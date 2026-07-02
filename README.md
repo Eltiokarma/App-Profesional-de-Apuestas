@@ -12,9 +12,12 @@ tipografía editorial (Archivo) y monospace (IBM Plex Mono) para cuotas y métri
   Ambos marcan), leyenda con **% de variación** en vivo, tarjetas de mercado con sparklines y
   marcado manual de value bets. Modos Prepartido / En vivo (marcador, minuto, divisor KO y
   línea del minuto actual).
-- **Burbujas** — constantes K (Dixon-Coles) como bubble chart: tamaño = magnitud,
-  color = nivel del rival, posición = favorable/desfavorable. Selector de constante y de modelo,
-  panel de valores y "Próximos 3".
+- **Burbujas** — visualización del **Motor SAD real** (ver abajo): cada racha K es una
+  burbuja que crece partido a partido y se resetea (se pincha) al cambiar el signo.
+  Timeline de los últimos 12 partidos por equipo, selectores de tipo de K
+  (Resultado / Goles anotados / Goles recibidos) × condición (Total / Local / Visita),
+  nivel continuo + bin v6 (Élite…Sin datos), racha activa, último aporte q y panel
+  con todas las K fusionadas.
 - **Skills** — tarjetas EFE / SAD / DT / Timeline con generar → spinner → generado. EFE abre
   como dashboard (gauges, bloques A–E, alertas); los demás como reporte por secciones. Historial.
 - **Estadísticas** — forma últimos 5, comparativa con barras, H2H y tabla de posiciones.
@@ -22,6 +25,26 @@ tipografía editorial (Archivo) y monospace (IBM Plex Mono) para cuotas y métri
 Incluye header de fixture persistente, **menú de partidos tipo BeSoccer** agrupado por
 competición, estados vacíos, loading skeletons, **vista de celular** (tab bar inferior +
 previsualización en marco de teléfono con el botón 📱) y datos de ejemplo realistas. Todo en español.
+
+## Motor SAD (`src/motor/`)
+
+Port fiel a TypeScript del motor de niveles y constantes K documentado en
+`docs/MOTOR_SAD_EXTRACCION.md` (SAD v3.4), verificado contra su ejemplo numérico oficial:
+
+- **`levels.ts`** — nivel continuo por ventana móvil de 20 partidos
+  (`Nivel = P + G + 1`, G sobre los últimos 5), con la regla retroactiva del partido nº 20.
+- **`constants.ts`** — valores instantáneos `q* = dif × res × nivel_del_rival`
+  (multiplicador visitante 1.4, fallback de nivel 1.0) y los 12 acumuladores `k*`
+  con reseteo al cambiar el signo (k_goles_recibido acumula valor absoluto;
+  los k local/visita conservan valor fuera de su condición).
+- **`discretizer.ts`** — fusión `k = k⁺ + k⁻` y bins fijos v6 (0–9, Sin datos → Élite).
+- **`history.ts`** — fuente de fixtures: al no haber backend, sintetiza una historia
+  determinista (~40 partidos por equipo, PRNG sembrado) que alimenta el pipeline auténtico.
+- **`engine.ts`** — orquestador memoizado: historia → niveles → constantes → fusión.
+
+```bash
+npm run test:motor   # verifica el motor contra el doc (§3.5, §3.2, §2, §4.1)
+```
 
 ## Cómo ejecutar
 
@@ -35,8 +58,9 @@ npm run preview  # sirve el build de producción
 ## Estructura
 
 - `src/data/` — equipos, partidos, tablas, definiciones de mercados/skills/niveles (tipados).
+- `src/motor/` — el Motor SAD (niveles, constantes K, fusión y bins; ver sección anterior).
 - `src/lib/` — helpers puros: PRNG determinista, series de cuotas, construcción de la gráfica
-  (`chart.ts`), sparklines, burbujas (`bubbles.ts`), vista de partido (`view.ts`).
+  (`chart.ts`), sparklines, vista de partido (`view.ts`).
 - `src/store.ts` — estado central de la app (hook `useSad`), espejo del `DCLogic` del prototipo.
 - `src/components/` — sidebar, headers desktop/móvil, match picker, bottom nav, SVG de la gráfica, estados.
 - `src/sections/` — las 4 secciones (Cuotas, Burbujas, Skills, Estadísticas).

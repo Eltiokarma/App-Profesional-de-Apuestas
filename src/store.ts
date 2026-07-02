@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { MATCHES } from './data'
 import type {
-  ConstKey,
+  KCondKey,
+  KTypeKey,
   Match,
   ModelKey,
   OddsMode,
@@ -27,7 +28,8 @@ export interface SadState {
   marked: Record<string, boolean>
   now: number
   liveMin: number
-  constante: ConstKey
+  kType: KTypeKey
+  kCond: KCondKey
   model: ModelKey
   chartMarket: string
   skillStatus: Record<string, SkillState>
@@ -48,7 +50,8 @@ const initialState: SadState = {
   marked: {},
   now: Date.now(),
   liveMin: 63,
-  constante: 'dif',
+  kType: 'res',
+  kCond: 'total',
   model: 'auto',
   chartMarket: '1x2',
   skillStatus: { efe: 'idle', sad: 'idle', tac: 'idle', tl: 'idle' },
@@ -72,7 +75,8 @@ export interface SadStore {
   clearMatch: () => void
   setMode: (mode: OddsMode) => () => void
   toggleMark: (id: string) => void
-  setConst: (c: ConstKey) => () => void
+  setKType: (c: KTypeKey) => () => void
+  setKCond: (c: KCondKey) => () => void
   setModel: (m: ModelKey) => () => void
   setChartMarket: (key: string) => void
   generate: (key: string) => () => void
@@ -137,7 +141,8 @@ export function useSad(): SadStore {
       }),
     [patchFn],
   )
-  const setConst = useCallback((c: ConstKey) => () => patch({ constante: c }), [patch])
+  const setKType = useCallback((c: KTypeKey) => () => patch({ kType: c }), [patch])
+  const setKCond = useCallback((c: KCondKey) => () => patch({ kCond: c }), [patch])
   const setModel = useCallback((m: ModelKey) => () => patch({ model: m }), [patch])
   const setChartMarket = useCallback((key: string) => patch({ chartMarket: key }), [patch])
 
@@ -173,7 +178,8 @@ export function useSad(): SadStore {
     clearMatch,
     setMode,
     toggleMark,
-    setConst,
+    setKType,
+    setKCond,
     setModel,
     setChartMarket,
     generate,

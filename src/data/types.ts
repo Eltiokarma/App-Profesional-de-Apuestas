@@ -65,7 +65,10 @@ export interface Level {
   soft: string
 }
 
-export type ConstKey = 'dif' | 'gf' | 'gc'
+/** Tipo de constante K fusionada del Motor SAD: resultado / goles anotados / goles recibidos. */
+export type KTypeKey = 'res' | 'ga' | 'gr'
+/** Condición de la K: total, solo local o solo visita. */
+export type KCondKey = 'total' | 'local' | 'visita'
 export type ModelKey = 'auto' | 'global' | 'liga'
 export type SectionKey = 'cuotas' | 'burbujas' | 'skills' | 'estadisticas'
 export type OddsMode = 'prematch' | 'live'
