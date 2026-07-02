@@ -1,0 +1,183 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { MATCHES } from './data'
+import type {
+  ConstKey,
+  Match,
+  ModelKey,
+  OddsMode,
+  SectionKey,
+  SkillState,
+} from './data/types'
+
+export interface HistoryEntry {
+  key: string
+  time: string
+  id: string
+}
+
+export interface SadState {
+  theme: 'dark' | 'light'
+  section: SectionKey
+  matchId: string | null
+  pickerOpen: boolean
+  loading: boolean
+  vw: number
+  forceMobile: boolean
+  oddsMode: OddsMode
+  marked: Record<string, boolean>
+  now: number
+  liveMin: number
+  constante: ConstKey
+  model: ModelKey
+  chartMarket: string
+  skillStatus: Record<string, SkillState>
+  skillTime: Record<string, string>
+  openReport: string | null
+  history: HistoryEntry[]
+}
+
+const initialState: SadState = {
+  theme: 'dark',
+  section: 'cuotas',
+  matchId: 'm1',
+  pickerOpen: false,
+  loading: false,
+  vw: typeof window !== 'undefined' ? window.innerWidth : 1280,
+  forceMobile: false,
+  oddsMode: 'prematch',
+  marked: {},
+  now: Date.now(),
+  liveMin: 63,
+  constante: 'dif',
+  model: 'auto',
+  chartMarket: '1x2',
+  skillStatus: { efe: 'idle', sad: 'idle', tac: 'idle', tl: 'idle' },
+  skillTime: {},
+  openReport: null,
+  history: [],
+}
+
+function nowText(): string {
+  const d = new Date()
+  return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2)
+}
+
+export interface SadStore {
+  s: SadState
+  currentMatch: () => Match | undefined
+  toggleTheme: () => void
+  go: (sec: SectionKey) => () => void
+  togglePicker: () => void
+  selectMatch: (id: string) => () => void
+  clearMatch: () => void
+  setMode: (mode: OddsMode) => () => void
+  toggleMark: (id: string) => void
+  setConst: (c: ConstKey) => () => void
+  setModel: (m: ModelKey) => () => void
+  setChartMarket: (key: string) => void
+  generate: (key: string) => () => void
+  openReport: (key: string) => () => void
+  toggleMobile: () => void
+}
+
+export function useSad(): SadStore {
+  const [s, setS] = useState<SadState>(initialState)
+
+  const patch = useCallback((p: Partial<SadState>) => setS((prev) => ({ ...prev, ...p })), [])
+  const patchFn = useCallback((fn: (prev: SadState) => Partial<SadState>) => setS((prev) => ({ ...prev, ...fn(prev) })), [])
+
+  // keep a live ref of state for the interval callback
+  const stateRef = useRef(s)
+  stateRef.current = s
+  const tickRef = useRef(0)
+
+  useEffect(() => {
+    const onResize = () => patch({ vw: window.innerWidth })
+    window.addEventListener('resize', onResize)
+    const iv = setInterval(() => {
+      const st = stateRef.current
+      if (st.section !== 'cuotas' || st.oddsMode !== 'live') return // only re-render while live
+      tickRef.current++
+      const p: Partial<SadState> = { now: Date.now() }
+      if (tickRef.current % 2 === 0 && st.liveMin < 90) p.liveMin = st.liveMin + 1
+      patch(p)
+    }, 1000)
+    return () => {
+      clearInterval(iv)
+      window.removeEventListener('resize', onResize)
+    }
+  }, [patch])
+
+  const currentMatch = useCallback(() => MATCHES.find((x) => x.id === stateRef.current.matchId), [])
+
+  const toggleTheme = useCallback(() => patchFn((prev) => ({ theme: prev.theme === 'dark' ? 'light' : 'dark' })), [patchFn])
+  const go = useCallback((sec: SectionKey) => () => patch({ section: sec, pickerOpen: false }), [patch])
+  const togglePicker = useCallback(() => patchFn((prev) => ({ pickerOpen: !prev.pickerOpen })), [patchFn])
+
+  const selectMatch = useCallback(
+    (id: string) => () => {
+      const mt = MATCHES.find((x) => x.id === id)
+      const live = !!mt && mt.status === 'live'
+      const lm = live ? parseInt(mt!.min) || 60 : 63
+      patch({ matchId: id, pickerOpen: false, loading: true, oddsMode: live ? 'live' : 'prematch', liveMin: lm })
+      setTimeout(() => patch({ loading: false }), 720)
+    },
+    [patch],
+  )
+
+  const clearMatch = useCallback(() => patch({ matchId: null, pickerOpen: false }), [patch])
+  const setMode = useCallback((mode: OddsMode) => () => patch({ oddsMode: mode }), [patch])
+  const toggleMark = useCallback(
+    (id: string) =>
+      patchFn((prev) => {
+        const m = { ...prev.marked }
+        if (m[id]) delete m[id]
+        else m[id] = true
+        return { marked: m }
+      }),
+    [patchFn],
+  )
+  const setConst = useCallback((c: ConstKey) => () => patch({ constante: c }), [patch])
+  const setModel = useCallback((m: ModelKey) => () => patch({ model: m }), [patch])
+  const setChartMarket = useCallback((key: string) => patch({ chartMarket: key }), [patch])
+
+  const generate = useCallback(
+    (key: string) => () => {
+      patchFn((prev) => ({ skillStatus: { ...prev.skillStatus, [key]: 'gen' } }))
+      setTimeout(() => {
+        const t = nowText()
+        patchFn((prev) => {
+          const hist = [{ key, time: t, id: key + '-' + Date.now() }, ...prev.history.filter((h) => h.key !== key)]
+          return {
+            skillStatus: { ...prev.skillStatus, [key]: 'done' },
+            skillTime: { ...prev.skillTime, [key]: t },
+            openReport: key,
+            history: hist,
+          }
+        })
+      }, 1700)
+    },
+    [patchFn],
+  )
+
+  const openReport = useCallback((key: string) => () => patch({ openReport: key }), [patch])
+  const toggleMobile = useCallback(() => patchFn((prev) => ({ forceMobile: !prev.forceMobile, pickerOpen: false })), [patchFn])
+
+  return {
+    s,
+    currentMatch,
+    toggleTheme,
+    go,
+    togglePicker,
+    selectMatch,
+    clearMatch,
+    setMode,
+    toggleMark,
+    setConst,
+    setModel,
+    setChartMarket,
+    generate,
+    openReport,
+    toggleMobile,
+  }
+}

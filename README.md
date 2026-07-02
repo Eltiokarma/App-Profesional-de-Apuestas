@@ -1,3 +1,49 @@
+# SAD · Análisis pre-partido
+
+Web app **desktop-first y responsive** para análisis pre-partido de fútbol y apuestas.
+Implementada en **React + Vite + TypeScript** a partir del prototipo de Claude Design
+(`project/SAD.dc.html`). Estética oscura tipo terminal deportiva, con tema claro/oscuro,
+tipografía editorial (Archivo) y monospace (IBM Plex Mono) para cuotas y métricas.
+
+## Secciones
+
+- **Cuotas** (la estrella) — cada cuota es una **gráfica de movimiento** desde la apertura
+  hasta el final del partido. Tabs por mercado (1X2, Doble oportunidad, Más/Menos, Hándicap,
+  Ambos marcan), leyenda con **% de variación** en vivo, tarjetas de mercado con sparklines y
+  marcado manual de value bets. Modos Prepartido / En vivo (marcador, minuto, divisor KO y
+  línea del minuto actual).
+- **Burbujas** — constantes K (Dixon-Coles) como bubble chart: tamaño = magnitud,
+  color = nivel del rival, posición = favorable/desfavorable. Selector de constante y de modelo,
+  panel de valores y "Próximos 3".
+- **Skills** — tarjetas EFE / SAD / DT / Timeline con generar → spinner → generado. EFE abre
+  como dashboard (gauges, bloques A–E, alertas); los demás como reporte por secciones. Historial.
+- **Estadísticas** — forma últimos 5, comparativa con barras, H2H y tabla de posiciones.
+
+Incluye header de fixture persistente, **menú de partidos tipo BeSoccer** agrupado por
+competición, estados vacíos, loading skeletons, **vista de celular** (tab bar inferior +
+previsualización en marco de teléfono con el botón 📱) y datos de ejemplo realistas. Todo en español.
+
+## Cómo ejecutar
+
+```bash
+npm install
+npm run dev      # servidor de desarrollo (http://localhost:5173)
+npm run build    # typecheck + build de producción a dist/
+npm run preview  # sirve el build de producción
+```
+
+## Estructura
+
+- `src/data/` — equipos, partidos, tablas, definiciones de mercados/skills/niveles (tipados).
+- `src/lib/` — helpers puros: PRNG determinista, series de cuotas, construcción de la gráfica
+  (`chart.ts`), sparklines, burbujas (`bubbles.ts`), vista de partido (`view.ts`).
+- `src/store.ts` — estado central de la app (hook `useSad`), espejo del `DCLogic` del prototipo.
+- `src/components/` — sidebar, headers desktop/móvil, match picker, bottom nav, SVG de la gráfica, estados.
+- `src/sections/` — las 4 secciones (Cuotas, Burbujas, Skills, Estadísticas).
+- `project/`, `chats/` — bundle original de Claude Design (referencia de diseño e intención).
+
+---
+
 # CODING AGENTS: READ THIS FIRST
 
 This is a **handoff bundle** from Claude Design (claude.ai/design).
