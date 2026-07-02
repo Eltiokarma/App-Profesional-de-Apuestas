@@ -77,7 +77,10 @@ function constantesDTO(teamKey: string, s: KSnapshot): ConstantesDTO {
     fecha: tToIso(s.t),
     condicion: s.isLocal ? 'Local' : 'Visita',
     rivalId: TEAM_NUM[s.rival],
+    rivalNombre: TEAMS[s.rival].name,
     nivelRival: s.rivalLevel,
+    golesFavor: s.gf,
+    golesContra: s.ga,
     q: {
       local: s.q.local,
       visita: s.q.visita,
@@ -119,14 +122,16 @@ class MockDataSource implements SadDataSource {
     return MATCHES.map((m) => {
       const goles = (m.score || '0 - 0').split('-').map((x) => parseInt(x.trim()) || 0)
       const enJuego = m.status === 'live'
+      const hora = m.status === 'sched' && /^\d{2}:\d{2}$/.test(m.min) ? m.min : '21:00'
       return {
         id: FIXTURE_NUM(m.id),
-        fecha: MOCK_NOW,
+        fecha: `2026-07-02T${hora}:00.000Z`,
         ligaId: LIGA_NUM[m.lk] ?? 0,
         liga: m.league,
         temporada: 2026,
         estado: enJuego ? 'en_vivo' : m.status === 'fin' ? 'finalizado' : 'programado',
         minuto: enJuego ? parseInt(m.min) || null : null,
+        estadio: m.venue,
         local: equipoDTO(m.home),
         visitante: equipoDTO(m.away),
         golesLocal: m.status === 'sched' ? null : goles[0],

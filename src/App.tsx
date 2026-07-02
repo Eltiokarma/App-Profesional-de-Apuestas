@@ -1,6 +1,7 @@
-import { MATCHES } from './data'
 import { useSad } from './store'
 import { matchView } from './lib/view'
+import { loadMatches } from './services/appdata'
+import { useAsync } from './services/useAsync'
 import { Sidebar } from './components/Sidebar'
 import { DesktopHeader } from './components/DesktopHeader'
 import { MobileHeader } from './components/MobileHeader'
@@ -20,7 +21,9 @@ type Style = React.CSSProperties
 export function App() {
   const store = useSad()
   const { s } = store
-  const m = MATCHES.find((x) => x.id === s.matchId)
+  const fixtures = useAsync(loadMatches, 'fixtures')
+  const matches = fixtures.data ?? []
+  const m = matches.find((x) => x.id === s.matchId)
 
   const isMobile = s.forceMobile || s.vw < 760
   const isDesktop = !isMobile
@@ -64,9 +67,9 @@ export function App() {
   const liveBadge = !!m && isLive
   const mv = m ? matchView(m) : null
 
-  const showEmpty = !m
-  const showSkeleton = !!m && s.loading
-  const showContent = !!m && !s.loading
+  const showEmpty = !m && !fixtures.loading && !fixtures.error
+  const showSkeleton = (!!m && s.loading) || fixtures.loading
+  const showContent = !!m && !s.loading && !fixtures.loading
 
   return (
     <div data-theme={s.theme} style={rootStyle}>
@@ -81,9 +84,16 @@ export function App() {
             <DesktopHeader store={store} mv={mv} liveBadge={liveBadge} liveMinute={s.liveMin} liveScore={m ? m.score : ''} />
           )}
 
-          {s.pickerOpen && <MatchPicker store={store} current={m} pickerStyle={pickerStyle} />}
+          {s.pickerOpen && <MatchPicker store={store} matches={matches} current={m} pickerStyle={pickerStyle} />}
 
           <main className="sad-scroll" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: contentPad }}>
+            {fixtures.error && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', marginBottom: 14, borderRadius: 12, background: 'var(--down-soft)', border: '1px solid color-mix(in oklch,var(--down),transparent 55%)' }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--down)', flexShrink: 0 }}></span>
+                <span style={{ font: '500 12.5px var(--sans)', color: 'var(--t1)', flex: 1 }}>No se pudieron cargar los partidos: {fixtures.error}</span>
+                <button onClick={fixtures.reload} style={{ padding: '7px 13px', borderRadius: 8, border: 0, background: 'var(--down)', color: '#fff', cursor: 'pointer', font: '600 11.5px var(--sans)', flexShrink: 0 }}>Reintentar</button>
+              </div>
+            )}
             {showEmpty && <EmptyState store={store} />}
             {showSkeleton && <Skeleton />}
             {showContent && m && s.section === 'cuotas' && <Cuotas store={store} m={m} isMobile={isMobile} />}

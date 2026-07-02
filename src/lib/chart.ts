@@ -1,5 +1,10 @@
-import { LINE_COLORS, MARKET_DEFS, MATCHES } from '../data'
+import { LINE_COLORS, MARKET_DEFS } from '../data'
+import type { Match } from '../data/types'
 import { seriesFor, type Series } from './odds'
+
+/** Tabla base { mercado → { selección → cuota } } servida por el contrato /cuotas. */
+export type BaseOddsTable = Record<string, Record<string, number>>
+const baseOf = (base: BaseOddsTable | undefined, mk: string, selK: string) => base?.[mk]?.[selK]
 
 export interface ChartLine {
   key: string
@@ -46,18 +51,19 @@ export interface Chart {
 }
 
 export function buildChart(
-  mId: string,
+  m: Match,
   mk: string,
   isLive: boolean,
   liveMin: number,
   marked: Record<string, boolean>,
+  base?: BaseOddsTable,
 ): Chart {
   const def = MARKET_DEFS.find((d) => d.key === mk)!
-  const m = MATCHES.find((x) => x.id === mId)!
+  const mId = m.id
   const sels = def.sels(m)
   const koFrac = 0.46
   const series = sels.map((sd) => {
-    const S = seriesFor(mId, mk, sd.k)
+    const S = seriesFor(m, mk, sd.k, baseOf(base, mk, sd.k))
     const PRE = S.pre.length
     const pts: { t: number; odd: number }[] = []
     for (let i = 0; i < PRE; i++) {
@@ -174,8 +180,8 @@ export interface Spark {
   dotY: string
 }
 
-export function buildSpark(mId: string, mk: string, selK: string, isLive: boolean, liveMin: number): Spark {
-  const S: Series = seriesFor(mId, mk, selK)
+export function buildSpark(m: Match, mk: string, selK: string, isLive: boolean, liveMin: number, base?: BaseOddsTable): Spark {
+  const S: Series = seriesFor(m, mk, selK, baseOf(base, mk, selK))
   const koFrac = 0.5
   const PRE = S.pre.length
   const pts: { t: number; odd: number }[] = []

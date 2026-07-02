@@ -96,14 +96,26 @@ extracción) y el build de producción.
    ⚠ Nada `VITE_*` es secreto (queda en el bundle); la clave de API-Football
    jamás debe llegar al frontend.
 
-## 4. Hoja de ruta de integración (siguiente trabajo en este repo)
+## 4. Hoja de ruta de integración
 
-1. Migrar las secciones a `getDataSource()` (hoy leen el mock síncrono directo):
-   - Selector de partidos y header ← `fixtures()`
-   - Cuotas ← `cuotas()` + polling `VITE_POLL_LIVE_MS` en vivo
-   - Burbujas ← `constantes()` + `niveles()`
-   - Skills / análisis ← `analisisPrepartido()`
-   - Estadísticas ← `niveles()` + `prediccion()` (gap §5 como panel)
-2. Estados de carga/error por sección (los skeletons ya existen).
-3. Cache ligera con revalidación (SWR casero o TanStack Query si crece).
-4. Deploy del frontend (Vercel/Netlify/Cloudflare Pages) apuntando a staging.
+Hecho (las secciones ya consumen `getDataSource()` con estados de carga/error):
+
+- ✅ Selector de partidos y header ← `fixtures()` (mapeo DTO→UI en
+  `src/services/appdata.ts`, registro dinámico de equipos desconocidos)
+- ✅ Cuotas ← `cuotas()` (las series de movimiento se construyen alrededor de la
+  cuota real; el histórico intradía sigue siendo sintético hasta que exista un
+  endpoint de historial de cuotas)
+- ✅ Burbujas ← `constantes()` + `niveles()` (reconstrucción de snapshots desde DTOs)
+- ✅ Skills: el reporte SAD ← `analisisPrepartido()` (resumen, niveles, K, gap)
+- ✅ Estadísticas: panel "Regresión al nivel · Ley §5" ← `prediccion()`
+
+Pendiente:
+
+1. Ampliar el contrato con `/equipos/{id}/stats` (gf, gc, xG, posesión, forma) y
+   `/ligas/{id}/standings`: la comparativa de rendimiento y la mini-tabla de
+   Estadísticas aún usan datos locales de demo.
+2. Historial de cuotas (`/cuotas/{fixtureId}/historial`) para que la gráfica de
+   movimiento sea 100 % real.
+3. Polling de cuotas en vivo con `VITE_POLL_LIVE_MS`.
+4. Cache ligera con revalidación (SWR casero o TanStack Query si crece).
+5. Deploy del frontend (Vercel/Netlify/Cloudflare Pages) apuntando a staging.

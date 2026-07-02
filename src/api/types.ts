@@ -28,6 +28,7 @@ export interface FixtureDTO {
   temporada: number
   estado: EstadoFixture
   minuto: number | null
+  estadio?: string
   local: EquipoDTO
   visitante: EquipoDTO
   golesLocal: number | null
@@ -44,14 +45,18 @@ export interface NivelDTO {
   binEtiqueta: string // 'Sin datos' … 'Élite'
 }
 
-/** Fila de constants + fusión (§3 y §4.2): la foto completa tras un partido. */
+/** Fila de constants + fusión (§3 y §4.2): la foto completa tras un partido.
+ *  rivalNombre y goles vienen de processed_matches (rival_nombre, goals_*). */
 export interface ConstantesDTO {
   equipoId: number
   fixtureId: number
   fecha: string
   condicion: 'Local' | 'Visita'
   rivalId: number
+  rivalNombre: string
   nivelRival: number
+  golesFavor: number
+  golesContra: number
   q: {
     local: number | null
     visita: number | null

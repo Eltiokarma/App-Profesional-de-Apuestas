@@ -1,7 +1,8 @@
 import { LEVELS, TEAMS } from '../data'
 import type { KCondKey, KTypeKey, Match } from '../data/types'
-import { teamEngine } from '../motor/engine'
-import type { FusedK, KSnapshot, TeamEngine } from '../motor/types'
+import type { FusedK, KSnapshot } from '../motor/types'
+import { loadBurbujas, type BurbujasData } from '../services/appdata'
+import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
 interface Props {
@@ -94,7 +95,7 @@ function buildBubbles(snaps: KSnapshot[], kType: KTypeKey, kCond: KCondKey, maxA
   })
 }
 
-function TeamPanel({ eng, teamId, role, kType, kCond, maxAbs }: { eng: TeamEngine; teamId: string; role: string; kType: KTypeKey; kCond: KCondKey; maxAbs: number }) {
+function TeamPanel({ eng, teamId, role, kType, kCond, maxAbs }: { eng: BurbujasData; teamId: string; role: string; kType: KTypeKey; kCond: KCondKey; maxAbs: number }) {
   const T = TEAMS[teamId]
   const key = FUSED_KEY[kType][kCond]
   const bubbles = buildBubbles(eng.snaps, kType, kCond, maxAbs)
@@ -177,8 +178,13 @@ export function Burbujas({ store, m, isMobile }: Props) {
   const A = TEAMS[m.away]
   const gridBurbujas = isMobile ? '1fr' : '1fr 1fr 280px'
 
-  const engH = teamEngine(m.home)
-  const engA = teamEngine(m.away)
+  // constantes K + niveles vía el contrato (/constantes, /niveles)
+  const engData = useAsync(async () => {
+    const [h, a] = await Promise.all([loadBurbujas(m.home), loadBurbujas(m.away)])
+    return { h, a }
+  }, m.id)
+  const engH = engData.data?.h ?? null
+  const engA = engData.data?.a ?? null
 
   const typeOpts = ([['res', 'Resultado'], ['ga', 'Goles anotados'], ['gr', 'Goles recibidos']] as [KTypeKey, string][]).map(([k, l]) => ({
     key: k, label: l, bg: s.kType === k ? 'var(--bg3)' : 'transparent', fg: s.kType === k ? 'var(--t1)' : 'var(--t2)',
@@ -200,7 +206,7 @@ export function Burbujas({ store, m, isMobile }: Props) {
   }
 
   // tabla del panel lateral: toda la foto del motor para ambos equipos
-  const kv = (eng: TeamEngine | null, kk: keyof FusedK) => (eng && eng.snaps.length ? eng.snaps[eng.snaps.length - 1].fused[kk] : 0)
+  const kv = (eng: BurbujasData | null, kk: keyof FusedK) => (eng && eng.snaps.length ? eng.snaps[eng.snaps.length - 1].fused[kk] : 0)
   const kColor = (v: number, inverse: boolean) => (v === 0 ? 'var(--t3)' : (inverse ? v < 0 : v > 0) ? 'var(--up)' : 'var(--down)')
   const valueRows: { label: string; hv: string; av: string; hc: string; ac: string }[] = [
     { label: 'Nivel (continuo)', hv: engH ? engH.level.toFixed(2) : '—', av: engA ? engA.level.toFixed(2) : '—', hc: 'var(--t1)', ac: 'var(--t1)' },
@@ -250,6 +256,21 @@ export function Burbujas({ store, m, isMobile }: Props) {
         </div>
       </div>
 
+      {engData.error && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', marginBottom: 14, borderRadius: 12, background: 'var(--down-soft)', border: '1px solid color-mix(in oklch,var(--down),transparent 55%)' }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--down)', flexShrink: 0 }}></span>
+          <span style={{ font: '500 12.5px var(--sans)', color: 'var(--t1)', flex: 1 }}>No se pudieron cargar las constantes K: {engData.error}</span>
+          <button onClick={engData.reload} style={{ padding: '7px 13px', borderRadius: 8, border: 0, background: 'var(--down)', color: '#fff', cursor: 'pointer', font: '600 11.5px var(--sans)', flexShrink: 0 }}>Reintentar</button>
+        </div>
+      )}
+      {engData.loading && (
+        <div style={{ display: 'grid', gridTemplateColumns: gridBurbujas, gap: 14 }}>
+          <div className="sad-sk" style={{ height: 360 }}></div>
+          <div className="sad-sk" style={{ height: 360 }}></div>
+          <div className="sad-sk" style={{ height: 360 }}></div>
+        </div>
+      )}
+      {!engData.loading && !engData.error && (
       <div style={{ display: 'grid', gridTemplateColumns: gridBurbujas, gap: 14 }}>
         {engH && <TeamPanel eng={engH} teamId={m.home} role={'Local · modelo ' + s.model} kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} />}
         {engA && <TeamPanel eng={engA} teamId={m.away} role={'Visitante · modelo ' + s.model} kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} />}
@@ -296,6 +317,7 @@ export function Burbujas({ store, m, isMobile }: Props) {
           </section>
         </aside>
       </div>
+      )}
     </div>
   )
 }

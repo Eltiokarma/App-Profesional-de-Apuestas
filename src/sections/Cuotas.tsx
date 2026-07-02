@@ -4,6 +4,8 @@ import { buildChart, buildSpark } from '../lib/chart'
 import { curOddOf, seriesFor } from '../lib/odds'
 import { ChartSvg } from '../components/ChartSvg'
 import { matchView } from '../lib/view'
+import { loadCuotasBase } from '../services/appdata'
+import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
 interface Props {
@@ -18,6 +20,9 @@ export function Cuotas({ store, m, isMobile }: Props) {
   const mv = matchView(m)
   const cmk = s.chartMarket || '1x2'
   const gridCuotasCards = isMobile ? '1fr' : '1fr 1fr 1fr'
+  // cuotas base del contrato (/cuotas): sobre ellas se construye el movimiento
+  const cuotas = useAsync(() => loadCuotasBase(m.id), m.id)
+  const base = cuotas.data ?? undefined
 
   const preBg = !isLive ? 'var(--bg3)' : 'transparent'
   const preFg = !isLive ? 'var(--t1)' : 'var(--t2)'
@@ -33,13 +38,13 @@ export function Cuotas({ store, m, isMobile }: Props) {
     fg: d.key === cmk ? 'var(--accent)' : 'var(--t2)',
   }))
 
-  const chart = buildChart(m.id, cmk, isLive, s.liveMin, s.marked)
+  const chart = buildChart(m, cmk, isLive, s.liveMin, s.marked, base)
   const chartXfromOpen = isLive ? 'apertura → ' + s.liveMin + '’ en vivo' : 'apertura → cierre prepartido'
 
   const marketCards = MARKET_DEFS.map((def) => {
     const sels = def.sels(m).map((sd) => {
-      const sp = buildSpark(m.id, def.key, sd.k, isLive, s.liveMin)
-      const S = seriesFor(m.id, def.key, sd.k)
+      const sp = buildSpark(m, def.key, sd.k, isLive, s.liveMin, base)
+      const S = seriesFor(m, def.key, sd.k, base?.[def.key]?.[sd.k])
       const cur = curOddOf(S, isLive, s.liveMin)
       const dlt = cur - S.open
       const id = m.id + ':' + def.key + ':' + sd.k
@@ -104,6 +109,25 @@ export function Cuotas({ store, m, isMobile }: Props) {
         ))}
       </div>
 
+      {cuotas.error && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', marginBottom: 14, borderRadius: 12, background: 'var(--down-soft)', border: '1px solid color-mix(in oklch,var(--down),transparent 55%)' }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--down)', flexShrink: 0 }}></span>
+          <span style={{ font: '500 12.5px var(--sans)', color: 'var(--t1)', flex: 1 }}>No se pudieron cargar las cuotas: {cuotas.error}</span>
+          <button onClick={cuotas.reload} style={{ padding: '7px 13px', borderRadius: 8, border: 0, background: 'var(--down)', color: '#fff', cursor: 'pointer', font: '600 11.5px var(--sans)', flexShrink: 0 }}>Reintentar</button>
+        </div>
+      )}
+      {cuotas.loading && (
+        <div>
+          <div className="sad-sk" style={{ height: 380, marginBottom: 14 }}></div>
+          <div style={{ display: 'grid', gridTemplateColumns: gridCuotasCards, gap: 14 }}>
+            <div className="sad-sk" style={{ height: 150 }}></div>
+            <div className="sad-sk" style={{ height: 150 }}></div>
+            <div className="sad-sk" style={{ height: 150 }}></div>
+          </div>
+        </div>
+      )}
+      {!cuotas.loading && !cuotas.error && (
+        <>
       {/* BIG MOVEMENT CHART */}
       <section style={{ marginBottom: 14, padding: '18px 18px 14px', borderRadius: 16, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
@@ -172,6 +196,8 @@ export function Cuotas({ store, m, isMobile }: Props) {
           </div>
         ))}
       </div>
+        </>
+      )}
     </div>
   )
 }
