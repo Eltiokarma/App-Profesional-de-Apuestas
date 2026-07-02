@@ -1,5 +1,8 @@
 import { SKILL_DEFS, TEAMS } from '../data'
 import type { Match } from '../data/types'
+import type { GapEquipoDTO } from '../api/types'
+import { loadAnalisis } from '../services/appdata'
+import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
 interface Props {
@@ -60,15 +63,49 @@ export function Skills({ store, m, isMobile }: Props) {
     { text: 'Pivote titular en duda — impacto medio en cohesión C.', color: 'var(--mark)', soft: 'var(--mark-soft)', line: 'color-mix(in oklch,var(--mark),transparent 60%)' },
   ]
 
+  // reporte SAD alimentado por el contrato (/analisis-prepartido)
+  const analisis = useAsync(() => loadAnalisis(m.id), m.id)
+  const fmtGap = (g: GapEquipoDTO) =>
+    g.gap == null ? 'sin datos de forma' : `gap ${g.gap > 0 ? '+' : ''}${g.gap.toFixed(2)} (${g.senal}, ${g.tendencia === 'mejora' ? 'tiende a mejorar' : 'tiende a empeorar'})`
+  const ad = analisis.data
+  const sadReport: TextReport = ad
+    ? {
+        abbr: 'SAD', title: 'Análisis Pre-Partido', iconBg: 'var(--up-soft)', iconColor: 'var(--up)',
+        sections: [
+          {
+            h: 'Resumen ejecutivo · Motor SAD',
+            body: ad.resumen,
+            tags: [`${H.short} ${ad.niveles.local.nivel.toFixed(2)} · ${ad.niveles.local.binEtiqueta}`, `${A.short} ${ad.niveles.visitante.nivel.toFixed(2)} · ${ad.niveles.visitante.binEtiqueta}`],
+          },
+          {
+            h: 'Momentum · constantes K',
+            body:
+              `${H.name}: K ${ad.constantes.local ? ad.constantes.local.fusion.k.toFixed(1) : '—'} · ` +
+              `${A.name}: K ${ad.constantes.visitante ? ad.constantes.visitante.fusion.k.toFixed(1) : '—'}. ` +
+              'K > 0 racha positiva activa; K = 0 recién reseteada; K < 0 mala racha.',
+            tags: [
+              `K local ${ad.constantes.local ? ad.constantes.local.fusion.kLocal.toFixed(1) : '—'}`,
+              `K visita ${ad.constantes.visitante ? ad.constantes.visitante.fusion.kVisita.toFixed(1) : '—'}`,
+            ],
+          },
+          {
+            h: 'Regresión al nivel (§5)',
+            body:
+              `${H.name}: ${fmtGap(ad.prediccion.local)}. ${A.name}: ${fmtGap(ad.prediccion.visitante)}.` +
+              (ad.prediccion.local.senal === 'fuerte' || ad.prediccion.visitante.senal === 'fuerte'
+                ? ' Señal fuerte: el value no cura el reset — no ir contra la regresión por cuota.'
+                : ''),
+            tags: ad.prediccion.gapDiff == null ? [] : [`gap diferencial ${ad.prediccion.gapDiff > 0 ? '+' : ''}${ad.prediccion.gapDiff.toFixed(2)}`],
+          },
+        ],
+      }
+    : {
+        abbr: 'SAD', title: 'Análisis Pre-Partido', iconBg: 'var(--up-soft)', iconColor: 'var(--up)',
+        sections: [{ h: 'Resumen ejecutivo', body: analisis.error ? `No se pudo cargar el análisis: ${analisis.error}` : 'Cargando análisis del motor…', tags: [] }],
+      }
+
   const textReports: Record<string, TextReport> = {
-    sad: {
-      abbr: 'SAD', title: 'Análisis Pre-Partido', iconBg: 'var(--up-soft)', iconColor: 'var(--up)',
-      sections: [
-        { h: 'Resumen ejecutivo', body: H.name + ' llega con mejor forma reciente y ventaja de localía; ' + A.name + ' depende de la transición rápida. Partido de pocos goles con ligera ventaja local.', tags: ['Ventaja local', 'Bajo marcador'] },
-        { h: 'Claves del partido', body: 'El control del mediocampo y los balones parados serán decisivos. La presión alta del local puede forzar pérdidas en la salida visitante.', tags: ['Mediocampo', 'Balón parado', 'Presión alta'] },
-        { h: 'Pronóstico del modelo', body: 'Resultado más probable 1-0 / 2-1. Under 2.5 con valor según el modelo; ambos marcan poco probable.', tags: ['1-0', 'Under 2.5'] },
-      ],
-    },
+    sad: sadReport,
     tac: {
       abbr: 'DT', title: 'Diagnóstico Táctico', iconBg: 'var(--mark-soft)', iconColor: 'var(--mark)',
       sections: [

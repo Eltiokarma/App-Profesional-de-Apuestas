@@ -1,6 +1,9 @@
 import { STANDINGS, TEAMS } from '../data'
 import type { FormResult, Match } from '../data/types'
+import type { GapEquipoDTO } from '../api/types'
 import { rng } from '../lib/odds'
+import { loadPrediccion } from '../services/appdata'
+import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
 interface Props {
@@ -9,8 +12,32 @@ interface Props {
   isMobile: boolean
 }
 
+function GapCard({ g, name, align }: { g: GapEquipoDTO; name: string; align: 'left' | 'right' }) {
+  const color = g.gap == null ? 'var(--t3)' : g.tendencia === 'mejora' ? 'var(--up)' : 'var(--down)'
+  const soft = g.gap == null ? 'var(--bg3)' : g.tendencia === 'mejora' ? 'var(--up-soft)' : 'var(--down-soft)'
+  return (
+    <div style={{ padding: '12px 14px', borderRadius: 12, background: 'var(--bg)', border: '1px solid var(--line)', textAlign: align }}>
+      <div style={{ font: '600 11px var(--sans)', color: 'var(--t2)', marginBottom: 6 }}>{name}</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, justifyContent: align === 'right' ? 'flex-end' : 'flex-start' }}>
+        <span style={{ font: '700 24px var(--mono)', color, fontVariantNumeric: 'tabular-nums' }}>
+          {g.gap == null ? '—' : (g.gap > 0 ? '+' : '') + g.gap.toFixed(2)}
+        </span>
+        {g.senal && (
+          <span style={{ padding: '3px 9px', borderRadius: 6, background: soft, color, font: '700 9.5px var(--mono)', letterSpacing: '.3px' }}>
+            {g.senal.toUpperCase()}{g.tendencia ? ` · ${g.tendencia === 'mejora' ? 'TIENDE A MEJORAR' : 'TIENDE A EMPEORAR'}` : ''}
+          </span>
+        )}
+      </div>
+      <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginTop: 6 }}>
+        forma últ. 5: {g.ptsRecientes == null ? '—' : g.ptsRecientes.toFixed(2)} pts · esperado μ: {g.ptsEsperados.toFixed(2)} pts · nivel {g.nivel.toFixed(2)}
+      </div>
+    </div>
+  )
+}
+
 export function Estadisticas({ store, m, isMobile }: Props) {
   void store
+  const pred = useAsync(() => loadPrediccion(m.id), m.id)
   const H = TEAMS[m.home]
   const A = TEAMS[m.away]
   const gridStats = isMobile ? '1fr' : 'minmax(0,1fr) 320px'
@@ -111,6 +138,42 @@ export function Estadisticas({ store, m, isMobile }: Props) {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* REGRESIÓN AL NIVEL (§5) */}
+      <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)', marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+          <div style={{ font: '700 12px var(--sans)' }}>Regresión al nivel · Ley §5</div>
+          <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>gap = μ esperado − forma últ. 5 · gap &gt; 0 subrinde (tiende a mejorar)</div>
+        </div>
+        {pred.loading && <div className="sad-sk" style={{ height: 96 }}></div>}
+        {pred.error && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: 'var(--down-soft)', border: '1px solid color-mix(in oklch,var(--down),transparent 55%)' }}>
+            <span style={{ font: '500 12px var(--sans)', color: 'var(--t1)', flex: 1 }}>No se pudo cargar la predicción: {pred.error}</span>
+            <button onClick={pred.reload} style={{ padding: '6px 11px', borderRadius: 7, border: 0, background: 'var(--down)', color: '#fff', cursor: 'pointer', font: '600 11px var(--sans)' }}>Reintentar</button>
+          </div>
+        )}
+        {pred.data && (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr auto 1fr', alignItems: 'stretch', gap: 14 }}>
+              <GapCard g={pred.data.local} name={H.name} align="left" />
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '0 6px' }}>
+                <span style={{ font: '600 9px var(--mono)', color: 'var(--t3)', letterSpacing: '1px' }}>GAP DIFERENCIAL</span>
+                <span style={{ font: '700 20px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>
+                  {pred.data.gapDiff == null ? '—' : (pred.data.gapDiff > 0 ? '+' : '') + pred.data.gapDiff.toFixed(2)}
+                </span>
+                <span style={{ font: '500 9px var(--mono)', color: 'var(--t3)' }}>local − visitante</span>
+              </div>
+              <GapCard g={pred.data.visitante} name={A.name} align="right" />
+            </div>
+            {(pred.data.local.senal === 'fuerte' || pred.data.visitante.senal === 'fuerte') && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', marginTop: 12, borderRadius: 10, background: 'var(--mark-soft)', border: '1px solid color-mix(in oklch,var(--mark),transparent 60%)' }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--mark)', flexShrink: 0 }}></span>
+                <span style={{ font: '500 12px var(--sans)', color: 'var(--t1)' }}>Señal fuerte de regresión: <strong>el value no cura el reset</strong> — con señal clara, la cuota no justifica ir en contra.</span>
+              </div>
+            )}
+          </>
+        )}
       </section>
 
       <div style={{ display: 'grid', gridTemplateColumns: gridStats, gap: 14 }}>

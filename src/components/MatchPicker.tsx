@@ -1,16 +1,17 @@
-import { MATCHES, TEAMS } from '../data'
+import { TEAMS } from '../data'
 import type { Match } from '../data/types'
 import type { SadStore } from '../store'
 
 interface Props {
   store: SadStore
+  matches: Match[]
   current: Match | undefined
   pickerStyle: React.CSSProperties
 }
 
-export function MatchPicker({ store, current, pickerStyle }: Props) {
+export function MatchPicker({ store, matches, current, pickerStyle }: Props) {
   const groupMap: Record<string, Match[]> = {}
-  MATCHES.forEach((x) => {
+  matches.forEach((x) => {
     ;(groupMap[x.comp] = groupMap[x.comp] || []).push(x)
   })
   const matchGroups = Object.keys(groupMap).map((comp) => ({
@@ -25,6 +26,7 @@ export function MatchPicker({ store, current, pickerStyle }: Props) {
       const active = !!current && x.id === current.id
       return {
         id: x.id,
+        match: x,
         homeName: HT.name, homeShort: HT.short, homeColor: HT.color, homeFg: HT.fg,
         awayName: AT.name, awayShort: AT.short, awayColor: AT.color, awayFg: AT.fg,
         centerTop: sched ? x.min : x.score,
@@ -57,7 +59,7 @@ export function MatchPicker({ store, current, pickerStyle }: Props) {
                 <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)' }}>{grp.count}</span>
               </div>
               {grp.rows.map((row) => (
-                <button key={row.id} onClick={store.selectMatch(row.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '9px 8px', border: 0, borderRadius: 9, cursor: 'pointer', background: row.bg, marginBottom: 1 }}>
+                <button key={row.id} onClick={store.selectMatch(row.match)} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '9px 8px', border: 0, borderRadius: 9, cursor: 'pointer', background: row.bg, marginBottom: 1 }}>
                   <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
                     <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>{row.homeName}</span>
                     <span style={{ width: 22, height: 22, borderRadius: '50%', background: row.homeColor, color: row.homeFg, display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 8px var(--mono)', flexShrink: 0 }}>{row.homeShort}</span>

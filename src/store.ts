@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { MATCHES } from './data'
 import type {
   KCondKey,
   KTypeKey,
@@ -67,11 +66,10 @@ function nowText(): string {
 
 export interface SadStore {
   s: SadState
-  currentMatch: () => Match | undefined
   toggleTheme: () => void
   go: (sec: SectionKey) => () => void
   togglePicker: () => void
-  selectMatch: (id: string) => () => void
+  selectMatch: (mt: Match) => () => void
   clearMatch: () => void
   setMode: (mode: OddsMode) => () => void
   toggleMark: (id: string) => void
@@ -112,18 +110,15 @@ export function useSad(): SadStore {
     }
   }, [patch])
 
-  const currentMatch = useCallback(() => MATCHES.find((x) => x.id === stateRef.current.matchId), [])
-
   const toggleTheme = useCallback(() => patchFn((prev) => ({ theme: prev.theme === 'dark' ? 'light' : 'dark' })), [patchFn])
   const go = useCallback((sec: SectionKey) => () => patch({ section: sec, pickerOpen: false }), [patch])
   const togglePicker = useCallback(() => patchFn((prev) => ({ pickerOpen: !prev.pickerOpen })), [patchFn])
 
   const selectMatch = useCallback(
-    (id: string) => () => {
-      const mt = MATCHES.find((x) => x.id === id)
-      const live = !!mt && mt.status === 'live'
-      const lm = live ? parseInt(mt!.min) || 60 : 63
-      patch({ matchId: id, pickerOpen: false, loading: true, oddsMode: live ? 'live' : 'prematch', liveMin: lm })
+    (mt: Match) => () => {
+      const live = mt.status === 'live'
+      const lm = live ? parseInt(mt.min) || 60 : 63
+      patch({ matchId: mt.id, pickerOpen: false, loading: true, oddsMode: live ? 'live' : 'prematch', liveMin: lm })
       setTimeout(() => patch({ loading: false }), 720)
     },
     [patch],
@@ -170,7 +165,6 @@ export function useSad(): SadStore {
 
   return {
     s,
-    currentMatch,
     toggleTheme,
     go,
     togglePicker,

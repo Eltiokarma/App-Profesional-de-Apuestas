@@ -1,4 +1,4 @@
-import { MARKET_DEFS, MATCHES } from '../data'
+import { MARKET_DEFS } from '../data'
 import type { Match } from '../data/types'
 
 // Deterministic FNV-1a seed + xorshift PRNG, keyed by a string id.
@@ -59,11 +59,17 @@ export interface Series {
 
 const _series: Record<string, Series> = {}
 
-export function seriesFor(mId: string, mk: string, selK: string): Series {
-  const key = mId + '|' + mk + '|' + selK
+/**
+ * Serie de movimiento de una cuota. `baseOverride` permite construir la deriva
+ * alrededor de la cuota real servida por el backend (contrato /cuotas); sin él
+ * se usa la cuota base local determinista.
+ */
+export function seriesFor(m: Match, mk: string, selK: string, baseOverride?: number): Series {
+  const mId = m.id
+  const key = mId + '|' + mk + '|' + selK + (baseOverride != null ? '|' + baseOverride.toFixed(2) : '')
   if (_series[key]) return _series[key]
-  const base = oddsFor(mId)[mk][selK]
-  const r = rng(key + '#')
+  const base = baseOverride ?? oddsFor(mId)[mk][selK]
+  const r = rng(mId + '|' + mk + '|' + selK + '#')
   const PRE = 14
   const IN = 19
   const open = Math.max(1.05, Math.round(base * (0.9 + r() * 0.2) * 100) / 100)
@@ -75,7 +81,6 @@ export function seriesFor(mId: string, mk: string, selK: string): Series {
   }
   pre[0] = open
   pre[PRE - 1] = base
-  const m = MATCHES.find((x) => x.id === mId)!
   const endVal = Math.max(1.02, Math.round(base * inplayInfluence(m, mk, selK) * 100) / 100)
   const inp: number[] = []
   for (let i = 0; i < IN; i++) {

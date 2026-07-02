@@ -142,6 +142,7 @@ components:
         temporada: { type: integer }
         estado: { $ref: '#/components/schemas/EstadoFixture' }
         minuto: { type: integer, nullable: true }
+        estadio: { type: string }
         local: { $ref: '#/components/schemas/Equipo' }
         visitante: { $ref: '#/components/schemas/Equipo' }
         golesLocal: { type: integer, nullable: true }
@@ -158,14 +159,18 @@ components:
         binEtiqueta: { type: string }
     Constantes:
       type: object
-      required: [equipoId, fixtureId, fecha, condicion, rivalId, nivelRival, q, k, fusion]
+      description: Fila de constants + processed_matches (rival, goles) + fusión
+      required: [equipoId, fixtureId, fecha, condicion, rivalId, rivalNombre, nivelRival, golesFavor, golesContra, q, k, fusion]
       properties:
         equipoId: { type: integer }
         fixtureId: { type: integer }
         fecha: { type: string, format: date-time }
         condicion: { type: string, enum: [Local, Visita] }
         rivalId: { type: integer }
+        rivalNombre: { type: string }
         nivelRival: { type: number }
+        golesFavor: { type: integer }
+        golesContra: { type: integer }
         q:
           type: object
           properties:
