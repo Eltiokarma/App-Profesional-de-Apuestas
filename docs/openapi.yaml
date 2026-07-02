@@ -1,0 +1,251 @@
+openapi: 3.0.3
+info:
+  title: SAD API
+  version: 0.1.0
+  description: >
+    Contrato entre el backend SAD (FastAPI + PostgreSQL, monolito modular con el
+    paquete motor_sad) y los clientes (web SAD, UI PyQt). Espeja el pipeline
+    sad → levels → constants → discreto documentado en MOTOR_SAD_EXTRACCION.md.
+    El frontend web consume estos endpoints vía src/api/ cuando
+    VITE_DATA_SOURCE=http.
+servers:
+  - url: http://localhost:8000/api/v1
+    description: desarrollo local
+  - url: https://api.CAMBIAR-DOMINIO.com/api/v1
+    description: producción
+security:
+  - bearerAuth: []
+paths:
+  /health:
+    get:
+      summary: Estado del servicio, la DB y el último ciclo del pipeline
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+  /fixtures:
+    get:
+      summary: Lista de fixtures (filtrable por fecha, estado y liga)
+      parameters:
+        - { name: fecha, in: query, schema: { type: string, format: date } }
+        - { name: estado, in: query, schema: { $ref: '#/components/schemas/EstadoFixture' } }
+        - { name: ligaId, in: query, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Fixture' } }
+  /fixtures/{id}:
+    get:
+      summary: Un fixture por id
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Fixture' }
+        '404': { description: No existe }
+  /niveles/{equipoId}:
+    get:
+      summary: Historia de niveles del equipo (desc por fecha)
+      parameters:
+        - { name: equipoId, in: path, required: true, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Nivel' } }
+  /constantes/{equipoId}:
+    get:
+      summary: Historia de constantes K del equipo (desc por fecha)
+      parameters:
+        - { name: equipoId, in: path, required: true, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Constantes' } }
+  /predicciones/{fixtureId}:
+    get:
+      summary: Ley de la Regresión al Nivel (gap) para un fixture
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Prediccion' }
+  /analisis-prepartido/{fixtureId}:
+    get:
+      summary: Reporte integral pre-partido (niveles + K + gap + resumen)
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AnalisisPrepartido' }
+  /cuotas/{fixtureId}:
+    get:
+      summary: Cuotas del fixture por mercado y selección
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Cuota' } }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer }
+  schemas:
+    Health:
+      type: object
+      required: [status, version, dbOk, lastPipelineRun]
+      properties:
+        status: { type: string, enum: [ok, degraded] }
+        version: { type: string }
+        dbOk: { type: boolean }
+        lastPipelineRun: { type: string, format: date-time, nullable: true }
+    EstadoFixture:
+      type: string
+      enum: [programado, en_vivo, finalizado]
+    Equipo:
+      type: object
+      required: [id, nombre, abreviatura]
+      properties:
+        id: { type: integer }
+        nombre: { type: string }
+        abreviatura: { type: string }
+        pais: { type: string }
+    Fixture:
+      type: object
+      required: [id, fecha, ligaId, liga, temporada, estado, local, visitante]
+      properties:
+        id: { type: integer }
+        fecha: { type: string, format: date-time }
+        ligaId: { type: integer }
+        liga: { type: string }
+        temporada: { type: integer }
+        estado: { $ref: '#/components/schemas/EstadoFixture' }
+        minuto: { type: integer, nullable: true }
+        local: { $ref: '#/components/schemas/Equipo' }
+        visitante: { $ref: '#/components/schemas/Equipo' }
+        golesLocal: { type: integer, nullable: true }
+        golesVisitante: { type: integer, nullable: true }
+    Nivel:
+      type: object
+      required: [equipoId, fixtureId, fecha, nivel, bin, binEtiqueta]
+      properties:
+        equipoId: { type: integer }
+        fixtureId: { type: integer }
+        fecha: { type: string, format: date-time }
+        nivel: { type: number, description: 'continuo ~0.5–3.5' }
+        bin: { type: integer, minimum: 0, maximum: 9 }
+        binEtiqueta: { type: string }
+    Constantes:
+      type: object
+      required: [equipoId, fixtureId, fecha, condicion, rivalId, nivelRival, q, k, fusion]
+      properties:
+        equipoId: { type: integer }
+        fixtureId: { type: integer }
+        fecha: { type: string, format: date-time }
+        condicion: { type: string, enum: [Local, Visita] }
+        rivalId: { type: integer }
+        nivelRival: { type: number }
+        q:
+          type: object
+          properties:
+            local: { type: number, nullable: true }
+            visita: { type: number, nullable: true }
+            negativo: { type: number }
+            golesAnotado: { type: number }
+            golesRecibido: { type: number }
+        k:
+          type: object
+          description: Los 12 acumuladores de racha (§3.3)
+          properties:
+            positivo: { type: number }
+            negativo: { type: number }
+            positivoLocal: { type: number }
+            negativoLocal: { type: number }
+            positivoVisita: { type: number }
+            negativoVisita: { type: number }
+            golesAnotado: { type: number }
+            golesRecibido: { type: number }
+            golesLocalAnotado: { type: number }
+            golesLocalRecibido: { type: number }
+            golesVisitaAnotado: { type: number }
+            golesVisitaRecibido: { type: number }
+        fusion:
+          type: object
+          description: K fusionadas k = k⁺ + k⁻ (§4.2)
+          properties:
+            k: { type: number }
+            kLocal: { type: number }
+            kVisita: { type: number }
+            golesAnotado: { type: number }
+            golesRecibido: { type: number }
+            golesLocalAnotado: { type: number }
+            golesLocalRecibido: { type: number }
+            golesVisitaAnotado: { type: number }
+            golesVisitaRecibido: { type: number }
+    GapEquipo:
+      type: object
+      required: [equipoId, nivel, ptsEsperados]
+      properties:
+        equipoId: { type: integer }
+        nivel: { type: number }
+        ptsRecientes: { type: number, nullable: true }
+        ptsEsperados: { type: number, description: 'μ recortado a [0,3]' }
+        gap: { type: number, nullable: true, description: 'esperados − recientes; >0 subrinde' }
+        senal: { type: string, enum: [fuerte, leve, equilibrio], nullable: true }
+        tendencia: { type: string, enum: [mejora, empeora], nullable: true }
+    Prediccion:
+      type: object
+      required: [fixtureId, local, visitante, generadoEn]
+      properties:
+        fixtureId: { type: integer }
+        local: { $ref: '#/components/schemas/GapEquipo' }
+        visitante: { $ref: '#/components/schemas/GapEquipo' }
+        gapDiff: { type: number, nullable: true }
+        generadoEn: { type: string, format: date-time }
+    AnalisisPrepartido:
+      type: object
+      required: [fixtureId, niveles, constantes, prediccion, resumen]
+      properties:
+        fixtureId: { type: integer }
+        niveles:
+          type: object
+          properties:
+            local: { $ref: '#/components/schemas/Nivel' }
+            visitante: { $ref: '#/components/schemas/Nivel' }
+        constantes:
+          type: object
+          properties:
+            local: { $ref: '#/components/schemas/Constantes', nullable: true }
+            visitante: { $ref: '#/components/schemas/Constantes', nullable: true }
+        prediccion: { $ref: '#/components/schemas/Prediccion' }
+        resumen: { type: string }
+    Cuota:
+      type: object
+      required: [fixtureId, mercado, seleccion, cuota, actualizadoEn]
+      properties:
+        fixtureId: { type: integer }
+        mercado: { type: string, enum: [1x2, dc, ou, ah, btts] }
+        seleccion: { type: string }
+        cuota: { type: number }
+        actualizadoEn: { type: string, format: date-time }

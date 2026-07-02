@@ -18,5 +18,10 @@ npm-debug.log*
 # vite
 *.local
 
+# variables de entorno (usar .env.example como plantilla)
+.env
+.env.*
+!.env.example
+
 # typescript incremental build info
 *.tsbuildinfo

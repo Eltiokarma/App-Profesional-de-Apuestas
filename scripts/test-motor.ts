@@ -4,6 +4,7 @@ import { K0, qValues, stepK } from '../src/motor/constants'
 import { fuse, levelBin } from '../src/motor/discretizer'
 import { teamEngine } from '../src/motor/engine'
 import { computeTeamLevels } from '../src/motor/levels'
+import { gapFor, mu, ptsRecent, senalDe } from '../src/motor/regression'
 import type { TeamMatch } from '../src/motor/types'
 
 let failed = 0
@@ -70,6 +71,23 @@ check('0.5 → bin 0 Sin datos', levelBin(0.5), { bin: 0, label: 'Sin datos' })
 check('2.2 → bin 5 Promedio', levelBin(2.2), { bin: 5, label: 'Promedio' })
 check('2.7 → bin 7 Fuerte', levelBin(2.7), { bin: 7, label: 'Fuerte' })
 check('3.3 → bin 9 Élite', levelBin(3.3), { bin: 9, label: 'Élite' })
+
+// ---- §5 Ley de la Regresión al Nivel ----
+console.log('— §5 regresión al nivel —')
+check('μ(2, 2, 1) = 1.110+1.372−1.338+0.422', mu(2, 2, 1), 1.11 + 0.686 * 2 - 0.669 * 2 + 0.422)
+check('μ recorta a [0,3] por arriba', mu(3.8, 0.5, 1), 3)
+check('μ recorta a [0,3] por abajo', mu(0.5, 3.5, 0), 0)
+check('forma reciente: 5 victorias → 3.0', ptsRecent(Array.from({ length: 5 }, (_, i) => mk(i, 2, 0))), 3)
+check('forma reciente: <5 partidos → null', ptsRecent([mk(0, 1, 0)]), null)
+check('señal |gap|>0.5 → fuerte', senalDe(0.61), 'fuerte')
+check('señal 0.3–0.5 → leve', senalDe(-0.4), 'leve')
+check('señal <0.3 → equilibrio', senalDe(0.1), 'equilibrio')
+const gBet = gapFor('bet')!
+console.log(`  bet: nivel=${gBet.nivel.toFixed(2)} recientes=${gBet.ptsRecientes} esperados=${gBet.ptsEsperados.toFixed(2)} gap=${gBet.gap?.toFixed(2)} (${gBet.senal}/${gBet.tendencia})`)
+if (gBet.gap == null || !['fuerte', 'leve', 'equilibrio'].includes(gBet.senal!)) {
+  failed++
+  console.log('  ✗ gap incompleto')
+}
 
 // ---- pipeline completo: sanidad sobre datos sintéticos ----
 console.log('— pipeline sintético —')

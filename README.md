@@ -46,6 +46,22 @@ Port fiel a TypeScript del motor de niveles y constantes K documentado en
 npm run test:motor   # verifica el motor contra el doc (§3.5, §3.2, §2, §4.1)
 ```
 
+## Servicios externos y backend
+
+La app está lista para trabajar contra el backend SAD (FastAPI + PostgreSQL):
+
+- **Contrato de API**: `docs/openapi.yaml` (fixtures, niveles, constantes K,
+  predicciones §5, análisis pre-partido, cuotas). El backend lo implementa; este
+  frontend ya lo consume.
+- **Fuente de datos conmutable** (`src/services/datasource.ts`): `mock` (motor
+  local demo, default) o `http` (backend real) vía `.env` — ver `.env.example`.
+  El indicador de feed del sidebar hace health-check real en modo http.
+- **Cliente HTTP tipado** en `src/api/` (timeout, errores, bearer opcional).
+- **CI** en GitHub Actions: `test:motor` + build en cada push/PR.
+
+Plan completo de infraestructura (FastAPI, Neon/Supabase, API-Football, costos)
+e integración: **`docs/SERVICIOS_EXTERNOS.md`**.
+
 ## Cómo ejecutar
 
 ```bash
@@ -53,6 +69,9 @@ npm install
 npm run dev      # servidor de desarrollo (http://localhost:5173)
 npm run build    # typecheck + build de producción a dist/
 npm run preview  # sirve el build de producción
+
+# conectar al backend real:
+cp .env.example .env   # y poner VITE_DATA_SOURCE=http + VITE_API_BASE_URL
 ```
 
 ## Estructura

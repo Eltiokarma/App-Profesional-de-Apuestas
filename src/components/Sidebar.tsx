@@ -1,5 +1,7 @@
 import type { SadStore } from '../store'
 import type { SectionKey } from '../data/types'
+import { CONFIG } from '../config'
+import { useFeedStatus } from '../services/useFeedStatus'
 
 export function Sidebar({ store }: { store: SadStore }) {
   const { s } = store
@@ -7,6 +9,15 @@ export function Sidebar({ store }: { store: SadStore }) {
   const navB = (k: SectionKey) => (s.section === k ? 'var(--accent-soft)' : 'transparent')
   const navF = (k: SectionKey) => (s.section === k ? 'var(--t1)' : 'var(--t2)')
   const skillsBadge = s.history.length || ''
+  const feed = useFeedStatus()
+  const feedColor = feed.checking ? 'var(--mark)' : feed.ok ? 'var(--up)' : 'var(--down)'
+  const feedLabel = feed.mode === 'mock' ? 'MOTOR LOCAL · DEMO' : feed.checking ? 'CONECTANDO…' : feed.ok ? 'FEED CONECTADO' : 'SIN CONEXIÓN'
+  const feedDetail =
+    feed.mode === 'mock'
+      ? 'fuente simulada · sin API externa'
+      : feed.ok
+        ? `API · ${feed.latencyMs ?? '—'}ms · ${feed.detail}`
+        : CONFIG.apiBaseUrl.replace(/^https?:\/\//, '')
 
   return (
     <aside style={{ width: 228, flexShrink: 0, background: 'var(--bg1)', borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column', padding: '18px 14px' }}>
@@ -46,10 +57,10 @@ export function Sidebar({ store }: { store: SadStore }) {
       <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ padding: 12, borderRadius: 11, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--up)', boxShadow: '0 0 8px var(--up)' }}></span>
-            <span style={{ font: '600 11px var(--mono)', color: 'var(--t2)', letterSpacing: '.4px' }}>FEED CONECTADO</span>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: feedColor, boxShadow: `0 0 8px ${feedColor}` }}></span>
+            <span style={{ font: '600 11px var(--mono)', color: 'var(--t2)', letterSpacing: '.4px' }}>{feedLabel}</span>
           </div>
-          <div style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)', lineHeight: 1.5 }}>12 casas · sincronía 42ms</div>
+          <div style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)', lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={feedDetail}>{feedDetail}</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
           <button onClick={store.toggleTheme} title="Cambiar tema" style={{ width: 38, height: 38, flexShrink: 0, borderRadius: 10, border: '1px solid var(--line)', background: 'var(--bg2)', color: 'var(--t2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
