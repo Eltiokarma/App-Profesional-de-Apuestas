@@ -27,6 +27,8 @@ export interface Match {
   date: string
   venue: string
   lk: string
+  /** Id numérico de la liga en el contrato (140 LaLiga, 39 Premier, 135 Serie A…). */
+  ligaId?: number
   score: string
   status: MatchStatus
   min: string

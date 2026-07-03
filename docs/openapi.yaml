@@ -97,6 +97,30 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/AnalisisPrepartido' }
+  /equipos/{equipoId}/stats:
+    get:
+      summary: Stats de temporada calculadas de los fixtures terminados
+      parameters:
+        - { name: equipoId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EquipoStats' }
+        '404': { description: No existe }
+  /ligas/{ligaId}/standings:
+    get:
+      summary: Tabla de posiciones calculada de los fixtures terminados
+      parameters:
+        - { name: ligaId, in: path, required: true, schema: { type: integer } }
+        - { name: temporada, in: query, schema: { type: integer, description: 'default: última temporada' } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/StandingRow' } }
   /cuotas/{fixtureId}:
     get:
       summary: Cuotas del fixture por mercado y selección
@@ -245,6 +269,36 @@ components:
             visitante: { $ref: '#/components/schemas/Constantes', nullable: true }
         prediccion: { $ref: '#/components/schemas/Prediccion' }
         resumen: { type: string }
+    EquipoStats:
+      type: object
+      description: Calculadas de fixtures; los promedios avanzados son null hasta que el backend los derive
+      required: [equipoId, nombre, partidosJugados, puntos, forma, golesFavorProm, golesContraProm]
+      properties:
+        equipoId: { type: integer }
+        nombre: { type: string }
+        partidosJugados: { type: integer }
+        puntos: { type: integer }
+        forma:
+          type: array
+          description: Últimos 5 resultados, más reciente primero
+          items: { type: string, enum: [W, D, L] }
+        golesFavorProm: { type: number }
+        golesContraProm: { type: number }
+        xgProm: { type: number, nullable: true }
+        posesionProm: { type: number, nullable: true }
+        tirosPuertaProm: { type: number, nullable: true }
+        cornersProm: { type: number, nullable: true }
+    StandingRow:
+      type: object
+      required: [posicion, equipoId, nombre, puntos, partidosJugados, golesFavor, golesContra]
+      properties:
+        posicion: { type: integer }
+        equipoId: { type: integer }
+        nombre: { type: string }
+        puntos: { type: integer }
+        partidosJugados: { type: integer }
+        golesFavor: { type: integer }
+        golesContra: { type: integer }
     Cuota:
       type: object
       required: [fixtureId, mercado, seleccion, cuota, actualizadoEn]

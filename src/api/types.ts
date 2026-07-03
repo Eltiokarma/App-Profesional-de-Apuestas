@@ -125,6 +125,34 @@ export interface AnalisisPrepartidoDTO {
   resumen: string
 }
 
+/** Stats de temporada calculadas de los fixtures terminados (endpoint /equipos/{id}/stats).
+ *  Los promedios avanzados son null hasta que el backend los derive (v0). */
+export interface EquipoStatsDTO {
+  equipoId: number
+  nombre: string
+  partidosJugados: number
+  puntos: number
+  /** Últimos 5 resultados, más reciente primero. */
+  forma: ('W' | 'D' | 'L')[]
+  golesFavorProm: number
+  golesContraProm: number
+  xgProm: number | null
+  posesionProm: number | null
+  tirosPuertaProm: number | null
+  cornersProm: number | null
+}
+
+/** Fila de /ligas/{id}/standings (calculada de fixtures). */
+export interface StandingRowDTO {
+  posicion: number
+  equipoId: number
+  nombre: string
+  puntos: number
+  partidosJugados: number
+  golesFavor: number
+  golesContra: number
+}
+
 export interface CuotaDTO {
   fixtureId: number
   mercado: string // '1x2' | 'dc' | 'ou' | 'ah' | 'btts'
