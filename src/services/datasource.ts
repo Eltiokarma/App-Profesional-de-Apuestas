@@ -7,13 +7,15 @@ import type {
   AnalisisPrepartidoDTO,
   ConstantesDTO,
   CuotaDTO,
+  EquipoStatsDTO,
   FixtureDTO,
   GapEquipoDTO,
   NivelDTO,
   PrediccionDTO,
+  StandingRowDTO,
 } from '../api/types'
 import { CONFIG, type DataSourceMode } from '../config'
-import { MARKET_DEFS, MATCHES, TEAMS } from '../data'
+import { MARKET_DEFS, MATCHES, STANDINGS, TEAMS } from '../data'
 import { oddsFor } from '../lib/odds'
 import { levelBin } from '../motor/discretizer'
 import { teamEngine } from '../motor/engine'
@@ -35,6 +37,8 @@ export interface SadDataSource {
   prediccion(fixtureId: number): Promise<PrediccionDTO>
   analisisPrepartido(fixtureId: number): Promise<AnalisisPrepartidoDTO>
   cuotas(fixtureId: number): Promise<CuotaDTO[]>
+  equipoStats(equipoId: number): Promise<EquipoStatsDTO>
+  standings(ligaId: number, temporada?: number): Promise<StandingRowDTO[]>
 }
 
 // ---------- mapeo de ids internos (strings) ↔ contrato (números) ----------
@@ -44,6 +48,7 @@ export const NUM_TEAM: Record<number, string> = Object.fromEntries(TEAM_KEYS.map
 export const FIXTURE_NUM = (matchId: string) => parseInt(matchId.slice(1), 10)
 
 const LIGA_NUM: Record<string, number> = { laliga: 140, premier: 39, seriea: 135 }
+const LK_BY_NUM: Record<number, string> = Object.fromEntries(Object.entries(LIGA_NUM).map(([lk, n]) => [n, lk]))
 
 // fecha sintética determinista para el historial del motor (t = jornada)
 const tToIso = (t: number) => {
@@ -209,6 +214,47 @@ class MockDataSource implements SadDataSource {
     }
     return out
   }
+
+  async equipoStats(equipoId: number): Promise<EquipoStatsDTO> {
+    const key = NUM_TEAM[equipoId]
+    const T = key ? TEAMS[key] : undefined
+    if (!T) throw new Error(`equipo ${equipoId} no existe`)
+    return {
+      equipoId,
+      nombre: T.name,
+      partidosJugados: 38,
+      puntos: T.pts,
+      forma: T.form,
+      golesFavorProm: T.gf,
+      golesContraProm: T.gc,
+      xgProm: T.xg,
+      posesionProm: T.poss,
+      tirosPuertaProm: T.sot,
+      cornersProm: T.corn,
+    }
+  }
+
+  async standings(ligaId: number): Promise<StandingRowDTO[]> {
+    const lk = LK_BY_NUM[ligaId]
+    const rows = (lk && STANDINGS[lk]) || []
+    const keyByName = (name: string) => TEAM_KEYS.find((k) => TEAMS[k].name === name)
+    return rows
+      .map(([nombre, puntos]) => ({ nombre, puntos }))
+      .sort((a, b) => b.puntos - a.puntos)
+      .map((e, i) => {
+        const k = keyByName(e.nombre)
+        const T = k ? TEAMS[k] : undefined
+        return {
+          posicion: i + 1,
+          equipoId: k ? TEAM_NUM[k] : 0,
+          nombre: e.nombre,
+          puntos: e.puntos,
+          partidosJugados: 38,
+          golesFavor: T ? Math.round(T.gf * 38) : 0,
+          golesContra: T ? Math.round(T.gc * 38) : 0,
+        }
+      })
+  }
 }
 
 class HttpDataSource implements SadDataSource {
@@ -234,6 +280,8 @@ class HttpDataSource implements SadDataSource {
   prediccion = (fixtureId: number) => SadApi.prediccion(fixtureId)
   analisisPrepartido = (fixtureId: number) => SadApi.analisisPrepartido(fixtureId)
   cuotas = (fixtureId: number) => SadApi.cuotas(fixtureId)
+  equipoStats = (equipoId: number) => SadApi.equipoStats(equipoId)
+  standings = (ligaId: number, temporada?: number) => SadApi.standings(ligaId, temporada)
 }
 
 let _ds: SadDataSource | null = null

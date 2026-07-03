@@ -4,11 +4,13 @@ import type {
   AnalisisPrepartidoDTO,
   ConstantesDTO,
   CuotaDTO,
+  EquipoStatsDTO,
   EstadoFixture,
   FixtureDTO,
   HealthDTO,
   NivelDTO,
   PrediccionDTO,
+  StandingRowDTO,
 } from './types'
 
 export const SadApi = {
@@ -33,4 +35,9 @@ export const SadApi = {
     apiGet<AnalisisPrepartidoDTO>(`/analisis-prepartido/${fixtureId}`),
 
   cuotas: (fixtureId: number) => apiGet<CuotaDTO[]>(`/cuotas/${fixtureId}`),
+
+  equipoStats: (equipoId: number) => apiGet<EquipoStatsDTO>(`/equipos/${equipoId}/stats`),
+
+  standings: (ligaId: number, temporada?: number) =>
+    apiGet<StandingRowDTO[]>(`/ligas/${ligaId}/standings` + qs({ temporada })),
 }

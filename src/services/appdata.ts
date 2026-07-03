@@ -2,7 +2,15 @@
 // estas funciones (que hablan el contrato de docs/openapi.yaml vía
 // getDataSource()); en modo mock los datos salen del motor local y son
 // idénticos a los de antes, en modo http salen del backend real.
-import type { ConstantesDTO, EquipoDTO, FixtureDTO, PrediccionDTO, AnalisisPrepartidoDTO } from '../api/types'
+import type {
+  AnalisisPrepartidoDTO,
+  ConstantesDTO,
+  EquipoDTO,
+  EquipoStatsDTO,
+  FixtureDTO,
+  PrediccionDTO,
+  StandingRowDTO,
+} from '../api/types'
 import { TEAMS } from '../data'
 import type { Match, Team } from '../data/types'
 import type { KSnapshot } from '../motor/types'
@@ -67,6 +75,7 @@ export function fixtureToMatch(f: FixtureDTO): Match {
     date: live ? 'Hoy · en juego' : fin ? 'Hoy' : `Hoy · ${hora}`,
     venue: f.estadio ?? '',
     lk: LK_BY_LIGA_ID[f.ligaId] ?? String(f.ligaId),
+    ligaId: f.ligaId,
     score: f.golesLocal == null ? '0 - 0' : `${f.golesLocal} - ${f.golesVisitante}`,
     status: live ? 'live' : fin ? 'fin' : 'sched',
     min: live ? `${f.minuto ?? ''}'` : fin ? '' : hora,
@@ -156,4 +165,23 @@ export function loadPrediccion(matchId: string): Promise<PrediccionDTO> {
 
 export function loadAnalisis(matchId: string): Promise<AnalisisPrepartidoDTO> {
   return getDataSource().analisisPrepartido(fixtureNum(matchId))
+}
+
+// ── estadísticas de temporada + tabla de posiciones ─────────────────────────
+export interface EstadisticasData {
+  home: EquipoStatsDTO
+  away: EquipoStatsDTO
+  tabla: StandingRowDTO[]
+}
+
+export async function loadEstadisticas(m: Match): Promise<EstadisticasData> {
+  const ds = getDataSource()
+  const homeId = TEAM_NUM[m.home]
+  const awayId = TEAM_NUM[m.away]
+  const [home, away, tabla] = await Promise.all([
+    ds.equipoStats(homeId),
+    ds.equipoStats(awayId),
+    m.ligaId != null ? ds.standings(m.ligaId) : Promise.resolve([]),
+  ])
+  return { home, away, tabla }
 }

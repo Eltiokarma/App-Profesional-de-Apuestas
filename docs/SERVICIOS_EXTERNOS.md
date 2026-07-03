@@ -109,11 +109,15 @@ Hecho (las secciones ya consumen `getDataSource()` con estados de carga/error):
 - ✅ Skills: el reporte SAD ← `analisisPrepartido()` (resumen, niveles, K, gap)
 - ✅ Estadísticas: panel "Regresión al nivel · Ley §5" ← `prediccion()`
 
+- ✅ Estadísticas: forma, promedios de goles, puntos y tabla de posiciones ←
+  `equipoStats()` + `standings()` (calculados de fixtures por el backend; las
+  filas de xG/posesión/tiros/córners aparecen solo cuando el backend las sirva)
+
 Pendiente:
 
-1. Ampliar el contrato con `/equipos/{id}/stats` (gf, gc, xG, posesión, forma) y
-   `/ligas/{id}/standings`: la comparativa de rendimiento y la mini-tabla de
-   Estadísticas aún usan datos locales de demo.
+1. Backend: derivar xG/posesión/tiros/córners de las estadísticas por partido
+   de API-Football; endpoint de enfrentamientos directos (H2H — la card sigue
+   siendo demo).
 2. Historial de cuotas (`/cuotas/{fixtureId}/historial`) para que la gráfica de
    movimiento sea 100 % real.
 3. Polling de cuotas en vivo con `VITE_POLL_LIVE_MS`.
