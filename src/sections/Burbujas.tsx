@@ -1,6 +1,8 @@
 import { LEVELS, TEAMS } from '../data'
 import type { KCondKey, KTypeKey, Match } from '../data/types'
-import type { FusedK, KSnapshot } from '../motor/types'
+import { KLineChart, KLineLegend } from '../components/KLineChart'
+import { binBadge, FUSED_KEY, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
+import type { FusedK } from '../motor/types'
 import { loadBurbujas, type BurbujasData } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
@@ -11,94 +13,11 @@ interface Props {
   isMobile: boolean
 }
 
-const WINDOW = 12 // últimos N partidos visibles en el timeline
-
-const FUSED_KEY: Record<KTypeKey, Record<KCondKey, keyof FusedK>> = {
-  res: { total: 'k', local: 'kLocal', visita: 'kVisita' },
-  ga: { total: 'golesAnotado', local: 'golesLocalAnotado', visita: 'golesVisitaAnotado' },
-  gr: { total: 'golesRecibido', local: 'golesLocalRecibido', visita: 'golesVisitaRecibido' },
-}
-
-/** Valor con signo de display: para goles recibidos la racha alta es desfavorable (abajo, rojo). */
-const signedVal = (kType: KTypeKey, v: number) => (kType === 'gr' ? -v : v)
-
-const fmtK = (v: number) => (Math.abs(v) >= 20 ? v.toFixed(0) : v.toFixed(1))
-const signFmt = (v: number) => (v > 0 ? '+' + fmtK(v) : fmtK(v))
-
-function binBadge(bin: number): { color: string; soft: string } {
-  if (bin >= 8) return { color: 'var(--up)', soft: 'var(--up-soft)' }
-  if (bin >= 6) return { color: 'var(--accent)', soft: 'var(--accent-soft)' }
-  if (bin >= 4) return { color: 'var(--mark)', soft: 'var(--mark-soft)' }
-  if (bin >= 1) return { color: 'var(--down)', soft: 'var(--down-soft)' }
-  return { color: 'var(--t3)', soft: 'var(--bg3)' }
-}
-
-/** Racha activa: partidos desde el último reseteo de la K seleccionada. */
-function streakLen(snaps: KSnapshot[], key: keyof FusedK): number {
-  let n = 0
-  for (let i = snaps.length - 1; i >= 0 && snaps[i].fused[key] !== 0; i--) n++
-  return n
-}
-
-/** Último aporte q a la K seleccionada (último partido de la condición). */
-function lastQ(snaps: KSnapshot[], kType: KTypeKey, kCond: KCondKey): number | null {
-  for (let i = snaps.length - 1; i >= 0; i--) {
-    const s = snaps[i]
-    if (kCond === 'local' && !s.isLocal) continue
-    if (kCond === 'visita' && s.isLocal) continue
-    if (kType === 'ga') return s.q.golesAnotado
-    if (kType === 'gr') return s.q.golesRecibido
-    return s.isLocal ? s.q.local : s.q.visita
-  }
-  return null
-}
-
-interface Bubble {
-  x: number
-  y: number
-  r: number
-  color: string
-  filled: boolean
-  dim: boolean
-  isLast: boolean
-  text: string
-  title: string
-}
-
-function buildBubbles(snaps: KSnapshot[], kType: KTypeKey, kCond: KCondKey, maxAbs: number): Bubble[] {
-  const key = FUSED_KEY[kType][kCond]
-  const win = snaps.slice(-WINDOW)
-  const total = snaps.length
-  return win.map((s, i) => {
-    const v = s.fused[key]
-    const sv = signedVal(kType, v)
-    const reset = v === 0
-    const inCond = kCond === 'total' || (kCond === 'local') === s.isLocal
-    const r = reset ? 4.5 : 8 + 20 * Math.sqrt(Math.abs(sv) / maxAbs)
-    const qc = kType === 'ga' ? s.q.golesAnotado : kType === 'gr' ? s.q.golesRecibido : s.isLocal ? s.q.local : s.q.visita
-    const rv = TEAMS[s.rival]
-    return {
-      x: 7 + (win.length === 1 ? 43 : (i / (win.length - 1)) * 86),
-      y: 50 - (sv / maxAbs) * 32,
-      r,
-      color: reset ? 'var(--t3)' : sv > 0 ? 'var(--up)' : 'var(--down)',
-      filled: !reset,
-      dim: !inCond && !reset,
-      isLast: i === win.length - 1,
-      text: !reset && r >= 13 ? signFmt(sv) : '',
-      title:
-        `#${total - win.length + i + 1} · ${s.isLocal ? 'vs' : 'en'} ${rv ? rv.short : s.rival} ${s.gf}-${s.ga}` +
-        ` · rival nivel ${s.rivalLevel.toFixed(2)}` +
-        (inCond ? ` · q ${qc == null ? '—' : signFmt(qc)}` : ' · no actualiza (otra condición)') +
-        ` · K ${fmtK(v)}${reset ? ' (reset)' : ''}`,
-    }
-  })
-}
+const WINDOW = 20
 
 function TeamPanel({ eng, teamId, role, kType, kCond, maxAbs }: { eng: BurbujasData; teamId: string; role: string; kType: KTypeKey; kCond: KCondKey; maxAbs: number }) {
   const T = TEAMS[teamId]
   const key = FUSED_KEY[kType][kCond]
-  const bubbles = buildBubbles(eng.snaps, kType, kCond, maxAbs)
   const cur = eng.snaps.length ? eng.snaps[eng.snaps.length - 1].fused[key] : 0
   const sv = signedVal(kType, cur)
   const racha = streakLen(eng.snaps, key)
@@ -116,44 +35,13 @@ function TeamPanel({ eng, teamId, role, kType, kCond, maxAbs }: { eng: BurbujasD
         </div>
         <span style={{ padding: '3px 9px', borderRadius: 6, background: bb.soft, color: bb.color, font: '700 9.5px var(--mono)', letterSpacing: '.3px', flexShrink: 0 }}>{eng.binLabel} · {eng.bin}</span>
       </div>
-      <div style={{ position: 'relative', height: 210, marginTop: 6, borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', left: 0, right: 0, top: '50%', height: 1, background: 'var(--line)' }}></div>
-        <div style={{ position: 'absolute', left: 8, top: 8, font: '500 9px var(--mono)', color: 'var(--up)' }}>+ favorable</div>
-        <div style={{ position: 'absolute', left: 8, bottom: 8, font: '500 9px var(--mono)', color: 'var(--down)' }}>− desfavorable</div>
-        {bubbles.map((b, i) => (
-          <div
-            key={i}
-            title={b.title}
-            style={{
-              position: 'absolute',
-              left: `${b.x}%`,
-              top: `${b.y}%`,
-              width: b.r * 2,
-              height: b.r * 2,
-              marginLeft: -b.r,
-              marginTop: -b.r,
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              font: `700 ${Math.max(8, b.r * 0.55)}px var(--mono)`,
-              color: '#fff',
-              background: b.filled ? b.color : 'transparent',
-              border: `2px solid ${b.color}`,
-              opacity: b.dim ? 0.35 : 1,
-              boxShadow: b.isLast && b.filled ? `0 0 0 3px color-mix(in oklch,${b.color},transparent 72%)` : 'none',
-              transition: 'all .25s',
-              zIndex: b.isLast ? 2 : 1,
-            }}
-          >
-            {b.text}
-          </div>
-        ))}
+
+      {/* picos acumulados: la K crece con la racha y cae a cero al resetearse */}
+      <div style={{ marginTop: 6, borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--line)', padding: 6 }}>
+        <KLineChart snaps={eng.snaps} kType={kType} kCond={kCond} maxAbs={maxAbs} window={WINDOW} />
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, font: '500 9px var(--mono)', color: 'var(--t3)' }}>
-        <span>hace {Math.min(WINDOW, eng.snaps.length)} partidos</span>
-        <span>último</span>
-      </div>
+      <KLineLegend />
+
       <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
         <div style={{ flex: 1, padding: '8px 10px', borderRadius: 9, background: 'var(--bg)', border: '1px solid var(--line)' }}>
           <div style={{ font: '500 9px var(--mono)', color: 'var(--t3)', marginBottom: 2 }}>K ACTUAL</div>
@@ -207,15 +95,16 @@ export function Burbujas({ store, m, isMobile }: Props) {
 
   // tabla del panel lateral: toda la foto del motor para ambos equipos
   const kv = (eng: BurbujasData | null, kk: keyof FusedK) => (eng && eng.snaps.length ? eng.snaps[eng.snaps.length - 1].fused[kk] : 0)
-  const kColor = (v: number, inverse: boolean) => (v === 0 ? 'var(--t3)' : (inverse ? v < 0 : v > 0) ? 'var(--up)' : 'var(--down)')
+  const kColor = (v: number) => (v === 0 ? 'var(--t3)' : v > 0 ? 'var(--up)' : 'var(--down)')
+  const fmt = (v: number) => signFmt(v)
   const valueRows: { label: string; hv: string; av: string; hc: string; ac: string }[] = [
     { label: 'Nivel (continuo)', hv: engH ? engH.level.toFixed(2) : '—', av: engA ? engA.level.toFixed(2) : '—', hc: 'var(--t1)', ac: 'var(--t1)' },
     ...([['K resultado', 'k', false], ['K local', 'kLocal', false], ['K visita', 'kVisita', false], ['K goles anot.', 'golesAnotado', false], ['K goles rec.', 'golesRecibido', true]] as [string, keyof FusedK, boolean][]).map(
       ([label, kk, inv]) => {
         const hvN = kv(engH, kk)
         const avN = kv(engA, kk)
-        const disp = (v: number) => (inv ? (v === 0 ? '0.0' : '−' + fmtK(v)) : signFmt(v))
-        return { label, hv: disp(hvN), av: disp(avN), hc: kColor(inv ? -hvN : hvN, false), ac: kColor(inv ? -avN : avN, false) }
+        const disp = (v: number) => (inv ? (v === 0 ? '0.0' : '−' + Math.abs(v).toFixed(1)) : fmt(v))
+        return { label, hv: disp(hvN), av: disp(avN), hc: kColor(inv ? -hvN : hvN), ac: kColor(inv ? -avN : avN) }
       },
     ),
   ]
@@ -235,7 +124,7 @@ export function Burbujas({ store, m, isMobile }: Props) {
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 18, flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ margin: 0, font: '800 22px var(--sans)', letterSpacing: '-.3px' }}>Burbujas · Constantes K</h1>
-          <p style={{ margin: '5px 0 0', font: '500 12.5px var(--sans)', color: 'var(--t2)' }}>Motor SAD · q = dif × res × nivel del rival · la K crece con la racha y se resetea al cambiar el signo</p>
+          <p style={{ margin: '5px 0 0', font: '500 12.5px var(--sans)', color: 'var(--t2)' }}>Motor SAD · picos acumulados: la K crece con la racha y se resetea al cambiar el signo</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', padding: 4, borderRadius: 10, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
@@ -265,9 +154,9 @@ export function Burbujas({ store, m, isMobile }: Props) {
       )}
       {engData.loading && (
         <div style={{ display: 'grid', gridTemplateColumns: gridBurbujas, gap: 14 }}>
-          <div className="sad-sk" style={{ height: 360 }}></div>
-          <div className="sad-sk" style={{ height: 360 }}></div>
-          <div className="sad-sk" style={{ height: 360 }}></div>
+          <div className="sad-sk" style={{ height: 380 }}></div>
+          <div className="sad-sk" style={{ height: 380 }}></div>
+          <div className="sad-sk" style={{ height: 380 }}></div>
         </div>
       )}
       {!engData.loading && !engData.error && (
@@ -298,7 +187,7 @@ export function Burbujas({ store, m, isMobile }: Props) {
                     <span style={{ padding: '3px 9px', borderRadius: 6, background: binBadge(eng.bin).soft, color: binBadge(eng.bin).color, font: '700 9.5px var(--mono)', letterSpacing: '.3px' }}>
                       {eng.binLabel} · bin {eng.bin}
                     </span>
-                    <span style={{ font: '500 9.5px var(--mono)', color: 'var(--t3)' }}>{eng.snaps.length} partidos</span>
+                    <button onClick={() => store.openTeam(id)} style={{ marginLeft: 'auto', padding: '3px 9px', borderRadius: 6, border: '1px solid var(--line)', background: 'transparent', color: 'var(--t2)', cursor: 'pointer', font: '600 9.5px var(--sans)' }}>Ver equipo</button>
                   </div>
                 ) : null,
               )}

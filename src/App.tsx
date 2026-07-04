@@ -5,9 +5,10 @@ import { useAsync } from './services/useAsync'
 import { Sidebar } from './components/Sidebar'
 import { DesktopHeader } from './components/DesktopHeader'
 import { MobileHeader } from './components/MobileHeader'
-import { MatchPicker } from './components/MatchPicker'
 import { BottomNav } from './components/BottomNav'
 import { EmptyState, Skeleton } from './components/EmptyState'
+import { Partidos } from './sections/Partidos'
+import { Equipo } from './sections/Equipo'
 import { Cuotas } from './sections/Cuotas'
 import { Burbujas } from './sections/Burbujas'
 import { Skills } from './sections/Skills'
@@ -52,23 +53,14 @@ export function App() {
   const colStyle: Style = { flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, position: 'relative' }
   const contentPad = isMobile ? '14px 14px 22px' : '24px'
 
-  const pickerStyle: Style = {
-    ...(isMobile
-      ? { position: 'absolute', left: 10, right: 10, top: 8, zIndex: 41, maxHeight: '84%', overflowY: 'auto', overflowX: 'hidden' }
-      : { position: 'absolute', top: 78, right: 22, width: 380, zIndex: 41 }),
-    background: 'var(--bg1)',
-    border: '1px solid var(--line2)',
-    borderRadius: 14,
-    boxShadow: 'var(--shadow)',
-    padding: 10,
-  }
-
   const isLive = s.section === 'cuotas' && s.oddsMode === 'live'
   const liveBadge = !!m && isLive
   const mv = m ? matchView(m) : null
 
-  const showEmpty = !m && !fixtures.loading && !fixtures.error
-  const showSkeleton = (!!m && s.loading) || fixtures.loading
+  // Partidos y Equipo no requieren partido seleccionado
+  const needsMatch = s.section === 'cuotas' || s.section === 'burbujas' || s.section === 'skills' || s.section === 'estadisticas'
+  const showEmpty = needsMatch && !m && !fixtures.loading && !fixtures.error
+  const showSkeleton = needsMatch && ((!!m && s.loading) || fixtures.loading)
   const showContent = !!m && !s.loading && !fixtures.loading
 
   return (
@@ -84,8 +76,6 @@ export function App() {
             <DesktopHeader store={store} mv={mv} liveBadge={liveBadge} liveMinute={s.liveMin} liveScore={m ? m.score : ''} />
           )}
 
-          {s.pickerOpen && <MatchPicker store={store} matches={matches} current={m} pickerStyle={pickerStyle} />}
-
           <main className="sad-scroll" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: contentPad }}>
             {fixtures.error && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', marginBottom: 14, borderRadius: 12, background: 'var(--down-soft)', border: '1px solid color-mix(in oklch,var(--down),transparent 55%)' }}>
@@ -96,6 +86,11 @@ export function App() {
             )}
             {showEmpty && <EmptyState store={store} />}
             {showSkeleton && <Skeleton />}
+            {s.section === 'partidos' && (
+              <Partidos store={store} matches={matches} loading={fixtures.loading} error={fixtures.error} reload={fixtures.reload} isMobile={isMobile} />
+            )}
+            {s.section === 'equipo' && s.teamKey && <Equipo store={store} teamKey={s.teamKey} isMobile={isMobile} />}
+            {s.section === 'equipo' && !s.teamKey && <EmptyState store={store} />}
             {showContent && m && s.section === 'cuotas' && <Cuotas store={store} m={m} isMobile={isMobile} />}
             {showContent && m && s.section === 'burbujas' && <Burbujas store={store} m={m} isMobile={isMobile} />}
             {showContent && m && s.section === 'skills' && <Skills store={store} m={m} isMobile={isMobile} />}

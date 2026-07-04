@@ -57,6 +57,9 @@ export interface ConstantesDTO {
   nivelRival: number
   golesFavor: number
   golesContra: number
+  ligaId: number
+  /** true si el partido fue de torneo internacional (UCL, UEL, Libertadores…). */
+  esInternacional: boolean
   q: {
     local: number | null
     visita: number | null

@@ -59,19 +59,20 @@ def make_fixtures():
     fixtures, fid = [], 900001
     for i, rd in enumerate(rounds):
         date = start + timedelta(days=4 * i)
+        liga = 2 if i % 9 == 4 else LEAGUE_ID  # cada ~9ª jornada es Champions
         for home, away in rd:
             rng = random.Random(fid)
             sh, sa = STRENGTH[home], STRENGTH[away]
             gh = poisson(rng, max(0.25, 1.45 + 0.9 * (sh - sa) + 0.2))
             ga = poisson(rng, max(0.2, 1.25 + 0.9 * (sa - sh)))
-            fixtures.append(dict(id=fid, date=date, home=home, away=away, gh=gh, ga=ga,
+            fixtures.append(dict(id=fid, date=date, home=home, away=away, gh=gh, ga=ga, league=liga,
                                  status_long="Match Finished", status_short="FT", elapsed=90))
             fid += 1
     # partido EN VIVO (Betis 1-0 Sevilla, 67') y PROGRAMADO (Madrid-Barça mañana)
-    fixtures.append(dict(id=fid, date=now, home=543, away=536, gh=1, ga=0,
+    fixtures.append(dict(id=fid, date=now, home=543, away=536, gh=1, ga=0, league=LEAGUE_ID,
                          status_long="Second Half", status_short="2H", elapsed=67))
     fid += 1
-    fixtures.append(dict(id=fid, date=now + timedelta(days=1), home=541, away=529, gh=None, ga=None,
+    fixtures.append(dict(id=fid, date=now + timedelta(days=1), home=541, away=529, gh=None, ga=None, league=LEAGUE_ID,
                          status_long="Not Started", status_short="NS", elapsed=None))
     return fixtures
 
@@ -170,17 +171,18 @@ def seed(base_dir: str):
     """)
     sad.executemany("INSERT INTO teams (id, name, country) VALUES (?,?, 'Spain')", TEAMS)
     sad.execute("INSERT INTO leagues (id, name, country) VALUES (?, 'LaLiga', 'Spain')", (LEAGUE_ID,))
+    sad.execute("INSERT INTO leagues (id, name, country) VALUES (2, 'UEFA Champions League', 'World')")
     for f in fixtures:
         sad.execute(
             """INSERT INTO fixtures (id, date, venue_name, status_long, status_short, elapsed,
                league_id, league_season, home_team_id, away_team_id, goals_home, goals_away)
                VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
             (f["id"], f["date"].strftime("%Y-%m-%d %H:%M:%S"), f"Estadio {names[f['home']]}",
-             f["status_long"], f["status_short"], f["elapsed"], LEAGUE_ID, SEASON,
+             f["status_long"], f["status_short"], f["elapsed"], f["league"], SEASON,
              f["home"], f["away"], f["gh"], f["ga"]),
         )
-    # cuotas para el vivo y el programado (3 bookmakers, con dispersión)
-    for f in fixtures[-2:]:
+    # cuotas prepartido: los últimos 10 terminados + el vivo + el programado
+    for f in fixtures[-12:]:
         for bid, bname in BOOKMAKERS:
             rng = random.Random(f"{f['id']}|{bid}")
             for bet_id, (bet_name, sels) in enumerate(ODDS_MARKETS, start=1):
@@ -197,8 +199,8 @@ def seed(base_dir: str):
     finished = [f for f in fixtures if f["status_long"] == "Match Finished"]
     hist = {tid: [] for tid, _ in TEAMS}
     for f in sorted(finished, key=lambda x: x["date"]):
-        hist[f["home"]].append(dict(fixture_id=f["id"], date=f["date"], rival=f["away"], is_local=True, gf=f["gh"], ga=f["ga"]))
-        hist[f["away"]].append(dict(fixture_id=f["id"], date=f["date"], rival=f["home"], is_local=False, gf=f["ga"], ga=f["gh"]))
+        hist[f["home"]].append(dict(fixture_id=f["id"], date=f["date"], rival=f["away"], is_local=True, gf=f["gh"], ga=f["ga"], league=f["league"]))
+        hist[f["away"]].append(dict(fixture_id=f["id"], date=f["date"], rival=f["home"], is_local=False, gf=f["ga"], ga=f["gh"], league=f["league"]))
 
     levels_by_team = {tid: compute_levels(h) for tid, h in hist.items()}
 
@@ -265,7 +267,7 @@ def seed(base_dir: str):
                    k_goles_local_anotado, k_goles_local_recibido, k_goles_visita_anotado, k_goles_visita_recibido, processed_at)
                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (m["date"].strftime("%Y-%m-%d %H:%M:%S"), m["fixture_id"], tid, names[tid], m["rival"], names[m["rival"]],
-                 "Local" if m["is_local"] else "Visita", "Match Finished", LEAGUE_ID, str(SEASON),
+                 "Local" if m["is_local"] else "Visita", "Match Finished", m["league"], str(SEASON),
                  m["gf"] if m["is_local"] else m["ga"], m["ga"] if m["is_local"] else m["gf"],
                  level_bin(levels_by_team[tid][idx]), level_bin(nivel_rival),
                  k["k_positivo"] + k["k_negativo"], k["k_positivo_local"] + k["k_negativo_local"],

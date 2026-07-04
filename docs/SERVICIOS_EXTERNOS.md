@@ -113,6 +113,14 @@ Hecho (las secciones ya consumen `getDataSource()` con estados de carga/error):
 - ✅ Estadísticas: forma, promedios de goles, puntos y tabla de posiciones ←
   `equipoStats()` + `standings()` (calculados de fixtures por el backend; las
   filas de xG/posesión/tiros/córners aparecen solo cuando el backend las sirva)
+- ✅ Pantalla inicial **Partidos** (toda la historia capturada, filtros por
+  estado) ← `fixtures()`; los pasados abren con sus cuotas guardadas
+- ✅ **Buscador inteligente** de equipos ← `/equipos?buscar=` y **página de
+  equipo** (nivel+bin, momentum K, temporada, historial) ← `fixtures?equipoId`
+- ✅ Burbujas como **gráfica de líneas** (picos acumulados) con distinción de
+  torneos internacionales ← `esInternacional` en `/constantes`
+- 📋 Familias nuevas de burbujas (DC, márgenes, cuotas prepartido):
+  spec en `docs/ROADMAP_BURBUJAS.md`
 
 Pendiente:
 

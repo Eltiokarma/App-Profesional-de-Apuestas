@@ -33,7 +33,7 @@ export function MobileHeader({ store, mv, phonePreview, liveBadge, liveMinute }:
         </button>
       </div>
       {mv ? (
-        <button onClick={store.togglePicker} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 11px', border: '1px solid var(--line)', borderRadius: 11, background: 'var(--bg2)', cursor: 'pointer', textAlign: 'left' }}>
+        <button onClick={store.go('partidos')} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 11px', border: '1px solid var(--line)', borderRadius: 11, background: 'var(--bg2)', cursor: 'pointer', textAlign: 'left' }}>
           <span style={{ width: 26, height: 26, borderRadius: '50%', background: mv.homeColor, color: mv.homeFg, display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 9.5px var(--mono)', flexShrink: 0 }}>{mv.homeShort}</span>
           <span style={{ width: 26, height: 26, borderRadius: '50%', background: mv.awayColor, color: mv.awayFg, display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 9.5px var(--mono)', marginLeft: -12, boxShadow: '0 0 0 2px var(--bg2)', flexShrink: 0 }}>{mv.awayShort}</span>
           <span style={{ flex: 1, minWidth: 0 }}>

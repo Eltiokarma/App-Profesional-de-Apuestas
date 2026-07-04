@@ -19,7 +19,8 @@ export interface SadState {
   theme: 'dark' | 'light'
   section: SectionKey
   matchId: string | null
-  pickerOpen: boolean
+  /** Equipo abierto en la página de equipo (clave interna). */
+  teamKey: string | null
   loading: boolean
   vw: number
   forceMobile: boolean
@@ -39,9 +40,9 @@ export interface SadState {
 
 const initialState: SadState = {
   theme: 'dark',
-  section: 'cuotas',
+  section: 'partidos',
   matchId: 'm1',
-  pickerOpen: false,
+  teamKey: null,
   loading: false,
   vw: typeof window !== 'undefined' ? window.innerWidth : 1280,
   forceMobile: false,
@@ -68,7 +69,7 @@ export interface SadStore {
   s: SadState
   toggleTheme: () => void
   go: (sec: SectionKey) => () => void
-  togglePicker: () => void
+  openTeam: (teamKey: string) => void
   selectMatch: (mt: Match) => () => void
   clearMatch: () => void
   setMode: (mode: OddsMode) => () => void
@@ -111,20 +112,21 @@ export function useSad(): SadStore {
   }, [patch])
 
   const toggleTheme = useCallback(() => patchFn((prev) => ({ theme: prev.theme === 'dark' ? 'light' : 'dark' })), [patchFn])
-  const go = useCallback((sec: SectionKey) => () => patch({ section: sec, pickerOpen: false }), [patch])
-  const togglePicker = useCallback(() => patchFn((prev) => ({ pickerOpen: !prev.pickerOpen })), [patchFn])
+  const go = useCallback((sec: SectionKey) => () => patch({ section: sec }), [patch])
+  const openTeam = useCallback((teamKey: string) => patch({ teamKey, section: 'equipo' }), [patch])
 
   const selectMatch = useCallback(
     (mt: Match) => () => {
       const live = mt.status === 'live'
       const lm = live ? parseInt(mt.min) || 60 : 63
-      patch({ matchId: mt.id, pickerOpen: false, loading: true, oddsMode: live ? 'live' : 'prematch', liveMin: lm })
+      // seleccionar un partido lleva directo a Cuotas
+      patch({ matchId: mt.id, section: 'cuotas', loading: true, oddsMode: live ? 'live' : 'prematch', liveMin: lm })
       setTimeout(() => patch({ loading: false }), 720)
     },
     [patch],
   )
 
-  const clearMatch = useCallback(() => patch({ matchId: null, pickerOpen: false }), [patch])
+  const clearMatch = useCallback(() => patch({ matchId: null }), [patch])
   const setMode = useCallback((mode: OddsMode) => () => patch({ oddsMode: mode }), [patch])
   const toggleMark = useCallback(
     (id: string) =>
@@ -161,13 +163,13 @@ export function useSad(): SadStore {
   )
 
   const openReport = useCallback((key: string) => () => patch({ openReport: key }), [patch])
-  const toggleMobile = useCallback(() => patchFn((prev) => ({ forceMobile: !prev.forceMobile, pickerOpen: false })), [patchFn])
+  const toggleMobile = useCallback(() => patchFn((prev) => ({ forceMobile: !prev.forceMobile })), [patchFn])
 
   return {
     s,
     toggleTheme,
     go,
-    togglePicker,
+    openTeam,
     selectMatch,
     clearMatch,
     setMode,

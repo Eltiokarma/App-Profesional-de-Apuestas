@@ -72,6 +72,6 @@ export type KTypeKey = 'res' | 'ga' | 'gr'
 /** Condición de la K: total, solo local o solo visita. */
 export type KCondKey = 'total' | 'local' | 'visita'
 export type ModelKey = 'auto' | 'global' | 'liga'
-export type SectionKey = 'cuotas' | 'burbujas' | 'skills' | 'estadisticas'
+export type SectionKey = 'partidos' | 'cuotas' | 'burbujas' | 'skills' | 'estadisticas' | 'equipo'
 export type OddsMode = 'prematch' | 'live'
 export type SkillState = 'idle' | 'gen' | 'done'
