@@ -1,7 +1,7 @@
 import { TEAMS } from '../data'
 import type { KCondKey, KTypeKey } from '../data/types'
 import { KLineChart, KLineLegend } from '../components/KLineChart'
-import { binBadge, FUSED_KEY, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
+import { binBadge, FUSED_KEY, K_TYPE_GROUPS, K_WINDOW_OPTS, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
 import type { FusedK } from '../motor/types'
 import { loadBurbujas, loadTeamFixtures, loadTeamStats } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
@@ -26,7 +26,7 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
   const key = FUSED_KEY[kType][kCond]
   const snaps = bur.data?.snaps ?? []
   let maxAbs = 0.001
-  for (const sn of snaps.slice(-20)) maxAbs = Math.max(maxAbs, Math.abs(sn.fused[key]))
+  for (const sn of snaps.slice(-s.kWindow)) maxAbs = Math.max(maxAbs, Math.abs(sn.fused[key]))
 
   const kv = (kk: keyof FusedK) => (snaps.length ? snaps[snaps.length - 1].fused[kk] : 0)
   const kColor = (v: number) => (v === 0 ? 'var(--t3)' : v > 0 ? 'var(--up)' : 'var(--down)')
@@ -41,7 +41,6 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
   const cargando = stats.loading || bur.loading || fx.loading
   const error = stats.error || bur.error || fx.error
 
-  const typeOpts = ([['res', 'Resultado'], ['ga', 'Goles anotados'], ['gr', 'Goles recibidos'], ['dc', 'Doble oport.']] as [KTypeKey, string][])
   const condOpts = ([['total', 'Total'], ['local', 'Local'], ['visita', 'Visita']] as [KCondKey, string][])
 
   return (
@@ -90,21 +89,38 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
             <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
                 <div style={{ font: '700 12px var(--sans)' }}>Momentum · Constantes K</div>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <div style={{ display: 'flex', padding: 3, borderRadius: 9, background: 'var(--bg3)', border: '1px solid var(--line)' }}>
-                    {typeOpts.map(([k, l]) => (
-                      <button key={k} onClick={store.setKType(k)} style={{ padding: '5px 10px', border: 0, borderRadius: 6, cursor: 'pointer', background: s.kType === k ? 'var(--bg1)' : 'transparent', color: s.kType === k ? 'var(--t1)' : 'var(--t2)', font: '600 10.5px var(--sans)' }}>{l}</button>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: 5, borderRadius: 9, background: 'var(--bg3)', border: '1px solid var(--line)' }}>
+                    {K_TYPE_GROUPS.map((g) => (
+                      <div key={g.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <span style={{ font: '600 8px var(--mono)', color: 'var(--t3)', width: 52, textTransform: 'uppercase', letterSpacing: '.4px', flexShrink: 0 }}>{g.label}</span>
+                        <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                          {g.opts.map(([k, l]) => (
+                            <button key={k} onClick={store.setKType(k)} style={{ padding: '4px 7px', border: 0, borderRadius: 6, cursor: 'pointer', background: s.kType === k ? 'var(--bg1)' : 'transparent', color: s.kType === k ? 'var(--t1)' : 'var(--t2)', font: '600 10px var(--sans)' }}>{l}</button>
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </div>
-                  <div style={{ display: 'flex', padding: 3, borderRadius: 9, background: 'var(--bg3)', border: '1px solid var(--line)' }}>
-                    {condOpts.map(([k, l]) => (
-                      <button key={k} onClick={store.setKCond(k)} style={{ padding: '5px 10px', border: 0, borderRadius: 6, cursor: 'pointer', background: s.kCond === k ? 'var(--bg1)' : 'transparent', color: s.kCond === k ? 'var(--t1)' : 'var(--t2)', font: '600 10.5px var(--sans)' }}>{l}</button>
-                    ))}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ display: 'flex', padding: 3, borderRadius: 9, background: 'var(--bg3)', border: '1px solid var(--line)' }}>
+                      {condOpts.map(([k, l]) => (
+                        <button key={k} onClick={store.setKCond(k)} style={{ padding: '5px 10px', border: 0, borderRadius: 6, cursor: 'pointer', background: s.kCond === k ? 'var(--bg1)' : 'transparent', color: s.kCond === k ? 'var(--t1)' : 'var(--t2)', font: '600 10.5px var(--sans)' }}>{l}</button>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{ font: '600 8px var(--mono)', color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '.4px' }}>Ver</span>
+                      <div style={{ display: 'flex', padding: 3, borderRadius: 9, background: 'var(--bg3)', border: '1px solid var(--line)' }}>
+                        {K_WINDOW_OPTS.map(([n, l]) => (
+                          <button key={n} onClick={store.setWindow(n)} style={{ padding: '5px 10px', border: 0, borderRadius: 6, cursor: 'pointer', background: s.kWindow === n ? 'var(--bg1)' : 'transparent', color: s.kWindow === n ? 'var(--t1)' : 'var(--t2)', font: '600 10.5px var(--sans)' }}>{l}</button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
               <div style={{ borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--line)', padding: 6 }}>
-                <KLineChart snaps={snaps} kType={kType} kCond={kCond} maxAbs={maxAbs} />
+                <KLineChart snaps={snaps} kType={kType} kCond={kCond} maxAbs={maxAbs} window={s.kWindow} />
               </div>
               <KLineLegend />
               <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>

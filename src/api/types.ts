@@ -86,6 +86,13 @@ export interface ConstantesDTO {
     dc: number
     dcLocal: number
     dcVisita: number
+    /** Márgenes (§3.7): rachas por margen exacto de goles (1/2/3+), aporte plano nivelRival. */
+    vic1: number; vic1Local: number; vic1Visita: number
+    vic2: number; vic2Local: number; vic2Visita: number
+    vic3: number; vic3Local: number; vic3Visita: number
+    der1: number; der1Local: number; der1Visita: number
+    der2: number; der2Local: number; der2Visita: number
+    der3: number; der3Local: number; der3Visita: number
   }
   fusion: {
     k: number
@@ -100,6 +107,12 @@ export interface ConstantesDTO {
     kDc: number
     kDcLocal: number
     kDcVisita: number
+    kVic1: number; kVic1Local: number; kVic1Visita: number
+    kVic2: number; kVic2Local: number; kVic2Visita: number
+    kVic3: number; kVic3Local: number; kVic3Visita: number
+    kDer1: number; kDer1Local: number; kDer1Visita: number
+    kDer2: number; kDer2Local: number; kDer2Visita: number
+    kDer3: number; kDer3Local: number; kDer3Visita: number
   }
 }
 

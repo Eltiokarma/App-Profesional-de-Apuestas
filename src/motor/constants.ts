@@ -15,6 +15,12 @@ export const K0: KState = {
   posVisita: 0, negVisita: 0,
   gA: 0, gR: 0, gLA: 0, gLR: 0, gVA: 0, gVR: 0,
   dc: 0, dcLocal: 0, dcVisita: 0,
+  vic1: 0, vic1Local: 0, vic1Visita: 0,
+  vic2: 0, vic2Local: 0, vic2Visita: 0,
+  vic3: 0, vic3Local: 0, vic3Visita: 0,
+  der1: 0, der1Local: 0, der1Visita: 0,
+  der2: 0, der2Local: 0, der2Visita: 0,
+  der3: 0, der3Local: 0, der3Visita: 0,
 }
 
 /** Valores instantáneos q* de un partido (§3.2). */
@@ -73,6 +79,34 @@ export function stepK(prev: KState, isLocal: boolean, gf: number, ga: number, ni
   k.dc = perdio ? 0 : prev.dc + q.dc
   if (isLocal) k.dcLocal = perdio ? 0 : prev.dcLocal + q.dc
   if (!isLocal) k.dcVisita = perdio ? 0 : prev.dcVisita + q.dc
+
+  // Márgenes (§3.7): aporte plano nivel; solo el bucket del margen EXACTO del
+  // signo de este partido acumula; los demás (mismo o distinto signo) resetean.
+  // El empate deja gv = gd = 0 → resetea ambos signos.
+  const gv = gf > ga ? Math.min(gf - ga, 3) : 0 // bucket ganado (1/2/3+); 0 si no ganó
+  const gd = perdio ? Math.min(ga - gf, 3) : 0 // bucket perdido (1/2/3+); 0 si no perdió
+  k.vic1 = gv === 1 ? prev.vic1 + nivel : 0
+  k.vic2 = gv === 2 ? prev.vic2 + nivel : 0
+  k.vic3 = gv === 3 ? prev.vic3 + nivel : 0
+  k.der1 = gd === 1 ? prev.der1 + nivel : 0
+  k.der2 = gd === 2 ? prev.der2 + nivel : 0
+  k.der3 = gd === 3 ? prev.der3 + nivel : 0
+  if (isLocal) {
+    k.vic1Local = gv === 1 ? prev.vic1Local + nivel : 0
+    k.vic2Local = gv === 2 ? prev.vic2Local + nivel : 0
+    k.vic3Local = gv === 3 ? prev.vic3Local + nivel : 0
+    k.der1Local = gd === 1 ? prev.der1Local + nivel : 0
+    k.der2Local = gd === 2 ? prev.der2Local + nivel : 0
+    k.der3Local = gd === 3 ? prev.der3Local + nivel : 0
+  } // en visita conservan (ya copiados de prev)
+  if (!isLocal) {
+    k.vic1Visita = gv === 1 ? prev.vic1Visita + nivel : 0
+    k.vic2Visita = gv === 2 ? prev.vic2Visita + nivel : 0
+    k.vic3Visita = gv === 3 ? prev.vic3Visita + nivel : 0
+    k.der1Visita = gd === 1 ? prev.der1Visita + nivel : 0
+    k.der2Visita = gd === 2 ? prev.der2Visita + nivel : 0
+    k.der3Visita = gd === 3 ? prev.der3Visita + nivel : 0
+  }
 
   return { q, k }
 }

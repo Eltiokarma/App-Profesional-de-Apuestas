@@ -30,6 +30,8 @@ export interface SadState {
   liveMin: number
   kType: KTypeKey
   kCond: KCondKey
+  /** Ventana de la gráfica de K: nº de partidos (Infinity = toda la historia). */
+  kWindow: number
   model: ModelKey
   chartMarket: string
   skillStatus: Record<string, SkillState>
@@ -52,6 +54,7 @@ const initialState: SadState = {
   liveMin: 63,
   kType: 'res',
   kCond: 'total',
+  kWindow: Infinity, // por defecto: toda la historia
   model: 'auto',
   chartMarket: '1x2',
   skillStatus: { efe: 'idle', sad: 'idle', tac: 'idle', tl: 'idle' },
@@ -76,6 +79,7 @@ export interface SadStore {
   toggleMark: (id: string) => void
   setKType: (c: KTypeKey) => () => void
   setKCond: (c: KCondKey) => () => void
+  setWindow: (n: number) => () => void
   setModel: (m: ModelKey) => () => void
   setChartMarket: (key: string) => void
   generate: (key: string) => () => void
@@ -140,6 +144,7 @@ export function useSad(): SadStore {
   )
   const setKType = useCallback((c: KTypeKey) => () => patch({ kType: c }), [patch])
   const setKCond = useCallback((c: KCondKey) => () => patch({ kCond: c }), [patch])
+  const setWindow = useCallback((n: number) => () => patch({ kWindow: n }), [patch])
   const setModel = useCallback((m: ModelKey) => () => patch({ model: m }), [patch])
   const setChartMarket = useCallback((key: string) => patch({ chartMarket: key }), [patch])
 
@@ -176,6 +181,7 @@ export function useSad(): SadStore {
     toggleMark,
     setKType,
     setKCond,
+    setWindow,
     setModel,
     setChartMarket,
     generate,

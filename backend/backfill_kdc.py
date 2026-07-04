@@ -1,13 +1,14 @@
-"""Rellena las columnas de Doble Oportunidad (k_dc, §3.6) en una constants.db
-ya generada por el pipeline — puente LOCAL hasta que el pipeline las emita.
+"""Rellena las columnas de las familias K derivadas (Doble Oportunidad §3.6 y
+Márgenes §3.7) en una constants.db ya generada por el pipeline — puente LOCAL
+hasta que el pipeline las emita.
 
 No re-corre la extracción: recorre el historial de cada equipo en orden
-cronológico y aplica la fórmula del motor (idéntica a src/motor y seed_demo),
-reusando el MISMO nivel de rival que el pipeline ya horneó en cada fila. Ese
-nivel se **recupera exacto** de las q existentes (q_goles_anotado = goles ·
-nivel_rival), de modo que k_dc queda consistente con las k que ya están en la
-fila. Para empates 0-0 (sin q de la que recuperar) cae al nivel continuo de
-levels.db, y se reporta cuántas filas usaron ese respaldo.
+cronológico y aplica la fórmula del motor (backend/familias_k.py, espejo de
+src/motor), reusando el MISMO nivel de rival que el pipeline ya horneó en cada
+fila. Ese nivel se **recupera exacto** de las q existentes (q_goles_anotado =
+goles · nivel_rival), de modo que las familias quedan consistentes con las k que
+ya están en la fila. Para empates 0-0 (sin q de la que recuperar) cae al nivel
+continuo de levels.db, y se reporta cuántas filas usaron ese respaldo.
 
 Idempotente: recalcula desde cero en cada corrida. Antes de escribir hace una
 copia de seguridad pristina (constants.db.bak, solo la primera vez). Solo
@@ -23,25 +24,9 @@ import sys
 from bisect import bisect_right
 
 from backend.db import BASE_DIR
+from backend.familias_k import FAMILIAS0, FAMILIAS_COLS, step_familias
 
-NEW_COLS = ("q_dc", "k_dc", "k_dc_local", "k_dc_visita")
-
-
-def kdc_step(prev_dc, prev_dc_local, prev_dc_visita, is_local, gf, ga, nivel):
-    """Un partido de avance de k_dc (§3.6). Empate aporta 0.5·nivel; la derrota
-    resetea; sin multiplicador visitante. dc_local/dc_visita solo cambian en su
-    condición (si no, conservan el valor anterior)."""
-    dif = abs(gf - ga)
-    perdio = gf < ga
-    q_dc = 0.0 if perdio else max(dif * nivel, 0.5 * nivel)
-    dc = 0.0 if perdio else prev_dc + q_dc
-    dc_local = prev_dc_local
-    dc_visita = prev_dc_visita
-    if is_local:
-        dc_local = 0.0 if perdio else prev_dc_local + q_dc
-    else:
-        dc_visita = 0.0 if perdio else prev_dc_visita + q_dc
-    return q_dc, dc, dc_local, dc_visita
+NEW_COLS = ("q_dc", *FAMILIAS_COLS)  # todas las columnas que rellena el puente
 
 
 def backfill(base_dir):
@@ -67,6 +52,7 @@ def backfill(base_dir):
         if c not in existing:
             co.execute(f"ALTER TABLE constants ADD COLUMN {c} REAL")
     co.commit()
+    set_clause = ", ".join(f"{c}=?" for c in NEW_COLS)
 
     # fixtures: goles y local/visita, en memoria
     fixtures = {
@@ -87,13 +73,13 @@ def backfill(base_dir):
 
     teams = [r[0] for r in co.execute("SELECT DISTINCT team_id FROM constants")]
     total_rows = fallback_0_0 = 0
-    max_dc = 0.0
+    max_dc = max_der = 0.0
     for tid in teams:
         rows = co.execute(
             "SELECT id, fixture_id, date, q_goles_anotado, q_goles_recibido FROM constants WHERE team_id=? ORDER BY date, id",
             (tid,),
         ).fetchall()
-        dc = dc_local = dc_visita = 0.0
+        st = dict(FAMILIAS0)
         updates = []
         for row_id, fx, date, qga, qgr in rows:
             f = fixtures.get(fx)
@@ -111,20 +97,19 @@ def backfill(base_dir):
             else:
                 nivel = nivel_levels(rival, date)
                 fallback_0_0 += 1
-            q_dc, dc, dc_local, dc_visita = kdc_step(dc, dc_local, dc_visita, is_local, gf, ga, nivel)
-            updates.append((q_dc, dc, dc_local, dc_visita, row_id))
-            max_dc = max(max_dc, dc)
-        co.executemany(
-            "UPDATE constants SET q_dc=?, k_dc=?, k_dc_local=?, k_dc_visita=? WHERE id=?", updates
-        )
+            q_dc, st = step_familias(st, is_local, gf, ga, nivel)
+            updates.append((q_dc, *(st[c] for c in FAMILIAS_COLS), row_id))
+            max_dc = max(max_dc, st["k_dc"])
+            max_der = max(max_der, st["k_der1"], st["k_der2"], st["k_der3"])
+        co.executemany(f"UPDATE constants SET {set_clause} WHERE id=?", updates)
         total_rows += len(updates)
     co.commit()
     co.close()
     sad.close()
     lv.close()
     print(
-        f"k_dc rellenado: {total_rows} filas · {len(teams)} equipos · "
-        f"max k_dc={max_dc:.2f} · respaldo levels.db en 0-0={fallback_0_0}"
+        f"Familias K rellenadas: {total_rows} filas · {len(teams)} equipos · "
+        f"max k_dc={max_dc:.2f} · max k_derrota={max_der:.2f} · respaldo levels.db en 0-0={fallback_0_0}"
     )
 
 
