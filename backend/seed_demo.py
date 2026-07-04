@@ -119,19 +119,30 @@ def step_k(prev, is_local, gf, ga, nivel):
         k["k_goles_visita_recibido"] = k["k_goles_visita_recibido"] + abs(q_gr) if q_gr < 0 else 0.0
     k["k_goles_anotado"] = k["k_goles_anotado"] + q_ga if q_ga > 0 else 0.0
     k["k_goles_recibido"] = k["k_goles_recibido"] + abs(q_gr) if q_gr < 0 else 0.0
+    # §3.6 Doble Oportunidad (k_dc): racha "sin perder" (1X). Empate aporta el
+    # mínimo 0.5·nivel; derrota resetea. Sin multiplicador visitante (roadmap §1).
+    q_dc = 0.0 if res == -1 else max(dif * nivel, 0.5 * nivel)
+    perdio = res == -1
+    k["k_dc"] = 0.0 if perdio else k["k_dc"] + q_dc
+    if is_local:
+        k["k_dc_local"] = 0.0 if perdio else k["k_dc_local"] + q_dc
+    else:
+        k["k_dc_visita"] = 0.0 if perdio else k["k_dc_visita"] + q_dc
     q = dict(q_local=q_local, q_visita=q_visita, q_negativo=q_neg,
              q_goles_anotado=q_ga, q_goles_recibido=q_gr,
              q_goles_local_anotado=q_ga if is_local else None,
              q_goles_local_recibido=q_gr if is_local else None,
              q_goles_visita_anotado=q_ga if not is_local else None,
-             q_goles_visita_recibido=q_gr if not is_local else None)
+             q_goles_visita_recibido=q_gr if not is_local else None,
+             q_dc=q_dc)
     return q, k
 
 
 K0 = {k: 0.0 for k in (
     "k_positivo", "k_negativo", "k_positivo_local", "k_negativo_local",
     "k_positivo_visita", "k_negativo_visita", "k_goles_anotado", "k_goles_recibido",
-    "k_goles_local_anotado", "k_goles_local_recibido", "k_goles_visita_anotado", "k_goles_visita_recibido")}
+    "k_goles_local_anotado", "k_goles_local_recibido", "k_goles_visita_anotado", "k_goles_visita_recibido",
+    "k_dc", "k_dc_local", "k_dc_visita")}
 
 
 ODDS_MARKETS = [
@@ -225,9 +236,11 @@ def seed(base_dir: str):
         fixture_id INTEGER NOT NULL, date DATETIME NOT NULL,
         q_local REAL, q_visita REAL, q_negativo REAL, q_goles_anotado REAL, q_goles_recibido REAL,
         q_goles_local_anotado REAL, q_goles_local_recibido REAL, q_goles_visita_anotado REAL, q_goles_visita_recibido REAL,
+        q_dc REAL,
         k_positivo REAL, k_negativo REAL, k_positivo_local REAL, k_negativo_local REAL,
         k_positivo_visita REAL, k_negativo_visita REAL, k_goles_anotado REAL, k_goles_recibido REAL,
-        k_goles_local_anotado REAL, k_goles_local_recibido REAL, k_goles_visita_anotado REAL, k_goles_visita_recibido REAL);
+        k_goles_local_anotado REAL, k_goles_local_recibido REAL, k_goles_visita_anotado REAL, k_goles_visita_recibido REAL,
+        k_dc REAL, k_dc_local REAL, k_dc_visita REAL);
         CREATE INDEX ix_constants_team_date ON constants(team_id, date);""")
     di = sqlite3.connect(os.path.join(base_dir, "discreto.db"))
     di.executescript("""CREATE TABLE processed_matches (id INTEGER PRIMARY KEY, fecha DATETIME NOT NULL,
@@ -249,16 +262,20 @@ def seed(base_dir: str):
                 """INSERT INTO constants (team_id, fixture_id, date,
                    q_local, q_visita, q_negativo, q_goles_anotado, q_goles_recibido,
                    q_goles_local_anotado, q_goles_local_recibido, q_goles_visita_anotado, q_goles_visita_recibido,
+                   q_dc,
                    k_positivo, k_negativo, k_positivo_local, k_negativo_local,
                    k_positivo_visita, k_negativo_visita, k_goles_anotado, k_goles_recibido,
-                   k_goles_local_anotado, k_goles_local_recibido, k_goles_visita_anotado, k_goles_visita_recibido)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                   k_goles_local_anotado, k_goles_local_recibido, k_goles_visita_anotado, k_goles_visita_recibido,
+                   k_dc, k_dc_local, k_dc_visita)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (tid, m["fixture_id"], m["date"].strftime("%Y-%m-%d %H:%M:%S"),
                  q["q_local"], q["q_visita"], q["q_negativo"], q["q_goles_anotado"], q["q_goles_recibido"],
                  q["q_goles_local_anotado"], q["q_goles_local_recibido"], q["q_goles_visita_anotado"], q["q_goles_visita_recibido"],
+                 q["q_dc"],
                  k["k_positivo"], k["k_negativo"], k["k_positivo_local"], k["k_negativo_local"],
                  k["k_positivo_visita"], k["k_negativo_visita"], k["k_goles_anotado"], k["k_goles_recibido"],
-                 k["k_goles_local_anotado"], k["k_goles_local_recibido"], k["k_goles_visita_anotado"], k["k_goles_visita_recibido"]),
+                 k["k_goles_local_anotado"], k["k_goles_local_recibido"], k["k_goles_visita_anotado"], k["k_goles_visita_recibido"],
+                 k["k_dc"], k["k_dc_local"], k["k_dc_visita"]),
             )
             di.execute(
                 """INSERT INTO processed_matches (fecha, fixture_id, equipo_id, equipo_nombre, rival_id, rival_nombre,

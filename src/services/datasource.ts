@@ -97,6 +97,7 @@ function constantesDTO(teamKey: string, s: KSnapshot): ConstantesDTO {
       negativo: s.q.negativo,
       golesAnotado: s.q.golesAnotado,
       golesRecibido: s.q.golesRecibido,
+      dc: s.q.dc,
     },
     k: {
       positivo: s.k.pos,
@@ -111,6 +112,9 @@ function constantesDTO(teamKey: string, s: KSnapshot): ConstantesDTO {
       golesLocalRecibido: s.k.gLR,
       golesVisitaAnotado: s.k.gVA,
       golesVisitaRecibido: s.k.gVR,
+      dc: s.k.dc,
+      dcLocal: s.k.dcLocal,
+      dcVisita: s.k.dcVisita,
     },
     fusion: { ...s.fused },
   }

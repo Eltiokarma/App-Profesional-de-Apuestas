@@ -41,7 +41,7 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
   const cargando = stats.loading || bur.loading || fx.loading
   const error = stats.error || bur.error || fx.error
 
-  const typeOpts = ([['res', 'Resultado'], ['ga', 'Goles anotados'], ['gr', 'Goles recibidos']] as [KTypeKey, string][])
+  const typeOpts = ([['res', 'Resultado'], ['ga', 'Goles anotados'], ['gr', 'Goles recibidos'], ['dc', 'Doble oport.']] as [KTypeKey, string][])
   const condOpts = ([['total', 'Total'], ['local', 'Local'], ['visita', 'Visita']] as [KCondKey, string][])
 
   return (

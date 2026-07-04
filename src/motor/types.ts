@@ -39,6 +39,9 @@ export interface QVals {
   negativo: number
   golesAnotado: number
   golesRecibido: number
+  /** Aporte de Doble Oportunidad (§3.6 / ROADMAP §1): 0 si perdió, si no
+   *  max(dif·nivel_rival, 0.5·nivel_rival). Alimenta los acumuladores k_dc. */
+  dc: number
 }
 
 /** Los 12 acumuladores de racha k* (§3.3). Solo un lado ≠ 0 a la vez. */
@@ -55,6 +58,11 @@ export interface KState {
   gLR: number
   gVA: number
   gVR: number
+  // Doble Oportunidad (§3.6): racha "sin perder" (1X). No-negativos, resetean
+  // solo al perder. dc = total, dcLocal/dcVisita solo en su condición.
+  dc: number
+  dcLocal: number
+  dcVisita: number
 }
 
 /** K fusionadas (§4.2): k = k_positivo + k_negativo; los k_goles pasan tal cual. */
@@ -68,6 +76,11 @@ export interface FusedK {
   golesLocalRecibido: number
   golesVisitaAnotado: number
   golesVisitaRecibido: number
+  // Doble Oportunidad: k_dc es un único acumulador no-negativo → sin fusión ±,
+  // el valor fusionado es el propio acumulador (§3.6).
+  kDc: number
+  kDcLocal: number
+  kDcVisita: number
 }
 
 /** Foto completa tras cada partido (fila de `constants` + fusión). */

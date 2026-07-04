@@ -218,9 +218,10 @@ components:
             negativo: { type: number }
             golesAnotado: { type: number }
             golesRecibido: { type: number }
+            dc: { type: number, description: 'Aporte Doble Oportunidad (§3.6): 0 si perdió, si no max(dif·nivelRival, 0.5·nivelRival)' }
         k:
           type: object
-          description: Los 12 acumuladores de racha (§3.3)
+          description: Acumuladores de racha (§3.3) + familia Doble Oportunidad (§3.6)
           properties:
             positivo: { type: number }
             negativo: { type: number }
@@ -234,9 +235,12 @@ components:
             golesLocalRecibido: { type: number }
             golesVisitaAnotado: { type: number }
             golesVisitaRecibido: { type: number }
+            dc: { type: number, description: 'Racha "sin perder" (1X); no-negativo, resetea solo al perder (§3.6)' }
+            dcLocal: { type: number }
+            dcVisita: { type: number }
         fusion:
           type: object
-          description: K fusionadas k = k⁺ + k⁻ (§4.2)
+          description: K fusionadas k = k⁺ + k⁻ (§4.2); k_dc pasa tal cual (§3.6)
           properties:
             k: { type: number }
             kLocal: { type: number }
@@ -247,6 +251,9 @@ components:
             golesLocalRecibido: { type: number }
             golesVisitaAnotado: { type: number }
             golesVisitaRecibido: { type: number }
+            kDc: { type: number }
+            kDcLocal: { type: number }
+            kDcVisita: { type: number }
     GapEquipo:
       type: object
       required: [equipoId, nivel, ptsEsperados]

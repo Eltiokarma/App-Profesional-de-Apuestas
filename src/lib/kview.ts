@@ -6,6 +6,7 @@ export const FUSED_KEY: Record<KTypeKey, Record<KCondKey, keyof FusedK>> = {
   res: { total: 'k', local: 'kLocal', visita: 'kVisita' },
   ga: { total: 'golesAnotado', local: 'golesLocalAnotado', visita: 'golesVisitaAnotado' },
   gr: { total: 'golesRecibido', local: 'golesLocalRecibido', visita: 'golesVisitaRecibido' },
+  dc: { total: 'kDc', local: 'kDcLocal', visita: 'kDcVisita' },
 }
 
 /** Valor con signo de display: para goles recibidos la racha alta es desfavorable. */
@@ -37,6 +38,7 @@ export function lastQ(snaps: KSnapshot[], kType: KTypeKey, kCond: KCondKey): num
     if (kCond === 'visita' && s.isLocal) continue
     if (kType === 'ga') return s.q.golesAnotado
     if (kType === 'gr') return s.q.golesRecibido
+    if (kType === 'dc') return s.q.dc
     return s.isLocal ? s.q.local : s.q.visita
   }
   return null

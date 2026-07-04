@@ -38,7 +38,7 @@ export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20 }: Props) 
     const v = s.fused[key]
     const sv = signedVal(kType, v)
     const inCond = kCond === 'total' || (kCond === 'local') === s.isLocal
-    const qc = kType === 'ga' ? s.q.golesAnotado : kType === 'gr' ? s.q.golesRecibido : s.isLocal ? s.q.local : s.q.visita
+    const qc = kType === 'ga' ? s.q.golesAnotado : kType === 'gr' ? s.q.golesRecibido : kType === 'dc' ? s.q.dc : s.isLocal ? s.q.local : s.q.visita
     const rv = TEAMS[s.rival]
     return {
       x: x(i),

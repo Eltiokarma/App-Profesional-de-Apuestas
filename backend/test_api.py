@@ -70,6 +70,13 @@ def main():
     conds = {r["condicion"] for r in ct}
     check("condicion Local/Visita", conds == {"Local", "Visita"}, conds)
 
+    # Doble Oportunidad (§3.6): familia k_dc servida por el contrato
+    check("k_dc: fusion.kDc = k.dc (pasa tal cual, sin ±)", all(abs(r["fusion"]["kDc"] - r["k"]["dc"]) < 1e-9 for r in ct))
+    check("k_dc: acumuladores no-negativos", all(r["k"]["dc"] >= 0 and r["k"]["dcLocal"] >= 0 and r["k"]["dcVisita"] >= 0 for r in ct))
+    check("k_dc: hay racha activa en algún partido", any(r["k"]["dc"] > 0 for r in ct))
+    check("k_dc: la derrota resetea a 0", all(r["k"]["dc"] == 0 for r in ct if r["golesFavor"] < r["golesContra"]))
+    check("q_dc: no-negativo y 0 en toda derrota", all(r["q"]["dc"] >= 0 and (r["q"]["dc"] == 0 or r["golesFavor"] >= r["golesContra"]) for r in ct))
+
     # /predicciones — §5
     p = c.get(A + f"/predicciones/{vivo['id']}").json()
     check(
