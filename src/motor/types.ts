@@ -63,6 +63,15 @@ export interface KState {
   dc: number
   dcLocal: number
   dcVisita: number
+  // Márgenes (§3.7): rachas por margen EXACTO de goles (1, 2, 3+). Aporte plano
+  // nivel_rival; solo un bucket del mismo signo ≠ 0 a la vez; el empate resetea
+  // ambos signos. Local/visita solo se tocan en su condición.
+  vic1: number; vic1Local: number; vic1Visita: number
+  vic2: number; vic2Local: number; vic2Visita: number
+  vic3: number; vic3Local: number; vic3Visita: number
+  der1: number; der1Local: number; der1Visita: number
+  der2: number; der2Local: number; der2Visita: number
+  der3: number; der3Local: number; der3Visita: number
 }
 
 /** K fusionadas (§4.2): k = k_positivo + k_negativo; los k_goles pasan tal cual. */
@@ -81,6 +90,13 @@ export interface FusedK {
   kDc: number
   kDcLocal: number
   kDcVisita: number
+  // Márgenes (§3.7): acumuladores no-negativos → sin fusión ±, pasan tal cual.
+  kVic1: number; kVic1Local: number; kVic1Visita: number
+  kVic2: number; kVic2Local: number; kVic2Visita: number
+  kVic3: number; kVic3Local: number; kVic3Visita: number
+  kDer1: number; kDer1Local: number; kDer1Visita: number
+  kDer2: number; kDer2Local: number; kDer2Visita: number
+  kDer3: number; kDer3Local: number; kDer3Visita: number
 }
 
 /** Foto completa tras cada partido (fila de `constants` + fusión). */

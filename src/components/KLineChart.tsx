@@ -1,6 +1,6 @@
 import type { KCondKey, KTypeKey } from '../data/types'
 import { TEAMS } from '../data'
-import { FUSED_KEY, fmtK, signFmt, signedVal } from '../lib/kview'
+import { FUSED_KEY, fmtK, isMargin, marginQ, signFmt, signedVal } from '../lib/kview'
 import type { KSnapshot } from '../motor/types'
 
 interface Props {
@@ -38,7 +38,12 @@ export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20 }: Props) 
     const v = s.fused[key]
     const sv = signedVal(kType, v)
     const inCond = kCond === 'total' || (kCond === 'local') === s.isLocal
-    const qc = kType === 'ga' ? s.q.golesAnotado : kType === 'gr' ? s.q.golesRecibido : kType === 'dc' ? s.q.dc : s.isLocal ? s.q.local : s.q.visita
+    const qc =
+      kType === 'ga' ? s.q.golesAnotado
+      : kType === 'gr' ? s.q.golesRecibido
+      : kType === 'dc' ? s.q.dc
+      : isMargin(kType) ? marginQ(kType, s.gf, s.ga, s.rivalLevel)
+      : s.isLocal ? s.q.local : s.q.visita
     const rv = TEAMS[s.rival]
     return {
       x: x(i),

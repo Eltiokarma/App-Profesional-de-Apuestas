@@ -244,6 +244,15 @@ def constantes_de(team_id: int, limit: int) -> list[dict]:
             rival_nombre = f["away_name"] if es_local else f["home_name"]
             nivel_rival = 0.0
             liga_id = f["league_id"] or 0
+        # Márgenes (§3.7): 18 columnas opcionales, leídas con degradación elegante.
+        # kVicN/kDerN pasan tal cual (no llevan fusión ±) → mismo valor en k y fusion.
+        mraw = {
+            f"{s}{b}{suf}": z(col(c, f"k_{s}{b}{cs}"))
+            for s in ("vic", "der")
+            for b in (1, 2, 3)
+            for suf, cs in (("", ""), ("Local", "_local"), ("Visita", "_visita"))
+        }
+        mfus = {"k" + kk[0].upper() + kk[1:]: v for kk, v in mraw.items()}
         out.append(
             {
                 "equipoId": team_id,
@@ -282,6 +291,7 @@ def constantes_de(team_id: int, limit: int) -> list[dict]:
                     "dc": z(col(c, "k_dc")),
                     "dcLocal": z(col(c, "k_dc_local")),
                     "dcVisita": z(col(c, "k_dc_visita")),
+                    **mraw,  # Márgenes (§3.7)
                 },
                 # fusión §4.2: k = k⁺ + k⁻ (NULL→0); los k_goles y k_dc pasan tal cual
                 "fusion": {
@@ -297,6 +307,7 @@ def constantes_de(team_id: int, limit: int) -> list[dict]:
                     "kDc": z(col(c, "k_dc")),
                     "kDcLocal": z(col(c, "k_dc_local")),
                     "kDcVisita": z(col(c, "k_dc_visita")),
+                    **mfus,  # Márgenes (§3.7)
                 },
             }
         )

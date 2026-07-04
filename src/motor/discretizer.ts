@@ -20,6 +20,12 @@ export function fuse(k: KState): FusedK {
     kDc: k.dc,
     kDcLocal: k.dcLocal,
     kDcVisita: k.dcVisita,
+    kVic1: k.vic1, kVic1Local: k.vic1Local, kVic1Visita: k.vic1Visita,
+    kVic2: k.vic2, kVic2Local: k.vic2Local, kVic2Visita: k.vic2Visita,
+    kVic3: k.vic3, kVic3Local: k.vic3Local, kVic3Visita: k.vic3Visita,
+    kDer1: k.der1, kDer1Local: k.der1Local, kDer1Visita: k.der1Visita,
+    kDer2: k.der2, kDer2Local: k.der2Local, kDer2Visita: k.der2Visita,
+    kDer3: k.der3, kDer3Local: k.der3Local, kDer3Visita: k.der3Visita,
   }
 }
 

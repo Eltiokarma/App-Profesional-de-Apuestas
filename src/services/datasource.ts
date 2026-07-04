@@ -115,6 +115,12 @@ function constantesDTO(teamKey: string, s: KSnapshot): ConstantesDTO {
       dc: s.k.dc,
       dcLocal: s.k.dcLocal,
       dcVisita: s.k.dcVisita,
+      vic1: s.k.vic1, vic1Local: s.k.vic1Local, vic1Visita: s.k.vic1Visita,
+      vic2: s.k.vic2, vic2Local: s.k.vic2Local, vic2Visita: s.k.vic2Visita,
+      vic3: s.k.vic3, vic3Local: s.k.vic3Local, vic3Visita: s.k.vic3Visita,
+      der1: s.k.der1, der1Local: s.k.der1Local, der1Visita: s.k.der1Visita,
+      der2: s.k.der2, der2Local: s.k.der2Local, der2Visita: s.k.der2Visita,
+      der3: s.k.der3, der3Local: s.k.der3Local, der3Visita: s.k.der3Visita,
     },
     fusion: { ...s.fused },
   }

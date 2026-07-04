@@ -77,6 +77,38 @@ check('fusión k_dc = acumulador tal cual', fuse(dc4.k).kDc, 2)
 const dc5 = stepK(K0, false, 2, 2, 4)
 check('q_dc empate visita vs nivel 4 = 0.5·4 = 2', dc5.q.dc, 2)
 
+// ---- §3.7 Márgenes: rachas por margen EXACTO de goles ----
+console.log('— §3.7 márgenes (victoria/derrota por N) —')
+// victoria local por 1 vs nivel 3: k_vic1 acumula nivel (plano), resto 0
+const mg1 = stepK(K0, true, 1, 0, 3)
+check('vic1 gana por 1 → +nivel (3)', mg1.k.vic1, 3)
+check('vic1_local también (partido local)', mg1.k.vic1Local, 3)
+check('vic2/der1 en 0', [mg1.k.vic2, mg1.k.der1], [0, 0])
+// otra victoria por 1 vs nivel 2 (local): vic1 acumula 3→5
+const mg2 = stepK({ ...K0, vic1: 3, vic1Local: 3 }, true, 2, 1, 2)
+check('vic1 encadena por 1: 3→5', mg2.k.vic1, 5)
+// victoria por 2: cambia de bucket → vic1 RESET, vic2 arranca
+const mg3 = stepK({ ...K0, vic1: 5, vic1Local: 5 }, true, 3, 1, 2)
+check('vic1 RESET al cambiar margen', mg3.k.vic1, 0)
+check('vic2 arranca (+nivel 2)', mg3.k.vic2, 2)
+// victoria por 4 → bucket 3+ (min(dif,3))
+const mg4 = stepK(K0, true, 5, 1, 2)
+check('victoria por 4 cae en vic3 (3+)', mg4.k.vic3, 2)
+check('vic1/vic2 en 0', [mg4.k.vic1, mg4.k.vic2], [0, 0])
+// derrota por 1: resetea TODAS las victorias, arranca der1
+const mg5 = stepK({ ...K0, vic1: 9, vic2: 0 }, false, 0, 1, 4)
+check('derrota resetea victorias', mg5.k.vic1, 0)
+check('der1 arranca (+nivel 4)', mg5.k.der1, 4)
+check('der1_visita también (partido visita)', mg5.k.der1Visita, 4)
+// empate resetea AMBOS signos
+const mg6 = stepK({ ...K0, vic2: 6, der1: 4 }, true, 1, 1, 3)
+check('empate resetea victorias y derrotas', [mg6.k.vic2, mg6.k.der1], [0, 0])
+// local/visita: en visita, los _local conservan; solo _visita cambia
+const mg7 = stepK({ ...K0, vic1Local: 7 }, false, 2, 0, 2)
+check('vic2_local se conserva en visita', mg7.k.vic1Local, 7)
+check('vic2_visita arranca por margen 2 (+nivel 2)', mg7.k.vic2Visita, 2)
+check('fusión kVic2Visita pasa tal cual', fuse(mg7.k).kVic2Visita, 2)
+
 // ---- §2 niveles: regla retroactiva y fórmula ----
 console.log('— §2 niveles —')
 const mk = (i: number, gf: number, ga: number): TeamMatch => ({ fixtureId: i, t: i, rival: 'x', isLocal: true, gf, ga })

@@ -68,8 +68,10 @@ export interface Level {
 }
 
 /** Tipo de constante K fusionada del Motor SAD: resultado / goles anotados /
- *  goles recibidos / doble oportunidad (racha "sin perder", §3.6). */
-export type KTypeKey = 'res' | 'ga' | 'gr' | 'dc'
+ *  goles recibidos / doble oportunidad (§3.6) / márgenes por N goles (§3.7). */
+export type KTypeKey =
+  | 'res' | 'ga' | 'gr' | 'dc'
+  | 'vic1' | 'vic2' | 'vic3' | 'der1' | 'der2' | 'der3'
 /** Condición de la K: total, solo local o solo visita. */
 export type KCondKey = 'total' | 'local' | 'visita'
 export type ModelKey = 'auto' | 'global' | 'liga'

@@ -126,6 +126,12 @@ function constantesToSnap(c: ConstantesDTO, idx: number): KSnapshot {
       dc: c.k.dc,
       dcLocal: c.k.dcLocal,
       dcVisita: c.k.dcVisita,
+      vic1: c.k.vic1, vic1Local: c.k.vic1Local, vic1Visita: c.k.vic1Visita,
+      vic2: c.k.vic2, vic2Local: c.k.vic2Local, vic2Visita: c.k.vic2Visita,
+      vic3: c.k.vic3, vic3Local: c.k.vic3Local, vic3Visita: c.k.vic3Visita,
+      der1: c.k.der1, der1Local: c.k.der1Local, der1Visita: c.k.der1Visita,
+      der2: c.k.der2, der2Local: c.k.der2Local, der2Visita: c.k.der2Visita,
+      der3: c.k.der3, der3Local: c.k.der3Local, der3Visita: c.k.der3Visita,
     },
     esInternacional: c.esInternacional,
     fused: { ...c.fusion },
@@ -136,7 +142,9 @@ export async function loadBurbujas(teamKey: string): Promise<BurbujasData | null
   const equipoId = TEAM_NUM[teamKey]
   if (equipoId == null) return null
   const ds = getDataSource()
-  const [constantes, niveles] = await Promise.all([ds.constantes(equipoId, 50), ds.niveles(equipoId, 1)])
+  // 500 = tope del contrato; cubre la historia completa de prácticamente todos
+  // los equipos. La ventana visible (20/50/Todo) se recorta luego en la gráfica.
+  const [constantes, niveles] = await Promise.all([ds.constantes(equipoId, 500), ds.niveles(equipoId, 1)])
   const snaps = constantes
     .slice()
     .reverse() // el contrato entrega desc por fecha; la UI trabaja cronológico

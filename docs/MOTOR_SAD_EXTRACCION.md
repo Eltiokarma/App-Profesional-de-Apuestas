@@ -330,7 +330,36 @@ Detalles fieles (importan para replicar bit a bit y para la paridad motor TS ↔
 > recuperado de las `q` existentes (`q_goles_anotado = goles · nivel_rival`), con
 > respaldo a `levels.db` solo en empates 0-0. Idempotente y con copia de seguridad
 > (`constants.db.bak`). **Re-ejecutar tras cada regeneración** de `constants.db`
-> por el pipeline, hasta que el pipeline emita las columnas por sí mismo.
+> por el pipeline, hasta que el pipeline emita las columnas por sí mismo. El mismo
+> puente rellena también los Márgenes (§3.7); la fórmula de ambas familias vive en
+> un único sitio: `backend/familias_k.py` (espejo de `src/motor`).
+
+### 3.7 Familia Márgenes (victoria/derrota por N goles)
+
+Segunda familia por mercado (ROADMAP_BURBUJAS §2). **6 acumuladores** que detectan
+rachas por **margen EXACTO de goles** `N ∈ {1, 2, 3+}`, con variantes total/local/visita
+(18 en total):
+
+```
+dif = |gf − ga|,  bucket = min(dif, 3)   → 1, 2 o 3 (=3+)
+
+victoria (gf>ga): k_vic{bucket} += nivel_rival ; las demás vic y TODAS las der → 0
+derrota  (gf<ga): k_der{bucket} += nivel_rival ; las demás der y TODAS las vic → 0
+empate:           todas (vic y der) → 0
+```
+
+Detalles fieles:
+
+- **Aporte plano `nivel_rival`** (no `dif × nivel`): importa la *repetición* del
+  marcador, no la diferencia. Detectores de patrón sostenido ("siempre pierde por
+  la mínima"), insumo de la Ley del Marcador.
+- **Solo un bucket del mismo signo ≠ 0 a la vez**: al cambiar el margen o el signo,
+  la racha anterior se resetea. Sin multiplicador visitante.
+- `_local`/`_visita` solo se tocan en su condición (si no, conservan valor).
+- No-negativos → **sin fusión ±**; `fusion.kVicN…` = el acumulador tal cual.
+- El display (color y aporte q) trata las derrotas como desfavorables (hacia abajo).
+- Verificado en `scripts/test-motor.ts` (§3.7) y `backend/test_api.py`. Mismo
+  despliegue que §3.6 (pipeline dueño; backfill como puente).
 
 ---
 

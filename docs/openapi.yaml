@@ -221,7 +221,7 @@ components:
             dc: { type: number, description: 'Aporte Doble Oportunidad (§3.6): 0 si perdió, si no max(dif·nivelRival, 0.5·nivelRival)' }
         k:
           type: object
-          description: Acumuladores de racha (§3.3) + familia Doble Oportunidad (§3.6)
+          description: Acumuladores de racha (§3.3) + Doble Oportunidad (§3.6) + Márgenes (§3.7)
           properties:
             positivo: { type: number }
             negativo: { type: number }
@@ -238,6 +238,25 @@ components:
             dc: { type: number, description: 'Racha "sin perder" (1X); no-negativo, resetea solo al perder (§3.6)' }
             dcLocal: { type: number }
             dcVisita: { type: number }
+            # Márgenes (§3.7): racha por margen exacto de goles (1/2/3+). Aporte plano nivelRival.
+            vic1: { type: number }
+            vic1Local: { type: number }
+            vic1Visita: { type: number }
+            vic2: { type: number }
+            vic2Local: { type: number }
+            vic2Visita: { type: number }
+            vic3: { type: number }
+            vic3Local: { type: number }
+            vic3Visita: { type: number }
+            der1: { type: number }
+            der1Local: { type: number }
+            der1Visita: { type: number }
+            der2: { type: number }
+            der2Local: { type: number }
+            der2Visita: { type: number }
+            der3: { type: number }
+            der3Local: { type: number }
+            der3Visita: { type: number }
         fusion:
           type: object
           description: K fusionadas k = k⁺ + k⁻ (§4.2); k_dc pasa tal cual (§3.6)
@@ -254,6 +273,25 @@ components:
             kDc: { type: number }
             kDcLocal: { type: number }
             kDcVisita: { type: number }
+            # Márgenes (§3.7): acumuladores no-negativos, pasan tal cual
+            kVic1: { type: number }
+            kVic1Local: { type: number }
+            kVic1Visita: { type: number }
+            kVic2: { type: number }
+            kVic2Local: { type: number }
+            kVic2Visita: { type: number }
+            kVic3: { type: number }
+            kVic3Local: { type: number }
+            kVic3Visita: { type: number }
+            kDer1: { type: number }
+            kDer1Local: { type: number }
+            kDer1Visita: { type: number }
+            kDer2: { type: number }
+            kDer2Local: { type: number }
+            kDer2Visita: { type: number }
+            kDer3: { type: number }
+            kDer3Local: { type: number }
+            kDer3Visita: { type: number }
     GapEquipo:
       type: object
       required: [equipoId, nivel, ptsEsperados]

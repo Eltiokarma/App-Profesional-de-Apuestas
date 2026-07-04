@@ -77,6 +77,17 @@ def main():
     check("k_dc: la derrota resetea a 0", all(r["k"]["dc"] == 0 for r in ct if r["golesFavor"] < r["golesContra"]))
     check("q_dc: no-negativo y 0 en toda derrota", all(r["q"]["dc"] >= 0 and (r["q"]["dc"] == 0 or r["golesFavor"] >= r["golesContra"]) for r in ct))
 
+    # Márgenes (§3.7): familias por margen exacto de goles
+    fam_m = [f"{s}{b}" for s in ("vic", "der") for b in (1, 2, 3)]
+    check("márgenes: fusion.kXxx = k.xxx (pasa tal cual)", all(abs(r["fusion"]["k" + m[0].upper() + m[1:]] - r["k"][m]) < 1e-9 for r in ct for m in fam_m))
+    check("márgenes: acumuladores no-negativos", all(r["k"][m] >= 0 for r in ct for m in fam_m))
+    check("márgenes: máx un bucket del mismo signo activo", all(
+        sum(r["k"][f"vic{b}"] > 0 for b in (1, 2, 3)) <= 1 and sum(r["k"][f"der{b}"] > 0 for b in (1, 2, 3)) <= 1 for r in ct))
+    check("márgenes: victoria anula derrotas, derrota anula victorias, empate anula todo", all(
+        (all(r["k"][f"der{b}"] == 0 for b in (1, 2, 3)) if r["golesFavor"] > r["golesContra"] else all(r["k"][f"vic{b}"] == 0 for b in (1, 2, 3)) if r["golesFavor"] < r["golesContra"] else all(r["k"][f"vic{b}"] == 0 and r["k"][f"der{b}"] == 0 for b in (1, 2, 3)))
+        for r in ct))
+    check("márgenes: hay racha activa en alguna familia", any(r["k"][m] > 0 for r in ct for m in fam_m))
+
     # /predicciones — §5
     p = c.get(A + f"/predicciones/{vivo['id']}").json()
     check(

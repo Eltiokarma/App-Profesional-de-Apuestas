@@ -14,6 +14,8 @@ import sys
 from bisect import bisect_right
 from datetime import datetime, timedelta
 
+from backend.familias_k import FAMILIAS0, FAMILIAS_COLS, step_familias
+
 # Equipos con sus ids reales de API-Football (LaLiga = 140)
 TEAMS = [
     (543, "Real Betis"), (536, "Sevilla FC"), (530, "Atlético Madrid"),
@@ -119,15 +121,9 @@ def step_k(prev, is_local, gf, ga, nivel):
         k["k_goles_visita_recibido"] = k["k_goles_visita_recibido"] + abs(q_gr) if q_gr < 0 else 0.0
     k["k_goles_anotado"] = k["k_goles_anotado"] + q_ga if q_ga > 0 else 0.0
     k["k_goles_recibido"] = k["k_goles_recibido"] + abs(q_gr) if q_gr < 0 else 0.0
-    # §3.6 Doble Oportunidad (k_dc): racha "sin perder" (1X). Empate aporta el
-    # mínimo 0.5·nivel; derrota resetea. Sin multiplicador visitante (roadmap §1).
-    q_dc = 0.0 if res == -1 else max(dif * nivel, 0.5 * nivel)
-    perdio = res == -1
-    k["k_dc"] = 0.0 if perdio else k["k_dc"] + q_dc
-    if is_local:
-        k["k_dc_local"] = 0.0 if perdio else k["k_dc_local"] + q_dc
-    else:
-        k["k_dc_visita"] = 0.0 if perdio else k["k_dc_visita"] + q_dc
+    # Familias derivadas en un único sitio: §3.6 Doble Oportunidad + §3.7 Márgenes.
+    q_dc, fam = step_familias(k, is_local, gf, ga, nivel)
+    k.update(fam)
     q = dict(q_local=q_local, q_visita=q_visita, q_negativo=q_neg,
              q_goles_anotado=q_ga, q_goles_recibido=q_gr,
              q_goles_local_anotado=q_ga if is_local else None,
@@ -138,11 +134,11 @@ def step_k(prev, is_local, gf, ga, nivel):
     return q, k
 
 
-K0 = {k: 0.0 for k in (
+K0 = {**{k: 0.0 for k in (
     "k_positivo", "k_negativo", "k_positivo_local", "k_negativo_local",
     "k_positivo_visita", "k_negativo_visita", "k_goles_anotado", "k_goles_recibido",
-    "k_goles_local_anotado", "k_goles_local_recibido", "k_goles_visita_anotado", "k_goles_visita_recibido",
-    "k_dc", "k_dc_local", "k_dc_visita")}
+    "k_goles_local_anotado", "k_goles_local_recibido", "k_goles_visita_anotado", "k_goles_visita_recibido")},
+      **FAMILIAS0}
 
 
 ODDS_MARKETS = [
@@ -232,7 +228,8 @@ def seed(base_dir: str):
         return lvls[i] if i >= 0 else 1.0  # fallback 1.0 (§3.1)
 
     co = sqlite3.connect(os.path.join(base_dir, "constants.db"))
-    co.executescript("""CREATE TABLE constants (id INTEGER PRIMARY KEY, team_id INTEGER NOT NULL,
+    familias_ddl = ", ".join(f"{c} REAL" for c in FAMILIAS_COLS)  # k_dc + márgenes (§3.6/§3.7)
+    co.executescript(f"""CREATE TABLE constants (id INTEGER PRIMARY KEY, team_id INTEGER NOT NULL,
         fixture_id INTEGER NOT NULL, date DATETIME NOT NULL,
         q_local REAL, q_visita REAL, q_negativo REAL, q_goles_anotado REAL, q_goles_recibido REAL,
         q_goles_local_anotado REAL, q_goles_local_recibido REAL, q_goles_visita_anotado REAL, q_goles_visita_recibido REAL,
@@ -240,7 +237,7 @@ def seed(base_dir: str):
         k_positivo REAL, k_negativo REAL, k_positivo_local REAL, k_negativo_local REAL,
         k_positivo_visita REAL, k_negativo_visita REAL, k_goles_anotado REAL, k_goles_recibido REAL,
         k_goles_local_anotado REAL, k_goles_local_recibido REAL, k_goles_visita_anotado REAL, k_goles_visita_recibido REAL,
-        k_dc REAL, k_dc_local REAL, k_dc_visita REAL);
+        {familias_ddl});
         CREATE INDEX ix_constants_team_date ON constants(team_id, date);""")
     di = sqlite3.connect(os.path.join(base_dir, "discreto.db"))
     di.executescript("""CREATE TABLE processed_matches (id INTEGER PRIMARY KEY, fecha DATETIME NOT NULL,
@@ -258,24 +255,25 @@ def seed(base_dir: str):
         for idx, m in enumerate(h):
             nivel_rival = rival_level_at(m["rival"], m["date"])
             q, k = step_k(k, m["is_local"], m["gf"], m["ga"], nivel_rival)
+            crow = {
+                "team_id": tid, "fixture_id": m["fixture_id"],
+                "date": m["date"].strftime("%Y-%m-%d %H:%M:%S"),
+                "q_local": q["q_local"], "q_visita": q["q_visita"], "q_negativo": q["q_negativo"],
+                "q_goles_anotado": q["q_goles_anotado"], "q_goles_recibido": q["q_goles_recibido"],
+                "q_goles_local_anotado": q["q_goles_local_anotado"], "q_goles_local_recibido": q["q_goles_local_recibido"],
+                "q_goles_visita_anotado": q["q_goles_visita_anotado"], "q_goles_visita_recibido": q["q_goles_visita_recibido"],
+                "q_dc": q["q_dc"],
+                "k_positivo": k["k_positivo"], "k_negativo": k["k_negativo"],
+                "k_positivo_local": k["k_positivo_local"], "k_negativo_local": k["k_negativo_local"],
+                "k_positivo_visita": k["k_positivo_visita"], "k_negativo_visita": k["k_negativo_visita"],
+                "k_goles_anotado": k["k_goles_anotado"], "k_goles_recibido": k["k_goles_recibido"],
+                "k_goles_local_anotado": k["k_goles_local_anotado"], "k_goles_local_recibido": k["k_goles_local_recibido"],
+                "k_goles_visita_anotado": k["k_goles_visita_anotado"], "k_goles_visita_recibido": k["k_goles_visita_recibido"],
+                **{c: k[c] for c in FAMILIAS_COLS},
+            }
             co.execute(
-                """INSERT INTO constants (team_id, fixture_id, date,
-                   q_local, q_visita, q_negativo, q_goles_anotado, q_goles_recibido,
-                   q_goles_local_anotado, q_goles_local_recibido, q_goles_visita_anotado, q_goles_visita_recibido,
-                   q_dc,
-                   k_positivo, k_negativo, k_positivo_local, k_negativo_local,
-                   k_positivo_visita, k_negativo_visita, k_goles_anotado, k_goles_recibido,
-                   k_goles_local_anotado, k_goles_local_recibido, k_goles_visita_anotado, k_goles_visita_recibido,
-                   k_dc, k_dc_local, k_dc_visita)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                (tid, m["fixture_id"], m["date"].strftime("%Y-%m-%d %H:%M:%S"),
-                 q["q_local"], q["q_visita"], q["q_negativo"], q["q_goles_anotado"], q["q_goles_recibido"],
-                 q["q_goles_local_anotado"], q["q_goles_local_recibido"], q["q_goles_visita_anotado"], q["q_goles_visita_recibido"],
-                 q["q_dc"],
-                 k["k_positivo"], k["k_negativo"], k["k_positivo_local"], k["k_negativo_local"],
-                 k["k_positivo_visita"], k["k_negativo_visita"], k["k_goles_anotado"], k["k_goles_recibido"],
-                 k["k_goles_local_anotado"], k["k_goles_local_recibido"], k["k_goles_visita_anotado"], k["k_goles_visita_recibido"],
-                 k["k_dc"], k["k_dc_local"], k["k_dc_visita"]),
+                f"INSERT INTO constants ({','.join(crow)}) VALUES ({','.join('?' * len(crow))})",
+                tuple(crow.values()),
             )
             di.execute(
                 """INSERT INTO processed_matches (fecha, fixture_id, equipo_id, equipo_nombre, rival_id, rival_nombre,
