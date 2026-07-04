@@ -101,7 +101,7 @@ def main():
     check("standings: orden por puntos desc", all(tb[i]["puntos"] >= tb[i + 1]["puntos"] for i in range(5)))
     check("standings: Real Madrid arriba de Sevilla", next(t["posicion"] for t in tb if "Madrid" in t["nombre"]) < next(t["posicion"] for t in tb if "Sevilla" in t["nombre"]))
     suma_pj = sum(t["partidosJugados"] for t in tb)
-    check("standings: 240 participaciones (120 partidos × 2)", suma_pj == 240, suma_pj)
+    check("standings: 216 participaciones (108 de liga × 2; 12 son UCL)", suma_pj == 216, suma_pj)
 
     # /cuotas — mapeo API-Football → contrato y media entre bookmakers
     q = c.get(A + f"/cuotas/{vivo['id']}").json()
@@ -111,6 +111,27 @@ def main():
     check("cuotas plausibles (1.0–20)", all(1.0 < r["cuota"] < 20 for r in q))
     sin = c.get(A + "/cuotas/900001").json()
     check("fixture sin odds → lista vacía", sin == [], sin)
+
+    # cuotas prepartido guardadas en partidos PASADOS
+    pasados = [f for f in fx if f["estado"] == "finalizado"]
+    con_odds = [f for f in pasados if c.get(A + f"/cuotas/{f['id']}").json()]
+    check("hay pasados con cuotas capturadas (≥8)", len(con_odds) >= 8, len(con_odds))
+
+    # /equipos?buscar= — búsqueda inteligente
+    b1 = c.get(A + "/equipos?buscar=bet").json()
+    check("buscar 'bet' → Real Betis primero", b1 and "Betis" in b1[0]["nombre"], b1[:1])
+    b2 = c.get(A + "/equipos?buscar=atletico").json()
+    check("buscar sin tilde 'atletico' → Atlético", b2 and "Atlético" in b2[0]["nombre"], b2[:1])
+    check("buscar corto (1 char) → 422", c.get(A + "/equipos?buscar=a").status_code == 422)
+
+    # /fixtures?equipoId=
+    fxb = c.get(A + f"/fixtures?equipoId={betis}&limit=200").json()
+    ok_eq = all(f["local"]["id"] == betis or f["visitante"]["id"] == betis for f in fxb)
+    check("fixtures?equipoId: todos incluyen al equipo (41: 40+vivo)", ok_eq and len(fxb) == 41, len(fxb))
+
+    # constantes: flag de torneo internacional presente y con casos True
+    intl = [r for r in ct if r.get("esInternacional")]
+    check("constantes traen ligaId/esInternacional (hay UCL)", "ligaId" in c0 and len(intl) >= 3, len(intl))
 
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)

@@ -19,6 +19,7 @@ import { MARKET_DEFS, MATCHES, STANDINGS, TEAMS } from '../data'
 import { oddsFor } from '../lib/odds'
 import { levelBin } from '../motor/discretizer'
 import { teamEngine } from '../motor/engine'
+import { leagueOf } from '../motor/history'
 import { gapDiff, gapFor } from '../motor/regression'
 import type { KSnapshot } from '../motor/types'
 
@@ -31,7 +32,8 @@ export interface FeedHealth {
 export interface SadDataSource {
   readonly mode: DataSourceMode
   health(): Promise<FeedHealth>
-  fixtures(): Promise<FixtureDTO[]>
+  fixtures(params?: { equipoId?: number; limit?: number }): Promise<FixtureDTO[]>
+  buscarEquipos(buscar: string): Promise<{ id: number; nombre: string; abreviatura: string }[]>
   niveles(equipoId: number, limit?: number): Promise<NivelDTO[]>
   constantes(equipoId: number, limit?: number): Promise<ConstantesDTO[]>
   prediccion(fixtureId: number): Promise<PrediccionDTO>
@@ -76,6 +78,7 @@ function nivelDTO(teamKey: string): NivelDTO {
 }
 
 function constantesDTO(teamKey: string, s: KSnapshot): ConstantesDTO {
+  const lk = leagueOf(teamKey)
   return {
     equipoId: TEAM_NUM[teamKey],
     fixtureId: s.fixtureId,
@@ -86,6 +89,8 @@ function constantesDTO(teamKey: string, s: KSnapshot): ConstantesDTO {
     nivelRival: s.rivalLevel,
     golesFavor: s.gf,
     golesContra: s.ga,
+    ligaId: s.esInternacional ? 2 : (lk ? LIGA_NUM[lk] : 0),
+    esInternacional: !!s.esInternacional,
     q: {
       local: s.q.local,
       visita: s.q.visita,
@@ -123,8 +128,24 @@ class MockDataSource implements SadDataSource {
     return { ok: true, latencyMs: null, detail: 'motor local (demo)' }
   }
 
-  async fixtures(): Promise<FixtureDTO[]> {
-    return MATCHES.map((m) => {
+  async buscarEquipos(buscar: string) {
+    const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    const q = norm(buscar)
+    if (q.length < 2) return []
+    return TEAM_KEYS.map((k) => ({ k, n: norm(TEAMS[k].name) }))
+      .filter((e) => e.n.includes(q))
+      .map((e) => ({
+        rank: e.n.startsWith(q) ? 0 : e.n.split(' ').some((w) => w.startsWith(q)) ? 1 : 2,
+        dto: equipoDTO(e.k),
+      }))
+      .sort((a, b) => a.rank - b.rank || a.dto.nombre.length - b.dto.nombre.length)
+      .slice(0, 10)
+      .map((e) => e.dto)
+  }
+
+  async fixtures(params: { equipoId?: number; limit?: number } = {}): Promise<FixtureDTO[]> {
+    const teamKey = params.equipoId != null ? NUM_TEAM[params.equipoId] : undefined
+    return MATCHES.filter((m) => !teamKey || m.home === teamKey || m.away === teamKey).map((m) => {
       const goles = (m.score || '0 - 0').split('-').map((x) => parseInt(x.trim()) || 0)
       const enJuego = m.status === 'live'
       const hora = m.status === 'sched' && /^\d{2}:\d{2}$/.test(m.min) ? m.min : '21:00'
@@ -274,7 +295,8 @@ class HttpDataSource implements SadDataSource {
     }
   }
 
-  fixtures = () => SadApi.fixtures()
+  fixtures = (params?: { equipoId?: number; limit?: number }) => SadApi.fixtures(params)
+  buscarEquipos = (buscar: string) => SadApi.buscarEquipos(buscar)
   niveles = (equipoId: number, limit?: number) => SadApi.niveles(equipoId, limit)
   constantes = (equipoId: number, limit?: number) => SadApi.constantes(equipoId, limit)
   prediccion = (fixtureId: number) => SadApi.prediccion(fixtureId)

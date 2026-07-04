@@ -31,6 +31,10 @@ export function Sidebar({ store }: { store: SadStore }) {
 
       <div style={{ font: '600 10px var(--mono)', color: 'var(--t3)', letterSpacing: '1px', padding: '6px 10px 8px' }}>MÓDULOS</div>
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <button onClick={store.go('partidos')} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 12px', border: 0, borderRadius: 10, cursor: 'pointer', background: navB('partidos'), color: navF('partidos'), font: '600 13.5px var(--sans)', textAlign: 'left', transition: 'background .14s,color .14s' }}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M8 3v4M16 3v4M3 11h18" /></svg>
+          <span>Partidos</span>
+        </button>
         <button onClick={store.go('cuotas')} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 12px', border: 0, borderRadius: 10, cursor: 'pointer', background: navB('cuotas'), color: navF('cuotas'), font: '600 13.5px var(--sans)', textAlign: 'left', transition: 'background .14s,color .14s' }}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 17l6-6 4 4 8-8" /><path d="M16 7h5v5" /></svg>
           <span>Cuotas</span>

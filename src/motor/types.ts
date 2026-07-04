@@ -21,6 +21,8 @@ export interface TeamMatch {
   isLocal: boolean
   gf: number
   ga: number
+  /** true si fue partido de torneo internacional (UCL, UEL, Libertadores…). */
+  esInternacional?: boolean
 }
 
 /** Fila de `team_levels`: nivel continuo (~0.5–3.5) por (equipo, fixture). */

@@ -91,6 +91,8 @@ export function teamHistory(lk: string, teamId: string): TeamMatch[] {
         isLocal,
         gf: isLocal ? f.gh : f.ga,
         ga: isLocal ? f.ga : f.gh,
+        // cada ~9ª jornada simula un torneo internacional (espejo del seed del backend)
+        esInternacional: f.t % 9 === 4,
       }
     })
 }

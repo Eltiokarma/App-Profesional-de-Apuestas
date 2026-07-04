@@ -33,6 +33,7 @@ paths:
         - { name: fecha, in: query, schema: { type: string, format: date } }
         - { name: estado, in: query, schema: { $ref: '#/components/schemas/EstadoFixture' } }
         - { name: ligaId, in: query, schema: { type: integer } }
+        - { name: equipoId, in: query, schema: { type: integer, description: 'solo partidos de este equipo' } }
       responses:
         '200':
           description: OK
@@ -97,6 +98,18 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/AnalisisPrepartido' }
+  /equipos:
+    get:
+      summary: Búsqueda inteligente de equipos (sin tildes, ranking por prefijo)
+      parameters:
+        - { name: buscar, in: query, required: true, schema: { type: string, minLength: 2 } }
+        - { name: limit, in: query, schema: { type: integer, default: 10, maximum: 25 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Equipo' } }
   /equipos/{equipoId}/stats:
     get:
       summary: Stats de temporada calculadas de los fixtures terminados
@@ -195,6 +208,8 @@ components:
         nivelRival: { type: number }
         golesFavor: { type: integer }
         golesContra: { type: integer }
+        ligaId: { type: integer }
+        esInternacional: { type: boolean, description: 'true si fue torneo internacional (UCL, UEL, Libertadores…)' }
         q:
           type: object
           properties:

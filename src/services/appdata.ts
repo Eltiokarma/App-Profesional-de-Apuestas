@@ -124,6 +124,7 @@ function constantesToSnap(c: ConstantesDTO, idx: number): KSnapshot {
       gVA: c.k.golesVisitaAnotado,
       gVR: c.k.golesVisitaRecibido,
     },
+    esInternacional: c.esInternacional,
     fused: { ...c.fusion },
   }
 }
@@ -165,6 +166,25 @@ export function loadPrediccion(matchId: string): Promise<PrediccionDTO> {
 
 export function loadAnalisis(matchId: string): Promise<AnalisisPrepartidoDTO> {
   return getDataSource().analisisPrepartido(fixtureNum(matchId))
+}
+
+// ── buscador de equipos y página de equipo ──────────────────────────────────
+export async function searchTeams(q: string): Promise<EquipoDTO[]> {
+  return getDataSource().buscarEquipos(q)
+}
+
+/** Historia de fixtures de un equipo mapeada a Match internos. */
+export async function loadTeamFixtures(teamKey: string): Promise<Match[]> {
+  const equipoId = TEAM_NUM[teamKey]
+  if (equipoId == null) return []
+  const fx = await getDataSource().fixtures({ equipoId, limit: 60 })
+  return fx.map(fixtureToMatch)
+}
+
+export async function loadTeamStats(teamKey: string): Promise<EquipoStatsDTO | null> {
+  const equipoId = TEAM_NUM[teamKey]
+  if (equipoId == null) return null
+  return getDataSource().equipoStats(equipoId)
 }
 
 // ── estadísticas de temporada + tabla de posiciones ─────────────────────────

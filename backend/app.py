@@ -44,6 +44,12 @@ BINS = [
 MU = {"intercept": 1.110, "nivel": 0.686, "rival": -0.669, "localia": 0.422}
 RECENT_WINDOW = 5
 
+# Ligas de torneos internacionales de clubes (ids de API-Football);
+# ampliable con SAD_INTL_LEAGUE_IDS="2,3,848,..."
+INTL_LEAGUE_IDS = {
+    int(x) for x in os.environ.get("SAD_INTL_LEAGUE_IDS", "2,3,848,13,11,15,531").split(",") if x.strip()
+}
+
 
 def level_bin(level: float) -> tuple[int, str]:
     for i, (mx, label) in enumerate(BINS):
@@ -222,6 +228,7 @@ def constantes_de(team_id: int, limit: int) -> list[dict]:
             gf, ga = (p["goals_home"], p["goals_away"]) if es_local else (p["goals_away"], p["goals_home"])
             rival_id, rival_nombre = p["rival_id"], p["rival_nombre"]
             nivel_rival = float(p["nivel_rival"] if p["nivel_rival"] is not None else 0)
+            liga_id = p["league_id"] or 0
         else:  # fallback si el discretizador va por detrás de constants
             f = db.query_one("sad", FIXTURE_SQL + " WHERE f.id=?", (c["fixture_id"],))
             if not f:
@@ -231,6 +238,7 @@ def constantes_de(team_id: int, limit: int) -> list[dict]:
             rival_id = f["away_team_id"] if es_local else f["home_team_id"]
             rival_nombre = f["away_name"] if es_local else f["home_name"]
             nivel_rival = 0.0
+            liga_id = f["league_id"] or 0
         out.append(
             {
                 "equipoId": team_id,
@@ -240,6 +248,8 @@ def constantes_de(team_id: int, limit: int) -> list[dict]:
                 "rivalId": rival_id,
                 "rivalNombre": rival_nombre,
                 "nivelRival": nivel_rival,
+                "ligaId": liga_id,
+                "esInternacional": liga_id in INTL_LEAGUE_IDS,
                 "golesFavor": gf or 0,
                 "golesContra": ga or 0,
                 "q": {
@@ -341,11 +351,32 @@ def health():
     return {"status": "ok" if db_ok else "degraded", "version": app.version, "dbOk": db_ok, "lastPipelineRun": last_run}
 
 
+@app.get(API + "/equipos")
+def buscar_equipos(buscar: str = Query(min_length=2), limit: int = Query(default=10, le=25)):
+    """Búsqueda inteligente: sin tildes ni mayúsculas; ranking
+    prefijo > inicio de palabra > contiene."""
+    import unicodedata
+
+    def norm(s: str) -> str:
+        return "".join(ch for ch in unicodedata.normalize("NFD", (s or "").lower()) if unicodedata.category(ch) != "Mn")
+
+    q = norm(buscar)
+    scored = []
+    for r in db.query("sad", "SELECT id, name FROM teams"):
+        n = norm(r["name"])
+        if q in n:
+            rank = 0 if n.startswith(q) else 1 if any(w.startswith(q) for w in n.split()) else 2
+            scored.append((rank, len(n), r["id"], r["name"]))
+    scored.sort()
+    return [equipo_dto(tid, nombre) for _, __, tid, nombre in scored[:limit]]
+
+
 @app.get(API + "/fixtures")
 def fixtures(
     fecha: str | None = None,
     estado: str | None = None,
     ligaId: int | None = None,
+    equipoId: int | None = None,
     limit: int = Query(default=50, le=200),
 ):
     cond, params = [], []
@@ -355,6 +386,9 @@ def fixtures(
     if ligaId is not None:
         cond.append("f.league_id=?")
         params.append(ligaId)
+    if equipoId is not None:
+        cond.append("(f.home_team_id=? OR f.away_team_id=?)")
+        params.extend([equipoId, equipoId])
     where = (" WHERE " + " AND ".join(cond)) if cond else ""
     rows = db.query("sad", FIXTURE_SQL + where + " ORDER BY f.date DESC LIMIT ?", (*params, limit))
     out = [fixture_dto(r) for r in rows]

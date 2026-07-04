@@ -1,5 +1,6 @@
 import type { SadStore } from '../store'
 import type { MatchView } from '../lib/view'
+import { TeamSearch } from './TeamSearch'
 
 interface Props {
   store: SadStore
@@ -13,7 +14,7 @@ export function DesktopHeader({ store, mv, liveBadge, liveMinute, liveScore }: P
   return (
     <header style={{ height: 74, flexShrink: 0, background: 'var(--bg1)', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', padding: '0 22px', gap: 18, position: 'relative', zIndex: 30 }}>
       {mv ? (
-        <button onClick={store.togglePicker} style={{ display: 'flex', alignItems: 'center', gap: 16, background: 'transparent', border: 0, cursor: 'pointer', padding: '6px 8px', borderRadius: 12, textAlign: 'left' }}>
+        <button onClick={store.go('partidos')} title="Ver partidos" style={{ display: 'flex', alignItems: 'center', gap: 16, background: 'transparent', border: 0, cursor: 'pointer', padding: '6px 8px', borderRadius: 12, textAlign: 'left' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ width: 32, height: 32, borderRadius: '50%', background: mv.homeColor, color: mv.homeFg, display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 12px var(--mono)', boxShadow: '0 0 0 2px var(--bg1),0 0 0 3px var(--line)' }}>{mv.homeShort}</span>
             <span style={{ font: '700 15px var(--sans)', color: 'var(--t1)' }}>{mv.homeName}</span>
@@ -50,10 +51,7 @@ export function DesktopHeader({ store, mv, liveBadge, liveMinute, liveScore }: P
         <button onClick={store.toggleMobile} title="Vista móvil" style={{ width: 40, height: 40, borderRadius: 10, border: '1px solid var(--line)', background: 'var(--bg2)', color: 'var(--t2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5" /><path d="M11 18.5h2" /></svg>
         </button>
-        <button onClick={store.togglePicker} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px', borderRadius: 10, border: '1px solid var(--line)', background: 'var(--bg2)', color: 'var(--t1)', cursor: 'pointer', font: '600 12.5px var(--sans)' }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 4H6a2 2 0 00-2 2v2M16 4h2a2 2 0 012 2v2M8 20H6a2 2 0 01-2-2v-2M16 20h2a2 2 0 002-2v-2" /></svg>
-          Cambiar partido
-        </button>
+        <TeamSearch store={store} width={250} />
       </div>
     </header>
   )

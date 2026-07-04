@@ -8,9 +8,9 @@ export function EmptyState({ store }: { store: SadStore }) {
       </div>
       <div style={{ font: '700 19px var(--sans)' }}>Selecciona un partido</div>
       <div style={{ font: '500 13px var(--sans)', color: 'var(--t2)', maxWidth: 340, lineHeight: 1.5 }}>Elige un fixture para cargar cuotas, constantes K, reportes y estadísticas del análisis pre-partido.</div>
-      <button onClick={store.togglePicker} style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 8, padding: '11px 18px', borderRadius: 11, border: 0, cursor: 'pointer', background: 'var(--accent)', color: '#fff', font: '600 13px var(--sans)' }}>
+      <button onClick={store.go('partidos')} style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 8, padding: '11px 18px', borderRadius: 11, border: 0, cursor: 'pointer', background: 'var(--accent)', color: '#fff', font: '600 13px var(--sans)' }}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-        Elegir partido
+        Ver partidos
       </button>
     </div>
   )
