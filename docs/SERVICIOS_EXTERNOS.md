@@ -13,11 +13,12 @@ API-Football ──polling──►  BACKEND (FastAPI + motor_sad)  ──SQL─
                  Web SAD (este repo)          UI PyQt existente
 ```
 
-- **Backend: monolito modular en FastAPI (Python)** — vive en el repo del motor
-  (`Eltiokarma/Professional-Player`). Un solo servicio con el paquete `motor_sad`
-  dentro, que expone la API y corre el pipeline programado
-  (extracción → `calculate_missing_levels()` → `batch_calculate_teams(incremental=True)`
-  → `process_all_teams()`). Nada de microservicios a esta escala.
+- **Backend: monolito modular en FastAPI (Python)** — el v0 de solo lectura
+  **vive en este repo** (`backend/`, ver su README) y sirve las 4 SQLite del
+  pipeline. El repo `Eltiokarma/Professional-Player` queda como referencia del
+  motor original y del extractor. En fase 2 el backend suma la ingesta
+  programada (extracción → niveles → constantes → discreto).
+  Nada de microservicios a esta escala.
 - **Base de datos: PostgreSQL gestionado** (Neon o Supabase) — las 4 SQLite
   (`sad`, `levels`, `constants`, `discreto`) pasan a 4 esquemas del mismo Postgres.
   Cambios técnicos al migrar: fechas como `timestamptz` y `executemany` → `COPY`.

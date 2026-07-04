@@ -64,14 +64,33 @@ e integración: **`docs/SERVICIOS_EXTERNOS.md`**.
 
 ## Cómo ejecutar
 
+**Solo la web (datos demo del motor local):**
+
 ```bash
 npm install
-npm run dev      # servidor de desarrollo (http://localhost:5173)
+npm run dev      # http://localhost:5173
+```
+
+**Con datos reales (backend incluido en `backend/`):** pega tus 4 bases
+(`sad.db`, `levels.db`, `constants.db`, `discreto.db`) en la raíz del repo
+(git las ignora) y usa dos terminales:
+
+```bash
+# Terminal 1 — backend
+pip install -r backend/requirements.txt
+python -m uvicorn backend.app:app --port 8000
+
+# Terminal 2 — web
+npm install
+cp .env.example .env   # VITE_DATA_SOURCE=http · VITE_API_BASE_URL=http://localhost:8000/api/v1
+npm run dev            # http://localhost:5173
+```
+
+Guía completa (demo sin bases, variables, endpoints): **`backend/README.md`**.
+
+```bash
 npm run build    # typecheck + build de producción a dist/
 npm run preview  # sirve el build de producción
-
-# conectar al backend real:
-cp .env.example .env   # y poner VITE_DATA_SOURCE=http + VITE_API_BASE_URL
 ```
 
 ## Estructura
