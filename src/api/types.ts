@@ -66,6 +66,8 @@ export interface ConstantesDTO {
     negativo: number
     golesAnotado: number
     golesRecibido: number
+    /** Aporte Doble Oportunidad (§3.6): 0 si perdió, si no max(dif·nivelRival, 0.5·nivelRival). */
+    dc: number
   }
   k: {
     positivo: number
@@ -80,6 +82,10 @@ export interface ConstantesDTO {
     golesLocalRecibido: number
     golesVisitaAnotado: number
     golesVisitaRecibido: number
+    /** Doble Oportunidad (§3.6): racha "sin perder" (1X), no-negativa, resetea solo al perder. */
+    dc: number
+    dcLocal: number
+    dcVisita: number
   }
   fusion: {
     k: number
@@ -91,6 +97,9 @@ export interface ConstantesDTO {
     golesLocalRecibido: number
     golesVisitaAnotado: number
     golesVisitaRecibido: number
+    kDc: number
+    kDcLocal: number
+    kDcVisita: number
   }
 }
 

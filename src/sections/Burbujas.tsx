@@ -74,7 +74,7 @@ export function Burbujas({ store, m, isMobile }: Props) {
   const engH = engData.data?.h ?? null
   const engA = engData.data?.a ?? null
 
-  const typeOpts = ([['res', 'Resultado'], ['ga', 'Goles anotados'], ['gr', 'Goles recibidos']] as [KTypeKey, string][]).map(([k, l]) => ({
+  const typeOpts = ([['res', 'Resultado'], ['ga', 'Goles anotados'], ['gr', 'Goles recibidos'], ['dc', 'Doble oport.']] as [KTypeKey, string][]).map(([k, l]) => ({
     key: k, label: l, bg: s.kType === k ? 'var(--bg3)' : 'transparent', fg: s.kType === k ? 'var(--t1)' : 'var(--t2)',
   }))
   const condOpts = ([['total', 'Total'], ['local', 'Local'], ['visita', 'Visita']] as [KCondKey, string][]).map(([k, l]) => ({
@@ -99,7 +99,7 @@ export function Burbujas({ store, m, isMobile }: Props) {
   const fmt = (v: number) => signFmt(v)
   const valueRows: { label: string; hv: string; av: string; hc: string; ac: string }[] = [
     { label: 'Nivel (continuo)', hv: engH ? engH.level.toFixed(2) : '—', av: engA ? engA.level.toFixed(2) : '—', hc: 'var(--t1)', ac: 'var(--t1)' },
-    ...([['K resultado', 'k', false], ['K local', 'kLocal', false], ['K visita', 'kVisita', false], ['K goles anot.', 'golesAnotado', false], ['K goles rec.', 'golesRecibido', true]] as [string, keyof FusedK, boolean][]).map(
+    ...([['K resultado', 'k', false], ['K local', 'kLocal', false], ['K visita', 'kVisita', false], ['K goles anot.', 'golesAnotado', false], ['K goles rec.', 'golesRecibido', true], ['K doble op.', 'kDc', false]] as [string, keyof FusedK, boolean][]).map(
       ([label, kk, inv]) => {
         const hvN = kv(engH, kk)
         const avN = kv(engA, kk)

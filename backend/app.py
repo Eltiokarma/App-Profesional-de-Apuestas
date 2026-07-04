@@ -221,6 +221,11 @@ def constantes_de(team_id: int, limit: int) -> list[dict]:
     pm = {r["fixture_id"]: r for r in pm_rows}
     out = []
     z = lambda v: float(v) if v is not None else 0.0  # noqa: E731
+    # Columnas opcionales: la familia Doble Oportunidad (§3.6) la emite el
+    # pipeline; si esta constants.db aún no la tiene, se sirve como 0 (racha
+    # vacía) sin romper el contrato — se poblará al re-correr la extracción.
+    cols = set(consts[0].keys())
+    col = lambda c, n: c[n] if n in cols else None  # noqa: E731
     for c in consts:
         p = pm.get(c["fixture_id"])
         if p:
@@ -258,6 +263,7 @@ def constantes_de(team_id: int, limit: int) -> list[dict]:
                     "negativo": z(c["q_negativo"]),
                     "golesAnotado": z(c["q_goles_anotado"]),
                     "golesRecibido": z(c["q_goles_recibido"]),
+                    "dc": z(col(c, "q_dc")),
                 },
                 "k": {
                     "positivo": z(c["k_positivo"]),
@@ -272,8 +278,12 @@ def constantes_de(team_id: int, limit: int) -> list[dict]:
                     "golesLocalRecibido": z(c["k_goles_local_recibido"]),
                     "golesVisitaAnotado": z(c["k_goles_visita_anotado"]),
                     "golesVisitaRecibido": z(c["k_goles_visita_recibido"]),
+                    # Doble Oportunidad (§3.6): acumuladores no-negativos
+                    "dc": z(col(c, "k_dc")),
+                    "dcLocal": z(col(c, "k_dc_local")),
+                    "dcVisita": z(col(c, "k_dc_visita")),
                 },
-                # fusión §4.2: k = k⁺ + k⁻ (NULL→0); los k_goles pasan tal cual
+                # fusión §4.2: k = k⁺ + k⁻ (NULL→0); los k_goles y k_dc pasan tal cual
                 "fusion": {
                     "k": z(c["k_positivo"]) + z(c["k_negativo"]),
                     "kLocal": z(c["k_positivo_local"]) + z(c["k_negativo_local"]),
@@ -284,6 +294,9 @@ def constantes_de(team_id: int, limit: int) -> list[dict]:
                     "golesLocalRecibido": z(c["k_goles_local_recibido"]),
                     "golesVisitaAnotado": z(c["k_goles_visita_anotado"]),
                     "golesVisitaRecibido": z(c["k_goles_visita_recibido"]),
+                    "kDc": z(col(c, "k_dc")),
+                    "kDcLocal": z(col(c, "k_dc_local")),
+                    "kDcVisita": z(col(c, "k_dc_visita")),
                 },
             }
         )

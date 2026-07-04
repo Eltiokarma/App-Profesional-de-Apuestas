@@ -17,6 +17,9 @@ export function fuse(k: KState): FusedK {
     golesLocalRecibido: k.gLR,
     golesVisitaAnotado: k.gVA,
     golesVisitaRecibido: k.gVR,
+    kDc: k.dc,
+    kDcLocal: k.dcLocal,
+    kDcVisita: k.dcVisita,
   }
 }
 

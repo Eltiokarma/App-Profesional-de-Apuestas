@@ -49,6 +49,34 @@ const st4 = stepK({ ...K0, posLocal: 7 }, false, 2, 0, 2)
 check('k_positivo_local se conserva en visita', st4.k.posLocal, 7)
 check('k_positivo_visita acumula 1.4·2·1·2=5.6', st4.k.posVisita, 5.6)
 
+// ---- §3.6 Doble Oportunidad (k_dc): racha "sin perder" (1X) ----
+console.log('— §3.6 doble oportunidad (k_dc) —')
+// victoria local 2-0 vs nivel 3: q_dc = max(2·3, 0.5·3) = 6
+const dc1 = stepK(K0, true, 2, 0, 3)
+check('q_dc victoria 2-0 vs nivel 3 = 6', dc1.q.dc, 6)
+check('k_dc 0→6', dc1.k.dc, 6)
+check('k_dc_local 0→6', dc1.k.dcLocal, 6)
+check('k_dc_visita se conserva (0) en local', dc1.k.dcVisita, 0)
+// empate NO resetea: aporta el mínimo 0.5·nivel (dif=0)
+const dc2 = stepK({ ...K0, dc: 6, dcLocal: 6 }, true, 1, 1, 2)
+check('q_dc empate 1-1 vs nivel 2 = 0.5·2 = 1', dc2.q.dc, 1)
+check('k_dc empate acumula 6→7', dc2.k.dc, 7)
+check('k_dc_local empate acumula 6→7', dc2.k.dcLocal, 7)
+// derrota resetea a 0 (aporte 0)
+const dc3 = stepK({ ...K0, dc: 7, dcLocal: 7 }, true, 0, 1, 2.5)
+check('q_dc derrota = 0', dc3.q.dc, 0)
+check('k_dc derrota RESET → 0', dc3.k.dc, 0)
+check('k_dc_local derrota RESET → 0', dc3.k.dcLocal, 0)
+// visita: SIN multiplicador ×1.4 (roadmap: q_dc = dif·nivel). dcLocal se conserva.
+const dc4 = stepK({ ...K0, dcLocal: 5 }, false, 1, 0, 2)
+check('q_dc visita 1-0 vs nivel 2 = 2 (sin ×1.4)', dc4.q.dc, 2)
+check('k_dc_visita 0→2', dc4.k.dcVisita, 2)
+check('k_dc_local se conserva (5) en visita', dc4.k.dcLocal, 5)
+check('fusión k_dc = acumulador tal cual', fuse(dc4.k).kDc, 2)
+// empate de visita: mínimo 0.5·nivel, tampoco lleva ×1.4
+const dc5 = stepK(K0, false, 2, 2, 4)
+check('q_dc empate visita vs nivel 4 = 0.5·4 = 2', dc5.q.dc, 2)
+
 // ---- §2 niveles: regla retroactiva y fórmula ----
 console.log('— §2 niveles —')
 const mk = (i: number, gf: number, ga: number): TeamMatch => ({ fixtureId: i, t: i, rival: 'x', isLocal: true, gf, ga })

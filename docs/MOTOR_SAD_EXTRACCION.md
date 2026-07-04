@@ -292,6 +292,41 @@ k_goles_anotado:  8.0 → 20.0
 Fusión: k_local = 13.0 + 0 = +13.0  → feature prev_team_k_local para ML
 ```
 
+### 3.6 Familia Doble Oportunidad (k_dc)
+
+Primera familia de K **por mercado** (spec acordada en `docs/ROADMAP_BURBUJAS.md`
+§1). Acumulador de racha **"sin perder"** (1X desde la perspectiva del equipo):
+crece mientras no pierde y se resetea al perder.
+
+```
+dif = |gf − ga|,  res = +1 victoria / 0 empate / −1 derrota
+
+q_dc = 0                              si res = derrota
+q_dc = max(dif × nivel_rival, 0.5 × nivel_rival)   si res ∈ {victoria, empate}
+
+k_dc:        si perdió → 0 ; si no → k_dc += q_dc          (todos los partidos)
+k_dc_local:  SOLO en partidos de local (misma regla). En visita CONSERVA valor.
+k_dc_visita: análogo, solo en partidos de visita.
+```
+
+Detalles fieles (importan para replicar bit a bit y para la paridad motor TS ↔ pipeline):
+
+- El **empate NO resetea** (a diferencia de `k_positivo`): aporta el mínimo
+  `0.5 × nivel_rival` para que la racha "sin perder" siga creciendo aunque no
+  haya diferencia de goles. Solo la **derrota** resetea.
+- **Sin multiplicador visitante** (`×1.4`): la fórmula del roadmap es `dif × nivel_rival`
+  a secas; la condición local/visita solo decide *qué* acumulador se alimenta,
+  no el peso del aporte.
+- `k_dc` es **no-negativo** y de un solo signo → **no lleva fusión ±**: el valor
+  fusionado (`fusion.kDc`) es el propio acumulador tal cual.
+- Verificado en `scripts/test-motor.ts` (§3.6) y `backend/test_api.py`.
+
+> **Nota de despliegue**: el dueño del cálculo es el pipeline (columnas `q_dc`,
+> `k_dc`, `k_dc_local`, `k_dc_visita` en `constants`). El backend las lee con
+> degradación elegante (0 si la `constants.db` aún no las trae); `backend/seed_demo.py`
+> las genera para la demo. Hasta re-correr la extracción, en datos reales la
+> familia aparece vacía (racha 0) sin romper el contrato.
+
 ---
 
 ## 4. Discretización y fusión (`discretizer_db` → `discreto.db`)
