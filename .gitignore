@@ -30,6 +30,8 @@ npm-debug.log*
 *.db
 *.db-wal
 *.db-shm
+*.db.bak
+*.bak
 demo_data/
 __pycache__/
 *.pyc

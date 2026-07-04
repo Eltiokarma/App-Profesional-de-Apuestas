@@ -324,8 +324,13 @@ Detalles fieles (importan para replicar bit a bit y para la paridad motor TS ↔
 > **Nota de despliegue**: el dueño del cálculo es el pipeline (columnas `q_dc`,
 > `k_dc`, `k_dc_local`, `k_dc_visita` en `constants`). El backend las lee con
 > degradación elegante (0 si la `constants.db` aún no las trae); `backend/seed_demo.py`
-> las genera para la demo. Hasta re-correr la extracción, en datos reales la
-> familia aparece vacía (racha 0) sin romper el contrato.
+> las genera para la demo. Sobre una `constants.db` real ya generada (sin re-correr
+> la extracción) hay un **puente local**: `python -m backend.backfill_kdc` recorre
+> el historial y rellena las columnas reusando el nivel de rival **exacto**
+> recuperado de las `q` existentes (`q_goles_anotado = goles · nivel_rival`), con
+> respaldo a `levels.db` solo en empates 0-0. Idempotente y con copia de seguridad
+> (`constants.db.bak`). **Re-ejecutar tras cada regeneración** de `constants.db`
+> por el pipeline, hasta que el pipeline emita las columnas por sí mismo.
 
 ---
 
