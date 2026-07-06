@@ -6,7 +6,7 @@ import { Sidebar } from './components/Sidebar'
 import { DesktopHeader } from './components/DesktopHeader'
 import { MobileHeader } from './components/MobileHeader'
 import { BottomNav } from './components/BottomNav'
-import { EmptyState, Skeleton } from './components/EmptyState'
+import { EmptyState } from './components/EmptyState'
 import { Partidos } from './sections/Partidos'
 import { Equipo } from './sections/Equipo'
 import { Cuotas } from './sections/Cuotas'
@@ -22,9 +22,9 @@ type Style = React.CSSProperties
 export function App() {
   const store = useSad()
   const { s } = store
-  const fixtures = useAsync(loadMatches, 'fixtures')
+  const fixtures = useAsync(() => loadMatches(s.fecha), s.fecha)
   const matches = fixtures.data ?? []
-  const m = matches.find((x) => x.id === s.matchId)
+  const m = s.match ?? undefined
 
   const isMobile = s.forceMobile || s.vw < 760
   const isDesktop = !isMobile
@@ -59,9 +59,9 @@ export function App() {
 
   // Partidos y Equipo no requieren partido seleccionado
   const needsMatch = s.section === 'cuotas' || s.section === 'burbujas' || s.section === 'skills' || s.section === 'estadisticas'
-  const showEmpty = needsMatch && !m && !fixtures.loading && !fixtures.error
-  const showSkeleton = needsMatch && fixtures.loading
-  const showContent = !!m && !fixtures.loading
+  // la selección vive en el store: las secciones ya no dependen de la lista del día
+  const showEmpty = needsMatch && !m
+  const showContent = !!m
 
   return (
     <div data-theme={s.theme} style={rootStyle}>
@@ -77,15 +77,7 @@ export function App() {
           )}
 
           <main className="sad-scroll" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: contentPad }}>
-            {fixtures.error && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', marginBottom: 14, borderRadius: 12, background: 'var(--down-soft)', border: '1px solid color-mix(in oklch,var(--down),transparent 55%)' }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--down)', flexShrink: 0 }}></span>
-                <span style={{ font: '500 12.5px var(--sans)', color: 'var(--t1)', flex: 1 }}>No se pudieron cargar los partidos: {fixtures.error}</span>
-                <button onClick={fixtures.reload} style={{ padding: '7px 13px', borderRadius: 8, border: 0, background: 'var(--down)', color: '#fff', cursor: 'pointer', font: '600 11.5px var(--sans)', flexShrink: 0 }}>Reintentar</button>
-              </div>
-            )}
             {showEmpty && <EmptyState store={store} />}
-            {showSkeleton && <Skeleton />}
             {s.section === 'partidos' && (
               <Partidos store={store} matches={matches} loading={fixtures.loading} error={fixtures.error} reload={fixtures.reload} isMobile={isMobile} />
             )}
