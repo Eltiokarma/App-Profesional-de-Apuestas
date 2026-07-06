@@ -23,6 +23,10 @@ npm-debug.log*
 .env.*
 !.env.example
 
+# respaldos y configuración local del agente
+*.bundle
+.claude/
+
 # typescript incremental build info
 *.tsbuildinfo
 
