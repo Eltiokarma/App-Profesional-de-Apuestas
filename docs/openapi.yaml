@@ -76,6 +76,18 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: '#/components/schemas/Constantes' } }
+  /constantes-cuota/{equipoId}:
+    get:
+      summary: 'k_cuota (§3.8): rachas de suma de cuota 1X2 prepartido, solo 2026 (asc por fecha)'
+      description: Vacío si aún no se construyó constants_cuota (correr backend/backfill_cuota).
+      parameters:
+        - { name: equipoId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/ConstanteCuota' } }
   /predicciones/{fixtureId}:
     get:
       summary: Ley de la Regresión al Nivel (gap) para un fixture
@@ -292,6 +304,36 @@ components:
             kDer3: { type: number }
             kDer3Local: { type: number }
             kDer3Visita: { type: number }
+    ConstanteCuota:
+      type: object
+      description: 'Fila de constants_cuota (§3.8): racha de SUMA de cuota 1X2, solo 2026'
+      required: [equipoId, fixtureId, fecha, resultado, cuota, k]
+      properties:
+        equipoId: { type: integer }
+        fixtureId: { type: integer }
+        fecha: { type: string, format: date-time }
+        resultado: { type: integer, enum: [1, 0, -1], description: '1 gana · 0 empata · -1 pierde' }
+        esLocal: { type: boolean, description: 'true si jugó de local (toggle LOCAL/VISITA)' }
+        cuota:
+          type: object
+          description: Cuota 1X2 que aplicó a ese partido (null si sin cuota capturada)
+          properties:
+            victoria: { type: number, nullable: true }
+            empate: { type: number, nullable: true }
+            derrota: { type: number, nullable: true }
+        k:
+          type: object
+          description: 9 acumuladores de suma de cuota (total/local/visita)
+          properties:
+            victoria: { type: number }
+            victoriaLocal: { type: number }
+            victoriaVisita: { type: number }
+            empate: { type: number }
+            empateLocal: { type: number }
+            empateVisita: { type: number }
+            derrota: { type: number }
+            derrotaLocal: { type: number }
+            derrotaVisita: { type: number }
     GapEquipo:
       type: object
       required: [equipoId, nivel, ptsEsperados]

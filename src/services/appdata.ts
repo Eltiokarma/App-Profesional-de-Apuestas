@@ -4,6 +4,7 @@
 // idénticos a los de antes, en modo http salen del backend real.
 import type {
   AnalisisPrepartidoDTO,
+  ConstanteCuotaDTO,
   ConstantesDTO,
   EquipoDTO,
   EquipoStatsDTO,
@@ -156,6 +157,13 @@ export async function loadBurbujas(teamKey: string): Promise<BurbujasData | null
     bin: nv ? nv.bin : 0,
     binLabel: nv ? nv.binEtiqueta : 'Sin datos',
   }
+}
+
+/** k_cuota (§3.8): rachas de suma de cuota 1X2 (solo 2026, datos reales). */
+export async function loadConstantesCuota(teamKey: string): Promise<ConstanteCuotaDTO[]> {
+  const equipoId = TEAM_NUM[teamKey]
+  if (equipoId == null) return []
+  return getDataSource().constantesCuota(equipoId)
 }
 
 // ── cuotas: tabla base { mercado → { selección → cuota } } ──────────────────

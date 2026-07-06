@@ -361,6 +361,38 @@ Detalles fieles:
 - Verificado en `scripts/test-motor.ts` (§3.7) y `backend/test_api.py`. Mismo
   despliegue que §3.6 (pipeline dueño; backfill como puente).
 
+### 3.8 Familia Cuotas (k_cuota)
+
+Tercera familia por mercado (ROADMAP §3) y la única basada en la **cuota prepartido
+1X2** (tabla `odds`, `bet_name='Match Winner'`, promedio de bookmakers), no en el
+resultado. Vive en su **propia tabla `constants_cuota`** (constants.db), independiente
+de `constants`. 3 rachas × total/local/visita = **9 acumuladores**, **SUMA PURA de la
+cuota** (sin ponderar por nivel):
+
+```
+por equipo, partidos de 2026 ordenados por fecha:
+  k_cuota_victoria: si GANA  → += cuota_victoria;                si no gana  → 0
+  k_cuota_empate:   si EMPATA → += cuota_empate;                 si no empata→ 0
+  k_cuota_derrota:  si PIERDE → += cuota_derrota (= victoria del rival); si no → 0
+```
+
+- `_local`/`_visita`: misma regla pero solo se tocan en su contexto (conservan fuera),
+  como `k_positivo_local/visita`.
+- **Partido sin cuota capturada**: se SALTA (no aporta ni revienta; la racha continúa
+  como si no existiera). Por fila se guarda la cuota que aplicó (NULL si no había) y el
+  resultado, para trazabilidad.
+- **Alcance: solo 2026**. El motor **mock/demo NO la calcula**: las barras se llenan
+  solo con datos reales.
+
+Implementación (este repo):
+- Fórmula en `backend/cuota_engine.py` (`step_cuota`); test `backend/test_cuota.py`.
+- `backend/backfill_cuota.py`: (1) rellena huecos 2026 de unos pocos clubes con cuotas
+  1X2 **sintéticas** (`bookmaker_name='SYNTHETIC'`, borrables con
+  `DELETE FROM odds WHERE bookmaker_name='SYNTHETIC'`); (2) construye `constants_cuota`.
+- Endpoint `GET /constantes-cuota/{id}` (vacío si la tabla no existe).
+- UI: **barras** (`src/components/KBarChart.tsx`) en la página de Equipo, con toggle
+  TODOS/LOCAL/VISITA; la barra cae a 0 donde revienta la racha.
+
 ---
 
 ## 4. Discretización y fusión (`discretizer_db` → `discreto.db`)
