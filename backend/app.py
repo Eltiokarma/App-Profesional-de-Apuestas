@@ -2,13 +2,15 @@
 
 Implementa el contrato docs/openapi.yaml del repo App-Profesional-de-Apuestas
 (el frontend web lo consume con VITE_DATA_SOURCE=http). v0: sin escrituras,
-sin auth (bearer opcional llega en fase 2), CORS abierto configurable.
+sin auth (bearer opcional llega en fase 2), CORS solo local salvo SAD_CORS_ORIGINS.
 
 Ejecutar junto a las DBs reales:
     uvicorn backend.app:app --port 8000
 """
 import os
 import sqlite3
+import time
+import unicodedata
 from datetime import date as date_t, datetime, timedelta, timezone
 from functools import lru_cache
 from typing import Literal
@@ -20,9 +22,12 @@ from backend import db
 
 app = FastAPI(title="SAD API", version="0.1.0")
 
+# Sin SAD_CORS_ORIGINS solo se permiten los orígenes de desarrollo local;
+# en despliegue hay que fijar la variable al dominio real del frontend.
+_DEV_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.environ.get("SAD_CORS_ORIGINS", "*").split(","),
+    allow_origins=[o.strip() for o in os.environ.get("SAD_CORS_ORIGINS", _DEV_ORIGINS).split(",") if o.strip()],
     allow_methods=["GET"],
     allow_headers=["*"],
 )
@@ -338,7 +343,12 @@ def constantes_cuota_de(team_id: int) -> list[dict]:
     """Filas de constants_cuota (k_cuota, §3.8) del equipo, en orden cronológico.
     Si la tabla aún no existe (no se corrió backfill_cuota) devuelve []."""
     try:
-        rows = db.query("constants", "SELECT * FROM constants_cuota WHERE team_id=? ORDER BY date, id", (team_id,))
+        # tope de seguridad: si hubiera más de 1000 filas se conservan las más recientes
+        rows = db.query(
+            "constants",
+            "SELECT * FROM (SELECT * FROM constants_cuota WHERE team_id=? ORDER BY date DESC, id DESC LIMIT 1000) ORDER BY date, id",
+            (team_id,),
+        )
     except sqlite3.OperationalError:
         return []
     out = []
@@ -422,22 +432,26 @@ def health():
     return {"status": "ok" if db_ok else "degraded", "version": app.version, "dbOk": db_ok, "lastPipelineRun": last_run}
 
 
+def _norm(s: str) -> str:
+    return "".join(ch for ch in unicodedata.normalize("NFD", (s or "").lower()) if unicodedata.category(ch) != "Mn")
+
+
+@lru_cache(maxsize=2)
+def _equipos_norm(bucket: int) -> tuple[tuple[int, str, str], ...]:
+    # caché por minuto: evita escanear y normalizar toda la tabla en cada búsqueda
+    return tuple((r["id"], r["name"], _norm(r["name"])) for r in db.query("sad", "SELECT id, name FROM teams"))
+
+
 @app.get(API + "/equipos")
-def buscar_equipos(buscar: str = Query(min_length=2), limit: int = Query(default=10, ge=1, le=25)):
+def buscar_equipos(buscar: str = Query(min_length=2, max_length=60), limit: int = Query(default=10, ge=1, le=25)):
     """Búsqueda inteligente: sin tildes ni mayúsculas; ranking
     prefijo > inicio de palabra > contiene."""
-    import unicodedata
-
-    def norm(s: str) -> str:
-        return "".join(ch for ch in unicodedata.normalize("NFD", (s or "").lower()) if unicodedata.category(ch) != "Mn")
-
-    q = norm(buscar)
+    q = _norm(buscar)
     scored = []
-    for r in db.query("sad", "SELECT id, name FROM teams"):
-        n = norm(r["name"])
+    for tid, nombre, n in _equipos_norm(int(time.monotonic() // 60)):
         if q in n:
             rank = 0 if n.startswith(q) else 1 if any(w.startswith(q) for w in n.split()) else 2
-            scored.append((rank, len(n), r["id"], r["name"]))
+            scored.append((rank, len(n), tid, nombre))
     scored.sort()
     return [equipo_dto(tid, nombre) for _, __, tid, nombre in scored[:limit]]
 
@@ -557,7 +571,7 @@ def equipo_stats(equipo_id: int):
            WHERE (home_team_id=? OR away_team_id=?)
              AND status_long='Match Finished'
              AND goals_home IS NOT NULL AND goals_away IS NOT NULL
-           ORDER BY date DESC""",
+           ORDER BY date DESC LIMIT 2000""",
         (equipo_id, equipo_id),
     )
     pts = gf_tot = gc_tot = 0
@@ -599,7 +613,8 @@ def standings(liga_id: int, temporada: int | None = None):
            FROM fixtures f
            JOIN teams ht ON ht.id=f.home_team_id JOIN teams at ON at.id=f.away_team_id
            WHERE f.league_id=? AND f.league_season=? AND f.status_long='Match Finished'
-             AND f.goals_home IS NOT NULL AND f.goals_away IS NOT NULL""",
+             AND f.goals_home IS NOT NULL AND f.goals_away IS NOT NULL
+           LIMIT 5000""",
         (liga_id, temporada),
     )
     acc: dict[int, dict] = {}

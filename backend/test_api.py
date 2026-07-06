@@ -147,6 +147,7 @@ def main():
     b2 = c.get(A + "/equipos?buscar=atletico").json()
     check("buscar sin tilde 'atletico' → Atlético", b2 and "Atlético" in b2[0]["nombre"], b2[:1])
     check("buscar corto (1 char) → 422", c.get(A + "/equipos?buscar=a").status_code == 422)
+    check("buscar demasiado largo (>60) → 422", c.get(A + "/equipos?buscar=" + "a" * 61).status_code == 422)
 
     # /fixtures?equipoId=
     fxb = c.get(A + f"/fixtures?equipoId={betis}&limit=200").json()
