@@ -61,10 +61,30 @@ export function ensureTeam(dto: EquipoDTO): string {
 const LK_BY_LIGA_ID: Record<number, string> = { 140: 'laliga', 39: 'premier', 135: 'seriea' }
 
 // ── fixtures ────────────────────────────────────────────────────────────────
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+const pad2 = (n: number) => String(n).padStart(2, '0')
+
+/** Etiqueta relativa del día en hora local: Hoy / Ayer / Mañana / "5 jul" / "5 jul 2025". */
+export function etiquetaFecha(d: Date, hoy = new Date()): string {
+  const dias = Math.round(
+    (new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() -
+      new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime()) /
+      86_400_000,
+  )
+  if (dias === 0) return 'Hoy'
+  if (dias === -1) return 'Ayer'
+  if (dias === 1) return 'Mañana'
+  const base = `${d.getDate()} ${MESES[d.getMonth()]}`
+  return d.getFullYear() === hoy.getFullYear() ? base : `${base} ${d.getFullYear()}`
+}
+
 export function fixtureToMatch(f: FixtureDTO): Match {
   const home = ensureTeam(f.local)
   const away = ensureTeam(f.visitante)
-  const hora = f.fecha.slice(11, 16)
+  // el contrato entrega fecha ISO-8601 UTC (Z); la UI muestra hora local
+  const fecha = new Date(f.fecha)
+  const hora = `${pad2(fecha.getHours())}:${pad2(fecha.getMinutes())}`
+  const dia = etiquetaFecha(fecha)
   const live = f.estado === 'en_vivo'
   const fin = f.estado === 'finalizado'
   return {
@@ -73,7 +93,7 @@ export function fixtureToMatch(f: FixtureDTO): Match {
     away,
     comp: f.liga.split(' · ')[0],
     league: f.liga,
-    date: live ? 'Hoy · en juego' : fin ? 'Hoy' : `Hoy · ${hora}`,
+    date: live ? `${dia} · en juego` : fin ? dia : `${dia} · ${hora}`,
     venue: f.estadio ?? '',
     lk: LK_BY_LIGA_ID[f.ligaId] ?? String(f.ligaId),
     ligaId: f.ligaId,
@@ -222,8 +242,9 @@ export async function loadProximos(teamKey: string, n = 3): Promise<ProximoRival
     prox.map(async (f) => {
       const rival = f.local.id === equipoId ? f.visitante : f.local
       const nv = (await ds.niveles(rival.id, 1))[0]
+      const d = new Date(f.fecha)
       return {
-        fecha: `${f.fecha.slice(8, 10)}/${f.fecha.slice(5, 7)}`,
+        fecha: `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}`,
         rivalNombre: rival.nombre,
         bin: nv ? nv.bin : 0,
         binEtiqueta: nv ? nv.binEtiqueta : 'Sin datos',

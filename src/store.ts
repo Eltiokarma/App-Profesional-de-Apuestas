@@ -21,7 +21,6 @@ export interface SadState {
   matchId: string | null
   /** Equipo abierto en la página de equipo (clave interna). */
   teamKey: string | null
-  loading: boolean
   vw: number
   forceMobile: boolean
   oddsMode: OddsMode
@@ -45,7 +44,6 @@ const initialState: SadState = {
   section: 'partidos',
   matchId: 'm1',
   teamKey: null,
-  loading: false,
   vw: typeof window !== 'undefined' ? window.innerWidth : 1280,
   forceMobile: false,
   oddsMode: 'prematch',
@@ -99,7 +97,15 @@ export function useSad(): SadStore {
   const tickRef = useRef(0)
 
   useEffect(() => {
-    const onResize = () => patch({ vw: window.innerWidth })
+    let raf = 0
+    const onResize = () => {
+      // throttle a un frame: resize dispara decenas de eventos por segundo
+      if (raf) return
+      raf = requestAnimationFrame(() => {
+        raf = 0
+        patch({ vw: window.innerWidth })
+      })
+    }
     window.addEventListener('resize', onResize)
     const iv = setInterval(() => {
       const st = stateRef.current
@@ -111,6 +117,7 @@ export function useSad(): SadStore {
     }, 1000)
     return () => {
       clearInterval(iv)
+      if (raf) cancelAnimationFrame(raf)
       window.removeEventListener('resize', onResize)
     }
   }, [patch])
@@ -124,8 +131,7 @@ export function useSad(): SadStore {
       const live = mt.status === 'live'
       const lm = live ? parseInt(mt.min) || 60 : 63
       // seleccionar un partido lleva directo a Cuotas
-      patch({ matchId: mt.id, section: 'cuotas', loading: true, oddsMode: live ? 'live' : 'prematch', liveMin: lm })
-      setTimeout(() => patch({ loading: false }), 720)
+      patch({ matchId: mt.id, section: 'cuotas', oddsMode: live ? 'live' : 'prematch', liveMin: lm })
     },
     [patch],
   )

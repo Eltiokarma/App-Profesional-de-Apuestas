@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { LINE_COLORS, MARKET_DEFS } from '../data'
 import type { Match } from '../data/types'
 import { buildChart, buildSpark } from '../lib/chart'
@@ -38,10 +39,12 @@ export function Cuotas({ store, m, isMobile }: Props) {
     fg: d.key === cmk ? 'var(--accent)' : 'var(--t2)',
   }))
 
-  const chart = buildChart(m, cmk, isLive, s.liveMin, s.marked, base)
+  // memoizadas contra el tick de 1s del store (s.now): solo se reconstruyen
+  // cuando cambia algo que de verdad afecta a las series
+  const chart = useMemo(() => buildChart(m, cmk, isLive, s.liveMin, s.marked, base), [m, cmk, isLive, s.liveMin, s.marked, base])
   const chartXfromOpen = isLive ? 'apertura → ' + s.liveMin + '’ en vivo' : 'apertura → cierre prepartido'
 
-  const marketCards = MARKET_DEFS.map((def) => {
+  const marketCards = useMemo(() => MARKET_DEFS.map((def) => {
     const sels = def.sels(m).map((sd) => {
       const sp = buildSpark(m, def.key, sd.k, isLive, s.liveMin, base)
       const S = seriesFor(m, def.key, sd.k, base?.[def.key]?.[sd.k])
@@ -64,7 +67,7 @@ export function Cuotas({ store, m, isMobile }: Props) {
       cardBorder: def.key === cmk ? 'var(--accent)' : 'var(--line)',
       sels,
     }
-  })
+  }), [m, cmk, isLive, s.liveMin, s.marked, base])
 
   const markedCount = Object.keys(s.marked).filter((k) => k.indexOf(m.id + ':') === 0 && s.marked[k]).length
 
