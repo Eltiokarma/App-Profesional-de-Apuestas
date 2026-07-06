@@ -5,6 +5,7 @@
 import { SadApi } from '../api/sad'
 import type {
   AnalisisPrepartidoDTO,
+  ConstanteCuotaDTO,
   ConstantesDTO,
   CuotaDTO,
   EquipoStatsDTO,
@@ -36,6 +37,8 @@ export interface SadDataSource {
   buscarEquipos(buscar: string): Promise<{ id: number; nombre: string; abreviatura: string }[]>
   niveles(equipoId: number, limit?: number): Promise<NivelDTO[]>
   constantes(equipoId: number, limit?: number): Promise<ConstantesDTO[]>
+  /** k_cuota (§3.8): solo datos reales; en mock devuelve []. */
+  constantesCuota(equipoId: number): Promise<ConstanteCuotaDTO[]>
   prediccion(fixtureId: number): Promise<PrediccionDTO>
   analisisPrepartido(fixtureId: number): Promise<AnalisisPrepartidoDTO>
   cuotas(fixtureId: number): Promise<CuotaDTO[]>
@@ -199,6 +202,10 @@ class MockDataSource implements SadDataSource {
       .map((s) => constantesDTO(key, s))
   }
 
+  async constantesCuota(): Promise<ConstanteCuotaDTO[]> {
+    return [] // el motor demo no tiene cuotas históricas: k_cuota solo con datos reales
+  }
+
   async prediccion(fixtureId: number): Promise<PrediccionDTO> {
     const m = MATCHES.find((x) => FIXTURE_NUM(x.id) === fixtureId)
     if (!m) throw new Error(`fixture ${fixtureId} no existe`)
@@ -309,6 +316,7 @@ class HttpDataSource implements SadDataSource {
   buscarEquipos = (buscar: string) => SadApi.buscarEquipos(buscar)
   niveles = (equipoId: number, limit?: number) => SadApi.niveles(equipoId, limit)
   constantes = (equipoId: number, limit?: number) => SadApi.constantes(equipoId, limit)
+  constantesCuota = (equipoId: number) => SadApi.constantesCuota(equipoId)
   prediccion = (fixtureId: number) => SadApi.prediccion(fixtureId)
   analisisPrepartido = (fixtureId: number) => SadApi.analisisPrepartido(fixtureId)
   cuotas = (fixtureId: number) => SadApi.cuotas(fixtureId)

@@ -8,6 +8,7 @@ Ejecutar junto a las DBs reales:
     uvicorn backend.app:app --port 8000
 """
 import os
+import sqlite3
 from datetime import datetime, timezone
 
 from fastapi import FastAPI, HTTPException, Query
@@ -314,6 +315,33 @@ def constantes_de(team_id: int, limit: int) -> list[dict]:
     return out
 
 
+def constantes_cuota_de(team_id: int) -> list[dict]:
+    """Filas de constants_cuota (k_cuota, §3.8) del equipo, en orden cronológico.
+    Si la tabla aún no existe (no se corrió backfill_cuota) devuelve []."""
+    try:
+        rows = db.query("constants", "SELECT * FROM constants_cuota WHERE team_id=? ORDER BY date, id", (team_id,))
+    except sqlite3.OperationalError:
+        return []
+    out = []
+    for r in rows:
+        out.append(
+            {
+                "equipoId": team_id,
+                "fixtureId": r["fixture_id"],
+                "fecha": iso(r["date"]),
+                "resultado": r["resultado"],
+                "esLocal": bool(r["es_local"]),
+                "cuota": {"victoria": r["cuota_victoria"], "empate": r["cuota_empate"], "derrota": r["cuota_derrota"]},
+                "k": {
+                    "victoria": r["k_cuota_victoria"], "victoriaLocal": r["k_cuota_victoria_local"], "victoriaVisita": r["k_cuota_victoria_visita"],
+                    "empate": r["k_cuota_empate"], "empateLocal": r["k_cuota_empate_local"], "empateVisita": r["k_cuota_empate_visita"],
+                    "derrota": r["k_cuota_derrota"], "derrotaLocal": r["k_cuota_derrota_local"], "derrotaVisita": r["k_cuota_derrota_visita"],
+                },
+            }
+        )
+    return out
+
+
 def niveles_de(team_id: int, limit: int) -> list[dict]:
     rows = db.query(
         "levels",
@@ -434,6 +462,13 @@ def niveles(equipo_id: int, limit: int = Query(default=50, le=500)):
 @app.get(API + "/constantes/{equipo_id}")
 def constantes(equipo_id: int, limit: int = Query(default=50, le=500)):
     return constantes_de(equipo_id, limit)
+
+
+@app.get(API + "/constantes-cuota/{equipo_id}")
+def constantes_cuota(equipo_id: int):
+    """k_cuota (§3.8): rachas de suma de cuota 1X2, solo 2026. Vacío si no se
+    ha construido constants_cuota (correr backend/backfill_cuota)."""
+    return constantes_cuota_de(equipo_id)
 
 
 @app.get(API + "/predicciones/{fixture_id}")

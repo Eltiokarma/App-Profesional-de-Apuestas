@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { TEAMS } from '../data'
 import type { KCondKey, KTypeKey } from '../data/types'
+import type { ConstanteCuotaDTO } from '../api/types'
 import { KLineChart, KLineLegend } from '../components/KLineChart'
+import { KBarChart, type CuotaBar } from '../components/KBarChart'
 import { binBadge, FUSED_KEY, K_TYPE_GROUPS, K_WINDOW_OPTS, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
 import type { FusedK } from '../motor/types'
-import { loadBurbujas, loadTeamFixtures, loadTeamStats } from '../services/appdata'
+import { loadBurbujas, loadConstantesCuota, loadTeamFixtures, loadTeamStats } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
@@ -42,6 +45,23 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
   const error = stats.error || bur.error || fx.error
 
   const condOpts = ([['total', 'Total'], ['local', 'Local'], ['visita', 'Visita']] as [KCondKey, string][])
+
+  // Cuotas K (§3.8): barras de rachas de suma de cuota 1X2, toggle TODOS/LOCAL/VISITA
+  const [cuotaCond, setCuotaCond] = useState<'TODOS' | 'LOCAL' | 'VISITA'>('TODOS')
+  const cuota = useAsync(() => loadConstantesCuota(teamKey), teamKey)
+  const CUOTA_FAMILIES = [
+    { key: 'victoria', label: 'victorias', color: 'var(--up)', soft: 'var(--up-soft)' },
+    { key: 'empate', label: 'empates', color: 'var(--mark)', soft: 'var(--mark-soft)' },
+    { key: 'derrota', label: 'derrotas', color: 'var(--down)', soft: 'var(--down-soft)' },
+  ] as const
+  const condSuffix = cuotaCond === 'LOCAL' ? 'Local' : cuotaCond === 'VISITA' ? 'Visita' : ''
+  const cuotaRows = (cuota.data ?? []).filter(
+    (r) => r.cuota.victoria != null && (cuotaCond === 'TODOS' || (cuotaCond === 'LOCAL') === r.esLocal),
+  )
+  const barsFor = (fam: 'victoria' | 'empate' | 'derrota'): CuotaBar[] => {
+    const kk = (fam + condSuffix) as keyof ConstanteCuotaDTO['k']
+    return cuotaRows.map((r) => ({ fecha: r.fecha, value: r.k[kk], burst: r.k[kk] === 0, cuota: r.cuota[fam], res: r.resultado }))
+  }
 
   return (
     <div>
@@ -137,6 +157,34 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
                   <div style={{ font: '700 16px var(--mono)', color: q == null ? 'var(--t3)' : q > 0 ? 'var(--up)' : q < 0 ? 'var(--down)' : 'var(--t2)' }}>{q == null ? '—' : signFmt(q)}</div>
                 </div>
               </div>
+            </section>
+
+            {/* CUOTAS K (§3.8) — barras de rachas de suma de cuota 1X2 */}
+            <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ font: '700 12px var(--sans)' }}>Cuotas K · rachas 1X2</div>
+                  <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>Suma acumulada de la cuota; la barra cae a 0 al romperse la racha · solo 2026</div>
+                </div>
+                <div style={{ display: 'flex', padding: 3, borderRadius: 9, background: 'var(--bg3)', border: '1px solid var(--line)' }}>
+                  {(['TODOS', 'LOCAL', 'VISITA'] as const).map((c) => (
+                    <button key={c} onClick={() => setCuotaCond(c)} style={{ padding: '5px 12px', border: 0, borderRadius: 6, cursor: 'pointer', background: cuotaCond === c ? 'var(--bg1)' : 'transparent', color: cuotaCond === c ? 'var(--t1)' : 'var(--t2)', font: '600 10.5px var(--sans)' }}>{c}</button>
+                  ))}
+                </div>
+              </div>
+              {cuota.loading ? (
+                <div className="sad-sk" style={{ height: 150, marginTop: 10 }} />
+              ) : cuota.data && cuota.data.length ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+                  {CUOTA_FAMILIES.map((f) => (
+                    <KBarChart key={f.key} bars={barsFor(f.key)} color={f.color} soft={f.soft} title={`Racha de ${f.label}`} />
+                  ))}
+                </div>
+              ) : (
+                <div style={{ font: '500 11px var(--mono)', color: 'var(--t3)', padding: '18px 0', textAlign: 'center' }}>
+                  Sin datos de cuotas 2026 para este equipo (o modo mock).
+                </div>
+              )}
             </section>
 
             {/* HISTORIAL DE PARTIDOS */}

@@ -116,6 +116,24 @@ export interface ConstantesDTO {
   }
 }
 
+/** Fila de constants_cuota (k_cuota, §3.8): rachas de SUMA de cuota 1X2 prepartido,
+ *  solo partidos de 2026. cuota.* = null si el partido no tenía cuota capturada. */
+export interface ConstanteCuotaDTO {
+  equipoId: number
+  fixtureId: number
+  fecha: string
+  /** 1 gana · 0 empata · -1 pierde. */
+  resultado: 1 | 0 | -1
+  /** true si el equipo jugó de local ese partido (para el toggle LOCAL/VISITA). */
+  esLocal: boolean
+  cuota: { victoria: number | null; empate: number | null; derrota: number | null }
+  k: {
+    victoria: number; victoriaLocal: number; victoriaVisita: number
+    empate: number; empateLocal: number; empateVisita: number
+    derrota: number; derrotaLocal: number; derrotaVisita: number
+  }
+}
+
 export type SenalGap = 'fuerte' | 'leve' | 'equilibrio'
 
 /** Ley de la Regresión al Nivel (§5) para un equipo dentro de un fixture. */

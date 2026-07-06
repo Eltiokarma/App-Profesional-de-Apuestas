@@ -2,6 +2,7 @@
 import { apiGet, qs } from './client'
 import type {
   AnalisisPrepartidoDTO,
+  ConstanteCuotaDTO,
   ConstantesDTO,
   CuotaDTO,
   EquipoDTO,
@@ -32,6 +33,10 @@ export const SadApi = {
   /** Historia de constantes K de un equipo (desc por fecha; limit opcional). */
   constantes: (equipoId: number, limit?: number) =>
     apiGet<ConstantesDTO[]>(`/constantes/${equipoId}` + qs({ limit })),
+
+  /** k_cuota (§3.8): rachas de suma de cuota 1X2, solo 2026 (asc por fecha). */
+  constantesCuota: (equipoId: number) =>
+    apiGet<ConstanteCuotaDTO[]>(`/constantes-cuota/${equipoId}`),
 
   prediccion: (fixtureId: number) => apiGet<PrediccionDTO>(`/predicciones/${fixtureId}`),
 
