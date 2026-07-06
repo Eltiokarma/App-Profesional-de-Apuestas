@@ -97,7 +97,8 @@ export function fixtureToMatch(f: FixtureDTO): Match {
     venue: f.estadio ?? '',
     lk: LK_BY_LIGA_ID[f.ligaId] ?? String(f.ligaId),
     ligaId: f.ligaId,
-    score: f.golesLocal == null ? '0 - 0' : `${f.golesLocal} - ${f.golesVisitante}`,
+    // finalizado sin goles = walkover/adjudicado (AWD/WO): no inventar un 0-0
+    score: f.golesLocal == null || f.golesVisitante == null ? (fin ? '—' : '0 - 0') : `${f.golesLocal} - ${f.golesVisitante}`,
     status: live ? 'live' : fin ? 'fin' : 'sched',
     min: live ? `${f.minuto ?? ''}'` : fin ? '' : hora,
   }

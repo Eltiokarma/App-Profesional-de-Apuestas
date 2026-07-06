@@ -101,7 +101,7 @@ export function Cuotas({ store, m, isMobile }: Props) {
           </span>
           <span style={{ font: '700 18px var(--mono)', color: 'var(--t1)', whiteSpace: 'nowrap', flexShrink: 0 }}>{mv.homeShort} {m.score} {mv.awayShort}</span>
           <span style={{ font: '600 12px var(--mono)', color: 'var(--t2)' }}>{s.liveMin}'</span>
-          <span style={{ marginLeft: 'auto', font: '500 11px var(--mono)', color: 'var(--t3)' }}>Cuotas movidas hace instantes · 12 casas</span>
+          <span style={{ marginLeft: 'auto', font: '500 11px var(--mono)', color: 'var(--t3)' }}>media entre casas capturadas</span>
         </div>
       )}
 
@@ -138,7 +138,7 @@ export function Cuotas({ store, m, isMobile }: Props) {
             <h3 style={{ margin: 0, font: '700 15px var(--sans)' }}>{chart.title}</h3>
             <span style={{ font: '500 11px var(--mono)', color: 'var(--t3)' }}>Movimiento de cuota · {chartXfromOpen}</span>
           </div>
-          <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>media de 12 casas</span>
+          <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>media entre casas capturadas</span>
         </div>
 
         {/* legend */}

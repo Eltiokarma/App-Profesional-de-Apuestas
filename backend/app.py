@@ -228,11 +228,15 @@ def gap_equipo(team_id: int, fecha: str | None) -> dict:
     }
 
 
-def constantes_de(team_id: int, limit: int) -> list[dict]:
+def constantes_de(team_id: int, limit: int, hasta: str | None = None) -> list[dict]:
+    cond, params = "", [team_id]
+    if hasta:
+        cond = " AND date<=?"
+        params.append(hasta.replace("T", " ").rstrip("Z"))
     consts = db.query(
         "constants",
-        "SELECT * FROM constants WHERE team_id=? ORDER BY date DESC, id DESC LIMIT ?",
-        (team_id, limit),
+        f"SELECT * FROM constants WHERE team_id=?{cond} ORDER BY date DESC, id DESC LIMIT ?",
+        (*params, limit),
     )
     if not consts:
         return []
@@ -371,11 +375,15 @@ def constantes_cuota_de(team_id: int) -> list[dict]:
     return out
 
 
-def niveles_de(team_id: int, limit: int) -> list[dict]:
+def niveles_de(team_id: int, limit: int, hasta: str | None = None) -> list[dict]:
+    cond, params = "", [team_id]
+    if hasta:
+        cond = " AND date<=?"
+        params.append(hasta.replace("T", " ").rstrip("Z"))
     rows = db.query(
         "levels",
-        "SELECT fixture_id, date, level FROM team_levels WHERE team_id=? ORDER BY date DESC, id DESC LIMIT ?",
-        (team_id, limit),
+        f"SELECT fixture_id, date, level FROM team_levels WHERE team_id=?{cond} ORDER BY date DESC, id DESC LIMIT ?",
+        (*params, limit),
     )
     out = []
     for r in rows:
@@ -528,10 +536,13 @@ def prediccion(fixture_id: int):
 def analisis_prepartido(fixture_id: int):
     f = get_fixture(fixture_id)
     home_id, away_id = f["home_team_id"], f["away_team_id"]
-    niveles_h = niveles_de(home_id, 1)
-    niveles_a = niveles_de(away_id, 1)
-    const_h = constantes_de(home_id, 1)
-    const_a = constantes_de(away_id, 1)
+    # foto a la fecha del fixture: para partidos pasados el análisis usa el
+    # estado del motor de ese momento, no el actual (igual que /predicciones)
+    fecha = iso(f["date"])
+    niveles_h = niveles_de(home_id, 1, hasta=fecha)
+    niveles_a = niveles_de(away_id, 1, hasta=fecha)
+    const_h = constantes_de(home_id, 1, hasta=fecha)
+    const_a = constantes_de(away_id, 1, hasta=fecha)
     pred = prediccion(fixture_id)
 
     def nv(rows, team_id):
