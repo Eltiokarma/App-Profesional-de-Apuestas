@@ -19,18 +19,24 @@ export function TeamSearch({ store, width = 240 }: { store: SadStore; width?: nu
       return
     }
     setBusy(true)
+    let alive = true // descarta respuestas de consultas ya reemplazadas
     const timer = setTimeout(() => {
       searchTeams(t)
         .then((r) => {
+          if (!alive) return
           setRes(r)
           setBusy(false)
         })
         .catch(() => {
+          if (!alive) return
           setRes([])
           setBusy(false)
         })
     }, 250)
-    return () => clearTimeout(timer)
+    return () => {
+      alive = false
+      clearTimeout(timer)
+    }
   }, [q])
 
   useEffect(() => {

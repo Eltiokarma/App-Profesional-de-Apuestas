@@ -18,9 +18,15 @@ export function useAsync<T>(fn: () => Promise<T>, key: unknown): AsyncState<T> {
   const [tick, setTick] = useState(0)
   const fnRef = useRef(fn)
   fnRef.current = fn
+  const prevKey = useRef(key)
 
   useEffect(() => {
     let alive = true
+    if (prevKey.current !== key) {
+      // al cambiar de key no puede quedar visible el dato del key anterior
+      prevKey.current = key
+      setData(null)
+    }
     setLoading(true)
     setError(null)
     fnRef

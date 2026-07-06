@@ -200,6 +200,38 @@ export async function loadTeamFixtures(teamKey: string): Promise<Match[]> {
   return fx.map(fixtureToMatch)
 }
 
+// ── próximos partidos con nivel del rival (card de Burbujas) ────────────────
+export interface ProximoRival {
+  fecha: string // dd/mm
+  rivalNombre: string
+  bin: number
+  binEtiqueta: string
+}
+
+export async function loadProximos(teamKey: string, n = 3): Promise<ProximoRival[]> {
+  const equipoId = TEAM_NUM[teamKey]
+  if (equipoId == null) return []
+  const ds = getDataSource()
+  // el contrato entrega desc por fecha: los programados (fechas futuras) vienen primero
+  const fx = await ds.fixtures({ equipoId, limit: 50 })
+  const prox = fx
+    .filter((f) => f.estado === 'programado')
+    .sort((a, b) => a.fecha.localeCompare(b.fecha))
+    .slice(0, n)
+  return Promise.all(
+    prox.map(async (f) => {
+      const rival = f.local.id === equipoId ? f.visitante : f.local
+      const nv = (await ds.niveles(rival.id, 1))[0]
+      return {
+        fecha: `${f.fecha.slice(8, 10)}/${f.fecha.slice(5, 7)}`,
+        rivalNombre: rival.nombre,
+        bin: nv ? nv.bin : 0,
+        binEtiqueta: nv ? nv.binEtiqueta : 'Sin datos',
+      }
+    }),
+  )
+}
+
 export async function loadTeamStats(teamKey: string): Promise<EquipoStatsDTO | null> {
   const equipoId = TEAM_NUM[teamKey]
   if (equipoId == null) return null

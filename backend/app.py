@@ -9,7 +9,8 @@ Ejecutar junto a las DBs reales:
 """
 import os
 import sqlite3
-from datetime import datetime, timezone
+from datetime import date as date_t, datetime, timedelta, timezone
+from functools import lru_cache
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -93,6 +94,7 @@ def estado_de(status_short, status_long) -> str:
     return "programado"
 
 
+@lru_cache(maxsize=None)
 def liga_nombre(league_id) -> str:
     try:
         row = db.query_one("sad", "SELECT name FROM leagues WHERE id=?", (league_id,))
@@ -404,7 +406,7 @@ def health():
 
 
 @app.get(API + "/equipos")
-def buscar_equipos(buscar: str = Query(min_length=2), limit: int = Query(default=10, le=25)):
+def buscar_equipos(buscar: str = Query(min_length=2), limit: int = Query(default=10, ge=1, le=25)):
     """Búsqueda inteligente: sin tildes ni mayúsculas; ranking
     prefijo > inicio de palabra > contiene."""
     import unicodedata
@@ -425,16 +427,17 @@ def buscar_equipos(buscar: str = Query(min_length=2), limit: int = Query(default
 
 @app.get(API + "/fixtures")
 def fixtures(
-    fecha: str | None = None,
+    fecha: date_t | None = None,
     estado: str | None = None,
     ligaId: int | None = None,
     equipoId: int | None = None,
-    limit: int = Query(default=50, le=200),
+    limit: int = Query(default=50, ge=1, le=200),
 ):
     cond, params = [], []
     if fecha:
-        cond.append("date(f.date)=?")
-        params.append(fecha)
+        # rango en vez de date(f.date)=? para poder usar el índice sobre f.date
+        cond.append("f.date >= ? AND f.date < ?")
+        params.extend([fecha.isoformat(), (fecha + timedelta(days=1)).isoformat()])
     if ligaId is not None:
         cond.append("f.league_id=?")
         params.append(ligaId)
@@ -455,12 +458,12 @@ def fixture(fixture_id: int):
 
 
 @app.get(API + "/niveles/{equipo_id}")
-def niveles(equipo_id: int, limit: int = Query(default=50, le=500)):
+def niveles(equipo_id: int, limit: int = Query(default=50, ge=1, le=500)):
     return niveles_de(equipo_id, limit)
 
 
 @app.get(API + "/constantes/{equipo_id}")
-def constantes(equipo_id: int, limit: int = Query(default=50, le=500)):
+def constantes(equipo_id: int, limit: int = Query(default=50, ge=1, le=500)):
     return constantes_de(equipo_id, limit)
 
 

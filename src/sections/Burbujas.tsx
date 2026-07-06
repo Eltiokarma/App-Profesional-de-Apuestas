@@ -1,9 +1,9 @@
-import { LEVELS, TEAMS } from '../data'
+import { TEAMS } from '../data'
 import type { KCondKey, KTypeKey, Match } from '../data/types'
 import { KLineChart, KLineLegend } from '../components/KLineChart'
 import { binBadge, FUSED_KEY, K_TYPE_GROUPS, K_WINDOW_OPTS, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
 import type { FusedK } from '../motor/types'
-import { loadBurbujas, type BurbujasData } from '../services/appdata'
+import { loadBurbujas, loadProximos, type BurbujasData } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
@@ -66,11 +66,12 @@ export function Burbujas({ store, m, isMobile }: Props) {
 
   // constantes K + niveles vía el contrato (/constantes, /niveles)
   const engData = useAsync(async () => {
-    const [h, a] = await Promise.all([loadBurbujas(m.home), loadBurbujas(m.away)])
-    return { h, a }
+    const [h, a, prox] = await Promise.all([loadBurbujas(m.home), loadBurbujas(m.away), loadProximos(m.home)])
+    return { h, a, prox }
   }, m.id)
   const engH = engData.data?.h ?? null
   const engA = engData.data?.a ?? null
+  const proximos = engData.data?.prox ?? []
 
   const condOpts = ([['total', 'Total'], ['local', 'Local'], ['visita', 'Visita']] as [KCondKey, string][]).map(([k, l]) => ({
     key: k, label: l, bg: s.kCond === k ? 'var(--bg3)' : 'transparent', fg: s.kCond === k ? 'var(--t1)' : 'var(--t2)',
@@ -106,16 +107,6 @@ export function Burbujas({ store, m, isMobile }: Props) {
       },
     ),
   ]
-
-  const nx = [
-    { when: 'J33', name: 'Getafe', lv: 'medio' },
-    { when: 'J34', name: 'Real Madrid', lv: 'elite' },
-    { when: 'J35', name: 'Las Palmas', lv: 'bajo' },
-  ]
-  const nextThree = nx.map((n) => {
-    const lv = LEVELS.find((l) => l.k === n.lv)!
-    return { when: n.when, name: n.name, lvLabel: lv.label, lvColor: lv.color, lvSoft: lv.soft }
-  })
 
   return (
     <div>
@@ -211,15 +202,21 @@ export function Burbujas({ store, m, isMobile }: Props) {
             </div>
           </section>
           <section style={{ padding: 16, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
-            <div style={{ font: '700 12px var(--sans)', marginBottom: 4 }}>Próximos 3 · {H.name}</div>
-            <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginBottom: 12 }}>Calendario por nivel</div>
-            {nextThree.map((n, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid var(--line)' }}>
-                <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)', width: 36 }}>{n.when}</span>
-                <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)', flex: 1 }}>{n.name}</span>
-                <span style={{ padding: '3px 9px', borderRadius: 6, background: n.lvSoft, color: n.lvColor, font: '700 9.5px var(--mono)', letterSpacing: '.3px' }}>{n.lvLabel}</span>
-              </div>
-            ))}
+            <div style={{ font: '700 12px var(--sans)', marginBottom: 4 }}>Próximos {proximos.length || 3} · {H.name}</div>
+            <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginBottom: 12 }}>Calendario por nivel del rival</div>
+            {proximos.length === 0 && (
+              <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t3)', padding: '6px 0' }}>Sin partidos programados en los datos</div>
+            )}
+            {proximos.map((n, i) => {
+              const bb = binBadge(n.bin)
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid var(--line)' }}>
+                  <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)', width: 36, fontVariantNumeric: 'tabular-nums' }}>{n.fecha}</span>
+                  <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{n.rivalNombre}</span>
+                  <span style={{ padding: '3px 9px', borderRadius: 6, background: bb.soft, color: bb.color, font: '700 9.5px var(--mono)', letterSpacing: '.3px', flexShrink: 0 }}>{n.binEtiqueta}</span>
+                </div>
+              )
+            })}
           </section>
         </aside>
       </div>
