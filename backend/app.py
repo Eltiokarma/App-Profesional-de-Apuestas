@@ -11,6 +11,7 @@ import os
 import sqlite3
 from datetime import date as date_t, datetime, timedelta, timezone
 from functools import lru_cache
+from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -92,6 +93,22 @@ def estado_de(status_short, status_long) -> str:
     if ss in FIN_SHORT or (status_long or "") == "Match Finished":
         return "finalizado"
     return "programado"
+
+
+# Equivalente SQL de estado_de(): el filtro debe aplicarse ANTES del LIMIT
+# (filtrar en Python devolvía menos filas de las pedidas o ninguna).
+_SS = "COALESCE(UPPER(f.status_short),'')"
+_EN_VIVO_SQL = f"{_SS} IN ({','.join('?' * len(LIVE_SHORT))})"
+_FIN_SQL = f"({_SS} IN ({','.join('?' * len(FIN_SHORT))}) OR COALESCE(f.status_long,'')='Match Finished')"
+
+
+def estado_sql(estado: str) -> tuple[str, list]:
+    live, fin = sorted(LIVE_SHORT), sorted(FIN_SHORT)
+    if estado == "en_vivo":
+        return _EN_VIVO_SQL, live
+    if estado == "finalizado":
+        return f"(NOT {_EN_VIVO_SQL} AND {_FIN_SQL})", live + fin
+    return f"(NOT {_EN_VIVO_SQL} AND NOT {_FIN_SQL})", live + fin
 
 
 @lru_cache(maxsize=None)
@@ -428,7 +445,7 @@ def buscar_equipos(buscar: str = Query(min_length=2), limit: int = Query(default
 @app.get(API + "/fixtures")
 def fixtures(
     fecha: date_t | None = None,
-    estado: str | None = None,
+    estado: Literal["programado", "en_vivo", "finalizado"] | None = None,
     ligaId: int | None = None,
     equipoId: int | None = None,
     limit: int = Query(default=50, ge=1, le=200),
@@ -438,6 +455,10 @@ def fixtures(
         # rango en vez de date(f.date)=? para poder usar el índice sobre f.date
         cond.append("f.date >= ? AND f.date < ?")
         params.extend([fecha.isoformat(), (fecha + timedelta(days=1)).isoformat()])
+    if estado:
+        sql, extra = estado_sql(estado)
+        cond.append(sql)
+        params.extend(extra)
     if ligaId is not None:
         cond.append("f.league_id=?")
         params.append(ligaId)
@@ -446,10 +467,7 @@ def fixtures(
         params.extend([equipoId, equipoId])
     where = (" WHERE " + " AND ".join(cond)) if cond else ""
     rows = db.query("sad", FIXTURE_SQL + where + " ORDER BY f.date DESC LIMIT ?", (*params, limit))
-    out = [fixture_dto(r) for r in rows]
-    if estado:
-        out = [f for f in out if f["estado"] == estado]
-    return out
+    return [fixture_dto(r) for r in rows]
 
 
 @app.get(API + "/fixtures/{fixture_id}")

@@ -174,6 +174,11 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
               </div>
               {cuota.loading ? (
                 <div className="sad-sk" style={{ height: 150, marginTop: 10 }} />
+              ) : cuota.error ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '18px 0' }}>
+                  <span style={{ font: '500 11px var(--mono)', color: 'var(--down)' }}>No se pudieron cargar las cuotas: {cuota.error}</span>
+                  <button onClick={cuota.reload} style={{ padding: '4px 10px', border: '1px solid var(--line)', borderRadius: 7, cursor: 'pointer', background: 'var(--bg3)', color: 'var(--t1)', font: '600 10.5px var(--sans)' }}>Reintentar</button>
+                </div>
               ) : cuota.data && cuota.data.length ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
                   {CUOTA_FAMILIES.map((f) => (

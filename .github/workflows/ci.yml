@@ -31,5 +31,7 @@ jobs:
           cache: pip
       - name: Instalar dependencias del backend
         run: pip install -r backend/requirements.txt
-      - name: Tests del contrato SAD API (seed demo + 33 verificaciones)
+      - name: Tests del contrato SAD API (seed demo + verificaciones)
         run: python -m backend.test_api
+      - name: Tests del acumulador k_cuota
+        run: python -m backend.test_cuota

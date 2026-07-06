@@ -9,6 +9,7 @@ export function TeamSearch({ store, width = 240 }: { store: SadStore; width?: nu
   const [res, setRes] = useState<EquipoDTO[]>([])
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState(false)
   const boxRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -16,9 +17,11 @@ export function TeamSearch({ store, width = 240 }: { store: SadStore; width?: nu
     if (t.length < 2) {
       setRes([])
       setBusy(false)
+      setErr(false)
       return
     }
     setBusy(true)
+    setErr(false)
     let alive = true // descarta respuestas de consultas ya reemplazadas
     const timer = setTimeout(() => {
       searchTeams(t)
@@ -30,6 +33,7 @@ export function TeamSearch({ store, width = 240 }: { store: SadStore; width?: nu
         .catch(() => {
           if (!alive) return
           setRes([])
+          setErr(true)
           setBusy(false)
         })
     }, 250)
@@ -82,7 +86,10 @@ export function TeamSearch({ store, width = 240 }: { store: SadStore; width?: nu
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M9 6l6 6-6 6" /></svg>
             </button>
           ))}
-          {!busy && res.length === 0 && (
+          {!busy && err && (
+            <div style={{ font: '500 11.5px var(--sans)', color: 'var(--down)', padding: '10px 12px' }}>Error de red al buscar · revisa la conexión con el servidor</div>
+          )}
+          {!busy && !err && res.length === 0 && (
             <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t3)', padding: '10px 12px' }}>Sin resultados para "{q.trim()}"</div>
           )}
         </div>

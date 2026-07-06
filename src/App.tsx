@@ -60,8 +60,8 @@ export function App() {
   // Partidos y Equipo no requieren partido seleccionado
   const needsMatch = s.section === 'cuotas' || s.section === 'burbujas' || s.section === 'skills' || s.section === 'estadisticas'
   const showEmpty = needsMatch && !m && !fixtures.loading && !fixtures.error
-  const showSkeleton = needsMatch && ((!!m && s.loading) || fixtures.loading)
-  const showContent = !!m && !s.loading && !fixtures.loading
+  const showSkeleton = needsMatch && fixtures.loading
+  const showContent = !!m && !fixtures.loading
 
   return (
     <div data-theme={s.theme} style={rootStyle}>
