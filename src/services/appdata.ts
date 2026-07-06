@@ -103,9 +103,29 @@ export function fixtureToMatch(f: FixtureDTO): Match {
   }
 }
 
-export async function loadMatches(): Promise<Match[]> {
-  const fx = await getDataSource().fixtures()
-  return fx.map(fixtureToMatch)
+const localDateStr = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+
+/** Partidos de un día LOCAL (yyyy-mm-dd) en orden cronológico.
+ *  El backend filtra por día UTC, así que un día local abarca dos días UTC
+ *  (p. ej. en UTC-5 un partido a las 21:00 cae en el día UTC siguiente):
+ *  se pide también el día vecino y se recorta por fecha local. */
+export async function loadMatches(fecha: string): Promise<Match[]> {
+  const ds = getDataSource()
+  const base = new Date(fecha + 'T12:00:00')
+  const offMin = base.getTimezoneOffset() // >0 al oeste de UTC, <0 al este
+  const pedidos = [ds.fixtures({ fecha, limit: 200 })]
+  if (offMin !== 0) {
+    const vecino = new Date(base)
+    vecino.setDate(base.getDate() + (offMin > 0 ? 1 : -1))
+    pedidos.push(ds.fixtures({ fecha: localDateStr(vecino), limit: 200 }))
+  }
+  const lotes = await Promise.all(pedidos)
+  const vistos = new Set<number>()
+  return lotes
+    .flat()
+    .filter((f) => !vistos.has(f.id) && vistos.add(f.id) && localDateStr(new Date(f.fecha)) === fecha)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha))
+    .map(fixtureToMatch)
 }
 
 export const fixtureNum = (matchId: string) => parseInt(matchId.slice(1), 10)

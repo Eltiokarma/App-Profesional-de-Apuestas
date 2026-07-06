@@ -33,7 +33,7 @@ export interface FeedHealth {
 export interface SadDataSource {
   readonly mode: DataSourceMode
   health(): Promise<FeedHealth>
-  fixtures(params?: { equipoId?: number; limit?: number }): Promise<FixtureDTO[]>
+  fixtures(params?: { fecha?: string; equipoId?: number; limit?: number }): Promise<FixtureDTO[]>
   buscarEquipos(buscar: string): Promise<{ id: number; nombre: string; abreviatura: string }[]>
   niveles(equipoId: number, limit?: number): Promise<NivelDTO[]>
   constantes(equipoId: number, limit?: number): Promise<ConstantesDTO[]>
@@ -156,15 +156,21 @@ class MockDataSource implements SadDataSource {
       .map((e) => e.dto)
   }
 
-  async fixtures(params: { equipoId?: number; limit?: number } = {}): Promise<FixtureDTO[]> {
+  async fixtures(params: { fecha?: string; equipoId?: number; limit?: number } = {}): Promise<FixtureDTO[]> {
     const teamKey = params.equipoId != null ? NUM_TEAM[params.equipoId] : undefined
+    // los partidos demo viven en el día de hoy (hora local) para que la
+    // barra de fechas funcione igual que con el backend real
+    const hoy = new Date()
+    const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`
+    if (params.fecha && params.fecha !== hoyStr) return []
     return MATCHES.filter((m) => !teamKey || m.home === teamKey || m.away === teamKey).map((m) => {
       const goles = (m.score || '0 - 0').split('-').map((x) => parseInt(x.trim()) || 0)
       const enJuego = m.status === 'live'
       const hora = m.status === 'sched' && /^\d{2}:\d{2}$/.test(m.min) ? m.min : '21:00'
+      const [hh, mm] = hora.split(':').map(Number)
       return {
         id: FIXTURE_NUM(m.id),
-        fecha: `2026-07-02T${hora}:00.000Z`,
+        fecha: new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), hh, mm).toISOString(),
         ligaId: LIGA_NUM[m.lk] ?? 0,
         liga: m.league,
         temporada: 2026,
@@ -312,7 +318,7 @@ class HttpDataSource implements SadDataSource {
     }
   }
 
-  fixtures = (params?: { equipoId?: number; limit?: number }) => SadApi.fixtures(params)
+  fixtures = (params?: { fecha?: string; equipoId?: number; limit?: number }) => SadApi.fixtures(params)
   buscarEquipos = (buscar: string) => SadApi.buscarEquipos(buscar)
   niveles = (equipoId: number, limit?: number) => SadApi.niveles(equipoId, limit)
   constantes = (equipoId: number, limit?: number) => SadApi.constantes(equipoId, limit)

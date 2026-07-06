@@ -19,6 +19,10 @@ export interface SadState {
   theme: 'dark' | 'light'
   section: SectionKey
   matchId: string | null
+  /** Partido seleccionado (objeto completo: no depende de la lista del día visible). */
+  match: Match | null
+  /** Día visible en Partidos (yyyy-mm-dd, local). */
+  fecha: string
   /** Equipo abierto en la página de equipo (clave interna). */
   teamKey: string | null
   vw: number
@@ -39,10 +43,17 @@ export interface SadState {
   history: HistoryEntry[]
 }
 
+export function hoyStr(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${('0' + (d.getMonth() + 1)).slice(-2)}-${('0' + d.getDate()).slice(-2)}`
+}
+
 const initialState: SadState = {
   theme: 'dark',
   section: 'partidos',
-  matchId: 'm1',
+  matchId: null,
+  match: null,
+  fecha: hoyStr(),
   teamKey: null,
   vw: typeof window !== 'undefined' ? window.innerWidth : 1280,
   forceMobile: false,
@@ -73,6 +84,7 @@ export interface SadStore {
   openTeam: (teamKey: string) => void
   selectMatch: (mt: Match) => () => void
   clearMatch: () => void
+  setFecha: (fecha: string) => void
   setMode: (mode: OddsMode) => () => void
   toggleMark: (id: string) => void
   setKType: (c: KTypeKey) => () => void
@@ -131,12 +143,13 @@ export function useSad(): SadStore {
       const live = mt.status === 'live'
       const lm = live ? parseInt(mt.min) || 60 : 63
       // seleccionar un partido lleva directo a Cuotas
-      patch({ matchId: mt.id, section: 'cuotas', oddsMode: live ? 'live' : 'prematch', liveMin: lm })
+      patch({ matchId: mt.id, match: mt, section: 'cuotas', oddsMode: live ? 'live' : 'prematch', liveMin: lm })
     },
     [patch],
   )
 
-  const clearMatch = useCallback(() => patch({ matchId: null }), [patch])
+  const clearMatch = useCallback(() => patch({ matchId: null, match: null }), [patch])
+  const setFecha = useCallback((fecha: string) => patch({ fecha }), [patch])
   const setMode = useCallback((mode: OddsMode) => () => patch({ oddsMode: mode }), [patch])
   const toggleMark = useCallback(
     (id: string) =>
@@ -183,6 +196,7 @@ export function useSad(): SadStore {
     openTeam,
     selectMatch,
     clearMatch,
+    setFecha,
     setMode,
     toggleMark,
     setKType,

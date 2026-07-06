@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { TEAMS } from '../data'
 import type { Match, MatchStatus } from '../data/types'
 import { TeamSearch } from '../components/TeamSearch'
@@ -15,10 +15,34 @@ interface Props {
 
 type Filtro = 'todos' | MatchStatus
 
-/** Pantalla inicial: todos los partidos capturados, agrupados por competición. */
+const DIAS = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB']
+const dd = (n: number) => String(n).padStart(2, '0')
+const isoDia = (d: Date) => `${d.getFullYear()}-${dd(d.getMonth() + 1)}-${dd(d.getDate())}`
+
+/** Chips de día estilo BeSoccer: hoy ± 3 con AYER/HOY/MAÑANA. */
+function diasBarra(fechaSel: string): { value: string; label: string }[] {
+  const hoy = new Date()
+  const chips = []
+  for (let rel = -3; rel <= 3; rel++) {
+    const d = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + rel)
+    const label = rel === 0 ? 'HOY' : rel === -1 ? 'AYER' : rel === 1 ? 'MAÑANA' : `${DIAS[d.getDay()]} ${dd(d.getDate())}`
+    chips.push({ value: isoDia(d), label })
+  }
+  if (!chips.some((c) => c.value === fechaSel)) {
+    const d = new Date(fechaSel + 'T12:00:00')
+    const chip = { value: fechaSel, label: `${DIAS[d.getDay()]} ${dd(d.getDate())}/${dd(d.getMonth() + 1)}` }
+    if (fechaSel < chips[0].value) chips.unshift(chip)
+    else chips.push(chip)
+  }
+  return chips
+}
+
+/** Pantalla inicial: los partidos del día elegido, agrupados por competición. */
 export function Partidos({ store, matches, loading, error, reload, isMobile }: Props) {
+  const { s } = store
   const [filtro, setFiltro] = useState<Filtro>('todos')
   const [texto, setTexto] = useState('')
+  const dateRef = useRef<HTMLInputElement>(null)
 
   const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
   const t = norm(texto.trim())
@@ -51,11 +75,46 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
         <div>
           <h1 style={{ margin: 0, font: '800 22px var(--sans)', letterSpacing: '-.3px' }}>Partidos</h1>
           <p style={{ margin: '5px 0 0', font: '500 12.5px var(--sans)', color: 'var(--t2)' }}>
-            Todos los partidos capturados · elige uno para analizarlo
+            Elige un día y un partido para analizarlo
             {nLive > 0 && <span style={{ color: 'var(--down)', font: '600 12px var(--mono)' }}> · {nLive} en vivo</span>}
           </p>
         </div>
         <TeamSearch store={store} width={isMobile ? '100%' : 260} />
+      </div>
+
+      {/* barra de fechas estilo BeSoccer */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+        <div className="sad-scroll" style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 11, background: 'var(--bg2)', border: '1px solid var(--line)', overflowX: 'auto', flex: isMobile ? 1 : 'initial' }}>
+          {diasBarra(s.fecha).map((c) => {
+            const activo = c.value === s.fecha
+            return (
+              <button
+                key={c.value}
+                onClick={() => store.setFecha(c.value)}
+                style={{ padding: '8px 13px', border: 0, borderRadius: 8, cursor: 'pointer', background: activo ? 'var(--accent-soft)' : 'transparent', color: activo ? 'var(--accent)' : c.label === 'HOY' ? 'var(--t1)' : 'var(--t2)', font: `700 11px var(--mono)`, letterSpacing: '.4px', whiteSpace: 'nowrap', flexShrink: 0 }}
+              >
+                {c.label}
+              </button>
+            )
+          })}
+        </div>
+        <button
+          onClick={() => dateRef.current?.showPicker?.()}
+          style={{ display: 'flex', alignItems: 'center', padding: '9px 11px', borderRadius: 10, background: 'var(--bg2)', border: '1px solid var(--line)', cursor: 'pointer', flexShrink: 0, position: 'relative' }}
+          title="Ir a una fecha"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+          </svg>
+          <input
+            ref={dateRef}
+            type="date"
+            value={s.fecha}
+            onChange={(e) => e.target.value && store.setFecha(e.target.value)}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, border: 0, padding: 0, pointerEvents: 'none' }}
+            tabIndex={-1}
+          />
+        </button>
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -127,7 +186,6 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
                       <span style={{ width: 28, height: 28, borderRadius: '50%', background: A?.color ?? 'var(--bg3)', color: A?.fg ?? 'var(--t2)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 9px var(--mono)', flexShrink: 0 }}>{A?.short ?? '?'}</span>
                       <span style={{ font: '600 13px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{A?.name ?? m.away}</span>
                     </span>
-                    {!isMobile && <span style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)', flexShrink: 0 }}>{m.date}</span>}
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M9 6l6 6-6 6" /></svg>
                   </button>
                 )
@@ -136,7 +194,9 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
           </section>
         ))}
       {!loading && !error && visibles.length === 0 && (
-        <div style={{ font: '500 12.5px var(--sans)', color: 'var(--t3)', padding: 24, textAlign: 'center' }}>Sin partidos para este filtro.</div>
+        <div style={{ font: '500 12.5px var(--sans)', color: 'var(--t3)', padding: 24, textAlign: 'center' }}>
+          {matches.length === 0 ? 'Sin partidos este día.' : 'Sin partidos para este filtro.'}
+        </div>
       )}
     </div>
   )
