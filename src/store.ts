@@ -3,7 +3,6 @@ import type {
   KCondKey,
   KTypeKey,
   Match,
-  ModelKey,
   OddsMode,
   SectionKey,
   SkillState,
@@ -35,7 +34,6 @@ export interface SadState {
   kCond: KCondKey
   /** Ventana de la gráfica de K: nº de partidos (Infinity = toda la historia). */
   kWindow: number
-  model: ModelKey
   chartMarket: string
   skillStatus: Record<string, SkillState>
   skillTime: Record<string, string>
@@ -64,7 +62,6 @@ const initialState: SadState = {
   kType: 'res',
   kCond: 'total',
   kWindow: Infinity, // por defecto: toda la historia
-  model: 'auto',
   chartMarket: '1x2',
   skillStatus: { efe: 'idle', sad: 'idle', tac: 'idle', tl: 'idle' },
   skillTime: {},
@@ -90,7 +87,6 @@ export interface SadStore {
   setKType: (c: KTypeKey) => () => void
   setKCond: (c: KCondKey) => () => void
   setWindow: (n: number) => () => void
-  setModel: (m: ModelKey) => () => void
   setChartMarket: (key: string) => void
   generate: (key: string) => () => void
   openReport: (key: string) => () => void
@@ -142,10 +138,20 @@ export function useSad(): SadStore {
     (mt: Match) => () => {
       const live = mt.status === 'live'
       const lm = live ? parseInt(mt.min) || 60 : 63
-      // seleccionar un partido lleva directo a Cuotas
-      patch({ matchId: mt.id, match: mt, section: 'cuotas', oddsMode: live ? 'live' : 'prematch', liveMin: lm })
+      // seleccionar un partido lleva directo a Cuotas; los reportes de skills
+      // son por partido, así que se resetean al cambiar de selección
+      patchFn((prev) => (prev.matchId === mt.id ? { section: 'cuotas' } : {
+        matchId: mt.id,
+        match: mt,
+        section: 'cuotas',
+        oddsMode: live ? 'live' : 'prematch',
+        liveMin: lm,
+        skillStatus: { efe: 'idle', sad: 'idle', tac: 'idle', tl: 'idle' },
+        skillTime: {},
+        openReport: null,
+      }))
     },
-    [patch],
+    [patchFn],
   )
 
   const clearMatch = useCallback(() => patch({ matchId: null, match: null }), [patch])
@@ -164,7 +170,6 @@ export function useSad(): SadStore {
   const setKType = useCallback((c: KTypeKey) => () => patch({ kType: c }), [patch])
   const setKCond = useCallback((c: KCondKey) => () => patch({ kCond: c }), [patch])
   const setWindow = useCallback((n: number) => () => patch({ kWindow: n }), [patch])
-  const setModel = useCallback((m: ModelKey) => () => patch({ model: m }), [patch])
   const setChartMarket = useCallback((key: string) => patch({ chartMarket: key }), [patch])
 
   const generate = useCallback(
@@ -202,7 +207,6 @@ export function useSad(): SadStore {
     setKType,
     setKCond,
     setWindow,
-    setModel,
     setChartMarket,
     generate,
     openReport,

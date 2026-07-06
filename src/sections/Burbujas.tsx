@@ -79,11 +79,6 @@ export function Burbujas({ store, m, isMobile }: Props) {
   const windowOpts = K_WINDOW_OPTS.map(([n, l]) => ({
     key: n, label: l, bg: s.kWindow === n ? 'var(--bg3)' : 'transparent', fg: s.kWindow === n ? 'var(--t1)' : 'var(--t2)',
   }))
-  const modelOpts = (['auto', 'global', 'liga'] as const).map((k) => ({
-    key: k, label: k === 'auto' ? 'Auto' : k === 'global' ? 'Global' : 'Liga',
-    bg: s.model === k ? 'var(--accent-soft)' : 'transparent', fg: s.model === k ? 'var(--accent)' : 'var(--t2)',
-  }))
-
   // escala común para comparar local vs visitante de un vistazo
   const key = FUSED_KEY[s.kType][s.kCond]
   let maxAbs = 0.001
@@ -143,11 +138,6 @@ export function Burbujas({ store, m, isMobile }: Props) {
                   <button key={c.key} onClick={store.setWindow(c.key)} style={{ padding: '6px 12px', border: 0, borderRadius: 7, cursor: 'pointer', background: c.bg, color: c.fg, font: '600 11px var(--sans)' }}>{c.label}</button>
                 ))}
               </div>
-              <div style={{ display: 'flex', padding: 4, borderRadius: 10, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
-                {modelOpts.map((md) => (
-                  <button key={md.key} onClick={store.setModel(md.key)} style={{ padding: '6px 10px', border: 0, borderRadius: 7, cursor: 'pointer', background: md.bg, color: md.fg, font: '600 11px var(--mono)' }}>{md.label}</button>
-                ))}
-              </div>
             </div>
           </div>
         </div>
@@ -169,8 +159,8 @@ export function Burbujas({ store, m, isMobile }: Props) {
       )}
       {!engData.loading && !engData.error && (
       <div style={{ display: 'grid', gridTemplateColumns: gridBurbujas, gap: 14 }}>
-        {engH && <TeamPanel eng={engH} teamId={m.home} role={'Local · modelo ' + s.model} kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} chartWindow={s.kWindow} />}
-        {engA && <TeamPanel eng={engA} teamId={m.away} role={'Visitante · modelo ' + s.model} kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} chartWindow={s.kWindow} />}
+        {engH && <TeamPanel eng={engH} teamId={m.home} role="Local" kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} chartWindow={s.kWindow} />}
+        {engA && <TeamPanel eng={engA} teamId={m.away} role="Visitante" kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} chartWindow={s.kWindow} />}
 
         <aside style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <section style={{ padding: 16, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
