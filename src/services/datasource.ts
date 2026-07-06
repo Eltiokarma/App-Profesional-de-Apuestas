@@ -8,7 +8,9 @@ import type {
   ConstanteCuotaDTO,
   ConstantesDTO,
   CuotaDTO,
+  EquipoDTO,
   EquipoStatsDTO,
+  EstadoFixture,
   FixtureDTO,
   GapEquipoDTO,
   NivelDTO,
@@ -30,11 +32,20 @@ export interface FeedHealth {
   detail: string
 }
 
+/** Filtros de /fixtures del contrato (docs/openapi.yaml). */
+export interface FixturesParams {
+  fecha?: string
+  estado?: EstadoFixture
+  ligaId?: number
+  equipoId?: number
+  limit?: number
+}
+
 export interface SadDataSource {
   readonly mode: DataSourceMode
   health(): Promise<FeedHealth>
-  fixtures(params?: { fecha?: string; equipoId?: number; limit?: number }): Promise<FixtureDTO[]>
-  buscarEquipos(buscar: string): Promise<{ id: number; nombre: string; abreviatura: string }[]>
+  fixtures(params?: FixturesParams): Promise<FixtureDTO[]>
+  buscarEquipos(buscar: string, limit?: number): Promise<EquipoDTO[]>
   niveles(equipoId: number, limit?: number): Promise<NivelDTO[]>
   constantes(equipoId: number, limit?: number): Promise<ConstantesDTO[]>
   /** k_cuota (§3.8): solo datos reales; en mock devuelve []. */
@@ -141,7 +152,7 @@ class MockDataSource implements SadDataSource {
     return { ok: true, latencyMs: null, detail: 'motor local (demo)' }
   }
 
-  async buscarEquipos(buscar: string) {
+  async buscarEquipos(buscar: string, limit = 10) {
     const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
     const q = norm(buscar)
     if (q.length < 2) return []
@@ -152,37 +163,46 @@ class MockDataSource implements SadDataSource {
         dto: equipoDTO(e.k),
       }))
       .sort((a, b) => a.rank - b.rank || a.dto.nombre.length - b.dto.nombre.length)
-      .slice(0, 10)
+      .slice(0, Math.min(Math.max(limit, 1), 25)) // mismo tope que el backend
       .map((e) => e.dto)
   }
 
-  async fixtures(params: { fecha?: string; equipoId?: number; limit?: number } = {}): Promise<FixtureDTO[]> {
+  async fixtures(params: FixturesParams = {}): Promise<FixtureDTO[]> {
     const teamKey = params.equipoId != null ? NUM_TEAM[params.equipoId] : undefined
     // los partidos demo viven en el día de hoy (hora local) para que la
     // barra de fechas funcione igual que con el backend real
     const hoy = new Date()
     const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`
     if (params.fecha && params.fecha !== hoyStr) return []
-    return MATCHES.filter((m) => !teamKey || m.home === teamKey || m.away === teamKey).map((m) => {
-      const goles = (m.score || '0 - 0').split('-').map((x) => parseInt(x.trim()) || 0)
-      const enJuego = m.status === 'live'
-      const hora = m.status === 'sched' && /^\d{2}:\d{2}$/.test(m.min) ? m.min : '21:00'
-      const [hh, mm] = hora.split(':').map(Number)
-      return {
-        id: FIXTURE_NUM(m.id),
-        fecha: new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), hh, mm).toISOString(),
-        ligaId: LIGA_NUM[m.lk] ?? 0,
-        liga: m.league,
-        temporada: 2026,
-        estado: enJuego ? 'en_vivo' : m.status === 'fin' ? 'finalizado' : 'programado',
-        minuto: enJuego ? parseInt(m.min) || null : null,
-        estadio: m.venue,
-        local: equipoDTO(m.home),
-        visitante: equipoDTO(m.away),
-        golesLocal: m.status === 'sched' ? null : goles[0],
-        golesVisitante: m.status === 'sched' ? null : goles[1],
-      }
-    })
+    const estadoDe = (m: (typeof MATCHES)[number]): EstadoFixture =>
+      m.status === 'live' ? 'en_vivo' : m.status === 'fin' ? 'finalizado' : 'programado'
+    return MATCHES.filter(
+      (m) =>
+        (!teamKey || m.home === teamKey || m.away === teamKey) &&
+        (!params.estado || estadoDe(m) === params.estado) &&
+        (params.ligaId == null || (LIGA_NUM[m.lk] ?? 0) === params.ligaId),
+    )
+      .slice(0, Math.min(Math.max(params.limit ?? 50, 1), 200)) // mismo tope que el backend
+      .map((m) => {
+        const goles = (m.score || '0 - 0').split('-').map((x) => parseInt(x.trim()) || 0)
+        const enJuego = m.status === 'live'
+        const hora = m.status === 'sched' && /^\d{2}:\d{2}$/.test(m.min) ? m.min : '21:00'
+        const [hh, mm] = hora.split(':').map(Number)
+        return {
+          id: FIXTURE_NUM(m.id),
+          fecha: new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), hh, mm).toISOString(),
+          ligaId: LIGA_NUM[m.lk] ?? 0,
+          liga: m.league,
+          temporada: 2026,
+          estado: estadoDe(m),
+          minuto: enJuego ? parseInt(m.min) || null : null,
+          estadio: m.venue,
+          local: equipoDTO(m.home),
+          visitante: equipoDTO(m.away),
+          golesLocal: m.status === 'sched' ? null : goles[0],
+          golesVisitante: m.status === 'sched' ? null : goles[1],
+        }
+      })
   }
 
   async niveles(equipoId: number, limit = 50): Promise<NivelDTO[]> {
@@ -271,14 +291,16 @@ class MockDataSource implements SadDataSource {
       forma: T.form,
       golesFavorProm: T.gf,
       golesContraProm: T.gc,
-      xgProm: T.xg,
-      posesionProm: T.poss,
-      tirosPuertaProm: T.sot,
-      cornersProm: T.corn,
+      // igual que el backend v0: los promedios avanzados aún no se derivan
+      xgProm: null,
+      posesionProm: null,
+      tirosPuertaProm: null,
+      cornersProm: null,
     }
   }
 
-  async standings(ligaId: number): Promise<StandingRowDTO[]> {
+  async standings(ligaId: number, temporada?: number): Promise<StandingRowDTO[]> {
+    if (temporada != null && temporada !== 2026) return [] // la demo solo tiene la 2026
     const lk = LK_BY_NUM[ligaId]
     const rows = (lk && STANDINGS[lk]) || []
     const keyByName = (name: string) => TEAM_KEYS.find((k) => TEAMS[k].name === name)
@@ -318,8 +340,8 @@ class HttpDataSource implements SadDataSource {
     }
   }
 
-  fixtures = (params?: { fecha?: string; equipoId?: number; limit?: number }) => SadApi.fixtures(params)
-  buscarEquipos = (buscar: string) => SadApi.buscarEquipos(buscar)
+  fixtures = (params?: FixturesParams) => SadApi.fixtures(params)
+  buscarEquipos = (buscar: string, limit?: number) => SadApi.buscarEquipos(buscar, limit)
   niveles = (equipoId: number, limit?: number) => SadApi.niveles(equipoId, limit)
   constantes = (equipoId: number, limit?: number) => SadApi.constantes(equipoId, limit)
   constantesCuota = (equipoId: number) => SadApi.constantesCuota(equipoId)

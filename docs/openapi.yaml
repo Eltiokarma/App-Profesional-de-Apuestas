@@ -34,6 +34,7 @@ paths:
         - { name: estado, in: query, schema: { $ref: '#/components/schemas/EstadoFixture' } }
         - { name: ligaId, in: query, schema: { type: integer } }
         - { name: equipoId, in: query, schema: { type: integer, description: 'solo partidos de este equipo' } }
+        - { name: limit, in: query, schema: { type: integer, default: 50, minimum: 1, maximum: 200 } }
       responses:
         '200':
           description: OK
@@ -57,7 +58,7 @@ paths:
       summary: Historia de niveles del equipo (desc por fecha)
       parameters:
         - { name: equipoId, in: path, required: true, schema: { type: integer } }
-        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+        - { name: limit, in: query, schema: { type: integer, default: 50, minimum: 1, maximum: 500 } }
       responses:
         '200':
           description: OK
@@ -69,7 +70,7 @@ paths:
       summary: Historia de constantes K del equipo (desc por fecha)
       parameters:
         - { name: equipoId, in: path, required: true, schema: { type: integer } }
-        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+        - { name: limit, in: query, schema: { type: integer, default: 50, minimum: 1, maximum: 500 } }
       responses:
         '200':
           description: OK
@@ -114,7 +115,7 @@ paths:
     get:
       summary: Búsqueda inteligente de equipos (sin tildes, ranking por prefijo)
       parameters:
-        - { name: buscar, in: query, required: true, schema: { type: string, minLength: 2 } }
+        - { name: buscar, in: query, required: true, schema: { type: string, minLength: 2, maxLength: 60 } }
         - { name: limit, in: query, schema: { type: integer, default: 10, maximum: 25 } }
       responses:
         '200':
@@ -209,7 +210,7 @@ components:
     Constantes:
       type: object
       description: Fila de constants + processed_matches (rival, goles) + fusión
-      required: [equipoId, fixtureId, fecha, condicion, rivalId, rivalNombre, nivelRival, golesFavor, golesContra, q, k, fusion]
+      required: [equipoId, fixtureId, fecha, condicion, rivalId, rivalNombre, nivelRival, golesFavor, golesContra, ligaId, esInternacional, q, k, fusion]
       properties:
         equipoId: { type: integer }
         fixtureId: { type: integer }
