@@ -39,3 +39,4 @@ npm-debug.log*
 demo_data/
 __pycache__/
 *.pyc
+.extractor_cuota.json

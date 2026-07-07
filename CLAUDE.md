@@ -17,6 +17,12 @@ pip install -r backend/requirements.txt
 python -m uvicorn backend.app:app --port 8000
 python -m backend.test_api        # 60 verificaciones del contrato
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
+
+# ingesta (dueña de los datos; el backend HTTP sigue siendo de solo lectura)
+python -m backend.ingesta.extractor --probar    # 1 request de prueba (API_FOOTBALL_KEY en .env)
+python -m backend.ingesta.extractor             # fixtures hoy−3d..+10d + cuotas NS (tope 95/día)
+python -m backend.ingesta.pipeline --out .      # regenera levels/constants/discreto desde sad.db
+python -m backend.ingesta.test_paridad          # test dorado vs DBs del pipeline viejo
 ```
 
 Modo de datos por `.env`: `VITE_DATA_SOURCE=mock` (motor local demo) o
@@ -38,8 +44,11 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
 
 ## Reglas del proyecto
 
-- **Las `.db` jamás se commitean** (ya están en .gitignore). El pipeline de
-  extracción (repo Professional-Player, solo referencia) es el dueño de los datos.
+- **Las `.db` jamás se commitean** (ya están en .gitignore). `backend/ingesta/`
+  es la única capa que escribe datos: extractor → sad.db, pipeline → derivadas.
+  El repo viejo (Professional-Player / D:/SAD_Replica) queda solo como referencia.
+- La clave de API-Football vive en `.env` (API_FOOTBALL_KEY, git-ignorada) o en
+  env vars; jamás hardcodeada ni con prefijo VITE_.
 - Cambios de API: primero `docs/openapi.yaml`, luego backend + `src/api/types.ts`
   + ambos datasources (mock y http) + tests (`backend/test_api.py`).
 - La matemática del motor es sagrada: cualquier cambio se valida contra
