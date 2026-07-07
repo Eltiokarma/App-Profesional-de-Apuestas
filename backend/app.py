@@ -1,13 +1,15 @@
 """SAD API — backend FastAPI de solo lectura sobre el pipeline SQLite.
 
 Implementa el contrato docs/openapi.yaml del repo App-Profesional-de-Apuestas
-(el frontend web lo consume con VITE_DATA_SOURCE=http). v0: sin escrituras,
-sin auth (bearer opcional llega en fase 2), CORS solo local salvo SAD_CORS_ORIGINS.
+(el frontend web lo consume con VITE_DATA_SOURCE=http). v0: sin escrituras;
+auth bearer opcional (SAD_API_TOKEN), rate limit por IP (SAD_RATE_LIMIT),
+CORS solo local salvo SAD_CORS_ORIGINS, docs desactivables (SAD_DOCS).
 
 Ejecutar junto a las DBs reales:
     uvicorn backend.app:app --port 8000
 """
 import os
+import secrets
 import sqlite3
 import time
 import unicodedata
@@ -15,15 +17,72 @@ from datetime import date as date_t, datetime, timedelta, timezone
 from functools import lru_cache
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from backend import db
 
-app = FastAPI(title="SAD API", version="0.1.0")
+# /docs, /redoc y /openapi.json: encendidos en local, apagados por defecto en
+# cuanto hay token (despliegue). SAD_DOCS=1/0 fuerza el comportamiento.
+_DOCS_ON = os.environ.get("SAD_DOCS", "0" if os.environ.get("SAD_API_TOKEN") else "1").strip().lower() in {"1", "true", "si", "sí", "yes"}
 
-# Sin SAD_CORS_ORIGINS solo se permiten los orígenes de desarrollo local;
-# en despliegue hay que fijar la variable al dominio real del frontend.
+app = FastAPI(
+    title="SAD API",
+    version="0.1.0",
+    docs_url="/docs" if _DOCS_ON else None,
+    redoc_url="/redoc" if _DOCS_ON else None,
+    openapi_url="/openapi.json" if _DOCS_ON else None,
+)
+
+API = "/api/v1"
+
+# Auth bearer opcional: sin SAD_API_TOKEN la API queda abierta (uso local);
+# con token, todo salvo /health y docs exige `Authorization: Bearer <token>`.
+# Se leen los globals en cada request para poder monkeypatchearlos en tests.
+API_TOKEN = os.environ.get("SAD_API_TOKEN", "")
+_AUTH_EXEMPT = {f"{API}/health", "/docs", "/redoc", "/openapi.json"}
+
+
+@app.middleware("http")
+async def auth_bearer(request: Request, call_next):
+    if API_TOKEN and request.url.path not in _AUTH_EXEMPT:
+        auth = request.headers.get("authorization", "")
+        if not (auth.startswith("Bearer ") and secrets.compare_digest(auth[7:], API_TOKEN)):
+            return JSONResponse(
+                {"detail": "No autorizado"}, status_code=401, headers={"WWW-Authenticate": "Bearer"}
+            )
+    return await call_next(request)
+
+
+# Rate limit en memoria por IP, ventana fija de 60 s (SAD_RATE_LIMIT req/min,
+# 0 = apagado). Detrás de un proxy inverso la IP vista es la del proxy: en un
+# despliegue real hay que limitar también en el proxy o propagar la IP real.
+RATE_LIMIT = int(os.environ.get("SAD_RATE_LIMIT", "120"))
+_hits: dict[str, tuple[int, int]] = {}
+
+
+@app.middleware("http")
+async def rate_limiter(request: Request, call_next):
+    if RATE_LIMIT > 0:
+        ip = request.client.host if request.client else "?"
+        window = int(time.monotonic() // 60)
+        prev_window, count = _hits.get(ip, (window, 0))
+        if prev_window != window:
+            count = 0
+        if count >= RATE_LIMIT:
+            return JSONResponse(
+                {"detail": "Demasiadas peticiones"}, status_code=429, headers={"Retry-After": "60"}
+            )
+        if len(_hits) > 10_000:
+            _hits.clear()
+        _hits[ip] = (window, count + 1)
+    return await call_next(request)
+
+
+# CORS se registra el último para que envuelva a auth y rate limit (los 401/429
+# también deben llevar cabeceras CORS). Sin SAD_CORS_ORIGINS solo se permiten
+# los orígenes de desarrollo local; en despliegue, fijar el dominio real.
 _DEV_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
 app.add_middleware(
     CORSMiddleware,
@@ -31,8 +90,6 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
-
-API = "/api/v1"
 
 # ---------------------------------------------------------------------------
 # helpers
