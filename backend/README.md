@@ -38,7 +38,7 @@ Servicio de **solo lectura** sobre las 4 SQLite del pipeline SAD
 ```bash
 python -m backend.seed_demo                          # genera ./demo_data con esquemas reales
 SAD_DATA_DIR=demo_data python -m uvicorn backend.app:app --port 8000
-python -m backend.test_api                           # 33 verificaciones del contrato
+python -m backend.test_api                           # 60 verificaciones del contrato
 ```
 
 ## Endpoints
@@ -61,10 +61,17 @@ python -m backend.test_api                           # 33 verificaciones del con
 | Variable | Default | Uso |
 |---|---|---|
 | `SAD_DATA_DIR` | raíz del repo | carpeta con las 4 SQLite |
-| `SAD_CORS_ORIGINS` | `*` | orígenes permitidos (coma-separados) |
+| `SAD_CORS_ORIGINS` | localhost/127.0.0.1:5173 | orígenes permitidos (coma-separados); en despliegue, el dominio real del frontend |
+| `SAD_API_TOKEN` | *(vacío = abierta)* | con valor, todo salvo `/health` exige `Authorization: Bearer <token>` (el frontend lo manda con `VITE_API_KEY`) |
+| `SAD_RATE_LIMIT` | `120` | requests por minuto por IP (429 al exceder); `0` lo apaga |
+| `SAD_DOCS` | `1` sin token, `0` con token | expone `/docs`, `/redoc` y `/openapi.json` |
+
+Nota despliegue: el rate limit ve la IP del cliente directo — detrás de un
+proxy inverso esa IP es la del proxy, así que en producción conviene limitar
+también en el proxy (o propagar la IP real).
 
 ## Fase 2 (pendiente)
 
 Ingesta propia (API-Football + APScheduler), PostgreSQL gestionado con Alembic,
-xG/posesión desde estadísticas por partido, endpoint H2H, auth de sesión y
+xG/posesión desde estadísticas por partido, endpoint H2H y
 despliegue 24/7 — ver `docs/SERVICIOS_EXTERNOS.md`.

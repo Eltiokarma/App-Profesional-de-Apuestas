@@ -28,7 +28,11 @@ def main():
     dbmod.BASE_DIR = tmp  # el módulo pudo importarse antes de fijar el env
 
     from fastapi.testclient import TestClient
+    import backend.app as appmod
     from backend.app import app
+
+    # la suite lanza >120 requests seguidas: sin esto el limitador (120/min) la cortaría
+    appmod.RATE_LIMIT = 0
 
     c = TestClient(app)
     A = "/api/v1"
@@ -157,6 +161,27 @@ def main():
     # constantes: flag de torneo internacional presente y con casos True
     intl = [r for r in ct if r.get("esInternacional")]
     check("constantes traen ligaId/esInternacional (hay UCL)", "ligaId" in c0 and len(intl) >= 3, len(intl))
+
+    # auth bearer opcional (SAD_API_TOKEN)
+    appmod.API_TOKEN = "token-de-prueba"
+    check("auth: sin token → 401", c.get(A + "/fixtures?limit=1").status_code == 401)
+    check("auth: token incorrecto → 401", c.get(A + "/fixtures?limit=1", headers={"Authorization": "Bearer malo"}).status_code == 401)
+    ok_auth = c.get(A + "/fixtures?limit=1", headers={"Authorization": "Bearer token-de-prueba"})
+    check("auth: token correcto → 200", ok_auth.status_code == 200 and ok_auth.json())
+    check("auth: /health queda libre", c.get(A + "/health").status_code == 200)
+    appmod.API_TOKEN = ""
+    check("auth: sin SAD_API_TOKEN la API queda abierta", c.get(A + "/fixtures?limit=1").status_code == 200)
+
+    # rate limit por IP (SAD_RATE_LIMIT)
+    appmod.RATE_LIMIT = 3
+    appmod._hits.clear()
+    codes = [c.get(A + "/health").status_code for _ in range(4)]
+    check("rate limit: 3 pasan y la 4ª → 429", codes == [200, 200, 200, 429], codes)
+    r = c.get(A + "/health")
+    check("rate limit: 429 con Retry-After: 60", r.status_code == 429 and r.headers.get("retry-after") == "60", dict(r.headers))
+    appmod.RATE_LIMIT = 0
+    appmod._hits.clear()
+    check("rate limit: con 0 queda apagado", c.get(A + "/health").status_code == 200)
 
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
