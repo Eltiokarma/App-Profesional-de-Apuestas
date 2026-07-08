@@ -10,12 +10,13 @@
   --t1: #e9eef4;
   --t2: #98a4b3;
   --t3: #5e6a78;
-  --accent: #5b8def;
-  --accent-soft: rgba(91, 141, 239, 0.14);
-  --up: #2fbe6e;
-  --up-soft: rgba(47, 190, 110, 0.13);
-  --down: #f2585b;
-  --down-soft: rgba(242, 88, 91, 0.13);
+  /* acentos nocturnos adaptados a la paleta tranquilidad (#6ACAFF / #57E6AE) */
+  --accent: #6acaff;
+  --accent-soft: rgba(106, 202, 255, 0.14);
+  --up: #57e6ae;
+  --up-soft: rgba(87, 230, 174, 0.13);
+  --down: #f2696c;
+  --down-soft: rgba(242, 105, 108, 0.13);
   --mark: #e6b450;
   --mark-soft: rgba(230, 180, 80, 0.13);
   --lv-elite: #e5484d;
@@ -26,25 +27,28 @@
   --shadow: 0 1px 0 rgba(255, 255, 255, 0.02), 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
+/* Paleta "tranquilidad" (#58DAFF · #6ACAFF · #57E6AE · #08E0A8 · #FFFFFF):
+   los tonos claros van como fondos/tintes; los acentos se oscurecen dentro
+   de la misma familia para mantener contraste AA sobre blanco. */
 [data-theme='light'] {
-  --bg: #eff2f6;
+  --bg: #ecf5f9;
   --bg1: #ffffff;
   --bg2: #ffffff;
-  --bg3: #eef2f7;
-  --line: #e3e8ef;
-  --line2: #d3dce6;
-  --t1: #0f1722;
-  --t2: #56616f;
-  --t3: #929dab;
-  --accent: #2f6be0;
-  --accent-soft: rgba(47, 107, 224, 0.1);
-  --up: #138a4c;
-  --up-soft: rgba(19, 138, 76, 0.1);
-  --down: #d8383b;
-  --down-soft: rgba(216, 56, 59, 0.09);
-  --mark: #b9831c;
-  --mark-soft: rgba(185, 131, 28, 0.12);
-  --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 10px 28px rgba(16, 24, 40, 0.08);
+  --bg3: #e1eff6;
+  --line: #d6e7ef;
+  --line2: #c1d9e4;
+  --t1: #10222c;
+  --t2: #4d6673;
+  --t3: #8ca3af;
+  --accent: #0e7490;
+  --accent-soft: rgba(88, 218, 255, 0.18);
+  --up: #067a5e;
+  --up-soft: rgba(8, 224, 168, 0.14);
+  --down: #c4504f;
+  --down-soft: rgba(196, 80, 79, 0.1);
+  --mark: #a87e1e;
+  --mark-soft: rgba(168, 126, 30, 0.13);
+  --shadow: 0 1px 2px rgba(12, 60, 80, 0.05), 0 10px 28px rgba(12, 60, 80, 0.08);
 }
 
 * {
