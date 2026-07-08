@@ -13,6 +13,7 @@ Uso:
   PYTHONUTF8=1 python -m backend.ingesta.extractor                  # ventana default
   PYTHONUTF8=1 python -m backend.ingesta.extractor --desde 2026-06-08
   ... --solo fixtures | --solo cuotas · --limite N · --db ruta · --probar
+  ... --torneo 1:2026 --torneo 34:2026   # temporada completa, sin ventana
 """
 import argparse
 import json
@@ -35,6 +36,8 @@ DELAY = 1.5
 
 # Única fuente de verdad de ligas (el viejo tenía 3 listas divergentes).
 LIGAS = {
+    # Mundial (jun-jul 2026: la ventana diaria mantiene resultados y cuotas al día)
+    1: "Copa del Mundo",
     # Sudamérica
     128: "Argentina - Liga Profesional",
     129: "Argentina - Primera Nacional",
@@ -303,6 +306,8 @@ def main() -> int:
     ap.add_argument("--probar", action="store_true", help="solo verificar conexión (1 request)")
     ap.add_argument("--ligas", action="store_true",
                     help="solo rellenar la tabla leagues desde /leagues (1 request por página)")
+    ap.add_argument("--torneo", action="append", metavar="LIGA[:TEMPORADA]",
+                    help="ingesta completa de un torneo (temporada entera, sin ventana); repetible")
     args = ap.parse_args()
 
     cliente = Cliente(leer_clave(), args.limite)
@@ -320,6 +325,23 @@ def main() -> int:
         con.close()
         print(f"ligas guardadas: {n} · requests usadas: {cliente.usadas}/{cliente.limite}")
         return 0 if n else 1
+
+    if args.torneo:
+        con = sqlite3.connect(args.db)
+        total = 0
+        for spec in args.torneo:
+            if not cliente.quedan():
+                break
+            liga_txt, _, temp = spec.partition(":")
+            liga_id = int(liga_txt)
+            temporada = int(temp) if temp else SEASON
+            filas = cliente.paginado("fixtures", {"league": liga_id, "season": temporada})
+            n = guardar_fixtures(con, filas)
+            total += n
+            print(f"  [{cliente.usadas}/{cliente.limite}] liga {liga_id} · temporada {temporada}: {n} fixtures")
+        con.close()
+        print(f"fixtures guardados: {total} · requests usadas: {cliente.usadas}/{cliente.limite}")
+        return 0
     hoy = datetime.now(timezone.utc)
     desde = args.desde or (hoy - timedelta(days=DIAS_ATRAS)).strftime("%Y-%m-%d")
     hasta = args.hasta or (hoy + timedelta(days=DIAS_ADELANTE)).strftime("%Y-%m-%d")
