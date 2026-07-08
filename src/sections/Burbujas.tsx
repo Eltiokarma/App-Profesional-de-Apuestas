@@ -1,10 +1,12 @@
+import { useState } from 'react'
 import { TEAMS } from '../data'
 import type { KCondKey, KTypeKey, Match } from '../data/types'
 import { KLineChart, KLineLegend } from '../components/KLineChart'
+import { RachasCuotas, type CuotaCond } from '../components/RachasCuotas'
 import { TeamBadge } from '../components/TeamBadge'
 import { binBadge, FUSED_KEY, K_TYPE_GROUPS, K_WINDOW_OPTS, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
 import type { FusedK } from '../motor/types'
-import { loadBurbujas, loadProximos, type BurbujasData } from '../services/appdata'
+import { loadBurbujas, loadProximos, type BurbujasData, type ProximoRival } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
@@ -69,12 +71,14 @@ export function Burbujas({ store, m, isMobile }: Props) {
 
   // constantes K + niveles vía el contrato (/constantes, /niveles)
   const engData = useAsync(async () => {
-    const [h, a, prox] = await Promise.all([loadBurbujas(m.home), loadBurbujas(m.away), loadProximos(m.home)])
-    return { h, a, prox }
+    const [h, a, proxH, proxA] = await Promise.all([loadBurbujas(m.home), loadBurbujas(m.away), loadProximos(m.home), loadProximos(m.away)])
+    return { h, a, proxH, proxA }
   }, m.id)
   const engH = engData.data?.h ?? null
   const engA = engData.data?.a ?? null
-  const proximos = engData.data?.prox ?? []
+
+  // cuotas K (§3.8): un solo toggle para ambos equipos (misma condición = comparación justa)
+  const [cuotaCond, setCuotaCond] = useState<CuotaCond>('TODOS')
 
   const condOpts = ([['total', 'Total'], ['local', 'Local'], ['visita', 'Visita']] as [KCondKey, string][]).map(([k, l]) => ({
     key: k, label: l, bg: s.kCond === k ? 'var(--bg3)' : 'transparent', fg: s.kCond === k ? 'var(--t1)' : 'var(--t2)',
@@ -105,6 +109,35 @@ export function Burbujas({ store, m, isMobile }: Props) {
       },
     ),
   ]
+
+  // cuotas K (§3.8) bajo cada panel: rachas 1X2 del equipo con el toggle compartido
+  const rachasCard = (teamId: string) => (
+    <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+      <div style={{ font: '700 12px var(--sans)' }}>Cuotas K · rachas 1X2 · {TEAMS[teamId].short}</div>
+      <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>Suma acumulada de la cuota; cae a 0 al romperse la racha · {cuotaCond.toLowerCase()} · solo 2026</div>
+      <RachasCuotas teamKey={teamId} cond={cuotaCond} />
+    </section>
+  )
+
+  const proximosCard = (teamId: string, prox: ProximoRival[]) => (
+    <section style={{ padding: 16, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+      <div style={{ font: '700 12px var(--sans)', marginBottom: 4 }}>Próximos {prox.length || 3} · {TEAMS[teamId].name}</div>
+      <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginBottom: 12 }}>Calendario por nivel del rival</div>
+      {prox.length === 0 && (
+        <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t3)', padding: '6px 0' }}>Sin partidos programados en los datos</div>
+      )}
+      {prox.map((n, i) => {
+        const bb = binBadge(n.bin)
+        return (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid var(--line)' }}>
+            <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)', width: 36, fontVariantNumeric: 'tabular-nums' }}>{n.fecha}</span>
+            <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{n.rivalNombre}</span>
+            <span style={{ padding: '3px 9px', borderRadius: 6, background: bb.soft, color: bb.color, font: '700 9.5px var(--mono)', letterSpacing: '.3px', flexShrink: 0 }}>{n.binEtiqueta}</span>
+          </div>
+        )
+      })}
+    </section>
+  )
 
   return (
     <div>
@@ -142,6 +175,14 @@ export function Burbujas({ store, m, isMobile }: Props) {
                 ))}
               </div>
             </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <span style={{ font: '600 8.5px var(--mono)', color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '.4px' }}>Cuotas</span>
+              <div style={{ display: 'flex', padding: 4, borderRadius: 10, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+                {(['TODOS', 'LOCAL', 'VISITA'] as const).map((c) => (
+                  <button key={c} onClick={() => setCuotaCond(c)} style={{ padding: '6px 10px', border: 0, borderRadius: 7, cursor: 'pointer', background: cuotaCond === c ? 'var(--bg3)' : 'transparent', color: cuotaCond === c ? 'var(--t1)' : 'var(--t2)', font: '600 10.5px var(--sans)' }}>{c}</button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -162,8 +203,14 @@ export function Burbujas({ store, m, isMobile }: Props) {
       )}
       {!engData.loading && !engData.error && (
       <div style={{ display: 'grid', gridTemplateColumns: gridBurbujas, gap: 14 }}>
-        {engH && <TeamPanel eng={engH} teamId={m.home} role="Local" kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} chartWindow={s.kWindow} onOpen={() => store.openTeam(m.home)} />}
-        {engA && <TeamPanel eng={engA} teamId={m.away} role="Visitante" kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} chartWindow={s.kWindow} onOpen={() => store.openTeam(m.away)} />}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
+          {engH && <TeamPanel eng={engH} teamId={m.home} role="Local" kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} chartWindow={s.kWindow} onOpen={() => store.openTeam(m.home)} />}
+          {rachasCard(m.home)}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
+          {engA && <TeamPanel eng={engA} teamId={m.away} role="Visitante" kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} chartWindow={s.kWindow} onOpen={() => store.openTeam(m.away)} />}
+          {rachasCard(m.away)}
+        </div>
 
         <aside style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <section style={{ padding: 16, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
@@ -194,23 +241,8 @@ export function Burbujas({ store, m, isMobile }: Props) {
               )}
             </div>
           </section>
-          <section style={{ padding: 16, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
-            <div style={{ font: '700 12px var(--sans)', marginBottom: 4 }}>Próximos {proximos.length || 3} · {H.name}</div>
-            <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginBottom: 12 }}>Calendario por nivel del rival</div>
-            {proximos.length === 0 && (
-              <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t3)', padding: '6px 0' }}>Sin partidos programados en los datos</div>
-            )}
-            {proximos.map((n, i) => {
-              const bb = binBadge(n.bin)
-              return (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid var(--line)' }}>
-                  <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)', width: 36, fontVariantNumeric: 'tabular-nums' }}>{n.fecha}</span>
-                  <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{n.rivalNombre}</span>
-                  <span style={{ padding: '3px 9px', borderRadius: 6, background: bb.soft, color: bb.color, font: '700 9.5px var(--mono)', letterSpacing: '.3px', flexShrink: 0 }}>{n.binEtiqueta}</span>
-                </div>
-              )
-            })}
-          </section>
+          {proximosCard(m.home, engData.data?.proxH ?? [])}
+          {proximosCard(m.away, engData.data?.proxA ?? [])}
         </aside>
       </div>
       )}
