@@ -99,7 +99,11 @@ export function Cuotas({ store, m, isMobile }: Props) {
           <span style={{ display: 'flex', alignItems: 'center', gap: 7, font: '700 11px var(--mono)', color: 'var(--down)', letterSpacing: '.6px' }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--down)', animation: 'sadpulse 1.1s infinite' }}></span>EN DIRECTO
           </span>
-          <span style={{ font: '700 18px var(--mono)', color: 'var(--t1)', whiteSpace: 'nowrap', flexShrink: 0 }}>{mv.homeShort} {m.score} {mv.awayShort}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap', flexShrink: 0 }}>
+            <button className="sad-hover" onClick={() => store.openTeam(mv.homeKey)} title={'Ver página de ' + mv.homeName} style={{ background: 'transparent', border: 0, cursor: 'pointer', padding: '2px 5px', borderRadius: 7, font: '700 18px var(--mono)', color: 'var(--t1)' }}>{mv.homeShort}</button>
+            <span style={{ font: '700 18px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>{m.score}</span>
+            <button className="sad-hover" onClick={() => store.openTeam(mv.awayKey)} title={'Ver página de ' + mv.awayName} style={{ background: 'transparent', border: 0, cursor: 'pointer', padding: '2px 5px', borderRadius: 7, font: '700 18px var(--mono)', color: 'var(--t1)' }}>{mv.awayShort}</button>
+          </span>
           <span style={{ font: '600 12px var(--mono)', color: 'var(--t2)' }}>{s.liveMin}'</span>
           <span style={{ marginLeft: 'auto', font: '500 11px var(--mono)', color: 'var(--t3)' }}>media entre casas capturadas</span>
         </div>

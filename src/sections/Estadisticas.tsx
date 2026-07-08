@@ -37,7 +37,6 @@ function GapCard({ g, name, align }: { g: GapEquipoDTO; name: string; align: 'le
 }
 
 export function Estadisticas({ store, m, isMobile }: Props) {
-  void store
   const pred = useAsync(() => loadPrediccion(m.id), m.id)
   const est = useAsync(() => loadEstadisticas(m), m.id)
   const H = TEAMS[m.home]
@@ -124,23 +123,23 @@ export function Estadisticas({ store, m, isMobile }: Props) {
         <>
       <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)', marginBottom: 14 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 14, marginBottom: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+          <button className="sad-hover" onClick={() => store.openTeam(m.home)} title={'Ver página de ' + H.name} style={{ display: 'flex', alignItems: 'center', gap: 11, background: 'transparent', border: 0, cursor: 'pointer', padding: '4px 8px', margin: '-4px -8px', borderRadius: 10, textAlign: 'left', color: 'inherit', justifySelf: 'start' }}>
             <TeamBadge logo={H.logo} short={H.short} color={H.color} fg={H.fg} size={34} />
             <div>
               <div style={{ font: '700 14px var(--sans)' }}>{H.name}</div>
               <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>Local{homePos != null ? ` · ${homePos}º` : ''} · {d.home.partidosJugados} PJ</div>
             </div>
-          </div>
+          </button>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
             <span style={{ font: '600 9px var(--mono)', color: 'var(--t3)', letterSpacing: '1px' }}>FORMA · ÚLT. 5</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 11, justifyContent: 'flex-end' }}>
+          <button className="sad-hover" onClick={() => store.openTeam(m.away)} title={'Ver página de ' + A.name} style={{ display: 'flex', alignItems: 'center', gap: 11, justifyContent: 'flex-end', background: 'transparent', border: 0, cursor: 'pointer', padding: '4px 8px', margin: '-4px -8px', borderRadius: 10, color: 'inherit', justifySelf: 'end' }}>
             <div style={{ textAlign: 'right' }}>
               <div style={{ font: '700 14px var(--sans)' }}>{A.name}</div>
               <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>Visitante{awayPos != null ? ` · ${awayPos}º` : ''} · {d.away.partidosJugados} PJ</div>
             </div>
             <TeamBadge logo={A.logo} short={A.short} color={A.color} fg={A.fg} size={34} />
-          </div>
+          </button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 14 }}>
           <div style={{ display: 'flex', gap: 5 }}>

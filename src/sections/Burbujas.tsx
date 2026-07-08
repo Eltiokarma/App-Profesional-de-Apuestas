@@ -14,7 +14,7 @@ interface Props {
   isMobile: boolean
 }
 
-function TeamPanel({ eng, teamId, role, kType, kCond, maxAbs, chartWindow }: { eng: BurbujasData; teamId: string; role: string; kType: KTypeKey; kCond: KCondKey; maxAbs: number; chartWindow: number }) {
+function TeamPanel({ eng, teamId, role, kType, kCond, maxAbs, chartWindow, onOpen }: { eng: BurbujasData; teamId: string; role: string; kType: KTypeKey; kCond: KCondKey; maxAbs: number; chartWindow: number; onOpen: () => void }) {
   const T = TEAMS[teamId]
   const key = FUSED_KEY[kType][kCond]
   const cur = eng.snaps.length ? eng.snaps[eng.snaps.length - 1].fused[key] : 0
@@ -27,11 +27,13 @@ function TeamPanel({ eng, teamId, role, kType, kCond, maxAbs, chartWindow }: { e
   return (
     <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-        <TeamBadge logo={T.logo} short={T.short} color={T.color} fg={T.fg} size={28} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ font: '700 13.5px var(--sans)' }}>{T.name}</div>
-          <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>{role} · nivel {eng.level.toFixed(2)}</div>
-        </div>
+        <button className="sad-hover" onClick={onOpen} title={'Ver página de ' + T.name} style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, background: 'transparent', border: 0, cursor: 'pointer', padding: '4px 8px', margin: '-4px -8px', borderRadius: 9, textAlign: 'left', color: 'inherit' }}>
+          <TeamBadge logo={T.logo} short={T.short} color={T.color} fg={T.fg} size={28} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ font: '700 13.5px var(--sans)' }}>{T.name}</div>
+            <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>{role} · nivel {eng.level.toFixed(2)}</div>
+          </div>
+        </button>
         <span style={{ padding: '3px 9px', borderRadius: 6, background: bb.soft, color: bb.color, font: '700 9.5px var(--mono)', letterSpacing: '.3px', flexShrink: 0 }}>{eng.binLabel} · {eng.bin}</span>
       </div>
 
@@ -160,8 +162,8 @@ export function Burbujas({ store, m, isMobile }: Props) {
       )}
       {!engData.loading && !engData.error && (
       <div style={{ display: 'grid', gridTemplateColumns: gridBurbujas, gap: 14 }}>
-        {engH && <TeamPanel eng={engH} teamId={m.home} role="Local" kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} chartWindow={s.kWindow} />}
-        {engA && <TeamPanel eng={engA} teamId={m.away} role="Visitante" kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} chartWindow={s.kWindow} />}
+        {engH && <TeamPanel eng={engH} teamId={m.home} role="Local" kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} chartWindow={s.kWindow} onOpen={() => store.openTeam(m.home)} />}
+        {engA && <TeamPanel eng={engA} teamId={m.away} role="Visitante" kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} chartWindow={s.kWindow} onOpen={() => store.openTeam(m.away)} />}
 
         <aside style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <section style={{ padding: 16, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
