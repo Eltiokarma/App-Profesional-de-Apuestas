@@ -1,6 +1,7 @@
 import { TEAMS } from '../data'
 import type { Match } from '../data/types'
 import type { GapEquipoDTO } from '../api/types'
+import { TeamBadge } from '../components/TeamBadge'
 import { rng } from '../lib/odds'
 import { loadEstadisticas, loadPrediccion } from '../services/appdata'
 import { TEAM_NUM } from '../services/datasource'
@@ -136,7 +137,7 @@ export function Estadisticas({ store, m, isMobile }: Props) {
       <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)', marginBottom: 14 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 14, marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-            <span style={{ width: 34, height: 34, borderRadius: '50%', background: H.color, color: H.fg, display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 12px var(--mono)' }}>{H.short}</span>
+            <TeamBadge logo={H.logo} short={H.short} color={H.color} fg={H.fg} size={34} />
             <div>
               <div style={{ font: '700 14px var(--sans)' }}>{H.name}</div>
               <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>Local{homePos != null ? ` · ${homePos}º` : ''} · {d.home.partidosJugados} PJ</div>
@@ -150,7 +151,7 @@ export function Estadisticas({ store, m, isMobile }: Props) {
               <div style={{ font: '700 14px var(--sans)' }}>{A.name}</div>
               <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>Visitante{awayPos != null ? ` · ${awayPos}º` : ''} · {d.away.partidosJugados} PJ</div>
             </div>
-            <span style={{ width: 34, height: 34, borderRadius: '50%', background: A.color, color: A.fg, display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 12px var(--mono)' }}>{A.short}</span>
+            <TeamBadge logo={A.logo} short={A.short} color={A.color} fg={A.fg} size={34} />
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 14 }}>

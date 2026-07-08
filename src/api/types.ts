@@ -16,6 +16,8 @@ export interface EquipoDTO {
   nombre: string
   abreviatura: string
   pais?: string
+  /** URL del escudo (teams.logo de sad.db); null/ausente → iniciales de color. */
+  logo?: string | null
 }
 
 export type EstadoFixture = 'programado' | 'en_vivo' | 'finalizado'

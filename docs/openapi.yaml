@@ -181,6 +181,7 @@ components:
         nombre: { type: string }
         abreviatura: { type: string }
         pais: { type: string }
+        logo: { type: string, nullable: true, description: 'URL del escudo (teams.logo de sad.db)' }
     Fixture:
       type: object
       required: [id, fecha, ligaId, liga, temporada, estado, local, visitante]

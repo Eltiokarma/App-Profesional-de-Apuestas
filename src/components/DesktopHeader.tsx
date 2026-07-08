@@ -1,5 +1,6 @@
 import type { SadStore } from '../store'
 import type { MatchView } from '../lib/view'
+import { TeamBadge } from './TeamBadge'
 import { TeamSearch } from './TeamSearch'
 
 interface Props {
@@ -14,18 +15,20 @@ export function DesktopHeader({ store, mv, liveBadge, liveMinute, liveScore }: P
   return (
     <header style={{ height: 74, flexShrink: 0, background: 'var(--bg1)', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', padding: '0 22px', gap: 18, position: 'relative', zIndex: 30 }}>
       {mv ? (
-        <button onClick={store.go('partidos')} title="Ver partidos" style={{ display: 'flex', alignItems: 'center', gap: 16, background: 'transparent', border: 0, cursor: 'pointer', padding: '6px 8px', borderRadius: 12, textAlign: 'left' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 32, height: 32, borderRadius: '50%', background: mv.homeColor, color: mv.homeFg, display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 12px var(--mono)', boxShadow: '0 0 0 2px var(--bg1),0 0 0 3px var(--line)' }}>{mv.homeShort}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <button className="sad-hover" onClick={() => store.openTeam(mv.homeKey)} title={`Ver página de ${mv.homeName}`} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'transparent', border: 0, cursor: 'pointer', padding: '6px 10px', borderRadius: 12, textAlign: 'left' }}>
+            <TeamBadge logo={mv.homeLogo} short={mv.homeShort} color={mv.homeColor} fg={mv.homeFg} size={32} ring />
             <span style={{ font: '700 15px var(--sans)', color: 'var(--t1)' }}>{mv.homeName}</span>
-          </div>
-          <span style={{ font: '600 12px var(--mono)', color: 'var(--t3)' }}>vs</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          </button>
+          <button className="sad-hover" onClick={store.go('partidos')} title="Ver partidos" style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'transparent', border: 0, cursor: 'pointer', padding: '8px 6px', borderRadius: 10 }}>
+            <span style={{ font: '600 12px var(--mono)', color: 'var(--t3)' }}>vs</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+          </button>
+          <button className="sad-hover" onClick={() => store.openTeam(mv.awayKey)} title={`Ver página de ${mv.awayName}`} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'transparent', border: 0, cursor: 'pointer', padding: '6px 10px', borderRadius: 12, textAlign: 'left' }}>
             <span style={{ font: '700 15px var(--sans)', color: 'var(--t1)' }}>{mv.awayName}</span>
-            <span style={{ width: 32, height: 32, borderRadius: '50%', background: mv.awayColor, color: mv.awayFg, display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 12px var(--mono)', boxShadow: '0 0 0 2px var(--bg1),0 0 0 3px var(--line)' }}>{mv.awayShort}</span>
-          </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 2 }}><path d="M6 9l6 6 6-6" /></svg>
-        </button>
+            <TeamBadge logo={mv.awayLogo} short={mv.awayShort} color={mv.awayColor} fg={mv.awayFg} size={32} ring />
+          </button>
+        </div>
       ) : null}
       {mv && (
         <>

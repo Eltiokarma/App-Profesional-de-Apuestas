@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { TEAMS } from '../data'
 import type { Match, MatchStatus } from '../data/types'
+import { TeamBadge } from '../components/TeamBadge'
 import { TeamSearch } from '../components/TeamSearch'
 import type { SadStore } from '../store'
 
@@ -171,7 +172,7 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
                   >
                     <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
                       <span style={{ font: '600 13px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>{H?.name ?? m.home}</span>
-                      <span style={{ width: 28, height: 28, borderRadius: '50%', background: H?.color ?? 'var(--bg3)', color: H?.fg ?? 'var(--t2)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 9px var(--mono)', flexShrink: 0 }}>{H?.short ?? '?'}</span>
+                      <TeamBadge logo={H?.logo} short={H?.short ?? '?'} color={H?.color ?? 'var(--bg3)'} fg={H?.fg ?? 'var(--t2)'} size={28} />
                     </span>
                     <span style={{ width: 74, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                       <span style={{ font: '700 16px var(--mono)', color: m.status === 'sched' ? 'var(--t2)' : 'var(--t1)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
@@ -183,7 +184,7 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
                       </span>
                     </span>
                     <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ width: 28, height: 28, borderRadius: '50%', background: A?.color ?? 'var(--bg3)', color: A?.fg ?? 'var(--t2)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 9px var(--mono)', flexShrink: 0 }}>{A?.short ?? '?'}</span>
+                      <TeamBadge logo={A?.logo} short={A?.short ?? '?'} color={A?.color ?? 'var(--bg3)'} fg={A?.fg ?? 'var(--t2)'} size={28} />
                       <span style={{ font: '600 13px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{A?.name ?? m.away}</span>
                     </span>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M9 6l6 6-6 6" /></svg>

@@ -5,6 +5,8 @@ export interface Team {
   short: string
   color: string
   fg: string
+  /** URL del escudo (contrato Equipo.logo); ausente → iniciales de color. */
+  logo?: string | null
   pts: number
   pos: number
   form: FormResult[]

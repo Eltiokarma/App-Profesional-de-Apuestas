@@ -1,6 +1,7 @@
 import { TEAMS } from '../data'
 import type { KCondKey, KTypeKey, Match } from '../data/types'
 import { KLineChart, KLineLegend } from '../components/KLineChart'
+import { TeamBadge } from '../components/TeamBadge'
 import { binBadge, FUSED_KEY, K_TYPE_GROUPS, K_WINDOW_OPTS, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
 import type { FusedK } from '../motor/types'
 import { loadBurbujas, loadProximos, type BurbujasData } from '../services/appdata'
@@ -26,7 +27,7 @@ function TeamPanel({ eng, teamId, role, kType, kCond, maxAbs, chartWindow }: { e
   return (
     <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-        <span style={{ width: 28, height: 28, borderRadius: '50%', background: T.color, color: T.fg, display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 10px var(--mono)' }}>{T.short}</span>
+        <TeamBadge logo={T.logo} short={T.short} color={T.color} fg={T.fg} size={28} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ font: '700 13.5px var(--sans)' }}>{T.name}</div>
           <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>{role} · nivel {eng.level.toFixed(2)}</div>

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { EquipoDTO } from '../api/types'
 import { ensureTeam, searchTeams } from '../services/appdata'
 import type { SadStore } from '../store'
+import { TeamBadge } from './TeamBadge'
 
 /** Buscador inteligente de equipos (sin tildes, ranking por prefijo). */
 export function TeamSearch({ store, width = 240 }: { store: SadStore; width?: number | string }) {
@@ -80,8 +81,8 @@ export function TeamSearch({ store, width = 240 }: { store: SadStore; width?: nu
       {open && q.trim().length >= 2 && (
         <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 45, background: 'var(--bg1)', border: '1px solid var(--line2)', borderRadius: 12, boxShadow: 'var(--shadow)', padding: 6, maxHeight: 320, overflowY: 'auto' }} className="sad-scroll">
           {res.map((r) => (
-            <button key={r.id} onClick={() => pick(r)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 10px', border: 0, borderRadius: 9, cursor: 'pointer', background: 'transparent', textAlign: 'left' }}>
-              <span style={{ width: 26, height: 26, borderRadius: '50%', background: 'var(--bg3)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 8.5px var(--mono)', color: 'var(--t2)', flexShrink: 0 }}>{r.abreviatura}</span>
+            <button key={r.id} className="sad-hover" onClick={() => pick(r)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 10px', border: 0, borderRadius: 9, cursor: 'pointer', background: 'transparent', textAlign: 'left' }}>
+              <TeamBadge logo={r.logo} short={r.abreviatura} color="var(--bg3)" fg="var(--t2)" size={26} style={{ border: '1px solid var(--line)' }} />
               <span style={{ font: '600 12.5px var(--sans)', color: 'var(--t1)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.nombre}</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M9 6l6 6-6 6" /></svg>
             </button>
