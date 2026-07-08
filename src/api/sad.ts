@@ -18,7 +18,7 @@ import type {
 export const SadApi = {
   health: () => apiGet<HealthDTO>('/health', { timeoutMs: 5_000 }),
 
-  fixtures: (params: { fecha?: string; estado?: EstadoFixture; ligaId?: number; equipoId?: number; limit?: number } = {}) =>
+  fixtures: (params: { fecha?: string; estado?: EstadoFixture; ligaId?: number; equipoId?: number; rivalId?: number; limit?: number } = {}) =>
     apiGet<FixtureDTO[]>('/fixtures' + qs(params)),
 
   /** Búsqueda inteligente de equipos (sin tildes, ranking por prefijo). */

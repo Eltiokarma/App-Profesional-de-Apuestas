@@ -527,8 +527,11 @@ def fixtures(
     estado: Literal["programado", "en_vivo", "finalizado"] | None = None,
     ligaId: int | None = None,
     equipoId: int | None = None,
+    rivalId: int | None = None,
     limit: int = Query(default=50, ge=1, le=200),
 ):
+    if rivalId is not None and equipoId is None:
+        raise HTTPException(status_code=422, detail="rivalId requiere equipoId")
     cond, params = [], []
     if fecha:
         # rango en vez de date(f.date)=? para poder usar el índice sobre f.date
@@ -541,7 +544,10 @@ def fixtures(
     if ligaId is not None:
         cond.append("f.league_id=?")
         params.append(ligaId)
-    if equipoId is not None:
+    if equipoId is not None and rivalId is not None:
+        cond.append("((f.home_team_id=? AND f.away_team_id=?) OR (f.home_team_id=? AND f.away_team_id=?))")
+        params.extend([equipoId, rivalId, rivalId, equipoId])
+    elif equipoId is not None:
         cond.append("(f.home_team_id=? OR f.away_team_id=?)")
         params.extend([equipoId, equipoId])
     where = (" WHERE " + " AND ".join(cond)) if cond else ""

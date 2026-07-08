@@ -38,6 +38,8 @@ export interface FixturesParams {
   estado?: EstadoFixture
   ligaId?: number
   equipoId?: number
+  /** Con equipoId: solo enfrentamientos directos entre ambos (H2H). */
+  rivalId?: number
   limit?: number
 }
 
@@ -169,6 +171,7 @@ class MockDataSource implements SadDataSource {
 
   async fixtures(params: FixturesParams = {}): Promise<FixtureDTO[]> {
     const teamKey = params.equipoId != null ? NUM_TEAM[params.equipoId] : undefined
+    const rivalKey = params.rivalId != null ? NUM_TEAM[params.rivalId] : undefined
     // los partidos demo viven en el día de hoy (hora local) para que la
     // barra de fechas funcione igual que con el backend real
     const hoy = new Date()
@@ -179,6 +182,7 @@ class MockDataSource implements SadDataSource {
     return MATCHES.filter(
       (m) =>
         (!teamKey || m.home === teamKey || m.away === teamKey) &&
+        (!teamKey || !rivalKey || (m.home === teamKey && m.away === rivalKey) || (m.home === rivalKey && m.away === teamKey)) &&
         (!params.estado || estadoDe(m) === params.estado) &&
         (params.ligaId == null || (LIGA_NUM[m.lk] ?? 0) === params.ligaId),
     )

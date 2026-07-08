@@ -160,6 +160,17 @@ def main():
     ok_eq = all(f["local"]["id"] == betis or f["visitante"]["id"] == betis for f in fxb)
     check("fixtures?equipoId: todos incluyen al equipo (41: 40+vivo)", ok_eq and len(fxb) == 41, len(fxb))
 
+    # /fixtures?equipoId&rivalId — enfrentamientos directos (H2H)
+    rival = next(f["visitante"]["id"] if f["local"]["id"] == betis else f["local"]["id"] for f in fxb if f["estado"] == "finalizado")
+    h2h = c.get(A + f"/fixtures?equipoId={betis}&rivalId={rival}&limit=200").json()
+    ok_h2h = h2h and all({f["local"]["id"], f["visitante"]["id"]} == {betis, rival} for f in h2h)
+    check("fixtures?rivalId: todas las filas son entre ambos equipos", ok_h2h, len(h2h))
+    h2h_inv = c.get(A + f"/fixtures?equipoId={rival}&rivalId={betis}&limit=200").json()
+    check("fixtures?rivalId: simétrico al invertir equipoId↔rivalId", [f["id"] for f in h2h] == [f["id"] for f in h2h_inv])
+    h2h_fin = c.get(A + f"/fixtures?equipoId={betis}&rivalId={rival}&estado=finalizado&limit=200").json()
+    check("fixtures?rivalId+finalizado: solo finalizados", h2h_fin and all(f["estado"] == "finalizado" for f in h2h_fin), len(h2h_fin))
+    check("fixtures?rivalId sin equipoId → 422", c.get(A + f"/fixtures?rivalId={rival}").status_code == 422)
+
     # constantes: flag de torneo internacional presente y con casos True
     intl = [r for r in ct if r.get("esInternacional")]
     check("constantes traen ligaId/esInternacional (hay UCL)", "ligaId" in c0 and len(intl) >= 3, len(intl))

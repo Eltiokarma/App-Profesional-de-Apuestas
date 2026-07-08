@@ -278,6 +278,41 @@ export async function loadProximos(teamKey: string, n = 3): Promise<ProximoRival
   )
 }
 
+// ── enfrentamientos directos (card H2H de Estadísticas) ─────────────────────
+export interface H2HData {
+  home: number
+  draw: number
+  away: number
+  last: { when: string; match: string; score: string; color: string }[]
+}
+
+/** H2H real vía /fixtures?equipoId&rivalId; contadores desde la perspectiva
+ *  del local del partido actual. null si algún equipo no está en el contrato. */
+export async function loadH2H(m: Match): Promise<H2HData | null> {
+  const homeId = TEAM_NUM[m.home]
+  const awayId = TEAM_NUM[m.away]
+  if (homeId == null || awayId == null) return null
+  const fx = await getDataSource().fixtures({ equipoId: homeId, rivalId: awayId, estado: 'finalizado', limit: 12 })
+  // finalizado sin goles = walkover/adjudicado: fuera del H2H (mismo criterio que fixtureToMatch)
+  const jugados = fx.filter((f) => f.golesLocal != null && f.golesVisitante != null).slice(0, 6)
+  const out: H2HData = { home: 0, draw: 0, away: 0, last: [] }
+  for (const f of jugados) {
+    const gHome = f.local.id === homeId ? f.golesLocal! : f.golesVisitante!
+    const gAway = f.local.id === homeId ? f.golesVisitante! : f.golesLocal!
+    if (gHome > gAway) out.home++
+    else if (gHome < gAway) out.away++
+    else out.draw++
+    const d = new Date(f.fecha)
+    out.last.push({
+      when: `${d.getDate()} ${MESES[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`,
+      match: `${f.local.abreviatura} vs ${f.visitante.abreviatura}`,
+      score: `${f.golesLocal} - ${f.golesVisitante}`,
+      color: gHome > gAway ? 'var(--up)' : gHome < gAway ? 'var(--down)' : 'var(--t2)',
+    })
+  }
+  return out
+}
+
 export async function loadTeamStats(teamKey: string): Promise<EquipoStatsDTO | null> {
   const equipoId = TEAM_NUM[teamKey]
   if (equipoId == null) return null
