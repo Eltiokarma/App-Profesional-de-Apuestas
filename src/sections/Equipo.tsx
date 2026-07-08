@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { TEAMS } from '../data'
 import type { KCondKey, KTypeKey } from '../data/types'
-import type { ConstanteCuotaDTO } from '../api/types'
 import { KLineChart, KLineLegend } from '../components/KLineChart'
-import { KBarChart, type CuotaBar } from '../components/KBarChart'
+import { RachasCuotas, type CuotaCond } from '../components/RachasCuotas'
 import { TeamBadge } from '../components/TeamBadge'
 import { binBadge, FUSED_KEY, K_TYPE_GROUPS, K_WINDOW_OPTS, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
 import type { FusedK } from '../motor/types'
-import { loadBurbujas, loadConstantesCuota, loadTeamFixtures, loadTeamStats } from '../services/appdata'
+import { loadBurbujas, loadTeamFixtures, loadTeamStats } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
@@ -47,22 +46,8 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
 
   const condOpts = ([['total', 'Total'], ['local', 'Local'], ['visita', 'Visita']] as [KCondKey, string][])
 
-  // Cuotas K (§3.8): barras de rachas de suma de cuota 1X2, toggle TODOS/LOCAL/VISITA
-  const [cuotaCond, setCuotaCond] = useState<'TODOS' | 'LOCAL' | 'VISITA'>('TODOS')
-  const cuota = useAsync(() => loadConstantesCuota(teamKey), teamKey)
-  const CUOTA_FAMILIES = [
-    { key: 'victoria', label: 'victorias', color: 'var(--up)', soft: 'var(--up-soft)' },
-    { key: 'empate', label: 'empates', color: 'var(--mark)', soft: 'var(--mark-soft)' },
-    { key: 'derrota', label: 'derrotas', color: 'var(--down)', soft: 'var(--down-soft)' },
-  ] as const
-  const condSuffix = cuotaCond === 'LOCAL' ? 'Local' : cuotaCond === 'VISITA' ? 'Visita' : ''
-  const cuotaRows = (cuota.data ?? []).filter(
-    (r) => r.cuota.victoria != null && (cuotaCond === 'TODOS' || (cuotaCond === 'LOCAL') === r.esLocal),
-  )
-  const barsFor = (fam: 'victoria' | 'empate' | 'derrota'): CuotaBar[] => {
-    const kk = (fam + condSuffix) as keyof ConstanteCuotaDTO['k']
-    return cuotaRows.map((r) => ({ fecha: r.fecha, value: r.k[kk], burst: r.k[kk] === 0, cuota: r.cuota[fam], res: r.resultado }))
-  }
+  // Cuotas K (§3.8): toggle TODOS/LOCAL/VISITA; las barras viven en RachasCuotas
+  const [cuotaCond, setCuotaCond] = useState<CuotaCond>('TODOS')
 
   return (
     <div>
@@ -173,24 +158,7 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
                   ))}
                 </div>
               </div>
-              {cuota.loading ? (
-                <div className="sad-sk" style={{ height: 150, marginTop: 10 }} />
-              ) : cuota.error ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '18px 0' }}>
-                  <span style={{ font: '500 11px var(--mono)', color: 'var(--down)' }}>No se pudieron cargar las cuotas: {cuota.error}</span>
-                  <button onClick={cuota.reload} style={{ padding: '4px 10px', border: '1px solid var(--line)', borderRadius: 7, cursor: 'pointer', background: 'var(--bg3)', color: 'var(--t1)', font: '600 10.5px var(--sans)' }}>Reintentar</button>
-                </div>
-              ) : cuota.data && cuota.data.length ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
-                  {CUOTA_FAMILIES.map((f) => (
-                    <KBarChart key={f.key} bars={barsFor(f.key)} color={f.color} soft={f.soft} title={`Racha de ${f.label}`} />
-                  ))}
-                </div>
-              ) : (
-                <div style={{ font: '500 11px var(--mono)', color: 'var(--t3)', padding: '18px 0', textAlign: 'center' }}>
-                  Sin datos de cuotas 2026 para este equipo (o modo mock).
-                </div>
-              )}
+              <RachasCuotas teamKey={teamKey} cond={cuotaCond} />
             </section>
 
             {/* HISTORIAL DE PARTIDOS */}

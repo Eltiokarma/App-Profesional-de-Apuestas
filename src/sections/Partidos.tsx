@@ -55,11 +55,12 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
     return norm(H?.name ?? '').includes(t) || norm(A?.name ?? '').includes(t)
   })
 
-  const grupos: { comp: string; rows: Match[] }[] = []
+  const grupos: { comp: string; ligaId?: number; img?: string | null; rows: Match[] }[] = []
   for (const m of visibles) {
     const g = grupos.find((x) => x.comp === m.comp)
     if (g) g.rows.push(m)
-    else grupos.push({ comp: m.comp, rows: [m] })
+    // bandera del país; en copas internacionales (sin bandera) cae al logo del torneo
+    else grupos.push({ comp: m.comp, ligaId: m.ligaId, img: m.ligaBandera ?? m.ligaLogo, rows: [m] })
   }
 
   const chips: { k: Filtro; label: string }[] = [
@@ -154,7 +155,14 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
           <section key={grp.comp} style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 2px 8px' }}>
               <span style={{ width: 5, height: 15, borderRadius: 2, background: 'var(--accent)' }}></span>
-              <span style={{ font: '700 12.5px var(--sans)', color: 'var(--t1)', flex: 1 }}>{grp.comp}</span>
+              {grp.ligaId != null ? (
+                <button className="sad-hover" onClick={() => store.openLiga(grp.ligaId!)} title={`Ver información de ${grp.comp}`} style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'transparent', border: 0, cursor: 'pointer', padding: '3px 7px', margin: '-3px -7px', borderRadius: 7, textAlign: 'left', flex: 1, minWidth: 0 }}>
+                  {grp.img && <img src={grp.img} alt="" width={16} height={12} style={{ objectFit: 'cover', borderRadius: 2, flexShrink: 0 }} />}
+                  <span style={{ font: '700 12.5px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{grp.comp}</span>
+                </button>
+              ) : (
+                <span style={{ font: '700 12.5px var(--sans)', color: 'var(--t1)', flex: 1 }}>{grp.comp}</span>
+              )}
               <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)' }}>{grp.rows.length}</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

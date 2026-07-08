@@ -9,6 +9,7 @@ import type {
   EquipoDTO,
   EquipoStatsDTO,
   FixtureDTO,
+  LigaDTO,
   PrediccionDTO,
   StandingRowDTO,
 } from '../api/types'
@@ -101,6 +102,8 @@ export function fixtureToMatch(f: FixtureDTO): Match {
     venue: f.estadio ?? '',
     lk: LK_BY_LIGA_ID[f.ligaId] ?? String(f.ligaId),
     ligaId: f.ligaId,
+    ligaLogo: f.ligaLogo ?? null,
+    ligaBandera: f.ligaBandera ?? null,
     // finalizado sin goles = walkover/adjudicado (AWD/WO): no inventar un 0-0
     score: f.golesLocal == null || f.golesVisitante == null ? (fin ? '—' : '0 - 0') : `${f.golesLocal} - ${f.golesVisitante}`,
     status: live ? 'live' : fin ? 'fin' : 'sched',
@@ -257,12 +260,8 @@ export async function loadProximos(teamKey: string, n = 3): Promise<ProximoRival
   const equipoId = TEAM_NUM[teamKey]
   if (equipoId == null) return []
   const ds = getDataSource()
-  // el contrato entrega desc por fecha: los programados (fechas futuras) vienen primero
-  const fx = await ds.fixtures({ equipoId, limit: 50 })
-  const prox = fx
-    .filter((f) => f.estado === 'programado')
-    .sort((a, b) => a.fecha.localeCompare(b.fecha))
-    .slice(0, n)
+  // desde hoy y asc: excluye programados con fecha pasada (aplazados sin jugar)
+  const prox = await ds.fixtures({ equipoId, estado: 'programado', desde: localDateStr(new Date()), orden: 'asc', limit: n })
   return Promise.all(
     prox.map(async (f) => {
       const rival = f.local.id === equipoId ? f.visitante : f.local
@@ -276,6 +275,41 @@ export async function loadProximos(teamKey: string, n = 3): Promise<ProximoRival
       }
     }),
   )
+}
+
+// ── enfrentamientos directos (card H2H de Estadísticas) ─────────────────────
+export interface H2HData {
+  home: number
+  draw: number
+  away: number
+  last: { when: string; match: string; score: string; color: string }[]
+}
+
+/** H2H real vía /fixtures?equipoId&rivalId; contadores desde la perspectiva
+ *  del local del partido actual. null si algún equipo no está en el contrato. */
+export async function loadH2H(m: Match): Promise<H2HData | null> {
+  const homeId = TEAM_NUM[m.home]
+  const awayId = TEAM_NUM[m.away]
+  if (homeId == null || awayId == null) return null
+  const fx = await getDataSource().fixtures({ equipoId: homeId, rivalId: awayId, estado: 'finalizado', limit: 12 })
+  // finalizado sin goles = walkover/adjudicado: fuera del H2H (mismo criterio que fixtureToMatch)
+  const jugados = fx.filter((f) => f.golesLocal != null && f.golesVisitante != null).slice(0, 6)
+  const out: H2HData = { home: 0, draw: 0, away: 0, last: [] }
+  for (const f of jugados) {
+    const gHome = f.local.id === homeId ? f.golesLocal! : f.golesVisitante!
+    const gAway = f.local.id === homeId ? f.golesVisitante! : f.golesLocal!
+    if (gHome > gAway) out.home++
+    else if (gHome < gAway) out.away++
+    else out.draw++
+    const d = new Date(f.fecha)
+    out.last.push({
+      when: `${d.getDate()} ${MESES[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`,
+      match: `${f.local.abreviatura} vs ${f.visitante.abreviatura}`,
+      score: `${f.golesLocal} - ${f.golesVisitante}`,
+      color: gHome > gAway ? 'var(--up)' : gHome < gAway ? 'var(--down)' : 'var(--t2)',
+    })
+  }
+  return out
 }
 
 export async function loadTeamStats(teamKey: string): Promise<EquipoStatsDTO | null> {
@@ -301,4 +335,29 @@ export async function loadEstadisticas(m: Match): Promise<EstadisticasData> {
     m.ligaId != null ? ds.standings(m.ligaId) : Promise.resolve([]),
   ])
   return { home, away, tabla }
+}
+
+// ── página de liga: metadatos + clasificación + partidos ────────────────────
+export interface LigaData {
+  meta: LigaDTO | null
+  tabla: StandingRowDTO[]
+  proximos: Match[]
+  recientes: Match[]
+}
+
+export async function loadLiga(ligaId: number): Promise<LigaData> {
+  const ds = getDataSource()
+  const hoy = localDateStr(new Date())
+  const [meta, tabla, prog, fin] = await Promise.all([
+    ds.liga(ligaId).catch(() => null), // liga sin metadatos (404) no bloquea la página
+    ds.standings(ligaId),
+    ds.fixtures({ ligaId, estado: 'programado', desde: hoy, orden: 'asc', limit: 10 }),
+    ds.fixtures({ ligaId, estado: 'finalizado', limit: 10 }),
+  ])
+  return {
+    meta,
+    tabla,
+    proximos: prog.map(fixtureToMatch),
+    recientes: fin.map(fixtureToMatch), // el contrato entrega desc: más reciente primero
+  }
 }

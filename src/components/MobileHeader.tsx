@@ -34,21 +34,27 @@ export function MobileHeader({ store, mv, phonePreview, liveBadge, liveMinute }:
         </button>
       </div>
       {mv ? (
-        <button onClick={store.go('partidos')} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 11px', border: '1px solid var(--line)', borderRadius: 11, background: 'var(--bg2)', cursor: 'pointer', textAlign: 'left' }}>
-          <TeamBadge logo={mv.homeLogo} short={mv.homeShort} color={mv.homeColor} fg={mv.homeFg} size={26} />
-          <TeamBadge logo={mv.awayLogo} short={mv.awayShort} color={mv.awayColor} fg={mv.awayFg} size={26} style={{ marginLeft: -12, boxShadow: '0 0 0 2px var(--bg2)' }} />
-          <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: 'block', font: '700 12.5px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{mv.homeName} vs {mv.awayName}</span>
-            <span style={{ display: 'block', font: '500 10px var(--mono)', color: 'var(--t3)' }}>{mv.league} · {mv.date}</span>
-          </span>
-          {liveBadge && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px', borderRadius: 7, background: 'var(--down-soft)', flexShrink: 0 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--down)', animation: 'sadpulse 1.1s infinite' }}></span>
-              <span style={{ font: '700 10px var(--mono)', color: 'var(--down)' }}>{liveMinute}'</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%', padding: '4px 5px', border: '1px solid var(--line)', borderRadius: 11, background: 'var(--bg2)' }}>
+          <button className="sad-hover" onClick={() => store.openTeam(mv.homeKey)} title={'Ver página de ' + mv.homeName} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, background: 'transparent', border: 0, cursor: 'pointer', padding: 0, borderRadius: 9, flexShrink: 0 }}>
+            <TeamBadge logo={mv.homeLogo} short={mv.homeShort} color={mv.homeColor} fg={mv.homeFg} size={26} />
+          </button>
+          <button className="sad-hover" onClick={() => store.openTeam(mv.awayKey)} title={'Ver página de ' + mv.awayName} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, background: 'transparent', border: 0, cursor: 'pointer', padding: 0, borderRadius: 9, flexShrink: 0 }}>
+            <TeamBadge logo={mv.awayLogo} short={mv.awayShort} color={mv.awayColor} fg={mv.awayFg} size={26} />
+          </button>
+          <button className="sad-hover" onClick={store.go('partidos')} title="Ver partidos" style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, padding: '5px 6px', border: 0, borderRadius: 9, background: 'transparent', cursor: 'pointer', textAlign: 'left' }}>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: 'block', font: '700 12.5px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{mv.homeName} vs {mv.awayName}</span>
+              <span style={{ display: 'block', font: '500 10px var(--mono)', color: 'var(--t3)' }}>{mv.league} · {mv.date}</span>
             </span>
-          )}
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M6 9l6 6 6-6" /></svg>
-        </button>
+            {liveBadge && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px', borderRadius: 7, background: 'var(--down-soft)', flexShrink: 0 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--down)', animation: 'sadpulse 1.1s infinite' }}></span>
+                <span style={{ font: '700 10px var(--mono)', color: 'var(--down)' }}>{liveMinute}'</span>
+              </span>
+            )}
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M6 9l6 6 6-6" /></svg>
+          </button>
+        </div>
       ) : (
         <div style={{ font: '600 13px var(--sans)', color: 'var(--t2)', padding: '4px 2px' }}>Ningún partido seleccionado</div>
       )}

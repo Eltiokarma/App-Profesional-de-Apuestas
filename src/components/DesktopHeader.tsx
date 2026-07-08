@@ -35,7 +35,13 @@ export function DesktopHeader({ store, mv, liveBadge, liveMinute, liveScore }: P
           <div style={{ height: 34, width: 1, background: 'var(--line)' }}></div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ font: '600 11px var(--mono)', color: 'var(--accent)', letterSpacing: '.4px' }}>{mv.league}</span>
+              {mv.ligaId != null ? (
+                <button className="sad-hover" onClick={() => store.openLiga(mv.ligaId!)} title={`Ver información de ${mv.league}`} style={{ background: 'transparent', border: 0, cursor: 'pointer', padding: '2px 6px', margin: '-2px -6px', borderRadius: 7, font: '600 11px var(--mono)', color: 'var(--accent)', letterSpacing: '.4px' }}>
+                  {mv.league}
+                </button>
+              ) : (
+                <span style={{ font: '600 11px var(--mono)', color: 'var(--accent)', letterSpacing: '.4px' }}>{mv.league}</span>
+              )}
             </div>
             <div style={{ font: '500 11.5px var(--mono)', color: 'var(--t3)' }}>{mv.date} · {mv.venue}</div>
           </div>

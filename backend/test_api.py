@@ -50,12 +50,21 @@ def main():
     check("vivo: minuto 67 y marcador 1-0", vivo["minuto"] == 67 and vivo["golesLocal"] == 1 and vivo["golesVisitante"] == 0, vivo)
     check("fecha ISO con T", "T" in vivo["fecha"], vivo["fecha"])
     check("liga por nombre", vivo["liga"] == "LaLiga", vivo["liga"])
+    check("fixture trae bandera y logo de la liga", vivo["ligaBandera"] and vivo["ligaLogo"], {k: vivo[k] for k in ("ligaBandera", "ligaLogo")})
+    ucl = next(f for f in fx if f["ligaId"] == 2)
+    check("copa internacional: ligaBandera null pero ligaLogo presente", ucl["ligaBandera"] is None and ucl["ligaLogo"], ucl["liga"])
     # filtro estado en SQL: se aplica antes del LIMIT (con limit=1 debe encontrar igual)
     fin1 = c.get(A + "/fixtures?estado=finalizado&limit=1").json()
     check("fixtures?estado=finalizado&limit=1 encuentra pese al LIMIT", len(fin1) == 1 and fin1[0]["estado"] == "finalizado", fin1)
     prog = c.get(A + "/fixtures?estado=programado&limit=200").json()
     check("fixtures?estado=programado: solo programados", bool(prog) and all(f["estado"] == "programado" for f in prog), len(prog))
     check("fixtures?estado=inválido → 422", c.get(A + "/fixtures?estado=jugando").status_code == 422)
+    asc = c.get(A + "/fixtures?orden=asc&limit=200").json()
+    check("fixtures?orden=asc: fechas ascendentes", len(asc) == 122 and all(asc[i]["fecha"] <= asc[i + 1]["fecha"] for i in range(len(asc) - 1)))
+    hoy_demo = vivo["fecha"][:10]
+    dd = c.get(A + f"/fixtures?desde={hoy_demo}&limit=200").json()
+    check("fixtures?desde: solo fechas >= desde", bool(dd) and len(dd) < 122 and all(f["fecha"][:10] >= hoy_demo for f in dd), len(dd))
+    check("fixtures?orden=inválido → 422", c.get(A + "/fixtures?orden=random").status_code == 422)
     uno = c.get(A + f"/fixtures/{vivo['id']}").json()
     check("/fixtures/{id} coincide", uno["id"] == vivo["id"] and uno["local"]["nombre"] == vivo["local"]["nombre"])
     check("equipos del fixture traen logo (nullable)", "logo" in uno["local"] and "logo" in uno["visitante"], uno["local"])
@@ -124,6 +133,13 @@ def main():
     check("stats: xG/posesión null en v0", st["xgProm"] is None and st["posesionProm"] is None)
     check("/equipos/999999/stats → 404", c.get(A + "/equipos/999999/stats").status_code == 404)
 
+    # /ligas/{id}
+    lg = c.get(A + "/ligas/140").json()
+    check("/ligas/140: nombre, país y bandera", lg["nombre"] == "LaLiga" and lg["pais"] == "Spain" and lg["bandera"], lg)
+    lg2 = c.get(A + "/ligas/2").json()
+    check("/ligas/2 (copa): bandera null, logo presente", lg2["bandera"] is None and lg2["logo"], lg2)
+    check("/ligas/999999 → 404", c.get(A + "/ligas/999999").status_code == 404)
+
     # /ligas/{id}/standings
     tb = c.get(A + "/ligas/140/standings").json()
     check("standings: 6 equipos ordenados", len(tb) == 6 and tb[0]["posicion"] == 1 and tb[-1]["posicion"] == 6, [t["nombre"] for t in tb])
@@ -159,6 +175,17 @@ def main():
     fxb = c.get(A + f"/fixtures?equipoId={betis}&limit=200").json()
     ok_eq = all(f["local"]["id"] == betis or f["visitante"]["id"] == betis for f in fxb)
     check("fixtures?equipoId: todos incluyen al equipo (41: 40+vivo)", ok_eq and len(fxb) == 41, len(fxb))
+
+    # /fixtures?equipoId&rivalId — enfrentamientos directos (H2H)
+    rival = next(f["visitante"]["id"] if f["local"]["id"] == betis else f["local"]["id"] for f in fxb if f["estado"] == "finalizado")
+    h2h = c.get(A + f"/fixtures?equipoId={betis}&rivalId={rival}&limit=200").json()
+    ok_h2h = h2h and all({f["local"]["id"], f["visitante"]["id"]} == {betis, rival} for f in h2h)
+    check("fixtures?rivalId: todas las filas son entre ambos equipos", ok_h2h, len(h2h))
+    h2h_inv = c.get(A + f"/fixtures?equipoId={rival}&rivalId={betis}&limit=200").json()
+    check("fixtures?rivalId: simétrico al invertir equipoId↔rivalId", [f["id"] for f in h2h] == [f["id"] for f in h2h_inv])
+    h2h_fin = c.get(A + f"/fixtures?equipoId={betis}&rivalId={rival}&estado=finalizado&limit=200").json()
+    check("fixtures?rivalId+finalizado: solo finalizados", h2h_fin and all(f["estado"] == "finalizado" for f in h2h_fin), len(h2h_fin))
+    check("fixtures?rivalId sin equipoId → 422", c.get(A + f"/fixtures?rivalId={rival}").status_code == 422)
 
     # constantes: flag de torneo internacional presente y con casos True
     intl = [r for r in ct if r.get("esInternacional")]

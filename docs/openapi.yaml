@@ -28,12 +28,15 @@ paths:
               schema: { $ref: '#/components/schemas/Health' }
   /fixtures:
     get:
-      summary: Lista de fixtures (filtrable por fecha, estado y liga)
+      summary: Lista de fixtures (filtrable por fecha, estado, liga, equipo y rival H2H)
       parameters:
         - { name: fecha, in: query, schema: { type: string, format: date } }
+        - { name: desde, in: query, schema: { type: string, format: date, description: 'solo fixtures con fecha >= desde' } }
         - { name: estado, in: query, schema: { $ref: '#/components/schemas/EstadoFixture' } }
+        - { name: orden, in: query, schema: { type: string, enum: [asc, desc], default: desc, description: 'orden por fecha' } }
         - { name: ligaId, in: query, schema: { type: integer } }
         - { name: equipoId, in: query, schema: { type: integer, description: 'solo partidos de este equipo' } }
+        - { name: rivalId, in: query, schema: { type: integer, description: 'con equipoId: solo enfrentamientos directos entre ambos (H2H); requiere equipoId' } }
         - { name: limit, in: query, schema: { type: integer, default: 50, minimum: 1, maximum: 200 } }
       responses:
         '200':
@@ -135,6 +138,18 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/EquipoStats' }
         '404': { description: No existe }
+  /ligas/{ligaId}:
+    get:
+      summary: Metadatos de una liga (nombre, país, logo, bandera)
+      parameters:
+        - { name: ligaId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Liga' }
+        '404': { description: No existe }
   /ligas/{ligaId}/standings:
     get:
       summary: Tabla de posiciones calculada de los fixtures terminados
@@ -198,6 +213,18 @@ components:
         visitante: { $ref: '#/components/schemas/Equipo' }
         golesLocal: { type: integer, nullable: true }
         golesVisitante: { type: integer, nullable: true }
+        ligaLogo: { type: string, nullable: true, description: 'URL del logo del torneo (leagues.logo)' }
+        ligaBandera: { type: string, nullable: true, description: 'URL de la bandera del país (leagues.flag; null en copas internacionales)' }
+    Liga:
+      type: object
+      required: [id, nombre]
+      properties:
+        id: { type: integer }
+        nombre: { type: string }
+        pais: { type: string, nullable: true }
+        logo: { type: string, nullable: true }
+        bandera: { type: string, nullable: true }
+        temporada: { type: integer, nullable: true, description: 'última temporada conocida' }
     Nivel:
       type: object
       required: [equipoId, fixtureId, fecha, nivel, bin, binEtiqueta]

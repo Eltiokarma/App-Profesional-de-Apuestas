@@ -10,6 +10,7 @@ import type {
   EstadoFixture,
   FixtureDTO,
   HealthDTO,
+  LigaDTO,
   NivelDTO,
   PrediccionDTO,
   StandingRowDTO,
@@ -18,7 +19,7 @@ import type {
 export const SadApi = {
   health: () => apiGet<HealthDTO>('/health', { timeoutMs: 5_000 }),
 
-  fixtures: (params: { fecha?: string; estado?: EstadoFixture; ligaId?: number; equipoId?: number; limit?: number } = {}) =>
+  fixtures: (params: { fecha?: string; desde?: string; estado?: EstadoFixture; orden?: 'asc' | 'desc'; ligaId?: number; equipoId?: number; rivalId?: number; limit?: number } = {}) =>
     apiGet<FixtureDTO[]>('/fixtures' + qs(params)),
 
   /** Búsqueda inteligente de equipos (sin tildes, ranking por prefijo). */
@@ -46,6 +47,9 @@ export const SadApi = {
   cuotas: (fixtureId: number) => apiGet<CuotaDTO[]>(`/cuotas/${fixtureId}`),
 
   equipoStats: (equipoId: number) => apiGet<EquipoStatsDTO>(`/equipos/${equipoId}/stats`),
+
+  /** Metadatos de la liga (nombre, país, logo, bandera). */
+  liga: (ligaId: number) => apiGet<LigaDTO>(`/ligas/${ligaId}`),
 
   standings: (ligaId: number, temporada?: number) =>
     apiGet<StandingRowDTO[]>(`/ligas/${ligaId}/standings` + qs({ temporada })),

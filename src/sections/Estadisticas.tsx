@@ -2,8 +2,7 @@ import { TEAMS } from '../data'
 import type { Match } from '../data/types'
 import type { GapEquipoDTO } from '../api/types'
 import { TeamBadge } from '../components/TeamBadge'
-import { rng } from '../lib/odds'
-import { loadEstadisticas, loadPrediccion } from '../services/appdata'
+import { loadEstadisticas, loadH2H, loadPrediccion } from '../services/appdata'
 import { TEAM_NUM } from '../services/datasource'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
@@ -38,7 +37,6 @@ function GapCard({ g, name, align }: { g: GapEquipoDTO; name: string; align: 'le
 }
 
 export function Estadisticas({ store, m, isMobile }: Props) {
-  void store
   const pred = useAsync(() => loadPrediccion(m.id), m.id)
   const est = useAsync(() => loadEstadisticas(m), m.id)
   const H = TEAMS[m.home]
@@ -93,20 +91,9 @@ export function Estadisticas({ store, m, isMobile }: Props) {
       })
     : []
 
-  // H2H sigue siendo demo local: el contrato aún no tiene endpoint de enfrentamientos
-  const r2 = rng(m.id + 'h2h')
-  const hw = 2 + ((r2() * 5) | 0)
-  const aw = 2 + ((r2() * 4) | 0)
-  const dr = 1 + ((r2() * 3) | 0)
-  const h2h = {
-    home: hw, draw: dr, away: aw,
-    last: [
-      { when: '2024', match: H.short + ' vs ' + A.short, score: '1-2', color: 'var(--down)' },
-      { when: '2024', match: A.short + ' vs ' + H.short, score: '0-0', color: 'var(--t2)' },
-      { when: '2023', match: H.short + ' vs ' + A.short, score: '2-1', color: 'var(--up)' },
-      { when: '2023', match: A.short + ' vs ' + H.short, score: '1-1', color: 'var(--t2)' },
-    ],
-  }
+  // enfrentamientos directos reales vía /fixtures?equipoId&rivalId
+  const h2hReq = useAsync(() => loadH2H(m), m.id)
+  const h2h = h2hReq.data ?? null
 
   return (
     <div>
@@ -136,23 +123,23 @@ export function Estadisticas({ store, m, isMobile }: Props) {
         <>
       <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)', marginBottom: 14 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 14, marginBottom: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+          <button className="sad-hover" onClick={() => store.openTeam(m.home)} title={'Ver página de ' + H.name} style={{ display: 'flex', alignItems: 'center', gap: 11, background: 'transparent', border: 0, cursor: 'pointer', padding: '4px 8px', margin: '-4px -8px', borderRadius: 10, textAlign: 'left', color: 'inherit', justifySelf: 'start' }}>
             <TeamBadge logo={H.logo} short={H.short} color={H.color} fg={H.fg} size={34} />
             <div>
               <div style={{ font: '700 14px var(--sans)' }}>{H.name}</div>
               <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>Local{homePos != null ? ` · ${homePos}º` : ''} · {d.home.partidosJugados} PJ</div>
             </div>
-          </div>
+          </button>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
             <span style={{ font: '600 9px var(--mono)', color: 'var(--t3)', letterSpacing: '1px' }}>FORMA · ÚLT. 5</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 11, justifyContent: 'flex-end' }}>
+          <button className="sad-hover" onClick={() => store.openTeam(m.away)} title={'Ver página de ' + A.name} style={{ display: 'flex', alignItems: 'center', gap: 11, justifyContent: 'flex-end', background: 'transparent', border: 0, cursor: 'pointer', padding: '4px 8px', margin: '-4px -8px', borderRadius: 10, color: 'inherit', justifySelf: 'end' }}>
             <div style={{ textAlign: 'right' }}>
               <div style={{ font: '700 14px var(--sans)' }}>{A.name}</div>
               <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>Visitante{awayPos != null ? ` · ${awayPos}º` : ''} · {d.away.partidosJugados} PJ</div>
             </div>
             <TeamBadge logo={A.logo} short={A.short} color={A.color} fg={A.fg} size={34} />
-          </div>
+          </button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 14 }}>
           <div style={{ display: 'flex', gap: 5 }}>
@@ -230,30 +217,41 @@ export function Estadisticas({ store, m, isMobile }: Props) {
 
         <aside style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <section style={{ padding: 16, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
-            <div style={{ font: '700 12px var(--sans)', marginBottom: 12 }}>Enfrentamientos directos <span style={{ font: '500 9px var(--mono)', color: 'var(--t3)' }}>· demo</span></div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <div style={{ flex: 1, textAlign: 'center' }}>
-                <div style={{ font: '700 20px var(--mono)', color: 'var(--accent)' }}>{h2h.home}</div>
-                <div style={{ font: '500 9px var(--mono)', color: 'var(--t3)' }}>{H.short}</div>
-              </div>
-              <div style={{ flex: 1, textAlign: 'center' }}>
-                <div style={{ font: '700 20px var(--mono)', color: 'var(--t2)' }}>{h2h.draw}</div>
-                <div style={{ font: '500 9px var(--mono)', color: 'var(--t3)' }}>EMPATES</div>
-              </div>
-              <div style={{ flex: 1, textAlign: 'center' }}>
-                <div style={{ font: '700 20px var(--mono)', color: 'var(--t1)' }}>{h2h.away}</div>
-                <div style={{ font: '500 9px var(--mono)', color: 'var(--t3)' }}>{A.short}</div>
-              </div>
+            <div style={{ font: '700 12px var(--sans)', marginBottom: 12 }}>
+              Enfrentamientos directos
+              {h2h && h2h.last.length > 0 && <span style={{ font: '500 9px var(--mono)', color: 'var(--t3)' }}> · últimos {h2h.last.length} · finalizados</span>}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {h2h.last.map((l, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 9px', borderRadius: 8, background: 'var(--bg)' }}>
-                  <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)', width: 54 }}>{l.when}</span>
-                  <span style={{ font: '600 11px var(--sans)', color: 'var(--t2)', flex: 1 }}>{l.match}</span>
-                  <span style={{ font: '700 11px var(--mono)', color: l.color }}>{l.score}</span>
+            {h2hReq.loading && <div className="sad-sk" style={{ height: 140 }}></div>}
+            {!h2hReq.loading && (!h2h || h2h.last.length === 0) && (
+              <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t3)', padding: '6px 0' }}>Sin enfrentamientos previos en los datos</div>
+            )}
+            {!h2hReq.loading && h2h && h2h.last.length > 0 && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <div style={{ flex: 1, textAlign: 'center' }}>
+                    <div style={{ font: '700 20px var(--mono)', color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>{h2h.home}</div>
+                    <div style={{ font: '500 9px var(--mono)', color: 'var(--t3)' }}>{H.short}</div>
+                  </div>
+                  <div style={{ flex: 1, textAlign: 'center' }}>
+                    <div style={{ font: '700 20px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>{h2h.draw}</div>
+                    <div style={{ font: '500 9px var(--mono)', color: 'var(--t3)' }}>EMPATES</div>
+                  </div>
+                  <div style={{ flex: 1, textAlign: 'center' }}>
+                    <div style={{ font: '700 20px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>{h2h.away}</div>
+                    <div style={{ font: '500 9px var(--mono)', color: 'var(--t3)' }}>{A.short}</div>
+                  </div>
                 </div>
-              ))}
-            </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {h2h.last.map((l, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 9px', borderRadius: 8, background: 'var(--bg)' }}>
+                      <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)', width: 54, fontVariantNumeric: 'tabular-nums' }}>{l.when}</span>
+                      <span style={{ font: '600 11px var(--sans)', color: 'var(--t2)', flex: 1 }}>{l.match}</span>
+                      <span style={{ font: '700 11px var(--mono)', color: l.color, fontVariantNumeric: 'tabular-nums' }}>{l.score}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </section>
           <section style={{ padding: 16, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
             <div style={{ font: '700 12px var(--sans)', marginBottom: 10 }}>Tabla de posiciones</div>
