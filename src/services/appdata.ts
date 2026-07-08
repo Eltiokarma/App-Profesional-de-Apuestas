@@ -9,6 +9,7 @@ import type {
   EquipoDTO,
   EquipoStatsDTO,
   FixtureDTO,
+  LigaDTO,
   PrediccionDTO,
   StandingRowDTO,
 } from '../api/types'
@@ -101,6 +102,8 @@ export function fixtureToMatch(f: FixtureDTO): Match {
     venue: f.estadio ?? '',
     lk: LK_BY_LIGA_ID[f.ligaId] ?? String(f.ligaId),
     ligaId: f.ligaId,
+    ligaLogo: f.ligaLogo ?? null,
+    ligaBandera: f.ligaBandera ?? null,
     // finalizado sin goles = walkover/adjudicado (AWD/WO): no inventar un 0-0
     score: f.golesLocal == null || f.golesVisitante == null ? (fin ? '—' : '0 - 0') : `${f.golesLocal} - ${f.golesVisitante}`,
     status: live ? 'live' : fin ? 'fin' : 'sched',
@@ -257,12 +260,8 @@ export async function loadProximos(teamKey: string, n = 3): Promise<ProximoRival
   const equipoId = TEAM_NUM[teamKey]
   if (equipoId == null) return []
   const ds = getDataSource()
-  // el contrato entrega desc por fecha: los programados (fechas futuras) vienen primero
-  const fx = await ds.fixtures({ equipoId, limit: 50 })
-  const prox = fx
-    .filter((f) => f.estado === 'programado')
-    .sort((a, b) => a.fecha.localeCompare(b.fecha))
-    .slice(0, n)
+  // desde hoy y asc: excluye programados con fecha pasada (aplazados sin jugar)
+  const prox = await ds.fixtures({ equipoId, estado: 'programado', desde: localDateStr(new Date()), orden: 'asc', limit: n })
   return Promise.all(
     prox.map(async (f) => {
       const rival = f.local.id === equipoId ? f.visitante : f.local
@@ -336,4 +335,29 @@ export async function loadEstadisticas(m: Match): Promise<EstadisticasData> {
     m.ligaId != null ? ds.standings(m.ligaId) : Promise.resolve([]),
   ])
   return { home, away, tabla }
+}
+
+// ── página de liga: metadatos + clasificación + partidos ────────────────────
+export interface LigaData {
+  meta: LigaDTO | null
+  tabla: StandingRowDTO[]
+  proximos: Match[]
+  recientes: Match[]
+}
+
+export async function loadLiga(ligaId: number): Promise<LigaData> {
+  const ds = getDataSource()
+  const hoy = localDateStr(new Date())
+  const [meta, tabla, prog, fin] = await Promise.all([
+    ds.liga(ligaId).catch(() => null), // liga sin metadatos (404) no bloquea la página
+    ds.standings(ligaId),
+    ds.fixtures({ ligaId, estado: 'programado', desde: hoy, orden: 'asc', limit: 10 }),
+    ds.fixtures({ ligaId, estado: 'finalizado', limit: 10 }),
+  ])
+  return {
+    meta,
+    tabla,
+    proximos: prog.map(fixtureToMatch),
+    recientes: fin.map(fixtureToMatch), // el contrato entrega desc: más reciente primero
+  }
 }

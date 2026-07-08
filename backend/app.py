@@ -174,23 +174,33 @@ def estado_sql(estado: str) -> tuple[str, list]:
 
 
 @lru_cache(maxsize=None)
-def liga_nombre(league_id) -> str:
+def liga_meta(league_id) -> dict:
+    """Metadatos de leagues (nombre, país, logo, bandera); tolera DBs sin la tabla."""
     try:
-        row = db.query_one("sad", "SELECT name FROM leagues WHERE id=?", (league_id,))
+        row = db.query_one(
+            "sad", "SELECT name, country, logo, flag, season FROM leagues WHERE id=?", (league_id,)
+        )
         if row and row["name"]:
-            return row["name"]
+            return {
+                "nombre": row["name"],
+                "pais": row["country"],
+                "logo": row["logo"],
+                "bandera": row["flag"],
+                "temporada": row["season"],
+            }
     except Exception:
         pass  # la tabla leagues puede no existir en DBs antiguas
-    return f"Liga {league_id}"
+    return {"nombre": f"Liga {league_id}", "pais": None, "logo": None, "bandera": None, "temporada": None}
 
 
 def fixture_dto(f) -> dict:
     estado = estado_de(f["status_short"], f["status_long"])
+    liga = liga_meta(f["league_id"])
     return {
         "id": f["id"],
         "fecha": iso(f["date"]),
         "ligaId": f["league_id"] or 0,
-        "liga": liga_nombre(f["league_id"]),
+        "liga": liga["nombre"],
         "temporada": f["league_season"] or 0,
         "estado": estado,
         "minuto": f["elapsed"] if estado == "en_vivo" else None,
@@ -199,6 +209,8 @@ def fixture_dto(f) -> dict:
         "visitante": equipo_dto(f["away_team_id"], f["away_name"], f["away_logo"]),
         "golesLocal": f["goals_home"] if estado != "programado" else None,
         "golesVisitante": f["goals_away"] if estado != "programado" else None,
+        "ligaLogo": liga["logo"],
+        "ligaBandera": liga["bandera"],
     }
 
 
@@ -524,7 +536,9 @@ def buscar_equipos(buscar: str = Query(min_length=2, max_length=60), limit: int 
 @app.get(API + "/fixtures")
 def fixtures(
     fecha: date_t | None = None,
+    desde: date_t | None = None,
     estado: Literal["programado", "en_vivo", "finalizado"] | None = None,
+    orden: Literal["asc", "desc"] = "desc",
     ligaId: int | None = None,
     equipoId: int | None = None,
     rivalId: int | None = None,
@@ -537,6 +551,9 @@ def fixtures(
         # rango en vez de date(f.date)=? para poder usar el índice sobre f.date
         cond.append("f.date >= ? AND f.date < ?")
         params.extend([fecha.isoformat(), (fecha + timedelta(days=1)).isoformat()])
+    if desde:
+        cond.append("f.date >= ?")
+        params.append(desde.isoformat())
     if estado:
         sql, extra = estado_sql(estado)
         cond.append(sql)
@@ -551,7 +568,8 @@ def fixtures(
         cond.append("(f.home_team_id=? OR f.away_team_id=?)")
         params.extend([equipoId, equipoId])
     where = (" WHERE " + " AND ".join(cond)) if cond else ""
-    rows = db.query("sad", FIXTURE_SQL + where + " ORDER BY f.date DESC LIMIT ?", (*params, limit))
+    orden_sql = "ASC" if orden == "asc" else "DESC"
+    rows = db.query("sad", FIXTURE_SQL + where + f" ORDER BY f.date {orden_sql} LIMIT ?", (*params, limit))
     return [fixture_dto(r) for r in rows]
 
 
@@ -672,6 +690,15 @@ def equipo_stats(equipo_id: int):
         "tirosPuertaProm": None,
         "cornersProm": None,
     }
+
+
+@app.get(API + "/ligas/{liga_id}")
+def liga(liga_id: int):
+    """Metadatos de la liga (nombre, país, logo, bandera)."""
+    meta = liga_meta(liga_id)
+    if meta["pais"] is None and meta["logo"] is None and meta["nombre"] == f"Liga {liga_id}":
+        raise HTTPException(404, f"liga {liga_id} no existe")
+    return {"id": liga_id, **meta}
 
 
 @app.get(API + "/ligas/{liga_id}/standings")

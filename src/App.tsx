@@ -9,12 +9,12 @@ import { BottomNav } from './components/BottomNav'
 import { EmptyState } from './components/EmptyState'
 import { Partidos } from './sections/Partidos'
 import { Equipo } from './sections/Equipo'
+import { Liga } from './sections/Liga'
 import { Cuotas } from './sections/Cuotas'
 import { Burbujas } from './sections/Burbujas'
 import { Skills } from './sections/Skills'
 import { Estadisticas } from './sections/Estadisticas'
 
-const ACCENT = '#5B8DEF'
 const PAD = '16px'
 
 type Style = React.CSSProperties
@@ -31,7 +31,6 @@ export function App() {
   const phonePreview = s.forceMobile && s.vw >= 760
 
   const rootStyle: Style = {
-    ['--accent' as string]: ACCENT,
     ['--pad' as string]: PAD,
     height: '100vh',
     width: '100%',
@@ -83,6 +82,8 @@ export function App() {
             )}
             {s.section === 'equipo' && s.teamKey && <Equipo store={store} teamKey={s.teamKey} isMobile={isMobile} />}
             {s.section === 'equipo' && !s.teamKey && <EmptyState store={store} />}
+            {s.section === 'liga' && s.ligaId != null && <Liga store={store} ligaId={s.ligaId} isMobile={isMobile} />}
+            {s.section === 'liga' && s.ligaId == null && <EmptyState store={store} />}
             {showContent && m && s.section === 'cuotas' && <Cuotas store={store} m={m} isMobile={isMobile} />}
             {showContent && m && s.section === 'burbujas' && <Burbujas store={store} m={m} isMobile={isMobile} />}
             {showContent && m && s.section === 'skills' && <Skills store={store} m={m} isMobile={isMobile} />}

@@ -50,12 +50,21 @@ def main():
     check("vivo: minuto 67 y marcador 1-0", vivo["minuto"] == 67 and vivo["golesLocal"] == 1 and vivo["golesVisitante"] == 0, vivo)
     check("fecha ISO con T", "T" in vivo["fecha"], vivo["fecha"])
     check("liga por nombre", vivo["liga"] == "LaLiga", vivo["liga"])
+    check("fixture trae bandera y logo de la liga", vivo["ligaBandera"] and vivo["ligaLogo"], {k: vivo[k] for k in ("ligaBandera", "ligaLogo")})
+    ucl = next(f for f in fx if f["ligaId"] == 2)
+    check("copa internacional: ligaBandera null pero ligaLogo presente", ucl["ligaBandera"] is None and ucl["ligaLogo"], ucl["liga"])
     # filtro estado en SQL: se aplica antes del LIMIT (con limit=1 debe encontrar igual)
     fin1 = c.get(A + "/fixtures?estado=finalizado&limit=1").json()
     check("fixtures?estado=finalizado&limit=1 encuentra pese al LIMIT", len(fin1) == 1 and fin1[0]["estado"] == "finalizado", fin1)
     prog = c.get(A + "/fixtures?estado=programado&limit=200").json()
     check("fixtures?estado=programado: solo programados", bool(prog) and all(f["estado"] == "programado" for f in prog), len(prog))
     check("fixtures?estado=inválido → 422", c.get(A + "/fixtures?estado=jugando").status_code == 422)
+    asc = c.get(A + "/fixtures?orden=asc&limit=200").json()
+    check("fixtures?orden=asc: fechas ascendentes", len(asc) == 122 and all(asc[i]["fecha"] <= asc[i + 1]["fecha"] for i in range(len(asc) - 1)))
+    hoy_demo = vivo["fecha"][:10]
+    dd = c.get(A + f"/fixtures?desde={hoy_demo}&limit=200").json()
+    check("fixtures?desde: solo fechas >= desde", bool(dd) and len(dd) < 122 and all(f["fecha"][:10] >= hoy_demo for f in dd), len(dd))
+    check("fixtures?orden=inválido → 422", c.get(A + "/fixtures?orden=random").status_code == 422)
     uno = c.get(A + f"/fixtures/{vivo['id']}").json()
     check("/fixtures/{id} coincide", uno["id"] == vivo["id"] and uno["local"]["nombre"] == vivo["local"]["nombre"])
     check("equipos del fixture traen logo (nullable)", "logo" in uno["local"] and "logo" in uno["visitante"], uno["local"])
@@ -123,6 +132,13 @@ def main():
     check("stats: puntos coherentes (0–120)", 0 <= st["puntos"] <= 3 * st["partidosJugados"])
     check("stats: xG/posesión null en v0", st["xgProm"] is None and st["posesionProm"] is None)
     check("/equipos/999999/stats → 404", c.get(A + "/equipos/999999/stats").status_code == 404)
+
+    # /ligas/{id}
+    lg = c.get(A + "/ligas/140").json()
+    check("/ligas/140: nombre, país y bandera", lg["nombre"] == "LaLiga" and lg["pais"] == "Spain" and lg["bandera"], lg)
+    lg2 = c.get(A + "/ligas/2").json()
+    check("/ligas/2 (copa): bandera null, logo presente", lg2["bandera"] is None and lg2["logo"], lg2)
+    check("/ligas/999999 → 404", c.get(A + "/ligas/999999").status_code == 404)
 
     # /ligas/{id}/standings
     tb = c.get(A + "/ligas/140/standings").json()

@@ -31,6 +31,10 @@ export interface Match {
   lk: string
   /** Id numérico de la liga en el contrato (140 LaLiga, 39 Premier, 135 Serie A…). */
   ligaId?: number
+  /** URL del logo del torneo (null/ausente → sin imagen). */
+  ligaLogo?: string | null
+  /** URL de la bandera del país (null en copas internacionales). */
+  ligaBandera?: string | null
   score: string
   status: MatchStatus
   min: string
@@ -76,6 +80,6 @@ export type KTypeKey =
   | 'vic1' | 'vic2' | 'vic3' | 'der1' | 'der2' | 'der3'
 /** Condición de la K: total, solo local o solo visita. */
 export type KCondKey = 'total' | 'local' | 'visita'
-export type SectionKey = 'partidos' | 'cuotas' | 'burbujas' | 'skills' | 'estadisticas' | 'equipo'
+export type SectionKey = 'partidos' | 'cuotas' | 'burbujas' | 'skills' | 'estadisticas' | 'equipo' | 'liga'
 export type OddsMode = 'prematch' | 'live'
 export type SkillState = 'idle' | 'gen' | 'done'

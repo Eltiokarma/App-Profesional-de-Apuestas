@@ -184,6 +184,13 @@ def guardar_fixtures(con: sqlite3.Connection, respuesta: list) -> int:
                 (equipo["id"], equipo.get("name"), equipo.get("country"),
                  equipo.get("founded"), equipo.get("logo")),
             )
+        if league.get("id") and league.get("name"):
+            con.execute(
+                "INSERT OR REPLACE INTO leagues (id, name, country, logo, flag, season) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (league["id"], league["name"], league.get("country"),
+                 league.get("logo"), league.get("flag"), league.get("season")),
+            )
         ht, ft = score.get("halftime", {}), score.get("fulltime", {})
         et, pen = score.get("extratime", {}), score.get("penalty", {})
         con.execute(
@@ -257,6 +264,26 @@ def fixtures_sin_cuotas(con: sqlite3.Connection, dias: int = DIAS_ADELANTE) -> l
     ]
 
 
+def guardar_ligas(con: sqlite3.Connection, respuesta: list) -> int:
+    """Items de /leagues: {league: {id,name,logo}, country: {name,flag}, seasons: [...]}."""
+    n = 0
+    for item in respuesta:
+        lg = item.get("league", {})
+        pais = item.get("country", {})
+        if not lg.get("id") or not lg.get("name"):
+            continue
+        temporadas = [s.get("year") for s in item.get("seasons", []) if s.get("year")]
+        con.execute(
+            "INSERT OR REPLACE INTO leagues (id, name, country, logo, flag, season) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (lg["id"], lg["name"], pais.get("name"), lg.get("logo"),
+             pais.get("flag"), max(temporadas) if temporadas else None),
+        )
+        n += 1
+    con.commit()
+    return n
+
+
 def probar(cliente: Cliente) -> int:
     data = cliente.get("timezone", {})
     if data and data.get("response"):
@@ -274,6 +301,8 @@ def main() -> int:
     ap.add_argument("--hasta", help="fin de ventana YYYY-MM-DD (default hoy+10d)")
     ap.add_argument("--solo", choices=["fixtures", "cuotas"], help="ejecutar una sola fase")
     ap.add_argument("--probar", action="store_true", help="solo verificar conexión (1 request)")
+    ap.add_argument("--ligas", action="store_true",
+                    help="solo rellenar la tabla leagues desde /leagues (1 request por página)")
     args = ap.parse_args()
 
     cliente = Cliente(leer_clave(), args.limite)
@@ -283,6 +312,14 @@ def main() -> int:
     if not os.path.exists(args.db):
         print(f"No existe {args.db}", file=sys.stderr)
         return 1
+
+    if args.ligas:
+        con = sqlite3.connect(args.db)
+        filas = cliente.paginado("leagues", {})
+        n = guardar_ligas(con, filas)
+        con.close()
+        print(f"ligas guardadas: {n} · requests usadas: {cliente.usadas}/{cliente.limite}")
+        return 0 if n else 1
     hoy = datetime.now(timezone.utc)
     desde = args.desde or (hoy - timedelta(days=DIAS_ATRAS)).strftime("%Y-%m-%d")
     hasta = args.hasta or (hoy + timedelta(days=DIAS_ADELANTE)).strftime("%Y-%m-%d")

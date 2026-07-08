@@ -35,6 +35,21 @@ export interface FixtureDTO {
   visitante: EquipoDTO
   golesLocal: number | null
   golesVisitante: number | null
+  /** URL del logo del torneo (leagues.logo). */
+  ligaLogo?: string | null
+  /** URL de la bandera del país (leagues.flag; null en copas internacionales). */
+  ligaBandera?: string | null
+}
+
+/** Metadatos de una liga (GET /ligas/{ligaId}). */
+export interface LigaDTO {
+  id: number
+  nombre: string
+  pais: string | null
+  logo: string | null
+  bandera: string | null
+  /** Última temporada conocida. */
+  temporada: number | null
 }
 
 /** Fila de team_levels + discretización (§2 y §4.1 del motor). */

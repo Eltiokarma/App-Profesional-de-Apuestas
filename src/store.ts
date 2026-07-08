@@ -24,6 +24,8 @@ export interface SadState {
   fecha: string
   /** Equipo abierto en la página de equipo (clave interna). */
   teamKey: string | null
+  /** Liga abierta en la página de liga (id del contrato). */
+  ligaId: number | null
   vw: number
   forceMobile: boolean
   oddsMode: OddsMode
@@ -53,6 +55,7 @@ const initialState: SadState = {
   match: null,
   fecha: hoyStr(),
   teamKey: null,
+  ligaId: null,
   vw: typeof window !== 'undefined' ? window.innerWidth : 1280,
   forceMobile: false,
   oddsMode: 'prematch',
@@ -79,6 +82,7 @@ export interface SadStore {
   toggleTheme: () => void
   go: (sec: SectionKey) => () => void
   openTeam: (teamKey: string) => void
+  openLiga: (ligaId: number) => void
   selectMatch: (mt: Match) => () => void
   clearMatch: () => void
   setFecha: (fecha: string) => void
@@ -133,6 +137,7 @@ export function useSad(): SadStore {
   const toggleTheme = useCallback(() => patchFn((prev) => ({ theme: prev.theme === 'dark' ? 'light' : 'dark' })), [patchFn])
   const go = useCallback((sec: SectionKey) => () => patch({ section: sec }), [patch])
   const openTeam = useCallback((teamKey: string) => patch({ teamKey, section: 'equipo' }), [patch])
+  const openLiga = useCallback((ligaId: number) => patch({ ligaId, section: 'liga' }), [patch])
 
   const selectMatch = useCallback(
     (mt: Match) => () => {
@@ -199,6 +204,7 @@ export function useSad(): SadStore {
     toggleTheme,
     go,
     openTeam,
+    openLiga,
     selectMatch,
     clearMatch,
     setFecha,

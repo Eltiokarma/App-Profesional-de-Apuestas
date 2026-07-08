@@ -13,6 +13,7 @@ import type {
   EstadoFixture,
   FixtureDTO,
   GapEquipoDTO,
+  LigaDTO,
   NivelDTO,
   PrediccionDTO,
   StandingRowDTO,
@@ -35,7 +36,11 @@ export interface FeedHealth {
 /** Filtros de /fixtures del contrato (docs/openapi.yaml). */
 export interface FixturesParams {
   fecha?: string
+  /** Solo fixtures con fecha >= desde (yyyy-mm-dd). */
+  desde?: string
   estado?: EstadoFixture
+  /** Orden por fecha (default desc). */
+  orden?: 'asc' | 'desc'
   ligaId?: number
   equipoId?: number
   /** Con equipoId: solo enfrentamientos directos entre ambos (H2H). */
@@ -56,6 +61,7 @@ export interface SadDataSource {
   analisisPrepartido(fixtureId: number): Promise<AnalisisPrepartidoDTO>
   cuotas(fixtureId: number): Promise<CuotaDTO[]>
   equipoStats(equipoId: number): Promise<EquipoStatsDTO>
+  liga(ligaId: number): Promise<LigaDTO>
   standings(ligaId: number, temporada?: number): Promise<StandingRowDTO[]>
 }
 
@@ -67,6 +73,13 @@ export const FIXTURE_NUM = (matchId: string) => parseInt(matchId.slice(1), 10)
 
 const LIGA_NUM: Record<string, number> = { laliga: 140, premier: 39, seriea: 135 }
 const LK_BY_NUM: Record<number, string> = Object.fromEntries(Object.entries(LIGA_NUM).map(([lk, n]) => [n, lk]))
+
+// metadatos demo de las ligas mock (mismo CDN que el backend real)
+const LIGA_META: Record<number, LigaDTO> = {
+  140: { id: 140, nombre: 'LaLiga', pais: 'Spain', logo: 'https://media.api-sports.io/football/leagues/140.png', bandera: 'https://media.api-sports.io/flags/es.svg', temporada: 2026 },
+  39: { id: 39, nombre: 'Premier League', pais: 'England', logo: 'https://media.api-sports.io/football/leagues/39.png', bandera: 'https://media.api-sports.io/flags/gb-eng.svg', temporada: 2026 },
+  135: { id: 135, nombre: 'Serie A', pais: 'Italy', logo: 'https://media.api-sports.io/football/leagues/135.png', bandera: 'https://media.api-sports.io/flags/it.svg', temporada: 2026 },
+}
 
 // fecha sintética determinista para el historial del motor (t = jornada)
 const tToIso = (t: number) => {
@@ -186,7 +199,6 @@ class MockDataSource implements SadDataSource {
         (!params.estado || estadoDe(m) === params.estado) &&
         (params.ligaId == null || (LIGA_NUM[m.lk] ?? 0) === params.ligaId),
     )
-      .slice(0, Math.min(Math.max(params.limit ?? 50, 1), 200)) // mismo tope que el backend
       .map((m) => {
         const goles = (m.score || '0 - 0').split('-').map((x) => parseInt(x.trim()) || 0)
         const enJuego = m.status === 'live'
@@ -205,8 +217,13 @@ class MockDataSource implements SadDataSource {
           visitante: equipoDTO(m.away),
           golesLocal: m.status === 'sched' ? null : goles[0],
           golesVisitante: m.status === 'sched' ? null : goles[1],
+          ligaLogo: LIGA_META[LIGA_NUM[m.lk] ?? 0]?.logo ?? null,
+          ligaBandera: LIGA_META[LIGA_NUM[m.lk] ?? 0]?.bandera ?? null,
         }
       })
+      .filter((f) => !params.desde || f.fecha >= new Date(params.desde + 'T00:00:00').toISOString())
+      .sort((a, b) => (params.orden === 'asc' ? a.fecha.localeCompare(b.fecha) : b.fecha.localeCompare(a.fecha)))
+      .slice(0, Math.min(Math.max(params.limit ?? 50, 1), 200)) // mismo tope que el backend
   }
 
   async niveles(equipoId: number, limit = 50): Promise<NivelDTO[]> {
@@ -303,6 +320,12 @@ class MockDataSource implements SadDataSource {
     }
   }
 
+  async liga(ligaId: number): Promise<LigaDTO> {
+    const meta = LIGA_META[ligaId]
+    if (!meta) throw new Error(`liga ${ligaId} no existe`)
+    return meta
+  }
+
   async standings(ligaId: number, temporada?: number): Promise<StandingRowDTO[]> {
     if (temporada != null && temporada !== 2026) return [] // la demo solo tiene la 2026
     const lk = LK_BY_NUM[ligaId]
@@ -353,6 +376,7 @@ class HttpDataSource implements SadDataSource {
   analisisPrepartido = (fixtureId: number) => SadApi.analisisPrepartido(fixtureId)
   cuotas = (fixtureId: number) => SadApi.cuotas(fixtureId)
   equipoStats = (equipoId: number) => SadApi.equipoStats(equipoId)
+  liga = (ligaId: number) => SadApi.liga(ligaId)
   standings = (ligaId: number, temporada?: number) => SadApi.standings(ligaId, temporada)
 }
 

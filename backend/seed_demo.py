@@ -164,7 +164,7 @@ def seed(base_dir: str):
     sad = sqlite3.connect(os.path.join(base_dir, "sad.db"))
     sad.executescript("""
         CREATE TABLE teams (id INTEGER PRIMARY KEY, name TEXT, country TEXT, founded INTEGER, logo TEXT);
-        CREATE TABLE leagues (id INTEGER PRIMARY KEY, name TEXT, country TEXT);
+        CREATE TABLE leagues (id INTEGER PRIMARY KEY, name TEXT, country TEXT, logo TEXT, flag TEXT, season INTEGER);
         CREATE TABLE fixtures (
             id INTEGER PRIMARY KEY, referee TEXT, timezone TEXT, date DATETIME, timestamp INTEGER,
             first_half_start INTEGER, second_half_start INTEGER, venue_id INTEGER, venue_name TEXT,
@@ -177,8 +177,17 @@ def seed(base_dir: str):
             bookmaker_id INTEGER, bookmaker_name TEXT, bet_id INTEGER, bet_name TEXT, value TEXT, odd REAL);
     """)
     sad.executemany("INSERT INTO teams (id, name, country) VALUES (?,?, 'Spain')", TEAMS)
-    sad.execute("INSERT INTO leagues (id, name, country) VALUES (?, 'LaLiga', 'Spain')", (LEAGUE_ID,))
-    sad.execute("INSERT INTO leagues (id, name, country) VALUES (2, 'UEFA Champions League', 'World')")
+    sad.execute(
+        "INSERT INTO leagues (id, name, country, logo, flag, season) VALUES (?, 'LaLiga', 'Spain', "
+        "'https://media.api-sports.io/football/leagues/140.png', 'https://media.api-sports.io/flags/es.svg', ?)",
+        (LEAGUE_ID, SEASON),
+    )
+    # copa internacional: sin bandera de país (flag NULL), solo logo del torneo
+    sad.execute(
+        "INSERT INTO leagues (id, name, country, logo, flag, season) VALUES (2, 'UEFA Champions League', 'World', "
+        "'https://media.api-sports.io/football/leagues/2.png', NULL, ?)",
+        (SEASON,),
+    )
     for f in fixtures:
         sad.execute(
             """INSERT INTO fixtures (id, date, venue_name, status_long, status_short, elapsed,

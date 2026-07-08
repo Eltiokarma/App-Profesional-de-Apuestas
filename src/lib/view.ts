@@ -15,6 +15,7 @@ export interface MatchView {
   awayFg: string
   awayLogo?: string | null
   league: string
+  ligaId?: number
   date: string
   venue: string
 }
@@ -36,6 +37,7 @@ export function matchView(m: Match): MatchView {
     awayFg: A.fg,
     awayLogo: A.logo,
     league: m.league,
+    ligaId: m.ligaId,
     date: m.date,
     venue: m.venue,
   }
