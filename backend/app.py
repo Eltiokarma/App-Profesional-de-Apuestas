@@ -144,8 +144,8 @@ def abrev(nombre: str) -> str:
     return (nombre or "???").replace(" ", "")[:3].upper()
 
 
-def equipo_dto(team_id: int, nombre: str) -> dict:
-    return {"id": team_id, "nombre": nombre, "abreviatura": abrev(nombre)}
+def equipo_dto(team_id: int, nombre: str, logo: str | None = None) -> dict:
+    return {"id": team_id, "nombre": nombre, "abreviatura": abrev(nombre), "logo": logo}
 
 
 def estado_de(status_short, status_long) -> str:
@@ -195,8 +195,8 @@ def fixture_dto(f) -> dict:
         "estado": estado,
         "minuto": f["elapsed"] if estado == "en_vivo" else None,
         "estadio": f["venue_name"] or "",
-        "local": equipo_dto(f["home_team_id"], f["home_name"]),
-        "visitante": equipo_dto(f["away_team_id"], f["away_name"]),
+        "local": equipo_dto(f["home_team_id"], f["home_name"], f["home_logo"]),
+        "visitante": equipo_dto(f["away_team_id"], f["away_name"], f["away_logo"]),
         "golesLocal": f["goals_home"] if estado != "programado" else None,
         "golesVisitante": f["goals_away"] if estado != "programado" else None,
     }
@@ -206,8 +206,8 @@ FIXTURE_SQL = """
 SELECT f.id, f.date, f.status_long, f.status_short, f.elapsed,
        f.league_id, f.league_season, f.venue_name,
        f.goals_home, f.goals_away,
-       f.home_team_id, ht.name AS home_name,
-       f.away_team_id, at.name AS away_name
+       f.home_team_id, ht.name AS home_name, ht.logo AS home_logo,
+       f.away_team_id, at.name AS away_name, at.logo AS away_logo
 FROM fixtures f
 JOIN teams ht ON ht.id = f.home_team_id
 JOIN teams at ON at.id = f.away_team_id
@@ -502,9 +502,9 @@ def _norm(s: str) -> str:
 
 
 @lru_cache(maxsize=2)
-def _equipos_norm(bucket: int) -> tuple[tuple[int, str, str], ...]:
+def _equipos_norm(bucket: int) -> tuple[tuple[int, str, str | None, str], ...]:
     # caché por minuto: evita escanear y normalizar toda la tabla en cada búsqueda
-    return tuple((r["id"], r["name"], _norm(r["name"])) for r in db.query("sad", "SELECT id, name FROM teams"))
+    return tuple((r["id"], r["name"], r["logo"], _norm(r["name"])) for r in db.query("sad", "SELECT id, name, logo FROM teams"))
 
 
 @app.get(API + "/equipos")
@@ -513,12 +513,12 @@ def buscar_equipos(buscar: str = Query(min_length=2, max_length=60), limit: int 
     prefijo > inicio de palabra > contiene."""
     q = _norm(buscar)
     scored = []
-    for tid, nombre, n in _equipos_norm(int(time.monotonic() // 60)):
+    for tid, nombre, logo, n in _equipos_norm(int(time.monotonic() // 60)):
         if q in n:
             rank = 0 if n.startswith(q) else 1 if any(w.startswith(q) for w in n.split()) else 2
-            scored.append((rank, len(n), tid, nombre))
+            scored.append((rank, len(n), tid, nombre, logo))
     scored.sort()
-    return [equipo_dto(tid, nombre) for _, __, tid, nombre in scored[:limit]]
+    return [equipo_dto(tid, nombre, logo) for _, __, tid, nombre, logo in scored[:limit]]
 
 
 @app.get(API + "/fixtures")

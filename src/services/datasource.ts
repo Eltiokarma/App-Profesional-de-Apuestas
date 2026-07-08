@@ -75,7 +75,7 @@ const MOCK_NOW = '2026-07-02T21:00:00.000Z'
 
 function equipoDTO(key: string) {
   const T = TEAMS[key]
-  return { id: TEAM_NUM[key], nombre: T.name, abreviatura: T.short }
+  return { id: TEAM_NUM[key], nombre: T.name, abreviatura: T.short, logo: T.logo ?? null }
 }
 
 function nivelDTO(teamKey: string): NivelDTO {

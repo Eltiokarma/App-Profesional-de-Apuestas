@@ -118,3 +118,14 @@ body {
   animation: sadshimmer 1.3s infinite linear;
   border-radius: 8px;
 }
+
+/* Botones interactivos del shell (header, listas): feedback al pasar el ratón. */
+.sad-hover {
+  transition: background 0.13s ease;
+}
+.sad-hover:hover {
+  background: var(--bg2) !important;
+}
+.sad-hover:active {
+  background: var(--bg3) !important;
+}

@@ -33,7 +33,10 @@ function hashCode(s: string): number {
 /** Garantiza que el equipo del DTO existe en el registro visual; devuelve su clave interna. */
 export function ensureTeam(dto: EquipoDTO): string {
   const known = NUM_TEAM[dto.id]
-  if (known) return known
+  if (known) {
+    if (dto.logo && !TEAMS[known].logo) TEAMS[known].logo = dto.logo
+    return known
+  }
   const key = 't' + dto.id
   if (!TEAMS[key]) {
     const neutral: Team = {
@@ -41,6 +44,7 @@ export function ensureTeam(dto: EquipoDTO): string {
       short: dto.abreviatura || dto.nombre.slice(0, 3).toUpperCase(),
       color: PALETTE[hashCode(dto.nombre) % PALETTE.length],
       fg: '#fff',
+      logo: dto.logo ?? null,
       pts: 50,
       pos: 10,
       form: ['D', 'D', 'D', 'D', 'D'],

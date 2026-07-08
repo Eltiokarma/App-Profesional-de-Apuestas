@@ -58,6 +58,7 @@ def main():
     check("fixtures?estado=inválido → 422", c.get(A + "/fixtures?estado=jugando").status_code == 422)
     uno = c.get(A + f"/fixtures/{vivo['id']}").json()
     check("/fixtures/{id} coincide", uno["id"] == vivo["id"] and uno["local"]["nombre"] == vivo["local"]["nombre"])
+    check("equipos del fixture traen logo (nullable)", "logo" in uno["local"] and "logo" in uno["visitante"], uno["local"])
     check("/fixtures/999999 → 404", c.get(A + "/fixtures/999999").status_code == 404)
 
     betis = vivo["local"]["id"]
@@ -148,6 +149,7 @@ def main():
     # /equipos?buscar= — búsqueda inteligente
     b1 = c.get(A + "/equipos?buscar=bet").json()
     check("buscar 'bet' → Real Betis primero", b1 and "Betis" in b1[0]["nombre"], b1[:1])
+    check("buscar: DTO incluye logo (nullable)", "logo" in b1[0], b1[:1])
     b2 = c.get(A + "/equipos?buscar=atletico").json()
     check("buscar sin tilde 'atletico' → Atlético", b2 and "Atlético" in b2[0]["nombre"], b2[:1])
     check("buscar corto (1 char) → 422", c.get(A + "/equipos?buscar=a").status_code == 422)

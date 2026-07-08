@@ -4,6 +4,7 @@ import type { KCondKey, KTypeKey } from '../data/types'
 import type { ConstanteCuotaDTO } from '../api/types'
 import { KLineChart, KLineLegend } from '../components/KLineChart'
 import { KBarChart, type CuotaBar } from '../components/KBarChart'
+import { TeamBadge } from '../components/TeamBadge'
 import { binBadge, FUSED_KEY, K_TYPE_GROUPS, K_WINDOW_OPTS, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
 import type { FusedK } from '../motor/types'
 import { loadBurbujas, loadConstantesCuota, loadTeamFixtures, loadTeamStats } from '../services/appdata'
@@ -66,7 +67,7 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, flexWrap: 'wrap' }}>
-        <span style={{ width: 52, height: 52, borderRadius: '50%', background: T.color, color: T.fg, display: 'flex', alignItems: 'center', justifyContent: 'center', font: '800 16px var(--mono)', boxShadow: '0 0 0 2px var(--bg1),0 0 0 3px var(--line)' }}>{T.short}</span>
+        <TeamBadge logo={T.logo} short={T.short} color={T.color} fg={T.fg} size={52} ring />
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 style={{ margin: 0, font: '800 22px var(--sans)', letterSpacing: '-.3px' }}>{T.name}</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 5, flexWrap: 'wrap' }}>
@@ -217,7 +218,7 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
                         </span>
                       )}
                       <span style={{ font: '600 11px var(--mono)', color: 'var(--t3)', width: 22, flexShrink: 0 }}>{esLocal ? 'vs' : 'en'}</span>
-                      <span style={{ width: 22, height: 22, borderRadius: '50%', background: RV?.color ?? 'var(--bg3)', color: RV?.fg ?? 'var(--t2)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 7.5px var(--mono)', flexShrink: 0 }}>{RV?.short ?? '?'}</span>
+                      <TeamBadge logo={RV?.logo} short={RV?.short ?? '?'} color={RV?.color ?? 'var(--bg3)'} fg={RV?.fg ?? 'var(--t2)'} size={22} />
                       <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{RV?.name ?? rivalKey}</span>
                       <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)', flexShrink: 0 }}>{m.comp}</span>
                       <span style={{ font: '700 13px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums', minWidth: 44, textAlign: 'right', flexShrink: 0 }}>

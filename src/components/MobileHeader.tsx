@@ -1,5 +1,6 @@
 import type { SadStore } from '../store'
 import type { MatchView } from '../lib/view'
+import { TeamBadge } from './TeamBadge'
 
 interface Props {
   store: SadStore
@@ -34,8 +35,8 @@ export function MobileHeader({ store, mv, phonePreview, liveBadge, liveMinute }:
       </div>
       {mv ? (
         <button onClick={store.go('partidos')} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 11px', border: '1px solid var(--line)', borderRadius: 11, background: 'var(--bg2)', cursor: 'pointer', textAlign: 'left' }}>
-          <span style={{ width: 26, height: 26, borderRadius: '50%', background: mv.homeColor, color: mv.homeFg, display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 9.5px var(--mono)', flexShrink: 0 }}>{mv.homeShort}</span>
-          <span style={{ width: 26, height: 26, borderRadius: '50%', background: mv.awayColor, color: mv.awayFg, display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 9.5px var(--mono)', marginLeft: -12, boxShadow: '0 0 0 2px var(--bg2)', flexShrink: 0 }}>{mv.awayShort}</span>
+          <TeamBadge logo={mv.homeLogo} short={mv.homeShort} color={mv.homeColor} fg={mv.homeFg} size={26} />
+          <TeamBadge logo={mv.awayLogo} short={mv.awayShort} color={mv.awayColor} fg={mv.awayFg} size={26} style={{ marginLeft: -12, boxShadow: '0 0 0 2px var(--bg2)' }} />
           <span style={{ flex: 1, minWidth: 0 }}>
             <span style={{ display: 'block', font: '700 12.5px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{mv.homeName} vs {mv.awayName}</span>
             <span style={{ display: 'block', font: '500 10px var(--mono)', color: 'var(--t3)' }}>{mv.league} · {mv.date}</span>
