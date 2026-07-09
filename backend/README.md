@@ -65,13 +65,15 @@ python -m backend.test_api                           # 60 verificaciones del con
 | `SAD_API_TOKEN` | *(vacío = abierta)* | con valor, todo salvo `/health` exige `Authorization: Bearer <token>` (el frontend lo manda con `VITE_API_KEY`) |
 | `SAD_RATE_LIMIT` | `120` | requests por minuto por IP (429 al exceder); `0` lo apaga |
 | `SAD_DOCS` | `1` sin token, `0` con token | expone `/docs`, `/redoc` y `/openapi.json` |
+| `SAD_INGESTA_HORA` | *(vacía = apagada)* | `HH:MM` UTC: corre `backend.ingesta.corrida_diaria` a diario en subproceso (despliegue de un solo servicio) |
+| `SAD_BOOTSTRAP_URL` | *(vacía)* | zip con las 4 DBs: se descarga a `SAD_DATA_DIR` en el arranque si falta sad.db (carga inicial del volumen) |
 
 Nota despliegue: el rate limit ve la IP del cliente directo — detrás de un
 proxy inverso esa IP es la del proxy, así que en producción conviene limitar
-también en el proxy (o propagar la IP real).
+también en el proxy (o propagar la IP real). Guía completa Railway + Vercel:
+`docs/DESPLIEGUE.md`.
 
 ## Fase 2 (pendiente)
 
-Ingesta propia (API-Football + APScheduler), PostgreSQL gestionado con Alembic,
-xG/posesión desde estadísticas por partido, endpoint H2H y
-despliegue 24/7 — ver `docs/SERVICIOS_EXTERNOS.md`.
+PostgreSQL gestionado con Alembic, xG/posesión desde estadísticas por partido
+y historial de cuotas — ver `docs/SERVICIOS_EXTERNOS.md`.

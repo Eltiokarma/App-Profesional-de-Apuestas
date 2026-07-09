@@ -1,0 +1,15 @@
+# El contexto solo necesita backend/: fuera las DBs (1+ GB), el frontend y git
+.git
+node_modules
+dist
+demo_data
+docs
+public
+src
+scripts
+*.db
+*.bundle
+.env
+.env.*
+backend/__pycache__
+backend/**/__pycache__

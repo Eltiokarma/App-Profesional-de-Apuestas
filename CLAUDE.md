@@ -60,17 +60,19 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
 
 ## Estado actual
 
-Hecho: 4 secciones + Partidos (pantalla inicial) + página de Equipo + buscador
-inteligente; burbujas = gráfica de líneas de picos K con distinción de torneos
-internacionales; gap §5 en Estadísticas; backend completo (38 tests verdes);
-CI con dos jobs. Probado end-to-end con datos reales del usuario.
+Hecho: 4 secciones + Partidos (pantalla inicial) + páginas de Equipo y de Liga
+(con temporadas pasadas) + buscador inteligente; H2H real en Estadísticas;
+burbujas = gráfica de líneas de picos K con distinción de torneos
+internacionales; gap §5 en Estadísticas; backend completo; CI con dos jobs.
+Probado end-to-end con datos reales del usuario (Mundial 2026 incluido).
 
 ## Siguientes pasos (en orden)
 
-1. **Familias nuevas de burbujas** — spec completa en `docs/ROADMAP_BURBUJAS.md`:
-   empezar por `k_dc` (Doble Oportunidad), luego márgenes (±1/2/3+ goles),
-   luego k_cuota_* sobre cuotas prepartido (regla de huecos ya definida).
-2. Backend: xG/posesión desde estadísticas por partido; endpoint H2H
-   (la card de Estadísticas sigue siendo demo).
-3. Historial de cuotas por fixture para que la gráfica de movimiento sea real.
-4. Fase nube cuando toque: `docs/SERVICIOS_EXTERNOS.md` (Postgres, ingesta, deploy).
+1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
+   (frontend) — guía paso a paso en `docs/DESPLIEGUE.md`.
+2. **Familias nuevas de burbujas** — spec completa en `docs/ROADMAP_BURBUJAS.md`:
+   `k_dc` hecho; siguen márgenes (±1/2/3+ goles) y k_cuota_* sobre cuotas
+   prepartido (regla de huecos ya definida).
+3. Backend: xG/posesión desde estadísticas por partido.
+4. Historial de cuotas por fixture para que la gráfica de movimiento sea real.
+5. Fase nube completa cuando toque: `docs/SERVICIOS_EXTERNOS.md` (Postgres).
