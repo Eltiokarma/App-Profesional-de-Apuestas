@@ -42,6 +42,8 @@ export interface FixturesParams {
   /** Orden por fecha (default desc). */
   orden?: 'asc' | 'desc'
   ligaId?: number
+  /** Solo fixtures de esta temporada de la liga. */
+  temporada?: number
   equipoId?: number
   /** Con equipoId: solo enfrentamientos directos entre ambos (H2H). */
   rivalId?: number
@@ -76,9 +78,9 @@ const LK_BY_NUM: Record<number, string> = Object.fromEntries(Object.entries(LIGA
 
 // metadatos demo de las ligas mock (mismo CDN que el backend real)
 const LIGA_META: Record<number, LigaDTO> = {
-  140: { id: 140, nombre: 'LaLiga', pais: 'Spain', logo: 'https://media.api-sports.io/football/leagues/140.png', bandera: 'https://media.api-sports.io/flags/es.svg', temporada: 2026 },
-  39: { id: 39, nombre: 'Premier League', pais: 'England', logo: 'https://media.api-sports.io/football/leagues/39.png', bandera: 'https://media.api-sports.io/flags/gb-eng.svg', temporada: 2026 },
-  135: { id: 135, nombre: 'Serie A', pais: 'Italy', logo: 'https://media.api-sports.io/football/leagues/135.png', bandera: 'https://media.api-sports.io/flags/it.svg', temporada: 2026 },
+  140: { id: 140, nombre: 'LaLiga', pais: 'Spain', logo: 'https://media.api-sports.io/football/leagues/140.png', bandera: 'https://media.api-sports.io/flags/es.svg', temporada: 2026, temporadas: [2026] },
+  39: { id: 39, nombre: 'Premier League', pais: 'England', logo: 'https://media.api-sports.io/football/leagues/39.png', bandera: 'https://media.api-sports.io/flags/gb-eng.svg', temporada: 2026, temporadas: [2026] },
+  135: { id: 135, nombre: 'Serie A', pais: 'Italy', logo: 'https://media.api-sports.io/football/leagues/135.png', bandera: 'https://media.api-sports.io/flags/it.svg', temporada: 2026, temporadas: [2026] },
 }
 
 // fecha sintética determinista para el historial del motor (t = jornada)
@@ -197,7 +199,8 @@ class MockDataSource implements SadDataSource {
         (!teamKey || m.home === teamKey || m.away === teamKey) &&
         (!teamKey || !rivalKey || (m.home === teamKey && m.away === rivalKey) || (m.home === rivalKey && m.away === teamKey)) &&
         (!params.estado || estadoDe(m) === params.estado) &&
-        (params.ligaId == null || (LIGA_NUM[m.lk] ?? 0) === params.ligaId),
+        (params.ligaId == null || (LIGA_NUM[m.lk] ?? 0) === params.ligaId) &&
+        (params.temporada == null || params.temporada === 2026), // la demo solo tiene la 2026
     )
       .map((m) => {
         const goles = (m.score || '0 - 0').split('-').map((x) => parseInt(x.trim()) || 0)

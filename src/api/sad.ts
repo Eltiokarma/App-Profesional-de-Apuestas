@@ -19,7 +19,7 @@ import type {
 export const SadApi = {
   health: () => apiGet<HealthDTO>('/health', { timeoutMs: 5_000 }),
 
-  fixtures: (params: { fecha?: string; desde?: string; estado?: EstadoFixture; orden?: 'asc' | 'desc'; ligaId?: number; equipoId?: number; rivalId?: number; limit?: number } = {}) =>
+  fixtures: (params: { fecha?: string; desde?: string; estado?: EstadoFixture; orden?: 'asc' | 'desc'; ligaId?: number; temporada?: number; equipoId?: number; rivalId?: number; limit?: number } = {}) =>
     apiGet<FixtureDTO[]>('/fixtures' + qs(params)),
 
   /** Búsqueda inteligente de equipos (sin tildes, ranking por prefijo). */

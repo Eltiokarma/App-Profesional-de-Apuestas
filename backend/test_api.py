@@ -136,9 +136,15 @@ def main():
     # /ligas/{id}
     lg = c.get(A + "/ligas/140").json()
     check("/ligas/140: nombre, país y bandera", lg["nombre"] == "LaLiga" and lg["pais"] == "Spain" and lg["bandera"], lg)
+    check("/ligas/140: temporadas capturadas desc", lg["temporadas"] == [2025], lg.get("temporadas"))
     lg2 = c.get(A + "/ligas/2").json()
     check("/ligas/2 (copa): bandera null, logo presente", lg2["bandera"] is None and lg2["logo"], lg2)
     check("/ligas/999999 → 404", c.get(A + "/ligas/999999").status_code == 404)
+
+    # /fixtures?temporada
+    ft = c.get(A + "/fixtures?ligaId=140&temporada=2025&limit=200").json()
+    check("fixtures?temporada: filtra por temporada de la liga", ft and all(f["temporada"] == 2025 for f in ft), len(ft))
+    check("fixtures?temporada sin datos → lista vacía", c.get(A + "/fixtures?ligaId=140&temporada=1999").json() == [])
 
     # /ligas/{id}/standings
     tb = c.get(A + "/ligas/140/standings").json()

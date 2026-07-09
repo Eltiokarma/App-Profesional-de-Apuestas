@@ -540,6 +540,7 @@ def fixtures(
     estado: Literal["programado", "en_vivo", "finalizado"] | None = None,
     orden: Literal["asc", "desc"] = "desc",
     ligaId: int | None = None,
+    temporada: int | None = None,
     equipoId: int | None = None,
     rivalId: int | None = None,
     limit: int = Query(default=50, ge=1, le=200),
@@ -561,6 +562,9 @@ def fixtures(
     if ligaId is not None:
         cond.append("f.league_id=?")
         params.append(ligaId)
+    if temporada is not None:
+        cond.append("f.league_season=?")
+        params.append(temporada)
     if equipoId is not None and rivalId is not None:
         cond.append("((f.home_team_id=? AND f.away_team_id=?) OR (f.home_team_id=? AND f.away_team_id=?))")
         params.extend([equipoId, rivalId, rivalId, equipoId])
@@ -694,11 +698,16 @@ def equipo_stats(equipo_id: int):
 
 @app.get(API + "/ligas/{liga_id}")
 def liga(liga_id: int):
-    """Metadatos de la liga (nombre, país, logo, bandera)."""
+    """Metadatos de la liga (nombre, país, logo, bandera, temporadas capturadas)."""
     meta = liga_meta(liga_id)
     if meta["pais"] is None and meta["logo"] is None and meta["nombre"] == f"Liga {liga_id}":
         raise HTTPException(404, f"liga {liga_id} no existe")
-    return {"id": liga_id, **meta}
+    rows = db.query(
+        "sad",
+        "SELECT DISTINCT league_season AS s FROM fixtures WHERE league_id=? AND league_season IS NOT NULL ORDER BY s DESC",
+        (liga_id,),
+    )
+    return {"id": liga_id, **meta, "temporadas": [r["s"] for r in rows]}
 
 
 @app.get(API + "/ligas/{liga_id}/standings")

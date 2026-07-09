@@ -345,14 +345,15 @@ export interface LigaData {
   recientes: Match[]
 }
 
-export async function loadLiga(ligaId: number): Promise<LigaData> {
+/** `temporada` opcional: sin ella, la más reciente (una pasada no tendrá próximos). */
+export async function loadLiga(ligaId: number, temporada?: number): Promise<LigaData> {
   const ds = getDataSource()
   const hoy = localDateStr(new Date())
   const [meta, tabla, prog, fin] = await Promise.all([
     ds.liga(ligaId).catch(() => null), // liga sin metadatos (404) no bloquea la página
-    ds.standings(ligaId),
-    ds.fixtures({ ligaId, estado: 'programado', desde: hoy, orden: 'asc', limit: 10 }),
-    ds.fixtures({ ligaId, estado: 'finalizado', limit: 10 }),
+    ds.standings(ligaId, temporada),
+    ds.fixtures({ ligaId, temporada, estado: 'programado', desde: hoy, orden: 'asc', limit: 10 }),
+    ds.fixtures({ ligaId, temporada, estado: 'finalizado', limit: 10 }),
   ])
   return {
     meta,
