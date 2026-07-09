@@ -1,5 +1,7 @@
+import { useRef, useState } from 'react'
 import { TEAMS } from '../data'
 import type { Match } from '../data/types'
+import type { LigaDTO } from '../api/types'
 import { TeamBadge } from '../components/TeamBadge'
 import { loadLiga } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
@@ -11,13 +13,22 @@ interface Props {
   isMobile: boolean
 }
 
-/** Página de liga: identidad (bandera/logo), clasificación y partidos. */
+/** Página de liga: identidad (bandera/logo), clasificación y partidos, con temporadas pasadas. */
 export function Liga({ store, ligaId, isMobile }: Props) {
-  const liga = useAsync(() => loadLiga(ligaId), ligaId)
+  // selección de temporada ligada a la liga: al cambiar de liga vuelve a la más reciente
+  const [sel, setSel] = useState<{ liga: number; temporada: number } | null>(null)
+  const temporada = sel && sel.liga === ligaId ? sel.temporada : null
+  const liga = useAsync(() => loadLiga(ligaId, temporada ?? undefined), `${ligaId}:${temporada ?? ''}`)
   const d = liga.data
 
-  const nombre = d?.meta?.nombre ?? `Liga ${ligaId}`
-  const img = d?.meta ? (d.meta.bandera ?? d.meta.logo) : null
+  // la cabecera no debe parpadear al cambiar de temporada: conservar el último meta de esta liga
+  const metaRef = useRef<LigaDTO | null>(null)
+  if (d?.meta) metaRef.current = d.meta
+  const meta = d?.meta ?? (metaRef.current?.id === ligaId ? metaRef.current : null)
+
+  const nombre = meta?.nombre ?? `Liga ${ligaId}`
+  const img = meta ? (meta.bandera ?? meta.logo) : null
+  const temporadas = meta?.temporadas ?? []
 
   const filaPartido = (m: Match) => {
     const H = TEAMS[m.home]
@@ -57,11 +68,24 @@ export function Liga({ store, ligaId, isMobile }: Props) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 style={{ margin: 0, font: '800 22px var(--sans)', letterSpacing: '-.3px' }}>{nombre}</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 5, flexWrap: 'wrap' }}>
-            {d?.meta?.pais && (
-              <span style={{ padding: '4px 10px', borderRadius: 7, background: 'var(--accent-soft)', color: 'var(--accent)', font: '700 10.5px var(--mono)', letterSpacing: '.3px' }}>{d.meta.pais}</span>
+            {meta?.pais && (
+              <span style={{ padding: '4px 10px', borderRadius: 7, background: 'var(--accent-soft)', color: 'var(--accent)', font: '700 10.5px var(--mono)', letterSpacing: '.3px' }}>{meta.pais}</span>
             )}
-            {d?.meta?.temporada != null && (
-              <span style={{ font: '500 11px var(--mono)', color: 'var(--t3)' }}>Temporada {d.meta.temporada}</span>
+            {temporadas.length > 1 ? (
+              <select
+                value={temporada ?? temporadas[0]}
+                onChange={(e) => setSel({ liga: ligaId, temporada: Number(e.target.value) })}
+                title="Ver otra temporada"
+                style={{ padding: '4px 8px', borderRadius: 7, border: '1px solid var(--line2)', background: 'var(--bg2)', color: 'var(--t1)', font: '600 11px var(--mono)', cursor: 'pointer' }}
+              >
+                {temporadas.map((t) => (
+                  <option key={t} value={t}>Temporada {t}</option>
+                ))}
+              </select>
+            ) : (
+              meta?.temporada != null && (
+                <span style={{ font: '500 11px var(--mono)', color: 'var(--t3)' }}>Temporada {meta.temporada}</span>
+              )
             )}
           </div>
         </div>

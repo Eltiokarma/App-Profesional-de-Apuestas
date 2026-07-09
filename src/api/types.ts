@@ -50,6 +50,8 @@ export interface LigaDTO {
   bandera: string | null
   /** Última temporada conocida. */
   temporada: number | null
+  /** Temporadas con fixtures capturados, descendente. */
+  temporadas: number[]
 }
 
 /** Fila de team_levels + discretización (§2 y §4.1 del motor). */
