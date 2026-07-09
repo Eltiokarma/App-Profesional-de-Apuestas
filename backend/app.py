@@ -11,6 +11,9 @@ Ejecutar junto a las DBs reales:
 import os
 import secrets
 import sqlite3
+import subprocess
+import sys
+import threading
 import time
 import unicodedata
 from datetime import date as date_t, datetime, timedelta, timezone
@@ -90,6 +93,30 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
+
+# Ingesta programada opcional (despliegue de un solo servicio: el volumen de
+# Railway solo se monta en un servicio, así que el cron vive aquí dentro).
+# SAD_INGESTA_HORA=HH:MM (UTC) lanza backend.ingesta.corrida_diaria una vez al
+# día en subproceso. El backend HTTP sigue siendo de solo lectura: quien
+# escribe es la capa de ingesta; aquí solo se programa.
+INGESTA_HORA = os.environ.get("SAD_INGESTA_HORA", "").strip()
+
+
+def _ingesta_diaria_loop() -> None:
+    hh, mm = (int(x) for x in INGESTA_HORA.split(":"))
+    while True:
+        ahora = datetime.now(timezone.utc)
+        objetivo = ahora.replace(hour=hh, minute=mm, second=0, microsecond=0)
+        if objetivo <= ahora:
+            objetivo += timedelta(days=1)
+        time.sleep((objetivo - ahora).total_seconds())
+        print(f"[ingesta] corrida diaria {datetime.now(timezone.utc).isoformat()}", flush=True)
+        subprocess.run([sys.executable, "-m", "backend.ingesta.corrida_diaria"])
+        liga_meta.cache_clear()  # puede haber ligas nuevas en sad.db
+
+
+if INGESTA_HORA:
+    threading.Thread(target=_ingesta_diaria_loop, daemon=True, name="ingesta-diaria").start()
 
 # ---------------------------------------------------------------------------
 # helpers
