@@ -28,7 +28,7 @@ en subproceso. El backend HTTP sigue siendo de solo lectura.
 
    | Variable | Valor | Nota |
    |---|---|---|
-   | `API_FOOTBALL_KEY` | *(la clave RapidAPI)* | solo la usa la ingesta |
+   | `API_FOOTBALL_KEY` | *(clave de dashboard.api-football.com)* | solo la usa la ingesta |
    | `SAD_CORS_ORIGINS` | `https://<tu-app>.vercel.app` | el dominio real del frontend |
    | `SAD_API_TOKEN` | *(token largo aleatorio)* | apaga `/docs` y protege la API |
    | `SAD_INGESTA_HORA` | `06:30` | corrida diaria (UTC); vacía = sin ingesta |
