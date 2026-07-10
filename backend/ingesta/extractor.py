@@ -1,4 +1,4 @@
-"""Extractor prepartido de API-Football (RapidAPI) → sad.db.
+"""Extractor prepartido de API-Football (api-sports.io directo) → sad.db.
 
 Port de la ruta A del pipeline viejo (auto_extractor_v5.py, ver
 docs/INFORME_INGESTA.md §3) corrigiendo sus defectos: UNA sola lista de ligas,
@@ -26,8 +26,9 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
-BASE_URL = "https://api-football-v1.p.rapidapi.com/v3"
-HOST = "api-football-v1.p.rapidapi.com"
+# API-Football directo (clave de dashboard.api-football.com): mismo API v3
+# que servía RapidAPI, cambian solo el host y la cabecera de autenticación.
+BASE_URL = "https://v3.football.api-sports.io"
 SEASON = int(os.environ.get("SAD_SEASON", "2026"))
 DIAS_ATRAS = 3
 DIAS_ADELANTE = 10
@@ -130,9 +131,7 @@ class Cliente:
         self.usadas += 1
         self._guardar_cuota()
         url = f"{BASE_URL}/{endpoint}?{urllib.parse.urlencode(params)}"
-        req = urllib.request.Request(
-            url, headers={"x-rapidapi-key": self.clave, "x-rapidapi-host": HOST}
-        )
+        req = urllib.request.Request(url, headers={"x-apisports-key": self.clave})
         for intento in range(3):
             try:
                 with urllib.request.urlopen(req, timeout=30) as resp:
@@ -292,7 +291,7 @@ def probar(cliente: Cliente) -> int:
     if data and data.get("response"):
         print(f"Conexión OK — {len(data['response'])} timezones · requests usadas: {cliente.usadas}")
         return 0
-    print("Sin conexión: revisa la clave o la suscripción en RapidAPI")
+    print("Sin conexión: revisa la clave en dashboard.api-football.com")
     return 1
 
 
