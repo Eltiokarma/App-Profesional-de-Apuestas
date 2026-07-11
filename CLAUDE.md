@@ -20,7 +20,8 @@ python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
 
 # ingesta (dueña de los datos; el backend HTTP sigue siendo de solo lectura)
 python -m backend.ingesta.extractor --probar    # 1 request de prueba (API_FOOTBALL_KEY en .env)
-python -m backend.ingesta.extractor             # fixtures hoy−3d..+10d + cuotas NS (tope 95/día)
+python -m backend.ingesta.extractor --buscar "Copa Chile"  # descubrir IDs de torneos nuevos
+python -m backend.ingesta.extractor             # fixtures hoy−3d..+10d + cuotas NS (tope auto por plan)
 python -m backend.ingesta.pipeline --out .      # regenera levels/constants/discreto desde sad.db
 python -m backend.ingesta.test_paridad          # test dorado vs DBs del pipeline viejo
 ```
@@ -74,5 +75,7 @@ Probado end-to-end con datos reales del usuario (Mundial 2026 incluido).
    `k_dc` hecho; siguen márgenes (±1/2/3+ goles) y k_cuota_* sobre cuotas
    prepartido (regla de huecos ya definida).
 3. Backend: xG/posesión desde estadísticas por partido.
-4. Historial de cuotas por fixture para que la gráfica de movimiento sea real.
+4. Historial de cuotas por fixture para que la gráfica de movimiento sea real —
+   plan completo por fases (historial → día de partido → en vivo) en
+   `docs/EXTRACCION_TIEMPO_REAL.md`.
 5. Fase nube completa cuando toque: `docs/SERVICIOS_EXTERNOS.md` (Postgres).

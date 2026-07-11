@@ -32,7 +32,12 @@ en subproceso. El backend HTTP sigue siendo de solo lectura.
    | `SAD_CORS_ORIGINS` | `https://<tu-app>.vercel.app` | el dominio real del frontend |
    | `SAD_API_TOKEN` | *(token largo aleatorio)* | apaga `/docs` y protege la API |
    | `SAD_INGESTA_HORA` | `06:30` | corrida diaria (UTC); vacía = sin ingesta |
+   | `SAD_LIGAS_EXTRA` | `414:Copa Chile,999:Copa de la Liga Perú` | torneos extra sin tocar código; IDs con `--buscar` |
    | `SAD_BOOTSTRAP_URL` | *(URL del zip, solo la primera vez)* | ver carga inicial |
+
+   Para descubrir el ID de un torneo nuevo (p. ej. una copa recién creada),
+   con la clave en el entorno: `python -m backend.ingesta.extractor --buscar "Copa Chile"`
+   (imprime id, país y temporadas leídos de la API; 1 request).
 
 4. **Carga inicial de las DBs** (una sola vez). El volumen recién creado está
    vacío y no se puede subir archivos directo, por eso el bootstrap:

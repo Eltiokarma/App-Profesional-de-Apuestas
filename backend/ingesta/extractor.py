@@ -83,6 +83,25 @@ LIGAS = {
 }
 
 
+def _ligas_extra() -> dict[int, str]:
+    """SAD_LIGAS_EXTRA="414:Copa Chile,999:Copa de la Liga Perú" añade torneos
+    sin tocar código (útil para torneos nuevos; el ID se descubre con --buscar)."""
+    extra: dict[int, str] = {}
+    for item in os.environ.get("SAD_LIGAS_EXTRA", "").split(","):
+        item = item.strip()
+        if not item:
+            continue
+        id_txt, _, nombre = item.partition(":")
+        try:
+            extra[int(id_txt)] = nombre.strip() or f"liga {id_txt}"
+        except ValueError:
+            print(f"SAD_LIGAS_EXTRA: entrada inválida {item!r} (formato id:Nombre)", file=sys.stderr)
+    return extra
+
+
+LIGAS.update(_ligas_extra())
+
+
 def leer_clave() -> str:
     clave = os.environ.get("API_FOOTBALL_KEY", "").strip()
     if not clave and os.path.exists(".env"):
@@ -346,6 +365,8 @@ def main() -> int:
     ap.add_argument("--hasta", help="fin de ventana YYYY-MM-DD (default hoy+10d)")
     ap.add_argument("--solo", choices=["fixtures", "cuotas"], help="ejecutar una sola fase")
     ap.add_argument("--probar", action="store_true", help="solo verificar conexión (1 request)")
+    ap.add_argument("--buscar", metavar="TEXTO",
+                    help="buscar ligas por nombre en /leagues e imprimir sus IDs (1 request)")
     ap.add_argument("--ligas", action="store_true",
                     help="solo rellenar la tabla leagues desde /leagues (1 request por página)")
     ap.add_argument("--torneo", action="append", metavar="LIGA[:TEMPORADA]",
@@ -355,6 +376,20 @@ def main() -> int:
     cliente = Cliente(leer_clave(), args.limite)
     if args.probar:
         return probar(cliente)
+
+    if args.buscar:
+        data = cliente.get("leagues", {"search": args.buscar})
+        filas = (data or {}).get("response", [])
+        if not filas:
+            print("sin resultados (el nombre necesita al menos 3 letras)")
+            return 1
+        for item in filas:
+            lg, pais = item.get("league", {}), item.get("country", {})
+            años = [str(s["year"]) for s in item.get("seasons", []) if s.get("year")]
+            print(f"  id {lg.get('id')} · {lg.get('name')} · {pais.get('name')}"
+                  f" · temporadas: {', '.join(años[-4:]) or '—'}")
+        print('para ingestarla: SAD_LIGAS_EXTRA="id:Nombre[,id:Nombre]" (env) o añadirla a LIGAS')
+        return 0
 
     if not os.path.exists(args.db):
         print(f"No existe {args.db}", file=sys.stderr)

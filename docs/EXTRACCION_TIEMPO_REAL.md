@@ -1,0 +1,84 @@
+# Extracción en tiempo real — plan por fases
+
+Objetivo: pasar de la foto diaria actual a datos frescos en tres saltos
+controlados, sin romper la regla de oro (el backend HTTP es de solo lectura;
+solo `backend/ingesta/` escribe). Presupuesto: plan pago de API-Football,
+tope y ritmo autoajustados por cabeceras `x-ratelimit-*` (ya hecho).
+
+## Estado actual (fase 0)
+
+Una corrida diaria (`SAD_INGESTA_HORA`): fixtures hoy−3d..+10d + **una sola
+foto** de cuotas por fixture NS (los que ya tienen odds se saltan). La gráfica
+de movimiento de Cuotas es simulación del frontend anclada a esa foto
+(`src/lib/odds.ts: seriesFor`), y el minuto/marcador en vivo también son
+simulados (`src/store.ts`).
+
+## Fase 1 · Historial de cuotas prepartido (= punto 4 del roadmap)
+
+La que da valor de apuestas real: movimiento de la cuota **antes** del partido.
+
+- **sad.db**: tabla nueva `odds_history(fixture_id, bookmaker_id, bet_id,
+  bet_name, value, odd, captured_at)`. La tabla `odds` queda como "última
+  foto" (compatibilidad con el pipeline y la regla de huecos ya definida en
+  `docs/ROADMAP_BURBUJAS.md`); cada corrida además apendiza el snapshot a
+  `odds_history`.
+- **Extractor**: deja de saltarse los NS con odds — re-consulta cuotas de los
+  fixtures NS de hoy..+2d en cada corrida (los de +3d..+10d siguen solo en la
+  primera captura). Coste: ~40–80 requests extra por corrida.
+- **Scheduler**: `SAD_INGESTA_HORA` acepta lista `"06:30,12:30,18:30"`
+  (cambio pequeño en `backend/app.py:_ingesta_diaria_loop`). Tres snapshots
+  al día ya dibujan una curva prepartido honesta.
+- **Contrato** (orden obligatorio del proyecto): `docs/openapi.yaml` primero —
+  `GET /fixtures/{id}/cuotas/historial` → lista de `{capturedAt, mercado,
+  seleccion, cuota}`; luego backend, `src/api/types.ts`, ambos datasources y
+  `backend/test_api.py`.
+- **Frontend**: `seriesFor` consume los puntos reales para el tramo
+  prepartido (apertura = primer snapshot, no inventada). El tramo "en vivo"
+  sigue simulado hasta la fase 3, marcado como tal en la UI.
+
+Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
+
+## Fase 2 · Día de partido
+
+- Corrida ligera solo-cuotas para fixtures que empiezan en <6 h, cada 30–60
+  min (bucle nuevo en el scheduler, mismo subproceso extractor con
+  `--solo cuotas --ventana-horas 6`).
+- Cierra la curva prepartido con densidad donde importa (las últimas horas
+  son las de más movimiento).
+- Presupuesto: ~20 fixtures/día × 8 refrescos ≈ **160/día** extra.
+
+## Fase 3 · En vivo de verdad
+
+- **Marcador y minuto**: `GET /fixtures?live=<ids de LIGAS>` — 1 request trae
+  todos los partidos en juego de nuestras ligas. Poll cada 60–90 s **solo**
+  mientras haya partidos vivos; actualiza `fixtures` (status, elapsed, goles).
+- **Cuotas en juego**: `GET /odds/live` (cobertura por liga a verificar con
+  el plan; no todas las ligas tienen odds live). Tabla separada
+  `odds_live(fixture_id, ..., minuto, captured_at)` con retención corta
+  (p. ej. 7 días) para no engordar sad.db.
+- **SQLite**: activar `PRAGMA journal_mode=WAL` en sad.db antes de esto —
+  con escrituras cada minuto y el backend leyendo, el modo journal por
+  defecto daría `database is locked`.
+- **Backend**: `GET /fixtures/{id}/live` (marcador, minuto, cuotas live).
+  El frontend reemplaza el simulador: `liveMin` del tick del store →
+  polling del endpoint cada 10–15 s; `inplayInfluence`/tramo `inp` de
+  `seriesFor` → puntos reales.
+- **Presupuesto**: 2 req/min × ~6 h de ventana con partidos ≈ **700/día**.
+  Total fases 1+2+3 ≈ 1.300/día — holgado incluso en Pro.
+
+## Fase 4 · Solo si hace falta
+
+Postgres gestionado (`docs/SERVICIOS_EXTERNOS.md`) si el volumen de
+`odds_history`/`odds_live` o la concurrencia superan a SQLite+WAL. No antes.
+
+## Decisiones abiertas
+
+1. Cobertura real de `/odds/live` por liga (verificar con `--probar` extendido
+   o 1 request manual cuando haya partidos vivos de nuestras ligas).
+2. Retención de `odds_live` y de snapshots viejos de `odds_history`.
+3. Si el poll en vivo vive en el mismo servicio Railway (hilo como el
+   scheduler actual) o en un worker separado — empezar en el mismo, separar
+   solo si compite con el backend.
+
+Orden: 1 → 2 → 3. La fase 1 es la única que toca el contrato web↔backend;
+las demás suman sobre ella.
