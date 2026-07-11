@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { CONFIG } from './config'
 import type {
   KCondKey,
   KTypeKey,
@@ -120,6 +121,7 @@ export function useSad(): SadStore {
     }
     window.addEventListener('resize', onResize)
     const iv = setInterval(() => {
+      if (CONFIG.dataSource === 'http') return // el minuto real viene de la ingesta; el reloj simulado es solo demo
       const st = stateRef.current
       if (st.section !== 'cuotas' || st.oddsMode !== 'live') return // only re-render while live
       tickRef.current++
