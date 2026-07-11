@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react'
 import { useSad } from './store'
+import type { FixtureLiveDTO } from './api/types'
 import { CONFIG } from './config'
 import { matchView } from './lib/view'
-import { loadMatches } from './services/appdata'
+import { loadFixtureLive, loadMatches } from './services/appdata'
 import { useAsync } from './services/useAsync'
 import { Sidebar } from './components/Sidebar'
 import { DesktopHeader } from './components/DesktopHeader'
@@ -37,6 +39,25 @@ export function App() {
   const mSel = s.match ?? undefined
   const m = esHttp && mSel ? (matches.find((x) => x.id === mSel.id) ?? mSel) : mSel
 
+  // ÚNICA fuente del en vivo real (http): App hace el polling y de aquí beben
+  // el header y la sección Cuotas — nunca más dos relojes distintos en pantalla
+  const [live, setLive] = useState<FixtureLiveDTO | null>(null)
+  const liveId = esHttp && m && m.status === 'live' ? m.id : null
+  useEffect(() => {
+    if (!liveId) {
+      setLive(null)
+      return
+    }
+    let alive = true
+    const cargar = () =>
+      loadFixtureLive(liveId)
+        .then((d) => { if (alive) setLive(d.estado === 'en_vivo' ? d : null) })
+        .catch(() => { /* opcional para pintar */ })
+    cargar()
+    const iv = setInterval(cargar, CONFIG.pollLiveMs)
+    return () => { alive = false; clearInterval(iv) }
+  }, [liveId])
+
   const isMobile = s.forceMobile || s.vw < 760
   const isDesktop = !isMobile
   const phonePreview = s.forceMobile && s.vw >= 760
@@ -63,11 +84,15 @@ export function App() {
   const colStyle: Style = { flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, position: 'relative' }
   const contentPad = isMobile ? '14px 14px 22px' : '24px'
 
-  // http: el badge LIVE refleja el estado real del fixture y el minuto real de
-  // la ingesta; el reloj simulado del store queda solo para el modo demo
+  // http: el badge LIVE refleja el estado real del fixture y el minuto real
+  // del endpoint /live (misma fuente que el banner de Cuotas); el reloj
+  // simulado del store queda solo para el modo demo
   const isLive = esHttp ? !!m && m.status === 'live' : s.section === 'cuotas' && s.oddsMode === 'live'
   const liveBadge = !!m && isLive
-  const liveMinuto = esHttp ? (m ? parseInt(m.min) || 0 : 0) : s.liveMin
+  const liveMinuto = esHttp ? (live?.minuto ?? (m ? parseInt(m.min) || 0 : 0)) : s.liveMin
+  const liveScore = esHttp && live
+    ? `${live.golesLocal ?? '–'} - ${live.golesVisitante ?? '–'}`
+    : m ? m.score : ''
   const mv = m ? matchView(m) : null
 
   // Partidos y Equipo no requieren partido seleccionado
@@ -86,7 +111,7 @@ export function App() {
             <MobileHeader store={store} mv={mv} phonePreview={phonePreview} liveBadge={liveBadge} liveMinute={liveMinuto} />
           )}
           {isDesktop && (
-            <DesktopHeader store={store} mv={mv} liveBadge={liveBadge} liveMinute={liveMinuto} liveScore={m ? m.score : ''} />
+            <DesktopHeader store={store} mv={mv} liveBadge={liveBadge} liveMinute={liveMinuto} liveScore={liveScore} />
           )}
 
           <main className="sad-scroll" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: contentPad }}>
@@ -98,7 +123,7 @@ export function App() {
             {s.section === 'equipo' && !s.teamKey && <EmptyState store={store} />}
             {s.section === 'liga' && s.ligaId != null && <Liga store={store} ligaId={s.ligaId} isMobile={isMobile} />}
             {s.section === 'liga' && s.ligaId == null && <EmptyState store={store} />}
-            {showContent && m && s.section === 'cuotas' && <Cuotas store={store} m={m} isMobile={isMobile} />}
+            {showContent && m && s.section === 'cuotas' && <Cuotas store={store} m={m} isMobile={isMobile} live={live} />}
             {showContent && m && s.section === 'burbujas' && <Burbujas store={store} m={m} isMobile={isMobile} />}
             {showContent && m && s.section === 'skills' && <Skills store={store} m={m} isMobile={isMobile} />}
             {showContent && m && s.section === 'estadisticas' && <Estadisticas store={store} m={m} isMobile={isMobile} />}

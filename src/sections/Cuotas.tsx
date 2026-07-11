@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type { FixtureLiveDTO } from '../api/types'
 import { CONFIG } from '../config'
 import { LINE_COLORS, MARKET_DEFS } from '../data'
@@ -7,7 +7,7 @@ import { buildChart, buildSpark, type LiveRealSerie } from '../lib/chart'
 import { curOddOf, seriesFor } from '../lib/odds'
 import { ChartSvg } from '../components/ChartSvg'
 import { matchView } from '../lib/view'
-import { loadCuotasBase, loadCuotasCasas, loadCuotasHistorial, loadFixtureLive } from '../services/appdata'
+import { loadCuotasBase, loadCuotasCasas, loadCuotasHistorial } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
@@ -15,9 +15,11 @@ interface Props {
   store: SadStore
   m: Match
   isMobile: boolean
+  /** En vivo real compartido: App hace el polling y header + banner beben de aquí. */
+  live: FixtureLiveDTO | null
 }
 
-export function Cuotas({ store, m, isMobile }: Props) {
+export function Cuotas({ store, m, isMobile, live }: Props) {
   const { s } = store
   // Regla de datos: en http (producción) NO se pinta nada inventado — sin
   // >=2 capturas reales no hay curva, y el modo "En vivo" (simulado) queda
@@ -36,24 +38,6 @@ export function Cuotas({ store, m, isMobile }: Props) {
   const base = cuotas.data?.[0] ?? undefined
   const hist = cuotas.data?.[1] ?? undefined
   const casas = cuotas.data?.[2] ?? undefined
-
-  // en vivo REAL (solo http, fase 3): polling silencioso del endpoint /live
-  // mientras el partido esté en juego; sin cobertura no se pinta nada
-  const [live, setLive] = useState<FixtureLiveDTO | null>(null)
-  useEffect(() => {
-    if (esDemo || m.status !== 'live') {
-      setLive(null)
-      return
-    }
-    let alive = true
-    const cargar = () =>
-      loadFixtureLive(m.id)
-        .then((d) => { if (alive) setLive(d.estado === 'en_vivo' ? d : null) })
-        .catch(() => { /* el endpoint es opcional para pintar */ })
-    cargar()
-    const iv = setInterval(cargar, CONFIG.pollLiveMs)
-    return () => { alive = false; clearInterval(iv) }
-  }, [m.id, m.status, esDemo])
 
   const preBg = !isLive ? 'var(--bg3)' : 'transparent'
   const preFg = !isLive ? 'var(--t1)' : 'var(--t2)'
