@@ -164,7 +164,9 @@ class Cliente:
         self.limite_api: int | None = None
         self.delay = DELAY_DEFAULT
         self.hoy = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        self.usadas = self._leer_cuota()
+        self.usadas = 0
+        self._sondeo_hecho = False
+        self._leer_cuota()
 
     def _ajustar_por_cabeceras(self, headers) -> None:
         """x-ratelimit-requests-* traen la cuota diaria del plan; x-ratelimit-limit,
@@ -178,30 +180,45 @@ class Cliente:
                 self.limite = max(diario - MARGEN_DIARIO, 1)
             if restantes is not None:
                 self.usadas = max(self.usadas, diario - restantes)
-                self._guardar_cuota()
+            self._guardar_cuota()
         por_minuto = _cabecera_int(headers, "x-ratelimit-limit")
         if por_minuto:
             self.delay = max(60.0 / por_minuto, DELAY_MIN)
 
-    def _leer_cuota(self) -> int:
+    def _leer_cuota(self) -> None:
         try:
             with open(CUOTA_PATH, encoding="utf-8") as f:
                 datos = json.load(f)
-            return datos["usadas"] if datos.get("dia") == self.hoy else 0
-        except (OSError, ValueError, KeyError):
-            return 0
+        except (OSError, ValueError):
+            return
+        # el límite del plan aprendido se conserva entre días y entre procesos:
+        # sin esto, un proceso nuevo arranca en 95 y con usadas > 95 se niega a
+        # hacer la request que le enseñaría el tope real (bloqueo circular)
+        limite_api = datos.get("limite_api")
+        if isinstance(limite_api, int) and limite_api > 0:
+            self.limite_api = limite_api
+            if not self.limite_fijo:
+                self.limite = max(limite_api - MARGEN_DIARIO, 1)
+        if datos.get("dia") == self.hoy:
+            self.usadas = int(datos.get("usadas", 0) or 0)
 
     def _guardar_cuota(self) -> None:
         with open(CUOTA_PATH, "w", encoding="utf-8") as f:
-            json.dump({"dia": self.hoy, "usadas": self.usadas}, f)
+            json.dump({"dia": self.hoy, "usadas": self.usadas, "limite_api": self.limite_api}, f)
 
     def quedan(self, n: int = 1) -> bool:
         return self.limite - self.usadas >= n
 
     def get(self, endpoint: str, params: dict) -> dict | None:
         if not self.quedan():
-            print(f"  presupuesto diario agotado ({self.usadas}/{self.limite})")
-            return None
+            # sin plan aprendido todavía, una única request de sondeo por proceso:
+            # las cabeceras de la respuesta fijan el tope real (el marcador local
+            # puede venir de un plan mayor que el fallback)
+            if self.limite_fijo or self.limite_api is not None or self._sondeo_hecho:
+                print(f"  presupuesto diario agotado ({self.usadas}/{self.limite})")
+                return None
+            self._sondeo_hecho = True
+            print(f"  marcador local ({self.usadas}) supera el fallback ({self.limite}): sondeo para leer el plan real")
         self.usadas += 1
         self._guardar_cuota()
         url = f"{BASE_URL}/{endpoint}?{urllib.parse.urlencode(params)}"
