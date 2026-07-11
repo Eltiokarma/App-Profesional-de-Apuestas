@@ -30,9 +30,12 @@ La que da valor de apuestas real: movimiento de la cuota **antes** del partido.
   Tres snapshots al día ya dibujan una curva prepartido honesta.
 - **Contrato**: `GET /cuotas/{fixtureId}/historial` → `CuotaSnapshot[]`
   (asc por captura; `[]` en DBs anteriores a esta fase).
-- **Frontend**: `seriesFor(hist)` pinta el tramo prepartido con los puntos
-  reales (apertura = primer snapshot). Con <2 snapshots cae a la deriva
-  sintética de siempre. El tramo "en vivo" sigue simulado hasta la fase 3.
+- **Frontend — regla de datos**: en producción (`http`) NO se pinta nada
+  inventado. Con >=2 capturas reales por selección, la curva es real
+  (apertura = primer snapshot, eje X = capturas); con menos, placeholder
+  honesto y solo las cuotas actuales (reales). El toggle "En vivo" y toda
+  la simulación quedan confinados al modo demo (`mock`, "MOTOR LOCAL ·
+  DEMO") hasta la fase 3.
 
 Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
 
