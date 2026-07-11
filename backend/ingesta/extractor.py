@@ -7,7 +7,9 @@ y sin clave hardcodeada (env API_FOOTBALL_KEY o .env de la raíz).
 
 Flujo: /fixtures por liga en la ventana [--desde, --hasta] (default hoy−3d a
 hoy+10d) y /odds de los partidos NS sin cuotas (todos los bookmakers en 1
-request). Presupuesto conservador para el plan free (100/día → tope 95).
+request). El presupuesto diario y el ritmo se leen de las cabeceras
+x-ratelimit-* de cada respuesta, así que se ajustan solos al plan contratado
+(fallback conservador del plan free: 95/día · 10 req/min).
 
 Uso:
   PYTHONUTF8=1 python -m backend.ingesta.extractor                  # ventana default
@@ -32,10 +34,13 @@ BASE_URL = "https://v3.football.api-sports.io"
 SEASON = int(os.environ.get("SAD_SEASON", "2026"))
 DIAS_ATRAS = 3
 DIAS_ADELANTE = 10
+# Fallbacks del plan free, vigentes solo hasta que la primera respuesta traiga
+# las cabeceras x-ratelimit-*: tope diario (100 − margen) y 10 req/min. Con
+# cabeceras, tope y ritmo se recalculan al plan real (Pro 7500/día · 300/min, etc.).
 LIMITE_DEFAULT = 95
-# El plan free limita también a ~10 requests/minuto: con 6.5 s entre llamadas
-# la corrida no provoca 429 (cada 429 costaba una espera de 60 s y horas de corrida).
-DELAY = 6.5
+MARGEN_DIARIO = 5
+DELAY_DEFAULT = 6.5
+DELAY_MIN = 0.25
 
 # Única fuente de verdad de ligas (el viejo tenía 3 listas divergentes).
 LIGAS = {
@@ -101,15 +106,44 @@ def fecha_utc(iso: str) -> str:
 CUOTA_PATH = ".extractor_cuota.json"
 
 
+def _cabecera_int(headers, nombre: str) -> int | None:
+    try:
+        return int(headers.get(nombre))
+    except (TypeError, ValueError):
+        return None
+
+
 class Cliente:
     """El tope es DIARIO y compartido entre corridas: se persiste en
-    .extractor_cuota.json (git-ignorado) porque el plan free corta a las 100/día."""
+    .extractor_cuota.json (git-ignorado) porque la API corta al agotar el plan.
+    Tope y ritmo se leen de las cabeceras x-ratelimit-* de cada respuesta;
+    --limite explícito fija el tope a mano y desactiva el autoajuste."""
 
-    def __init__(self, clave: str, limite: int):
+    def __init__(self, clave: str, limite: int | None = None):
         self.clave = clave
-        self.limite = limite
+        self.limite_fijo = limite is not None
+        self.limite = limite if limite is not None else LIMITE_DEFAULT
+        self.limite_api: int | None = None
+        self.delay = DELAY_DEFAULT
         self.hoy = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         self.usadas = self._leer_cuota()
+
+    def _ajustar_por_cabeceras(self, headers) -> None:
+        """x-ratelimit-requests-* traen la cuota diaria del plan; x-ratelimit-limit,
+        el rate limit por minuto. El contador de la API manda sobre el local
+        (cubre otras corridas u otros consumidores de la misma clave)."""
+        diario = _cabecera_int(headers, "x-ratelimit-requests-limit")
+        restantes = _cabecera_int(headers, "x-ratelimit-requests-remaining")
+        if diario:
+            self.limite_api = diario
+            if not self.limite_fijo:
+                self.limite = max(diario - MARGEN_DIARIO, 1)
+            if restantes is not None:
+                self.usadas = max(self.usadas, diario - restantes)
+                self._guardar_cuota()
+        por_minuto = _cabecera_int(headers, "x-ratelimit-limit")
+        if por_minuto:
+            self.delay = max(60.0 / por_minuto, DELAY_MIN)
 
     def _leer_cuota(self) -> int:
         try:
@@ -138,10 +172,11 @@ class Cliente:
             try:
                 with urllib.request.urlopen(req, timeout=30) as resp:
                     data = json.load(resp)
+                    self._ajustar_por_cabeceras(resp.headers)
                 if data.get("errors"):
                     print(f"  error de la API: {data['errors']}")
                     return None
-                time.sleep(DELAY)
+                time.sleep(self.delay)
                 return data
             except urllib.error.HTTPError as e:
                 if e.code == 429:
@@ -292,6 +327,11 @@ def probar(cliente: Cliente) -> int:
     data = cliente.get("timezone", {})
     if data and data.get("response"):
         print(f"Conexión OK — {len(data['response'])} timezones · requests usadas: {cliente.usadas}")
+        if cliente.limite_api:
+            print(f"plan detectado: {cliente.limite_api} req/día · ~{round(60 / cliente.delay)} req/min "
+                  f"→ tope local {cliente.limite} · delay {cliente.delay:.2f} s")
+        else:
+            print("la API no mandó cabeceras x-ratelimit-*; sigo con los fallbacks del plan free")
         return 0
     print("Sin conexión: revisa la clave en dashboard.api-football.com")
     return 1
@@ -300,7 +340,8 @@ def probar(cliente: Cliente) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Extractor API-Football → sad.db (prepartido)")
     ap.add_argument("--db", default="sad.db", help="ruta a sad.db")
-    ap.add_argument("--limite", type=int, default=LIMITE_DEFAULT, help="tope de requests")
+    ap.add_argument("--limite", type=int, default=None,
+                    help="tope fijo de requests (default: auto por cabeceras de la API, arranca en 95)")
     ap.add_argument("--desde", help="inicio de ventana YYYY-MM-DD (default hoy−3d)")
     ap.add_argument("--hasta", help="fin de ventana YYYY-MM-DD (default hoy+10d)")
     ap.add_argument("--solo", choices=["fixtures", "cuotas"], help="ejecutar una sola fase")
