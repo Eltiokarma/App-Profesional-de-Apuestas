@@ -121,6 +121,30 @@ def _ingesta_diaria_loop() -> None:
 if INGESTA_HORA:
     threading.Thread(target=_ingesta_diaria_loop, daemon=True, name="ingesta-diaria").start()
 
+# Refresco de día de partido (fase 2 de docs/EXTRACCION_TIEMPO_REAL.md):
+# SAD_REFRESCO_MIN=30 corre cada N minutos un extractor ligero (--ventana-horas 6:
+# SOLO cuotas de NS que empiezan en <6 h). Sin partidos próximos el extractor
+# sale con 0 requests, así que el bucle puede correr ciego. Vacía = apagado.
+REFRESCO_MIN = os.environ.get("SAD_REFRESCO_MIN", "").strip()
+REFRESCO_VENTANA_H = os.environ.get("SAD_REFRESCO_VENTANA_HORAS", "6").strip() or "6"
+
+
+def _refresco_cuotas_loop() -> None:
+    minutos = max(10, int(REFRESCO_MIN))  # piso de 10 min: más fino es fase 3 (en vivo)
+    raiz = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    env = {**os.environ, "PYTHONPATH": raiz, "PYTHONUTF8": "1", "PYTHONUNBUFFERED": "1"}
+    while True:
+        time.sleep(minutos * 60)
+        print(f"[ingesta] refresco de cuotas {datetime.now(timezone.utc).isoformat()}", flush=True)
+        subprocess.run(
+            [sys.executable, "-u", "-m", "backend.ingesta.extractor", "--ventana-horas", REFRESCO_VENTANA_H],
+            cwd=db.BASE_DIR, env=env,
+        )
+
+
+if REFRESCO_MIN:
+    threading.Thread(target=_refresco_cuotas_loop, daemon=True, name="refresco-cuotas").start()
+
 # ---------------------------------------------------------------------------
 # helpers
 # ---------------------------------------------------------------------------

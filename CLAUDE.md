@@ -22,6 +22,7 @@ python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
 python -m backend.ingesta.extractor --probar    # 1 request de prueba (API_FOOTBALL_KEY en .env)
 python -m backend.ingesta.extractor --buscar "Copa Chile"  # descubrir IDs de torneos nuevos
 python -m backend.ingesta.extractor             # fixtures hoy−3d..+10d + cuotas NS (tope auto por plan)
+python -m backend.ingesta.extractor --ventana-horas 6  # refresco ligero: solo cuotas de NS próximos
 python -m backend.ingesta.pipeline --out .      # regenera levels/constants/discreto desde sad.db
 python -m backend.ingesta.test_paridad          # test dorado vs DBs del pipeline viejo
 ```
