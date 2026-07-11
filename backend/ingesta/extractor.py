@@ -6,10 +6,13 @@ fechas SIEMPRE en UTC con el formato de sad.db ('YYYY-MM-DD HH:MM:SS.ffffff'),
 y sin clave hardcodeada (env API_FOOTBALL_KEY o .env de la raíz).
 
 Flujo: /fixtures por liga en la ventana [--desde, --hasta] (default hoy−3d a
-hoy+10d) y /odds de los partidos NS sin cuotas (todos los bookmakers en 1
-request). El presupuesto diario y el ritmo se leen de las cabeceras
-x-ratelimit-* de cada respuesta, así que se ajustan solos al plan contratado
-(fallback conservador del plan free: 95/día · 10 req/min).
+hoy+10d) y /odds de los partidos NS (todos los bookmakers en 1 request):
+primera captura para los que no tienen cuotas, y re-captura de los que
+empiezan en <= 2 días para el historial de movimiento (odds_history guarda
+la media entre casas por mercado/selección con captured_at; la tabla odds
+queda como "última foto"). El presupuesto diario y el ritmo se leen de las
+cabeceras x-ratelimit-* de cada respuesta, así que se ajustan solos al plan
+contratado (fallback conservador del plan free: 95/día · 10 req/min).
 
 Uso:
   PYTHONUTF8=1 python -m backend.ingesta.extractor                  # ventana default
@@ -34,6 +37,22 @@ BASE_URL = "https://v3.football.api-sports.io"
 SEASON = int(os.environ.get("SAD_SEASON", "2026"))
 DIAS_ATRAS = 3
 DIAS_ADELANTE = 10
+DIAS_REFRESCO = 2  # NS que empiezan en <= N días: re-captura de cuotas para el historial
+
+DDL_ODDS_HISTORY = """
+CREATE TABLE IF NOT EXISTS odds_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fixture_id INTEGER NOT NULL,
+    league_id INTEGER,
+    bet_id INTEGER,
+    bet_name TEXT,
+    value TEXT,
+    odd REAL,
+    casas INTEGER,
+    captured_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_oddshist_fixture ON odds_history(fixture_id, captured_at);
+"""
 # Fallbacks del plan free, vigentes solo hasta que la primera respuesta traiga
 # las cabeceras x-ratelimit-*: tope diario (100 − margen) y 10 req/min. Con
 # cabeceras, tope y ritmo se recalculan al plan real (Pro 7500/día · 300/min, etc.).
@@ -277,6 +296,8 @@ def guardar_fixtures(con: sqlite3.Connection, respuesta: list) -> int:
 
 def guardar_odds(con: sqlite3.Connection, fixture_id: int, respuesta: list) -> int:
     n = 0
+    capturado = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
+    medias: dict[tuple, list[float]] = {}
     for item in respuesta:
         league_id = item.get("league", {}).get("id")
         for bk in item.get("bookmakers", []):
@@ -301,15 +322,33 @@ def guardar_odds(con: sqlite3.Connection, fixture_id: int, respuesta: list) -> i
                             (fixture_id, league_id, bk.get("id"), bk.get("name"),
                              bet.get("id"), bet.get("name"), valor.get("value"), odd),
                         )
+                    if odd is not None:
+                        medias.setdefault(
+                            (league_id, bet.get("id"), bet.get("name"), valor.get("value")), []
+                        ).append(odd)
                     n += 1
+    # snapshot para el historial de movimiento: media entre casas por selección
+    for (liga, bet_id, bet_name, value), odds in medias.items():
+        con.execute(
+            "INSERT INTO odds_history (fixture_id, league_id, bet_id, bet_name, "
+            "value, odd, casas, captured_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (fixture_id, liga, bet_id, bet_name, value,
+             round(sum(odds) / len(odds), 3), len(odds), capturado),
+        )
     con.commit()
     return n
 
 
-def fixtures_sin_cuotas(con: sqlite3.Connection, dias: int = DIAS_ADELANTE) -> list[int]:
-    hoy = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    tope = (datetime.now(timezone.utc) + timedelta(days=dias)).strftime("%Y-%m-%d")
-    return [
+def fixtures_para_cuotas(con: sqlite3.Connection, dias: int = DIAS_ADELANTE,
+                         dias_refresco: int = DIAS_REFRESCO) -> list[int]:
+    """Primero los NS sin ninguna cuota (primera captura, toda la ventana);
+    después los NS que empiezan en <= dias_refresco días aunque ya tengan
+    (re-captura: snapshot nuevo en odds_history)."""
+    ahora = datetime.now(timezone.utc)
+    hoy = ahora.strftime("%Y-%m-%d")
+    tope = (ahora + timedelta(days=dias)).strftime("%Y-%m-%d")
+    tope_refresco = (ahora + timedelta(days=dias_refresco)).strftime("%Y-%m-%d")
+    sin_cuotas = [
         fila[0]
         for fila in con.execute(
             """SELECT DISTINCT f.id FROM fixtures f
@@ -320,6 +359,18 @@ def fixtures_sin_cuotas(con: sqlite3.Connection, dias: int = DIAS_ADELANTE) -> l
             (hoy, tope),
         )
     ]
+    refresco = [
+        fila[0]
+        for fila in con.execute(
+            """SELECT DISTINCT f.id FROM fixtures f
+               JOIN odds o ON o.fixture_id = f.id
+               WHERE f.status_short = 'NS' AND date(f.date) BETWEEN ? AND ?
+               ORDER BY f.date""",
+            (hoy, tope_refresco),
+        )
+    ]
+    vistos = set(sin_cuotas)
+    return sin_cuotas + [f for f in refresco if f not in vistos]
 
 
 def guardar_ligas(con: sqlite3.Connection, respuesta: list) -> int:
@@ -423,6 +474,7 @@ def main() -> int:
     desde = args.desde or (hoy - timedelta(days=DIAS_ATRAS)).strftime("%Y-%m-%d")
     hasta = args.hasta or (hoy + timedelta(days=DIAS_ADELANTE)).strftime("%Y-%m-%d")
     con = sqlite3.connect(args.db)
+    con.executescript(DDL_ODDS_HISTORY)  # idempotente: prepara el historial en DBs viejas
 
     if args.solo != "cuotas":
         print(f"Fixtures {desde} → {hasta} · temporada {SEASON} · {len(LIGAS)} ligas")
@@ -440,8 +492,8 @@ def main() -> int:
         print(f"fixtures guardados: {total}")
 
     if args.solo != "fixtures":
-        pendientes = fixtures_sin_cuotas(con)
-        print(f"Cuotas: {len(pendientes)} partidos NS sin odds "
+        pendientes = fixtures_para_cuotas(con)
+        print(f"Cuotas: {len(pendientes)} partidos NS (primera captura + refresco <={DIAS_REFRESCO}d) "
               f"(presupuesto restante {cliente.limite - cliente.usadas})")
         total = 0
         for fid in pendientes:

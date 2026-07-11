@@ -222,3 +222,14 @@ export interface CuotaDTO {
   cuota: number
   actualizadoEn: string
 }
+
+/** Un punto del movimiento prepartido: media entre casas en esa captura de la ingesta. */
+export interface CuotaSnapshotDTO {
+  fixtureId: number
+  mercado: string
+  seleccion: string
+  cuota: number
+  /** Nº de bookmakers promediados en la captura. */
+  casas?: number
+  capturadoEn: string
+}

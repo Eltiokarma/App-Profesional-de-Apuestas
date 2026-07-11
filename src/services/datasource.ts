@@ -8,6 +8,7 @@ import type {
   ConstanteCuotaDTO,
   ConstantesDTO,
   CuotaDTO,
+  CuotaSnapshotDTO,
   EquipoDTO,
   EquipoStatsDTO,
   EstadoFixture,
@@ -20,7 +21,7 @@ import type {
 } from '../api/types'
 import { CONFIG, type DataSourceMode } from '../config'
 import { MARKET_DEFS, MATCHES, STANDINGS, TEAMS } from '../data'
-import { oddsFor } from '../lib/odds'
+import { oddsFor, rng } from '../lib/odds'
 import { levelBin } from '../motor/discretizer'
 import { teamEngine } from '../motor/engine'
 import { leagueOf } from '../motor/history'
@@ -62,6 +63,8 @@ export interface SadDataSource {
   prediccion(fixtureId: number): Promise<PrediccionDTO>
   analisisPrepartido(fixtureId: number): Promise<AnalisisPrepartidoDTO>
   cuotas(fixtureId: number): Promise<CuotaDTO[]>
+  /** Snapshots prepartido de la ingesta (asc por captura; [] si aún no hay). */
+  cuotasHistorial(fixtureId: number): Promise<CuotaSnapshotDTO[]>
   equipoStats(equipoId: number): Promise<EquipoStatsDTO>
   liga(ligaId: number): Promise<LigaDTO>
   standings(ligaId: number, temporada?: number): Promise<StandingRowDTO[]>
@@ -303,6 +306,36 @@ class MockDataSource implements SadDataSource {
     return out
   }
 
+  async cuotasHistorial(fixtureId: number): Promise<CuotaSnapshotDTO[]> {
+    // Demo: 6 snapshots deterministas que derivan hacia la cuota base — misma
+    // forma que servirá el backend real desde odds_history.
+    const m = MATCHES.find((x) => FIXTURE_NUM(x.id) === fixtureId)
+    if (!m) return []
+    const table = oddsFor(m.id)
+    const N = 6
+    const t0 = new Date(MOCK_NOW).getTime() - (N - 1) * 6 * 3600_000
+    const out: CuotaSnapshotDTO[] = []
+    for (const def of MARKET_DEFS) {
+      for (const k in table[def.key]) {
+        const base = table[def.key][k]
+        const r = rng(m.id + '|' + def.key + '|' + k + '|hist')
+        const inicio = base * (0.92 + r() * 0.16)
+        for (let i = 0; i < N; i++) {
+          const f = i / (N - 1)
+          const v = i === N - 1 ? base : inicio * (1 - f) + base * f + (r() - 0.5) * 0.04 * base
+          out.push({
+            fixtureId, mercado: def.key, seleccion: k,
+            cuota: Math.max(1.04, Math.round(v * 100) / 100),
+            casas: 12,
+            capturadoEn: new Date(t0 + i * 6 * 3600_000).toISOString(),
+          })
+        }
+      }
+    }
+    // asc por captura, como el backend real
+    return out.sort((a, b) => a.capturadoEn.localeCompare(b.capturadoEn))
+  }
+
   async equipoStats(equipoId: number): Promise<EquipoStatsDTO> {
     const key = NUM_TEAM[equipoId]
     const T = key ? TEAMS[key] : undefined
@@ -378,6 +411,7 @@ class HttpDataSource implements SadDataSource {
   prediccion = (fixtureId: number) => SadApi.prediccion(fixtureId)
   analisisPrepartido = (fixtureId: number) => SadApi.analisisPrepartido(fixtureId)
   cuotas = (fixtureId: number) => SadApi.cuotas(fixtureId)
+  cuotasHistorial = (fixtureId: number) => SadApi.cuotasHistorial(fixtureId)
   equipoStats = (equipoId: number) => SadApi.equipoStats(equipoId)
   liga = (ligaId: number) => SadApi.liga(ligaId)
   standings = (ligaId: number, temporada?: number) => SadApi.standings(ligaId, temporada)

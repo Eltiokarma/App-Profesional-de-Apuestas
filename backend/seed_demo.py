@@ -175,6 +175,9 @@ def seed(base_dir: str):
             extratime_home INTEGER, extratime_away INTEGER, penalty_home INTEGER, penalty_away INTEGER);
         CREATE TABLE odds (id INTEGER PRIMARY KEY AUTOINCREMENT, fixture_id INTEGER, league_id INTEGER,
             bookmaker_id INTEGER, bookmaker_name TEXT, bet_id INTEGER, bet_name TEXT, value TEXT, odd REAL);
+        CREATE TABLE odds_history (id INTEGER PRIMARY KEY AUTOINCREMENT, fixture_id INTEGER NOT NULL,
+            league_id INTEGER, bet_id INTEGER, bet_name TEXT, value TEXT, odd REAL, casas INTEGER,
+            captured_at TEXT NOT NULL);
     """)
     sad.executemany("INSERT INTO teams (id, name, country) VALUES (?,?, 'Spain')", TEAMS)
     sad.execute(
@@ -207,6 +210,21 @@ def seed(base_dir: str):
                         "INSERT INTO odds (fixture_id, league_id, bookmaker_id, bookmaker_name, bet_id, bet_name, value, odd) VALUES (?,?,?,?,?,?,?,?)",
                         (f["id"], LEAGUE_ID, bid, bname, bet_id, bet_name, value,
                          round(base * (0.94 + rng.random() * 0.12), 2)),
+                    )
+    # historial de snapshots prepartido (fase 1 de tiempo real): 3 capturas por
+    # fixture con odds, derivando hacia la cuota base — como odds_history real
+    for f in fixtures[-12:]:
+        rng = random.Random(f"{f['id']}|hist")
+        for bet_id, (bet_name, sels) in enumerate(ODDS_MARKETS, start=1):
+            for value, base in sels:
+                inicio = base * (0.92 + rng.random() * 0.16)
+                for i in range(3):
+                    frac = i / 2
+                    odd = base if i == 2 else inicio * (1 - frac) + base * frac + (rng.random() - 0.5) * 0.04 * base
+                    sad.execute(
+                        "INSERT INTO odds_history (fixture_id, league_id, bet_id, bet_name, value, odd, casas, captured_at) VALUES (?,?,?,?,?,?,?,?)",
+                        (f["id"], LEAGUE_ID, bet_id, bet_name, value, round(odd, 3), len(BOOKMAKERS),
+                         (f["date"] - timedelta(hours=36 - 12 * i)).strftime("%Y-%m-%d %H:%M:%S")),
                     )
     sad.commit()
     sad.close()

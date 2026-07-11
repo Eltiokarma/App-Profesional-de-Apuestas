@@ -5,7 +5,7 @@ import { buildChart, buildSpark } from '../lib/chart'
 import { curOddOf, seriesFor } from '../lib/odds'
 import { ChartSvg } from '../components/ChartSvg'
 import { matchView } from '../lib/view'
-import { loadCuotasBase } from '../services/appdata'
+import { loadCuotasBase, loadCuotasHistorial } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
@@ -21,9 +21,14 @@ export function Cuotas({ store, m, isMobile }: Props) {
   const mv = matchView(m)
   const cmk = s.chartMarket || '1x2'
   const gridCuotasCards = isMobile ? '1fr' : '1fr 1fr 1fr'
-  // cuotas base del contrato (/cuotas): sobre ellas se construye el movimiento
-  const cuotas = useAsync(() => loadCuotasBase(m.id), m.id)
-  const base = cuotas.data ?? undefined
+  // cuotas base (/cuotas) + historial de snapshots (/cuotas/{id}/historial):
+  // con >=2 snapshots el tramo prepartido de la gráfica es real
+  const cuotas = useAsync(
+    () => Promise.all([loadCuotasBase(m.id), loadCuotasHistorial(m.id)]),
+    m.id,
+  )
+  const base = cuotas.data?.[0] ?? undefined
+  const hist = cuotas.data?.[1] ?? undefined
 
   const preBg = !isLive ? 'var(--bg3)' : 'transparent'
   const preFg = !isLive ? 'var(--t1)' : 'var(--t2)'
@@ -41,13 +46,13 @@ export function Cuotas({ store, m, isMobile }: Props) {
 
   // memoizadas contra el tick de 1s del store (s.now): solo se reconstruyen
   // cuando cambia algo que de verdad afecta a las series
-  const chart = useMemo(() => buildChart(m, cmk, isLive, s.liveMin, s.marked, base), [m, cmk, isLive, s.liveMin, s.marked, base])
+  const chart = useMemo(() => buildChart(m, cmk, isLive, s.liveMin, s.marked, base, hist), [m, cmk, isLive, s.liveMin, s.marked, base, hist])
   const chartXfromOpen = isLive ? 'apertura → ' + s.liveMin + '’ en vivo' : 'apertura → cierre prepartido'
 
   const marketCards = useMemo(() => MARKET_DEFS.map((def) => {
     const sels = def.sels(m).map((sd) => {
-      const sp = buildSpark(m, def.key, sd.k, isLive, s.liveMin, base)
-      const S = seriesFor(m, def.key, sd.k, base?.[def.key]?.[sd.k])
+      const sp = buildSpark(m, def.key, sd.k, isLive, s.liveMin, base, hist)
+      const S = seriesFor(m, def.key, sd.k, base?.[def.key]?.[sd.k], hist?.[def.key]?.[sd.k])
       const cur = curOddOf(S, isLive, s.liveMin)
       const dlt = cur - S.open
       const id = m.id + ':' + def.key + ':' + sd.k
@@ -67,7 +72,7 @@ export function Cuotas({ store, m, isMobile }: Props) {
       cardBorder: def.key === cmk ? 'var(--accent)' : 'var(--line)',
       sels,
     }
-  }), [m, cmk, isLive, s.liveMin, s.marked, base])
+  }), [m, cmk, isLive, s.liveMin, s.marked, base, hist])
 
   const markedCount = Object.keys(s.marked).filter((k) => k.indexOf(m.id + ':') === 0 && s.marked[k]).length
 
