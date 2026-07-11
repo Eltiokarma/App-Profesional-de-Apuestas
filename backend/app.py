@@ -111,7 +111,7 @@ def _ingesta_diaria_loop() -> None:
             objetivo += timedelta(days=1)
         time.sleep((objetivo - ahora).total_seconds())
         print(f"[ingesta] corrida diaria {datetime.now(timezone.utc).isoformat()}", flush=True)
-        subprocess.run([sys.executable, "-m", "backend.ingesta.corrida_diaria"])
+        subprocess.run([sys.executable, "-u", "-m", "backend.ingesta.corrida_diaria"])
         liga_meta.cache_clear()  # puede haber ligas nuevas en sad.db
 
 
