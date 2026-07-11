@@ -15,9 +15,9 @@ export function MobileHeader({ store, mv, phonePreview, liveBadge, liveMinute }:
   return (
     <header style={{ flexShrink: 0, background: 'var(--bg1)', borderBottom: '1px solid var(--line)', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 9, zIndex: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg,var(--accent),color-mix(in oklch,var(--accent),#000 22%))', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '800 14px var(--sans)', color: '#fff' }}>S</div>
+        <img src="/quipu-badge.svg" alt="Quipu Analytics" width={30} height={30} style={{ display: 'block', borderRadius: 8, flexShrink: 0 }} />
         <div style={{ lineHeight: 1.05, flex: 1 }}>
-          <div style={{ font: '800 14px var(--sans)', letterSpacing: '.5px' }}>SAD</div>
+          <div style={{ font: '800 13.5px var(--sans)', letterSpacing: '.2px' }}>Quipu Analytics</div>
           <div style={{ font: '500 9px var(--mono)', color: 'var(--t3)' }}>ANÁLISIS PRE-PARTIDO</div>
         </div>
         {phonePreview && (
