@@ -223,6 +223,17 @@ export interface CuotaDTO {
   actualizadoEn: string
 }
 
+/** Cuota de UNA casa para una selección (última foto). mejor=true: la más alta. */
+export interface CuotaCasaDTO {
+  fixtureId: number
+  mercado: string
+  seleccion: string
+  casaId: number
+  casa: string
+  cuota: number
+  mejor: boolean
+}
+
 /** Un punto del movimiento prepartido: media entre casas en esa captura de la ingesta. */
 export interface CuotaSnapshotDTO {
   fixtureId: number

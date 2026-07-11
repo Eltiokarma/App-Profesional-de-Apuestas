@@ -798,6 +798,38 @@ def cuotas(fixture_id: int):
     ]
 
 
+@app.get(API + "/cuotas/{fixture_id}/casas")
+def cuotas_casas(fixture_id: int):
+    """Cuota de cada casa por selección (última foto). La más alta de cada
+    selección va marcada con mejor=true: ahí paga más ese acierto."""
+    rows = db.query(
+        "sad",
+        "SELECT bookmaker_id, bookmaker_name, bet_name, value, odd FROM odds "
+        "WHERE fixture_id=? AND odd IS NOT NULL AND bookmaker_id IS NOT NULL",
+        (fixture_id,),
+    )
+    por_sel: dict[tuple[str, str], list[dict]] = {}
+    for r in rows:
+        key = cuota_key(r["bet_name"], r["value"])
+        if key:
+            por_sel.setdefault(key, []).append(
+                {
+                    "fixtureId": fixture_id,
+                    "mercado": key[0],
+                    "seleccion": key[1],
+                    "casaId": r["bookmaker_id"],
+                    "casa": r["bookmaker_name"] or f"casa {r['bookmaker_id']}",
+                    "cuota": round(float(r["odd"]), 2),
+                }
+            )
+    out = []
+    for key in sorted(por_sel):
+        filas = sorted(por_sel[key], key=lambda f: -f["cuota"])
+        tope = filas[0]["cuota"]
+        out.extend({**f, "mejor": f["cuota"] >= tope - 1e-9} for f in filas)
+    return out
+
+
 @app.get(API + "/cuotas/{fixture_id}/historial")
 def cuotas_historial(fixture_id: int):
     """Snapshots prepartido de odds_history (asc por captura). [] si la DB
