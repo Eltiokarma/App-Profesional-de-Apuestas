@@ -62,6 +62,7 @@ export function buildChart(
   marked: Record<string, boolean>,
   base?: BaseOddsTable,
   hist?: HistOddsTable,
+  soloCapturas?: boolean, // true (http): el eje X son capturas reales de la ingesta, sin tiempos inventados
 ): Chart {
   const def = MARKET_DEFS.find((d) => d.key === mk)!
   const mId = m.id
@@ -151,6 +152,11 @@ export function buildChart(
       [koFrac + (45 / 90) * (1 - koFrac), "45'"],
       [koFrac + (75 / 90) * (1 - koFrac), "75'"],
       [1, "90'"],
+    ]
+  } else if (soloCapturas) {
+    xL = [
+      [0, 'Apertura'],
+      [1, 'Última captura'],
     ]
   } else {
     xL = [

@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { CONFIG } from '../config'
 import { LINE_COLORS, MARKET_DEFS } from '../data'
 import type { Match } from '../data/types'
 import { buildChart, buildSpark } from '../lib/chart'
@@ -17,7 +18,11 @@ interface Props {
 
 export function Cuotas({ store, m, isMobile }: Props) {
   const { s } = store
-  const isLive = s.oddsMode === 'live'
+  // Regla de datos: en http (producción) NO se pinta nada inventado — sin
+  // >=2 capturas reales no hay curva, y el modo "En vivo" (simulado) queda
+  // solo para la demo local hasta la fase 3 de docs/EXTRACCION_TIEMPO_REAL.md.
+  const esDemo = CONFIG.dataSource === 'mock'
+  const isLive = esDemo && s.oddsMode === 'live'
   const mv = matchView(m)
   const cmk = s.chartMarket || '1x2'
   const gridCuotasCards = isMobile ? '1fr' : '1fr 1fr 1fr'
@@ -45,24 +50,41 @@ export function Cuotas({ store, m, isMobile }: Props) {
     fg: d.key === cmk ? 'var(--accent)' : 'var(--t2)',
   }))
 
+  // en http la gráfica solo existe si TODAS las selecciones del mercado activo
+  // tienen >=2 capturas reales; si no, placeholder honesto (nada inventado)
+  const defActivo = MARKET_DEFS.find((d) => d.key === cmk)!
+  const hayCurva = esDemo || defActivo.sels(m).every((sd) => (hist?.[cmk]?.[sd.k]?.length ?? 0) >= 2)
+
   // memoizadas contra el tick de 1s del store (s.now): solo se reconstruyen
   // cuando cambia algo que de verdad afecta a las series
-  const chart = useMemo(() => buildChart(m, cmk, isLive, s.liveMin, s.marked, base, hist), [m, cmk, isLive, s.liveMin, s.marked, base, hist])
-  const chartXfromOpen = isLive ? 'apertura → ' + s.liveMin + '’ en vivo' : 'apertura → cierre prepartido'
+  const chart = useMemo(
+    () => (hayCurva ? buildChart(m, cmk, isLive, s.liveMin, s.marked, base, hist, !esDemo) : null),
+    [m, cmk, isLive, s.liveMin, s.marked, base, hist, hayCurva, esDemo],
+  )
+  const chartXfromOpen = isLive
+    ? 'apertura → ' + s.liveMin + '’ en vivo'
+    : esDemo ? 'apertura → cierre prepartido' : 'apertura → última captura de la ingesta'
 
   const marketCards = useMemo(() => MARKET_DEFS.map((def) => {
     const sels = def.sels(m).map((sd) => {
-      const sp = buildSpark(m, def.key, sd.k, isLive, s.liveMin, base, hist)
-      const S = seriesFor(m, def.key, sd.k, base?.[def.key]?.[sd.k], hist?.[def.key]?.[sd.k])
-      const cur = curOddOf(S, isLive, s.liveMin)
-      const dlt = cur - S.open
+      const baseSel = base?.[def.key]?.[sd.k]
+      const h = hist?.[def.key]?.[sd.k]
+      // en http, sparkline y deltas solo con >=2 capturas reales; si no,
+      // se muestra la cuota real a secas (sin movimiento inventado)
+      const conMovimiento = esDemo || (h?.length ?? 0) >= 2
+      const sp = conMovimiento ? buildSpark(m, def.key, sd.k, isLive, s.liveMin, base, hist) : null
+      const S = conMovimiento ? seriesFor(m, def.key, sd.k, baseSel, h) : null
+      const cur = S ? curOddOf(S, isLive, s.liveMin) : baseSel ?? 0
+      const dlt = S ? cur - S.open : 0
       const id = m.id + ':' + def.key + ':' + sd.k
       const mkd = !!s.marked[id]
       return {
-        key: sd.k, label: sd.label, oddText: cur.toFixed(2),
-        sparkD: sp.d, sparkDotX: sp.dotX, sparkDotY: sp.dotY, sparkColor: LINE_COLORS[def.key][sd.k],
-        trend: Math.abs(dlt) >= 0.01, trendGlyph: dlt > 0 ? '▲' : '▼', trendColor: dlt > 0 ? 'var(--up)' : 'var(--down)',
-        showPct: isLive && Math.abs(dlt) >= 0.01, pctText: (dlt > 0 ? '+' : '') + ((dlt / S.open) * 100).toFixed(1) + '%', pctBg: dlt > 0 ? 'var(--up-soft)' : 'var(--down-soft)',
+        key: sd.k, label: sd.label, oddText: cur ? cur.toFixed(2) : '—',
+        sparkD: sp?.d ?? '', sparkDotX: sp?.dotX ?? '0', sparkDotY: sp?.dotY ?? '0', sparkColor: LINE_COLORS[def.key][sd.k],
+        trend: !!S && Math.abs(dlt) >= 0.01, trendGlyph: dlt > 0 ? '▲' : '▼', trendColor: dlt > 0 ? 'var(--up)' : 'var(--down)',
+        showPct: isLive && !!S && Math.abs(dlt) >= 0.01,
+        pctText: S ? (dlt > 0 ? '+' : '') + ((dlt / S.open) * 100).toFixed(1) + '%' : '',
+        pctBg: dlt > 0 ? 'var(--up-soft)' : 'var(--down-soft)',
         marked: mkd, starFill: mkd ? 'var(--mark)' : 'none', starStroke: mkd ? 'var(--mark)' : 'var(--t3)',
         rowBg: mkd ? 'var(--mark-soft)' : 'transparent',
         id,
@@ -73,7 +95,7 @@ export function Cuotas({ store, m, isMobile }: Props) {
       cardBorder: def.key === cmk ? 'var(--accent)' : 'var(--line)',
       sels,
     }
-  }), [m, cmk, isLive, s.liveMin, s.marked, base, hist])
+  }), [m, cmk, isLive, s.liveMin, s.marked, base, hist, esDemo])
 
   // comparador de casas del mercado activo: mejor cuota primero + ventaja vs media
   const casasRows = useMemo(() => {
@@ -104,12 +126,14 @@ export function Cuotas({ store, m, isMobile }: Props) {
               <span style={{ font: '600 12px var(--mono)', color: 'var(--mark)' }}>{markedCount} marcadas</span>
             </div>
           )}
-          <div style={{ display: 'flex', padding: 4, borderRadius: 11, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
-            <button onClick={store.setMode('prematch')} style={{ padding: '8px 16px', border: 0, borderRadius: 8, cursor: 'pointer', background: preBg, color: preFg, font: '600 12.5px var(--sans)' }}>Prepartido</button>
-            <button onClick={store.setMode('live')} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 16px', border: 0, borderRadius: 8, cursor: 'pointer', background: liveBg, color: liveFg, font: '600 12.5px var(--sans)' }}>
-              {isLive && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--down)', animation: 'sadpulse 1.1s infinite' }}></span>}En vivo
-            </button>
-          </div>
+          {esDemo && (
+            <div style={{ display: 'flex', padding: 4, borderRadius: 11, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+              <button onClick={store.setMode('prematch')} style={{ padding: '8px 16px', border: 0, borderRadius: 8, cursor: 'pointer', background: preBg, color: preFg, font: '600 12.5px var(--sans)' }}>Prepartido</button>
+              <button onClick={store.setMode('live')} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 16px', border: 0, borderRadius: 8, cursor: 'pointer', background: liveBg, color: liveFg, font: '600 12.5px var(--sans)' }}>
+                {isLive && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--down)', animation: 'sadpulse 1.1s infinite' }}></span>}En vivo
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -154,7 +178,17 @@ export function Cuotas({ store, m, isMobile }: Props) {
       )}
       {!cuotas.loading && !cuotas.error && (
         <>
-      {/* BIG MOVEMENT CHART */}
+      {/* BIG MOVEMENT CHART — o placeholder honesto si aún no hay capturas */}
+      {!chart && (
+        <section style={{ marginBottom: 14, padding: '26px 22px', borderRadius: 16, background: 'var(--bg2)', border: '1px dashed var(--line)', textAlign: 'center' }}>
+          <h3 style={{ margin: 0, font: '700 14px var(--sans)', color: 'var(--t2)' }}>{defActivo.title}: aún sin historial de movimiento</h3>
+          <p style={{ margin: '7px auto 0', maxWidth: 520, font: '500 12px var(--sans)', color: 'var(--t3)' }}>
+            La curva se dibuja solo con capturas reales de la ingesta (mínimo 2 por selección).
+            Cada corrida suma un punto; las cuotas actuales de abajo sí son reales.
+          </p>
+        </section>
+      )}
+      {chart && (
       <section style={{ marginBottom: 14, padding: '18px 18px 14px', borderRadius: 16, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
@@ -190,6 +224,7 @@ export function Cuotas({ store, m, isMobile }: Props) {
           <ChartSvg chart={chart} liveMin={s.liveMin} />
         </div>
       </section>
+      )}
 
       {/* COMPARADOR DE CASAS (mercado activo) */}
       {casasRows.length > 0 && (
@@ -197,7 +232,7 @@ export function Cuotas({ store, m, isMobile }: Props) {
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
               <h3 style={{ margin: 0, font: '700 15px var(--sans)' }}>Mejor casa por selección</h3>
-              <span style={{ font: '500 11px var(--mono)', color: 'var(--t3)' }}>{chart.title} · última captura</span>
+              <span style={{ font: '500 11px var(--mono)', color: 'var(--t3)' }}>{defActivo.title} · última captura</span>
             </div>
             <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>la cuota más alta paga más ese acierto</span>
           </div>
@@ -240,10 +275,14 @@ export function Cuotas({ store, m, isMobile }: Props) {
                     <svg width="13" height="13" viewBox="0 0 24 24" fill={sel.starFill} stroke={sel.starStroke} strokeWidth="1.8"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.3 1.1 6.1L12 17.2 6.5 19.9l1.1-6.1L3.1 9.4l6.1-.8z" /></svg>
                   </button>
                   <span style={{ font: '600 11.5px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sel.label}</span>
-                  <svg viewBox="0 0 80 28" preserveAspectRatio="none" style={{ width: 58, height: 22, flexShrink: 0 }}>
-                    <path d={sel.sparkD} fill="none" stroke={sel.sparkColor} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke"></path>
-                    <circle cx={sel.sparkDotX} cy={sel.sparkDotY} r="2" fill={sel.sparkColor}></circle>
-                  </svg>
+                  {sel.sparkD ? (
+                    <svg viewBox="0 0 80 28" preserveAspectRatio="none" style={{ width: 58, height: 22, flexShrink: 0 }}>
+                      <path d={sel.sparkD} fill="none" stroke={sel.sparkColor} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke"></path>
+                      <circle cx={sel.sparkDotX} cy={sel.sparkDotY} r="2" fill={sel.sparkColor}></circle>
+                    </svg>
+                  ) : (
+                    <span style={{ width: 58, flexShrink: 0, textAlign: 'center', font: '500 10px var(--mono)', color: 'var(--t3)' }}>—</span>
+                  )}
                   {sel.showPct && <span style={{ padding: '2px 6px', borderRadius: 6, background: sel.pctBg, color: sel.trendColor, font: '700 9.5px var(--mono)', flexShrink: 0 }}>{sel.pctText}</span>}
                   {sel.trend && <span style={{ font: '600 10px var(--mono)', color: sel.trendColor, width: 12 }}>{sel.trendGlyph}</span>}
                   <span style={{ font: '600 15px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums', minWidth: 42, textAlign: 'right' }}>{sel.oddText}</span>
