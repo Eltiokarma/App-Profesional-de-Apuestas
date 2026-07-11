@@ -163,6 +163,23 @@ def main():
     sin = c.get(A + "/cuotas/900001").json()
     check("fixture sin odds → lista vacía", sin == [], sin)
 
+    # /fixtures/{id}/live — en vivo real (fase 3): marcador, minuto y odds_live
+    lv = c.get(A + f"/fixtures/{vivo['id']}/live").json()
+    check("live: estado en_vivo + minuto 67", lv["estado"] == "en_vivo" and lv["minuto"] == 67, lv)
+    check("live: marcador presente", lv["golesLocal"] is not None and lv["golesVisitante"] is not None, lv)
+    check("live: cuotas de la última captura (3 del 1X2 live)",
+          len(lv["cuotas"]) == 3 and {q2["seleccion"] for q2 in lv["cuotas"]} == {"1", "X", "2"}, lv["cuotas"])
+    check("live: la suspendida viene marcada", any(q2["suspendida"] for q2 in lv["cuotas"]), lv["cuotas"])
+    check("live: serie con minutos asc y sin suspendidas",
+          len(lv["serie"]) > 6 and all(not any(p["minuto"] == 67 and p["seleccion"] == "2" for p in lv["serie"]) for _ in [0])
+          and [p["minuto"] for p in lv["serie"]] == sorted(p["minuto"] for p in lv["serie"]), len(lv["serie"]))
+    check("live: actualizadoEn presente", bool(lv["actualizadoEn"]), lv["actualizadoEn"])
+    fin = next(f for f in fx if f["estado"] == "finalizado")
+    lv0 = c.get(A + f"/fixtures/{fin['id']}/live").json()
+    check("live de fixture sin odds_live → cuotas y serie vacías",
+          lv0["cuotas"] == [] and lv0["serie"] == [], lv0)
+    check("live de fixture inexistente → 404", c.get(A + "/fixtures/999999/live").status_code == 404)
+
     # /cuotas/{id}/casas — comparador: cuota de cada casa, la mejor marcada
     cc = c.get(A + f"/cuotas/{vivo['id']}/casas").json()
     check("casas: 36 filas (12 selecciones × 3 casas)", len(cc) == 36, len(cc))

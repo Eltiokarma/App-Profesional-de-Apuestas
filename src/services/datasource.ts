@@ -9,15 +9,18 @@ import type {
   ConstantesDTO,
   CuotaCasaDTO,
   CuotaDTO,
+  CuotaLiveDTO,
   CuotaSnapshotDTO,
   EquipoDTO,
   EquipoStatsDTO,
   EstadoFixture,
   FixtureDTO,
+  FixtureLiveDTO,
   GapEquipoDTO,
   LigaDTO,
   NivelDTO,
   PrediccionDTO,
+  PuntoLiveDTO,
   StandingRowDTO,
 } from '../api/types'
 import { CONFIG, type DataSourceMode } from '../config'
@@ -56,6 +59,8 @@ export interface SadDataSource {
   readonly mode: DataSourceMode
   health(): Promise<FeedHealth>
   fixtures(params?: FixturesParams): Promise<FixtureDTO[]>
+  /** En vivo real: marcador, minuto y cuotas en juego (vacías sin cobertura). */
+  fixtureLive(fixtureId: number): Promise<FixtureLiveDTO>
   buscarEquipos(buscar: string, limit?: number): Promise<EquipoDTO[]>
   niveles(equipoId: number, limit?: number): Promise<NivelDTO[]>
   constantes(equipoId: number, limit?: number): Promise<ConstantesDTO[]>
@@ -309,6 +314,32 @@ class MockDataSource implements SadDataSource {
     return out
   }
 
+  async fixtureLive(fixtureId: number): Promise<FixtureLiveDTO> {
+    // Demo: serie 1X2 determinista del segundo tiempo, con una suspendida al
+    // final — misma forma que sirve el backend real desde odds_live.
+    const m = MATCHES.find((x) => FIXTURE_NUM(x.id) === fixtureId)
+    if (!m) throw new Error(`fixture ${fixtureId} no existe`)
+    const estado = m.status === 'live' ? 'en_vivo' : m.status === 'fin' ? 'finalizado' : 'programado'
+    const p = (m.score || '0 - 0').split('-').map((x) => parseInt(x.trim()) || 0)
+    if (estado !== 'en_vivo') {
+      return { fixtureId, estado, minuto: null, golesLocal: p[0] ?? null, golesVisitante: p[1] ?? null, cuotas: [], serie: [], actualizadoEn: null }
+    }
+    const minuto = parseInt(m.min) || 63
+    const r = rng(m.id + '|live')
+    const BASES: [string, number][] = [['1', 1.65], ['X', 3.9], ['2', 5.2]]
+    const serie: PuntoLiveDTO[] = []
+    for (let min = 46; min <= minuto; min += 3) {
+      for (const [sel, base] of BASES) {
+        serie.push({ minuto: min, mercado: '1x2', seleccion: sel, cuota: Math.round(base * (0.94 + r() * 0.12) * 100) / 100 })
+      }
+    }
+    const ultimos = serie.slice(-BASES.length)
+    const cuotas: CuotaLiveDTO[] = ultimos.map((pt, i) => ({
+      mercado: pt.mercado, seleccion: pt.seleccion, cuota: pt.cuota, suspendida: i === BASES.length - 1,
+    }))
+    return { fixtureId, estado, minuto, golesLocal: p[0] ?? null, golesVisitante: p[1] ?? null, cuotas, serie, actualizadoEn: MOCK_NOW }
+  }
+
   async cuotasCasas(fixtureId: number): Promise<CuotaCasaDTO[]> {
     // Demo: 6 casas deterministas alrededor de la cuota base — misma forma
     // (y mismo orden cuota desc + mejor marcada) que el backend real.
@@ -431,6 +462,7 @@ class HttpDataSource implements SadDataSource {
   }
 
   fixtures = (params?: FixturesParams) => SadApi.fixtures(params)
+  fixtureLive = (fixtureId: number) => SadApi.fixtureLive(fixtureId)
   buscarEquipos = (buscar: string, limit?: number) => SadApi.buscarEquipos(buscar, limit)
   niveles = (equipoId: number, limit?: number) => SadApi.niveles(equipoId, limit)
   constantes = (equipoId: number, limit?: number) => SadApi.constantes(equipoId, limit)

@@ -9,6 +9,7 @@ import type {
   EquipoDTO,
   EquipoStatsDTO,
   FixtureDTO,
+  FixtureLiveDTO,
   LigaDTO,
   PrediccionDTO,
   StandingRowDTO,
@@ -267,6 +268,11 @@ export async function loadCuotasHistorial(matchId: string): Promise<OddsHistTabl
     /* opcional para pintar: los errores reales ya los reporta /cuotas */
   }
   return out
+}
+
+/** En vivo real (fase 3): marcador, minuto y cuotas en juego del backend. */
+export function loadFixtureLive(matchId: string): Promise<FixtureLiveDTO> {
+  return getDataSource().fixtureLive(fixtureNum(matchId))
 }
 
 // ── predicción (§5) y análisis pre-partido ──────────────────────────────────

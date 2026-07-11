@@ -11,6 +11,7 @@ import type {
   EquipoStatsDTO,
   EstadoFixture,
   FixtureDTO,
+  FixtureLiveDTO,
   HealthDTO,
   LigaDTO,
   NivelDTO,
@@ -28,6 +29,9 @@ export const SadApi = {
   buscarEquipos: (buscar: string, limit = 10) => apiGet<EquipoDTO[]>('/equipos' + qs({ buscar, limit })),
 
   fixture: (id: number) => apiGet<FixtureDTO>(`/fixtures/${id}`),
+
+  /** En vivo real: marcador, minuto y cuotas en juego (vacías si no hay cobertura). */
+  fixtureLive: (id: number) => apiGet<FixtureLiveDTO>(`/fixtures/${id}/live`),
 
   /** Historia de niveles de un equipo (desc por fecha; limit opcional). */
   niveles: (equipoId: number, limit?: number) =>

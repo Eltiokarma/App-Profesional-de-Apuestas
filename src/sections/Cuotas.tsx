@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import type { FixtureLiveDTO } from '../api/types'
 import { CONFIG } from '../config'
 import { LINE_COLORS, MARKET_DEFS } from '../data'
 import type { Match } from '../data/types'
@@ -6,7 +7,7 @@ import { buildChart, buildSpark } from '../lib/chart'
 import { curOddOf, seriesFor } from '../lib/odds'
 import { ChartSvg } from '../components/ChartSvg'
 import { matchView } from '../lib/view'
-import { loadCuotasBase, loadCuotasCasas, loadCuotasHistorial } from '../services/appdata'
+import { loadCuotasBase, loadCuotasCasas, loadCuotasHistorial, loadFixtureLive } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
@@ -35,6 +36,24 @@ export function Cuotas({ store, m, isMobile }: Props) {
   const base = cuotas.data?.[0] ?? undefined
   const hist = cuotas.data?.[1] ?? undefined
   const casas = cuotas.data?.[2] ?? undefined
+
+  // en vivo REAL (solo http, fase 3): polling silencioso del endpoint /live
+  // mientras el partido esté en juego; sin cobertura no se pinta nada
+  const [live, setLive] = useState<FixtureLiveDTO | null>(null)
+  useEffect(() => {
+    if (esDemo || m.status !== 'live') {
+      setLive(null)
+      return
+    }
+    let alive = true
+    const cargar = () =>
+      loadFixtureLive(m.id)
+        .then((d) => { if (alive) setLive(d.estado === 'en_vivo' ? d : null) })
+        .catch(() => { /* el endpoint es opcional para pintar */ })
+    cargar()
+    const iv = setInterval(cargar, CONFIG.pollLiveMs)
+    return () => { alive = false; clearInterval(iv) }
+  }, [m.id, m.status, esDemo])
 
   const preBg = !isLive ? 'var(--bg3)' : 'transparent'
   const preFg = !isLive ? 'var(--t1)' : 'var(--t2)'
@@ -97,6 +116,15 @@ export function Cuotas({ store, m, isMobile }: Props) {
     }
   }), [m, cmk, isLive, s.liveMin, s.marked, base, hist, esDemo])
 
+  // cuotas en juego reales del mercado activo (http + partido vivo + cobertura)
+  const cuotasJuego = useMemo(() => {
+    if (!live || !live.cuotas.length) return []
+    const etiquetas = Object.fromEntries(defActivo.sels(m).map((sd) => [sd.k, sd.label]))
+    return live.cuotas
+      .filter((c2) => c2.mercado === cmk)
+      .map((c2) => ({ ...c2, label: etiquetas[c2.seleccion] ?? c2.seleccion }))
+  }, [live, cmk, defActivo, m])
+
   // comparador de casas del mercado activo: mejor cuota primero + ventaja vs media
   const casasRows = useMemo(() => {
     const def = MARKET_DEFS.find((d) => d.key === cmk)
@@ -149,6 +177,24 @@ export function Cuotas({ store, m, isMobile }: Props) {
           </span>
           <span style={{ font: '600 12px var(--mono)', color: 'var(--t2)' }}>{s.liveMin}'</span>
           <span style={{ marginLeft: 'auto', font: '500 11px var(--mono)', color: 'var(--t3)' }}>media entre casas capturadas</span>
+        </div>
+      )}
+
+      {/* EN DIRECTO REAL (http): marcador y minuto de la ingesta en vivo */}
+      {live && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', marginBottom: 16, borderRadius: 12, background: 'var(--bg1)', border: '1px solid var(--line)', flexWrap: 'wrap' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 7, font: '700 11px var(--mono)', color: 'var(--down)', letterSpacing: '.6px' }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--down)', animation: 'sadpulse 1.1s infinite' }}></span>EN DIRECTO
+          </span>
+          <span style={{ font: '700 18px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>
+            {mv.homeShort} {live.golesLocal ?? '–'} - {live.golesVisitante ?? '–'} {mv.awayShort}
+          </span>
+          {live.minuto != null && <span style={{ font: '600 12px var(--mono)', color: 'var(--t2)' }}>{live.minuto}'</span>}
+          <span style={{ marginLeft: 'auto', font: '500 11px var(--mono)', color: 'var(--t3)' }}>
+            {live.actualizadoEn
+              ? 'cuotas en juego · captura ' + new Date(live.actualizadoEn).toLocaleTimeString()
+              : 'sin cobertura de cuotas en vivo en esta liga'}
+          </span>
         </div>
       )}
 
@@ -224,6 +270,28 @@ export function Cuotas({ store, m, isMobile }: Props) {
           <ChartSvg chart={chart} liveMin={s.liveMin} />
         </div>
       </section>
+      )}
+
+      {/* CUOTAS EN JUEGO REALES (mercado activo) */}
+      {cuotasJuego.length > 0 && (
+        <section style={{ marginBottom: 14, padding: '16px 18px 14px', borderRadius: 16, background: 'var(--bg2)', border: '1px solid color-mix(in oklch,var(--down),transparent 65%)' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+              <h3 style={{ margin: 0, font: '700 15px var(--sans)' }}>Cuotas en juego</h3>
+              <span style={{ font: '500 11px var(--mono)', color: 'var(--t3)' }}>{defActivo.title} · última captura de la ingesta en vivo</span>
+            </div>
+            {live?.minuto != null && <span style={{ font: '600 10px var(--mono)', color: 'var(--down)' }}>minuto {live.minuto}'</span>}
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {cuotasJuego.map((c2) => (
+              <span key={c2.seleccion} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 12px', borderRadius: 10, border: '1px solid var(--line)', background: 'var(--bg)', opacity: c2.suspendida ? 0.45 : 1 }}>
+                <span style={{ font: '600 11.5px var(--sans)', color: 'var(--t1)' }}>{c2.label}</span>
+                <span style={{ font: '700 16px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>{c2.cuota.toFixed(2)}</span>
+                {c2.suspendida && <span style={{ font: '700 9px var(--mono)', color: 'var(--down)', letterSpacing: '.5px' }}>SUSP</span>}
+              </span>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* COMPARADOR DE CASAS (mercado activo) */}

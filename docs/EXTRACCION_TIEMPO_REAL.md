@@ -53,22 +53,28 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   son las de más movimiento).
 - Presupuesto: ~20 fixtures/día × 8 refrescos ≈ **160/día** extra.
 
-## Fase 3 · En vivo de verdad
+## Fase 3 · En vivo de verdad — HECHA
 
-- **Marcador y minuto**: `GET /fixtures?live=<ids de LIGAS>` — 1 request trae
-  todos los partidos en juego de nuestras ligas. Poll cada 60–90 s **solo**
-  mientras haya partidos vivos; actualiza `fixtures` (status, elapsed, goles).
-- **Cuotas en juego**: `GET /odds/live` (cobertura por liga a verificar con
-  el plan; no todas las ligas tienen odds live). Tabla separada
-  `odds_live(fixture_id, ..., minuto, captured_at)` con retención corta
-  (p. ej. 7 días) para no engordar sad.db.
-- **SQLite**: activar `PRAGMA journal_mode=WAL` en sad.db antes de esto —
-  con escrituras cada minuto y el backend leyendo, el modo journal por
-  defecto daría `database is locked`.
-- **Backend**: `GET /fixtures/{id}/live` (marcador, minuto, cuotas live).
-  El frontend reemplaza el simulador: `liveMin` del tick del store →
-  polling del endpoint cada 10–15 s; `inplayInfluence`/tramo `inp` de
-  `seriesFor` → puntos reales.
+- **`backend/ingesta/en_vivo.py`** (un ciclo por invocación): busca fixtures
+  nuestros en ventana de juego en sad.db (0 requests si no hay);
+  `GET /fixtures?live=<ids de LIGAS>` actualiza marcador/minuto/estado
+  (via guardar_fixtures); `GET /odds/live` → tabla `odds_live` (con
+  `suspendida` y `minuto`), retención 7 días. Activa WAL en sad.db
+  (requisito: escrituras por minuto conviviendo con lecturas).
+- **`SAD_LIVE_SEGUNDOS=60`** (env, vacía = apagado, piso 30): hilo en
+  `backend/app.py` que corre el ciclo.
+- **Backend**: `GET /fixtures/{id}/live` → estado/minuto/marcador reales +
+  `cuotas` (última captura, con suspendidas) + `serie` (movimiento del
+  partido). `cuota_key` ganó el alias "Fulltime Result" (catálogo live).
+- **Frontend**: en http, con el partido en juego, polling silencioso cada
+  `VITE_POLL_LIVE_MS` (default 60 s): banner EN DIRECTO real (marcador,
+  minuto, hora de captura) + sección "Cuotas en juego" del mercado activo
+  (suspendidas atenuadas). Sin cobertura de odds live: solo marcador/minuto,
+  nada inventado.
+- **Pendiente de datos reales**: pintar `serie` como tramo en vivo de la
+  gráfica grande — primero confirmar cobertura/formato de `/odds/live` por
+  liga con un día real de partidos (el mapeo de bets live puede necesitar
+  más aliases en `cuota_key`).
 - **Presupuesto**: 2 req/min × ~6 h de ventana con partidos ≈ **700/día**.
   Total fases 1+2+3 ≈ 1.300/día — holgado incluso en Pro.
 
