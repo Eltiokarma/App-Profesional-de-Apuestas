@@ -564,7 +564,8 @@ def cuota_key(bet_name: str, value: str):
         return {"Home": ("1x2", "1"), "Draw": ("1x2", "X"), "Away": ("1x2", "2"),
                 "1": ("1x2", "1"), "X": ("1x2", "X"), "2": ("1x2", "2")}.get(v)
     if "double chance" in b:
-        return {"Home/Draw": ("dc", "1X"), "Home/Away": ("dc", "12"), "Draw/Away": ("dc", "X2")}.get(v)
+        return {"Home/Draw": ("dc", "1X"), "Home/Away": ("dc", "12"), "Draw/Away": ("dc", "X2"),
+                "1X": ("dc", "1X"), "12": ("dc", "12"), "X2": ("dc", "X2")}.get(v)
     if "over/under" in b or b == "goals over/under":
         return {"Over 2.5": ("ou", "O"), "Under 2.5": ("ou", "U")}.get(v)
     if "both teams" in b:
