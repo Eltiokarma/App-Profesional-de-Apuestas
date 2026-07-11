@@ -33,7 +33,9 @@ SEASON = int(os.environ.get("SAD_SEASON", "2026"))
 DIAS_ATRAS = 3
 DIAS_ADELANTE = 10
 LIMITE_DEFAULT = 95
-DELAY = 1.5
+# El plan free limita también a ~10 requests/minuto: con 6.5 s entre llamadas
+# la corrida no provoca 429 (cada 429 costaba una espera de 60 s y horas de corrida).
+DELAY = 6.5
 
 # Única fuente de verdad de ligas (el viejo tenía 3 listas divergentes).
 LIGAS = {
