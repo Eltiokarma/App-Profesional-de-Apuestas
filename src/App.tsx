@@ -31,7 +31,11 @@ export function App() {
     CONFIG.dataSource === 'http' ? { refreshMs: CONFIG.pollLiveMs } : undefined,
   )
   const matches = fixtures.data ?? []
-  const m = s.match ?? undefined
+  const esHttp = CONFIG.dataSource === 'http'
+  // en http el partido seleccionado se rehidrata desde la lista auto-refrescada:
+  // el snapshot del store quedaría congelado en el marcador del momento del clic
+  const mSel = s.match ?? undefined
+  const m = esHttp && mSel ? (matches.find((x) => x.id === mSel.id) ?? mSel) : mSel
 
   const isMobile = s.forceMobile || s.vw < 760
   const isDesktop = !isMobile
@@ -59,8 +63,11 @@ export function App() {
   const colStyle: Style = { flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, position: 'relative' }
   const contentPad = isMobile ? '14px 14px 22px' : '24px'
 
-  const isLive = s.section === 'cuotas' && s.oddsMode === 'live'
+  // http: el badge LIVE refleja el estado real del fixture y el minuto real de
+  // la ingesta; el reloj simulado del store queda solo para el modo demo
+  const isLive = esHttp ? !!m && m.status === 'live' : s.section === 'cuotas' && s.oddsMode === 'live'
   const liveBadge = !!m && isLive
+  const liveMinuto = esHttp ? (m ? parseInt(m.min) || 0 : 0) : s.liveMin
   const mv = m ? matchView(m) : null
 
   // Partidos y Equipo no requieren partido seleccionado
@@ -76,10 +83,10 @@ export function App() {
 
         <div style={colStyle}>
           {isMobile && (
-            <MobileHeader store={store} mv={mv} phonePreview={phonePreview} liveBadge={liveBadge} liveMinute={s.liveMin} />
+            <MobileHeader store={store} mv={mv} phonePreview={phonePreview} liveBadge={liveBadge} liveMinute={liveMinuto} />
           )}
           {isDesktop && (
-            <DesktopHeader store={store} mv={mv} liveBadge={liveBadge} liveMinute={s.liveMin} liveScore={m ? m.score : ''} />
+            <DesktopHeader store={store} mv={mv} liveBadge={liveBadge} liveMinute={liveMinuto} liveScore={m ? m.score : ''} />
           )}
 
           <main className="sad-scroll" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: contentPad }}>
