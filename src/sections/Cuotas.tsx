@@ -206,7 +206,13 @@ export function Cuotas({ store, m, isMobile }: Props) {
           {live.minuto != null && <span style={{ font: '600 12px var(--mono)', color: 'var(--t2)' }}>{live.minuto}'</span>}
           <span style={{ marginLeft: 'auto', font: '500 11px var(--mono)', color: 'var(--t3)' }}>
             {live.actualizadoEn
-              ? 'cuotas en juego · captura ' + new Date(live.actualizadoEn).toLocaleTimeString()
+              ? (() => {
+                  // frescura visible: si la casa cerró el mercado, aquí se nota
+                  const edadMin = Math.max(0, Math.round((Date.now() - new Date(live.actualizadoEn).getTime()) / 60000))
+                  return edadMin < 2
+                    ? 'cuotas en juego · al minuto'
+                    : `cuotas en juego · última captura hace ${edadMin} min`
+                })()
               : 'sin cobertura de cuotas en vivo en esta liga'}
           </span>
         </div>

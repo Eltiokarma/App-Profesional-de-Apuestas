@@ -145,10 +145,21 @@ def main() -> int:
     n_odds = 0
     if ids_vivos and cliente.quedan():
         data = cliente.get("odds/live", {})
+        con_feed: set[int] = set()
         for item in (data or {}).get("response", []):
-            if item.get("fixture", {}).get("id") in ids_vivos:
+            fid = item.get("fixture", {}).get("id")
+            if fid in ids_vivos:
                 n_odds += guardar_odds_live(con, item, capturado)
+                con_feed.add(fid)
         con.commit()
+        # evidencia en logs: distinguir "no pedimos" de "la casa cerró el mercado"
+        susp = con.execute(
+            "SELECT COUNT(*) FROM odds_live WHERE captured_at=? AND suspendida=1", (capturado,)
+        ).fetchone()[0]
+        print(f"odds live: {n_odds} valores ({susp} suspendidos) en {len(con_feed)} fixtures")
+        sin_feed = ids_vivos - con_feed
+        if sin_feed:
+            print(f"sin odds en el feed live (cobertura o mercado cerrado por la casa): {sorted(sin_feed)}")
 
     # cerrar los que se cayeron del feed live (terminaron): /fixtures?ids= trae
     # su estado y marcador finales sin esperar a la corrida diaria (lotes de 20)
