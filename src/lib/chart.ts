@@ -75,6 +75,11 @@ export function buildChart(
   const mId = m.id
   const sels = def.sels(m)
   const koFrac = 0.46
+  // tiempo extra: el eje llega hasta el último minuto real (91-120), no se
+  // clava en 90 apilando los puntos nuevos en el borde
+  const maxMin = liveReal
+    ? Math.max(90, liveReal.minuto, ...Object.values(liveReal.pts[mk] ?? {}).flat().map((p) => p.min))
+    : 90
   const series = liveReal
     ? sels.flatMap((sd) => {
         // solo datos reales: prepartido si hay >=2 capturas, en vivo si hay serie
@@ -82,7 +87,7 @@ export function buildChart(
         const lv = liveReal.pts[mk]?.[sd.k] ?? []
         const pts: { t: number; odd: number }[] = []
         if (h.length >= 2) h.forEach((odd, i) => pts.push({ t: (i / (h.length - 1)) * koFrac, odd }))
-        lv.forEach((p) => pts.push({ t: koFrac + (Math.min(p.min, 90) / 90) * (1 - koFrac), odd: p.odd }))
+        lv.forEach((p) => pts.push({ t: koFrac + (Math.min(p.min, maxMin) / maxMin) * (1 - koFrac), odd: p.odd }))
         if (!pts.length) return []
         const S: Series = {
           open: h.length >= 2 ? h[0] : lv[0].odd,
@@ -167,13 +172,12 @@ export function buildChart(
   }
   let xL: [number, string][]
   if (isLive || liveReal) {
+    const marcas = maxMin > 90 ? [45, 90] : [15, 45, 75]
     xL = [
       [0, 'Apertura'],
       [koFrac, 'KO'],
-      [koFrac + (15 / 90) * (1 - koFrac), "15'"],
-      [koFrac + (45 / 90) * (1 - koFrac), "45'"],
-      [koFrac + (75 / 90) * (1 - koFrac), "75'"],
-      [1, "90'"],
+      ...marcas.map((mn) => [koFrac + (mn / maxMin) * (1 - koFrac), mn + "'"] as [number, string]),
+      [1, maxMin + "'"],
     ]
   } else if (soloCapturas) {
     xL = [
@@ -194,7 +198,7 @@ export function buildChart(
     anchor: i === 0 ? 'start' : i === xL.length - 1 ? 'end' : 'middle',
   }))
   const minutoNow = isLive ? liveMin : liveReal ? liveReal.minuto : null
-  const nowT = minutoNow != null ? koFrac + (Math.min(minutoNow, 90) / 90) * (1 - koFrac) : null
+  const nowT = minutoNow != null ? koFrac + (Math.min(minutoNow, maxMin) / maxMin) * (1 - koFrac) : null
   return {
     lines,
     grid,

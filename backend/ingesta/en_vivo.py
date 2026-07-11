@@ -28,7 +28,7 @@ from backend.ingesta.extractor import (
     leer_clave,
 )
 
-VENTANA_JUEGO_MIN = 150  # arrancó hace <= 2h30 → puede seguir en juego
+VENTANA_JUEGO_MIN = 210  # arrancó hace <= 3h30: cubre alargue, penales y pausas largas
 RETENCION_DIAS = 7
 EN_JUEGO = ("1H", "HT", "2H", "ET", "BT", "P", "LIVE", "INT", "SUSP")
 
