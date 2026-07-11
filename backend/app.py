@@ -167,6 +167,15 @@ def _en_vivo_loop() -> None:
 if LIVE_SEGUNDOS:
     threading.Thread(target=_en_vivo_loop, daemon=True, name="ingesta-en-vivo").start()
 
+# Primera línea de los logs tras cada deploy: confirma qué quedó encendido.
+# Si no aparece, el deploy corriendo es anterior a las fases 2/3.
+print(
+    f"[ingesta] programación → diaria: {INGESTA_HORA or 'apagada'} · "
+    f"refresco: {REFRESCO_MIN + ' min' if REFRESCO_MIN else 'apagado'} · "
+    f"en vivo: {LIVE_SEGUNDOS + ' s' if LIVE_SEGUNDOS else 'apagado'}",
+    flush=True,
+)
+
 # ---------------------------------------------------------------------------
 # helpers
 # ---------------------------------------------------------------------------
