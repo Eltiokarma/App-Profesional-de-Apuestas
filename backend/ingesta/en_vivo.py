@@ -67,6 +67,16 @@ def fixtures_en_ventana(con: sqlite3.Connection) -> list[int]:
     ]
 
 
+def fixtures_marcados_en_juego(con: sqlite3.Connection) -> set[int]:
+    """Los que sad.db cree que siguen en juego: si ya no aparecen en el feed
+    live es que terminaron y hay que cerrarlos (estado + marcador final)."""
+    marcas = ",".join("?" * len(EN_JUEGO))
+    return {
+        fila[0]
+        for fila in con.execute(f"SELECT id FROM fixtures WHERE status_short IN ({marcas})", EN_JUEGO)
+    }
+
+
 def guardar_odds_live(con: sqlite3.Connection, item: dict, capturado: str) -> int:
     """Un item de /odds/live: {fixture:{id,status:{elapsed}}, odds:[{id,name,values:[…]}]}."""
     f = item.get("fixture", {})
@@ -133,6 +143,18 @@ def main() -> int:
             if item.get("fixture", {}).get("id") in ids_vivos:
                 n_odds += guardar_odds_live(con, item, capturado)
         con.commit()
+
+    # cerrar los que se cayeron del feed live (terminaron): /fixtures?ids= trae
+    # su estado y marcador finales sin esperar a la corrida diaria (lotes de 20)
+    terminados = sorted(fixtures_marcados_en_juego(con) - ids_vivos)
+    n_fin = 0
+    for i in range(0, len(terminados), 20):
+        if not cliente.quedan():
+            break
+        data = cliente.get("fixtures", {"ids": "-".join(map(str, terminados[i:i + 20]))})
+        n_fin += guardar_fixtures(con, (data or {}).get("response", []))
+    if terminados:
+        print(f"cerrados (salieron del feed live): {n_fin} de {len(terminados)}")
 
     corte = (datetime.now(timezone.utc) - timedelta(days=RETENCION_DIAS)).strftime("%Y-%m-%d %H:%M:%S")
     borradas = con.execute("DELETE FROM odds_live WHERE captured_at < ?", (corte,)).rowcount
