@@ -5,7 +5,7 @@ import { buildChart, buildSpark } from '../lib/chart'
 import { curOddOf, seriesFor } from '../lib/odds'
 import { ChartSvg } from '../components/ChartSvg'
 import { matchView } from '../lib/view'
-import { loadCuotasBase, loadCuotasHistorial } from '../services/appdata'
+import { loadCuotasBase, loadCuotasCasas, loadCuotasHistorial } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
@@ -21,14 +21,15 @@ export function Cuotas({ store, m, isMobile }: Props) {
   const mv = matchView(m)
   const cmk = s.chartMarket || '1x2'
   const gridCuotasCards = isMobile ? '1fr' : '1fr 1fr 1fr'
-  // cuotas base (/cuotas) + historial de snapshots (/cuotas/{id}/historial):
-  // con >=2 snapshots el tramo prepartido de la gráfica es real
+  // cuotas base (/cuotas) + historial (/historial: tramo prepartido real con
+  // >=2 snapshots) + comparador por casa (/casas: dónde paga más)
   const cuotas = useAsync(
-    () => Promise.all([loadCuotasBase(m.id), loadCuotasHistorial(m.id)]),
+    () => Promise.all([loadCuotasBase(m.id), loadCuotasHistorial(m.id), loadCuotasCasas(m.id)]),
     m.id,
   )
   const base = cuotas.data?.[0] ?? undefined
   const hist = cuotas.data?.[1] ?? undefined
+  const casas = cuotas.data?.[2] ?? undefined
 
   const preBg = !isLive ? 'var(--bg3)' : 'transparent'
   const preFg = !isLive ? 'var(--t1)' : 'var(--t2)'
@@ -73,6 +74,19 @@ export function Cuotas({ store, m, isMobile }: Props) {
       sels,
     }
   }), [m, cmk, isLive, s.liveMin, s.marked, base, hist])
+
+  // comparador de casas del mercado activo: mejor cuota primero + ventaja vs media
+  const casasRows = useMemo(() => {
+    const def = MARKET_DEFS.find((d) => d.key === cmk)
+    if (!def || !casas?.[cmk]) return []
+    return def.sels(m).map((sd) => {
+      const filas = casas[cmk][sd.k] ?? []
+      const media = filas.length ? filas.reduce((a, f) => a + f.cuota, 0) / filas.length : 0
+      const mejor = filas[0]
+      const ventaja = mejor && media ? ((mejor.cuota - media) / media) * 100 : 0
+      return { k: sd.k, label: sd.label, filas, ventajaText: ventaja >= 0.05 ? '+' + ventaja.toFixed(1) + '% vs media' : '' }
+    }).filter((r) => r.filas.length > 1)
+  }, [m, cmk, casas])
 
   const markedCount = Object.keys(s.marked).filter((k) => k.indexOf(m.id + ':') === 0 && s.marked[k]).length
 
@@ -176,6 +190,37 @@ export function Cuotas({ store, m, isMobile }: Props) {
           <ChartSvg chart={chart} liveMin={s.liveMin} />
         </div>
       </section>
+
+      {/* COMPARADOR DE CASAS (mercado activo) */}
+      {casasRows.length > 0 && (
+        <section style={{ marginBottom: 14, padding: '16px 18px 14px', borderRadius: 16, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+              <h3 style={{ margin: 0, font: '700 15px var(--sans)' }}>Mejor casa por selección</h3>
+              <span style={{ font: '500 11px var(--mono)', color: 'var(--t3)' }}>{chart.title} · última captura</span>
+            </div>
+            <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>la cuota más alta paga más ese acierto</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {casasRows.map((row) => (
+              <div key={row.k} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 10px', borderRadius: 10, background: 'var(--bg)' }}>
+                <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)', width: 130, flexShrink: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.label}</span>
+                <div className="sad-scroll" style={{ display: 'flex', gap: 6, overflowX: 'auto', flex: 1, paddingBottom: 2 }}>
+                  {row.filas.map((f, i) => (
+                    <span key={f.casa + i} title={f.mejor ? 'mejor cuota' : undefined} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 9px', borderRadius: 8, flexShrink: 0, border: `1px solid ${f.mejor ? 'color-mix(in oklch,var(--up),transparent 45%)' : 'var(--line)'}`, background: f.mejor ? 'var(--up-soft)' : 'var(--bg2)' }}>
+                      <span style={{ font: '500 10px var(--sans)', color: f.mejor ? 'var(--up)' : 'var(--t3)' }}>{f.casa}</span>
+                      <span style={{ font: '700 13px var(--mono)', color: f.mejor ? 'var(--up)' : 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>{f.cuota.toFixed(2)}</span>
+                    </span>
+                  ))}
+                </div>
+                {row.ventajaText && (
+                  <span style={{ font: '600 10px var(--mono)', color: 'var(--up)', flexShrink: 0 }}>{row.ventajaText}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* MARKET CARDS WITH SPARKLINES */}
       <div style={{ display: 'grid', gridTemplateColumns: gridCuotasCards, gap: 14 }}>

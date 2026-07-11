@@ -7,6 +7,7 @@ import type {
   AnalisisPrepartidoDTO,
   ConstanteCuotaDTO,
   ConstantesDTO,
+  CuotaCasaDTO,
   CuotaDTO,
   CuotaSnapshotDTO,
   EquipoDTO,
@@ -63,6 +64,8 @@ export interface SadDataSource {
   prediccion(fixtureId: number): Promise<PrediccionDTO>
   analisisPrepartido(fixtureId: number): Promise<AnalisisPrepartidoDTO>
   cuotas(fixtureId: number): Promise<CuotaDTO[]>
+  /** Cuota de cada casa por selección, la mejor marcada (orden cuota desc). */
+  cuotasCasas(fixtureId: number): Promise<CuotaCasaDTO[]>
   /** Snapshots prepartido de la ingesta (asc por captura; [] si aún no hay). */
   cuotasHistorial(fixtureId: number): Promise<CuotaSnapshotDTO[]>
   equipoStats(equipoId: number): Promise<EquipoStatsDTO>
@@ -306,6 +309,30 @@ class MockDataSource implements SadDataSource {
     return out
   }
 
+  async cuotasCasas(fixtureId: number): Promise<CuotaCasaDTO[]> {
+    // Demo: 6 casas deterministas alrededor de la cuota base — misma forma
+    // (y mismo orden cuota desc + mejor marcada) que el backend real.
+    const m = MATCHES.find((x) => FIXTURE_NUM(x.id) === fixtureId)
+    if (!m) return []
+    const table = oddsFor(m.id)
+    const CASAS: [number, string][] = [[8, 'Bet365'], [11, '1xBet'], [32, 'Pinnacle'], [2, 'Betfair'], [6, 'Bwin'], [16, 'William Hill']]
+    const out: CuotaCasaDTO[] = []
+    for (const def of MARKET_DEFS) {
+      for (const k in table[def.key]) {
+        const base = table[def.key][k]
+        const r = rng(m.id + '|' + def.key + '|' + k + '|casas')
+        const filas = CASAS.map(([casaId, casa]) => ({
+          fixtureId, mercado: def.key, seleccion: k, casaId, casa,
+          cuota: Math.max(1.04, Math.round(base * (0.95 + r() * 0.1) * 100) / 100),
+          mejor: false,
+        })).sort((a, b) => b.cuota - a.cuota)
+        for (const f of filas) f.mejor = f.cuota >= filas[0].cuota - 1e-9
+        out.push(...filas)
+      }
+    }
+    return out
+  }
+
   async cuotasHistorial(fixtureId: number): Promise<CuotaSnapshotDTO[]> {
     // Demo: 6 snapshots deterministas que derivan hacia la cuota base — misma
     // forma que servirá el backend real desde odds_history.
@@ -411,6 +438,7 @@ class HttpDataSource implements SadDataSource {
   prediccion = (fixtureId: number) => SadApi.prediccion(fixtureId)
   analisisPrepartido = (fixtureId: number) => SadApi.analisisPrepartido(fixtureId)
   cuotas = (fixtureId: number) => SadApi.cuotas(fixtureId)
+  cuotasCasas = (fixtureId: number) => SadApi.cuotasCasas(fixtureId)
   cuotasHistorial = (fixtureId: number) => SadApi.cuotasHistorial(fixtureId)
   equipoStats = (equipoId: number) => SadApi.equipoStats(equipoId)
   liga = (ligaId: number) => SadApi.liga(ligaId)

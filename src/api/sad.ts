@@ -4,6 +4,7 @@ import type {
   AnalisisPrepartidoDTO,
   ConstanteCuotaDTO,
   ConstantesDTO,
+  CuotaCasaDTO,
   CuotaDTO,
   CuotaSnapshotDTO,
   EquipoDTO,
@@ -46,6 +47,9 @@ export const SadApi = {
     apiGet<AnalisisPrepartidoDTO>(`/analisis-prepartido/${fixtureId}`),
 
   cuotas: (fixtureId: number) => apiGet<CuotaDTO[]>(`/cuotas/${fixtureId}`),
+
+  /** Cuota de cada casa por selección, la mejor marcada (orden cuota desc). */
+  cuotasCasas: (fixtureId: number) => apiGet<CuotaCasaDTO[]>(`/cuotas/${fixtureId}/casas`),
 
   /** Historial de snapshots prepartido (asc por captura; [] si aún no hay). */
   cuotasHistorial: (fixtureId: number) =>

@@ -174,6 +174,21 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: '#/components/schemas/Cuota' } }
+  /cuotas/{fixtureId}/casas:
+    get:
+      summary: Cuotas por casa de apuestas (última foto) para comparar dónde paga más
+      description: >
+        Una fila por casa y selección, orden mercado → selección → cuota desc.
+        `mejor: true` marca la cuota más alta de cada selección (varias si empatan):
+        la diferencia de decimales entre casas es la ventaja al elegir dónde apostar.
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/CuotaCasa' } }
   /cuotas/{fixtureId}/historial:
     get:
       summary: Historial de cuotas prepartido (snapshots de cada corrida de ingesta, asc por captura)
@@ -456,6 +471,18 @@ components:
         seleccion: { type: string }
         cuota: { type: number }
         actualizadoEn: { type: string, format: date-time }
+    CuotaCasa:
+      type: object
+      description: Cuota de UNA casa para una selección (última foto de la ingesta)
+      required: [fixtureId, mercado, seleccion, casaId, casa, cuota, mejor]
+      properties:
+        fixtureId: { type: integer }
+        mercado: { type: string, enum: [1x2, dc, ou, ah, btts] }
+        seleccion: { type: string }
+        casaId: { type: integer }
+        casa: { type: string }
+        cuota: { type: number }
+        mejor: { type: boolean, description: 'true si es la cuota más alta de la selección' }
     CuotaSnapshot:
       type: object
       description: Un punto del movimiento prepartido (media entre casas en esa captura)

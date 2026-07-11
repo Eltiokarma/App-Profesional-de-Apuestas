@@ -163,6 +163,18 @@ def main():
     sin = c.get(A + "/cuotas/900001").json()
     check("fixture sin odds → lista vacía", sin == [], sin)
 
+    # /cuotas/{id}/casas — comparador: cuota de cada casa, la mejor marcada
+    cc = c.get(A + f"/cuotas/{vivo['id']}/casas").json()
+    check("casas: 36 filas (12 selecciones × 3 casas)", len(cc) == 36, len(cc))
+    check("casas: claves del contrato", cc and all(
+        k in cc[0] for k in ("fixtureId", "mercado", "seleccion", "casaId", "casa", "cuota", "mejor")), cc[:1])
+    unos = [r for r in cc if r["mercado"] == "1x2" and r["seleccion"] == "1"]
+    check("casas: 3 casas por selección, orden cuota desc",
+          len(unos) == 3 and unos[0]["cuota"] >= unos[1]["cuota"] >= unos[2]["cuota"], unos)
+    check("casas: mejor = la cuota más alta", unos[0]["mejor"] and all(
+        r["mejor"] == (r["cuota"] >= unos[0]["cuota"] - 1e-9) for r in unos), unos)
+    check("casas de fixture sin odds → lista vacía", c.get(A + "/cuotas/900001/casas").json() == [])
+
     # /cuotas/{id}/historial — snapshots prepartido (fase 1 tiempo real)
     h = c.get(A + f"/cuotas/{vivo['id']}/historial").json()
     check("historial: 36 puntos (12 selecciones × 3 capturas)", len(h) == 36, len(h))

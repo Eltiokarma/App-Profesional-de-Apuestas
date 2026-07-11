@@ -226,6 +226,30 @@ export async function loadCuotasBase(matchId: string): Promise<OddsTable> {
   return out
 }
 
+/** Comparador { mercado → { selección → [{casa, cuota, mejor}] cuota desc } }.
+ *  La diferencia de decimales entre casas dice dónde paga más ese acierto.
+ *  Falla suave: sin datos devuelve {} y la sección no se pinta. */
+export interface CuotaCasaUI {
+  casa: string
+  cuota: number
+  mejor: boolean
+}
+export type OddsCasasTable = Record<string, Record<string, CuotaCasaUI[]>>
+
+export async function loadCuotasCasas(matchId: string): Promise<OddsCasasTable> {
+  const out: OddsCasasTable = {}
+  try {
+    const rows = await getDataSource().cuotasCasas(fixtureNum(matchId))
+    for (const r of rows) {
+      const mk = (out[r.mercado] = out[r.mercado] ?? {})
+      ;(mk[r.seleccion] = mk[r.seleccion] ?? []).push({ casa: r.casa, cuota: r.cuota, mejor: r.mejor })
+    }
+  } catch {
+    /* opcional para pintar: los errores reales ya los reporta /cuotas */
+  }
+  return out
+}
+
 /** Historial prepartido { mercado → { selección → [cuotas asc por captura] } }.
  *  Falla suave: sin historial (DB vieja o error) devuelve {} y la gráfica cae
  *  a la deriva sintética de siempre. */
