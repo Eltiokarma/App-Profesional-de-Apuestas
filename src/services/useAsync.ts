@@ -10,8 +10,10 @@ export interface AsyncState<T> {
 /**
  * Carga async con estados de loading/error y recarga manual.
  * `key` reinicia la carga cuando cambia (p. ej. el id del partido).
+ * `opts.refreshMs`: re-ejecuta fn en silencio cada N ms (sin tocar loading,
+ * sin flicker) — para que las listas reflejen la ingesta sin recargar la página.
  */
-export function useAsync<T>(fn: () => Promise<T>, key: unknown): AsyncState<T> {
+export function useAsync<T>(fn: () => Promise<T>, key: unknown, opts?: { refreshMs?: number }): AsyncState<T> {
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -47,6 +49,18 @@ export function useAsync<T>(fn: () => Promise<T>, key: unknown): AsyncState<T> {
       alive = false
     }
   }, [key, tick])
+
+  const refreshMs = opts?.refreshMs
+  useEffect(() => {
+    if (!refreshMs) return
+    const iv = setInterval(() => {
+      fnRef
+        .current()
+        .then((d) => setData(d))
+        .catch(() => { /* refresco silencioso: el error visible ya lo da la carga normal */ })
+    }, refreshMs)
+    return () => clearInterval(iv)
+  }, [refreshMs, key])
 
   const reload = useCallback(() => setTick((t) => t + 1), [])
   return { data, loading, error, reload }

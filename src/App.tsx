@@ -1,4 +1,5 @@
 import { useSad } from './store'
+import { CONFIG } from './config'
 import { matchView } from './lib/view'
 import { loadMatches } from './services/appdata'
 import { useAsync } from './services/useAsync'
@@ -22,7 +23,13 @@ type Style = React.CSSProperties
 export function App() {
   const store = useSad()
   const { s } = store
-  const fixtures = useAsync(() => loadMatches(s.fecha), s.fecha)
+  // en http la lista del día se refresca sola (marcadores/estados de la
+  // ingesta en vivo llegan sin recargar la página); en mock no hace falta
+  const fixtures = useAsync(
+    () => loadMatches(s.fecha),
+    s.fecha,
+    CONFIG.dataSource === 'http' ? { refreshMs: CONFIG.pollLiveMs } : undefined,
+  )
   const matches = fixtures.data ?? []
   const m = s.match ?? undefined
 
