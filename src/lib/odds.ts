@@ -60,27 +60,44 @@ export interface Series {
 const _series: Record<string, Series> = {}
 
 /**
- * Serie de movimiento de una cuota. `baseOverride` permite construir la deriva
- * alrededor de la cuota real servida por el backend (contrato /cuotas); sin él
- * se usa la cuota base local determinista.
+ * Serie de movimiento de una cuota.
+ * - `hist` (>=2 puntos): snapshots REALES de la ingesta (contrato
+ *   /cuotas/{id}/historial) — el tramo prepartido se pinta tal cual, con la
+ *   apertura del primer snapshot. Solo el tramo en vivo sigue simulado
+ *   (hasta la fase 3 de docs/EXTRACCION_TIEMPO_REAL.md).
+ * - Sin `hist`: deriva sintética determinista alrededor de `baseOverride`
+ *   (cuota real de /cuotas) o de la cuota base local del modo demo.
  */
-export function seriesFor(m: Match, mk: string, selK: string, baseOverride?: number): Series {
+export function seriesFor(m: Match, mk: string, selK: string, baseOverride?: number, hist?: number[]): Series {
   const mId = m.id
-  const key = mId + '|' + mk + '|' + selK + (baseOverride != null ? '|' + baseOverride.toFixed(2) : '')
+  const conHist = !!hist && hist.length >= 2
+  const key =
+    mId + '|' + mk + '|' + selK +
+    (baseOverride != null ? '|' + baseOverride.toFixed(2) : '') +
+    (conHist ? '|h' + hist!.length + ':' + hist![hist!.length - 1].toFixed(2) : '')
   if (_series[key]) return _series[key]
-  const base = baseOverride ?? oddsFor(mId)[mk][selK]
   const r = rng(mId + '|' + mk + '|' + selK + '#')
-  const PRE = 14
-  const IN = 19
-  const open = Math.max(1.05, Math.round(base * (0.9 + r() * 0.2) * 100) / 100)
-  const pre: number[] = []
-  for (let i = 0; i < PRE; i++) {
-    const f = i / (PRE - 1)
-    const v = open * (1 - f) + base * f + (r() - 0.5) * 0.05 * base * (1 - f * 0.6)
-    pre.push(Math.max(1.04, Math.round(v * 100) / 100))
+  let open: number
+  let pre: number[]
+  let base: number
+  if (conHist) {
+    pre = hist!.slice()
+    open = pre[0]
+    base = pre[pre.length - 1]
+  } else {
+    base = baseOverride ?? oddsFor(mId)[mk][selK]
+    const PRE = 14
+    open = Math.max(1.05, Math.round(base * (0.9 + r() * 0.2) * 100) / 100)
+    pre = []
+    for (let i = 0; i < PRE; i++) {
+      const f = i / (PRE - 1)
+      const v = open * (1 - f) + base * f + (r() - 0.5) * 0.05 * base * (1 - f * 0.6)
+      pre.push(Math.max(1.04, Math.round(v * 100) / 100))
+    }
+    pre[0] = open
+    pre[PRE - 1] = base
   }
-  pre[0] = open
-  pre[PRE - 1] = base
+  const IN = 19
   const endVal = Math.max(1.02, Math.round(base * inplayInfluence(m, mk, selK) * 100) / 100)
   const inp: number[] = []
   for (let i = 0; i < IN; i++) {

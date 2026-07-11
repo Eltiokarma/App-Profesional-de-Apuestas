@@ -13,28 +13,26 @@ de movimiento de Cuotas es simulación del frontend anclada a esa foto
 (`src/lib/odds.ts: seriesFor`), y el minuto/marcador en vivo también son
 simulados (`src/store.ts`).
 
-## Fase 1 · Historial de cuotas prepartido (= punto 4 del roadmap)
+## Fase 1 · Historial de cuotas prepartido (= punto 4 del roadmap) — HECHA
 
 La que da valor de apuestas real: movimiento de la cuota **antes** del partido.
 
-- **sad.db**: tabla nueva `odds_history(fixture_id, bookmaker_id, bet_id,
-  bet_name, value, odd, captured_at)`. La tabla `odds` queda como "última
-  foto" (compatibilidad con el pipeline y la regla de huecos ya definida en
-  `docs/ROADMAP_BURBUJAS.md`); cada corrida además apendiza el snapshot a
-  `odds_history`.
-- **Extractor**: deja de saltarse los NS con odds — re-consulta cuotas de los
-  fixtures NS de hoy..+2d en cada corrida (los de +3d..+10d siguen solo en la
-  primera captura). Coste: ~40–80 requests extra por corrida.
-- **Scheduler**: `SAD_INGESTA_HORA` acepta lista `"06:30,12:30,18:30"`
-  (cambio pequeño en `backend/app.py:_ingesta_diaria_loop`). Tres snapshots
-  al día ya dibujan una curva prepartido honesta.
-- **Contrato** (orden obligatorio del proyecto): `docs/openapi.yaml` primero —
-  `GET /fixtures/{id}/cuotas/historial` → lista de `{capturedAt, mercado,
-  seleccion, cuota}`; luego backend, `src/api/types.ts`, ambos datasources y
-  `backend/test_api.py`.
-- **Frontend**: `seriesFor` consume los puntos reales para el tramo
-  prepartido (apertura = primer snapshot, no inventada). El tramo "en vivo"
-  sigue simulado hasta la fase 3, marcado como tal en la UI.
+- **sad.db**: tabla `odds_history(fixture_id, league_id, bet_id, bet_name,
+  value, odd, casas, captured_at)` — un punto por selección y captura con la
+  **media entre casas** (más compacta que guardar cada bookmaker; `casas`
+  registra cuántos promedió). La tabla `odds` queda como "última foto"
+  (compatibilidad con el pipeline y la regla de huecos de
+  `docs/ROADMAP_BURBUJAS.md`). El extractor crea la tabla si no existe.
+- **Extractor**: `fixtures_para_cuotas` — primero los NS sin cuotas de toda
+  la ventana (primera captura), después re-captura de los NS que empiezan en
+  <= 2 días aunque ya tengan (snapshot nuevo).
+- **Scheduler**: `SAD_INGESTA_HORA` acepta lista `"06:30,12:30,18:30"`.
+  Tres snapshots al día ya dibujan una curva prepartido honesta.
+- **Contrato**: `GET /cuotas/{fixtureId}/historial` → `CuotaSnapshot[]`
+  (asc por captura; `[]` en DBs anteriores a esta fase).
+- **Frontend**: `seriesFor(hist)` pinta el tramo prepartido con los puntos
+  reales (apertura = primer snapshot). Con <2 snapshots cae a la deriva
+  sintética de siempre. El tramo "en vivo" sigue simulado hasta la fase 3.
 
 Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
 

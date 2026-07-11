@@ -226,6 +226,25 @@ export async function loadCuotasBase(matchId: string): Promise<OddsTable> {
   return out
 }
 
+/** Historial prepartido { mercado → { selección → [cuotas asc por captura] } }.
+ *  Falla suave: sin historial (DB vieja o error) devuelve {} y la gráfica cae
+ *  a la deriva sintética de siempre. */
+export type OddsHistTable = Record<string, Record<string, number[]>>
+
+export async function loadCuotasHistorial(matchId: string): Promise<OddsHistTable> {
+  const out: OddsHistTable = {}
+  try {
+    const rows = await getDataSource().cuotasHistorial(fixtureNum(matchId))
+    for (const r of rows) {
+      const mk = (out[r.mercado] = out[r.mercado] ?? {})
+      ;(mk[r.seleccion] = mk[r.seleccion] ?? []).push(r.cuota)
+    }
+  } catch {
+    /* opcional para pintar: los errores reales ya los reporta /cuotas */
+  }
+  return out
+}
+
 // ── predicción (§5) y análisis pre-partido ──────────────────────────────────
 export function loadPrediccion(matchId: string): Promise<PrediccionDTO> {
   return getDataSource().prediccion(fixtureNum(matchId))

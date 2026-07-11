@@ -174,6 +174,21 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: '#/components/schemas/Cuota' } }
+  /cuotas/{fixtureId}/historial:
+    get:
+      summary: Historial de cuotas prepartido (snapshots de cada corrida de ingesta, asc por captura)
+      description: >
+        Cada corrida de la ingesta guarda en odds_history la media entre casas por
+        mercado/selección. Vacío si el fixture aún no tiene snapshots (o si la DB
+        es anterior a la fase 1 de extracción en tiempo real).
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/CuotaSnapshot' } }
 components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer }
@@ -441,3 +456,14 @@ components:
         seleccion: { type: string }
         cuota: { type: number }
         actualizadoEn: { type: string, format: date-time }
+    CuotaSnapshot:
+      type: object
+      description: Un punto del movimiento prepartido (media entre casas en esa captura)
+      required: [fixtureId, mercado, seleccion, cuota, capturadoEn]
+      properties:
+        fixtureId: { type: integer }
+        mercado: { type: string, enum: [1x2, dc, ou, ah, btts] }
+        seleccion: { type: string }
+        cuota: { type: number }
+        casas: { type: integer, description: 'nº de bookmakers promediados en la captura' }
+        capturadoEn: { type: string, format: date-time }

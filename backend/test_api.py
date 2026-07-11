@@ -163,6 +163,20 @@ def main():
     sin = c.get(A + "/cuotas/900001").json()
     check("fixture sin odds → lista vacía", sin == [], sin)
 
+    # /cuotas/{id}/historial — snapshots prepartido (fase 1 tiempo real)
+    h = c.get(A + f"/cuotas/{vivo['id']}/historial").json()
+    check("historial: 36 puntos (12 selecciones × 3 capturas)", len(h) == 36, len(h))
+    check("historial: claves del contrato", h and all(
+        k in h[0] for k in ("fixtureId", "mercado", "seleccion", "cuota", "casas", "capturadoEn")), h[:1])
+    capturas = [r["capturadoEn"] for r in h]
+    check("historial: asc por captura", capturas == sorted(capturas))
+    serie_1 = [r["cuota"] for r in h if r["mercado"] == "1x2" and r["seleccion"] == "1"]
+    q_1 = next(r["cuota"] for r in q if r["mercado"] == "1x2" and r["seleccion"] == "1")
+    check("historial: 3 capturas por selección", len(serie_1) == 3, serie_1)
+    check("historial: última captura ≈ cuota base de /cuotas", abs(serie_1[-1] - q_1) < 0.35, (serie_1[-1], q_1))
+    hsin = c.get(A + "/cuotas/900001/historial").json()
+    check("historial de fixture sin odds → lista vacía", hsin == [], hsin)
+
     # cuotas prepartido guardadas en partidos PASADOS
     pasados = [f for f in fx if f["estado"] == "finalizado"]
     con_odds = [f for f in pasados if c.get(A + f"/cuotas/{f['id']}").json()]

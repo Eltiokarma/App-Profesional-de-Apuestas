@@ -96,19 +96,22 @@ app.add_middleware(
 
 # Ingesta programada opcional (despliegue de un solo servicio: el volumen de
 # Railway solo se monta en un servicio, así que el cron vive aquí dentro).
-# SAD_INGESTA_HORA=HH:MM (UTC) lanza backend.ingesta.corrida_diaria una vez al
-# día en subproceso. El backend HTTP sigue siendo de solo lectura: quien
-# escribe es la capa de ingesta; aquí solo se programa.
+# SAD_INGESTA_HORA=HH:MM[,HH:MM…] (UTC) lanza backend.ingesta.corrida_diaria
+# en subproceso a cada hora de la lista (varias corridas/día = varios snapshots
+# de cuotas en odds_history). El backend HTTP sigue siendo de solo lectura:
+# quien escribe es la capa de ingesta; aquí solo se programa.
 INGESTA_HORA = os.environ.get("SAD_INGESTA_HORA", "").strip()
 
 
 def _ingesta_diaria_loop() -> None:
-    hh, mm = (int(x) for x in INGESTA_HORA.split(":"))
+    horas = sorted(
+        (int(hh), int(mm))
+        for hh, mm in (x.strip().split(":") for x in INGESTA_HORA.split(",") if x.strip())
+    )
     while True:
         ahora = datetime.now(timezone.utc)
-        objetivo = ahora.replace(hour=hh, minute=mm, second=0, microsecond=0)
-        if objetivo <= ahora:
-            objetivo += timedelta(days=1)
+        candidatos = (ahora.replace(hour=hh, minute=mm, second=0, microsecond=0) for hh, mm in horas)
+        objetivo = min(c if c > ahora else c + timedelta(days=1) for c in candidatos)
         time.sleep((objetivo - ahora).total_seconds())
         print(f"[ingesta] corrida diaria {datetime.now(timezone.utc).isoformat()}", flush=True)
         subprocess.run([sys.executable, "-u", "-m", "backend.ingesta.corrida_diaria"])
@@ -793,3 +796,33 @@ def cuotas(fixture_id: int):
         }
         for (mercado, seleccion), v in sorted(acc.items())
     ]
+
+
+@app.get(API + "/cuotas/{fixture_id}/historial")
+def cuotas_historial(fixture_id: int):
+    """Snapshots prepartido de odds_history (asc por captura). [] si la DB
+    aún no tiene la tabla (anterior a la fase 1 de tiempo real)."""
+    try:
+        rows = db.query(
+            "sad",
+            "SELECT bet_name, value, odd, casas, captured_at FROM odds_history "
+            "WHERE fixture_id=? AND odd IS NOT NULL ORDER BY captured_at, bet_name, value",
+            (fixture_id,),
+        )
+    except Exception:
+        return []
+    out = []
+    for r in rows:
+        key = cuota_key(r["bet_name"], r["value"])
+        if key:
+            out.append(
+                {
+                    "fixtureId": fixture_id,
+                    "mercado": key[0],
+                    "seleccion": key[1],
+                    "cuota": round(float(r["odd"]), 2),
+                    "casas": r["casas"],
+                    "capturadoEn": iso(r["captured_at"]),
+                }
+            )
+    return out

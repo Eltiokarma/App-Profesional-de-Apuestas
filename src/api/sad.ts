@@ -5,6 +5,7 @@ import type {
   ConstanteCuotaDTO,
   ConstantesDTO,
   CuotaDTO,
+  CuotaSnapshotDTO,
   EquipoDTO,
   EquipoStatsDTO,
   EstadoFixture,
@@ -45,6 +46,10 @@ export const SadApi = {
     apiGet<AnalisisPrepartidoDTO>(`/analisis-prepartido/${fixtureId}`),
 
   cuotas: (fixtureId: number) => apiGet<CuotaDTO[]>(`/cuotas/${fixtureId}`),
+
+  /** Historial de snapshots prepartido (asc por captura; [] si aún no hay). */
+  cuotasHistorial: (fixtureId: number) =>
+    apiGet<CuotaSnapshotDTO[]>(`/cuotas/${fixtureId}/historial`),
 
   equipoStats: (equipoId: number) => apiGet<EquipoStatsDTO>(`/equipos/${equipoId}/stats`),
 

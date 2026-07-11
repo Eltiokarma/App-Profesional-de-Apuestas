@@ -31,7 +31,7 @@ en subproceso. El backend HTTP sigue siendo de solo lectura.
    | `API_FOOTBALL_KEY` | *(clave de dashboard.api-football.com)* | solo la usa la ingesta |
    | `SAD_CORS_ORIGINS` | `https://<tu-app>.vercel.app` | el dominio real del frontend |
    | `SAD_API_TOKEN` | *(token largo aleatorio)* | apaga `/docs` y protege la API |
-   | `SAD_INGESTA_HORA` | `06:30` | corrida diaria (UTC); vacía = sin ingesta |
+   | `SAD_INGESTA_HORA` | `06:30,12:30,18:30` | horas de corrida (UTC, lista = varios snapshots de cuotas/día); vacía = sin ingesta |
    | `SAD_LIGAS_EXTRA` | `414:Copa Chile,999:Copa de la Liga Perú` | torneos extra sin tocar código; IDs con `--buscar` |
    | `SAD_BOOTSTRAP_URL` | *(URL del zip, solo la primera vez)* | ver carga inicial |
 
