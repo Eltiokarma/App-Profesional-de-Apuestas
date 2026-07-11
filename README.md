@@ -1,4 +1,4 @@
-# SAD · Análisis pre-partido
+# Quipu Analytics · Análisis pre-partido
 
 Web app **desktop-first y responsive** para análisis pre-partido de fútbol y apuestas.
 Implementada en **React + Vite + TypeScript** a partir del prototipo de Claude Design

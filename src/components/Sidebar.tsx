@@ -22,9 +22,9 @@ export function Sidebar({ store }: { store: SadStore }) {
   return (
     <aside style={{ width: 228, flexShrink: 0, background: 'var(--bg1)', borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column', padding: '18px 14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '4px 8px 20px' }}>
-        <div style={{ width: 36, height: 36, borderRadius: 9, background: 'linear-gradient(135deg,var(--accent),color-mix(in oklch,var(--accent),#000 22%))', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '800 16px var(--sans)', color: '#fff', letterSpacing: '-.5px' }}>S</div>
+        <img src="/quipu-badge.svg" alt="Quipu Analytics" width={36} height={36} style={{ display: 'block', borderRadius: 9, flexShrink: 0 }} />
         <div style={{ lineHeight: 1.05 }}>
-          <div style={{ font: '800 16px var(--sans)', letterSpacing: '.5px' }}>SAD</div>
+          <div style={{ font: '800 15px var(--sans)', letterSpacing: '.2px' }}>Quipu Analytics</div>
           <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px', marginTop: 2 }}>ANÁLISIS PRE-PARTIDO</div>
         </div>
       </div>
