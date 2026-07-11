@@ -223,6 +223,35 @@ export interface CuotaDTO {
   actualizadoEn: string
 }
 
+/** Cuota en juego (última captura live). suspendida=true: la casa no la acepta ahora. */
+export interface CuotaLiveDTO {
+  mercado: string
+  seleccion: string
+  cuota: number
+  suspendida: boolean
+}
+
+/** Un punto del movimiento en vivo (sin suspendidas), asc por captura. */
+export interface PuntoLiveDTO {
+  minuto: number | null
+  mercado: string
+  seleccion: string
+  cuota: number
+}
+
+/** Estado en vivo real del fixture (ingesta SAD_LIVE_SEGUNDOS). */
+export interface FixtureLiveDTO {
+  fixtureId: number
+  estado: EstadoFixture
+  minuto: number | null
+  golesLocal: number | null
+  golesVisitante: number | null
+  cuotas: CuotaLiveDTO[]
+  serie: PuntoLiveDTO[]
+  /** null si la liga no tiene cobertura de odds live o la ingesta está apagada. */
+  actualizadoEn: string | null
+}
+
 /** Cuota de UNA casa para una selección (última foto). mejor=true: la más alta. */
 export interface CuotaCasaDTO {
   fixtureId: number

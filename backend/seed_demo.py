@@ -178,6 +178,9 @@ def seed(base_dir: str):
         CREATE TABLE odds_history (id INTEGER PRIMARY KEY AUTOINCREMENT, fixture_id INTEGER NOT NULL,
             league_id INTEGER, bet_id INTEGER, bet_name TEXT, value TEXT, odd REAL, casas INTEGER,
             captured_at TEXT NOT NULL);
+        CREATE TABLE odds_live (id INTEGER PRIMARY KEY AUTOINCREMENT, fixture_id INTEGER NOT NULL,
+            minuto INTEGER, bet_id INTEGER, bet_name TEXT, value TEXT, odd REAL,
+            suspendida INTEGER DEFAULT 0, captured_at TEXT NOT NULL);
     """)
     sad.executemany("INSERT INTO teams (id, name, country) VALUES (?,?, 'Spain')", TEAMS)
     sad.execute(
@@ -226,6 +229,19 @@ def seed(base_dir: str):
                         (f["id"], LEAGUE_ID, bet_id, bet_name, value, round(odd, 3), len(BOOKMAKERS),
                          (f["date"] - timedelta(hours=36 - 12 * i)).strftime("%Y-%m-%d %H:%M:%S")),
                     )
+    # cuotas EN VIVO (fase 3): serie de capturas por minuto para el partido en
+    # juego, con el catálogo de /odds/live ("Fulltime Result") y una suspendida
+    vivo = next(f for f in fixtures if f["status_short"] == "2H")
+    rng = random.Random(f"{vivo['id']}|live")
+    for i, minuto in enumerate(range(46, vivo["elapsed"] + 1, 3)):
+        capt = (vivo["date"] + timedelta(minutes=minuto)).strftime("%Y-%m-%d %H:%M:%S")
+        for value, base in [("Home", 1.65), ("Draw", 3.9), ("Away", 5.2)]:
+            sad.execute(
+                "INSERT INTO odds_live (fixture_id, minuto, bet_id, bet_name, value, odd, suspendida, captured_at) VALUES (?,?,?,?,?,?,?,?)",
+                (vivo["id"], minuto, 59, "Fulltime Result", value,
+                 round(base * (0.94 + rng.random() * 0.12), 2),
+                 1 if value == "Away" and minuto == vivo["elapsed"] else 0, capt),
+            )
     sad.commit()
     sad.close()
 

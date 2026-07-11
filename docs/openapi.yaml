@@ -57,6 +57,24 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Fixture' }
         '404': { description: No existe }
+  /fixtures/{id}/live:
+    get:
+      summary: Estado en vivo real del fixture (marcador, minuto, cuotas en juego)
+      description: >
+        Alimentado por la ingesta en vivo (SAD_LIVE_SEGUNDOS). `cuotas` es la
+        última captura de odds en juego y `serie` el movimiento acumulado del
+        partido (solo selecciones no suspendidas). Ambas vacías si la liga no
+        tiene cobertura de odds live o la ingesta en vivo está apagada; el
+        marcador/minuto salen de la tabla fixtures, refrescada por el mismo ciclo.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FixtureLive' }
+        '404': { description: No existe }
   /niveles/{equipoId}:
     get:
       summary: Historia de niveles del equipo (desc por fecha)
@@ -471,6 +489,40 @@ components:
         seleccion: { type: string }
         cuota: { type: number }
         actualizadoEn: { type: string, format: date-time }
+    FixtureLive:
+      type: object
+      required: [fixtureId, estado, minuto, golesLocal, golesVisitante, cuotas, serie, actualizadoEn]
+      properties:
+        fixtureId: { type: integer }
+        estado: { $ref: '#/components/schemas/EstadoFixture' }
+        minuto: { type: integer, nullable: true }
+        golesLocal: { type: integer, nullable: true }
+        golesVisitante: { type: integer, nullable: true }
+        cuotas:
+          type: array
+          description: Última captura de cuotas en juego (mercados mapeables del contrato)
+          items: { $ref: '#/components/schemas/CuotaLive' }
+        serie:
+          type: array
+          description: Movimiento acumulado del partido, asc por captura (sin suspendidas)
+          items: { $ref: '#/components/schemas/PuntoLive' }
+        actualizadoEn: { type: string, format: date-time, nullable: true, description: 'última captura live; null si nunca hubo' }
+    CuotaLive:
+      type: object
+      required: [mercado, seleccion, cuota, suspendida]
+      properties:
+        mercado: { type: string, enum: [1x2, dc, ou, ah, btts] }
+        seleccion: { type: string }
+        cuota: { type: number }
+        suspendida: { type: boolean, description: 'la casa no acepta apuestas a esta selección ahora' }
+    PuntoLive:
+      type: object
+      required: [minuto, mercado, seleccion, cuota]
+      properties:
+        minuto: { type: integer, nullable: true }
+        mercado: { type: string, enum: [1x2, dc, ou, ah, btts] }
+        seleccion: { type: string }
+        cuota: { type: number }
     CuotaCasa:
       type: object
       description: Cuota de UNA casa para una selección (última foto de la ingesta)

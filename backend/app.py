@@ -145,6 +145,28 @@ def _refresco_cuotas_loop() -> None:
 if REFRESCO_MIN:
     threading.Thread(target=_refresco_cuotas_loop, daemon=True, name="refresco-cuotas").start()
 
+# En vivo (fase 3 de docs/EXTRACCION_TIEMPO_REAL.md): SAD_LIVE_SEGUNDOS=60
+# corre backend.ingesta.en_vivo cada N segundos (piso 30). El módulo decide
+# solo: sin partidos en ventana de juego sale con 0 requests, así que el bucle
+# corre ciego sin gastar presupuesto en horas muertas. Vacía = apagado.
+LIVE_SEGUNDOS = os.environ.get("SAD_LIVE_SEGUNDOS", "").strip()
+
+
+def _en_vivo_loop() -> None:
+    segundos = max(30, int(LIVE_SEGUNDOS))
+    raiz = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    env = {**os.environ, "PYTHONPATH": raiz, "PYTHONUTF8": "1", "PYTHONUNBUFFERED": "1"}
+    while True:
+        time.sleep(segundos)
+        subprocess.run(
+            [sys.executable, "-u", "-m", "backend.ingesta.en_vivo"],
+            cwd=db.BASE_DIR, env=env,
+        )
+
+
+if LIVE_SEGUNDOS:
+    threading.Thread(target=_en_vivo_loop, daemon=True, name="ingesta-en-vivo").start()
+
 # ---------------------------------------------------------------------------
 # helpers
 # ---------------------------------------------------------------------------
@@ -528,8 +550,10 @@ def niveles_de(team_id: int, limit: int, hasta: str | None = None) -> list[dict]
 def cuota_key(bet_name: str, value: str):
     b = (bet_name or "").lower()
     v = (value or "").strip()
-    if "match winner" in b or b == "1x2":
-        return {"Home": ("1x2", "1"), "Draw": ("1x2", "X"), "Away": ("1x2", "2")}.get(v)
+    # "fulltime result": nombre del 1X2 en el catálogo de /odds/live
+    if "match winner" in b or "fulltime result" in b or b == "1x2":
+        return {"Home": ("1x2", "1"), "Draw": ("1x2", "X"), "Away": ("1x2", "2"),
+                "1": ("1x2", "1"), "X": ("1x2", "X"), "2": ("1x2", "2")}.get(v)
     if "double chance" in b:
         return {"Home/Draw": ("dc", "1X"), "Home/Away": ("dc", "12"), "Draw/Away": ("dc", "X2")}.get(v)
     if "over/under" in b or b == "goals over/under":
@@ -820,6 +844,51 @@ def cuotas(fixture_id: int):
         }
         for (mercado, seleccion), v in sorted(acc.items())
     ]
+
+
+@app.get(API + "/fixtures/{fixture_id}/live")
+def fixture_live(fixture_id: int):
+    """Estado en vivo real: marcador/minuto de fixtures (refrescados por la
+    ingesta en vivo) + última captura y serie de odds_live. Sin cobertura o
+    con la ingesta apagada, cuotas/serie van vacías — nada se inventa."""
+    f = db.query_one(
+        "sad",
+        "SELECT status_short, status_long, elapsed, goals_home, goals_away FROM fixtures WHERE id=?",
+        (fixture_id,),
+    )
+    if not f:
+        raise HTTPException(404, f"fixture {fixture_id} no existe")
+    try:
+        filas = db.query(
+            "sad",
+            "SELECT minuto, bet_name, value, odd, suspendida, captured_at FROM odds_live "
+            "WHERE fixture_id=? ORDER BY captured_at",
+            (fixture_id,),
+        )
+    except Exception:
+        filas = []
+    ultima = filas[-1]["captured_at"] if filas else None
+    cuotas = []
+    serie = []
+    for r in filas:
+        key = cuota_key(r["bet_name"], r["value"])
+        if not key:
+            continue
+        punto = {"mercado": key[0], "seleccion": key[1], "cuota": round(float(r["odd"]), 2)}
+        if not r["suspendida"]:
+            serie.append({"minuto": r["minuto"], **punto})
+        if r["captured_at"] == ultima:
+            cuotas.append({**punto, "suspendida": bool(r["suspendida"])})
+    return {
+        "fixtureId": fixture_id,
+        "estado": estado_de(f["status_short"], f["status_long"]),
+        "minuto": f["elapsed"],
+        "golesLocal": f["goals_home"],
+        "golesVisitante": f["goals_away"],
+        "cuotas": cuotas,
+        "serie": serie,
+        "actualizadoEn": iso(ultima) if ultima else None,
+    }
 
 
 @app.get(API + "/cuotas/{fixture_id}/casas")
