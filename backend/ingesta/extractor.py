@@ -373,6 +373,21 @@ def fixtures_para_cuotas(con: sqlite3.Connection, dias: int = DIAS_ADELANTE,
     return sin_cuotas + [f for f in refresco if f not in vistos]
 
 
+def fixtures_proximos(con: sqlite3.Connection, horas: int) -> list[int]:
+    """NS que arrancan entre ahora y ahora+N horas (fechas de sad.db en UTC):
+    el objetivo del refresco de día de partido (fase 2)."""
+    ahora = datetime.now(timezone.utc)
+    desde = ahora.strftime("%Y-%m-%d %H:%M:%S")
+    hasta = (ahora + timedelta(hours=horas)).strftime("%Y-%m-%d %H:%M:%S")
+    return [
+        fila[0]
+        for fila in con.execute(
+            "SELECT id FROM fixtures WHERE status_short='NS' AND date BETWEEN ? AND ? ORDER BY date",
+            (desde, hasta),
+        )
+    ]
+
+
 def guardar_ligas(con: sqlite3.Connection, respuesta: list) -> int:
     """Items de /leagues: {league: {id,name,logo}, country: {name,flag}, seasons: [...]}."""
     n = 0
@@ -415,6 +430,8 @@ def main() -> int:
     ap.add_argument("--desde", help="inicio de ventana YYYY-MM-DD (default hoy−3d)")
     ap.add_argument("--hasta", help="fin de ventana YYYY-MM-DD (default hoy+10d)")
     ap.add_argument("--solo", choices=["fixtures", "cuotas"], help="ejecutar una sola fase")
+    ap.add_argument("--ventana-horas", type=int, metavar="N",
+                    help="refresco ligero (fase 2): SOLO cuotas de los NS que empiezan en <= N horas")
     ap.add_argument("--probar", action="store_true", help="solo verificar conexión (1 request)")
     ap.add_argument("--buscar", metavar="TEXTO",
                     help="buscar ligas por nombre en /leagues e imprimir sus IDs (1 request)")
@@ -474,7 +491,27 @@ def main() -> int:
     desde = args.desde or (hoy - timedelta(days=DIAS_ATRAS)).strftime("%Y-%m-%d")
     hasta = args.hasta or (hoy + timedelta(days=DIAS_ADELANTE)).strftime("%Y-%m-%d")
     con = sqlite3.connect(args.db)
+    con.execute("PRAGMA busy_timeout=15000")  # convive con las lecturas del backend
     con.executescript(DDL_ODDS_HISTORY)  # idempotente: prepara el historial en DBs viejas
+
+    if args.ventana_horas:
+        pendientes = fixtures_proximos(con, args.ventana_horas)
+        print(f"Refresco: {len(pendientes)} NS que empiezan en <= {args.ventana_horas} h "
+              f"(presupuesto restante {cliente.limite - cliente.usadas})")
+        total = 0
+        for fid in pendientes:
+            if not cliente.quedan():
+                print("  presupuesto agotado; el resto queda para el próximo refresco")
+                break
+            data = cliente.get("odds", {"fixture": fid})
+            if data is None:
+                continue
+            n = guardar_odds(con, fid, data.get("response", []))
+            total += n
+            print(f"  [{cliente.usadas}/{cliente.limite}] fixture {fid}: {n} cuotas")
+        con.close()
+        print(f"cuotas refrescadas: {total} · requests usadas: {cliente.usadas}/{cliente.limite}")
+        return 0
 
     if args.solo != "cuotas":
         print(f"Fixtures {desde} → {hasta} · temporada {SEASON} · {len(LIGAS)} ligas")

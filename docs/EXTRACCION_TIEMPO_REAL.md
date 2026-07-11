@@ -39,11 +39,16 @@ La que da valor de apuestas real: movimiento de la cuota **antes** del partido.
 
 Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
 
-## Fase 2 · Día de partido
+## Fase 2 · Día de partido — HECHA
 
-- Corrida ligera solo-cuotas para fixtures que empiezan en <6 h, cada 30–60
-  min (bucle nuevo en el scheduler, mismo subproceso extractor con
-  `--solo cuotas --ventana-horas 6`).
+- `extractor --ventana-horas 6`: corrida ligera SOLO de cuotas para los NS
+  que empiezan en <= 6 h (snapshot directo a `odds_history`; sin fixtures
+  próximos sale con 0 requests).
+- `SAD_REFRESCO_MIN=30` (env, vacía = apagado): hilo propio en
+  `backend/app.py` que corre ese refresco cada N minutos (piso 10; la
+  ventana se ajusta con `SAD_REFRESCO_VENTANA_HORAS`, default 6).
+- Escritura con `busy_timeout` para convivir con las lecturas del backend
+  (el paso a WAL sigue reservado para la fase 3).
 - Cierra la curva prepartido con densidad donde importa (las últimas horas
   son las de más movimiento).
 - Presupuesto: ~20 fixtures/día × 8 refrescos ≈ **160/día** extra.
