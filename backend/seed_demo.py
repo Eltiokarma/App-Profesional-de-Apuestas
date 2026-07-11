@@ -242,6 +242,13 @@ def seed(base_dir: str):
                  round(base * (0.94 + rng.random() * 0.12), 2),
                  1 if value == "Away" and minuto == vivo["elapsed"] else 0, capt),
             )
+        # línea O/U del catálogo live ya con el handicap fusionado ("Over 2.5")
+        for value, base in [("Over 2.5", 1.4), ("Under 2.5", 2.9)]:
+            sad.execute(
+                "INSERT INTO odds_live (fixture_id, minuto, bet_id, bet_name, value, odd, suspendida, captured_at) VALUES (?,?,?,?,?,?,?,?)",
+                (vivo["id"], minuto, 36, "Over/Under Line", value,
+                 round(base * (0.94 + rng.random() * 0.12), 2), 0, capt),
+            )
     sad.commit()
     sad.close()
 

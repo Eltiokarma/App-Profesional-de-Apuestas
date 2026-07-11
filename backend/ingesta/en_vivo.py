@@ -91,10 +91,16 @@ def guardar_odds_live(con: sqlite3.Connection, item: dict, capturado: str) -> in
                 odd = float(valor.get("odd"))
             except (TypeError, ValueError):
                 continue
+            # el catálogo live manda la línea aparte: "Over" + handicap "2.5" →
+            # se guarda "Over 2.5" (mismo formato que prepartido → cuota_key mapea)
+            valor_txt = str(valor.get("value"))
+            handicap = valor.get("handicap")
+            if handicap not in (None, "") and str(handicap) not in valor_txt:
+                valor_txt = f"{valor_txt} {handicap}"
             con.execute(
                 "INSERT INTO odds_live (fixture_id, minuto, bet_id, bet_name, value, "
                 "odd, suspendida, captured_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (fid, minuto, bet.get("id"), bet.get("name"), str(valor.get("value")),
+                (fid, minuto, bet.get("id"), bet.get("name"), valor_txt,
                  odd, 1 if valor.get("suspended") else 0, capturado),
             )
             n += 1

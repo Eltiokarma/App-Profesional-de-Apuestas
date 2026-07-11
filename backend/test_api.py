@@ -167,8 +167,9 @@ def main():
     lv = c.get(A + f"/fixtures/{vivo['id']}/live").json()
     check("live: estado en_vivo + minuto 67", lv["estado"] == "en_vivo" and lv["minuto"] == 67, lv)
     check("live: marcador presente", lv["golesLocal"] is not None and lv["golesVisitante"] is not None, lv)
-    check("live: cuotas de la última captura (3 del 1X2 live)",
-          len(lv["cuotas"]) == 3 and {q2["seleccion"] for q2 in lv["cuotas"]} == {"1", "X", "2"}, lv["cuotas"])
+    check("live: cuotas de la última captura (1X2 + O/U del catálogo live)",
+          len(lv["cuotas"]) == 5 and {(q2["mercado"], q2["seleccion"]) for q2 in lv["cuotas"]}
+          == {("1x2", "1"), ("1x2", "X"), ("1x2", "2"), ("ou", "O"), ("ou", "U")}, lv["cuotas"])
     check("live: la suspendida viene marcada", any(q2["suspendida"] for q2 in lv["cuotas"]), lv["cuotas"])
     check("live: serie con minutos asc y sin suspendidas",
           len(lv["serie"]) > 6 and all(not any(p["minuto"] == 67 and p["seleccion"] == "2" for p in lv["serie"]) for _ in [0])
