@@ -71,10 +71,13 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   minuto, hora de captura) + sección "Cuotas en juego" del mercado activo
   (suspendidas atenuadas). Sin cobertura de odds live: solo marcador/minuto,
   nada inventado.
-- **Pendiente de datos reales**: pintar `serie` como tramo en vivo de la
-  gráfica grande — primero confirmar cobertura/formato de `/odds/live` por
-  liga con un día real de partidos (el mapeo de bets live puede necesitar
-  más aliases en `cuota_key`).
+- **Gráfica**: la `serie` live se pinta como tramo en vivo REAL de la
+  gráfica grande (prepartido 0→KO con el historial, KO→90' con odds_live,
+  marcador de minuto actual). Si la liga no tiene cobertura de odds live,
+  el tramo simplemente no aparece — regla "real o nada". Pendiente menor:
+  el catálogo de bets de /odds/live puede necesitar más aliases en
+  `cuota_key` según lo que llegue el primer día real de partidos (hoy
+  mapea "Fulltime Result"/1X2 y los mercados clásicos).
 - **Presupuesto**: 2 req/min × ~6 h de ventana con partidos ≈ **700/día**.
   Total fases 1+2+3 ≈ 1.300/día — holgado incluso en Pro.
 

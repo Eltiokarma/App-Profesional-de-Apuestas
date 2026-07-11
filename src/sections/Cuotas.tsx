@@ -3,7 +3,7 @@ import type { FixtureLiveDTO } from '../api/types'
 import { CONFIG } from '../config'
 import { LINE_COLORS, MARKET_DEFS } from '../data'
 import type { Match } from '../data/types'
-import { buildChart, buildSpark } from '../lib/chart'
+import { buildChart, buildSpark, type LiveRealSerie } from '../lib/chart'
 import { curOddOf, seriesFor } from '../lib/odds'
 import { ChartSvg } from '../components/ChartSvg'
 import { matchView } from '../lib/view'
@@ -69,20 +69,34 @@ export function Cuotas({ store, m, isMobile }: Props) {
     fg: d.key === cmk ? 'var(--accent)' : 'var(--t2)',
   }))
 
-  // en http la gráfica solo existe si TODAS las selecciones del mercado activo
-  // tienen >=2 capturas reales; si no, placeholder honesto (nada inventado)
+  // serie en vivo REAL agrupada para la gráfica { mercado → { sel → [{min, odd}] } }
+  const livePts = useMemo<LiveRealSerie | null>(() => {
+    if (esDemo || !live?.serie.length) return null
+    const pts: LiveRealSerie['pts'] = {}
+    for (const p of live.serie) {
+      const mkT = (pts[p.mercado] = pts[p.mercado] ?? {})
+      ;(mkT[p.seleccion] = mkT[p.seleccion] ?? []).push({ min: p.minuto ?? 0, odd: p.cuota })
+    }
+    return { minuto: live.minuto ?? 90, pts }
+  }, [esDemo, live])
+
+  // en http la gráfica existe si hay prepartido real completo (>=2 capturas en
+  // todas las selecciones) O serie en vivo real del mercado; si no, placeholder
   const defActivo = MARKET_DEFS.find((d) => d.key === cmk)!
-  const hayCurva = esDemo || defActivo.sels(m).every((sd) => (hist?.[cmk]?.[sd.k]?.length ?? 0) >= 2)
+  const histCompleto = defActivo.sels(m).every((sd) => (hist?.[cmk]?.[sd.k]?.length ?? 0) >= 2)
+  const hayCurva = esDemo || histCompleto || !!livePts?.pts[cmk]
 
   // memoizadas contra el tick de 1s del store (s.now): solo se reconstruyen
   // cuando cambia algo que de verdad afecta a las series
   const chart = useMemo(
-    () => (hayCurva ? buildChart(m, cmk, isLive, s.liveMin, s.marked, base, hist, !esDemo) : null),
-    [m, cmk, isLive, s.liveMin, s.marked, base, hist, hayCurva, esDemo],
+    () => (hayCurva ? buildChart(m, cmk, isLive, s.liveMin, s.marked, base, hist, !esDemo, livePts ?? undefined) : null),
+    [m, cmk, isLive, s.liveMin, s.marked, base, hist, hayCurva, esDemo, livePts],
   )
   const chartXfromOpen = isLive
     ? 'apertura → ' + s.liveMin + '’ en vivo'
-    : esDemo ? 'apertura → cierre prepartido' : 'apertura → última captura de la ingesta'
+    : livePts?.pts[cmk]
+      ? 'apertura → ' + (live?.minuto ?? '?') + '’ en vivo'
+      : esDemo ? 'apertura → cierre prepartido' : 'apertura → última captura de la ingesta'
 
   const marketCards = useMemo(() => MARKET_DEFS.map((def) => {
     const sels = def.sels(m).map((sd) => {
@@ -267,7 +281,7 @@ export function Cuotas({ store, m, isMobile }: Props) {
 
         {/* plot */}
         <div style={{ borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--line)', overflow: 'hidden', padding: 4 }}>
-          <ChartSvg chart={chart} liveMin={s.liveMin} />
+          <ChartSvg chart={chart} liveMin={esDemo ? s.liveMin : live?.minuto ?? 0} />
         </div>
       </section>
       )}

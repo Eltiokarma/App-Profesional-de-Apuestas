@@ -10,6 +10,12 @@ const baseOf = (base: BaseOddsTable | undefined, mk: string, selK: string) => ba
 export type HistOddsTable = Record<string, Record<string, number[]>>
 const histOf = (hist: HistOddsTable | undefined, mk: string, selK: string) => hist?.[mk]?.[selK]
 
+/** Serie EN VIVO real (contrato /fixtures/{id}/live): puntos por minuto del partido. */
+export interface LiveRealSerie {
+  minuto: number
+  pts: Record<string, Record<string, { min: number; odd: number }[]>>
+}
+
 export interface ChartLine {
   key: string
   label: string
@@ -63,28 +69,44 @@ export function buildChart(
   base?: BaseOddsTable,
   hist?: HistOddsTable,
   soloCapturas?: boolean, // true (http): el eje X son capturas reales de la ingesta, sin tiempos inventados
+  liveReal?: LiveRealSerie, // http + partido en juego: tramo en vivo con la serie REAL de odds_live
 ): Chart {
   const def = MARKET_DEFS.find((d) => d.key === mk)!
   const mId = m.id
   const sels = def.sels(m)
   const koFrac = 0.46
-  const series = sels.map((sd) => {
-    const S = seriesFor(m, mk, sd.k, baseOf(base, mk, sd.k), histOf(hist, mk, sd.k))
-    const PRE = S.pre.length
-    const pts: { t: number; odd: number }[] = []
-    for (let i = 0; i < PRE; i++) {
-      const t = isLive ? (i / (PRE - 1)) * koFrac : i / (PRE - 1)
-      pts.push({ t, odd: S.pre[i] })
-    }
-    if (isLive) {
-      const ci = Math.max(0, Math.min(S.IN - 1, Math.round((liveMin / 90) * (S.IN - 1))))
-      for (let i = 0; i <= ci; i++) {
-        const t = koFrac + (i / (S.IN - 1)) * (1 - koFrac)
-        pts.push({ t, odd: S.inp[i] })
-      }
-    }
-    return { sd, S, pts }
-  })
+  const series = liveReal
+    ? sels.flatMap((sd) => {
+        // solo datos reales: prepartido si hay >=2 capturas, en vivo si hay serie
+        const h = histOf(hist, mk, sd.k) ?? []
+        const lv = liveReal.pts[mk]?.[sd.k] ?? []
+        const pts: { t: number; odd: number }[] = []
+        if (h.length >= 2) h.forEach((odd, i) => pts.push({ t: (i / (h.length - 1)) * koFrac, odd }))
+        lv.forEach((p) => pts.push({ t: koFrac + (Math.min(p.min, 90) / 90) * (1 - koFrac), odd: p.odd }))
+        if (!pts.length) return []
+        const S: Series = {
+          open: h.length >= 2 ? h[0] : lv[0].odd,
+          pre: h, inp: [], base: pts[pts.length - 1].odd, IN: 0,
+        }
+        return [{ sd, S, pts }]
+      })
+    : sels.map((sd) => {
+        const S = seriesFor(m, mk, sd.k, baseOf(base, mk, sd.k), histOf(hist, mk, sd.k))
+        const PRE = S.pre.length
+        const pts: { t: number; odd: number }[] = []
+        for (let i = 0; i < PRE; i++) {
+          const t = isLive ? (i / (PRE - 1)) * koFrac : i / (PRE - 1)
+          pts.push({ t, odd: S.pre[i] })
+        }
+        if (isLive) {
+          const ci = Math.max(0, Math.min(S.IN - 1, Math.round((liveMin / 90) * (S.IN - 1))))
+          for (let i = 0; i <= ci; i++) {
+            const t = koFrac + (i / (S.IN - 1)) * (1 - koFrac)
+            pts.push({ t, odd: S.inp[i] })
+          }
+        }
+        return { sd, S, pts }
+      })
   let ymin = Infinity
   let ymax = -Infinity
   series.forEach((x) =>
@@ -144,7 +166,7 @@ export function buildChart(
     grid.push({ y: py(v).toFixed(1), label: v.toFixed(2) })
   }
   let xL: [number, string][]
-  if (isLive) {
+  if (isLive || liveReal) {
     xL = [
       [0, 'Apertura'],
       [koFrac, 'KO'],
@@ -171,16 +193,17 @@ export function buildChart(
     label,
     anchor: i === 0 ? 'start' : i === xL.length - 1 ? 'end' : 'middle',
   }))
-  const nowT = isLive ? koFrac + (Math.min(liveMin, 90) / 90) * (1 - koFrac) : null
+  const minutoNow = isLive ? liveMin : liveReal ? liveReal.minuto : null
+  const nowT = minutoNow != null ? koFrac + (Math.min(minutoNow, 90) / 90) * (1 - koFrac) : null
   return {
     lines,
     grid,
     xLabels,
     title: def.title,
     sub: def.sub,
-    showKO: isLive,
+    showKO: isLive || !!liveReal,
     koX: px(koFrac).toFixed(1),
-    showNow: isLive,
+    showNow: isLive || !!liveReal,
     nowX: nowT != null ? px(nowT).toFixed(1) : '0',
   }
 }
