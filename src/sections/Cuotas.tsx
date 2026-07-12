@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { FixtureLiveDTO } from '../api/types'
 import { CONFIG } from '../config'
 import { LINE_COLORS, MARKET_DEFS } from '../data'
@@ -7,7 +7,7 @@ import { buildChart, buildSpark, type LiveRealSerie } from '../lib/chart'
 import { curOddOf, seriesFor } from '../lib/odds'
 import { ChartSvg } from '../components/ChartSvg'
 import { matchView } from '../lib/view'
-import { loadCuotasBase, loadCuotasCasas, loadCuotasHistorial } from '../services/appdata'
+import { loadCuotasBase, loadCuotasCasas, loadCuotasHistorial, loadFuentesHistorial } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
@@ -29,11 +29,16 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
   const mv = matchView(m)
   const cmk = s.chartMarket || '1x2'
   const gridCuotasCards = isMobile ? '1fr' : '1fr 1fr 1fr'
+  // fuente del historial: null = media entre casas; o una casa de referencia
+  // (Bet365, Pinnacle…) con su curva cruda, que no se suaviza al promediar
+  const [fuente, setFuente] = useState<string | null>(null)
+  useEffect(() => setFuente(null), [m.id])
+  const fuentes = useAsync(() => loadFuentesHistorial(m.id), m.id)
   // cuotas base (/cuotas) + historial (/historial: tramo prepartido real con
-  // >=2 snapshots) + comparador por casa (/casas: dónde paga más)
+  // >=2 snapshots, de la fuente elegida) + comparador por casa (/casas)
   const cuotas = useAsync(
-    () => Promise.all([loadCuotasBase(m.id), loadCuotasHistorial(m.id), loadCuotasCasas(m.id)]),
-    m.id,
+    () => Promise.all([loadCuotasBase(m.id), loadCuotasHistorial(m.id, fuente), loadCuotasCasas(m.id)]),
+    m.id + '|' + (fuente ?? 'media'),
   )
   const base = cuotas.data?.[0] ?? undefined
   const hist = cuotas.data?.[1] ?? undefined
@@ -151,6 +156,27 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
 
   const markedCount = Object.keys(s.marked).filter((k) => k.indexOf(m.id + ':') === 0 && s.marked[k]).length
 
+  // chips MEDIA / casa de referencia: se pintan también en el placeholder para
+  // poder volver a la media si la casa elegida aún no tiene capturas
+  const fuentesList = fuentes.data ?? []
+  const fuenteChips = fuentesList.length > 0 ? (
+    <div style={{ display: 'flex', padding: 3, borderRadius: 8, background: 'var(--bg3)', border: '1px solid var(--line)' }}>
+      {[null, ...fuentesList].map((f) => {
+        const activa = fuente === f
+        return (
+          <button
+            key={f ?? 'media'}
+            onClick={() => setFuente(f)}
+            title={f ? 'Curva cruda de ' + f + ' (sin promediar)' : 'Media entre todas las casas capturadas'}
+            style={{ padding: '4px 10px', border: 0, borderRadius: 6, cursor: 'pointer', background: activa ? 'var(--accent-soft)' : 'transparent', color: activa ? 'var(--accent)' : 'var(--t3)', font: '600 10.5px var(--mono)', whiteSpace: 'nowrap' }}
+          >
+            {f ?? 'MEDIA'}
+          </button>
+        )
+      })}
+    </div>
+  ) : null
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -244,11 +270,12 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
       {/* BIG MOVEMENT CHART — o placeholder honesto si aún no hay capturas */}
       {!chart && (
         <section style={{ marginBottom: 14, padding: '26px 22px', borderRadius: 16, background: 'var(--bg2)', border: '1px dashed var(--line)', textAlign: 'center' }}>
-          <h3 style={{ margin: 0, font: '700 14px var(--sans)', color: 'var(--t2)' }}>{defActivo.title}: aún sin historial de movimiento</h3>
+          <h3 style={{ margin: 0, font: '700 14px var(--sans)', color: 'var(--t2)' }}>{defActivo.title}: aún sin historial de movimiento{fuente ? ' de ' + fuente : ''}</h3>
           <p style={{ margin: '7px auto 0', maxWidth: 520, font: '500 12px var(--sans)', color: 'var(--t3)' }}>
             La curva se dibuja solo con capturas reales de la ingesta (mínimo 2 por selección).
             Cada corrida suma un punto; las cuotas actuales de abajo sí son reales.
           </p>
+          {fuenteChips && <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>{fuenteChips}</div>}
         </section>
       )}
       {chart && (
@@ -258,7 +285,8 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
             <h3 style={{ margin: 0, font: '700 15px var(--sans)' }}>{chart.title}</h3>
             <span style={{ font: '500 11px var(--mono)', color: 'var(--t3)' }}>Movimiento de cuota · {chartXfromOpen}</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            {fuenteChips}
             <div style={{ display: 'flex', padding: 3, borderRadius: 8, background: 'var(--bg3)', border: '1px solid var(--line)' }}>
               {(['lineal', 'log'] as const).map((e2) => {
                 const activa = chart.escalaLog ? e2 === 'log' : e2 === 'lineal'
@@ -269,7 +297,7 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
                 )
               })}
             </div>
-            <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>media entre casas capturadas</span>
+            <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>{fuente ? 'cuota de ' + fuente : 'media entre casas capturadas'}</span>
           </div>
         </div>
 

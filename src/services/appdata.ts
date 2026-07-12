@@ -256,10 +256,10 @@ export async function loadCuotasCasas(matchId: string): Promise<OddsCasasTable> 
  *  a la deriva sintética de siempre. */
 export type OddsHistTable = Record<string, Record<string, number[]>>
 
-export async function loadCuotasHistorial(matchId: string): Promise<OddsHistTable> {
+export async function loadCuotasHistorial(matchId: string, casa?: string | null): Promise<OddsHistTable> {
   const out: OddsHistTable = {}
   try {
-    const rows = await getDataSource().cuotasHistorial(fixtureNum(matchId))
+    const rows = await getDataSource().cuotasHistorial(fixtureNum(matchId), casa)
     for (const r of rows) {
       const mk = (out[r.mercado] = out[r.mercado] ?? {})
       ;(mk[r.seleccion] = mk[r.seleccion] ?? []).push(r.cuota)
@@ -268,6 +268,15 @@ export async function loadCuotasHistorial(matchId: string): Promise<OddsHistTabl
     /* opcional para pintar: los errores reales ya los reporta /cuotas */
   }
   return out
+}
+
+/** Casas de referencia con historial propio para el fixture ([] si no hay). */
+export async function loadFuentesHistorial(matchId: string): Promise<string[]> {
+  try {
+    return await getDataSource().cuotasHistorialFuentes(fixtureNum(matchId))
+  } catch {
+    return [] // DB vieja o error: solo queda la media, sin chips extra
+  }
 }
 
 /** En vivo real (fase 3): marcador, minuto y cuotas en juego del backend. */

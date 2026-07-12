@@ -39,6 +39,14 @@ DIAS_ATRAS = 3
 DIAS_ADELANTE = 10
 DIAS_REFRESCO = 2  # NS que empiezan en <= N días: re-captura de cuotas para el historial
 
+# Casas cuyo movimiento se guarda INDIVIDUAL además de la media: la media es
+# el precio de mercado, pero amortigua los saltos; estas muestran el crudo.
+CASAS_REFERENCIA = {
+    c.strip().lower()
+    for c in os.environ.get("SAD_CASAS_REFERENCIA", "bet365,pinnacle,1xbet,betano").split(",")
+    if c.strip()
+}
+
 DDL_ODDS_HISTORY = """
 CREATE TABLE IF NOT EXISTS odds_history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,6 +61,17 @@ CREATE TABLE IF NOT EXISTS odds_history (
 );
 CREATE INDEX IF NOT EXISTS idx_oddshist_fixture ON odds_history(fixture_id, captured_at);
 """
+
+
+def preparar_historial(con: sqlite3.Connection) -> None:
+    """Crea odds_history si falta y migra DBs anteriores: las columnas casa_id/
+    casa distinguen filas por casa de referencia (NULL = media entre casas)."""
+    con.executescript(DDL_ODDS_HISTORY)
+    columnas = {fila[1] for fila in con.execute("PRAGMA table_info(odds_history)")}
+    if "casa_id" not in columnas:
+        con.execute("ALTER TABLE odds_history ADD COLUMN casa_id INTEGER")
+        con.execute("ALTER TABLE odds_history ADD COLUMN casa TEXT")
+        con.commit()
 # Fallbacks del plan free, vigentes solo hasta que la primera respuesta traiga
 # las cabeceras x-ratelimit-*: tope diario (100 − margen) y 10 req/min. Con
 # cabeceras, tope y ritmo se recalculan al plan real (Pro 7500/día · 300/min, etc.).
@@ -317,9 +336,11 @@ def guardar_odds(con: sqlite3.Connection, fixture_id: int, respuesta: list) -> i
     n = 0
     capturado = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
     medias: dict[tuple, list[float]] = {}
+    referencias: list[tuple] = []
     for item in respuesta:
         league_id = item.get("league", {}).get("id")
         for bk in item.get("bookmakers", []):
+            es_referencia = (bk.get("name") or "").strip().lower() in CASAS_REFERENCIA
             for bet in bk.get("bets", []):
                 for valor in bet.get("values", []):
                     try:
@@ -345,6 +366,9 @@ def guardar_odds(con: sqlite3.Connection, fixture_id: int, respuesta: list) -> i
                         medias.setdefault(
                             (league_id, bet.get("id"), bet.get("name"), valor.get("value")), []
                         ).append(odd)
+                        if es_referencia:
+                            referencias.append((league_id, bk.get("id"), bk.get("name"),
+                                                bet.get("id"), bet.get("name"), valor.get("value"), odd))
                     n += 1
     # snapshot para el historial de movimiento: media entre casas por selección
     for (liga, bet_id, bet_name, value), odds in medias.items():
@@ -353,6 +377,13 @@ def guardar_odds(con: sqlite3.Connection, fixture_id: int, respuesta: list) -> i
             "value, odd, casas, captured_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (fixture_id, liga, bet_id, bet_name, value,
              round(sum(odds) / len(odds), 3), len(odds), capturado),
+        )
+    # y el crudo de las casas de referencia (la media amortigua los saltos)
+    for (liga, casa_id, casa, bet_id, bet_name, value, odd) in referencias:
+        con.execute(
+            "INSERT INTO odds_history (fixture_id, league_id, bet_id, bet_name, "
+            "value, odd, casas, captured_at, casa_id, casa) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)",
+            (fixture_id, liga, bet_id, bet_name, value, odd, capturado, casa_id, casa),
         )
     con.commit()
     return n
@@ -511,7 +542,7 @@ def main() -> int:
     hasta = args.hasta or (hoy + timedelta(days=DIAS_ADELANTE)).strftime("%Y-%m-%d")
     con = sqlite3.connect(args.db)
     con.execute("PRAGMA busy_timeout=15000")  # convive con las lecturas del backend
-    con.executescript(DDL_ODDS_HISTORY)  # idempotente: prepara el historial en DBs viejas
+    preparar_historial(con)  # idempotente: crea/migra odds_history en DBs viejas
 
     if args.ventana_horas:
         pendientes = fixtures_proximos(con, args.ventana_horas)
