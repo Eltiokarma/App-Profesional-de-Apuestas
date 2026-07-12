@@ -546,6 +546,17 @@ def main() -> int:
             total += n
             print(f"  [{cliente.usadas}/{cliente.limite}] {nombre}: {n} fixtures")
         print(f"fixtures guardados: {total}")
+        # limpieza de zombis: NS de ligas fuera de la lista (p. ej. Friendlies
+        # de la carga inicial) jamás se actualizarán — se purgan; el historial
+        # terminado de cualquier liga se conserva (alimenta al motor)
+        marcas = ",".join("?" * len(LIGAS))
+        purga = con.execute(
+            f"DELETE FROM fixtures WHERE status_short='NS' AND league_id NOT IN ({marcas})",
+            tuple(LIGAS),
+        )
+        con.commit()
+        if purga.rowcount:
+            print(f"fixtures NS purgados (ligas sin mantenimiento): {purga.rowcount}")
 
     if args.solo != "fixtures":
         pendientes = fixtures_para_cuotas(con)
