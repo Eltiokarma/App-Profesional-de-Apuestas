@@ -181,6 +181,8 @@ def seed(base_dir: str):
         CREATE TABLE odds_live (id INTEGER PRIMARY KEY AUTOINCREMENT, fixture_id INTEGER NOT NULL,
             minuto INTEGER, bet_id INTEGER, bet_name TEXT, value TEXT, odd REAL,
             suspendida INTEGER DEFAULT 0, captured_at TEXT NOT NULL);
+        CREATE TABLE fixture_eventos (id INTEGER PRIMARY KEY AUTOINCREMENT, fixture_id INTEGER NOT NULL,
+            minuto INTEGER, tipo TEXT, detalle TEXT, equipo_id INTEGER, jugador TEXT);
     """)
     sad.executemany("INSERT INTO teams (id, name, country) VALUES (?,?, 'Spain')", TEAMS)
     sad.execute(
@@ -249,6 +251,18 @@ def seed(base_dir: str):
                 (vivo["id"], minuto, 36, "Over/Under Line", value,
                  round(base * (0.94 + rng.random() * 0.12), 2), 0, capt),
             )
+    # eventos del partido en juego (goles y tarjetas, con el catálogo crudo de la API)
+    sad.executemany(
+        "INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador) VALUES (?,?,?,?,?,?)",
+        [
+            (vivo["id"], 12, "Card", "Yellow Card", vivo["away"], "J. Pérez"),
+            (vivo["id"], 34, "Goal", "Normal Goal", vivo["home"], "L. García"),
+            (vivo["id"], 51, "Goal", "Penalty", vivo["away"], "M. Díaz"),
+            (vivo["id"], 60, "Card", "Second Yellow card", vivo["away"], "J. Pérez"),
+            (vivo["id"], 63, "subst", "Substitution 1", vivo["home"], "Suplente"),  # no debe servirse
+            (vivo["id"], 65, "Goal", "Missed Penalty", vivo["home"], "R. Falla"),   # tampoco
+        ],
+    )
     sad.commit()
     sad.close()
 

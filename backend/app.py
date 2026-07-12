@@ -856,6 +856,20 @@ def cuotas(fixture_id: int):
     ]
 
 
+# Mapeo de eventos crudos de API-Football → tipos del contrato
+def _tipo_evento(tipo: str, detalle: str):
+    t = (tipo or "").lower()
+    d = (detalle or "").lower()
+    if t == "goal":
+        return None if "missed" in d else "gol"
+    if t == "card":
+        if "second yellow" in d or "red" in d:
+            return "roja"
+        if "yellow" in d:
+            return "amarilla"
+    return None  # sustituciones, VAR, etc. no se sirven (por ahora)
+
+
 @app.get(API + "/fixtures/{fixture_id}/live")
 def fixture_live(fixture_id: int):
     """Estado en vivo real: marcador/minuto de fixtures (refrescados por la
@@ -889,6 +903,23 @@ def fixture_live(fixture_id: int):
             serie.append({"minuto": r["minuto"], **punto})
         if r["captured_at"] == ultima:
             cuotas.append({**punto, "suspendida": bool(r["suspendida"])})
+    try:
+        filas_ev = db.query(
+            "sad",
+            "SELECT minuto, tipo, detalle, equipo_id, jugador FROM fixture_eventos "
+            "WHERE fixture_id=? ORDER BY minuto, id",
+            (fixture_id,),
+        )
+    except Exception:
+        filas_ev = []
+    eventos = []
+    for e in filas_ev:
+        tipo = _tipo_evento(e["tipo"], e["detalle"])
+        if tipo:
+            eventos.append(
+                {"minuto": e["minuto"], "tipo": tipo, "equipoId": e["equipo_id"],
+                 "jugador": e["jugador"], "detalle": e["detalle"]}
+            )
     return {
         "fixtureId": fixture_id,
         "estado": estado_de(f["status_short"], f["status_long"]),
@@ -897,6 +928,7 @@ def fixture_live(fixture_id: int):
         "golesVisitante": f["goals_away"],
         "cuotas": cuotas,
         "serie": serie,
+        "eventos": eventos,
         "actualizadoEn": iso(ultima) if ultima else None,
     }
 

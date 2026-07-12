@@ -489,9 +489,19 @@ components:
         seleccion: { type: string }
         cuota: { type: number }
         actualizadoEn: { type: string, format: date-time }
+    EventoLive:
+      type: object
+      description: Evento del partido para anclar el movimiento de la gráfica (gol, tarjeta)
+      required: [minuto, tipo]
+      properties:
+        minuto: { type: integer, nullable: true }
+        tipo: { type: string, enum: [gol, amarilla, roja] }
+        equipoId: { type: integer, nullable: true }
+        jugador: { type: string, nullable: true }
+        detalle: { type: string, nullable: true, description: 'detalle crudo de la API (Penalty, Own Goal…)' }
     FixtureLive:
       type: object
-      required: [fixtureId, estado, minuto, golesLocal, golesVisitante, cuotas, serie, actualizadoEn]
+      required: [fixtureId, estado, minuto, golesLocal, golesVisitante, cuotas, serie, eventos, actualizadoEn]
       properties:
         fixtureId: { type: integer }
         estado: { $ref: '#/components/schemas/EstadoFixture' }
@@ -506,6 +516,10 @@ components:
           type: array
           description: Movimiento acumulado del partido, asc por captura (sin suspendidas)
           items: { $ref: '#/components/schemas/PuntoLive' }
+        eventos:
+          type: array
+          description: Goles y tarjetas del partido, asc por minuto (de la ingesta en vivo/cierre)
+          items: { $ref: '#/components/schemas/EventoLive' }
         actualizadoEn: { type: string, format: date-time, nullable: true, description: 'última captura live; null si nunca hubo' }
     CuotaLive:
       type: object

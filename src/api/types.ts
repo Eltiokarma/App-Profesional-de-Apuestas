@@ -239,6 +239,15 @@ export interface PuntoLiveDTO {
   cuota: number
 }
 
+/** Evento del partido (gol, tarjeta) para anclar el movimiento de la gráfica. */
+export interface EventoLiveDTO {
+  minuto: number | null
+  tipo: 'gol' | 'amarilla' | 'roja'
+  equipoId: number | null
+  jugador: string | null
+  detalle: string | null
+}
+
 /** Estado en vivo real del fixture (ingesta SAD_LIVE_SEGUNDOS). */
 export interface FixtureLiveDTO {
   fixtureId: number
@@ -248,6 +257,7 @@ export interface FixtureLiveDTO {
   golesVisitante: number | null
   cuotas: CuotaLiveDTO[]
   serie: PuntoLiveDTO[]
+  eventos: EventoLiveDTO[]
   /** null si la liga no tiene cobertura de odds live o la ingesta está apagada. */
   actualizadoEn: string | null
 }
