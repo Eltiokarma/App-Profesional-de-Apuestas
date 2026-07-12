@@ -29,7 +29,7 @@ from backend.ingesta.extractor import (
 )
 
 VENTANA_JUEGO_MIN = 210  # arrancó hace <= 3h30: cubre alargue, penales y pausas largas
-RETENCION_DIAS = 7
+RETENCION_DIAS = 30  # la curva en vivo de un partido terminado es material de estudio
 EN_JUEGO = ("1H", "HT", "2H", "ET", "BT", "P", "LIVE", "INT", "SUSP")
 
 DDL_ODDS_LIVE = """

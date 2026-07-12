@@ -79,7 +79,9 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
   const chartXfromOpen = isLive
     ? 'apertura → ' + s.liveMin + '’ en vivo'
     : livePts?.pts[cmk]
-      ? 'apertura → ' + (live?.minuto ?? '?') + '’ en vivo'
+      ? live?.estado === 'en_vivo'
+        ? 'apertura → ' + (live.minuto ?? '?') + '’ en vivo'
+        : 'apertura → final del partido'
       : esDemo ? 'apertura → cierre prepartido' : 'apertura → última captura de la ingesta'
 
   const marketCards = useMemo(() => MARKET_DEFS.map((def) => {
@@ -114,9 +116,10 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
     }
   }), [m, cmk, isLive, s.liveMin, s.marked, base, hist, esDemo])
 
-  // cuotas en juego reales del mercado activo (http + partido vivo + cobertura)
+  // cuotas en juego reales del mercado activo (http + partido vivo + cobertura);
+  // en partidos terminados no aplican — la serie queda solo en la gráfica
   const cuotasJuego = useMemo(() => {
-    if (!live || !live.cuotas.length) return []
+    if (!live || live.estado !== 'en_vivo' || !live.cuotas.length) return []
     const etiquetas = Object.fromEntries(defActivo.sels(m).map((sd) => [sd.k, sd.label]))
     return live.cuotas
       .filter((c2) => c2.mercado === cmk)
@@ -178,8 +181,8 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
         </div>
       )}
 
-      {/* EN DIRECTO REAL (http): marcador y minuto de la ingesta en vivo */}
-      {live && (
+      {/* EN DIRECTO REAL (http): solo mientras el partido está en juego */}
+      {live && live.estado === 'en_vivo' && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', marginBottom: 16, borderRadius: 12, background: 'var(--bg1)', border: '1px solid var(--line)', flexWrap: 'wrap' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 7, font: '700 11px var(--mono)', color: 'var(--down)', letterSpacing: '.6px' }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--down)', animation: 'sadpulse 1.1s infinite' }}></span>EN DIRECTO
