@@ -15,11 +15,13 @@ export function MobileHeader({ store, mv, phonePreview, liveBadge, liveMinute }:
   return (
     <header style={{ flexShrink: 0, background: 'var(--bg1)', borderBottom: '1px solid var(--line)', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 9, zIndex: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <img src="/quipu-badge.svg" alt="Quipu Analytics" width={30} height={30} style={{ display: 'block', borderRadius: 8, flexShrink: 0 }} />
-        <div style={{ lineHeight: 1.05, flex: 1 }}>
-          <div style={{ font: '800 13.5px var(--sans)', letterSpacing: '.2px' }}>Quipu Analytics</div>
-          <div style={{ font: '500 9px var(--mono)', color: 'var(--t3)' }}>ANÁLISIS PRE-PARTIDO</div>
-        </div>
+        <button onClick={store.go('partidos')} title="Ir a Partidos" style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, background: 'transparent', border: 0, cursor: 'pointer', textAlign: 'left', padding: 0 }}>
+          <img src="/quipu-badge.svg" alt="Quipu Analytics" width={30} height={30} style={{ display: 'block', borderRadius: 8, flexShrink: 0 }} />
+          <div style={{ lineHeight: 1.05, flex: 1 }}>
+            <div style={{ font: '800 13.5px var(--sans)', letterSpacing: '.2px', color: 'var(--t1)' }}>Quipu Analytics</div>
+            <div style={{ font: '500 9px var(--mono)', color: 'var(--t3)' }}>ANÁLISIS PRE-PARTIDO</div>
+          </div>
+        </button>
         {phonePreview && (
           <button onClick={store.toggleMobile} title="Salir de vista móvil" style={{ width: 34, height: 34, borderRadius: 9, border: '1px solid var(--line)', background: 'var(--bg2)', color: 'var(--t2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="13" rx="2" /><path d="M8 21h8M12 17v4" /></svg>

@@ -21,13 +21,13 @@ export function Sidebar({ store }: { store: SadStore }) {
 
   return (
     <aside style={{ width: 228, flexShrink: 0, background: 'var(--bg1)', borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column', padding: '18px 14px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '4px 8px 20px' }}>
+      <button onClick={store.go('partidos')} title="Ir a Partidos" style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '4px 8px 20px', background: 'transparent', border: 0, cursor: 'pointer', textAlign: 'left', width: '100%' }}>
         <img src="/quipu-badge.svg" alt="Quipu Analytics" width={36} height={36} style={{ display: 'block', borderRadius: 9, flexShrink: 0 }} />
         <div style={{ lineHeight: 1.05 }}>
-          <div style={{ font: '800 15px var(--sans)', letterSpacing: '.2px' }}>Quipu Analytics</div>
+          <div style={{ font: '800 15px var(--sans)', letterSpacing: '.2px', color: 'var(--t1)' }}>Quipu Analytics</div>
           <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px', marginTop: 2 }}>ANÁLISIS PRE-PARTIDO</div>
         </div>
-      </div>
+      </button>
 
       <div style={{ font: '600 10px var(--mono)', color: 'var(--t3)', letterSpacing: '1px', padding: '6px 10px 8px' }}>MÓDULOS</div>
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
