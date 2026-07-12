@@ -55,13 +55,18 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
     return norm(H?.name ?? '').includes(t) || norm(A?.name ?? '').includes(t)
   })
 
-  const grupos: { comp: string; ligaId?: number; img?: string | null; rows: Match[] }[] = []
+  // agrupado por ID de liga, no por nombre: la API llama "Copa de la Liga"
+  // tanto a la de Perú como a la de Chile y por nombre se mezclaban
+  const grupos: { comp: string; pais: string | null; ligaId?: number; img?: string | null; rows: Match[] }[] = []
   for (const m of visibles) {
-    const g = grupos.find((x) => x.comp === m.comp)
+    const g = grupos.find((x) => (x.ligaId != null && m.ligaId != null ? x.ligaId === m.ligaId : x.comp === m.comp))
     if (g) g.rows.push(m)
     // bandera del país; en copas internacionales (sin bandera) cae al logo del torneo
-    else grupos.push({ comp: m.comp, ligaId: m.ligaId, img: m.ligaBandera ?? m.ligaLogo, rows: [m] })
+    else grupos.push({ comp: m.comp, pais: m.ligaPais ?? null, ligaId: m.ligaId, img: m.ligaBandera ?? m.ligaLogo, rows: [m] })
   }
+  // torneos homónimos de países distintos: se distinguen con " · País"
+  const repetidos = new Set(grupos.filter((g) => grupos.some((o) => o !== g && o.comp === g.comp)).map((g) => g.comp))
+  for (const g of grupos) if (repetidos.has(g.comp) && g.pais) g.comp = `${g.comp} · ${g.pais}`
 
   const chips: { k: Filtro; label: string }[] = [
     { k: 'todos', label: 'Todos' },
@@ -152,7 +157,7 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
 
       {!loading &&
         grupos.map((grp) => (
-          <section key={grp.comp} style={{ marginBottom: 16 }}>
+          <section key={grp.ligaId ?? grp.comp} style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 2px 8px' }}>
               <span style={{ width: 5, height: 15, borderRadius: 2, background: 'var(--accent)' }}></span>
               {grp.ligaId != null ? (

@@ -237,6 +237,7 @@ class MockDataSource implements SadDataSource {
           golesVisitante: m.status === 'sched' ? null : goles[1],
           ligaLogo: LIGA_META[LIGA_NUM[m.lk] ?? 0]?.logo ?? null,
           ligaBandera: LIGA_META[LIGA_NUM[m.lk] ?? 0]?.bandera ?? null,
+          ligaPais: LIGA_META[LIGA_NUM[m.lk] ?? 0]?.pais ?? null,
         }
       })
       .filter((f) => !params.desde || f.fecha >= new Date(params.desde + 'T00:00:00').toISOString())

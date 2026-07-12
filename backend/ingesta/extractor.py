@@ -93,7 +93,9 @@ LIGAS = {
     265: "Chile - Primera División",
     281: "Perú - Primera División",
     1232: "Perú - Copa de la Liga",
-    1220: "Chile - Copa Chile",
+    1220: "Chile - Copa de la Liga",  # la API la llama igual que la peruana
+    # Amistosos internacionales de clubes (pretemporada, giras)
+    667: "Amistosos de Clubes",
     268: "Uruguay - Primera División",
     242: "Ecuador - Liga Pro",
     # México

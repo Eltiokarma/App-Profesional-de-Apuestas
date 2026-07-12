@@ -51,6 +51,7 @@ def main():
     check("fecha ISO con T", "T" in vivo["fecha"], vivo["fecha"])
     check("liga por nombre", vivo["liga"] == "LaLiga", vivo["liga"])
     check("fixture trae bandera y logo de la liga", vivo["ligaBandera"] and vivo["ligaLogo"], {k: vivo[k] for k in ("ligaBandera", "ligaLogo")})
+    check("fixture trae ligaPais (desambigua torneos homónimos)", vivo["ligaPais"] == "Spain", vivo.get("ligaPais"))
     ucl = next(f for f in fx if f["ligaId"] == 2)
     check("copa internacional: ligaBandera null pero ligaLogo presente", ucl["ligaBandera"] is None and ucl["ligaLogo"], ucl["liga"])
     # filtro estado en SQL: se aplica antes del LIMIT (con limit=1 debe encontrar igual)

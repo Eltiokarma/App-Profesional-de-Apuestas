@@ -105,6 +105,7 @@ export function fixtureToMatch(f: FixtureDTO): Match {
     ligaId: f.ligaId,
     ligaLogo: f.ligaLogo ?? null,
     ligaBandera: f.ligaBandera ?? null,
+    ligaPais: f.ligaPais ?? null,
     // finalizado sin goles = walkover/adjudicado (AWD/WO): no inventar un 0-0
     score: f.golesLocal == null || f.golesVisitante == null ? (fin ? '—' : '0 - 0') : `${f.golesLocal} - ${f.golesVisitante}`,
     status: live ? 'live' : fin ? 'fin' : 'sched',

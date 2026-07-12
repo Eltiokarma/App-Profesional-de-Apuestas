@@ -278,6 +278,7 @@ components:
         golesVisitante: { type: integer, nullable: true }
         ligaLogo: { type: string, nullable: true, description: 'URL del logo del torneo (leagues.logo)' }
         ligaBandera: { type: string, nullable: true, description: 'URL de la bandera del país (leagues.flag; null en copas internacionales)' }
+        ligaPais: { type: string, nullable: true, description: 'país del torneo (leagues.country): desambigua torneos homónimos, p. ej. la Copa de la Liga de Perú y la de Chile' }
     Liga:
       type: object
       required: [id, nombre]

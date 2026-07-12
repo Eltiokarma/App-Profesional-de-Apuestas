@@ -39,6 +39,8 @@ export interface FixtureDTO {
   ligaLogo?: string | null
   /** URL de la bandera del país (leagues.flag; null en copas internacionales). */
   ligaBandera?: string | null
+  /** País del torneo: desambigua homónimos (Copa de la Liga de Perú vs Chile). */
+  ligaPais?: string | null
 }
 
 /** Metadatos de una liga (GET /ligas/{ligaId}). */
