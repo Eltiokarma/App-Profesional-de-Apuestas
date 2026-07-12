@@ -35,6 +35,8 @@ export interface Match {
   ligaLogo?: string | null
   /** URL de la bandera del país (null en copas internacionales). */
   ligaBandera?: string | null
+  /** País del torneo: desambigua homónimos (Copa de la Liga de Perú vs Chile). */
+  ligaPais?: string | null
   score: string
   status: MatchStatus
   min: string

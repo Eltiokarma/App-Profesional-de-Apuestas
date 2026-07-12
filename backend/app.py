@@ -296,6 +296,8 @@ def fixture_dto(f) -> dict:
         "golesVisitante": f["goals_away"] if estado != "programado" else None,
         "ligaLogo": liga["logo"],
         "ligaBandera": liga["bandera"],
+        # desambigua torneos homónimos (Copa de la Liga de Perú vs la de Chile)
+        "ligaPais": liga["pais"],
     }
 
 
