@@ -216,6 +216,12 @@ def seed(base_dir: str):
                         (f["id"], LEAGUE_ID, bid, bname, bet_id, bet_name, value,
                          round(base * (0.94 + rng.random() * 0.12), 2)),
                     )
+            # trampa: la API sirve los MISMOS mercados en versión 1er tiempo;
+            # si cuota_key los deja pasar, /cuotas y /casas mezclan valores
+            sad.execute(
+                "INSERT INTO odds (fixture_id, league_id, bookmaker_id, bookmaker_name, bet_id, bet_name, value, odd) VALUES (?,?,?,?,?,?,?,?)",
+                (f["id"], LEAGUE_ID, bid, bname, 6, "Goals Over/Under First Half", "Over 2.5", 9.99),
+            )
     # historial de snapshots prepartido (fase 1 de tiempo real): 3 capturas por
     # fixture con odds, derivando hacia la cuota base — como odds_history real
     for f in fixtures[-12:]:
@@ -238,6 +244,13 @@ def seed(base_dir: str):
                             (f["id"], LEAGUE_ID, bet_id, bet_name, value,
                              round(odd * (0.96 + rng.random() * 0.08), 2), capt, bid, bname),
                         )
+                    # trampa por captura: el mismo mercado en versión 1er
+                    # tiempo — sin filtro en cuota_key produce el zigzag
+                    if bet_name == "Goals Over/Under":
+                        sad.execute(
+                            "INSERT INTO odds_history (fixture_id, league_id, bet_id, bet_name, value, odd, casas, captured_at) VALUES (?,?,?,?,?,?,?,?)",
+                            (f["id"], LEAGUE_ID, 6, "Goals Over/Under First Half", value, 9.99, len(BOOKMAKERS), capt),
+                        )
     # cuotas EN VIVO (fase 3): serie de capturas por minuto para el partido en
     # juego, con el catálogo de /odds/live ("Fulltime Result") y una suspendida
     vivo = next(f for f in fixtures if f["status_short"] == "2H")
@@ -258,6 +271,11 @@ def seed(base_dir: str):
                 (vivo["id"], minuto, 36, "Over/Under Line", value,
                  round(base * (0.94 + rng.random() * 0.12), 2), 0, capt),
             )
+        # trampa live: el feed también trae mercados de 1er tiempo
+        sad.execute(
+            "INSERT INTO odds_live (fixture_id, minuto, bet_id, bet_name, value, odd, suspendida, captured_at) VALUES (?,?,?,?,?,?,?,?)",
+            (vivo["id"], minuto, 13, "First Half Winner", "Home", 9.99, 0, capt),
+        )
     # eventos del partido en juego (goles y tarjetas, con el catálogo crudo de la API)
     sad.executemany(
         "INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador) VALUES (?,?,?,?,?,?)",

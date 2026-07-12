@@ -555,10 +555,20 @@ def niveles_de(team_id: int, limit: int, hasta: str | None = None) -> list[dict]
     return out
 
 
-# Mapeo bet_name/value de API-Football → mercados del contrato
+# Mapeo bet_name/value de API-Football → mercados del contrato.
+# El catálogo trae los MISMOS mercados en versión 1er/2º tiempo, córners,
+# tarjetas o prórroga ("Goals Over/Under First Half", "Asian Handicap First
+# Half"…): si se cuelan bajo la misma clave, la serie alterna partido
+# completo / medio tiempo en cada captura y la gráfica zigzaguea. Aquí solo
+# pasan mercados del partido completo.
+_BETS_FUERA = ("half", "1st", "2nd", "first", "second", "corner", "card", "extra", "period", "halftime")
+
+
 def cuota_key(bet_name: str, value: str):
     b = (bet_name or "").lower()
     v = (value or "").strip()
+    if any(t in b for t in _BETS_FUERA):
+        return None
     # "fulltime result": nombre del 1X2 en el catálogo de /odds/live
     if "match winner" in b or "fulltime result" in b or b == "1x2":
         return {"Home": ("1x2", "1"), "Draw": ("1x2", "X"), "Away": ("1x2", "2"),

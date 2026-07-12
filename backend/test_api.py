@@ -220,6 +220,15 @@ def main():
           [r["cuota"] for r in hb] != [r["cuota"] for r in h])
     check("fuentes de fixture sin historial → []", c.get(A + "/cuotas/900001/historial/fuentes").json() == [])
 
+    # mercados de 1er tiempo (trampas del seed, cuota 9.99): si cuota_key los
+    # dejara pasar, la serie alternaría partido/medio tiempo (zigzag)
+    check("1er tiempo fuera de /cuotas", all(r["cuota"] != 9.99 for r in q))
+    check("1er tiempo fuera de /casas", all(r["cuota"] != 9.99 for r in cc))
+    check("1er tiempo fuera del historial (media y por casa)",
+          all(r["cuota"] != 9.99 for r in h + hb))
+    check("1er tiempo fuera del live (cuotas y serie)",
+          all(p["cuota"] != 9.99 for p in lv["cuotas"] + lv["serie"]))
+
     # cuotas prepartido guardadas en partidos PASADOS
     pasados = [f for f in fx if f["estado"] == "finalizado"]
     con_odds = [f for f in pasados if c.get(A + f"/cuotas/{f['id']}").json()]
