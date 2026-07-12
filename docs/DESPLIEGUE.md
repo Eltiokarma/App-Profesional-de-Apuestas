@@ -35,6 +35,7 @@ en subproceso. El backend HTTP sigue siendo de solo lectura.
    | `SAD_REFRESCO_MIN` | `30` | fase 2: cada N min refresca cuotas de NS que empiezan en <6 h (0 requests si no hay); vacía = apagado |
    | `SAD_LIVE_SEGUNDOS` | `60` | fase 3: ciclo en vivo (marcador/minuto + odds live) mientras haya partidos en juego; vacía = apagado |
    | `SAD_LIGAS_EXTRA` | `414:Copa Chile,999:Copa de la Liga Perú` | torneos extra sin tocar código; IDs con `--buscar` |
+   | `SAD_CASAS_REFERENCIA` | `bet365,pinnacle,1xbet,betano` | casas cuyo historial crudo se guarda aparte (selector Media/casa en la gráfica); ese es el default — solo definirla para cambiar la lista |
    | `SAD_BOOTSTRAP_URL` | *(URL del zip, solo la primera vez)* | ver carga inicial |
 
    Para descubrir el ID de un torneo nuevo (p. ej. una copa recién creada),

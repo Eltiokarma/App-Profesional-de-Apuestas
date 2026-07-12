@@ -965,19 +965,54 @@ def cuotas_casas(fixture_id: int):
     return out
 
 
-@app.get(API + "/cuotas/{fixture_id}/historial")
-def cuotas_historial(fixture_id: int):
-    """Snapshots prepartido de odds_history (asc por captura). [] si la DB
-    aún no tiene la tabla (anterior a la fase 1 de tiempo real)."""
+@app.get(API + "/cuotas/{fixture_id}/historial/fuentes")
+def cuotas_historial_fuentes(fixture_id: int):
+    """Casas de referencia con historial propio para este fixture (además de
+    la media). [] en DBs anteriores a la migración."""
     try:
         rows = db.query(
             "sad",
-            "SELECT bet_name, value, odd, casas, captured_at FROM odds_history "
-            "WHERE fixture_id=? AND odd IS NOT NULL ORDER BY captured_at, bet_name, value",
+            "SELECT DISTINCT casa FROM odds_history WHERE fixture_id=? AND casa IS NOT NULL ORDER BY casa",
             (fixture_id,),
         )
+        return [r["casa"] for r in rows]
     except Exception:
         return []
+
+
+@app.get(API + "/cuotas/{fixture_id}/historial")
+def cuotas_historial(fixture_id: int, casa: str | None = None):
+    """Snapshots prepartido de odds_history (asc por captura). Sin `casa`:
+    la media entre casas; con `casa`: el movimiento crudo de esa casa de
+    referencia. [] si la DB aún no tiene la tabla."""
+    try:
+        if casa:
+            rows = db.query(
+                "sad",
+                "SELECT bet_name, value, odd, casas, captured_at FROM odds_history "
+                "WHERE fixture_id=? AND lower(casa)=lower(?) AND odd IS NOT NULL "
+                "ORDER BY captured_at, bet_name, value",
+                (fixture_id, casa),
+            )
+        else:
+            rows = db.query(
+                "sad",
+                "SELECT bet_name, value, odd, casas, captured_at FROM odds_history "
+                "WHERE fixture_id=? AND casa_id IS NULL AND odd IS NOT NULL "
+                "ORDER BY captured_at, bet_name, value",
+                (fixture_id,),
+            )
+    except Exception:
+        # DB anterior a la migración (sin columna casa): todo es media
+        try:
+            rows = db.query(
+                "sad",
+                "SELECT bet_name, value, odd, casas, captured_at FROM odds_history "
+                "WHERE fixture_id=? AND odd IS NOT NULL ORDER BY captured_at, bet_name, value",
+                (fixture_id,),
+            ) if not casa else []
+        except Exception:
+            return []
     out = []
     for r in rows:
         key = cuota_key(r["bet_name"], r["value"])

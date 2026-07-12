@@ -55,9 +55,14 @@ export const SadApi = {
   /** Cuota de cada casa por selección, la mejor marcada (orden cuota desc). */
   cuotasCasas: (fixtureId: number) => apiGet<CuotaCasaDTO[]>(`/cuotas/${fixtureId}/casas`),
 
-  /** Historial de snapshots prepartido (asc por captura; [] si aún no hay). */
-  cuotasHistorial: (fixtureId: number) =>
-    apiGet<CuotaSnapshotDTO[]>(`/cuotas/${fixtureId}/historial`),
+  /** Historial de snapshots prepartido (asc por captura; [] si aún no hay).
+   *  Sin `casa`: media entre casas; con `casa`: el crudo de esa referencia. */
+  cuotasHistorial: (fixtureId: number, casa?: string | null) =>
+    apiGet<CuotaSnapshotDTO[]>(`/cuotas/${fixtureId}/historial` + qs({ casa: casa ?? undefined })),
+
+  /** Casas de referencia con historial propio para el fixture. */
+  cuotasHistorialFuentes: (fixtureId: number) =>
+    apiGet<string[]>(`/cuotas/${fixtureId}/historial/fuentes`),
 
   equipoStats: (equipoId: number) => apiGet<EquipoStatsDTO>(`/equipos/${equipoId}/stats`),
 

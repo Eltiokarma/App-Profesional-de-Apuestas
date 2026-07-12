@@ -72,8 +72,11 @@ export interface SadDataSource {
   cuotas(fixtureId: number): Promise<CuotaDTO[]>
   /** Cuota de cada casa por selección, la mejor marcada (orden cuota desc). */
   cuotasCasas(fixtureId: number): Promise<CuotaCasaDTO[]>
-  /** Snapshots prepartido de la ingesta (asc por captura; [] si aún no hay). */
-  cuotasHistorial(fixtureId: number): Promise<CuotaSnapshotDTO[]>
+  /** Snapshots prepartido de la ingesta (asc por captura; [] si aún no hay).
+   *  Sin `casa`: media; con `casa`: el crudo de esa casa de referencia. */
+  cuotasHistorial(fixtureId: number, casa?: string | null): Promise<CuotaSnapshotDTO[]>
+  /** Casas de referencia con historial propio para el fixture. */
+  cuotasHistorialFuentes(fixtureId: number): Promise<string[]>
   equipoStats(equipoId: number): Promise<EquipoStatsDTO>
   liga(ligaId: number): Promise<LigaDTO>
   standings(ligaId: number, temporada?: number): Promise<StandingRowDTO[]>
@@ -369,9 +372,14 @@ class MockDataSource implements SadDataSource {
     return out
   }
 
-  async cuotasHistorial(fixtureId: number): Promise<CuotaSnapshotDTO[]> {
+  async cuotasHistorialFuentes(): Promise<string[]> {
+    return ['1xBet', 'Bet365', 'Betano', 'Pinnacle']
+  }
+
+  async cuotasHistorial(fixtureId: number, casa?: string | null): Promise<CuotaSnapshotDTO[]> {
     // Demo: 6 snapshots deterministas que derivan hacia la cuota base — misma
-    // forma que servirá el backend real desde odds_history.
+    // forma que servirá el backend real desde odds_history. Con `casa`, otra
+    // semilla: cada fuente tiene su propio movimiento.
     const m = MATCHES.find((x) => FIXTURE_NUM(x.id) === fixtureId)
     if (!m) return []
     const table = oddsFor(m.id)
@@ -381,7 +389,7 @@ class MockDataSource implements SadDataSource {
     for (const def of MARKET_DEFS) {
       for (const k in table[def.key]) {
         const base = table[def.key][k]
-        const r = rng(m.id + '|' + def.key + '|' + k + '|hist')
+        const r = rng(m.id + '|' + def.key + '|' + k + '|hist' + (casa ? '|' + casa : ''))
         const inicio = base * (0.92 + r() * 0.16)
         for (let i = 0; i < N; i++) {
           const f = i / (N - 1)
@@ -476,7 +484,8 @@ class HttpDataSource implements SadDataSource {
   analisisPrepartido = (fixtureId: number) => SadApi.analisisPrepartido(fixtureId)
   cuotas = (fixtureId: number) => SadApi.cuotas(fixtureId)
   cuotasCasas = (fixtureId: number) => SadApi.cuotasCasas(fixtureId)
-  cuotasHistorial = (fixtureId: number) => SadApi.cuotasHistorial(fixtureId)
+  cuotasHistorial = (fixtureId: number, casa?: string | null) => SadApi.cuotasHistorial(fixtureId, casa)
+  cuotasHistorialFuentes = (fixtureId: number) => SadApi.cuotasHistorialFuentes(fixtureId)
   equipoStats = (equipoId: number) => SadApi.equipoStats(equipoId)
   liga = (ligaId: number) => SadApi.liga(ligaId)
   standings = (ligaId: number, temporada?: number) => SadApi.standings(ligaId, temporada)

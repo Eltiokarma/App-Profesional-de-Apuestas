@@ -177,7 +177,7 @@ def seed(base_dir: str):
             bookmaker_id INTEGER, bookmaker_name TEXT, bet_id INTEGER, bet_name TEXT, value TEXT, odd REAL);
         CREATE TABLE odds_history (id INTEGER PRIMARY KEY AUTOINCREMENT, fixture_id INTEGER NOT NULL,
             league_id INTEGER, bet_id INTEGER, bet_name TEXT, value TEXT, odd REAL, casas INTEGER,
-            captured_at TEXT NOT NULL);
+            captured_at TEXT NOT NULL, casa_id INTEGER, casa TEXT);
         CREATE TABLE odds_live (id INTEGER PRIMARY KEY AUTOINCREMENT, fixture_id INTEGER NOT NULL,
             minuto INTEGER, bet_id INTEGER, bet_name TEXT, value TEXT, odd REAL,
             suspendida INTEGER DEFAULT 0, captured_at TEXT NOT NULL);
@@ -225,12 +225,19 @@ def seed(base_dir: str):
                 inicio = base * (0.92 + rng.random() * 0.16)
                 for i in range(3):
                     frac = i / 2
+                    capt = (f["date"] - timedelta(hours=36 - 12 * i)).strftime("%Y-%m-%d %H:%M:%S")
                     odd = base if i == 2 else inicio * (1 - frac) + base * frac + (rng.random() - 0.5) * 0.04 * base
                     sad.execute(
                         "INSERT INTO odds_history (fixture_id, league_id, bet_id, bet_name, value, odd, casas, captured_at) VALUES (?,?,?,?,?,?,?,?)",
-                        (f["id"], LEAGUE_ID, bet_id, bet_name, value, round(odd, 3), len(BOOKMAKERS),
-                         (f["date"] - timedelta(hours=36 - 12 * i)).strftime("%Y-%m-%d %H:%M:%S")),
+                        (f["id"], LEAGUE_ID, bet_id, bet_name, value, round(odd, 3), len(BOOKMAKERS), capt),
                     )
+                    # crudo por casa de referencia (mismo instante, dispersión propia)
+                    for bid, bname in BOOKMAKERS:
+                        sad.execute(
+                            "INSERT INTO odds_history (fixture_id, league_id, bet_id, bet_name, value, odd, casas, captured_at, casa_id, casa) VALUES (?,?,?,?,?,?,1,?,?,?)",
+                            (f["id"], LEAGUE_ID, bet_id, bet_name, value,
+                             round(odd * (0.96 + rng.random() * 0.08), 2), capt, bid, bname),
+                        )
     # cuotas EN VIVO (fase 3): serie de capturas por minuto para el partido en
     # juego, con el catálogo de /odds/live ("Fulltime Result") y una suspendida
     vivo = next(f for f in fixtures if f["status_short"] == "2H")

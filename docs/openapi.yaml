@@ -207,15 +207,29 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: '#/components/schemas/CuotaCasa' } }
+  /cuotas/{fixtureId}/historial/fuentes:
+    get:
+      summary: Casas de referencia con historial propio para el fixture
+      description: Nombres de casas (SAD_CASAS_REFERENCIA) con snapshots individuales, además de la media.
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { type: string } }
   /cuotas/{fixtureId}/historial:
     get:
       summary: Historial de cuotas prepartido (snapshots de cada corrida de ingesta, asc por captura)
       description: >
         Cada corrida de la ingesta guarda en odds_history la media entre casas por
-        mercado/selección. Vacío si el fixture aún no tiene snapshots (o si la DB
-        es anterior a la fase 1 de extracción en tiempo real).
+        mercado/selección, y el crudo de las casas de referencia. Sin `casa` se
+        sirve la media; con `casa` el movimiento de esa casa. Vacío si el fixture
+        aún no tiene snapshots.
       parameters:
         - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+        - { name: casa, in: query, schema: { type: string, description: 'nombre de la casa de referencia (default: media)' } }
       responses:
         '200':
           description: OK

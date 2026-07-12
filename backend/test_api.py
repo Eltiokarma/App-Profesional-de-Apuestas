@@ -211,6 +211,15 @@ def main():
     hsin = c.get(A + "/cuotas/900001/historial").json()
     check("historial de fixture sin odds → lista vacía", hsin == [], hsin)
 
+    # historial por casa de referencia
+    fu = c.get(A + f"/cuotas/{vivo['id']}/historial/fuentes").json()
+    check("fuentes del historial: las 3 casas del seed", fu == ["1xBet", "Bet365", "Pinnacle"], fu)
+    hb = c.get(A + f"/cuotas/{vivo['id']}/historial?casa=bet365").json()
+    check("historial?casa= (case-insensitive): 36 puntos propios", len(hb) == 36, len(hb))
+    check("historial por casa distinto de la media",
+          [r["cuota"] for r in hb] != [r["cuota"] for r in h])
+    check("fuentes de fixture sin historial → []", c.get(A + "/cuotas/900001/historial/fuentes").json() == [])
+
     # cuotas prepartido guardadas en partidos PASADOS
     pasados = [f for f in fx if f["estado"] == "finalizado"]
     con_odds = [f for f in pasados if c.get(A + f"/cuotas/{f['id']}").json()]
