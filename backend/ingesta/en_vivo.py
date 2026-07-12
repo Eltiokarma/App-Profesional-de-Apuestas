@@ -45,6 +45,17 @@ CREATE TABLE IF NOT EXISTS odds_live (
     captured_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_oddslive_fixture ON odds_live(fixture_id, captured_at);
+
+CREATE TABLE IF NOT EXISTS fixture_eventos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fixture_id INTEGER NOT NULL,
+    minuto INTEGER,
+    tipo TEXT,
+    detalle TEXT,
+    equipo_id INTEGER,
+    jugador TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_eventos_fixture ON fixture_eventos(fixture_id);
 """
 
 
@@ -75,6 +86,29 @@ def fixtures_marcados_en_juego(con: sqlite3.Connection) -> set[int]:
         fila[0]
         for fila in con.execute(f"SELECT id FROM fixtures WHERE status_short IN ({marcas})", EN_JUEGO)
     }
+
+
+def guardar_eventos(con: sqlite3.Connection, item: dict) -> int:
+    """Eventos del partido (goles, tarjetas…) que traen /fixtures?live= y
+    /fixtures?ids=. El feed devuelve la lista completa en cada ciclo, así que
+    se reemplaza entera (idempotente)."""
+    fid = item.get("fixture", {}).get("id")
+    eventos = item.get("events") or []
+    if not fid or not eventos:
+        return 0
+    con.execute("DELETE FROM fixture_eventos WHERE fixture_id=?", (fid,))
+    n = 0
+    for ev in eventos:
+        t = ev.get("time") or {}
+        minuto = (t.get("elapsed") or 0) + (t.get("extra") or 0)
+        con.execute(
+            "INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (fid, minuto, ev.get("type"), ev.get("detail"),
+             (ev.get("team") or {}).get("id"), (ev.get("player") or {}).get("name")),
+        )
+        n += 1
+    return n
 
 
 def guardar_odds_live(con: sqlite3.Connection, item: dict, capturado: str) -> int:
@@ -138,6 +172,8 @@ def main() -> int:
         or item.get("league", {}).get("id") in LIGAS
     ]
     n_fix = guardar_fixtures(con, vivos)
+    n_ev = sum(guardar_eventos(con, item) for item in vivos)
+    con.commit()
     ids_vivos = {item["fixture"]["id"] for item in vivos if item.get("fixture", {}).get("id")}
     print(f"en juego: {len(ids_vivos)} fixtures nuestros (candidatos locales: {len(candidatos)})")
 
@@ -169,7 +205,10 @@ def main() -> int:
         if not cliente.quedan():
             break
         data = cliente.get("fixtures", {"ids": "-".join(map(str, terminados[i:i + 20]))})
-        n_fin += guardar_fixtures(con, (data or {}).get("response", []))
+        cerrados = (data or {}).get("response", [])
+        n_fin += guardar_fixtures(con, cerrados)
+        n_ev += sum(guardar_eventos(con, item) for item in cerrados)  # eventos finales del partido
+        con.commit()
     if terminados:
         print(f"cerrados (salieron del feed live): {n_fin} de {len(terminados)}")
 
@@ -177,8 +216,8 @@ def main() -> int:
     borradas = con.execute("DELETE FROM odds_live WHERE captured_at < ?", (corte,)).rowcount
     con.commit()
     con.close()
-    print(f"fixtures actualizados: {n_fix} · cuotas live: {n_odds} · purgadas: {borradas} "
-          f"· requests usadas: {cliente.usadas}/{cliente.limite}")
+    print(f"fixtures actualizados: {n_fix} · cuotas live: {n_odds} · eventos: {n_ev} "
+          f"· purgadas: {borradas} · requests usadas: {cliente.usadas}/{cliente.limite}")
     return 0
 
 

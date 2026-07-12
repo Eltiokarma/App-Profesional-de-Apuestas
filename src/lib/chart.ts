@@ -14,6 +14,14 @@ const histOf = (hist: HistOddsTable | undefined, mk: string, selK: string) => hi
 export interface LiveRealSerie {
   minuto: number
   pts: Record<string, Record<string, { min: number; odd: number }[]>>
+  /** Goles y tarjetas para anclar el movimiento a su causa. */
+  eventos: { min: number; tipo: 'gol' | 'amarilla' | 'roja'; label: string }[]
+}
+
+export interface ChartEvento {
+  x: number
+  tipo: 'gol' | 'amarilla' | 'roja'
+  label: string
 }
 
 export interface ChartLine {
@@ -58,6 +66,8 @@ export interface Chart {
   koX: string
   showNow: boolean
   nowX: string
+  eventos: ChartEvento[]
+  escalaLog: boolean
 }
 
 export function buildChart(
@@ -70,6 +80,7 @@ export function buildChart(
   hist?: HistOddsTable,
   soloCapturas?: boolean, // true (http): el eje X son capturas reales de la ingesta, sin tiempos inventados
   liveReal?: LiveRealSerie, // http + partido en juego: tramo en vivo con la serie REAL de odds_live
+  escala: 'auto' | 'lineal' | 'log' = 'auto', // log: las cuotas bajas no se aplastan cuando alguna se dispara
 ): Chart {
   const def = MARKET_DEFS.find((d) => d.key === mk)!
   const mId = m.id
@@ -127,12 +138,19 @@ export function buildChart(
   const pd = (ymax - ymin) * 0.14 || 0.2
   ymin = Math.max(1, ymin - pd)
   ymax += pd
+  // escala log automática cuando el rango se estira (una cuota en 50 no debe
+  // aplastar contra el piso a las que viven entre 1.0 y 3.0)
+  const escalaLog = escala === 'log' || (escala === 'auto' && ymax / ymin > 6)
   const plotL = 56
   const plotR = 984
   const plotT = 20
   const plotB = 252
   const px = (t: number) => plotL + t * (plotR - plotL)
-  const py = (v: number) => plotT + (1 - (v - ymin) / (ymax - ymin)) * (plotB - plotT)
+  const lymin = Math.log(ymin)
+  const lymax = Math.log(ymax)
+  const py = escalaLog
+    ? (v: number) => plotT + (1 - (Math.log(Math.max(v, ymin)) - lymin) / (lymax - lymin)) * (plotB - plotT)
+    : (v: number) => plotT + (1 - (v - ymin) / (ymax - ymin)) * (plotB - plotT)
   const lines: ChartLine[] = series.map(({ sd, S, pts }) => {
     let d = ''
     pts.forEach((p, i) => {
@@ -167,7 +185,8 @@ export function buildChart(
   })
   const grid: ChartGrid[] = []
   for (let i = 0; i <= 4; i++) {
-    const v = ymin + (i / 4) * (ymax - ymin)
+    // en log las líneas de la grilla van en pasos geométricos, no aritméticos
+    const v = escalaLog ? ymin * Math.pow(ymax / ymin, i / 4) : ymin + (i / 4) * (ymax - ymin)
     grid.push({ y: py(v).toFixed(1), label: v.toFixed(2) })
   }
   let xL: [number, string][]
@@ -199,6 +218,12 @@ export function buildChart(
   }))
   const minutoNow = isLive ? liveMin : liveReal ? liveReal.minuto : null
   const nowT = minutoNow != null ? koFrac + (Math.min(minutoNow, maxMin) / maxMin) * (1 - koFrac) : null
+  // goles y tarjetas anclados a su minuto en el tramo en vivo
+  const eventos: ChartEvento[] = (liveReal?.eventos ?? []).map((ev) => ({
+    x: Number(px(koFrac + (Math.min(ev.min, maxMin) / maxMin) * (1 - koFrac)).toFixed(1)),
+    tipo: ev.tipo,
+    label: ev.label,
+  }))
   return {
     lines,
     grid,
@@ -209,6 +234,8 @@ export function buildChart(
     koX: px(koFrac).toFixed(1),
     showNow: isLive || !!liveReal,
     nowX: nowT != null ? px(nowT).toFixed(1) : '0',
+    eventos,
+    escalaLog,
   }
 }
 

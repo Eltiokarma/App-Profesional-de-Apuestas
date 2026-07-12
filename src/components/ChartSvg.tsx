@@ -38,6 +38,22 @@ export function ChartSvg({ chart, liveMin }: { chart: Chart; liveMin: number }) 
         </>
       )}
 
+      {/* eventos del partido: gol (punto verde) · amarilla/roja (rectángulo) */}
+      {chart.eventos.map((ev, i) => {
+        const yTop = 26 + (i % 2) * 15 // alterna altura para que no se pisen
+        return (
+          <g key={'ev' + i}>
+            <title>{ev.label}</title>
+            <line x1={ev.x} x2={ev.x} y1={yTop + 12} y2={258} stroke="var(--line2)" strokeWidth={1} strokeDasharray="2 6" opacity={0.55} vectorEffect="non-scaling-stroke" />
+            {ev.tipo === 'gol' ? (
+              <circle cx={ev.x} cy={yTop + 5} r={5.5} fill="var(--up)" stroke="var(--bg)" strokeWidth={1.6} />
+            ) : (
+              <rect x={ev.x - 3.5} y={yTop - 1} width={7} height={11} rx={1.5} fill={ev.tipo === 'roja' ? 'var(--down)' : '#eab308'} stroke="var(--bg)" strokeWidth={1} />
+            )}
+          </g>
+        )
+      })}
+
       {chart.lines.map((ln, i) => (
         <path key={'ln' + i} d={ln.d} fill="none" stroke={ln.color} strokeWidth={2.4} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       ))}

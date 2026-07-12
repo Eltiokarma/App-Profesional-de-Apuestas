@@ -73,6 +73,8 @@ LIGAS = {
     239: "Colombia - Primera A",
     265: "Chile - Primera División",
     281: "Perú - Primera División",
+    1232: "Perú - Copa de la Liga",
+    1220: "Chile - Copa Chile",
     268: "Uruguay - Primera División",
     242: "Ecuador - Liga Pro",
     # México

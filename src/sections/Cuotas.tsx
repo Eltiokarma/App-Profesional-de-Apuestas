@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import type { FixtureLiveDTO } from '../api/types'
 import { CONFIG } from '../config'
 import { LINE_COLORS, MARKET_DEFS } from '../data'
@@ -61,7 +61,13 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
       const mkT = (pts[p.mercado] = pts[p.mercado] ?? {})
       ;(mkT[p.seleccion] = mkT[p.seleccion] ?? []).push({ min: p.minuto ?? 0, odd: p.cuota })
     }
-    return { minuto: live.minuto ?? 90, pts }
+    const NOMBRE = { gol: 'Gol', amarilla: 'Amarilla', roja: 'Roja' } as const
+    const eventos = live.eventos.map((e2) => ({
+      min: e2.minuto ?? 0,
+      tipo: e2.tipo,
+      label: `${e2.minuto ?? '?'}' ${NOMBRE[e2.tipo]}${e2.jugador ? ' · ' + e2.jugador : ''}`,
+    }))
+    return { minuto: live.minuto ?? 90, pts, eventos }
   }, [esDemo, live])
 
   // en http la gráfica existe si hay prepartido real completo (>=2 capturas en
@@ -70,11 +76,15 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
   const histCompleto = defActivo.sels(m).every((sd) => (hist?.[cmk]?.[sd.k]?.length ?? 0) >= 2)
   const hayCurva = esDemo || histCompleto || !!livePts?.pts[cmk]
 
+  // escala del eje Y: 'auto' pasa a log cuando el rango se estira (cuota >10
+  // aplastaría a las de 1.x); el usuario puede forzarla con los chips
+  const [escala, setEscala] = useState<'auto' | 'lineal' | 'log'>('auto')
+
   // memoizadas contra el tick de 1s del store (s.now): solo se reconstruyen
   // cuando cambia algo que de verdad afecta a las series
   const chart = useMemo(
-    () => (hayCurva ? buildChart(m, cmk, isLive, s.liveMin, s.marked, base, hist, !esDemo, livePts ?? undefined) : null),
-    [m, cmk, isLive, s.liveMin, s.marked, base, hist, hayCurva, esDemo, livePts],
+    () => (hayCurva ? buildChart(m, cmk, isLive, s.liveMin, s.marked, base, hist, !esDemo, livePts ?? undefined, escala) : null),
+    [m, cmk, isLive, s.liveMin, s.marked, base, hist, hayCurva, esDemo, livePts, escala],
   )
   const chartXfromOpen = isLive
     ? 'apertura → ' + s.liveMin + '’ en vivo'
@@ -248,7 +258,19 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
             <h3 style={{ margin: 0, font: '700 15px var(--sans)' }}>{chart.title}</h3>
             <span style={{ font: '500 11px var(--mono)', color: 'var(--t3)' }}>Movimiento de cuota · {chartXfromOpen}</span>
           </div>
-          <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>media entre casas capturadas</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: 'flex', padding: 3, borderRadius: 8, background: 'var(--bg3)', border: '1px solid var(--line)' }}>
+              {(['lineal', 'log'] as const).map((e2) => {
+                const activa = chart.escalaLog ? e2 === 'log' : e2 === 'lineal'
+                return (
+                  <button key={e2} onClick={() => setEscala(e2)} title={e2 === 'log' ? 'Escala logarítmica: las cuotas bajas no se aplastan' : 'Escala lineal'} style={{ padding: '4px 10px', border: 0, borderRadius: 6, cursor: 'pointer', background: activa ? 'var(--accent-soft)' : 'transparent', color: activa ? 'var(--accent)' : 'var(--t3)', font: '600 10.5px var(--mono)' }}>
+                    {e2 === 'log' ? 'LOG' : 'LINEAL'}
+                  </button>
+                )
+              })}
+            </div>
+            <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>media entre casas capturadas</span>
+          </div>
         </div>
 
         {/* legend */}

@@ -175,6 +175,10 @@ def main():
           len(lv["serie"]) > 6 and all(not any(p["minuto"] == 67 and p["seleccion"] == "2" for p in lv["serie"]) for _ in [0])
           and [p["minuto"] for p in lv["serie"]] == sorted(p["minuto"] for p in lv["serie"]), len(lv["serie"]))
     check("live: actualizadoEn presente", bool(lv["actualizadoEn"]), lv["actualizadoEn"])
+    check("live: eventos mapeados (gol/amarilla/roja; subst y penal fallado fuera)",
+          [(e["tipo"], e["minuto"]) for e in lv["eventos"]]
+          == [("amarilla", 12), ("gol", 34), ("gol", 51), ("roja", 60)], lv["eventos"])
+    check("live: eventos con jugador y equipo", all(e["jugador"] and e["equipoId"] for e in lv["eventos"]))
     fin = next(f for f in fx if f["estado"] == "finalizado")
     lv0 = c.get(A + f"/fixtures/{fin['id']}/live").json()
     check("live de fixture sin odds_live → cuotas y serie vacías",
