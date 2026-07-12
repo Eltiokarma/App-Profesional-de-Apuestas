@@ -39,10 +39,13 @@ export function App() {
   const mSel = s.match ?? undefined
   const m = esHttp && mSel ? (matches.find((x) => x.id === mSel.id) ?? mSel) : mSel
 
-  // ÚNICA fuente del en vivo real (http): App hace el polling y de aquí beben
-  // el header y la sección Cuotas — nunca más dos relojes distintos en pantalla
+  // ÚNICA fuente del en vivo real (http): App hace la consulta y de aquí beben
+  // el header y la sección Cuotas. En partidos EN JUEGO se refresca por polling;
+  // en partidos TERMINADOS se consulta una vez — la serie de odds_live queda
+  // como historia del partido y la gráfica no desaparece al pitazo final.
   const [live, setLive] = useState<FixtureLiveDTO | null>(null)
-  const liveId = esHttp && m && m.status === 'live' ? m.id : null
+  const liveId = esHttp && m && (m.status === 'live' || m.status === 'fin') ? m.id : null
+  const enJuego = esHttp && m?.status === 'live'
   useEffect(() => {
     if (!liveId) {
       setLive(null)
@@ -51,12 +54,13 @@ export function App() {
     let alive = true
     const cargar = () =>
       loadFixtureLive(liveId)
-        .then((d) => { if (alive) setLive(d.estado === 'en_vivo' ? d : null) })
+        .then((d) => { if (alive) setLive(d) })
         .catch(() => { /* opcional para pintar */ })
     cargar()
+    if (!enJuego) return () => { alive = false }
     const iv = setInterval(cargar, CONFIG.pollLiveMs)
     return () => { alive = false; clearInterval(iv) }
-  }, [liveId])
+  }, [liveId, enJuego])
 
   const isMobile = s.forceMobile || s.vw < 760
   const isDesktop = !isMobile
@@ -89,7 +93,9 @@ export function App() {
   // simulado del store queda solo para el modo demo
   const isLive = esHttp ? !!m && m.status === 'live' : s.section === 'cuotas' && s.oddsMode === 'live'
   const liveBadge = !!m && isLive
-  const liveMinuto = esHttp ? (live?.minuto ?? (m ? parseInt(m.min) || 0 : 0)) : s.liveMin
+  const liveMinuto = esHttp
+    ? ((live?.estado === 'en_vivo' ? live.minuto : null) ?? (m ? parseInt(m.min) || 0 : 0))
+    : s.liveMin
   const liveScore = esHttp && live
     ? `${live.golesLocal ?? '–'} - ${live.golesVisitante ?? '–'}`
     : m ? m.score : ''
