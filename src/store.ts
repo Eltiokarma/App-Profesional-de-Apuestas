@@ -109,6 +109,35 @@ export function useSad(): SadStore {
   stateRef.current = s
   const tickRef = useRef(0)
 
+  // ── historial del navegador ───────────────────────────────────────────────
+  // Cada cambio de sección/equipo/liga se registra con pushState para que el
+  // botón "atrás" navegue dentro de la app en vez de sacarte del sitio.
+  const popRef = useRef(false)
+  const primeraNav = useRef(true)
+  useEffect(() => {
+    const st = stateRef.current
+    window.history.replaceState({ section: st.section, teamKey: st.teamKey, ligaId: st.ligaId }, '')
+    const onPop = (e: PopStateEvent) => {
+      const prev = (e.state ?? {}) as { section?: SectionKey; teamKey?: string | null; ligaId?: number | null }
+      popRef.current = true
+      patch({ section: prev.section ?? 'partidos', teamKey: prev.teamKey ?? null, ligaId: prev.ligaId ?? null })
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [patch])
+
+  useEffect(() => {
+    if (primeraNav.current) {
+      primeraNav.current = false
+      return
+    }
+    if (popRef.current) {
+      popRef.current = false // este cambio vino del propio botón atrás: no re-apilar
+      return
+    }
+    window.history.pushState({ section: s.section, teamKey: s.teamKey, ligaId: s.ligaId }, '')
+  }, [s.section, s.teamKey, s.ligaId])
+
   useEffect(() => {
     let raf = 0
     const onResize = () => {
