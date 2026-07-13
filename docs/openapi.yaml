@@ -38,7 +38,7 @@ paths:
         - { name: temporada, in: query, schema: { type: integer, description: 'solo fixtures de esta temporada de la liga' } }
         - { name: equipoId, in: query, schema: { type: integer, description: 'solo partidos de este equipo' } }
         - { name: rivalId, in: query, schema: { type: integer, description: 'con equipoId: solo enfrentamientos directos entre ambos (H2H); requiere equipoId' } }
-        - { name: limit, in: query, schema: { type: integer, default: 50, minimum: 1, maximum: 200 } }
+        - { name: limit, in: query, schema: { type: integer, default: 50, minimum: 1, maximum: 500, description: 'tope 500: un día con amistosos globales supera los 200 partidos' } }
       responses:
         '200':
           description: OK
