@@ -41,7 +41,8 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
     m.id + '|' + (fuente ?? 'media'),
   )
   const base = cuotas.data?.[0] ?? undefined
-  const hist = cuotas.data?.[1] ?? undefined
+  const hist = cuotas.data?.[1]?.cuotas ?? undefined
+  const histFechas = cuotas.data?.[1]?.fechas ?? undefined
   const casas = cuotas.data?.[2] ?? undefined
 
   const preBg = !isLive ? 'var(--bg3)' : 'transparent'
@@ -88,8 +89,8 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
   // memoizadas contra el tick de 1s del store (s.now): solo se reconstruyen
   // cuando cambia algo que de verdad afecta a las series
   const chart = useMemo(
-    () => (hayCurva ? buildChart(m, cmk, isLive, s.liveMin, s.marked, base, hist, !esDemo, livePts ?? undefined, escala) : null),
-    [m, cmk, isLive, s.liveMin, s.marked, base, hist, hayCurva, esDemo, livePts, escala],
+    () => (hayCurva ? buildChart(m, cmk, isLive, s.liveMin, s.marked, base, hist, !esDemo, livePts ?? undefined, escala, histFechas) : null),
+    [m, cmk, isLive, s.liveMin, s.marked, base, hist, histFechas, hayCurva, esDemo, livePts, escala],
   )
   const chartXfromOpen = isLive
     ? 'apertura → ' + s.liveMin + '’ en vivo'
@@ -363,9 +364,16 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {casasRows.map((row) => (
-              <div key={row.k} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 10px', borderRadius: 10, background: 'var(--bg)' }}>
-                <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)', width: 130, flexShrink: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.label}</span>
-                <div className="sad-scroll" style={{ display: 'flex', gap: 6, overflowX: 'auto', flex: 1, paddingBottom: 2 }}>
+              // móvil: etiqueta y ventaja arriba, chips a TODO lo ancho abajo —
+              // con la etiqueta al lado la fila de casas quedaba aplastada y cortada
+              <div key={row.k} style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? 7 : 12, padding: '8px 10px', borderRadius: 10, background: 'var(--bg)' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, width: isMobile ? 'auto' : 130, flexShrink: 0, minWidth: 0 }}>
+                  <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.label}</span>
+                  {isMobile && row.ventajaText && (
+                    <span style={{ font: '600 10px var(--mono)', color: 'var(--up)', marginLeft: 'auto', flexShrink: 0 }}>{row.ventajaText}</span>
+                  )}
+                </div>
+                <div className="sad-scroll" style={{ display: 'flex', gap: 6, overflowX: 'auto', flex: 1, minWidth: 0, paddingBottom: 2 }}>
                   {row.filas.map((f, i) => (
                     <span key={f.casa + i} title={f.mejor ? 'mejor cuota' : undefined} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 9px', borderRadius: 8, flexShrink: 0, border: `1px solid ${f.mejor ? 'color-mix(in oklch,var(--up),transparent 45%)' : 'var(--line)'}`, background: f.mejor ? 'var(--up-soft)' : 'var(--bg2)' }}>
                       <span style={{ font: '500 10px var(--sans)', color: f.mejor ? 'var(--up)' : 'var(--t3)' }}>{f.casa}</span>
@@ -373,7 +381,7 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
                     </span>
                   ))}
                 </div>
-                {row.ventajaText && (
+                {!isMobile && row.ventajaText && (
                   <span style={{ font: '600 10px var(--mono)', color: 'var(--up)', flexShrink: 0 }}>{row.ventajaText}</span>
                 )}
               </div>
