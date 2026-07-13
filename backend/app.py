@@ -116,10 +116,44 @@ def _ingesta_diaria_loop() -> None:
         print(f"[ingesta] corrida diaria {datetime.now(timezone.utc).isoformat()}", flush=True)
         subprocess.run([sys.executable, "-u", "-m", "backend.ingesta.corrida_diaria"])
         liga_meta.cache_clear()  # puede haber ligas nuevas en sad.db
+        _correr_backfill("tras la corrida diaria")  # reanuda si quedó a medias
 
 
 if INGESTA_HORA:
     threading.Thread(target=_ingesta_diaria_loop, daemon=True, name="ingesta-diaria").start()
+
+# Backfill histórico: SAD_BACKFILL_DESDE=2020 trae los fixtures de TODAS las
+# ligas de la lista desde esa temporada. Corre al arrancar y tras cada corrida
+# diaria; el extractor lleva el progreso en .backfill_hist.json (en el volumen)
+# y cuando está completo sale con 0 requests, así que puede quedarse puesta.
+BACKFILL_DESDE = os.environ.get("SAD_BACKFILL_DESDE", "").strip()
+
+
+def _correr_backfill(motivo: str) -> None:
+    if not BACKFILL_DESDE:
+        return
+    raiz = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    env = {**os.environ, "PYTHONPATH": raiz, "PYTHONUTF8": "1", "PYTHONUNBUFFERED": "1"}
+    print(f"[ingesta] backfill histórico desde {BACKFILL_DESDE} ({motivo})", flush=True)
+    subprocess.run(
+        [sys.executable, "-u", "-m", "backend.ingesta.extractor", "--historico", BACKFILL_DESDE],
+        cwd=db.BASE_DIR, env=env,
+    )
+    # niveles/constantes de las temporadas nuevas: el pipeline es local (0 requests)
+    subprocess.run(
+        [sys.executable, "-u", "-m", "backend.ingesta.pipeline", "--out", "."],
+        cwd=db.BASE_DIR, env=env,
+    )
+    liga_meta.cache_clear()
+
+
+def _backfill_arranque() -> None:
+    time.sleep(30)  # dejar que el server termine de arrancar y sirva tráfico
+    _correr_backfill("arranque")
+
+
+if BACKFILL_DESDE:
+    threading.Thread(target=_backfill_arranque, daemon=True, name="backfill-historico").start()
 
 # Refresco de día de partido (fase 2 de docs/EXTRACCION_TIEMPO_REAL.md):
 # SAD_REFRESCO_MIN=30 corre cada N minutos un extractor ligero (--ventana-horas 6:
@@ -172,7 +206,8 @@ if LIVE_SEGUNDOS:
 print(
     f"[ingesta] programación → diaria: {INGESTA_HORA or 'apagada'} · "
     f"refresco: {REFRESCO_MIN + ' min' if REFRESCO_MIN else 'apagado'} · "
-    f"en vivo: {LIVE_SEGUNDOS + ' s' if LIVE_SEGUNDOS else 'apagado'}",
+    f"en vivo: {LIVE_SEGUNDOS + ' s' if LIVE_SEGUNDOS else 'apagado'} · "
+    f"backfill: {'desde ' + BACKFILL_DESDE if BACKFILL_DESDE else 'apagado'}",
     flush=True,
 )
 

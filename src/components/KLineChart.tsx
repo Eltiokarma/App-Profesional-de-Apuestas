@@ -68,9 +68,9 @@ export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20 }: Props) 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: 'auto', display: 'block' }}>
       {/* guías */}
-      <line x1={L} x2={R} y1={MID} y2={MID} stroke="var(--line)" strokeWidth={1} />
-      <line x1={L} x2={R} y1={MID - AMP} y2={MID - AMP} stroke="var(--line)" strokeWidth={0.6} strokeDasharray="3 5" />
-      <line x1={L} x2={R} y1={MID + AMP} y2={MID + AMP} stroke="var(--line)" strokeWidth={0.6} strokeDasharray="3 5" />
+      <line x1={L} x2={R} y1={MID} y2={MID} stroke="var(--grid)" strokeWidth={1} />
+      <line x1={L} x2={R} y1={MID - AMP} y2={MID - AMP} stroke="var(--grid)" strokeWidth={0.6} strokeDasharray="3 5" />
+      <line x1={L} x2={R} y1={MID + AMP} y2={MID + AMP} stroke="var(--grid)" strokeWidth={0.6} strokeDasharray="3 5" />
       <text x={L} y={MID - AMP - 5} fontSize={10} fontWeight={600} style={{ fill: 'var(--up)', fontFamily: 'var(--mono)' }}>+{fmtK(maxAbs)}</text>
       <text x={L} y={MID + AMP + 13} fontSize={10} fontWeight={600} style={{ fill: 'var(--down)', fontFamily: 'var(--mono)' }}>−{fmtK(maxAbs)}</text>
 
@@ -84,10 +84,12 @@ export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20 }: Props) 
         return (
           <g key={i} opacity={p.dim ? 0.35 : 1}>
             {p.intl ? (
+              // internacional: rombo ámbar SÓLIDO — punto de otro color, no
+              // solo otro borde; la racha +/− queda en el tooltip
               <rect
                 x={p.x - r} y={p.y - r} width={r * 2} height={r * 2}
                 transform={`rotate(45 ${p.x} ${p.y})`}
-                fill={p.reset ? 'var(--bg)' : color}
+                fill={p.reset ? 'var(--bg)' : 'var(--mark)'}
                 stroke="var(--mark)" strokeWidth={1.8}
               >
                 <title>{p.title}</title>
@@ -124,7 +126,7 @@ export function KLineLegend() {
       <span style={item}><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--up)' }}></span>racha +</span>
       <span style={item}><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--down)' }}></span>racha −</span>
       <span style={item}><span style={{ width: 8, height: 8, borderRadius: '50%', border: '1.5px solid var(--t3)' }}></span>reset</span>
-      <span style={item}><span style={{ width: 8, height: 8, background: 'var(--bg3)', border: '1.5px solid var(--mark)', transform: 'rotate(45deg)' }}></span>torneo internacional</span>
+      <span style={item}><span style={{ width: 8, height: 8, background: 'var(--mark)', transform: 'rotate(45deg)' }}></span>torneo internacional</span>
     </div>
   )
 }

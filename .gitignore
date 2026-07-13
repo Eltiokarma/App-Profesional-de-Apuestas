@@ -40,3 +40,4 @@ demo_data/
 __pycache__/
 *.pyc
 .extractor_cuota.json
+.backfill_hist.json

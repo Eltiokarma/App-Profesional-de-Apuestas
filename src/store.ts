@@ -49,8 +49,17 @@ export function hoyStr(): string {
   return `${d.getFullYear()}-${('0' + (d.getMonth() + 1)).slice(-2)}-${('0' + d.getDate()).slice(-2)}`
 }
 
+// modo día por defecto; el botón de tema recuerda la elección entre visitas
+function temaInicial(): 'dark' | 'light' {
+  try {
+    const guardado = localStorage.getItem('sad-theme')
+    if (guardado === 'dark' || guardado === 'light') return guardado
+  } catch { /* SSR o storage bloqueado */ }
+  return 'light'
+}
+
 const initialState: SadState = {
-  theme: 'dark',
+  theme: temaInicial(),
   section: 'partidos',
   matchId: null,
   match: null,
@@ -165,7 +174,11 @@ export function useSad(): SadStore {
     }
   }, [patch])
 
-  const toggleTheme = useCallback(() => patchFn((prev) => ({ theme: prev.theme === 'dark' ? 'light' : 'dark' })), [patchFn])
+  const toggleTheme = useCallback(() => patchFn((prev) => {
+    const theme = prev.theme === 'dark' ? 'light' : 'dark'
+    try { localStorage.setItem('sad-theme', theme) } catch { /* storage bloqueado */ }
+    return { theme }
+  }), [patchFn])
   const go = useCallback((sec: SectionKey) => () => patch({ section: sec }), [patch])
   const openTeam = useCallback((teamKey: string) => patch({ teamKey, section: 'equipo' }), [patch])
   const openLiga = useCallback((ligaId: number) => patch({ ligaId, section: 'liga' }), [patch])

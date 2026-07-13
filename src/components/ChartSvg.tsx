@@ -13,7 +13,7 @@ export function ChartSvg({ chart, liveMin }: { chart: Chart; liveMin: number }) 
     >
       {chart.grid.map((g, i) => (
         <g key={'g' + i}>
-          <line x1={56} x2={984} y1={g.y} y2={g.y} stroke="var(--line)" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+          <line x1={56} x2={984} y1={g.y} y2={g.y} stroke="var(--grid)" strokeWidth={1} vectorEffect="non-scaling-stroke" />
           <text x={48} y={g.y} textAnchor="end" dominantBaseline="middle" fontSize={13} fontWeight={600} style={tf}>
             {g.label}
           </text>
