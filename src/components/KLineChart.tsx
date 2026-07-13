@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import type { KCondKey, KTypeKey } from '../data/types'
 import { TEAMS } from '../data'
 import { FUSED_KEY, fmtK, isMargin, marginQ, signFmt, signedVal } from '../lib/kview'
@@ -28,6 +29,10 @@ export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20 }: Props) 
   const key = FUSED_KEY[kType][kCond]
   const win = snaps.slice(-window)
   const n = win.length
+  // punto elegido con un toque/clic: burbuja propia (el <title> nativo solo
+  // funciona con hover de ratón y en el celular no existe)
+  const [sel, setSel] = useState<number | null>(null)
+  useEffect(() => setSel(null), [kType, kCond, window, snaps])
   if (!n) return <div style={{ font: '500 11px var(--mono)', color: 'var(--t3)', padding: 20 }}>Sin historia disponible.</div>
 
   const total = snaps.length
@@ -58,6 +63,14 @@ export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20 }: Props) 
         ` · rival nivel ${s.rivalLevel.toFixed(2)}` +
         (inCond ? ` · q ${qc == null ? '—' : signFmt(qc)}` : ' · no actualiza (otra condición)') +
         ` · K ${fmtK(v)}${v === 0 ? ' (reset)' : ''}`,
+      // dos renglones cortos para la burbuja al tocar el punto
+      t1:
+        `#${total - n + i + 1} · ${s.isLocal ? 'vs' : 'en'} ${rv ? rv.short : s.rival} ${s.gf}-${s.ga}` +
+        (s.esInternacional ? ' · internacional' : ''),
+      t2:
+        `K ${fmtK(v)}${v === 0 ? ' (reset)' : ''}` +
+        (inCond ? ` · q ${qc == null ? '—' : signFmt(qc)}` : ' · no actualiza') +
+        ` · rival ${s.rivalLevel.toFixed(2)}`,
     }
   })
 
@@ -65,8 +78,13 @@ export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20 }: Props) 
   const last = pts[n - 1]
   const tf: React.CSSProperties = { fill: 'var(--t3)', fontFamily: 'var(--mono)' }
 
+  const tip = sel != null && sel < n ? pts[sel] : null
+  const tipW = tip ? Math.min(Math.max(tip.t1.length, tip.t2.length) * 5.4 + 16, W - 2 * L) : 0
+  const tipX = tip ? Math.min(Math.max(tip.x - tipW / 2, L), R - tipW) : 0
+  const tipY = tip ? (tip.y > 56 ? tip.y - 42 : tip.y + 12) : 0
+
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: 'auto', display: 'block' }}>
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: 'auto', display: 'block' }} onClick={() => setSel(null)}>
       {/* guías */}
       <line x1={L} x2={R} y1={MID} y2={MID} stroke="var(--grid)" strokeWidth={1} />
       <line x1={L} x2={R} y1={MID - AMP} y2={MID - AMP} stroke="var(--grid)" strokeWidth={0.6} strokeDasharray="3 5" />
@@ -77,12 +95,21 @@ export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20 }: Props) 
       {/* línea de picos acumulados */}
       <path d={path} fill="none" stroke="var(--accent)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.9} />
 
-      {/* puntos por partido */}
+      {/* puntos por partido (tocables: abren la burbuja con su detalle) */}
       {pts.map((p, i) => {
         const color = p.reset ? 'var(--t3)' : p.sv > 0 ? 'var(--up)' : 'var(--down)'
         const r = p.reset ? 3 : i === n - 1 ? 5.5 : 4
         return (
-          <g key={i} opacity={p.dim ? 0.35 : 1}>
+          <g
+            key={i}
+            opacity={p.dim ? 0.35 : 1}
+            style={{ cursor: 'pointer' }}
+            onClick={(e) => {
+              e.stopPropagation()
+              setSel(sel === i ? null : i)
+            }}
+          >
+            <circle cx={p.x} cy={p.y} r={11} fill="transparent" />
             {p.intl ? (
               // internacional: rombo ámbar SÓLIDO — punto de otro color, no
               // solo otro borde; la racha +/− queda en el tooltip
@@ -115,6 +142,16 @@ export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20 }: Props) 
       {/* eje x */}
       <text x={L} y={H - 2} fontSize={10} fontWeight={600} style={tf}>hace {n} partidos</text>
       <text x={R} y={H - 2} textAnchor="end" fontSize={10} fontWeight={600} style={tf}>último</text>
+
+      {/* burbuja del punto elegido */}
+      {tip && (
+        <g style={{ pointerEvents: 'none' }}>
+          <circle cx={tip.x} cy={tip.y} r={7} fill="none" stroke={tip.intl ? 'var(--mark)' : 'var(--accent)'} strokeWidth={1.6} />
+          <rect x={tipX} y={tipY} width={tipW} height={30} rx={6} fill="var(--bg3)" stroke={tip.intl ? 'var(--mark)' : 'var(--accent)'} strokeWidth={1.1} />
+          <text x={tipX + tipW / 2} y={tipY + 12.5} textAnchor="middle" fontSize={9.5} fontWeight={700} style={{ fill: 'var(--t1)', fontFamily: 'var(--mono)' }}>{tip.t1}</text>
+          <text x={tipX + tipW / 2} y={tipY + 24} textAnchor="middle" fontSize={9.5} fontWeight={600} style={{ fill: 'var(--t2)', fontFamily: 'var(--mono)' }}>{tip.t2}</text>
+        </g>
+      )}
     </svg>
   )
 }

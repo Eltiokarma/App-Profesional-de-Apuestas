@@ -1,15 +1,36 @@
+import { useEffect, useState } from 'react'
 import type { Chart } from '../lib/chart'
 
 const tf: React.CSSProperties = { fill: 'var(--t3)', fontFamily: 'var(--mono)' }
 
+interface Tip {
+  x: number
+  y: number
+  label: string
+  color: string
+}
+
 /** Self-contained SVG chart — grid, KO/now markers, lines, dots and axis labels
- *  as native <text> nodes so nothing depends on HTML overlay positioning. */
+ *  as native <text> nodes so nothing depends on HTML overlay positioning.
+ *  Cada punto de las series es tocable (móvil) o clicable (PC): abre una
+ *  burbuja propia con selección · cuota · fecha de captura o minuto. */
 export function ChartSvg({ chart, liveMin }: { chart: Chart; liveMin: number }) {
+  const [tip, setTip] = useState<Tip | null>(null)
+  // al cambiar de mercado/partido la gráfica es otra: la burbuja abierta caduca
+  useEffect(() => setTip(null), [chart])
+
+  // caja del tooltip: ancho por longitud del texto, sin salirse del lienzo
+  const tipW = tip ? Math.min(tip.label.length * 7.6 + 20, 460) : 0
+  const tipX = tip ? Math.min(Math.max(tip.x - tipW / 2, 58), 984 - tipW) : 0
+  const tipArriba = tip ? tip.y > 60 : true
+  const tipY = tip ? (tipArriba ? tip.y - 42 : tip.y + 14) : 0
+
   return (
     <svg
       viewBox="0 0 1000 300"
       preserveAspectRatio="xMidYMid meet"
       style={{ width: '100%', height: 'auto', display: 'block' }}
+      onClick={() => setTip(null)}
     >
       {chart.grid.map((g, i) => (
         <g key={'g' + i}>
@@ -57,6 +78,25 @@ export function ChartSvg({ chart, liveMin }: { chart: Chart; liveMin: number }) 
       {chart.lines.map((ln, i) => (
         <path key={'ln' + i} d={ln.d} fill="none" stroke={ln.color} strokeWidth={2.4} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       ))}
+
+      {/* puntos tocables: marca visible pequeña + zona de toque generosa */}
+      {chart.lines.map((ln, i) =>
+        ln.pts.map((p, j) => (
+          <g
+            key={'pt' + i + '_' + j}
+            style={{ cursor: 'pointer' }}
+            onClick={(e) => {
+              e.stopPropagation()
+              const mismo = tip && tip.x === Number(p.x) && tip.y === Number(p.y) && tip.label === p.label
+              setTip(mismo ? null : { x: Number(p.x), y: Number(p.y), label: p.label, color: ln.color })
+            }}
+          >
+            <circle cx={p.x} cy={p.y} r={2.4} fill={ln.color} opacity={0.65} />
+            <circle cx={p.x} cy={p.y} r={11} fill="transparent" />
+          </g>
+        )),
+      )}
+
       {chart.lines.map((ln, i) => (
         <circle key={'dt' + i} cx={ln.dotX} cy={ln.dotY} r={4.2} fill={ln.color} stroke="var(--bg)" strokeWidth={2.5} />
       ))}
@@ -65,6 +105,17 @@ export function ChartSvg({ chart, liveMin }: { chart: Chart; liveMin: number }) 
           {xl.label}
         </text>
       ))}
+
+      {/* burbuja del punto elegido (reemplaza al <title> nativo del navegador) */}
+      {tip && (
+        <g style={{ pointerEvents: 'none' }}>
+          <circle cx={tip.x} cy={tip.y} r={5} fill={tip.color} stroke="var(--bg)" strokeWidth={2} />
+          <rect x={tipX} y={tipY} width={tipW} height={28} rx={7} fill="var(--bg3)" stroke={tip.color} strokeWidth={1.2} />
+          <text x={tipX + tipW / 2} y={tipY + 18.5} textAnchor="middle" fontSize={13} fontWeight={700} style={{ fill: 'var(--t1)', fontFamily: 'var(--mono)' }}>
+            {tip.label}
+          </text>
+        </g>
+      )}
     </svg>
   )
 }

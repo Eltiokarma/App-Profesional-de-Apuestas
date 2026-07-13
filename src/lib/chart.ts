@@ -10,6 +10,17 @@ const baseOf = (base: BaseOddsTable | undefined, mk: string, selK: string) => ba
 export type HistOddsTable = Record<string, Record<string, number[]>>
 const histOf = (hist: HistOddsTable | undefined, mk: string, selK: string) => hist?.[mk]?.[selK]
 
+/** Fechas de captura alineadas índice a índice con el historial. */
+export type HistFechasTable = Record<string, Record<string, string[]>>
+
+const MES_CORTO = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+const fmtFecha = (iso: string): string => {
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  const p2 = (n: number) => String(n).padStart(2, '0')
+  return `${d.getDate()} ${MES_CORTO[d.getMonth()]} ${p2(d.getHours())}:${p2(d.getMinutes())}`
+}
+
 /** Serie EN VIVO real (contrato /fixtures/{id}/live): puntos por minuto del partido. */
 export interface LiveRealSerie {
   minuto: number
@@ -24,11 +35,19 @@ export interface ChartEvento {
   label: string
 }
 
+/** Punto tocable de la gráfica: al pulsarlo se abre la burbuja con su valor. */
+export interface ChartPunto {
+  x: string
+  y: string
+  label: string
+}
+
 export interface ChartLine {
   key: string
   label: string
   color: string
   d: string
+  pts: ChartPunto[]
   dotX: string
   dotY: string
   curOdd: string
@@ -81,6 +100,7 @@ export function buildChart(
   soloCapturas?: boolean, // true (http): el eje X son capturas reales de la ingesta, sin tiempos inventados
   liveReal?: LiveRealSerie, // http + partido en juego: tramo en vivo con la serie REAL de odds_live
   escala: 'auto' | 'lineal' | 'log' = 'auto', // log: las cuotas bajas no se aplastan cuando alguna se dispara
+  fechas?: HistFechasTable, // fechas de captura: el tooltip de cada punto muestra cuándo se tomó
 ): Chart {
   const def = MARKET_DEFS.find((d) => d.key === mk)!
   const mId = m.id
@@ -91,14 +111,16 @@ export function buildChart(
   const maxMin = liveReal
     ? Math.max(90, liveReal.minuto, ...Object.values(liveReal.pts[mk] ?? {}).flat().map((p) => p.min))
     : 90
+  type Punto = { t: number; odd: number; fecha?: string; min?: number }
   const series = liveReal
     ? sels.flatMap((sd) => {
         // solo datos reales: prepartido si hay >=2 capturas, en vivo si hay serie
         const h = histOf(hist, mk, sd.k) ?? []
+        const fh = fechas?.[mk]?.[sd.k]
         const lv = liveReal.pts[mk]?.[sd.k] ?? []
-        const pts: { t: number; odd: number }[] = []
-        if (h.length >= 2) h.forEach((odd, i) => pts.push({ t: (i / (h.length - 1)) * koFrac, odd }))
-        lv.forEach((p) => pts.push({ t: koFrac + (Math.min(p.min, maxMin) / maxMin) * (1 - koFrac), odd: p.odd }))
+        const pts: Punto[] = []
+        if (h.length >= 2) h.forEach((odd, i) => pts.push({ t: (i / (h.length - 1)) * koFrac, odd, fecha: fh?.[i] }))
+        lv.forEach((p) => pts.push({ t: koFrac + (Math.min(p.min, maxMin) / maxMin) * (1 - koFrac), odd: p.odd, min: p.min }))
         if (!pts.length) return []
         const S: Series = {
           open: h.length >= 2 ? h[0] : lv[0].odd,
@@ -107,18 +129,21 @@ export function buildChart(
         return [{ sd, S, pts }]
       })
     : sels.map((sd) => {
-        const S = seriesFor(m, mk, sd.k, baseOf(base, mk, sd.k), histOf(hist, mk, sd.k))
+        const h = histOf(hist, mk, sd.k)
+        const S = seriesFor(m, mk, sd.k, baseOf(base, mk, sd.k), h)
+        // las fechas solo aplican si la serie prepartido ES el historial real
+        const fh = h && h.length >= 2 ? fechas?.[mk]?.[sd.k] : undefined
         const PRE = S.pre.length
-        const pts: { t: number; odd: number }[] = []
+        const pts: Punto[] = []
         for (let i = 0; i < PRE; i++) {
           const t = isLive ? (i / (PRE - 1)) * koFrac : i / (PRE - 1)
-          pts.push({ t, odd: S.pre[i] })
+          pts.push({ t, odd: S.pre[i], fecha: fh?.[i] })
         }
         if (isLive) {
           const ci = Math.max(0, Math.min(S.IN - 1, Math.round((liveMin / 90) * (S.IN - 1))))
           for (let i = 0; i <= ci; i++) {
             const t = koFrac + (i / (S.IN - 1)) * (1 - koFrac)
-            pts.push({ t, odd: S.inp[i] })
+            pts.push({ t, odd: S.inp[i], min: Math.round((i / (S.IN - 1)) * 90) })
           }
         }
         return { sd, S, pts }
@@ -167,6 +192,14 @@ export function buildChart(
       label: sd.label,
       color: LINE_COLORS[mk][sd.k],
       d,
+      // puntos tocables: cuota + cuándo (fecha de captura o minuto de juego)
+      pts: pts.map((p) => ({
+        x: px(p.t).toFixed(1),
+        y: py(p.odd).toFixed(1),
+        label:
+          `${sd.label} · ${p.odd.toFixed(2)}` +
+          (p.fecha ? ` · ${fmtFecha(p.fecha)}` : p.min != null ? ` · ${p.min}’` : ''),
+      })),
       dotX: px(last.t).toFixed(1),
       dotY: py(cur).toFixed(1),
       curOdd: cur.toFixed(2),

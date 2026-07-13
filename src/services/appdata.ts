@@ -253,23 +253,32 @@ export async function loadCuotasCasas(matchId: string): Promise<OddsCasasTable> 
   return out
 }
 
-/** Historial prepartido { mercado → { selección → [cuotas asc por captura] } }.
- *  Falla suave: sin historial (DB vieja o error) devuelve {} y la gráfica cae
- *  a la deriva sintética de siempre. */
+/** Historial prepartido { mercado → { selección → [cuotas asc por captura] } }
+ *  más las fechas de captura alineadas índice a índice (para el tooltip de la
+ *  gráfica). Falla suave: sin historial (DB vieja o error) devuelve tablas
+ *  vacías y la gráfica cae a la deriva sintética de siempre. */
 export type OddsHistTable = Record<string, Record<string, number[]>>
+export type OddsHistFechas = Record<string, Record<string, string[]>>
+export interface HistorialCuotas {
+  cuotas: OddsHistTable
+  fechas: OddsHistFechas
+}
 
-export async function loadCuotasHistorial(matchId: string, casa?: string | null): Promise<OddsHistTable> {
-  const out: OddsHistTable = {}
+export async function loadCuotasHistorial(matchId: string, casa?: string | null): Promise<HistorialCuotas> {
+  const cuotas: OddsHistTable = {}
+  const fechas: OddsHistFechas = {}
   try {
     const rows = await getDataSource().cuotasHistorial(fixtureNum(matchId), casa)
     for (const r of rows) {
-      const mk = (out[r.mercado] = out[r.mercado] ?? {})
+      const mk = (cuotas[r.mercado] = cuotas[r.mercado] ?? {})
       ;(mk[r.seleccion] = mk[r.seleccion] ?? []).push(r.cuota)
+      const mf = (fechas[r.mercado] = fechas[r.mercado] ?? {})
+      ;(mf[r.seleccion] = mf[r.seleccion] ?? []).push(r.capturadoEn)
     }
   } catch {
     /* opcional para pintar: los errores reales ya los reporta /cuotas */
   }
-  return out
+  return { cuotas, fechas }
 }
 
 /** Casas de referencia con historial propio para el fixture ([] si no hay). */
