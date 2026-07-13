@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Chart } from '../lib/chart'
 
 const tf: React.CSSProperties = { fill: 'var(--t3)', fontFamily: 'var(--mono)' }
@@ -16,8 +16,40 @@ interface Tip {
  *  burbuja propia con selección · cuota · fecha de captura o minuto. */
 export function ChartSvg({ chart, liveMin }: { chart: Chart; liveMin: number }) {
   const [tip, setTip] = useState<Tip | null>(null)
+  const svgRef = useRef<SVGSVGElement>(null)
   // al cambiar de mercado/partido la gráfica es otra: la burbuja abierta caduca
   useEffect(() => setTip(null), [chart])
+
+  // el toque en CUALQUIER parte de la gráfica elige el punto más cercano: en
+  // el celular el lienzo de 1000 unidades se comprime a ~370px y un objetivo
+  // por punto quedaría de ~4px — imposible de acertar con el dedo
+  const onTap = (e: React.MouseEvent<SVGSVGElement>) => {
+    const svg = svgRef.current
+    if (!svg) return
+    const r = svg.getBoundingClientRect()
+    if (!r.width) return
+    const esc = 1000 / r.width // aspecto preservado: misma escala en x e y
+    const x = (e.clientX - r.left) * esc
+    const y = (e.clientY - r.top) * esc
+    let mejor: { p: { x: string; y: string; label: string }; color: string } | null = null
+    let mejorD = Infinity
+    for (const ln of chart.lines) {
+      for (const p of ln.pts) {
+        const d = (Number(p.x) - x) ** 2 + (Number(p.y) - y) ** 2
+        if (d < mejorD) {
+          mejorD = d
+          mejor = { p, color: ln.color }
+        }
+      }
+    }
+    // umbral generoso (~55 unidades ≈ 20px en pantalla de celular)
+    if (!mejor || mejorD > 55 ** 2) {
+      setTip(null)
+      return
+    }
+    const nuevo = { x: Number(mejor.p.x), y: Number(mejor.p.y), label: mejor.p.label, color: mejor.color }
+    setTip(tip && tip.x === nuevo.x && tip.y === nuevo.y && tip.label === nuevo.label ? null : nuevo)
+  }
 
   // caja del tooltip: ancho por longitud del texto, sin salirse del lienzo
   const tipW = tip ? Math.min(tip.label.length * 7.6 + 20, 460) : 0
@@ -27,10 +59,11 @@ export function ChartSvg({ chart, liveMin }: { chart: Chart; liveMin: number }) 
 
   return (
     <svg
+      ref={svgRef}
       viewBox="0 0 1000 300"
       preserveAspectRatio="xMidYMid meet"
-      style={{ width: '100%', height: 'auto', display: 'block' }}
-      onClick={() => setTip(null)}
+      style={{ width: '100%', height: 'auto', display: 'block', cursor: 'pointer', touchAction: 'manipulation' }}
+      onClick={onTap}
     >
       {chart.grid.map((g, i) => (
         <g key={'g' + i}>
@@ -79,22 +112,9 @@ export function ChartSvg({ chart, liveMin }: { chart: Chart; liveMin: number }) 
         <path key={'ln' + i} d={ln.d} fill="none" stroke={ln.color} strokeWidth={2.4} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       ))}
 
-      {/* puntos tocables: marca visible pequeña + zona de toque generosa */}
+      {/* marcas de captura: el toque lo resuelve onTap por cercanía */}
       {chart.lines.map((ln, i) =>
-        ln.pts.map((p, j) => (
-          <g
-            key={'pt' + i + '_' + j}
-            style={{ cursor: 'pointer' }}
-            onClick={(e) => {
-              e.stopPropagation()
-              const mismo = tip && tip.x === Number(p.x) && tip.y === Number(p.y) && tip.label === p.label
-              setTip(mismo ? null : { x: Number(p.x), y: Number(p.y), label: p.label, color: ln.color })
-            }}
-          >
-            <circle cx={p.x} cy={p.y} r={2.4} fill={ln.color} opacity={0.65} />
-            <circle cx={p.x} cy={p.y} r={11} fill="transparent" />
-          </g>
-        )),
+        ln.pts.map((p, j) => <circle key={'pt' + i + '_' + j} cx={p.x} cy={p.y} r={2.4} fill={ln.color} opacity={0.65} />),
       )}
 
       {chart.lines.map((ln, i) => (
