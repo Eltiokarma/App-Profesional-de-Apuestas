@@ -123,11 +123,12 @@ export async function loadMatches(fecha: string): Promise<Match[]> {
   const ds = getDataSource()
   const base = new Date(fecha + 'T12:00:00')
   const offMin = base.getTimezoneOffset() // >0 al oeste de UTC, <0 al este
-  const pedidos = [ds.fixtures({ fecha, limit: 200 })]
+  // tope 500 del contrato: con amistosos globales un día pasa de 200 partidos
+  const pedidos = [ds.fixtures({ fecha, limit: 500 })]
   if (offMin !== 0) {
     const vecino = new Date(base)
     vecino.setDate(base.getDate() + (offMin > 0 ? 1 : -1))
-    pedidos.push(ds.fixtures({ fecha: localDateStr(vecino), limit: 200 }))
+    pedidos.push(ds.fixtures({ fecha: localDateStr(vecino), limit: 500 }))
   }
   const lotes = await Promise.all(pedidos)
   const vistos = new Set<number>()

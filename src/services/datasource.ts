@@ -242,7 +242,7 @@ class MockDataSource implements SadDataSource {
       })
       .filter((f) => !params.desde || f.fecha >= new Date(params.desde + 'T00:00:00').toISOString())
       .sort((a, b) => (params.orden === 'asc' ? a.fecha.localeCompare(b.fecha) : b.fecha.localeCompare(a.fecha)))
-      .slice(0, Math.min(Math.max(params.limit ?? 50, 1), 200)) // mismo tope que el backend
+      .slice(0, Math.min(Math.max(params.limit ?? 50, 1), 500)) // mismo tope que el backend
   }
 
   async niveles(equipoId: number, limit = 50): Promise<NivelDTO[]> {

@@ -36,7 +36,7 @@ en subproceso. El backend HTTP sigue siendo de solo lectura.
    | `SAD_LIVE_SEGUNDOS` | `60` | fase 3: ciclo en vivo (marcador/minuto + odds live) mientras haya partidos en juego; vacía = apagado |
    | `SAD_LIGAS_EXTRA` | `414:Copa Chile,999:Copa de la Liga Perú` | torneos extra sin tocar código; IDs con `--buscar` |
    | `SAD_CASAS_REFERENCIA` | `bet365,pinnacle,1xbet,betano` | casas cuyo historial crudo se guarda aparte (selector Media/casa en la gráfica); ese es el default — solo definirla para cambiar la lista |
-   | `SAD_BACKFILL_DESDE` | `2020` | backfill de temporadas pasadas: fixtures de TODAS las ligas de la lista desde esa temporada. Corre al arrancar y tras cada corrida diaria, con progreso reanudable en el volumen (`.backfill_hist.json`); completo = 0 requests, puede quedarse puesta |
+   | `SAD_BACKFILL_DESDE` | `2020` | backfill: fixtures de TODAS las ligas de la lista desde esa temporada **hasta la vigente incluida** (la vigente se re-barre cada 30 días; lo demás una sola vez). Corre al arrancar y tras cada corrida diaria, con progreso reanudable en el volumen (`.backfill_hist.json`); al día = 0 requests, puede quedarse puesta |
    | `SAD_BOOTSTRAP_URL` | *(URL del zip, solo la primera vez)* | ver carga inicial |
 
    Para descubrir el ID de un torneo nuevo (p. ej. una copa recién creada),

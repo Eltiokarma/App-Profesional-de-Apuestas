@@ -291,8 +291,9 @@ def guardar_fixtures(con: sqlite3.Connection, respuesta: list) -> int:
         teams = item.get("teams", {})
         goals = item.get("goals", {})
         score = item.get("score", {})
-        home, away = teams.get("home", {}), teams.get("away", {})
-        if not f.get("id") or not home.get("id") or not away.get("id"):
+        # amistosos con rival por confirmar: la API manda el equipo en null
+        home, away = teams.get("home") or {}, teams.get("away") or {}
+        if not f.get("id") or not f.get("date") or not home.get("id") or not away.get("id"):
             continue
         for equipo in (home, away):
             con.execute(
@@ -461,42 +462,56 @@ def guardar_ligas(con: sqlite3.Connection, respuesta: list) -> int:
 
 
 BACKFILL_PATH = ".backfill_hist.json"
+REFRESCO_VIGENTE_DIAS = 30  # la temporada en curso se re-barre cada N días
 
 
 def historico(cliente: Cliente, con: sqlite3.Connection, desde: int) -> int:
-    """Backfill de temporadas pasadas: fixtures de TODAS las ligas de LIGAS
-    desde la temporada `desde` hasta SEASON−1 (la vigente ya la cubre la
-    ventana diaria). El progreso se persiste en .backfill_hist.json torneo a
-    torneo: si el presupuesto diario se agota, la próxima corrida reanuda
-    donde quedó; cuando no queda nada pendiente sale sin gastar requests."""
-    hecho: set[str] = set()
+    """Backfill: fixtures de TODAS las ligas de LIGAS desde la temporada
+    `desde` hasta la VIGENTE incluida. Las pasadas se bajan una sola vez; la
+    vigente se re-barre cada 30 días, porque la ventana diaria (−3/+10 días)
+    no recoge lo jugado antes del despliegue ni lo anunciado a más de 10 días.
+    Progreso en .backfill_hist.json torneo a torneo: si el presupuesto se
+    agota reanuda en la próxima corrida; al día sale sin gastar requests."""
+    hoy = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    hecho: dict[str, str] = {}
     try:
         with open(BACKFILL_PATH, encoding="utf-8") as f:
-            hecho = set(json.load(f).get("hecho", []))
+            crudo = json.load(f).get("hecho", {})
+        # formato viejo (lista sin fechas): se migra con fecha antigua para
+        # que la temporada vigente se re-barra ya
+        hecho = crudo if isinstance(crudo, dict) else dict.fromkeys(crudo, "2000-01-01")
     except (OSError, ValueError):
         pass
-    pendientes = [
-        (lid, temp)
-        for lid in sorted(LIGAS)
-        for temp in range(desde, SEASON)
-        if f"{lid}:{temp}" not in hecho
-    ]
+    tope_vigente = (datetime.now(timezone.utc) - timedelta(days=REFRESCO_VIGENTE_DIAS)).strftime("%Y-%m-%d")
+
+    def pendiente(lid: int, temp: int) -> bool:
+        marca = hecho.get(f"{lid}:{temp}")
+        if marca is None:
+            return True
+        return temp == SEASON and marca < tope_vigente  # la vigente caduca
+
+    pendientes = [(lid, temp) for lid in sorted(LIGAS) for temp in range(desde, SEASON + 1)
+                  if pendiente(lid, temp)]
     if not pendientes:
-        print(f"histórico {desde}–{SEASON - 1}: completo ({len(hecho)} torneos, 0 requests)")
+        print(f"histórico {desde}–{SEASON}: al día ({len(hecho)} torneos, 0 requests)")
         return 0
-    print(f"histórico {desde}–{SEASON - 1}: {len(pendientes)} torneos pendientes "
+    print(f"histórico {desde}–{SEASON}: {len(pendientes)} torneos pendientes "
           f"(presupuesto restante {cliente.limite - cliente.usadas})")
     total = 0
     for lid, temporada in pendientes:
         if not cliente.quedan():
             print("  presupuesto agotado; el histórico se reanuda en la próxima corrida")
             break
-        filas = cliente.paginado("fixtures", {"league": lid, "season": temporada})
-        n = guardar_fixtures(con, filas)
+        try:
+            filas = cliente.paginado("fixtures", {"league": lid, "season": temporada})
+            n = guardar_fixtures(con, filas)
+        except Exception as e:  # un payload raro no puede matar el backfill entero
+            print(f"  {LIGAS.get(lid, lid)} · {temporada}: ERROR {e} — se reintenta en la próxima corrida")
+            continue
         total += n
-        hecho.add(f"{lid}:{temporada}")
+        hecho[f"{lid}:{temporada}"] = hoy
         with open(BACKFILL_PATH, "w", encoding="utf-8") as f:
-            json.dump({"desde": desde, "hecho": sorted(hecho)}, f)
+            json.dump({"desde": desde, "hecho": hecho}, f)
         print(f"  [{cliente.usadas}/{cliente.limite}] {LIGAS.get(lid, lid)} · {temporada}: {n} fixtures")
     print(f"histórico: {total} fixtures nuevos")
     return total
@@ -623,11 +638,15 @@ def main() -> int:
         for liga_id, nombre in LIGAS.items():
             if not cliente.quedan():
                 break
-            filas = cliente.paginado(
-                "fixtures",
-                {"league": liga_id, "season": SEASON, "from": desde, "to": hasta},
-            )
-            n = guardar_fixtures(con, filas)
+            try:
+                filas = cliente.paginado(
+                    "fixtures",
+                    {"league": liga_id, "season": SEASON, "from": desde, "to": hasta},
+                )
+                n = guardar_fixtures(con, filas)
+            except Exception as e:  # una liga con payload raro no corta a las demás
+                print(f"  {nombre}: ERROR {e} — sigo con la siguiente liga")
+                continue
             total += n
             print(f"  [{cliente.usadas}/{cliente.limite}] {nombre}: {n} fixtures")
         print(f"fixtures guardados: {total}")

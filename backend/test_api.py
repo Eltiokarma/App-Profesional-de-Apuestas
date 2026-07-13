@@ -42,6 +42,8 @@ def main():
     check("/health ok + dbOk + lastPipelineRun", h["status"] == "ok" and h["dbOk"] and h["lastPipelineRun"], h)
 
     # /fixtures
+    check("fixtures acepta limit=500 (días con amistosos globales)",
+          c.get(A + "/fixtures?limit=500").status_code == 200)
     fx = c.get(A + "/fixtures?limit=200").json()
     check("/fixtures devuelve 122 (120 terminados + vivo + programado)", len(fx) == 122, len(fx))
     estados = {f["estado"] for f in fx}

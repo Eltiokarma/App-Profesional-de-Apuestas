@@ -678,7 +678,8 @@ def fixtures(
     temporada: int | None = None,
     equipoId: int | None = None,
     rivalId: int | None = None,
-    limit: int = Query(default=50, ge=1, le=200),
+    # tope 500: un día con amistosos de clubes globales supera los 200 partidos
+    limit: int = Query(default=50, ge=1, le=500),
 ):
     if rivalId is not None and equipoId is None:
         raise HTTPException(status_code=422, detail="rivalId requiere equipoId")
