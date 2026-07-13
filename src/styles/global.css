@@ -24,6 +24,9 @@
   --lv-medio: #f2c744;
   --lv-bajo: #34c759;
   --pad: 16px;
+  /* grid de las gráficas: la línea base acercada un 20% al texto para que
+     las guías se lean sin robar protagonismo a las series */
+  --grid: color-mix(in oklch, var(--line), var(--t2) 20%);
   --shadow: 0 1px 0 rgba(255, 255, 255, 0.02), 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
@@ -48,6 +51,9 @@
   --down-soft: rgba(196, 80, 79, 0.1);
   --mark: #a87e1e;
   --mark-soft: rgba(168, 126, 30, 0.13);
+  /* se redeclara aquí: var() dentro de una custom property se resuelve donde
+     se define, no donde se usa — sin esto el grid claro heredaría el oscuro */
+  --grid: color-mix(in oklch, var(--line), var(--t2) 20%);
   --shadow: 0 1px 2px rgba(12, 60, 80, 0.05), 0 10px 28px rgba(12, 60, 80, 0.08);
 }
 

@@ -52,7 +52,7 @@ export function KBarChart({ bars, color, soft, title }: Props) {
         <span style={{ font: '700 13px var(--mono)', color: cur > 0 ? color : 'var(--t3)', fontVariantNumeric: 'tabular-nums' }}>{cur.toFixed(2)}</span>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: 'auto', display: 'block' }}>
-        <line x1={PAD_L} x2={W - PAD_R} y1={BASE} y2={BASE} stroke="var(--line)" strokeWidth={1} />
+        <line x1={PAD_L} x2={W - PAD_R} y1={BASE} y2={BASE} stroke="var(--grid)" strokeWidth={1} />
         <text x={PAD_L} y={PLOT_TOP - 8} fontSize={9.5} fontWeight={600} style={{ fill: 'var(--t3)', fontFamily: 'var(--mono)' }}>máx {maxY.toFixed(1)}</text>
         {bars.map((b, i) => {
           const h = b.burst ? 2.5 : Math.max(2.5, (b.value / maxY) * plotH)

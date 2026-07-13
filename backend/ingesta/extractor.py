@@ -460,6 +460,48 @@ def guardar_ligas(con: sqlite3.Connection, respuesta: list) -> int:
     return n
 
 
+BACKFILL_PATH = ".backfill_hist.json"
+
+
+def historico(cliente: Cliente, con: sqlite3.Connection, desde: int) -> int:
+    """Backfill de temporadas pasadas: fixtures de TODAS las ligas de LIGAS
+    desde la temporada `desde` hasta SEASON−1 (la vigente ya la cubre la
+    ventana diaria). El progreso se persiste en .backfill_hist.json torneo a
+    torneo: si el presupuesto diario se agota, la próxima corrida reanuda
+    donde quedó; cuando no queda nada pendiente sale sin gastar requests."""
+    hecho: set[str] = set()
+    try:
+        with open(BACKFILL_PATH, encoding="utf-8") as f:
+            hecho = set(json.load(f).get("hecho", []))
+    except (OSError, ValueError):
+        pass
+    pendientes = [
+        (lid, temp)
+        for lid in sorted(LIGAS)
+        for temp in range(desde, SEASON)
+        if f"{lid}:{temp}" not in hecho
+    ]
+    if not pendientes:
+        print(f"histórico {desde}–{SEASON - 1}: completo ({len(hecho)} torneos, 0 requests)")
+        return 0
+    print(f"histórico {desde}–{SEASON - 1}: {len(pendientes)} torneos pendientes "
+          f"(presupuesto restante {cliente.limite - cliente.usadas})")
+    total = 0
+    for lid, temporada in pendientes:
+        if not cliente.quedan():
+            print("  presupuesto agotado; el histórico se reanuda en la próxima corrida")
+            break
+        filas = cliente.paginado("fixtures", {"league": lid, "season": temporada})
+        n = guardar_fixtures(con, filas)
+        total += n
+        hecho.add(f"{lid}:{temporada}")
+        with open(BACKFILL_PATH, "w", encoding="utf-8") as f:
+            json.dump({"desde": desde, "hecho": sorted(hecho)}, f)
+        print(f"  [{cliente.usadas}/{cliente.limite}] {LIGAS.get(lid, lid)} · {temporada}: {n} fixtures")
+    print(f"histórico: {total} fixtures nuevos")
+    return total
+
+
 def probar(cliente: Cliente) -> int:
     data = cliente.get("timezone", {})
     if data and data.get("response"):
@@ -491,6 +533,9 @@ def main() -> int:
                     help="solo rellenar la tabla leagues desde /leagues (1 request por página)")
     ap.add_argument("--torneo", action="append", metavar="LIGA[:TEMPORADA]",
                     help="ingesta completa de un torneo (temporada entera, sin ventana); repetible")
+    ap.add_argument("--historico", type=int, metavar="DESDE",
+                    help="backfill: fixtures de TODAS las ligas desde esa temporada hasta la actual−1 "
+                         "(progreso en .backfill_hist.json, reanudable)")
     args = ap.parse_args()
 
     cliente = Cliente(leer_clave(), args.limite)
@@ -538,6 +583,13 @@ def main() -> int:
             print(f"  [{cliente.usadas}/{cliente.limite}] liga {liga_id} · temporada {temporada}: {n} fixtures")
         con.close()
         print(f"fixtures guardados: {total} · requests usadas: {cliente.usadas}/{cliente.limite}")
+        return 0
+
+    if args.historico:
+        con = sqlite3.connect(args.db)
+        con.execute("PRAGMA busy_timeout=15000")
+        historico(cliente, con, args.historico)
+        con.close()
         return 0
     hoy = datetime.now(timezone.utc)
     desde = args.desde or (hoy - timedelta(days=DIAS_ATRAS)).strftime("%Y-%m-%d")
