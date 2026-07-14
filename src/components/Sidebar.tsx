@@ -9,6 +9,9 @@ export function Sidebar({ store }: { store: SadStore }) {
   const navB = (k: SectionKey) => (s.section === k ? 'var(--accent-soft)' : 'transparent')
   const navF = (k: SectionKey) => (s.section === k ? 'var(--t1)' : 'var(--t2)')
   const skillsBadge = s.history.length || ''
+  // Skills es contenido simulado: solo en la demo local (en producción el
+  // botón quedaba "vacío" y confundía — el EFE vive en Análisis)
+  const conSkills = CONFIG.dataSource === 'mock'
   const feed = useFeedStatus()
   const feedColor = feed.checking ? 'var(--mark)' : feed.ok ? 'var(--up)' : 'var(--down)'
   const feedLabel = feed.mode === 'mock' ? 'MOTOR LOCAL · DEMO' : feed.checking ? 'CONECTANDO…' : feed.ok ? 'FEED CONECTADO' : 'SIN CONEXIÓN'
@@ -50,13 +53,15 @@ export function Sidebar({ store }: { store: SadStore }) {
           <span>Análisis</span>
           <span style={{ marginLeft: 'auto', font: '600 9px var(--mono)', color: 'var(--t3)' }}>EFE</span>
         </button>
-        <button onClick={store.go('skills')} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 12px', border: 0, borderRadius: 10, cursor: 'pointer', background: navB('skills'), color: navF('skills'), font: '600 13.5px var(--sans)', textAlign: 'left', transition: 'background .14s,color .14s' }}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l1.7 4.6 4.6 1.7-4.6 1.7L12 15.1l-1.7-4.6L5.7 8.8l4.6-1.7z" /><path d="M18.5 14l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9z" opacity=".7" /></svg>
-          <span>Skills</span>
-          {skillsBadge !== '' && (
-            <span style={{ marginLeft: 'auto', minWidth: 17, height: 17, padding: '0 5px', borderRadius: 9, background: 'var(--accent)', color: '#fff', font: '700 10px var(--mono)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{skillsBadge}</span>
-          )}
-        </button>
+        {conSkills && (
+          <button onClick={store.go('skills')} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 12px', border: 0, borderRadius: 10, cursor: 'pointer', background: navB('skills'), color: navF('skills'), font: '600 13.5px var(--sans)', textAlign: 'left', transition: 'background .14s,color .14s' }}>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l1.7 4.6 4.6 1.7-4.6 1.7L12 15.1l-1.7-4.6L5.7 8.8l4.6-1.7z" /><path d="M18.5 14l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9z" opacity=".7" /></svg>
+            <span>Skills</span>
+            {skillsBadge !== '' && (
+              <span style={{ marginLeft: 'auto', minWidth: 17, height: 17, padding: '0 5px', borderRadius: 9, background: 'var(--accent)', color: '#fff', font: '700 10px var(--mono)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{skillsBadge}</span>
+            )}
+          </button>
+        )}
         <button onClick={store.go('estadisticas')} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 12px', border: 0, borderRadius: 10, cursor: 'pointer', background: navB('estadisticas'), color: navF('estadisticas'), font: '600 13.5px var(--sans)', textAlign: 'left', transition: 'background .14s,color .14s' }}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M5 21V11M12 21V4M19 21v-8" /><path d="M3 21h18" /></svg>
           <span>Estadísticas</span>

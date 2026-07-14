@@ -98,6 +98,15 @@ PERFIL_TACTICO = _obj({
     "vulnerabilidad": _STR,
 })
 
+# La DESPENSA: lo que el modelo investigó, devuelto junto al análisis para
+# guardarlo por equipo con TTL y NO volver a pagarlo en el siguiente análisis.
+# Claves en sintonía con db.TIPOS (dt/plantel 14d · fixture 7d · xi/bajas 48h ·
+# tabla/resultados 24h). Cada campo es un resumen textual denso; "" = no investigado.
+DESPENSA_EQUIPO = _obj({
+    "dt": _STR, "plantel": _STR, "tabla": _STR, "resultados": _STR,
+    "fixture": _STR, "xi_reciente": _STR, "bajas": _STR,
+})
+
 EFE_COMPARATIVO = _obj({
     "version_efe": _STR,
     "partido": _obj({
@@ -136,6 +145,9 @@ EFE_COMPARATIVO = _obj({
     }),
     "datos_faltantes": _arr(_STR),
     "fuentes": _arr(_STR),
+    # la despensa viaja DENTRO de la respuesta y el motor la separa: se guarda
+    # en la tabla investigacion (no en el análisis) para abaratar los siguientes
+    "investigacion": _obj({"equipo_a": DESPENSA_EQUIPO, "equipo_b": DESPENSA_EQUIPO}),
 })
 
 
