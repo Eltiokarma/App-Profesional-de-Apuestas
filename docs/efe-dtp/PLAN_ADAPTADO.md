@@ -120,10 +120,11 @@ mira aquí si existe N−1 con cierre pendiente para armar la cadena rodante; el
 ### Los prompts viven en el repo, no en la DB
 
 `EFE_v1_5_prompt.md` (protocolo, bloque 1 del system) y
-`SYSTEM_PROMPT_SAD_API.md` (instrucciones API, bloque 2) se leen del disco al
-arrancar y van con `cache_control` — versionados con git, un solo archivo por
-versión, la caché se regenera sola al cambiar. Los esquemas JSON
-(EFE_COMPARATIVO, DTP, MATRIZ_V2) van como JSON Schema en
+`SYSTEM_PROMPT_SAD_API.md` (instrucciones API, bloque 2) viven en
+**`backend/analisis/prompts/`** (el Dockerfile solo empaqueta `backend/`, por
+eso no en docs/). Se leen del disco y van con `cache_control` — versionados
+con git, un solo archivo por versión, la caché se regenera sola al cambiar.
+Los esquemas JSON (EFE_COMPARATIVO, DTP, MATRIZ_V2) van como JSON Schema en
 `backend/analisis/esquemas.py` y se pasan como structured output.
 
 ### Flujo de una llamada a POST /api/efe {fixtureId}

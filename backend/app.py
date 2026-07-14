@@ -23,6 +23,7 @@ from typing import Literal
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from backend import db
 
@@ -1076,3 +1077,37 @@ def cuotas_historial(fixture_id: int, casa: str | None = None):
                 }
             )
     return out
+
+
+# ---------------------------------------------------------------------------
+# análisis EFE+DTP (docs/efe-dtp/PLAN_ADAPTADO.md)
+# ---------------------------------------------------------------------------
+# Excepción documentada a la regla de solo lectura: estos endpoints escriben
+# efe.db (propiedad exclusiva de backend/analisis/), nunca las DBs del SAD.
+# El POST cuesta créditos de la API de Claude: queda protegido por el auth
+# bearer global (SAD_API_TOKEN) igual que el resto de la API.
+
+
+class EfeRequest(BaseModel):
+    fixtureId: int
+
+
+@app.post(API + "/analisis/efe")
+def analisis_efe(body: EfeRequest):
+    """Genera (o devuelve, si ya existe) el EFE comparativo del fixture."""
+    from backend.analisis import motor as efemotor
+    try:
+        return efemotor.generar_efe(body.fixtureId)
+    except efemotor.FixtureNoExiste as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except efemotor.SinClave as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=f"Error del análisis: {e}")
+
+
+@app.get(API + "/analisis/partido/{fixture_id}")
+def analisis_partido(fixture_id: int):
+    """Todo lo emitido para un fixture (lectura pura, cero créditos)."""
+    from backend.analisis import motor as efemotor
+    return efemotor.analisis_del_partido(fixture_id)

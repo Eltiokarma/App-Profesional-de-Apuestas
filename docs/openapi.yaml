@@ -236,6 +236,41 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: '#/components/schemas/CuotaSnapshot' } }
+  /analisis/efe:
+    post:
+      summary: Genera (o devuelve, si ya existe) el análisis EFE comparativo de un fixture
+      description: >
+        Capa EFE+DTP (docs/efe-dtp/PLAN_ADAPTADO.md). Llama a la API de Claude
+        con el protocolo EFE como system cacheado y structured outputs; si el
+        análisis ya existe para ese fixture y estado, lo devuelve sin gastar
+        créditos. Escribe SOLO en efe.db (excepción documentada a la regla de
+        solo lectura). 404 si el fixture no existe; 503 sin ANTHROPIC_API_KEY.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fixtureId]
+              properties:
+                fixtureId: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AnalisisRegistro' }
+  /analisis/partido/{fixtureId}:
+    get:
+      summary: Análisis emitidos para un fixture (lectura pura, cero créditos)
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK ([] si no hay análisis)
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/AnalisisRegistro' } }
 components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer }
@@ -514,6 +549,16 @@ components:
         equipoId: { type: integer, nullable: true }
         jugador: { type: string, nullable: true }
         detalle: { type: string, nullable: true, description: 'detalle crudo de la API (Penalty, Own Goal…)' }
+    AnalisisRegistro:
+      type: object
+      required: [tipo, fixtureId, estado, versionEfe, creadoEn, resultado]
+      properties:
+        tipo: { type: string, enum: [efe, dtp, matriz] }
+        fixtureId: { type: integer }
+        estado: { type: string, enum: [preliminar, confirmado], description: 'preliminar = XI provisional (T−24h); confirmado = XI oficial (T−40min)' }
+        versionEfe: { type: string, description: 'versión del protocolo con la que se emitió (inmutable)' }
+        creadoEn: { type: string, format: date-time }
+        resultado: { type: object, description: 'JSON del esquema EFE_COMPARATIVO / DTP / MATRIZ_V2 (backend/analisis/esquemas.py)', additionalProperties: true }
     FixtureLive:
       type: object
       required: [fixtureId, estado, minuto, golesLocal, golesVisitante, cuotas, serie, eventos, actualizadoEn]
