@@ -412,6 +412,44 @@ def guardar_odds(con: sqlite3.Connection, fixture_id: int, respuesta: list) -> i
     return n
 
 
+def capturar_cuotas_lote(cliente: "Cliente", con: sqlite3.Connection,
+                         pendientes: list[int]) -> tuple[int, int]:
+    """Cuotas EN LOTE: /odds?date=YYYY-MM-DD trae el día entero paginado
+    (~10 fixtures por página) — antes pedíamos /odds?fixture=X partido a
+    partido y una corrida de Mundial quemaba cientos de requests; en lote,
+    un día con 60 partidos cuesta ~6 páginas. El feed del día se filtra a
+    NUESTROS pendientes y se guarda igual que antes (misma forma de item).
+    Devuelve (cuotas_guardadas, fixtures_con_cobertura)."""
+    if not pendientes:
+        return 0, 0
+    marcas = ",".join("?" * len(pendientes))
+    fechas: dict[str, set[int]] = {}
+    for fid, fecha in con.execute(
+            f"SELECT id, substr(date, 1, 10) FROM fixtures WHERE id IN ({marcas})",
+            pendientes):
+        if fecha:
+            fechas.setdefault(fecha, set()).add(fid)
+    total = 0
+    cubiertos: set[int] = set()
+    for fecha in sorted(fechas):
+        if not cliente.quedan():
+            print("  presupuesto agotado; el resto queda para la próxima corrida")
+            break
+        objetivo = fechas[fecha]
+        filas = cliente.paginado("odds", {"date": fecha})
+        por_fixture: dict[int, list] = {}
+        for item in filas:
+            fid = (item.get("fixture") or {}).get("id")
+            if fid in objetivo:
+                por_fixture.setdefault(fid, []).append(item)
+        for fid, items in por_fixture.items():
+            total += guardar_odds(con, fid, items)
+            cubiertos.add(fid)
+        print(f"  [{cliente.usadas}/{cliente.limite}] {fecha}: cuotas de "
+              f"{len(por_fixture)}/{len(objetivo)} partidos nuestros (feed del día: {len(filas)} items)")
+    return total, len(cubiertos)
+
+
 def fixtures_para_cuotas(con: sqlite3.Connection, dias: int = DIAS_ADELANTE,
                          dias_refresco: int = DIAS_REFRESCO) -> list[int]:
     """Primero los NS sin ninguna cuota (primera captura, toda la ventana);
@@ -642,21 +680,12 @@ def main() -> int:
 
     if args.ventana_horas:
         pendientes = fixtures_proximos(con, args.ventana_horas)
-        print(f"Refresco: {len(pendientes)} NS que empiezan en <= {args.ventana_horas} h "
+        print(f"Refresco: {len(pendientes)} NS que empiezan en <= {args.ventana_horas} h · en lote por fecha "
               f"(presupuesto restante {cliente.limite - cliente.usadas})")
-        total = 0
-        for fid in pendientes:
-            if not cliente.quedan():
-                print("  presupuesto agotado; el resto queda para el próximo refresco")
-                break
-            data = cliente.get("odds", {"fixture": fid})
-            if data is None:
-                continue
-            n = guardar_odds(con, fid, data.get("response", []))
-            total += n
-            print(f"  [{cliente.usadas}/{cliente.limite}] fixture {fid}: {n} cuotas")
+        total, cubiertos = capturar_cuotas_lote(cliente, con, pendientes)
         con.close()
-        print(f"cuotas refrescadas: {total} · requests usadas: {cliente.usadas}/{cliente.limite}")
+        print(f"cuotas refrescadas: {total} ({cubiertos}/{len(pendientes)} con cobertura) "
+              f"· requests usadas: {cliente.usadas}/{cliente.limite}")
         print(f"consumo por endpoint: {cliente.resumen()}")
         return 0
 
@@ -693,19 +722,9 @@ def main() -> int:
     if args.solo != "fixtures":
         pendientes = fixtures_para_cuotas(con)
         print(f"Cuotas: {len(pendientes)} partidos NS (primera captura + refresco <={DIAS_REFRESCO}d) "
-              f"(presupuesto restante {cliente.limite - cliente.usadas})")
-        total = 0
-        for fid in pendientes:
-            if not cliente.quedan():
-                print("  presupuesto agotado; el resto queda para la próxima corrida")
-                break
-            data = cliente.get("odds", {"fixture": fid})
-            if data is None:
-                continue
-            n = guardar_odds(con, fid, data.get("response", []))
-            total += n
-            print(f"  [{cliente.usadas}/{cliente.limite}] fixture {fid}: {n} cuotas")
-        print(f"cuotas guardadas: {total}")
+              f"· en lote por fecha (presupuesto restante {cliente.limite - cliente.usadas})")
+        total, cubiertos = capturar_cuotas_lote(cliente, con, pendientes)
+        print(f"cuotas guardadas: {total} ({cubiertos}/{len(pendientes)} fixtures con cobertura)")
 
     print(f"consumo por endpoint: {cliente.resumen()} · total {cliente.usadas}/{cliente.limite}")
     con.close()
