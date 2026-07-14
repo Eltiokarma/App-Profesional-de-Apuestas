@@ -315,6 +315,16 @@ export function estadoAnalisisEfe(matchId: string): Promise<GeneracionEfeDTO> {
   return getDataSource().estadoEfe(fixtureNum(matchId))
 }
 
+/** Lanza el timeline comparativo (mismo patrón asíncrono que el EFE). */
+export function generarTimeline(matchId: string, forzar = false): Promise<GeneracionEfeDTO> {
+  return getDataSource().generarTimeline(fixtureNum(matchId), forzar)
+}
+
+/** Sondeo del trabajo de timeline. */
+export function estadoTimeline(matchId: string): Promise<GeneracionEfeDTO> {
+  return getDataSource().estadoTimeline(fixtureNum(matchId))
+}
+
 // ── predicción (§5) y análisis pre-partido ──────────────────────────────────
 export function loadPrediccion(matchId: string): Promise<PrediccionDTO> {
   return getDataSource().prediccion(fixtureNum(matchId))

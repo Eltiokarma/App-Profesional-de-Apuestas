@@ -54,6 +54,49 @@ def _equipo(nombre: str, color: str, porcentaje: float, clasificacion: str) -> d
     }
 
 
+def timeline_demo(equipo_a: str, equipo_b: str) -> dict:
+    """Timeline de muestra determinista (misma forma que el contrato TIMELINE)."""
+    def ev(fecha, equipo, tipo, titulo, detalle, marcador="", jornada=0, destacado=False):
+        return {"fecha": fecha, "aproximada": False, "equipo": equipo, "tipo": tipo,
+                "titulo": titulo, "detalle": detalle, "jornada": jornada,
+                "marcador": marcador, "destacado": destacado,
+                "alerta_relacionada": "", "fuente": "demo"}
+    return {
+        "titulo": f"{equipo_a} vs {equipo_b} — Feb-Jul 2026",
+        "periodo": {"desde": "2026-02-01", "hasta": "2026-07-14"},
+        "equipos": [
+            {"nombre": equipo_a, "lado": "izquierda", "color": "#5B8DEF",
+             "color_secundario": "#C7D0EC",
+             "stats": {"posicion": 2, "puntos": 38,
+                       "ultima_victoria": "2026-07-06 2-0", "otros": []}},
+            {"nombre": equipo_b, "lado": "derecha", "color": "#E5484D",
+             "color_secundario": "#F2C1C3",
+             "stats": {"posicion": 7, "puntos": 27,
+                       "ultima_victoria": "2026-06-21 1-0", "otros": []}},
+        ],
+        "eventos": [
+            ev("2026-02-09", equipo_a, "resultado", "Victoria 2-0 en el debut",
+               "Arranque sólido con doblete del 9.", "2-0", 1),
+            ev("2026-03-02", equipo_b, "tecnico", "Cambio de DT",
+               "Sale el técnico tras 4 fechas sin ganar; asume el interino.",
+               destacado=True),
+            ev("2026-04-12", "ambos", "resultado", "Clásico 1-1",
+               "Enfrentamiento directo parejo, con expulsión al 80'.", "1-1", 9),
+            ev("2026-05-17", equipo_b, "derrota", "Caída 0-3 como local",
+               "Peor derrota del semestre; crisis en la interna.", "0-3", 14),
+            ev("2026-06-28", equipo_a, "hito", "Clasificación a la final",
+               "Cierra la fase como líder e instala la final del Apertura.",
+               destacado=True),
+        ],
+        "agrupacion": "mes",
+        "narrativa": f"{equipo_a} llega en curva ascendente y con final asegurada; "
+                     f"{equipo_b} cambió de DT a mitad del semestre y alterna resultados. "
+                     "El precedente directo del período terminó igualado.",
+        "datos_faltantes": [],
+        "fuentes": ["demo"],
+    }
+
+
 def efe_demo(equipo_a: str, equipo_b: str, torneo: str | None, fecha: str | None) -> dict:
     return {
         "version_efe": "1.5",

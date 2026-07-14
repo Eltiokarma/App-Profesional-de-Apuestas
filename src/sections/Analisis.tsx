@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { AnalisisRegistroDTO, EfeBloque, EfeComparativo, EfeEquipo, GeneracionEfeDTO } from '../api/types'
+import type { AnalisisRegistroDTO, EfeBloque, EfeComparativo, EfeEquipo, GeneracionEfeDTO, TimelineData } from '../api/types'
 import { CONFIG } from '../config'
 import type { Match } from '../data/types'
-import { estadoAnalisisEfe, generarAnalisisEfe, loadAnalisisPartido } from '../services/appdata'
+import { estadoAnalisisEfe, estadoTimeline, generarAnalisisEfe, generarTimeline, loadAnalisisPartido } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
+import { TimelineComparativo } from '../components/TimelineComparativo'
 
 interface Props {
   m: Match
@@ -165,18 +166,57 @@ export function Analisis({ m, isMobile }: Props) {
     const efes = (registros.data ?? []).filter((r) => r.tipo === 'efe')
     return efes.find((r) => r.estado === 'confirmado') ?? efes[efes.length - 1] ?? null
   }, [registros.data])
-  const r: EfeComparativo | null = efe?.resultado ?? null
+  const r: EfeComparativo | null = (efe?.resultado as EfeComparativo) ?? null
+
+  // timeline comparativo (modo futbol-timeline): registro independiente del EFE
+  const tlReg: AnalisisRegistroDTO | null = useMemo(() => {
+    const tls = (registros.data ?? []).filter((x) => x.tipo === 'timeline')
+    return tls[tls.length - 1] ?? null
+  }, [registros.data])
+  const tl: TimelineData | null = (tlReg?.resultado as TimelineData) ?? null
+  const [tlGenerando, setTlGenerando] = useState(false)
+  const [tlError, setTlError] = useState<string | null>(null)
+
+  const manejarTl = (res: GeneracionEfeDTO) => {
+    if (!vivoRef.current) return
+    if (res.estado === 'listo') {
+      setTlGenerando(false)
+      registros.reload()
+    } else if (res.estado === 'generando') {
+      setTlGenerando(true)
+      timerTlRef.current = setTimeout(() => {
+        estadoTimeline(m.id).then(manejarTl).catch(() => {
+          if (vivoRef.current) timerTlRef.current = setTimeout(() => estadoTimeline(m.id).then(manejarTl).catch(() => setTlGenerando(false)), 8000)
+        })
+      }, 6000)
+    } else {
+      setTlGenerando(false)
+      setTlError(res.detalle || (res.estado === 'nada' ? 'La generación no está en curso: vuelve a intentarlo' : 'Error del timeline'))
+    }
+  }
+  const generarTl = (forzar = false) => {
+    setTlGenerando(true)
+    setTlError(null)
+    generarTimeline(m.id, forzar)
+      .then(manejarTl)
+      .catch((e: unknown) => {
+        setTlGenerando(false)
+        setTlError(e instanceof Error ? e.message : 'error del timeline')
+      })
+  }
 
   // el trabajo corre en el SERVIDOR: el POST responde al instante y aquí se
   // sondea /estado cada pocos segundos hasta listo/error. Sobrevive a que el
   // usuario cierre la página (al volver, el useEffect retoma el sondeo).
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const timerTlRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const vivoRef = useRef(true)
   useEffect(() => {
     vivoRef.current = true
     return () => {
       vivoRef.current = false
       if (timerRef.current) clearTimeout(timerRef.current)
+      if (timerTlRef.current) clearTimeout(timerTlRef.current)
     }
   }, [m.id])
 
@@ -216,6 +256,13 @@ export function Analisis({ m, isMobile }: Props) {
     if (registros.loading || efe) return
     estadoAnalisisEfe(m.id)
       .then((res) => { if (res.estado === 'generando') manejar(res) })
+      .catch(() => { /* opcional */ })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [m.id, registros.loading])
+  useEffect(() => {
+    if (registros.loading || tl) return
+    estadoTimeline(m.id)
+      .then((res) => { if (res.estado === 'generando') manejarTl(res) })
       .catch(() => { /* opcional */ })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [m.id, registros.loading])
@@ -452,6 +499,54 @@ export function Analisis({ m, isMobile }: Props) {
             </div>
           )}
         </>
+      )}
+
+      {/* ── TIMELINE COMPARATIVO (modo futbol-timeline, skill independiente) ── */}
+      {!registros.loading && !registros.error && (
+        <section style={{ marginTop: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+            <h2 style={{ margin: 0, font: '800 16px var(--sans)', letterSpacing: '-.2px' }}>Timeline comparativo</h2>
+            <span style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)', flex: 1 }}>la película de ambos equipos · últimos 6 meses</span>
+            {tlReg && (
+              <button
+                onClick={() => generarTl(true)}
+                disabled={tlGenerando}
+                title={esDemo ? 'Regenerar el timeline de muestra' : 'Descarta este timeline y emite uno nuevo (consume créditos ~$0.10-0.18)'}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 9, border: '1px solid var(--line)', cursor: tlGenerando ? 'wait' : 'pointer', background: tlGenerando ? 'var(--bg3)' : 'var(--bg2)', color: tlGenerando ? 'var(--t3)' : 'var(--t1)', font: '600 11px var(--sans)' }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={tlGenerando ? { animation: 'sadspin 1.1s linear infinite' } : undefined}>
+                  <path d="M21 12a9 9 0 11-2.64-6.36M21 3v6h-6" />
+                </svg>
+                {tlGenerando ? 'Regenerando…' : 'Regenerar'}
+              </button>
+            )}
+          </div>
+          {tlError && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', marginBottom: 12, borderRadius: 11, background: 'var(--down-soft)', border: '1px solid color-mix(in oklch,var(--down),transparent 55%)' }}>
+              <span style={{ font: '500 12px var(--sans)', color: 'var(--t1)', flex: 1 }}>{tlError}</span>
+              <button onClick={() => generarTl(!!tlReg)} style={{ padding: '6px 12px', borderRadius: 8, border: 0, background: 'var(--down)', color: '#fff', cursor: 'pointer', font: '600 11px var(--sans)', flexShrink: 0 }}>Reintentar</button>
+            </div>
+          )}
+          {tl ? (
+            <TimelineComparativo data={tl} isMobile={isMobile} />
+          ) : (
+            <div style={{ padding: '24px 20px', borderRadius: 16, background: 'var(--bg2)', border: '1px dashed var(--line)', textAlign: 'center' }}>
+              <p style={{ margin: '0 auto 14px', maxWidth: 480, font: '500 12px var(--sans)', color: 'var(--t3)' }}>
+                Cronología comparativa del semestre: resultados, cambios de DT, crisis y
+                hitos de ambos equipos sobre un mismo eje temporal.
+                {esDemo ? ' Modo demo: timeline de muestra, sin costo.' : ' Reutiliza lo investigado por el EFE (~$0.10-0.18; con EFE previo, menos).'}
+              </p>
+              <button onClick={() => generarTl()} disabled={tlGenerando} style={{ padding: '10px 20px', borderRadius: 10, border: 0, cursor: tlGenerando ? 'wait' : 'pointer', background: tlGenerando ? 'var(--bg3)' : 'var(--accent)', color: tlGenerando ? 'var(--t2)' : '#fff', font: '700 12.5px var(--sans)' }}>
+                {tlGenerando ? 'Generando timeline… (1-3 min)' : 'Generar timeline'}
+              </button>
+              {tlGenerando && (
+                <p style={{ margin: '10px auto 0', maxWidth: 440, font: '500 10.5px var(--mono)', color: 'var(--t3)' }}>
+                  El trabajo corre en el servidor: puedes cerrar esta página y volver.
+                </p>
+              )}
+            </div>
+          )}
+        </section>
       )}
     </div>
   )

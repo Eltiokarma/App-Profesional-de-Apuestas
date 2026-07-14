@@ -1132,6 +1132,29 @@ def analisis_efe_estado(fixture_id: int):
     return efemotor.estado_efe(fixture_id)
 
 
+@app.post(API + "/analisis/timeline")
+def analisis_timeline(body: EfeRequest):
+    """Lanza el timeline comparativo del fixture (modo futbol-timeline).
+
+    Mismo patrón asíncrono que el EFE: respuesta inmediata y sondeo en
+    /analisis/timeline/estado/{id}. Con `forzar` regenera. Hereda alertas y
+    colores del EFE previo si existe (cero búsquedas duplicadas)."""
+    from backend.analisis import motor as efemotor
+    try:
+        return efemotor.iniciar_timeline(body.fixtureId, forzar=body.forzar)
+    except efemotor.FixtureNoExiste as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except efemotor.SinClave as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+
+@app.get(API + "/analisis/timeline/estado/{fixture_id}")
+def analisis_timeline_estado(fixture_id: int):
+    """Sondeo del trabajo de timeline: listo / generando / error / nada."""
+    from backend.analisis import motor as efemotor
+    return efemotor.estado_timeline(fixture_id)
+
+
 @app.get(API + "/analisis/partido/{fixture_id}")
 def analisis_partido(fixture_id: int):
     """Todo lo emitido para un fixture (lectura pura, cero créditos)."""

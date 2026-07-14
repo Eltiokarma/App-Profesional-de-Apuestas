@@ -81,18 +81,13 @@ def analisis_de_fixture(fixture_id: int) -> list[dict]:
             (fixture_id,),
         ).fetchall()
     # ESTA es la ruta que alimenta el dashboard (/analisis/partido/{id}): la
-    # autocuración de EFE vacíos tiene que correr también aquí, no solo en
-    # analisis_existente — si no, el dashboard sigue pintando el análisis en 0.
-    from backend.analisis.esquemas import analisis_vacio
+    # autocuración de análisis vacíos tiene que correr también aquí, no solo
+    # en analisis_existente — si no, el dashboard sigue pintando el vacío.
     buenos: list[dict] = []
     for f in filas:
         dto = _fila_a_dto(f)
-        if dto["tipo"] == "efe" and analisis_vacio(dto["resultado"]):
-            with conectar() as con:
-                con.execute("DELETE FROM analisis WHERE tipo=? AND fixture_id=? AND estado=?",
-                            (dto["tipo"], fixture_id, dto["estado"]))
-                con.commit()
-            print(f"[efe] fixture {fixture_id}: análisis vacío purgado (regenerable)", flush=True)
+        if _es_vacio(dto):
+            _purgar(dto["tipo"], fixture_id, dto["estado"])
         else:
             buenos.append(dto)
     return buenos
@@ -116,18 +111,30 @@ def analisis_existente(tipo: str, fixture_id: int, estado: str) -> dict | None:
     if not f:
         return None
     dto = _fila_a_dto(f)
-    # Autocuración: un EFE guardado sin contenido (ambos equipos en 0 — bug de
-    # versiones anteriores) se borra para que el usuario pueda regenerarlo.
-    if tipo == "efe":
-        from backend.analisis.esquemas import analisis_vacio
-        if analisis_vacio(dto["resultado"]):
-            with conectar() as con:
-                con.execute("DELETE FROM analisis WHERE tipo=? AND fixture_id=? AND estado=?",
-                            (tipo, fixture_id, estado))
-                con.commit()
-            print(f"[efe] fixture {fixture_id}: análisis vacío purgado (regenerable)", flush=True)
-            return None
+    if _es_vacio(dto):
+        _purgar(tipo, fixture_id, estado)
+        return None
     return dto
+
+
+def _es_vacio(dto: dict) -> bool:
+    """Autocuración: un análisis guardado sin contenido (EFE en ceros o
+    timeline sin eventos) no vale como caché — se detecta para purgarlo y
+    que el usuario pueda regenerar."""
+    from backend.analisis.esquemas import analisis_vacio, timeline_vacio
+    if dto["tipo"] == "efe":
+        return analisis_vacio(dto["resultado"])
+    if dto["tipo"] == "timeline":
+        return timeline_vacio(dto["resultado"])
+    return False
+
+
+def _purgar(tipo: str, fixture_id: int, estado: str) -> None:
+    with conectar() as con:
+        con.execute("DELETE FROM analisis WHERE tipo=? AND fixture_id=? AND estado=?",
+                    (tipo, fixture_id, estado))
+        con.commit()
+    print(f"[{tipo}] fixture {fixture_id}: análisis vacío purgado (regenerable)", flush=True)
 
 
 def guardar_analisis(tipo: str, fixture_id: int, equipo_a: str, equipo_b: str,

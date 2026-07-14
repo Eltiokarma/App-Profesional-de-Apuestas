@@ -341,6 +341,26 @@ def main():
           gen3.get("estado"))
     check("tras forzar sigue habiendo UN solo análisis del fixture",
           len(c.get(A + f"/analisis/partido/{vivo['id']}").json()) == 1)
+    # timeline comparativo (modo futbol-timeline): mismo patrón asíncrono
+    gtl = c.post(A + "/analisis/timeline", json={"fixtureId": vivo["id"]}).json()
+    check("timeline: POST responde listo (demo) con tipo timeline",
+          gtl["estado"] == "listo" and gtl["registro"]["tipo"] == "timeline",
+          gtl.get("estado"))
+    rtl = gtl["registro"]["resultado"]
+    check("timeline: contrato (2 equipos, eventos en orden, agrupación)",
+          len(rtl["equipos"]) == 2 and len(rtl["eventos"]) >= 3
+          and rtl["agrupacion"] in ("mes", "trimestre")
+          and [e["fecha"] for e in rtl["eventos"]] == sorted(e["fecha"] for e in rtl["eventos"]))
+    check("timeline/estado → listo con registro",
+          c.get(A + f"/analisis/timeline/estado/{vivo['id']}").json()["estado"] == "listo")
+    check("analisis/partido lista efe + timeline",
+          sorted(x["tipo"] for x in c.get(A + f"/analisis/partido/{vivo['id']}").json())
+          == ["efe", "timeline"])
+    check("timeline con forzar → regenera y responde listo",
+          c.post(A + "/analisis/timeline", json={"fixtureId": vivo["id"], "forzar": True}).json()["estado"] == "listo")
+    from backend.analisis.esquemas import TIMELINE, timeline_vacio
+    check("timeline_vacio detecta un timeline sin eventos",
+          timeline_vacio(ajustar({}, TIMELINE)) and not timeline_vacio(rtl))
     check("efe de fixture inexistente → 404",
           c.post(A + "/analisis/efe", json={"fixtureId": 999999}).status_code == 404)
     del os.environ["SAD_EFE_DEMO"]

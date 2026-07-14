@@ -80,6 +80,13 @@ export const SadApi = {
   /** Sondeo del trabajo de análisis EFE. */
   estadoEfe: (fixtureId: number) => apiGet<GeneracionEfeDTO>(`/analisis/efe/estado/${fixtureId}`),
 
+  /** Lanza el timeline comparativo (mismo patrón asíncrono que el EFE). */
+  generarTimeline: (fixtureId: number, forzar = false) =>
+    apiPost<GeneracionEfeDTO>('/analisis/timeline', { fixtureId, forzar }, { timeoutMs: 30_000 }),
+
+  /** Sondeo del trabajo de timeline. */
+  estadoTimeline: (fixtureId: number) => apiGet<GeneracionEfeDTO>(`/analisis/timeline/estado/${fixtureId}`),
+
   /** Metadatos de la liga (nombre, país, logo, bandera). */
   liga: (ligaId: number) => apiGet<LigaDTO>(`/ligas/${ligaId}`),
 
