@@ -60,9 +60,12 @@ def _nivel_at(by, tid, date):
 
 def _fixtures_2026(sad):
     """Partidos 2026 terminados: id, home, away, gh, ga, date."""
+    # regla de 90': fulltime_* manda; el filtro incluye AET/PEN
     return sad.execute(
-        "SELECT id, home_team_id, away_team_id, goals_home, goals_away, date "
-        "FROM fixtures WHERE date LIKE '2026%' AND status_long='Match Finished'"
+        "SELECT id, home_team_id, away_team_id, "
+        "COALESCE(fulltime_home, goals_home), COALESCE(fulltime_away, goals_away), date "
+        "FROM fixtures WHERE date LIKE '2026%' "
+        "AND (status_short IN ('FT','AET','PEN') OR status_long='Match Finished')"
     ).fetchall()
 
 

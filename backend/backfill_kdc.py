@@ -57,7 +57,9 @@ def backfill(base_dir):
     # fixtures: goles y local/visita, en memoria
     fixtures = {
         r[0]: (r[1], r[2], r[3], r[4])
-        for r in sad.execute("SELECT id, home_team_id, away_team_id, goals_home, goals_away FROM fixtures")
+        # regla de 90': fulltime_* manda (goals_* incluye la prórroga en AET/PEN)
+        for r in sad.execute("SELECT id, home_team_id, away_team_id, "
+                             "COALESCE(fulltime_home, goals_home), COALESCE(fulltime_away, goals_away) FROM fixtures")
     }
     # levels por equipo para el respaldo de los 0-0 (bisect por fecha)
     lv_by_team = {}

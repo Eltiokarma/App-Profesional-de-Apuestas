@@ -294,6 +294,27 @@ def main():
     efedb.guardar_analisis("efe", 900003, "X", "Y", "2026-01-01", "preliminar", vacio, "1.5")
     check("análisis vacío → /analisis/partido lo purga y devuelve []",
           c.get(A + "/analisis/partido/900003").json() == [])
+    # REGLA DE 90': la matemática usa fulltime_* (un AET con 2-2 en los 90 y
+    # 3-2 tras prórroga cuenta como EMPATE), y el filtro incluye AET/PEN
+    import sqlite3 as _sql
+    import tempfile as _tmp
+    from backend.ingesta import pipeline as _pipe
+    _f90 = os.path.join(_tmp.mkdtemp(), "sad90.db")
+    with _sql.connect(_f90) as _c90:
+        _c90.execute("""CREATE TABLE fixtures (id INTEGER PRIMARY KEY, date DATETIME,
+            home_team_id INTEGER, away_team_id INTEGER, goals_home INTEGER, goals_away INTEGER,
+            fulltime_home INTEGER, fulltime_away INTEGER, status_short TEXT, status_long TEXT,
+            league_id INTEGER, league_season INTEGER)""")
+        _c90.executemany(
+            "INSERT INTO fixtures VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            [(1, "2026-07-01", 10, 20, 3, 2, 2, 2, "AET", "Match Finished After Extra Time", 1, 2026),
+             (2, "2026-07-02", 10, 20, 1, 0, 1, 0, "FT", "Match Finished", 1, 2026)])
+        _c90.commit()
+    _fx90 = _pipe.leer_fixtures(_f90)
+    check("K de 90': el AET entra al motor con su marcador de los 90 (2-2)",
+          len(_fx90) == 2 and (_fx90[0][4], _fx90[0][5]) == (2, 2)
+          and (_fx90[1][4], _fx90[1][5]) == (1, 0),
+          [(f[4], f[5]) for f in _fx90])
     # datos locales: tabla/resultados/próximos salen de sad.db (costo cero,
     # sin búsqueda web) y entran al análisis como datos_cacheados
     from backend.analisis import motor as efemotor
