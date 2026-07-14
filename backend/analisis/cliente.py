@@ -17,11 +17,20 @@ import os
 from backend.analisis.esquemas import ajustar
 
 MODELO = os.environ.get("SAD_EFE_MODELO", "claude-sonnet-5")
-MAX_TOKENS = 16_000
+# Con la investigación real activa (18 búsquedas) el razonamiento + el JSON
+# del EFE no cabían en 16k → stop_reason=max_tokens. Tope amplio + STREAMING
+# (obligatorio por encima de ~16k para no chocar con timeouts HTTP del SDK).
+MAX_TOKENS = int(os.environ.get("SAD_EFE_MAX_TOKENS", "64000"))
 # Un EFE completo investiga ~7 tipos de datos por equipo (14 en total): con un
 # tope bajo el modelo agota las búsquedas, recibe bloques de error
 # (max_uses_exceeded) y concluye "herramienta no disponible" → análisis en ceros.
 MAX_BUSQUEDAS = int(os.environ.get("SAD_EFE_BUSQUEDAS", "18"))
+
+# Precios de claude-sonnet-5 por millón de tokens (intro hasta 2026-08-31:
+# $2 input / $10 output; caché: escritura 1.25×, lectura 0.1×) y $10 por
+# 1000 búsquedas web. Solo para el log de costo estimado por corrida.
+_PRECIO = {"input": 2.0, "output": 10.0, "cache_write": 2.5, "cache_read": 0.2}
+_PRECIO_BUSQUEDA = 0.01
 
 _PROMPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prompts")
 _MARCA_BLOQUE2 = "## INSTRUCCIONES DE EJECUCIÓN API"
@@ -85,41 +94,64 @@ def analizar(payload: dict, esquema: dict, con_busqueda: bool) -> tuple[dict, di
         kwargs["tools"] = [{"type": "web_search_20260209", "name": "web_search",
                             "max_uses": MAX_BUSQUEDAS}]
 
-    respuesta = client.messages.create(**kwargs)
+    # STREAMING: con max_tokens grandes (64k) el create() normal choca con los
+    # timeouts HTTP del SDK; el stream mantiene la conexión viva los 1-5 min.
+    def _llamada():
+        with client.messages.stream(**kwargs) as stream:
+            return stream.get_final_message()
+
+    # el uso se ACUMULA entre reanudes: cada pause_turn es otra request cobrada
+    uso = {"input": 0, "output": 0, "cache_write": 0, "cache_read": 0}
+    hechas = 0
+    errores: list[str] = []
+
+    def _sumar(r) -> None:
+        nonlocal hechas
+        uso["input"] += r.usage.input_tokens
+        uso["output"] += r.usage.output_tokens
+        uso["cache_write"] += getattr(r.usage, "cache_creation_input_tokens", 0) or 0
+        uso["cache_read"] += getattr(r.usage, "cache_read_input_tokens", 0) or 0
+        stu = getattr(r.usage, "server_tool_use", None)
+        hechas += getattr(stu, "web_search_requests", 0) or 0
+        # los errores de búsqueda NO lanzan excepción: llegan como bloques de
+        # resultado con error_code (p. ej. max_uses_exceeded) — se registran aquí
+        for b in r.content:
+            if getattr(b, "type", "") == "web_search_tool_result" \
+                    and not isinstance(getattr(b, "content", None), list):
+                code = getattr(b.content, "error_code", None)
+                if code:
+                    errores.append(code)
+
+    respuesta = _llamada()
+    _sumar(respuesta)
     # las herramientas de servidor pueden pausar el turno: se reanuda tal cual
     reanudes = 0
     while respuesta.stop_reason == "pause_turn" and reanudes < 5:
         kwargs["messages"] = kwargs["messages"] + [
             {"role": "assistant", "content": respuesta.content}
         ]
-        respuesta = client.messages.create(**kwargs)
+        respuesta = _llamada()
+        _sumar(respuesta)
         reanudes += 1
+
+    costo = (uso["input"] * _PRECIO["input"] + uso["output"] * _PRECIO["output"]
+             + uso["cache_write"] * _PRECIO["cache_write"]
+             + uso["cache_read"] * _PRECIO["cache_read"]) / 1_000_000 \
+        + hechas * _PRECIO_BUSQUEDA
+    print(f"[efe] {MODELO} · in={uso['input']} out={uso['output']} "
+          f"cache_write={uso['cache_write']} cache_read={uso['cache_read']} "
+          f"busqueda={'sí' if con_busqueda else 'no'} hechas={hechas} "
+          f"max={MAX_BUSQUEDAS} costo≈${costo:.2f}"
+          + (f" errores_busqueda={errores}" if errores else ""), flush=True)
 
     texto = next((b.text for b in reversed(respuesta.content) if b.type == "text"), None)
     if respuesta.stop_reason == "refusal" or texto is None:
         raise RuntimeError(f"La API no devolvió análisis (stop_reason={respuesta.stop_reason})")
     if respuesta.stop_reason == "max_tokens":
-        raise RuntimeError("Análisis truncado (max_tokens): reintentar")
+        raise RuntimeError(
+            f"Análisis truncado (max_tokens={MAX_TOKENS}): pulsa Regenerar; "
+            "si se repite, sube SAD_EFE_MAX_TOKENS en Railway"
+        )
 
-    uso = {
-        "input": respuesta.usage.input_tokens,
-        "output": respuesta.usage.output_tokens,
-        "cache_write": getattr(respuesta.usage, "cache_creation_input_tokens", 0) or 0,
-        "cache_read": getattr(respuesta.usage, "cache_read_input_tokens", 0) or 0,
-    }
-    # los errores de búsqueda NO lanzan excepción: llegan como bloques de
-    # resultado con error_code (p. ej. max_uses_exceeded) — se registran aquí
-    stu = getattr(respuesta.usage, "server_tool_use", None)
-    hechas = getattr(stu, "web_search_requests", 0) or 0
-    errores = [getattr(b.content, "error_code", None)
-               for b in respuesta.content
-               if getattr(b, "type", "") == "web_search_tool_result"
-               and not isinstance(getattr(b, "content", None), list)]
-    errores = [e for e in errores if e]
-    print(f"[efe] {MODELO} · in={uso['input']} out={uso['output']} "
-          f"cache_write={uso['cache_write']} cache_read={uso['cache_read']} "
-          f"busqueda={'sí' if con_busqueda else 'no'} hechas={hechas} "
-          f"max={MAX_BUSQUEDAS}"
-          + (f" errores_busqueda={errores}" if errores else ""), flush=True)
     # normalizado contra el esquema: el frontend recibe SIEMPRE la forma exacta
     return ajustar(_extraer_json(texto), esquema), uso
