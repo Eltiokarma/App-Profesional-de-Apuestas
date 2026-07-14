@@ -77,6 +77,11 @@ def preparar_historial(con: sqlite3.Connection) -> None:
 # cabeceras, tope y ritmo se recalculan al plan real (Pro 7500/día · 300/min, etc.).
 LIMITE_DEFAULT = 95
 MARGEN_DIARIO = 5
+# El backfill histórico NO puede comerse el presupuesto del día entero: deja
+# esta reserva para los refrescos de cuotas y el ciclo en vivo (14/07/2026 el
+# backfill agotó las 7495 requests y el resto del día quedó sin ingesta).
+# En planes chicos la reserva se acota a la mitad del tope.
+RESERVA_BACKFILL = int(os.environ.get("SAD_BACKFILL_RESERVA", "1500"))
 DELAY_DEFAULT = 6.5
 DELAY_MIN = 0.25
 
@@ -495,10 +500,17 @@ def historico(cliente: Cliente, con: sqlite3.Connection, desde: int) -> int:
     if not pendientes:
         print(f"histórico {desde}–{SEASON}: al día ({len(hecho)} torneos, 0 requests)")
         return 0
+    # reserva intocable para el resto del día (refrescos de cuotas + en vivo);
+    # acotada a la mitad del tope para que en planes chicos algo avance
+    reserva = min(RESERVA_BACKFILL, cliente.limite // 2)
     print(f"histórico {desde}–{SEASON}: {len(pendientes)} torneos pendientes "
-          f"(presupuesto restante {cliente.limite - cliente.usadas})")
+          f"(presupuesto restante {cliente.limite - cliente.usadas}, reserva {reserva})")
     total = 0
     for lid, temporada in pendientes:
+        if cliente.limite - cliente.usadas <= reserva:
+            print(f"  reserva del día alcanzada ({cliente.usadas}/{cliente.limite}, "
+                  f"reserva {reserva}); el histórico se reanuda en la próxima corrida")
+            break
         if not cliente.quedan():
             print("  presupuesto agotado; el histórico se reanuda en la próxima corrida")
             break
