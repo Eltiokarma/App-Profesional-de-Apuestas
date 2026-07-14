@@ -151,6 +151,61 @@ EFE_COMPARATIVO = _obj({
 })
 
 
+# ── TIMELINE (modo futbol-timeline, prompts/TIMELINE_prompt.md) ──────────────
+# Misma regla que el EFE: cero uniones de tipos (structured outputs las
+# rechazó) — el JSON llega por instrucción y ajustar() lo normaliza.
+
+TL_TIPOS_EVENTO = ["resultado", "derrota", "empate", "institucional",
+                   "tecnico", "sancion", "hito"]
+
+TL_EQUIPO = _obj({
+    "nombre": _STR,
+    "lado": {"type": "string", "enum": ["izquierda", "derecha"]},
+    "color": _STR,
+    "color_secundario": _STR,
+    "stats": _obj({
+        "posicion": {"type": "integer"},  # 0 si se desconoce
+        "puntos": _NUM,
+        "ultima_victoria": _STR,
+        "otros": _arr(_STR),
+    }),
+})
+
+TL_EVENTO = _obj({
+    "fecha": _STR,               # YYYY-MM-DD o "~YYYY-MM" si aproximada
+    "aproximada": _BOOL,
+    "equipo": _STR,              # nombre del equipo o "ambos" (H2H, centrado)
+    "tipo": {"type": "string", "enum": TL_TIPOS_EVENTO},
+    "titulo": _STR,
+    "detalle": _STR,
+    "jornada": {"type": "integer"},  # 0 si no aplica
+    "marcador": _STR,            # "" si no aplica
+    "destacado": _BOOL,
+    "alerta_relacionada": _STR,  # "" si no hay alerta EFE ligada
+    "fuente": _STR,
+})
+
+TIMELINE = _obj({
+    "titulo": _STR,
+    "periodo": _obj({"desde": _STR, "hasta": _STR}),
+    "equipos": _arr(TL_EQUIPO),
+    "eventos": _arr(TL_EVENTO),
+    "agrupacion": {"type": "string", "enum": ["mes", "trimestre"]},
+    "narrativa": _STR,
+    "datos_faltantes": _arr(_STR),
+    "fuentes": _arr(_STR),
+})
+
+
+def timeline_vacio(resultado: dict) -> bool:
+    """True si el timeline llegó sin eventos (investigación fallida): no se
+    guarda — cachearlo dejaría al usuario sin forma de regenerar."""
+    try:
+        return len(resultado["eventos"]) == 0
+    except (KeyError, TypeError):
+        return True
+
+
 def ajustar(dato, esquema: dict):
     """Normaliza `dato` a la forma exacta del esquema: claves faltantes o en
     null → ""/0/false/[] según el tipo; enums inválidos → primer valor; los

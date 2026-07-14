@@ -397,11 +397,51 @@ export interface GeneracionEfeDTO {
 
 /** Registro de un análisis emitido (GET /analisis/partido/{id}). */
 export interface AnalisisRegistroDTO {
-  tipo: 'efe' | 'dtp' | 'matriz'
+  tipo: 'efe' | 'timeline' | 'dtp' | 'matriz'
   fixtureId: number
   /** preliminar = XI provisional (T−24h) · confirmado = XI oficial (T−40min). */
   estado: 'preliminar' | 'confirmado'
   versionEfe: string
   creadoEn: string
-  resultado: EfeComparativo
+  /** EfeComparativo si tipo='efe'; TimelineData si tipo='timeline'. */
+  resultado: EfeComparativo | TimelineData
+}
+
+// ── TIMELINE (modo futbol-timeline; prompts/TIMELINE_prompt.md) ─────────────
+
+export type TlTipoEvento = 'resultado' | 'derrota' | 'empate' | 'institucional' | 'tecnico' | 'sancion' | 'hito'
+
+export interface TlEquipo {
+  nombre: string
+  lado: 'izquierda' | 'derecha'
+  color: string
+  color_secundario: string
+  stats: { posicion: number; puntos: number; ultima_victoria: string; otros: string[] }
+}
+
+export interface TlEvento {
+  /** YYYY-MM-DD, o "~YYYY-MM" si aproximada. */
+  fecha: string
+  aproximada: boolean
+  /** Nombre del equipo, o "ambos" en enfrentamientos directos (centrado). */
+  equipo: string
+  tipo: TlTipoEvento
+  titulo: string
+  detalle: string
+  jornada: number
+  marcador: string
+  destacado: boolean
+  alerta_relacionada: string
+  fuente: string
+}
+
+export interface TimelineData {
+  titulo: string
+  periodo: { desde: string; hasta: string }
+  equipos: TlEquipo[]
+  eventos: TlEvento[]
+  agrupacion: 'mes' | 'trimestre'
+  narrativa: string
+  datos_faltantes: string[]
+  fuentes: string[]
 }

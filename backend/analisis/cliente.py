@@ -55,6 +55,31 @@ def bloques_system() -> list[dict]:
     ]
 
 
+def bloques_system_timeline() -> list[dict]:
+    """System del modo TIMELINE (skill independiente del EFE, mismo patrón)."""
+    tl = _leer("TIMELINE_prompt.md")
+    pos = tl.find(_MARCA_BLOQUE2)
+    if pos != -1:
+        tl = tl[pos:]
+    return [{"type": "text", "text": tl, "cache_control": {"type": "ephemeral"}}]
+
+
+# instrucción de salida por modo: la del EFE exige además la despensa
+SALIDA_EFE = (
+    "EXCLUSIVAMENTE el objeto JSON del esquema del modo, sin texto adicional ni markdown. "
+    "AÑADE una clave raíz 'investigacion' = {equipo_a: {dt, plantel, tabla, resultados, "
+    "fixture, xi_reciente, bajas}, equipo_b: {idem}}: cada campo es un resumen TEXTUAL "
+    "denso y autocontenido de lo que investigaste (nombres, fechas, cifras, fuente), "
+    "porque se guardará como caché y será el 'datos_cacheados' de análisis futuros. "
+    "Usa \"\" en lo que no investigaste."
+)
+SALIDA_TIMELINE = (
+    "EXCLUSIVAMENTE el objeto JSON del esquema TIMELINE, sin texto adicional ni markdown. "
+    "Eventos en orden cronológico estricto; enfrentamientos directos entre los dos "
+    "equipos con equipo='ambos'."
+)
+
+
 def hay_clave() -> bool:
     return bool(os.environ.get("ANTHROPIC_API_KEY", "").strip())
 
@@ -71,10 +96,12 @@ def _extraer_json(texto: str) -> dict:
         raise RuntimeError(f"JSON inválido en la respuesta: {e}") from e
 
 
-def analizar(payload: dict, esquema: dict, con_busqueda: bool) -> tuple[dict, dict]:
+def analizar(payload: dict, esquema: dict, con_busqueda: bool,
+             system: list | None = None, salida: str | None = None) -> tuple[dict, dict]:
     """Una llamada al modo del payload. Devuelve (resultado, uso).
 
-    `uso` trae los contadores de tokens para vigilar caché y costo en logs.
+    `system`/`salida` parametrizan el modo (default: EFE). `uso` trae los
+    contadores de tokens para vigilar caché y costo en logs.
     Lanza RuntimeError si no hay ANTHROPIC_API_KEY.
     """
     if not hay_clave():
@@ -82,20 +109,12 @@ def analizar(payload: dict, esquema: dict, con_busqueda: bool) -> tuple[dict, di
     import anthropic  # import tardío: el resto del backend no lo necesita
 
     client = anthropic.Anthropic()
-    # refuerzo explícito: la salida es SOLO el objeto JSON del esquema del modo,
-    # MÁS la despensa (clave raíz 'investigacion') que abarata análisis futuros
-    payload = {**payload, "salida": (
-        "EXCLUSIVAMENTE el objeto JSON del esquema del modo, sin texto adicional ni markdown. "
-        "AÑADE una clave raíz 'investigacion' = {equipo_a: {dt, plantel, tabla, resultados, "
-        "fixture, xi_reciente, bajas}, equipo_b: {idem}}: cada campo es un resumen TEXTUAL "
-        "denso y autocontenido de lo que investigaste (nombres, fechas, cifras, fuente), "
-        "porque se guardará como caché y será el 'datos_cacheados' de análisis futuros. "
-        "Usa \"\" en lo que no investigaste."
-    )}
+    # refuerzo explícito: la salida es SOLO el objeto JSON del esquema del modo
+    payload = {**payload, "salida": salida or SALIDA_EFE}
     kwargs: dict = {
         "model": MODELO,
         "max_tokens": MAX_TOKENS,
-        "system": bloques_system(),
+        "system": system or bloques_system(),
         "messages": [{"role": "user", "content": json.dumps(payload, ensure_ascii=False)}],
     }
     if con_busqueda:

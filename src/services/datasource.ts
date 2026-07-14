@@ -28,7 +28,7 @@ import type {
 } from '../api/types'
 import { CONFIG, type DataSourceMode } from '../config'
 import { MARKET_DEFS, MATCHES, STANDINGS, TEAMS } from '../data'
-import { efeDemo } from '../data/efeDemo'
+import { efeDemo, timelineDemo } from '../data/efeDemo'
 import { oddsFor, rng } from '../lib/odds'
 import { levelBin } from '../motor/discretizer'
 import { teamEngine } from '../motor/engine'
@@ -90,6 +90,10 @@ export interface SadDataSource {
   generarEfe(fixtureId: number, forzar?: boolean): Promise<GeneracionEfeDTO>
   /** Sondeo del trabajo de análisis EFE. */
   estadoEfe(fixtureId: number): Promise<GeneracionEfeDTO>
+  /** Lanza el timeline comparativo (mismo patrón asíncrono que el EFE). */
+  generarTimeline(fixtureId: number, forzar?: boolean): Promise<GeneracionEfeDTO>
+  /** Sondeo del trabajo de timeline. */
+  estadoTimeline(fixtureId: number): Promise<GeneracionEfeDTO>
 }
 
 // ---------- mapeo de ids internos (strings) ↔ contrato (números) ----------
@@ -387,12 +391,41 @@ class MockDataSource implements SadDataSource {
     return ['1xBet', 'Bet365', 'Betano', 'Pinnacle']
   }
 
-  // análisis EFE demo: se "genera" en memoria con una pequeña demora realista
+  // análisis EFE/timeline demo: se "generan" en memoria con una demora realista
   private _analisis = new Map<number, AnalisisRegistroDTO>()
+  private _timelines = new Map<number, AnalisisRegistroDTO>()
 
   async analisisPartido(fixtureId: number): Promise<AnalisisRegistroDTO[]> {
-    const reg = this._analisis.get(fixtureId)
-    return reg ? [reg] : []
+    const out: AnalisisRegistroDTO[] = []
+    const efe = this._analisis.get(fixtureId)
+    if (efe) out.push(efe)
+    const tl = this._timelines.get(fixtureId)
+    if (tl) out.push(tl)
+    return out
+  }
+
+  async generarTimeline(fixtureId: number, forzar = false): Promise<GeneracionEfeDTO> {
+    const previo = this._timelines.get(fixtureId)
+    if (previo && !forzar) return { estado: 'listo', registro: previo }
+    if (forzar) this._timelines.delete(fixtureId)
+    const m = MATCHES.find((x) => FIXTURE_NUM(x.id) === fixtureId)
+    if (!m) return { estado: 'error', detalle: `fixture ${fixtureId} no existe` }
+    await new Promise((r) => setTimeout(r, 1200))
+    const reg: AnalisisRegistroDTO = {
+      tipo: 'timeline',
+      fixtureId,
+      estado: 'preliminar',
+      versionEfe: '1.5',
+      creadoEn: new Date(MOCK_NOW).toISOString(),
+      resultado: timelineDemo(TEAMS[m.home].name, TEAMS[m.away].name),
+    }
+    this._timelines.set(fixtureId, reg)
+    return { estado: 'listo', registro: reg }
+  }
+
+  async estadoTimeline(fixtureId: number): Promise<GeneracionEfeDTO> {
+    const reg = this._timelines.get(fixtureId)
+    return reg ? { estado: 'listo', registro: reg } : { estado: 'nada' }
   }
 
   async generarEfe(fixtureId: number, forzar = false): Promise<GeneracionEfeDTO> {
@@ -532,6 +565,8 @@ class HttpDataSource implements SadDataSource {
   analisisPartido = (fixtureId: number) => SadApi.analisisPartido(fixtureId)
   generarEfe = (fixtureId: number, forzar?: boolean) => SadApi.generarEfe(fixtureId, forzar)
   estadoEfe = (fixtureId: number) => SadApi.estadoEfe(fixtureId)
+  generarTimeline = (fixtureId: number, forzar?: boolean) => SadApi.generarTimeline(fixtureId, forzar)
+  estadoTimeline = (fixtureId: number) => SadApi.estadoTimeline(fixtureId)
   equipoStats = (equipoId: number) => SadApi.equipoStats(equipoId)
   liga = (ligaId: number) => SadApi.liga(ligaId)
   standings = (ligaId: number, temporada?: number) => SadApi.standings(ligaId, temporada)

@@ -22,12 +22,12 @@ import threading
 from backend import db as saddb
 from backend.analisis import cliente, demo
 from backend.analisis import db as efedb
-from backend.analisis.esquemas import EFE_COMPARATIVO, analisis_vacio
+from backend.analisis.esquemas import EFE_COMPARATIVO, TIMELINE, analisis_vacio, timeline_vacio
 
 VERSION_EFE = "1.5"
 
-# trabajos en curso / fallidos, por fixture (en memoria: un solo proceso web)
-_trabajos: dict[int, dict] = {}
+# trabajos en curso / fallidos, por "tipo:fixture" (en memoria: un solo proceso)
+_trabajos: dict[str, dict] = {}
 _lock = threading.Lock()
 
 
@@ -125,6 +125,51 @@ def _datos_locales(fx: dict) -> dict[str, dict[str, str]]:
     }
 
 
+def _xi_y_bajas(fixture_id: int, home_id: int, away_id: int) -> dict[str, dict[str, str]]:
+    """XI oficial y lesionados desde API-Football (2 requests contra el
+    presupuesto de la ingesta, con su respaldo incluido). El XI se publica
+    ~20-40 min antes del pitazo: si aún no está, queda como faltante y la
+    búsqueda web lo intenta. Buscar convocatorias en la web era caro y
+    poco fiable (ligas chicas): la API lo tiene de primera mano."""
+    out: dict[str, dict[str, str]] = {"equipo_a": {}, "equipo_b": {}}
+    try:
+        from backend.ingesta.extractor import Cliente, leer_clave
+        api = Cliente(leer_clave())
+    except BaseException:  # sin API_FOOTBALL_KEY (p. ej. entorno local)
+        return out
+
+    def lado_de(team: dict | None) -> str | None:
+        tid = (team or {}).get("id")
+        return "equipo_a" if tid == home_id else "equipo_b" if tid == away_id else None
+
+    data = api.get("fixtures/lineups", {"fixture": fixture_id})
+    for item in (data or {}).get("response", []):
+        lado = lado_de(item.get("team"))
+        if not lado:
+            continue
+        xi = [f"{(j.get('player') or {}).get('name') or '?'} ({(j.get('player') or {}).get('pos') or '?'})"
+              for j in item.get("startXI") or []]
+        if xi:
+            dt = (item.get("coach") or {}).get("name") or "?"
+            out[lado]["xi_reciente"] = (
+                f"XI OFICIAL confirmado (formación {item.get('formation') or '?'}, DT {dt}): "
+                + ", ".join(xi) + " [fuente: API-Football lineups]"
+            )
+
+    data = api.get("injuries", {"fixture": fixture_id})
+    bajas: dict[str, list[str]] = {"equipo_a": [], "equipo_b": []}
+    for item in (data or {}).get("response", []):
+        lado = lado_de(item.get("team"))
+        if not lado:
+            continue
+        p = item.get("player") or {}
+        bajas[lado].append(f"{p.get('name') or '?'} ({p.get('reason') or p.get('type') or 'baja'})")
+    for lado, lista in bajas.items():
+        if lista:
+            out[lado]["bajas"] = "Bajas/lesiones reportadas: " + ", ".join(lista) + " [fuente: API-Football injuries]"
+    return out
+
+
 def _demo_activo() -> bool:
     return os.environ.get("SAD_EFE_DEMO", "").strip() == "1"
 
@@ -151,12 +196,18 @@ def generar_efe(fixture_id: int, estado: str = "preliminar") -> dict:
             raise SinClave("Falta ANTHROPIC_API_KEY en el entorno")
         frescos_a, faltan_a = efedb.investigacion_de(equipo_a)
         frescos_b, faltan_b = efedb.investigacion_de(equipo_b)
+        # solo los tipos del EFE: la despensa también guarda timeline_eventos
+        # y meterlos aquí inflaría el prompt sin aportar al protocolo
+        frescos_a = {k: v for k, v in frescos_a.items() if k in efedb.TIPOS}
+        frescos_b = {k: v for k, v in frescos_b.items() if k in efedb.TIPOS}
         # lo que ya tenemos en sad.db (tabla, resultados, próximos partidos)
-        # entra como dato cacheado y NO se busca en la web: costo cero
+        # entra como dato cacheado y NO se busca en la web: costo cero.
+        # XI oficial y lesiones vienen de API-Football (2 requests baratas).
         locales = _datos_locales(fx)
+        xi_bajas = _xi_y_bajas(fixture_id, fx["home_team_id"], fx["away_team_id"])
         for frescos, faltan, lado in ((frescos_a, faltan_a, "equipo_a"),
                                       (frescos_b, faltan_b, "equipo_b")):
-            for tipo, txt in locales[lado].items():
+            for tipo, txt in {**locales[lado], **xi_bajas[lado]}.items():
                 if txt and tipo in faltan:
                     frescos[tipo] = txt
                     faltan.remove(tipo)
@@ -214,65 +265,165 @@ def generar_efe(fixture_id: int, estado: str = "preliminar") -> dict:
     )
 
 
-def _trabajo(fixture_id: int, estado: str) -> None:
-    try:
-        generar_efe(fixture_id, estado)
-        with _lock:
-            _trabajos.pop(fixture_id, None)
-        print(f"[efe] fixture {fixture_id}: análisis guardado", flush=True)
-    except Exception as e:  # el error queda consultable vía /estado
-        with _lock:
-            _trabajos[fixture_id] = {"estado": "error", "detalle": str(e)}
-        print(f"[efe] ERROR fixture {fixture_id}: {e}", flush=True)
+# ── infraestructura común de trabajos (EFE y TIMELINE) ──────────────────────
 
-
-def iniciar_efe(fixture_id: int, estado: str = "preliminar", forzar: bool = False) -> dict:
-    """Respuesta inmediata: listo (con registro), generando, o lanza el hilo.
-
-    `forzar` (botón Regenerar): descarta lo guardado y emite un análisis
-    nuevo — salvo que ya haya un trabajo en curso, que no se duplica."""
+def _lanzar(tipo: str, fixture_id: int, generar, forzar: bool, nombre_boton: str) -> dict:
+    """Patrón compartido: listo si ya existe, generando si hay hilo en curso,
+    o lanza el trabajo. `generar` es el callable síncrono del modo."""
+    clave = f"{tipo}:{fixture_id}"
     with _lock:
-        trabajo = _trabajos.get(fixture_id)
+        trabajo = _trabajos.get(clave)
         if trabajo and trabajo["estado"] == "generando":
             return _respuesta("generando", detalle="análisis en curso")
 
     if forzar:
-        efedb.borrar_analisis("efe", fixture_id)
-        print(f"[efe] fixture {fixture_id}: regeneración forzada (análisis previo descartado)", flush=True)
+        efedb.borrar_analisis(tipo, fixture_id)
+        print(f"[{tipo}] fixture {fixture_id}: regeneración forzada (previo descartado)", flush=True)
     else:
-        existente = efedb.analisis_existente("efe", fixture_id, estado)
+        existente = efedb.analisis_existente(tipo, fixture_id, "confirmado") \
+            or efedb.analisis_existente(tipo, fixture_id, "preliminar")
         if existente:
             return _respuesta("listo", registro=existente)
     _fixture(fixture_id)  # 404 antes de encolar nada
 
     if _demo_activo():  # demo: rápido y sin API → síncrono
-        return _respuesta("listo", registro=generar_efe(fixture_id, estado))
+        return _respuesta("listo", registro=generar(fixture_id))
     if not cliente.hay_clave():
         raise SinClave("Falta ANTHROPIC_API_KEY en el entorno")
 
+    def _trabajo() -> None:
+        try:
+            generar(fixture_id)
+            with _lock:
+                _trabajos.pop(clave, None)
+            print(f"[{tipo}] fixture {fixture_id}: análisis guardado", flush=True)
+        except Exception as e:  # el error queda consultable vía /estado
+            with _lock:
+                _trabajos[clave] = {"estado": "error", "detalle": str(e)}
+            print(f"[{tipo}] ERROR fixture {fixture_id}: {e}", flush=True)
+
     with _lock:
-        trabajo = _trabajos.get(fixture_id)
+        trabajo = _trabajos.get(clave)
         if trabajo and trabajo["estado"] == "generando":
             return _respuesta("generando", detalle="análisis en curso")
         # sin trabajo, o el anterior falló: se (re)lanza
-        _trabajos[fixture_id] = {"estado": "generando", "detalle": None}
-    threading.Thread(target=_trabajo, args=(fixture_id, estado),
-                     daemon=True, name=f"efe-{fixture_id}").start()
-    print(f"[efe] fixture {fixture_id}: análisis lanzado", flush=True)
-    return _respuesta("generando", detalle="análisis lanzado")
+        _trabajos[clave] = {"estado": "generando", "detalle": None}
+    threading.Thread(target=_trabajo, daemon=True, name=f"{tipo}-{fixture_id}").start()
+    print(f"[{tipo}] fixture {fixture_id}: análisis lanzado", flush=True)
+    return _respuesta("generando", detalle=f"{nombre_boton} lanzado")
 
 
-def estado_efe(fixture_id: int) -> dict:
+def _estado(tipo: str, fixture_id: int) -> dict:
     """Para el sondeo del frontend: listo / generando / error / nada."""
-    existente = efedb.analisis_existente("efe", fixture_id, "confirmado") \
-        or efedb.analisis_existente("efe", fixture_id, "preliminar")
+    existente = efedb.analisis_existente(tipo, fixture_id, "confirmado") \
+        or efedb.analisis_existente(tipo, fixture_id, "preliminar")
     if existente:
         return _respuesta("listo", registro=existente)
     with _lock:
-        trabajo = _trabajos.get(fixture_id)
+        trabajo = _trabajos.get(f"{tipo}:{fixture_id}")
     if trabajo:
         return _respuesta(trabajo["estado"], detalle=trabajo.get("detalle"))
     return _respuesta("nada")
+
+
+def iniciar_efe(fixture_id: int, estado: str = "preliminar", forzar: bool = False) -> dict:
+    return _lanzar("efe", fixture_id, lambda fid: generar_efe(fid, estado), forzar, "análisis EFE")
+
+
+def estado_efe(fixture_id: int) -> dict:
+    return _estado("efe", fixture_id)
+
+
+# ── TIMELINE (modo futbol-timeline, prompts/TIMELINE_prompt.md) ──────────────
+
+def generar_timeline(fixture_id: int, estado: str = "preliminar") -> dict:
+    """Timeline comparativo de los dos equipos del fixture (SÍNCRONO: para el
+    hilo de trabajo y el modo demo). Período: últimos 6 meses (default del
+    protocolo); si hay EFE previo, hereda alertas y colores sin re-buscar."""
+    existente = efedb.analisis_existente("timeline", fixture_id, estado)
+    if existente:
+        return existente
+
+    fx = _fixture(fixture_id)
+    equipo_a, equipo_b = fx["local"], fx["visitante"]
+    fecha = (fx["date"] or "")[:10] or None
+
+    if _demo_activo():
+        resultado = demo.timeline_demo(equipo_a, equipo_b)
+    else:
+        if not cliente.hay_clave():
+            raise SinClave("Falta ANTHROPIC_API_KEY en el entorno")
+        from datetime import datetime, timedelta, timezone
+        hasta = datetime.now(timezone.utc).date()
+        desde = hasta - timedelta(days=182)  # default del protocolo: 6 meses
+
+        # contexto del EFE previo (si existe): alertas activas y colores —
+        # cero búsquedas duplicadas entre los dos modos
+        contexto: dict = {}
+        efe_previo = efedb.analisis_existente("efe", fixture_id, "confirmado") \
+            or efedb.analisis_existente("efe", fixture_id, "preliminar")
+        if efe_previo:
+            r = efe_previo["resultado"]
+            contexto = {
+                "alertas_activas": [a.get("codigo", "") for a in r.get("alertas", [])],
+                "colores": {equipo_a: r.get("equipos", {}).get("a", {}).get("color", ""),
+                            equipo_b: r.get("equipos", {}).get("b", {}).get("color", "")},
+                "hitos_detectados": [],
+            }
+
+        # datos cacheados: eventos de timelines previos (despensa) + resultados
+        # reales de NUESTRA base (costo cero, la web solo completa el contexto)
+        cacheados: dict = {}
+        for equipo, tid in ((equipo_a, fx["home_team_id"]), (equipo_b, fx["away_team_id"])):
+            frescos, _falt = efedb.investigacion_de(equipo)
+            entrada: dict = {"resultados_db": _resultados_de(tid)}
+            if "timeline_eventos" in frescos:
+                entrada["timeline_eventos"] = frescos["timeline_eventos"]
+            cacheados[equipo] = entrada
+
+        payload = {
+            "modo": "timeline",
+            "equipos": [equipo_a, equipo_b],
+            "periodo": {"desde": desde.isoformat(), "hasta": hasta.isoformat()},
+            "tipos": ["todos"],
+            "contexto_efe": contexto,
+            "datos_cacheados": cacheados,
+        }
+        resultado, _uso = cliente.analizar(
+            payload, TIMELINE, con_busqueda=True,
+            system=cliente.bloques_system_timeline(), salida=cliente.SALIDA_TIMELINE,
+        )
+        if timeline_vacio(resultado):
+            raise RuntimeError(
+                "El timeline llegó sin eventos (investigación fallida). "
+                "No se guardó: vuelve a pulsar «Generar timeline» para reintentar."
+            )
+        # despensa del timeline: eventos confirmados por equipo, reutilizables
+        # por el próximo timeline que solape el período (tipo timeline_eventos)
+        por_equipo: dict[str, list] = {equipo_a: [], equipo_b: []}
+        for ev in resultado.get("eventos", []):
+            if ev.get("equipo") == "ambos":
+                por_equipo[equipo_a].append(ev)
+                por_equipo[equipo_b].append(ev)
+            elif ev.get("equipo") in por_equipo:
+                por_equipo[ev["equipo"]].append(ev)
+        for equipo, evs in por_equipo.items():
+            if evs:
+                efedb.guardar_investigacion(equipo, "timeline_eventos", evs,
+                                            resultado.get("fuentes", []))
+
+    return efedb.guardar_analisis(
+        "timeline", fixture_id, equipo_a, equipo_b, fecha or "", estado,
+        resultado, VERSION_EFE,
+    )
+
+
+def iniciar_timeline(fixture_id: int, forzar: bool = False) -> dict:
+    return _lanzar("timeline", fixture_id, generar_timeline, forzar, "timeline")
+
+
+def estado_timeline(fixture_id: int) -> dict:
+    return _estado("timeline", fixture_id)
 
 
 def analisis_del_partido(fixture_id: int) -> list[dict]:

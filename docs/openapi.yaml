@@ -277,6 +277,45 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/GeneracionEfe' }
+  /analisis/timeline:
+    post:
+      summary: Lanza el timeline comparativo del fixture (modo futbol-timeline)
+      description: >
+        Cronología de los dos equipos del fixture (últimos 6 meses por defecto)
+        emitida por el modelo como JSON del esquema TIMELINE y renderizada por
+        <TimelineComparativo>. Mismo patrón asíncrono y de regeneración que
+        /analisis/efe; hereda alertas y colores del EFE previo si existe. El
+        registro devuelto lleva tipo 'timeline' y su resultado es el TIMELINE.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fixtureId]
+              properties:
+                fixtureId: { type: integer }
+                forzar:
+                  type: boolean
+                  default: false
+                  description: Regenerar — descarta el timeline guardado y emite uno nuevo
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GeneracionEfe' }
+  /analisis/timeline/estado/{fixtureId}:
+    get:
+      summary: Sondeo del trabajo de timeline
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: listo (con registro) / generando / error (con detalle) / nada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GeneracionEfe' }
   /analisis/partido/{fixtureId}:
     get:
       summary: Análisis emitidos para un fixture (lectura pura, cero créditos)

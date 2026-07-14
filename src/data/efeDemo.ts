@@ -1,7 +1,32 @@
-// Análisis EFE de muestra para el modo demo (espejo de backend/analisis/demo.py):
-// permite desarrollar y probar la sección Análisis sin API ni créditos.
-// Regla del proyecto: la simulación vive SOLO en demo.
-import type { EfeBloque, EfeComparativo, EfeEquipo } from '../api/types'
+// Análisis EFE y timeline de muestra para el modo demo (espejo de
+// backend/analisis/demo.py): permiten desarrollar y probar la sección
+// Análisis sin API ni créditos. Regla del proyecto: la simulación vive SOLO en demo.
+import type { EfeBloque, EfeComparativo, EfeEquipo, TimelineData, TlEvento } from '../api/types'
+
+export function timelineDemo(equipoA: string, equipoB: string): TimelineData {
+  const ev = (fecha: string, equipo: string, tipo: TlEvento['tipo'], titulo: string, detalle: string, marcador = '', jornada = 0, destacado = false): TlEvento => ({
+    fecha, aproximada: false, equipo, tipo, titulo, detalle, jornada, marcador, destacado, alerta_relacionada: '', fuente: 'demo',
+  })
+  return {
+    titulo: `${equipoA} vs ${equipoB} — Feb-Jul 2026`,
+    periodo: { desde: '2026-02-01', hasta: '2026-07-14' },
+    equipos: [
+      { nombre: equipoA, lado: 'izquierda', color: '#5B8DEF', color_secundario: '#C7D0EC', stats: { posicion: 2, puntos: 38, ultima_victoria: '2026-07-06 2-0', otros: [] } },
+      { nombre: equipoB, lado: 'derecha', color: '#E5484D', color_secundario: '#F2C1C3', stats: { posicion: 7, puntos: 27, ultima_victoria: '2026-06-21 1-0', otros: [] } },
+    ],
+    eventos: [
+      ev('2026-02-09', equipoA, 'resultado', 'Victoria 2-0 en el debut', 'Arranque sólido con doblete del 9.', '2-0', 1),
+      ev('2026-03-02', equipoB, 'tecnico', 'Cambio de DT', 'Sale el técnico tras 4 fechas sin ganar; asume el interino.', '', 0, true),
+      ev('2026-04-12', 'ambos', 'resultado', 'Clásico 1-1', "Enfrentamiento directo parejo, con expulsión al 80'.", '1-1', 9),
+      ev('2026-05-17', equipoB, 'derrota', 'Caída 0-3 como local', 'Peor derrota del semestre; crisis en la interna.', '0-3', 14),
+      ev('2026-06-28', equipoA, 'hito', 'Clasificación a la final', 'Cierra la fase como líder e instala la final del Apertura.', '', 0, true),
+    ],
+    agrupacion: 'mes',
+    narrativa: `${equipoA} llega en curva ascendente y con final asegurada; ${equipoB} cambió de DT a mitad del semestre y alterna resultados. El precedente directo del período terminó igualado.`,
+    datos_faltantes: [],
+    fuentes: ['demo'],
+  }
+}
 
 function bloque(score: number, max: number, inds: [string, 'verde' | 'ambar' | 'rojo', string][], ponderado?: number, ppp = 0): EfeBloque {
   return {
