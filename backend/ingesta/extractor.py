@@ -34,6 +34,11 @@ from datetime import datetime, timedelta, timezone
 # API-Football directo (clave de dashboard.api-football.com): mismo API v3
 # que servía RapidAPI, cambian solo el host y la cabecera de autenticación.
 BASE_URL = "https://v3.football.api-sports.io"
+# Respaldo: la MISMA API-Football servida vía RapidAPI (mismos endpoints,
+# params y formato de respuesta) con su propia cuota gratuita (~100/día).
+# Solo se usa cuando el plan principal se agota — clave en RAPIDAPI_KEY.
+RESPALDO_HOST = "api-football-v1.p.rapidapi.com"
+RESPALDO_URL = f"https://{RESPALDO_HOST}/v3"
 SEASON = int(os.environ.get("SAD_SEASON", "2026"))
 DIAS_ATRAS = 3
 DIAS_ADELANTE = 10
@@ -196,6 +201,12 @@ class Cliente:
         self.usadas_por: dict[str, int] = {}  # auditoría: consumo por endpoint
         self._sondeo_hecho = False
         self._sondeo_ts = 0.0  # último sondeo horario con el tope alcanzado
+        # respaldo RapidAPI (misma API por otra puerta, cuota gratuita propia):
+        # SOLO se usa con el plan principal agotado — "modo emergencia"
+        self.clave_respaldo = os.environ.get("RAPIDAPI_KEY", "").strip()
+        self.limite_respaldo = int(os.environ.get("SAD_RAPIDAPI_LIMITE", str(LIMITE_DEFAULT)))
+        self.usadas_respaldo = 0
+        self._aviso_respaldo = False
         self._leer_cuota()
 
     def resumen(self) -> str:
@@ -235,16 +246,25 @@ class Cliente:
                 self.limite = max(limite_api - MARGEN_DIARIO, 1)
         if datos.get("dia") == self.hoy:
             self.usadas = int(datos.get("usadas", 0) or 0)
+            self.usadas_respaldo = int(datos.get("usadas_respaldo", 0) or 0)
 
     def _guardar_cuota(self) -> None:
         with open(CUOTA_PATH, "w", encoding="utf-8") as f:
-            json.dump({"dia": self.hoy, "usadas": self.usadas, "limite_api": self.limite_api}, f)
+            json.dump({"dia": self.hoy, "usadas": self.usadas, "limite_api": self.limite_api,
+                       "usadas_respaldo": self.usadas_respaldo}, f)
+
+    def _quedan_respaldo(self, n: int = 1) -> bool:
+        return bool(self.clave_respaldo) and self.limite_respaldo - self.usadas_respaldo >= n
 
     def quedan(self, n: int = 1) -> bool:
-        return self.limite - self.usadas >= n
+        # el respaldo cuenta como capacidad disponible (para que las corridas
+        # de cuotas/fixtures sigan); el backfill NO llega aquí en emergencia
+        # porque su reserva lo frena antes
+        return self.limite - self.usadas >= n or self._quedan_respaldo(n)
 
     def get(self, endpoint: str, params: dict) -> dict | None:
-        if not self.quedan():
+        respaldo = False
+        if self.limite - self.usadas < 1:
             if not self.limite_fijo and self.limite_api is None and not self._sondeo_hecho:
                 # sin plan aprendido todavía, una única request de sondeo por
                 # proceso: las cabeceras fijan el tope real (el marcador local
@@ -258,19 +278,41 @@ class Cliente:
                 # a la medianoche UTC ni redeployar
                 self._sondeo_ts = time.monotonic()
                 print(f"  presupuesto agotado ({self.usadas}/{self.limite}): sondeo horario por si el plan subió")
+            elif self._quedan_respaldo():
+                # MODO EMERGENCIA: la misma request sale por RapidAPI con su
+                # cuota gratuita — los datos del día no se pierden
+                respaldo = True
+                if not self._aviso_respaldo:
+                    self._aviso_respaldo = True
+                    print(f"  principal agotado → respaldo RapidAPI activo "
+                          f"({self.usadas_respaldo}/{self.limite_respaldo})")
             else:
-                print(f"  presupuesto diario agotado ({self.usadas}/{self.limite})")
+                print(f"  presupuesto diario agotado ({self.usadas}/{self.limite}, "
+                      f"respaldo {self.usadas_respaldo}/{self.limite_respaldo if self.clave_respaldo else 'sin clave'})")
                 return None
-        self.usadas += 1
-        self.usadas_por[endpoint] = self.usadas_por.get(endpoint, 0) + 1
+        if respaldo:
+            self.usadas_respaldo += 1
+            self.usadas_por["respaldo:" + endpoint] = self.usadas_por.get("respaldo:" + endpoint, 0) + 1
+            url = f"{RESPALDO_URL}/{endpoint}?{urllib.parse.urlencode(params)}"
+            cabeceras = {"x-rapidapi-key": self.clave_respaldo, "x-rapidapi-host": RESPALDO_HOST}
+        else:
+            self.usadas += 1
+            self.usadas_por[endpoint] = self.usadas_por.get(endpoint, 0) + 1
+            url = f"{BASE_URL}/{endpoint}?{urllib.parse.urlencode(params)}"
+            cabeceras = {"x-apisports-key": self.clave}
         self._guardar_cuota()
-        url = f"{BASE_URL}/{endpoint}?{urllib.parse.urlencode(params)}"
-        req = urllib.request.Request(url, headers={"x-apisports-key": self.clave})
+        return self._pedir(url, cabeceras, endpoint, respaldo)
+
+    def _pedir(self, url: str, cabeceras: dict, endpoint: str, respaldo: bool) -> dict | None:
+        req = urllib.request.Request(url, headers=cabeceras)
         for intento in range(3):
             try:
                 with urllib.request.urlopen(req, timeout=30) as resp:
                     data = json.load(resp)
-                    self._ajustar_por_cabeceras(resp.headers)
+                    if respaldo:
+                        self._ajustar_respaldo(resp.headers)
+                    else:
+                        self._ajustar_por_cabeceras(resp.headers)
                 if data.get("errors"):
                     print(f"  error de la API: {data['errors']}")
                     return None
@@ -287,6 +329,17 @@ class Cliente:
                 print(f"  error de red: {e} (intento {intento + 1}/3)")
                 time.sleep(5)
         return None
+
+    def _ajustar_respaldo(self, headers) -> None:
+        """RapidAPI reenvía las cabeceras x-ratelimit-requests-* del proveedor:
+        el contador del respaldo también se sincroniza con la API."""
+        diario = _cabecera_int(headers, "x-ratelimit-requests-limit")
+        restantes = _cabecera_int(headers, "x-ratelimit-requests-remaining")
+        if diario:
+            self.limite_respaldo = max(diario - MARGEN_DIARIO, 1)
+            if restantes is not None:
+                self.usadas_respaldo = max(self.usadas_respaldo, diario - restantes)
+            self._guardar_cuota()
 
     def paginado(self, endpoint: str, params: dict) -> list:
         """Concatena todas las páginas de una consulta (cada página = 1 request)."""
