@@ -1,13 +1,12 @@
-"""JSON Schema del contrato EFE_COMPARATIVO (structured outputs).
+"""Esquema del contrato EFE_COMPARATIVO + normalizador.
 
-Espejo del esquema de prompts/SYSTEM_PROMPT_SAD_API.md, endurecido para
-`output_config.format`: todos los objetos con additionalProperties=false y
-todas las claves requeridas.
-
-REGLA DURA de structured outputs: máximo 16 parámetros con uniones de tipos
-(anyOf / type arrays) — la primera versión tenía 92 nullables y la API la
-rechazó con 400. Por eso aquí NO hay nullables: lo que no aplica va como
-"" (texto), 0 (número) o false (booleano), y el frontend lo trata igual.
+Historia de dos rechazos de la API con structured outputs: (1) 92 campos
+anulables > límite de 16 uniones; (2) sin uniones, "compiled grammar is too
+large" — el esquema del EFE es demasiado rico para ese mecanismo. Por eso el
+JSON se pide POR INSTRUCCIÓN (el system prompt ya exige "exclusivamente JSON
+válido") y este módulo lo NORMALIZA contra el esquema con ajustar(): claves
+faltantes o null se rellenan con ""/0/false/[], enums inválidos se corrigen,
+y el frontend recibe siempre la forma exacta del contrato.
 """
 
 
@@ -138,3 +137,27 @@ EFE_COMPARATIVO = _obj({
     "datos_faltantes": _arr(_STR),
     "fuentes": _arr(_STR),
 })
+
+
+def ajustar(dato, esquema: dict):
+    """Normaliza `dato` a la forma exacta del esquema: claves faltantes o en
+    null → ""/0/false/[] según el tipo; enums inválidos → primer valor; los
+    extras se descartan. Garantiza al frontend el contrato completo."""
+    t = esquema.get("type")
+    if t == "object":
+        base = dato if isinstance(dato, dict) else {}
+        return {k: ajustar(base.get(k), sub) for k, sub in esquema["properties"].items()}
+    if t == "array":
+        return [ajustar(x, esquema["items"]) for x in (dato if isinstance(dato, list) else [])]
+    if t == "string":
+        valores = esquema.get("enum")
+        if valores:
+            return dato if dato in valores else valores[0]
+        return dato if isinstance(dato, str) else ("" if dato is None else str(dato))
+    if t == "number":
+        return float(dato) if isinstance(dato, (int, float)) and not isinstance(dato, bool) else 0.0
+    if t == "integer":
+        return int(dato) if isinstance(dato, (int, float)) and not isinstance(dato, bool) else 0
+    if t == "boolean":
+        return dato if isinstance(dato, bool) else False
+    return dato

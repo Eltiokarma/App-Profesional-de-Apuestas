@@ -263,18 +263,17 @@ def main():
     check("analisis/partido lista el efe", len(ap) == 1 and ap[0]["tipo"] == "efe", len(ap))
     check("analisis/partido sin análisis → []",
           c.get(A + "/analisis/partido/900001").json() == [])
-    # el esquema de structured outputs no puede pasar de 16 uniones de tipos
-    from backend.analisis.esquemas import EFE_COMPARATIVO
-
-    def _uniones(n):
-        if isinstance(n, dict):
-            propio = (1 if "anyOf" in n else 0) + (1 if isinstance(n.get("type"), list) else 0)
-            return propio + sum(_uniones(v) for v in n.values())
-        if isinstance(n, list):
-            return sum(_uniones(v) for v in n)
-        return 0
-    check("esquema EFE sin uniones de tipos (límite API: 16)", _uniones(EFE_COMPARATIVO) == 0,
-          _uniones(EFE_COMPARATIVO))
+    # normalizador: el JSON del modelo (por instrucción) se ajusta al contrato
+    from backend.analisis.cliente import _extraer_json
+    from backend.analisis.esquemas import EFE_COMPARATIVO, ajustar
+    aj = ajustar({"partido": {"equipo_a": "X", "torneo": None},
+                  "alertas": [{"codigo": "T.54", "equipo": None}]}, EFE_COMPARATIVO)
+    check("ajustar: rellena huecos y corrige nulls al contrato",
+          aj["partido"]["equipo_a"] == "X" and aj["partido"]["torneo"] == ""
+          and aj["equipos"]["a"]["bloques"]["A"]["score"] == 0.0
+          and aj["alertas"][0]["tipo"] == "estructural" and aj["lectura_sad"]["paradoja"] == "")
+    check("extraer JSON tolera envoltorios markdown",
+          _extraer_json('```json\n{"a": 1}\n```') == {"a": 1})
     check("efe de fixture inexistente → 404",
           c.post(A + "/analisis/efe", json={"fixtureId": 999999}).status_code == 404)
     del os.environ["SAD_EFE_DEMO"]

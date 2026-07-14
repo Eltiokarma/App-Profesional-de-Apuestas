@@ -2,8 +2,10 @@
 
 - System de dos bloques con prompt caching (protocolo EFE + instrucciones API);
   en caché caliente la lectura cuesta ~10% del precio de input.
-- Structured outputs (`output_config.format`): el JSON llega válido contra el
-  esquema, sin parseos frágiles.
+- El JSON se pide POR INSTRUCCIÓN (el system prompt exige "exclusivamente
+  JSON válido") y se normaliza con esquemas.ajustar() — structured outputs
+  rechazó el esquema del EFE dos veces (límite de uniones y "compiled
+  grammar is too large"): es demasiado rico para ese mecanismo.
 - Web search (web_search_20260209) SOLO cuando hay campos faltantes: es lo
   caro (~$10/1000 búsquedas + tokens).
 - El modelo se elige por tarea: Sonnet 5 para razonar el protocolo, Haiku
@@ -11,6 +13,8 @@
 """
 import json
 import os
+
+from backend.analisis.esquemas import ajustar
 
 MODELO = os.environ.get("SAD_EFE_MODELO", "claude-sonnet-5")
 MAX_TOKENS = 16_000
@@ -43,6 +47,18 @@ def hay_clave() -> bool:
     return bool(os.environ.get("ANTHROPIC_API_KEY", "").strip())
 
 
+def _extraer_json(texto: str) -> dict:
+    """JSON del texto del modelo, tolerante a envoltorios (```json … ```)."""
+    t = texto.strip()
+    inicio, fin = t.find("{"), t.rfind("}")
+    if inicio == -1 or fin <= inicio:
+        raise RuntimeError("la respuesta no contiene JSON")
+    try:
+        return json.loads(t[inicio:fin + 1])
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"JSON inválido en la respuesta: {e}") from e
+
+
 def analizar(payload: dict, esquema: dict, con_busqueda: bool) -> tuple[dict, dict]:
     """Una llamada al modo del payload. Devuelve (resultado, uso).
 
@@ -54,12 +70,13 @@ def analizar(payload: dict, esquema: dict, con_busqueda: bool) -> tuple[dict, di
     import anthropic  # import tardío: el resto del backend no lo necesita
 
     client = anthropic.Anthropic()
+    # refuerzo explícito: la salida es SOLO el objeto JSON del esquema del modo
+    payload = {**payload, "salida": "EXCLUSIVAMENTE el objeto JSON del esquema del modo, sin texto adicional ni markdown"}
     kwargs: dict = {
         "model": MODELO,
         "max_tokens": MAX_TOKENS,
         "system": bloques_system(),
         "messages": [{"role": "user", "content": json.dumps(payload, ensure_ascii=False)}],
-        "output_config": {"format": {"type": "json_schema", "schema": esquema}},
     }
     if con_busqueda:
         kwargs["tools"] = [{"type": "web_search_20260209", "name": "web_search",
@@ -90,4 +107,5 @@ def analizar(payload: dict, esquema: dict, con_busqueda: bool) -> tuple[dict, di
     print(f"[efe] {MODELO} · in={uso['input']} out={uso['output']} "
           f"cache_write={uso['cache_write']} cache_read={uso['cache_read']} "
           f"busqueda={'sí' if con_busqueda else 'no'}", flush=True)
-    return json.loads(texto), uso
+    # normalizado contra el esquema: el frontend recibe SIEMPRE la forma exacta
+    return ajustar(_extraer_json(texto), esquema), uso
