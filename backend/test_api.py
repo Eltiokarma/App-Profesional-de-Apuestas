@@ -120,6 +120,22 @@ def main():
     )
     check("gapDiff = local − visitante", abs(p["gapDiff"] - (p["local"]["gap"] - p["visitante"]["gap"])) < 1e-6)
     check("μ recortado a [0,3]", 0 <= p["local"]["ptsEsperados"] <= 3)
+    check(
+        "gap ajustado por calendario para ambos, señal válida",
+        p["local"]["gapAjustado"] is not None and p["visitante"]["gapAjustado"] is not None
+        and p["local"]["senalAjustada"] in ("fuerte", "leve", "equilibrio"),
+        p,
+    )
+    check(
+        "gapAjustado = esperadosAjustados − recientes",
+        abs(p["local"]["gapAjustado"] - (p["local"]["ptsEsperadosAjustados"] - p["local"]["ptsRecientes"])) < 1e-3,
+        p["local"],
+    )
+    check("μ ajustado recortado a [0,3]", 0 <= p["local"]["ptsEsperadosAjustados"] <= 3)
+    check(
+        "gapDiffAjustado = local − visitante",
+        abs(p["gapDiffAjustado"] - (p["local"]["gapAjustado"] - p["visitante"]["gapAjustado"])) < 1e-3,
+    )
 
     # /analisis-prepartido
     an = c.get(A + f"/analisis-prepartido/{vivo['id']}").json()

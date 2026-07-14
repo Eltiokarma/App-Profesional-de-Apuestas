@@ -66,7 +66,10 @@ export function Skills({ store, m, isMobile }: Props) {
   // reporte SAD alimentado por el contrato (/analisis-prepartido)
   const analisis = useAsync(() => loadAnalisis(m.id), m.id)
   const fmtGap = (g: GapEquipoDTO) =>
-    g.gap == null ? 'sin datos de forma' : `gap ${g.gap > 0 ? '+' : ''}${g.gap.toFixed(2)} (${g.senal}, ${g.tendencia === 'mejora' ? 'tiende a mejorar' : 'tiende a empeorar'})`
+    g.gap == null
+      ? 'sin datos de forma'
+      : `gap ${g.gap > 0 ? '+' : ''}${g.gap.toFixed(2)} (${g.senal}, ${g.tendencia === 'mejora' ? 'tiende a mejorar' : 'tiende a empeorar'})` +
+        (g.gapAjustado == null ? '' : `, ajustado por calendario ${g.gapAjustado > 0 ? '+' : ''}${g.gapAjustado.toFixed(2)} (${g.senalAjustada})`)
   const ad = analisis.data
   const sadReport: TextReport = ad
     ? {
@@ -95,7 +98,10 @@ export function Skills({ store, m, isMobile }: Props) {
               (ad.prediccion.local.senal === 'fuerte' || ad.prediccion.visitante.senal === 'fuerte'
                 ? ' Señal fuerte: el value no cura el reset — no ir contra la regresión por cuota.'
                 : ''),
-            tags: ad.prediccion.gapDiff == null ? [] : [`gap diferencial ${ad.prediccion.gapDiff > 0 ? '+' : ''}${ad.prediccion.gapDiff.toFixed(2)}`],
+            tags: [
+              ...(ad.prediccion.gapDiff == null ? [] : [`gap diferencial ${ad.prediccion.gapDiff > 0 ? '+' : ''}${ad.prediccion.gapDiff.toFixed(2)}`]),
+              ...(ad.prediccion.gapDiffAjustado == null ? [] : [`ajustado ${ad.prediccion.gapDiffAjustado > 0 ? '+' : ''}${ad.prediccion.gapDiffAjustado.toFixed(2)}`]),
+            ],
           },
         ],
       }

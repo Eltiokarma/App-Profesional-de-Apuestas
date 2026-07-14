@@ -469,6 +469,29 @@ No es parte del pipeline de DB pero es el consumidor directo de `levels.db`:
 - Principio rector: **"el value no cura el reset"** — con señal clara de regresión,
   la cuota no justifica ir en contra.
 
+### Extensión: gap ajustado por calendario (v2, aditivo)
+
+El gap clásico compara la forma real (5 partidos contra rivales reales, con
+localías reales) con una expectativa GENÉRICA (rival 2.0, localía 0.5): 5
+partidos de visita contra élites inflan la señal "subrinde" sin que haya
+bajón real. El **gap ajustado** corrige eso reusando μ tal como fue calibrada:
+
+```
+pts_esperados_ajustados = (1/5) · Σ μ(nivel_equipo, nivel_rival_i, localía_i)
+                          sobre los MISMOS 5 partidos de pts_recent
+gap_ajustado            = pts_esperados_ajustados − pts_recent
+```
+
+- `nivel_rival_i` = nivel continuo del rival a la fecha del partido
+  (semántica `date <= fecha`, **fallback 1.0** — el mismo de §3.1 al ponderar
+  rivales, no el 0.5 general).
+- `localía_i` = 1 si fue local, 0 si visitante.
+- Mismos umbrales de señal y misma lectura de signo que el gap clásico;
+  `gap_diff_ajustado = gap_ajustado_local − gap_ajustado_visitante`.
+- Es **aditivo**: el gap clásico se mantiene intacto (campos `gap`/`senal`/
+  `tendencia`); el ajustado viaja en `gapAjustado`/`senalAjustada`/
+  `tendenciaAjustada` + `ptsEsperadosAjustados` (contrato `GapEquipo`).
+
 ### ⚠️ Discrepancias documentación vs código (resueltas a favor del código)
 
 1. **Nivel usado en las constantes**: el doc dice "nivel discretizado del rival

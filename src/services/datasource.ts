@@ -33,7 +33,7 @@ import { oddsFor, rng } from '../lib/odds'
 import { levelBin } from '../motor/discretizer'
 import { teamEngine } from '../motor/engine'
 import { leagueOf } from '../motor/history'
-import { gapDiff, gapFor } from '../motor/regression'
+import { gapDiff, gapDiffAjustado, gapFor } from '../motor/regression'
 import type { KSnapshot } from '../motor/types'
 
 export interface FeedHealth {
@@ -294,6 +294,7 @@ class MockDataSource implements SadDataSource {
       local: gapEquipoDTO(m.home),
       visitante: gapEquipoDTO(m.away),
       gapDiff: gapDiff(m.home, m.away),
+      gapDiffAjustado: gapDiffAjustado(m.home, m.away),
       generadoEn: MOCK_NOW,
     }
   }

@@ -530,6 +530,10 @@ components:
         gap: { type: number, nullable: true, description: 'esperados − recientes; >0 subrinde' }
         senal: { type: string, enum: [fuerte, leve, equilibrio], nullable: true }
         tendencia: { type: string, enum: [mejora, empeora], nullable: true }
+        ptsEsperadosAjustados: { type: number, nullable: true, description: 'media de μ(nivel, rival_i, localía_i) sobre los MISMOS últ. 5 (ajuste por calendario); null si no hay 5' }
+        gapAjustado: { type: number, nullable: true, description: 'esperadosAjustados − recientes; >0 subrinde DADO su calendario' }
+        senalAjustada: { type: string, enum: [fuerte, leve, equilibrio], nullable: true }
+        tendenciaAjustada: { type: string, enum: [mejora, empeora], nullable: true }
     Prediccion:
       type: object
       required: [fixtureId, local, visitante, generadoEn]
@@ -538,6 +542,7 @@ components:
         local: { $ref: '#/components/schemas/GapEquipo' }
         visitante: { $ref: '#/components/schemas/GapEquipo' }
         gapDiff: { type: number, nullable: true }
+        gapDiffAjustado: { type: number, nullable: true, description: 'gapAjustado_local − gapAjustado_visitante' }
         generadoEn: { type: string, format: date-time }
     AnalisisPrepartido:
       type: object

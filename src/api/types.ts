@@ -169,6 +169,12 @@ export interface GapEquipoDTO {
   gap: number | null
   senal: SenalGap | null
   tendencia: 'mejora' | 'empeora' | null
+  /** Media de μ(nivel, rival_i, localía_i) sobre los MISMOS últ. 5 (ajuste por calendario). */
+  ptsEsperadosAjustados: number | null
+  /** gapAjustado = esperadosAjustados − recientes; >0 subrinde DADO su calendario. */
+  gapAjustado: number | null
+  senalAjustada: SenalGap | null
+  tendenciaAjustada: 'mejora' | 'empeora' | null
 }
 
 export interface PrediccionDTO {
@@ -177,6 +183,8 @@ export interface PrediccionDTO {
   visitante: GapEquipoDTO
   /** gap_local − gap_visitante. */
   gapDiff: number | null
+  /** gapAjustado_local − gapAjustado_visitante (ajuste por calendario). */
+  gapDiffAjustado: number | null
   generadoEn: string
 }
 

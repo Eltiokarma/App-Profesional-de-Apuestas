@@ -4,7 +4,7 @@ import { K0, qValues, stepK } from '../src/motor/constants'
 import { fuse, levelBin } from '../src/motor/discretizer'
 import { teamEngine } from '../src/motor/engine'
 import { computeTeamLevels } from '../src/motor/levels'
-import { gapFor, mu, ptsRecent, senalDe } from '../src/motor/regression'
+import { gapFor, mu, ptsEsperadosAjustados, ptsRecent, senalDe } from '../src/motor/regression'
 import type { TeamMatch } from '../src/motor/types'
 
 let failed = 0
@@ -142,11 +142,29 @@ check('forma reciente: <5 partidos → null', ptsRecent([mk(0, 1, 0)]), null)
 check('señal |gap|>0.5 → fuerte', senalDe(0.61), 'fuerte')
 check('señal 0.3–0.5 → leve', senalDe(-0.4), 'leve')
 check('señal <0.3 → equilibrio', senalDe(0.1), 'equilibrio')
+// gap ajustado por calendario: media de μ con rival/localía REALES de los últ. 5
+const cal = (rl: number, loc: boolean) => ({ rivalLevel: rl, isLocal: loc })
+check(
+  'ajustado: 5 partidos vs rival 2.0 alternando localía = μ media',
+  ptsEsperadosAjustados(2, [cal(2, true), cal(2, false), cal(2, true), cal(2, false), cal(2, true)]),
+  (3 * mu(2, 2, 1) + 2 * mu(2, 2, 0)) / 5,
+)
+check('ajustado: calendario élite fuera baja la expectativa', ptsEsperadosAjustados(2, Array.from({ length: 5 }, () => cal(3.5, false))), mu(2, 3.5, 0))
+check('ajustado: <5 partidos → null', ptsEsperadosAjustados(2, [cal(2, true)]), null)
 const gBet = gapFor('bet')!
-console.log(`  bet: nivel=${gBet.nivel.toFixed(2)} recientes=${gBet.ptsRecientes} esperados=${gBet.ptsEsperados.toFixed(2)} gap=${gBet.gap?.toFixed(2)} (${gBet.senal}/${gBet.tendencia})`)
+console.log(
+  `  bet: nivel=${gBet.nivel.toFixed(2)} recientes=${gBet.ptsRecientes} esperados=${gBet.ptsEsperados.toFixed(2)} gap=${gBet.gap?.toFixed(2)} (${gBet.senal}/${gBet.tendencia})` +
+    ` · ajustado=${gBet.gapAjustado?.toFixed(2)} (${gBet.senalAjustada}/${gBet.tendenciaAjustada})`,
+)
 if (gBet.gap == null || !['fuerte', 'leve', 'equilibrio'].includes(gBet.senal!)) {
   failed++
   console.log('  ✗ gap incompleto')
+}
+if (gBet.gapAjustado == null || gBet.ptsEsperadosAjustados == null) {
+  failed++
+  console.log('  ✗ gap ajustado incompleto')
+} else {
+  check('gapAjustado = esperadosAjustados − recientes', gBet.gapAjustado, gBet.ptsEsperadosAjustados - gBet.ptsRecientes!)
 }
 
 // ---- pipeline completo: sanidad sobre datos sintéticos ----
