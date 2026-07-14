@@ -12,7 +12,8 @@ export function BottomNav({ store }: { store: SadStore }) {
   const btn: React.CSSProperties = { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, border: 0, background: 'transparent', cursor: 'pointer', padding: '4px 0' }
 
   return (
-    <nav style={{ flexShrink: 0, display: 'flex', background: 'var(--bg1)', borderTop: '1px solid var(--line)', padding: '7px 6px 10px' }}>
+    // safe-area: en iPhone la franja del gesto de inicio tapaba los botones
+    <nav style={{ flexShrink: 0, display: 'flex', background: 'var(--bg1)', borderTop: '1px solid var(--line)', padding: '7px 6px calc(10px + env(safe-area-inset-bottom, 0px))' }}>
       <button onClick={store.go('partidos')} style={{ ...btn, color: navF('partidos') }}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M8 3v4M16 3v4M3 11h18" /></svg>
         <span style={{ font: '600 10px var(--sans)' }}>Partidos</span>

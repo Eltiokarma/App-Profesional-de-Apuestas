@@ -42,7 +42,8 @@ class SinClave(Exception):
 def _fixture(fixture_id: int) -> dict:
     fila = saddb.query_one(
         "sad",
-        "SELECT f.id, f.date, ht.name AS local, at.name AS visitante, l.name AS liga "
+        "SELECT f.id, f.date, f.home_team_id, f.away_team_id, f.league_id, "
+        "f.league_season, ht.name AS local, at.name AS visitante, l.name AS liga "
         "FROM fixtures f "
         "JOIN teams ht ON ht.id = f.home_team_id "
         "JOIN teams at ON at.id = f.away_team_id "
@@ -53,6 +54,75 @@ def _fixture(fixture_id: int) -> dict:
     if not fila:
         raise FixtureNoExiste(f"fixture {fixture_id} no existe")
     return dict(fila)
+
+
+# ── datos locales: lo que YA tenemos en sad.db no se busca en la web ─────────
+
+def _resultados_de(team_id: int) -> str:
+    filas = saddb.query(
+        "sad",
+        "SELECT f.date, f.goals_home, f.goals_away, ht.name AS local, at.name AS visitante "
+        "FROM fixtures f JOIN teams ht ON ht.id=f.home_team_id JOIN teams at ON at.id=f.away_team_id "
+        "WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.status_long='Match Finished' "
+        "AND f.goals_home IS NOT NULL ORDER BY f.date DESC LIMIT 8",
+        (team_id, team_id),
+    )
+    return " · ".join(
+        f"{(r['date'] or '')[:10]} {r['local']} {r['goals_home']}-{r['goals_away']} {r['visitante']}"
+        for r in filas
+    )
+
+
+def _proximos_de(team_id: int) -> str:
+    filas = saddb.query(
+        "sad",
+        "SELECT f.date, ht.name AS local, at.name AS visitante "
+        "FROM fixtures f JOIN teams ht ON ht.id=f.home_team_id JOIN teams at ON at.id=f.away_team_id "
+        "WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.status_short='NS' "
+        "ORDER BY f.date ASC LIMIT 5",
+        (team_id, team_id),
+    )
+    return " · ".join(f"{(r['date'] or '')[:16]} {r['local']} vs {r['visitante']}" for r in filas)
+
+
+def _tabla_de(league_id: int | None, season: int | None) -> str:
+    if not league_id or not season:
+        return ""
+    filas = saddb.query(
+        "sad",
+        "SELECT f.home_team_id, f.away_team_id, f.goals_home, f.goals_away, "
+        "ht.name AS local, at.name AS visitante "
+        "FROM fixtures f JOIN teams ht ON ht.id=f.home_team_id JOIN teams at ON at.id=f.away_team_id "
+        "WHERE f.league_id=? AND f.league_season=? AND f.status_long='Match Finished' "
+        "AND f.goals_home IS NOT NULL LIMIT 5000",
+        (league_id, season),
+    )
+    acc: dict[int, dict] = {}
+    for r in filas:
+        for tid, nombre, gf, gc in ((r["home_team_id"], r["local"], r["goals_home"], r["goals_away"]),
+                                    (r["away_team_id"], r["visitante"], r["goals_away"], r["goals_home"])):
+            e = acc.setdefault(tid, {"n": nombre, "pts": 0, "pj": 0, "gf": 0, "gc": 0})
+            e["pj"] += 1
+            e["gf"] += gf
+            e["gc"] += gc
+            e["pts"] += 3 if gf > gc else 1 if gf == gc else 0
+    tabla = sorted(acc.values(), key=lambda e: (-e["pts"], -(e["gf"] - e["gc"]), -e["gf"]))
+    return " · ".join(
+        f"{i + 1}. {e['n']} {e['pts']}pts (PJ {e['pj']}, {e['gf']}-{e['gc']})"
+        for i, e in enumerate(tabla[:12])
+    )
+
+
+def _datos_locales(fx: dict) -> dict[str, dict[str, str]]:
+    """resultados / fixture / tabla desde NUESTRA ingesta: gratis y al día —
+    la búsqueda web queda solo para lo que no tenemos (dt, plantel, xi, bajas)."""
+    tabla = _tabla_de(fx.get("league_id"), fx.get("league_season"))
+    return {
+        "equipo_a": {"resultados": _resultados_de(fx["home_team_id"]),
+                     "fixture": _proximos_de(fx["home_team_id"]), "tabla": tabla},
+        "equipo_b": {"resultados": _resultados_de(fx["away_team_id"]),
+                     "fixture": _proximos_de(fx["away_team_id"]), "tabla": tabla},
+    }
 
 
 def _demo_activo() -> bool:
@@ -81,6 +151,15 @@ def generar_efe(fixture_id: int, estado: str = "preliminar") -> dict:
             raise SinClave("Falta ANTHROPIC_API_KEY en el entorno")
         frescos_a, faltan_a = efedb.investigacion_de(equipo_a)
         frescos_b, faltan_b = efedb.investigacion_de(equipo_b)
+        # lo que ya tenemos en sad.db (tabla, resultados, próximos partidos)
+        # entra como dato cacheado y NO se busca en la web: costo cero
+        locales = _datos_locales(fx)
+        for frescos, faltan, lado in ((frescos_a, faltan_a, "equipo_a"),
+                                      (frescos_b, faltan_b, "equipo_b")):
+            for tipo, txt in locales[lado].items():
+                if txt and tipo in faltan:
+                    frescos[tipo] = txt
+                    faltan.remove(tipo)
         faltantes = [f"{t}_a" for t in faltan_a] + [f"{t}_b" for t in faltan_b]
         payload = {
             "modo": "efe",
@@ -93,6 +172,16 @@ def generar_efe(fixture_id: int, estado: str = "preliminar") -> dict:
             "datos_cacheados": {"equipo_a": frescos_a, "equipo_b": frescos_b},
             "campos_faltantes": faltantes,
         }
+        # el analista hace su propia lectura K en la app (sección Burbujas):
+        # el bloque C no se investiga ni puntúa — ahorra las búsquedas más caras.
+        # SAD_EFE_CON_K=1 lo reactiva si algún día se quiere de vuelta.
+        if os.environ.get("SAD_EFE_CON_K", "").strip() != "1":
+            payload["bloque_c"] = (
+                "NO investigues ni puntúes el bloque C (constantes K): el analista hace su "
+                "propia lectura K en la app. Aplica R-KT.2: C excluido (excluido=true, "
+                "motivo_exclusion='Lectura K manual del analista en la app', score/max/"
+                "ponderado en 0) y maximo_alcanzable renormalizado sin C."
+            )
         resultado, _uso = cliente.analizar(payload, EFE_COMPARATIVO,
                                            con_busqueda=bool(faltantes))
         # Un análisis sin contenido real (ambos equipos en 0) NO se guarda:

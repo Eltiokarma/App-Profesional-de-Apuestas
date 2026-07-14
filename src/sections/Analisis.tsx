@@ -336,7 +336,7 @@ export function Analisis({ m, isMobile }: Props) {
             className="sad-scroll"
             style={{
               display: 'flex', gap: 6, marginBottom: 14, overflowX: 'auto', paddingBottom: 2,
-              ...(isMobile ? { position: 'sticky' as const, top: -15, zIndex: 10, background: 'var(--bg)', paddingTop: 8, marginTop: -8 } : {}),
+              ...(isMobile ? { position: 'sticky' as const, top: -14, zIndex: 10, background: 'var(--bg)', paddingTop: 8, marginTop: -8 } : {}),
             }}
           >
             {tabs.map((t) => (

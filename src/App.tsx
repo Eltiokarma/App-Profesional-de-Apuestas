@@ -69,9 +69,9 @@ export function App() {
 
   const rootStyle: Style = {
     ['--pad' as string]: PAD,
-    // 100dvh y no 100vh: en móvil la barra del navegador tapaba la BottomNav
-    // (había que deslizarse hasta abajo para ver los botones)
-    height: '100dvh',
+    // --vh100 = 100dvh con reserva a 100vh (global.css): en móvil la barra
+    // del navegador tapaba la BottomNav y había que deslizarse para verla
+    height: 'var(--vh100)',
     width: '100%',
     color: 'var(--t1)',
     fontFamily: 'var(--sans)',
