@@ -82,8 +82,16 @@ def analizar(payload: dict, esquema: dict, con_busqueda: bool) -> tuple[dict, di
     import anthropic  # import tardío: el resto del backend no lo necesita
 
     client = anthropic.Anthropic()
-    # refuerzo explícito: la salida es SOLO el objeto JSON del esquema del modo
-    payload = {**payload, "salida": "EXCLUSIVAMENTE el objeto JSON del esquema del modo, sin texto adicional ni markdown"}
+    # refuerzo explícito: la salida es SOLO el objeto JSON del esquema del modo,
+    # MÁS la despensa (clave raíz 'investigacion') que abarata análisis futuros
+    payload = {**payload, "salida": (
+        "EXCLUSIVAMENTE el objeto JSON del esquema del modo, sin texto adicional ni markdown. "
+        "AÑADE una clave raíz 'investigacion' = {equipo_a: {dt, plantel, tabla, resultados, "
+        "fixture, xi_reciente, bajas}, equipo_b: {idem}}: cada campo es un resumen TEXTUAL "
+        "denso y autocontenido de lo que investigaste (nombres, fechas, cifras, fuente), "
+        "porque se guardará como caché y será el 'datos_cacheados' de análisis futuros. "
+        "Usa \"\" en lo que no investigaste."
+    )}
     kwargs: dict = {
         "model": MODELO,
         "max_tokens": MAX_TOKENS,

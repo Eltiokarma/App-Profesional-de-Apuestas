@@ -102,6 +102,22 @@ def generar_efe(fixture_id: int, estado: str = "preliminar") -> dict:
                 "El análisis llegó vacío (scores en 0 — investigación fallida). "
                 "No se guardó: vuelve a pulsar «Generar análisis EFE» para reintentar."
             )
+        # LA DESPENSA: lo investigado se separa del análisis y se deposita por
+        # equipo con TTL — el siguiente análisis de estos equipos lo recibe en
+        # datos_cacheados y busca solo lo vencido (de ~$0.50 a ~$0.10-0.20).
+        # Solo los tipos que FALTABAN: lo que ya estaba fresco no se re-sella.
+        inv = resultado.pop("investigacion", None) or {}
+        depositados = 0
+        for lado, equipo, faltan in (("equipo_a", equipo_a, faltan_a),
+                                     ("equipo_b", equipo_b, faltan_b)):
+            datos = inv.get(lado) or {}
+            for tipo in faltan:
+                contenido = (datos.get(tipo) or "").strip() if isinstance(datos.get(tipo), str) else ""
+                if contenido:
+                    efedb.guardar_investigacion(equipo, tipo, contenido)
+                    depositados += 1
+        print(f"[efe] despensa: {depositados} datos depositados "
+              f"({equipo_a} / {equipo_b})", flush=True)
 
     return efedb.guardar_analisis(
         "efe", fixture_id, equipo_a, equipo_b, fecha or "", estado,

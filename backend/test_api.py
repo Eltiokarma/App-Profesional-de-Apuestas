@@ -294,6 +294,17 @@ def main():
     efedb.guardar_analisis("efe", 900003, "X", "Y", "2026-01-01", "preliminar", vacio, "1.5")
     check("análisis vacío → /analisis/partido lo purga y devuelve []",
           c.get(A + "/analisis/partido/900003").json() == [])
+    # la despensa: el esquema del EFE exige el bloque investigacion (mismos
+    # tipos que la tabla con TTL) y lo depositado vuelve como dato fresco
+    from backend.analisis.esquemas import DESPENSA_EQUIPO
+    check("despensa: esquema en sintonía con TIPOS de la db",
+          tuple(DESPENSA_EQUIPO["properties"]) == efedb.TIPOS
+          and "investigacion" in EFE_COMPARATIVO["properties"])
+    efedb.guardar_investigacion("Equipo Despensa", "dt", "DT X, asumió 2024-05, 18 partidos")
+    frescos_t, faltan_t = efedb.investigacion_de("Equipo Despensa")
+    check("despensa: lo depositado vuelve fresco y ya no se re-busca",
+          frescos_t.get("dt") == "DT X, asumió 2024-05, 18 partidos"
+          and "dt" not in faltan_t and "tabla" in faltan_t)
     # regenerar (botón): forzar descarta el guardado y emite uno nuevo
     gen3 = c.post(A + "/analisis/efe", json={"fixtureId": vivo["id"], "forzar": True}).json()
     check("efe con forzar → regenera y responde listo",
