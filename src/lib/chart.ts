@@ -160,6 +160,18 @@ export function buildChart(
     ymin = 1
     ymax = 3
   }
+  // rango mínimo del eje (mismo criterio que buildSpark): variaciones de
+  // centavos no se estiran a sierra; el movimiento real conserva su drama
+  const minRango = Math.max(ymax * 0.05, 0.08)
+  if (ymax - ymin < minRango) {
+    const centro = (ymax + ymin) / 2
+    ymin = centro - minRango / 2
+    ymax = centro + minRango / 2
+    if (ymin < 1) {
+      ymax += 1 - ymin
+      ymin = 1
+    }
+  }
   const pd = (ymax - ymin) * 0.14 || 0.2
   ymin = Math.max(1, ymin - pd)
   ymax += pd
@@ -298,6 +310,15 @@ export function buildSpark(m: Match, mk: string, selK: string, isLive: boolean, 
     if (p.odd < mn) mn = p.odd
     if (p.odd > mx) mx = p.odd
   })
+  // rango mínimo del eje: el ruido de ±0.01 de la media entre casas se
+  // autoescalaba a pantalla completa y pintaba una sierra dramática — con
+  // piso de rango, lo casi-plano SE VE casi plano y el movimiento real resalta
+  const minRango = Math.max(mx * 0.06, 0.1)
+  if (mx - mn < minRango) {
+    const extra = (minRango - (mx - mn)) / 2
+    mn -= extra
+    mx += extra
+  }
   const rr = mx - mn || 1
   const px = (t: number) => 2 + t * 76
   const py = (v: number) => 3 + (1 - (v - mn) / rr) * 22
