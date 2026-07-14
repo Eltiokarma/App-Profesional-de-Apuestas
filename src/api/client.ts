@@ -46,3 +46,28 @@ const qs = (params: Record<string, string | number | undefined>) => {
 }
 
 export { qs }
+
+/** POST JSON. El análisis EFE puede tardar 1-3 min: pasar timeoutMs generoso. */
+export async function apiPost<T>(path: string, body: unknown, opts: RequestOpts = {}): Promise<T> {
+  const ctrl = new AbortController()
+  const timeout = setTimeout(() => ctrl.abort(), opts.timeoutMs ?? 30_000)
+  opts.signal?.addEventListener('abort', () => ctrl.abort(), { once: true })
+  try {
+    const headers: Record<string, string> = { Accept: 'application/json', 'Content-Type': 'application/json' }
+    if (CONFIG.apiKey) headers.Authorization = `Bearer ${CONFIG.apiKey}`
+    const res = await fetch(CONFIG.apiBaseUrl + path, { method: 'POST', headers, body: JSON.stringify(body), signal: ctrl.signal })
+    if (!res.ok) {
+      let resBody: unknown
+      try {
+        resBody = await res.json()
+      } catch {
+        /* cuerpo no-JSON */
+      }
+      const detalle = (resBody as { detail?: string } | undefined)?.detail
+      throw new ApiError(res.status, detalle || `POST ${path} → ${res.status} ${res.statusText}`, resBody)
+    }
+    return (await res.json()) as T
+  } finally {
+    clearTimeout(timeout)
+  }
+}

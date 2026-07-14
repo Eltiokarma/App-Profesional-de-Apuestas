@@ -285,3 +285,110 @@ export interface CuotaSnapshotDTO {
   casas?: number
   capturadoEn: string
 }
+
+// ── análisis EFE+DTP (backend/analisis/, docs/efe-dtp/PLAN_ADAPTADO.md) ─────
+
+export type EfeEstadoIndicador = 'verde' | 'ambar' | 'rojo'
+export type EfeClasificacion = 'FORMADO' | 'EN_FORMACION' | 'SIN_FORMACION'
+
+export interface EfeIndicador {
+  id: string
+  estado: EfeEstadoIndicador
+  justificacion: string
+  fuente: string | null
+}
+
+export interface EfeBloque {
+  score: number
+  max: number
+  ponderado: number | null
+  excluido: boolean | null
+  motivo_exclusion: string | null
+  d3_cap_aplicado: boolean | null
+  ppp: number | null
+  indicadores: EfeIndicador[]
+}
+
+export interface EfeJugador {
+  nombre: string
+  posicion: string
+  zona: 'GK' | 'DEF' | 'MID' | 'ATK'
+  rol: 'TF' | 'TH' | 'ROT' | 'SUP'
+  apps: string | null
+  estado: 'disponible' | 'baja' | 'duda'
+  motivo: string | null
+}
+
+export interface EfeEquipo {
+  color: string
+  color_light: string
+  color_mid: string
+  bloques: Record<'A' | 'B' | 'C' | 'D' | 'E', EfeBloque>
+  total: number
+  maximo_alcanzable: number
+  porcentaje: number
+  clasificacion: EfeClasificacion
+  disponibilidad: {
+    jugadores: EfeJugador[]
+    ip: number
+    ip_nivel: EfeEstadoIndicador
+    multiplicador_gk_aplicado: boolean
+    reduccion_zonas: Record<'GK' | 'DEF' | 'MID' | 'ATK', number>
+    f4: { rotados: number; diagnostico: string }
+    f5_factor_x: { nombre: string; contexto: string }[]
+  }
+  dt: { nombre: string; asuncion: string | null; meses: number | null }
+  calendario: {
+    rival: string
+    fecha: string | null
+    condicion: 'L' | 'V'
+    etiquetas: string[]
+    posicion: number | null
+    nota: string | null
+  }[]
+}
+
+export interface EfeComparativo {
+  version_efe: string
+  partido: {
+    equipo_a: string
+    equipo_b: string
+    torneo: string | null
+    fase: string | null
+    estadio: string | null
+    fecha: string | null
+    hora: string | null
+    condicion: { a: 'L' | 'V'; b: 'L' | 'V' }
+  }
+  equipos: { a: EfeEquipo; b: EfeEquipo }
+  matchup_h: {
+    perfil_a: { sistema: string | null; estilo: string | null; fortaleza: string | null; vulnerabilidad: string | null }
+    perfil_b: { sistema: string | null; estilo: string | null; fortaleza: string | null; vulnerabilidad: string | null }
+    h2a: string | null
+    h2b: string | null
+    h2c: string | null
+    diagnostico: 'FAVORABLE' | 'NEUTRO' | 'DESFAVORABLE'
+    razon: string
+  }
+  alertas: { codigo: string; tipo: 'estructural' | 'fecha'; equipo: string | null; detalle: string }[]
+  lectura_sad: {
+    modulo_operativo: string
+    un_x_dos: { texto: string; rango_ampliado: boolean }
+    contexto_emocional: string
+    dato_estructural: string
+    paradoja: string | null
+  }
+  datos_faltantes: string[]
+  fuentes: string[]
+}
+
+/** Registro de un análisis emitido (GET /analisis/partido/{id}, POST /analisis/efe). */
+export interface AnalisisRegistroDTO {
+  tipo: 'efe' | 'dtp' | 'matriz'
+  fixtureId: number
+  /** preliminar = XI provisional (T−24h) · confirmado = XI oficial (T−40min). */
+  estado: 'preliminar' | 'confirmado'
+  versionEfe: string
+  creadoEn: string
+  resultado: EfeComparativo
+}

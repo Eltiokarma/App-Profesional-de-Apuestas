@@ -1,7 +1,8 @@
 // Endpoints del backend SAD (contrato: docs/openapi.yaml).
-import { apiGet, qs } from './client'
+import { apiGet, apiPost, qs } from './client'
 import type {
   AnalisisPrepartidoDTO,
+  AnalisisRegistroDTO,
   ConstanteCuotaDTO,
   ConstantesDTO,
   CuotaCasaDTO,
@@ -65,6 +66,14 @@ export const SadApi = {
     apiGet<string[]>(`/cuotas/${fixtureId}/historial/fuentes`),
 
   equipoStats: (equipoId: number) => apiGet<EquipoStatsDTO>(`/equipos/${equipoId}/stats`),
+
+  /** Análisis emitidos para un fixture (lectura pura, cero créditos). */
+  analisisPartido: (fixtureId: number) => apiGet<AnalisisRegistroDTO[]>(`/analisis/partido/${fixtureId}`),
+
+  /** Genera (o devuelve, si ya existe) el EFE del fixture. Tarda 1-3 min
+   *  cuando investiga en la web: timeout generoso. */
+  generarEfe: (fixtureId: number) =>
+    apiPost<AnalisisRegistroDTO>('/analisis/efe', { fixtureId }, { timeoutMs: 300_000 }),
 
   /** Metadatos de la liga (nombre, país, logo, bandera). */
   liga: (ligaId: number) => apiGet<LigaDTO>(`/ligas/${ligaId}`),
