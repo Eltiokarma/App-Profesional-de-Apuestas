@@ -1003,24 +1003,33 @@ def cuotas_casas(fixture_id: int):
     selección va marcada con mejor=true: ahí paga más ese acierto."""
     rows = db.query(
         "sad",
-        "SELECT bookmaker_id, bookmaker_name, bet_name, value, odd FROM odds "
+        "SELECT id, bookmaker_id, bookmaker_name, bet_name, value, odd FROM odds "
         "WHERE fixture_id=? AND odd IS NOT NULL AND bookmaker_id IS NOT NULL",
         (fixture_id,),
     )
-    por_sel: dict[tuple[str, str], list[dict]] = {}
+    # DEDUPE por casa: el upsert viejo acumulaba filas de la misma casa (ids
+    # nulos / variantes del valor) y la casa salía 2-3 veces con cuotas
+    # distintas — se conserva SOLO la fila más reciente por (selección, casa)
+    ultima: dict[tuple, dict] = {}
     for r in rows:
         key = cuota_key(r["bet_name"], r["value"])
-        if key:
-            por_sel.setdefault(key, []).append(
-                {
-                    "fixtureId": fixture_id,
-                    "mercado": key[0],
-                    "seleccion": key[1],
-                    "casaId": r["bookmaker_id"],
-                    "casa": r["bookmaker_name"] or f"casa {r['bookmaker_id']}",
-                    "cuota": round(float(r["odd"]), 2),
-                }
-            )
+        if not key:
+            continue
+        casa = (r["bookmaker_name"] or f"casa {r['bookmaker_id']}").strip()
+        ck = (key, casa.lower())
+        if ck not in ultima or r["id"] > ultima[ck]["_id"]:
+            ultima[ck] = {
+                "_id": r["id"],
+                "fixtureId": fixture_id,
+                "mercado": key[0],
+                "seleccion": key[1],
+                "casaId": r["bookmaker_id"],
+                "casa": casa,
+                "cuota": round(float(r["odd"]), 2),
+            }
+    por_sel: dict[tuple[str, str], list[dict]] = {}
+    for (key, _casa), fila in ultima.items():
+        por_sel.setdefault(key, []).append({k: v for k, v in fila.items() if k != "_id"})
     out = []
     for key in sorted(por_sel):
         filas = sorted(por_sel[key], key=lambda f: -f["cuota"])
@@ -1077,20 +1086,35 @@ def cuotas_historial(fixture_id: int, casa: str | None = None):
             ) if not casa else []
         except Exception:
             return []
-    out = []
+    # COLAPSO ANTI-DUPLICADOS: si una captura escribió más de una fila para la
+    # misma selección (variantes del valor, casas repetidas del upsert viejo),
+    # se funden en UNA media ponderada por nº de casas — sin esto la curva
+    # zigzaguea alternando entre las filas gemelas.
+    acumulado: dict[tuple, list] = {}  # (mercado, sel, captured_at) → [Σ odd·peso, Σ peso]
+    orden: list[tuple] = []
     for r in rows:
         key = cuota_key(r["bet_name"], r["value"])
-        if key:
-            out.append(
-                {
-                    "fixtureId": fixture_id,
-                    "mercado": key[0],
-                    "seleccion": key[1],
-                    "cuota": round(float(r["odd"]), 2),
-                    "casas": r["casas"],
-                    "capturadoEn": iso(r["captured_at"]),
-                }
-            )
+        if not key:
+            continue
+        k = (key[0], key[1], r["captured_at"])
+        peso = max(int(r["casas"] or 1), 1)
+        if k not in acumulado:
+            acumulado[k] = [0.0, 0]
+            orden.append(k)
+        acumulado[k][0] += float(r["odd"]) * peso
+        acumulado[k][1] += peso
+    out = [
+        {
+            "fixtureId": fixture_id,
+            "mercado": mk,
+            "seleccion": sel,
+            "cuota": round(suma / peso, 2),
+            "casas": peso,
+            "capturadoEn": iso(cap),
+        }
+        for (mk, sel, cap) in orden
+        for (suma, peso) in (acumulado[(mk, sel, cap)],)
+    ]
     return out
 
 

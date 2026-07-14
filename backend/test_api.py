@@ -232,6 +232,47 @@ def main():
     check("1er tiempo fuera del live (cuotas y serie)",
           all(p["cuota"] != 9.99 for p in lv["cuotas"] + lv["serie"]))
 
+    # CASAS DUPLICADAS (el zigzag real del 14/07): el upsert viejo acumulaba
+    # filas de la misma casa (ids nulos / variantes '1X' vs 'Home/Draw')
+    import sqlite3 as _sql
+    with _sql.connect(os.path.join(tmp, "sad.db")) as _sd:
+        # fila fantasma: 1xBet duplicada con otra cuota para la misma selección
+        _sd.execute(
+            "INSERT INTO odds (fixture_id, league_id, bookmaker_id, bookmaker_name, "
+            "bet_id, bet_name, value, odd) VALUES (?, 140, 8, '1xBet', NULL, 'Match Winner', '1', 9.5)",
+            (vivo["id"],))
+        _sd.commit()
+    cc_dup = c.get(A + f"/cuotas/{vivo['id']}/casas").json()
+    unos_dup = [r for r in cc_dup if r["mercado"] == "1x2" and r["seleccion"] == "1"]
+    check("casas: la casa duplicada sale UNA sola vez (última fila gana)",
+          len(unos_dup) == 3 and sum(1 for r in unos_dup if r["casa"].lower() == "1xbet") == 1
+          and next(r["cuota"] for r in unos_dup if r["casa"].lower() == "1xbet") == 9.5,
+          unos_dup)
+    # limpiar_odds_duplicadas purga la fila vieja del volumen (queda la nueva)
+    from backend.ingesta.extractor import guardar_odds, limpiar_odds_duplicadas
+    with _sql.connect(os.path.join(tmp, "sad.db")) as _sd:
+        antes = _sd.execute("SELECT COUNT(*) FROM odds WHERE fixture_id=?", (vivo["id"],)).fetchone()[0]
+        borradas = limpiar_odds_duplicadas(_sd)
+        despues = _sd.execute("SELECT COUNT(*) FROM odds WHERE fixture_id=?", (vivo["id"],)).fetchone()[0]
+    check("limpiar_odds_duplicadas: purga la gemela y conserva la reciente",
+          borradas >= 1 and despues == antes - 1, (antes, borradas, despues))
+    # guardar_odds ya no acumula: ids nulos + variante del valor → misma fila
+    with _sql.connect(os.path.join(tmp, "sad.db")) as _sd:
+        item_a = {"league": {"id": 140}, "bookmakers": [{"id": None, "name": "1xBet", "bets": [
+            {"id": None, "name": "Double Chance", "values": [{"value": "Home/Draw", "odd": "1.40"}]}]}]}
+        item_b = {"league": {"id": 140}, "bookmakers": [{"id": None, "name": "1xBet", "bets": [
+            {"id": None, "name": "Double Chance", "values": [{"value": "1X", "odd": "1.55"}]}]}]}
+        guardar_odds(_sd, 900777, [item_a])
+        guardar_odds(_sd, 900777, [item_b])
+        filas_dc = _sd.execute(
+            "SELECT value, odd FROM odds WHERE fixture_id=900777").fetchall()
+        _sd.execute("DELETE FROM odds WHERE fixture_id=900777")
+        _sd.execute("DELETE FROM odds_history WHERE fixture_id=900777")
+        _sd.commit()
+    check("guardar_odds: ids nulos + variante '1X' NO acumulan filas (1 fila, cuota nueva)",
+          len(filas_dc) == 1 and filas_dc[0][0] == "Home/Draw" and filas_dc[0][1] == 1.55,
+          filas_dc)
+
     # análisis EFE (capa backend/analisis/, modo demo: sin API ni créditos)
     os.environ["SAD_EFE_DEMO"] = "1"
     from backend.analisis import db as efedb

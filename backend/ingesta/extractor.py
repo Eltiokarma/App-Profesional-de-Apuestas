@@ -408,25 +408,59 @@ def guardar_fixtures(con: sqlite3.Connection, respuesta: list) -> int:
     return n
 
 
+# El feed alterna nombres para el mismo valor ("1X" vs "Home/Draw"): sin forma
+# canónica, cada variante era una fila NUEVA de la misma casa (dato duplicado
+# → la misma casa 2-3 veces en /casas y medias que zigzaguean).
+_VALOR_CANON = {"1": "Home", "X": "Draw", "2": "Away",
+                "1X": "Home/Draw", "12": "Home/Away", "X2": "Draw/Away"}
+
+_CANON_SQL = ("CASE COALESCE(value,'') WHEN '1' THEN 'Home' WHEN 'X' THEN 'Draw' "
+              "WHEN '2' THEN 'Away' WHEN '1X' THEN 'Home/Draw' WHEN '12' THEN 'Home/Away' "
+              "WHEN 'X2' THEN 'Draw/Away' ELSE COALESCE(value,'') END")
+
+
+def limpiar_odds_duplicadas(con: sqlite3.Connection) -> int:
+    """Purga los duplicados acumulados en odds por el upsert viejo (ids nulos:
+    NULL=NULL nunca casa en SQL → cada captura insertaba otra fila) y por las
+    variantes del valor: conserva la fila MÁS RECIENTE por (fixture, casa,
+    mercado, valor canónico). Idempotente — corre en cada corrida."""
+    cur = con.execute(
+        f"DELETE FROM odds WHERE id NOT IN (SELECT MAX(id) FROM odds GROUP BY fixture_id, "
+        f"lower(COALESCE(bookmaker_name,'')), lower(COALESCE(bet_name,'')), {_CANON_SQL})"
+    )
+    con.commit()
+    return cur.rowcount
+
+
 def guardar_odds(con: sqlite3.Connection, fixture_id: int, respuesta: list) -> int:
     n = 0
     capturado = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
-    medias: dict[tuple, list[float]] = {}
-    referencias: list[tuple] = []
+    # media por selección: {casa: odd} — una casa cuenta UNA sola vez aunque
+    # el feed la repita (antes inflaba la media y duplicaba /casas)
+    medias: dict[tuple, dict[str, float]] = {}
+    referencias: dict[tuple, float] = {}
     for item in respuesta:
         league_id = item.get("league", {}).get("id")
         for bk in item.get("bookmakers", []):
-            es_referencia = (bk.get("name") or "").strip().lower() in CASAS_REFERENCIA
+            casa_nombre = (bk.get("name") or "").strip()
+            casa_l = casa_nombre.lower()
+            es_referencia = casa_l in CASAS_REFERENCIA
             for bet in bk.get("bets", []):
+                bet_nombre = bet.get("name") or ""
                 for valor in bet.get("values", []):
+                    v = _VALOR_CANON.get(str(valor.get("value")), valor.get("value"))
                     try:
                         odd = float(valor.get("odd"))
                     except (TypeError, ValueError):
                         odd = None
+                    # upsert por NOMBRES y valor canónico: los ids del feed a
+                    # veces llegan nulos y NULL=NULL nunca casa en SQL — la
+                    # clave por ids acumulaba una fila nueva en cada captura
                     fila = con.execute(
-                        "SELECT id FROM odds WHERE fixture_id=? AND bookmaker_id=? "
-                        "AND bet_id=? AND value=?",
-                        (fixture_id, bk.get("id"), bet.get("id"), valor.get("value")),
+                        "SELECT id FROM odds WHERE fixture_id=? "
+                        "AND lower(COALESCE(bookmaker_name,''))=? "
+                        "AND lower(COALESCE(bet_name,''))=? AND COALESCE(value,'')=?",
+                        (fixture_id, casa_l, bet_nombre.lower(), str(v or "")),
                     ).fetchone()
                     if fila:
                         con.execute("UPDATE odds SET odd=? WHERE id=?", (odd, fila[0]))
@@ -435,19 +469,18 @@ def guardar_odds(con: sqlite3.Connection, fixture_id: int, respuesta: list) -> i
                             "INSERT INTO odds (fixture_id, league_id, bookmaker_id, "
                             "bookmaker_name, bet_id, bet_name, value, odd) "
                             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                            (fixture_id, league_id, bk.get("id"), bk.get("name"),
-                             bet.get("id"), bet.get("name"), valor.get("value"), odd),
+                            (fixture_id, league_id, bk.get("id"), casa_nombre,
+                             bet.get("id"), bet_nombre, v, odd),
                         )
                     if odd is not None:
-                        medias.setdefault(
-                            (league_id, bet.get("id"), bet.get("name"), valor.get("value")), []
-                        ).append(odd)
+                        medias.setdefault((league_id, bet.get("id"), bet_nombre, v), {})[casa_l] = odd
                         if es_referencia:
-                            referencias.append((league_id, bk.get("id"), bk.get("name"),
-                                                bet.get("id"), bet.get("name"), valor.get("value"), odd))
+                            referencias[(league_id, bk.get("id"), casa_nombre,
+                                         bet.get("id"), bet_nombre, v)] = odd
                     n += 1
     # snapshot para el historial de movimiento: media entre casas por selección
-    for (liga, bet_id, bet_name, value), odds in medias.items():
+    for (liga, bet_id, bet_name, value), por_casa in medias.items():
+        odds = list(por_casa.values())
         con.execute(
             "INSERT INTO odds_history (fixture_id, league_id, bet_id, bet_name, "
             "value, odd, casas, captured_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -455,7 +488,7 @@ def guardar_odds(con: sqlite3.Connection, fixture_id: int, respuesta: list) -> i
              round(sum(odds) / len(odds), 3), len(odds), capturado),
         )
     # y el crudo de las casas de referencia (la media amortigua los saltos)
-    for (liga, casa_id, casa, bet_id, bet_name, value, odd) in referencias:
+    for (liga, casa_id, casa, bet_id, bet_name, value), odd in referencias.items():
         con.execute(
             "INSERT INTO odds_history (fixture_id, league_id, bet_id, bet_name, "
             "value, odd, casas, captured_at, casa_id, casa) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)",
@@ -730,6 +763,9 @@ def main() -> int:
     con = sqlite3.connect(args.db)
     con.execute("PRAGMA busy_timeout=15000")  # convive con las lecturas del backend
     preparar_historial(con)  # idempotente: crea/migra odds_history en DBs viejas
+    borradas = limpiar_odds_duplicadas(con)  # autocuración del volumen contaminado
+    if borradas:
+        print(f"odds duplicadas purgadas: {borradas} filas (upsert viejo por ids nulos / variantes de valor)")
 
     if args.ventana_horas:
         pendientes = fixtures_proximos(con, args.ventana_horas)
