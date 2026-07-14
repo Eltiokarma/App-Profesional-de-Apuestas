@@ -263,6 +263,13 @@ def main():
         fin_efe = next(f for f in fx if f["estado"] == "finalizado")
         check("efe sin ANTHROPIC_API_KEY → 503",
               c.post(A + "/analisis/efe", json={"fixtureId": fin_efe["id"]}).status_code == 503)
+    # preflight CORS del POST: con solo GET el navegador bloqueaba /analisis/efe
+    pre = c.options(A + "/analisis/efe", headers={
+        "Origin": "http://localhost:5173", "Access-Control-Request-Method": "POST",
+    })
+    check("CORS: preflight de POST /analisis/efe permitido",
+          pre.status_code == 200 and "POST" in pre.headers.get("access-control-allow-methods", ""),
+          (pre.status_code, pre.headers.get("access-control-allow-methods")))
 
     # cuotas prepartido guardadas en partidos PASADOS
     pasados = [f for f in fx if f["estado"] == "finalizado"]
