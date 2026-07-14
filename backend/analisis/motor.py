@@ -22,7 +22,7 @@ import threading
 from backend import db as saddb
 from backend.analisis import cliente, demo
 from backend.analisis import db as efedb
-from backend.analisis.esquemas import EFE_COMPARATIVO
+from backend.analisis.esquemas import EFE_COMPARATIVO, analisis_vacio
 
 VERSION_EFE = "1.5"
 
@@ -95,6 +95,13 @@ def generar_efe(fixture_id: int, estado: str = "preliminar") -> dict:
         }
         resultado, _uso = cliente.analizar(payload, EFE_COMPARATIVO,
                                            con_busqueda=bool(faltantes))
+        # Un análisis sin contenido real (ambos equipos en 0) NO se guarda:
+        # cachearlo dejaría al usuario sin forma de regenerar.
+        if analisis_vacio(resultado):
+            raise RuntimeError(
+                "El análisis llegó vacío (scores en 0 — investigación fallida). "
+                "No se guardó: vuelve a pulsar «Generar análisis EFE» para reintentar."
+            )
 
     return efedb.guardar_analisis(
         "efe", fixture_id, equipo_a, equipo_b, fecha or "", estado,

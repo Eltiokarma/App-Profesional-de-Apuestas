@@ -151,7 +151,14 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
       const media = filas.length ? filas.reduce((a, f) => a + f.cuota, 0) / filas.length : 0
       const mejor = filas[0]
       const ventaja = mejor && media ? ((mejor.cuota - media) / media) * 100 : 0
-      return { k: sd.k, label: sd.label, filas, ventajaText: ventaja >= 0.05 ? '+' + ventaja.toFixed(1) + '% vs media' : '' }
+      // variación entre la mejor y la peor oferta: cuánto pierdes apostando en la casa equivocada
+      const peorCuota = filas.length ? Math.min(...filas.map((f) => f.cuota)) : 0
+      const mejorCuota = filas.length ? Math.max(...filas.map((f) => f.cuota)) : 0
+      const spread = mejorCuota - peorCuota
+      const spreadText = spread >= 0.01 && peorCuota > 0
+        ? `Δ ${spread.toFixed(2)} (${((spread / peorCuota) * 100).toFixed(1)}% mejor–peor)`
+        : ''
+      return { k: sd.k, label: sd.label, filas, ventajaText: ventaja >= 0.05 ? '+' + ventaja.toFixed(1) + '% vs media' : '', spreadText }
     }).filter((r) => r.filas.length > 1)
   }, [m, cmk, casas])
 
@@ -242,10 +249,17 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
         </div>
       )}
 
-      {/* MARKET TABS */}
-      <div className="sad-scroll" style={{ display: 'flex', gap: 6, marginBottom: 14, overflowX: 'auto', paddingBottom: 2 }}>
+      {/* MARKET TABS — en móvil quedan pegados arriba al hacer scroll: cambiar
+          de mercado sin volver a subir por toda la página */}
+      <div
+        className="sad-scroll"
+        style={{
+          display: 'flex', gap: 6, marginBottom: 14, overflowX: 'auto', paddingBottom: 2,
+          ...(isMobile ? { position: 'sticky' as const, top: -15, zIndex: 10, background: 'var(--bg)', paddingTop: 8, marginTop: -8 } : {}),
+        }}
+      >
         {marketTabs.map((t) => (
-          <button key={t.key} onClick={() => store.setChartMarket(t.key)} style={{ flexShrink: 0, padding: '8px 15px', border: `1px solid ${t.line}`, borderRadius: 9, cursor: 'pointer', background: t.bg, color: t.fg, font: '600 12px var(--sans)', whiteSpace: 'nowrap' }}>{t.label}</button>
+          <button key={t.key} onClick={() => store.setChartMarket(t.key)} style={{ flexShrink: 0, padding: '8px 15px', border: `1px solid ${t.line}`, borderRadius: 9, cursor: 'pointer', background: t.active ? t.bg : 'var(--bg)', color: t.fg, font: '600 12px var(--sans)', whiteSpace: 'nowrap' }}>{t.label}</button>
         ))}
       </div>
 
@@ -369,8 +383,11 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
               <div key={row.k} style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? 7 : 12, padding: '8px 10px', borderRadius: 10, background: 'var(--bg)' }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, width: isMobile ? 'auto' : 130, flexShrink: 0, minWidth: 0 }}>
                   <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.label}</span>
-                  {isMobile && row.ventajaText && (
-                    <span style={{ font: '600 10px var(--mono)', color: 'var(--up)', marginLeft: 'auto', flexShrink: 0 }}>{row.ventajaText}</span>
+                  {isMobile && (row.spreadText || row.ventajaText) && (
+                    <span style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginLeft: 'auto', flexShrink: 0 }}>
+                      {row.spreadText && <span style={{ font: '600 10px var(--mono)', color: 'var(--accent)' }}>{row.spreadText}</span>}
+                      {row.ventajaText && <span style={{ font: '600 10px var(--mono)', color: 'var(--up)' }}>{row.ventajaText}</span>}
+                    </span>
                   )}
                 </div>
                 <div className="sad-scroll" style={{ display: 'flex', gap: 6, overflowX: 'auto', flex: 1, minWidth: 0, paddingBottom: 2 }}>
@@ -381,8 +398,11 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
                     </span>
                   ))}
                 </div>
-                {!isMobile && row.ventajaText && (
-                  <span style={{ font: '600 10px var(--mono)', color: 'var(--up)', flexShrink: 0 }}>{row.ventajaText}</span>
+                {!isMobile && (row.spreadText || row.ventajaText) && (
+                  <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, flexShrink: 0 }}>
+                    {row.ventajaText && <span style={{ font: '600 10px var(--mono)', color: 'var(--up)' }}>{row.ventajaText}</span>}
+                    {row.spreadText && <span style={{ font: '600 10px var(--mono)', color: 'var(--accent)' }}>{row.spreadText}</span>}
+                  </span>
                 )}
               </div>
             ))}

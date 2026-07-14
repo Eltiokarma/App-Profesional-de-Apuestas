@@ -309,10 +309,17 @@ export function Analisis({ m, isMobile }: Props) {
             </section>
           )}
 
-          {/* pestañas */}
-          <div className="sad-scroll" style={{ display: 'flex', gap: 6, marginBottom: 14, overflowX: 'auto', paddingBottom: 2 }}>
+          {/* pestañas — en móvil quedan pegadas arriba al hacer scroll para no
+              tener que volver a subir/bajar buscando los botones */}
+          <div
+            className="sad-scroll"
+            style={{
+              display: 'flex', gap: 6, marginBottom: 14, overflowX: 'auto', paddingBottom: 2,
+              ...(isMobile ? { position: 'sticky' as const, top: -15, zIndex: 10, background: 'var(--bg)', paddingTop: 8, marginTop: -8 } : {}),
+            }}
+          >
             {tabs.map((t) => (
-              <button key={t.k} onClick={() => setTab(t.k)} style={{ flexShrink: 0, padding: '8px 15px', border: `1px solid ${tab === t.k ? 'color-mix(in oklch,var(--accent),transparent 55%)' : 'var(--line)'}`, borderRadius: 9, cursor: 'pointer', background: tab === t.k ? 'var(--accent-soft)' : 'transparent', color: tab === t.k ? 'var(--accent)' : 'var(--t2)', font: '600 12px var(--sans)', whiteSpace: 'nowrap' }}>{t.label}</button>
+              <button key={t.k} onClick={() => setTab(t.k)} style={{ flexShrink: 0, padding: '8px 15px', border: `1px solid ${tab === t.k ? 'color-mix(in oklch,var(--accent),transparent 55%)' : 'var(--line)'}`, borderRadius: 9, cursor: 'pointer', background: tab === t.k ? 'var(--accent-soft)' : 'var(--bg)', color: tab === t.k ? 'var(--accent)' : 'var(--t2)', font: '600 12px var(--sans)', whiteSpace: 'nowrap' }}>{t.label}</button>
             ))}
           </div>
 

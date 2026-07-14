@@ -274,6 +274,22 @@ def main():
           and aj["alertas"][0]["tipo"] == "estructural" and aj["lectura_sad"]["paradoja"] == "")
     check("extraer JSON tolera envoltorios markdown",
           _extraer_json('```json\n{"a": 1}\n```') == {"a": 1})
+    # el modelo a veces emite cifras como texto: "3.5"/"75%" NO deben volverse 0
+    aj2 = ajustar({"equipos": {"a": {"total": "21,25", "porcentaje": "79%",
+                                     "bloques": {"A": {"score": "3.5"}}}}}, EFE_COMPARATIVO)
+    check("ajustar: strings numéricos se convierten, no se anulan",
+          aj2["equipos"]["a"]["total"] == 21.25 and aj2["equipos"]["a"]["porcentaje"] == 79.0
+          and aj2["equipos"]["a"]["bloques"]["A"]["score"] == 3.5,
+          aj2["equipos"]["a"]["total"])
+    # análisis vacíos (ambos equipos en 0) se detectan y no valen como caché
+    from backend.analisis.esquemas import analisis_vacio
+    vacio = ajustar({}, EFE_COMPARATIVO)
+    check("analisis_vacio detecta el comparativo en ceros",
+          analisis_vacio(vacio) and not analisis_vacio(ae["resultado"]))
+    # autocuración: un vacío guardado (bug antiguo) se purga y deja regenerar
+    efedb.guardar_analisis("efe", 900002, "X", "Y", "2026-01-01", "preliminar", vacio, "1.5")
+    check("análisis vacío guardado → purgado al leer (regenerable)",
+          efedb.analisis_existente("efe", 900002, "preliminar") is None)
     check("efe de fixture inexistente → 404",
           c.post(A + "/analisis/efe", json={"fixtureId": 999999}).status_code == 404)
     del os.environ["SAD_EFE_DEMO"]
