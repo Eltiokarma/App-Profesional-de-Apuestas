@@ -84,6 +84,78 @@ dinero real, nadie sin token debe poder dispararlas.
 La Matriz sale casi gratis (~$0.03): sin investigación, solo el JSON del EFE
 como input. 150 partidos/mes con mezcla realista ≈ **$10-25/mes**.
 
+## Cómo se organiza la información
+
+### Tres niveles, del más crudo al más elaborado
+
+```
+NIVEL 1 · investigacion   hechos por equipo, con fecha y fuente (reutilizables)
+NIVEL 2 · analisis        veredictos por partido (inmutables, con versión EFE)
+NIVEL 3 · cadena_dtp      la historia por equipo foco (pronóstico → validación → lección)
+```
+
+**Nivel 1 — `investigacion` (hechos).** Una fila por (equipo, tipo): `dt`,
+`plantel`, `xi_reciente`, `resultados`, `tabla`, `fixture`, `bajas`. Cada fila
+guarda el JSON normalizado, sus fuentes y `capturado_en`. Es la despensa: el
+EFE de Universitario y el de Alianza del mismo fin de semana comparten la
+misma investigación de tabla/resultados sin repetir búsquedas. La frescura la
+decide el TTL por tipo (dt/plantel 14 días, tabla/resultados 24 h, fixture 7
+días, xi/bajas 48 h y SIEMPRE refresco el día del partido). Lo vencido se
+marca como `campos_faltantes` y solo ESO habilita web search en la llamada.
+
+**Nivel 2 — `analisis` (veredictos).** Una fila por análisis emitido: tipo
+(`efe`/`dtp`/`matriz`), equipos, `fecha_partido`, el JSON completo del esquema
+y `version_efe`. Inmutable: lo emitido con v1.5 queda como v1.5 para siempre
+(auditoría de calibración). Se enlaza con la app por el **fixture_id de
+sad.db**: la página del partido pregunta `GET /api/partido/{fixtureId}` y si
+ya hay análisis lo pinta gratis, cero créditos.
+
+**Nivel 3 — `cadena_dtp` (la película).** Una fila por (equipo_foco, N):
+`apertura_json` (M1-M3+M6 pre-partido), `cierre_json` (M4+M5 post),
+`registro` {pronóstico, qué pasó, veredicto, lección}. El endpoint `/api/dtp`
+mira aquí si existe N−1 con cierre pendiente para armar la cadena rodante; el
+`/api/cierre` completa la fila y su lección alimenta el siguiente M3.
+`casos_validacion` guarda los casos numerados (1, 2, …) que calibran versiones.
+
+### Los prompts viven en el repo, no en la DB
+
+`EFE_v1_5_prompt.md` (protocolo, bloque 1 del system) y
+`SYSTEM_PROMPT_SAD_API.md` (instrucciones API, bloque 2) se leen del disco al
+arrancar y van con `cache_control` — versionados con git, un solo archivo por
+versión, la caché se regenera sola al cambiar. Los esquemas JSON
+(EFE_COMPARATIVO, DTP, MATRIZ_V2) van como JSON Schema en
+`backend/analisis/esquemas.py` y se pasan como structured output.
+
+### Flujo de una llamada a POST /api/efe {fixtureId}
+
+```
+1. ¿ya hay analisis para ese fixture?  → devolver (0 créditos)
+2. leer investigacion de ambos equipos → separar fresco / vencido / ausente
+3. armar request: system cacheado + user {modo, partido, datos_cacheados,
+   campos_faltantes} · web_search SOLO si hay faltantes (max_uses 6)
+4. structured output contra el esquema → JSON válido garantizado
+5. guardar: datos nuevos → investigacion (UPSERT) · veredicto → analisis
+6. devolver el JSON al frontend
+```
+
+### En la pantalla (diseño propio, tema Quipu)
+
+Sección **"Análisis"** en la página del partido, junto a Cuotas/Burbujas:
+
+- **Cabecera comparativa**: dos anillos (gauge) con % y clasificación
+  🟢/🟡/🔴, uno por equipo, con los colores del club.
+- **Pestañas**: Bloques (A-H expandibles con ✅/🔶/❌ y justificación+fuente) ·
+  Disponibilidad (tabla F1, barras de reducción por zona, badge IP, F4/F5) ·
+  Matchup (H1-H3) · Lectura SAD (4 cajas + Paradoja + alertas con su código) ·
+  Calendario (G1 con etiquetas).
+- **DTP debajo**: CIERRE del partido anterior (pizarra de goles
+  disparador→secuencia→definición + responsables) y APERTURA (mapa de duelos
+  por carril, plan por fases). **Matriz** bajo demanda.
+- **Estado vacío honesto** (regla "real o nada"): sin análisis no se pinta
+  nada inventado — botón "Generar análisis EFE" (POST protegido con
+  SAD_API_TOKEN) con el costo estimado visible. En modo demo, un análisis de
+  muestra fijo para desarrollo de UI.
+
 ## Lo que falta para poder construir (lo aporta el usuario)
 
 1. **`EFE_v1_5_prompt.md`** — el protocolo completo (bloques, pesos, alertas,
