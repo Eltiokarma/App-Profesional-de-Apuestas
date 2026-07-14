@@ -72,9 +72,10 @@ export const SadApi = {
   analisisPartido: (fixtureId: number) => apiGet<AnalisisRegistroDTO[]>(`/analisis/partido/${fixtureId}`),
 
   /** Lanza el análisis EFE (respuesta inmediata: listo/generando/error);
-   *  el trabajo corre en el servidor y se sondea con estadoEfe. */
-  generarEfe: (fixtureId: number) =>
-    apiPost<GeneracionEfeDTO>('/analisis/efe', { fixtureId }, { timeoutMs: 30_000 }),
+   *  el trabajo corre en el servidor y se sondea con estadoEfe.
+   *  `forzar` = regenerar: descarta el guardado y emite uno nuevo. */
+  generarEfe: (fixtureId: number, forzar = false) =>
+    apiPost<GeneracionEfeDTO>('/analisis/efe', { fixtureId, forzar }, { timeoutMs: 30_000 }),
 
   /** Sondeo del trabajo de análisis EFE. */
   estadoEfe: (fixtureId: number) => apiGet<GeneracionEfeDTO>(`/analisis/efe/estado/${fixtureId}`),

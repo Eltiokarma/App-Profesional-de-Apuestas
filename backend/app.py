@@ -1092,18 +1092,20 @@ def cuotas_historial(fixture_id: int, casa: str | None = None):
 
 class EfeRequest(BaseModel):
     fixtureId: int
+    forzar: bool = False  # regenerar: descarta el análisis guardado y relanza
 
 
 @app.post(API + "/analisis/efe")
 def analisis_efe(body: EfeRequest):
     """Lanza el análisis EFE del fixture (o lo devuelve si ya existe).
 
+    Con `forzar` el análisis guardado se borra y se emite uno nuevo (créditos).
     Respuesta INMEDIATA — el análisis tarda 1-3 min y corre en un hilo del
     servidor: estado 'listo' (con registro), 'generando' o 'error'. El
     frontend sondea /analisis/efe/estado/{id} hasta que esté listo."""
     from backend.analisis import motor as efemotor
     try:
-        return efemotor.iniciar_efe(body.fixtureId)
+        return efemotor.iniciar_efe(body.fixtureId, forzar=body.forzar)
     except efemotor.FixtureNoExiste as e:
         raise HTTPException(status_code=404, detail=str(e))
     except efemotor.SinClave as e:

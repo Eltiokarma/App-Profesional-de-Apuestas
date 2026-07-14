@@ -304,9 +304,10 @@ export function loadAnalisisPartido(matchId: string): Promise<AnalisisRegistroDT
   return getDataSource().analisisPartido(fixtureNum(matchId))
 }
 
-/** Lanza el análisis EFE (respuesta inmediata; el trabajo corre en el servidor). */
-export function generarAnalisisEfe(matchId: string): Promise<GeneracionEfeDTO> {
-  return getDataSource().generarEfe(fixtureNum(matchId))
+/** Lanza el análisis EFE (respuesta inmediata; el trabajo corre en el servidor).
+ *  `forzar` = regenerar: descarta el guardado y emite uno nuevo. */
+export function generarAnalisisEfe(matchId: string, forzar = false): Promise<GeneracionEfeDTO> {
+  return getDataSource().generarEfe(fixtureNum(matchId), forzar)
 }
 
 /** Sondeo del trabajo de análisis EFE (listo / generando / error / nada). */

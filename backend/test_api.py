@@ -290,6 +290,17 @@ def main():
     efedb.guardar_analisis("efe", 900002, "X", "Y", "2026-01-01", "preliminar", vacio, "1.5")
     check("análisis vacío guardado → purgado al leer (regenerable)",
           efedb.analisis_existente("efe", 900002, "preliminar") is None)
+    # ...también por la ruta del dashboard (/analisis/partido), que es otra función
+    efedb.guardar_analisis("efe", 900003, "X", "Y", "2026-01-01", "preliminar", vacio, "1.5")
+    check("análisis vacío → /analisis/partido lo purga y devuelve []",
+          c.get(A + "/analisis/partido/900003").json() == [])
+    # regenerar (botón): forzar descarta el guardado y emite uno nuevo
+    gen3 = c.post(A + "/analisis/efe", json={"fixtureId": vivo["id"], "forzar": True}).json()
+    check("efe con forzar → regenera y responde listo",
+          gen3["estado"] == "listo" and gen3["registro"]["fixtureId"] == vivo["id"],
+          gen3.get("estado"))
+    check("tras forzar sigue habiendo UN solo análisis del fixture",
+          len(c.get(A + f"/analisis/partido/{vivo['id']}").json()) == 1)
     check("efe de fixture inexistente → 404",
           c.post(A + "/analisis/efe", json={"fixtureId": 999999}).status_code == 404)
     del os.environ["SAD_EFE_DEMO"]
