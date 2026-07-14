@@ -13,6 +13,7 @@ import type {
   EstadoFixture,
   FixtureDTO,
   FixtureLiveDTO,
+  GeneracionEfeDTO,
   HealthDTO,
   LigaDTO,
   NivelDTO,
@@ -70,10 +71,13 @@ export const SadApi = {
   /** Análisis emitidos para un fixture (lectura pura, cero créditos). */
   analisisPartido: (fixtureId: number) => apiGet<AnalisisRegistroDTO[]>(`/analisis/partido/${fixtureId}`),
 
-  /** Genera (o devuelve, si ya existe) el EFE del fixture. Tarda 1-3 min
-   *  cuando investiga en la web: timeout generoso. */
+  /** Lanza el análisis EFE (respuesta inmediata: listo/generando/error);
+   *  el trabajo corre en el servidor y se sondea con estadoEfe. */
   generarEfe: (fixtureId: number) =>
-    apiPost<AnalisisRegistroDTO>('/analisis/efe', { fixtureId }, { timeoutMs: 300_000 }),
+    apiPost<GeneracionEfeDTO>('/analisis/efe', { fixtureId }, { timeoutMs: 30_000 }),
+
+  /** Sondeo del trabajo de análisis EFE. */
+  estadoEfe: (fixtureId: number) => apiGet<GeneracionEfeDTO>(`/analisis/efe/estado/${fixtureId}`),
 
   /** Metadatos de la liga (nombre, país, logo, bandera). */
   liga: (ligaId: number) => apiGet<LigaDTO>(`/ligas/${ligaId}`),

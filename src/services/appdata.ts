@@ -11,6 +11,7 @@ import type {
   EquipoStatsDTO,
   FixtureDTO,
   FixtureLiveDTO,
+  GeneracionEfeDTO,
   LigaDTO,
   PrediccionDTO,
   StandingRowDTO,
@@ -303,9 +304,14 @@ export function loadAnalisisPartido(matchId: string): Promise<AnalisisRegistroDT
   return getDataSource().analisisPartido(fixtureNum(matchId))
 }
 
-/** Genera el EFE del partido (en http tarda 1-3 min y cuesta créditos). */
-export function generarAnalisisEfe(matchId: string): Promise<AnalisisRegistroDTO> {
+/** Lanza el análisis EFE (respuesta inmediata; el trabajo corre en el servidor). */
+export function generarAnalisisEfe(matchId: string): Promise<GeneracionEfeDTO> {
   return getDataSource().generarEfe(fixtureNum(matchId))
+}
+
+/** Sondeo del trabajo de análisis EFE (listo / generando / error / nada). */
+export function estadoAnalisisEfe(matchId: string): Promise<GeneracionEfeDTO> {
+  return getDataSource().estadoEfe(fixtureNum(matchId))
 }
 
 // ── predicción (§5) y análisis pre-partido ──────────────────────────────────

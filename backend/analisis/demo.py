@@ -1,18 +1,18 @@
 """Análisis EFE de muestra para el modo demo (SAD_EFE_DEMO=1).
 
-Determinista y con la MISMA forma que el contrato EFE_COMPARATIVO: permite
+Determinista y con la MISMA forma que el contrato EFE_COMPARATIVO (sin
+nullables: "" / 0 / false donde no aplica — regla del esquema). Permite
 desarrollar la UI y correr test_api sin gastar créditos ni tener clave.
-Regla del proyecto: la simulación vive solo en demo — en producción, si no
-hay análisis real no se pinta nada.
 """
 
 
 def _bloque(score: float, maximo: float, indicadores: list[tuple[str, str, str]],
-            ponderado: float | None = None, ppp: float | None = None) -> dict:
+            ponderado: float | None = None, ppp: float = 0) -> dict:
     return {
-        "score": score, "max": maximo, "ponderado": ponderado,
-        "excluido": None, "motivo_exclusion": None,
-        "d3_cap_aplicado": None, "ppp": ppp,
+        "score": score, "max": maximo,
+        "ponderado": ponderado if ponderado is not None else score,
+        "excluido": False, "motivo_exclusion": "",
+        "d3_cap_aplicado": False, "ppp": ppp,
         "indicadores": [
             {"id": i, "estado": e, "justificacion": j, "fuente": "demo"}
             for i, e, j in indicadores
@@ -37,7 +37,7 @@ def _equipo(nombre: str, color: str, porcentaje: float, clasificacion: str) -> d
         "disponibilidad": {
             "jugadores": [
                 {"nombre": "Portero Uno", "posicion": "GK", "zona": "GK", "rol": "TF",
-                 "apps": "11/12", "estado": "disponible", "motivo": None},
+                 "apps": "11/12", "estado": "disponible", "motivo": ""},
                 {"nombre": "Delantero Diez", "posicion": "DC", "zona": "ATK", "rol": "TF",
                  "apps": "10/12", "estado": "duda", "motivo": "Sobrecarga muscular"},
             ],
@@ -49,7 +49,7 @@ def _equipo(nombre: str, color: str, porcentaje: float, clasificacion: str) -> d
         "dt": {"nombre": f"DT de {nombre}", "asuncion": "2025-05-01", "meses": 14},
         "calendario": [
             {"rival": "Rival Próximo", "fecha": "2026-07-20", "condicion": "L",
-             "etiquetas": ["🏠 LOCAL FUERTE"], "posicion": 4, "nota": None},
+             "etiquetas": ["🏠 LOCAL FUERTE"], "posicion": 4, "nota": ""},
         ],
     }
 
@@ -59,8 +59,8 @@ def efe_demo(equipo_a: str, equipo_b: str, torneo: str | None, fecha: str | None
         "version_efe": "1.5",
         "partido": {
             "equipo_a": equipo_a, "equipo_b": equipo_b,
-            "torneo": torneo, "fase": None, "estadio": None,
-            "fecha": fecha, "hora": None,
+            "torneo": torneo or "", "fase": "", "estadio": "",
+            "fecha": fecha or "", "hora": "",
             "condicion": {"a": "L", "b": "V"},
         },
         "equipos": {
@@ -86,7 +86,7 @@ def efe_demo(equipo_a: str, equipo_b: str, torneo: str | None, fecha: str | None
                          "rango_ampliado": False},
             "contexto_emocional": "Sin carga emocional extra: partido de liga estándar",
             "dato_estructural": "El local absorbe rotaciones sin caída (F4 refuerza B5)",
-            "paradoja": None,
+            "paradoja": "",
         },
         "datos_faltantes": ["xi_confirmado_a", "xi_confirmado_b"],
         "fuentes": ["demo"],

@@ -295,17 +295,20 @@ export interface EfeIndicador {
   id: string
   estado: EfeEstadoIndicador
   justificacion: string
-  fuente: string | null
+  /** "" si no hay fuente puntual. */
+  fuente: string
 }
 
 export interface EfeBloque {
   score: number
   max: number
-  ponderado: number | null
-  excluido: boolean | null
-  motivo_exclusion: string | null
-  d3_cap_aplicado: boolean | null
-  ppp: number | null
+  /** score × peso (igual al score en A, C y D). */
+  ponderado: number
+  excluido: boolean
+  motivo_exclusion: string
+  d3_cap_aplicado: boolean
+  /** 0 si no aplica (solo E). */
+  ppp: number
   indicadores: EfeIndicador[]
 }
 
@@ -314,9 +317,9 @@ export interface EfeJugador {
   posicion: string
   zona: 'GK' | 'DEF' | 'MID' | 'ATK'
   rol: 'TF' | 'TH' | 'ROT' | 'SUP'
-  apps: string | null
+  apps: string
   estado: 'disponible' | 'baja' | 'duda'
-  motivo: string | null
+  motivo: string
 }
 
 export interface EfeEquipo {
@@ -337,14 +340,15 @@ export interface EfeEquipo {
     f4: { rotados: number; diagnostico: string }
     f5_factor_x: { nombre: string; contexto: string }[]
   }
-  dt: { nombre: string; asuncion: string | null; meses: number | null }
+  dt: { nombre: string; asuncion: string; meses: number }
   calendario: {
     rival: string
-    fecha: string | null
+    fecha: string
     condicion: 'L' | 'V'
     etiquetas: string[]
-    posicion: number | null
-    nota: string | null
+    /** 0 si se desconoce. */
+    posicion: number
+    nota: string
   }[]
 }
 
@@ -353,36 +357,45 @@ export interface EfeComparativo {
   partido: {
     equipo_a: string
     equipo_b: string
-    torneo: string | null
-    fase: string | null
-    estadio: string | null
-    fecha: string | null
-    hora: string | null
+    torneo: string
+    fase: string
+    estadio: string
+    fecha: string
+    hora: string
     condicion: { a: 'L' | 'V'; b: 'L' | 'V' }
   }
   equipos: { a: EfeEquipo; b: EfeEquipo }
   matchup_h: {
-    perfil_a: { sistema: string | null; estilo: string | null; fortaleza: string | null; vulnerabilidad: string | null }
-    perfil_b: { sistema: string | null; estilo: string | null; fortaleza: string | null; vulnerabilidad: string | null }
-    h2a: string | null
-    h2b: string | null
-    h2c: string | null
+    perfil_a: { sistema: string; estilo: string; fortaleza: string; vulnerabilidad: string }
+    perfil_b: { sistema: string; estilo: string; fortaleza: string; vulnerabilidad: string }
+    h2a: EfeEstadoIndicador | 'na'
+    h2b: EfeEstadoIndicador | 'na'
+    h2c: EfeEstadoIndicador | 'na' 
     diagnostico: 'FAVORABLE' | 'NEUTRO' | 'DESFAVORABLE'
     razon: string
   }
-  alertas: { codigo: string; tipo: 'estructural' | 'fecha'; equipo: string | null; detalle: string }[]
+  alertas: { codigo: string; tipo: 'estructural' | 'fecha'; equipo: 'a' | 'b' | 'ambos' | 'global'; detalle: string }[]
   lectura_sad: {
     modulo_operativo: string
     un_x_dos: { texto: string; rango_ampliado: boolean }
     contexto_emocional: string
     dato_estructural: string
-    paradoja: string | null
+    /** "" si no hay paradoja. */
+    paradoja: string
   }
   datos_faltantes: string[]
   fuentes: string[]
 }
 
-/** Registro de un análisis emitido (GET /analisis/partido/{id}, POST /analisis/efe). */
+/** Estado del trabajo de análisis (POST /analisis/efe y su sondeo /estado). */
+export interface GeneracionEfeDTO {
+  estado: 'listo' | 'generando' | 'error' | 'nada'
+  detalle?: string | null
+  /** Presente solo con estado='listo'. */
+  registro?: AnalisisRegistroDTO | null
+}
+
+/** Registro de un análisis emitido (GET /analisis/partido/{id}). */
 export interface AnalisisRegistroDTO {
   tipo: 'efe' | 'dtp' | 'matriz'
   fixtureId: number

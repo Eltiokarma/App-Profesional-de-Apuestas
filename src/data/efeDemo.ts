@@ -3,9 +3,9 @@
 // Regla del proyecto: la simulación vive SOLO en demo.
 import type { EfeBloque, EfeComparativo, EfeEquipo } from '../api/types'
 
-function bloque(score: number, max: number, inds: [string, 'verde' | 'ambar' | 'rojo', string][], ponderado: number | null = null, ppp: number | null = null): EfeBloque {
+function bloque(score: number, max: number, inds: [string, 'verde' | 'ambar' | 'rojo', string][], ponderado?: number, ppp = 0): EfeBloque {
   return {
-    score, max, ponderado, excluido: null, motivo_exclusion: null, d3_cap_aplicado: null, ppp,
+    score, max, ponderado: ponderado ?? score, excluido: false, motivo_exclusion: '', d3_cap_aplicado: false, ppp,
     indicadores: inds.map(([id, estado, justificacion]) => ({ id, estado, justificacion, fuente: 'demo' })),
   }
 }
@@ -31,8 +31,8 @@ function equipo(nombre: string, color: string, porcentaje: number, clasificacion
     total: 21.25, maximo_alcanzable: 27, porcentaje, clasificacion,
     disponibilidad: {
       jugadores: [
-        { nombre: 'Portero Uno', posicion: 'GK', zona: 'GK', rol: 'TF', apps: '11/12', estado: 'disponible', motivo: null },
-        { nombre: 'Central Dos', posicion: 'DFC', zona: 'DEF', rol: 'TF', apps: '12/12', estado: 'disponible', motivo: null },
+        { nombre: 'Portero Uno', posicion: 'GK', zona: 'GK', rol: 'TF', apps: '11/12', estado: 'disponible', motivo: '' },
+        { nombre: 'Central Dos', posicion: 'DFC', zona: 'DEF', rol: 'TF', apps: '12/12', estado: 'disponible', motivo: '' },
         { nombre: 'Volante Cinco', posicion: 'MCD', zona: 'MID', rol: 'TH', apps: '8/12', estado: 'baja', motivo: 'Sanción (acumulación)' },
         { nombre: 'Delantero Diez', posicion: 'DC', zona: 'ATK', rol: 'TF', apps: '10/12', estado: 'duda', motivo: 'Sobrecarga muscular' },
       ],
@@ -43,10 +43,10 @@ function equipo(nombre: string, color: string, porcentaje: number, clasificacion
     },
     dt: { nombre: `DT de ${nombre}`, asuncion: '2025-05-01', meses: 14 },
     calendario: [
-      { rival: 'Rival Uno', fecha: '2026-07-20', condicion: 'L', etiquetas: ['🏠 LOCAL FUERTE'], posicion: 4, nota: null },
+      { rival: 'Rival Uno', fecha: '2026-07-20', condicion: 'L', etiquetas: ['🏠 LOCAL FUERTE'], posicion: 4, nota: '' },
       { rival: 'Rival Dos', fecha: '2026-07-27', condicion: 'V', etiquetas: ['⚔️ CLÁSICO'], posicion: 2, nota: 'Derby regional' },
-      { rival: 'Rival Tres', fecha: '2026-08-03', condicion: 'L', etiquetas: [], posicion: 11, nota: null },
-      { rival: 'Rival Cuatro', fecha: '2026-08-10', condicion: 'V', etiquetas: ['🆕 RECIÉN ASCENDIDO'], posicion: 16, nota: null },
+      { rival: 'Rival Tres', fecha: '2026-08-03', condicion: 'L', etiquetas: [], posicion: 11, nota: '' },
+      { rival: 'Rival Cuatro', fecha: '2026-08-10', condicion: 'V', etiquetas: ['🆕 RECIÉN ASCENDIDO'], posicion: 16, nota: '' },
     ],
   }
 }
@@ -55,8 +55,8 @@ export function efeDemo(equipoA: string, equipoB: string, torneo: string | null,
   return {
     version_efe: '1.5',
     partido: {
-      equipo_a: equipoA, equipo_b: equipoB, torneo, fase: null, estadio: null,
-      fecha, hora: null, condicion: { a: 'L', b: 'V' },
+      equipo_a: equipoA, equipo_b: equipoB, torneo: torneo ?? '', fase: '', estadio: '',
+      fecha: fecha ?? '', hora: '', condicion: { a: 'L', b: 'V' },
     },
     equipos: {
       a: equipo(equipoA, '#5B8DEF', 79, 'FORMADO'),
@@ -78,7 +78,7 @@ export function efeDemo(equipoA: string, equipoB: string, torneo: string | null,
       un_x_dos: { texto: 'Ligero favoritismo local; el empate al descanso no invalida la ventaja, la posterga', rango_ampliado: true },
       contexto_emocional: 'Sin carga emocional extra: partido de liga estándar',
       dato_estructural: 'El local absorbe rotaciones sin caída de nivel (F4 refuerza B5)',
-      paradoja: null,
+      paradoja: '',
     },
     datos_faltantes: ['xi_confirmado_a', 'xi_confirmado_b'],
     fuentes: ['demo'],
