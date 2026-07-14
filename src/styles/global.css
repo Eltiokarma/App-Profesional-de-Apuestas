@@ -69,6 +69,18 @@ body,
   height: 100%;
 }
 
+/* Altura real del viewport en móvil: 100vh incluye la zona tapada por la
+   barra del navegador (la BottomNav quedaba oculta hasta deslizarse).
+   100dvh la excluye; el @supports deja 100vh de reserva para navegadores viejos. */
+:root {
+  --vh100: 100vh;
+}
+@supports (height: 100dvh) {
+  :root {
+    --vh100: 100dvh;
+  }
+}
+
 body {
   font-family: var(--sans);
 }

@@ -294,6 +294,14 @@ def main():
     efedb.guardar_analisis("efe", 900003, "X", "Y", "2026-01-01", "preliminar", vacio, "1.5")
     check("análisis vacío → /analisis/partido lo purga y devuelve []",
           c.get(A + "/analisis/partido/900003").json() == [])
+    # datos locales: tabla/resultados/próximos salen de sad.db (costo cero,
+    # sin búsqueda web) y entran al análisis como datos_cacheados
+    from backend.analisis import motor as efemotor
+    loc = efemotor._datos_locales(efemotor._fixture(vivo["id"]))
+    check("datos locales desde sad.db: resultados y tabla sin búsqueda web",
+          loc["equipo_a"]["resultados"] != "" and loc["equipo_a"]["tabla"] != ""
+          and loc["equipo_b"]["resultados"] != "",
+          {k: v[:40] for k, v in loc["equipo_a"].items()})
     # la despensa: el esquema del EFE exige el bloque investigacion (mismos
     # tipos que la tabla con TTL) y lo depositado vuelve como dato fresco
     from backend.analisis.esquemas import DESPENSA_EQUIPO
