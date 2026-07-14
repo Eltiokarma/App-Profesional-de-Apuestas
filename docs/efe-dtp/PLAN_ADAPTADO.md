@@ -138,6 +138,48 @@ versión, la caché se regenera sola al cambiar. Los esquemas JSON
 6. devolver el JSON al frontend
 ```
 
+### Ciclo de vida por partido: dos etapas (la formación de último minuto)
+
+El XI confirmado no existe hasta ~1 h antes del kickoff, pero los bloques
+A-E del EFE son ESTRUCTURALES (DT, plantel, K, táctica, rendimiento) y no
+dependen de quién juegue hoy. Se parte el análisis en dos:
+
+```
+T−24h → EFE PRELIMINAR   bloques A-E completos + F provisional (bajas de
+                          prensa, XI probable) · badge "XI provisional"
+                          · web search si hace falta (~$0.10-0.20)
+
+T−40min → CONFIRMACIÓN    API-Football publica las alineaciones oficiales
+                          (/fixtures/lineups, ya en nuestro plan, SIN web
+                          search) → se recalcula SOLO la capa por fecha:
+                          F1/F2/IP con el XI real, F4 (rotación vs partido
+                          anterior), F5/FACTOR-X, modificadores de confianza
+                          y alertas por fecha · input = EFE preliminar +
+                          lineup estructurado → llamada barata (~$0.02-0.03,
+                          sin re-investigar nada) · badge "XI OFICIAL"
+```
+
+Piezas concretas:
+
+- **La ingesta ya sabe cuándo**: un chequeo tipo fase-2 en el scheduler — si
+  hay análisis preliminar y el fixture arranca en <75 min, pedir lineups a
+  API-Football; en cuanto aparecen, disparar la actualización F. Sin
+  intervención manual, sin depender de que el usuario esté conectado.
+- **`analisis` guarda ambas fotos**: `estado: preliminar | confirmado`, cada
+  una con su timestamp (anti-hindsight: queda registro de qué se sabía y
+  cuándo). La UI pinta el badge y el delta ("IP pasó de 3.5 a 8.0: Quintana
+  no está en el XI oficial → F2c activa GK ×1.5").
+- **El DTP nace en la etapa 2**: M1 es "lectura de la alineación como
+  declaración de intenciones" — sin XI oficial no tiene sentido. El
+  `/api/dtp` (apertura) se dispara automáticamente tras la confirmación,
+  cuando el CIERRE del partido anterior ya está hecho.
+- **Si no llega el lineup** (API sin cobertura de esa liga): el análisis se
+  queda como preliminar con su badge honesto — nunca se disfraza un XI
+  probable de confirmado.
+- **TTLs por tipo siguen mandando** en lo estructural; la regla "siempre
+  refrescar el día del partido" se cumple con esta etapa 2, que además es la
+  barata.
+
 ### En la pantalla (diseño propio, tema Quipu)
 
 Sección **"Análisis"** en la página del partido, junto a Cuotas/Burbujas:
