@@ -237,7 +237,9 @@ def main():
     from backend.analisis import db as efedb
     if os.path.exists(efedb.ruta()):
         os.remove(efedb.ruta())  # corrida limpia: sin restos de tests previos
-    ae = c.post(A + "/analisis/efe", json={"fixtureId": vivo["id"]}).json()
+    gen = c.post(A + "/analisis/efe", json={"fixtureId": vivo["id"]}).json()
+    check("efe: POST responde estado listo (demo síncrono)", gen["estado"] == "listo", gen.get("estado"))
+    ae = gen["registro"]
     check("efe: registro con claves del contrato",
           all(k in ae for k in ("tipo", "fixtureId", "estado", "versionEfe", "creadoEn", "resultado")), ae.keys())
     check("efe: tipo/estado/versión", ae["tipo"] == "efe" and ae["estado"] == "preliminar"
@@ -250,11 +252,29 @@ def main():
           r_efe["matchup_h"]["diagnostico"] in ("FAVORABLE", "NEUTRO", "DESFAVORABLE")
           and isinstance(r_efe["alertas"], list))
     ae2 = c.post(A + "/analisis/efe", json={"fixtureId": vivo["id"]}).json()
-    check("efe repetido → el mismo (caché, 0 créditos)", ae2["creadoEn"] == ae["creadoEn"])
+    check("efe repetido → el mismo (caché, 0 créditos)",
+          ae2["estado"] == "listo" and ae2["registro"]["creadoEn"] == ae["creadoEn"])
+    est = c.get(A + f"/analisis/efe/estado/{vivo['id']}").json()
+    check("efe/estado con análisis → listo con registro",
+          est["estado"] == "listo" and est["registro"]["creadoEn"] == ae["creadoEn"], est.get("estado"))
+    check("efe/estado sin trabajo ni análisis → nada",
+          c.get(A + "/analisis/efe/estado/900001").json()["estado"] == "nada")
     ap = c.get(A + f"/analisis/partido/{vivo['id']}").json()
     check("analisis/partido lista el efe", len(ap) == 1 and ap[0]["tipo"] == "efe", len(ap))
     check("analisis/partido sin análisis → []",
           c.get(A + "/analisis/partido/900001").json() == [])
+    # el esquema de structured outputs no puede pasar de 16 uniones de tipos
+    from backend.analisis.esquemas import EFE_COMPARATIVO
+
+    def _uniones(n):
+        if isinstance(n, dict):
+            propio = (1 if "anyOf" in n else 0) + (1 if isinstance(n.get("type"), list) else 0)
+            return propio + sum(_uniones(v) for v in n.values())
+        if isinstance(n, list):
+            return sum(_uniones(v) for v in n)
+        return 0
+    check("esquema EFE sin uniones de tipos (límite API: 16)", _uniones(EFE_COMPARATIVO) == 0,
+          _uniones(EFE_COMPARATIVO))
     check("efe de fixture inexistente → 404",
           c.post(A + "/analisis/efe", json={"fixtureId": 999999}).status_code == 404)
     del os.environ["SAD_EFE_DEMO"]

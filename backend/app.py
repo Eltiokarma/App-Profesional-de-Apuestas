@@ -1096,16 +1096,25 @@ class EfeRequest(BaseModel):
 
 @app.post(API + "/analisis/efe")
 def analisis_efe(body: EfeRequest):
-    """Genera (o devuelve, si ya existe) el EFE comparativo del fixture."""
+    """Lanza el análisis EFE del fixture (o lo devuelve si ya existe).
+
+    Respuesta INMEDIATA — el análisis tarda 1-3 min y corre en un hilo del
+    servidor: estado 'listo' (con registro), 'generando' o 'error'. El
+    frontend sondea /analisis/efe/estado/{id} hasta que esté listo."""
     from backend.analisis import motor as efemotor
     try:
-        return efemotor.generar_efe(body.fixtureId)
+        return efemotor.iniciar_efe(body.fixtureId)
     except efemotor.FixtureNoExiste as e:
         raise HTTPException(status_code=404, detail=str(e))
     except efemotor.SinClave as e:
         raise HTTPException(status_code=503, detail=str(e))
-    except RuntimeError as e:
-        raise HTTPException(status_code=502, detail=f"Error del análisis: {e}")
+
+
+@app.get(API + "/analisis/efe/estado/{fixture_id}")
+def analisis_efe_estado(fixture_id: int):
+    """Sondeo del trabajo: listo (con registro) / generando / error / nada."""
+    from backend.analisis import motor as efemotor
+    return efemotor.estado_efe(fixture_id)
 
 
 @app.get(API + "/analisis/partido/{fixture_id}")

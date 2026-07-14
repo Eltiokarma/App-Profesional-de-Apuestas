@@ -238,13 +238,15 @@ paths:
               schema: { type: array, items: { $ref: '#/components/schemas/CuotaSnapshot' } }
   /analisis/efe:
     post:
-      summary: Genera (o devuelve, si ya existe) el análisis EFE comparativo de un fixture
+      summary: Lanza el análisis EFE de un fixture (respuesta inmediata, trabajo en el servidor)
       description: >
-        Capa EFE+DTP (docs/efe-dtp/PLAN_ADAPTADO.md). Llama a la API de Claude
-        con el protocolo EFE como system cacheado y structured outputs; si el
-        análisis ya existe para ese fixture y estado, lo devuelve sin gastar
-        créditos. Escribe SOLO en efe.db (excepción documentada a la regla de
-        solo lectura). 404 si el fixture no existe; 503 sin ANTHROPIC_API_KEY.
+        Capa EFE+DTP (docs/efe-dtp/PLAN_ADAPTADO.md). El análisis tarda 1-3 min:
+        el POST responde al instante — 'listo' con el registro si ya existe (0
+        créditos), o 'generando' tras lanzar el trabajo en un hilo del backend
+        (sobrevive aunque el cliente cierre). El frontend sondea
+        /analisis/efe/estado/{fixtureId}. Escribe SOLO en efe.db (excepción
+        documentada a la regla de solo lectura). 404 si el fixture no existe;
+        503 sin ANTHROPIC_API_KEY.
       requestBody:
         required: true
         content:
@@ -259,7 +261,18 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/AnalisisRegistro' }
+              schema: { $ref: '#/components/schemas/GeneracionEfe' }
+  /analisis/efe/estado/{fixtureId}:
+    get:
+      summary: Sondeo del trabajo de análisis EFE
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: listo (con registro) / generando / error (con detalle) / nada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GeneracionEfe' }
   /analisis/partido/{fixtureId}:
     get:
       summary: Análisis emitidos para un fixture (lectura pura, cero créditos)
@@ -549,6 +562,13 @@ components:
         equipoId: { type: integer, nullable: true }
         jugador: { type: string, nullable: true }
         detalle: { type: string, nullable: true, description: 'detalle crudo de la API (Penalty, Own Goal…)' }
+    GeneracionEfe:
+      type: object
+      required: [estado]
+      properties:
+        estado: { type: string, enum: [listo, generando, error, nada] }
+        detalle: { type: string, nullable: true, description: 'mensaje del error o del progreso' }
+        registro: { $ref: '#/components/schemas/AnalisisRegistro', nullable: true, description: 'presente solo con estado=listo' }
     AnalisisRegistro:
       type: object
       required: [tipo, fixtureId, estado, versionEfe, creadoEn, resultado]

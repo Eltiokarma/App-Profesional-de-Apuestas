@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
-import type { AnalisisRegistroDTO, EfeBloque, EfeComparativo, EfeEquipo } from '../api/types'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { AnalisisRegistroDTO, EfeBloque, EfeComparativo, EfeEquipo, GeneracionEfeDTO } from '../api/types'
 import { CONFIG } from '../config'
 import type { Match } from '../data/types'
-import { generarAnalisisEfe, loadAnalisisPartido } from '../services/appdata'
+import { estadoAnalisisEfe, generarAnalisisEfe, loadAnalisisPartido } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 
 interface Props {
@@ -40,16 +40,19 @@ function GaugeRing({ eq, nombre }: { eq: EfeEquipo; nombre: string }) {
       <div style={{ font: '700 13px var(--sans)', color: 'var(--t1)', textAlign: 'center', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nombre}</div>
       <span style={{ padding: '3px 10px', borderRadius: 7, background: cl.soft, color: cl.color, font: '700 10px var(--mono)', letterSpacing: '.4px' }}>{cl.label}</span>
       <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', textAlign: 'center' }}>
-        DT {eq.dt.nombre}{eq.dt.meses != null ? ` · ${Math.round(eq.dt.meses)} meses` : ''}
+        DT {eq.dt.nombre}{eq.dt.meses > 0 ? ` · ${Math.round(eq.dt.meses)} meses` : ''}
       </div>
     </div>
   )
 }
 
 /** Fila de un bloque A-E con barra y detalle expandible de indicadores. */
+const PESO_BLOQUE = { A: 1, B: 1.5, C: 1, D: 1, E: 2 } as const
+
 function BloqueRow({ letra, b }: { letra: 'A' | 'B' | 'C' | 'D' | 'E'; b: EfeBloque }) {
   const [abierto, setAbierto] = useState(false)
-  const usado = b.ponderado ?? b.score
+  // ponderado calculado aquí (score × peso): no dependemos del campo del modelo
+  const usado = b.score * PESO_BLOQUE[letra]
   const tope = letra === 'B' ? 9 : letra === 'E' ? 6 : b.max
   const frac = b.excluido ? 0 : Math.max(0, Math.min(1, tope ? usado / tope : 0))
   return (
@@ -71,7 +74,7 @@ function BloqueRow({ letra, b }: { letra: 'A' | 'B' | 'C' | 'D' | 'E'; b: EfeBlo
       </button>
       {abierto && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 7, padding: '2px 2px 11px 30px' }}>
-          {b.ppp != null && <div style={{ font: '600 10px var(--mono)', color: 'var(--t3)' }}>PPP actual: {b.ppp.toFixed(2)}</div>}
+          {b.ppp > 0 && <div style={{ font: '600 10px var(--mono)', color: 'var(--t3)' }}>PPP actual: {b.ppp.toFixed(2)}</div>}
           {b.d3_cap_aplicado && <div style={{ font: '600 10px var(--mono)', color: 'var(--down)' }}>D3 ❌ — tope del bloque reducido a 2.5/4 (indicador de colapso)</div>}
           {b.indicadores.map((ind) => (
             <div key={ind.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
@@ -164,14 +167,57 @@ export function Analisis({ m, isMobile }: Props) {
   }, [registros.data])
   const r: EfeComparativo | null = efe?.resultado ?? null
 
+  // el trabajo corre en el SERVIDOR: el POST responde al instante y aquí se
+  // sondea /estado cada pocos segundos hasta listo/error. Sobrevive a que el
+  // usuario cierre la página (al volver, el useEffect retoma el sondeo).
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const vivoRef = useRef(true)
+  useEffect(() => {
+    vivoRef.current = true
+    return () => {
+      vivoRef.current = false
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [m.id])
+
+  const manejar = (res: GeneracionEfeDTO) => {
+    if (!vivoRef.current) return
+    if (res.estado === 'listo') {
+      setGenerando(false)
+      registros.reload()
+    } else if (res.estado === 'generando') {
+      setGenerando(true)
+      timerRef.current = setTimeout(() => {
+        estadoAnalisisEfe(m.id).then(manejar).catch(() => {
+          // fallo puntual del sondeo (red): se reintenta en el siguiente tick
+          if (vivoRef.current) timerRef.current = setTimeout(() => estadoAnalisisEfe(m.id).then(manejar).catch(() => setGenerando(false)), 8000)
+        })
+      }, 6000)
+    } else {
+      setGenerando(false)
+      setErrorGen(res.detalle || (res.estado === 'nada' ? 'La generación no está en curso: vuelve a intentarlo' : 'Error del análisis'))
+    }
+  }
+
   const generar = () => {
     setGenerando(true)
     setErrorGen(null)
     generarAnalisisEfe(m.id)
-      .then(() => registros.reload())
-      .catch((e: unknown) => setErrorGen(e instanceof Error ? e.message : 'error del análisis'))
-      .finally(() => setGenerando(false))
+      .then(manejar)
+      .catch((e: unknown) => {
+        setGenerando(false)
+        setErrorGen(e instanceof Error ? e.message : 'error del análisis')
+      })
   }
+
+  // si el usuario recargó la página con un análisis en curso, retomar el sondeo
+  useEffect(() => {
+    if (registros.loading || efe) return
+    estadoAnalisisEfe(m.id)
+      .then((res) => { if (res.estado === 'generando') manejar(res) })
+      .catch(() => { /* opcional */ })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [m.id, registros.loading])
 
   const tabs: { k: typeof tab; label: string }[] = [
     { k: 'bloques', label: 'Bloques EFE' },
@@ -224,8 +270,13 @@ export function Analisis({ m, isMobile }: Props) {
             <p style={{ margin: '0 auto 12px', maxWidth: 480, font: '600 11.5px var(--sans)', color: 'var(--down)' }}>{errorGen}</p>
           )}
           <button onClick={generar} disabled={generando} style={{ padding: '11px 22px', borderRadius: 10, border: 0, cursor: generando ? 'wait' : 'pointer', background: generando ? 'var(--bg3)' : 'var(--accent)', color: generando ? 'var(--t2)' : '#fff', font: '700 13px var(--sans)' }}>
-            {generando ? 'Analizando… (1-3 min)' : 'Generar análisis EFE'}
+            {generando ? 'Analizando en el servidor… (1-3 min)' : 'Generar análisis EFE'}
           </button>
+          {generando && (
+            <p style={{ margin: '10px auto 0', maxWidth: 440, font: '500 10.5px var(--mono)', color: 'var(--t3)' }}>
+              El trabajo corre en el servidor: puedes cerrar esta página y volver, el análisis seguirá.
+            </p>
+          )}
         </section>
       )}
 
@@ -248,7 +299,9 @@ export function Analisis({ m, isMobile }: Props) {
                 <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 13px', borderRadius: 11, background: a.tipo === 'estructural' ? 'var(--down-soft)' : 'var(--mark-soft)', border: `1px solid color-mix(in oklch,${a.tipo === 'estructural' ? 'var(--down)' : 'var(--mark)'},transparent 60%)` }}>
                   <span style={{ padding: '2px 8px', borderRadius: 6, background: 'var(--bg)', font: '700 9.5px var(--mono)', color: a.tipo === 'estructural' ? 'var(--down)' : 'var(--mark)', flexShrink: 0, whiteSpace: 'nowrap' }}>{a.codigo}</span>
                   <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>
-                    {a.equipo && <b style={{ color: 'var(--t2)' }}>[{a.equipo === 'a' ? r.partido.equipo_a : a.equipo === 'b' ? r.partido.equipo_b : a.equipo}] </b>}
+                    {a.equipo !== 'global' && (
+                      <b style={{ color: 'var(--t2)' }}>[{a.equipo === 'a' ? r.partido.equipo_a : a.equipo === 'b' ? r.partido.equipo_b : 'Ambos'}] </b>
+                    )}
                     {a.detalle}
                   </span>
                 </div>
@@ -302,7 +355,7 @@ export function Analisis({ m, isMobile }: Props) {
                   {(['h2a', 'h2b', 'h2c'] as const).map((h) => {
                     const v = r.matchup_h[h]
                     const col = v === 'verde' ? 'var(--up)' : v === 'rojo' ? 'var(--down)' : 'var(--mark)'
-                    return v ? <span key={h} style={{ padding: '3px 9px', borderRadius: 6, background: 'var(--bg)', font: '700 10px var(--mono)', color: col }}>{h.toUpperCase()} · {v}</span> : null
+                    return v !== 'na' ? <span key={h} style={{ padding: '3px 9px', borderRadius: 6, background: 'var(--bg)', font: '700 10px var(--mono)', color: col }}>{h.toUpperCase()} · {v}</span> : null
                   })}
                 </div>
               </section>
@@ -315,7 +368,7 @@ export function Analisis({ m, isMobile }: Props) {
                       {([['Sistema', perfil.sistema], ['Estilo', perfil.estilo], ['Fortaleza', perfil.fortaleza], ['Vulnerabilidad', perfil.vulnerabilidad]] as const).map(([k2, v]) => (
                         <div key={k2} style={{ display: 'flex', gap: 10, padding: '5px 0', borderBottom: '1px solid var(--line)' }}>
                           <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)', width: 96, flexShrink: 0, textTransform: 'uppercase', letterSpacing: '.3px' }}>{k2}</span>
-                          <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{v ?? '—'}</span>
+                          <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{v || '—'}</span>
                         </div>
                       ))}
                     </section>
@@ -357,10 +410,10 @@ export function Analisis({ m, isMobile }: Props) {
                   <div style={{ font: '700 12.5px var(--sans)', marginBottom: 8 }}>{lado === 'a' ? r.partido.equipo_a : r.partido.equipo_b} · próximos 4</div>
                   {r.equipos[lado].calendario.map((c2, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 0', borderBottom: '1px solid var(--line)' }}>
-                      <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)', width: 66, flexShrink: 0 }}>{c2.fecha ?? '—'}</span>
+                      <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)', width: 66, flexShrink: 0 }}>{c2.fecha || '—'}</span>
                       <span style={{ font: '700 10px var(--mono)', color: 'var(--t3)', width: 14, flexShrink: 0 }}>{c2.condicion}</span>
                       <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c2.rival}</span>
-                      {c2.posicion != null && <span style={{ font: '500 9.5px var(--mono)', color: 'var(--t3)', flexShrink: 0 }}>#{c2.posicion}</span>}
+                      {c2.posicion > 0 && <span style={{ font: '500 9.5px var(--mono)', color: 'var(--t3)', flexShrink: 0 }}>#{c2.posicion}</span>}
                       {c2.etiquetas.map((e2, j) => (
                         <span key={j} style={{ padding: '2px 7px', borderRadius: 6, background: 'var(--bg3)', font: '600 9px var(--mono)', color: 'var(--t2)', flexShrink: 0, whiteSpace: 'nowrap' }}>{e2}</span>
                       ))}
