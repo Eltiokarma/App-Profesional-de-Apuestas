@@ -199,10 +199,11 @@ export function Analisis({ m, isMobile }: Props) {
     }
   }
 
-  const generar = () => {
+  // `forzar` = botón Regenerar: descarta el análisis guardado y emite uno nuevo
+  const generar = (forzar = false) => {
     setGenerando(true)
     setErrorGen(null)
-    generarAnalisisEfe(m.id)
+    generarAnalisisEfe(m.id, forzar)
       .then(manejar)
       .catch((e: unknown) => {
         setGenerando(false)
@@ -245,9 +246,29 @@ export function Analisis({ m, isMobile }: Props) {
             <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>
               EFE v{efe.versionEfe} · {new Date(efe.creadoEn).toLocaleString()}
             </span>
+            {/* regenerar: descarta este análisis y emite uno nuevo (créditos) */}
+            <button
+              onClick={() => generar(true)}
+              disabled={generando}
+              title={esDemo ? 'Regenerar el análisis de muestra' : 'Descarta este análisis y emite uno nuevo (1-3 min, consume créditos ~$0.10-0.20)'}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 9, border: '1px solid var(--line)', cursor: generando ? 'wait' : 'pointer', background: generando ? 'var(--bg3)' : 'var(--bg2)', color: generando ? 'var(--t3)' : 'var(--t1)', font: '600 11.5px var(--sans)' }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={generando ? { animation: 'sadspin 1.1s linear infinite' } : undefined}>
+                <path d="M21 12a9 9 0 11-2.64-6.36M21 3v6h-6" />
+              </svg>
+              {generando ? 'Regenerando… (1-3 min)' : 'Regenerar'}
+            </button>
           </div>
         )}
       </div>
+
+      {/* error de una regeneración con dashboard ya visible */}
+      {efe && errorGen && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', marginBottom: 14, borderRadius: 11, background: 'var(--down-soft)', border: '1px solid color-mix(in oklch,var(--down),transparent 55%)' }}>
+          <span style={{ font: '500 12px var(--sans)', color: 'var(--t1)', flex: 1 }}>{errorGen}</span>
+          <button onClick={() => generar(true)} style={{ padding: '6px 12px', borderRadius: 8, border: 0, background: 'var(--down)', color: '#fff', cursor: 'pointer', font: '600 11px var(--sans)', flexShrink: 0 }}>Reintentar</button>
+        </div>
+      )}
 
       {registros.loading && <div className="sad-sk" style={{ height: 320 }}></div>}
       {registros.error && (
@@ -269,7 +290,7 @@ export function Analisis({ m, isMobile }: Props) {
           {errorGen && (
             <p style={{ margin: '0 auto 12px', maxWidth: 480, font: '600 11.5px var(--sans)', color: 'var(--down)' }}>{errorGen}</p>
           )}
-          <button onClick={generar} disabled={generando} style={{ padding: '11px 22px', borderRadius: 10, border: 0, cursor: generando ? 'wait' : 'pointer', background: generando ? 'var(--bg3)' : 'var(--accent)', color: generando ? 'var(--t2)' : '#fff', font: '700 13px var(--sans)' }}>
+          <button onClick={() => generar()} disabled={generando} style={{ padding: '11px 22px', borderRadius: 10, border: 0, cursor: generando ? 'wait' : 'pointer', background: generando ? 'var(--bg3)' : 'var(--accent)', color: generando ? 'var(--t2)' : '#fff', font: '700 13px var(--sans)' }}>
             {generando ? 'Analizando en el servidor… (1-3 min)' : 'Generar análisis EFE'}
           </button>
           {generando && (

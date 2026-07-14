@@ -121,11 +121,23 @@ def _trabajo(fixture_id: int, estado: str) -> None:
         print(f"[efe] ERROR fixture {fixture_id}: {e}", flush=True)
 
 
-def iniciar_efe(fixture_id: int, estado: str = "preliminar") -> dict:
-    """Respuesta inmediata: listo (con registro), generando, o lanza el hilo."""
-    existente = efedb.analisis_existente("efe", fixture_id, estado)
-    if existente:
-        return _respuesta("listo", registro=existente)
+def iniciar_efe(fixture_id: int, estado: str = "preliminar", forzar: bool = False) -> dict:
+    """Respuesta inmediata: listo (con registro), generando, o lanza el hilo.
+
+    `forzar` (botón Regenerar): descarta lo guardado y emite un análisis
+    nuevo — salvo que ya haya un trabajo en curso, que no se duplica."""
+    with _lock:
+        trabajo = _trabajos.get(fixture_id)
+        if trabajo and trabajo["estado"] == "generando":
+            return _respuesta("generando", detalle="análisis en curso")
+
+    if forzar:
+        efedb.borrar_analisis("efe", fixture_id)
+        print(f"[efe] fixture {fixture_id}: regeneración forzada (análisis previo descartado)", flush=True)
+    else:
+        existente = efedb.analisis_existente("efe", fixture_id, estado)
+        if existente:
+            return _respuesta("listo", registro=existente)
     _fixture(fixture_id)  # 404 antes de encolar nada
 
     if _demo_activo():  # demo: rápido y sin API → síncrono

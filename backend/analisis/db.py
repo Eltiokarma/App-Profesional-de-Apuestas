@@ -80,7 +80,30 @@ def analisis_de_fixture(fixture_id: int) -> list[dict]:
             "FROM analisis WHERE fixture_id=? ORDER BY creado_en",
             (fixture_id,),
         ).fetchall()
-    return [_fila_a_dto(f) for f in filas]
+    # ESTA es la ruta que alimenta el dashboard (/analisis/partido/{id}): la
+    # autocuración de EFE vacíos tiene que correr también aquí, no solo en
+    # analisis_existente — si no, el dashboard sigue pintando el análisis en 0.
+    from backend.analisis.esquemas import analisis_vacio
+    buenos: list[dict] = []
+    for f in filas:
+        dto = _fila_a_dto(f)
+        if dto["tipo"] == "efe" and analisis_vacio(dto["resultado"]):
+            with conectar() as con:
+                con.execute("DELETE FROM analisis WHERE tipo=? AND fixture_id=? AND estado=?",
+                            (dto["tipo"], fixture_id, dto["estado"]))
+                con.commit()
+            print(f"[efe] fixture {fixture_id}: análisis vacío purgado (regenerable)", flush=True)
+        else:
+            buenos.append(dto)
+    return buenos
+
+
+def borrar_analisis(tipo: str, fixture_id: int) -> None:
+    """Descarta TODOS los análisis del fixture (preliminar y confirmado) —
+    la base del botón «Regenerar»."""
+    with conectar() as con:
+        con.execute("DELETE FROM analisis WHERE tipo=? AND fixture_id=?", (tipo, fixture_id))
+        con.commit()
 
 
 def analisis_existente(tipo: str, fixture_id: int, estado: str) -> dict | None:

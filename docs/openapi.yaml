@@ -256,6 +256,10 @@ paths:
               required: [fixtureId]
               properties:
                 fixtureId: { type: integer }
+                forzar:
+                  type: boolean
+                  default: false
+                  description: Regenerar — descarta el análisis guardado y emite uno nuevo (consume créditos)
       responses:
         '200':
           description: OK

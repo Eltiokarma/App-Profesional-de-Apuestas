@@ -85,8 +85,9 @@ export interface SadDataSource {
   standings(ligaId: number, temporada?: number): Promise<StandingRowDTO[]>
   /** Análisis EFE+DTP emitidos para un fixture ([] si no hay). */
   analisisPartido(fixtureId: number): Promise<AnalisisRegistroDTO[]>
-  /** Lanza el análisis EFE (respuesta inmediata: listo/generando/error). */
-  generarEfe(fixtureId: number): Promise<GeneracionEfeDTO>
+  /** Lanza el análisis EFE (respuesta inmediata: listo/generando/error).
+   *  `forzar` = regenerar: descarta el guardado y emite uno nuevo. */
+  generarEfe(fixtureId: number, forzar?: boolean): Promise<GeneracionEfeDTO>
   /** Sondeo del trabajo de análisis EFE. */
   estadoEfe(fixtureId: number): Promise<GeneracionEfeDTO>
 }
@@ -394,9 +395,10 @@ class MockDataSource implements SadDataSource {
     return reg ? [reg] : []
   }
 
-  async generarEfe(fixtureId: number): Promise<GeneracionEfeDTO> {
+  async generarEfe(fixtureId: number, forzar = false): Promise<GeneracionEfeDTO> {
     const previo = this._analisis.get(fixtureId)
-    if (previo) return { estado: 'listo', registro: previo }
+    if (previo && !forzar) return { estado: 'listo', registro: previo }
+    if (forzar) this._analisis.delete(fixtureId) // regenerar: descartar y emitir de nuevo
     const m = MATCHES.find((x) => FIXTURE_NUM(x.id) === fixtureId)
     if (!m) return { estado: 'error', detalle: `fixture ${fixtureId} no existe` }
     await new Promise((r) => setTimeout(r, 1200)) // demora de "análisis"
@@ -528,7 +530,7 @@ class HttpDataSource implements SadDataSource {
   cuotasHistorial = (fixtureId: number, casa?: string | null) => SadApi.cuotasHistorial(fixtureId, casa)
   cuotasHistorialFuentes = (fixtureId: number) => SadApi.cuotasHistorialFuentes(fixtureId)
   analisisPartido = (fixtureId: number) => SadApi.analisisPartido(fixtureId)
-  generarEfe = (fixtureId: number) => SadApi.generarEfe(fixtureId)
+  generarEfe = (fixtureId: number, forzar?: boolean) => SadApi.generarEfe(fixtureId, forzar)
   estadoEfe = (fixtureId: number) => SadApi.estadoEfe(fixtureId)
   equipoStats = (equipoId: number) => SadApi.equipoStats(equipoId)
   liga = (ligaId: number) => SadApi.liga(ligaId)
