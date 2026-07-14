@@ -45,6 +45,11 @@ export function Sidebar({ store }: { store: SadStore }) {
           <span>Burbujas</span>
           <span style={{ marginLeft: 'auto', font: '600 9px var(--mono)', color: 'var(--t3)' }}>K</span>
         </button>
+        <button onClick={store.go('analisis')} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 12px', border: 0, borderRadius: 10, cursor: 'pointer', background: navB('analisis'), color: navF('analisis'), font: '600 13.5px var(--sans)', textAlign: 'left', transition: 'background .14s,color .14s' }}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" opacity=".55" /><path d="M12 3v2M21 12h-2M12 21v-2M3 12h2" /></svg>
+          <span>Análisis</span>
+          <span style={{ marginLeft: 'auto', font: '600 9px var(--mono)', color: 'var(--t3)' }}>EFE</span>
+        </button>
         <button onClick={store.go('skills')} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 12px', border: 0, borderRadius: 10, cursor: 'pointer', background: navB('skills'), color: navF('skills'), font: '600 13.5px var(--sans)', textAlign: 'left', transition: 'background .14s,color .14s' }}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l1.7 4.6 4.6 1.7-4.6 1.7L12 15.1l-1.7-4.6L5.7 8.8l4.6-1.7z" /><path d="M18.5 14l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9z" opacity=".7" /></svg>
           <span>Skills</span>

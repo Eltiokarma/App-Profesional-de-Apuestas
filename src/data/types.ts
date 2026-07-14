@@ -82,6 +82,6 @@ export type KTypeKey =
   | 'vic1' | 'vic2' | 'vic3' | 'der1' | 'der2' | 'der3'
 /** Condición de la K: total, solo local o solo visita. */
 export type KCondKey = 'total' | 'local' | 'visita'
-export type SectionKey = 'partidos' | 'cuotas' | 'burbujas' | 'skills' | 'estadisticas' | 'equipo' | 'liga'
+export type SectionKey = 'partidos' | 'cuotas' | 'burbujas' | 'analisis' | 'skills' | 'estadisticas' | 'equipo' | 'liga'
 export type OddsMode = 'prematch' | 'live'
 export type SkillState = 'idle' | 'gen' | 'done'

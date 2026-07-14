@@ -5,6 +5,7 @@
 import { SadApi } from '../api/sad'
 import type {
   AnalisisPrepartidoDTO,
+  AnalisisRegistroDTO,
   ConstanteCuotaDTO,
   ConstantesDTO,
   CuotaCasaDTO,
@@ -26,6 +27,7 @@ import type {
 } from '../api/types'
 import { CONFIG, type DataSourceMode } from '../config'
 import { MARKET_DEFS, MATCHES, STANDINGS, TEAMS } from '../data'
+import { efeDemo } from '../data/efeDemo'
 import { oddsFor, rng } from '../lib/odds'
 import { levelBin } from '../motor/discretizer'
 import { teamEngine } from '../motor/engine'
@@ -80,6 +82,10 @@ export interface SadDataSource {
   equipoStats(equipoId: number): Promise<EquipoStatsDTO>
   liga(ligaId: number): Promise<LigaDTO>
   standings(ligaId: number, temporada?: number): Promise<StandingRowDTO[]>
+  /** Análisis EFE+DTP emitidos para un fixture ([] si no hay). */
+  analisisPartido(fixtureId: number): Promise<AnalisisRegistroDTO[]>
+  /** Genera (o devuelve, si ya existe) el EFE del fixture. En http tarda 1-3 min. */
+  generarEfe(fixtureId: number): Promise<AnalisisRegistroDTO>
 }
 
 // ---------- mapeo de ids internos (strings) ↔ contrato (números) ----------
@@ -377,6 +383,32 @@ class MockDataSource implements SadDataSource {
     return ['1xBet', 'Bet365', 'Betano', 'Pinnacle']
   }
 
+  // análisis EFE demo: se "genera" en memoria con una pequeña demora realista
+  private _analisis = new Map<number, AnalisisRegistroDTO>()
+
+  async analisisPartido(fixtureId: number): Promise<AnalisisRegistroDTO[]> {
+    const reg = this._analisis.get(fixtureId)
+    return reg ? [reg] : []
+  }
+
+  async generarEfe(fixtureId: number): Promise<AnalisisRegistroDTO> {
+    const previo = this._analisis.get(fixtureId)
+    if (previo) return previo
+    const m = MATCHES.find((x) => FIXTURE_NUM(x.id) === fixtureId)
+    if (!m) throw new Error(`fixture ${fixtureId} no existe`)
+    await new Promise((r) => setTimeout(r, 1200)) // demora de "análisis"
+    const reg: AnalisisRegistroDTO = {
+      tipo: 'efe',
+      fixtureId,
+      estado: 'preliminar',
+      versionEfe: '1.5',
+      creadoEn: new Date(MOCK_NOW).toISOString(),
+      resultado: efeDemo(TEAMS[m.home].name, TEAMS[m.away].name, m.league, null),
+    }
+    this._analisis.set(fixtureId, reg)
+    return reg
+  }
+
   async cuotasHistorial(fixtureId: number, casa?: string | null): Promise<CuotaSnapshotDTO[]> {
     // Demo: 6 snapshots deterministas que derivan hacia la cuota base — misma
     // forma que servirá el backend real desde odds_history. Con `casa`, otra
@@ -487,6 +519,8 @@ class HttpDataSource implements SadDataSource {
   cuotasCasas = (fixtureId: number) => SadApi.cuotasCasas(fixtureId)
   cuotasHistorial = (fixtureId: number, casa?: string | null) => SadApi.cuotasHistorial(fixtureId, casa)
   cuotasHistorialFuentes = (fixtureId: number) => SadApi.cuotasHistorialFuentes(fixtureId)
+  analisisPartido = (fixtureId: number) => SadApi.analisisPartido(fixtureId)
+  generarEfe = (fixtureId: number) => SadApi.generarEfe(fixtureId)
   equipoStats = (equipoId: number) => SadApi.equipoStats(equipoId)
   liga = (ligaId: number) => SadApi.liga(ligaId)
   standings = (ligaId: number, temporada?: number) => SadApi.standings(ligaId, temporada)

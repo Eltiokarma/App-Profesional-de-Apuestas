@@ -21,6 +21,10 @@ export function BottomNav({ store }: { store: SadStore }) {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="7.5" cy="9" r="3.4" opacity=".9" /><circle cx="16.5" cy="7.5" r="2.2" opacity=".55" /><circle cx="14.5" cy="16" r="4" opacity=".8" /></svg>
         <span style={{ font: '600 10px var(--sans)' }}>Burbujas</span>
       </button>
+      <button onClick={store.go('analisis')} style={{ ...btn, color: navF('analisis') }}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" opacity=".55" /><path d="M12 3v2M21 12h-2M12 21v-2M3 12h2" /></svg>
+        <span style={{ font: '600 10px var(--sans)' }}>Análisis</span>
+      </button>
       <button onClick={store.go('skills')} style={{ ...btn, color: navF('skills'), position: 'relative' }}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l1.7 4.6 4.6 1.7-4.6 1.7L12 15.1l-1.7-4.6L5.7 8.8l4.6-1.7z" /><path d="M18.5 14l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9z" opacity=".7" /></svg>
         <span style={{ font: '600 10px var(--sans)' }}>Skills</span>

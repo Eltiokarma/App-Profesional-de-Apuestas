@@ -4,6 +4,7 @@
 // idénticos a los de antes, en modo http salen del backend real.
 import type {
   AnalisisPrepartidoDTO,
+  AnalisisRegistroDTO,
   ConstanteCuotaDTO,
   ConstantesDTO,
   EquipoDTO,
@@ -293,6 +294,18 @@ export async function loadFuentesHistorial(matchId: string): Promise<string[]> {
 /** En vivo real (fase 3): marcador, minuto y cuotas en juego del backend. */
 export function loadFixtureLive(matchId: string): Promise<FixtureLiveDTO> {
   return getDataSource().fixtureLive(fixtureNum(matchId))
+}
+
+// ── análisis EFE+DTP (backend/analisis/) ────────────────────────────────────
+
+/** Análisis emitidos para el partido (lectura pura; [] si no hay). */
+export function loadAnalisisPartido(matchId: string): Promise<AnalisisRegistroDTO[]> {
+  return getDataSource().analisisPartido(fixtureNum(matchId))
+}
+
+/** Genera el EFE del partido (en http tarda 1-3 min y cuesta créditos). */
+export function generarAnalisisEfe(matchId: string): Promise<AnalisisRegistroDTO> {
+  return getDataSource().generarEfe(fixtureNum(matchId))
 }
 
 // ── predicción (§5) y análisis pre-partido ──────────────────────────────────

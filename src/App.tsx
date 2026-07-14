@@ -15,6 +15,7 @@ import { Equipo } from './sections/Equipo'
 import { Liga } from './sections/Liga'
 import { Cuotas } from './sections/Cuotas'
 import { Burbujas } from './sections/Burbujas'
+import { Analisis } from './sections/Analisis'
 import { Skills } from './sections/Skills'
 import { Estadisticas } from './sections/Estadisticas'
 
@@ -102,7 +103,7 @@ export function App() {
   const mv = m ? matchView(m) : null
 
   // Partidos y Equipo no requieren partido seleccionado
-  const needsMatch = s.section === 'cuotas' || s.section === 'burbujas' || s.section === 'skills' || s.section === 'estadisticas'
+  const needsMatch = s.section === 'cuotas' || s.section === 'burbujas' || s.section === 'analisis' || s.section === 'skills' || s.section === 'estadisticas'
   // la selección vive en el store: las secciones ya no dependen de la lista del día
   const showEmpty = needsMatch && !m
   const showContent = !!m
@@ -131,6 +132,7 @@ export function App() {
             {s.section === 'liga' && s.ligaId == null && <EmptyState store={store} />}
             {showContent && m && s.section === 'cuotas' && <Cuotas store={store} m={m} isMobile={isMobile} live={live} />}
             {showContent && m && s.section === 'burbujas' && <Burbujas store={store} m={m} isMobile={isMobile} />}
+            {showContent && m && s.section === 'analisis' && <Analisis m={m} isMobile={isMobile} />}
             {showContent && m && s.section === 'skills' && <Skills store={store} m={m} isMobile={isMobile} />}
             {showContent && m && s.section === 'estadisticas' && <Estadisticas store={store} m={m} isMobile={isMobile} />}
           </main>
