@@ -193,8 +193,14 @@ class Cliente:
         self.delay = DELAY_DEFAULT
         self.hoy = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         self.usadas = 0
+        self.usadas_por: dict[str, int] = {}  # auditoría: consumo por endpoint
         self._sondeo_hecho = False
+        self._sondeo_ts = 0.0  # último sondeo horario con el tope alcanzado
         self._leer_cuota()
+
+    def resumen(self) -> str:
+        """Consumo por endpoint de ESTE proceso, para la auditoría en logs."""
+        return " ".join(f"{k}={v}" for k, v in sorted(self.usadas_por.items())) or "sin requests"
 
     def _ajustar_por_cabeceras(self, headers) -> None:
         """x-ratelimit-requests-* traen la cuota diaria del plan; x-ratelimit-limit,
@@ -239,15 +245,24 @@ class Cliente:
 
     def get(self, endpoint: str, params: dict) -> dict | None:
         if not self.quedan():
-            # sin plan aprendido todavía, una única request de sondeo por proceso:
-            # las cabeceras de la respuesta fijan el tope real (el marcador local
-            # puede venir de un plan mayor que el fallback)
-            if self.limite_fijo or self.limite_api is not None or self._sondeo_hecho:
+            if not self.limite_fijo and self.limite_api is None and not self._sondeo_hecho:
+                # sin plan aprendido todavía, una única request de sondeo por
+                # proceso: las cabeceras fijan el tope real (el marcador local
+                # puede venir de un plan mayor que el fallback)
+                self._sondeo_hecho = True
+                print(f"  marcador local ({self.usadas}) supera el fallback ({self.limite}): sondeo para leer el plan real")
+            elif not self.limite_fijo and time.monotonic() - self._sondeo_ts >= 3600:
+                # plan aprendido pero agotado: 1 sondeo por hora — si el plan se
+                # sube a mitad del día (upgrade en el dashboard), las cabeceras
+                # enseñan el tope nuevo y la ingesta se reactiva SOLA sin esperar
+                # a la medianoche UTC ni redeployar
+                self._sondeo_ts = time.monotonic()
+                print(f"  presupuesto agotado ({self.usadas}/{self.limite}): sondeo horario por si el plan subió")
+            else:
                 print(f"  presupuesto diario agotado ({self.usadas}/{self.limite})")
                 return None
-            self._sondeo_hecho = True
-            print(f"  marcador local ({self.usadas}) supera el fallback ({self.limite}): sondeo para leer el plan real")
         self.usadas += 1
+        self.usadas_por[endpoint] = self.usadas_por.get(endpoint, 0) + 1
         self._guardar_cuota()
         url = f"{BASE_URL}/{endpoint}?{urllib.parse.urlencode(params)}"
         req = urllib.request.Request(url, headers={"x-apisports-key": self.clave})
@@ -642,6 +657,7 @@ def main() -> int:
             print(f"  [{cliente.usadas}/{cliente.limite}] fixture {fid}: {n} cuotas")
         con.close()
         print(f"cuotas refrescadas: {total} · requests usadas: {cliente.usadas}/{cliente.limite}")
+        print(f"consumo por endpoint: {cliente.resumen()}")
         return 0
 
     if args.solo != "cuotas":
@@ -691,6 +707,7 @@ def main() -> int:
             print(f"  [{cliente.usadas}/{cliente.limite}] fixture {fid}: {n} cuotas")
         print(f"cuotas guardadas: {total}")
 
+    print(f"consumo por endpoint: {cliente.resumen()} · total {cliente.usadas}/{cliente.limite}")
     con.close()
     print(f"listo · requests usadas: {cliente.usadas}/{cliente.limite}")
     return 0
