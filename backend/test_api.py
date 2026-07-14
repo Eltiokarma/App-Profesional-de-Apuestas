@@ -232,6 +232,38 @@ def main():
     check("1er tiempo fuera del live (cuotas y serie)",
           all(p["cuota"] != 9.99 for p in lv["cuotas"] + lv["serie"]))
 
+    # análisis EFE (capa backend/analisis/, modo demo: sin API ni créditos)
+    os.environ["SAD_EFE_DEMO"] = "1"
+    from backend.analisis import db as efedb
+    if os.path.exists(efedb.ruta()):
+        os.remove(efedb.ruta())  # corrida limpia: sin restos de tests previos
+    ae = c.post(A + "/analisis/efe", json={"fixtureId": vivo["id"]}).json()
+    check("efe: registro con claves del contrato",
+          all(k in ae for k in ("tipo", "fixtureId", "estado", "versionEfe", "creadoEn", "resultado")), ae.keys())
+    check("efe: tipo/estado/versión", ae["tipo"] == "efe" and ae["estado"] == "preliminar"
+          and ae["versionEfe"] == "1.5", ae)
+    r_efe = ae["resultado"]
+    check("efe: comparativo con ambos equipos y clasificación",
+          r_efe["equipos"]["a"]["clasificacion"] in ("FORMADO", "EN_FORMACION", "SIN_FORMACION")
+          and r_efe["equipos"]["b"]["porcentaje"] > 0, r_efe["equipos"]["b"]["clasificacion"])
+    check("efe: matchup y alertas presentes",
+          r_efe["matchup_h"]["diagnostico"] in ("FAVORABLE", "NEUTRO", "DESFAVORABLE")
+          and isinstance(r_efe["alertas"], list))
+    ae2 = c.post(A + "/analisis/efe", json={"fixtureId": vivo["id"]}).json()
+    check("efe repetido → el mismo (caché, 0 créditos)", ae2["creadoEn"] == ae["creadoEn"])
+    ap = c.get(A + f"/analisis/partido/{vivo['id']}").json()
+    check("analisis/partido lista el efe", len(ap) == 1 and ap[0]["tipo"] == "efe", len(ap))
+    check("analisis/partido sin análisis → []",
+          c.get(A + "/analisis/partido/900001").json() == [])
+    check("efe de fixture inexistente → 404",
+          c.post(A + "/analisis/efe", json={"fixtureId": 999999}).status_code == 404)
+    del os.environ["SAD_EFE_DEMO"]
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        # sin demo y sin clave: 503 honesto (fixture distinto para no chocar con la caché)
+        fin_efe = next(f for f in fx if f["estado"] == "finalizado")
+        check("efe sin ANTHROPIC_API_KEY → 503",
+              c.post(A + "/analisis/efe", json={"fixtureId": fin_efe["id"]}).status_code == 503)
+
     # cuotas prepartido guardadas en partidos PASADOS
     pasados = [f for f in fx if f["estado"] == "finalizado"]
     con_odds = [f for f in pasados if c.get(A + f"/cuotas/{f['id']}").json()]
