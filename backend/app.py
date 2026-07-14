@@ -286,6 +286,14 @@ _SS = "COALESCE(UPPER(f.status_short),'')"
 _EN_VIVO_SQL = f"{_SS} IN ({','.join('?' * len(LIVE_SHORT))})"
 _FIN_SQL = f"({_SS} IN ({','.join('?' * len(FIN_SHORT))}) OR COALESCE(f.status_long,'')='Match Finished')"
 
+# Resultado DENTRO DE LOS 90 MINUTOS: toda la matemática (K, gap §5, stats,
+# tabla) usa fulltime_* — en partidos con prórroga/penales (AET/PEN) goals_*
+# trae el marcador de los 120'. El marcador MOSTRADO en la UI sigue siendo el
+# final real (goals_*). COALESCE cubre filas sin fulltime.
+_G90_H = "COALESCE(f.fulltime_home, f.goals_home)"
+_G90_A = "COALESCE(f.fulltime_away, f.goals_away)"
+_FIN90_SQL = "(f.status_short IN ('FT','AET','PEN') OR f.status_long='Match Finished')"
+
 
 def estado_sql(estado: str) -> tuple[str, list]:
     live, fin = sorted(LIVE_SHORT), sorted(FIN_SHORT)
@@ -343,6 +351,7 @@ FIXTURE_SQL = """
 SELECT f.id, f.date, f.status_long, f.status_short, f.elapsed,
        f.league_id, f.league_season, f.venue_name,
        f.goals_home, f.goals_away,
+       f.fulltime_home, f.fulltime_away,
        f.home_team_id, ht.name AS home_name, ht.logo AS home_logo,
        f.away_team_id, at.name AS away_name, at.logo AS away_logo
 FROM fixtures f
@@ -383,11 +392,11 @@ def pts_recientes(team_id: int, antes_de: str | None) -> float | None:
         params.append(antes_de.replace("T", " ").rstrip("Z"))
     rows = db.query(
         "sad",
-        f"""SELECT f.home_team_id, f.goals_home, f.goals_away
+        f"""SELECT f.home_team_id, {_G90_H} AS goals_home, {_G90_A} AS goals_away
             FROM fixtures f
             WHERE (f.home_team_id=? OR f.away_team_id=?)
-              AND f.status_long='Match Finished'
-              AND f.goals_home IS NOT NULL AND f.goals_away IS NOT NULL{cond}
+              AND {_FIN90_SQL}
+              AND {_G90_H} IS NOT NULL AND {_G90_A} IS NOT NULL{cond}
             ORDER BY f.date DESC LIMIT {RECENT_WINDOW}""",
         tuple(params),
     )
@@ -462,7 +471,10 @@ def constantes_de(team_id: int, limit: int, hasta: str | None = None) -> list[di
             if not f:
                 continue
             es_local = f["home_team_id"] == team_id
-            gf, ga = (f["goals_home"], f["goals_away"]) if es_local else (f["goals_away"], f["goals_home"])
+            # regla de 90': fulltime_* manda (goals_* incluye la prórroga)
+            g90h = f["fulltime_home"] if f["fulltime_home"] is not None else f["goals_home"]
+            g90a = f["fulltime_away"] if f["fulltime_away"] is not None else f["goals_away"]
+            gf, ga = (g90h, g90a) if es_local else (g90a, g90h)
             rival_id = f["away_team_id"] if es_local else f["home_team_id"]
             rival_nombre = f["away_name"] if es_local else f["home_name"]
             nivel_rival = 0.0
@@ -802,11 +814,12 @@ def equipo_stats(equipo_id: int):
         raise HTTPException(404, f"equipo {equipo_id} no existe")
     rows = db.query(
         "sad",
-        """SELECT home_team_id, goals_home, goals_away FROM fixtures
-           WHERE (home_team_id=? OR away_team_id=?)
-             AND status_long='Match Finished'
-             AND goals_home IS NOT NULL AND goals_away IS NOT NULL
-           ORDER BY date DESC LIMIT 2000""",
+        f"""SELECT f.home_team_id, {_G90_H} AS goals_home, {_G90_A} AS goals_away
+           FROM fixtures f
+           WHERE (f.home_team_id=? OR f.away_team_id=?)
+             AND {_FIN90_SQL}
+             AND {_G90_H} IS NOT NULL AND {_G90_A} IS NOT NULL
+           ORDER BY f.date DESC LIMIT 2000""",
         (equipo_id, equipo_id),
     )
     pts = gf_tot = gc_tot = 0
@@ -857,12 +870,12 @@ def standings(liga_id: int, temporada: int | None = None):
         temporada = row["s"] if row and row["s"] is not None else 0
     rows = db.query(
         "sad",
-        """SELECT f.home_team_id, f.away_team_id, f.goals_home, f.goals_away,
+        f"""SELECT f.home_team_id, f.away_team_id, {_G90_H} AS goals_home, {_G90_A} AS goals_away,
                   ht.name AS home_name, at.name AS away_name
            FROM fixtures f
            JOIN teams ht ON ht.id=f.home_team_id JOIN teams at ON at.id=f.away_team_id
-           WHERE f.league_id=? AND f.league_season=? AND f.status_long='Match Finished'
-             AND f.goals_home IS NOT NULL AND f.goals_away IS NOT NULL
+           WHERE f.league_id=? AND f.league_season=? AND {_FIN90_SQL}
+             AND {_G90_H} IS NOT NULL AND {_G90_A} IS NOT NULL
            LIMIT 5000""",
         (liga_id, temporada),
     )

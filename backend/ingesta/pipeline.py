@@ -84,14 +84,22 @@ CREATE INDEX idx_league ON processed_matches(league_id);
 
 
 def leer_fixtures(sad_path: str) -> list[tuple]:
-    """Partidos terminados con goles, orden (date, id) — el orden del motor."""
+    """Partidos terminados con goles, orden (date, id) — el orden del motor.
+
+    REGLA SAGRADA: la K se calcula con el resultado DENTRO DE LOS 90 MINUTOS
+    (fulltime_*), no con el final tras prórroga o penales — en un AET/PEN
+    goals_* trae el marcador de los 120'. COALESCE cubre DBs sin fulltime.
+    El filtro por status_short incluye AET/PEN (su status_long varía)."""
     with sqlite3.connect(f"file:{sad_path}?mode=ro", uri=True) as con:
         return con.execute(
-            """SELECT id, date, home_team_id, away_team_id, goals_home, goals_away,
+            """SELECT id, date, home_team_id, away_team_id,
+                      COALESCE(fulltime_home, goals_home) AS goals_home,
+                      COALESCE(fulltime_away, goals_away) AS goals_away,
                       status_long, league_id, league_season
                FROM fixtures
-               WHERE status_long = 'Match Finished'
-                 AND goals_home IS NOT NULL AND goals_away IS NOT NULL
+               WHERE (status_short IN ('FT', 'AET', 'PEN') OR status_long = 'Match Finished')
+                 AND COALESCE(fulltime_home, goals_home) IS NOT NULL
+                 AND COALESCE(fulltime_away, goals_away) IS NOT NULL
                ORDER BY date, id"""
         ).fetchall()
 

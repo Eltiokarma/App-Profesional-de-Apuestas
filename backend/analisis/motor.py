@@ -59,12 +59,17 @@ def _fixture(fixture_id: int) -> dict:
 # ── datos locales: lo que YA tenemos en sad.db no se busca en la web ─────────
 
 def _resultados_de(team_id: int) -> str:
+    # regla de 90': fulltime_* manda (goals_* incluye prórroga en AET/PEN);
+    # el filtro por status_short incluye AET/PEN (su status_long varía)
     filas = saddb.query(
         "sad",
-        "SELECT f.date, f.goals_home, f.goals_away, ht.name AS local, at.name AS visitante "
+        "SELECT f.date, COALESCE(f.fulltime_home, f.goals_home) AS goals_home, "
+        "COALESCE(f.fulltime_away, f.goals_away) AS goals_away, "
+        "ht.name AS local, at.name AS visitante "
         "FROM fixtures f JOIN teams ht ON ht.id=f.home_team_id JOIN teams at ON at.id=f.away_team_id "
-        "WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.status_long='Match Finished' "
-        "AND f.goals_home IS NOT NULL ORDER BY f.date DESC LIMIT 8",
+        "WHERE (f.home_team_id=? OR f.away_team_id=?) "
+        "AND (f.status_short IN ('FT','AET','PEN') OR f.status_long='Match Finished') "
+        "AND COALESCE(f.fulltime_home, f.goals_home) IS NOT NULL ORDER BY f.date DESC LIMIT 8",
         (team_id, team_id),
     )
     return " · ".join(
@@ -90,11 +95,14 @@ def _tabla_de(league_id: int | None, season: int | None) -> str:
         return ""
     filas = saddb.query(
         "sad",
-        "SELECT f.home_team_id, f.away_team_id, f.goals_home, f.goals_away, "
+        "SELECT f.home_team_id, f.away_team_id, "
+        "COALESCE(f.fulltime_home, f.goals_home) AS goals_home, "
+        "COALESCE(f.fulltime_away, f.goals_away) AS goals_away, "
         "ht.name AS local, at.name AS visitante "
         "FROM fixtures f JOIN teams ht ON ht.id=f.home_team_id JOIN teams at ON at.id=f.away_team_id "
-        "WHERE f.league_id=? AND f.league_season=? AND f.status_long='Match Finished' "
-        "AND f.goals_home IS NOT NULL LIMIT 5000",
+        "WHERE f.league_id=? AND f.league_season=? "
+        "AND (f.status_short IN ('FT','AET','PEN') OR f.status_long='Match Finished') "
+        "AND COALESCE(f.fulltime_home, f.goals_home) IS NOT NULL LIMIT 5000",
         (league_id, season),
     )
     acc: dict[int, dict] = {}
