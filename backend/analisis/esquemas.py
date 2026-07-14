@@ -155,9 +155,40 @@ def ajustar(dato, esquema: dict):
             return dato if dato in valores else valores[0]
         return dato if isinstance(dato, str) else ("" if dato is None else str(dato))
     if t == "number":
-        return float(dato) if isinstance(dato, (int, float)) and not isinstance(dato, bool) else 0.0
+        return _numero(dato, float, 0.0)
     if t == "integer":
-        return int(dato) if isinstance(dato, (int, float)) and not isinstance(dato, bool) else 0
+        return _numero(dato, lambda v: int(float(v)), 0)
     if t == "boolean":
         return dato if isinstance(dato, bool) else False
     return dato
+
+
+def _numero(dato, convertir, defecto):
+    """Coerción numérica tolerante: acepta números y strings numéricos
+    ("3.5", "3,5", "75%") — el modelo a veces emite cifras como texto y
+    convertirlas a 0 destruiría un análisis válido."""
+    if isinstance(dato, bool):
+        return defecto
+    if isinstance(dato, (int, float)):
+        return convertir(dato)
+    if isinstance(dato, str):
+        limpio = dato.strip().replace(",", ".").rstrip("%").strip()
+        try:
+            return convertir(limpio)
+        except ValueError:
+            return defecto
+    return defecto
+
+
+def analisis_vacio(resultado: dict) -> bool:
+    """True si un EFE_COMPARATIVO quedó sin contenido real: ambos equipos con
+    total y porcentaje en 0 (síntoma de investigación fallida — p. ej. el
+    modelo creyó que la búsqueda web no estaba disponible)."""
+    try:
+        equipos = resultado["equipos"]
+        return all(
+            float(equipos[k]["total"]) == 0 and float(equipos[k]["porcentaje"]) == 0
+            for k in ("a", "b")
+        )
+    except (KeyError, TypeError, ValueError):
+        return True

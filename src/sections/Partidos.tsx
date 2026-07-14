@@ -38,12 +38,33 @@ function diasBarra(fechaSel: string): { value: string; label: string }[] {
   return chips
 }
 
+// preferencias de ligas (favoritas ancladas arriba / minimizadas), en localStorage
+function leerLS(clave: string): string[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(clave) ?? '[]')
+    return Array.isArray(v) ? v.map(String) : []
+  } catch {
+    return []
+  }
+}
+function guardarLS(clave: string, v: string[]) {
+  try { localStorage.setItem(clave, JSON.stringify(v)) } catch { /* modo privado */ }
+}
+
 /** Pantalla inicial: los partidos del día elegido, agrupados por competición. */
 export function Partidos({ store, matches, loading, error, reload, isMobile }: Props) {
   const { s } = store
   const [filtro, setFiltro] = useState<Filtro>('todos')
   const [texto, setTexto] = useState('')
   const dateRef = useRef<HTMLInputElement>(null)
+  // favoritas (ancladas arriba) y minimizadas, por id de liga (o nombre si no hay id)
+  const [favoritas, setFavoritas] = useState<string[]>(() => leerLS('sad-ligas-fav'))
+  const [minimizadas, setMinimizadas] = useState<string[]>(() => leerLS('sad-ligas-min'))
+  const alternar = (lista: string[], setLista: (v: string[]) => void, claveLS: string, k: string) => {
+    const nueva = lista.includes(k) ? lista.filter((x) => x !== k) : [...lista, k]
+    setLista(nueva)
+    guardarLS(claveLS, nueva)
+  }
 
   const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
   const t = norm(texto.trim())
@@ -67,6 +88,10 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
   // torneos homónimos de países distintos: se distinguen con " · País"
   const repetidos = new Set(grupos.filter((g) => grupos.some((o) => o !== g && o.comp === g.comp)).map((g) => g.comp))
   for (const g of grupos) if (repetidos.has(g.comp) && g.pais) g.comp = `${g.comp} · ${g.pais}`
+
+  // favoritas ancladas arriba (orden estable dentro de cada bloque)
+  const claveDe = (g: (typeof grupos)[number]) => (g.ligaId != null ? 'id:' + g.ligaId : 'nm:' + g.comp)
+  const ordenados = [...grupos].sort((a, b) => Number(favoritas.includes(claveDe(b))) - Number(favoritas.includes(claveDe(a))))
 
   const chips: { k: Filtro; label: string }[] = [
     { k: 'todos', label: 'Todos' },
@@ -156,20 +181,41 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
       )}
 
       {!loading &&
-        grupos.map((grp) => (
-          <section key={grp.ligaId ?? grp.comp} style={{ marginBottom: 16 }}>
+        ordenados.map((grp) => {
+          const k = claveDe(grp)
+          const fav = favoritas.includes(k)
+          const min = minimizadas.includes(k)
+          return (
+          <section key={grp.ligaId ?? grp.comp} style={{ marginBottom: min ? 8 : 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 2px 8px' }}>
-              <span style={{ width: 5, height: 15, borderRadius: 2, background: 'var(--accent)' }}></span>
+              <span style={{ width: 5, height: 15, borderRadius: 2, background: fav ? 'var(--mark)' : 'var(--accent)' }}></span>
               {grp.ligaId != null ? (
                 <button className="sad-hover" onClick={() => store.openLiga(grp.ligaId!)} title={`Ver información de ${grp.comp}`} style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'transparent', border: 0, cursor: 'pointer', padding: '3px 7px', margin: '-3px -7px', borderRadius: 7, textAlign: 'left', flex: 1, minWidth: 0 }}>
                   {grp.img && <img src={grp.img} alt="" width={16} height={12} style={{ objectFit: 'cover', borderRadius: 2, flexShrink: 0 }} />}
                   <span style={{ font: '700 12.5px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{grp.comp}</span>
                 </button>
               ) : (
-                <span style={{ font: '700 12.5px var(--sans)', color: 'var(--t1)', flex: 1 }}>{grp.comp}</span>
+                <span style={{ font: '700 12.5px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{grp.comp}</span>
               )}
               <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)' }}>{grp.rows.length}</span>
+              {/* anclar arriba (favorita) — táctil: 30px de zona de toque */}
+              <button
+                onClick={() => alternar(favoritas, setFavoritas, 'sad-ligas-fav', k)}
+                title={fav ? 'Quitar de favoritas' : 'Anclar arriba'}
+                style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 0, cursor: 'pointer', padding: 0, borderRadius: 7, flexShrink: 0 }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill={fav ? 'var(--mark)' : 'none'} stroke={fav ? 'var(--mark)' : 'var(--t3)'} strokeWidth="1.8"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.3 1.1 6.1L12 17.2 6.5 19.9l1.1-6.1L3.1 9.4l6.1-.8z" /></svg>
+              </button>
+              {/* minimizar / expandir la liga */}
+              <button
+                onClick={() => alternar(minimizadas, setMinimizadas, 'sad-ligas-min', k)}
+                title={min ? 'Expandir liga' : 'Minimizar liga'}
+                style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 0, cursor: 'pointer', padding: 0, borderRadius: 7, flexShrink: 0 }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: min ? 'rotate(-90deg)' : 'none', transition: 'transform .15s' }}><path d="M6 9l6 6 6-6" /></svg>
+              </button>
             </div>
+            {!min && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {grp.rows.map((m) => {
                 const H = TEAMS[m.home]
@@ -205,8 +251,10 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
                 )
               })}
             </div>
+            )}
           </section>
-        ))}
+          )
+        })}
       {!loading && !error && visibles.length === 0 && (
         <div style={{ font: '500 12.5px var(--sans)', color: 'var(--t3)', padding: 24, textAlign: 'center' }}>
           {matches.length === 0 ? 'Sin partidos este día.' : 'Sin partidos para este filtro.'}

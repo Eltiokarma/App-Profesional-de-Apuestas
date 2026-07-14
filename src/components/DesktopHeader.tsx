@@ -9,9 +9,11 @@ interface Props {
   liveBadge: boolean
   liveMinute: number
   liveScore: string
+  finBadge: boolean
+  finScore: string
 }
 
-export function DesktopHeader({ store, mv, liveBadge, liveMinute, liveScore }: Props) {
+export function DesktopHeader({ store, mv, liveBadge, liveMinute, liveScore, finBadge, finScore }: Props) {
   return (
     <header style={{ height: 74, flexShrink: 0, background: 'var(--bg1)', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', padding: '0 22px', gap: 18, position: 'relative', zIndex: 30 }}>
       {mv ? (
@@ -50,6 +52,12 @@ export function DesktopHeader({ store, mv, liveBadge, liveMinute, liveScore }: P
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--down)', animation: 'sadpulse 1.1s infinite', flexShrink: 0 }}></span>
               <span style={{ font: '700 11px var(--mono)', color: 'var(--down)', letterSpacing: '.6px' }}>LIVE {liveMinute}'</span>
               <span style={{ font: '700 13px var(--mono)', color: 'var(--t1)' }}>{liveScore}</span>
+            </div>
+          )}
+          {finBadge && (
+            <div style={{ marginLeft: 6, display: 'flex', alignItems: 'center', gap: 8, padding: '6px 11px', borderRadius: 8, background: 'var(--bg3)', border: '1px solid var(--line)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+              <span style={{ font: '700 10px var(--mono)', color: 'var(--t3)', letterSpacing: '.6px' }}>FINAL</span>
+              <span style={{ font: '700 14px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>{finScore}</span>
             </div>
           )}
         </>

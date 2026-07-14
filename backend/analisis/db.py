@@ -90,7 +90,21 @@ def analisis_existente(tipo: str, fixture_id: int, estado: str) -> dict | None:
             "FROM analisis WHERE tipo=? AND fixture_id=? AND estado=?",
             (tipo, fixture_id, estado),
         ).fetchone()
-    return _fila_a_dto(f) if f else None
+    if not f:
+        return None
+    dto = _fila_a_dto(f)
+    # Autocuración: un EFE guardado sin contenido (ambos equipos en 0 — bug de
+    # versiones anteriores) se borra para que el usuario pueda regenerarlo.
+    if tipo == "efe":
+        from backend.analisis.esquemas import analisis_vacio
+        if analisis_vacio(dto["resultado"]):
+            with conectar() as con:
+                con.execute("DELETE FROM analisis WHERE tipo=? AND fixture_id=? AND estado=?",
+                            (tipo, fixture_id, estado))
+                con.commit()
+            print(f"[efe] fixture {fixture_id}: análisis vacío purgado (regenerable)", flush=True)
+            return None
+    return dto
 
 
 def guardar_analisis(tipo: str, fixture_id: int, equipo_a: str, equipo_b: str,

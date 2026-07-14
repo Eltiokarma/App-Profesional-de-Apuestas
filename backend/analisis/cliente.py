@@ -18,7 +18,10 @@ from backend.analisis.esquemas import ajustar
 
 MODELO = os.environ.get("SAD_EFE_MODELO", "claude-sonnet-5")
 MAX_TOKENS = 16_000
-MAX_BUSQUEDAS = 6
+# Un EFE completo investiga ~7 tipos de datos por equipo (14 en total): con un
+# tope bajo el modelo agota las búsquedas, recibe bloques de error
+# (max_uses_exceeded) y concluye "herramienta no disponible" → análisis en ceros.
+MAX_BUSQUEDAS = int(os.environ.get("SAD_EFE_BUSQUEDAS", "18"))
 
 _PROMPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prompts")
 _MARCA_BLOQUE2 = "## INSTRUCCIONES DE EJECUCIÓN API"
@@ -104,8 +107,19 @@ def analizar(payload: dict, esquema: dict, con_busqueda: bool) -> tuple[dict, di
         "cache_write": getattr(respuesta.usage, "cache_creation_input_tokens", 0) or 0,
         "cache_read": getattr(respuesta.usage, "cache_read_input_tokens", 0) or 0,
     }
+    # los errores de búsqueda NO lanzan excepción: llegan como bloques de
+    # resultado con error_code (p. ej. max_uses_exceeded) — se registran aquí
+    stu = getattr(respuesta.usage, "server_tool_use", None)
+    hechas = getattr(stu, "web_search_requests", 0) or 0
+    errores = [getattr(b.content, "error_code", None)
+               for b in respuesta.content
+               if getattr(b, "type", "") == "web_search_tool_result"
+               and not isinstance(getattr(b, "content", None), list)]
+    errores = [e for e in errores if e]
     print(f"[efe] {MODELO} · in={uso['input']} out={uso['output']} "
           f"cache_write={uso['cache_write']} cache_read={uso['cache_read']} "
-          f"busqueda={'sí' if con_busqueda else 'no'}", flush=True)
+          f"busqueda={'sí' if con_busqueda else 'no'} hechas={hechas} "
+          f"max={MAX_BUSQUEDAS}"
+          + (f" errores_busqueda={errores}" if errores else ""), flush=True)
     # normalizado contra el esquema: el frontend recibe SIEMPRE la forma exacta
     return ajustar(_extraer_json(texto), esquema), uso

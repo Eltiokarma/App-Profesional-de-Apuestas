@@ -8,9 +8,12 @@ interface Props {
   phonePreview: boolean
   liveBadge: boolean
   liveMinute: number
+  liveScore: string
+  finBadge: boolean
+  finScore: string
 }
 
-export function MobileHeader({ store, mv, phonePreview, liveBadge, liveMinute }: Props) {
+export function MobileHeader({ store, mv, phonePreview, liveBadge, liveMinute, liveScore, finBadge, finScore }: Props) {
   const isDark = store.s.theme === 'dark'
   return (
     <header style={{ flexShrink: 0, background: 'var(--bg1)', borderBottom: '1px solid var(--line)', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 9, zIndex: 20 }}>
@@ -52,6 +55,13 @@ export function MobileHeader({ store, mv, phonePreview, liveBadge, liveMinute }:
               <span style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px', borderRadius: 7, background: 'var(--down-soft)', flexShrink: 0 }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--down)', animation: 'sadpulse 1.1s infinite' }}></span>
                 <span style={{ font: '700 10px var(--mono)', color: 'var(--down)' }}>{liveMinute}'</span>
+                <span style={{ font: '700 11px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>{liveScore}</span>
+              </span>
+            )}
+            {finBadge && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px', borderRadius: 7, background: 'var(--bg3)', border: '1px solid var(--line)', flexShrink: 0 }}>
+                <span style={{ font: '700 8.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px' }}>FINAL</span>
+                <span style={{ font: '700 11.5px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>{finScore}</span>
               </span>
             )}
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M6 9l6 6 6-6" /></svg>

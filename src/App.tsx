@@ -100,6 +100,10 @@ export function App() {
   const liveScore = esHttp && live
     ? `${live.golesLocal ?? '–'} - ${live.golesVisitante ?? '–'}`
     : m ? m.score : ''
+  // partidos terminados: el marcador final va SIEMPRE visible en el header
+  // (antes solo se veía fecha/hora y esa información se perdía)
+  const finBadge = !!m && m.status === 'fin'
+  const finScore = finBadge ? (esHttp && live ? liveScore : m!.score) : ''
   const mv = m ? matchView(m) : null
 
   // Partidos y Equipo no requieren partido seleccionado
@@ -115,10 +119,10 @@ export function App() {
 
         <div style={colStyle}>
           {isMobile && (
-            <MobileHeader store={store} mv={mv} phonePreview={phonePreview} liveBadge={liveBadge} liveMinute={liveMinuto} />
+            <MobileHeader store={store} mv={mv} phonePreview={phonePreview} liveBadge={liveBadge} liveMinute={liveMinuto} liveScore={liveScore} finBadge={finBadge} finScore={finScore} />
           )}
           {isDesktop && (
-            <DesktopHeader store={store} mv={mv} liveBadge={liveBadge} liveMinute={liveMinuto} liveScore={liveScore} />
+            <DesktopHeader store={store} mv={mv} liveBadge={liveBadge} liveMinute={liveMinuto} liveScore={liveScore} finBadge={finBadge} finScore={finScore} />
           )}
 
           <main className="sad-scroll" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: contentPad }}>
