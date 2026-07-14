@@ -91,7 +91,9 @@ _DEV_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in os.environ.get("SAD_CORS_ORIGINS", _DEV_ORIGINS).split(",") if o.strip()],
-    allow_methods=["GET"],
+    # POST: los endpoints de análisis EFE (/analisis/efe) — el preflight del
+    # navegador se rechazaba con solo GET y el POST ni salía ("Failed to fetch")
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
