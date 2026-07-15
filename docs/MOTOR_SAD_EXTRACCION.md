@@ -518,6 +518,24 @@ señal_calendario = blando si recuperabilidad > μ_genérica + 0.15
   contra sad.db real: `python -m backend.backtest_gap --muestra 800` reconstruye
   las señales sin fuga (nivel/forma a fecha − 1 s) sobre una muestra y reporta
   el residual (pts − μ_partido) por bucket de señal.
+
+### Resultados empíricos (backtest 2026-07, 1500 fixtures de 118 517)
+
+1. **μ está descalibrada — hallazgo dominante.** OLS sobre 3000 observaciones:
+   `μ ≈ 1.231 + 0.334·nivel − 0.356·rival + 0.385·localía` (RMSE 1.250 vs
+   1.284 de la heredada). Los coeficientes de nivel/rival reales son **la
+   mitad** de los heredados: la μ vigente exagera al doble las diferencias de
+   nivel → sobreestima favoritos (−0.42 pts de residual) y subestima débiles.
+   Ese sesgo de compresión (residual ≈ −0.5·(μ − 1.37)) explicaba casi todos
+   los residuales por bucket de la primera pasada. **Pendiente de decisión:
+   recalibrar los coeficientes oficiales.** Mientras tanto, `--calibrar`
+   re-evalúa todas las tablas con la μ OLS para ver la señal limpia.
+2. **Partido trampa: sin efecto incremental** (n=72: −0.39 vs −0.42 del
+   control; la diferencia es ruido). Se mantiene como bandera informativa;
+   no se promueve a la matemática.
+3. La lectura "gap > 0 → mejora YA" no se confirmó al horizonte de 1 partido;
+   a 5 partidos la señal clásica insinúa reversión (mejora +0.05, leve
+   empeora −0.15). Veredicto final pendiente de re-medir con μ recalibrada.
 - Contrato: `muPartido`, `proximos[]` (rival, nivel, μ, localía, internacional,
   días de descanso), `recuperabilidad`, `senalCalendario`, `partidoTrampa`.
 - Nivel del rival futuro: `date <= fecha` con fallback 1.0, igual que el gap

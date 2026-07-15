@@ -35,11 +35,24 @@ from datetime import timedelta
 from backend import db
 from backend.app import (
     _dt, _FIN90_SQL, _G90_A, _G90_H, _NO_CAMINO, _SS, CAL_UMBRAL, gap_equipo,
-    INTL_LEAGUE_IDS, MU, mu, nivel_a_fecha, RECOVERY_NEXT, TRAMPA_DELTA_NIVEL,
+    INTL_LEAGUE_IDS, MU, nivel_a_fecha, RECOVERY_NEXT, TRAMPA_DELTA_NIVEL,
     TRAMPA_VENTANA_DIAS,
 )
 
 BUCKETS_SENAL = ["fuerte mejora", "leve mejora", "equilibrio", "leve empeora", "fuerte empeora"]
+COEFS_ACTUALES = [MU["intercept"], MU["nivel"], MU["rival"], MU["localia"]]
+
+# Cada observación guarda (pts, [términos (nivel, rival, localía)]) en vez de
+# la μ ya evaluada: así las MISMAS tablas se pueden re-evaluar con la μ
+# recalibrada (--calibrar) y separar señal real de sesgo de calibración.
+
+
+def _mu_de(coefs: list[float], t: tuple) -> float:
+    return max(0.0, min(3.0, coefs[0] + coefs[1] * t[0] + coefs[2] * t[1] + coefs[3] * t[2]))
+
+
+def _stats_de(obs: list[tuple], coefs: list[float]) -> dict:
+    return _stats([(pts, sum(_mu_de(coefs, t) for t in terms) / len(terms)) for pts, terms in obs])
 
 
 def _puntos(gf: int, ga: int) -> int:
@@ -199,32 +212,30 @@ def backtest(muestra: int = 300, liga: int | None = None, temporada: int | None 
                 descartadas += 1
                 continue
             n_obs += 1
-            mu_partido = mu(nivel, nivel_rival, 1.0 if es_local else 0.0)
-            par = (float(_puntos(gf, ga)), mu_partido)
+            obs = (float(_puntos(gf, ga)), [(nivel, nivel_rival, 1.0 if es_local else 0.0)])
             b_cla = _bucket(g["senal"], g["tendencia"])
             b_adj = _bucket(g["senalAjustada"], g["tendenciaAjustada"])
-            clasica[b_cla].append(par)
-            ajustada[b_adj].append(par)
+            clasica[b_cla].append(obs)
+            ajustada[b_adj].append(obs)
 
             # horizonte > 1: residual MEDIO de los próximos N terminados
             if horizonte > 1:
                 sigs = _siguientes(team_id, f["date"], f["id"], horizonte)
                 if sigs:
-                    pares_h = []
+                    terms, pts_tot = [], 0
                     for r in sigs:
                         s_local = r["home_team_id"] == team_id
                         rid = r["away_team_id"] if s_local else r["home_team_id"]
-                        mu_s = mu(nivel, nivel_a_fecha(rid, antes, fallback=1.0), 1.0 if s_local else 0.0)
-                        pts_s = _puntos(r["gh"] if s_local else r["ga"], r["ga"] if s_local else r["gh"])
-                        pares_h.append((float(pts_s), mu_s))
-                    par_h = (sum(p for p, _ in pares_h) / len(pares_h), sum(m for _, m in pares_h) / len(pares_h))
-                    horiz_clasica[b_cla].append(par_h)
-                    horiz_ajustada[b_adj].append(par_h)
+                        terms.append((nivel, nivel_a_fecha(rid, antes, fallback=1.0), 1.0 if s_local else 0.0))
+                        pts_tot += _puntos(r["gh"] if s_local else r["ga"], r["ga"] if s_local else r["gh"])
+                    obs_h = (pts_tot / len(sigs), terms)
+                    horiz_clasica[b_cla].append(obs_h)
+                    horiz_ajustada[b_adj].append(obs_h)
 
             # partido trampa: favoritos claros, con vs sin "grande" a ±4 días
             if nivel_rival <= nivel - TRAMPA_DELTA_NIVEL:
                 grupo = "trampa" if _grande_cerca(team_id, f["id"], f["date"], nivel, antes) else "favorito sin grande"
-                trampa[grupo].append(par)
+                trampa[grupo].append(obs)
 
             # calendario: solo con señal de gap activa (|gap| ≥ 0.3)
             if abs(g["gap"]) >= 0.3:
@@ -232,30 +243,43 @@ def backtest(muestra: int = 300, liga: int | None = None, temporada: int | None 
                 if prox:
                     # μ de los próximos con el nivel del rival A LA FECHA DEL ANÁLISIS
                     # (lo que se sabía entonces), no a la fecha futura
-                    mus = [
-                        mu(nivel, nivel_a_fecha(r["away_team_id"] if r["home_team_id"] == team_id else r["home_team_id"], antes, fallback=1.0),
-                           1.0 if r["home_team_id"] == team_id else 0.0)
-                        for r in prox
-                    ]
-                    recup = sum(mus) / len(mus)
+                    datos = []
+                    for r in prox:
+                        r_local = r["home_team_id"] == team_id
+                        rid = r["away_team_id"] if r_local else r["home_team_id"]
+                        datos.append((r, (nivel, nivel_a_fecha(rid, antes, fallback=1.0), 1.0 if r_local else 0.0)))
+                    # la señal se clasifica con la μ VIGENTE (tal como se sirve hoy)
+                    recup = sum(_mu_de(COEFS_ACTUALES, t) for _, t in datos) / len(datos)
                     dif = recup - g["ptsEsperados"]
                     senal_cal = "blando" if dif > CAL_UMBRAL else "duro" if dif < -CAL_UMBRAL else "neutro"
-                    sig = next((r for r in prox if _es_terminado90(r)), None)
+                    sig = next(((r, t) for r, t in datos if _es_terminado90(r)), None)
                     if sig is not None:
-                        sig_local = sig["home_team_id"] == team_id
-                        pts_sig = _puntos(sig["gh"] if sig_local else sig["ga"], sig["ga"] if sig_local else sig["gh"])
-                        mu_sig = mus[prox.index(sig)]
+                        r, t = sig
+                        sig_local = r["home_team_id"] == team_id
+                        pts_sig = _puntos(r["gh"] if sig_local else r["ga"], r["ga"] if sig_local else r["gh"])
                         lado = "subrinde" if g["gap"] > 0 else "sobrerinde"
-                        calendario[lado][senal_cal].append((float(pts_sig), mu_sig))
+                        calendario[lado][senal_cal].append((float(pts_sig), [t]))
 
     calibracion = None
     if calibrar:
-        actual = [MU["intercept"], MU["nivel"], MU["rival"], MU["localia"]]
         coefs = _ols(calib)
         calibracion = {
             "n": len(calib),
-            "actual": {"coefs": actual, "rmse": _rmse(calib, actual) if calib else None},
+            "actual": {"coefs": COEFS_ACTUALES, "rmse": _rmse(calib, COEFS_ACTUALES) if calib else None},
             "ols": None if coefs is None else {"coefs": coefs, "rmse": _rmse(calib, coefs)},
+        }
+
+    def _seccion(coefs: list[float]) -> dict:
+        return {
+            "clasica": {b: _stats_de(v, coefs) for b, v in clasica.items()},
+            "ajustada": {b: _stats_de(v, coefs) for b, v in ajustada.items()},
+            "horizonte": None if horizonte <= 1 else {
+                "n": horizonte,
+                "clasica": {b: _stats_de(v, coefs) for b, v in horiz_clasica.items()},
+                "ajustada": {b: _stats_de(v, coefs) for b, v in horiz_ajustada.items()},
+            },
+            "calendario": {lado: {s: _stats_de(v, coefs) for s, v in d.items()} for lado, d in calendario.items()},
+            "trampa": {k: _stats_de(v, coefs) for k, v in trampa.items()},
         }
 
     return {
@@ -263,16 +287,11 @@ def backtest(muestra: int = 300, liga: int | None = None, temporada: int | None 
         "muestra": len(fixtures),
         "observaciones": n_obs,
         "descartadas": descartadas,
-        "clasica": {b: _stats(v) for b, v in clasica.items()},
-        "ajustada": {b: _stats(v) for b, v in ajustada.items()},
-        "horizonte": None if horizonte <= 1 else {
-            "n": horizonte,
-            "clasica": {b: _stats(v) for b, v in horiz_clasica.items()},
-            "ajustada": {b: _stats(v) for b, v in horiz_ajustada.items()},
-        },
-        "calendario": {lado: {s: _stats(v) for s, v in d.items()} for lado, d in calendario.items()},
-        "trampa": {k: _stats(v) for k, v in trampa.items()},
+        **_seccion(COEFS_ACTUALES),
         "calibracion": calibracion,
+        # las MISMAS señales (clasificadas con la μ vigente) medidas con la μ
+        # recalibrada: residual limpio del sesgo de compresión de μ
+        "con_mu_ols": _seccion(calibracion["ols"]["coefs"]) if calibracion and calibracion["ols"] else None,
     }
 
 
@@ -335,6 +354,19 @@ def main():
                   f"{o['coefs'][3]:+.3f}·localía   RMSE={o['rmse']:.4f}")
             print("  (μ es sagrada: estos coeficientes NO se aplican solos — son evidencia para decidir "
                   "una recalibración documentada en MOTOR_SAD_EXTRACCION.md)")
+
+    if r["con_mu_ols"]:
+        o = r["con_mu_ols"]
+        print("\n═══ MISMAS señales (clasificadas con la μ vigente) RE-EVALUADAS con la μ recalibrada ═══")
+        print("    (residual limpio del sesgo de compresión: aquí se ve la señal de verdad)")
+        _tabla("señal CLÁSICA → residual del partido [μ OLS]", o["clasica"], BUCKETS_SENAL)
+        _tabla("señal AJUSTADA → residual del partido [μ OLS]", o["ajustada"], BUCKETS_SENAL)
+        if o["horizonte"]:
+            _tabla(f"señal CLÁSICA → próximos {o['horizonte']['n']} partidos [μ OLS]", o["horizonte"]["clasica"], BUCKETS_SENAL)
+            _tabla(f"señal AJUSTADA → próximos {o['horizonte']['n']} partidos [μ OLS]", o["horizonte"]["ajustada"], BUCKETS_SENAL)
+        _tabla("SUBRINDE: calendario → siguiente partido [μ OLS]", o["calendario"]["subrinde"], ["blando", "neutro", "duro"])
+        _tabla("SOBRERINDE: calendario → siguiente partido [μ OLS]", o["calendario"]["sobrerinde"], ["blando", "neutro", "duro"])
+        _tabla("PARTIDO TRAMPA [μ OLS]", o["trampa"], ["trampa", "favorito sin grande"])
 
     print("\nUmbrales vigentes: gap 0.3/0.5 · calendario ±0.15 · trampa Δnivel 0.8, ±4 días. "
           "Con n bajos (err alto) ampliar --muestra antes de sacar conclusiones.")

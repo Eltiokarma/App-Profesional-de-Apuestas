@@ -179,8 +179,11 @@ def main():
     check("backtest §5: calibración OLS devuelve 4 coeficientes y RMSE",
           bt2["calibracion"]["ols"] and len(bt2["calibracion"]["ols"]["coefs"]) == 4
           and bt2["calibracion"]["ols"]["rmse"] > 0 and bt2["calibracion"]["actual"]["rmse"] > 0, bt2["calibracion"])
-    check("backtest §5: sin flags, horizonte y calibración quedan apagados",
-          bt["horizonte"] is None and bt["calibracion"] is None)
+    check("backtest §5: sin flags, horizonte/calibración/re-evaluación apagados",
+          bt["horizonte"] is None and bt["calibracion"] is None and bt["con_mu_ols"] is None)
+    check("backtest §5: con --calibrar re-evalúa las tablas con la μ OLS",
+          bt2["con_mu_ols"] and set(bt2["con_mu_ols"]["ajustada"]) == set(BUCKETS_SENAL)
+          and bt2["con_mu_ols"]["trampa"].keys() == bt2["trampa"].keys(), bt2["con_mu_ols"] and "ok")
 
     # /analisis-prepartido
     an = c.get(A + f"/analisis-prepartido/{vivo['id']}").json()
