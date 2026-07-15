@@ -65,7 +65,7 @@ La app habla **siempre** el contrato del openapi:
 - `MockDataSource` (default) — el Motor SAD local (`src/motor/`) sirviendo ese
   mismo contrato con datos deterministas. Incluye `/predicciones` real: la Ley de
   la Regresión al Nivel (§5) está implementada en `src/motor/regression.ts`
-  (μ = 1.110 + 0.686·nivel − 0.669·nivel_rival + 0.422·localía, recorte [0,3],
+  (μ = 1.241 + 0.334·nivel − 0.357·nivel_rival + 0.382·localía, recorte [0,3],
   forma reciente de 5, umbrales de señal 0.3/0.5).
 - `HttpDataSource` — cliente del backend real (`src/api/`): fetch con timeout,
   `ApiError` tipado y bearer token opcional.

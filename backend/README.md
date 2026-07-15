@@ -50,7 +50,7 @@ python -m backend.test_api                           # verificaciones del contra
 | `GET /api/v1/fixtures/{id}` | ídem |
 | `GET /api/v1/niveles/{equipoId}` | `levels.db` + bins fijos v6 |
 | `GET /api/v1/constantes/{equipoId}` | `constants.db` + rival/goles de `discreto.db` + fusión k = k⁺ + k⁻ |
-| `GET /api/v1/predicciones/{fixtureId}` | Ley de Regresión al Nivel §5 (μ = 1.110 + 0.686·nivel − 0.669·rival + 0.422·localía) |
+| `GET /api/v1/predicciones/{fixtureId}` | Ley de Regresión al Nivel §5 (μ v2 = 1.241 + 0.334·nivel − 0.357·rival + 0.382·localía) |
 | `GET /api/v1/analisis-prepartido/{fixtureId}` | composición de todo lo anterior |
 | `GET /api/v1/cuotas/{fixtureId}` | tabla `odds` de `sad.db`, mapeada al contrato y promediada entre bookmakers |
 | `GET /api/v1/equipos/{equipoId}/stats` | forma (últ. 5), PJ, puntos y promedios de goles de fixtures; xG/posesión `null` en v0 |

@@ -203,7 +203,7 @@ export function Estadisticas({ store, m, isMobile }: Props) {
       <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)', marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
           <div style={{ font: '700 12px var(--sans)' }}>Regresión al nivel · Ley §5</div>
-          <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>gap = μ esperado − forma últ. 5 · gap &gt; 0 subrinde (tiende a mejorar) · ajustado = μ con los rivales y localías reales de esos 5</div>
+          <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>gap = μ esperado − forma últ. 5 · gap &gt; 0 subrinde · tendencia orientativa a ~5 partidos (backtest 2026-07: el sobrerinde fuerte suele persistir) · ajustado = μ con los rivales reales de esos 5</div>
         </div>
         {pred.loading && <div className="sad-sk" style={{ height: 96 }}></div>}
         {pred.error && (

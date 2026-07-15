@@ -134,9 +134,10 @@ check('3.3 → bin 9 Élite', levelBin(3.3), { bin: 9, label: 'Élite' })
 
 // ---- §5 Ley de la Regresión al Nivel ----
 console.log('— §5 regresión al nivel —')
-check('μ(2, 2, 1) = 1.110+1.372−1.338+0.422', mu(2, 2, 1), 1.11 + 0.686 * 2 - 0.669 * 2 + 0.422)
-check('μ recorta a [0,3] por arriba', mu(3.8, 0.5, 1), 3)
-check('μ recorta a [0,3] por abajo', mu(0.5, 3.5, 0), 0)
+// μ v2 (2026-07): 1.241 + 0.334·nivel − 0.357·rival + 0.382·localía
+check('μ(2, 2, 1) = 1.241+0.668−0.714+0.382', mu(2, 2, 1), 1.241 + 0.334 * 2 - 0.357 * 2 + 0.382)
+check('μ recorta a [0,3] por arriba', mu(6, 0.5, 1), 3)
+check('μ recorta a [0,3] por abajo', mu(0.5, 4.5, 0), 0)
 check('forma reciente: 5 victorias → 3.0', ptsRecent(Array.from({ length: 5 }, (_, i) => mk(i, 2, 0))), 3)
 check('forma reciente: <5 partidos → null', ptsRecent([mk(0, 1, 0)]), null)
 check('señal |gap|>0.5 → fuerte', senalDe(0.61), 'fuerte')

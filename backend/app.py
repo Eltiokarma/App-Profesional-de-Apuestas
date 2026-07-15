@@ -228,8 +228,10 @@ BINS = [
     (2.85, "Fuerte"), (3.2, "Muy fuerte"), (float("inf"), "Élite"),
 ]
 
-# Ley de la Regresión al Nivel (§5) — coeficientes de regresion_nivel_engine.py
-MU = {"intercept": 1.110, "nivel": 0.686, "rival": -0.669, "localia": 0.422}
+# Ley de la Regresión al Nivel (§5) — μ v2 (2026-07): OLS sobre 10 000 obs de
+# sad.db real (backtest_gap --calibrar); la v1 heredada (1.110/0.686/−0.669/
+# 0.422) sobreestimaba a los favoritos en ~0.4 pts. Ver MOTOR_SAD_EXTRACCION.md §5.
+MU = {"intercept": 1.241, "nivel": 0.334, "rival": -0.357, "localia": 0.382}
 RECENT_WINDOW = 5
 
 # Camino de recuperación (§5 v2): el gap dice dirección, el calendario futuro

@@ -67,8 +67,10 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
 Hecho: 4 secciones + Partidos (pantalla inicial) + páginas de Equipo y de Liga
 (con temporadas pasadas) + buscador inteligente; H2H real en Estadísticas;
 burbujas = gráfica de líneas de picos K con distinción de torneos
-internacionales; gap §5 en Estadísticas; backend completo; CI con dos jobs.
-Probado end-to-end con datos reales del usuario (Mundial 2026 incluido).
+internacionales; gap §5 en Estadísticas con μ v2 recalibrada contra datos
+reales (backtest muestreado, ver MOTOR_SAD_EXTRACCION.md §5); backend
+completo; CI con dos jobs. Probado end-to-end con datos reales del usuario
+(Mundial 2026 incluido).
 
 ## Siguientes pasos (en orden)
 

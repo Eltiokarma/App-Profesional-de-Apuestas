@@ -453,12 +453,19 @@ No es parte del pipeline de DB pero es el consumidor directo de `levels.db`:
 
 - **Forma reciente**: `pts_recent` = promedio de puntos en los últimos **5**
   partidos (`WINDOW = 5`); `None` si no hay 5 partidos.
-- **μ (puntos esperados)** — regresión lineal calibrada:
+- **μ (puntos esperados)** — regresión lineal calibrada, **v2 (2026-07)**:
 
   ```
-  μ = 1.110 + 0.686·nivel_equipo − 0.669·nivel_rival + 0.422·is_home
+  μ = 1.241 + 0.334·nivel_equipo − 0.357·nivel_rival + 0.382·is_home
   (recortado a [0, 3])
   ```
+
+  Recalibrada por OLS sobre 10 000 observaciones de sad.db real
+  (`backend/backtest_gap.py --calibrar`, RMSE 1.256 vs 1.291 de la v1);
+  validación: deja a los favoritos claros en residual ≈ 0, donde la v1 los
+  sobreestimaba en ~0.4 pts. La v1 histórica (heredada del repo viejo:
+  `1.110 + 0.686·nivel − 0.669·rival + 0.422·is_home`) exageraba al doble
+  el efecto de la diferencia de niveles.
 
 - **Gap (según el CÓDIGO)**: `gap = pts_esperados − pts_recent`, donde
   `pts_esperados` usa μ con rival promedio (nivel 2.0) y 50 % de localía.
@@ -527,15 +534,22 @@ señal_calendario = blando si recuperabilidad > μ_genérica + 0.15
    mitad** de los heredados: la μ vigente exagera al doble las diferencias de
    nivel → sobreestima favoritos (−0.42 pts de residual) y subestima débiles.
    Ese sesgo de compresión (residual ≈ −0.5·(μ − 1.37)) explicaba casi todos
-   los residuales por bucket de la primera pasada. **Pendiente de decisión:
-   recalibrar los coeficientes oficiales.** Mientras tanto, `--calibrar`
-   re-evalúa todas las tablas con la μ OLS para ver la señal limpia.
-2. **Partido trampa: sin efecto incremental** (n=72: −0.39 vs −0.42 del
-   control; la diferencia es ruido). Se mantiene como bandera informativa;
+   los residuales por bucket de la primera pasada. **Resuelto: los
+   coeficientes v2 (arriba) son oficiales desde 2026-07**, confirmados
+   estables en dos muestras independientes (3 000 y 10 000 obs:
+   1.231/0.334/−0.356/0.385 vs 1.241/0.334/−0.357/0.382). `--calibrar`
+   sigue disponible para auditar la calibración con datos futuros.
+2. **Partido trampa: sin efecto incremental** (replicado 3 veces; con μ v2:
+   +0.08 vs −0.00 del control). Se mantiene como bandera informativa;
    no se promueve a la matemática.
-3. La lectura "gap > 0 → mejora YA" no se confirmó al horizonte de 1 partido;
-   a 5 partidos la señal clásica insinúa reversión (mejora +0.05, leve
-   empeora −0.15). Veredicto final pendiente de re-medir con μ recalibrada.
+3. **Veredicto de la ley con μ v2** (re-medición limpia, n=8 816): las
+   señales del gap son débiles al partido siguiente (≤0.1 pts). Lo único
+   que replicó en dos muestras: el **sobrerinde fuerte PERSISTE** al
+   siguiente partido (+0.11 ± 0.05, anti-reversión). A ~5 partidos la
+   clásica insinúa reversión suave. Lectura de producto: la tendencia del
+   gap es ORIENTATIVA a mediano plazo, no promesa inmediata; el gradiente
+   de calendario blando/duro no mostró poder incremental (queda como
+   contexto del camino de recuperación).
 - Contrato: `muPartido`, `proximos[]` (rival, nivel, μ, localía, internacional,
   días de descanso), `recuperabilidad`, `senalCalendario`, `partidoTrampa`.
 - Nivel del rival futuro: `date <= fecha` con fallback 1.0, igual que el gap

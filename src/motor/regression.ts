@@ -10,8 +10,10 @@
 import { teamEngine } from './engine'
 import type { KSnapshot, TeamMatch } from './types'
 
-/** Coeficientes de la regresión lineal calibrada de μ. */
-export const MU = { intercept: 1.11, nivel: 0.686, rival: -0.669, localia: 0.422 } as const
+/** Coeficientes de μ — v2 (2026-07): OLS sobre 10 000 obs de sad.db real
+ *  (backend/backtest_gap --calibrar). La v1 heredada (1.110/0.686/−0.669/0.422)
+ *  sobreestimaba a los favoritos en ~0.4 pts. Ver MOTOR_SAD_EXTRACCION.md §5. */
+export const MU = { intercept: 1.241, nivel: 0.334, rival: -0.357, localia: 0.382 } as const
 
 /** Ventana de forma reciente. */
 export const RECENT_WINDOW = 5
