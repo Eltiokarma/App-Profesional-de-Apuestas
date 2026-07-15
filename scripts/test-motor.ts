@@ -4,7 +4,7 @@ import { K0, qValues, stepK } from '../src/motor/constants'
 import { fuse, levelBin } from '../src/motor/discretizer'
 import { teamEngine } from '../src/motor/engine'
 import { computeTeamLevels } from '../src/motor/levels'
-import { gapFor, mu, ptsEsperadosAjustados, ptsRecent, senalDe } from '../src/motor/regression'
+import { CAL_UMBRAL, gapFor, mu, ptsEsperadosAjustados, ptsRecent, recuperabilidad, senalCalendario, senalDe } from '../src/motor/regression'
 import type { TeamMatch } from '../src/motor/types'
 
 let failed = 0
@@ -151,6 +151,13 @@ check(
 )
 check('ajustado: calendario élite fuera baja la expectativa', ptsEsperadosAjustados(2, Array.from({ length: 5 }, () => cal(3.5, false))), mu(2, 3.5, 0))
 check('ajustado: <5 partidos → null', ptsEsperadosAjustados(2, [cal(2, true)]), null)
+// camino de recuperación (§5 v2): media de μ futuras y señal de calendario
+check('recuperabilidad: media de las μ futuras', recuperabilidad([1.5, 2.1, 0.9]), 1.5)
+check('recuperabilidad: sin próximos → null', recuperabilidad([]), null)
+check('calendario blando: recup > μ genérica + umbral', senalCalendario(1.5 + CAL_UMBRAL + 0.01, 1.5), 'blando')
+check('calendario duro: recup < μ genérica − umbral', senalCalendario(1.5 - CAL_UMBRAL - 0.01, 1.5), 'duro')
+check('calendario neutro: dentro del umbral', senalCalendario(1.55, 1.5), 'neutro')
+check('calendario null sin recuperabilidad', senalCalendario(null, 1.5), null)
 const gBet = gapFor('bet')!
 console.log(
   `  bet: nivel=${gBet.nivel.toFixed(2)} recientes=${gBet.ptsRecientes} esperados=${gBet.ptsEsperados.toFixed(2)} gap=${gBet.gap?.toFixed(2)} (${gBet.senal}/${gBet.tendencia})` +

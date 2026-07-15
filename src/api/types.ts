@@ -175,6 +175,31 @@ export interface GapEquipoDTO {
   gapAjustado: number | null
   senalAjustada: SenalGap | null
   tendenciaAjustada: 'mejora' | 'empeora' | null
+  /** μ del PROPIO fixture (rival real, localía real): si hoy puede expresarse la regresión. */
+  muPartido: number | null
+  /** Camino de recuperación: próximos fixtures del equipo tras el analizado (máx. 3). */
+  proximos: ProximoPartidoDTO[]
+  /** Media de muEsperado sobre `proximos`; null si no hay próximos. */
+  recuperabilidad: number | null
+  /** recuperabilidad vs μ genérica (umbral ±0.15, provisional hasta backtest). */
+  senalCalendario: 'blando' | 'neutro' | 'duro' | null
+  /** Rival de hoy claramente inferior + un grande a ≤4 días: rotación/cansancio. */
+  partidoTrampa: boolean
+}
+
+/** Un partido futuro del camino de recuperación (§5 v2). */
+export interface ProximoPartidoDTO {
+  fixtureId: number
+  fecha: string
+  rival: EquipoDTO
+  esLocal: boolean
+  /** Nivel continuo del rival a la fecha (fallback 1.0 — §3.1). */
+  nivelRival: number
+  /** μ(nivel, nivelRival, localía) de ese partido futuro. */
+  muEsperado: number
+  esInternacional: boolean
+  /** Días desde el partido anterior del camino (el analizado para el primero). */
+  diasDescanso: number
 }
 
 export interface PrediccionDTO {

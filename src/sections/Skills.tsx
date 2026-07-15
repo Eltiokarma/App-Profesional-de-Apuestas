@@ -101,6 +101,10 @@ export function Skills({ store, m, isMobile }: Props) {
             tags: [
               ...(ad.prediccion.gapDiff == null ? [] : [`gap diferencial ${ad.prediccion.gapDiff > 0 ? '+' : ''}${ad.prediccion.gapDiff.toFixed(2)}`]),
               ...(ad.prediccion.gapDiffAjustado == null ? [] : [`ajustado ${ad.prediccion.gapDiffAjustado > 0 ? '+' : ''}${ad.prediccion.gapDiffAjustado.toFixed(2)}`]),
+              ...(ad.prediccion.local.senalCalendario == null ? [] : [`calendario ${H.short} ${ad.prediccion.local.senalCalendario}`]),
+              ...(ad.prediccion.visitante.senalCalendario == null ? [] : [`calendario ${A.short} ${ad.prediccion.visitante.senalCalendario}`]),
+              ...(ad.prediccion.local.partidoTrampa ? [`⚠ trampa ${H.short}`] : []),
+              ...(ad.prediccion.visitante.partidoTrampa ? [`⚠ trampa ${A.short}`] : []),
             ],
           },
         ],

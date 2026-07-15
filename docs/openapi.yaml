@@ -521,7 +521,7 @@ components:
             derrotaVisita: { type: number }
     GapEquipo:
       type: object
-      required: [equipoId, nivel, ptsEsperados]
+      required: [equipoId, nivel, ptsEsperados, proximos, partidoTrampa]
       properties:
         equipoId: { type: integer }
         nivel: { type: number }
@@ -534,6 +534,27 @@ components:
         gapAjustado: { type: number, nullable: true, description: 'esperadosAjustados − recientes; >0 subrinde DADO su calendario' }
         senalAjustada: { type: string, enum: [fuerte, leve, equilibrio], nullable: true }
         tendenciaAjustada: { type: string, enum: [mejora, empeora], nullable: true }
+        muPartido: { type: number, nullable: true, description: 'μ del PROPIO fixture analizado (rival real, localía real): si hoy puede expresarse la regresión' }
+        proximos:
+          type: array
+          maxItems: 3
+          description: 'camino de recuperación: próximos fixtures del equipo tras el analizado'
+          items: { $ref: '#/components/schemas/ProximoPartido' }
+        recuperabilidad: { type: number, nullable: true, description: 'media de muEsperado sobre proximos; null si no hay próximos' }
+        senalCalendario: { type: string, enum: [blando, neutro, duro], nullable: true, description: 'recuperabilidad vs μ genérica (umbral ±0.15, provisional hasta backtest)' }
+        partidoTrampa: { type: boolean, description: 'rival de hoy claramente inferior con un grande (internacional o nivel ≥ propio) a ≤4 días: candidato a rotación/cansancio' }
+    ProximoPartido:
+      type: object
+      required: [fixtureId, fecha, rival, esLocal, nivelRival, muEsperado, esInternacional, diasDescanso]
+      properties:
+        fixtureId: { type: integer }
+        fecha: { type: string, format: date-time }
+        rival: { $ref: '#/components/schemas/Equipo' }
+        esLocal: { type: boolean }
+        nivelRival: { type: number, description: 'nivel continuo a la fecha (fallback 1.0 — §3.1)' }
+        muEsperado: { type: number, description: 'μ(nivel, nivelRival, localía) de ese partido futuro' }
+        esInternacional: { type: boolean }
+        diasDescanso: { type: integer, description: 'días desde el partido anterior del camino (el analizado para el primero)' }
     Prediccion:
       type: object
       required: [fixtureId, local, visitante, generadoEn]

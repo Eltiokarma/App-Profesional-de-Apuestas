@@ -47,6 +47,34 @@ function GapCard({ g, name, align }: { g: GapEquipoDTO; name: string; align: 'le
           )}
         </div>
       )}
+      {g.muPartido != null && (
+        <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginTop: 6 }}>
+          μ del partido: {g.muPartido.toFixed(2)} pts
+          {g.recuperabilidad != null && (
+            <>
+              {' · próximos: '}
+              <span style={{ color: g.senalCalendario === 'blando' ? 'var(--up)' : g.senalCalendario === 'duro' ? 'var(--down)' : 'var(--t2)', fontWeight: 700 }}>
+                {g.recuperabilidad.toFixed(2)} ({g.senalCalendario})
+              </span>
+            </>
+          )}
+        </div>
+      )}
+      {g.proximos.length > 0 && (
+        <div style={{ display: 'flex', gap: 5, marginTop: 7, flexWrap: 'wrap', justifyContent: align === 'right' ? 'flex-end' : 'flex-start' }}>
+          {g.proximos.map((p) => (
+            <span key={p.fixtureId} title={`${p.rival.nombre} · nivel ${p.nivelRival.toFixed(2)} · ${p.esLocal ? 'local' : 'visita'} · ${p.diasDescanso} día(s) de descanso${p.esInternacional ? ' · internacional' : ''}`} style={{ padding: '3px 8px', borderRadius: 6, background: 'var(--bg2)', border: '1px solid var(--line)', font: '600 9.5px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+              {p.rival.abreviatura} {p.esLocal ? 'L' : 'V'} · μ {p.muEsperado.toFixed(2)} · {p.diasDescanso}d{p.esInternacional ? ' · INT' : ''}
+            </span>
+          ))}
+        </div>
+      )}
+      {g.partidoTrampa && (
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 8, padding: '4px 9px', borderRadius: 6, background: 'var(--mark-soft)', border: '1px solid color-mix(in oklch,var(--mark),transparent 60%)' }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--mark)' }}></span>
+          <span style={{ font: '700 9.5px var(--mono)', color: 'var(--t1)', letterSpacing: '.3px' }}>PARTIDO TRAMPA · grande a ±4 días</span>
+        </div>
+      )}
     </div>
   )
 }

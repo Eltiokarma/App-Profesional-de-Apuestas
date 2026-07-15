@@ -492,6 +492,35 @@ gap_ajustado            = pts_esperados_ajustados − pts_recent
   `tendencia`); el ajustado viaja en `gapAjustado`/`senalAjustada`/
   `tendenciaAjustada` + `ptsEsperadosAjustados` (contrato `GapEquipo`).
 
+### Extensión: camino de recuperación (calendario FUTURO) y partido trampa
+
+El gap dice *dirección* pero no *dónde* va a expresarse: la regresión elige el
+partido barato (subrinde hoy contra un grande → la mejora llega contra el
+débil de pasado mañana; el nivel se mantiene por caminos distintos). Capa
+descriptiva sobre μ, también aditiva:
+
+```
+μ_partido        = μ(nivel, nivel_rival_REAL del fixture analizado, localía real)
+                   → si HOY puede expresarse la regresión
+camino           = [ μ(nivel, rival_j, localía_j) para los próximos ≤3 fixtures ]
+recuperabilidad  = media del camino (null sin próximos)
+señal_calendario = blando si recuperabilidad > μ_genérica + 0.15
+                   duro  si            < μ_genérica − 0.15 · si no, neutro
+```
+
+- Lectura: **gap > 0 + blando → mejora inminente**; gap > 0 + duro → mejora
+  aplazada (no apostar hoy a la recuperación); simétrico para gap < 0.
+- **Partido trampa** (rotación/cansancio): rival de hoy con nivel ≤ propio
+  − 0.8 **y** un "grande" (torneo internacional o rival de nivel ≥ propio) a
+  ≤4 días antes o después. Es una BANDERA — μ no tiene término de fatiga y no
+  se le inventa uno; si el backtest le da poder predictivo, entrará entonces.
+- Umbrales (0.15, 0.8, 4 días, 3 próximos) **provisionales hasta el backtest**
+  contra sad.db real.
+- Contrato: `muPartido`, `proximos[]` (rival, nivel, μ, localía, internacional,
+  días de descanso), `recuperabilidad`, `senalCalendario`, `partidoTrampa`.
+- Nivel del rival futuro: `date <= fecha` con fallback 1.0, igual que el gap
+  ajustado. Fixtures pospuestos/cancelados quedan fuera del camino.
+
 ### ⚠️ Discrepancias documentación vs código (resueltas a favor del código)
 
 1. **Nivel usado en las constantes**: el doc dice "nivel discretizado del rival

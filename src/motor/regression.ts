@@ -120,3 +120,29 @@ export function gapDiffAjustado(homeId: string, awayId: string): number | null {
   if (!h || !a || h.gapAjustado == null || a.gapAjustado == null) return null
   return h.gapAjustado - a.gapAjustado
 }
+
+// ---- Camino de recuperación (calendario FUTURO) ----------------------------
+// El gap dice dirección; el calendario futuro dice dónde puede expresarse:
+// la recuperación elige el partido barato (subrinde + calendario blando →
+// mejora inminente; subrinde + calendario duro → mejora aplazada).
+
+/** Umbral blando/duro de la señal de calendario (provisional hasta backtest). */
+export const CAL_UMBRAL = 0.15
+
+/** Partido trampa: rival de hoy con nivel ≤ propio − 0.8 y un "grande" cerca. */
+export const TRAMPA_DELTA_NIVEL = 0.8
+
+export type SenalCalendario = 'blando' | 'neutro' | 'duro'
+
+/** Media de las μ esperadas de los próximos partidos; null si no hay ninguno. */
+export function recuperabilidad(mus: number[]): number | null {
+  if (mus.length === 0) return null
+  return mus.reduce((a, b) => a + b, 0) / mus.length
+}
+
+/** Señal de calendario: recuperabilidad vs la μ genérica del equipo. */
+export function senalCalendario(recup: number | null, esperadosGenerico: number): SenalCalendario | null {
+  if (recup == null) return null
+  const d = recup - esperadosGenerico
+  return d > CAL_UMBRAL ? 'blando' : d < -CAL_UMBRAL ? 'duro' : 'neutro'
+}
