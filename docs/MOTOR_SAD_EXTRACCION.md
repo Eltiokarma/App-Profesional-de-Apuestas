@@ -542,7 +542,17 @@ señal_calendario = blando si recuperabilidad > μ_genérica + 0.15
 2. **Partido trampa: sin efecto incremental** (replicado 3 veces; con μ v2:
    +0.08 vs −0.00 del control). Se mantiene como bandera informativa;
    no se promueve a la matemática.
-3. **Veredicto de la ley con μ v2** (re-medición limpia, n=8 816): las
+3. **Calibración por liga (top 12 × 800 obs, `--por-liga`)**: la μ global v2
+   aguanta — recalibrar por liga mejora el RMSE ≤ 0.022 en todas → una sola
+   μ mundial basta por ahora. Estructura sistemática detectada: la
+   **localía** va de +0.23 (amistosos) a +0.73 (Perú), con Sudamérica en
+   +0.48…+0.73 (≈ doble del 0.382 global); **Argentina** pondera nivel/rival
+   a la mitad (~±0.15, liga de paridad); los **amistosos de clubes** — el
+   bucket más grande de la base (12 783 fixtures) — tienen los efectos más
+   débiles de nivel y localía, y hoy alimentan forma y niveles como
+   cualquier partido oficial. Refinamientos candidatos (sin decidir):
+   localía por liga/región y tratamiento especial de amistosos.
+4. **Veredicto de la ley con μ v2** (re-medición limpia, n=8 816): las
    señales del gap son débiles al partido siguiente (≤0.1 pts). Lo único
    que replicó en dos muestras: el **sobrerinde fuerte PERSISTE** al
    siguiente partido (+0.11 ± 0.05, anti-reversión). A ~5 partidos la
