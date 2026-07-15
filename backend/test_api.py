@@ -184,6 +184,13 @@ def main():
     check("backtest §5: con --calibrar re-evalúa las tablas con la μ OLS",
           bt2["con_mu_ols"] and set(bt2["con_mu_ols"]["ajustada"]) == set(BUCKETS_SENAL)
           and bt2["con_mu_ols"]["trampa"].keys() == bt2["trampa"].keys(), bt2["con_mu_ols"] and "ok")
+    from backend.backtest_gap import calibracion_por_liga
+    pl = calibracion_por_liga(top=3, muestra_por_liga=100, semilla=3)
+    check("backtest §5: calibración por liga (demo: LaLiga + Champions, con nombre)",
+          len(pl) == 2 and pl[0]["ligaId"] == 140 and "LaLiga" in pl[0]["nombre"]
+          and pl[0]["n"] > pl[1]["n"], [(r["ligaId"], r["n"]) for r in pl])
+    check("backtest §5: por liga trae OLS y RMSE comparado cuando hay muestra",
+          pl[0]["ols"] and len(pl[0]["ols"]["coefs"]) == 4 and pl[0]["rmse_global"] > 0, pl[0])
 
     # /analisis-prepartido
     an = c.get(A + f"/analisis-prepartido/{vivo['id']}").json()

@@ -20,12 +20,16 @@ Extras:
                   N partidos por bucket de señal (¿a qué plazo aparece la
                   regresión si el partido siguiente es momentum?)
   --calibrar      reajusta los 4 coeficientes de μ por OLS sobre la muestra y
-                  compara RMSE contra los heredados (μ descalibrada en los
-                  extremos = residuales espurios en todos los buckets)
+                  compara RMSE contra los vigentes
+  --por-liga N    SOLO calibración, separada por liga: toma las N ligas con
+                  más fixtures terminados, calibra μ en cada una (hasta
+                  --muestra fixtures por liga) y compara contra la μ global.
+                  ¿Basta una μ mundial o hay ligas que se desvían?
 
     python -m backend.backtest_gap                       # 300 fixtures al azar
     python -m backend.backtest_gap --muestra 1500 --horizonte 5 --calibrar
     python -m backend.backtest_gap --muestra 800 --liga 140 --temporada 2025
+    python -m backend.backtest_gap --por-liga 10 --muestra 400   # μ por liga
     SAD_DATA_DIR=demo_data python -m backend.backtest_gap  # contra la demo
 """
 import argparse
@@ -160,6 +164,73 @@ def _grande_cerca(team_id: int, fixture_id: int, fecha, nivel: float, antes: str
         if (r["league_id"] or 0) in INTL_LEAGUE_IDS or nivel_a_fecha(rival_id, antes, fallback=1.0) >= nivel:
             return True
     return False
+
+
+def _liga_nombre(league_id) -> str:
+    try:
+        r = db.query_one("sad", "SELECT name, country FROM leagues WHERE id=?", (league_id,))
+        if r and r["name"]:
+            return f"{r['name']} ({r['country'] or '?'})"
+    except Exception:
+        pass  # la tabla leagues puede no existir en DBs antiguas
+    return f"liga {league_id}"
+
+
+def calibracion_por_liga(top: int, muestra_por_liga: int, temporada: int | None = None,
+                         desde: str | None = None, hasta: str | None = None,
+                         semilla: int = 42) -> list[dict]:
+    """μ por liga: OLS independiente en las `top` ligas con más fixtures
+    terminados (hasta `muestra_por_liga` fixtures por liga, sin fuga)."""
+    cond, params = [_FIN90_SQL, f"{_G90_H} IS NOT NULL", f"{_G90_A} IS NOT NULL"], []
+    if temporada is not None:
+        cond.append("f.league_season=?")
+        params.append(temporada)
+    if desde:
+        cond.append("f.date>=?")
+        params.append(desde)
+    if hasta:
+        cond.append("f.date<=?")
+        params.append(hasta)
+    where = " AND ".join(cond)
+    ligas = db.query(
+        "sad",
+        f"""SELECT f.league_id, COUNT(*) AS n FROM fixtures f WHERE {where}
+            GROUP BY f.league_id ORDER BY n DESC LIMIT {int(top)}""",
+        tuple(params),
+    )
+    out = []
+    for lg in ligas:
+        rows = db.query(
+            "sad",
+            f"""SELECT f.id, f.date, f.home_team_id, f.away_team_id,
+                       {_G90_H} AS gh, {_G90_A} AS ga
+                FROM fixtures f WHERE {where} AND f.league_id=?""",
+            (*params, lg["league_id"]),
+        )
+        sample = random.Random(semilla).sample(rows, min(muestra_por_liga, len(rows)))
+        filas = []
+        for f in sample:
+            antes = (_dt(f["date"]) - timedelta(seconds=1)).strftime("%Y-%m-%d %H:%M:%S")
+            for team_id, rival_id, es_local, gf, ga in (
+                (f["home_team_id"], f["away_team_id"], True, f["gh"], f["ga"]),
+                (f["away_team_id"], f["home_team_id"], False, f["ga"], f["gh"]),
+            ):
+                filas.append((
+                    nivel_a_fecha(team_id, antes),
+                    nivel_a_fecha(rival_id, antes, fallback=1.0),
+                    1.0 if es_local else 0.0,
+                    float(_puntos(gf, ga)),
+                ))
+        coefs = _ols(filas)
+        out.append({
+            "ligaId": lg["league_id"],
+            "nombre": _liga_nombre(lg["league_id"]),
+            "fixtures": len(rows),
+            "n": len(filas),
+            "rmse_global": _rmse(filas, COEFS_ACTUALES) if filas else None,
+            "ols": None if coefs is None else {"coefs": coefs, "rmse": _rmse(filas, coefs)},
+        })
+    return out
 
 
 def backtest(muestra: int = 300, liga: int | None = None, temporada: int | None = None,
@@ -320,7 +391,27 @@ def main():
                     help="además del partido: residual medio de los próximos N partidos por bucket")
     ap.add_argument("--calibrar", action="store_true",
                     help="reajustar los 4 coeficientes de μ por OLS sobre la muestra y comparar RMSE")
+    ap.add_argument("--por-liga", type=int, default=0, metavar="N",
+                    help="solo calibración, separada por liga: las N ligas con más fixtures (--muestra = tope por liga)")
     a = ap.parse_args()
+
+    if a.por_liga:
+        filas = calibracion_por_liga(a.por_liga, a.muestra, a.temporada, a.desde, a.hasta, a.semilla)
+        c = COEFS_ACTUALES
+        print(f"— calibración de μ POR LIGA (top {a.por_liga} por nº de fixtures; hasta {a.muestra} fixtures/liga) —")
+        print(f"  μ global vigente: {c[0]:+.3f} {c[1]:+.3f}·nivel {c[2]:+.3f}·rival {c[3]:+.3f}·localía")
+        print(f"  {'liga':<38} {'fixt':>6} {'n':>6}  {'inter':>6} {'nivel':>7} {'rival':>7} {'local':>6}  RMSE global→liga")
+        for r in filas:
+            base = f"  {r['nombre'][:37]:<38} {r['fixtures']:>6} {r['n']:>6}"
+            if r["ols"] is None:
+                print(base + "  (muestra insuficiente para OLS)")
+            else:
+                o = r["ols"]["coefs"]
+                print(base + f"  {o[0]:>+6.3f} {o[1]:>+7.3f} {o[2]:>+7.3f} {o[3]:>+6.3f}  "
+                             f"{r['rmse_global']:.4f} → {r['ols']['rmse']:.4f}")
+        print("\nLectura: si el RMSE por liga apenas mejora al global y los coeficientes rondan los de la μ v2,")
+        print("una sola μ mundial basta; desvíos grandes y consistentes justificarían μ por liga (decisión doc §5).")
+        return
 
     r = backtest(a.muestra, a.liga, a.temporada, a.desde, a.hasta, a.semilla, a.horizonte, a.calibrar)
     print(f"Universo: {r['universo']} fixtures terminados · muestra: {r['muestra']} "
