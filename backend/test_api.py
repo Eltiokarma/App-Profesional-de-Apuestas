@@ -173,6 +173,14 @@ def main():
     check("backtest §5: residuales acotados a [−3, 3]",
           all(abs(s["residual"]) <= 3 for s in list(bt["clasica"].values()) + list(bt["ajustada"].values()) if s["n"]))
     check("backtest §5: n de la muestra coherente", bt["muestra"] == 60 and bt["universo"] == 120, bt)
+    bt2 = backtest(muestra=40, semilla=2, horizonte=3, calibrar=True)
+    check("backtest §5: horizonte trae buckets con residual medio de próximos N",
+          bt2["horizonte"]["n"] == 3 and set(bt2["horizonte"]["ajustada"]) == set(BUCKETS_SENAL), bt2["horizonte"])
+    check("backtest §5: calibración OLS devuelve 4 coeficientes y RMSE",
+          bt2["calibracion"]["ols"] and len(bt2["calibracion"]["ols"]["coefs"]) == 4
+          and bt2["calibracion"]["ols"]["rmse"] > 0 and bt2["calibracion"]["actual"]["rmse"] > 0, bt2["calibracion"])
+    check("backtest §5: sin flags, horizonte y calibración quedan apagados",
+          bt["horizonte"] is None and bt["calibracion"] is None)
 
     # /analisis-prepartido
     an = c.get(A + f"/analisis-prepartido/{vivo['id']}").json()

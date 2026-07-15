@@ -15,9 +15,9 @@ npm run test:motor                # motor TS verificado contra docs/MOTOR_SAD_EX
 # backend (junto a las 4 .db en la raíz, o SAD_DATA_DIR)
 pip install -r backend/requirements.txt
 python -m uvicorn backend.app:app --port 8000
-python -m backend.test_api        # verificaciones del contrato (159 checks)
+python -m backend.test_api        # verificaciones del contrato (162 checks)
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
-python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--temporada)
+python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--horizonte/--calibrar)
 
 # ingesta (dueña de los datos; el backend HTTP sigue siendo de solo lectura)
 python -m backend.ingesta.extractor --probar    # 1 request de prueba (API_FOOTBALL_KEY en .env)
