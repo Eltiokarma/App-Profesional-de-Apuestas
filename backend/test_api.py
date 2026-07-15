@@ -164,6 +164,17 @@ def main():
           len(pp["visitante"]["proximos"]) == 1 and pp["visitante"]["proximos"][0]["esInternacional"]
           and pp["visitante"]["proximos"][0]["diasDescanso"] == 1, pp["visitante"])
 
+    # fiabilidad de μ por liga (calibración por liga 2026-07)
+    check("fiabilidadMu: LaLiga → confianza alta con nota", p["fiabilidadMu"]["nivel"] == "alta" and p["fiabilidadMu"]["nota"], p["fiabilidadMu"])
+    from backend.app import fiabilidad_mu
+    check("fiabilidadMu: amistosos → baja · liga CONMEBOL → media",
+          fiabilidad_mu(667)["nivel"] == "baja" and fiabilidad_mu(281)["nivel"] == "media",
+          (fiabilidad_mu(667), fiabilidad_mu(281)))
+
+    # regla de los 90': el diagnóstico corre limpio sobre la demo (sin AET/PEN)
+    from backend.ingesta.pipeline import diagnostico_90
+    check("pipeline --diagnostico-90 corre sobre la demo", diagnostico_90(os.path.join(tmp, "sad.db")) == 0)
+
     # backtest §5 (muestreado, sin fuga): humo sobre la demo
     from backend.backtest_gap import backtest, BUCKETS_SENAL
     bt = backtest(muestra=60, semilla=1)

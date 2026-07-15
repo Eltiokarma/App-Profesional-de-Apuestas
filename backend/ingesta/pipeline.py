@@ -8,6 +8,9 @@ Solo lee sad.db; escribe las tres DBs derivadas en --out (nunca en sitio sin
 pedirlo explícitamente).
 
 Uso: PYTHONUTF8=1 python -m backend.ingesta.pipeline --out ./derivadas [--sad sad.db]
+     PYTHONUTF8=1 python -m backend.ingesta.pipeline --diagnostico-90 [--sad sad.db]
+       → audita la regla de los 90': AET/PEN sin fulltime_* usan el marcador
+         de 120' en el motor (K/niveles/gap inflados en torneos con prórroga)
 """
 import argparse
 import os
@@ -196,15 +199,63 @@ def etapa_discreto(fixtures, filas_niveles, constantes, nombres, out_dir: str) -
     return len(filas)
 
 
+def diagnostico_90(sad_path: str) -> int:
+    """Regla de los 90': ¿cuántos AET/PEN carecen de fulltime_*? Esos partidos
+    entran al motor con el marcador de los 120' (una prórroga ganada cuenta
+    como victoria en vez del empate de los 90 → K/niveles/gap inflados)."""
+    con = sqlite3.connect(f"file:{sad_path}?mode=ro", uri=True)
+    con.row_factory = sqlite3.Row
+    try:
+        tot = con.execute("SELECT COUNT(*) c FROM fixtures WHERE status_short IN ('AET','PEN')").fetchone()["c"]
+        mal = con.execute(
+            """SELECT COUNT(*) c FROM fixtures WHERE status_short IN ('AET','PEN')
+               AND (fulltime_home IS NULL OR fulltime_away IS NULL)"""
+        ).fetchone()["c"]
+    except sqlite3.OperationalError as e:
+        print(f"La tabla fixtures no tiene columnas fulltime_* ({e}):")
+        print("TODOS los AET/PEN usan el 120'. Re-ingestar con el extractor actual (las crea) y re-correr el pipeline.")
+        con.close()
+        return 1
+    print(f"Fixtures con prórroga/penales (AET/PEN): {tot}")
+    print(f"  con fulltime_* guardado → el motor usa los 90' (correcto): {tot - mal}")
+    print(f"  SIN fulltime_* → el motor usa el 120' (MAL): {mal}")
+    if mal:
+        print("\nLos 10 más recientes (re-barrer su liga con el extractor: --torneo LIGA:TEMPORADA, y re-correr el pipeline):")
+        for r in con.execute(
+            """SELECT f.date, f.status_short, f.league_id, f.goals_home, f.goals_away,
+                      ht.name AS h, at.name AS a
+               FROM fixtures f JOIN teams ht ON ht.id=f.home_team_id JOIN teams at ON at.id=f.away_team_id
+               WHERE f.status_short IN ('AET','PEN') AND (f.fulltime_home IS NULL OR f.fulltime_away IS NULL)
+               ORDER BY f.date DESC LIMIT 10"""
+        ):
+            print(f"  {str(r['date'])[:10]}  {r['h']} {r['goals_home']}-{r['goals_away']} {r['a']}  [{r['status_short']} · liga {r['league_id']}]")
+        ligas = con.execute(
+            """SELECT league_id, COUNT(*) c FROM fixtures
+               WHERE status_short IN ('AET','PEN') AND (fulltime_home IS NULL OR fulltime_away IS NULL)
+               GROUP BY league_id ORDER BY c DESC LIMIT 10"""
+        ).fetchall()
+        print("  por liga (id×casos): " + " · ".join(f"{r['league_id']}×{r['c']}" for r in ligas))
+    else:
+        print("Datos en orden. Si la K aún se ve inflada, regenerar las derivadas: pipeline --out .")
+    con.close()
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Pipeline sad.db → levels/constants/discreto")
     ap.add_argument("--sad", default="sad.db", help="ruta a sad.db (solo lectura)")
-    ap.add_argument("--out", required=True, help="directorio de salida para las DBs derivadas")
+    ap.add_argument("--out", help="directorio de salida para las DBs derivadas (obligatorio salvo --diagnostico-90)")
+    ap.add_argument("--diagnostico-90", action="store_true", dest="diag90",
+                    help="auditar la regla de los 90' (AET/PEN sin fulltime_*) y salir sin escribir nada")
     args = ap.parse_args()
 
     if not os.path.exists(args.sad):
         print(f"No existe {args.sad}", file=sys.stderr)
         return 1
+    if args.diag90:
+        return diagnostico_90(args.sad)
+    if not args.out:
+        ap.error("--out es obligatorio (salvo con --diagnostico-90)")
     os.makedirs(args.out, exist_ok=True)
 
     t0 = time.perf_counter()

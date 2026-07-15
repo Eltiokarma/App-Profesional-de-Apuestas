@@ -15,7 +15,7 @@ npm run test:motor                # motor TS verificado contra docs/MOTOR_SAD_EX
 # backend (junto a las 4 .db en la raíz, o SAD_DATA_DIR)
 pip install -r backend/requirements.txt
 python -m uvicorn backend.app:app --port 8000
-python -m backend.test_api        # verificaciones del contrato (165 checks)
+python -m backend.test_api        # verificaciones del contrato (168 checks)
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
 python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--horizonte/--calibrar/--por-liga)
 

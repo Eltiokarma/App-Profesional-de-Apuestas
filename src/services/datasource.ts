@@ -191,6 +191,20 @@ function constantesDTO(teamKey: string, s: KSnapshot): ConstantesDTO {
 
 const esIntMatch = (m: (typeof MATCHES)[number]) => /(champions|europa|libertadores|sudamericana)/i.test(m.comp)
 
+// Confianza en μ v2 por liga (calibración por liga 2026-07 — doc §5, misma regla que el backend)
+const CONMEBOL = ['Argentina', 'Bolivia', 'Brazil', 'Chile', 'Colombia', 'Ecuador', 'Paraguay', 'Peru', 'Uruguay', 'Venezuela']
+function fiabilidadMuDe(m: (typeof MATCHES)[number]): { nivel: 'alta' | 'media' | 'baja'; nota: string } {
+  const nombre = (m.league || m.comp || '').toLowerCase()
+  const pais = LIGA_META[LIGA_NUM[m.lk] ?? 0]?.pais ?? ''
+  if (nombre.includes('friendl') || nombre.includes('amistoso'))
+    return { nivel: 'baja', nota: 'Amistosos: nivel y localía pesan mucho menos de lo que μ asume (rotaciones, sedes neutras) — señales de gap poco fiables.' }
+  if (pais === 'Argentina')
+    return { nivel: 'media', nota: 'Liga de paridad: la diferencia de niveles predice ~la mitad de lo que μ asume — desconfiar de favoritismos claros.' }
+  if (CONMEBOL.includes(pais) || nombre.includes('libertadores') || nombre.includes('sudamericana'))
+    return { nivel: 'media', nota: 'Sudamérica: la localía real (~+0.5–0.7) casi dobla la de μ (+0.38) — el local vale más de lo que μ dice.' }
+  return { nivel: 'alta', nota: 'Sin desviaciones detectadas para esta liga en la calibración por liga (2026-07).' }
+}
+
 /** Contexto §5 v2 del fixture: μ del partido, camino de recuperación y trampa. */
 function contextoCalendario(teamKey: string, m: (typeof MATCHES)[number]) {
   const eng = teamEngine(teamKey)!
@@ -337,6 +351,7 @@ class MockDataSource implements SadDataSource {
       visitante: gapEquipoDTO(m.away, m),
       gapDiff: gapDiff(m.home, m.away),
       gapDiffAjustado: gapDiffAjustado(m.home, m.away),
+      fiabilidadMu: fiabilidadMuDe(m),
       generadoEn: MOCK_NOW,
     }
   }

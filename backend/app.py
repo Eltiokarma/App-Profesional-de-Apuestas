@@ -447,6 +447,31 @@ def _tendencia_de(gap):
     return None if gap is None or gap == 0 else ("mejora" if gap > 0 else "empeora")
 
 
+# Calibración por liga (2026-07, doc §5): países CONMEBOL donde la localía
+# real (~+0.5–0.7) casi dobla la de μ v2 (+0.382)
+_CONMEBOL = {"Argentina", "Bolivia", "Brazil", "Chile", "Colombia", "Ecuador",
+             "Paraguay", "Peru", "Uruguay", "Venezuela"}
+
+
+def fiabilidad_mu(league_id) -> dict:
+    """Confianza en μ v2 para la liga del fixture. Reglas DESCRIPTIVAS derivadas
+    de la calibración por liga (2026-07, MOTOR_SAD_EXTRACCION.md §5); no tocan μ."""
+    meta = liga_meta(league_id)
+    nombre = (meta["nombre"] or "").lower()
+    pais = meta["pais"] or ""
+    if "friendl" in nombre or "amistoso" in nombre:
+        return {"nivel": "baja",
+                "nota": "Amistosos: nivel y localía pesan mucho menos de lo que μ asume (rotaciones, sedes neutras) — señales de gap poco fiables."}
+    if pais == "Argentina":
+        return {"nivel": "media",
+                "nota": "Liga de paridad: la diferencia de niveles predice ~la mitad de lo que μ asume — desconfiar de favoritismos claros."}
+    if pais in _CONMEBOL or "libertadores" in nombre or "sudamericana" in nombre:
+        return {"nivel": "media",
+                "nota": "Sudamérica: la localía real (~+0.5–0.7) casi dobla la de μ (+0.38) — el local vale más de lo que μ dice."}
+    return {"nivel": "alta",
+            "nota": "Sin desviaciones detectadas para esta liga en la calibración por liga (2026-07)."}
+
+
 def gap_equipo(team_id: int, fecha: str | None) -> dict:
     nivel = nivel_a_fecha(team_id, fecha)
     forma = forma_reciente(team_id, fecha)
@@ -892,6 +917,7 @@ def prediccion(fixture_id: int):
         "visitante": visitante,
         "gapDiff": gap_diff,
         "gapDiffAjustado": gap_diff_adj,
+        "fiabilidadMu": fiabilidad_mu(f["league_id"]),
         "generadoEn": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     }
 

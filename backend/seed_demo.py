@@ -208,6 +208,9 @@ def seed(base_dir: str):
         "'https://media.api-sports.io/football/leagues/2.png', NULL, ?)",
         (SEASON,),
     )
+    # ligas solo-metadata (sin fixtures) para probar fiabilidad_mu por liga
+    sad.execute("INSERT INTO leagues (id, name, country, season) VALUES (667, 'Friendlies Clubs', 'World', ?)", (SEASON,))
+    sad.execute("INSERT INTO leagues (id, name, country, season) VALUES (281, 'Primera División', 'Peru', ?)", (SEASON,))
     for f in fixtures:
         sad.execute(
             """INSERT INTO fixtures (id, date, venue_name, status_long, status_short, elapsed,

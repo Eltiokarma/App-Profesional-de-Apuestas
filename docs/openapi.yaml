@@ -564,6 +564,13 @@ components:
         visitante: { $ref: '#/components/schemas/GapEquipo' }
         gapDiff: { type: number, nullable: true }
         gapDiffAjustado: { type: number, nullable: true, description: 'gapAjustado_local − gapAjustado_visitante' }
+        fiabilidadMu:
+          type: object
+          nullable: true
+          description: 'confianza en μ v2 para la liga del fixture (evidencia: calibración por liga 2026-07, doc §5)'
+          properties:
+            nivel: { type: string, enum: [alta, media, baja] }
+            nota: { type: string, description: 'por qué, en lenguaje de apostador' }
         generadoEn: { type: string, format: date-time }
     AnalisisPrepartido:
       type: object

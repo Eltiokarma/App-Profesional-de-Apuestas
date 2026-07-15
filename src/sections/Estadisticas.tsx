@@ -202,9 +202,29 @@ export function Estadisticas({ store, m, isMobile }: Props) {
       {/* REGRESIÓN AL NIVEL (§5) */}
       <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)', marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
-          <div style={{ font: '700 12px var(--sans)' }}>Regresión al nivel · Ley §5</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+            <div style={{ font: '700 12px var(--sans)' }}>Regresión al nivel · Ley §5</div>
+            {pred.data?.fiabilidadMu && (
+              <span
+                title={pred.data.fiabilidadMu.nota}
+                style={{
+                  padding: '2px 8px', borderRadius: 5, font: '700 8.5px var(--mono)', letterSpacing: '.4px',
+                  color: pred.data.fiabilidadMu.nivel === 'alta' ? 'var(--up)' : pred.data.fiabilidadMu.nivel === 'media' ? 'var(--mark)' : 'var(--down)',
+                  background: pred.data.fiabilidadMu.nivel === 'alta' ? 'var(--up-soft)' : pred.data.fiabilidadMu.nivel === 'media' ? 'var(--mark-soft)' : 'var(--down-soft)',
+                }}
+              >
+                μ CONFIANZA {pred.data.fiabilidadMu.nivel.toUpperCase()}
+              </span>
+            )}
+          </div>
           <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>gap = μ esperado − forma últ. 5 · gap &gt; 0 subrinde · tendencia orientativa a ~5 partidos (backtest 2026-07: el sobrerinde fuerte suele persistir) · ajustado = μ con los rivales reales de esos 5</div>
         </div>
+        {pred.data?.fiabilidadMu && pred.data.fiabilidadMu.nivel !== 'alta' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 11px', marginBottom: 12, borderRadius: 9, background: pred.data.fiabilidadMu.nivel === 'baja' ? 'var(--down-soft)' : 'var(--mark-soft)', border: `1px solid color-mix(in oklch,${pred.data.fiabilidadMu.nivel === 'baja' ? 'var(--down)' : 'var(--mark)'},transparent 60%)` }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: pred.data.fiabilidadMu.nivel === 'baja' ? 'var(--down)' : 'var(--mark)', flexShrink: 0 }}></span>
+            <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{pred.data.fiabilidadMu.nota}</span>
+          </div>
+        )}
         {pred.loading && <div className="sad-sk" style={{ height: 96 }}></div>}
         {pred.error && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: 'var(--down-soft)', border: '1px solid color-mix(in oklch,var(--down),transparent 55%)' }}>
