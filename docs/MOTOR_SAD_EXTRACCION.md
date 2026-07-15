@@ -453,12 +453,19 @@ No es parte del pipeline de DB pero es el consumidor directo de `levels.db`:
 
 - **Forma reciente**: `pts_recent` = promedio de puntos en los últimos **5**
   partidos (`WINDOW = 5`); `None` si no hay 5 partidos.
-- **μ (puntos esperados)** — regresión lineal calibrada:
+- **μ (puntos esperados)** — regresión lineal calibrada, **v2 (2026-07)**:
 
   ```
-  μ = 1.110 + 0.686·nivel_equipo − 0.669·nivel_rival + 0.422·is_home
+  μ = 1.241 + 0.334·nivel_equipo − 0.357·nivel_rival + 0.382·is_home
   (recortado a [0, 3])
   ```
+
+  Recalibrada por OLS sobre 10 000 observaciones de sad.db real
+  (`backend/backtest_gap.py --calibrar`, RMSE 1.256 vs 1.291 de la v1);
+  validación: deja a los favoritos claros en residual ≈ 0, donde la v1 los
+  sobreestimaba en ~0.4 pts. La v1 histórica (heredada del repo viejo:
+  `1.110 + 0.686·nivel − 0.669·rival + 0.422·is_home`) exageraba al doble
+  el efecto de la diferencia de niveles.
 
 - **Gap (según el CÓDIGO)**: `gap = pts_esperados − pts_recent`, donde
   `pts_esperados` usa μ con rival promedio (nivel 2.0) y 50 % de localía.
@@ -468,6 +475,85 @@ No es parte del pipeline de DB pero es el consumidor directo de `levels.db`:
 - Umbrales de señal: |gap| > 0.5 fuerte, 0.3–0.5 leve, < 0.3 equilibrio.
 - Principio rector: **"el value no cura el reset"** — con señal clara de regresión,
   la cuota no justifica ir en contra.
+
+### Extensión: gap ajustado por calendario (v2, aditivo)
+
+El gap clásico compara la forma real (5 partidos contra rivales reales, con
+localías reales) con una expectativa GENÉRICA (rival 2.0, localía 0.5): 5
+partidos de visita contra élites inflan la señal "subrinde" sin que haya
+bajón real. El **gap ajustado** corrige eso reusando μ tal como fue calibrada:
+
+```
+pts_esperados_ajustados = (1/5) · Σ μ(nivel_equipo, nivel_rival_i, localía_i)
+                          sobre los MISMOS 5 partidos de pts_recent
+gap_ajustado            = pts_esperados_ajustados − pts_recent
+```
+
+- `nivel_rival_i` = nivel continuo del rival a la fecha del partido
+  (semántica `date <= fecha`, **fallback 1.0** — el mismo de §3.1 al ponderar
+  rivales, no el 0.5 general).
+- `localía_i` = 1 si fue local, 0 si visitante.
+- Mismos umbrales de señal y misma lectura de signo que el gap clásico;
+  `gap_diff_ajustado = gap_ajustado_local − gap_ajustado_visitante`.
+- Es **aditivo**: el gap clásico se mantiene intacto (campos `gap`/`senal`/
+  `tendencia`); el ajustado viaja en `gapAjustado`/`senalAjustada`/
+  `tendenciaAjustada` + `ptsEsperadosAjustados` (contrato `GapEquipo`).
+
+### Extensión: camino de recuperación (calendario FUTURO) y partido trampa
+
+El gap dice *dirección* pero no *dónde* va a expresarse: la regresión elige el
+partido barato (subrinde hoy contra un grande → la mejora llega contra el
+débil de pasado mañana; el nivel se mantiene por caminos distintos). Capa
+descriptiva sobre μ, también aditiva:
+
+```
+μ_partido        = μ(nivel, nivel_rival_REAL del fixture analizado, localía real)
+                   → si HOY puede expresarse la regresión
+camino           = [ μ(nivel, rival_j, localía_j) para los próximos ≤3 fixtures ]
+recuperabilidad  = media del camino (null sin próximos)
+señal_calendario = blando si recuperabilidad > μ_genérica + 0.15
+                   duro  si            < μ_genérica − 0.15 · si no, neutro
+```
+
+- Lectura: **gap > 0 + blando → mejora inminente**; gap > 0 + duro → mejora
+  aplazada (no apostar hoy a la recuperación); simétrico para gap < 0.
+- **Partido trampa** (rotación/cansancio): rival de hoy con nivel ≤ propio
+  − 0.8 **y** un "grande" (torneo internacional o rival de nivel ≥ propio) a
+  ≤4 días antes o después. Es una BANDERA — μ no tiene término de fatiga y no
+  se le inventa uno; si el backtest le da poder predictivo, entrará entonces.
+- Umbrales (0.15, 0.8, 4 días, 3 próximos) **provisionales hasta el backtest**
+  contra sad.db real: `python -m backend.backtest_gap --muestra 800` reconstruye
+  las señales sin fuga (nivel/forma a fecha − 1 s) sobre una muestra y reporta
+  el residual (pts − μ_partido) por bucket de señal.
+
+### Resultados empíricos (backtest 2026-07, 1500 fixtures de 118 517)
+
+1. **μ está descalibrada — hallazgo dominante.** OLS sobre 3000 observaciones:
+   `μ ≈ 1.231 + 0.334·nivel − 0.356·rival + 0.385·localía` (RMSE 1.250 vs
+   1.284 de la heredada). Los coeficientes de nivel/rival reales son **la
+   mitad** de los heredados: la μ vigente exagera al doble las diferencias de
+   nivel → sobreestima favoritos (−0.42 pts de residual) y subestima débiles.
+   Ese sesgo de compresión (residual ≈ −0.5·(μ − 1.37)) explicaba casi todos
+   los residuales por bucket de la primera pasada. **Resuelto: los
+   coeficientes v2 (arriba) son oficiales desde 2026-07**, confirmados
+   estables en dos muestras independientes (3 000 y 10 000 obs:
+   1.231/0.334/−0.356/0.385 vs 1.241/0.334/−0.357/0.382). `--calibrar`
+   sigue disponible para auditar la calibración con datos futuros.
+2. **Partido trampa: sin efecto incremental** (replicado 3 veces; con μ v2:
+   +0.08 vs −0.00 del control). Se mantiene como bandera informativa;
+   no se promueve a la matemática.
+3. **Veredicto de la ley con μ v2** (re-medición limpia, n=8 816): las
+   señales del gap son débiles al partido siguiente (≤0.1 pts). Lo único
+   que replicó en dos muestras: el **sobrerinde fuerte PERSISTE** al
+   siguiente partido (+0.11 ± 0.05, anti-reversión). A ~5 partidos la
+   clásica insinúa reversión suave. Lectura de producto: la tendencia del
+   gap es ORIENTATIVA a mediano plazo, no promesa inmediata; el gradiente
+   de calendario blando/duro no mostró poder incremental (queda como
+   contexto del camino de recuperación).
+- Contrato: `muPartido`, `proximos[]` (rival, nivel, μ, localía, internacional,
+  días de descanso), `recuperabilidad`, `senalCalendario`, `partidoTrampa`.
+- Nivel del rival futuro: `date <= fecha` con fallback 1.0, igual que el gap
+  ajustado. Fixtures pospuestos/cancelados quedan fuera del camino.
 
 ### ⚠️ Discrepancias documentación vs código (resueltas a favor del código)
 

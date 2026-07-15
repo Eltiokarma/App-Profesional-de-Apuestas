@@ -45,7 +45,7 @@ def main():
     check("fixtures acepta limit=500 (días con amistosos globales)",
           c.get(A + "/fixtures?limit=500").status_code == 200)
     fx = c.get(A + "/fixtures?limit=200").json()
-    check("/fixtures devuelve 122 (120 terminados + vivo + programado)", len(fx) == 122, len(fx))
+    check("/fixtures devuelve 125 (120 terminados + vivo + 4 programados)", len(fx) == 125, len(fx))
     estados = {f["estado"] for f in fx}
     check("estados en_vivo/finalizado/programado presentes", estados == {"en_vivo", "finalizado", "programado"}, estados)
     vivo = next(f for f in fx if f["estado"] == "en_vivo")
@@ -63,10 +63,10 @@ def main():
     check("fixtures?estado=programado: solo programados", bool(prog) and all(f["estado"] == "programado" for f in prog), len(prog))
     check("fixtures?estado=inválido → 422", c.get(A + "/fixtures?estado=jugando").status_code == 422)
     asc = c.get(A + "/fixtures?orden=asc&limit=200").json()
-    check("fixtures?orden=asc: fechas ascendentes", len(asc) == 122 and all(asc[i]["fecha"] <= asc[i + 1]["fecha"] for i in range(len(asc) - 1)))
+    check("fixtures?orden=asc: fechas ascendentes", len(asc) == 125 and all(asc[i]["fecha"] <= asc[i + 1]["fecha"] for i in range(len(asc) - 1)))
     hoy_demo = vivo["fecha"][:10]
     dd = c.get(A + f"/fixtures?desde={hoy_demo}&limit=200").json()
-    check("fixtures?desde: solo fechas >= desde", bool(dd) and len(dd) < 122 and all(f["fecha"][:10] >= hoy_demo for f in dd), len(dd))
+    check("fixtures?desde: solo fechas >= desde", bool(dd) and len(dd) < 125 and all(f["fecha"][:10] >= hoy_demo for f in dd), len(dd))
     check("fixtures?orden=inválido → 422", c.get(A + "/fixtures?orden=random").status_code == 422)
     uno = c.get(A + f"/fixtures/{vivo['id']}").json()
     check("/fixtures/{id} coincide", uno["id"] == vivo["id"] and uno["local"]["nombre"] == vivo["local"]["nombre"])
@@ -120,6 +120,70 @@ def main():
     )
     check("gapDiff = local − visitante", abs(p["gapDiff"] - (p["local"]["gap"] - p["visitante"]["gap"])) < 1e-6)
     check("μ recortado a [0,3]", 0 <= p["local"]["ptsEsperados"] <= 3)
+    check(
+        "gap ajustado por calendario para ambos, señal válida",
+        p["local"]["gapAjustado"] is not None and p["visitante"]["gapAjustado"] is not None
+        and p["local"]["senalAjustada"] in ("fuerte", "leve", "equilibrio"),
+        p,
+    )
+    check(
+        "gapAjustado = esperadosAjustados − recientes",
+        abs(p["local"]["gapAjustado"] - (p["local"]["ptsEsperadosAjustados"] - p["local"]["ptsRecientes"])) < 1e-3,
+        p["local"],
+    )
+    check("μ ajustado recortado a [0,3]", 0 <= p["local"]["ptsEsperadosAjustados"] <= 3)
+    check(
+        "gapDiffAjustado = local − visitante",
+        abs(p["gapDiffAjustado"] - (p["local"]["gapAjustado"] - p["visitante"]["gapAjustado"])) < 1e-3,
+    )
+    # camino de recuperación (§5 v2): el vivo es Betis-Sevilla; el seed pone a
+    # Betis 2 futuros (Barça en Champions +2d, Villarreal +5d) y a Sevilla 1
+    pl, pv = p["local"], p["visitante"]
+    check("camino: Betis con 2 próximos, Sevilla con 1", len(pl["proximos"]) == 2 and len(pv["proximos"]) == 1,
+          (len(pl["proximos"]), len(pv["proximos"])))
+    check("camino: primer próximo de Betis es internacional (+2d de descanso)",
+          pl["proximos"][0]["esInternacional"] and pl["proximos"][0]["diasDescanso"] == 2, pl["proximos"])
+    check("camino: segundo próximo de Betis descansa 3 días tras el primero",
+          not pl["proximos"][1]["esInternacional"] and pl["proximos"][1]["diasDescanso"] == 3, pl["proximos"])
+    check("camino: rival con nombre y μ esperada en [0,3]",
+          all(x["rival"]["nombre"] and 0 <= x["muEsperado"] <= 3 for x in pl["proximos"] + pv["proximos"]))
+    check("camino: recuperabilidad = media de μ esperadas",
+          abs(pl["recuperabilidad"] - sum(x["muEsperado"] for x in pl["proximos"]) / 2) < 1e-3, pl)
+    check("camino: señal de calendario válida",
+          pl["senalCalendario"] in ("blando", "neutro", "duro") and pv["senalCalendario"] in ("blando", "neutro", "duro"))
+    check("camino: μ del partido en [0,3] y trampa booleana",
+          0 <= pl["muPartido"] <= 3 and isinstance(pl["partidoTrampa"], bool) and isinstance(pv["partidoTrampa"], bool))
+    # el programado (Madrid-Barça) va DESPUÉS del vivo: Barça tiene próximo (Betis
+    # en Champions al día siguiente) y Madrid ninguno → recuperabilidad null
+    prog_fx = min((f for f in fx if f["estado"] == "programado"), key=lambda f: f["fecha"])  # Madrid-Barça (+1d)
+    pp = c.get(A + f"/predicciones/{prog_fx['id']}").json()
+    check("camino: sin próximos → proximos [], recuperabilidad y señal null",
+          pp["local"]["proximos"] == [] and pp["local"]["recuperabilidad"] is None and pp["local"]["senalCalendario"] is None,
+          pp["local"])
+    check("camino: Barça tiene un próximo internacional al día siguiente",
+          len(pp["visitante"]["proximos"]) == 1 and pp["visitante"]["proximos"][0]["esInternacional"]
+          and pp["visitante"]["proximos"][0]["diasDescanso"] == 1, pp["visitante"])
+
+    # backtest §5 (muestreado, sin fuga): humo sobre la demo
+    from backend.backtest_gap import backtest, BUCKETS_SENAL
+    bt = backtest(muestra=60, semilla=1)
+    check("backtest §5: corre sobre la demo con observaciones", bt["observaciones"] > 0, bt)
+    check("backtest §5: buckets completos en clásica y ajustada",
+          set(bt["clasica"]) == set(BUCKETS_SENAL) == set(bt["ajustada"]))
+    check("backtest §5: residuales acotados a [−3, 3]",
+          all(abs(s["residual"]) <= 3 for s in list(bt["clasica"].values()) + list(bt["ajustada"].values()) if s["n"]))
+    check("backtest §5: n de la muestra coherente", bt["muestra"] == 60 and bt["universo"] == 120, bt)
+    bt2 = backtest(muestra=40, semilla=2, horizonte=3, calibrar=True)
+    check("backtest §5: horizonte trae buckets con residual medio de próximos N",
+          bt2["horizonte"]["n"] == 3 and set(bt2["horizonte"]["ajustada"]) == set(BUCKETS_SENAL), bt2["horizonte"])
+    check("backtest §5: calibración OLS devuelve 4 coeficientes y RMSE",
+          bt2["calibracion"]["ols"] and len(bt2["calibracion"]["ols"]["coefs"]) == 4
+          and bt2["calibracion"]["ols"]["rmse"] > 0 and bt2["calibracion"]["actual"]["rmse"] > 0, bt2["calibracion"])
+    check("backtest §5: sin flags, horizonte/calibración/re-evaluación apagados",
+          bt["horizonte"] is None and bt["calibracion"] is None and bt["con_mu_ols"] is None)
+    check("backtest §5: con --calibrar re-evalúa las tablas con la μ OLS",
+          bt2["con_mu_ols"] and set(bt2["con_mu_ols"]["ajustada"]) == set(BUCKETS_SENAL)
+          and bt2["con_mu_ols"]["trampa"].keys() == bt2["trampa"].keys(), bt2["con_mu_ols"] and "ok")
 
     # /analisis-prepartido
     an = c.get(A + f"/analisis-prepartido/{vivo['id']}").json()
@@ -435,7 +499,7 @@ def main():
     # /fixtures?equipoId=
     fxb = c.get(A + f"/fixtures?equipoId={betis}&limit=200").json()
     ok_eq = all(f["local"]["id"] == betis or f["visitante"]["id"] == betis for f in fxb)
-    check("fixtures?equipoId: todos incluyen al equipo (41: 40+vivo)", ok_eq and len(fxb) == 41, len(fxb))
+    check("fixtures?equipoId: todos incluyen al equipo (43: 40+vivo+2 futuros)", ok_eq and len(fxb) == 43, len(fxb))
 
     # /fixtures?equipoId&rivalId — enfrentamientos directos (H2H)
     rival = next(f["visitante"]["id"] if f["local"]["id"] == betis else f["local"]["id"] for f in fxb if f["estado"] == "finalizado")

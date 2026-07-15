@@ -51,7 +51,8 @@ def round_robin(ids):
 
 
 def make_fixtures():
-    """~40 terminados por equipo + 1 en vivo + 1 programado (con odds)."""
+    """~40 terminados por equipo + 1 en vivo + 1 programado (con odds) +
+    3 NS futuros sin cuotas (camino de recuperación §5 v2)."""
     ids = [t for t, _ in TEAMS]
     single = round_robin(ids)
     dbl = single + [[(a, h) for h, a in rd] for rd in single]
@@ -76,6 +77,17 @@ def make_fixtures():
     fid += 1
     fixtures.append(dict(id=fid, date=now + timedelta(days=1), home=541, away=529, gh=None, ga=None, league=LEAGUE_ID,
                          status_long="Not Started", status_short="NS", elapsed=None))
+    fid += 1
+    # camino de recuperación (§5 v2): calendario futuro de Betis (con un grande
+    # europeo intercalado) y de Sevilla, para /predicciones del partido en vivo
+    fixtures.append(dict(id=fid, date=now + timedelta(days=2), home=529, away=543, gh=None, ga=None, league=2,
+                         status_long="Not Started", status_short="NS", elapsed=None))  # Barça-Betis (Champions)
+    fid += 1
+    fixtures.append(dict(id=fid, date=now + timedelta(days=5), home=543, away=533, gh=None, ga=None, league=LEAGUE_ID,
+                         status_long="Not Started", status_short="NS", elapsed=None))  # Betis-Villarreal
+    fid += 1
+    fixtures.append(dict(id=fid, date=now + timedelta(days=4), home=536, away=530, gh=None, ga=None, league=LEAGUE_ID,
+                         status_long="Not Started", status_short="NS", elapsed=None))  # Sevilla-Atlético
     return fixtures
 
 
@@ -206,7 +218,10 @@ def seed(base_dir: str):
              f["home"], f["away"], f["gh"], f["ga"]),
         )
     # cuotas prepartido: los últimos 10 terminados + el vivo + el programado
-    for f in fixtures[-12:]:
+    # (los NS del camino de recuperación quedan sin cuotas a propósito)
+    term_cuotas = [f for f in fixtures if f["status_long"] == "Match Finished"][-10:]
+    con_cuotas = term_cuotas + [f for f in fixtures if f["status_long"] != "Match Finished"][:2]
+    for f in con_cuotas:
         for bid, bname in BOOKMAKERS:
             rng = random.Random(f"{f['id']}|{bid}")
             for bet_id, (bet_name, sels) in enumerate(ODDS_MARKETS, start=1):
@@ -224,7 +239,7 @@ def seed(base_dir: str):
             )
     # historial de snapshots prepartido (fase 1 de tiempo real): 3 capturas por
     # fixture con odds, derivando hacia la cuota base — como odds_history real
-    for f in fixtures[-12:]:
+    for f in con_cuotas:
         rng = random.Random(f"{f['id']}|hist")
         for bet_id, (bet_name, sels) in enumerate(ODDS_MARKETS, start=1):
             for value, base in sels:

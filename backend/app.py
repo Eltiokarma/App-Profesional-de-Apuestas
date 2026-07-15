@@ -228,9 +228,20 @@ BINS = [
     (2.85, "Fuerte"), (3.2, "Muy fuerte"), (float("inf"), "Élite"),
 ]
 
-# Ley de la Regresión al Nivel (§5) — coeficientes de regresion_nivel_engine.py
-MU = {"intercept": 1.110, "nivel": 0.686, "rival": -0.669, "localia": 0.422}
+# Ley de la Regresión al Nivel (§5) — μ v2 (2026-07): OLS sobre 10 000 obs de
+# sad.db real (backtest_gap --calibrar); la v1 heredada (1.110/0.686/−0.669/
+# 0.422) sobreestimaba a los favoritos en ~0.4 pts. Ver MOTOR_SAD_EXTRACCION.md §5.
+MU = {"intercept": 1.241, "nivel": 0.334, "rival": -0.357, "localia": 0.382}
 RECENT_WINDOW = 5
+
+# Camino de recuperación (§5 v2): el gap dice dirección, el calendario futuro
+# dice dónde puede expresarse. Banderas descriptivas: NO entran en μ ni en el gap.
+RECOVERY_NEXT = 3        # próximos fixtures considerados
+CAL_UMBRAL = 0.15        # blando/duro vs la μ genérica (provisional hasta backtest)
+TRAMPA_VENTANA_DIAS = 4  # "grande" a ≤4 días del partido analizado
+TRAMPA_DELTA_NIVEL = 0.8 # rival de hoy claramente inferior: nivel ≤ propio − 0.8
+# estados que sacan un fixture del camino (pospuesto/cancelado/abandonado)
+_NO_CAMINO = ("CANC", "PST", "ABD", "AWD", "WO")
 
 # Ligas de torneos internacionales de clubes (ids de API-Football);
 # ampliable con SAD_INTL_LEAGUE_IDS="2,3,848,..."
@@ -261,6 +272,15 @@ def iso(dt_text) -> str:
     if not s.endswith("Z") and "+" not in s[10:]:
         s += "Z"
     return s
+
+
+def _dt(dt_text) -> datetime:
+    """DATETIME de SQLite (o ISO) → datetime naive."""
+    s = str(dt_text).replace("T", " ").rstrip("Z").split(".")[0]
+    try:
+        return datetime.strptime(s, "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return datetime.strptime(s[:10], "%Y-%m-%d")
 
 
 def abrev(nombre: str) -> str:
@@ -367,8 +387,9 @@ def get_fixture(fixture_id: int):
     return row
 
 
-def nivel_a_fecha(team_id: int, fecha_iso: str | None) -> float:
-    """Último level con date <= fecha (0.5 si no hay registros — §2.3)."""
+def nivel_a_fecha(team_id: int, fecha_iso: str | None, fallback: float = 0.5) -> float:
+    """Último level con date <= fecha (fallback 0.5 — §2.3; 1.0 al ponderar
+    como rival, §3.1 / discrepancia 2)."""
     if fecha_iso:
         row = db.query_one(
             "levels",
@@ -381,18 +402,19 @@ def nivel_a_fecha(team_id: int, fecha_iso: str | None) -> float:
             "SELECT level FROM team_levels WHERE team_id=? ORDER BY date DESC, id DESC LIMIT 1",
             (team_id,),
         )
-    return float(row["level"]) if row else 0.5
+    return float(row["level"]) if row else fallback
 
 
-def pts_recientes(team_id: int, antes_de: str | None) -> float | None:
-    """Promedio de puntos en los últimos 5 terminados (None si no hay 5)."""
+def forma_reciente(team_id: int, antes_de: str | None) -> list[dict] | None:
+    """Últimos 5 terminados con rival, fecha y localía (None si no hay 5)."""
     cond, params = "", [team_id, team_id]
     if antes_de:
         cond = " AND f.date < ?"
         params.append(antes_de.replace("T", " ").rstrip("Z"))
     rows = db.query(
         "sad",
-        f"""SELECT f.home_team_id, {_G90_H} AS goals_home, {_G90_A} AS goals_away
+        f"""SELECT f.date, f.home_team_id, f.away_team_id,
+                   {_G90_H} AS goals_home, {_G90_A} AS goals_away
             FROM fixtures f
             WHERE (f.home_team_id=? OR f.away_team_id=?)
               AND {_FIN90_SQL}
@@ -402,32 +424,132 @@ def pts_recientes(team_id: int, antes_de: str | None) -> float | None:
     )
     if len(rows) < RECENT_WINDOW:
         return None
-    pts = 0
+    forma = []
     for r in rows:
-        gf, ga = (r["goals_home"], r["goals_away"]) if r["home_team_id"] == team_id else (r["goals_away"], r["goals_home"])
-        pts += 3 if gf > ga else 1 if gf == ga else 0
-    return pts / RECENT_WINDOW
+        es_local = r["home_team_id"] == team_id
+        gf, ga = (r["goals_home"], r["goals_away"]) if es_local else (r["goals_away"], r["goals_home"])
+        forma.append({
+            "gf": gf,
+            "ga": ga,
+            "rival_id": r["away_team_id"] if es_local else r["home_team_id"],
+            "fecha": str(r["date"]),
+            "es_local": es_local,
+        })
+    return forma
+
+
+def _senal_de(gap: float) -> str:
+    a = abs(gap)
+    return "fuerte" if a > 0.5 else "leve" if a >= 0.3 else "equilibrio"
+
+
+def _tendencia_de(gap):
+    return None if gap is None or gap == 0 else ("mejora" if gap > 0 else "empeora")
 
 
 def gap_equipo(team_id: int, fecha: str | None) -> dict:
     nivel = nivel_a_fecha(team_id, fecha)
-    recientes = pts_recientes(team_id, fecha)
+    forma = forma_reciente(team_id, fecha)
     esperados = mu(nivel, 2.0, 0.5)  # rival promedio, localía neutra
+    recientes = None
+    esperados_adj = None
+    if forma is not None:
+        recientes = sum(3 if p["gf"] > p["ga"] else 1 if p["gf"] == p["ga"] else 0 for p in forma) / RECENT_WINDOW
+        # ajuste por calendario: μ con el rival y la localía REALES de cada uno
+        # de esos 5 partidos (nivel del rival a la fecha, fallback 1.0 — §3.1)
+        esperados_adj = sum(
+            mu(nivel, nivel_a_fecha(p["rival_id"], p["fecha"], fallback=1.0), 1.0 if p["es_local"] else 0.0)
+            for p in forma
+        ) / RECENT_WINDOW
     gap = None if recientes is None else esperados - recientes
-    senal = None
-    tendencia = None
-    if gap is not None:
-        a = abs(gap)
-        senal = "fuerte" if a > 0.5 else "leve" if a >= 0.3 else "equilibrio"
-        tendencia = None if gap == 0 else ("mejora" if gap > 0 else "empeora")
+    gap_adj = None if recientes is None or esperados_adj is None else esperados_adj - recientes
     return {
         "equipoId": team_id,
         "nivel": round(nivel, 4),
         "ptsRecientes": recientes,
         "ptsEsperados": round(esperados, 4),
         "gap": None if gap is None else round(gap, 4),
-        "senal": senal,
-        "tendencia": tendencia,
+        "senal": None if gap is None else _senal_de(gap),
+        "tendencia": _tendencia_de(gap),
+        "ptsEsperadosAjustados": None if esperados_adj is None else round(esperados_adj, 4),
+        "gapAjustado": None if gap_adj is None else round(gap_adj, 4),
+        "senalAjustada": None if gap_adj is None else _senal_de(gap_adj),
+        "tendenciaAjustada": _tendencia_de(gap_adj),
+    }
+
+
+def proximos_de(team_id: int, nivel: float, fixture) -> list[dict]:
+    """Camino de recuperación (§5 v2): próximos fixtures del equipo tras el
+    analizado, con la μ esperada contra el rival real de cada uno."""
+    marks = ",".join("?" * len(_NO_CAMINO))
+    rows = db.query(
+        "sad",
+        FIXTURE_SQL + f""" WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.id != ? AND f.date > ?
+            AND {_SS} NOT IN ({marks})
+            ORDER BY f.date ASC LIMIT {RECOVERY_NEXT}""",
+        (team_id, team_id, fixture["id"], str(fixture["date"]), *_NO_CAMINO),
+    )
+    prox, prev = [], _dt(fixture["date"])
+    for r in rows:
+        es_local = r["home_team_id"] == team_id
+        rival_id = r["away_team_id"] if es_local else r["home_team_id"]
+        nivel_rival = nivel_a_fecha(rival_id, iso(r["date"]), fallback=1.0)
+        d = _dt(r["date"])
+        prox.append({
+            "fixtureId": r["id"],
+            "fecha": iso(r["date"]),
+            "rival": equipo_dto(rival_id, r["away_name"] if es_local else r["home_name"],
+                                r["away_logo"] if es_local else r["home_logo"]),
+            "esLocal": es_local,
+            "nivelRival": round(nivel_rival, 4),
+            "muEsperado": round(mu(nivel, nivel_rival, 1.0 if es_local else 0.0), 4),
+            "esInternacional": (r["league_id"] or 0) in INTL_LEAGUE_IDS,
+            "diasDescanso": (d.date() - prev.date()).days,
+        })
+        prev = d
+    return prox
+
+
+def partido_trampa(team_id: int, fixture, nivel: float, nivel_rival_hoy: float) -> bool:
+    """Rival de hoy claramente inferior + un 'grande' (internacional o nivel ≥
+    propio) a ≤4 días, antes o después: candidato a rotación/cansancio."""
+    if nivel_rival_hoy > nivel - TRAMPA_DELTA_NIVEL:
+        return False
+    d = _dt(fixture["date"])
+    ini = (d - timedelta(days=TRAMPA_VENTANA_DIAS)).strftime("%Y-%m-%d %H:%M:%S")
+    fin = (d + timedelta(days=TRAMPA_VENTANA_DIAS)).strftime("%Y-%m-%d %H:%M:%S")
+    rows = db.query(
+        "sad",
+        """SELECT f.date, f.league_id, f.home_team_id, f.away_team_id FROM fixtures f
+           WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.id != ? AND f.date BETWEEN ? AND ?""",
+        (team_id, team_id, fixture["id"], ini, fin),
+    )
+    for r in rows:
+        rival_id = r["away_team_id"] if r["home_team_id"] == team_id else r["home_team_id"]
+        if (r["league_id"] or 0) in INTL_LEAGUE_IDS or nivel_a_fecha(rival_id, iso(r["date"]), fallback=1.0) >= nivel:
+            return True
+    return False
+
+
+def contexto_calendario(team_id: int, fixture, g: dict) -> dict:
+    """Enriquecimiento §5 v2 del GapEquipo cuando hay fixture en mano: μ del
+    propio partido, camino de recuperación y bandera de partido trampa."""
+    es_local = fixture["home_team_id"] == team_id
+    rival_id = fixture["away_team_id"] if es_local else fixture["home_team_id"]
+    nivel = g["nivel"]
+    nivel_rival_hoy = nivel_a_fecha(rival_id, iso(fixture["date"]), fallback=1.0)
+    prox = proximos_de(team_id, nivel, fixture)
+    recup = round(sum(p["muEsperado"] for p in prox) / len(prox), 4) if prox else None
+    senal_cal = None
+    if recup is not None:
+        dif = recup - g["ptsEsperados"]
+        senal_cal = "blando" if dif > CAL_UMBRAL else "duro" if dif < -CAL_UMBRAL else "neutro"
+    return {
+        "muPartido": round(mu(nivel, nivel_rival_hoy, 1.0 if es_local else 0.0), 4),
+        "proximos": prox,
+        "recuperabilidad": recup,
+        "senalCalendario": senal_cal,
+        "partidoTrampa": partido_trampa(team_id, fixture, nivel, nivel_rival_hoy),
     }
 
 
@@ -755,15 +877,21 @@ def prediccion(fixture_id: int):
     f = get_fixture(fixture_id)
     fecha = iso(f["date"])
     local = gap_equipo(f["home_team_id"], fecha)
+    local.update(contexto_calendario(f["home_team_id"], f, local))
     visitante = gap_equipo(f["away_team_id"], fecha)
+    visitante.update(contexto_calendario(f["away_team_id"], f, visitante))
     gap_diff = None
     if local["gap"] is not None and visitante["gap"] is not None:
         gap_diff = round(local["gap"] - visitante["gap"], 4)
+    gap_diff_adj = None
+    if local["gapAjustado"] is not None and visitante["gapAjustado"] is not None:
+        gap_diff_adj = round(local["gapAjustado"] - visitante["gapAjustado"], 4)
     return {
         "fixtureId": fixture_id,
         "local": local,
         "visitante": visitante,
         "gapDiff": gap_diff,
+        "gapDiffAjustado": gap_diff_adj,
         "generadoEn": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     }
 

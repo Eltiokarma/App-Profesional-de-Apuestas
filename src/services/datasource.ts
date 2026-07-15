@@ -33,7 +33,10 @@ import { oddsFor, rng } from '../lib/odds'
 import { levelBin } from '../motor/discretizer'
 import { teamEngine } from '../motor/engine'
 import { leagueOf } from '../motor/history'
-import { gapDiff, gapFor } from '../motor/regression'
+import {
+  gapDiff, gapDiffAjustado, gapFor, LOCALIA_NEUTRA, mu, recuperabilidad,
+  RIVAL_PROMEDIO, senalCalendario, TRAMPA_DELTA_NIVEL,
+} from '../motor/regression'
 import type { KSnapshot } from '../motor/types'
 
 export interface FeedHealth {
@@ -186,9 +189,48 @@ function constantesDTO(teamKey: string, s: KSnapshot): ConstantesDTO {
   }
 }
 
-function gapEquipoDTO(teamKey: string): GapEquipoDTO {
+const esIntMatch = (m: (typeof MATCHES)[number]) => /(champions|europa|libertadores|sudamericana)/i.test(m.comp)
+
+/** Contexto §5 v2 del fixture: μ del partido, camino de recuperación y trampa. */
+function contextoCalendario(teamKey: string, m: (typeof MATCHES)[number]) {
+  const eng = teamEngine(teamKey)!
+  const esLocal = m.home === teamKey
+  const rivalKey = esLocal ? m.away : m.home
+  const nivelRivalHoy = teamEngine(rivalKey)?.level ?? 1
+  // la demo vive en un solo día: "próximos" = programados posteriores del equipo
+  const futuros = MATCHES.filter((x) => x.id !== m.id && x.status === 'sched' && (x.home === teamKey || x.away === teamKey)).slice(0, 3)
+  const proximos = futuros.map((x) => {
+    const esL = x.home === teamKey
+    const rk = esL ? x.away : x.home
+    const nr = teamEngine(rk)?.level ?? 1
+    return {
+      fixtureId: FIXTURE_NUM(x.id),
+      fecha: MOCK_NOW,
+      rival: equipoDTO(rk),
+      esLocal: esL,
+      nivelRival: nr,
+      muEsperado: mu(eng.level, nr, esL ? 1 : 0),
+      esInternacional: esIntMatch(x),
+      diasDescanso: 0,
+    }
+  })
+  const recup = recuperabilidad(proximos.map((p) => p.muEsperado))
+  const grandeCerca = MATCHES.some(
+    (x) => x.id !== m.id && (x.home === teamKey || x.away === teamKey) &&
+      (esIntMatch(x) || (teamEngine(x.home === teamKey ? x.away : x.home)?.level ?? 1) >= eng.level),
+  )
+  return {
+    muPartido: mu(eng.level, nivelRivalHoy, esLocal ? 1 : 0),
+    proximos,
+    recuperabilidad: recup,
+    senalCalendario: senalCalendario(recup, mu(eng.level, RIVAL_PROMEDIO, LOCALIA_NEUTRA)),
+    partidoTrampa: nivelRivalHoy <= eng.level - TRAMPA_DELTA_NIVEL && grandeCerca,
+  }
+}
+
+function gapEquipoDTO(teamKey: string, m: (typeof MATCHES)[number]): GapEquipoDTO {
   const g = gapFor(teamKey)!
-  return { equipoId: TEAM_NUM[teamKey], ...g }
+  return { equipoId: TEAM_NUM[teamKey], ...g, ...contextoCalendario(teamKey, m) }
 }
 
 class MockDataSource implements SadDataSource {
@@ -291,9 +333,10 @@ class MockDataSource implements SadDataSource {
     if (!m) throw new Error(`fixture ${fixtureId} no existe`)
     return {
       fixtureId,
-      local: gapEquipoDTO(m.home),
-      visitante: gapEquipoDTO(m.away),
+      local: gapEquipoDTO(m.home, m),
+      visitante: gapEquipoDTO(m.away, m),
       gapDiff: gapDiff(m.home, m.away),
+      gapDiffAjustado: gapDiffAjustado(m.home, m.away),
       generadoEn: MOCK_NOW,
     }
   }

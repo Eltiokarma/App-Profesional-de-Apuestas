@@ -4,7 +4,7 @@ import { K0, qValues, stepK } from '../src/motor/constants'
 import { fuse, levelBin } from '../src/motor/discretizer'
 import { teamEngine } from '../src/motor/engine'
 import { computeTeamLevels } from '../src/motor/levels'
-import { gapFor, mu, ptsRecent, senalDe } from '../src/motor/regression'
+import { CAL_UMBRAL, gapFor, mu, ptsEsperadosAjustados, ptsRecent, recuperabilidad, senalCalendario, senalDe } from '../src/motor/regression'
 import type { TeamMatch } from '../src/motor/types'
 
 let failed = 0
@@ -134,19 +134,45 @@ check('3.3 → bin 9 Élite', levelBin(3.3), { bin: 9, label: 'Élite' })
 
 // ---- §5 Ley de la Regresión al Nivel ----
 console.log('— §5 regresión al nivel —')
-check('μ(2, 2, 1) = 1.110+1.372−1.338+0.422', mu(2, 2, 1), 1.11 + 0.686 * 2 - 0.669 * 2 + 0.422)
-check('μ recorta a [0,3] por arriba', mu(3.8, 0.5, 1), 3)
-check('μ recorta a [0,3] por abajo', mu(0.5, 3.5, 0), 0)
+// μ v2 (2026-07): 1.241 + 0.334·nivel − 0.357·rival + 0.382·localía
+check('μ(2, 2, 1) = 1.241+0.668−0.714+0.382', mu(2, 2, 1), 1.241 + 0.334 * 2 - 0.357 * 2 + 0.382)
+check('μ recorta a [0,3] por arriba', mu(6, 0.5, 1), 3)
+check('μ recorta a [0,3] por abajo', mu(0.5, 4.5, 0), 0)
 check('forma reciente: 5 victorias → 3.0', ptsRecent(Array.from({ length: 5 }, (_, i) => mk(i, 2, 0))), 3)
 check('forma reciente: <5 partidos → null', ptsRecent([mk(0, 1, 0)]), null)
 check('señal |gap|>0.5 → fuerte', senalDe(0.61), 'fuerte')
 check('señal 0.3–0.5 → leve', senalDe(-0.4), 'leve')
 check('señal <0.3 → equilibrio', senalDe(0.1), 'equilibrio')
+// gap ajustado por calendario: media de μ con rival/localía REALES de los últ. 5
+const cal = (rl: number, loc: boolean) => ({ rivalLevel: rl, isLocal: loc })
+check(
+  'ajustado: 5 partidos vs rival 2.0 alternando localía = μ media',
+  ptsEsperadosAjustados(2, [cal(2, true), cal(2, false), cal(2, true), cal(2, false), cal(2, true)]),
+  (3 * mu(2, 2, 1) + 2 * mu(2, 2, 0)) / 5,
+)
+check('ajustado: calendario élite fuera baja la expectativa', ptsEsperadosAjustados(2, Array.from({ length: 5 }, () => cal(3.5, false))), mu(2, 3.5, 0))
+check('ajustado: <5 partidos → null', ptsEsperadosAjustados(2, [cal(2, true)]), null)
+// camino de recuperación (§5 v2): media de μ futuras y señal de calendario
+check('recuperabilidad: media de las μ futuras', recuperabilidad([1.5, 2.1, 0.9]), 1.5)
+check('recuperabilidad: sin próximos → null', recuperabilidad([]), null)
+check('calendario blando: recup > μ genérica + umbral', senalCalendario(1.5 + CAL_UMBRAL + 0.01, 1.5), 'blando')
+check('calendario duro: recup < μ genérica − umbral', senalCalendario(1.5 - CAL_UMBRAL - 0.01, 1.5), 'duro')
+check('calendario neutro: dentro del umbral', senalCalendario(1.55, 1.5), 'neutro')
+check('calendario null sin recuperabilidad', senalCalendario(null, 1.5), null)
 const gBet = gapFor('bet')!
-console.log(`  bet: nivel=${gBet.nivel.toFixed(2)} recientes=${gBet.ptsRecientes} esperados=${gBet.ptsEsperados.toFixed(2)} gap=${gBet.gap?.toFixed(2)} (${gBet.senal}/${gBet.tendencia})`)
+console.log(
+  `  bet: nivel=${gBet.nivel.toFixed(2)} recientes=${gBet.ptsRecientes} esperados=${gBet.ptsEsperados.toFixed(2)} gap=${gBet.gap?.toFixed(2)} (${gBet.senal}/${gBet.tendencia})` +
+    ` · ajustado=${gBet.gapAjustado?.toFixed(2)} (${gBet.senalAjustada}/${gBet.tendenciaAjustada})`,
+)
 if (gBet.gap == null || !['fuerte', 'leve', 'equilibrio'].includes(gBet.senal!)) {
   failed++
   console.log('  ✗ gap incompleto')
+}
+if (gBet.gapAjustado == null || gBet.ptsEsperadosAjustados == null) {
+  failed++
+  console.log('  ✗ gap ajustado incompleto')
+} else {
+  check('gapAjustado = esperadosAjustados − recientes', gBet.gapAjustado, gBet.ptsEsperadosAjustados - gBet.ptsRecientes!)
 }
 
 // ---- pipeline completo: sanidad sobre datos sintéticos ----

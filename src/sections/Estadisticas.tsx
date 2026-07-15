@@ -16,6 +16,8 @@ interface Props {
 function GapCard({ g, name, align }: { g: GapEquipoDTO; name: string; align: 'left' | 'right' }) {
   const color = g.gap == null ? 'var(--t3)' : g.tendencia === 'mejora' ? 'var(--up)' : 'var(--down)'
   const soft = g.gap == null ? 'var(--bg3)' : g.tendencia === 'mejora' ? 'var(--up-soft)' : 'var(--down-soft)'
+  const colorAdj = g.gapAjustado == null ? 'var(--t3)' : g.tendenciaAjustada === 'mejora' ? 'var(--up)' : 'var(--down)'
+  const softAdj = g.gapAjustado == null ? 'var(--bg3)' : g.tendenciaAjustada === 'mejora' ? 'var(--up-soft)' : 'var(--down-soft)'
   return (
     <div style={{ padding: '12px 14px', borderRadius: 12, background: 'var(--bg)', border: '1px solid var(--line)', textAlign: align }}>
       <div style={{ font: '600 11px var(--sans)', color: 'var(--t2)', marginBottom: 6 }}>{name}</div>
@@ -32,6 +34,47 @@ function GapCard({ g, name, align }: { g: GapEquipoDTO; name: string; align: 'le
       <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginTop: 6 }}>
         forma últ. 5: {g.ptsRecientes == null ? '—' : g.ptsRecientes.toFixed(2)} pts · esperado μ: {g.ptsEsperados.toFixed(2)} pts · nivel {g.nivel.toFixed(2)}
       </div>
+      {g.gapAjustado != null && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 8, justifyContent: align === 'right' ? 'flex-end' : 'flex-start' }}>
+          <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>ajustado por calendario:</span>
+          <span style={{ font: '700 13px var(--mono)', color: colorAdj, fontVariantNumeric: 'tabular-nums' }}>
+            {(g.gapAjustado > 0 ? '+' : '') + g.gapAjustado.toFixed(2)}
+          </span>
+          {g.senalAjustada && (
+            <span style={{ padding: '2px 7px', borderRadius: 5, background: softAdj, color: colorAdj, font: '700 8.5px var(--mono)', letterSpacing: '.3px' }}>
+              {g.senalAjustada.toUpperCase()}
+            </span>
+          )}
+        </div>
+      )}
+      {g.muPartido != null && (
+        <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginTop: 6 }}>
+          μ del partido: {g.muPartido.toFixed(2)} pts
+          {g.recuperabilidad != null && (
+            <>
+              {' · próximos: '}
+              <span style={{ color: g.senalCalendario === 'blando' ? 'var(--up)' : g.senalCalendario === 'duro' ? 'var(--down)' : 'var(--t2)', fontWeight: 700 }}>
+                {g.recuperabilidad.toFixed(2)} ({g.senalCalendario})
+              </span>
+            </>
+          )}
+        </div>
+      )}
+      {g.proximos.length > 0 && (
+        <div style={{ display: 'flex', gap: 5, marginTop: 7, flexWrap: 'wrap', justifyContent: align === 'right' ? 'flex-end' : 'flex-start' }}>
+          {g.proximos.map((p) => (
+            <span key={p.fixtureId} title={`${p.rival.nombre} · nivel ${p.nivelRival.toFixed(2)} · ${p.esLocal ? 'local' : 'visita'} · ${p.diasDescanso} día(s) de descanso${p.esInternacional ? ' · internacional' : ''}`} style={{ padding: '3px 8px', borderRadius: 6, background: 'var(--bg2)', border: '1px solid var(--line)', font: '600 9.5px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+              {p.rival.abreviatura} {p.esLocal ? 'L' : 'V'} · μ {p.muEsperado.toFixed(2)} · {p.diasDescanso}d{p.esInternacional ? ' · INT' : ''}
+            </span>
+          ))}
+        </div>
+      )}
+      {g.partidoTrampa && (
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 8, padding: '4px 9px', borderRadius: 6, background: 'var(--mark-soft)', border: '1px solid color-mix(in oklch,var(--mark),transparent 60%)' }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--mark)' }}></span>
+          <span style={{ font: '700 9.5px var(--mono)', color: 'var(--t1)', letterSpacing: '.3px' }}>PARTIDO TRAMPA · grande a ±4 días</span>
+        </div>
+      )}
     </div>
   )
 }
@@ -160,7 +203,7 @@ export function Estadisticas({ store, m, isMobile }: Props) {
       <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)', marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
           <div style={{ font: '700 12px var(--sans)' }}>Regresión al nivel · Ley §5</div>
-          <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>gap = μ esperado − forma últ. 5 · gap &gt; 0 subrinde (tiende a mejorar)</div>
+          <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>gap = μ esperado − forma últ. 5 · gap &gt; 0 subrinde · tendencia orientativa a ~5 partidos (backtest 2026-07: el sobrerinde fuerte suele persistir) · ajustado = μ con los rivales reales de esos 5</div>
         </div>
         {pred.loading && <div className="sad-sk" style={{ height: 96 }}></div>}
         {pred.error && (
@@ -179,6 +222,11 @@ export function Estadisticas({ store, m, isMobile }: Props) {
                   {pred.data.gapDiff == null ? '—' : (pred.data.gapDiff > 0 ? '+' : '') + pred.data.gapDiff.toFixed(2)}
                 </span>
                 <span style={{ font: '500 9px var(--mono)', color: 'var(--t3)' }}>local − visitante</span>
+                {pred.data.gapDiffAjustado != null && (
+                  <span style={{ font: '600 11px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+                    ajustado {(pred.data.gapDiffAjustado > 0 ? '+' : '') + pred.data.gapDiffAjustado.toFixed(2)}
+                  </span>
+                )}
               </div>
               <GapCard g={pred.data.visitante} name={A.name} align="right" />
             </div>
