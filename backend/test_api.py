@@ -174,6 +174,20 @@ def main():
     # regla de los 90': el diagnóstico corre limpio sobre la demo (sin AET/PEN)
     from backend.ingesta.pipeline import diagnostico_90
     check("pipeline --diagnostico-90 corre sobre la demo", diagnostico_90(os.path.join(tmp, "sad.db")) == 0)
+    # ... y el detector del auto-sanado encuentra exactamente los torneos rotos
+    import sqlite3 as _sq
+    from backend.ingesta.extractor import torneos_90_pendientes
+    con90 = _sq.connect(":memory:")
+    con90.execute("CREATE TABLE fixtures (id INTEGER PRIMARY KEY, status_short TEXT, "
+                  "fulltime_home INTEGER, fulltime_away INTEGER, league_id INTEGER, league_season INTEGER)")
+    con90.executemany("INSERT INTO fixtures VALUES (?,?,?,?,?,?)", [
+        (1, "AET", None, None, 1, 2026),   # roto (sin fulltime)
+        (2, "PEN", None, None, 1, 2026),   # roto, mismo torneo
+        (3, "AET", 1, 1, 1, 2026),         # sano
+        (4, "FT", None, None, 140, 2026),  # FT: los 90' SON el resultado
+    ])
+    check("sanar 90': detecta el torneo roto y solo ese", torneos_90_pendientes(con90) == [(1, 2026, 2)])
+    con90.close()
 
     # backtest §5 (muestreado, sin fuga): humo sobre la demo
     from backend.backtest_gap import backtest, BUCKETS_SENAL

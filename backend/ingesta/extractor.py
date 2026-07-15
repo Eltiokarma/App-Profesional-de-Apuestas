@@ -606,7 +606,70 @@ def guardar_ligas(con: sqlite3.Connection, respuesta: list) -> int:
 
 
 BACKFILL_PATH = ".backfill_hist.json"
-REFRESCO_VIGENTE_DIAS = 30  # la temporada en curso se re-barre cada N días
+# La temporada en curso se re-barre cada N días (SAD_REBARRIDO_DIAS para
+# forzar: con 1, el próximo arranque/corrida re-barre toda la vigente)
+REFRESCO_VIGENTE_DIAS = int(os.environ.get("SAD_REBARRIDO_DIAS", "30") or "30")
+
+SANAR90_PATH = ".sanar90.json"
+SANAR90_REINTENTO_DIAS = 7  # un torneo re-barrido que siga mal se reintenta tras N días
+SANAR90_MAX_TORNEOS = 5     # tope por corrida (protege el presupuesto diario)
+
+
+def torneos_90_pendientes(con: sqlite3.Connection) -> list[tuple]:
+    """Torneos (league_id, season, casos) con AET/PEN sin fulltime_*: esos
+    partidos entran al motor con el marcador de los 120' (regla de los 90'
+    violada — típico de fixtures guardados por versiones viejas)."""
+    try:
+        return con.execute(
+            """SELECT league_id, league_season, COUNT(*) FROM fixtures
+               WHERE status_short IN ('AET','PEN')
+                 AND (fulltime_home IS NULL OR fulltime_away IS NULL)
+                 AND league_id IS NOT NULL AND league_season IS NOT NULL
+               GROUP BY league_id, league_season ORDER BY COUNT(*) DESC"""
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return []  # DB sin columnas fulltime_* (esquema muy viejo)
+
+
+def sanar_90(cliente: "Cliente", con: sqlite3.Connection) -> int:
+    """Autocuración de la regla de los 90': re-barre los torneos detectados
+    por torneos_90_pendientes (el INSERT OR REPLACE rellena fulltime_*).
+    Marcador de intentos en .sanar90.json para no re-barrer lo incurable
+    (partidos que la API sirve sin fulltime) en cada corrida."""
+    casos = torneos_90_pendientes(con)
+    if not casos:
+        return 0
+    ahora = datetime.now(timezone.utc)
+    hoy = ahora.strftime("%Y-%m-%d")
+    tope = (ahora - timedelta(days=SANAR90_REINTENTO_DIAS)).strftime("%Y-%m-%d")
+    intentos: dict[str, str] = {}
+    try:
+        with open(SANAR90_PATH, encoding="utf-8") as f:
+            intentos = json.load(f)
+    except (OSError, ValueError):
+        pass
+    pendientes = [(lid, temp, c) for lid, temp, c in casos
+                  if intentos.get(f"{lid}:{temp}", "") < tope][:SANAR90_MAX_TORNEOS]
+    if not pendientes:
+        return 0
+    print(f"sanar 90': {len(casos)} torneos con AET/PEN sin fulltime_*; re-barro {len(pendientes)} en esta corrida")
+    total = 0
+    for lid, temp, c in pendientes:
+        if not cliente.quedan():
+            print("  presupuesto agotado; sanar 90' se reanuda en la próxima corrida")
+            break
+        try:
+            filas = cliente.paginado("fixtures", {"league": lid, "season": temp})
+            n = guardar_fixtures(con, filas)
+        except Exception as e:  # un torneo raro no corta la curación de los demás
+            print(f"  liga {lid} · {temp}: ERROR {e} — se reintenta en {SANAR90_REINTENTO_DIAS} días")
+        else:
+            total += n
+            print(f"  [{cliente.usadas}/{cliente.limite}] liga {lid} · {temp}: {n} fixtures re-barridos ({c} AET/PEN a curar)")
+        intentos[f"{lid}:{temp}"] = hoy
+        with open(SANAR90_PATH, "w", encoding="utf-8") as f:
+            json.dump(intentos, f)
+    return total
 
 
 def historico(cliente: Cliente, con: sqlite3.Connection, desde: int) -> int:
@@ -796,6 +859,8 @@ def main() -> int:
             total += n
             print(f"  [{cliente.usadas}/{cliente.limite}] {nombre}: {n} fixtures")
         print(f"fixtures guardados: {total}")
+        # regla de los 90': curar torneos con AET/PEN sin fulltime_* (datos viejos)
+        sanar_90(cliente, con)
         # limpieza de zombis: NS de ligas fuera de la lista (p. ej. Friendlies
         # de la carga inicial) jamás se actualizarán — se purgan; el historial
         # terminado de cualquier liga se conserva (alimenta al motor)

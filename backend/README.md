@@ -38,7 +38,7 @@ Servicio de **solo lectura** sobre las 4 SQLite del pipeline SAD
 ```bash
 python -m backend.seed_demo                          # genera ./demo_data con esquemas reales
 SAD_DATA_DIR=demo_data python -m uvicorn backend.app:app --port 8000
-python -m backend.test_api                           # verificaciones del contrato (168 checks)
+python -m backend.test_api                           # verificaciones del contrato (169 checks)
 ```
 
 ## Endpoints

@@ -37,6 +37,7 @@ en subproceso. El backend HTTP sigue siendo de solo lectura.
    | `SAD_LIGAS_EXTRA` | `414:Copa Chile,999:Copa de la Liga Perú` | torneos extra sin tocar código; IDs con `--buscar` |
    | `SAD_CASAS_REFERENCIA` | `bet365,pinnacle,1xbet,betano` | casas cuyo historial crudo se guarda aparte (selector Media/casa en la gráfica); ese es el default — solo definirla para cambiar la lista |
    | `SAD_BACKFILL_DESDE` | `2020` | backfill: fixtures de TODAS las ligas de la lista desde esa temporada **hasta la vigente incluida** (la vigente se re-barre cada 30 días; lo demás una sola vez). Corre al arrancar y tras cada corrida diaria, con progreso reanudable en el volumen (`.backfill_hist.json`); al día = 0 requests, puede quedarse puesta |
+   | `SAD_REBARRIDO_DIAS` | `30` | (opcional) cada cuántos días el backfill re-barre la temporada VIGENTE. Ponerla en `1` temporalmente fuerza el re-barrido completo en el próximo arranque (p. ej. tras detectar fixtures faltantes: ventana diaria que no corrió); después devolverla a `30` |
    | `ANTHROPIC_API_KEY` | *(clave de console.anthropic.com)* | capa de análisis EFE+DTP (`POST /api/v1/analisis/efe`). Ponerle límite mensual de gasto en la consola de Anthropic. Sin ella, el endpoint responde 503 y el resto de la API funciona igual |
    | `SAD_EFE_MODELO` | `claude-sonnet-5` | (opcional) modelo para el análisis EFE; ese es el default |
    | `SAD_BOOTSTRAP_URL` | *(URL del zip, solo la primera vez)* | ver carga inicial |
@@ -61,6 +62,12 @@ Con `SAD_INGESTA_HORA` puesta, cada día el extractor actualiza sad.db
 (ventana hoy−3d..+10d + cuotas, tope 95 req/día) y el pipeline regenera las
 derivadas en `/data`. El backend abre conexión por consulta, así que sirve
 los datos nuevos sin reiniciar.
+
+Cada corrida además **se cura sola la regla de los 90'**: detecta torneos con
+partidos AET/PEN sin `fulltime_*` (guardados por versiones viejas — el motor
+los contaba con el marcador de los 120') y los re-barre automáticamente
+(máx. 5 torneos/corrida, marcador `.sanar90.json` en el volumen). Auditoría
+manual: `python -m backend.ingesta.pipeline --diagnostico-90`.
 
 ## 2. Frontend en Vercel
 
