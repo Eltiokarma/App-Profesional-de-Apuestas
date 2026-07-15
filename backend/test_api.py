@@ -164,6 +164,16 @@ def main():
           len(pp["visitante"]["proximos"]) == 1 and pp["visitante"]["proximos"][0]["esInternacional"]
           and pp["visitante"]["proximos"][0]["diasDescanso"] == 1, pp["visitante"])
 
+    # backtest §5 (muestreado, sin fuga): humo sobre la demo
+    from backend.backtest_gap import backtest, BUCKETS_SENAL
+    bt = backtest(muestra=60, semilla=1)
+    check("backtest §5: corre sobre la demo con observaciones", bt["observaciones"] > 0, bt)
+    check("backtest §5: buckets completos en clásica y ajustada",
+          set(bt["clasica"]) == set(BUCKETS_SENAL) == set(bt["ajustada"]))
+    check("backtest §5: residuales acotados a [−3, 3]",
+          all(abs(s["residual"]) <= 3 for s in list(bt["clasica"].values()) + list(bt["ajustada"].values()) if s["n"]))
+    check("backtest §5: n de la muestra coherente", bt["muestra"] == 60 and bt["universo"] == 120, bt)
+
     # /analisis-prepartido
     an = c.get(A + f"/analisis-prepartido/{vivo['id']}").json()
     check(

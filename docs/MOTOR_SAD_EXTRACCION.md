@@ -515,7 +515,9 @@ señal_calendario = blando si recuperabilidad > μ_genérica + 0.15
   ≤4 días antes o después. Es una BANDERA — μ no tiene término de fatiga y no
   se le inventa uno; si el backtest le da poder predictivo, entrará entonces.
 - Umbrales (0.15, 0.8, 4 días, 3 próximos) **provisionales hasta el backtest**
-  contra sad.db real.
+  contra sad.db real: `python -m backend.backtest_gap --muestra 800` reconstruye
+  las señales sin fuga (nivel/forma a fecha − 1 s) sobre una muestra y reporta
+  el residual (pts − μ_partido) por bucket de señal.
 - Contrato: `muPartido`, `proximos[]` (rival, nivel, μ, localía, internacional,
   días de descanso), `recuperabilidad`, `senalCalendario`, `partidoTrampa`.
 - Nivel del rival futuro: `date <= fecha` con fallback 1.0, igual que el gap
