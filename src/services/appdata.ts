@@ -219,6 +219,51 @@ export async function loadConstantesCuota(teamKey: string): Promise<ConstanteCuo
   return getDataSource().constantesCuota(equipoId)
 }
 
+/** Apuesta que SALIÓ en un partido pasado del equipo: el 1X2 que ocurrió
+ *  (desde la perspectiva del equipo) y la cuota prepartido que pagaba.
+ *  cuotaSalida = null cuando la ingesta no capturó cuota de ese partido:
+ *  se muestra "sin cuota registrada", jamás un número inventado. */
+export interface ApuestaSalida {
+  fixtureId: number
+  fecha: string
+  condicion: 'Local' | 'Visita'
+  /** Rival y marcador vienen del cruce con /constantes; null si no casan. */
+  rival: string | null
+  marcador: string | null // goles del equipo - goles del rival
+  resultado: 1 | 0 | -1
+  cuotaSalida: number | null
+}
+
+/** Últimos `n` partidos TERMINADOS del equipo con la cuota de lo que salió
+ *  (más reciente primero). Cruza /constantes-cuota (cuotas 1X2 + resultado,
+ *  solo datos reales) con /constantes (rival y marcador) por fixtureId. */
+export async function loadApuestasSalidas(teamKey: string, n = 3): Promise<ApuestaSalida[]> {
+  const equipoId = TEAM_NUM[teamKey]
+  if (equipoId == null) return []
+  const ds = getDataSource()
+  const [cuotas, constantes] = await Promise.all([
+    ds.constantesCuota(equipoId),
+    ds.constantes(equipoId, 500),
+  ])
+  if (!cuotas.length) return []
+  const meta = new Map(constantes.map((c) => [c.fixtureId, c]))
+  return cuotas
+    .slice(-n) // el contrato entrega asc por fecha
+    .reverse()
+    .map((r) => {
+      const c = meta.get(r.fixtureId)
+      return {
+        fixtureId: r.fixtureId,
+        fecha: r.fecha,
+        condicion: r.esLocal ? 'Local' : 'Visita',
+        rival: c?.rivalNombre ?? null,
+        marcador: c ? `${c.golesFavor}-${c.golesContra}` : null,
+        resultado: r.resultado,
+        cuotaSalida: r.resultado === 1 ? r.cuota.victoria : r.resultado === 0 ? r.cuota.empate : r.cuota.derrota,
+      }
+    })
+}
+
 // ── cuotas: tabla base { mercado → { selección → cuota } } ──────────────────
 export type OddsTable = Record<string, Record<string, number>>
 

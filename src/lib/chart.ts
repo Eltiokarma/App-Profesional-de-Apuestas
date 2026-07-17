@@ -87,7 +87,15 @@ export interface Chart {
   nowX: string
   eventos: ChartEvento[]
   escalaLog: boolean
+  /** Referencia de la cuota inicial en la leyenda: 'apertura' (fase pre) o 'KO' (fase vivo). */
+  refLabel: string
 }
+
+/** Fase de la gráfica cuando el partido tiene tramo en vivo: 'pre' pinta solo
+ *  apertura → KO y 'vivo' solo KO → final, cada una con SU escala. Juntas en un
+ *  solo lienzo, las cuotas en vivo (1.01 ↔ 500) aplastaban el movimiento
+ *  prepartido hasta hacerlo ilegible incluso en escala log. */
+export type ChartFase = 'pre' | 'vivo'
 
 export function buildChart(
   m: Match,
@@ -101,53 +109,55 @@ export function buildChart(
   liveReal?: LiveRealSerie, // http + partido en juego: tramo en vivo con la serie REAL de odds_live
   escala: 'auto' | 'lineal' | 'log' = 'auto', // log: las cuotas bajas no se aplastan cuando alguna se dispara
   fechas?: HistFechasTable, // fechas de captura: el tooltip de cada punto muestra cuándo se tomó
+  fase: ChartFase = 'pre', // con tramo en vivo: qué mitad pintar (cada una con su escala)
 ): Chart {
   const def = MARKET_DEFS.find((d) => d.key === mk)!
   const mId = m.id
   const sels = def.sels(m)
-  const koFrac = 0.46
+  const hayVivo = isLive || !!liveReal
+  const enVivo = hayVivo && fase === 'vivo'
   // tiempo extra: el eje llega hasta el último minuto real (91-120), no se
   // clava en 90 apilando los puntos nuevos en el borde
   const maxMin = liveReal
     ? Math.max(90, liveReal.minuto, ...Object.values(liveReal.pts[mk] ?? {}).flat().map((p) => p.min))
     : 90
   type Punto = { t: number; odd: number; fecha?: string; min?: number }
-  const series = liveReal
+  const series = enVivo && liveReal
     ? sels.flatMap((sd) => {
-        // solo datos reales: prepartido si hay >=2 capturas, en vivo si hay serie
-        const h = histOf(hist, mk, sd.k) ?? []
-        const fh = fechas?.[mk]?.[sd.k]
+        // FASE VIVO (http): solo la serie real de odds_live, KO → final
         const lv = liveReal.pts[mk]?.[sd.k] ?? []
-        const pts: Punto[] = []
-        if (h.length >= 2) h.forEach((odd, i) => pts.push({ t: (i / (h.length - 1)) * koFrac, odd, fecha: fh?.[i] }))
-        lv.forEach((p) => pts.push({ t: koFrac + (Math.min(p.min, maxMin) / maxMin) * (1 - koFrac), odd: p.odd, min: p.min }))
-        if (!pts.length) return []
-        const S: Series = {
-          open: h.length >= 2 ? h[0] : lv[0].odd,
-          pre: h, inp: [], base: pts[pts.length - 1].odd, IN: 0,
-        }
+        if (!lv.length) return []
+        const pts: Punto[] = lv.map((p) => ({ t: Math.min(p.min, maxMin) / maxMin, odd: p.odd, min: p.min }))
+        const S: Series = { open: lv[0].odd, pre: [], inp: [], base: pts[pts.length - 1].odd, IN: 0 }
         return [{ sd, S, pts }]
       })
-    : sels.map((sd) => {
-        const h = histOf(hist, mk, sd.k)
-        const S = seriesFor(m, mk, sd.k, baseOf(base, mk, sd.k), h)
-        // las fechas solo aplican si la serie prepartido ES el historial real
-        const fh = h && h.length >= 2 ? fechas?.[mk]?.[sd.k] : undefined
-        const PRE = S.pre.length
-        const pts: Punto[] = []
-        for (let i = 0; i < PRE; i++) {
-          const t = isLive ? (i / (PRE - 1)) * koFrac : i / (PRE - 1)
-          pts.push({ t, odd: S.pre[i], fecha: fh?.[i] })
-        }
-        if (isLive) {
+    : enVivo
+      ? sels.map((sd) => {
+          // FASE VIVO (demo): tramo simulado KO → minuto actual
+          const S = seriesFor(m, mk, sd.k, baseOf(base, mk, sd.k), histOf(hist, mk, sd.k))
           const ci = Math.max(0, Math.min(S.IN - 1, Math.round((liveMin / 90) * (S.IN - 1))))
+          const pts: Punto[] = []
           for (let i = 0; i <= ci; i++) {
-            const t = koFrac + (i / (S.IN - 1)) * (1 - koFrac)
-            pts.push({ t, odd: S.inp[i], min: Math.round((i / (S.IN - 1)) * 90) })
+            pts.push({ t: S.IN > 1 ? i / (S.IN - 1) : 0, odd: S.inp[i], min: Math.round((i / (S.IN - 1)) * 90) })
           }
-        }
-        return { sd, S, pts }
-      })
+          return { sd, S: { ...S, open: S.inp[0] }, pts }
+        })
+      : sels.flatMap((sd) => {
+          // FASE PRE (o partido sin tramo vivo): historial apertura → KO a todo
+          // el ancho; solo capturas reales en http (>=2 por selección)
+          const h = histOf(hist, mk, sd.k)
+          if (liveReal && (h?.length ?? 0) < 2) return [] // sin prepartido real: nada inventado
+          const S = seriesFor(m, mk, sd.k, baseOf(base, mk, sd.k), h)
+          // las fechas solo aplican si la serie prepartido ES el historial real
+          const fh = h && h.length >= 2 ? fechas?.[mk]?.[sd.k] : undefined
+          const PRE = S.pre.length
+          const pts: Punto[] = []
+          for (let i = 0; i < PRE; i++) {
+            pts.push({ t: PRE > 1 ? i / (PRE - 1) : 0, odd: S.pre[i], fecha: fh?.[i] })
+          }
+          if (!pts.length) return []
+          return [{ sd, S, pts }]
+        })
   let ymin = Infinity
   let ymax = -Infinity
   series.forEach((x) =>
@@ -235,18 +245,19 @@ export function buildChart(
     grid.push({ y: py(v).toFixed(1), label: v.toFixed(2) })
   }
   let xL: [number, string][]
-  if (isLive || liveReal) {
+  if (enVivo) {
+    // fase vivo: el eje ES el partido, KO → último minuto real
     const marcas = maxMin > 90 ? [45, 90] : [15, 45, 75]
     xL = [
-      [0, 'Apertura'],
-      [koFrac, 'KO'],
-      ...marcas.map((mn) => [koFrac + (mn / maxMin) * (1 - koFrac), mn + "'"] as [number, string]),
+      [0, 'KO'],
+      ...marcas.map((mn) => [mn / maxMin, mn + "'"] as [number, string]),
       [1, maxMin + "'"],
     ]
   } else if (soloCapturas) {
+    // con tramo vivo, la última captura prepartido ES el KO
     xL = [
       [0, 'Apertura'],
-      [1, 'Última captura'],
+      [1, hayVivo ? 'KO' : 'Última captura'],
     ]
   } else {
     xL = [
@@ -261,26 +272,29 @@ export function buildChart(
     label,
     anchor: i === 0 ? 'start' : i === xL.length - 1 ? 'end' : 'middle',
   }))
-  const minutoNow = isLive ? liveMin : liveReal ? liveReal.minuto : null
-  const nowT = minutoNow != null ? koFrac + (Math.min(minutoNow, maxMin) / maxMin) * (1 - koFrac) : null
-  // goles y tarjetas anclados a su minuto en el tramo en vivo
-  const eventos: ChartEvento[] = (liveReal?.eventos ?? []).map((ev) => ({
-    x: Number(px(koFrac + (Math.min(ev.min, maxMin) / maxMin) * (1 - koFrac)).toFixed(1)),
-    tipo: ev.tipo,
-    label: ev.label,
-  }))
+  const minutoNow = !enVivo ? null : isLive ? liveMin : liveReal ? liveReal.minuto : null
+  const nowT = minutoNow != null ? Math.min(minutoNow, maxMin) / maxMin : null
+  // goles y tarjetas anclados a su minuto (solo tienen sentido en la fase vivo)
+  const eventos: ChartEvento[] = enVivo
+    ? (liveReal?.eventos ?? []).map((ev) => ({
+        x: Number(px(Math.min(ev.min, maxMin) / maxMin).toFixed(1)),
+        tipo: ev.tipo,
+        label: ev.label,
+      }))
+    : []
   return {
     lines,
     grid,
     xLabels,
     title: def.title,
     sub: def.sub,
-    showKO: isLive || !!liveReal,
-    koX: px(koFrac).toFixed(1),
-    showNow: isLive || !!liveReal,
+    showKO: false, // cada fase vive en su propio lienzo: el KO es un borde, no una línea
+    koX: '0',
+    showNow: enVivo,
     nowX: nowT != null ? px(nowT).toFixed(1) : '0',
     eventos,
     escalaLog,
+    refLabel: enVivo ? 'KO' : 'apertura',
   }
 }
 
