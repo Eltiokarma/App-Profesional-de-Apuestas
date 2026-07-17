@@ -37,7 +37,8 @@ en subproceso. El backend HTTP sigue siendo de solo lectura.
    | `SAD_LIGAS_EXTRA` | `414:Copa Chile,999:Copa de la Liga Perú` | torneos extra sin tocar código; IDs con `--buscar` |
    | `SAD_CASAS_REFERENCIA` | `bet365,pinnacle,1xbet,betano` | casas cuyo historial crudo se guarda aparte (selector Media/casa en la gráfica); ese es el default — solo definirla para cambiar la lista |
    | `SAD_BACKFILL_DESDE` | `2020` | backfill: fixtures de TODAS las ligas de la lista desde esa temporada **hasta la vigente incluida** (la vigente se re-barre cada 30 días; lo demás una sola vez). Corre al arrancar y tras cada corrida diaria, con progreso reanudable en el volumen (`.backfill_hist.json`); al día = 0 requests, puede quedarse puesta |
-   | `SAD_REBARRIDO_DIAS` | `30` | (opcional) cada cuántos días el backfill re-barre la temporada VIGENTE. Ponerla en `1` temporalmente fuerza el re-barrido completo en el próximo arranque (p. ej. tras detectar fixtures faltantes: ventana diaria que no corrió); después devolverla a `30` |
+   | `SAD_RELLENO_FECHAS` | `2026-05-31` o `2026-05-01:2026-06-05` | (opcional, one-shot) al arrancar re-pide `/fixtures` POR FECHA en ese día/rango (todas las temporadas, filtrado a las ligas de la lista) y regenera el pipeline. Palanca para **tapar a mano un hueco y verlo en los logs sin esperar** a la corrida programada. Gasta requests en cada arranque → quitarla cuando el hueco quede tapado. Diagnóstico previo: `python -m backend.ingesta.diagnostico` |
+   | `SAD_REBARRIDO_DIAS` | `30` | (opcional) cada cuántos días el backfill re-barre la temporada VIGENTE y las pasadas que sigan ABIERTAS en la DB (NS/TBD con fecha vencida — año cruzado). Ponerla en `1` temporalmente fuerza el re-barrido completo en el próximo arranque (p. ej. tras detectar fixtures faltantes: ventana diaria que no corrió); después devolverla a `30` |
    | `ANTHROPIC_API_KEY` | *(clave de console.anthropic.com)* | capa de análisis EFE+DTP (`POST /api/v1/analisis/efe`). Ponerle límite mensual de gasto en la consola de Anthropic. Sin ella, el endpoint responde 503 y el resto de la API funciona igual |
    | `SAD_EFE_MODELO` | `claude-sonnet-5` | (opcional) modelo para el análisis EFE; ese es el default |
    | `SAD_BOOTSTRAP_URL` | *(URL del zip, solo la primera vez)* | ver carga inicial |
@@ -61,13 +62,39 @@ en subproceso. El backend HTTP sigue siendo de solo lectura.
 Con `SAD_INGESTA_HORA` puesta, cada día el extractor actualiza sad.db
 (ventana hoy−3d..+10d + cuotas, tope 95 req/día) y el pipeline regenera las
 derivadas en `/data`. El backend abre conexión por consulta, así que sirve
-los datos nuevos sin reiniciar.
+los datos nuevos sin reiniciar. La ventana pide `/fixtures` **por fecha**
+(no por liga+temporada): el feed del día trae todas las temporadas a la vez,
+así que las ligas de año cruzado (Premier, Champions, Liga MX… que en mayo de
+2026 iban por la temporada API 2025) ya no desaparecen de la ventana — ese
+desfase fue el origen del hueco del 31/05/2026 en muchas ligas.
 
-Cada corrida además **se cura sola la regla de los 90'**: detecta torneos con
-partidos AET/PEN sin `fulltime_*` (guardados por versiones viejas — el motor
-los contaba con el marcador de los 120') y los re-barre automáticamente
-(máx. 5 torneos/corrida, marcador `.sanar90.json` en el volumen). Auditoría
-manual: `python -m backend.ingesta.pipeline --diagnostico-90`.
+Cada corrida además **se cura sola**, dos pasadas automáticas:
+
+- **Regla de los 90'**: detecta torneos con partidos AET/PEN sin `fulltime_*`
+  (guardados por versiones viejas — el motor los contaba con el marcador de
+  los 120') y los re-barre (máx. 5 torneos/corrida, marcador `.sanar90.json`
+  en el volumen). Auditoría manual:
+  `python -m backend.ingesta.pipeline --diagnostico-90`.
+- **Sanar fechas**: detecta días PASADOS que quedaron con partidos NS/TBD
+  (la firma de un hueco de ingesta) y re-pide cada día con `/fixtures?date=`,
+  que también trae los partidos que ni existían al barrer el torneo (finales
+  y liguillas creadas tarde). Máx. 10 fechas/corrida (`SAD_SANAR_FECHAS_MAX`),
+  horizonte 180 días (`SAD_SANAR_FECHAS_DIAS`), marcador `.sanar_fechas.json`
+  en el volumen (una fecha incurable se reintenta a los 7 días).
+
+El backfill (`SAD_BACKFILL_DESDE`) también re-barre cada 30 días los torneos
+de temporadas **pasadas que sigan abiertos** en la DB (con NS/TBD de fecha
+vencida), no solo la vigente: así el tramo final de una temporada cruzada no
+queda congelado en el estado del primer barrido.
+
+Auditoría de huecos (sin gastar requests, o con `--api` contrastando 1 día
+contra el feed real):
+
+```bash
+python -m backend.ingesta.diagnostico                    # resumen de zombis
+python -m backend.ingesta.diagnostico --dia 2026-05-31 --api
+python -m backend.ingesta.extractor --desde 2026-05-31 --hasta 2026-05-31 --solo fixtures  # rellenar un día a mano
+```
 
 ## 2. Frontend en Vercel
 

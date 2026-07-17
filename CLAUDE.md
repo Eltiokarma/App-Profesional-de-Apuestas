@@ -22,7 +22,8 @@ python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--
 # ingesta (dueña de los datos; el backend HTTP sigue siendo de solo lectura)
 python -m backend.ingesta.extractor --probar    # 1 request de prueba (API_FOOTBALL_KEY en .env)
 python -m backend.ingesta.extractor --buscar "Copa Chile"  # descubrir IDs de torneos nuevos
-python -m backend.ingesta.extractor             # fixtures hoy−3d..+10d + cuotas NS (tope auto por plan)
+python -m backend.ingesta.extractor             # fixtures hoy−3d..+10d (por FECHA, todas las temporadas) + cuotas NS (tope auto por plan)
+python -m backend.ingesta.diagnostico --dia 2026-05-31 --api  # auditar huecos (NS/TBD vencidos) y contrastar un día con la API
 python -m backend.ingesta.extractor --ventana-horas 6  # refresco ligero: solo cuotas de NS próximos
 python -m backend.ingesta.en_vivo               # 1 ciclo en vivo: marcador/minuto + odds_live (WAL)
 python -m backend.ingesta.pipeline --out .      # regenera levels/constants/discreto desde sad.db

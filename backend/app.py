@@ -158,6 +158,47 @@ def _backfill_arranque() -> None:
 if BACKFILL_DESDE:
     threading.Thread(target=_backfill_arranque, daemon=True, name="backfill-historico").start()
 
+# Relleno puntual de fechas (one-shot al arranque): SAD_RELLENO_FECHAS="2026-05-31"
+# o un rango "2026-05-01:2026-06-05" re-pide /fixtures POR FECHA en ese tramo
+# (todas las temporadas, filtrado a nuestras ligas) y regenera el pipeline.
+# Es la palanca para tapar A MANO un hueco detectado —p. ej. el 31/05 de las
+# ligas de año cruzado que la ventana por temporada nunca vio— y verlo en los
+# logs sin esperar a la corrida programada. Sirve para fechas de CUALQUIER
+# temporada porque pide por fecha. Es idempotente pero gasta requests en cada
+# arranque: quitar la variable cuando el hueco quede tapado.
+RELLENO_FECHAS = os.environ.get("SAD_RELLENO_FECHAS", "").strip()
+
+
+def _relleno_fechas_arranque() -> None:
+    desde, _, hasta = RELLENO_FECHAS.partition(":")
+    desde, hasta = desde.strip(), (hasta.strip() or desde.strip())
+    try:  # una variable con formato inválido no debe tumbar el hilo en silencio
+        datetime.strptime(desde, "%Y-%m-%d")
+        datetime.strptime(hasta, "%Y-%m-%d")
+    except ValueError:
+        print(f"[ingesta] SAD_RELLENO_FECHAS inválida ({RELLENO_FECHAS!r}; "
+              f"formato YYYY-MM-DD o YYYY-MM-DD:YYYY-MM-DD) — se ignora", flush=True)
+        return
+    time.sleep(35)  # tras el arranque del server (y del backfill_arranque, que espera 30 s)
+    raiz = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    env = {**os.environ, "PYTHONPATH": raiz, "PYTHONUTF8": "1", "PYTHONUNBUFFERED": "1"}
+    print(f"[ingesta] relleno puntual de fechas {desde} → {hasta} (arranque)", flush=True)
+    subprocess.run(
+        [sys.executable, "-u", "-m", "backend.ingesta.extractor",
+         "--desde", desde, "--hasta", hasta, "--solo", "fixtures"],
+        cwd=db.BASE_DIR, env=env,
+    )
+    # niveles/constantes de lo recién rellenado (pipeline local, 0 requests)
+    subprocess.run(
+        [sys.executable, "-u", "-m", "backend.ingesta.pipeline", "--out", "."],
+        cwd=db.BASE_DIR, env=env,
+    )
+    liga_meta.cache_clear()
+
+
+if RELLENO_FECHAS:
+    threading.Thread(target=_relleno_fechas_arranque, daemon=True, name="relleno-fechas").start()
+
 # Refresco de día de partido (fase 2 de docs/EXTRACCION_TIEMPO_REAL.md):
 # SAD_REFRESCO_MIN=30 corre cada N minutos un extractor ligero (--ventana-horas 6:
 # SOLO cuotas de NS que empiezan en <6 h). Sin partidos próximos el extractor
@@ -210,7 +251,8 @@ print(
     f"[ingesta] programación → diaria: {INGESTA_HORA or 'apagada'} · "
     f"refresco: {REFRESCO_MIN + ' min' if REFRESCO_MIN else 'apagado'} · "
     f"en vivo: {LIVE_SEGUNDOS + ' s' if LIVE_SEGUNDOS else 'apagado'} · "
-    f"backfill: {'desde ' + BACKFILL_DESDE if BACKFILL_DESDE else 'apagado'}",
+    f"backfill: {'desde ' + BACKFILL_DESDE if BACKFILL_DESDE else 'apagado'}"
+    + (f" · relleno: {RELLENO_FECHAS}" if RELLENO_FECHAS else ""),
     flush=True,
 )
 

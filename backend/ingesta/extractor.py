@@ -5,8 +5,12 @@ docs/INFORME_INGESTA.md §3) corrigiendo sus defectos: UNA sola lista de ligas,
 fechas SIEMPRE en UTC con el formato de sad.db ('YYYY-MM-DD HH:MM:SS.ffffff'),
 y sin clave hardcodeada (env API_FOOTBALL_KEY o .env de la raíz).
 
-Flujo: /fixtures por liga en la ventana [--desde, --hasta] (default hoy−3d a
-hoy+10d) y /odds de los partidos NS (todos los bookmakers en 1 request):
+Flujo: /fixtures POR FECHA en la ventana [--desde, --hasta] (default hoy−3d a
+hoy+10d; el feed del día trae todas las ligas y TODAS las temporadas, así que
+es inmune al desfase de temporadas cruzadas: en mayo de 2026 la Premier va por
+la temporada 2025 de la API mientras Brasil va por la 2026 — pedir por liga
+con un SEASON único global dejaba a media lista sin datos) y /odds de los
+partidos NS (todos los bookmakers en 1 request):
 primera captura para los que no tienen cuotas, y re-captura de los que
 empiezan en <= 2 días para el historial de movimiento (odds_history guarda
 la media entre casas por mercado/selección con captured_at; la tabla odds
@@ -672,6 +676,107 @@ def sanar_90(cliente: "Cliente", con: sqlite3.Connection) -> int:
     return total
 
 
+def ventana_por_fecha(cliente: "Cliente", con: sqlite3.Connection,
+                      desde: str, hasta: str) -> int:
+    """Fixtures de la ventana pidiendo /fixtures?date=YYYY-MM-DD día a día y
+    filtrando el feed mundial a NUESTRAS ligas. Sustituye a la consulta por
+    liga+season: aquella dependía de un SEASON único global y las ligas de año
+    cruzado (Premier, Champions, Liga MX… con temporada API 2025 en mayo de
+    2026) desaparecían de la ventana — el hueco del 31/05 en muchas ligas.
+    Además ahorra: ~1 request por día en vez de 1 por liga."""
+    total = 0
+    dia = datetime.strptime(desde, "%Y-%m-%d")
+    fin = datetime.strptime(hasta, "%Y-%m-%d")
+    while dia <= fin:
+        if not cliente.quedan():
+            print("  presupuesto agotado; el resto de la ventana queda para la próxima corrida")
+            break
+        fecha = dia.strftime("%Y-%m-%d")
+        try:
+            filas = cliente.paginado("fixtures", {"date": fecha})
+            nuestras = [it for it in filas if (it.get("league") or {}).get("id") in LIGAS]
+            n = guardar_fixtures(con, nuestras)
+        except Exception as e:  # un día con payload raro no corta a los demás
+            print(f"  {fecha}: ERROR {e} — sigo con el día siguiente")
+            dia += timedelta(days=1)
+            continue
+        total += n
+        print(f"  [{cliente.usadas}/{cliente.limite}] {fecha}: {n} fixtures nuestros "
+              f"(feed del día: {len(filas)} partidos)")
+        dia += timedelta(days=1)
+    return total
+
+
+SANARF_PATH = ".sanar_fechas.json"
+SANARF_REINTENTO_DIAS = 7   # una fecha re-barrida que siga con zombis se reintenta tras N días
+SANARF_MAX_FECHAS = int(os.environ.get("SAD_SANAR_FECHAS_MAX", "10") or "10")
+SANARF_HORIZONTE_DIAS = int(os.environ.get("SAD_SANAR_FECHAS_DIAS", "180") or "180")
+
+
+def fechas_zombi(con: sqlite3.Connection, hasta: str,
+                 horizonte_dias: int = SANARF_HORIZONTE_DIAS) -> list[tuple]:
+    """Fechas PASADAS que aún tienen partidos NS/TBD en la DB: la firma de un
+    hueco de ingesta (el partido se jugó pero nadie volvió a pedir ese día).
+    Devuelve [(fecha, zombis)] de la más reciente a la más vieja."""
+    piso = (datetime.now(timezone.utc) - timedelta(days=horizonte_dias)).strftime("%Y-%m-%d")
+    try:
+        return con.execute(
+            """SELECT substr(date, 1, 10) AS dia, COUNT(*) FROM fixtures
+               WHERE status_short IN ('NS', 'TBD')
+                 AND substr(date, 1, 10) BETWEEN ? AND ?
+               GROUP BY dia ORDER BY dia DESC""",
+            (piso, hasta),
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return []
+
+
+def sanar_fechas(cliente: "Cliente", con: sqlite3.Connection) -> int:
+    """Autocuración de huecos por fecha: re-pide con /fixtures?date= los días
+    pasados que siguen con partidos NS/TBD (más viejos que la ventana diaria,
+    que ya cubre hoy−3d). El feed por fecha trae todas las temporadas, así que
+    cura tanto los NS congelados (resultado nunca actualizado) como los
+    partidos que ni existían al barrer el torneo (finales/liguillas creadas
+    tarde). Marcador de intentos en .sanar_fechas.json para no re-pedir en
+    cada corrida las fechas incurables (aplazados sin resolver)."""
+    ahora = datetime.now(timezone.utc)
+    tope = (ahora - timedelta(days=DIAS_ATRAS + 1)).strftime("%Y-%m-%d")
+    casos = fechas_zombi(con, tope)
+    if not casos:
+        return 0
+    hoy = ahora.strftime("%Y-%m-%d")
+    reintento = (ahora - timedelta(days=SANARF_REINTENTO_DIAS)).strftime("%Y-%m-%d")
+    intentos: dict[str, str] = {}
+    try:
+        with open(SANARF_PATH, encoding="utf-8") as f:
+            intentos = json.load(f)
+    except (OSError, ValueError):
+        pass
+    pendientes = [(fecha, c) for fecha, c in casos
+                  if intentos.get(fecha, "") < reintento][:SANARF_MAX_FECHAS]
+    if not pendientes:
+        return 0
+    print(f"sanar fechas: {len(casos)} días pasados con partidos NS/TBD; re-pido {len(pendientes)} en esta corrida")
+    total = 0
+    for fecha, c in pendientes:
+        if not cliente.quedan():
+            print("  presupuesto agotado; sanar fechas se reanuda en la próxima corrida")
+            break
+        try:
+            filas = cliente.paginado("fixtures", {"date": fecha})
+            nuestras = [it for it in filas if (it.get("league") or {}).get("id") in LIGAS]
+            n = guardar_fixtures(con, nuestras)
+        except Exception as e:  # una fecha rara no corta la curación de las demás
+            print(f"  {fecha}: ERROR {e} — se reintenta en {SANARF_REINTENTO_DIAS} días")
+        else:
+            total += n
+            print(f"  [{cliente.usadas}/{cliente.limite}] {fecha}: {n} fixtures re-guardados ({c} zombis a curar)")
+        intentos[fecha] = hoy
+        with open(SANARF_PATH, "w", encoding="utf-8") as f:
+            json.dump(intentos, f)
+    return total
+
+
 def historico(cliente: Cliente, con: sqlite3.Connection, desde: int) -> int:
     """Backfill: fixtures de TODAS las ligas de LIGAS desde la temporada
     `desde` hasta la VIGENTE incluida. Las pasadas se bajan una sola vez; la
@@ -690,12 +795,29 @@ def historico(cliente: Cliente, con: sqlite3.Connection, desde: int) -> int:
     except (OSError, ValueError):
         pass
     tope_vigente = (datetime.now(timezone.utc) - timedelta(days=REFRESCO_VIGENTE_DIAS)).strftime("%Y-%m-%d")
+    # torneos de temporadas PASADAS que siguen abiertos en la DB (NS/TBD con
+    # fecha ya vencida): en las ligas de año cruzado la temporada API 2025 se
+    # juega hasta mayo/junio de 2026 — barrerla "una sola vez" en invierno
+    # congelaba todo su tramo final (el hueco del 31/05)
+    try:
+        abiertos = {
+            (lid, temp) for lid, temp in con.execute(
+                """SELECT DISTINCT league_id, league_season FROM fixtures
+                   WHERE status_short IN ('NS', 'TBD') AND substr(date, 1, 10) < ?
+                     AND league_id IS NOT NULL AND league_season IS NOT NULL""",
+                (hoy,),
+            )
+        }
+    except sqlite3.OperationalError:
+        abiertos = set()
 
     def pendiente(lid: int, temp: int) -> bool:
         marca = hecho.get(f"{lid}:{temp}")
         if marca is None:
             return True
-        return temp == SEASON and marca < tope_vigente  # la vigente caduca
+        if temp == SEASON:
+            return marca < tope_vigente  # la vigente caduca
+        return (lid, temp) in abiertos and marca < tope_vigente  # pasada pero abierta: también caduca
 
     pendientes = [(lid, temp) for lid in sorted(LIGAS) for temp in range(desde, SEASON + 1)
                   if pendiente(lid, temp)]
@@ -750,7 +872,9 @@ def main() -> int:
     ap.add_argument("--db", default="sad.db", help="ruta a sad.db")
     ap.add_argument("--limite", type=int, default=None,
                     help="tope fijo de requests (default: auto por cabeceras de la API, arranca en 95)")
-    ap.add_argument("--desde", help="inicio de ventana YYYY-MM-DD (default hoy−3d)")
+    ap.add_argument("--desde", help="inicio de ventana YYYY-MM-DD (default hoy−3d); la ventana "
+                                    "pide por fecha, así que sirve para rellenar días pasados "
+                                    "de CUALQUIER temporada (p. ej. --desde 2026-05-31 --hasta 2026-05-31)")
     ap.add_argument("--hasta", help="fin de ventana YYYY-MM-DD (default hoy+10d)")
     ap.add_argument("--solo", choices=["fixtures", "cuotas"], help="ejecutar una sola fase")
     ap.add_argument("--ventana-horas", type=int, metavar="N",
@@ -842,25 +966,14 @@ def main() -> int:
         return 0
 
     if args.solo != "cuotas":
-        print(f"Fixtures {desde} → {hasta} · temporada {SEASON} · {len(LIGAS)} ligas")
-        total = 0
-        for liga_id, nombre in LIGAS.items():
-            if not cliente.quedan():
-                break
-            try:
-                filas = cliente.paginado(
-                    "fixtures",
-                    {"league": liga_id, "season": SEASON, "from": desde, "to": hasta},
-                )
-                n = guardar_fixtures(con, filas)
-            except Exception as e:  # una liga con payload raro no corta a las demás
-                print(f"  {nombre}: ERROR {e} — sigo con la siguiente liga")
-                continue
-            total += n
-            print(f"  [{cliente.usadas}/{cliente.limite}] {nombre}: {n} fixtures")
+        print(f"Fixtures {desde} → {hasta} · por fecha (todas las temporadas) · filtro a {len(LIGAS)} ligas")
+        total = ventana_por_fecha(cliente, con, desde, hasta)
         print(f"fixtures guardados: {total}")
         # regla de los 90': curar torneos con AET/PEN sin fulltime_* (datos viejos)
         sanar_90(cliente, con)
+        # huecos por fecha: días pasados que quedaron con NS/TBD (p. ej. el
+        # tramo final de las temporadas cruzadas antes de esta corrección)
+        sanar_fechas(cliente, con)
         # limpieza de zombis: NS de ligas fuera de la lista (p. ej. Friendlies
         # de la carga inicial) jamás se actualizarán — se purgan; el historial
         # terminado de cualquier liga se conserva (alimenta al motor)
