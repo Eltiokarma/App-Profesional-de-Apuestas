@@ -273,6 +273,16 @@ def main() -> int:
 
     n = etapa_discreto(fixtures, filas_niveles, constantes, nombres, args.out)
     print(f"discreto.db: {n} filas")
+
+    # k_cuota (§3.8): constants_cuota vivía SOLO del backfill manual y se
+    # congelaba en su última corrida (la UI mostraba "últimos partidos" de
+    # meses atrás); ahora se reconstruye aquí, en cada corrida del pipeline
+    try:
+        from backend.backfill_cuota import construir_constants_cuota
+        construir_constants_cuota(args.out, args.sad)
+    except Exception as e:  # tabla derivada: su fallo no invalida el resto
+        print(f"constants_cuota: ERROR {e} — las demás DBs quedan escritas", file=sys.stderr)
+
     print(f"listo en {time.perf_counter() - t0:.1f} s → {args.out}")
     return 0
 
