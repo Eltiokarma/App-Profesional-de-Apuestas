@@ -20,6 +20,15 @@ const R = 448
 const MID = 104
 const AMP = 84 // px de amplitud vertical para |sv| = maxAbs
 
+const MES_CORTO = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+/** '12 abr 26' — cuándo ocurrió el punto; '' si el dato no existe (demo). */
+const fmtFecha = (iso?: string): string => {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  return `${d.getDate()} ${MES_CORTO[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`
+}
+
 /**
  * K acumulada como gráfica de líneas: los "picos acumulados" crecen con la
  * racha y caen a cero en el reseteo. Los partidos de torneos internacionales
@@ -51,6 +60,7 @@ export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20 }: Props) 
       : isMargin(kType) ? marginQ(kType, s.gf, s.ga, s.rivalLevel)
       : s.isLocal ? s.q.local : s.q.visita
     const rv = TEAMS[s.rival]
+    const fch = fmtFecha(s.fecha)
     return {
       x: x(i),
       y: y(sv),
@@ -60,13 +70,16 @@ export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20 }: Props) 
       dim: !inCond,
       title:
         `#${total - n + i + 1} · ${s.isLocal ? 'vs' : 'en'} ${rv ? rv.short : s.rival} ${s.gf}-${s.ga}` +
+        (fch ? ` · ${fch}` : '') +
         (s.esInternacional ? ' · internacional' : ' · liga') +
         ` · rival nivel ${s.rivalLevel.toFixed(2)}` +
         (inCond ? ` · q ${qc == null ? '—' : signFmt(qc)}` : ' · no actualiza (otra condición)') +
         ` · K ${fmtK(v)}${v === 0 ? ' (reset)' : ''}`,
-      // dos renglones cortos para la burbuja al tocar el punto
+      // dos renglones cortos para la burbuja al tocar el punto: el primero
+      // lleva la FECHA para ubicar cuándo ocurrió el evento
       t1:
         `#${total - n + i + 1} · ${s.isLocal ? 'vs' : 'en'} ${rv ? rv.short : s.rival} ${s.gf}-${s.ga}` +
+        (fch ? ` · ${fch}` : '') +
         (s.esInternacional ? ' · internacional' : ''),
       t2:
         `K ${fmtK(v)}${v === 0 ? ' (reset)' : ''}` +

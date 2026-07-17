@@ -3,7 +3,7 @@ import type { KCondKey, KTypeKey } from '../data/types'
 import type { FusedK, KSnapshot } from '../motor/types'
 
 /** Opciones del selector de ventana de la gráfica (Infinity = toda la historia). */
-export const K_WINDOW_OPTS: [number, string][] = [[8, '8'], [15, '15'], [50, '50'], [Infinity, 'Todo']]
+export const K_WINDOW_OPTS: [number, string][] = [[8, '8'], [15, '15'], [30, '30'], [50, '50'], [100, '100'], [Infinity, 'Todo']]
 
 /** Grupos del selector de tipo de K (Resultado · Goles · Mercados · Márgenes),
  *  compartidos por Burbujas y la página de Equipo. */

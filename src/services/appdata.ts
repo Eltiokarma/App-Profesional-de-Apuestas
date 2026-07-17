@@ -158,6 +158,7 @@ function constantesToSnap(c: ConstantesDTO, idx: number): KSnapshot {
   return {
     fixtureId: c.fixtureId,
     t: idx,
+    fecha: c.fecha, // solo para tooltips: cuándo ocurrió el punto
     rival: rivalKey,
     isLocal: c.condicion === 'Local',
     gf: c.golesFavor,
@@ -219,10 +220,16 @@ export async function loadConstantesCuota(teamKey: string): Promise<ConstanteCuo
   return getDataSource().constantesCuota(equipoId)
 }
 
-/** Apuesta que SALIÓ en un partido pasado del equipo: el 1X2 que ocurrió
- *  (desde la perspectiva del equipo) y la cuota prepartido que pagaba.
- *  cuotaSalida = null cuando la ingesta no capturó cuota de ese partido:
- *  se muestra "sin cuota registrada", jamás un número inventado. */
+/** Apuesta que SALIÓ en un partido pasado del equipo: lo que ocurrió en cada
+ *  mercado (1X2, Más/Menos 2.5, Ambos marcan) y la cuota prepartido que
+ *  pagaba. cuota = null cuando la ingesta no capturó ese mercado: se muestra
+ *  "sin cuota registrada", jamás un número inventado. */
+export interface MercadoSalida {
+  /** Qué ocurrió ('Más de 2.5', 'Sí'…); null si no hay marcador para saberlo. */
+  salida: string | null
+  cuota: number | null
+}
+
 export interface ApuestaSalida {
   fixtureId: number
   fecha: string
@@ -232,11 +239,18 @@ export interface ApuestaSalida {
   marcador: string | null // goles del equipo - goles del rival
   resultado: 1 | 0 | -1
   cuotaSalida: number | null
+  /** Más/Menos 2.5 y Ambos marcan: salida real + cuota capturada. */
+  ou: MercadoSalida
+  btts: MercadoSalida
+  /** Doble oportunidad: las DOS combinaciones que salieron (p. ej. gana el
+   *  local → 1X y 12), cada una con su cuota capturada (null = sin cuota). */
+  dc: { sel: string; cuota: number | null }[]
 }
 
 /** Últimos `n` partidos TERMINADOS del equipo con la cuota de lo que salió
  *  (más reciente primero). Cruza /constantes-cuota (cuotas 1X2 + resultado,
- *  solo datos reales) con /constantes (rival y marcador) por fixtureId. */
+ *  solo datos reales) con /constantes (rival y marcador) por fixtureId, y
+ *  pide /cuotas de cada fixture para los mercados O/U 2.5 y BTTS. */
 export async function loadApuestasSalidas(teamKey: string, n = 3): Promise<ApuestaSalida[]> {
   const equipoId = TEAM_NUM[teamKey]
   if (equipoId == null) return []
@@ -247,21 +261,38 @@ export async function loadApuestasSalidas(teamKey: string, n = 3): Promise<Apues
   ])
   if (!cuotas.length) return []
   const meta = new Map(constantes.map((c) => [c.fixtureId, c]))
-  return cuotas
-    .slice(-n) // el contrato entrega asc por fecha
-    .reverse()
-    .map((r) => {
-      const c = meta.get(r.fixtureId)
-      return {
-        fixtureId: r.fixtureId,
-        fecha: r.fecha,
-        condicion: r.esLocal ? 'Local' : 'Visita',
-        rival: c?.rivalNombre ?? null,
-        marcador: c ? `${c.golesFavor}-${c.golesContra}` : null,
-        resultado: r.resultado,
-        cuotaSalida: r.resultado === 1 ? r.cuota.victoria : r.resultado === 0 ? r.cuota.empate : r.cuota.derrota,
-      }
-    })
+  const ultimos = cuotas.slice(-n).reverse() // el contrato entrega asc por fecha
+  // cuotas por fixture (O/U 2.5 y BTTS): un fixture sin cuotas guardadas no
+  // rompe la lista — ese mercado sale como "sin cuota registrada"
+  const tablas = await Promise.all(
+    ultimos.map((r) => ds.cuotas(r.fixtureId).catch(() => [])),
+  )
+  return ultimos.map((r, i) => {
+    const c = meta.get(r.fixtureId)
+    const odd = (mercado: string, sel: string) =>
+      tablas[i].find((q) => q.mercado === mercado && q.seleccion === sel)?.cuota ?? null
+    const total = c ? c.golesFavor + c.golesContra : null
+    const ambos = c ? c.golesFavor > 0 && c.golesContra > 0 : null
+    // resultado del PARTIDO (no del equipo): 1 ganó local · 0 empate · -1 ganó visita
+    const resMatch = r.esLocal ? r.resultado : -r.resultado
+    const dcKeys = resMatch === 1 ? ['1X', '12'] : resMatch === 0 ? ['1X', 'X2'] : ['12', 'X2']
+    return {
+      fixtureId: r.fixtureId,
+      fecha: r.fecha,
+      condicion: r.esLocal ? 'Local' : 'Visita',
+      rival: c?.rivalNombre ?? null,
+      marcador: c ? `${c.golesFavor}-${c.golesContra}` : null,
+      resultado: r.resultado,
+      cuotaSalida: r.resultado === 1 ? r.cuota.victoria : r.resultado === 0 ? r.cuota.empate : r.cuota.derrota,
+      ou: total == null
+        ? { salida: null, cuota: null }
+        : { salida: total > 2.5 ? 'Más de 2.5' : 'Menos de 2.5', cuota: odd('ou', total > 2.5 ? 'O' : 'U') },
+      btts: ambos == null
+        ? { salida: null, cuota: null }
+        : { salida: ambos ? 'Sí' : 'No', cuota: odd('btts', ambos ? 'Y' : 'N') },
+      dc: dcKeys.map((sel) => ({ sel, cuota: odd('dc', sel) })),
+    }
+  })
 }
 
 // ── cuotas: tabla base { mercado → { selección → cuota } } ──────────────────
