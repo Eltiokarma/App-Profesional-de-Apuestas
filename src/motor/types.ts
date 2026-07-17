@@ -23,6 +23,8 @@ export interface TeamMatch {
   ga: number
   /** true si fue partido de torneo internacional (UCL, UEL, Libertadores…). */
   esInternacional?: boolean
+  /** Fecha del partido (solo informativa, para tooltips; el motor no la usa). */
+  fecha?: string
 }
 
 /** Fila de `team_levels`: nivel continuo (~0.5–3.5) por (equipo, fixture). */
