@@ -955,8 +955,9 @@ def constantes(equipo_id: int, limit: int = Query(default=50, ge=1, le=500)):
 
 @app.get(API + "/constantes-cuota/{equipo_id}")
 def constantes_cuota(equipo_id: int):
-    """k_cuota (§3.8): rachas de suma de cuota 1X2, solo 2026. Vacío si no se
-    ha construido constants_cuota (correr backend/backfill_cuota)."""
+    """k_cuota (§3.8): rachas de suma de cuota 1X2, solo 2026. La tabla
+    constants_cuota se reconstruye en cada corrida del pipeline (y también con
+    backend/backfill_cuota, que además puede inyectar cuotas sintéticas)."""
     return constantes_cuota_de(equipo_id)
 
 

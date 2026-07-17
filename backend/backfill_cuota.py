@@ -115,8 +115,18 @@ def rellenar_sinteticas(base_dir, teams):
     print(f"Relleno sintético: {len(hechos)} fixtures · {filas} filas odds (bookmaker=SYNTHETIC) para {len(teams)} equipos")
 
 
-def construir_constants_cuota(base_dir):
-    sad = _connect(base_dir, "sad.db")
+def construir_constants_cuota(base_dir, sad_path=None):
+    """Reconstruye constants_cuota entera desde sad.db. La llama también el
+    pipeline en cada corrida: cuando solo la construía el backfill manual, la
+    tabla se congelaba en su última corrida y los "últimos partidos" de la UI
+    mostraban datos de meses atrás. `sad_path` permite un sad.db fuera de
+    base_dir (el pipeline separa --sad de --out)."""
+    if sad_path is None:
+        sad = _connect(base_dir, "sad.db")
+    else:
+        sad = sqlite3.connect(f"file:{sad_path}?mode=ro", uri=True)
+        sad.execute("PRAGMA temp_store=MEMORY")
+        sad.execute("PRAGMA busy_timeout=30000")
     mw = _mw_odds(sad)  # incluye ya las sintéticas
     fixtures = _fixtures_2026(sad)
     sad.close()
