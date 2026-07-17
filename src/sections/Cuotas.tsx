@@ -5,6 +5,7 @@ import { LINE_COLORS, MARKET_DEFS } from '../data'
 import type { Match } from '../data/types'
 import { buildChart, buildSpark, type LiveRealSerie } from '../lib/chart'
 import { curOddOf, seriesFor } from '../lib/odds'
+import { ApuestasSalidas } from '../components/ApuestasSalidas'
 import { ChartSvg } from '../components/ChartSvg'
 import { matchView } from '../lib/view'
 import { loadCuotasBase, loadCuotasCasas, loadCuotasHistorial, loadFuentesHistorial } from '../services/appdata'
@@ -86,18 +87,35 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
   // aplastaría a las de 1.x); el usuario puede forzarla con los chips
   const [escala, setEscala] = useState<'auto' | 'lineal' | 'log'>('auto')
 
+  // FASES de la gráfica: con tramo en vivo, prepartido y en-vivo se pintan por
+  // separado (cada una con su escala) — juntas, el 1.01↔500 del final aplastaba
+  // el movimiento prepartido hasta hacerlo ilegible incluso en log
+  const hayTramoVivo = isLive || !!livePts?.pts[cmk]
+  const hayTramoPre = esDemo || histCompleto
+  const [fase, setFase] = useState<'pre' | 'vivo'>('pre')
+  useEffect(() => {
+    // por defecto: el partido en juego abre EN VIVO; uno terminado, el prepartido
+    setFase(isLive || live?.estado === 'en_vivo' ? 'vivo' : 'pre')
+  }, [m.id, isLive, live?.estado])
+  // si la fase elegida no tiene datos en este mercado, cae a la que sí tenga
+  const faseEfectiva: 'pre' | 'vivo' = fase === 'vivo'
+    ? (hayTramoVivo ? 'vivo' : 'pre')
+    : (hayTramoPre ? 'pre' : 'vivo')
+
   // memoizadas contra el tick de 1s del store (s.now): solo se reconstruyen
   // cuando cambia algo que de verdad afecta a las series
   const chart = useMemo(
-    () => (hayCurva ? buildChart(m, cmk, isLive, s.liveMin, s.marked, base, hist, !esDemo, livePts ?? undefined, escala, histFechas) : null),
-    [m, cmk, isLive, s.liveMin, s.marked, base, hist, histFechas, hayCurva, esDemo, livePts, escala],
+    () => (hayCurva ? buildChart(m, cmk, isLive, s.liveMin, s.marked, base, hist, !esDemo, livePts ?? undefined, escala, histFechas, faseEfectiva) : null),
+    [m, cmk, isLive, s.liveMin, s.marked, base, hist, histFechas, hayCurva, esDemo, livePts, escala, faseEfectiva],
   )
-  const chartXfromOpen = isLive
-    ? 'apertura → ' + s.liveMin + '’ en vivo'
-    : livePts?.pts[cmk]
-      ? live?.estado === 'en_vivo'
-        ? 'apertura → ' + (live.minuto ?? '?') + '’ en vivo'
-        : 'apertura → final del partido'
+  const chartXfromOpen = faseEfectiva === 'vivo'
+    ? (isLive
+        ? 'KO → ' + s.liveMin + '’ en vivo'
+        : live?.estado === 'en_vivo'
+          ? 'KO → ' + (live.minuto ?? '?') + '’ en vivo'
+          : 'KO → final del partido')
+    : hayTramoVivo
+      ? 'apertura → KO (prepartido)'
       : esDemo ? 'apertura → cierre prepartido' : 'apertura → última captura de la ingesta'
 
   const marketCards = useMemo(() => MARKET_DEFS.map((def) => {
@@ -301,6 +319,25 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
             <span style={{ font: '500 11px var(--mono)', color: 'var(--t3)' }}>Movimiento de cuota · {chartXfromOpen}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            {/* toggle de fase: dos lienzos separados (prepartido / en vivo) */}
+            {hayTramoVivo && hayTramoPre && (
+              <div style={{ display: 'flex', padding: 3, borderRadius: 8, background: 'var(--bg3)', border: '1px solid var(--line)' }}>
+                {(['pre', 'vivo'] as const).map((f2) => {
+                  const activa = faseEfectiva === f2
+                  const esVivo = f2 === 'vivo'
+                  return (
+                    <button
+                      key={f2}
+                      onClick={() => setFase(f2)}
+                      title={esVivo ? 'Solo el tramo en vivo (KO → final), con su propia escala' : 'Solo el movimiento prepartido (apertura → KO), con su propia escala'}
+                      style={{ padding: '4px 10px', border: 0, borderRadius: 6, cursor: 'pointer', background: activa ? (esVivo ? 'var(--down-soft)' : 'var(--accent-soft)') : 'transparent', color: activa ? (esVivo ? 'var(--down)' : 'var(--accent)') : 'var(--t3)', font: '600 10.5px var(--mono)', whiteSpace: 'nowrap' }}
+                    >
+                      {esVivo ? 'EN VIVO' : 'PREPARTIDO'}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
             {fuenteChips}
             <div style={{ display: 'flex', padding: 3, borderRadius: 8, background: 'var(--bg3)', border: '1px solid var(--line)' }}>
               {(['lineal', 'log'] as const).map((e2) => {
@@ -323,7 +360,7 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
               <span style={{ width: 11, height: 11, borderRadius: 3, background: ln.color, flexShrink: 0 }}></span>
               <span style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <span style={{ font: '600 11.5px var(--sans)', color: 'var(--t1)' }}>{ln.label}</span>
-                <span style={{ font: '500 9.5px var(--mono)', color: 'var(--t3)' }}>apertura {ln.openOdd}</span>
+                <span style={{ font: '500 9.5px var(--mono)', color: 'var(--t3)' }}>{chart.refLabel} {ln.openOdd}</span>
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 4 }}>
                 <span style={{ font: '600 21px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{ln.curOdd}</span>
@@ -343,6 +380,23 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
         </div>
       </section>
       )}
+
+      {/* APUESTAS QUE SALIERON — últimos partidos de cada equipo con la cuota
+          que pagó el 1X2 que ocurrió (lectura rápida de rentabilidad reciente) */}
+      <section style={{ marginBottom: 14, padding: '16px 18px 14px', borderRadius: 16, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+          <h3 style={{ margin: 0, font: '700 15px var(--sans)' }}>Apuestas que salieron</h3>
+          <span style={{ font: '500 11px var(--mono)', color: 'var(--t3)' }}>últimos 3 partidos de cada equipo · cuota prepartido del 1X2 que ocurrió</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 }}>
+          {[{ k: mv.homeKey, nom: mv.homeName }, { k: mv.awayKey, nom: mv.awayName }].map((eq) => (
+            <div key={eq.k}>
+              <button className="sad-hover" onClick={() => store.openTeam(eq.k)} title={'Ver página de ' + eq.nom} style={{ background: 'transparent', border: 0, cursor: 'pointer', padding: '0 0 8px', font: '700 12.5px var(--sans)', color: 'var(--t1)' }}>{eq.nom}</button>
+              <ApuestasSalidas teamKey={eq.k} nombre={eq.nom} />
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* CUOTAS EN JUEGO REALES (mercado activo) */}
       {cuotasJuego.length > 0 && (

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { TEAMS } from '../data'
 import type { KCondKey, KTypeKey } from '../data/types'
+import { ApuestasSalidas } from '../components/ApuestasSalidas'
 import { KLineChart, KLineLegend } from '../components/KLineChart'
 import { RachasCuotas, type CuotaCond } from '../components/RachasCuotas'
 import { TeamBadge } from '../components/TeamBadge'
@@ -159,6 +160,13 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
                 </div>
               </div>
               <RachasCuotas teamKey={teamKey} cond={cuotaCond} />
+            </section>
+
+            {/* APUESTAS QUE SALIERON — cuota que pagó el 1X2 de los últimos partidos */}
+            <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+              <div style={{ font: '700 12px var(--sans)', marginBottom: 2 }}>Apuestas que salieron</div>
+              <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginBottom: 12 }}>Últimos 3 partidos · cuota prepartido del 1X2 que ocurrió (rentabilidad reciente)</div>
+              <ApuestasSalidas teamKey={teamKey} nombre={T?.name ?? teamKey} />
             </section>
 
             {/* HISTORIAL DE PARTIDOS */}
