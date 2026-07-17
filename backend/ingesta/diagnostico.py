@@ -23,47 +23,73 @@ import sys
 from collections import defaultdict
 from datetime import datetime, timezone
 
-from .extractor import LIGAS, Cliente, fechas_zombi, leer_clave
+from .extractor import LIGAS, LIGAS_RUIDO, Cliente, fechas_zombi, leer_clave
 
 JUGADO = ("FT", "AET", "PEN")
 ZOMBI = ("NS", "TBD")
 
 
 def resumen(con: sqlite3.Connection) -> int:
-    """Visión general: fechas pasadas con zombis y torneos aún abiertos."""
+    """Visión general separando el HUECO REAL (ligas seguidas) del RUIDO
+    (amistosos que la API no resuelve + ligas fuera de la lista, que se purgan
+    solas o se ignoran a propósito)."""
     hoy = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    fechas = fechas_zombi(con, hoy, horizonte_dias=3650)
-    total_zombis = sum(c for _, c in fechas)
-    print(f"Fechas pasadas con partidos NS/TBD (zombis): {len(fechas)} días · {total_zombis} partidos")
-    for fecha, c in fechas[:30]:
+    seguidas = set(LIGAS) - set(LIGAS_RUIDO)
+    # candidatas: fechas con algún NS/TBD que no sea de una liga-ruido; luego
+    # se recuenta cada fecha SOLO con ligas seguidas para el hueco accionable
+    fechas = fechas_zombi(con, hoy, horizonte_dias=3650, excluir=frozenset(LIGAS_RUIDO))
+    accionables = []
+    for fecha, _ in fechas:
+        n = con.execute(
+            "SELECT COUNT(*) FROM fixtures WHERE status_short IN ('NS','TBD') "
+            "AND substr(date,1,10)=? AND league_id IN "
+            f"({','.join('?' * len(seguidas))})",
+            (fecha, *seguidas),
+        ).fetchone()[0]
+        if n:
+            accionables.append((fecha, n))
+    total_real = sum(c for _, c in accionables)
+    # ruido = todo lo pasado NS/TBD menos el hueco real de ligas seguidas
+    total_pasado = con.execute(
+        "SELECT COUNT(*) FROM fixtures WHERE status_short IN ('NS','TBD') AND substr(date,1,10) < ?",
+        (hoy,),
+    ).fetchone()[0]
+    ruido_total = total_pasado - total_real
+
+    print(f"HUECO REAL (ligas seguidas, sin amistosos): {len(accionables)} días · {total_real} partidos")
+    for fecha, c in accionables[:30]:
         ligas = [
             f"{LIGAS.get(lid, lid)} ({n})"
             for lid, n in con.execute(
-                """SELECT league_id, COUNT(*) FROM fixtures
+                f"""SELECT league_id, COUNT(*) FROM fixtures
                    WHERE status_short IN ('NS','TBD') AND substr(date,1,10)=?
+                     AND league_id IN ({','.join('?' * len(seguidas))})
                    GROUP BY league_id ORDER BY COUNT(*) DESC""",
-                (fecha,),
+                (fecha, *seguidas),
             )
         ]
-        print(f"  {fecha}: {c} zombis → {', '.join(ligas[:6])}{' …' if len(ligas) > 6 else ''}")
-    if len(fechas) > 30:
-        print(f"  … y {len(fechas) - 30} días más (usa --dia para inspeccionar uno)")
+        print(f"  {fecha}: {c} → {', '.join(ligas[:6])}{' …' if len(ligas) > 6 else ''}")
+    if len(accionables) > 30:
+        print(f"  … y {len(accionables) - 30} días más (usa --dia para inspeccionar uno)")
+    print(f"\nRuido ignorado (amistosos {sorted(LIGAS_RUIDO)} + ligas fuera de la lista): "
+          f"{ruido_total} NS/TBD — se purgan en la corrida diaria o no se persiguen.")
 
     abiertos = con.execute(
-        """SELECT league_id, league_season, COUNT(*), MIN(substr(date,1,10)), MAX(substr(date,1,10))
+        f"""SELECT league_id, league_season, COUNT(*), MIN(substr(date,1,10)), MAX(substr(date,1,10))
            FROM fixtures
            WHERE status_short IN ('NS','TBD') AND substr(date,1,10) < ?
              AND league_id IS NOT NULL AND league_season IS NOT NULL
+             AND league_id IN ({','.join('?' * len(seguidas))})
            GROUP BY league_id, league_season ORDER BY COUNT(*) DESC""",
-        (hoy,),
+        (hoy, *seguidas),
     ).fetchall()
     if abiertos:
-        print(f"\nTorneos con tramo congelado (candidatos a re-barrido del backfill): {len(abiertos)}")
+        print(f"\nTorneos de ligas seguidas con tramo congelado (los cura el re-barrido): {len(abiertos)}")
         for lid, temp, c, desde, hasta in abiertos:
             print(f"  {LIGAS.get(lid, f'liga {lid}')} · temporada {temp}: {c} zombis entre {desde} y {hasta}")
     else:
-        print("\nSin torneos congelados: no hay NS/TBD con fecha vencida.")
-    return 0 if not fechas else 1
+        print("\nSin torneos de ligas seguidas congelados.")
+    return 0 if not accionables else 1
 
 
 def dia(con: sqlite3.Connection, fecha: str) -> int:

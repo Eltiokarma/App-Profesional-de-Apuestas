@@ -37,6 +37,8 @@ en subproceso. El backend HTTP sigue siendo de solo lectura.
    | `SAD_LIGAS_EXTRA` | `414:Copa Chile,999:Copa de la Liga Perú` | torneos extra sin tocar código; IDs con `--buscar` |
    | `SAD_CASAS_REFERENCIA` | `bet365,pinnacle,1xbet,betano` | casas cuyo historial crudo se guarda aparte (selector Media/casa en la gráfica); ese es el default — solo definirla para cambiar la lista |
    | `SAD_BACKFILL_DESDE` | `2020` | backfill: fixtures de TODAS las ligas de la lista desde esa temporada **hasta la vigente incluida** (la vigente se re-barre cada 30 días; lo demás una sola vez). Corre al arrancar y tras cada corrida diaria, con progreso reanudable en el volumen (`.backfill_hist.json`); al día = 0 requests, puede quedarse puesta |
+   | `SAD_INGESTA_AL_ARRANCAR` | `1` | (opcional, one-shot) dispara una corrida diaria completa (ventana por fecha + cuotas + `sanar_fechas` + purga de ligas no seguidas) a los ~40 s del arranque, **sin esperar a `SAD_INGESTA_HORA`**. Para aplicar un parche de ingesta lo antes posible tras un deploy; quitarla después |
+   | `SAD_LIGAS_RUIDO` | `667` | (opcional) ligas de "ruido": amistosos cuyos NS la API casi nunca resuelve. No se re-barren ni se persiguen por fecha (se bajan solo en la primera pasada del backfill). Ese es el default; `667` = Amistosos de Clubes. NO afecta a temporadas pasadas de ligas reales, que se curan igual |
    | `SAD_RELLENO_FECHAS` | `2026-05-31` o `2026-05-01:2026-06-05` | (opcional, one-shot) al arrancar re-pide `/fixtures` POR FECHA en ese día/rango (todas las temporadas, filtrado a las ligas de la lista) y regenera el pipeline. Palanca para **tapar a mano un hueco y verlo en los logs sin esperar** a la corrida programada. Gasta requests en cada arranque → quitarla cuando el hueco quede tapado. Diagnóstico previo: `python -m backend.ingesta.diagnostico` |
    | `SAD_REBARRIDO_DIAS` | `30` | (opcional) cada cuántos días el backfill re-barre la temporada VIGENTE y las pasadas que sigan ABIERTAS en la DB (NS/TBD con fecha vencida — año cruzado). Ponerla en `1` temporalmente fuerza el re-barrido completo en el próximo arranque (p. ej. tras detectar fixtures faltantes: ventana diaria que no corrió); después devolverla a `30` |
    | `ANTHROPIC_API_KEY` | *(clave de console.anthropic.com)* | capa de análisis EFE+DTP (`POST /api/v1/analisis/efe`). Ponerle límite mensual de gasto en la consola de Anthropic. Sin ella, el endpoint responde 503 y el resto de la API funciona igual |
@@ -80,12 +82,21 @@ Cada corrida además **se cura sola**, dos pasadas automáticas:
   que también trae los partidos que ni existían al barrer el torneo (finales
   y liguillas creadas tarde). Máx. 10 fechas/corrida (`SAD_SANAR_FECHAS_MAX`),
   horizonte 180 días (`SAD_SANAR_FECHAS_DIAS`), marcador `.sanar_fechas.json`
-  en el volumen (una fecha incurable se reintenta a los 7 días).
+  en el volumen (una fecha incurable se reintenta a los 7 días). Una fecha que
+  solo tiene amistosos (`SAD_LIGAS_RUIDO`) sin resultado NO se persigue: es
+  ruido que la API no resuelve.
 
 El backfill (`SAD_BACKFILL_DESDE`) también re-barre cada 30 días los torneos
 de temporadas **pasadas que sigan abiertos** en la DB (con NS/TBD de fecha
 vencida), no solo la vigente: así el tramo final de una temporada cruzada no
-queda congelado en el estado del primer barrido.
+queda congelado en el estado del primer barrido. Los amistosos
+(`SAD_LIGAS_RUIDO`) se excluyen de ese re-barrido (se bajan solo la primera vez).
+
+**Importante sobre el "cuándo":** el backfill corre en un hilo **al ARRANCAR**
+(~30 s tras el boot), no a la hora de `SAD_INGESTA_HORA`. Así que un redeploy
+ya descongela las temporadas pasadas reales de inmediato. Para que la curación
+por fecha (`sanar_fechas`) y la purga también corran al arrancar sin esperar a
+la hora, poner `SAD_INGESTA_AL_ARRANCAR=1`.
 
 Auditoría de huecos (sin gastar requests, o con `--api` contrastando 1 día
 contra el feed real):

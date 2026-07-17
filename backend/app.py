@@ -125,6 +125,26 @@ def _ingesta_diaria_loop() -> None:
 if INGESTA_HORA:
     threading.Thread(target=_ingesta_diaria_loop, daemon=True, name="ingesta-diaria").start()
 
+# SAD_INGESTA_AL_ARRANCAR=1 dispara UNA corrida diaria completa (ventana por
+# fecha + cuotas + sanar_90 + sanar_fechas + purga de ligas no seguidas) a los
+# ~40 s del arranque, sin esperar a SAD_INGESTA_HORA. Para aplicar un parche de
+# ingesta "lo antes posible" tras un deploy; el backfill ya corre solo al
+# arrancar, esto añade la parte de curación por fecha y la limpieza de zombis.
+INGESTA_AL_ARRANCAR = os.environ.get("SAD_INGESTA_AL_ARRANCAR", "").strip().lower() in (
+    "1", "true", "si", "sí", "yes", "on"
+)
+
+
+def _corrida_al_arranque() -> None:
+    time.sleep(40)  # tras el arranque; después del backfill_arranque (30 s) para no solaparse
+    print(f"[ingesta] corrida diaria al arranque {datetime.now(timezone.utc).isoformat()}", flush=True)
+    subprocess.run([sys.executable, "-u", "-m", "backend.ingesta.corrida_diaria"])
+    liga_meta.cache_clear()
+
+
+if INGESTA_AL_ARRANCAR:
+    threading.Thread(target=_corrida_al_arranque, daemon=True, name="corrida-arranque").start()
+
 # Backfill histórico: SAD_BACKFILL_DESDE=2020 trae los fixtures de TODAS las
 # ligas de la lista desde esa temporada. Corre al arrancar y tras cada corrida
 # diaria; el extractor lleva el progreso en .backfill_hist.json (en el volumen)
@@ -252,6 +272,7 @@ print(
     f"refresco: {REFRESCO_MIN + ' min' if REFRESCO_MIN else 'apagado'} · "
     f"en vivo: {LIVE_SEGUNDOS + ' s' if LIVE_SEGUNDOS else 'apagado'} · "
     f"backfill: {'desde ' + BACKFILL_DESDE if BACKFILL_DESDE else 'apagado'}"
+    + (" · corrida al arranque" if INGESTA_AL_ARRANCAR else "")
     + (f" · relleno: {RELLENO_FECHAS}" if RELLENO_FECHAS else ""),
     flush=True,
 )
