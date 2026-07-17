@@ -157,6 +157,17 @@ def _ligas_extra() -> dict[int, str]:
 
 LIGAS.update(_ligas_extra())
 
+# Ligas de "ruido": amistosos cuyos NS la API casi nunca resuelve (667 =
+# Amistosos de Clubes; eran ~2/3 de todos los zombis). No se re-barren ni se
+# persiguen por fecha, para no quemar requests en partidos que jamás tendrán
+# resultado. OJO: solo se saltan en el RE-barrido — la primera pasada del
+# backfill sí las baja (captura los amistosos que sí terminaron) y su historial
+# ya jugado se conserva. Esto NO afecta a las temporadas pasadas de ligas
+# reales sin resolver, que se curan igual. Configurable (vaciar = como antes).
+LIGAS_RUIDO = {
+    int(x) for x in os.environ.get("SAD_LIGAS_RUIDO", "667").split(",") if x.strip().isdigit()
+}
+
 
 def leer_clave() -> str:
     clave = os.environ.get("API_FOOTBALL_KEY", "").strip()
@@ -714,18 +725,26 @@ SANARF_HORIZONTE_DIAS = int(os.environ.get("SAD_SANAR_FECHAS_DIAS", "180") or "1
 
 
 def fechas_zombi(con: sqlite3.Connection, hasta: str,
-                 horizonte_dias: int = SANARF_HORIZONTE_DIAS) -> list[tuple]:
+                 horizonte_dias: int = SANARF_HORIZONTE_DIAS,
+                 excluir: "frozenset[int] | set[int]" = frozenset()) -> list[tuple]:
     """Fechas PASADAS que aún tienen partidos NS/TBD en la DB: la firma de un
     hueco de ingesta (el partido se jugó pero nadie volvió a pedir ese día).
-    Devuelve [(fecha, zombis)] de la más reciente a la más vieja."""
+    Devuelve [(fecha, zombis)] de la más reciente a la más vieja. `excluir`
+    (p. ej. LIGAS_RUIDO) descarta esas ligas del conteo: una fecha que solo
+    tiene amistosos sin resultado deja de contar como hueco a perseguir."""
     piso = (datetime.now(timezone.utc) - timedelta(days=horizonte_dias)).strftime("%Y-%m-%d")
+    filtro = ""
+    valores = [piso, hasta]
+    if excluir:
+        filtro = f" AND league_id NOT IN ({','.join('?' * len(excluir))})"
+        valores += list(excluir)
     try:
         return con.execute(
-            """SELECT substr(date, 1, 10) AS dia, COUNT(*) FROM fixtures
+            f"""SELECT substr(date, 1, 10) AS dia, COUNT(*) FROM fixtures
                WHERE status_short IN ('NS', 'TBD')
-                 AND substr(date, 1, 10) BETWEEN ? AND ?
+                 AND substr(date, 1, 10) BETWEEN ? AND ?{filtro}
                GROUP BY dia ORDER BY dia DESC""",
-            (piso, hasta),
+            valores,
         ).fetchall()
     except sqlite3.OperationalError:
         return []
@@ -741,7 +760,10 @@ def sanar_fechas(cliente: "Cliente", con: sqlite3.Connection) -> int:
     cada corrida las fechas incurables (aplazados sin resolver)."""
     ahora = datetime.now(timezone.utc)
     tope = (ahora - timedelta(days=DIAS_ATRAS + 1)).strftime("%Y-%m-%d")
-    casos = fechas_zombi(con, tope)
+    # los amistosos sin resultado son ruido: una fecha que solo tiene 667 no
+    # merece un request (nunca se cura). Las fechas con alguna liga real siguen
+    # entrando y, de paso, refrescan el amistoso de ese día si lo hubiera.
+    casos = fechas_zombi(con, tope, excluir=LIGAS_RUIDO)
     if not casos:
         return 0
     hoy = ahora.strftime("%Y-%m-%d")
@@ -814,7 +836,9 @@ def historico(cliente: Cliente, con: sqlite3.Connection, desde: int) -> int:
     def pendiente(lid: int, temp: int) -> bool:
         marca = hecho.get(f"{lid}:{temp}")
         if marca is None:
-            return True
+            return True  # primera pasada: se baja aun siendo ruido (captura lo ya jugado)
+        if lid in LIGAS_RUIDO:
+            return False  # ruido (amistosos): no re-perseguir NS que la API no resuelve
         if temp == SEASON:
             return marca < tope_vigente  # la vigente caduca
         return (lid, temp) in abiertos and marca < tope_vigente  # pasada pero abierta: también caduca
