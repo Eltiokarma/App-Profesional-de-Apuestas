@@ -303,6 +303,16 @@ def main():
     check("despensa: lo depositado queda fresco para el próximo EFE",
           frescos_d.get("dt") == "DT investigado en desktop" and frescos_d.get("bajas") == "Sin bajas",
           {k: frescos_d.get(k) for k in ("dt", "bajas")})
+    # canonización: el barrido de liga puede traer variantes del nombre
+    carga2 = c.post(A + "/analisis/despensa", json={
+        "equipos": [{"equipo": "Betis", "datos": {"dt": "DT vía nombre corto"}}],
+    }).json()
+    check("despensa: nombre canonizado al de la app (Betis → Real Betis)",
+          carga2.get("canonizados", {}).get("Betis") == "Real Betis"
+          and carga2["equipos"] == ["Real Betis"], carga2)
+    frescos_d2, _ = efedb2.investigacion_de("Real Betis")
+    check("despensa: el depósito canonizado queda bajo teams.name",
+          frescos_d2.get("dt") == "DT vía nombre corto", frescos_d2.get("dt"))
     check("despensa: equipos vacío → 422",
           c.post(A + "/analisis/despensa", json={"equipos": []}).status_code == 422)
     check("despensa: cuerpo inválido → 422",
