@@ -297,6 +297,9 @@ export interface PlantillaDTO {
   /** Σ goles de la plantilla (denominador de participación). */
   golesPlantilla: number
   jugadores: JugadorDTO[]
+  /** Con jugadores=[]: true si el backend lanzó la ingesta on-demand del
+   *  equipo — la UI sondea hasta que la plantilla llegue. */
+  ingestaLanzada?: boolean
 }
 
 /** Lado de la ficha: plantilla + congestión de calendario (0 requests). */

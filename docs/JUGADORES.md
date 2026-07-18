@@ -31,6 +31,11 @@ python -m backend.ingesta.jugadores --ttl-horas 24  # refresco más agresivo
 ```
 
 - Selección: equipos de NUESTRAS ligas con fixtures NS próximos (default 3 días).
+- **Bajo demanda**: al entrar a un equipo sin plantilla, GET /equipos/{id}/plantilla
+  lanza en segundo plano `--equipo ID` (mismo patrón de subprocesos que la
+  ingesta programada; el HTTP sigue de solo lectura). La respuesta lleva
+  `ingestaLanzada: true` y la UI sondea hasta que llegue.
+  `SAD_PLANTILLA_ONDEMAND=0` la apaga.
 - TTL por equipo (default 168 h = 7 días, en `plantillas_meta`): fuera de
   ventana de traspasos la plantilla casi no cambia; en ventana, bajar el TTL.
 - Presupuesto por equipo: `players` paginado (~2-3 req) + `injuries` (1) +

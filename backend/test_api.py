@@ -260,6 +260,14 @@ def main():
     check("plantilla: DT y revolución de ventana",
           pl["entrenador"]["nombre"] and pl["revolucion"]["llegadas"] == 1, {k: pl.get(k) for k in ("entrenador", "revolucion")})
     check("/equipos/999999/plantilla → 404", c.get(A + "/equipos/999999/plantilla").status_code == 404)
+    check("plantilla con datos: ingestaLanzada=false", pl["ingestaLanzada"] is False, pl.get("ingestaLanzada"))
+    # equipo sin plantilla: degradación honesta; on-demand apagada en tests
+    # (SAD_PLANTILLA_ONDEMAND=0) para no gastar requests si hubiera clave local
+    os.environ["SAD_PLANTILLA_ONDEMAND"] = "0"
+    sp = c.get(A + "/equipos/599/plantilla").json()
+    check("plantilla vacía: jugadores=[] y temporada null, nada inventado",
+          sp["jugadores"] == [] and sp["temporada"] is None and sp["dependencia"]["hhi"] is None, sp)
+    check("plantilla vacía: sin on-demand no se lanza ingesta", sp["ingestaLanzada"] is False, sp.get("ingestaLanzada"))
 
     # /fixtures/{id}/ficha — puente con los skills
     fi = c.get(A + f"/fixtures/{vivo['id']}/ficha").json()
