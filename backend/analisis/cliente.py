@@ -85,12 +85,19 @@ def bloques_system_timeline() -> list[dict]:
 # instrucción de salida por modo: la del EFE exige además la despensa
 SALIDA_EFE = (
     "EXCLUSIVAMENTE el objeto JSON del esquema del modo, sin texto adicional ni markdown. "
+    "Justificaciones y textos: 1-2 frases, densas (el output se paga). "
     "AÑADE una clave raíz 'investigacion' = {equipo_a: {dt, plantel, tabla, resultados, "
     "fixture, xi_reciente, bajas}, equipo_b: {idem}}: cada campo es un resumen TEXTUAL "
     "denso y autocontenido de lo que investigaste (nombres, fechas, cifras, fuente), "
     "porque se guardará como caché y será el 'datos_cacheados' de análisis futuros. "
-    "MÁXIMO ~100 palabras por campo (el output se paga: denso, no extenso). "
-    "Usa \"\" en lo que no investigaste."
+    "MÁXIMO ~100 palabras por campo. Usa \"\" en lo que no investigaste."
+)
+# EFE caliente (nada faltó por investigar): la despensa no se re-emite — esos
+# ~2-4k tokens de output eran puro eco de lo que ya está guardado
+SALIDA_EFE_CALIENTE = (
+    "EXCLUSIVAMENTE el objeto JSON del esquema del modo, sin texto adicional ni markdown. "
+    "Justificaciones y textos: 1-2 frases, densas (el output se paga). "
+    "NO añadas la clave 'investigacion' (no investigaste nada: todo vino en datos_cacheados)."
 )
 SALIDA_TIMELINE = (
     "EXCLUSIVAMENTE el objeto JSON del esquema TIMELINE, sin texto adicional ni markdown. "
@@ -140,6 +147,16 @@ def analizar(payload: dict, esquema: dict, con_busqueda: bool,
         "system": system or bloques_system(),
         "messages": [{"role": "user", "content": json.dumps(payload, ensure_ascii=False)}],
     }
+    # Sonnet 5 PIENSA por defecto (adaptive thinking) con esfuerzo ALTO si no
+    # se configura: en el EFE eso eran decenas de miles de tokens de
+    # razonamiento a precio de output — el mayor costo oculto por corrida.
+    # Esfuerzo explícito (SAD_EFE_EFFORT; medium ≈ calidad de Sonnet 4.6 en
+    # high a fracción del gasto). Haiku no soporta effort (400) y no piensa
+    # por defecto, así que se deja tal cual.
+    if "haiku" not in modelo:
+        kwargs["output_config"] = {
+            "effort": os.environ.get("SAD_EFE_EFFORT", "medium").strip() or "medium"
+        }
     tope_busquedas = min(max_busquedas or MAX_BUSQUEDAS, MAX_BUSQUEDAS)
     if con_busqueda:
         # La variante 20260209 (filtrado dinámico) solo existe en Opus/Sonnet;
