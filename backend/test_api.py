@@ -287,6 +287,27 @@ def main():
     mv = jugcapa.movimientos_para_timeline(betis)
     check("movimientos timeline: traspaso y DT con fechas", "llega de" in mv and "DT vigente" in mv, mv)
 
+    # /analisis/despensa — carga manual desde el Claude de escritorio
+    carga = c.post(A + "/analisis/despensa", json={
+        "equipos": [
+            {"equipo": "Real Betis", "datos": {"dt": "DT investigado en desktop",
+                                               "bajas": "Sin bajas", "invalido": "x", "plantel": ""}},
+            {"equipo": "Sevilla FC", "datos": {"xi_reciente": "XI del último partido"}},
+        ],
+        "fuentes": ["https://ejemplo.com"],
+    }).json()
+    check("despensa: deposita los válidos y reporta ignorados",
+          carga["depositados"] == 3 and carga["tiposIgnorados"] == ["invalido"], carga)
+    from backend.analisis import db as efedb2
+    frescos_d, _falt_d = efedb2.investigacion_de("Real Betis")
+    check("despensa: lo depositado queda fresco para el próximo EFE",
+          frescos_d.get("dt") == "DT investigado en desktop" and frescos_d.get("bajas") == "Sin bajas",
+          {k: frescos_d.get(k) for k in ("dt", "bajas")})
+    check("despensa: equipos vacío → 422",
+          c.post(A + "/analisis/despensa", json={"equipos": []}).status_code == 422)
+    check("despensa: cuerpo inválido → 422",
+          c.post(A + "/analisis/despensa", json={"equipos": [{"equipo": "X"}]}).status_code == 422)
+
     # /ligas/{id}
     lg = c.get(A + "/ligas/140").json()
     check("/ligas/140: nombre, país y bandera", lg["nombre"] == "LaLiga" and lg["pais"] == "Spain" and lg["bandera"], lg)

@@ -499,6 +499,25 @@ export interface EfeComparativo {
   fuentes: string[]
 }
 
+/** Carga manual de la despensa (docs/DESPENSA_DESKTOP.md): investigación
+ *  hecha gratis en el Claude de escritorio → POST /analisis/despensa. */
+export interface CargaDespensaDTO {
+  equipos: {
+    /** Nombre EXACTO del equipo como aparece en la app. */
+    equipo: string
+    /** tipo → resumen textual (dt, plantel, tabla, resultados, fixture, xi_reciente, bajas). */
+    datos: Record<string, string>
+  }[]
+  fuentes?: string[]
+}
+
+export interface CargaDespensaResultadoDTO {
+  depositados: number
+  equipos: string[]
+  tiposValidos?: string[]
+  tiposIgnorados?: string[]
+}
+
 /** Estado del trabajo de análisis (POST /analisis/efe y su sondeo /estado). */
 export interface GeneracionEfeDTO {
   estado: 'listo' | 'generando' | 'error' | 'nada'

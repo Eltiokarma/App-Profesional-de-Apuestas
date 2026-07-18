@@ -271,6 +271,30 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: '#/components/schemas/CuotaSnapshot' } }
+  /analisis/despensa:
+    post:
+      summary: Carga manual de la despensa (investigación hecha en el Claude de escritorio)
+      description: >
+        docs/DESPENSA_DESKTOP.md — la investigación cara (plantel, DT, bajas,
+        táctica) se hace GRATIS en el Claude de escritorio (suscripción plana),
+        se exporta como JSON y se deposita aquí. El siguiente EFE por API la
+        recibe como datos_cacheados y no busca en la web (~$0.10-0.20 en vez
+        del análisis frío). El nombre del equipo debe coincidir con el de la
+        app; tipos válidos: dt, plantel, tabla, resultados, fixture,
+        xi_reciente, bajas. Escribe efe.db (misma excepción documentada de
+        solo-lectura que /analisis/efe).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CargaDespensa' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CargaDespensaResultado' }
+        '422': { description: Cuerpo inválido o equipos vacío }
   /analisis/efe:
     post:
       summary: Lanza el análisis EFE de un fixture (respuesta inmediata, trabajo en el servidor)
@@ -744,6 +768,38 @@ components:
         generadoEn: { type: string, format: date-time }
         local: { $ref: '#/components/schemas/FichaEquipo' }
         visitante: { $ref: '#/components/schemas/FichaEquipo' }
+    CargaDespensa:
+      type: object
+      required: [equipos]
+      properties:
+        equipos:
+          type: array
+          items:
+            type: object
+            required: [equipo, datos]
+            properties:
+              equipo: { type: string, description: nombre EXACTO del equipo como aparece en la app }
+              datos:
+                type: object
+                description: 'tipo → resumen textual denso (tipos: dt, plantel, tabla, resultados, fixture, xi_reciente, bajas)'
+                additionalProperties: { type: string }
+        fuentes:
+          type: array
+          items: { type: string }
+    CargaDespensaResultado:
+      type: object
+      required: [depositados, equipos]
+      properties:
+        depositados: { type: integer }
+        equipos:
+          type: array
+          items: { type: string }
+        tiposValidos:
+          type: array
+          items: { type: string }
+        tiposIgnorados:
+          type: array
+          items: { type: string }
     StandingRow:
       type: object
       required: [posicion, equipoId, nombre, puntos, partidosJugados, golesFavor, golesContra]
