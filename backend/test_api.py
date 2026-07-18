@@ -313,6 +313,12 @@ def main():
     frescos_d2, _ = efedb2.investigacion_de("Real Betis")
     check("despensa: el depósito canonizado queda bajo teams.name",
           frescos_d2.get("dt") == "DT vía nombre corto", frescos_d2.get("dt"))
+    # tokens sin orden / añadidos ("Betis Real" → "Real Betis"; caso FC Cajamarca vs Cajamarca FC)
+    carga3 = c.post(A + "/analisis/despensa", json={
+        "equipos": [{"equipo": "Club Betis Real", "datos": {"dt": "DT por tokens"}}],
+    }).json()
+    check("despensa: canonización por tokens sin orden",
+          carga3.get("canonizados", {}).get("Club Betis Real") == "Real Betis", carga3)
     check("despensa: equipos vacío → 422",
           c.post(A + "/analisis/despensa", json={"equipos": []}).status_code == 422)
     check("despensa: cuerpo inválido → 422",
