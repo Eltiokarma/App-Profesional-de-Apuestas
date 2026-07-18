@@ -8,14 +8,14 @@ export function promptDespensaLiga(liga: string, equipos: string[]): string {
 
 ${lista}
 
-Para CADA equipo produce resúmenes TEXTUALES densos y autocontenidos
-(nombres, fechas, cifras, fuente) de estos campos:
+SOLO estos tres campos por equipo — NO investigues tabla, resultados,
+calendario, alineaciones, formaciones ni estadísticas de jugadores: la app ya
+los saca de su propia base y de su API de datos. Interesa lo que las webs de
+datos NO listan:
 
-- dt: entrenador actual, fecha de asunción, contexto (interino, cuestionado…).
-- plantel: jugadores clave con posición y rendimiento, fichajes/salidas recientes, dependencias ofensivas.
-- bajas: lesionados, sancionados y dudas para el próximo partido, con motivo.
-- xi_reciente: el once más reciente y la formación utilizada.
-- fixture: sus próximos 3-5 partidos con fechas y torneos.
+- dt: contexto del entrenador — fecha de asunción, interino o confirmado, cuestionamiento en prensa, relación con el vestuario.
+- plantel: lectura CUALITATIVA — jerarquías reales, quién está en forma o caído, fichajes/salidas recientes y cómo encajan, conflictos o líos internos.
+- bajas: dudas y novedades de PRENSA para el próximo partido — las lesiones confirmadas ya las tiene la app; interesan las dudas, sanciones internas, regresos y rumores de rotación.
 
 ENTREGA POR TANDAS: un bloque de código JSON por cada 6 equipos (así ninguna
 respuesta se corta). Cada bloque con esta forma exacta, sin texto fuera del
@@ -25,7 +25,7 @@ bloque:
   "equipos": [
     {
       "equipo": "<nombre EXACTAMENTE como te lo di>",
-      "datos": { "dt": "…", "plantel": "…", "bajas": "…", "xi_reciente": "…", "fixture": "…" }
+      "datos": { "dt": "…", "plantel": "…", "bajas": "…" }
     }
   ],
   "fuentes": ["url1", "url2"]

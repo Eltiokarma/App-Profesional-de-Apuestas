@@ -133,12 +133,42 @@ def _datos_locales(fx: dict) -> dict[str, dict[str, str]]:
     }
 
 
+def _xi_de_item(item: dict, titulo: str) -> str:
+    xi = [f"{(j.get('player') or {}).get('name') or '?'} ({(j.get('player') or {}).get('pos') or '?'})"
+          for j in item.get("startXI") or []]
+    if not xi:
+        return ""
+    dt = (item.get("coach") or {}).get("name") or "?"
+    return (f"{titulo} (formación {item.get('formation') or '?'}, DT {dt}): "
+            + ", ".join(xi) + " [fuente: API-Football lineups]")
+
+
+def _xi_ultimo_partido(api, team_id: int) -> str:
+    """Formación y XI del ÚLTIMO partido jugado, desde la API (1 request del
+    plan ya pagado) — evita que el EFE busque la formación en la web cuando el
+    XI oficial de hoy aún no se publicó."""
+    fila = saddb.query_one(
+        "sad",
+        "SELECT id, date FROM fixtures WHERE (home_team_id=? OR away_team_id=?) "
+        "AND (status_short IN ('FT','AET','PEN') OR status_long='Match Finished') "
+        "ORDER BY date DESC LIMIT 1",
+        (team_id, team_id),
+    )
+    if not fila or not api.quedan():
+        return ""
+    data = api.get("fixtures/lineups", {"fixture": fila["id"]})
+    for item in (data or {}).get("response", []):
+        if (item.get("team") or {}).get("id") == team_id:
+            return _xi_de_item(item, f"XI del último partido jugado ({str(fila['date'])[:10]})")
+    return ""
+
+
 def _xi_y_bajas(fixture_id: int, home_id: int, away_id: int) -> dict[str, dict[str, str]]:
-    """XI oficial y lesionados desde API-Football (2 requests contra el
+    """XI oficial y lesionados desde API-Football (2-4 requests contra el
     presupuesto de la ingesta, con su respaldo incluido). El XI se publica
-    ~20-40 min antes del pitazo: si aún no está, queda como faltante y la
-    búsqueda web lo intenta. Buscar convocatorias en la web era caro y
-    poco fiable (ligas chicas): la API lo tiene de primera mano."""
+    ~20-40 min antes del pitazo: si aún no está, se sirve la formación del
+    ÚLTIMO partido jugado (también de la API) — nada de esto debe terminar en
+    búsqueda web, que es lo caro y poco fiable en ligas chicas."""
     out: dict[str, dict[str, str]] = {"equipo_a": {}, "equipo_b": {}}
     try:
         from backend.ingesta.extractor import Cliente, leer_clave
@@ -155,14 +185,15 @@ def _xi_y_bajas(fixture_id: int, home_id: int, away_id: int) -> dict[str, dict[s
         lado = lado_de(item.get("team"))
         if not lado:
             continue
-        xi = [f"{(j.get('player') or {}).get('name') or '?'} ({(j.get('player') or {}).get('pos') or '?'})"
-              for j in item.get("startXI") or []]
+        xi = _xi_de_item(item, "XI OFICIAL confirmado")
         if xi:
-            dt = (item.get("coach") or {}).get("name") or "?"
-            out[lado]["xi_reciente"] = (
-                f"XI OFICIAL confirmado (formación {item.get('formation') or '?'}, DT {dt}): "
-                + ", ".join(xi) + " [fuente: API-Football lineups]"
-            )
+            out[lado]["xi_reciente"] = xi
+    # sin XI oficial todavía: la formación del último partido, de la API
+    for lado, tid in (("equipo_a", home_id), ("equipo_b", away_id)):
+        if "xi_reciente" not in out[lado]:
+            xi = _xi_ultimo_partido(api, tid)
+            if xi:
+                out[lado]["xi_reciente"] = xi
 
     data = api.get("injuries", {"fixture": fixture_id})
     bajas: dict[str, list[str]] = {"equipo_a": [], "equipo_b": []}
