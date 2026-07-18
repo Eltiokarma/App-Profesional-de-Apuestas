@@ -205,31 +205,76 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
                 )
               )}
               {!plant.loading && !plant.error && plant.data && plant.data.jugadores.length > 0 && (
-                <div className="sad-scroll" style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 380, overflowY: 'auto', paddingRight: 4, marginTop: 10 }}>
-                  {plant.data.jugadores.map((j: JugadorDTO) => {
-                    const esGK = j.posicion === 'Portero'
-                    const confColor = j.confianza === 'A' ? 'var(--up)' : j.confianza === 'B' ? 'var(--t2)' : 'var(--t3)'
+                <div className="sad-scroll" style={{ display: 'flex', flexDirection: 'column', gap: 3, maxHeight: 440, overflowY: 'auto', paddingRight: 4, marginTop: 10 }}>
+                  {/* cabecera de columnas */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 10px 4px 10px' }}>
+                    <span style={{ width: 26 + 8 + 26, flexShrink: 0 }}></span>
+                    <span style={{ flex: 1 }}></span>
+                    <span style={{ font: '600 8.5px var(--mono)', color: 'var(--t3)', width: isMobile ? 34 : 74, textAlign: 'right', flexShrink: 0, letterSpacing: '.4px' }}>MIN</span>
+                    <span style={{ font: '600 8.5px var(--mono)', color: 'var(--t3)', width: 92, textAlign: 'right', flexShrink: 0, letterSpacing: '.4px' }}>PRODUCCIÓN</span>
+                    <span style={{ font: '600 8.5px var(--mono)', color: 'var(--t3)', width: 34, textAlign: 'center', flexShrink: 0, letterSpacing: '.4px' }}>RAT</span>
+                    <span style={{ font: '600 8.5px var(--mono)', color: 'var(--t3)', width: 18, textAlign: 'center', flexShrink: 0, letterSpacing: '.4px' }}>±</span>
+                  </div>
+                  {([['Portero', 'PORTEROS', '#E6B450'], ['Defensa', 'DEFENSAS', '#5B8DEF'], ['Centrocampista', 'MEDIOCAMPO', '#2FBE6E'], ['Delantero', 'DELANTEROS', '#E5484D'], ['', 'OTROS', 'var(--t3)']] as [string, string, string][]).map(([pos, titulo, color]) => {
+                    const grupo = plant.data!.jugadores.filter((j: JugadorDTO) => (pos ? j.posicion === pos : !['Portero', 'Defensa', 'Centrocampista', 'Delantero'].includes(j.posicion)))
+                    if (grupo.length === 0) return null
                     return (
-                      <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 9, border: '1px solid var(--line)', background: 'var(--bg)', opacity: j.baja ? 0.75 : 1 }}>
-                        <span style={{ font: '700 8.5px var(--mono)', color: 'var(--t3)', width: 26, flexShrink: 0, textTransform: 'uppercase' }}>{j.posicion ? j.posicion.slice(0, 3) : '?'}</span>
-                        <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {j.nombre}
-                          {j.baja && <span style={{ marginLeft: 6, padding: '2px 6px', borderRadius: 5, background: 'var(--down-soft)', color: 'var(--down)', font: '700 8.5px var(--mono)' }}>BAJA{j.baja.detalle ? ` · ${j.baja.detalle}` : ''}</span>}
-                          {j.enCapilla && !j.baja && <span style={{ marginLeft: 6, padding: '2px 6px', borderRadius: 5, background: 'var(--bg3)', color: 'var(--t2)', font: '700 8.5px var(--mono)' }}>EN CAPILLA · {j.amarillas} 🟨</span>}
-                          {j.recienLlegado && <span style={{ marginLeft: 6, padding: '2px 6px', borderRadius: 5, background: 'var(--bg3)', color: 'var(--accent)', font: '700 8.5px var(--mono)' }}>NUEVO{j.recienLlegado.desde ? ` · de ${j.recienLlegado.desde}` : ''}</span>}
-                        </span>
-                        <span title="% de los minutos del más usado de la plantilla" style={{ font: '600 11px var(--mono)', color: 'var(--t2)', width: 44, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{Math.round(j.pctMinutos * 100)}%</span>
-                        {esGK ? (
-                          <span title="Paradas y goles encajados por 90 minutos" style={{ font: '600 11px var(--mono)', color: 'var(--t2)', width: 96, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
-                            {j.paradasP90 != null ? `${j.paradasP90.toFixed(1)} par · ${j.golesEncajadosP90?.toFixed(1)} GC` : '—'}
-                          </span>
-                        ) : (
-                          <span title={`${j.goles}G + ${j.asistencias}A · ${Math.round(j.participacionOfensiva * 100)}% de la producción del equipo`} style={{ font: '600 11px var(--mono)', color: j.participacionOfensiva >= 0.15 ? 'var(--up)' : 'var(--t2)', width: 96, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
-                            {j.goles}G+{j.asistencias}A{j.participacionOfensiva >= 0.1 ? ` · ${Math.round(j.participacionOfensiva * 100)}%` : ''}
-                          </span>
-                        )}
-                        <span title="Rating medio ponderado por minutos" style={{ font: '700 11px var(--mono)', color: j.rating != null && j.rating >= 7 ? 'var(--up)' : 'var(--t2)', width: 34, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{j.rating != null ? j.rating.toFixed(1) : '—'}</span>
-                        <span title={`Confianza estadística por minutos jugados (${j.minutos} min)`} style={{ width: 18, height: 18, borderRadius: 5, background: 'var(--bg3)', color: confColor, display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 9.5px var(--mono)', flexShrink: 0 }}>{j.confianza}</span>
+                      <div key={titulo}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 2px 4px 2px' }}>
+                          <span style={{ width: 8, height: 8, borderRadius: 3, background: color, flexShrink: 0 }}></span>
+                          <span style={{ font: '700 9px var(--mono)', color: 'var(--t3)', letterSpacing: '.6px' }}>{titulo}</span>
+                          <span style={{ flex: 1, height: 1, background: 'var(--line)' }}></span>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          {grupo.map((j: JugadorDTO) => {
+                            const esGK = j.posicion === 'Portero'
+                            const confColor = j.confianza === 'A' ? 'var(--up)' : j.confianza === 'B' ? 'var(--t2)' : 'var(--t3)'
+                            const ratBg = j.rating == null ? 'var(--bg3)' : j.rating >= 7 ? 'color-mix(in oklch, var(--up), transparent 82%)' : j.rating < 6.5 ? 'color-mix(in oklch, var(--down), transparent 84%)' : 'var(--bg3)'
+                            const ratFg = j.rating == null ? 'var(--t3)' : j.rating >= 7 ? 'var(--up)' : j.rating < 6.5 ? 'var(--down)' : 'var(--t2)'
+                            const pct = Math.round(j.pctMinutos * 100)
+                            return (
+                              <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 9, border: '1px solid var(--line)', background: 'var(--bg)', opacity: j.baja ? 0.72 : 1 }}>
+                                {/* foto (de la API) o iniciales con el color de la posición */}
+                                {j.foto ? (
+                                  <img src={j.foto} alt="" loading="lazy" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, background: 'var(--bg3)' }} />
+                                ) : (
+                                  <span style={{ width: 26, height: 26, borderRadius: '50%', background: `color-mix(in oklch, ${color}, transparent 80%)`, color, display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 10px var(--sans)', flexShrink: 0 }}>{j.nombre.replace(/[^A-Za-zÁ-ÿ]/g, '').slice(0, 1) || '?'}</span>
+                                )}
+                                <span title={j.posicion || 'posición desconocida'} style={{ font: '700 8px var(--mono)', color, width: 26, flexShrink: 0, textTransform: 'uppercase' }}>{j.posicion ? j.posicion.slice(0, 3) : '?'}</span>
+                                <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {j.nombre}
+                                  {j.baja && <span title={j.baja.detalle ?? undefined} style={{ marginLeft: 6, padding: '2px 6px', borderRadius: 5, background: 'var(--down-soft)', color: 'var(--down)', font: '700 8.5px var(--mono)' }}>BAJA{j.baja.detalle ? ` · ${j.baja.detalle}` : ''}</span>}
+                                  {j.enCapilla && !j.baja && <span title="Riesgo de sanción por acumulación de amarillas" style={{ marginLeft: 6, padding: '2px 6px', borderRadius: 5, background: 'color-mix(in oklch, #E6B450, transparent 82%)', color: '#B98A1D', font: '700 8.5px var(--mono)' }}>CAPILLA · {j.amarillas}🟨</span>}
+                                  {j.recienLlegado && <span style={{ marginLeft: 6, padding: '2px 6px', borderRadius: 5, background: 'color-mix(in oklch, var(--accent), transparent 84%)', color: 'var(--accent)', font: '700 8.5px var(--mono)' }}>NUEVO{j.recienLlegado.desde ? ` · ${j.recienLlegado.desde}` : ''}</span>}
+                                </span>
+                                {/* minutos: barra + % */}
+                                <span title={`${j.minutos} minutos · ${pct}% del más usado de la plantilla`} style={{ display: 'flex', alignItems: 'center', gap: 6, width: isMobile ? 34 : 74, flexShrink: 0, justifyContent: 'flex-end' }}>
+                                  {!isMobile && (
+                                    <span style={{ width: 34, height: 4, borderRadius: 2, background: 'var(--bg3)', overflow: 'hidden', flexShrink: 0 }}>
+                                      <span style={{ display: 'block', width: `${pct}%`, height: '100%', borderRadius: 2, background: pct >= 70 ? 'var(--up)' : pct >= 35 ? color : 'var(--t3)' }}></span>
+                                    </span>
+                                  )}
+                                  <span style={{ font: '600 10.5px var(--mono)', color: 'var(--t2)', width: 30, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{pct}%</span>
+                                </span>
+                                {/* producción: G+A (con % del equipo) o métricas de portero */}
+                                {esGK ? (
+                                  <span title="Paradas y goles encajados por 90 minutos" style={{ font: '600 10.5px var(--mono)', color: 'var(--t2)', width: 92, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                                    {j.paradasP90 != null ? `${j.paradasP90.toFixed(1)}🧤 ${j.golesEncajadosP90?.toFixed(1)}GC` : '—'}
+                                  </span>
+                                ) : (
+                                  <span title={`${j.goles} goles + ${j.asistencias} asistencias · ${Math.round(j.participacionOfensiva * 100)}% de la producción del equipo`} style={{ display: 'flex', alignItems: 'center', gap: 5, width: 92, flexShrink: 0, justifyContent: 'flex-end' }}>
+                                    <span style={{ font: '600 10.5px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{j.goles}G+{j.asistencias}A</span>
+                                    {j.participacionOfensiva >= 0.1 && (
+                                      <span style={{ padding: '1px 5px', borderRadius: 4, background: 'color-mix(in oklch, var(--up), transparent 82%)', color: 'var(--up)', font: '700 9.5px var(--mono)', fontVariantNumeric: 'tabular-nums' }}>{Math.round(j.participacionOfensiva * 100)}%</span>
+                                    )}
+                                  </span>
+                                )}
+                                <span title="Rating medio ponderado por minutos" style={{ padding: '3px 0', borderRadius: 6, background: ratBg, color: ratFg, width: 34, textAlign: 'center', flexShrink: 0, font: '700 10.5px var(--mono)', fontVariantNumeric: 'tabular-nums' }}>{j.rating != null ? j.rating.toFixed(1) : '—'}</span>
+                                <span title={`Confianza estadística por minutos jugados (${j.minutos} min)${j.recienLlegado ? ' · recién llegado: baja un grado' : ''}`} style={{ width: 18, height: 18, borderRadius: 5, background: 'var(--bg3)', color: confColor, display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 9.5px var(--mono)', flexShrink: 0 }}>{j.confianza}</span>
+                              </div>
+                            )
+                          })}
+                        </div>
                       </div>
                     )
                   })}
