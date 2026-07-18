@@ -241,6 +241,77 @@ export interface EquipoStatsDTO {
   cornersProm: number | null
 }
 
+// ── capa de jugadores (docs/JUGADORES.md, capa 1) ───────────────────────────
+
+/** Indicadores de un jugador: por-90 con encogimiento bayesiano, confianza
+ *  por minutos y flags (baja, recién llegado, en capilla). */
+export interface JugadorDTO {
+  id: number
+  nombre: string
+  edad: number | null
+  foto: string | null
+  /** Portero · Defensa · Centrocampista · Delantero · '' si se desconoce. */
+  posicion: string
+  partidos: number
+  titularidades: number
+  minutos: number
+  /** minutos / máx. de la plantilla — proxy de titularidad. */
+  pctMinutos: number
+  /** Media ponderada por minutos entre competiciones (null sin rating). */
+  rating: number | null
+  /** A ≥1800 min · B ≥600 · C <600; recién llegado baja un grado (reseteo). */
+  confianza: 'A' | 'B' | 'C'
+  goles: number
+  asistencias: number
+  golesP90: number | null
+  asistenciasP90: number | null
+  /** (G+A)/90 encogido hacia la media de su posición (M=900 min). */
+  gaP90Ajustado: number | null
+  /** (G+A) del jugador / Σ goles de la plantilla. */
+  participacionOfensiva: number
+  amarillas: number
+  rojas: number
+  /** ≥4 amarillas sin roja: riesgo de sanción (bandera descriptiva). */
+  enCapilla: boolean
+  /** Solo porteros (null en jugadores de campo). */
+  paradasP90: number | null
+  golesEncajadosP90: number | null
+  baja: { tipo: string | null; detalle: string | null } | null
+  /** Traspaso hacia el equipo en ≤90 días: sus stats vienen de otro contexto. */
+  recienLlegado: { desde: string | null; fecha: string | null } | null
+}
+
+/** Plantilla con indicadores + agregados (GET /equipos/{id}/plantilla).
+ *  Sin ingesta de jugadores para el equipo: jugadores=[] — nada se inventa. */
+export interface PlantillaDTO {
+  equipoId: number
+  nombre?: string
+  temporada: number | null
+  /** Última ingesta de jugadores del equipo (null si nunca corrió). */
+  actualizadoEn: string | null
+  entrenador: { nombre: string | null; desde: string | null } | null
+  /** HHI de shares de G+A: ~1/n coral · →1 él-dependiente. */
+  dependencia: { hhi: number | null; top: { jugadorId: number; nombre: string; participacion: number }[] }
+  /** Traspasos de la ventana reciente (estabilidad de plantel). */
+  revolucion: { llegadas: number; salidas: number; ventanaDias: number }
+  /** Σ goles de la plantilla (denominador de participación). */
+  golesPlantilla: number
+  jugadores: JugadorDTO[]
+}
+
+/** Lado de la ficha: plantilla + congestión de calendario (0 requests). */
+export interface FichaEquipoDTO extends PlantillaDTO {
+  congestion: { diasDescanso: number | null; partidos21d: number }
+}
+
+/** Ficha de partido (GET /fixtures/{id}/ficha): el puente con los skills. */
+export interface FichaPartidoDTO {
+  fixtureId: number
+  generadoEn: string
+  local: FichaEquipoDTO
+  visitante: FichaEquipoDTO
+}
+
 /** Fila de /ligas/{id}/standings (calculada de fixtures). */
 export interface StandingRowDTO {
   posicion: number

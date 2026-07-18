@@ -1066,6 +1066,33 @@ def equipo_stats(equipo_id: int):
     }
 
 
+@app.get(API + "/equipos/{equipo_id}/plantilla")
+def equipo_plantilla(equipo_id: int):
+    """Plantilla con indicadores (docs/JUGADORES.md): por-90 con encogimiento,
+    dependencia HHI, bajas, traspasos, DT. Calculado en lectura de las tablas
+    de jugadores de sad.db (backend.ingesta.jugadores); sin ingesta aún,
+    jugadores=[] — nada se inventa."""
+    team = db.query_one("sad", "SELECT id, name FROM teams WHERE id=?", (equipo_id,))
+    if not team:
+        raise HTTPException(404, f"equipo {equipo_id} no existe")
+    from backend import jugadores as jug
+    p = jug.plantilla_de(equipo_id)
+    p["nombre"] = team["name"]
+    return p
+
+
+@app.get(API + "/fixtures/{fixture_id}/ficha")
+def fixture_ficha(fixture_id: int):
+    """Ficha de partido (docs/JUGADORES.md): plantillas con indicadores +
+    congestión de calendario de AMBOS equipos. Es el puente con los skills
+    (EFE/DTP/timeline): JSON determinista calculado por código."""
+    from backend import jugadores as jug
+    ficha = jug.ficha_partido(fixture_id)
+    if not ficha:
+        raise HTTPException(404, f"fixture {fixture_id} no existe")
+    return ficha
+
+
 @app.get(API + "/ligas/{liga_id}")
 def liga(liga_id: int):
     """Metadatos de la liga (nombre, país, logo, bandera, temporadas capturadas)."""

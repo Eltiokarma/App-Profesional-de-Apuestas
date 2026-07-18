@@ -24,6 +24,12 @@ def main() -> int:
     ext = subprocess.run([sys.executable, "-m", "backend.ingesta.extractor"], cwd=data, env=env)
     if ext.returncode != 0:
         print(f"extractor terminó con código {ext.returncode}; el pipeline corre igual", file=sys.stderr)
+    # jugadores (docs/JUGADORES.md): plantillas/bajas/traspasos/DT de los
+    # equipos con NS próximos — mismo presupuesto compartido, TTL 7 días
+    jug = subprocess.run([sys.executable, "-m", "backend.ingesta.jugadores"], cwd=data, env=env)
+    if jug.returncode != 0:
+        print(f"ingesta de jugadores terminó con código {jug.returncode}; el pipeline corre igual",
+              file=sys.stderr)
     pipe = subprocess.run([sys.executable, "-m", "backend.ingesta.pipeline", "--out", "."], cwd=data, env=env)
     return pipe.returncode
 

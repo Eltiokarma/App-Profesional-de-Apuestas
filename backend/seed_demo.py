@@ -195,6 +195,23 @@ def seed(base_dir: str):
             suspendida INTEGER DEFAULT 0, captured_at TEXT NOT NULL);
         CREATE TABLE fixture_eventos (id INTEGER PRIMARY KEY AUTOINCREMENT, fixture_id INTEGER NOT NULL,
             minuto INTEGER, tipo TEXT, detalle TEXT, equipo_id INTEGER, jugador TEXT);
+        CREATE TABLE jugadores (id INTEGER PRIMARY KEY, nombre TEXT, edad INTEGER, foto TEXT, nacionalidad TEXT);
+        CREATE TABLE jugador_stats (player_id INTEGER NOT NULL, team_id INTEGER NOT NULL,
+            league_id INTEGER NOT NULL, season INTEGER NOT NULL, posicion TEXT, partidos INTEGER,
+            titularidades INTEGER, minutos INTEGER, rating REAL, capitan INTEGER, goles INTEGER,
+            asistencias INTEGER, goles_encajados INTEGER, paradas INTEGER, tiros INTEGER,
+            tiros_puerta INTEGER, pases_clave INTEGER, amarillas INTEGER, rojas INTEGER,
+            penales_anotados INTEGER, penales_fallados INTEGER, actualizado_en TEXT,
+            PRIMARY KEY (player_id, team_id, league_id, season));
+        CREATE TABLE jugador_bajas (player_id INTEGER NOT NULL, team_id INTEGER NOT NULL,
+            season INTEGER, tipo TEXT, detalle TEXT, fecha TEXT,
+            PRIMARY KEY (player_id, team_id, season));
+        CREATE TABLE traspasos (player_id INTEGER NOT NULL, fecha TEXT NOT NULL, tipo TEXT,
+            team_in INTEGER, team_in_nombre TEXT, team_out INTEGER, team_out_nombre TEXT,
+            PRIMARY KEY (player_id, fecha));
+        CREATE TABLE entrenadores (team_id INTEGER NOT NULL, coach_id INTEGER NOT NULL,
+            nombre TEXT, foto TEXT, desde TEXT, actualizado_en TEXT, PRIMARY KEY (team_id, coach_id));
+        CREATE TABLE plantillas_meta (team_id INTEGER PRIMARY KEY, season INTEGER, actualizado_en TEXT);
     """)
     sad.executemany("INSERT INTO teams (id, name, country) VALUES (?,?, 'Spain')", TEAMS)
     sad.execute(
@@ -306,6 +323,45 @@ def seed(base_dir: str):
             (vivo["id"], 65, "Goal", "Missed Penalty", vivo["home"], "R. Falla"),   # tampoco
         ],
     )
+    # ---- capa de jugadores (docs/JUGADORES.md): plantillas demo -----------
+    # Misma forma que deja backend.ingesta.jugadores: stats por competición,
+    # una baja con peso real, un recién llegado, DT y meta con TTL.
+    POSICIONES = ["Goalkeeper", "Goalkeeper", "Defender", "Defender", "Defender", "Defender",
+                  "Midfielder", "Midfielder", "Midfielder", "Midfielder", "Midfielder",
+                  "Attacker", "Attacker", "Attacker", "Attacker", "Defender"]
+    ahora = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    for tid, tname in TEAMS:
+        rng = random.Random(f"{tid}|jugadores")
+        for i, pos in enumerate(POSICIONES):
+            pid = tid * 1000 + i
+            titular = i % 2 == 0 or rng.random() > 0.35
+            minutos = int((1800 if titular else 500) * (0.55 + rng.random() * 0.7))
+            partidos = min(40, minutos // 70)
+            es_gk, es_atk = pos == "Goalkeeper", pos == "Attacker"
+            goles = 0 if es_gk else int(minutos / 90 * (0.45 if es_atk else 0.1) * (0.5 + rng.random()))
+            asist = 0 if es_gk else int(minutos / 90 * 0.12 * (0.4 + rng.random()))
+            sad.execute("INSERT INTO jugadores (id, nombre, edad, nacionalidad) VALUES (?,?,?, 'Spain')",
+                        (pid, f"J{i + 1} {tname.split()[-1]}", 21 + i % 14))
+            sad.execute(
+                """INSERT INTO jugador_stats (player_id, team_id, league_id, season, posicion,
+                   partidos, titularidades, minutos, rating, capitan, goles, asistencias,
+                   goles_encajados, paradas, tiros, tiros_puerta, pases_clave, amarillas, rojas,
+                   penales_anotados, penales_fallados, actualizado_en)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (pid, tid, LEAGUE_ID, SEASON, pos, partidos, int(partidos * 0.8), minutos,
+                 round(6.4 + rng.random() * 1.2, 2), 1 if i == 2 else 0, goles, asist,
+                 int(minutos / 90 * 1.1) if es_gk else 0, int(minutos / 90 * 3.1) if es_gk else 0,
+                 goles * 3, goles * 2, asist * 2, rng.randrange(6), 0, 0, 0, ahora),
+            )
+        # baja con peso (el primer delantero), recién llegado, DT y meta
+        sad.execute("INSERT INTO jugador_bajas (player_id, team_id, season, tipo, detalle, fecha) VALUES (?,?,?,?,?,?)",
+                    (tid * 1000 + 11, tid, SEASON, "Missing Fixture", "Lesión muscular", ahora[:10]))
+        sad.execute("INSERT INTO traspasos (player_id, fecha, tipo, team_in, team_in_nombre, team_out, team_out_nombre) VALUES (?,?,?,?,?,?,?)",
+                    (tid * 1000 + 14, ahora[:10], "Loan", tid, tname, 999, "Deportivo Demo"))
+        sad.execute("INSERT INTO entrenadores (team_id, coach_id, nombre, desde, actualizado_en) VALUES (?,?,?,?,?)",
+                    (tid, tid + 5000, f"DT {tname.split()[-1]}", "2025-12-01", ahora))
+        sad.execute("INSERT INTO plantillas_meta (team_id, season, actualizado_en) VALUES (?,?,?)",
+                    (tid, SEASON, ahora))
     sad.commit()
     sad.close()
 

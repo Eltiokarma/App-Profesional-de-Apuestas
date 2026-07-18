@@ -219,6 +219,20 @@ def generar_efe(fixture_id: int, estado: str = "preliminar") -> dict:
                 if txt and tipo in faltan:
                     frescos[tipo] = txt
                     faltan.remove(tipo)
+        # cruce con la capa de jugadores (docs/JUGADORES.md): los indicadores
+        # de NUESTRA base mandan sobre la búsqueda web en plantel/dt, y las
+        # bajas se enriquecen con su PESO real (minutos, producción). Sin
+        # ingesta de jugadores el resumen viene vacío y nada cambia.
+        from backend import jugadores as jugcapa
+        for frescos, faltan, tid in ((frescos_a, faltan_a, fx["home_team_id"]),
+                                     (frescos_b, faltan_b, fx["away_team_id"])):
+            for tipo, txt in jugcapa.resumen_para_skills(tid).items():
+                if tipo == "bajas" and frescos.get("bajas"):
+                    frescos["bajas"] = f"{frescos['bajas']} || {txt}"
+                else:
+                    frescos[tipo] = txt
+                if tipo in faltan:
+                    faltan.remove(tipo)
         faltantes = [f"{t}_a" for t in faltan_a] + [f"{t}_b" for t in faltan_b]
         payload = {
             "modo": "efe",
@@ -382,11 +396,17 @@ def generar_timeline(fixture_id: int, estado: str = "preliminar") -> dict:
         # datos cacheados: eventos de timelines previos (despensa) + resultados
         # reales de NUESTRA base (costo cero, la web solo completa el contexto)
         cacheados: dict = {}
+        from backend import jugadores as jugcapa
         for equipo, tid in ((equipo_a, fx["home_team_id"]), (equipo_b, fx["away_team_id"])):
             frescos, _falt = efedb.investigacion_de(equipo)
             entrada: dict = {"resultados_db": _resultados_de(tid)}
             if "timeline_eventos" in frescos:
                 entrada["timeline_eventos"] = frescos["timeline_eventos"]
+            # traspasos y DT con fechas exactas de nuestra base: eventos
+            # confirmados — la web queda para el contexto narrativo
+            movimientos = jugcapa.movimientos_para_timeline(tid)
+            if movimientos:
+                entrada["movimientos_db"] = movimientos
             cacheados[equipo] = entrada
 
         payload = {

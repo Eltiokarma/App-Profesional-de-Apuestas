@@ -157,6 +157,41 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/EquipoStats' }
         '404': { description: No existe }
+  /equipos/{equipoId}/plantilla:
+    get:
+      summary: Plantilla con indicadores de jugadores (docs/JUGADORES.md)
+      description: >
+        Indicadores calculados en lectura de las tablas de jugadores de sad.db
+        (ingesta backend.ingesta.jugadores): por-90 con encogimiento bayesiano
+        hacia la media de la posición, grado de confianza por minutos (A/B/C),
+        dependencia ofensiva HHI, bajas, recién llegados y DT. Sin ingesta de
+        jugadores para el equipo, `jugadores: []` — nada se inventa.
+      parameters:
+        - { name: equipoId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Plantilla' }
+        '404': { description: No existe }
+  /fixtures/{fixtureId}/ficha:
+    get:
+      summary: Ficha de partido — plantillas + congestión de ambos equipos
+      description: >
+        El puente con los skills (EFE/DTP/timeline): JSON determinista con la
+        plantilla de indicadores de local y visitante más la congestión de
+        calendario (días de descanso, partidos en 21 días) calculada de los
+        fixtures ya capturados (0 requests).
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FichaPartido' }
+        '404': { description: No existe }
   /ligas/{ligaId}:
     get:
       summary: Metadatos de una liga (nombre, país, logo, bandera)
@@ -608,6 +643,106 @@ components:
         posesionProm: { type: number, nullable: true }
         tirosPuertaProm: { type: number, nullable: true }
         cornersProm: { type: number, nullable: true }
+    Jugador:
+      type: object
+      description: Indicadores de un jugador (docs/JUGADORES.md, capa 1)
+      required: [id, nombre, posicion, partidos, titularidades, minutos, pctMinutos, confianza,
+                 goles, asistencias, participacionOfensiva, amarillas, rojas, enCapilla]
+      properties:
+        id: { type: integer }
+        nombre: { type: string }
+        edad: { type: integer, nullable: true }
+        foto: { type: string, nullable: true }
+        posicion: { type: string, description: 'Portero · Defensa · Centrocampista · Delantero · ""' }
+        partidos: { type: integer }
+        titularidades: { type: integer }
+        minutos: { type: integer }
+        pctMinutos: { type: number, description: minutos / máx. de la plantilla (proxy de titularidad) }
+        rating: { type: number, nullable: true, description: media ponderada por minutos entre competiciones }
+        confianza: { type: string, enum: [A, B, C], description: 'A ≥1800 min · B ≥600 · C <600; recién llegado baja un grado' }
+        goles: { type: integer }
+        asistencias: { type: integer }
+        golesP90: { type: number, nullable: true }
+        asistenciasP90: { type: number, nullable: true }
+        gaP90Ajustado: { type: number, nullable: true, description: '(G+A)/90 con encogimiento bayesiano hacia la media de su posición (M=900 min)' }
+        participacionOfensiva: { type: number, description: (G+A) del jugador / Σ goles de la plantilla }
+        amarillas: { type: integer }
+        rojas: { type: integer }
+        enCapilla: { type: boolean, description: '≥4 amarillas sin roja: riesgo de sanción (bandera, la regla exacta varía por torneo)' }
+        paradasP90: { type: number, nullable: true, description: solo porteros }
+        golesEncajadosP90: { type: number, nullable: true, description: solo porteros }
+        baja:
+          type: object
+          nullable: true
+          properties:
+            tipo: { type: string, nullable: true }
+            detalle: { type: string, nullable: true }
+        recienLlegado:
+          type: object
+          nullable: true
+          description: traspaso hacia el equipo en ≤90 días
+          properties:
+            desde: { type: string, nullable: true }
+            fecha: { type: string, nullable: true }
+    Plantilla:
+      type: object
+      description: Plantilla con indicadores + agregados del equipo (docs/JUGADORES.md)
+      required: [equipoId, jugadores, dependencia, revolucion]
+      properties:
+        equipoId: { type: integer }
+        nombre: { type: string }
+        temporada: { type: integer, nullable: true }
+        actualizadoEn: { type: string, format: date-time, nullable: true, description: última ingesta de jugadores del equipo }
+        entrenador:
+          type: object
+          nullable: true
+          properties:
+            nombre: { type: string, nullable: true }
+            desde: { type: string, nullable: true }
+        dependencia:
+          type: object
+          description: 'HHI de shares de G+A: ~1/n coral · →1 él-dependiente'
+          properties:
+            hhi: { type: number, nullable: true }
+            top:
+              type: array
+              items:
+                type: object
+                properties:
+                  jugadorId: { type: integer }
+                  nombre: { type: string }
+                  participacion: { type: number }
+        revolucion:
+          type: object
+          description: traspasos de la ventana reciente (estabilidad de plantel)
+          properties:
+            llegadas: { type: integer }
+            salidas: { type: integer }
+            ventanaDias: { type: integer }
+        golesPlantilla: { type: integer, description: Σ goles de la plantilla (denominador de participación) }
+        jugadores:
+          type: array
+          items: { $ref: '#/components/schemas/Jugador' }
+    FichaEquipo:
+      allOf:
+        - $ref: '#/components/schemas/Plantilla'
+        - type: object
+          properties:
+            congestion:
+              type: object
+              description: calculada de fixtures ya capturados (0 requests)
+              properties:
+                diasDescanso: { type: integer, nullable: true }
+                partidos21d: { type: integer }
+    FichaPartido:
+      type: object
+      description: 'Puente con los skills: plantillas + congestión de ambos equipos'
+      required: [fixtureId, generadoEn, local, visitante]
+      properties:
+        fixtureId: { type: integer }
+        generadoEn: { type: string, format: date-time }
+        local: { $ref: '#/components/schemas/FichaEquipo' }
+        visitante: { $ref: '#/components/schemas/FichaEquipo' }
     StandingRow:
       type: object
       required: [posicion, equipoId, nombre, puntos, partidosJugados, golesFavor, golesContra]
