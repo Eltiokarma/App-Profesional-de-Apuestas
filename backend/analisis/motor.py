@@ -257,33 +257,53 @@ def generar_efe(fixture_id: int, estado: str = "preliminar") -> dict:
             )
         # presupuesto de búsquedas PROPORCIONAL a lo faltante: con la despensa +
         # la capa de jugadores lo típico son 2-4 campos, no los 14 de un EFE
-        # frío — dejar el techo fijo quemaba ~18 búsquedas (y sus tokens) igual
+        # frío — dejar el techo fijo quemaba ~18 búsquedas (y sus tokens) igual.
+        # El presupuesto viaja también en el payload para que el modelo lo
+        # administre (sin esto, agotaba max_uses y concluía "sin herramienta").
+        tope_busquedas = min(3 + 2 * len(faltantes), cliente.MAX_BUSQUEDAS)
+        if faltantes:
+            payload["presupuesto_busquedas"] = (
+                f"Tienes {tope_busquedas} búsquedas web como máximo: adminístralas — "
+                "una por campo faltante y solo repite si el resultado fue inútil."
+            )
         print(f"[efe] faltantes ({len(faltantes)}): {', '.join(faltantes) or 'ninguno'}", flush=True)
         resultado, _uso = cliente.analizar(
             payload, EFE_COMPARATIVO, con_busqueda=bool(faltantes),
-            max_busquedas=2 + 2 * len(faltantes),
+            max_busquedas=tope_busquedas,
         )
-        # Un análisis sin contenido real (ambos equipos en 0) NO se guarda:
-        # cachearlo dejaría al usuario sin forma de regenerar.
-        if analisis_vacio(resultado):
-            raise RuntimeError(
-                "El análisis llegó vacío (scores en 0 — investigación fallida). "
-                "No se guardó: vuelve a pulsar «Generar análisis EFE» para reintentar."
-            )
+
         # LA DESPENSA: lo investigado se separa del análisis y se deposita por
         # equipo con TTL — el siguiente análisis de estos equipos lo recibe en
         # datos_cacheados y busca solo lo vencido (de ~$0.50 a ~$0.10-0.20).
         # Solo los tipos que FALTABAN: lo que ya estaba fresco no se re-sella.
-        inv = resultado.pop("investigacion", None) or {}
-        depositados = 0
-        for lado, equipo, faltan in (("equipo_a", equipo_a, faltan_a),
-                                     ("equipo_b", equipo_b, faltan_b)):
-            datos = inv.get(lado) or {}
-            for tipo in faltan:
-                contenido = (datos.get(tipo) or "").strip() if isinstance(datos.get(tipo), str) else ""
-                if contenido:
-                    efedb.guardar_investigacion(equipo, tipo, contenido)
-                    depositados += 1
+        def _depositar(res: dict) -> int:
+            inv = res.pop("investigacion", None) or {}
+            n = 0
+            for lado, equipo, faltan in (("equipo_a", equipo_a, faltan_a),
+                                         ("equipo_b", equipo_b, faltan_b)):
+                datos = inv.get(lado) or {}
+                for tipo in faltan:
+                    contenido = (datos.get(tipo) or "").strip() if isinstance(datos.get(tipo), str) else ""
+                    if contenido:
+                        efedb.guardar_investigacion(equipo, tipo, contenido)
+                        n += 1
+            return n
+
+        # Un análisis sin contenido real (ambos equipos en 0) NO se guarda
+        # (cachearlo dejaría al usuario sin forma de regenerar), pero lo que SÍ
+        # se investigó se salva IGUAL a la despensa: ya está pagado — el
+        # reintento lo recibe como datos_cacheados y cuesta una fracción, en
+        # vez de repagar el análisis fallido completo.
+        if analisis_vacio(resultado):
+            salvados = _depositar(resultado)
+            print(f"[efe] análisis vacío: {salvados} datos investigados salvados a la despensa", flush=True)
+            raise RuntimeError(
+                "El análisis llegó vacío (scores en 0 — investigación fallida). No se guardó"
+                + (f"; {salvados} datos investigados quedaron en la despensa y el reintento los aprovecha"
+                   if salvados else "")
+                + ": vuelve a pulsar «Generar análisis EFE» para reintentar."
+            )
+        depositados = _depositar(resultado)
         print(f"[efe] despensa: {depositados} datos depositados "
               f"({equipo_a} / {equipo_b})", flush=True)
 
