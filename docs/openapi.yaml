@@ -723,6 +723,7 @@ components:
         jugadores:
           type: array
           items: { $ref: '#/components/schemas/Jugador' }
+        ingestaLanzada: { type: boolean, description: 'con jugadores=[]: true si la ingesta on-demand del equipo quedó lanzada en segundo plano (la UI sondea)' }
     FichaEquipo:
       allOf:
         - $ref: '#/components/schemas/Plantilla'

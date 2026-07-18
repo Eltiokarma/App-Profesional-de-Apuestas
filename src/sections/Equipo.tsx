@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { TEAMS } from '../data'
 import type { KCondKey, KTypeKey } from '../data/types'
 import { ApuestasSalidas } from '../components/ApuestasSalidas'
@@ -26,6 +26,21 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
   const bur = useAsync(() => loadBurbujas(teamKey), teamKey)
   const fx = useAsync(() => loadTeamFixtures(teamKey), teamKey)
   const plant = useAsync(() => loadPlantilla(teamKey), teamKey)
+
+  // ingesta on-demand: si el backend la lanzó (plantilla vacía), sondear
+  // hasta que llegue (~5-6 requests del lado del servidor, unos segundos)
+  const [sondeos, setSondeos] = useState(0)
+  useEffect(() => setSondeos(0), [teamKey])
+  useEffect(() => {
+    const d = plant.data
+    if (!plant.loading && !plant.error && d && d.jugadores.length === 0 && d.ingestaLanzada && sondeos < 8) {
+      const t = setTimeout(() => {
+        setSondeos((n) => n + 1)
+        plant.reload()
+      }, 8000)
+      return () => clearTimeout(t)
+    }
+  }, [plant.loading, plant.error, plant.data, sondeos]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const kType: KTypeKey = s.kType
   const kCond: KCondKey = s.kCond
@@ -178,9 +193,16 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
                 <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t3)', padding: '10px 0' }}>No se pudo cargar la plantilla: {plant.error}</div>
               )}
               {!plant.loading && !plant.error && (!plant.data || plant.data.jugadores.length === 0) && (
-                <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t3)', padding: '10px 0' }}>
-                  Plantilla sin capturar todavía — la ingesta de jugadores (python -m backend.ingesta.jugadores) la trae para los equipos con partidos próximos.
-                </div>
+                plant.data?.ingestaLanzada ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, font: '500 11.5px var(--sans)', color: 'var(--t2)', padding: '10px 0' }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', animation: 'sadpulse 1.1s infinite' }}></span>
+                    Trayendo la plantilla de la API — se actualiza sola en unos segundos…
+                  </div>
+                ) : (
+                  <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t3)', padding: '10px 0' }}>
+                    Plantilla sin capturar todavía — la ingesta de jugadores (python -m backend.ingesta.jugadores) la trae para los equipos con partidos próximos.
+                  </div>
+                )
               )}
               {!plant.loading && !plant.error && plant.data && plant.data.jugadores.length > 0 && (
                 <div className="sad-scroll" style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 380, overflowY: 'auto', paddingRight: 4, marginTop: 10 }}>

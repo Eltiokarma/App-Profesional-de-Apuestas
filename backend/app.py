@@ -1066,18 +1066,74 @@ def equipo_stats(equipo_id: int):
     }
 
 
+# Ingesta de plantilla BAJO DEMANDA: al entrar a un equipo sin datos de
+# jugadores se lanza en segundo plano backend.ingesta.jugadores --equipo
+# (mismo patrón de subprocesos que la ingesta programada: el HTTP sigue siendo
+# de solo lectura, quien escribe es la capa de ingesta). Dedupe en memoria por
+# equipo; SAD_PLANTILLA_ONDEMAND=0 la apaga. La UI sondea hasta que llega.
+_plantillas_en_curso: set[int] = set()
+_plantillas_lock = threading.Lock()
+
+
+def _ondemand_activo() -> bool:
+    return os.environ.get("SAD_PLANTILLA_ONDEMAND", "1").strip().lower() not in ("0", "false", "no")
+
+
+def _lanzar_ingesta_plantilla(equipo_id: int) -> bool:
+    """True si la ingesta del equipo quedó lanzada (o ya estaba en curso)."""
+    if not _ondemand_activo():
+        return False
+    try:  # sin API_FOOTBALL_KEY (p. ej. demo local) no hay nada que lanzar
+        from backend.ingesta.extractor import leer_clave
+        leer_clave()
+    except BaseException:
+        return False
+    with _plantillas_lock:
+        if equipo_id in _plantillas_en_curso:
+            return True
+        _plantillas_en_curso.add(equipo_id)
+    # temporada: la del último fixture conocido del equipo (torneos de año
+    # cruzado incluidos); fallback al año en curso
+    row = db.query_one(
+        "sad",
+        "SELECT league_season FROM fixtures WHERE (home_team_id=? OR away_team_id=?) "
+        "AND league_season IS NOT NULL ORDER BY date DESC LIMIT 1",
+        (equipo_id, equipo_id),
+    )
+    temporada = row["league_season"] if row else datetime.now(timezone.utc).year
+    raiz = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    env = {**os.environ, "PYTHONPATH": raiz, "PYTHONUTF8": "1", "PYTHONUNBUFFERED": "1"}
+
+    def _trabajo() -> None:
+        try:
+            print(f"[jugadores] ingesta on-demand equipo {equipo_id} t{temporada}", flush=True)
+            subprocess.run(
+                [sys.executable, "-u", "-m", "backend.ingesta.jugadores",
+                 "--equipo", str(equipo_id), "--temporada", str(temporada)],
+                cwd=db.BASE_DIR, env=env,
+            )
+        finally:
+            with _plantillas_lock:
+                _plantillas_en_curso.discard(equipo_id)
+
+    threading.Thread(target=_trabajo, daemon=True, name=f"plantilla-{equipo_id}").start()
+    return True
+
+
 @app.get(API + "/equipos/{equipo_id}/plantilla")
 def equipo_plantilla(equipo_id: int):
     """Plantilla con indicadores (docs/JUGADORES.md): por-90 con encogimiento,
     dependencia HHI, bajas, traspasos, DT. Calculado en lectura de las tablas
     de jugadores de sad.db (backend.ingesta.jugadores); sin ingesta aún,
-    jugadores=[] — nada se inventa."""
+    jugadores=[] + ingesta on-demand lanzada en segundo plano (ingestaLanzada
+    avisa a la UI para sondear) — nada se inventa."""
     team = db.query_one("sad", "SELECT id, name FROM teams WHERE id=?", (equipo_id,))
     if not team:
         raise HTTPException(404, f"equipo {equipo_id} no existe")
     from backend import jugadores as jug
     p = jug.plantilla_de(equipo_id)
     p["nombre"] = team["name"]
+    p["ingestaLanzada"] = False if p["jugadores"] else _lanzar_ingesta_plantilla(equipo_id)
     return p
 
 
