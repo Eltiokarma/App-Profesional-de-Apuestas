@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { AnalisisRegistroDTO, EfeBloque, EfeComparativo, EfeEquipo, GeneracionEfeDTO, TimelineData } from '../api/types'
 import { CONFIG } from '../config'
 import type { Match } from '../data/types'
-import { estadoAnalisisEfe, estadoTimeline, generarAnalisisEfe, generarTimeline, loadAnalisisPartido } from '../services/appdata'
+import type { CargaDespensaDTO } from '../api/types'
+import { cargarDespensa, estadoAnalisisEfe, estadoTimeline, generarAnalisisEfe, generarTimeline, loadAnalisisPartido } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import { TimelineComparativo } from '../components/TimelineComparativo'
 
@@ -20,6 +21,65 @@ const CLASIF = {
 } as const
 const ROL = { TF: 'Titular fijo', TH: 'Titular habitual', ROT: 'Rotación', SUP: 'Suplente' } as const
 const BLOQUE_NOMBRE = { A: 'Cuerpo técnico', B: 'Plantel', C: 'K Constants', D: 'Coherencia táctica', E: 'Rendimiento' } as const
+
+/** Carga de la despensa desde el Claude de escritorio (docs/DESPENSA_DESKTOP.md):
+ *  la investigación cara se hace GRATIS con la suscripción y se pega aquí como
+ *  JSON — el siguiente EFE por API no busca en la web (~$0.10-0.20). */
+function CargaDespensaBox() {
+  const [abierto, setAbierto] = useState(false)
+  const [texto, setTexto] = useState('')
+  const [cargando, setCargando] = useState(false)
+  const [resultado, setResultado] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const subir = async () => {
+    setCargando(true)
+    setError(null)
+    setResultado(null)
+    try {
+      const payload = JSON.parse(texto) as CargaDespensaDTO
+      if (!payload?.equipos?.length) throw new Error('el JSON no trae la lista "equipos"')
+      const r = await cargarDespensa(payload)
+      setResultado(`${r.depositados} datos depositados (${r.equipos.join(' / ')})${r.tiposIgnorados?.length ? ` · tipos ignorados: ${r.tiposIgnorados.join(', ')}` : ''} — genera el EFE ahora: usará esta investigación en vez de buscar en la web.`)
+      setTexto('')
+    } catch (e) {
+      setError(e instanceof SyntaxError ? 'JSON inválido: copia el bloque completo que devolvió Claude' : e instanceof Error ? e.message : 'error al cargar')
+    } finally {
+      setCargando(false)
+    }
+  }
+
+  return (
+    <section style={{ marginBottom: 14, borderRadius: 12, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+      <button onClick={() => setAbierto(!abierto)} style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '10px 14px', background: 'transparent', border: 0, cursor: 'pointer', textAlign: 'left' }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
+        <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)', flex: 1 }}>Cargar investigación del Claude de escritorio <span style={{ color: 'var(--t3)', font: '500 10.5px var(--mono)' }}>· gratis con tu suscripción · el EFE sale a ~$0.10</span></span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2.4" strokeLinecap="round" style={{ transform: abierto ? 'rotate(90deg)' : 'none', transition: 'transform .12s' }}><path d="M9 6l6 6-6 6" /></svg>
+      </button>
+      {abierto && (
+        <div style={{ padding: '0 14px 14px' }}>
+          <p style={{ margin: '0 0 8px', font: '500 11px var(--sans)', color: 'var(--t3)' }}>
+            Copia el prompt de <span style={{ font: '600 11px var(--mono)', color: 'var(--t2)' }}>docs/DESPENSA_DESKTOP.md</span> en tu Claude de escritorio (los nombres de los equipos tal como salen en la app), pega aquí el JSON que devuelva y sube. Vale para varios partidos a la vez.
+          </p>
+          <textarea
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            placeholder={'{"equipos": [{"equipo": "Universitario", "datos": {"dt": "…", "plantel": "…", "bajas": "…"}}], "fuentes": ["…"]}'}
+            spellCheck={false}
+            style={{ width: '100%', minHeight: 120, padding: 10, borderRadius: 9, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--t1)', font: '500 11px var(--mono)', resize: 'vertical', boxSizing: 'border-box' }}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
+            <button onClick={subir} disabled={cargando || !texto.trim()} style={{ padding: '8px 16px', borderRadius: 9, border: 0, cursor: cargando || !texto.trim() ? 'default' : 'pointer', background: cargando || !texto.trim() ? 'var(--bg3)' : 'var(--accent)', color: cargando || !texto.trim() ? 'var(--t3)' : '#fff', font: '700 12px var(--sans)' }}>
+              {cargando ? 'Depositando…' : 'Depositar en la despensa'}
+            </button>
+            {resultado && <span style={{ font: '600 11px var(--sans)', color: 'var(--up)', flex: 1 }}>{resultado}</span>}
+            {error && <span style={{ font: '600 11px var(--sans)', color: 'var(--down)', flex: 1 }}>{error}</span>}
+          </div>
+        </div>
+      )}
+    </section>
+  )
+}
 
 /** Anillo (gauge) con el % del EFE y su clasificación. */
 function GaugeRing({ eq, nombre }: { eq: EfeEquipo; nombre: string }) {
@@ -308,6 +368,9 @@ export function Analisis({ m, isMobile }: Props) {
           </div>
         )}
       </div>
+
+      {/* despensa manual: la investigación cara, gratis desde el escritorio */}
+      <CargaDespensaBox />
 
       {/* error de una regeneración con dashboard ya visible */}
       {efe && errorGen && (

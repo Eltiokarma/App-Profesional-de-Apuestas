@@ -1460,6 +1460,55 @@ class EfeRequest(BaseModel):
     forzar: bool = False  # regenerar: descarta el análisis guardado y relanza
 
 
+class EquipoDespensa(BaseModel):
+    equipo: str
+    datos: dict[str, str]
+
+
+class CargaDespensaRequest(BaseModel):
+    equipos: list[EquipoDespensa]
+    fuentes: list[str] = []
+
+
+@app.post(API + "/analisis/despensa")
+def cargar_despensa(body: CargaDespensaRequest):
+    """Carga MANUAL de la despensa (docs/DESPENSA_DESKTOP.md): la investigación
+    hecha gratis en el Claude de escritorio (suscripción plana) se deposita
+    aquí y el EFE por API ya no busca en la web — solo razona sobre datos
+    cacheados (~$0.10-0.20 en vez del análisis frío completo).
+
+    Misma excepción documentada de solo-lectura que /analisis/efe: escribe
+    efe.db (tabla investigacion), nunca las DBs del SAD. El nombre del equipo
+    debe coincidir con el de la app (teams.name); los tipos fuera del catálogo
+    de la despensa se ignoran."""
+    from backend.analisis import db as efedb
+    if not body.equipos:
+        raise HTTPException(422, "equipos vacío: nada que depositar")
+    depositados, ignorados = 0, []
+    for e in body.equipos:
+        nombre = (e.equipo or "").strip()
+        if not nombre:
+            continue
+        for tipo, contenido in e.datos.items():
+            contenido = (contenido or "").strip()
+            if not contenido:
+                continue
+            if tipo not in efedb.TIPOS:
+                ignorados.append(tipo)
+                continue
+            efedb.guardar_investigacion(nombre, tipo, contenido, body.fuentes or None)
+            depositados += 1
+    print(f"[despensa] carga manual: {depositados} datos "
+          f"({', '.join(e.equipo for e in body.equipos)})"
+          + (f" · tipos ignorados: {sorted(set(ignorados))}" if ignorados else ""), flush=True)
+    return {
+        "depositados": depositados,
+        "equipos": [e.equipo for e in body.equipos],
+        "tiposValidos": list(efedb.TIPOS),
+        "tiposIgnorados": sorted(set(ignorados)),
+    }
+
+
 @app.post(API + "/analisis/efe")
 def analisis_efe(body: EfeRequest):
     """Lanza el análisis EFE del fixture (o lo devuelve si ya existe).

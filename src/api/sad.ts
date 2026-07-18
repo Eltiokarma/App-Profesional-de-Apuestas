@@ -3,6 +3,8 @@ import { apiGet, apiPost, qs } from './client'
 import type {
   AnalisisPrepartidoDTO,
   AnalisisRegistroDTO,
+  CargaDespensaDTO,
+  CargaDespensaResultadoDTO,
   ConstanteCuotaDTO,
   ConstantesDTO,
   CuotaCasaDTO,
@@ -87,6 +89,11 @@ export const SadApi = {
 
   /** Sondeo del trabajo de análisis EFE. */
   estadoEfe: (fixtureId: number) => apiGet<GeneracionEfeDTO>(`/analisis/efe/estado/${fixtureId}`),
+
+  /** Carga manual de la despensa: investigación del Claude de escritorio
+   *  (docs/DESPENSA_DESKTOP.md) — el próximo EFE no busca en la web. */
+  cargarDespensa: (payload: CargaDespensaDTO) =>
+    apiPost<CargaDespensaResultadoDTO>('/analisis/despensa', payload, { timeoutMs: 15_000 }),
 
   /** Lanza el timeline comparativo (mismo patrón asíncrono que el EFE). */
   generarTimeline: (fixtureId: number, forzar = false) =>

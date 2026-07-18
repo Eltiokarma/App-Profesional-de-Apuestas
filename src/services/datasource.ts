@@ -6,6 +6,8 @@ import { SadApi } from '../api/sad'
 import type {
   AnalisisPrepartidoDTO,
   AnalisisRegistroDTO,
+  CargaDespensaDTO,
+  CargaDespensaResultadoDTO,
   GeneracionEfeDTO,
   ConstanteCuotaDTO,
   ConstantesDTO,
@@ -101,6 +103,8 @@ export interface SadDataSource {
   generarEfe(fixtureId: number, forzar?: boolean): Promise<GeneracionEfeDTO>
   /** Sondeo del trabajo de análisis EFE. */
   estadoEfe(fixtureId: number): Promise<GeneracionEfeDTO>
+  /** Carga manual de la despensa (investigación del Claude de escritorio). */
+  cargarDespensa(payload: CargaDespensaDTO): Promise<CargaDespensaResultadoDTO>
   /** Lanza el timeline comparativo (mismo patrón asíncrono que el EFE). */
   generarTimeline(fixtureId: number, forzar?: boolean): Promise<GeneracionEfeDTO>
   /** Sondeo del trabajo de timeline. */
@@ -597,6 +601,13 @@ class MockDataSource implements SadDataSource {
     return reg ? { estado: 'listo', registro: reg } : { estado: 'nada' }
   }
 
+  async cargarDespensa(payload: CargaDespensaDTO): Promise<CargaDespensaResultadoDTO> {
+    // demo: se "acepta" sin almacenar (la despensa real vive en efe.db del backend)
+    const depositados = payload.equipos.reduce(
+      (s, e) => s + Object.values(e.datos).filter((v) => v && v.trim()).length, 0)
+    return { depositados, equipos: payload.equipos.map((e) => e.equipo) }
+  }
+
   async cuotasHistorial(fixtureId: number, casa?: string | null): Promise<CuotaSnapshotDTO[]> {
     // Demo: 6 snapshots deterministas que derivan hacia la cuota base — misma
     // forma que servirá el backend real desde odds_history. Con `casa`, otra
@@ -731,6 +742,7 @@ class HttpDataSource implements SadDataSource {
   analisisPartido = (fixtureId: number) => SadApi.analisisPartido(fixtureId)
   generarEfe = (fixtureId: number, forzar?: boolean) => SadApi.generarEfe(fixtureId, forzar)
   estadoEfe = (fixtureId: number) => SadApi.estadoEfe(fixtureId)
+  cargarDespensa = (payload: CargaDespensaDTO) => SadApi.cargarDespensa(payload)
   generarTimeline = (fixtureId: number, forzar?: boolean) => SadApi.generarTimeline(fixtureId, forzar)
   estadoTimeline = (fixtureId: number) => SadApi.estadoTimeline(fixtureId)
   equipoStats = (equipoId: number) => SadApi.equipoStats(equipoId)

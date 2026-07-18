@@ -11,6 +11,8 @@ import type {
   EquipoStatsDTO,
   FixtureDTO,
   FixtureLiveDTO,
+  CargaDespensaDTO,
+  CargaDespensaResultadoDTO,
   GeneracionEfeDTO,
   LigaDTO,
   PlantillaDTO,
@@ -385,6 +387,12 @@ export function loadAnalisisPartido(matchId: string): Promise<AnalisisRegistroDT
  *  `forzar` = regenerar: descarta el guardado y emite uno nuevo. */
 export function generarAnalisisEfe(matchId: string, forzar = false): Promise<GeneracionEfeDTO> {
   return getDataSource().generarEfe(fixtureNum(matchId), forzar)
+}
+
+/** Carga manual de la despensa: investigación hecha gratis en el Claude de
+ *  escritorio (docs/DESPENSA_DESKTOP.md) — el próximo EFE no busca en la web. */
+export function cargarDespensa(payload: CargaDespensaDTO): Promise<CargaDespensaResultadoDTO> {
+  return getDataSource().cargarDespensa(payload)
 }
 
 /** Sondeo del trabajo de análisis EFE (listo / generando / error / nada). */
