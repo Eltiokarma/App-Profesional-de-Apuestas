@@ -17,6 +17,9 @@ import os
 from backend.analisis.esquemas import ajustar
 
 MODELO = os.environ.get("SAD_EFE_MODELO", "claude-sonnet-5")
+# El timeline es narrativa + ordenar eventos (mucho ya viene de la base):
+# Haiku lo resuelve a ~1/3 del precio; SAD_TL_MODELO lo cambia si hace falta.
+MODELO_TIMELINE = os.environ.get("SAD_TL_MODELO", "claude-haiku-4-5-20251001")
 # Con la investigación real activa (18 búsquedas) el razonamiento + el JSON
 # del EFE no cabían en 16k → stop_reason=max_tokens. Tope amplio + STREAMING
 # (obligatorio por encima de ~16k para no chocar con timeouts HTTP del SDK).
@@ -31,11 +34,21 @@ MAX_BUSQUEDAS = int(os.environ.get("SAD_EFE_BUSQUEDAS", "18"))
 # movimientos_db, eventos previos): su presupuesto es menor.
 BUSQUEDAS_TIMELINE = int(os.environ.get("SAD_TL_BUSQUEDAS", "8"))
 
-# Precios de claude-sonnet-5 por millón de tokens (intro hasta 2026-08-31:
-# $2 input / $10 output; caché: escritura 1.25×, lectura 0.1×) y $10 por
-# 1000 búsquedas web. Solo para el log de costo estimado por corrida.
-_PRECIO = {"input": 2.0, "output": 10.0, "cache_write": 2.5, "cache_read": 0.2}
+# Precios por millón de tokens según el modelo (sonnet-5 con intro hasta
+# 2026-08-31; caché: escritura 1.25×, lectura 0.1×) y $10 por 1000 búsquedas
+# web. Solo para el log de costo estimado por corrida.
+_PRECIOS = {
+    "haiku": {"input": 1.0, "output": 5.0, "cache_write": 1.25, "cache_read": 0.1},
+    "sonnet": {"input": 2.0, "output": 10.0, "cache_write": 2.5, "cache_read": 0.2},
+}
 _PRECIO_BUSQUEDA = 0.01
+
+
+def _precio_de(modelo: str) -> dict:
+    for clave, tabla in _PRECIOS.items():
+        if clave in modelo:
+            return tabla
+    return _PRECIOS["sonnet"]
 
 _PROMPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prompts")
 _MARCA_BLOQUE2 = "## INSTRUCCIONES DE EJECUCIÓN API"
@@ -76,6 +89,7 @@ SALIDA_EFE = (
     "fixture, xi_reciente, bajas}, equipo_b: {idem}}: cada campo es un resumen TEXTUAL "
     "denso y autocontenido de lo que investigaste (nombres, fechas, cifras, fuente), "
     "porque se guardará como caché y será el 'datos_cacheados' de análisis futuros. "
+    "MÁXIMO ~100 palabras por campo (el output se paga: denso, no extenso). "
     "Usa \"\" en lo que no investigaste."
 )
 SALIDA_TIMELINE = (
@@ -103,7 +117,7 @@ def _extraer_json(texto: str) -> dict:
 
 def analizar(payload: dict, esquema: dict, con_busqueda: bool,
              system: list | None = None, salida: str | None = None,
-             max_busquedas: int | None = None) -> tuple[dict, dict]:
+             max_busquedas: int | None = None, modelo: str | None = None) -> tuple[dict, dict]:
     """Una llamada al modo del payload. Devuelve (resultado, uso).
 
     `system`/`salida` parametrizan el modo (default: EFE). `max_busquedas`
@@ -119,8 +133,9 @@ def analizar(payload: dict, esquema: dict, con_busqueda: bool,
     client = anthropic.Anthropic()
     # refuerzo explícito: la salida es SOLO el objeto JSON del esquema del modo
     payload = {**payload, "salida": salida or SALIDA_EFE}
+    modelo = modelo or MODELO
     kwargs: dict = {
-        "model": MODELO,
+        "model": modelo,
         "max_tokens": MAX_TOKENS,
         "system": system or bloques_system(),
         "messages": [{"role": "user", "content": json.dumps(payload, ensure_ascii=False)}],
@@ -183,11 +198,12 @@ def analizar(payload: dict, esquema: dict, con_busqueda: bool,
         _sumar(respuesta)
         reanudes += 1
 
-    costo = (uso["input"] * _PRECIO["input"] + uso["output"] * _PRECIO["output"]
-             + uso["cache_write"] * _PRECIO["cache_write"]
-             + uso["cache_read"] * _PRECIO["cache_read"]) / 1_000_000 \
+    precio = _precio_de(modelo)
+    costo = (uso["input"] * precio["input"] + uso["output"] * precio["output"]
+             + uso["cache_write"] * precio["cache_write"]
+             + uso["cache_read"] * precio["cache_read"]) / 1_000_000 \
         + hechas * _PRECIO_BUSQUEDA
-    print(f"[efe] {MODELO} · in={uso['input']} out={uso['output']} "
+    print(f"[efe] {modelo} · in={uso['input']} out={uso['output']} "
           f"cache_write={uso['cache_write']} cache_read={uso['cache_read']} "
           f"busqueda={'sí' if con_busqueda else 'no'} hechas={hechas} "
           f"max={tope_busquedas if con_busqueda else 0} reanudes={reanudes} costo≈${costo:.2f}"
