@@ -24,7 +24,12 @@ MAX_TOKENS = int(os.environ.get("SAD_EFE_MAX_TOKENS", "64000"))
 # Un EFE completo investiga ~7 tipos de datos por equipo (14 en total): con un
 # tope bajo el modelo agota las búsquedas, recibe bloques de error
 # (max_uses_exceeded) y concluye "herramienta no disponible" → análisis en ceros.
+# Este es el TECHO: el motor pasa un tope proporcional a los campos faltantes
+# (con la despensa + la capa de jugadores, lo típico es que falten 2-4, no 14).
 MAX_BUSQUEDAS = int(os.environ.get("SAD_EFE_BUSQUEDAS", "18"))
+# El timeline complementa datos que ya vienen de la base (resultados_db,
+# movimientos_db, eventos previos): su presupuesto es menor.
+BUSQUEDAS_TIMELINE = int(os.environ.get("SAD_TL_BUSQUEDAS", "8"))
 
 # Precios de claude-sonnet-5 por millón de tokens (intro hasta 2026-08-31:
 # $2 input / $10 output; caché: escritura 1.25×, lectura 0.1×) y $10 por
@@ -97,11 +102,14 @@ def _extraer_json(texto: str) -> dict:
 
 
 def analizar(payload: dict, esquema: dict, con_busqueda: bool,
-             system: list | None = None, salida: str | None = None) -> tuple[dict, dict]:
+             system: list | None = None, salida: str | None = None,
+             max_busquedas: int | None = None) -> tuple[dict, dict]:
     """Una llamada al modo del payload. Devuelve (resultado, uso).
 
-    `system`/`salida` parametrizan el modo (default: EFE). `uso` trae los
-    contadores de tokens para vigilar caché y costo en logs.
+    `system`/`salida` parametrizan el modo (default: EFE). `max_busquedas`
+    acota el web search de ESTA llamada (default: el techo MAX_BUSQUEDAS) —
+    el costo real de una corrida es proporcional a las búsquedas, no al modelo.
+    `uso` trae los contadores de tokens para vigilar caché y costo en logs.
     Lanza RuntimeError si no hay ANTHROPIC_API_KEY.
     """
     if not hay_clave():
@@ -117,9 +125,10 @@ def analizar(payload: dict, esquema: dict, con_busqueda: bool,
         "system": system or bloques_system(),
         "messages": [{"role": "user", "content": json.dumps(payload, ensure_ascii=False)}],
     }
+    tope_busquedas = min(max_busquedas or MAX_BUSQUEDAS, MAX_BUSQUEDAS)
     if con_busqueda:
         kwargs["tools"] = [{"type": "web_search_20260209", "name": "web_search",
-                            "max_uses": MAX_BUSQUEDAS}]
+                            "max_uses": tope_busquedas}]
 
     # STREAMING: con max_tokens grandes (64k) el create() normal choca con los
     # timeouts HTTP del SDK; el stream mantiene la conexión viva los 1-5 min.
@@ -151,12 +160,25 @@ def analizar(payload: dict, esquema: dict, con_busqueda: bool,
 
     respuesta = _llamada()
     _sumar(respuesta)
-    # las herramientas de servidor pueden pausar el turno: se reanuda tal cual
+    # Las herramientas de servidor pueden pausar el turno. Cada reanude re-envía
+    # TODA la conversación (resultados de búsqueda incluidos): sin caché eso se
+    # re-factura como input fresco en cada vuelta y multiplicaba el costo ×3-4.
+    # Se marca cache_control en el último bloque de lo acumulado — el breakpoint
+    # ROTA (se quita del reanude anterior) para respetar el máximo de 4.
     reanudes = 0
     while respuesta.stop_reason == "pause_turn" and reanudes < 5:
-        kwargs["messages"] = kwargs["messages"] + [
-            {"role": "assistant", "content": respuesta.content}
-        ]
+        try:
+            bloques = [b.model_dump(exclude_none=True) for b in respuesta.content]
+            for msg in kwargs["messages"]:
+                if isinstance(msg.get("content"), list):
+                    for blq in msg["content"]:
+                        if isinstance(blq, dict):
+                            blq.pop("cache_control", None)
+            bloques[-1] = {**bloques[-1], "cache_control": {"type": "ephemeral"}}
+            contenido = bloques
+        except Exception:  # forma de bloque inesperada: reanudar sin caché, como antes
+            contenido = respuesta.content
+        kwargs["messages"] = kwargs["messages"] + [{"role": "assistant", "content": contenido}]
         respuesta = _llamada()
         _sumar(respuesta)
         reanudes += 1
@@ -168,7 +190,7 @@ def analizar(payload: dict, esquema: dict, con_busqueda: bool,
     print(f"[efe] {MODELO} · in={uso['input']} out={uso['output']} "
           f"cache_write={uso['cache_write']} cache_read={uso['cache_read']} "
           f"busqueda={'sí' if con_busqueda else 'no'} hechas={hechas} "
-          f"max={MAX_BUSQUEDAS} costo≈${costo:.2f}"
+          f"max={tope_busquedas if con_busqueda else 0} reanudes={reanudes} costo≈${costo:.2f}"
           + (f" errores_busqueda={errores}" if errores else ""), flush=True)
 
     texto = next((b.text for b in reversed(respuesta.content) if b.type == "text"), None)
