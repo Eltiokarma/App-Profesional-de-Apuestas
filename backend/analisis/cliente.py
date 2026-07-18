@@ -142,7 +142,11 @@ def analizar(payload: dict, esquema: dict, con_busqueda: bool,
     }
     tope_busquedas = min(max_busquedas or MAX_BUSQUEDAS, MAX_BUSQUEDAS)
     if con_busqueda:
-        kwargs["tools"] = [{"type": "web_search_20260209", "name": "web_search",
+        # La variante 20260209 (filtrado dinámico) solo existe en Opus/Sonnet;
+        # Haiku no soporta su tool calling programático (400 invalid_request) y
+        # usa la básica 20250305 — misma búsqueda, sin el filtrado en código.
+        version = "web_search_20250305" if "haiku" in modelo else "web_search_20260209"
+        kwargs["tools"] = [{"type": version, "name": "web_search",
                             "max_uses": tope_busquedas}]
 
     # STREAMING: con max_tokens grandes (64k) el create() normal choca con los
