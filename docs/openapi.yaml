@@ -319,6 +319,14 @@ paths:
                   type: boolean
                   default: false
                   description: Regenerar — descarta el análisis guardado y emite uno nuevo (consume créditos)
+                permitirFrio:
+                  type: boolean
+                  default: false
+                  description: >
+                    Candado de análisis frío — por defecto, si faltan más de
+                    SAD_EFE_MAX_FALTANTES campos (default 6) el análisis se
+                    bloquea ANTES de gastar y el error guía a cargar la
+                    despensa gratis; true = acepto pagar el frío (~$0.6-1.2).
       responses:
         '200':
           description: OK

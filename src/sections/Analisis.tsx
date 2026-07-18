@@ -3,8 +3,7 @@ import type { AnalisisRegistroDTO, EfeBloque, EfeComparativo, EfeEquipo, Generac
 import { CONFIG } from '../config'
 import { TEAMS } from '../data'
 import type { Match } from '../data/types'
-import { promptDespensaLiga } from '../lib/despensa'
-import type { CargaDespensaDTO } from '../api/types'
+import { extraerBloquesDespensa, promptDespensaLiga } from '../lib/despensa'
 import { cargarDespensa, estadoAnalisisEfe, estadoTimeline, generarAnalisisEfe, generarTimeline, loadAnalisisPartido } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import { TimelineComparativo } from '../components/TimelineComparativo'
@@ -46,8 +45,9 @@ function CargaDespensaBox({ liga, equipos }: { liga: string; equipos: string[] }
     setError(null)
     setResultado(null)
     try {
-      const payload = JSON.parse(texto) as CargaDespensaDTO
-      if (!payload?.equipos?.length) throw new Error('el JSON no trae la lista "equipos"')
+      // acepta TODAS las tandas pegadas juntas (con texto o ``` entre medio)
+      const payload = extraerBloquesDespensa(texto)
+      if (!payload.equipos.length) throw new Error('no encontré bloques JSON con "equipos" — pega las tandas tal cual las devolvió Claude')
       const r = await cargarDespensa(payload)
       const ajustes = r.canonizados && Object.keys(r.canonizados).length
         ? ` · nombres ajustados: ${Object.entries(r.canonizados).map(([a, b]) => `${a}→${b}`).join(', ')}`
@@ -76,7 +76,7 @@ function CargaDespensaBox({ liga, equipos }: { liga: string; equipos: string[] }
               {copiado ? '¡Copiado!' : `Copiar prompt (${equipos.join(' y ')})`}
             </button>
             <span style={{ font: '500 10.5px var(--sans)', color: 'var(--t3)' }}>
-              Pégalo en tu Claude de escritorio y trae aquí el JSON. Para barrer la <b>liga entera</b>, usa el botón de la página de la liga (junto a la Clasificación).
+              Pégalo en tu Claude de escritorio y trae aquí la respuesta — puedes pegar <b>todas las tandas de la liga juntas</b> (con texto entre medio, da igual): se suben en un solo depósito. El prompt de liga entera está en la página de la liga.
             </span>
           </div>
           <textarea
@@ -317,17 +317,20 @@ export function Analisis({ m, isMobile }: Props) {
     }
   }
 
-  // `forzar` = botón Regenerar: descarta el análisis guardado y emite uno nuevo
-  const generar = (forzar = false) => {
+  // `forzar` = botón Regenerar: descarta el análisis guardado y emite uno nuevo.
+  // `permitirFrio` = opt-in explícito a pagar un análisis sin despensa (~$0.6-1.2):
+  // por defecto el backend lo bloquea ANTES de gastar y guía al flujo gratis.
+  const generar = (forzar = false, permitirFrio = false) => {
     setGenerando(true)
     setErrorGen(null)
-    generarAnalisisEfe(m.id, forzar)
+    generarAnalisisEfe(m.id, forzar, permitirFrio)
       .then(manejar)
       .catch((e: unknown) => {
         setGenerando(false)
         setErrorGen(e instanceof Error ? e.message : 'error del análisis')
       })
   }
+  const esErrorFrio = !!errorGen && errorGen.includes('FRÍO')
 
   // si el usuario recargó la página con un análisis en curso, retomar el sondeo
   useEffect(() => {
@@ -392,8 +395,11 @@ export function Analisis({ m, isMobile }: Props) {
 
       {/* error de una regeneración con dashboard ya visible */}
       {efe && errorGen && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', marginBottom: 14, borderRadius: 11, background: 'var(--down-soft)', border: '1px solid color-mix(in oklch,var(--down),transparent 55%)' }}>
-          <span style={{ font: '500 12px var(--sans)', color: 'var(--t1)', flex: 1 }}>{errorGen}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', marginBottom: 14, borderRadius: 11, background: 'var(--down-soft)', border: '1px solid color-mix(in oklch,var(--down),transparent 55%)', flexWrap: 'wrap' }}>
+          <span style={{ font: '500 12px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 220 }}>{errorGen}</span>
+          {esErrorFrio && (
+            <button onClick={() => generar(true, true)} style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg2)', color: 'var(--t1)', cursor: 'pointer', font: '600 11px var(--sans)', flexShrink: 0 }}>Generar igual (frío)</button>
+          )}
           <button onClick={() => generar(true)} style={{ padding: '6px 12px', borderRadius: 8, border: 0, background: 'var(--down)', color: '#fff', cursor: 'pointer', font: '600 11px var(--sans)', flexShrink: 0 }}>Reintentar</button>
         </div>
       )}
@@ -418,9 +424,16 @@ export function Analisis({ m, isMobile }: Props) {
           {errorGen && (
             <p style={{ margin: '0 auto 12px', maxWidth: 480, font: '600 11.5px var(--sans)', color: 'var(--down)' }}>{errorGen}</p>
           )}
-          <button onClick={() => generar()} disabled={generando} style={{ padding: '11px 22px', borderRadius: 10, border: 0, cursor: generando ? 'wait' : 'pointer', background: generando ? 'var(--bg3)' : 'var(--accent)', color: generando ? 'var(--t2)' : '#fff', font: '700 13px var(--sans)' }}>
-            {generando ? 'Analizando en el servidor… (1-3 min)' : 'Generar análisis EFE'}
-          </button>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button onClick={() => generar()} disabled={generando} style={{ padding: '11px 22px', borderRadius: 10, border: 0, cursor: generando ? 'wait' : 'pointer', background: generando ? 'var(--bg3)' : 'var(--accent)', color: generando ? 'var(--t2)' : '#fff', font: '700 13px var(--sans)' }}>
+              {generando ? 'Analizando en el servidor… (1-3 min)' : 'Generar análisis EFE'}
+            </button>
+            {esErrorFrio && !generando && (
+              <button onClick={() => generar(false, true)} title="Acepto pagar el análisis sin despensa (~$0.6-1.2)" style={{ padding: '11px 22px', borderRadius: 10, border: '1px solid var(--line)', cursor: 'pointer', background: 'var(--bg2)', color: 'var(--t1)', font: '700 13px var(--sans)' }}>
+                Generar igual (frío)
+              </button>
+            )}
+          </div>
           {generando && (
             <p style={{ margin: '10px auto 0', maxWidth: 440, font: '500 10.5px var(--mono)', color: 'var(--t3)' }}>
               El trabajo corre en el servidor: puedes cerrar esta página y volver, el análisis seguirá.
