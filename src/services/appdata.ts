@@ -385,8 +385,8 @@ export function loadAnalisisPartido(matchId: string): Promise<AnalisisRegistroDT
 
 /** Lanza el análisis EFE (respuesta inmediata; el trabajo corre en el servidor).
  *  `forzar` = regenerar: descarta el guardado y emite uno nuevo. */
-export function generarAnalisisEfe(matchId: string, forzar = false): Promise<GeneracionEfeDTO> {
-  return getDataSource().generarEfe(fixtureNum(matchId), forzar)
+export function generarAnalisisEfe(matchId: string, forzar = false, permitirFrio = false): Promise<GeneracionEfeDTO> {
+  return getDataSource().generarEfe(fixtureNum(matchId), forzar, permitirFrio)
 }
 
 /** Carga manual de la despensa: investigación hecha gratis en el Claude de

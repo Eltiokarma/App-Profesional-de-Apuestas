@@ -242,9 +242,10 @@ def _respuesta(estado: str, detalle: str | None = None, registro: dict | None = 
     return {"estado": estado, "detalle": detalle, "registro": registro}
 
 
-def generar_efe(fixture_id: int, estado: str = "preliminar") -> dict:
+def generar_efe(fixture_id: int, estado: str = "preliminar", permitir_frio: bool = False) -> dict:
     """Corre el análisis completo y guarda el veredicto (SÍNCRONO: solo para
-    el hilo de trabajo y el modo demo)."""
+    el hilo de trabajo y el modo demo). `permitir_frio` desactiva el candado
+    de análisis frío para ESTA corrida (opt-in explícito a pagar el frío)."""
     existente = efedb.analisis_existente("efe", fixture_id, estado)
     if existente:
         return existente
@@ -312,6 +313,19 @@ def generar_efe(fixture_id: int, estado: str = "preliminar") -> dict:
                 "motivo_exclusion='Lectura K manual del analista en la app', score/max/"
                 "ponderado en 0) y maximo_alcanzable renormalizado sin C."
             )
+        # CANDADO DE ANÁLISIS FRÍO: cada campo faltante son ~1-2 búsquedas web
+        # (lo caro). Sin despensa cargada, el análisis frío sale $0.6-1.2 — se
+        # BLOQUEA antes de gastar un centavo y se guía al flujo gratis; pagar
+        # el frío es opt-in explícito (permitir_frio / botón «Generar igual»).
+        umbral_frio = int(os.environ.get("SAD_EFE_MAX_FALTANTES", "6"))
+        if not permitir_frio and len(faltantes) > umbral_frio:
+            raise RuntimeError(
+                f"Análisis FRÍO bloqueado para no gastar de más: faltan {len(faltantes)} campos "
+                f"({', '.join(faltantes)}). Carga la despensa gratis (botón «Copiar prompt» → "
+                "Claude de escritorio → pegar el JSON aquí) y reintenta (~$0.10-0.20), o pulsa "
+                "«Generar igual (frío)» si prefieres pagarlo ahora (~$0.6-1.2)."
+            )
+
         # presupuesto de búsquedas PROPORCIONAL a lo faltante: con la despensa +
         # la capa de jugadores lo típico son 2-4 campos, no los 14 de un EFE
         # frío — dejar el techo fijo quemaba ~18 búsquedas (y sus tokens) igual.
@@ -431,8 +445,10 @@ def _estado(tipo: str, fixture_id: int) -> dict:
     return _respuesta("nada")
 
 
-def iniciar_efe(fixture_id: int, estado: str = "preliminar", forzar: bool = False) -> dict:
-    return _lanzar("efe", fixture_id, lambda fid: generar_efe(fid, estado), forzar, "análisis EFE")
+def iniciar_efe(fixture_id: int, estado: str = "preliminar", forzar: bool = False,
+                permitir_frio: bool = False) -> dict:
+    return _lanzar("efe", fixture_id, lambda fid: generar_efe(fid, estado, permitir_frio),
+                   forzar, "análisis EFE")
 
 
 def estado_efe(fixture_id: int) -> dict:

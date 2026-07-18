@@ -1458,6 +1458,9 @@ def cuotas_historial(fixture_id: int, casa: str | None = None):
 class EfeRequest(BaseModel):
     fixtureId: int
     forzar: bool = False  # regenerar: descarta el análisis guardado y relanza
+    # candado de análisis frío: true = acepto pagar el análisis sin despensa
+    # (~$0.6-1.2); por defecto se bloquea y se guía al flujo gratis
+    permitirFrio: bool = False
 
 
 class EquipoDespensa(BaseModel):
@@ -1547,7 +1550,8 @@ def analisis_efe(body: EfeRequest):
     frontend sondea /analisis/efe/estado/{id} hasta que esté listo."""
     from backend.analisis import motor as efemotor
     try:
-        return efemotor.iniciar_efe(body.fixtureId, forzar=body.forzar)
+        return efemotor.iniciar_efe(body.fixtureId, forzar=body.forzar,
+                                    permitir_frio=body.permitirFrio)
     except efemotor.FixtureNoExiste as e:
         raise HTTPException(status_code=404, detail=str(e))
     except efemotor.SinClave as e:

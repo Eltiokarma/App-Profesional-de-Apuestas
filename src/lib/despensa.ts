@@ -1,6 +1,50 @@
 // Prompt reusable de barrido de liga para el Claude de escritorio
 // (docs/DESPENSA_DESKTOP.md). Lo genera el botón de la página de Liga con los
 // nombres EXACTOS de la app; el backend además canoniza variantes.
+import type { CargaDespensaDTO } from '../api/types'
+
+/** Extrae TODOS los bloques JSON de la despensa de un texto pegado (las
+ *  tandas del barrido, aunque vengan con texto o ```json entre medio) y los
+ *  funde en un solo payload — la liga entera se sube de una pegada. */
+export function extraerBloquesDespensa(texto: string): CargaDespensaDTO {
+  const objetos: CargaDespensaDTO[] = []
+  let depth = 0
+  let start = -1
+  let inStr = false
+  let esc = false
+  for (let i = 0; i < texto.length; i++) {
+    const ch = texto[i]
+    if (inStr) {
+      if (esc) esc = false
+      else if (ch === '\\') esc = true
+      else if (ch === '"') inStr = false
+      continue
+    }
+    if (ch === '"') {
+      if (depth > 0) inStr = true
+      continue
+    }
+    if (ch === '{') {
+      if (depth === 0) start = i
+      depth++
+    } else if (ch === '}') {
+      depth = Math.max(0, depth - 1)
+      if (depth === 0 && start >= 0) {
+        try {
+          const o = JSON.parse(texto.slice(start, i + 1)) as CargaDespensaDTO
+          if (o && Array.isArray(o.equipos) && o.equipos.length) objetos.push(o)
+        } catch {
+          /* bloque que no es JSON válido: se ignora */
+        }
+        start = -1
+      }
+    }
+  }
+  return {
+    equipos: objetos.flatMap((o) => o.equipos),
+    fuentes: [...new Set(objetos.flatMap((o) => o.fuentes ?? []))],
+  }
+}
 
 export function promptDespensaLiga(liga: string, equipos: string[]): string {
   const lista = equipos.map((e) => `- ${e}`).join('\n')

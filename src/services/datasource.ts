@@ -99,8 +99,9 @@ export interface SadDataSource {
   /** Análisis EFE+DTP emitidos para un fixture ([] si no hay). */
   analisisPartido(fixtureId: number): Promise<AnalisisRegistroDTO[]>
   /** Lanza el análisis EFE (respuesta inmediata: listo/generando/error).
-   *  `forzar` = regenerar: descarta el guardado y emite uno nuevo. */
-  generarEfe(fixtureId: number, forzar?: boolean): Promise<GeneracionEfeDTO>
+   *  `forzar` = regenerar; `permitirFrio` = opt-in a pagar el análisis sin
+   *  despensa (~$0.6-1.2) — por defecto el backend lo bloquea antes de gastar. */
+  generarEfe(fixtureId: number, forzar?: boolean, permitirFrio?: boolean): Promise<GeneracionEfeDTO>
   /** Sondeo del trabajo de análisis EFE. */
   estadoEfe(fixtureId: number): Promise<GeneracionEfeDTO>
   /** Carga manual de la despensa (investigación del Claude de escritorio). */
@@ -740,7 +741,7 @@ class HttpDataSource implements SadDataSource {
   cuotasHistorial = (fixtureId: number, casa?: string | null) => SadApi.cuotasHistorial(fixtureId, casa)
   cuotasHistorialFuentes = (fixtureId: number) => SadApi.cuotasHistorialFuentes(fixtureId)
   analisisPartido = (fixtureId: number) => SadApi.analisisPartido(fixtureId)
-  generarEfe = (fixtureId: number, forzar?: boolean) => SadApi.generarEfe(fixtureId, forzar)
+  generarEfe = (fixtureId: number, forzar?: boolean, permitirFrio?: boolean) => SadApi.generarEfe(fixtureId, forzar, permitirFrio)
   estadoEfe = (fixtureId: number) => SadApi.estadoEfe(fixtureId)
   cargarDespensa = (payload: CargaDespensaDTO) => SadApi.cargarDespensa(payload)
   generarTimeline = (fixtureId: number, forzar?: boolean) => SadApi.generarTimeline(fixtureId, forzar)

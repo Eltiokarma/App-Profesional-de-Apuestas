@@ -601,6 +601,28 @@ def main():
     check("efe de fixture inexistente → 404",
           c.post(A + "/analisis/efe", json={"fixtureId": 999999}).status_code == 404)
     del os.environ["SAD_EFE_DEMO"]
+
+    # candado de análisis FRÍO: sin despensa suficiente se bloquea ANTES de
+    # gastar (la llamada a la API jamás debe ejecutarse)
+    import backend.analisis.motor as efemotor2
+    os.environ["SAD_EFE_MAX_FALTANTES"] = "0"
+    _hay_clave = efemotor2.cliente.hay_clave
+    _analizar = efemotor2.cliente.analizar
+    efemotor2.cliente.hay_clave = lambda: True
+    efemotor2.cliente.analizar = lambda *a, **k: (_ for _ in ()).throw(AssertionError("no debió llamar a la API"))
+    try:
+        fin_frio = next(f for f in fx if f["estado"] == "finalizado" and f["id"] != vivo["id"])
+        try:
+            efemotor2.generar_efe(fin_frio["id"])
+            check("candado frío: bloquea el análisis caro", False, "no lanzó")
+        except RuntimeError as e:
+            check("candado frío: bloquea antes de gastar y guía a la despensa",
+                  "FRÍO" in str(e) and "despensa" in str(e), str(e)[:100])
+    finally:
+        efemotor2.cliente.hay_clave = _hay_clave
+        efemotor2.cliente.analizar = _analizar
+        os.environ.pop("SAD_EFE_MAX_FALTANTES", None)
+
     if not os.environ.get("ANTHROPIC_API_KEY"):
         # sin demo y sin clave: 503 honesto (fixture distinto para no chocar con la caché)
         fin_efe = next(f for f in fx if f["estado"] == "finalizado")

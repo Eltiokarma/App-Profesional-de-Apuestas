@@ -84,8 +84,8 @@ export const SadApi = {
   /** Lanza el análisis EFE (respuesta inmediata: listo/generando/error);
    *  el trabajo corre en el servidor y se sondea con estadoEfe.
    *  `forzar` = regenerar: descarta el guardado y emite uno nuevo. */
-  generarEfe: (fixtureId: number, forzar = false) =>
-    apiPost<GeneracionEfeDTO>('/analisis/efe', { fixtureId, forzar }, { timeoutMs: 30_000 }),
+  generarEfe: (fixtureId: number, forzar = false, permitirFrio = false) =>
+    apiPost<GeneracionEfeDTO>('/analisis/efe', { fixtureId, forzar, permitirFrio }, { timeoutMs: 30_000 }),
 
   /** Sondeo del trabajo de análisis EFE. */
   estadoEfe: (fixtureId: number) => apiGet<GeneracionEfeDTO>(`/analisis/efe/estado/${fixtureId}`),
