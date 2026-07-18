@@ -23,16 +23,24 @@ por API recibe todo como `datos_cacheados`, no lanza búsquedas web y cuesta
 Repite por cada liga que vayas a apostar esa semana. El prompt es siempre el
 mismo — solo cambia la liga, y el botón lo arma por ti.
 
+## Qué se investiga en el escritorio y qué NO
+
+El prompt pide SOLO lo que la web sabe y los datos no: `dt` (contexto),
+`plantel` (lectura cualitativa) y `bajas` (dudas de prensa). El resto lo
+cubre la app sin costo de búsqueda:
+
+- `tabla`, `resultados`, `fixture`: de sad.db (gratis).
+- `xi_reciente` (formación): de API-Football — el XI oficial si ya se publicó,
+  o la alineación del último partido jugado si no (requests del plan, no web).
+- lesiones confirmadas, plantel numérico y DT: capa de jugadores
+  (docs/JUGADORES.md) donde API-Football tenga cobertura.
+
+Precedencia: ficha de la base > despensa manual > búsqueda web.
+
 ## TTL de la despensa (cuándo repetir el barrido)
 
 - `dt` y `plantel`: **14 días** — un barrido cada dos semanas basta.
-- `fixture`: 7 días.
-- `xi_reciente` y `bajas`: **48 h** — lo ideal es barrer la víspera de la
-  jornada (o repetir solo estos dos campos a mitad de semana).
-- `tabla` y `resultados`: no hace falta pedirlos — salen gratis de sad.db.
-
-La despensa manual manda sobre la búsqueda web, y la ficha de jugadores de la
-base (docs/JUGADORES.md) manda sobre ambas donde API-Football tenga cobertura.
+- `bajas`: **48 h** — barrido ligero (solo ese campo) la víspera de la jornada.
 
 ## Nombres de equipo
 
@@ -54,14 +62,14 @@ Investiga en la web, con fuentes de hoy, a TODOS estos equipos de <LIGA>:
 - <Equipo 2>
 - … (la tabla completa de la liga)
 
-Para CADA equipo produce resúmenes TEXTUALES densos y autocontenidos
-(nombres, fechas, cifras, fuente) de estos campos:
+SOLO estos tres campos por equipo — NO investigues tabla, resultados,
+calendario, alineaciones, formaciones ni estadísticas de jugadores: la app ya
+los saca de su propia base y de su API de datos. Interesa lo que las webs de
+datos NO listan:
 
-- dt: entrenador actual, fecha de asunción, contexto (interino, cuestionado…).
-- plantel: jugadores clave con posición y rendimiento, fichajes/salidas recientes, dependencias ofensivas.
-- bajas: lesionados, sancionados y dudas para el próximo partido, con motivo.
-- xi_reciente: el once más reciente y la formación utilizada.
-- fixture: sus próximos 3-5 partidos con fechas y torneos.
+- dt: contexto del entrenador — fecha de asunción, interino o confirmado, cuestionamiento en prensa, relación con el vestuario.
+- plantel: lectura CUALITATIVA — jerarquías reales, quién está en forma o caído, fichajes/salidas recientes y cómo encajan, conflictos o líos internos.
+- bajas: dudas y novedades de PRENSA para el próximo partido — las lesiones confirmadas ya las tiene la app; interesan las dudas, sanciones internas, regresos y rumores de rotación.
 
 ENTREGA POR TANDAS: un bloque de código JSON por cada 6 equipos (así ninguna
 respuesta se corta). Cada bloque con esta forma exacta, sin texto fuera del
@@ -71,7 +79,7 @@ bloque:
   "equipos": [
     {
       "equipo": "<nombre EXACTAMENTE como te lo di>",
-      "datos": { "dt": "…", "plantel": "…", "bajas": "…", "xi_reciente": "…", "fixture": "…" }
+      "datos": { "dt": "…", "plantel": "…", "bajas": "…" }
     }
   ],
   "fuentes": ["url1", "url2"]
