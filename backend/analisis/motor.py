@@ -341,6 +341,8 @@ def generar_efe(fixture_id: int, estado: str = "preliminar", permitir_frio: bool
         resultado, _uso = cliente.analizar(
             payload, EFE_COMPARATIVO, con_busqueda=bool(faltantes),
             max_busquedas=tope_busquedas,
+            # caliente (0 faltantes): no re-emitir la despensa en el output
+            salida=cliente.SALIDA_EFE if faltantes else cliente.SALIDA_EFE_CALIENTE,
         )
 
         # LA DESPENSA: lo investigado se separa del análisis y se deposita por
