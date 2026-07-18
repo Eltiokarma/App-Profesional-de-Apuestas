@@ -1497,7 +1497,14 @@ def cargar_despensa(body: CargaDespensaRequest):
         if len(exacto) == 1:
             return exacto[0]
         parcial = [n for n, nn in equipos_db if q in nn or nn in q]
-        return parcial[0] if len(parcial) == 1 else nombre
+        if len(parcial) == 1:
+            return parcial[0]
+        # tokens sin orden: "FC Cajamarca" vs "Cajamarca FC", o añadidos tipo
+        # "Club Deportivo Los Chankas" vs "Los Chankas" — solo con match ÚNICO
+        qt = set(q.split())
+        tokens = [n for n, nn in equipos_db
+                  if qt and (qt <= set(nn.split()) or set(nn.split()) <= qt)]
+        return tokens[0] if len(tokens) == 1 else nombre
 
     depositados, ignorados = 0, []
     canonizados: dict[str, str] = {}
