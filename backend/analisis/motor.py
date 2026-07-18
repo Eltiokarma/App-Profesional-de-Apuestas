@@ -178,6 +178,31 @@ def _xi_y_bajas(fixture_id: int, home_id: int, away_id: int) -> dict[str, dict[s
     return out
 
 
+def _asegurar_plantillas(fx: dict) -> None:
+    """Ingesta de jugadores de ambos equipos ANTES del análisis si falta:
+    plantel/DT/bajas salen de API-Football (plan ya pagado, ~5-6 requests por
+    equipo) en vez de búsquedas web (lo caro, por uso). El subproceso mantiene
+    la escritura en la capa de ingesta; si falla o no hay clave, el análisis
+    sigue y esos campos se investigan por la vía de siempre."""
+    import subprocess
+    import sys as _sys
+    from backend import jugadores as jugcapa
+    temporada = fx.get("league_season")
+    raiz = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    env = {**os.environ, "PYTHONPATH": raiz, "PYTHONUTF8": "1", "PYTHONUNBUFFERED": "1"}
+    for tid in (fx["home_team_id"], fx["away_team_id"]):
+        try:
+            if jugcapa.plantilla_de(tid)["jugadores"]:
+                continue
+            print(f"[efe] equipo {tid} sin plantilla: ingesta previa (API-Football, no web)", flush=True)
+            cmd = [_sys.executable, "-u", "-m", "backend.ingesta.jugadores", "--equipo", str(tid)]
+            if temporada:
+                cmd += ["--temporada", str(temporada)]
+            subprocess.run(cmd, cwd=saddb.BASE_DIR, env=env, timeout=180)
+        except Exception as e:  # sin clave / timeout: no bloquea el análisis
+            print(f"[efe] ingesta previa de {tid} no disponible: {e}", flush=True)
+
+
 def _demo_activo() -> bool:
     return os.environ.get("SAD_EFE_DEMO", "").strip() == "1"
 
@@ -202,6 +227,7 @@ def generar_efe(fixture_id: int, estado: str = "preliminar") -> dict:
     else:
         if not cliente.hay_clave():
             raise SinClave("Falta ANTHROPIC_API_KEY en el entorno")
+        _asegurar_plantillas(fx)  # plantel/DT/bajas por API-Football, no por web
         frescos_a, faltan_a = efedb.investigacion_de(equipo_a)
         frescos_b, faltan_b = efedb.investigacion_de(equipo_b)
         # solo los tipos del EFE: la despensa también guarda timeline_eventos
@@ -446,7 +472,7 @@ def generar_timeline(fixture_id: int, estado: str = "preliminar") -> dict:
         resultado, _uso = cliente.analizar(
             payload, TIMELINE, con_busqueda=True,
             system=cliente.bloques_system_timeline(), salida=cliente.SALIDA_TIMELINE,
-            max_busquedas=cliente.BUSQUEDAS_TIMELINE,
+            max_busquedas=cliente.BUSQUEDAS_TIMELINE, modelo=cliente.MODELO_TIMELINE,
         )
         if timeline_vacio(resultado):
             raise RuntimeError(
