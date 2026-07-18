@@ -65,8 +65,9 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
     if (esDemo || !live?.serie.length) return null
     const pts: LiveRealSerie['pts'] = {}
     for (const p of live.serie) {
+      if (p.minuto == null) continue // sin minuto no hay X: no inventar un 0'
       const mkT = (pts[p.mercado] = pts[p.mercado] ?? {})
-      ;(mkT[p.seleccion] = mkT[p.seleccion] ?? []).push({ min: p.minuto ?? 0, odd: p.cuota })
+      ;(mkT[p.seleccion] = mkT[p.seleccion] ?? []).push({ min: p.minuto, odd: p.cuota })
     }
     const NOMBRE = { gol: 'Gol', amarilla: 'Amarilla', roja: 'Roja' } as const
     const eventos = live.eventos.map((e2) => ({
