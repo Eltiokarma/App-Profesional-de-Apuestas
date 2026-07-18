@@ -255,8 +255,14 @@ def generar_efe(fixture_id: int, estado: str = "preliminar") -> dict:
                 "motivo_exclusion='Lectura K manual del analista en la app', score/max/"
                 "ponderado en 0) y maximo_alcanzable renormalizado sin C."
             )
-        resultado, _uso = cliente.analizar(payload, EFE_COMPARATIVO,
-                                           con_busqueda=bool(faltantes))
+        # presupuesto de búsquedas PROPORCIONAL a lo faltante: con la despensa +
+        # la capa de jugadores lo típico son 2-4 campos, no los 14 de un EFE
+        # frío — dejar el techo fijo quemaba ~18 búsquedas (y sus tokens) igual
+        print(f"[efe] faltantes ({len(faltantes)}): {', '.join(faltantes) or 'ninguno'}", flush=True)
+        resultado, _uso = cliente.analizar(
+            payload, EFE_COMPARATIVO, con_busqueda=bool(faltantes),
+            max_busquedas=2 + 2 * len(faltantes),
+        )
         # Un análisis sin contenido real (ambos equipos en 0) NO se guarda:
         # cachearlo dejaría al usuario sin forma de regenerar.
         if analisis_vacio(resultado):
@@ -420,6 +426,7 @@ def generar_timeline(fixture_id: int, estado: str = "preliminar") -> dict:
         resultado, _uso = cliente.analizar(
             payload, TIMELINE, con_busqueda=True,
             system=cliente.bloques_system_timeline(), salida=cliente.SALIDA_TIMELINE,
+            max_busquedas=cliente.BUSQUEDAS_TIMELINE,
         )
         if timeline_vacio(resultado):
             raise RuntimeError(
