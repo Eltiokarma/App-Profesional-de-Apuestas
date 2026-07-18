@@ -13,6 +13,7 @@ import type {
   FixtureLiveDTO,
   GeneracionEfeDTO,
   LigaDTO,
+  PlantillaDTO,
   PrediccionDTO,
   StandingRowDTO,
 } from '../api/types'
@@ -491,6 +492,14 @@ export async function loadTeamStats(teamKey: string): Promise<EquipoStatsDTO | n
   const equipoId = TEAM_NUM[teamKey]
   if (equipoId == null) return null
   return getDataSource().equipoStats(equipoId)
+}
+
+/** Plantilla con indicadores de jugadores (docs/JUGADORES.md); null si el
+ *  equipo no está registrado. Con jugadores=[] la UI dice "sin capturar". */
+export async function loadPlantilla(teamKey: string): Promise<PlantillaDTO | null> {
+  const equipoId = TEAM_NUM[teamKey]
+  if (equipoId == null) return null
+  return getDataSource().plantilla(equipoId)
 }
 
 // ── estadísticas de temporada + tabla de posiciones ─────────────────────────

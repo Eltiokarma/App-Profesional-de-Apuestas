@@ -7,7 +7,8 @@ import { RachasCuotas, type CuotaCond } from '../components/RachasCuotas'
 import { TeamBadge } from '../components/TeamBadge'
 import { binBadge, FUSED_KEY, K_TYPE_GROUPS, K_WINDOW_OPTS, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
 import type { FusedK } from '../motor/types'
-import { loadBurbujas, loadTeamFixtures, loadTeamStats } from '../services/appdata'
+import type { JugadorDTO } from '../api/types'
+import { loadBurbujas, loadPlantilla, loadTeamFixtures, loadTeamStats } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
@@ -24,6 +25,7 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
   const stats = useAsync(() => loadTeamStats(teamKey), teamKey)
   const bur = useAsync(() => loadBurbujas(teamKey), teamKey)
   const fx = useAsync(() => loadTeamFixtures(teamKey), teamKey)
+  const plant = useAsync(() => loadPlantilla(teamKey), teamKey)
 
   const kType: KTypeKey = s.kType
   const kCond: KCondKey = s.kCond
@@ -144,6 +146,73 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
                   <div style={{ font: '700 16px var(--mono)', color: q == null ? 'var(--t3)' : q > 0 ? 'var(--up)' : q < 0 ? 'var(--down)' : 'var(--t2)' }}>{q == null ? '—' : signFmt(q)}</div>
                 </div>
               </div>
+            </section>
+
+            {/* PLANTILLA — indicadores de jugadores (docs/JUGADORES.md) */}
+            <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ font: '700 12px var(--sans)' }}>Plantilla · indicadores</div>
+                  <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>Por 90&apos; con encogimiento a la media de la posición · confianza A/B/C por minutos</div>
+                </div>
+                {plant.data && plant.data.jugadores.length > 0 && (
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {plant.data.entrenador?.nombre && (
+                      <span style={{ padding: '4px 9px', borderRadius: 7, background: 'var(--bg3)', border: '1px solid var(--line)', font: '600 10px var(--mono)', color: 'var(--t2)' }}>DT {plant.data.entrenador.nombre}</span>
+                    )}
+                    {plant.data.dependencia.hhi != null && (
+                      <span style={{ padding: '4px 9px', borderRadius: 7, background: 'var(--bg3)', border: '1px solid var(--line)', font: '600 10px var(--mono)', color: plant.data.dependencia.hhi >= 0.18 ? 'var(--down)' : 'var(--t2)' }}>
+                        Dependencia {plant.data.dependencia.hhi >= 0.18 ? 'ALTA' : 'repartida'} · HHI {plant.data.dependencia.hhi.toFixed(2)}
+                      </span>
+                    )}
+                    {(plant.data.revolucion.llegadas > 0 || plant.data.revolucion.salidas > 0) && (
+                      <span style={{ padding: '4px 9px', borderRadius: 7, background: 'var(--bg3)', border: '1px solid var(--line)', font: '600 10px var(--mono)', color: 'var(--t2)' }}>
+                        Ventana: +{plant.data.revolucion.llegadas} / −{plant.data.revolucion.salidas}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+              {plant.loading && <div className="sad-sk" style={{ height: 160, marginTop: 10 }}></div>}
+              {!plant.loading && plant.error && (
+                <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t3)', padding: '10px 0' }}>No se pudo cargar la plantilla: {plant.error}</div>
+              )}
+              {!plant.loading && !plant.error && (!plant.data || plant.data.jugadores.length === 0) && (
+                <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t3)', padding: '10px 0' }}>
+                  Plantilla sin capturar todavía — la ingesta de jugadores (python -m backend.ingesta.jugadores) la trae para los equipos con partidos próximos.
+                </div>
+              )}
+              {!plant.loading && !plant.error && plant.data && plant.data.jugadores.length > 0 && (
+                <div className="sad-scroll" style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 380, overflowY: 'auto', paddingRight: 4, marginTop: 10 }}>
+                  {plant.data.jugadores.map((j: JugadorDTO) => {
+                    const esGK = j.posicion === 'Portero'
+                    const confColor = j.confianza === 'A' ? 'var(--up)' : j.confianza === 'B' ? 'var(--t2)' : 'var(--t3)'
+                    return (
+                      <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 9, border: '1px solid var(--line)', background: 'var(--bg)', opacity: j.baja ? 0.75 : 1 }}>
+                        <span style={{ font: '700 8.5px var(--mono)', color: 'var(--t3)', width: 26, flexShrink: 0, textTransform: 'uppercase' }}>{j.posicion ? j.posicion.slice(0, 3) : '?'}</span>
+                        <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {j.nombre}
+                          {j.baja && <span style={{ marginLeft: 6, padding: '2px 6px', borderRadius: 5, background: 'var(--down-soft)', color: 'var(--down)', font: '700 8.5px var(--mono)' }}>BAJA{j.baja.detalle ? ` · ${j.baja.detalle}` : ''}</span>}
+                          {j.enCapilla && !j.baja && <span style={{ marginLeft: 6, padding: '2px 6px', borderRadius: 5, background: 'var(--bg3)', color: 'var(--t2)', font: '700 8.5px var(--mono)' }}>EN CAPILLA · {j.amarillas} 🟨</span>}
+                          {j.recienLlegado && <span style={{ marginLeft: 6, padding: '2px 6px', borderRadius: 5, background: 'var(--bg3)', color: 'var(--accent)', font: '700 8.5px var(--mono)' }}>NUEVO{j.recienLlegado.desde ? ` · de ${j.recienLlegado.desde}` : ''}</span>}
+                        </span>
+                        <span title="% de los minutos del más usado de la plantilla" style={{ font: '600 11px var(--mono)', color: 'var(--t2)', width: 44, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{Math.round(j.pctMinutos * 100)}%</span>
+                        {esGK ? (
+                          <span title="Paradas y goles encajados por 90 minutos" style={{ font: '600 11px var(--mono)', color: 'var(--t2)', width: 96, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+                            {j.paradasP90 != null ? `${j.paradasP90.toFixed(1)} par · ${j.golesEncajadosP90?.toFixed(1)} GC` : '—'}
+                          </span>
+                        ) : (
+                          <span title={`${j.goles}G + ${j.asistencias}A · ${Math.round(j.participacionOfensiva * 100)}% de la producción del equipo`} style={{ font: '600 11px var(--mono)', color: j.participacionOfensiva >= 0.15 ? 'var(--up)' : 'var(--t2)', width: 96, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+                            {j.goles}G+{j.asistencias}A{j.participacionOfensiva >= 0.1 ? ` · ${Math.round(j.participacionOfensiva * 100)}%` : ''}
+                          </span>
+                        )}
+                        <span title="Rating medio ponderado por minutos" style={{ font: '700 11px var(--mono)', color: j.rating != null && j.rating >= 7 ? 'var(--up)' : 'var(--t2)', width: 34, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{j.rating != null ? j.rating.toFixed(1) : '—'}</span>
+                        <span title={`Confianza estadística por minutos jugados (${j.minutos} min)`} style={{ width: 18, height: 18, borderRadius: 5, background: 'var(--bg3)', color: confColor, display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 9.5px var(--mono)', flexShrink: 0 }}>{j.confianza}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </section>
 
             {/* CUOTAS K (§3.8) — barras de rachas de suma de cuota 1X2 */}

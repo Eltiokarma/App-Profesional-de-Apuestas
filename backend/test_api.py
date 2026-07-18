@@ -232,6 +232,53 @@ def main():
     check("stats: xG/posesión null en v0", st["xgProm"] is None and st["posesionProm"] is None)
     check("/equipos/999999/stats → 404", c.get(A + "/equipos/999999/stats").status_code == 404)
 
+    # /equipos/{id}/plantilla — capa de jugadores (docs/JUGADORES.md)
+    pl = c.get(A + f"/equipos/{betis}/plantilla").json()
+    check("plantilla: 16 jugadores orden minutos desc",
+          len(pl["jugadores"]) == 16 and all(pl["jugadores"][i]["minutos"] >= pl["jugadores"][i + 1]["minutos"]
+                                            for i in range(len(pl["jugadores"]) - 1)), len(pl.get("jugadores", [])))
+    check("plantilla: nombre y temporada", pl["nombre"] and pl["temporada"] == 2025, {k: pl.get(k) for k in ("nombre", "temporada")})
+    j0 = pl["jugadores"][0]
+    check("jugador: pctMinutos del más usado = 1", j0["pctMinutos"] == 1.0, j0["pctMinutos"])
+    check("jugador: confianza A/B/C coherente con minutos (salvo recién llegados)",
+          all(j["recienLlegado"] or j["confianza"] == ("A" if j["minutos"] >= 1800 else "B" if j["minutos"] >= 600 else "C")
+              for j in pl["jugadores"]))
+    gk = next(j for j in pl["jugadores"] if j["posicion"] == "Portero")
+    check("portero: paradas/GC por 90 presentes y sin participación ofensiva",
+          gk["paradasP90"] is not None and gk["golesEncajadosP90"] is not None and gk["participacionOfensiva"] == 0, gk)
+    campo = next(j for j in pl["jugadores"] if j["posicion"] != "Portero" and j["minutos"] > 0)
+    check("jugador de campo: gaP90Ajustado encogido presente", campo["gaP90Ajustado"] is not None, campo)
+    check("plantilla: participaciones suman <= 1",
+          abs(sum(j["participacionOfensiva"] for j in pl["jugadores"])) <= 1.001)
+    check("plantilla: HHI en (0, 1]", pl["dependencia"]["hhi"] is not None and 0 < pl["dependencia"]["hhi"] <= 1, pl["dependencia"])
+    check("plantilla: top de dependencia <= 3 con nombres", 0 < len(pl["dependencia"]["top"]) <= 3 and pl["dependencia"]["top"][0]["nombre"])
+    baja = [j for j in pl["jugadores"] if j["baja"]]
+    check("plantilla: la baja demo llega con detalle", len(baja) == 1 and baja[0]["baja"]["detalle"] == "Lesión muscular", baja)
+    nuevo = [j for j in pl["jugadores"] if j["recienLlegado"]]
+    check("plantilla: recién llegado con origen y confianza degradada",
+          len(nuevo) == 1 and nuevo[0]["recienLlegado"]["desde"] == "Deportivo Demo" and nuevo[0]["confianza"] in ("B", "C"), nuevo)
+    check("plantilla: DT y revolución de ventana",
+          pl["entrenador"]["nombre"] and pl["revolucion"]["llegadas"] == 1, {k: pl.get(k) for k in ("entrenador", "revolucion")})
+    check("/equipos/999999/plantilla → 404", c.get(A + "/equipos/999999/plantilla").status_code == 404)
+
+    # /fixtures/{id}/ficha — puente con los skills
+    fi = c.get(A + f"/fixtures/{vivo['id']}/ficha").json()
+    check("ficha: ambos lados con plantilla y congestión",
+          fi["local"]["jugadores"] and fi["visitante"]["jugadores"]
+          and "diasDescanso" in fi["local"]["congestion"] and fi["local"]["congestion"]["partidos21d"] >= 0, fi["local"].get("congestion"))
+    check("ficha: nombres de los equipos", fi["local"]["nombre"] and fi["visitante"]["nombre"])
+    check("/fixtures/999999/ficha → 404", c.get(A + "/fixtures/999999/ficha").status_code == 404)
+
+    # resúmenes para el cruce con los skills (motor EFE/timeline)
+    from backend import jugadores as jugcapa
+    rs = jugcapa.resumen_para_skills(betis)
+    check("resumen skills: plantel/dt/bajas presentes",
+          "plantel" in rs and "dt" in rs and "bajas" in rs, sorted(rs))
+    check("resumen skills: la baja lleva su peso (% de minutos)", "% de minutos" in rs.get("bajas", ""), rs.get("bajas"))
+    check("resumen skills: fuente citada", "[fuente: sad.db" in rs.get("plantel", ""))
+    mv = jugcapa.movimientos_para_timeline(betis)
+    check("movimientos timeline: traspaso y DT con fechas", "llega de" in mv and "DT vigente" in mv, mv)
+
     # /ligas/{id}
     lg = c.get(A + "/ligas/140").json()
     check("/ligas/140: nombre, país y bandera", lg["nombre"] == "LaLiga" and lg["pais"] == "Spain" and lg["bandera"], lg)

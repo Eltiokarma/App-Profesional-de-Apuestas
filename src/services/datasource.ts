@@ -17,11 +17,15 @@ import type {
   EventoLiveDTO,
   EquipoStatsDTO,
   EstadoFixture,
+  FichaEquipoDTO,
+  FichaPartidoDTO,
   FixtureDTO,
   FixtureLiveDTO,
   GapEquipoDTO,
+  JugadorDTO,
   LigaDTO,
   NivelDTO,
+  PlantillaDTO,
   PrediccionDTO,
   PuntoLiveDTO,
   StandingRowDTO,
@@ -84,6 +88,10 @@ export interface SadDataSource {
   /** Casas de referencia con historial propio para el fixture. */
   cuotasHistorialFuentes(fixtureId: number): Promise<string[]>
   equipoStats(equipoId: number): Promise<EquipoStatsDTO>
+  /** Plantilla con indicadores de jugadores (docs/JUGADORES.md); jugadores=[] sin ingesta. */
+  plantilla(equipoId: number): Promise<PlantillaDTO>
+  /** Ficha de partido: plantillas + congestión de ambos equipos (puente con los skills). */
+  fichaPartido(fixtureId: number): Promise<FichaPartidoDTO>
   liga(ligaId: number): Promise<LigaDTO>
   standings(ligaId: number, temporada?: number): Promise<StandingRowDTO[]>
   /** Análisis EFE+DTP emitidos para un fixture ([] si no hay). */
@@ -245,6 +253,85 @@ function contextoCalendario(teamKey: string, m: (typeof MATCHES)[number]) {
 function gapEquipoDTO(teamKey: string, m: (typeof MATCHES)[number]): GapEquipoDTO {
   const g = gapFor(teamKey)!
   return { equipoId: TEAM_NUM[teamKey], ...g, ...contextoCalendario(teamKey, m) }
+}
+
+// ── plantilla demo (capa de jugadores, docs/JUGADORES.md) ───────────────────
+// Plantel determinista por equipo con la MISMA forma e indicadores que sirve
+// el backend real (por-90 encogido, HHI, confianza, flags).
+const DEMO_NOMBRES = ['R. Ferreyra', 'M. Ordóñez', 'L. Cabral', 'D. Peralta', 'J. Villalba', 'S. Quintero',
+  'A. Bustos', 'T. Herrera', 'E. Saravia', 'N. Ríos', 'G. Ledesma', 'F. Aguirre', 'C. Montoya', 'I. Zárate',
+  'P. Cáceres', 'B. Funes', 'O. Medrano', 'K. Ibáñez']
+const DEMO_POS = ['Portero', 'Portero', 'Defensa', 'Defensa', 'Defensa', 'Defensa', 'Defensa',
+  'Centrocampista', 'Centrocampista', 'Centrocampista', 'Centrocampista', 'Centrocampista',
+  'Delantero', 'Delantero', 'Delantero', 'Delantero', 'Defensa', 'Centrocampista']
+
+function plantillaDemo(teamKey: string): PlantillaDTO {
+  const T = TEAMS[teamKey]
+  const r = rng(teamKey + '|plantilla')
+  const M = 900 // misma constante de encogimiento que el backend
+  const PRIOR: Record<string, number> = { Portero: 0.01, Defensa: 0.08, Centrocampista: 0.22, Delantero: 0.45 }
+  const base = DEMO_NOMBRES.map((nombre, i) => {
+    const posicion = DEMO_POS[i]
+    const titular = i % 2 === 0 || r() > 0.35
+    const minutos = Math.round((titular ? 1700 : 450) * (0.55 + r() * 0.7))
+    const partidos = Math.min(38, Math.round(minutos / 70))
+    const esGK = posicion === 'Portero'
+    const esDel = posicion === 'Delantero'
+    const goles = esGK ? 0 : Math.round(minutos / 90 * (esDel ? 0.45 : posicion === 'Centrocampista' ? 0.15 : 0.04) * (0.5 + r()))
+    const asistencias = esGK ? 0 : Math.round(minutos / 90 * 0.12 * (0.4 + r() * 1.2))
+    const amarillas = Math.round(r() * 6)
+    return { nombre, posicion, minutos, partidos, goles, asistencias, amarillas, i, rating: Math.round((6.4 + r() * 1.2) * 100) / 100 }
+  })
+  const maxMin = Math.max(...base.map((b) => b.minutos)) || 1
+  const gaEquipo = base.reduce((s, b) => s + b.goles + b.asistencias, 0)
+  const golesEquipo = base.reduce((s, b) => s + b.goles, 0)
+  const jugadores: JugadorDTO[] = base.map((b) => {
+    const esGK = b.posicion === 'Portero'
+    const ga90 = b.minutos ? ((b.goles + b.asistencias) / b.minutos) * 90 : 0
+    const conBaja = b.i === 12 // el primer delantero está de baja en la demo
+    return {
+      id: TEAM_NUM[teamKey] * 100 + b.i,
+      nombre: b.nombre,
+      edad: 21 + (b.i % 14),
+      foto: null,
+      posicion: b.posicion,
+      partidos: b.partidos,
+      titularidades: Math.round(b.partidos * 0.8),
+      minutos: b.minutos,
+      pctMinutos: Math.round((b.minutos / maxMin) * 1000) / 1000,
+      rating: b.rating,
+      confianza: (b.minutos >= 1800 ? 'A' : b.minutos >= 600 ? 'B' : 'C') as JugadorDTO['confianza'],
+      goles: b.goles,
+      asistencias: b.asistencias,
+      golesP90: b.minutos ? Math.round((b.goles / b.minutos) * 90 * 1000) / 1000 : null,
+      asistenciasP90: b.minutos ? Math.round((b.asistencias / b.minutos) * 90 * 1000) / 1000 : null,
+      gaP90Ajustado: Math.round(((b.minutos * ga90 + M * (PRIOR[b.posicion] ?? 0.2)) / (b.minutos + M)) * 1000) / 1000,
+      participacionOfensiva: gaEquipo ? Math.round(((b.goles + b.asistencias) / gaEquipo) * 1000) / 1000 : 0,
+      amarillas: b.amarillas,
+      rojas: 0,
+      enCapilla: b.amarillas >= 4,
+      paradasP90: esGK ? Math.round((2.4 + rng(b.nombre)() * 1.5) * 1000) / 1000 : null,
+      golesEncajadosP90: esGK ? Math.round((0.8 + rng(b.nombre + 'gc')() * 0.7) * 1000) / 1000 : null,
+      baja: conBaja ? { tipo: 'Missing Fixture', detalle: 'Lesión muscular' } : null,
+      recienLlegado: b.i === 15 ? { desde: 'Deportivo Demo', fecha: '2026-06-30' } : null,
+    }
+  }).sort((a, b) => b.minutos - a.minutos)
+  const shares = jugadores.filter((j) => j.goles + j.asistencias > 0).map((j) => (j.goles + j.asistencias) / (gaEquipo || 1))
+  const top = [...jugadores].filter((j) => j.participacionOfensiva > 0).sort((a, b) => b.participacionOfensiva - a.participacionOfensiva).slice(0, 3)
+  return {
+    equipoId: TEAM_NUM[teamKey],
+    nombre: T.name,
+    temporada: 2026,
+    actualizadoEn: MOCK_NOW,
+    entrenador: { nombre: 'E. Domínguez', desde: '2025-12-01' },
+    dependencia: {
+      hhi: shares.length ? Math.round(shares.reduce((s, x) => s + x * x, 0) * 1000) / 1000 : null,
+      top: top.map((j) => ({ jugadorId: j.id, nombre: j.nombre, participacion: j.participacionOfensiva })),
+    },
+    revolucion: { llegadas: 2, salidas: 1, ventanaDias: 120 },
+    golesPlantilla: golesEquipo,
+    jugadores,
+  }
 }
 
 class MockDataSource implements SadDataSource {
@@ -561,6 +648,27 @@ class MockDataSource implements SadDataSource {
     }
   }
 
+  async plantilla(equipoId: number): Promise<PlantillaDTO> {
+    const key = NUM_TEAM[equipoId]
+    if (!key || !TEAMS[key]) throw new Error(`equipo ${equipoId} no existe`)
+    return plantillaDemo(key)
+  }
+
+  async fichaPartido(fixtureId: number): Promise<FichaPartidoDTO> {
+    const m = MATCHES.find((x) => FIXTURE_NUM(x.id) === fixtureId)
+    if (!m) throw new Error(`fixture ${fixtureId} no existe`)
+    const lado = (key: string, dias: number): FichaEquipoDTO => ({
+      ...plantillaDemo(key),
+      congestion: { diasDescanso: dias, partidos21d: 7 - dias },
+    })
+    return {
+      fixtureId,
+      generadoEn: MOCK_NOW,
+      local: lado(m.home, 3),
+      visitante: lado(m.away, 5),
+    }
+  }
+
   async liga(ligaId: number): Promise<LigaDTO> {
     const meta = LIGA_META[ligaId]
     if (!meta) throw new Error(`liga ${ligaId} no existe`)
@@ -626,6 +734,8 @@ class HttpDataSource implements SadDataSource {
   generarTimeline = (fixtureId: number, forzar?: boolean) => SadApi.generarTimeline(fixtureId, forzar)
   estadoTimeline = (fixtureId: number) => SadApi.estadoTimeline(fixtureId)
   equipoStats = (equipoId: number) => SadApi.equipoStats(equipoId)
+  plantilla = (equipoId: number) => SadApi.plantilla(equipoId)
+  fichaPartido = (fixtureId: number) => SadApi.fichaPartido(fixtureId)
   liga = (ligaId: number) => SadApi.liga(ligaId)
   standings = (ligaId: number, temporada?: number) => SadApi.standings(ligaId, temporada)
 }

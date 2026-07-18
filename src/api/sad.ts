@@ -11,12 +11,14 @@ import type {
   EquipoDTO,
   EquipoStatsDTO,
   EstadoFixture,
+  FichaPartidoDTO,
   FixtureDTO,
   FixtureLiveDTO,
   GeneracionEfeDTO,
   HealthDTO,
   LigaDTO,
   NivelDTO,
+  PlantillaDTO,
   PrediccionDTO,
   StandingRowDTO,
 } from './types'
@@ -67,6 +69,12 @@ export const SadApi = {
     apiGet<string[]>(`/cuotas/${fixtureId}/historial/fuentes`),
 
   equipoStats: (equipoId: number) => apiGet<EquipoStatsDTO>(`/equipos/${equipoId}/stats`),
+
+  /** Plantilla con indicadores de jugadores (docs/JUGADORES.md). */
+  plantilla: (equipoId: number) => apiGet<PlantillaDTO>(`/equipos/${equipoId}/plantilla`),
+
+  /** Ficha de partido: plantillas + congestión de ambos equipos. */
+  fichaPartido: (fixtureId: number) => apiGet<FichaPartidoDTO>(`/fixtures/${fixtureId}/ficha`),
 
   /** Análisis emitidos para un fixture (lectura pura, cero créditos). */
   analisisPartido: (fixtureId: number) => apiGet<AnalisisRegistroDTO[]>(`/analisis/partido/${fixtureId}`),

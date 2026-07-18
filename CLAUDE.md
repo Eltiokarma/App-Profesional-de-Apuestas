@@ -25,6 +25,7 @@ python -m backend.ingesta.extractor --buscar "Copa Chile"  # descubrir IDs de to
 python -m backend.ingesta.extractor             # fixtures hoy−3d..+10d (por FECHA, todas las temporadas) + cuotas NS (tope auto por plan)
 python -m backend.ingesta.diagnostico --dia 2026-05-31 --api  # auditar huecos (NS/TBD vencidos) y contrastar un día con la API
 python -m backend.ingesta.extractor --ventana-horas 6  # refresco ligero: solo cuotas de NS próximos
+python -m backend.ingesta.jugadores             # plantillas/bajas/traspasos/DT de equipos con NS próximos (docs/JUGADORES.md)
 python -m backend.ingesta.en_vivo               # 1 ciclo en vivo: marcador/minuto + odds_live (WAL)
 python -m backend.ingesta.pipeline --out .      # regenera levels/constants/discreto desde sad.db
 python -m backend.ingesta.test_paridad          # test dorado vs DBs del pipeline viejo
@@ -71,7 +72,10 @@ burbujas = gráfica de líneas de picos K con distinción de torneos
 internacionales; gap §5 en Estadísticas con μ v2 recalibrada contra datos
 reales (backtest muestreado, ver MOTOR_SAD_EXTRACCION.md §5); backend
 completo; CI con dos jobs. Probado end-to-end con datos reales del usuario
-(Mundial 2026 incluido).
+(Mundial 2026 incluido). Capa de jugadores (docs/JUGADORES.md, capa 1):
+ingesta de plantillas/bajas/traspasos/DT, indicadores por-90 con shrinkage +
+HHI + confianza A/B/C, sección Plantilla en Equipo, ficha de partido
+(/fixtures/{id}/ficha) y cruce con los análisis EFE/timeline del backend.
 
 ## Siguientes pasos (en orden)
 
