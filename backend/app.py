@@ -1257,6 +1257,33 @@ def fixture_live(fixture_id: int):
     except Exception:
         filas = []
     ultima = filas[-1]["captured_at"] if filas else None
+    # MINUTO EFECTIVO por captura (monótono): en el descuento del 1er tiempo y
+    # el descanso la API repite elapsed=45 (o manda null), y al arrancar el 2º
+    # tiempo la curva se apilaba en vertical y dibujaba lazos hacia atrás. Los
+    # null heredan el último minuto conocido, los retrocesos del feed se
+    # recortan, y las capturas de un mismo minuto se reparten en fracciones
+    # (45.0, 45.33, 45.67 → 46) — no se pierde ningún punto y la X siempre avanza.
+    orden_capturas: list = []
+    minuto_de: dict = {}
+    for r in filas:
+        if r["captured_at"] not in minuto_de:
+            orden_capturas.append(r["captured_at"])
+            minuto_de[r["captured_at"]] = r["minuto"]
+    minutos, previo = [], 0
+    for cap in orden_capturas:
+        m = minuto_de[cap]
+        m = previo if m is None else max(int(m), previo)
+        minutos.append(m)
+        previo = m
+    minuto_efectivo: dict = {}
+    i = 0
+    while i < len(minutos):
+        j = i
+        while j < len(minutos) and minutos[j] == minutos[i]:
+            j += 1
+        for k in range(i, j):
+            minuto_efectivo[orden_capturas[k]] = round(minutos[i] + (k - i) / (j - i), 2)
+        i = j
     cuotas = []
     serie = []
     for r in filas:
@@ -1265,7 +1292,7 @@ def fixture_live(fixture_id: int):
             continue
         punto = {"mercado": key[0], "seleccion": key[1], "cuota": round(float(r["odd"]), 2)}
         if not r["suspendida"]:
-            serie.append({"minuto": r["minuto"], **punto})
+            serie.append({"minuto": minuto_efectivo.get(r["captured_at"], r["minuto"]), **punto})
         if r["captured_at"] == ultima:
             cuotas.append({**punto, "suspendida": bool(r["suspendida"])})
     try:

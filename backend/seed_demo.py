@@ -293,6 +293,18 @@ def seed(base_dir: str):
     # juego, con el catálogo de /odds/live ("Fulltime Result") y una suspendida
     vivo = next(f for f in fixtures if f["status_short"] == "2H")
     rng = random.Random(f"{vivo['id']}|live")
+    # DESCUENTO DEL 1T + DESCANSO: la API repite elapsed=45, retrocede un
+    # minuto y manda null en el descanso — el patrón real que apilaba la curva
+    # en vertical y dibujaba lazos al arrancar el 2T; el backend debe repartirlo
+    # en minutos efectivos 45.x monótonos
+    for minuto, tmin in [(45, 41), (45, 42), (44, 43), (None, 44), (None, 45)]:
+        capt = (vivo["date"] + timedelta(minutes=tmin)).strftime("%Y-%m-%d %H:%M:%S")
+        for value, base in [("Home", 1.65), ("Draw", 3.9), ("Away", 5.2)]:
+            sad.execute(
+                "INSERT INTO odds_live (fixture_id, minuto, bet_id, bet_name, value, odd, suspendida, captured_at) VALUES (?,?,?,?,?,?,?,?)",
+                (vivo["id"], minuto, 59, "Fulltime Result", value,
+                 round(base * (0.94 + rng.random() * 0.12), 2), 0, capt),
+            )
     for i, minuto in enumerate(range(46, vivo["elapsed"] + 1, 3)):
         capt = (vivo["date"] + timedelta(minutes=minuto)).strftime("%Y-%m-%d %H:%M:%S")
         for value, base in [("Home", 1.65), ("Draw", 3.9), ("Away", 5.2)]:

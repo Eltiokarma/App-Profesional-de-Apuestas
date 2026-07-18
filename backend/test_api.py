@@ -338,6 +338,14 @@ def main():
     check("live de fixture sin odds_live → cuotas y serie vacías",
           lv0["cuotas"] == [] and lv0["serie"] == [], lv0)
     check("live de fixture inexistente → 404", c.get(A + "/fixtures/999999/live").status_code == 404)
+    # descuento del 1T / descanso: elapsed=45 repetido, un retroceso a 44 y
+    # nulls (seed) deben salir como minutos EFECTIVOS 45.x monótonos
+    mins_1 = [p["minuto"] for p in lv["serie"] if p["mercado"] == "1x2" and p["seleccion"] == "1"]
+    check("live: descuento repartido en fracciones 45.x (sin pila vertical)",
+          any(45 <= mv < 46 for mv in mins_1) and sum(1 for mv in mins_1 if 45 <= mv < 46) == 5, mins_1[:8])
+    check("live: la X siempre avanza (sin nulls, retrocesos ni lazos)",
+          all(m is not None for m in mins_1)
+          and all(mins_1[i] < mins_1[i + 1] for i in range(len(mins_1) - 1)), mins_1[:8])
 
     # /cuotas/{id}/casas — comparador: cuota de cada casa, la mejor marcada
     cc = c.get(A + f"/cuotas/{vivo['id']}/casas").json()

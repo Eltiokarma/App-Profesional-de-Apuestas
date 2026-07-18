@@ -342,7 +342,10 @@ export interface CuotaLiveDTO {
   suspendida: boolean
 }
 
-/** Un punto del movimiento en vivo (sin suspendidas), asc por captura. */
+/** Un punto del movimiento en vivo (sin suspendidas), asc por captura.
+ *  minuto es el EFECTIVO monótono: el descuento y el descanso (elapsed=45
+ *  repetido o null en el feed) se reparten en fracciones (45.0, 45.33 → 46)
+ *  para que la curva nunca se apile ni retroceda. */
 export interface PuntoLiveDTO {
   minuto: number | null
   mercado: string
