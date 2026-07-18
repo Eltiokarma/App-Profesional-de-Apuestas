@@ -1484,11 +1484,30 @@ def cargar_despensa(body: CargaDespensaRequest):
     from backend.analisis import db as efedb
     if not body.equipos:
         raise HTTPException(422, "equipos vacío: nada que depositar")
+
+    # CANONIZACIÓN: el barrido de liga puede traer variantes del nombre
+    # ("Universitario de Deportes" vs "Universitario"). La despensa se guarda
+    # bajo teams.name (es la clave con la que el EFE la busca): match exacto
+    # normalizado, o parcial ÚNICO; ambiguo o desconocido queda tal cual.
+    equipos_db = [(r["name"], _norm(r["name"])) for r in db.query("sad", "SELECT name FROM teams")]
+
+    def _canonico(nombre: str) -> str:
+        q = _norm(nombre)
+        exacto = [n for n, nn in equipos_db if nn == q]
+        if len(exacto) == 1:
+            return exacto[0]
+        parcial = [n for n, nn in equipos_db if q in nn or nn in q]
+        return parcial[0] if len(parcial) == 1 else nombre
+
     depositados, ignorados = 0, []
+    canonizados: dict[str, str] = {}
     for e in body.equipos:
         nombre = (e.equipo or "").strip()
         if not nombre:
             continue
+        canon = _canonico(nombre)
+        if canon != nombre:
+            canonizados[nombre] = canon
         for tipo, contenido in e.datos.items():
             contenido = (contenido or "").strip()
             if not contenido:
@@ -1496,14 +1515,16 @@ def cargar_despensa(body: CargaDespensaRequest):
             if tipo not in efedb.TIPOS:
                 ignorados.append(tipo)
                 continue
-            efedb.guardar_investigacion(nombre, tipo, contenido, body.fuentes or None)
+            efedb.guardar_investigacion(canon, tipo, contenido, body.fuentes or None)
             depositados += 1
     print(f"[despensa] carga manual: {depositados} datos "
           f"({', '.join(e.equipo for e in body.equipos)})"
+          + (f" · canonizados: {canonizados}" if canonizados else "")
           + (f" · tipos ignorados: {sorted(set(ignorados))}" if ignorados else ""), flush=True)
     return {
         "depositados": depositados,
-        "equipos": [e.equipo for e in body.equipos],
+        "equipos": [canonizados.get(e.equipo, e.equipo) for e in body.equipos],
+        "canonizados": canonizados,
         "tiposValidos": list(efedb.TIPOS),
         "tiposIgnorados": sorted(set(ignorados)),
     }

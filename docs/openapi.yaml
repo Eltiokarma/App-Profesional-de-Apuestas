@@ -794,6 +794,10 @@ components:
         equipos:
           type: array
           items: { type: string }
+        canonizados:
+          type: object
+          description: nombres ajustados al canon de la app (dado → teams.name)
+          additionalProperties: { type: string }
         tiposValidos:
           type: array
           items: { type: string }

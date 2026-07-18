@@ -40,7 +40,10 @@ function CargaDespensaBox() {
       const payload = JSON.parse(texto) as CargaDespensaDTO
       if (!payload?.equipos?.length) throw new Error('el JSON no trae la lista "equipos"')
       const r = await cargarDespensa(payload)
-      setResultado(`${r.depositados} datos depositados (${r.equipos.join(' / ')})${r.tiposIgnorados?.length ? ` · tipos ignorados: ${r.tiposIgnorados.join(', ')}` : ''} — genera el EFE ahora: usará esta investigación en vez de buscar en la web.`)
+      const ajustes = r.canonizados && Object.keys(r.canonizados).length
+        ? ` · nombres ajustados: ${Object.entries(r.canonizados).map(([a, b]) => `${a}→${b}`).join(', ')}`
+        : ''
+      setResultado(`${r.depositados} datos depositados (${r.equipos.join(' / ')})${ajustes}${r.tiposIgnorados?.length ? ` · tipos ignorados: ${r.tiposIgnorados.join(', ')}` : ''} — genera el EFE ahora: usará esta investigación en vez de buscar en la web.`)
       setTexto('')
     } catch (e) {
       setError(e instanceof SyntaxError ? 'JSON inválido: copia el bloque completo que devolvió Claude' : e instanceof Error ? e.message : 'error al cargar')

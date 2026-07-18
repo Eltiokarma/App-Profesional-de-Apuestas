@@ -514,6 +514,8 @@ export interface CargaDespensaDTO {
 export interface CargaDespensaResultadoDTO {
   depositados: number
   equipos: string[]
+  /** Nombres ajustados al canon de la app (dado → teams.name). */
+  canonizados?: Record<string, string>
   tiposValidos?: string[]
   tiposIgnorados?: string[]
 }
