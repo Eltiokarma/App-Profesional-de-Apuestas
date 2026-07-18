@@ -230,8 +230,12 @@ class Cliente:
 
     def _ajustar_por_cabeceras(self, headers) -> None:
         """x-ratelimit-requests-* traen la cuota diaria del plan; x-ratelimit-limit,
-        el rate limit por minuto. El contador de la API manda sobre el local
-        (cubre otras corridas u otros consumidores de la misma clave)."""
+        el rate limit por minuto. El contador de la API manda sobre el local EN
+        AMBAS DIRECCIONES: hacia arriba cubre otros consumidores de la misma
+        clave, y hacia abajo cubre que la ventana diaria del plan resetea a la
+        HORA DE LA SUSCRIPCIÓN (no a medianoche UTC) — con max() el marcador
+        local quedaba clavado en el tope tras el reset de la API y la ingesta
+        se bloqueaba sola con miles de requests reales disponibles."""
         diario = _cabecera_int(headers, "x-ratelimit-requests-limit")
         restantes = _cabecera_int(headers, "x-ratelimit-requests-remaining")
         if diario:
@@ -239,7 +243,11 @@ class Cliente:
             if not self.limite_fijo:
                 self.limite = max(diario - MARGEN_DIARIO, 1)
             if restantes is not None:
-                self.usadas = max(self.usadas, diario - restantes)
+                usadas_api = max(diario - restantes, 0)
+                if usadas_api < self.usadas - 50:  # el reset de ventana, no ruido de concurrencia
+                    print(f"  cuota sincronizada con la API: {self.usadas} → {usadas_api} "
+                          f"(la ventana del plan resetea a la hora de la suscripción)")
+                self.usadas = usadas_api
             self._guardar_cuota()
         por_minuto = _cabecera_int(headers, "x-ratelimit-limit")
         if por_minuto:
@@ -353,7 +361,8 @@ class Cliente:
         if diario:
             self.limite_respaldo = max(diario - MARGEN_DIARIO, 1)
             if restantes is not None:
-                self.usadas_respaldo = max(self.usadas_respaldo, diario - restantes)
+                # misma regla bidireccional que el principal (reset por hora de suscripción)
+                self.usadas_respaldo = max(diario - restantes, 0)
             self._guardar_cuota()
 
     def paginado(self, endpoint: str, params: dict) -> list:
