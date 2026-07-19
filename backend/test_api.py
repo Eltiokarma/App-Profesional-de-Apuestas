@@ -352,7 +352,7 @@ def main():
 
     # /ligas/{id}/standings
     tb = c.get(A + "/ligas/140/standings").json()
-    check("standings: liga COMPLETA (6 con partidos + 1 sin jugar)", len(tb) == 7 and tb[0]["posicion"] == 1 and tb[-1]["posicion"] == 7, [t["nombre"] for t in tb])
+    check("standings: liga COMPLETA (6 con partidos + 2 sin jugar)", len(tb) == 8 and tb[0]["posicion"] == 1 and tb[-1]["posicion"] == 8, [t["nombre"] for t in tb])
     check("standings: orden por puntos desc", all(tb[i]["puntos"] >= tb[i + 1]["puntos"] for i in range(len(tb) - 1)))
     sin_jugar = next((t for t in tb if t["nombre"] == "Demo Sin Plantilla"), None)
     check("standings: equipo sin partidos terminados entra con ceros (los prompts barren la liga entera)",

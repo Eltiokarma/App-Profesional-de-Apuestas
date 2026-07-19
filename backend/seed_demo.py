@@ -218,10 +218,13 @@ def seed(base_dir: str):
     # /plantilla (jugadores=[]) y el relleno con ceros de la clasificación —
     # su único fixture es un NS futuro (jornada aún no jugada)
     sad.execute("INSERT INTO teams (id, name, country) VALUES (599, 'Demo Sin Plantilla', 'Spain')")
+    sad.execute("INSERT INTO teams (id, name, country) VALUES (598, 'Demo Ascendido', 'Spain')")
+    # el NS es ENTRE los dos equipos demo: no altera el camino de recuperación
+    # de los equipos con historia (sus checks asumen sus próximos exactos)
     sad.execute(
         """INSERT INTO fixtures (id, date, venue_name, status_long, status_short,
            league_id, league_season, home_team_id, away_team_id)
-           VALUES (900600, ?, 'Estadio Demo', 'Not Started', 'NS', ?, ?, 599, 529)""",
+           VALUES (900600, ?, 'Estadio Demo', 'Not Started', 'NS', ?, ?, 599, 598)""",
         ((datetime.utcnow() + timedelta(days=5)).strftime("%Y-%m-%d %H:%M:%S"), LEAGUE_ID, SEASON),
     )
     sad.execute(
