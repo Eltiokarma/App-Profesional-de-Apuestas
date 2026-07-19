@@ -1193,6 +1193,21 @@ def standings(liga_id: int, temporada: int | None = None):
     for r in rows:
         upsert(r["home_team_id"], r["home_name"], r["goals_home"], r["goals_away"])
         upsert(r["away_team_id"], r["away_name"], r["goals_away"], r["goals_home"])
+    # LIGA COMPLETA: los equipos de la temporada que aún no tienen partidos
+    # terminados (jornada 1 a medias, pospuestos) entran con ceros — sin esto
+    # la tabla salía coja y los prompts de despensa/timeline (que se arman con
+    # ella) barrían solo una parte de la liga
+    todos = db.query(
+        "sad",
+        """SELECT DISTINCT t.id AS tid, t.name AS nombre FROM fixtures f
+           JOIN teams t ON t.id IN (f.home_team_id, f.away_team_id)
+           WHERE f.league_id=? AND f.league_season=?""",
+        (liga_id, temporada),
+    )
+    for r in todos:
+        if r["tid"] not in acc:
+            acc[r["tid"]] = {"equipoId": r["tid"], "nombre": r["nombre"], "puntos": 0,
+                             "partidosJugados": 0, "golesFavor": 0, "golesContra": 0}
     tabla = sorted(acc.values(), key=lambda e: (-e["puntos"], -(e["golesFavor"] - e["golesContra"]), -e["golesFavor"], e["nombre"]))
     return [{"posicion": i + 1, **e} for i, e in enumerate(tabla)]
 
