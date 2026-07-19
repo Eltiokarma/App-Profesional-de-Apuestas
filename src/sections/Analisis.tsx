@@ -3,7 +3,7 @@ import type { AnalisisRegistroDTO, EfeBloque, EfeComparativo, EfeEquipo, Generac
 import { CONFIG } from '../config'
 import { TEAMS } from '../data'
 import type { Match } from '../data/types'
-import { extraerBloquesDespensa, promptDespensaLiga } from '../lib/despensa'
+import { extraerBloquesDespensa, promptDespensaLiga, promptTimelineLiga } from '../lib/despensa'
 import { cargarDespensa, estadoAnalisisEfe, estadoTimeline, generarAnalisisEfe, generarTimeline, loadAnalisisPartido } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import { TimelineComparativo } from '../components/TimelineComparativo'
@@ -32,12 +32,12 @@ function CargaDespensaBox({ liga, equipos }: { liga: string; equipos: string[] }
   const [cargando, setCargando] = useState(false)
   const [resultado, setResultado] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [copiado, setCopiado] = useState(false)
+  const [copiado, setCopiado] = useState<string | null>(null)
 
-  const copiarPrompt = async () => {
-    await navigator.clipboard.writeText(promptDespensaLiga(liga, equipos))
-    setCopiado(true)
-    setTimeout(() => setCopiado(false), 2500)
+  const copiarPrompt = async (key: string, gen: (l: string, e: string[]) => string) => {
+    await navigator.clipboard.writeText(gen(liga, equipos))
+    setCopiado(key)
+    setTimeout(() => setCopiado(null), 2500)
   }
 
   const subir = async () => {
@@ -70,13 +70,18 @@ function CargaDespensaBox({ liga, equipos }: { liga: string; equipos: string[] }
       </button>
       {abierto && (
         <div style={{ padding: '0 14px 14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
-            <button onClick={copiarPrompt} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid var(--line)', cursor: 'pointer', background: copiado ? 'var(--up-soft)' : 'var(--bg3)', color: copiado ? 'var(--up)' : 'var(--t1)', font: '600 11px var(--sans)', flexShrink: 0 }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>
-              {copiado ? '¡Copiado!' : `Copiar prompt (${equipos.join(' y ')})`}
-            </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+            {([
+              ['research', 'Prompt research', promptDespensaLiga],
+              ['timeline', 'Prompt timeline', promptTimelineLiga],
+            ] as [string, string, (l: string, e: string[]) => string][]).map(([key, label, gen]) => (
+              <button key={key} onClick={() => copiarPrompt(key, gen)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid var(--line)', cursor: 'pointer', background: copiado === key ? 'var(--up-soft)' : 'var(--bg3)', color: copiado === key ? 'var(--up)' : 'var(--t1)', font: '600 11px var(--sans)', flexShrink: 0 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>
+                {copiado === key ? '¡Copiado!' : `${label} (${equipos.join(' y ')})`}
+              </button>
+            ))}
             <span style={{ font: '500 10.5px var(--sans)', color: 'var(--t3)' }}>
-              Pégalo en tu Claude de escritorio y trae aquí la respuesta — puedes pegar <b>todas las tandas de la liga juntas</b> (con texto entre medio, da igual): se suben en un solo depósito. El prompt de liga entera está en la página de la liga.
+              Pégalos en tu Claude de escritorio y trae aquí la respuesta — puedes pegar <b>todas las tandas juntas</b> (research y timeline mezclados, da igual): se sube todo en un depósito. Los prompts de liga entera están en la página de la liga.
             </span>
           </div>
           <textarea

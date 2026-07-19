@@ -173,8 +173,13 @@ TTL_HORAS = {
     "fixture": 7 * 24,
     "xi_reciente": 48,
     "bajas": 48,
+    # cronología del modo timeline (cargable desde el escritorio): los eventos
+    # institucionales/técnicos no caducan rápido
+    "timeline_eventos": 72,
 }
-TIPOS = tuple(TTL_HORAS)
+# TIPOS del protocolo EFE: lo que el EFE investiga/consume. timeline_eventos
+# es del modo timeline — NO debe entrar aquí o el EFE lo contaría faltante.
+TIPOS = tuple(t for t in TTL_HORAS if t != "timeline_eventos")
 
 
 def investigacion_de(equipo: str) -> tuple[dict, list[str]]:

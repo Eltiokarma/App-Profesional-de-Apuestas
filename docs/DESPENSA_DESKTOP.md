@@ -92,6 +92,20 @@ campo. Cuando termines una tanda, sigue con la siguiente hasta cubrir todos.
 Consejo: guarda el prompt como un Proyecto en Claude ("Despensa SAD") con esta
 instrucción fija — cada semana solo pegas la lista de equipos del botón.
 
+## Cronología para el timeline (segundo prompt)
+
+El mismo flujo sirve para el modo timeline: el botón **"Prompt timeline"**
+(página de la liga, o el de los dos equipos en la caja del partido) pide los
+eventos extra-cancha de los últimos 6 meses — cambios de DT, crisis,
+sanciones, fichajes clave, hitos — como lista `timeline_eventos` por equipo
+(tipos: `tecnico`, `institucional`, `sancion`, `hito`; los resultados de
+partidos NO se piden: salen de sad.db). Se pega en la misma caja (puede ir
+mezclado con las tandas de research) y dura **72 h** en la despensa.
+
+Con la cronología de ambos equipos cargada, el timeline **no lanza ninguna
+búsqueda web**: solo arma la película (~$0.03-0.06 con Haiku). El log lo
+confirma: `[timeline] eventos frescos de ambos equipos: sin búsqueda web`.
+
 ## Automatización (opcional)
 
 `POST /api/v1/analisis/despensa` con el mismo JSON y
