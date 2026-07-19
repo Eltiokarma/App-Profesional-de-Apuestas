@@ -214,9 +214,16 @@ def seed(base_dir: str):
         CREATE TABLE plantillas_meta (team_id INTEGER PRIMARY KEY, season INTEGER, actualizado_en TEXT);
     """)
     sad.executemany("INSERT INTO teams (id, name, country) VALUES (?,?, 'Spain')", TEAMS)
-    # equipo SIN plantilla ni fixtures: prueba la degradación (jugadores=[])
-    # y la señal de ingesta on-demand del endpoint /plantilla
+    # equipo SIN plantilla ni partidos TERMINADOS: prueba la degradación de
+    # /plantilla (jugadores=[]) y el relleno con ceros de la clasificación —
+    # su único fixture es un NS futuro (jornada aún no jugada)
     sad.execute("INSERT INTO teams (id, name, country) VALUES (599, 'Demo Sin Plantilla', 'Spain')")
+    sad.execute(
+        """INSERT INTO fixtures (id, date, venue_name, status_long, status_short,
+           league_id, league_season, home_team_id, away_team_id)
+           VALUES (900600, ?, 'Estadio Demo', 'Not Started', 'NS', ?, ?, 599, 529)""",
+        ((datetime.utcnow() + timedelta(days=5)).strftime("%Y-%m-%d %H:%M:%S"), LEAGUE_ID, SEASON),
+    )
     sad.execute(
         "INSERT INTO leagues (id, name, country, logo, flag, season) VALUES (?, 'LaLiga', 'Spain', "
         "'https://media.api-sports.io/football/leagues/140.png', 'https://media.api-sports.io/flags/es.svg', ?)",

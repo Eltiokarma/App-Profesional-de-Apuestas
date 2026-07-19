@@ -45,7 +45,7 @@ def main():
     check("fixtures acepta limit=500 (días con amistosos globales)",
           c.get(A + "/fixtures?limit=500").status_code == 200)
     fx = c.get(A + "/fixtures?limit=200").json()
-    check("/fixtures devuelve 125 (120 terminados + vivo + 4 programados)", len(fx) == 125, len(fx))
+    check("/fixtures devuelve 126 (120 terminados + vivo + 5 programados)", len(fx) == 126, len(fx))
     estados = {f["estado"] for f in fx}
     check("estados en_vivo/finalizado/programado presentes", estados == {"en_vivo", "finalizado", "programado"}, estados)
     vivo = next(f for f in fx if f["estado"] == "en_vivo")
@@ -63,10 +63,10 @@ def main():
     check("fixtures?estado=programado: solo programados", bool(prog) and all(f["estado"] == "programado" for f in prog), len(prog))
     check("fixtures?estado=inválido → 422", c.get(A + "/fixtures?estado=jugando").status_code == 422)
     asc = c.get(A + "/fixtures?orden=asc&limit=200").json()
-    check("fixtures?orden=asc: fechas ascendentes", len(asc) == 125 and all(asc[i]["fecha"] <= asc[i + 1]["fecha"] for i in range(len(asc) - 1)))
+    check("fixtures?orden=asc: fechas ascendentes", len(asc) == 126 and all(asc[i]["fecha"] <= asc[i + 1]["fecha"] for i in range(len(asc) - 1)))
     hoy_demo = vivo["fecha"][:10]
     dd = c.get(A + f"/fixtures?desde={hoy_demo}&limit=200").json()
-    check("fixtures?desde: solo fechas >= desde", bool(dd) and len(dd) < 125 and all(f["fecha"][:10] >= hoy_demo for f in dd), len(dd))
+    check("fixtures?desde: solo fechas >= desde", bool(dd) and len(dd) < 126 and all(f["fecha"][:10] >= hoy_demo for f in dd), len(dd))
     check("fixtures?orden=inválido → 422", c.get(A + "/fixtures?orden=random").status_code == 422)
     uno = c.get(A + f"/fixtures/{vivo['id']}").json()
     check("/fixtures/{id} coincide", uno["id"] == vivo["id"] and uno["local"]["nombre"] == vivo["local"]["nombre"])
@@ -352,8 +352,11 @@ def main():
 
     # /ligas/{id}/standings
     tb = c.get(A + "/ligas/140/standings").json()
-    check("standings: 6 equipos ordenados", len(tb) == 6 and tb[0]["posicion"] == 1 and tb[-1]["posicion"] == 6, [t["nombre"] for t in tb])
-    check("standings: orden por puntos desc", all(tb[i]["puntos"] >= tb[i + 1]["puntos"] for i in range(5)))
+    check("standings: liga COMPLETA (6 con partidos + 1 sin jugar)", len(tb) == 7 and tb[0]["posicion"] == 1 and tb[-1]["posicion"] == 7, [t["nombre"] for t in tb])
+    check("standings: orden por puntos desc", all(tb[i]["puntos"] >= tb[i + 1]["puntos"] for i in range(len(tb) - 1)))
+    sin_jugar = next((t for t in tb if t["nombre"] == "Demo Sin Plantilla"), None)
+    check("standings: equipo sin partidos terminados entra con ceros (los prompts barren la liga entera)",
+          sin_jugar is not None and sin_jugar["partidosJugados"] == 0 and sin_jugar["puntos"] == 0, sin_jugar)
     check("standings: Real Madrid arriba de Sevilla", next(t["posicion"] for t in tb if "Madrid" in t["nombre"]) < next(t["posicion"] for t in tb if "Sevilla" in t["nombre"]))
     suma_pj = sum(t["partidosJugados"] for t in tb)
     check("standings: 216 participaciones (108 de liga × 2; 12 son UCL)", suma_pj == 216, suma_pj)
