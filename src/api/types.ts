@@ -505,8 +505,8 @@ export interface CargaDespensaDTO {
   equipos: {
     /** Nombre EXACTO del equipo como aparece en la app. */
     equipo: string
-    /** tipo → resumen textual (dt, plantel, tabla, resultados, fixture, xi_reciente, bajas). */
-    datos: Record<string, string>
+    /** tipo → resumen textual (dt, plantel, bajas…); timeline_eventos lleva la LISTA de eventos. */
+    datos: Record<string, string | unknown[]>
   }[]
   fuentes?: string[]
 }

@@ -3,6 +3,43 @@
 // nombres EXACTOS de la app; el backend además canoniza variantes.
 import type { CargaDespensaDTO } from '../api/types'
 
+/** Prompt de CRONOLOGÍA (modo timeline): eventos extra-cancha de los últimos
+ *  6 meses. Con esto cargado, el timeline no busca en la web (~$0.05). */
+export function promptTimelineLiga(liga: string, equipos: string[]): string {
+  const lista = equipos.map((e) => `- ${e}`).join('\n')
+  return `Investiga en la web la CRONOLOGÍA de los últimos 6 meses de TODOS estos equipos de ${liga}:
+
+${lista}
+
+SOLO eventos extra-cancha e hitos — NO listes resultados de partidos normales
+(la app ya los tiene todos de su base): cambios de entrenador con fechas,
+crisis institucionales, sanciones, fichajes o salidas importantes, lesiones
+largas de figuras, títulos o clasificaciones, conflictos internos, huelgas,
+temas dirigenciales.
+
+ENTREGA POR TANDAS: un bloque de código JSON por cada 6 equipos, con esta
+forma exacta, sin texto fuera del bloque:
+
+{
+  "equipos": [
+    {
+      "equipo": "<nombre EXACTAMENTE como te lo di>",
+      "datos": {
+        "timeline_eventos": [
+          { "fecha": "YYYY-MM-DD", "aproximada": false, "tipo": "tecnico", "titulo": "…", "detalle": "…", "fuente": "medio o url" }
+        ]
+      }
+    }
+  ],
+  "fuentes": ["url1", "url2"]
+}
+
+"tipo" es uno de: tecnico (cambios de DT), institucional, sancion, hito.
+5-10 eventos por equipo, del más antiguo al más reciente. Si no hay fecha
+exacta usa "~YYYY-MM" y aproximada=true. detalle: máximo ~40 palabras.
+Cuando termines una tanda, sigue con la siguiente hasta cubrir todos.`
+}
+
 /** Extrae TODOS los bloques JSON de la despensa de un texto pegado (las
  *  tandas del barrido, aunque vengan con texto o ```json entre medio) y los
  *  funde en un solo payload — la liga entera se sube de una pegada. */

@@ -498,11 +498,14 @@ def generar_timeline(fixture_id: int, estado: str = "preliminar") -> dict:
         # reales de NUESTRA base (costo cero, la web solo completa el contexto)
         cacheados: dict = {}
         from backend import jugadores as jugcapa
+        ambos_con_eventos = True
         for equipo, tid in ((equipo_a, fx["home_team_id"]), (equipo_b, fx["away_team_id"])):
             frescos, _falt = efedb.investigacion_de(equipo)
             entrada: dict = {"resultados_db": _resultados_de(tid)}
             if "timeline_eventos" in frescos:
                 entrada["timeline_eventos"] = frescos["timeline_eventos"]
+            else:
+                ambos_con_eventos = False
             # traspasos y DT con fechas exactas de nuestra base: eventos
             # confirmados — la web queda para el contexto narrativo
             movimientos = jugcapa.movimientos_para_timeline(tid)
@@ -518,8 +521,13 @@ def generar_timeline(fixture_id: int, estado: str = "preliminar") -> dict:
             "contexto_efe": contexto,
             "datos_cacheados": cacheados,
         }
+        # con la cronología de AMBOS equipos ya cargada (barrido de escritorio
+        # o timeline previo), no hay nada que buscar: eventos + resultados_db +
+        # movimientos_db bastan — el timeline queda en solo el armado (~$0.05)
+        if ambos_con_eventos:
+            print("[timeline] eventos frescos de ambos equipos: sin búsqueda web", flush=True)
         resultado, _uso = cliente.analizar(
-            payload, TIMELINE, con_busqueda=True,
+            payload, TIMELINE, con_busqueda=not ambos_con_eventos,
             system=cliente.bloques_system_timeline(), salida=cliente.SALIDA_TIMELINE,
             max_busquedas=cliente.BUSQUEDAS_TIMELINE, modelo=cliente.MODELO_TIMELINE,
         )

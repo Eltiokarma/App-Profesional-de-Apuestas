@@ -8,6 +8,7 @@ CORS solo local salvo SAD_CORS_ORIGINS, docs desactivables (SAD_DOCS).
 Ejecutar junto a las DBs reales:
     uvicorn backend.app:app --port 8000
 """
+import json
 import os
 import secrets
 import sqlite3
@@ -1465,7 +1466,9 @@ class EfeRequest(BaseModel):
 
 class EquipoDespensa(BaseModel):
     equipo: str
-    datos: dict[str, str]
+    # str para los tipos del EFE; timeline_eventos acepta la LISTA de eventos
+    # (o un string con el JSON de la lista, que se parsea)
+    datos: dict[str, str | list]
 
 
 class CargaDespensaRequest(BaseModel):
@@ -1511,6 +1514,7 @@ def cargar_despensa(body: CargaDespensaRequest):
 
     depositados, ignorados = 0, []
     canonizados: dict[str, str] = {}
+    tipos_validos = set(efedb.TIPOS) | {"timeline_eventos"}
     for e in body.equipos:
         nombre = (e.equipo or "").strip()
         if not nombre:
@@ -1519,12 +1523,22 @@ def cargar_despensa(body: CargaDespensaRequest):
         if canon != nombre:
             canonizados[nombre] = canon
         for tipo, contenido in e.datos.items():
-            contenido = (contenido or "").strip()
-            if not contenido:
-                continue
-            if tipo not in efedb.TIPOS:
+            if tipo not in tipos_validos:
                 ignorados.append(tipo)
                 continue
+            if tipo == "timeline_eventos":
+                # lista de eventos (o string con el JSON de la lista)
+                if isinstance(contenido, str):
+                    try:
+                        contenido = json.loads(contenido)
+                    except ValueError:
+                        continue
+                if not isinstance(contenido, list) or not contenido:
+                    continue
+            else:
+                contenido = (contenido or "").strip() if isinstance(contenido, str) else ""
+                if not contenido:
+                    continue
             efedb.guardar_investigacion(canon, tipo, contenido, body.fuentes or None)
             depositados += 1
     print(f"[despensa] carga manual: {depositados} datos "

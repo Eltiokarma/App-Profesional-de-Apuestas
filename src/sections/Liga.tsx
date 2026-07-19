@@ -3,7 +3,7 @@ import { TEAMS } from '../data'
 import type { Match } from '../data/types'
 import type { LigaDTO } from '../api/types'
 import { TeamBadge } from '../components/TeamBadge'
-import { promptDespensaLiga } from '../lib/despensa'
+import { promptDespensaLiga, promptTimelineLiga } from '../lib/despensa'
 import { loadLiga } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
@@ -18,7 +18,7 @@ interface Props {
 export function Liga({ store, ligaId, isMobile }: Props) {
   // selección de temporada ligada a la liga: al cambiar de liga vuelve a la más reciente
   const [sel, setSel] = useState<{ liga: number; temporada: number } | null>(null)
-  const [promptCopiado, setPromptCopiado] = useState(false)
+  const [promptCopiado, setPromptCopiado] = useState<string | null>(null)
   const temporada = sel && sel.liga === ligaId ? sel.temporada : null
   const liga = useAsync(() => loadLiga(ligaId, temporada ?? undefined), `${ligaId}:${temporada ?? ''}`)
   const d = liga.data
@@ -113,20 +113,26 @@ export function Liga({ store, ligaId, isMobile }: Props) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 2 }}>
               <div style={{ font: '700 12px var(--sans)' }}>Clasificación</div>
               {d.tabla.length > 0 && (
-                <button
-                  onClick={async () => {
-                    // barrido de despensa: prompt con TODOS los equipos de la
-                    // liga (nombres exactos) para el Claude de escritorio
-                    await navigator.clipboard.writeText(promptDespensaLiga(nombre, d.tabla.map((r) => r.nombre)))
-                    setPromptCopiado(true)
-                    setTimeout(() => setPromptCopiado(false), 2500)
-                  }}
-                  title="Copia el prompt de barrido de la liga (docs/DESPENSA_DESKTOP.md): pégalo en tu Claude de escritorio y deposita el JSON en la pantalla de análisis — el EFE saldrá a ~$0.10"
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 11px', borderRadius: 8, border: '1px solid var(--line)', cursor: 'pointer', background: promptCopiado ? 'var(--up-soft)' : 'var(--bg3)', color: promptCopiado ? 'var(--up)' : 'var(--t2)', font: '600 10.5px var(--sans)', flexShrink: 0 }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>
-                  {promptCopiado ? '¡Prompt copiado!' : 'Prompt despensa (liga entera)'}
-                </button>
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
+                  {([
+                    ['despensa', 'Prompt research', 'Barrido de la liga para el EFE (DT, plantel, bajas): pégalo en tu Claude de escritorio y deposita el JSON en la pantalla de análisis — el EFE saldrá a ~$0.15', promptDespensaLiga],
+                    ['timeline', 'Prompt timeline', 'Cronología de la liga (cambios de DT, crisis, sanciones, hitos): con esto cargado, el timeline no busca en la web (~$0.05)', promptTimelineLiga],
+                  ] as [string, string, string, (l: string, e: string[]) => string][]).map(([key, label, title, gen]) => (
+                    <button
+                      key={key}
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(gen(nombre, d.tabla.map((r) => r.nombre)))
+                        setPromptCopiado(key)
+                        setTimeout(() => setPromptCopiado(null), 2500)
+                      }}
+                      title={title}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 11px', borderRadius: 8, border: '1px solid var(--line)', cursor: 'pointer', background: promptCopiado === key ? 'var(--up-soft)' : 'var(--bg3)', color: promptCopiado === key ? 'var(--up)' : 'var(--t2)', font: '600 10.5px var(--sans)', flexShrink: 0 }}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>
+                      {promptCopiado === key ? '¡Copiado!' : label}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
             <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginBottom: 12 }}>Calculada con los fixtures finalizados capturados</div>

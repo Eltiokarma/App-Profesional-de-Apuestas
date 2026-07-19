@@ -319,6 +319,19 @@ def main():
     }).json()
     check("despensa: canonización por tokens sin orden",
           carga3.get("canonizados", {}).get("Club Betis Real") == "Real Betis", carga3)
+    # cronología del timeline: lista de eventos cargable desde el escritorio
+    carga_tl = c.post(A + "/analisis/despensa", json={
+        "equipos": [{"equipo": "Real Betis", "datos": {"timeline_eventos": [
+            {"fecha": "2026-03-01", "aproximada": False, "tipo": "tecnico",
+             "titulo": "Cambio de DT", "detalle": "Llega el nuevo técnico", "fuente": "prensa"},
+        ]}}],
+    }).json()
+    frescos_tl, falt_tl = efedb2.investigacion_de("Real Betis")
+    check("despensa: timeline_eventos se deposita como lista",
+          carga_tl["depositados"] == 1 and isinstance(frescos_tl.get("timeline_eventos"), list)
+          and frescos_tl["timeline_eventos"][0]["tipo"] == "tecnico", carga_tl)
+    check("despensa: timeline_eventos NO cuenta como faltante del EFE",
+          "timeline_eventos" not in efedb2.TIPOS and "timeline_eventos" not in falt_tl)
     check("despensa: equipos vacío → 422",
           c.post(A + "/analisis/despensa", json={"equipos": []}).status_code == 422)
     check("despensa: cuerpo inválido → 422",

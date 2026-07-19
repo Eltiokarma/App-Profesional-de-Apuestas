@@ -605,7 +605,7 @@ class MockDataSource implements SadDataSource {
   async cargarDespensa(payload: CargaDespensaDTO): Promise<CargaDespensaResultadoDTO> {
     // demo: se "acepta" sin almacenar (la despensa real vive en efe.db del backend)
     const depositados = payload.equipos.reduce(
-      (s, e) => s + Object.values(e.datos).filter((v) => v && v.trim()).length, 0)
+      (s, e) => s + Object.values(e.datos).filter((v) => (typeof v === 'string' ? v.trim() : v.length > 0)).length, 0)
     return { depositados, equipos: payload.equipos.map((e) => e.equipo) }
   }
 
