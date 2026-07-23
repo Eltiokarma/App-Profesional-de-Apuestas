@@ -3,7 +3,8 @@
 Un ciclo por invocación, pensado para el hilo SAD_LIVE_SEGUNDOS de backend.app:
 1. Mira en sad.db si hay fixtures nuestros en ventana de juego (arrancaron hace
    <= 2h30 o siguen marcados en juego). Sin candidatos: sale con 0 requests.
-2. /fixtures?live=<ids de LIGAS> — marcador, minuto y estado reales (1 request);
+2. /fixtures?live=<ids de las ligas importantes> — marcador, minuto y estado
+   reales (1 request); las ligas menores (Liga 2, copas nacionales) no entran;
    se guardan con guardar_fixtures (INSERT OR REPLACE).
 3. /odds/live — cuotas en juego de la API (1 request); se filtran a nuestros
    fixtures y se apendizan a odds_live con minuto y captured_at. La cobertura
@@ -23,9 +24,9 @@ from datetime import datetime, timedelta, timezone
 
 from backend.ingesta.extractor import (
     Cliente,
-    LIGAS,
     guardar_fixtures,
     leer_clave,
+    ligas_vivo,
 )
 
 VENTANA_JUEGO_MIN = 210  # arrancó hace <= 3h30: cubre alargue, penales y pausas largas
@@ -59,21 +60,26 @@ CREATE INDEX IF NOT EXISTS idx_eventos_fixture ON fixture_eventos(fixture_id);
 """
 
 
-def fixtures_en_ventana(con: sqlite3.Connection) -> list[int]:
+def fixtures_en_ventana(con: sqlite3.Connection, ligas: "set[int]") -> list[int]:
     """Nuestros fixtures que pueden estar en juego ahora: arrancaron hace poco
-    (NS aún no actualizado) o ya están marcados con un estado en juego."""
+    (NS aún no actualizado) o ya están marcados con un estado en juego. Se
+    limita a `ligas` (las importantes): las menores no entran al ciclo en vivo."""
+    if not ligas:
+        return []
     ahora = datetime.now(timezone.utc)
     desde = (ahora - timedelta(minutes=VENTANA_JUEGO_MIN)).strftime("%Y-%m-%d %H:%M:%S")
     hasta = ahora.strftime("%Y-%m-%d %H:%M:%S")
     marcas = ",".join("?" * len(EN_JUEGO))
+    ligas_marcas = ",".join("?" * len(ligas))
     return [
         fila[0]
         for fila in con.execute(
             f"""SELECT id FROM fixtures
-                WHERE (status_short = 'NS' AND date BETWEEN ? AND ?)
-                   OR status_short IN ({marcas})
+                WHERE league_id IN ({ligas_marcas})
+                  AND ((status_short = 'NS' AND date BETWEEN ? AND ?)
+                       OR status_short IN ({marcas}))
                 ORDER BY date""",
-            (desde, hasta, *EN_JUEGO),
+            (*sorted(ligas), desde, hasta, *EN_JUEGO),
         )
     ]
 
@@ -154,7 +160,10 @@ def main() -> int:
     con.execute("PRAGMA journal_mode=WAL")  # persistente; requisito de la fase 3
     con.executescript(DDL_ODDS_LIVE)
 
-    candidatos = set(fixtures_en_ventana(con))
+    # solo las ligas importantes reciben el ciclo en vivo (las menores —Liga 2,
+    # copas nacionales— se ingestan igual en fixtures/histórico/cuotas prepartido)
+    vivo = ligas_vivo()
+    candidatos = set(fixtures_en_ventana(con, vivo))
     if not candidatos:
         con.close()
         print("sin partidos en ventana de juego · 0 requests")
@@ -163,13 +172,13 @@ def main() -> int:
     cliente = Cliente(leer_clave())
     capturado = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
 
-    # 1 request: marcador/minuto/estado de todo lo vivo en nuestras ligas
-    ids_ligas = "-".join(str(i) for i in sorted(LIGAS))
+    # 1 request: marcador/minuto/estado de todo lo vivo en nuestras ligas importantes
+    ids_ligas = "-".join(str(i) for i in sorted(vivo))
     data = cliente.get("fixtures", {"live": ids_ligas})
     vivos = [
         item for item in (data or {}).get("response", [])
         if item.get("fixture", {}).get("id") in candidatos
-        or item.get("league", {}).get("id") in LIGAS
+        or item.get("league", {}).get("id") in vivo
     ]
     n_fix = guardar_fixtures(con, vivos)
     n_ev = sum(guardar_eventos(con, item) for item in vivos)

@@ -98,23 +98,60 @@ DELAY_MIN = 0.25
 LIGAS = {
     # Mundial (jun-jul 2026: la ventana diaria mantiene resultados y cuotas al día)
     1: "Copa del Mundo",
-    # Sudamérica
+    # Sudamérica — por país, con TODAS las categorías donde puede jugar un mismo
+    # equipo (1ª, 2ª y copa nacional): para analizar un país no puede faltar
+    # ninguna. Las 2ª divisiones y las copas nacionales son "menores" (ver
+    # LIGAS_MENORES): se ingestan igual pero SIN cuotas en vivo.
+    # Argentina
     128: "Argentina - Liga Profesional",
-    129: "Argentina - Primera Nacional",
+    1032: "Argentina - Copa de la Liga Profesional",  # torneo de 1ª (media temporada)
+    129: "Argentina - Primera Nacional",  # 2ª división
+    130: "Argentina - Copa Argentina",    # copa nacional: entran equipos de ascenso
+    # Brasil
     71: "Brasil - Serie A",
-    72: "Brasil - Serie B",
+    72: "Brasil - Serie B",               # 2ª división
+    73: "Brasil - Copa do Brasil",        # copa nacional: mezcla Serie A/B/C/D
+    # Colombia
     239: "Colombia - Primera A",
+    240: "Colombia - Primera B",          # 2ª división
+    241: "Colombia - Copa Colombia",      # copa nacional
+    # Chile
     265: "Chile - Primera División",
+    266: "Chile - Primera B",             # 2ª división
+    267: "Chile - Copa Chile",            # copa nacional
+    1220: "Chile - Copa de la Liga",
+    # Perú
     281: "Perú - Primera División",
+    282: "Perú - Segunda División (Liga 2)",  # 2ª división
+    502: "Perú - Copa Bicentenario",      # copa nacional: 1ª + Liga 2
     1232: "Perú - Copa de la Liga",
-    1220: "Chile - Copa de la Liga",  # la API la llama igual que la peruana
+    # Uruguay (la API parte la 1ª en Apertura/Clausura: hacen falta las dos)
+    268: "Uruguay - Primera División (Apertura)",
+    270: "Uruguay - Primera División (Clausura)",
+    269: "Uruguay - Segunda División",    # 2ª división
+    930: "Uruguay - Copa Uruguay",        # copa nacional
+    # Ecuador
+    242: "Ecuador - Liga Pro",
+    243: "Ecuador - Liga Pro Serie B",    # 2ª división
+    917: "Ecuador - Copa Ecuador",        # copa nacional
+    # Paraguay (la API parte la 1ª en Apertura/Clausura: hacen falta las dos)
+    250: "Paraguay - División Profesional (Apertura)",
+    252: "Paraguay - División Profesional (Clausura)",
+    251: "Paraguay - División Intermedia",  # 2ª división
+    501: "Paraguay - Copa Paraguay",        # copa nacional
+    # Bolivia
+    344: "Bolivia - Primera División",
+    964: "Bolivia - Copa de la División Profesional",  # torneo de 1ª
+    710: "Bolivia - Nacional B",          # 2ª división
+    # Venezuela
+    299: "Venezuela - Primera División",
+    300: "Venezuela - Segunda División",  # 2ª división
+    1113: "Venezuela - Copa Venezuela",   # copa nacional
     # Amistosos internacionales de clubes (pretemporada, giras)
     667: "Amistosos de Clubes",
-    268: "Uruguay - Primera División",
-    242: "Ecuador - Liga Pro",
     # México
     262: "México - Liga MX",
-    263: "México - Liga de Expansión",
+    263: "México - Liga de Expansión",    # 2ª división
     # Copas CONMEBOL
     13: "CONMEBOL Libertadores",
     11: "CONMEBOL Sudamericana",
@@ -167,6 +204,59 @@ LIGAS.update(_ligas_extra())
 LIGAS_RUIDO = {
     int(x) for x in os.environ.get("SAD_LIGAS_RUIDO", "667").split(",") if x.strip().isdigit()
 }
+
+# Ligas "menores": segundas divisiones y copas nacionales donde juegan equipos
+# de otras categorías. Se ingestan IGUAL que las demás — fixtures, histórico y
+# cuotas PREPARTIDO — porque las constantes/burbujas de un equipo necesitan
+# TODOS sus partidos: para analizar un país no puede faltar la Liga 2 ni la
+# Copa donde ese equipo juega. Lo ÚNICO que NO reciben es el ciclo EN VIVO: las
+# cuotas en juego (en_vivo.py) se siguen solo en las ligas importantes, como
+# hasta ahora (la cobertura live de la API en estas es pobre y no vale gastar
+# el ciclo minuto a minuto en ellas). Configurable por env sin tocar código:
+# SAD_LIGAS_MENORES="282,130" añade IDs; SAD_LIGAS_MENORES=" " (o "0") las trata
+# a todas como importantes.
+_MENORES_DEFAULT = {
+    # Argentina
+    130,  # Copa Argentina
+    # Brasil
+    73,   # Copa do Brasil
+    # Colombia
+    240,  # Primera B
+    241,  # Copa Colombia
+    # Chile
+    266,  # Primera B
+    267,  # Copa Chile
+    1220, # Copa de la Liga
+    # Perú
+    282,  # Segunda División (Liga 2)
+    502,  # Copa Bicentenario
+    1232, # Copa de la Liga
+    # Uruguay
+    269,  # Segunda División
+    930,  # Copa Uruguay
+    # Ecuador
+    243,  # Liga Pro Serie B
+    917,  # Copa Ecuador
+    # Paraguay
+    251,  # División Intermedia
+    501,  # Copa Paraguay
+    # Bolivia
+    710,  # Nacional B
+    # Venezuela
+    300,  # Segunda División
+    1113, # Copa Venezuela
+}
+_menores_env = os.environ.get("SAD_LIGAS_MENORES")
+if _menores_env is None:
+    LIGAS_MENORES = set(_MENORES_DEFAULT)
+else:  # override explícito: la lista del env manda (vaciar = ninguna menor)
+    LIGAS_MENORES = {int(x) for x in _menores_env.split(",") if x.strip().isdigit()}
+
+
+def ligas_vivo() -> set[int]:
+    """Ligas cuyas cuotas EN VIVO se siguen: las importantes = LIGAS − menores.
+    (Las menores se ingestan igual en fixtures/histórico/cuotas prepartido.)"""
+    return set(LIGAS) - LIGAS_MENORES
 
 
 def leer_clave() -> str:
