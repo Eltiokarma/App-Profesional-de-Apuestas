@@ -98,27 +98,47 @@ DELAY_MIN = 0.25
 LIGAS = {
     # Mundial (jun-jul 2026: la ventana diaria mantiene resultados y cuotas al día)
     1: "Copa del Mundo",
-    # Sudamérica
+    # Sudamérica — por país, con TODAS las categorías donde puede jugar un mismo
+    # equipo (1ª, 2ª y copa nacional): para analizar un país no puede faltar
+    # ninguna. Las 2ª divisiones y las copas nacionales son "menores" (ver
+    # LIGAS_MENORES): se ingestan igual pero SIN cuotas en vivo.
+    # Argentina
     128: "Argentina - Liga Profesional",
-    129: "Argentina - Primera Nacional",
+    1032: "Argentina - Copa de la Liga Profesional",  # torneo de 1ª (media temporada)
+    129: "Argentina - Primera Nacional",  # 2ª división
+    130: "Argentina - Copa Argentina",    # copa nacional: entran equipos de ascenso
+    # Brasil
     71: "Brasil - Serie A",
-    72: "Brasil - Serie B",
+    72: "Brasil - Serie B",               # 2ª división
+    73: "Brasil - Copa do Brasil",        # copa nacional: mezcla Serie A/B/C/D
+    # Colombia
     239: "Colombia - Primera A",
-    241: "Colombia - Copa Colombia",  # copa nacional: mezcla Primera A y B
+    240: "Colombia - Primera B",          # 2ª división
+    241: "Colombia - Copa Colombia",      # copa nacional
+    # Chile
     265: "Chile - Primera División",
+    266: "Chile - Primera B",             # 2ª división
+    267: "Chile - Copa Chile",            # copa nacional
+    1220: "Chile - Copa de la Liga",
+    # Perú
     281: "Perú - Primera División",
-    282: "Perú - Liga 2 (Segunda División)",  # sin cuotas en vivo (menor)
-    130: "Argentina - Copa Argentina",  # copa nacional: entran equipos de ascenso
-    73: "Brasil - Copa do Brasil",      # copa nacional: mezcla Serie A/B/C/D
+    282: "Perú - Segunda División (Liga 2)",  # 2ª división
+    502: "Perú - Copa Bicentenario",      # copa nacional: 1ª + Liga 2
     1232: "Perú - Copa de la Liga",
-    1220: "Chile - Copa de la Liga",  # la API la llama igual que la peruana
+    # Uruguay (la API parte la 1ª en Apertura/Clausura: hacen falta las dos)
+    268: "Uruguay - Primera División (Apertura)",
+    270: "Uruguay - Primera División (Clausura)",
+    269: "Uruguay - Segunda División",    # 2ª división
+    930: "Uruguay - Copa Uruguay",        # copa nacional
+    # Ecuador
+    242: "Ecuador - Liga Pro",
+    243: "Ecuador - Liga Pro Serie B",    # 2ª división
+    917: "Ecuador - Copa Ecuador",        # copa nacional
     # Amistosos internacionales de clubes (pretemporada, giras)
     667: "Amistosos de Clubes",
-    268: "Uruguay - Primera División",
-    242: "Ecuador - Liga Pro",
     # México
     262: "México - Liga MX",
-    263: "México - Liga de Expansión",
+    263: "México - Liga de Expansión",    # 2ª división
     # Copas CONMEBOL
     13: "CONMEBOL Libertadores",
     11: "CONMEBOL Sudamericana",
@@ -183,10 +203,27 @@ LIGAS_RUIDO = {
 # SAD_LIGAS_MENORES="282,130" añade IDs; SAD_LIGAS_MENORES=" " (o "0") las trata
 # a todas como importantes.
 _MENORES_DEFAULT = {
-    282,  # Perú - Liga 2 (Segunda División)
-    130,  # Argentina - Copa Argentina
-    73,   # Brasil - Copa do Brasil
-    241,  # Colombia - Copa Colombia
+    # Argentina
+    130,  # Copa Argentina
+    # Brasil
+    73,   # Copa do Brasil
+    # Colombia
+    240,  # Primera B
+    241,  # Copa Colombia
+    # Chile
+    266,  # Primera B
+    267,  # Copa Chile
+    1220, # Copa de la Liga
+    # Perú
+    282,  # Segunda División (Liga 2)
+    502,  # Copa Bicentenario
+    1232, # Copa de la Liga
+    # Uruguay
+    269,  # Segunda División
+    930,  # Copa Uruguay
+    # Ecuador
+    243,  # Liga Pro Serie B
+    917,  # Copa Ecuador
 }
 _menores_env = os.environ.get("SAD_LIGAS_MENORES")
 if _menores_env is None:
