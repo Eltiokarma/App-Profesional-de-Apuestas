@@ -104,8 +104,12 @@ LIGAS = {
     71: "Brasil - Serie A",
     72: "Brasil - Serie B",
     239: "Colombia - Primera A",
+    241: "Colombia - Copa Colombia",  # copa nacional: mezcla Primera A y B
     265: "Chile - Primera División",
     281: "Perú - Primera División",
+    282: "Perú - Liga 2 (Segunda División)",  # sin cuotas en vivo (menor)
+    130: "Argentina - Copa Argentina",  # copa nacional: entran equipos de ascenso
+    73: "Brasil - Copa do Brasil",      # copa nacional: mezcla Serie A/B/C/D
     1232: "Perú - Copa de la Liga",
     1220: "Chile - Copa de la Liga",  # la API la llama igual que la peruana
     # Amistosos internacionales de clubes (pretemporada, giras)
@@ -167,6 +171,34 @@ LIGAS.update(_ligas_extra())
 LIGAS_RUIDO = {
     int(x) for x in os.environ.get("SAD_LIGAS_RUIDO", "667").split(",") if x.strip().isdigit()
 }
+
+# Ligas "menores": segundas divisiones y copas nacionales donde juegan equipos
+# de otras categorías. Se ingestan IGUAL que las demás — fixtures, histórico y
+# cuotas PREPARTIDO — porque las constantes/burbujas de un equipo necesitan
+# TODOS sus partidos: para analizar un país no puede faltar la Liga 2 ni la
+# Copa donde ese equipo juega. Lo ÚNICO que NO reciben es el ciclo EN VIVO: las
+# cuotas en juego (en_vivo.py) se siguen solo en las ligas importantes, como
+# hasta ahora (la cobertura live de la API en estas es pobre y no vale gastar
+# el ciclo minuto a minuto en ellas). Configurable por env sin tocar código:
+# SAD_LIGAS_MENORES="282,130" añade IDs; SAD_LIGAS_MENORES=" " (o "0") las trata
+# a todas como importantes.
+_MENORES_DEFAULT = {
+    282,  # Perú - Liga 2 (Segunda División)
+    130,  # Argentina - Copa Argentina
+    73,   # Brasil - Copa do Brasil
+    241,  # Colombia - Copa Colombia
+}
+_menores_env = os.environ.get("SAD_LIGAS_MENORES")
+if _menores_env is None:
+    LIGAS_MENORES = set(_MENORES_DEFAULT)
+else:  # override explícito: la lista del env manda (vaciar = ninguna menor)
+    LIGAS_MENORES = {int(x) for x in _menores_env.split(",") if x.strip().isdigit()}
+
+
+def ligas_vivo() -> set[int]:
+    """Ligas cuyas cuotas EN VIVO se siguen: las importantes = LIGAS − menores.
+    (Las menores se ingestan igual en fixtures/histórico/cuotas prepartido.)"""
+    return set(LIGAS) - LIGAS_MENORES
 
 
 def leer_clave() -> str:
