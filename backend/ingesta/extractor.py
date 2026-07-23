@@ -134,6 +134,19 @@ LIGAS = {
     242: "Ecuador - Liga Pro",
     243: "Ecuador - Liga Pro Serie B",    # 2ª división
     917: "Ecuador - Copa Ecuador",        # copa nacional
+    # Paraguay (la API parte la 1ª en Apertura/Clausura: hacen falta las dos)
+    250: "Paraguay - División Profesional (Apertura)",
+    252: "Paraguay - División Profesional (Clausura)",
+    251: "Paraguay - División Intermedia",  # 2ª división
+    501: "Paraguay - Copa Paraguay",        # copa nacional
+    # Bolivia
+    344: "Bolivia - Primera División",
+    964: "Bolivia - Copa de la División Profesional",  # torneo de 1ª
+    710: "Bolivia - Nacional B",          # 2ª división
+    # Venezuela
+    299: "Venezuela - Primera División",
+    300: "Venezuela - Segunda División",  # 2ª división
+    1113: "Venezuela - Copa Venezuela",   # copa nacional
     # Amistosos internacionales de clubes (pretemporada, giras)
     667: "Amistosos de Clubes",
     # México
@@ -224,6 +237,14 @@ _MENORES_DEFAULT = {
     # Ecuador
     243,  # Liga Pro Serie B
     917,  # Copa Ecuador
+    # Paraguay
+    251,  # División Intermedia
+    501,  # Copa Paraguay
+    # Bolivia
+    710,  # Nacional B
+    # Venezuela
+    300,  # Segunda División
+    1113, # Copa Venezuela
 }
 _menores_env = os.environ.get("SAD_LIGAS_MENORES")
 if _menores_env is None:
