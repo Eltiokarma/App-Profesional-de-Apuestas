@@ -94,8 +94,8 @@ export interface SadDataSource {
   plantilla(equipoId: number): Promise<PlantillaDTO>
   /** Ficha de partido: plantillas + congestión de ambos equipos (puente con los skills). */
   fichaPartido(fixtureId: number): Promise<FichaPartidoDTO>
-  liga(ligaId: number): Promise<LigaDTO>
-  standings(ligaId: number, temporada?: number): Promise<StandingRowDTO[]>
+  liga(ligaId: number, temporada?: number): Promise<LigaDTO>
+  standings(ligaId: number, temporada?: number, fase?: string): Promise<StandingRowDTO[]>
   /** Análisis EFE+DTP emitidos para un fixture ([] si no hay). */
   analisisPartido(fixtureId: number): Promise<AnalisisRegistroDTO[]>
   /** Lanza el análisis EFE (respuesta inmediata: listo/generando/error).
@@ -123,9 +123,9 @@ const LK_BY_NUM: Record<number, string> = Object.fromEntries(Object.entries(LIGA
 
 // metadatos demo de las ligas mock (mismo CDN que el backend real)
 const LIGA_META: Record<number, LigaDTO> = {
-  140: { id: 140, nombre: 'LaLiga', pais: 'Spain', logo: 'https://media.api-sports.io/football/leagues/140.png', bandera: 'https://media.api-sports.io/flags/es.svg', temporada: 2026, temporadas: [2026] },
-  39: { id: 39, nombre: 'Premier League', pais: 'England', logo: 'https://media.api-sports.io/football/leagues/39.png', bandera: 'https://media.api-sports.io/flags/gb-eng.svg', temporada: 2026, temporadas: [2026] },
-  135: { id: 135, nombre: 'Serie A', pais: 'Italy', logo: 'https://media.api-sports.io/football/leagues/135.png', bandera: 'https://media.api-sports.io/flags/it.svg', temporada: 2026, temporadas: [2026] },
+  140: { id: 140, nombre: 'LaLiga', pais: 'Spain', logo: 'https://media.api-sports.io/football/leagues/140.png', bandera: 'https://media.api-sports.io/flags/es.svg', temporada: 2026, temporadas: [2026], fases: [] },
+  39: { id: 39, nombre: 'Premier League', pais: 'England', logo: 'https://media.api-sports.io/football/leagues/39.png', bandera: 'https://media.api-sports.io/flags/gb-eng.svg', temporada: 2026, temporadas: [2026], fases: [] },
+  135: { id: 135, nombre: 'Serie A', pais: 'Italy', logo: 'https://media.api-sports.io/football/leagues/135.png', bandera: 'https://media.api-sports.io/flags/it.svg', temporada: 2026, temporadas: [2026], fases: [] },
 }
 
 // fecha sintética determinista para el historial del motor (t = jornada)
@@ -681,14 +681,15 @@ class MockDataSource implements SadDataSource {
     }
   }
 
-  async liga(ligaId: number): Promise<LigaDTO> {
+  async liga(ligaId: number, _temporada?: number): Promise<LigaDTO> {
     const meta = LIGA_META[ligaId]
     if (!meta) throw new Error(`liga ${ligaId} no existe`)
-    return meta
+    return meta // las ligas demo son europeas: sin Apertura/Clausura (fases: [])
   }
 
-  async standings(ligaId: number, temporada?: number): Promise<StandingRowDTO[]> {
+  async standings(ligaId: number, temporada?: number, _fase?: string): Promise<StandingRowDTO[]> {
     if (temporada != null && temporada !== 2026) return [] // la demo solo tiene la 2026
+    // las ligas demo no parten el año: `_fase` no aplica, siempre la tabla del año
     const lk = LK_BY_NUM[ligaId]
     const rows = (lk && STANDINGS[lk]) || []
     const keyByName = (name: string) => TEAM_KEYS.find((k) => TEAMS[k].name === name)
@@ -749,8 +750,8 @@ class HttpDataSource implements SadDataSource {
   equipoStats = (equipoId: number) => SadApi.equipoStats(equipoId)
   plantilla = (equipoId: number) => SadApi.plantilla(equipoId)
   fichaPartido = (fixtureId: number) => SadApi.fichaPartido(fixtureId)
-  liga = (ligaId: number) => SadApi.liga(ligaId)
-  standings = (ligaId: number, temporada?: number) => SadApi.standings(ligaId, temporada)
+  liga = (ligaId: number, temporada?: number) => SadApi.liga(ligaId, temporada)
+  standings = (ligaId: number, temporada?: number, fase?: string) => SadApi.standings(ligaId, temporada, fase)
 }
 
 let _ds: SadDataSource | null = null

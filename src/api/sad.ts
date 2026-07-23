@@ -102,9 +102,9 @@ export const SadApi = {
   /** Sondeo del trabajo de timeline. */
   estadoTimeline: (fixtureId: number) => apiGet<GeneracionEfeDTO>(`/analisis/timeline/estado/${fixtureId}`),
 
-  /** Metadatos de la liga (nombre, país, logo, bandera). */
-  liga: (ligaId: number) => apiGet<LigaDTO>(`/ligas/${ligaId}`),
+  /** Metadatos de la liga (nombre, país, logo, bandera, fases de la temporada). */
+  liga: (ligaId: number, temporada?: number) => apiGet<LigaDTO>(`/ligas/${ligaId}` + qs({ temporada })),
 
-  standings: (ligaId: number, temporada?: number) =>
-    apiGet<StandingRowDTO[]>(`/ligas/${ligaId}/standings` + qs({ temporada })),
+  standings: (ligaId: number, temporada?: number, fase?: string) =>
+    apiGet<StandingRowDTO[]>(`/ligas/${ligaId}/standings` + qs({ temporada, fase })),
 }

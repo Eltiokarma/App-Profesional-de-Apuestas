@@ -54,6 +54,9 @@ export interface LigaDTO {
   temporada: number | null
   /** Temporadas con fixtures capturados, descendente. */
   temporadas: number[]
+  /** Fases del torneo de la temporada (Apertura, Clausura, …), ordenadas por
+   *  fecha. `[]` si la liga no parte el año (la tabla general ya la cubre). */
+  fases: string[]
 }
 
 /** Fila de team_levels + discretización (§2 y §4.1 del motor). */

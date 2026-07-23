@@ -16,11 +16,14 @@ interface Props {
 
 /** Página de liga: identidad (bandera/logo), clasificación y partidos, con temporadas pasadas. */
 export function Liga({ store, ligaId, isMobile }: Props) {
-  // selección de temporada ligada a la liga: al cambiar de liga vuelve a la más reciente
-  const [sel, setSel] = useState<{ liga: number; temporada: number } | null>(null)
+  // selección de temporada+fase ligada a la liga: al cambiar de liga vuelve a la
+  // más reciente y a la tabla del año (fase: null)
+  const [sel, setSel] = useState<{ liga: number; temporada: number | null; fase: string | null } | null>(null)
   const [promptCopiado, setPromptCopiado] = useState<string | null>(null)
-  const temporada = sel && sel.liga === ligaId ? sel.temporada : null
-  const liga = useAsync(() => loadLiga(ligaId, temporada ?? undefined), `${ligaId}:${temporada ?? ''}`)
+  const activo = sel && sel.liga === ligaId ? sel : null
+  const temporada = activo?.temporada ?? null
+  const fase = activo?.fase ?? null
+  const liga = useAsync(() => loadLiga(ligaId, temporada ?? undefined, fase ?? undefined), `${ligaId}:${temporada ?? ''}:${fase ?? ''}`)
   const d = liga.data
 
   // la cabecera no debe parpadear al cambiar de temporada: conservar el último meta de esta liga
@@ -31,6 +34,7 @@ export function Liga({ store, ligaId, isMobile }: Props) {
   const nombre = meta?.nombre ?? `Liga ${ligaId}`
   const img = meta ? (meta.bandera ?? meta.logo) : null
   const temporadas = meta?.temporadas ?? []
+  const fases = meta?.fases ?? []
 
   const filaPartido = (m: Match) => {
     const H = TEAMS[m.home]
@@ -76,7 +80,7 @@ export function Liga({ store, ligaId, isMobile }: Props) {
             {temporadas.length > 1 ? (
               <select
                 value={temporada ?? temporadas[0]}
-                onChange={(e) => setSel({ liga: ligaId, temporada: Number(e.target.value) })}
+                onChange={(e) => setSel({ liga: ligaId, temporada: Number(e.target.value), fase: null })}
                 title="Ver otra temporada"
                 style={{ padding: '4px 8px', borderRadius: 7, border: '1px solid var(--line2)', background: 'var(--bg2)', color: 'var(--t1)', font: '600 11px var(--mono)', cursor: 'pointer' }}
               >
@@ -135,7 +139,28 @@ export function Liga({ store, ligaId, isMobile }: Props) {
                 </div>
               )}
             </div>
-            <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginBottom: 12 }}>Calculada con los fixtures finalizados capturados</div>
+            {/* FASES: Apertura / Clausura / … según lo nombre la región. Solo
+                aparecen cuando la liga parte el año (meta.fases no vacío). */}
+            {fases.length > 0 && (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '10px 0 4px' }}>
+                {[null, ...fases].map((f) => {
+                  const activa = fase === f
+                  return (
+                    <button
+                      key={f ?? '__año__'}
+                      onClick={() => setSel({ liga: ligaId, temporada, fase: f })}
+                      title={f ? `Tabla de la fase ${f}` : 'Tabla acumulada de todo el año'}
+                      style={{ padding: '5px 12px', borderRadius: 999, border: activa ? '1px solid var(--accent)' : '1px solid var(--line)', background: activa ? 'var(--accent-soft)' : 'var(--bg3)', color: activa ? 'var(--accent)' : 'var(--t2)', font: '700 10.5px var(--sans)', cursor: 'pointer', letterSpacing: '.2px' }}
+                    >
+                      {f ?? 'Año'}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+            <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginBottom: 12 }}>
+              {fase ? `Fase ${fase} · ` : fases.length > 0 ? 'Tabla del año · ' : ''}Calculada con los fixtures finalizados capturados
+            </div>
             {d.tabla.length > 0 ? (
               <div style={{ display: 'grid', gridTemplateColumns: '26px minmax(0,1fr) 34px 34px 34px 40px', gap: '0 6px', fontVariantNumeric: 'tabular-nums' }}>
                 {(['#', 'Equipo', 'PJ', 'GF', 'GC', 'Pts'] as const).map((h, i) => (

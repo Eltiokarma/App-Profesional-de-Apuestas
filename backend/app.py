@@ -10,6 +10,7 @@ Ejecutar junto a las DBs reales:
 """
 import json
 import os
+import re
 import secrets
 import sqlite3
 import subprocess
@@ -377,6 +378,46 @@ _FIN_SQL = f"({_SS} IN ({','.join('?' * len(FIN_SHORT))}) OR COALESCE(f.status_l
 _G90_H = "COALESCE(f.fulltime_home, f.goals_home)"
 _G90_A = "COALESCE(f.fulltime_away, f.goals_away)"
 _FIN90_SQL = "(f.status_short IN ('FT','AET','PEN') OR f.status_long='Match Finished')"
+
+# FASE del torneo (Apertura/Clausura/…): API-Football la trae en league_round
+# como "<Fase> - <jornada>" ("Apertura - 5", "Clausura - 12", "Regular Season -
+# 3"). Muchas ligas de la región parten el año en torneos cortos que arrancan de
+# cero; otras traen una sola fase. Quitamos la jornada final para quedarnos con
+# el nombre de la fase, tal cual lo nombre cada país — sin traducir ni inventar.
+_RE_FASE = re.compile(r"^(.*?)\s*[-–]\s*\d+\s*$")
+
+
+def _fase_de_round(ronda: str | None) -> str | None:
+    if not ronda:
+        return None
+    m = _RE_FASE.match(ronda)
+    return (m.group(1) if m else ronda).strip() or None
+
+
+def _fases_liga(liga_id: int, temporada: int | None) -> list[str]:
+    """Fases de una temporada, ordenadas por la fecha de su primer partido.
+    [] cuando hay una sola fase (la liga no parte el año): la tabla general
+    ya la cubre y no tiene sentido ofrecer un filtro con una única opción."""
+    if temporada is None:
+        return []
+    rows = db.query(
+        "sad",
+        "SELECT league_round AS r, MIN(date) AS d FROM fixtures "
+        "WHERE league_id=? AND league_season=? AND league_round IS NOT NULL "
+        "GROUP BY league_round",
+        (liga_id, temporada),
+    )
+    primero: dict[str, str] = {}
+    for row in rows:
+        fase = _fase_de_round(row["r"])
+        if fase is None:
+            continue
+        d = row["d"]
+        if fase not in primero or (d is not None and (primero[fase] is None or d < primero[fase])):
+            primero[fase] = d
+    if len(primero) <= 1:
+        return []
+    return sorted(primero, key=lambda f: (primero[f] is None, primero[f] or ""))
 
 
 def estado_sql(estado: str) -> tuple[str, list]:
@@ -1151,8 +1192,9 @@ def fixture_ficha(fixture_id: int):
 
 
 @app.get(API + "/ligas/{liga_id}")
-def liga(liga_id: int):
-    """Metadatos de la liga (nombre, país, logo, bandera, temporadas capturadas)."""
+def liga(liga_id: int, temporada: int | None = None):
+    """Metadatos de la liga (nombre, país, logo, bandera, temporadas capturadas
+    y fases del torneo —Apertura/Clausura/…— de la temporada pedida)."""
     meta = liga_meta(liga_id)
     if meta["pais"] is None and meta["logo"] is None and meta["nombre"] == f"Liga {liga_id}":
         raise HTTPException(404, f"liga {liga_id} no existe")
@@ -1161,19 +1203,23 @@ def liga(liga_id: int):
         "SELECT DISTINCT league_season AS s FROM fixtures WHERE league_id=? AND league_season IS NOT NULL ORDER BY s DESC",
         (liga_id,),
     )
-    return {"id": liga_id, **meta, "temporadas": [r["s"] for r in rows]}
+    temporadas = [r["s"] for r in rows]
+    temp = temporada if temporada is not None else (temporadas[0] if temporadas else None)
+    return {"id": liga_id, **meta, "temporadas": temporadas, "fases": _fases_liga(liga_id, temp)}
 
 
 @app.get(API + "/ligas/{liga_id}/standings")
-def standings(liga_id: int, temporada: int | None = None):
-    """Tabla de posiciones calculada de los fixtures terminados de la liga."""
+def standings(liga_id: int, temporada: int | None = None, fase: str | None = None):
+    """Tabla de posiciones calculada de los fixtures terminados de la liga.
+    Con `fase` (Apertura/Clausura/… según la región) solo cuentan los partidos
+    de esa fase —cada torneo corto arranca de cero—; sin ella, la tabla del año."""
     if temporada is None:
         row = db.query_one("sad", "SELECT MAX(league_season) AS s FROM fixtures WHERE league_id=?", (liga_id,))
         temporada = row["s"] if row and row["s"] is not None else 0
     rows = db.query(
         "sad",
         f"""SELECT f.home_team_id, f.away_team_id, {_G90_H} AS goals_home, {_G90_A} AS goals_away,
-                  ht.name AS home_name, at.name AS away_name
+                  f.league_round AS ronda, ht.name AS home_name, at.name AS away_name
            FROM fixtures f
            JOIN teams ht ON ht.id=f.home_team_id JOIN teams at ON at.id=f.away_team_id
            WHERE f.league_id=? AND f.league_season=? AND {_FIN90_SQL}
@@ -1191,20 +1237,24 @@ def standings(liga_id: int, temporada: int | None = None):
         e["puntos"] += 3 if gf > ga else 1 if gf == ga else 0
 
     for r in rows:
+        if fase is not None and _fase_de_round(r["ronda"]) != fase:
+            continue
         upsert(r["home_team_id"], r["home_name"], r["goals_home"], r["goals_away"])
         upsert(r["away_team_id"], r["away_name"], r["goals_away"], r["goals_home"])
-    # LIGA COMPLETA: los equipos de la temporada que aún no tienen partidos
-    # terminados (jornada 1 a medias, pospuestos) entran con ceros — sin esto
-    # la tabla salía coja y los prompts de despensa/timeline (que se arman con
-    # ella) barrían solo una parte de la liga
+    # LIGA COMPLETA: los equipos de la temporada (o de la fase) que aún no tienen
+    # partidos terminados (jornada 1 a medias, pospuestos) entran con ceros — sin
+    # esto la tabla salía coja y los prompts de despensa/timeline (que se arman
+    # con ella) barrían solo una parte de la liga
     todos = db.query(
         "sad",
-        """SELECT DISTINCT t.id AS tid, t.name AS nombre FROM fixtures f
+        """SELECT DISTINCT t.id AS tid, t.name AS nombre, f.league_round AS ronda FROM fixtures f
            JOIN teams t ON t.id IN (f.home_team_id, f.away_team_id)
            WHERE f.league_id=? AND f.league_season=?""",
         (liga_id, temporada),
     )
     for r in todos:
+        if fase is not None and _fase_de_round(r["ronda"]) != fase:
+            continue
         if r["tid"] not in acc:
             acc[r["tid"]] = {"equipoId": r["tid"], "nombre": r["nombre"], "puntos": 0,
                              "partidosJugados": 0, "golesFavor": 0, "golesContra": 0}
