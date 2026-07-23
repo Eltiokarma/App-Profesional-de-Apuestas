@@ -360,6 +360,37 @@ def main():
     check("standings: Real Madrid arriba de Sevilla", next(t["posicion"] for t in tb if "Madrid" in t["nombre"]) < next(t["posicion"] for t in tb if "Sevilla" in t["nombre"]))
     suma_pj = sum(t["partidosJugados"] for t in tb)
     check("standings: 216 participaciones (108 de liga × 2; 12 son UCL)", suma_pj == 216, suma_pj)
+    # FASES (Apertura/Clausura): liga europea sin torneo partido → sin fases
+    check("/ligas/140: sin fases (no parte el año)", lg["fases"] == [], lg.get("fases"))
+    # liga sintética partida (Apertura/Clausura, como Liga MX/Uruguay): las
+    # fases se derivan de league_round y cada torneo corto arranca de cero
+    import sqlite3 as _sqlf
+    with _sqlf.connect(os.path.join(tmp, "sad.db")) as _sf:
+        _sf.execute("INSERT INTO leagues (id, name, country, season) VALUES (7777, 'Liga Partida Demo', 'Mexico', 2025)")
+        _sf.executemany("INSERT INTO teams (id, name, country) VALUES (?,?, 'Mexico')", [(7001, "Águilas"), (7002, "Pumas")])
+        _sf.executemany(
+            """INSERT INTO fixtures (id, date, status_long, status_short, league_id, league_season,
+               league_round, home_team_id, away_team_id, goals_home, goals_away, fulltime_home, fulltime_away)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            [(970001, "2025-01-10", "Match Finished", "FT", 7777, 2025, "Apertura - 1", 7001, 7002, 3, 0, 3, 0),
+             (970002, "2025-06-10", "Match Finished", "FT", 7777, 2025, "Clausura - 1", 7002, 7001, 2, 1, 2, 1)],
+        )
+        _sf.commit()
+    lgp = c.get(A + "/ligas/7777").json()
+    check("/ligas/7777: fases ordenadas por fecha (Apertura antes que Clausura)",
+          lgp["fases"] == ["Apertura", "Clausura"], lgp.get("fases"))
+    gen = c.get(A + "/ligas/7777/standings").json()
+    check("standings general: tabla del año suma ambas fases (2 PJ por equipo)",
+          len(gen) == 2 and all(t["partidosJugados"] == 2 and t["puntos"] == 3 for t in gen), gen)
+    check("standings general: desempata por diferencia de gol (Águilas +2 sobre Pumas)",
+          gen[0]["nombre"] == "Águilas" and gen[0]["posicion"] == 1, [t["nombre"] for t in gen])
+    ap = c.get(A + "/ligas/7777/standings?fase=Apertura").json()
+    check("standings Apertura: solo su partido, arranca de cero (Águilas 3, Pumas 0)",
+          {t["nombre"]: (t["partidosJugados"], t["puntos"]) for t in ap} == {"Águilas": (1, 3), "Pumas": (1, 0)}, ap)
+    cl = c.get(A + "/ligas/7777/standings?fase=Clausura").json()
+    check("standings Clausura: torneo aparte (Pumas 3, Águilas 0)",
+          cl[0]["nombre"] == "Pumas" and cl[0]["puntos"] == 3 and cl[1]["puntos"] == 0, [t["nombre"] for t in cl])
+    check("standings fase inexistente → tabla vacía", c.get(A + "/ligas/7777/standings?fase=Repechaje").json() == [])
 
     # /cuotas — mapeo API-Football → contrato y media entre bookmakers
     q = c.get(A + f"/cuotas/{vivo['id']}").json()

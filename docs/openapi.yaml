@@ -197,6 +197,7 @@ paths:
       summary: Metadatos de una liga (nombre, país, logo, bandera)
       parameters:
         - { name: ligaId, in: path, required: true, schema: { type: integer } }
+        - { name: temporada, in: query, schema: { type: integer, description: 'para calcular las fases de esa temporada; default: la última' } }
       responses:
         '200':
           description: OK
@@ -207,9 +208,15 @@ paths:
   /ligas/{ligaId}/standings:
     get:
       summary: Tabla de posiciones calculada de los fixtures terminados
+      description: >
+        Sin `fase`, la tabla del año (todos los partidos de la temporada). Con
+        `fase` (Apertura/Clausura/… según lo nombre la región, tal cual viene en
+        `league_round`), solo los partidos de esa fase: cada torneo corto arranca
+        de cero. Las fases disponibles vienen en `Liga.fases`.
       parameters:
         - { name: ligaId, in: path, required: true, schema: { type: integer } }
         - { name: temporada, in: query, schema: { type: integer, description: 'default: última temporada' } }
+        - { name: fase, in: query, schema: { type: string, description: 'nombre de la fase (Apertura, Clausura, …); default: tabla del año' } }
       responses:
         '200':
           description: OK
@@ -448,6 +455,7 @@ components:
         bandera: { type: string, nullable: true }
         temporada: { type: integer, nullable: true, description: 'última temporada conocida' }
         temporadas: { type: array, items: { type: integer }, description: 'temporadas con fixtures capturados, descendente' }
+        fases: { type: array, items: { type: string }, description: 'fases del torneo de la temporada (Apertura, Clausura, …), ordenadas por fecha; [] si la liga no parte la temporada' }
     Nivel:
       type: object
       required: [equipoId, fixtureId, fecha, nivel, bin, binEtiqueta]

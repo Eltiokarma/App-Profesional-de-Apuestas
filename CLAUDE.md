@@ -67,7 +67,9 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
 ## Estado actual
 
 Hecho: 4 secciones + Partidos (pantalla inicial) + páginas de Equipo y de Liga
-(con temporadas pasadas) + buscador inteligente; H2H real en Estadísticas;
+(con temporadas pasadas y tabla por fase —Apertura/Clausura/… derivada de
+`league_round`, cada torneo corto arranca de cero, más la tabla del año) +
+buscador inteligente; H2H real en Estadísticas;
 burbujas = gráfica de líneas de picos K con distinción de torneos
 internacionales; gap §5 en Estadísticas con μ v2 recalibrada contra datos
 reales (backtest muestreado, ver MOTOR_SAD_EXTRACCION.md §5); backend
