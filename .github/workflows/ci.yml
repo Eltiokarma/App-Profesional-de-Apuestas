@@ -35,3 +35,5 @@ jobs:
         run: python -m backend.test_api
       - name: Tests del acumulador k_cuota
         run: python -m backend.test_cuota
+      - name: Tests del ciclo en vivo (cuotas en juego por liga)
+        run: python -m backend.test_en_vivo

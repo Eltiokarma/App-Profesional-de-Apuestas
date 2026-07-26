@@ -455,14 +455,21 @@ class Cliente:
                 self.usadas_respaldo = max(diario - restantes, 0)
             self._guardar_cuota()
 
-    def paginado(self, endpoint: str, params: dict) -> list:
-        """Concatena todas las páginas de una consulta (cada página = 1 request)."""
+    def paginado(self, endpoint: str, params: dict, tope_paginas: int = 0) -> list:
+        """Concatena todas las páginas de una consulta (cada página = 1 request).
+
+        `tope_paginas` > 0 corta ahí y avisa por consola: los ciclos que corren
+        cada minuto (en vivo) no pueden quedar a merced de un feed enorme.
+        """
         data = self.get(endpoint, params)
         if not data:
             return []
         filas = list(data.get("response", []))
-        total = data.get("paging", {}).get("total", 1)
-        for pagina in range(2, total + 1):
+        total = data.get("paging", {}).get("total", 1) or 1
+        ultima = min(total, tope_paginas) if tope_paginas > 0 else total
+        if ultima < total:
+            print(f"  {endpoint}: {total} páginas, se leen {ultima} (tope) — el resto queda sin bajar")
+        for pagina in range(2, ultima + 1):
             data = self.get(endpoint, {**params, "page": pagina})
             if not data:
                 break

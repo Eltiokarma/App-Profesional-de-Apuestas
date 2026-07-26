@@ -34,6 +34,8 @@ en subproceso. El backend HTTP sigue siendo de solo lectura.
    | `SAD_INGESTA_HORA` | `06:30,12:30,18:30` | horas de corrida (UTC, lista = varios snapshots de cuotas/día); vacía = sin ingesta |
    | `SAD_REFRESCO_MIN` | `30` | fase 2: cada N min refresca cuotas de NS que empiezan en <6 h (0 requests si no hay); vacía = apagado |
    | `SAD_LIVE_SEGUNDOS` | `60` | fase 3: ciclo en vivo (marcador/minuto + odds live) mientras haya partidos en juego; vacía = apagado |
+   | `SAD_LIVE_ODDS_LIGAS` | `6` | (opcional) ligas por ciclo en vivo a las que se les piden cuotas (`/odds/live?league=`, 1 request cubre todos sus partidos simultáneos). Ese es el default; `0` = sin tope. Las que no entran no se pierden: el orden es por captura más vieja primero, así que rotan y entran en el ciclo siguiente |
+   | `SAD_LIVE_ODDS_PAGINAS` | `3` | (opcional) tope de páginas por liga en `/odds/live` (~10 fixtures por página). Ese es el default; sube solo si una liga tiene más de 30 partidos a la vez |
    | `SAD_LIGAS_EXTRA` | `414:Copa Chile,999:Copa de la Liga Perú` | torneos extra sin tocar código; IDs con `--buscar` |
    | `SAD_CASAS_REFERENCIA` | `bet365,pinnacle,1xbet,betano` | casas cuyo historial crudo se guarda aparte (selector Media/casa en la gráfica); ese es el default — solo definirla para cambiar la lista |
    | `SAD_BACKFILL_DESDE` | `2020` | backfill: fixtures de TODAS las ligas de la lista desde esa temporada **hasta la vigente incluida** (la vigente se re-barre cada 30 días; lo demás una sola vez). Corre al arrancar y tras cada corrida diaria, con progreso reanudable en el volumen (`.backfill_hist.json`); al día = 0 requests, puede quedarse puesta |

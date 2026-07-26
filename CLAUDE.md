@@ -16,6 +16,7 @@ npm run test:motor                # motor TS verificado contra docs/MOTOR_SAD_EX
 pip install -r backend/requirements.txt
 python -m uvicorn backend.app:app --port 8000
 python -m backend.test_api        # verificaciones del contrato (169 checks)
+python -m backend.test_en_vivo    # ciclo en vivo: cuotas en juego por liga (sin red)
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
 python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--horizonte/--calibrar/--por-liga)
 
