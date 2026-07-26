@@ -73,6 +73,31 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   liga. Topes: `SAD_LIVE_ODDS_LIGAS` (6 ligas/ciclo, rotando por captura más
   vieja primero: ninguna se queda sin curva) y `SAD_LIVE_ODDS_PAGINAS` (3).
   Test offline: `python -m backend.test_en_vivo`.
+- **Las otras tres puertas** que dejaban partidos sin curva (26/07/2026, UTC
+  Cajamarca–UCV Moquegua):
+  1. **`TBD` no era candidato.** La ventana solo aceptaba `NS`, pero en esta DB
+     `TBD` es un estado real y frecuente (toda la maquinaria de zombis de
+     `diagnostico.py` va sobre NS/TBD). Un partido con hora por confirmar
+     jamás entraba al ciclo. Ahora entran `NS` y `TBD`.
+  2. **Solo se miraba hacia atrás.** La ventana era `[saque−0, saque+3h30]`:
+     si la API adelanta el saque o nuestra hora va unos minutos tarde, el
+     partido ya se juega mientras su `date` sigue en el futuro y el ciclo
+     salía con "sin partidos en ventana · 0 requests" sin preguntar nada.
+     Ahora arranca 15 min antes (`VENTANA_PREVIA_MIN`).
+  3. **`live=<37 ligas>`.** El parámetro hermano `ids` está documentado con
+     tope de 20 y de `live` no hay tope publicado; si recortara, se caerían
+     justo las ligas de id alto — Perú (281), Venezuela (299), Bolivia (344).
+     Pasado `TOPE_LIGAS_LIVE` (20) se pide `live=all` y filtramos nosotros:
+     mismo coste, cero dependencia de lo que haga el filtro del servidor.
+  Y lo más importante: **las cuotas ya no dependen de ese feed**. El universo
+  de ligas a pedir sale del feed live **más** nuestros candidatos locales, así
+  que un partido que el feed se deje igual recibe su `/odds/live?league=`.
+- **`python -m backend.ingesta.diag_vivo --fixture N [--api]`**: dice cuál de
+  las puertas se cerró para un partido concreto — liga fuera de lista o marcada
+  menor, ventana, si el ciclo corrió esa franja, filas en `odds_live`, si
+  `cuota_key` las mapea (hay datos pero la ficha se ve vacía), prepartido y
+  presupuesto del día. Con `--api` (2 requests) responde lo único que no está
+  en la DB: si la API ofrece odds live de esa liga.
 - **`SAD_LIVE_SEGUNDOS=60`** (env, vacía = apagado, piso 30): hilo en
   `backend/app.py` que corre el ciclo.
 - **Backend**: `GET /fixtures/{id}/live` → estado/minuto/marcador reales +

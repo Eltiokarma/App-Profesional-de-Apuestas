@@ -8,13 +8,17 @@ cualquier liga del mundo, así que hay que pedirlo POR LIGA.
 """
 import sqlite3
 import sys
+from datetime import datetime, timedelta, timezone
 
 from backend.ingesta.en_vivo import (
     DDL_ODDS_LIVE,
+    TOPE_LIGAS_LIVE,
+    candidatos_por_liga,
     capturar_odds_live,
     ligas_de_vivos,
     orden_por_antiguedad,
 )
+from backend.ingesta.extractor import ligas_vivo
 
 fallos = 0
 
@@ -85,10 +89,23 @@ class ClienteFalso:
         return filas
 
 
-def db() -> sqlite3.Connection:
+DDL_FIXTURES = """
+CREATE TABLE fixtures (id INTEGER PRIMARY KEY, date TEXT, status_short TEXT,
+                       league_id INTEGER, goals_home INTEGER, goals_away INTEGER);
+"""
+
+
+def db(con_fixtures: bool = False) -> sqlite3.Connection:
     con = sqlite3.connect(":memory:")
     con.executescript(DDL_ODDS_LIVE)
+    if con_fixtures:
+        con.executescript(DDL_FIXTURES)
     return con
+
+
+def hace(minutos: int) -> str:
+    """Fecha en el formato de sad.db, `minutos` antes de ahora (negativo = futuro)."""
+    return (datetime.now(timezone.utc) - timedelta(minutes=minutos)).strftime("%Y-%m-%d %H:%M:%S.%f")
 
 
 def main():
@@ -114,7 +131,7 @@ def main():
 
     con = db()
     cliente = ClienteFalso(feed)
-    n, con_feed = capturar_odds_live(cliente, con, vivos, ids_vivos, "2026-07-26 20:43:00.000")
+    n, con_feed = capturar_odds_live(cliente, con, por_liga, ids_vivos, "2026-07-26 20:43:00.000")
     check("pide /odds/live filtrado por liga (nunca el feed global)",
           all(p[0] == "odds/live" and p[1] in (PERU, PREMIER) for p in cliente.pedidos), cliente.pedidos)
     check("una request por liga, no por partido", len(cliente.pedidos) == 2, cliente.pedidos)
@@ -130,9 +147,20 @@ def main():
     # la liga sin cobertura real de la API no rompe a las demás
     con = db()
     cliente = ClienteFalso({PERU: feed[PERU], PREMIER: []})
-    n, con_feed = capturar_odds_live(cliente, con, vivos, ids_vivos, "2026-07-26 20:44:00.000")
+    n, con_feed = capturar_odds_live(cliente, con, por_liga, ids_vivos, "2026-07-26 20:44:00.000")
     check("sin cobertura en una liga, las otras igual capturan",
           con_feed == {MELGAR_CRISTAL, OTRO_PERU}, con_feed)
+
+    # EL CASO GRUESO: /fixtures?live= no devolvió el partido peruano (recorte
+    # del filtro, hipo de la API…). Las cuotas se piden igual porque la liga
+    # entra por nuestros candidatos locales, no solo por ese feed.
+    con = db()
+    cliente = ClienteFalso(feed)
+    solo_premier = ligas_de_vivos([{"fixture": {"id": OTRO_PAIS}, "league": {"id": PREMIER}}])
+    union = {**solo_premier, PERU: {MELGAR_CRISTAL, OTRO_PERU}}  # como lo arma main()
+    n, con_feed = capturar_odds_live(cliente, con, union, ids_vivos, "2026-07-26 20:46:00.000")
+    check("si el feed de fixtures se deja una liga, sus cuotas se piden igual",
+          MELGAR_CRISTAL in con_feed, con_feed)
 
     # rotación: con tope de ligas por ciclo va primero la de captura más vieja
     con = db()
@@ -156,9 +184,39 @@ def main():
     # presupuesto agotado a media lista: no se cae, deja el resto al próximo ciclo
     con = db()
     cliente = ClienteFalso(feed, presupuesto=1)
-    n, con_feed = capturar_odds_live(cliente, con, vivos, ids_vivos, "2026-07-26 20:45:00.000")
+    n, con_feed = capturar_odds_live(cliente, con, por_liga, ids_vivos, "2026-07-26 20:45:00.000")
     check("con presupuesto justo captura lo que puede y no revienta",
           0 < len(con_feed) < 3 and cliente.usadas == 1, (con_feed, cliente.usadas))
+
+    # --- ventana de candidatos: quién entra al ciclo (0 requests) ------------
+    con = db(con_fixtures=True)
+    filas = [
+        (1, hace(30), "NS", PERU),        # arrancó hace 30': aún sin voltear el estado
+        (2, hace(30), "TBD", PERU),       # hora por confirmar y ya se juega
+        (3, hace(-10), "NS", PERU),       # arranca en 10': saque adelantado / hora desfasada
+        (4, hace(-90), "NS", PERU),       # arranca en hora y media: todavía no
+        (5, hace(400), "NS", PERU),       # zombi viejo, fuera de la ventana
+        (6, hace(50), "1H", PREMIER),     # marcado en juego
+        (7, hace(20), "NS", 282),         # liga menor: fuera del ciclo en vivo
+        (8, hace(200), "FT", PERU),       # terminado
+    ]
+    con.executemany("INSERT INTO fixtures (id, date, status_short, league_id) VALUES (?,?,?,?)", filas)
+    con.commit()
+    cand = candidatos_por_liga(con, {PERU, PREMIER})
+    ids = {fid for fids in cand.values() for fid in fids}
+    check("NS recién arrancado entra", 1 in ids, ids)
+    check("TBD en juego entra (antes quedaba fuera del ciclo)", 2 in ids, ids)
+    check("NS que arranca en minutos entra (margen previo)", 3 in ids, ids)
+    check("NS lejano NO entra", 4 not in ids, ids)
+    check("zombi fuera de la ventana NO entra", 5 not in ids, ids)
+    check("estado en juego entra siempre", 6 in ids, ids)
+    check("liga menor NO entra al ciclo en vivo", 7 not in ids, ids)
+    check("terminado NO entra", 8 not in ids, ids)
+    check("agrupa candidatos por liga", cand[PREMIER] == {6}, cand)
+
+    # /fixtures?live=: con la lista real de ligas hay que ir por live=all
+    check("con 37 ligas nuestras se pide live=all (el filtro por ids no da)",
+          len(ligas_vivo()) > TOPE_LIGAS_LIVE, len(ligas_vivo()))
 
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
