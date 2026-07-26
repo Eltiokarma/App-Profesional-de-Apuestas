@@ -16,6 +16,7 @@ npm run test:motor                # motor TS verificado contra docs/MOTOR_SAD_EX
 pip install -r backend/requirements.txt
 python -m uvicorn backend.app:app --port 8000
 python -m backend.test_api        # verificaciones del contrato (169 checks)
+python -m backend.test_en_vivo    # ciclo en vivo: cuotas en juego por liga (sin red)
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
 python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--horizonte/--calibrar/--por-liga)
 
@@ -27,6 +28,7 @@ python -m backend.ingesta.diagnostico --dia 2026-05-31 --api  # auditar huecos (
 python -m backend.ingesta.extractor --ventana-horas 6  # refresco ligero: solo cuotas de NS próximos
 python -m backend.ingesta.jugadores             # plantillas/bajas/traspasos/DT de equipos con NS próximos (docs/JUGADORES.md)
 python -m backend.ingesta.en_vivo               # 1 ciclo en vivo: marcador/minuto + odds_live (WAL)
+python -m backend.ingesta.diag_vivo --hoy       # por qué un partido no tiene cuotas en juego (--fixture N, --api)
 python -m backend.ingesta.pipeline --out .      # regenera levels/constants/discreto desde sad.db
 python -m backend.ingesta.test_paridad          # test dorado vs DBs del pipeline viejo
 ```

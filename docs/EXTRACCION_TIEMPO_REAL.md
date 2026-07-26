@@ -58,9 +58,46 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
 - **`backend/ingesta/en_vivo.py`** (un ciclo por invocación): busca fixtures
   nuestros en ventana de juego en sad.db (0 requests si no hay);
   `GET /fixtures?live=<ids de LIGAS>` actualiza marcador/minuto/estado
-  (via guardar_fixtures); `GET /odds/live` → tabla `odds_live` (con
-  `suspendida` y `minuto`), retención 7 días. Activa WAL en sad.db
+  (via guardar_fixtures); `GET /odds/live?league=<id>` **por cada liga con
+  partido nuestro en juego** → tabla `odds_live` (con `suspendida` y
+  `minuto`), retención 30 días. Activa WAL en sad.db
   (requisito: escrituras por minuto conviviendo con lecturas).
+- **Por qué por liga y no el feed global** (bug 26/07/2026, Melgar–Cristal en
+  Perú - Primera División sin cuotas en juego pese a ser liga importante):
+  `/odds/live` viene **paginado a ~10 fixtures por página**, igual que el
+  `/odds` prepartido. Pedirlo sin filtro traía solo la página 1 — los 10
+  primeros partidos vivos DEL MUNDO — así que nuestras ligas casi nunca
+  aparecían y la UI mostraba "sin cobertura de cuotas en vivo en esta liga",
+  que era mentira: nunca se preguntó por ellas. Con `?league=` el feed llega
+  completo y una sola request cubre todos los partidos simultáneos de esa
+  liga. Topes: `SAD_LIVE_ODDS_LIGAS` (6 ligas/ciclo, rotando por captura más
+  vieja primero: ninguna se queda sin curva) y `SAD_LIVE_ODDS_PAGINAS` (3).
+  Test offline: `python -m backend.test_en_vivo`.
+- **Las otras tres puertas** que dejaban partidos sin curva (26/07/2026, UTC
+  Cajamarca–UCV Moquegua):
+  1. **`TBD` no era candidato.** La ventana solo aceptaba `NS`, pero en esta DB
+     `TBD` es un estado real y frecuente (toda la maquinaria de zombis de
+     `diagnostico.py` va sobre NS/TBD). Un partido con hora por confirmar
+     jamás entraba al ciclo. Ahora entran `NS` y `TBD`.
+  2. **Solo se miraba hacia atrás.** La ventana era `[saque−0, saque+3h30]`:
+     si la API adelanta el saque o nuestra hora va unos minutos tarde, el
+     partido ya se juega mientras su `date` sigue en el futuro y el ciclo
+     salía con "sin partidos en ventana · 0 requests" sin preguntar nada.
+     Ahora arranca 15 min antes (`VENTANA_PREVIA_MIN`).
+  3. **`live=<37 ligas>`.** El parámetro hermano `ids` está documentado con
+     tope de 20 y de `live` no hay tope publicado; si recortara, se caerían
+     justo las ligas de id alto — Perú (281), Venezuela (299), Bolivia (344).
+     Pasado `TOPE_LIGAS_LIVE` (20) se pide `live=all` y filtramos nosotros:
+     mismo coste, cero dependencia de lo que haga el filtro del servidor.
+  Y lo más importante: **las cuotas ya no dependen de ese feed**. El universo
+  de ligas a pedir sale del feed live **más** nuestros candidatos locales, así
+  que un partido que el feed se deje igual recibe su `/odds/live?league=`.
+- **`python -m backend.ingesta.diag_vivo --fixture N [--api]`**: dice cuál de
+  las puertas se cerró para un partido concreto — liga fuera de lista o marcada
+  menor, ventana, si el ciclo corrió esa franja, filas en `odds_live`, si
+  `cuota_key` las mapea (hay datos pero la ficha se ve vacía), prepartido y
+  presupuesto del día. Con `--api` (2 requests) responde lo único que no está
+  en la DB: si la API ofrece odds live de esa liga.
 - **`SAD_LIVE_SEGUNDOS=60`** (env, vacía = apagado, piso 30): hilo en
   `backend/app.py` que corre el ciclo.
 - **Backend**: `GET /fixtures/{id}/live` → estado/minuto/marcador reales +
@@ -78,8 +115,11 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   el catálogo de bets de /odds/live puede necesitar más aliases en
   `cuota_key` según lo que llegue el primer día real de partidos (hoy
   mapea "Fulltime Result"/1X2 y los mercados clásicos).
-- **Presupuesto**: 2 req/min × ~6 h de ventana con partidos ≈ **700/día**.
-  Total fases 1+2+3 ≈ 1.300/día — holgado incluso en Pro.
+- **Presupuesto**: 1 req/min de marcador + 1 por liga con partido vivo (tope 6)
+  × ~6 h de ventana con partidos. En la práctica 2-4 ligas nuestras coinciden
+  en juego → ≈ **1.100-1.800/día** en los días cargados. Total fases 1+2+3
+  ≈ 2.500/día en el peor día — cabe en Pro (7.500) con la reserva de backfill
+  intacta. Si aprieta: bajar `SAD_LIVE_ODDS_LIGAS` o subir `SAD_LIVE_SEGUNDOS`.
 
 ## Fase 4 · Solo si hace falta
 
@@ -88,8 +128,11 @@ Postgres gestionado (`docs/SERVICIOS_EXTERNOS.md`) si el volumen de
 
 ## Decisiones abiertas
 
-1. Cobertura real de `/odds/live` por liga (verificar con `--probar` extendido
-   o 1 request manual cuando haya partidos vivos de nuestras ligas).
+1. Cobertura real de `/odds/live` por liga: ya no se confunde con el bug de
+   paginación (ver fase 3), pero sigue pendiente medir en qué ligas la API
+   de verdad no ofrece odds live. Los logs del ciclo lo dicen liga por liga
+   ("ligas sin odds en el feed live"); si alguna sale vacía siempre, vale la
+   pena dejar de preguntarle y ahorrarse la request.
 2. Retención de `odds_live` y de snapshots viejos de `odds_history`.
 3. Si el poll en vivo vive en el mismo servicio Railway (hilo como el
    scheduler actual) o en un worker separado — empezar en el mismo, separar
