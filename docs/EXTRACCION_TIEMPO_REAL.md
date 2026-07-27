@@ -70,9 +70,20 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   aparecían y la UI mostraba "sin cobertura de cuotas en vivo en esta liga",
   que era mentira: nunca se preguntó por ellas. Con `?league=` el feed llega
   completo y una sola request cubre todos los partidos simultáneos de esa
-  liga. Topes: `SAD_LIVE_ODDS_LIGAS` (6 ligas/ciclo, rotando por captura más
-  vieja primero: ninguna se queda sin curva) y `SAD_LIVE_ODDS_PAGINAS` (3).
+  liga. Topes: `SAD_LIVE_ODDS_LIGAS` (6 ligas/ciclo, rotando por CONSULTA más
+  vieja primero: ninguna se queda sin turno) y `SAD_LIVE_ODDS_PAGINAS` (3).
   Test offline: `python -m backend.test_en_vivo`.
+- **Por qué la rotación va por consulta y no por captura** (bug 27/07/2026,
+  Guayaquil City–U. Católica en Ecuador - Liga Pro sin cuotas en juego): el
+  orden era por la última captura en `odds_live`, y una liga donde la API no
+  devuelve odds live nunca captura nada — quedaba pegada al frente de la cola
+  para siempre y, con el tope de 6 ligas/ciclo, varias así acaparaban todos
+  los cupos: a las ligas CON cobertura ni se les preguntaba y la UI volvía a
+  decir "sin cobertura de cuotas en vivo en esta liga" siendo mentira. Ahora
+  cada consulta (traiga datos o no) se registra en `odds_live_consultas` y la
+  cola rota por esa marca: la liga vacía también gasta su turno.
+  `diag_vivo` la lee para distinguir "nunca le tocó turno" de "se preguntó y
+  la API no dio nada".
 - **Las otras tres puertas** que dejaban partidos sin curva (26/07/2026, UTC
   Cajamarca–UCV Moquegua):
   1. **`TBD` no era candidato.** La ventana solo aceptaba `NS`, pero en esta DB
@@ -129,10 +140,12 @@ Postgres gestionado (`docs/SERVICIOS_EXTERNOS.md`) si el volumen de
 ## Decisiones abiertas
 
 1. Cobertura real de `/odds/live` por liga: ya no se confunde con el bug de
-   paginación (ver fase 3), pero sigue pendiente medir en qué ligas la API
-   de verdad no ofrece odds live. Los logs del ciclo lo dicen liga por liga
-   ("ligas sin odds en el feed live"); si alguna sale vacía siempre, vale la
-   pena dejar de preguntarle y ahorrarse la request.
+   paginación ni con el de rotación (ver fase 3), pero sigue pendiente medir
+   en qué ligas la API de verdad no ofrece odds live. Los logs del ciclo lo
+   dicen liga por liga ("ligas sin odds en el feed live") y
+   `odds_live_consultas.con_datos` guarda el resultado de la última consulta;
+   si alguna sale vacía siempre, vale la pena dejar de preguntarle y
+   ahorrarse la request.
 2. Retención de `odds_live` y de snapshots viejos de `odds_history`.
 3. Si el poll en vivo vive en el mismo servicio Railway (hilo como el
    scheduler actual) o en un worker separado — empezar en el mismo, separar
