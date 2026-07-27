@@ -1,4 +1,74 @@
-# Despensa desde el Claude de escritorio — barrido de ligas gratis
+# Despensa — la investigación que evita pagar búsquedas web en cada EFE
+
+> **Dos caminos para llenarla.** El de abajo (escritorio, copiar-pegar) sigue
+> valiendo para un apuro. El recomendado hoy es el **barrido en bloque
+> versionado en el repo**, que se carga solo en cada deploy:
+> [ver más abajo](#barrido-en-bloque-desde-el-repo-quincenal).
+
+## Barrido EN BLOQUE desde el repo (quincenal)
+
+La investigación vive como archivo en `backend/analisis/despensa/<liga>.json`,
+se revisa en un PR y el backend la deposita en `efe.db` **al arrancar**: sin
+tokens, sin red y sin que nadie tenga que acordarse de pegar nada.
+
+```bash
+python -m backend.analisis.despensa_bulk --listar   # qué hay y qué edad tiene
+python -m backend.analisis.despensa_bulk            # cargar (idempotente)
+python -m backend.analisis.despensa_bulk --liga peru-primera --forzar
+```
+
+Formato del archivo:
+
+```json
+{
+  "liga": "Perú - Primera División (Liga 1 2026)",
+  "investigado_en": "2026-07-27",
+  "fuentes": ["https://…"],
+  "equipos": [
+    { "equipo": "Universitario de Deportes",
+      "alias": ["Universitario"],
+      "datos": { "dt": "…", "plantel": "…", "bajas": "" } }
+  ]
+}
+```
+
+Tres reglas que hacen que esto no mienta:
+
+1. **`capturado_en` es `investigado_en`**, no la hora del deploy. Un bloque de
+   hace un mes entra vencido y el EFE lo cuenta como faltante. Sellarlo con la
+   fecha de carga sería fabricar frescura: el análisis creería tener datos de
+   hoy sobre un plantel de hace un mes.
+2. **Nunca pisa un dato más nuevo.** La carga manual de la víspera (bajas
+   frescas) sobrevive a un redeploy que reinyecta el bloque quincenal.
+3. **Campo vacío = la web no lo dijo.** No se rellena por intuición: se deja
+   `""` y el EFE lo busca. Un DT inventado sale mucho más caro que una búsqueda.
+
+`alias` existe porque los medios y la app (API-Football) no siempre llaman
+igual al club ("Deportivo Moquegua" vs "UCV Moquegua"). Si ningún alias casa,
+el log del arranque lo canta: `⚠ NO existen en la app (nadie leerá su
+despensa)`. Ese aviso hay que atenderlo — el dato estaría depositado en una
+clave que nadie consulta.
+
+### El ciclo de 15 días
+
+1. Pedirle a Claude Code el refresco del barrido (investiga en la web y
+   reescribe los `<liga>.json` con la fecha del día).
+2. Revisar el PR: se lee como texto, se ve qué cambió por club.
+3. Merge → Railway redespliega → el log muestra `[despensa-bulk] …: N datos de
+   M equipos`.
+
+**Ojo con `bajas`:** su TTL son 48 h, así que un barrido quincenal NO lo
+mantiene fresco (y no debe: una lesión de hace dos semanas es ruido). Las
+lesiones confirmadas salen de la capa de jugadores (API-Football) y las dudas
+de prensa, del barrido ligero de la víspera. Lo que el bloque quincenal cubre
+de verdad es `dt` y `plantel`, que son justo los dos campos que solo da la web.
+
+Si el refresco es cada 15 días y el TTL son 14, hay un día en que todo EFE sale
+caro: `SAD_DESPENSA_TTL_DIAS=16` alinea el TTL con la cadencia real.
+
+---
+
+## Desde el Claude de escritorio (copiar-pegar)
 
 El costo del EFE por API está dominado por el análisis EN FRÍO: investigar en
 la web plantel, DT, bajas y contexto (~$0.50-0.80 por partido). Ese lote se

@@ -1,0 +1,157 @@
+{
+  "liga": "Venezuela - Primera División 2026",
+  "investigado_en": "2026-07-27",
+  "nota": "Barrido quincenal. Campo vacío = la web no lo dijo con fuente fiable; el EFE lo buscará. NADA se rellena por intuición. `alias`: nombres alternativos por si la app (API-Football) llama distinto al club.",
+  "fuentes": [
+    "https://es.wikipedia.org/wiki/Primera_Divisi%C3%B3n_de_Venezuela_2026"
+  ],
+  "equipos": [
+    {
+      "equipo": "Academia Puerto Cabello",
+      "datos": {
+        "dt": "Eduardo Saragó. DT según la ficha de la temporada al 27/07/2026; la temporada tuvo varios cambios de banquillo entre Apertura y Clausura.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Anzoátegui",
+      "datos": {
+        "dt": "Giancarlo Maldonado. DT según la ficha de la temporada al 27/07/2026; la temporada tuvo varios cambios de banquillo entre Apertura y Clausura.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Anzoategui",
+        "Deportivo Anzoategui"
+      ]
+    },
+    {
+      "equipo": "Carabobo",
+      "datos": {
+        "dt": "Daniel Farías. DT según la ficha de la temporada al 27/07/2026; la temporada tuvo varios cambios de banquillo entre Apertura y Clausura.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Carabobo FC"
+      ]
+    },
+    {
+      "equipo": "Caracas",
+      "datos": {
+        "dt": "Henry Meléndez. DT según la ficha de la temporada al 27/07/2026; la temporada tuvo varios cambios de banquillo entre Apertura y Clausura.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Caracas FC"
+      ]
+    },
+    {
+      "equipo": "Deportivo La Guaira",
+      "datos": {
+        "dt": "Héctor Bidoglio (argentino). DT según la ficha de la temporada al 27/07/2026; la temporada tuvo varios cambios de banquillo entre Apertura y Clausura.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Deportivo Táchira",
+      "datos": {
+        "dt": "Álvaro Recoba (uruguayo). DT según la ficha de la temporada al 27/07/2026; la temporada tuvo varios cambios de banquillo entre Apertura y Clausura.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Deportivo Tachira"
+      ]
+    },
+    {
+      "equipo": "Estudiantes de Mérida",
+      "datos": {
+        "dt": "Jesús Gómez. DT según la ficha de la temporada al 27/07/2026; la temporada tuvo varios cambios de banquillo entre Apertura y Clausura.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Estudiantes de Merida"
+      ]
+    },
+    {
+      "equipo": "Metropolitanos",
+      "datos": {
+        "dt": "Francesco Stifano (italiano). DT según la ficha de la temporada al 27/07/2026; la temporada tuvo varios cambios de banquillo entre Apertura y Clausura.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Metropolitanos FC"
+      ]
+    },
+    {
+      "equipo": "Monagas",
+      "datos": {
+        "dt": "Jesús Ortiz. DT según la ficha de la temporada al 27/07/2026; la temporada tuvo varios cambios de banquillo entre Apertura y Clausura.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Monagas SC"
+      ]
+    },
+    {
+      "equipo": "Portuguesa",
+      "datos": {
+        "dt": "Leo González. DT según la ficha de la temporada al 27/07/2026; la temporada tuvo varios cambios de banquillo entre Apertura y Clausura.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Portuguesa FC"
+      ]
+    },
+    {
+      "equipo": "Rayo Zuliano",
+      "datos": {
+        "dt": "Johanny García. DT según la ficha de la temporada al 27/07/2026; la temporada tuvo varios cambios de banquillo entre Apertura y Clausura.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Trujillanos",
+      "datos": {
+        "dt": "Pedro Vera. DT según la ficha de la temporada al 27/07/2026; la temporada tuvo varios cambios de banquillo entre Apertura y Clausura.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Trujillanos FC"
+      ]
+    },
+    {
+      "equipo": "Universidad Central",
+      "datos": {
+        "dt": "Daniel Sasso. DT según la ficha de la temporada al 27/07/2026; la temporada tuvo varios cambios de banquillo entre Apertura y Clausura.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "UCV FC",
+        "Universidad Central de Venezuela"
+      ]
+    },
+    {
+      "equipo": "Zamora",
+      "datos": {
+        "dt": "Noel Sanvicente. DT según la ficha de la temporada al 27/07/2026; la temporada tuvo varios cambios de banquillo entre Apertura y Clausura.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Zamora FC"
+      ]
+    }
+  ]
+}

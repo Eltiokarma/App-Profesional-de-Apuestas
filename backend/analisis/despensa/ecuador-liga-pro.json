@@ -1,0 +1,177 @@
+{
+  "liga": "Ecuador - Liga Pro Serie A 2026",
+  "investigado_en": "2026-07-27",
+  "nota": "OJO: el nombre 'Universidad Católica' existe en Ecuador y en Chile — verificar que la despensa caiga en el club correcto. Barrido quincenal. Campo vacío = la web no lo dijo con fuente fiable; el EFE lo buscará. NADA se rellena por intuición. `alias`: nombres alternativos por si la app (API-Football) llama distinto al club.",
+  "fuentes": [
+    "https://es.wikipedia.org/wiki/Serie_A_de_Ecuador_2026",
+    "https://www.eldiario.ec/deportes/ligapro-2026-arrancara-este-viernes-con-seis-entrenadores-ecuatorianos-en-la-serie-a-19022026/"
+  ],
+  "equipos": [
+    {
+      "equipo": "Aucas",
+      "datos": {
+        "dt": "Maximiliano Bevacqua, INTERINO (argentino). DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Barcelona",
+      "datos": {
+        "dt": "César Farías (venezolano). DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Barcelona SC",
+        "Barcelona Sporting Club"
+      ]
+    },
+    {
+      "equipo": "Delfín",
+      "datos": {
+        "dt": "Juan Carlos León. Cuerpo técnico con continuidad. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Delfin",
+        "Delfin SC"
+      ]
+    },
+    {
+      "equipo": "Deportivo Cuenca",
+      "datos": {
+        "dt": "Daniel Néculman. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Emelec",
+      "datos": {
+        "dt": "Cristian Nasuti (argentino). DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "CS Emelec"
+      ]
+    },
+    {
+      "equipo": "Guayaquil City",
+      "datos": {
+        "dt": "Pool Gavilánez. Regresó a Serie A tras 2 años fuera. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Independiente del Valle",
+      "datos": {
+        "dt": "Joaquín Papa (uruguayo). Campeón vigente, con técnico nuevo esta temporada. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Leones",
+      "datos": {
+        "dt": "Matías Córdoba (argentino). ASCENDIDO: debuta en Serie A. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Leones FC",
+        "Leones del Norte"
+      ]
+    },
+    {
+      "equipo": "Libertad",
+      "datos": {
+        "dt": "Juan Pablo Buch (colombiano). Continuidad en el cuerpo técnico. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Libertad FC"
+      ]
+    },
+    {
+      "equipo": "Liga de Quito",
+      "datos": {
+        "dt": "Gustavo Álvarez (argentino). Continuidad en el cuerpo técnico. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "LDU de Quito",
+        "LDU Quito"
+      ]
+    },
+    {
+      "equipo": "Macará",
+      "datos": {
+        "dt": "Guillermo Sanguinetti (uruguayo). Continuidad. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Macara"
+      ]
+    },
+    {
+      "equipo": "Manta",
+      "datos": {
+        "dt": "Javier Carvajal. Continuidad. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Manta FC"
+      ]
+    },
+    {
+      "equipo": "Mushuc Runa",
+      "datos": {
+        "dt": "Paúl Vélez. Continuidad. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Orense",
+      "datos": {
+        "dt": "Agustín Robles, INTERINO. Continuidad declarada en el cuerpo técnico. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Orense SC"
+      ]
+    },
+    {
+      "equipo": "Técnico Universitario",
+      "datos": {
+        "dt": "Bernardo Redín (colombiano). DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Tecnico Universitario"
+      ]
+    },
+    {
+      "equipo": "Universidad Católica",
+      "datos": {
+        "dt": "Diego Martínez. Continuidad. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Universidad Catolica del Ecuador",
+        "U. Catolica"
+      ]
+    }
+  ]
+}

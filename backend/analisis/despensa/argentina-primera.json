@@ -1,0 +1,315 @@
+{
+  "liga": "Argentina - Primera División 2026 (Torneo Clausura)",
+  "investigado_en": "2026-07-27",
+  "nota": "30 equipos en dos zonas; el Clausura arrancó el 23/07/2026. Barrido quincenal. Campo vacío = la web no lo dijo con fuente fiable; el EFE lo buscará. NADA se rellena por intuición. `alias`: nombres alternativos por si la app (API-Football) llama distinto al club.",
+  "fuentes": [
+    "https://442.perfil.com/noticias/futbol/guia-del-torneo-clausura-2026-zonas-formato-y-el-mapa-de-los-30-equipos-de-primera-division.phtml",
+    "https://es.wikipedia.org/wiki/Anexo:Torneo_Clausura_2026_(Argentina)"
+  ],
+  "equipos": [
+    {
+      "equipo": "Boca Juniors",
+      "datos": {
+        "dt": "Rodolfo Arruabarrena. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Independiente",
+      "datos": {
+        "dt": "Gustavo Quinteros. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "San Lorenzo",
+      "datos": {
+        "dt": "Néstor 'Pipo' Gorosito. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "San Lorenzo de Almagro"
+      ]
+    },
+    {
+      "equipo": "Talleres de Córdoba",
+      "datos": {
+        "dt": "Jorge Sampaoli. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Talleres Cordoba",
+        "Talleres"
+      ]
+    },
+    {
+      "equipo": "Instituto de Córdoba",
+      "datos": {
+        "dt": "Diego Flores. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Instituto Cordoba",
+        "Instituto"
+      ]
+    },
+    {
+      "equipo": "Vélez Sarsfield",
+      "datos": {
+        "dt": "Guillermo Barros Schelotto. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Velez Sarsfield"
+      ]
+    },
+    {
+      "equipo": "Estudiantes de La Plata",
+      "datos": {
+        "dt": "Alexander 'Cacique' Medina (uruguayo). DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Estudiantes L.P.",
+        "Estudiantes La Plata"
+      ]
+    },
+    {
+      "equipo": "Lanús",
+      "datos": {
+        "dt": "Mauricio Pellegrino. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Lanus"
+      ]
+    },
+    {
+      "equipo": "Newell's Old Boys",
+      "datos": {
+        "dt": "Frank Darío Kudelka. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Newells Old Boys"
+      ]
+    },
+    {
+      "equipo": "Defensa y Justicia",
+      "datos": {
+        "dt": "Julio Vacari. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Central Córdoba",
+      "datos": {
+        "dt": "DUPLA INTERINA (Matías Villavicencio y Emilio Romero) en la guía del torneo; el club cerró con Sebastián Domínguez —que rescindió con Deportivo Garcilaso de Perú— para asumir hacia el 25/07/2026, con debut previsto el 30/07 ante Atlético Tucumán y contrato hasta junio 2027. Banco en pleno recambio",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Central Cordoba de Santiago",
+        "Central Cordoba"
+      ]
+    },
+    {
+      "equipo": "Unión de Santa Fe",
+      "datos": {
+        "dt": "Leonardo Madelón. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Union Santa Fe",
+        "Union"
+      ]
+    },
+    {
+      "equipo": "Platense",
+      "datos": {
+        "dt": "Walter Zunino. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Club Atletico Platense"
+      ]
+    },
+    {
+      "equipo": "Deportivo Riestra",
+      "datos": {
+        "dt": "Guillermo Duró. Puntero de la Zona A tras la fecha 1. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Gimnasia y Esgrima de Mendoza",
+      "datos": {
+        "dt": "Darío Franco. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Gimnasia y Esgrima Mendoza",
+        "Gimnasia Mendoza"
+      ]
+    },
+    {
+      "equipo": "River Plate",
+      "datos": {
+        "dt": "Eduardo Coudet. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Racing Club",
+      "datos": {
+        "dt": "Juan Pablo Vojvoda. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Racing"
+      ]
+    },
+    {
+      "equipo": "Huracán",
+      "datos": {
+        "dt": "Diego Martínez. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Huracan"
+      ]
+    },
+    {
+      "equipo": "Rosario Central",
+      "datos": {
+        "dt": "Jorge Almirón. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Belgrano de Córdoba",
+      "datos": {
+        "dt": "Ricardo Zielinski. CAMPEÓN del Apertura 2026: juega el Clausura con el título ya en el bolsillo y base sostenida. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Belgrano Cordoba",
+        "Belgrano"
+      ]
+    },
+    {
+      "equipo": "Argentinos Juniors",
+      "datos": {
+        "dt": "Nicolás Diez. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Gimnasia y Esgrima La Plata",
+      "datos": {
+        "dt": "Ariel Pereyra. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Gimnasia L.P.",
+        "Gimnasia La Plata"
+      ]
+    },
+    {
+      "equipo": "Banfield",
+      "datos": {
+        "dt": "Pedro Troglio. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Tigre",
+      "datos": {
+        "dt": "Diego Davobe. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Atlético Tucumán",
+      "datos": {
+        "dt": "Julio César Falcioni. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Atletico Tucuman"
+      ]
+    },
+    {
+      "equipo": "Sarmiento de Junín",
+      "datos": {
+        "dt": "Facundo Sava. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Sarmiento Junin",
+        "Sarmiento"
+      ]
+    },
+    {
+      "equipo": "Barracas Central",
+      "datos": {
+        "dt": "Diego Ayude. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Aldosivi",
+      "datos": {
+        "dt": "Israel Damonte. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Estudiantes de Río Cuarto",
+      "datos": {
+        "dt": "Rubén Forestello. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Estudiantes de Rio Cuarto",
+        "Estudiantes Rio Cuarto"
+      ]
+    },
+    {
+      "equipo": "Independiente Rivadavia",
+      "datos": {
+        "dt": "Alfredo Berti. DT según la guía del Clausura 2026 al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    }
+  ]
+}

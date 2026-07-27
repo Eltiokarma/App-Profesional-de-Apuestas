@@ -165,9 +165,15 @@ def _fila_a_dto(f: sqlite3.Row) -> dict:
 
 # ── investigacion (despensa con TTL por tipo, en horas) ─────────────────────
 
+# Los dos campos que solo da la web (`dt` y `plantel`) caducan a los 14 días
+# por defecto. Si el barrido en bloque es QUINCENAL, 14 deja un día sin cubrir
+# y ese día todo EFE sale caro: SAD_DESPENSA_TTL_DIAS=16 alinea el TTL con la
+# cadencia real del refresco (docs/DESPENSA_DESKTOP.md).
+_TTL_DIAS = max(1, int(os.environ.get("SAD_DESPENSA_TTL_DIAS", "14")))
+
 TTL_HORAS = {
-    "dt": 14 * 24,
-    "plantel": 14 * 24,
+    "dt": _TTL_DIAS * 24,
+    "plantel": _TTL_DIAS * 24,
     "tabla": 24,
     "resultados": 24,
     "fixture": 7 * 24,
