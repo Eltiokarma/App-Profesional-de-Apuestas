@@ -105,4 +105,8 @@ HHI + confianza A/B/C, sección Plantilla en Equipo, ficha de partido
 4. Historial de cuotas por fixture para que la gráfica de movimiento sea real —
    plan completo por fases (historial → día de partido → en vivo) en
    `docs/EXTRACCION_TIEMPO_REAL.md`.
-5. Fase nube completa cuando toque: `docs/SERVICIOS_EXTERNOS.md` (Postgres).
+5. **DTP** (Diagnóstico Táctico de Partido) — diseño cerrado en
+   `docs/efe-dtp/DTP_DISENO.md`. Bloquea la fase A (ficha de partido:
+   alineaciones con `grid`, eventos completos y stats por partido): tres de
+   los seis módulos no tienen materia prima sin ella.
+6. Fase nube completa cuando toque: `docs/SERVICIOS_EXTERNOS.md` (Postgres).
