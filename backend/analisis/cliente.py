@@ -99,6 +99,13 @@ SALIDA_EFE_CALIENTE = (
     "Justificaciones y textos: 1-2 frases, densas (el output se paga). "
     "NO añadas la clave 'investigacion' (no investigaste nada: todo vino en datos_cacheados)."
 )
+SALIDA_DTP = (
+    "EXCLUSIVAMENTE el objeto JSON del esquema DTP, sin texto adicional ni markdown. "
+    "Textos densos de 1-2 frases (el output se paga). NO investigues en la web: todo lo "
+    "que necesitas está en datos_cacheados; lo que falte va en datos_faltantes y se dice, "
+    "no se rellena a ojo. Respeta la disciplina del protocolo: hecho != interpretación, "
+    "no fabricar mecánica de gol, anti-hindsight estricto."
+)
 SALIDA_TIMELINE = (
     "EXCLUSIVAMENTE el objeto JSON del esquema TIMELINE, sin texto adicional ni markdown. "
     "Eventos en orden cronológico estricto; enfrentamientos directos entre los dos "

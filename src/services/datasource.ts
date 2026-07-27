@@ -26,6 +26,7 @@ import type {
   GapEquipoDTO,
   JugadorDTO,
   AlineacionDTO,
+  EslabonDtpDTO,
   FichaTacticaDTO,
   LigaDTO,
   NivelDTO,
@@ -36,7 +37,7 @@ import type {
 } from '../api/types'
 import { CONFIG, type DataSourceMode } from '../config'
 import { MARKET_DEFS, MATCHES, STANDINGS, TEAMS } from '../data'
-import { efeDemo, timelineDemo } from '../data/efeDemo'
+import { dtpDemo, efeDemo, timelineDemo } from '../data/efeDemo'
 import { oddsFor, rng } from '../lib/odds'
 import { levelBin } from '../motor/discretizer'
 import { teamEngine } from '../motor/engine'
@@ -112,6 +113,12 @@ export interface SadDataSource {
   generarTimeline(fixtureId: number, forzar?: boolean): Promise<GeneracionEfeDTO>
   /** Sondeo del trabajo de timeline. */
   estadoTimeline(fixtureId: number): Promise<GeneracionEfeDTO>
+  /** Lanza el DTP desde un equipo foco (docs/efe-dtp/DTP_DISENO.md). */
+  generarDtp(fixtureId: number, equipoFoco: number, forzar?: boolean): Promise<GeneracionEfeDTO>
+  /** Sondeo del trabajo de DTP. */
+  estadoDtp(fixtureId: number, equipoFoco: number): Promise<GeneracionEfeDTO>
+  /** La película del equipo: cadena de pronóstico → veredicto → lección. */
+  cadena(equipoId: number, limit?: number): Promise<EslabonDtpDTO[]>
 }
 
 // ---------- mapeo de ids internos (strings) ↔ contrato (números) ----------
@@ -580,6 +587,43 @@ class MockDataSource implements SadDataSource {
     return reg ? { estado: 'listo', registro: reg } : { estado: 'nada' }
   }
 
+  // DTP demo: la cadena vive en memoria, una entrada por (fixture, equipo foco)
+  private _dtp = new Map<string, AnalisisRegistroDTO>()
+
+  async generarDtp(fixtureId: number, equipoFoco: number, forzar = false): Promise<GeneracionEfeDTO> {
+    const clave = `${fixtureId}:${equipoFoco}`
+    const previo = this._dtp.get(clave)
+    if (previo && !forzar) return { estado: 'listo', registro: previo }
+    const m = MATCHES.find((x) => FIXTURE_NUM(x.id) === fixtureId)
+    if (!m) return { estado: 'error', detalle: `fixture ${fixtureId} no existe` }
+    const foco = NUM_TEAM[equipoFoco]
+    if (foco !== m.home && foco !== m.away) {
+      return { estado: 'error', detalle: `el equipo ${equipoFoco} no juega el fixture ${fixtureId}` }
+    }
+    await new Promise((r) => setTimeout(r, 1200))
+    const rival = foco === m.home ? m.away : m.home
+    const reg: AnalisisRegistroDTO = {
+      tipo: 'dtp', fixtureId, estado: 'preliminar', versionEfe: '1.5',
+      creadoEn: new Date(MOCK_NOW).toISOString(),
+      resultado: dtpDemo(TEAMS[foco].name, TEAMS[rival].name),
+    }
+    this._dtp.set(clave, reg)
+    return { estado: 'listo', registro: reg }
+  }
+
+  async estadoDtp(fixtureId: number, equipoFoco: number): Promise<GeneracionEfeDTO> {
+    const reg = this._dtp.get(`${fixtureId}:${equipoFoco}`)
+    return reg ? { estado: 'listo', registro: reg } : { estado: 'nada' }
+  }
+
+  async cadena(equipoId: number): Promise<EslabonDtpDTO[]> {
+    const nombre = TEAMS[NUM_TEAM[equipoId]]?.name
+    if (!nombre) return []
+    return [...this._dtp.values()]
+      .map((r) => r.resultado as unknown as EslabonDtpDTO)
+      .filter((e) => e && e.equipoFoco === nombre)
+  }
+
   async generarEfe(fixtureId: number, forzar = false): Promise<GeneracionEfeDTO> {
     const previo = this._analisis.get(fixtureId)
     if (previo && !forzar) return { estado: 'listo', registro: previo }
@@ -774,6 +818,9 @@ class HttpDataSource implements SadDataSource {
   cargarDespensa = (payload: CargaDespensaDTO) => SadApi.cargarDespensa(payload)
   generarTimeline = (fixtureId: number, forzar?: boolean) => SadApi.generarTimeline(fixtureId, forzar)
   estadoTimeline = (fixtureId: number) => SadApi.estadoTimeline(fixtureId)
+  generarDtp = (fixtureId: number, equipoFoco: number, forzar?: boolean) => SadApi.generarDtp(fixtureId, equipoFoco, forzar)
+  estadoDtp = (fixtureId: number, equipoFoco: number) => SadApi.estadoDtp(fixtureId, equipoFoco)
+  cadena = (equipoId: number, limit?: number) => SadApi.cadena(equipoId, limit)
   equipoStats = (equipoId: number) => SadApi.equipoStats(equipoId)
   plantilla = (equipoId: number) => SadApi.plantilla(equipoId)
   fichaPartido = (fixtureId: number) => SadApi.fichaPartido(fixtureId)

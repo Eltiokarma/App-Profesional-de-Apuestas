@@ -43,3 +43,5 @@ jobs:
         run: python -m backend.test_despensa
       - name: Tests de la ficha de partido (fase A del DTP)
         run: python -m backend.test_ficha
+      - name: Tests del DTP (cadena rodante y anti-hindsight)
+        run: python -m backend.test_dtp

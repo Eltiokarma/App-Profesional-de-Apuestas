@@ -20,6 +20,7 @@ python -m backend.test_api        # verificaciones del contrato (169 checks)
 python -m backend.test_en_vivo    # ciclo en vivo: cuotas en juego por liga (sin red)
 python -m backend.test_despensa   # despensa en bloque: TTL honesto y canonización
 python -m backend.test_ficha      # ficha de partido (alineaciones/eventos/stats, fase A del DTP)
+python -m backend.test_dtp        # DTP: cadena rodante, anti-hindsight y sin búsqueda web
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
 python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--horizonte/--calibrar/--por-liga)
 
@@ -54,6 +55,7 @@ src/motor/         Motor SAD en TS: niveles ventana-20, q*/k* con reseteo,
 src/sections/      Partidos (inicio) · Cuotas · Burbujas · Skills · Estadísticas · Equipo
 src/components/    KLineChart (picos K) · KBarChart (rachas de cuota) ·
                    TablaPosiciones (ÚNICA clasificación, con sus fases) ·
+                   DtpPizarra (cierre+apertura del DTP y cadena) ·
                    TeamSearch, shell
 backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.db
 ```
@@ -109,8 +111,12 @@ HHI + confianza A/B/C, sección Plantilla en Equipo, ficha de partido
    plan completo por fases (historial → día de partido → en vivo) en
    `docs/EXTRACCION_TIEMPO_REAL.md`.
 5. **DTP** (Diagnóstico Táctico de Partido) — diseño en
-   `docs/efe-dtp/DTP_DISENO.md`. **Fase A hecha** (ficha de partido:
-   alineaciones con `grid`→carriles, eventos con asistente y stats, servidas en
-   `/fixtures/{id}/ficha.tactica`). Sigue la fase B: esquema DTP, `generar_dtp`
-   y la cadena rodante en `cadena_dtp`.
+   `docs/efe-dtp/DTP_DISENO.md`. **Fases A y B hechas**: ficha de partido
+   (alineaciones con `grid`→carriles, eventos con asistente y stats en
+   `/fixtures/{id}/ficha.tactica`) y motor (`POST /analisis/dtp` por equipo
+   foco, cadena rodante en `cadena_dtp`, `GET /equipos/{id}/cadena`). Queda la
+   fase C **también hecha**: pizarra en la sección Análisis (toggle de equipo
+   foco) y cadena en la página de Equipo. Queda correr
+   `ficha_partido --estado` tras la primera corrida real: de si el plan sirve
+   `grid` depende que M2 hable de carriles reales.
 6. Fase nube completa cuando toque: `docs/SERVICIOS_EXTERNOS.md` (Postgres).

@@ -18,6 +18,7 @@ import type {
   FixtureLiveDTO,
   GeneracionEfeDTO,
   HealthDTO,
+  EslabonDtpDTO,
   LigaDTO,
   NivelDTO,
   PlantillaDTO,
@@ -101,6 +102,18 @@ export const SadApi = {
 
   /** Sondeo del trabajo de timeline. */
   estadoTimeline: (fixtureId: number) => apiGet<GeneracionEfeDTO>(`/analisis/timeline/estado/${fixtureId}`),
+
+  /** Lanza el DTP desde un equipo foco (la cadena es la película de UN equipo). */
+  generarDtp: (fixtureId: number, equipoFoco: number, forzar = false) =>
+    apiPost<GeneracionEfeDTO>('/analisis/dtp', { fixtureId, equipoFoco, forzar }, { timeoutMs: 30_000 }),
+
+  /** Sondeo del trabajo de DTP. */
+  estadoDtp: (fixtureId: number, equipoFoco: number) =>
+    apiGet<GeneracionEfeDTO>(`/analisis/dtp/estado/${fixtureId}` + qs({ equipoFoco })),
+
+  /** La película del equipo: pronóstico → qué pasó → veredicto → lección. */
+  cadena: (equipoId: number, limit?: number) =>
+    apiGet<EslabonDtpDTO[]>(`/equipos/${equipoId}/cadena` + qs({ limit })),
 
   /** Metadatos de la liga (nombre, país, logo, bandera, fases de la temporada). */
   liga: (ligaId: number, temporada?: number) => apiGet<LigaDTO>(`/ligas/${ligaId}` + qs({ temporada })),

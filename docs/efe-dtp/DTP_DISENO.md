@@ -106,7 +106,7 @@ es el primer paso de la fase B.
 
 ---
 
-## 3. Fase B — el motor
+## 3. Fase B — el motor · HECHA
 
 ### Esquema
 
@@ -174,7 +174,7 @@ costo: cada partido paga uno.
 
 ---
 
-## 4. Fase C — la pantalla
+## 4. Fase C — la pantalla · HECHA
 
 En la sección Análisis, **debajo del EFE**, como manda `PLAN_ADAPTADO.md`:
 
@@ -203,11 +203,19 @@ En la sección Análisis, **debajo del EFE**, como manda `PLAN_ADAPTADO.md`:
    DTOs, mock y `test_api`). El carril de M2 se deriva del `grid` normalizado
    por cuántos jugadores hay en esa línea, y `conGrid: false` avisa cuando la
    API no lo sirvió: el DTP verá el hueco en vez de inventarse un carril.
-3. **B1** esquema DTP + `generar_dtp` en modo apertura, con test de payload
-   (que lo cacheado llegue completo y `con_busqueda=False`).
-4. **B2** cadena: `cierre` + `registro` + anti-hindsight, con test de la regla
-   "sin apertura previa no hay contraste".
-5. **C** pantalla.
+3. ~~**B1** esquema DTP + `generar_dtp`.~~ **Hecho.** `esquemas.DTP` +
+   `motor.generar_dtp/iniciar_dtp/estado_dtp`, endpoints y contrato completo.
+   `_lanzar`/`_estado` se generalizaron con `clave`/`existente`/`borrar`
+   porque el DTP vive en `cadena_dtp` POR EQUIPO FOCO (dos por fixture) y no
+   en `analisis`, cuya clave única es (tipo, fixture, estado).
+4. ~~**B2** cadena + anti-hindsight.~~ **Hecho.** El cierre se escribe en el
+   eslabón de N−1 (no en el de N) y `guardar_cadena` **nunca** pisa una
+   apertura ya escrita: un pronóstico no se puede reescribir después del
+   partido. Sin apertura previa, `veredicto` va vacío y el payload lleva la
+   orden explícita de no reconstruirlo. Test: `backend/test_dtp.py`.
+5. ~~**C** pantalla.~~ **Hecho.** `src/components/DtpPizarra.tsx` (pizarra +
+   cadena), bloque DTP en la sección Análisis con toggle de equipo foco y
+   sondeo propio, y `Cadena DTP` en la página de Equipo.
 
 Cada fase se puede parar sin dejar nada a medias: A sirve por sí sola (la
 ficha de partido mejora el EFE y la UI), B sin C ya deja la cadena escrita.

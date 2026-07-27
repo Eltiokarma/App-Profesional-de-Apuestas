@@ -390,6 +390,68 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/GeneracionEfe' }
+  /analisis/dtp:
+    post:
+      summary: Lanza el DTP (Diagnóstico Táctico de Partido) desde un equipo foco
+      description: >
+        Cadena rodante del protocolo DTP (docs/efe-dtp/DTP_DISENO.md):
+        CIERRE del partido anterior (M4 autopsia de goles + M5 contraste) +
+        APERTURA del próximo (M1 lectura del XI, M2 duelos por carril, M3 plan
+        por fases, M6 contexto). Es POR EQUIPO FOCO: un mismo fixture puede
+        tener dos DTP, uno por equipo. NO busca en la web — se alimenta de la
+        ficha de partido (`/fixtures/{id}/ficha.tactica`); si esa ficha falta,
+        responde 409 diciendo qué hay que correr en vez de inventar.
+        Mismo patrón asíncrono que /analisis/efe.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fixtureId, equipoFoco]
+              properties:
+                fixtureId: { type: integer }
+                equipoFoco: { type: integer, description: 'equipoId del equipo desde el que se analiza' }
+                forzar: { type: boolean, default: false }
+      responses:
+        '200':
+          description: listo (con registro) / generando
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GeneracionEfe' }
+        '404': { description: El fixture no existe o el equipo no lo juega }
+        '409': { description: Sin ficha de partido para analizar (correr backend.ingesta.ficha_partido) }
+        '503': { description: Falta ANTHROPIC_API_KEY }
+  /analisis/dtp/estado/{fixtureId}:
+    get:
+      summary: Sondeo del trabajo de DTP
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+        - { name: equipoFoco, in: query, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: listo (con registro) / generando / error (con detalle) / nada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GeneracionEfe' }
+  /equipos/{equipoId}/cadena:
+    get:
+      summary: La película del equipo (cadena DTP)
+      description: >
+        Pronóstico → qué pasó → veredicto → lección, del partido más reciente
+        hacia atrás. `[]` si aún no se generó ningún DTP del equipo.
+      parameters:
+        - { name: equipoId, in: path, required: true, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, default: 20, minimum: 1, maximum: 100 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/EslabonDtp' }
+        '404': { description: No existe el equipo }
   /analisis/partido/{fixtureId}:
     get:
       summary: Análisis emitidos para un fixture (lectura pura, cero créditos)
@@ -785,6 +847,26 @@ components:
         local: { $ref: '#/components/schemas/FichaEquipo' }
         visitante: { $ref: '#/components/schemas/FichaEquipo' }
         tactica: { $ref: '#/components/schemas/FichaTactica' }
+    EslabonDtp:
+      type: object
+      description: 'Un partido de la cadena DTP de un equipo foco'
+      required: [equipoFoco, partidoN, fixtureId]
+      properties:
+        equipoFoco: { type: string }
+        partidoN: { type: integer, description: 'posición cronológica del partido en la temporada del equipo' }
+        rival: { type: string, nullable: true }
+        fecha: { type: string, nullable: true }
+        fixtureId: { type: integer, nullable: true }
+        apertura: { type: object, nullable: true, description: 'M1/M2/M3/M6 escritos ANTES del partido' }
+        cierre: { type: object, nullable: true, description: 'M4/M5 escritos después' }
+        registro:
+          type: object
+          nullable: true
+          properties:
+            pronostico_clave: { type: string }
+            que_paso: { type: string }
+            veredicto: { type: string, enum: ['', acierto, parcial, fallo], description: '"" si no hubo pronóstico previo (anti-hindsight)' }
+            leccion: { type: string }
     FichaTactica:
       type: object
       description: |

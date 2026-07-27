@@ -3,12 +3,13 @@ import { TEAMS } from '../data'
 import type { KCondKey, KTypeKey } from '../data/types'
 import { ApuestasSalidas } from '../components/ApuestasSalidas'
 import { KLineChart, KLineLegend } from '../components/KLineChart'
+import { CadenaDtp } from '../components/DtpPizarra'
 import { RachasCuotas, type CuotaCond } from '../components/RachasCuotas'
 import { TeamBadge } from '../components/TeamBadge'
 import { binBadge, FUSED_KEY, K_TYPE_GROUPS, K_WINDOW_OPTS, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
 import type { FusedK } from '../motor/types'
 import type { JugadorDTO } from '../api/types'
-import { loadBurbujas, loadPlantilla, loadTeamFixtures, loadTeamStats } from '../services/appdata'
+import { loadBurbujas, loadPlantilla, loadTeamFixtures, loadTeamStats, loadCadena } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
@@ -26,6 +27,8 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
   const bur = useAsync(() => loadBurbujas(teamKey), teamKey)
   const fx = useAsync(() => loadTeamFixtures(teamKey), teamKey)
   const plant = useAsync(() => loadPlantilla(teamKey), teamKey)
+  // la cadena DTP: lectura pura, 0 créditos (se genera desde la ficha del partido)
+  const cadena = useAsync(() => loadCadena(teamKey), teamKey)
 
   // ingesta on-demand: si el backend la lanzó (plantilla vacía), sondear
   // hasta que llegue (~5-6 requests del lado del servidor, unos segundos)
@@ -303,6 +306,16 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
               <div style={{ font: '700 12px var(--sans)', marginBottom: 2 }}>Apuestas que salieron</div>
               <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginBottom: 12 }}>Últimos 3 partidos · cuota prepartido del 1X2 que ocurrió (rentabilidad reciente)</div>
               <ApuestasSalidas teamKey={teamKey} nombre={T?.name ?? teamKey} />
+            </section>
+
+            {/* CADENA DTP — la película: pronóstico → qué pasó → lección */}
+            <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+              <div style={{ font: '700 12px var(--sans)', marginBottom: 2 }}>Cadena DTP</div>
+              <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginBottom: 12 }}>
+                Cada partido cierra el anterior y abre el siguiente · el veredicto solo existe si hubo pronóstico previo
+              </div>
+              {cadena.loading && <div className="sad-sk" style={{ height: 90 }} />}
+              {!cadena.loading && <CadenaDtp eslabones={cadena.data ?? []} />}
             </section>
 
             {/* HISTORIAL DE PARTIDOS */}

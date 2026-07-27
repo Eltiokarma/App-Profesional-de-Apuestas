@@ -1,7 +1,7 @@
 // Análisis EFE y timeline de muestra para el modo demo (espejo de
 // backend/analisis/demo.py): permiten desarrollar y probar la sección
 // Análisis sin API ni créditos. Regla del proyecto: la simulación vive SOLO en demo.
-import type { EfeBloque, EfeComparativo, EfeEquipo, TimelineData, TlEvento } from '../api/types'
+import type { EfeBloque, EfeComparativo, EfeEquipo, EslabonDtpDTO, TimelineData, TlEvento } from '../api/types'
 
 export function timelineDemo(equipoA: string, equipoB: string): TimelineData {
   const ev = (fecha: string, equipo: string, tipo: TlEvento['tipo'], titulo: string, detalle: string, marcador = '', jornada = 0, destacado = false): TlEvento => ({
@@ -107,5 +107,69 @@ export function efeDemo(equipoA: string, equipoB: string, torneo: string | null,
     },
     datos_faltantes: ['xi_confirmado_a', 'xi_confirmado_b'],
     fuentes: ['demo'],
+  }
+}
+
+
+/** DTP de muestra (modo demo): misma forma que sirve el backend — el registro
+ *  del DTP es el ESLABÓN de la cadena, no el JSON pelado del modelo. */
+export function dtpDemo(foco: string, rival: string): EslabonDtpDTO {
+  return {
+    equipoFoco: foco,
+    partidoN: 12,
+    rival,
+    fecha: '2026-07-02',
+    fixtureId: null,
+    apertura: {
+      m1: {
+        sistema: '4-2-3-1 (demo)',
+        cambios_vs_anterior: ['Vuelve el lateral titular'],
+        roles_reasignados: ['El interior derecho cae a construir'],
+        senal_del_xi: 'XI de control con doble pivote',
+        vulnerabilidad_propia: 'Espalda de los laterales en transición',
+        forma_sin_balon: '4-4-2 en bloque medio',
+      },
+      m2: {
+        choque_sistemas: `4-2-3-1 de ${foco} contra el 3-5-2 de ${rival} (demo)`,
+        duelos_carril: [
+          { carril: 'izquierda', duelo: 'Lateral vs extremo', mismatch: 'Ventaja en velocidad' },
+          { carril: 'centro', duelo: 'Doble pivote vs enganche', mismatch: 'Superioridad numérica' },
+        ],
+        vida_util_rival: { tipo: 'estructural' as const, minutos: '75-85' },
+        vias_gol: { foco: ['Segunda jugada tras córner'], rival: ['Contra por izquierda'] },
+        veredicto: 'Equilibrado con leve ventaja del foco',
+        razon: 'El doble pivote neutraliza al enganche rival (demo)',
+      },
+      m3_fases: [
+        { tramo: '0-25', plan: 'Bloque medio y salida limpia', palancas: ['Cambiar de banda al tercer pase'] },
+        { tramo: '25-65', plan: 'Fijar por dentro para abrir el carril', palancas: ['Interior entre líneas'] },
+        { tramo: '65-80+', plan: 'Sostener con frescura por fuera', palancas: ['Extremo de refresco al carril débil'] },
+      ],
+      m6: { competitivo: true, rotacion: 'Sin rotación relevante (demo)', fatiga: '6 días de descanso',
+            ausencias_clave: 'Ninguna', otros: 'modo demo' },
+    },
+    cierre: {
+      m4_goles: [{
+        gol: '0-1', minuto: 34, via: 'transicion',
+        disparador: 'Pérdida en salida bajo presión (demo)',
+        secuencia: 'Recuperación en campo rival y conducción por el carril izquierdo',
+        definicion: 'Centro raso al segundo palo',
+        responsables_merito: ['Extremo rival'],
+        responsables_error: [{ jugador: 'Volante central', nivel: 'principal' as const, detalle: 'Pierde la marca (demo)' }],
+        absolucion: 'El portero no tiene responsabilidad en el gol',
+      }],
+      m5: {
+        plan_funciono_hasta_min: 30,
+        peligro_real: 'Dos llegadas claras antes del gol (demo)',
+        cronologia_giro: 'El gol adelanta al rival y obliga a arriesgar la línea',
+        contraste_pronostico: { aciertos: ['El carril izquierdo era la vía'], fallos: ['Se esperaba más control inicial'] },
+      },
+    },
+    registro: {
+      pronostico_clave: 'Duelo por izquierda decisivo (demo)',
+      que_paso: 'Por ahí llegó el gol',
+      veredicto: 'parcial' as const,
+      leccion: 'La cobertura del carril débil manda sobre la posesión',
+    },
   }
 }

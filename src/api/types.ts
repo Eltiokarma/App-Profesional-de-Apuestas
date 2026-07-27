@@ -361,6 +361,70 @@ export interface FichaPartidoDTO {
   tactica?: FichaTacticaDTO
 }
 
+/** APERTURA del DTP: M1/M2/M3/M6, escritos ANTES del partido. */
+export interface AperturaDtp {
+  m1: {
+    sistema: string
+    cambios_vs_anterior: string[]
+    roles_reasignados: string[]
+    senal_del_xi: string
+    vulnerabilidad_propia: string
+    forma_sin_balon: string
+  }
+  m2: {
+    choque_sistemas: string
+    duelos_carril: { carril: string; duelo: string; mismatch: string }[]
+    vida_util_rival: { tipo: 'improvisado' | 'estructural'; minutos: string }
+    vias_gol: { foco: string[]; rival: string[] }
+    veredicto: string
+    razon: string
+  }
+  m3_fases: { tramo: string; plan: string; palancas: string[] }[]
+  m6: { competitivo: boolean; rotacion: string; fatiga: string; ausencias_clave: string; otros: string }
+}
+
+/** CIERRE del DTP: M4 (autopsia de goles) y M5 (contraste), escritos después. */
+export interface CierreDtp {
+  m4_goles: {
+    gol: string
+    minuto: number
+    via: 'pelota_parada' | 'transicion' | 'juego_abierto'
+    disparador: string
+    secuencia: string
+    definicion: string
+    responsables_merito: string[]
+    responsables_error: { jugador: string; nivel: 'principal' | 'secundario' | 'estructural'; detalle: string }[]
+    absolucion: string
+  }[]
+  m5: {
+    plan_funciono_hasta_min: number
+    peligro_real: string
+    cronologia_giro: string
+    contraste_pronostico: { aciertos: string[]; fallos: string[] }
+  }
+}
+
+/** Un partido de la cadena DTP (GET /equipos/{id}/cadena). */
+export interface EslabonDtpDTO {
+  equipoFoco: string
+  /** Posición cronológica del partido en la temporada del equipo. */
+  partidoN: number
+  rival: string | null
+  fecha: string | null
+  fixtureId: number | null
+  /** M1/M2/M3/M6, escritos ANTES del partido. */
+  apertura: AperturaDtp | null
+  /** M4/M5, escritos después. */
+  cierre: CierreDtp | null
+  registro: {
+    pronostico_clave: string
+    que_paso: string
+    /** "" si no hubo pronóstico previo: sin él no se emite veredicto. */
+    veredicto: '' | 'acierto' | 'parcial' | 'fallo'
+    leccion: string
+  } | null
+}
+
 /** Fila de /ligas/{id}/standings (calculada de fixtures). */
 export interface StandingRowDTO {
   posicion: number
@@ -582,8 +646,9 @@ export interface AnalisisRegistroDTO {
   estado: 'preliminar' | 'confirmado'
   versionEfe: string
   creadoEn: string
-  /** EfeComparativo si tipo='efe'; TimelineData si tipo='timeline'. */
-  resultado: EfeComparativo | TimelineData
+  /** EfeComparativo si tipo='efe'; TimelineData si tipo='timeline';
+   *  EslabonDtpDTO (el eslabón de la cadena) si tipo='dtp'. */
+  resultado: EfeComparativo | TimelineData | EslabonDtpDTO
 }
 
 // ── TIMELINE (modo futbol-timeline; prompts/TIMELINE_prompt.md) ─────────────

@@ -117,10 +117,14 @@ def cargar_archivo(ruta: str, forzar: bool = False) -> dict:
             canon = nombre
             if equipos_app:
                 nombres_app = {n for n, _ in equipos_app}
+                # el primero que EXISTA en la app manda; si ninguno casa, se
+                # cae al nombre principal — quedarse con el último alias
+                # probado depositaría el dato bajo un nombre arbitrario
+                canon = canonizar(nombre, equipos_app)
                 for cand in candidatos:
                     c = canonizar(cand, equipos_app)
-                    canon = c
                     if c in nombres_app:
+                        canon = c
                         break
             if canon != nombre:
                 res["canonizados"][nombre] = canon

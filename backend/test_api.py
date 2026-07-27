@@ -547,6 +547,31 @@ def main():
           all(k in ae for k in ("tipo", "fixtureId", "estado", "versionEfe", "creadoEn", "resultado")), ae.keys())
     check("efe: tipo/estado/versión", ae["tipo"] == "efe" and ae["estado"] == "preliminar"
           and ae["versionEfe"] == "1.5", ae)
+    # ── DTP (fase B): cadena rodante por equipo foco ──────────────────────
+    # en modo demo el análisis es síncrono, así que la respuesta ya viene lista
+    dtp = c.post(A + "/analisis/dtp", json={"fixtureId": vivo["id"], "equipoFoco": vivo["local"]["id"]}).json()
+    check("dtp: se genera y queda listo", dtp["estado"] == "listo", dtp.get("estado"))
+    esl = (dtp.get("registro") or {}).get("resultado") or {}
+    check("dtp: el registro ES el eslabón de la cadena",
+          esl.get("equipoFoco") and esl.get("partidoN"), esl)
+    check("dtp: apertura con duelos por carril (M2)",
+          len(esl.get("apertura", {}).get("m2", {}).get("duelos_carril", [])) > 0, esl.get("apertura"))
+    check("dtp: apertura con plan por tramos (M3)",
+          len(esl.get("apertura", {}).get("m3_fases", [])) == 3, esl.get("apertura", {}).get("m3_fases"))
+    check("dtp: cierre con autopsia de goles (M4)",
+          len(esl.get("cierre", {}).get("m4_goles", [])) > 0, esl.get("cierre"))
+    est = c.get(A + f"/analisis/dtp/estado/{vivo['id']}", params={"equipoFoco": vivo["local"]["id"]}).json()
+    check("dtp: el sondeo lo encuentra", est["estado"] == "listo", est)
+    cad = c.get(A + f"/equipos/{vivo['local']['id']}/cadena").json()
+    check("cadena: el partido aparece en la película del equipo",
+          any(e["partidoN"] == esl["partidoN"] for e in cad), cad)
+    check("cadena: cada eslabón trae veredicto y lección",
+          all("veredicto" in (e.get("registro") or {"veredicto": ""}) for e in cad), cad)
+    check("cadena de equipo inexistente → 404",
+          c.get(A + "/equipos/999999/cadena").status_code == 404)
+    fuera = c.post(A + "/analisis/dtp", json={"fixtureId": vivo["id"], "equipoFoco": 999999})
+    check("dtp: equipo que no juega el partido → 404", fuera.status_code == 404, fuera.status_code)
+
     r_efe = ae["resultado"]
     check("efe: comparativo con ambos equipos y clasificación",
           r_efe["equipos"]["a"]["clasificacion"] in ("FORMADO", "EN_FORMACION", "SIN_FORMACION")
