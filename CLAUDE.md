@@ -19,6 +19,7 @@ python -m uvicorn backend.app:app --port 8000
 python -m backend.test_api        # verificaciones del contrato (169 checks)
 python -m backend.test_en_vivo    # ciclo en vivo: cuotas en juego por liga (sin red)
 python -m backend.test_despensa   # despensa en bloque: TTL honesto y canonización
+python -m backend.test_ficha      # ficha de partido (alineaciones/eventos/stats, fase A del DTP)
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
 python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--horizonte/--calibrar/--por-liga)
 
@@ -31,6 +32,8 @@ python -m backend.ingesta.extractor --ventana-horas 6  # refresco ligero: solo c
 python -m backend.ingesta.jugadores             # plantillas/bajas/traspasos/DT de equipos con NS próximos (docs/JUGADORES.md)
 python -m backend.ingesta.en_vivo               # 1 ciclo en vivo: marcador/minuto + odds_live (WAL)
 python -m backend.ingesta.diag_vivo --hoy       # por qué un partido no tiene cuotas en juego (--fixture N, --api)
+python -m backend.ingesta.ficha_partido        # alineaciones+eventos+stats de los partidos anteriores (3 req c/u)
+python -m backend.ingesta.ficha_partido --estado  # qué ficha hay capturada y si trae grid/xG (0 requests)
 python -m backend.analisis.despensa_bulk --listar  # despensa del repo: qué hay y qué edad tiene
 python -m backend.ingesta.pipeline --out .      # regenera levels/constants/discreto desde sad.db
 python -m backend.ingesta.test_paridad          # test dorado vs DBs del pipeline viejo
@@ -105,8 +108,9 @@ HHI + confianza A/B/C, sección Plantilla en Equipo, ficha de partido
 4. Historial de cuotas por fixture para que la gráfica de movimiento sea real —
    plan completo por fases (historial → día de partido → en vivo) en
    `docs/EXTRACCION_TIEMPO_REAL.md`.
-5. **DTP** (Diagnóstico Táctico de Partido) — diseño cerrado en
-   `docs/efe-dtp/DTP_DISENO.md`. Bloquea la fase A (ficha de partido:
-   alineaciones con `grid`, eventos completos y stats por partido): tres de
-   los seis módulos no tienen materia prima sin ella.
+5. **DTP** (Diagnóstico Táctico de Partido) — diseño en
+   `docs/efe-dtp/DTP_DISENO.md`. **Fase A hecha** (ficha de partido:
+   alineaciones con `grid`→carriles, eventos con asistente y stats, servidas en
+   `/fixtures/{id}/ficha.tactica`). Sigue la fase B: esquema DTP, `generar_dtp`
+   y la cadena rodante en `cadena_dtp`.
 6. Fase nube completa cuando toque: `docs/SERVICIOS_EXTERNOS.md` (Postgres).

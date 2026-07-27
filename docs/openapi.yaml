@@ -777,13 +777,74 @@ components:
                 partidos21d: { type: integer }
     FichaPartido:
       type: object
-      description: 'Puente con los skills: plantillas + congestión de ambos equipos'
+      description: 'Puente con los skills: plantillas + congestión de ambos equipos + ficha táctica'
       required: [fixtureId, generadoEn, local, visitante]
       properties:
         fixtureId: { type: integer }
         generadoEn: { type: string, format: date-time }
         local: { $ref: '#/components/schemas/FichaEquipo' }
         visitante: { $ref: '#/components/schemas/FichaEquipo' }
+        tactica: { $ref: '#/components/schemas/FichaTactica' }
+    FichaTactica:
+      type: object
+      description: |
+        Materia prima del DTP (docs/efe-dtp/DTP_DISENO.md): XI con carriles,
+        goles con autor y asistente, y métricas del partido. Todo vacío si la
+        ingesta aún no capturó la ficha — nunca reconstruido a ojo.
+      required: [eventos, capturada]
+      properties:
+        capturada: { type: boolean, description: 'false = no hay nada capturado; el DTP no puede abrir M1/M2/M4' }
+        alineaciones:
+          type: object
+          nullable: true
+          properties:
+            local: { $ref: '#/components/schemas/Alineacion' }
+            visitante: { $ref: '#/components/schemas/Alineacion' }
+        eventos:
+          type: array
+          items:
+            type: object
+            properties:
+              minuto: { type: integer }
+              extra: { type: integer, description: 'minutos añadidos ya sumados en `minuto`' }
+              tipo: { type: string, description: 'Goal | Card | subst | Var' }
+              detalle: { type: string }
+              equipoId: { type: integer }
+              jugador: { type: string, nullable: true }
+              jugadorId: { type: integer, nullable: true }
+              asistente: { type: string, nullable: true }
+              asistenteId: { type: integer, nullable: true }
+        estadisticas:
+          type: object
+          nullable: true
+          description: 'clave cruda de API-Football → valor ("Ball Possession": "62%")'
+          properties:
+            local: { type: object, additionalProperties: { type: string } }
+            visitante: { type: object, additionalProperties: { type: string } }
+    Alineacion:
+      type: object
+      required: [equipoId, titulares, suplentes, conGrid]
+      properties:
+        equipoId: { type: integer }
+        formacion: { type: string, nullable: true }
+        entrenador: { type: string, nullable: true }
+        conGrid: { type: boolean, description: 'false = sin grid de la API: M2 no puede hablar de carriles' }
+        titulares:
+          type: array
+          items: { $ref: '#/components/schemas/JugadorAlineado' }
+        suplentes:
+          type: array
+          items: { $ref: '#/components/schemas/JugadorAlineado' }
+    JugadorAlineado:
+      type: object
+      required: [jugadorId, nombre]
+      properties:
+        jugadorId: { type: integer }
+        nombre: { type: string, nullable: true }
+        numero: { type: integer, nullable: true }
+        posicion: { type: string, nullable: true, description: 'G|D|M|F' }
+        grid: { type: string, nullable: true, description: '"fila:columna" de API-Football' }
+        carril: { type: string, nullable: true, enum: [izquierda, centro, derecha, null], description: 'derivado del grid; null si no hay' }
     CargaDespensa:
       type: object
       required: [equipos]

@@ -41,3 +41,5 @@ jobs:
         run: python -m backend.test_en_vivo
       - name: Tests de la despensa en bloque (ahorro del EFE)
         run: python -m backend.test_despensa
+      - name: Tests de la ficha de partido (fase A del DTP)
+        run: python -m backend.test_ficha

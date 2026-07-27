@@ -311,11 +311,54 @@ export interface FichaEquipoDTO extends PlantillaDTO {
 }
 
 /** Ficha de partido (GET /fixtures/{id}/ficha): el puente con los skills. */
+export interface JugadorAlineadoDTO {
+  jugadorId: number
+  nombre: string | null
+  numero: number | null
+  posicion: string | null
+  /** "fila:columna" de API-Football. */
+  grid: string | null
+  /** Carril derivado del grid; null si la API no lo sirvió. */
+  carril: 'izquierda' | 'centro' | 'derecha' | null
+}
+
+export interface AlineacionDTO {
+  equipoId: number
+  formacion: string | null
+  entrenador: string | null
+  /** false = sin grid: el DTP no puede hablar de carriles (M2). */
+  conGrid: boolean
+  titulares: JugadorAlineadoDTO[]
+  suplentes: JugadorAlineadoDTO[]
+}
+
+export interface EventoPartidoDTO {
+  minuto: number
+  /** Añadidos, ya sumados en `minuto`. */
+  extra: number
+  tipo: string
+  detalle: string | null
+  equipoId: number | null
+  jugador: string | null
+  jugadorId: number | null
+  asistente: string | null
+  asistenteId: number | null
+}
+
+/** Materia prima del DTP (docs/efe-dtp/DTP_DISENO.md). Vacía si no se capturó. */
+export interface FichaTacticaDTO {
+  capturada: boolean
+  alineaciones: { local: AlineacionDTO; visitante: AlineacionDTO } | null
+  eventos: EventoPartidoDTO[]
+  estadisticas: { local: Record<string, string>; visitante: Record<string, string> } | null
+}
+
 export interface FichaPartidoDTO {
   fixtureId: number
   generadoEn: string
   local: FichaEquipoDTO
   visitante: FichaEquipoDTO
+  tactica?: FichaTacticaDTO
 }
 
 /** Fila de /ligas/{id}/standings (calculada de fixtures). */

@@ -1,4 +1,4 @@
-"""Corrida diaria de ingesta: extractor (ventana hoy−3d..+10d) + pipeline.
+"""Corrida diaria de ingesta: extractor + jugadores + ficha de partido + pipeline.
 
 Pensada para el despliegue con un solo servicio (SAD_DATA_DIR = volumen con
 las 4 DBs) y utilizable igual en local:
@@ -29,6 +29,13 @@ def main() -> int:
     jug = subprocess.run([sys.executable, "-m", "backend.ingesta.jugadores"], cwd=data, env=env)
     if jug.returncode != 0:
         print(f"ingesta de jugadores terminó con código {jug.returncode}; el pipeline corre igual",
+              file=sys.stderr)
+    # ficha de partido (fase A del DTP, docs/efe-dtp/DTP_DISENO.md): alineaciones
+    # con grid, eventos con asistente y stats de los partidos ANTERIORES de los
+    # equipos con NS próximo — 3 requests por partido, idempotente
+    fic = subprocess.run([sys.executable, "-m", "backend.ingesta.ficha_partido"], cwd=data, env=env)
+    if fic.returncode != 0:
+        print(f"ficha de partido terminó con código {fic.returncode}; el pipeline corre igual",
               file=sys.stderr)
     pipe = subprocess.run([sys.executable, "-m", "backend.ingesta.pipeline", "--out", "."], cwd=data, env=env)
     return pipe.returncode

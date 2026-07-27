@@ -34,7 +34,7 @@ problema de prompt.
 
 ---
 
-## 2. Fase A — los datos (sin LLM)
+## 2. Fase A — los datos (sin LLM) · HECHA
 
 Tres tablas nuevas en `sad.db`, propiedad de `backend/ingesta/` como el resto.
 
@@ -62,9 +62,12 @@ CREATE TABLE fixture_stats (           -- fixtures/statistics (formato largo:
 );
 ```
 
-y `fixture_eventos` (ya existe) gana `asistente`, `jugador_id`, `extra` y
-`equipo_local` — hoy no distingue el minuto añadido ni quién asistió, y M4 los
-necesita.
+y `fixture_eventos` (ya existía) gana `extra`, `jugador_id`, `asistente` y
+`asistente_id` — no distinguía el minuto añadido ni quién asistió, y M4 los
+necesita. La migración es en caliente (`ALTER TABLE` si falta la columna): las
+DBs ya desplegadas no hay que recrearlas. Su guardado pasó a ser **compartido**
+con el ciclo en vivo, para que lo capturado en directo y lo capturado después
+del partido tengan exactamente las mismas columnas.
 
 **Quién los llena.** Un módulo nuevo `backend/ingesta/ficha_partido.py`, con
 la misma disciplina que el resto de la ingesta:
@@ -86,11 +89,20 @@ las siguientes. Es ruido frente a las ~1.500/día del plan.
 temporadas pasadas serían decenas de miles de requests para un dato que el DTP
 solo mira del partido inmediatamente anterior.
 
-⚠️ **A verificar contra una respuesta real antes de codificar**: que el plan
-contratado sirva `player.grid` en `fixtures/lineups` y `expected_goals` en
-`fixtures/statistics`. Si `grid` no viene, M2 se degrada a carriles derivados
-de `posicion` (G/D/M/F), que es más pobre — y hay que decirlo en la ficha, no
-disimularlo.
+⚠️ **Pendiente de verificar con datos reales** (no se puede desde una sesión
+sin clave): que el plan contratado sirva `player.grid` en `fixtures/lineups` y
+`expected_goals` en `fixtures/statistics`. El código no lo asume: guarda lo que
+venga y `ficha_partido --estado` lo canta —
+
+```
+filas de alineación: 240 · con grid (carril de M2): 240
+  ⚠ NINGUNA trae grid: M2 tendría que degradarse a carriles por posición
+  ⚠ sin expected_goals en el catálogo: M5 se queda sin respaldo numérico
+```
+
+— y la ficha servida lleva `conGrid: false` para que el DTP vea el hueco en
+vez de inventarse un carril. Correr ese comando tras la primera corrida real
+es el primer paso de la fase B.
 
 ---
 
@@ -181,11 +193,16 @@ En la sección Análisis, **debajo del EFE**, como manda `PLAN_ADAPTADO.md`:
 
 ## 5. Orden y verificación
 
-1. **A1** ficha de partido: tablas + `ficha_partido.py` + test offline con
-   respuestas de la API grabadas. *Sin LLM: se verifica con datos, no con
-   impresiones.*
-2. **A2** exponer la ficha en el backend (`/fixtures/{id}/ficha` ya existe:
-   se le añaden alineaciones, eventos completos y stats).
+1. ~~**A1** ficha de partido: tablas + `ficha_partido.py` + test offline.~~
+   **Hecho.** `backend/ingesta/ficha_partido.py`, en la corrida diaria;
+   `backend/test_ficha.py` en CI. `fixture_eventos` migró en caliente (gana
+   `extra`, `jugador_id`, `asistente`, `asistente_id`) y su guardado es ahora
+   compartido: el ciclo en vivo y la ingesta post-partido escriben lo mismo.
+2. ~~**A2** exponer la ficha en el backend.~~ **Hecho.**
+   `/fixtures/{id}/ficha` gana el bloque `tactica` (contrato en openapi,
+   DTOs, mock y `test_api`). El carril de M2 se deriva del `grid` normalizado
+   por cuántos jugadores hay en esa línea, y `conGrid: false` avisa cuando la
+   API no lo sirvió: el DTP verá el hueco en vez de inventarse un carril.
 3. **B1** esquema DTP + `generar_dtp` en modo apertura, con test de payload
    (que lo cacheado llegue completo y `con_busqueda=False`).
 4. **B2** cadena: `cierre` + `registro` + anti-hindsight, con test de la regla

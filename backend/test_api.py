@@ -276,6 +276,25 @@ def main():
           and "diasDescanso" in fi["local"]["congestion"] and fi["local"]["congestion"]["partidos21d"] >= 0, fi["local"].get("congestion"))
     check("ficha: nombres de los equipos", fi["local"]["nombre"] and fi["visitante"]["nombre"])
     check("/fixtures/999999/ficha → 404", c.get(A + "/fixtures/999999/ficha").status_code == 404)
+    # ficha TÁCTICA (fase A del DTP): XI con carriles, goles con asistente, stats
+    t = fi.get("tactica") or {}
+    check("ficha táctica: capturada", t.get("capturada") is True, t.get("capturada"))
+    ali = (t.get("alineaciones") or {}).get("local") or {}
+    check("ficha táctica: XI del local con formación", len(ali.get("titulares", [])) == 11 and ali.get("formacion"), ali.get("formacion"))
+    check("ficha táctica: conGrid y carriles de M2",
+          ali.get("conGrid") is True and all(j["carril"] for j in ali.get("titulares", [])),
+          [j.get("carril") for j in ali.get("titulares", [])][:4])
+    check("ficha táctica: suplentes sin carril (no están en el campo)",
+          all(j["carril"] is None for j in ali.get("suplentes", [])), ali.get("suplentes"))
+    gol = next((e for e in t.get("eventos", []) if e["tipo"] == "Goal" and e["asistente"]), None)
+    check("ficha táctica: el gol trae autor y asistente (M4)", bool(gol and gol["jugador"]), gol)
+    check("ficha táctica: estadísticas por equipo",
+          (t.get("estadisticas") or {}).get("local", {}).get("Ball Possession") == "58%", t.get("estadisticas"))
+    # un partido sin ficha capturada NO inventa nada
+    otro = next(f for f in fx if f["id"] != vivo["id"])
+    t2 = c.get(A + f"/fixtures/{otro['id']}/ficha").json().get("tactica") or {}
+    check("ficha táctica: sin capturar → capturada=false y sin alineaciones",
+          t2.get("capturada") is False and not t2.get("eventos"), t2)
 
     # resúmenes para el cruce con los skills (motor EFE/timeline)
     from backend import jugadores as jugcapa
