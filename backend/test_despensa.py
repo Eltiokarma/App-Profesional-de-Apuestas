@@ -134,6 +134,22 @@ def main():
           and canonizar("Cajamarca FC", equipos) == "FC Cajamarca", "")
     # "Alianza" casa con Alianza Lima Y con Alianza Atletico: ambiguo, no se
     # elige uno al azar (meter el dato en el club equivocado es peor que no meterlo)
+    # si NINGÚN alias casa, manda el nombre principal (no el último probado)
+    limpiar()
+    escribir(tmp, "alias.json", {"liga": "L", "investigado_en": "2026-07-26", "fuentes": [],
+                                 "equipos": [{"equipo": "Equipo Inexistente",
+                                              "alias": ["Otro Nombre Raro", "Tercer Nombre"],
+                                              "datos": {"dt": "x"}}]})
+    r = [x for x in despensa_bulk.cargar_todo(directorio=tmp) if x["archivo"] == "alias.json"][0]
+    guardado = [n for (n,) in __import__("sqlite3").connect(efedb.ruta())
+                .execute("SELECT equipo FROM investigacion")]
+    check("sin alias que case, se deposita bajo el nombre principal (no bajo un alias)",
+          "Equipo Inexistente" in guardado
+          and not {"Otro Nombre Raro", "Tercer Nombre"} & set(guardado), guardado)
+    check("y se avisa de que ese nombre no existe en la app",
+          "Equipo Inexistente" in r["sin_equipo"] or not r["sin_equipo"], r["sin_equipo"])
+    os.remove(os.path.join(tmp, "alias.json"))
+
     check("un nombre ambiguo se queda como está (no inventa equipo)",
           canonizar("Alianza", equipos) == "Alianza", canonizar("Alianza", equipos))
 

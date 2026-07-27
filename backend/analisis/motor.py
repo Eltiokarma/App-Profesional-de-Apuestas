@@ -22,7 +22,15 @@ import threading
 from backend import db as saddb
 from backend.analisis import cliente, demo
 from backend.analisis import db as efedb
-from backend.analisis.esquemas import EFE_COMPARATIVO, TIMELINE, analisis_vacio, timeline_vacio
+from backend.analisis.esquemas import (
+    DTP,
+    EFE_COMPARATIVO,
+    TIMELINE,
+    ajustar,
+    analisis_vacio,
+    dtp_vacio,
+    timeline_vacio,
+)
 
 VERSION_EFE = "1.5"
 
@@ -388,23 +396,29 @@ def generar_efe(fixture_id: int, estado: str = "preliminar", permitir_frio: bool
 
 # ── infraestructura común de trabajos (EFE y TIMELINE) ──────────────────────
 
-def _lanzar(tipo: str, fixture_id: int, generar, forzar: bool, nombre_boton: str) -> dict:
+def _lanzar(tipo: str, fixture_id: int, generar, forzar: bool, nombre_boton: str,
+            clave: str | None = None, existente=None, borrar=None) -> dict:
     """Patrón compartido: listo si ya existe, generando si hay hilo en curso,
-    o lanza el trabajo. `generar` es el callable síncrono del modo."""
-    clave = f"{tipo}:{fixture_id}"
+    o lanza el trabajo. `generar` es el callable síncrono del modo.
+
+    `clave`/`existente`/`borrar` se inyectan para el DTP, que se guarda en
+    cadena_dtp por EQUIPO FOCO (dos análisis por fixture) en vez de en la tabla
+    `analisis`, cuya clave única es (tipo, fixture, estado)."""
+    clave = clave or f"{tipo}:{fixture_id}"
     with _lock:
         trabajo = _trabajos.get(clave)
         if trabajo and trabajo["estado"] == "generando":
             return _respuesta("generando", detalle="análisis en curso")
 
+    buscar = existente or (lambda: efedb.analisis_existente(tipo, fixture_id, "confirmado")
+                           or efedb.analisis_existente(tipo, fixture_id, "preliminar"))
     if forzar:
-        efedb.borrar_analisis(tipo, fixture_id)
+        (borrar or (lambda: efedb.borrar_analisis(tipo, fixture_id)))()
         print(f"[{tipo}] fixture {fixture_id}: regeneración forzada (previo descartado)", flush=True)
     else:
-        existente = efedb.analisis_existente(tipo, fixture_id, "confirmado") \
-            or efedb.analisis_existente(tipo, fixture_id, "preliminar")
-        if existente:
-            return _respuesta("listo", registro=existente)
+        previo = buscar()
+        if previo:
+            return _respuesta("listo", registro=previo)
     _fixture(fixture_id)  # 404 antes de encolar nada
 
     if _demo_activo():  # demo: rápido y sin API → síncrono
@@ -434,14 +448,15 @@ def _lanzar(tipo: str, fixture_id: int, generar, forzar: bool, nombre_boton: str
     return _respuesta("generando", detalle=f"{nombre_boton} lanzado")
 
 
-def _estado(tipo: str, fixture_id: int) -> dict:
+def _estado(tipo: str, fixture_id: int, clave: str | None = None, existente=None) -> dict:
     """Para el sondeo del frontend: listo / generando / error / nada."""
-    existente = efedb.analisis_existente(tipo, fixture_id, "confirmado") \
-        or efedb.analisis_existente(tipo, fixture_id, "preliminar")
-    if existente:
-        return _respuesta("listo", registro=existente)
+    buscar = existente or (lambda: efedb.analisis_existente(tipo, fixture_id, "confirmado")
+                           or efedb.analisis_existente(tipo, fixture_id, "preliminar"))
+    previo = buscar()
+    if previo:
+        return _respuesta("listo", registro=previo)
     with _lock:
-        trabajo = _trabajos.get(f"{tipo}:{fixture_id}")
+        trabajo = _trabajos.get(clave or f"{tipo}:{fixture_id}")
     if trabajo:
         return _respuesta(trabajo["estado"], detalle=trabajo.get("detalle"))
     return _respuesta("nada")
@@ -567,3 +582,202 @@ def estado_timeline(fixture_id: int) -> dict:
 def analisis_del_partido(fixture_id: int) -> list[dict]:
     """Todo lo emitido para un fixture (lectura pura, cero créditos)."""
     return efedb.analisis_de_fixture(fixture_id)
+
+
+# ── DTP (Diagnóstico Táctico de Partido) — docs/efe-dtp/DTP_DISENO.md ────────
+# Cadena rodante: DTP(N) = CIERRE de N−1 (M4+M5) + APERTURA de N (M1+M2+M3+M6).
+# NO busca en la web: todo sale de la ficha de partido que ingesta la fase A.
+# Lo que falte va a datos_faltantes y se dice; nada se rellena a ojo.
+
+def _partido_n(team_id: int, fecha: str) -> int:
+    """Número de partido del equipo en la temporada: su posición cronológica
+    entre TODOS sus fixtures (cualquier competición: la cadena es la película
+    del equipo, no la de un torneo). Reproducible: se recalcula igual siempre."""
+    fila = saddb.query_one(
+        "sad",
+        "SELECT COUNT(*) AS n FROM fixtures WHERE (home_team_id=? OR away_team_id=?) "
+        "AND date <= ? AND substr(date,1,4) = substr(?,1,4)",
+        (team_id, team_id, fecha, fecha),
+    )
+    return int(fila["n"]) if fila and fila["n"] else 1
+
+
+_FIN90_DTP = "(f.status_short IN ('FT','AET','PEN') OR f.status_long='Match Finished')"
+
+
+def _anterior_de(team_id: int, fecha: str) -> dict | None:
+    """Último partido TERMINADO del equipo antes de `fecha` — el N−1 que la
+    cadena tiene que cerrar."""
+    fila = saddb.query_one(
+        "sad",
+        "SELECT f.id, f.date, f.home_team_id, f.away_team_id, f.league_id, f.league_season, "
+        "f.goals_home, f.goals_away, ht.name AS local, at.name AS visitante, l.name AS liga "
+        "FROM fixtures f JOIN teams ht ON ht.id=f.home_team_id "
+        "JOIN teams at ON at.id=f.away_team_id LEFT JOIN leagues l ON l.id=f.league_id "
+        "WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.date < ? "
+        f"AND {_FIN90_DTP} ORDER BY f.date DESC LIMIT 1",
+        (team_id, team_id, fecha),
+    )
+    return dict(fila) if fila else None
+
+
+def _ficha_para_dtp(fixture_id: int, home_id: int, away_id: int) -> dict:
+    from backend import ficha_tactica
+    return ficha_tactica.tactica_de(fixture_id, home_id, away_id)
+
+
+def _lado_de(fx: dict, team_id: int) -> str:
+    return "local" if fx["home_team_id"] == team_id else "visitante"
+
+
+def generar_dtp(fixture_id: int, equipo_foco_id: int) -> dict:
+    """DTP del partido `fixture_id` visto desde `equipo_foco_id`.
+
+    Modo `dtp_completo` si existe una apertura escrita ANTES del partido
+    anterior; si no, `dtp_apertura`. El cierre nunca contrasta contra un
+    pronóstico que no existía: eso sería hindsight, no cadena.
+    """
+    fx = _fixture(fixture_id)
+    if equipo_foco_id not in (fx["home_team_id"], fx["away_team_id"]):
+        raise FixtureNoExiste(f"el equipo {equipo_foco_id} no juega el fixture {fixture_id}")
+    foco = fx["local"] if equipo_foco_id == fx["home_team_id"] else fx["visitante"]
+    rival = fx["visitante"] if equipo_foco_id == fx["home_team_id"] else fx["local"]
+    fecha = (fx["date"] or "")[:10] or None
+    n = _partido_n(equipo_foco_id, fx["date"] or "")
+
+    if _demo_activo():
+        resultado = demo.dtp_demo(foco, rival, fx["liga"], fecha)
+        efedb.guardar_cadena(foco, n, rival, fecha, fixture_id, resultado.get("apertura"),
+                             resultado.get("cierre"), (resultado.get("cierre") or {}).get("registro"))
+        return _dto_dtp(efedb.eslabon(foco, n))
+
+    if not cliente.hay_clave():
+        raise SinClave("Falta ANTHROPIC_API_KEY en el entorno")
+
+    faltantes: list[str] = []
+    # ── partido N: la alineación (oficial si la ingesta ya la capturó) ──────
+    ficha_n = _ficha_para_dtp(fixture_id, fx["home_team_id"], fx["away_team_id"])
+    ali_n = (ficha_n.get("alineaciones") or {})
+    xi_oficial = bool(ali_n and ali_n.get(_lado_de(fx, equipo_foco_id), {}).get("titulares"))
+    if not xi_oficial:
+        faltantes.append("xi_oficial_n")
+
+    # ── partido N−1: la ficha que hace posible el CIERRE ────────────────────
+    ant = _anterior_de(equipo_foco_id, fx["date"] or "")
+    ficha_ant = None
+    if ant:
+        ficha_ant = _ficha_para_dtp(ant["id"], ant["home_team_id"], ant["away_team_id"])
+        if not ficha_ant.get("capturada"):
+            faltantes.append("ficha_partido_anterior")
+    else:
+        faltantes.append("partido_anterior")
+
+    # ── el pronóstico escrito ANTES de N−1 (lo que da valor a la cadena) ────
+    apertura_previa = None
+    if ant:
+        eslabon_ant = efedb.eslabon_de_fixture(foco, ant["id"])
+        apertura_previa = (eslabon_ant or {}).get("apertura")
+    if ant and not apertura_previa:
+        faltantes.append("apertura_previa")
+
+    # sin XI de N y sin ficha del anterior no hay nada que analizar: negarse es
+    # más honesto (y más barato) que pagar una llamada para inventar carriles
+    if not xi_oficial and not (ficha_ant and ficha_ant.get("capturada")):
+        raise RuntimeError(
+            "Sin datos para el DTP: no hay alineación de este partido ni ficha del anterior. "
+            "Corre `python -m backend.ingesta.ficha_partido` (3 requests por partido) y reintenta."
+        )
+
+    # el mapa de carriles de M2 sale del grid del XI que vayamos a leer: el de
+    # N si ya está publicado, y si no el del anterior como referencia
+    lado_foco = _lado_de(fx, equipo_foco_id)
+    ali_foco_n = (ali_n or {}).get(lado_foco) or {}
+    ali_foco_ant = {}
+    if ficha_ant and ficha_ant.get("alineaciones") and ant:
+        ali_foco_ant = (ficha_ant["alineaciones"] or {}).get(_lado_de(ant, equipo_foco_id)) or {}
+    hay_xi = bool(ali_foco_n.get("titulares") or ali_foco_ant.get("titulares"))
+    con_grid = bool(ali_foco_n.get("conGrid") or ali_foco_ant.get("conGrid"))
+    payload = {
+        "modo": "dtp_completo" if apertura_previa else "dtp_apertura",
+        "partido": {"equipo_foco": foco, "rival": rival, "condicion": _lado_de(fx, equipo_foco_id),
+                    "torneo": fx["liga"], "fecha": fecha, "partido_n": n},
+        "datos_cacheados": {
+            "ficha_n": ficha_n,
+            "anterior": ({"partido": {"local": ant["local"], "visitante": ant["visitante"],
+                                      "fecha": (ant["date"] or "")[:10], "torneo": ant["liga"],
+                                      "marcador": f"{ant['goals_home']}-{ant['goals_away']}"},
+                          "ficha": ficha_ant} if ant else None),
+            "apertura_previa": apertura_previa,
+        },
+        "campos_faltantes": faltantes,
+    }
+    # el EFE de este partido, si existe: contexto sin gastar nada
+    efe_previo = efedb.analisis_existente("efe", fixture_id, "confirmado") \
+        or efedb.analisis_existente("efe", fixture_id, "preliminar")
+    if efe_previo:
+        payload["contexto_efe"] = efe_previo["resultado"].get("lectura_sad", {})
+    if hay_xi and not con_grid:
+        payload["aviso_carriles"] = (
+            "La alineación NO trae grid (posición en el campo): NO inventes duelos por carril. "
+            "En M2 usa solo las posiciones G/D/M/F disponibles, di en `razon` que el mapa de "
+            "carriles es aproximado y añade 'grid' a datos_faltantes."
+        )
+    if not apertura_previa:
+        payload["aviso_cadena"] = (
+            "No hay pronóstico escrito antes del partido anterior: en M5 deja "
+            "contraste_pronostico vacío y en registro.veredicto pon \"\". NO reconstruyas "
+            "un pronóstico retroactivo."
+        )
+
+    print(f"[dtp] fixture {fixture_id} · foco {foco} (N={n}) · modo {payload['modo']} · "
+          f"faltantes: {', '.join(faltantes) or 'ninguno'}", flush=True)
+    resultado, _uso = cliente.analizar(
+        payload, DTP, con_busqueda=False, salida=cliente.SALIDA_DTP,
+    )
+    resultado = ajustar(resultado, DTP)
+    if dtp_vacio(resultado):
+        raise RuntimeError(
+            "El DTP llegó sin apertura utilizable. No se guardó: vuelve a pulsar «Generar DTP»."
+        )
+
+    # el CIERRE pertenece a N−1, no a N: se escribe en su eslabón. La apertura
+    # de aquel partido no se toca (guardar_cadena la conserva).
+    cierre = resultado.get("cierre") or {}
+    if ant and (cierre.get("m4_goles") or cierre.get("m5", {}).get("peligro_real")):
+        efedb.guardar_cadena(foco, _partido_n(equipo_foco_id, ant["date"] or ""),
+                             ant["visitante"] if ant["home_team_id"] == equipo_foco_id else ant["local"],
+                             (ant["date"] or "")[:10], ant["id"], None,
+                             cierre, cierre.get("registro"))
+    efedb.guardar_cadena(foco, n, rival, fecha, fixture_id, resultado.get("apertura"))
+    return _dto_dtp(efedb.eslabon(foco, n))
+
+
+def iniciar_dtp(fixture_id: int, equipo_foco_id: int, forzar: bool = False) -> dict:
+    fx = _fixture(fixture_id)
+    foco = fx["local"] if equipo_foco_id == fx["home_team_id"] else fx["visitante"]
+    return _lanzar(
+        "dtp", fixture_id, lambda fid: generar_dtp(fid, equipo_foco_id), forzar, "análisis DTP",
+        clave=f"dtp:{fixture_id}:{equipo_foco_id}",
+        existente=lambda: _dto_dtp(efedb.eslabon_de_fixture(foco, fixture_id)),
+        borrar=lambda: None,
+    )
+
+
+def estado_dtp(fixture_id: int, equipo_foco_id: int) -> dict:
+    fx = _fixture(fixture_id)
+    foco = fx["local"] if equipo_foco_id == fx["home_team_id"] else fx["visitante"]
+    return _estado("dtp", fixture_id, clave=f"dtp:{fixture_id}:{equipo_foco_id}",
+                   existente=lambda: _dto_dtp(efedb.eslabon_de_fixture(foco, fixture_id)))
+
+
+def _dto_dtp(eslabon: dict | None) -> dict | None:
+    """Un eslabón vale como "listo" solo si tiene apertura: un cierre suelto
+    (escrito por el DTP del partido siguiente) no es un DTP de este partido."""
+    if not eslabon or not eslabon.get("apertura"):
+        return None
+    return {"tipo": "dtp", "fixtureId": eslabon["fixtureId"], "estado": "preliminar",
+            "versionEfe": VERSION_EFE, "creadoEn": None, "resultado": eslabon}
+
+
+def cadena_de_equipo(equipo_foco: str, limite: int = 20) -> list[dict]:
+    return efedb.cadena_de(equipo_foco, limite)

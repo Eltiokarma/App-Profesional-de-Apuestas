@@ -216,3 +216,75 @@ def guardar_investigacion(equipo: str, tipo: str, contenido: dict | list,
              json.dumps(fuentes or [], ensure_ascii=False), ahora()),
         )
         con.commit()
+
+
+# ── cadena_dtp (la película por equipo foco) ────────────────────────────────
+
+def guardar_cadena(equipo_foco: str, partido_n: int, rival: str, fecha: str | None,
+                   fixture_id: int, apertura: dict | None,
+                   cierre: dict | None = None, registro: dict | None = None) -> None:
+    """Una fila por (equipo_foco, N). La apertura se escribe ANTES del partido;
+    el cierre, después. Nunca se pisa una apertura ya escrita con otra
+    posterior al partido: eso convertiría el pronóstico en hindsight."""
+    with conectar() as con:
+        previa = con.execute(
+            "SELECT apertura_json, cierre_json, registro FROM cadena_dtp "
+            "WHERE equipo_foco=? AND partido_n=?",
+            (equipo_foco, partido_n),
+        ).fetchone()
+        apertura_txt = None
+        if previa and previa["apertura_json"]:
+            apertura_txt = previa["apertura_json"]   # la de antes manda
+        elif apertura is not None:
+            apertura_txt = json.dumps(apertura, ensure_ascii=False)
+        con.execute(
+            "INSERT OR REPLACE INTO cadena_dtp (equipo_foco, partido_n, rival, fecha, "
+            "fixture_id, apertura_json, cierre_json, registro) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (equipo_foco, partido_n, rival, fecha, fixture_id, apertura_txt,
+             json.dumps(cierre, ensure_ascii=False) if cierre is not None else
+             (previa["cierre_json"] if previa else None),
+             json.dumps(registro, ensure_ascii=False) if registro is not None else
+             (previa["registro"] if previa else None)),
+        )
+        con.commit()
+
+
+def _fila_cadena(f) -> dict:
+    return {
+        "equipoFoco": f["equipo_foco"],
+        "partidoN": f["partido_n"],
+        "rival": f["rival"],
+        "fecha": f["fecha"],
+        "fixtureId": f["fixture_id"],
+        "apertura": json.loads(f["apertura_json"]) if f["apertura_json"] else None,
+        "cierre": json.loads(f["cierre_json"]) if f["cierre_json"] else None,
+        "registro": json.loads(f["registro"]) if f["registro"] else None,
+    }
+
+
+def cadena_de(equipo_foco: str, limite: int = 20) -> list[dict]:
+    """La película del equipo, del partido más reciente hacia atrás."""
+    with conectar() as con:
+        filas = con.execute(
+            "SELECT * FROM cadena_dtp WHERE equipo_foco=? ORDER BY partido_n DESC LIMIT ?",
+            (equipo_foco, limite),
+        ).fetchall()
+    return [_fila_cadena(f) for f in filas]
+
+
+def eslabon(equipo_foco: str, partido_n: int) -> dict | None:
+    with conectar() as con:
+        f = con.execute(
+            "SELECT * FROM cadena_dtp WHERE equipo_foco=? AND partido_n=?",
+            (equipo_foco, partido_n),
+        ).fetchone()
+    return _fila_cadena(f) if f else None
+
+
+def eslabon_de_fixture(equipo_foco: str, fixture_id: int) -> dict | None:
+    with conectar() as con:
+        f = con.execute(
+            "SELECT * FROM cadena_dtp WHERE equipo_foco=? AND fixture_id=?",
+            (equipo_foco, fixture_id),
+        ).fetchone()
+    return _fila_cadena(f) if f else None

@@ -361,6 +361,27 @@ export interface FichaPartidoDTO {
   tactica?: FichaTacticaDTO
 }
 
+/** Un partido de la cadena DTP (GET /equipos/{id}/cadena). */
+export interface EslabonDtpDTO {
+  equipoFoco: string
+  /** Posición cronológica del partido en la temporada del equipo. */
+  partidoN: number
+  rival: string | null
+  fecha: string | null
+  fixtureId: number | null
+  /** M1/M2/M3/M6, escritos ANTES del partido. */
+  apertura: Record<string, unknown> | null
+  /** M4/M5, escritos después. */
+  cierre: Record<string, unknown> | null
+  registro: {
+    pronostico_clave: string
+    que_paso: string
+    /** "" si no hubo pronóstico previo: sin él no se emite veredicto. */
+    veredicto: '' | 'acierto' | 'parcial' | 'fallo'
+    leccion: string
+  } | null
+}
+
 /** Fila de /ligas/{id}/standings (calculada de fixtures). */
 export interface StandingRowDTO {
   posicion: number
@@ -582,8 +603,9 @@ export interface AnalisisRegistroDTO {
   estado: 'preliminar' | 'confirmado'
   versionEfe: string
   creadoEn: string
-  /** EfeComparativo si tipo='efe'; TimelineData si tipo='timeline'. */
-  resultado: EfeComparativo | TimelineData
+  /** EfeComparativo si tipo='efe'; TimelineData si tipo='timeline';
+   *  EslabonDtpDTO (el eslabón de la cadena) si tipo='dtp'. */
+  resultado: EfeComparativo | TimelineData | EslabonDtpDTO
 }
 
 // ── TIMELINE (modo futbol-timeline; prompts/TIMELINE_prompt.md) ─────────────

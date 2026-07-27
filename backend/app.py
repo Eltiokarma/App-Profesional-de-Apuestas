@@ -1666,6 +1666,53 @@ def analisis_timeline_estado(fixture_id: int):
     return efemotor.estado_timeline(fixture_id)
 
 
+class DtpRequest(BaseModel):
+    fixtureId: int
+    # el DTP es POR EQUIPO FOCO: la cadena rodante es la película de UN equipo
+    equipoFoco: int
+    forzar: bool = False
+
+
+@app.post(API + "/analisis/dtp")
+def analisis_dtp(body: DtpRequest):
+    """Lanza el DTP del fixture visto desde `equipoFoco` (docs/efe-dtp/DTP_DISENO.md).
+
+    Mismo patrón asíncrono que el EFE. NO busca en la web: se alimenta de la
+    ficha de partido que ingesta backend.ingesta.ficha_partido, así que si esa
+    ficha falta responde 409 explicando qué correr — no paga una llamada para
+    inventar carriles."""
+    from backend.analisis import motor as efemotor
+    try:
+        return efemotor.iniciar_dtp(body.fixtureId, body.equipoFoco, forzar=body.forzar)
+    except efemotor.FixtureNoExiste as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except efemotor.SinClave as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+
+
+@app.get(API + "/analisis/dtp/estado/{fixture_id}")
+def analisis_dtp_estado(fixture_id: int, equipoFoco: int):
+    """Sondeo del trabajo de DTP: listo / generando / error / nada."""
+    from backend.analisis import motor as efemotor
+    try:
+        return efemotor.estado_dtp(fixture_id, equipoFoco)
+    except efemotor.FixtureNoExiste as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get(API + "/equipos/{equipo_id}/cadena")
+def equipo_cadena(equipo_id: int, limit: int = Query(default=20, ge=1, le=100)):
+    """La película del equipo: pronóstico → qué pasó → veredicto → lección,
+    del partido más reciente hacia atrás. [] si aún no hay ningún DTP."""
+    fila = db.query_one("sad", "SELECT name FROM teams WHERE id=?", (equipo_id,))
+    if not fila:
+        raise HTTPException(404, f"equipo {equipo_id} no existe")
+    from backend.analisis import motor as efemotor
+    return efemotor.cadena_de_equipo(fila["name"], limit)
+
+
 @app.get(API + "/analisis/partido/{fixture_id}")
 def analisis_partido(fixture_id: int):
     """Todo lo emitido para un fixture (lectura pura, cero créditos)."""

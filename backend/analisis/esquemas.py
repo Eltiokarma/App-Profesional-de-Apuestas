@@ -259,3 +259,104 @@ def analisis_vacio(resultado: dict) -> bool:
         )
     except (KeyError, TypeError, ValueError):
         return True
+
+
+# ── DTP (Diagnóstico Táctico de Partido) ────────────────────────────────────
+# Calcado de las claves del esquema DTP del system prompt
+# (backend/analisis/prompts/SYSTEM_PROMPT_SAD_API.md §ESQUEMA DTP). Mismo
+# mecanismo que el EFE: el JSON se pide por instrucción y se NORMALIZA con
+# ajustar(), así el frontend recibe siempre la forma exacta aunque el modelo
+# se deje una clave.
+
+_NIVEL_RESP = {"type": "string", "enum": ["principal", "secundario", "estructural"]}
+
+RESPONSABLE = _obj({
+    "jugador": _STR,
+    "nivel": _NIVEL_RESP,
+    "detalle": _STR,
+})
+
+GOL_M4 = _obj({
+    "gol": _STR,                 # "1-0", "2-1"…
+    "minuto": _NUM,
+    "via": {"type": "string", "enum": ["pelota_parada", "transicion", "juego_abierto"]},
+    "disparador": _STR,          # DISPARADOR → SECUENCIA → DEFINICIÓN
+    "secuencia": _STR,
+    "definicion": _STR,
+    "responsables_merito": _arr(_STR),
+    "responsables_error": _arr(RESPONSABLE),
+    "absolucion": _STR,          # "" cuando no toca absolver a nadie
+})
+
+CIERRE = _obj({
+    "m4_goles": _arr(GOL_M4),
+    "m5": _obj({
+        "plan_funciono_hasta_min": _NUM,
+        "peligro_real": _STR,
+        "cronologia_giro": _STR,
+        "contraste_pronostico": _obj({"aciertos": _arr(_STR), "fallos": _arr(_STR)}),
+    }),
+    "registro": _obj({
+        "pronostico_clave": _STR,
+        "que_paso": _STR,
+        # "" va PRIMERO a propósito: ajustar() usa el primer valor del enum
+        # como default, y sin pronóstico escrito antes del partido no se puede
+        # emitir veredicto (anti-hindsight, docs/efe-dtp/DTP_DISENO.md §3)
+        "veredicto": {"type": "string", "enum": ["", "acierto", "parcial", "fallo"]},
+        "leccion": _STR,
+    }),
+})
+
+DUELO_CARRIL = _obj({"carril": _STR, "duelo": _STR, "mismatch": _STR})
+
+APERTURA = _obj({
+    "m1": _obj({
+        "sistema": _STR,
+        "cambios_vs_anterior": _arr(_STR),
+        "roles_reasignados": _arr(_STR),
+        "senal_del_xi": _STR,
+        "vulnerabilidad_propia": _STR,
+        "forma_sin_balon": _STR,
+    }),
+    "m2": _obj({
+        "choque_sistemas": _STR,
+        "duelos_carril": _arr(DUELO_CARRIL),
+        "vida_util_rival": _obj({
+            "tipo": {"type": "string", "enum": ["improvisado", "estructural"]},
+            "minutos": _STR,
+        }),
+        "vias_gol": _obj({"foco": _arr(_STR), "rival": _arr(_STR)}),
+        "veredicto": _STR,
+        "razon": _STR,
+    }),
+    "m3_fases": _arr(_obj({
+        "tramo": {"type": "string", "enum": ["0-25", "25-65", "65-80+"]},
+        "plan": _STR,
+        "palancas": _arr(_STR),
+    })),
+    "m6": _obj({
+        "competitivo": _BOOL,
+        "rotacion": _STR,
+        "fatiga": _STR,
+        "ausencias_clave": _STR,
+        "otros": _STR,
+    }),
+})
+
+DTP = _obj({
+    "cadena": _obj({"tiene_anterior": _BOOL, "partido_anterior": _STR}),
+    "cierre": CIERRE,
+    "apertura": APERTURA,
+    "datos_faltantes": _arr(_STR),
+    "fuentes": _arr(_STR),
+})
+
+
+def dtp_vacio(resultado: dict) -> bool:
+    """True si la apertura llegó sin nada utilizable: no se guarda, para que
+    el usuario pueda reintentar (mismo criterio que timeline_vacio)."""
+    try:
+        a = resultado["apertura"]
+        return not (a["m1"]["sistema"] or a["m2"]["choque_sistemas"] or a["m3_fases"])
+    except (KeyError, TypeError):
+        return True
