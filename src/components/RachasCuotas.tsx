@@ -1,5 +1,6 @@
 import type { ConstanteCuotaDTO } from '../api/types'
 import { KBarChart, type CuotaBar } from './KBarChart'
+import type { Cond } from '../lib/kview'
 import { loadConstantesCuota } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 
@@ -13,7 +14,7 @@ const CUOTA_FAMILIES = [
 
 /** Cuotas K (§3.8): rachas 1X2 de un equipo con carga propia; el toggle
  *  TODOS/LOCAL/VISITA vive fuera (compartible entre dos instancias). */
-export function RachasCuotas({ teamKey, cond }: { teamKey: string; cond: CuotaCond }) {
+export function RachasCuotas({ teamKey, cond, rol }: { teamKey: string; cond: CuotaCond; rol?: Cond }) {
   const cuota = useAsync(() => loadConstantesCuota(teamKey), teamKey)
   const condSuffix = cond === 'LOCAL' ? 'Local' : cond === 'VISITA' ? 'Visita' : ''
   const cuotaRows = (cuota.data ?? []).filter(
@@ -21,7 +22,7 @@ export function RachasCuotas({ teamKey, cond }: { teamKey: string; cond: CuotaCo
   )
   const barsFor = (fam: 'victoria' | 'empate' | 'derrota'): CuotaBar[] => {
     const kk = (fam + condSuffix) as keyof ConstanteCuotaDTO['k']
-    return cuotaRows.map((r) => ({ fecha: r.fecha, value: r.k[kk], burst: r.k[kk] === 0, cuota: r.cuota[fam], res: r.resultado }))
+    return cuotaRows.map((r) => ({ fecha: r.fecha, value: r.k[kk], burst: r.k[kk] === 0, cuota: r.cuota[fam], res: r.resultado, esLocal: r.esLocal }))
   }
 
   if (cuota.loading) return <div className="sad-sk" style={{ height: 150, marginTop: 10 }} />
@@ -41,7 +42,7 @@ export function RachasCuotas({ teamKey, cond }: { teamKey: string; cond: CuotaCo
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
       {CUOTA_FAMILIES.map((f) => (
-        <KBarChart key={f.key} bars={barsFor(f.key)} color={f.color} soft={f.soft} title={`Racha de ${f.label}`} />
+        <KBarChart key={f.key} bars={barsFor(f.key)} color={f.color} soft={f.soft} title={`Racha de ${f.label}`} rol={rol} cond={cond} />
       ))}
     </div>
   )

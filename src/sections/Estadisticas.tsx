@@ -1,6 +1,7 @@
 import { TEAMS } from '../data'
 import type { Match } from '../data/types'
 import type { GapEquipoDTO } from '../api/types'
+import { TablaPosiciones } from '../components/TablaPosiciones'
 import { TeamBadge } from '../components/TeamBadge'
 import { loadEstadisticas, loadH2H, loadPrediccion } from '../services/appdata'
 import { TEAM_NUM } from '../services/datasource'
@@ -127,12 +128,8 @@ export function Estadisticas({ store, m, isMobile }: Props) {
   const homePos = posOf(m.home)
   const awayPos = posOf(m.away)
 
-  const standings = d
-    ? d.tabla.map((s) => {
-        const hl = (TEAM_NUM[m.home] != null && s.equipoId === TEAM_NUM[m.home]) || (TEAM_NUM[m.away] != null && s.equipoId === TEAM_NUM[m.away]) || s.nombre === H.name || s.nombre === A.name
-        return { pos: s.posicion, name: s.nombre, pts: s.puntos, bg: hl ? 'var(--accent-soft)' : 'transparent', posColor: hl ? 'var(--accent)' : 'var(--t3)', nameColor: hl ? 'var(--t1)' : 'var(--t2)' }
-      })
-    : []
+  // los dos equipos del partido van resaltados en la clasificación
+  const destacados = [TEAM_NUM[m.home], TEAM_NUM[m.away]].filter((x): x is number => x != null)
 
   // enfrentamientos directos reales vía /fixtures?equipoId&rivalId
   const h2hReq = useAsync(() => loadH2H(m), m.id)
@@ -321,17 +318,15 @@ export function Estadisticas({ store, m, isMobile }: Props) {
               </>
             )}
           </section>
-          <section style={{ padding: 16, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
-            <div style={{ font: '700 12px var(--sans)', marginBottom: 10 }}>Tabla de posiciones</div>
-            {standings.map((st, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 8px', borderRadius: 7, background: st.bg }}>
-                <span style={{ font: '600 11px var(--mono)', color: st.posColor, width: 18 }}>{st.pos}</span>
-                <span style={{ font: '600 12px var(--sans)', color: st.nameColor, flex: 1 }}>{st.name}</span>
-                <span style={{ font: '600 11px var(--mono)', color: 'var(--t2)' }}>{st.pts}</span>
-              </div>
-            ))}
-            {standings.length === 0 && <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t3)' }}>Sin tabla para esta liga.</div>}
-          </section>
+          {/* misma tabla (columnas y botones de fase) que en la página de liga */}
+          {m.ligaId != null && (
+            <TablaPosiciones
+              ligaId={m.ligaId}
+              fases={d?.ligaFases ?? []}
+              destacar={destacados}
+              destacarNombres={[H.name, A.name]}
+            />
+          )}
         </aside>
       </div>
         </>

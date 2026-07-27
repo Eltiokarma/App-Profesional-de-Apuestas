@@ -514,44 +514,46 @@ export async function loadPlantilla(teamKey: string): Promise<PlantillaDTO | nul
 export interface EstadisticasData {
   home: EquipoStatsDTO
   away: EquipoStatsDTO
+  /** Tabla del AÑO: de aquí salen las posiciones (#N) que se pintan junto a
+   *  cada equipo. La clasificación con sus fases la pide TablaPosiciones. */
   tabla: StandingRowDTO[]
+  /** Fases de la liga (Apertura/Clausura/…) para los botones de la tabla. */
+  ligaFases: string[]
 }
 
 export async function loadEstadisticas(m: Match): Promise<EstadisticasData> {
   const ds = getDataSource()
   const homeId = TEAM_NUM[m.home]
   const awayId = TEAM_NUM[m.away]
-  const [home, away, tabla] = await Promise.all([
+  const [home, away, tabla, meta] = await Promise.all([
     ds.equipoStats(homeId),
     ds.equipoStats(awayId),
     m.ligaId != null ? ds.standings(m.ligaId) : Promise.resolve([]),
+    m.ligaId != null ? ds.liga(m.ligaId).catch(() => null) : Promise.resolve(null),
   ])
-  return { home, away, tabla }
+  return { home, away, tabla, ligaFases: meta?.fases ?? [] }
 }
 
 // ── página de liga: metadatos + clasificación + partidos ────────────────────
 export interface LigaData {
   meta: LigaDTO | null
-  tabla: StandingRowDTO[]
   proximos: Match[]
   recientes: Match[]
 }
 
 /** `temporada` opcional: sin ella, la más reciente (una pasada no tendrá próximos).
- *  `fase` opcional (Apertura/Clausura/…): filtra la tabla al torneo corto; sin
- *  ella, la tabla del año. */
-export async function loadLiga(ligaId: number, temporada?: number, fase?: string): Promise<LigaData> {
+ *  La clasificación NO viaja aquí: la pide TablaPosiciones, que es quien maneja
+ *  el selector de fase (Apertura/Clausura/…) y la usa igual en Estadísticas. */
+export async function loadLiga(ligaId: number, temporada?: number): Promise<LigaData> {
   const ds = getDataSource()
   const hoy = localDateStr(new Date())
-  const [meta, tabla, prog, fin] = await Promise.all([
+  const [meta, prog, fin] = await Promise.all([
     ds.liga(ligaId, temporada).catch(() => null), // liga sin metadatos (404) no bloquea la página
-    ds.standings(ligaId, temporada, fase),
     ds.fixtures({ ligaId, temporada, estado: 'programado', desde: hoy, orden: 'asc', limit: 10 }),
     ds.fixtures({ ligaId, temporada, estado: 'finalizado', limit: 10 }),
   ])
   return {
     meta,
-    tabla,
     proximos: prog.map(fixtureToMatch),
     recientes: fin.map(fixtureToMatch), // el contrato entrega desc: más reciente primero
   }

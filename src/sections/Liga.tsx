@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { TEAMS } from '../data'
 import type { Match } from '../data/types'
 import type { LigaDTO } from '../api/types'
+import { TablaPosiciones } from '../components/TablaPosiciones'
 import { TeamBadge } from '../components/TeamBadge'
 import { promptDespensaLiga, promptTimelineLiga } from '../lib/despensa'
 import { loadLiga } from '../services/appdata'
@@ -16,14 +17,13 @@ interface Props {
 
 /** Página de liga: identidad (bandera/logo), clasificación y partidos, con temporadas pasadas. */
 export function Liga({ store, ligaId, isMobile }: Props) {
-  // selección de temporada+fase ligada a la liga: al cambiar de liga vuelve a la
-  // más reciente y a la tabla del año (fase: null)
-  const [sel, setSel] = useState<{ liga: number; temporada: number | null; fase: string | null } | null>(null)
+  // selección de temporada ligada a la liga: al cambiar de liga vuelve a la más
+  // reciente (la fase la maneja TablaPosiciones, que es quien pide la tabla)
+  const [sel, setSel] = useState<{ liga: number; temporada: number | null } | null>(null)
   const [promptCopiado, setPromptCopiado] = useState<string | null>(null)
   const activo = sel && sel.liga === ligaId ? sel : null
   const temporada = activo?.temporada ?? null
-  const fase = activo?.fase ?? null
-  const liga = useAsync(() => loadLiga(ligaId, temporada ?? undefined, fase ?? undefined), `${ligaId}:${temporada ?? ''}:${fase ?? ''}`)
+  const liga = useAsync(() => loadLiga(ligaId, temporada ?? undefined), `${ligaId}:${temporada ?? ''}`)
   const d = liga.data
 
   // la cabecera no debe parpadear al cambiar de temporada: conservar el último meta de esta liga
@@ -80,7 +80,7 @@ export function Liga({ store, ligaId, isMobile }: Props) {
             {temporadas.length > 1 ? (
               <select
                 value={temporada ?? temporadas[0]}
-                onChange={(e) => setSel({ liga: ligaId, temporada: Number(e.target.value), fase: null })}
+                onChange={(e) => setSel({ liga: ligaId, temporada: Number(e.target.value) })}
                 title="Ver otra temporada"
                 style={{ padding: '4px 8px', borderRadius: 7, border: '1px solid var(--line2)', background: 'var(--bg2)', color: 'var(--t1)', font: '600 11px var(--mono)', cursor: 'pointer' }}
               >
@@ -112,11 +112,13 @@ export function Liga({ store, ligaId, isMobile }: Props) {
 
       {!liga.loading && !liga.error && d && (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1fr) 320px', gap: 14 }}>
-          {/* CLASIFICACIÓN */}
-          <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)', alignSelf: 'start' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 2 }}>
-              <div style={{ font: '700 12px var(--sans)' }}>Clasificación</div>
-              {d.tabla.length > 0 && (
+          {/* CLASIFICACIÓN — misma tabla (y mismos botones de fase) que en Estadísticas */}
+          <TablaPosiciones
+            ligaId={ligaId}
+            temporada={temporada ?? undefined}
+            fases={fases}
+            acciones={(tabla) =>
+              tabla.length > 0 && (
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
                   {([
                     ['despensa', 'Prompt research', 'Barrido de la liga para el EFE (DT, plantel, bajas): pégalo en tu Claude de escritorio y deposita el JSON en la pantalla de análisis — el EFE saldrá a ~$0.15', promptDespensaLiga],
@@ -125,7 +127,7 @@ export function Liga({ store, ligaId, isMobile }: Props) {
                     <button
                       key={key}
                       onClick={async () => {
-                        await navigator.clipboard.writeText(gen(nombre, d.tabla.map((r) => r.nombre)))
+                        await navigator.clipboard.writeText(gen(nombre, tabla.map((r) => r.nombre)))
                         setPromptCopiado(key)
                         setTimeout(() => setPromptCopiado(null), 2500)
                       }}
@@ -137,50 +139,9 @@ export function Liga({ store, ligaId, isMobile }: Props) {
                     </button>
                   ))}
                 </div>
-              )}
-            </div>
-            {/* FASES: Apertura / Clausura / … según lo nombre la región. Solo
-                aparecen cuando la liga parte el año (meta.fases no vacío). */}
-            {fases.length > 0 && (
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '10px 0 4px' }}>
-                {[null, ...fases].map((f) => {
-                  const activa = fase === f
-                  return (
-                    <button
-                      key={f ?? '__año__'}
-                      onClick={() => setSel({ liga: ligaId, temporada, fase: f })}
-                      title={f ? `Tabla de la fase ${f}` : 'Tabla acumulada de todo el año'}
-                      style={{ padding: '5px 12px', borderRadius: 999, border: activa ? '1px solid var(--accent)' : '1px solid var(--line)', background: activa ? 'var(--accent-soft)' : 'var(--bg3)', color: activa ? 'var(--accent)' : 'var(--t2)', font: '700 10.5px var(--sans)', cursor: 'pointer', letterSpacing: '.2px' }}
-                    >
-                      {f ?? 'Año'}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-            <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginBottom: 12 }}>
-              {fase ? `Fase ${fase} · ` : fases.length > 0 ? 'Tabla del año · ' : ''}Calculada con los fixtures finalizados capturados
-            </div>
-            {d.tabla.length > 0 ? (
-              <div style={{ display: 'grid', gridTemplateColumns: '26px minmax(0,1fr) 34px 34px 34px 40px', gap: '0 6px', fontVariantNumeric: 'tabular-nums' }}>
-                {(['#', 'Equipo', 'PJ', 'GF', 'GC', 'Pts'] as const).map((h, i) => (
-                  <span key={h} style={{ font: '600 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.4px', padding: '2px 0 8px', textAlign: i >= 2 ? 'right' : 'left' }}>{h}</span>
-                ))}
-                {d.tabla.map((r) => (
-                  <div key={r.equipoId} style={{ display: 'contents' }}>
-                    <span style={{ font: '600 11.5px var(--mono)', color: r.posicion <= 4 ? 'var(--accent)' : 'var(--t3)', padding: '7px 0', borderTop: '1px solid var(--line)' }}>{r.posicion}</span>
-                    <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)', padding: '7px 0', borderTop: '1px solid var(--line)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.nombre}</span>
-                    <span style={{ font: '500 11.5px var(--mono)', color: 'var(--t2)', padding: '7px 0', borderTop: '1px solid var(--line)', textAlign: 'right' }}>{r.partidosJugados}</span>
-                    <span style={{ font: '500 11.5px var(--mono)', color: 'var(--t2)', padding: '7px 0', borderTop: '1px solid var(--line)', textAlign: 'right' }}>{r.golesFavor}</span>
-                    <span style={{ font: '500 11.5px var(--mono)', color: 'var(--t2)', padding: '7px 0', borderTop: '1px solid var(--line)', textAlign: 'right' }}>{r.golesContra}</span>
-                    <span style={{ font: '700 12px var(--mono)', color: 'var(--t1)', padding: '7px 0', borderTop: '1px solid var(--line)', textAlign: 'right' }}>{r.puntos}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t3)', padding: 12 }}>Sin fixtures finalizados capturados para calcular la tabla.</div>
-            )}
-          </section>
+              )
+            }
+          />
 
           <aside style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <section style={{ padding: 16, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>

@@ -4,7 +4,7 @@ import type { KCondKey, KTypeKey, Match } from '../data/types'
 import { KLineChart, KLineLegend } from '../components/KLineChart'
 import { RachasCuotas, type CuotaCond } from '../components/RachasCuotas'
 import { TeamBadge } from '../components/TeamBadge'
-import { binBadge, FUSED_KEY, K_TYPE_GROUPS, K_WINDOW_OPTS, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
+import { binBadge, type Cond, FUSED_KEY, K_TYPE_GROUPS, K_WINDOW_OPTS, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
 import type { FusedK } from '../motor/types'
 import { loadBurbujas, loadProximos, type BurbujasData, type ProximoRival } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
@@ -16,7 +16,7 @@ interface Props {
   isMobile: boolean
 }
 
-function TeamPanel({ eng, teamId, role, kType, kCond, maxAbs, chartWindow, onOpen }: { eng: BurbujasData; teamId: string; role: string; kType: KTypeKey; kCond: KCondKey; maxAbs: number; chartWindow: number; onOpen: () => void }) {
+function TeamPanel({ eng, teamId, role, rol, kType, kCond, maxAbs, chartWindow, onOpen }: { eng: BurbujasData; teamId: string; role: string; rol: Cond; kType: KTypeKey; kCond: KCondKey; maxAbs: number; chartWindow: number; onOpen: () => void }) {
   const T = TEAMS[teamId]
   const key = FUSED_KEY[kType][kCond]
   const cur = eng.snaps.length ? eng.snaps[eng.snaps.length - 1].fused[key] : 0
@@ -41,7 +41,7 @@ function TeamPanel({ eng, teamId, role, kType, kCond, maxAbs, chartWindow, onOpe
 
       {/* picos acumulados: la K crece con la racha y cae a cero al resetearse */}
       <div style={{ marginTop: 6, borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--line)', padding: 6 }}>
-        <KLineChart snaps={eng.snaps} kType={kType} kCond={kCond} maxAbs={maxAbs} window={chartWindow} />
+        <KLineChart snaps={eng.snaps} kType={kType} kCond={kCond} maxAbs={maxAbs} window={chartWindow} rol={rol} />
       </div>
       <KLineLegend />
 
@@ -111,11 +111,11 @@ export function Burbujas({ store, m, isMobile }: Props) {
   ]
 
   // cuotas K (§3.8) bajo cada panel: rachas 1X2 del equipo con el toggle compartido
-  const rachasCard = (teamId: string) => (
+  const rachasCard = (teamId: string, rol: Cond) => (
     <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
       <div style={{ font: '700 12px var(--sans)' }}>Cuotas K · rachas 1X2 · {TEAMS[teamId].short}</div>
       <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>Suma acumulada de la cuota; cae a 0 al romperse la racha · {cuotaCond.toLowerCase()} · solo 2026</div>
-      <RachasCuotas teamKey={teamId} cond={cuotaCond} />
+      <RachasCuotas teamKey={teamId} cond={cuotaCond} rol={rol} />
     </section>
   )
 
@@ -204,12 +204,12 @@ export function Burbujas({ store, m, isMobile }: Props) {
       {!engData.loading && !engData.error && (
       <div style={{ display: 'grid', gridTemplateColumns: gridBurbujas, gap: 14 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
-          {engH && <TeamPanel eng={engH} teamId={m.home} role="Local" kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} chartWindow={s.kWindow} onOpen={() => store.openTeam(m.home)} />}
-          {rachasCard(m.home)}
+          {engH && <TeamPanel eng={engH} teamId={m.home} role="Local" rol="local" kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} chartWindow={s.kWindow} onOpen={() => store.openTeam(m.home)} />}
+          {rachasCard(m.home, 'local')}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
-          {engA && <TeamPanel eng={engA} teamId={m.away} role="Visitante" kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} chartWindow={s.kWindow} onOpen={() => store.openTeam(m.away)} />}
-          {rachasCard(m.away)}
+          {engA && <TeamPanel eng={engA} teamId={m.away} role="Visitante" rol="visita" kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} chartWindow={s.kWindow} onOpen={() => store.openTeam(m.away)} />}
+          {rachasCard(m.away, 'visita')}
         </div>
 
         <aside style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
