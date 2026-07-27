@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { AnalisisRegistroDTO, EfeBloque, EfeComparativo, EfeEquipo, EslabonDtpDTO, GeneracionEfeDTO, TimelineData } from '../api/types'
+import type { AnalisisRegistroDTO, EfeBloque, EfeComparativo, EfeEquipo, EslabonDtpDTO, GeneracionEfeDTO, PreflightEfeDTO, TimelineData } from '../api/types'
 import { CONFIG } from '../config'
 import { TEAMS } from '../data'
 import type { Match } from '../data/types'
 import { extraerBloquesDespensa, promptDespensaLiga, promptTimelineLiga } from '../lib/despensa'
-import { cargarDespensa, estadoAnalisisEfe, estadoDtp, estadoTimeline, generarAnalisisEfe, generarDtp, generarTimeline, loadAnalisisPartido } from '../services/appdata'
+import { cargarDespensa, estadoAnalisisEfe, estadoDtp, estadoTimeline, generarAnalisisEfe, generarDtp, generarTimeline, loadAnalisisPartido, preflightEfe } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import { TimelineComparativo } from '../components/TimelineComparativo'
 import { DtpPizarra } from '../components/DtpPizarra'
+import { PreflightEfe } from '../components/PreflightEfe'
 
 interface Props {
   m: Match
@@ -27,7 +28,7 @@ const BLOQUE_NOMBRE = { A: 'Cuerpo técnico', B: 'Plantel', C: 'K Constants', D:
 /** Carga de la despensa desde el Claude de escritorio (docs/DESPENSA_DESKTOP.md):
  *  la investigación cara se hace GRATIS con la suscripción y se pega aquí como
  *  JSON — el siguiente EFE por API no busca en la web (~$0.10-0.20). */
-function CargaDespensaBox({ liga, equipos }: { liga: string; equipos: string[] }) {
+function CargaDespensaBox({ liga, equipos, onDeposito }: { liga: string; equipos: string[]; onDeposito?: () => void }) {
   const [abierto, setAbierto] = useState(false)
   const [texto, setTexto] = useState('')
   const [cargando, setCargando] = useState(false)
@@ -53,8 +54,9 @@ function CargaDespensaBox({ liga, equipos }: { liga: string; equipos: string[] }
       const ajustes = r.canonizados && Object.keys(r.canonizados).length
         ? ` · nombres ajustados: ${Object.entries(r.canonizados).map(([a, b]) => `${a}→${b}`).join(', ')}`
         : ''
-      setResultado(`${r.depositados} datos depositados (${r.equipos.join(' / ')})${ajustes}${r.tiposIgnorados?.length ? ` · tipos ignorados: ${r.tiposIgnorados.join(', ')}` : ''} — genera el EFE ahora: usará esta investigación en vez de buscar en la web.`)
+      setResultado(`${r.depositados} datos depositados (${r.equipos.join(' / ')})${ajustes}${r.tiposIgnorados?.length ? ` · tipos ignorados: ${r.tiposIgnorados.join(', ')}` : ''} — mira el chequeo de arriba: ya debería marcar menos búsquedas.`)
       setTexto('')
+      onDeposito?.()   // el chequeo previo se recalcula: es gratis y es el punto
     } catch (e) {
       setError(e instanceof SyntaxError ? 'JSON inválido: copia el bloque completo que devolvió Claude' : e instanceof Error ? e.message : 'error al cargar')
     } finally {
@@ -343,10 +345,26 @@ export function Analisis({ m, isMobile }: Props) {
     }
   }, [m.id])
 
+  // CHEQUEO PREVIO: de dónde sale cada dato y qué va a costar la corrida. Es
+  // una lectura (no gasta nada) y se recarga sola cuando algo puede haberlo
+  // cambiado: al depositar despensa y al terminar un análisis.
+  const [pf, setPf] = useState<PreflightEfeDTO | null>(null)
+  const cargarPreflight = () => {
+    preflightEfe(m.id)
+      .then((r) => { if (vivoRef.current) setPf(r) })
+      .catch(() => { /* el chequeo es una ayuda: si falla, no bloquea nada */ })
+  }
+  useEffect(() => {
+    setPf(null)
+    cargarPreflight()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [m.id])
+
   const manejar = (res: GeneracionEfeDTO) => {
     if (!vivoRef.current) return
     if (res.estado === 'listo') {
       setGenerando(false)
+      cargarPreflight()   // ya hay análisis guardado: verlo pasa a costar 0
       registros.reload()
     } else if (res.estado === 'generando') {
       setGenerando(true)
@@ -439,8 +457,15 @@ export function Analisis({ m, isMobile }: Props) {
         )}
       </div>
 
+      {/* chequeo previo: qué hay cargado y qué va a costar — ANTES de gastar */}
+      {pf && <PreflightEfe pf={pf} onRecargar={cargarPreflight} />}
+
       {/* despensa manual: la investigación cara, gratis desde el escritorio */}
-      <CargaDespensaBox liga={m.league || m.comp} equipos={[TEAMS[m.home]?.name ?? m.home, TEAMS[m.away]?.name ?? m.away]} />
+      <CargaDespensaBox
+        liga={m.league || m.comp}
+        equipos={[TEAMS[m.home]?.name ?? m.home, TEAMS[m.away]?.name ?? m.away]}
+        onDeposito={cargarPreflight}
+      />
 
       {/* error de una regeneración con dashboard ya visible */}
       {efe && errorGen && (

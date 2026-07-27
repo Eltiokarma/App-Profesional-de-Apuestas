@@ -239,6 +239,9 @@ def analizar(payload: dict, esquema: dict, con_busqueda: bool,
              + uso["cache_write"] * precio["cache_write"]
              + uso["cache_read"] * precio["cache_read"]) / 1_000_000 \
         + hechas * _PRECIO_BUSQUEDA
+    # el costo real viaja con el uso: el motor lo guarda en `corridas` y el
+    # preflight lo devuelve como MEDICIÓN en vez de como estimación
+    uso["costo"], uso["busquedas"], uso["modelo"] = costo, hechas, modelo
     print(f"[efe] {modelo} · in={uso['input']} out={uso['output']} "
           f"cache_write={uso['cache_write']} cache_read={uso['cache_read']} "
           f"busqueda={'sí' if con_busqueda else 'no'} hechas={hechas} "

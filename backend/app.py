@@ -1655,6 +1655,21 @@ def analisis_efe_estado(fixture_id: int):
     return efemotor.estado_efe(fixture_id)
 
 
+@app.get(API + "/analisis/efe/preflight/{fixture_id}")
+def analisis_efe_preflight(fixture_id: int):
+    """Qué va a costar el EFE ANTES de generarlo — costo cero.
+
+    Resuelve las mismas fuentes que la corrida real (misma función), pero sin
+    llamar a ningún modelo y sin gastar cuota de API-Football. El candado de
+    análisis frío solo evita la catástrofe; esto informa también del caso
+    intermedio, que es el que sorprende en la factura."""
+    from backend.analisis import motor as efemotor
+    try:
+        return efemotor.preflight_efe(fixture_id)
+    except efemotor.FixtureNoExiste as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 @app.post(API + "/analisis/timeline")
 def analisis_timeline(body: EfeRequest):
     """Lanza el timeline comparativo del fixture (modo futbol-timeline).

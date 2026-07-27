@@ -666,6 +666,43 @@ export interface CargaDespensaResultadoDTO {
   tiposIgnorados?: string[]
 }
 
+/** De dónde saldrá cada dato al generar el EFE. `falta` es el único que cuesta
+ *  dinero (dispara búsqueda web); `api` gasta cuota del plan, no dólares. */
+export type OrigenDato = 'despensa' | 'anejo' | 'local' | 'api' | 'falta'
+
+export interface DatoPreflightDTO {
+  tipo: string
+  origen: OrigenDato
+  detalle: string
+  /** Solo en origen='anejo': días desde la captura. */
+  edadDias?: number | null
+}
+
+export interface EquipoPreflightDTO {
+  equipo: string
+  /** false = ningún dato guardado bajo ESE nombre (posible desajuste). */
+  enDespensa: boolean
+  datos: DatoPreflightDTO[]
+}
+
+/** Qué va a costar el EFE ANTES de generarlo (GET /analisis/efe/preflight). */
+export interface PreflightEfeDTO {
+  fixtureId: number
+  /** caliente = 0 faltantes · frio = por encima del umbral del candado. */
+  nivel: 'caliente' | 'tibio' | 'frio'
+  faltantes: number
+  /** Campos que dependen de que API-Football reporte algo (ensanchan el rango). */
+  dudosos: number
+  busquedasPrevistas: number
+  bloqueado: boolean
+  umbralFrio: number
+  costo: { min: number; max: number; medido: boolean; muestra: number }
+  yaExiste: boolean
+  demo: boolean
+  equipos: EquipoPreflightDTO[]
+  recomendaciones: string[]
+}
+
 /** Estado del trabajo de análisis (POST /analisis/efe y su sondeo /estado). */
 export interface GeneracionEfeDTO {
   estado: 'listo' | 'generando' | 'error' | 'nada'

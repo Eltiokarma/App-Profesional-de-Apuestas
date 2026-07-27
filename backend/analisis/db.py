@@ -51,6 +51,16 @@ CREATE TABLE IF NOT EXISTS casos_validacion (
     caso_num INTEGER, partido TEXT, fecha TEXT,
     que_acerto TEXT, que_fallo TEXT, correccion_derivada TEXT
 );
+CREATE TABLE IF NOT EXISTS corridas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tipo TEXT NOT NULL,
+    fixture_id INTEGER,
+    faltantes INTEGER, busquedas INTEGER, modelo TEXT,
+    tokens_in INTEGER, tokens_out INTEGER, cache_write INTEGER, cache_read INTEGER,
+    costo REAL,
+    creado_en TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_corridas_tipo ON corridas(tipo, faltantes);
 """
 
 
@@ -263,6 +273,66 @@ def guardar_investigacion(equipo: str, tipo: str, contenido: dict | list,
              json.dumps(fuentes or [], ensure_ascii=False), ahora()),
         )
         con.commit()
+
+
+# ── corridas (lo que REALMENTE costó cada llamada) ──────────────────────────
+#
+# El preflight puede estimar con una fórmula, pero una fórmula es una opinión.
+# Cada llamada ya calcula su costo real en cliente.analizar(): guardarlo cuesta
+# una fila y convierte la estimación en una medición. Con esto, la próxima vez
+# que el usuario vea "~$0.45" será porque las corridas parecidas costaron eso,
+# no porque alguien lo supuso.
+
+def registrar_corrida(tipo: str, fixture_id: int | None, faltantes: int,
+                      uso: dict) -> None:
+    """Una fila por llamada al modelo. Nunca revienta el análisis: si esto
+    falla, el usuario pierde una estadística, no un análisis ya pagado."""
+    try:
+        with conectar() as con:
+            con.execute(
+                "INSERT INTO corridas (tipo, fixture_id, faltantes, busquedas, modelo, "
+                "tokens_in, tokens_out, cache_write, cache_read, costo, creado_en) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                (tipo, fixture_id, faltantes, uso.get("busquedas") or 0,
+                 uso.get("modelo") or "", uso.get("input") or 0, uso.get("output") or 0,
+                 uso.get("cache_write") or 0, uso.get("cache_read") or 0,
+                 float(uso.get("costo") or 0.0), ahora()),
+            )
+            con.commit()
+    except Exception as e:
+        print(f"[costo] corrida no registrada: {e}", flush=True)
+
+
+def costo_medido(tipo: str, faltantes: int, tolerancia: int = 1,
+                 limite: int = 12) -> tuple[float, float, int]:
+    """(min, max, n) de lo que costaron corridas PARECIDAS —mismo tipo, número
+    de faltantes a ±`tolerancia`—. (0, 0, 0) si no hay historia: entonces el
+    preflight cae a la fórmula y lo declara."""
+    try:
+        with conectar() as con:
+            filas = con.execute(
+                "SELECT costo FROM corridas WHERE tipo=? AND faltantes BETWEEN ? AND ? "
+                "AND costo > 0 ORDER BY id DESC LIMIT ?",
+                (tipo, faltantes - tolerancia, faltantes + tolerancia, limite),
+            ).fetchall()
+    except Exception:
+        return 0.0, 0.0, 0
+    costos = [f["costo"] for f in filas]
+    if not costos:
+        return 0.0, 0.0, 0
+    return min(costos), max(costos), len(costos)
+
+
+def corridas_recientes(limite: int = 20) -> list[dict]:
+    """Historial para auditar el gasto (lectura pura)."""
+    try:
+        with conectar() as con:
+            filas = con.execute(
+                "SELECT tipo, fixture_id, faltantes, busquedas, modelo, costo, creado_en "
+                "FROM corridas ORDER BY id DESC LIMIT ?", (limite,)).fetchall()
+        return [dict(f) for f in filas]
+    except Exception:
+        return []
 
 
 # ── cadena_dtp (la película por equipo foco) ────────────────────────────────

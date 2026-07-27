@@ -148,6 +148,56 @@ Ahora hay dos capas, ambas en código:
 Es el mismo criterio de siempre: preferimos un dato con su edad a la vista antes
 que uno cómodo, y preferimos los dos antes que una factura.
 
+## El chequeo previo: saberlo ANTES de pulsar
+
+El candado de análisis frío evita la catástrofe, pero solo la catástrofe. Con
+el umbral en 6, un partido al que le faltan **4** campos pasa el candado sin
+decir nada y son 11 búsquedas: **medio dólar**, descubierto con la factura.
+
+`GET /analisis/efe/preflight/{fixtureId}` responde eso antes de gastar. No
+llama a ningún modelo y no consume cuota de API-Football: resuelve las fuentes
+con la **misma función** que la corrida real (`_resolver_fuentes`) y devuelve,
+por equipo y por tipo, de dónde va a salir el dato:
+
+| Origen | Qué significa | Cuesta |
+|---|---|---|
+| `local` | sad.db o la capa de jugadores | nada |
+| `despensa` | investigado antes y todavía fresco | nada |
+| `anejo` | vencido pero servible, con su edad declarada | nada |
+| `api` | API-Football al generar | cuota del plan, no dólares |
+| `falta` | **no lo tenemos: búsqueda web** | esto es lo que se paga |
+
+Que sea la misma función no es un detalle de implementación: un preflight que
+estimara por su cuenta empezaría a mentir el día que alguien cambiara el orden
+de resolución, y una pantalla de costo que miente es peor que no tenerla.
+
+`bajas` es el único que se declara **dudoso**: depende de que API-Football
+reporte lesionados de ese partido, y eso no se sabe sin gastar la request. Va
+en el máximo del rango en vez de darse por resuelto.
+
+### Estimado vs medido
+
+Cada llamada ya calculaba su costo real para el log; ahora además se guarda
+(tabla `corridas`). Con tres o más corridas de tamaño parecido, el preflight
+deja de estimar y devuelve el **rango real de lo que costaron**, marcado
+`MEDIDO ×n`. Mientras no las haya, usa la recta entre los dos extremos
+conocidos —0 búsquedas ≈ $0.05, 18 ≈ $0.6-1.2— y lo marca `ESTIMADO`.
+
+### Lo que el chequeo destapó
+
+La despensa en bloque del repo tiene los nueve países de Sudamérica, pero
+**solo `dt` está relleno**: `plantel` y `bajas` están vacíos en las nueve ligas
+(salvo 8 equipos de Perú). Como la regla es que un campo sin fuente va vacío y
+no rellenado a ojo, el archivo es honesto — pero el efecto práctico es que
+cualquier EFE fuera de Perú arranca con 4 faltantes, pasa el candado y cuesta
+~$0.50.
+
+La salida barata no es subir el umbral: `plantel` y `bajas` los da gratis la
+capa de jugadores desde API-Football. Con `python -m backend.ingesta.jugadores`
+corrido sobre esos equipos, esos cuatro faltantes desaparecen y el mismo
+análisis baja a ~$0.05. El preflight lo dice con esas palabras en sus
+recomendaciones.
+
 ## Cómo saber si funciona
 
 El log de cada corrida trae la cuenta, y es la medida real:

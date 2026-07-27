@@ -709,7 +709,28 @@ def main():
           timeline_vacio(ajustar({}, TIMELINE)) and not timeline_vacio(rtl))
     check("efe de fixture inexistente → 404",
           c.post(A + "/analisis/efe", json={"fixtureId": 999999}).status_code == 404)
+    # preflight: el chequeo previo del costo es una LECTURA (no gasta nada)
+    pf = c.get(A + f"/analisis/efe/preflight/{vivo['id']}").json()
+    check("preflight: contrato completo",
+          {"fixtureId", "nivel", "faltantes", "dudosos", "busquedasPrevistas", "bloqueado",
+           "umbralFrio", "costo", "yaExiste", "demo", "equipos", "recomendaciones"} <= set(pf),
+          sorted(pf))
+    check("preflight: en demo dice que no se gasta y no inventa un semáforo",
+          pf["demo"] is True and pf["costo"]["max"] == 0.0 and pf["nivel"] == "caliente", pf)
+    check("preflight: ve el análisis ya emitido (verlo cuesta 0)", pf["yaExiste"] is True, pf)
+    check("preflight de fixture inexistente → 404",
+          c.get(A + "/analisis/efe/preflight/999999").status_code == 404)
     del os.environ["SAD_EFE_DEMO"]
+    pf2 = c.get(A + f"/analisis/efe/preflight/{vivo['id']}").json()
+    check("preflight fuera de demo: un origen por cada tipo del protocolo",
+          all(len(e["datos"]) == len(efedb.TIPOS) for e in pf2["equipos"])
+          and all(d["origen"] in ("despensa", "anejo", "local", "api", "falta")
+                  for e in pf2["equipos"] for d in e["datos"]), pf2["equipos"][:1])
+    check("preflight: las búsquedas previstas son 3 + 2 × faltantes (0 si no falta nada)",
+          pf2["busquedasPrevistas"] == (min(3 + 2 * pf2["faltantes"], 18) if pf2["faltantes"] else 0),
+          (pf2["faltantes"], pf2["busquedasPrevistas"]))
+    check("preflight: siempre dice qué hacer, aunque no falte nada",
+          len(pf2["recomendaciones"]) > 0, pf2["recomendaciones"])
 
     # candado de análisis FRÍO: sin despensa suficiente se bloquea ANTES de
     # gastar (la llamada a la API jamás debe ejecutarse)

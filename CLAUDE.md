@@ -23,6 +23,7 @@ python -m backend.test_ficha      # ficha de partido (alineaciones/eventos/stats
 python -m backend.test_dtp        # DTP: cadena rodante, anti-hindsight y sin búsqueda web
 python -m backend.test_calendario # calendario SAD: bloque G del EFE calculado (sin IA)
 python -m backend.test_cronologia  # cronología SAD: los partidos del timeline, calculados
+python -m backend.test_preflight  # chequeo previo del EFE: qué va a costar antes de gastar
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
 python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--horizonte/--calibrar/--por-liga)
 

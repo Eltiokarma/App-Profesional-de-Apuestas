@@ -18,6 +18,7 @@ import type {
   LigaDTO,
   PartidoCalendarioDTO,
   PlantillaDTO,
+  PreflightEfeDTO,
   PrediccionDTO,
   StandingRowDTO,
 } from '../api/types'
@@ -395,6 +396,12 @@ export function generarAnalisisEfe(matchId: string, forzar = false, permitirFrio
  *  escritorio (docs/DESPENSA_DESKTOP.md) — el próximo EFE no busca en la web. */
 export function cargarDespensa(payload: CargaDespensaDTO): Promise<CargaDespensaResultadoDTO> {
   return getDataSource().cargarDespensa(payload)
+}
+
+/** Qué va a costar el EFE ANTES de generarlo: de dónde sale cada dato, cuántas
+ *  búsquedas web va a disparar y el rango de costo. No gasta nada. */
+export function preflightEfe(matchId: string): Promise<PreflightEfeDTO> {
+  return getDataSource().preflightEfe(fixtureNum(matchId))
 }
 
 /** Sondeo del trabajo de análisis EFE (listo / generando / error / nada). */
