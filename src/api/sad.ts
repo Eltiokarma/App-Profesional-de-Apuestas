@@ -21,6 +21,7 @@ import type {
   EslabonDtpDTO,
   LigaDTO,
   NivelDTO,
+  PartidoCalendarioDTO,
   PlantillaDTO,
   PrediccionDTO,
   StandingRowDTO,
@@ -110,6 +111,11 @@ export const SadApi = {
   /** Sondeo del trabajo de DTP. */
   estadoDtp: (fixtureId: number, equipoFoco: number) =>
     apiGet<GeneracionEfeDTO>(`/analisis/dtp/estado/${fixtureId}` + qs({ equipoFoco })),
+
+  /** Calendario SAD: próximos partidos con el mapa de rivales del bloque G
+   *  ya calculado de nuestra base (0 tokens). */
+  calendario: (equipoId: number, n?: number) =>
+    apiGet<PartidoCalendarioDTO[]>(`/equipos/${equipoId}/calendario` + qs({ n })),
 
   /** La película del equipo: pronóstico → qué pasó → veredicto → lección. */
   cadena: (equipoId: number, limit?: number) =>

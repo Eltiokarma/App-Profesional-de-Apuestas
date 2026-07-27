@@ -1190,6 +1190,18 @@ def equipo_plantilla(equipo_id: int):
     return p
 
 
+@app.get(API + "/equipos/{equipo_id}/calendario")
+def equipo_calendario(equipo_id: int, n: int = Query(default=4, ge=1, le=10)):
+    """Calendario SAD: los próximos partidos con el mapa de rivales del bloque G
+    (etiquetas del protocolo EFE) calculado de sad.db, cada etiqueta con el dato
+    que la sostiene. Cero requests y cero tokens: esto lo deducía el modelo."""
+    team = db.query_one("sad", "SELECT id FROM teams WHERE id=?", (equipo_id,))
+    if not team:
+        raise HTTPException(404, f"equipo {equipo_id} no existe")
+    from backend import calendario as cal
+    return cal.calendario_de(equipo_id, n)
+
+
 @app.get(API + "/fixtures/{fixture_id}/ficha")
 def fixture_ficha(fixture_id: int):
     """Ficha de partido (docs/JUGADORES.md): plantillas con indicadores +

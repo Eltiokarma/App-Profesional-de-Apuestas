@@ -16,6 +16,7 @@ import type {
   CargaDespensaResultadoDTO,
   GeneracionEfeDTO,
   LigaDTO,
+  PartidoCalendarioDTO,
   PlantillaDTO,
   PrediccionDTO,
   StandingRowDTO,
@@ -433,28 +434,28 @@ export async function loadTeamFixtures(teamKey: string): Promise<Match[]> {
   return fx.map(fixtureToMatch)
 }
 
-// ── próximos partidos con nivel del rival (card de Burbujas) ────────────────
-export interface ProximoRival {
-  fecha: string // dd/mm
-  rivalNombre: string
+// ── calendario SAD: próximos partidos con el mapa de rivales ────────────────
+// El mismo calendario que lee el EFE (bloque G), calculado por el backend sin
+// gastar un token. La UI le añade el bin del rival, que ya sale del motor.
+export interface PartidoCalendarioUI extends PartidoCalendarioDTO {
+  /** dd/mm para la columna de fecha */
+  fechaCorta: string
   bin: number
   binEtiqueta: string
 }
 
-export async function loadProximos(teamKey: string, n = 3): Promise<ProximoRival[]> {
+export async function loadCalendarioSad(teamKey: string, n = 4): Promise<PartidoCalendarioUI[]> {
   const equipoId = TEAM_NUM[teamKey]
   if (equipoId == null) return []
   const ds = getDataSource()
-  // desde hoy y asc: excluye programados con fecha pasada (aplazados sin jugar)
-  const prox = await ds.fixtures({ equipoId, estado: 'programado', desde: localDateStr(new Date()), orden: 'asc', limit: n })
+  const cal = await ds.calendario(equipoId, n)
   return Promise.all(
-    prox.map(async (f) => {
-      const rival = f.local.id === equipoId ? f.visitante : f.local
-      const nv = (await ds.niveles(rival.id, 1))[0]
-      const d = new Date(f.fecha)
+    cal.map(async (c) => {
+      const nv = (await ds.niveles(c.rivalId, 1))[0]
+      const [y, mm, dd] = c.fecha.split('-')
       return {
-        fecha: `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}`,
-        rivalNombre: rival.nombre,
+        ...c,
+        fechaCorta: dd && mm ? `${dd}/${mm}` : y,
         bin: nv ? nv.bin : 0,
         binEtiqueta: nv ? nv.binEtiqueta : 'Sin datos',
       }

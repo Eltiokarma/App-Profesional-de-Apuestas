@@ -175,6 +175,25 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Plantilla' }
         '404': { description: No existe }
+  /equipos/{equipoId}/calendario:
+    get:
+      summary: Calendario SAD — próximos partidos con el mapa de rivales (bloque G del EFE)
+      description: >
+        Las etiquetas contextuales del rival (RECIÉN ASCENDIDO, EN CRISIS,
+        LOCAL FUERTE, VISITA DÉBIL, EQUIPO SORPRESA, BLOQUE BAJO, CLÁSICO)
+        calculadas de sad.db con el criterio numérico del protocolo, cada una
+        con el dato que la sostiene. 0 requests y 0 tokens: es el mismo bloque
+        que antes deducía el modelo. `[]` si no hay fixtures programados.
+      parameters:
+        - { name: equipoId, in: path, required: true, schema: { type: integer } }
+        - { name: n, in: query, schema: { type: integer, default: 4, minimum: 1, maximum: 10 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/PartidoCalendario' } }
+        '404': { description: No existe el equipo }
   /fixtures/{fixtureId}/ficha:
     get:
       summary: Ficha de partido — plantillas + congestión de ambos equipos
@@ -847,6 +866,41 @@ components:
         local: { $ref: '#/components/schemas/FichaEquipo' }
         visitante: { $ref: '#/components/schemas/FichaEquipo' }
         tactica: { $ref: '#/components/schemas/FichaTactica' }
+    EtiquetaRival:
+      type: object
+      description: >
+        Una etiqueta del bloque G2 con el DATO que la sostiene. Sin el número
+        sería una opinión, y una opinión no debería entrar en un análisis.
+      required: [codigo, label, dato]
+      properties:
+        codigo:
+          type: string
+          enum: [RECIEN_ASCENDIDO, EN_CRISIS, LOCAL_FUERTE, VISITA_DEBIL, EQUIPO_SORPRESA, BLOQUE_BAJO, CLASICO]
+        label: { type: string, description: 'el nombre del protocolo, para mostrar' }
+        dato: { type: string, description: 'la cifra que dispara la etiqueta ("3 derrotas seguidas")' }
+        nota: { type: string, description: 'qué implica para la lectura' }
+        parcial:
+          type: boolean
+          description: >
+            true cuando el criterio solo se cubre en parte (CLÁSICO: detectamos
+            derbis de ciudad, no rivalidades nacionales). Su ausencia no prueba nada.
+    PartidoCalendario:
+      type: object
+      description: 'Un partido próximo con el mapa de rivales del bloque G ya resuelto'
+      required: [fixtureId, fecha, rivalId, rival, condicion, etiquetas]
+      properties:
+        fixtureId: { type: integer }
+        fecha: { type: string, format: date }
+        rivalId: { type: integer }
+        rival: { type: string }
+        condicion: { type: string, enum: [L, V] }
+        torneo: { type: string, nullable: true }
+        ronda: { type: string, nullable: true }
+        posicionRival: { type: integer, nullable: true }
+        equiposEnLaTabla: { type: integer, nullable: true }
+        zonaRival: { type: string, nullable: true, enum: [alta, media, descenso, null] }
+        diasDescanso: { type: integer, nullable: true, description: 'contra el partido anterior' }
+        etiquetas: { type: array, items: { $ref: '#/components/schemas/EtiquetaRival' } }
     EslabonDtp:
       type: object
       description: 'Un partido de la cadena DTP de un equipo foco'

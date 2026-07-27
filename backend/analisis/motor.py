@@ -129,15 +129,31 @@ def _tabla_de(league_id: int | None, season: int | None) -> str:
     )
 
 
+def _calendario_de(team_id: int) -> str:
+    """El fixture del bloque G ya RESUELTO: próximos rivales con su posición,
+    días de descanso y las etiquetas contextuales de G2 con el número que las
+    sostiene. Se calcula de sad.db (backend/calendario.py), así que el modelo
+    no busca ni deduce lo que ya es nuestro. Si no hay nada calculado, cae a la
+    lista escueta de próximos partidos: media verdad, nunca una inventada."""
+    try:
+        from backend import calendario as calsad
+        txt = calsad.texto_para_skills(team_id)
+        if txt:
+            return txt
+    except Exception:
+        pass
+    return _proximos_de(team_id)
+
+
 def _datos_locales(fx: dict) -> dict[str, dict[str, str]]:
     """resultados / fixture / tabla desde NUESTRA ingesta: gratis y al día —
     la búsqueda web queda solo para lo que no tenemos (dt, plantel, xi, bajas)."""
     tabla = _tabla_de(fx.get("league_id"), fx.get("league_season"))
     return {
         "equipo_a": {"resultados": _resultados_de(fx["home_team_id"]),
-                     "fixture": _proximos_de(fx["home_team_id"]), "tabla": tabla},
+                     "fixture": _calendario_de(fx["home_team_id"]), "tabla": tabla},
         "equipo_b": {"resultados": _resultados_de(fx["away_team_id"]),
-                     "fixture": _proximos_de(fx["away_team_id"]), "tabla": tabla},
+                     "fixture": _calendario_de(fx["away_team_id"]), "tabla": tabla},
     }
 
 
@@ -282,8 +298,16 @@ def generar_efe(fixture_id: int, estado: str = "preliminar", permitir_frio: bool
         for frescos, faltan, lado in ((frescos_a, faltan_a, "equipo_a"),
                                       (frescos_b, faltan_b, "equipo_b")):
             for tipo, txt in {**locales[lado], **xi_bajas[lado]}.items():
-                if txt and tipo in faltan:
+                if not txt:
+                    continue
+                # el calendario calculado MANDA sobre lo que haya en despensa:
+                # aquello salió de una búsqueda web vieja, esto es de hoy y de
+                # nuestros propios datos
+                if tipo == "fixture" and txt.startswith("Calendario SAD"):
                     frescos[tipo] = txt
+                elif tipo in faltan:
+                    frescos[tipo] = txt
+                if tipo in faltan and frescos.get(tipo) == txt:
                     faltan.remove(tipo)
         # cruce con la capa de jugadores (docs/JUGADORES.md): los indicadores
         # de NUESTRA base mandan sobre la búsqueda web en plantel/dt, y las
@@ -311,6 +335,20 @@ def generar_efe(fixture_id: int, estado: str = "preliminar", permitir_frio: bool
             "datos_cacheados": {"equipo_a": frescos_a, "equipo_b": frescos_b},
             "campos_faltantes": faltantes,
         }
+        # bloque G: el calendario y el mapa de rivales ya vienen calculados de
+        # sad.db con el criterio numérico del protocolo (backend/calendario.py).
+        # Buscarlo en la web era pagar por un dato propio — y peor: por uno
+        # menos fiable que el nuestro en ligas chicas.
+        if any(str(locales[l].get("fixture", "")).startswith("Calendario SAD")
+               for l in ("equipo_a", "equipo_b")):
+            payload["bloque_g"] = (
+                "NO busques el fixture ni las etiquetas contextuales del bloque G: vienen "
+                "calculadas de nuestra base en datos_cacheados.<equipo>.fixture, cada una con "
+                "el dato que la sostiene. DEJA `calendario` VACÍO ([]) en la salida: lo "
+                "rellenamos nosotros con esos mismos datos, y copiarlo solo gastaría tokens. "
+                "Úsalo para la lectura de la ventana (G3), nada más. Si un rival va 'sin "
+                "etiqueta', es que NINGÚN criterio se cumplió: no le inventes una."
+            )
         # el analista hace su propia lectura K en la app (sección Burbujas):
         # el bloque C no se investiga ni puntúa — ahorra las búsquedas más caras.
         # SAD_EFE_CON_K=1 lo reactiva si algún día se quiere de vuelta.
@@ -387,6 +425,17 @@ def generar_efe(fixture_id: int, estado: str = "preliminar", permitir_frio: bool
         depositados = _depositar(resultado)
         print(f"[efe] despensa: {depositados} datos depositados "
               f"({equipo_a} / {equipo_b})", flush=True)
+
+        # el bloque G lo rellena el CÓDIGO, no el modelo: mismos datos, sin
+        # tokens de salida y sin margen para que se adorne por el camino
+        try:
+            from backend import calendario as calsad
+            for lado, tid in (("equipo_a", fx["home_team_id"]), ("equipo_b", fx["away_team_id"])):
+                items = calsad.items_para_efe(tid)
+                if items and isinstance(resultado.get(lado), dict):
+                    resultado[lado]["calendario"] = items
+        except Exception as e:  # nunca tirar un análisis ya pagado por esto
+            print(f"[efe] calendario no rellenado: {e}", flush=True)
 
     return efedb.guardar_analisis(
         "efe", fixture_id, equipo_a, equipo_b, fecha or "", estado,
@@ -708,14 +757,22 @@ def generar_dtp(fixture_id: int, equipo_foco_id: int) -> dict:
                                       "marcador": f"{ant['goals_home']}-{ant['goals_away']}"},
                           "ficha": ficha_ant} if ant else None),
             "apertura_previa": apertura_previa,
+            # el calendario del bloque G ya calculado: el DTP mira hacia
+            # adelante (vida útil del plan, M6) y necesita saber qué viene
+            "calendario": _calendario_de(equipo_foco_id),
         },
         "campos_faltantes": faltantes,
     }
-    # el EFE de este partido, si existe: contexto sin gastar nada
+    # el EFE de este partido, si existe: contexto sin gastar nada. Van las DOS
+    # piezas — el matchup H (quién gana qué duelo) es justo lo que el DTP
+    # verifica en el campo, y sin él la lectura SAD llega sin el porqué.
     efe_previo = efedb.analisis_existente("efe", fixture_id, "confirmado") \
         or efedb.analisis_existente("efe", fixture_id, "preliminar")
     if efe_previo:
-        payload["contexto_efe"] = efe_previo["resultado"].get("lectura_sad", {})
+        res = efe_previo["resultado"]
+        contexto = {k: res.get(k) for k in ("lectura_sad", "matchup_h") if res.get(k)}
+        if contexto:
+            payload["contexto_efe"] = contexto
     if hay_xi and not con_grid:
         payload["aviso_carriles"] = (
             "La alineación NO trae grid (posición en el campo): NO inventes duelos por carril. "

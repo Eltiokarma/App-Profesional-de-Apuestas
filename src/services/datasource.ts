@@ -27,9 +27,11 @@ import type {
   JugadorDTO,
   AlineacionDTO,
   EslabonDtpDTO,
+  EtiquetaRivalDTO,
   FichaTacticaDTO,
   LigaDTO,
   NivelDTO,
+  PartidoCalendarioDTO,
   PlantillaDTO,
   PrediccionDTO,
   PuntoLiveDTO,
@@ -119,6 +121,9 @@ export interface SadDataSource {
   estadoDtp(fixtureId: number, equipoFoco: number): Promise<GeneracionEfeDTO>
   /** La película del equipo: cadena de pronóstico → veredicto → lección. */
   cadena(equipoId: number, limit?: number): Promise<EslabonDtpDTO[]>
+  /** Calendario SAD: próximos partidos con el mapa de rivales (bloque G del EFE)
+   *  ya calculado — la misma lectura en todas las pantallas, sin IA. */
+  calendario(equipoId: number, n?: number): Promise<PartidoCalendarioDTO[]>
 }
 
 // ---------- mapeo de ids internos (strings) ↔ contrato (números) ----------
@@ -616,6 +621,55 @@ class MockDataSource implements SadDataSource {
     return reg ? { estado: 'listo', registro: reg } : { estado: 'nada' }
   }
 
+  async calendario(equipoId: number, n = 4): Promise<PartidoCalendarioDTO[]> {
+    const key = NUM_TEAM[equipoId]
+    if (!key || !TEAMS[key]) return []
+    // la demo vive en un solo día: "próximos" = los programados del equipo
+    const futuros = MATCHES.filter((x) => x.status === 'sched' && (x.home === key || x.away === key)).slice(0, n)
+    const tabla = STANDINGS[TEAMS[key] && futuros[0] ? futuros[0].lk : 'laliga'] ?? []
+    return futuros.map((x, i) => {
+      const esLocal = x.home === key
+      const rk = esLocal ? x.away : x.home
+      const rival = TEAMS[rk]
+      // solo las etiquetas que los datos de la demo sostienen, con su dato:
+      // inventar las otras aquí enseñaría a la UI a confiar en humo
+      const etiquetas: EtiquetaRivalDTO[] = []
+      const derrotas = (() => {
+        let c = 0
+        for (const r of rival.form) { if (r === 'L') c++; else break }
+        return c
+      })()
+      if (derrotas >= 3) {
+        etiquetas.push({
+          codigo: 'EN_CRISIS', label: 'EN CRISIS', dato: `${derrotas} derrotas seguidas`,
+          nota: 'posible efecto rebote, en cualquiera de los dos sentidos',
+        })
+      }
+      const g = gapFor(rk)
+      if (g && g.gap != null && g.gap <= -0.35) {
+        etiquetas.push({
+          codigo: 'EQUIPO_SORPRESA', label: 'EQUIPO SORPRESA',
+          dato: `rinde ${Math.abs(g.gap).toFixed(2)} pts/partido por encima de su nivel`,
+          nota: 'candidato a regresión: la ventaja puede no sostenerse',
+        })
+      }
+      return {
+        fixtureId: FIXTURE_NUM(x.id),
+        fecha: MOCK_NOW.slice(0, 10),
+        rivalId: TEAM_NUM[rk],
+        rival: rival.name,
+        condicion: esLocal ? 'L' : 'V',
+        torneo: x.comp,
+        ronda: x.league,
+        posicionRival: rival.pos,
+        equiposEnLaTabla: tabla.length || null,
+        zonaRival: !tabla.length ? null : rival.pos <= 4 ? 'alta' : rival.pos > tabla.length - 3 ? 'descenso' : 'media',
+        diasDescanso: i === 0 ? null : 0,
+        etiquetas,
+      }
+    })
+  }
+
   async cadena(equipoId: number): Promise<EslabonDtpDTO[]> {
     const nombre = TEAMS[NUM_TEAM[equipoId]]?.name
     if (!nombre) return []
@@ -821,6 +875,7 @@ class HttpDataSource implements SadDataSource {
   generarDtp = (fixtureId: number, equipoFoco: number, forzar?: boolean) => SadApi.generarDtp(fixtureId, equipoFoco, forzar)
   estadoDtp = (fixtureId: number, equipoFoco: number) => SadApi.estadoDtp(fixtureId, equipoFoco)
   cadena = (equipoId: number, limit?: number) => SadApi.cadena(equipoId, limit)
+  calendario = (equipoId: number, n?: number) => SadApi.calendario(equipoId, n)
   equipoStats = (equipoId: number) => SadApi.equipoStats(equipoId)
   plantilla = (equipoId: number) => SadApi.plantilla(equipoId)
   fichaPartido = (fixtureId: number) => SadApi.fichaPartido(fixtureId)
