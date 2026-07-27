@@ -204,8 +204,17 @@ def _listar(liga: str | None, directorio: str | None) -> None:
         equipos = b.get("equipos") or []
         llenos = sum(1 for e in equipos for v in (e.get("datos") or {}).values() if v)
         ttl = efedb.TTL_HORAS.get("dt", 336) / 24
-        estado = "sin fecha válida" if edad is None else (
-            f"{edad} días · {'VENCE en ' + str(int(ttl - edad)) + ' días' if edad < ttl else 'VENCIDO (toca refrescar)'}")
+        gracia = efedb.GRACIA_HORAS.get("dt", 0) / 24
+        if edad is None:
+            estado = "sin fecha válida"
+        elif edad < ttl:
+            estado = f"{edad} días · VENCE en {int(ttl - edad)} días"
+        elif edad < ttl + gracia:
+            # dentro de gracia el EFE lo sigue usando: no cuesta, pero avisa
+            estado = (f"{edad} días · VENCIDO, aún servido con su edad declarada "
+                      f"({int(ttl + gracia - edad)} días antes de volver a costar)")
+        else:
+            estado = f"{edad} días · VENCIDO y fuera de gracia: cada EFE vuelve a buscar en la web"
         print(f"{os.path.basename(ruta)}: {b.get('liga', '?')} · {len(equipos)} equipos · "
               f"{llenos} campos con dato · investigado {b.get('investigado_en')} ({estado})")
 

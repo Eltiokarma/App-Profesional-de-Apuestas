@@ -165,11 +165,17 @@ def _fila_a_dto(f: sqlite3.Row) -> dict:
 
 # ── investigacion (despensa con TTL por tipo, en horas) ─────────────────────
 
-# Los dos campos que solo da la web (`dt` y `plantel`) caducan a los 14 días
-# por defecto. Si el barrido en bloque es QUINCENAL, 14 deja un día sin cubrir
-# y ese día todo EFE sale caro: SAD_DESPENSA_TTL_DIAS=16 alinea el TTL con la
-# cadencia real del refresco (docs/DESPENSA_DESKTOP.md).
-_TTL_DIAS = max(1, int(os.environ.get("SAD_DESPENSA_TTL_DIAS", "14")))
+# La despensa se rellena en BARRIDOS periódicos (docs/DESPENSA_DESKTOP.md), así
+# que el TTL se DERIVA de esa cadencia en vez de fijarse a ojo: un TTL más corto
+# que el barrido abre una ventana en la que la despensa ya venció y el barrido
+# todavía no llegó — y ese día TODO EFE sale caro. El margen absorbe además que
+# un barrido se atrase un día o dos, que es lo normal cuando lo dispara una
+# persona.
+_CADENCIA_DIAS = max(1, int(os.environ.get("SAD_DESPENSA_CADENCIA_DIAS", "15")))
+_MARGEN_DIAS = 2
+# SAD_DESPENSA_TTL_DIAS sigue mandando si alguien lo fija explícitamente.
+_TTL_DIAS = max(1, int(os.environ.get("SAD_DESPENSA_TTL_DIAS", "0") or 0)
+                or _CADENCIA_DIAS + _MARGEN_DIAS)
 
 TTL_HORAS = {
     "dt": _TTL_DIAS * 24,
@@ -183,13 +189,47 @@ TTL_HORAS = {
     # institucionales/técnicos no caducan rápido
     "timeline_eventos": 72,
 }
+
+# GRACIA: aun con el TTL alineado, un barrido que no se corre deja la despensa
+# vencida y el EFE volvería a pagar búsquedas. Para los tipos que SOLO da la web
+# (dt, plantel), un dato vencido pero reciente se sigue sirviendo —declarando su
+# edad— durante un ciclo más de barrido: un plantel de hace tres semanas es peor
+# que uno de ayer, pero es MUCHO mejor que gastar en buscarlo, y decir su edad
+# deja que el análisis lo descuente. Pasada la gracia vuelve a contar como
+# faltante: servir un dato viejo sin límite sí sería mentir.
+#
+# El resto no lleva gracia y no la necesita: tabla/resultados/fixture salen de
+# sad.db y xi_reciente/bajas de API-Football, así que nunca dependen de esto.
+GRACIA_HORAS = {"dt": _CADENCIA_DIAS * 24, "plantel": _CADENCIA_DIAS * 24}
+
 # TIPOS del protocolo EFE: lo que el EFE investiga/consume. timeline_eventos
 # es del modo timeline — NO debe entrar aquí o el EFE lo contaría faltante.
 TIPOS = tuple(t for t in TTL_HORAS if t != "timeline_eventos")
 
 
+def _nota_edad(contenido, dias: int):
+    """Marca un dato añejo con su edad. Solo tiene sentido en texto (que es lo
+    que guarda el EFE); cualquier otra forma se devuelve intacta antes que
+    corromperla por adornarla."""
+    if not isinstance(contenido, str) or not contenido.strip():
+        return contenido
+    return (f"[dato de hace {dias} días, sin refrescar desde el último barrido: "
+            f"tómalo con reserva y NO lo des por confirmado] {contenido}")
+
+
 def investigacion_de(equipo: str) -> tuple[dict, list[str]]:
-    """Devuelve ({tipo: contenido} fresco, [tipos vencidos o ausentes])."""
+    """({tipo: contenido} utilizable, [tipos ausentes o demasiado viejos]).
+
+    Lo añejo-pero-servible entra en el primero (con su edad declarada) y NO en
+    el segundo: los faltantes son los que disparan búsqueda web, y por tanto el
+    gasto."""
+    frescos, faltantes, _ = investigacion_detallada(equipo)
+    return frescos, faltantes
+
+
+def investigacion_detallada(equipo: str) -> tuple[dict, list[str], dict[str, int]]:
+    """Igual que `investigacion_de` + {tipo: días de antigüedad} de lo que se
+    sirvió pasado su TTL, para poder decirlo en el prompt y en el log."""
     with conectar() as con:
         filas = con.execute(
             "SELECT tipo, contenido, capturado_en FROM investigacion WHERE equipo=?",
@@ -197,13 +237,20 @@ def investigacion_de(equipo: str) -> tuple[dict, list[str]]:
         ).fetchall()
     ahora_dt = datetime.now(timezone.utc)
     frescos: dict = {}
+    anejos: dict[str, int] = {}
     for f in filas:
+        tipo = f["tipo"]
         capturado = datetime.strptime(f["capturado_en"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
         edad_h = (ahora_dt - capturado).total_seconds() / 3600
-        if edad_h <= TTL_HORAS.get(f["tipo"], 24):
-            frescos[f["tipo"]] = json.loads(f["contenido"])
+        ttl = TTL_HORAS.get(tipo, 24)
+        if edad_h <= ttl:
+            frescos[tipo] = json.loads(f["contenido"])
+        elif edad_h <= ttl + GRACIA_HORAS.get(tipo, 0):
+            dias = int(edad_h // 24)
+            frescos[tipo] = _nota_edad(json.loads(f["contenido"]), dias)
+            anejos[tipo] = dias
     faltantes = [t for t in TIPOS if t not in frescos]
-    return frescos, faltantes
+    return frescos, faltantes, anejos
 
 
 def guardar_investigacion(equipo: str, tipo: str, contenido: dict | list,

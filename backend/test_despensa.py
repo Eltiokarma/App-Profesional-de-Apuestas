@@ -11,6 +11,7 @@ import json
 import os
 import sys
 import tempfile
+from datetime import datetime, timedelta, timezone
 
 # la despensa vive junto a las DBs: se apunta a un temporal ANTES de importar
 _TMP = tempfile.mkdtemp(prefix="sad-despensa-")
@@ -107,6 +108,34 @@ def main():
     check("el EFE lo ve fresco y deja de contarlo faltante",
           "dt" in frescos and "dt" not in faltantes, (list(frescos), faltantes))
     check("lo no investigado sigue en faltantes", "plantel" in faltantes, faltantes)
+
+    # ── LA VENTANA CARA: barrido quincenal vs TTL ──────────────────────────
+    # El día en que la despensa vence y el barrido aún no llegó, el EFE volvía
+    # a pagar búsquedas. Ese día no debe existir.
+    check("el TTL cubre la cadencia del barrido con margen",
+          efedb.TTL_HORAS["dt"] / 24 > 15, efedb.TTL_HORAS["dt"] / 24)
+
+    def envejecer(equipo, tipo, dias):
+        viejo = (datetime.now(timezone.utc) - timedelta(days=dias)).strftime("%Y-%m-%d %H:%M:%S")
+        with efedb.conectar() as con:
+            con.execute("UPDATE investigacion SET capturado_en=? WHERE equipo=? AND tipo=?",
+                        (viejo, equipo, tipo))
+            con.commit()
+
+    # un barrido que se atrasa: el dato pasó el TTL pero sigue dentro de gracia
+    envejecer("Sporting Cristal", "dt", int(efedb.TTL_HORAS["dt"] / 24) + 3)
+    frescos_v, faltan_v, anejos_v = efedb.investigacion_detallada("Sporting Cristal")
+    check("vencido pero dentro de gracia: se sirve y NO dispara búsqueda",
+          "dt" in frescos_v and "dt" not in faltan_v, (list(frescos_v), faltan_v))
+    check("y se sirve declarando su edad (no se hace pasar por fresco)",
+          anejos_v.get("dt") and "sin refrescar" in frescos_v["dt"], (anejos_v, frescos_v.get("dt")))
+
+    # pasada la gracia sí vuelve a faltar: servir un dato viejo sin límite sería mentir
+    envejecer("Sporting Cristal", "dt",
+              int((efedb.TTL_HORAS["dt"] + efedb.GRACIA_HORAS["dt"]) / 24) + 2)
+    _fr, faltan_x, anejos_x = efedb.investigacion_detallada("Sporting Cristal")
+    check("pasada la gracia vuelve a contar como faltante",
+          "dt" in faltan_x and not anejos_x, (faltan_x, anejos_x))
 
     # ── canonización: los nombres del barrido contra los nombres de la app ──
     # (API-Football nombra distinto que los medios; sin este puente el dato se
