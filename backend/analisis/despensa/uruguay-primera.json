@@ -1,0 +1,121 @@
+{
+  "liga": "Uruguay - Primera División 2026",
+  "investigado_en": "2026-07-27",
+  "nota": "PARCIAL: 10 de los 16 clubes. Los seis restantes no aparecían con entrenador en la fuente y NO se rellenaron a ojo. Barrido quincenal. Campo vacío = la web no lo dijo con fuente fiable; el EFE lo buscará. NADA se rellena por intuición. `alias`: nombres alternativos por si la app (API-Football) llama distinto al club.",
+  "fuentes": [
+    "https://es.wikipedia.org/wiki/Campeonato_Uruguayo_de_Primera_Divisi%C3%B3n_2026"
+  ],
+  "equipos": [
+    {
+      "equipo": "Racing",
+      "datos": {
+        "dt": "Cristian Chambian, con continuidad: ganó el Torneo Apertura 2026. Dato de la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Racing Montevideo",
+        "Racing Club de Montevideo"
+      ]
+    },
+    {
+      "equipo": "Nacional",
+      "datos": {
+        "dt": "Jorge Bava, que reemplazó a Jadson Viera durante la temporada. Dato de la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Club Nacional de Football"
+      ]
+    },
+    {
+      "equipo": "Peñarol",
+      "datos": {
+        "dt": "Diego Aguirre, con continuidad toda la campaña. Dato de la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Penarol",
+        "CA Penarol"
+      ]
+    },
+    {
+      "equipo": "Liverpool",
+      "datos": {
+        "dt": "Jorge Fossati. TERCER técnico del año: empezó Camilo Speranza, siguió Gustavo Ferrín y llegó Fossati. Banco inestable. Dato de la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Liverpool Montevideo",
+        "Liverpool FC Montevideo"
+      ]
+    },
+    {
+      "equipo": "Boston River",
+      "datos": {
+        "dt": "Ignacio Ithurralde, que reemplazó a Israel Damonte. Dato de la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Defensor Sporting",
+      "datos": {
+        "dt": "Mauricio Larriera, que reemplazó a Román Cuello. Dato de la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Defensor Sp."
+      ]
+    },
+    {
+      "equipo": "Danubio",
+      "datos": {
+        "dt": "Leonardo Ramos. TERCER técnico del año: Diego Monarriz, luego Gustavo Matosas y ahora Ramos. Dato de la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Danubio FC"
+      ]
+    },
+    {
+      "equipo": "Albion",
+      "datos": {
+        "dt": "Federico Nieves, nombrado para esta temporada. Dato de la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Albion FC"
+      ]
+    },
+    {
+      "equipo": "Cerro",
+      "datos": {
+        "dt": "Nelson Abeijón, nombrado para esta temporada. Dato de la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "CA Cerro",
+        "Cerro Montevideo"
+      ]
+    },
+    {
+      "equipo": "Central Español",
+      "datos": {
+        "dt": "Pablo De Ambrosio. RECIÉN ASCENDIDO; siguió durante el Apertura. Dato de la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Central Espanol"
+      ]
+    }
+  ]
+}

@@ -137,6 +137,32 @@ def main():
     check("un nombre ambiguo se queda como está (no inventa equipo)",
           canonizar("Alianza", equipos) == "Alianza", canonizar("Alianza", equipos))
 
+    # ── todos los bloques del repo son cargables y bien formados ───────────
+    print("\n— bloques versionados en el repo —")
+    rutas = despensa_bulk.archivos()
+    check("hay bloques en el repo", bool(rutas), rutas)
+    total_equipos = 0
+    for ruta in rutas:
+        nombre = os.path.basename(ruta)
+        with open(ruta, encoding="utf-8") as f:
+            try:
+                b = json.load(f)
+            except ValueError as e:
+                check(f"{nombre}: JSON válido", False, str(e))
+                continue
+        equipos = b.get("equipos") or []
+        total_equipos += len(equipos)
+        malos = [e.get("equipo") for e in equipos
+                 if not e.get("equipo") or not isinstance(e.get("datos"), dict)
+                 or set(e["datos"]) - despensa_bulk.TIPOS_VALIDOS]
+        sin_dt = [e["equipo"] for e in equipos if not (e.get("datos") or {}).get("dt")]
+        check(f"{nombre}: {len(equipos)} equipos, estructura y tipos válidos", not malos, malos)
+        check(f"{nombre}: fecha de investigación utilizable",
+              bool(despensa_bulk._fecha_valida(b.get("investigado_en", ""))), b.get("investigado_en"))
+        # un bloque sin dt no ahorra nada: es la razón de ser del barrido
+        check(f"{nombre}: todos los equipos traen dt", not sin_dt, sin_dt)
+    print(f"    total: {total_equipos} equipos en {len(rutas)} ligas")
+
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
 

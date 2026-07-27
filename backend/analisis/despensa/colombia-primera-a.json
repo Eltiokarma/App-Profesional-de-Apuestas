@@ -1,0 +1,218 @@
+{
+  "liga": "Colombia - Primera A 2026 (Torneo Finalización)",
+  "investigado_en": "2026-07-27",
+  "nota": "Barrido quincenal. Campo vacío = la web no lo dijo con fuente fiable; el EFE lo buscará. NADA se rellena por intuición. `alias`: nombres alternativos por si la app (API-Football) llama distinto al club.",
+  "fuentes": [
+    "https://es.wikipedia.org/wiki/Torneo_Finalizaci%C3%B3n_2026_(Colombia)"
+  ],
+  "equipos": [
+    {
+      "equipo": "Águilas Doradas",
+      "datos": {
+        "dt": "Flavio Robatto (argentino). DT según la ficha de la temporada al 27/07/2026 (Finalización, arrancó el 24/07).",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Aguilas Doradas",
+        "Rionegro Aguilas"
+      ]
+    },
+    {
+      "equipo": "Alianza Valledupar",
+      "datos": {
+        "dt": "Camilo Ayala. DT según la ficha de la temporada al 27/07/2026 (Finalización, arrancó el 24/07).",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Alianza Petrolera",
+        "Alianza FC"
+      ]
+    },
+    {
+      "equipo": "América de Cali",
+      "datos": {
+        "dt": "David González. DT según la ficha de la temporada al 27/07/2026 (Finalización, arrancó el 24/07).",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "America de Cali"
+      ]
+    },
+    {
+      "equipo": "Atlético Bucaramanga",
+      "datos": {
+        "dt": "Pablo Peirano (uruguayo). DT según la ficha de la temporada al 27/07/2026 (Finalización, arrancó el 24/07).",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Atletico Bucaramanga",
+        "Bucaramanga"
+      ]
+    },
+    {
+      "equipo": "Atlético Nacional",
+      "datos": {
+        "dt": "Lucas González. DT según la ficha de la temporada al 27/07/2026 (Finalización, arrancó el 24/07).",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Atletico Nacional"
+      ]
+    },
+    {
+      "equipo": "Boyacá Chicó",
+      "datos": {
+        "dt": "Jhon Jaime Gómez. DT según la ficha de la temporada al 27/07/2026 (Finalización, arrancó el 24/07).",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Boyaca Chico"
+      ]
+    },
+    {
+      "equipo": "Cúcuta Deportivo",
+      "datos": {
+        "dt": "Richard Páez (venezolano). DT según la ficha de la temporada al 27/07/2026 (Finalización, arrancó el 24/07).",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Cucuta Deportivo"
+      ]
+    },
+    {
+      "equipo": "Deportes Tolima",
+      "datos": {
+        "dt": "Sebastián Oliveros. DT según la ficha de la temporada al 27/07/2026 (Finalización, arrancó el 24/07).",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Deportivo Cali",
+      "datos": {
+        "dt": "Rafael Dudamel (venezolano). DT según la ficha de la temporada al 27/07/2026 (Finalización, arrancó el 24/07).",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Deportivo Pasto",
+      "datos": {
+        "dt": "Jonathan Risueño (español). DT según la ficha de la temporada al 27/07/2026 (Finalización, arrancó el 24/07).",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Deportivo Pereira",
+      "datos": {
+        "dt": "Arturo Reyes. DT según la ficha de la temporada al 27/07/2026 (Finalización, arrancó el 24/07).",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Fortaleza",
+      "datos": {
+        "dt": "Diego Arias. DT según la ficha de la temporada al 27/07/2026 (Finalización, arrancó el 24/07).",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Fortaleza CEIF"
+      ]
+    },
+    {
+      "equipo": "Independiente Medellín",
+      "datos": {
+        "dt": "Luis Amaranto Perea; el club cambió de técnico el 02/06/2026. DT según la ficha de la temporada al 27/07/2026 (Finalización, arrancó el 24/07).",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Independiente Medellin",
+        "Deportivo Independiente Medellin"
+      ]
+    },
+    {
+      "equipo": "Internacional de Bogotá",
+      "datos": {
+        "dt": "Ricardo Valiño (argentino). DT según la ficha de la temporada al 27/07/2026 (Finalización, arrancó el 24/07).",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Internacional de Bogota",
+        "Tigres FC"
+      ]
+    },
+    {
+      "equipo": "Jaguares",
+      "datos": {
+        "dt": "Hubert Bodhert. DT según la ficha de la temporada al 27/07/2026 (Finalización, arrancó el 24/07).",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Jaguares de Cordoba"
+      ]
+    },
+    {
+      "equipo": "Junior",
+      "datos": {
+        "dt": "Alfredo Arias (uruguayo). Campeón del Apertura 2026 (12º título). DT según la ficha de la temporada al 27/07/2026 (Finalización, arrancó el 24/07).",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Junior FC",
+        "Atletico Junior"
+      ]
+    },
+    {
+      "equipo": "Llaneros",
+      "datos": {
+        "dt": "José Luis García. DT según la ficha de la temporada al 27/07/2026 (Finalización, arrancó el 24/07).",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Llaneros FC"
+      ]
+    },
+    {
+      "equipo": "Millonarios",
+      "datos": {
+        "dt": "Fabián Bustos (argentino). DT según la ficha de la temporada al 27/07/2026 (Finalización, arrancó el 24/07).",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Once Caldas",
+      "datos": {
+        "dt": "Hernán Darío Herrera. DT según la ficha de la temporada al 27/07/2026 (Finalización, arrancó el 24/07).",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Santa Fe",
+      "datos": {
+        "dt": "Pablo Repetto (uruguayo). DT según la ficha de la temporada al 27/07/2026 (Finalización, arrancó el 24/07).",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Independiente Santa Fe"
+      ]
+    }
+  ]
+}

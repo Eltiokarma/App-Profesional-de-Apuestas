@@ -1,0 +1,54 @@
+{
+  "liga": "Bolivia - Primera División 2026 (División Profesional)",
+  "investigado_en": "2026-07-27",
+  "nota": "PARCIAL: 4 de 16 clubes. La liga cambió 13 de 16 técnicos antes de mayo y no encontré una ficha por club fiable; el resto se deja al EFE en vez de inventarlo. Contexto general: banquillos MUY inestables en 2026. Barrido quincenal. Campo vacío = la web no lo dijo con fuente fiable; el EFE lo buscará. NADA se rellena por intuición. `alias`: nombres alternativos por si la app (API-Football) llama distinto al club.",
+  "fuentes": [
+    "https://es.wikipedia.org/wiki/Primera_Divisi%C3%B3n_de_Bolivia_2026",
+    "https://www.eldiario.net/portal/2026/05/05/trece-entrenadores-fueron-despedidos-en-este-2026/",
+    "https://www.infobae.com/colombia/deportes/2026/05/22/alejandro-restrepo-fue-confirmado-como-nuevo-director-tecnico-del-bolivar-de-la-paz/"
+  ],
+  "equipos": [
+    {
+      "equipo": "Aurora",
+      "datos": {
+        "dt": "Giancarlo Umaña. Uno de los TRES únicos técnicos que seguían en su puesto desde el arranque (al 04/05/2026): 13 de 16 clubes ya habían despedido al suyo",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "CD Aurora"
+      ]
+    },
+    {
+      "equipo": "Oriente Petrolero",
+      "datos": {
+        "dt": "David Gonzáles. Otro de los tres bancos que no se movieron desde el arranque",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "ABB",
+      "datos": {
+        "dt": "Sebastián Núñez. Tercero de los bancos estables desde el arranque",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Always Ready B",
+        "Academia del Balompie Boliviano"
+      ]
+    },
+    {
+      "equipo": "Bolívar",
+      "datos": {
+        "dt": "Alejandro Restrepo (colombiano), confirmado el 21-22/05/2026; venía de Independiente Medellín",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Bolivar"
+      ]
+    }
+  ]
+}

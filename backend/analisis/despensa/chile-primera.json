@@ -1,0 +1,163 @@
+{
+  "liga": "Chile - Primera División 2026 (Liga de Primera)",
+  "investigado_en": "2026-07-27",
+  "nota": "Barrido quincenal. Campo vacío = la web no lo dijo con fuente fiable; el EFE lo buscará. NADA se rellena por intuición. `alias`: nombres alternativos por si la app (API-Football) llama distinto al club.",
+  "fuentes": [
+    "https://es.wikipedia.org/wiki/Anexo:Temporada_2026_del_f%C3%BAtbol_chileno",
+    "https://es.wikipedia.org/wiki/Liga_de_Primera_2026"
+  ],
+  "equipos": [
+    {
+      "equipo": "Audax Italiano",
+      "datos": {
+        "dt": "Patricio Graff. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Cobresal",
+      "datos": {
+        "dt": "Gustavo Huerta. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Colo-Colo",
+      "datos": {
+        "dt": "Fernando Ortiz. Sin torneo internacional este año: foco exclusivo en la liga. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Colo Colo"
+      ]
+    },
+    {
+      "equipo": "Coquimbo Unido",
+      "datos": {
+        "dt": "Hernán Caputto. Campeón 2025 y Chile 1 en la Libertadores. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Deportes Concepción",
+      "datos": {
+        "dt": "Fernando Díaz. RECIÉN ASCENDIDO: vuelve tras 18 años. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Deportes La Serena",
+      "datos": {
+        "dt": "Felipe Gutiérrez. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Deportes Limache",
+      "datos": {
+        "dt": "Víctor Rivero. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Everton",
+      "datos": {
+        "dt": "Walter Ribonetto. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Everton de Vina"
+      ]
+    },
+    {
+      "equipo": "Huachipato",
+      "datos": {
+        "dt": "Jaime García. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Ñublense",
+      "datos": {
+        "dt": "Juan José Ribera. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Nublense"
+      ]
+    },
+    {
+      "equipo": "O'Higgins",
+      "datos": {
+        "dt": "Lucas Bovaglio. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "OHiggins"
+      ]
+    },
+    {
+      "equipo": "Palestino",
+      "datos": {
+        "dt": "Guillermo Farré. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Unión La Calera",
+      "datos": {
+        "dt": "Martín Cicotello. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Union La Calera"
+      ]
+    },
+    {
+      "equipo": "Universidad Católica",
+      "datos": {
+        "dt": "Daniel Garnero. Subcampeón el año pasado, apunta al título. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Universidad Catolica"
+      ]
+    },
+    {
+      "equipo": "Universidad de Chile",
+      "datos": {
+        "dt": "Fernando Gago. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "U. de Chile"
+      ]
+    },
+    {
+      "equipo": "Universidad de Concepción",
+      "datos": {
+        "dt": "Ricardo Viveros. ASCENDIDO como campeón de la Liga de Ascenso. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Universidad de Concepcion"
+      ]
+    }
+  ]
+}

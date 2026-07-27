@@ -1,0 +1,194 @@
+{
+  "liga": "Brasil - Serie A 2026",
+  "investigado_en": "2026-07-27",
+  "nota": "Barrido quincenal. Campo vacío = la web no lo dijo con fuente fiable; el EFE lo buscará. NADA se rellena por intuición. `alias`: nombres alternativos por si la app (API-Football) llama distinto al club.",
+  "fuentes": [
+    "https://es.wikipedia.org/wiki/Campeonato_Brasile%C3%B1o_de_F%C3%BAtbol_Serie_A_2026"
+  ],
+  "equipos": [
+    {
+      "equipo": "Athletico Paranaense",
+      "datos": {
+        "dt": "Odair Hellmann. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Athletico-PR",
+        "Atletico Paranaense"
+      ]
+    },
+    {
+      "equipo": "Atlético Mineiro",
+      "datos": {
+        "dt": "Eduardo Domínguez (argentino). DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Atletico-MG",
+        "Atletico Mineiro"
+      ]
+    },
+    {
+      "equipo": "Bahia",
+      "datos": {
+        "dt": "Rogério Ceni. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Botafogo",
+      "datos": {
+        "dt": "Franclim Carvalho (portugués). DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Bragantino",
+      "datos": {
+        "dt": "Vágner Mancini. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "RB Bragantino",
+        "Red Bull Bragantino"
+      ]
+    },
+    {
+      "equipo": "Chapecoense",
+      "datos": {
+        "dt": "Fábio Matias. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Corinthians",
+      "datos": {
+        "dt": "Fernando Diniz. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Coritiba",
+      "datos": {
+        "dt": "Fernando Seabra. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Cruzeiro",
+      "datos": {
+        "dt": "Artur Jorge (portugués), que reemplazó a Tite el 22/03/2026. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Flamengo",
+      "datos": {
+        "dt": "Leonardo Jardim, que reemplazó a Filipe Luís el 04/03/2026. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Fluminense",
+      "datos": {
+        "dt": "Luis Zubeldía (argentino). DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Grêmio",
+      "datos": {
+        "dt": "Luís Castro (portugués). DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Gremio"
+      ]
+    },
+    {
+      "equipo": "Internacional",
+      "datos": {
+        "dt": "Paulo Pezzolano (uruguayo). DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Mirassol",
+      "datos": {
+        "dt": "Rafael Guanaes. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Palmeiras",
+      "datos": {
+        "dt": "Abel Ferreira (portugués), el proyecto más largo de la liga. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Remo",
+      "datos": {
+        "dt": "Léo Condé. Club RECIÉN ASCENDIDO: vuelve a la elite tras 32 años. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Santos",
+      "datos": {
+        "dt": "Cuca. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "São Paulo",
+      "datos": {
+        "dt": "Dorival Júnior. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Sao Paulo"
+      ]
+    },
+    {
+      "equipo": "Vasco da Gama",
+      "datos": {
+        "dt": "Pedro Emanuel (angoleño). DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Vasco DA Gama"
+      ]
+    },
+    {
+      "equipo": "Vitória",
+      "datos": {
+        "dt": "Jair Ventura. DT según la ficha de la temporada al 27/07/2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Vitoria"
+      ]
+    }
+  ]
+}
