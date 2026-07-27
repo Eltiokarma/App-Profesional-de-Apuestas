@@ -63,8 +63,32 @@ lesiones confirmadas salen de la capa de jugadores (API-Football) y las dudas
 de prensa, del barrido ligero de la víspera. Lo que el bloque quincenal cubre
 de verdad es `dt` y `plantel`, que son justo los dos campos que solo da la web.
 
-Si el refresco es cada 15 días y el TTL son 14, hay un día en que todo EFE sale
-caro: `SAD_DESPENSA_TTL_DIAS=16` alinea el TTL con la cadencia real.
+### La ventana cara ya no existe
+
+Un TTL más corto que el barrido abre un día en que la despensa venció y el
+barrido todavía no llegó — y ese día TODO EFE vuelve a pagar búsquedas. Estaba
+"resuelto" pidiéndole al operador que pusiera una variable en Railway, que es
+otra forma de decir que seguía abierto.
+
+Ahora se cierra en el código, en dos capas:
+
+1. **El TTL se deriva del barrido.** `SAD_DESPENSA_CADENCIA_DIAS` (15 por
+   defecto) declara cada cuánto se barre, y el TTL sale de ahí + 2 días de
+   margen. Cambiar la cadencia arrastra el TTL sola; no hay dos números que
+   puedan desalinearse.
+2. **Gracia para `dt` y `plantel`.** Si un barrido no se corre, un dato vencido
+   pero de menos de un ciclo extra **se sigue sirviendo, declarando su edad**
+   (`[dato de hace 19 días, sin refrescar…]`) en vez de disparar una búsqueda.
+   Un plantel de hace tres semanas es peor que uno de ayer, pero es mucho mejor
+   que pagar por buscarlo — y decir su edad deja que el análisis lo descuente.
+   Pasada la gracia vuelve a contar como faltante: servir un dato viejo sin
+   límite sí sería mentir.
+
+Los demás tipos no llevan gracia porque no la necesitan: `tabla`, `resultados`
+y `fixture` salen de `sad.db`, y `xi_reciente`/`bajas` de API-Football.
+
+`SAD_DESPENSA_TTL_DIAS` sigue existiendo y manda si se fija explícitamente,
+pero ya no hace falta tocarlo.
 
 ---
 

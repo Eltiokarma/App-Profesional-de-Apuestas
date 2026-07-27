@@ -87,14 +87,30 @@ el trabajo mecánico, no contra la interpretación.
 | `SAD_EFE_EFFORT` | `medium` | esfuerzo de razonamiento; `high` multiplica el gasto |
 | `SAD_EFE_BUSQUEDAS` | `18` | techo duro de búsquedas por corrida |
 | `SAD_EFE_MAX_FALTANTES` | `6` | candado del análisis frío (bloquea antes de gastar) |
-| `SAD_DESPENSA_TTL_DIAS` | `14` | **poner en `16`**: alinea el TTL con el barrido quincenal real |
+| `SAD_DESPENSA_CADENCIA_DIAS` | `15` | cada cuánto se barre la despensa; el TTL se deriva de aquí |
 | `SAD_EFE_MODELO` | `claude-sonnet-5` | el modelo del EFE/DTP |
 | `SAD_TL_MODELO` | Haiku 4.5 | el timeline no necesita más |
 | `SAD_EFE_CON_K` | apagado | reactiva el bloque C si alguna vez se quiere de vuelta |
 
-El TTL en 14 con un barrido cada 15 días deja **un día de cada quince en que
-todo EFE sale caro**, porque la despensa vence justo antes del refresco. Con 16
-no hay ventana descubierta.
+### La ventana cara, cerrada en el código
+
+Un TTL más corto que el barrido dejaba **un día de cada quince en que todo EFE
+salía caro**: la despensa vencía justo antes del refresco y volvían las
+búsquedas. Pedirle al operador que pusiera una variable no lo arreglaba — solo
+movía el problema a que alguien se acordara.
+
+Ahora hay dos capas, ambas en código:
+
+1. **El TTL se deriva de la cadencia** (`SAD_DESPENSA_CADENCIA_DIAS` + 2 días de
+   margen). No hay dos números que puedan desalinearse.
+2. **Gracia de un ciclo para `dt` y `plantel`** — los únicos tipos que dependen
+   de la despensa, ahora que el calendario y la tabla se calculan. Si un barrido
+   se atrasa, el dato vencido se sirve igual **declarando su edad** en vez de
+   disparar una búsqueda, y el prompt lo recibe en `datos_anejos` con la orden
+   de no darlo por confirmado. Pasada la gracia vuelve a faltar.
+
+Es el mismo criterio de siempre: preferimos un dato con su edad a la vista antes
+que uno cómodo, y preferimos los dos antes que una factura.
 
 ## Cómo saber si funciona
 

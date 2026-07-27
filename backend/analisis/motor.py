@@ -284,8 +284,8 @@ def generar_efe(fixture_id: int, estado: str = "preliminar", permitir_frio: bool
         if not cliente.hay_clave():
             raise SinClave("Falta ANTHROPIC_API_KEY en el entorno")
         _asegurar_plantillas(fx)  # plantel/DT/bajas por API-Football, no por web
-        frescos_a, faltan_a = efedb.investigacion_de(equipo_a)
-        frescos_b, faltan_b = efedb.investigacion_de(equipo_b)
+        frescos_a, faltan_a, anejos_a = efedb.investigacion_detallada(equipo_a)
+        frescos_b, faltan_b, anejos_b = efedb.investigacion_detallada(equipo_b)
         # solo los tipos del EFE: la despensa también guarda timeline_eventos
         # y meterlos aquí inflaría el prompt sin aportar al protocolo
         frescos_a = {k: v for k, v in frescos_a.items() if k in efedb.TIPOS}
@@ -335,6 +335,17 @@ def generar_efe(fixture_id: int, estado: str = "preliminar", permitir_frio: bool
             "datos_cacheados": {"equipo_a": frescos_a, "equipo_b": frescos_b},
             "campos_faltantes": faltantes,
         }
+        # lo añejo se sirve, pero SE DICE: el modelo tiene que saber que ese
+        # plantel es de hace tres semanas para no darlo por confirmado. Callarlo
+        # sería ahorrar dinero a cambio de una certeza falsa.
+        anejos = {f"{t}_a": d for t, d in anejos_a.items()} | {f"{t}_b": d for t, d in anejos_b.items()}
+        if anejos:
+            payload["datos_anejos"] = (
+                "Estos datos vencieron y se sirven igual para no gastar en buscarlos: "
+                + ", ".join(f"{t} ({d} días)" for t, d in sorted(anejos.items()))
+                + ". Úsalos como referencia, NO los declares confirmados y menciónalos "
+                "en datos_faltantes si una conclusión depende de ellos."
+            )
         # bloque G: el calendario y el mapa de rivales ya vienen calculados de
         # sad.db con el criterio numérico del protocolo (backend/calendario.py).
         # Buscarlo en la web era pagar por un dato propio — y peor: por uno
@@ -383,7 +394,9 @@ def generar_efe(fixture_id: int, estado: str = "preliminar", permitir_frio: bool
                 f"Tienes {tope_busquedas} búsquedas web como máximo: adminístralas — "
                 "una por campo faltante y solo repite si el resultado fue inútil."
             )
-        print(f"[efe] faltantes ({len(faltantes)}): {', '.join(faltantes) or 'ninguno'}", flush=True)
+        print(f"[efe] faltantes ({len(faltantes)}): {', '.join(faltantes) or 'ninguno'}"
+              + (f" · añejos servidos sin buscar: {', '.join(f'{t} ({d}d)' for t, d in sorted(anejos.items()))}"
+                 if anejos else ""), flush=True)
         resultado, _uso = cliente.analizar(
             payload, EFE_COMPARATIVO, con_busqueda=bool(faltantes),
             max_busquedas=tope_busquedas,
