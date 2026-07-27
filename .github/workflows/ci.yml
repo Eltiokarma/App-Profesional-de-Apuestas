@@ -49,3 +49,5 @@ jobs:
         run: python -m backend.test_calendario
       - name: Tests de la cronología SAD (partidos del timeline calculados)
         run: python -m backend.test_cronologia
+      - name: Tests del chequeo previo del EFE (qué cuesta antes de gastar)
+        run: python -m backend.test_preflight

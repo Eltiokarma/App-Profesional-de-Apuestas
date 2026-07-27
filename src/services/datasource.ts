@@ -33,6 +33,7 @@ import type {
   NivelDTO,
   PartidoCalendarioDTO,
   PlantillaDTO,
+  PreflightEfeDTO,
   PrediccionDTO,
   PuntoLiveDTO,
   StandingRowDTO,
@@ -109,6 +110,8 @@ export interface SadDataSource {
   generarEfe(fixtureId: number, forzar?: boolean, permitirFrio?: boolean): Promise<GeneracionEfeDTO>
   /** Sondeo del trabajo de análisis EFE. */
   estadoEfe(fixtureId: number): Promise<GeneracionEfeDTO>
+  /** Qué va a costar el EFE ANTES de generarlo (no gasta nada). */
+  preflightEfe(fixtureId: number): Promise<PreflightEfeDTO>
   /** Carga manual de la despensa (investigación del Claude de escritorio). */
   cargarDespensa(payload: CargaDespensaDTO): Promise<CargaDespensaResultadoDTO>
   /** Lanza el timeline comparativo (mismo patrón asíncrono que el EFE). */
@@ -702,6 +705,33 @@ class MockDataSource implements SadDataSource {
     return reg ? { estado: 'listo', registro: reg } : { estado: 'nada' }
   }
 
+  async preflightEfe(fixtureId: number): Promise<PreflightEfeDTO> {
+    // demo: el motor local no gasta nada, y decirlo es más honesto que
+    // simular un semáforo tibio que aquí nunca se cumpliría
+    const m = MATCHES.find((x) => FIXTURE_NUM(x.id) === fixtureId)
+    const nombres = m ? [TEAMS[m.home]?.name ?? m.home, TEAMS[m.away]?.name ?? m.away] : []
+    return {
+      fixtureId,
+      nivel: 'caliente',
+      faltantes: 0,
+      dudosos: 0,
+      busquedasPrevistas: 0,
+      bloqueado: false,
+      umbralFrio: 6,
+      costo: { min: 0, max: 0, medido: false, muestra: 0 },
+      yaExiste: this._analisis.has(fixtureId),
+      demo: true,
+      equipos: nombres.map((equipo) => ({
+        equipo,
+        enDespensa: true,
+        datos: ['dt', 'plantel', 'tabla', 'resultados', 'fixture', 'xi_reciente', 'bajas'].map((tipo) => ({
+          tipo, origen: 'local' as const, detalle: 'modo demo: motor local, sin costo', edadDias: null,
+        })),
+      })),
+      recomendaciones: ['Modo demo: el análisis es de muestra y no gasta nada.'],
+    }
+  }
+
   async cargarDespensa(payload: CargaDespensaDTO): Promise<CargaDespensaResultadoDTO> {
     // demo: se "acepta" sin almacenar (la despensa real vive en efe.db del backend)
     const depositados = payload.equipos.reduce(
@@ -869,6 +899,7 @@ class HttpDataSource implements SadDataSource {
   analisisPartido = (fixtureId: number) => SadApi.analisisPartido(fixtureId)
   generarEfe = (fixtureId: number, forzar?: boolean, permitirFrio?: boolean) => SadApi.generarEfe(fixtureId, forzar, permitirFrio)
   estadoEfe = (fixtureId: number) => SadApi.estadoEfe(fixtureId)
+  preflightEfe = (fixtureId: number) => SadApi.preflightEfe(fixtureId)
   cargarDespensa = (payload: CargaDespensaDTO) => SadApi.cargarDespensa(payload)
   generarTimeline = (fixtureId: number, forzar?: boolean) => SadApi.generarTimeline(fixtureId, forzar)
   estadoTimeline = (fixtureId: number) => SadApi.estadoTimeline(fixtureId)

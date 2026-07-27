@@ -258,6 +258,223 @@ def _asegurar_plantillas(fx: dict) -> None:
             print(f"[efe] ingesta previa de {tid} no disponible: {e}", flush=True)
 
 
+def _hay_clave_api_football() -> bool:
+    try:
+        from backend.ingesta.extractor import leer_clave
+        return bool(leer_clave())
+    except BaseException:
+        return False
+
+
+def _xi_bajas_previstos(fx: dict) -> dict[str, dict[str, str]]:
+    """Lo que `_xi_y_bajas` VA a resolver, sin gastar una sola request.
+
+    No es una promesa: es la misma condición que la función real necesita para
+    devolver algo. `xi_reciente` sale del XI oficial o —si aún no se publicó—
+    del último partido jugado, así que basta con que exista uno en sad.db.
+    `bajas` depende de que la API reporte lesionados de ESTE partido, y eso no
+    se puede saber desde aquí: se marca dudoso en vez de darlo por hecho."""
+    if not _hay_clave_api_football():
+        return {"equipo_a": {}, "equipo_b": {}}
+    out: dict[str, dict[str, str]] = {"equipo_a": {}, "equipo_b": {}}
+    for lado, tid in (("equipo_a", fx["home_team_id"]), ("equipo_b", fx["away_team_id"])):
+        jugado = saddb.query_one(
+            "sad",
+            "SELECT id FROM fixtures WHERE (home_team_id=? OR away_team_id=?) "
+            "AND (status_short IN ('FT','AET','PEN') OR status_long='Match Finished') LIMIT 1",
+            (tid, tid),
+        )
+        if jugado:
+            out[lado]["xi_reciente"] = "API-Football: XI oficial, o el del último partido jugado"
+        out[lado]["bajas"] = "API-Football: lesionados del partido (si reporta alguno)"
+    return out
+
+
+# tipos cuya resolución por API-Football NO se puede confirmar sin gastar la
+# request: si la API no reporta nada, terminan en búsqueda web como cualquier
+# otro faltante. El preflight los cuenta aparte y ensancha el rango de costo.
+TIPOS_DUDOSOS = ("bajas",)
+
+
+def _resolver_fuentes(fx: dict, con_api: bool = True) -> dict:
+    """De dónde sale cada tipo del protocolo EFE, con las mismas reglas y en el
+    mismo orden que la corrida real: despensa → sad.db → API-Football → capa de
+    jugadores. Lo que quede fuera es lo que dispara búsqueda web, y por tanto
+    lo que cuesta dinero.
+
+    `con_api=False` es el modo preflight: no llama a API-Football (ni gasta su
+    cuota) y usa `_xi_bajas_previstos`. Es la MISMA función en los dos casos a
+    propósito — un preflight que estimara por su cuenta acabaría mintiendo en
+    cuanto alguien cambiara el orden aquí."""
+    equipo_a, equipo_b = fx["local"], fx["visitante"]
+    frescos_a, faltan_a, anejos_a = efedb.investigacion_detallada(equipo_a)
+    frescos_b, faltan_b, anejos_b = efedb.investigacion_detallada(equipo_b)
+    # solo los tipos del EFE: la despensa también guarda timeline_eventos
+    # y meterlos aquí inflaría el prompt sin aportar al protocolo
+    frescos_a = {k: v for k, v in frescos_a.items() if k in efedb.TIPOS}
+    frescos_b = {k: v for k, v in frescos_b.items() if k in efedb.TIPOS}
+    origen_a = {t: ("anejo" if t in anejos_a else "despensa") for t in frescos_a}
+    origen_b = {t: ("anejo" if t in anejos_b else "despensa") for t in frescos_b}
+
+    # lo que ya tenemos en sad.db (tabla, resultados, próximos partidos)
+    # entra como dato cacheado y NO se busca en la web: costo cero.
+    # XI oficial y lesiones vienen de API-Football (2 requests baratas).
+    locales = _datos_locales(fx)
+    xi_bajas = _xi_y_bajas(fx["id"], fx["home_team_id"], fx["away_team_id"]) \
+        if con_api else _xi_bajas_previstos(fx)
+    for frescos, faltan, origen, lado in ((frescos_a, faltan_a, origen_a, "equipo_a"),
+                                          (frescos_b, faltan_b, origen_b, "equipo_b")):
+        for tipo, txt in {**locales[lado], **xi_bajas[lado]}.items():
+            if not txt:
+                continue
+            de_api = tipo in xi_bajas[lado] and tipo not in locales[lado]
+            # el calendario calculado MANDA sobre lo que haya en despensa:
+            # aquello salió de una búsqueda web vieja, esto es de hoy y de
+            # nuestros propios datos
+            if tipo == "fixture" and txt.startswith("Calendario SAD"):
+                frescos[tipo] = txt
+                origen[tipo] = "local"
+            elif tipo in faltan:
+                frescos[tipo] = txt
+                origen[tipo] = "api" if de_api else "local"
+            if tipo in faltan and frescos.get(tipo) == txt:
+                faltan.remove(tipo)
+
+    # cruce con la capa de jugadores (docs/JUGADORES.md): los indicadores
+    # de NUESTRA base mandan sobre la búsqueda web en plantel/dt, y las
+    # bajas se enriquecen con su PESO real (minutos, producción). Sin
+    # ingesta de jugadores el resumen viene vacío y nada cambia.
+    from backend import jugadores as jugcapa
+    for frescos, faltan, origen, tid in ((frescos_a, faltan_a, origen_a, fx["home_team_id"]),
+                                         (frescos_b, faltan_b, origen_b, fx["away_team_id"])):
+        for tipo, txt in jugcapa.resumen_para_skills(tid).items():
+            if tipo == "bajas" and frescos.get("bajas"):
+                frescos["bajas"] = f"{frescos['bajas']} || {txt}"
+            else:
+                frescos[tipo] = txt
+            origen[tipo] = "local"   # nuestra base manda sobre lo demás
+            if tipo in faltan:
+                faltan.remove(tipo)
+
+    return {
+        "equipo_a": {"nombre": equipo_a, "frescos": frescos_a, "faltan": faltan_a,
+                     "anejos": anejos_a, "origen": origen_a},
+        "equipo_b": {"nombre": equipo_b, "frescos": frescos_b, "faltan": faltan_b,
+                     "anejos": anejos_b, "origen": origen_b},
+        "locales": locales,
+    }
+
+
+# ── preflight: qué va a costar el EFE, ANTES de pulsar el botón ─────────────
+#
+# El candado de análisis frío evita la catástrofe (>6 faltantes), pero deja
+# pasar en silencio el caso intermedio: 4 faltantes son 11 búsquedas y ~medio
+# dólar, y hasta aquí el usuario se enteraba con la factura. Esto lo dice antes.
+#
+# La fórmula sale de los dos extremos documentados en COSTO_IA.md: 0 búsquedas
+# ≈ $0.05 (razonamiento + salida con el system cacheado) y 18 búsquedas
+# ≈ $0.6-1.2 (el análisis frío). Es una recta entre esos dos puntos, y se usa
+# SOLO mientras no haya corridas reales de ese tamaño: en cuanto las hay, manda
+# lo medido.
+COSTO_BASE = 0.05
+COSTO_POR_BUSQUEDA = (0.030, 0.062)
+
+_DETALLE_ORIGEN = {
+    "despensa": "en la despensa, fresco",
+    "anejo": "en la despensa, vencido pero servible (se declara su edad)",
+    "local": "de nuestra base (sad.db / capa de jugadores)",
+    "api": "de API-Football al generar (cuota del plan, no dólares)",
+    "falta": "NO lo tenemos: se buscará en la web (esto es lo que cuesta)",
+}
+
+
+def preflight_efe(fixture_id: int) -> dict:
+    """Qué va a pasar si se pulsa «Generar análisis EFE», sin gastar nada."""
+    fx = _fixture(fixture_id)
+    ya = bool(efedb.analisis_existente("efe", fixture_id, "preliminar")
+              or efedb.analisis_existente("efe", fixture_id, "confirmado"))
+    if _demo_activo():
+        return {
+            "fixtureId": fixture_id, "nivel": "caliente", "faltantes": 0, "dudosos": 0,
+            "busquedasPrevistas": 0, "bloqueado": False,
+            "umbralFrio": int(os.environ.get("SAD_EFE_MAX_FALTANTES", "6")),
+            "costo": {"min": 0.0, "max": 0.0, "medido": False, "muestra": 0},
+            "yaExiste": ya, "demo": True, "equipos": [],
+            "recomendaciones": ["Modo demo (SAD_EFE_DEMO=1): el análisis es de muestra y no gasta nada."],
+        }
+
+    res = _resolver_fuentes(fx, con_api=False)
+    umbral = int(os.environ.get("SAD_EFE_MAX_FALTANTES", "6"))
+    equipos, faltantes, dudosos = [], 0, 0
+    sin_despensa: list[str] = []
+    falta_por_tipo: dict[str, list[str]] = {}
+    for lado in ("equipo_a", "equipo_b"):
+        r = res[lado]
+        origen, nombre = r["origen"], r["nombre"]
+        datos = []
+        for tipo in efedb.TIPOS:
+            o = origen.get(tipo, "falta") if tipo not in r["faltan"] else "falta"
+            # dudoso: lo prometió la API pero puede no reportar nada
+            if o == "api" and tipo in TIPOS_DUDOSOS:
+                dudosos += 1
+            if o == "falta":
+                faltantes += 1
+                falta_por_tipo.setdefault(tipo, []).append(nombre)
+            datos.append({
+                "tipo": tipo, "origen": o, "detalle": _DETALLE_ORIGEN[o],
+                "edadDias": r["anejos"].get(tipo),
+            })
+        en_despensa = any(d["origen"] in ("despensa", "anejo") for d in datos)
+        if not en_despensa:
+            sin_despensa.append(nombre)
+        equipos.append({"equipo": nombre, "enDespensa": en_despensa, "datos": datos})
+
+    busquedas = min(3 + 2 * faltantes, cliente.MAX_BUSQUEDAS) if faltantes else 0
+    peor = min(3 + 2 * (faltantes + dudosos), cliente.MAX_BUSQUEDAS) if faltantes + dudosos else 0
+    lo_medido = efedb.costo_medido("efe", faltantes)
+    if lo_medido[2] >= 3:   # con menos de tres corridas parecidas no es una medida
+        costo = {"min": round(lo_medido[0], 2), "max": round(lo_medido[1], 2),
+                 "medido": True, "muestra": lo_medido[2]}
+    else:
+        costo = {"min": round(COSTO_BASE + busquedas * COSTO_POR_BUSQUEDA[0], 2),
+                 "max": round(COSTO_BASE + peor * COSTO_POR_BUSQUEDA[1], 2),
+                 "medido": False, "muestra": lo_medido[2]}
+
+    nivel = "caliente" if faltantes == 0 else "frio" if faltantes > umbral else "tibio"
+    recomendaciones = []
+    if ya:
+        recomendaciones.append("Ya hay un EFE guardado para este partido: verlo cuesta 0 — "
+                               "solo «Regenerar» vuelve a pagar.")
+    if faltantes:
+        for tipo, equipos_falt in sorted(falta_por_tipo.items()):
+            recomendaciones.append(f"Falta «{tipo}» en {' y '.join(equipos_falt)}.")
+        if {"plantel", "dt"} & set(falta_por_tipo):
+            recomendaciones.append(
+                "plantel/dt salen gratis de la capa de jugadores: corre "
+                "`python -m backend.ingesta.jugadores` (API-Football, plan ya pagado) "
+                "y vuelve a mirar aquí.")
+        recomendaciones.append(
+            "O carga la despensa gratis: «Copiar prompt research» → Claude de escritorio "
+            "→ pegar el JSON aquí. Con todo cargado el análisis baja a ~$0.05.")
+    else:
+        recomendaciones.append("Nada que buscar en la web: esta es la corrida más barata posible.")
+    if sin_despensa:
+        recomendaciones.append(
+            f"Sin ningún dato en la despensa bajo el nombre {' ni '.join(sin_despensa)} — "
+            "si cargaste su liga, puede ser que el nombre del archivo no coincida con el de la app.")
+    if dudosos:
+        recomendaciones.append(
+            f"{dudosos} campo(s) dependen de que API-Football reporte lesionados: si no reporta, "
+            "se buscan en la web (por eso el máximo del rango).")
+
+    return {
+        "fixtureId": fixture_id, "nivel": nivel, "faltantes": faltantes, "dudosos": dudosos,
+        "busquedasPrevistas": busquedas, "bloqueado": faltantes > umbral, "umbralFrio": umbral,
+        "costo": costo, "yaExiste": ya, "demo": False, "equipos": equipos,
+        "recomendaciones": recomendaciones,
+    }
+
+
 def _demo_activo() -> bool:
     return os.environ.get("SAD_EFE_DEMO", "").strip() == "1"
 
@@ -284,45 +501,10 @@ def generar_efe(fixture_id: int, estado: str = "preliminar", permitir_frio: bool
         if not cliente.hay_clave():
             raise SinClave("Falta ANTHROPIC_API_KEY en el entorno")
         _asegurar_plantillas(fx)  # plantel/DT/bajas por API-Football, no por web
-        frescos_a, faltan_a, anejos_a = efedb.investigacion_detallada(equipo_a)
-        frescos_b, faltan_b, anejos_b = efedb.investigacion_detallada(equipo_b)
-        # solo los tipos del EFE: la despensa también guarda timeline_eventos
-        # y meterlos aquí inflaría el prompt sin aportar al protocolo
-        frescos_a = {k: v for k, v in frescos_a.items() if k in efedb.TIPOS}
-        frescos_b = {k: v for k, v in frescos_b.items() if k in efedb.TIPOS}
-        # lo que ya tenemos en sad.db (tabla, resultados, próximos partidos)
-        # entra como dato cacheado y NO se busca en la web: costo cero.
-        # XI oficial y lesiones vienen de API-Football (2 requests baratas).
-        locales = _datos_locales(fx)
-        xi_bajas = _xi_y_bajas(fixture_id, fx["home_team_id"], fx["away_team_id"])
-        for frescos, faltan, lado in ((frescos_a, faltan_a, "equipo_a"),
-                                      (frescos_b, faltan_b, "equipo_b")):
-            for tipo, txt in {**locales[lado], **xi_bajas[lado]}.items():
-                if not txt:
-                    continue
-                # el calendario calculado MANDA sobre lo que haya en despensa:
-                # aquello salió de una búsqueda web vieja, esto es de hoy y de
-                # nuestros propios datos
-                if tipo == "fixture" and txt.startswith("Calendario SAD"):
-                    frescos[tipo] = txt
-                elif tipo in faltan:
-                    frescos[tipo] = txt
-                if tipo in faltan and frescos.get(tipo) == txt:
-                    faltan.remove(tipo)
-        # cruce con la capa de jugadores (docs/JUGADORES.md): los indicadores
-        # de NUESTRA base mandan sobre la búsqueda web en plantel/dt, y las
-        # bajas se enriquecen con su PESO real (minutos, producción). Sin
-        # ingesta de jugadores el resumen viene vacío y nada cambia.
-        from backend import jugadores as jugcapa
-        for frescos, faltan, tid in ((frescos_a, faltan_a, fx["home_team_id"]),
-                                     (frescos_b, faltan_b, fx["away_team_id"])):
-            for tipo, txt in jugcapa.resumen_para_skills(tid).items():
-                if tipo == "bajas" and frescos.get("bajas"):
-                    frescos["bajas"] = f"{frescos['bajas']} || {txt}"
-                else:
-                    frescos[tipo] = txt
-                if tipo in faltan:
-                    faltan.remove(tipo)
+        res = _resolver_fuentes(fx)
+        frescos_a, faltan_a, anejos_a = res["equipo_a"]["frescos"], res["equipo_a"]["faltan"], res["equipo_a"]["anejos"]
+        frescos_b, faltan_b, anejos_b = res["equipo_b"]["frescos"], res["equipo_b"]["faltan"], res["equipo_b"]["anejos"]
+        locales = res["locales"]
         faltantes = [f"{t}_a" for t in faltan_a] + [f"{t}_b" for t in faltan_b]
         payload = {
             "modo": "efe",
@@ -397,12 +579,14 @@ def generar_efe(fixture_id: int, estado: str = "preliminar", permitir_frio: bool
         print(f"[efe] faltantes ({len(faltantes)}): {', '.join(faltantes) or 'ninguno'}"
               + (f" · añejos servidos sin buscar: {', '.join(f'{t} ({d}d)' for t, d in sorted(anejos.items()))}"
                  if anejos else ""), flush=True)
-        resultado, _uso = cliente.analizar(
+        resultado, uso = cliente.analizar(
             payload, EFE_COMPARATIVO, con_busqueda=bool(faltantes),
             max_busquedas=tope_busquedas,
             # caliente (0 faltantes): no re-emitir la despensa en el output
             salida=cliente.SALIDA_EFE if faltantes else cliente.SALIDA_EFE_CALIENTE,
         )
+        # lo que costó DE VERDAD: con esto el preflight deja de estimar
+        efedb.registrar_corrida("efe", fixture_id, len(faltantes), uso)
 
         # LA DESPENSA: lo investigado se separa del análisis y se deposita por
         # equipo con TTL — el siguiente análisis de estos equipos lo recibe en
@@ -622,11 +806,12 @@ def generar_timeline(fixture_id: int, estado: str = "preliminar") -> dict:
             tope_tl = min(cliente.BUSQUEDAS_TIMELINE_CALC, tope_tl)
         print(f"[timeline] {len(eventos_calc)} eventos de partido calculados · "
               f"tope búsquedas: {0 if ambos_con_eventos else tope_tl}", flush=True)
-        resultado, _uso = cliente.analizar(
+        resultado, uso = cliente.analizar(
             payload, TIMELINE, con_busqueda=not ambos_con_eventos,
             system=cliente.bloques_system_timeline(), salida=cliente.SALIDA_TIMELINE,
             max_busquedas=tope_tl, modelo=cliente.MODELO_TIMELINE,
         )
+        efedb.registrar_corrida("timeline", fixture_id, 0 if ambos_con_eventos else 2, uso)
         # el vacío se juzga sobre LO DEL MODELO, no sobre lo que aportó el
         # código: un semestre sin nada institucional es un timeline legítimo,
         # pero una respuesta sin eventos NI narrativa es una corrida fallida y
@@ -845,9 +1030,10 @@ def generar_dtp(fixture_id: int, equipo_foco_id: int) -> dict:
 
     print(f"[dtp] fixture {fixture_id} · foco {foco} (N={n}) · modo {payload['modo']} · "
           f"faltantes: {', '.join(faltantes) or 'ninguno'}", flush=True)
-    resultado, _uso = cliente.analizar(
+    resultado, uso = cliente.analizar(
         payload, DTP, con_busqueda=False, salida=cliente.SALIDA_DTP,
     )
+    efedb.registrar_corrida("dtp", fixture_id, len(faltantes), uso)
     resultado = ajustar(resultado, DTP)
     if dtp_vacio(resultado):
         raise RuntimeError(

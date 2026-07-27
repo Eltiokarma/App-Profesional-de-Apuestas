@@ -23,6 +23,7 @@ import type {
   NivelDTO,
   PartidoCalendarioDTO,
   PlantillaDTO,
+  PreflightEfeDTO,
   PrediccionDTO,
   StandingRowDTO,
 } from './types'
@@ -91,6 +92,10 @@ export const SadApi = {
 
   /** Sondeo del trabajo de análisis EFE. */
   estadoEfe: (fixtureId: number) => apiGet<GeneracionEfeDTO>(`/analisis/efe/estado/${fixtureId}`),
+
+  /** Qué va a costar el EFE ANTES de generarlo (costo cero: no llama al modelo
+   *  ni gasta cuota de API-Football). */
+  preflightEfe: (fixtureId: number) => apiGet<PreflightEfeDTO>(`/analisis/efe/preflight/${fixtureId}`),
 
   /** Carga manual de la despensa: investigación del Claude de escritorio
    *  (docs/DESPENSA_DESKTOP.md) — el próximo EFE no busca en la web. */

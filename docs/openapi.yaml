@@ -370,6 +370,28 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/GeneracionEfe' }
+  /analisis/efe/preflight/{fixtureId}:
+    get:
+      summary: Qué va a costar el EFE ANTES de generarlo (costo cero)
+      description: >
+        Resuelve exactamente las mismas fuentes que usaría /analisis/efe —
+        despensa, sad.db, capa de jugadores— pero SIN llamar a ningún modelo y
+        SIN gastar cuota de API-Football, y devuelve el origen de cada dato por
+        equipo. Los `falta` son los que disparan búsqueda web, que es lo caro:
+        el presupuesto es 3 + 2 × faltantes (techo SAD_EFE_BUSQUEDAS), y el
+        candado de análisis frío bloquea por encima de SAD_EFE_MAX_FALTANTES.
+        `costo` viene de las corridas realmente medidas cuando las hay
+        (`medido: true`); si no, de la fórmula, y se dice cuál es cuál.
+        404 si el fixture no existe.
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PreflightEfe' }
+        '404': { description: El fixture no existe }
   /analisis/timeline:
     post:
       summary: Lanza el timeline comparativo del fixture (modo futbol-timeline)
@@ -1054,6 +1076,61 @@ components:
         estado: { type: string, enum: [listo, generando, error, nada] }
         detalle: { type: string, nullable: true, description: 'mensaje del error o del progreso' }
         registro: { $ref: '#/components/schemas/AnalisisRegistro', nullable: true, description: 'presente solo con estado=listo' }
+    OrigenDato:
+      type: string
+      description: >
+        De dónde saldrá el dato al generar. `falta` es el único que cuesta
+        dinero (dispara búsqueda web); `api` gasta cuota del plan de
+        API-Football, no dólares.
+      enum: [despensa, anejo, local, api, falta]
+    DatoPreflight:
+      type: object
+      required: [tipo, origen, detalle]
+      properties:
+        tipo: { type: string, description: 'tipo del protocolo EFE (dt, plantel, tabla, resultados, fixture, xi_reciente, bajas)' }
+        origen: { $ref: '#/components/schemas/OrigenDato' }
+        detalle: { type: string, description: 'qué fuente exactamente, o por qué falta' }
+        edadDias: { type: integer, nullable: true, description: 'solo en origen=anejo: días desde la captura' }
+    EquipoPreflight:
+      type: object
+      required: [equipo, datos]
+      properties:
+        equipo: { type: string }
+        enDespensa: { type: boolean, description: 'false = ningún dato guardado bajo ESE nombre (posible desajuste de nombre)' }
+        datos:
+          type: array
+          items: { $ref: '#/components/schemas/DatoPreflight' }
+    CostoPreflight:
+      type: object
+      required: [min, max, medido]
+      properties:
+        min: { type: number, description: 'USD' }
+        max: { type: number, description: 'USD' }
+        medido: { type: boolean, description: 'true = de corridas reales guardadas; false = de la fórmula' }
+        muestra: { type: integer, description: 'corridas medidas que sostienen el rango (0 si es fórmula)' }
+    PreflightEfe:
+      type: object
+      required: [fixtureId, nivel, faltantes, busquedasPrevistas, bloqueado, umbralFrio, costo, equipos, recomendaciones]
+      properties:
+        fixtureId: { type: integer }
+        nivel:
+          type: string
+          enum: [caliente, tibio, frio]
+          description: 'caliente = 0 faltantes (sin búsquedas); frio = por encima del umbral del candado'
+        faltantes: { type: integer, description: 'campos que dispararán búsqueda web (los dos equipos sumados)' }
+        busquedasPrevistas: { type: integer, description: 'min(3 + 2 × faltantes, SAD_EFE_BUSQUEDAS); 0 si no falta nada' }
+        bloqueado: { type: boolean, description: 'true = el candado de análisis frío lo va a bloquear (hace falta permitirFrio)' }
+        umbralFrio: { type: integer, description: 'SAD_EFE_MAX_FALTANTES' }
+        costo: { $ref: '#/components/schemas/CostoPreflight' }
+        yaExiste: { type: boolean, description: 'true = ya hay EFE guardado para este fixture: verlo cuesta 0' }
+        demo: { type: boolean, description: 'true = modo demo (SAD_EFE_DEMO): no se gasta nada' }
+        equipos:
+          type: array
+          items: { $ref: '#/components/schemas/EquipoPreflight' }
+        recomendaciones:
+          type: array
+          description: Qué hacer para bajar el costo, ordenado por lo que más ahorra
+          items: { type: string }
     AnalisisRegistro:
       type: object
       required: [tipo, fixtureId, estado, versionEfe, creadoEn, resultado]
