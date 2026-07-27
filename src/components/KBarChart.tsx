@@ -1,3 +1,5 @@
+import { type Cond, condEtiquetas, puntosEtiquetados } from '../lib/kview'
+
 // Gráfica de BARRAS de una racha de k_cuota (§3.8). Eje X = fecha del partido,
 // eje Y = suma acumulada de la cuota. El partido que revienta la racha (valor 0)
 // se dibuja como un "muñón" en la base para marcar dónde estalló.
@@ -10,6 +12,8 @@ export interface CuotaBar {
   cuota: number | null
   /** 1 gana · 0 empata · -1 pierde. */
   res: number
+  /** condición del partido: separa "últimos de local" de "últimos de visita". */
+  esLocal: boolean
 }
 
 interface Props {
@@ -17,6 +21,10 @@ interface Props {
   color: string
   soft: string
   title: string
+  /** Condición del equipo que se analiza; fija los dos valores extra visibles. */
+  rol?: Cond
+  /** Toggle activo (TODOS/LOCAL/VISITA): si es específico, manda sobre `rol`. */
+  cond?: 'TODOS' | 'LOCAL' | 'VISITA'
 }
 
 const W = 460
@@ -28,7 +36,7 @@ const BASE = 128 // línea base (y de valor 0)
 
 const RES_TXT: Record<number, string> = { 1: 'ganó', 0: 'empató', [-1]: 'perdió' }
 
-export function KBarChart({ bars, color, soft, title }: Props) {
+export function KBarChart({ bars, color, soft, title, rol, cond = 'TODOS' }: Props) {
   if (!bars.length) {
     return (
       <div style={{ padding: '10px 12px', borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--line)' }}>
@@ -44,6 +52,26 @@ export function KBarChart({ bars, color, soft, title }: Props) {
   const barW = Math.max(1.5, Math.min(bw * 0.72, 22))
   const cx = (i: number) => PAD_L + bw * (i + 0.5)
   const cur = bars[n - 1].value
+
+  // mismos tres valores a la vista que en la gráfica de líneas: el último y los
+  // dos últimos de la condición que se analiza (saltando los que repiten valor)
+  const condRef = condEtiquetas(cond, rol, bars[n - 1].esLocal)
+  const marca = condRef === 'local' ? 'L' : 'V'
+  const etiquetas = puntosEtiquetados(
+    n,
+    (i) => bars[i].esLocal === (condRef === 'local'),
+    (i) => bars[i].value.toFixed(2),
+  ).map((i, orden) => {
+    const h = bars[i].burst ? 2.5 : Math.max(2.5, (bars[i].value / maxY) * plotH)
+    const ancho = 30
+    return {
+      i,
+      x: Math.min(Math.max(cx(i), PAD_L + ancho / 2), W - PAD_R - ancho / 2),
+      y: Math.max(BASE - h - 5, PLOT_TOP - 2),
+      texto: (orden === 0 ? '' : marca + ' ') + bars[i].value.toFixed(2),
+      principal: orden === 0,
+    }
+  })
 
   return (
     <div style={{ padding: '10px 12px', borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--line)' }}>
@@ -64,6 +92,16 @@ export function KBarChart({ bars, color, soft, title }: Props) {
             </rect>
           )
         })}
+        {/* los tres valores visibles, sobre su barra */}
+        {etiquetas.map((e) => (
+          <text
+            key={e.i} x={e.x} y={e.y} textAnchor="middle"
+            fontSize={e.principal ? 10 : 9} fontWeight={700}
+            style={{ fill: e.principal ? color : 'var(--t2)', fontFamily: 'var(--mono)', stroke: 'var(--bg)', strokeWidth: 3, paintOrder: 'stroke', strokeLinejoin: 'round' }}
+          >
+            {e.texto}
+          </text>
+        ))}
         <text x={PAD_L} y={H - 3} fontSize={9} fontWeight={600} style={{ fill: 'var(--t3)', fontFamily: 'var(--mono)' }}>{bars[0].fecha.slice(0, 10)}</text>
         <text x={W - PAD_R} y={H - 3} textAnchor="end" fontSize={9} fontWeight={600} style={{ fill: 'var(--t3)', fontFamily: 'var(--mono)' }}>{bars[n - 1].fecha.slice(0, 10)}</text>
       </svg>

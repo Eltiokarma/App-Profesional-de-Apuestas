@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { KCondKey, KTypeKey } from '../data/types'
 import { TEAMS } from '../data'
-import { FUSED_KEY, fmtK, isMargin, marginQ, signFmt, signedVal } from '../lib/kview'
+import { type Cond, condEtiquetas, FUSED_KEY, fmtK, isMargin, marginQ, puntosEtiquetados, signFmt, signedVal } from '../lib/kview'
 import type { KSnapshot } from '../motor/types'
 
 interface Props {
@@ -11,6 +11,10 @@ interface Props {
   /** Escala compartida entre paneles para comparar de un vistazo. */
   maxAbs: number
   window?: number
+  /** Condición del equipo que se analiza (Local/Visitante del partido). Fija
+   *  cuáles son los dos puntos extra con valor visible; con el toggle en Local
+   *  o Visita manda el toggle (ver condEtiquetas). */
+  rol?: Cond
 }
 
 const W = 460
@@ -34,7 +38,7 @@ const fmtFecha = (iso?: string): string => {
  * racha y caen a cero en el reseteo. Los partidos de torneos internacionales
  * se marcan con rombo ámbar; los que no actualizan la condición van atenuados.
  */
-export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20 }: Props) {
+export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20, rol }: Props) {
   const key = FUSED_KEY[kType][kCond]
   const win = snaps.slice(-window)
   const n = win.length
@@ -89,8 +93,40 @@ export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20 }: Props) 
   })
 
   const path = pts.map((p, i) => (i ? 'L' : 'M') + p.x.toFixed(1) + ' ' + p.y.toFixed(1)).join(' ')
-  const last = pts[n - 1]
   const tf: React.CSSProperties = { fill: 'var(--t3)', fontFamily: 'var(--mono)' }
+
+  // TRES valores a la vista, no solo el último: el último partido y los dos
+  // últimos de la condición que se analiza (de local o de visitante). El del
+  // último partido va grande a la derecha; los otros dos, con anillo sobre su
+  // punto y prefijo L/V para saber de qué condición hablan.
+  const cond = condEtiquetas(kCond, rol, win[n - 1].isLocal)
+  const marca = cond === 'local' ? 'L' : 'V'
+  const colorDe = (p: (typeof pts)[number]) => (p.reset ? 'var(--t3)' : p.sv > 0 ? 'var(--up)' : 'var(--down)')
+  const puestas: { x: number; y: number }[] = []
+  const etiquetas = puntosEtiquetados(
+    n,
+    (i) => win[i].isLocal === (cond === 'local'),
+    (i) => signFmt(pts[i].sv),
+  ).map((i, orden) => {
+    const p = pts[i]
+    const principal = orden === 0
+    const ancho = principal ? 34 : 44 // px aprox. del texto, para no solaparlos
+    const x = principal ? Math.min(p.x, R - 4) : Math.min(Math.max(p.x, L + ancho / 2), R - ancho / 2)
+    // arriba si la racha es positiva (el hueco está de ese lado); si el sitio
+    // ya está ocupado por otra etiqueta, se prueba el lado contrario
+    let arriba = p.sv >= 0
+    const alto = principal ? 10 : 13 // hueco sobre el punto (el anillo mide 7.5)
+    let y = p.y + (arriba ? -alto : alto + 8)
+    const choca = (yy: number) => puestas.some((q) => Math.abs(q.x - x) < ancho && Math.abs(q.y - yy) < 11)
+    if (choca(y)) {
+      arriba = !arriba
+      y = p.y + (arriba ? -alto : alto + 8)
+      while (choca(y)) y += arriba ? -12 : 12
+    }
+    y = Math.min(Math.max(y, 11), H - 16)
+    puestas.push({ x, y })
+    return { i, x, y, principal, texto: (principal ? '' : marca + ' ') + signFmt(p.sv), color: colorDe(p), px: p.x, py: p.y }
+  })
 
   const tip = sel != null && sel < n ? pts[sel] : null
   const tipW = tip ? Math.min(Math.max(tip.t1.length, tip.t2.length) * 5.4 + 16, W - 2 * L) : 0
@@ -159,14 +195,20 @@ export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20 }: Props) 
         )
       })}
 
-      {/* valor actual */}
-      <text
-        x={Math.min(last.x, R - 4)} y={last.y + (last.sv >= 0 ? -10 : 18)}
-        textAnchor="end" fontSize={13} fontWeight={700}
-        style={{ fill: last.reset ? 'var(--t3)' : last.sv > 0 ? 'var(--up)' : 'var(--down)', fontFamily: 'var(--mono)' }}
-      >
-        {signFmt(last.sv)}
-      </text>
+      {/* valores a la vista: último · último y penúltimo de la condición */}
+      {etiquetas.map((e) => (
+        <g key={e.i}>
+          {!e.principal && <circle cx={e.px} cy={e.py} r={7.5} fill="none" stroke={e.color} strokeWidth={1.2} opacity={0.6} />}
+          <text
+            x={e.x} y={e.y}
+            textAnchor={e.principal ? 'end' : 'middle'} fontSize={e.principal ? 13 : 10.5} fontWeight={700}
+            // halo del color del lienzo: el número se lee aunque caiga sobre la línea
+            style={{ fill: e.color, fontFamily: 'var(--mono)', stroke: 'var(--bg)', strokeWidth: 3, paintOrder: 'stroke', strokeLinejoin: 'round' }}
+          >
+            {e.texto}
+          </text>
+        </g>
+      ))}
 
       {/* eje x */}
       <text x={L} y={H - 2} fontSize={10} fontWeight={600} style={tf}>hace {n} partidos</text>
@@ -193,6 +235,7 @@ export function KLineLegend() {
       <span style={item}><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--down)' }}></span>racha −</span>
       <span style={item}><span style={{ width: 8, height: 8, borderRadius: '50%', border: '1.5px solid var(--t3)' }}></span>reset</span>
       <span style={item}><span style={{ width: 8, height: 8, background: 'var(--mark)', transform: 'rotate(45deg)' }}></span>torneo internacional</span>
+      <span style={item}><span style={{ width: 9, height: 9, borderRadius: '50%', border: '1.2px solid var(--t2)' }}></span>L/V = últimos dos de local (o de visita)</span>
     </div>
   )
 }

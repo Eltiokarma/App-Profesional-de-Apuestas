@@ -75,6 +75,48 @@ export function streakLen(snaps: KSnapshot[], key: keyof FusedK): number {
   return n
 }
 
+/** Condición de referencia de las etiquetas de una gráfica: manda el toggle
+ *  cuando es específico (la serie solo se mueve en esa condición, y etiquetar
+ *  puntos atenuados confunde); en 'total' manda el rol del equipo que se
+ *  analiza (Local/Visitante del partido) y, sin él, la del último partido. */
+export function condEtiquetas(
+  kCond: KCondKey | 'TODOS' | 'LOCAL' | 'VISITA',
+  rol: Cond | undefined,
+  ultimoEsLocal: boolean,
+): Cond {
+  const c = kCond.toLowerCase()
+  if (c === 'local') return 'local'
+  if (c === 'visita') return 'visita'
+  return rol ?? (ultimoEsLocal ? 'local' : 'visita')
+}
+
+export type Cond = 'local' | 'visita'
+
+/**
+ * Los puntos que llevan VALOR VISIBLE en las gráficas (índices, en orden):
+ *   1. el último partido,
+ *   2. el último de la condición que se analiza (local o visitante),
+ *   3. el penúltimo de esa condición.
+ * Si el valor de un candidato repite uno ya elegido —empezando por el caso
+ * típico: el último partido ya era de esa condición— se recorre un punto hacia
+ * atrás hasta dar con uno distinto: tres etiquetas iguales apiladas no dicen
+ * nada. Devuelve entre 1 y 3 índices (menos si la historia no da para más).
+ */
+export function puntosEtiquetados(
+  n: number,
+  esCond: (i: number) => boolean,
+  etiqueta: (i: number) => string,
+): number[] {
+  if (n <= 0) return []
+  const elegidos = [n - 1]
+  for (let i = n - 1; i >= 0 && elegidos.length < 3; i--) {
+    if (!esCond(i)) continue
+    if (elegidos.some((j) => etiqueta(j) === etiqueta(i))) continue
+    elegidos.push(i)
+  }
+  return elegidos
+}
+
 /** Último aporte q a la K seleccionada (último partido de la condición). */
 export function lastQ(snaps: KSnapshot[], kType: KTypeKey, kCond: KCondKey): number | null {
   for (let i = snaps.length - 1; i >= 0; i--) {

@@ -11,6 +11,7 @@ Todo en español (UI, commits, docs).
 npm install && npm run dev        # http://localhost:5173
 npm run build                     # typecheck + build (SIEMPRE antes de commitear)
 npm run test:motor                # motor TS verificado contra docs/MOTOR_SAD_EXTRACCION.md
+npm run test:kview                # capa de visualización de las K (3 valores por gráfica)
 
 # backend (junto a las 4 .db en la raíz, o SAD_DATA_DIR)
 pip install -r backend/requirements.txt
@@ -46,7 +47,9 @@ src/motor/         Motor SAD en TS: niveles ventana-20, q*/k* con reseteo,
                    fusión k = k⁺+k⁻, bins v6, regresión §5 — VERIFICADO contra
                    docs/MOTOR_SAD_EXTRACCION.md; no tocar fórmulas sin ese doc
 src/sections/      Partidos (inicio) · Cuotas · Burbujas · Skills · Estadísticas · Equipo
-src/components/    KLineChart (picos K), TeamSearch, shell
+src/components/    KLineChart (picos K) · KBarChart (rachas de cuota) ·
+                   TablaPosiciones (ÚNICA clasificación, con sus fases) ·
+                   TeamSearch, shell
 backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.db
 ```
 
@@ -63,6 +66,11 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   `docs/MOTOR_SAD_EXTRACCION.md` y sus tests (`scripts/test-motor.ts`).
 - Estilo UI: inline styles con las variables CSS del tema (`--bg`, `--t1`,
   `--up/--down`, fuentes `--sans`/`--mono`), números tabulares, todo en español.
+- Tabla de posiciones: SIEMPRE `src/components/TablaPosiciones.tsx` (trae sus
+  botones de fase Año/Apertura/Clausura). No duplicar tablas por sección.
+- Gráficas de K: tres valores a la vista (último · últimos dos de la condición
+  que se analiza, saltando los que repiten valor) vía `puntosEtiquetados` de
+  `src/lib/kview.ts`. Una gráfica nueva usa ese helper, no su propia regla.
 - Git: trabajar en rama + merge; push a GitHub solo como respaldo (no editar
   "en la nube"). Respaldo alternativo: `git bundle create respaldo.bundle --all`.
 

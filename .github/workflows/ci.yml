@@ -18,6 +18,8 @@ jobs:
         run: npm ci
       - name: Verificar Motor SAD contra el doc de extracción
         run: npm run test:motor
+      - name: Verificar la capa de visualización de las K
+        run: npm run test:kview
       - name: Typecheck + build de producción
         run: npm run build
 
