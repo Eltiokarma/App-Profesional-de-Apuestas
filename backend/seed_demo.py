@@ -194,7 +194,16 @@ def seed(base_dir: str):
             minuto INTEGER, bet_id INTEGER, bet_name TEXT, value TEXT, odd REAL,
             suspendida INTEGER DEFAULT 0, captured_at TEXT NOT NULL);
         CREATE TABLE fixture_eventos (id INTEGER PRIMARY KEY AUTOINCREMENT, fixture_id INTEGER NOT NULL,
-            minuto INTEGER, tipo TEXT, detalle TEXT, equipo_id INTEGER, jugador TEXT);
+            minuto INTEGER, extra INTEGER, tipo TEXT, detalle TEXT, equipo_id INTEGER, jugador TEXT,
+            jugador_id INTEGER, asistente TEXT, asistente_id INTEGER);
+        CREATE TABLE alineaciones (fixture_id INTEGER NOT NULL, team_id INTEGER NOT NULL,
+            formacion TEXT, entrenador TEXT, player_id INTEGER NOT NULL, jugador TEXT, numero INTEGER,
+            posicion TEXT, grid TEXT, titular INTEGER NOT NULL,
+            PRIMARY KEY (fixture_id, team_id, player_id));
+        CREATE TABLE fixture_stats (fixture_id INTEGER NOT NULL, team_id INTEGER NOT NULL,
+            clave TEXT NOT NULL, valor TEXT, PRIMARY KEY (fixture_id, team_id, clave));
+        CREATE TABLE fichas_meta (fixture_id INTEGER PRIMARY KEY, capturado_en TEXT NOT NULL,
+            alineaciones INTEGER DEFAULT 0, eventos INTEGER DEFAULT 0, stats INTEGER DEFAULT 0);
         CREATE TABLE jugadores (id INTEGER PRIMARY KEY, nombre TEXT, edad INTEGER, foto TEXT, nacionalidad TEXT);
         CREATE TABLE jugador_stats (player_id INTEGER NOT NULL, team_id INTEGER NOT NULL,
             league_id INTEGER NOT NULL, season INTEGER NOT NULL, posicion TEXT, partidos INTEGER,
@@ -338,16 +347,38 @@ def seed(base_dir: str):
         )
     # eventos del partido en juego (goles y tarjetas, con el catálogo crudo de la API)
     sad.executemany(
-        "INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador) VALUES (?,?,?,?,?,?)",
+        "INSERT INTO fixture_eventos (fixture_id, minuto, extra, tipo, detalle, equipo_id, jugador, "
+        "jugador_id, asistente, asistente_id) VALUES (?,?,?,?,?,?,?,?,?,?)",
         [
-            (vivo["id"], 12, "Card", "Yellow Card", vivo["away"], "J. Pérez"),
-            (vivo["id"], 34, "Goal", "Normal Goal", vivo["home"], "L. García"),
-            (vivo["id"], 51, "Goal", "Penalty", vivo["away"], "M. Díaz"),
-            (vivo["id"], 60, "Card", "Second Yellow card", vivo["away"], "J. Pérez"),
-            (vivo["id"], 63, "subst", "Substitution 1", vivo["home"], "Suplente"),  # no debe servirse
-            (vivo["id"], 65, "Goal", "Missed Penalty", vivo["home"], "R. Falla"),   # tampoco
+            (vivo["id"], 12, 0, "Card", "Yellow Card", vivo["away"], "J. Pérez", 9002, None, None),
+            (vivo["id"], 34, 0, "Goal", "Normal Goal", vivo["home"], "L. García", 9001, "A. Ruiz", 9003),
+            (vivo["id"], 51, 0, "Goal", "Penalty", vivo["away"], "M. Díaz", 9004, None, None),
+            (vivo["id"], 60, 0, "Card", "Second Yellow card", vivo["away"], "J. Pérez", 9002, None, None),
+            (vivo["id"], 63, 0, "subst", "Substitution 1", vivo["home"], "Suplente", 9005, "L. García", 9001),  # no debe servirse como gol/tarjeta
+            (vivo["id"], 65, 0, "Goal", "Missed Penalty", vivo["home"], "R. Falla", 9006, None, None),   # tampoco
         ],
     )
+    # ficha táctica demo (fase A del DTP): XI con grid → carriles de M2
+    for tid, formacion, base in ((vivo["home"], "4-4-2", 9001), (vivo["away"], "4-3-3", 9101)):
+        filas_ali = []
+        for i in range(11):
+            fila = 1 if i == 0 else 2 if i < 5 else 3 if i < 9 else 4
+            filas_ali.append((vivo["id"], tid, formacion, "DT demo", base + i, f"Titular {i + 1}",
+                              i + 1, "G" if i == 0 else "D" if i < 5 else "M" if i < 9 else "F",
+                              f"{fila}:{(i % 4) + 1}", 1))
+        filas_ali.append((vivo["id"], tid, formacion, "DT demo", base + 50, "Suplente 1", 21, "M", None, 0))
+        sad.executemany(
+            "INSERT INTO alineaciones (fixture_id, team_id, formacion, entrenador, player_id, jugador, "
+            "numero, posicion, grid, titular) VALUES (?,?,?,?,?,?,?,?,?,?)", filas_ali)
+    sad.executemany(
+        "INSERT INTO fixture_stats (fixture_id, team_id, clave, valor) VALUES (?,?,?,?)",
+        [(vivo["id"], vivo["home"], "Ball Possession", "58%"),
+         (vivo["id"], vivo["home"], "expected_goals", "1.42"),
+         (vivo["id"], vivo["away"], "Ball Possession", "42%"),
+         (vivo["id"], vivo["away"], "expected_goals", "0.87")])
+    sad.execute("INSERT INTO fichas_meta (fixture_id, capturado_en, alineaciones, eventos, stats) "
+                "VALUES (?,?,?,?,?)", (vivo["id"], "2026-07-02 22:10:00", 24, 6, 4))
+
     # ---- capa de jugadores (docs/JUGADORES.md): plantillas demo -----------
     # Misma forma que deja backend.ingesta.jugadores: stats por competición,
     # una baja con peso real, un recién llegado, DT y meta con TTL.

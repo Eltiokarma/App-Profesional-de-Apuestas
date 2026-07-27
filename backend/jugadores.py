@@ -280,11 +280,16 @@ def ficha_partido(fixture_id: int) -> dict | None:
         p["nombre"] = nombre
         p["congestion"] = _congestion(tid, str(fila["date"]))
         lados[lado] = p
+    from backend import ficha_tactica
     return {
         "fixtureId": fixture_id,
         "generadoEn": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "local": lados["local"],
         "visitante": lados["visitante"],
+        # materia prima del DTP (docs/efe-dtp/DTP_DISENO.md): XI con carriles,
+        # goles con autor y asistente, y métricas del partido. Vacío si la
+        # ingesta aún no capturó la ficha — nunca reconstruido a ojo.
+        "tactica": ficha_tactica.tactica_de(fixture_id, fila["home_team_id"], fila["away_team_id"]),
     }
 
 

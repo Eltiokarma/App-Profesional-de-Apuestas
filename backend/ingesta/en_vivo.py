@@ -40,6 +40,9 @@ from backend.ingesta.extractor import (
     leer_clave,
     ligas_vivo,
 )
+# los eventos (goles con minuto, autor y asistente) los define la ficha de
+# partido: el ciclo en vivo y la ingesta post-partido escriben lo mismo
+from backend.ingesta.ficha_partido import guardar_eventos, preparar_tablas as preparar_ficha
 
 VENTANA_JUEGO_MIN = 210  # arrancó hace <= 3h30: cubre alargue, penales y pausas largas
 VENTANA_PREVIA_MIN = 15  # y hasta 15' ANTES: cubre saques adelantados y horas desfasadas
@@ -78,17 +81,6 @@ CREATE TABLE IF NOT EXISTS odds_live (
     captured_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_oddslive_fixture ON odds_live(fixture_id, captured_at);
-
-CREATE TABLE IF NOT EXISTS fixture_eventos (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    fixture_id INTEGER NOT NULL,
-    minuto INTEGER,
-    tipo TEXT,
-    detalle TEXT,
-    equipo_id INTEGER,
-    jugador TEXT
-);
-CREATE INDEX IF NOT EXISTS idx_eventos_fixture ON fixture_eventos(fixture_id);
 """
 
 
@@ -142,27 +134,6 @@ def fixtures_marcados_en_juego(con: sqlite3.Connection) -> set[int]:
     }
 
 
-def guardar_eventos(con: sqlite3.Connection, item: dict) -> int:
-    """Eventos del partido (goles, tarjetas…) que traen /fixtures?live= y
-    /fixtures?ids=. El feed devuelve la lista completa en cada ciclo, así que
-    se reemplaza entera (idempotente)."""
-    fid = item.get("fixture", {}).get("id")
-    eventos = item.get("events") or []
-    if not fid or not eventos:
-        return 0
-    con.execute("DELETE FROM fixture_eventos WHERE fixture_id=?", (fid,))
-    n = 0
-    for ev in eventos:
-        t = ev.get("time") or {}
-        minuto = (t.get("elapsed") or 0) + (t.get("extra") or 0)
-        con.execute(
-            "INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
-            (fid, minuto, ev.get("type"), ev.get("detail"),
-             (ev.get("team") or {}).get("id"), (ev.get("player") or {}).get("name")),
-        )
-        n += 1
-    return n
 
 
 def ligas_de_vivos(vivos: list) -> dict[int, set[int]]:
@@ -298,6 +269,7 @@ def main() -> int:
     con.execute("PRAGMA busy_timeout=15000")
     con.execute("PRAGMA journal_mode=WAL")  # persistente; requisito de la fase 3
     con.executescript(DDL_ODDS_LIVE)
+    preparar_ficha(con)  # fixture_eventos y sus columnas nuevas
 
     # solo las ligas importantes reciben el ciclo en vivo (las menores —Liga 2,
     # copas nacionales— se ingestan igual en fixtures/histórico/cuotas prepartido)

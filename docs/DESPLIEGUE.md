@@ -36,6 +36,7 @@ en subproceso. El backend HTTP sigue siendo de solo lectura.
    | `SAD_LIVE_SEGUNDOS` | `60` | fase 3: ciclo en vivo (marcador/minuto + odds live) mientras haya partidos en juego; vacía = apagado |
    | `SAD_LIVE_ODDS_LIGAS` | `6` | (opcional) ligas por ciclo en vivo a las que se les piden cuotas (`/odds/live?league=`, 1 request cubre todos sus partidos simultáneos). Ese es el default; `0` = sin tope. Las que no entran no se pierden: el orden es por captura más vieja primero, así que rotan y entran en el ciclo siguiente |
    | `SAD_LIVE_ODDS_PAGINAS` | `3` | (opcional) tope de páginas por liga en `/odds/live` (~10 fixtures por página). Ese es el default; sube solo si una liga tiene más de 30 partidos a la vez |
+   | `SAD_FICHA_PARTIDOS` | `3` | (opcional) partidos terminados por equipo a los que se les captura ficha (alineaciones/eventos/stats) en cada corrida; 3 requests por partido. Ese es el default: para la cadena del DTP basta 1, los otros dos dan el contraste de M1/M6 |
    | `SAD_DESPENSA_TTL_DIAS` | `16` | (opcional) días que dura fresca la investigación de `dt`/`plantel` en la despensa; default 14. Con barrido quincenal conviene 16, o habrá un día en que todo EFE salga caro (`docs/DESPENSA_DESKTOP.md`) |
    | `SAD_DESPENSA_BULK` | `1` | (opcional) carga al arrancar la despensa versionada en el repo (`backend/analisis/despensa/*.json`). Es local, idempotente y no gasta tokens; `0` la apaga. Ese es el default |
    | `SAD_LIGAS_EXTRA` | `414:Copa Chile,999:Copa de la Liga Perú` | torneos extra sin tocar código; IDs con `--buscar` |

@@ -25,6 +25,8 @@ import type {
   FixtureLiveDTO,
   GapEquipoDTO,
   JugadorDTO,
+  AlineacionDTO,
+  FichaTacticaDTO,
   LigaDTO,
   NivelDTO,
   PlantillaDTO,
@@ -673,11 +675,36 @@ class MockDataSource implements SadDataSource {
       ...plantillaDemo(key),
       congestion: { diasDescanso: dias, partidos21d: 7 - dias },
     })
+    // ficha táctica demo: solo el partido en juego la tiene, para que la UI
+    // pueda desarrollarse sin backend. El resto va vacío — "real o nada".
+    const enJuego = m.status === 'live'
+    const xi = (equipoId: number, formacion: string, base: number): AlineacionDTO => ({
+      equipoId, formacion, entrenador: 'DT demo', conGrid: true,
+      titulares: Array.from({ length: 11 }, (_, i) => ({
+        jugadorId: base + i, nombre: `Titular ${i + 1}`, numero: i + 1,
+        posicion: i === 0 ? 'G' : i < 5 ? 'D' : i < 9 ? 'M' : 'F',
+        grid: `${i === 0 ? 1 : i < 5 ? 2 : i < 9 ? 3 : 4}:${(i % 4) + 1}`,
+        carril: (['centro', 'izquierda', 'centro', 'derecha'] as const)[i % 4],
+      })),
+      suplentes: [],
+    })
+    const tactica: FichaTacticaDTO = enJuego
+      ? {
+          capturada: true,
+          alineaciones: { local: xi(TEAM_NUM[m.home] ?? 1, '4-4-2', 9001), visitante: xi(TEAM_NUM[m.away] ?? 2, '4-3-3', 9101) },
+          eventos: [
+            { minuto: 34, extra: 0, tipo: 'Goal', detalle: 'Normal Goal', equipoId: TEAM_NUM[m.home] ?? 1, jugador: 'Titular 10', jugadorId: 9010, asistente: 'Titular 8', asistenteId: 9008 },
+            { minuto: 51, extra: 0, tipo: 'Goal', detalle: 'Penalty', equipoId: TEAM_NUM[m.away] ?? 2, jugador: 'Titular 11', jugadorId: 9111, asistente: null, asistenteId: null },
+          ],
+          estadisticas: { local: { 'Ball Possession': '58%' }, visitante: { 'Ball Possession': '42%' } },
+        }
+      : { capturada: false, alineaciones: null, eventos: [], estadisticas: null }
     return {
       fixtureId,
       generadoEn: MOCK_NOW,
       local: lado(m.home, 3),
       visitante: lado(m.away, 5),
+      tactica,
     }
   }
 
