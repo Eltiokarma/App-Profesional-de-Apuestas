@@ -10,6 +10,7 @@ import type {
   EquipoDTO,
   EquipoStatsDTO,
   EslabonDtpDTO,
+  FichaPartidoDTO,
   FixtureDTO,
   FixtureLiveDTO,
   CargaDespensaDTO,
@@ -377,6 +378,13 @@ export async function loadFuentesHistorial(matchId: string): Promise<string[]> {
 /** En vivo real (fase 3): marcador, minuto y cuotas en juego del backend. */
 export function loadFixtureLive(matchId: string): Promise<FixtureLiveDTO> {
   return getDataSource().fixtureLive(fixtureNum(matchId))
+}
+
+/** Ficha del partido (plantillas + táctica). La ingesta en vivo captura el XI
+ *  confirmado ~1 h antes del saque; en cuanto existe, `tactica.alineaciones`
+ *  llega aquí y el análisis (EFE/DTP/skills) puede completarse. */
+export function loadFichaPartido(matchId: string): Promise<FichaPartidoDTO> {
+  return getDataSource().fichaPartido(fixtureNum(matchId))
 }
 
 // ── análisis EFE+DTP (backend/analisis/) ────────────────────────────────────

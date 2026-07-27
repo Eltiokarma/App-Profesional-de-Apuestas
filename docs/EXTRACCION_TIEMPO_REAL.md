@@ -109,6 +109,17 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   `cuota_key` las mapea (hay datos pero la ficha se ve vacía), prepartido y
   presupuesto del día. Con `--api` (2 requests) responde lo único que no está
   en la DB: si la API ofrece odds live de esa liga.
+- **Alineaciones prepartido** (27/07/2026): el ciclo también pide
+  `fixtures/lineups` de los partidos de las ligas en vivo entre 75 min antes
+  y 45 min después del saque, hasta capturarlas — la ficha post-partido
+  (`ficha_partido.py`) solo baja partidos terminados, así que el XI
+  confirmado no llegaba nunca ANTES del pitazo, que es cuando el análisis lo
+  necesita. Reintento cada 5 min (tabla `xi_intentos`, mismo patrón que
+  `odds_live_consultas`), tope `SAD_LIVE_XI` (4 fixtures/ciclo, 0 = apagado).
+  Van a la tabla `alineaciones` de siempre: `/fixtures/{id}/ficha` las sirve
+  al instante (sin sello), los skills/EFE/DTP las reciben por esa vía, y la
+  tarjeta "Alineaciones confirmadas" de Burbujas las muestra con refresco
+  automático y botón ↻.
 - **`SAD_LIVE_SEGUNDOS=60`** (env, vacía = apagado, piso 30): hilo en
   `backend/app.py` que corre el ciclo.
 - **Backend**: `GET /fixtures/{id}/live` → estado/minuto/marcador reales +

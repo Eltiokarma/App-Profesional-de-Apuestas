@@ -22,6 +22,11 @@ Un ciclo por invocación, pensado para el hilo SAD_LIVE_SEGUNDOS de backend.app:
    Donde la API de verdad no ofrece odds live, queda solo marcador/minuto
    (para saber cuál de los dos casos es: python -m backend.ingesta.diag_vivo).
 4. Retención: borra odds_live con más de RETENCION_DIAS días.
+5. Alineaciones prepartido (antes del paso 2, porque su ventana arranca antes
+   que la de juego): fixtures/lineups de los partidos que arrancan en <= 75
+   min o acaban de arrancar sin XI capturado → tabla `alineaciones`, la misma
+   de la ficha post-partido. /fixtures/{id}/ficha las sirve en cuanto existen
+   y el análisis (EFE/DTP/skills) puede completarse antes del saque.
 
 Activa WAL en sad.db (persistente): con escrituras cada minuto conviviendo con
 las lecturas del backend, el modo journal clásico daría "database is locked".
@@ -42,7 +47,11 @@ from backend.ingesta.extractor import (
 )
 # los eventos (goles con minuto, autor y asistente) los define la ficha de
 # partido: el ciclo en vivo y la ingesta post-partido escriben lo mismo
-from backend.ingesta.ficha_partido import guardar_eventos, preparar_tablas as preparar_ficha
+from backend.ingesta.ficha_partido import (
+    guardar_alineaciones,
+    guardar_eventos,
+    preparar_tablas as preparar_ficha,
+)
 
 VENTANA_JUEGO_MIN = 210  # arrancó hace <= 3h30: cubre alargue, penales y pausas largas
 VENTANA_PREVIA_MIN = 15  # y hasta 15' ANTES: cubre saques adelantados y horas desfasadas
@@ -70,6 +79,21 @@ TOPE_LIGAS_LIVE = 20
 TOPE_LIGAS = int(os.environ.get("SAD_LIVE_ODDS_LIGAS", "6"))
 TOPE_PAGINAS = max(1, int(os.environ.get("SAD_LIVE_ODDS_PAGINAS", "3")))
 
+# Alineaciones ANTES del saque: la API las publica ~20-60 min antes y el
+# análisis las necesita en cuanto existen (el EFE/DTP y los skills leen la
+# ficha /fixtures/{id}/ficha, que sirve la tabla `alineaciones` al instante).
+# La ficha post-partido (ficha_partido.py) solo baja partidos TERMINADOS, así
+# que sin este paso el XI confirmado no llegaba nunca antes del pitazo.
+# 1 request por partido (fixtures/lineups), desde XI_VENTANA_PREVIA_MIN antes
+# del saque hasta XI_VENTANA_TARDE_MIN después (ligas que publican tarde);
+# capturado una vez, no se vuelve a pedir. Donde aún no está publicado, el
+# intento queda anotado en xi_intentos y se reintenta cada XI_REINTENTO_MIN —
+# no cada ciclo — para no quemar presupuesto en ligas sin cobertura.
+XI_VENTANA_PREVIA_MIN = 75
+XI_VENTANA_TARDE_MIN = 45
+XI_REINTENTO_MIN = 5
+TOPE_XI = int(os.environ.get("SAD_LIVE_XI", "4"))  # fixtures por ciclo (0 = apagado)
+
 DDL_ODDS_LIVE = """
 CREATE TABLE IF NOT EXISTS odds_live (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -86,6 +110,11 @@ CREATE INDEX IF NOT EXISTS idx_oddslive_fixture ON odds_live(fixture_id, capture
 CREATE TABLE IF NOT EXISTS odds_live_consultas (
     league_id INTEGER PRIMARY KEY,
     consultada_en TEXT NOT NULL,
+    con_datos INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS xi_intentos (
+    fixture_id INTEGER PRIMARY KEY,
+    intentada_en TEXT NOT NULL,
     con_datos INTEGER NOT NULL DEFAULT 0
 );
 """
@@ -180,6 +209,59 @@ def orden_por_antiguedad(con: sqlite3.Connection, por_liga: dict[int, set[int]])
             tuple(sorted(por_liga)))
     }
     return sorted(por_liga, key=lambda lid: (ultima.get(lid, ""), lid))
+
+
+def fixtures_para_xi(con: sqlite3.Connection, ligas: "set[int]") -> list[int]:
+    """Fixtures de las ligas en vivo cuya alineación conviene pedir YA: saque
+    entre XI_VENTANA_PREVIA_MIN antes y XI_VENTANA_TARDE_MIN después de ahora
+    (previos o ya en juego), sin XI capturado y sin intento reciente. Orden:
+    saque más próximo primero — el XI que le falta al análisis de hoy manda."""
+    if not ligas or TOPE_XI <= 0:
+        return []
+    ahora = datetime.now(timezone.utc)
+    desde = (ahora - timedelta(minutes=XI_VENTANA_TARDE_MIN)).strftime("%Y-%m-%d %H:%M:%S")
+    hasta = (ahora + timedelta(minutes=XI_VENTANA_PREVIA_MIN)).strftime("%Y-%m-%d %H:%M:%S")
+    corte_intento = (ahora - timedelta(minutes=XI_REINTENTO_MIN)).strftime("%Y-%m-%d %H:%M:%S")
+    estados = PREVIOS + EN_JUEGO
+    marcas_e = ",".join("?" * len(estados))
+    marcas_l = ",".join("?" * len(ligas))
+    return [fid for (fid,) in con.execute(
+        f"""SELECT f.id FROM fixtures f
+            WHERE f.league_id IN ({marcas_l})
+              AND f.status_short IN ({marcas_e})
+              AND f.date BETWEEN ? AND ?
+              AND NOT EXISTS (SELECT 1 FROM alineaciones a WHERE a.fixture_id = f.id)
+              AND NOT EXISTS (SELECT 1 FROM xi_intentos i
+                              WHERE i.fixture_id = f.id AND i.intentada_en > ?)
+            ORDER BY f.date""",
+        (*sorted(ligas), *estados, desde, hasta, corte_intento))]
+
+
+def capturar_xi(cliente, con: sqlite3.Connection, fixtures: list[int], capturado: str) -> int:
+    """Alineaciones prepartido → tabla alineaciones (la misma que la ficha
+    post-partido: /fixtures/{id}/ficha las sirve en cuanto existen y el
+    análisis puede completarse). 1 request por fixture, tope TOPE_XI por
+    ciclo; el intento se anota gane o pierda, para espaciar los reintentos."""
+    atendidos = fixtures[:TOPE_XI] if TOPE_XI > 0 else fixtures
+    con_xi = 0
+    for fid in atendidos:
+        if not cliente.quedan():
+            break
+        data = cliente.get("fixtures/lineups", {"fixture": fid})
+        n = guardar_alineaciones(con, fid, (data or {}).get("response", []))
+        con.execute(
+            "INSERT INTO xi_intentos (fixture_id, intentada_en, con_datos) VALUES (?, ?, ?) "
+            "ON CONFLICT(fixture_id) DO UPDATE SET intentada_en=excluded.intentada_en, "
+            "con_datos=excluded.con_datos",
+            (fid, capturado, 1 if n else 0),
+        )
+        if n:
+            con_xi += 1
+    con.commit()
+    if atendidos:
+        print(f"alineaciones prepartido: {con_xi} de {len(atendidos)} fixtures con XI publicado"
+              + (f" · {len(fixtures) - len(atendidos)} esperan al próximo ciclo" if len(fixtures) > len(atendidos) else ""))
+    return con_xi
 
 
 def guardar_odds_live(con: sqlite3.Connection, item: dict, capturado: str) -> int:
@@ -298,13 +380,24 @@ def main() -> int:
     vivo = ligas_vivo()
     locales = candidatos_por_liga(con, vivo)
     candidatos = {fid for fids in locales.values() for fid in fids}
-    if not candidatos:
+    # la ventana del XI arranca ANTES que la de juego: puede haber alineaciones
+    # que pedir cuando todavía no hay ningún partido en juego
+    xi_pendientes = fixtures_para_xi(con, vivo)
+    if not candidatos and not xi_pendientes:
         con.close()
-        print("sin partidos en ventana de juego · 0 requests")
+        print("sin partidos en ventana de juego ni alineaciones que pedir · 0 requests")
         return 0
 
     cliente = Cliente(leer_clave())
     capturado = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
+
+    # el XI primero: es lo que le falta al análisis prepartido y caduca al saque
+    if xi_pendientes:
+        capturar_xi(cliente, con, xi_pendientes, capturado)
+    if not candidatos:
+        con.close()
+        print(f"sin partidos en ventana de juego · requests usadas: {cliente.usadas}/{cliente.limite}")
+        return 0
 
     # 1 request: marcador/minuto/estado de todo lo vivo en nuestras ligas
     # importantes. Con más de TOPE_LIGAS_LIVE ligas se pide live=all y el

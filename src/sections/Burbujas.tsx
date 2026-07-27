@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { TEAMS } from '../data'
 import type { KCondKey, KTypeKey, Match } from '../data/types'
+import { AlineacionesXi } from '../components/AlineacionesXi'
 import { KLineChart, KLineLegend } from '../components/KLineChart'
 import { RachasCuotas, type CuotaCond } from '../components/RachasCuotas'
 import { CalendarioSad } from '../components/CalendarioSad'
 import { TeamBadge } from '../components/TeamBadge'
 import { binBadge, type Cond, FUSED_KEY, K_TYPE_GROUPS, K_WINDOW_OPTS, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
 import type { FusedK } from '../motor/types'
-import { loadBurbujas, loadCalendarioSad, type BurbujasData } from '../services/appdata'
+import { loadBurbujas, loadCalendarioSad, loadFichaPartido, type BurbujasData } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
@@ -77,6 +78,12 @@ export function Burbujas({ store, m, isMobile }: Props) {
   }, m.id)
   const engH = engData.data?.h ?? null
   const engA = engData.data?.a ?? null
+
+  // XI confirmado: la ingesta en vivo lo captura sola al publicarse (~1 h
+  // antes del saque); refresco silencioso para que aparezca sin tocar nada,
+  // y el botón ↻ de la tarjeta lo trae al momento
+  const ficha = useAsync(() => loadFichaPartido(m.id), m.id, { refreshMs: 120_000 })
+  const alineaciones = ficha.data?.tactica?.alineaciones ?? null
 
   // cuotas K (§3.8): un solo toggle para ambos equipos (misma condición = comparación justa)
   const [cuotaCond, setCuotaCond] = useState<CuotaCond>('TODOS')
@@ -228,6 +235,20 @@ export function Burbujas({ store, m, isMobile }: Props) {
         </aside>
       </div>
       )}
+
+      {/* XI confirmado: mismo dato que consume el análisis (EFE/DTP/skills) */}
+      <div style={{ marginTop: 14 }}>
+        <AlineacionesXi
+          local={alineaciones?.local}
+          visitante={alineaciones?.visitante}
+          localNombre={H.name}
+          visitanteNombre={A.name}
+          loading={ficha.loading}
+          error={ficha.error}
+          onReload={ficha.reload}
+          isMobile={isMobile}
+        />
+      </div>
     </div>
   )
 }
