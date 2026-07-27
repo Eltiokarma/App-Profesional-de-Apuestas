@@ -42,6 +42,7 @@ export function PreflightEfe({ pf, onRecargar }: {
   onRecargar?: () => void
 }) {
   const n = NIVEL[pf.nivel]
+  const gasto = pf.gasto
   const rango = pf.costo.max > pf.costo.min
     ? `${dinero(pf.costo.min)}–${dinero(pf.costo.max)}`
     : dinero(pf.costo.min)
@@ -129,6 +130,55 @@ export function PreflightEfe({ pf, onRecargar }: {
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: color }}></span>{label}
               </span>
             ))}
+          </div>
+        )}
+
+        {/* GASTO REAL: lo de arriba es una estimación y se puede equivocar
+            (se equivocó); esto es el cargo que existió. El desglose
+            json/pensamiento es lo que dice dónde se va el dinero cuando no hay
+            ni una búsqueda web. */}
+        {gasto && gasto.corridas > 0 && (
+          <div style={{ marginTop: 11, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+              <span style={{ font: '700 11px var(--sans)', color: 'var(--t1)' }}>Ya gastado en este partido</span>
+              <span style={{ font: '800 13px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>
+                {dinero(gasto.total)}
+              </span>
+              <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>
+                {gasto.corridas} corrida{gasto.corridas === 1 ? '' : 's'} ·{' '}
+                {gasto.porTipo.map((t) => `${t.tipo} ${dinero(t.costo)}${t.corridas > 1 ? ` ×${t.corridas}` : ''}`).join(' · ')}
+              </span>
+            </div>
+            <div style={{ display: 'grid', gap: 3 }}>
+              {gasto.ultimas.map((c, i) => {
+                const pens = c.tokensPensamiento ?? 0
+                const json = c.tokensJson ?? 0
+                const out = c.tokensOut || pens + json || 1
+                const pctPens = Math.round((pens / out) * 100)
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, font: '500 9.5px var(--mono)', color: 'var(--t2)', flexWrap: 'wrap' }}>
+                    <span style={{ minWidth: 54, color: 'var(--t1)', fontWeight: 700 }}>{c.tipo}</span>
+                    <span style={{ minWidth: 46, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{dinero(c.costo)}</span>
+                    <span style={{ color: 'var(--t3)' }}>
+                      {(c.busquedas ?? 0) > 0 ? `${c.busquedas} búsq · ` : 'sin búsquedas · '}
+                      out {out.toLocaleString('es')}
+                    </span>
+                    {/* barra: cuánto del output fue razonamiento y cuánto JSON */}
+                    <span title={`razonamiento ${pens.toLocaleString('es')} · JSON ${json.toLocaleString('es')}`}
+                      style={{ display: 'flex', width: 90, height: 6, borderRadius: 3, overflow: 'hidden', background: 'var(--bg3)' }}>
+                      <span style={{ width: `${pctPens}%`, background: 'var(--mark)' }}></span>
+                      <span style={{ flex: 1, background: 'var(--accent)' }}></span>
+                    </span>
+                    <span style={{ color: 'var(--t3)' }}>{pctPens}% razonamiento</span>
+                  </div>
+                )
+              })}
+            </div>
+            <div style={{ font: '500 9px var(--mono)', color: 'var(--t3)', marginTop: 5 }}>
+              El razonamiento se cobra a precio de salida igual que el JSON. Si esa barra
+              va casi toda ámbar, el gasto no está en lo que se escribe sino en lo que se
+              piensa: se baja con <b>SAD_EFE_EFFORT</b>, no con más despensa.
+            </div>
           </div>
         )}
 

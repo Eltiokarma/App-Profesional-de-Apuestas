@@ -180,8 +180,52 @@ en el máximo del rango en vez de darse por resuelto.
 Cada llamada ya calculaba su costo real para el log; ahora además se guarda
 (tabla `corridas`). Con tres o más corridas de tamaño parecido, el preflight
 deja de estimar y devuelve el **rango real de lo que costaron**, marcado
-`MEDIDO ×n`. Mientras no las haya, usa la recta entre los dos extremos
-conocidos —0 búsquedas ≈ $0.05, 18 ≈ $0.6-1.2— y lo marca `ESTIMADO`.
+`MEDIDO ×n`. Mientras no las haya, usa la fórmula y lo marca `ESTIMADO`.
+
+### El error que costó 60 centavos: creer que sin búsquedas no se paga
+
+La primera versión de este documento —y del preflight— daba **~$0.05** para una
+corrida sin faltantes. Un EFE real con el semáforo en verde, cero búsquedas y
+todo cargado costó **$0.60**. La estimación no estaba imprecisa: estaba
+conceptualmente mal.
+
+Con 0 búsquedas se sigue pagando, y el reparto es este:
+
+| Concepto | Tokens | Costo |
+|---|---|---|
+| system (protocolo EFE + API) | ~11k, cacheados | $0.03 la 1ª vez, $0.002 después |
+| payload de entrada | 2-4k | ~$0.01 |
+| JSON de salida | 2-5k | $0.02-0.05 |
+| **razonamiento** | **decenas de miles** | **el sumando grande** |
+
+El razonamiento se cobra **a precio de salida**, igual que el JSON, y con
+`SAD_EFE_EFFORT=medium` sobre un protocolo de 9k tokens puede ser 10-40× el
+tamaño de la respuesta. `SAD_EFE_MAX_TOKENS` está en 64000: el techo permite
+esa factura sin avisar.
+
+De ahí dos cambios:
+
+1. El rango base pasó a **$0.10-$0.50** y es ancho **a propósito** — esa anchura
+   dice "todavía no lo sabemos". Se estrecha con mediciones, no con optimismo.
+2. `corridas` guarda ahora el **reparto del output**: cuánto fue JSON y cuánto
+   razonamiento. Se cuentan los caracteres reales de cada bloque de la respuesta
+   y se reparte el `output_tokens` cobrado en esa proporción, así que el
+   desglose suma exactamente lo facturado.
+
+El diagnóstico que habilita: si la barra del panel sale casi toda ámbar, el
+dinero **no** está en lo que se escribe ni en lo que se busca — está en lo que
+se piensa, y eso no se arregla con más despensa sino bajando `SAD_EFE_EFFORT`.
+
+### Lo ya gastado, no lo que va a costar
+
+Una estimación mira hacia adelante y puede equivocarse. El panel muestra además
+**lo que ya se pagó en ese partido**, sumando todas las corridas: el EFE, sus
+regeneraciones, el timeline y el DTP. Es la cifra que aparece en la factura y no
+coincide con "lo que costó la última corrida" — tres regeneraciones de $0.20 son
+$0.60, y hasta aquí eso no se veía en ninguna pantalla.
+
+Se suman también los intentos fallidos: el cargo existió aunque el análisis se
+descartara por venir vacío.
 
 ### Lo que el chequeo destapó
 
@@ -207,7 +251,14 @@ El log de cada corrida trae la cuenta, y es la medida real:
 [efe] despensa: 0 datos depositados ← nada nuevo que pagar
 [dtp] fixture 123 · foco X (N=14) · modo dtp_completo · faltantes: ninguno
 [timeline] 38 eventos de partido calculados · tope búsquedas: 4
+[efe] claude-sonnet-5 · in=3120 out=48210 (json≈4100 pensamiento≈44110)
+      cache_write=0 cache_read=11020 busqueda=no hechas=0 costo≈$0.49
 ```
+
+Esa última línea es la que hay que leer cuando el número sorprenda. `hechas=0`
+con `costo≈$0.49` significa que **no se buscó nada y aun así se pagó**: mira
+`pensamiento≈`. Si es 10× el `json≈`, el gasto está en el esfuerzo de
+razonamiento y la palanca es `SAD_EFE_EFFORT`, no la despensa.
 
 En el timeline, esos 38 eventos son 38 que el modelo no buscó ni escribió. Si
 el número sale en 0 con partidos que sí jugaron, el problema es de ingesta —el

@@ -1108,6 +1108,49 @@ components:
         max: { type: number, description: 'USD' }
         medido: { type: boolean, description: 'true = de corridas reales guardadas; false = de la fórmula' }
         muestra: { type: integer, description: 'corridas medidas que sostienen el rango (0 si es fórmula)' }
+    CorridaDTO:
+      type: object
+      description: >
+        Una llamada al modelo, con lo que costó DE VERDAD. `tokensPensamiento`
+        es el razonamiento, que se cobra a precio de salida igual que el JSON:
+        separarlos es lo que dice si hay que acortar textos (json) o bajar el
+        esfuerzo (pensamiento).
+      required: [tipo, costo, creadoEn]
+      properties:
+        tipo: { type: string, enum: [efe, timeline, dtp] }
+        fixtureId: { type: integer, nullable: true }
+        faltantes: { type: integer }
+        busquedas: { type: integer }
+        modelo: { type: string }
+        tokensIn: { type: integer }
+        tokensOut: { type: integer }
+        cacheWrite: { type: integer }
+        cacheRead: { type: integer }
+        tokensJson: { type: integer, description: 'parte del output que fue JSON emitido' }
+        tokensPensamiento: { type: integer, description: 'parte del output que fue razonamiento' }
+        costo: { type: number, description: 'USD reales de esa llamada' }
+        creadoEn: { type: string, format: date-time }
+    GastoFixture:
+      type: object
+      description: >
+        Lo YA gastado en el partido. Suma todas las corridas, incluidas
+        regeneraciones e intentos fallidos: el cargo existió aunque el análisis
+        se descartara.
+      required: [total, corridas, porTipo, ultimas]
+      properties:
+        total: { type: number, description: 'USD' }
+        corridas: { type: integer }
+        porTipo:
+          type: array
+          items:
+            type: object
+            properties:
+              tipo: { type: string }
+              corridas: { type: integer }
+              costo: { type: number }
+        ultimas:
+          type: array
+          items: { $ref: '#/components/schemas/CorridaDTO' }
     PreflightEfe:
       type: object
       required: [fixtureId, nivel, faltantes, busquedasPrevistas, bloqueado, umbralFrio, costo, equipos, recomendaciones]
@@ -1122,6 +1165,7 @@ components:
         bloqueado: { type: boolean, description: 'true = el candado de análisis frío lo va a bloquear (hace falta permitirFrio)' }
         umbralFrio: { type: integer, description: 'SAD_EFE_MAX_FALTANTES' }
         costo: { $ref: '#/components/schemas/CostoPreflight' }
+        gasto: { $ref: '#/components/schemas/GastoFixture' }
         yaExiste: { type: boolean, description: 'true = ya hay EFE guardado para este fixture: verlo cuesta 0' }
         demo: { type: boolean, description: 'true = modo demo (SAD_EFE_DEMO): no se gasta nada' }
         equipos:

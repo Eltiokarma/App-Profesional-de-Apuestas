@@ -371,13 +371,23 @@ def _resolver_fuentes(fx: dict, con_api: bool = True) -> dict:
 # pasar en silencio el caso intermedio: 4 faltantes son 11 búsquedas y ~medio
 # dólar, y hasta aquí el usuario se enteraba con la factura. Esto lo dice antes.
 #
-# La fórmula sale de los dos extremos documentados en COSTO_IA.md: 0 búsquedas
-# ≈ $0.05 (razonamiento + salida con el system cacheado) y 18 búsquedas
-# ≈ $0.6-1.2 (el análisis frío). Es una recta entre esos dos puntos, y se usa
-# SOLO mientras no haya corridas reales de ese tamaño: en cuanto las hay, manda
-# lo medido.
-COSTO_BASE = 0.05
-COSTO_POR_BUSQUEDA = (0.030, 0.062)
+# EL COSTO BASE NO ES CERO, y esa fue la primera lección cara: la versión
+# inicial de esto anunciaba ~$0.05 para una corrida sin búsquedas, como si el
+# gasto fuera solo la web. No lo es. Con 0 búsquedas se sigue pagando:
+#
+#   system (~11k tokens)   cacheado: $0.03 la primera vez, $0.002 después
+#   payload de entrada     ~$0.01
+#   JSON de salida         2-5k tokens → $0.02-0.05
+#   RAZONAMIENTO           se cobra a precio de salida y es el sumando grande:
+#                          decenas de miles de tokens con effort medium
+#
+# El razonamiento es lo que no se puede acotar a ojo, y por eso el rango base
+# es ancho a propósito: esa anchura ES la información («no lo sabemos todavía»).
+# En cuanto hay tres corridas medidas, `costo_medido` manda y esto no se usa.
+# El desglose json/pensamiento de `corridas` es lo que permitirá estrecharlo
+# con datos en vez de con otra suposición.
+COSTO_BASE = (0.10, 0.50)
+COSTO_POR_BUSQUEDA = (0.028, 0.040)
 
 _DETALLE_ORIGEN = {
     "despensa": "en la despensa, fresco",
@@ -400,6 +410,7 @@ def preflight_efe(fixture_id: int) -> dict:
             "umbralFrio": int(os.environ.get("SAD_EFE_MAX_FALTANTES", "6")),
             "costo": {"min": 0.0, "max": 0.0, "medido": False, "muestra": 0},
             "yaExiste": ya, "demo": True, "equipos": [],
+            "gasto": {"total": 0.0, "corridas": 0, "porTipo": [], "ultimas": []},
             "recomendaciones": ["Modo demo (SAD_EFE_DEMO=1): el análisis es de muestra y no gasta nada."],
         }
 
@@ -436,8 +447,8 @@ def preflight_efe(fixture_id: int) -> dict:
         costo = {"min": round(lo_medido[0], 2), "max": round(lo_medido[1], 2),
                  "medido": True, "muestra": lo_medido[2]}
     else:
-        costo = {"min": round(COSTO_BASE + busquedas * COSTO_POR_BUSQUEDA[0], 2),
-                 "max": round(COSTO_BASE + peor * COSTO_POR_BUSQUEDA[1], 2),
+        costo = {"min": round(COSTO_BASE[0] + busquedas * COSTO_POR_BUSQUEDA[0], 2),
+                 "max": round(COSTO_BASE[1] + peor * COSTO_POR_BUSQUEDA[1], 2),
                  "medido": False, "muestra": lo_medido[2]}
 
     nivel = "caliente" if faltantes == 0 else "frio" if faltantes > umbral else "tibio"
@@ -467,11 +478,23 @@ def preflight_efe(fixture_id: int) -> dict:
             f"{dudosos} campo(s) dependen de que API-Football reporte lesionados: si no reporta, "
             "se buscan en la web (por eso el máximo del rango).")
 
+    # LO QUE YA SE GASTÓ AQUÍ. Una estimación mira hacia adelante y se puede
+    # equivocar; esto es el cargo que existió. Suma TODAS las corridas del
+    # partido —regeneraciones y análisis fallidos incluidos—, porque "el EFE me
+    # costó X" y "en este partido llevo gastado X" son preguntas distintas y la
+    # segunda es la que aparece en la factura.
+    gasto = efedb.gasto_de_fixture(fixture_id)
+    if gasto["corridas"]:
+        detalle = " · ".join(f"{t['tipo']} ${t['costo']:.2f} ({t['corridas']})"
+                             for t in gasto["porTipo"])
+        recomendaciones.insert(0, f"Ya gastado en este partido: ${gasto['total']:.2f} "
+                                  f"en {gasto['corridas']} corrida(s) — {detalle}.")
+
     return {
         "fixtureId": fixture_id, "nivel": nivel, "faltantes": faltantes, "dudosos": dudosos,
         "busquedasPrevistas": busquedas, "bloqueado": faltantes > umbral, "umbralFrio": umbral,
         "costo": costo, "yaExiste": ya, "demo": False, "equipos": equipos,
-        "recomendaciones": recomendaciones,
+        "gasto": gasto, "recomendaciones": recomendaciones,
     }
 
 

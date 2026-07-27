@@ -61,7 +61,16 @@ CREATE TABLE IF NOT EXISTS corridas (
     creado_en TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_corridas_tipo ON corridas(tipo, faltantes);
+CREATE INDEX IF NOT EXISTS idx_corridas_fixture ON corridas(fixture_id);
 """
+
+# El reparto del output (JSON vs razonamiento) llegó después de la primera
+# versión de `corridas`: se añade en caliente para no perder las filas ya
+# guardadas — en SQLite un ALTER que ya existe es un error, no un problema.
+_COLUMNAS_NUEVAS = (
+    ("tokens_json", "INTEGER"),
+    ("tokens_pensamiento", "INTEGER"),
+)
 
 
 def ruta() -> str:
@@ -74,6 +83,11 @@ def conectar() -> sqlite3.Connection:
     con.execute("PRAGMA busy_timeout=15000")
     con.execute("PRAGMA journal_mode=WAL")
     con.executescript(DDL)
+    for columna, tipo in _COLUMNAS_NUEVAS:
+        try:
+            con.execute(f"ALTER TABLE corridas ADD COLUMN {columna} {tipo}")
+        except sqlite3.OperationalError:
+            pass  # ya existe: es el caso normal a partir de la segunda conexión
     return con
 
 
@@ -291,12 +305,14 @@ def registrar_corrida(tipo: str, fixture_id: int | None, faltantes: int,
         with conectar() as con:
             con.execute(
                 "INSERT INTO corridas (tipo, fixture_id, faltantes, busquedas, modelo, "
-                "tokens_in, tokens_out, cache_write, cache_read, costo, creado_en) "
-                "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                "tokens_in, tokens_out, cache_write, cache_read, costo, "
+                "tokens_json, tokens_pensamiento, creado_en) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (tipo, fixture_id, faltantes, uso.get("busquedas") or 0,
                  uso.get("modelo") or "", uso.get("input") or 0, uso.get("output") or 0,
                  uso.get("cache_write") or 0, uso.get("cache_read") or 0,
-                 float(uso.get("costo") or 0.0), ahora()),
+                 float(uso.get("costo") or 0.0), uso.get("tokens_json") or 0,
+                 uso.get("tokens_pensamiento") or 0, ahora()),
             )
             con.commit()
     except Exception as e:
@@ -323,16 +339,46 @@ def costo_medido(tipo: str, faltantes: int, tolerancia: int = 1,
     return min(costos), max(costos), len(costos)
 
 
-def corridas_recientes(limite: int = 20) -> list[dict]:
-    """Historial para auditar el gasto (lectura pura)."""
+_CAMPOS_CORRIDA = ("tipo, fixture_id, faltantes, busquedas, modelo, tokens_in, tokens_out, "
+                   "cache_write, cache_read, tokens_json, tokens_pensamiento, costo, creado_en")
+
+
+def corridas_recientes(limite: int = 20, fixture_id: int | None = None) -> list[dict]:
+    """Historial del gasto (lectura pura). Con `fixture_id`, solo el de ese
+    partido: es la respuesta a "¿cuánto llevo gastado aquí?", que no es lo
+    mismo que lo que costó la última corrida."""
     try:
         with conectar() as con:
-            filas = con.execute(
-                "SELECT tipo, fixture_id, faltantes, busquedas, modelo, costo, creado_en "
-                "FROM corridas ORDER BY id DESC LIMIT ?", (limite,)).fetchall()
+            if fixture_id is not None:
+                filas = con.execute(
+                    f"SELECT {_CAMPOS_CORRIDA} FROM corridas WHERE fixture_id=? "
+                    "ORDER BY id DESC LIMIT ?", (fixture_id, limite)).fetchall()
+            else:
+                filas = con.execute(
+                    f"SELECT {_CAMPOS_CORRIDA} FROM corridas ORDER BY id DESC LIMIT ?",
+                    (limite,)).fetchall()
         return [dict(f) for f in filas]
     except Exception:
         return []
+
+
+def gasto_de_fixture(fixture_id: int) -> dict:
+    """(total, corridas) de un partido, y el desglose por tipo. Sumar TODAS las
+    corridas —incluidas las regeneraciones y los intentos fallidos— es lo
+    honesto: el cargo existió aunque el análisis se descartara."""
+    filas = corridas_recientes(200, fixture_id)
+    por_tipo: dict[str, dict] = {}
+    for f in filas:
+        e = por_tipo.setdefault(f["tipo"], {"tipo": f["tipo"], "corridas": 0, "costo": 0.0})
+        e["corridas"] += 1
+        e["costo"] += f["costo"] or 0.0
+    return {
+        "total": round(sum(f["costo"] or 0.0 for f in filas), 4),
+        "corridas": len(filas),
+        "porTipo": [{**v, "costo": round(v["costo"], 4)} for v in
+                    sorted(por_tipo.values(), key=lambda x: -x["costo"])],
+        "ultimas": filas[:8],
+    }
 
 
 # ── cadena_dtp (la película por equipo foco) ────────────────────────────────

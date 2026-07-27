@@ -123,7 +123,13 @@ def main():
           pf2["faltantes"] == 0 and pf2["busquedasPrevistas"] == 0, pf2["faltantes"])
     check("el nivel pasa a caliente y se levanta el bloqueo",
           pf2["nivel"] == "caliente" and pf2["bloqueado"] is False, pf2["nivel"])
-    check("y el costo estimado cae al mínimo", pf2["costo"]["max"] <= 0.10, pf2["costo"])
+    # OJO: sin búsquedas el costo BAJA, pero no cae a cero. La primera versión
+    # de esto anunciaba ~$0.05 y una corrida real costó $0.60: el razonamiento
+    # se cobra a precio de salida aunque no se busque nada en la web.
+    check("sin búsquedas el costo baja respecto al caso con faltantes",
+          pf2["costo"]["max"] < pf["costo"]["max"], (pf2["costo"], pf["costo"]))
+    check("pero NO se anuncia como gratis: los tokens se pagan igual",
+          pf2["costo"]["min"] >= 0.10, pf2["costo"])
     o2 = tipos_por_origen(pf2, N_LOCAL)
     check("lo depositado se declara como despensa, no como 'base'",
           {"dt", "plantel"} <= set(o2.get("despensa", [])), o2)
@@ -147,10 +153,13 @@ def main():
 
     # ── 4. el costo pasa de estimado a MEDIDO cuando hay corridas reales ────
     check("sin historia, el costo se declara estimado", pf3["costo"]["medido"] is False, pf3["costo"])
+    check("y el estimado SIN búsquedas no es ~0: el razonamiento se paga igual",
+          pf3["costo"]["min"] >= 0.10 and pf3["costo"]["max"] >= 0.40, pf3["costo"])
     for costo in (0.06, 0.08, 0.07):
         efedb.registrar_corrida("efe", FIXTURE, 0, {"costo": costo, "busquedas": 0,
                                                     "modelo": "claude-sonnet-5", "input": 1000,
-                                                    "output": 2000, "cache_write": 0, "cache_read": 5000})
+                                                    "output": 2000, "cache_write": 0, "cache_read": 5000,
+                                                    "tokens_json": 1500, "tokens_pensamiento": 500})
     pf4 = motor.preflight_efe(FIXTURE)
     check("con tres corridas parecidas, el rango pasa a ser una MEDICIÓN",
           pf4["costo"]["medido"] is True and pf4["costo"]["muestra"] == 3, pf4["costo"])
@@ -158,6 +167,34 @@ def main():
           pf4["costo"]["min"] == 0.06 and pf4["costo"]["max"] == 0.08, pf4["costo"])
     lejos = efedb.costo_medido("efe", 8)
     check("las corridas de otro tamaño no contaminan la medición", lejos[2] == 0, lejos)
+
+    # ── 4b. el gasto YA hecho: mirada hacia atrás, no estimación ────────────
+    efedb.registrar_corrida("timeline", FIXTURE, 0, {"costo": 0.05, "busquedas": 0,
+                                                     "modelo": "haiku", "input": 500, "output": 900,
+                                                     "cache_write": 0, "cache_read": 0,
+                                                     "tokens_json": 800, "tokens_pensamiento": 100})
+    g = pf4 and motor.preflight_efe(FIXTURE)["gasto"]
+    check("suma TODAS las corridas del partido, no solo la última",
+          g["corridas"] == 4 and abs(g["total"] - 0.26) < 1e-6, g["total"])
+    check("y las desglosa por tipo (un EFE regenerado tres veces se ve)",
+          {t["tipo"]: t["corridas"] for t in g["porTipo"]} == {"efe": 3, "timeline": 1},
+          g["porTipo"])
+    check("cada corrida trae el reparto del output: JSON vs razonamiento",
+          all("tokens_json" in c and "tokens_pensamiento" in c for c in g["ultimas"]),
+          list(g["ultimas"][0]) if g["ultimas"] else None)
+    check("el gasto ya hecho encabeza las recomendaciones (es lo primero que se mira)",
+          motor.preflight_efe(FIXTURE)["recomendaciones"][0].startswith("Ya gastado en este partido"),
+          motor.preflight_efe(FIXTURE)["recomendaciones"][0])
+    check("un partido sin corridas no inventa un gasto",
+          efedb.gasto_de_fixture(424242)["total"] == 0.0)
+
+    # el reparto json/pensamiento se calcula de los chars REALES y suma justo
+    # el output cobrado (si no sumara, el desglose mentiría sobre la factura)
+    uso = {"output": 10_000, "chars_json": 2_000, "chars_pensamiento": 8_000}
+    chars = uso["chars_json"] + uso["chars_pensamiento"]
+    tj = round(uso["output"] * uso["chars_json"] / chars)
+    check("el reparto reconstruye exactamente el output cobrado",
+          tj + (uso["output"] - tj) == uso["output"] and tj == 2000, tj)
 
     # ── 5. no divergir de la corrida real ──────────────────────────────────
     # el preflight y generar_efe llaman a la MISMA función: se comprueba que lo
