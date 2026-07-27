@@ -404,6 +404,42 @@ export interface CierreDtp {
   }
 }
 
+/** Código de las etiquetas contextuales del rival (bloque G2 del protocolo EFE). */
+export type CodigoEtiquetaRival =
+  | 'RECIEN_ASCENDIDO' | 'EN_CRISIS' | 'LOCAL_FUERTE' | 'VISITA_DEBIL'
+  | 'EQUIPO_SORPRESA' | 'BLOQUE_BAJO' | 'CLASICO'
+
+/** Una etiqueta del rival CON el dato que la sostiene: sin el número sería una
+ *  opinión, y una opinión no debería entrar en un análisis. */
+export interface EtiquetaRivalDTO {
+  codigo: CodigoEtiquetaRival
+  label: string
+  /** La cifra que dispara la etiqueta ("3 derrotas seguidas", "80% en casa"). */
+  dato: string
+  nota?: string
+  /** true si el criterio solo se cubre en parte (CLÁSICO: derbis de ciudad,
+   *  no rivalidades nacionales). Su ausencia no prueba nada. */
+  parcial?: boolean
+}
+
+/** Un partido próximo con el mapa de rivales ya resuelto
+ *  (GET /equipos/{id}/calendario). */
+export interface PartidoCalendarioDTO {
+  fixtureId: number
+  fecha: string
+  rivalId: number
+  rival: string
+  condicion: 'L' | 'V'
+  torneo: string | null
+  ronda: string | null
+  posicionRival: number | null
+  equiposEnLaTabla: number | null
+  zonaRival: 'alta' | 'media' | 'descenso' | null
+  /** Días desde el partido anterior: la congestión se lee de un vistazo. */
+  diasDescanso: number | null
+  etiquetas: EtiquetaRivalDTO[]
+}
+
 /** Un partido de la cadena DTP (GET /equipos/{id}/cadena). */
 export interface EslabonDtpDTO {
   equipoFoco: string

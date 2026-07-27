@@ -3,13 +3,14 @@ import { TEAMS } from '../data'
 import type { KCondKey, KTypeKey } from '../data/types'
 import { ApuestasSalidas } from '../components/ApuestasSalidas'
 import { KLineChart, KLineLegend } from '../components/KLineChart'
+import { CalendarioSad } from '../components/CalendarioSad'
 import { CadenaDtp } from '../components/DtpPizarra'
 import { RachasCuotas, type CuotaCond } from '../components/RachasCuotas'
 import { TeamBadge } from '../components/TeamBadge'
 import { binBadge, FUSED_KEY, K_TYPE_GROUPS, K_WINDOW_OPTS, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
 import type { FusedK } from '../motor/types'
 import type { JugadorDTO } from '../api/types'
-import { loadBurbujas, loadPlantilla, loadTeamFixtures, loadTeamStats, loadCadena } from '../services/appdata'
+import { loadBurbujas, loadCalendarioSad, loadPlantilla, loadTeamFixtures, loadTeamStats, loadCadena } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
@@ -29,6 +30,8 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
   const plant = useAsync(() => loadPlantilla(teamKey), teamKey)
   // la cadena DTP: lectura pura, 0 créditos (se genera desde la ficha del partido)
   const cadena = useAsync(() => loadCadena(teamKey), teamKey)
+  // el mismo calendario que lee el EFE (bloque G), sin gastar un token
+  const cal = useAsync(() => loadCalendarioSad(teamKey), teamKey)
 
   // ingesta on-demand: si el backend la lanzó (plantilla vacía), sondear
   // hasta que llegue (~5-6 requests del lado del servidor, unos segundos)
@@ -358,6 +361,7 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
           </div>
 
           <aside style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <CalendarioSad titulo={T?.name ?? teamKey} partidos={cal.data ?? []} loading={cal.loading} />
             <section style={{ padding: 16, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
               <div style={{ font: '700 12px var(--sans)', marginBottom: 10 }}>Constantes K actuales</div>
               {([['K resultado', 'k', false], ['K local', 'kLocal', false], ['K visita', 'kVisita', false], ['K goles anot.', 'golesAnotado', false], ['K goles rec.', 'golesRecibido', true]] as [string, keyof FusedK, boolean][]).map(

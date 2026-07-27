@@ -45,3 +45,5 @@ jobs:
         run: python -m backend.test_ficha
       - name: Tests del DTP (cadena rodante y anti-hindsight)
         run: python -m backend.test_dtp
+      - name: Tests del calendario SAD (bloque G calculado, sin IA)
+        run: python -m backend.test_calendario

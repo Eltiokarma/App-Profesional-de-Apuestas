@@ -3,10 +3,11 @@ import { TEAMS } from '../data'
 import type { KCondKey, KTypeKey, Match } from '../data/types'
 import { KLineChart, KLineLegend } from '../components/KLineChart'
 import { RachasCuotas, type CuotaCond } from '../components/RachasCuotas'
+import { CalendarioSad } from '../components/CalendarioSad'
 import { TeamBadge } from '../components/TeamBadge'
 import { binBadge, type Cond, FUSED_KEY, K_TYPE_GROUPS, K_WINDOW_OPTS, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
 import type { FusedK } from '../motor/types'
-import { loadBurbujas, loadProximos, type BurbujasData, type ProximoRival } from '../services/appdata'
+import { loadBurbujas, loadCalendarioSad, type BurbujasData } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
@@ -71,7 +72,7 @@ export function Burbujas({ store, m, isMobile }: Props) {
 
   // constantes K + niveles vía el contrato (/constantes, /niveles)
   const engData = useAsync(async () => {
-    const [h, a, proxH, proxA] = await Promise.all([loadBurbujas(m.home), loadBurbujas(m.away), loadProximos(m.home), loadProximos(m.away)])
+    const [h, a, proxH, proxA] = await Promise.all([loadBurbujas(m.home), loadBurbujas(m.away), loadCalendarioSad(m.home), loadCalendarioSad(m.away)])
     return { h, a, proxH, proxA }
   }, m.id)
   const engH = engData.data?.h ?? null
@@ -116,26 +117,6 @@ export function Burbujas({ store, m, isMobile }: Props) {
       <div style={{ font: '700 12px var(--sans)' }}>Cuotas K · rachas 1X2 · {TEAMS[teamId].short}</div>
       <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>Suma acumulada de la cuota; cae a 0 al romperse la racha · {cuotaCond.toLowerCase()} · solo 2026</div>
       <RachasCuotas teamKey={teamId} cond={cuotaCond} rol={rol} />
-    </section>
-  )
-
-  const proximosCard = (teamId: string, prox: ProximoRival[]) => (
-    <section style={{ padding: 16, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
-      <div style={{ font: '700 12px var(--sans)', marginBottom: 4 }}>Próximos {prox.length || 3} · {TEAMS[teamId].name}</div>
-      <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginBottom: 12 }}>Calendario por nivel del rival</div>
-      {prox.length === 0 && (
-        <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t3)', padding: '6px 0' }}>Sin partidos programados en los datos</div>
-      )}
-      {prox.map((n, i) => {
-        const bb = binBadge(n.bin)
-        return (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid var(--line)' }}>
-            <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)', width: 36, fontVariantNumeric: 'tabular-nums' }}>{n.fecha}</span>
-            <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{n.rivalNombre}</span>
-            <span style={{ padding: '3px 9px', borderRadius: 6, background: bb.soft, color: bb.color, font: '700 9.5px var(--mono)', letterSpacing: '.3px', flexShrink: 0 }}>{n.binEtiqueta}</span>
-          </div>
-        )
-      })}
     </section>
   )
 
@@ -241,8 +222,9 @@ export function Burbujas({ store, m, isMobile }: Props) {
               )}
             </div>
           </section>
-          {proximosCard(m.home, engData.data?.proxH ?? [])}
-          {proximosCard(m.away, engData.data?.proxA ?? [])}
+          {/* el MISMO calendario que lee el EFE: nivel del rival + bloque G */}
+          <CalendarioSad titulo={TEAMS[m.home].name} partidos={engData.data?.proxH ?? []} loading={engData.loading} />
+          <CalendarioSad titulo={TEAMS[m.away].name} partidos={engData.data?.proxA ?? []} loading={engData.loading} />
         </aside>
       </div>
       )}

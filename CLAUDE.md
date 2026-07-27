@@ -21,6 +21,7 @@ python -m backend.test_en_vivo    # ciclo en vivo: cuotas en juego por liga (sin
 python -m backend.test_despensa   # despensa en bloque: TTL honesto y canonización
 python -m backend.test_ficha      # ficha de partido (alineaciones/eventos/stats, fase A del DTP)
 python -m backend.test_dtp        # DTP: cadena rodante, anti-hindsight y sin búsqueda web
+python -m backend.test_calendario # calendario SAD: bloque G del EFE calculado (sin IA)
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
 python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--horizonte/--calibrar/--por-liga)
 
@@ -78,6 +79,13 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   `--up/--down`, fuentes `--sans`/`--mono`), números tabulares, todo en español.
 - Tabla de posiciones: SIEMPRE `src/components/TablaPosiciones.tsx` (trae sus
   botones de fase Año/Apertura/Clausura). No duplicar tablas por sección.
+- Calendario: SIEMPRE `src/components/CalendarioSad.tsx` sobre
+  `loadCalendarioSad` (contrato `/equipos/{id}/calendario`). Las etiquetas del
+  rival salen de `backend/calendario.py` con el criterio numérico del protocolo
+  y viajan CON su dato; ninguna pantalla dibuja su propia lista de próximos.
+- Costo de la IA: `docs/efe-dtp/COSTO_IA.md`. Lo que está en nuestra base se
+  calcula, no se le pregunta al modelo — y lo calculado no se le hace copiar a
+  la salida.
 - Gráficas de K: tres valores a la vista (último · últimos dos de la condición
   que se analiza, saltando los que repiten valor) vía `puntosEtiquetados` de
   `src/lib/kview.ts`. Una gráfica nueva usa ese helper, no su propia regla.

@@ -269,6 +269,24 @@ def main():
           sp["jugadores"] == [] and sp["temporada"] is None and sp["dependencia"]["hhi"] is None, sp)
     check("plantilla vacía: sin on-demand no se lanza ingesta", sp["ingestaLanzada"] is False, sp.get("ingestaLanzada"))
 
+    # /equipos/{id}/calendario — el bloque G del EFE, calculado sin IA
+    cal = c.get(A + f"/equipos/{betis}/calendario").json()
+    check("calendario: lista con rival, condición y etiquetas",
+          isinstance(cal, list) and all(
+              x["rival"] and x["condicion"] in ("L", "V") and isinstance(x["etiquetas"], list)
+              for x in cal), cal[:1])
+    check("calendario: en orden ascendente por fecha",
+          [x["fecha"] for x in cal] == sorted(x["fecha"] for x in cal), [x["fecha"] for x in cal])
+    check("calendario: toda etiqueta viaja con su dato (nunca una opinión suelta)",
+          all(e["codigo"] and e["dato"] for x in cal for e in x["etiquetas"]),
+          [e for x in cal for e in x["etiquetas"]])
+    check("calendario: n acota el número de partidos",
+          len(c.get(A + f"/equipos/{betis}/calendario?n=1").json()) <= 1)
+    check("calendario: n fuera de rango → 422",
+          c.get(A + f"/equipos/{betis}/calendario?n=0").status_code == 422)
+    check("/equipos/999999/calendario → 404",
+          c.get(A + "/equipos/999999/calendario").status_code == 404)
+
     # /fixtures/{id}/ficha — puente con los skills
     fi = c.get(A + f"/fixtures/{vivo['id']}/ficha").json()
     check("ficha: ambos lados con plantilla y congestión",
