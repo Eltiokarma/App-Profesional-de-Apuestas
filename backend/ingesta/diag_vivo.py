@@ -112,7 +112,21 @@ def diagnosticar(con: sqlite3.Connection, fid: int, cliente=None) -> None:
     else:
         print(f"{OK} estado {ss}: partido cerrado, su ventana en vivo ya pasó")
 
-    # 3. lo que quedó guardado
+    # 3. ¿el ciclo llegó a PREGUNTAR por esta liga? (la rotación con tope de
+    #    ligas por ciclo va por esta marca; sin ella, "sin cobertura" puede
+    #    significar simplemente "nunca le tocó turno")
+    if tabla_existe(con, "odds_live_consultas"):
+        fila = con.execute(
+            "SELECT consultada_en, con_datos FROM odds_live_consultas WHERE league_id=?",
+            (lid,)).fetchone()
+        if fila:
+            print(f"{OK if fila[1] else DUDA} última consulta /odds/live?league={lid}: "
+                  f"{fila[0]} UTC · {'trajo datos' if fila[1] else 'vacía (¿cobertura de la API?)'}")
+        else:
+            print(f"{DUDA} el ciclo nunca ha consultado /odds/live de esta liga "
+                  f"(no le ha tocado turno con partido vivo, o el ciclo no corre)")
+
+    # 4. lo que quedó guardado
     if not tabla_existe(con, "odds_live"):
         print(f"{NO} no existe la tabla odds_live: el ciclo en vivo nunca corrió en esta DB")
     else:
@@ -150,7 +164,7 @@ def diagnosticar(con: sqlite3.Connection, fid: int, cliente=None) -> None:
                 print(f"      y tampoco capturó nada de ningún partido en esa franja: el ciclo "
                       f"no corrió (SAD_LIVE_SEGUNDOS apagado, deploy viejo o presupuesto agotado)")
 
-    # 4. prepartido, para separar "no hay cuotas de nada" de "solo faltan las live"
+    # 5. prepartido, para separar "no hay cuotas de nada" de "solo faltan las live"
     for tabla in ("odds", "odds_history"):
         if tabla_existe(con, tabla):
             n = con.execute(f"SELECT COUNT(*) FROM {tabla} WHERE fixture_id=?", (fid,)).fetchone()[0]
@@ -158,7 +172,7 @@ def diagnosticar(con: sqlite3.Connection, fid: int, cliente=None) -> None:
 
     print(f"    presupuesto: {cuota_diaria()}")
 
-    # 5. lo único que no se puede saber desde la DB: si la API ofrece odds live
+    # 6. lo único que no se puede saber desde la DB: si la API ofrece odds live
     #    de esta liga. 2 requests, solo con --api.
     if cliente is not None:
         data = cliente.get("fixtures", {"live": "all"})

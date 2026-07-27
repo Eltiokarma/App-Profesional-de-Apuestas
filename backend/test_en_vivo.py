@@ -10,6 +10,7 @@ import sqlite3
 import sys
 from datetime import datetime, timedelta, timezone
 
+from backend.ingesta import en_vivo as en_vivo_mod
 from backend.ingesta.en_vivo import (
     DDL_ODDS_LIVE,
     TOPE_LIGAS_LIVE,
@@ -162,24 +163,46 @@ def main():
     check("si el feed de fixtures se deja una liga, sus cuotas se piden igual",
           MELGAR_CRISTAL in con_feed, con_feed)
 
-    # rotación: con tope de ligas por ciclo va primero la de captura más vieja
+    # rotación: con tope de ligas por ciclo va primero la de CONSULTA más vieja
+    # (no la de captura: eso era el bug de Ecuador, ver más abajo)
     con = db()
     con.execute(
-        "INSERT INTO odds_live (fixture_id, minuto, bet_id, bet_name, value, odd, suspendida, captured_at) "
-        "VALUES (?,?,?,?,?,?,?,?)",
-        (OTRO_PAIS, 10, 59, "Fulltime Result", "Home", 2.0, 0, "2026-07-26 20:40:00.000"),
+        "INSERT INTO odds_live_consultas (league_id, consultada_en, con_datos) VALUES (?,?,?)",
+        (PREMIER, "2026-07-26 20:40:00.000", 1),
     )
     con.commit()
     orden = orden_por_antiguedad(con, por_liga)
-    check("la liga sin capturas previas va primera", orden[0] == PERU, orden)
+    check("la liga nunca consultada va primera", orden[0] == PERU, orden)
     con.execute(
-        "INSERT INTO odds_live (fixture_id, minuto, bet_id, bet_name, value, odd, suspendida, captured_at) "
-        "VALUES (?,?,?,?,?,?,?,?)",
-        (MELGAR_CRISTAL, 41, 59, "Fulltime Result", "Home", 1.7, 0, "2026-07-26 20:42:00.000"),
+        "INSERT INTO odds_live_consultas (league_id, consultada_en, con_datos) VALUES (?,?,?)",
+        (PERU, "2026-07-26 20:42:00.000", 1),
     )
     con.commit()
-    check("con ambas capturadas manda la más vieja",
+    check("con ambas consultadas manda la más vieja",
           orden_por_antiguedad(con, por_liga) == [PREMIER, PERU], orden_por_antiguedad(con, por_liga))
+
+    # EL CASO ECUADOR (27/07/2026, Guayaquil City–U. Católica): una liga donde
+    # la API no da odds live nunca captura nada; rotando por CAPTURA quedaba
+    # pegada al frente de la cola para siempre y, con el tope de ligas por
+    # ciclo, acaparaba los cupos — a las ligas con cobertura ni se les
+    # preguntaba y la ficha decía "sin cobertura" siendo mentira. Rotando por
+    # CONSULTA, la liga vacía también gasta su turno y el siguiente ciclo le
+    # toca a la que sí tiene cuotas.
+    con = db()
+    cliente = ClienteFalso({PERU: feed[PERU], PREMIER: []})  # PREMIER sin cobertura
+    tope_original = en_vivo_mod.TOPE_LIGAS
+    en_vivo_mod.TOPE_LIGAS = 1
+    try:
+        _, cf1 = capturar_odds_live(cliente, con, por_liga, ids_vivos, "2026-07-26 20:50:00.000")
+        _, cf2 = capturar_odds_live(cliente, con, por_liga, ids_vivos, "2026-07-26 20:51:00.000")
+    finally:
+        en_vivo_mod.TOPE_LIGAS = tope_original
+    check("una liga sin cobertura no acapara el tope: el turno rota a la que sí tiene",
+          cf1 | cf2 == {MELGAR_CRISTAL, OTRO_PERU}, (cf1, cf2))
+    fila = con.execute(
+        "SELECT con_datos FROM odds_live_consultas WHERE league_id=?", (PREMIER,)).fetchone()
+    check("odds_live_consultas registra la consulta vacía (con_datos=0)",
+          fila is not None and fila[0] == 0, fila)
 
     # presupuesto agotado a media lista: no se cae, deja el resto al próximo ciclo
     con = db()

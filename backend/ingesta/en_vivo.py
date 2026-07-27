@@ -62,8 +62,10 @@ TOPE_LIGAS_LIVE = 20
 # partidos simultáneos de esa liga vienen en la misma respuesta). Topes para que
 # un ciclo que corre cada minuto no se coma el presupuesto del día:
 #   SAD_LIVE_ODDS_LIGAS=6   ligas por ciclo (0 = sin tope). Las que no entran no
-#                           se pierden: el orden es por antigüedad de captura,
-#                           así que rotan y en el ciclo siguiente van primeras.
+#                           se pierden: el orden es por antigüedad de CONSULTA
+#                           (odds_live_consultas), así que rotan y en el ciclo
+#                           siguiente van primeras. OJO: no por antigüedad de
+#                           captura — ver orden_por_antiguedad.
 #   SAD_LIVE_ODDS_PAGINAS=3 páginas por liga (~10 fixtures por página).
 TOPE_LIGAS = int(os.environ.get("SAD_LIVE_ODDS_LIGAS", "6"))
 TOPE_PAGINAS = max(1, int(os.environ.get("SAD_LIVE_ODDS_PAGINAS", "3")))
@@ -81,6 +83,11 @@ CREATE TABLE IF NOT EXISTS odds_live (
     captured_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_oddslive_fixture ON odds_live(fixture_id, captured_at);
+CREATE TABLE IF NOT EXISTS odds_live_consultas (
+    league_id INTEGER PRIMARY KEY,
+    consultada_en TEXT NOT NULL,
+    con_datos INTEGER NOT NULL DEFAULT 0
+);
 """
 
 
@@ -150,21 +157,28 @@ def ligas_de_vivos(vivos: list) -> dict[int, set[int]]:
 
 
 def orden_por_antiguedad(con: sqlite3.Connection, por_liga: dict[int, set[int]]) -> list[int]:
-    """Ligas ordenadas por captura más vieja primero (las que nunca capturaron,
+    """Ligas ordenadas por CONSULTA más vieja primero (las nunca consultadas,
     delante). Con tope de ligas por ciclo esto reparte el presupuesto en vez de
-    servir siempre a las mismas: ninguna liga se queda sin curva."""
-    liga_de = {fid: lid for lid, fids in por_liga.items() for fid in fids}
-    if not liga_de:
+    servir siempre a las mismas: ninguna liga se queda sin turno.
+
+    La antigüedad es la de odds_live_consultas (cuándo se le PIDIÓ /odds/live a
+    esa liga), no la de la última captura en odds_live. Ordenar por captura era
+    un bug (27/07/2026, Guayaquil City–U. Católica en Ecuador - Liga Pro sin
+    cuotas en juego): una liga donde la API no devuelve odds live nunca captura
+    nada, así que quedaba pegada al frente de la cola PARA SIEMPRE — y con el
+    tope de ligas por ciclo, varias así acaparaban todos los cupos y a las
+    demás ni se les preguntaba. La ficha decía "sin cobertura de cuotas en vivo
+    en esta liga" sin ser verdad: nunca se hizo la request."""
+    if not por_liga:
         return []
-    marcas = ",".join("?" * len(liga_de))
-    ultima: dict[int, str] = {}
-    for fid, cap in con.execute(
-            f"SELECT fixture_id, MAX(captured_at) FROM odds_live "
-            f"WHERE fixture_id IN ({marcas}) GROUP BY fixture_id",
-            tuple(sorted(liga_de))):
-        lid = liga_de[fid]
-        if cap and cap > ultima.get(lid, ""):
-            ultima[lid] = cap
+    marcas = ",".join("?" * len(por_liga))
+    ultima = {
+        lid: cap
+        for lid, cap in con.execute(
+            f"SELECT league_id, consultada_en FROM odds_live_consultas "
+            f"WHERE league_id IN ({marcas})",
+            tuple(sorted(por_liga)))
+    }
     return sorted(por_liga, key=lambda lid: (ultima.get(lid, ""), lid))
 
 
@@ -238,6 +252,14 @@ def capturar_odds_live(cliente, con: sqlite3.Connection, por_liga: dict,
                 con_feed.add(fid)
         if len(con_feed) == antes:
             sin_cobertura.append(lid)
+        # la rotación va por ESTA marca, no por las capturas: una liga sin
+        # cobertura también gastó su turno y pasa al final de la cola
+        con.execute(
+            "INSERT INTO odds_live_consultas (league_id, consultada_en, con_datos) "
+            "VALUES (?, ?, ?) ON CONFLICT(league_id) DO UPDATE SET "
+            "consultada_en=excluded.consultada_en, con_datos=excluded.con_datos",
+            (lid, capturado, 0 if len(con_feed) == antes else 1),
+        )
     con.commit()
     # evidencia en logs: distinguir "no pedimos" de "la casa cerró el mercado"
     susp = con.execute(
