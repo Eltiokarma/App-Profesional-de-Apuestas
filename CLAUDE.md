@@ -18,6 +18,7 @@ pip install -r backend/requirements.txt
 python -m uvicorn backend.app:app --port 8000
 python -m backend.test_api        # verificaciones del contrato (169 checks)
 python -m backend.test_en_vivo    # ciclo en vivo: cuotas en juego por liga (sin red)
+python -m backend.test_despensa   # despensa en bloque: TTL honesto y canonización
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
 python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--horizonte/--calibrar/--por-liga)
 
@@ -30,6 +31,7 @@ python -m backend.ingesta.extractor --ventana-horas 6  # refresco ligero: solo c
 python -m backend.ingesta.jugadores             # plantillas/bajas/traspasos/DT de equipos con NS próximos (docs/JUGADORES.md)
 python -m backend.ingesta.en_vivo               # 1 ciclo en vivo: marcador/minuto + odds_live (WAL)
 python -m backend.ingesta.diag_vivo --hoy       # por qué un partido no tiene cuotas en juego (--fixture N, --api)
+python -m backend.analisis.despensa_bulk --listar  # despensa del repo: qué hay y qué edad tiene
 python -m backend.ingesta.pipeline --out .      # regenera levels/constants/discreto desde sad.db
 python -m backend.ingesta.test_paridad          # test dorado vs DBs del pipeline viejo
 ```
@@ -64,6 +66,9 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   + ambos datasources (mock y http) + tests (`backend/test_api.py`).
 - La matemática del motor es sagrada: cualquier cambio se valida contra
   `docs/MOTOR_SAD_EXTRACCION.md` y sus tests (`scripts/test-motor.ts`).
+- Despensa del EFE (`backend/analisis/despensa/*.json`, barrido quincenal):
+  campo sin fuente va VACÍO, nunca rellenado a ojo; `investigado_en` es la
+  fecha real de la investigación. Ver `docs/DESPENSA_DESKTOP.md`.
 - Estilo UI: inline styles con las variables CSS del tema (`--bg`, `--t1`,
   `--up/--down`, fuentes `--sans`/`--mono`), números tabulares, todo en español.
 - Tabla de posiciones: SIEMPRE `src/components/TablaPosiciones.tsx` (trae sus

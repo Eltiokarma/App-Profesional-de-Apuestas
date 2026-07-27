@@ -1,0 +1,192 @@
+{
+  "liga": "Perú - Primera División (Liga 1 2026)",
+  "investigado_en": "2026-07-27",
+  "nota": "Barrido quincenal. Solo dt/plantel/bajas: lo que las webs de datos NO listan. Campo vacío = la web no lo dijo con fuente fiable; el EFE lo buscará. NADA se rellena por intuición. `alias`: nombres alternativos por si la app (API-Football) llama distinto al club.",
+  "fuentes": [
+    "https://es.wikipedia.org/wiki/Liga1_2026_(Per%C3%BA)",
+    "https://es.wikipedia.org/wiki/Torneo_Clausura_2026_(Per%C3%BA)",
+    "https://depor.com/futbol-peruano/descentralizado/liga-1-2026-los-12-tecnicos-que-no-siguen-en-sus-clubes-quienes-fueron-despedidos-por-malos-resultados-en-torneo-apertura-fotos-noticia/",
+    "https://depor.com/futbol-peruano/descentralizado/sebastian-dominguez-deportivo-garcilaso-deja-el-club-y-dirigira-a-central-cordoba-en-argentina-liga-1-2026-noticia/",
+    "https://ovacion.pe/noticias/deportivo-garcilaso/lizandro-greppo-dirigira-forma-interina-al-garcilaso",
+    "https://depor.com/futbol-peruano/descentralizado/hector-cuper-es-anunciado-como-nuevo-entrenador-de-universitario-en-busca-del-tetracampeonato-liga-1-2026-noticia/",
+    "https://depor.com/futbol-peruano/descentralizado/javier-rabanal-a-cusco-fc-fichaje-confirmado-tras-su-breve-paso-por-universitario-torneo-clausura-liga-1-2026-noticia/",
+    "https://www.futbolperuano.com/liga-1/noticias/alianza-lima-fichajes-y-bajas-en-el-plantel-para-el-torneo-clausura-2026-588749",
+    "https://www.futbolperuano.com/liga-1/noticias/fichajes-de-sporting-cristal-altas-y-bajas-para-el-torneo-clausura-588174"
+  ],
+  "equipos": [
+    {
+      "equipo": "Universitario de Deportes",
+      "datos": {
+        "dt": "Héctor Cúper, anunciado el 11/05/2026 en pleno Apertura para sustituir al español Javier Rabanal (salida abrupta tras un paso breve); entre ambos, Jorge Araujo dirigió de forma interina. Llega con cartel internacional (ex Inter, Valencia, selección de Egipto) y el encargo explícito del tetracampeonato más la Copa Libertadores: banco con exigencia máxima y poca paciencia si el Clausura se tuerce.",
+        "plantel": "Campeón vigente con plantel de jerarquía; José Rivera aparece en el radar de Sporting Cristal como posible salida en el mercado de mitad de temporada (rumor de prensa, sin confirmar).",
+        "bajas": ""
+      },
+      "alias": [
+        "Universitario"
+      ]
+    },
+    {
+      "equipo": "Alianza Lima",
+      "datos": {
+        "dt": "Pablo Guede, continuidad tras ganar el Torneo Apertura 2026. Es uno de los pocos banquillos que NO se movió: 12 de los 18 clubes cambiaron de DT durante el Apertura. Apuesta declarada por sostener el bloque campeón en vez de refundar el plantel.",
+        "plantel": "Continuidad deliberada: Guede prefirió mantener el grupo antes que fichar agresivo. Altas: Cristian Neira (vuelve del préstamo en Atlético Grau), Nicolás Díaz (defensa, del Puebla de México) y Jhair Soto (defensa, de ADT). Baja: el arquero Guillermo Viscarra. Viscarra y Estrada habían tenido pocos minutos en la primera mitad del año.",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Sporting Cristal",
+      "datos": {
+        "dt": "Roberto Mosquera, de regreso al club para 'poner orden' tras un primer semestre malo; sustituyó a Paulo Autuori, que dejó el cargo durante el Apertura. Mosquera venía de Sport Huancayo, que también quedó sin técnico por ese movimiento. Es un retorno con mandato de corrección, no un proyecto largo.",
+        "plantel": "Mercado activo de mitad de año. Altas confirmadas: Hernán Barcos (delantero argentino), Juan Manuel Cuesta (de UCV de Venezuela), Michael Hoyos (de Newell's Old Boys) y Anderson Villa Corta (defensa, de Mineros de Zacatecas). Bajas: Gustavo Cazonatti (volante) y Alejandro Pósito (central). Sigue buscando: Wilder Cartagena (Orlando City), José Rivera (Universitario), Mauro Manotas (Real Cartagena) y Francisco Arancibia (Deportivo Garcilaso) — rumores de prensa. El grueso del plantel (35+) se mantiene.",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Deportivo Garcilaso",
+      "datos": {
+        "dt": "BANCO EN TRANSICIÓN. Sebastián Domínguez rescindió por mutuo acuerdo el 23-25/07/2026 —en plena fecha 1-2 del Clausura, tras perder con Sporting Cristal— para dirigir a Central Córdoba de Argentina hasta junio 2027. Había llegado en marzo 2026: 7º en el Apertura, 15 partidos entre Liga 1 y Copa de la Liga con 7 victorias, 3 empates y 5 derrotas. El club anunció que el argentino Lizandro Greppo dirige de forma INTERINA los próximos partidos. Antes de Domínguez ya había salido Hernán Lisi: tercer técnico del año.",
+        "plantel": "Francisco Arancibia figura en el radar de Sporting Cristal para el mercado de mitad de temporada (rumor de prensa).",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "FBC Melgar",
+      "datos": {
+        "dt": "Miguel Rondelli, llegado desde Cusco FC —salió de allí por pago de cláusula, no por despido— para reemplazar a Juan Reynoso, que dejó el club durante el Apertura. Arranque de Clausura inmejorable: Melgar es líder con 6 puntos de 6 tras dos fechas, así que el banco está respaldado por resultados.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Cusco FC",
+      "datos": {
+        "dt": "Javier Rabanal, fichaje confirmado para el Clausura tras su salida abrupta de Universitario. Es el TERCER técnico del club en el año: Miguel Rondelli se fue a Melgar por cláusula, Alejandro Orfila llegó a reemplazarlo y no continuó al terminar el Apertura.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Cienciano",
+      "datos": {
+        "dt": "Horacio Melgarejo. Uno de los seis banquillos que NO cambió durante el Apertura 2026, en una liga donde 12 de 18 clubes sí lo hicieron.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Alianza Atlético",
+      "datos": {
+        "dt": "Federico Urciuoli. Banquillo estable: no figura entre los 12 clubes que cambiaron de técnico durante el Apertura 2026.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Alianza Atletico",
+        "Alianza Atletico Sullana"
+      ]
+    },
+    {
+      "equipo": "Atlético Grau",
+      "datos": {
+        "dt": "Gerardo Ameli. Reemplazó a Ángel Comizzo, que fue el PRIMER técnico destituido de la Liga 1 2026 (marzo, tras un arranque malo del Apertura); la directiva cortó su contrato y se despidió dirigiendo ante FC Cajamarca.",
+        "plantel": "Cristian Neira, que estaba a préstamo desde Alianza Lima, volvió a su club para el Clausura.",
+        "bajas": ""
+      },
+      "alias": [
+        "Atletico Grau",
+        "Grau"
+      ]
+    },
+    {
+      "equipo": "Sport Huancayo",
+      "datos": {
+        "dt": "Richard Pellejero. Asumió tras la salida de Roberto Mosquera, que se marchó a Sporting Cristal durante el Apertura.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Sport Boys",
+      "datos": {
+        "dt": "Carlos Desio. Llegó tras la salida de Jaime De la Pava, uno de los 12 técnicos que dejaron su club durante el Apertura 2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "ADT",
+      "datos": {
+        "dt": "Francisco Usúcar. Sustituyó a Pablo Trobbiani, que dejó el cargo en el Apertura 2026.",
+        "plantel": "Jhair Soto (defensa) salió a Alianza Lima en el mercado de mitad de temporada.",
+        "bajas": ""
+      },
+      "alias": [
+        "ADT de Tarma",
+        "Asociacion Deportiva Tarma"
+      ]
+    },
+    {
+      "equipo": "Los Chankas",
+      "datos": {
+        "dt": "Walter Paolella. No figura entre los cambios de banquillo del Apertura 2026.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "UTC",
+      "datos": {
+        "dt": "Cristian Paulucci. Asumió tras la destitución de Carlos Bustos, la MÁS RECIENTE de la temporada: lo despidieron después de caer 2-1 ante FC Cajamarca. Banco recién estrenado y club en zona de urgencia.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "UTC Cajamarca",
+        "Universidad Tecnica de Cajamarca"
+      ]
+    },
+    {
+      "equipo": "Comerciantes Unidos",
+      "datos": {
+        "dt": "SITUACIÓN A CONFIRMAR: la ficha de la temporada lista a José Hernández, pero la del Torneo Clausura registra a Daniel Morales como INTERINO. Lo seguro es que el banco está en interinato o en cambio reciente; conviene verificar el día del partido.",
+        "plantel": "",
+        "bajas": ""
+      }
+    },
+    {
+      "equipo": "Juan Pablo II College",
+      "datos": {
+        "dt": "Jorge Araujo, que venía de dirigir a Universitario como interino entre Rabanal y Cúper. Reemplazó a Marcelo Zuleta, despedido tras un 4-1 encajado justamente ante Universitario. Arranque de Clausura notable: 4 puntos en dos fechas, tercero en la tabla.",
+        "plantel": "",
+        "bajas": ""
+      },
+      "alias": [
+        "Juan Pablo II"
+      ]
+    },
+    {
+      "equipo": "FC Cajamarca",
+      "datos": {
+        "dt": "Celso Ayala (ex internacional paraguayo). Tomó el equipo tras la salida de Carlos Silvestri durante el Apertura. Es club RECIÉN ASCENDIDO: primera temporada en Liga 1, sin historial reciente en la categoría.",
+        "plantel": "Plantel de equipo ascendido, sin recorrido previo en Primera: la comparación con rivales establecidos exige cautela.",
+        "bajas": ""
+      },
+      "alias": [
+        "Cajamarca FC",
+        "Cajamarca"
+      ]
+    },
+    {
+      "equipo": "Deportivo Moquegua",
+      "datos": {
+        "dt": "Jaime Serna. Club RECIÉN ASCENDIDO que vuelve a la máxima categoría tras 12 años de ausencia: sin historial reciente en Liga 1 y con la adaptación como principal incógnita.",
+        "plantel": "Plantel de ascenso, sin recorrido en Primera División reciente.",
+        "bajas": ""
+      },
+      "alias": [
+        "UCV Moquegua",
+        "Moquegua"
+      ]
+    }
+  ]
+}

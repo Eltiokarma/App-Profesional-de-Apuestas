@@ -17,7 +17,6 @@ import subprocess
 import sys
 import threading
 import time
-import unicodedata
 from datetime import date as date_t, datetime, timedelta, timezone
 from functools import lru_cache
 from typing import Literal
@@ -28,6 +27,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from backend import db
+from backend.nombres import canonizar, normalizar
 
 # /docs, /redoc y /openapi.json: encendidos en local, apagados por defecto en
 # cuanto hay token (despliegue). SAD_DOCS=1/0 fuerza el comportamiento.
@@ -266,6 +266,17 @@ def _en_vivo_loop() -> None:
 
 if LIVE_SEGUNDOS:
     threading.Thread(target=_en_vivo_loop, daemon=True, name="ingesta-en-vivo").start()
+
+# Despensa EN BLOQUE: la investigación versionada en el repo se deposita en
+# efe.db al arrancar. Es local, idempotente y no gasta ni un token — pero
+# ahorra la parte cara del EFE (las búsquedas web de dt/plantel). Se salta con
+# SAD_DESPENSA_BULK=0. Nunca pisa un dato más nuevo que ya esté cargado.
+if os.environ.get("SAD_DESPENSA_BULK", "1").strip() != "0":
+    try:
+        from backend.analisis import despensa_bulk
+        despensa_bulk.cargar_todo()
+    except Exception as e:  # un bloque roto no puede impedir que el backend arranque
+        print(f"[despensa-bulk] no se pudo cargar: {e}", flush=True)
 
 # Primera línea de los logs tras cada deploy: confirma qué quedó encendido.
 # Si no aparece, el deploy corriendo es anterior a las fases 2/3.
@@ -912,7 +923,7 @@ def health():
 
 
 def _norm(s: str) -> str:
-    return "".join(ch for ch in unicodedata.normalize("NFD", (s or "").lower()) if unicodedata.category(ch) != "Mn")
+    return normalizar(s)
 
 
 @lru_cache(maxsize=2)
@@ -1563,19 +1574,7 @@ def cargar_despensa(body: CargaDespensaRequest):
     equipos_db = [(r["name"], _norm(r["name"])) for r in db.query("sad", "SELECT name FROM teams")]
 
     def _canonico(nombre: str) -> str:
-        q = _norm(nombre)
-        exacto = [n for n, nn in equipos_db if nn == q]
-        if len(exacto) == 1:
-            return exacto[0]
-        parcial = [n for n, nn in equipos_db if q in nn or nn in q]
-        if len(parcial) == 1:
-            return parcial[0]
-        # tokens sin orden: "FC Cajamarca" vs "Cajamarca FC", o añadidos tipo
-        # "Club Deportivo Los Chankas" vs "Los Chankas" — solo con match ÚNICO
-        qt = set(q.split())
-        tokens = [n for n, nn in equipos_db
-                  if qt and (qt <= set(nn.split()) or set(nn.split()) <= qt)]
-        return tokens[0] if len(tokens) == 1 else nombre
+        return canonizar(nombre, equipos_db)
 
     depositados, ignorados = 0, []
     canonizados: dict[str, str] = {}

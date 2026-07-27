@@ -39,3 +39,5 @@ jobs:
         run: python -m backend.test_cuota
       - name: Tests del ciclo en vivo (cuotas en juego por liga)
         run: python -m backend.test_en_vivo
+      - name: Tests de la despensa en bloque (ahorro del EFE)
+        run: python -m backend.test_despensa
