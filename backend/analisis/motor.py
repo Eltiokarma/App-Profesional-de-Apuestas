@@ -553,9 +553,8 @@ def generar_timeline(fixture_id: int, estado: str = "preliminar") -> dict:
     else:
         if not cliente.hay_clave():
             raise SinClave("Falta ANTHROPIC_API_KEY en el entorno")
-        from datetime import datetime, timedelta, timezone
-        hasta = datetime.now(timezone.utc).date()
-        desde = hasta - timedelta(days=182)  # default del protocolo: 6 meses
+        from backend import cronologia as crono
+        desde, hasta = crono.ventana()  # default del protocolo: 6 meses
 
         # contexto del EFE previo (si existe): alertas activas y colores —
         # cero búsquedas duplicadas entre los dos modos
@@ -571,14 +570,25 @@ def generar_timeline(fixture_id: int, estado: str = "preliminar") -> dict:
                 "hitos_detectados": [],
             }
 
-        # datos cacheados: eventos de timelines previos (despensa) + resultados
-        # reales de NUESTRA base (costo cero, la web solo completa el contexto)
+        # LOS PARTIDOS SE CALCULAN: marcador exacto, jornada y enfrentamiento
+        # directo salen de sad.db (backend/cronologia.py). Antes el modelo los
+        # buscaba en la web y después los copiaba uno por uno a la salida —
+        # tres facturas por un dato que ya era nuestro.
+        eventos_calc = crono.eventos_del_partido(
+            fx["home_team_id"], equipo_a, fx["away_team_id"], equipo_b, desde, hasta)
+
+        # datos cacheados: eventos de timelines previos (despensa) + el balance
+        # del período de NUESTRA base (costo cero; la web solo completa el
+        # contexto institucional, que es lo único que no se puede calcular)
         cacheados: dict = {}
         from backend import jugadores as jugcapa
         ambos_con_eventos = True
         for equipo, tid in ((equipo_a, fx["home_team_id"]), (equipo_b, fx["away_team_id"])):
             frescos, _falt = efedb.investigacion_de(equipo)
-            entrada: dict = {"resultados_db": _resultados_de(tid)}
+            # con los partidos ya calculados basta el balance (una línea) en vez
+            # de la lista de resultados: el modelo no tiene que reescribirlos
+            entrada: dict = {"resultados_db": crono.resumen_para_skills(eventos_calc, equipo)
+                             or _resultados_de(tid)}
             if "timeline_eventos" in frescos:
                 entrada["timeline_eventos"] = frescos["timeline_eventos"]
             else:
@@ -593,7 +603,7 @@ def generar_timeline(fixture_id: int, estado: str = "preliminar") -> dict:
         payload = {
             "modo": "timeline",
             "equipos": [equipo_a, equipo_b],
-            "periodo": {"desde": desde.isoformat(), "hasta": hasta.isoformat()},
+            "periodo": {"desde": desde, "hasta": hasta},
             "tipos": ["todos"],
             "contexto_efe": contexto,
             "datos_cacheados": cacheados,
@@ -603,20 +613,37 @@ def generar_timeline(fixture_id: int, estado: str = "preliminar") -> dict:
         # movimientos_db bastan — el timeline queda en solo el armado (~$0.05)
         if ambos_con_eventos:
             print("[timeline] eventos frescos de ambos equipos: sin búsqueda web", flush=True)
+        # presupuesto de búsquedas: con los partidos y la tabla calculados, dos
+        # de los cuatro patrones del protocolo (resultados, tabla de posiciones)
+        # dejan de tener sentido — queda lo institucional: crisis/fichajes y DT.
+        tope_tl = cliente.BUSQUEDAS_TIMELINE
+        if eventos_calc:
+            payload["bloque_partidos"] = crono.ORDEN_PARA_SKILLS
+            tope_tl = min(cliente.BUSQUEDAS_TIMELINE_CALC, tope_tl)
+        print(f"[timeline] {len(eventos_calc)} eventos de partido calculados · "
+              f"tope búsquedas: {0 if ambos_con_eventos else tope_tl}", flush=True)
         resultado, _uso = cliente.analizar(
             payload, TIMELINE, con_busqueda=not ambos_con_eventos,
             system=cliente.bloques_system_timeline(), salida=cliente.SALIDA_TIMELINE,
-            max_busquedas=cliente.BUSQUEDAS_TIMELINE, modelo=cliente.MODELO_TIMELINE,
+            max_busquedas=tope_tl, modelo=cliente.MODELO_TIMELINE,
         )
-        if timeline_vacio(resultado):
+        # el vacío se juzga sobre LO DEL MODELO, no sobre lo que aportó el
+        # código: un semestre sin nada institucional es un timeline legítimo,
+        # pero una respuesta sin eventos NI narrativa es una corrida fallida y
+        # cachearla dejaría al usuario sin forma de regenerar.
+        if timeline_vacio(resultado) and not (resultado.get("narrativa") or "").strip():
             raise RuntimeError(
-                "El timeline llegó sin eventos (investigación fallida). "
+                "El timeline llegó sin eventos ni narrativa (investigación fallida). "
                 "No se guardó: vuelve a pulsar «Generar timeline» para reintentar."
             )
-        # despensa del timeline: eventos confirmados por equipo, reutilizables
-        # por el próximo timeline que solape el período (tipo timeline_eventos)
+        # despensa del timeline: SOLO lo institucional. Sellar los partidos
+        # calculados sería congelar mañana lo que hoy se recalcula gratis (y con
+        # el marcador al día si la ingesta corrige un resultado).
+        propios = [ev for ev in resultado.get("eventos", [])
+                   if ev.get("tipo") not in crono.TIPOS_PARTIDO] if eventos_calc \
+            else list(resultado.get("eventos", []))
         por_equipo: dict[str, list] = {equipo_a: [], equipo_b: []}
-        for ev in resultado.get("eventos", []):
+        for ev in propios:
             if ev.get("equipo") == "ambos":
                 por_equipo[equipo_a].append(ev)
                 por_equipo[equipo_b].append(ev)
@@ -626,6 +653,23 @@ def generar_timeline(fixture_id: int, estado: str = "preliminar") -> dict:
             if evs:
                 efedb.guardar_investigacion(equipo, "timeline_eventos", evs,
                                             resultado.get("fuentes", []))
+
+        # LA FUSIÓN: los partidos calculados entran aquí, no por la salida del
+        # modelo. Si igual emitió alguno (contra la orden), se descarta: el
+        # nuestro trae el marcador de la ingesta, no el de una página web.
+        if eventos_calc:
+            resultado["eventos"] = crono.ordenar(propios + eventos_calc)
+            equipos = resultado.get("equipos") or []
+            for i, (nombre, tid) in enumerate(((equipo_a, fx["home_team_id"]),
+                                               (equipo_b, fx["away_team_id"]))):
+                # por nombre primero: el modelo puede devolverlos en otro orden
+                destino = next((e for e in equipos if e.get("nombre") == nombre),
+                               equipos[i] if i < len(equipos) else None)
+                if isinstance(destino, dict):
+                    destino["stats"] = crono.stats_de(
+                        tid, fx.get("league_id"), fx.get("league_season"), desde, hasta)
+            if crono.FUENTE not in resultado.get("fuentes", []):
+                resultado.setdefault("fuentes", []).append(crono.FUENTE)
 
     return efedb.guardar_analisis(
         "timeline", fixture_id, equipo_a, equipo_b, fecha or "", estado,

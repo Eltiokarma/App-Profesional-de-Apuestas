@@ -33,6 +33,12 @@ MAX_BUSQUEDAS = int(os.environ.get("SAD_EFE_BUSQUEDAS", "18"))
 # El timeline complementa datos que ya vienen de la base (resultados_db,
 # movimientos_db, eventos previos): su presupuesto es menor.
 BUSQUEDAS_TIMELINE = int(os.environ.get("SAD_TL_BUSQUEDAS", "8"))
+# Con los partidos y la tabla calculados (backend/cronologia.py), dos de los
+# cuatro patrones de búsqueda del protocolo —"resultados" y "tabla posiciones"—
+# ya no tienen nada que traer: queda lo institucional (crisis/fichajes y DT),
+# ~2 búsquedas por equipo. Bajar el techo es lo que hace el ahorro real: el
+# modelo administra lo que le den, y lo que le sobra lo gasta.
+BUSQUEDAS_TIMELINE_CALC = int(os.environ.get("SAD_TL_BUSQUEDAS_CALC", "4"))
 
 # Precios por millón de tokens según el modelo (sonnet-5 con intro hasta
 # 2026-08-31; caché: escritura 1.25×, lectura 0.1×) y $10 por 1000 búsquedas
@@ -109,7 +115,9 @@ SALIDA_DTP = (
 SALIDA_TIMELINE = (
     "EXCLUSIVAMENTE el objeto JSON del esquema TIMELINE, sin texto adicional ni markdown. "
     "Eventos en orden cronológico estricto; enfrentamientos directos entre los dos "
-    "equipos con equipo='ambos'."
+    "equipos con equipo='ambos'. Detalles de 1-2 frases densas (el output se paga). "
+    "Si el request trae `bloque_partidos`, ESA orden manda sobre la cobertura mínima del "
+    "protocolo: los partidos y la tabla vienen calculados y no se copian a la salida."
 )
 
 
