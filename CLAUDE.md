@@ -22,6 +22,7 @@ python -m backend.test_despensa   # despensa en bloque: TTL honesto y canonizaci
 python -m backend.test_ficha      # ficha de partido (alineaciones/eventos/stats, fase A del DTP)
 python -m backend.test_dtp        # DTP: cadena rodante, anti-hindsight y sin búsqueda web
 python -m backend.test_calendario # calendario SAD: bloque G del EFE calculado (sin IA)
+python -m backend.test_cronologia  # cronología SAD: los partidos del timeline, calculados
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
 python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--horizonte/--calibrar/--por-liga)
 
@@ -85,7 +86,8 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   y viajan CON su dato; ninguna pantalla dibuja su propia lista de próximos.
 - Costo de la IA: `docs/efe-dtp/COSTO_IA.md`. Lo que está en nuestra base se
   calcula, no se le pregunta al modelo — y lo calculado no se le hace copiar a
-  la salida.
+  la salida. Los dos bloques calculados hoy: el mapa de rivales del EFE
+  (`backend/calendario.py`) y los partidos del timeline (`backend/cronologia.py`).
 - Gráficas de K: tres valores a la vista (último · últimos dos de la condición
   que se analiza, saltando los que repiten valor) vía `puntosEtiquetados` de
   `src/lib/kview.ts`. Una gráfica nueva usa ese helper, no su propia regla.
