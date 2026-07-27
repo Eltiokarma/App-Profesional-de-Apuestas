@@ -9,6 +9,7 @@ import type {
   ConstantesDTO,
   EquipoDTO,
   EquipoStatsDTO,
+  EslabonDtpDTO,
   FixtureDTO,
   FixtureLiveDTO,
   CargaDespensaDTO,
@@ -508,6 +509,21 @@ export async function loadPlantilla(teamKey: string): Promise<PlantillaDTO | nul
   const equipoId = TEAM_NUM[teamKey]
   if (equipoId == null) return null
   return getDataSource().plantilla(equipoId)
+}
+
+/** DTP del partido visto desde un equipo (docs/efe-dtp/DTP_DISENO.md). */
+export function generarDtp(matchId: string, teamKey: string, forzar = false): Promise<GeneracionEfeDTO> {
+  return getDataSource().generarDtp(fixtureNum(matchId), TEAM_NUM[teamKey], forzar)
+}
+
+export function estadoDtp(matchId: string, teamKey: string): Promise<GeneracionEfeDTO> {
+  return getDataSource().estadoDtp(fixtureNum(matchId), TEAM_NUM[teamKey])
+}
+
+/** La película del equipo: cadena de pronóstico → veredicto → lección. */
+export function loadCadena(teamKey: string, limit?: number): Promise<EslabonDtpDTO[]> {
+  const id = TEAM_NUM[teamKey]
+  return id == null ? Promise.resolve([]) : getDataSource().cadena(id, limit)
 }
 
 // ── estadísticas de temporada + tabla de posiciones ─────────────────────────

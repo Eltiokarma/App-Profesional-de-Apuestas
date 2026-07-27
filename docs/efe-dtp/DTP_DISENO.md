@@ -174,7 +174,7 @@ costo: cada partido paga uno.
 
 ---
 
-## 4. Fase C — la pantalla
+## 4. Fase C — la pantalla · HECHA
 
 En la sección Análisis, **debajo del EFE**, como manda `PLAN_ADAPTADO.md`:
 
@@ -213,7 +213,9 @@ En la sección Análisis, **debajo del EFE**, como manda `PLAN_ADAPTADO.md`:
    apertura ya escrita: un pronóstico no se puede reescribir después del
    partido. Sin apertura previa, `veredicto` va vacío y el payload lleva la
    orden explícita de no reconstruirlo. Test: `backend/test_dtp.py`.
-5. **C** pantalla.
+5. ~~**C** pantalla.~~ **Hecho.** `src/components/DtpPizarra.tsx` (pizarra +
+   cadena), bloque DTP en la sección Análisis con toggle de equipo foco y
+   sondeo propio, y `Cadena DTP` en la página de Equipo.
 
 Cada fase se puede parar sin dejar nada a medias: A sirve por sí sola (la
 ficha de partido mejora el EFE y la UI), B sin C ya deja la cadena escrita.

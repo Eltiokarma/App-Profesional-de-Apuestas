@@ -55,6 +55,7 @@ src/motor/         Motor SAD en TS: niveles ventana-20, q*/k* con reseteo,
 src/sections/      Partidos (inicio) · Cuotas · Burbujas · Skills · Estadísticas · Equipo
 src/components/    KLineChart (picos K) · KBarChart (rachas de cuota) ·
                    TablaPosiciones (ÚNICA clasificación, con sus fases) ·
+                   DtpPizarra (cierre+apertura del DTP y cadena) ·
                    TeamSearch, shell
 backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.db
 ```
@@ -114,5 +115,8 @@ HHI + confianza A/B/C, sección Plantilla en Equipo, ficha de partido
    (alineaciones con `grid`→carriles, eventos con asistente y stats en
    `/fixtures/{id}/ficha.tactica`) y motor (`POST /analisis/dtp` por equipo
    foco, cadena rodante en `cadena_dtp`, `GET /equipos/{id}/cadena`). Queda la
-   fase C: pintar cierre y apertura en la sección Análisis.
+   fase C **también hecha**: pizarra en la sección Análisis (toggle de equipo
+   foco) y cadena en la página de Equipo. Queda correr
+   `ficha_partido --estado` tras la primera corrida real: de si el plan sirve
+   `grid` depende que M2 hable de carriles reales.
 6. Fase nube completa cuando toque: `docs/SERVICIOS_EXTERNOS.md` (Postgres).

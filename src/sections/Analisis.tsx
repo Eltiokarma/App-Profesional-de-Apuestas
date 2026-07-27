@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { AnalisisRegistroDTO, EfeBloque, EfeComparativo, EfeEquipo, GeneracionEfeDTO, TimelineData } from '../api/types'
+import type { AnalisisRegistroDTO, EfeBloque, EfeComparativo, EfeEquipo, EslabonDtpDTO, GeneracionEfeDTO, TimelineData } from '../api/types'
 import { CONFIG } from '../config'
 import { TEAMS } from '../data'
 import type { Match } from '../data/types'
 import { extraerBloquesDespensa, promptDespensaLiga, promptTimelineLiga } from '../lib/despensa'
-import { cargarDespensa, estadoAnalisisEfe, estadoTimeline, generarAnalisisEfe, generarTimeline, loadAnalisisPartido } from '../services/appdata'
+import { cargarDespensa, estadoAnalisisEfe, estadoDtp, estadoTimeline, generarAnalisisEfe, generarDtp, generarTimeline, loadAnalisisPartido } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import { TimelineComparativo } from '../components/TimelineComparativo'
+import { DtpPizarra } from '../components/DtpPizarra'
 
 interface Props {
   m: Match
@@ -288,11 +289,49 @@ export function Analisis({ m, isMobile }: Props) {
       })
   }
 
+  // DTP: es POR EQUIPO FOCO, así que hay uno por equipo del partido. El foco
+  // arranca en el local y se cambia con el toggle.
+  const [foco, setFoco] = useState<'home' | 'away'>('home')
+  const focoKey = foco === 'home' ? m.home : m.away
+  const [dtpGenerando, setDtpGenerando] = useState(false)
+  const [dtpError, setDtpError] = useState<string | null>(null)
+  const [dtps, setDtps] = useState<Record<string, EslabonDtpDTO>>({})
+  const dtp: EslabonDtpDTO | null = dtps[focoKey] ?? null
+
+  const manejarDtp = (res: GeneracionEfeDTO, key: string) => {
+    if (!vivoRef.current) return
+    if (res.estado === 'listo' && res.registro) {
+      setDtpGenerando(false)
+      setDtps((prev) => ({ ...prev, [key]: res.registro!.resultado as EslabonDtpDTO }))
+    } else if (res.estado === 'generando') {
+      setDtpGenerando(true)
+      timerDtpRef.current = setTimeout(() => {
+        estadoDtp(m.id, key).then((r) => manejarDtp(r, key)).catch(() => setDtpGenerando(false))
+      }, 6000)
+    } else if (res.estado !== 'nada') {
+      setDtpGenerando(false)
+      setDtpError(res.detalle || 'Error del DTP')
+    } else {
+      setDtpGenerando(false)
+    }
+  }
+  const generarDtpDe = (key: string, forzar = false) => {
+    setDtpGenerando(true)
+    setDtpError(null)
+    generarDtp(m.id, key, forzar)
+      .then((r) => manejarDtp(r, key))
+      .catch((e: unknown) => {
+        setDtpGenerando(false)
+        setDtpError(e instanceof Error ? e.message : 'error del DTP')
+      })
+  }
+
   // el trabajo corre en el SERVIDOR: el POST responde al instante y aquí se
   // sondea /estado cada pocos segundos hasta listo/error. Sobrevive a que el
   // usuario cierre la página (al volver, el useEffect retoma el sondeo).
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const timerTlRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const timerDtpRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const vivoRef = useRef(true)
   useEffect(() => {
     vivoRef.current = true
@@ -300,6 +339,7 @@ export function Analisis({ m, isMobile }: Props) {
       vivoRef.current = false
       if (timerRef.current) clearTimeout(timerRef.current)
       if (timerTlRef.current) clearTimeout(timerTlRef.current)
+      if (timerDtpRef.current) clearTimeout(timerDtpRef.current)
     }
   }, [m.id])
 
@@ -344,11 +384,15 @@ export function Analisis({ m, isMobile }: Props) {
       .then((res) => { if (res.estado === 'generando') manejar(res) })
       .catch(() => { /* opcional */ })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [m.id, registros.loading])
+  }, [m.id, registros.loading, focoKey])
   useEffect(() => {
     if (registros.loading || tl) return
     estadoTimeline(m.id)
       .then((res) => { if (res.estado === 'generando') manejarTl(res) })
+      .catch(() => { /* opcional */ })
+    // DTP ya emitido para este foco: se pinta sin gastar nada
+    estadoDtp(m.id, focoKey)
+      .then((res) => manejarDtp(res, focoKey))
       .catch(() => { /* opcional */ })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [m.id, registros.loading])
@@ -639,6 +683,72 @@ export function Analisis({ m, isMobile }: Props) {
                 {tlGenerando ? 'Generando timeline… (1-3 min)' : 'Generar timeline'}
               </button>
               {tlGenerando && (
+                <p style={{ margin: '10px auto 0', maxWidth: 440, font: '500 10.5px var(--mono)', color: 'var(--t3)' }}>
+                  El trabajo corre en el servidor: puedes cerrar esta página y volver.
+                </p>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ── DTP: cierre del anterior + apertura del próximo, por equipo foco ── */}
+      {!registros.loading && !registros.error && (
+        <section style={{ marginTop: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+            <h2 style={{ margin: 0, font: '800 16px var(--sans)', letterSpacing: '-.2px' }}>DTP · Diagnóstico Táctico</h2>
+            <span style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)', flex: 1 }}>
+              cadena rodante: cierra el partido anterior y abre este
+            </span>
+            {/* el foco: la cadena es la película de UN equipo, no del partido */}
+            <div style={{ display: 'flex', padding: 3, borderRadius: 9, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+              {([['home', TEAMS[m.home].short], ['away', TEAMS[m.away].short]] as const).map(([k, label]) => (
+                <button
+                  key={k}
+                  onClick={() => setFoco(k)}
+                  title={`Ver el DTP desde ${TEAMS[k === 'home' ? m.home : m.away].name}`}
+                  style={{ padding: '5px 11px', border: 0, borderRadius: 7, cursor: 'pointer', background: foco === k ? 'var(--bg3)' : 'transparent', color: foco === k ? 'var(--t1)' : 'var(--t2)', font: '600 11px var(--sans)' }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {dtp && (
+              <button
+                onClick={() => generarDtpDe(focoKey, true)}
+                disabled={dtpGenerando}
+                title={esDemo ? 'Regenerar el DTP de muestra' : 'Descarta este DTP y emite uno nuevo (~$0.10-0.25)'}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 9, border: '1px solid var(--line)', cursor: dtpGenerando ? 'wait' : 'pointer', background: dtpGenerando ? 'var(--bg3)' : 'var(--bg2)', color: dtpGenerando ? 'var(--t3)' : 'var(--t1)', font: '600 11px var(--sans)' }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={dtpGenerando ? { animation: 'sadspin 1.1s linear infinite' } : undefined}>
+                  <path d="M21 12a9 9 0 11-2.64-6.36M21 3v6h-6" />
+                </svg>
+                {dtpGenerando ? 'Regenerando…' : 'Regenerar'}
+              </button>
+            )}
+          </div>
+          {dtpError && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', marginBottom: 12, borderRadius: 11, background: 'var(--down-soft)', border: '1px solid color-mix(in oklch,var(--down),transparent 55%)' }}>
+              <span style={{ font: '500 12px var(--sans)', color: 'var(--t1)', flex: 1 }}>{dtpError}</span>
+              <button onClick={() => generarDtpDe(focoKey)} style={{ padding: '6px 12px', borderRadius: 8, border: 0, background: 'var(--down)', color: '#fff', cursor: 'pointer', font: '600 11px var(--sans)', flexShrink: 0 }}>Reintentar</button>
+            </div>
+          )}
+          {dtp ? (
+            <DtpPizarra eslabon={dtp} isMobile={isMobile} />
+          ) : (
+            <div style={{ padding: '24px 20px', borderRadius: 16, background: 'var(--bg2)', border: '1px dashed var(--line)', textAlign: 'center' }}>
+              <p style={{ margin: '0 auto 14px', maxWidth: 520, font: '500 12px var(--sans)', color: 'var(--t3)' }}>
+                Autopsia de los goles del partido anterior (disparador → secuencia → definición,
+                con responsables) y plan del próximo: duelos por carril, vida útil del planteo
+                rival y palancas por tramo, desde <b style={{ color: 'var(--t2)' }}>{TEAMS[focoKey].name}</b>.
+                {esDemo
+                  ? ' Modo demo: DTP de muestra, sin costo.'
+                  : ' No busca en la web: se alimenta de la ficha de partido ya capturada (~$0.10-0.25).'}
+              </p>
+              <button onClick={() => generarDtpDe(focoKey)} disabled={dtpGenerando} style={{ padding: '10px 20px', borderRadius: 10, border: 0, cursor: dtpGenerando ? 'wait' : 'pointer', background: dtpGenerando ? 'var(--bg3)' : 'var(--accent)', color: dtpGenerando ? 'var(--t2)' : '#fff', font: '700 12.5px var(--sans)' }}>
+                {dtpGenerando ? 'Generando DTP… (1-3 min)' : `Generar DTP de ${TEAMS[focoKey].short}`}
+              </button>
+              {dtpGenerando && (
                 <p style={{ margin: '10px auto 0', maxWidth: 440, font: '500 10.5px var(--mono)', color: 'var(--t3)' }}>
                   El trabajo corre en el servidor: puedes cerrar esta página y volver.
                 </p>

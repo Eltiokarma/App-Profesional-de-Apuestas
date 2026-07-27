@@ -1,7 +1,7 @@
 // Análisis EFE y timeline de muestra para el modo demo (espejo de
 // backend/analisis/demo.py): permiten desarrollar y probar la sección
 // Análisis sin API ni créditos. Regla del proyecto: la simulación vive SOLO en demo.
-import type { EfeBloque, EfeComparativo, EfeEquipo, TimelineData, TlEvento } from '../api/types'
+import type { EfeBloque, EfeComparativo, EfeEquipo, EslabonDtpDTO, TimelineData, TlEvento } from '../api/types'
 
 export function timelineDemo(equipoA: string, equipoB: string): TimelineData {
   const ev = (fecha: string, equipo: string, tipo: TlEvento['tipo'], titulo: string, detalle: string, marcador = '', jornada = 0, destacado = false): TlEvento => ({
@@ -113,7 +113,7 @@ export function efeDemo(equipoA: string, equipoB: string, torneo: string | null,
 
 /** DTP de muestra (modo demo): misma forma que sirve el backend — el registro
  *  del DTP es el ESLABÓN de la cadena, no el JSON pelado del modelo. */
-export function dtpDemo(foco: string, rival: string) {
+export function dtpDemo(foco: string, rival: string): EslabonDtpDTO {
   return {
     equipoFoco: foco,
     partidoN: 12,
@@ -135,7 +135,7 @@ export function dtpDemo(foco: string, rival: string) {
           { carril: 'izquierda', duelo: 'Lateral vs extremo', mismatch: 'Ventaja en velocidad' },
           { carril: 'centro', duelo: 'Doble pivote vs enganche', mismatch: 'Superioridad numérica' },
         ],
-        vida_util_rival: { tipo: 'estructural', minutos: '75-85' },
+        vida_util_rival: { tipo: 'estructural' as const, minutos: '75-85' },
         vias_gol: { foco: ['Segunda jugada tras córner'], rival: ['Contra por izquierda'] },
         veredicto: 'Equilibrado con leve ventaja del foco',
         razon: 'El doble pivote neutraliza al enganche rival (demo)',
@@ -155,7 +155,7 @@ export function dtpDemo(foco: string, rival: string) {
         secuencia: 'Recuperación en campo rival y conducción por el carril izquierdo',
         definicion: 'Centro raso al segundo palo',
         responsables_merito: ['Extremo rival'],
-        responsables_error: [{ jugador: 'Volante central', nivel: 'principal', detalle: 'Pierde la marca (demo)' }],
+        responsables_error: [{ jugador: 'Volante central', nivel: 'principal' as const, detalle: 'Pierde la marca (demo)' }],
         absolucion: 'El portero no tiene responsabilidad en el gol',
       }],
       m5: {

@@ -361,6 +361,49 @@ export interface FichaPartidoDTO {
   tactica?: FichaTacticaDTO
 }
 
+/** APERTURA del DTP: M1/M2/M3/M6, escritos ANTES del partido. */
+export interface AperturaDtp {
+  m1: {
+    sistema: string
+    cambios_vs_anterior: string[]
+    roles_reasignados: string[]
+    senal_del_xi: string
+    vulnerabilidad_propia: string
+    forma_sin_balon: string
+  }
+  m2: {
+    choque_sistemas: string
+    duelos_carril: { carril: string; duelo: string; mismatch: string }[]
+    vida_util_rival: { tipo: 'improvisado' | 'estructural'; minutos: string }
+    vias_gol: { foco: string[]; rival: string[] }
+    veredicto: string
+    razon: string
+  }
+  m3_fases: { tramo: string; plan: string; palancas: string[] }[]
+  m6: { competitivo: boolean; rotacion: string; fatiga: string; ausencias_clave: string; otros: string }
+}
+
+/** CIERRE del DTP: M4 (autopsia de goles) y M5 (contraste), escritos después. */
+export interface CierreDtp {
+  m4_goles: {
+    gol: string
+    minuto: number
+    via: 'pelota_parada' | 'transicion' | 'juego_abierto'
+    disparador: string
+    secuencia: string
+    definicion: string
+    responsables_merito: string[]
+    responsables_error: { jugador: string; nivel: 'principal' | 'secundario' | 'estructural'; detalle: string }[]
+    absolucion: string
+  }[]
+  m5: {
+    plan_funciono_hasta_min: number
+    peligro_real: string
+    cronologia_giro: string
+    contraste_pronostico: { aciertos: string[]; fallos: string[] }
+  }
+}
+
 /** Un partido de la cadena DTP (GET /equipos/{id}/cadena). */
 export interface EslabonDtpDTO {
   equipoFoco: string
@@ -370,9 +413,9 @@ export interface EslabonDtpDTO {
   fecha: string | null
   fixtureId: number | null
   /** M1/M2/M3/M6, escritos ANTES del partido. */
-  apertura: Record<string, unknown> | null
+  apertura: AperturaDtp | null
   /** M4/M5, escritos después. */
-  cierre: Record<string, unknown> | null
+  cierre: CierreDtp | null
   registro: {
     pronostico_clave: string
     que_paso: string
