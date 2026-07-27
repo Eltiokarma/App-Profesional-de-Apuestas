@@ -188,7 +188,12 @@ def analizar(payload: dict, esquema: dict, con_busqueda: bool,
             return stream.get_final_message()
 
     # el uso se ACUMULA entre reanudes: cada pause_turn es otra request cobrada
-    uso = {"input": 0, "output": 0, "cache_write": 0, "cache_read": 0}
+    uso = {"input": 0, "output": 0, "cache_write": 0, "cache_read": 0,
+           # los tokens de salida se cobran igual sean JSON o razonamiento, pero
+           # NO se arreglan igual: si el gasto está en el JSON hay que pedir
+           # textos más cortos, y si está en el pensamiento hay que bajar el
+           # effort. Sin separarlos, cualquier recorte es a ciegas.
+           "chars_json": 0, "chars_pensamiento": 0}
     hechas = 0
     errores: list[str] = []
 
@@ -198,6 +203,12 @@ def analizar(payload: dict, esquema: dict, con_busqueda: bool,
         uso["output"] += r.usage.output_tokens
         uso["cache_write"] += getattr(r.usage, "cache_creation_input_tokens", 0) or 0
         uso["cache_read"] += getattr(r.usage, "cache_read_input_tokens", 0) or 0
+        for b in r.content:
+            tipo = getattr(b, "type", "")
+            if tipo == "thinking":
+                uso["chars_pensamiento"] += len(getattr(b, "thinking", "") or "")
+            elif tipo == "text":
+                uso["chars_json"] += len(getattr(b, "text", "") or "")
         stu = getattr(r.usage, "server_tool_use", None)
         hechas += getattr(stu, "web_search_requests", 0) or 0
         # los errores de búsqueda NO lanzan excepción: llegan como bloques de
@@ -242,7 +253,14 @@ def analizar(payload: dict, esquema: dict, con_busqueda: bool,
     # el costo real viaja con el uso: el motor lo guarda en `corridas` y el
     # preflight lo devuelve como MEDICIÓN en vez de como estimación
     uso["costo"], uso["busquedas"], uso["modelo"] = costo, hechas, modelo
+    # reparto del output entre lo que se escribió y lo que se pensó. Los chars
+    # son exactos; el paso a tokens es una regla de tres sobre el total real,
+    # así que suma justo `output` y no una cifra inventada.
+    chars = uso["chars_json"] + uso["chars_pensamiento"]
+    uso["tokens_json"] = round(uso["output"] * uso["chars_json"] / chars) if chars else 0
+    uso["tokens_pensamiento"] = uso["output"] - uso["tokens_json"]
     print(f"[efe] {modelo} · in={uso['input']} out={uso['output']} "
+          f"(json≈{uso['tokens_json']} pensamiento≈{uso['tokens_pensamiento']}) "
           f"cache_write={uso['cache_write']} cache_read={uso['cache_read']} "
           f"busqueda={'sí' if con_busqueda else 'no'} hechas={hechas} "
           f"max={tope_busquedas if con_busqueda else 0} reanudes={reanudes} costo≈${costo:.2f}"

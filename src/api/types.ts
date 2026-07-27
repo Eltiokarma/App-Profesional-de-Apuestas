@@ -685,6 +685,34 @@ export interface EquipoPreflightDTO {
   datos: DatoPreflightDTO[]
 }
 
+/** Una llamada al modelo, con lo que costó DE VERDAD. `tokensPensamiento` se
+ *  cobra a precio de salida igual que el JSON: separarlos es lo que dice si hay
+ *  que acortar textos o bajar el esfuerzo de razonamiento. */
+export interface CorridaDTO {
+  tipo: 'efe' | 'timeline' | 'dtp'
+  fixtureId?: number | null
+  faltantes?: number
+  busquedas?: number
+  modelo?: string
+  tokensIn?: number
+  tokensOut?: number
+  cacheWrite?: number
+  cacheRead?: number
+  tokensJson?: number
+  tokensPensamiento?: number
+  costo: number
+  creadoEn: string
+}
+
+/** Lo YA gastado en el partido: todas las corridas, incluidas regeneraciones e
+ *  intentos fallidos — el cargo existió aunque el análisis se descartara. */
+export interface GastoFixtureDTO {
+  total: number
+  corridas: number
+  porTipo: { tipo: string; corridas: number; costo: number }[]
+  ultimas: CorridaDTO[]
+}
+
 /** Qué va a costar el EFE ANTES de generarlo (GET /analisis/efe/preflight). */
 export interface PreflightEfeDTO {
   fixtureId: number
@@ -697,6 +725,8 @@ export interface PreflightEfeDTO {
   bloqueado: boolean
   umbralFrio: number
   costo: { min: number; max: number; medido: boolean; muestra: number }
+  /** Lo que YA se pagó en este partido (mirada hacia atrás, no estimación). */
+  gasto?: GastoFixtureDTO
   yaExiste: boolean
   demo: boolean
   equipos: EquipoPreflightDTO[]
