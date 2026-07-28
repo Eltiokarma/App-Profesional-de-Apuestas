@@ -308,14 +308,17 @@ export function Estadisticas({ store, m, isMobile }: Props) {
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {/* P6: cada cruce alterna la condición y el orden del texto
-                      no basta — la marca dice si el local de HOY jugó en casa */}
+                  {/* P6: AMBOS símbolos por cruce — el primero del texto es el
+                      local de ese día, así que [L] pega a la izquierda y [V] a
+                      la derecha, cada uno con el color de SU equipo */}
                   {h2h.last.map((l, i) => (
-                    <div key={i} title={`${H.short} jugó de ${l.localHoyEnCasa ? 'local' : 'visitante'} en ese cruce`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 9px', borderRadius: 8, background: 'var(--bg)' }}>
-                      <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)', width: 54, fontVariantNumeric: 'tabular-nums' }}>{l.when}</span>
-                      <MarcaCondicion cond={l.localHoyEnCasa ? 'L' : 'V'} color={H.color} size={14} />
-                      <span style={{ font: '600 11px var(--sans)', color: 'var(--t2)', flex: 1 }}>{l.match}</span>
-                      <span style={{ font: '700 11px var(--mono)', color: l.color, fontVariantNumeric: 'tabular-nums' }}>{l.score}</span>
+                    <div key={i} title={`${H.short} jugó de ${l.localHoyEnCasa ? 'local' : 'visitante'} en ese cruce`} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 9px', borderRadius: 8, background: 'var(--bg)' }}>
+                      <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)', width: 54, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{l.when}</span>
+                      <MarcaCondicion cond="L" color={l.localHoyEnCasa ? H.color : A.color} size={14} />
+                      <span style={{ font: '600 11px var(--sans)', color: 'var(--t2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{l.match}</span>
+                      <MarcaCondicion cond="V" color={l.localHoyEnCasa ? A.color : H.color} size={14} />
+                      <span style={{ flex: 1 }}></span>
+                      <span style={{ font: '700 11px var(--mono)', color: l.color, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{l.score}</span>
                     </div>
                   ))}
                 </div>
