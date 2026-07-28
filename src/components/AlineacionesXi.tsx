@@ -12,6 +12,7 @@
 // pizarra del DTP no se toca: su contrato es texto por carril.
 import { useEffect, useState } from 'react'
 import type { AlineacionDTO, EventoPartidoDTO, JugadorDTO, JugadorAlineadoDTO } from '../api/types'
+import { MarcaCondicion } from './MarcaCondicion'
 
 const POS_LABEL: Record<string, string> = { G: 'POR', D: 'DEF', M: 'MED', F: 'DEL' }
 
@@ -167,9 +168,9 @@ function puntosXi(ali: AlineacionDTO, lado: 'local' | 'visita'): { puntos: Punto
   return { puntos, exacta: false }
 }
 
-function EncabezadoEquipo({ ali, nombre, color, alDerecha }: { ali: AlineacionDTO; nombre: string; color: string; alDerecha?: boolean }) {
+function EncabezadoEquipo({ ali, nombre, color, cond, alDerecha }: { ali: AlineacionDTO; nombre: string; color: string; cond: 'L' | 'V'; alDerecha?: boolean }) {
   const piezas = [
-    <span key="p" style={{ width: 10, height: 10, borderRadius: 3, background: color, display: 'inline-block', flexShrink: 0 }}></span>,
+    <MarcaCondicion key="p" cond={cond} color={color} size={16} />,
     <span key="n" style={{ font: '700 12.5px var(--sans)', color: 'var(--t1)' }}>{nombre}</span>,
     ali.formacion ? (
       <span key="f" style={{ padding: '2px 8px', borderRadius: 6, background: 'var(--accent-soft)', color: 'var(--accent)', font: '700 10px var(--mono)', letterSpacing: '.3px' }}>{ali.formacion}</span>
@@ -203,7 +204,7 @@ function CanchaXi({ local, visitante, localNombre, visitanteNombre, eventos, jug
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
         {calculados.map((l) => (
-          <EncabezadoEquipo key={l.lado} ali={l.ali} nombre={l.nombre} color={l.color} alDerecha={l.lado === 'visita'} />
+          <EncabezadoEquipo key={l.lado} ali={l.ali} nombre={l.nombre} color={l.color} cond={l.lado === 'local' ? 'L' : 'V'} alDerecha={l.lado === 'visita'} />
         ))}
       </div>
 
@@ -212,6 +213,15 @@ function CanchaXi({ local, visitante, localNombre, visitanteNombre, eventos, jug
         <div style={{ position: 'absolute', left: 0, right: 0, top: '33.33%', borderTop: `1px dashed ${linea}` }}></div>
         <div style={{ position: 'absolute', left: 0, right: 0, top: '66.66%', borderTop: `1px dashed ${linea}` }}></div>
         <div style={{ position: 'absolute', left: 8, top: 6, font: '600 8.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.6px' }}>IZQ</div>
+        {/* P6: cada mitad rotulada con su condición — el lado ya no se infiere */}
+        <div style={{ position: 'absolute', left: '25%', top: 6, transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 5 }}>
+          <MarcaCondicion cond="L" color="var(--accent)" size={13} />
+          <span style={{ font: '600 8.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.8px' }}>LOCAL</span>
+        </div>
+        <div style={{ position: 'absolute', left: '75%', top: 6, transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ font: '600 8.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.8px' }}>VISITANTE</span>
+          <MarcaCondicion cond="V" color="var(--down)" size={13} />
+        </div>
         <div style={{ position: 'absolute', left: 8, top: '35%', font: '600 8.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.6px' }}>CENTRO</div>
         <div style={{ position: 'absolute', left: 8, top: '68%', font: '600 8.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.6px' }}>DER</div>
 
@@ -311,7 +321,10 @@ function CanchaXi({ local, visitante, localNombre, visitanteNombre, eventos, jug
           const alDerecha = l.lado === 'visita' && !isMobile
           return (
             <div key={l.lado} style={{ flex: 1, minWidth: isMobile ? '100%' : 220, display: 'flex', flexDirection: 'column', gap: 3, alignItems: alDerecha ? 'flex-end' : 'flex-start' }}>
-              <div style={{ font: '600 8.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px' }}>BANCO · {l.nombre}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexDirection: alDerecha ? 'row-reverse' : 'row' }}>
+                <MarcaCondicion cond={l.lado === 'local' ? 'L' : 'V'} color={l.color} size={13} />
+                <span style={{ font: '600 8.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px' }}>BANCO · {l.nombre}</span>
+              </div>
               {l.ali.suplentes
                 .filter((j) => j.nombre)
                 .map((j) => {
@@ -342,7 +355,7 @@ function CanchaXi({ local, visitante, localNombre, visitanteNombre, eventos, jug
   )
 }
 
-function LadoXi({ ali, nombre, eventos, jugadores, isMobile }: { ali: AlineacionDTO; nombre: string; eventos: EventoPartidoDTO[]; jugadores: Map<number, JugadorDTO>; isMobile: boolean }) {
+function LadoXi({ ali, nombre, cond, eventos, jugadores, isMobile }: { ali: AlineacionDTO; nombre: string; cond: 'L' | 'V'; eventos: EventoPartidoDTO[]; jugadores: Map<number, JugadorDTO>; isMobile: boolean }) {
   const cambios = cambiosDelLado(ali, eventos)
   const salieron = new Map(cambios.map((c) => [c.saleId, c.minuto]))
   const entraron = new Map(cambios.map((c) => [c.entraId, c.minuto]))
@@ -355,8 +368,10 @@ function LadoXi({ ali, nombre, eventos, jugadores, isMobile }: { ali: Alineacion
   )
   return (
     <div style={{ minWidth: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+        <MarcaCondicion cond={cond} color={cond === 'L' ? 'var(--accent)' : 'var(--down)'} size={16} />
         <span style={{ font: '700 13px var(--sans)', color: 'var(--t1)' }}>{nombre}</span>
+        <span style={{ font: '600 9px var(--mono)', color: 'var(--t3)', letterSpacing: '.8px' }}>{cond === 'L' ? 'LOCAL' : 'VISITANTE'}</span>
         {ali.formacion && (
           <span style={{ padding: '2px 8px', borderRadius: 6, background: 'var(--accent-soft)', color: 'var(--accent)', font: '700 10px var(--mono)', letterSpacing: '.3px' }}>{ali.formacion}</span>
         )}
@@ -527,8 +542,8 @@ export function AlineacionesXi({ local, visitante, localNombre, visitanteNombre,
       )}
       {hayXi && vista === 'lista' && (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 18 : 24 }}>
-          {local && local.titulares.length > 0 && <LadoXi ali={local} nombre={localNombre} eventos={eventos} jugadores={indice(jugadoresLocal)} isMobile={isMobile} />}
-          {visitante && visitante.titulares.length > 0 && <LadoXi ali={visitante} nombre={visitanteNombre} eventos={eventos} jugadores={indice(jugadoresVisitante)} isMobile={isMobile} />}
+          {local && local.titulares.length > 0 && <LadoXi ali={local} nombre={localNombre} cond="L" eventos={eventos} jugadores={indice(jugadoresLocal)} isMobile={isMobile} />}
+          {visitante && visitante.titulares.length > 0 && <LadoXi ali={visitante} nombre={visitanteNombre} cond="V" eventos={eventos} jugadores={indice(jugadoresVisitante)} isMobile={isMobile} />}
         </div>
       )}
     </section>

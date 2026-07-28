@@ -1,6 +1,7 @@
 import type { SadStore } from '../store'
 import type { MatchView } from '../lib/view'
 import { useFeedStatus } from '../services/useFeedStatus'
+import { MarcaCondicion } from './MarcaCondicion'
 import { TeamBadge } from './TeamBadge'
 import { TeamSearch } from './TeamSearch'
 
@@ -53,17 +54,23 @@ export function DesktopHeader({ store, mv, liveBadge, liveMinute, liveScore, fin
             </div>
             <div style={{ font: '500 11.5px var(--mono)', color: 'var(--t3)' }}>{mv.date} · {mv.venue}</div>
           </div>
+          {/* P6: "1 - 0" no dice de quién es el 1 hasta leer los nombres —
+              la marca de condición a cada lado lo resuelve sin añadir texto */}
           {liveBadge && (
             <div style={{ marginLeft: 6, display: 'flex', alignItems: 'center', gap: 8, padding: '6px 11px', borderRadius: 8, background: 'var(--down-soft)', border: '1px solid color-mix(in oklch,var(--down),transparent 55%)', whiteSpace: 'nowrap', flexShrink: 0 }}>
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--down)', animation: 'sadpulse 1.1s infinite', flexShrink: 0 }}></span>
               <span style={{ font: '700 11px var(--mono)', color: 'var(--down)', letterSpacing: '.6px' }}>LIVE {liveMinute}'</span>
-              <span style={{ font: '700 13px var(--mono)', color: 'var(--t1)' }}>{liveScore}</span>
+              <MarcaCondicion cond="L" color={mv!.homeColor} />
+              <span style={{ font: '700 13px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>{mv!.homeShort} {liveScore} {mv!.awayShort}</span>
+              <MarcaCondicion cond="V" color={mv!.awayColor} />
             </div>
           )}
           {finBadge && (
             <div style={{ marginLeft: 6, display: 'flex', alignItems: 'center', gap: 8, padding: '6px 11px', borderRadius: 8, background: 'var(--bg3)', border: '1px solid var(--line)', whiteSpace: 'nowrap', flexShrink: 0 }}>
               <span style={{ font: '700 10px var(--mono)', color: 'var(--t3)', letterSpacing: '.6px' }}>FINAL</span>
-              <span style={{ font: '700 14px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>{finScore}</span>
+              <MarcaCondicion cond="L" color={mv!.homeColor} />
+              <span style={{ font: '700 14px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>{mv!.homeShort} {finScore} {mv!.awayShort}</span>
+              <MarcaCondicion cond="V" color={mv!.awayColor} />
             </div>
           )}
         </>
