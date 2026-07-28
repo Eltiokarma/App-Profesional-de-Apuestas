@@ -85,17 +85,10 @@ function cambiosDelLado(ali: AlineacionDTO, eventos: EventoPartidoDTO[]): Cambio
   return cambios
 }
 
-/** Quién ocupa HOY el puesto de cada titular original: con los cambios
- *  aplicados en orden, cada sustitución hereda el punto del jugador al que
- *  reemplazó (también en cadenas: entró y después salió). */
-function ocupantes(ali: AlineacionDTO, cambios: CambioXi[]): Map<number, { id: number; nombre: string; minuto: number }> {
-  const porPuesto = new Map<number, { id: number; nombre: string; minuto: number }>()
-  for (const c of cambios) {
-    const puesto = ali.titulares.find((t) => (porPuesto.get(t.jugadorId)?.id ?? t.jugadorId) === c.saleId)
-    if (puesto) porPuesto.set(puesto.jugadorId, { id: c.entraId, nombre: c.entraNombre, minuto: c.minuto })
-  }
-  return porPuesto
-}
+// NOTA: la cancha NO reemplaza al sustituido por el que entra. El once
+// inicial se queda dibujado con sus estadísticas (que si no, se pierden) y el
+// que salió solo lleva su ▼min'; el que entró ya está en el banco con su
+// ▲min' y sus propios scores. La tira de cambios cuenta la historia completa.
 
 function apellido(nombre: string | null | undefined): string {
   if (!nombre) return '—'
@@ -191,12 +184,11 @@ function CanchaXi({ local, visitante, localNombre, visitanteNombre, eventos, jug
   ].filter((l): l is NonNullable<typeof l> => l !== null)
   const calculados = lados.map((l) => {
     const cambios = cambiosDelLado(l.ali, eventos)
-    return { ...l, ...puntosXi(l.ali, l.lado), cambios, porPuesto: ocupantes(l.ali, cambios) }
+    return { ...l, ...puntosXi(l.ali, l.lado), cambios, salieron: new Map(cambios.map((c) => [c.saleId, c.minuto])) }
   })
   const aproximada = calculados.some((l) => !l.exacta)
   const hayCambios = calculados.some((l) => l.cambios.length > 0)
-  const hayBanderas = calculados.some((l) =>
-    l.puntos.some((p) => bandera(l.plantilla.get(l.porPuesto.get(p.key)?.id ?? p.key))))
+  const hayBanderas = calculados.some((l) => l.puntos.some((p) => bandera(l.plantilla.get(p.key))))
   const linea = 'var(--line2)'
   const dCirculo = isMobile ? 24 : 32
 
@@ -239,26 +231,22 @@ function CanchaXi({ local, visitante, localNombre, visitanteNombre, eventos, jug
 
         {calculados.map((l) =>
           l.puntos.map((p) => {
-            // si a este puesto ya le entró un cambio, en la cancha está el que
-            // juega AHORA — el titular original queda en el tooltip y en la
-            // tira de cambios de abajo
-            const occ = l.porPuesto.get(p.key)
-            const suplente = occ ? l.ali.suplentes.find((j) => j.jugadorId === occ.id) : undefined
-            const numero = occ ? (suplente?.numero != null ? String(suplente.numero) : '–') : p.numero
-            const nombre = occ ? apellido(suplente?.nombre ?? occ.nombre) : p.apellido
-            // los scores son del que está EN cancha (si entró un cambio, del que entró)
-            const jug = l.plantilla.get(occ?.id ?? p.key)
+            // el once inicial se queda dibujado aunque haya cambios: si el
+            // jugador salió, sus estadísticas siguen a la vista y solo se
+            // marca el minuto de la salida (el que entró vive en el banco)
+            const jug = l.plantilla.get(p.key)
             const flag = bandera(jug)
             const rat = ratEstilo(jug?.rating)
+            const salio = l.salieron.get(p.key)
             const titulo =
-              (occ ? `${numero} · ${suplente?.nombre ?? occ.nombre} · entró al ${occ.minuto}' por ${p.nombre}` : `${p.numero} · ${p.nombre}`) +
+              `${p.numero} · ${p.nombre}` + (salio != null ? ` · salió al ${salio}'` : '') +
               statsTip(jug) + (flag ? ` · ${flag.nota}` : '')
             return (
               <div key={`${l.lado}-${p.key}`} title={titulo} style={{ position: 'absolute', left: `${p.x}%`, top: `${p.y}%`, transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'sadup .35s ease both' }}>
                 <div style={{ position: 'relative', width: dCirculo, height: dCirculo }}>
-                  <div style={{ width: dCirculo, height: dCirculo, borderRadius: '50%', background: l.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', font: `700 ${isMobile ? 10.5 : 12}px var(--mono)`, boxShadow: '0 2px 6px rgba(0,0,0,.2), 0 0 0 2px var(--bg2)', fontVariantNumeric: 'tabular-nums' }}>{numero}</div>
-                  {occ && (
-                    <span style={{ position: 'absolute', top: -6, right: -12, padding: '1px 4px', borderRadius: 5, background: 'var(--up)', color: '#fff', font: '700 8px var(--mono)', whiteSpace: 'nowrap', boxShadow: '0 0 0 1.5px var(--bg2)' }}>▲{occ.minuto}'</span>
+                  <div style={{ width: dCirculo, height: dCirculo, borderRadius: '50%', background: l.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', font: `700 ${isMobile ? 10.5 : 12}px var(--mono)`, boxShadow: '0 2px 6px rgba(0,0,0,.2), 0 0 0 2px var(--bg2)', fontVariantNumeric: 'tabular-nums', opacity: salio != null ? 0.72 : 1 }}>{p.numero}</div>
+                  {salio != null && (
+                    <span title={`Salió al ${salio}'`} style={{ position: 'absolute', top: -6, right: -12, padding: '1px 4px', borderRadius: 5, background: 'var(--down)', color: '#fff', font: '700 8px var(--mono)', whiteSpace: 'nowrap', boxShadow: '0 0 0 1.5px var(--bg2)' }}>▼{salio}'</span>
                   )}
                   {flag && (
                     <span style={{ position: 'absolute', top: -2, left: -3, width: isMobile ? 9 : 11, height: isMobile ? 9 : 11, borderRadius: '50%', background: flag.color, boxShadow: '0 0 0 2px var(--bg2)' }}></span>
@@ -266,7 +254,7 @@ function CanchaXi({ local, visitante, localNombre, visitanteNombre, eventos, jug
                 </div>
                 {!isMobile && (
                   <>
-                    <div style={{ marginTop: 3, font: '600 9.5px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', textShadow: '0 1px 0 var(--bg), 0 0 4px var(--bg)' }}>{nombre}</div>
+                    <div style={{ marginTop: 3, font: '600 9.5px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', textShadow: '0 1px 0 var(--bg), 0 0 4px var(--bg)' }}>{p.apellido}</div>
                     {jug && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 2 }}>
                         <span style={{ padding: '1px 5px', borderRadius: 5, background: rat.bg, color: rat.fg, font: '700 8.5px var(--mono)', fontVariantNumeric: 'tabular-nums', textShadow: 'none' }}>{jug.rating != null ? jug.rating.toFixed(1) : '—'}</span>

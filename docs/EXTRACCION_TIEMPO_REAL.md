@@ -126,10 +126,12 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   tras ese intento la condición se apaga sola, y una respuesta vacía nunca
   pisa el XI ya capturado. Los cambios DURANTE el partido no tocan
   `alineaciones`: son eventos `subst` que el ciclo ya captura, y la tarjeta
-  los cruza con el once — en la cancha se ve quién juega AHORA (badge ▲min'),
-  con la tira de cambios y el banco marcado; como la API confunde quién viaja
-  como jugador/asistente en un cambio, la UI decide por membresía (el que
-  está en cancha es el que sale).
+  los cruza con el once — la cancha CONSERVA el once inicial (el sustituido
+  se queda con sus estadísticas y su ▼min'; quitarlo perdía sus scores),
+  el que entra vive en el banco con su ▲min' y sus propios scores, y la
+  tira de cambios cuenta la historia completa; como la API confunde quién
+  viaja como jugador/asistente en un cambio, la UI decide por membresía
+  (el que está en cancha es el que sale).
 - **`SAD_LIVE_SEGUNDOS=60`** (env, vacía = apagado, piso 30): hilo en
   `backend/app.py` que corre el ciclo.
 - **Backend**: `GET /fixtures/{id}/live` → estado/minuto/marcador reales +
