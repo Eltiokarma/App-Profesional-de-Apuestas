@@ -8,7 +8,7 @@ import { CalendarioSad } from '../components/CalendarioSad'
 import { TeamBadge } from '../components/TeamBadge'
 import { binBadge, type Cond, FUSED_KEY, K_TYPE_GROUPS, K_WINDOW_OPTS, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
 import type { FusedK } from '../motor/types'
-import { loadBurbujas, loadCalendarioSad, loadFichaPartido, type BurbujasData } from '../services/appdata'
+import { loadAnalisis, loadBurbujas, loadCalendarioSad, loadFichaPartido, type BurbujasData } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
@@ -82,8 +82,31 @@ export function Burbujas({ store, m, isMobile }: Props) {
   // XI confirmado: la ingesta en vivo lo captura sola al publicarse (~1 h
   // antes del saque); refresco silencioso para que aparezca sin tocar nada,
   // y el botón ↻ de la tarjeta lo trae al momento
-  const ficha = useAsync(() => loadFichaPartido(m.id), m.id, { refreshMs: 120_000 })
+  const XI_REFRESH_MS = 120_000
+  const ficha = useAsync(() => loadFichaPartido(m.id), m.id, { refreshMs: XI_REFRESH_MS })
   const alineaciones = ficha.data?.tactica?.alineaciones ?? null
+
+  // tira de veredicto: la conclusión del motor en una línea, ANTES de las
+  // gráficas — gap ajustado, señal, μ del partido, K y trampa de calendario
+  const analisis = useAsync(() => loadAnalisis(m.id), m.id)
+  const veredicto = (() => {
+    const ad = analisis.data
+    if (!ad) return null
+    const p = ad.prediccion
+    const gap = p.gapDiffAjustado ?? p.gapDiff
+    const senal = p.local.senalAjustada === 'fuerte' || p.visitante.senalAjustada === 'fuerte'
+      ? 'fuerte'
+      : p.local.senalAjustada ?? p.visitante.senalAjustada ?? p.local.senal ?? '—'
+    const trampa = p.local.partidoTrampa || p.visitante.partidoTrampa
+    const kL = ad.constantes.local?.fusion.k
+    const kV = ad.constantes.visitante?.fusion.k
+    return {
+      gap, senal, trampa,
+      mu: p.local.muPartido,
+      k: `${kL != null ? signFmt(kL) : '—'} / ${kV != null ? signFmt(kV) : '—'}`,
+      resumen: ad.resumen,
+    }
+  })()
 
   // cuotas K (§3.8): un solo toggle para ambos equipos (misma condición = comparación justa)
   const [cuotaCond, setCuotaCond] = useState<CuotaCond>('TODOS')
@@ -175,6 +198,27 @@ export function Burbujas({ store, m, isMobile }: Props) {
         </div>
       </div>
 
+      {/* la conclusión primero: lo que el motor ya calculó, en una línea */}
+      {veredicto && (
+        <div style={{ display: 'flex', alignItems: 'center', rowGap: 10, padding: '11px 2px', marginBottom: 14, borderRadius: 12, background: 'var(--bg2)', border: '1px solid var(--line)', flexWrap: 'wrap' }}>
+          {([
+            ['GAP AJUST.', veredicto.gap != null ? signFmt(veredicto.gap) : '—', veredicto.gap == null ? 'var(--t3)' : veredicto.gap > 0 ? 'var(--up)' : veredicto.gap < 0 ? 'var(--down)' : 'var(--t2)', 'Gap ajustado por calendario: local − visitante (§5)'],
+            ['SEÑAL', String(veredicto.senal), veredicto.senal === 'fuerte' ? 'var(--t1)' : 'var(--t2)', 'Señal de regresión al nivel (la más fuerte de los dos)'],
+            ['μ PARTIDO', veredicto.mu != null ? veredicto.mu.toFixed(2) : '—', 'var(--t1)', 'Puntos esperados del local en ESTE fixture (rival y localía reales)'],
+            ['K FUSIÓN', veredicto.k, 'var(--t1)', 'K fusionada (k⁺+k⁻) local / visitante'],
+            ['TRAMPA', veredicto.trampa ? 'sí' : 'no', veredicto.trampa ? 'var(--down)' : 'var(--t3)', 'Partido trampa: rival inferior + un grande a ≤4 días'],
+          ] as [string, string, string, string][]).map(([label, valor, color, tip]) => (
+            <div key={label} title={tip} style={{ padding: '0 14px', borderRight: '1px solid var(--line)' }}>
+              <div style={{ font: '500 9px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px' }}>{label}</div>
+              <div style={{ font: '700 15px var(--mono)', color, fontVariantNumeric: 'tabular-nums' }}>{valor}</div>
+            </div>
+          ))}
+          <div style={{ padding: '0 14px', font: '500 11px var(--sans)', color: 'var(--t2)', flex: 1, minWidth: 180, lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} title={veredicto.resumen}>
+            {veredicto.resumen}
+          </div>
+        </div>
+      )}
+
       {engData.error && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', marginBottom: 14, borderRadius: 12, background: 'var(--down-soft)', border: '1px solid color-mix(in oklch,var(--down),transparent 55%)' }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--down)', flexShrink: 0 }}></span>
@@ -244,6 +288,9 @@ export function Burbujas({ store, m, isMobile }: Props) {
           localNombre={H.name}
           visitanteNombre={A.name}
           eventos={ficha.data?.tactica?.eventos ?? []}
+          jugadoresLocal={ficha.data?.local.jugadores}
+          jugadoresVisitante={ficha.data?.visitante.jugadores}
+          refreshMs={XI_REFRESH_MS}
           loading={ficha.loading}
           error={ficha.error}
           onReload={ficha.reload}

@@ -26,6 +26,7 @@ import type {
   GapEquipoDTO,
   JugadorDTO,
   AlineacionDTO,
+  JugadorAlineadoDTO,
   EslabonDtpDTO,
   EtiquetaRivalDTO,
   FichaTacticaDTO,
@@ -805,32 +806,44 @@ class MockDataSource implements SadDataSource {
     })
     // ficha táctica demo: solo el partido en juego la tiene, para que la UI
     // pueda desarrollarse sin backend. El resto va vacío — "real o nada".
+    // El XI sale de la MISMA plantilla demo (ids incluidos): así el cruce de
+    // scores por jugadorId funciona igual que con los datos reales.
     const enJuego = m.status === 'live'
-    const xi = (equipoId: number, formacion: string, base: number): AlineacionDTO => ({
-      equipoId, formacion, entrenador: 'DT demo', conGrid: true,
-      titulares: Array.from({ length: 11 }, (_, i) => ({
-        jugadorId: base + i, nombre: `Titular ${i + 1}`, numero: i + 1,
-        posicion: i === 0 ? 'G' : i < 5 ? 'D' : i < 9 ? 'M' : 'F',
-        grid: `${i === 0 ? 1 : i < 5 ? 2 : i < 9 ? 3 : 4}:${(i % 4) + 1}`,
-        carril: (['centro', 'izquierda', 'centro', 'derecha'] as const)[i % 4],
-      })),
-      suplentes: Array.from({ length: 3 }, (_, i) => ({
-        jugadorId: base + 11 + i, nombre: `Suplente ${i + 1}`, numero: 12 + i,
-        posicion: 'M', grid: null, carril: null,
-      })),
-    })
+    const xi = (key: string, formacion: string): AlineacionDTO => {
+      const p = plantillaDemo(key)
+      const orden: Record<string, number> = { Portero: 0, Defensa: 1, Centrocampista: 2, Delantero: 3 }
+      const ordenados = [...p.jugadores].sort((a, b) => (orden[a.posicion] ?? 2) - (orden[b.posicion] ?? 2) || b.minutos - a.minutos)
+      // UN portero al arco; el suplente de arco va al banco, no de lateral
+      const gks = ordenados.filter((j) => j.posicion === 'Portero')
+      const campo = ordenados.filter((j) => j.posicion !== 'Portero')
+      const js = [...gks.slice(0, 1), ...campo.slice(0, 10), ...gks.slice(1, 2), ...campo.slice(10, 12)]
+      const alinear = (j: JugadorDTO, i: number, titular: boolean): JugadorAlineadoDTO => ({
+        jugadorId: j.id, nombre: j.nombre, numero: (titular ? 1 : 12) + i,
+        posicion: j.posicion === 'Portero' ? 'G' : j.posicion === 'Defensa' ? 'D' : j.posicion === 'Delantero' ? 'F' : 'M',
+        grid: titular ? `${i === 0 ? 1 : i < 5 ? 2 : i < 9 ? 3 : 4}:${(i % 4) + 1}` : null,
+        carril: titular ? (['centro', 'izquierda', 'centro', 'derecha'] as const)[i % 4] : null,
+      })
+      return {
+        equipoId: TEAM_NUM[key] ?? 1, formacion, entrenador: p.entrenador?.nombre ?? null, conGrid: true,
+        titulares: js.slice(0, 11).map((j, i) => alinear(j, i, true)),
+        suplentes: js.slice(11, 14).map((j, i) => alinear(j, i, false)),
+      }
+    }
+    const xiL = xi(m.home, '4-4-2')
+    const xiV = xi(m.away, '4-3-3')
+    const ev = (j: JugadorAlineadoDTO) => ({ jugador: j.nombre, jugadorId: j.jugadorId })
     const tactica: FichaTacticaDTO = enJuego
       ? {
           capturada: true,
-          alineaciones: { local: xi(TEAM_NUM[m.home] ?? 1, '4-4-2', 9001), visitante: xi(TEAM_NUM[m.away] ?? 2, '4-3-3', 9101) },
+          alineaciones: { local: xiL, visitante: xiV },
           eventos: [
-            { minuto: 34, extra: 0, tipo: 'Goal', detalle: 'Normal Goal', equipoId: TEAM_NUM[m.home] ?? 1, jugador: 'Titular 10', jugadorId: 9010, asistente: 'Titular 8', asistenteId: 9008 },
-            { minuto: 51, extra: 0, tipo: 'Goal', detalle: 'Penalty', equipoId: TEAM_NUM[m.away] ?? 2, jugador: 'Titular 11', jugadorId: 9111, asistente: null, asistenteId: null },
+            { minuto: 34, extra: 0, tipo: 'Goal', detalle: 'Normal Goal', equipoId: xiL.equipoId, ...ev(xiL.titulares[9]), asistente: xiL.titulares[7].nombre, asistenteId: xiL.titulares[7].jugadorId },
+            { minuto: 51, extra: 0, tipo: 'Goal', detalle: 'Penalty', equipoId: xiV.equipoId, ...ev(xiV.titulares[10]), asistente: null, asistenteId: null },
             // cambios: el segundo lleva jugador/asistente INVERTIDOS a
             // propósito — la API real también los confunde y la UI tiene que
             // decidir por membresía (quién estaba en cancha sale)
-            { minuto: 58, extra: 0, tipo: 'subst', detalle: 'Substitution 1', equipoId: TEAM_NUM[m.home] ?? 1, jugador: 'Titular 7', jugadorId: 9007, asistente: 'Suplente 1', asistenteId: 9012 },
-            { minuto: 65, extra: 0, tipo: 'subst', detalle: 'Substitution 1', equipoId: TEAM_NUM[m.away] ?? 2, jugador: 'Suplente 2', jugadorId: 9113, asistente: 'Titular 9', asistenteId: 9109 },
+            { minuto: 58, extra: 0, tipo: 'subst', detalle: 'Substitution 1', equipoId: xiL.equipoId, ...ev(xiL.titulares[6]), asistente: xiL.suplentes[0].nombre, asistenteId: xiL.suplentes[0].jugadorId },
+            { minuto: 65, extra: 0, tipo: 'subst', detalle: 'Substitution 1', equipoId: xiV.equipoId, ...ev(xiV.suplentes[1]), asistente: xiV.titulares[8].nombre, asistenteId: xiV.titulares[8].jugadorId },
           ],
           estadisticas: { local: { 'Ball Possession': '58%' }, visitante: { 'Ball Possession': '42%' } },
         }

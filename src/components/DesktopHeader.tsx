@@ -1,5 +1,6 @@
 import type { SadStore } from '../store'
 import type { MatchView } from '../lib/view'
+import { useFeedStatus } from '../services/useFeedStatus'
 import { TeamBadge } from './TeamBadge'
 import { TeamSearch } from './TeamSearch'
 
@@ -14,6 +15,11 @@ interface Props {
 }
 
 export function DesktopHeader({ store, mv, liveBadge, liveMinute, liveScore, finBadge, finScore }: Props) {
+  // la edad del dato es parte del dato: la frescura del feed vive junto al
+  // marcador, donde se decide — no solo en el pie del sidebar
+  const feed = useFeedStatus()
+  const feedColor = feed.checking ? 'var(--mark)' : feed.ok ? 'var(--up)' : 'var(--down)'
+  const feedTexto = feed.checking ? 'CONECTANDO…' : feed.ok ? `FEED OK · ${feed.latencyMs ?? '—'}ms` : 'SIN CONEXIÓN'
   return (
     <header style={{ height: 74, flexShrink: 0, background: 'var(--bg1)', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', padding: '0 22px', gap: 18, position: 'relative', zIndex: 30 }}>
       {mv ? (
@@ -65,6 +71,12 @@ export function DesktopHeader({ store, mv, liveBadge, liveMinute, liveScore, fin
       {!mv && <div style={{ font: '600 14px var(--sans)', color: 'var(--t2)' }}>Ningún partido seleccionado</div>}
 
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+        {feed.mode === 'http' && (
+          <div title={feed.ok ? feed.detail : 'El backend no responde: lo que ves puede estar viejo'} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 11px', borderRadius: 8, background: `color-mix(in oklch, ${feedColor}, transparent 88%)`, border: `1px solid color-mix(in oklch, ${feedColor}, transparent 60%)`, whiteSpace: 'nowrap', flexShrink: 0 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: feedColor, ...(feed.ok ? {} : { animation: 'sadpulse 1.1s infinite' }) }}></span>
+            <span style={{ font: '600 10.5px var(--mono)', color: feedColor }}>{feedTexto}</span>
+          </div>
+        )}
         <button onClick={store.toggleMobile} title="Vista móvil" style={{ width: 40, height: 40, borderRadius: 10, border: '1px solid var(--line)', background: 'var(--bg2)', color: 'var(--t2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5" /><path d="M11 18.5h2" /></svg>
         </button>
