@@ -10,10 +10,42 @@
 // punteadas son los mismos carriles (izquierda/centro/derecha) que usa el
 // mapa de duelos del DTP — la cancha y el M2 hablan el mismo idioma, pero la
 // pizarra del DTP no se toca: su contrato es texto por carril.
-import { useState } from 'react'
-import type { AlineacionDTO, EventoPartidoDTO, JugadorAlineadoDTO } from '../api/types'
+import { useEffect, useState } from 'react'
+import type { AlineacionDTO, EventoPartidoDTO, JugadorDTO, JugadorAlineadoDTO } from '../api/types'
 
 const POS_LABEL: Record<string, string> = { G: 'POR', D: 'DEF', M: 'MED', F: 'DEL' }
+
+// ── indicadores de la capa de jugadores (docs/JUGADORES.md) ─────────────────
+// La ficha ya trae la plantilla con sus indicadores calculados: aquí solo se
+// cruzan por jugadorId con el once. Mismos criterios de color que la sección
+// Plantilla — un score no puede significar una cosa en cada pantalla.
+
+const AMBAR = '#B98A1D'
+
+const ratEstilo = (rating: number | null | undefined) => ({
+  bg: rating == null ? 'var(--bg3)' : rating >= 7 ? 'color-mix(in oklch, var(--up), transparent 82%)' : rating < 6.5 ? 'color-mix(in oklch, var(--down), transparent 84%)' : 'var(--bg3)',
+  fg: rating == null ? 'var(--t3)' : rating >= 7 ? 'var(--up)' : rating < 6.5 ? 'var(--down)' : 'var(--t2)',
+})
+const confColor = (c?: string) => (c === 'A' ? 'var(--up)' : c === 'B' ? 'var(--t2)' : 'var(--t3)')
+const produccion = (j: JugadorDTO) =>
+  j.paradasP90 != null ? `${j.paradasP90.toFixed(1)}🧤 ${j.golesEncajadosP90?.toFixed(1)}GC` : `${j.goles}G+${j.asistencias}A`
+
+const indice = (jugadores?: JugadorDTO[]) => new Map((jugadores ?? []).map((j) => [j.id, j]))
+
+/** Bandera de estado del jugador (baja > capilla > recién llegado): un punto
+ *  de color en el chip de la cancha, con su explicación en el tooltip. */
+function bandera(j?: JugadorDTO): { color: string; nota: string } | null {
+  if (!j) return null
+  if (j.baja) return { color: 'var(--down)', nota: `BAJA${j.baja.detalle ? ` · ${j.baja.detalle}` : ''}` }
+  if (j.enCapilla) return { color: AMBAR, nota: `en capilla (${j.amarillas} amarillas)` }
+  if (j.recienLlegado) return { color: 'var(--accent)', nota: `recién llegado${j.recienLlegado.desde ? ` de ${j.recienLlegado.desde}` : ''}` }
+  return null
+}
+
+const statsTip = (j?: JugadorDTO) =>
+  j
+    ? ` · ${Math.round(j.pctMinutos * 100)}% min · ${produccion(j)} · rating ${j.rating != null ? j.rating.toFixed(1) : '—'} · confianza ${j.confianza}`
+    : ''
 
 interface CambioXi {
   minuto: number
@@ -151,10 +183,10 @@ function EncabezadoEquipo({ ali, nombre, color, alDerecha }: { ali: AlineacionDT
   )
 }
 
-function CanchaXi({ local, visitante, localNombre, visitanteNombre, eventos, isMobile }: { local?: AlineacionDTO | null; visitante?: AlineacionDTO | null; localNombre: string; visitanteNombre: string; eventos: EventoPartidoDTO[]; isMobile: boolean }) {
+function CanchaXi({ local, visitante, localNombre, visitanteNombre, eventos, jugadoresLocal, jugadoresVisitante, isMobile }: { local?: AlineacionDTO | null; visitante?: AlineacionDTO | null; localNombre: string; visitanteNombre: string; eventos: EventoPartidoDTO[]; jugadoresLocal?: JugadorDTO[]; jugadoresVisitante?: JugadorDTO[]; isMobile: boolean }) {
   const lados = [
-    local && local.titulares.length > 0 ? { ali: local, lado: 'local' as const, color: 'var(--accent)', nombre: localNombre } : null,
-    visitante && visitante.titulares.length > 0 ? { ali: visitante, lado: 'visita' as const, color: 'var(--down)', nombre: visitanteNombre } : null,
+    local && local.titulares.length > 0 ? { ali: local, lado: 'local' as const, color: 'var(--accent)', nombre: localNombre, plantilla: indice(jugadoresLocal) } : null,
+    visitante && visitante.titulares.length > 0 ? { ali: visitante, lado: 'visita' as const, color: 'var(--down)', nombre: visitanteNombre, plantilla: indice(jugadoresVisitante) } : null,
   ].filter((l): l is NonNullable<typeof l> => l !== null)
   const calculados = lados.map((l) => {
     const cambios = cambiosDelLado(l.ali, eventos)
@@ -162,6 +194,8 @@ function CanchaXi({ local, visitante, localNombre, visitanteNombre, eventos, isM
   })
   const aproximada = calculados.some((l) => !l.exacta)
   const hayCambios = calculados.some((l) => l.cambios.length > 0)
+  const hayBanderas = calculados.some((l) =>
+    l.puntos.some((p) => bandera(l.plantilla.get(l.porPuesto.get(p.key)?.id ?? p.key))))
   const linea = 'var(--line2)'
   const dCirculo = isMobile ? 24 : 32
 
@@ -202,7 +236,13 @@ function CanchaXi({ local, visitante, localNombre, visitanteNombre, eventos, isM
             const suplente = occ ? l.ali.suplentes.find((j) => j.jugadorId === occ.id) : undefined
             const numero = occ ? (suplente?.numero != null ? String(suplente.numero) : '–') : p.numero
             const nombre = occ ? apellido(suplente?.nombre ?? occ.nombre) : p.apellido
-            const titulo = occ ? `${numero} · ${suplente?.nombre ?? occ.nombre} · entró al ${occ.minuto}' por ${p.nombre}` : `${p.numero} · ${p.nombre}`
+            // los scores son del que está EN cancha (si entró un cambio, del que entró)
+            const jug = l.plantilla.get(occ?.id ?? p.key)
+            const flag = bandera(jug)
+            const rat = ratEstilo(jug?.rating)
+            const titulo =
+              (occ ? `${numero} · ${suplente?.nombre ?? occ.nombre} · entró al ${occ.minuto}' por ${p.nombre}` : `${p.numero} · ${p.nombre}`) +
+              statsTip(jug) + (flag ? ` · ${flag.nota}` : '')
             return (
               <div key={`${l.lado}-${p.key}`} title={titulo} style={{ position: 'absolute', left: `${p.x}%`, top: `${p.y}%`, transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'sadup .35s ease both' }}>
                 <div style={{ position: 'relative', width: dCirculo, height: dCirculo }}>
@@ -210,9 +250,20 @@ function CanchaXi({ local, visitante, localNombre, visitanteNombre, eventos, isM
                   {occ && (
                     <span style={{ position: 'absolute', top: -6, right: -12, padding: '1px 4px', borderRadius: 5, background: 'var(--up)', color: '#fff', font: '700 8px var(--mono)', whiteSpace: 'nowrap', boxShadow: '0 0 0 1.5px var(--bg2)' }}>▲{occ.minuto}'</span>
                   )}
+                  {flag && (
+                    <span style={{ position: 'absolute', top: -2, left: -3, width: isMobile ? 9 : 11, height: isMobile ? 9 : 11, borderRadius: '50%', background: flag.color, boxShadow: '0 0 0 2px var(--bg2)' }}></span>
+                  )}
                 </div>
                 {!isMobile && (
-                  <div style={{ marginTop: 3, font: '600 9.5px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', textShadow: '0 1px 0 var(--bg), 0 0 4px var(--bg)' }}>{nombre}</div>
+                  <>
+                    <div style={{ marginTop: 3, font: '600 9.5px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', textShadow: '0 1px 0 var(--bg), 0 0 4px var(--bg)' }}>{nombre}</div>
+                    {jug && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 2 }}>
+                        <span style={{ padding: '1px 5px', borderRadius: 5, background: rat.bg, color: rat.fg, font: '700 8.5px var(--mono)', fontVariantNumeric: 'tabular-nums', textShadow: 'none' }}>{jug.rating != null ? jug.rating.toFixed(1) : '—'}</span>
+                        <span style={{ font: '700 8.5px var(--mono)', color: confColor(jug.confianza), textShadow: '0 1px 0 var(--bg), 0 0 4px var(--bg)' }}>{jug.confianza}</span>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )
@@ -223,6 +274,15 @@ function CanchaXi({ local, visitante, localNombre, visitanteNombre, eventos, isM
       {aproximada && (
         <div style={{ marginTop: 8, font: '500 10px var(--mono)', color: 'var(--t3)' }}>
           posiciones aproximadas por formación (sin grid de la API): el mapa de carriles del DTP tampoco está disponible
+        </div>
+      )}
+      {hayBanderas && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8, font: '500 9.5px var(--mono)', color: 'var(--t3)', flexWrap: 'wrap' }}>
+          {([['var(--down)', 'baja / duda'], [AMBAR, 'en capilla'], ['var(--accent)', 'recién llegado']] as const).map(([c, l]) => (
+            <span key={l} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: c }}></span>{l}
+            </span>
+          ))}
         </div>
       )}
       {hayCambios && (
@@ -266,10 +326,17 @@ function CanchaXi({ local, visitante, localNombre, visitanteNombre, eventos, isM
   )
 }
 
-function LadoXi({ ali, nombre, eventos }: { ali: AlineacionDTO; nombre: string; eventos: EventoPartidoDTO[] }) {
+function LadoXi({ ali, nombre, eventos, jugadores, isMobile }: { ali: AlineacionDTO; nombre: string; eventos: EventoPartidoDTO[]; jugadores: Map<number, JugadorDTO>; isMobile: boolean }) {
   const cambios = cambiosDelLado(ali, eventos)
   const salieron = new Map(cambios.map((c) => [c.saleId, c.minuto]))
   const entraron = new Map(cambios.map((c) => [c.entraId, c.minuto]))
+  // en móvil la columna POS se sacrifica y PRODUCCIÓN se estrecha: el nombre
+  // necesita espacio real, no puntos suspensivos en cada fila
+  const wProd = isMobile ? 64 : 92
+  const hayScores = ali.titulares.some((j) => jugadores.has(j.jugadorId))
+  const cab = (t: string, w: number, align: 'right' | 'center' = 'right') => (
+    <span style={{ font: '600 8.5px var(--mono)', color: 'var(--t3)', width: w, textAlign: align, flexShrink: 0, letterSpacing: '.4px' }}>{t}</span>
+  )
   return (
     <div style={{ minWidth: 0 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
@@ -279,17 +346,44 @@ function LadoXi({ ali, nombre, eventos }: { ali: AlineacionDTO; nombre: string; 
         )}
         {ali.entrenador && <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>DT {ali.entrenador}</span>}
       </div>
+      {hayScores && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 0 5px' }}>
+          <span style={{ width: 18, flexShrink: 0 }}></span>
+          {!isMobile && <span style={{ width: 26, flexShrink: 0 }}></span>}
+          <span style={{ flex: 1, minWidth: 0 }}></span>
+          {cab('MIN', 34)}
+          {cab('PRODUCCIÓN', wProd)}
+          {cab('RAT', 34, 'center')}
+          {cab('±', 18, 'center')}
+        </div>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        {ali.titulares.map((j) => (
-          <div key={j.jugadorId} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ font: '600 10.5px var(--mono)', color: 'var(--t3)', width: 18, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{j.numero ?? '–'}</span>
-            <span style={{ font: '600 9px var(--mono)', color: 'var(--t3)', width: 26, flexShrink: 0, letterSpacing: '.3px' }}>{j.posicion ? POS_LABEL[j.posicion] ?? j.posicion : ''}</span>
-            <span style={{ font: '500 12px var(--sans)', color: 'var(--t1)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nombre ?? '—'}</span>
-            {salieron.has(j.jugadorId) && (
-              <span title="Sustituido" style={{ font: '600 9.5px var(--mono)', color: 'var(--down)', flexShrink: 0 }}>▼ {salieron.get(j.jugadorId)}'</span>
-            )}
-          </div>
-        ))}
+        {ali.titulares.map((j) => {
+          const jug = jugadores.get(j.jugadorId)
+          const rat = ratEstilo(jug?.rating)
+          return (
+            <div key={j.jugadorId} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ font: '600 10.5px var(--mono)', color: 'var(--t3)', width: 18, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{j.numero ?? '–'}</span>
+              {!isMobile && (
+                <span style={{ font: '600 9px var(--mono)', color: 'var(--t3)', width: 26, flexShrink: 0, letterSpacing: '.3px' }}>{j.posicion ? POS_LABEL[j.posicion] ?? j.posicion : ''}</span>
+              )}
+              <span title={jug ? `${j.nombre}${statsTip(jug)}` : undefined} style={{ font: '500 12px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {j.nombre ?? '—'}
+                {salieron.has(j.jugadorId) && (
+                  <span title="Sustituido" style={{ marginLeft: 6, font: '600 9.5px var(--mono)', color: 'var(--down)' }}>▼{salieron.get(j.jugadorId)}'</span>
+                )}
+              </span>
+              {hayScores && (
+                <>
+                  <span title={jug ? `${jug.minutos} minutos` : undefined} style={{ font: '600 10.5px var(--mono)', color: 'var(--t2)', width: 34, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{jug ? `${Math.round(jug.pctMinutos * 100)}%` : '—'}</span>
+                  <span title={jug?.paradasP90 != null ? 'Paradas y goles encajados por 90 minutos' : jug ? `${jug.goles} goles + ${jug.asistencias} asistencias` : undefined} style={{ font: '600 10.5px var(--mono)', color: 'var(--t2)', width: wProd, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{jug ? produccion(jug) : '—'}</span>
+                  <span title="Rating medio ponderado por minutos" style={{ padding: '3px 0', borderRadius: 6, background: rat.bg, color: rat.fg, width: 34, textAlign: 'center', flexShrink: 0, font: '700 10.5px var(--mono)', fontVariantNumeric: 'tabular-nums' }}>{jug?.rating != null ? jug.rating.toFixed(1) : '—'}</span>
+                  <span title={jug ? `Confianza estadística por minutos jugados (${jug.minutos} min)` : undefined} style={{ width: 18, height: 18, borderRadius: 5, background: 'var(--bg3)', color: confColor(jug?.confianza), display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 9.5px var(--mono)', flexShrink: 0 }}>{jug?.confianza ?? '—'}</span>
+                </>
+              )}
+            </div>
+          )
+        })}
       </div>
       {ali.suplentes.length > 0 && (
         <div style={{ marginTop: 8, font: '500 10.5px var(--sans)', color: 'var(--t3)', lineHeight: 1.5 }}>
@@ -312,6 +406,39 @@ function LadoXi({ ali, nombre, eventos }: { ali: AlineacionDTO; nombre: string; 
   )
 }
 
+/** Vacío honesto CON reloj (regla "real o nada" + cuándo se vuelve a mirar):
+ *  la cuenta atrás del próximo sondeo automático evita el ↻ compulsivo. */
+function VacioXi({ refreshMs }: { refreshMs?: number }) {
+  const [restante, setRestante] = useState(refreshMs ?? 0)
+  useEffect(() => {
+    if (!refreshMs) return
+    const t0 = Date.now()
+    const iv = setInterval(() => setRestante(refreshMs - ((Date.now() - t0) % refreshMs)), 1000)
+    return () => clearInterval(iv)
+  }, [refreshMs])
+  const mm = Math.floor(restante / 60000)
+  const ss = Math.floor((restante % 60000) / 1000)
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+      <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--bg3)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--t3)', flexShrink: 0 }}>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>
+      </div>
+      <div style={{ flex: 1, minWidth: 180 }}>
+        <div style={{ font: '600 12px var(--sans)', color: 'var(--t1)' }}>Aún sin XI publicado por la API</div>
+        <div style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)', marginTop: 2 }}>
+          se suele publicar ~1 h antes del saque
+          {refreshMs ? ` · próximo sondeo automático en ${mm}:${String(ss).padStart(2, '0')}` : ''} · con ↻ lo traes al momento
+        </div>
+      </div>
+      {refreshMs ? (
+        <div style={{ height: 4, width: 120, borderRadius: 3, background: 'var(--bg3)', overflow: 'hidden', flexShrink: 0 }}>
+          <div style={{ height: '100%', width: `${Math.round((1 - restante / refreshMs) * 100)}%`, background: 'var(--accent)', borderRadius: 3 }}></div>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 interface Props {
   local?: AlineacionDTO | null
   visitante?: AlineacionDTO | null
@@ -319,6 +446,11 @@ interface Props {
   visitanteNombre: string
   /** Eventos de la ficha: de aquí salen los cambios (sustituciones) del partido. */
   eventos?: EventoPartidoDTO[]
+  /** Plantillas con indicadores (la ficha ya las trae): scores junto al once. */
+  jugadoresLocal?: JugadorDTO[]
+  jugadoresVisitante?: JugadorDTO[]
+  /** Intervalo del refresco silencioso de la ficha: alimenta la cuenta atrás del vacío. */
+  refreshMs?: number
   loading?: boolean
   error?: string | null
   /** Recarga la ficha del backend: el XI aparece solo al confirmarse (~1 h antes). */
@@ -326,7 +458,7 @@ interface Props {
   isMobile: boolean
 }
 
-export function AlineacionesXi({ local, visitante, localNombre, visitanteNombre, eventos = [], loading, error, onReload, isMobile }: Props) {
+export function AlineacionesXi({ local, visitante, localNombre, visitanteNombre, eventos = [], jugadoresLocal, jugadoresVisitante, refreshMs, loading, error, onReload, isMobile }: Props) {
   const hayXi = !!(local?.titulares.length || visitante?.titulares.length)
   const [vista, setVista] = useState<'cancha' | 'lista'>('cancha')
   const tab = (activo: boolean) => ({
@@ -335,8 +467,10 @@ export function AlineacionesXi({ local, visitante, localNombre, visitanteNombre,
   })
   return (
     <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+      {/* en móvil el título ocupa su propia línea: los controles no pueden
+          aplastar el subtítulo a una palabra por renglón */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: hayXi ? 14 : 8, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: isMobile ? '1 1 100%' : 1, minWidth: 0 }}>
           <div style={{ font: '700 12px var(--sans)' }}>Alineaciones confirmadas</div>
           <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginTop: 2 }}>
             La ingesta las captura sola al publicarse (~1 h antes del saque) · son las que alimentan el análisis EFE/DTP y los skills
@@ -365,18 +499,14 @@ export function AlineacionesXi({ local, visitante, localNombre, visitanteNombre,
         <div style={{ font: '500 11.5px var(--sans)', color: 'var(--down)' }}>No se pudo cargar la ficha: {error}</div>
       )}
       {!error && loading && !hayXi && <div className="sad-sk" style={{ height: 90 }} />}
-      {!error && !loading && !hayXi && (
-        <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t3)', lineHeight: 1.5 }}>
-          Aún sin XI publicado por la API. En cuanto exista se carga solo (y con ↻ lo traes al momento); entonces el análisis puede completarse con la alineación real.
-        </div>
-      )}
+      {!error && !loading && !hayXi && <VacioXi refreshMs={refreshMs} />}
       {hayXi && vista === 'cancha' && (
-        <CanchaXi local={local} visitante={visitante} localNombre={localNombre} visitanteNombre={visitanteNombre} eventos={eventos} isMobile={isMobile} />
+        <CanchaXi local={local} visitante={visitante} localNombre={localNombre} visitanteNombre={visitanteNombre} eventos={eventos} jugadoresLocal={jugadoresLocal} jugadoresVisitante={jugadoresVisitante} isMobile={isMobile} />
       )}
       {hayXi && vista === 'lista' && (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 18 : 24 }}>
-          {local && local.titulares.length > 0 && <LadoXi ali={local} nombre={localNombre} eventos={eventos} />}
-          {visitante && visitante.titulares.length > 0 && <LadoXi ali={visitante} nombre={visitanteNombre} eventos={eventos} />}
+          {local && local.titulares.length > 0 && <LadoXi ali={local} nombre={localNombre} eventos={eventos} jugadores={indice(jugadoresLocal)} isMobile={isMobile} />}
+          {visitante && visitante.titulares.length > 0 && <LadoXi ali={visitante} nombre={visitanteNombre} eventos={eventos} jugadores={indice(jugadoresVisitante)} isMobile={isMobile} />}
         </div>
       )}
     </section>

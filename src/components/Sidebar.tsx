@@ -1,10 +1,21 @@
 import type { SadStore } from '../store'
 import type { SectionKey } from '../data/types'
 import { CONFIG } from '../config'
+import { estadoAnalisisEfe, loadMatches } from '../services/appdata'
+import { useAsync } from '../services/useAsync'
 import { useFeedStatus } from '../services/useFeedStatus'
+import { hoyStr } from '../store'
 
 export function Sidebar({ store }: { store: SadStore }) {
   const { s } = store
+  // carga real de cada módulo: contadores discretos con datos que ya existen
+  // (nada de puntos decorativos que no significan nada)
+  const hoy = hoyStr()
+  const deHoy = useAsync(() => loadMatches(hoy), hoy)
+  const nHoy = deHoy.data?.length ?? null
+  const efe = useAsync(async () => (s.matchId ? estadoAnalisisEfe(s.matchId) : null), s.matchId)
+  const efeListo = efe.data?.estado === 'listo'
+  const efeGenerando = efe.data?.estado === 'generando'
   const isDark = s.theme === 'dark'
   const navB = (k: SectionKey) => (s.section === k ? 'var(--accent-soft)' : 'transparent')
   const navF = (k: SectionKey) => (s.section === k ? 'var(--t1)' : 'var(--t2)')
@@ -37,6 +48,7 @@ export function Sidebar({ store }: { store: SadStore }) {
         <button onClick={store.go('partidos')} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 12px', border: 0, borderRadius: 10, cursor: 'pointer', background: navB('partidos'), color: navF('partidos'), font: '600 13.5px var(--sans)', textAlign: 'left', transition: 'background .14s,color .14s' }}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M8 3v4M16 3v4M3 11h18" /></svg>
           <span>Partidos</span>
+          {nHoy != null && <span style={{ marginLeft: 'auto', font: '600 9.5px var(--mono)', color: 'var(--t3)' }}>{nHoy} hoy</span>}
         </button>
         <button onClick={store.go('cuotas')} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 12px', border: 0, borderRadius: 10, cursor: 'pointer', background: navB('cuotas'), color: navF('cuotas'), font: '600 13.5px var(--sans)', textAlign: 'left', transition: 'background .14s,color .14s' }}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 17l6-6 4 4 8-8" /><path d="M16 7h5v5" /></svg>
@@ -51,7 +63,13 @@ export function Sidebar({ store }: { store: SadStore }) {
         <button onClick={store.go('analisis')} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 12px', border: 0, borderRadius: 10, cursor: 'pointer', background: navB('analisis'), color: navF('analisis'), font: '600 13.5px var(--sans)', textAlign: 'left', transition: 'background .14s,color .14s' }}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" opacity=".55" /><path d="M12 3v2M21 12h-2M12 21v-2M3 12h2" /></svg>
           <span>Análisis</span>
-          <span style={{ marginLeft: 'auto', font: '600 9px var(--mono)', color: 'var(--t3)' }}>EFE</span>
+          {efeListo ? (
+            <span style={{ marginLeft: 'auto', font: '600 9.5px var(--mono)', color: 'var(--up)', background: 'color-mix(in oklch, var(--up), transparent 86%)', padding: '2px 7px', borderRadius: 5 }}>EFE listo</span>
+          ) : efeGenerando ? (
+            <span style={{ marginLeft: 'auto', font: '600 9.5px var(--mono)', color: 'var(--mark)' }}>EFE…</span>
+          ) : (
+            <span style={{ marginLeft: 'auto', font: '600 9px var(--mono)', color: 'var(--t3)' }}>EFE</span>
+          )}
         </button>
         {conSkills && (
           <button onClick={store.go('skills')} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 12px', border: 0, borderRadius: 10, cursor: 'pointer', background: navB('skills'), color: navF('skills'), font: '600 13.5px var(--sans)', textAlign: 'left', transition: 'background .14s,color .14s' }}>
