@@ -309,6 +309,46 @@ def main():
     check("XI: capturado no vuelve a entrar en la ventana", 11 not in fixtures_para_xi(con, {PERU}),
           fixtures_para_xi(con, {PERU}))
 
+    # --- cambios de formación ANTES del saque: refresco único cerca del KO ---
+    # 21: XI capturado 1 h antes del saque y el partido arranca en 10 min → un
+    #     refresco por si el DT lo cambió. 22: capturado hace nada → no.
+    con.executemany("INSERT INTO fixtures (id, date, status_short, league_id) VALUES (?,?,?,?)", [
+        (21, hace(-10), "NS", PERU),
+        (22, hace(-10), "NS", PERU),
+        (23, hace(-40), "NS", PERU),  # capturado temprano pero faltan 40 min: aún no
+    ])
+    con.executemany(
+        "INSERT INTO alineaciones (fixture_id, team_id, formacion, entrenador, player_id, "
+        "jugador, numero, posicion, grid, titular) VALUES (?, 1, '4-4-2', 'DT', 5, 'Alguien', 1, 'G', '1:1', 1)",
+        [(21,), (22,), (23,)])
+    con.executemany("INSERT INTO xi_intentos (fixture_id, intentada_en, con_datos) VALUES (?,?,1)",
+                    [(21, hace(50)), (22, hace(3)), (23, hace(20))])
+    con.commit()
+    xi = fixtures_para_xi(con, {PERU})
+    check("XI: capturado temprano se refresca una vez cerca del saque", 21 in xi, xi)
+    check("XI: capturado hace nada NO se refresca", 22 not in xi, xi)
+    check("XI: el refresco espera a los últimos minutos antes del saque", 23 not in xi, xi)
+
+    lineups[21] = [
+        {"team": {"id": 1}, "formation": "4-3-3", "coach": {"name": "DT Local"},
+         "startXI": [{"player": {"id": 400, "name": "Nuevo", "number": 9, "pos": "F", "grid": "4:1"}}],
+         "substitutes": []},
+    ]
+    cliente = ClienteXi(lineups)
+    capturar_xi(cliente, con, [21], hace(0))  # el intento del refresco es AHORA
+    formacion = con.execute("SELECT formacion FROM alineaciones WHERE fixture_id=21").fetchone()[0]
+    check("XI: el refresco reemplaza el once (la formación nueva manda)", formacion == "4-3-3", formacion)
+    check("XI: tras el refresco la condición se apaga sola", 21 not in fixtures_para_xi(con, {PERU}),
+          fixtures_para_xi(con, {PERU}))
+
+    # hipo de la API en el refresco: la respuesta vacía NO borra el XI que había
+    con.execute("UPDATE xi_intentos SET intentada_en=? WHERE fixture_id=21", (hace(50),))
+    con.commit()
+    cliente = ClienteXi({})  # la API responde vacío
+    capturar_xi(cliente, con, [21], "2026-07-26 19:21:00.000")
+    quedan = con.execute("SELECT COUNT(*) FROM alineaciones WHERE fixture_id=21").fetchone()[0]
+    check("XI: una respuesta vacía no pisa el XI ya capturado", quedan == 1, quedan)
+
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
 

@@ -243,6 +243,7 @@ export function Burbujas({ store, m, isMobile }: Props) {
           visitante={alineaciones?.visitante}
           localNombre={H.name}
           visitanteNombre={A.name}
+          eventos={ficha.data?.tactica?.eventos ?? []}
           loading={ficha.loading}
           error={ficha.error}
           onReload={ficha.reload}

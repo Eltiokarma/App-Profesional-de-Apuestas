@@ -11,9 +11,58 @@
 // mapa de duelos del DTP — la cancha y el M2 hablan el mismo idioma, pero la
 // pizarra del DTP no se toca: su contrato es texto por carril.
 import { useState } from 'react'
-import type { AlineacionDTO, JugadorAlineadoDTO } from '../api/types'
+import type { AlineacionDTO, EventoPartidoDTO, JugadorAlineadoDTO } from '../api/types'
 
 const POS_LABEL: Record<string, string> = { G: 'POR', D: 'DEF', M: 'MED', F: 'DEL' }
+
+interface CambioXi {
+  minuto: number
+  saleId: number
+  saleNombre: string
+  entraId: number
+  entraNombre: string
+}
+
+/** Sustituciones de un equipo a partir de los eventos de la ficha (los mismos
+ *  que captura el ciclo en vivo). La API no siempre respeta quién viaja como
+ *  jugador y quién como asistente en un cambio, así que aquí decide la
+ *  membresía: el que ESTÁ en cancha sale, el otro entra — y el once en cancha
+ *  se va actualizando para que las ventanas encadenadas (entra y luego sale)
+ *  también cuadren. */
+function cambiosDelLado(ali: AlineacionDTO, eventos: EventoPartidoDTO[]): CambioXi[] {
+  const enCancha = new Set(ali.titulares.map((j) => j.jugadorId))
+  const subs = eventos
+    .filter((e) => e.equipoId === ali.equipoId && (e.tipo ?? '').toLowerCase().startsWith('subst'))
+    .sort((a, b) => a.minuto - b.minuto)
+  const cambios: CambioXi[] = []
+  for (const e of subs) {
+    if (e.jugadorId == null || e.asistenteId == null) continue
+    const primeroSale = enCancha.has(e.jugadorId)
+    if (!primeroSale && !enCancha.has(e.asistenteId)) continue // ninguno en cancha: dato roto
+    const sale = primeroSale
+      ? { id: e.jugadorId, nombre: e.jugador }
+      : { id: e.asistenteId, nombre: e.asistente }
+    const entra = primeroSale
+      ? { id: e.asistenteId, nombre: e.asistente }
+      : { id: e.jugadorId, nombre: e.jugador }
+    enCancha.delete(sale.id)
+    enCancha.add(entra.id)
+    cambios.push({ minuto: e.minuto, saleId: sale.id, saleNombre: sale.nombre ?? '—', entraId: entra.id, entraNombre: entra.nombre ?? '—' })
+  }
+  return cambios
+}
+
+/** Quién ocupa HOY el puesto de cada titular original: con los cambios
+ *  aplicados en orden, cada sustitución hereda el punto del jugador al que
+ *  reemplazó (también en cadenas: entró y después salió). */
+function ocupantes(ali: AlineacionDTO, cambios: CambioXi[]): Map<number, { id: number; nombre: string; minuto: number }> {
+  const porPuesto = new Map<number, { id: number; nombre: string; minuto: number }>()
+  for (const c of cambios) {
+    const puesto = ali.titulares.find((t) => (porPuesto.get(t.jugadorId)?.id ?? t.jugadorId) === c.saleId)
+    if (puesto) porPuesto.set(puesto.jugadorId, { id: c.entraId, nombre: c.entraNombre, minuto: c.minuto })
+  }
+  return porPuesto
+}
 
 function apellido(nombre: string | null | undefined): string {
   if (!nombre) return '—'
@@ -102,13 +151,17 @@ function EncabezadoEquipo({ ali, nombre, color, alDerecha }: { ali: AlineacionDT
   )
 }
 
-function CanchaXi({ local, visitante, localNombre, visitanteNombre, isMobile }: { local?: AlineacionDTO | null; visitante?: AlineacionDTO | null; localNombre: string; visitanteNombre: string; isMobile: boolean }) {
+function CanchaXi({ local, visitante, localNombre, visitanteNombre, eventos, isMobile }: { local?: AlineacionDTO | null; visitante?: AlineacionDTO | null; localNombre: string; visitanteNombre: string; eventos: EventoPartidoDTO[]; isMobile: boolean }) {
   const lados = [
     local && local.titulares.length > 0 ? { ali: local, lado: 'local' as const, color: 'var(--accent)', nombre: localNombre } : null,
     visitante && visitante.titulares.length > 0 ? { ali: visitante, lado: 'visita' as const, color: 'var(--down)', nombre: visitanteNombre } : null,
   ].filter((l): l is NonNullable<typeof l> => l !== null)
-  const calculados = lados.map((l) => ({ ...l, ...puntosXi(l.ali, l.lado) }))
+  const calculados = lados.map((l) => {
+    const cambios = cambiosDelLado(l.ali, eventos)
+    return { ...l, ...puntosXi(l.ali, l.lado), cambios, porPuesto: ocupantes(l.ali, cambios) }
+  })
   const aproximada = calculados.some((l) => !l.exacta)
+  const hayCambios = calculados.some((l) => l.cambios.length > 0)
   const linea = 'var(--line2)'
   const dCirculo = isMobile ? 24 : 32
 
@@ -141,14 +194,29 @@ function CanchaXi({ local, visitante, localNombre, visitanteNombre, isMobile }: 
         <div style={{ position: 'absolute', right: 0, top: '44%', bottom: '44%', width: '2.2%', background: 'color-mix(in oklch, var(--down), transparent 82%)', borderRadius: '0 3px 3px 0' }}></div>
 
         {calculados.map((l) =>
-          l.puntos.map((p) => (
-            <div key={`${l.lado}-${p.key}`} title={`${p.numero} · ${p.nombre}`} style={{ position: 'absolute', left: `${p.x}%`, top: `${p.y}%`, transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'sadup .35s ease both' }}>
-              <div style={{ width: dCirculo, height: dCirculo, borderRadius: '50%', background: l.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', font: `700 ${isMobile ? 10.5 : 12}px var(--mono)`, boxShadow: '0 2px 6px rgba(0,0,0,.2), 0 0 0 2px var(--bg2)', fontVariantNumeric: 'tabular-nums' }}>{p.numero}</div>
-              {!isMobile && (
-                <div style={{ marginTop: 3, font: '600 9.5px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', textShadow: '0 1px 0 var(--bg), 0 0 4px var(--bg)' }}>{p.apellido}</div>
-              )}
-            </div>
-          )),
+          l.puntos.map((p) => {
+            // si a este puesto ya le entró un cambio, en la cancha está el que
+            // juega AHORA — el titular original queda en el tooltip y en la
+            // tira de cambios de abajo
+            const occ = l.porPuesto.get(p.key)
+            const suplente = occ ? l.ali.suplentes.find((j) => j.jugadorId === occ.id) : undefined
+            const numero = occ ? (suplente?.numero != null ? String(suplente.numero) : '–') : p.numero
+            const nombre = occ ? apellido(suplente?.nombre ?? occ.nombre) : p.apellido
+            const titulo = occ ? `${numero} · ${suplente?.nombre ?? occ.nombre} · entró al ${occ.minuto}' por ${p.nombre}` : `${p.numero} · ${p.nombre}`
+            return (
+              <div key={`${l.lado}-${p.key}`} title={titulo} style={{ position: 'absolute', left: `${p.x}%`, top: `${p.y}%`, transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'sadup .35s ease both' }}>
+                <div style={{ position: 'relative', width: dCirculo, height: dCirculo }}>
+                  <div style={{ width: dCirculo, height: dCirculo, borderRadius: '50%', background: l.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', font: `700 ${isMobile ? 10.5 : 12}px var(--mono)`, boxShadow: '0 2px 6px rgba(0,0,0,.2), 0 0 0 2px var(--bg2)', fontVariantNumeric: 'tabular-nums' }}>{numero}</div>
+                  {occ && (
+                    <span style={{ position: 'absolute', top: -6, right: -12, padding: '1px 4px', borderRadius: 5, background: 'var(--up)', color: '#fff', font: '700 8px var(--mono)', whiteSpace: 'nowrap', boxShadow: '0 0 0 1.5px var(--bg2)' }}>▲{occ.minuto}'</span>
+                  )}
+                </div>
+                {!isMobile && (
+                  <div style={{ marginTop: 3, font: '600 9.5px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', textShadow: '0 1px 0 var(--bg), 0 0 4px var(--bg)' }}>{nombre}</div>
+                )}
+              </div>
+            )
+          }),
         )}
       </div>
 
@@ -157,20 +225,51 @@ function CanchaXi({ local, visitante, localNombre, visitanteNombre, isMobile }: 
           posiciones aproximadas por formación (sin grid de la API): el mapa de carriles del DTP tampoco está disponible
         </div>
       )}
+      {hayCambios && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, marginTop: 10, flexWrap: 'wrap' }}>
+          {calculados.map((l) =>
+            l.cambios.length > 0 ? (
+              <div key={l.lado} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3, alignItems: l.lado === 'visita' ? 'flex-end' : 'flex-start' }}>
+                {l.cambios.map((c, i) => (
+                  <div key={i} style={{ font: '500 10.5px var(--mono)', color: 'var(--t2)', display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap', justifyContent: l.lado === 'visita' ? 'flex-end' : 'flex-start' }}>
+                    <span style={{ color: 'var(--t3)', fontVariantNumeric: 'tabular-nums' }}>{c.minuto}'</span>
+                    <span style={{ color: 'var(--down)' }}>▼ {apellido(c.saleNombre)}</span>
+                    <span style={{ color: 'var(--up)' }}>▲ {apellido(c.entraNombre)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null,
+          )}
+        </div>
+      )}
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, marginTop: 10, font: '500 10.5px var(--sans)', color: 'var(--t3)', lineHeight: 1.5, flexWrap: 'wrap' }}>
-        {calculados.map((l) =>
-          l.ali.suplentes.length > 0 ? (
+        {calculados.map((l) => {
+          if (l.ali.suplentes.length === 0) return null
+          const entraron = new Map(l.cambios.map((c) => [c.entraId, c.minuto]))
+          return (
             <div key={l.lado} style={{ flex: 1, minWidth: 0, textAlign: l.lado === 'visita' ? 'right' : 'left' }}>
-              Banco: {l.ali.suplentes.map((j) => j.nombre).filter(Boolean).join(', ')}
+              Banco:{' '}
+              {l.ali.suplentes
+                .filter((j) => j.nombre)
+                .map((j, i) => (
+                  <span key={j.jugadorId}>
+                    {i > 0 && ', '}
+                    {j.nombre}
+                    {entraron.has(j.jugadorId) && <span style={{ color: 'var(--up)', font: '600 9.5px var(--mono)' }}> ▲{entraron.get(j.jugadorId)}'</span>}
+                  </span>
+                ))}
             </div>
-          ) : null,
-        )}
+          )
+        })}
       </div>
     </div>
   )
 }
 
-function LadoXi({ ali, nombre }: { ali: AlineacionDTO; nombre: string }) {
+function LadoXi({ ali, nombre, eventos }: { ali: AlineacionDTO; nombre: string; eventos: EventoPartidoDTO[] }) {
+  const cambios = cambiosDelLado(ali, eventos)
+  const salieron = new Map(cambios.map((c) => [c.saleId, c.minuto]))
+  const entraron = new Map(cambios.map((c) => [c.entraId, c.minuto]))
   return (
     <div style={{ minWidth: 0 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
@@ -186,12 +285,24 @@ function LadoXi({ ali, nombre }: { ali: AlineacionDTO; nombre: string }) {
             <span style={{ font: '600 10.5px var(--mono)', color: 'var(--t3)', width: 18, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{j.numero ?? '–'}</span>
             <span style={{ font: '600 9px var(--mono)', color: 'var(--t3)', width: 26, flexShrink: 0, letterSpacing: '.3px' }}>{j.posicion ? POS_LABEL[j.posicion] ?? j.posicion : ''}</span>
             <span style={{ font: '500 12px var(--sans)', color: 'var(--t1)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nombre ?? '—'}</span>
+            {salieron.has(j.jugadorId) && (
+              <span title="Sustituido" style={{ font: '600 9.5px var(--mono)', color: 'var(--down)', flexShrink: 0 }}>▼ {salieron.get(j.jugadorId)}'</span>
+            )}
           </div>
         ))}
       </div>
       {ali.suplentes.length > 0 && (
         <div style={{ marginTop: 8, font: '500 10.5px var(--sans)', color: 'var(--t3)', lineHeight: 1.5 }}>
-          Banco: {ali.suplentes.map((j) => j.nombre).filter(Boolean).join(', ')}
+          Banco:{' '}
+          {ali.suplentes
+            .filter((j) => j.nombre)
+            .map((j, i) => (
+              <span key={j.jugadorId}>
+                {i > 0 && ', '}
+                {j.nombre}
+                {entraron.has(j.jugadorId) && <span style={{ color: 'var(--up)', font: '600 9.5px var(--mono)' }}> ▲{entraron.get(j.jugadorId)}'</span>}
+              </span>
+            ))}
         </div>
       )}
       {!ali.conGrid && (
@@ -206,6 +317,8 @@ interface Props {
   visitante?: AlineacionDTO | null
   localNombre: string
   visitanteNombre: string
+  /** Eventos de la ficha: de aquí salen los cambios (sustituciones) del partido. */
+  eventos?: EventoPartidoDTO[]
   loading?: boolean
   error?: string | null
   /** Recarga la ficha del backend: el XI aparece solo al confirmarse (~1 h antes). */
@@ -213,7 +326,7 @@ interface Props {
   isMobile: boolean
 }
 
-export function AlineacionesXi({ local, visitante, localNombre, visitanteNombre, loading, error, onReload, isMobile }: Props) {
+export function AlineacionesXi({ local, visitante, localNombre, visitanteNombre, eventos = [], loading, error, onReload, isMobile }: Props) {
   const hayXi = !!(local?.titulares.length || visitante?.titulares.length)
   const [vista, setVista] = useState<'cancha' | 'lista'>('cancha')
   const tab = (activo: boolean) => ({
@@ -258,12 +371,12 @@ export function AlineacionesXi({ local, visitante, localNombre, visitanteNombre,
         </div>
       )}
       {hayXi && vista === 'cancha' && (
-        <CanchaXi local={local} visitante={visitante} localNombre={localNombre} visitanteNombre={visitanteNombre} isMobile={isMobile} />
+        <CanchaXi local={local} visitante={visitante} localNombre={localNombre} visitanteNombre={visitanteNombre} eventos={eventos} isMobile={isMobile} />
       )}
       {hayXi && vista === 'lista' && (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 18 : 24 }}>
-          {local && local.titulares.length > 0 && <LadoXi ali={local} nombre={localNombre} />}
-          {visitante && visitante.titulares.length > 0 && <LadoXi ali={visitante} nombre={visitanteNombre} />}
+          {local && local.titulares.length > 0 && <LadoXi ali={local} nombre={localNombre} eventos={eventos} />}
+          {visitante && visitante.titulares.length > 0 && <LadoXi ali={visitante} nombre={visitanteNombre} eventos={eventos} />}
         </div>
       )}
     </section>
