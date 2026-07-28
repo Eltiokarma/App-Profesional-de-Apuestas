@@ -189,6 +189,9 @@ function CanchaXi({ local, visitante, localNombre, visitanteNombre, eventos, jug
   const aproximada = calculados.some((l) => !l.exacta)
   const hayCambios = calculados.some((l) => l.cambios.length > 0)
   const hayBanderas = calculados.some((l) => l.puntos.some((p) => bandera(l.plantilla.get(p.key))))
+  // en móvil no hay hover: tap en el jugador → tarjeta flotante con sus
+  // estadísticas (en PC el tooltip del title ya lo resuelve)
+  const [sel, setSel] = useState<{ lado: 'local' | 'visita'; key: number } | null>(null)
   const linea = 'var(--line2)'
   const dCirculo = isMobile ? 24 : 32
 
@@ -200,7 +203,7 @@ function CanchaXi({ local, visitante, localNombre, visitanteNombre, eventos, jug
         ))}
       </div>
 
-      <div style={{ position: 'relative', width: '100%', aspectRatio: '16 / 9.2', borderRadius: 12, border: '1px solid var(--line)', background: 'var(--bg)', overflow: 'hidden' }}>
+      <div onClick={isMobile ? () => setSel(null) : undefined} style={{ position: 'relative', width: '100%', aspectRatio: '16 / 9.2', borderRadius: 12, border: '1px solid var(--line)', background: 'var(--bg)', overflow: 'hidden' }}>
         {/* carriles: el mismo idioma (izquierda/centro/derecha) que el M2 del DTP */}
         <div style={{ position: 'absolute', left: 0, right: 0, top: '33.33%', borderTop: `1px dashed ${linea}` }}></div>
         <div style={{ position: 'absolute', left: 0, right: 0, top: '66.66%', borderTop: `1px dashed ${linea}` }}></div>
@@ -242,7 +245,19 @@ function CanchaXi({ local, visitante, localNombre, visitanteNombre, eventos, jug
               `${p.numero} · ${p.nombre}` + (salio != null ? ` · salió al ${salio}'` : '') +
               statsTip(jug) + (flag ? ` · ${flag.nota}` : '')
             return (
-              <div key={`${l.lado}-${p.key}`} title={titulo} style={{ position: 'absolute', left: `${p.x}%`, top: `${p.y}%`, transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'sadup .35s ease both' }}>
+              <div
+                key={`${l.lado}-${p.key}`}
+                title={titulo}
+                onClick={
+                  isMobile
+                    ? (e) => {
+                        e.stopPropagation()
+                        setSel((s) => (s && s.key === p.key && s.lado === l.lado ? null : { lado: l.lado, key: p.key }))
+                      }
+                    : undefined
+                }
+                style={{ position: 'absolute', left: `${p.x}%`, top: `${p.y}%`, transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'sadup .35s ease both', cursor: isMobile ? 'pointer' : 'default' }}
+              >
                 <div style={{ position: 'relative', width: dCirculo, height: dCirculo }}>
                   <div style={{ width: dCirculo, height: dCirculo, borderRadius: '50%', background: l.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', font: `700 ${isMobile ? 10.5 : 12}px var(--mono)`, boxShadow: '0 2px 6px rgba(0,0,0,.2), 0 0 0 2px var(--bg2)', fontVariantNumeric: 'tabular-nums', opacity: salio != null ? 0.72 : 1 }}>{p.numero}</div>
                   {salio != null && (
@@ -267,6 +282,52 @@ function CanchaXi({ local, visitante, localNombre, visitanteNombre, eventos, jug
             )
           }),
         )}
+
+        {/* tarjeta flotante del jugador tocado (solo móvil): las mismas
+            estadísticas que el tooltip de PC, ancladas cerca de su punto */}
+        {isMobile &&
+          sel &&
+          (() => {
+            const l = calculados.find((x) => x.lado === sel.lado)
+            const p = l?.puntos.find((x) => x.key === sel.key)
+            if (!l || !p) return null
+            const jug = l.plantilla.get(p.key)
+            const flag = bandera(jug)
+            const salio = l.salieron.get(p.key)
+            const rat = ratEstilo(jug?.rating)
+            const arriba = p.y > 52 // el flotante abre hacia el lado con espacio
+            return (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{ position: 'absolute', left: `${Math.min(70, Math.max(30, p.x))}%`, top: `${arriba ? p.y - 7 : p.y + 7}%`, transform: `translate(-50%, ${arriba ? '-100%' : '0'})`, zIndex: 5, background: 'var(--bg2)', border: '1px solid var(--line2)', borderRadius: 10, padding: '9px 11px', boxShadow: '0 8px 22px rgba(0,0,0,.22)', minWidth: 168, maxWidth: '80%', animation: 'sadup .15s ease' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
+                  <span style={{ width: 18, height: 18, borderRadius: '50%', background: l.color, color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', font: '700 9px var(--mono)', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{p.numero}</span>
+                  <span style={{ font: '700 12px var(--sans)', color: 'var(--t1)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{p.nombre}</span>
+                  <button onClick={() => setSel(null)} style={{ border: 0, background: 'transparent', color: 'var(--t3)', font: '700 12px var(--mono)', cursor: 'pointer', padding: '0 2px', flexShrink: 0 }}>✕</button>
+                </div>
+                {jug ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{ padding: '1px 6px', borderRadius: 5, background: rat.bg, color: rat.fg, font: '700 10px var(--mono)', fontVariantNumeric: 'tabular-nums' }}>{jug.rating != null ? jug.rating.toFixed(1) : '—'}</span>
+                      <span style={{ font: '700 10px var(--mono)', color: confColor(jug.confianza) }}>{jug.confianza}</span>
+                      <span style={{ font: '500 9.5px var(--mono)', color: 'var(--t3)' }}>rating · confianza</span>
+                    </div>
+                    <div style={{ font: '500 10px var(--mono)', color: 'var(--t2)' }}>{Math.round(jug.pctMinutos * 100)}% de minutos · {produccion(jug)}</div>
+                  </div>
+                ) : (
+                  <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>sin indicadores de plantilla para este jugador</div>
+                )}
+                {flag && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: flag.color, flexShrink: 0 }}></span>
+                    <span style={{ font: '500 9.5px var(--mono)', color: 'var(--t2)' }}>{flag.nota}</span>
+                  </div>
+                )}
+                {salio != null && <div style={{ marginTop: 4, font: '600 10px var(--mono)', color: 'var(--down)' }}>▼ salió al {salio}'</div>}
+              </div>
+            )
+          })()}
       </div>
 
       {aproximada && (
