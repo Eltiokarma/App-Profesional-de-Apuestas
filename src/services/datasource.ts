@@ -814,7 +814,10 @@ class MockDataSource implements SadDataSource {
         grid: `${i === 0 ? 1 : i < 5 ? 2 : i < 9 ? 3 : 4}:${(i % 4) + 1}`,
         carril: (['centro', 'izquierda', 'centro', 'derecha'] as const)[i % 4],
       })),
-      suplentes: [],
+      suplentes: Array.from({ length: 3 }, (_, i) => ({
+        jugadorId: base + 11 + i, nombre: `Suplente ${i + 1}`, numero: 12 + i,
+        posicion: 'M', grid: null, carril: null,
+      })),
     })
     const tactica: FichaTacticaDTO = enJuego
       ? {
@@ -823,6 +826,11 @@ class MockDataSource implements SadDataSource {
           eventos: [
             { minuto: 34, extra: 0, tipo: 'Goal', detalle: 'Normal Goal', equipoId: TEAM_NUM[m.home] ?? 1, jugador: 'Titular 10', jugadorId: 9010, asistente: 'Titular 8', asistenteId: 9008 },
             { minuto: 51, extra: 0, tipo: 'Goal', detalle: 'Penalty', equipoId: TEAM_NUM[m.away] ?? 2, jugador: 'Titular 11', jugadorId: 9111, asistente: null, asistenteId: null },
+            // cambios: el segundo lleva jugador/asistente INVERTIDOS a
+            // propósito — la API real también los confunde y la UI tiene que
+            // decidir por membresía (quién estaba en cancha sale)
+            { minuto: 58, extra: 0, tipo: 'subst', detalle: 'Substitution 1', equipoId: TEAM_NUM[m.home] ?? 1, jugador: 'Titular 7', jugadorId: 9007, asistente: 'Suplente 1', asistenteId: 9012 },
+            { minuto: 65, extra: 0, tipo: 'subst', detalle: 'Substitution 1', equipoId: TEAM_NUM[m.away] ?? 2, jugador: 'Suplente 2', jugadorId: 9113, asistente: 'Titular 9', asistenteId: 9109 },
           ],
           estadisticas: { local: { 'Ball Possession': '58%' }, visitante: { 'Ball Possession': '42%' } },
         }

@@ -120,6 +120,16 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   al instante (sin sello), los skills/EFE/DTP las reciben por esa vía, y la
   tarjeta "Alineaciones confirmadas" de Burbujas las muestra con refresco
   automático y botón ↻.
+- **Cambios de formación** (28/07/2026): un XI capturado más de 30 min antes
+  del saque se refresca UNA vez al entrar en los últimos 15 min
+  (`XI_CAPTURA_VIEJA_MIN`/`XI_REFRESCO_ANTES_MIN`), por si el DT lo corrigió;
+  tras ese intento la condición se apaga sola, y una respuesta vacía nunca
+  pisa el XI ya capturado. Los cambios DURANTE el partido no tocan
+  `alineaciones`: son eventos `subst` que el ciclo ya captura, y la tarjeta
+  los cruza con el once — en la cancha se ve quién juega AHORA (badge ▲min'),
+  con la tira de cambios y el banco marcado; como la API confunde quién viaja
+  como jugador/asistente en un cambio, la UI decide por membresía (el que
+  está en cancha es el que sale).
 - **`SAD_LIVE_SEGUNDOS=60`** (env, vacía = apagado, piso 30): hilo en
   `backend/app.py` que corre el ciclo.
 - **Backend**: `GET /fixtures/{id}/live` → estado/minuto/marcador reales +
