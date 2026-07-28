@@ -7,6 +7,7 @@ import { buildChart, buildSpark, type LiveRealSerie } from '../lib/chart'
 import { curOddOf, seriesFor } from '../lib/odds'
 import { ApuestasSalidas } from '../components/ApuestasSalidas'
 import { ChartSvg } from '../components/ChartSvg'
+import { MarcaCondicion } from '../components/MarcaCondicion'
 import { matchView } from '../lib/view'
 import { loadCuotasBase, loadCuotasCasas, loadCuotasHistorial, loadFuentesHistorial } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
@@ -132,8 +133,12 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
       const dlt = S ? cur - S.open : 0
       const id = m.id + ':' + def.key + ':' + sd.k
       const mkd = !!s.marked[id]
+      // P6: las columnas "1"/"2" (y los hándicaps H1/H2) asumen que el usuario
+      // sabe quién es el local — la marca de condición lo dice sin leer nombres
+      const cond: 'L' | 'V' | null = sd.k === '1' || sd.k === 'H1' ? 'L' : sd.k === '2' || sd.k === 'H2' ? 'V' : null
       return {
         key: sd.k, label: sd.label, oddText: cur ? cur.toFixed(2) : '—',
+        cond, condColor: cond === 'L' ? mv.homeColor : mv.awayColor,
         sparkD: sp?.d ?? '', sparkDotX: sp?.dotX ?? '0', sparkDotY: sp?.dotY ?? '0', sparkColor: LINE_COLORS[def.key][sd.k],
         trend: !!S && Math.abs(dlt) >= 0.01, trendGlyph: dlt > 0 ? '▲' : '▼', trendColor: dlt > 0 ? 'var(--up)' : 'var(--down)',
         showPct: isLive && !!S && Math.abs(dlt) >= 0.01,
@@ -235,9 +240,11 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--down)', animation: 'sadpulse 1.1s infinite' }}></span>EN DIRECTO
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap', flexShrink: 0 }}>
+            <MarcaCondicion cond="L" color={mv.homeColor} />
             <button className="sad-hover" onClick={() => store.openTeam(mv.homeKey)} title={'Ver página de ' + mv.homeName} style={{ background: 'transparent', border: 0, cursor: 'pointer', padding: '2px 5px', borderRadius: 7, font: '700 18px var(--mono)', color: 'var(--t1)' }}>{mv.homeShort}</button>
             <span style={{ font: '700 18px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>{m.score}</span>
             <button className="sad-hover" onClick={() => store.openTeam(mv.awayKey)} title={'Ver página de ' + mv.awayName} style={{ background: 'transparent', border: 0, cursor: 'pointer', padding: '2px 5px', borderRadius: 7, font: '700 18px var(--mono)', color: 'var(--t1)' }}>{mv.awayShort}</button>
+            <MarcaCondicion cond="V" color={mv.awayColor} />
           </span>
           <span style={{ font: '600 12px var(--mono)', color: 'var(--t2)' }}>{s.liveMin}'</span>
           <span style={{ marginLeft: 'auto', font: '500 11px var(--mono)', color: 'var(--t3)' }}>media entre casas capturadas</span>
@@ -250,8 +257,12 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
           <span style={{ display: 'flex', alignItems: 'center', gap: 7, font: '700 11px var(--mono)', color: 'var(--down)', letterSpacing: '.6px' }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--down)', animation: 'sadpulse 1.1s infinite' }}></span>EN DIRECTO
           </span>
-          <span style={{ font: '700 18px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>
-            {mv.homeShort} {live.golesLocal ?? '–'} - {live.golesVisitante ?? '–'} {mv.awayShort}
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+            <MarcaCondicion cond="L" color={mv.homeColor} />
+            <span style={{ font: '700 18px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>
+              {mv.homeShort} {live.golesLocal ?? '–'} - {live.golesVisitante ?? '–'} {mv.awayShort}
+            </span>
+            <MarcaCondicion cond="V" color={mv.awayColor} />
           </span>
           {live.minuto != null && <span style={{ font: '600 12px var(--mono)', color: 'var(--t2)' }}>{live.minuto}'</span>}
           <span style={{ marginLeft: 'auto', font: '500 11px var(--mono)', color: 'var(--t3)' }}>
@@ -482,6 +493,7 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
                   <button onClick={(e) => { e.stopPropagation(); store.toggleMark(sel.id) }} style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', flexShrink: 0, display: 'flex' }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill={sel.starFill} stroke={sel.starStroke} strokeWidth="1.8"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.3 1.1 6.1L12 17.2 6.5 19.9l1.1-6.1L3.1 9.4l6.1-.8z" /></svg>
                   </button>
+                  {sel.cond && <MarcaCondicion cond={sel.cond} color={sel.condColor} size={14} />}
                   <span style={{ font: '600 11.5px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sel.label}</span>
                   {sel.sparkD ? (
                     <svg viewBox="0 0 80 28" preserveAspectRatio="none" style={{ width: 58, height: 22, flexShrink: 0 }}>

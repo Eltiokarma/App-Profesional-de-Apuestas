@@ -3,6 +3,7 @@ import { TEAMS } from '../data'
 import type { KCondKey, KTypeKey, Match } from '../data/types'
 import { AlineacionesXi } from '../components/AlineacionesXi'
 import { KLineChart, KLineLegend } from '../components/KLineChart'
+import { MarcaCondicion } from '../components/MarcaCondicion'
 import { RachasCuotas, type CuotaCond } from '../components/RachasCuotas'
 import { CalendarioSad } from '../components/CalendarioSad'
 import { TeamBadge } from '../components/TeamBadge'
@@ -33,6 +34,8 @@ function TeamPanel({ eng, teamId, role, rol, kType, kCond, maxAbs, chartWindow, 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
         <button className="sad-hover" onClick={onOpen} title={'Ver página de ' + T.name} style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, background: 'transparent', border: 0, cursor: 'pointer', padding: '4px 8px', margin: '-4px -8px', borderRadius: 9, textAlign: 'left', color: 'inherit' }}>
           <TeamBadge logo={T.logo} short={T.short} color={T.color} fg={T.fg} size={28} />
+          {/* P6: relleno = local, contorno = visitante — no depender del orden */}
+          <MarcaCondicion cond={rol === 'local' ? 'L' : 'V'} color={T.color} size={16} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ font: '700 13.5px var(--sans)' }}>{T.name}</div>
             <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>{role} · nivel {eng.level.toFixed(2)}</div>
@@ -205,7 +208,7 @@ export function Burbujas({ store, m, isMobile }: Props) {
             ['GAP AJUST.', veredicto.gap != null ? signFmt(veredicto.gap) : '—', veredicto.gap == null ? 'var(--t3)' : veredicto.gap > 0 ? 'var(--up)' : veredicto.gap < 0 ? 'var(--down)' : 'var(--t2)', 'Gap ajustado por calendario: local − visitante (§5)'],
             ['SEÑAL', String(veredicto.senal), veredicto.senal === 'fuerte' ? 'var(--t1)' : 'var(--t2)', 'Señal de regresión al nivel (la más fuerte de los dos)'],
             ['μ PARTIDO', veredicto.mu != null ? veredicto.mu.toFixed(2) : '—', 'var(--t1)', 'Puntos esperados del local en ESTE fixture (rival y localía reales)'],
-            ['K FUSIÓN', veredicto.k, 'var(--t1)', 'K fusionada (k⁺+k⁻) local / visitante'],
+            ['K FUSIÓN L / V', veredicto.k, 'var(--t1)', 'K fusionada (k⁺+k⁻): local / visitante'],
             ['TRAMPA', veredicto.trampa ? 'sí' : 'no', veredicto.trampa ? 'var(--down)' : 'var(--t3)', 'Partido trampa: rival inferior + un grande a ≤4 días'],
           ] as [string, string, string, string][]).map(([label, valor, color, tip]) => (
             <div key={label} title={tip} style={{ padding: '0 14px', borderRight: '1px solid var(--line)' }}>

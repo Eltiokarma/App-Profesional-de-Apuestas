@@ -483,7 +483,8 @@ export interface H2HData {
   home: number
   draw: number
   away: number
-  last: { when: string; match: string; score: string; color: string }[]
+  /** localHoyEnCasa: en ese cruce, ¿el local de HOY jugó en casa? (P6) */
+  last: { when: string; match: string; score: string; color: string; localHoyEnCasa: boolean }[]
 }
 
 /** H2H real vía /fixtures?equipoId&rivalId; contadores desde la perspectiva
@@ -508,6 +509,7 @@ export async function loadH2H(m: Match): Promise<H2HData | null> {
       match: `${f.local.abreviatura} vs ${f.visitante.abreviatura}`,
       score: `${f.golesLocal} - ${f.golesVisitante}`,
       color: gHome > gAway ? 'var(--up)' : gHome < gAway ? 'var(--down)' : 'var(--t2)',
+      localHoyEnCasa: f.local.id === homeId,
     })
   }
   return out

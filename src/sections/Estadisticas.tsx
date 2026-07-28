@@ -1,6 +1,7 @@
 import { TEAMS } from '../data'
 import type { Match } from '../data/types'
 import type { GapEquipoDTO } from '../api/types'
+import { MarcaCondicion } from '../components/MarcaCondicion'
 import { TablaPosiciones } from '../components/TablaPosiciones'
 import { TeamBadge } from '../components/TeamBadge'
 import { loadEstadisticas, loadH2H, loadPrediccion } from '../services/appdata'
@@ -307,9 +308,12 @@ export function Estadisticas({ store, m, isMobile }: Props) {
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {/* P6: cada cruce alterna la condición y el orden del texto
+                      no basta — la marca dice si el local de HOY jugó en casa */}
                   {h2h.last.map((l, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 9px', borderRadius: 8, background: 'var(--bg)' }}>
+                    <div key={i} title={`${H.short} jugó de ${l.localHoyEnCasa ? 'local' : 'visitante'} en ese cruce`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 9px', borderRadius: 8, background: 'var(--bg)' }}>
                       <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)', width: 54, fontVariantNumeric: 'tabular-nums' }}>{l.when}</span>
+                      <MarcaCondicion cond={l.localHoyEnCasa ? 'L' : 'V'} color={H.color} size={14} />
                       <span style={{ font: '600 11px var(--sans)', color: 'var(--t2)', flex: 1 }}>{l.match}</span>
                       <span style={{ font: '700 11px var(--mono)', color: l.color, fontVariantNumeric: 'tabular-nums' }}>{l.score}</span>
                     </div>
