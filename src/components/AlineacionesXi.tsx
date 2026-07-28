@@ -302,22 +302,38 @@ function CanchaXi({ local, visitante, localNombre, visitanteNombre, eventos, jug
           )}
         </div>
       )}
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, marginTop: 10, font: '500 10.5px var(--sans)', color: 'var(--t3)', lineHeight: 1.5, flexWrap: 'wrap' }}>
+      {/* banco con las mismas estadísticas que los de la cancha: dorsal,
+          rating con sus umbrales de color y confianza A/B/C */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, marginTop: 10, flexWrap: 'wrap' }}>
         {calculados.map((l) => {
           if (l.ali.suplentes.length === 0) return null
           const entraron = new Map(l.cambios.map((c) => [c.entraId, c.minuto]))
+          const alDerecha = l.lado === 'visita' && !isMobile
           return (
-            <div key={l.lado} style={{ flex: 1, minWidth: 0, textAlign: l.lado === 'visita' ? 'right' : 'left' }}>
-              Banco:{' '}
+            <div key={l.lado} style={{ flex: 1, minWidth: isMobile ? '100%' : 220, display: 'flex', flexDirection: 'column', gap: 3, alignItems: alDerecha ? 'flex-end' : 'flex-start' }}>
+              <div style={{ font: '600 8.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px' }}>BANCO · {l.nombre}</div>
               {l.ali.suplentes
                 .filter((j) => j.nombre)
-                .map((j, i) => (
-                  <span key={j.jugadorId}>
-                    {i > 0 && ', '}
-                    {j.nombre}
-                    {entraron.has(j.jugadorId) && <span style={{ color: 'var(--up)', font: '600 9.5px var(--mono)' }}> ▲{entraron.get(j.jugadorId)}'</span>}
-                  </span>
-                ))}
+                .map((j) => {
+                  const jug = l.plantilla.get(j.jugadorId)
+                  const flag = bandera(jug)
+                  const rat = ratEstilo(jug?.rating)
+                  const min = entraron.get(j.jugadorId)
+                  return (
+                    <div key={j.jugadorId} title={`${j.nombre}${statsTip(jug)}${flag ? ` · ${flag.nota}` : ''}`} style={{ display: 'flex', flexDirection: alDerecha ? 'row-reverse' : 'row', alignItems: 'center', gap: 6, maxWidth: '100%' }}>
+                      <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)', width: 18, textAlign: alDerecha ? 'left' : 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{j.numero ?? '–'}</span>
+                      {flag && <span style={{ width: 7, height: 7, borderRadius: '50%', background: flag.color, flexShrink: 0 }}></span>}
+                      <span style={{ font: '500 11px var(--sans)', color: 'var(--t2)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nombre}</span>
+                      {min != null && <span title="Entró al partido" style={{ font: '600 9.5px var(--mono)', color: 'var(--up)', flexShrink: 0 }}>▲{min}'</span>}
+                      {jug && (
+                        <>
+                          <span title="Rating medio ponderado por minutos" style={{ padding: '1px 6px', borderRadius: 5, background: rat.bg, color: rat.fg, font: '700 9.5px var(--mono)', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{jug.rating != null ? jug.rating.toFixed(1) : '—'}</span>
+                          <span title={`Confianza estadística por minutos jugados (${jug.minutos} min)`} style={{ font: '700 9.5px var(--mono)', color: confColor(jug.confianza), flexShrink: 0 }}>{jug.confianza}</span>
+                        </>
+                      )}
+                    </div>
+                  )
+                })}
             </div>
           )
         })}
@@ -357,8 +373,10 @@ function LadoXi({ ali, nombre, eventos, jugadores, isMobile }: { ali: Alineacion
           {cab('±', 18, 'center')}
         </div>
       )}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        {ali.titulares.map((j) => {
+      {(() => {
+        // misma fila para once y banco: el suplente merece las mismas
+        // estadísticas que el que está en cancha (su letra y su puntaje)
+        const fila = (j: JugadorAlineadoDTO, enBanco: boolean) => {
           const jug = jugadores.get(j.jugadorId)
           const rat = ratEstilo(jug?.rating)
           return (
@@ -367,10 +385,13 @@ function LadoXi({ ali, nombre, eventos, jugadores, isMobile }: { ali: Alineacion
               {!isMobile && (
                 <span style={{ font: '600 9px var(--mono)', color: 'var(--t3)', width: 26, flexShrink: 0, letterSpacing: '.3px' }}>{j.posicion ? POS_LABEL[j.posicion] ?? j.posicion : ''}</span>
               )}
-              <span title={jug ? `${j.nombre}${statsTip(jug)}` : undefined} style={{ font: '500 12px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span title={jug ? `${j.nombre}${statsTip(jug)}` : undefined} style={{ font: '500 12px var(--sans)', color: enBanco ? 'var(--t2)' : 'var(--t1)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {j.nombre ?? '—'}
-                {salieron.has(j.jugadorId) && (
+                {!enBanco && salieron.has(j.jugadorId) && (
                   <span title="Sustituido" style={{ marginLeft: 6, font: '600 9.5px var(--mono)', color: 'var(--down)' }}>▼{salieron.get(j.jugadorId)}'</span>
+                )}
+                {enBanco && entraron.has(j.jugadorId) && (
+                  <span title="Entró al partido" style={{ marginLeft: 6, font: '600 9.5px var(--mono)', color: 'var(--up)' }}>▲{entraron.get(j.jugadorId)}'</span>
                 )}
               </span>
               {hayScores && (
@@ -383,22 +404,23 @@ function LadoXi({ ali, nombre, eventos, jugadores, isMobile }: { ali: Alineacion
               )}
             </div>
           )
-        })}
-      </div>
-      {ali.suplentes.length > 0 && (
-        <div style={{ marginTop: 8, font: '500 10.5px var(--sans)', color: 'var(--t3)', lineHeight: 1.5 }}>
-          Banco:{' '}
-          {ali.suplentes
-            .filter((j) => j.nombre)
-            .map((j, i) => (
-              <span key={j.jugadorId}>
-                {i > 0 && ', '}
-                {j.nombre}
-                {entraron.has(j.jugadorId) && <span style={{ color: 'var(--up)', font: '600 9.5px var(--mono)' }}> ▲{entraron.get(j.jugadorId)}'</span>}
-              </span>
-            ))}
-        </div>
-      )}
+        }
+        return (
+          <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {ali.titulares.map((j) => fila(j, false))}
+            </div>
+            {ali.suplentes.length > 0 && (
+              <>
+                <div style={{ margin: '10px 0 4px', font: '600 8.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px' }}>BANCO</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  {ali.suplentes.map((j) => fila(j, true))}
+                </div>
+              </>
+            )}
+          </>
+        )
+      })()}
       {!ali.conGrid && (
         <div style={{ marginTop: 6, font: '500 10px var(--mono)', color: 'var(--t3)' }}>sin grid de la API: el mapa de carriles del DTP no está disponible</div>
       )}
