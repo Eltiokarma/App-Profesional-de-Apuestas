@@ -14,12 +14,16 @@ from backend.ingesta import en_vivo as en_vivo_mod
 from backend.ingesta.en_vivo import (
     DDL_ODDS_LIVE,
     TOPE_LIGAS_LIVE,
+    XI_REINTENTO_MIN,
     candidatos_por_liga,
     capturar_odds_live,
+    capturar_xi,
+    fixtures_para_xi,
     ligas_de_vivos,
     orden_por_antiguedad,
 )
 from backend.ingesta.extractor import ligas_vivo
+from backend.ingesta.ficha_partido import preparar_tablas as preparar_ficha
 
 fallos = 0
 
@@ -240,6 +244,70 @@ def main():
     # /fixtures?live=: con la lista real de ligas hay que ir por live=all
     check("con 37 ligas nuestras se pide live=all (el filtro por ids no da)",
           len(ligas_vivo()) > TOPE_LIGAS_LIVE, len(ligas_vivo()))
+
+    # --- alineaciones prepartido: la ventana del XI y su captura -------------
+    con = db(con_fixtures=True)
+    preparar_ficha(con)  # tabla alineaciones (la misma de la ficha post-partido)
+    con.executemany("INSERT INTO fixtures (id, date, status_short, league_id) VALUES (?,?,?,?)", [
+        (11, hace(-30), "NS", PERU),      # arranca en 30': el XI ya debería estar
+        (12, hace(-200), "NS", PERU),     # arranca en 3h20: demasiado pronto
+        (13, hace(20), "1H", PERU),       # en juego sin XI: la liga lo publicó tarde
+        (14, hace(120), "2H", PERU),      # en juego hace 2 h: su XI ya no se persigue
+        (15, hace(-30), "NS", 282),       # liga menor: fuera del ciclo
+        (16, hace(-30), "NS", PERU),      # ya tiene XI capturado
+        (17, hace(-30), "NS", PERU),      # intento hace 2 min: aún no se reintenta
+        (18, hace(-30), "NS", PERU),      # intento viejo: se reintenta
+    ])
+    con.execute("INSERT INTO alineaciones (fixture_id, team_id, formacion, entrenador, "
+                "player_id, jugador, numero, posicion, grid, titular) "
+                "VALUES (16, 1, '4-4-2', 'DT', 5, 'Alguien', 1, 'G', '1:1', 1)")
+    con.executemany("INSERT INTO xi_intentos (fixture_id, intentada_en, con_datos) VALUES (?,?,0)",
+                    [(17, hace(2)), (18, hace(XI_REINTENTO_MIN + 3))])
+    con.commit()
+    xi = fixtures_para_xi(con, {PERU})
+    check("XI: el que arranca en minutos entra", 11 in xi, xi)
+    check("XI: el que arranca en horas NO entra (aún no está publicado)", 12 not in xi, xi)
+    check("XI: en juego sin XI sigue entrando (publicación tardía)", 13 in xi, xi)
+    check("XI: en juego hace horas ya NO se persigue", 14 not in xi, xi)
+    check("XI: liga menor NO entra", 15 not in xi, xi)
+    check("XI: con alineación ya capturada NO se repite", 16 not in xi, xi)
+    check("XI: intento reciente espera su reintento", 17 not in xi, xi)
+    check("XI: intento viejo se reintenta", 18 in xi, xi)
+
+    lineups = {11: [
+        {"team": {"id": 1}, "formation": "4-4-2", "coach": {"name": "DT Local"},
+         "startXI": [{"player": {"id": 100 + i, "name": f"J{i}", "number": i + 1,
+                                 "pos": "G" if i == 0 else "D", "grid": f"1:{i + 1}"}} for i in range(11)],
+         "substitutes": [{"player": {"id": 200, "name": "Suplente", "number": 12, "pos": "M"}}]},
+        {"team": {"id": 2}, "formation": "4-3-3", "coach": {"name": "DT Visita"},
+         "startXI": [{"player": {"id": 300 + i, "name": f"V{i}", "number": i + 1,
+                                 "pos": "G" if i == 0 else "M", "grid": f"1:{i + 1}"}} for i in range(11)],
+         "substitutes": []},
+    ]}
+
+    class ClienteXi:
+        def __init__(self, feed):
+            self.feed, self.usadas, self.pedidos = feed, 0, []
+
+        def quedan(self, n: int = 1) -> bool:
+            return True
+
+        def get(self, endpoint, params):
+            self.usadas += 1
+            self.pedidos.append((endpoint, params.get("fixture")))
+            return {"response": self.feed.get(params.get("fixture"), [])}
+
+    cliente = ClienteXi(lineups)
+    n_xi = capturar_xi(cliente, con, [11, 13], "2026-07-26 19:05:00.000")
+    check("XI: pide fixtures/lineups por fixture",
+          all(p[0] == "fixtures/lineups" for p in cliente.pedidos), cliente.pedidos)
+    filas_xi = con.execute("SELECT COUNT(*) FROM alineaciones WHERE fixture_id=11 AND titular=1").fetchone()[0]
+    check("XI: guarda los 22 titulares del partido publicado", n_xi == 1 and filas_xi == 22, (n_xi, filas_xi))
+    intentos = dict(con.execute("SELECT fixture_id, con_datos FROM xi_intentos WHERE fixture_id IN (11,13)"))
+    check("XI: anota el intento con y sin datos (el vacío se reintenta luego)",
+          intentos == {11: 1, 13: 0}, intentos)
+    check("XI: capturado no vuelve a entrar en la ventana", 11 not in fixtures_para_xi(con, {PERU}),
+          fixtures_para_xi(con, {PERU}))
 
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)

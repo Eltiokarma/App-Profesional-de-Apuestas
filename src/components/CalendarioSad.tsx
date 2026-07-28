@@ -29,14 +29,16 @@ const COLORES = {
 
 export function ChipEtiqueta({ e }: { e: EtiquetaRivalDTO }) {
   const c = COLORES[TONO[e.codigo] ?? 'warn']
+  // maxWidth + wrap: el dato puede ser largo ("73% de victorias en casa (8/11)")
+  // y en columnas angostas el chip tiene que doblarse DENTRO de la tarjeta, no
+  // desbordarla por la derecha
   return (
     <span
       title={[e.dato, e.nota, e.parcial ? 'Criterio cubierto solo en parte: su ausencia no prueba nada' : null].filter(Boolean).join(' · ')}
-      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 7px', borderRadius: 6, background: c.bg, color: c.fg, font: '700 8.5px var(--mono)', letterSpacing: '.3px', whiteSpace: 'nowrap' }}
+      style={{ display: 'inline-flex', alignItems: 'baseline', flexWrap: 'wrap', gap: '1px 4px', maxWidth: '100%', padding: '2px 7px', borderRadius: 6, background: c.bg, color: c.fg, font: '700 8.5px var(--mono)', letterSpacing: '.3px', lineHeight: 1.5 }}
     >
-      {e.label}
-      {e.parcial && <span style={{ opacity: 0.7 }}>·parcial</span>}
-      <span style={{ font: '500 8.5px var(--mono)', opacity: 0.85 }}>{e.dato}</span>
+      <span style={{ whiteSpace: 'nowrap' }}>{e.label}{e.parcial && <span style={{ opacity: 0.7 }}> ·parcial</span>}</span>
+      <span style={{ font: '500 8.5px var(--mono)', opacity: 0.85, minWidth: 0 }}>{e.dato}</span>
     </span>
   )
 }
@@ -71,7 +73,7 @@ export function CalendarioSad({ partidos, loading, titulo, onPartido }: Props) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)', width: 40, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{p.fechaCorta}</span>
                 <span title={p.condicion === 'L' ? 'De local' : 'De visitante'} style={{ font: '700 9px var(--mono)', color: 'var(--t2)', width: 12, flexShrink: 0 }}>{p.condicion}</span>
-                <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left' }}>{p.rival}</span>
+                <span title={p.rival} style={{ font: '600 12px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left' }}>{p.rival}</span>
                 {pos && (
                   <span title={p.equiposEnLaTabla ? `${pos} de ${p.equiposEnLaTabla} en la tabla` : undefined} style={{ font: '600 10px var(--mono)', color: zona, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{pos}</span>
                 )}
@@ -81,7 +83,9 @@ export function CalendarioSad({ partidos, loading, titulo, onPartido }: Props) {
                 <span style={{ padding: '3px 9px', borderRadius: 6, background: bb.soft, color: bb.color, font: '700 9.5px var(--mono)', letterSpacing: '.3px', flexShrink: 0 }}>{p.binEtiqueta}</span>
               </div>
               {p.etiquetas.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, margin: '6px 0 0 52px' }}>
+                // sin la sangría de 52px: en el aside de 280px ese margen
+                // empujaba los chips fuera de la tarjeta y se veían cortados
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, margin: '6px 0 0' }}>
                   {p.etiquetas.map((e) => (
                     <ChipEtiqueta key={e.codigo} e={e} />
                   ))}
