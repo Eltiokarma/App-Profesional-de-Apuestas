@@ -67,6 +67,27 @@ PREVIOS = ("NS", "TBD")  # estados de "aún no empezó" en esta DB (ver diagnost
 # nosotros: mismo coste (1 request) y ninguna liga puede quedarse fuera.
 TOPE_LIGAS_LIVE = 20
 
+
+def _tope(nombre: str, defecto: int) -> int:
+    """Env var numérica que NO puede tumbar el ciclo si viene mal escrita.
+
+    Los topes de abajo son CANTIDADES, pero se llaman SAD_LIVE_ODDS_LIGAS y
+    SAD_LIVE_ODDS_FIXTURES: el nombre invita a poner una lista de IDs ahí. Con
+    `int()` a pelo, un `SAD_LIVE_ODDS_LIGAS=128,71` reventaba el import y el
+    ciclo en vivo moría entero cada minuto, en silencio y sin cuotas de nadie.
+    Ahora avisa y sigue con el default. (Las ligas se eligen en LIGAS del
+    extractor, y se sacan del ciclo en vivo con SAD_LIGAS_MENORES.)"""
+    crudo = os.environ.get(nombre, "").strip()
+    if not crudo:
+        return defecto
+    try:
+        return int(crudo)
+    except ValueError:
+        print(f"{nombre}={crudo!r} no es un número: es una CANTIDAD, no una lista de ligas. "
+              f"Sigo con {defecto} (las ligas se configuran en SAD_LIGAS_MENORES / "
+              f"SAD_LIGAS_EXTRA).", file=sys.stderr)
+        return defecto
+
 # Cuotas en juego: 1 request por LIGA con partido nuestro vivo (todos los
 # partidos simultáneos de esa liga vienen en la misma respuesta). Topes para que
 # un ciclo que corre cada minuto no se coma el presupuesto del día:
@@ -80,15 +101,15 @@ TOPE_LIGAS_LIVE = 20
 # mientras el plan diario ni se tocaba: un guard de presupuesto cobrado en
 # cobertura. 12 sigue acotando el peor caso (12 requests/ciclo) y deja de
 # racionar en las noches sudamericanas, que son justo cuando hace falta.
-TOPE_LIGAS = int(os.environ.get("SAD_LIVE_ODDS_LIGAS", "12"))
-TOPE_PAGINAS = max(1, int(os.environ.get("SAD_LIVE_ODDS_PAGINAS", "3")))
+TOPE_LIGAS = _tope("SAD_LIVE_ODDS_LIGAS", 12)
+TOPE_PAGINAS = max(1, _tope("SAD_LIVE_ODDS_PAGINAS", 3))
 # Rescate por partido: /odds/live?fixture= cuando la ronda de la liga no trajo
 # un partido que SÍ se está jugando. La vía por liga es la barata (1 request
 # cubre todos sus simultáneos) y sigue siendo la primera, pero cuando falla
 # —feed vacío, filtro ?league= que no filtra, request caída— dejaba al partido
 # sin curva y a la pantalla culpando a la cobertura de la API. Preguntar por el
 # fixture no depende de nada de eso. 0 = apagado.
-TOPE_FIXTURES = int(os.environ.get("SAD_LIVE_ODDS_FIXTURES", "4"))
+TOPE_FIXTURES = _tope("SAD_LIVE_ODDS_FIXTURES", 4)
 
 # Alineaciones ANTES del saque: la API las publica ~20-60 min antes y el
 # análisis las necesita en cuanto existen (el EFE/DTP y los skills leen la
