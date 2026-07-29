@@ -70,13 +70,17 @@ TOPE_LIGAS_LIVE = 20
 # Cuotas en juego: 1 request por LIGA con partido nuestro vivo (todos los
 # partidos simultáneos de esa liga vienen en la misma respuesta). Topes para que
 # un ciclo que corre cada minuto no se coma el presupuesto del día:
-#   SAD_LIVE_ODDS_LIGAS=6   ligas por ciclo (0 = sin tope). Las que no entran no
-#                           se pierden: el orden es por antigüedad de CONSULTA
-#                           (odds_live_consultas), así que rotan y en el ciclo
-#                           siguiente van primeras. OJO: no por antigüedad de
-#                           captura — ver orden_por_antiguedad.
+#   SAD_LIVE_ODDS_LIGAS=12  ligas por ciclo (0 = sin tope). Las que no entran no
+#                           se pierden: el orden es EN JUEGO primero y luego por
+#                           antigüedad de CONSULTA (odds_live_consultas), así
+#                           que rotan y en el ciclo siguiente van primeras. OJO:
+#                           no por antigüedad de captura — ver orden_por_antiguedad.
 #   SAD_LIVE_ODDS_PAGINAS=3 páginas por liga (~10 fixtures por página).
-TOPE_LIGAS = int(os.environ.get("SAD_LIVE_ODDS_LIGAS", "6"))
+# El tope era 6, y con eso una liga podía esperar varios ciclos su turno
+# mientras el plan diario ni se tocaba: un guard de presupuesto cobrado en
+# cobertura. 12 sigue acotando el peor caso (12 requests/ciclo) y deja de
+# racionar en las noches sudamericanas, que son justo cuando hace falta.
+TOPE_LIGAS = int(os.environ.get("SAD_LIVE_ODDS_LIGAS", "12"))
 TOPE_PAGINAS = max(1, int(os.environ.get("SAD_LIVE_ODDS_PAGINAS", "3")))
 
 # Alineaciones ANTES del saque: la API las publica ~20-60 min antes y el
@@ -179,6 +183,27 @@ def fixtures_marcados_en_juego(con: sqlite3.Connection) -> set[int]:
 
 
 
+def ligas_marcadas_en_juego(con: sqlite3.Connection, ligas: "set[int]") -> set[int]:
+    """Ligas que NUESTRA base ya tiene con un partido en juego (0 requests).
+
+    Se suman a las del feed live para la prioridad de la cola: si el feed tuvo
+    un hipo y no devolvió el partido, la liga seguiría teniendo el partido
+    corriendo — mandarla al fondo por eso sería reabrir la misma puerta que
+    cierra `en_juego`. Un estado EN_JUEGO en fixtures no se pone solo: lo
+    escribió un ciclo anterior desde el propio feed."""
+    if not ligas:
+        return set()
+    marcas = ",".join("?" * len(EN_JUEGO))
+    ligas_marcas = ",".join("?" * len(ligas))
+    return {
+        fila[0]
+        for fila in con.execute(
+            f"SELECT DISTINCT league_id FROM fixtures "
+            f"WHERE league_id IN ({ligas_marcas}) AND status_short IN ({marcas})",
+            (*sorted(ligas), *EN_JUEGO))
+    }
+
+
 def ligas_de_vivos(vivos: list) -> dict[int, set[int]]:
     """{league_id: {fixture_id, …}} de lo que está en juego ahora mismo. Una
     request de /odds/live?league= sirve a TODOS los partidos simultáneos de esa
@@ -192,10 +217,12 @@ def ligas_de_vivos(vivos: list) -> dict[int, set[int]]:
     return por_liga
 
 
-def orden_por_antiguedad(con: sqlite3.Connection, por_liga: dict[int, set[int]]) -> list[int]:
-    """Ligas ordenadas por CONSULTA más vieja primero (las nunca consultadas,
-    delante). Con tope de ligas por ciclo esto reparte el presupuesto en vez de
-    servir siempre a las mismas: ninguna liga se queda sin turno.
+def orden_por_antiguedad(con: sqlite3.Connection, por_liga: dict[int, set[int]],
+                         en_juego: "set[int] | None" = None) -> list[int]:
+    """Ligas ordenadas para el tope por ciclo: primero las que tienen un partido
+    EN JUEGO confirmado, y dentro de cada grupo por CONSULTA más vieja (las
+    nunca consultadas, delante). Así se reparte el presupuesto sin que una liga
+    con partido corriendo pierda el cupo.
 
     La antigüedad es la de odds_live_consultas (cuándo se le PIDIÓ /odds/live a
     esa liga), no la de la última captura en odds_live. Ordenar por captura era
@@ -204,9 +231,17 @@ def orden_por_antiguedad(con: sqlite3.Connection, por_liga: dict[int, set[int]])
     nada, así que quedaba pegada al frente de la cola PARA SIEMPRE — y con el
     tope de ligas por ciclo, varias así acaparaban todos los cupos y a las
     demás ni se les preguntaba. La ficha decía "sin cobertura de cuotas en vivo
-    en esta liga" sin ser verdad: nunca se hizo la request."""
+    en esta liga" sin ser verdad: nunca se hizo la request.
+
+    `en_juego` cierra la puerta hermana (29/07/2026, Gimnasia LP–River Plate en
+    Argentina - Liga Profesional en el minuto 3 sin cuotas): `por_liga` mezcla
+    las ligas del feed live con las que solo tienen un NS/TBD en una ventana de
+    3h45, y la cola las trataba igual. Una liga sin nadie jugando le ganaba el
+    turno a otra con el partido en marcha — y el partido termina, la ventana
+    no. Sin el set (llamada vieja) el orden es el de antes."""
     if not por_liga:
         return []
+    en_juego = en_juego or set()
     marcas = ",".join("?" * len(por_liga))
     ultima = {
         lid: cap
@@ -215,7 +250,7 @@ def orden_por_antiguedad(con: sqlite3.Connection, por_liga: dict[int, set[int]])
             f"WHERE league_id IN ({marcas})",
             tuple(sorted(por_liga)))
     }
-    return sorted(por_liga, key=lambda lid: (ultima.get(lid, ""), lid))
+    return sorted(por_liga, key=lambda lid: (lid not in en_juego, ultima.get(lid, ""), lid))
 
 
 def fixtures_para_xi(con: sqlite3.Connection, ligas: "set[int]") -> list[int]:
@@ -324,7 +359,8 @@ def guardar_odds_live(con: sqlite3.Connection, item: dict, capturado: str) -> in
 
 
 def capturar_odds_live(cliente, con: sqlite3.Connection, por_liga: dict,
-                       ids_objetivo: set, capturado: str) -> tuple[int, set]:
+                       ids_objetivo: set, capturado: str,
+                       en_juego: "set[int] | None" = None) -> tuple[int, set]:
     """Cuotas en juego de nuestros partidos vivos → odds_live.
 
     UNA request (o dos, si pagina) por LIGA con partido nuestro en juego, no
@@ -337,11 +373,14 @@ def capturar_odds_live(cliente, con: sqlite3.Connection, por_liga: dict,
     candidatos locales. Si ese feed se deja un partido (recorte del filtro por
     ligas, hipo de la API, estado que aún no hemos volteado), sus cuotas se
     piden igual — la curva en vivo no puede depender de una segunda llamada.
+
+    `en_juego` (ligas con partido confirmado en el feed live) manda en el orden:
+    con tope por ciclo, primero se sirve a quien tiene el partido corriendo.
     Devuelve (valores_guardados, fixtures_con_cuotas).
     """
     if not por_liga or not cliente.quedan():
         return 0, set()
-    orden = orden_por_antiguedad(con, por_liga)
+    orden = orden_por_antiguedad(con, por_liga, en_juego)
     atendidas = orden if TOPE_LIGAS <= 0 else orden[:TOPE_LIGAS]
     aplazadas = orden[len(atendidas):]
     n_odds = 0
@@ -384,6 +423,13 @@ def capturar_odds_live(cliente, con: sqlite3.Connection, por_liga: dict,
               f"cerrado por la casa): {sorted(sin_cobertura)}")
     if aplazadas:
         print(f"  ligas aplazadas al próximo ciclo (tope {TOPE_LIGAS}): {sorted(set(aplazadas))}")
+        # aplazar una liga SIN partido en juego es gratis; aplazar una CON
+        # partido corriendo es perder curva que no vuelve: se avisa aparte
+        vivas = sorted(set(aplazadas) & (en_juego or set()))
+        if vivas:
+            print(f"  ATENCIÓN: {len(vivas)} de ellas tienen partido EN JUEGO {vivas} — "
+                  f"sube SAD_LIVE_ODDS_LIGAS (0 = sin tope) o baja las que no te interesen "
+                  f"a SAD_LIGAS_MENORES")
     sin_feed = set(ids_objetivo) - con_feed
     if sin_feed:
         print(f"  fixtures sin cuotas en esta captura: {sorted(sin_feed)}")
@@ -449,12 +495,18 @@ def main() -> int:
           f"candidatos locales: {len(candidatos)})")
 
     # universo de cuotas = feed live + nuestros candidatos: si el feed se dejó
-    # un partido, sus cuotas se piden igual (una request por liga las cubre)
+    # un partido, sus cuotas se piden igual (una request por liga las cubre).
+    # Las del feed son las que TIENEN partido corriendo: con tope por ciclo van
+    # primeras (las locales pueden ser solo un NS dentro de la ventana).
     por_liga = ligas_de_vivos(vivos)
+    # ANTES de sumarle los candidatos locales (que pueden ser un simple NS en
+    # ventana), más las que nuestra base ya tiene jugando por si el feed falló
+    en_juego_ligas = set(por_liga) | ligas_marcadas_en_juego(con, vivo)
     for lid, fids in locales.items():
         por_liga.setdefault(lid, set()).update(fids)
     n_odds, _ = capturar_odds_live(con=con, cliente=cliente, por_liga=por_liga,
-                                   ids_objetivo=candidatos | ids_vivos, capturado=capturado)
+                                   ids_objetivo=candidatos | ids_vivos, capturado=capturado,
+                                   en_juego=en_juego_ligas)
 
     # cerrar los que se cayeron del feed live (terminaron): /fixtures?ids= trae
     # su estado y marcador finales sin esperar a la corrida diaria (lotes de 20)

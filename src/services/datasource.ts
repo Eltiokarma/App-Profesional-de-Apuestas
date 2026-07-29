@@ -509,7 +509,7 @@ class MockDataSource implements SadDataSource {
     const estado = m.status === 'live' ? 'en_vivo' : m.status === 'fin' ? 'finalizado' : 'programado'
     const p = (m.score || '0 - 0').split('-').map((x) => parseInt(x.trim()) || 0)
     if (estado !== 'en_vivo') {
-      return { fixtureId, estado, minuto: null, golesLocal: p[0] ?? null, golesVisitante: p[1] ?? null, cuotas: [], serie: [], eventos: [], actualizadoEn: null }
+      return { fixtureId, estado, minuto: null, golesLocal: p[0] ?? null, golesVisitante: p[1] ?? null, cuotas: [], serie: [], eventos: [], actualizadoEn: null, coberturaLive: 'sin_consultar', coberturaConsultadaEn: null }
     }
     const minuto = parseInt(m.min) || 63
     const r = rng(m.id + '|live')
@@ -528,7 +528,7 @@ class MockDataSource implements SadDataSource {
       { minuto: 23, tipo: 'amarilla', equipoId: null, jugador: 'J. Demo', detalle: 'Yellow Card' },
       { minuto: 49, tipo: 'gol', equipoId: null, jugador: 'L. Demo', detalle: 'Normal Goal' },
     ]
-    return { fixtureId, estado, minuto, golesLocal: p[0] ?? null, golesVisitante: p[1] ?? null, cuotas, serie, eventos, actualizadoEn: MOCK_NOW }
+    return { fixtureId, estado, minuto, golesLocal: p[0] ?? null, golesVisitante: p[1] ?? null, cuotas, serie, eventos, actualizadoEn: MOCK_NOW, coberturaLive: 'con_datos', coberturaConsultadaEn: MOCK_NOW }
   }
 
   async cuotasCasas(fixtureId: number): Promise<CuotaCasaDTO[]> {

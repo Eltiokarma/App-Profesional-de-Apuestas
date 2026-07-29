@@ -1187,7 +1187,7 @@ components:
         resultado: { type: object, description: 'JSON del esquema EFE_COMPARATIVO / DTP / MATRIZ_V2 (backend/analisis/esquemas.py)', additionalProperties: true }
     FixtureLive:
       type: object
-      required: [fixtureId, estado, minuto, golesLocal, golesVisitante, cuotas, serie, eventos, actualizadoEn]
+      required: [fixtureId, estado, minuto, golesLocal, golesVisitante, cuotas, serie, eventos, actualizadoEn, coberturaLive, coberturaConsultadaEn]
       properties:
         fixtureId: { type: integer }
         estado: { $ref: '#/components/schemas/EstadoFixture' }
@@ -1207,6 +1207,16 @@ components:
           description: Goles y tarjetas del partido, asc por minuto (de la ingesta en vivo/cierre)
           items: { $ref: '#/components/schemas/EventoLive' }
         actualizadoEn: { type: string, format: date-time, nullable: true, description: 'última captura live; null si nunca hubo' }
+        coberturaLive:
+          type: string
+          enum: [con_datos, sin_datos, sin_consultar]
+          description: >
+            Por qué `cuotas` puede venir vacía, leído de odds_live_consultas para la liga de
+            este fixture. `sin_consultar`: el ciclo en vivo NUNCA le pidió /odds/live a esta
+            liga (no le tocó turno con el tope por ciclo, o la ingesta está apagada) — no es
+            falta de cobertura. `sin_datos`: se le pidió y la API no devolvió nada (falta de
+            cobertura real). `con_datos`: la última consulta trajo cuotas de esa liga.
+        coberturaConsultadaEn: { type: string, format: date-time, nullable: true, description: 'cuándo se consultó /odds/live de esta liga por última vez; null si nunca' }
     CuotaLive:
       type: object
       required: [mercado, seleccion, cuota, suspendida]

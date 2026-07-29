@@ -20,6 +20,7 @@ from backend.ingesta.en_vivo import (
     capturar_xi,
     fixtures_para_xi,
     ligas_de_vivos,
+    ligas_marcadas_en_juego,
     orden_por_antiguedad,
 )
 from backend.ingesta.extractor import ligas_vivo
@@ -208,6 +209,51 @@ def main():
     check("odds_live_consultas registra la consulta vacía (con_datos=0)",
           fila is not None and fila[0] == 0, fila)
 
+    # EL CASO ARGENTINA (29/07/2026, Gimnasia LP–River Plate en el minuto 3 sin
+    # cuotas): `por_liga` mezcla las ligas del feed live con las que solo
+    # tienen un NS/TBD dentro de una ventana de 3h45, y la cola las trataba
+    # igual. Con tope por ciclo, una liga sin nadie jugando le ganaba el turno
+    # a otra con el partido corriendo — y el partido se termina, la ventana no.
+    con = db()
+    con.executemany(
+        "INSERT INTO odds_live_consultas (league_id, consultada_en, con_datos) VALUES (?,?,?)",
+        [(PERU, "2026-07-29 23:59:00.000", 1)],  # Perú, la única en juego, recién consultada
+    )
+    con.commit()
+    mezcla = {PERU: {MELGAR_CRISTAL}, PREMIER: {OTRO_PAIS}}  # PREMIER solo tiene un NS en ventana
+    check("con partido EN JUEGO va primera aunque la hayan consultado recién",
+          orden_por_antiguedad(con, mezcla, {PERU}) == [PERU, PREMIER],
+          orden_por_antiguedad(con, mezcla, {PERU}))
+    check("sin el set de en juego, el orden es el de antes (llamada vieja)",
+          orden_por_antiguedad(con, mezcla) == [PREMIER, PERU],
+          orden_por_antiguedad(con, mezcla))
+
+    con = db()
+    cliente = ClienteFalso(feed)
+    en_vivo_mod.TOPE_LIGAS = 1
+    try:
+        _, cf = capturar_odds_live(cliente, con, mezcla, ids_vivos,
+                                   "2026-07-29 23:59:30.000", en_juego={PERU})
+    finally:
+        en_vivo_mod.TOPE_LIGAS = tope_original
+    check("con un solo cupo, el cupo es del partido que se está jugando",
+          MELGAR_CRISTAL in cf and OTRO_PAIS not in cf
+          and [p[1] for p in cliente.pedidos] == [PERU],
+          (cf, cliente.pedidos))
+
+    # y si el feed live tuvo un hipo, la liga sigue contando como en juego:
+    # el estado EN_JUEGO de nuestra base no se pone solo, lo escribió el feed
+    con = db(con_fixtures=True)
+    con.executemany(
+        "INSERT INTO fixtures (id, date, status_short, league_id) VALUES (?,?,?,?)",
+        [(MELGAR_CRISTAL, hace(20), "1H", PERU),   # jugando según nuestra base
+         (OTRO_PAIS, hace(5), "NS", PREMIER)],     # solo un NS en ventana
+    )
+    con.commit()
+    check("una liga marcada en juego cuenta aunque el feed no la devuelva",
+          ligas_marcadas_en_juego(con, {PERU, PREMIER}) == {PERU},
+          ligas_marcadas_en_juego(con, {PERU, PREMIER}))
+
     # presupuesto agotado a media lista: no se cae, deja el resto al próximo ciclo
     con = db()
     cliente = ClienteFalso(feed, presupuesto=1)
@@ -242,7 +288,7 @@ def main():
     check("agrupa candidatos por liga", cand[PREMIER] == {6}, cand)
 
     # /fixtures?live=: con la lista real de ligas hay que ir por live=all
-    check("con 37 ligas nuestras se pide live=all (el filtro por ids no da)",
+    check(f"con {len(ligas_vivo())} ligas nuestras se pide live=all (el filtro por ids no da)",
           len(ligas_vivo()) > TOPE_LIGAS_LIVE, len(ligas_vivo()))
 
     # --- alineaciones prepartido: la ventana del XI y su captura -------------

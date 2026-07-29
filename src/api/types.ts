@@ -520,6 +520,17 @@ export interface FixtureLiveDTO {
   eventos: EventoLiveDTO[]
   /** null si la liga no tiene cobertura de odds live o la ingesta está apagada. */
   actualizadoEn: string | null
+  /**
+   * Por qué `cuotas` puede venir vacía (odds_live_consultas de esta liga).
+   * `sin_consultar`: el ciclo NUNCA le pidió /odds/live a la liga — no le tocó
+   * turno con el tope por ciclo, o la ingesta está apagada. NO es falta de
+   * cobertura, y decirlo así en pantalla era mentir.
+   * `sin_datos`: se le pidió y la API no devolvió nada (cobertura real).
+   * `con_datos`: la última consulta de la liga sí trajo cuotas.
+   */
+  coberturaLive: 'con_datos' | 'sin_datos' | 'sin_consultar'
+  /** Última consulta de /odds/live de esta liga; null si nunca. */
+  coberturaConsultadaEn: string | null
 }
 
 /** Cuota de UNA casa para una selección (última foto). mejor=true: la más alta. */
