@@ -100,14 +100,35 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   (129)** se marcó como menor: era la única 2ª división sin marcar. Si el tope
   vuelve a quedar corto, el log lo grita: `ATENCIÓN: N de ellas tienen partido
   EN JUEGO`.
+- **Por qué `con_datos` no bastaba** (29/07/2026, Gimnasia LP–River Plate y
+  Mirassol–Remo: la pantalla decía *"la API no cubre cuotas en vivo de esta
+  liga"* en ligas con cobertura de sobra). El booleano se ponía a 0 en **cuatro
+  situaciones distintas** y la UI las presentaba como una: el feed vino vacío;
+  el feed trajo partidos pero ninguno nuestro (el filtro `?league=` no
+  devolvió lo pedido); la request se cayó (red, HTTP, `errors` de la API,
+  presupuesto agotado — `get()` devuelve `None` en todas y `paginado()` lo
+  convierte en `[]`, idéntico a un feed vacío); o el turno se lo llevó otra
+  liga. Ahora `odds_live_consultas` guarda `estado` (`ok` · `vacia` · `ajena` ·
+  `fallo`) más `items`/`nuestros`/`ajenos`, y `Cliente.fallos` es lo que
+  distingue una caída de una respuesta legítimamente vacía. **Solo `vacia` se
+  acerca a "falta de cobertura", y ni ese lo prueba.**
+- **Rescate por fixture** (`SAD_LIVE_ODDS_FIXTURES`, 4 por ciclo; 0 = apagado):
+  la vía por liga sigue siendo la primera porque es la barata — 1 request cubre
+  todos los simultáneos — pero cuando no trae un partido que SÍ se está
+  jugando, se le pregunta directo con `/odds/live?fixture=`. Eso no depende de
+  que el filtro por liga se porte bien, y es lo que salva la curva en las tres
+  causas de fallo de arriba.
 - **Por qué la pantalla ya no miente.** Los tres bugs anteriores compartían
   síntoma — "sin cobertura de cuotas en vivo en esta liga" — porque la UI solo
   sabía que este fixture no tenía filas en `odds_live`, y de ahí deducía falta
   de cobertura. `GET /fixtures/{id}/live` ahora devuelve `coberturaLive`
-  (`con_datos` · `sin_datos` · `sin_consultar`) y `coberturaConsultadaEn`,
-  leídos de `odds_live_consultas` para la liga del fixture, y la sección Cuotas
-  dice lo que de verdad pasa: *"aún sin turno del ciclo en vivo · no es falta
-  de cobertura"* vs *"la API no cubre cuotas en vivo de esta liga"*.
+  (`con_datos` · `sin_datos` · `feed_ajeno` · `fallo` · `sin_consultar`) y
+  `coberturaConsultadaEn`, leídos de `odds_live_consultas` para la liga del
+  fixture, y la sección Cuotas dice **solo lo observado**: *"aún sin turno del
+  ciclo en vivo"*, *"la última consulta de esta liga vino vacía"*, *"el feed de
+  la liga no trajo este partido"*, *"la última consulta de cuotas falló"*.
+  Ninguna de esas frases concluye nada sobre la cobertura de la API — esa
+  conclusión es la que estuvo mal tres veces seguidas.
 - **Las otras tres puertas** que dejaban partidos sin curva (26/07/2026, UTC
   Cajamarca–UCV Moquegua):
   1. **`TBD` no era candidato.** La ventana solo aceptaba `NS`, pero en esta DB

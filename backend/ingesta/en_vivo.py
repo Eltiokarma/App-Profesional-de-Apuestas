@@ -82,6 +82,13 @@ TOPE_LIGAS_LIVE = 20
 # racionar en las noches sudamericanas, que son justo cuando hace falta.
 TOPE_LIGAS = int(os.environ.get("SAD_LIVE_ODDS_LIGAS", "12"))
 TOPE_PAGINAS = max(1, int(os.environ.get("SAD_LIVE_ODDS_PAGINAS", "3")))
+# Rescate por partido: /odds/live?fixture= cuando la ronda de la liga no trajo
+# un partido que SÍ se está jugando. La vía por liga es la barata (1 request
+# cubre todos sus simultáneos) y sigue siendo la primera, pero cuando falla
+# —feed vacío, filtro ?league= que no filtra, request caída— dejaba al partido
+# sin curva y a la pantalla culpando a la cobertura de la API. Preguntar por el
+# fixture no depende de nada de eso. 0 = apagado.
+TOPE_FIXTURES = int(os.environ.get("SAD_LIVE_ODDS_FIXTURES", "4"))
 
 # Alineaciones ANTES del saque: la API las publica ~20-60 min antes y el
 # análisis las necesita en cuanto existen (el EFE/DTP y los skills leen la
@@ -118,10 +125,19 @@ CREATE TABLE IF NOT EXISTS odds_live (
     captured_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_oddslive_fixture ON odds_live(fixture_id, captured_at);
+-- Una fila por liga con la ÚLTIMA ronda de /odds/live. `con_datos` era un
+-- booleano que mezclaba cuatro cosas distintas — feed vacío, feed que no traía
+-- nuestro partido, request fallida y presupuesto agotado — y la pantalla
+-- acabó afirmando "la API no cubre esta liga" en los cuatro casos. `estado`
+-- las separa; `items`/`nuestros`/`ajenos` dejan la evidencia cruda.
 CREATE TABLE IF NOT EXISTS odds_live_consultas (
     league_id INTEGER PRIMARY KEY,
     consultada_en TEXT NOT NULL,
-    con_datos INTEGER NOT NULL DEFAULT 0
+    con_datos INTEGER NOT NULL DEFAULT 0,
+    estado TEXT,      -- ok | vacia | ajena | fallo
+    items INTEGER,    -- cuántos items devolvió el feed de la liga
+    nuestros INTEGER, -- cuántos de esos eran partidos que seguimos
+    ajenos INTEGER    -- cuántos venían de OTRA liga (el filtro no filtró)
 );
 CREATE TABLE IF NOT EXISTS xi_intentos (
     fixture_id INTEGER PRIMARY KEY,
@@ -129,6 +145,17 @@ CREATE TABLE IF NOT EXISTS xi_intentos (
     con_datos INTEGER NOT NULL DEFAULT 0
 );
 """
+
+
+def preparar_consultas(con: sqlite3.Connection) -> None:
+    """Columnas nuevas de odds_live_consultas en DBs que ya existen (la de
+    producción se creó con solo `con_datos`)."""
+    existentes = {f[1] for f in con.execute("PRAGMA table_info(odds_live_consultas)")}
+    for col, tipo in (("estado", "TEXT"), ("items", "INTEGER"),
+                      ("nuestros", "INTEGER"), ("ajenos", "INTEGER")):
+        if col not in existentes:
+            con.execute(f"ALTER TABLE odds_live_consultas ADD COLUMN {col} {tipo}")
+    con.commit()
 
 
 def candidatos_por_liga(con: sqlite3.Connection, ligas: "set[int]") -> dict[int, set[int]]:
@@ -360,7 +387,8 @@ def guardar_odds_live(con: sqlite3.Connection, item: dict, capturado: str) -> in
 
 def capturar_odds_live(cliente, con: sqlite3.Connection, por_liga: dict,
                        ids_objetivo: set, capturado: str,
-                       en_juego: "set[int] | None" = None) -> tuple[int, set]:
+                       en_juego: "set[int] | None" = None,
+                       ids_en_juego: "set[int] | None" = None) -> tuple[int, set]:
     """Cuotas en juego de nuestros partidos vivos → odds_live.
 
     UNA request (o dos, si pagina) por LIGA con partido nuestro en juego, no
@@ -376,6 +404,9 @@ def capturar_odds_live(cliente, con: sqlite3.Connection, por_liga: dict,
 
     `en_juego` (ligas con partido confirmado en el feed live) manda en el orden:
     con tope por ciclo, primero se sirve a quien tiene el partido corriendo.
+
+    `ids_en_juego` (FIXTURES confirmados en juego) son los que, si su ronda de
+    liga no los trajo, se rescatan uno a uno con /odds/live?fixture=.
     Devuelve (valores_guardados, fixtures_con_cuotas).
     """
     if not por_liga or not cliente.quedan():
@@ -392,25 +423,72 @@ def capturar_odds_live(cliente, con: sqlite3.Connection, por_liga: dict,
             aplazadas.extend(atendidas[atendidas.index(lid):])
             print("  presupuesto agotado: el resto de ligas espera al próximo ciclo")
             break
+        fallos_antes = cliente.fallos
         filas = cliente.paginado("odds/live", {"league": lid}, tope_paginas=TOPE_PAGINAS)
         consultadas.append(lid)
         antes = len(con_feed)
+        ajenos = 0
         for item in filas:
             fid = (item.get("fixture") or {}).get("id")
+            if (item.get("league") or {}).get("id") not in (None, lid):
+                ajenos += 1  # el filtro ?league= no filtró: feed de otra liga
             if fid in ids_objetivo:
                 n_odds += guardar_odds_live(con, item, capturado)
                 con_feed.add(fid)
-        if len(con_feed) == antes:
+        nuestros = len(con_feed) - antes
+        # POR QUÉ no hubo cuotas: cuatro causas que el booleano viejo mezclaba
+        # en una sola, y la pantalla acababa culpando a la cobertura de la API
+        if cliente.fallos > fallos_antes:
+            estado = "fallo"      # red, HTTP, errors de la API o presupuesto
+        elif not filas:
+            estado = "vacia"      # la liga existe y el feed vino sin nada
+        elif not nuestros:
+            estado = "ajena"      # trajo partidos, pero ninguno de los nuestros
+        else:
+            estado = "ok"
+        if estado != "ok":
             sin_cobertura.append(lid)
+        if estado == "ajena":
+            ligas_feed = sorted({(it.get("league") or {}).get("id") for it in filas} - {None})
+            print(f"  liga {lid}: el feed trajo {len(filas)} partidos pero ninguno nuestro "
+                  f"(ligas en la respuesta: {ligas_feed[:6]}) — si ahí no está {lid}, el "
+                  f"filtro ?league= no está filtrando")
+        elif estado == "fallo":
+            print(f"  liga {lid}: la consulta FALLÓ (no es falta de cobertura); reintenta sola")
         # la rotación va por ESTA marca, no por las capturas: una liga sin
         # cobertura también gastó su turno y pasa al final de la cola
         con.execute(
-            "INSERT INTO odds_live_consultas (league_id, consultada_en, con_datos) "
-            "VALUES (?, ?, ?) ON CONFLICT(league_id) DO UPDATE SET "
-            "consultada_en=excluded.consultada_en, con_datos=excluded.con_datos",
-            (lid, capturado, 0 if len(con_feed) == antes else 1),
+            "INSERT INTO odds_live_consultas (league_id, consultada_en, con_datos, estado, "
+            "items, nuestros, ajenos) VALUES (?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(league_id) DO UPDATE SET consultada_en=excluded.consultada_en, "
+            "con_datos=excluded.con_datos, estado=excluded.estado, items=excluded.items, "
+            "nuestros=excluded.nuestros, ajenos=excluded.ajenos",
+            (lid, capturado, 1 if estado == "ok" else 0, estado, len(filas), nuestros, ajenos),
         )
     con.commit()
+
+    # RESCATE POR PARTIDO: lo de arriba es la vía barata (1 request cubre toda
+    # la liga), pero cuando falla nos deja sin curva de un partido que SÍ se
+    # está jugando. /odds/live?fixture= pregunta por él directamente, sin
+    # depender de que el filtro por liga se porte bien. Solo para partidos
+    # confirmados en juego que la ronda de su liga no trajo, y con tope propio.
+    faltan = sorted((ids_en_juego or set()) - con_feed)
+    if faltan and TOPE_FIXTURES > 0:
+        for fid in faltan[:TOPE_FIXTURES]:
+            if not cliente.quedan():
+                break
+            filas = cliente.paginado("odds/live", {"fixture": fid}, tope_paginas=1)
+            for item in filas:
+                if (item.get("fixture") or {}).get("id") == fid:
+                    n_odds += guardar_odds_live(con, item, capturado)
+                    con_feed.add(fid)
+        rescatados = sorted(set(faltan[:TOPE_FIXTURES]) & con_feed)
+        print(f"  rescate por fixture: {len(rescatados)} de {len(faltan[:TOPE_FIXTURES])} "
+              f"pedidos trajeron cuotas {rescatados}")
+        if len(faltan) > TOPE_FIXTURES:
+            print(f"  (quedaron {len(faltan) - TOPE_FIXTURES} para el próximo ciclo; "
+                  f"tope SAD_LIVE_ODDS_FIXTURES={TOPE_FIXTURES})")
+        con.commit()
     # evidencia en logs: distinguir "no pedimos" de "la casa cerró el mercado"
     susp = con.execute(
         "SELECT COUNT(*) FROM odds_live WHERE captured_at=? AND suspendida=1", (capturado,)
@@ -448,6 +526,7 @@ def main() -> int:
     con.execute("PRAGMA busy_timeout=15000")
     con.execute("PRAGMA journal_mode=WAL")  # persistente; requisito de la fase 3
     con.executescript(DDL_ODDS_LIVE)
+    preparar_consultas(con)  # columnas nuevas en DBs ya creadas
     preparar_ficha(con)  # fixture_eventos y sus columnas nuevas
 
     # solo las ligas importantes reciben el ciclo en vivo (las menores —Liga 2,
@@ -504,9 +583,12 @@ def main() -> int:
     en_juego_ligas = set(por_liga) | ligas_marcadas_en_juego(con, vivo)
     for lid, fids in locales.items():
         por_liga.setdefault(lid, set()).update(fids)
+    # los fixtures que de verdad se están jugando (feed + lo que nuestra base
+    # ya tiene marcado): si su ronda de liga no los trae, se rescatan uno a uno
+    ids_en_juego = ids_vivos | (fixtures_marcados_en_juego(con) & candidatos)
     n_odds, _ = capturar_odds_live(con=con, cliente=cliente, por_liga=por_liga,
                                    ids_objetivo=candidatos | ids_vivos, capturado=capturado,
-                                   en_juego=en_juego_ligas)
+                                   en_juego=en_juego_ligas, ids_en_juego=ids_en_juego)
 
     # cerrar los que se cayeron del feed live (terminaron): /fixtures?ids= trae
     # su estado y marcador finales sin esperar a la corrida diaria (lotes de 20)

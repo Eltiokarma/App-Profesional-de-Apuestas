@@ -22,6 +22,7 @@ from backend.ingesta.en_vivo import (
     ligas_de_vivos,
     ligas_marcadas_en_juego,
     orden_por_antiguedad,
+    preparar_consultas,
 )
 from backend.ingesta.extractor import ligas_vivo
 from backend.ingesta.ficha_partido import preparar_tablas as preparar_ficha
@@ -40,9 +41,10 @@ PERU, PREMIER = 281, 39
 MELGAR_CRISTAL, OTRO_PERU, OTRO_PAIS = 900001, 900002, 900003
 
 
-def item_odds(fid: int, minuto: int = 43) -> dict:
+def item_odds(fid: int, minuto: int = 43, liga: int | None = None) -> dict:
     return {
         "fixture": {"id": fid, "status": {"elapsed": minuto}},
+        **({"league": {"id": liga}} if liga else {}),
         "odds": [{"id": 59, "name": "Fulltime Result", "values": [
             {"value": "Home", "odd": "1.69"},
             {"value": "Draw", "odd": "3.75"},
@@ -57,10 +59,14 @@ class ClienteFalso:
 
     PAGINA = 2
 
-    def __init__(self, feed: dict, presupuesto: int = 99):
+    def __init__(self, feed: dict, presupuesto: int = 99, caen: "set | None" = None,
+                 por_fixture: "dict | None" = None):
         self.feed = feed              # {league_id | None: [items]}
         self.presupuesto = presupuesto
+        self.caen = caen or set()     # ligas cuya request FALLA (red/HTTP/errors)
+        self.por_fixture = por_fixture or {}   # {fixture_id: [items]} de ?fixture=
         self.usadas = 0
+        self.fallos = 0               # el contador que distingue fallo de feed vacío
         self.pedidos: list = []
 
     def quedan(self, n: int = 1) -> bool:
@@ -72,9 +78,15 @@ class ClienteFalso:
         self.usadas += 1
         self.pedidos.append((endpoint, params.get("league"), params.get("page", 1)))
         liga = params.get("league")
-        items = self.feed.get(liga, []) if liga else [
-            it for lista in self.feed.values() for it in lista
-        ]
+        if liga in self.caen:
+            self.fallos += 1          # como el Cliente real ante red/HTTP/errors
+            return None
+        if params.get("fixture") is not None:
+            items = self.por_fixture.get(params["fixture"], [])
+        elif liga:
+            items = self.feed.get(liga, [])
+        else:
+            items = [it for lista in self.feed.values() for it in lista]
         pagina = int(params.get("page", 1))
         total = max(1, -(-len(items) // self.PAGINA))
         trozo = items[(pagina - 1) * self.PAGINA: pagina * self.PAGINA]
@@ -240,6 +252,76 @@ def main():
           MELGAR_CRISTAL in cf and OTRO_PAIS not in cf
           and [p[1] for p in cliente.pedidos] == [PERU],
           (cf, cliente.pedidos))
+
+    # POR QUÉ no hubo cuotas: el booleano con_datos mezclaba cuatro causas en
+    # una, y la pantalla acabó diciendo "la API no cubre esta liga" en las
+    # cuatro (Gimnasia LP-River y Mirassol-Remo, 29/07/2026, con cobertura
+    # real). `estado` las separa; solo `vacia` se acerca a falta de cobertura.
+    def estado_de_liga(con, lid):
+        return con.execute(
+            "SELECT estado, items, nuestros, ajenos FROM odds_live_consultas WHERE league_id=?",
+            (lid,)).fetchone()
+
+    con = db()
+    preparar_consultas(con)
+    cliente = ClienteFalso(feed)
+    capturar_odds_live(cliente, con, por_liga, ids_vivos, "2026-07-29 23:00:00.000")
+    check("liga que devuelve nuestros partidos → estado ok",
+          estado_de_liga(con, PERU)[0] == "ok", estado_de_liga(con, PERU))
+
+    con = db()
+    preparar_consultas(con)
+    cliente = ClienteFalso({PERU: [], PREMIER: feed[PREMIER]})
+    capturar_odds_live(cliente, con, por_liga, ids_vivos, "2026-07-29 23:01:00.000")
+    check("feed realmente vacío → estado vacia (lo único parecido a sin cobertura)",
+          estado_de_liga(con, PERU) == ("vacia", 0, 0, 0), estado_de_liga(con, PERU))
+
+    con = db()
+    preparar_consultas(con)
+    # la API devuelve partidos, pero de OTRA liga: el filtro ?league= no filtró
+    cliente = ClienteFalso({PERU: [item_odds(700001, liga=61), item_odds(700002, liga=61)],
+                            PREMIER: feed[PREMIER]})
+    capturar_odds_live(cliente, con, por_liga, ids_vivos, "2026-07-29 23:02:00.000")
+    check("feed con partidos ajenos → estado ajena, con los ajenos contados",
+          estado_de_liga(con, PERU) == ("ajena", 2, 0, 2), estado_de_liga(con, PERU))
+
+    con = db()
+    preparar_consultas(con)
+    cliente = ClienteFalso(feed, caen={PERU})
+    capturar_odds_live(cliente, con, por_liga, ids_vivos, "2026-07-29 23:03:00.000")
+    check("request caída → estado fallo (NO 'la API no cubre esta liga')",
+          estado_de_liga(con, PERU)[0] == "fallo", estado_de_liga(con, PERU))
+    check("una caída no contamina a las demás ligas",
+          estado_de_liga(con, PREMIER)[0] == "ok", estado_de_liga(con, PREMIER))
+
+    # RESCATE POR FIXTURE: si la ronda por liga no trajo un partido que SÍ se
+    # está jugando, se le pregunta directamente. Es lo que salva la curva
+    # cuando el feed por liga falla por cualquiera de las tres causas de arriba.
+    con = db()
+    preparar_consultas(con)
+    cliente = ClienteFalso({PERU: [], PREMIER: []},
+                           por_fixture={MELGAR_CRISTAL: [item_odds(MELGAR_CRISTAL)]})
+    n, con_feed = capturar_odds_live(cliente, con, por_liga, ids_vivos,
+                                     "2026-07-29 23:04:00.000",
+                                     ids_en_juego={MELGAR_CRISTAL, OTRO_PAIS})
+    check("con el feed por liga vacío, el rescate por fixture trae la cuota igual",
+          MELGAR_CRISTAL in con_feed and n == 3, (con_feed, n))
+    check("el rescate pregunta por fixture, no por liga",
+          any(p[0] == "odds/live" and p[1] is None for p in cliente.pedidos), cliente.pedidos)
+
+    con = db()
+    preparar_consultas(con)
+    cliente = ClienteFalso(feed)
+    tope_fx = en_vivo_mod.TOPE_FIXTURES
+    en_vivo_mod.TOPE_FIXTURES = 0
+    try:
+        _, con_feed = capturar_odds_live(cliente, con, {PERU: {MELGAR_CRISTAL}}, ids_vivos,
+                                         "2026-07-29 23:05:00.000",
+                                         ids_en_juego={MELGAR_CRISTAL})
+    finally:
+        en_vivo_mod.TOPE_FIXTURES = tope_fx
+    check("con SAD_LIVE_ODDS_FIXTURES=0 el rescate queda apagado",
+          all(p[1] is not None for p in cliente.pedidos), cliente.pedidos)
 
     # y si el feed live tuvo un hipo, la liga sigue contando como en juego:
     # el estado EN_JUEGO de nuestra base no se pone solo, lo escribió el feed

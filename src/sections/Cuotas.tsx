@@ -21,6 +21,20 @@ interface Props {
   live: FixtureLiveDTO | null
 }
 
+/**
+ * Por qué el partido está en juego y no hay cuotas. Cada texto dice SOLO lo
+ * que la última ronda de /odds/live de esa liga permite afirmar: culpar a la
+ * cobertura de la API en los cuatro casos mandaba a buscar el fallo donde no
+ * estaba (Gimnasia LP-River y Mirassol-Remo, 29/07/2026, con cobertura real).
+ */
+const MOTIVO_SIN_CUOTAS: Record<FixtureLiveDTO['coberturaLive'], string> = {
+  sin_consultar: 'aún sin turno del ciclo en vivo',
+  sin_datos: 'la última consulta de esta liga vino vacía',
+  feed_ajeno: 'el feed de la liga no trajo este partido',
+  fallo: 'la última consulta de cuotas falló · reintenta sola',
+  con_datos: 'liga con cuotas · aún sin las de este partido',
+}
+
 export function Cuotas({ store, m, isMobile, live }: Props) {
   const { s } = store
   // Regla de datos: en http (producción) NO se pinta nada inventado — sin
@@ -274,14 +288,10 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
                     ? 'cuotas en juego · al minuto'
                     : `cuotas en juego · última captura hace ${edadMin} min`
                 })()
-              // sin captura de ESTE partido: el porqué lo dice la liga, no el
-              // fixture. Decir "sin cobertura" cuando nunca se preguntó era
-              // mentira, y mandaba a buscar el fallo donde no estaba.
-              : live.coberturaLive === 'sin_consultar'
-                ? 'aún sin turno del ciclo en vivo · no es falta de cobertura'
-                : live.coberturaLive === 'sin_datos'
-                  ? 'la API no cubre cuotas en vivo de esta liga'
-                  : 'liga con cobertura · aún sin cuotas de este partido'}
+              // sin captura de ESTE partido: el porqué lo dice la última ronda
+              // de la liga. Cada rama afirma SOLO lo observado — "la API no
+              // cubre esta liga" es una conclusión que casi nunca se sostiene.
+              : MOTIVO_SIN_CUOTAS[live.coberturaLive] ?? 'aún sin cuotas de este partido'}
           </span>
         </div>
       )}

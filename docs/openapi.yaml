@@ -1209,13 +1209,17 @@ components:
         actualizadoEn: { type: string, format: date-time, nullable: true, description: 'última captura live; null si nunca hubo' }
         coberturaLive:
           type: string
-          enum: [con_datos, sin_datos, sin_consultar]
+          enum: [con_datos, sin_datos, feed_ajeno, fallo, sin_consultar]
           description: >
             Por qué `cuotas` puede venir vacía, leído de odds_live_consultas para la liga de
-            este fixture. `sin_consultar`: el ciclo en vivo NUNCA le pidió /odds/live a esta
-            liga (no le tocó turno con el tope por ciclo, o la ingesta está apagada) — no es
-            falta de cobertura. `sin_datos`: se le pidió y la API no devolvió nada (falta de
-            cobertura real). `con_datos`: la última consulta trajo cuotas de esa liga.
+            este fixture. `sin_consultar`: el ciclo NUNCA le pidió /odds/live a esta liga (no
+            le tocó turno con el tope por ciclo, o la ingesta está apagada). `sin_datos`: se
+            le pidió y el feed vino vacío. `feed_ajeno`: el feed trajo partidos pero ninguno
+            nuestro — el filtro ?league= no devolvió lo pedido, y NO es falta de cobertura.
+            `fallo`: la consulta se cayó (red, HTTP, errors de la API o presupuesto agotado).
+            `con_datos`: la última consulta trajo cuotas de esa liga. Ninguno de los cuatro
+            primeros permite afirmar que la API no cubra la liga: solo `sin_datos` se acerca,
+            y aun así puede ser un feed momentáneamente vacío.
         coberturaConsultadaEn: { type: string, format: date-time, nullable: true, description: 'cuándo se consultó /odds/live de esta liga por última vez; null si nunca' }
     CuotaLive:
       type: object

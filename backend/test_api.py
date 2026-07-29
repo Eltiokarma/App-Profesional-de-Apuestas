@@ -465,8 +465,8 @@ def main():
     # liga" siempre, y en el caso de "no le tocó turno" eso era mentira
     ch = next(f for f in fx if f["ligaId"] == 2)
     lvc = c.get(A + f"/fixtures/{ch['id']}/live").json()
-    check("live: liga consultada y vacía → coberturaLive sin_datos",
-          lvc["coberturaLive"] == "sin_datos" and bool(lvc["coberturaConsultadaEn"]),
+    check("live: feed con partidos ajenos → coberturaLive feed_ajeno (no 'sin cobertura')",
+          lvc["coberturaLive"] == "feed_ajeno" and bool(lvc["coberturaConsultadaEn"]),
           (lvc["coberturaLive"], lvc["coberturaConsultadaEn"]))
     check("live de fixture inexistente → 404", c.get(A + "/fixtures/999999/live").status_code == 404)
     # descuento del 1T / descanso: elapsed=45 repetido, un retroceso a 44 y
