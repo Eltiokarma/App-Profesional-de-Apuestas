@@ -38,6 +38,10 @@ python -m backend.ingesta.jugadores --ttl-horas 24  # refresco más agresivo
   `SAD_PLANTILLA_ONDEMAND=0` la apaga.
 - TTL por equipo (default 168 h = 7 días, en `plantillas_meta`): fuera de
   ventana de traspasos la plantilla casi no cambia; en ventana, bajar el TTL.
+- Equipos SIN cobertura de la API (plantilla vacía): sellado LARGO aparte
+  (`SAD_JUGADORES_TTL_SIN_DATOS`, default 720 h = 30 días, marca `con_datos=0`
+  en `plantillas_meta`). Repreguntarlos cada TTL normal quemaba 4 requests por
+  equipo sin fruto — el 28/07/2026 fueron 223 de 276 equipos (~78% del gasto).
 - Presupuesto por equipo: `players` paginado (~2-3 req) + `injuries` (1) +
   `transfers` (1) + `coachs` (1) ≈ **5-6 requests/equipo**, contra el MISMO
   presupuesto autoajustado del extractor (cabeceras x-ratelimit, respaldo
@@ -55,7 +59,8 @@ si no existen):
   — de `injuries` (lesiones Y sanciones reportadas por la API).
 - `traspasos` (player_id, fecha, tipo, team_in, team_in_nombre, team_out, team_out_nombre)
 - `entrenadores` (team_id, coach_id, nombre, foto, desde)
-- `plantillas_meta` (team_id, season, actualizado_en) — el TTL.
+- `plantillas_meta` (team_id, season, actualizado_en, con_datos) — el TTL
+  (con_datos=0 → sellado largo de equipos sin cobertura).
 
 ## Indicadores (backend/jugadores.py) — fórmulas
 

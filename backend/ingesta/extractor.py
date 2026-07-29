@@ -86,11 +86,18 @@ def preparar_historial(con: sqlite3.Connection) -> None:
 # cabeceras, tope y ritmo se recalculan al plan real (Pro 7500/día · 300/min, etc.).
 LIMITE_DEFAULT = 95
 MARGEN_DIARIO = 5
-# El backfill histórico NO puede comerse el presupuesto del día entero: deja
-# esta reserva para los refrescos de cuotas y el ciclo en vivo (14/07/2026 el
-# backfill agotó las 7495 requests y el resto del día quedó sin ingesta).
-# En planes chicos la reserva se acota a la mitad del tope.
+# La ingesta EN BLOQUE (backfill histórico, jugadores, ficha de partido) NO
+# puede comerse el presupuesto del día entero: deja esta reserva para los
+# refrescos de cuotas y el ciclo en vivo (14/07/2026 el backfill agotó las
+# 7495 requests; 28/07/2026 jugadores+ficha hicieron lo mismo y los partidos
+# de la noche quedaron sin cuotas live). En planes chicos se acota a la mitad
+# del tope. Lo que no entra hoy se reanuda solo en la próxima corrida.
 RESERVA_BACKFILL = int(os.environ.get("SAD_BACKFILL_RESERVA", "1500"))
+
+
+def reserva_del_dia(limite: int) -> int:
+    """Requests que la ingesta en bloque deja SIN gastar para el en vivo."""
+    return min(RESERVA_BACKFILL, limite // 2)
 DELAY_DEFAULT = 6.5
 DELAY_MIN = 0.25
 
@@ -305,7 +312,10 @@ class Cliente:
         self.usadas = 0
         self.usadas_por: dict[str, int] = {}  # auditoría: consumo por endpoint
         self._sondeo_hecho = False
-        self._sondeo_ts = 0.0  # último sondeo horario con el tope alcanzado
+        # último sondeo con el tope alcanzado: epoch PERSISTIDO en el JSON de
+        # cuota — el ciclo en vivo arranca un proceso nuevo por minuto, y un
+        # marcador en memoria haría un sondeo por ciclo en vez de uno por hora
+        self._sondeo_epoch = 0.0
         # respaldo RapidAPI (misma API por otra puerta, cuota gratuita propia):
         # SOLO se usa con el plan principal agotado — "modo emergencia"
         self.clave_respaldo = os.environ.get("RAPIDAPI_KEY", "").strip()
@@ -360,11 +370,13 @@ class Cliente:
         if datos.get("dia") == self.hoy:
             self.usadas = int(datos.get("usadas", 0) or 0)
             self.usadas_respaldo = int(datos.get("usadas_respaldo", 0) or 0)
+            self._sondeo_epoch = float(datos.get("sondeo_epoch", 0) or 0)
 
     def _guardar_cuota(self) -> None:
         with open(CUOTA_PATH, "w", encoding="utf-8") as f:
             json.dump({"dia": self.hoy, "usadas": self.usadas, "limite_api": self.limite_api,
-                       "usadas_respaldo": self.usadas_respaldo}, f)
+                       "usadas_respaldo": self.usadas_respaldo,
+                       "sondeo_epoch": self._sondeo_epoch}, f)
 
     def _quedan_respaldo(self, n: int = 1) -> bool:
         return bool(self.clave_respaldo) and self.limite_respaldo - self.usadas_respaldo >= n
@@ -384,12 +396,13 @@ class Cliente:
                 # puede venir de un plan mayor que el fallback)
                 self._sondeo_hecho = True
                 print(f"  marcador local ({self.usadas}) supera el fallback ({self.limite}): sondeo para leer el plan real")
-            elif not self.limite_fijo and time.monotonic() - self._sondeo_ts >= 3600:
-                # plan aprendido pero agotado: 1 sondeo por hora — si el plan se
-                # sube a mitad del día (upgrade en el dashboard), las cabeceras
-                # enseñan el tope nuevo y la ingesta se reactiva SOLA sin esperar
-                # a la medianoche UTC ni redeployar
-                self._sondeo_ts = time.monotonic()
+            elif not self.limite_fijo and time.time() - self._sondeo_epoch >= 3600:
+                # plan aprendido pero agotado: 1 sondeo por hora ENTRE TODOS los
+                # procesos (epoch persistido) — si el plan se sube a mitad del
+                # día o la ventana resetea a la hora de la suscripción, las
+                # cabeceras enseñan el estado real y la ingesta se reactiva SOLA
+                self._sondeo_epoch = time.time()
+                self._guardar_cuota()
                 print(f"  presupuesto agotado ({self.usadas}/{self.limite}): sondeo horario por si el plan subió")
             elif self._quedan_respaldo():
                 # MODO EMERGENCIA: la misma request sale por RapidAPI con su
@@ -422,12 +435,20 @@ class Cliente:
             try:
                 with urllib.request.urlopen(req, timeout=30) as resp:
                     data = json.load(resp)
-                    if respaldo:
+                    errores = data.get("errors")
+                    if isinstance(errores, dict) and "requests" in errores:
+                        # rebote por límite diario: las cabeceras de una
+                        # respuesta bloqueada NO son fiables (mostraban un
+                        # 'remaining' recién reseteado con el bloqueo aún
+                        # activo, el marcador local bajaba a 1 y el ciclo en
+                        # vivo insistía cada minuto toda la noche)
+                        self._marcar_agotada(respaldo)
+                    elif respaldo:
                         self._ajustar_respaldo(resp.headers)
                     else:
                         self._ajustar_por_cabeceras(resp.headers)
-                if data.get("errors"):
-                    print(f"  error de la API: {data['errors']}")
+                if errores:
+                    print(f"  error de la API: {errores}")
                     return None
                 time.sleep(self.delay)
                 return data
@@ -442,6 +463,16 @@ class Cliente:
                 print(f"  error de red: {e} (intento {intento + 1}/3)")
                 time.sleep(5)
         return None
+
+    def _marcar_agotada(self, respaldo: bool) -> None:
+        """El marcador local pasa al tope y se persiste: los procesos
+        siguientes no vuelven a disparar hasta el sondeo horario, que es el
+        que detecta cuándo la ventana del plan vuelve a abrir."""
+        if respaldo:
+            self.usadas_respaldo = max(self.usadas_respaldo, self.limite_respaldo)
+        else:
+            self.usadas = max(self.usadas, self.limite)
+        self._guardar_cuota()
 
     def _ajustar_respaldo(self, headers) -> None:
         """RapidAPI reenvía las cabeceras x-ratelimit-requests-* del proveedor:
@@ -956,7 +987,7 @@ def historico(cliente: Cliente, con: sqlite3.Connection, desde: int) -> int:
         return 0
     # reserva intocable para el resto del día (refrescos de cuotas + en vivo);
     # acotada a la mitad del tope para que en planes chicos algo avance
-    reserva = min(RESERVA_BACKFILL, cliente.limite // 2)
+    reserva = reserva_del_dia(cliente.limite)
     print(f"histórico {desde}–{SEASON}: {len(pendientes)} torneos pendientes "
           f"(presupuesto restante {cliente.limite - cliente.usadas}, reserva {reserva})")
     total = 0
