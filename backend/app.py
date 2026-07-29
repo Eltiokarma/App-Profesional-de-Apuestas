@@ -1328,10 +1328,16 @@ def _tipo_evento(tipo: str, detalle: str):
 def fixture_live(fixture_id: int):
     """Estado en vivo real: marcador/minuto de fixtures (refrescados por la
     ingesta en vivo) + última captura y serie de odds_live. Sin cobertura o
-    con la ingesta apagada, cuotas/serie van vacías — nada se inventa."""
+    con la ingesta apagada, cuotas/serie van vacías — nada se inventa.
+
+    `coberturaLive` dice POR QUÉ van vacías: sin él, la pantalla decía "sin
+    cobertura de cuotas en vivo en esta liga" en los dos casos, y en el de
+    "todavía no le tocó turno del ciclo" eso era mentira (bugs del 26 y 27/07
+    de 2026 en Perú y Ecuador, y el de Argentina que los siguió)."""
     f = db.query_one(
         "sad",
-        "SELECT status_short, status_long, elapsed, goals_home, goals_away FROM fixtures WHERE id=?",
+        "SELECT status_short, status_long, elapsed, goals_home, goals_away, league_id "
+        "FROM fixtures WHERE id=?",
         (fixture_id,),
     )
     if not f:
@@ -1346,6 +1352,20 @@ def fixture_live(fixture_id: int):
     except Exception:
         filas = []
     ultima = filas[-1]["captured_at"] if filas else None
+    # la marca de la RONDA de la liga (no del fixture): distingue "nunca se
+    # preguntó" de "se preguntó y la API no cubre esta liga"
+    cobertura, cobertura_en = "sin_consultar", None
+    try:
+        c = db.query_one(
+            "sad",
+            "SELECT consultada_en, con_datos FROM odds_live_consultas WHERE league_id=?",
+            (f["league_id"],),
+        )
+        if c:
+            cobertura = "con_datos" if c["con_datos"] else "sin_datos"
+            cobertura_en = c["consultada_en"]
+    except Exception:
+        pass  # DBs sin la tabla (el ciclo en vivo nunca corrió): sin_consultar
     # MINUTO EFECTIVO por captura (monótono): en el descuento del 1er tiempo y
     # el descanso la API repite elapsed=45 (o manda null), y al arrancar el 2º
     # tiempo la curva se apilaba en vertical y dibujaba lazos hacia atrás. Los
@@ -1411,6 +1431,8 @@ def fixture_live(fixture_id: int):
         "serie": serie,
         "eventos": eventos,
         "actualizadoEn": iso(ultima) if ultima else None,
+        "coberturaLive": cobertura,
+        "coberturaConsultadaEn": iso(cobertura_en) if cobertura_en else None,
     }
 
 

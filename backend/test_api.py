@@ -450,6 +450,9 @@ def main():
           len(lv["serie"]) > 6 and all(not any(p["minuto"] == 67 and p["seleccion"] == "2" for p in lv["serie"]) for _ in [0])
           and [p["minuto"] for p in lv["serie"]] == sorted(p["minuto"] for p in lv["serie"]), len(lv["serie"]))
     check("live: actualizadoEn presente", bool(lv["actualizadoEn"]), lv["actualizadoEn"])
+    check("live: coberturaLive con_datos + cuándo se consultó la liga",
+          lv["coberturaLive"] == "con_datos" and bool(lv["coberturaConsultadaEn"]),
+          (lv["coberturaLive"], lv["coberturaConsultadaEn"]))
     check("live: eventos mapeados (gol/amarilla/roja; subst y penal fallado fuera)",
           [(e["tipo"], e["minuto"]) for e in lv["eventos"]]
           == [("amarilla", 12), ("gol", 34), ("gol", 51), ("roja", 60)], lv["eventos"])
@@ -458,6 +461,13 @@ def main():
     lv0 = c.get(A + f"/fixtures/{fin['id']}/live").json()
     check("live de fixture sin odds_live → cuotas y serie vacías",
           lv0["cuotas"] == [] and lv0["serie"] == [], lv0)
+    # el porqué de las cuotas vacías: la pantalla decía "sin cobertura en esta
+    # liga" siempre, y en el caso de "no le tocó turno" eso era mentira
+    ch = next(f for f in fx if f["ligaId"] == 2)
+    lvc = c.get(A + f"/fixtures/{ch['id']}/live").json()
+    check("live: liga consultada y vacía → coberturaLive sin_datos",
+          lvc["coberturaLive"] == "sin_datos" and bool(lvc["coberturaConsultadaEn"]),
+          (lvc["coberturaLive"], lvc["coberturaConsultadaEn"]))
     check("live de fixture inexistente → 404", c.get(A + "/fixtures/999999/live").status_code == 404)
     # descuento del 1T / descanso: elapsed=45 repetido, un retroceso a 44 y
     # nulls (seed) deben salir como minutos EFECTIVOS 45.x monótonos

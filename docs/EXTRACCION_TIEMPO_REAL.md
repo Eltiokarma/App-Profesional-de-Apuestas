@@ -70,8 +70,9 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   aparecían y la UI mostraba "sin cobertura de cuotas en vivo en esta liga",
   que era mentira: nunca se preguntó por ellas. Con `?league=` el feed llega
   completo y una sola request cubre todos los partidos simultáneos de esa
-  liga. Topes: `SAD_LIVE_ODDS_LIGAS` (6 ligas/ciclo, rotando por CONSULTA más
-  vieja primero: ninguna se queda sin turno) y `SAD_LIVE_ODDS_PAGINAS` (3).
+  liga. Topes: `SAD_LIVE_ODDS_LIGAS` (12 ligas/ciclo, EN JUEGO primero y luego
+  por CONSULTA más vieja: ninguna se queda sin turno) y
+  `SAD_LIVE_ODDS_PAGINAS` (3).
   Test offline: `python -m backend.test_en_vivo`.
 - **Por qué la rotación va por consulta y no por captura** (bug 27/07/2026,
   Guayaquil City–U. Católica en Ecuador - Liga Pro sin cuotas en juego): el
@@ -84,6 +85,29 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   cola rota por esa marca: la liga vacía también gasta su turno.
   `diag_vivo` la lee para distinguir "nunca le tocó turno" de "se preguntó y
   la API no dio nada".
+- **Por qué la cola pone EN JUEGO primero** (bug 29/07/2026, Gimnasia LP–River
+  Plate en Argentina - Liga Profesional, minuto 3 sin cuotas): el universo de
+  ligas a pedir mezcla dos cosas muy distintas — las del feed live, con partido
+  realmente en marcha, y las que solo tienen un NS/TBD dentro de una ventana de
+  3h45 — y la cola las trataba igual. Con tope por ciclo, una liga sin nadie
+  jugando le ganaba el turno a otra con el partido corriendo, y el partido se
+  termina mientras la ventana no. Ahora `orden_por_antiguedad` recibe el set de
+  ligas en juego y ordena `(no está en juego, consulta más vieja, id)`. Además:
+  el tope pasó de 6 a **12** (con 6 se racionaba coverage mientras el plan
+  diario ni se tocaba), los **Amistosos de Clubes (667)** salieron del ciclo en
+  vivo — es la liga que más NS zombis produce, ya marcada en `LIGAS_RUIDO`, y
+  gastaba turnos sin partido real que cubrir — y **Argentina Primera Nacional
+  (129)** se marcó como menor: era la única 2ª división sin marcar. Si el tope
+  vuelve a quedar corto, el log lo grita: `ATENCIÓN: N de ellas tienen partido
+  EN JUEGO`.
+- **Por qué la pantalla ya no miente.** Los tres bugs anteriores compartían
+  síntoma — "sin cobertura de cuotas en vivo en esta liga" — porque la UI solo
+  sabía que este fixture no tenía filas en `odds_live`, y de ahí deducía falta
+  de cobertura. `GET /fixtures/{id}/live` ahora devuelve `coberturaLive`
+  (`con_datos` · `sin_datos` · `sin_consultar`) y `coberturaConsultadaEn`,
+  leídos de `odds_live_consultas` para la liga del fixture, y la sección Cuotas
+  dice lo que de verdad pasa: *"aún sin turno del ciclo en vivo · no es falta
+  de cobertura"* vs *"la API no cubre cuotas en vivo de esta liga"*.
 - **Las otras tres puertas** que dejaban partidos sin curva (26/07/2026, UTC
   Cajamarca–UCV Moquegua):
   1. **`TBD` no era candidato.** La ventana solo aceptaba `NS`, pero en esta DB
@@ -149,11 +173,14 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   el catálogo de bets de /odds/live puede necesitar más aliases en
   `cuota_key` según lo que llegue el primer día real de partidos (hoy
   mapea "Fulltime Result"/1X2 y los mercados clásicos).
-- **Presupuesto**: 1 req/min de marcador + 1 por liga con partido vivo (tope 6)
-  × ~6 h de ventana con partidos. En la práctica 2-4 ligas nuestras coinciden
-  en juego → ≈ **1.100-1.800/día** en los días cargados. Total fases 1+2+3
-  ≈ 2.500/día en el peor día — cabe en Pro (7.500) con la reserva de backfill
-  intacta. Si aprieta: bajar `SAD_LIVE_ODDS_LIGAS` o subir `SAD_LIVE_SEGUNDOS`.
+- **Presupuesto**: 1 req/min de marcador + 1 por liga con partido vivo (tope
+  12) × ~6 h de ventana con partidos. El tope es el techo, no el gasto: solo se
+  pide a las ligas que tienen candidato, y en la práctica 2-4 ligas nuestras
+  coinciden en juego → ≈ **1.100-1.800/día** en los días cargados. Total fases
+  1+2+3 ≈ 2.500/día en el peor día — cabe en Pro (7.500) con la reserva de
+  backfill intacta. Si aprieta: bajar `SAD_LIVE_ODDS_LIGAS` o subir
+  `SAD_LIVE_SEGUNDOS`. Si sobra (el caso real: el plan sin tocarse mientras
+  ligas con partido esperaban turno), subirlo o ponerlo en `0`.
 
 ## Fase 4 · Solo si hace falta
 

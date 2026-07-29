@@ -212,8 +212,9 @@ LIGAS_RUIDO = {
     int(x) for x in os.environ.get("SAD_LIGAS_RUIDO", "667").split(",") if x.strip().isdigit()
 }
 
-# Ligas "menores": segundas divisiones y copas nacionales donde juegan equipos
-# de otras categorías. Se ingestan IGUAL que las demás — fixtures, histórico y
+# Ligas "menores": segundas divisiones, copas nacionales donde juegan equipos
+# de otras categorías, y amistosos de clubes. Se ingestan IGUAL que las demás
+# — fixtures, histórico y
 # cuotas PREPARTIDO — porque las constantes/burbujas de un equipo necesitan
 # TODOS sus partidos: para analizar un país no puede faltar la Liga 2 ni la
 # Copa donde ese equipo juega. Lo ÚNICO que NO reciben es el ciclo EN VIVO: las
@@ -223,7 +224,13 @@ LIGAS_RUIDO = {
 # SAD_LIGAS_MENORES="282,130" añade IDs; SAD_LIGAS_MENORES=" " (o "0") las trata
 # a todas como importantes.
 _MENORES_DEFAULT = {
+    # Amistosos de clubes: pretemporada y giras. Es la MISMA liga que
+    # LIGAS_RUIDO saca del re-barrido por sus NS que nunca resuelven, y esos
+    # zombis quedaban en la ventana del ciclo en vivo comiéndose turnos del
+    # tope por ciclo. Un amistoso no necesita curva de cuotas en juego.
+    667,  # Amistosos de Clubes
     # Argentina
+    129,  # Primera Nacional — 2ª división; era la ÚNICA 2ª sin marcar
     130,  # Copa Argentina
     # Brasil
     73,   # Copa do Brasil

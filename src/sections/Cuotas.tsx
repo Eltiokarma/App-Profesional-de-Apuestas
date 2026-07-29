@@ -274,7 +274,14 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
                     ? 'cuotas en juego · al minuto'
                     : `cuotas en juego · última captura hace ${edadMin} min`
                 })()
-              : 'sin cobertura de cuotas en vivo en esta liga'}
+              // sin captura de ESTE partido: el porqué lo dice la liga, no el
+              // fixture. Decir "sin cobertura" cuando nunca se preguntó era
+              // mentira, y mandaba a buscar el fallo donde no estaba.
+              : live.coberturaLive === 'sin_consultar'
+                ? 'aún sin turno del ciclo en vivo · no es falta de cobertura'
+                : live.coberturaLive === 'sin_datos'
+                  ? 'la API no cubre cuotas en vivo de esta liga'
+                  : 'liga con cobertura · aún sin cuotas de este partido'}
           </span>
         </div>
       )}
