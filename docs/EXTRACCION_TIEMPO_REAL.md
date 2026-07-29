@@ -70,7 +70,7 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   aparecían y la UI mostraba "sin cobertura de cuotas en vivo en esta liga",
   que era mentira: nunca se preguntó por ellas. Con `?league=` el feed llega
   completo y una sola request cubre todos los partidos simultáneos de esa
-  liga. Topes: `SAD_LIVE_ODDS_LIGAS` (12 ligas/ciclo, EN JUEGO primero y luego
+  liga. Topes: `SAD_LIVE_ODDS_LIGAS` (6 ligas/ciclo, EN JUEGO primero y luego
   por CONSULTA más vieja: ninguna se queda sin turno) y
   `SAD_LIVE_ODDS_PAGINAS` (3).
   Test offline: `python -m backend.test_en_vivo`.
@@ -93,8 +93,8 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   jugando le ganaba el turno a otra con el partido corriendo, y el partido se
   termina mientras la ventana no. Ahora `orden_por_antiguedad` recibe el set de
   ligas en juego y ordena `(no está en juego, consulta más vieja, id)`. Además:
-  el tope pasó de 6 a **12** (con 6 se racionaba coverage mientras el plan
-  diario ni se tocaba), los **Amistosos de Clubes (667)** salieron del ciclo en
+  el tope pasó de 6 a 12 —y **volvió a 6 el mismo día**: ver el freno de
+  presupuesto más abajo—, los **Amistosos de Clubes (667)** salieron del ciclo en
   vivo — es la liga que más NS zombis produce, ya marcada en `LIGAS_RUIDO`, y
   gastaba turnos sin partido real que cubrir — y **Argentina Primera Nacional
   (129)** se marcó como menor: era la única 2ª división sin marcar. Si el tope
@@ -118,6 +118,16 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   jugando, se le pregunta directo con `/odds/live?fixture=`. Eso no depende de
   que el filtro por liga se porte bien, y es lo que salva la curva en las tres
   causas de fallo de arriba.
+- **FRENO DE PRESUPUESTO** (`SAD_LIVE_RESERVA`, 1500) — la lección más cara del
+  29/07/2026. Con el tope en 12, el ciclo por minuto podía pedir >30 requests
+  (12 ligas × hasta 3 páginas, + XI, + rescate) y **agotó el plan del día**:
+  `presupuesto diario agotado (7496/7495, respaldo 95/95)`, cero requests, cero
+  cuotas, cero marcador — y las copas que sí funcionaban se pararon a mitad de
+  partido. El tope volvió a **6**, y ahora `cupo_del_ciclo` calcula cuántas
+  ligas caben sin tocar la reserva: con margen de sobra sirve el tope entero,
+  al acercarse encoge, y al llegar deja de pedir cuotas pero **sigue pidiendo
+  marcador y minuto** (1 request, lo más barato y lo más valioso). El rescate
+  por fixture pasa por el mismo freno. Un tope alto ya no puede vaciar el plan.
 - **Por qué la pantalla ya no miente.** Los tres bugs anteriores compartían
   síntoma — "sin cobertura de cuotas en vivo en esta liga" — porque la UI solo
   sabía que este fixture no tenía filas en `odds_live`, y de ahí deducía falta

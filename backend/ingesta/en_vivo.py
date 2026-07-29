@@ -91,17 +91,20 @@ def _tope(nombre: str, defecto: int) -> int:
 # Cuotas en juego: 1 request por LIGA con partido nuestro vivo (todos los
 # partidos simultáneos de esa liga vienen en la misma respuesta). Topes para que
 # un ciclo que corre cada minuto no se coma el presupuesto del día:
-#   SAD_LIVE_ODDS_LIGAS=12  ligas por ciclo (0 = sin tope). Las que no entran no
+#   SAD_LIVE_ODDS_LIGAS=6   ligas por ciclo (0 = sin tope). Las que no entran no
 #                           se pierden: el orden es EN JUEGO primero y luego por
 #                           antigüedad de CONSULTA (odds_live_consultas), así
 #                           que rotan y en el ciclo siguiente van primeras. OJO:
 #                           no por antigüedad de captura — ver orden_por_antiguedad.
 #   SAD_LIVE_ODDS_PAGINAS=3 páginas por liga (~10 fixtures por página).
-# El tope era 6, y con eso una liga podía esperar varios ciclos su turno
-# mientras el plan diario ni se tocaba: un guard de presupuesto cobrado en
-# cobertura. 12 sigue acotando el peor caso (12 requests/ciclo) y deja de
-# racionar en las noches sudamericanas, que son justo cuando hace falta.
-TOPE_LIGAS = _tope("SAD_LIVE_ODDS_LIGAS", 12)
+# Estuvo en 12 unas horas, subido con la premisa de que el plan diario no se
+# tocaba. Los logs del 29/07/2026 la desmintieron: 7496/7495 usadas y el
+# respaldo también a cero, con el ciclo en vivo haciendo CERO requests y
+# TODO parado — incluidas las copas que sí funcionaban. Un ciclo por minuto
+# con 12 ligas (y hasta 3 páginas cada una) puede pedir >30 requests/minuto:
+# se come un plan de 7.500 en una tarde. Vuelve a 6, y ahora con freno propio
+# (cupo_del_ciclo) para que no pueda vaciar el plan aunque se suba a mano.
+TOPE_LIGAS = _tope("SAD_LIVE_ODDS_LIGAS", 6)
 TOPE_PAGINAS = max(1, _tope("SAD_LIVE_ODDS_PAGINAS", 3))
 # Rescate por partido: /odds/live?fixture= cuando la ronda de la liga no trajo
 # un partido que SÍ se está jugando. La vía por liga es la barata (1 request
@@ -110,6 +113,32 @@ TOPE_PAGINAS = max(1, _tope("SAD_LIVE_ODDS_PAGINAS", 3))
 # sin curva y a la pantalla culpando a la cobertura de la API. Preguntar por el
 # fixture no depende de nada de eso. 0 = apagado.
 TOPE_FIXTURES = _tope("SAD_LIVE_ODDS_FIXTURES", 4)
+
+# FRENO DE PRESUPUESTO. El ciclo corre cada minuto y, sin freno propio, se come
+# el plan del día y deja sin datos a TODO lo demás: la ingesta diaria, el
+# refresco de cuotas prepartido y el propio marcador en vivo. Es exactamente lo
+# que pasó el 29/07/2026 (7496/7495 y el respaldo agotado: cero requests, cero
+# cuotas, cero marcador — y las copas que funcionaban se pararon a mitad de
+# partido). La reserva es lo que el ciclo en vivo NO puede tocar.
+RESERVA_VIVO = _tope("SAD_LIVE_RESERVA", 1500)
+# Requests que se le suponen a una liga por ronda (1 request + su paginado):
+# el cupo se calcula con esto para degradar suave en vez de chocar contra la pared.
+COSTE_LIGA = 3
+
+
+def cupo_del_ciclo(cliente, tope: int) -> int:
+    """Cuántas ligas puede pedir ESTE ciclo sin comerse la reserva del día.
+
+    Con margen de sobra devuelve el tope entero; según se acerca a la reserva
+    va bajando, y al llegar sale 0: el ciclo sigue pidiendo marcador y minuto
+    (1 request, lo más barato y lo más valioso) pero deja de pedir cuotas.
+    Así el plan nunca se agota por el ciclo en vivo."""
+    if tope <= 0:  # 0 = sin tope explícito: igual se respeta la reserva
+        tope = 10**6
+    margen = (cliente.limite - cliente.usadas) - RESERVA_VIVO
+    if margen <= 0:
+        return 0
+    return max(0, min(tope, margen // COSTE_LIGA))
 
 # Alineaciones ANTES del saque: la API las publica ~20-60 min antes y el
 # análisis las necesita en cuanto existen (el EFE/DTP y los skills leen la
@@ -433,7 +462,16 @@ def capturar_odds_live(cliente, con: sqlite3.Connection, por_liga: dict,
     if not por_liga or not cliente.quedan():
         return 0, set()
     orden = orden_por_antiguedad(con, por_liga, en_juego)
-    atendidas = orden if TOPE_LIGAS <= 0 else orden[:TOPE_LIGAS]
+    cupo = cupo_del_ciclo(cliente, TOPE_LIGAS)
+    if cupo <= 0:
+        print(f"  cuotas en juego EN PAUSA: quedan {cliente.limite - cliente.usadas} requests y "
+              f"la reserva del día es {RESERVA_VIVO} (SAD_LIVE_RESERVA). El marcador sigue; "
+              f"las cuotas vuelven cuando el plan resetee")
+        return 0, set()
+    if cupo < min(len(orden), TOPE_LIGAS if TOPE_LIGAS > 0 else len(orden)):
+        print(f"  presupuesto justo: este ciclo pide {cupo} ligas en vez de {TOPE_LIGAS} "
+              f"(quedan {cliente.limite - cliente.usadas}, reserva {RESERVA_VIVO})")
+    atendidas = orden[:cupo]
     aplazadas = orden[len(atendidas):]
     n_odds = 0
     con_feed: set = set()
@@ -494,9 +532,11 @@ def capturar_odds_live(cliente, con: sqlite3.Connection, por_liga: dict,
     # depender de que el filtro por liga se porte bien. Solo para partidos
     # confirmados en juego que la ronda de su liga no trajo, y con tope propio.
     faltan = sorted((ids_en_juego or set()) - con_feed)
-    if faltan and TOPE_FIXTURES > 0:
+    # el rescate también gasta: se le aplica la misma reserva que a las ligas
+    # (si no, el freno de arriba sería un colador)
+    if faltan and TOPE_FIXTURES > 0 and cupo_del_ciclo(cliente, TOPE_FIXTURES) > 0:
         for fid in faltan[:TOPE_FIXTURES]:
-            if not cliente.quedan():
+            if not cliente.quedan() or cupo_del_ciclo(cliente, TOPE_FIXTURES) <= 0:
                 break
             filas = cliente.paginado("odds/live", {"fixture": fid}, tope_paginas=1)
             for item in filas:

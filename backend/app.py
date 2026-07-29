@@ -1324,6 +1324,22 @@ def _tipo_evento(tipo: str, detalle: str):
     return None  # sustituciones, VAR, etc. no se sirven (por ahora)
 
 
+def _presupuesto_agotado() -> bool:
+    """¿El plan de API-Football del día está agotado? Lo dice el marcador que
+    comparten todas las corridas de ingesta (.extractor_cuota.json, en el
+    volumen). Con el plan agotado el ciclo en vivo no hace ni una request: no
+    hay cuotas, no hay marcador y no hay nada que la liga pueda explicar."""
+    try:
+        with open(os.path.join(db.BASE_DIR, ".extractor_cuota.json"), encoding="utf-8") as f:
+            d = json.load(f)
+        if d.get("dia") != datetime.now(timezone.utc).strftime("%Y-%m-%d"):
+            return False  # marcador de otro día: la ventana ya reseteó
+        limite = d.get("limite_api")
+        return bool(limite) and int(d.get("usadas", 0)) >= int(limite) - 5
+    except (OSError, ValueError, TypeError):
+        return False  # sin marcador no se afirma nada
+
+
 @app.get(API + "/fixtures/{fixture_id}/live")
 def fixture_live(fixture_id: int):
     """Estado en vivo real: marcador/minuto de fixtures (refrescados por la
@@ -1355,6 +1371,12 @@ def fixture_live(fixture_id: int):
     # la marca de la RONDA de la liga (no del fixture): distingue "nunca se
     # preguntó" de "se preguntó y la API no cubre esta liga"
     cobertura, cobertura_en = "sin_consultar", None
+    # el plan del día manda sobre todo lo demás: agotado, el ciclo en vivo no
+    # hace NI UNA request, así que la última ronda de la liga es de hace horas
+    # y presentarla como el motivo actual es contar otra película (29/07/2026:
+    # 7496/7495 usadas y la ficha diciendo "esta liga vino vacía")
+    if _presupuesto_agotado():
+        cobertura = "presupuesto"
     try:
         c = db.query_one(
             "sad",
@@ -1365,9 +1387,11 @@ def fixture_live(fixture_id: int):
             # `estado` dice POR QUÉ; el booleano viejo solo decía "no hubo", y
             # con eso la pantalla culpaba a la cobertura de la API en los
             # cuatro casos. DBs sin la columna caen al booleano.
-            cobertura = {"ok": "con_datos", "vacia": "sin_datos",
-                         "ajena": "feed_ajeno", "fallo": "fallo"}.get(
+            estado = {"ok": "con_datos", "vacia": "sin_datos",
+                      "ajena": "feed_ajeno", "fallo": "fallo"}.get(
                 c["estado"], "con_datos" if c["con_datos"] else "sin_datos")
+            if cobertura != "presupuesto" or estado == "con_datos":
+                cobertura = estado
             cobertura_en = c["consultada_en"]
     except Exception:
         pass  # DBs sin la tabla (el ciclo en vivo nunca corrió): sin_consultar
