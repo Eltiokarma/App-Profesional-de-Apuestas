@@ -22,6 +22,11 @@ from datetime import datetime, timedelta, timezone
 from backend.ingesta.extractor import LIGAS, Cliente, leer_clave, reserva_del_dia
 
 TTL_HORAS_DEFAULT = 168  # 7 días: fuera de ventana de traspasos alcanza de sobra
+# Equipos que la API NO cubre (plantilla vacía): sellado LARGO. Repreguntarlos
+# cada TTL normal quemaba 4 requests por equipo sin fruto — el 28/07/2026
+# fueron 223 de 276 equipos ingestados (~78% del gasto de jugadores). La
+# cobertura de la API no aparece de un día para otro.
+TTL_HORAS_SIN_DATOS = int(os.environ.get("SAD_JUGADORES_TTL_SIN_DATOS", "720"))  # 30 días
 DIAS_NS_DEFAULT = 3
 
 DDL = """
@@ -97,6 +102,11 @@ CREATE TABLE IF NOT EXISTS plantillas_meta (
 
 def preparar_tablas(con: sqlite3.Connection) -> None:
     con.executescript(DDL)
+    columnas = {r[1] for r in con.execute("PRAGMA table_info(plantillas_meta)")}
+    if "con_datos" not in columnas:
+        # default 1: lo ya sellado sin la marca se trata como equipo con datos
+        # (TTL corto), que es el comportamiento previo a la columna
+        con.execute("ALTER TABLE plantillas_meta ADD COLUMN con_datos INTEGER NOT NULL DEFAULT 1")
     con.commit()
 
 
@@ -133,9 +143,11 @@ def equipos_pendientes(con: sqlite3.Connection, dias: int, ttl_horas: int) -> li
          (ahora + timedelta(days=dias)).strftime("%Y-%m-%d %H:%M:%S"), *LIGAS),
     ).fetchall()
     limite_ttl = (ahora - timedelta(hours=ttl_horas)).strftime("%Y-%m-%d %H:%M:%S")
+    limite_sin = (ahora - timedelta(hours=max(TTL_HORAS_SIN_DATOS, ttl_horas))).strftime("%Y-%m-%d %H:%M:%S")
     frescos = {
         r[0] for r in con.execute(
-            "SELECT team_id FROM plantillas_meta WHERE actualizado_en > ?", (limite_ttl,)
+            "SELECT team_id FROM plantillas_meta WHERE actualizado_en > ? "
+            "OR (con_datos = 0 AND actualizado_en > ?)", (limite_ttl, limite_sin)
         ).fetchall()
     }
     vistos: dict[int, int] = {}
@@ -268,10 +280,12 @@ def ingestar_equipo(cliente: Cliente, con: sqlite3.Connection, team_id: int, sea
         return False
     filas = cliente.paginado("players", {"team": team_id, "season": season})
     stats = guardar_plantilla(con, team_id, season, filas)
-    if stats == 0 and not filas:
-        # sin cobertura de la API para este equipo/temporada: se sella igual
-        # (reintentarlo cada corrida quemaría requests sin fruto)
-        print(f"  equipo {team_id} t{season}: sin datos de jugadores en la API")
+    con_datos = 1 if (stats or filas) else 0
+    if not con_datos:
+        # sin cobertura de la API para este equipo/temporada: se sella con el
+        # TTL LARGO (reintentarlo cada corrida quemaría requests sin fruto)
+        print(f"  equipo {team_id} t{season}: sin datos de jugadores en la API "
+              f"(se repregunta en {TTL_HORAS_SIN_DATOS // 24} días)")
     data = cliente.get("injuries", {"team": team_id, "season": season})
     bajas = guardar_bajas(con, team_id, season, (data or {}).get("response", []))
     data = cliente.get("transfers", {"team": team_id})
@@ -279,8 +293,9 @@ def ingestar_equipo(cliente: Cliente, con: sqlite3.Connection, team_id: int, sea
     data = cliente.get("coachs", {"team": team_id})
     dt = guardar_entrenador(con, team_id, (data or {}).get("response", []))
     con.execute(
-        "INSERT OR REPLACE INTO plantillas_meta (team_id, season, actualizado_en) VALUES (?, ?, ?)",
-        (team_id, season, _ahora()),
+        "INSERT OR REPLACE INTO plantillas_meta (team_id, season, actualizado_en, con_datos) "
+        "VALUES (?, ?, ?, ?)",
+        (team_id, season, _ahora(), con_datos),
     )
     con.commit()
     print(f"  [{cliente.usadas}/{cliente.limite}] equipo {team_id} t{season}: "
