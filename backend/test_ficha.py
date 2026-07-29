@@ -147,16 +147,22 @@ def main():
 
     # ── a quién se le pide ficha ───────────────────────────────────────────
     con = db()
+    from datetime import datetime, timedelta, timezone
+
     from backend.ingesta.extractor import LIGAS
     liga = sorted(LIGAS)[0]
+    # fechas relativas a hoy: con fechas fijas el test caducaba en cuanto el
+    # "NS próximo" quedaba en el pasado
+    def dia(delta: int) -> str:
+        return (datetime.now(timezone.utc) + timedelta(days=delta)).strftime("%Y-%m-%d 20:00:00")
     con.executemany("INSERT INTO fixtures (id, date, status_short, league_id, home_team_id, away_team_id) "
                     "VALUES (?,?,?,?,?,?)", [
-        (1, "2026-07-28 20:00:00", "NS", liga, 100, 200),    # el próximo
-        (2, "2026-07-20 20:00:00", "FT", liga, 100, 300),    # anterior del 100
-        (3, "2026-07-13 20:00:00", "FT", liga, 400, 100),    # el de antes
-        (4, "2026-07-06 20:00:00", "FT", liga, 100, 500),    # más viejo aún
-        (5, "2026-07-21 20:00:00", "FT", liga, 200, 600),    # anterior del 200
-        (6, "2026-07-19 20:00:00", "FT", 999999, 700, 800),  # liga que no seguimos
+        (1, dia(+1), "NS", liga, 100, 200),      # el próximo
+        (2, dia(-8), "FT", liga, 100, 300),      # anterior del 100
+        (3, dia(-15), "FT", liga, 400, 100),     # el de antes
+        (4, dia(-22), "FT", liga, 100, 500),     # más viejo aún
+        (5, dia(-7), "FT", liga, 200, 600),      # anterior del 200
+        (6, dia(-9), "FT", 999999, 700, 800),    # liga que no seguimos
     ])
     con.commit()
     pend = fixtures_pendientes(con, dias=3, ultimos=2)

@@ -19,7 +19,7 @@ import sqlite3
 import sys
 from datetime import datetime, timedelta, timezone
 
-from backend.ingesta.extractor import LIGAS, Cliente, leer_clave
+from backend.ingesta.extractor import LIGAS, Cliente, leer_clave, reserva_del_dia
 
 TTL_HORAS_DEFAULT = 168  # 7 días: fuera de ventana de traspasos alcanza de sobra
 DIAS_NS_DEFAULT = 3
@@ -312,10 +312,19 @@ def main() -> int:
         pendientes = [(args.equipo, args.temporada or datetime.now(timezone.utc).year)]
     else:
         pendientes = equipos_pendientes(con, args.dias, args.ttl_horas)
+    # misma reserva que el backfill: esta ingesta corre en bloque (~5-6
+    # requests por equipo × cientos de equipos) y no puede dejar sin
+    # presupuesto a las cuotas live y los XI de la noche
+    reserva = 0 if args.equipo else reserva_del_dia(cliente.limite)
     print(f"Jugadores: {len(pendientes)} equipos pendientes (NS <= {args.dias} días, "
-          f"TTL {args.ttl_horas} h) · presupuesto restante {cliente.limite - cliente.usadas}")
+          f"TTL {args.ttl_horas} h) · presupuesto restante {cliente.limite - cliente.usadas}"
+          f" · reserva {reserva}")
     hechos = 0
     for team_id, season in pendientes:
+        if cliente.limite - cliente.usadas <= reserva:
+            print(f"reserva del día alcanzada ({cliente.usadas}/{cliente.limite}, reserva {reserva}): "
+                  f"{hechos}/{len(pendientes)} equipos (el resto, en la próxima corrida)")
+            break
         if not ingestar_equipo(cliente, con, team_id, season):
             print(f"presupuesto agotado: {hechos}/{len(pendientes)} equipos (el resto, en la próxima corrida)")
             break

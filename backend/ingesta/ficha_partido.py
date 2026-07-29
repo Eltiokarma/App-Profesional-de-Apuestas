@@ -33,7 +33,7 @@ import sqlite3
 import sys
 from datetime import datetime, timedelta, timezone
 
-from backend.ingesta.extractor import LIGAS, Cliente, leer_clave
+from backend.ingesta.extractor import LIGAS, Cliente, leer_clave, reserva_del_dia
 
 DIAS_NS_DEFAULT = 3
 ULTIMOS_DEFAULT = int(os.environ.get("SAD_FICHA_PARTIDOS", "3"))
@@ -309,11 +309,20 @@ def main() -> int:
         return 0
 
     cliente = Cliente(leer_clave(), args.limite)
+    # misma reserva que el backfill: una corrida con backlog grande (300+
+    # partidos × 3 requests) no puede dejar sin presupuesto a las cuotas
+    # live y los XI de la noche
+    reserva = 0 if args.fixture else reserva_del_dia(cliente.limite)
     print(f"Ficha de partido: {len(pendientes)} partidos pendientes "
           f"(NS <= {args.dias} días, últimos {args.ultimos} por equipo) · "
-          f"3 requests c/u · presupuesto restante {cliente.limite - cliente.usadas}")
+          f"3 requests c/u · presupuesto restante {cliente.limite - cliente.usadas}"
+          f" · reserva {reserva}")
     hechos = 0
     for fid in pendientes:
+        if cliente.limite - cliente.usadas <= reserva:
+            print(f"reserva del día alcanzada ({cliente.usadas}/{cliente.limite}, reserva {reserva}): "
+                  f"{hechos}/{len(pendientes)} partidos (el resto, en la próxima corrida)")
+            break
         if not ingestar_fixture(cliente, con, fid):
             print(f"presupuesto agotado: {hechos}/{len(pendientes)} partidos "
                   f"(el resto, en la próxima corrida)")
