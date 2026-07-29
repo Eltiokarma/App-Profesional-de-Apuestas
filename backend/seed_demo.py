@@ -194,7 +194,8 @@ def seed(base_dir: str):
             minuto INTEGER, bet_id INTEGER, bet_name TEXT, value TEXT, odd REAL,
             suspendida INTEGER DEFAULT 0, captured_at TEXT NOT NULL);
         CREATE TABLE odds_live_consultas (league_id INTEGER PRIMARY KEY, consultada_en TEXT NOT NULL,
-            con_datos INTEGER NOT NULL DEFAULT 0);
+            con_datos INTEGER NOT NULL DEFAULT 0, estado TEXT, items INTEGER, nuestros INTEGER,
+            ajenos INTEGER);
         CREATE TABLE fixture_eventos (id INTEGER PRIMARY KEY AUTOINCREMENT, fixture_id INTEGER NOT NULL,
             minuto INTEGER, extra INTEGER, tipo TEXT, detalle TEXT, equipo_id INTEGER, jugador TEXT,
             jugador_id INTEGER, asistente TEXT, asistente_id INTEGER);
@@ -348,13 +349,15 @@ def seed(base_dir: str):
             (vivo["id"], minuto, 13, "First Half Winner", "Home", 9.99, 0, capt),
         )
     # rondas de /odds/live por liga: es lo que separa "la API no cubre esta
-    # liga" de "todavía no le tocó turno del ciclo". La liga del partido en
-    # vivo trajo datos; la Champions se consultó y volvió vacía; la 667 no
-    # tiene fila, que es el caso "nunca se le preguntó".
+    # liga" de las otras tres causas de no tener cuotas. La liga del partido en
+    # vivo trajo datos; la Champions devolvió 8 partidos pero ninguno nuestro
+    # (el filtro ?league= no filtró: `ajena`); la 667 no tiene fila, que es el
+    # caso "nunca se le preguntó".
     ronda = (vivo["date"] + timedelta(minutes=vivo["elapsed"])).strftime("%Y-%m-%d %H:%M:%S")
     sad.executemany(
-        "INSERT INTO odds_live_consultas (league_id, consultada_en, con_datos) VALUES (?,?,?)",
-        [(vivo["league"], ronda, 1), (2, ronda, 0)],
+        "INSERT INTO odds_live_consultas (league_id, consultada_en, con_datos, estado, items, "
+        "nuestros, ajenos) VALUES (?,?,?,?,?,?,?)",
+        [(vivo["league"], ronda, 1, "ok", 3, 1, 0), (2, ronda, 0, "ajena", 8, 0, 8)],
     )
     # eventos del partido en juego (goles y tarjetas, con el catálogo crudo de la API)
     sad.executemany(

@@ -523,12 +523,16 @@ export interface FixtureLiveDTO {
   /**
    * Por qué `cuotas` puede venir vacía (odds_live_consultas de esta liga).
    * `sin_consultar`: el ciclo NUNCA le pidió /odds/live a la liga — no le tocó
-   * turno con el tope por ciclo, o la ingesta está apagada. NO es falta de
-   * cobertura, y decirlo así en pantalla era mentir.
-   * `sin_datos`: se le pidió y la API no devolvió nada (cobertura real).
+   * turno con el tope por ciclo, o la ingesta está apagada.
+   * `sin_datos`: se le pidió y el feed vino vacío.
+   * `feed_ajeno`: el feed trajo partidos pero ninguno nuestro (el filtro
+   * ?league= no devolvió lo pedido).
+   * `fallo`: la consulta se cayó (red, HTTP, errors de la API, presupuesto).
    * `con_datos`: la última consulta de la liga sí trajo cuotas.
+   * Solo `sin_datos` se acerca a "la API no cubre esta liga" — y ni ese lo
+   * prueba. Afirmarlo en los cuatro casos era el bug.
    */
-  coberturaLive: 'con_datos' | 'sin_datos' | 'sin_consultar'
+  coberturaLive: 'con_datos' | 'sin_datos' | 'feed_ajeno' | 'fallo' | 'sin_consultar'
   /** Última consulta de /odds/live de esta liga; null si nunca. */
   coberturaConsultadaEn: string | null
 }

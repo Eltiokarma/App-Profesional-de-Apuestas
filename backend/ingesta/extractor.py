@@ -318,6 +318,11 @@ class Cliente:
         self.hoy = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         self.usadas = 0
         self.usadas_por: dict[str, int] = {}  # auditoría: consumo por endpoint
+        # requests que volvieron sin datos por FALLO (red, HTTP, errors de la
+        # API, presupuesto): get() devuelve None igual que ante una respuesta
+        # legítimamente vacía, y quien llama no podía distinguirlas. Comparar
+        # este contador antes/después de una llamada sí las distingue.
+        self.fallos = 0
         self._sondeo_hecho = False
         # último sondeo con el tope alcanzado: epoch PERSISTIDO en el JSON de
         # cuota — el ciclo en vivo arranca un proceso nuevo por minuto, y un
@@ -422,6 +427,7 @@ class Cliente:
             else:
                 print(f"  presupuesto diario agotado ({self.usadas}/{self.limite}, "
                       f"respaldo {self.usadas_respaldo}/{self.limite_respaldo if self.clave_respaldo else 'sin clave'})")
+                self.fallos += 1
                 return None
         if respaldo:
             self.usadas_respaldo += 1
@@ -456,6 +462,7 @@ class Cliente:
                         self._ajustar_por_cabeceras(resp.headers)
                 if errores:
                     print(f"  error de la API: {errores}")
+                    self.fallos += 1
                     return None
                 time.sleep(self.delay)
                 return data
@@ -469,6 +476,7 @@ class Cliente:
             except (urllib.error.URLError, TimeoutError) as e:
                 print(f"  error de red: {e} (intento {intento + 1}/3)")
                 time.sleep(5)
+        self.fallos += 1  # agotó los 3 intentos: esto NO es "la API no tiene datos"
         return None
 
     def _marcar_agotada(self, respaldo: bool) -> None:

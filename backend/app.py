@@ -1358,11 +1358,16 @@ def fixture_live(fixture_id: int):
     try:
         c = db.query_one(
             "sad",
-            "SELECT consultada_en, con_datos FROM odds_live_consultas WHERE league_id=?",
+            "SELECT consultada_en, con_datos, estado FROM odds_live_consultas WHERE league_id=?",
             (f["league_id"],),
         )
         if c:
-            cobertura = "con_datos" if c["con_datos"] else "sin_datos"
+            # `estado` dice POR QUÉ; el booleano viejo solo decía "no hubo", y
+            # con eso la pantalla culpaba a la cobertura de la API en los
+            # cuatro casos. DBs sin la columna caen al booleano.
+            cobertura = {"ok": "con_datos", "vacia": "sin_datos",
+                         "ajena": "feed_ajeno", "fallo": "fallo"}.get(
+                c["estado"], "con_datos" if c["con_datos"] else "sin_datos")
             cobertura_en = c["consultada_en"]
     except Exception:
         pass  # DBs sin la tabla (el ciclo en vivo nunca corrió): sin_consultar

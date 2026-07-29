@@ -6,7 +6,7 @@ live, la API con cobertura de odds live de esa liga, y los nombres de mercado
 mapeados por cuota_key. Cuando la ficha dice "sin cobertura de cuotas en vivo
 en esta liga", esto dice CUÁL de las puertas se quedó cerrada.
 
-Sin red por defecto (solo lee sad.db). Con --api gasta 2 requests para
+Sin red por defecto (solo lee sad.db). Con --api gasta 3-4 requests para
 distinguir lo único que no se puede saber desde la DB: si la API ofrece o no
 cuotas en juego de esa liga.
 
@@ -116,12 +116,30 @@ def diagnosticar(con: sqlite3.Connection, fid: int, cliente=None) -> None:
     #    ligas por ciclo va por esta marca; sin ella, "sin cobertura" puede
     #    significar simplemente "nunca le tocó turno")
     if tabla_existe(con, "odds_live_consultas"):
+        cols = {f[1] for f in con.execute("PRAGMA table_info(odds_live_consultas)")}
+        extra = ", estado, items, nuestros, ajenos" if "estado" in cols else ""
         fila = con.execute(
-            "SELECT consultada_en, con_datos FROM odds_live_consultas WHERE league_id=?",
+            f"SELECT consultada_en, con_datos{extra} FROM odds_live_consultas WHERE league_id=?",
             (lid,)).fetchone()
-        if fila:
+        if fila and extra:
+            estado, items, nuestros, ajenos = fila[2], fila[3], fila[4], fila[5]
+            print(f"{OK if estado == 'ok' else DUDA} última consulta /odds/live?league={lid}: "
+                  f"{fila[0]} UTC · estado {estado} "
+                  f"({items} items, {nuestros} nuestros, {ajenos} de otra liga)")
+            print("    " + {
+                "ok": "la liga sí devuelve cuotas en juego",
+                "vacia": "el feed vino VACÍO. Es lo más parecido a falta de cobertura, "
+                         "pero un feed vacío puntual no lo prueba: míralo varias rondas",
+                "ajena": f"el feed trajo partidos pero NINGUNO nuestro. Si `ajenos` > 0, el "
+                         f"filtro ?league={lid} no está filtrando y estamos leyendo el feed "
+                         f"global paginado — NO es falta de cobertura",
+                "fallo": "la consulta se CAYÓ (red, HTTP, errors de la API o presupuesto). "
+                         "No dice nada sobre la cobertura de la liga",
+            }.get(estado, "estado desconocido"))
+        elif fila:
             print(f"{OK if fila[1] else DUDA} última consulta /odds/live?league={lid}: "
-                  f"{fila[0]} UTC · {'trajo datos' if fila[1] else 'vacía (¿cobertura de la API?)'}")
+                  f"{fila[0]} UTC · {'trajo datos' if fila[1] else 'sin datos'} "
+                  f"(DB vieja: sin columna `estado`, no se puede saber por qué)")
         else:
             print(f"{DUDA} el ciclo nunca ha consultado /odds/live de esta liga "
                   f"(no le ha tocado turno con partido vivo, o el ciclo no corre)")
@@ -173,7 +191,7 @@ def diagnosticar(con: sqlite3.Connection, fid: int, cliente=None) -> None:
     print(f"    presupuesto: {cuota_diaria()}")
 
     # 6. lo único que no se puede saber desde la DB: si la API ofrece odds live
-    #    de esta liga. 2 requests, solo con --api.
+    #    de esta liga, por liga Y por fixture. 3-4 requests, solo con --api.
     if cliente is not None:
         data = cliente.get("fixtures", {"live": "all"})
         vivos = {(it.get("fixture") or {}).get("id") for it in (data or {}).get("response", [])}
@@ -181,13 +199,29 @@ def diagnosticar(con: sqlite3.Connection, fid: int, cliente=None) -> None:
               f"en el mundo; este {'SÍ' if fid in vivos else 'NO'} aparece")
         filas = cliente.paginado("odds/live", {"league": lid}, tope_paginas=3)
         ids = {(it.get("fixture") or {}).get("id") for it in filas}
+        ligas_resp = sorted({(it.get("league") or {}).get("id") for it in filas} - {None})
         if not filas:
             print(f"{NO} /odds/live?league={lid}: la API no devuelve NADA para esta liga ahora "
-                  f"mismo. Si se repite con partidos en juego, es falta de cobertura real de "
-                  f"la API — no un fallo nuestro (bájala a SAD_LIGAS_MENORES y ahorra requests)")
+                  f"mismo. Si se repite ronda tras ronda con partidos en juego, ahí sí es "
+                  f"falta de cobertura (bájala a SAD_LIGAS_MENORES y ahorra requests)")
         else:
             print(f"{OK} /odds/live?league={lid}: {len(filas)} items, fixtures {sorted(x for x in ids if x)}")
             print(f"    este partido {'SÍ' if fid in ids else 'NO'} está en ese feed")
+            print(f"    ligas EN LA RESPUESTA: {ligas_resp}")
+            if ligas_resp and lid not in ligas_resp:
+                print(f"{NO} el filtro ?league={lid} NO está filtrando: la API devolvió otras "
+                      f"ligas. Eso explica el 'sin cobertura' sin que falte cobertura — y es "
+                      f"justo lo que cubre el rescate por fixture (SAD_LIVE_ODDS_FIXTURES)")
+        # la prueba decisiva: preguntar por el partido, sin depender del filtro
+        directo = cliente.paginado("odds/live", {"fixture": fid}, tope_paginas=1)
+        n_val = sum(len(b.get("values") or []) for it in directo for b in (it.get("odds") or []))
+        if directo:
+            print(f"{OK} /odds/live?fixture={fid}: {len(directo)} items y {n_val} cuotas. "
+                  f"HAY cobertura para este partido — si por liga no llegaba, el problema "
+                  f"es el feed por liga, no la API")
+        else:
+            print(f"{NO} /odds/live?fixture={fid}: tampoco por fixture hay cuotas. Aquí sí "
+                  f"apunta a cobertura real (o a mercado cerrado en este momento)")
         print(f"    requests gastadas: {cliente.usadas}")
 
 
@@ -223,7 +257,7 @@ def main() -> int:
                     help="id del fixture (repetible)")
     ap.add_argument("--hoy", action="store_true", help="todos los de hoy de las ligas en vivo")
     ap.add_argument("--api", action="store_true",
-                    help="2 requests: ¿está en el feed live? ¿la API da odds live de esa liga?")
+                    help="3-4 requests: ¿está en el feed live? ¿la API da odds live por liga? ¿y por fixture?")
     args = ap.parse_args()
 
     if not os.path.exists(args.db):
