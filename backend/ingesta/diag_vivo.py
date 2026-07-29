@@ -64,8 +64,14 @@ def cuota_diaria() -> str:
             d = json.load(f)
     except (OSError, ValueError):
         return f"sin {CUOTA_PATH} (o no se corre desde la raíz de datos)"
-    return (f"día {d.get('dia')} · usadas {d.get('usadas')} de "
-            f"{d.get('limite_api') or '?'} del plan")
+    linea = (f"día {d.get('dia')} · usadas {d.get('usadas')} de "
+             f"{d.get('limite_api') or '?'} del plan")
+    por = d.get("usadas_por")
+    if isinstance(por, dict) and por:
+        # el desglose acumulado del día: QUIÉN se está comiendo el plan
+        top = sorted(por.items(), key=lambda kv: -kv[1])[:8]
+        linea += "\n      consumo del día: " + " · ".join(f"{k}={v}" for k, v in top)
+    return linea
 
 
 def diagnosticar(con: sqlite3.Connection, fid: int, cliente=None) -> None:

@@ -671,7 +671,8 @@ def main() -> int:
     con.commit()
     con.close()
     print(f"fixtures actualizados: {n_fix} · cuotas live: {n_odds} · eventos: {n_ev} "
-          f"· purgadas: {borradas} · requests usadas: {cliente.usadas}/{cliente.limite}")
+          f"· purgadas: {borradas} · requests usadas: {cliente.usadas}/{cliente.limite} "
+          f"· consumo del día: {cliente.resumen()}")
     return 0
 
 

@@ -51,7 +51,17 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   (el paso a WAL sigue reservado para la fase 3).
 - Cierra la curva prepartido con densidad donde importa (las últimas horas
   son las de más movimiento).
-- Presupuesto: ~20 fixtures/día × 8 refrescos ≈ **160/día** extra.
+- Presupuesto: ~20 fixtures/día × 8-48 refrescos ≈ **160-960/día** extra —
+  **siempre que se pida por fixture**. La lección del 29/07/2026: al pasar
+  las cuotas a "lote por fecha", cada refresco pagaba el feed mundial de
+  `/odds?date=` (40-90 páginas) para re-capturar 5-15 partidos nuestros, 48
+  veces al día ≈ 2.000-4.300 requests — y el plan de 7.500 amaneció muerto
+  (`7496/7495`) con las copas paradas a mitad de partido. Desde entonces
+  `capturar_cuotas_lote` elige POR FECHA: pocos pendientes
+  (`SAD_CUOTAS_LOTE_UMBRAL`, 12) → `/odds?fixture=` exacto; muchos → lote.
+  El consumo del día queda auditado por endpoint en `.extractor_cuota.json`
+  (lo imprimen cada ciclo y `diag_vivo`): la próxima vez que el plan
+  aparezca vacío, el culpable tiene nombre.
 
 ## Fase 3 · En vivo de verdad — HECHA
 
