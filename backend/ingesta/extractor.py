@@ -340,6 +340,18 @@ class Cliente:
         self.limite_respaldo = int(os.environ.get("SAD_RAPIDAPI_LIMITE", str(LIMITE_DEFAULT)))
         self.usadas_respaldo = 0
         self._aviso_respaldo = False
+        # EMERGENCIA VIP: segunda clave de api-sports (SAD_EMERGENCIA_KEY) para
+        # seguir partidos marcados VIP cuando el plan principal Y el respaldo
+        # están agotados. El plan correcto para esta clave es el Basic "soft
+        # limit" (nunca corta: factura el excedente a $0.005/request) — el
+        # Basic nuevo y el free de RapidAPI cortan en seco a los 100 y no
+        # pueden rescatar nada. Como aquí cada request ES dinero, esta clave
+        # no entra en el flujo normal: solo la gasta get_emergencia(), solo
+        # para VIP, y con su propio techo diario (SAD_EMERGENCIA_TOPE ≈ un
+        # partido y medio; 300 requests ≈ $1 tras los 100 gratis del día).
+        self.clave_emergencia = os.environ.get("SAD_EMERGENCIA_KEY", "").strip()
+        self.tope_emergencia = int(os.environ.get("SAD_EMERGENCIA_TOPE", "300"))
+        self.usadas_emergencia = 0
         self._leer_cuota()
 
     def resumen(self) -> str:
@@ -389,6 +401,7 @@ class Cliente:
         if datos.get("dia") == self.hoy:
             self.usadas = int(datos.get("usadas", 0) or 0)
             self.usadas_respaldo = int(datos.get("usadas_respaldo", 0) or 0)
+            self.usadas_emergencia = int(datos.get("usadas_emergencia", 0) or 0)
             self._sondeo_epoch = float(datos.get("sondeo_epoch", 0) or 0)
             por = datos.get("usadas_por")
             if isinstance(por, dict):  # el acumulado del día sigue creciendo aquí
@@ -399,6 +412,7 @@ class Cliente:
         with open(CUOTA_PATH, "w", encoding="utf-8") as f:
             json.dump({"dia": self.hoy, "usadas": self.usadas, "limite_api": self.limite_api,
                        "usadas_respaldo": self.usadas_respaldo,
+                       "usadas_emergencia": self.usadas_emergencia,
                        "sondeo_epoch": self._sondeo_epoch,
                        "usadas_por": self.usadas_por}, f)
 
@@ -454,14 +468,23 @@ class Cliente:
         self._guardar_cuota()
         return self._pedir(url, cabeceras, endpoint, respaldo)
 
-    def _pedir(self, url: str, cabeceras: dict, endpoint: str, respaldo: bool) -> dict | None:
+    def _pedir(self, url: str, cabeceras: dict, endpoint: str, respaldo: bool,
+               emergencia: bool = False) -> dict | None:
         req = urllib.request.Request(url, headers=cabeceras)
         for intento in range(3):
             try:
                 with urllib.request.urlopen(req, timeout=30) as resp:
                     data = json.load(resp)
                     errores = data.get("errors")
-                    if isinstance(errores, dict) and "requests" in errores:
+                    if emergencia:
+                        # la clave de emergencia lleva SU contador y SU tope:
+                        # sus cabeceras no deben tocar los marcadores del plan
+                        # principal ni del respaldo. Si aun así rebota por
+                        # límite (clave con plan "hard"), se sella el día.
+                        if isinstance(errores, dict) and "requests" in errores:
+                            self.usadas_emergencia = max(self.usadas_emergencia, self.tope_emergencia)
+                            self._guardar_cuota()
+                    elif isinstance(errores, dict) and "requests" in errores:
                         # rebote por límite diario: las cabeceras de una
                         # respuesta bloqueada NO son fiables (mostraban un
                         # 'remaining' recién reseteado con el bloqueo aún
@@ -490,6 +513,25 @@ class Cliente:
                 time.sleep(5)
         self.fallos += 1  # agotó los 3 intentos: esto NO es "la API no tiene datos"
         return None
+
+    def emergencia_disponible(self, n: int = 1) -> bool:
+        """¿Hay clave de emergencia y le queda techo hoy? (SAD_EMERGENCIA_KEY)."""
+        return bool(self.clave_emergencia) and self.tope_emergencia - self.usadas_emergencia >= n
+
+    def get_emergencia(self, endpoint: str, params: dict) -> dict | None:
+        """Request con la clave de EMERGENCIA: ignora el plan principal y el
+        respaldo — es para partidos VIP con todo lo demás agotado. Aquí cada
+        request puede ser dinero (plan soft limit factura el excedente), así
+        que el único freno es tope_emergencia y quien llama decide QUÉ vale
+        la pena pedir. Nunca la llama el flujo normal de ingesta."""
+        if not self.emergencia_disponible():
+            return None
+        self.usadas_emergencia += 1
+        self.usadas_por["emergencia:" + endpoint] = self.usadas_por.get("emergencia:" + endpoint, 0) + 1
+        self._guardar_cuota()
+        url = f"{BASE_URL}/{endpoint}?{urllib.parse.urlencode(params)}"
+        return self._pedir(url, {"x-apisports-key": self.clave_emergencia}, endpoint,
+                           respaldo=False, emergencia=True)
 
     def _marcar_agotada(self, respaldo: bool) -> None:
         """El marcador local pasa al tope y se persiste: los procesos

@@ -453,6 +453,17 @@ def main():
     check("live: coberturaLive con_datos + cuándo se consultó la liga",
           lv["coberturaLive"] == "con_datos" and bool(lv["coberturaConsultadaEn"]),
           (lv["coberturaLive"], lv["coberturaConsultadaEn"]))
+    # VIP "sí o sí": el POST escribe .vip_fixtures.json (no las .db) y /live lo refleja
+    check("live: sin marca, vip=false", lv["vip"] is False, lv["vip"])
+    rv = c.post(A + f"/fixtures/{vivo['id']}/vip", json={"activo": True}).json()
+    check("POST vip activa la marca", rv == {"fixtureId": vivo["id"], "vip": True}, rv)
+    check("live: con marca, vip=true",
+          c.get(A + f"/fixtures/{vivo['id']}/live").json()["vip"] is True)
+    rv = c.post(A + f"/fixtures/{vivo['id']}/vip", json={"activo": False}).json()
+    check("POST vip desactiva la marca",
+          rv["vip"] is False and c.get(A + f"/fixtures/{vivo['id']}/live").json()["vip"] is False, rv)
+    check("POST vip de fixture inexistente → 404",
+          c.post(A + "/fixtures/999999999/vip", json={"activo": True}).status_code == 404)
     check("live: eventos mapeados (gol/amarilla/roja; subst y penal fallado fuera)",
           [(e["tipo"], e["minuto"]) for e in lv["eventos"]]
           == [("amarilla", 12), ("gol", 34), ("gol", 51), ("roja", 60)], lv["eventos"])

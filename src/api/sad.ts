@@ -16,6 +16,7 @@ import type {
   FichaPartidoDTO,
   FixtureDTO,
   FixtureLiveDTO,
+  VipEstadoDTO,
   GeneracionEfeDTO,
   HealthDTO,
   EslabonDtpDTO,
@@ -41,6 +42,10 @@ export const SadApi = {
 
   /** En vivo real: marcador, minuto y cuotas en juego (vacías si no hay cobertura). */
   fixtureLive: (id: number) => apiGet<FixtureLiveDTO>(`/fixtures/${id}/live`),
+
+  /** Marca/desmarca el partido como VIP ("sí o sí, aunque cueste"). */
+  marcarVip: (id: number, activo: boolean) =>
+    apiPost<VipEstadoDTO>(`/fixtures/${id}/vip`, { activo }),
 
   /** Historia de niveles de un equipo (desc por fecha; limit opcional). */
   niveles: (equipoId: number, limit?: number) =>

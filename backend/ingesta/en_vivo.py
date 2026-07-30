@@ -34,6 +34,7 @@ las lecturas del backend, el modo journal clásico daría "database is locked".
 Uso manual: PYTHONUTF8=1 python -m backend.ingesta.en_vivo [--db sad.db]
 """
 import argparse
+import json
 import os
 import sqlite3
 import sys
@@ -113,6 +114,21 @@ TOPE_PAGINAS = max(1, _tope("SAD_LIVE_ODDS_PAGINAS", 3))
 # sin curva y a la pantalla culpando a la cobertura de la API. Preguntar por el
 # fixture no depende de nada de eso. 0 = apagado.
 TOPE_FIXTURES = _tope("SAD_LIVE_ODDS_FIXTURES", 4)
+
+# PARTIDOS VIP: "este partido lo quiero sí o sí, aunque cueste". Se marcan
+# desde la app (POST /fixtures/{id}/vip → .vip_fixtures.json en la raíz de
+# datos) o por liga con SAD_EMERGENCIA_LIGAS="13,11". Dos efectos:
+# 1. Con el plan sano, el VIP entra al rescate por fixture aunque su liga sea
+#    menor: la marca manda sobre LIGAS_MENORES para ESE partido.
+# 2. Con el plan (y el respaldo) agotados, el modo emergencia les mantiene
+#    marcador y cuotas con la clave SAD_EMERGENCIA_KEY — la que puede facturar
+#    excedente — sin gastar un centavo en nada que no esté marcado.
+# Las marcas caducan solas (VIP_CADUCIDAD_H): nadie paga por un olvido.
+VIP_PATH = ".vip_fixtures.json"
+VIP_CADUCIDAD_H = 8
+LIGAS_EMERGENCIA = {
+    int(x) for x in os.environ.get("SAD_EMERGENCIA_LIGAS", "").split(",") if x.strip().isdigit()
+}
 
 # FRENO DE PRESUPUESTO. El ciclo corre cada minuto y, sin freno propio, se come
 # el plan del día y deja sin datos a TODO lo demás: la ingesta diaria, el
@@ -195,6 +211,84 @@ CREATE TABLE IF NOT EXISTS xi_intentos (
     con_datos INTEGER NOT NULL DEFAULT 0
 );
 """
+
+
+def fixtures_vip(con: sqlite3.Connection, ruta: str = VIP_PATH) -> set[int]:
+    """Fixtures marcados VIP que AHORA están en ventana de juego (0 requests):
+    las marcas de la app (caducadas fuera) + los partidos de las ligas de
+    SAD_EMERGENCIA_LIGAS. Sin filtro de liga importante/menor: la marca es
+    'este partido sí o sí' y manda sobre esa clasificación."""
+    marcados: set[int] = set()
+    try:
+        with open(ruta, encoding="utf-8") as f:
+            datos = json.load(f)
+        limite = datetime.now(timezone.utc) - timedelta(hours=VIP_CADUCIDAD_H)
+        for fid, marcado_en in (datos.items() if isinstance(datos, dict) else []):
+            try:
+                cuando = datetime.strptime(str(marcado_en)[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+                if cuando >= limite:
+                    marcados.add(int(fid))
+            except (ValueError, TypeError):
+                continue
+    except (OSError, ValueError):
+        pass  # sin archivo o corrupto: sin marcas manuales
+    ahora = datetime.now(timezone.utc)
+    desde = (ahora - timedelta(minutes=VENTANA_JUEGO_MIN)).strftime("%Y-%m-%d %H:%M:%S")
+    hasta = (ahora + timedelta(minutes=VENTANA_PREVIA_MIN)).strftime("%Y-%m-%d %H:%M:%S")
+    filtros, args = [], []
+    if marcados:
+        filtros.append(f"id IN ({','.join('?' * len(marcados))})")
+        args.extend(sorted(marcados))
+    if LIGAS_EMERGENCIA:
+        filtros.append(f"league_id IN ({','.join('?' * len(LIGAS_EMERGENCIA))})")
+        args.extend(sorted(LIGAS_EMERGENCIA))
+    if not filtros:
+        return set()
+    marcas = ",".join("?" * len(EN_JUEGO))
+    previos = ",".join("?" * len(PREVIOS))
+    return {
+        fila[0] for fila in con.execute(
+            f"""SELECT id FROM fixtures WHERE ({' OR '.join(filtros)})
+                AND ((status_short IN ({previos}) AND date BETWEEN ? AND ?)
+                     OR status_short IN ({marcas}))""",
+            (*args, *PREVIOS, desde, hasta, *EN_JUEGO))
+    }
+
+
+def capturar_emergencia(cliente, con: sqlite3.Connection, vip_sin: list[int],
+                        capturado: str) -> int:
+    """Marcador + cuotas de los VIP que el flujo normal no pudo servir, con la
+    clave de EMERGENCIA (la que factura excedente). 1 request de /fixtures?ids=
+    para el marcador de todos + 1 de /odds/live?fixture= por partido. Cada
+    request es dinero: solo VIP, solo lo mínimo, y el tope diario manda."""
+    if not vip_sin or not cliente.emergencia_disponible(2):
+        return 0
+    print(f"modo EMERGENCIA: {len(vip_sin)} VIP sin servir con el plan agotado {sorted(vip_sin)}")
+    data = cliente.get_emergencia("fixtures", {"ids": "-".join(map(str, sorted(vip_sin)[:20]))})
+    items = (data or {}).get("response", [])
+    guardar_fixtures(con, items)
+    for item in items:
+        guardar_eventos(con, item)
+    # cuotas SOLO para los que el marcador recién pedido confirma en juego: un
+    # VIP que aún no arranca cuesta 1 request por ciclo (marcador), no 2
+    jugando = {
+        (item.get("fixture") or {}).get("id")
+        for item in items
+        if ((item.get("fixture") or {}).get("status") or {}).get("short") in EN_JUEGO
+    }
+    n_odds = 0
+    for fid in sorted(set(vip_sin) & jugando):
+        if not cliente.emergencia_disponible():
+            print(f"  tope de emergencia alcanzado ({cliente.tope_emergencia}/día): el resto espera")
+            break
+        data = cliente.get_emergencia("odds/live", {"fixture": fid})
+        for item in (data or {}).get("response", []):
+            if (item.get("fixture") or {}).get("id") == fid:
+                n_odds += guardar_odds_live(con, item, capturado)
+    con.commit()
+    print(f"  emergencia: {n_odds} cuotas de {len(set(vip_sin) & jugando)} en juego "
+          f"· usadas {cliente.usadas_emergencia}/{cliente.tope_emergencia} hoy")
+    return n_odds
 
 
 def preparar_consultas(con: sqlite3.Connection) -> None:
@@ -598,7 +692,9 @@ def main() -> int:
     # la ventana del XI arranca ANTES que la de juego: puede haber alineaciones
     # que pedir cuando todavía no hay ningún partido en juego
     xi_pendientes = fixtures_para_xi(con, vivo)
-    if not candidatos and not xi_pendientes:
+    # los VIP entran aunque su liga sea menor: la marca manda para ESE partido
+    vip = fixtures_vip(con)
+    if not candidatos and not xi_pendientes and not vip:
         con.close()
         print("sin partidos en ventana de juego ni alineaciones que pedir · 0 requests")
         return 0
@@ -609,7 +705,7 @@ def main() -> int:
     # el XI primero: es lo que le falta al análisis prepartido y caduca al saque
     if xi_pendientes:
         capturar_xi(cliente, con, xi_pendientes, capturado)
-    if not candidatos:
+    if not candidatos and not vip:
         con.close()
         print(f"sin partidos en ventana de juego · requests usadas: {cliente.usadas}/{cliente.limite}")
         return 0
@@ -624,6 +720,7 @@ def main() -> int:
     vivos = [
         item for item in (data or {}).get("response", [])
         if item.get("fixture", {}).get("id") in candidatos
+        or item.get("fixture", {}).get("id") in vip
         or item.get("league", {}).get("id") in vivo
     ]
     n_fix = guardar_fixtures(con, vivos)
@@ -645,11 +742,25 @@ def main() -> int:
     for lid, fids in locales.items():
         por_liga.setdefault(lid, set()).update(fids)
     # los fixtures que de verdad se están jugando (feed + lo que nuestra base
-    # ya tiene marcado): si su ronda de liga no los trae, se rescatan uno a uno
-    ids_en_juego = ids_vivos | (fixtures_marcados_en_juego(con) & candidatos)
-    n_odds, _ = capturar_odds_live(con=con, cliente=cliente, por_liga=por_liga,
-                                   ids_objetivo=candidatos | ids_vivos, capturado=capturado,
-                                   en_juego=en_juego_ligas, ids_en_juego=ids_en_juego)
+    # ya tiene marcado): si su ronda de liga no los trae, se rescatan uno a uno.
+    # Los VIP entran aquí aunque su liga sea menor: el rescate por fixture les
+    # da cuotas con el presupuesto normal mientras lo haya.
+    ids_en_juego = ids_vivos | (fixtures_marcados_en_juego(con) & (candidatos | vip))
+    n_odds, con_feed = capturar_odds_live(con=con, cliente=cliente, por_liga=por_liga,
+                                          ids_objetivo=candidatos | ids_vivos | vip,
+                                          capturado=capturado,
+                                          en_juego=en_juego_ligas, ids_en_juego=ids_en_juego)
+
+    # MODO EMERGENCIA: VIP en juego que el flujo normal no pudo servir porque
+    # el plan (y el respaldo) no dan más — la clave de emergencia les mantiene
+    # marcador y cuotas. Solo se dispara con el presupuesto normal muerto: si
+    # hay plan, el rescate de arriba ya lo intentó gratis.
+    # (vip entero, no solo los "en juego" según la DB: con el plan muerto el
+    # estado local puede estar viejo — el marcador de emergencia lo actualiza
+    # y las cuotas solo se pagan para los confirmados jugando)
+    vip_sin = sorted(vip - con_feed)
+    if vip_sin and not cliente.quedan(2):
+        n_odds += capturar_emergencia(cliente, con, vip_sin, capturado)
 
     # cerrar los que se cayeron del feed live (terminaron): /fixtures?ids= trae
     # su estado y marcador finales sin esperar a la corrida diaria (lotes de 20)

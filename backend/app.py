@@ -1324,6 +1324,63 @@ def _tipo_evento(tipo: str, detalle: str):
     return None  # sustituciones, VAR, etc. no se sirven (por ahora)
 
 
+VIP_CADUCIDAD_H = 8  # espejo de backend/ingesta/en_vivo.py — las marcas caducan solas
+
+
+def _vip_ruta() -> str:
+    return os.path.join(db.BASE_DIR, ".vip_fixtures.json")
+
+
+def _vip_marcas() -> dict:
+    """Marcas VIP vigentes {fixture_id_str: 'YYYY-MM-DD HH:MM:SS'} — las
+    caducadas se filtran al leer, igual que hace la ingesta."""
+    try:
+        with open(_vip_ruta(), encoding="utf-8") as f:
+            datos = json.load(f)
+        if not isinstance(datos, dict):
+            return {}
+    except (OSError, ValueError):
+        return {}
+    limite = datetime.now(timezone.utc) - timedelta(hours=VIP_CADUCIDAD_H)
+    vivas = {}
+    for fid, marcado_en in datos.items():
+        try:
+            cuando = datetime.strptime(str(marcado_en)[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+            if cuando >= limite:
+                vivas[str(fid)] = str(marcado_en)
+        except (ValueError, TypeError):
+            continue
+    return vivas
+
+
+class VipRequest(BaseModel):
+    activo: bool
+
+
+@app.post(API + "/fixtures/{fixture_id}/vip")
+def fixture_vip(fixture_id: int, req: VipRequest):
+    """Marca/desmarca un partido como VIP: 'este lo quiero sí o sí'. La marca
+    vive en .vip_fixtures.json (la raíz de datos, NO las .db — la regla de
+    solo-lectura sobre las bases sigue intacta) y la lee el ciclo en vivo:
+    con plan sano el VIP entra al rescate por fixture aunque su liga sea
+    menor; con el plan agotado, el modo emergencia (SAD_EMERGENCIA_KEY, la
+    clave que puede facturar excedente) le mantiene marcador y cuotas.
+    Caduca sola a las 8 h: nadie paga por un olvido."""
+    if not db.query_one("sad", "SELECT id FROM fixtures WHERE id=?", (fixture_id,)):
+        raise HTTPException(404, f"fixture {fixture_id} no existe")
+    marcas = _vip_marcas()
+    if req.activo:
+        marcas[str(fixture_id)] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    else:
+        marcas.pop(str(fixture_id), None)
+    try:
+        with open(_vip_ruta(), "w", encoding="utf-8") as f:
+            json.dump(marcas, f)
+    except OSError as e:
+        raise HTTPException(503, f"no se pudo guardar la marca VIP: {e}")
+    return {"fixtureId": fixture_id, "vip": req.activo}
+
+
 def _presupuesto_agotado() -> bool:
     """¿El plan de API-Football del día está agotado? Lo dice el marcador que
     comparten todas las corridas de ingesta (.extractor_cuota.json, en el
@@ -1462,6 +1519,7 @@ def fixture_live(fixture_id: int):
         "actualizadoEn": iso(ultima) if ultima else None,
         "coberturaLive": cobertura,
         "coberturaConsultadaEn": iso(cobertura_en) if cobertura_en else None,
+        "vip": str(fixture_id) in _vip_marcas(),
     }
 
 
