@@ -127,10 +127,11 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [ligaId, pedido]
+                required: [ligaId, pedido, fixtures]
                 properties:
                   ligaId: { type: integer }
                   pedido: { type: boolean }
+                  fixtures: { type: integer, description: 'partidos sin resultado que el ciclo va a refrescar (0 = nada que refrescar; -1 = no se pudo calcular)' }
         '404': { description: Liga sin fixtures en la base }
   /niveles/{equipoId}:
     get:

@@ -67,18 +67,30 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
     setLista(nueva)
     guardarLS(claveLS, nueva)
   }
-  // refresco forzado por liga: 'pedido' pinta el ✓ hasta que el ciclo lo atienda
+  // refresco forzado por liga. El estado dice la VERDAD de lo que va a pasar:
+  // 'nada' cuando el backend responde que no hay partidos sin resultado que
+  // refrescar (antes se pintaba un ✓ igual y el usuario esperaba de balde).
   const esHttp = CONFIG.dataSource === 'http'
-  const [refrescos, setRefrescos] = useState<Record<number, 'pedido' | undefined>>({})
+  type EstadoRefresco = 'pidiendo' | 'pedido' | 'nada' | 'error' | undefined
+  const [refrescos, setRefrescos] = useState<Record<number, EstadoRefresco>>({})
   const pedirRefresco = async (ligaId: number) => {
-    setRefrescos((r) => ({ ...r, [ligaId]: 'pedido' }))
+    setRefrescos((r) => ({ ...r, [ligaId]: 'pidiendo' }))
+    const limpiar = (ms: number) =>
+      setTimeout(() => setRefrescos((r) => ({ ...r, [ligaId]: undefined })), ms)
     try {
-      await refrescarLiga(ligaId)
-      // el ✓ se queda ~90 s: lo que tarda el próximo ciclo en atenderlo
-      setTimeout(() => setRefrescos((r) => ({ ...r, [ligaId]: undefined })), 90_000)
+      const res = await refrescarLiga(ligaId)
+      setRefrescos((r) => ({ ...r, [ligaId]: res.fixtures === 0 ? 'nada' : 'pedido' }))
+      limpiar(res.fixtures === 0 ? 4_000 : 90_000)
     } catch {
-      setRefrescos((r) => ({ ...r, [ligaId]: undefined })) // falló: se puede reintentar
+      setRefrescos((r) => ({ ...r, [ligaId]: 'error' }))
+      limpiar(4_000)
     }
+  }
+  const MARCA_REFRESCO: Record<'pidiendo' | 'pedido' | 'nada' | 'error', { txt: string; color: string; title: string }> = {
+    pidiendo: { txt: '…', color: 'var(--t3)', title: 'Pidiendo el refresco…' },
+    pedido: { txt: '✓', color: 'var(--up)', title: 'Pedido anotado: el próximo ciclo (~1 min) actualiza los marcadores de esta liga' },
+    nada: { txt: '–', color: 'var(--t3)', title: 'No hay partidos sin resultado que refrescar en esta liga (±12 h)' },
+    error: { txt: '!', color: 'var(--down)', title: 'No se pudo pedir el refresco — reintenta' },
   }
 
   const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -227,12 +239,13 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
               {esHttp && grp.ligaId != null && (
                 <button
                   onClick={() => pedirRefresco(grp.ligaId!)}
-                  title="Forzar la actualización del marcador de esta liga (la atiende el próximo ciclo en vivo, ~1 minuto)"
-                  disabled={refrescos[grp.ligaId] === 'pedido'}
-                  style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 0, cursor: refrescos[grp.ligaId] === 'pedido' ? 'default' : 'pointer', padding: 0, borderRadius: 7, flexShrink: 0 }}
+                  title={MARCA_REFRESCO[refrescos[grp.ligaId!] as 'pedido']?.title
+                    ?? 'Forzar la actualización del marcador de esta liga (la atiende el próximo ciclo en vivo, ~1 minuto)'}
+                  disabled={!!refrescos[grp.ligaId!]}
+                  style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 0, cursor: refrescos[grp.ligaId!] ? 'default' : 'pointer', padding: 0, borderRadius: 7, flexShrink: 0 }}
                 >
-                  {refrescos[grp.ligaId] === 'pedido'
-                    ? <span style={{ font: '700 12px var(--mono)', color: 'var(--up)' }}>✓</span>
+                  {refrescos[grp.ligaId!]
+                    ? <span style={{ font: '700 12px var(--mono)', color: MARCA_REFRESCO[refrescos[grp.ligaId!] as 'pedido'].color }}>{MARCA_REFRESCO[refrescos[grp.ligaId!] as 'pedido'].txt}</span>
                     : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4" /><path d="M21 3v6h-6" /></svg>}
                 </button>
               )}

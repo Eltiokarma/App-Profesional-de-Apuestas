@@ -510,7 +510,7 @@ class MockDataSource implements SadDataSource {
   }
 
   async refrescarLiga(ligaId: number): Promise<RefrescoLigaDTO> {
-    return { ligaId, pedido: true }
+    return { ligaId, pedido: true, fixtures: 1 }
   }
 
   async marcarVip(fixtureId: number, activo: boolean): Promise<VipEstadoDTO> {

@@ -499,11 +499,51 @@ def main():
     check("refresco forzado: costó 1 request de marcador",
           [p[0] for p in cliente.pedidos] == ["fixtures"], cliente.pedidos)
 
-    ruta = refresco_json({"282": vieja})  # pedido caducado (>15 min... 9h)
+    ruta = refresco_json({"282": vieja})  # pedido caducado (>30 min... 9h)
     cliente = ClienteFalso({})
     check("refresco forzado: un pedido caducado no gasta nada",
           en_vivo_mod.refrescar_ligas_pedidas(cliente, con, ya_frescos=set(), ruta=ruta) == 0
           and cliente.pedidos == [], cliente.pedidos)
+
+    # LA VENTANA (bug 30/07/2026: el ⟳ daba ✓ y no pasaba nada). El forzado
+    # tiene su PROPIA ventana ancha: usaba la de juego (−210 min/+15 min) y
+    # dejaba fuera justo lo que el usuario quiere arreglar — los NS congelados
+    # de hace horas y los partidos que arrancan más tarde.
+    con2 = sqlite3.connect(":memory:")
+    con2.executescript(DDL_ODDS_LIVE + DDL_FIXTURES_FULL)
+    con2.executemany("INSERT INTO fixtures (id,date,status_short,league_id) VALUES (?,?,?,?)", [
+        (901, hace(30), "NS", 11),         # dentro de la ventana de juego
+        (902, hace(250), "NS", 11),        # congelado hace 4h10 — antes FUERA
+        (903, hace(-90), "NS", 11),        # arranca en 1h30  — antes FUERA
+        (904, hace(60), "FT", 11),         # terminado: no se toca
+        (905, hace(60), "NS", 71),         # otra liga: no se pide
+        (906, hace(60 * 20), "NS", 11),    # hace 20 h: fuera hasta del forzado
+    ])
+    con2.commit()
+    check("la ventana del forzado abarca congelados viejos y próximos, no los terminados",
+          en_vivo_mod.fixtures_para_refresco(con2, {11}) == [902, 901, 903],  # asc por fecha
+          en_vivo_mod.fixtures_para_refresco(con2, {11}))
+
+    # el pedido SOBREVIVE si no hubo con qué servirlo (antes se borraba igual y
+    # el click se evaporaba en silencio: ✓ en pantalla y nada más, para siempre)
+    ruta = refresco_json({"11": ahora})
+    cliente = ClienteFalso({}, presupuesto=0, emergencia=None)
+    n = en_vivo_mod.refrescar_ligas_pedidas(cliente, con2, ya_frescos=set(), ruta=ruta)
+    check("sin presupuesto ni emergencia, el pedido NO se consume: sigue vivo",
+          n == 0 and _os.path.exists(ruta) and cliente.pedidos == [], (n, cliente.pedidos))
+    cliente = ClienteFalso({}, marcadores=[item_marcador(902, 11)])
+    check("y el ciclo siguiente, con presupuesto, lo atiende",
+          en_vivo_mod.refrescar_ligas_pedidas(cliente, con2, ya_frescos=set(), ruta=ruta) == 1
+          and not _os.path.exists(ruta))
+
+    # "nada que refrescar" sí consume el pedido: no hay nada que esperar
+    ruta = refresco_json({"71": ahora})
+    con2.execute("UPDATE fixtures SET status_short='FT' WHERE league_id=71")
+    con2.commit()
+    cliente = ClienteFalso({})
+    check("sin partidos que refrescar, el pedido se consume y no gasta requests",
+          en_vivo_mod.refrescar_ligas_pedidas(cliente, con2, ya_frescos=set(), ruta=ruta) == 0
+          and not _os.path.exists(ruta) and cliente.pedidos == [], cliente.pedidos)
 
     # con el plan muerto, el marcador sale por la clave de emergencia
     con.execute("UPDATE fixtures SET status_short='NS', goals_home=NULL, date=? WHERE id=?",
