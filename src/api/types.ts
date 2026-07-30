@@ -552,6 +552,9 @@ export interface VipEstadoDTO {
 export interface RefrescoLigaDTO {
   ligaId: number
   pedido: boolean
+  /** Partidos sin resultado que el ciclo va a refrescar. 0 = nada que
+   *  refrescar (el ✓ sería mentira); -1 = no se pudo calcular. */
+  fixtures: number
 }
 
 /** Cuota de UNA casa para una selección (última foto). mejor=true: la más alta. */

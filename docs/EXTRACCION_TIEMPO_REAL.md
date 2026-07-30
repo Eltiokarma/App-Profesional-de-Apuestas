@@ -153,11 +153,26 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   el candado contra la factura sorpresa. Nunca la toca el flujo normal.
 - **Refresco forzado de liga** (el botón ⟳ junto al nombre de la liga en
   Partidos → `POST /ligas/{id}/refrescar` → `.refresco_ligas.json`): el
-  próximo ciclo actualiza el MARCADOR de todos los partidos en ventana de esa
-  liga por `/fixtures?ids=` — presupuesto normal si queda, emergencia si el
-  plan está muerto (el caso real: Bragantino–Sporting Cristal ya jugándose con
-  el estado congelado en NS). Solo marcador; las cuotas siguen sus reglas
-  (VIP para pagarlas). El pedido se consume al atenderse y caduca a los 15 min.
+  próximo ciclo actualiza el MARCADOR de los partidos SIN RESULTADO de esa liga
+  por `/fixtures?ids=` — presupuesto normal si queda, emergencia si el plan está
+  muerto (el caso real: Bragantino–Sporting Cristal ya jugándose con el estado
+  congelado en NS). Solo marcador; las cuotas siguen sus reglas (VIP para
+  pagarlas).
+  Dos cosas que lo tenían **inservible** en su primera versión (30/07/2026: el ⟳
+  daba el ✓ y no pasaba nada):
+  1. **Usaba la ventana de juego** (−210 min/+15 min), la misma del ciclo
+     normal. El botón existe para arreglar lo que esa ventana se dejó fuera, así
+     que con ella no arreglaba nada: los NS congelados de hace horas y los
+     partidos que arrancan más tarde quedaban excluidos — exactamente el motivo
+     del click. Ahora tiene ventana propia y ancha (`REFRESCO_ATRAS_H` 12 h /
+     `REFRESCO_ADELANTE_H` 6 h) y entra cualquier estado que no sea final.
+  2. **El pedido se consumía siempre**, incluso sin presupuesto ni clave de
+     emergencia: el click se evaporaba en silencio y el usuario esperaba de
+     balde. Ahora solo se consume si se pudo atender (o si de verdad no había
+     nada que refrescar); si no, sobrevive a los ciclos hasta que haya con qué
+     servirlo, y caduca solo a los `REFRESCO_CADUCIDAD_MIN` (30).
+  Y el POST devuelve `fixtures`: cuántos partidos va a tocar. Con 0 la app dice
+  *"nada que refrescar"* en vez de pintar un ✓ que no significa nada.
 - **Por qué la pantalla ya no miente.** Los tres bugs anteriores compartían
   síntoma — "sin cobertura de cuotas en vivo en esta liga" — porque la UI solo
   sabía que este fixture no tenía filas en `odds_live`, y de ahí deducía falta

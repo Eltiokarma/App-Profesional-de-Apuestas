@@ -466,7 +466,19 @@ def main():
           c.post(A + "/fixtures/999999999/vip", json={"activo": True}).status_code == 404)
     # refresco forzado de liga (el ⟳ de Partidos): escribe el pedido para el ciclo
     rr = c.post(A + f"/ligas/{vivo['ligaId']}/refrescar").json()
-    check("POST refrescar liga → pedido anotado", rr == {"ligaId": vivo["ligaId"], "pedido": True}, rr)
+    check("POST refrescar liga → pedido anotado", rr["ligaId"] == vivo["ligaId"] and rr["pedido"], rr)
+    # el conteo evita el ✓ mentiroso: con 0 la app dice "nada que refrescar".
+    # Aquí sale 0 porque los fixtures del seed tienen fecha fija (jul-2026) y
+    # caen fuera de la ventana ±12 h del forzado; la ventana en sí la prueba
+    # test_en_vivo con fechas relativas al reloj.
+    check("POST refrescar liga informa cuántos partidos va a tocar (entero >= 0)",
+          isinstance(rr["fixtures"], int) and rr["fixtures"] >= 0, rr)
+    # LA COSTURA: el POST escribe en BASE_DIR y el ciclo lee una ruta RELATIVA
+    # (corre con cwd=BASE_DIR). Si los nombres se separan, el click se pierde
+    # sin que nada falle — el bug más difícil de ver de todo el flujo.
+    from backend.ingesta.en_vivo import REFRESCO_PATH as _RP
+    check("el nombre del archivo del POST es el que lee el ciclo en vivo",
+          _RP == ".refresco_ligas.json", _RP)
     import json as _json
 
     import backend.db as _db

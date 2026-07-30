@@ -138,7 +138,14 @@ LIGAS_EMERGENCIA = {
 # (VIP para pagarlas). El pedido se consume al atenderse y caduca a los 15 min:
 # un click viejo no gasta nada.
 REFRESCO_PATH = ".refresco_ligas.json"
-REFRESCO_CADUCIDAD_MIN = 15
+REFRESCO_CADUCIDAD_MIN = 30
+# Ventana PROPIA del refresco forzado, mucho más ancha que la de juego: el
+# botón existe para arreglar lo que la ventana normal se dejó fuera, así que
+# usar la misma no arreglaba nada (bug 30/07/2026: el ⟳ daba el ✓ y no pasaba
+# nada — con −210 min/+15 min quedaban fuera los NS congelados de hace horas y
+# los partidos que arrancan más tarde, que son EXACTAMENTE el motivo del click).
+REFRESCO_ATRAS_H = 12
+REFRESCO_ADELANTE_H = 6
 
 # FRENO DE PRESUPUESTO. El ciclo corre cada minuto y, sin freno propio, se come
 # el plan del día y deja sin datos a TODO lo demás: la ingesta diaria, el
@@ -284,33 +291,77 @@ def ligas_a_refrescar(ruta: str = REFRESCO_PATH) -> set[int]:
     return pedidas
 
 
+def fixtures_para_refresco(con: sqlite3.Connection, ligas: "set[int]") -> list[int]:
+    """Partidos SIN RESULTADO de esas ligas en la ventana ancha del forzado
+    (0 requests). Cualquier estado que no sea final entra: NS/TBD congelados,
+    en juego, e incluso PST/CANC — que el usuario fuerza precisamente porque
+    sospecha que el estado guardado es mentira. No filtra por liga importante:
+    si el usuario pide esa liga, es esa liga."""
+    if not ligas:
+        return []
+    ahora = datetime.now(timezone.utc)
+    desde = (ahora - timedelta(hours=REFRESCO_ATRAS_H)).strftime("%Y-%m-%d %H:%M:%S")
+    hasta = (ahora + timedelta(hours=REFRESCO_ADELANTE_H)).strftime("%Y-%m-%d %H:%M:%S")
+    marcas = ",".join("?" * len(ligas))
+    return [
+        fila[0] for fila in con.execute(
+            f"""SELECT id FROM fixtures
+                WHERE league_id IN ({marcas}) AND date BETWEEN ? AND ?
+                  AND (status_short IS NULL OR status_short NOT IN ('FT','AET','PEN','AWD','WO'))
+                ORDER BY date""",
+            (*sorted(ligas), desde, hasta))
+    ]
+
+
 def refrescar_ligas_pedidas(cliente, con: sqlite3.Connection, ya_frescos: "set[int]",
                             ruta: str = REFRESCO_PATH) -> int:
     """Marcador forzado de las ligas pedidas desde la app: /fixtures?ids= de sus
-    partidos en ventana (lotes de 20). Presupuesto normal si queda; si no, la
-    clave de emergencia. El pedido se consume aunque no hubiera nada que traer:
-    un click no puede quedarse cobrando ciclos."""
+    partidos sin resultado en la ventana ancha (lotes de 20). Presupuesto normal
+    si queda; si no, la clave de emergencia.
+
+    El pedido se consume SOLO si se pudo atender. Antes se borraba siempre, así
+    que un click sin presupuesto (ni clave de emergencia) se evaporaba en
+    silencio: el usuario veía el ✓ y no pasaba nada, para siempre. Ahora
+    sobrevive a los ciclos hasta que haya con qué servirlo — y si nunca lo hay,
+    caduca solo a los REFRESCO_CADUCIDAD_MIN."""
     pedidas = ligas_a_refrescar(ruta)
     if not pedidas:
         return 0
-    por_liga = candidatos_por_liga(con, pedidas)  # ventana estándar, CUALQUIER liga pedida
-    fids = sorted({f for fs in por_liga.values() for f in fs} - ya_frescos)
-    n = 0
+    # los que el feed live acaba de traer en ESTE ciclo ya están al segundo
+    fids = [f for f in fixtures_para_refresco(con, pedidas) if f not in ya_frescos]
+    if not fids:
+        print(f"refresco forzado: ligas {sorted(pedidas)} · nada que refrescar "
+              f"(sin partidos sin resultado en ±{REFRESCO_ATRAS_H}h/{REFRESCO_ADELANTE_H}h)")
+        _consumir_refresco(ruta)
+        return 0
+    n, pedidos_ok = 0, 0
     for i in range(0, len(fids), 20):
         ids = "-".join(map(str, fids[i:i + 20]))
-        data = (cliente.get("fixtures", {"ids": ids}) if cliente.quedan()
-                else cliente.get_emergencia("fixtures", {"ids": ids}))
+        if cliente.quedan():
+            data = cliente.get("fixtures", {"ids": ids})
+        elif cliente.emergencia_disponible():
+            data = cliente.get_emergencia("fixtures", {"ids": ids})
+        else:
+            print(f"refresco forzado: ligas {sorted(pedidas)} SIN presupuesto ni clave de "
+                  f"emergencia · el pedido queda para el próximo ciclo")
+            return n  # NO se consume: el click sigue vivo
+        pedidos_ok += 1
         items = (data or {}).get("response", [])
         n += guardar_fixtures(con, items)
         for item in items:
             guardar_eventos(con, item)
     con.commit()
-    print(f"refresco forzado: ligas {sorted(pedidas)} · {n} de {len(fids)} fixtures actualizados")
+    print(f"refresco forzado: ligas {sorted(pedidas)} · {n} de {len(fids)} fixtures "
+          f"actualizados en {pedidos_ok} requests")
+    _consumir_refresco(ruta)
+    return n
+
+
+def _consumir_refresco(ruta: str) -> None:
     try:
-        os.remove(ruta)  # consumido: el próximo click escribe uno nuevo
+        os.remove(ruta)  # atendido: el próximo click escribe uno nuevo
     except OSError:
         pass
-    return n
 
 
 def capturar_emergencia(cliente, con: sqlite3.Connection, vip_sin: list[int],

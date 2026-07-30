@@ -1406,7 +1406,19 @@ def liga_refrescar(liga_id: int):
             json.dump(pedidos, f)
     except OSError as e:
         raise HTTPException(503, f"no se pudo guardar el pedido: {e}")
-    return {"ligaId": liga_id, "pedido": True}
+    # cuántos partidos va a tocar el ciclo: con 0 el ✓ de la app sería una
+    # mentira (pedido anotado, nada que refrescar). Import perezoso para no
+    # cargar la ingesta al arrancar el backend.
+    try:
+        from backend.ingesta.en_vivo import fixtures_para_refresco
+        con = db.connect("sad")
+        try:
+            n = len(fixtures_para_refresco(con, {liga_id}))
+        finally:
+            con.close()
+    except Exception:
+        n = -1  # no se pudo calcular: la app no afirma nada
+    return {"ligaId": liga_id, "pedido": True, "fixtures": n}
 
 
 def _presupuesto_agotado() -> bool:
