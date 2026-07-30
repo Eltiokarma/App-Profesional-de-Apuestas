@@ -138,6 +138,19 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   al acercarse encoge, y al llegar deja de pedir cuotas pero **sigue pidiendo
   marcador y minuto** (1 request, lo más barato y lo más valioso). El rescate
   por fixture pasa por el mismo freno. Un tope alto ya no puede vaciar el plan.
+- **Partidos VIP y modo emergencia** (`SAD_EMERGENCIA_KEY` · `_TOPE` ·
+  `_LIGAS`): "este partido lo quiero sí o sí, aunque cueste". Se marca desde
+  la app (botón en Cuotas → `POST /fixtures/{id}/vip` → `.vip_fixtures.json`
+  en la raíz de datos, NO las .db; caduca a las 8 h) o por liga con
+  `SAD_EMERGENCIA_LIGAS`. Con plan sano, el VIP entra al rescate por fixture
+  aunque su liga sea menor (la marca manda sobre `LIGAS_MENORES` para ESE
+  partido). Con el plan y el respaldo muertos —la noche del 29/07— la clave
+  de emergencia (un 2º account de api-sports con el Basic "soft limit"
+  deprecated, que nunca corta y factura el excedente a $0.005) les mantiene
+  marcador y cuotas: 1 request de `/fixtures?ids=` compartida + 1 de
+  `/odds/live?fixture=` por VIP **confirmado en juego** (a un NS solo se le
+  paga el marcador). Techo diario propio (`SAD_EMERGENCIA_TOPE`, 300 ≈ $1):
+  el candado contra la factura sorpresa. Nunca la toca el flujo normal.
 - **Por qué la pantalla ya no miente.** Los tres bugs anteriores compartían
   síntoma — "sin cobertura de cuotas en vivo en esta liga" — porque la UI solo
   sabía que este fixture no tenía filas en `odds_live`, y de ahí deducía falta

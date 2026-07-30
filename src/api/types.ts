@@ -537,6 +537,15 @@ export interface FixtureLiveDTO {
   coberturaLive: 'con_datos' | 'sin_datos' | 'feed_ajeno' | 'fallo' | 'presupuesto' | 'sin_consultar'
   /** Última consulta de /odds/live de esta liga; null si nunca. */
   coberturaConsultadaEn: string | null
+  /** Marcado "sí o sí": rescate por fixture aunque su liga sea menor y, con el
+   *  plan agotado, modo emergencia (clave que factura excedente). Caduca a las 8 h. */
+  vip: boolean
+}
+
+/** Respuesta de POST /fixtures/{id}/vip. */
+export interface VipEstadoDTO {
+  fixtureId: number
+  vip: boolean
 }
 
 /** Cuota de UNA casa para una selección (última foto). mejor=true: la más alta. */

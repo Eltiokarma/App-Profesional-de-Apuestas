@@ -10,6 +10,7 @@ import os
 import sqlite3
 import sys
 import tempfile
+from datetime import datetime, timedelta, timezone
 
 _TMP = tempfile.mkdtemp(prefix="sad-cal-")
 os.environ["SAD_DATA_DIR"] = _TMP
@@ -19,6 +20,14 @@ from backend import calendario  # noqa: E402
 fallos = 0
 FOCO, ASCENDIDO, CRISIS, LOCALON, VISITANTE_MALO, BLOQUE, VECINO = 1, 2, 3, 4, 5, 6, 7
 LIGA, TEMP = 281, 2026
+
+
+def dia(n: int) -> str:
+    """Fecha a N días de HOY. Los partidos del calendario van relativos al
+    reloj: con fechas fijas el test caducaba solo (el 30/07/2026 a las 00:00
+    UTC, el 'próximo' del 29/07 pasó a ser ayer y 6 checks murieron en verde
+    ajeno — una bomba de tiempo, no un test)."""
+    return (datetime.now(timezone.utc) + timedelta(days=n)).strftime("%Y-%m-%d 20:00:00")
 
 
 def check(nombre, cond, detalle=""):
@@ -65,7 +74,7 @@ def montar():
         return fid
 
     # historia del foco (para el descanso) y de cada rival
-    jugado(FOCO, VECINO, 1, 1, "2026-07-20 20:00:00")
+    jugado(FOCO, VECINO, 1, 1, dia(-8))
 
     # ASCENDIDO: sin partidos en esta liga la temporada pasada, pero con historia
     jugado(ASCENDIDO, VECINO, 0, 0, "2025-05-01 20:00:00", temporada=TEMP - 1)
@@ -97,10 +106,10 @@ def montar():
                     "VALUES (?,?, '5-3-2', ?, 1)", (fid, BLOQUE, 900 + i))
 
     # próximos del foco, uno por rival a etiquetar
-    programado(FOCO, ASCENDIDO, "2026-07-29 20:00:00")
-    programado(FOCO, CRISIS, "2026-08-02 20:00:00")
-    programado(LOCALON, FOCO, "2026-08-09 20:00:00", "Ciudad F")
-    programado(FOCO, VISITANTE_MALO, "2026-08-16 20:00:00")
+    programado(FOCO, ASCENDIDO, dia(1))
+    programado(FOCO, CRISIS, dia(5))
+    programado(LOCALON, FOCO, dia(12), "Ciudad F")
+    programado(FOCO, VISITANTE_MALO, dia(19))
     con.commit()
     con.close()
 

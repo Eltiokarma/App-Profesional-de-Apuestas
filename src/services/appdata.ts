@@ -380,6 +380,11 @@ export function loadFixtureLive(matchId: string): Promise<FixtureLiveDTO> {
   return getDataSource().fixtureLive(fixtureNum(matchId))
 }
 
+/** Marca/desmarca el partido como VIP ("sí o sí, aunque cueste"). */
+export function marcarPartidoVip(matchId: string, activo: boolean) {
+  return getDataSource().marcarVip(fixtureNum(matchId), activo)
+}
+
 /** Ficha del partido (plantillas + táctica). La ingesta en vivo captura el XI
  *  confirmado ~1 h antes del saque; en cuanto existe, `tactica.alineaciones`
  *  llega aquí y el análisis (EFE/DTP/skills) puede completarse. */

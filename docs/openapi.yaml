@@ -75,6 +75,39 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/FixtureLive' }
         '404': { description: No existe }
+  /fixtures/{id}/vip:
+    post:
+      summary: Marca/desmarca el partido como VIP ("este sí o sí, aunque cueste")
+      description: >
+        La marca vive en .vip_fixtures.json de la raíz de datos (no en las .db)
+        y la lee el ciclo en vivo. Con plan sano, el VIP entra al rescate por
+        fixture aunque su liga sea menor; con el plan y el respaldo agotados,
+        el modo emergencia (SAD_EMERGENCIA_KEY, la clave que puede facturar
+        excedente) le mantiene marcador y cuotas dentro de SAD_EMERGENCIA_TOPE.
+        Caduca sola a las 8 h.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [activo]
+              properties:
+                activo: { type: boolean }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [fixtureId, vip]
+                properties:
+                  fixtureId: { type: integer }
+                  vip: { type: boolean }
+        '404': { description: No existe }
   /niveles/{equipoId}:
     get:
       summary: Historia de niveles del equipo (desc por fecha)
@@ -1187,7 +1220,7 @@ components:
         resultado: { type: object, description: 'JSON del esquema EFE_COMPARATIVO / DTP / MATRIZ_V2 (backend/analisis/esquemas.py)', additionalProperties: true }
     FixtureLive:
       type: object
-      required: [fixtureId, estado, minuto, golesLocal, golesVisitante, cuotas, serie, eventos, actualizadoEn, coberturaLive, coberturaConsultadaEn]
+      required: [fixtureId, estado, minuto, golesLocal, golesVisitante, cuotas, serie, eventos, actualizadoEn, coberturaLive, coberturaConsultadaEn, vip]
       properties:
         fixtureId: { type: integer }
         estado: { $ref: '#/components/schemas/EstadoFixture' }
@@ -1224,6 +1257,7 @@ components:
             primeros permite afirmar que la API no cubra la liga: solo `sin_datos` se acerca,
             y aun así puede ser un feed momentáneamente vacío.
         coberturaConsultadaEn: { type: string, format: date-time, nullable: true, description: 'cuándo se consultó /odds/live de esta liga por última vez; null si nunca' }
+        vip: { type: boolean, description: 'partido marcado "sí o sí": entra al rescate por fixture aunque su liga sea menor y, con el plan agotado, al modo emergencia (clave que factura excedente). La marca caduca sola a las 8 h' }
     CuotaLive:
       type: object
       required: [mercado, seleccion, cuota, suspendida]

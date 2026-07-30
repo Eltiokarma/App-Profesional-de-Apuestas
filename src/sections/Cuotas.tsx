@@ -9,7 +9,7 @@ import { ApuestasSalidas } from '../components/ApuestasSalidas'
 import { ChartSvg } from '../components/ChartSvg'
 import { MarcaCondicion } from '../components/MarcaCondicion'
 import { matchView } from '../lib/view'
-import { loadCuotasBase, loadCuotasCasas, loadCuotasHistorial, loadFuentesHistorial } from '../services/appdata'
+import { loadCuotasBase, loadCuotasCasas, loadCuotasHistorial, loadFuentesHistorial, marcarPartidoVip } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
@@ -50,6 +50,19 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
   // (Bet365, Pinnacle…) con su curva cruda, que no se suaviza al promediar
   const [fuente, setFuente] = useState<string | null>(null)
   useEffect(() => setFuente(null), [m.id])
+  // VIP "sí o sí": null = lo que diga el backend (live.vip); al tocar el botón
+  // manda el valor local hasta que el próximo poll lo confirme
+  const [vipLocal, setVipLocal] = useState<boolean | null>(null)
+  useEffect(() => setVipLocal(null), [m.id])
+  const vip = vipLocal ?? live?.vip ?? false
+  const toggleVip = async () => {
+    setVipLocal(!vip)
+    try {
+      await marcarPartidoVip(m.id, !vip)
+    } catch {
+      setVipLocal(vip) // no se pudo guardar: el botón vuelve a la verdad
+    }
+  }
   const fuentes = useAsync(() => loadFuentesHistorial(m.id), m.id)
   // cuotas base (/cuotas) + historial (/historial: tramo prepartido real con
   // >=2 snapshots, de la fuente elegida) + comparador por casa (/casas)
@@ -280,6 +293,15 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
             <MarcaCondicion cond="V" color={mv.awayColor} />
           </span>
           {live.minuto != null && <span style={{ font: '600 12px var(--mono)', color: 'var(--t2)' }}>{live.minuto}'</span>}
+          <button
+            onClick={toggleVip}
+            title={vip
+              ? 'VIP activo: con el plan agotado, este partido se sigue con la clave de emergencia (factura excedente). La marca caduca sola a las 8 h.'
+              : 'Seguir este partido sí o sí: si el plan diario se agota, se mantiene marcador y cuotas con la clave de emergencia (cuesta ~$0.005 por request).'}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 8, cursor: 'pointer', font: '600 11px var(--sans)', border: `1px solid ${vip ? 'color-mix(in oklch,var(--up),transparent 45%)' : 'var(--line)'}`, background: vip ? 'var(--up-soft)' : 'transparent', color: vip ? 'var(--up)' : 'var(--t2)' }}
+          >
+            {vip ? '★ VIP · sí o sí' : '☆ Seguir sí o sí'}
+          </button>
           <span style={{ marginLeft: 'auto', font: '500 11px var(--mono)', color: 'var(--t3)' }}>
             {live.actualizadoEn
               ? (() => {

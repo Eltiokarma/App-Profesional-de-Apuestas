@@ -61,7 +61,13 @@ class ClienteFalso:
 
     def __init__(self, feed: dict, presupuesto: int = 99, caen: "set | None" = None,
                  por_fixture: "dict | None" = None, limite: int | None = None,
-                 usadas: int = 0):
+                 usadas: int = 0, emergencia: "dict | None" = None,
+                 tope_emergencia: int = 300):
+        # emergencia: {"fixtures": [items de /fixtures?ids=], fid: [items odds]}
+        # None = sin SAD_EMERGENCIA_KEY configurada
+        self.emergencia_feed = emergencia
+        self.tope_emergencia = tope_emergencia
+        self.usadas_emergencia = 0
         self.feed = feed              # {league_id | None: [items]}
         self.presupuesto = presupuesto
         # el freno de presupuesto lee limite/usadas como el Cliente real; por
@@ -76,6 +82,18 @@ class ClienteFalso:
 
     def quedan(self, n: int = 1) -> bool:
         return self.presupuesto - self.hechas >= n
+
+    def emergencia_disponible(self, n: int = 1) -> bool:
+        return self.emergencia_feed is not None and self.tope_emergencia - self.usadas_emergencia >= n
+
+    def get_emergencia(self, endpoint: str, params: dict):
+        if not self.emergencia_disponible():
+            return None
+        self.usadas_emergencia += 1
+        self.pedidos.append(("EMERGENCIA:" + endpoint, params.get("fixture"), params.get("ids")))
+        if endpoint == "fixtures":
+            return {"response": self.emergencia_feed.get("fixtures", [])}
+        return {"response": self.emergencia_feed.get(params.get("fixture"), [])}
 
     def get(self, endpoint: str, params: dict):
         if not self.quedan():
@@ -360,6 +378,68 @@ def main():
 
     check("el tope por ciclo vuelve a 6: 12 duplicaba el consumo del ciclo",
           en_vivo_mod.TOPE_LIGAS == 6, en_vivo_mod.TOPE_LIGAS)
+
+    # VIP "sí o sí" + MODO EMERGENCIA (la lección cara del 29/07/2026: plan y
+    # respaldo muertos con Vasco-Medellín y Gimnasia-River en juego, y ninguna
+    # forma de pagar solo por lo importante)
+    import json as _json
+    import tempfile
+
+    def vip_json(marcas: dict) -> str:
+        f = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8")
+        _json.dump(marcas, f)
+        f.close()
+        return f.name
+
+    con = db(con_fixtures=True)
+    ahora = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    vieja = (datetime.now(timezone.utc) - timedelta(hours=9)).strftime("%Y-%m-%d %H:%M:%S")
+    con.executemany(
+        "INSERT INTO fixtures (id, date, status_short, league_id) VALUES (?,?,?,?)",
+        [(MELGAR_CRISTAL, hace(20), "1H", 282),   # ¡liga MENOR! la marca manda
+         (OTRO_PERU, hace(30), "1H", PERU),       # marca caducada
+         (OTRO_PAIS, hace(600), "FT", PREMIER)],  # terminado: fuera de ventana
+    )
+    con.commit()
+    ruta = vip_json({str(MELGAR_CRISTAL): ahora, str(OTRO_PERU): vieja, str(OTRO_PAIS): ahora})
+    vip = en_vivo_mod.fixtures_vip(con, ruta)
+    check("VIP: la marca manda aunque la liga sea menor", MELGAR_CRISTAL in vip, vip)
+    check("VIP: la marca caducada (>8h) no cuenta — nadie paga por un olvido",
+          OTRO_PERU not in vip, vip)
+    check("VIP: un partido fuera de ventana no entra aunque esté marcado",
+          OTRO_PAIS not in vip, vip)
+
+    # emergencia: marcador para todos los VIP sin servir, cuotas SOLO para los
+    # que ese marcador confirma en juego
+    con = db(con_fixtures=True)
+    preparar_ficha(con)
+    cliente = ClienteFalso({}, presupuesto=0, emergencia={
+        "fixtures": [{"fixture": {"id": MELGAR_CRISTAL, "status": {"short": "2H"}}},
+                     {"fixture": {"id": OTRO_PERU, "status": {"short": "NS"}}}],
+        MELGAR_CRISTAL: [item_odds(MELGAR_CRISTAL)],
+        OTRO_PERU: [item_odds(OTRO_PERU)],
+    })
+    n = en_vivo_mod.capturar_emergencia(cliente, con, [MELGAR_CRISTAL, OTRO_PERU],
+                                        "2026-07-29 23:40:00.000")
+    check("emergencia: cuotas del VIP confirmado en juego", n == 3, n)
+    check("emergencia: al NS solo se le pagó el marcador compartido, no cuotas",
+          cliente.usadas_emergencia == 2 and not any(
+              p[1] == OTRO_PERU for p in cliente.pedidos if p[0].startswith("EMERGENCIA:odds")),
+          (cliente.usadas_emergencia, cliente.pedidos))
+    guardadas = con.execute("SELECT COUNT(*) FROM odds_live WHERE fixture_id=?",
+                            (MELGAR_CRISTAL,)).fetchone()[0]
+    check("emergencia: las cuotas quedan en odds_live como las normales", guardadas == 3, guardadas)
+
+    cliente = ClienteFalso({}, presupuesto=0, emergencia=None)
+    check("sin SAD_EMERGENCIA_KEY la emergencia no hace nada (0 requests)",
+          en_vivo_mod.capturar_emergencia(cliente, con, [MELGAR_CRISTAL], "x") == 0
+          and cliente.pedidos == [], cliente.pedidos)
+
+    cliente = ClienteFalso({}, presupuesto=0, tope_emergencia=1,
+                           emergencia={"fixtures": [], MELGAR_CRISTAL: [item_odds(MELGAR_CRISTAL)]})
+    check("el tope de emergencia manda: sin techo para 2 requests ni empieza",
+          en_vivo_mod.capturar_emergencia(cliente, con, [MELGAR_CRISTAL], "x") == 0
+          and cliente.usadas_emergencia == 0, cliente.usadas_emergencia)
 
     # y si el feed live tuvo un hipo, la liga sigue contando como en juego:
     # el estado EN_JUEGO de nuestra base no se pone solo, lo escribió el feed
