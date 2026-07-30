@@ -1381,6 +1381,34 @@ def fixture_vip(fixture_id: int, req: VipRequest):
     return {"fixtureId": fixture_id, "vip": req.activo}
 
 
+@app.post(API + "/ligas/{liga_id}/refrescar")
+def liga_refrescar(liga_id: int):
+    """Refresco forzado del MARCADOR de una liga (el botón ⟳ de Partidos).
+    Escribe el pedido en .refresco_ligas.json (la raíz de datos, NO las .db) y
+    el próximo ciclo en vivo actualiza estado/marcador/minuto de todos los
+    partidos en ventana de esa liga por /fixtures?ids= — con presupuesto normal
+    si queda, o con la clave de emergencia si el plan está muerto. Solo
+    marcador: las cuotas siguen sus reglas (VIP para pagarlas). El pedido se
+    consume al atenderse y caduca a los 15 min."""
+    if not db.query_one("sad", "SELECT 1 FROM fixtures WHERE league_id=? LIMIT 1", (liga_id,)):
+        raise HTTPException(404, f"liga {liga_id} sin fixtures en la base")
+    ruta = os.path.join(db.BASE_DIR, ".refresco_ligas.json")
+    try:
+        with open(ruta, encoding="utf-8") as f:
+            pedidos = json.load(f)
+        if not isinstance(pedidos, dict):
+            pedidos = {}
+    except (OSError, ValueError):
+        pedidos = {}
+    pedidos[str(liga_id)] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        with open(ruta, "w", encoding="utf-8") as f:
+            json.dump(pedidos, f)
+    except OSError as e:
+        raise HTTPException(503, f"no se pudo guardar el pedido: {e}")
+    return {"ligaId": liga_id, "pedido": True}
+
+
 def _presupuesto_agotado() -> bool:
     """¿El plan de API-Football del día está agotado? Lo dice el marcador que
     comparten todas las corridas de ingesta (.extractor_cuota.json, en el

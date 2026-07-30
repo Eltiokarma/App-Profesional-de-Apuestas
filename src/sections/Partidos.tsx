@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react'
+import { CONFIG } from '../config'
 import { TEAMS } from '../data'
+import { refrescarLiga } from '../services/appdata'
 import type { Match, MatchStatus } from '../data/types'
 import { TeamBadge } from '../components/TeamBadge'
 import { TeamSearch } from '../components/TeamSearch'
@@ -64,6 +66,19 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
     const nueva = lista.includes(k) ? lista.filter((x) => x !== k) : [...lista, k]
     setLista(nueva)
     guardarLS(claveLS, nueva)
+  }
+  // refresco forzado por liga: 'pedido' pinta el ✓ hasta que el ciclo lo atienda
+  const esHttp = CONFIG.dataSource === 'http'
+  const [refrescos, setRefrescos] = useState<Record<number, 'pedido' | undefined>>({})
+  const pedirRefresco = async (ligaId: number) => {
+    setRefrescos((r) => ({ ...r, [ligaId]: 'pedido' }))
+    try {
+      await refrescarLiga(ligaId)
+      // el ✓ se queda ~90 s: lo que tarda el próximo ciclo en atenderlo
+      setTimeout(() => setRefrescos((r) => ({ ...r, [ligaId]: undefined })), 90_000)
+    } catch {
+      setRefrescos((r) => ({ ...r, [ligaId]: undefined })) // falló: se puede reintentar
+    }
   }
 
   const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -189,15 +204,38 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
           <section key={grp.ligaId ?? grp.comp} style={{ marginBottom: min ? 8 : 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 2px 8px' }}>
               <span style={{ width: 5, height: 15, borderRadius: 2, background: fav ? 'var(--mark)' : 'var(--accent)' }}></span>
+              {/* el botón del nombre abarca SOLO el nombre (antes con flex:1 se
+                  tragaba todo el hueco de la fila y un click al aire te metía
+                  a la página de la liga); el hueco pasa a minimizar/expandir */}
               {grp.ligaId != null ? (
-                <button className="sad-hover" onClick={() => store.openLiga(grp.ligaId!)} title={`Ver información de ${grp.comp}`} style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'transparent', border: 0, cursor: 'pointer', padding: '3px 7px', margin: '-3px -7px', borderRadius: 7, textAlign: 'left', flex: 1, minWidth: 0 }}>
+                <button className="sad-hover" onClick={() => store.openLiga(grp.ligaId!)} title={`Ver información de ${grp.comp}`} style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'transparent', border: 0, cursor: 'pointer', padding: '3px 7px', margin: '-3px -7px', borderRadius: 7, textAlign: 'left', flex: '0 1 auto', minWidth: 0 }}>
                   {grp.img && <img src={grp.img} alt="" width={16} height={12} style={{ objectFit: 'cover', borderRadius: 2, flexShrink: 0 }} />}
                   <span style={{ font: '700 12.5px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{grp.comp}</span>
                 </button>
               ) : (
-                <span style={{ font: '700 12.5px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{grp.comp}</span>
+                <span style={{ font: '700 12.5px var(--sans)', color: 'var(--t1)', flex: '0 1 auto', minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{grp.comp}</span>
               )}
+              <button
+                onClick={() => alternar(minimizadas, setMinimizadas, 'sad-ligas-min', k)}
+                title={min ? 'Expandir liga' : 'Minimizar liga'}
+                style={{ flex: 1, minWidth: 0, height: 26, background: 'transparent', border: 0, cursor: 'pointer', padding: 0 }}
+              ></button>
               <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)' }}>{grp.rows.length}</span>
+              {/* refresco forzado del marcador de la liga (lo atiende el
+                  próximo ciclo en vivo; con el plan muerto, la clave de
+                  emergencia) — solo con backend real */}
+              {esHttp && grp.ligaId != null && (
+                <button
+                  onClick={() => pedirRefresco(grp.ligaId!)}
+                  title="Forzar la actualización del marcador de esta liga (la atiende el próximo ciclo en vivo, ~1 minuto)"
+                  disabled={refrescos[grp.ligaId] === 'pedido'}
+                  style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 0, cursor: refrescos[grp.ligaId] === 'pedido' ? 'default' : 'pointer', padding: 0, borderRadius: 7, flexShrink: 0 }}
+                >
+                  {refrescos[grp.ligaId] === 'pedido'
+                    ? <span style={{ font: '700 12px var(--mono)', color: 'var(--up)' }}>✓</span>
+                    : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4" /><path d="M21 3v6h-6" /></svg>}
+                </button>
+              )}
               {/* anclar arriba (favorita) — táctil: 30px de zona de toque */}
               <button
                 onClick={() => alternar(favoritas, setFavoritas, 'sad-ligas-fav', k)}

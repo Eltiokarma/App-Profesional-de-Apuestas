@@ -385,6 +385,11 @@ export function marcarPartidoVip(matchId: string, activo: boolean) {
   return getDataSource().marcarVip(fixtureNum(matchId), activo)
 }
 
+/** Refresco forzado del marcador de una liga (el ⟳ de Partidos). */
+export function refrescarLiga(ligaId: number) {
+  return getDataSource().refrescarLiga(ligaId)
+}
+
 /** Ficha del partido (plantillas + táctica). La ingesta en vivo captura el XI
  *  confirmado ~1 h antes del saque; en cuanto existe, `tactica.alineaciones`
  *  llega aquí y el análisis (EFE/DTP/skills) puede completarse. */

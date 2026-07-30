@@ -151,6 +151,13 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   `/odds/live?fixture=` por VIP **confirmado en juego** (a un NS solo se le
   paga el marcador). Techo diario propio (`SAD_EMERGENCIA_TOPE`, 300 ≈ $1):
   el candado contra la factura sorpresa. Nunca la toca el flujo normal.
+- **Refresco forzado de liga** (el botón ⟳ junto al nombre de la liga en
+  Partidos → `POST /ligas/{id}/refrescar` → `.refresco_ligas.json`): el
+  próximo ciclo actualiza el MARCADOR de todos los partidos en ventana de esa
+  liga por `/fixtures?ids=` — presupuesto normal si queda, emergencia si el
+  plan está muerto (el caso real: Bragantino–Sporting Cristal ya jugándose con
+  el estado congelado en NS). Solo marcador; las cuotas siguen sus reglas
+  (VIP para pagarlas). El pedido se consume al atenderse y caduca a los 15 min.
 - **Por qué la pantalla ya no miente.** Los tres bugs anteriores compartían
   síntoma — "sin cobertura de cuotas en vivo en esta liga" — porque la UI solo
   sabía que este fixture no tenía filas en `odds_live`, y de ahí deducía falta

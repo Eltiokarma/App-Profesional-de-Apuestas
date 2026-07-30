@@ -548,6 +548,12 @@ export interface VipEstadoDTO {
   vip: boolean
 }
 
+/** Respuesta de POST /ligas/{id}/refrescar (el botón ⟳ de Partidos). */
+export interface RefrescoLigaDTO {
+  ligaId: number
+  pedido: boolean
+}
+
 /** Cuota de UNA casa para una selección (última foto). mejor=true: la más alta. */
 export interface CuotaCasaDTO {
   fixtureId: number
