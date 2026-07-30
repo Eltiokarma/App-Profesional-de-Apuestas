@@ -527,12 +527,14 @@ export interface FixtureLiveDTO {
    * `sin_datos`: se le pidió y el feed vino vacío.
    * `feed_ajeno`: el feed trajo partidos pero ninguno nuestro (el filtro
    * ?league= no devolvió lo pedido).
-   * `fallo`: la consulta se cayó (red, HTTP, errors de la API, presupuesto).
+   * `fallo`: la consulta se cayó (red, HTTP o errors de la API).
+   * `presupuesto`: el plan diario de API-Football se agotó. El ciclo no hace
+   * ni una request, así que lo que diga la liga es de hace horas.
    * `con_datos`: la última consulta de la liga sí trajo cuotas.
    * Solo `sin_datos` se acerca a "la API no cubre esta liga" — y ni ese lo
    * prueba. Afirmarlo en los cuatro casos era el bug.
    */
-  coberturaLive: 'con_datos' | 'sin_datos' | 'feed_ajeno' | 'fallo' | 'sin_consultar'
+  coberturaLive: 'con_datos' | 'sin_datos' | 'feed_ajeno' | 'fallo' | 'presupuesto' | 'sin_consultar'
   /** Última consulta de /odds/live de esta liga; null si nunca. */
   coberturaConsultadaEn: string | null
 }

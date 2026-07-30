@@ -317,7 +317,13 @@ class Cliente:
         self.delay = DELAY_DEFAULT
         self.hoy = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         self.usadas = 0
-        self.usadas_por: dict[str, int] = {}  # auditoría: consumo por endpoint
+        # auditoría: consumo por endpoint. Se PERSISTE en el JSON de cuota y se
+        # acumula entre procesos (cada ciclo en vivo es un proceso nuevo): sin
+        # esto, el día que el plan aparece agotado nadie puede decir QUIÉN se
+        # lo comió (29/07/2026: 7496/7495 y a adivinar). Dos procesos
+        # concurrentes pueden pisarse algún conteo — vale como orden de
+        # magnitud, que es lo que la auditoría necesita.
+        self.usadas_por: dict[str, int] = {}
         # requests que volvieron sin datos por FALLO (red, HTTP, errors de la
         # API, presupuesto): get() devuelve None igual que ante una respuesta
         # legítimamente vacía, y quien llama no podía distinguirlas. Comparar
@@ -337,7 +343,8 @@ class Cliente:
         self._leer_cuota()
 
     def resumen(self) -> str:
-        """Consumo por endpoint de ESTE proceso, para la auditoría en logs."""
+        """Consumo por endpoint acumulado del DÍA (persistido en el JSON de
+        cuota, compartido entre procesos), para la auditoría en logs."""
         return " ".join(f"{k}={v}" for k, v in sorted(self.usadas_por.items())) or "sin requests"
 
     def _ajustar_por_cabeceras(self, headers) -> None:
@@ -383,12 +390,17 @@ class Cliente:
             self.usadas = int(datos.get("usadas", 0) or 0)
             self.usadas_respaldo = int(datos.get("usadas_respaldo", 0) or 0)
             self._sondeo_epoch = float(datos.get("sondeo_epoch", 0) or 0)
+            por = datos.get("usadas_por")
+            if isinstance(por, dict):  # el acumulado del día sigue creciendo aquí
+                self.usadas_por = {str(k): int(v) for k, v in por.items()
+                                   if isinstance(v, (int, float))}
 
     def _guardar_cuota(self) -> None:
         with open(CUOTA_PATH, "w", encoding="utf-8") as f:
             json.dump({"dia": self.hoy, "usadas": self.usadas, "limite_api": self.limite_api,
                        "usadas_respaldo": self.usadas_respaldo,
-                       "sondeo_epoch": self._sondeo_epoch}, f)
+                       "sondeo_epoch": self._sondeo_epoch,
+                       "usadas_por": self.usadas_por}, f)
 
     def _quedan_respaldo(self, n: int = 1) -> bool:
         return bool(self.clave_respaldo) and self.limite_respaldo - self.usadas_respaldo >= n
@@ -665,13 +677,31 @@ def guardar_odds(con: sqlite3.Connection, fixture_id: int, respuesta: list) -> i
     return n
 
 
+# Punto de equilibrio del lote por fecha: /odds?date= trae el día entero DEL
+# MUNDO (~10 fixtures por página, 40-90 páginas un día cargado), no solo el
+# nuestro. El comentario original ("un día con 60 partidos cuesta ~6 páginas")
+# asumía que el feed venía filtrado a nuestras ligas, y esa cuenta mal hecha
+# quemó el plan del 29/07/2026: el refresco de cada 30 min (SAD_REFRESCO_MIN)
+# pagaba el mundo entero —40-90 requests— para re-capturar 5-15 partidos
+# nuestros, 48 veces al día ≈ 2.000-4.300 requests/día él solo (los docs lo
+# presupuestaban en ~160). Con POCOS pendientes, /odds?fixture= partido a
+# partido cuesta exactamente 1 request cada uno y siempre gana.
+UMBRAL_LOTE = int(os.environ.get("SAD_CUOTAS_LOTE_UMBRAL", "12"))
+
+
 def capturar_cuotas_lote(cliente: "Cliente", con: sqlite3.Connection,
                          pendientes: list[int]) -> tuple[int, int]:
-    """Cuotas EN LOTE: /odds?date=YYYY-MM-DD trae el día entero paginado
-    (~10 fixtures por página) — antes pedíamos /odds?fixture=X partido a
-    partido y una corrida de Mundial quemaba cientos de requests; en lote,
-    un día con 60 partidos cuesta ~6 páginas. El feed del día se filtra a
-    NUESTROS pendientes y se guarda igual que antes (misma forma de item).
+    """Cuotas prepartido con la estrategia elegida POR CANTIDAD, fecha a fecha:
+
+    - Muchos pendientes (> UMBRAL_LOTE): /odds?date=YYYY-MM-DD en lote — una
+      corrida de Mundial con 60 partidos nuestros amortiza las páginas del
+      feed mundial. Es lo que ya hacíamos.
+    - Pocos (<= UMBRAL_LOTE): /odds?fixture=X por partido, 1 request exacta
+      cada uno. Es el caso del refresco de día de partido, que con el lote
+      pagaba el feed del mundo entero para un puñado de partidos (ver
+      UMBRAL_LOTE: así se agotó el plan el 29/07/2026).
+
+    El guardado es el mismo en ambas vías (misma forma de item).
     Devuelve (cuotas_guardadas, fixtures_con_cobertura)."""
     if not pendientes:
         return 0, 0
@@ -689,17 +719,29 @@ def capturar_cuotas_lote(cliente: "Cliente", con: sqlite3.Connection,
             print("  presupuesto agotado; el resto queda para la próxima corrida")
             break
         objetivo = fechas[fecha]
-        filas = cliente.paginado("odds", {"date": fecha})
         por_fixture: dict[int, list] = {}
-        for item in filas:
-            fid = (item.get("fixture") or {}).get("id")
-            if fid in objetivo:
-                por_fixture.setdefault(fid, []).append(item)
+        if len(objetivo) <= UMBRAL_LOTE:
+            # pocos: al grano, 1 request por partido y ni una página del mundo
+            for fid in sorted(objetivo):
+                if not cliente.quedan():
+                    break
+                items = [it for it in cliente.paginado("odds", {"fixture": fid})
+                         if (it.get("fixture") or {}).get("id") == fid]
+                if items:
+                    por_fixture[fid] = items
+            via = f"por fixture ({len(objetivo)} <= umbral {UMBRAL_LOTE})"
+        else:
+            filas = cliente.paginado("odds", {"date": fecha})
+            for item in filas:
+                fid = (item.get("fixture") or {}).get("id")
+                if fid in objetivo:
+                    por_fixture.setdefault(fid, []).append(item)
+            via = f"en lote ({len(filas)} items del feed mundial)"
         for fid, items in por_fixture.items():
             total += guardar_odds(con, fid, items)
             cubiertos.add(fid)
         print(f"  [{cliente.usadas}/{cliente.limite}] {fecha}: cuotas de "
-              f"{len(por_fixture)}/{len(objetivo)} partidos nuestros (feed del día: {len(filas)} items)")
+              f"{len(por_fixture)}/{len(objetivo)} partidos nuestros · {via}")
     return total, len(cubiertos)
 
 

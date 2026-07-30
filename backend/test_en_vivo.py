@@ -60,22 +60,28 @@ class ClienteFalso:
     PAGINA = 2
 
     def __init__(self, feed: dict, presupuesto: int = 99, caen: "set | None" = None,
-                 por_fixture: "dict | None" = None):
+                 por_fixture: "dict | None" = None, limite: int | None = None,
+                 usadas: int = 0):
         self.feed = feed              # {league_id | None: [items]}
         self.presupuesto = presupuesto
+        # el freno de presupuesto lee limite/usadas como el Cliente real; por
+        # defecto van holgados para que los demás tests no lo noten
+        self.limite = limite if limite is not None else 10**6
+        self.usadas = usadas
         self.caen = caen or set()     # ligas cuya request FALLA (red/HTTP/errors)
         self.por_fixture = por_fixture or {}   # {fixture_id: [items]} de ?fixture=
-        self.usadas = 0
         self.fallos = 0               # el contador que distingue fallo de feed vacío
+        self.hechas = 0               # requests de ESTE ciclo (usadas puede venir sembrada)
         self.pedidos: list = []
 
     def quedan(self, n: int = 1) -> bool:
-        return self.presupuesto - self.usadas >= n
+        return self.presupuesto - self.hechas >= n
 
     def get(self, endpoint: str, params: dict):
         if not self.quedan():
             return None
         self.usadas += 1
+        self.hechas += 1
         self.pedidos.append((endpoint, params.get("league"), params.get("page", 1)))
         liga = params.get("league")
         if liga in self.caen:
@@ -322,6 +328,38 @@ def main():
         en_vivo_mod.TOPE_FIXTURES = tope_fx
     check("con SAD_LIVE_ODDS_FIXTURES=0 el rescate queda apagado",
           all(p[1] is not None for p in cliente.pedidos), cliente.pedidos)
+
+    # FRENO DE PRESUPUESTO (29/07/2026: 7496/7495 y el respaldo agotado — cero
+    # requests, cero cuotas, cero marcador, y las copas que funcionaban paradas
+    # a mitad de partido). Un ciclo por minuto sin freno propio se come el plan
+    # del día y deja sin datos a TODO, incluida la ingesta diaria.
+    con = db()
+    preparar_consultas(con)
+    cliente = ClienteFalso(feed, limite=7495, usadas=7400)  # dentro de la reserva
+    n, con_feed = capturar_odds_live(cliente, con, por_liga, ids_vivos,
+                                     "2026-07-29 23:35:00.000", ids_en_juego=ids_vivos)
+    check("con el plan dentro de la reserva NO se piden cuotas (ni el rescate)",
+          cliente.pedidos == [] and n == 0 and con_feed == set(),
+          (cliente.pedidos, n, con_feed))
+    check("y no se escribe ninguna ronda: no hubo consulta que registrar",
+          con.execute("SELECT COUNT(*) FROM odds_live_consultas").fetchone()[0] == 0)
+
+    con = db()
+    preparar_consultas(con)
+    cliente = ClienteFalso(feed, limite=7495, usadas=5990)  # margen justo: 5 sobre reserva
+    capturar_odds_live(cliente, con, por_liga, ids_vivos, "2026-07-29 23:36:00.000")
+    check("con margen justo el cupo se encoge en vez de chocar contra la pared",
+          0 < len({p[1] for p in cliente.pedidos}) < 2, cliente.pedidos)
+
+    con = db()
+    preparar_consultas(con)
+    cliente = ClienteFalso(feed, limite=7495, usadas=0)
+    capturar_odds_live(cliente, con, por_liga, ids_vivos, "2026-07-29 23:37:00.000")
+    check("con el plan holgado se sirven todas las ligas del tope",
+          {p[1] for p in cliente.pedidos} == {PERU, PREMIER}, cliente.pedidos)
+
+    check("el tope por ciclo vuelve a 6: 12 duplicaba el consumo del ciclo",
+          en_vivo_mod.TOPE_LIGAS == 6, en_vivo_mod.TOPE_LIGAS)
 
     # y si el feed live tuvo un hipo, la liga sigue contando como en juego:
     # el estado EN_JUEGO de nuestra base no se pone solo, lo escribió el feed

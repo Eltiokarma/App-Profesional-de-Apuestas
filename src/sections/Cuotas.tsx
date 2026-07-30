@@ -32,6 +32,7 @@ const MOTIVO_SIN_CUOTAS: Record<FixtureLiveDTO['coberturaLive'], string> = {
   sin_datos: 'la última consulta de esta liga vino vacía',
   feed_ajeno: 'el feed de la liga no trajo este partido',
   fallo: 'la última consulta de cuotas falló · reintenta sola',
+  presupuesto: 'plan diario de la API agotado · sin capturas hasta el reset',
   con_datos: 'liga con cuotas · aún sin las de este partido',
 }
 
