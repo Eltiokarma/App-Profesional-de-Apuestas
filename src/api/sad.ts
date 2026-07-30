@@ -16,6 +16,7 @@ import type {
   FichaPartidoDTO,
   FixtureDTO,
   FixtureLiveDTO,
+  RefrescoLigaDTO,
   VipEstadoDTO,
   GeneracionEfeDTO,
   HealthDTO,
@@ -46,6 +47,10 @@ export const SadApi = {
   /** Marca/desmarca el partido como VIP ("sí o sí, aunque cueste"). */
   marcarVip: (id: number, activo: boolean) =>
     apiPost<VipEstadoDTO>(`/fixtures/${id}/vip`, { activo }),
+
+  /** Refresco forzado del marcador de la liga (lo atiende el próximo ciclo en vivo). */
+  refrescarLiga: (ligaId: number) =>
+    apiPost<RefrescoLigaDTO>(`/ligas/${ligaId}/refrescar`, {}),
 
   /** Historia de niveles de un equipo (desc por fecha; limit opcional). */
   niveles: (equipoId: number, limit?: number) =>

@@ -130,6 +130,16 @@ LIGAS_EMERGENCIA = {
     int(x) for x in os.environ.get("SAD_EMERGENCIA_LIGAS", "").split(",") if x.strip().isdigit()
 }
 
+# REFRESCO FORZADO DE LIGA: el botón ⟳ de la app (POST /ligas/{id}/refrescar →
+# .refresco_ligas.json). El próximo ciclo actualiza el MARCADOR de todos los
+# partidos en ventana de esa liga por /fixtures?ids= (lotes de 20): con plan
+# vivo cuesta 1-2 requests del presupuesto normal; con el plan muerto usa la
+# clave de emergencia si la hay. Solo marcador — las cuotas siguen sus reglas
+# (VIP para pagarlas). El pedido se consume al atenderse y caduca a los 15 min:
+# un click viejo no gasta nada.
+REFRESCO_PATH = ".refresco_ligas.json"
+REFRESCO_CADUCIDAD_MIN = 15
+
 # FRENO DE PRESUPUESTO. El ciclo corre cada minuto y, sin freno propio, se come
 # el plan del día y deja sin datos a TODO lo demás: la ingesta diaria, el
 # refresco de cuotas prepartido y el propio marcador en vivo. Es exactamente lo
@@ -253,6 +263,54 @@ def fixtures_vip(con: sqlite3.Connection, ruta: str = VIP_PATH) -> set[int]:
                      OR status_short IN ({marcas}))""",
             (*args, *PREVIOS, desde, hasta, *EN_JUEGO))
     }
+
+
+def ligas_a_refrescar(ruta: str = REFRESCO_PATH) -> set[int]:
+    """Ligas con refresco forzado pedido desde la app y aún vigente (≤15 min)."""
+    try:
+        with open(ruta, encoding="utf-8") as f:
+            datos = json.load(f)
+    except (OSError, ValueError):
+        return set()
+    limite = datetime.now(timezone.utc) - timedelta(minutes=REFRESCO_CADUCIDAD_MIN)
+    pedidas: set[int] = set()
+    for lid, pedido_en in (datos.items() if isinstance(datos, dict) else []):
+        try:
+            cuando = datetime.strptime(str(pedido_en)[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+            if cuando >= limite:
+                pedidas.add(int(lid))
+        except (ValueError, TypeError):
+            continue
+    return pedidas
+
+
+def refrescar_ligas_pedidas(cliente, con: sqlite3.Connection, ya_frescos: "set[int]",
+                            ruta: str = REFRESCO_PATH) -> int:
+    """Marcador forzado de las ligas pedidas desde la app: /fixtures?ids= de sus
+    partidos en ventana (lotes de 20). Presupuesto normal si queda; si no, la
+    clave de emergencia. El pedido se consume aunque no hubiera nada que traer:
+    un click no puede quedarse cobrando ciclos."""
+    pedidas = ligas_a_refrescar(ruta)
+    if not pedidas:
+        return 0
+    por_liga = candidatos_por_liga(con, pedidas)  # ventana estándar, CUALQUIER liga pedida
+    fids = sorted({f for fs in por_liga.values() for f in fs} - ya_frescos)
+    n = 0
+    for i in range(0, len(fids), 20):
+        ids = "-".join(map(str, fids[i:i + 20]))
+        data = (cliente.get("fixtures", {"ids": ids}) if cliente.quedan()
+                else cliente.get_emergencia("fixtures", {"ids": ids}))
+        items = (data or {}).get("response", [])
+        n += guardar_fixtures(con, items)
+        for item in items:
+            guardar_eventos(con, item)
+    con.commit()
+    print(f"refresco forzado: ligas {sorted(pedidas)} · {n} de {len(fids)} fixtures actualizados")
+    try:
+        os.remove(ruta)  # consumido: el próximo click escribe uno nuevo
+    except OSError:
+        pass
+    return n
 
 
 def capturar_emergencia(cliente, con: sqlite3.Connection, vip_sin: list[int],
@@ -694,7 +752,7 @@ def main() -> int:
     xi_pendientes = fixtures_para_xi(con, vivo)
     # los VIP entran aunque su liga sea menor: la marca manda para ESE partido
     vip = fixtures_vip(con)
-    if not candidatos and not xi_pendientes and not vip:
+    if not candidatos and not xi_pendientes and not vip and not ligas_a_refrescar():
         con.close()
         print("sin partidos en ventana de juego ni alineaciones que pedir · 0 requests")
         return 0
@@ -705,7 +763,7 @@ def main() -> int:
     # el XI primero: es lo que le falta al análisis prepartido y caduca al saque
     if xi_pendientes:
         capturar_xi(cliente, con, xi_pendientes, capturado)
-    if not candidatos and not vip:
+    if not candidatos and not vip and not ligas_a_refrescar():
         con.close()
         print(f"sin partidos en ventana de juego · requests usadas: {cliente.usadas}/{cliente.limite}")
         return 0
@@ -761,6 +819,10 @@ def main() -> int:
     vip_sin = sorted(vip - con_feed)
     if vip_sin and not cliente.quedan(2):
         n_odds += capturar_emergencia(cliente, con, vip_sin, capturado)
+
+    # refresco forzado desde la app (botón ⟳ de la liga): solo marcador, y los
+    # que el feed live ya refrescó este ciclo no se vuelven a pedir
+    refrescar_ligas_pedidas(cliente, con, ya_frescos=ids_vivos)
 
     # cerrar los que se cayeron del feed live (terminaron): /fixtures?ids= trae
     # su estado y marcador finales sin esperar a la corrida diaria (lotes de 20)

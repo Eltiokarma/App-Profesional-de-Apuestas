@@ -62,7 +62,8 @@ class ClienteFalso:
     def __init__(self, feed: dict, presupuesto: int = 99, caen: "set | None" = None,
                  por_fixture: "dict | None" = None, limite: int | None = None,
                  usadas: int = 0, emergencia: "dict | None" = None,
-                 tope_emergencia: int = 300):
+                 tope_emergencia: int = 300, marcadores: "list | None" = None):
+        self.marcadores = marcadores or []  # respuesta de /fixtures?ids=
         # emergencia: {"fixtures": [items de /fixtures?ids=], fid: [items odds]}
         # None = sin SAD_EMERGENCIA_KEY configurada
         self.emergencia_feed = emergencia
@@ -100,6 +101,9 @@ class ClienteFalso:
             return None
         self.usadas += 1
         self.hechas += 1
+        if params.get("ids") is not None:
+            self.pedidos.append((endpoint, None, params.get("ids")))
+            return {"response": self.marcadores, "paging": {"current": 1, "total": 1}}
         self.pedidos.append((endpoint, params.get("league"), params.get("page", 1)))
         liga = params.get("league")
         if liga in self.caen:
@@ -135,6 +139,31 @@ DDL_FIXTURES = """
 CREATE TABLE fixtures (id INTEGER PRIMARY KEY, date TEXT, status_short TEXT,
                        league_id INTEGER, goals_home INTEGER, goals_away INTEGER);
 """
+
+# el esquema real de guardar_fixtures (INSERT OR REPLACE con 25 columnas):
+# lo usan los tests del refresco forzado, que guardan la respuesta completa
+DDL_FIXTURES_FULL = """
+CREATE TABLE teams (id INTEGER PRIMARY KEY, name TEXT, country TEXT, founded INTEGER, logo TEXT);
+CREATE TABLE leagues (id INTEGER PRIMARY KEY, name TEXT, country TEXT, logo TEXT, flag TEXT, season INTEGER);
+CREATE TABLE fixtures (id INTEGER PRIMARY KEY, timezone TEXT, date TEXT, timestamp INTEGER,
+    venue_id INTEGER, venue_name TEXT, venue_city TEXT, status_long TEXT, status_short TEXT,
+    elapsed INTEGER, league_id INTEGER, league_season INTEGER, league_round TEXT,
+    home_team_id INTEGER, away_team_id INTEGER, goals_home INTEGER, goals_away INTEGER,
+    halftime_home INTEGER, halftime_away INTEGER, fulltime_home INTEGER, fulltime_away INTEGER,
+    extratime_home INTEGER, extratime_away INTEGER, penalty_home INTEGER, penalty_away INTEGER);
+"""
+
+
+def item_marcador(fid: int, liga: int, status: str = "2H", gh: int = 1, ga: int = 0) -> dict:
+    """Item de /fixtures?ids= con lo mínimo que guardar_fixtures exige."""
+    return {
+        "fixture": {"id": fid, "date": "2026-07-30T22:30:00+00:00",
+                    "status": {"long": "x", "short": status, "elapsed": 50}},
+        "league": {"id": liga, "name": f"Liga {liga}", "season": 2026},
+        "teams": {"home": {"id": 7001, "name": "Local"}, "away": {"id": 7002, "name": "Visita"}},
+        "goals": {"home": gh, "away": ga},
+        "score": {},
+    }
 
 
 def db(con_fixtures: bool = False) -> sqlite3.Connection:
@@ -440,6 +469,54 @@ def main():
     check("el tope de emergencia manda: sin techo para 2 requests ni empieza",
           en_vivo_mod.capturar_emergencia(cliente, con, [MELGAR_CRISTAL], "x") == 0
           and cliente.usadas_emergencia == 0, cliente.usadas_emergencia)
+
+    # REFRESCO FORZADO DE LIGA (el botón ⟳ de Partidos): el pedido en
+    # .refresco_ligas.json actualiza el marcador de la liga aunque sea menor,
+    # se consume al atenderse, y caducado no gasta nada
+    def refresco_json(marcas: dict) -> str:
+        f = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8")
+        _json.dump(marcas, f)
+        f.close()
+        return f.name
+
+    import os as _os
+    con = sqlite3.connect(":memory:")
+    con.executescript(DDL_ODDS_LIVE + DDL_FIXTURES_FULL)
+    preparar_ficha(con)
+    # NS congelado de una liga MENOR (282) que en realidad ya se juega
+    con.execute("INSERT INTO fixtures (id, date, status_short, league_id) VALUES (?,?,?,?)",
+                (MELGAR_CRISTAL, hace(20), "NS", 282))
+    con.commit()
+    ruta = refresco_json({"282": ahora})
+    cliente = ClienteFalso({}, marcadores=[item_marcador(MELGAR_CRISTAL, 282)])
+    n = en_vivo_mod.refrescar_ligas_pedidas(cliente, con, ya_frescos=set(), ruta=ruta)
+    fila = con.execute("SELECT status_short, goals_home FROM fixtures WHERE id=?",
+                       (MELGAR_CRISTAL,)).fetchone()
+    check("refresco forzado: el NS congelado de una liga menor pasa a su estado real",
+          n == 1 and fila == ("2H", 1), (n, fila))
+    check("refresco forzado: el pedido se consume (el archivo desaparece)",
+          not _os.path.exists(ruta))
+    check("refresco forzado: costó 1 request de marcador",
+          [p[0] for p in cliente.pedidos] == ["fixtures"], cliente.pedidos)
+
+    ruta = refresco_json({"282": vieja})  # pedido caducado (>15 min... 9h)
+    cliente = ClienteFalso({})
+    check("refresco forzado: un pedido caducado no gasta nada",
+          en_vivo_mod.refrescar_ligas_pedidas(cliente, con, ya_frescos=set(), ruta=ruta) == 0
+          and cliente.pedidos == [], cliente.pedidos)
+
+    # con el plan muerto, el marcador sale por la clave de emergencia
+    con.execute("UPDATE fixtures SET status_short='NS', goals_home=NULL, date=? WHERE id=?",
+                (hace(20), MELGAR_CRISTAL))
+    con.commit()
+    ruta = refresco_json({"282": ahora})
+    cliente = ClienteFalso({}, presupuesto=0,
+                           emergencia={"fixtures": [item_marcador(MELGAR_CRISTAL, 282)]})
+    n = en_vivo_mod.refrescar_ligas_pedidas(cliente, con, ya_frescos=set(), ruta=ruta)
+    check("refresco forzado con plan muerto: el marcador sale por la emergencia",
+          n == 1 and cliente.usadas_emergencia == 1
+          and any(p[0] == "EMERGENCIA:fixtures" for p in cliente.pedidos),
+          (n, cliente.pedidos))
 
     # y si el feed live tuvo un hipo, la liga sigue contando como en juego:
     # el estado EN_JUEGO de nuestra base no se pone solo, lo escribió el feed

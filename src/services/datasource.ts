@@ -23,6 +23,7 @@ import type {
   FichaPartidoDTO,
   FixtureDTO,
   FixtureLiveDTO,
+  RefrescoLigaDTO,
   VipEstadoDTO,
   GapEquipoDTO,
   JugadorDTO,
@@ -84,6 +85,8 @@ export interface SadDataSource {
   fixtureLive(fixtureId: number): Promise<FixtureLiveDTO>
   /** Marca/desmarca un partido VIP (mock: en memoria; http: POST real). */
   marcarVip(fixtureId: number, activo: boolean): Promise<VipEstadoDTO>
+  /** Pide el refresco forzado del marcador de una liga (mock: no-op). */
+  refrescarLiga(ligaId: number): Promise<RefrescoLigaDTO>
   buscarEquipos(buscar: string, limit?: number): Promise<EquipoDTO[]>
   niveles(equipoId: number, limit?: number): Promise<NivelDTO[]>
   constantes(equipoId: number, limit?: number): Promise<ConstantesDTO[]>
@@ -506,6 +509,10 @@ class MockDataSource implements SadDataSource {
     return out
   }
 
+  async refrescarLiga(ligaId: number): Promise<RefrescoLigaDTO> {
+    return { ligaId, pedido: true }
+  }
+
   async marcarVip(fixtureId: number, activo: boolean): Promise<VipEstadoDTO> {
     if (activo) MOCK_VIP.add(fixtureId)
     else MOCK_VIP.delete(fixtureId)
@@ -919,6 +926,7 @@ class HttpDataSource implements SadDataSource {
   fixtures = (params?: FixturesParams) => SadApi.fixtures(params)
   fixtureLive = (fixtureId: number) => SadApi.fixtureLive(fixtureId)
   marcarVip = (fixtureId: number, activo: boolean) => SadApi.marcarVip(fixtureId, activo)
+  refrescarLiga = (ligaId: number) => SadApi.refrescarLiga(ligaId)
   buscarEquipos = (buscar: string, limit?: number) => SadApi.buscarEquipos(buscar, limit)
   niveles = (equipoId: number, limit?: number) => SadApi.niveles(equipoId, limit)
   constantes = (equipoId: number, limit?: number) => SadApi.constantes(equipoId, limit)

@@ -36,6 +36,20 @@ const MOTIVO_SIN_CUOTAS: Record<FixtureLiveDTO['coberturaLive'], string> = {
   con_datos: 'liga con cuotas · aún sin las de este partido',
 }
 
+function BotonVip({ vip, onClick }: { vip: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title={vip
+        ? 'VIP activo: con el plan agotado, este partido se sigue con la clave de emergencia (factura excedente). La marca caduca sola a las 8 h.'
+        : 'Seguir este partido sí o sí: si el plan diario se agota, se mantiene marcador y cuotas con la clave de emergencia (cuesta ~$0.005 por request).'}
+      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 8, cursor: 'pointer', font: '600 11px var(--sans)', border: `1px solid ${vip ? 'color-mix(in oklch,var(--up),transparent 45%)' : 'var(--line)'}`, background: vip ? 'var(--up-soft)' : 'transparent', color: vip ? 'var(--up)' : 'var(--t2)' }}
+    >
+      {vip ? '★ VIP · sí o sí' : '☆ Seguir sí o sí'}
+    </button>
+  )
+}
+
 export function Cuotas({ store, m, isMobile, live }: Props) {
   const { s } = store
   // Regla de datos: en http (producción) NO se pinta nada inventado — sin
@@ -280,7 +294,12 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
       )}
 
       {/* EN DIRECTO REAL (http): solo mientras el partido está en juego */}
-      {live && live.estado === 'en_vivo' && (
+      {/* La barra en vivo NO depende de que /live responda: si la LISTA dice
+          que el partido está en juego, la barra sale igual (con lo que haya) y
+          el botón VIP también — que es justo lo que hace falta cuando el flujo
+          de datos está roto. Antes, un fetch caído borraba barra y botón
+          mientras el header seguía diciendo LIVE (Gimnasia-River, 30/07). */}
+      {(live?.estado === 'en_vivo' || (!esDemo && m.status === 'live')) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', marginBottom: 16, borderRadius: 12, background: 'var(--bg1)', border: '1px solid var(--line)', flexWrap: 'wrap' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 7, font: '700 11px var(--mono)', color: 'var(--down)', letterSpacing: '.6px' }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--down)', animation: 'sadpulse 1.1s infinite' }}></span>EN DIRECTO
@@ -288,33 +307,47 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
           <span style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
             <MarcaCondicion cond="L" color={mv.homeColor} />
             <span style={{ font: '700 18px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>
-              {mv.homeShort} {live.golesLocal ?? '–'} - {live.golesVisitante ?? '–'} {mv.awayShort}
+              {live?.estado === 'en_vivo'
+                ? `${mv.homeShort} ${live.golesLocal ?? '–'} - ${live.golesVisitante ?? '–'} ${mv.awayShort}`
+                : `${mv.homeShort} ${m.score || '– - –'} ${mv.awayShort}`}
             </span>
             <MarcaCondicion cond="V" color={mv.awayColor} />
           </span>
-          {live.minuto != null && <span style={{ font: '600 12px var(--mono)', color: 'var(--t2)' }}>{live.minuto}'</span>}
-          <button
-            onClick={toggleVip}
-            title={vip
-              ? 'VIP activo: con el plan agotado, este partido se sigue con la clave de emergencia (factura excedente). La marca caduca sola a las 8 h.'
-              : 'Seguir este partido sí o sí: si el plan diario se agota, se mantiene marcador y cuotas con la clave de emergencia (cuesta ~$0.005 por request).'}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 8, cursor: 'pointer', font: '600 11px var(--sans)', border: `1px solid ${vip ? 'color-mix(in oklch,var(--up),transparent 45%)' : 'var(--line)'}`, background: vip ? 'var(--up-soft)' : 'transparent', color: vip ? 'var(--up)' : 'var(--t2)' }}
-          >
-            {vip ? '★ VIP · sí o sí' : '☆ Seguir sí o sí'}
-          </button>
+          {(live?.minuto ?? (parseInt(m.min) || null)) != null && (
+            <span style={{ font: '600 12px var(--mono)', color: 'var(--t2)' }}>{live?.minuto ?? parseInt(m.min)}'</span>
+          )}
+          <BotonVip vip={vip} onClick={toggleVip} />
           <span style={{ marginLeft: 'auto', font: '500 11px var(--mono)', color: 'var(--t3)' }}>
-            {live.actualizadoEn
-              ? (() => {
-                  // frescura visible: si la casa cerró el mercado, aquí se nota
-                  const edadMin = Math.max(0, Math.round((Date.now() - new Date(live.actualizadoEn).getTime()) / 60000))
-                  return edadMin < 2
-                    ? 'cuotas en juego · al minuto'
-                    : `cuotas en juego · última captura hace ${edadMin} min`
-                })()
-              // sin captura de ESTE partido: el porqué lo dice la última ronda
-              // de la liga. Cada rama afirma SOLO lo observado — "la API no
-              // cubre esta liga" es una conclusión que casi nunca se sostiene.
-              : MOTIVO_SIN_CUOTAS[live.coberturaLive] ?? 'aún sin cuotas de este partido'}
+            {!live || live.estado !== 'en_vivo'
+              // la lista dice EN JUEGO pero /live no ha respondido (o falló):
+              // el polling reintenta solo — no se afirma nada sobre cuotas
+              ? 'sin respuesta del backend en vivo · reintentando'
+              : live.actualizadoEn
+                ? (() => {
+                    // frescura visible: si la casa cerró el mercado, aquí se nota
+                    const edadMin = Math.max(0, Math.round((Date.now() - new Date(live.actualizadoEn).getTime()) / 60000))
+                    return edadMin < 2
+                      ? 'cuotas en juego · al minuto'
+                      : `cuotas en juego · última captura hace ${edadMin} min`
+                  })()
+                // sin captura de ESTE partido: el porqué lo dice la última ronda
+                // de la liga. Cada rama afirma SOLO lo observado — "la API no
+                // cubre esta liga" es una conclusión que casi nunca se sostiene.
+                : MOTIVO_SIN_CUOTAS[live.coberturaLive] ?? 'aún sin cuotas de este partido'}
+          </span>
+        </div>
+      )}
+
+      {/* Antes del saque también se puede marcar VIP — es CUANDO conviene
+          hacerlo. Cubre además el estado congelado (plan agotado y el NS que
+          ya arrancó): sin esta fila, el partido que más necesita la marca era
+          el único sin botón. */}
+      {!esDemo && m.status === 'sched' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 16px', marginBottom: 16, borderRadius: 12, background: 'var(--bg1)', border: '1px solid var(--line)', flexWrap: 'wrap' }}>
+          <span style={{ font: '700 11px var(--mono)', color: 'var(--t2)', letterSpacing: '.6px' }}>ANTES DEL SAQUE</span>
+          <BotonVip vip={vip} onClick={toggleVip} />
+          <span style={{ marginLeft: 'auto', font: '500 11px var(--mono)', color: 'var(--t3)' }}>
+            {vip ? 'marcado: se sigue aunque el plan del día se agote' : 'marca VIP ahora y el partido se sigue pase lo que pase'}
           </span>
         </div>
       )}

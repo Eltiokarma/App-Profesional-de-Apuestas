@@ -108,6 +108,30 @@ paths:
                   fixtureId: { type: integer }
                   vip: { type: boolean }
         '404': { description: No existe }
+  /ligas/{ligaId}/refrescar:
+    post:
+      summary: Refresco forzado del marcador de una liga (el botón ⟳ de Partidos)
+      description: >
+        Escribe el pedido en .refresco_ligas.json (la raíz de datos, no las .db)
+        y el próximo ciclo en vivo actualiza estado/marcador/minuto de todos los
+        partidos en ventana de esa liga por /fixtures?ids= — presupuesto normal
+        si queda, clave de emergencia si el plan está muerto. Solo marcador; las
+        cuotas siguen sus reglas (VIP para pagarlas). Se consume al atenderse y
+        caduca a los 15 min.
+      parameters:
+        - { name: ligaId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ligaId, pedido]
+                properties:
+                  ligaId: { type: integer }
+                  pedido: { type: boolean }
+        '404': { description: Liga sin fixtures en la base }
   /niveles/{equipoId}:
     get:
       summary: Historia de niveles del equipo (desc por fecha)

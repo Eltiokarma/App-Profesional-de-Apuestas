@@ -464,6 +464,17 @@ def main():
           rv["vip"] is False and c.get(A + f"/fixtures/{vivo['id']}/live").json()["vip"] is False, rv)
     check("POST vip de fixture inexistente → 404",
           c.post(A + "/fixtures/999999999/vip", json={"activo": True}).status_code == 404)
+    # refresco forzado de liga (el ⟳ de Partidos): escribe el pedido para el ciclo
+    rr = c.post(A + f"/ligas/{vivo['ligaId']}/refrescar").json()
+    check("POST refrescar liga → pedido anotado", rr == {"ligaId": vivo["ligaId"], "pedido": True}, rr)
+    import json as _json
+
+    import backend.db as _db
+    with open(os.path.join(_db.BASE_DIR, ".refresco_ligas.json"), encoding="utf-8") as _f:
+        check("el pedido queda en .refresco_ligas.json (lo consume el ciclo en vivo)",
+              str(vivo["ligaId"]) in _json.load(_f))
+    check("POST refrescar liga inexistente → 404",
+          c.post(A + "/ligas/999999/refrescar").status_code == 404)
     check("live: eventos mapeados (gol/amarilla/roja; subst y penal fallado fuera)",
           [(e["tipo"], e["minuto"]) for e in lv["eventos"]]
           == [("amarilla", 12), ("gol", 34), ("gol", 51), ("roja", 60)], lv["eventos"])
