@@ -93,11 +93,60 @@ MARGEN_DIARIO = 5
 # de la noche quedaron sin cuotas live). En planes chicos se acota a la mitad
 # del tope. Lo que no entra hoy se reanuda solo en la próxima corrida.
 RESERVA_BACKFILL = int(os.environ.get("SAD_BACKFILL_RESERVA", "1500"))
+# Reserva CON FÚTBOL CERCA. Tiene que ser bastante mayor que la del ciclo en
+# vivo (SAD_LIVE_RESERVA, 1500): si son iguales, el bloque gasta hasta dejar
+# exactamente el suelo del vivo y el vivo amanece apagado — margen real: CERO.
+# Eso pasó el 30/07/2026: la ingesta en bloque (ficha 2.569 + jugadores 1.656 =
+# 63% del día) dejó 1.472 a las 18:33 y las cuotas en juego quedaron EN PAUSA
+# 309 ciclos seguidos, 5 h 30 min, justo el prime time sudamericano. El plan ni
+# se agotó (6.670/7.495): simplemente se gastó en lo que PODÍA ESPERAR.
+RESERVA_CON_PARTIDOS = int(os.environ.get("SAD_BLOQUE_RESERVA_PARTIDOS", "3500"))
+# Cuánto se mira hacia adelante para decidir que "hay fútbol cerca". 14 h y no
+# 6: los partidos de la noche se conocen desde la mañana, y con una ventana
+# corta la corrida del mediodía no los "veía" y gastaba el plan igual — para
+# cuando llegaba el fútbol ya no quedaba nada. Con 14 h, la corrida de las
+# 12:30 UTC ya ve el prime time sudamericano y cede el paso.
+HORAS_VENTANA_PARTIDOS = int(os.environ.get("SAD_BLOQUE_VENTANA_HORAS", "14"))
 
 
-def reserva_del_dia(limite: int) -> int:
-    """Requests que la ingesta en bloque deja SIN gastar para el en vivo."""
-    return min(RESERVA_BACKFILL, limite // 2)
+def hay_partidos_cerca(con, horas: int = HORAS_VENTANA_PARTIDOS) -> int:
+    """Partidos NUESTROS en juego o que arrancan en las próximas `horas` (0
+    requests). Es lo que decide si la ingesta en bloque tiene que ceder el paso.
+
+    Se mira el CALENDARIO, no el reloj: los husos y los horarios de cada liga
+    cambian, pero "hay fútbol nuestro a punto de empezar" es la misma pregunta
+    en todas partes."""
+    ahora = datetime.now(timezone.utc)
+    desde = (ahora - timedelta(minutes=210)).strftime("%Y-%m-%d %H:%M:%S")
+    hasta = (ahora + timedelta(hours=horas)).strftime("%Y-%m-%d %H:%M:%S")
+    ligas = set(LIGAS) - LIGAS_MENORES
+    if not ligas:
+        return 0
+    marcas = ",".join("?" * len(ligas))
+    fila = con.execute(
+        f"""SELECT COUNT(*) FROM fixtures
+            WHERE league_id IN ({marcas}) AND date BETWEEN ? AND ?
+              AND (status_short IS NULL OR status_short NOT IN ('FT','AET','PEN','AWD','WO','PST','CANC'))""",
+        (*sorted(ligas), desde, hasta)).fetchone()
+    return int(fila[0] if fila else 0)
+
+
+def reserva_del_dia(limite: int, con=None) -> int:
+    """Requests que la ingesta en bloque deja SIN gastar para el en vivo.
+
+    Con fútbol cerca sube a RESERVA_CON_PARTIDOS: la ficha de un partido
+    terminado y las plantillas se pueden bajar mañana sin perder nada, pero
+    la curva de un partido en juego pasa UNA vez y no vuelve. La prioridad
+    estaba invertida — ver RESERVA_CON_PARTIDOS."""
+    base = min(RESERVA_BACKFILL, limite // 2)
+    if con is None:
+        return base
+    try:
+        if hay_partidos_cerca(con):
+            return min(max(base, RESERVA_CON_PARTIDOS), limite // 2)
+    except Exception:
+        pass  # DB sin fixtures o esquema viejo: la reserva base ya protege algo
+    return base
 DELAY_DEFAULT = 6.5
 DELAY_MIN = 0.25
 
@@ -1085,8 +1134,10 @@ def historico(cliente: Cliente, con: sqlite3.Connection, desde: int) -> int:
         print(f"histórico {desde}–{SEASON}: al día ({len(hecho)} torneos, 0 requests)")
         return 0
     # reserva intocable para el resto del día (refrescos de cuotas + en vivo);
-    # acotada a la mitad del tope para que en planes chicos algo avance
-    reserva = reserva_del_dia(cliente.limite)
+    # acotada a la mitad del tope para que en planes chicos algo avance. Con
+    # fútbol nuestro cerca sube sola: el histórico de 2024 puede esperar a
+    # mañana, la curva de un partido en juego no vuelve nunca
+    reserva = reserva_del_dia(cliente.limite, con)
     print(f"histórico {desde}–{SEASON}: {len(pendientes)} torneos pendientes "
           f"(presupuesto restante {cliente.limite - cliente.usadas}, reserva {reserva})")
     total = 0

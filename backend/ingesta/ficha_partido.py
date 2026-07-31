@@ -309,10 +309,13 @@ def main() -> int:
         return 0
 
     cliente = Cliente(leer_clave(), args.limite)
-    # misma reserva que el backfill: una corrida con backlog grande (300+
-    # partidos × 3 requests) no puede dejar sin presupuesto a las cuotas
-    # live y los XI de la noche
-    reserva = 0 if args.fixture else reserva_del_dia(cliente.limite)
+    # reserva CONSCIENTE DEL CALENDARIO: con fútbol nuestro cerca sube a
+    # SAD_BLOQUE_RESERVA_PARTIDOS. Una corrida con backlog grande (300+ partidos
+    # × 3 requests) no puede dejar sin presupuesto a las cuotas live de la noche
+    # — y la ficha de un partido TERMINADO se baja mañana sin perder nada,
+    # mientras que la curva de uno en juego pasa una vez (30/07/2026: 309 ciclos
+    # con las cuotas en pausa por culpa de este bloque)
+    reserva = 0 if args.fixture else reserva_del_dia(cliente.limite, con)
     print(f"Ficha de partido: {len(pendientes)} partidos pendientes "
           f"(NS <= {args.dias} días, últimos {args.ultimos} por equipo) · "
           f"3 requests c/u · presupuesto restante {cliente.limite - cliente.usadas}"

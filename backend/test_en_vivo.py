@@ -558,6 +558,36 @@ def main():
           and any(p[0] == "EMERGENCIA:fixtures" for p in cliente.pedidos),
           (n, cliente.pedidos))
 
+    # LAS DOS RESERVAS (30/07/2026: 309 ciclos con las cuotas en juego EN
+    # PAUSA, 5 h 30 min de prime time sudamericano, y el plan ni se agotó —
+    # 6.670/7.495). La ingesta en bloque paraba al dejar 1.500 y el ciclo en
+    # vivo se apaga por debajo de 1.500: el margen real del vivo era CERO.
+    # Con fútbol cerca, el bloque tiene que ceder — la ficha de un partido
+    # terminado se baja mañana; la curva de uno en juego pasa una vez.
+    from backend.ingesta.extractor import hay_partidos_cerca, reserva_del_dia
+
+    con3 = sqlite3.connect(":memory:")
+    con3.executescript(DDL_FIXTURES)
+    check("sin fútbol cerca, el bloque usa su reserva base y avanza",
+          reserva_del_dia(7495, con3) == 1500 and hay_partidos_cerca(con3) == 0,
+          reserva_del_dia(7495, con3))
+    con3.execute("INSERT INTO fixtures (id,date,status_short,league_id) VALUES (?,?,?,?)",
+                 (1, hace(-120), "NS", 11))  # Sudamericana en 2 h
+    con3.commit()
+    check("con fútbol nuestro cerca, la reserva del bloque SUBE",
+          reserva_del_dia(7495, con3) == 3500, reserva_del_dia(7495, con3))
+    check("y así el ciclo en vivo tiene margen real en vez de cero",
+          reserva_del_dia(7495, con3) - en_vivo_mod.RESERVA_VIVO >= 1500,
+          reserva_del_dia(7495, con3) - en_vivo_mod.RESERVA_VIVO)
+    con3.execute("UPDATE fixtures SET status_short='FT'")
+    con3.commit()
+    check("un partido ya terminado no cuenta como fútbol cerca",
+          hay_partidos_cerca(con3) == 0, hay_partidos_cerca(con3))
+    con3.execute("UPDATE fixtures SET status_short='NS', league_id=282")
+    con3.commit()
+    check("una liga menor tampoco frena al bloque (no recibe ciclo en vivo)",
+          hay_partidos_cerca(con3) == 0, hay_partidos_cerca(con3))
+
     # y si el feed live tuvo un hipo, la liga sigue contando como en juego:
     # el estado EN_JUEGO de nuestra base no se pone solo, lo escribió el feed
     con = db(con_fixtures=True)

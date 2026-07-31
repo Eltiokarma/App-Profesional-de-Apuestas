@@ -19,6 +19,7 @@ python -m uvicorn backend.app:app --port 8000
 python -m backend.test_api        # verificaciones del contrato (169 checks)
 python -m backend.test_en_vivo    # ciclo en vivo: cuotas en juego por liga (sin red)
 python -m backend.test_cuotas_lote # cuotas prepartido: lote por fecha vs por fixture (presupuesto)
+python -m backend.test_jugadores  # presupuesto de jugadores: TTL separado y padrón de ligas
 python -m backend.test_despensa   # despensa en bloque: TTL honesto y canonización
 python -m backend.test_ficha      # ficha de partido (alineaciones/eventos/stats, fase A del DTP)
 python -m backend.test_dtp        # DTP: cadena rodante, anti-hindsight y sin búsqueda web
