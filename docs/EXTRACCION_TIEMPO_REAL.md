@@ -173,6 +173,21 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
      servirlo, y caduca solo a los `REFRESCO_CADUCIDAD_MIN` (30).
   Y el POST devuelve `fixtures`: cuántos partidos va a tocar. Con 0 la app dice
   *"nada que refrescar"* en vez de pintar un ✓ que no significa nada.
+- **LAS DOS RESERVAS TIENEN QUE SER DISTINTAS** (30/07/2026: 309 ciclos con las
+  cuotas en juego `EN PAUSA`, de 18:33 a 00:01 — 5 h 30 min del prime time
+  sudamericano, con partidos de Sudamericana sin curva). Y el plan **ni se
+  agotó**: 6.670/7.495. El fallo era de prioridades, no de volumen. La ingesta
+  en bloque paraba al dejar `SAD_BACKFILL_RESERVA` (1500) y el ciclo en vivo se
+  apaga por debajo de `SAD_LIVE_RESERVA` (1500): **el margen real del vivo era
+  CERO** — el bloque gastaba exactamente hasta el punto donde el vivo se apaga.
+  El desglose del día lo dejó a la vista: ficha de partido 2.569 + jugadores
+  1.656 = **63 % del plan** gastado en cosas que se pueden bajar mañana sin
+  perder nada, mientras la curva de un partido en juego pasa UNA vez y no
+  vuelve. Ahora `reserva_del_dia(limite, con)` mira el CALENDARIO (no el reloj,
+  que depende del huso): con fútbol nuestro en juego o a menos de
+  `SAD_BLOQUE_VENTANA_HORAS` (14 h), la reserva del bloque sube a
+  `SAD_BLOQUE_RESERVA_PARTIDOS` (3500) y el bloque cede el paso. Sin fútbol
+  cerca vuelve a 1500 y avanza a fondo con el backlog.
 - **Por qué la pantalla ya no miente.** Los tres bugs anteriores compartían
   síntoma — "sin cobertura de cuotas en vivo en esta liga" — porque la UI solo
   sabía que este fixture no tenía filas en `odds_live`, y de ahí deducía falta

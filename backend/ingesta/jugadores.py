@@ -327,10 +327,11 @@ def main() -> int:
         pendientes = [(args.equipo, args.temporada or datetime.now(timezone.utc).year)]
     else:
         pendientes = equipos_pendientes(con, args.dias, args.ttl_horas)
-    # misma reserva que el backfill: esta ingesta corre en bloque (~5-6
-    # requests por equipo × cientos de equipos) y no puede dejar sin
-    # presupuesto a las cuotas live y los XI de la noche
-    reserva = 0 if args.equipo else reserva_del_dia(cliente.limite)
+    # reserva CONSCIENTE DEL CALENDARIO: con fútbol nuestro cerca sube a
+    # SAD_BLOQUE_RESERVA_PARTIDOS. Esta ingesta corre en bloque (~4 requests por
+    # equipo × cientos de equipos) y no puede dejar sin presupuesto a las cuotas
+    # live de la noche; una plantilla se baja mañana igual de bien
+    reserva = 0 if args.equipo else reserva_del_dia(cliente.limite, con)
     print(f"Jugadores: {len(pendientes)} equipos pendientes (NS <= {args.dias} días, "
           f"TTL {args.ttl_horas} h) · presupuesto restante {cliente.limite - cliente.usadas}"
           f" · reserva {reserva}")
