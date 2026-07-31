@@ -17,9 +17,10 @@ import argparse
 import os
 import sqlite3
 import sys
+import unicodedata
 from datetime import datetime, timedelta, timezone
 
-from backend.ingesta.extractor import LIGAS, Cliente, leer_clave, reserva_del_dia
+from backend.ingesta.extractor import LIGAS, Cliente, leer_clave, ligas_vivo, reserva_del_dia
 
 TTL_HORAS_DEFAULT = 168  # 7 días: fuera de ventana de traspasos alcanza de sobra
 # Equipos que la API NO cubre (plantilla vacía): sellado LARGO. Repreguntarlos
@@ -27,6 +28,20 @@ TTL_HORAS_DEFAULT = 168  # 7 días: fuera de ventana de traspasos alcanza de sob
 # fueron 223 de 276 equipos ingestados (~78% del gasto de jugadores). La
 # cobertura de la API no aparece de un día para otro.
 TTL_HORAS_SIN_DATOS = int(os.environ.get("SAD_JUGADORES_TTL_SIN_DATOS", "720"))  # 30 días
+# TTL de los dos datos LENTOS: traspasos y DT. Los cuatro endpoints iban con el
+# mismo TTL de 7 días, y eso era la mitad del gasto de jugadores tirada: las
+# bajas y las stats por-90 cambian cada semana, pero los traspasos solo se
+# mueven en ventana de mercado y un DT dura meses. 30 días.
+# NO se pierde el cambio de DT: cada alineación (ficha y XI prepartido) trae el
+# nombre del entrenador, y si no coincide con el guardado se fuerza el refresco
+# — la etiqueta "DT NUEVO" del bloque G sigue saliendo el mismo día.
+TTL_HORAS_LENTO = int(os.environ.get("SAD_JUGADORES_TTL_LENTO", "720"))  # 30 días
+# La ingesta de jugadores sigue las ligas IMPORTANTES, no las 56 de LIGAS: las
+# copas nacionales meten cientos de equipos de ascenso (y 667 Amistosos de
+# Clubes, equipos de todo el mundo) cuyas plantillas casi no alimentan el
+# análisis. Un equipo de 1ª que juega copa sigue entrando por SU liga.
+# SAD_JUGADORES_TODAS_LIGAS=1 vuelve al padrón completo.
+JUGADORES_TODAS_LIGAS = os.environ.get("SAD_JUGADORES_TODAS_LIGAS", "").strip() == "1"
 DIAS_NS_DEFAULT = 3
 
 DDL = """
@@ -107,6 +122,11 @@ def preparar_tablas(con: sqlite3.Connection) -> None:
         # default 1: lo ya sellado sin la marca se trata como equipo con datos
         # (TTL corto), que es el comportamiento previo a la columna
         con.execute("ALTER TABLE plantillas_meta ADD COLUMN con_datos INTEGER NOT NULL DEFAULT 1")
+    if "lento_en" not in columnas:
+        # cuándo se pidieron por última vez traspasos y DT (los dos datos que
+        # NO cambian a ritmo semanal). NULL en lo ya sellado: la primera
+        # corrida tras el deploy los pide una vez y a partir de ahí rota lento
+        con.execute("ALTER TABLE plantillas_meta ADD COLUMN lento_en TEXT")
     con.commit()
 
 
@@ -133,14 +153,15 @@ def equipos_pendientes(con: sqlite3.Connection, dias: int, ttl_horas: int) -> li
     excluyendo los refrescados dentro del TTL. La temporada es la del fixture
     próximo (así los torneos de año cruzado piden la temporada correcta)."""
     ahora = datetime.now(timezone.utc)
-    marcas = ",".join("?" * len(LIGAS))
+    ligas = set(LIGAS) if JUGADORES_TODAS_LIGAS else ligas_vivo()
+    marcas = ",".join("?" * len(ligas))
     filas = con.execute(
         f"""SELECT f.home_team_id, f.away_team_id, f.league_season FROM fixtures f
             WHERE f.status_short='NS' AND f.date >= ? AND f.date <= ?
               AND f.league_id IN ({marcas})
             ORDER BY f.date""",
         (ahora.strftime("%Y-%m-%d %H:%M:%S"),
-         (ahora + timedelta(days=dias)).strftime("%Y-%m-%d %H:%M:%S"), *LIGAS),
+         (ahora + timedelta(days=dias)).strftime("%Y-%m-%d %H:%M:%S"), *sorted(ligas)),
     ).fetchall()
     limite_ttl = (ahora - timedelta(hours=ttl_horas)).strftime("%Y-%m-%d %H:%M:%S")
     limite_sin = (ahora - timedelta(hours=max(TTL_HORAS_SIN_DATOS, ttl_horas))).strftime("%Y-%m-%d %H:%M:%S")
@@ -273,10 +294,53 @@ def guardar_entrenador(con: sqlite3.Connection, team_id: int, filas: list) -> in
     return n
 
 
+def necesita_lentas(con: sqlite3.Connection, team_id: int,
+                    ttl_horas: int = TTL_HORAS_LENTO) -> bool:
+    """¿Toca pedir traspasos y DT de este equipo? Son los dos datos que NO
+    cambian a ritmo semanal, así que van con TTL propio (30 días) en vez del
+    de la plantilla (7). Se piden igualmente, sin esperar al TTL, cuando la
+    ÚLTIMA ALINEACIÓN capturada trae un entrenador distinto del guardado:
+    esa señal llega gratis con cada ficha y cada XI prepartido, así que un
+    cambio de DT se detecta el mismo día y la etiqueta "DT NUEVO" no se
+    retrasa. Sin alineaciones ni marca previa, se piden."""
+    fila = con.execute(
+        "SELECT lento_en FROM plantillas_meta WHERE team_id=?", (team_id,)).fetchone()
+    if not fila or not fila[0]:
+        return True
+    limite = (datetime.now(timezone.utc) - timedelta(hours=ttl_horas)).strftime("%Y-%m-%d %H:%M:%S")
+    if fila[0] <= limite:
+        return True
+    try:
+        dt_alin = con.execute(
+            """SELECT a.entrenador FROM alineaciones a JOIN fixtures f ON f.id = a.fixture_id
+               WHERE a.team_id=? AND a.entrenador IS NOT NULL AND a.entrenador <> ''
+               ORDER BY f.date DESC LIMIT 1""", (team_id,)).fetchone()
+        dt_guardado = con.execute(
+            "SELECT nombre FROM entrenadores WHERE team_id=? ORDER BY actualizado_en DESC LIMIT 1",
+            (team_id,)).fetchone()
+    except sqlite3.Error:
+        return False  # DB sin esas tablas: el TTL manda
+    if dt_alin and dt_guardado and dt_alin[0] and dt_guardado[0]:
+        if _norm_dt(dt_alin[0]) != _norm_dt(dt_guardado[0]):
+            print(f"  equipo {team_id}: la alineación trae DT '{dt_alin[0]}' y teníamos "
+                  f"'{dt_guardado[0]}' → se refresca traspasos y DT sin esperar al TTL")
+            return True
+    return False
+
+
+def _norm_dt(nombre: str) -> str:
+    """Nombres de DT comparables entre /coachs y las alineaciones (la API los
+    escribe distinto: 'M. Pellegrino' vs 'Mauricio Pellegrino')."""
+    n = unicodedata.normalize("NFD", (nombre or "").lower())
+    n = "".join(c for c in n if unicodedata.category(c) != "Mn")
+    partes = [p for p in n.replace(".", " ").split() if len(p) > 1]
+    return partes[-1] if partes else n.strip()
+
+
 def ingestar_equipo(cliente: Cliente, con: sqlite3.Connection, team_id: int, season: int) -> bool:
-    """Plantilla + bajas + traspasos + DT de un equipo (~5-6 requests). False
-    si el presupuesto se agotó antes de completarlo (no se sella el TTL)."""
-    if not cliente.quedan(4):
+    """Plantilla + bajas (+ traspasos y DT si toca) de un equipo. False si el
+    presupuesto se agotó antes de completarlo (no se sella el TTL)."""
+    if not cliente.quedan(2):
         return False
     filas = cliente.paginado("players", {"team": team_id, "season": season})
     stats = guardar_plantilla(con, team_id, season, filas)
@@ -288,18 +352,29 @@ def ingestar_equipo(cliente: Cliente, con: sqlite3.Connection, team_id: int, sea
               f"(se repregunta en {TTL_HORAS_SIN_DATOS // 24} días)")
     data = cliente.get("injuries", {"team": team_id, "season": season})
     bajas = guardar_bajas(con, team_id, season, (data or {}).get("response", []))
-    data = cliente.get("transfers", {"team": team_id})
-    trasp = guardar_traspasos(con, (data or {}).get("response", []))
-    data = cliente.get("coachs", {"team": team_id})
-    dt = guardar_entrenador(con, team_id, (data or {}).get("response", []))
+    # traspasos y DT solo si toca (TTL propio de 30 días o cambio de DT visto
+    # en la alineación): eran la mitad del gasto de jugadores para datos que
+    # casi nunca cambian entre corridas
+    lentas = necesita_lentas(con, team_id) and cliente.quedan(2)
+    trasp = dt = 0
+    lento_en = None
+    if lentas:
+        data = cliente.get("transfers", {"team": team_id})
+        trasp = guardar_traspasos(con, (data or {}).get("response", []))
+        data = cliente.get("coachs", {"team": team_id})
+        dt = guardar_entrenador(con, team_id, (data or {}).get("response", []))
+        lento_en = _ahora()
     con.execute(
-        "INSERT OR REPLACE INTO plantillas_meta (team_id, season, actualizado_en, con_datos) "
-        "VALUES (?, ?, ?, ?)",
-        (team_id, season, _ahora(), con_datos),
+        "INSERT INTO plantillas_meta (team_id, season, actualizado_en, con_datos, lento_en) "
+        "VALUES (?, ?, ?, ?, ?) ON CONFLICT(team_id) DO UPDATE SET "
+        "season=excluded.season, actualizado_en=excluded.actualizado_en, "
+        "con_datos=excluded.con_datos, lento_en=COALESCE(excluded.lento_en, plantillas_meta.lento_en)",
+        (team_id, season, _ahora(), con_datos, lento_en),
     )
     con.commit()
     print(f"  [{cliente.usadas}/{cliente.limite}] equipo {team_id} t{season}: "
-          f"{stats} filas de stats · {bajas} bajas · {trasp} traspasos · DT {'sí' if dt else 'no'}")
+          f"{stats} filas de stats · {bajas} bajas"
+          + (f" · {trasp} traspasos · DT {'sí' if dt else 'no'}" if lentas else " · (traspasos/DT al día)"))
     return True
 
 
