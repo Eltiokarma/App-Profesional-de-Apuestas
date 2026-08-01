@@ -6,7 +6,7 @@ live, la API con cobertura de odds live de esa liga, y los nombres de mercado
 mapeados por cuota_key. Cuando la ficha dice "sin cobertura de cuotas en vivo
 en esta liga", esto dice CUÁL de las puertas se quedó cerrada.
 
-Sin red por defecto (solo lee sad.db). Con --api gasta 3-4 requests para
+Sin red por defecto (solo lee sad.db). Con --api gasta 4-5 requests para
 distinguir lo único que no se puede saber desde la DB: si la API ofrece o no
 cuotas en juego de esa liga.
 
@@ -218,6 +218,25 @@ def diagnosticar(con: sqlite3.Connection, fid: int, cliente=None) -> None:
                 print(f"{NO} el filtro ?league={lid} NO está filtrando: la API devolvió otras "
                       f"ligas. Eso explica el 'sin cobertura' sin que falte cobertura — y es "
                       f"justo lo que cubre el rescate por fixture (SAD_LIVE_ODDS_FIXTURES)")
+        # ¿API-Football declara cobertura de ODDS para esta liga/temporada? Es
+        # lo único que separa "la casa aún no abrió el mercado" (Los Chankas:
+        # 45 min vacío y luego 227 capturas) de "este producto no cubre esta
+        # liga". Sin este flag llevamos días infiriendo de feeds vacíos, que es
+        # exactamente lo que nos hizo equivocarnos dos veces.
+        data = cliente.get("leagues", {"id": lid})
+        temporadas = ((data or {}).get("response") or [{}])[0].get("seasons") or []
+        actual = next((s for s in temporadas if s.get("current")), temporadas[-1] if temporadas else {})
+        cob = (actual.get("coverage") or {})
+        odds_ok = cob.get("odds")
+        print(f"{OK if odds_ok else NO} /leagues?id={lid}: temporada {actual.get('year')} · "
+              f"coverage.odds = {odds_ok}")
+        if odds_ok is False:
+            print(f"      API-Football NO cubre cuotas de esta liga esta temporada. No hay parche "
+                  f"nuestro que lo arregle: las casas sí tienen mercado, pero este proveedor no "
+                  f"lo publica. Para tenerlas haría falta OTRA fuente de odds.")
+        elif odds_ok:
+            print(f"      la liga SÍ está cubierta: un feed live vacío es entonces mercado aún "
+                  f"sin abrir (o cerrado por la casa), no falta de cobertura — reintentar sirve")
         # ¿el feed live trae desglose POR CASA y lo estamos ignorando? El
         # prepartido sí lo trae (odds.bookmaker_name), pero odds_live no tiene
         # esa columna y el parser lee item["odds"] directo. Que guardemos
@@ -282,7 +301,7 @@ def main() -> int:
                     help="id del fixture (repetible)")
     ap.add_argument("--hoy", action="store_true", help="todos los de hoy de las ligas en vivo")
     ap.add_argument("--api", action="store_true",
-                    help="3-4 requests: ¿está en el feed live? ¿la API da odds live por liga? ¿y por fixture?")
+                    help="4-5 requests: ¿está en el feed live? ¿coverage.odds de la liga? ¿feed por liga? ¿y por fixture?")
     args = ap.parse_args()
 
     if not os.path.exists(args.db):
