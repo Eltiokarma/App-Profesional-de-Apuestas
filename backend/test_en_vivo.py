@@ -380,11 +380,33 @@ def main():
     # requests, cero cuotas, cero marcador, y las copas que funcionaban paradas
     # a mitad de partido). Un ciclo por minuto sin freno propio se come el plan
     # del día y deja sin datos a TODO, incluida la ingesta diaria.
+    # La reserva es lo que cuesta mantener el MARCADOR vivo hasta el reset UTC
+    # (1 request por ciclo), no un suelo fijo. A mediodía son 720; a las 23:35,
+    # 25. El reloj sale de la marca del propio ciclo, así que esto no depende
+    # de la hora a la que corra el test.
+    def dt(h, m):
+        return datetime(2026, 8, 1, h, m, tzinfo=timezone.utc)
+
+    check("la reserva encoge según se acerca el reset (1 request por ciclo)",
+          en_vivo_mod.reserva_viva(dt(0, 1)) == 1439
+          and en_vivo_mod.reserva_viva(dt(12, 0)) == 720
+          and en_vivo_mod.reserva_viva(dt(23, 35)) == 25,
+          (en_vivo_mod.reserva_viva(dt(0, 1)), en_vivo_mod.reserva_viva(dt(12, 0)),
+           en_vivo_mod.reserva_viva(dt(23, 35))))
+    # con ciclos más cortos que un minuto los ciclos que faltan se disparan:
+    # ahí sí muerde RESERVA_VIVO, que es el techo
+    en_vivo_mod.SEGUNDOS_CICLO = 10
+    check("con ciclos cortos manda el techo SAD_LIVE_RESERVA",
+          en_vivo_mod.reserva_viva(dt(0, 1)) == en_vivo_mod.RESERVA_VIVO,
+          en_vivo_mod.reserva_viva(dt(0, 1)))
+    en_vivo_mod.SEGUNDOS_CICLO = 60
+
     con = db()
     preparar_consultas(con)
-    cliente = ClienteFalso(feed, limite=7495, usadas=7400)  # dentro de la reserva
+    # a las 12:00 la reserva es 720; con 495 restantes se está DENTRO
+    cliente = ClienteFalso(feed, limite=7495, usadas=7000)
     n, con_feed = capturar_odds_live(cliente, con, por_liga, ids_vivos,
-                                     "2026-07-29 23:35:00.000", ids_en_juego=ids_vivos)
+                                     "2026-07-29 12:00:00.000", ids_en_juego=ids_vivos)
     check("con el plan dentro de la reserva NO se piden cuotas (ni el rescate)",
           cliente.pedidos == [] and n == 0 and con_feed == set(),
           (cliente.pedidos, n, con_feed))
@@ -393,10 +415,25 @@ def main():
 
     con = db()
     preparar_consultas(con)
-    cliente = ClienteFalso(feed, limite=7495, usadas=5990)  # margen justo: 5 sobre reserva
-    capturar_odds_live(cliente, con, por_liga, ids_vivos, "2026-07-29 23:36:00.000")
+    # reserva 720 + 5 de margen → cupo 1 (5 // COSTE_LIGA)
+    cliente = ClienteFalso(feed, limite=7495, usadas=7495 - 720 - 5)
+    capturar_odds_live(cliente, con, por_liga, ids_vivos, "2026-07-29 12:00:00.000")
     check("con margen justo el cupo se encoge en vez de chocar contra la pared",
           0 < len({p[1] for p in cliente.pedidos}) < 2, cliente.pedidos)
+
+    # REGRESIÓN 01/08/2026: el ciclo entró EN PAUSA a las 21:51 con 1473
+    # requests libres porque se negaba a bajar del suelo fijo de 1500. 80
+    # minutos, 12 partidos en juego, cero cuotas — Sport Boys cortado a mitad
+    # de partido y Cusco FC vs UTC sin una sola— y 1269 requests vencidas sin
+    # gastar al llegar el reset. A esa hora la reserva honesta son ~129.
+    con = db()
+    preparar_consultas(con)
+    cliente = ClienteFalso(feed, limite=7495, usadas=6022)
+    n, _ = capturar_odds_live(cliente, con, por_liga, ids_vivos,
+                              "2026-08-01 21:51:25.000", ids_en_juego=ids_vivos)
+    check("con 1473 libres a las 21:51 el ciclo SIGUE pidiendo cuotas (no se pausa)",
+          len({p[1] for p in cliente.pedidos}) > 0 and n > 0,
+          (cliente.pedidos, n))
 
     con = db()
     preparar_consultas(con)
@@ -576,9 +613,11 @@ def main():
     con3.commit()
     check("con fútbol nuestro cerca, la reserva del bloque SUBE",
           reserva_del_dia(7495, con3) == 3500, reserva_del_dia(7495, con3))
-    check("y así el ciclo en vivo tiene margen real en vez de cero",
-          reserva_del_dia(7495, con3) - en_vivo_mod.RESERVA_VIVO >= 1500,
-          reserva_del_dia(7495, con3) - en_vivo_mod.RESERVA_VIVO)
+    # y desde el 01/08 la otra mitad: lo que el bloque reserva es del EN VIVO, y
+    # el en vivo puede gastarlo. Su propio freno solo aparta el marcador.
+    check("y el en vivo puede gastar de verdad lo que el bloque le reservó",
+          reserva_del_dia(7495, con3) - en_vivo_mod.reserva_viva(dt(21, 51)) >= 3000,
+          (reserva_del_dia(7495, con3), en_vivo_mod.reserva_viva(dt(21, 51))))
     con3.execute("UPDATE fixtures SET status_short='FT'")
     con3.commit()
     check("un partido ya terminado no cuenta como fútbol cerca",
