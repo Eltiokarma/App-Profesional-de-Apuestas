@@ -1251,7 +1251,8 @@ def main() -> int:
 
     if args.historico:
         con = sqlite3.connect(args.db)
-        con.execute("PRAGMA busy_timeout=15000")
+        con.execute("PRAGMA busy_timeout=30000")
+        con.execute("PRAGMA journal_mode=WAL")
         historico(cliente, con, args.historico)
         con.close()
         return 0
@@ -1259,7 +1260,8 @@ def main() -> int:
     desde = args.desde or (hoy - timedelta(days=DIAS_ATRAS)).strftime("%Y-%m-%d")
     hasta = args.hasta or (hoy + timedelta(days=DIAS_ADELANTE)).strftime("%Y-%m-%d")
     con = sqlite3.connect(args.db)
-    con.execute("PRAGMA busy_timeout=15000")  # convive con las lecturas del backend
+    con.execute("PRAGMA busy_timeout=30000")  # convive con el ciclo en vivo y las lecturas
+    con.execute("PRAGMA journal_mode=WAL")   # en WAL solo hay UN escritor: sin esperar, el ciclo muere
     preparar_historial(con)  # idempotente: crea/migra odds_history en DBs viejas
     borradas = limpiar_odds_duplicadas(con)  # autocuración del volumen contaminado
     if borradas:

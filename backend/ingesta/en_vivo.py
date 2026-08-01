@@ -249,6 +249,14 @@ CREATE TABLE IF NOT EXISTS xi_intentos (
     intentada_en TEXT NOT NULL,
     con_datos INTEGER NOT NULL DEFAULT 0
 );
+-- Turnos del rescate por fixture. Sin esto, `sorted(faltan)[:TOPE]` servía
+-- SIEMPRE a los mismos ids bajos: con 6 partidos en juego y tope 4, los dos
+-- de id más alto no se rescataban NUNCA (01/08/2026, México). Es el mismo
+-- error que ya arreglamos para las ligas, sin aplicarlo a los fixtures.
+CREATE TABLE IF NOT EXISTS odds_live_rescates (
+    fixture_id INTEGER PRIMARY KEY,
+    intentado_en TEXT NOT NULL
+);
 """
 
 
@@ -610,6 +618,23 @@ def orden_por_antiguedad(con: sqlite3.Connection, por_liga: dict[int, set[int]],
     return sorted(por_liga, key=lambda lid: (lid not in en_juego, ultima.get(lid, ""), lid))
 
 
+def orden_rescate(con: sqlite3.Connection, fixtures: "list[int]") -> list[int]:
+    """Fixtures del rescate ordenados por INTENTO más viejo (los nunca
+    intentados, delante). Con tope por ciclo, ordenar por id dejaba fuera
+    siempre a los mismos: 6 partidos en juego y tope 4 = dos que no se
+    rescataban nunca."""
+    if not fixtures:
+        return []
+    marcas = ",".join("?" * len(fixtures))
+    try:
+        ultimo = dict(con.execute(
+            f"SELECT fixture_id, intentado_en FROM odds_live_rescates "
+            f"WHERE fixture_id IN ({marcas})", tuple(sorted(fixtures))))
+    except sqlite3.Error:
+        ultimo = {}  # DB sin la tabla: orden estable, como antes
+    return sorted(fixtures, key=lambda f: (ultimo.get(f, ""), f))
+
+
 def fixtures_para_xi(con: sqlite3.Connection, ligas: "set[int]") -> list[int]:
     """Fixtures de las ligas en vivo cuya alineación conviene pedir YA. Dos
     casos, orden por saque más próximo primero:
@@ -833,25 +858,39 @@ def capturar_odds_live(cliente, con: sqlite3.Connection, por_liga: dict,
     # entró en espera, y ese es justo el caso que no hay que reintentar.
     dormidas = ligas_en_backoff(con, set(por_liga))
     liga_de = {f: lid for lid, fids in por_liga.items() for f in fids}
-    faltan = sorted(f for f in (ids_en_juego or set()) - con_feed
-                    if liga_de.get(f) not in dormidas)
+    candidatos_resc = [f for f in (ids_en_juego or set()) - con_feed
+                       if liga_de.get(f) not in dormidas]
+    # ROTACIÓN: por intento más viejo primero (los nunca intentados, delante).
+    # Antes era `sorted(faltan)[:TOPE]`, o sea SIEMPRE los mismos ids bajos:
+    # con 6 partidos en juego y tope 4, los dos de id más alto no se rescataban
+    # nunca. Hoy no se nota porque los 4 devuelven vacío, pero en cuanto la
+    # cobertura vuelva esos dos quedarían ciegos para siempre.
+    faltan = orden_rescate(con, candidatos_resc)
     # el rescate también gasta: se le aplica la misma reserva que a las ligas
     # (si no, el freno de arriba sería un colador)
     if faltan and TOPE_FIXTURES > 0 and cupo_del_ciclo(cliente, TOPE_FIXTURES) > 0:
-        for fid in faltan[:TOPE_FIXTURES]:
+        atendidos = faltan[:TOPE_FIXTURES]
+        for fid in atendidos:
             if not cliente.quedan() or cupo_del_ciclo(cliente, TOPE_FIXTURES) <= 0:
                 break
             filas = cliente.paginado("odds/live", {"fixture": fid}, tope_paginas=1)
+            # el turno se gasta aunque venga vacío: si no, este fixture volvería
+            # a ser el primero de la cola en el ciclo siguiente y los demás no
+            # entrarían jamás (el bug de la rotación por ids, otra vez)
+            con.execute(
+                "INSERT INTO odds_live_rescates (fixture_id, intentado_en) VALUES (?, ?) "
+                "ON CONFLICT(fixture_id) DO UPDATE SET intentado_en=excluded.intentado_en",
+                (fid, capturado))
             for item in filas:
                 if (item.get("fixture") or {}).get("id") == fid:
                     n_odds += guardar_odds_live(con, item, capturado)
                     con_feed.add(fid)
-        rescatados = sorted(set(faltan[:TOPE_FIXTURES]) & con_feed)
-        print(f"  rescate por fixture: {len(rescatados)} de {len(faltan[:TOPE_FIXTURES])} "
+        rescatados = sorted(set(atendidos) & con_feed)
+        print(f"  rescate por fixture: {len(rescatados)} de {len(atendidos)} "
               f"pedidos trajeron cuotas {rescatados}")
-        if len(faltan) > TOPE_FIXTURES:
-            print(f"  (quedaron {len(faltan) - TOPE_FIXTURES} para el próximo ciclo; "
-                  f"tope SAD_LIVE_ODDS_FIXTURES={TOPE_FIXTURES})")
+        if len(faltan) > len(atendidos):
+            print(f"  (quedaron {len(faltan) - len(atendidos)} para el próximo ciclo, "
+                  f"y van primero por turno; tope SAD_LIVE_ODDS_FIXTURES={TOPE_FIXTURES})")
         con.commit()
     # evidencia en logs: distinguir "no pedimos" de "la casa cerró el mercado"
     susp = con.execute(
@@ -887,7 +926,7 @@ def main() -> int:
         print(f"No existe {args.db}", file=sys.stderr)
         return 1
     con = sqlite3.connect(args.db)
-    con.execute("PRAGMA busy_timeout=15000")
+    con.execute("PRAGMA busy_timeout=30000")  # el refresco de cuotas retiene el lock ~20 s
     con.execute("PRAGMA journal_mode=WAL")  # persistente; requisito de la fase 3
     con.executescript(DDL_ODDS_LIVE)
     preparar_consultas(con)  # columnas nuevas en DBs ya creadas
@@ -1000,5 +1039,26 @@ def main() -> int:
     return 0
 
 
+def main_tolerante() -> int:
+    """main() envuelto: un `database is locked` NO puede tumbar el ciclo.
+
+    01/08/2026: tres caídas de este módulo en una noche (23:53, 00:23, 00:54)
+    en capturar_xi, guardar_fixtures y el DELETE de retención. En WAL solo hay
+    UN escritor, y el refresco de cuotas retiene el lock ~20 s: con el
+    busy_timeout de 15 s el ciclo se rendía y moría con traceback, perdiendo la
+    vuelta ENTERA (marcador incluido). Ahora el timeout es de 30 s y, si aun
+    así no entra, se sale limpio: el ciclo siguiente arranca en un minuto y lo
+    que no se escribió se vuelve a intentar. Un lock es contención normal
+    entre procesos, no un error del que haya que morir."""
+    try:
+        return main()
+    except sqlite3.OperationalError as e:
+        if "locked" in str(e).lower() or "busy" in str(e).lower():
+            print(f"sad.db ocupada por otra escritura ({e}); este ciclo se salta "
+                  f"y el siguiente reintenta", file=sys.stderr)
+            return 0  # no es un fallo del servicio: no ensuciar el exit code
+        raise
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main_tolerante())
