@@ -208,6 +208,22 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   **caduca** a las `SAD_LIVE_BACKOFF_OLVIDO_H` (8 h): el castigo no es eterno,
   cada jornada empieza limpia, y como es por `league_id`, añadir ligas al
   catálogo no desarma lo aprendido de las demás.
+- **`database is locked` no puede tumbar el ciclo** (01/08/2026: tres caídas
+  en una noche —23:53, 00:23, 00:54— en `capturar_xi`, `guardar_fixtures` y el
+  DELETE de retención). En WAL hay **un solo escritor**, y el refresco de
+  cuotas retiene el lock ~20 s: con `busy_timeout=15000` el ciclo se rendía y
+  moría con traceback, perdiendo la vuelta ENTERA, marcador incluido. Ahora
+  todos los escritores (extractor, ficha, jugadores, en vivo) declaran
+  `journal_mode=WAL` y `busy_timeout=30000`, y `main_tolerante()` convierte un
+  lock en "este ciclo se salta, el siguiente reintenta" — es contención normal
+  entre procesos, no un error del que haya que morir.
+- **El rescate por fixture ROTA** (01/08/2026, México): era
+  `sorted(faltan)[:TOPE]`, o sea siempre los mismos ids bajos. Con 6 partidos
+  en juego y tope 4, los dos de id más alto **no se rescataban nunca** — el
+  mismo error que ya habíamos arreglado para las ligas, sin aplicarlo a los
+  fixtures. Ahora `orden_rescate` ordena por intento más viejo
+  (`odds_live_rescates`) y el turno se gasta aunque el feed venga vacío: si no,
+  el mismo fixture volvería a encabezar la cola cada ciclo.
 - **Por qué la pantalla ya no miente.** Los tres bugs anteriores compartían
   síntoma — "sin cobertura de cuotas en vivo en esta liga" — porque la UI solo
   sabía que este fixture no tenía filas en `odds_live`, y de ahí deducía falta

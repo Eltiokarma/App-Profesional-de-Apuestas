@@ -653,6 +653,43 @@ def main():
     check("liga dormida: ni ronda ni rescate por fixture (0 requests)",
           cliente.pedidos == [], cliente.pedidos)
 
+    # ROTACIÓN DEL RESCATE (01/08/2026, México): con 6 partidos en juego y
+    # tope 4, `sorted(faltan)[:4]` servía SIEMPRE a los mismos ids bajos — los
+    # dos de id más alto no se rescataban nunca. Hoy no se nota porque los 4
+    # devuelven vacío, pero en cuanto vuelva la cobertura quedarían ciegos.
+    con = db()
+    preparar_consultas(con)
+    seis = [1505482, 1519436, 1549698, 1550912, 1581376, 1607654]
+    check("sin intentos previos, el orden es estable",
+          en_vivo_mod.orden_rescate(con, seis) == sorted(seis))
+    con.executemany(
+        "INSERT INTO odds_live_rescates (fixture_id, intentado_en) VALUES (?,?)",
+        [(f, "2026-08-01 00:10:00.000") for f in seis[:4]])  # los 4 primeros ya tuvieron turno
+    con.commit()
+    check("los que ya tuvieron turno van al final: entran los que nunca entraron",
+          en_vivo_mod.orden_rescate(con, seis)[:2] == [1581376, 1607654],
+          en_vivo_mod.orden_rescate(con, seis))
+
+    con = db(con_fixtures=True)
+    preparar_consultas(con)
+    preparar_ficha(con)
+    # dos ciclos seguidos con tope 2: los 4 fixtures tienen que entrar todos
+    por_liga_6 = {PERU: set(seis)}
+    tope_fx = en_vivo_mod.TOPE_FIXTURES
+    en_vivo_mod.TOPE_FIXTURES = 2
+    try:
+        pedidos = []
+        for i in range(3):
+            cliente = ClienteFalso({PERU: []})
+            capturar_odds_live(cliente, con, por_liga_6, set(seis),
+                               f"2026-08-01 01:0{i}:00.000", ids_en_juego=set(seis))
+            pedidos += [p[1] for p in cliente.pedidos if p[0] == "odds/live" and p[1] is None]
+    finally:
+        en_vivo_mod.TOPE_FIXTURES = tope_fx
+    atendidos = {f for f, _ in con.execute("SELECT fixture_id, intentado_en FROM odds_live_rescates")}
+    check("en 3 ciclos con tope 2, TODOS los 6 fixtures tuvieron su turno",
+          atendidos == set(seis), sorted(atendidos))
+
     # y si el feed live tuvo un hipo, la liga sigue contando como en juego:
     # el estado EN_JUEGO de nuestra base no se pone solo, lo escribió el feed
     con = db(con_fixtures=True)

@@ -395,7 +395,8 @@ def main() -> int:
         return 1
     cliente = Cliente(leer_clave(), args.limite)
     con = sqlite3.connect(args.db)
-    con.execute("PRAGMA busy_timeout=15000")  # convive con las lecturas del backend
+    con.execute("PRAGMA busy_timeout=30000")  # convive con el ciclo en vivo y las lecturas
+    con.execute("PRAGMA journal_mode=WAL")   # en WAL solo hay UN escritor: sin esperar, el ciclo muere
     preparar_tablas(con)
 
     if args.equipo:
