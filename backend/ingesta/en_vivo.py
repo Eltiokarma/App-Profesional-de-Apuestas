@@ -171,23 +171,65 @@ BACKOFF_OLVIDO_H = _tope("SAD_LIVE_BACKOFF_OLVIDO_H", 8)
 # refresco de cuotas prepartido y el propio marcador en vivo. Es exactamente lo
 # que pasó el 29/07/2026 (7496/7495 y el respaldo agotado: cero requests, cero
 # cuotas, cero marcador — y las copas que funcionaban se pararon a mitad de
-# partido). La reserva es lo que el ciclo en vivo NO puede tocar.
-RESERVA_VIVO = _tope("SAD_LIVE_RESERVA", 1500)
+# partido).
+#
+# PERO el freno de aquel día era un SUELO FIJO de 1500, y eso lo rompía por el
+# otro lado: la ingesta en bloque ya deja 3500 sin gastar EXPRESAMENTE para el
+# en vivo (reserva_del_dia), y el en vivo se negaba además a bajar de 1500. Esas
+# 1500 no las gastaba nadie: se vencían a medianoche. El 01/08/2026 el ciclo
+# entró en pausa a las 21:51 con 1473 restantes y estuvo 80 minutos con 12
+# partidos en juego y CERO cuotas — Sport Boys cortado a mitad de partido y
+# Cusco FC vs UTC sin una sola cuota— mientras 1269 requests se tiraban a la
+# basura al llegar el reset.
+#
+# Lo único que hay que proteger de verdad es lo BARATO e irrecuperable: el
+# marcador y el minuto (`fixtures?live=all`, 1 request por ciclo) tienen que
+# llegar vivos hasta el reset. Eso no son 1500 requests: son los ciclos que
+# quedan de aquí a medianoche UTC. A las 21:51 eran ~130, no 1500. El resto del
+# plan es del en vivo, que es el dato que pasa UNA vez y no vuelve.
+RESERVA_VIVO = _tope("SAD_LIVE_RESERVA", 1500)  # TOPE de la reserva, no suelo fijo
+# Cada cuánto corre el ciclo (lo fija SAD_LIVE_SEGUNDOS en backend.app). Solo se
+# usa para contar cuántos ciclos faltan hasta el reset; un valor de más deja la
+# reserva más chica, nunca negativa.
+SEGUNDOS_CICLO = _tope("SAD_LIVE_SEGUNDOS", 60)
+
+
+def fecha_de(marca: str) -> "datetime | None":
+    """'2026-08-01 21:51:25.123' → datetime UTC. None si no se puede leer."""
+    try:
+        return datetime.strptime(str(marca)[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError):
+        return None
+
+
+def reserva_viva(ahora: datetime | None = None) -> int:
+    """Requests a dejar sin gastar: mantener el marcador vivo hasta el reset.
+
+    1 request por ciclo × ciclos que quedan del día UTC, acotado por
+    RESERVA_VIVO (que pasa a ser un techo, no un suelo). Encoge sola según
+    avanza la noche, así que el en vivo puede gastar el plan casi entero
+    justo cuando hay fútbol, sin dejar nunca la pantalla muerta.
+    """
+    ahora = ahora or datetime.now(timezone.utc)
+    reset = (ahora + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    ciclos = max(0, int((reset - ahora).total_seconds() // max(1, SEGUNDOS_CICLO)))
+    return max(0, min(RESERVA_VIVO, ciclos))
+
+
 # Requests que se le suponen a una liga por ronda (1 request + su paginado):
 # el cupo se calcula con esto para degradar suave en vez de chocar contra la pared.
 COSTE_LIGA = 3
 
 
-def cupo_del_ciclo(cliente, tope: int) -> int:
-    """Cuántas ligas puede pedir ESTE ciclo sin comerse la reserva del día.
+def cupo_del_ciclo(cliente, tope: int, ahora: datetime | None = None) -> int:
+    """Cuántas ligas puede pedir ESTE ciclo sin dejar el marcador sin plan.
 
     Con margen de sobra devuelve el tope entero; según se acerca a la reserva
     va bajando, y al llegar sale 0: el ciclo sigue pidiendo marcador y minuto
-    (1 request, lo más barato y lo más valioso) pero deja de pedir cuotas.
-    Así el plan nunca se agota por el ciclo en vivo."""
+    (1 request, lo más barato y lo más valioso) pero deja de pedir cuotas."""
     if tope <= 0:  # 0 = sin tope explícito: igual se respeta la reserva
         tope = 10**6
-    margen = (cliente.limite - cliente.usadas) - RESERVA_VIVO
+    margen = (cliente.limite - cliente.usadas) - reserva_viva(ahora)
     if margen <= 0:
         return 0
     return max(0, min(tope, margen // COSTE_LIGA))
@@ -774,15 +816,18 @@ def capturar_odds_live(cliente, con: sqlite3.Connection, por_liga: dict,
     orden = [lid for lid in orden_por_antiguedad(con, por_liga, en_juego) if lid not in dormidas]
     if not orden:
         return 0, set()
-    cupo = cupo_del_ciclo(cliente, TOPE_LIGAS)
+    # la marca del ciclo ES el reloj: así la reserva no depende del reloj real
+    # (y los tests dejan de ser una lotería según la hora a la que corran)
+    ahora = fecha_de(capturado)
+    cupo = cupo_del_ciclo(cliente, TOPE_LIGAS, ahora)
     if cupo <= 0:
         print(f"  cuotas en juego EN PAUSA: quedan {cliente.limite - cliente.usadas} requests y "
-              f"la reserva del día es {RESERVA_VIVO} (SAD_LIVE_RESERVA). El marcador sigue; "
-              f"las cuotas vuelven cuando el plan resetee")
+              f"hay que reservar {reserva_viva(ahora)} para que el marcador llegue vivo al reset "
+              f"(tope SAD_LIVE_RESERVA={RESERVA_VIVO}). El marcador sigue")
         return 0, set()
     if cupo < min(len(orden), TOPE_LIGAS if TOPE_LIGAS > 0 else len(orden)):
         print(f"  presupuesto justo: este ciclo pide {cupo} ligas en vez de {TOPE_LIGAS} "
-              f"(quedan {cliente.limite - cliente.usadas}, reserva {RESERVA_VIVO})")
+              f"(quedan {cliente.limite - cliente.usadas}, reserva {reserva_viva(ahora)})")
     atendidas = orden[:cupo]
     aplazadas = orden[len(atendidas):]
     n_odds = 0

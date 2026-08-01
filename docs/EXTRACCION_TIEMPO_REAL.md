@@ -138,6 +138,12 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   al acercarse encoge, y al llegar deja de pedir cuotas pero **sigue pidiendo
   marcador y minuto** (1 request, lo más barato y lo más valioso). El rescate
   por fixture pasa por el mismo freno. Un tope alto ya no puede vaciar el plan.
+
+  **Pero ese freno era un SUELO FIJO, y por ahí se rompió el 01/08/2026.**
+  `reserva_viva()` lo sustituye: lo único que hay que apartar es lo barato e
+  irrecuperable —el marcador y el minuto hasta el reset UTC—, o sea 1 request
+  por ciclo × ciclos que faltan, con `SAD_LIVE_RESERVA` de **techo** y no de
+  suelo. A las 21:51 eso son ~129 requests, no 1500. Ver más abajo.
 - **Partidos VIP y modo emergencia** (`SAD_EMERGENCIA_KEY` · `_TOPE` ·
   `_LIGAS`): "este partido lo quiero sí o sí, aunque cueste". Se marca desde
   la app (botón en Cuotas → `POST /fixtures/{id}/vip` → `.vip_fixtures.json`
@@ -188,6 +194,30 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   `SAD_BLOQUE_VENTANA_HORAS` (14 h), la reserva del bloque sube a
   `SAD_BLOQUE_RESERVA_PARTIDOS` (3500) y el bloque cede el paso. Sin fútbol
   cerca vuelve a 1500 y avanza a fondo con el backlog.
+
+- **UNA RESERVA ES PARA ALGUIEN, O NO ES UNA RESERVA** (01/08/2026: el ciclo
+  entró `EN PAUSA` a las 21:51 con **1.473 requests libres** y estuvo 80
+  minutos con 12 partidos en juego de 10 ligas y **cero cuotas** —Sport Boys
+  cortado a mitad de partido, Cusco FC vs UTC sin una sola cuota—, con
+  `odds/live` congelado en 1.956 toda la ventana). Subir la reserva del bloque
+  a 3500 arregló media cosa: el bloque ya apartaba requests **para el en
+  vivo**, pero el en vivo seguía teniendo su propio suelo de 1500 y se negaba
+  a bajar de ahí. Nadie gastaba esas 1.500: **se vencían a medianoche**. Esa
+  noche fueron 1.269 tiradas a la basura mientras había fútbol sin curva.
+
+  Una reserva tiene que proteger algo concreto. Lo que hay que proteger es que
+  la pantalla no se muera: `fixtures?live=all`, 1 request por ciclo. Eso es
+  `reserva_viva()` = ciclos que quedan hasta el reset UTC, con
+  `SAD_LIVE_RESERVA` de techo. Todo lo demás del plan es del en vivo, que es
+  el dato que pasa una vez y no vuelve. El reloj sale de la marca del propio
+  ciclo (`capturado`), no del reloj real: así los tests no son una lotería
+  según la hora a la que corran.
+
+  De paso salió el segundo colador: el refresco de cuotas prepartido
+  (`--ventana-horas`, cada `SAD_REFRESCO_MIN`) era el **único** camino que no
+  pasaba por `reserva_del_dia`. A las 22:06 corrió con 1.442 restantes —dentro
+  de lo reservado para el en vivo— y se llevó 18. Ahora cede el paso: es
+  prepartido y vuelve dentro de media hora.
 - **Backoff por liga** (`SAD_LIVE_BACKOFF_PASO_MIN`/`_TOPE`, 3 min × rondas,
   tope 10 MIN). Auditoría de la noche del 31/07/2026: **796 requests
   tiradas, el 11 % del plan** — 506 rondas por liga que volvieron vacías y 290

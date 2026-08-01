@@ -1269,8 +1269,19 @@ def main() -> int:
 
     if args.ventana_horas:
         pendientes = fixtures_proximos(con, args.ventana_horas)
+        # el refresco es el ÚNICO camino que no pasaba por reserva_del_dia: se
+        # colaba dentro de lo reservado para el en vivo (01/08/2026, 22:06: corrió
+        # con 1442 restantes y se llevó 18). Es prepartido y vuelve a pasar cada
+        # media hora; la curva de un partido en juego pasa una vez.
+        reserva = reserva_del_dia(cliente.limite, con)
+        restante = cliente.limite - cliente.usadas
         print(f"Refresco: {len(pendientes)} NS que empiezan en <= {args.ventana_horas} h · en lote por fecha "
-              f"(presupuesto restante {cliente.limite - cliente.usadas})")
+              f"(presupuesto restante {restante}, reserva {reserva})")
+        if restante <= reserva:
+            con.close()
+            print(f"reserva del día alcanzada ({cliente.usadas}/{cliente.limite}): el refresco "
+                  f"cede el paso al en vivo y se reanuda en la próxima corrida")
+            return 0
         total, cubiertos = capturar_cuotas_lote(cliente, con, pendientes)
         con.close()
         print(f"cuotas refrescadas: {total} ({cubiertos}/{len(pendientes)} con cobertura) "

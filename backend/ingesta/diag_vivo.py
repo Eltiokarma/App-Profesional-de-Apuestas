@@ -13,6 +13,7 @@ cuotas en juego de esa liga.
     python -m backend.ingesta.diag_vivo --fixture 1234567
     python -m backend.ingesta.diag_vivo --hoy
     python -m backend.ingesta.diag_vivo --fixture 1234567 --api
+    python -m backend.ingesta.diag_vivo --liga 262 --liga 263   # solo coverage.odds
 """
 import argparse
 import contextlib
@@ -218,25 +219,7 @@ def diagnosticar(con: sqlite3.Connection, fid: int, cliente=None) -> None:
                 print(f"{NO} el filtro ?league={lid} NO está filtrando: la API devolvió otras "
                       f"ligas. Eso explica el 'sin cobertura' sin que falte cobertura — y es "
                       f"justo lo que cubre el rescate por fixture (SAD_LIVE_ODDS_FIXTURES)")
-        # ¿API-Football declara cobertura de ODDS para esta liga/temporada? Es
-        # lo único que separa "la casa aún no abrió el mercado" (Los Chankas:
-        # 45 min vacío y luego 227 capturas) de "este producto no cubre esta
-        # liga". Sin este flag llevamos días infiriendo de feeds vacíos, que es
-        # exactamente lo que nos hizo equivocarnos dos veces.
-        data = cliente.get("leagues", {"id": lid})
-        temporadas = ((data or {}).get("response") or [{}])[0].get("seasons") or []
-        actual = next((s for s in temporadas if s.get("current")), temporadas[-1] if temporadas else {})
-        cob = (actual.get("coverage") or {})
-        odds_ok = cob.get("odds")
-        print(f"{OK if odds_ok else NO} /leagues?id={lid}: temporada {actual.get('year')} · "
-              f"coverage.odds = {odds_ok}")
-        if odds_ok is False:
-            print(f"      API-Football NO cubre cuotas de esta liga esta temporada. No hay parche "
-                  f"nuestro que lo arregle: las casas sí tienen mercado, pero este proveedor no "
-                  f"lo publica. Para tenerlas haría falta OTRA fuente de odds.")
-        elif odds_ok:
-            print(f"      la liga SÍ está cubierta: un feed live vacío es entonces mercado aún "
-                  f"sin abrir (o cerrado por la casa), no falta de cobertura — reintentar sirve")
+        cobertura_liga(cliente, lid)
         # ¿el feed live trae desglose POR CASA y lo estamos ignorando? El
         # prepartido sí lo trae (odds.bookmaker_name), pero odds_live no tiene
         # esa columna y el parser lee item["odds"] directo. Que guardemos
@@ -267,6 +250,36 @@ def diagnosticar(con: sqlite3.Connection, fid: int, cliente=None) -> None:
             print(f"{NO} /odds/live?fixture={fid}: tampoco por fixture hay cuotas. Aquí sí "
                   f"apunta a cobertura real (o a mercado cerrado en este momento)")
         print(f"    requests gastadas: {cliente.usadas}")
+
+
+def cobertura_liga(cliente, lid: int) -> bool | None:
+    """¿API-Football declara cobertura de ODDS para esta liga/temporada? (1 request)
+
+    Es lo único que separa "la casa aún no abrió el mercado" (Los Chankas: 45
+    min vacío y después 227 capturas) de "este producto no cubre esta liga".
+    Sin este flag llevamos días infiriendo de feeds vacíos, que es exactamente
+    lo que nos hizo equivocarnos dos veces.
+    """
+    data = cliente.get("leagues", {"id": lid})
+    resp = ((data or {}).get("response") or [{}])[0]
+    nombre = (resp.get("league") or {}).get("name") or ""
+    pais = (resp.get("country") or {}).get("name") or ""
+    temporadas = resp.get("seasons") or []
+    actual = next((s for s in temporadas if s.get("current")), temporadas[-1] if temporadas else {})
+    odds_ok = (actual.get("coverage") or {}).get("odds")
+    etiqueta = f"{nombre} ({pais})" if nombre else f"liga {lid}"
+    print(f"{OK if odds_ok else NO} /leagues?id={lid}: {etiqueta} · temporada "
+          f"{actual.get('year')} · coverage.odds = {odds_ok}")
+    if odds_ok is False:
+        print(f"      API-Football NO cubre cuotas de esta liga esta temporada. No hay parche "
+              f"nuestro que lo arregle: las casas sí tienen mercado, pero este proveedor no "
+              f"lo publica. Para tenerlas haría falta OTRA fuente de odds.")
+    elif odds_ok:
+        print(f"      la liga SÍ está cubierta: un feed live vacío es entonces mercado aún "
+              f"sin abrir (o cerrado por la casa), no falta de cobertura — reintentar sirve")
+    else:
+        print(f"      la API no devolvió temporada para esta liga: revisa el id")
+    return odds_ok
 
 
 def mercados_mapeados(con: sqlite3.Connection, fid: int) -> int:
@@ -300,9 +313,20 @@ def main() -> int:
     ap.add_argument("--fixture", type=int, action="append", default=[],
                     help="id del fixture (repetible)")
     ap.add_argument("--hoy", action="store_true", help="todos los de hoy de las ligas en vivo")
+    ap.add_argument("--liga", type=int, action="append", default=[],
+                    help="solo coverage.odds de esa liga (1 request c/u, sin sad.db ni fixture)")
     ap.add_argument("--api", action="store_true",
                     help="4-5 requests: ¿está en el feed live? ¿coverage.odds de la liga? ¿feed por liga? ¿y por fixture?")
     args = ap.parse_args()
+
+    # atajo: la pregunta "¿cubre la API esta liga?" es de LIGA, no de partido.
+    # No hace falta la DB ni buscar un fixture que esté justo en juego.
+    if args.liga:
+        cliente = Cliente(leer_clave())
+        for lid in dict.fromkeys(args.liga):
+            cobertura_liga(cliente, lid)
+        print(f"    requests gastadas: {cliente.usadas}")
+        return 0
 
     if not os.path.exists(args.db):
         print(f"No existe {args.db}", file=sys.stderr)
