@@ -224,6 +224,15 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   fixtures. Ahora `orden_rescate` ordena por intento más viejo
   (`odds_live_rescates`) y el turno se gasta aunque el feed venga vacío: si no,
   el mismo fixture volvería a encabezar la cola cada ciclo.
+- **El descarte silencioso** (01/08/2026, auditando The Strongest–Aurora). El
+  guardado filtraba por `ids_objetivo`: si el feed de la liga traía un partido
+  con cuotas que no era candidato —estado desfasado en nuestra base, fecha
+  corrida, el feed live que se lo dejó— se **tiraba sin dejar rastro**. Y no
+  contaba como `ajena`, porque bastaba con que OTRO fixture de la misma ronda
+  sí matcheara: una pasada incompleta invisible en los logs. Ahora, si el
+  partido existe en nuestra tabla `fixtures`, su cuota se guarda igual — que la
+  API diga que tiene mercado abierto es mejor evidencia que nuestro estado
+  guardado — y lo que de verdad no conocemos se descarta **avisando**.
 - **Por qué la pantalla ya no miente.** Los tres bugs anteriores compartían
   síntoma — "sin cobertura de cuotas en vivo en esta liga" — porque la UI solo
   sabía que este fixture no tenía filas en `odds_live`, y de ahí deducía falta

@@ -690,6 +690,36 @@ def main():
     check("en 3 ciclos con tope 2, TODOS los 6 fixtures tuvieron su turno",
           atendidos == set(seis), sorted(atendidos))
 
+    # EL DESCARTE SILENCIOSO: el feed de la liga trae un partido con cuotas que
+    # no era candidato (estado desfasado en nuestra base, fecha corrida, el feed
+    # live que se lo dejó). Se tiraba SIN avisar —no contaba como `ajena`
+    # porque bastaba con que otro fixture de la ronda sí matcheara— y era una
+    # pasada incompleta invisible. Si el partido existe en nuestros fixtures,
+    # la API diciendo que tiene mercado abierto es mejor evidencia que nuestro
+    # estado guardado.
+    con = db(con_fixtures=True)
+    preparar_consultas(con)
+    con.executemany("INSERT INTO fixtures (id, date, status_short, league_id) VALUES (?,?,?,?)",
+                    [(MELGAR_CRISTAL, hace(20), "1H", PERU),
+                     (OTRO_PERU, hace(30), "FT", PERU)])  # nuestra base lo cree TERMINADO
+    con.commit()
+    cliente = ClienteFalso({PERU: [item_odds(MELGAR_CRISTAL), item_odds(OTRO_PERU)]})
+    n, con_feed = capturar_odds_live(cliente, con, {PERU: {MELGAR_CRISTAL}},
+                                     {MELGAR_CRISTAL}, "2026-08-01 03:00:00.000")
+    check("el partido con cuotas que NO era candidato se guarda igual (está en nuestra base)",
+          OTRO_PERU in con_feed and n == 6, (sorted(con_feed), n))
+
+    con = db(con_fixtures=True)
+    preparar_consultas(con)
+    con.execute("INSERT INTO fixtures (id, date, status_short, league_id) VALUES (?,?,?,?)",
+                (MELGAR_CRISTAL, hace(20), "1H", PERU))
+    con.commit()
+    cliente = ClienteFalso({PERU: [item_odds(MELGAR_CRISTAL), item_odds(777777)]})
+    n, con_feed = capturar_odds_live(cliente, con, {PERU: {MELGAR_CRISTAL}},
+                                     {MELGAR_CRISTAL}, "2026-08-01 03:01:00.000")
+    check("un partido del feed que NO está en nuestra base sí se descarta",
+          777777 not in con_feed and MELGAR_CRISTAL in con_feed, sorted(con_feed))
+
     # y si el feed live tuvo un hipo, la liga sigue contando como en juego:
     # el estado EN_JUEGO de nuestra base no se pone solo, lo escribió el feed
     con = db(con_fixtures=True)

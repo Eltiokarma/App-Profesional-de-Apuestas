@@ -799,13 +799,39 @@ def capturar_odds_live(cliente, con: sqlite3.Connection, por_liga: dict,
         consultadas.append(lid)
         antes = len(con_feed)
         ajenos = 0
+        # el feed puede traer partidos de la liga que NO estaban en ids_objetivo
+        # (estado desfasado en nuestra base, fecha corrida, el feed live que se
+        # los dejó…). Si el partido EXISTE en nuestros fixtures, es nuestro y su
+        # cuota se guarda: la API está diciendo que tiene mercado abierto, que es
+        # mejor evidencia que nuestro estado guardado. Antes se descartaban en
+        # SILENCIO —sin contar como `ajena`, porque bastaba con que otro fixture
+        # de la misma ronda sí matcheara— y era una pasada incompleta invisible.
+        del_feed = [f for f in ((it.get("fixture") or {}).get("id") for it in filas) if f]
+        extra = set()
+        desconocidos = 0
+        if del_feed:
+            fuera = [f for f in del_feed if f not in ids_objetivo]
+            if fuera:
+                marcas_f = ",".join("?" * len(fuera))
+                try:
+                    extra = {r[0] for r in con.execute(
+                        f"SELECT id FROM fixtures WHERE id IN ({marcas_f})", tuple(sorted(fuera)))}
+                except sqlite3.Error:
+                    extra = set()  # DB sin tabla fixtures: el filtro de antes
+                desconocidos = len(fuera) - len(extra)
         for item in filas:
             fid = (item.get("fixture") or {}).get("id")
             if (item.get("league") or {}).get("id") not in (None, lid):
                 ajenos += 1  # el filtro ?league= no filtró: feed de otra liga
-            if fid in ids_objetivo:
+            if fid in ids_objetivo or fid in extra:
                 n_odds += guardar_odds_live(con, item, capturado)
                 con_feed.add(fid)
+        if extra:
+            print(f"  liga {lid}: {len(extra)} partidos con cuotas que NO eran candidatos "
+                  f"{sorted(extra)} — se guardan igual (la API dice que tienen mercado)")
+        if desconocidos:
+            print(f"  liga {lid}: {desconocidos} partidos del feed no están en nuestra base "
+                  f"(fuera de la ventana de fixtures): sus cuotas se descartan")
         nuestros = len(con_feed) - antes
         # POR QUÉ no hubo cuotas: cuatro causas que el booleano viejo mezclaba
         # en una sola, y la pantalla acababa culpando a la cobertura de la API
