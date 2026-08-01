@@ -148,10 +148,23 @@ REFRESCO_ATRAS_H = 12
 REFRESCO_ADELANTE_H = 6
 
 # BACKOFF POR LIGA: cada ronda seguida sin datos aleja la siguiente consulta.
-# Paso 3 min, tope 10 → una liga sin cobertura acaba consultándose cada 30 min
-# en vez de cada ciclo, y el cupo que libera va a las que sí dan cuotas.
+# El TOPE está en MINUTOS y es bajo a propósito. Los Chankas–Comerciantes
+# (31/07/2026) enseñó por qué: la liga 281 devolvió VACÍO 44 rondas seguidas
+# —45 minutos— y a las 20:30:59 abrió de golpe con 619 valores, y de ahí 227
+# capturas seguidas sin fallar. O sea que "vacío" NO significa "esta liga no
+# tiene cobertura": significa que la casa aún no abrió el mercado en vivo.
+# Con un tope de 30 min habríamos llegado hasta media hora tarde a la apertura
+# y el hueco del principio de la curva sería PEOR, no mejor. Con 10 min el
+# ahorro es casi el mismo (las esperas 3-6-9-10-10… bajan de 44 consultas a
+# ~6 en esos 45 min) y lo que se puede perder está acotado a 10 minutos.
 BACKOFF_PASO_MIN = _tope("SAD_LIVE_BACKOFF_PASO_MIN", 3)
-BACKOFF_TOPE = _tope("SAD_LIVE_BACKOFF_TOPE", 10)
+BACKOFF_MAX_MIN = _tope("SAD_LIVE_BACKOFF_MAX_MIN", 10)
+# …pero el castigo NO es eterno: si hace más de N horas que no se le pregunta a
+# una liga, su contador se da por caducado y entra limpia. Sin esto, una liga
+# que acumuló 50 vacías anoche amanecería hoy castigada — y eso es justo lo que
+# no queremos cuando arranca una temporada, vuelve la cobertura de la API o se
+# añade una liga al catálogo. Cada jornada empieza sin prejuicios.
+BACKOFF_OLVIDO_H = _tope("SAD_LIVE_BACKOFF_OLVIDO_H", 8)
 
 # FRENO DE PRESUPUESTO. El ciclo corre cada minuto y, sin freno propio, se come
 # el plan del día y deja sin datos a TODO lo demás: la ingesta diaria, el
@@ -423,19 +436,18 @@ def preparar_consultas(con: sqlite3.Connection) -> None:
 
 def espera_backoff(vacias: int) -> int:
     """Minutos que una liga espera antes de que se le vuelva a pedir /odds/live,
-    según cuántas rondas SEGUIDAS lleva sin traer nada.
+    según cuántas rondas SEGUIDAS lleva sin traer nada. 0, 3, 6, 9, 10, 10…
 
     La noche del 31/07/2026: 506 rondas por liga volvieron vacías y el rescate
     por fixture gastó 290 requests con CERO aciertos — 796 tiradas, el 11% del
-    plan, en confirmar una y otra vez que la API no cubre esas ligas (Bolivia
-    115 ciclos, Ecuador 84, Chile 84, Venezuela 78, Perú 44…). Preguntar una
-    vez está bien; preguntar 115 veces la misma noche es tirar el presupuesto
-    que necesitan las ligas que SÍ dan cuotas.
+    plan. Preguntar una vez está bien; preguntar 115 veces la misma noche
+    (Bolivia) es quitarle presupuesto a las ligas que sí están dando cuotas.
 
-    Con paso de 3 min y tope 10, una liga sin cobertura pasa de consultarse
-    cada ciclo a cada 30 min — y si un día empieza a cubrirla, la primera
-    ronda con datos resetea el contador y vuelve al ritmo normal."""
-    return min(max(vacias, 0), BACKOFF_TOPE) * BACKOFF_PASO_MIN
+    El tope es BAJO porque un feed vacío es casi siempre TEMPORAL: en
+    Los Chankas–Comerciantes la liga estuvo 45 min vacía y luego dio 227
+    capturas seguidas. Esperar de más no ahorra casi nada y llega tarde a la
+    apertura del mercado, que es justo el tramo que falta en la curva."""
+    return min(max(vacias, 0) * BACKOFF_PASO_MIN, BACKOFF_MAX_MIN)
 
 
 def ligas_en_backoff(con: sqlite3.Connection, ligas: "set[int]") -> set[int]:
@@ -457,9 +469,23 @@ def ligas_en_backoff(con: sqlite3.Connection, ligas: "set[int]") -> set[int]:
             cuando = datetime.strptime(str(consultada_en)[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
         except ValueError:
             continue
+        if (ahora - cuando) >= timedelta(hours=BACKOFF_OLVIDO_H):
+            continue  # contador caducado: la liga entra limpia a esta jornada
         if (ahora - cuando) < timedelta(minutes=minutos):
             saltar.add(lid)
     return saltar
+
+
+def olvidar_backoff(con: sqlite3.Connection) -> int:
+    """Pone a cero los contadores caducados (última consulta hace más de
+    BACKOFF_OLVIDO_H). Mantiene la tabla honesta: lo que se ve en diag_vivo es
+    lo que el ciclo va a usar, no un castigo de anteayer."""
+    limite = (datetime.now(timezone.utc) - timedelta(hours=BACKOFF_OLVIDO_H)).strftime("%Y-%m-%d %H:%M:%S")
+    cur = con.execute(
+        "UPDATE odds_live_consultas SET vacias_seguidas=0 "
+        "WHERE vacias_seguidas > 0 AND consultada_en < ?", (limite,))
+    con.commit()
+    return cur.rowcount
 
 
 def candidatos_por_liga(con: sqlite3.Connection, ligas: "set[int]") -> dict[int, set[int]]:

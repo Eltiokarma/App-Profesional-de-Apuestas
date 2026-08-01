@@ -592,9 +592,14 @@ def main():
     # 290 rescates por fixture con CERO aciertos = 796 requests tiradas, el 11%
     # del plan, en confirmar 115 veces la misma noche que la API no cubre
     # Bolivia). Preguntar una vez está bien; insistir cada ciclo, no.
-    check("el backoff crece con las rondas vacías y tiene tope",
-          [en_vivo_mod.espera_backoff(v) for v in (0, 1, 3, 10, 50)] == [0, 3, 9, 30, 30],
+    check("el backoff crece con las rondas vacías y topa BAJO (10 min)",
+          [en_vivo_mod.espera_backoff(v) for v in (0, 1, 3, 10, 50)] == [0, 3, 9, 10, 10],
           [en_vivo_mod.espera_backoff(v) for v in (0, 1, 3, 10, 50)])
+    # EL CASO LOS CHANKAS: la liga estuvo 45 min vacía y luego dio 227 capturas
+    # seguidas. Un feed vacío es TEMPORAL casi siempre, así que el tope no puede
+    # ser grande: lo que se espera de más se pierde de la apertura del mercado.
+    check("esperar de más no ahorra: en 45 min de vacío el tope alto casi no baja consultas",
+          en_vivo_mod.BACKOFF_MAX_MIN <= 10, en_vivo_mod.BACKOFF_MAX_MIN)
 
     con = db()
     preparar_consultas(con)
@@ -603,17 +608,17 @@ def main():
         "INSERT INTO odds_live_consultas (league_id, consultada_en, con_datos, estado, vacias_seguidas) "
         "VALUES (?,?,?,?,?)",
         [(PERU, ahora_s, 1, "ok", 0),          # trae datos: nunca duerme
-         (PREMIER, ahora_s, 0, "vacia", 10)],  # 10 vacías seguidas: 30 min
+         (PREMIER, ahora_s, 0, "vacia", 10)],  # 10 vacías seguidas: tope (10 min)
     )
     con.commit()
     check("una liga que trae datos no entra nunca en espera",
           PERU not in en_vivo_mod.ligas_en_backoff(con, {PERU, PREMIER}))
-    check("una liga con 10 rondas vacías seguidas espera su turno largo",
+    check("una liga con 10 rondas vacías seguidas espera el tope",
           PREMIER in en_vivo_mod.ligas_en_backoff(con, {PERU, PREMIER}))
     con.execute("UPDATE odds_live_consultas SET consultada_en=? WHERE league_id=?",
-                ((datetime.now(timezone.utc) - timedelta(minutes=31)).strftime("%Y-%m-%d %H:%M:%S"), PREMIER))
+                ((datetime.now(timezone.utc) - timedelta(minutes=11)).strftime("%Y-%m-%d %H:%M:%S"), PREMIER))
     con.commit()
-    check("pasados los 30 min se le vuelve a preguntar (por si la API la cubre ya)",
+    check("pasado el tope se le vuelve a preguntar (el mercado pudo abrir)",
           PREMIER not in en_vivo_mod.ligas_en_backoff(con, {PERU, PREMIER}))
 
     # el contador: 'ok' resetea · 'vacia' suma · 'fallo' NO castiga
