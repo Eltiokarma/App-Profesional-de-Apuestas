@@ -147,6 +147,12 @@ REFRESCO_CADUCIDAD_MIN = 30
 REFRESCO_ATRAS_H = 12
 REFRESCO_ADELANTE_H = 6
 
+# BACKOFF POR LIGA: cada ronda seguida sin datos aleja la siguiente consulta.
+# Paso 3 min, tope 10 → una liga sin cobertura acaba consultándose cada 30 min
+# en vez de cada ciclo, y el cupo que libera va a las que sí dan cuotas.
+BACKOFF_PASO_MIN = _tope("SAD_LIVE_BACKOFF_PASO_MIN", 3)
+BACKOFF_TOPE = _tope("SAD_LIVE_BACKOFF_TOPE", 10)
+
 # FRENO DE PRESUPUESTO. El ciclo corre cada minuto y, sin freno propio, se come
 # el plan del día y deja sin datos a TODO lo demás: la ingesta diaria, el
 # refresco de cuotas prepartido y el propio marcador en vivo. Es exactamente lo
@@ -220,7 +226,10 @@ CREATE TABLE IF NOT EXISTS odds_live_consultas (
     estado TEXT,      -- ok | vacia | ajena | fallo
     items INTEGER,    -- cuántos items devolvió el feed de la liga
     nuestros INTEGER, -- cuántos de esos eran partidos que seguimos
-    ajenos INTEGER    -- cuántos venían de OTRA liga (el filtro no filtró)
+    ajenos INTEGER,   -- cuántos venían de OTRA liga (el filtro no filtró)
+    -- rondas SEGUIDAS sin datos: cada una aleja la siguiente consulta
+    -- (ver espera_backoff). 'ok' lo resetea; 'fallo' no lo toca.
+    vacias_seguidas INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS xi_intentos (
     fixture_id INTEGER PRIMARY KEY,
@@ -405,10 +414,52 @@ def preparar_consultas(con: sqlite3.Connection) -> None:
     producción se creó con solo `con_datos`)."""
     existentes = {f[1] for f in con.execute("PRAGMA table_info(odds_live_consultas)")}
     for col, tipo in (("estado", "TEXT"), ("items", "INTEGER"),
-                      ("nuestros", "INTEGER"), ("ajenos", "INTEGER")):
+                      ("nuestros", "INTEGER"), ("ajenos", "INTEGER"),
+                      ("vacias_seguidas", "INTEGER NOT NULL DEFAULT 0")):
         if col not in existentes:
             con.execute(f"ALTER TABLE odds_live_consultas ADD COLUMN {col} {tipo}")
     con.commit()
+
+
+def espera_backoff(vacias: int) -> int:
+    """Minutos que una liga espera antes de que se le vuelva a pedir /odds/live,
+    según cuántas rondas SEGUIDAS lleva sin traer nada.
+
+    La noche del 31/07/2026: 506 rondas por liga volvieron vacías y el rescate
+    por fixture gastó 290 requests con CERO aciertos — 796 tiradas, el 11% del
+    plan, en confirmar una y otra vez que la API no cubre esas ligas (Bolivia
+    115 ciclos, Ecuador 84, Chile 84, Venezuela 78, Perú 44…). Preguntar una
+    vez está bien; preguntar 115 veces la misma noche es tirar el presupuesto
+    que necesitan las ligas que SÍ dan cuotas.
+
+    Con paso de 3 min y tope 10, una liga sin cobertura pasa de consultarse
+    cada ciclo a cada 30 min — y si un día empieza a cubrirla, la primera
+    ronda con datos resetea el contador y vuelve al ritmo normal."""
+    return min(max(vacias, 0), BACKOFF_TOPE) * BACKOFF_PASO_MIN
+
+
+def ligas_en_backoff(con: sqlite3.Connection, ligas: "set[int]") -> set[int]:
+    """Ligas a las que TOCA no preguntar todavía (0 requests). Solo cuentan las
+    rondas vacías/ajenas: un `fallo` de red no dice nada sobre la cobertura."""
+    if not ligas:
+        return set()
+    marcas = ",".join("?" * len(ligas))
+    ahora = datetime.now(timezone.utc)
+    saltar = set()
+    for lid, consultada_en, vacias in con.execute(
+            f"SELECT league_id, consultada_en, COALESCE(vacias_seguidas, 0) "
+            f"FROM odds_live_consultas WHERE league_id IN ({marcas})",
+            tuple(sorted(ligas))):
+        minutos = espera_backoff(vacias)
+        if not minutos or not consultada_en:
+            continue
+        try:
+            cuando = datetime.strptime(str(consultada_en)[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+        if (ahora - cuando) < timedelta(minutes=minutos):
+            saltar.add(lid)
+    return saltar
 
 
 def candidatos_por_liga(con: sqlite3.Connection, ligas: "set[int]") -> dict[int, set[int]]:
@@ -664,7 +715,14 @@ def capturar_odds_live(cliente, con: sqlite3.Connection, por_liga: dict,
     """
     if not por_liga or not cliente.quedan():
         return 0, set()
-    orden = orden_por_antiguedad(con, por_liga, en_juego)
+    # las ligas que llevan rondas seguidas sin dar nada esperan su turno largo:
+    # no gastan cupo ni request, y el hueco va a las que sí traen cuotas
+    dormidas = ligas_en_backoff(con, set(por_liga))
+    if dormidas:
+        print(f"  ligas en espera por rondas vacías seguidas (backoff): {sorted(dormidas)}")
+    orden = [lid for lid in orden_por_antiguedad(con, por_liga, en_juego) if lid not in dormidas]
+    if not orden:
+        return 0, set()
     cupo = cupo_del_ciclo(cliente, TOPE_LIGAS)
     if cupo <= 0:
         print(f"  cuotas en juego EN PAUSA: quedan {cliente.limite - cliente.usadas} requests y "
@@ -719,13 +777,20 @@ def capturar_odds_live(cliente, con: sqlite3.Connection, por_liga: dict,
             print(f"  liga {lid}: la consulta FALLÓ (no es falta de cobertura); reintenta sola")
         # la rotación va por ESTA marca, no por las capturas: una liga sin
         # cobertura también gastó su turno y pasa al final de la cola
+        # el contador del backoff: 'ok' lo resetea, 'vacia'/'ajena' lo suben.
+        # 'fallo' NO cuenta — una caída de red no dice nada de la cobertura, y
+        # castigar por ella dejaría muda a una liga que sí tiene cuotas.
+        sube = 1 if estado in ("vacia", "ajena") else 0
         con.execute(
             "INSERT INTO odds_live_consultas (league_id, consultada_en, con_datos, estado, "
-            "items, nuestros, ajenos) VALUES (?, ?, ?, ?, ?, ?, ?) "
+            "items, nuestros, ajenos, vacias_seguidas) VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
             "ON CONFLICT(league_id) DO UPDATE SET consultada_en=excluded.consultada_en, "
             "con_datos=excluded.con_datos, estado=excluded.estado, items=excluded.items, "
-            "nuestros=excluded.nuestros, ajenos=excluded.ajenos",
-            (lid, capturado, 1 if estado == "ok" else 0, estado, len(filas), nuestros, ajenos),
+            "nuestros=excluded.nuestros, ajenos=excluded.ajenos, "
+            "vacias_seguidas=CASE WHEN excluded.estado='ok' THEN 0 "
+            "WHEN excluded.estado='fallo' THEN odds_live_consultas.vacias_seguidas "
+            "ELSE odds_live_consultas.vacias_seguidas + 1 END",
+            (lid, capturado, 1 if estado == "ok" else 0, estado, len(filas), nuestros, ajenos, sube),
         )
     con.commit()
 
@@ -734,7 +799,16 @@ def capturar_odds_live(cliente, con: sqlite3.Connection, por_liga: dict,
     # está jugando. /odds/live?fixture= pregunta por él directamente, sin
     # depender de que el filtro por liga se porte bien. Solo para partidos
     # confirmados en juego que la ronda de su liga no trajo, y con tope propio.
-    faltan = sorted((ids_en_juego or set()) - con_feed)
+    # el rescate NO se intenta en ligas dormidas: la noche del 31/07 gastó 290
+    # requests con CERO aciertos, todas en ligas cuyo feed por liga ya venía
+    # vacío. Si la API no cubre la liga, tampoco cubre su partido — y cuando la
+    # liga despierte y traiga datos, el rescate vuelve a estar disponible.
+    # Se recalcula DESPUÉS de la ronda: una liga que acaba de volver vacía ya
+    # entró en espera, y ese es justo el caso que no hay que reintentar.
+    dormidas = ligas_en_backoff(con, set(por_liga))
+    liga_de = {f: lid for lid, fids in por_liga.items() for f in fids}
+    faltan = sorted(f for f in (ids_en_juego or set()) - con_feed
+                    if liga_de.get(f) not in dormidas)
     # el rescate también gasta: se le aplica la misma reserva que a las ligas
     # (si no, el freno de arriba sería un colador)
     if faltan and TOPE_FIXTURES > 0 and cupo_del_ciclo(cliente, TOPE_FIXTURES) > 0:

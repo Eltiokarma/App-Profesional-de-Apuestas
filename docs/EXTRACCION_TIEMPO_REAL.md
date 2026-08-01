@@ -188,6 +188,17 @@ Presupuesto fase 1: 3 corridas × ~150 req ≈ **450/día** (Pro: 7.500).
   `SAD_BLOQUE_VENTANA_HORAS` (14 h), la reserva del bloque sube a
   `SAD_BLOQUE_RESERVA_PARTIDOS` (3500) y el bloque cede el paso. Sin fútbol
   cerca vuelve a 1500 y avanza a fondo con el backlog.
+- **Backoff por liga** (`SAD_LIVE_BACKOFF_PASO_MIN`/`_TOPE`, 3 min × rondas,
+  tope 10 → 30 min). Auditoría de la noche del 31/07/2026: **796 requests
+  tiradas, el 11 % del plan** — 506 rondas por liga que volvieron vacías y 290
+  rescates por fixture con **cero** aciertos. El detalle por liga: Bolivia 115
+  ciclos preguntando lo mismo, Ecuador 84, Chile 84, Venezuela 78, Perú 44,
+  Colombia 30, México 55. Preguntar una vez está bien; insistir cada minuto es
+  quitarle presupuesto a las ligas que SÍ dan cuotas. Ahora cada ronda seguida
+  sin datos aleja la siguiente, una ronda con datos resetea el contador, y un
+  `fallo` de red no castiga (no dice nada sobre la cobertura). El rescate por
+  fixture tampoco insiste en una liga dormida: si la API no cubre la liga,
+  tampoco cubre su partido — eso era el 100 % de esos 290.
 - **Por qué la pantalla ya no miente.** Los tres bugs anteriores compartían
   síntoma — "sin cobertura de cuotas en vivo en esta liga" — porque la UI solo
   sabía que este fixture no tenía filas en `odds_live`, y de ahí deducía falta
