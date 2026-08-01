@@ -218,6 +218,25 @@ def diagnosticar(con: sqlite3.Connection, fid: int, cliente=None) -> None:
                 print(f"{NO} el filtro ?league={lid} NO está filtrando: la API devolvió otras "
                       f"ligas. Eso explica el 'sin cobertura' sin que falte cobertura — y es "
                       f"justo lo que cubre el rescate por fixture (SAD_LIVE_ODDS_FIXTURES)")
+        # ¿el feed live trae desglose POR CASA y lo estamos ignorando? El
+        # prepartido sí lo trae (odds.bookmaker_name), pero odds_live no tiene
+        # esa columna y el parser lee item["odds"] directo. Que guardemos
+        # cientos de valores por partido ya prueba que la estructura NO es la
+        # de bookmakers — pero podría traer AMBAS, y entonces estaríamos
+        # tirando la comparación entre casas EN VIVO, que es donde vive el
+        # valor. Esto lo responde sin ambigüedad y sin gastar una request más.
+        if filas:
+            claves = sorted({k for it in filas for k in it})
+            print(f"    claves del item de /odds/live: {claves}")
+            casas = [it.get("bookmakers") for it in filas if it.get("bookmakers")]
+            if casas:
+                nombres = sorted({(b or {}).get("name") for c in casas for b in c} - {None})
+                print(f"{NO} el feed live SÍ trae bookmakers {nombres} y NO los guardamos: "
+                      f"odds_live no tiene columna de casa. Se está perdiendo la comparación "
+                      f"entre casas en vivo")
+            else:
+                print(f"{OK} el feed live NO desglosa por casa (viene agregado en `odds`): "
+                      f"no hay otra casa a la que preguntar cuando viene vacío")
         # la prueba decisiva: preguntar por el partido, sin depender del filtro
         directo = cliente.paginado("odds/live", {"fixture": fid}, tope_paginas=1)
         n_val = sum(len(b.get("values") or []) for it in directo for b in (it.get("odds") or []))
