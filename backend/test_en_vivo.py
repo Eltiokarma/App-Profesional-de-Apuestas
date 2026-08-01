@@ -588,6 +588,71 @@ def main():
     check("una liga menor tampoco frena al bloque (no recibe ciclo en vivo)",
           hay_partidos_cerca(con3) == 0, hay_partidos_cerca(con3))
 
+    # BACKOFF POR LIGA (auditoría del 31/07/2026: 506 rondas por liga vacías +
+    # 290 rescates por fixture con CERO aciertos = 796 requests tiradas, el 11%
+    # del plan, en confirmar 115 veces la misma noche que la API no cubre
+    # Bolivia). Preguntar una vez está bien; insistir cada ciclo, no.
+    check("el backoff crece con las rondas vacías y topa BAJO (10 min)",
+          [en_vivo_mod.espera_backoff(v) for v in (0, 1, 3, 10, 50)] == [0, 3, 9, 10, 10],
+          [en_vivo_mod.espera_backoff(v) for v in (0, 1, 3, 10, 50)])
+    # EL CASO LOS CHANKAS: la liga estuvo 45 min vacía y luego dio 227 capturas
+    # seguidas. Un feed vacío es TEMPORAL casi siempre, así que el tope no puede
+    # ser grande: lo que se espera de más se pierde de la apertura del mercado.
+    check("esperar de más no ahorra: en 45 min de vacío el tope alto casi no baja consultas",
+          en_vivo_mod.BACKOFF_MAX_MIN <= 10, en_vivo_mod.BACKOFF_MAX_MIN)
+
+    con = db()
+    preparar_consultas(con)
+    ahora_s = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    con.executemany(
+        "INSERT INTO odds_live_consultas (league_id, consultada_en, con_datos, estado, vacias_seguidas) "
+        "VALUES (?,?,?,?,?)",
+        [(PERU, ahora_s, 1, "ok", 0),          # trae datos: nunca duerme
+         (PREMIER, ahora_s, 0, "vacia", 10)],  # 10 vacías seguidas: tope (10 min)
+    )
+    con.commit()
+    check("una liga que trae datos no entra nunca en espera",
+          PERU not in en_vivo_mod.ligas_en_backoff(con, {PERU, PREMIER}))
+    check("una liga con 10 rondas vacías seguidas espera el tope",
+          PREMIER in en_vivo_mod.ligas_en_backoff(con, {PERU, PREMIER}))
+    con.execute("UPDATE odds_live_consultas SET consultada_en=? WHERE league_id=?",
+                ((datetime.now(timezone.utc) - timedelta(minutes=11)).strftime("%Y-%m-%d %H:%M:%S"), PREMIER))
+    con.commit()
+    check("pasado el tope se le vuelve a preguntar (el mercado pudo abrir)",
+          PREMIER not in en_vivo_mod.ligas_en_backoff(con, {PERU, PREMIER}))
+
+    # el contador: 'ok' resetea · 'vacia' suma · 'fallo' NO castiga
+    def vacias(con, lid):
+        return con.execute("SELECT vacias_seguidas FROM odds_live_consultas WHERE league_id=?",
+                           (lid,)).fetchone()[0]
+
+    con = db()
+    preparar_consultas(con)
+    cliente = ClienteFalso({PERU: [], PREMIER: feed[PREMIER]})
+    capturar_odds_live(cliente, con, por_liga, ids_vivos, "2026-07-31 23:00:00.000")
+    check("una ronda vacía suma al contador", vacias(con, PERU) == 1, vacias(con, PERU))
+    check("una ronda con datos lo deja en cero", vacias(con, PREMIER) == 0, vacias(con, PREMIER))
+
+    con = db()
+    preparar_consultas(con)
+    cliente = ClienteFalso(feed, caen={PERU})
+    capturar_odds_live(cliente, con, por_liga, ids_vivos, "2026-07-31 23:01:00.000")
+    check("un FALLO de red no castiga a la liga (no dice nada de la cobertura)",
+          vacias(con, PERU) == 0, vacias(con, PERU))
+
+    # y el rescate por fixture no insiste en una liga dormida
+    con = db()
+    preparar_consultas(con)
+    con.execute("INSERT INTO odds_live_consultas (league_id, consultada_en, con_datos, estado, "
+                "vacias_seguidas) VALUES (?,?,0,'vacia',10)", (PERU, ahora_s))
+    con.commit()
+    cliente = ClienteFalso({PERU: [], PREMIER: []},
+                           por_fixture={MELGAR_CRISTAL: [item_odds(MELGAR_CRISTAL)]})
+    capturar_odds_live(cliente, con, {PERU: {MELGAR_CRISTAL}}, ids_vivos,
+                       "2026-07-31 23:02:00.000", ids_en_juego={MELGAR_CRISTAL})
+    check("liga dormida: ni ronda ni rescate por fixture (0 requests)",
+          cliente.pedidos == [], cliente.pedidos)
+
     # y si el feed live tuvo un hipo, la liga sigue contando como en juego:
     # el estado EN_JUEGO de nuestra base no se pone solo, lo escribió el feed
     con = db(con_fixtures=True)
