@@ -26,6 +26,11 @@ npm-debug.log*
 # respaldos y configuración local del agente
 *.bundle
 .claude/
+# excepción: los skills del SAD SÍ se versionan (ver .claude/skills/README.md)
+!.claude/
+.claude/*
+!.claude/skills/
+.claude/settings.local.json
 
 # typescript incremental build info
 *.tsbuildinfo
