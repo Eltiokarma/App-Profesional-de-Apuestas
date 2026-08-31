@@ -159,7 +159,7 @@ paths:
               schema: { type: array, items: { $ref: '#/components/schemas/Constantes' } }
   /constantes-cuota/{equipoId}:
     get:
-      summary: 'k_cuota (§3.8): rachas de suma de cuota 1X2 prepartido, solo 2026 (asc por fecha)'
+      summary: 'k_cuota (§3.8): rachas de suma de cuota prepartido 1X2 y doble oportunidad, solo 2026 (asc por fecha)'
       description: Vacío si aún no se construyó constants_cuota (correr backend/backfill_cuota).
       parameters:
         - { name: equipoId, in: path, required: true, schema: { type: integer } }
@@ -727,7 +727,7 @@ components:
             kDer3Visita: { type: number }
     ConstanteCuota:
       type: object
-      description: 'Fila de constants_cuota (§3.8): racha de SUMA de cuota 1X2, solo 2026'
+      description: 'Fila de constants_cuota (§3.8): rachas de SUMA de cuota del 1X2 y de la Doble Oportunidad, solo 2026'
       required: [equipoId, fixtureId, fecha, resultado, cuota, k]
       properties:
         equipoId: { type: integer }
@@ -737,14 +737,19 @@ components:
         esLocal: { type: boolean, description: 'true si jugó de local (toggle LOCAL/VISITA)' }
         cuota:
           type: object
-          description: Cuota 1X2 que aplicó a ese partido (null si sin cuota capturada)
+          description: >-
+            Cuotas que aplicaron a ese partido, en la perspectiva del equipo (null si el
+            mercado no se capturó; los dos mercados tienen huecos independientes).
           properties:
             victoria: { type: number, nullable: true }
             empate: { type: number, nullable: true }
             derrota: { type: number, nullable: true }
+            dc1x: { type: number, nullable: true, description: 'doble oportunidad: no pierde' }
+            dc12: { type: number, nullable: true, description: 'doble oportunidad: no empata' }
+            dcX2: { type: number, nullable: true, description: 'doble oportunidad: no gana' }
         k:
           type: object
-          description: 9 acumuladores de suma de cuota (total/local/visita)
+          description: 18 acumuladores de suma de cuota (6 familias × total/local/visita)
           properties:
             victoria: { type: number }
             victoriaLocal: { type: number }
@@ -755,6 +760,15 @@ components:
             derrota: { type: number }
             derrotaLocal: { type: number }
             derrotaVisita: { type: number }
+            dc1x: { type: number }
+            dc1xLocal: { type: number }
+            dc1xVisita: { type: number }
+            dc12: { type: number }
+            dc12Local: { type: number }
+            dc12Visita: { type: number }
+            dcX2: { type: number }
+            dcX2Local: { type: number }
+            dcX2Visita: { type: number }
     GapEquipo:
       type: object
       required: [equipoId, nivel, ptsEsperados, proximos, partidoTrampa]
