@@ -24,6 +24,21 @@ from backend.nombres import canonizar, normalizar  # noqa: E402
 fallos = 0
 
 
+def hace(dias: int) -> str:
+    """Fecha ISO de hace N días. Los bloques de este test son barridos
+    RECIENTES, no fechas fijas: con una constante en el archivo el test pasa el
+    día que se escribe y empieza a fallar solo, semanas después, por el mero
+    paso del calendario — que es justo lo contrario de lo que se quiere probar
+    (el mecanismo del TTL, no en qué mes estamos)."""
+    return (datetime.now(timezone.utc) - timedelta(days=dias)).strftime("%Y-%m-%d")
+
+
+# Dos barridos dentro del TTL: el segundo más nuevo que el primero, para poder
+# comprobar a la vez que lo reciente actualiza y que el EFE lo ve fresco.
+BARRIDO_ANTERIOR = hace(8)
+BARRIDO_RECIENTE = hace(2)
+
+
 def check(nombre, cond, detalle=""):
     global fallos
     if not cond:
@@ -38,7 +53,8 @@ def escribir(dir_, nombre, bloque) -> str:
     return ruta
 
 
-def bloque(fecha="2026-07-20", dt="Contexto del DT", equipo="Sporting Cristal"):
+def bloque(fecha=None, dt="Contexto del DT", equipo="Sporting Cristal"):
+    fecha = fecha or BARRIDO_ANTERIOR
     return {"liga": "L", "investigado_en": fecha, "fuentes": ["https://x"],
             "equipos": [{"equipo": equipo, "datos": {"dt": dt, "plantel": "", "bajas": ""}}]}
 
@@ -61,12 +77,12 @@ def main():
 
     # ── la fecha del archivo es la que manda (TTL honesto) ──────────────────
     limpiar()
-    escribir(tmp, "liga.json", bloque(fecha="2026-07-20"))
+    escribir(tmp, "liga.json", bloque(fecha=BARRIDO_ANTERIOR))
     despensa_bulk.cargar_todo(directorio=tmp)
     cont, cap = capturado("Sporting Cristal", "dt")
     check("deposita el dato bajo el equipo", cont == "Contexto del DT", cont)
     check("capturado_en = fecha de investigación, no la de carga",
-          cap == "2026-07-20 00:00:00", cap)
+          cap == BARRIDO_ANTERIOR + " 00:00:00", cap)
 
     # ── no pisa lo más nuevo (la carga manual de la víspera sobrevive) ──────
     efedb.guardar_investigacion("Sporting Cristal", "dt", "DATO NUEVO A MANO")
@@ -82,10 +98,11 @@ def main():
     check("un campo vacío no se deposita (el EFE debe buscarlo)", cap_p is None, cap_p)
 
     # ── el bloque más nuevo del repo sí actualiza ──────────────────────────
-    escribir(tmp, "liga.json", bloque(fecha="2026-07-26", dt="DT actualizado"))
+    escribir(tmp, "liga.json", bloque(fecha=BARRIDO_RECIENTE, dt="DT actualizado"))
     despensa_bulk.cargar_todo(directorio=tmp)
     cont, cap = capturado("Sporting Cristal", "dt")
-    check("un bloque más reciente actualiza", cont == "DT actualizado" and cap == "2026-07-26 00:00:00", (cont, cap))
+    check("un bloque más reciente actualiza",
+          cont == "DT actualizado" and cap == BARRIDO_RECIENTE + " 00:00:00", (cont, cap))
 
     # ── archivos rotos: no tumban la carga ni mienten ──────────────────────
     roto = os.path.join(tmp, "roto.json")
@@ -102,7 +119,7 @@ def main():
 
     # ── TTL: lo que el EFE ve como fresco ──────────────────────────────────
     limpiar()
-    escribir(tmp, "liga.json", bloque(fecha="2026-07-26"))
+    escribir(tmp, "liga.json", bloque(fecha=BARRIDO_RECIENTE))
     despensa_bulk.cargar_todo(directorio=tmp)
     frescos, faltantes = efedb.investigacion_de("Sporting Cristal")
     check("el EFE lo ve fresco y deja de contarlo faltante",
@@ -165,7 +182,7 @@ def main():
     # elige uno al azar (meter el dato en el club equivocado es peor que no meterlo)
     # si NINGÚN alias casa, manda el nombre principal (no el último probado)
     limpiar()
-    escribir(tmp, "alias.json", {"liga": "L", "investigado_en": "2026-07-26", "fuentes": [],
+    escribir(tmp, "alias.json", {"liga": "L", "investigado_en": BARRIDO_RECIENTE, "fuentes": [],
                                  "equipos": [{"equipo": "Equipo Inexistente",
                                               "alias": ["Otro Nombre Raro", "Tercer Nombre"],
                                               "datos": {"dt": "x"}}]})
