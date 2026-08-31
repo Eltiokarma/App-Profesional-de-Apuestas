@@ -429,6 +429,38 @@ def main():
           cl[0]["nombre"] == "Pumas" and cl[0]["puntos"] == 3 and cl[1]["puntos"] == 0, [t["nombre"] for t in cl])
     check("standings fase inexistente → tabla vacía", c.get(A + "/ligas/7777/standings?fase=Repechaje").json() == [])
 
+    # /constantes-cuota (k_cuota §3.8) — la tabla no la escribe el seed sino el
+    # pipeline: se construye aquí para probar la cadena odds → motor → contrato
+    check("sin constants_cuota el endpoint no rompe (lista vacía)",
+          c.get(A + "/constantes-cuota/529").json() == [])
+    from backend.backfill_cuota import construir_constants_cuota
+
+    construir_constants_cuota(tmp)
+    cq = c.get(A + "/constantes-cuota/529").json()
+    check("constantes-cuota: hay filas y van en orden cronológico",
+          len(cq) > 0 and [r["fecha"] for r in cq] == sorted(r["fecha"] for r in cq), len(cq))
+    fam1x2 = ("victoria", "empate", "derrota")
+    famdc = ("dc1x", "dc12", "dcX2")
+    check("constantes-cuota: 18 acumuladores (1X2 + doble oportunidad × total/local/visita)",
+          set(cq[0]["k"]) == {f + suf for f in fam1x2 + famdc for suf in ("", "Local", "Visita")}, sorted(cq[0]["k"]))
+    check("constantes-cuota: la cuota de los 6 mercados viaja con su fila",
+          set(cq[0]["cuota"]) == set(fam1x2 + famdc), sorted(cq[0]["cuota"]))
+    con_dc = [r for r in cq if r["cuota"]["dc1x"] is not None]
+    check("constantes-cuota: partidos con doble oportunidad capturada", len(con_dc) > 0, len(con_dc))
+    check("constantes-cuota: la doble oportunidad paga menos que su 1X2",
+          all(r["cuota"]["dc1x"] < r["cuota"]["victoria"] and r["cuota"]["dcX2"] < r["cuota"]["derrota"] for r in con_dc),
+          con_dc[:1])
+    # regla: 1X vive mientras no pierde, X2 mientras no gana, 12 mientras no empata
+    check("constantes-cuota: 1X en 0 exactamente en las derrotas",
+          all((r["k"]["dc1x"] == 0) == (r["resultado"] == -1) for r in con_dc), [(r["resultado"], r["k"]["dc1x"]) for r in con_dc])
+    check("constantes-cuota: X2 en 0 exactamente en las victorias",
+          all((r["k"]["dcX2"] == 0) == (r["resultado"] == 1) for r in con_dc), [(r["resultado"], r["k"]["dcX2"]) for r in con_dc])
+    check("constantes-cuota: 12 en 0 exactamente en los empates",
+          all((r["k"]["dc12"] == 0) == (r["resultado"] == 0) for r in con_dc), [(r["resultado"], r["k"]["dc12"]) for r in con_dc])
+    check("constantes-cuota: la racha 1X nunca es menor que la de victorias (evento contenido)",
+          all(r["k"]["dc1x"] > 0 or r["k"]["victoria"] == 0 for r in con_dc))
+    check("constantes-cuota: equipo sin partidos → lista vacía", c.get(A + "/constantes-cuota/999999").json() == [])
+
     # /cuotas — mapeo API-Football → contrato y media entre bookmakers
     q = c.get(A + f"/cuotas/{vivo['id']}").json()
     mercados = {r["mercado"] for r in q}

@@ -35,7 +35,16 @@ reseteo idénticas al motor: solo una familia del mismo signo ≠ 0 a la vez.
 ## 3. Burbujas sobre cuotas prepartido
 
 Acumuladores sobre la **cuota prepartido capturada** (tabla `odds`), no sobre
-el resultado:
+el resultado.
+
+**Hecho** (§3.8 de `MOTOR_SAD_EXTRACCION.md`): las 6 familias por evento —
+`k_cuota_victoria/empate/derrota` sobre el 1X2 y `k_cuota_dc1x/dc12/dcx2` sobre
+la Doble Oportunidad, en la perspectiva del equipo (1X = no pierde · 12 = no
+empata · X2 = no gana)—, cada mercado con sus huecos propios. La doble
+oportunidad acopla dos resultados, así que sus rachas duran más: es donde las
+burbujas se ven mejor.
+
+Pendientes de este bloque:
 
 - `k_cuota_favorito`: acumula mientras el equipo cierra como favorito
   (cuota 1X2 propia mínima del mercado) y **cumple**; se resetea cuando siendo
@@ -69,6 +78,7 @@ Las cuotas se llevan capturando meses, pero la historia de partidos llega a
 
 ## 5. Orden de implementación sugerido
 
-1. `k_dc` (una familia, valida el patrón end-to-end en pipeline + contrato + UI).
-2. Márgenes (`derrota/victoria por N`) — son 6 acumuladores mecánicos del mismo molde.
-3. `k_cuota_*` con la regla de huecos (requiere timestamp de captura en `odds`).
+1. `k_dc` (una familia, valida el patrón end-to-end en pipeline + contrato + UI). ✔
+2. Márgenes (`derrota/victoria por N`) — son 6 acumuladores mecánicos del mismo molde. ✔
+3. `k_cuota_*` por evento (1X2 + doble oportunidad) con la regla de huecos. ✔
+4. `k_cuota_favorito` / `k_cuota_tapado` (requieren timestamp de captura en `odds`).

@@ -16,7 +16,7 @@ npm run test:kview                # capa de visualización de las K (3 valores p
 # backend (junto a las 4 .db en la raíz, o SAD_DATA_DIR)
 pip install -r backend/requirements.txt
 python -m uvicorn backend.app:app --port 8000
-python -m backend.test_api        # verificaciones del contrato (169 checks)
+python -m backend.test_api        # verificaciones del contrato (265 checks)
 python -m backend.test_en_vivo    # ciclo en vivo: cuotas en juego por liga (sin red)
 python -m backend.test_cuotas_lote # cuotas prepartido: lote por fecha vs por fixture (presupuesto)
 python -m backend.test_jugadores  # presupuesto de jugadores: TTL separado y padrón de ligas
@@ -94,6 +94,10 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
 - Gráficas de K: tres valores a la vista (último · últimos dos de la condición
   que se analiza, saltando los que repiten valor) vía `puntosEtiquetados` de
   `src/lib/kview.ts`. Una gráfica nueva usa ese helper, no su propia regla.
+- Cuotas K (§3.8): las barras SIEMPRE vía `RachasCuotas` y su botonera
+  `ControlesCuotas` (condición · mercado 1X2/Doble op./Ambos · ventana); cada
+  mercado dibuja solo los partidos con SU cuota capturada — sin dato, la
+  gráfica sale vacía, nunca rellenada.
 - Git: trabajar en rama + merge; push a GitHub solo como respaldo (no editar
   "en la nube"). Respaldo alternativo: `git bundle create respaldo.bundle --all`.
 
@@ -117,8 +121,9 @@ HHI + confianza A/B/C, sección Plantilla en Equipo, ficha de partido
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
    (frontend) — guía paso a paso en `docs/DESPLIEGUE.md`.
 2. **Familias nuevas de burbujas** — spec completa en `docs/ROADMAP_BURBUJAS.md`:
-   `k_dc` hecho; siguen márgenes (±1/2/3+ goles) y k_cuota_* sobre cuotas
-   prepartido (regla de huecos ya definida).
+   `k_dc`, márgenes (±1/2/3+ goles) y k_cuota_* sobre cuotas prepartido (1X2 y
+   doble oportunidad, con su regla de huecos) hechos; siguen
+   `k_cuota_favorito`/`k_cuota_tapado`.
 3. Backend: xG/posesión desde estadísticas por partido.
 4. Historial de cuotas por fixture para que la gráfica de movimiento sea real —
    plan completo por fases (historial → día de partido → en vivo) en

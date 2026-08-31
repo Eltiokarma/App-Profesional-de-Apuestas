@@ -4,7 +4,7 @@ import type { KCondKey, KTypeKey, Match } from '../data/types'
 import { AlineacionesXi } from '../components/AlineacionesXi'
 import { KLineChart, KLineLegend } from '../components/KLineChart'
 import { MarcaCondicion } from '../components/MarcaCondicion'
-import { RachasCuotas, type CuotaCond } from '../components/RachasCuotas'
+import { ControlesCuotas, CUOTA_VISTA0, RachasCuotas, tituloMercado, type CuotaVista } from '../components/RachasCuotas'
 import { CalendarioSad } from '../components/CalendarioSad'
 import { TeamBadge } from '../components/TeamBadge'
 import { binBadge, type Cond, FUSED_KEY, K_TYPE_GROUPS, K_WINDOW_OPTS, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
@@ -111,8 +111,9 @@ export function Burbujas({ store, m, isMobile }: Props) {
     }
   })()
 
-  // cuotas K (§3.8): un solo toggle para ambos equipos (misma condición = comparación justa)
-  const [cuotaCond, setCuotaCond] = useState<CuotaCond>('TODOS')
+  // cuotas K (§3.8): una sola vista para ambos equipos (misma condición, mismo
+  // mercado y misma ventana = comparación justa)
+  const [cuotaVista, setCuotaVista] = useState<CuotaVista>(CUOTA_VISTA0)
 
   const condOpts = ([['total', 'Total'], ['local', 'Local'], ['visita', 'Visita']] as [KCondKey, string][]).map(([k, l]) => ({
     key: k, label: l, bg: s.kCond === k ? 'var(--bg3)' : 'transparent', fg: s.kCond === k ? 'var(--t1)' : 'var(--t2)',
@@ -147,9 +148,9 @@ export function Burbujas({ store, m, isMobile }: Props) {
   // cuotas K (§3.8) bajo cada panel: rachas 1X2 del equipo con el toggle compartido
   const rachasCard = (teamId: string, rol: Cond) => (
     <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
-      <div style={{ font: '700 12px var(--sans)' }}>Cuotas K · rachas 1X2 · {TEAMS[teamId].short}</div>
-      <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>Suma acumulada de la cuota; cae a 0 al romperse la racha · {cuotaCond.toLowerCase()} · solo 2026</div>
-      <RachasCuotas teamKey={teamId} cond={cuotaCond} rol={rol} />
+      <div style={{ font: '700 12px var(--sans)' }}>Cuotas K · {tituloMercado(cuotaVista.mercado)} · {TEAMS[teamId].short}</div>
+      <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>Suma acumulada de la cuota; cae a 0 al romperse la racha · {cuotaVista.cond.toLowerCase()} · solo 2026</div>
+      <RachasCuotas teamKey={teamId} vista={cuotaVista} rol={rol} />
     </section>
   )
 
@@ -191,11 +192,7 @@ export function Burbujas({ store, m, isMobile }: Props) {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
               <span style={{ font: '600 8.5px var(--mono)', color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '.4px' }}>Cuotas</span>
-              <div style={{ display: 'flex', padding: 4, borderRadius: 10, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
-                {(['TODOS', 'LOCAL', 'VISITA'] as const).map((c) => (
-                  <button key={c} onClick={() => setCuotaCond(c)} style={{ padding: '6px 10px', border: 0, borderRadius: 7, cursor: 'pointer', background: cuotaCond === c ? 'var(--bg3)' : 'transparent', color: cuotaCond === c ? 'var(--t1)' : 'var(--t2)', font: '600 10.5px var(--sans)' }}>{c}</button>
-                ))}
-              </div>
+              <ControlesCuotas vista={cuotaVista} onChange={setCuotaVista} />
             </div>
           </div>
         </div>

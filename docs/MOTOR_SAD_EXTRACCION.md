@@ -363,35 +363,50 @@ Detalles fieles:
 
 ### 3.8 Familia Cuotas (k_cuota)
 
-Tercera familia por mercado (ROADMAP §3) y la única basada en la **cuota prepartido
-1X2** (tabla `odds`, `bet_name='Match Winner'`, promedio de bookmakers), no en el
-resultado. Vive en su **propia tabla `constants_cuota`** (constants.db), independiente
-de `constants`. 3 rachas × total/local/visita = **9 acumuladores**, **SUMA PURA de la
+Tercera familia por mercado (ROADMAP §3) y la única basada en la **cuota prepartido**
+(tabla `odds`, promedio de bookmakers), no en el resultado. Cubre **dos mercados**: el
+1X2 (`bet_name='Match Winner'`) y la Doble Oportunidad (`bet_name='Double Chance'`).
+Vive en su **propia tabla `constants_cuota`** (constants.db), independiente de
+`constants`. 6 rachas × total/local/visita = **18 acumuladores**, **SUMA PURA de la
 cuota** (sin ponderar por nivel):
 
 ```
 por equipo, partidos de 2026 ordenados por fecha:
+  1X2 — el evento exacto:
   k_cuota_victoria: si GANA  → += cuota_victoria;                si no gana  → 0
   k_cuota_empate:   si EMPATA → += cuota_empate;                 si no empata→ 0
   k_cuota_derrota:  si PIERDE → += cuota_derrota (= victoria del rival); si no → 0
+  Doble Oportunidad — el evento acopla dos resultados:
+  k_cuota_dc1x:     si NO PIERDE (gana o empata) → += cuota 1X;  si pierde   → 0
+  k_cuota_dc12:     si NO EMPATA (gana o pierde) → += cuota 12;  si empata   → 0
+  k_cuota_dcx2:     si NO GANA (empata o pierde) → += cuota X2;  si gana     → 0
 ```
 
+- Las dc* van **siempre en la perspectiva del equipo**: "1" es su victoria, así que para
+  el visitante 1X es el `Draw/Away` del mercado y X2 el `Home/Draw`. Como el evento es
+  más ancho, estas rachas duran más que las del 1X2 — son las burbujas más visibles.
 - `_local`/`_visita`: misma regla pero solo se tocan en su contexto (conservan fuera),
   como `k_positivo_local/visita`.
 - **Partido sin cuota capturada**: se SALTA (no aporta ni revienta; la racha continúa
-  como si no existiera). Por fila se guarda la cuota que aplicó (NULL si no había) y el
-  resultado, para trazabilidad.
+  como si no existiera). Los **dos mercados se saltan por separado**: un partido con 1X2
+  y sin Doble Oportunidad mueve el primero y deja el segundo intacto. Por fila se guardan
+  las cuotas que aplicaron (NULL las que no había) y el resultado, para trazabilidad.
 - **Alcance: solo 2026**. El motor **mock/demo NO la calcula**: las barras se llenan
-  solo con datos reales.
+  solo con datos reales — sin cuota histórica de un mercado, su gráfica sale vacía
+  ("Sin partidos con cuota"), jamás con un número inventado.
 
 Implementación (este repo):
 - Fórmula en `backend/cuota_engine.py` (`step_cuota`); test `backend/test_cuota.py`.
 - `backend/backfill_cuota.py`: (1) rellena huecos 2026 de unos pocos clubes con cuotas
-  1X2 **sintéticas** (`bookmaker_name='SYNTHETIC'`, borrables con
+  1X2 **sintéticas** y su Doble Oportunidad derivada de esas mismas cuotas
+  (`bookmaker_name='SYNTHETIC'`, borrables con
   `DELETE FROM odds WHERE bookmaker_name='SYNTHETIC'`); (2) construye `constants_cuota`.
-- Endpoint `GET /constantes-cuota/{id}` (vacío si la tabla no existe).
-- UI: **barras** (`src/components/KBarChart.tsx`) en la página de Equipo, con toggle
-  TODOS/LOCAL/VISITA; la barra cae a 0 donde revienta la racha.
+- Endpoint `GET /constantes-cuota/{id}` (vacío si la tabla no existe; los 9 campos de
+  Doble Oportunidad salen en 0/NULL si la constants.db es anterior a esta familia).
+- UI: **barras** (`src/components/KBarChart.tsx`) en la página de Equipo y bajo cada
+  panel de Burbujas, con la botonera de `ControlesCuotas`: condición
+  (TODOS/LOCAL/VISITA) · mercado (1X2 / Doble op. / Ambos) · ventana (8/15/30/50/Todo).
+  La barra cae a 0 donde revienta la racha.
 
 ---
 

@@ -5,7 +5,7 @@ import { ApuestasSalidas } from '../components/ApuestasSalidas'
 import { KLineChart, KLineLegend } from '../components/KLineChart'
 import { CalendarioSad } from '../components/CalendarioSad'
 import { CadenaDtp } from '../components/DtpPizarra'
-import { RachasCuotas, type CuotaCond } from '../components/RachasCuotas'
+import { ControlesCuotas, CUOTA_VISTA0, RachasCuotas, tituloMercado, type CuotaVista } from '../components/RachasCuotas'
 import { TeamBadge } from '../components/TeamBadge'
 import { binBadge, FUSED_KEY, K_TYPE_GROUPS, K_WINDOW_OPTS, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
 import type { FusedK } from '../motor/types'
@@ -70,8 +70,9 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
 
   const condOpts = ([['total', 'Total'], ['local', 'Local'], ['visita', 'Visita']] as [KCondKey, string][])
 
-  // Cuotas K (§3.8): toggle TODOS/LOCAL/VISITA; las barras viven en RachasCuotas
-  const [cuotaCond, setCuotaCond] = useState<CuotaCond>('TODOS')
+  // Cuotas K (§3.8): condición · mercado (1X2 / doble op.) · ventana; las
+  // barras viven en RachasCuotas y la botonera en ControlesCuotas
+  const [cuotaVista, setCuotaVista] = useState<CuotaVista>(CUOTA_VISTA0)
 
   return (
     <div>
@@ -292,16 +293,12 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
             <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
                 <div>
-                  <div style={{ font: '700 12px var(--sans)' }}>Cuotas K · rachas 1X2</div>
+                  <div style={{ font: '700 12px var(--sans)' }}>Cuotas K · {tituloMercado(cuotaVista.mercado)}</div>
                   <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>Suma acumulada de la cuota; la barra cae a 0 al romperse la racha · solo 2026</div>
                 </div>
-                <div style={{ display: 'flex', padding: 3, borderRadius: 9, background: 'var(--bg3)', border: '1px solid var(--line)' }}>
-                  {(['TODOS', 'LOCAL', 'VISITA'] as const).map((c) => (
-                    <button key={c} onClick={() => setCuotaCond(c)} style={{ padding: '5px 12px', border: 0, borderRadius: 6, cursor: 'pointer', background: cuotaCond === c ? 'var(--bg1)' : 'transparent', color: cuotaCond === c ? 'var(--t1)' : 'var(--t2)', font: '600 10.5px var(--sans)' }}>{c}</button>
-                  ))}
-                </div>
+                <ControlesCuotas vista={cuotaVista} onChange={setCuotaVista} />
               </div>
-              <RachasCuotas teamKey={teamKey} cond={cuotaCond} />
+              <RachasCuotas teamKey={teamKey} vista={cuotaVista} />
             </section>
 
             {/* APUESTAS QUE SALIERON — cuota que pagó el 1X2 de los últimos partidos */}

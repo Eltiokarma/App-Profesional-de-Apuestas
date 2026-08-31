@@ -5,13 +5,16 @@ Dos fases (idempotentes):
 
 1. RELLENO SINTÉTICO (§7): para un puñado de equipos elegidos (SYNTH_TEAMS), a sus
    partidos 2026 SIN cuota 1X2 capturada les inyecta cuotas 1X2 aproximadas
-   (derivadas de la diferencia de nivel) directamente en la tabla `odds` de sad.db,
+   (derivadas de la diferencia de nivel) y su Doble Oportunidad derivada de esas
+   mismas cuotas, directamente en la tabla `odds` de sad.db,
    marcadas con `bookmaker_name='SYNTHETIC'` para poder borrarlas cuando llegue la
    cuota real:  DELETE FROM odds WHERE bookmaker_name='SYNTHETIC';
    Se re-borran y re-generan en cada corrida.
 
 2. CONSTANTS_CUOTA: recorre, por equipo, sus partidos 2026 terminados ORDENADOS por
-   fecha y acumula los 9 k_cuota (backend/cuota_engine). Reconstruye la tabla entera.
+   fecha y acumula los 18 k_cuota —9 del 1X2 y 9 de la Doble Oportunidad—
+   (backend/cuota_engine). Reconstruye la tabla entera. Los dos mercados tienen
+   huecos independientes: un partido sin cuota de un mercado lo salta solo a él.
 
 Solo escribe sad.db (odds sintéticas) y constants.db (constants_cuota); levels.db se
 abre en solo-lectura. El motor mock/demo NO se toca: las barras se llenan solo aquí.
@@ -25,7 +28,7 @@ import sqlite3
 import sys
 from bisect import bisect_right
 
-from backend.cuota_engine import CUOTA0, CUOTA_K_COLS, cuotas_sinteticas, step_cuota
+from backend.cuota_engine import CUOTA0, CUOTA_K_COLS, cuotas_sinteticas, dc_desde_1x2, step_cuota
 from backend.db import BASE_DIR
 
 # Clubes con cobertura 2026 parcial (huecos importantes) para el relleno sintético.
@@ -69,20 +72,29 @@ def _fixtures_2026(sad):
     ).fetchall()
 
 
-def _mw_odds(sad):
-    """{fixture_id: (home, draw, away)} promediando bookmakers del mercado 1X2."""
+def _odds_mercado(sad, bet_name, selecciones):
+    """{fixture_id: (odd, odd, odd)} promediando bookmakers de un mercado. Solo
+    entran los fixtures que tienen las TRES selecciones (media pata no sirve)."""
     rows = sad.execute(
-        "SELECT fixture_id, value, AVG(odd) FROM odds WHERE bet_name='Match Winner' "
-        "GROUP BY fixture_id, value"
+        "SELECT fixture_id, value, AVG(odd) FROM odds WHERE bet_name=? GROUP BY fixture_id, value",
+        (bet_name,),
     ).fetchall()
     agg = {}
     for fid, value, odd in rows:
         agg.setdefault(fid, {})[value] = odd
-    out = {}
-    for fid, m in agg.items():
-        if "Home" in m and "Draw" in m and "Away" in m:
-            out[fid] = (m["Home"], m["Draw"], m["Away"])
-    return out
+    return {fid: tuple(m[v] for v in selecciones) for fid, m in agg.items() if all(v in m for v in selecciones)}
+
+
+def _mw_odds(sad):
+    """{fixture_id: (home, draw, away)} del mercado 1X2."""
+    return _odds_mercado(sad, "Match Winner", ("Home", "Draw", "Away"))
+
+
+def _dc_odds(sad):
+    """{fixture_id: (1X, 12, X2)} del mercado Doble Oportunidad, en la
+    perspectiva del LOCAL (Home/Draw, Home/Away, Draw/Away); el visitante
+    intercambia 1X y X2 al construir sus filas."""
+    return _odds_mercado(sad, "Double Chance", ("Home/Draw", "Home/Away", "Draw/Away"))
 
 
 def rellenar_sinteticas(base_dir, teams):
@@ -103,13 +115,19 @@ def rellenar_sinteticas(base_dir, teams):
             hechos.add(fid)
             liga = sad.execute("SELECT league_id FROM fixtures WHERE id=?", (fid,)).fetchone()[0]
             ch, cd, ca = cuotas_sinteticas(_nivel_at(lv, h, date), _nivel_at(lv, a, date))
-            for value, odd in (("Home", ch), ("Draw", cd), ("Away", ca)):
-                sad.execute(
-                    "INSERT INTO odds (fixture_id, league_id, bookmaker_id, bookmaker_name, bet_id, bet_name, value, odd) "
-                    "VALUES (?,?,?,?,?,?,?,?)",
-                    (fid, liga, 0, "SYNTHETIC", 1, "Match Winner", value, odd),
-                )
-                filas += 1
+            c1x, c12, cx2 = dc_desde_1x2(ch, cd, ca)
+            sinteticas = (
+                ("Match Winner", 1, (("Home", ch), ("Draw", cd), ("Away", ca))),
+                ("Double Chance", 12, (("Home/Draw", c1x), ("Home/Away", c12), ("Draw/Away", cx2))),
+            )
+            for bet_name, bet_id, sels in sinteticas:
+                for value, odd in sels:
+                    sad.execute(
+                        "INSERT INTO odds (fixture_id, league_id, bookmaker_id, bookmaker_name, bet_id, bet_name, value, odd) "
+                        "VALUES (?,?,?,?,?,?,?,?)",
+                        (fid, liga, 0, "SYNTHETIC", bet_id, bet_name, value, odd),
+                    )
+                    filas += 1
     sad.commit()
     sad.close()
     print(f"Relleno sintético: {len(hechos)} fixtures · {filas} filas odds (bookmaker=SYNTHETIC) para {len(teams)} equipos")
@@ -128,6 +146,7 @@ def construir_constants_cuota(base_dir, sad_path=None):
         sad.execute("PRAGMA temp_store=MEMORY")
         sad.execute("PRAGMA busy_timeout=30000")
     mw = _mw_odds(sad)  # incluye ya las sintéticas
+    dc = _dc_odds(sad)  # Doble Oportunidad: mercado independiente, con sus propios huecos
     fixtures = _fixtures_2026(sad)
     sad.close()
 
@@ -143,13 +162,15 @@ def construir_constants_cuota(base_dir, sad_path=None):
         DROP TABLE IF EXISTS constants_cuota;
         CREATE TABLE constants_cuota (
             id INTEGER PRIMARY KEY, team_id INTEGER NOT NULL, fixture_id INTEGER NOT NULL, date DATETIME NOT NULL,
-            cuota_victoria REAL, cuota_empate REAL, cuota_derrota REAL, resultado INTEGER, es_local INTEGER,
+            cuota_victoria REAL, cuota_empate REAL, cuota_derrota REAL,
+            cuota_dc1x REAL, cuota_dc12 REAL, cuota_dcx2 REAL, resultado INTEGER, es_local INTEGER,
             {", ".join(f"{c} REAL" for c in CUOTA_K_COLS)});
         CREATE INDEX ix_cuota_team_date ON constants_cuota(team_id, date);
     """)
-    cols = ["team_id", "fixture_id", "date", "cuota_victoria", "cuota_empate", "cuota_derrota", "resultado", "es_local", *CUOTA_K_COLS]
+    cols = ["team_id", "fixture_id", "date", "cuota_victoria", "cuota_empate", "cuota_derrota",
+            "cuota_dc1x", "cuota_dc12", "cuota_dcx2", "resultado", "es_local", *CUOTA_K_COLS]
     ins = f"INSERT INTO constants_cuota ({','.join(cols)}) VALUES ({','.join('?' * len(cols))})"
-    total = con_cuota = 0
+    total = con_cuota = con_dc = 0
     for tid, partidos in por_equipo.items():
         st = dict(CUOTA0)
         filas = []
@@ -162,13 +183,23 @@ def construir_constants_cuota(base_dir, sad_path=None):
                 con_cuota += 1
             else:
                 cv = ce = cd = None
-            st = step_cuota(st, r, is_local, cv, ce, cd)
-            filas.append((tid, fid, date, cv, ce, cd, r, 1 if is_local else 0, *(st[c] for c in CUOTA_K_COLS)))
+            o = dc.get(fid)
+            if o:
+                hd, ha, da = o
+                # perspectiva del equipo: 1X = no pierde, 12 = no empata, X2 = no gana
+                c1x, c12, cx2 = (hd, ha, da) if is_local else (da, ha, hd)
+                con_dc += 1
+            else:
+                c1x = c12 = cx2 = None
+            st = step_cuota(st, r, is_local, cv, ce, cd, c1x, c12, cx2)
+            filas.append((tid, fid, date, cv, ce, cd, c1x, c12, cx2, r, 1 if is_local else 0,
+                          *(st[c] for c in CUOTA_K_COLS)))
         co.executemany(ins, filas)
         total += len(filas)
     co.commit()
     co.close()
-    print(f"constants_cuota: {total} filas · {len(por_equipo)} equipos · {con_cuota} partidos con cuota")
+    print(f"constants_cuota: {total} filas · {len(por_equipo)} equipos · "
+          f"{con_cuota} partidos con cuota 1X2 · {con_dc} con doble oportunidad")
 
 
 def main(argv):

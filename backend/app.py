@@ -813,8 +813,10 @@ def constantes_de(team_id: int, limit: int, hasta: str | None = None) -> list[di
 
 
 def constantes_cuota_de(team_id: int) -> list[dict]:
-    """Filas de constants_cuota (k_cuota, §3.8) del equipo, en orden cronológico.
-    Si la tabla aún no existe (no se corrió backfill_cuota) devuelve []."""
+    """Filas de constants_cuota (k_cuota, §3.8) del equipo, en orden cronológico:
+    rachas de suma de cuota del 1X2 y de la Doble Oportunidad (1X/12/X2, en la
+    perspectiva del equipo). Si la tabla aún no existe (no se corrió
+    backfill_cuota) devuelve []."""
     try:
         # tope de seguridad: si hubiera más de 1000 filas se conservan las más recientes
         rows = db.query(
@@ -825,6 +827,12 @@ def constantes_cuota_de(team_id: int) -> list[dict]:
     except sqlite3.OperationalError:
         return []
     out = []
+    # Columnas opcionales: la Doble Oportunidad (§3.8) la emite el pipeline; si
+    # esta constants.db se construyó antes, sus 9 acumuladores y sus 3 cuotas se
+    # sirven como 0/null (racha vacía) sin romper el contrato.
+    cols = set(rows[0].keys()) if rows else set()
+    col = lambda r, n: r[n] if n in cols else None  # noqa: E731
+    z = lambda v: float(v) if v is not None else 0.0  # noqa: E731
     for r in rows:
         out.append(
             {
@@ -833,11 +841,17 @@ def constantes_cuota_de(team_id: int) -> list[dict]:
                 "fecha": iso(r["date"]),
                 "resultado": r["resultado"],
                 "esLocal": bool(r["es_local"]),
-                "cuota": {"victoria": r["cuota_victoria"], "empate": r["cuota_empate"], "derrota": r["cuota_derrota"]},
+                "cuota": {
+                    "victoria": r["cuota_victoria"], "empate": r["cuota_empate"], "derrota": r["cuota_derrota"],
+                    "dc1x": col(r, "cuota_dc1x"), "dc12": col(r, "cuota_dc12"), "dcX2": col(r, "cuota_dcx2"),
+                },
                 "k": {
                     "victoria": r["k_cuota_victoria"], "victoriaLocal": r["k_cuota_victoria_local"], "victoriaVisita": r["k_cuota_victoria_visita"],
                     "empate": r["k_cuota_empate"], "empateLocal": r["k_cuota_empate_local"], "empateVisita": r["k_cuota_empate_visita"],
                     "derrota": r["k_cuota_derrota"], "derrotaLocal": r["k_cuota_derrota_local"], "derrotaVisita": r["k_cuota_derrota_visita"],
+                    "dc1x": z(col(r, "k_cuota_dc1x")), "dc1xLocal": z(col(r, "k_cuota_dc1x_local")), "dc1xVisita": z(col(r, "k_cuota_dc1x_visita")),
+                    "dc12": z(col(r, "k_cuota_dc12")), "dc12Local": z(col(r, "k_cuota_dc12_local")), "dc12Visita": z(col(r, "k_cuota_dc12_visita")),
+                    "dcX2": z(col(r, "k_cuota_dcx2")), "dcX2Local": z(col(r, "k_cuota_dcx2_local")), "dcX2Visita": z(col(r, "k_cuota_dcx2_visita")),
                 },
             }
         )
@@ -1008,7 +1022,8 @@ def constantes(equipo_id: int, limit: int = Query(default=50, ge=1, le=500)):
 
 @app.get(API + "/constantes-cuota/{equipo_id}")
 def constantes_cuota(equipo_id: int):
-    """k_cuota (§3.8): rachas de suma de cuota 1X2, solo 2026. La tabla
+    """k_cuota (§3.8): rachas de suma de cuota del 1X2 y de la Doble
+    Oportunidad (1X/12/X2), solo 2026. La tabla
     constants_cuota se reconstruye en cada corrida del pipeline (y también con
     backend/backfill_cuota, que además puede inyectar cuotas sintéticas)."""
     return constantes_cuota_de(equipo_id)

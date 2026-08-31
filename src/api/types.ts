@@ -140,8 +140,10 @@ export interface ConstantesDTO {
   }
 }
 
-/** Fila de constants_cuota (k_cuota, §3.8): rachas de SUMA de cuota 1X2 prepartido,
- *  solo partidos de 2026. cuota.* = null si el partido no tenía cuota capturada. */
+/** Fila de constants_cuota (k_cuota, §3.8): rachas de SUMA de cuota prepartido del
+ *  1X2 y de la Doble Oportunidad, solo partidos de 2026. Las dc* van SIEMPRE en la
+ *  perspectiva del equipo (1X = no pierde · 12 = no empata · X2 = no gana).
+ *  cuota.* = null si ese mercado no se capturó (los dos tienen huecos aparte). */
 export interface ConstanteCuotaDTO {
   equipoId: number
   fixtureId: number
@@ -150,11 +152,17 @@ export interface ConstanteCuotaDTO {
   resultado: 1 | 0 | -1
   /** true si el equipo jugó de local ese partido (para el toggle LOCAL/VISITA). */
   esLocal: boolean
-  cuota: { victoria: number | null; empate: number | null; derrota: number | null }
+  cuota: {
+    victoria: number | null; empate: number | null; derrota: number | null
+    dc1x: number | null; dc12: number | null; dcX2: number | null
+  }
   k: {
     victoria: number; victoriaLocal: number; victoriaVisita: number
     empate: number; empateLocal: number; empateVisita: number
     derrota: number; derrotaLocal: number; derrotaVisita: number
+    dc1x: number; dc1xLocal: number; dc1xVisita: number
+    dc12: number; dc12Local: number; dc12Visita: number
+    dcX2: number; dcX2Local: number; dcX2Visita: number
   }
 }
 
