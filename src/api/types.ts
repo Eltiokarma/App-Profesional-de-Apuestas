@@ -924,6 +924,8 @@ export interface EquipoParte {
   plantel: JugadorParte[]
   fuera: { nombre: string; estado: string; motivo: string }[]
   factorX: { nombre: string; contexto: string }[]
+  /** Caja de sensibilidad: qué cambiaría si el dato que falta fuera otro. */
+  sensibilidad: { supuesto: string; efecto: string }[]
   disponibilidad: DisponibilidadParte
 }
 
@@ -941,14 +943,51 @@ export interface DocumentoParte {
   cuerpo: string
 }
 
+/** Lectura SAD: el juicio que cierra el EFE (no hay forma de calcularlo). */
+export interface LecturaSadParte {
+  moduloOperativo: string
+  unXDos: { texto: string; rangoAmpliado: boolean }
+  contextoEmocional: string
+  datoEstructural: string
+  paradoja: string
+}
+
+/** Teorema del Echado. Los niveles llegan del skill: el backend no inventa
+ *  umbrales para una escala que vive en otro lado. '' = píntalo en neutro. */
+export interface TdeParte {
+  ie?: number
+  ieNivel?: Semaforo | ''
+  ise?: number
+  iseNivel?: Semaforo | ''
+  equipo?: 'a' | 'b' | ''
+  tipologia?: string
+  ventana?: string
+  disciplina43?: boolean
+  vias?: { nombre: string; indice: number; ventana: string; detalle: string }[]
+  falsador?: string
+}
+
 export interface ParteCoworkDTO {
   fixtureId: number
   estado: 'pendiente_xi' | 'confirmado'
   version: string
-  partido: { equipoA: string; equipoB: string; fecha: string }
+  partido: { equipoA: string; equipoB: string; fecha: string; equipoAId: number; equipoBId: number }
   equipos: { a: EquipoParte; b: EquipoParte }
   alertas: AlertaParte[]
-  matchup: { diagnostico: 'FAVORABLE' | 'NEUTRO' | 'DESFAVORABLE'; favorece: 'a' | 'b' | ''; razon: string }
+  matchup: {
+    diagnostico: 'FAVORABLE' | 'NEUTRO' | 'DESFAVORABLE'
+    favorece: 'a' | 'b' | ''
+    razon: string
+    /** Los tres indicadores que sostienen el diagnóstico ('na' = no aplica). */
+    h2a: Semaforo | 'na'
+    h2b: Semaforo | 'na'
+    h2c: Semaforo | 'na'
+  }
+  lecturaSad: LecturaSadParte
+  tde: TdeParte
+  /** Institucional de Cowork + partidos calculados por el backend; null si no
+   *  hay ni lo uno ni lo otro. Se pinta con el TimelineComparativo de siempre. */
+  timeline: TimelineData | null
   pronostico: {
     motor: string
     matriz: string

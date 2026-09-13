@@ -479,7 +479,7 @@ export function Analisis({ m, isMobile }: Props) {
 
       {parteCargando && <div className="sad-sk" style={{ height: 260, marginBottom: 14 }}></div>}
 
-      {parte && <ParteCowork parte={parte} matchId={m.id} onParte={setParte} isMobile={isMobile} />}
+      {parte && <ParteCowork parte={parte} matchId={m.id} equipoAKey={m.home} equipoBKey={m.away} onParte={setParte} isMobile={isMobile} />}
 
       {!parteCargando && !parte && (
         <section style={{ padding: '26px 20px', marginBottom: 14, borderRadius: 16, background: 'var(--bg2)', border: '1px dashed var(--line)', textAlign: 'center' }}>

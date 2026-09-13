@@ -60,6 +60,9 @@ LADOS = ("a", "b")
 # por debajo de esto, el cruce del once con la tabla no es creíble y el bloque F
 # se queda congelado en vez de publicar un IP inventado (ver _disponibilidad)
 MINIMO_CASADOS = 7
+# tipos de evento institucional del protocolo TIMELINE (los de partido los pone
+# cronologia.py: ver docs/efe-dtp/COSTO_IA.md)
+TL_TIPOS = ("institucional", "tecnico", "sancion", "hito")
 # documentos que la pantalla sabe titular sola; cualquier otro id se acepta
 # igual y se muestra con el título que venga
 DOCUMENTOS = {
@@ -160,6 +163,104 @@ def _equipo(bruto: dict, equipos_db: list[tuple[str, str]]) -> dict:
         "fuera": fuera,
         "factorX": [{"nombre": _txt(x.get("nombre")), "contexto": _txt(x.get("contexto"))}
                     for x in (bruto.get("factorX") or []) if _txt(x.get("nombre"))],
+        "sensibilidad": [x for x in (_sensibilidad(y) for y in (bruto.get("sensibilidad") or [])) if x],
+    }
+
+
+def _sensibilidad(x: dict) -> dict | None:
+    """Caja de sensibilidad: qué cambiaría si el dato que falta fuera otro.
+
+    Es la contrapartida honesta de "sin dato es una respuesta válida": el hueco
+    se declara Y se dice cuánto movería el análisis. Un hueco sin esto es una
+    excusa; con esto es una incertidumbre acotada."""
+    supuesto = _txt(x.get("supuesto"))
+    if not supuesto:
+        return None
+    return {"supuesto": supuesto, "efecto": _txt(x.get("efecto"))}
+
+
+_SEMAFORO = ("verde", "ambar", "rojo")
+
+
+def _sem(v, con_na: bool = False) -> str:
+    t = _txt(v).lower()
+    if t in _SEMAFORO or (con_na and t == "na"):
+        return t
+    return "na" if con_na else ""
+
+
+def _lectura_sad(x: dict) -> dict:
+    """Lo que el protocolo llama la lectura SAD: el juicio que cierra el EFE.
+
+    Es puro criterio —no hay forma de calcularlo— y es lo que el analista lee
+    primero cuando ya vio los números. Sin sitio propio en el parte terminaba
+    diluido dentro del ensayo."""
+    uxd = x.get("unXDos") or x.get("un_x_dos") or {}
+    if isinstance(uxd, str):
+        uxd = {"texto": uxd}
+    return {
+        "moduloOperativo": _txt(x.get("moduloOperativo") or x.get("modulo_operativo")),
+        "unXDos": {"texto": _txt(uxd.get("texto")),
+                   "rangoAmpliado": bool(uxd.get("rangoAmpliado") or uxd.get("rango_ampliado"))},
+        "contextoEmocional": _txt(x.get("contextoEmocional") or x.get("contexto_emocional")),
+        "datoEstructural": _txt(x.get("datoEstructural") or x.get("dato_estructural")),
+        "paradoja": _txt(x.get("paradoja")),
+    }
+
+
+def _via_tde(v: dict) -> dict | None:
+    nombre = _txt(v.get("nombre"))
+    if not nombre:
+        return None
+    return {"nombre": nombre, "indice": _num(v.get("indice"), 1000),
+            "ventana": _txt(v.get("ventana")), "detalle": _txt(v.get("detalle"))}
+
+
+def _tde(x: dict) -> dict:
+    """Teorema del Echado: los dos índices y su ventana.
+
+    Los NIVELES (verde/ámbar/rojo) llegan del skill, no los inventa el backend:
+    la escala del IE es suya y ponerle umbrales aquí sería duplicar —y con el
+    tiempo desalinear— una tabla que vive en otro lado. Sin nivel, la pantalla
+    pinta el número en neutro."""
+    if not isinstance(x, dict):
+        return {}
+    vias = [v for v in (_via_tde(y) for y in (x.get("vias") or [])) if v]
+    tiene = any([_txt(x.get("tipologia")), vias, x.get("ie") is not None, x.get("ise") is not None])
+    if not tiene:
+        return {}
+    equipo = _txt(x.get("equipo")).lower()
+    return {
+        "ie": _num(x.get("ie"), 1000), "ieNivel": _sem(x.get("ieNivel")),
+        "ise": _num(x.get("ise"), 1000), "iseNivel": _sem(x.get("iseNivel")),
+        "equipo": equipo if equipo in LADOS else "",
+        "tipologia": _txt(x.get("tipologia")),
+        "ventana": _txt(x.get("ventana")),
+        "disciplina43": bool(x.get("disciplina43")),
+        "vias": vias,
+        "falsador": _txt(x.get("falsador")),
+    }
+
+
+def _evento_tl(e: dict) -> dict | None:
+    """Un evento INSTITUCIONAL del timeline. Los partidos no entran por aquí:
+    los calcula backend/cronologia.py de nuestra propia base."""
+    from backend import cronologia as crono
+    titulo = _txt(e.get("titulo"))
+    fecha = _txt(e.get("fecha"))
+    if not titulo or not fecha:
+        return None
+    tipo = _txt(e.get("tipo")).lower()
+    if tipo in crono.TIPOS_PARTIDO or tipo not in TL_TIPOS:
+        # un resultado copiado a mano se descarta: el marcador es de la ingesta
+        return None
+    return {
+        "fecha": fecha, "aproximada": bool(e.get("aproximada")) or fecha.startswith("~"),
+        "equipo": _txt(e.get("equipo")), "tipo": tipo, "titulo": titulo,
+        "detalle": _txt(e.get("detalle")), "jornada": 0, "marcador": "",
+        "destacado": bool(e.get("destacado")),
+        "alerta_relacionada": _txt(e.get("alertaRelacionada") or e.get("alerta_relacionada")),
+        "fuente": _txt(e.get("fuente")),
     }
 
 
@@ -213,6 +314,14 @@ def normalizar_parte(payload: dict) -> dict:
         "alertas": [a for a in (_alerta(x) for x in (payload.get("alertas") or [])) if a],
         "matchup": {},
         "pronostico": {},
+        "lecturaSad": _lectura_sad(payload.get("lecturaSad") or payload.get("lectura_sad") or {}),
+        "tde": _tde(payload.get("tde") or {}),
+        "timelineEventos": [e for e in (_evento_tl(x) for x in (payload.get("timelineEventos") or [])) if e],
+        "timelineNarrativa": _txt(payload.get("timelineNarrativa")),
+        "cadena": {l: _txt(((payload.get("cadena") or {}).get(l) or {}).get("pronostico")
+                           if isinstance((payload.get("cadena") or {}).get(l), dict)
+                           else (payload.get("cadena") or {}).get(l))
+                   for l in LADOS},
         "documentos": [d for d in (_documento(x) for x in (payload.get("documentos") or [])) if d],
         "pendientes": _lista_txt(payload.get("pendientes")),
         "fuentes": _lista_txt(payload.get("fuentes")),
@@ -225,6 +334,11 @@ def normalizar_parte(payload: dict) -> dict:
         "diagnostico": diag if diag in ("FAVORABLE", "NEUTRO", "DESFAVORABLE") else "NEUTRO",
         "favorece": _txt(m.get("favorece")).lower() if _txt(m.get("favorece")).lower() in LADOS else "",
         "razon": _txt(m.get("razon")),
+        # H2a/H2b/H2c: los tres indicadores que SOSTIENEN el diagnóstico. Sin
+        # ellos, "MATCHUP FAVORABLE" es una etiqueta sin nada detrás.
+        "h2a": _sem(m.get("h2a"), con_na=True),
+        "h2b": _sem(m.get("h2b"), con_na=True),
+        "h2c": _sem(m.get("h2c"), con_na=True),
     }
     p = payload.get("pronostico") or {}
     prob = p.get("probabilidades") or {}
@@ -244,7 +358,7 @@ def normalizar_parte(payload: dict) -> dict:
 def _fixture(fixture_id: int):
     return saddb.query_one(
         "sad",
-        "SELECT f.id, f.date, f.league_id, f.home_team_id, f.away_team_id, "
+        "SELECT f.id, f.date, f.league_id, f.league_season, f.home_team_id, f.away_team_id, "
         "ht.name AS home_name, at.name AS away_name "
         "FROM fixtures f JOIN teams ht ON ht.id=f.home_team_id "
         "JOIN teams at ON at.id=f.away_team_id WHERE f.id=?",
@@ -290,6 +404,7 @@ def guardar(payload: dict) -> dict:
         )
     # un parte nuevo sobre un fixture que ya tenía once resuelto se recalcula
     # solo al leerlo: el once vive aparte, justamente para sobrevivir al parte
+    cadena = _guardar_cadena(fx, parte.get("cadena") or {})
     resumen = {
         "fixtureId": parte["fixtureId"],
         "partido": f"{fx['home_name']} vs {fx['away_name']}",
@@ -300,10 +415,16 @@ def guardar(payload: dict) -> dict:
         "alertas": len(parte["alertas"]),
         "discrepancias": discrepancias,
         "xiResuelto": bool(previo and previo["xi_json"]),
+        "eventosTimeline": len(parte.get("timelineEventos") or []),
+        "cadena": cadena,
+        "conLecturaSad": bool((parte.get("lecturaSad") or {}).get("moduloOperativo")),
+        "conTde": bool(parte.get("tde")),
     }
     print(f"[cowork] parte {resumen['estado']}: {resumen['partido']} "
           f"({resumen['jugadores']['a']}+{resumen['jugadores']['b']} jugadores, "
-          f"{len(parte['documentos'])} documentos)"
+          f"{len(parte['documentos'])} documentos, "
+          f"{resumen['eventosTimeline']} eventos de timeline)"
+          + (f" · cadena: {', '.join(cadena)}" if cadena else "")
           + (f" · DISCREPANCIAS: {discrepancias}" if discrepancias else ""), flush=True)
     return resumen
 
@@ -362,6 +483,68 @@ def _disponibilidad(equipo: dict, xi: dict | None) -> dict:
             "formacion": xi.get("formacion", "")}
 
 
+def timeline_del_parte(fx, eventos: list[dict], narrativa: str, fuentes: list[str]) -> dict | None:
+    """Funde lo institucional de Cowork con los partidos CALCULADOS.
+
+    Misma regla y mismo código que el timeline por API (docs/efe-dtp/COSTO_IA.md):
+    los resultados, la jornada y el enfrentamiento directo salen de `fixtures`
+    vía backend/cronologia.py, no de lo que escriba nadie. Cowork solo aporta
+    lo que no se puede calcular —crisis, sanciones, cambios de DT, hitos— y
+    esta función arma el TimelineData que pinta la pantalla de siempre.
+    """
+    from backend import cronologia as crono
+    desde, hasta = crono.ventana()
+    calculados = crono.eventos_del_partido(
+        fx["home_team_id"], fx["home_name"], fx["away_team_id"], fx["away_name"], desde, hasta)
+    if not calculados and not eventos:
+        return None
+    return {
+        "titulo": f"{fx['home_name']} vs {fx['away_name']}",
+        "periodo": {"desde": desde, "hasta": hasta},
+        "equipos": [
+            {"nombre": fx["home_name"], "lado": "izquierda",
+             "color": "#5B8DEF", "color_secundario": "#C7D0EC",
+             "stats": crono.stats_de(fx["home_team_id"], fx["league_id"],
+                                     fx["league_season"], desde, hasta)},
+            {"nombre": fx["away_name"], "lado": "derecha",
+             "color": "#E5484D", "color_secundario": "#F2C1C3",
+             "stats": crono.stats_de(fx["away_team_id"], fx["league_id"],
+                                     fx["league_season"], desde, hasta)},
+        ],
+        "eventos": crono.ordenar(list(eventos) + calculados),
+        "agrupacion": "mes",
+        "narrativa": narrativa,
+        "datos_faltantes": [],
+        "fuentes": sorted({*(fuentes or []), crono.FUENTE}),
+    }
+
+
+def _guardar_cadena(fx, cadena: dict) -> list[str]:
+    """El pronóstico clave por equipo foco entra en la cadena del DTP.
+
+    La película del equipo (página de Equipo) se alimenta de `cadena_dtp`, y
+    hasta aquí solo escribía en ella el motor por API: con Cowork llevando el
+    análisis, la cadena se habría quedado congelada. Se escribe SOLO la
+    apertura —el pronóstico, antes del partido—; el veredicto lo emite después
+    quien cierre el eslabón, que es lo que lo hace auditable.
+    """
+    from backend.analisis.motor import _partido_n  # misma numeración, no otra
+    escritos = []
+    fecha = (fx["date"] or "")[:10] or None
+    for lado, (foco, rival, tid) in (("a", (fx["home_name"], fx["away_name"], fx["home_team_id"])),
+                                     ("b", (fx["away_name"], fx["home_name"], fx["away_team_id"]))):
+        pronostico = (cadena.get(lado) or "").strip()
+        if not pronostico:
+            continue
+        efedb.guardar_cadena(
+            foco, _partido_n(tid, fx["date"] or ""), rival, fecha, fx["id"], None,
+            registro={"pronostico_clave": pronostico, "que_paso": "",
+                      "veredicto": "", "leccion": ""},
+        )
+        escritos.append(foco)
+    return escritos
+
+
 def dto(fixture_id: int) -> dict | None:
     """Todo lo que la pantalla necesita, con lo calculable ya calculado."""
     with _conectar() as con:
@@ -384,15 +567,29 @@ def dto(fixture_id: int) -> dict | None:
         if f3:
             alertas.append({**f3, "equipo": lado})
         equipos[lado] = {**eq, **tot, "disponibilidad": disp}
+    fx = _fixture(fila["fixture_id"])
+    # el timeline se funde AL LEER, no al depositar: si la ingesta corrige un
+    # marcador, la próxima lectura ya lo trae — sellarlo sería congelar hoy lo
+    # que mañana se recalcula gratis
+    timeline = None
+    if fx:
+        timeline = timeline_del_parte(fx, parte.get("timelineEventos") or [],
+                                      parte.get("timelineNarrativa") or "",
+                                      parte.get("fuentes") or [])
     return {
         "fixtureId": fila["fixture_id"],
         "estado": fila["estado"],
         "version": fila["version"],
         "partido": {"equipoA": fila["equipo_a"], "equipoB": fila["equipo_b"],
-                    "fecha": fila["fecha"]},
+                    "fecha": fila["fecha"],
+                    "equipoAId": fx["home_team_id"] if fx else 0,
+                    "equipoBId": fx["away_team_id"] if fx else 0},
         "equipos": equipos,
         "alertas": alertas,
         "matchup": parte["matchup"],
+        "lecturaSad": parte.get("lecturaSad") or _lectura_sad({}),
+        "tde": parte.get("tde") or {},
+        "timeline": timeline,
         "pronostico": parte["pronostico"],
         "documentos": parte["documentos"],
         "pendientes": parte["pendientes"],

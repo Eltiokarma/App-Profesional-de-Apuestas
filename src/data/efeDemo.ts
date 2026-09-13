@@ -224,6 +224,7 @@ export function parteCoworkDemo(fixtureId: number, equipoA: string, equipoB: str
       porcentaje: +((total / 27) * 100).toFixed(1), clasificacion: clas,
       dt: { nombre: dt, meses }, perfil,
       plantel: plantel(prefijo), fuera: [], factorX: [],
+      sensibilidad: [{ supuesto: 'el central 2 no llega', efecto: 'la reducción en DEF pasa a zona debilitada y el matchup deja de ser claro' }],
       disponibilidad: {
         resuelto: false, sinTabla: false, fuente: '',
         nota: 'bloque F congelado: sin once confirmado no se puntúa (Disciplina 35)',
@@ -237,7 +238,7 @@ export function parteCoworkDemo(fixtureId: number, equipoA: string, equipoB: str
   }
   return {
     fixtureId, estado: 'pendiente_xi', version: 'cowork/1',
-    partido: { equipoA, equipoB, fecha: '2026-07-20' },
+    partido: { equipoA, equipoB, fecha: '2026-07-20', equipoAId: 0, equipoBId: 0 },
     equipos: {
       a: equipo(equipoA, 'A', [4, 5, 3, 4, 3], 'FORMADO', 'A. Ruiz (muestra)', 19,
         { sistema: '4-3-3', estilo: 'presión alta y salida limpia', fortaleza: 'juego asociado por dentro', vulnerabilidad: 'espalda de los laterales' }),
@@ -248,7 +249,25 @@ export function parteCoworkDemo(fixtureId: number, equipoA: string, equipoB: str
       { codigo: 'T.54', equipo: 'b', tipo: 'estructural', detalle: 'DT interino con menos de 6 meses: las K del equipo pierden línea base.' },
       { codigo: 'DEMO', equipo: 'global', tipo: 'fecha', detalle: 'Parte de muestra: el modo demo no habla con Cowork ni con ninguna API.' },
     ],
-    matchup: { diagnostico: 'FAVORABLE', favorece: 'a', razon: 'bloque bajo del rival con vida útil corta contra un ataque que llega por fuera.' },
+    matchup: {
+      diagnostico: 'FAVORABLE', favorece: 'a',
+      razon: 'bloque bajo del rival con vida útil corta contra un ataque que llega por fuera.',
+      h2a: 'verde', h2b: 'verde', h2c: 'ambar',
+    },
+    lecturaSad: {
+      moduloOperativo: 'Regresión al Nivel con gap favorable al local; módulo de goles habilitado.',
+      unXDos: { texto: 'Local con ventaja estructural; el empate es el escenario de cobertura.', rangoAmpliado: false },
+      contextoEmocional: 'El visitante llega de dos derrotas y con el interino sin margen: la presión externa empuja a un planteo conservador.',
+      datoEstructural: 'Núcleo del local intacto desde hace tres temporadas; el visitante renovó seis titulares en el último mercado.',
+      paradoja: 'El equipo con mejor EFE es el que más depende de un solo hombre: si falta el arquero titular, la ventaja estructural se estrecha.',
+    },
+    tde: {
+      ie: 58, ieNivel: 'ambar', ise: 31, iseNivel: 'verde', equipo: 'b',
+      tipologia: 'repliegue por agotamiento', ventana: "75-90'", disciplina43: false,
+      vias: [{ nombre: 'echada', indice: 58, ventana: "75-90'", detalle: 'el bloque baja diez metros tras el primer gol en contra' }],
+      falsador: "si el visitante mantiene la línea por encima de su área tras el 75', el índice está mal calculado.",
+    },
+    timeline: timelineDemo(equipoA, equipoB),
     pronostico: {
       motor: 'gap §5 a favor del local (+0.34)', matriz: '54 / 26 / 20', mercado: '1.80 / 3.50 / 4.40',
       probabilidades: { local: 54, empate: 26, visita: 20 }, marcador: '2-1',

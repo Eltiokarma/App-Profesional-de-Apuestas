@@ -98,7 +98,14 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   llega. El bloque F viaja congelado y se cierra con `POST
   /analisis/cowork/{id}/xi` (ficha de API-Football o once pegado a mano); un
   once que casa con menos de 7 nombres de la tabla F1 NO cierra el bloque:
-  se devuelve el conflicto en vez de un IP inventado.
+  se devuelve el conflicto en vez de un IP inventado. Cada skill del pipeline
+  tiene su sitio en la pantalla (tabla en `docs/COWORK.md`): bloque G desde
+  `backend/calendario.py`, timeline fundido con `backend/cronologia.py` y
+  pintado con `TimelineComparativo`, TDE estructurado con sus niveles venidos
+  del skill (el backend no le pone umbrales a esa escala), y el pronóstico por
+  equipo foco entra en `cadena_dtp` como apertura —el veredicto lo emite quien
+  cierre el eslabón—. Un bloque nuevo del prompt necesita sitio en el parte:
+  si no lo tiene, se pierde.
 - Costo de la IA: `docs/efe-dtp/COSTO_IA.md`. Lo que está en nuestra base se
   calcula, no se le pregunta al modelo — y lo calculado no se le hace copiar a
   la salida. Los dos bloques calculados hoy: el mapa de rivales del EFE

@@ -47,17 +47,40 @@ def _parte(fixture_id: int, nombre_a: str = "", nombre_b: str = "") -> dict:
                   "perfil": {"sistema": "4-3-3", "estilo": "presión alta",
                              "fortaleza": "juego aéreo", "vulnerabilidad": "espalda de laterales"},
                   "plantel": _plantel("A"),
-                  "fuera": [{"nombre": "A Jugador6", "estado": "baja", "motivo": "lesión"}]},
+                  "fuera": [{"nombre": "A Jugador6", "estado": "baja", "motivo": "lesión"}],
+                  "sensibilidad": [{"supuesto": "el central no llega", "efecto": "DEF pasa a zona debilitada"},
+                                   {"supuesto": "", "efecto": "esto se descarta"}]},
             "b": {"nombre": nombre_b, "bloques": {"A": 1, "B": 2, "D": 1, "E": 1},
                   "excluidos": {"C": "SIN DATOS K — recién ascendido (R-KT.2)"},
                   "dt": {"nombre": "DT B", "meses": 2},
                   "plantel": _plantel("B"), "fuera": []},
         },
         "alertas": [{"codigo": "T.54", "equipo": "b", "tipo": "estructural", "detalle": "DT interino"}],
-        "matchup": {"diagnostico": "MATCHUP FAVORABLE", "favorece": "a", "razon": "asimetría en ATK"},
+        "matchup": {"diagnostico": "MATCHUP FAVORABLE", "favorece": "a", "razon": "asimetría en ATK",
+                    "h2a": "verde", "h2b": "verde", "h2c": "inventado"},
         "pronostico": {"motor": "gap §5 a favor de A", "matriz": "55/25/20", "mercado": "1.85 / 3.4 / 4.2",
                        "probabilidades": {"local": 52, "empate": 26, "visita": 22},
                        "marcador": "2-1", "falsador": "si B abre el marcador antes del 20'"},
+        "lecturaSad": {
+            "moduloOperativo": "Regresión al Nivel con gap a favor de A",
+            "unXDos": {"texto": "A con ventaja estructural", "rangoAmpliado": True},
+            "contextoEmocional": "B llega de dos derrotas",
+            "datoEstructural": "Núcleo de A intacto",
+            "paradoja": "El mejor EFE es el más dependiente de un hombre",
+        },
+        "tde": {"ie": 58, "ieNivel": "ambar", "ise": 31, "equipo": "b",
+                "tipologia": "repliegue por agotamiento", "ventana": "75-90'",
+                "vias": [{"nombre": "echada", "indice": 58, "ventana": "75-90'", "detalle": "baja el bloque"}],
+                "falsador": "si sostiene la línea tras el 75'"},
+        "timelineEventos": [
+            {"fecha": "2026-03-02", "equipo": nombre_b or "B", "tipo": "tecnico",
+             "titulo": "Cambio de DT", "detalle": "asume el interino", "destacado": True},
+            {"fecha": "2026-04-10", "equipo": nombre_a or "A", "tipo": "resultado",
+             "titulo": "Victoria 2-0", "marcador": "2-0"},
+        ],
+        "timelineNarrativa": "Semestre de curva ascendente para A.",
+        "cadena": {"a": {"pronostico": "A domina por fuera y define antes del 70'"},
+                   "b": {"pronostico": "B aguanta con bloque bajo y busca el contragolpe"}},
         "documentos": [{"id": "ensayo", "cuerpo": "# Cómo puede darse\n\nTexto largo."},
                        {"id": "tde", "titulo": "TDE", "cuerpo": "IE 62 · ventana 75-90"},
                        {"id": "vacio", "cuerpo": "   "}],
@@ -252,6 +275,72 @@ def main():
     r = c.post(f"{A}/analisis/cowork", json=p)
     check("jugador sin zona o sin nombre se descarta", r.json()["jugadores"]["a"] == 16,
           r.json()["jugadores"])
+
+    # ── lo que cada skill produce tiene sitio ───────────────────────────────
+    c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
+    d = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()
+
+    # bloque G: el calendario NO viaja en el parte, pero el DTO trae los ids
+    # con los que la pantalla lo pide ya calculado
+    check("el parte trae los ids de equipo para el calendario",
+          d["partido"]["equipoAId"] > 0 and d["partido"]["equipoBId"] > 0, d["partido"])
+
+    # bloque H completo: los tres indicadores, con el inválido normalizado
+    check("los indicadores H2 viajan", (d["matchup"]["h2a"], d["matchup"]["h2b"]) == ("verde", "verde"),
+          d["matchup"])
+    check("un H2 inválido cae en 'na', no se inventa", d["matchup"]["h2c"] == "na", d["matchup"])
+
+    # lectura SAD
+    ls = d["lecturaSad"]
+    check("la lectura SAD tiene sitio propio", ls["moduloOperativo"].startswith("Regresión"), ls)
+    check("el 1X2 conserva su rango ampliado", ls["unXDos"]["rangoAmpliado"] is True, ls["unXDos"])
+    check("la paradoja viaja", ls["paradoja"].startswith("El mejor EFE"), ls)
+
+    # caja de sensibilidad
+    sens = d["equipos"]["a"]["sensibilidad"]
+    check("la caja de sensibilidad viaja por equipo", len(sens) == 1, sens)
+    check("un supuesto vacío no entra", all(x["supuesto"] for x in sens), sens)
+
+    # TDE estructurado
+    t = d["tde"]
+    check("el TDE trae sus dos índices", (t["ie"], t["ise"]) == (58.0, 31.0), t)
+    check("el nivel del IE llega del skill, no del backend", t["ieNivel"] == "ambar", t)
+    check("el ISE sin nivel queda vacío en vez de inventado", t["iseNivel"] == "", t)
+    check("el TDE trae su ventana y su causa", t["ventana"] and t["tipologia"], t)
+    check("las vías del TDE viajan", len(t["vias"]) == 1, t.get("vias"))
+
+    # timeline: lo institucional entra, el partido copiado se descarta y los
+    # partidos de NUESTRA base se funden
+    tl = d["timeline"]
+    check("el timeline se arma al leer", tl is not None and tl["equipos"][0]["nombre"] == fx["a"],
+          (tl or {}).get("equipos"))
+    tipos = [e["tipo"] for e in (tl or {}).get("eventos", [])]
+    check("el evento institucional de Cowork entra", "tecnico" in tipos, tipos[:8])
+    check("un resultado copiado a mano se descarta",
+          not any(e.get("titulo") == "Victoria 2-0" for e in (tl or {}).get("eventos", [])), tipos[:8])
+    check("la fuente de la ingesta se declara en el timeline",
+          any("sad.db" in f for f in (tl or {}).get("fuentes", [])), (tl or {}).get("fuentes"))
+    check("la narrativa viaja", (tl or {}).get("narrativa", "").startswith("Semestre"), (tl or {}).get("narrativa"))
+
+    # cadena del DTP: la película del equipo sigue rodando
+    rec = c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha)).json()
+    check("el recibo dice en qué cadenas escribió", set(rec["cadena"]) == {fx["a"], fx["b"]}, rec.get("cadena"))
+    eq_id = dbmod.query_one("sad", "SELECT id FROM teams WHERE name=?", (fx["a"],))["id"]
+    cadena = c.get(f"{A}/equipos/{eq_id}/cadena").json()
+    check("el pronóstico entra en la cadena del equipo",
+          any((e.get("registro") or {}).get("pronostico_clave", "").startswith("A domina") for e in cadena),
+          cadena[:1])
+    check("la cadena del parte no emite veredicto (anti-hindsight)",
+          all((e.get("registro") or {}).get("veredicto", "") == "" for e in cadena), cadena[:1])
+
+    # un parte sin los bloques nuevos sigue siendo válido: nada es obligatorio
+    minimo = {"fixtureId": sin_ficha, "equipos": {"a": {"bloques": {"A": 2}}, "b": {"bloques": {"A": 2}}}}
+    r = c.post(f"{A}/analisis/cowork", json=minimo)
+    check("un parte mínimo se acepta igual", r.status_code == 200, r.text[:200])
+    d2 = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()
+    check("sin TDE el bloque va vacío, no inventado", d2["tde"] == {}, d2["tde"])
+    check("sin lectura SAD los campos van vacíos", d2["lecturaSad"]["moduloOperativo"] == "", d2["lecturaSad"])
+    c.delete(f"{A}/analisis/cowork/{sin_ficha}")
 
     # ── el cruce de nombres, al detalle ─────────────────────────────────────
     from backend.analisis import bloque_f as bf

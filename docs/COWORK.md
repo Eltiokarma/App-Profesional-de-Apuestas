@@ -34,6 +34,39 @@ escritura** en vez de a la factura. Por eso el parte **no lleva**:
 Si llegan igual, se ignoran. Un campo calculado que viaja en el depósito es
 trabajo pagado dos veces y una fuente más de desacuerdo.
 
+## Qué produce cada skill y dónde se ve
+
+El parte no es un volcado de texto: cada skill del pipeline tiene un sitio
+propio en la pantalla. Si algo no aparece en esta tabla, no tiene dónde caer y
+se perdería.
+
+| Skill / bloque | Qué manda Cowork | Dónde se ve |
+|---|---|---|
+| `efe-clasificador` A-E | sub-scores crudos + una nota por bloque | pestaña **Bloques EFE** |
+| bloque F | tabla F1 + bajas públicas | pestaña **Bloque F** (IP, zonas y ramas calculadas aquí) |
+| bloque G · calendario | **nada** | pestaña **Calendario** — `backend/calendario.py` |
+| bloque H · matchup | diagnóstico, razón, perfiles y `h2a/h2b/h2c` | pestaña **Matchup** |
+| lectura SAD | módulo operativo, 1X2, contexto, dato estructural, paradoja | pestaña **Lectura SAD** |
+| caja de sensibilidad | `sensibilidad` por equipo | pestaña **Lectura SAD** |
+| `sad-analysis` | las tres fuentes de probabilidad + falsador | pestaña **Lectura SAD** |
+| `teorema-del-echado` | `tde`: IE, ISE, tipología, ventana, vías | pestaña **Teorema del Echado** |
+| `futbol-timeline` | `timelineEventos` (solo institucional) + narrativa | pestaña **Timeline** (fundida con los partidos calculados) |
+| `diagnostico-tactico` | documento `dtp` + `cadena.{a,b}.pronostico` | pestaña **Documentos** y la cadena de la página de **Equipo** |
+| matriz de escenarios | documento `matriz` | pestaña **Documentos** |
+| ensayo | documento `ensayo` | pestaña **Documentos** |
+
+Dos matices que se ganan al mandar estructura en vez de prosa:
+
+- El **timeline** llega como lista de eventos institucionales, no como HTML. El
+  backend le funde los partidos, la jornada y el marcador de `fixtures` y la
+  pantalla lo pinta con el mismo componente que el resto de la app. Si Cowork
+  manda un evento de tipo `resultado`, se descarta: el marcador es de la
+  ingesta, no de una página web.
+- El **TDE** trae sus índices como números. Los niveles (verde/ámbar/rojo) los
+  manda el skill, no el backend: la escala del IE es suya, y ponerle umbrales
+  aquí sería duplicar una tabla que vive en otro lado y desalinearla con el
+  tiempo. Sin nivel, la pantalla pinta el número en neutro.
+
 ## El ciclo, de noche a mediodía
 
 ```
@@ -117,7 +150,7 @@ y puede caer entre los descartados. Está declarado en la respuesta.
 
 ---
 
-# PROMPT COWORK — SAD BATCH NOCTURNO v2
+# PROMPT COWORK — SAD BATCH NOCTURNO v2.1
 
 > Pegar como instrucción de la tarea en Claude Cowork.
 > Reemplazar lo que está entre `<< >>` antes de correr.
@@ -184,7 +217,21 @@ Escribís vos (es juicio, no se puede calcular):
 - Las bajas y sanciones ya públicas, en `fuera`, con su motivo y su fuente.
 - Las alertas del protocolo que se disparen (T.54, R-KT.2, GK-DOWNGRADE,
   FACTOR-X, COLAPSO EN CASCADA…).
-- El matchup H y el perfil táctico de cada equipo.
+- El matchup H: diagnóstico, razón, el perfil táctico de cada equipo Y los tres
+  indicadores `h2a` / `h2b` / `h2c` (verde/ambar/rojo/na) que lo sostienen. Un
+  "MATCHUP FAVORABLE" sin los tres es una etiqueta que nadie puede discutir.
+- La LECTURA SAD, que es lo que se lee primero cuando ya se vieron los números:
+  módulo operativo, 1X2, contexto emocional, dato estructural y la paradoja del
+  partido (vacía si no hay).
+- La CAJA DE SENSIBILIDAD por equipo: por cada hueco declarado, qué cambiaría si
+  el dato fuera otro. Es lo que convierte un "sin dato" en una incertidumbre
+  acotada en vez de una excusa.
+- El TDE estructurado en `tde` (IE, ISE, tipología, ventana, vías) además del
+  documento en prosa. Los niveles verde/ámbar/rojo los ponés vos: el backend no
+  le inventa umbrales a tu escala.
+- Los eventos INSTITUCIONALES del timeline en `timelineEventos` (nunca partidos).
+- El pronóstico clave por equipo foco en `cadena`: una frase, la que después se
+  va a poder declarar acertada o fallada.
 - El pronóstico con sus TRES fuentes declaradas en simultáneo (Disciplina 33):
   motor de Regresión al Nivel (sad-analysis), matriz manual y mercado. Si el
   motor no pudo correr, se dice — no se reemplaza con estimación (Disciplina 21).
@@ -217,10 +264,10 @@ negritas, citas y tablas se pintan bien en la app.
             sensibilidad Y ADEMÁS entra en `pendientes`. Si el IE o el ISE
             cruzan el borde entre tipologías, activás Disciplina 43 y declarás
             las dos vías con sus ventanas separadas.
-  timeline  cronología comparativa (skill futbol-timeline). Solo lo
-            INSTITUCIONAL: crisis, sanciones, cambios de DT, fichajes, hitos.
-            Los partidos y la tabla NO: los calcula la app y los inserta.
-            Si lo mandás en HTML, poné `"formato": "html"`.
+  timeline  NO va como documento. Los eventos institucionales van en
+            `timelineEventos` (ver punto 7) y la app los funde con los partidos
+            que calcula de su base. Mandarlo como HTML lo deja fuera de esa
+            fusión y sin el tema de la app: no lo hagas.
   ensayo    cómo puede darse el partido, en prosa de periodista, sin siglas,
             con fundamento técnico. Cierra con probabilidad de marcador y de
             ganador. Es lo primero que se lee: escribilo para eso.
@@ -269,14 +316,43 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
       "fuera": [{"nombre": "Nombre Apellido", "estado": "baja",
                  "motivo": "lesión muscular — Depor, 10/09"}],
       "factorX": [{"nombre": "Nombre Apellido",
-                   "contexto": "fichaje de julio sin minutos; 12 goles en su liga anterior"}]
+                   "contexto": "fichaje de julio sin minutos; 12 goles en su liga anterior"}],
+      "sensibilidad": [{"supuesto": "el central 2 no llega",
+                        "efecto": "DEF pasa a zona debilitada y el matchup deja de ser claro"}]
     },
     "b": { "…igual…" }
   },
   "alertas": [{"codigo": "T.54", "equipo": "b", "tipo": "estructural",
                "detalle": "DT interino desde hace 3 semanas"}],
   "matchup": {"diagnostico": "FAVORABLE", "favorece": "a",
-              "razon": "bloque bajo del rival con vida útil ≤65' contra un ataque que llega por fuera"},
+              "razon": "bloque bajo del rival con vida útil ≤65' contra un ataque que llega por fuera",
+              "h2a": "verde", "h2b": "verde", "h2c": "ambar"},
+  "lecturaSad": {
+    "moduloOperativo": "Regresión al Nivel con gap favorable al local; módulo de goles habilitado",
+    "unXDos": {"texto": "Local con ventaja estructural; el empate es la cobertura",
+               "rangoAmpliado": false},
+    "contextoEmocional": "El visitante llega de dos derrotas y con el interino sin margen",
+    "datoEstructural": "Núcleo del local intacto hace tres temporadas; el visitante renovó seis titulares",
+    "paradoja": "El del mejor EFE es el que más depende de un solo hombre"
+  },
+  "tde": {
+    "ie": 58, "ieNivel": "ambar", "ise": 31, "iseNivel": "verde", "equipo": "b",
+    "tipologia": "repliegue por agotamiento", "ventana": "75-90'",
+    "disciplina43": false,
+    "vias": [{"nombre": "echada", "indice": 58, "ventana": "75-90'",
+              "detalle": "el bloque baja diez metros tras el primer gol en contra"}],
+    "falsador": "si sostiene la línea por encima de su área tras el 75', el índice está mal"
+  },
+  "timelineEventos": [
+    {"fecha": "2026-03-02", "equipo": "Nombre del club", "tipo": "tecnico",
+     "titulo": "Cambio de DT", "detalle": "sale tras 4 fechas sin ganar",
+     "destacado": true, "fuente": "Depor"}
+  ],
+  "timelineNarrativa": "Semestre de curva ascendente para el local; el visitante alterna.",
+  "cadena": {
+    "a": {"pronostico": "domina por fuera y define antes del 70'"},
+    "b": {"pronostico": "aguanta con bloque bajo y busca el contragolpe"}
+  },
   "pronostico": {
     "motor": "gap §5 a favor del local (+0.31)",
     "matriz": "52 / 27 / 21",
@@ -289,8 +365,7 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
     {"id": "ensayo", "cuerpo": "## La lectura\n\nTexto…"},
     {"id": "dtp", "cuerpo": "…"},
     {"id": "matriz", "cuerpo": "…"},
-    {"id": "tde", "cuerpo": "…"},
-    {"id": "timeline", "formato": "html", "cuerpo": "<section>…</section>"}
+    {"id": "tde", "cuerpo": "…"}
   ],
   "pendientes": ["XI de los dos equipos",
                  "TDE: no se encontró el dato de minutos del central 2"],
@@ -307,6 +382,12 @@ LEÉ EL RECIBO que devuelve el POST:
   Verificá el `fixtureId` contra la agenda y volvé a depositar.
 - `jugadores` con menos de los que escribiste = a esos les faltaba zona o rol
   y no entraron. Completalos y re-depositá (es idempotente: el último manda).
+- `eventosTimeline` en 0 habiendo mandado eventos = eran de tipo partido y se
+  descartaron, o les faltaba fecha o título.
+- `conLecturaSad` o `conTde` en false = ese bloque no llegó y la pestaña va a
+  salir vacía. Si fue a propósito (sin dato), anotalo en `pendientes`.
+- `cadena` vacía = no mandaste pronóstico por equipo y la película del equipo
+  no avanzó esta fecha.
 
 ## 8. CUANDO LLEGUE EL ONCE
 
@@ -345,6 +426,9 @@ hechos. No los escribas vos.
   oficial vs la prensa) → documentás LAS DOS y declarás la contradicción en
   `notas`. No la resuelvas en silencio.
 - Nada de revisiones con el resultado puesto.
+- `timelineEventos` solo acepta `institucional`, `tecnico`, `sancion` e `hito`.
+  Un evento de tipo `resultado`, `derrota` o `empate` se descarta al depositar:
+  esos los pone la app con el marcador de su propia ingesta.
 - Fuentes peruanas de referencia: futbolperuano.com, RPP, Ovación, Líbero,
   Depor, El Comercio.
 

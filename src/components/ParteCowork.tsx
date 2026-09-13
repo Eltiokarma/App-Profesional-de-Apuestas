@@ -10,13 +10,15 @@
 // publica el once a esa hora) y se muestra como dos ramas: el piso y el techo
 // razonable del impacto. Cuando el once aparece —de la ficha ya ingestada o
 // del pantallazo que el usuario pega aquí— el bloque se cierra al instante.
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type {
-  DisponibilidadParte, DocumentoParte, EquipoParte, JugadorParte, ParteCoworkDTO, RamaF, Semaforo, ZonaF,
+  DisponibilidadParte, DocumentoParte, EquipoParte, JugadorParte, ParteCoworkDTO, RamaF, Semaforo, TdeParte, ZonaF,
 } from '../api/types'
 import { parsearMd, type MdBloque, type MdInline } from '../lib/md'
 import { parsearOnce } from '../lib/once'
-import { resolverXiParte } from '../services/appdata'
+import { loadCalendarioSad, resolverXiParte, type PartidoCalendarioUI } from '../services/appdata'
+import { CalendarioSad } from './CalendarioSad'
+import { TimelineComparativo } from './TimelineComparativo'
 
 const COLOR: Record<Semaforo, string> = { verde: 'var(--up)', ambar: 'var(--mark)', rojo: 'var(--down)' }
 const SUAVE: Record<Semaforo, string> = { verde: 'var(--up-soft)', ambar: 'var(--mark-soft)', rojo: 'var(--down-soft)' }
@@ -368,17 +370,98 @@ function CajaOnce({ parte, matchId, onParte }: { parte: ParteCoworkDTO; matchId:
   )
 }
 
+function Indice({ etiqueta, valor, nivel, nota }: { etiqueta: string; valor: number; nivel?: Semaforo | ''; nota: string }) {
+  // sin nivel del skill se pinta en neutro: el backend no inventa umbrales
+  const col = nivel ? COLOR[nivel] : 'var(--t1)'
+  const fondo = nivel ? SUAVE[nivel] : 'var(--bg3)'
+  return (
+    <div style={{ flex: 1, minWidth: 120, padding: '11px 13px', borderRadius: 11, background: fondo, textAlign: 'center' }}>
+      <div style={{ font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px' }}>{etiqueta}</div>
+      <div style={{ font: '800 22px var(--mono)', color: col, fontVariantNumeric: 'tabular-nums' }}>{valor}</div>
+      <div style={{ font: '500 10px var(--sans)', color: 'var(--t3)' }}>{nota}</div>
+    </div>
+  )
+}
+
+/** Teorema del Echado: los dos índices opuestos con su ventana y su causa. */
+function PanelTde({ tde, nombreDe }: { tde: TdeParte; nombreDe: (l: 'a' | 'b') => string }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <section style={{ padding: '14px 16px', borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', marginBottom: 11 }}>
+          <span style={{ font: '700 10px var(--mono)', color: 'var(--accent)', letterSpacing: '.6px', textTransform: 'uppercase' }}>Teorema del Echado</span>
+          {tde.equipo && <span style={{ font: '600 11.5px var(--sans)', color: 'var(--t1)' }}>{nombreDe(tde.equipo as 'a' | 'b')}</span>}
+          {tde.disciplina43 && (
+            <span style={{ padding: '3px 9px', borderRadius: 7, background: 'var(--mark-soft)', color: 'var(--mark)', font: '700 9.5px var(--mono)' }}>
+              DISCIPLINA 43 · dos vías declaradas
+            </span>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 11 }}>
+          <Indice etiqueta="IE · ECHADA" valor={tde.ie ?? 0} nivel={tde.ieNivel} nota="repliegue sin control" />
+          <Indice etiqueta="ISE · SOBREEXPOSICIÓN" valor={tde.ise ?? 0} nivel={tde.iseNivel} nota="no replegar a tiempo" />
+          {tde.ventana && (
+            <div style={{ flex: 1, minWidth: 120, padding: '11px 13px', borderRadius: 11, background: 'var(--accent-soft)', textAlign: 'center' }}>
+              <div style={{ font: '700 9.5px var(--mono)', color: 'var(--accent)', letterSpacing: '.5px' }}>VENTANA</div>
+              <div style={{ font: '800 22px var(--mono)', color: 'var(--accent)' }}>{tde.ventana}</div>
+              <div style={{ font: '500 10px var(--sans)', color: 'var(--t3)' }}>tramo de riesgo</div>
+            </div>
+          )}
+        </div>
+        {tde.tipologia && (
+          <div style={{ display: 'flex', gap: 10, padding: '5px 0', borderBottom: '1px solid var(--line)' }}>
+            <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)', width: 96, flexShrink: 0, textTransform: 'uppercase', letterSpacing: '.3px' }}>Causa modal</span>
+            <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{tde.tipologia}</span>
+          </div>
+        )}
+        {(tde.vias ?? []).map((v, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '7px 0', borderBottom: '1px solid var(--line)' }}>
+            <span style={{ font: '700 10px var(--mono)', color: 'var(--t2)', width: 96, flexShrink: 0 }}>{v.nombre}</span>
+            <span style={{ font: '700 11px var(--mono)', color: 'var(--t1)', width: 42, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{v.indice}</span>
+            <span style={{ font: '600 10.5px var(--mono)', color: 'var(--t3)', width: 70, flexShrink: 0 }}>{v.ventana}</span>
+            <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0 }}>{v.detalle}</span>
+          </div>
+        ))}
+        {tde.falsador && (
+          <div style={{ marginTop: 10, padding: '9px 12px', borderRadius: 10, background: 'var(--bg3)' }}>
+            <span style={{ font: '700 9.5px var(--mono)', color: 'var(--mark)', letterSpacing: '.5px' }}>FALSADOR · </span>
+            <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{tde.falsador}</span>
+          </div>
+        )}
+      </section>
+    </div>
+  )
+}
+
 // ── la sección entera ───────────────────────────────────────────────────────
 
 interface Props {
   parte: ParteCoworkDTO
   matchId: string
+  /** claves internas de los equipos: el calendario del bloque G se pide por ahí */
+  equipoAKey: string
+  equipoBKey: string
   onParte: (p: ParteCoworkDTO) => void
   isMobile: boolean
 }
 
-export function ParteCowork({ parte, matchId, onParte, isMobile }: Props) {
-  const [tab, setTab] = useState<'bloques' | 'f' | 'lectura' | 'documentos'>('bloques')
+type Tab = 'bloques' | 'f' | 'matchup' | 'lectura' | 'tde' | 'calendario' | 'timeline' | 'documentos'
+
+export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, isMobile }: Props) {
+  const [tab, setTab] = useState<Tab>('bloques')
+
+  // el calendario (bloque G) se pide SOLO al abrir su pestaña: ya está
+  // calculado y es gratis, pero son dos requests que nadie pidió si el
+  // usuario no entra ahí
+  const [cal, setCal] = useState<Record<string, PartidoCalendarioUI[]>>({})
+  useEffect(() => {
+    if (tab !== 'calendario') return
+    for (const k of [equipoAKey, equipoBKey]) {
+      if (cal[k]) continue
+      loadCalendarioSad(k).then((ps) => setCal((prev) => ({ ...prev, [k]: ps }))).catch(() => { /* el calendario es una ayuda */ })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, equipoAKey, equipoBKey])
   const dosCol = isMobile ? '1fr' : '1fr 1fr'
   const pendienteXi = parte.estado !== 'confirmado'
   // qué lado sigue congelado: el once del local suele llegar antes que el del
@@ -387,10 +470,16 @@ export function ParteCowork({ parte, matchId, onParte, isMobile }: Props) {
   const faltan = (['a', 'b'] as const).filter((l) => !parte.equipos[l].disponibilidad.resuelto)
   const nombreDe = (l: 'a' | 'b') => (l === 'a' ? parte.partido.equipoA : parte.partido.equipoB)
   const p = parte.pronostico
-  const tabs: { k: typeof tab; label: string }[] = [
+  const ls = parte.lecturaSad
+  const conTde = !!(parte.tde && (parte.tde.tipologia || parte.tde.ie || parte.tde.ise || parte.tde.vias?.length))
+  const tabs: { k: Tab; label: string }[] = [
     { k: 'bloques', label: 'Bloques EFE' },
     { k: 'f', label: pendienteXi ? 'Bloque F · congelado' : 'Bloque F' },
-    { k: 'lectura', label: 'Matchup y pronóstico' },
+    { k: 'matchup', label: 'Matchup' },
+    { k: 'lectura', label: 'Lectura SAD' },
+    ...(conTde ? [{ k: 'tde' as Tab, label: 'Teorema del Echado' }] : []),
+    { k: 'calendario', label: 'Calendario' },
+    ...(parte.timeline ? [{ k: 'timeline' as Tab, label: 'Timeline' }] : []),
     { k: 'documentos', label: `Documentos (${parte.documentos.length})` },
   ]
 
@@ -472,15 +561,83 @@ export function ParteCowork({ parte, matchId, onParte, isMobile }: Props) {
         </div>
       )}
 
-      {tab === 'lectura' && (
+      {tab === 'matchup' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <section style={{ padding: '13px 16px', borderRadius: 14, textAlign: 'center', background: parte.matchup.diagnostico === 'FAVORABLE' ? 'var(--up-soft)' : parte.matchup.diagnostico === 'DESFAVORABLE' ? 'var(--down-soft)' : 'var(--bg2)', border: '1px solid var(--line)' }}>
             <div style={{ font: '800 14px var(--mono)', letterSpacing: '.5px', color: parte.matchup.diagnostico === 'FAVORABLE' ? 'var(--up)' : parte.matchup.diagnostico === 'DESFAVORABLE' ? 'var(--down)' : 'var(--t1)' }}>
               MATCHUP {parte.matchup.diagnostico}
-              {parte.matchup.favorece && ` · ${parte.matchup.favorece === 'a' ? parte.partido.equipoA : parte.partido.equipoB}`}
+              {parte.matchup.favorece && ` · ${nombreDe(parte.matchup.favorece as 'a' | 'b')}`}
             </div>
             <div style={{ font: '500 12px var(--sans)', color: 'var(--t1)', marginTop: 5 }}>{parte.matchup.razon}</div>
+            {/* los tres indicadores que SOSTIENEN el diagnóstico: sin ellos la
+                etiqueta de arriba no se puede discutir */}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 9, flexWrap: 'wrap' }}>
+              {([['h2a', 'explota la vulnerabilidad'], ['h2b', 'asimetría por zonas'], ['h2c', 'vida útil del planteo']] as const).map(([k, ayuda]) => {
+                const v = parte.matchup[k]
+                if (!v || v === 'na') return null
+                return (
+                  <span key={k} title={ayuda} style={{ padding: '3px 9px', borderRadius: 6, background: 'var(--bg)', font: '700 10px var(--mono)', color: COLOR[v as Semaforo] }}>
+                    {k.toUpperCase()} · {v}
+                  </span>
+                )
+              })}
+            </div>
           </section>
+
+          <div style={{ display: 'grid', gridTemplateColumns: dosCol, gap: 14 }}>
+            {(['a', 'b'] as const).map((lado) => {
+              const perfil = parte.equipos[lado].perfil
+              return (
+                <section key={lado} style={{ padding: '14px 16px', borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+                  <div style={{ font: '700 12.5px var(--sans)', marginBottom: 9 }}>{parte.equipos[lado].nombre}</div>
+                  {([['Sistema', perfil.sistema], ['Estilo', perfil.estilo], ['Fortaleza', perfil.fortaleza], ['Vulnerabilidad', perfil.vulnerabilidad]] as const).map(([k, v]) => (
+                    <div key={k} style={{ display: 'flex', gap: 10, padding: '5px 0', borderBottom: '1px solid var(--line)' }}>
+                      <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)', width: 96, flexShrink: 0, textTransform: 'uppercase', letterSpacing: '.3px' }}>{k}</span>
+                      <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{v || '—'}</span>
+                    </div>
+                  ))}
+                  {parte.equipos[lado].factorX.length > 0 && (
+                    <div style={{ marginTop: 10 }}>
+                      <div style={{ font: '700 9.5px var(--mono)', color: 'var(--mark)', letterSpacing: '.5px', marginBottom: 5 }}>FACTOR-X</div>
+                      {parte.equipos[lado].factorX.map((f, i) => (
+                        <div key={i} style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', marginBottom: 3 }}>
+                          <b style={{ color: 'var(--t2)' }}>{f.nombre}</b> — {f.contexto}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {tab === 'lectura' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* LA LECTURA SAD: el juicio que cierra el EFE. No se puede calcular
+              y por eso tiene sitio propio en vez de diluirse en el ensayo. */}
+          <div style={{ display: 'grid', gridTemplateColumns: dosCol, gap: 14 }}>
+            {([
+              ['Módulo operativo', ls.moduloOperativo],
+              ['1X2', ls.unXDos.texto + (ls.unXDos.rangoAmpliado ? ' · rango ampliado ±10% (FACTOR-X)' : '')],
+              ['Contexto emocional', ls.contextoEmocional],
+              ['Dato estructural', ls.datoEstructural],
+            ] as const).map(([titulo, texto]) => (
+              <section key={titulo} style={{ padding: '13px 16px', borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+                <div style={{ font: '700 10px var(--mono)', color: 'var(--accent)', letterSpacing: '.6px', textTransform: 'uppercase', marginBottom: 6 }}>{titulo}</div>
+                <div style={{ font: '500 12.5px var(--sans)', color: texto.trim() ? 'var(--t1)' : 'var(--t3)', lineHeight: 1.5 }}>
+                  {texto.trim() || 'sin dato — el parte llegó sin esta lectura'}
+                </div>
+              </section>
+            ))}
+          </div>
+          {ls.paradoja && (
+            <section style={{ padding: '13px 16px', borderRadius: 14, background: 'var(--mark-soft)', border: '1px solid color-mix(in oklch,var(--mark),transparent 55%)' }}>
+              <div style={{ font: '700 10px var(--mono)', color: 'var(--mark)', letterSpacing: '.6px', marginBottom: 6 }}>⚖️ PARADOJA DEL PARTIDO</div>
+              <div style={{ font: '500 12.5px var(--sans)', color: 'var(--t1)', lineHeight: 1.5 }}>{ls.paradoja}</div>
+            </section>
+          )}
 
           <section style={{ padding: '14px 16px', borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
             <div style={{ font: '700 10px var(--mono)', color: 'var(--accent)', letterSpacing: '.6px', textTransform: 'uppercase', marginBottom: 9 }}>Pronóstico · tres fuentes declaradas</div>
@@ -512,22 +669,26 @@ export function ParteCowork({ parte, matchId, onParte, isMobile }: Props) {
             )}
           </section>
 
-          <div style={{ display: 'grid', gridTemplateColumns: dosCol, gap: 14 }}>
-            {(['a', 'b'] as const).map((lado) => {
-              const perfil = parte.equipos[lado].perfil
-              return (
-                <section key={lado} style={{ padding: '14px 16px', borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
-                  <div style={{ font: '700 12.5px var(--sans)', marginBottom: 9 }}>{parte.equipos[lado].nombre}</div>
-                  {([['Sistema', perfil.sistema], ['Estilo', perfil.estilo], ['Fortaleza', perfil.fortaleza], ['Vulnerabilidad', perfil.vulnerabilidad]] as const).map(([k, v]) => (
-                    <div key={k} style={{ display: 'flex', gap: 10, padding: '5px 0', borderBottom: '1px solid var(--line)' }}>
-                      <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)', width: 96, flexShrink: 0, textTransform: 'uppercase', letterSpacing: '.3px' }}>{k}</span>
-                      <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{v || '—'}</span>
-                    </div>
-                  ))}
+          {/* CAJA DE SENSIBILIDAD: el hueco declarado, con cuánto movería */}
+          {(['a', 'b'] as const).some((l) => parte.equipos[l].sensibilidad?.length > 0) && (
+            <div style={{ display: 'grid', gridTemplateColumns: dosCol, gap: 14 }}>
+              {(['a', 'b'] as const).map((lado) => (
+                <section key={lado} style={{ padding: '13px 16px', borderRadius: 14, background: 'var(--bg2)', border: '1px dashed var(--line)' }}>
+                  <div style={{ font: '700 10px var(--mono)', color: 'var(--t3)', letterSpacing: '.6px', marginBottom: 7 }}>
+                    CAJA DE SENSIBILIDAD · {parte.equipos[lado].nombre}
+                  </div>
+                  {(parte.equipos[lado].sensibilidad ?? []).length === 0
+                    ? <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t3)' }}>sin huecos declarados</div>
+                    : (parte.equipos[lado].sensibilidad ?? []).map((x, i) => (
+                      <div key={i} style={{ display: 'flex', gap: 10, padding: '5px 0', borderBottom: '1px solid var(--line)' }}>
+                        <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t2)', flex: 1, minWidth: 0 }}>si {x.supuesto}</span>
+                        <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0 }}>→ {x.efecto}</span>
+                      </div>
+                    ))}
                 </section>
-              )
-            })}
-          </div>
+              ))}
+            </div>
+          )}
 
           {parte.pendientes.length > 0 && (
             <section style={{ padding: '13px 16px', borderRadius: 14, background: 'var(--bg2)', border: '1px dashed var(--line)' }}>
@@ -542,6 +703,27 @@ export function ParteCowork({ parte, matchId, onParte, isMobile }: Props) {
             <div style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)', wordBreak: 'break-word' }}>Fuentes: {parte.fuentes.join(' · ')}</div>
           )}
         </div>
+      )}
+
+      {tab === 'tde' && <PanelTde tde={parte.tde} nombreDe={nombreDe} />}
+
+      {/* BLOQUE G: el calendario NO viene en el parte — se calcula de nuestra
+          base y se pinta con la misma pieza que el resto de la app */}
+      {tab === 'calendario' && (
+        <div style={{ display: 'grid', gridTemplateColumns: dosCol, gap: 14 }}>
+          {([[equipoAKey, parte.partido.equipoA], [equipoBKey, parte.partido.equipoB]] as const).map(([key, nombre]) => (
+            <CalendarioSad key={key} titulo={nombre} partidos={cal[key] ?? []} loading={!cal[key]} />
+          ))}
+        </div>
+      )}
+
+      {tab === 'timeline' && parte.timeline && (
+        <>
+          <div style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)', marginBottom: 10 }}>
+            Lo institucional lo escribió Cowork; los partidos, la jornada y el marcador los calcula el backend de nuestra base.
+          </div>
+          <TimelineComparativo data={parte.timeline} isMobile={isMobile} />
+        </>
       )}
 
       {tab === 'documentos' && (

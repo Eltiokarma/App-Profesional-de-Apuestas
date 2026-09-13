@@ -1507,6 +1507,69 @@ components:
             properties:
               nombre: { type: string }
               contexto: { type: string }
+        sensibilidad:
+          type: array
+          description: 'caja de sensibilidad: qué cambiaría si el dato que falta fuera otro'
+          items:
+            type: object
+            properties:
+              supuesto: { type: string }
+              efecto: { type: string }
+    LecturaSadParte:
+      type: object
+      description: El juicio que cierra el EFE. No se puede calcular; por eso lo escribe Cowork.
+      properties:
+        moduloOperativo: { type: string }
+        unXDos:
+          type: object
+          properties:
+            texto: { type: string }
+            rangoAmpliado: { type: boolean, description: '±10% por FACTOR-X' }
+        contextoEmocional: { type: string }
+        datoEstructural: { type: string }
+        paradoja: { type: string, description: '"" si no hay paradoja' }
+    TdeParte:
+      type: object
+      description: >
+        Teorema del Echado. Los NIVELES (ieNivel/iseNivel) llegan del skill: el backend no
+        pone umbrales a una escala que vive en otro lado, y sin nivel la pantalla pinta el
+        número en neutro.
+      properties:
+        ie: { type: number, description: 'Índice de Echada' }
+        ieNivel: { type: string, enum: [verde, ambar, rojo, ''] }
+        ise: { type: number, description: 'Índice de Sobreexposición' }
+        iseNivel: { type: string, enum: [verde, ambar, rojo, ''] }
+        equipo: { type: string, enum: [a, b, ''], description: 'de quién se estima' }
+        tipologia: { type: string, description: 'la causa modal entre las seis tipologías' }
+        ventana: { type: string, description: "la ventana de 15 minutos, ej. \"75-90'\"" }
+        disciplina43: { type: boolean, description: 'true = se declaran las dos vías por separado' }
+        vias:
+          type: array
+          items:
+            type: object
+            properties:
+              nombre: { type: string }
+              indice: { type: number }
+              ventana: { type: string }
+              detalle: { type: string }
+        falsador: { type: string }
+    EventoTimelineParte:
+      type: object
+      description: >
+        Evento INSTITUCIONAL del timeline. Los partidos NO entran por aquí: el marcador,
+        la jornada y el enfrentamiento directo los calcula backend/cronologia.py de
+        nuestra base, y un evento de tipo resultado/derrota/empate se descarta al normalizar.
+      required: [fecha, titulo, tipo]
+      properties:
+        fecha: { type: string, description: 'YYYY-MM-DD, o ~YYYY-MM si es aproximada' }
+        aproximada: { type: boolean }
+        equipo: { type: string, description: 'nombre del equipo, o "ambos"' }
+        tipo: { type: string, enum: [institucional, tecnico, sancion, hito] }
+        titulo: { type: string }
+        detalle: { type: string }
+        destacado: { type: boolean }
+        alertaRelacionada: { type: string }
+        fuente: { type: string }
     ParteCoworkEntrada:
       type: object
       required: [fixtureId, equipos]
@@ -1528,6 +1591,25 @@ components:
             diagnostico: { type: string, enum: [FAVORABLE, NEUTRO, DESFAVORABLE] }
             favorece: { type: string, enum: [a, b, ''] }
             razon: { type: string }
+            h2a: { type: string, enum: [verde, ambar, rojo, na] }
+            h2b: { type: string, enum: [verde, ambar, rojo, na] }
+            h2c: { type: string, enum: [verde, ambar, rojo, na] }
+        lecturaSad: { $ref: '#/components/schemas/LecturaSadParte' }
+        tde: { $ref: '#/components/schemas/TdeParte' }
+        timelineEventos:
+          type: array
+          description: 'solo lo institucional; los partidos los pone el backend'
+          items: { $ref: '#/components/schemas/EventoTimelineParte' }
+        timelineNarrativa: { type: string }
+        cadena:
+          type: object
+          description: >
+            El pronóstico clave por equipo foco. Entra en cadena_dtp (la película del
+            equipo, página de Equipo) como APERTURA: el veredicto lo emite después quien
+            cierre el eslabón, que es lo que lo hace auditable.
+          properties:
+            a: { type: object, properties: { pronostico: { type: string } } }
+            b: { type: object, properties: { pronostico: { type: string } } }
         pronostico: { $ref: '#/components/schemas/PronosticoParte' }
         documentos:
           type: array
@@ -1658,6 +1740,7 @@ components:
         plantel: { type: array, items: { $ref: '#/components/schemas/JugadorParte' } }
         fuera: { type: array, items: { type: object, additionalProperties: true } }
         factorX: { type: array, items: { type: object, additionalProperties: true } }
+        sensibilidad: { type: array, items: { type: object, additionalProperties: true } }
         disponibilidad: { $ref: '#/components/schemas/DisponibilidadParte' }
     ParteCowork:
       type: object
@@ -1672,6 +1755,8 @@ components:
             equipoA: { type: string }
             equipoB: { type: string }
             fecha: { type: string }
+            equipoAId: { type: integer, description: 'para pedir el calendario del bloque G' }
+            equipoBId: { type: integer }
         equipos:
           type: object
           properties:
@@ -1681,6 +1766,16 @@ components:
         matchup:
           type: object
           additionalProperties: true
+        lecturaSad: { $ref: '#/components/schemas/LecturaSadParte' }
+        tde: { $ref: '#/components/schemas/TdeParte' }
+        timeline:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: >
+            TimelineData listo para pintar: lo institucional del parte fundido con los
+            partidos calculados. Se arma AL LEER, no al depositar, para que una corrección
+            de la ingesta se refleje sin re-depositar nada.
         pronostico: { $ref: '#/components/schemas/PronosticoParte' }
         documentos: { type: array, items: { $ref: '#/components/schemas/DocumentoParte' } }
         pendientes: { type: array, items: { type: string } }
@@ -1712,6 +1807,13 @@ components:
           items: { type: string }
           description: 'nombres que mandó Cowork y no casan con el fixture: se declaran, no se corrigen en silencio'
         xiResuelto: { type: boolean }
+        eventosTimeline: { type: integer }
+        cadena:
+          type: array
+          items: { type: string }
+          description: 'equipos foco cuya cadena recibió el pronóstico'
+        conLecturaSad: { type: boolean }
+        conTde: { type: boolean }
     PartePendiente:
       type: object
       required: [fixtureId, partido, faltaXi]
