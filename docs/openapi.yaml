@@ -562,6 +562,103 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: '#/components/schemas/AnalisisRegistro' } }
+  /analisis/cowork/agenda:
+    get:
+      summary: Los partidos del día ordenados por prioridad (paso 1 del batch de Cowork)
+      description: >
+        Calculado de nuestra base con el criterio del protocolo (Liga 1 Perú, derbi de
+        ciudad, copa internacional, liga grande con equipo arriba o en crisis, choque del
+        top 6 europeo). Sin `fecha`, el día siguiente en UTC. Los descartados viajan con
+        su motivo. Cero créditos.
+      parameters:
+        - { name: fecha, in: query, schema: { type: string, format: date } }
+        - { name: limite, in: query, schema: { type: integer, default: 4, minimum: 1, maximum: 20 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgendaCowork' }
+  /analisis/cowork/pendientes:
+    get:
+      summary: Partes que todavía esperan el once
+      parameters:
+        - { name: limite, in: query, schema: { type: integer, default: 50, minimum: 1, maximum: 200 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/PartePendiente' }
+  /analisis/cowork:
+    post:
+      summary: Deposita el parte de análisis de un partido (idempotente por fixtureId)
+      description: >
+        El camino barato: Cowork escribe el análisis con la suscripción y lo deposita.
+        NO hay que mandar total, máximo alcanzable, porcentaje, clasificación, IP,
+        reducción por zona, ramas A/B, F3, F4 ni los nombres/fecha del partido: todo eso
+        lo calcula el backend y se ignora si llega. Ver docs/COWORK.md.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ParteCoworkEntrada' }
+      responses:
+        '200':
+          description: Recibo del depósito
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReciboParte' }
+        '422': { description: 'fixtureId ausente o desconocido, o equipos vacíos' }
+  /analisis/cowork/{fixtureId}:
+    get:
+      summary: El parte con lo calculable ya calculado (lectura pura, cero créditos)
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ParteCowork' }
+        '404': { description: No hay parte para ese fixture }
+    delete:
+      summary: Descarta el parte (y su once) para volver a depositarlo limpio
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Borrado }
+        '404': { description: No hay parte para ese fixture }
+  /analisis/cowork/{fixtureId}/xi:
+    post:
+      summary: Llega el once y se cierra el bloque F — en local, gratis y al instante
+      description: >
+        Tres caminos: `desdeFicha` (lo que ya capturó API-Football), el once a mano en
+        `a`/`b` (el pantallazo que el usuario le pasa a Cowork), o los dos mezclados.
+        Recalcula IP, reducción por zona, F3 y F4 con las fórmulas del protocolo: ningún
+        modelo interviene. Si el once no casa con la tabla del parte (menos de 7 nombres),
+        el bloque NO se cierra y se devuelve el conflicto declarado.
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                a: { $ref: '#/components/schemas/XiLado' }
+                b: { $ref: '#/components/schemas/XiLado' }
+                desdeFicha: { type: boolean, default: false }
+      responses:
+        '200':
+          description: El parte recalculado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ParteCowork' }
+        '409': { description: 'No hay parte, o la ficha todavía no trae alineaciones' }
 components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer }
@@ -1336,3 +1433,315 @@ components:
         cuota: { type: number }
         casas: { type: integer, description: 'nº de bookmakers promediados en la captura' }
         capturadoEn: { type: string, format: date-time }
+    XiLado:
+      type: object
+      description: El once de un lado tal como se lee de la hoja o del pantallazo
+      properties:
+        once: { type: array, items: { type: string }, description: 'los 11 titulares' }
+        banca: { type: array, items: { type: string } }
+        formacion: { type: string }
+        fuente: { type: string, description: 'pantallazo BeSoccer, rueda de prensa, cuenta oficial…' }
+    JugadorParte:
+      type: object
+      description: Una fila de la tabla F1. Sin zona o sin rol no entra (no pesaría en ninguna fórmula).
+      required: [nombre, zona, rol]
+      properties:
+        nombre: { type: string }
+        posicion: { type: string }
+        zona: { type: string, enum: [GK, DEF, MID, ATK] }
+        rol: { type: string, enum: [TF, TH, ROT, SUP], description: 'TF 🔴×3 · TH 🟠×2 · ROT 🟡×1 · SUP ⚪×0.5' }
+        apps: { type: string, description: 'titularidades, ej. "12/15"' }
+        estado: { type: string, enum: ['', disponible, baja, duda], description: 'lo pone el backend al resolver el once' }
+        motivo: { type: string }
+    EquipoParteEntrada:
+      type: object
+      description: Lo que Cowork escribe de un equipo. a = local, b = visitante.
+      properties:
+        nombre: { type: string, description: 'opcional; si no casa con el fixture se declara la discrepancia' }
+        bloques:
+          type: object
+          description: 'sub-scores CRUDOS del protocolo (A ≤4, B ≤6, C ≤4, D ≤4, E ≤3); el ponderado lo calcula el backend'
+          properties:
+            A: { type: number }
+            B: { type: number }
+            C: { type: number }
+            D: { type: number }
+            E: { type: number }
+        excluidos:
+          type: object
+          description: 'letra → motivo; un bloque excluido no suma ni al total ni al máximo'
+          additionalProperties: { type: string }
+        notas:
+          type: object
+          description: 'letra → una línea justificando el sub-score'
+          additionalProperties: { type: string }
+        dt:
+          type: object
+          properties:
+            nombre: { type: string }
+            meses: { type: number }
+        perfil:
+          type: object
+          properties:
+            sistema: { type: string }
+            estilo: { type: string }
+            fortaleza: { type: string }
+            vulnerabilidad: { type: string }
+        plantel:
+          type: array
+          description: 'los 14-16 jugadores relevantes (tabla F1), SIN estado'
+          items: { $ref: '#/components/schemas/JugadorParte' }
+        fuera:
+          type: array
+          description: 'lo que ya es público la noche anterior: lesiones largas, sanciones, selección'
+          items:
+            type: object
+            properties:
+              nombre: { type: string }
+              estado: { type: string, enum: [baja, duda] }
+              motivo: { type: string }
+        factorX:
+          type: array
+          items:
+            type: object
+            properties:
+              nombre: { type: string }
+              contexto: { type: string }
+    ParteCoworkEntrada:
+      type: object
+      required: [fixtureId, equipos]
+      properties:
+        fixtureId: { type: integer, description: 'de /analisis/cowork/agenda' }
+        version: { type: string, default: cowork/1 }
+        generadoEn: { type: string }
+        equipos:
+          type: object
+          properties:
+            a: { $ref: '#/components/schemas/EquipoParteEntrada' }
+            b: { $ref: '#/components/schemas/EquipoParteEntrada' }
+        alertas:
+          type: array
+          items: { $ref: '#/components/schemas/AlertaParte' }
+        matchup:
+          type: object
+          properties:
+            diagnostico: { type: string, enum: [FAVORABLE, NEUTRO, DESFAVORABLE] }
+            favorece: { type: string, enum: [a, b, ''] }
+            razon: { type: string }
+        pronostico: { $ref: '#/components/schemas/PronosticoParte' }
+        documentos:
+          type: array
+          items: { $ref: '#/components/schemas/DocumentoParte' }
+        pendientes: { type: array, items: { type: string } }
+        fuentes: { type: array, items: { type: string } }
+        descartados: { type: array, items: { type: string } }
+        notas: { type: string }
+    AlertaParte:
+      type: object
+      required: [codigo]
+      properties:
+        codigo: { type: string, description: 'T.54, R-KT.2, GK-DOWNGRADE, F3…' }
+        equipo: { type: string, enum: [a, b, global] }
+        tipo: { type: string, enum: [estructural, fecha] }
+        detalle: { type: string }
+    PronosticoParte:
+      type: object
+      description: Las tres fuentes van declaradas en simultáneo (Disciplina 33); ninguna reemplaza a otra.
+      properties:
+        motor: { type: string }
+        matriz: { type: string }
+        mercado: { type: string }
+        probabilidades:
+          type: object
+          properties:
+            local: { type: number }
+            empate: { type: number }
+            visita: { type: number }
+        marcador: { type: string }
+        falsador: { type: string, description: 'la condición observable que declara fallado el pronóstico' }
+    DocumentoParte:
+      type: object
+      required: [id, cuerpo]
+      properties:
+        id: { type: string, description: 'dtp, matriz, tde, ensayo, timeline, pendientes o el que sea' }
+        titulo: { type: string }
+        formato: { type: string, enum: [md, html, texto], default: md }
+        cuerpo: { type: string }
+    BloqueParte:
+      type: object
+      required: [score, max, peso, ponderado, topePonderado, excluido]
+      properties:
+        score: { type: number }
+        max: { type: number }
+        peso: { type: number }
+        ponderado: { type: number, description: 'score × peso, calculado por el backend' }
+        topePonderado: { type: number }
+        excluido: { type: boolean }
+        motivoExclusion: { type: string }
+        nota: { type: string }
+    DisponibilidadParte:
+      type: object
+      description: >
+        El bloque F. Con once resuelto trae ip/reduccion/f4; sin once trae las dos ramas
+        pre-calculadas y `resuelto: false`. `conflicto` aparece cuando el once recibido no
+        casa con la tabla: el bloque se queda congelado en vez de publicar un IP falso.
+      required: [resuelto]
+      properties:
+        resuelto: { type: boolean }
+        sinTabla: { type: boolean }
+        fuente: { type: string }
+        capturadoEn: { type: string }
+        formacion: { type: string }
+        nota: { type: string }
+        conflicto: { type: string }
+        ip: { type: number }
+        ipNivel: { type: string, enum: [verde, ambar, rojo] }
+        reduccion:
+          type: object
+          properties:
+            GK: { type: number }
+            DEF: { type: number }
+            MID: { type: number }
+            ATK: { type: number }
+        reduccionNivel:
+          type: object
+          additionalProperties: { type: string, enum: [verde, ambar, rojo] }
+        multiplicadorGk: { type: boolean }
+        zonasCriticas: { type: array, items: { type: string } }
+        fuera:
+          type: array
+          items:
+            type: object
+            properties:
+              nombre: { type: string }
+              zona: { type: string }
+              rol: { type: string }
+              estado: { type: string }
+              motivo: { type: string }
+              impacto: { type: number }
+        f4:
+          type: object
+          properties:
+            rotados: { type: integer }
+            nombres: { type: array, items: { type: string } }
+            diagnostico: { type: string }
+        jugadores: { type: array, items: { $ref: '#/components/schemas/JugadorParte' } }
+        dudas: { type: array, items: { type: string }, description: 'nombres que casan con más de un jugador: no se resuelven' }
+        noReconocidos: { type: array, items: { type: string } }
+        casados: { type: integer }
+        once: { type: integer }
+        ramas:
+          type: object
+          description: 'solo sin once: rama a = juegan todos los disponibles conocidos; rama b = además falta el 🔴 más pesado'
+          additionalProperties: true
+    EquipoParte:
+      type: object
+      description: El equipo tal como lo sirve el backend, con lo calculable ya calculado.
+      required: [nombre, bloques, total, maximoAlcanzable, porcentaje, clasificacion, disponibilidad]
+      properties:
+        nombre: { type: string }
+        bloques:
+          type: object
+          additionalProperties: { $ref: '#/components/schemas/BloqueParte' }
+        total: { type: number }
+        maximoAlcanzable: { type: number, description: '27 con bloque C, 23 sin él' }
+        porcentaje: { type: number }
+        clasificacion: { type: string, enum: [FORMADO, EN_FORMACION, SIN_FORMACION] }
+        dt:
+          type: object
+          properties:
+            nombre: { type: string }
+            meses: { type: number }
+        perfil:
+          type: object
+          additionalProperties: { type: string }
+        plantel: { type: array, items: { $ref: '#/components/schemas/JugadorParte' } }
+        fuera: { type: array, items: { type: object, additionalProperties: true } }
+        factorX: { type: array, items: { type: object, additionalProperties: true } }
+        disponibilidad: { $ref: '#/components/schemas/DisponibilidadParte' }
+    ParteCowork:
+      type: object
+      required: [fixtureId, estado, partido, equipos]
+      properties:
+        fixtureId: { type: integer }
+        estado: { type: string, enum: [pendiente_xi, confirmado] }
+        version: { type: string }
+        partido:
+          type: object
+          properties:
+            equipoA: { type: string }
+            equipoB: { type: string }
+            fecha: { type: string }
+        equipos:
+          type: object
+          properties:
+            a: { $ref: '#/components/schemas/EquipoParte' }
+            b: { $ref: '#/components/schemas/EquipoParte' }
+        alertas: { type: array, items: { $ref: '#/components/schemas/AlertaParte' } }
+        matchup:
+          type: object
+          additionalProperties: true
+        pronostico: { $ref: '#/components/schemas/PronosticoParte' }
+        documentos: { type: array, items: { $ref: '#/components/schemas/DocumentoParte' } }
+        pendientes: { type: array, items: { type: string } }
+        fuentes: { type: array, items: { type: string } }
+        notas: { type: string }
+        xi:
+          type: object
+          description: 'el once guardado por lado (sin la banca), con su fuente'
+          additionalProperties: true
+        creadoEn: { type: string }
+        actualizadoEn: { type: string }
+    ReciboParte:
+      type: object
+      required: [fixtureId, partido, estado]
+      properties:
+        fixtureId: { type: integer }
+        partido: { type: string, description: 'los nombres de NUESTRA base, no los del depósito' }
+        fecha: { type: string }
+        estado: { type: string, enum: [guardado, actualizado] }
+        jugadores:
+          type: object
+          properties:
+            a: { type: integer }
+            b: { type: integer }
+        documentos: { type: array, items: { type: string } }
+        alertas: { type: integer }
+        discrepancias:
+          type: array
+          items: { type: string }
+          description: 'nombres que mandó Cowork y no casan con el fixture: se declaran, no se corrigen en silencio'
+        xiResuelto: { type: boolean }
+    PartePendiente:
+      type: object
+      required: [fixtureId, partido, faltaXi]
+      properties:
+        fixtureId: { type: integer }
+        fecha: { type: string }
+        partido: { type: string }
+        faltaXi: { type: array, items: { type: string, enum: [a, b] } }
+        actualizadoEn: { type: string }
+    AgendaItem:
+      type: object
+      required: [fixtureId, partido, prioridad, motivo]
+      properties:
+        fixtureId: { type: integer }
+        hora: { type: string }
+        partido: { type: string }
+        equipoA: { type: string }
+        equipoB: { type: string }
+        liga: { type: string }
+        pais: { type: string, nullable: true }
+        prioridad: { type: integer, description: '1-5 del protocolo; 0 = descartado' }
+        motivo: { type: string }
+        etiquetas: { type: array, items: { type: string } }
+        parte: { type: string, description: 'estado del parte ya depositado, "" si no hay' }
+    AgendaCowork:
+      type: object
+      required: [fecha, analizar, enEspera, descartados]
+      properties:
+        fecha: { type: string, format: date }
+        analizar: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
+        enEspera: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
+        descartados: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
+        nota: { type: string }

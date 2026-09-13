@@ -1909,3 +1909,104 @@ def analisis_partido(fixture_id: int):
     """Todo lo emitido para un fixture (lectura pura, cero créditos)."""
     from backend.analisis import motor as efemotor
     return efemotor.analisis_del_partido(fixture_id)
+
+
+# ---------------------------------------------------------------------------
+# parte de Cowork — el análisis escrito con la suscripción (docs/COWORK.md)
+# ---------------------------------------------------------------------------
+# El camino barato: Cowork analiza de noche y DEPOSITA aquí; el backend guarda,
+# calcula lo que es aritmética (totales, IP, reducción por zona, ramas del
+# bloque F) y lo sirve. Cero créditos de la API de Claude — el motor de
+# /analisis/efe queda de emergencia.
+#
+# Misma excepción documentada de solo-lectura que el resto de /analisis:
+# escribe efe.db (tabla parte_cowork), nunca las DBs del SAD. El POST va
+# protegido por el bearer global (SAD_API_TOKEN), que es la credencial que
+# lleva Cowork.
+
+
+class XiLadoBody(BaseModel):
+    once: list[str] = []
+    banca: list[str] = []
+    formacion: str = ""
+    fuente: str = ""   # "pantallazo BeSoccer", "rueda de prensa", …
+
+
+class XiBody(BaseModel):
+    a: XiLadoBody | None = None
+    b: XiLadoBody | None = None
+    # sin ningún once en el cuerpo se intenta con la ficha ya ingestada
+    desdeFicha: bool = False
+
+
+@app.get(API + "/analisis/cowork/agenda")
+def cowork_agenda(
+    fecha: date_t | None = None,
+    limite: int = Query(default=4, ge=1, le=20),
+):
+    """Los partidos del día ordenados por prioridad — paso 1 del batch.
+
+    Calculado de nuestra base con el criterio del protocolo (Liga 1 Perú,
+    derbi de ciudad, copa internacional, liga grande con equipo arriba o en
+    crisis, choque del top 6 europeo). Sin `fecha`, el día siguiente en UTC.
+    Los descartados viajan con su motivo: un descarte sin motivo no se audita."""
+    from backend.analisis import parte as cowork
+    return cowork.agenda(fecha, limite)
+
+
+@app.get(API + "/analisis/cowork/pendientes")
+def cowork_pendientes(limite: int = Query(default=50, ge=1, le=200)):
+    """Partes que todavía esperan once. Lo primero que se mira al despertar."""
+    from backend.analisis import parte as cowork
+    return cowork.pendientes(limite)
+
+
+@app.post(API + "/analisis/cowork")
+def cowork_depositar(payload: dict):
+    """Deposita el parte de un partido (idempotente por fixtureId).
+
+    Lo que NO hay que mandar porque lo calcula el backend: total, máximo
+    alcanzable, porcentaje, clasificación, IP, reducción por zona, ramas A/B,
+    F3, F4, y los nombres/fecha del partido. Ver docs/COWORK.md."""
+    from backend.analisis import parte as cowork
+    try:
+        return cowork.guardar(payload)
+    except cowork.ParteInvalido as e:
+        raise HTTPException(422, str(e))
+
+
+@app.get(API + "/analisis/cowork/{fixture_id}")
+def cowork_parte(fixture_id: int):
+    """El parte con lo calculable ya calculado (lectura pura, cero créditos)."""
+    from backend.analisis import parte as cowork
+    dto = cowork.dto(fixture_id)
+    if not dto:
+        raise HTTPException(404, f"no hay parte de Cowork para el fixture {fixture_id}")
+    return dto
+
+
+@app.delete(API + "/analisis/cowork/{fixture_id}")
+def cowork_borrar(fixture_id: int):
+    """Descarta el parte (y su once) para volver a depositarlo limpio."""
+    from backend.analisis import parte as cowork
+    if not cowork.borrar(fixture_id):
+        raise HTTPException(404, f"no hay parte de Cowork para el fixture {fixture_id}")
+    return {"borrado": fixture_id}
+
+
+@app.post(API + "/analisis/cowork/{fixture_id}/xi")
+def cowork_xi(fixture_id: int, body: XiBody):
+    """Llega el once y se cierra el bloque F — en local, gratis y al instante.
+
+    Tres caminos, mismo resultado: `desdeFicha` (lo que ya capturó
+    API-Football), el once a mano en `a`/`b` (el pantallazo que el usuario le
+    pasa a Cowork), o los dos mezclados. Recalcula IP, reducción por zona,
+    F3 y F4 con las fórmulas del protocolo: ningún modelo interviene."""
+    from backend.analisis import parte as cowork
+    onces = {l: v.model_dump() for l, v in (("a", body.a), ("b", body.b)) if v and v.once}
+    try:
+        if onces:
+            return cowork.resolver_xi(fixture_id, onces)
+        return cowork.resolver_desde_ficha(fixture_id)
+    except cowork.ParteInvalido as e:
+        raise HTTPException(409, str(e))

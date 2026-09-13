@@ -1,7 +1,7 @@
 // Análisis EFE y timeline de muestra para el modo demo (espejo de
 // backend/analisis/demo.py): permiten desarrollar y probar la sección
 // Análisis sin API ni créditos. Regla del proyecto: la simulación vive SOLO en demo.
-import type { EfeBloque, EfeComparativo, EfeEquipo, EslabonDtpDTO, TimelineData, TlEvento } from '../api/types'
+import type { BloqueParte, EfeBloque, EfeComparativo, EfeEquipo, EquipoParte, EslabonDtpDTO, JugadorParte, ParteCoworkDTO, RamaF, RolF, TimelineData, TlEvento, ZonaF } from '../api/types'
 
 export function timelineDemo(equipoA: string, equipoB: string): TimelineData {
   const ev = (fecha: string, equipo: string, tipo: TlEvento['tipo'], titulo: string, detalle: string, marcador = '', jornada = 0, destacado = false): TlEvento => ({
@@ -171,5 +171,97 @@ export function dtpDemo(foco: string, rival: string): EslabonDtpDTO {
       veredicto: 'parcial' as const,
       leccion: 'La cobertura del carril débil manda sobre la posesión',
     },
+  }
+}
+
+/** Parte de Cowork de muestra (espejo de lo que deposita el batch nocturno).
+ *  Llega con el bloque F congelado y las dos ramas, que es el estado normal
+ *  la noche anterior: ninguna fuente publica el once a esa hora. */
+export function parteCoworkDemo(fixtureId: number, equipoA: string, equipoB: string): ParteCoworkDTO {
+  const bloque = (score: number, max: number, peso: number, nota: string, excluido = false, motivo = ''): BloqueParte => ({
+    score: excluido ? 0 : score, max, peso,
+    ponderado: excluido ? 0 : +(score * peso).toFixed(2), topePonderado: +(max * peso).toFixed(2),
+    excluido, motivoExclusion: motivo, nota,
+  })
+  const jug = (nombre: string, zona: ZonaF, rol: RolF, posicion: string, apps: string): JugadorParte =>
+    ({ nombre, zona, rol, posicion, apps, estado: '', motivo: '' })
+  const plantel = (p: string): JugadorParte[] => [
+    jug(`${p} · Arquero`, 'GK', 'TF', 'Portero', '18/18'),
+    jug(`${p} · Arquero suplente`, 'GK', 'SUP', 'Portero', '0/18'),
+    jug(`${p} · Lateral derecho`, 'DEF', 'TF', 'Lateral', '16/18'),
+    jug(`${p} · Central 1`, 'DEF', 'TF', 'Central', '17/18'),
+    jug(`${p} · Central 2`, 'DEF', 'TH', 'Central', '11/18'),
+    jug(`${p} · Lateral izquierdo`, 'DEF', 'TH', 'Lateral', '12/18'),
+    jug(`${p} · Pivote`, 'MID', 'TF', 'Volante', '17/18'),
+    jug(`${p} · Interior`, 'MID', 'TH', 'Volante', '13/18'),
+    jug(`${p} · Enganche`, 'MID', 'ROT', 'Mediapunta', '7/18'),
+    jug(`${p} · Extremo derecho`, 'ATK', 'TF', 'Extremo', '15/18'),
+    jug(`${p} · Extremo izquierdo`, 'ATK', 'ROT', 'Extremo', '8/18'),
+    jug(`${p} · Delantero`, 'ATK', 'TF', 'Delantero', '16/18'),
+    jug(`${p} · Recambio ofensivo`, 'ATK', 'SUP', 'Delantero', '2/18'),
+    jug(`${p} · Recambio de medio`, 'MID', 'SUP', 'Volante', '3/18'),
+  ]
+  // las ramas se calculan en el backend; en demo se dan ya hechas con los
+  // mismos pesos del protocolo (TF ×3, TH ×2, ROT ×1, SUP ×0.5; GK ×1.5)
+  const rama = (ip: number, red: Record<ZonaF, number>, supuesto: string, gk = false, ausente = ''): RamaF => ({
+    ip, ipNivel: ip <= 3 ? 'verde' : ip <= 7 ? 'ambar' : 'rojo',
+    reduccion: red,
+    reduccionNivel: { GK: red.GK < 20 ? 'verde' : red.GK <= 40 ? 'ambar' : 'rojo', DEF: red.DEF < 20 ? 'verde' : red.DEF <= 40 ? 'ambar' : 'rojo', MID: red.MID < 20 ? 'verde' : red.MID <= 40 ? 'ambar' : 'rojo', ATK: red.ATK < 20 ? 'verde' : red.ATK <= 40 ? 'ambar' : 'rojo' },
+    multiplicadorGk: gk, zonasCriticas: (Object.keys(red) as ZonaF[]).filter((z) => red[z] > 40),
+    fuera: [], supuesto, ausenteHipotetico: ausente,
+  })
+  const equipo = (nombre: string, prefijo: string, scores: [number, number, number, number, number], clas: EquipoParte['clasificacion'], dt: string, meses: number, perfil: EquipoParte['perfil']): EquipoParte => {
+    const bloques = {
+      A: bloque(scores[0], 4, 1, 'continuidad del cuerpo técnico'),
+      B: bloque(scores[1], 6, 1.5, 'núcleo del plantel y banco'),
+      C: bloque(scores[2], 4, 1, 'ciclos de las K'),
+      D: bloque(scores[3], 4, 1, 'coherencia del sistema'),
+      E: bloque(scores[4], 3, 2, 'rendimiento en cancha'),
+    }
+    const total = +Object.values(bloques).reduce((s, b) => s + b.ponderado, 0).toFixed(2)
+    return {
+      nombre, bloques, total, maximoAlcanzable: 27,
+      porcentaje: +((total / 27) * 100).toFixed(1), clasificacion: clas,
+      dt: { nombre: dt, meses }, perfil,
+      plantel: plantel(prefijo), fuera: [], factorX: [],
+      disponibilidad: {
+        resuelto: false, sinTabla: false, fuente: '',
+        nota: 'bloque F congelado: sin once confirmado no se puntúa (Disciplina 35)',
+        jugadores: plantel(prefijo),
+        ramas: {
+          a: rama(0, { GK: 0, DEF: 0, MID: 0, ATK: 0 }, 'juegan todos los disponibles conocidos'),
+          b: rama(4.5, { GK: 100, DEF: 0, MID: 0, ATK: 0 }, `además falta ${prefijo} · Arquero`, true, `${prefijo} · Arquero`),
+        },
+      },
+    }
+  }
+  return {
+    fixtureId, estado: 'pendiente_xi', version: 'cowork/1',
+    partido: { equipoA, equipoB, fecha: '2026-07-20' },
+    equipos: {
+      a: equipo(equipoA, 'A', [4, 5, 3, 4, 3], 'FORMADO', 'DT de muestra', 19,
+        { sistema: '4-3-3', estilo: 'presión alta y salida limpia', fortaleza: 'juego asociado por dentro', vulnerabilidad: 'espalda de los laterales' }),
+      b: equipo(equipoB, 'B', [2, 3, 2, 2, 1], 'EN_FORMACION', 'DT interino', 2,
+        { sistema: '5-3-2', estilo: 'bloque bajo y contragolpe', fortaleza: 'orden defensivo', vulnerabilidad: 'generación con la pelota' }),
+    },
+    alertas: [
+      { codigo: 'T.54', equipo: 'b', tipo: 'estructural', detalle: 'DT interino con menos de 6 meses: las K del equipo pierden línea base.' },
+      { codigo: 'DEMO', equipo: 'global', tipo: 'fecha', detalle: 'Parte de muestra: el modo demo no habla con Cowork ni con ninguna API.' },
+    ],
+    matchup: { diagnostico: 'FAVORABLE', favorece: 'a', razon: 'bloque bajo del rival con vida útil corta contra un ataque que llega por fuera.' },
+    pronostico: {
+      motor: 'gap §5 a favor del local (+0.34)', matriz: '54 / 26 / 20', mercado: '1.80 / 3.50 / 4.40',
+      probabilidades: { local: 54, empate: 26, visita: 20 }, marcador: '2-1',
+      falsador: 'si el visitante abre el marcador antes del minuto 20, la lectura de bloque bajo queda fallada.',
+    },
+    documentos: [
+      { id: 'ensayo', titulo: 'Cómo puede darse el partido', formato: 'md', cuerpo: '## La lectura\n\nEl local llega con el bloque intacto y el rival con un interino de dos meses. La pregunta no es quién es mejor, sino **cuánto aguanta** el planteo defensivo del visitante.\n\n- Primer tramo: el local acumula por fuera y el visitante se ordena.\n- Entre el 55′ y el 70′ aparece la grieta, cuando el bloque baja diez metros.\n\n> Modo demo: texto de muestra, sin fuentes reales.' },
+      { id: 'tde', titulo: 'Teorema del Echado', formato: 'md', cuerpo: '**IE 58** · tipología: repliegue por agotamiento.\n\nVentana de riesgo: **75-90′**. Falsador: si el visitante mantiene la línea por encima de su propio área tras el 75′, el índice está mal calculado.' },
+    ],
+    pendientes: ['XI de los dos equipos', 'confirmar si el central 2 llega'],
+    fuentes: ['demo'],
+    notas: 'Parte de muestra del modo demo.',
+    xi: { a: {}, b: {} },
+    creadoEn: '2026-07-19T04:10:00Z', actualizadoEn: '2026-07-19T04:10:00Z',
   }
 }

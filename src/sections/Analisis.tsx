@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { AnalisisRegistroDTO, EfeBloque, EfeComparativo, EfeEquipo, EslabonDtpDTO, GeneracionEfeDTO, PreflightEfeDTO, TimelineData } from '../api/types'
+import type { AnalisisRegistroDTO, EfeBloque, EfeComparativo, EfeEquipo, EslabonDtpDTO, GeneracionEfeDTO, ParteCoworkDTO, PreflightEfeDTO, TimelineData } from '../api/types'
 import { CONFIG } from '../config'
 import { TEAMS } from '../data'
 import type { Match } from '../data/types'
 import { extraerBloquesDespensa, promptDespensaLiga, promptTimelineLiga } from '../lib/despensa'
-import { cargarDespensa, estadoAnalisisEfe, estadoDtp, estadoTimeline, generarAnalisisEfe, generarDtp, generarTimeline, loadAnalisisPartido, preflightEfe } from '../services/appdata'
+import { cargarDespensa, estadoAnalisisEfe, estadoDtp, estadoTimeline, generarAnalisisEfe, generarDtp, generarTimeline, loadAnalisisPartido, loadParteCowork, preflightEfe } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import { TimelineComparativo } from '../components/TimelineComparativo'
 import { DtpPizarra } from '../components/DtpPizarra'
 import { PreflightEfe } from '../components/PreflightEfe'
+import { ParteCowork } from '../components/ParteCowork'
 
 interface Props {
   m: Match
@@ -345,6 +346,23 @@ export function Analisis({ m, isMobile }: Props) {
     }
   }, [m.id])
 
+  // EL PARTE DE COWORK es el camino normal: ya está escrito y depositado, se
+  // lee y ya. El motor por API de Claude queda debajo, plegado, como
+  // emergencia — cuesta dinero y tarda minutos (docs/COWORK.md).
+  const [parte, setParte] = useState<ParteCoworkDTO | null>(null)
+  const [parteCargando, setParteCargando] = useState(true)
+  const [emergencia, setEmergencia] = useState(false)
+  useEffect(() => {
+    setParte(null)
+    setParteCargando(true)
+    setEmergencia(false)
+    loadParteCowork(m.id)
+      .then((p) => { if (vivoRef.current) setParte(p) })
+      .catch(() => { /* sin parte no hay drama: se ve el modo emergencia */ })
+      .finally(() => { if (vivoRef.current) setParteCargando(false) })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [m.id])
+
   // CHEQUEO PREVIO: de dónde sale cada dato y qué va a costar la corrida. Es
   // una lectura (no gasta nada) y se recarga sola cuando algo puede haberlo
   // cambiado: al depositar despensa y al terminar un análisis.
@@ -430,7 +448,9 @@ export function Analisis({ m, isMobile }: Props) {
         <div>
           <h1 style={{ margin: 0, font: '800 22px var(--sans)', letterSpacing: '-.3px' }}>Análisis EFE</h1>
           <p style={{ margin: '5px 0 0', font: '500 12.5px var(--sans)', color: 'var(--t2)' }}>
-            Estado de Formación de Equipo · comparativa estructural pre-partido
+            {parte
+              ? 'Parte de Cowork · escrito con la suscripción, sin créditos de API'
+              : 'Estado de Formación de Equipo · comparativa estructural pre-partido'}
           </p>
         </div>
         {efe && (
@@ -457,6 +477,36 @@ export function Analisis({ m, isMobile }: Props) {
         )}
       </div>
 
+      {parteCargando && <div className="sad-sk" style={{ height: 260, marginBottom: 14 }}></div>}
+
+      {parte && <ParteCowork parte={parte} matchId={m.id} onParte={setParte} isMobile={isMobile} />}
+
+      {!parteCargando && !parte && (
+        <section style={{ padding: '26px 20px', marginBottom: 14, borderRadius: 16, background: 'var(--bg2)', border: '1px dashed var(--line)', textAlign: 'center' }}>
+          <h3 style={{ margin: 0, font: '700 15px var(--sans)', color: 'var(--t1)' }}>Cowork todavía no dejó el parte de este partido</h3>
+          <p style={{ margin: '8px auto 0', maxWidth: 520, font: '500 12px var(--sans)', color: 'var(--t3)' }}>
+            El batch nocturno deposita el análisis ya escrito y esta pantalla solo lo lee.
+            Si hace falta el análisis ahora mismo, abajo está el motor por API de Claude:
+            tarda 1-3 minutos y sí consume créditos.
+          </p>
+        </section>
+      )}
+
+      {/* MODO EMERGENCIA: el motor que le paga a la API de Claude. Plegado a
+          propósito — es el camino caro, no el normal. */}
+      <button
+        onClick={() => setEmergencia(!emergencia)}
+        style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '10px 14px', marginBottom: 14, borderRadius: 12, border: '1px solid var(--line)', background: 'var(--bg2)', cursor: 'pointer', textAlign: 'left' }}
+      >
+        <span style={{ font: '700 9.5px var(--mono)', color: 'var(--mark)', letterSpacing: '.5px', flexShrink: 0 }}>EMERGENCIA</span>
+        <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)', flex: 1 }}>
+          Generar aquí con la API de Claude
+          <span style={{ color: 'var(--t3)', font: '500 10.5px var(--mono)' }}> · 1-3 min · consume créditos</span>
+        </span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2.4" strokeLinecap="round" style={{ transform: emergencia ? 'rotate(90deg)' : 'none', transition: 'transform .12s', flexShrink: 0 }}><path d="M9 6l6 6-6 6" /></svg>
+      </button>
+
+      {emergencia && (<>
       {/* chequeo previo: qué hay cargado y qué va a costar — ANTES de gastar */}
       {pf && <PreflightEfe pf={pf} onRecargar={cargarPreflight} />}
 
@@ -782,6 +832,7 @@ export function Analisis({ m, isMobile }: Props) {
           )}
         </section>
       )}
+      </>)}
     </div>
   )
 }

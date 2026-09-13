@@ -55,3 +55,5 @@ jobs:
         run: python -m backend.test_cronologia
       - name: Tests del chequeo previo del EFE (qué cuesta antes de gastar)
         run: python -m backend.test_preflight
+      - name: Tests del parte de Cowork (bloque F calculado y cruce del once)
+        run: python -m backend.test_cowork
