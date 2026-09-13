@@ -158,4 +158,13 @@ bloque F calculado en local y cierre del once desde la ficha o a mano.
    foco) y cadena en la página de Equipo. Queda correr
    `ficha_partido --estado` tras la primera corrida real: de si el plan sirve
    `grid` depende que M2 hable de carriles reales.
-6. Fase nube completa cuando toque: `docs/SERVICIOS_EXTERNOS.md` (Postgres).
+6. **Bucle de aprendizaje** — diseño completo en `docs/APRENDIZAJE.md`, nada
+   implementado todavía. Cowork valida su propio pronóstico 12 h después del
+   partido, deja la lección cuando falla, y cada 4 fallos la app arma un
+   dossier para que el usuario autorice regenerar el `.zip` del skill. Lo
+   objetivo (marcador, acierto del 1X2, Brier, si se cumplió el falsador) lo
+   calcula el backend; Cowork solo escribe el juicio. La regla que no se
+   negocia: los casos contaminados fijan rúbrica pero NO acreditan, y la app
+   nunca mueve un peso de un skill por su cuenta. Orden: veredicto → lecciones
+   → antecedentes → dossier. Snapshot de los skills en `docs/skills/`.
+7. Fase nube completa cuando toque: `docs/SERVICIOS_EXTERNOS.md` (Postgres).
