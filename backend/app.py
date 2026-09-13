@@ -43,22 +43,85 @@ app = FastAPI(
 
 API = "/api/v1"
 
-# Auth bearer opcional: sin SAD_API_TOKEN la API queda abierta (uso local);
-# con token, todo salvo /health y docs exige `Authorization: Bearer <token>`.
+# Auth bearer: sin SAD_API_TOKEN la API queda abierta (uso local); con token,
+# todo salvo /health y docs exige `Authorization: Bearer <token>`.
 # Se leen los globals en cada request para poder monkeypatchearlos en tests.
+#
+# DOS TOKENS, y la diferencia importa:
+#
+#   SAD_API_TOKEN     la llave maestra. Abre TODO, incluidos los endpoints que
+#                     gastan dinero (/analisis/efe|timeline|dtp queman créditos
+#                     de la API de Claude; /fixtures/{id}/vip y
+#                     /ligas/{id}/refrescar pueden tirar de SAD_EMERGENCIA_KEY,
+#                     que factura excedente de API-Football) y el DELETE.
+#   SAD_TOKEN_COWORK  acotado: solo la superficie del parte y las lecturas que
+#                     el pipeline necesita. Es el que se le da a Cowork.
+#
+# Por qué acotado y no el mismo: Cowork es un agente que lee páginas de prensa
+# y pantallazos, o sea contenido que no controlamos. Mínimo privilegio no es
+# paranoia ahí — es que un texto en una página de resultados no debería tener
+# ni la posibilidad teórica de acabar en una llamada que cuesta dinero. Y de
+# paso el token se rota solo, sin tocar el acceso del frontend.
 API_TOKEN = os.environ.get("SAD_API_TOKEN", "")
+TOKEN_COWORK = os.environ.get("SAD_TOKEN_COWORK", "")
 _AUTH_EXEMPT = {f"{API}/health", "/docs", "/redoc", "/openapi.json"}
+
+# Lista de PERMITIDOS, no de prohibidos: un endpoint nuevo nace denegado para
+# Cowork y hay que abrirlo a mano. Al revés, cada endpoint que añadiéramos
+# sería un agujero hasta que alguien se acordara de cerrarlo.
+_COWORK_PERMITIDO = tuple(
+    (metodo, re.compile(re.escape(API) + patron + "$"))
+    for metodo, patron in (
+        # la superficie del parte (OJO: sin DELETE — borrar es cosa tuya)
+        ("GET", r"/analisis/cowork(?:/.*)?"),
+        ("POST", r"/analisis/cowork"),
+        ("POST", r"/analisis/cowork/\d+/xi"),
+        ("POST", r"/analisis/cowork/\d+/veredicto"),
+        # lo que el pipeline necesita LEER para escribir el parte
+        ("GET", r"/(?:health|fixtures|equipos|ligas|cuotas|constantes|constantes-cuota"
+                r"|niveles|predicciones|analisis-prepartido)(?:/.*)?"),
+    )
+)
+
+
+def _cowork_puede(metodo: str, ruta: str) -> bool:
+    return any(m == metodo and rx.match(ruta) for m, rx in _COWORK_PERMITIDO)
+
+
+def _igual(a: str, b: str) -> bool:
+    """compare_digest en bytes: con str revienta si llega un header no-ASCII."""
+    return bool(a) and bool(b) and secrets.compare_digest(a.encode(), b.encode())
 
 
 @app.middleware("http")
 async def auth_bearer(request: Request, call_next):
-    if API_TOKEN and request.url.path not in _AUTH_EXEMPT:
-        auth = request.headers.get("authorization", "")
-        if not (auth.startswith("Bearer ") and secrets.compare_digest(auth[7:], API_TOKEN)):
-            return JSONResponse(
-                {"detail": "No autorizado"}, status_code=401, headers={"WWW-Authenticate": "Bearer"}
-            )
-    return await call_next(request)
+    if not API_TOKEN or request.url.path in _AUTH_EXEMPT:
+        return await call_next(request)
+    auth = request.headers.get("authorization", "")
+    presentado = auth[7:] if auth.startswith("Bearer ") else ""
+    if _igual(presentado, API_TOKEN):
+        return await call_next(request)
+    # el token acotado: si el valor es el mismo que el maestro no hay recorte
+    # que valga (ya habría pasado arriba), así que se ignora y se avisa al
+    # arrancar en vez de fingir que protege algo
+    if TOKEN_COWORK and TOKEN_COWORK != API_TOKEN and _igual(presentado, TOKEN_COWORK):
+        if _cowork_puede(request.method, request.url.path):
+            return await call_next(request)
+        return JSONResponse(
+            {"detail": f"El token de Cowork no puede {request.method} {request.url.path}. "
+                       "Es un token acotado (SAD_TOKEN_COWORK): solo la superficie del parte "
+                       "y las lecturas del pipeline. Los endpoints que gastan créditos o cuota, "
+                       "y el borrado, necesitan SAD_API_TOKEN."},
+            status_code=403,
+        )
+    return JSONResponse(
+        {"detail": "No autorizado"}, status_code=401, headers={"WWW-Authenticate": "Bearer"}
+    )
+
+
+if TOKEN_COWORK and TOKEN_COWORK == API_TOKEN:
+    print("[auth] SAD_TOKEN_COWORK es idéntico a SAD_API_TOKEN: no recorta nada "
+          "y se ignora. Pon un valor distinto o quítalo.", flush=True)
 
 
 # Rate limit en memoria por IP, ventana fija de 60 s (SAD_RATE_LIMIT req/min,

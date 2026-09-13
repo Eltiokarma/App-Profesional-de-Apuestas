@@ -883,6 +883,60 @@ def main():
     ok_auth = c.get(A + "/fixtures?limit=1", headers={"Authorization": "Bearer token-de-prueba"})
     check("auth: token correcto → 200", ok_auth.status_code == 200 and ok_auth.json())
     check("auth: /health queda libre", c.get(A + "/health").status_code == 200)
+
+    # token ACOTADO de Cowork (SAD_TOKEN_COWORK): lista de permitidos
+    appmod.TOKEN_COWORK = "token-cowork"
+    cw = {"Authorization": "Bearer token-cowork"}
+    fx = dbmod.query_one("sad", "SELECT id FROM fixtures ORDER BY date DESC LIMIT 1")["id"]
+
+    check("cowork: puede leer la agenda",
+          c.get(A + "/analisis/cowork/agenda", headers=cw).status_code == 200)
+    check("cowork: puede depositar el parte (422 del cuerpo, NO 403)",
+          c.post(A + "/analisis/cowork", json={"equipos": {}}, headers=cw).status_code == 422)
+    check("cowork: puede mandar el once",
+          c.post(A + f"/analisis/cowork/{fx}/xi", json={"desdeFicha": True}, headers=cw).status_code != 403)
+    check("cowork: puede cerrar el veredicto",
+          c.post(A + f"/analisis/cowork/{fx}/veredicto",
+                 json={"seleccion": "ciega", "modoEvaluacion": "PRE",
+                       "porLado": {"a": {"veredicto": "acierto"}}}, headers=cw).status_code != 403)
+    check("cowork: puede leer fixtures y equipos",
+          c.get(A + "/fixtures?limit=1", headers=cw).status_code == 200
+          and c.get(A + f"/equipos/{dbmod.query_one('sad', 'SELECT id FROM teams LIMIT 1')['id']}/calendario",
+                    headers=cw).status_code == 200)
+
+    # lo que NO puede: gastar dinero, gastar cuota, o borrar
+    caro = [
+        ("POST", "/analisis/efe", {"fixtureId": fx}),
+        ("POST", "/analisis/timeline", {"fixtureId": fx}),
+        ("POST", "/analisis/dtp", {"fixtureId": fx, "equipoFoco": 1}),
+        ("POST", "/analisis/despensa", {"equipos": []}),
+        ("POST", f"/fixtures/{fx}/vip", {"activo": True}),
+        ("POST", "/ligas/140/refrescar", {}),
+    ]
+    negados = [ruta for metodo, ruta, cuerpo in caro
+               if c.post(A + ruta, json=cuerpo, headers=cw).status_code == 403]
+    check("cowork: NO puede llamar a lo que gasta créditos ni cuota",
+          len(negados) == len(caro), f"pasaron: {[r for _, r, _ in caro if r not in negados]}")
+    check("cowork: NO puede borrar el parte",
+          c.delete(A + f"/analisis/cowork/{fx}", headers=cw).status_code == 403)
+    check("cowork: el 403 explica qué token hace falta",
+          "SAD_API_TOKEN" in c.post(A + "/analisis/efe", json={"fixtureId": fx}, headers=cw).json()["detail"])
+    check("cowork: un endpoint nuevo nace denegado (lista de permitidos)",
+          c.get(A + f"/analisis/efe/preflight/{fx}", headers=cw).status_code == 403)
+
+    # la llave maestra sigue abriendo todo
+    check("maestro: sí puede borrar",
+          c.delete(A + f"/analisis/cowork/{fx}",
+                   headers={"Authorization": "Bearer token-de-prueba"}).status_code in (200, 404))
+    # un token de Cowork idéntico al maestro no recorta nada: se ignora
+    appmod.TOKEN_COWORK = "token-de-prueba"
+    check("cowork: si es idéntico al maestro se ignora (y entonces abre todo)",
+          c.delete(A + f"/analisis/cowork/{fx}",
+                   headers={"Authorization": "Bearer token-de-prueba"}).status_code in (200, 404))
+    appmod.TOKEN_COWORK = ""
+    check("sin SAD_TOKEN_COWORK ese token deja de valer",
+          c.get(A + "/analisis/cowork/agenda", headers=cw).status_code == 401)
+
     appmod.API_TOKEN = ""
     check("auth: sin SAD_API_TOKEN la API queda abierta", c.get(A + "/fixtures?limit=1").status_code == 200)
 

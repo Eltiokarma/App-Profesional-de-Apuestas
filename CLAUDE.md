@@ -106,6 +106,12 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   equipo foco entra en `cadena_dtp` como apertura —el veredicto lo emite quien
   cierre el eslabón—. Un bloque nuevo del prompt necesita sitio en el parte:
   si no lo tiene, se pierde.
+- **Dos tokens** (`backend/app.py`): `SAD_API_TOKEN` es la llave maestra —abre
+  también lo que gasta créditos de Claude y cuota de API-Football— y
+  `SAD_TOKEN_COWORK` es el acotado que se le da a Cowork: solo
+  `/analisis/cowork/*` (sin DELETE) y los GET del pipeline, por LISTA DE
+  PERMITIDOS. Un endpoint nuevo nace denegado para Cowork; abrirlo es
+  deliberado. Nunca le des el maestro a un agente que lee contenido de fuera.
 - Costo de la IA: `docs/efe-dtp/COSTO_IA.md`. Lo que está en nuestra base se
   calcula, no se le pregunta al modelo — y lo calculado no se le hace copiar a
   la salida. Los dos bloques calculados hoy: el mapa de rivales del EFE

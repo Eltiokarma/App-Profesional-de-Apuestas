@@ -115,7 +115,42 @@ jugador queda como estaba. No se adivina.
 
 ## El endpoint, en corto
 
-Todo bajo `/api/v1`, con `Authorization: Bearer <SAD_API_TOKEN>`.
+Todo bajo `/api/v1`, con `Authorization: Bearer <SAD_TOKEN_COWORK>`.
+
+### Qué token se le da a Cowork (y cuál no)
+
+**No le des `SAD_API_TOKEN`.** Es la llave maestra y abre, entre otras cosas,
+los tres endpoints que queman créditos de la API de Claude
+(`/analisis/efe|timeline|dtp`), los dos que pueden tirar de
+`SAD_EMERGENCIA_KEY` —la clave que factura excedente de API-Football—
+(`/fixtures/{id}/vip`, `/ligas/{id}/refrescar`) y el borrado de partes. Es
+justo lo que esta arquitectura existe para no hacer.
+
+`SAD_TOKEN_COWORK` es un token acotado a la superficie del parte y a las
+lecturas que el pipeline necesita. Lo demás responde **403 diciendo qué token
+haría falta**, así que un fallo se lee en el log en vez de aparecer en la
+factura.
+
+| Con el token de Cowork | Resultado |
+|---|---|
+| `GET /analisis/cowork/*`, `POST /analisis/cowork`, `.../xi`, `.../veredicto` | ✅ |
+| `GET` de fixtures, equipos, ligas, cuotas, constantes, niveles, predicciones | ✅ |
+| `DELETE /analisis/cowork/{id}` | 🚫 403 — borrar es cosa tuya |
+| `POST /analisis/efe`, `/timeline`, `/dtp`, `/despensa` | 🚫 403 — gasta créditos |
+| `POST /fixtures/{id}/vip`, `/ligas/{id}/refrescar` | 🚫 403 — puede gastar cuota |
+
+Es una **lista de permitidos**: un endpoint nuevo nace denegado para Cowork y
+hay que abrirlo a mano. Al revés, cada endpoint que añadiéramos sería un
+agujero hasta que alguien se acordara de cerrarlo.
+
+Por qué acotado y no el mismo: Cowork lee páginas de prensa y pantallazos, o
+sea contenido que no controlamos. Mínimo privilegio ahí no es paranoia — es
+que un texto en una página de resultados no debería tener ni la posibilidad
+teórica de acabar en una llamada que cuesta dinero. Y de paso el token se rota
+solo, sin tocar el acceso del frontend.
+
+> Si pones `SAD_TOKEN_COWORK` con el mismo valor que `SAD_API_TOKEN`, no
+> recorta nada: se ignora y el backend lo avisa al arrancar.
 
 | Método | Ruta | Para qué |
 |---|---|---|
@@ -268,7 +303,9 @@ Todo lo que produzcas termina en la app por HTTP. No generes archivos sueltos
 ni carpetas de entregables: el parte ES el entregable.
 
 Base:  << https://TU-APP.up.railway.app/api/v1 >>
-Token: << SAD_API_TOKEN >>   → cabecera `Authorization: Bearer <token>`
+Token: << SAD_TOKEN_COWORK >>   → cabecera `Authorization: Bearer <token>`
+       (es el token ACOTADO; si algo responde 403, NO cambies de token:
+        ese endpoint no es para vos, anotalo y seguí)
 
 Anclá la fecha real con la herramienta de hora del sistema. No asumas qué día
 es. Zona de referencia: America/Lima.
