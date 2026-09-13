@@ -26,6 +26,7 @@ python -m backend.test_dtp        # DTP: cadena rodante, anti-hindsight y sin b�
 python -m backend.test_calendario # calendario SAD: bloque G del EFE calculado (sin IA)
 python -m backend.test_cronologia  # cronología SAD: los partidos del timeline, calculados
 python -m backend.test_preflight  # chequeo previo del EFE: qué va a costar antes de gastar
+python -m backend.test_cowork    # parte de Cowork: bloque F calculado y cruce del once
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
 python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--horizonte/--calibrar/--por-liga)
 
@@ -61,6 +62,7 @@ src/sections/      Partidos (inicio) · Cuotas · Burbujas · Skills · Estadís
 src/components/    KLineChart (picos K) · KBarChart (rachas de cuota) ·
                    TablaPosiciones (ÚNICA clasificación, con sus fases) ·
                    DtpPizarra (cierre+apertura del DTP y cadena) ·
+                   ParteCowork (el parte depositado + caja del once) ·
                    TeamSearch, shell
 backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.db
 ```
@@ -87,6 +89,29 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   `loadCalendarioSad` (contrato `/equipos/{id}/calendario`). Las etiquetas del
   rival salen de `backend/calendario.py` con el criterio numérico del protocolo
   y viajan CON su dato; ninguna pantalla dibuja su propia lista de próximos.
+- **Parte de Cowork** (`docs/COWORK.md`): el análisis lo escribe Cowork con la
+  suscripción y lo deposita en `POST /analisis/cowork`; el motor por API de
+  Claude queda de emergencia (plegado en la sección Análisis). El parte NO
+  trae nada calculable —total, porcentaje, clasificación, IP, reducción por
+  zona, ramas A/B, F3, F4, ni los nombres del partido—: eso sale de
+  `backend/analisis/parte.py` y `backend/analisis/bloque_f.py`, y se ignora si
+  llega. El bloque F viaja congelado y se cierra con `POST
+  /analisis/cowork/{id}/xi` (ficha de API-Football o once pegado a mano); un
+  once que casa con menos de 7 nombres de la tabla F1 NO cierra el bloque:
+  se devuelve el conflicto en vez de un IP inventado. Cada skill del pipeline
+  tiene su sitio en la pantalla (tabla en `docs/COWORK.md`): bloque G desde
+  `backend/calendario.py`, timeline fundido con `backend/cronologia.py` y
+  pintado con `TimelineComparativo`, TDE estructurado con sus niveles venidos
+  del skill (el backend no le pone umbrales a esa escala), y el pronóstico por
+  equipo foco entra en `cadena_dtp` como apertura —el veredicto lo emite quien
+  cierre el eslabón—. Un bloque nuevo del prompt necesita sitio en el parte:
+  si no lo tiene, se pierde.
+- **Dos tokens** (`backend/app.py`): `SAD_API_TOKEN` es la llave maestra —abre
+  también lo que gasta créditos de Claude y cuota de API-Football— y
+  `SAD_TOKEN_COWORK` es el acotado que se le da a Cowork: solo
+  `/analisis/cowork/*` (sin DELETE) y los GET del pipeline, por LISTA DE
+  PERMITIDOS. Un endpoint nuevo nace denegado para Cowork; abrirlo es
+  deliberado. Nunca le des el maestro a un agente que lee contenido de fuera.
 - Costo de la IA: `docs/efe-dtp/COSTO_IA.md`. Lo que está en nuestra base se
   calcula, no se le pregunta al modelo — y lo calculado no se le hace copiar a
   la salida. Los dos bloques calculados hoy: el mapa de rivales del EFE
@@ -115,6 +140,8 @@ completo; CI con dos jobs. Probado end-to-end con datos reales del usuario
 ingesta de plantillas/bajas/traspasos/DT, indicadores por-90 con shrinkage +
 HHI + confianza A/B/C, sección Plantilla en Equipo, ficha de partido
 (/fixtures/{id}/ficha) y cruce con los análisis EFE/timeline del backend.
+Camino Cowork (docs/COWORK.md): agenda priorizada del día, depósito del parte,
+bloque F calculado en local y cierre del once desde la ficha o a mano.
 
 ## Siguientes pasos (en orden)
 
@@ -137,4 +164,18 @@ HHI + confianza A/B/C, sección Plantilla en Equipo, ficha de partido
    foco) y cadena en la página de Equipo. Queda correr
    `ficha_partido --estado` tras la primera corrida real: de si el plan sirve
    `grid` depende que M2 hable de carriles reales.
-6. Fase nube completa cuando toque: `docs/SERVICIOS_EXTERNOS.md` (Postgres).
+6. **Bucle de aprendizaje** — `docs/APRENDIZAJE.md`. **Fase B hecha**: el
+   veredicto a las 12 h (`POST /analisis/cowork/{id}/veredicto`,
+   `backend/analisis/veredicto.py`). Lo objetivo lo calcula el backend
+   —marcador, acierto del 1X2, Brier de tres resultados, si cayó gol en la
+   ventana del TDE, los goles con su minuto— y se RECALCULA al leer; Cowork
+   solo escribe el juicio y, sobre todo, la POBLACIÓN del caso (`ciega` /
+   `por_resultado` / `post_resultado`), que no se puede deducir y que decide
+   si acredita. Solo `ciega` + `PRE` acredita: los contaminados fijan rúbrica
+   pero NO acreditan, y ninguna métrica puede mezclarlos. Sin pronóstico
+   previo la cadena no recibe veredicto, y re-depositar el parte no pisa el
+   pronóstico declarado ni borra el veredicto escrito. Faltan las fases C
+   (lecciones por skill), D (dossier cada 4 fallos, que ABRE la revisión pero
+   no autoriza mover nada) y A (antecedentes). La app nunca mueve un peso de
+   un skill por su cuenta. Snapshot de los skills en `docs/skills/`.
+7. Fase nube completa cuando toque: `docs/SERVICIOS_EXTERNOS.md` (Postgres).

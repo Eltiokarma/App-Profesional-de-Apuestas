@@ -43,22 +43,85 @@ app = FastAPI(
 
 API = "/api/v1"
 
-# Auth bearer opcional: sin SAD_API_TOKEN la API queda abierta (uso local);
-# con token, todo salvo /health y docs exige `Authorization: Bearer <token>`.
+# Auth bearer: sin SAD_API_TOKEN la API queda abierta (uso local); con token,
+# todo salvo /health y docs exige `Authorization: Bearer <token>`.
 # Se leen los globals en cada request para poder monkeypatchearlos en tests.
+#
+# DOS TOKENS, y la diferencia importa:
+#
+#   SAD_API_TOKEN     la llave maestra. Abre TODO, incluidos los endpoints que
+#                     gastan dinero (/analisis/efe|timeline|dtp queman créditos
+#                     de la API de Claude; /fixtures/{id}/vip y
+#                     /ligas/{id}/refrescar pueden tirar de SAD_EMERGENCIA_KEY,
+#                     que factura excedente de API-Football) y el DELETE.
+#   SAD_TOKEN_COWORK  acotado: solo la superficie del parte y las lecturas que
+#                     el pipeline necesita. Es el que se le da a Cowork.
+#
+# Por qué acotado y no el mismo: Cowork es un agente que lee páginas de prensa
+# y pantallazos, o sea contenido que no controlamos. Mínimo privilegio no es
+# paranoia ahí — es que un texto en una página de resultados no debería tener
+# ni la posibilidad teórica de acabar en una llamada que cuesta dinero. Y de
+# paso el token se rota solo, sin tocar el acceso del frontend.
 API_TOKEN = os.environ.get("SAD_API_TOKEN", "")
+TOKEN_COWORK = os.environ.get("SAD_TOKEN_COWORK", "")
 _AUTH_EXEMPT = {f"{API}/health", "/docs", "/redoc", "/openapi.json"}
+
+# Lista de PERMITIDOS, no de prohibidos: un endpoint nuevo nace denegado para
+# Cowork y hay que abrirlo a mano. Al revés, cada endpoint que añadiéramos
+# sería un agujero hasta que alguien se acordara de cerrarlo.
+_COWORK_PERMITIDO = tuple(
+    (metodo, re.compile(re.escape(API) + patron + "$"))
+    for metodo, patron in (
+        # la superficie del parte (OJO: sin DELETE — borrar es cosa tuya)
+        ("GET", r"/analisis/cowork(?:/.*)?"),
+        ("POST", r"/analisis/cowork"),
+        ("POST", r"/analisis/cowork/\d+/xi"),
+        ("POST", r"/analisis/cowork/\d+/veredicto"),
+        # lo que el pipeline necesita LEER para escribir el parte
+        ("GET", r"/(?:health|fixtures|equipos|ligas|cuotas|constantes|constantes-cuota"
+                r"|niveles|predicciones|analisis-prepartido)(?:/.*)?"),
+    )
+)
+
+
+def _cowork_puede(metodo: str, ruta: str) -> bool:
+    return any(m == metodo and rx.match(ruta) for m, rx in _COWORK_PERMITIDO)
+
+
+def _igual(a: str, b: str) -> bool:
+    """compare_digest en bytes: con str revienta si llega un header no-ASCII."""
+    return bool(a) and bool(b) and secrets.compare_digest(a.encode(), b.encode())
 
 
 @app.middleware("http")
 async def auth_bearer(request: Request, call_next):
-    if API_TOKEN and request.url.path not in _AUTH_EXEMPT:
-        auth = request.headers.get("authorization", "")
-        if not (auth.startswith("Bearer ") and secrets.compare_digest(auth[7:], API_TOKEN)):
-            return JSONResponse(
-                {"detail": "No autorizado"}, status_code=401, headers={"WWW-Authenticate": "Bearer"}
-            )
-    return await call_next(request)
+    if not API_TOKEN or request.url.path in _AUTH_EXEMPT:
+        return await call_next(request)
+    auth = request.headers.get("authorization", "")
+    presentado = auth[7:] if auth.startswith("Bearer ") else ""
+    if _igual(presentado, API_TOKEN):
+        return await call_next(request)
+    # el token acotado: si el valor es el mismo que el maestro no hay recorte
+    # que valga (ya habría pasado arriba), así que se ignora y se avisa al
+    # arrancar en vez de fingir que protege algo
+    if TOKEN_COWORK and TOKEN_COWORK != API_TOKEN and _igual(presentado, TOKEN_COWORK):
+        if _cowork_puede(request.method, request.url.path):
+            return await call_next(request)
+        return JSONResponse(
+            {"detail": f"El token de Cowork no puede {request.method} {request.url.path}. "
+                       "Es un token acotado (SAD_TOKEN_COWORK): solo la superficie del parte "
+                       "y las lecturas del pipeline. Los endpoints que gastan créditos o cuota, "
+                       "y el borrado, necesitan SAD_API_TOKEN."},
+            status_code=403,
+        )
+    return JSONResponse(
+        {"detail": "No autorizado"}, status_code=401, headers={"WWW-Authenticate": "Bearer"}
+    )
+
+
+if TOKEN_COWORK and TOKEN_COWORK == API_TOKEN:
+    print("[auth] SAD_TOKEN_COWORK es idéntico a SAD_API_TOKEN: no recorta nada "
+          "y se ignora. Pon un valor distinto o quítalo.", flush=True)
 
 
 # Rate limit en memoria por IP, ventana fija de 60 s (SAD_RATE_LIMIT req/min,
@@ -1909,3 +1972,171 @@ def analisis_partido(fixture_id: int):
     """Todo lo emitido para un fixture (lectura pura, cero créditos)."""
     from backend.analisis import motor as efemotor
     return efemotor.analisis_del_partido(fixture_id)
+
+
+# ---------------------------------------------------------------------------
+# parte de Cowork — el análisis escrito con la suscripción (docs/COWORK.md)
+# ---------------------------------------------------------------------------
+# El camino barato: Cowork analiza de noche y DEPOSITA aquí; el backend guarda,
+# calcula lo que es aritmética (totales, IP, reducción por zona, ramas del
+# bloque F) y lo sirve. Cero créditos de la API de Claude — el motor de
+# /analisis/efe queda de emergencia.
+#
+# Misma excepción documentada de solo-lectura que el resto de /analisis:
+# escribe efe.db (tabla parte_cowork), nunca las DBs del SAD. El POST va
+# protegido por el bearer global (SAD_API_TOKEN), que es la credencial que
+# lleva Cowork.
+
+
+class XiLadoBody(BaseModel):
+    once: list[str] = []
+    banca: list[str] = []
+    formacion: str = ""
+    fuente: str = ""   # "pantallazo BeSoccer", "rueda de prensa", …
+
+
+class XiBody(BaseModel):
+    a: XiLadoBody | None = None
+    b: XiLadoBody | None = None
+    # sin ningún once en el cuerpo se intenta con la ficha ya ingestada
+    desdeFicha: bool = False
+
+
+@app.get(API + "/analisis/cowork/agenda")
+def cowork_agenda(
+    fecha: date_t | None = None,
+    limite: int = Query(default=4, ge=1, le=20),
+    ligaId: int | None = None,
+    desdeAhora: bool = False,
+    horas: int = Query(default=12, ge=1, le=72),
+    incluirDescartados: bool = False,
+):
+    """Los partidos del día ordenados por prioridad — paso 1 del batch.
+
+    Calculado de nuestra base con el criterio del protocolo (Liga 1 Perú,
+    derbi de ciudad, copa internacional, liga grande con equipo arriba o en
+    crisis, choque del top 6 europeo). Sin `fecha`, el día siguiente en UTC.
+    Los descartados viajan con su motivo: un descarte sin motivo no se audita.
+
+    Mandos manuales para apuntar el batch sin tocar el padrón: `ligaId` acota a
+    una liga, `desdeAhora`+`horas` abre una ventana rodante desde este momento
+    (útil de noche, cuando el día UTC ya cambió) e `incluirDescartados` mete a
+    los de prioridad 0 al final, con su motivo. Un filtro puesto ANTES del
+    pitazo no contamina la población: el caso sigue siendo `ciega`."""
+    from backend.analisis import parte as cowork
+    return cowork.agenda(fecha, limite, ligaId, desdeAhora, horas, incluirDescartados)
+
+
+@app.get(API + "/analisis/cowork/pendientes")
+def cowork_pendientes(limite: int = Query(default=50, ge=1, le=200)):
+    """Partes que todavía esperan once. Lo primero que se mira al despertar."""
+    from backend.analisis import parte as cowork
+    return cowork.pendientes(limite)
+
+
+@app.post(API + "/analisis/cowork")
+def cowork_depositar(payload: dict):
+    """Deposita el parte de un partido (idempotente por fixtureId).
+
+    Lo que NO hay que mandar porque lo calcula el backend: total, máximo
+    alcanzable, porcentaje, clasificación, IP, reducción por zona, ramas A/B,
+    F3, F4, y los nombres/fecha del partido. Ver docs/COWORK.md."""
+    from backend.analisis import parte as cowork
+    try:
+        return cowork.guardar(payload)
+    except cowork.ParteInvalido as e:
+        raise HTTPException(422, str(e))
+
+
+@app.get(API + "/analisis/cowork/{fixture_id}")
+def cowork_parte(fixture_id: int):
+    """El parte con lo calculable ya calculado (lectura pura, cero créditos)."""
+    from backend.analisis import parte as cowork
+    dto = cowork.dto(fixture_id)
+    if not dto:
+        raise HTTPException(404, f"no hay parte de Cowork para el fixture {fixture_id}")
+    return dto
+
+
+@app.delete(API + "/analisis/cowork/{fixture_id}")
+def cowork_borrar(fixture_id: int):
+    """Descarta el parte (y su once) para volver a depositarlo limpio."""
+    from backend.analisis import parte as cowork
+    if not cowork.borrar(fixture_id):
+        raise HTTPException(404, f"no hay parte de Cowork para el fixture {fixture_id}")
+    return {"borrado": fixture_id}
+
+
+class LadoVeredictoBody(BaseModel):
+    veredicto: str = ""          # acierto | parcial | fallo
+    queP: str = ""               # qué pasó, en una frase
+    leccion: str = ""
+    skill: str = ""              # a qué skill le toca la lección
+    reglaTocada: str = ""
+
+
+class VeredictoBody(BaseModel):
+    # población del caso: decide si acredita o si solo fija rúbrica
+    seleccion: str               # ciega | por_resultado | post_resultado
+    modoEvaluacion: str          # PRE | COND
+    falsadorCumplido: bool | None = None
+    porLado: dict[str, LadoVeredictoBody] = {}
+    notas: str = ""
+
+
+@app.get(API + "/analisis/cowork/veredictos/pendientes")
+def cowork_veredictos_pendientes(
+    horas: int = Query(default=12, ge=0, le=720),
+    limite: int = Query(default=50, ge=1, le=200),
+):
+    """Partes de partidos terminados hace más de `horas` y sin veredicto.
+
+    Es el disparador de la validación (fase B de docs/APRENDIZAJE.md): nadie
+    tiene que acordarse de nada y lo que no se validó hoy sigue mañana."""
+    from backend.analisis import parte as cowork
+    return cowork.pendientes_veredicto(horas, limite)
+
+
+@app.post(API + "/analisis/cowork/{fixture_id}/veredicto")
+def cowork_veredicto(fixture_id: int, body: VeredictoBody):
+    """Cierra el caso 12 h después: ¿acertó el pronóstico?
+
+    Lo objetivo lo calcula el backend y viaja en la respuesta (marcador, si
+    acertó el 1X2, el Brier, si cayó gol en la ventana del TDE, y los goles
+    con su minuto). Lo que llega de fuera es el juicio: por qué falló, la
+    lección, y —esto es lo que no se puede deducir— si el caso es CIEGO o
+    está contaminado. Sin pronóstico previo no se escribe veredicto en la
+    cadena del equipo: se dice en `sinPronosticoPrevio`."""
+    from backend.analisis import parte as cowork
+    try:
+        return cowork.guardar_veredicto(fixture_id, body.model_dump())
+    except cowork.ParteInvalido as e:
+        raise HTTPException(422, str(e))
+
+
+@app.get(API + "/analisis/cowork/{fixture_id}/veredicto")
+def cowork_veredicto_leer(fixture_id: int):
+    """El veredicto guardado con su parte objetiva recalculada al leer."""
+    from backend.analisis import parte as cowork
+    v = cowork.veredicto_de(fixture_id)
+    if not v:
+        raise HTTPException(404, f"el fixture {fixture_id} todavía no tiene veredicto")
+    return v
+
+
+@app.post(API + "/analisis/cowork/{fixture_id}/xi")
+def cowork_xi(fixture_id: int, body: XiBody):
+    """Llega el once y se cierra el bloque F — en local, gratis y al instante.
+
+    Tres caminos, mismo resultado: `desdeFicha` (lo que ya capturó
+    API-Football), el once a mano en `a`/`b` (el pantallazo que el usuario le
+    pasa a Cowork), o los dos mezclados. Recalcula IP, reducción por zona,
+    F3 y F4 con las fórmulas del protocolo: ningún modelo interviene."""
+    from backend.analisis import parte as cowork
+    onces = {l: v.model_dump() for l, v in (("a", body.a), ("b", body.b)) if v and v.once}
+    try:
+        if onces:
+            return cowork.resolver_xi(fixture_id, onces)
+        return cowork.resolver_desde_ficha(fixture_id)
+    except cowork.ParteInvalido as e:
+        raise HTTPException(409, str(e))

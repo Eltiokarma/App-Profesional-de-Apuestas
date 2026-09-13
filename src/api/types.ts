@@ -835,3 +835,279 @@ export interface TimelineData {
   datos_faltantes: string[]
   fuentes: string[]
 }
+
+// ── parte de Cowork (docs/COWORK.md) ────────────────────────────────────────
+// El análisis lo escribe Cowork con la suscripción y lo deposita; el backend
+// guarda, calcula lo que es aritmética y lo sirve. Todo lo que aquí es número
+// —total, porcentaje, IP, reducción por zona, ramas— viene ya calculado: la
+// pantalla no recalcula nada, y Cowork no escribió nada de eso.
+
+export type ZonaF = 'GK' | 'DEF' | 'MID' | 'ATK'
+export type RolF = 'TF' | 'TH' | 'ROT' | 'SUP'
+export type EstadoJugadorF = '' | 'disponible' | 'baja' | 'duda'
+
+export interface JugadorParte {
+  nombre: string
+  posicion?: string
+  zona: ZonaF
+  rol: RolF
+  apps?: string
+  estado?: EstadoJugadorF
+  motivo?: string
+  /** dónde apareció en la hoja del partido, una vez resuelto el once. */
+  hoja?: 'titular' | 'banca' | 'fuera'
+}
+
+export interface BloqueParte {
+  score: number
+  max: number
+  peso: number
+  /** score × peso — lo calcula el backend, no el modelo. */
+  ponderado: number
+  topePonderado: number
+  excluido: boolean
+  motivoExclusion?: string
+  nota?: string
+}
+
+export interface RamaF {
+  ip: number
+  ipNivel: Semaforo
+  reduccion: Record<ZonaF, number>
+  reduccionNivel: Record<ZonaF, Semaforo>
+  multiplicadorGk: boolean
+  zonasCriticas: ZonaF[]
+  fuera: { nombre: string; zona: ZonaF; rol: RolF; estado: string; motivo: string; impacto: number }[]
+  supuesto: string
+  ausenteHipotetico?: string
+}
+
+export type Semaforo = 'verde' | 'ambar' | 'rojo'
+
+export interface DisponibilidadParte {
+  /** false = bloque F congelado (sin once, o con un once que no casa). */
+  resuelto: boolean
+  sinTabla?: boolean
+  fuente?: string
+  capturadoEn?: string
+  formacion?: string
+  nota?: string
+  /** el once recibido no casa con la tabla: se dice en vez de publicar un IP falso. */
+  conflicto?: string
+  ip?: number
+  ipNivel?: Semaforo
+  reduccion?: Record<ZonaF, number>
+  reduccionNivel?: Record<ZonaF, Semaforo>
+  multiplicadorGk?: boolean
+  zonasCriticas?: ZonaF[]
+  fuera?: RamaF['fuera']
+  f4?: { rotados: number; nombres: string[]; diagnostico: string }
+  jugadores?: JugadorParte[]
+  dudas?: string[]
+  noReconocidos?: string[]
+  casados?: number
+  once?: number
+  /** solo mientras no hay once: los dos bordes entre los que va a caer el IP. */
+  ramas?: { a: RamaF; b: RamaF }
+}
+
+export interface EquipoParte {
+  nombre: string
+  bloques: Record<'A' | 'B' | 'C' | 'D' | 'E', BloqueParte>
+  total: number
+  /** 27 con bloque C, 23 sin él. */
+  maximoAlcanzable: number
+  porcentaje: number
+  clasificacion: 'FORMADO' | 'EN_FORMACION' | 'SIN_FORMACION'
+  dt: { nombre: string; meses: number }
+  perfil: { sistema: string; estilo: string; fortaleza: string; vulnerabilidad: string }
+  plantel: JugadorParte[]
+  fuera: { nombre: string; estado: string; motivo: string }[]
+  factorX: { nombre: string; contexto: string }[]
+  /** Caja de sensibilidad: qué cambiaría si el dato que falta fuera otro. */
+  sensibilidad: { supuesto: string; efecto: string }[]
+  disponibilidad: DisponibilidadParte
+}
+
+export interface AlertaParte {
+  codigo: string
+  equipo: 'a' | 'b' | 'global'
+  tipo: 'estructural' | 'fecha'
+  detalle: string
+}
+
+export interface DocumentoParte {
+  id: string
+  titulo: string
+  formato: 'md' | 'html' | 'texto'
+  cuerpo: string
+}
+
+/** Lectura SAD: el juicio que cierra el EFE (no hay forma de calcularlo). */
+export interface LecturaSadParte {
+  moduloOperativo: string
+  unXDos: { texto: string; rangoAmpliado: boolean }
+  contextoEmocional: string
+  datoEstructural: string
+  paradoja: string
+}
+
+/** Teorema del Echado. Los niveles llegan del skill: el backend no inventa
+ *  umbrales para una escala que vive en otro lado. '' = píntalo en neutro. */
+export interface TdeParte {
+  ie?: number
+  ieNivel?: Semaforo | ''
+  ise?: number
+  iseNivel?: Semaforo | ''
+  equipo?: 'a' | 'b' | ''
+  tipologia?: string
+  ventana?: string
+  disciplina43?: boolean
+  vias?: { nombre: string; indice: number; ventana: string; detalle: string }[]
+  falsador?: string
+}
+
+/** El cierre del caso 12 h después (fase B de docs/APRENDIZAJE.md). */
+export interface LadoVeredicto {
+  veredicto: 'acierto' | 'parcial' | 'fallo'
+  queP: string
+  leccion: string
+  skill: string
+  reglaTocada: string
+}
+
+/** Lo que la base responde sola. Se recalcula al leer: no se sella. */
+export interface VeredictoObjetivo {
+  jugado: boolean
+  motivo?: string
+  marcador?: { local: number; visitante: number; texto: string; ganador: 'a' | 'b' | 'empate'; terminado: boolean }
+  unXDos?: {
+    declarado: string
+    real: 'local' | 'empate' | 'visita'
+    acerto: boolean
+    probabilidadDeclarada: number
+    reparto: Record<string, number>
+    nota: string
+  }
+  marcadorExacto?: { declarado: string; real: string; acerto: boolean }
+  /** Brier de TRES resultados (0 perfecto, 2 máximo). No es el binario del TDE. */
+  brier?: { valor: number | null; escala: string }
+  tde?: {
+    ventana: string
+    desde?: number
+    hasta?: number
+    equipo?: string
+    comprobable: boolean
+    /** null = no se pudo comprobar (sin ficha de eventos o sin ventana legible). */
+    golEnVentana: boolean | null
+    goles?: { minuto: number; lado: 'a' | 'b'; jugador: string }[]
+    nota: string
+  }
+  evidencia?: {
+    goles: { minuto: number; lado: 'a' | 'b'; jugador: string; autogol: boolean }[]
+    primerGol: { minuto: number; lado: 'a' | 'b'; jugador: string } | null
+    conFicha: boolean
+    nota: string
+  }
+}
+
+export interface VeredictoParte {
+  fixtureId: number
+  /** La población del caso: solo `ciega` calcula métricas. */
+  seleccion: 'ciega' | 'por_resultado' | 'post_resultado'
+  modoEvaluacion: 'PRE' | 'COND'
+  /** ciega + PRE, y solo eso. */
+  acredita: boolean
+  falsador: { texto: string; cumplido: boolean | null }
+  porLado: Partial<Record<'a' | 'b', LadoVeredicto>>
+  notas: string
+  cerradoEn: string
+  objetivo: VeredictoObjetivo
+  sinPronosticoPrevio?: string[]
+}
+
+export interface VeredictoPendienteDTO {
+  fixtureId: number
+  fecha: string
+  partido: string
+  marcador: string
+  jugadoEn: string
+}
+
+export interface ParteCoworkDTO {
+  fixtureId: number
+  estado: 'pendiente_xi' | 'confirmado'
+  version: string
+  partido: { equipoA: string; equipoB: string; fecha: string; equipoAId: number; equipoBId: number }
+  equipos: { a: EquipoParte; b: EquipoParte }
+  alertas: AlertaParte[]
+  matchup: {
+    diagnostico: 'FAVORABLE' | 'NEUTRO' | 'DESFAVORABLE'
+    favorece: 'a' | 'b' | ''
+    razon: string
+    /** Los tres indicadores que sostienen el diagnóstico ('na' = no aplica). */
+    h2a: Semaforo | 'na'
+    h2b: Semaforo | 'na'
+    h2c: Semaforo | 'na'
+  }
+  lecturaSad: LecturaSadParte
+  tde: TdeParte
+  /** Institucional de Cowork + partidos calculados por el backend; null si no
+   *  hay ni lo uno ni lo otro. Se pinta con el TimelineComparativo de siempre. */
+  timeline: TimelineData | null
+  pronostico: {
+    motor: string
+    matriz: string
+    mercado: string
+    probabilidades: { local: number; empate: number; visita: number }
+    marcador: string
+    falsador: string
+  }
+  documentos: DocumentoParte[]
+  pendientes: string[]
+  fuentes: string[]
+  notas: string
+  xi: Record<'a' | 'b', { once?: string[]; formacion?: string; fuente?: string; capturadoEn?: string }>
+  /** null mientras el caso no se haya cerrado. */
+  veredicto: VeredictoParte | null
+  creadoEn: string
+  actualizadoEn: string
+}
+
+export interface XiLadoDTO {
+  once: string[]
+  banca?: string[]
+  formacion?: string
+  fuente?: string
+}
+
+export interface ParteAgendaItemDTO {
+  fixtureId: number
+  hora: string
+  partido: string
+  equipoA: string
+  equipoB: string
+  liga: string
+  pais: string | null
+  /** 1-5 del protocolo; 0 = descartado (y `motivo` dice por qué). */
+  prioridad: number
+  motivo: string
+  etiquetas: string[]
+  parte: string
+}
+
+export interface AgendaCoworkDTO {
+  fecha: string
+  analizar: ParteAgendaItemDTO[]
+  enEspera: ParteAgendaItemDTO[]
+  descartados: ParteAgendaItemDTO[]
+  nota: string
+}
+
+export interface PartePendienteDTO {
+  fixtureId: number
+  fecha: string
+  partido: string
+  faltaXi: ('a' | 'b')[]
+  actualizadoEn: string
+}

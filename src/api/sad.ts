@@ -1,6 +1,7 @@
 // Endpoints del backend SAD (contrato: docs/openapi.yaml).
 import { apiGet, apiPost, qs } from './client'
 import type {
+  AgendaCoworkDTO,
   AnalisisPrepartidoDTO,
   AnalisisRegistroDTO,
   CargaDespensaDTO,
@@ -25,8 +26,12 @@ import type {
   NivelDTO,
   PartidoCalendarioDTO,
   PlantillaDTO,
+  ParteCoworkDTO,
+  PartePendienteDTO,
+  VeredictoPendienteDTO,
   PreflightEfeDTO,
   PrediccionDTO,
+  XiLadoDTO,
   StandingRowDTO,
 } from './types'
 
@@ -138,6 +143,28 @@ export const SadApi = {
 
   /** Metadatos de la liga (nombre, país, logo, bandera, fases de la temporada). */
   liga: (ligaId: number, temporada?: number) => apiGet<LigaDTO>(`/ligas/${ligaId}` + qs({ temporada })),
+
+  // ── parte de Cowork: el análisis escrito con la suscripción ──────────────
+
+  /** El parte del partido con lo calculable ya calculado. null si no hay. */
+  parteCowork: (fixtureId: number) => apiGet<ParteCoworkDTO>(`/analisis/cowork/${fixtureId}`),
+
+  /** Llega el once y el bloque F se cierra en el backend: gratis y al instante.
+   *  Sin onces, se intenta con la ficha que ya capturó la ingesta. */
+  resolverXi: (fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }) =>
+    apiPost<ParteCoworkDTO>(`/analisis/cowork/${fixtureId}/xi`, body, { timeoutMs: 20_000 }),
+
+  /** Los partidos del día ordenados por prioridad (paso 1 del batch nocturno). */
+  agendaCowork: (fecha?: string, limite?: number) =>
+    apiGet<AgendaCoworkDTO>('/analisis/cowork/agenda' + qs({ fecha, limite })),
+
+  /** Partes de partidos ya jugados y sin veredicto (fase B). */
+  veredictosPendientes: (horas?: number, limite?: number) =>
+    apiGet<VeredictoPendienteDTO[]>('/analisis/cowork/veredictos/pendientes' + qs({ horas, limite })),
+
+  /** Partes que todavía esperan once. */
+  partesPendientes: (limite?: number) =>
+    apiGet<PartePendienteDTO[]>('/analisis/cowork/pendientes' + qs({ limite })),
 
   standings: (ligaId: number, temporada?: number, fase?: string) =>
     apiGet<StandingRowDTO[]>(`/ligas/${ligaId}/standings` + qs({ temporada, fase })),

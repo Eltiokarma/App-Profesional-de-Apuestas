@@ -19,7 +19,9 @@ import type {
   LigaDTO,
   PartidoCalendarioDTO,
   PlantillaDTO,
+  ParteCoworkDTO,
   PreflightEfeDTO,
+  XiLadoDTO,
   PrediccionDTO,
   StandingRowDTO,
 } from '../api/types'
@@ -601,4 +603,23 @@ export async function loadLiga(ligaId: number, temporada?: number): Promise<Liga
     proximos: prog.map(fixtureToMatch),
     recientes: fin.map(fixtureToMatch), // el contrato entrega desc: más reciente primero
   }
+}
+
+// ── parte de Cowork (docs/COWORK.md) ────────────────────────────────────────
+// El camino barato: el análisis ya está escrito y depositado; la pantalla solo
+// lo lee. Y cuando aparece el once, el bloque F se cierra en el backend con
+// aritmética — ni un token.
+
+/** El parte de este partido, o null si Cowork todavía no lo depositó. */
+export function loadParteCowork(matchId: string): Promise<ParteCoworkDTO | null> {
+  return getDataSource().parteCowork(fixtureNum(matchId))
+}
+
+/** Manda el once (a mano o desde la ficha ya ingestada) y devuelve el parte
+ *  recalculado: IP, reducción por zona, F3 y F4 al instante y gratis. */
+export function resolverXiParte(
+  matchId: string,
+  body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean },
+): Promise<ParteCoworkDTO> {
+  return getDataSource().resolverXi(fixtureNum(matchId), body)
 }

@@ -62,7 +62,8 @@ python -m backend.test_api                           # verificaciones del contra
 |---|---|---|
 | `SAD_DATA_DIR` | raíz del repo | carpeta con las 4 SQLite |
 | `SAD_CORS_ORIGINS` | localhost/127.0.0.1:5173 | orígenes permitidos (coma-separados); en despliegue, el dominio real del frontend |
-| `SAD_API_TOKEN` | *(vacío = abierta)* | con valor, todo salvo `/health` exige `Authorization: Bearer <token>` (el frontend lo manda con `VITE_API_KEY`) |
+| `SAD_API_TOKEN` | *(vacío = abierta)* | LLAVE MAESTRA: con valor, todo salvo `/health` exige `Authorization: Bearer <token>` (el frontend lo manda con `VITE_API_KEY`). Abre también lo que gasta dinero: `/analisis/efe\|timeline\|dtp` (créditos de Claude) y `/fixtures/{id}/vip` + `/ligas/{id}/refrescar` (pueden tirar de `SAD_EMERGENCIA_KEY`, que factura excedente) |
+| `SAD_TOKEN_COWORK` | *(vacío = no existe)* | token ACOTADO para Cowork: solo `/analisis/cowork/*` (sin DELETE) y los GET de lectura del pipeline. Todo lo demás → 403 explicando qué token hace falta. Es una lista de permitidos: un endpoint nuevo nace denegado. Si se pone igual que `SAD_API_TOKEN` no recorta nada y se ignora (avisa al arrancar) |
 | `SAD_RATE_LIMIT` | `120` | requests por minuto por IP (429 al exceder); `0` lo apaga |
 | `SAD_DOCS` | `1` sin token, `0` con token | expone `/docs`, `/redoc` y `/openapi.json` |
 | `SAD_INGESTA_HORA` | *(vacía = apagada)* | `HH:MM` UTC: corre `backend.ingesta.corrida_diaria` a diario en subproceso (despliegue de un solo servicio) |

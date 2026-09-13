@@ -30,7 +30,8 @@ en subproceso. El backend HTTP sigue siendo de solo lectura.
    |---|---|---|
    | `API_FOOTBALL_KEY` | *(clave de dashboard.api-football.com)* | solo la usa la ingesta |
    | `SAD_CORS_ORIGINS` | `https://<tu-app>.vercel.app` | el dominio real del frontend |
-   | `SAD_API_TOKEN` | *(token largo aleatorio)* | apaga `/docs` y protege la API |
+   | `SAD_API_TOKEN` | *(token largo aleatorio)* | apaga `/docs` y protege la API. **Llave maestra**: abre también lo que gasta créditos de Claude y cuota de API-Football. Es el que usa el frontend |
+   | `SAD_TOKEN_COWORK` | *(otro token largo, distinto)* | el que se le da a **Cowork**. Acotado a `/analisis/cowork/*` (sin DELETE) y a las lecturas del pipeline: no puede gastar créditos ni cuota aunque se lo pidan. Rótalo sin tocar el del frontend. Ver `docs/COWORK.md` |
    | `SAD_INGESTA_HORA` | `06:30,12:30,18:30` | horas de corrida (UTC, lista = varios snapshots de cuotas/día); vacía = sin ingesta. **Costo**: cada corrida completa gasta cientos de requests (extractor + jugadores + ficha); con un backlog grande de plantillas/fichas, dos corridas el mismo día pueden pasar de 3 000. La reserva del día (`SAD_BACKFILL_RESERVA`) frena la parte en bloque antes de dejar sin presupuesto al ciclo en vivo |
    | `SAD_REFRESCO_MIN` | `30` | fase 2: cada N min refresca cuotas de NS que empiezan en <6 h (0 requests si no hay); vacía = apagado. Con pocos pendientes pide `/odds?fixture=` (1 request por partido); el lote por fecha —que paga el feed MUNDIAL, 40-90 páginas— solo se usa con más de `SAD_CUOTAS_LOTE_UMBRAL` pendientes ese día. Antes de esa regla, este refresco solo quemaba 2.000-4.300 requests/día y fue lo que agotó el plan el 29/07/2026 |
    | `SAD_CUOTAS_LOTE_UMBRAL` | `12` | (opcional) pendientes de cuotas por FECHA a partir de los cuales conviene el lote `/odds?date=` (feed mundial) en vez de `/odds?fixture=` uno a uno. `0` = siempre lote (comportamiento anterior) |

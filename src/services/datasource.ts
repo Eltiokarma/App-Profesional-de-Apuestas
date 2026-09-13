@@ -2,6 +2,7 @@
 // - MockDataSource: el motor local (src/motor) sirviendo ese contrato (demo, default).
 // - HttpDataSource: el backend FastAPI real (VITE_DATA_SOURCE=http).
 // Migrar una pantalla a datos reales = consumirla vía getDataSource(); nada más.
+import { ApiError } from '../api/client'
 import { SadApi } from '../api/sad'
 import type {
   AnalisisPrepartidoDTO,
@@ -34,16 +35,22 @@ import type {
   FichaTacticaDTO,
   LigaDTO,
   NivelDTO,
+  JugadorParte,
+  ParteCoworkDTO,
   PartidoCalendarioDTO,
   PlantillaDTO,
   PreflightEfeDTO,
+  RolF,
+  Semaforo,
+  XiLadoDTO,
+  ZonaF,
   PrediccionDTO,
   PuntoLiveDTO,
   StandingRowDTO,
 } from '../api/types'
 import { CONFIG, type DataSourceMode } from '../config'
 import { MARKET_DEFS, MATCHES, STANDINGS, TEAMS } from '../data'
-import { dtpDemo, efeDemo, timelineDemo } from '../data/efeDemo'
+import { dtpDemo, efeDemo, parteCoworkDemo, timelineDemo } from '../data/efeDemo'
 import { oddsFor, rng } from '../lib/odds'
 import { levelBin } from '../motor/discretizer'
 import { teamEngine } from '../motor/engine'
@@ -134,6 +141,12 @@ export interface SadDataSource {
   /** Calendario SAD: próximos partidos con el mapa de rivales (bloque G del EFE)
    *  ya calculado — la misma lectura en todas las pantallas, sin IA. */
   calendario(equipoId: number, n?: number): Promise<PartidoCalendarioDTO[]>
+  /** El parte que dejó Cowork para este partido (docs/COWORK.md); null si no hay.
+   *  Es el camino barato: análisis escrito con la suscripción, cero créditos. */
+  parteCowork(fixtureId: number): Promise<ParteCoworkDTO | null>
+  /** Llega el once y el bloque F se cierra en el backend (aritmética, sin IA).
+   *  Sin onces en el cuerpo, se intenta con la ficha ya ingestada. */
+  resolverXi(fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }): Promise<ParteCoworkDTO>
 }
 
 // ---------- mapeo de ids internos (strings) ↔ contrato (números) ----------
@@ -751,6 +764,93 @@ class MockDataSource implements SadDataSource {
     }
   }
 
+  // parte de Cowork demo: llega congelado (como de noche) y el once se
+  // resuelve aquí con los MISMOS pesos del protocolo que usa el backend
+  private _partes = new Map<number, ParteCoworkDTO>()
+
+  async parteCowork(fixtureId: number): Promise<ParteCoworkDTO | null> {
+    const m = MATCHES.find((x) => FIXTURE_NUM(x.id) === fixtureId)
+    if (!m) return null
+    let p = this._partes.get(fixtureId)
+    if (!p) {
+      // un partido ya jugado trae su caso cerrado; uno por jugar, todavía no
+      p = parteCoworkDemo(fixtureId, TEAMS[m.home].name, TEAMS[m.away].name,
+        m.status === 'fin' ? m.score.replace(/\s/g, '') : undefined)
+      this._partes.set(fixtureId, p)
+    }
+    return p
+  }
+
+  async resolverXi(fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }): Promise<ParteCoworkDTO> {
+    const p = await this.parteCowork(fixtureId)
+    if (!p) throw new Error('no hay parte para ese partido')
+    if (body.desdeFicha) throw new Error('modo demo: no hay ficha de API-Football que leer; pega el once a mano')
+    const PESO: Record<RolF, number> = { TF: 3, TH: 2, ROT: 1, SUP: 0.5 }
+    const norm = (x: string) => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+    const siguiente: ParteCoworkDTO = { ...p, equipos: { ...p.equipos } }
+    for (const lado of ['a', 'b'] as const) {
+      const dato = body[lado]
+      if (!dato?.once?.length) continue
+      const eq = p.equipos[lado]
+      const hoja = new Set([...dato.once, ...(dato.banca ?? [])].map(norm))
+      const banca = new Set((dato.banca ?? []).map(norm))
+      const jugadores = eq.plantel.map((j) => ({
+        ...j,
+        estado: (hoja.has(norm(j.nombre)) ? 'disponible' : 'baja') as JugadorParte['estado'],
+        motivo: hoja.has(norm(j.nombre)) ? '' : 'no figura en la hoja del partido',
+        hoja: (banca.has(norm(j.nombre)) ? 'banca' : hoja.has(norm(j.nombre)) ? 'titular' : 'fuera') as JugadorParte['hoja'],
+      }))
+      // mismo candado que el backend: un once que casa con menos de 7 nombres
+      // de la tabla no describe a un equipo diezmado, describe otra hoja
+      const casados = jugadores.filter((j) => j.hoja === 'titular').length
+      if (casados < 7) {
+        siguiente.equipos[lado] = {
+          ...eq,
+          disponibilidad: {
+            ...eq.disponibilidad, resuelto: false, fuente: dato.fuente || 'carga manual',
+            conflicto: `el once recibido casa con ${casados} de ${dato.once.length} nombres de la tabla: no se cierra el bloque F con eso.`,
+            noReconocidos: dato.once.filter((n) => !eq.plantel.some((j) => norm(j.nombre) === norm(n))),
+          },
+        }
+        continue
+      }
+      const peso = (j: JugadorParte) => PESO[j.rol] * (j.zona === 'GK' && j.rol === 'TF' ? 1.5 : 1)
+      const ip = +jugadores.filter((j) => j.estado === 'baja').reduce((s, j) => s + peso(j), 0).toFixed(2)
+      const red = { GK: 0, DEF: 0, MID: 0, ATK: 0 } as Record<ZonaF, number>
+      for (const z of ['GK', 'DEF', 'MID', 'ATK'] as ZonaF[]) {
+        const zona = jugadores.filter((j) => j.zona === z)
+        const tot = zona.reduce((s, j) => s + PESO[j.rol], 0)
+        const per = zona.filter((j) => j.estado === 'baja').reduce((s, j) => s + PESO[j.rol], 0)
+        red[z] = tot ? +((per / tot) * 100).toFixed(1) : 0
+      }
+      const sem = (v: number): Semaforo => (v < 20 ? 'verde' : v <= 40 ? 'ambar' : 'rojo')
+      const rotados = jugadores.filter((j) => j.hoja === 'banca' && (j.rol === 'TF' || j.rol === 'TH'))
+      siguiente.equipos[lado] = {
+        ...eq,
+        disponibilidad: {
+          resuelto: true, sinTabla: false, fuente: dato.fuente || 'carga manual',
+          formacion: dato.formacion ?? '', ip,
+          ipNivel: ip <= 3 ? 'verde' : ip <= 7 ? 'ambar' : 'rojo',
+          reduccion: red,
+          reduccionNivel: { GK: sem(red.GK), DEF: sem(red.DEF), MID: sem(red.MID), ATK: sem(red.ATK) },
+          multiplicadorGk: jugadores.some((j) => j.zona === 'GK' && j.rol === 'TF' && j.estado === 'baja'),
+          zonasCriticas: (Object.keys(red) as ZonaF[]).filter((z) => red[z] > 40),
+          fuera: jugadores.filter((j) => j.estado === 'baja').map((j) => ({
+            nombre: j.nombre, zona: j.zona, rol: j.rol, estado: 'baja', motivo: j.motivo ?? '', impacto: peso(j),
+          })),
+          f4: { rotados: rotados.length, nombres: rotados.map((j) => j.nombre),
+                diagnostico: rotados.length ? `${rotados.length} titular(es) del XI tipo en el banco` : 'sin rotación respecto al XI tipo' },
+          jugadores, dudas: [], noReconocidos: [], casados: dato.once.length, once: dato.once.length,
+        },
+      }
+    }
+    siguiente.estado = (['a', 'b'] as const).every((l) => siguiente.equipos[l].disponibilidad.resuelto)
+      ? 'confirmado' : 'pendiente_xi'
+    siguiente.actualizadoEn = new Date().toISOString()
+    this._partes.set(fixtureId, siguiente)
+    return siguiente
+  }
+
   async cargarDespensa(payload: CargaDespensaDTO): Promise<CargaDespensaResultadoDTO> {
     // demo: se "acepta" sin almacenar (la despensa real vive en efe.db del backend)
     const depositados = payload.equipos.reduce(
@@ -953,6 +1053,14 @@ class HttpDataSource implements SadDataSource {
   fichaPartido = (fixtureId: number) => SadApi.fichaPartido(fixtureId)
   liga = (ligaId: number, temporada?: number) => SadApi.liga(ligaId, temporada)
   standings = (ligaId: number, temporada?: number, fase?: string) => SadApi.standings(ligaId, temporada, fase)
+  // 404 = todavía no hay parte para ese partido; es un estado normal, no un error
+  parteCowork = (fixtureId: number) =>
+    SadApi.parteCowork(fixtureId).catch((e: unknown) => {
+      if (e instanceof ApiError && e.status === 404) return null
+      throw e
+    })
+  resolverXi = (fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }) =>
+    SadApi.resolverXi(fixtureId, body)
 }
 
 let _ds: SadDataSource | null = null
