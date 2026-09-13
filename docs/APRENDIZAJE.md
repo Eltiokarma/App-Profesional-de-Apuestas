@@ -1,8 +1,8 @@
 # El bucle de aprendizaje — diseño, todavía sin construir
 
-> **Estado: PLANIFICADO.** Nada de este documento está implementado. Es el
-> diseño acordado el 13.09.2026 para que no se pierda, con el orden en que
-> conviene hacerlo. Cuando una fase se construya, se marca aquí.
+> **Estado: fase B HECHA (13.09.2026).** El veredicto a las 12 h está
+> construido y en la app. Las fases C, D y A siguen planificadas. Cada fase se
+> marca aquí al construirse.
 
 ## Lo que se quiere, en una frase
 
@@ -14,10 +14,10 @@ lecciones en una versión nueva de un skill.
 Cuatro piezas, en ese orden:
 
 ```
-  A. ANTECEDENTES     Cowork lee lo que dijo de estos equipos → escribe menos
-  B. VEREDICTO 12h    ¿acertó? lo objetivo lo calcula la app; el juicio lo escribe Cowork
-  C. LECCIONES        lo aprendido se acumula por skill, con su población declarada
-  D. REVISIÓN         cada N fallos la app arma el dossier y el usuario autoriza el .zip
+  A. ANTECEDENTES     Cowork lee lo que dijo de estos equipos → escribe menos      PENDIENTE
+  B. VEREDICTO 12h    ¿acertó? lo objetivo lo calcula la app; el juicio lo escribe   HECHA
+  C. LECCIONES        lo aprendido se acumula por skill, con su población declarada  PENDIENTE
+  D. REVISIÓN         cada N fallos la app arma el dossier y el usuario autoriza     PENDIENTE
 ```
 
 ---
@@ -149,11 +149,20 @@ que se puede calcular, se calcula.
 | ¿acertó el marcador exacto? | la lección, en una frase accionable |
 | error de la probabilidad (Brier por caso) | a qué skill le toca la lección |
 | ¿el gol del tramo final cayó en la ventana del TDE? | si el caso es `ciego` o está contaminado |
-| ¿se cumplió el falsador declarado? | — |
+| los goles con su minuto y su lado (la evidencia) | **si se cumplió el falsador** |
 
-Que el falsador sea comprobable es, otra vez, el punto entero de haberlo
-exigido: *"si el visitante abre el marcador antes del 20'"* se verifica contra
-`fixture_eventos` sin preguntarle a nadie.
+**Corrección sobre la primera versión de este documento:** aquí decía que el
+falsador lo verificaría el backend. Al construirlo quedó claro que no: el
+falsador es prosa libre y un verificador que acierte el 80% de las veces es
+peor que no tenerlo, porque nadie sabría de cuál 20% desconfiar. Lo que la app
+hace es **servir la evidencia** con la que se comprueba —los goles con su
+minuto y su lado— y dejar que Cowork declare `falsadorCumplido`.
+
+Lo que sí se comprueba solo es **la ventana del TDE**, y por una razón
+concreta: `"75-90'"` son dos números y un gol tiene un minuto. Se cuentan solo
+los goles CONTRA el equipo evaluado —la echada se observa en lo que recibe— y
+si la ficha de eventos no está capturada, `golEnVentana` vuelve `null` en vez
+de `false`: no comprobable no es lo mismo que no ocurrido.
 
 **Contrato propuesto:**
 
@@ -178,8 +187,31 @@ POST /analisis/cowork/{fixtureId}/veredicto
   vea el marcador y el Brier que le salieron sin tener que pedirlos.
 ```
 
-El veredicto entra en `cadena_dtp.registro` (el hueco que ya existe) y, si
-trae `skill`, también en la tabla de lecciones de la fase C.
+El veredicto entra en `cadena_dtp.registro` (el hueco que ya existe). La
+lección viaja dentro del veredicto con su `skill`; la fase C la indexará desde
+ahí en vez de pedir una tabla a medio construir hoy.
+
+**Construido así** (`backend/analisis/veredicto.py` + `parte.py`):
+
+- El objetivo se **recalcula en cada lectura**, nunca se sella. Si la ingesta
+  corrige un marcador o llega la ficha de eventos que faltaba, la próxima
+  lectura trae el cálculo bueno sin que nadie reescriba el juicio.
+- El Brier es de **tres resultados** (Σ(pᵢ−oᵢ)², 0 perfecto, 2 máximo) y lo
+  dice en su propio campo `escala`. El objetivo `< 0.20` del TDE es un Brier
+  **binario**: no están en la misma escala y ponerlos en la misma tabla sería
+  un error de lectura.
+- Un reparto que no suma 100 se normaliza. Un 1X2 con dos selecciones
+  empatadas en el máximo **no cuenta acierto**: se declara en `nota` en vez de
+  desempatarse a ojo.
+- Un marcador de un partido en curso se sirve igual (para eso existe `COND`)
+  pero viene marcado `terminado: false`.
+
+**Un bug que el diseño predijo y los tests destaparon:** re-depositar el parte
+después de cerrar el caso borraba el veredicto de la cadena, porque la
+apertura escribía un registro vacío encima. Ahora el re-depósito conserva el
+veredicto **y** el pronóstico ya declarado, y delata en `cadenaIgnorada` que
+llegó uno distinto. Es exactamente el hindsight que la fase B existe para
+impedir, entrando por la puerta de atrás.
 
 **Cuidado con el orden.** Si Cowork escribe el veredicto *antes* de consultar
 el marcador, el caso es PRE. Si consulta el marcador y después puntúa, es

@@ -342,6 +342,176 @@ def main():
     check("sin lectura SAD los campos van vacíos", d2["lecturaSad"]["moduloOperativo"] == "", d2["lecturaSad"])
     c.delete(f"{A}/analisis/cowork/{sin_ficha}")
 
+    # ── FASE B · el veredicto a las 12 h ────────────────────────────────────
+    # un partido terminado hace rato y con ficha de eventos capturada
+    pasado = dbmod.query_one(
+        "sad", "SELECT f.id, COALESCE(f.fulltime_home, f.goals_home) AS gl, "
+               "COALESCE(f.fulltime_away, f.goals_away) AS gv, f.date "
+               "FROM fixtures f WHERE f.status_short='FT' AND f.date < datetime('now','-2 days') "
+               "ORDER BY f.date DESC LIMIT 1")
+    marcador_real = f"{pasado['gl']}-{pasado['gv']}"
+    real = "local" if pasado["gl"] > pasado["gv"] else ("visita" if pasado["gv"] > pasado["gl"] else "empate")
+
+    # el pronóstico se declara ANTES: se deposita el parte apuntando al ganador real
+    p_ok = _parte(pasado["id"])
+    otras = [k for k in ("local", "empate", "visita") if k != real]
+    p_ok["pronostico"]["probabilidades"] = {real: 60, otras[0]: 25, otras[1]: 15}
+    p_ok["pronostico"]["marcador"] = marcador_real
+    c.post(f"{A}/analisis/cowork", json=p_ok)
+
+    # la lista de pendientes es el disparador
+    pend = c.get(f"{A}/analisis/cowork/veredictos/pendientes").json()
+    check("el partido jugado aparece como pendiente de veredicto",
+          any(x["fixtureId"] == pasado["id"] for x in pend), pend[:2])
+    check("el pendiente trae ya el marcador",
+          next((x["marcador"] for x in pend if x["fixtureId"] == pasado["id"]), "") == marcador_real,
+          pend[:2])
+    check("un partido sin jugar NO aparece como pendiente",
+          all(x["fixtureId"] != sin_ficha for x in pend), pend[:2])
+
+    # la población es obligatoria y no se deduce
+    r = c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto",
+               json={"seleccion": "cualquiera", "modoEvaluacion": "PRE",
+                     "porLado": {"a": {"veredicto": "acierto"}}})
+    check("una población inválida se rechaza explicando por qué",
+          r.status_code == 422 and "acredita" in r.text, r.text[:200])
+    r = c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto",
+               json={"seleccion": "ciega", "modoEvaluacion": "PRE", "porLado": {}})
+    check("un veredicto sin ningún lado se rechaza", r.status_code == 422, r.status_code)
+
+    r = c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto", json={
+        "seleccion": "ciega", "modoEvaluacion": "PRE", "falsadorCumplido": False,
+        "porLado": {"a": {"veredicto": "acierto", "queP": "ganó como se dijo", "leccion": ""},
+                    "b": {"veredicto": "fallo", "queP": "no llegó por fuera",
+                          "leccion": "el bloque bajo entrenado sostiene los 90",
+                          "skill": "teorema-del-echado"}},
+    })
+    check("el veredicto se acepta", r.status_code == 200, r.text[:300])
+    v = r.json()
+    o = v["objetivo"]
+    check("el marcador lo pone la base, no el veredicto", o["marcador"]["texto"] == marcador_real, o["marcador"])
+    check("dice si el partido está terminado", o["marcador"]["terminado"] is True, o["marcador"])
+    check("acierta el 1X2 declarado", o["unXDos"]["acerto"] is True and o["unXDos"]["real"] == real,
+          o["unXDos"])
+    check("acierta el marcador exacto", o["marcadorExacto"]["acerto"] is True, o["marcadorExacto"])
+    # Brier de tres resultados con 60/25/15 sobre el acertado:
+    # (0.6-1)² + (0.25-0)² + (0.15-0)² = 0.16 + 0.0625 + 0.0225 = 0.245
+    check("el Brier se calcula y declara su escala", o["brier"]["valor"] == 0.245
+          and "binario" in o["brier"]["escala"], o["brier"])
+
+    # un reparto que no suma 100 se normaliza en vez de rechazarse
+    p_norm = dict(p_ok)
+    p_norm["pronostico"] = {**p_ok["pronostico"], "probabilidades": {real: 6, otras[0]: 2.5, otras[1]: 1.5}}
+    c.post(f"{A}/analisis/cowork", json=p_norm)
+    check("un reparto que no suma 100 se normaliza, no se rechaza",
+          c.get(f"{A}/analisis/cowork/{pasado['id']}/veredicto").json()["objetivo"]["brier"]["valor"] == 0.245,
+          c.get(f"{A}/analisis/cowork/{pasado['id']}/veredicto").json()["objetivo"]["brier"])
+    c.post(f"{A}/analisis/cowork", json=p_ok)
+    check("ciega + PRE acredita", v["acredita"] is True, v)
+    check("el falsador queda declarado por quien lo comprobó",
+          v["falsador"]["cumplido"] is False and v["falsador"]["texto"], v["falsador"])
+
+    # anti-hindsight: este parte sí mandó cadena, así que el cierre entra
+    check("sin pronóstico previo no se escribiría veredicto en la cadena",
+          v["sinPronosticoPrevio"] == [], v.get("sinPronosticoPrevio"))
+    eq_local = dbmod.query_one(
+        "sad", "SELECT ht.id FROM fixtures f JOIN teams ht ON ht.id=f.home_team_id WHERE f.id=?",
+        (pasado["id"],))["id"]
+    cad = c.get(f"{A}/equipos/{eq_local}/cadena").json()
+    eslabon = next((e for e in cad if e["fixtureId"] == pasado["id"]), None)
+    check("el veredicto cierra el eslabón de la cadena",
+          (eslabon or {}).get("registro", {}).get("veredicto") == "acierto", eslabon)
+    check("y el pronóstico previo NO se pisa al cerrar",
+          (eslabon or {}).get("registro", {}).get("pronostico_clave", "").startswith("A domina"),
+          (eslabon or {}).get("registro"))
+
+    # el veredicto viaja con el parte y se puede leer aparte
+    check("el parte trae su veredicto", c.get(f"{A}/analisis/cowork/{pasado['id']}").json()["veredicto"] is not None)
+    check("y hay endpoint propio para leerlo",
+          c.get(f"{A}/analisis/cowork/{pasado['id']}/veredicto").status_code == 200)
+    check("ya no aparece como pendiente",
+          all(x["fixtureId"] != pasado["id"]
+              for x in c.get(f"{A}/analisis/cowork/veredictos/pendientes").json()))
+    check("un fixture sin veredicto responde 404",
+          c.get(f"{A}/analisis/cowork/{sin_ficha}/veredicto").status_code == 404)
+
+    # REGRESIÓN: re-depositar el parte después del cierre no puede borrar el
+    # veredicto ni cambiar el pronóstico ya declarado (sería hindsight)
+    otro_pron = _parte(pasado["id"])
+    otro_pron["pronostico"]["probabilidades"] = {real: 60, otras[0]: 25, otras[1]: 15}
+    otro_pron["cadena"]["a"]["pronostico"] = "ahora digo otra cosa, con el resultado puesto"
+    rec2 = c.post(f"{A}/analisis/cowork", json=otro_pron).json()
+    check("un pronóstico distinto tras el partido se delata en el recibo",
+          rec2["cadenaIgnorada"], rec2.get("cadenaIgnorada"))
+    cad2 = c.get(f"{A}/equipos/{eq_local}/cadena").json()
+    esl2 = next((e for e in cad2 if e["fixtureId"] == pasado["id"]), None)
+    check("el pronóstico que manda sigue siendo el primero",
+          (esl2 or {}).get("registro", {}).get("pronostico_clave", "").startswith("A domina"),
+          (esl2 or {}).get("registro"))
+    check("y el veredicto ya escrito sobrevive al re-depósito",
+          (esl2 or {}).get("registro", {}).get("veredicto") == "acierto", (esl2 or {}).get("registro"))
+
+    # población contaminada: se guarda, se muestra y NO acredita
+    r = c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto", json={
+        "seleccion": "por_resultado", "modoEvaluacion": "PRE",
+        "porLado": {"a": {"veredicto": "acierto"}}})
+    check("un caso sembrado no acredita", r.json()["acredita"] is False, r.json())
+    r = c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto", json={
+        "seleccion": "ciega", "modoEvaluacion": "COND",
+        "porLado": {"a": {"veredicto": "acierto"}}})
+    check("ciego pero puntuado en marcha tampoco acredita", r.json()["acredita"] is False, r.json())
+
+    # anti-hindsight de verdad: un fixture que NUNCA tuvo pronóstico en la cadena
+    virgen = dbmod.query_one(
+        "sad", "SELECT id FROM fixtures WHERE status_short='FT' AND id NOT IN (?,?,?) "
+               "ORDER BY date DESC LIMIT 1", (pasado["id"], con_ficha, sin_ficha))["id"]
+    sin_cadena = _parte(virgen)
+    sin_cadena.pop("cadena")
+    c.post(f"{A}/analisis/cowork", json=sin_cadena)
+    r = c.post(f"{A}/analisis/cowork/{virgen}/veredicto", json={
+        "seleccion": "ciega", "modoEvaluacion": "PRE",
+        "porLado": {"a": {"veredicto": "fallo", "queP": "…"}}})
+    check("sin pronóstico previo la cadena NO recibe veredicto",
+          len(r.json()["sinPronosticoPrevio"]) == 1, r.json().get("sinPronosticoPrevio"))
+    check("pero el caso se guarda igual en el parte",
+          c.get(f"{A}/analisis/cowork/{virgen}/veredicto").json()["porLado"]["a"]["veredicto"] == "fallo")
+
+    # ── la ventana del TDE, comprobada contra los goles reales ──────────────
+    # el partido con ficha tiene goles en el 34' (local) y el 51' (visitante)
+    p_tde = _parte(con_ficha)
+    p_tde["tde"] = {"ie": 60, "equipo": "a", "ventana": "45-60'", "tipologia": "prueba"}
+    c.post(f"{A}/analisis/cowork", json=p_tde)
+    c.post(f"{A}/analisis/cowork/{con_ficha}/veredicto", json={
+        "seleccion": "ciega", "modoEvaluacion": "COND", "porLado": {"a": {"veredicto": "fallo"}}})
+    o2 = c.get(f"{A}/analisis/cowork/{con_ficha}/veredicto").json()["objetivo"]
+    check("la ventana del TDE se lee del texto", (o2["tde"]["desde"], o2["tde"]["hasta"]) == (45, 60),
+          o2.get("tde"))
+    check("detecta el gol recibido dentro de la ventana", o2["tde"]["golEnVentana"] is True,
+          o2.get("tde"))
+    check("y solo cuenta los goles CONTRA el equipo evaluado",
+          all(g["lado"] == "b" for g in o2["tde"]["goles"]), o2["tde"].get("goles"))
+    check("la evidencia trae los goles con su minuto",
+          len(o2["evidencia"]["goles"]) >= 2 and o2["evidencia"]["primerGol"]["minuto"] == 34,
+          o2["evidencia"].get("goles"))
+
+    # una ventana fuera de los goles no se da por cumplida
+    p_tde["tde"]["ventana"] = "75-90'"
+    c.post(f"{A}/analisis/cowork", json=p_tde)
+    o3 = c.get(f"{A}/analisis/cowork/{con_ficha}/veredicto").json()["objetivo"]
+    check("sin gol en la ventana, no se inventa el acierto", o3["tde"]["golEnVentana"] is False,
+          o3.get("tde"))
+    check("lo objetivo se RECALCULA al leer (el juicio no se re-escribió)",
+          o3["tde"]["ventana"] == "75-90'", o3.get("tde"))
+
+    # un pronóstico sin 1X2 no cuenta acierto en vez de contarlo como fallo
+    p_vacio = _parte(con_ficha)
+    p_vacio["pronostico"]["probabilidades"] = {"local": 0, "empate": 0, "visita": 0}
+    c.post(f"{A}/analisis/cowork", json=p_vacio)
+    o4 = c.get(f"{A}/analisis/cowork/{con_ficha}/veredicto").json()["objetivo"]
+    check("sin 1X2 declarado no hay acierto ni fallo, hay nota",
+          o4["unXDos"]["acerto"] is False and "no se cuenta" in o4["unXDos"]["nota"], o4["unXDos"])
+    check("y tampoco hay Brier", o4["brier"]["valor"] is None, o4["brier"])
+
     # ── el cruce de nombres, al detalle ─────────────────────────────────────
     from backend.analisis import bloque_f as bf
 

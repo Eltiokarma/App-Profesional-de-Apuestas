@@ -967,6 +967,73 @@ export interface TdeParte {
   falsador?: string
 }
 
+/** El cierre del caso 12 h después (fase B de docs/APRENDIZAJE.md). */
+export interface LadoVeredicto {
+  veredicto: 'acierto' | 'parcial' | 'fallo'
+  queP: string
+  leccion: string
+  skill: string
+  reglaTocada: string
+}
+
+/** Lo que la base responde sola. Se recalcula al leer: no se sella. */
+export interface VeredictoObjetivo {
+  jugado: boolean
+  motivo?: string
+  marcador?: { local: number; visitante: number; texto: string; ganador: 'a' | 'b' | 'empate'; terminado: boolean }
+  unXDos?: {
+    declarado: string
+    real: 'local' | 'empate' | 'visita'
+    acerto: boolean
+    probabilidadDeclarada: number
+    reparto: Record<string, number>
+    nota: string
+  }
+  marcadorExacto?: { declarado: string; real: string; acerto: boolean }
+  /** Brier de TRES resultados (0 perfecto, 2 máximo). No es el binario del TDE. */
+  brier?: { valor: number | null; escala: string }
+  tde?: {
+    ventana: string
+    desde?: number
+    hasta?: number
+    equipo?: string
+    comprobable: boolean
+    /** null = no se pudo comprobar (sin ficha de eventos o sin ventana legible). */
+    golEnVentana: boolean | null
+    goles?: { minuto: number; lado: 'a' | 'b'; jugador: string }[]
+    nota: string
+  }
+  evidencia?: {
+    goles: { minuto: number; lado: 'a' | 'b'; jugador: string; autogol: boolean }[]
+    primerGol: { minuto: number; lado: 'a' | 'b'; jugador: string } | null
+    conFicha: boolean
+    nota: string
+  }
+}
+
+export interface VeredictoParte {
+  fixtureId: number
+  /** La población del caso: solo `ciega` calcula métricas. */
+  seleccion: 'ciega' | 'por_resultado' | 'post_resultado'
+  modoEvaluacion: 'PRE' | 'COND'
+  /** ciega + PRE, y solo eso. */
+  acredita: boolean
+  falsador: { texto: string; cumplido: boolean | null }
+  porLado: Partial<Record<'a' | 'b', LadoVeredicto>>
+  notas: string
+  cerradoEn: string
+  objetivo: VeredictoObjetivo
+  sinPronosticoPrevio?: string[]
+}
+
+export interface VeredictoPendienteDTO {
+  fixtureId: number
+  fecha: string
+  partido: string
+  marcador: string
+  jugadoEn: string
+}
+
 export interface ParteCoworkDTO {
   fixtureId: number
   estado: 'pendiente_xi' | 'confirmado'
@@ -1001,6 +1068,8 @@ export interface ParteCoworkDTO {
   fuentes: string[]
   notas: string
   xi: Record<'a' | 'b', { once?: string[]; formacion?: string; fuente?: string; capturadoEn?: string }>
+  /** null mientras el caso no se haya cerrado. */
+  veredicto: VeredictoParte | null
   creadoEn: string
   actualizadoEn: string
 }

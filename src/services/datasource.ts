@@ -773,7 +773,9 @@ class MockDataSource implements SadDataSource {
     if (!m) return null
     let p = this._partes.get(fixtureId)
     if (!p) {
-      p = parteCoworkDemo(fixtureId, TEAMS[m.home].name, TEAMS[m.away].name)
+      // un partido ya jugado trae su caso cerrado; uno por jugar, todavía no
+      p = parteCoworkDemo(fixtureId, TEAMS[m.home].name, TEAMS[m.away].name,
+        m.status === 'fin' ? m.score.replace(/\s/g, '') : undefined)
       this._partes.set(fixtureId, p)
     }
     return p

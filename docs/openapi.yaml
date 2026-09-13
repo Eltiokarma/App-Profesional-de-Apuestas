@@ -659,6 +659,58 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ParteCowork' }
         '409': { description: 'No hay parte, o la ficha todavía no trae alineaciones' }
+  /analisis/cowork/veredictos/pendientes:
+    get:
+      summary: Partes de partidos ya jugados y todavía sin veredicto (fase B)
+      description: >
+        El disparador de la validación: partidos con parte depositado, terminados hace más
+        de `horas`, sin cerrar. Nadie tiene que acordarse de nada y lo que no se validó hoy
+        sigue estando mañana. Ver docs/APRENDIZAJE.md.
+      parameters:
+        - { name: horas, in: query, schema: { type: integer, default: 12, minimum: 0, maximum: 720 } }
+        - { name: limite, in: query, schema: { type: integer, default: 50, minimum: 1, maximum: 200 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/VeredictoPendiente' }
+  /analisis/cowork/{fixtureId}/veredicto:
+    get:
+      summary: El veredicto guardado, con su parte objetiva recalculada al leer
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Veredicto' }
+        '404': { description: El fixture todavía no tiene veredicto }
+    post:
+      summary: Cierra el caso 12 h después — ¿acertó el pronóstico?
+      description: >
+        Lo objetivo lo calcula el backend y viaja en la respuesta (marcador, acierto del
+        1X2, Brier, si cayó gol en la ventana del TDE, los goles con su minuto). De fuera
+        llega el juicio: por qué falló, la lección, y —lo que no se puede deducir— si el
+        caso es CIEGO o está contaminado. Sin pronóstico previo no se escribe veredicto en
+        la cadena del equipo: los lados afectados vuelven en `sinPronosticoPrevio`.
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VeredictoEntrada' }
+      responses:
+        '200':
+          description: El veredicto con lo calculado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Veredicto' }
+        '422': { description: 'población o modo inválidos, sin porLado, o no hay parte' }
 components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer }
@@ -1785,6 +1837,10 @@ components:
           type: object
           description: 'el once guardado por lado (sin la banca), con su fuente'
           additionalProperties: true
+        veredicto:
+          nullable: true
+          description: 'null mientras el caso no se haya cerrado'
+          allOf: [{ $ref: '#/components/schemas/Veredicto' }]
         creadoEn: { type: string }
         actualizadoEn: { type: string }
     ReciboParte:
@@ -1847,3 +1903,130 @@ components:
         enEspera: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
         descartados: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
         nota: { type: string }
+    VeredictoPendiente:
+      type: object
+      required: [fixtureId, partido, marcador]
+      properties:
+        fixtureId: { type: integer }
+        fecha: { type: string }
+        partido: { type: string }
+        marcador: { type: string, description: 'a 90 minutos, de nuestra ingesta' }
+        jugadoEn: { type: string }
+    LadoVeredicto:
+      type: object
+      properties:
+        veredicto: { type: string, enum: [acierto, parcial, fallo] }
+        queP: { type: string, description: 'qué pasó, en una frase' }
+        leccion: { type: string }
+        skill: { type: string, description: 'a qué skill le toca la lección' }
+        reglaTocada: { type: string }
+    VeredictoEntrada:
+      type: object
+      required: [seleccion, modoEvaluacion, porLado]
+      properties:
+        seleccion:
+          type: string
+          enum: [ciega, por_resultado, post_resultado]
+          description: >
+            La población del caso, y NO se puede deducir desde el backend. `ciega` = el
+            partido se eligió sin saber nada (el parte de Cowork nace así, de la agenda);
+            `por_resultado` = se eligió porque pasó algo; `post_resultado` = se puntuó con
+            el marcador ya a la vista. Solo ciega + PRE acredita validación predictiva: las
+            otras fijan rúbrica pero no acreditan (docs/APRENDIZAJE.md).
+        modoEvaluacion: { type: string, enum: [PRE, COND] }
+        falsadorCumplido:
+          type: boolean
+          nullable: true
+          description: >
+            Lo declara quien lo comprobó. El falsador es prosa y el backend no verifica
+            prosa arbitraria: sirve la evidencia (los goles con su minuto y su lado) y deja
+            el juicio fuera.
+        porLado:
+          type: object
+          properties:
+            a: { $ref: '#/components/schemas/LadoVeredicto' }
+            b: { $ref: '#/components/schemas/LadoVeredicto' }
+        notas: { type: string }
+    VeredictoObjetivo:
+      type: object
+      description: Lo que la base responde sola. Se RECALCULA en cada lectura, no se sella.
+      properties:
+        jugado: { type: boolean }
+        motivo: { type: string, description: 'por qué no se pudo calcular' }
+        marcador:
+          type: object
+          properties:
+            local: { type: integer }
+            visitante: { type: integer }
+            texto: { type: string }
+            ganador: { type: string, enum: [a, b, empate] }
+            terminado: { type: boolean, description: 'false = en curso; el marcador no es un resultado' }
+        unXDos:
+          type: object
+          properties:
+            declarado: { type: string, description: 'vacío si no hubo 1X2 o si dos selecciones empataron' }
+            real: { type: string, enum: [local, empate, visita] }
+            acerto: { type: boolean }
+            probabilidadDeclarada: { type: number }
+            reparto: { type: object, additionalProperties: { type: number } }
+            nota: { type: string }
+        marcadorExacto:
+          type: object
+          properties:
+            declarado: { type: string }
+            real: { type: string }
+            acerto: { type: boolean }
+        brier:
+          type: object
+          properties:
+            valor: { type: number, nullable: true }
+            escala: { type: string, description: '0 perfecto, 2 máximo, TRES resultados: no comparable con un Brier binario' }
+        tde:
+          type: object
+          description: 'solo si el parte declaró ventana; golEnVentana null = no comprobable'
+          properties:
+            ventana: { type: string }
+            desde: { type: integer }
+            hasta: { type: integer }
+            equipo: { type: string, enum: [a, b, ''] }
+            comprobable: { type: boolean }
+            golEnVentana: { type: boolean, nullable: true }
+            goles: { type: array, items: { type: object, additionalProperties: true } }
+            nota: { type: string }
+        evidencia:
+          type: object
+          properties:
+            goles:
+              type: array
+              items:
+                type: object
+                properties:
+                  minuto: { type: integer }
+                  lado: { type: string, enum: [a, b] }
+                  jugador: { type: string }
+                  autogol: { type: boolean }
+            primerGol: { type: object, nullable: true, additionalProperties: true }
+            conFicha: { type: boolean }
+            nota: { type: string }
+    Veredicto:
+      type: object
+      properties:
+        fixtureId: { type: integer }
+        seleccion: { type: string, enum: [ciega, por_resultado, post_resultado] }
+        modoEvaluacion: { type: string, enum: [PRE, COND] }
+        acredita: { type: boolean, description: 'ciega + PRE, y solo eso' }
+        falsador:
+          type: object
+          properties:
+            texto: { type: string }
+            cumplido: { type: boolean, nullable: true }
+        porLado:
+          type: object
+          additionalProperties: { $ref: '#/components/schemas/LadoVeredicto' }
+        notas: { type: string }
+        cerradoEn: { type: string }
+        objetivo: { $ref: '#/components/schemas/VeredictoObjetivo' }
+        sinPronosticoPrevio:
+          type: array
+          items: { type: string }
+          description: 'equipos cuyo eslabón no recibió veredicto por no tener pronóstico declarado'

@@ -77,6 +77,9 @@ Dos matices que se ganan al mandar estructura en vez de prosa:
   4. POST /analisis/cowork/{id}/xi       llega el once → bloque F cerrado, gratis
        · {"desdeFicha": true}            lo que ya capturó API-Football
        · {"a": {"once": [...]}}          el pantallazo que le pasás a Cowork
+  ────────── se juega ──────────
+  5. GET  /analisis/cowork/veredictos/pendientes   ¿qué falta validar? (12 h después)
+  6. POST /analisis/cowork/{id}/veredicto          ¿acertó? el juicio; el marcador lo pone la app
 ```
 
 El paso 4 es el que hace que el parte valga: todo lo caro de escribir ya estaba
@@ -121,6 +124,9 @@ Todo bajo `/api/v1`, con `Authorization: Bearer <SAD_API_TOKEN>`.
 | GET | `/analisis/cowork/{fixtureId}` | leerlo con todo lo calculable ya calculado |
 | POST | `/analisis/cowork/{fixtureId}/xi` | llega el once → se cierra el bloque F |
 | GET | `/analisis/cowork/pendientes` | qué partes siguen esperando once |
+| GET | `/analisis/cowork/veredictos/pendientes?horas=12` | qué casos jugados siguen sin cerrar |
+| POST | `/analisis/cowork/{fixtureId}/veredicto` | cerrar el caso: ¿acertó el pronóstico? |
+| GET | `/analisis/cowork/{fixtureId}/veredicto` | leerlo con su parte objetiva recalculada |
 | DELETE | `/analisis/cowork/{fixtureId}` | descartarlo y volver a depositar limpio |
 
 El esquema completo está en `docs/openapi.yaml` (`ParteCoworkEntrada`).
@@ -147,6 +153,62 @@ Ahora lo resuelve `agenda()` con el criterio numérico del protocolo:
 `CLÁSICO` es el que queda a medias, igual que en el bloque G: una rivalidad
 nacional sin vecindad geográfica (Alianza–Cienciano) no sale de nuestros datos
 y puede caer entre los descartados. Está declarado en la respuesta.
+
+## El veredicto: 12 horas después (fase B de `docs/APRENDIZAJE.md`)
+
+Un pronóstico que nadie comprueba no es un pronóstico. Doce horas después del
+partido hay que decir si acertó, y **la mitad de esa respuesta ya está en
+nuestra base**:
+
+| Lo calcula el backend | Lo escribe Cowork |
+|---|---|
+| marcador final (a 90') y ganador | por qué falló |
+| ¿acertó el 1X2 declarado? | qué mecanismo no vio |
+| ¿acertó el marcador exacto? | la lección, en una frase accionable |
+| el Brier del caso | a qué skill le toca esa lección |
+| ¿cayó gol en la ventana del TDE? | **si el caso es ciego o está contaminado** |
+| los goles con su minuto y su lado | si el falsador se cumplió |
+
+Dos fronteras que conviene entender, porque explican por qué el reparto es ese
+y no otro:
+
+- **El falsador no lo verifica el backend.** Es prosa, y verificar prosa
+  arbitraria con un 80% de acierto sería peor que no hacerlo: nadie sabría de
+  cuál 20% desconfiar. Lo que la app hace es servir la evidencia con la que se
+  comprueba —los goles con minuto y lado— y dejar que Cowork declare.
+- **La ventana del TDE sí se comprueba**, porque "75-90'" son dos números y un
+  gol tiene un minuto. Se cuentan solo los goles CONTRA el equipo evaluado: la
+  echada se observa en lo que recibe, no en lo que hace.
+
+### La población del caso: el campo que decide si esto vale
+
+`seleccion` es obligatorio y **no se puede deducir desde el backend**:
+
+| Valor | Cuándo | ¿Acredita? |
+|---|---|---|
+| `ciega` | el partido se eligió sin saber nada — de la agenda, la noche anterior | **sí**, con `PRE` |
+| `por_resultado` | se eligió porque pasó algo (sembrado) | no |
+| `post_resultado` | se puntuó con el marcador ya a la vista | no |
+
+El parte de Cowork **nace ciego**, y esa es la razón por la que vale: es la
+primera vez que el sistema produce casos ciegos en volumen. Mezclar poblaciones
+no es un matiz: la calibración del TDE ya midió el precio (11% de echadas
+reales contra 31% con los sembrados dentro).
+
+`modoEvaluacion` es `PRE` si el veredicto se redactó sin mirar el marcador y
+`COND` si se escribió con el partido en marcha o el resultado delante. Solo
+`ciega` + `PRE` acredita.
+
+### Anti-hindsight
+
+Sin pronóstico previo declarado, **la cadena del equipo no recibe veredicto**.
+El caso se guarda igual y los equipos afectados vuelven en
+`sinPronosticoPrevio`. Un juicio sobre algo que nunca se declaró no es
+auditable: es una opinión escrita después.
+
+Por lo mismo, re-depositar el parte después del partido **no cambia el
+pronóstico ya declarado ni borra el veredicto ya escrito**. Si mandás otro
+pronóstico, se conserva el primero y el recibo lo delata en `cadenaIgnorada`.
 
 ---
 
@@ -475,3 +537,62 @@ diciendo qué va a costar antes de gastar.
 
 Un parte de Cowork y un EFE por API pueden convivir sobre el mismo partido:
 son dos registros distintos y ninguno pisa al otro.
+
+---
+
+# PROMPT CORTO — "VALIDAR LO DE AYER"
+
+Para la corrida de validación, 12 horas después de los partidos.
+
+```text
+Vas a cerrar los casos que quedaron abiertos. No analices nada nuevo.
+
+1. GET << {base} >>/analisis/cowork/veredictos/pendientes
+   Devuelve los partidos con parte depositado, ya jugados y sin veredicto,
+   con su marcador. Si viene vacío, decilo y terminá.
+
+2. Para cada uno, leé el parte (GET /analisis/cowork/{fixtureId}) y compará lo
+   que dijiste con lo que pasó. El marcador, el acierto del 1X2, el Brier y la
+   ventana del TDE los calcula la app: NO los escribas, leelos de la respuesta
+   del POST.
+
+3. POST << {base} >>/analisis/cowork/{fixtureId}/veredicto
+   {
+     "seleccion": "ciega",
+     "modoEvaluacion": "PRE",
+     "falsadorCumplido": false,
+     "porLado": {
+       "a": {"veredicto": "acierto", "queP": "ganó por fuera, como se dijo", "leccion": ""},
+       "b": {"veredicto": "fallo",
+             "queP": "aguantó el tramo final que se le daba por perdido",
+             "leccion": "el bloque bajo entrenado sostiene los 90: no asumir vida útil corta sin dato",
+             "skill": "teorema-del-echado",
+             "reglaTocada": "escala de P(echada)"}
+     }
+   }
+
+SOBRE `seleccion` — es el campo que decide si el caso sirve para calibrar:
+  ciega            el partido salió de la agenda, se eligió sin saber nada.
+                   Es lo normal en este pipeline y es lo que hay que poner.
+  por_resultado    lo elegiste porque pasó algo llamativo.
+  post_resultado   miraste el marcador ANTES de puntuar.
+Si dudás entre ciega y post_resultado, es post_resultado. Un caso mal
+declarado como ciego envenena la calibración entera; uno declarado de más solo
+se queda sin acreditar.
+
+SOBRE `modoEvaluacion`: PRE si escribiste el juicio sin el marcador delante,
+COND si lo escribiste con el partido en marcha o el resultado a la vista.
+
+SOBRE la lección: una frase accionable y sobre el MECANISMO, no sobre el
+rival. "Barcos define solo" no sirve; "el favorito con ventaja desde el 42
+concede entre el 77 y el 90" sí. Poné `skill` solo si tenés claro a cuál le
+toca, y `reglaTocada` solo si podés nombrar la regla concreta.
+
+Si el POST devuelve `sinPronosticoPrevio` con equipos dentro: ese lado no
+tenía pronóstico declarado y su cadena NO recibió veredicto. No lo arregles
+re-depositando el parte con un pronóstico nuevo —sería escribirlo con el
+resultado puesto—: anotalo y seguí.
+
+Al terminar, tres líneas: cuántos casos cerraste, cuántos acertaron el 1X2, y
+cuántas lecciones dejaste con su skill.
+```

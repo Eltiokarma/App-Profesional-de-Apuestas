@@ -1994,6 +1994,63 @@ def cowork_borrar(fixture_id: int):
     return {"borrado": fixture_id}
 
 
+class LadoVeredictoBody(BaseModel):
+    veredicto: str = ""          # acierto | parcial | fallo
+    queP: str = ""               # qué pasó, en una frase
+    leccion: str = ""
+    skill: str = ""              # a qué skill le toca la lección
+    reglaTocada: str = ""
+
+
+class VeredictoBody(BaseModel):
+    # población del caso: decide si acredita o si solo fija rúbrica
+    seleccion: str               # ciega | por_resultado | post_resultado
+    modoEvaluacion: str          # PRE | COND
+    falsadorCumplido: bool | None = None
+    porLado: dict[str, LadoVeredictoBody] = {}
+    notas: str = ""
+
+
+@app.get(API + "/analisis/cowork/veredictos/pendientes")
+def cowork_veredictos_pendientes(
+    horas: int = Query(default=12, ge=0, le=720),
+    limite: int = Query(default=50, ge=1, le=200),
+):
+    """Partes de partidos terminados hace más de `horas` y sin veredicto.
+
+    Es el disparador de la validación (fase B de docs/APRENDIZAJE.md): nadie
+    tiene que acordarse de nada y lo que no se validó hoy sigue mañana."""
+    from backend.analisis import parte as cowork
+    return cowork.pendientes_veredicto(horas, limite)
+
+
+@app.post(API + "/analisis/cowork/{fixture_id}/veredicto")
+def cowork_veredicto(fixture_id: int, body: VeredictoBody):
+    """Cierra el caso 12 h después: ¿acertó el pronóstico?
+
+    Lo objetivo lo calcula el backend y viaja en la respuesta (marcador, si
+    acertó el 1X2, el Brier, si cayó gol en la ventana del TDE, y los goles
+    con su minuto). Lo que llega de fuera es el juicio: por qué falló, la
+    lección, y —esto es lo que no se puede deducir— si el caso es CIEGO o
+    está contaminado. Sin pronóstico previo no se escribe veredicto en la
+    cadena del equipo: se dice en `sinPronosticoPrevio`."""
+    from backend.analisis import parte as cowork
+    try:
+        return cowork.guardar_veredicto(fixture_id, body.model_dump())
+    except cowork.ParteInvalido as e:
+        raise HTTPException(422, str(e))
+
+
+@app.get(API + "/analisis/cowork/{fixture_id}/veredicto")
+def cowork_veredicto_leer(fixture_id: int):
+    """El veredicto guardado con su parte objetiva recalculada al leer."""
+    from backend.analisis import parte as cowork
+    v = cowork.veredicto_de(fixture_id)
+    if not v:
+        raise HTTPException(404, f"el fixture {fixture_id} todavía no tiene veredicto")
+    return v
+
+
 @app.post(API + "/analisis/cowork/{fixture_id}/xi")
 def cowork_xi(fixture_id: int, body: XiBody):
     """Llega el once y se cierra el bloque F — en local, gratis y al instante.

@@ -1,7 +1,7 @@
 // Análisis EFE y timeline de muestra para el modo demo (espejo de
 // backend/analisis/demo.py): permiten desarrollar y probar la sección
 // Análisis sin API ni créditos. Regla del proyecto: la simulación vive SOLO en demo.
-import type { BloqueParte, EfeBloque, EfeComparativo, EfeEquipo, EquipoParte, EslabonDtpDTO, JugadorParte, ParteCoworkDTO, RamaF, RolF, TimelineData, TlEvento, ZonaF } from '../api/types'
+import type { BloqueParte, VeredictoParte, EfeBloque, EfeComparativo, EfeEquipo, EquipoParte, EslabonDtpDTO, JugadorParte, ParteCoworkDTO, RamaF, RolF, TimelineData, TlEvento, ZonaF } from '../api/types'
 
 export function timelineDemo(equipoA: string, equipoB: string): TimelineData {
   const ev = (fecha: string, equipo: string, tipo: TlEvento['tipo'], titulo: string, detalle: string, marcador = '', jornada = 0, destacado = false): TlEvento => ({
@@ -177,7 +177,7 @@ export function dtpDemo(foco: string, rival: string): EslabonDtpDTO {
 /** Parte de Cowork de muestra (espejo de lo que deposita el batch nocturno).
  *  Llega con el bloque F congelado y las dos ramas, que es el estado normal
  *  la noche anterior: ninguna fuente publica el once a esa hora. */
-export function parteCoworkDemo(fixtureId: number, equipoA: string, equipoB: string): ParteCoworkDTO {
+export function parteCoworkDemo(fixtureId: number, equipoA: string, equipoB: string, marcador?: string): ParteCoworkDTO {
   const bloque = (score: number, max: number, peso: number, nota: string, excluido = false, motivo = ''): BloqueParte => ({
     score: excluido ? 0 : score, max, peso,
     ponderado: excluido ? 0 : +(score * peso).toFixed(2), topePonderado: +(max * peso).toFixed(2),
@@ -281,6 +281,56 @@ export function parteCoworkDemo(fixtureId: number, equipoA: string, equipoB: str
     fuentes: ['demo'],
     notas: 'Parte de muestra del modo demo.',
     xi: { a: {}, b: {} },
+    // el caso se cierra 12 h después del partido: sin marcador, sigue abierto
+    veredicto: marcador ? veredictoDemo(fixtureId, marcador) : null,
     creadoEn: '2026-07-19T04:10:00Z', actualizadoEn: '2026-07-19T04:10:00Z',
+  }
+}
+
+/** Veredicto de muestra: el cierre del caso con lo objetivo ya calculado.
+ *  En la app real estos números los saca el backend de la ingesta; aquí se
+ *  derivan del marcador de la demo para que la banda se pueda ver. */
+function veredictoDemo(fixtureId: number, marcador: string): VeredictoParte {
+  const [gl, gv] = marcador.split('-').map((x) => parseInt(x.trim(), 10))
+  const real = gl > gv ? 'local' : gv > gl ? 'visita' : 'empate'
+  const reparto = { local: 54, empate: 26, visita: 20 }
+  const brier = +(['local', 'empate', 'visita'] as const)
+    .reduce((s2, k) => s2 + ((reparto[k] / 100) - (k === real ? 1 : 0)) ** 2, 0).toFixed(4)
+  return {
+    fixtureId, seleccion: 'ciega', modoEvaluacion: 'PRE', acredita: true,
+    falsador: { texto: 'si el visitante abre el marcador antes del minuto 20, la lectura de bloque bajo queda fallada.', cumplido: false },
+    porLado: {
+      a: { veredicto: real === 'local' ? 'acierto' : 'fallo',
+           queP: real === 'local' ? 'ganó por fuera, como se anticipó' : 'no encontró el camino por fuera',
+           leccion: real === 'local' ? '' : 'el bloque bajo entrenado sostiene los 90: no asumir vida útil corta sin dato',
+           skill: real === 'local' ? '' : 'diagnostico-tactico', reglaTocada: '' },
+      b: { veredicto: real === 'local' ? 'fallo' : 'acierto',
+           queP: real === 'local' ? 'no aguantó el tramo final como se le suponía' : 'aguantó el tramo final, como se dijo',
+           leccion: real === 'local' ? 'el interino no sostiene el bloque sin el 5 titular' : '',
+           skill: real === 'local' ? 'teorema-del-echado' : '', reglaTocada: '' },
+    },
+    notas: 'Modo demo: veredicto de muestra.',
+    cerradoEn: '2026-07-21 09:00:00',
+    objetivo: {
+      jugado: true,
+      marcador: { local: gl, visitante: gv, texto: `${gl}-${gv}`,
+                  ganador: real === 'local' ? 'a' : real === 'visita' ? 'b' : 'empate', terminado: true },
+      unXDos: { declarado: 'local', real, acerto: real === 'local', probabilidadDeclarada: 54,
+                reparto, nota: '' },
+      marcadorExacto: { declarado: '2-1', real: `${gl}-${gv}`, acerto: `${gl}-${gv}` === '2-1' },
+      brier: { valor: brier, escala: '0 perfecto · 2 máximo · tres resultados (NO comparable con un Brier binario)' },
+      tde: { ventana: "75-90'", desde: 75, hasta: 90, equipo: 'b', comprobable: true,
+             golEnVentana: false, goles: [],
+             nota: '' },
+      evidencia: {
+        goles: [
+          { minuto: 23, lado: 'a' as const, jugador: 'Jugador de muestra', autogol: false },
+          { minuto: 58, lado: 'b' as const, jugador: 'Jugador de muestra', autogol: false },
+          { minuto: 71, lado: 'a' as const, jugador: 'Jugador de muestra', autogol: false },
+        ].slice(0, gl + gv),
+        primerGol: { minuto: 23, lado: 'a' as const, jugador: 'Jugador de muestra' },
+        conFicha: true, nota: '',
+      },
+    },
   }
 }

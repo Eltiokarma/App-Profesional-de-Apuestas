@@ -26,10 +26,11 @@ Excepción de solo-lectura: escribe efe.db (tabla `parte_cowork`), nunca las
 DBs del SAD.
 """
 import json
+import sqlite3
 from datetime import date as date_t, datetime, timedelta, timezone
 
 from backend import db as saddb
-from backend.analisis import bloque_f, db as efedb
+from backend.analisis import bloque_f, db as efedb, veredicto as vered
 from backend.nombres import canonizar, normalizar
 
 VERSION = "cowork/1"
@@ -79,9 +80,20 @@ class ParteInvalido(ValueError):
     """El depósito no se puede guardar tal cual llegó (y se dice por qué)."""
 
 
+# el veredicto llegó después de la primera versión de la tabla: se añade en
+# caliente para no perder los partes ya depositados (en SQLite un ALTER que ya
+# existe es un error, no un problema)
+_COLUMNAS_NUEVAS = (("veredicto_json", "TEXT"),)
+
+
 def _conectar():
     con = efedb.conectar()
     con.executescript(DDL)
+    for columna, tipo in _COLUMNAS_NUEVAS:
+        try:
+            con.execute(f"ALTER TABLE parte_cowork ADD COLUMN {columna} {tipo}")
+        except sqlite3.OperationalError:
+            pass  # ya existe: el caso normal a partir de la segunda conexión
     return con
 
 
@@ -404,7 +416,7 @@ def guardar(payload: dict) -> dict:
         )
     # un parte nuevo sobre un fixture que ya tenía once resuelto se recalcula
     # solo al leerlo: el once vive aparte, justamente para sobrevivir al parte
-    cadena = _guardar_cadena(fx, parte.get("cadena") or {})
+    cadena, cadena_ignorada = _guardar_cadena(fx, parte.get("cadena") or {})
     resumen = {
         "fixtureId": parte["fixtureId"],
         "partido": f"{fx['home_name']} vs {fx['away_name']}",
@@ -417,6 +429,7 @@ def guardar(payload: dict) -> dict:
         "xiResuelto": bool(previo and previo["xi_json"]),
         "eventosTimeline": len(parte.get("timelineEventos") or []),
         "cadena": cadena,
+        "cadenaIgnorada": cadena_ignorada,
         "conLecturaSad": bool((parte.get("lecturaSad") or {}).get("moduloOperativo")),
         "conTde": bool(parte.get("tde")),
     }
@@ -425,6 +438,8 @@ def guardar(payload: dict) -> dict:
           f"{len(parte['documentos'])} documentos, "
           f"{resumen['eventosTimeline']} eventos de timeline)"
           + (f" · cadena: {', '.join(cadena)}" if cadena else "")
+          + (f" · PRONÓSTICO YA DECLARADO, se conserva el primero: {cadena_ignorada}"
+             if cadena_ignorada else "")
           + (f" · DISCREPANCIAS: {discrepancias}" if discrepancias else ""), flush=True)
     return resumen
 
@@ -519,7 +534,7 @@ def timeline_del_parte(fx, eventos: list[dict], narrativa: str, fuentes: list[st
     }
 
 
-def _guardar_cadena(fx, cadena: dict) -> list[str]:
+def _guardar_cadena(fx, cadena: dict) -> tuple[list[str], list[str]]:
     """El pronóstico clave por equipo foco entra en la cadena del DTP.
 
     La película del equipo (página de Equipo) se alimenta de `cadena_dtp`, y
@@ -527,22 +542,40 @@ def _guardar_cadena(fx, cadena: dict) -> list[str]:
     análisis, la cadena se habría quedado congelada. Se escribe SOLO la
     apertura —el pronóstico, antes del partido—; el veredicto lo emite después
     quien cierre el eslabón, que es lo que lo hace auditable.
+
+    Dos cosas que este método NO hace, y que son la misma regla mirada desde
+    sus dos lados:
+
+    - **No pisa un pronóstico ya declarado.** Re-depositar el parte con otro
+      pronóstico después del partido convertiría la cadena en hindsight. El
+      primero manda y el segundo se delata en el recibo.
+    - **No borra un veredicto ya escrito.** Un re-depósito posterior al cierre
+      arrasaba con `que_paso`/`veredicto`/`leccion`: se fundían en el registro
+      vacío de la apertura. Ahora se conservan.
     """
     from backend.analisis.motor import _partido_n  # misma numeración, no otra
-    escritos = []
+    escritos, ignorados = [], []
     fecha = (fx["date"] or "")[:10] or None
     for lado, (foco, rival, tid) in (("a", (fx["home_name"], fx["away_name"], fx["home_team_id"])),
                                      ("b", (fx["away_name"], fx["home_name"], fx["away_team_id"]))):
         pronostico = (cadena.get(lado) or "").strip()
         if not pronostico:
             continue
+        previo = ((efedb.eslabon_de_fixture(foco, fx["id"]) or {}).get("registro") or {})
+        declarado = (previo.get("pronostico_clave") or "").strip()
+        if declarado and declarado != pronostico:
+            ignorados.append(foco)
         efedb.guardar_cadena(
             foco, _partido_n(tid, fx["date"] or ""), rival, fecha, fx["id"], None,
-            registro={"pronostico_clave": pronostico, "que_paso": "",
-                      "veredicto": "", "leccion": ""},
+            registro={
+                "pronostico_clave": declarado or pronostico,
+                "que_paso": previo.get("que_paso", ""),
+                "veredicto": previo.get("veredicto", ""),
+                "leccion": previo.get("leccion", ""),
+            },
         )
         escritos.append(foco)
-    return escritos
+    return escritos, ignorados
 
 
 def dto(fixture_id: int) -> dict | None:
@@ -596,6 +629,7 @@ def dto(fixture_id: int) -> dict | None:
         "fuentes": parte["fuentes"],
         "notas": parte["notas"],
         "xi": {l: {k: v for k, v in (xi.get(l) or {}).items() if k != "banca"} for l in LADOS},
+        "veredicto": veredicto_de(fila["fixture_id"]),
         "creadoEn": fila["creado_en"],
         "actualizadoEn": fila["actualizado_en"],
     }
@@ -691,6 +725,165 @@ def resolver_desde_ficha(fixture_id: int) -> dict:
             "`python -m backend.ingesta.ficha_partido` o manda el once a mano "
             "(POST /analisis/cowork/{id}/xi) desde el pantallazo")
     return resolver_xi(fixture_id, onces)
+
+
+# ── el veredicto: 12 h después (fase B de docs/APRENDIZAJE.md) ─────────────
+
+def _lado_veredicto(x) -> dict | None:
+    if not isinstance(x, dict):
+        return None
+    v = _txt(x.get("veredicto")).lower()
+    if v not in vered.VEREDICTOS:
+        return None
+    return {"veredicto": v, "queP": _txt(x.get("queP")), "leccion": _txt(x.get("leccion")),
+            "skill": _txt(x.get("skill")), "reglaTocada": _txt(x.get("reglaTocada"))}
+
+
+def guardar_veredicto(fixture_id: int, payload: dict) -> dict:
+    """Cierra el caso: lo objetivo se calcula aquí, el juicio llega de Cowork.
+
+    La población (`seleccion`) y el modo de evaluación los DECLARA quien
+    escribe, porque el backend no puede saber si el veredicto se redactó antes
+    o después de mirar el marcador. Se guardan con el caso para que ninguna
+    tasa de acierto los pueda ignorar después.
+    """
+    with _conectar() as con:
+        fila = con.execute("SELECT parte_json FROM parte_cowork WHERE fixture_id=?",
+                           (fixture_id,)).fetchone()
+    if not fila:
+        raise ParteInvalido(f"no hay parte de Cowork para el fixture {fixture_id}")
+    parte = json.loads(fila["parte_json"])
+
+    seleccion = _txt(payload.get("seleccion")).lower()
+    modo = _txt(payload.get("modoEvaluacion")).upper()
+    if seleccion not in vered.SELECCIONES:
+        raise ParteInvalido(
+            "seleccion tiene que ser ciega, por_resultado o post_resultado: es lo que "
+            "decide si el caso acredita o solo fija rúbrica, y no se puede deducir")
+    if modo not in vered.MODOS:
+        raise ParteInvalido("modoEvaluacion tiene que ser PRE o COND")
+
+    por_lado = {}
+    for l in LADOS:
+        v = _lado_veredicto((payload.get("porLado") or {}).get(l))
+        if v:
+            por_lado[l] = v
+    if not por_lado:
+        raise ParteInvalido("porLado vacío: hace falta el veredicto de al menos un lado "
+                            "(acierto, parcial o fallo)")
+
+    cumplido = payload.get("falsadorCumplido")
+    guardado = {
+        "seleccion": seleccion,
+        "modoEvaluacion": modo,
+        "acredita": vered.acredita(seleccion, modo),
+        "falsador": {"texto": (parte.get("pronostico") or {}).get("falsador", ""),
+                     "cumplido": cumplido if isinstance(cumplido, bool) else None},
+        "porLado": por_lado,
+        "notas": _txt(payload.get("notas")),
+        "cerradoEn": efedb.ahora(),
+    }
+    with _conectar() as con:
+        con.execute("UPDATE parte_cowork SET veredicto_json=?, actualizado_en=? WHERE fixture_id=?",
+                    (json.dumps(guardado, ensure_ascii=False), efedb.ahora(), fixture_id))
+
+    sin_pronostico = _cerrar_cadena(fixture_id, por_lado)
+    listo = veredicto_de(fixture_id)
+    obj = listo.get("objetivo") or {}
+    print(f"[cowork] veredicto {fixture_id}: {obj.get('marcador', {}).get('texto', '?')} · "
+          f"1X2 {'✓' if obj.get('unXDos', {}).get('acerto') else '✗'} · "
+          f"{seleccion}/{modo} ({'acredita' if guardado['acredita'] else 'no acredita'})"
+          + (f" · sin pronóstico previo: {sin_pronostico}" if sin_pronostico else ""), flush=True)
+    listo["sinPronosticoPrevio"] = sin_pronostico
+    return listo
+
+
+def _cerrar_cadena(fixture_id: int, por_lado: dict) -> list[str]:
+    """Escribe el cierre en la cadena del DTP, respetando el anti-hindsight.
+
+    Sin pronóstico previo NO se emite veredicto en la cadena: un juicio sobre
+    algo que nunca se declaró no es auditable, es una opinión escrita después.
+    El caso se guarda igual en el parte y el lado se devuelve para delatarlo.
+    """
+    fx = _fixture(fixture_id)
+    if not fx:
+        return []
+    sin_pronostico = []
+    for lado, (foco, tid) in (("a", (fx["home_name"], fx["home_team_id"])),
+                              ("b", (fx["away_name"], fx["away_team_id"]))):
+        v = por_lado.get(lado)
+        if not v:
+            continue
+        eslabon = efedb.eslabon_de_fixture(foco, fixture_id)
+        previo = ((eslabon or {}).get("registro") or {}).get("pronostico_clave", "")
+        if not previo:
+            sin_pronostico.append(foco)
+            continue
+        from backend.analisis.motor import _partido_n
+        efedb.guardar_cadena(
+            foco, _partido_n(tid, fx["date"] or ""), fx["away_name"] if lado == "a" else fx["home_name"],
+            (fx["date"] or "")[:10] or None, fixture_id, None,
+            registro={"pronostico_clave": previo, "que_paso": v["queP"],
+                      "veredicto": v["veredicto"], "leccion": v["leccion"]},
+        )
+    return sin_pronostico
+
+
+def veredicto_de(fixture_id: int) -> dict | None:
+    """El veredicto guardado + la parte objetiva RECALCULADA al leer.
+
+    Igual que el timeline: lo derivado no se sella. Si la ingesta corrige un
+    marcador o llega la ficha de eventos que faltaba, la próxima lectura trae
+    el cálculo bueno sin que nadie tenga que volver a escribir el juicio.
+    """
+    with _conectar() as con:
+        fila = con.execute(
+            "SELECT parte_json, veredicto_json FROM parte_cowork WHERE fixture_id=?",
+            (fixture_id,)).fetchone()
+    if not fila or not fila["veredicto_json"]:
+        return None
+    parte = json.loads(fila["parte_json"])
+    guardado = json.loads(fila["veredicto_json"])
+    return {**guardado, "fixtureId": fixture_id,
+            "objetivo": vered.objetivo(fixture_id, parte)}
+
+
+def pendientes_veredicto(horas: int = 12, limite: int = 50) -> list[dict]:
+    """Partes de partidos terminados hace más de `horas` y todavía sin cerrar.
+
+    Es lo que dispara la corrida de validación: nadie tiene que acordarse de
+    nada, y lo que no se validó hoy sigue estando mañana."""
+    with _conectar() as con:
+        filas = con.execute(
+            "SELECT fixture_id, fecha, equipo_a, equipo_b FROM parte_cowork "
+            "WHERE veredicto_json IS NULL ORDER BY fecha DESC LIMIT 400").fetchall()
+    if not filas:
+        return []
+    ids = [f["fixture_id"] for f in filas]
+    marca = (datetime.now(timezone.utc) - timedelta(hours=horas)).strftime("%Y-%m-%d %H:%M:%S")
+    marcadores = {
+        r["id"]: r for r in saddb.query(
+            "sad",
+            f"SELECT f.id, f.date, COALESCE(f.fulltime_home, f.goals_home) AS gl, "
+            f"COALESCE(f.fulltime_away, f.goals_away) AS gv FROM fixtures f "
+            f"WHERE f.id IN ({','.join('?' * len(ids))}) AND f.date <= ?",
+            (*ids, marca))
+    }
+    out = []
+    for f in filas:
+        m = marcadores.get(f["fixture_id"])
+        if not m or m["gl"] is None or m["gv"] is None:
+            continue  # aún no jugado, o sin marcador todavía en nuestra base
+        out.append({
+            "fixtureId": f["fixture_id"],
+            "fecha": f["fecha"],
+            "partido": f"{f['equipo_a']} vs {f['equipo_b']}",
+            "marcador": f"{m['gl']}-{m['gv']}",
+            "jugadoEn": m["date"],
+        })
+        if len(out) >= limite:
+            break
+    return out
 
 
 def pendientes(limite: int = 50) -> list[dict]:

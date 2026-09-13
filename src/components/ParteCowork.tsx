@@ -12,7 +12,8 @@
 // del pantallazo que el usuario pega aquí— el bloque se cierra al instante.
 import { useEffect, useMemo, useState } from 'react'
 import type {
-  DisponibilidadParte, DocumentoParte, EquipoParte, JugadorParte, ParteCoworkDTO, RamaF, Semaforo, TdeParte, ZonaF,
+  DisponibilidadParte, DocumentoParte, EquipoParte, JugadorParte, ParteCoworkDTO, RamaF, Semaforo, TdeParte,
+  VeredictoParte, ZonaF,
 } from '../api/types'
 import { parsearMd, type MdBloque, type MdInline } from '../lib/md'
 import { parsearOnce } from '../lib/once'
@@ -433,6 +434,136 @@ function PanelTde({ tde, nombreDe }: { tde: TdeParte; nombreDe: (l: 'a' | 'b') =
   )
 }
 
+/** El cierre del caso: qué pasó de verdad (fase B de docs/APRENDIZAJE.md).
+ *
+ *  Todo lo que se pinta aquí en números lo calculó el backend contra la
+ *  ingesta; lo que está en prosa lo escribió Cowork. La distinción importa
+ *  porque es lo que hace auditable el pronóstico: nadie puede ajustar el
+ *  marcador a la explicación después. */
+function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' | 'b') => string }) {
+  const [abierto, setAbierto] = useState(false)
+  const o = v.objetivo
+  const m = o.marcador
+  const ok = (x: boolean | null | undefined) => (x === null || x === undefined ? 'var(--t3)' : x ? 'var(--up)' : 'var(--down)')
+  const marca = (x: boolean | null | undefined) => (x === null || x === undefined ? '—' : x ? '✓' : '✗')
+  const VER = {
+    acierto: { color: 'var(--up)', soft: 'var(--up-soft)', label: 'ACIERTO' },
+    parcial: { color: 'var(--mark)', soft: 'var(--mark-soft)', label: 'PARCIAL' },
+    fallo: { color: 'var(--down)', soft: 'var(--down-soft)', label: 'FALLO' },
+  } as const
+
+  if (!o.jugado) {
+    return (
+      <section style={{ padding: '11px 15px', marginBottom: 12, borderRadius: 12, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+        <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t3)' }}>
+          Caso cerrado, pero el marcador todavía no está en nuestra base: {o.motivo}
+        </span>
+      </section>
+    )
+  }
+
+  return (
+    <section style={{ marginBottom: 12, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 15px', flexWrap: 'wrap' }}>
+        <span style={{ font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.6px' }}>VEREDICTO</span>
+        <span style={{ font: '800 20px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>{m?.texto}</span>
+        {m && !m.terminado && (
+          <span style={{ padding: '2px 8px', borderRadius: 6, background: 'var(--mark-soft)', color: 'var(--mark)', font: '700 9px var(--mono)' }}>EN CURSO</span>
+        )}
+        <span style={{ font: '600 11.5px var(--mono)', color: ok(o.unXDos?.acerto) }}>
+          {marca(o.unXDos?.acerto)} 1X2
+        </span>
+        <span style={{ font: '600 11.5px var(--mono)', color: ok(o.marcadorExacto?.acerto) }}>
+          {marca(o.marcadorExacto?.acerto)} marcador
+        </span>
+        {o.tde && (
+          <span style={{ font: '600 11.5px var(--mono)', color: ok(o.tde.golEnVentana) }}
+            title={o.tde.nota || `ventana ${o.tde.ventana}`}>
+            {marca(o.tde.golEnVentana)} ventana TDE
+          </span>
+        )}
+        {o.brier?.valor !== null && o.brier?.valor !== undefined && (
+          <span style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)' }} title={o.brier.escala}>
+            Brier {o.brier.valor.toFixed(3)}
+          </span>
+        )}
+        <span style={{ flex: 1 }}></span>
+        {/* la población del caso: lo que decide si esto cuenta o solo ilustra */}
+        <span
+          title={v.acredita
+            ? 'caso ciego y puntuado antes: acredita validación predictiva'
+            : 'el caso fija rúbrica pero NO acredita (docs/APRENDIZAJE.md)'}
+          style={{ padding: '3px 9px', borderRadius: 7, font: '700 9.5px var(--mono)', letterSpacing: '.3px', background: v.acredita ? 'var(--up-soft)' : 'var(--bg3)', color: v.acredita ? 'var(--up)' : 'var(--t3)' }}>
+          {v.seleccion.toUpperCase().replace('_', ' ')} · {v.modoEvaluacion} · {v.acredita ? 'ACREDITA' : 'NO ACREDITA'}
+        </span>
+        <button onClick={() => setAbierto(!abierto)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 9px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--t2)', cursor: 'pointer', font: '600 10.5px var(--sans)' }}>
+          {abierto ? 'Menos' : 'Detalle'}
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" style={{ transform: abierto ? 'rotate(90deg)' : 'none', transition: 'transform .12s' }}><path d="M9 6l6 6-6 6" /></svg>
+        </button>
+      </div>
+
+      {abierto && (
+        <div style={{ padding: '0 15px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {(['a', 'b'] as const).map((lado) => {
+            const l = v.porLado[lado]
+            if (!l) return null
+            const est = VER[l.veredicto]
+            return (
+              <div key={lado} style={{ padding: '10px 12px', borderRadius: 11, background: est.soft }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', marginBottom: l.queP || l.leccion ? 6 : 0 }}>
+                  <span style={{ font: '700 9.5px var(--mono)', color: est.color, letterSpacing: '.4px' }}>{est.label}</span>
+                  <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)' }}>{nombreDe(lado)}</span>
+                  {l.skill && (
+                    <span style={{ padding: '2px 8px', borderRadius: 6, background: 'var(--bg)', font: '600 9.5px var(--mono)', color: 'var(--t2)' }}>{l.skill}</span>
+                  )}
+                </div>
+                {l.queP && <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{l.queP}</div>}
+                {l.leccion && (
+                  <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t2)', marginTop: 4 }}>
+                    <b style={{ color: 'var(--t3)', font: '700 9.5px var(--mono)' }}>LECCIÓN · </b>{l.leccion}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+
+          {v.falsador.texto && (
+            <div style={{ padding: '9px 12px', borderRadius: 10, background: 'var(--bg3)' }}>
+              <span style={{ font: '700 9.5px var(--mono)', color: ok(v.falsador.cumplido), letterSpacing: '.4px' }}>
+                FALSADOR {marca(v.falsador.cumplido)} ·{' '}
+              </span>
+              <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{v.falsador.texto}</span>
+            </div>
+          )}
+
+          {/* la evidencia con la que se comprueba todo lo de arriba */}
+          {!!o.evidencia?.goles?.length && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.4px' }}>GOLES</span>
+              {o.evidencia.goles.map((g, i) => (
+                <span key={i} style={{ padding: '2px 8px', borderRadius: 6, background: 'var(--bg3)', font: '600 10px var(--mono)', color: 'var(--t2)' }}>
+                  {g.minuto}&apos; {nombreDe(g.lado)}{g.jugador ? ` · ${g.jugador}` : ''}{g.autogol ? ' (ag)' : ''}
+                </span>
+              ))}
+            </div>
+          )}
+          {o.evidencia?.nota && (
+            <div style={{ font: '500 10.5px var(--sans)', color: 'var(--t3)' }}>{o.evidencia.nota}</div>
+          )}
+          {!!v.sinPronosticoPrevio?.length && (
+            <div style={{ font: '500 10.5px var(--sans)', color: 'var(--mark)' }}>
+              Sin pronóstico previo declarado, la cadena no recibe veredicto: {v.sinPronosticoPrevio.join(' · ')}
+            </div>
+          )}
+          <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>
+            {o.brier?.escala} · cerrado {v.cerradoEn}
+          </div>
+        </div>
+      )}
+    </section>
+  )
+}
+
 // ── la sección entera ───────────────────────────────────────────────────────
 
 interface Props {
@@ -485,8 +616,10 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
 
   return (
     <div>
+      {parte.veredicto && <BandaVeredicto v={parte.veredicto} nombreDe={nombreDe} />}
+
       {/* la marca visible: que nadie lea esto creyendo que el once está cerrado */}
-      {pendienteXi && (
+      {pendienteXi && !parte.veredicto && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 15px', marginBottom: 12, borderRadius: 12, background: 'var(--mark-soft)', border: '1px solid color-mix(in oklch,var(--mark),transparent 50%)' }}>
           <span style={{ font: '800 12px var(--mono)', color: 'var(--mark)', letterSpacing: '.4px', flexShrink: 0 }}>
             {faltan.length === 2 ? '⚠️ XI NO CONFIRMADO' : '⚠️ FALTA UN XI'}
