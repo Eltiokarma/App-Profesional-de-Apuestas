@@ -381,6 +381,11 @@ export function ParteCowork({ parte, matchId, onParte, isMobile }: Props) {
   const [tab, setTab] = useState<'bloques' | 'f' | 'lectura' | 'documentos'>('bloques')
   const dosCol = isMobile ? '1fr' : '1fr 1fr'
   const pendienteXi = parte.estado !== 'confirmado'
+  // qué lado sigue congelado: el once del local suele llegar antes que el del
+  // visitante, y un aviso que dice "los dos" cuando ya hay uno cerrado se lee
+  // como que no sirvió de nada cargarlo
+  const faltan = (['a', 'b'] as const).filter((l) => !parte.equipos[l].disponibilidad.resuelto)
+  const nombreDe = (l: 'a' | 'b') => (l === 'a' ? parte.partido.equipoA : parte.partido.equipoB)
   const p = parte.pronostico
   const tabs: { k: typeof tab; label: string }[] = [
     { k: 'bloques', label: 'Bloques EFE' },
@@ -394,9 +399,13 @@ export function ParteCowork({ parte, matchId, onParte, isMobile }: Props) {
       {/* la marca visible: que nadie lea esto creyendo que el once está cerrado */}
       {pendienteXi && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 15px', marginBottom: 12, borderRadius: 12, background: 'var(--mark-soft)', border: '1px solid color-mix(in oklch,var(--mark),transparent 50%)' }}>
-          <span style={{ font: '800 12px var(--mono)', color: 'var(--mark)', letterSpacing: '.4px', flexShrink: 0 }}>⚠️ XI NO CONFIRMADO</span>
+          <span style={{ font: '800 12px var(--mono)', color: 'var(--mark)', letterSpacing: '.4px', flexShrink: 0 }}>
+            {faltan.length === 2 ? '⚠️ XI NO CONFIRMADO' : '⚠️ FALTA UN XI'}
+          </span>
           <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', flex: 1 }}>
-            Bloque F congelado: el impacto va en dos ramas hasta que llegue el once. Todo lo demás ya está cerrado.
+            {faltan.length === 2
+              ? 'Bloque F congelado en los dos: el impacto va en dos ramas hasta que llegue el once. Todo lo demás ya está cerrado.'
+              : `Bloque F cerrado en ${nombreDe(faltan[0] === 'a' ? 'b' : 'a')}; falta el once de ${nombreDe(faltan[0])}, que sigue en dos ramas.`}
           </span>
         </div>
       )}

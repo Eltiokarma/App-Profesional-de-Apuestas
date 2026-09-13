@@ -239,9 +239,9 @@ export function parteCoworkDemo(fixtureId: number, equipoA: string, equipoB: str
     fixtureId, estado: 'pendiente_xi', version: 'cowork/1',
     partido: { equipoA, equipoB, fecha: '2026-07-20' },
     equipos: {
-      a: equipo(equipoA, 'A', [4, 5, 3, 4, 3], 'FORMADO', 'DT de muestra', 19,
+      a: equipo(equipoA, 'A', [4, 5, 3, 4, 3], 'FORMADO', 'A. Ruiz (muestra)', 19,
         { sistema: '4-3-3', estilo: 'presión alta y salida limpia', fortaleza: 'juego asociado por dentro', vulnerabilidad: 'espalda de los laterales' }),
-      b: equipo(equipoB, 'B', [2, 3, 2, 2, 1], 'EN_FORMACION', 'DT interino', 2,
+      b: equipo(equipoB, 'B', [2, 3, 2, 2, 1], 'EN_FORMACION', 'J. Prieto (interino)', 2,
         { sistema: '5-3-2', estilo: 'bloque bajo y contragolpe', fortaleza: 'orden defensivo', vulnerabilidad: 'generación con la pelota' }),
     },
     alertas: [
