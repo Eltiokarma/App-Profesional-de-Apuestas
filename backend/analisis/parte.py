@@ -939,24 +939,55 @@ def _prioridad(liga: dict, etiquetas: set[str], pos_local: int, pos_visita: int)
     return 0, f"fuera del padrón de ligas cubiertas ({liga.get('nombre')})"
 
 
-def agenda(fecha: date_t | None = None, limite: int = 4) -> dict:
+def agenda(fecha: date_t | None = None, limite: int = 4, liga_id: int | None = None,
+           desde_ahora: bool = False, horas: int = 12,
+           incluir_descartados: bool = False) -> dict:
     """Los partidos del día ordenados por prioridad — calculado, no preguntado.
 
     Es el paso 1 del batch: en vez de hacerle deducir a Cowork qué partido
     importa (y pagar esa deducción en tiempo y en búsquedas), la base lo
     resuelve con el criterio numérico del protocolo. Los descartados viajan
     CON su motivo: un descarte sin motivo no se puede auditar.
+
+    Los tres mandos manuales son para apuntar el batch a mano —probar una liga
+    concreta, o cubrir lo que queda de esta noche— sin tener que tocar el
+    padrón de prioridades:
+
+      liga_id             solo esa liga
+      desde_ahora + horas ventana rodante desde AHORA (no el día natural: a las
+                          20:00 de Lima el día UTC ya cambió, y un filtro por
+                          fecha se comería justo los partidos de la noche)
+      incluir_descartados los de prioridad 0 entran al final, con su motivo
+
+    **Esto NO contamina la población del caso.** Elegir "Liga MX de esta noche"
+    antes del pitazo es una selección ex ante: el caso sigue siendo `ciega`.
+    Lo que la contaminaría es elegir un partido PORQUE pasó algo en él. La
+    respuesta lo dice con esas palabras para que nadie tenga que deducirlo al
+    escribir el veredicto (docs/APRENDIZAJE.md).
     """
     from backend import app as sadapp  # liga_meta y el mapa de posiciones
 
-    dia = fecha or (datetime.now(timezone.utc) + timedelta(days=1)).date()
+    if desde_ahora:
+        ahora = datetime.now(timezone.utc)
+        desde = ahora.strftime("%Y-%m-%d %H:%M:%S")
+        hasta = (ahora + timedelta(hours=max(1, horas))).strftime("%Y-%m-%d %H:%M:%S")
+        dia = ahora.date()
+        ventana = f"desde ahora y por {horas} h"
+    else:
+        dia = fecha or (datetime.now(timezone.utc) + timedelta(days=1)).date()
+        desde, hasta = dia.isoformat(), (dia + timedelta(days=1)).isoformat()
+        ventana = f"día completo {dia.isoformat()} (UTC)"
+    cond, params = ["f.date >= ?", "f.date < ?"], [desde, hasta]
+    if liga_id is not None:
+        cond.append("f.league_id = ?")
+        params.append(liga_id)
     filas = saddb.query(
         "sad",
         "SELECT f.id, f.date, f.league_id, f.league_season, f.home_team_id, f.away_team_id, "
         "ht.name AS home_name, at.name AS away_name "
         "FROM fixtures f JOIN teams ht ON ht.id=f.home_team_id JOIN teams at ON at.id=f.away_team_id "
-        "WHERE f.date >= ? AND f.date < ? ORDER BY f.date",
-        (dia.isoformat(), (dia + timedelta(days=1)).isoformat()),
+        "WHERE " + " AND ".join(cond) + " ORDER BY f.date",
+        tuple(params),
     )
     with _conectar() as con:
         ya = {r["fixture_id"]: r["estado"] for r in
@@ -993,11 +1024,28 @@ def agenda(fecha: date_t | None = None, limite: int = 4) -> dict:
         }
         (candidatos if prio else descartados).append(item)
     candidatos.sort(key=lambda i: (i["prioridad"], i["hora"]))
+    # con el mando manual puesto, los de prioridad 0 entran al final y CON su
+    # motivo: se ve que no habrían entrado por sí solos
+    if incluir_descartados:
+        candidatos += sorted(descartados, key=lambda i: i["hora"])
+        descartados = []
+    manual = bool(liga_id is not None or desde_ahora or incluir_descartados)
     return {
         "fecha": dia.isoformat(),
+        "ventana": ventana,
+        "filtro": {"ligaId": liga_id, "desdeAhora": desde_ahora,
+                   "horas": horas if desde_ahora else None,
+                   "incluirDescartados": incluir_descartados, "manual": manual},
         "analizar": candidatos[:limite],
         "enEspera": candidatos[limite:],
         "descartados": descartados,
         "nota": "CLÁSICO solo se detecta por derbi de ciudad: una rivalidad nacional sin "
                 "vecindad geográfica no sale de nuestros datos y puede estar entre los descartados",
+        "notaSeleccion": (
+            "Filtro manual puesto: elegir una liga o una ventana ANTES del pitazo es "
+            "selección ex ante y el caso sigue siendo `ciega` al escribir el veredicto. "
+            "Lo que contamina es elegir un partido PORQUE pasó algo en él."
+            if manual else
+            "Selección estándar por el padrón de prioridades: casos `ciega`."
+        ),
     }

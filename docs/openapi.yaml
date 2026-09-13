@@ -573,6 +573,22 @@ paths:
       parameters:
         - { name: fecha, in: query, schema: { type: string, format: date } }
         - { name: limite, in: query, schema: { type: integer, default: 4, minimum: 1, maximum: 20 } }
+        - name: ligaId
+          in: query
+          schema: { type: integer }
+          description: 'acota a una liga (mando manual para apuntar el batch sin tocar el padrón)'
+        - name: desdeAhora
+          in: query
+          schema: { type: boolean, default: false }
+          description: >
+            ventana rodante desde este momento en vez del día natural. De noche el día UTC
+            ya cambió respecto al local, y un filtro por fecha se comería justo los partidos
+            de esta noche.
+        - { name: horas, in: query, schema: { type: integer, default: 12, minimum: 1, maximum: 72 } }
+        - name: incluirDescartados
+          in: query
+          schema: { type: boolean, default: false }
+          description: 'los de prioridad 0 entran al final de la lista, con su motivo'
       responses:
         '200':
           description: OK
@@ -1899,6 +1915,22 @@ components:
       required: [fecha, analizar, enEspera, descartados]
       properties:
         fecha: { type: string, format: date }
+        ventana: { type: string, description: 'qué rango se miró (día natural o ventana rodante)' }
+        filtro:
+          type: object
+          description: 'los mandos manuales tal como se aplicaron'
+          properties:
+            ligaId: { type: integer, nullable: true }
+            desdeAhora: { type: boolean }
+            horas: { type: integer, nullable: true }
+            incluirDescartados: { type: boolean }
+            manual: { type: boolean, description: 'true si se usó algún mando' }
+        notaSeleccion:
+          type: string
+          description: >
+            Si el caso sigue siendo `ciega` al escribir el veredicto. Un filtro puesto ANTES
+            del pitazo (una liga, una ventana) es selección ex ante y no contamina; lo que
+            contamina es elegir un partido PORQUE pasó algo en él.
         analizar: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
         enEspera: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
         descartados: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }

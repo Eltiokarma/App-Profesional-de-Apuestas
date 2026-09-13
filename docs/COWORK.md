@@ -154,6 +154,33 @@ Ahora lo resuelve `agenda()` con el criterio numérico del protocolo:
 nacional sin vecindad geográfica (Alianza–Cienciano) no sale de nuestros datos
 y puede caer entre los descartados. Está declarado en la respuesta.
 
+Ojo con el efecto práctico de la fila 4: **una jornada de Liga MX o de la Liga
+Profesional en la que ningún equipo esté en zona de clasificación ni venga de
+un cambio de DT sale entera como descartada.** Es el filtro haciendo su
+trabajo —no se pueden analizar todas—, pero hay que saberlo antes de apuntar
+el batch a una liga concreta y encontrarse la lista vacía.
+
+### Los mandos manuales
+
+Para apuntar el batch a mano (probar una liga, cubrir lo que queda de esta
+noche) sin tocar el padrón:
+
+| Parámetro | Qué hace |
+|---|---|
+| `ligaId=262` | solo esa liga |
+| `desdeAhora=true&horas=6` | ventana rodante desde este momento, no el día natural |
+| `incluirDescartados=true` | los de prioridad 0 entran al final, **con su motivo** |
+
+`desdeAhora` existe por una razón concreta: a las 20:00 de Lima el día UTC ya
+es el siguiente, así que un filtro por fecha se comería justo los partidos de
+esta noche. La ventana rodante no tiene ese problema.
+
+**Un filtro manual NO contamina la población del caso.** Elegir "Liga MX de
+esta noche" antes del pitazo es selección ex ante: el veredicto se escribe con
+`seleccion: "ciega"` igual. Lo que contamina es elegir un partido PORQUE pasó
+algo en él. La respuesta lo dice en `notaSeleccion` para que no haya que
+deducirlo doce horas después.
+
 ## El veredicto: 12 horas después (fase B de `docs/APRENDIZAJE.md`)
 
 Un pronóstico que nadie comprueba no es un pronóstico. Doce horas después del
@@ -595,4 +622,44 @@ resultado puesto—: anotalo y seguí.
 
 Al terminar, tres líneas: cuántos casos cerraste, cuántos acertaron el 1X2, y
 cuántas lecciones dejaste con su skill.
+```
+
+---
+
+# PROMPT CORTO — CORRIDA DE PRUEBA SOBRE UNA LIGA
+
+Para probar el pipeline sobre unos partidos concretos, sin esperar al batch.
+
+```text
+Corrida de prueba del pipeline SAD. Mismas reglas del batch nocturno, pero la
+lista de partidos la fijo yo con un filtro, no el padrón de prioridades.
+
+1. GET << {base} >>/analisis/cowork/agenda?ligaId=<<262>>&desdeAhora=true&horas=<<6>>&incluirDescartados=true&limite=<<3>>
+
+   Devuelve los partidos de esa liga que todavía no empezaron, dentro de la
+   ventana. Vienen con su `motivo`: si dice "liga grande sin equipo arriba ni
+   cambio de DT", es que no habrían entrado al batch por sí solos, y está bien
+   —los estoy pidiendo yo—.
+
+   Si `analizar` viene vacío: NO inventes fixtureIds. Decime qué devolvió
+   (ventana, filtro, cuántos partidos vio) y paramos ahí.
+
+2. Para cada partido, el pipeline completo del batch nocturno: EFE con su
+   rúbrica, tabla F1 sin estado, alertas, matchup con h2a/h2b/h2c, lectura
+   SAD, sensibilidad, TDE estructurado, eventos institucionales del timeline,
+   cadena, y los documentos en prosa.
+
+   Con poco tiempo hasta el pitazo, el orden de lo que NO se puede recortar:
+   bloques A-E · tabla F1 · bajas públicas · alertas · pronóstico con sus tres
+   fuentes. El ensayo y el timeline son lo primero que se cae si no llegás, y
+   se anota en `pendientes` en vez de escribirse a medias.
+
+3. POST << {base} >>/analisis/cowork  (uno por partido)
+   Leé el recibo: `discrepancias`, `jugadores`, `eventosTimeline`, `cadena`.
+
+4. Contame: qué partidos depositaste con su fixtureId, qué quedó en
+   `pendientes`, y si algún recibo trajo discrepancias.
+
+El bloque F va congelado: no busques el XI confirmado, que a esta hora no
+existe. Cuando salga te paso el pantallazo y lo cerramos por su endpoint.
 ```

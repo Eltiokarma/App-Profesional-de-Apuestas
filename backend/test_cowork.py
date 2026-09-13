@@ -134,6 +134,56 @@ def main():
           [i["prioridad"] for i in ag["analizar"]] == sorted(i["prioridad"] for i in ag["analizar"]))
     check("ningún analizable tiene prioridad 0", all(i["prioridad"] > 0 for i in ag["analizar"]))
 
+    # ── los mandos manuales de la agenda ────────────────────────────────────
+    liga_del_dia = dbmod.query_one(
+        "sad", "SELECT league_id, COUNT(*) AS n FROM fixtures WHERE substr(date,1,10)=? "
+               "GROUP BY league_id ORDER BY n DESC LIMIT 1", (fecha,))["league_id"]
+    r = c.get(f"{A}/analisis/cowork/agenda",
+              params={"fecha": fecha, "ligaId": liga_del_dia, "limite": 20}).json()
+    todos_liga = r["analizar"] + r["enEspera"] + r["descartados"]
+    check("el filtro por liga deja solo esa liga", todos_liga and all(
+        i["liga"] == next(x["liga"] for x in todos_liga) for i in todos_liga), r.get("filtro"))
+    check("el filtro se declara en la respuesta", r["filtro"]["ligaId"] == liga_del_dia
+          and r["filtro"]["manual"] is True, r.get("filtro"))
+    check("y se dice que un filtro ex ante NO contamina la población",
+          "ciega" in r["notaSeleccion"] and "manual" in r["notaSeleccion"].lower(),
+          r.get("notaSeleccion"))
+
+    # sin el mando, un partido de prioridad 0 se queda fuera de `analizar`
+    base = c.get(f"{A}/analisis/cowork/agenda", params={"fecha": fecha, "limite": 20}).json()
+    con_todo = c.get(f"{A}/analisis/cowork/agenda",
+                     params={"fecha": fecha, "limite": 20, "incluirDescartados": "true"}).json()
+    check("incluirDescartados sube los de prioridad 0 a la lista",
+          len(con_todo["analizar"]) >= len(base["analizar"]) and not con_todo["descartados"],
+          (len(base["analizar"]), len(con_todo["analizar"])))
+    check("pero conservan su motivo de descarte",
+          all(i["motivo"] for i in con_todo["analizar"]), con_todo["analizar"][:2])
+    check("y los de prioridad real van primero",
+          [i["prioridad"] for i in con_todo["analizar"] if i["prioridad"]] ==
+          sorted(i["prioridad"] for i in con_todo["analizar"] if i["prioridad"]),
+          [i["prioridad"] for i in con_todo["analizar"]])
+
+    # la ventana rodante ignora el día natural (a las 20:00 de Lima el día UTC ya cambió)
+    r = c.get(f"{A}/analisis/cowork/agenda", params={"desdeAhora": "true", "horas": 48,
+                                                     "limite": 20, "incluirDescartados": "true"}).json()
+    check("la ventana rodante se declara", r["filtro"]["desdeAhora"] is True
+          and "desde ahora" in r["ventana"], r.get("ventana"))
+    import datetime as _dt
+    ahora_txt = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    en_ventana = r["analizar"] + r["enEspera"] + r["descartados"]
+    check("la ventana rodante NO devuelve partidos ya empezados",
+          all(dbmod.query_one("sad", "SELECT date FROM fixtures WHERE id=?", (i["fixtureId"],))["date"]
+              >= ahora_txt for i in en_ventana),
+          [i["partido"] for i in en_ventana[:3]])
+    # y que el vacío sea del filtro y no de la base: por fecha esos días sí traen
+    pasado_dia = dbmod.query_one(
+        "sad", "SELECT substr(date,1,10) AS d FROM fixtures WHERE date < ? ORDER BY date DESC LIMIT 1",
+        (ahora_txt,))["d"]
+    r_pasado = c.get(f"{A}/analisis/cowork/agenda",
+                     params={"fecha": pasado_dia, "limite": 20, "incluirDescartados": "true"}).json()
+    check("los partidos pasados existen y es la ventana la que los excluye",
+          len(r_pasado["analizar"]) > 0, pasado_dia)
+
     # ── depósito ────────────────────────────────────────────────────────────
     r = c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
     check("deposita el parte", r.status_code == 200, r.text[:300])

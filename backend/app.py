@@ -1943,15 +1943,25 @@ class XiBody(BaseModel):
 def cowork_agenda(
     fecha: date_t | None = None,
     limite: int = Query(default=4, ge=1, le=20),
+    ligaId: int | None = None,
+    desdeAhora: bool = False,
+    horas: int = Query(default=12, ge=1, le=72),
+    incluirDescartados: bool = False,
 ):
     """Los partidos del día ordenados por prioridad — paso 1 del batch.
 
     Calculado de nuestra base con el criterio del protocolo (Liga 1 Perú,
     derbi de ciudad, copa internacional, liga grande con equipo arriba o en
     crisis, choque del top 6 europeo). Sin `fecha`, el día siguiente en UTC.
-    Los descartados viajan con su motivo: un descarte sin motivo no se audita."""
+    Los descartados viajan con su motivo: un descarte sin motivo no se audita.
+
+    Mandos manuales para apuntar el batch sin tocar el padrón: `ligaId` acota a
+    una liga, `desdeAhora`+`horas` abre una ventana rodante desde este momento
+    (útil de noche, cuando el día UTC ya cambió) e `incluirDescartados` mete a
+    los de prioridad 0 al final, con su motivo. Un filtro puesto ANTES del
+    pitazo no contamina la población: el caso sigue siendo `ciega`."""
     from backend.analisis import parte as cowork
-    return cowork.agenda(fecha, limite)
+    return cowork.agenda(fecha, limite, ligaId, desdeAhora, horas, incluirDescartados)
 
 
 @app.get(API + "/analisis/cowork/pendientes")
