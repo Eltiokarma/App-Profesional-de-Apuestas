@@ -297,7 +297,7 @@ function veredictoDemo(fixtureId: number, marcador: string): VeredictoParte {
   const brier = +(['local', 'empate', 'visita'] as const)
     .reduce((s2, k) => s2 + ((reparto[k] / 100) - (k === real ? 1 : 0)) ** 2, 0).toFixed(4)
   return {
-    fixtureId, seleccion: 'ciega', modoEvaluacion: 'PRE', acredita: true,
+    fixtureId, seleccion: 'ciega', modoEvaluacion: 'PRE', acredita: true, mancha: '',
     falsador: { texto: 'si el visitante abre el marcador antes del minuto 20, la lectura de bloque bajo queda fallada.', cumplido: false },
     porLado: {
       a: { veredicto: real === 'local' ? 'acierto' : 'fallo',

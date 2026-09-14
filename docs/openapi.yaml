@@ -2018,6 +2018,15 @@ components:
             el marcador ya a la vista. Solo ciega + PRE acredita validación predictiva: las
             otras fijan rúbrica pero no acreditan (docs/APRENDIZAJE.md).
         modoEvaluacion: { type: string, enum: [PRE, COND] }
+        mancha:
+          type: string
+          description: >
+            Salvedad sobre un caso que SÍ acredita: algo que contar aunque no cambie la
+            población. Por ejemplo, el parte se retocó con el partido rodando pero el
+            pronóstico no se tocó, o la alineación llegó por un pantallazo sin sellar.
+            Va en campo propio y no en `notas` porque una salvedad que solo se encuentra
+            leyendo prosa no se encuentra: la pantalla la marca junto a la etiqueta de
+            población y una auditoría posterior puede filtrarla.
         falsadorCumplido:
           type: boolean
           nullable: true
@@ -2099,6 +2108,7 @@ components:
         seleccion: { type: string, enum: [ciega, por_resultado, post_resultado] }
         modoEvaluacion: { type: string, enum: [PRE, COND] }
         acredita: { type: boolean, description: 'ciega + PRE, y solo eso' }
+        mancha: { type: string, description: 'salvedad declarada sobre un caso que acredita; vacía casi siempre' }
         falsador:
           type: object
           properties:

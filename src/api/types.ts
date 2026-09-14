@@ -1022,6 +1022,12 @@ export interface VeredictoParte {
   modoEvaluacion: 'PRE' | 'COND'
   /** ciega + PRE, y solo eso. */
   acredita: boolean
+  /**
+   * Salvedad declarada sobre un caso que SÍ acredita: algo que contar aunque
+   * no cambie la población. Vacía en la inmensa mayoría; cuando trae texto, el
+   * caso se puede auditar sin leer la prosa de `notas`.
+   */
+  mancha: string
   falsador: { texto: string; cumplido: boolean | null }
   porLado: Partial<Record<'a' | 'b', LadoVeredicto>>
   notas: string

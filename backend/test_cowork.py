@@ -483,6 +483,7 @@ def main():
     })
     check("el veredicto se acepta", r.status_code == 200, r.text[:300])
     v = r.json()
+    check("sin salvedad, el campo viene vacío y no ausente", v["mancha"] == "", v.get("mancha"))
     o = v["objetivo"]
     check("el marcador lo pone la base, no el veredicto", o["marcador"]["texto"] == marcador_real, o["marcador"])
     check("dice si el partido está terminado", o["marcador"]["terminado"] is True, o["marcador"])
@@ -493,6 +494,42 @@ def main():
     # (0.6-1)² + (0.25-0)² + (0.15-0)² = 0.16 + 0.0625 + 0.0225 = 0.245
     check("el Brier se calcula y declara su escala", o["brier"]["valor"] == 0.245
           and "binario" in o["brier"]["escala"], o["brier"])
+
+    # UNA SALVEDAD SOBRE UN CASO QUE ACREDITA. La población la declara quien
+    # escribe; la salvedad no la cambia, pero queda en campo propio para que se
+    # pueda auditar sin leer prosa. Caso real: un parte retocado con el partido
+    # rodando cuyo pronóstico no se tocó — sigue siendo ciego, y aun así hay
+    # algo que contar dentro de seis meses.
+    r = c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto", json={
+        "seleccion": "ciega", "modoEvaluacion": "PRE",
+        "mancha": "el parte se reescribió en el minuto 2 con el partido rodando; "
+                  "el pronóstico quedó intacto",
+        "porLado": {"a": {"veredicto": "acierto"}},
+    })
+    vm = r.json()
+    check("una salvedad declarada se guarda", vm["mancha"].startswith("el parte se reescribió"),
+          vm.get("mancha"))
+    check("y NO le quita el acredita: la población sigue siendo la declarada",
+          vm["acredita"] is True and vm["seleccion"] == "ciega", (vm["acredita"], vm["seleccion"]))
+    # el mismo recibo que el parte: un campo mal escrito se DICE
+    r = c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto", json={
+        "seleccion": "ciega", "modoEvaluacion": "PRE", "manchas": "typo",
+        "porLado": {"a": {"veredicto": "acierto"}},
+    })
+    check("una clave desconocida en el veredicto se delata, no se tira",
+          any("manchas" in x.get("donde", "") and "mancha" in x.get("esperado", "")
+              for x in r.json().get("rechazos", [])),
+          r.json().get("rechazos"))
+
+    c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto", json={
+        "seleccion": "ciega", "modoEvaluacion": "PRE",
+        "mancha": "el parte se reescribió en el minuto 2 con el partido rodando; "
+                  "el pronóstico quedó intacto",
+        "porLado": {"a": {"veredicto": "acierto"}},
+    })
+    check("la salvedad sobrevive a la relectura",
+          (c.get(f"{A}/analisis/cowork/{pasado['id']}/veredicto").json()["mancha"]
+           == vm["mancha"]))
 
     # un reparto que no suma 100 se normaliza en vez de rechazarse
     p_norm = dict(p_ok)

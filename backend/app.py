@@ -24,7 +24,7 @@ from typing import Literal
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from backend import db
 from backend.nombres import canonizar, normalizar
@@ -2076,9 +2076,18 @@ class LadoVeredictoBody(BaseModel):
 
 
 class VeredictoBody(BaseModel):
+    # EXTRAS PERMITIDOS, PERO DELATADOS. Antes el modelo los tiraba en silencio
+    # y un campo mal escrito era indistinguible de uno que nunca se mandó: el
+    # mismo agujero que ya nos costó dos corridas en el parte. Ahora llegan y
+    # `guardar_veredicto` los devuelve en `rechazos` con una sugerencia.
+    model_config = ConfigDict(extra="allow")
+
     # población del caso: decide si acredita o si solo fija rúbrica
     seleccion: str               # ciega | por_resultado | post_resultado
     modoEvaluacion: str          # PRE | COND
+    # salvedad sobre un caso que SÍ acredita: no cambia la población, pero la
+    # deja auditable sin leer prosa
+    mancha: str = ""
     falsadorCumplido: bool | None = None
     porLado: dict[str, LadoVeredictoBody] = {}
     notas: str = ""

@@ -218,6 +218,36 @@ el marcador, el caso es PRE. Si consulta el marcador y después puntúa, es
 `post_resultado` y no acredita. El endpoint no puede saberlo solo: **lo
 declara Cowork y el prompt tiene que decirlo con todas las letras.**
 
+### La salvedad: `mancha`
+
+Los tres nombres de población describen **cuánto se sabía del resultado** al
+escribir. Un parte retocado con el partido en el minuto 2 y 0-0 no es
+`post_resultado`: no había resultado que mirar. Forzarlo a esa etiqueta no
+sería prudencia, sería mentir en la otra dirección — el caso quedaría archivado
+como «puntuado sabiendo el marcador», que es falso, y la etiqueta perdería
+significado para todos los demás casos.
+
+Para eso está `mancha`: una frase que viaja **con el caso que sí acredita**,
+en campo propio y no en la prosa de `notas`. No cambia `seleccion` ni
+`acredita`; deja constancia de lo que hubo, con nombre y apellido, para que una
+auditoría dentro de seis meses la encuentre filtrando y no leyendo. La pantalla
+la marca **CON SALVEDAD** al lado de la etiqueta de población.
+
+Precedente, y la regla que deja:
+
+> **Liga MX · 1550964 (Santos–Juárez, 2026-09-14).** El parte se reescribió
+> entre el minuto 0 y el 4 con el partido rodando; el marcador estaba 0-0 y no
+> se miró, y el `pronostico` quedó intacto en 62/24/14 todo el tiempo.
+> Declarado **`ciega` + PRE** —decisión del dueño del proyecto— con la salvedad
+> escrita. La regla de la duda («si dudás entre ciega y post_resultado, es
+> post_resultado») **sigue en pie para los casos donde había resultado que
+> mirar**; no se aplica cuando el partido no había producido ninguno.
+
+Que la salvedad sea barata no la vuelve gratis: si un caso necesita `mancha`
+para sostenerse, lo que hay que arreglar es el proceso que lo ensució, no la
+etiqueta. Un `ciega` con salvedad cada dos casos es una métrica que ya no
+significa nada.
+
 ---
 
 ## C · Las lecciones, acumuladas por skill

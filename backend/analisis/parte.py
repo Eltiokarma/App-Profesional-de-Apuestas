@@ -236,6 +236,8 @@ _ECO_PARTE = {"partido", "estado", "creadoEn", "actualizadoEn", "xi", "veredicto
               "timeline", "rechazos", "perdido", "aviso", "entrada"}
 _ECO_EQUIPO = {"total", "maximoAlcanzable", "porcentaje", "clasificacion", "disponibilidad"}
 _ECO_JUGADOR = {"soloBaja"}
+_CLAVES_VEREDICTO = {"seleccion", "modoEvaluacion", "mancha", "falsadorCumplido",
+                     "porLado", "notas", "fixtureId"}
 
 
 def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
@@ -1002,14 +1004,27 @@ def guardar_veredicto(fixture_id: int, payload: dict) -> dict:
                             "(acierto, parcial o fallo)")
 
     cumplido = payload.get("falsadorCumplido")
+    # UNA EXCEPCIÓN DECLARADA. A veces el caso es `ciega` de verdad y aun así
+    # hay algo que contar: el parte se tocó con el partido rodando aunque el
+    # pronóstico no se movió, la alineación llegó por un pantallazo sin sellar,
+    # el reloj del que escribe no coincidía con el del partido. Eso no cambia
+    # la población —esa la declara quien escribe y decide si acredita—, pero
+    # tiene que quedar en un CAMPO, no en la prosa de `notas`: una salvedad que
+    # solo se puede encontrar leyendo no se encuentra nunca, y la duda vuelve
+    # entera dentro de seis meses cuando nadie se acuerde del caso.
+    mancha = _txt(payload.get("mancha"))
+    rechazos: list[dict] = []
+    _claves_raras(payload, _CLAVES_VEREDICTO, rechazos, "(veredicto)")
     guardado = {
         "seleccion": seleccion,
         "modoEvaluacion": modo,
         "acredita": vered.acredita(seleccion, modo),
+        "mancha": mancha,
         "falsador": {"texto": (parte.get("pronostico") or {}).get("falsador", ""),
                      "cumplido": cumplido if isinstance(cumplido, bool) else None},
         "porLado": por_lado,
         "notas": _txt(payload.get("notas")),
+        "rechazos": rechazos,
         "cerradoEn": efedb.ahora(),
     }
     with _conectar() as con:
@@ -1022,6 +1037,7 @@ def guardar_veredicto(fixture_id: int, payload: dict) -> dict:
     print(f"[cowork] veredicto {fixture_id}: {obj.get('marcador', {}).get('texto', '?')} · "
           f"1X2 {'✓' if obj.get('unXDos', {}).get('acerto') else '✗'} · "
           f"{seleccion}/{modo} ({'acredita' if guardado['acredita'] else 'no acredita'})"
+          + (f" · CON SALVEDAD: {mancha}" if mancha else "")
           + (f" · sin pronóstico previo: {sin_pronostico}" if sin_pronostico else ""), flush=True)
     listo["sinPronosticoPrevio"] = sin_pronostico
     return listo
@@ -1074,6 +1090,10 @@ def veredicto_de(fixture_id: int) -> dict | None:
     parte = json.loads(fila["parte_json"])
     guardado = json.loads(fila["veredicto_json"])
     return {**guardado, "fixtureId": fixture_id,
+            # los veredictos cerrados antes de que existiera el campo no tienen
+            # salvedad: vacía, no ausente, para que la pantalla no adivine
+            "mancha": guardado.get("mancha", ""),
+            "rechazos": guardado.get("rechazos", []),
             "objetivo": vered.objetivo(fixture_id, parte)}
 
 

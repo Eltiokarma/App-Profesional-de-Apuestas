@@ -261,6 +261,14 @@ reales contra 31% con los sembrados dentro).
 `COND` si se escribió con el partido en marcha o el resultado delante. Solo
 `ciega` + `PRE` acredita.
 
+**Y si el caso es ciego pero hay algo que contar:** `mancha`, una frase. No
+cambia la población ni el `acredita` —eso lo decide `seleccion`— pero queda en
+campo propio, la pantalla lo marca **CON SALVEDAD** y una auditoría lo
+encuentra filtrando en vez de leyendo. Ejemplo real: el parte se retocó con el
+partido ya rodando aunque el pronóstico no se movió. Las tres etiquetas de
+población dicen *cuánto se sabía del resultado*; si no había resultado que
+mirar, `post_resultado` sería mentir en la otra dirección.
+
 ### Anti-hindsight
 
 Sin pronóstico previo declarado, **la cadena del equipo no recibe veredicto**.
@@ -722,6 +730,7 @@ Vas a cerrar los casos que quedaron abiertos. No analices nada nuevo.
    {
      "seleccion": "ciega",
      "modoEvaluacion": "PRE",
+     "mancha": "",
      "falsadorCumplido": false,
      "porLado": {
        "a": {"veredicto": "acierto", "queP": "ganó por fuera, como se dijo", "leccion": ""},
@@ -741,6 +750,17 @@ SOBRE `seleccion` — es el campo que decide si el caso sirve para calibrar:
 Si dudás entre ciega y post_resultado, es post_resultado. Un caso mal
 declarado como ciego envenena la calibración entera; uno declarado de más solo
 se queda sin acreditar.
+
+La regla de la duda vale **cuando había resultado que mirar**. Un parte tocado
+con el partido en marcha y 0-0 sigue siendo ciego: no existía marcador que
+contaminara nada. Eso no se tapa, se declara en `mancha`.
+
+SOBRE `mancha` — una frase, y vacía casi siempre. Es para el caso ciego que
+igual tiene algo que contar: "el parte se reescribió en el minuto 2 con el
+partido rodando; el pronóstico quedó intacto", "la alineación llegó por
+pantallazo sin sellar". No te salva de declarar bien `seleccion`: si lo que
+pasó fue que miraste el marcador, eso es `post_resultado` y ninguna salvedad
+lo arregla.
 
 SOBRE `modoEvaluacion`: PRE si escribiste el juicio sin el marcador delante,
 COND si lo escribiste con el partido en marcha o el resultado a la vista.

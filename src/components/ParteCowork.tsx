@@ -502,6 +502,14 @@ function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' 
           style={{ padding: '3px 9px', borderRadius: 7, font: '700 9.5px var(--mono)', letterSpacing: '.3px', background: v.acredita ? 'var(--up-soft)' : 'var(--bg3)', color: v.acredita ? 'var(--up)' : 'var(--t3)' }}>
           {v.seleccion.toUpperCase().replace('_', ' ')} · {v.modoEvaluacion} · {v.acredita ? 'ACREDITA' : 'NO ACREDITA'}
         </span>
+        {/* una excepción declarada viaja PEGADA a la etiqueta que matiza: si se
+            escondiera en el detalle, el caso se leería como limpio de un vistazo */}
+        {v.mancha && (
+          <span title={v.mancha}
+            style={{ padding: '3px 9px', borderRadius: 7, font: '700 9.5px var(--mono)', letterSpacing: '.3px', background: 'var(--mark-soft)', color: 'var(--mark)' }}>
+            CON SALVEDAD
+          </span>
+        )}
         <button onClick={() => setAbierto(!abierto)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 9px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--t2)', cursor: 'pointer', font: '600 10.5px var(--sans)' }}>
           {abierto ? 'Menos' : 'Detalle'}
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" style={{ transform: abierto ? 'rotate(90deg)' : 'none', transition: 'transform .12s' }}><path d="M9 6l6 6-6 6" /></svg>
@@ -532,6 +540,13 @@ function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' 
               </div>
             )
           })}
+
+          {v.mancha && (
+            <div style={{ padding: '9px 12px', borderRadius: 10, background: 'var(--mark-soft)' }}>
+              <span style={{ font: '700 9.5px var(--mono)', color: 'var(--mark)', letterSpacing: '.4px' }}>SALVEDAD · </span>
+              <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{v.mancha}</span>
+            </div>
+          )}
 
           {v.falsador.texto && (
             <div style={{ padding: '9px 12px', borderRadius: 10, background: 'var(--bg3)' }}>
