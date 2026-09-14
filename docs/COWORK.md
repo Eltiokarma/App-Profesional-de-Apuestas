@@ -287,6 +287,22 @@ Ahora valen las tres:
 | `zona` | `GK` · `POR` · `Portero` · `Arquero` (ídem DEF, MID, ATK) — y si falta `zona`, se deduce de `posicion` |
 | `bloques.A` | `3` · `{"score": 3, "nota": "…"}` |
 
+**1-bis. Un campo con el nombre equivocado se delata.** Es el fallo más caro,
+porque no se parece a un fallo: la clave se descarta entera y el POST responde
+200 como si todo hubiera ido bien. Ahora cualquier clave desconocida —en la
+raíz, en un equipo, en un jugador, en una alerta o en una baja— vuelve en
+`rechazos` con la sugerencia más parecida.
+
+También se aceptan dos alias que salían naturales y se perdían:
+
+| Antes se perdía | Ahora |
+|---|---|
+| `alertas[].texto` | alias válido de `detalle` |
+| `alertas[].equipo: "ambos"` | vocabulario válido del protocolo (se normalizaba a `global`) |
+
+Y una alerta que llega sin texto se declara como cáscara vacía en vez de
+guardarse muda.
+
 **2. Lo que se rechaza se DICE.** El recibo trae `rechazos`, con dónde estaba,
 por qué no entró y qué se esperaba:
 
@@ -313,6 +329,25 @@ enterara. Ahora el recibo trae `perdido` y `aviso`:
 > **Regla para probar formas de campo:** hazlo sobre un fixture de descarte,
 > nunca sobre uno que ya tiene un parte bueno. Si igual pasa, el `aviso` te lo
 > dice y vuelves a depositar completo.
+
+### Una baja que no está en la tabla F1 no pesa en el IP
+
+El Impacto Ponderado pondera **todos** los roles (TF ×3, TH ×2, ROT ×1,
+SUP ×0.5) — pero solo de los jugadores que están en la tabla F1. Una baja
+listada únicamente en `fuera`, sin estar en `plantel`, no tenía rol con el que
+pesar y desaparecía del cálculo. El IP salía corto y parecía que el ponderador
+estaba roto.
+
+Dos formas de evitarlo, y la primera es la buena:
+
+1. **Ponla en `plantel`.** Es lo que pide el protocolo: la tabla F1 lista a
+   todos los relevantes, *disponibles y no disponibles*.
+2. O dale `zona` y `rol` dentro de `fuera`. El backend la incorpora a la tabla
+   para el bloque F y la marca `soloBaja`.
+
+Si no haces ninguna de las dos, el recibo te lo dice con nombre y apellido:
+*«esta baja no está en la tabla F1 y no trae zona/rol: NO pesa en el Impacto
+Ponderado»*.
 
 ---
 
@@ -382,7 +417,9 @@ Escribís vos (es juicio, no se puede calcular):
   máximo: A ≤4, B ≤6, C ≤4, D ≤4, E ≤3. Una línea de justificación por bloque.
 - La tabla F1: 14-16 jugadores con zona (GK/DEF/MID/ATK), rol (TF/TH/ROT/SUP)
   y apps. SIN columna de estado.
-- Las bajas y sanciones ya públicas, en `fuera`, con su motivo y su fuente.
+- Las bajas y sanciones ya públicas, en `fuera`, con su motivo y su fuente. Y
+  a esos mismos jugadores, TAMBIÉN en `plantel` con su zona y su rol: una baja
+  que no está en la tabla F1 no pesa en el Impacto Ponderado.
 - Las alertas del protocolo que se disparen (T.54, R-KT.2, GK-DOWNGRADE,
   FACTOR-X, COLAPSO EN CASCADA…).
 - El matchup H: diagnóstico, razón, el perfil táctico de cada equipo Y los tres

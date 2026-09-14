@@ -854,6 +854,8 @@ export interface JugadorParte {
   apps?: string
   estado?: EstadoJugadorF
   motivo?: string
+  /** true = entró a la tabla F1 desde `fuera`, para que su baja pese en el IP. */
+  soloBaja?: boolean
   /** dónde apareció en la hoja del partido, una vez resuelto el once. */
   hoja?: 'titular' | 'banca' | 'fuera'
 }
@@ -922,7 +924,8 @@ export interface EquipoParte {
   dt: { nombre: string; meses: number }
   perfil: { sistema: string; estilo: string; fortaleza: string; vulnerabilidad: string }
   plantel: JugadorParte[]
-  fuera: { nombre: string; estado: string; motivo: string }[]
+  /** Las bajas públicas. Con `zona` y `rol` pesan en el IP aunque no estén en la F1. */
+  fuera: { nombre: string; estado: string; motivo: string; zona?: string; rol?: string }[]
   factorX: { nombre: string; contexto: string }[]
   /** Caja de sensibilidad: qué cambiaría si el dato que falta fuera otro. */
   sensibilidad: { supuesto: string; efecto: string }[]
@@ -931,7 +934,8 @@ export interface EquipoParte {
 
 export interface AlertaParte {
   codigo: string
-  equipo: 'a' | 'b' | 'global'
+  /** `ambos` = toca a los dos equipos (vocabulario del protocolo EFE). */
+  equipo: 'a' | 'b' | 'ambos' | 'global'
   tipo: 'estructural' | 'fecha'
   detalle: string
 }

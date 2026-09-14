@@ -25,6 +25,7 @@ API-Football, o de un pantallazo que el usuario le pasa a Cowork— entra por
 Excepción de solo-lectura: escribe efe.db (tabla `parte_cowork`), nunca las
 DBs del SAD.
 """
+import difflib
 import json
 import sqlite3
 from datetime import date as date_t, datetime, timedelta, timezone
@@ -158,6 +159,7 @@ def _alias(valor, tabla: dict) -> str:
 
 
 def _jugador(j: dict, rechazos: list, donde: str) -> dict | None:
+    _claves_raras(j, _CLAVES_JUGADOR, rechazos, donde)
     nombre = _txt(j.get("nombre")) or _txt(j.get("jugador"))
     if not nombre:
         rechazos.append({"donde": donde, "porque": "sin nombre"})
@@ -191,18 +193,43 @@ def _bloque_crudo(v):
     return v, "", ""
 
 
-def _fuera(f: dict) -> dict | None:
+_CLAVES_FUERA = {"nombre", "estado", "motivo", "zona", "rol", "posicion", "apps"}
+
+
+def _fuera(f: dict, rechazos: list, donde: str) -> dict | None:
+    """Una baja pública. Puede traer zona y rol, y conviene que los traiga.
+
+    CORRECCIÓN de la primera versión: aquí se descartaban zona y rol "porque
+    ya están en el plantel". Falso cuando el jugador NO está en la tabla F1:
+    entonces la baja no pesa en el IP y desaparece del cálculo. Ahora, si trae
+    zona y rol, se incorpora a la tabla para el bloque F; y si no los trae y
+    tampoco está en la F1, se avisa de que no va a pesar.
+    """
+    _claves_raras(f, _CLAVES_FUERA, rechazos, donde)
     nombre = _txt(f.get("nombre"))
     if not nombre:
+        rechazos.append({"donde": donde, "porque": "baja sin nombre"})
         return None
     estado = _txt(f.get("estado")).lower()
     return {"nombre": nombre,
             "estado": estado if estado in ("baja", "duda") else "baja",
-            "motivo": _txt(f.get("motivo"))}
+            "motivo": _txt(f.get("motivo")),
+            "zona": _alias(f.get("zona"), _ZONA_ALIAS) or _alias(f.get("posicion"), _ZONA_ALIAS),
+            "rol": _alias(f.get("rol"), _ROL_ALIAS)}
+
+
+_CLAVES_EQUIPO = {"nombre", "bloques", "excluidos", "notas", "dt", "perfil",
+                  "plantel", "fuera", "factorX", "sensibilidad"}
+_CLAVES_JUGADOR = {"nombre", "jugador", "posicion", "zona", "rol", "apps", "estado", "motivo"}
+_CLAVES_PARTE = {"fixtureId", "version", "generadoEn", "equipos", "alertas", "matchup",
+                 "lecturaSad", "lectura_sad", "tde", "timelineEventos", "timelineNarrativa",
+                 "cadena", "documentos", "pendientes", "fuentes", "descartados", "notas",
+                 "pronostico"}
 
 
 def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
             rechazos: list, lado: str) -> dict:
+    _claves_raras(bruto, _CLAVES_EQUIPO, rechazos, f"equipos.{lado}")
     bloques_in = bruto.get("bloques") or {}
     excluidos_in = bruto.get("excluidos") or {}
     notas_in = bruto.get("notas") or {}
@@ -237,7 +264,27 @@ def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
         }
     plantel = [j for j in (_jugador(x, rechazos, f"equipos.{lado}.plantel[{i}]")
                            for i, x in enumerate(bruto.get("plantel") or [])) if j]
-    fuera = [f for f in (_fuera(x) for x in (bruto.get("fuera") or [])) if f]
+    fuera = [f for f in (_fuera(x, rechazos, f"equipos.{lado}.fuera[{i}]")
+                         for i, x in enumerate(bruto.get("fuera") or [])) if f]
+    # UNA BAJA QUE NO ESTÁ EN LA F1 NO PESA EN EL IP. El protocolo pide que la
+    # tabla F1 liste a todos los relevantes, disponibles y no disponibles; si
+    # una baja quedó fuera, o se incorpora con su rol o el IP la ignora — y
+    # ese IP mudo es el que después parece "el ponderador está roto".
+    en_tabla = {normalizar(j["nombre"]) for j in plantel}
+    for f in fuera:
+        if normalizar(f["nombre"]) in en_tabla:
+            continue
+        if f["zona"] and f["rol"]:
+            plantel.append({"nombre": f["nombre"], "posicion": "", "zona": f["zona"],
+                            "rol": f["rol"], "apps": "", "soloBaja": True})
+            en_tabla.add(normalizar(f["nombre"]))
+        else:
+            rechazos.append({
+                "donde": f"equipos.{lado}.fuera", "jugador": f["nombre"],
+                "porque": "esta baja no está en la tabla F1 y no trae zona/rol: "
+                          "NO pesa en el Impacto Ponderado",
+                "esperado": "inclúyela en `plantel`, o dale `zona` y `rol` aquí mismo",
+            })
     dt = bruto.get("dt") or {}
     if isinstance(dt, str):
         dt = {"nombre": dt}
@@ -353,16 +400,54 @@ def _evento_tl(e: dict) -> dict | None:
     }
 
 
-def _alerta(a: dict) -> dict | None:
+def _claves_raras(bruto: dict, conocidas: set, rechazos: list, donde: str) -> None:
+    """Delata las claves que nadie va a leer.
+
+    El modo de fallo más caro no es un valor inválido —ese se ve— sino una
+    clave con el nombre equivocado: se descarta enterita y el depósito
+    responde 200 como si todo hubiera ido bien. Se sugiere la más parecida
+    porque casi siempre es un `texto` donde iba `detalle`."""
+    if not isinstance(bruto, dict):
+        return
+    for clave in bruto:
+        if clave in conocidas:
+            continue
+        cerca = difflib.get_close_matches(clave, sorted(conocidas), n=1, cutoff=0.6)
+        rechazos.append({
+            "donde": f"{donde}.{clave}",
+            "porque": "campo desconocido: no se guarda nada de lo que venga aquí",
+            "esperado": (f"¿querías decir «{cerca[0]}»?" if cerca
+                         else "mira el contrato en docs/openapi.yaml"),
+        })
+
+
+_CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto"}
+# el protocolo usa `ambos` para una alerta que toca a los dos equipos: estaba
+# en el esquema del EFE viejo y se perdió al escribir este contrato
+_EQUIPOS_ALERTA = ("a", "b", "ambos", "global")
+
+
+def _alerta(a: dict, rechazos: list, donde: str) -> dict | None:
+    _claves_raras(a, _CLAVES_ALERTA, rechazos, donde)
     codigo = _txt(a.get("codigo"))
     if not codigo:
+        rechazos.append({"donde": donde, "porque": "alerta sin código"})
         return None
     equipo = _txt(a.get("equipo")).lower()
+    if equipo and equipo not in _EQUIPOS_ALERTA:
+        rechazos.append({"donde": f"{donde}.equipo", "porque": f"equipo no reconocido: {equipo!r}",
+                         "esperado": "a / b / ambos / global"})
     tipo = _txt(a.get("tipo")).lower()
+    # `texto` es el nombre que sale natural; se acepta como alias de `detalle`
+    detalle = _txt(a.get("detalle")) or _txt(a.get("texto"))
+    if not detalle:
+        rechazos.append({"donde": f"{donde}.detalle", "jugador": codigo,
+                         "porque": "la alerta llegó sin texto: se guarda como cáscara vacía",
+                         "esperado": "detalle: «qué dice la alerta»"})
     return {"codigo": codigo,
-            "equipo": equipo if equipo in ("a", "b", "global") else "global",
+            "equipo": equipo if equipo in _EQUIPOS_ALERTA else "global",
             "tipo": tipo if tipo in ("estructural", "fecha") else "fecha",
-            "detalle": _txt(a.get("detalle"))}
+            "detalle": detalle}
 
 
 def _documento(d: dict) -> dict | None:
@@ -399,12 +484,14 @@ def normalizar_parte(payload: dict) -> dict:
     # veía un 0 sin forma de saber por qué: cuarenta minutos de adivinar la forma
     # del campo en vez de cinco segundos de leer el motivo.
     rechazos: list[dict] = []
+    _claves_raras(payload, _CLAVES_PARTE, rechazos, "(raíz)")
     parte = {
         "fixtureId": fixture_id,
         "version": _txt(payload.get("version")) or VERSION,
         "generadoEn": _txt(payload.get("generadoEn")),
         "equipos": {l: _equipo(equipos_in.get(l) or {}, equipos_db, rechazos, l) for l in LADOS},
-        "alertas": [a for a in (_alerta(x) for x in (payload.get("alertas") or [])) if a],
+        "alertas": [a for a in (_alerta(x, rechazos, f"alertas[{i}]")
+                                for i, x in enumerate(payload.get("alertas") or [])) if a],
         "matchup": {},
         "pronostico": {},
         "lecturaSad": _lectura_sad(payload.get("lecturaSad") or payload.get("lectura_sad") or {}),

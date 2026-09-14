@@ -631,6 +631,69 @@ def main():
     check("re-depositar lo mismo NO avisa de pérdida", rec["perdido"] == [] and not rec["aviso"],
           rec.get("perdido"))
 
+    # ── LO QUE SE TIRA EN SILENCIO (2ª corrida de Cowork) ───────────────────
+    # El fallo más caro no es un valor inválido —ese se ve— sino una clave con
+    # el nombre equivocado: se descarta entera y el POST responde 200.
+    rec, d = _dep({"bloques": {"A": 4}, "sensibilidadd": [{"supuesto": "x"}],
+                   "plantel": [{"nombre": "Uno", "zona": "GK", "rol": "TF", "minutos": 90}]})
+    porques = {r["donde"]: r for r in rec["rechazos"]}
+    check("una clave desconocida del equipo se delata",
+          "equipos.a.sensibilidadd" in porques, list(porques))
+    check("y sugiere la que se quiso escribir",
+          "sensibilidad" in porques["equipos.a.sensibilidadd"]["esperado"],
+          porques.get("equipos.a.sensibilidadd"))
+    check("también dentro de un jugador",
+          any("minutos" in k for k in porques), list(porques))
+
+    r = c.post(f"{A}/analisis/cowork", json={"fixtureId": sin_ficha, "pronosticoo": {"marcador": "2-1"},
+                                             "equipos": {"a": {"bloques": {"A": 1}}, "b": {}}}).json()
+    check("una clave desconocida en la raíz se delata",
+          any(x["donde"] == "(raíz).pronosticoo" and "pronostico" in x["esperado"]
+              for x in r["rechazos"]), r["rechazos"])
+
+    # alertas: `texto` como alias de `detalle`, y `ambos` es vocabulario válido
+    r = c.post(f"{A}/analisis/cowork", json={
+        "fixtureId": sin_ficha, "equipos": {"a": {"bloques": {"A": 1}}, "b": {}},
+        "alertas": [{"codigo": "T.54", "equipo": "ambos", "texto": "el texto va aquí"},
+                    {"codigo": "VACIA", "equipo": "a"},
+                    {"codigo": "RARA", "equipo": "los dos", "detalle": "x"}]}).json()
+    d = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()
+    check("`texto` se acepta como alias de `detalle`",
+          d["alertas"][0]["detalle"] == "el texto va aquí", d["alertas"][0])
+    check("`ambos` es un equipo válido en una alerta", d["alertas"][0]["equipo"] == "ambos",
+          d["alertas"][0])
+    check("una alerta sin texto se delata como cáscara vacía",
+          any("cáscara vacía" in x["porque"] for x in r["rechazos"]), r["rechazos"])
+    check("un equipo de alerta inválido se delata",
+          any("equipo no reconocido" in x["porque"] for x in r["rechazos"]), r["rechazos"])
+
+    # ── UNA BAJA FUERA DE LA TABLA F1 NO PESA EN EL IP ──────────────────────
+    # Cowork lo leyó como "el ponderador solo cuenta TF". No: cuenta todos los
+    # roles, pero solo de quien está en la tabla.
+    base_f1 = [{"nombre": "Castillo", "zona": "DEF", "rol": "TF"},
+               {"nombre": "Uno", "zona": "MID", "rol": "TH"}]
+    _, d = _dep({"bloques": {"A": 1}, "plantel": base_f1,
+                 "fuera": [{"nombre": "Castillo", "estado": "baja", "motivo": "lesión"},
+                           {"nombre": "Uno", "estado": "baja", "motivo": "lesión"}]})
+    check("el IP pondera TODOS los roles, no solo TF",
+          d["equipos"]["a"]["disponibilidad"]["ramas"]["a"]["ip"] == 5.0,
+          d["equipos"]["a"]["disponibilidad"]["ramas"]["a"]["ip"])
+
+    rec, d = _dep({"bloques": {"A": 1}, "plantel": base_f1,
+                   "fuera": [{"nombre": "Castillo", "estado": "baja", "motivo": "lesión"},
+                             {"nombre": "Gómez", "estado": "baja", "motivo": "lesión",
+                              "zona": "MID", "rol": "🟠"},
+                             {"nombre": "Inda", "estado": "baja", "motivo": "lesión"}]})
+    check("una baja con zona y rol entra a la tabla y SÍ pesa",
+          d["equipos"]["a"]["disponibilidad"]["ramas"]["a"]["ip"] == 5.0,
+          d["equipos"]["a"]["disponibilidad"]["ramas"]["a"]["ip"])
+    check("y queda marcada como venida de `fuera`",
+          any(j.get("soloBaja") for j in d["equipos"]["a"]["plantel"]),
+          [j["nombre"] for j in d["equipos"]["a"]["plantel"]])
+    check("una baja SIN zona/rol y fuera de la F1 se delata (no pesa)",
+          any("NO pesa en el Impacto Ponderado" in x["porque"] and x.get("jugador") == "Inda"
+              for x in rec["rechazos"]), rec["rechazos"])
+
     # ── el cruce de nombres, al detalle ─────────────────────────────────────
     from backend.analisis import bloque_f as bf
 

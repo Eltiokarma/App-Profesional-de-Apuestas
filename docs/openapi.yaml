@@ -1561,13 +1561,19 @@ components:
           items: { $ref: '#/components/schemas/JugadorParte' }
         fuera:
           type: array
-          description: 'lo que ya es público la noche anterior: lesiones largas, sanciones, selección'
+          description: >
+            Lo que ya es público la noche anterior: lesiones largas, sanciones, selección.
+            OJO: una baja que no esté también en `plantel` NO pesa en el Impacto Ponderado
+            (no tiene rol con el que pesar). Ponla en `plantel`, o dale `zona` y `rol` aquí
+            y el backend la incorpora a la tabla F1 marcada como `soloBaja`.
           items:
             type: object
             properties:
               nombre: { type: string }
               estado: { type: string, enum: [baja, duda] }
               motivo: { type: string }
+              zona: { type: string, description: 'necesario si no está en `plantel`' }
+              rol: { type: string, description: 'necesario si no está en `plantel`' }
         factorX:
           type: array
           items:
@@ -1691,9 +1697,9 @@ components:
       required: [codigo]
       properties:
         codigo: { type: string, description: 'T.54, R-KT.2, GK-DOWNGRADE, F3…' }
-        equipo: { type: string, enum: [a, b, global] }
+        equipo: { type: string, enum: [a, b, ambos, global] }
         tipo: { type: string, enum: [estructural, fecha] }
-        detalle: { type: string }
+        detalle: { type: string, description: '`texto` se acepta como alias' }
     PronosticoParte:
       type: object
       description: Las tres fuentes van declaradas en simultáneo (Disciplina 33); ninguna reemplaza a otra.

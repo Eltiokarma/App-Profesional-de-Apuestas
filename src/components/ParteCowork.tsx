@@ -217,7 +217,13 @@ function TablaPlantel({ jugadores }: { jugadores: JugadorParte[] }) {
                 const sem: Semaforo | null = j.estado === 'baja' ? 'rojo' : j.estado === 'duda' ? 'ambar' : j.estado === 'disponible' ? 'verde' : null
                 return (
                   <tr key={i}>
-                    <td style={{ padding: '5px 8px', borderBottom: '1px solid var(--line)', color: 'var(--t1)', whiteSpace: 'nowrap' }}>{j.nombre}</td>
+                    <td style={{ padding: '5px 8px', borderBottom: '1px solid var(--line)', color: 'var(--t1)', whiteSpace: 'nowrap' }}>
+                      {j.nombre}
+                      {j.soloBaja && (
+                        <span title="no venía en la tabla F1: entró por ser baja, para que pese en el IP"
+                          style={{ marginLeft: 6, font: '600 9px var(--mono)', color: 'var(--t3)' }}>solo baja</span>
+                      )}
+                    </td>
                     <td style={{ padding: '5px 8px', borderBottom: '1px solid var(--line)', font: '700 10px var(--mono)', color: 'var(--t3)' }}>{j.zona}</td>
                     <td style={{ padding: '5px 8px', borderBottom: '1px solid var(--line)', color: 'var(--t2)', whiteSpace: 'nowrap' }}>{ROL_LABEL[j.rol] ?? j.rol}</td>
                     <td style={{ padding: '5px 8px', borderBottom: '1px solid var(--line)', font: '500 10px var(--mono)', color: 'var(--t3)', fontVariantNumeric: 'tabular-nums' }}>{j.apps || '—'}</td>
@@ -658,7 +664,12 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
             <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 13px', borderRadius: 11, background: a.tipo === 'estructural' ? 'var(--down-soft)' : 'var(--mark-soft)', border: `1px solid color-mix(in oklch,${a.tipo === 'estructural' ? 'var(--down)' : 'var(--mark)'},transparent 60%)` }}>
               <span style={{ padding: '2px 8px', borderRadius: 6, background: 'var(--bg)', font: '700 9.5px var(--mono)', color: a.tipo === 'estructural' ? 'var(--down)' : 'var(--mark)', flexShrink: 0, whiteSpace: 'nowrap' }}>{a.codigo}</span>
               <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>
-                {a.equipo !== 'global' && <b style={{ color: 'var(--t2)' }}>[{a.equipo === 'a' ? parte.partido.equipoA : parte.partido.equipoB}] </b>}
+                {a.equipo !== 'global' && (
+                  <b style={{ color: 'var(--t2)' }}>
+                    [{a.equipo === 'a' ? parte.partido.equipoA
+                      : a.equipo === 'b' ? parte.partido.equipoB : 'Ambos'}]{' '}
+                  </b>
+                )}
                 {a.detalle}
               </span>
             </div>
