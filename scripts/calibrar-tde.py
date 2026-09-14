@@ -14,12 +14,15 @@ Un número de calibración escrito a mano se vuelve a equivocar. Este se
 recalcula y se compara contra el que tiene el backend.
 """
 import csv
+import hashlib
 import re
 import sys
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
 REGISTRO = RAIZ / "docs/skills/teorema-del-echado/assets/casos/registro.csv"
+# el estado vigente del registro, fijado a mano cuando se declara un alta
+SHA_ESPERADO = "7e410172efd27162f288590a79b6cede7082e61fdf6efdda81de874f7f6bd8d7"
 
 # las clases que el skill EXCLUYE de toda métrica de frecuencia
 CLASES_FUERA = ("rama_abandonada",)
@@ -61,8 +64,20 @@ def main() -> int:
     if not REGISTRO.exists():
         print(f"no está el registro: {REGISTRO}")
         return 1
+    crudo = REGISTRO.read_bytes()
     filas = list(csv.DictReader(REGISTRO.open(encoding="utf-8")))
+    sha = hashlib.sha256(crudo).hexdigest()
     print(f"registro: {len(filas)} filas · {filas[0]['id'].strip()} … {filas[-1]['id'].strip()}")
+    # EL ESTADO SE IDENTIFICA POR SHA, NO POR CONTEO DE FILAS. De las tres
+    # desincronizaciones que ya hubo, dos no cambiaban el conteo: contar filas
+    # no habría detectado ni la resincronización de v0.1.7 ni la canonización
+    # de categorías. Ver docs/skills/teorema-del-echado/REGISTRO.md.
+    print(f"  sha256 {sha[:16]} · {len(crudo)} bytes", end="")
+    if sha == SHA_ESPERADO:
+        print("  ✓ el esperado")
+    else:
+        print(f"\n  ⚠ CAMBIÓ: se esperaba {SHA_ESPERADO[:16]}. Si es un alta legítima, "
+              f"actualizá SHA_ESPERADO en este script y declará el conteo y los IDs.")
 
     # HIGIENE: una columna con varias redacciones para el mismo valor fragmenta
     # cualquier agrupación EN SILENCIO. Se avisa antes de contar nada. El

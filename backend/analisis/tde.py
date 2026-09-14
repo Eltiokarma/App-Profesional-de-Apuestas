@@ -397,10 +397,16 @@ ALTA_DEL_SEMAFORO = {
          "ordenamiento, y un ordenamiento sin positivos arriba no es testeable",
     "c": "todos los positivos expresados en el esquema vigente de 6 indicadores",
     "hoy": "1 positivo ciego computable (n=8), en esquema `4ind_o_5ind` → (a) no, (b) no, (c) no",
-    "comoSeLeeLaC": "celda vacía en `IE_recomputado_esquema6` + esquema_P=6ind → nació en el "
-                    "esquema vigente, no hace falta. Vacía + 4ind/4ind_o_5ind → FALTA hacerlo, "
-                    "y ese positivo no cuenta para (c). Son 9 las que faltan (TDE-001…009), "
-                    "y entre ellas está el único positivo.",
+    # La (c) NO se prueba con «tiene recomputo». `IE_recomputado_esquema6`
+    # mezcla tres poblaciones —2 reexpresiones reales, 11 copias literales del
+    # IE sobre filas ya 6ind, y 3 que traen el recomputo de v0.1.5—, así que una
+    # celda llena no significa que hiciera falta reexpresar. Lo limpio son las
+    # vacías. Detalle en docs/skills/teorema-del-echado/REGISTRO.md.
+    "comoSeLeeLaC": "en_esquema_vigente = esquema_P == '6ind' OR IE_recomputado_esquema6 no "
+                    "vacío. Las 19 celdas vacías sí se leen limpio: 10 son 6ind (no hace "
+                    "falta) y 9 son TDE-001…009 (falta hacerlo). Esas nueve están BLOQUEADAS, "
+                    "no atrasadas: reexpresarlas exige decidir si se puntuaron sobre 4 o sobre "
+                    "5 indicadores, y eso es cambio de fondo. El único positivo está ahí.",
 }
 
 

@@ -269,6 +269,23 @@ Lo que el módulo sigue publicando: el IE, el ISE, su **tramo ordinal**, el tipo
 modal, la ventana, las compuertas operadas y los indicadores que sostienen la
 lectura. Se reactivan con las tres condiciones del alta del semáforo.
 
+### El dato canónico vive donde cambia, no donde se empaqueta
+
+El registro del TDE se desincronizó **tres veces** con el paquete del skill, y
+ninguna de las tres se habría detectado contando filas. La causa no es descuido:
+el registro cambia **por partido** y el skill se reempaqueta **por versión**.
+Empaquetar un dato de cadencia diaria dentro de un artefacto de cadencia semanal
+es divergencia garantizada.
+
+> **Regla.** El dato que cambia con los partidos vive en el repo; el artefacto
+> que cambia por decisión (rúbrica, referencias) viaja con el skill. Y el estado
+> vigente se identifica por **sha256**, no por conteo de filas ni por fecha —
+> dos de las tres desincronizaciones no cambiaban el conteo.
+
+`scripts/calibrar-tde.py` verifica el sha en cada corrida. El detalle —qué está
+perdido, qué es hueco declarado, y las tres poblaciones mezcladas en la columna
+de recomputo— está en `docs/skills/teorema-del-echado/REGISTRO.md`.
+
 ### Un Brier sin línea de base no dice nada
 
 Recalculado con los dos filtros puestos, el Brier del TDE da **0.3051** sobre
