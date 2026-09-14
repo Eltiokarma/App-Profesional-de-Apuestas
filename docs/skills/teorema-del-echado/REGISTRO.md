@@ -72,7 +72,7 @@ describe para que se lean juntas. No se tocó ninguna celda preexistente.
 | `hecho` | 15 | la celda tiene un valor trazable: reexpresión real (011, 012), copia correcta sobre fila ya `6ind`, o el recomputo de v0.1.5 (017, 018) |
 | `hecho_sin_procedencia` | 1 | **TDE-015**: hay un 5.3 que no reproduce ni el `IE` (5.5) ni el recomputo de v0.1.5 (5.5). Nadie sabe de dónde sale |
 | `no_requiere` | 10 | nació en el esquema vigente: 029-032, 043-048 |
-| `bloqueado` | 3 | **TDE-007, 008, 009**. Reexpresables en principio, pero no consta con qué esquema se puntuaron. No están atrasadas: falta una decisión de fondo |
+| `bloqueado` | 3 | **TDE-007, 008, 009**. Reexpresables en principio. Saber el denominador no da los valores de `P1a`, `P1b` y `P1c`, así que siguen bloqueadas |
 | `pre_rubrica` | 6 | **TDE-001…006**. **No reexpresables**: sus bloques no son promedios posibles de indicadores 0/0.5/1 con ningún denominador, así que se puntuaron con escala continua y no hay `P1a…P4` que convertir |
 
 **Sobre TDE-015 se decidió etiquetar y no aislar, porque no contamina.** Se
@@ -170,10 +170,38 @@ fila vieja:
 | TDE-008 | 0.63 | sí (k=4) |
 | TDE-009 | 0.75 | sí |
 
-Y no es solo P. **TDE-001 a 006 tienen bloques `F`, `C` o `S` que tampoco son
-formables** (F se promedia sobre 4 → múltiplos de 0.125, y ahí hay 0.70, 0.80,
-0.60, 0.55; C sobre 3 → múltiplos de 1/6, y hay 0.15, 0.30, 0.35, 0.85). De
-TDE-007 en adelante todas las filas son formables.
+Y no es solo P: **TDE-001 a 006 tienen bloques `F`, `C` o `S` que tampoco son
+formables**. De TDE-007 en adelante, ninguna fila tiene un bloque imposible.
+
+### El criterio exacto, porque las dos versiones ingenuas fallan
+
+Una fila es `pre_rubrica` si tiene al menos un bloque imposible **para todo k
+entre 1 y el máximo nominal de ese bloque**, con tolerancia de redondeo.
+
+- **El denominador es variable por diseño.** Un indicador `sin dato` o `n/a`
+  sale del promedio, así que clavar k en el nominal marca falsos positivos:
+  TDE-025 (`F = 0.667 = 2/3`) y TDE-026 (`F = 0.167 = 1/6`) son filas de
+  rúbrica con un indicador de F fuera del promedio, no filas pre-rúbrica.
+- **Pero k no puede pasarse del nominal.** F tiene 4 indicadores, C y S tienen
+  3: promediar sobre 5 o 6 es imposible. Barrer k hasta 6 para todos los
+  bloques es demasiado permisivo y esconde bloques que sí son imposibles —con
+  ese techo, de TDE-001 solo sobreviviría `C = 0.15`, cuando además su `F` y su
+  `S` tampoco son formables.
+
+Los dos criterios dan **exactamente las mismas seis filas**, así que la
+conclusión no depende de esa elección. El detalle por bloque sí.
+
+### Una segunda señal, independiente de la formabilidad
+
+Los 24 valores de bloque de TDE-001 a 006 son **todos múltiplos de 0.05**:
+0.15, 0.30, 0.35, 0.40, 0.50, 0.55, 0.60, 0.70, 0.75, 0.80, 0.85. De TDE-007 en
+adelante aparecen 0.167, 0.375, 0.583, 0.667, 0.833 — la firma de los
+denominadores 3, 4, 6 y 12. La única fila posterior enteramente sobre la
+rejilla de 0.05 es TDE-030, y solo porque sus cuatro bloques dieron 0.500.
+
+**El cambio de rejilla ocurre en el mismo límite que el test de formabilidad.**
+Dos señales distintas cortando en el mismo lugar es lo más cerca de una prueba
+que se puede llegar sin un documento.
 
 **Conclusión: las seis primeras se puntuaron con una escala continua por bloque,
 no promediando una rúbrica de indicadores.** No se perdió la información de con
@@ -208,3 +236,42 @@ La salida honesta es cambiar la condición, no el dato:
 Así el semáforo puede levantarse algún día con cinco positivos limpios, en vez
 de quedar bloqueado para siempre por una fila de 2026 que nadie puede arreglar.
 Es decisión del autor del skill.
+
+
+## Los tres `bloqueado`: qué dice la aritmética del denominador
+
+Identificar el **denominador** no es recuperar indicadores desde el valor del
+bloque —eso sigue prohibido—: es leer qué k puede producir el número declarado.
+
+| fila | P | k admisibles (1…6) | lectura |
+|---|---|---|---|
+| TDE-007 | 0.25 | 2, 4, 6 | k=6 descartado por cronología (`P1c` no existía) |
+| **TDE-008** | **0.63** | **4, y solo 4** | 0.63 es 5/8: **pinneado por aritmética** |
+| TDE-009 | 0.75 | 2, 4, 6 | ídem 007 |
+
+**`k = 5` queda excluido para las tres.** O sea que la división `P1a`/`P1b` de
+v0.1.1 no se aplicó a ninguna, pese a que las tres entraron en esa versión. El
+label `4ind_o_5ind` era aritméticamente falso para ellas.
+
+- **TDE-008 pasó a `4ind`**: es aritmética, no inferencia.
+- **TDE-007 y TDE-009 siguen en `4ind_o_5ind`**, que ya se sabe inexacto, a la
+  espera de una decisión del dueño. Descartar k=2 exigiría apoyarse en que
+  `compuertas_operadas` viene vacío en las dos —y en filas tan viejas un campo
+  vacío significa «no se registró», no «no operó ninguna». Ausencia de
+  declaración no es evidencia de ausencia.
+
+**Ninguna de las tres es positivo** (007 cerró `no`, 008 y 009 siguen
+abiertas), así que nada de esto toca (a) ni (c) hoy.
+
+## Dos anomalías menores, anotadas antes de que se pierdan
+
+1. **La reducción de F a tres indicadores no está declarada** en TDE-025 ni en
+   TDE-026. Su `compuertas_operadas` detalla las tres compuertas, la regla
+   `n/a` de S3 y las advertencias de banda, y no menciona el `sin dato` de F.
+   Es el mismo cambio de denominador que la regla de `P1a` ahora obliga a
+   declarar: convendría extender esa obligación a **cualquier** bloque.
+2. **TDE-026 se contradice a sí misma.** Su `compuertas_operadas` dice *«P1a
+   igual a 0 topea P en 0.5 y el promedio ya daba 0.5»*, pero la celda `P`
+   guarda **0.583** (7/12). O la celda tiene el promedio sin topear y el texto
+   lo describe mal, o al revés. No afecta ninguna métrica —la fila es
+   `rama_abandonada`— pero es una fila que no concuerda consigo misma.

@@ -22,7 +22,7 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parent.parent
 REGISTRO = RAIZ / "docs/skills/teorema-del-echado/assets/casos/registro.csv"
 # el estado vigente del registro, fijado a mano cuando se declara un alta
-SHA_ESPERADO = "b3649a7e4de1030e220d6111f871ad7c6bbb5bfa5e0005ee2d152248e0788c39"
+SHA_ESPERADO = "55ef00db09ae78f34b87c6f164b269f8439651f35b33ad53734b9cdd8cad8663"
 
 # las clases que el skill EXCLUYE de toda métrica de frecuencia
 CLASES_FUERA = ("rama_abandonada",)
@@ -169,6 +169,18 @@ def main() -> int:
     # — se puntuó con una escala continua, y entonces no hay nada que
     # reexpresar. Es lo que pasa con TDE-001…006.
     def _formable(v, nmax, tol=0.006):
+        """¿v puede ser el promedio de k indicadores 0/0.5/1, con 1 ≤ k ≤ nmax?
+
+        El denominador es VARIABLE por diseño —un indicador `sin dato` o `n/a`
+        sale del promedio— así que el test tiene que barrer k, no clavarlo en
+        el nominal. Con k fijo en 4, TDE-025 (F=0.667=2/3) y TDE-026
+        (F=0.167=1/6) saldrían marcadas como pre-rúbrica, y son filas de
+        rúbrica con un indicador de F fuera del promedio.
+
+        Pero k tampoco puede pasarse del nominal: F tiene 4 indicadores y C y S
+        tienen 3, así que promediar sobre 5 o 6 es imposible. El techo es el
+        nominal del bloque, no 6 para todos.
+        """
         return any(abs((m_ / 2) / k - v) <= tol
                    for k in range(1, nmax + 1) for m_ in range(0, 2 * k + 1))
 
