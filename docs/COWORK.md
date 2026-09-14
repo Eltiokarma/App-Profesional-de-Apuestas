@@ -770,6 +770,16 @@ rival. "Barcos define solo" no sirve; "el favorito con ventaja desde el 42
 concede entre el 77 y el 90" sí. Poné `skill` solo si tenés claro a cuál le
 toca, y `reglaTocada` solo si podés nombrar la regla concreta.
 
+SOBRE `mancha` — vacía casi siempre. Es para el caso que SÍ es ciego y aun
+así tiene algo que contar: "el parte se retocó en el minuto 2 con el partido
+rodando; el pronóstico quedó intacto", "la alineación llegó por pantallazo sin
+sellar". No cambia la población ni el acredita, queda como salvedad visible.
+No la uses para maquillar: si lo que pasó es que miraste el marcador antes de
+puntuar, eso es `post_resultado` y ninguna salvedad lo arregla.
+
+Si el POST devuelve `rechazos` con algo dentro, leelo: es un campo que
+escribiste mal y que NO se guardó, con la sugerencia de cómo se llama.
+
 Si el POST devuelve `sinPronosticoPrevio` con equipos dentro: ese lado no
 tenía pronóstico declarado y su cadena NO recibió veredicto. No lo arregles
 re-depositando el parte con un pronóstico nuevo —sería escribirlo con el
