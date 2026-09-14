@@ -122,16 +122,73 @@ def _lista_txt(v) -> list[str]:
     return [_txt(x) for x in (v or []) if _txt(x)]
 
 
-def _jugador(j: dict) -> dict | None:
-    nombre = _txt(j.get("nombre"))
+# La rúbrica del EFE nombra los roles con símbolos (🔴 🟠 🟡 ⚪) y con su
+# etiqueta ("Titular fijo"), y las posiciones en español. Quien escribe el
+# parte viene de leer ESA rúbrica, así que exigirle las siglas internas es
+# pedirle que traduzca — y cuando se equivoca, el jugador desaparecía sin
+# decir nada. Se aceptan las tres formas y se traduce aquí.
+_ROL_ALIAS = {
+    "TF": "TF", "🔴": "TF", "TITULAR FIJO": "TF", "FIJO": "TF",
+    "TH": "TH", "🟠": "TH", "TITULAR HABITUAL": "TH", "HABITUAL": "TH",
+    "ROT": "ROT", "🟡": "ROT", "ROTACION": "ROT", "ROTADOR": "ROT",
+    "SUP": "SUP", "⚪": "SUP", "SUPLENTE": "SUP", "MARGINAL": "SUP",
+    "SUPLENTE / MARGINAL": "SUP", "SUPLENTE/MARGINAL": "SUP",
+}
+_ZONA_ALIAS = {
+    "GK": "GK", "POR": "GK", "PORTERO": "GK", "ARQUERO": "GK", "G": "GK", "POR.": "GK",
+    "DEF": "DEF", "DEFENSA": "DEF", "D": "DEF", "ZAGUERO": "DEF", "LATERAL": "DEF",
+    "CENTRAL": "DEF", "DFC": "DEF",
+    "MID": "MID", "MED": "MID", "M": "MID", "MEDIO": "MID", "VOLANTE": "MID",
+    "MEDIOCAMPISTA": "MID", "CENTROCAMPISTA": "MID", "MC": "MID", "PIVOTE": "MID",
+    "ATK": "ATK", "DEL": "ATK", "F": "ATK", "ATA": "ATK", "ATAQUE": "ATK",
+    "DELANTERO": "ATK", "EXTREMO": "ATK", "ATACANTE": "ATK", "DC": "ATK",
+}
+
+
+def _alias(valor, tabla: dict) -> str:
+    """Traduce lo que llegó a la sigla interna. '' si no se reconoce."""
+    crudo = _txt(valor)
+    if not crudo:
+        return ""
+    for candidato in (crudo, crudo.upper(), normalizar(crudo).upper(),
+                      normalizar(crudo).upper().split()[0] if normalizar(crudo).split() else ""):
+        if candidato in tabla:
+            return tabla[candidato]
+    return ""
+
+
+def _jugador(j: dict, rechazos: list, donde: str) -> dict | None:
+    nombre = _txt(j.get("nombre")) or _txt(j.get("jugador"))
     if not nombre:
+        rechazos.append({"donde": donde, "porque": "sin nombre"})
         return None
-    zona = _txt(j.get("zona")).upper()
-    rol = _txt(j.get("rol")).upper()
-    if zona not in bloque_f.ZONAS or rol not in bloque_f.ROLES:
-        return None  # sin zona o sin rol no pesa en ninguna fórmula: sería relleno
+    # la zona puede venir en `zona` o deducirse de `posicion`
+    zona = _alias(j.get("zona"), _ZONA_ALIAS) or _alias(j.get("posicion"), _ZONA_ALIAS)
+    rol = _alias(j.get("rol"), _ROL_ALIAS)
+    if not zona:
+        rechazos.append({"donde": donde, "jugador": nombre,
+                         "porque": f"zona no reconocida: {j.get('zona')!r}",
+                         "esperado": "GK / DEF / MID / ATK (o la posición en español)"})
+        return None
+    if not rol:
+        rechazos.append({"donde": donde, "jugador": nombre,
+                         "porque": f"rol no reconocido: {j.get('rol')!r}",
+                         "esperado": "TF / TH / ROT / SUP (o 🔴 🟠 🟡 ⚪, o «Titular fijo»)"})
+        return None
     return {"nombre": nombre, "posicion": _txt(j.get("posicion")), "zona": zona,
             "rol": rol, "apps": _txt(j.get("apps"))}
+
+
+def _bloque_crudo(v):
+    """El sub-score puede venir plano (`"A": 3`) o como objeto
+    (`"A": {"score": 3, "nota": "…"}`). Las dos formas son razonables si vienes
+    de leer la rúbrica; antes la segunda se convertía en 0 sin avisar."""
+    if isinstance(v, dict):
+        for clave in ("score", "valor", "puntaje", "subscore", "sub_score"):
+            if clave in v:
+                return v[clave], _txt(v.get("nota")), _txt(v.get("motivoExclusion") or v.get("motivo"))
+        return None, _txt(v.get("nota")), _txt(v.get("motivoExclusion") or v.get("motivo"))
+    return v, "", ""
 
 
 def _fuera(f: dict) -> dict | None:
@@ -144,22 +201,42 @@ def _fuera(f: dict) -> dict | None:
             "motivo": _txt(f.get("motivo"))}
 
 
-def _equipo(bruto: dict, equipos_db: list[tuple[str, str]]) -> dict:
+def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
+            rechazos: list, lado: str) -> dict:
     bloques_in = bruto.get("bloques") or {}
     excluidos_in = bruto.get("excluidos") or {}
     notas_in = bruto.get("notas") or {}
     bloques = {}
     for letra in LETRAS:
-        motivo = _txt(excluidos_in.get(letra))
+        crudo, nota_obj, motivo_obj = _bloque_crudo(bloques_in.get(letra))
+        motivo = _txt(excluidos_in.get(letra)) or motivo_obj
+        score = 0.0 if motivo else _num(crudo, MAX_BLOQUE[letra])
+        # cualquier desvío entre lo que llegó y lo que se guarda se declara:
+        # un 99 donde el máximo es 6 se recortaba en silencio, y un sub-score
+        # recortado cambia la clasificación del equipo sin que nadie lo vea
+        if not motivo and crudo is not None:
+            try:
+                pedido = float(crudo)
+            except (TypeError, ValueError):
+                rechazos.append({"donde": f"equipos.{lado}.bloques.{letra}",
+                                 "porque": f"sub-score no numérico: {crudo!r}",
+                                 "esperado": f"un número de 0 a {MAX_BLOQUE[letra]:g}"})
+            else:
+                if round(pedido, 2) != score:
+                    rechazos.append({"donde": f"equipos.{lado}.bloques.{letra}",
+                                     "porque": f"sub-score fuera de rango: {pedido:g} "
+                                               f"(se guardó {score:g})",
+                                     "esperado": f"0 a {MAX_BLOQUE[letra]:g}"})
         bloques[letra] = {
-            "score": 0.0 if motivo else _num(bloques_in.get(letra), MAX_BLOQUE[letra]),
+            "score": score,
             "max": MAX_BLOQUE[letra],
             "peso": PESO_BLOQUE[letra],
             "excluido": bool(motivo),
             "motivoExclusion": motivo,
-            "nota": _txt(notas_in.get(letra)),
+            "nota": _txt(notas_in.get(letra)) or nota_obj,
         }
-    plantel = [j for j in (_jugador(x) for x in (bruto.get("plantel") or [])) if j]
+    plantel = [j for j in (_jugador(x, rechazos, f"equipos.{lado}.plantel[{i}]")
+                           for i, x in enumerate(bruto.get("plantel") or [])) if j]
     fuera = [f for f in (_fuera(x) for x in (bruto.get("fuera") or [])) if f]
     dt = bruto.get("dt") or {}
     if isinstance(dt, str):
@@ -318,11 +395,15 @@ def normalizar_parte(payload: dict) -> dict:
 
     equipos_db = [(r["name"], normalizar(r["name"]))
                   for r in saddb.query("sad", "SELECT name FROM teams")]
+    # lo que se descarta se DECLARA. Antes se caía en silencio y quien depositaba
+    # veía un 0 sin forma de saber por qué: cuarenta minutos de adivinar la forma
+    # del campo en vez de cinco segundos de leer el motivo.
+    rechazos: list[dict] = []
     parte = {
         "fixtureId": fixture_id,
         "version": _txt(payload.get("version")) or VERSION,
         "generadoEn": _txt(payload.get("generadoEn")),
-        "equipos": {l: _equipo(equipos_in.get(l) or {}, equipos_db) for l in LADOS},
+        "equipos": {l: _equipo(equipos_in.get(l) or {}, equipos_db, rechazos, l) for l in LADOS},
         "alertas": [a for a in (_alerta(x) for x in (payload.get("alertas") or [])) if a],
         "matchup": {},
         "pronostico": {},
@@ -339,6 +420,7 @@ def normalizar_parte(payload: dict) -> dict:
         "fuentes": _lista_txt(payload.get("fuentes")),
         "descartados": _lista_txt(payload.get("descartados")),
         "notas": _txt(payload.get("notas")),
+        "rechazos": rechazos,
     }
     m = payload.get("matchup") or {}
     diag = _txt(m.get("diagnostico")).upper().replace("MATCHUP ", "")
@@ -401,7 +483,7 @@ def guardar(payload: dict) -> dict:
 
     ahora = efedb.ahora()
     with _conectar() as con:
-        previo = con.execute("SELECT creado_en, xi_json FROM parte_cowork WHERE fixture_id=?",
+        previo = con.execute("SELECT creado_en, xi_json, parte_json FROM parte_cowork WHERE fixture_id=?",
                              (parte["fixtureId"],)).fetchone()
         con.execute(
             "INSERT INTO parte_cowork (fixture_id, fecha, equipo_a, equipo_b, estado, version, "
@@ -416,6 +498,28 @@ def guardar(payload: dict) -> dict:
         )
     # un parte nuevo sobre un fixture que ya tenía once resuelto se recalcula
     # solo al leerlo: el once vive aparte, justamente para sobrevivir al parte
+    # AVISO DE DEPÓSITO DESTRUCTIVO: el POST reemplaza el parte entero (es
+    # idempotente a propósito — con merge no habría forma de QUITAR una alerta
+    # que ya no aplica). Pero un cuerpo incompleto borraba lo anterior sin que
+    # nadie se enterara hasta abrir la pantalla. Ahora se cuenta y se dice.
+    perdido = []
+    if previo:
+        try:
+            antes = json.loads(previo["parte_json"])
+        except (ValueError, TypeError):
+            antes = {}
+        def _tam(p_: dict) -> dict:
+            return {
+                "alertas": len(p_.get("alertas") or []),
+                "documentos": len(p_.get("documentos") or []),
+                "fuentes": len(p_.get("fuentes") or []),
+                "jugadores": sum(len((p_.get("equipos", {}).get(l) or {}).get("plantel") or []) for l in LADOS),
+                "bajas": sum(len((p_.get("equipos", {}).get(l) or {}).get("fuera") or []) for l in LADOS),
+                "eventosTimeline": len(p_.get("timelineEventos") or []),
+            }
+        t_antes, t_ahora = _tam(antes), _tam(parte)
+        perdido = [f"{k}: {t_antes[k]} → {t_ahora[k]}" for k in t_antes if t_ahora[k] < t_antes[k]]
+
     cadena, cadena_ignorada = _guardar_cadena(fx, parte.get("cadena") or {})
     resumen = {
         "fixtureId": parte["fixtureId"],
@@ -432,11 +536,21 @@ def guardar(payload: dict) -> dict:
         "cadenaIgnorada": cadena_ignorada,
         "conLecturaSad": bool((parte.get("lecturaSad") or {}).get("moduloOperativo")),
         "conTde": bool(parte.get("tde")),
+        # lo que NO entró, con el motivo y dónde estaba
+        "rechazos": parte.get("rechazos") or [],
+        # lo que este depósito BORRÓ de lo que ya había guardado
+        "perdido": perdido,
+        "aviso": ("Este depósito dejó el parte con MENOS contenido del que tenía "
+                  f"({'; '.join(perdido)}). El POST reemplaza el parte entero: si fue sin "
+                  "querer, vuelve a depositarlo completo." if perdido else ""),
     }
     print(f"[cowork] parte {resumen['estado']}: {resumen['partido']} "
           f"({resumen['jugadores']['a']}+{resumen['jugadores']['b']} jugadores, "
           f"{len(parte['documentos'])} documentos, "
           f"{resumen['eventosTimeline']} eventos de timeline)"
+          + (f" · RECHAZOS: {len(parte.get('rechazos') or [])}"
+             if parte.get("rechazos") else "")
+          + (f" · BORRÓ: {'; '.join(perdido)}" if perdido else "")
           + (f" · cadena: {', '.join(cadena)}" if cadena else "")
           + (f" · PRONÓSTICO YA DECLARADO, se conserva el primero: {cadena_ignorada}"
              if cadena_ignorada else "")

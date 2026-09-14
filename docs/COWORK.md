@@ -272,6 +272,48 @@ Por lo mismo, re-depositar el parte después del partido **no cambia el
 pronóstico ya declarado ni borra el veredicto ya escrito**. Si mandás otro
 pronóstico, se conserva el primero y el recibo lo delata en `cadenaIgnorada`.
 
+## Qué hace el depósito con lo que no entiende
+
+Tres cosas que la primera corrida real destapó, y que ahora están cerradas:
+
+**1. Se aceptan las formas naturales.** La rúbrica del EFE nombra los roles con
+símbolos y con su etiqueta, y las posiciones en español. Exigir las siglas
+internas era pedir una traducción, y cuando salía mal el jugador desaparecía.
+Ahora valen las tres:
+
+| Campo | Formas aceptadas |
+|---|---|
+| `rol` | `TF` · `🔴` · `Titular fijo` (ídem TH/🟠, ROT/🟡, SUP/⚪) |
+| `zona` | `GK` · `POR` · `Portero` · `Arquero` (ídem DEF, MID, ATK) — y si falta `zona`, se deduce de `posicion` |
+| `bloques.A` | `3` · `{"score": 3, "nota": "…"}` |
+
+**2. Lo que se rechaza se DICE.** El recibo trae `rechazos`, con dónde estaba,
+por qué no entró y qué se esperaba:
+
+```json
+{"donde": "equipos.a.plantel[3]", "jugador": "Nombre",
+ "porque": "rol no reconocido: 'crack'",
+ "esperado": "TF / TH / ROT / SUP (o 🔴 🟠 🟡 ⚪, o «Titular fijo»)"}
+```
+
+Un sub-score que se recorta también se declara (`99 → 6`): un bloque recortado
+cambia la clasificación del equipo, y cambiarla en silencio es peor que
+rechazar el depósito.
+
+**3. El POST reemplaza el parte ENTERO, y ahora avisa.** Es idempotente a
+propósito: con merge no habría forma de *quitar* una alerta que dejó de
+aplicar. Pero un cuerpo incompleto borraba lo anterior sin que nadie se
+enterara. Ahora el recibo trae `perdido` y `aviso`:
+
+```
+"perdido": ["alertas: 5 → 0", "fuentes: 3 → 0", "jugadores: 32 → 0"],
+"aviso": "Este depósito dejó el parte con MENOS contenido del que tenía…"
+```
+
+> **Regla para probar formas de campo:** hazlo sobre un fixture de descarte,
+> nunca sobre uno que ya tiene un parte bueno. Si igual pasa, el `aviso` te lo
+> dice y vuelves a depositar completo.
+
 ---
 
 # PROMPT COWORK — SAD BATCH NOCTURNO v2.1
@@ -508,6 +550,10 @@ LEÉ EL RECIBO que devuelve el POST:
   Verificá el `fixtureId` contra la agenda y volvé a depositar.
 - `jugadores` con menos de los que escribiste = a esos les faltaba zona o rol
   y no entraron. Completalos y re-depositá (es idempotente: el último manda).
+- `rechazos` con contenido = eso NO entró. Cada uno dice dónde estaba, por qué
+  y qué se esperaba. Corrígelo y re-depositá completo.
+- `perdido`/`aviso` con contenido = este depósito dejó el parte con MENOS de lo
+  que tenía. El POST reemplaza entero: si fue sin querer, re-depositá completo.
 - `eventosTimeline` en 0 habiendo mandado eventos = eran de tipo partido y se
   descartaron, o les faltaba fecha o título.
 - `conLecturaSad` o `conTde` en false = ese bloque no llegó y la pestaña va a

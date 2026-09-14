@@ -1879,6 +1879,23 @@ components:
           items: { type: string }
           description: 'nombres que mandó Cowork y no casan con el fixture: se declaran, no se corrigen en silencio'
         xiResuelto: { type: boolean }
+        rechazos:
+          type: array
+          description: >
+            Lo que NO entró, con dónde estaba, por qué y qué se esperaba. Antes se
+            descartaba en silencio y quien depositaba veía un 0 sin forma de saber por qué.
+          items:
+            type: object
+            properties:
+              donde: { type: string }
+              jugador: { type: string }
+              porque: { type: string }
+              esperado: { type: string }
+        perdido:
+          type: array
+          items: { type: string }
+          description: 'campos que este depósito dejó con MENOS contenido del que había'
+        aviso: { type: string, description: 'explicación del depósito destructivo; "" si no lo hubo' }
         eventosTimeline: { type: integer }
         cadena:
           type: array

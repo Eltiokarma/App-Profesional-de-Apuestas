@@ -562,6 +562,75 @@ def main():
           o4["unXDos"]["acerto"] is False and "no se cuenta" in o4["unXDos"]["nota"], o4["unXDos"])
     check("y tampoco hay Brier", o4["brier"]["valor"] is None, o4["brier"])
 
+    # ── LO QUE SE RECHAZA SE DICE (reportado por Cowork en la 1ª corrida) ───
+    # La rúbrica del EFE nombra los roles con 🔴🟠🟡⚪ y con su etiqueta, y las
+    # posiciones en español. Quien escribe el parte viene de leer ESA rúbrica.
+    def _dep(equipo_a):
+        r = c.post(f"{A}/analisis/cowork", json={"fixtureId": sin_ficha,
+                                                 "equipos": {"a": equipo_a, "b": {"bloques": {"A": 1}}}})
+        return r.json(), c.get(f"{A}/analisis/cowork/{sin_ficha}").json()
+
+    rec, d = _dep({"bloques": {"A": {"score": 4, "nota": "mismo DT"}, "B": {"score": 5},
+                               "C": {"score": 3}, "D": {"score": 4}, "E": {"score": 3}},
+                   "plantel": [{"nombre": "Uno", "zona": "GK", "rol": "TF"}]})
+    check("el sub-score como objeto {score, nota} se entiende",
+          d["equipos"]["a"]["total"] == 24.5, d["equipos"]["a"]["total"])
+    check("y la nota del objeto llega al bloque",
+          d["equipos"]["a"]["bloques"]["A"]["nota"] == "mismo DT", d["equipos"]["a"]["bloques"]["A"])
+
+    rec, d = _dep({"bloques": {"A": 4},
+                   "plantel": [{"nombre": "Uno", "zona": "GK", "rol": "🔴"},
+                               {"nombre": "Dos", "zona": "DEF", "rol": "🟠"},
+                               {"nombre": "Tres", "zona": "MID", "rol": "🟡"},
+                               {"nombre": "Cuatro", "zona": "ATK", "rol": "⚪"}]})
+    check("los roles con el símbolo de la rúbrica entran", rec["jugadores"]["a"] == 4, rec["jugadores"])
+    check("y se traducen a la sigla interna",
+          [j["rol"] for j in d["equipos"]["a"]["plantel"]] == ["TF", "TH", "ROT", "SUP"],
+          [j["rol"] for j in d["equipos"]["a"]["plantel"]])
+
+    rec, d = _dep({"bloques": {"A": 4},
+                   "plantel": [{"nombre": "Uno", "posicion": "Portero", "rol": "Titular fijo"},
+                               {"nombre": "Dos", "posicion": "Lateral", "rol": "Titular habitual"},
+                               {"nombre": "Tres", "posicion": "Volante", "rol": "Rotación"},
+                               {"nombre": "Cuatro", "posicion": "Delantero", "rol": "Suplente"}]})
+    check("el rol por etiqueta y la zona por posición en español también",
+          rec["jugadores"]["a"] == 4, rec["jugadores"])
+    check("la zona se deduce de la posición",
+          [j["zona"] for j in d["equipos"]["a"]["plantel"]] == ["GK", "DEF", "MID", "ATK"],
+          [j["zona"] for j in d["equipos"]["a"]["plantel"]])
+
+    # y lo que de verdad no se entiende, se rechaza CON MOTIVO
+    rec, _ = _dep({"bloques": {"A": "cuatro", "B": 99},
+                   "plantel": [{"nombre": "Uno", "zona": "banquillo", "rol": "TF"},
+                               {"nombre": "Dos", "zona": "GK", "rol": "crack"},
+                               {"zona": "GK", "rol": "TF"}]})
+    porques = " · ".join(r["porque"] for r in rec["rechazos"])
+    check("un sub-score no numérico se declara", "no numérico" in porques, porques)
+    check("un sub-score recortado se declara (99 → 6)", "fuera de rango" in porques, porques)
+    check("una zona desconocida se declara con lo esperado",
+          any("zona no reconocida" in r["porque"] and "GK / DEF" in r.get("esperado", "")
+              for r in rec["rechazos"]), rec["rechazos"])
+    check("un rol desconocido se declara con lo esperado",
+          any("rol no reconocido" in r["porque"] and "🔴" in r.get("esperado", "")
+              for r in rec["rechazos"]), rec["rechazos"])
+    check("un jugador sin nombre se declara", "sin nombre" in porques, porques)
+    check("el rechazo dice DÓNDE estaba", all(r["donde"] for r in rec["rechazos"]), rec["rechazos"])
+
+    # ── un depósito que BORRA lo anterior lo dice (el error de la 1ª corrida) ─
+    c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
+    rec = c.post(f"{A}/analisis/cowork", json={"fixtureId": sin_ficha,
+                                               "equipos": {"a": {"bloques": {"A": 1}}, "b": {}}}).json()
+    check("un depósito incompleto avisa de lo que borró", rec["perdido"], rec.get("perdido"))
+    check("y el aviso explica que el POST reemplaza entero",
+          "reemplaza el parte entero" in rec["aviso"], rec.get("aviso"))
+    check("lo borrado se cuenta campo por campo",
+          any("alertas" in x for x in rec["perdido"]) and any("jugadores" in x for x in rec["perdido"]),
+          rec["perdido"])
+    c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
+    rec = c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha)).json()
+    check("re-depositar lo mismo NO avisa de pérdida", rec["perdido"] == [] and not rec["aviso"],
+          rec.get("perdido"))
+
     # ── el cruce de nombres, al detalle ─────────────────────────────────────
     from backend.analisis import bloque_f as bf
 
