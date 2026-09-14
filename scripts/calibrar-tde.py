@@ -22,7 +22,7 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parent.parent
 REGISTRO = RAIZ / "docs/skills/teorema-del-echado/assets/casos/registro.csv"
 # el estado vigente del registro, fijado a mano cuando se declara un alta
-SHA_ESPERADO = "7e410172efd27162f288590a79b6cede7082e61fdf6efdda81de874f7f6bd8d7"
+SHA_ESPERADO = "14b35f6800e5d9093ae96e2ed843247c195ffdbe74623eeaaaa974ea5ee6f30c"
 
 # las clases que el skill EXCLUYE de toda métrica de frecuencia
 CLASES_FUERA = ("rama_abandonada",)
@@ -86,7 +86,9 @@ def main() -> int:
     for col, esperado in (("clase_caso", {"normal", "rama_abandonada"}),
                           ("esquema_P", {"4ind", "5ind", "6ind", "4ind_o_5ind"}),
                           ("seleccion", {"ciega", "por_resultado", "post_resultado"}),
-                          ("se_echo", {"si", "no", "parcial"})):
+                          ("se_echo", {"si", "no", "parcial"}),
+                          ("estado_recomputo_esq6",
+                           {"hecho", "hecho_sin_procedencia", "no_requiere", "bloqueado"})):
         vistos = {f[col].strip() for f in filas if f[col].strip()}
         raros = sorted(vistos - esperado)
         if raros:
@@ -126,11 +128,24 @@ def main() -> int:
 
     # la condición (c): los positivos tienen que estar en el esquema VIGENTE
     print()
+    # LA (c) SE LEE DE LA COLUMNA, YA NO SE INFIERE. Antes esta distinción vivía
+    # en este script: si alguien calculaba la frecuencia con otra herramienta,
+    # la perdía. Ahora está en el dato, que es donde tiene que estar.
     viejos = [f["id"].strip() for f in pos
-              if f["esquema_P"].strip() != "6ind"
-              and not f["IE_recomputado_esquema6"].strip()]
+              if f["estado_recomputo_esq6"].strip() == "bloqueado"]
+    from collections import Counter
+    est = Counter(f["estado_recomputo_esq6"].strip() for f in filas)
+    print()
+    print(f"  recomputo al esquema 6: hecho {est['hecho']} · sin procedencia "
+          f"{est['hecho_sin_procedencia']} · no requiere {est['no_requiere']} · "
+          f"BLOQUEADO {est['bloqueado']}")
+    sp = [f["id"].strip() for f in filas
+          if f["estado_recomputo_esq6"].strip() == "hecho_sin_procedencia"]
+    if sp:
+        print(f"    · sin procedencia (valor que no reproduce ni el IE ni v0.1.5): {sp}")
+        print("      no contamina: queda fuera del filtro por modo y no es positivo")
     if viejos:
-        print(f"  ⚠ positivos medidos en un esquema de P que NO es el vigente: {viejos}")
+        print(f"  ⚠ positivos BLOQUEADOS, no expresables en el esquema vigente: {viejos}")
         print("    → no son comparables con las filas nuevas: positivos en esquema 6 = "
               f"{len(pos) - len(viejos)}")
 

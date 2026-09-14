@@ -402,11 +402,13 @@ ALTA_DEL_SEMAFORO = {
     # IE sobre filas ya 6ind, y 3 que traen el recomputo de v0.1.5—, así que una
     # celda llena no significa que hiciera falta reexpresar. Lo limpio son las
     # vacías. Detalle en docs/skills/teorema-del-echado/REGISTRO.md.
-    "comoSeLeeLaC": "en_esquema_vigente = esquema_P == '6ind' OR IE_recomputado_esquema6 no "
-                    "vacío. Las 19 celdas vacías sí se leen limpio: 10 son 6ind (no hace "
-                    "falta) y 9 son TDE-001…009 (falta hacerlo). Esas nueve están BLOQUEADAS, "
-                    "no atrasadas: reexpresarlas exige decidir si se puntuaron sobre 4 o sobre "
-                    "5 indicadores, y eso es cambio de fondo. El único positivo está ahí.",
+    "comoSeLeeLaC": "se lee de la columna `estado_recomputo_esq6` del registro, ya no se "
+                    "infiere: un positivo `bloqueado` no cuenta para (c). El reparto es "
+                    "hecho 15 · hecho_sin_procedencia 1 · no_requiere 10 · BLOQUEADO 9 "
+                    "(TDE-001…009). Bloqueadas, no atrasadas: reexpresarlas exige decidir "
+                    "si se puntuaron sobre 4 o sobre 5 indicadores, y eso es cambio de "
+                    "fondo. El único positivo ciego computable está ahí, así que (c) da "
+                    "falso y va a seguir dándolo aunque aparezcan cuatro positivos más.",
 }
 
 

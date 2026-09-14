@@ -58,17 +58,30 @@ De las 16 filas con valor:
 
 Consecuencia para cualquier consumidor: **la regla sobre las celdas vacías vale,
 la inversa no.** Una celda llena en fila `6ind` no significa que hiciera falta
-reexpresar. Por eso la condición (c) del alta del semáforo no se prueba con
-«tiene recomputo» sino con:
+reexpresar, así que «tiene recomputo» nunca fue una prueba válida.
 
-```
-en_esquema_vigente = esquema_P == '6ind' or IE_recomputado_esquema6 no vacío
-```
+## `estado_recomputo_esq6` · la columna que pone eso en el dato
 
-Las 19 celdas vacías sí se leen limpio: **10** son `6ind` (nacieron en el
-esquema vigente, no hace falta) y **9** son 001-009 (falta hacerlo). Esas nueve
-no están atrasadas, están **bloqueadas**: reexpresarlas exige decidir fila por
-fila si se puntuaron sobre 4 o sobre 5 indicadores, y eso es cambio de fondo.
+Esa distinción vivía en un script. Si alguien calculaba la frecuencia con otra
+herramienta, la perdía — el mismo modo de falla que venimos corrigiendo toda la
+sesión. Ahora es una columna, la 51, puesta **justo después** de la que
+describe para que se lean juntas. No se tocó ninguna celda preexistente.
 
-El único positivo ciego computable, TDE-005, está en ese grupo bloqueado. Por eso
-**(c) da falso y va a seguir dándolo aunque aparezcan cuatro positivos más.**
+| valor | n | qué significa |
+|---|---|---|
+| `hecho` | 15 | la celda tiene un valor trazable: reexpresión real (011, 012), copia correcta sobre fila ya `6ind`, o el recomputo de v0.1.5 (017, 018) |
+| `hecho_sin_procedencia` | 1 | **TDE-015**: hay un 5.3 que no reproduce ni el `IE` (5.5) ni el recomputo de v0.1.5 (5.5). Nadie sabe de dónde sale |
+| `no_requiere` | 10 | nació en el esquema vigente: 029-032, 043-048 |
+| `bloqueado` | 9 | **TDE-001…009**. No están atrasadas: reexpresarlas exige decidir fila por fila si se puntuaron sobre 4 o sobre 5 indicadores, y eso es cambio de fondo que decide el dueño |
+
+**Sobre TDE-015 se decidió etiquetar y no aislar, porque no contamina.** Se
+comprobó contra cada métrica: es `modo_evaluacion = COND` **y** `modo = RETRO`,
+o sea que queda doblemente fuera del filtro de frecuencia, y no es positivo, así
+que tampoco entra en (c) —que solo mira positivos—. El valor raro no participa
+de ninguna cuenta. Queda con nombre propio para que quien lo herede sepa que ahí
+hay algo sin resolver, en vez de creerle al número.
+
+**La condición (c) ahora se lee de esta columna**: un positivo `bloqueado` no
+cuenta. El único positivo ciego computable, TDE-005, está ahí. Por eso **(c) da
+falso y va a seguir dándolo aunque aparezcan cuatro positivos más** — y eso ya
+no depende de que nadie se acuerde: está en el dato.
