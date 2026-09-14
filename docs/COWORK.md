@@ -257,9 +257,18 @@ primera vez que el sistema produce casos ciegos en volumen. Mezclar poblaciones
 no es un matiz: la calibración del TDE ya midió el precio (11% de echadas
 reales contra 31% con los sembrados dentro).
 
-`modoEvaluacion` es `PRE` si el veredicto se redactó sin mirar el marcador y
-`COND` si se escribió con el partido en marcha o el resultado delante. Solo
-`ciega` + `PRE` acredita.
+`modoEvaluacion` dice **contra qué se puntuó**, no cuánto vio quien puntúa:
+`PRE` = el caso se cerró contra el **resultado final**; `COND` = se cerró
+contra un marcador **parcial**, con el partido todavía en juego, así que el
+acierto es condicional y podría darse vuelta. Todo veredicto se escribe
+después del partido y eso no lo vuelve COND. Haber seguido el partido en vivo
+tampoco: el pronóstico ya estaba sellado y el backend no deja pisarlo. Si eso
+pesa, va en `mancha`. Solo `ciega` + `PRE` acredita.
+
+**El backend lo comprueba**: `terminado` sale de nuestra base, así que
+declarar `PRE` sobre un partido que sigue rodando devuelve 422 y no guarda
+nada. No es un criterio a discutir — es una contradicción con un dato que ya
+tenemos.
 
 **Y si el caso es ciego pero hay algo que contar:** `mancha`, una frase. No
 cambia la población ni el `acredita` —eso lo decide `seleccion`— pero queda en
@@ -718,8 +727,11 @@ Para la corrida de validación, 12 horas después de los partidos.
 Vas a cerrar los casos que quedaron abiertos. No analices nada nuevo.
 
 1. GET << {base} >>/analisis/cowork/veredictos/pendientes
-   Devuelve los partidos con parte depositado, ya jugados y sin veredicto,
-   con su marcador. Si viene vacío, decilo y terminá.
+   Devuelve un sobre: `pendientes` (lo que hay que cerrar, con su marcador),
+   `noListados` (cada parte sin veredicto que NO entró, con el motivo y, si
+   está en juego, su minuto y marcador parcial), `criterio`, `ventanaHoras` y
+   `sinCerrar`. Si `pendientes` viene vacío, leé `nota` y `noListados` y
+   contame qué dijeron: ahí está si hay que esperar, avisar o si no hay nada.
 
 2. Para cada uno, leé el parte (GET /analisis/cowork/{fixtureId}) y compará lo
    que dijiste con lo que pasó. El marcador, el acierto del 1X2, el Brier y la
@@ -762,8 +774,15 @@ pantallazo sin sellar". No te salva de declarar bien `seleccion`: si lo que
 pasó fue que miraste el marcador, eso es `post_resultado` y ninguna salvedad
 lo arregla.
 
-SOBRE `modoEvaluacion`: PRE si escribiste el juicio sin el marcador delante,
-COND si lo escribiste con el partido en marcha o el resultado a la vista.
+SOBRE `modoEvaluacion`: dice CONTRA QUÉ puntuaste, no cuánto viste.
+  PRE    cerraste el caso contra el RESULTADO FINAL. Es lo normal.
+  COND   lo cerraste contra un marcador PARCIAL, con el partido rodando: el
+         acierto es condicional y podría darse vuelta. No acredita.
+Todo veredicto se escribe después del partido y eso no lo vuelve COND. Haber
+seguido el partido en vivo tampoco: el pronóstico ya estaba sellado y el
+backend no deja pisarlo. Si eso pesa, va en `mancha`, no acá.
+Declarar PRE sobre un partido sin terminar devuelve 422: el backend lo
+comprueba contra nuestra base.
 
 SOBRE la lección: una frase accionable y sobre el MECANISMO, no sobre el
 rival. "Barcos define solo" no sirve; "el favorito con ventaja desde el 42

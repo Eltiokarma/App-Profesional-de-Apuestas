@@ -28,7 +28,7 @@ import type {
   PlantillaDTO,
   ParteCoworkDTO,
   PartePendienteDTO,
-  VeredictoPendienteDTO,
+  SobrePendientesDTO,
   PreflightEfeDTO,
   PrediccionDTO,
   XiLadoDTO,
@@ -160,7 +160,7 @@ export const SadApi = {
 
   /** Partes de partidos ya jugados y sin veredicto (fase B). */
   veredictosPendientes: (horas?: number, limite?: number) =>
-    apiGet<VeredictoPendienteDTO[]>('/analisis/cowork/veredictos/pendientes' + qs({ horas, limite })),
+    apiGet<SobrePendientesDTO>('/analisis/cowork/veredictos/pendientes' + qs({ horas, limite })),
 
   /** Partes que todavía esperan once. */
   partesPendientes: (limite?: number) =>

@@ -1036,6 +1036,33 @@ export interface VeredictoParte {
   sinPronosticoPrevio?: string[]
 }
 
+/**
+ * El sobre de `/veredictos/pendientes`. No es una lista pelada a propósito: un
+ * array vacío no distingue «no hay nada que cerrar» de «los partidos siguen
+ * jugándose», y quien corre la validación se queda sin saber si esperar.
+ */
+export interface SobrePendientesDTO {
+  ventanaHoras: number
+  ahora: string
+  /** El filtro en castellano, incluido el sentido de `horas` (se cuenta desde el saque). */
+  criterio: string
+  /** Partes sin veredicto en total, entren o no a la lista. */
+  sinCerrar: number
+  /** Solo cuando `pendientes` viene vacío: por qué. */
+  nota?: string
+  pendientes: VeredictoPendienteDTO[]
+  noListados: PendienteNoListadoDTO[]
+}
+
+export interface PendienteNoListadoDTO {
+  fixtureId: number
+  partido: string
+  fecha: string
+  /** «2do tiempo, minuto 67, 1-0», «PST», … */
+  estado: string
+  porque: string
+}
+
 export interface VeredictoPendienteDTO {
   fixtureId: number
   fecha: string

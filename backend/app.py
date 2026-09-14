@@ -2098,10 +2098,16 @@ def cowork_veredictos_pendientes(
     horas: int = Query(default=12, ge=0, le=720),
     limite: int = Query(default=50, ge=1, le=200),
 ):
-    """Partes de partidos terminados hace más de `horas` y sin veredicto.
+    """Partes sin veredicto cuyo partido arrancó hace más de `horas`.
 
     Es el disparador de la validación (fase B de docs/APRENDIZAJE.md): nadie
-    tiene que acordarse de nada y lo que no se validó hoy sigue mañana."""
+    tiene que acordarse de nada y lo que no se validó hoy sigue mañana.
+
+    Devuelve un SOBRE con `pendientes` + `noListados` + `criterio`, no una
+    lista pelada: un `[]` no distingue "no hay nada que cerrar" de "los
+    partidos siguen jugándose", y quien corre la validación se queda sin saber
+    si esperar o seguir. `horas` se cuenta desde el SAQUE (no guardamos la
+    hora de término), así que subirlo ESTRECHA la búsqueda."""
     from backend.analisis import parte as cowork
     return cowork.pendientes_veredicto(horas, limite)
 

@@ -48,8 +48,13 @@ De ahí salen cinco invariantes para cualquier cosa que construyamos:
    muestran y se excluyen del acierto y del Brier. Un panel que mezcle las
    tres miente.
 3. **`modo_evaluacion` PRE o COND.** Solo PRE acredita validación predictiva.
-   Si el veredicto se escribió con el partido en curso y el marcador puesto,
-   es COND y se declara.
+   Distingue **contra qué se puntuó**, no cuánto vio quien puntúa: `PRE` = el
+   caso se cerró contra el **resultado final**; `COND` = se cerró contra un
+   marcador **parcial**, con el partido todavía rodando, así que el acierto es
+   condicional y podría darse vuelta. Todo veredicto se escribe después del
+   partido —eso no lo vuelve COND—; lo que lo vuelve COND es puntuar sin que
+   haya terminado. Es comprobable y **el backend lo comprueba**: declarar PRE
+   sobre un fixture que no figura terminado se rechaza con 422.
 4. **Sin pronóstico previo no hay veredicto.** Es la regla anti-hindsight que
    `cadena_dtp` ya implementa (`guardar_cadena` nunca pisa una apertura
    existente). El bucle la hereda entera.

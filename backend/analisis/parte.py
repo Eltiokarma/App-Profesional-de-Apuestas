@@ -994,6 +994,20 @@ def guardar_veredicto(fixture_id: int, payload: dict) -> dict:
     if modo not in vered.MODOS:
         raise ParteInvalido("modoEvaluacion tiene que ser PRE o COND")
 
+    # PRE ES COMPROBABLE Y SE COMPRUEBA. `terminado` sale de nuestra base, así
+    # que declarar PRE sobre un partido que sigue rodando no es un criterio a
+    # discutir: es una contradicción con un dato que ya tenemos. La regla del
+    # proyecto vale también acá —lo que está en la base se calcula, no se le
+    # pregunta al modelo—, y de paso ahorra la peor versión del error: puntuar
+    # un partido en el minuto 17 y que el sistema lo archive como validación
+    # predictiva.
+    obj_previo = vered.objetivo(fixture_id, parte)
+    if modo == "PRE" and obj_previo.get("jugado") and not obj_previo["marcador"]["terminado"]:
+        raise ParteInvalido(
+            "el partido todavía no terminó: un veredicto cerrado contra un marcador "
+            "parcial es COND, no PRE (y no acredita). Si querés esperar al final, "
+            "volvé cuando el fixture figure terminado en nuestra base")
+
     por_lado = {}
     for l in LADOS:
         v = _lado_veredicto((payload.get("porLado") or {}).get(l))
@@ -1097,42 +1111,102 @@ def veredicto_de(fixture_id: int) -> dict | None:
             "objetivo": vered.objetivo(fixture_id, parte)}
 
 
-def pendientes_veredicto(horas: int = 12, limite: int = 50) -> list[dict]:
-    """Partes de partidos terminados hace más de `horas` y todavía sin cerrar.
+# cómo se lee `status_short` de API-Football cuando hay que explicar una ausencia
+_EN_CURSO = {"1H": "1er tiempo", "HT": "entretiempo", "2H": "2do tiempo",
+             "ET": "alargue", "BT": "descanso del alargue", "P": "penales",
+             "LIVE": "en curso", "INT": "interrumpido"}
+_TERMINADO = {"FT", "AET", "PEN"}
+_NO_SE_JUGO = {"PST": "aplazado", "CANC": "cancelado", "ABD": "abandonado",
+               "AWD": "ganado en mesa", "WO": "walkover", "SUSP": "suspendido"}
 
-    Es lo que dispara la corrida de validación: nadie tiene que acordarse de
-    nada, y lo que no se validó hoy sigue estando mañana."""
+
+def pendientes_veredicto(horas: int = 12, limite: int = 50) -> dict:
+    """Partes sin cerrar cuyo partido ya arrancó hace más de `horas`.
+
+    Devuelve un SOBRE, no una lista pelada. Una lista vacía no distingue entre
+    "no hay nada que cerrar", "los partidos siguen jugándose" y "la ingesta no
+    trajo el marcador": las tres se ven igual desde afuera, y quien corre la
+    validación se queda sin saber si esperar, avisar o seguir. Por eso cada
+    parte sin veredicto que NO entra a la lista sale en `noListados` con el
+    motivo y, si se está jugando, con su minuto y su marcador parcial.
+    """
     with _conectar() as con:
         filas = con.execute(
             "SELECT fixture_id, fecha, equipo_a, equipo_b FROM parte_cowork "
             "WHERE veredicto_json IS NULL ORDER BY fecha DESC LIMIT 400").fetchall()
+    ahora = datetime.now(timezone.utc)
+    marca = (ahora - timedelta(hours=horas)).strftime("%Y-%m-%d %H:%M:%S")
+    sobre = {
+        "ventanaHoras": horas,
+        "ahora": ahora.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        # el criterio, con todas las letras: `horas` se cuenta desde el SAQUE,
+        # no desde el pitazo final (no guardamos la hora de término). Subirlo
+        # ESTRECHA la búsqueda; bajarlo la abre. Cowork probó con 24 creyendo
+        # lo contrario y no tenía cómo saberlo.
+        "criterio": f"partes sin veredicto cuyo partido arrancó hace más de {horas} h "
+                    f"y ya tiene marcador en nuestra base (subir `horas` estrecha)",
+        "sinCerrar": len(filas),
+        "pendientes": [],
+        "noListados": [],
+    }
     if not filas:
-        return []
+        sobre["nota"] = "no hay ningún parte sin veredicto: todo lo depositado ya está cerrado"
+        return sobre
+
     ids = [f["fixture_id"] for f in filas]
-    marca = (datetime.now(timezone.utc) - timedelta(hours=horas)).strftime("%Y-%m-%d %H:%M:%S")
     marcadores = {
         r["id"]: r for r in saddb.query(
             "sad",
-            f"SELECT f.id, f.date, COALESCE(f.fulltime_home, f.goals_home) AS gl, "
+            f"SELECT f.id, f.date, f.status_short AS estado, f.elapsed, "
+            f"COALESCE(f.fulltime_home, f.goals_home) AS gl, "
             f"COALESCE(f.fulltime_away, f.goals_away) AS gv FROM fixtures f "
-            f"WHERE f.id IN ({','.join('?' * len(ids))}) AND f.date <= ?",
-            (*ids, marca))
+            f"WHERE f.id IN ({','.join('?' * len(ids))})",
+            tuple(ids))
     }
-    out = []
     for f in filas:
-        m = marcadores.get(f["fixture_id"])
-        if not m or m["gl"] is None or m["gv"] is None:
-            continue  # aún no jugado, o sin marcador todavía en nuestra base
-        out.append({
-            "fixtureId": f["fixture_id"],
-            "fecha": f["fecha"],
-            "partido": f"{f['equipo_a']} vs {f['equipo_b']}",
-            "marcador": f"{m['gl']}-{m['gv']}",
-            "jugadoEn": m["date"],
+        fid = f["fixture_id"]
+        partido = f"{f['equipo_a']} vs {f['equipo_b']}"
+        m = marcadores.get(fid)
+
+        def fuera(porque: str, estado: str = ""):
+            if len(sobre["noListados"]) < 20:
+                sobre["noListados"].append({
+                    "fixtureId": fid, "partido": partido, "fecha": f["fecha"],
+                    "estado": estado, "porque": porque})
+
+        if not m:
+            fuera("el partido no está en nuestra base de fixtures")
+            continue
+        est = (m["estado"] or "").upper()
+        parcial = ("" if m["gl"] is None or m["gv"] is None else f"{m['gl']}-{m['gv']}")
+        if est in _EN_CURSO:
+            minuto = f", minuto {m['elapsed']}" if m["elapsed"] is not None else ""
+            fuera("el partido se está jugando: no hay resultado final que puntuar",
+                  f"{_EN_CURSO[est]}{minuto}" + (f", {parcial}" if parcial else ""))
+            continue
+        if est in _NO_SE_JUGO:
+            fuera(f"el partido está {_NO_SE_JUGO[est]}: no hay nada que puntuar", est)
+            continue
+        if m["gl"] is None or m["gv"] is None:
+            fuera("todavía no tenemos el marcador en nuestra base"
+                  + ("" if est in _TERMINADO else "; el partido tampoco figura terminado"), est)
+            continue
+        if m["date"] > marca:
+            fuera(f"arrancó hace menos de {horas} h: todavía no entra en la ventana",
+                  f"{est or 'sin estado'}, {parcial}")
+            continue
+        if len(sobre["pendientes"]) >= limite:
+            fuera(f"la lista se cortó en el límite de {limite}", est)
+            continue
+        sobre["pendientes"].append({
+            "fixtureId": fid, "fecha": f["fecha"], "partido": partido,
+            "marcador": parcial, "jugadoEn": m["date"],
         })
-        if len(out) >= limite:
-            break
-    return out
+
+    if not sobre["pendientes"]:
+        sobre["nota"] = (f"ningún caso listo para cerrar: hay {len(filas)} parte(s) sin "
+                         f"veredicto y ninguno pasa el filtro. Mirá `noListados`.")
+    return sobre
 
 
 def pendientes(limite: int = 50) -> list[dict]:

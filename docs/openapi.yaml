@@ -677,22 +677,32 @@ paths:
         '409': { description: 'No hay parte, o la ficha todavía no trae alineaciones' }
   /analisis/cowork/veredictos/pendientes:
     get:
-      summary: Partes de partidos ya jugados y todavía sin veredicto (fase B)
+      summary: Partes sin veredicto cuyo partido ya arrancó hace rato (fase B)
       description: >
-        El disparador de la validación: partidos con parte depositado, terminados hace más
-        de `horas`, sin cerrar. Nadie tiene que acordarse de nada y lo que no se validó hoy
-        sigue estando mañana. Ver docs/APRENDIZAJE.md.
+        El disparador de la validación: partes depositados, con el partido arrancado hace
+        más de `horas` y con marcador en nuestra base. Nadie tiene que acordarse de nada y
+        lo que no se validó hoy sigue estando mañana. Ver docs/APRENDIZAJE.md.
+
+
+        Devuelve un SOBRE, no una lista pelada: un `[]` no distingue "no hay nada que
+        cerrar" de "los partidos siguen jugándose" o "la ingesta todavía no trajo el
+        marcador", y quien corre la validación se queda sin saber si esperar o seguir.
+        Cada parte sin veredicto que no entra a `pendientes` sale en `noListados` con su
+        motivo y, si está en juego, con su minuto y su marcador parcial.
       parameters:
-        - { name: horas, in: query, schema: { type: integer, default: 12, minimum: 0, maximum: 720 } }
+        - name: horas
+          in: query
+          description: >
+            Se cuenta desde el SAQUE, no desde el pitazo final (no guardamos la hora de
+            término). Subirlo ESTRECHA la búsqueda; bajarlo la abre.
+          schema: { type: integer, default: 12, minimum: 0, maximum: 720 }
         - { name: limite, in: query, schema: { type: integer, default: 50, minimum: 1, maximum: 200 } }
       responses:
         '200':
           description: OK
           content:
             application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/VeredictoPendiente' }
+              schema: { $ref: '#/components/schemas/SobrePendientes' }
   /analisis/cowork/{fixtureId}/veredicto:
     get:
       summary: El veredicto guardado, con su parte objetiva recalculada al leer
@@ -1987,6 +1997,32 @@ components:
         enEspera: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
         descartados: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
         nota: { type: string }
+    SobrePendientes:
+      type: object
+      required: [ventanaHoras, criterio, sinCerrar, pendientes, noListados]
+      properties:
+        ventanaHoras: { type: integer }
+        ahora: { type: string, description: 'reloj del servidor, para fechar la corrida' }
+        criterio: { type: string, description: 'el filtro en castellano, con el sentido de `horas`' }
+        sinCerrar: { type: integer, description: 'partes sin veredicto en total, entren o no a la lista' }
+        nota: { type: string, description: 'solo cuando `pendientes` viene vacío: por qué' }
+        pendientes:
+          type: array
+          items: { $ref: '#/components/schemas/VeredictoPendiente' }
+        noListados:
+          type: array
+          description: >
+            Los partes sin veredicto que NO entraron, con su motivo. Es lo que convierte un
+            resultado vacío en una respuesta. Tope de 20.
+          items: { $ref: '#/components/schemas/PendienteNoListado' }
+    PendienteNoListado:
+      type: object
+      properties:
+        fixtureId: { type: integer }
+        partido: { type: string }
+        fecha: { type: string }
+        estado: { type: string, description: '«2do tiempo, minuto 67, 1-0», «PST», …' }
+        porque: { type: string, description: 'el motivo, en castellano' }
     VeredictoPendiente:
       type: object
       required: [fixtureId, partido, marcador]
@@ -2017,7 +2053,15 @@ components:
             `por_resultado` = se eligió porque pasó algo; `post_resultado` = se puntuó con
             el marcador ya a la vista. Solo ciega + PRE acredita validación predictiva: las
             otras fijan rúbrica pero no acreditan (docs/APRENDIZAJE.md).
-        modoEvaluacion: { type: string, enum: [PRE, COND] }
+        modoEvaluacion:
+          type: string
+          enum: [PRE, COND]
+          description: >
+            Contra qué se puntuó, no cuánto vio quien puntúa. PRE = el caso se cerró contra
+            el resultado FINAL; COND = contra un marcador parcial, con el partido rodando,
+            así que el acierto es condicional. Todo veredicto se escribe después del partido
+            y eso no lo vuelve COND. Declarar PRE sobre un fixture que no figura terminado
+            devuelve 422: es comprobable contra nuestra base y se comprueba.
         mancha:
           type: string
           description: >

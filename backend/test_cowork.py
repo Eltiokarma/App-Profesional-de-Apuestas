@@ -455,9 +455,22 @@ def main():
     c.post(f"{A}/analisis/cowork", json=p_ok)
 
     # la lista de pendientes es el disparador
-    pend = c.get(f"{A}/analisis/cowork/veredictos/pendientes").json()
+    sobre = c.get(f"{A}/analisis/cowork/veredictos/pendientes").json()
+    pend = sobre["pendientes"]
     check("el partido jugado aparece como pendiente de veredicto",
           any(x["fixtureId"] == pasado["id"] for x in pend), pend[:2])
+    check("el sobre declara la ventana y el criterio, no solo la lista",
+          sobre["ventanaHoras"] == 12 and "arrancó hace más de" in sobre["criterio"],
+          {k: sobre.get(k) for k in ("ventanaHoras", "criterio")})
+    check("y cuenta cuántos partes hay sin cerrar", sobre["sinCerrar"] >= 1, sobre["sinCerrar"])
+    # UN PARTIDO EN CURSO SE EXPLICA, NO SE CALLA. Es el caso de la 3ª corrida:
+    # `[]` pelado y Cowork sin poder decir si esperar o avisar.
+    check("un parte que no entra a la lista sale en noListados con su motivo",
+          len(sobre["noListados"]) >= 1 and all(x.get("porque") for x in sobre["noListados"]),
+          sobre["noListados"][:3])
+    check("y un partido en curso trae su minuto y su marcador parcial",
+          any("se está jugando" in x["porque"] and "minuto" in x["estado"]
+              for x in sobre["noListados"]), sobre["noListados"][:3])
     check("el pendiente trae ya el marcador",
           next((x["marcador"] for x in pend if x["fixtureId"] == pasado["id"]), "") == marcador_real,
           pend[:2])
@@ -511,6 +524,24 @@ def main():
           vm.get("mancha"))
     check("y NO le quita el acredita: la población sigue siendo la declarada",
           vm["acredita"] is True and vm["seleccion"] == "ciega", (vm["acredita"], vm["seleccion"]))
+    # PRE SOBRE UN PARTIDO EN CURSO SE RECHAZA. No es criterio: `terminado` está
+    # en nuestra base, y archivar como validación predictiva un caso puntuado en
+    # el minuto 17 es justo lo que la fase B existe para impedir.
+    en_curso = next((x["fixtureId"] for x in
+                     c.get(f"{A}/analisis/cowork/veredictos/pendientes").json()["noListados"]
+                     if "se está jugando" in x["porque"]), None)
+    if en_curso:
+        r = c.post(f"{A}/analisis/cowork/{en_curso}/veredicto", json={
+            "seleccion": "ciega", "modoEvaluacion": "PRE",
+            "porLado": {"a": {"veredicto": "acierto"}}})
+        check("PRE sobre un partido sin terminar se rechaza", r.status_code == 422, r.status_code)
+        check("y el mensaje dice que eso es COND", "COND" in r.text, r.text[:200])
+        r = c.post(f"{A}/analisis/cowork/{en_curso}/veredicto", json={
+            "seleccion": "ciega", "modoEvaluacion": "COND",
+            "porLado": {"a": {"veredicto": "acierto"}}})
+        check("COND sobre el mismo partido sí entra, y no acredita",
+              r.status_code == 200 and r.json()["acredita"] is False, r.text[:200])
+
     # el mismo recibo que el parte: un campo mal escrito se DICE
     r = c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto", json={
         "seleccion": "ciega", "modoEvaluacion": "PRE", "manchas": "typo",
@@ -563,7 +594,7 @@ def main():
           c.get(f"{A}/analisis/cowork/{pasado['id']}/veredicto").status_code == 200)
     check("ya no aparece como pendiente",
           all(x["fixtureId"] != pasado["id"]
-              for x in c.get(f"{A}/analisis/cowork/veredictos/pendientes").json()))
+              for x in c.get(f"{A}/analisis/cowork/veredictos/pendientes").json()["pendientes"]))
     check("un fixture sin veredicto responde 404",
           c.get(f"{A}/analisis/cowork/{sin_ficha}/veredicto").status_code == 404)
 
