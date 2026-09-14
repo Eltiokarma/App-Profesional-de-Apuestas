@@ -206,6 +206,30 @@ def main():
           any("Equipo Inventado" in d for d in r.json()["discrepancias"]), r.json().get("discrepancias"))
     check("re-depositar es actualizar, no duplicar", r.json()["estado"] == "actualizado")
 
+    # ── LO QUE FALTA SE AVISA AL DEPOSITAR, NO AL CERRAR ────────────────────
+    # Caso real: dos partes sin `cadena` y sin `tde`. Nadie se enteró hasta el
+    # cierre, 12 h después, cuando llenarlos ya habría sido hindsight.
+    pelado = {"fixtureId": sin_ficha, "equipos": {"a": {"bloques": {"A": 3}}, "b": {"bloques": {"A": 3}}}}
+    rec = c.post(f"{A}/analisis/cowork", json=pelado).json()
+    bloques_faltantes = {x["bloque"] for x in rec["faltan"]}
+    check("un parte sin cadena lo avisa al depositar", "cadena" in bloques_faltantes, rec["faltan"])
+    check("y sin tde también", "tde" in bloques_faltantes, bloques_faltantes)
+    check("y sin reparto 1X2 avisa que el caso se cierra sin métrica",
+          "pronostico.probabilidades" in bloques_faltantes, bloques_faltantes)
+    check("cada aviso dice qué va a costar y cómo se arregla ahora",
+          all(x.get("costara") and x.get("comoSeArregla") for x in rec["faltan"]), rec["faltan"])
+    check("y el de la cadena nombra sinPronosticoPrevio, que es donde se cobra",
+          any("sinPronosticoPrevio" in x["costara"] for x in rec["faltan"] if x["bloque"] == "cadena"),
+          rec["faltan"])
+    # el parte completo con cadena, tde y pronóstico no tiene nada que avisar
+    lleno = _parte(sin_ficha)
+    lleno["cadena"] = {"a": {"pronostico": "A domina el balón parado"}}
+    lleno["pronostico"] = {"probabilidades": {"local": 50, "empate": 30, "visita": 20},
+                           "falsador": "si el visitante abre antes del 20', la lectura falla"}
+    rec = c.post(f"{A}/analisis/cowork", json=lleno).json()
+    check("un parte completo no inventa avisos", rec["faltan"] == [], rec["faltan"])
+    c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
+
     # ── lectura: lo calculado ───────────────────────────────────────────────
     r = c.get(f"{A}/analisis/cowork/{sin_ficha}")
     check("lee el parte", r.status_code == 200, r.text[:200])

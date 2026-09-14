@@ -627,6 +627,47 @@ def guardar(payload: dict) -> dict:
         perdido = [f"{k}: {t_antes[k]} → {t_ahora[k]}" for k in t_antes if t_ahora[k] < t_antes[k]]
 
     cadena, cadena_ignorada = _guardar_cadena(fx, parte.get("cadena") or {})
+    # LO QUE FALTA AHORA Y SE COBRA DENTRO DE 12 HORAS. Un bloque vacío no es
+    # un error al depositar —se puede completar después, y a veces no hay dato—,
+    # pero algunos se pagan al cerrar el caso, cuando ya NO se pueden llenar sin
+    # hindsight. Decirlo acá, con el partido todavía por jugarse, es la única
+    # ventana en la que arreglarlo es legítimo. Callarlo es descubrirlo medio
+    # día tarde, que fue exactamente lo que pasó con `cadena` y con `tde`.
+    faltan = []
+    if not any((parte.get("cadena") or {}).get(l) for l in LADOS):
+        faltan.append({
+            "bloque": "cadena",
+            "costara": "ningún equipo recibirá veredicto en su cadena: al cerrar, "
+                       "`sinPronosticoPrevio` va a devolver los dos lados",
+            "comoSeArregla": "declará `cadena.a.pronostico` y `cadena.b.pronostico` AHORA, "
+                             "antes del saque; después del partido ya sería escribirlo con "
+                             "el resultado puesto",
+        })
+    if not parte.get("tde"):
+        faltan.append({
+            "bloque": "tde",
+            "costara": "el veredicto no va a poder comprobar la ventana del TDE "
+                       "(`objetivo.tde` viene vacío)",
+            "comoSeArregla": "mandá el bloque `tde` con su ventana de 15 minutos",
+        })
+    pron = parte.get("pronostico") or {}
+    # el normalizador siempre deja las tres claves, así que "vacío" es que
+    # sumen cero — no que el diccionario no esté
+    if not sum((pron.get("probabilidades") or {}).values()):
+        faltan.append({
+            "bloque": "pronostico.probabilidades",
+            "costara": "sin reparto 1X2 no hay acierto que medir ni Brier que calcular: "
+                       "el caso se cierra sin métrica",
+            "comoSeArregla": "mandá `pronostico.probabilidades` con local/empate/visita",
+        })
+    elif not _txt(pron.get("falsador")):
+        faltan.append({
+            "bloque": "pronostico.falsador",
+            "costara": "sin falsador no hay nada que refutar: `falsadorCumplido` "
+                       "queda en null y el caso pierde su prueba más dura",
+            "comoSeArregla": "una condición OBSERVABLE que, si ocurre, declara fallado "
+                             "el pronóstico",
+        })
     resumen = {
         "fixtureId": parte["fixtureId"],
         "partido": f"{fx['home_name']} vs {fx['away_name']}",
@@ -642,6 +683,9 @@ def guardar(payload: dict) -> dict:
         "cadenaIgnorada": cadena_ignorada,
         "conLecturaSad": bool((parte.get("lecturaSad") or {}).get("moduloOperativo")),
         "conTde": bool(parte.get("tde")),
+        # lo que falta y se va a cobrar al cerrar el caso, mientras todavía se
+        # puede llenar sin mirar el resultado
+        "faltan": faltan,
         # lo que NO entró, con el motivo y dónde estaba
         "rechazos": parte.get("rechazos") or [],
         # lo que este depósito BORRÓ de lo que ya había guardado
@@ -660,6 +704,8 @@ def guardar(payload: dict) -> dict:
           + (f" · cadena: {', '.join(cadena)}" if cadena else "")
           + (f" · PRONÓSTICO YA DECLARADO, se conserva el primero: {cadena_ignorada}"
              if cadena_ignorada else "")
+          + (f" · FALTAN (se cobra al cerrar): {', '.join(x['bloque'] for x in faltan)}"
+             if faltan else "")
           + (f" · DISCREPANCIAS: {discrepancias}" if discrepancias else ""), flush=True)
     return resumen
 

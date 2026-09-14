@@ -163,6 +163,23 @@ peor que no tenerlo, porque nadie sabría de cuál 20% desconfiar. Lo que la app
 hace es **servir la evidencia** con la que se comprueba —los goles con su
 minuto y su lado— y dejar que Cowork declare `falsadorCumplido`.
 
+**Qué pregunta ese booleano.** `falsadorCumplido` responde *¿ocurrió la
+condición?*, no *¿acertó el falsador?*. Importa porque las dos lecturas dan
+respuestas opuestas sobre el mismo partido, y solo una lleva información: si
+`true` significara "el pronóstico se cayó", el campo repetiría
+`unXDos.acerto`. Leído bien, la combinación **`true` + pronóstico acertado**
+es el hallazgo más valioso del cierre: la condición que el analista eligió
+como asesina del pronóstico ocurrió y el pronóstico sobrevivió, o sea que el
+falsador estaba mal elegido. Es una lección sobre el falsador mismo, que es la
+parte del método que menos se audita sola.
+
+> **Precedente · Liga MX 1550964 (Santos–Juárez).** Falsador: «si Juárez marca
+> primero, el pronóstico se cae por el D3 ❌ de Santos». Juárez marcó primero
+> (penal al 54) y Santos remontó y ganó 2-1. Lo correcto es
+> `falsadorCumplido: true` — la condición ocurrió — con el 1X2 acertado. En el
+> primer cierre se declaró `false` leyendo el campo como "¿acertó el
+> falsador?", que era la lectura que la doc de entonces permitía.
+
 Lo que sí se comprueba solo es **la ventana del TDE**, y por una razón
 concreta: `"75-90'"` son dos números y un gol tiene un minuto. Se cuentan solo
 los goles CONTRA el equipo evaluado —la echada se observa en lo que recibe— y

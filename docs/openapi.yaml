@@ -2075,7 +2075,16 @@ components:
           type: boolean
           nullable: true
           description: >
-            Lo declara quien lo comprobó. El falsador es prosa y el backend no verifica
+            ¿OCURRIÓ LA CONDICIÓN del falsador? — no "¿acertó el falsador?". El falsador es
+            «la condición observable que declara fallado el pronóstico»; `true` = esa
+            condición se dio, `false` = no se dio, `null` = no es comprobable contra la
+            evidencia que sirve el backend. La combinación interesante es `true` con el
+            pronóstico igualmente acertado: el falsador era malo, y eso es una lección
+            sobre el falsador mismo. Leído al revés el campo se vuelve redundante con
+            `unXDos.acerto` y no aporta nada.
+
+
+            Lo declara quien lo comprobó: el falsador es prosa y el backend no verifica
             prosa arbitraria: sirve la evidencia (los goles con su minuto y su lado) y deja
             el juicio fuera.
         porLado:
