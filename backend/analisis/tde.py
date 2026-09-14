@@ -324,35 +324,68 @@ BANDAS_SOBRE = ((3.0, 10, 25), (5.0, 25, 45), (7.0, 45, 70), (99.0, 70, 90))
 # estos números y falla si se desalinean. Un número de calibración escrito a
 # mano se vuelve a equivocar.
 CALIBRACION = {
-    "filtro": "ciega + PRE + cerrado, EXCLUYENDO clase_caso=rama_abandonada "
-              "(disciplinas 24, 27 y 31)",
-    "casosComputables": 17,
+    "filtro": "ciega + modo_evaluacion=PRE + cerrado, EXCLUYENDO clase_caso=rama_abandonada "
+              "(disciplinas 24, 27 y 31) Y modo=RETRO",
+    "porQueRetro": "hay DOS columnas de modo. `modo_evaluacion` dice con qué escala se puntuó "
+                   "P1a; `modo` dice CUÁNDO se escribió el análisis. Un RETRO se puntuó con el "
+                   "partido jugado: `seleccion=ciega` garantiza que el caso no se eligió porque "
+                   "pasara algo, no que se puntuara a ciegas.",
+    "casosComputables": 8,
     "seEcharon": 1,
-    "tasaObservada": 5.9,
-    "ieMedio": 4.85,
-    "porBanda": {"3-5": {"n": 11, "positivos": 1}, "5-7": {"n": 4, "positivos": 0},
+    "tasaObservada": 12.5,
+    "ieMedio": 5.18,
+    "porBanda": {"3-5": {"n": 5, "positivos": 1}, "5-7": {"n": 1, "positivos": 0},
                  "7-8.5": {"n": 2, "positivos": 0}},
     "positivosEnEsquemaVigente": 0,
-    "brier": 0.2292,
-    "brierTasaBase": 0.0554,
-    "pMediaDeclarada": 43.3,
-    "brierNota": "el 0.247 que citaba el skill se recalculó con el filtro puesto y da 0.2292 "
-                 "sobre 17 casos. Lo importante no es el número suelto: predecir SIEMPRE la "
-                 "tasa base saca 0.0554, así que hoy las probabilidades del módulo restan en "
-                 "vez de sumar. Lo ROBUSTO de esto es la brecha —43.3% declarado contra 5.9% "
-                 "observado, unas siete veces—; el skill score con un solo positivo es ruidoso.",
+    "brier": 0.3051,
+    "brierTasaBase": 0.1094,
+    "pMediaDeclarada": 48.9,
+    "brierNota": "predecir SIEMPRE la tasa base saca 0.1094, así que hoy las probabilidades del "
+                 "módulo restan en vez de sumar (skill −1.79). Lo robusto es la brecha: 48.9% "
+                 "declarado contra 12.5% observado, unas CUATRO veces. El skill score con un "
+                 "solo positivo es ruidoso.",
+    # LA PRUEBA DE QUE EL FILTRO RETRO NO ES UN CAPRICHO. La vía 2 tiene
+    # positivos de sobra, así que ahí el skill score sí es legible: con los
+    # RETRO adentro el ISE «predice» (+0.36) y sin ellos no (−0.60). Eso no es
+    # señal, es la firma de la contaminación. Sin este filtro el módulo se
+    # autoacredita una capacidad predictiva que no tiene.
+    "firmaDeContaminacion": {
+        "via2ConRetro": {"n": 14, "skill": 0.36},
+        "via2SinRetro": {"n": 6, "skill": -0.60},
+        "lectura": "el ISE solo parece predecir en las filas puntuadas DESPUÉS del partido",
+    },
+    # LAS DOS VÍAS FALLAN EN DIRECCIONES OPUESTAS: la 1 sobreestima (48.9 vs
+    # 12.5) y la 2 subestima (50.0 vs 83.3). No hay factor de corrección global
+    # posible; corregir una rompería la otra. Es el argumento que cierra
+    # cualquier intento de recalibrar sobre esta muestra.
+    "direccionesOpuestas": {"via1": "sobreestima ~4×", "via2": "subestima"},
     "nota": "la escala del IE NO ordena el riesgo hoy: el único positivo ciego computable "
             "(TDE-005) cae en la banda MÁS BAJA y las dos bandas altas tienen cero. Y está "
-            "medido con el esquema viejo de 4 indicadores, así que en el esquema vigente de "
-            "6 no hay ni un positivo. La banda que el IE anuncia no es la frecuencia con "
-            "que pasó.",
+            "medido con el esquema viejo, así que en el esquema vigente de 6 no hay ni un "
+            "positivo. La banda que el IE anuncia no es la frecuencia con que pasó.",
     "registro": "docs/skills/teorema-del-echado/assets/casos/registro.csv, 35 filas "
-                "(TDE-001…048), en la versión CANONIZADA que mandó el autor del skill: "
-                "clase_caso ∈ {normal, rama_abandonada}, esquema_P ∈ {4ind, 4ind_o_5ind, "
-                "6ind} y se_echo ∈ {si, no, parcial}, con el detalle de las dos echadas "
-                "largas conservado en `tipo_real`. Ninguna columna de números ni de "
-                "lecciones se tocó (disciplina 15).",
+                "(TDE-001…048), en la versión CANONIZADA que mandó el autor del skill. "
+                "El disco del skill sigue SIN canonizar (está montado read-only), así que "
+                "esta copia es la buena. Ninguna columna de números ni de lecciones se tocó.",
+    "recalcular": "python3 scripts/calibrar-tde.py",
 }
+
+# LAS TABLAS DE PROBABILIDAD ESTÁN SUSPENDIDAS, y con ellas el riesgo
+# compuesto —que es su producto literal (p_echada × p_fractura × p_gol) y por
+# eso hereda la inflación entera—. Se publica el índice, su banda ORDINAL, el
+# tipo modal, la ventana y las compuertas; no se publica probabilidad.
+TABLAS_SUSPENDIDAS = {
+    "desde": "hallazgo de calibración sobre el registro de 35 casos",
+    "que": ("IE → P(echada), ISE → P(sobreexposición) y `riesgo_compuesto`, "
+            "que es el producto de las tres"),
+    "porque": "vía 1 declara 48.9% y observa 12.5% (n=8); vía 2 declara 50.0% y observa "
+              "83.3% (n=6). Fallan en direcciones OPUESTAS, así que no hay corrección "
+              "global, y con estos N recalibrar sería ajustar a ruido",
+    "seReactivanCon": "las tres condiciones del alta del semáforo, que son las mismas",
+    "seSiguePublicando": ["ie", "ise", "banda ordinal", "tipo modal", "ventana",
+                          "compuertas operadas", "indicadores que sostienen la banda"],
+}
+
 
 # Cuándo se puede poner semáforo. Las tres a la vez, y la (c) es la que hace el
 # trabajo: sin ella, dentro de tres casos alguien cumple (a) y (b) mezclando
@@ -363,8 +396,26 @@ ALTA_DEL_SEMAFORO = {
     "b": "al menos 2 de esos positivos FUERA de la banda 3-5: un semáforo afirma "
          "ordenamiento, y un ordenamiento sin positivos arriba no es testeable",
     "c": "todos los positivos expresados en el esquema vigente de 6 indicadores",
-    "hoy": "1 positivo ciego computable, en esquema de 4 → (a) no, (b) no, (c) no",
+    "hoy": "1 positivo ciego computable (n=8), en esquema `4ind_o_5ind` → (a) no, (b) no, (c) no",
+    "comoSeLeeLaC": "celda vacía en `IE_recomputado_esquema6` + esquema_P=6ind → nació en el "
+                    "esquema vigente, no hace falta. Vacía + 4ind/4ind_o_5ind → FALTA hacerlo, "
+                    "y ese positivo no cuenta para (c). Son 9 las que faltan (TDE-001…009), "
+                    "y entre ellas está el único positivo.",
 }
+
+
+# Los cuatro tramos del IE, SIN su probabilidad. El tramo sigue sirviendo para
+# ordenar y para hablar; lo que se retiró es el número que decía cuántas veces
+# de cada cien pasa, porque ese número está medido y está inflado.
+ORDINAL = ((3.0, "bajo"), (5.0, "medio-bajo"), (7.0, "medio-alto"), (99.0, "alto"))
+
+
+def _ordinal(valor: float) -> dict:
+    for tope, etiqueta in ORDINAL:
+        if valor < tope:
+            return {"tramo": etiqueta,
+                    "nota": "tramo ordinal, no probabilidad: la tabla está suspendida"}
+    return {"tramo": "alto", "nota": "tramo ordinal, no probabilidad"}
 
 
 def _banda(valor: float, tabla) -> dict:
@@ -446,7 +497,11 @@ def indice(ind: dict) -> dict:
         "ie": round(ie, 2),
         "bloques": {l: round(v, 4) for l, v in bloques.items()},
         "indicadoresUsados": usados,
-        "pEchada": _banda(ie, BANDAS_ECHADA),
+        # BANDA ORDINAL, NO PROBABILIDAD. La tabla IE → P(echada) está
+        # suspendida: se dice en qué tramo cae y qué lo sostiene, no con qué
+        # frecuencia va a pasar.
+        "bandaOrdinal": _ordinal(ie),
+        "tablasSuspendidas": TABLAS_SUSPENDIDAS,
         "compuertasOperadas": operadas,
         "formula": "IE = (F·3 + C·2 + P·2 + S·1.5) / 8.5 × 10",
         "esquemaP": "6 indicadores (P1a, P1b, P1c, P2, P3, P4)",
@@ -463,7 +518,7 @@ def indice(ind: dict) -> dict:
         ise_v = round(ise * 10, 2)
         out["ise"] = ise_v
         out["iseIndicadores"] = usados_ise
-        out["pSobreexposicion"] = _banda(ise_v, BANDAS_SOBRE)
+        out["bandaOrdinalIse"] = _ordinal(ise_v)
         out["riesgo"]["via"] = "echada" if out["ie"] >= ise_v else "sobreexposicion"
         out["riesgo"]["maximo"] = max(out["ie"], ise_v)
         if out["ie"] >= 5 and ise_v >= 5:

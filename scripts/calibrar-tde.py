@@ -24,25 +24,33 @@ REGISTRO = RAIZ / "docs/skills/teorema-del-echado/assets/casos/registro.csv"
 # las clases que el skill EXCLUYE de toda métrica de frecuencia
 CLASES_FUERA = ("rama_abandonada",)
 SELECCIONES_FUERA = ("por_resultado", "post_resultado")
+# `modo` = cuándo se escribió el análisis. RETRO = con el partido jugado.
+MODO_FUERA = "RETRO"
 BANDAS = ((3.0, 5.0, "3-5"), (5.0, 7.0, "5-7"), (7.0, 8.5, "7-8.5"))
 
 
 def num(s):
-    m = re.match(r"^\s*([0-9]*\.?[0-9]+)", str(s or ""))
+    """UNA convención para los rangos: el PUNTO MEDIO, en toda columna.
+
+    Antes esto tomaba el extremo bajo para `IE` y el punto medio para
+    `p_echada`, así que el mismo caso pesaba distinto según qué se estuviera
+    contando. Dos convenciones conviviendo en un script de calibración es un
+    sesgo que nadie ve.
+    """
+    t = str(s or "").strip().replace("%", "")
+    m = re.match(r"^\s*([0-9]*\.?[0-9]+)\s*-\s*([0-9]*\.?[0-9]+)\s*$", t)
+    if m:
+        return (float(m.group(1)) + float(m.group(2))) / 2
+    m = re.match(r"^\s*([0-9]*\.?[0-9]+)", t)
     return float(m.group(1)) if m else None
 
 
 def prob(s):
-    """`p_echada` viene como «55», «55%» o «70-90%»: el rango se toma por su centro."""
-    t = str(s or "").strip().replace("%", "")
-    m = re.match(r"^\s*([0-9.]+)\s*-\s*([0-9.]+)\s*$", t)
-    if m:
-        return (float(m.group(1)) + float(m.group(2))) / 2 / 100
-    m = re.match(r"^\s*([0-9.]+)\s*$", t)
-    if not m:
-        return None
-    v = float(m.group(1))
-    return v / 100 if v > 1 else v
+    """Las columnas de probabilidad traen CUATRO formatos: «38», «35%», «70-90%»
+    y «0.40». Un parser que divida siempre entre 100 lee 0.40 como 0.4%; uno que
+    no divida nunca lee 38 como 3800%. Se decide por el valor, no por la forma."""
+    v = num(s)
+    return None if v is None else (v if v <= 1 else v / 100)
 
 
 def se_echo(f) -> bool:
@@ -73,8 +81,17 @@ def main() -> int:
     ciegos = [f for f in cerrados
               if f["seleccion"].strip() not in SELECCIONES_FUERA
               and f["modo_evaluacion"].strip() == "PRE"]
-    computables = [f for f in ciegos if f["clase_caso"].strip().lower() not in CLASES_FUERA]
-    fuera = [f["id"].strip() for f in ciegos if f not in computables]
+    limpios = [f for f in ciegos if f["clase_caso"].strip().lower() not in CLASES_FUERA]
+    # LA EXCLUSIÓN QUE FALTABA. Hay DOS columnas de modo y dicen cosas distintas:
+    # `modo_evaluacion` (PRE/COND/RETRO) dice con qué escala se puntuó P1a;
+    # `modo` (PRE/RETRO/DECLARADO/CERRADO) dice CUÁNDO se escribió el análisis.
+    # Un RETRO se puntuó con el partido jugado, así que no es una predicción:
+    # `seleccion = ciega` garantiza que el caso no se eligió porque pasara algo,
+    # no que se puntuara a ciegas. Es la misma distinción que la disciplina 31
+    # hace para `post_resultado` — allí falla el partido, acá falla el analista.
+    computables = [f for f in limpios if f["modo"].strip().upper() != MODO_FUERA]
+    fuera = [f["id"].strip() for f in ciegos if f not in limpios]
+    fuera_retro = [f["id"].strip() for f in limpios if f not in computables]
 
     pos = [f for f in computables if se_echo(f)]
     ies = [num(f["IE"]) for f in computables if num(f["IE"]) is not None]
@@ -82,7 +99,8 @@ def main() -> int:
 
     print()
     print(f"ciegos + PRE + cerrados      n={len(ciegos)}")
-    print(f"  menos {CLASES_FUERA[0]:18} n={len(computables)}   (fuera: {', '.join(fuera)})")
+    print(f"  menos {CLASES_FUERA[0]:18} n={len(limpios)}   (fuera: {', '.join(fuera)})")
+    print(f"  menos modo=RETRO           n={len(computables)}   (fuera: {', '.join(fuera_retro)})")
     print(f"  positivos                  {len(pos)}  → tasa base {tasa:.1f}%")
     print(f"  IE medio                   {sum(ies)/len(ies):.2f}")
     print()
@@ -120,6 +138,40 @@ def main() -> int:
         if len([o for _, o in usable if o]) < 5:
             print("  ⚠ con menos de 5 positivos el skill score es ruidoso; lo robusto "
                   "es la brecha entre la p media declarada y la observada")
+
+    # LA VÍA 2, Y LA PRUEBA DE QUE EL FILTRO RETRO NO ES UN CAPRICHO.
+    # El ISE tiene positivos de sobra, así que ahí el skill score sí es legible.
+    # Si con los RETRO adentro el módulo "predice" y sin ellos no, lo que se
+    # estaba midiendo no era capacidad predictiva: era el analista mirando el
+    # resultado. Es el contraste que delata la contaminación.
+    def _brier(grupo, col_p, col_o):
+        u = [(prob(f[col_p]), 0 if f[col_o].strip().lower().startswith("no") else 1)
+             for f in grupo if f[col_o].strip()]
+        u = [(x, o) for x, o in u if x is not None]
+        if not u:
+            return None
+        br = sum((x - o) ** 2 for x, o in u) / len(u)
+        t = sum(o for _, o in u) / len(u)
+        ref = sum((t - o) ** 2 for _, o in u) / len(u)
+        return dict(n=len(u), pos=sum(o for _, o in u), p=sum(x for x, _ in u) / len(u),
+                    obs=t, br=br, ref=ref, skill=(1 - br / ref) if ref else None)
+
+    ciegos2 = [f for f in filas if f["se_expuso"].strip()
+               and f["seleccion"].strip() not in SELECCIONES_FUERA
+               and f["modo_evaluacion"].strip() == "PRE"
+               and f["clase_caso"].strip().lower() not in CLASES_FUERA]
+    print()
+    print("  vía 2 · ISE → P(sobreexposición)")
+    for etq, g in (("con RETRO", ciegos2),
+                   ("sin RETRO", [f for f in ciegos2 if f["modo"].strip().upper() != MODO_FUERA])):
+        r = _brier(g, "p_sobreexposicion", "se_expuso")
+        if not r or r["skill"] is None:
+            print(f"    {etq}: sin datos suficientes")
+            continue
+        print(f"    {etq}  n={r['n']:2} pos={r['pos']} · declara {r['p']*100:.1f}% "
+              f"contra {r['obs']*100:.1f}% observado · skill {r['skill']:+.2f}")
+    print("    → si el skill cae al sacar los RETRO, lo que medía era el analista "
+          "mirando el resultado, no el módulo prediciendo")
 
     # contraste con lo que tiene el backend
     sys.path.insert(0, str(RAIZ))

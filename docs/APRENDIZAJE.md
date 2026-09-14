@@ -198,10 +198,10 @@ Con el filtro puesto, el resultado no se suaviza, se endurece:
 
 | | sin filtrar (mal) | filtrado (bien) |
 |---|---|---|
-| n | 23 | **17** |
+| n | 23 | **8** |
 | positivos | 2 | **1** |
-| banda 3-5 | | 1 de 11 |
-| banda 5-7 | | **0 de 4** |
+| banda 3-5 | | 1 de 5 |
+| banda 5-7 | | **0 de 1** |
 | banda 7-8.5 | | **0 de 2** |
 
 *(sobre el registro de 35 casos, TDE-001…048, canonizado por el autor del skill)*
@@ -220,19 +220,66 @@ redacciones para el mismo valor, y **falla si el backend se desalinea**.
 > `seleccion` y por `clase_caso`, y **declara el filtro que aplicó** junto al
 > número. Un porcentaje sin su población al lado no se publica.
 
+### Dos columnas de modo, y la que importa no era la que filtré
+
+`modo_evaluacion` (PRE/COND/RETRO) dice **con qué escala** se puntuó. `modo`
+(PRE/RETRO/DECLARADO/CERRADO) dice **cuándo se escribió el análisis**. Filtré
+por la primera. De los 17 «computables», **nueve tenían `modo = RETRO`**: se
+puntuaron con el partido ya jugado.
+
+`seleccion = ciega` garantiza que el caso no se eligió *porque* pasara algo. No
+garantiza que se puntuara a ciegas. Es la misma distinción que ya hacíamos para
+`post_resultado` — **allí falla el partido, acá falla el analista** — y la
+estábamos aplicando a una y no a la otra.
+
+Con la exclusión puesta, n baja de 17 a 8 y la brecha pasa de **siete veces a
+cuatro** (48.9% declarado contra 12.5% observado). Corrijo lo que publiqué: dije
+que las siete veces «no dependían del único positivo», y sí dependían — de nueve
+filas retrospectivas que inflaban el denominador de no-echadas.
+
+**La prueba de que la exclusión no es prudencia genérica está en la vía 2**, que
+sí tiene positivos de sobra:
+
+| ISE | n | declara | observa | skill score |
+|---|---|---|---|---|
+| con RETRO | 14 | 47.4% | 64.3% | **+0.36** |
+| sin RETRO | 6 | 50.0% | 83.3% | **−0.60** |
+
+El ISE parece predecir **solo en las filas puntuadas después del partido**. Eso
+no es señal: es la firma de la contaminación. Con los RETRO dentro, el módulo se
+autoacredita una capacidad que no tiene.
+
+> **Regla.** Una métrica de frecuencia filtra por las DOS columnas de modo. Una
+> fila escrita después del partido no entra en ninguna medida de capacidad
+> predictiva, aunque el caso se haya elegido a ciegas.
+
+### Las tablas de probabilidad quedan suspendidas
+
+No se recalibran: se **apagan**. Las dos vías fallan en **direcciones
+opuestas** —la 1 sobreestima unas 4×, la 2 subestima— así que no existe un
+factor de corrección global; arreglar una rompería la otra. Y con n=8 y un
+positivo, cualquier tabla ajustada a esta muestra sería ruido con autoridad.
+
+Se apaga también el **`riesgo_compuesto`**, porque es el producto literal de las
+tres probabilidades (TDE-001: 0.55 × 0.20 × 0.30 = 3.3) y hereda la inflación
+entera. Suspender las tablas y seguir publicando su producto habría sido no
+suspender nada.
+
+Lo que el módulo sigue publicando: el IE, el ISE, su **tramo ordinal**, el tipo
+modal, la ventana, las compuertas operadas y los indicadores que sostienen la
+lectura. Se reactivan con las tres condiciones del alta del semáforo.
+
 ### Un Brier sin línea de base no dice nada
 
-Recalculado con el filtro puesto, el Brier del TDE da **0.2292** sobre 17
-casos — cerca del 0.247 que citaba el skill. Pero el número suelto engaña en
-las dos direcciones, y la comparación que importa es otra: **predecir siempre
-la tasa base saca 0.0554**. Es decir que hoy las probabilidades del módulo
-**restan en vez de sumar** (skill score −3.14).
+Recalculado con los dos filtros puestos, el Brier del TDE da **0.3051** sobre
+8 casos. Pero el número suelto engaña en las dos direcciones, y la comparación
+que importa es otra: **predecir siempre la tasa base saca 0.1094**. Es decir que
+hoy las probabilidades del módulo **restan en vez de sumar** (skill −1.79).
 
 Dos honestidades sobre ese −3.14, porque el dato se puede sobreleer:
 
 - **Lo robusto es la brecha, no el skill score.** La p media declarada es
-  43.3% y lo observado 5.9%: unas **siete veces**. Eso no depende del único
-  positivo y es el hallazgo sólido.
+  48.9% y lo observado 12.5%: unas **cuatro veces**.
 - **El skill score con un positivo es ruidoso**, y la línea de base usa la tasa
   real, que es información que no se tenía al predecir. No sirve para condenar
   el método: sirve para decir que **el mapeo IE → probabilidad está roto**, que

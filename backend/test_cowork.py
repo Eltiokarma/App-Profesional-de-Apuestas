@@ -253,6 +253,13 @@ def main():
                               "P1a", "P1b", "P1c", "P2", "P3", "P4", "S1", "S2", "S3")}
     r5 = tdemod.indice(todos)
     check("con todos los indicadores en 0.5 el IE da 5.00", r5["ie"] == 5.0, r5.get("ie"))
+    # LAS TABLAS ESTÁN SUSPENDIDAS: banda ordinal, nunca probabilidad
+    check("no se emite probabilidad: la tabla está suspendida",
+          "pEchada" not in r5 and "pSobreexposicion" not in r5, sorted(r5))
+    check("se emite el tramo ordinal en su lugar",
+          r5["bandaOrdinal"]["tramo"] == "medio-alto", r5.get("bandaOrdinal"))
+    check("y el riesgo compuesto cae con ellas, porque es su producto",
+          "riesgo_compuesto" in r5["tablasSuspendidas"]["que"], r5["tablasSuspendidas"]["que"])
     check("y declara la fórmula y el esquema de P que usó",
           "8.5" in r5["formula"] and "6 indicadores" in r5["esquemaP"], r5["esquemaP"])
 
@@ -305,10 +312,20 @@ def main():
     check("la calibración declara el filtro que aplicó",
           "rama_abandonada" in cal["filtro"], cal.get("filtro"))
     check("y usa los computables, no todos los ciegos",
-          cal["casosComputables"] == 17 and cal["seEcharon"] == 1, cal)
+          cal["casosComputables"] == 8 and cal["seEcharon"] == 1, cal)
+    check("excluye modo=RETRO, que es cuándo se escribió el análisis",
+          "RETRO" in cal["filtro"] and "CUÁNDO" in cal["porQueRetro"], cal.get("filtro"))
+    # la vía 2 es la PRUEBA de que el filtro RETRO no es un capricho: con los
+    # retro adentro el ISE «predice» (+0.36) y sin ellos no (−0.60)
+    fc = cal["firmaDeContaminacion"]
+    check("la firma de contaminación viaja con la calibración",
+          fc["via2ConRetro"]["skill"] > 0 > fc["via2SinRetro"]["skill"], fc)
     check("el Brier viaja con su línea de base, no suelto",
           cal["brier"] > cal["brierTasaBase"] and "restan" in cal["brierNota"],
           {k: cal[k] for k in ("brier", "brierTasaBase")})
+    check("las dos vías fallan en direcciones OPUESTAS: no hay corrección global",
+          "sobreestima" in cal["direccionesOpuestas"]["via1"]
+          and "subestima" in cal["direccionesOpuestas"]["via2"], cal["direccionesOpuestas"])
     check("el único positivo cae en la banda MÁS BAJA: la escala no ordena",
           cal["porBanda"]["3-5"]["positivos"] == 1
           and cal["porBanda"]["5-7"]["positivos"] == 0
