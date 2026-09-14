@@ -85,3 +85,51 @@ hay algo sin resolver, en vez de creerle al número.
 cuenta. El único positivo ciego computable, TDE-005, está ahí. Por eso **(c) da
 falso y va a seguir dándolo aunque aparezcan cuatro positivos más** — y eso ya
 no depende de que nadie se acuerde: está en el dato.
+
+
+## Las nueve bloqueadas: qué consta y qué no
+
+Desbloquear TDE-001…009 exige saber con qué esquema se puntuó cada fila. La
+vara es **evidencia documental** —un texto del skill que lo diga— nunca una
+inferencia desde el valor del `IE`.
+
+**TDE-006 → `4ind`, con cita.** `references/INDICE_IE.md:190` (nota «Por qué P1
+se dividió», v0.1.1): *«En TDE-006, FC Cajamarca fue puntuado 1 por la segunda
+cláusula»* — y esa segunda cláusula es la redacción **anterior** a la división
+de P1. El CSV declara `IE = 7.6`, que es el valor pre-división. La fila
+declarada está en el esquema de 4.
+
+**TDE-001…005 y 007…009 → no consta.** Ningún archivo dice con qué esquema se
+puntuaron.
+
+### CUIDADO: el 6.7 de TDE-006 NO es la reexpresión al esquema 6
+
+La misma nota sigue: *«Con P1a = 0 y P1b = 0, el bloque P de ese caso baja de
+0.75 a 0.38 y el IE de 7.6 a 6.7»*. Es tentador volcar ese 6.7 en
+`IE_recomputado_esquema6` y dar la fila por resuelta. **Sería un error, y
+exactamente el que esta columna ya sufrió dos veces.**
+
+La cronología lo decide:
+
+| versión | cambio | indicadores de P |
+|---|---|---|
+| v0.1.1 | P1 se divide en P1a y P1b | **5** |
+| v0.1.3 | entra P1c (de la rama v0.1.2-B) | **6** |
+
+El 6.7 sale de la nota de **v0.1.1**, así que es la reexpresión al esquema de
+**cinco**, no al de seis: le falta puntuar `P1c` (coste institucional
+acumulado). Meterlo en la columna del esquema 6 repetiría el caso de TDE-017 y
+TDE-018, que llevan el recomputo de v0.1.5 en una columna que dice otra cosa.
+
+**TDE-006 sigue `bloqueado`**, y desbloquearlo tampoco movería nada: `se_echo =
+no`, no es positivo, y la condición (c) solo mira positivos.
+
+### La asimetría que conviene tener presente
+
+**El único positivo ciego computable es TDE-005, y de él no consta nada.** Las
+demás se pueden acotar por cronología —v0.1.1 declara que TDE-001…006 ya
+existían cuando se dividió P1— pero **TDE-007, 008 y 009 entraron en la misma
+versión que introdujo la división**, y nada dice si se puntuaron antes o
+después de aplicarla. Para esas tres no hay ni argumento indirecto.
+
+Esa cronología es **inferencia, no evidencia**, y no se escribe en el dato.

@@ -397,6 +397,11 @@ ALTA_DEL_SEMAFORO = {
          "ordenamiento, y un ordenamiento sin positivos arriba no es testeable",
     "c": "todos los positivos expresados en el esquema vigente de 6 indicadores",
     "hoy": "1 positivo ciego computable (n=8), en esquema `4ind_o_5ind` → (a) no, (b) no, (c) no",
+    "porQueCSigueEnFalso": "el único positivo es TDE-005 y está `bloqueado`: no consta con qué "
+                           "esquema se puntuó. Basta UN positivo fuera del esquema vigente para "
+                           "que (c) caiga, así que da falso aunque aparezcan cuatro positivos "
+                           "más y se cumplan (a) y (b). Desbloquearlo es decisión de rúbrica "
+                           "sobre filas históricas, no trabajo de calibración.",
     # La (c) NO se prueba con «tiene recomputo». `IE_recomputado_esquema6`
     # mezcla tres poblaciones —2 reexpresiones reales, 11 copias literales del
     # IE sobre filas ya 6ind, y 3 que traen el recomputo de v0.1.5—, así que una
