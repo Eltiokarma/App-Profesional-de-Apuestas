@@ -22,7 +22,7 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parent.parent
 REGISTRO = RAIZ / "docs/skills/teorema-del-echado/assets/casos/registro.csv"
 # el estado vigente del registro, fijado a mano cuando se declara un alta
-SHA_ESPERADO = "55ef00db09ae78f34b87c6f164b269f8439651f35b33ad53734b9cdd8cad8663"
+SHA_ESPERADO = "4a315dd9ca46db1b265435a214dbfa74545c7e38eeff00d84d1e158a8af0861a"
 
 # las clases que el skill EXCLUYE de toda métrica de frecuencia
 CLASES_FUERA = ("rama_abandonada",)
@@ -84,7 +84,7 @@ def main() -> int:
     # registro llegó canonizado a estos vocabularios; si aparece uno nuevo,
     # salta acá antes de que contamine una frecuencia.
     for col, esperado in (("clase_caso", {"normal", "rama_abandonada"}),
-                          ("esquema_P", {"4ind", "5ind", "6ind", "4ind_o_5ind"}),
+                          ("esquema_P", {"sin_esquema", "4ind", "5ind", "6ind"}),
                           ("seleccion", {"ciega", "por_resultado", "post_resultado"}),
                           ("se_echo", {"si", "no", "parcial"}),
                           ("estado_recomputo_esq6",

@@ -399,7 +399,8 @@ ALTA_DEL_SEMAFORO = {
          "—reexpresable, pendiente de una decisión— sí lo bloquea; uno `pre_rubrica` no, "
          "porque no se puede arreglar: sale del conteo de (a) en vez de trabar la (c)",
     "hoy": "0 positivos que cuenten. El único positivo ciego computable del registro "
-           "(TDE-005) es `pre_rubrica` y queda fuera del conteo → (a) no, (b) no, (c) sí",
+           "(TDE-005) es `pre_rubrica` / `sin_esquema` y queda fuera del conteo "
+           "→ (a) no, (b) no, (c) sí",
     # POR QUÉ LA (c) CAMBIÓ. Antes decía «todos los positivos en el esquema
     # vigente», y con una fila estructuralmente inexpresable eso equivalía a
     # NUNCA: bastaba TDE-005 para tumbarla, y TDE-005 no se puede arreglar ni
@@ -412,7 +413,10 @@ ALTA_DEL_SEMAFORO = {
                                  "información perdida, es información que nunca existió",
     "comoSeLeeLaC": "de la columna `estado_recomputo_esq6` del registro. Reparto: hecho 15 · "
                     "hecho_sin_procedencia 1 · no_requiere 10 · bloqueado 3 (TDE-007, 008, "
-                    "009) · pre_rubrica 6 (TDE-001…006)",
+                    "009) · pre_rubrica 6 (TDE-001…006). Y `esquema_P` queda en tres valores: "
+                    "sin_esquema 5 (TDE-001…005) · 4ind 6 · 6ind 24 — `4ind_o_5ind` "
+                    "desapareció porque k=5 está aritméticamente excluido en todas las que "
+                    "lo llevaban",
 }
 
 

@@ -254,11 +254,23 @@ v0.1.1 no se aplicó a ninguna, pese a que las tres entraron en esa versión. El
 label `4ind_o_5ind` era aritméticamente falso para ellas.
 
 - **TDE-008 pasó a `4ind`**: es aritmética, no inferencia.
-- **TDE-007 y TDE-009 siguen en `4ind_o_5ind`**, que ya se sabe inexacto, a la
-  espera de una decisión del dueño. Descartar k=2 exigiría apoyarse en que
-  `compuertas_operadas` viene vacío en las dos —y en filas tan viejas un campo
-  vacío significa «no se registró», no «no operó ninguna». Ausencia de
-  declaración no es evidencia de ausencia.
+- **TDE-007 y TDE-009 pasaron a `4ind`** por decisión del dueño, con el
+  razonamiento anotado: k=5 excluido por aritmética, k=6 por cronología (`P1c`
+  entró en v0.1.3 y las dos son altas de v0.1.1), k=2 posible pero improbable y
+  sin forma de descartarlo, porque `compuertas_operadas` no existía todavía —un
+  campo vacío ahí significa «no se registró», no «no operó ninguna». Indicio de
+  apoyo **solo para 007**: TDE-008 es `nivel_dato = C` y usó los cuatro, así que
+  es poco probable que 007, que es `B`, haya declarado dos sin dato. Ese indicio
+  no alcanza a 009, que también es `C`.
+
+**`4ind_o_5ind` desapareció del vocabulario**: era aritméticamente falso en
+todas las filas que lo llevaban. `esquema_P` queda en tres valores —
+`sin_esquema` 5 · `4ind` 6 · `6ind` 24.
+
+**Cuidado con los P de TDE-001 (0.40) y TDE-002 (0.70):** solo serían formables
+con k=5, y el esquema de cinco no existía cuando se escribieron. Caen en la
+rejilla de 0.1 por coincidencia, no por rúbrica. **No sirven como evidencia de
+un esquema de cinco.**
 
 **Ninguna de las tres es positivo** (007 cerró `no`, 008 y 009 siguen
 abiertas), así que nada de esto toca (a) ni (c) hoy.
