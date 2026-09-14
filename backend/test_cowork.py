@@ -267,6 +267,18 @@ def main():
     sin_prot = {**todos, "P1a": 0.0, "P1b": 1.0, "P1c": 1.0, "P2": 1.0, "P3": 1.0, "P4": 1.0}
     r = tdemod.indice(sin_prot)
     check("P1a=0 topa el bloque P en 0.5 (compuerta 1)", r["bloques"]["P"] == 0.5, r["bloques"])
+    # EL CRUDO AL LADO DEL TOPEADO. Sin eso, una compuerta que baja el promedio
+    # es indistinguible de una que no hizo nada — y hay un caso en el registro
+    # (TDE-026) que declara «sin efecto numérico» sobre un promedio que sí bajaba.
+    check("y el promedio CRUDO viaja al lado, para que el efecto se vea",
+          r["bloquesCrudos"]["P"] > 0.5, (r["bloquesCrudos"]["P"], r["bloques"]["P"]))
+    # toda reducción de denominador se declara, en CUALQUIER bloque, no solo en P
+    rf = tdemod.indice({k: v for k, v in todos.items() if k != "F3"})
+    check("un bloque F promediado sobre 3 se declara",
+          any("bloque F promediado sobre 3 de 4" in x for x in rf["compuertasOperadas"]),
+          rf["compuertasOperadas"])
+    check("y nombra el indicador que faltó",
+          any("F3" in x for x in rf["compuertasOperadas"]), rf["compuertasOperadas"])
     check("y la compuerta se DECLARA aunque el número no lo delate",
           any("compuerta 1" in x for x in r["compuertasOperadas"]), r["compuertasOperadas"])
 

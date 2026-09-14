@@ -257,8 +257,10 @@ label `4ind_o_5ind` era aritméticamente falso para ellas.
 - **TDE-007 y TDE-009 pasaron a `4ind`** por decisión del dueño, con el
   razonamiento anotado: k=5 excluido por aritmética, k=6 por cronología (`P1c`
   entró en v0.1.3 y las dos son altas de v0.1.1), k=2 posible pero improbable y
-  sin forma de descartarlo, porque `compuertas_operadas` no existía todavía —un
-  campo vacío ahí significa «no se registró», no «no operó ninguna». Indicio de
+  sin forma de descartarlo, porque **`compuertas_operadas` no existía todavía**:
+  está vacío en **exactamente TDE-001…009** y lleno en las 26 filas desde
+  TDE-011. El vacío ahí no significa «no se registró» ni «no operó ninguna»,
+  sino que no había dónde registrarlo. Indicio de
   apoyo **solo para 007**: TDE-008 es `nivel_dato = C` y usó los cuatro, así que
   es poco probable que 007, que es `B`, haya declarado dos sin dato. Ese indicio
   no alcanza a 009, que también es `C`.
@@ -287,3 +289,39 @@ abiertas), así que nada de esto toca (a) ni (c) hoy.
    guarda **0.583** (7/12). O la celda tiene el promedio sin topear y el texto
    lo describe mal, o al revés. No afecta ninguna métrica —la fila es
    `rama_abandonada`— pero es una fila que no concuerda consigo misma.
+
+
+## TDE-026: el problema no es solo el texto
+
+La convención acordada es que **las columnas F, C, P y S guardan el promedio
+CRUDO del bloque**, antes de compuertas, y que los topes se aplican al calcular
+el IE. Bajo esa regla, la celda `P = 0.583` (7/12) de TDE-026 está bien y su
+`compuertas_operadas` está mal cuando dice *«compuerta 1 ACTIVADA SIN EFECTO
+NUMERICO (P1a igual a 0 topea P en 0.5 y el promedio ya daba 0.5)»*: el
+promedio no daba 0.5, daba 0.583, y bajarlo a 0.5 **sí es efecto numérico**.
+
+Pero corregir solo el texto deja el problema a medias. **El IE de esa fila
+tampoco aplicó la compuerta:**
+
+| | |
+|---|---|
+| IE guardado | **4.4** |
+| con `P` crudo (0.583) | **4.41** ← es este |
+| con `P` topeado (0.5) | 4.22 |
+
+O sea que la compuerta se declaró y **no se aplicó en ningún lado**: ni en la
+celda —donde, por la convención, no debía— ni en el cálculo del IE, donde sí
+debía. La fila no tiene un texto mal redactado: tiene una compuerta que no
+operó.
+
+No cambia ninguna métrica (`rama_abandonada`), pero sí cambia qué hay que
+corregir: el texto **y** el IE, o declarar la fila con la compuerta no aplicada.
+
+### Lo que esto dejó en nuestra implementación
+
+`backend/analisis/tde.py` ahora devuelve **`bloquesCrudos` junto a `bloques`**.
+Con los dos a la vista, lo que hizo cada compuerta y cada regla de piso se ve
+en vez de discutirse. Y toda reducción de denominador se declara **en cualquier
+bloque**, no solo en P, nombrando el indicador que faltó — la obligación
+existía solo para `P1a` sin motor y por eso pasaron TDE-025 y TDE-026 con el
+bloque F promediado sobre tres sin decirlo.

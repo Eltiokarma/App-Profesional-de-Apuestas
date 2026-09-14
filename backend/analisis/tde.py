@@ -478,6 +478,23 @@ def indice(ind: dict) -> dict:
     for letra in ("F", "C", "P"):
         bloques[letra], usados[letra] = _promedio(ind, INDICADORES[letra])
     bloques["S"], usados["S"] = _promedio(ind, claves_s)
+    # EL CRUDO SE GUARDA ANTES DE TOCAR NADA. Las reglas de piso y las
+    # compuertas transforman el promedio, y si solo se publica el resultado
+    # nadie puede ver qué hizo cada una. Un caso del registro (TDE-026) declara
+    # una compuerta «sin efecto numérico» sobre un promedio que sí bajaba: con
+    # el crudo al lado, eso se ve en vez de discutirse.
+    crudos = dict(bloques)
+    # TODA REDUCCIÓN DE DENOMINADOR SE DECLARA, EN CUALQUIER BLOQUE. La
+    # obligación existía solo para P1a sin motor y por eso pasaron dos casos con
+    # el bloque F promediado sobre tres sin decirlo. Un denominador reducido y
+    # callado es indetectable salvo haciendo aritmética sobre el valor.
+    nominal = {"F": 4, "C": 3, "P": 6, "S": len(claves_s)}
+    for letra in ("F", "C", "P", "S"):
+        if usados[letra] and len(usados[letra]) < nominal[letra]:
+            faltan_ind = [k for k in (INDICADORES[letra] if letra != "S" else claves_s)
+                          if k not in usados[letra]]
+            operadas.append(f"bloque {letra} promediado sobre {len(usados[letra])} de "
+                            f"{nominal[letra]}: sin dato en {', '.join(faltan_ind)}")
 
     # regla especial F
     if ind.get("F1") == 1 and ind.get("F3") == 1 and bloques["F"] is not None and bloques["F"] < 0.75:
@@ -492,14 +509,6 @@ def indice(ind: dict) -> dict:
     if ind.get("P1a") == 0 and bloques["P"] is not None and bloques["P"] > 0.5:
         bloques["P"] = 0.5
         operadas.append("compuerta 1 (P1a=0 → bloque P topado en 0.5, después del promedio)")
-    # DENOMINADOR VARIABLE DEL BLOQUE P. `P1a` ausente no es lo mismo que `P1a`
-    # en 0: sin salida del motor se declara sin dato y P se promedia sobre
-    # CINCO. `_promedio` ya lo hace —solo cuenta los presentes— pero el caso se
-    # declara, porque dividir cinco términos entre seis es el error silencioso
-    # que esta regla existe para evitar.
-    if ind.get("P1a") is None and usados["P"]:
-        operadas.append(f"P1a sin dato del motor: bloque P promediado sobre "
-                        f"{len(usados['P'])}, no sobre {len(INDICADORES['P'])}")
 
     faltan = [l for l in ("F", "C", "P", "S") if bloques[l] is None]
     if faltan:
@@ -512,6 +521,9 @@ def indice(ind: dict) -> dict:
     out = {
         "ie": round(ie, 2),
         "bloques": {l: round(v, 4) for l, v in bloques.items()},
+        # el promedio ANTES de las reglas de piso y las compuertas: con los dos
+        # a la vista, lo que hizo cada transformación se ve en vez de creerse
+        "bloquesCrudos": {l: (None if v is None else round(v, 4)) for l, v in crudos.items()},
         "indicadoresUsados": usados,
         # BANDA ORDINAL, NO PROBABILIDAD. La tabla IE → P(echada) está
         # suspendida: se dice en qué tramo cae y qué lo sostiene, no con qué
