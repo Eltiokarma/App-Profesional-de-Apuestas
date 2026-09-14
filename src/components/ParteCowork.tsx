@@ -12,7 +12,7 @@
 // del pantallazo que el usuario pega aquí— el bloque se cierra al instante.
 import { useEffect, useMemo, useState } from 'react'
 import type {
-  DisponibilidadParte, DocumentoParte, EquipoParte, JugadorParte, ParteCoworkDTO, RamaF, Semaforo, TdeParte,
+  BloqueTde, DisponibilidadParte, DocumentoParte, EquipoParte, JugadorParte, ParteCoworkDTO, RamaF, Semaforo, TdeParte,
   VeredictoParte, ZonaF,
 } from '../api/types'
 import { parsearMd, type MdBloque, type MdInline } from '../lib/md'
@@ -390,31 +390,11 @@ function Indice({ etiqueta, valor, nivel, nota }: { etiqueta: string; valor: num
   )
 }
 
-/** Teorema del Echado: los dos índices opuestos con su ventana y su causa. */
-function PanelTde({ tde, nombreDe }: { tde: TdeParte; nombreDe: (l: 'a' | 'b') => string }) {
+/** El TDE de UN equipo: los dos índices opuestos con su ventana y su causa. */
+function BloqueTdeVista({ tde, nombreDe }: { tde: BloqueTde; nombreDe: (l: 'a' | 'b') => string }) {
   const c = tde.calculado
-  const cal = c?.calibracion
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* LA ADVERTENCIA VA PRIMERO, NO EN UNA NOTA AL PIE. Un IE de 5.0 leído
-          solo se entiende como «riesgo medio-alto, más o menos la mitad de las
-          veces», y lo observado es 12.5%. La escala está declarada
-          sobreestimada por el propio skill y medida acá: si el aviso no está
-          antes que el número, el número gana. */}
-      {cal && (
-        <section style={{ padding: '12px 15px', borderRadius: 13, background: 'var(--mark-soft)', border: '1px solid color-mix(in oklch,var(--mark),transparent 55%)' }}>
-          <div style={{ font: '700 9.5px var(--mono)', color: 'var(--mark)', letterSpacing: '.5px', marginBottom: 5 }}>
-            ESCALA SOBREESTIMADA · el índice NO es una frecuencia
-          </div>
-          <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', marginBottom: 6 }}>{cal.nota}</div>
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', font: '600 10.5px var(--mono)', color: 'var(--t2)' }}>
-            {cal.pMediaDeclarada !== undefined && <span>declarado {cal.pMediaDeclarada}%</span>}
-            <span>observado {cal.tasaObservada}%</span>
-            <span>n = {cal.casosComputables} · {cal.seEcharon} echada{cal.seEcharon === 1 ? '' : 's'}</span>
-          </div>
-          <div style={{ font: '500 10px var(--sans)', color: 'var(--t3)', marginTop: 5 }}>{cal.filtro}</div>
-        </section>
-      )}
       <section style={{ padding: '14px 16px', borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', marginBottom: 11 }}>
           <span style={{ font: '700 10px var(--mono)', color: 'var(--accent)', letterSpacing: '.6px', textTransform: 'uppercase' }}>Teorema del Echado</span>
@@ -530,15 +510,61 @@ function PanelTde({ tde, nombreDe }: { tde: TdeParte; nombreDe: (l: 'a' | 'b') =
         </section>
       )}
 
-      {c?.tablasSuspendidas && (
+    </div>
+  )
+}
+
+/** Teorema del Echado del partido. EL ÍNDICE ES POR EQUIPO: si el parte declaró
+ *  los dos, se pintan los dos. Guardar uno solo mandaba el del otro a `notas`,
+ *  que es prosa y no se puede comprobar contra los goles recibidos. */
+function PanelTde({ tde, nombreDe }: { tde: TdeParte; nombreDe: (l: 'a' | 'b') => string }) {
+  // local primero, como en todo el resto de la pantalla
+  const bloques = [...(tde.bloques ?? [])].sort((x, y) => (x.equipo || 'z').localeCompare(y.equipo || 'z'))
+  // la advertencia de escala y las tablas suspendidas son del TEOREMA, no de un
+  // equipo: repetirlas por bloque las convierte en decorado y se dejan de leer
+  const cal = bloques.map((b) => b.calculado?.calibracion).find(Boolean)
+  const susp = bloques.map((b) => b.calculado?.tablasSuspendidas).find(Boolean)
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* LA ADVERTENCIA VA PRIMERO, NO EN UNA NOTA AL PIE. Un IE de 5.0 leído
+          solo se entiende como «riesgo medio-alto, más o menos la mitad de las
+          veces», y lo observado es 12.5%. La escala está declarada
+          sobreestimada por el propio skill y medida acá: si el aviso no está
+          antes que el número, el número gana. */}
+      {cal && (
+        <section style={{ padding: '12px 15px', borderRadius: 13, background: 'var(--mark-soft)', border: '1px solid color-mix(in oklch,var(--mark),transparent 55%)' }}>
+          <div style={{ font: '700 9.5px var(--mono)', color: 'var(--mark)', letterSpacing: '.5px', marginBottom: 5 }}>
+            ESCALA SOBREESTIMADA · el índice NO es una frecuencia
+          </div>
+          <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', marginBottom: 6 }}>{cal.nota}</div>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', font: '600 10.5px var(--mono)', color: 'var(--t2)' }}>
+            {cal.pMediaDeclarada !== undefined && <span>declarado {cal.pMediaDeclarada}%</span>}
+            <span>observado {cal.tasaObservada}%</span>
+            <span>n = {cal.casosComputables} · {cal.seEcharon} echada{cal.seEcharon === 1 ? '' : 's'}</span>
+          </div>
+          <div style={{ font: '500 10px var(--sans)', color: 'var(--t3)', marginTop: 5 }}>{cal.filtro}</div>
+        </section>
+      )}
+      {bloques.length === 1 && bloques[0].equipo && (
+        <div style={{ font: '500 10.5px var(--sans)', color: 'var(--t3)' }}>
+          Solo hay índice de {nombreDe(bloques[0].equipo as 'a' | 'b')}: del otro equipo no se
+          declaró bloque, así que su ventana no se puede comprobar.
+        </div>
+      )}
+      {/* el nombre del equipo ya va en la cabecera de cada bloque: repetirlo
+          arriba es ruido, y el TDE ya tiene bastante texto */}
+      {bloques.map((b, i) => (
+        <BloqueTdeVista key={b.equipo || i} tde={b} nombreDe={nombreDe} />
+      ))}
+      {susp && (
         <section style={{ padding: '12px 15px', borderRadius: 13, background: 'var(--bg3)' }}>
           <div style={{ font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px', marginBottom: 4 }}>
             TABLAS DE PROBABILIDAD SUSPENDIDAS
           </div>
-          <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{c.tablasSuspendidas.que}</div>
-          <div style={{ font: '500 11px var(--sans)', color: 'var(--t2)', marginTop: 4 }}>{c.tablasSuspendidas.porque}</div>
+          <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{susp.que}</div>
+          <div style={{ font: '500 11px var(--sans)', color: 'var(--t2)', marginTop: 4 }}>{susp.porque}</div>
           <div style={{ font: '500 10px var(--sans)', color: 'var(--t3)', marginTop: 4 }}>
-            Se reactivan con: {c.tablasSuspendidas.seReactivanCon}
+            Se reactivan con: {susp.seReactivanCon}
           </div>
         </section>
       )}
@@ -588,12 +614,13 @@ function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' 
         <span style={{ font: '600 11.5px var(--mono)', color: ok(o.marcadorExacto?.acerto) }}>
           {marca(o.marcadorExacto?.acerto)} marcador
         </span>
-        {o.tde && (
-          <span style={{ font: '600 11.5px var(--mono)', color: ok(o.tde.golEnVentana) }}
-            title={o.tde.nota || `ventana ${o.tde.ventana}`}>
-            {marca(o.tde.golEnVentana)} ventana TDE
+        {(o.tde?.bloques ?? []).map((t, i) => (
+          <span key={t.equipo || i} style={{ font: '600 11.5px var(--mono)', color: ok(t.golEnVentana) }}
+            title={t.nota || `ventana ${t.ventana}`}>
+            {marca(t.golEnVentana)} ventana TDE
+            {(o.tde!.bloques.length > 1 && t.equipo) ? ` · ${nombreDe(t.equipo as 'a' | 'b')}` : ''}
           </span>
-        )}
+        ))}
         {o.brier?.valor !== null && o.brier?.valor !== undefined && (
           <span style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)' }} title={o.brier.escala}>
             Brier {o.brier.valor.toFixed(3)}
@@ -733,9 +760,8 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
   // forma preferida, porque entonces el índice lo calcula el backend— y el
   // bloque sale `sinDato` (por ejemplo, F2 sin salida del motor), no hay `ie`
   // que mirar y la pestaña desaparecería con el TDE adentro.
-  const conTde = !!(parte.tde && (parte.tde.tipologia || parte.tde.ie || parte.tde.ise
-    || parte.tde.vias?.length || parte.tde.calculado
-    || Object.keys(parte.tde.indicadores ?? {}).length))
+  const conTde = (parte.tde?.bloques ?? []).some((b) => b.tipologia || b.ie || b.ise
+    || b.vias?.length || b.calculado || Object.keys(b.indicadores ?? {}).length)
   const tabs: { k: Tab; label: string }[] = [
     { k: 'bloques', label: 'Bloques EFE' },
     { k: 'f', label: pendienteXi ? 'Bloque F · congelado' : 'Bloque F' },

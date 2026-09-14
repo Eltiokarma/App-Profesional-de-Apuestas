@@ -165,16 +165,25 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     }
 
     # ── la ventana del TDE: esto SÍ se comprueba ────────────────────────────
-    tde = parte.get("tde") or {}
-    rango = _ventana(tde.get("ventana") or "")
-    if rango:
+    # UNA COMPROBACIÓN POR BLOQUE. El índice es por equipo: si el parte declaró
+    # los dos, son dos ventanas y dos veredictos. Antes solo se miraba uno y el
+    # otro no existía para ninguna métrica.
+    from backend.analisis.parte import bloques_tde
+    bloques = []
+    for tde in bloques_tde(parte.get("tde") or {}):
+        rango = _ventana(tde.get("ventana") or "")
+        if not rango:
+            bloques.append({"ventana": tde.get("ventana", ""), "equipo": tde.get("equipo") or "",
+                            "comprobable": False, "golEnVentana": None,
+                            "nota": "la ventana declarada no trae dos minutos: no hay nada que comprobar"})
+            continue
         desde, hasta = rango
         foco = tde.get("equipo") or ""
         # la echada del equipo foco se observa en los goles que RECIBE
         contra = "b" if foco == "a" else ("a" if foco == "b" else "")
         en_ventana = [g for g in goles if desde <= g["minuto"] <= hasta
                       and (not contra or g["lado"] == contra)]
-        out["tde"] = {
+        bloques.append({
             "ventana": tde.get("ventana"), "desde": desde, "hasta": hasta,
             "equipo": foco,
             "comprobable": out["evidencia"]["conFicha"],
@@ -182,9 +191,7 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
             "goles": en_ventana,
             "nota": ("" if out["evidencia"]["conFicha"] else
                      "sin ficha de eventos no se puede comprobar la ventana: queda sin veredicto"),
-        }
-    elif tde:
-        out["tde"] = {"ventana": tde.get("ventana", ""), "comprobable": False,
-                      "golEnVentana": None,
-                      "nota": "la ventana declarada no trae dos minutos: no hay nada que comprobar"}
+        })
+    if bloques:
+        out["tde"] = {"bloques": bloques}
     return out

@@ -956,9 +956,9 @@ export interface LecturaSadParte {
   paradoja: string
 }
 
-/** Teorema del Echado. Los niveles llegan del skill: el backend no inventa
+/** El TDE de UN equipo. Los niveles llegan del skill: el backend no inventa
  *  umbrales para una escala que vive en otro lado. '' = píntalo en neutro. */
-export interface TdeParte {
+export interface BloqueTde {
   ie?: number
   ieNivel?: Semaforo | ''
   ise?: number
@@ -977,6 +977,12 @@ export interface TdeParte {
   declarado?: { ie?: number | null; ise?: number | null }
   /** Diferencias entre lo declarado y lo calculado. Vacío es lo normal. */
   discrepancia?: string[]
+}
+
+/** El TDE del PARTIDO: hasta un bloque por equipo. El índice es por equipo, y
+ *  guardar uno solo mandaba el del otro a `notas`, que no se puede medir. */
+export interface TdeParte {
+  bloques?: BloqueTde[]
 }
 
 export interface IndiceTde {
@@ -1034,16 +1040,20 @@ export interface VeredictoObjetivo {
   marcadorExacto?: { declarado: string; real: string; acerto: boolean }
   /** Brier de TRES resultados (0 perfecto, 2 máximo). No es el binario del TDE. */
   brier?: { valor: number | null; escala: string }
+  /** Una comprobación POR BLOQUE: la echada de cada equipo se ve en los goles
+   *  que RECIBE, así que con dos bloques hay dos ventanas y dos veredictos. */
   tde?: {
-    ventana: string
-    desde?: number
-    hasta?: number
-    equipo?: string
-    comprobable: boolean
-    /** null = no se pudo comprobar (sin ficha de eventos o sin ventana legible). */
-    golEnVentana: boolean | null
-    goles?: { minuto: number; lado: 'a' | 'b'; jugador: string }[]
-    nota: string
+    bloques: {
+      ventana: string
+      desde?: number
+      hasta?: number
+      equipo?: string
+      comprobable: boolean
+      /** null = no se pudo comprobar (sin ficha de eventos o sin ventana legible). */
+      golEnVentana: boolean | null
+      goles?: { minuto: number; lado: 'a' | 'b'; jugador: string }[]
+      nota: string
+    }[]
   }
   evidencia?: {
     goles: { minuto: number; lado: 'a' | 'b'; jugador: string; autogol: boolean }[]

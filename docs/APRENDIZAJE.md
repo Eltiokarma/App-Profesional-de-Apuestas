@@ -337,6 +337,11 @@ los goles CONTRA el equipo evaluado —la echada se observa en lo que recibe— 
 si la ficha de eventos no está capturada, `golEnVentana` vuelve `null` en vez
 de `false`: no comprobable no es lo mismo que no ocurrido.
 
+El índice es **por equipo**, así que la comprobación también: `objetivo.tde`
+trae `bloques`, uno por lado declarado, cada uno con su ventana y su veredicto.
+Mientras el parte guardó un solo TDE, el del otro equipo vivía en `notas` y
+**no entraba en ninguna métrica** — ni siquiera se sabía que faltaba.
+
 **Contrato propuesto:**
 
 ```

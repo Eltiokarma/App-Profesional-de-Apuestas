@@ -1695,10 +1695,10 @@ components:
         contextoEmocional: { type: string }
         datoEstructural: { type: string }
         paradoja: { type: string, description: '"" si no hay paradoja' }
-    TdeParte:
+    BloqueTde:
       type: object
       description: >
-        Teorema del Echado. Los NIVELES (ieNivel/iseNivel) llegan del skill: el backend no
+        El TDE de UN equipo. Los NIVELES (ieNivel/iseNivel) llegan del skill: el backend no
         pone umbrales a una escala que vive en otro lado, y sin nivel la pantalla pinta el
         número en neutro.
       properties:
@@ -1720,6 +1720,45 @@ components:
               ventana: { type: string }
               detalle: { type: string }
         falsador: { type: string }
+        calculado:
+          type: object
+          description: 'el índice CALCULADO con sus compuertas (solo en la respuesta)'
+          additionalProperties: true
+        declarado:
+          type: object
+          description: 'el ie/ise que llegó escrito, para poder contrastarlo'
+          additionalProperties: true
+        discrepancia:
+          type: array
+          description: 'diferencias entre lo declarado y la cuenta; vacío es lo normal'
+          items: { type: string }
+    TdeParte:
+      type: object
+      description: >
+        Teorema del Echado del partido. El índice es POR EQUIPO, así que el parte guarda
+        una LISTA: hasta un bloque por lado. Antes guardaba uno solo y el del otro equipo
+        terminaba en `notas` —prosa que no se puede consultar ni medir—.
+      properties:
+        bloques:
+          type: array
+          maxItems: 2
+          items: { $ref: '#/components/schemas/BloqueTde' }
+    TdeEntrada:
+      description: >
+        Al depositar se aceptan cuatro formas y todas se guardan igual, en `bloques`:
+        la canónica `{"bloques": [...]}` (que es lo que devuelve el GET, para poder
+        re-depositar la respuesta tal cual), un objeto plano con `equipo` adentro,
+        `{"a": {...}, "b": {...}}` como los equipos, y una lista de bloques. Dos bloques
+        para el mismo lado se rechazan: no se elige uno en silencio.
+      oneOf:
+        - $ref: '#/components/schemas/TdeParte'
+        - $ref: '#/components/schemas/BloqueTde'
+        - type: object
+          properties:
+            a: { $ref: '#/components/schemas/BloqueTde' }
+            b: { $ref: '#/components/schemas/BloqueTde' }
+        - type: array
+          items: { $ref: '#/components/schemas/BloqueTde' }
     EventoTimelineParte:
       type: object
       description: >
@@ -1762,7 +1801,7 @@ components:
             h2b: { type: string, enum: [verde, ambar, rojo, na] }
             h2c: { type: string, enum: [verde, ambar, rojo, na] }
         lecturaSad: { $ref: '#/components/schemas/LecturaSadParte' }
-        tde: { $ref: '#/components/schemas/TdeParte' }
+        tde: { $ref: '#/components/schemas/TdeEntrada' }
         timelineEventos:
           type: array
           description: 'solo lo institucional; los partidos los pone el backend'
@@ -2031,6 +2070,10 @@ components:
           description: 'equipos foco cuya cadena recibió el pronóstico'
         conLecturaSad: { type: boolean }
         conTde: { type: boolean }
+        ladosTde:
+          type: array
+          description: 'de qué equipos quedó índice ("a", "b"); vacío = ninguno'
+          items: { type: string }
     PartePendiente:
       type: object
       required: [fixtureId, partido, faltaXi]
@@ -2275,16 +2318,23 @@ components:
             escala: { type: string, description: '0 perfecto, 2 máximo, TRES resultados: no comparable con un Brier binario' }
         tde:
           type: object
-          description: 'solo si el parte declaró ventana; golEnVentana null = no comprobable'
+          description: >
+            Una comprobación POR BLOQUE declarado: la echada de cada equipo se observa en
+            los goles que RECIBE, así que con dos bloques hay dos ventanas y dos veredictos.
           properties:
-            ventana: { type: string }
-            desde: { type: integer }
-            hasta: { type: integer }
-            equipo: { type: string, enum: [a, b, ''] }
-            comprobable: { type: boolean }
-            golEnVentana: { type: boolean, nullable: true }
-            goles: { type: array, items: { type: object, additionalProperties: true } }
-            nota: { type: string }
+            bloques:
+              type: array
+              items:
+                type: object
+                properties:
+                  ventana: { type: string }
+                  desde: { type: integer }
+                  hasta: { type: integer }
+                  equipo: { type: string, enum: [a, b, ''] }
+                  comprobable: { type: boolean }
+                  golEnVentana: { type: boolean, nullable: true }
+                  goles: { type: array, items: { type: object, additionalProperties: true } }
+                  nota: { type: string }
         evidencia:
           type: object
           properties:

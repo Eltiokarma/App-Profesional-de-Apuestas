@@ -70,10 +70,18 @@ def _parte(fixture_id: int, nombre_a: str = "", nombre_b: str = "") -> dict:
             "datoEstructural": "Núcleo de A intacto",
             "paradoja": "El mejor EFE es el más dependiente de un hombre",
         },
-        "tde": {"ie": 58, "ieNivel": "ambar", "ise": 31, "equipo": "b",
-                "tipologia": "repliegue por agotamiento", "ventana": "75-90'",
-                "vias": [{"nombre": "echada", "indice": 58, "ventana": "75-90'", "detalle": "baja el bloque"}],
-                "falsador": "si sostiene la línea tras el 75'"},
+        # el índice es POR EQUIPO: el parte modelo declara los dos
+        "tde": {"bloques": [
+            {"ie": 58, "ieNivel": "ambar", "ise": 31, "equipo": "b",
+             "tipologia": "repliegue por agotamiento", "ventana": "75-90'",
+             "vias": [{"nombre": "echada", "indice": 58, "ventana": "75-90'", "detalle": "baja el bloque"}],
+             "falsador": "si sostiene la línea tras el 75'"},
+            {"ie": 24, "ieNivel": "verde", "ise": 47, "iseNivel": "ambar", "equipo": "a",
+             "tipologia": "sobreexposición por urgencia", "ventana": "60-75'",
+             "vias": [{"nombre": "sobreexposicion", "indice": 47, "ventana": "60-75'",
+                       "detalle": "adelanta los laterales"}],
+             "falsador": "si conserva los laterales por detrás del balón"},
+        ]},
         "timelineEventos": [
             {"fecha": "2026-03-02", "equipo": nombre_b or "B", "tipo": "tecnico",
              "titulo": "Cambio de DT", "detalle": "asume el interino", "destacado": True},
@@ -214,12 +222,13 @@ def main():
     # batch desatendido pierde el parte entero y no dice por qué.
     pel = {"fixtureId": sin_ficha, "equipos": {l: {"bloques": {"A": 3}} for l in ("a", "b")}}
     for nombre, val, donde in (
-        ("tde como lista", [{"equipo": "a", "ie": 6}], "tde"),
-        ("tde partido por equipo", {"a": {"ie": 6}, "b": {"ie": 5}}, "tde"),
         ("tde como string", "ECHADA-FIS", "tde"),
         ("vias con strings", {"equipo": "a", "ie": 6, "vias": ["ECHADA"]}, "tde.vias[0]"),
         ("vias como string suelto", {"equipo": "a", "ie": 6, "vias": "ECHADA"}, "tde.vias"),
         ("equipo con el nombre del club", {"equipo": "Tigres FC", "ie": 6}, "tde.equipo"),
+        ("dos bloques del mismo lado", [{"equipo": "a", "ie": 6}, {"equipo": "a", "ie": 5}],
+         "tde[1]"),
+        ("la llave y el equipo se contradicen", {"a": {"equipo": "b", "ie": 6}}, "tde.a.equipo"),
     ):
         r = c.post(f"{A}/analisis/cowork", json={**pel, "tde": val})
         check(f"{nombre}: responde 200, no 500", r.status_code == 200, r.status_code)
@@ -228,6 +237,59 @@ def main():
               any(x["donde"] == donde for x in rs), rs[:2])
         check(f"{nombre}: y dice la forma buena",
               any(x["donde"] == donde and x.get("esperado") for x in rs), rs[:2])
+
+    # ── EL TDE ES POR EQUIPO Y CABEN LOS DOS ───────────────────────────────
+    # Antes el parte guardaba UN bloque: el del segundo equipo terminaba en
+    # `notas`, que es prosa —no se puede consultar, no se puede comprobar
+    # contra los goles recibidos y no entra en ninguna métrica—.
+    dos = {"a": {"ie": 4.2, "ventana": "60-75'", "tipologia": "sobreexposición"},
+           "b": {"ie": 6.4, "ventana": "75-90'", "tipologia": "repliegue"}}
+    formas = {
+        "{a, b} como los equipos": dos,
+        "lista de bloques": [{**dos["a"], "equipo": "a"}, {**dos["b"], "equipo": "b"}],
+        "la canónica {bloques: [...]}": {"bloques": [{**dos["a"], "equipo": "a"},
+                                                     {**dos["b"], "equipo": "b"}]},
+    }
+    for nombre, val in formas.items():
+        r = c.post(f"{A}/analisis/cowork", json={**pel, "tde": val})
+        check(f"tde {nombre}: entra sin rechazos", r.status_code == 200
+              and not [x for x in r.json().get("rechazos", []) if x["donde"].startswith("tde")],
+              r.json().get("rechazos"))
+        check(f"tde {nombre}: el recibo dice de qué equipos quedó índice",
+              r.json().get("ladosTde") == ["a", "b"], r.json().get("ladosTde"))
+        d = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()
+        bl = d["tde"]["bloques"]
+        check(f"tde {nombre}: se guardan los DOS bloques", len(bl) == 2, bl)
+        check(f"tde {nombre}: cada uno con su lado y su ventana",
+              {b["equipo"]: b["ventana"] for b in bl} == {"a": "60-75'", "b": "75-90'"},
+              {b["equipo"]: b["ventana"] for b in bl})
+
+    # un solo bloque SIGUE entrando (forma plana), y el recibo cobra el que falta
+    r = c.post(f"{A}/analisis/cowork", json={**pel, "tde": {**dos["b"], "equipo": "b"}})
+    check("el objeto plano de siempre sigue entrando",
+          r.json()["ladosTde"] == ["b"], r.json().get("ladosTde"))
+    check("y `faltan` cobra el TDE del otro equipo",
+          any(f["bloque"].startswith("tde (el otro") for f in r.json()["faltan"]),
+          [f["bloque"] for f in r.json()["faltan"]])
+
+    # los DOS índices se calculan: uno por equipo, con sus propias compuertas
+    ind = {"F1": 1, "F2": 0.5, "F3": 1, "F4": 0, "C1": 1, "C2": 0.5, "C3": 0,
+           "P1a": 1, "P1b": 0.5, "P2": 0, "S1": 1, "S2": 0.5}
+    r = c.post(f"{A}/analisis/cowork", json={**pel, "tde": {"bloques": [
+        {"equipo": "a", "ventana": "60-75'", "indicadores": ind, "ie": 9.9},
+        {"equipo": "b", "ventana": "75-90'", "indicadores": {**ind, "F1": 0, "F3": 0}},
+    ]}})
+    check("dos bloques con indicadores: 200", r.status_code == 200, r.text[:200])
+    bl = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["tde"]["bloques"]
+    check("cada equipo tiene su índice CALCULADO",
+          all(b.get("calculado", {}).get("ie") is not None for b in bl),
+          [b.get("calculado", {}).get("ie") for b in bl])
+    check("y son distintos, porque los indicadores lo son",
+          bl[0]["calculado"]["ie"] != bl[1]["calculado"]["ie"],
+          [b["calculado"]["ie"] for b in bl])
+    check("la discrepancia se delata en el bloque que la tiene",
+          bool(bl[0].get("discrepancia")) and not bl[1].get("discrepancia"),
+          [b.get("discrepancia") for b in bl])
     c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
 
     # ── EL CONTRATO SE PUEDE LEER, NO SE ADIVINA ────────────────────────────
@@ -236,8 +298,8 @@ def main():
     ct = c.get(f"{A}/analisis/cowork/contrato").json()
     check("el contrato lista las claves de la raíz",
           set(ct["raiz"]) == _CLAVES_ESPERADAS, sorted(set(ct["raiz"]) ^ _CLAVES_ESPERADAS))
-    check("y avisa que `tde` NO se parte por equipo",
-          "NO una lista ni {a, b}" in ct["tde"]["forma"], ct["tde"]["forma"])
+    check("y avisa que el TDE es por equipo y caben los dos",
+          "bloques" in ct["tde"]["forma"] and ct["tde"].get("dosEquipos"), ct["tde"]["forma"])
     check("y publica los indicadores del TDE por bloque",
           set("FCPS") <= set(ct["tde"]["indicadores"]) and "ISE" in ct["tde"]["indicadores"],
           sorted(ct["tde"]["indicadores"]))
@@ -469,7 +531,7 @@ def main():
     con_ind = _parte(sin_ficha)
     con_ind["tde"] = {"equipo": "a", "ie": 9.9, "indicadores": todos}
     c.post(f"{A}/analisis/cowork", json=con_ind)
-    leido = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["tde"]
+    leido = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["tde"]["bloques"][0]
     check("el IE que se lee es el calculado, no el que llegó escrito",
           leido["ie"] == 5.0, (leido.get("ie"), leido.get("declarado")))
     check("y la discrepancia con lo declarado se delata",
@@ -549,6 +611,10 @@ def main():
           (vuelto["entrada"]["cadena"], vuelto["entrada"]["descartados"])
           == (ida["entrada"]["cadena"], ida["entrada"]["descartados"]),
           vuelto["entrada"])
+    check("los DOS bloques del TDE sobreviven al viaje, con su lado",
+          [b["equipo"] for b in vuelto["tde"]["bloques"]]
+          == [b["equipo"] for b in ida["tde"]["bloques"]] != [],
+          [b["equipo"] for b in vuelto["tde"]["bloques"]])
     check("y los totales calculados salen idénticos",
           [vuelto["equipos"][l]["porcentaje"] for l in ("a", "b")]
           == [ida["equipos"][l]["porcentaje"] for l in ("a", "b")],
@@ -691,7 +757,8 @@ def main():
     check("un supuesto vacío no entra", all(x["supuesto"] for x in sens), sens)
 
     # TDE estructurado
-    t = d["tde"]
+    check("el TDE guarda un bloque POR EQUIPO", len(d["tde"]["bloques"]) == 2, d["tde"])
+    t = next(b for b in d["tde"]["bloques"] if b["equipo"] == "b")
     check("el TDE trae sus dos índices", (t["ie"], t["ise"]) == (58.0, 31.0), t)
     check("el nivel del IE llega del skill, no del backend", t["ieNivel"] == "ambar", t)
     check("el ISE sin nivel queda vacío en vez de inventado", t["iseNivel"] == "", t)
@@ -941,24 +1008,36 @@ def main():
     c.post(f"{A}/analisis/cowork/{con_ficha}/veredicto", json={
         "seleccion": "ciega", "modoEvaluacion": "COND", "porLado": {"a": {"veredicto": "fallo"}}})
     o2 = c.get(f"{A}/analisis/cowork/{con_ficha}/veredicto").json()["objetivo"]
-    check("la ventana del TDE se lee del texto", (o2["tde"]["desde"], o2["tde"]["hasta"]) == (45, 60),
-          o2.get("tde"))
-    check("detecta el gol recibido dentro de la ventana", o2["tde"]["golEnVentana"] is True,
-          o2.get("tde"))
+    t2 = o2["tde"]["bloques"][0]
+    check("la ventana del TDE se lee del texto", (t2["desde"], t2["hasta"]) == (45, 60), t2)
+    check("detecta el gol recibido dentro de la ventana", t2["golEnVentana"] is True, t2)
     check("y solo cuenta los goles CONTRA el equipo evaluado",
-          all(g["lado"] == "b" for g in o2["tde"]["goles"]), o2["tde"].get("goles"))
+          all(g["lado"] == "b" for g in t2["goles"]), t2.get("goles"))
     check("la evidencia trae los goles con su minuto",
           len(o2["evidencia"]["goles"]) >= 2 and o2["evidencia"]["primerGol"]["minuto"] == 34,
           o2["evidencia"].get("goles"))
 
-    # una ventana fuera de los goles no se da por cumplida
-    p_tde["tde"]["ventana"] = "75-90'"
+    # DOS EQUIPOS, DOS VENTANAS, DOS VEREDICTOS. Antes el segundo bloque vivía
+    # en `notas` y no se comprobaba contra nada.
+    p_tde["tde"] = {"bloques": [{"ie": 60, "equipo": "a", "ventana": "45-60'", "tipologia": "prueba"},
+                                {"ie": 40, "equipo": "b", "ventana": "20-40'", "tipologia": "prueba"}]}
     c.post(f"{A}/analisis/cowork", json=p_tde)
-    o3 = c.get(f"{A}/analisis/cowork/{con_ficha}/veredicto").json()["objetivo"]
-    check("sin gol en la ventana, no se inventa el acierto", o3["tde"]["golEnVentana"] is False,
-          o3.get("tde"))
+    od = c.get(f"{A}/analisis/cowork/{con_ficha}/veredicto").json()["objetivo"]
+    porlado = {b["equipo"]: b for b in od["tde"]["bloques"]}
+    check("con dos bloques se comprueban las DOS ventanas", len(porlado) == 2, od["tde"])
+    check("la echada de 'a' se ve en el gol que RECIBE (51')",
+          porlado["a"]["golEnVentana"] is True, porlado["a"])
+    check("la de 'b' en el suyo (34'), que cae en su ventana",
+          porlado["b"]["golEnVentana"] is True and all(g["lado"] == "a" for g in porlado["b"]["goles"]),
+          porlado["b"])
+
+    # una ventana fuera de los goles no se da por cumplida
+    p_tde["tde"] = {"ie": 60, "equipo": "a", "ventana": "75-90'", "tipologia": "prueba"}
+    c.post(f"{A}/analisis/cowork", json=p_tde)
+    o3 = c.get(f"{A}/analisis/cowork/{con_ficha}/veredicto").json()["objetivo"]["tde"]["bloques"][0]
+    check("sin gol en la ventana, no se inventa el acierto", o3["golEnVentana"] is False, o3)
     check("lo objetivo se RECALCULA al leer (el juicio no se re-escribió)",
-          o3["tde"]["ventana"] == "75-90'", o3.get("tde"))
+          o3["ventana"] == "75-90'", o3)
 
     # un pronóstico sin 1X2 no cuenta acierto en vez de contarlo como fallo
     p_vacio = _parte(con_ficha)

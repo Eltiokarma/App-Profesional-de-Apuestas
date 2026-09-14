@@ -382,39 +382,26 @@ def _via_tde(v, rechazos: list, donde: str) -> dict | None:
             "ventana": _txt(v.get("ventana")), "detalle": _txt(v.get("detalle"))}
 
 
-def _tde(x, rechazos: list) -> dict:
-    """Teorema del Echado: los dos índices y su ventana.
+def _bloque_tde(x, rechazos: list, donde: str, lado: str = "") -> dict:
+    """El TDE de UN equipo: los dos índices, su ventana y su causa.
 
     Los NIVELES (verde/ámbar/rojo) llegan del skill, no los inventa el backend:
     la escala del IE es suya y ponerle umbrales aquí sería duplicar —y con el
     tiempo desalinear— una tabla que vive en otro lado. Sin nivel, la pantalla
     pinta el número en neutro."""
-    # EL TDE ES UN OBJETO PLANO Y ÚNICO. Las formas que a cualquiera se le
-    # ocurren primero —una lista, un `{a, b}` como los equipos, un string con
-    # la tipología— se guardaban como `{}` SIN UN SOLO RECHAZO. El trabajo se
-    # perdía y el recibo decía que todo estaba bien. Ahora cada una se delata
-    # con la forma buena al lado.
     if not isinstance(x, dict):
         rechazos.append({
-            "donde": "tde",
-            "porque": f"`tde` tiene que ser un objeto plano, llegó {type(x).__name__}",
+            "donde": donde,
+            "porque": f"un bloque del TDE tiene que ser un objeto, llegó {type(x).__name__}",
             "esperado": '{"equipo": "a", "indicadores": {...}, "tipologia": "…", "ventana": "…"}'})
-        return {}
-    if set(x) & set(LADOS) and not (set(x) - set(LADOS)):
-        rechazos.append({
-            "donde": "tde",
-            "porque": "`tde` NO se parte por equipo como `equipos`: el parte guarda UN solo "
-                      "bloque, el del equipo que administra el resultado",
-            "esperado": 'un objeto plano con "equipo": "a" o "b" adentro. El otro equipo, '
-                        "por ahora, va en `notas`"})
         return {}
     vias_raw = x.get("vias")
     if vias_raw is not None and not isinstance(vias_raw, list):
-        rechazos.append({"donde": "tde.vias", "porque": f"`vias` tiene que ser una lista, "
-                                                        f"llegó {type(vias_raw).__name__}",
+        rechazos.append({"donde": f"{donde}.vias", "porque": f"`vias` tiene que ser una lista, "
+                                                             f"llegó {type(vias_raw).__name__}",
                          "esperado": '[{"nombre": "ECHADA", "indice": 6.4, …}]'})
         vias_raw = []
-    vias = [v for v in (_via_tde(y, rechazos, f"tde.vias[{i}]")
+    vias = [v for v in (_via_tde(y, rechazos, f"{donde}.vias[{i}]")
                         for i, y in enumerate(vias_raw or [])) if v]
     ind = x.get("indicadores") if isinstance(x.get("indicadores"), dict) else {}
     tiene = any([_txt(x.get("tipologia")), vias, ind,
@@ -426,9 +413,17 @@ def _tde(x, rechazos: list) -> dict:
     # —que es la mitad del sentido del TDE—.
     equipo = _txt(x.get("equipo")).lower()
     if equipo and equipo not in LADOS:
-        rechazos.append({"donde": "tde.equipo",
+        rechazos.append({"donde": f"{donde}.equipo",
                          "porque": f"`equipo` es el lado, no el nombre del club: llegó {x.get('equipo')!r}",
                          "esperado": '"a" (local) o "b" (visitante)'})
+        equipo = ""
+    # cuando el lado viene de la LLAVE ({"a": {...}}) manda la llave, pero una
+    # contradicción no se elige en silencio: se dice cuál se guardó
+    if lado and equipo and equipo != lado:
+        rechazos.append({"donde": f"{donde}.equipo",
+                         "porque": f"el bloque está bajo {lado!r} pero adentro dice {equipo!r}: "
+                                   f"se guarda como {lado!r}",
+                         "esperado": "que la llave y el `equipo` de adentro digan lo mismo"})
     return {
         # LOS INDICADORES MANDAN SOBRE EL ÍNDICE. Si llegan los 0/0.5/1, el IE y
         # el ISE los calcula el backend con sus compuertas: la cuenta se puede
@@ -437,13 +432,70 @@ def _tde(x, rechazos: list) -> dict:
         "indicadores": {k: _num(v, 1) for k, v in ind.items() if v is not None},
         "ie": _num(x.get("ie"), 1000), "ieNivel": _sem(x.get("ieNivel")),
         "ise": _num(x.get("ise"), 1000), "iseNivel": _sem(x.get("iseNivel")),
-        "equipo": equipo if equipo in LADOS else "",
+        "equipo": lado or equipo,
         "tipologia": _txt(x.get("tipologia")),
         "ventana": _txt(x.get("ventana")),
         "disciplina43": bool(x.get("disciplina43")),
         "vias": vias,
         "falsador": _txt(x.get("falsador")),
     }
+
+
+def _tde(x, rechazos: list) -> dict:
+    """Teorema del Echado del partido: hasta UN bloque por equipo.
+
+    EL ÍNDICE ES POR EQUIPO Y EL PARTE GUARDABA UNO SOLO. El segundo terminaba
+    en `notas`, que es prosa: no se puede consultar, no se puede comprobar
+    contra los goles recibidos y no entra en ninguna métrica. Ahora los dos son
+    dato de primera clase y se guardan siempre en `bloques`.
+
+    Se aceptan las cuatro formas que aparecen solas —la canónica que devuelve el
+    GET, el objeto plano, el `{a, b}` como los equipos y la lista— porque la
+    alternativa ya se probó: la forma no prevista se guardaba como `{}` sin un
+    solo rechazo y el recibo decía que todo estaba bien.
+    """
+    if x is None:
+        return {}
+    crudos: list[tuple[str, str, object]] = []   # (donde, lado, bloque)
+    if isinstance(x, list):
+        crudos = [(f"tde[{i}]", "", y) for i, y in enumerate(x)]
+    elif isinstance(x, dict) and isinstance(x.get("bloques"), list):
+        crudos = [(f"tde.bloques[{i}]", "", y) for i, y in enumerate(x["bloques"])]
+    elif isinstance(x, dict) and set(x) & set(LADOS) and not (set(x) - set(LADOS)):
+        crudos = [(f"tde.{l}", l, x[l]) for l in LADOS if x.get(l) is not None]
+    elif isinstance(x, dict):
+        crudos = [("tde", "", x)]
+    else:
+        rechazos.append({
+            "donde": "tde",
+            "porque": f"`tde` tiene que ser un objeto o una lista de bloques, llegó {type(x).__name__}",
+            "esperado": '{"bloques": [{"equipo": "a", "indicadores": {…}, "ventana": "…"}]}'})
+        return {}
+
+    bloques: list[dict] = []
+    for donde, lado, crudo in crudos:
+        b = _bloque_tde(crudo, rechazos, donde, lado)
+        if not b:
+            continue
+        # DOS BLOQUES PARA EL MISMO LADO NO SE RESUELVEN A DEDO. Guardar el
+        # primero (o el último) es tirar un análisis entero sin decirlo.
+        gemelo = next((o for o in bloques if o["equipo"] and o["equipo"] == b["equipo"]), None)
+        if gemelo:
+            rechazos.append({
+                "donde": donde,
+                "porque": f"ya venía otro bloque del TDE para el equipo {b['equipo']!r}: "
+                          f"el segundo NO se guardó",
+                "esperado": "un bloque por lado; si son dos lecturas del mismo equipo, "
+                            "mandá una sola con las dos vías (`disciplina43`)"})
+            continue
+        bloques.append(b)
+    if len(bloques) > len(LADOS):
+        sobra = bloques[len(LADOS):]
+        rechazos.append({"donde": "tde", "porque": f"llegaron {len(bloques)} bloques y el partido "
+                                                   f"tiene dos equipos: {len(sobra)} no se guardaron",
+                         "esperado": "hasta un bloque por lado"})
+        bloques = bloques[:len(LADOS)]
+    return {"bloques": bloques} if bloques else {}
 
 
 def _evento_tl(e: dict) -> dict | None:
@@ -698,12 +750,21 @@ def guardar(payload: dict) -> dict:
                              "antes del saque; después del partido ya sería escribirlo con "
                              "el resultado puesto",
         })
-    if not parte.get("tde"):
+    tde_bloques = bloques_tde(parte.get("tde") or {})
+    if not tde_bloques:
         faltan.append({
             "bloque": "tde",
             "costara": "el veredicto no va a poder comprobar la ventana del TDE "
-                       "(`objetivo.tde` viene vacío)",
-            "comoSeArregla": "mandá el bloque `tde` con su ventana de 15 minutos",
+                       "(`objetivo.tde` viene sin bloques)",
+            "comoSeArregla": "mandá `tde` con su ventana de 15 minutos; el índice es POR "
+                             "equipo, así que caben los dos lados",
+        })
+    elif len(tde_bloques) == 1 and tde_bloques[0].get("equipo"):
+        faltan.append({
+            "bloque": "tde (el otro equipo)",
+            "costara": f"solo se comprueba la ventana del lado {tde_bloques[0]['equipo']!r}: "
+                       "del otro no queda nada medible",
+            "comoSeArregla": 'mandá los dos: {"bloques": [{"equipo": "a", …}, {"equipo": "b", …}]}',
         })
     pron = parte.get("pronostico") or {}
     # el normalizador siempre deja las tres claves, así que "vacío" es que
@@ -737,7 +798,9 @@ def guardar(payload: dict) -> dict:
         "cadena": cadena,
         "cadenaIgnorada": cadena_ignorada,
         "conLecturaSad": bool((parte.get("lecturaSad") or {}).get("moduloOperativo")),
-        "conTde": bool(parte.get("tde")),
+        "conTde": bool(tde_bloques),
+        # de QUÉ equipos quedó índice: el TDE es por equipo y caben los dos
+        "ladosTde": [b.get("equipo") or "" for b in tde_bloques],
         # lo que falta y se va a cobrar al cerrar el caso, mientras todavía se
         # puede llenar sin mirar el resultado
         "faltan": faltan,
@@ -899,16 +962,36 @@ def _guardar_cadena(fx, cadena: dict) -> tuple[list[str], list[str]]:
     return escritos, ignorados
 
 
+def bloques_tde(tde) -> list[dict]:
+    """Los bloques del TDE, entienda o no la forma vieja.
+
+    En la base hay partes depositados cuando `tde` era UN objeto plano. Leerlos
+    con la forma nueva devolvería vacío y el TDE de esos partidos desaparecería
+    de la pantalla sin que nadie tocara nada: eso es perder dato en silencio,
+    que es justo lo que venimos arreglando.
+    """
+    if not isinstance(tde, dict) or not tde:
+        return []
+    if isinstance(tde.get("bloques"), list):
+        return [b for b in tde["bloques"] if isinstance(b, dict) and b]
+    return [tde]   # forma vieja: un bloque plano
+
+
 def _tde_calculado(tde: dict) -> dict:
-    """El TDE con su índice CALCULADO cuando llegaron los indicadores.
+    """El TDE con su índice CALCULADO, un bloque por equipo.
 
     Igual que el bloque F y que los totales del EFE: si el dato de entrada está,
     el número lo pone la aritmética. Lo que llegó escrito se conserva al lado en
     `declarado`, y si no coincide se dice — un IE mal sumado que nadie compara
     es una banda de probabilidad equivocada durante meses.
     """
-    if not tde:
+    bloques = bloques_tde(tde)
+    if not bloques:
         return {}
+    return {"bloques": [_bloque_calculado(b) for b in bloques]}
+
+
+def _bloque_calculado(tde: dict) -> dict:
     ind = tde.get("indicadores") or {}
     if not ind:
         return tde
@@ -1487,9 +1570,13 @@ def contrato() -> dict:
                                 '({"score": 3, "nota": "…"})'},
         },
         "tde": {
-            "forma": "UN objeto plano, NO una lista ni {a, b}: el parte guarda el bloque del "
-                     "equipo que administra el resultado",
+            "forma": '{"bloques": [{...}, {...}]} — el índice es POR EQUIPO y caben los dos. '
+                     "También se aceptan, y se guardan igual, un objeto plano con `equipo` "
+                     "adentro, un {a, b} como los equipos y una lista de bloques",
             "equipo": 'el LADO ("a" o "b"), nunca el nombre del club',
+            "dosEquipos": "mandá los dos bloques: el del otro equipo en `notas` es prosa, no "
+                          "se puede comprobar contra los goles recibidos ni entra en ninguna "
+                          "métrica",
             "indicadores": {k: list(v) for k, v in INDICADORES_TDE.items()},
             "nota": "mandá `indicadores` en 0/0.5/1 y el backend calcula el IE, el ISE y las "
                     "compuertas. NO mandes P(echada) ni riesgo_compuesto: están suspendidas",

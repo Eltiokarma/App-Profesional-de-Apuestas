@@ -50,7 +50,7 @@ se perdería.
 | caja de sensibilidad | `sensibilidad` por equipo | pestaña **Lectura SAD** |
 | `sad-analysis` | las tres fuentes de probabilidad + falsador | pestaña **Lectura SAD** |
 | `teorema-del-echado` | P1a, F2 y F1 **los calcula el backend** (`GET /analisis/cowork/tde/{id}`); el resto lo escribís vos | pestaña **Teorema del Echado** |
-| `teorema-del-echado` | `tde`: IE, ISE, tipología, ventana, vías | pestaña **Teorema del Echado** |
+| `teorema-del-echado` | `tde.bloques[]`: IE, ISE, tipología, ventana, vías — **uno por equipo** | pestaña **Teorema del Echado** |
 | `futbol-timeline` | `timelineEventos` (solo institucional) + narrativa | pestaña **Timeline** (fundida con los partidos calculados) |
 | `diagnostico-tactico` | documento `dtp` + `cadena.{a,b}.pronostico` | pestaña **Documentos** y la cadena de la página de **Equipo** |
 | matriz de escenarios | documento `matriz` | pestaña **Documentos** |
@@ -375,22 +375,39 @@ validador. `/openapi.json` está apagado en despliegue —y con razón, expone
 también lo que gasta dinero—, pero dejar a quien deposita adivinando la forma
 garantiza depósitos a medias.
 
-### El `tde` es UNO, plano, y las otras formas se delatan
+### El `tde` es POR EQUIPO y caben los dos
 
-El parte guarda **un solo bloque TDE**: el del equipo que administra el
-resultado. Tres formas que a cualquiera se le ocurren primero —una lista, un
-`{a, b}` como los equipos, un string con la tipología— se guardaban como `{}`
-**sin un solo rechazo**: el trabajo se perdía y el recibo decía que todo estaba
-bien. Ahora cada una se delata con la forma buena al lado.
+El índice **es de un equipo**, no del partido: el IE de quien se puede echar no
+dice nada del riesgo del rival. El parte guardaba **uno solo** y el del otro
+equipo terminaba en `notas` —prosa que no se puede consultar, no se puede
+comprobar contra los goles recibidos y no entra en ninguna métrica—. Ahora los
+dos son dato de primera clase:
 
-Lo mismo con `vias`: con strings adentro reventaba por 500, y **un 500 en un
-batch desatendido pierde el parte entero sin decir por qué**. Y `equipo` es el
-LADO (`"a"` / `"b"`), nunca el nombre del club — mandarlo como «Tigres FC» se
-guardaba vacío y con él se perdía de qué equipo era el índice.
+```json
+"tde": {"bloques": [
+  {"equipo": "a", "ie": 4.2, "ventana": "60-75'", "indicadores": {...}},
+  {"equipo": "b", "ie": 6.4, "ventana": "75-90'", "indicadores": {...}}
+]}
+```
 
-> **Límite conocido:** un parte = un TDE. Si querés el índice de los dos
-> equipos como bloques de primera clase, es cambio de contrato y de pantalla.
-> Por ahora el segundo va en `notas`, que es prosa y no se puede consultar.
+Se aceptan **cuatro formas** y las cuatro se guardan igual, en `bloques`: la
+canónica de arriba —que es la que devuelve el GET, para poder re-depositar la
+respuesta tal cual—, un objeto plano con `equipo` adentro (la de siempre),
+`{"a": {...}, "b": {...}}` como los equipos, y una lista de bloques. Antes tres
+de esas cuatro se guardaban como `{}` **sin un solo rechazo**: el trabajo se
+perdía y el recibo decía que todo estaba bien.
+
+Lo que sigue delatándose: `tde` como string, `vias` con strings adentro (que
+reventaba por 500, y **un 500 en un batch desatendido pierde el parte entero
+sin decir por qué**), `equipo` con el nombre del club en vez del LADO
+(`"a"` / `"b"`), **dos bloques del mismo lado** —no se elige uno en silencio— y
+la llave que contradice al `equipo` de adentro.
+
+El recibo trae `ladosTde` con los equipos que quedaron, y si solo mandaste uno,
+`faltan` cobra el otro: del lado que no declaraste **no hay ventana que
+comprobar** cuando se cierre el caso. El veredicto devuelve
+`objetivo.tde.bloques`, una comprobación por bloque: la echada de cada equipo
+se mide en los goles que **recibe**.
 
 ### El once se cierra solo: no hay carrera de 30 minutos
 
@@ -571,9 +588,12 @@ Escribís vos (es juicio, no se puede calcular):
 - La CAJA DE SENSIBILIDAD por equipo: por cada hueco declarado, qué cambiaría si
   el dato fuera otro. Es lo que convierte un "sin dato" en una incertidumbre
   acotada en vez de una excusa.
-- El TDE estructurado en `tde` (IE, ISE, tipología, ventana, vías) además del
-  documento en prosa. Los niveles verde/ámbar/rojo los ponés vos: el backend no
-  le inventa umbrales a tu escala.
+- El TDE estructurado en `tde.bloques[]` (IE, ISE, tipología, ventana, vías),
+  **uno por equipo** — el índice es de un equipo, no del partido, y el del otro
+  en `notas` es prosa que nadie puede comprobar—, además del documento en
+  prosa. Los niveles verde/ámbar/rojo los ponés vos: el backend no le inventa
+  umbrales a tu escala. Los indicadores 0/0.5/1 mandan sobre el índice: si los
+  mandás, el IE y el ISE los calcula el backend con sus compuertas.
 - Los eventos INSTITUCIONALES del timeline en `timelineEventos` (nunca partidos).
 - El pronóstico clave por equipo foco en `cadena`: una frase, la que después se
   va a poder declarar acertada o fallada.
@@ -681,12 +701,19 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
     "paradoja": "El del mejor EFE es el que más depende de un solo hombre"
   },
   "tde": {
-    "ie": 58, "ieNivel": "ambar", "ise": 31, "iseNivel": "verde", "equipo": "b",
-    "tipologia": "repliegue por agotamiento", "ventana": "75-90'",
-    "disciplina43": false,
-    "vias": [{"nombre": "echada", "indice": 58, "ventana": "75-90'",
-              "detalle": "el bloque baja diez metros tras el primer gol en contra"}],
-    "falsador": "si sostiene la línea por encima de su área tras el 75', el índice está mal"
+    "bloques": [
+      {"equipo": "b", "ie": 58, "ieNivel": "ambar", "ise": 31, "iseNivel": "verde",
+       "tipologia": "repliegue por agotamiento", "ventana": "75-90'",
+       "disciplina43": false,
+       "vias": [{"nombre": "echada", "indice": 58, "ventana": "75-90'",
+                 "detalle": "el bloque baja diez metros tras el primer gol en contra"}],
+       "falsador": "si sostiene la línea por encima de su área tras el 75', el índice está mal"},
+      {"equipo": "a", "ie": 24, "ieNivel": "verde", "ise": 47, "iseNivel": "ambar",
+       "tipologia": "sobreexposición por urgencia", "ventana": "60-75'",
+       "vias": [{"nombre": "sobreexposicion", "indice": 47, "ventana": "60-75'",
+                 "detalle": "adelanta los dos laterales con el marcador abierto"}],
+       "falsador": "si conserva los laterales por detrás de la línea de balón"}
+    ]
   },
   "timelineEventos": [
     {"fecha": "2026-03-02", "equipo": "Nombre del club", "tipo": "tecnico",

@@ -261,11 +261,22 @@ export function parteCoworkDemo(fixtureId: number, equipoA: string, equipoB: str
       datoEstructural: 'Núcleo del local intacto desde hace tres temporadas; el visitante renovó seis titulares en el último mercado.',
       paradoja: 'El equipo con mejor EFE es el que más depende de un solo hombre: si falta el arquero titular, la ventaja estructural se estrecha.',
     },
+    // EL ÍNDICE ES POR EQUIPO: caben los dos, y la demo enseña los dos
     tde: {
-      ie: 58, ieNivel: 'ambar', ise: 31, iseNivel: 'verde', equipo: 'b',
-      tipologia: 'repliegue por agotamiento', ventana: "75-90'", disciplina43: false,
-      vias: [{ nombre: 'echada', indice: 58, ventana: "75-90'", detalle: 'el bloque baja diez metros tras el primer gol en contra' }],
-      falsador: "si el visitante mantiene la línea por encima de su área tras el 75', el índice está mal calculado.",
+      bloques: [
+        {
+          ie: 58, ieNivel: 'ambar', ise: 31, iseNivel: 'verde', equipo: 'b',
+          tipologia: 'repliegue por agotamiento', ventana: "75-90'", disciplina43: false,
+          vias: [{ nombre: 'echada', indice: 58, ventana: "75-90'", detalle: 'el bloque baja diez metros tras el primer gol en contra' }],
+          falsador: "si el visitante mantiene la línea por encima de su área tras el 75', el índice está mal calculado.",
+        },
+        {
+          ie: 24, ieNivel: 'verde', ise: 47, iseNivel: 'ambar', equipo: 'a',
+          tipologia: 'sobreexposición por urgencia de resultado', ventana: "60-75'", disciplina43: false,
+          vias: [{ nombre: 'sobreexposicion', indice: 47, ventana: "60-75'", detalle: 'adelanta los laterales si el marcador sigue abierto' }],
+          falsador: 'si el local conserva los dos laterales por detrás de la línea de balón con el partido empatado, el índice está mal calculado.',
+        },
+      ],
     },
     timeline: timelineDemo(equipoA, equipoB),
     pronostico: {
@@ -319,9 +330,12 @@ function veredictoDemo(fixtureId: number, marcador: string): VeredictoParte {
                 reparto, nota: '' },
       marcadorExacto: { declarado: '2-1', real: `${gl}-${gv}`, acerto: `${gl}-${gv}` === '2-1' },
       brier: { valor: brier, escala: '0 perfecto · 2 máximo · tres resultados (NO comparable con un Brier binario)' },
-      tde: { ventana: "75-90'", desde: 75, hasta: 90, equipo: 'b', comprobable: true,
-             golEnVentana: false, goles: [],
-             nota: '' },
+      tde: { bloques: [
+        { ventana: "75-90'", desde: 75, hasta: 90, equipo: 'b', comprobable: true,
+          golEnVentana: false, goles: [], nota: '' },
+        { ventana: "60-75'", desde: 60, hasta: 75, equipo: 'a', comprobable: true,
+          golEnVentana: gl + gv >= 2, goles: [], nota: '' },
+      ] },
       evidencia: {
         goles: [
           { minuto: 23, lado: 'a' as const, jugador: 'Jugador de muestra', autogol: false },

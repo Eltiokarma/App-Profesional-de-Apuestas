@@ -101,10 +101,11 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   se devuelve el conflicto en vez de un IP inventado. Cada skill del pipeline
   tiene su sitio en la pantalla (tabla en `docs/COWORK.md`): bloque G desde
   `backend/calendario.py`, timeline fundido con `backend/cronologia.py` y
-  pintado con `TimelineComparativo`, TDE estructurado con sus niveles venidos
-  del skill (el backend no le pone umbrales a esa escala), y el pronóstico por
-  equipo foco entra en `cadena_dtp` como apertura —el veredicto lo emite quien
-  cierre el eslabón—. Un bloque nuevo del prompt necesita sitio en el parte:
+  pintado con `TimelineComparativo`, TDE estructurado en `tde.bloques[]`
+  —**uno por equipo**: el índice es de un equipo, no del partido— con sus
+  niveles venidos del skill (el backend no le pone umbrales a esa escala), y el
+  pronóstico por equipo foco entra en `cadena_dtp` como apertura —el veredicto
+  lo emite quien cierre el eslabón—. Un bloque nuevo del prompt necesita sitio en el parte:
   si no lo tiene, se pierde.
 - **El once se cierra solo** (`POST /analisis/cowork/xi/auto`): cerrar el
   bloque F es cruzar listas de nombres y aplicar pesos de rol, no un análisis.
