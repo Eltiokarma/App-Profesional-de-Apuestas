@@ -326,20 +326,32 @@ BANDAS_SOBRE = ((3.0, 10, 25), (5.0, 25, 45), (7.0, 45, 70), (99.0, 70, 90))
 CALIBRACION = {
     "filtro": "ciega + PRE + cerrado, EXCLUYENDO clase_caso=rama_abandonada "
               "(disciplinas 24, 27 y 31)",
-    "casosComputables": 15,
+    "casosComputables": 17,
     "seEcharon": 1,
-    "tasaObservada": 6.7,
-    "ieMedio": 4.90,
-    "porBanda": {"3-5": {"n": 10, "positivos": 1}, "5-7": {"n": 3, "positivos": 0},
+    "tasaObservada": 5.9,
+    "ieMedio": 4.85,
+    "porBanda": {"3-5": {"n": 11, "positivos": 1}, "5-7": {"n": 4, "positivos": 0},
                  "7-8.5": {"n": 2, "positivos": 0}},
     "positivosEnEsquemaVigente": 0,
+    "brier": 0.2292,
+    "brierTasaBase": 0.0554,
+    "pMediaDeclarada": 43.3,
+    "brierNota": "el 0.247 que citaba el skill se recalculó con el filtro puesto y da 0.2292 "
+                 "sobre 17 casos. Lo importante no es el número suelto: predecir SIEMPRE la "
+                 "tasa base saca 0.0554, así que hoy las probabilidades del módulo restan en "
+                 "vez de sumar. Lo ROBUSTO de esto es la brecha —43.3% declarado contra 5.9% "
+                 "observado, unas siete veces—; el skill score con un solo positivo es ruidoso.",
     "nota": "la escala del IE NO ordena el riesgo hoy: el único positivo ciego computable "
             "(TDE-005) cae en la banda MÁS BAJA y las dos bandas altas tienen cero. Y está "
             "medido con el esquema viejo de 4 indicadores, así que en el esquema vigente de "
             "6 no hay ni un positivo. La banda que el IE anuncia no es la frecuencia con "
             "que pasó.",
-    "registro": "docs/skills/teorema-del-echado/assets/casos/registro.csv, 33 filas "
-                "(TDE-001…046). OJO: es una copia y el skill vivo va más adelante.",
+    "registro": "docs/skills/teorema-del-echado/assets/casos/registro.csv, 35 filas "
+                "(TDE-001…048), en la versión CANONIZADA que mandó el autor del skill: "
+                "clase_caso ∈ {normal, rama_abandonada}, esquema_P ∈ {4ind, 4ind_o_5ind, "
+                "6ind} y se_echo ∈ {si, no, parcial}, con el detalle de las dos echadas "
+                "largas conservado en `tipo_real`. Ninguna columna de números ni de "
+                "lecciones se tocó (disciplina 15).",
 }
 
 # Cuándo se puede poner semáforo. Las tres a la vez, y la (c) es la que hace el

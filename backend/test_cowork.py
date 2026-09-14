@@ -305,7 +305,10 @@ def main():
     check("la calibración declara el filtro que aplicó",
           "rama_abandonada" in cal["filtro"], cal.get("filtro"))
     check("y usa los computables, no todos los ciegos",
-          cal["casosComputables"] == 15 and cal["seEcharon"] == 1, cal)
+          cal["casosComputables"] == 17 and cal["seEcharon"] == 1, cal)
+    check("el Brier viaja con su línea de base, no suelto",
+          cal["brier"] > cal["brierTasaBase"] and "restan" in cal["brierNota"],
+          {k: cal[k] for k in ("brier", "brierTasaBase")})
     check("el único positivo cae en la banda MÁS BAJA: la escala no ordena",
           cal["porBanda"]["3-5"]["positivos"] == 1
           and cal["porBanda"]["5-7"]["positivos"] == 0

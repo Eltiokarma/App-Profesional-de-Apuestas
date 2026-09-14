@@ -32,6 +32,19 @@ def num(s):
     return float(m.group(1)) if m else None
 
 
+def prob(s):
+    """`p_echada` viene como «55», «55%» o «70-90%»: el rango se toma por su centro."""
+    t = str(s or "").strip().replace("%", "")
+    m = re.match(r"^\s*([0-9.]+)\s*-\s*([0-9.]+)\s*$", t)
+    if m:
+        return (float(m.group(1)) + float(m.group(2))) / 2 / 100
+    m = re.match(r"^\s*([0-9.]+)\s*$", t)
+    if not m:
+        return None
+    v = float(m.group(1))
+    return v / 100 if v > 1 else v
+
+
 def se_echo(f) -> bool:
     return not f["se_echo"].strip().lower().startswith("no")
 
@@ -44,13 +57,17 @@ def main() -> int:
     print(f"registro: {len(filas)} filas · {filas[0]['id'].strip()} … {filas[-1]['id'].strip()}")
 
     # HIGIENE: una columna con varias redacciones para el mismo valor fragmenta
-    # cualquier agrupación EN SILENCIO. Se avisa antes de contar nada.
-    for col in ("clase_caso", "esquema_P", "seleccion", "modo_evaluacion"):
-        vistos = sorted({f[col].strip() for f in filas if f[col].strip()})
-        if col in ("clase_caso",) and len(vistos) > 2:
-            print(f"  ⚠ `{col}` tiene {len(vistos)} redacciones: {vistos}")
-        elif col == "esquema_P" and len(vistos) > 3:
-            print(f"  ⚠ `{col}` tiene {len(vistos)} redacciones para 3 esquemas")
+    # cualquier agrupación EN SILENCIO. Se avisa antes de contar nada. El
+    # registro llegó canonizado a estos vocabularios; si aparece uno nuevo,
+    # salta acá antes de que contamine una frecuencia.
+    for col, esperado in (("clase_caso", {"normal", "rama_abandonada"}),
+                          ("esquema_P", {"4ind", "5ind", "6ind", "4ind_o_5ind"}),
+                          ("seleccion", {"ciega", "por_resultado", "post_resultado"}),
+                          ("se_echo", {"si", "no", "parcial"})):
+        vistos = {f[col].strip() for f in filas if f[col].strip()}
+        raros = sorted(vistos - esperado)
+        if raros:
+            print(f"  ⚠ `{col}` trae valores fuera del vocabulario canónico: {raros}")
 
     cerrados = [f for f in filas if f["se_echo"].strip()]
     ciegos = [f for f in cerrados
@@ -77,12 +94,32 @@ def main() -> int:
     # la condición (c): los positivos tienen que estar en el esquema VIGENTE
     print()
     viejos = [f["id"].strip() for f in pos
-              if not f["IE_recomputado_esquema6"].strip()
-              and "6" not in f["esquema_P"].strip()[:2]]
+              if f["esquema_P"].strip() != "6ind"
+              and not f["IE_recomputado_esquema6"].strip()]
     if viejos:
         print(f"  ⚠ positivos medidos en un esquema de P que NO es el vigente: {viejos}")
         print("    → no son comparables con las filas nuevas: positivos en esquema 6 = "
               f"{len(pos) - len(viejos)}")
+
+    # BRIER Y SU LÍNEA DE BASE. Un Brier suelto no dice nada: hay que compararlo
+    # con lo que saca predecir SIEMPRE la tasa base. Si el modelo no le gana a
+    # eso, sus probabilidades restan en vez de sumar.
+    usable = [(prob(f["p_echada"]), 1 if se_echo(f) else 0)
+              for f in computables if prob(f["p_echada"]) is not None]
+    if usable:
+        br = sum((p - o) ** 2 for p, o in usable) / len(usable)
+        tasa_u = sum(o for _, o in usable) / len(usable)
+        ref = sum((tasa_u - o) ** 2 for _, o in usable) / len(usable)
+        print()
+        print(f"  Brier                      {br:.4f}  (n={len(usable)})")
+        print(f"  p media declarada          {sum(p for p, _ in usable)/len(usable):.3f}  "
+              f"contra {tasa_u:.3f} observado")
+        print(f"  Brier de la tasa base      {ref:.4f}  → el módulo "
+              f"{'PIERDE' if br > ref else 'gana'} contra no saber nada")
+        print(f"  skill score (1 - br/ref)   {1 - br/ref:+.2f}")
+        if len([o for _, o in usable if o]) < 5:
+            print("  ⚠ con menos de 5 positivos el skill score es ruidoso; lo robusto "
+                  "es la brecha entre la p media declarada y la observada")
 
     # contraste con lo que tiene el backend
     sys.path.insert(0, str(RAIZ))

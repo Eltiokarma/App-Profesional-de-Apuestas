@@ -198,11 +198,13 @@ Con el filtro puesto, el resultado no se suaviza, se endurece:
 
 | | sin filtrar (mal) | filtrado (bien) |
 |---|---|---|
-| n | 21 | **15** |
+| n | 23 | **17** |
 | positivos | 2 | **1** |
-| banda 3-5 | 8% | 1 de 10 |
-| banda 5-7 | 14% | **0 de 3** |
-| banda 7-8.5 | 0% (n=2) | **0 de 2** |
+| banda 3-5 | | 1 de 11 |
+| banda 5-7 | | **0 de 4** |
+| banda 7-8.5 | | **0 de 2** |
+
+*(sobre el registro de 35 casos, TDE-001…048, canonizado por el autor del skill)*
 
 La conclusión cambia de «casi plana» a **nula o invertida**: el único positivo
 cae en la banda más baja. Y el remate: TDE-005 está medido con el esquema
@@ -217,6 +219,32 @@ redacciones para el mismo valor, y **falla si el backend se desalinea**.
 > **Regla.** Toda frecuencia que salga del registro filtra primero por
 > `seleccion` y por `clase_caso`, y **declara el filtro que aplicó** junto al
 > número. Un porcentaje sin su población al lado no se publica.
+
+### Un Brier sin línea de base no dice nada
+
+Recalculado con el filtro puesto, el Brier del TDE da **0.2292** sobre 17
+casos — cerca del 0.247 que citaba el skill. Pero el número suelto engaña en
+las dos direcciones, y la comparación que importa es otra: **predecir siempre
+la tasa base saca 0.0554**. Es decir que hoy las probabilidades del módulo
+**restan en vez de sumar** (skill score −3.14).
+
+Dos honestidades sobre ese −3.14, porque el dato se puede sobreleer:
+
+- **Lo robusto es la brecha, no el skill score.** La p media declarada es
+  43.3% y lo observado 5.9%: unas **siete veces**. Eso no depende del único
+  positivo y es el hallazgo sólido.
+- **El skill score con un positivo es ruidoso**, y la línea de base usa la tasa
+  real, que es información que no se tenía al predecir. No sirve para condenar
+  el método: sirve para decir que **el mapeo IE → probabilidad está roto**, que
+  es justo lo que la disciplina 20 del skill ya declaraba.
+
+Lo que esto NO dice: que el IE no ordene el riesgo. Eso sigue sin testearse,
+porque para testear un ordenamiento hacen falta positivos arriba y hay cero.
+Por eso el alta del semáforo pide las tres condiciones y no solo el N.
+
+> **Regla.** Un Brier se publica siempre con el Brier de su línea de base al
+> lado. Sin eso, un 0.23 puede leerse como bueno o como catastrófico según a
+> quién le convenga.
 
 Lo que sí se comprueba solo es **la ventana del TDE**, y por una razón
 concreta: `"75-90'"` son dos números y un gol tiene un minuto. Se cuentan solo
