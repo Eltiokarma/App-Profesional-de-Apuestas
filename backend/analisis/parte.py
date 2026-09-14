@@ -1293,6 +1293,68 @@ def pendientes_veredicto(horas: int = 12, limite: int = 50) -> dict:
     return sobre
 
 
+def cerrar_onces_pendientes(limite: int = 50) -> dict:
+    """Cierra el bloque F de todos los partes cuya alineación YA está ingestada.
+
+    EL ONCE NO NECESITA AL MODELO. Cerrar el bloque F es cruzar dos listas de
+    nombres y multiplicar por los pesos de rol: aritmética que ya vive en
+    `bloque_f.py`. Pedirle eso a un agente por token es lento, caro y peor —y
+    además mete una carrera contra el reloj que no existe: seis partidos que
+    arrancan juntos son seis cierres de milisegundos, no seis análisis.
+
+    Idempotente: un parte ya cerrado no se vuelve a tocar. Lo que no se pudo
+    cerrar sale con el motivo, que casi siempre es «la ficha todavía no trae
+    la alineación» —el caso que obliga al pantallazo manual—.
+    """
+    with _conectar() as con:
+        filas = [dict(r) for r in con.execute(
+            "SELECT fixture_id, equipo_a, equipo_b, xi_json FROM parte_cowork "
+            "WHERE veredicto_json IS NULL AND estado != 'confirmado' "
+            "ORDER BY fecha LIMIT ?", (limite,))]
+    cerrados, sin_ficha, conflictos = [], [], []
+    for f in filas:
+        fid = f["fixture_id"]
+        fx = _fixture(fid)
+        if not fx:
+            continue
+        ya = json.loads(f["xi_json"]) if f["xi_json"] else {}
+        onces = {}
+        for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])):
+            if ya.get(lado):
+                continue  # ese lado ya estaba cerrado: no se pisa
+            de_ficha = xi_de_ficha(fid, tid)
+            if de_ficha:
+                onces[lado] = de_ficha
+        partido = f"{f['equipo_a']} vs {f['equipo_b']}"
+        if not onces:
+            sin_ficha.append({"fixtureId": fid, "partido": partido,
+                              "porque": "la ficha todavía no trae la alineación"})
+            continue
+        listo = resolver_xi(fid, onces)
+        # UN ONCE QUE NO CASA CON LA TABLA F1 NO CIERRA NADA. El conflicto se
+        # reporta, no se fuerza: un IP inventado es peor que un bloque abierto.
+        malos = [l for l in LADOS if listo["equipos"][l]["disponibilidad"].get("conflicto")]
+        if malos:
+            conflictos.append({"fixtureId": fid, "partido": partido,
+                               "lados": malos,
+                               "porque": listo["equipos"][malos[0]]["disponibilidad"]["conflicto"]})
+        cerrados.append({"fixtureId": fid, "partido": partido,
+                         "lados": sorted(onces), "estado": listo["estado"]})
+    if cerrados:
+        print(f"[cowork] onces cerrados solos: {len(cerrados)} "
+              f"({', '.join(x['partido'] for x in cerrados[:4])})"
+              + (f" · CONFLICTOS: {len(conflictos)}" if conflictos else ""), flush=True)
+    return {
+        "revisados": len(filas),
+        "cerrados": cerrados,
+        "conConflicto": conflictos,
+        "sinFichaTodavia": sin_ficha,
+        "nota": "esto no gasta tokens ni llama a ningún modelo: cruza el once ingestado "
+                "con la tabla F1 y aplica los pesos de rol. Los que salen en "
+                "`sinFichaTodavia` son los que necesitan el pantallazo a mano.",
+    }
+
+
 def pendientes(limite: int = 50) -> list[dict]:
     """Partes esperando once — lo primero que mira el usuario al despertar."""
     with _conectar() as con:
@@ -1517,7 +1579,35 @@ def agenda(fecha: date_t | None = None, limite: int = 4, liga_id: int | None = N
         candidatos += sorted(descartados, key=lambda i: i["hora"])
         descartados = []
     manual = bool(liga_id is not None or desde_ahora or incluir_descartados)
+    # PARA PODER RETOMAR DONDE SE CORTÓ. Un batch que se queda sin tokens a
+    # mitad de camino tiene que poder volver mañana y seguir, no empezar de
+    # cero ni —peor— re-depositar encima de lo que ya estaba bien. Marcar cada
+    # candidato con lo que ya hay en la base convierte la agenda en la lista de
+    # trabajo pendiente, sin que nadie tenga que llevar la cuenta aparte.
+    todos_ids = [x["fixtureId"] for x in candidatos + descartados]
+    estados: dict[int, dict] = {}
+    if todos_ids:
+        with _conectar() as con:
+            for r in con.execute(
+                f"SELECT fixture_id, estado, xi_json, veredicto_json FROM parte_cowork "
+                f"WHERE fixture_id IN ({','.join('?' * len(todos_ids))})", tuple(todos_ids)):
+                estados[r["fixture_id"]] = {
+                    "tieneParte": True,
+                    "onceCerrado": bool(r["xi_json"]) and r["estado"] == "confirmado",
+                    "conVeredicto": bool(r["veredicto_json"]),
+                }
+    for x in candidatos + descartados:
+        x.update(estados.get(x["fixtureId"],
+                             {"tieneParte": False, "onceCerrado": False, "conVeredicto": False}))
+    faltan = [x for x in candidatos[:limite] if not x["tieneParte"]]
     return {
+        "porHacer": [x["fixtureId"] for x in faltan],
+        "yaHechos": [x["fixtureId"] for x in candidatos[:limite] if x["tieneParte"]],
+        "notaReanudacion": (
+            f"{len(faltan)} de {len(candidatos[:limite])} sin parte. `porHacer` es la lista "
+            "de trabajo: si la corrida se cortó, arrancá por ahí. Re-depositar un parte que "
+            "ya estaba REEMPLAZA el anterior, así que no vuelvas sobre `yaHechos` salvo que "
+            "quieras rehacerlos."),
         "fecha": dia.isoformat(),
         "ventana": ventana,
         "filtro": {"ligaId": liga_id, "desdeAhora": desde_ahora,

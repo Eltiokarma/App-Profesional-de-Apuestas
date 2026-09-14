@@ -106,6 +106,13 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   equipo foco entra en `cadena_dtp` como apertura —el veredicto lo emite quien
   cierre el eslabón—. Un bloque nuevo del prompt necesita sitio en el parte:
   si no lo tiene, se pierde.
+- **El once se cierra solo** (`POST /analisis/cowork/xi/auto`): cerrar el
+  bloque F es cruzar listas de nombres y aplicar pesos de rol, no un análisis.
+  Seis partidos que arrancan juntos son seis cierres de milisegundos, no una
+  carrera de 30 minutos. Idempotente, sin tokens ni cuota; `sinFichaTodavia`
+  son los del pantallazo a mano y `conConflicto` los que NO se fuerzan. La
+  agenda trae `porHacer`/`yaHechos` para **retomar donde se cortó** una corrida
+  que se quedó sin tokens.
 - **Vigilancia del pipeline**: `GET /analisis/cowork/latido` +
   `LatidoCowork` en la pantalla de Partidos. Una tubería automática sin
   vigilancia no falla con ruido, falla callada. El **silencio cuenta como

@@ -675,6 +675,35 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ParteCowork' }
         '409': { description: 'No hay parte, o la ficha todavía no trae alineaciones' }
+  /analisis/cowork/xi/auto:
+    post:
+      summary: Cierra el bloque F de todos los partes cuya alineación ya está ingestada
+      description: >
+        **El once no necesita al modelo.** Cerrar el bloque F es cruzar dos listas de
+        nombres y aplicar los pesos de rol: aritmética que vive en `bloque_f.py`. Por eso
+        seis partidos que arrancan juntos no son seis análisis contra el reloj, son seis
+        cierres de milisegundos — la carrera de 30 minutos no existe.
+
+
+        Idempotente: un lado ya cerrado no se vuelve a tocar. Lo que no se pudo cerrar sale
+        con el motivo. `sinFichaTodavia` son los que necesitan el pantallazo a mano, y
+        `conConflicto` los que casan con menos de 7 nombres de la tabla F1 — ahí no se
+        fuerza nada: un IP inventado es peor que un bloque abierto.
+      parameters:
+        - { name: limite, in: query, schema: { type: integer, default: 50, minimum: 1, maximum: 200 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  revisados: { type: integer }
+                  cerrados: { type: array, items: { type: object, additionalProperties: true } }
+                  conConflicto: { type: array, items: { type: object, additionalProperties: true } }
+                  sinFichaTodavia: { type: array, items: { type: object, additionalProperties: true } }
+                  nota: { type: string }
   /analisis/cowork/latido:
     get:
       summary: ¿Está corriendo el pipeline, o lleva días muerto en silencio?

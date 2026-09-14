@@ -206,6 +206,41 @@ def main():
           any("Equipo Inventado" in d for d in r.json()["discrepancias"]), r.json().get("discrepancias"))
     check("re-depositar es actualizar, no duplicar", r.json()["estado"] == "actualizado")
 
+    # ── EL ONCE SE CIERRA SOLO, SIN MODELO Y SIN RELOJ ──────────────────────
+    # Seis partidos que arrancan juntos no son seis análisis contra el reloj:
+    # son seis cruces de listas de nombres. La carrera de 30 minutos no existe.
+    c.post(f"{A}/analisis/cowork", json=_parte(con_ficha))
+    auto = c.post(f"{A}/analisis/cowork/xi/auto").json()
+    check("el cierre automático revisa los partes sin once",
+          auto["revisados"] >= 1, auto.get("revisados"))
+    check("y cierra el que YA tiene la alineación ingestada",
+          any(x["fixtureId"] == con_ficha for x in auto["cerrados"]),
+          [x["fixtureId"] for x in auto["cerrados"]])
+    check("declara que no gasta tokens ni llama a ningún modelo",
+          "no gasta tokens" in auto["nota"], auto.get("nota"))
+    check("y los que no tienen ficha salen con su motivo, no en silencio",
+          all(x.get("porque") for x in auto["sinFichaTodavia"]), auto.get("sinFichaTodavia"))
+    # idempotente: pasar dos veces no rehace nada
+    otra = c.post(f"{A}/analisis/cowork/xi/auto").json()
+    check("es idempotente: el ya cerrado no se vuelve a tocar",
+          all(x["fixtureId"] != con_ficha for x in otra["cerrados"]),
+          [x["fixtureId"] for x in otra["cerrados"]])
+
+    # ── LA AGENDA SE PUEDE RETOMAR DONDE SE CORTÓ ───────────────────────────
+    ag = c.get(f"{A}/analisis/cowork/agenda",
+               params={"fecha": fecha, "limite": 4, "incluirDescartados": True}).json()
+    check("la agenda dice qué falta por hacer y qué ya está",
+          "porHacer" in ag and "yaHechos" in ag, sorted(ag)[:6])
+    check("y cada candidato viene marcado con lo que ya hay en la base",
+          all("tieneParte" in x and "onceCerrado" in x
+              for x in (ag["analizar"] + ag["descartados"])),
+          (ag["analizar"] or [{}])[0])
+    check("los que ya tienen parte NO aparecen en porHacer",
+          all(x not in ag["porHacer"] for x in ag["yaHechos"]),
+          (ag["porHacer"], ag["yaHechos"]))
+    check("y se explica que re-depositar REEMPLAZA, para no rehacer de más",
+          "REEMPLAZA" in ag["notaReanudacion"], ag.get("notaReanudacion"))
+
     # ── EL LATIDO: QUE EL SILENCIO SE VEA ───────────────────────────────────
     # Una tubería automática sin vigilancia no falla con ruido, falla callada.
     lat_r = c.get(f"{A}/analisis/cowork/latido")

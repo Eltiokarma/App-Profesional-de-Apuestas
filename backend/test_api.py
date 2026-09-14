@@ -899,6 +899,13 @@ def main():
           c.post(A + f"/analisis/cowork/{fx}/veredicto",
                  json={"seleccion": "ciega", "modoEvaluacion": "PRE",
                        "porLado": {"a": {"veredicto": "acierto"}}}, headers=cw).status_code != 403)
+    # APERTURA DELIBERADA: cerrar bloques F desde alineaciones ya ingestadas no
+    # gasta tokens ni cuota, es idempotente, y es lo que el batch tiene que
+    # poder disparar solo cuando salen los onces.
+    check("cowork: puede disparar el cierre automático del once",
+          c.post(A + "/analisis/cowork/xi/auto", headers=cw).status_code == 200)
+    check("cowork: puede leer el latido del pipeline",
+          c.get(A + "/analisis/cowork/latido", headers=cw).status_code == 200)
     check("cowork: puede leer fixtures y equipos",
           c.get(A + "/fixtures?limit=1", headers=cw).status_code == 200
           and c.get(A + f"/equipos/{dbmod.query_one('sad', 'SELECT id FROM teams LIMIT 1')['id']}/calendario",

@@ -363,6 +363,37 @@ que alguien acaba de escribir.
 > nunca sobre uno que ya tiene un parte bueno. Si igual pasa, el `aviso` te lo
 > dice y vuelves a depositar completo.
 
+### El once se cierra solo: no hay carrera de 30 minutos
+
+**Cerrar el bloque F no necesita al modelo.** Es cruzar dos listas de nombres y
+aplicar los pesos de rol — aritmética que vive en `bloque_f.py`. Por eso seis
+partidos que arrancan juntos **no son seis análisis contra el reloj**: son seis
+cierres de milisegundos.
+
+`POST /analisis/cowork/xi/auto` cierra el bloque F de **todos** los partes cuya
+alineación ya trajo la ingesta. Idempotente, sin tokens, sin cuota de
+API-Football. Devuelve tres listas:
+
+| | qué es |
+|---|---|
+| `cerrados` | quedaron resueltos, con el lado y el estado |
+| `sinFichaTodavia` | la ficha aún no trae la alineación → **estos son los del pantallazo a mano** |
+| `conConflicto` | el once casa con menos de 7 nombres de la tabla F1: **no se fuerza**, un IP inventado es peor que un bloque abierto |
+
+La consecuencia para el diseño del batch: **el análisis pesado va la noche
+anterior, sin prisa**, y el once se cierra solo cuando aparece. Lo único que
+queda para vos es el pantallazo de los que salen en `sinFichaTodavia`.
+
+### Retomar donde se cortó
+
+La agenda trae `porHacer` y `yaHechos`, y marca cada candidato con
+`tieneParte`, `onceCerrado` y `conVeredicto`. Si la corrida se quedó sin
+tokens a mitad de camino, la siguiente arranca por `porHacer` y no rehace nada.
+
+**Re-depositar un parte REEMPLAZA el anterior**, así que no se vuelve sobre
+`yaHechos` salvo que se quiera rehacerlos a propósito. Eso es lo que convierte
+la agenda en la lista de trabajo: nadie tiene que llevar la cuenta aparte.
+
 ### Cómo saber que esto sigue corriendo
 
 `GET /analisis/cowork/latido` contesta de una sola llamada si el pipeline está

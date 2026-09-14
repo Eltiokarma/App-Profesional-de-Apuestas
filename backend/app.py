@@ -76,6 +76,11 @@ _COWORK_PERMITIDO = tuple(
         ("GET", r"/analisis/cowork(?:/.*)?"),
         ("POST", r"/analisis/cowork"),
         ("POST", r"/analisis/cowork/\d+/xi"),
+        # APERTURA DELIBERADA. `xi/auto` cierra bloques F desde alineaciones que
+        # la ingesta YA trajo: no gasta tokens, no llama a ningún modelo, no
+        # toca cuota de API-Football y es idempotente. Es justo lo que el batch
+        # tiene que poder disparar solo cuando salen los onces.
+        ("POST", r"/analisis/cowork/xi/auto"),
         ("POST", r"/analisis/cowork/\d+/veredicto"),
         # lo que el pipeline necesita LEER para escribir el parte
         ("GET", r"/(?:health|fixtures|equipos|ligas|cuotas|constantes|constantes-cuota"
@@ -2032,6 +2037,19 @@ def cowork_pendientes(limite: int = Query(default=50, ge=1, le=200)):
     """Partes que todavía esperan once. Lo primero que se mira al despertar."""
     from backend.analisis import parte as cowork
     return cowork.pendientes(limite)
+
+
+@app.post(API + "/analisis/cowork/xi/auto")
+def cowork_xi_auto(limite: int = Query(default=50, ge=1, le=200)):
+    """Cierra el bloque F de todos los partes cuya alineación ya está ingestada.
+
+    EL ONCE NO NECESITA AL MODELO: cerrar el bloque F es cruzar dos listas de
+    nombres y aplicar los pesos de rol. Por eso seis partidos que arrancan
+    juntos no son seis análisis contra el reloj, son seis cierres de
+    milisegundos. Idempotente; lo que no se pudo cerrar sale con el motivo.
+    """
+    from backend.analisis import parte as cowork
+    return cowork.cerrar_onces_pendientes(limite)
 
 
 @app.get(API + "/analisis/cowork/latido")
