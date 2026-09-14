@@ -363,6 +363,26 @@ que alguien acaba de escribir.
 > nunca sobre uno que ya tiene un parte bueno. Si igual pasa, el `aviso` te lo
 > dice y vuelves a depositar completo.
 
+### Cómo saber que esto sigue corriendo
+
+`GET /analisis/cowork/latido` contesta de una sola llamada si el pipeline está
+vivo. **El silencio cuenta como fallo**: cero partes en la ventana devuelve
+`rojo`, no «sin novedad» — que es la diferencia entre un monitor y un adorno.
+
+Mira cuatro señales:
+
+| señal | qué delata |
+|---|---|
+| `depositadosEnLaVentana` + `horasDesdeElUltimo` | el batch dejó de correr |
+| `coberturaDeAyer` | corrió pero se saltó partidos — **compara contra lo que la agenda habría elegido**, que es lo único que no se puede deducir mirando los partes |
+| `veredictosVencidos` | los partidos terminaron y nadie cerró el caso |
+| `sinOnceCerrado` | hay partes con el bloque F congelado |
+
+En la app aparece en la pantalla de **Partidos**, arriba de todo, **solo cuando
+hay algo que hacer**. Un aviso que sale siempre se deja de leer a la semana.
+
+El latido no dispara nada ni corrige nada: mira y dice. Quien arregla sos vos.
+
 ### El TDE no se escribe entero: la mitad ya está calculada
 
 `GET /analisis/cowork/tde/{fixtureId}` devuelve los insumos del Teorema del

@@ -106,6 +106,12 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   equipo foco entra en `cadena_dtp` como apertura —el veredicto lo emite quien
   cierre el eslabón—. Un bloque nuevo del prompt necesita sitio en el parte:
   si no lo tiene, se pierde.
+- **Vigilancia del pipeline**: `GET /analisis/cowork/latido` +
+  `LatidoCowork` en la pantalla de Partidos. Una tubería automática sin
+  vigilancia no falla con ruido, falla callada. El **silencio cuenta como
+  fallo** (cero partes en la ventana = rojo) y la cobertura se mide **contra lo
+  que la agenda habría elegido**, no contra lo depositado. La banda no se pinta
+  cuando todo está verde: un aviso permanente se deja de leer.
 - **Dos tokens** (`backend/app.py`): `SAD_API_TOKEN` es la llave maestra —abre
   también lo que gasta créditos de Claude y cuota de API-Football— y
   `SAD_TOKEN_COWORK` es el acotado que se le da a Cowork: solo

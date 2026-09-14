@@ -1346,6 +1346,86 @@ def _prioridad(liga: dict, etiquetas: set[str], pos_local: int, pos_visita: int)
     return 0, f"fuera del padrón de ligas cubiertas ({liga.get('nombre')})"
 
 
+def latido(horas: int = 36) -> dict:
+    """¿Está corriendo esto, o lleva dos días muerto y nadie se enteró?
+
+    Una tubería automática sin vigilancia no falla con ruido: falla en silencio,
+    y se descubre semanas después cuando alguien va a mirar una métrica y no hay
+    casos. Esto contesta de una sola llamada las cuatro preguntas que delatan
+    que el batch se cayó, y —lo importante— **el silencio también es un
+    estado**: cero partes depositados en 36 horas es rojo, no «sin novedad».
+
+    No decide nada ni arregla nada. Solo mira y dice.
+    """
+    ahora = datetime.now(timezone.utc)
+    corte = (ahora - timedelta(hours=horas)).strftime("%Y-%m-%d %H:%M:%S")
+    with _conectar() as con:
+        depositados = con.execute(
+            "SELECT COUNT(*) n FROM parte_cowork WHERE actualizado_en >= ?", (corte,)).fetchone()["n"]
+        ultimo = con.execute(
+            "SELECT fixture_id, equipo_a, equipo_b, actualizado_en FROM parte_cowork "
+            "ORDER BY actualizado_en DESC LIMIT 1").fetchone()
+        sin_cerrar = con.execute(
+            "SELECT COUNT(*) n FROM parte_cowork WHERE veredicto_json IS NULL").fetchone()["n"]
+        sin_xi = [dict(r) for r in con.execute(
+            "SELECT fixture_id, fecha, equipo_a, equipo_b FROM parte_cowork "
+            "WHERE xi_json IS NULL AND veredicto_json IS NULL ORDER BY fecha LIMIT 20")]
+    # COBERTURA: de los partidos que la agenda habría elegido ayer, ¿cuántos
+    # tienen parte? Es la señal que delata que el batch no corrió, y no se puede
+    # deducir mirando solo los partes: hay que comparar contra lo que TOCABA.
+    ayer = agenda(fecha=(ahora - timedelta(days=1)).date(), limite=8)
+    tocaban = [x["fixtureId"] for x in (ayer.get("analizar") or [])]
+    con_parte = set()
+    if tocaban:
+        with _conectar() as con:
+            con_parte = {r["fixture_id"] for r in con.execute(
+                f"SELECT fixture_id FROM parte_cowork WHERE fixture_id IN "
+                f"({','.join('?' * len(tocaban))})", tuple(tocaban))}
+    faltaron = [x for x in (ayer.get("analizar") or []) if x["fixtureId"] not in con_parte]
+
+    # los veredictos que ya deberían estar cerrados y no lo están
+    pend = pendientes_veredicto(horas=12, limite=50)
+    vencidos = pend.get("pendientes") or []
+
+    horas_sin_nada = None
+    if ultimo:
+        try:
+            t = datetime.strptime(str(ultimo["actualizado_en"])[:19], "%Y-%m-%d %H:%M:%S")
+            horas_sin_nada = round((ahora.replace(tzinfo=None) - t).total_seconds() / 3600, 1)
+        except ValueError:
+            pass
+
+    motivos = []
+    if depositados == 0:
+        motivos.append(f"no se depositó ningún parte en {horas} h")
+    if tocaban and faltaron:
+        motivos.append(f"{len(faltaron)} de {len(tocaban)} partidos de la agenda de ayer "
+                       "se quedaron sin parte")
+    if vencidos:
+        motivos.append(f"{len(vencidos)} caso(s) llevan más de 12 h terminados y sin veredicto")
+    estado = "rojo" if depositados == 0 else ("ambar" if motivos else "verde")
+    return {
+        "estado": estado,
+        "porque": motivos or ["todo al día"],
+        "ahora": ahora.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "ventanaHoras": horas,
+        "depositadosEnLaVentana": depositados,
+        "horasDesdeElUltimo": horas_sin_nada,
+        "ultimoParte": ({"fixtureId": ultimo["fixture_id"],
+                         "partido": f"{ultimo['equipo_a']} vs {ultimo['equipo_b']}",
+                         "cuando": ultimo["actualizado_en"]} if ultimo else None),
+        "coberturaDeAyer": {"tocaban": len(tocaban), "conParte": len(con_parte),
+                            "faltaron": [{"fixtureId": x["fixtureId"], "partido": x.get("partido", ""),
+                                          "porque": x.get("motivo", "")} for x in faltaron]},
+        "sinCerrar": sin_cerrar,
+        "veredictosVencidos": [{"fixtureId": v["fixtureId"], "partido": v["partido"],
+                                "marcador": v["marcador"]} for v in vencidos],
+        "sinOnceCerrado": sin_xi,
+        "nota": "esto solo mira; no dispara nada. El silencio cuenta como fallo: "
+                "cero partes en la ventana es ROJO, no «sin novedad».",
+    }
+
+
 def agenda(fecha: date_t | None = None, limite: int = 4, liga_id: int | None = None,
            desde_ahora: bool = False, horas: int = 12,
            incluir_descartados: bool = False) -> dict:

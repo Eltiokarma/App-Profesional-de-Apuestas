@@ -2034,6 +2034,20 @@ def cowork_pendientes(limite: int = Query(default=50, ge=1, le=200)):
     return cowork.pendientes(limite)
 
 
+@app.get(API + "/analisis/cowork/latido")
+def cowork_latido(horas: int = Query(default=36, ge=1, le=336)):
+    """¿Está corriendo el pipeline, o lleva dos días muerto y nadie se enteró?
+
+    Una tubería automática sin vigilancia no falla con ruido: falla en silencio.
+    Esto contesta de una sola llamada las cuatro señales que delatan la caída
+    —nada depositado, partidos de la agenda de ayer sin parte, veredictos
+    vencidos, onces sin cerrar— y trata el SILENCIO como fallo: cero partes en
+    la ventana es rojo, no «sin novedad».
+    """
+    from backend.analisis import parte as cowork
+    return cowork.latido(horas)
+
+
 @app.post(API + "/analisis/cowork")
 def cowork_depositar(payload: dict):
     """Deposita el parte de un partido (idempotente por fixtureId).

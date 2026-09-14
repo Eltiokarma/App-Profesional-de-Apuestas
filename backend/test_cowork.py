@@ -206,6 +206,33 @@ def main():
           any("Equipo Inventado" in d for d in r.json()["discrepancias"]), r.json().get("discrepancias"))
     check("re-depositar es actualizar, no duplicar", r.json()["estado"] == "actualizado")
 
+    # ── EL LATIDO: QUE EL SILENCIO SE VEA ───────────────────────────────────
+    # Una tubería automática sin vigilancia no falla con ruido, falla callada.
+    lat_r = c.get(f"{A}/analisis/cowork/latido")
+    lat = lat_r.json()
+    # REGRESIÓN DE ORDEN DE RUTAS: `latido` es un segmento suelto y FastAPI
+    # resuelve por orden de declaración. Declarado después de `/{fixture_id}`,
+    # el parámetro de camino se lo come y devuelve 422 intentando parsear
+    # "latido" como entero. Pasó, y por eso este check nombra la causa.
+    check("`latido` no se lo come /{fixture_id}", lat_r.status_code == 200, lat_r.text[:160])
+    check("el latido responde con estado y motivo",
+          lat["estado"] in ("verde", "ambar", "rojo") and lat["porque"], lat.get("estado"))
+    check("cuenta los partes de la ventana y dice cuánto hace del último",
+          "depositadosEnLaVentana" in lat and "horasDesdeElUltimo" in lat, sorted(lat))
+    check("mide la COBERTURA contra lo que tocaba, no solo lo depositado",
+          "tocaban" in lat["coberturaDeAyer"], lat.get("coberturaDeAyer"))
+    check("lista los veredictos vencidos y los onces sin cerrar",
+          isinstance(lat["veredictosVencidos"], list) and isinstance(lat["sinOnceCerrado"], list),
+          sorted(lat))
+    check("y declara que el silencio cuenta como fallo",
+          "ROJO" in lat["nota"] and "silencio" in lat["nota"].lower(), lat.get("nota"))
+    # sobre una ventana de 1 hora, lo que se depositó hace rato ya no cuenta:
+    # es la prueba de que el silencio se detecta
+    corto = c.get(f"{A}/analisis/cowork/latido", params={"horas": 1}).json()
+    check("con la ventana corta, cero depósitos da ROJO y no «sin novedad»",
+          corto["estado"] == "rojo" if corto["depositadosEnLaVentana"] == 0 else True,
+          (corto["depositadosEnLaVentana"], corto["estado"]))
+
     # ── LOS INSUMOS DEL TDE SALEN DEL MOTOR, NO DEL MODELO ──────────────────
     # El propio skill lo manda: P1a es «input inviolable» y F2 es «dato del
     # motor o no es dato». Pedirle a Cowork que escriba un μ que ya tenemos

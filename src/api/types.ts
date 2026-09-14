@@ -1101,6 +1101,28 @@ export interface PendienteNoListadoDTO {
   porque: string
 }
 
+/** El latido del pipeline: ¿corrió, o lleva días muerto en silencio? */
+export interface LatidoCoworkDTO {
+  estado: 'verde' | 'ambar' | 'rojo'
+  /** Los motivos, en castellano. Con todo al día trae una sola línea. */
+  porque: string[]
+  ahora: string
+  ventanaHoras: number
+  depositadosEnLaVentana: number
+  horasDesdeElUltimo: number | null
+  ultimoParte: { fixtureId: number; partido: string; cuando: string } | null
+  /** La señal que delata que el batch no corrió: lo que TOCABA contra lo que hay. */
+  coberturaDeAyer: {
+    tocaban: number
+    conParte: number
+    faltaron: { fixtureId: number; partido: string; porque: string }[]
+  }
+  sinCerrar: number
+  veredictosVencidos: { fixtureId: number; partido: string; marcador: string }[]
+  sinOnceCerrado: { fixtureId: number; fecha: string; equipo_a: string; equipo_b: string }[]
+  nota: string
+}
+
 export interface VeredictoPendienteDTO {
   fixtureId: number
   fecha: string

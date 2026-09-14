@@ -3,6 +3,7 @@ import { CONFIG } from '../config'
 import { TEAMS } from '../data'
 import { refrescarLiga } from '../services/appdata'
 import type { Match, MatchStatus } from '../data/types'
+import { LatidoCowork } from '../components/LatidoCowork'
 import { TeamBadge } from '../components/TeamBadge'
 import { TeamSearch } from '../components/TeamSearch'
 import type { SadStore } from '../store'
@@ -130,6 +131,11 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
 
   return (
     <div>
+      {/* El latido del pipeline. Va acá, en la pantalla donde uno aterriza, y no
+          en una pestaña que hay que ir a buscar: un monitor que nadie mira no
+          es un monitor. Y no se pinta cuando todo está bien — un aviso que sale
+          siempre se deja de leer a la semana. */}
+      <LatidoCowork isMobile={isMobile} />
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ margin: 0, font: '800 22px var(--sans)', letterSpacing: '-.3px' }}>Partidos</h1>

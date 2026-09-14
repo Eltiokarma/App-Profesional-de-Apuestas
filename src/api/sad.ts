@@ -28,6 +28,7 @@ import type {
   PlantillaDTO,
   ParteCoworkDTO,
   PartePendienteDTO,
+  LatidoCoworkDTO,
   SobrePendientesDTO,
   PreflightEfeDTO,
   PrediccionDTO,
@@ -159,6 +160,8 @@ export const SadApi = {
     apiGet<AgendaCoworkDTO>('/analisis/cowork/agenda' + qs({ fecha, limite })),
 
   /** Partes de partidos ya jugados y sin veredicto (fase B). */
+  coworkLatido: (horas?: number) =>
+    apiGet<LatidoCoworkDTO>('/analisis/cowork/latido' + qs({ horas })),
   veredictosPendientes: (horas?: number, limite?: number) =>
     apiGet<SobrePendientesDTO>('/analisis/cowork/veredictos/pendientes' + qs({ horas, limite })),
 

@@ -675,6 +675,35 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ParteCowork' }
         '409': { description: 'No hay parte, o la ficha todavía no trae alineaciones' }
+  /analisis/cowork/latido:
+    get:
+      summary: ¿Está corriendo el pipeline, o lleva días muerto en silencio?
+      description: >
+        Una tubería automática sin vigilancia no falla con ruido: falla callada, y se
+        descubre semanas después cuando alguien va a mirar una métrica y no hay casos.
+        Esto contesta de una sola llamada las cuatro señales que delatan la caída: nada
+        depositado en la ventana, partidos de la agenda de ayer sin parte, veredictos
+        vencidos y onces sin cerrar.
+
+
+        **El silencio cuenta como fallo.** Cero partes en la ventana devuelve `rojo`, no
+        «sin novedad» — que es la diferencia entre un monitor y un adorno. `coberturaDeAyer`
+        es la señal que no se puede deducir mirando solo los partes: compara contra lo que
+        la agenda habría elegido.
+
+
+        No dispara nada ni corrige nada: solo mira y dice.
+      parameters:
+        - name: horas
+          in: query
+          description: 'ventana para contar depósitos; por debajo de ella, el silencio es rojo'
+          schema: { type: integer, default: 36, minimum: 1, maximum: 336 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LatidoCowork' }
   /analisis/cowork/tde/{fixtureId}:
     get:
       summary: Los insumos del Teorema del Echado que salen de NUESTRA base
@@ -2021,6 +2050,31 @@ components:
         analizar: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
         enEspera: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
         descartados: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
+        nota: { type: string }
+    LatidoCowork:
+      type: object
+      required: [estado, porque, depositadosEnLaVentana, coberturaDeAyer]
+      properties:
+        estado: { type: string, enum: [verde, ambar, rojo] }
+        porque:
+          type: array
+          description: 'los motivos en castellano; con todo al día, una sola línea'
+          items: { type: string }
+        ahora: { type: string }
+        ventanaHoras: { type: integer }
+        depositadosEnLaVentana: { type: integer }
+        horasDesdeElUltimo: { type: number, nullable: true }
+        ultimoParte: { type: object, nullable: true, additionalProperties: true }
+        coberturaDeAyer:
+          type: object
+          description: >
+            Lo que la agenda de ayer habría elegido contra lo que tiene parte. Es la señal
+            que delata que el batch no corrió y que NO se puede deducir mirando solo los
+            partes depositados.
+          additionalProperties: true
+        sinCerrar: { type: integer }
+        veredictosVencidos: { type: array, items: { type: object, additionalProperties: true } }
+        sinOnceCerrado: { type: array, items: { type: object, additionalProperties: true } }
         nota: { type: string }
     FichaTde:
       type: object
