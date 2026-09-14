@@ -22,7 +22,7 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parent.parent
 REGISTRO = RAIZ / "docs/skills/teorema-del-echado/assets/casos/registro.csv"
 # el estado vigente del registro, fijado a mano cuando se declara un alta
-SHA_ESPERADO = "14b35f6800e5d9093ae96e2ed843247c195ffdbe74623eeaaaa974ea5ee6f30c"
+SHA_ESPERADO = "5f1744b9387312963bd48d20e295b7fcf1786a24c7337a49cdec8d47dc3314b0"
 
 # las clases que el skill EXCLUYE de toda métrica de frecuencia
 CLASES_FUERA = ("rama_abandonada",)
@@ -148,6 +148,29 @@ def main() -> int:
         print(f"  ⚠ positivos BLOQUEADOS, no expresables en el esquema vigente: {viejos}")
         print("    → no son comparables con las filas nuevas: positivos en esquema 6 = "
               f"{len(pos) - len(viejos)}")
+
+    # ¿LOS BLOQUES SON PROMEDIOS POSIBLES DE LA RÚBRICA? Cada indicador vale
+    # 0/0.5/1, así que un bloque solo puede valer (m/2)/k. Un valor que no
+    # encaja con ningún denominador no se puntuó con la rúbrica de indicadores
+    # — se puntuó con una escala continua, y entonces no hay nada que
+    # reexpresar. Es lo que pasa con TDE-001…006.
+    def _formable(v, nmax, tol=0.006):
+        return any(abs((m_ / 2) / k - v) <= tol
+                   for k in range(1, nmax + 1) for m_ in range(0, 2 * k + 1))
+
+    pre = []
+    for f in filas:
+        vals = [(l, num(f[l]), nm) for l, nm in (("F", 4), ("C", 3), ("P", 6), ("S", 3))]
+        malos = [l for l, v, nm in vals if v is not None and not _formable(v, nm)]
+        if malos:
+            pre.append((f["id"].strip(), malos))
+    if pre:
+        print()
+        print(f"  anteriores a la rúbrica de indicadores: {len(pre)} filas")
+        for i, malos in pre:
+            print(f"    {i}: bloques no formables → {', '.join(malos)}")
+        print("    → se puntuaron con escala continua por bloque; no hay indicadores "
+              "que reexpresar, así que NO son reexpresables al esquema 6")
 
     # BRIER Y SU LÍNEA DE BASE. Un Brier suelto no dice nada: hay que compararlo
     # con lo que saca predecir SIEMPRE la tasa base. Si el modelo no le gana a

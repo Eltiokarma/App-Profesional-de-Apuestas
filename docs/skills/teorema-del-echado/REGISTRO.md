@@ -133,3 +133,64 @@ versión que introdujo la división**, y nada dice si se puntuaron antes o
 después de aplicarla. Para esas tres no hay ni argumento indirecto.
 
 Esa cronología es **inferencia, no evidencia**, y no se escribe en el dato.
+
+
+## TDE-005 no es reexpresable, y no por falta de información
+
+La pregunta «¿se puntuó sobre 4 o sobre 5 indicadores?» **está mal formulada
+para esa fila**. La aritmética lo decide sin necesidad de ningún documento.
+
+Cada indicador vale 0, 0.5 o 1, así que la suma de k indicadores es un múltiplo
+de 0.5 y el bloque solo puede valer `(m/2)/k`. Con eso, el bloque P de cada
+fila vieja:
+
+| fila | P | ¿formable? |
+|---|---|---|
+| TDE-001 | 0.40 | sí (k=5) |
+| TDE-002 | 0.70 | sí (k=5) |
+| TDE-003 | 0.85 | **imposible con cualquier denominador** |
+| TDE-004 | 0.55 | **imposible** |
+| **TDE-005** | **0.55** | **imposible** |
+| TDE-006 | 0.75 | sí (k=2, 4 o 6) |
+| TDE-007 | 0.25 | sí |
+| TDE-008 | 0.63 | sí (k=4) |
+| TDE-009 | 0.75 | sí |
+
+Y no es solo P. **TDE-001 a 006 tienen bloques `F`, `C` o `S` que tampoco son
+formables** (F se promedia sobre 4 → múltiplos de 0.125, y ahí hay 0.70, 0.80,
+0.60, 0.55; C sobre 3 → múltiplos de 1/6, y hay 0.15, 0.30, 0.35, 0.85). De
+TDE-007 en adelante todas las filas son formables.
+
+**Conclusión: las seis primeras se puntuaron con una escala continua por bloque,
+no promediando una rúbrica de indicadores.** No se perdió la información de con
+qué esquema se puntuó P: **no hubo esquema de P**. No hay `P1a…P4` que
+reexpresar, y por eso TDE-005 no es reexpresable al esquema de 6 ni hoy ni
+nunca.
+
+### Lo que esto NO autoriza
+
+Volver a puntuar el partido hoy. TDE-005 está cerrado con `se_echo = si`:
+puntuar `P1b` (coste percibido de perder), `P2` (D3, respuesta a la adversidad)
+o `P4` sabiendo que el equipo se echó **es hindsight**, y la fila resultante
+sería `post_resultado` — excluida de toda métrica el día que entrara. Sería
+producir trabajo para obtener una fila que ninguna métrica puede mirar, que es
+exactamente el argumento por el que no se reconstruyen las perdidas.
+
+Tampoco lo autoriza traer el partido de la base: el dato que falta **no es del
+partido**, es de cómo alguien puntuó en agosto de 2026. Ninguna fuente externa
+lo contiene.
+
+### La salida real es de rúbrica, no de datos
+
+La condición (c) dice hoy *«todos los positivos expresados en el esquema
+vigente»*. Con una fila estructuralmente inexpresable, eso equivale a **nunca**.
+La salida honesta es cambiar la condición, no el dato:
+
+> (c) todos los positivos **computables** expresados en el esquema vigente. Un
+> positivo anterior a la rúbrica de indicadores no se reexpresa ni se
+> reconstruye: se marca `pre_rubrica` y **queda fuera del conteo de (a)**, que
+> pasa a exigir N ≥ 5 positivos ciegos **en el esquema vigente**.
+
+Así el semáforo puede levantarse algún día con cinco positivos limpios, en vez
+de quedar bloqueado para siempre por una fila de 2026 que nadie puede arreglar.
+Es decisión del autor del skill.
