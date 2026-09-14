@@ -969,6 +969,44 @@ export interface TdeParte {
   disciplina43?: boolean
   vias?: { nombre: string; indice: number; ventana: string; detalle: string }[]
   falsador?: string
+  /** Los 0/0.5/1 que mandó quien analiza. Si llegan, el índice lo calcula el backend. */
+  indicadores?: Record<string, number>
+  /** El índice CALCULADO, con sus compuertas declaradas. Ver backend/analisis/tde.py. */
+  calculado?: IndiceTde
+  /** Lo que llegó escrito, para poder contrastarlo con la cuenta. */
+  declarado?: { ie?: number | null; ise?: number | null }
+  /** Diferencias entre lo declarado y lo calculado. Vacío es lo normal. */
+  discrepancia?: string[]
+}
+
+export interface IndiceTde {
+  sinDato?: boolean
+  porque?: string
+  ie?: number
+  ise?: number | null
+  /** Promedio de cada bloque DESPUÉS de compuertas y reglas de piso. */
+  bloques?: Record<string, number>
+  /** El mismo promedio ANTES: con los dos se ve qué hizo cada compuerta. */
+  bloquesCrudos?: Record<string, number | null>
+  /** Tramo ordinal. NO es probabilidad: esa tabla está suspendida. */
+  bandaOrdinal?: { tramo: string; nota: string }
+  bandaOrdinalIse?: { tramo: string; nota: string }
+  compuertasOperadas?: string[]
+  /** Lo que el registro observó de verdad, para que nadie lea el índice como frecuencia. */
+  calibracion?: {
+    filtro: string
+    casosComputables: number
+    seEcharon: number
+    tasaObservada: number
+    pMediaDeclarada?: number
+    nota: string
+  }
+  tablasSuspendidas?: { que: string; porque: string; seReactivanCon: string }
+  riesgo?: { via?: string; maximo?: number; regla: string; dual?: string; dosVentanas?: string }
+  iseNota?: string
+  notaNivel?: string
+  formula?: string
+  esquemaP?: string
 }
 
 /** El cierre del caso 12 h después (fase B de docs/APRENDIZAJE.md). */

@@ -392,8 +392,29 @@ function Indice({ etiqueta, valor, nivel, nota }: { etiqueta: string; valor: num
 
 /** Teorema del Echado: los dos índices opuestos con su ventana y su causa. */
 function PanelTde({ tde, nombreDe }: { tde: TdeParte; nombreDe: (l: 'a' | 'b') => string }) {
+  const c = tde.calculado
+  const cal = c?.calibracion
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* LA ADVERTENCIA VA PRIMERO, NO EN UNA NOTA AL PIE. Un IE de 5.0 leído
+          solo se entiende como «riesgo medio-alto, más o menos la mitad de las
+          veces», y lo observado es 12.5%. La escala está declarada
+          sobreestimada por el propio skill y medida acá: si el aviso no está
+          antes que el número, el número gana. */}
+      {cal && (
+        <section style={{ padding: '12px 15px', borderRadius: 13, background: 'var(--mark-soft)', border: '1px solid color-mix(in oklch,var(--mark),transparent 55%)' }}>
+          <div style={{ font: '700 9.5px var(--mono)', color: 'var(--mark)', letterSpacing: '.5px', marginBottom: 5 }}>
+            ESCALA SOBREESTIMADA · el índice NO es una frecuencia
+          </div>
+          <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', marginBottom: 6 }}>{cal.nota}</div>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', font: '600 10.5px var(--mono)', color: 'var(--t2)' }}>
+            {cal.pMediaDeclarada !== undefined && <span>declarado {cal.pMediaDeclarada}%</span>}
+            <span>observado {cal.tasaObservada}%</span>
+            <span>n = {cal.casosComputables} · {cal.seEcharon} echada{cal.seEcharon === 1 ? '' : 's'}</span>
+          </div>
+          <div style={{ font: '500 10px var(--sans)', color: 'var(--t3)', marginTop: 5 }}>{cal.filtro}</div>
+        </section>
+      )}
       <section style={{ padding: '14px 16px', borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', marginBottom: 11 }}>
           <span style={{ font: '700 10px var(--mono)', color: 'var(--accent)', letterSpacing: '.6px', textTransform: 'uppercase' }}>Teorema del Echado</span>
@@ -405,8 +426,10 @@ function PanelTde({ tde, nombreDe }: { tde: TdeParte; nombreDe: (l: 'a' | 'b') =
           )}
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 11 }}>
-          <Indice etiqueta="IE · ECHADA" valor={tde.ie ?? 0} nivel={tde.ieNivel} nota="repliegue sin control" />
-          <Indice etiqueta="ISE · SOBREEXPOSICIÓN" valor={tde.ise ?? 0} nivel={tde.iseNivel} nota="no replegar a tiempo" />
+          <Indice etiqueta="IE · ECHADA" valor={tde.ie ?? 0} nivel={tde.ieNivel}
+            nota={c?.bandaOrdinal ? `tramo ${c.bandaOrdinal.tramo} · sin probabilidad` : 'repliegue sin control'} />
+          <Indice etiqueta="ISE · SOBREEXPOSICIÓN" valor={tde.ise ?? 0} nivel={tde.iseNivel}
+            nota={c?.bandaOrdinalIse ? `tramo ${c.bandaOrdinalIse.tramo} · sin probabilidad` : 'no replegar a tiempo'} />
           {tde.ventana && (
             <div style={{ flex: 1, minWidth: 120, padding: '11px 13px', borderRadius: 11, background: 'var(--accent-soft)', textAlign: 'center' }}>
               <div style={{ font: '700 9.5px var(--mono)', color: 'var(--accent)', letterSpacing: '.5px' }}>VENTANA</div>
@@ -436,6 +459,89 @@ function PanelTde({ tde, nombreDe }: { tde: TdeParte; nombreDe: (l: 'a' | 'b') =
           </div>
         )}
       </section>
+
+      {/* UN ÍNDICE MAL SUMADO QUE NADIE COMPARA ES UNA LECTURA EQUIVOCADA
+          DURANTE MESES. Si llegaron los indicadores, el número lo pone la
+          aritmética y lo que llegó escrito se muestra al lado. */}
+      {(tde.discrepancia ?? []).length > 0 && (
+        <section style={{ padding: '11px 15px', borderRadius: 13, background: 'var(--down-soft)', border: '1px solid color-mix(in oklch,var(--down),transparent 55%)' }}>
+          <div style={{ font: '700 9.5px var(--mono)', color: 'var(--down)', letterSpacing: '.5px', marginBottom: 4 }}>
+            EL ÍNDICE QUE LLEGÓ NO COINCIDE CON LA CUENTA
+          </div>
+          {tde.discrepancia!.map((d, i) => (
+            <div key={i} style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{d}</div>
+          ))}
+          <div style={{ font: '500 10px var(--sans)', color: 'var(--t3)', marginTop: 4 }}>manda el calculado</div>
+        </section>
+      )}
+
+      {c && !c.sinDato && (
+        <section style={{ padding: '14px 16px', borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+          <div style={{ font: '700 10px var(--mono)', color: 'var(--t3)', letterSpacing: '.6px', marginBottom: 10 }}>
+            CÓMO SE FORMÓ EL ÍNDICE
+          </div>
+          {c.bloques && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+              {Object.entries(c.bloques).map(([l, v]) => {
+                const crudo = c.bloquesCrudos?.[l]
+                const movido = crudo !== null && crudo !== undefined && Math.abs(crudo - v) > 0.001
+                return (
+                  <div key={l} style={{ padding: '8px 11px', borderRadius: 10, background: movido ? 'var(--mark-soft)' : 'var(--bg3)', minWidth: 76 }}>
+                    <div style={{ font: '700 9.5px var(--mono)', color: movido ? 'var(--mark)' : 'var(--t3)' }}>BLOQUE {l}</div>
+                    <div style={{ font: '700 15px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>{v.toFixed(3)}</div>
+                    {movido && (
+                      <div style={{ font: '500 9.5px var(--mono)', color: 'var(--t3)' }}>crudo {crudo!.toFixed(3)}</div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+          {/* el skill obliga a declarar las compuertas AUNQUE no muevan el número */}
+          {(c.compuertasOperadas ?? []).length > 0 && (
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.4px', marginBottom: 4 }}>COMPUERTAS OPERADAS</div>
+              {c.compuertasOperadas!.map((x, i) => (
+                <div key={i} style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', paddingLeft: 10, borderLeft: '2px solid var(--mark)', marginBottom: 3 }}>{x}</div>
+              ))}
+            </div>
+          )}
+          {c.riesgo?.regla && (
+            <div style={{ font: '500 11px var(--sans)', color: 'var(--t2)', marginBottom: 4 }}>
+              {c.riesgo.via && <b style={{ color: 'var(--t1)' }}>vía de mayor riesgo: {c.riesgo.via} · </b>}
+              {c.riesgo.regla}
+            </div>
+          )}
+          {c.riesgo?.dual && <div style={{ font: '500 11px var(--sans)', color: 'var(--mark)' }}>{c.riesgo.dual}</div>}
+          {c.riesgo?.dosVentanas && <div style={{ font: '500 11px var(--sans)', color: 'var(--mark)' }}>{c.riesgo.dosVentanas}</div>}
+          {c.iseNota && <div style={{ font: '500 11px var(--sans)', color: 'var(--t3)' }}>{c.iseNota}</div>}
+          {c.formula && (
+            <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginTop: 8 }}>
+              {c.formula} · bloque P sobre {c.esquemaP}
+            </div>
+          )}
+        </section>
+      )}
+
+      {c?.sinDato && (
+        <section style={{ padding: '12px 15px', borderRadius: 13, background: 'var(--bg3)' }}>
+          <span style={{ font: '700 9.5px var(--mono)', color: 'var(--t3)' }}>SIN ÍNDICE · </span>
+          <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{c.porque}</span>
+        </section>
+      )}
+
+      {c?.tablasSuspendidas && (
+        <section style={{ padding: '12px 15px', borderRadius: 13, background: 'var(--bg3)' }}>
+          <div style={{ font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px', marginBottom: 4 }}>
+            TABLAS DE PROBABILIDAD SUSPENDIDAS
+          </div>
+          <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{c.tablasSuspendidas.que}</div>
+          <div style={{ font: '500 11px var(--sans)', color: 'var(--t2)', marginTop: 4 }}>{c.tablasSuspendidas.porque}</div>
+          <div style={{ font: '500 10px var(--sans)', color: 'var(--t3)', marginTop: 4 }}>
+            Se reactivan con: {c.tablasSuspendidas.seReactivanCon}
+          </div>
+        </section>
+      )}
     </div>
   )
 }
@@ -623,7 +729,13 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
   const nombreDe = (l: 'a' | 'b') => (l === 'a' ? parte.partido.equipoA : parte.partido.equipoB)
   const p = parte.pronostico
   const ls = parte.lecturaSad
-  const conTde = !!(parte.tde && (parte.tde.tipologia || parte.tde.ie || parte.tde.ise || parte.tde.vias?.length))
+  // OJO con esta condición: si el parte trae SOLO los indicadores —que es la
+  // forma preferida, porque entonces el índice lo calcula el backend— y el
+  // bloque sale `sinDato` (por ejemplo, F2 sin salida del motor), no hay `ie`
+  // que mirar y la pestaña desaparecería con el TDE adentro.
+  const conTde = !!(parte.tde && (parte.tde.tipologia || parte.tde.ie || parte.tde.ise
+    || parte.tde.vias?.length || parte.tde.calculado
+    || Object.keys(parte.tde.indicadores ?? {}).length))
   const tabs: { k: Tab; label: string }[] = [
     { k: 'bloques', label: 'Bloques EFE' },
     { k: 'f', label: pendienteXi ? 'Bloque F · congelado' : 'Bloque F' },
