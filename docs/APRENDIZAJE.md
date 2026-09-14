@@ -180,6 +180,44 @@ parte del método que menos se audita sola.
 > primer cierre se declaró `false` leyendo el campo como "¿acertó el
 > falsador?", que era la lectura que la doc de entonces permitía.
 
+### El filtro de exclusión va ANTES de cualquier frecuencia
+
+Una métrica de frecuencia que no filtra su población no es una métrica
+optimista: es una métrica falsa. El TDE lo aprendió caro y quedó como regla del
+proyecto.
+
+La primera calibración del IE que escribí promedió los 21 casos ciegos y
+cerrados del registro **sin excluir los `rama_abandonada`**, que las
+disciplinas 24, 27 y 31 del skill sacan de toda métrica de frecuencia. Seis de
+los 21 lo eran. Y uno de los dos «positivos» era TDE-030, cuya propia lección
+en el CSV dice *«Excluida de toda metrica de frecuencia»* y cuyo `se_echo` es
+*«repliegue voluntario sostenido desde el 25»* — que por la definición del
+propio skill **no es una echada** sino un bloque bajo ejecutado.
+
+Con el filtro puesto, el resultado no se suaviza, se endurece:
+
+| | sin filtrar (mal) | filtrado (bien) |
+|---|---|---|
+| n | 21 | **15** |
+| positivos | 2 | **1** |
+| banda 3-5 | 8% | 1 de 10 |
+| banda 5-7 | 14% | **0 de 3** |
+| banda 7-8.5 | 0% (n=2) | **0 de 2** |
+
+La conclusión cambia de «casi plana» a **nula o invertida**: el único positivo
+cae en la banda más baja. Y el remate: TDE-005 está medido con el esquema
+viejo de 4 indicadores, así que **en el esquema vigente de 6 no hay ni un
+positivo ciego**. Un semáforo sobre eso no congelaría ruido — congelaría una
+escala calibrada con cero observaciones.
+
+Por eso el número no se escribe a mano: `scripts/calibrar-tde.py` lo recalcula
+desde el registro, aplica el filtro, avisa si una columna tiene varias
+redacciones para el mismo valor, y **falla si el backend se desalinea**.
+
+> **Regla.** Toda frecuencia que salga del registro filtra primero por
+> `seleccion` y por `clase_caso`, y **declara el filtro que aplicó** junto al
+> número. Un porcentaje sin su población al lado no se publica.
+
 Lo que sí se comprueba solo es **la ventana del TDE**, y por una razón
 concreta: `"75-90'"` son dos números y un gol tiene un minuto. Se cuentan solo
 los goles CONTRA el equipo evaluado —la echada se observa en lo que recibe— y

@@ -308,19 +308,50 @@ INDICADORES_ISE = ("SOB1", "SOB2", "SOB3")
 BANDAS_ECHADA = ((3.0, 10, 25), (5.0, 25, 45), (7.0, 45, 70), (99.0, 70, 90))
 BANDAS_SOBRE = ((3.0, 10, 25), (5.0, 25, 45), (7.0, 45, 70), (99.0, 70, 90))
 
-# Lo que el registro observó de verdad, en casos CIEGOS y PRE cerrados. Viaja
-# con el índice a propósito: el propio skill declara su escala sobreestimada
-# (disciplina 20) y un 5.0 leído como «55%» es el error que esto evita.
+# Lo que el registro observó de verdad. Viaja con el índice a propósito: el
+# propio skill declara su escala sobreestimada (disciplina 20) y un 5.0 leído
+# como «55%» es el error que esto evita.
+#
+# SE CALCULÓ MAL UNA VEZ. La primera versión promedió los 21 casos ciegos y
+# cerrados SIN excluir los `rama_abandonada`, que las disciplinas 24, 27 y 31
+# sacan de toda métrica de frecuencia. Uno de los dos «positivos» era TDE-030,
+# cuya propia lección dice «Excluida de toda metrica de frecuencia» y cuyo
+# se_echo es «repliegue voluntario sostenido desde el 25» — que por la
+# definición del skill no es una echada sino un bloque bajo ejecutado. Con el
+# filtro puesto el resultado no se suaviza: se endurece.
+#
+# Se recalcula con `python3 scripts/calibrar-tde.py`, que además compara contra
+# estos números y falla si se desalinean. Un número de calibración escrito a
+# mano se vuelve a equivocar.
 CALIBRACION = {
-    "casosCiegosCerrados": 21,
-    "seEcharon": 2,
-    "tasaObservada": 9.5,
-    "ieMedio": 4.96,
-    "porBanda": {"3-5": {"n": 12, "observado": 8}, "5-7": {"n": 7, "observado": 14},
-                 "7-8.5": {"n": 2, "observado": 0}},
-    "nota": "la escala del IE está declarada SOBREESTIMADA por el propio skill: "
-            "IE medio 4.96 contra 9.5% de echadas observadas. La banda que el IE "
-            "anuncia NO es la frecuencia con que pasó.",
+    "filtro": "ciega + PRE + cerrado, EXCLUYENDO clase_caso=rama_abandonada "
+              "(disciplinas 24, 27 y 31)",
+    "casosComputables": 15,
+    "seEcharon": 1,
+    "tasaObservada": 6.7,
+    "ieMedio": 4.90,
+    "porBanda": {"3-5": {"n": 10, "positivos": 1}, "5-7": {"n": 3, "positivos": 0},
+                 "7-8.5": {"n": 2, "positivos": 0}},
+    "positivosEnEsquemaVigente": 0,
+    "nota": "la escala del IE NO ordena el riesgo hoy: el único positivo ciego computable "
+            "(TDE-005) cae en la banda MÁS BAJA y las dos bandas altas tienen cero. Y está "
+            "medido con el esquema viejo de 4 indicadores, así que en el esquema vigente de "
+            "6 no hay ni un positivo. La banda que el IE anuncia no es la frecuencia con "
+            "que pasó.",
+    "registro": "docs/skills/teorema-del-echado/assets/casos/registro.csv, 33 filas "
+                "(TDE-001…046). OJO: es una copia y el skill vivo va más adelante.",
+}
+
+# Cuándo se puede poner semáforo. Las tres a la vez, y la (c) es la que hace el
+# trabajo: sin ella, dentro de tres casos alguien cumple (a) y (b) mezclando
+# reglas de puntuación distintas.
+ALTA_DEL_SEMAFORO = {
+    "a": "N ≥ 5 echadas observadas con selección ciega (el mismo umbral binding que "
+         "gobierna la revisión de pesos, CALIBRACION.md y disciplina 22)",
+    "b": "al menos 2 de esos positivos FUERA de la banda 3-5: un semáforo afirma "
+         "ordenamiento, y un ordenamiento sin positivos arriba no es testeable",
+    "c": "todos los positivos expresados en el esquema vigente de 6 indicadores",
+    "hoy": "1 positivo ciego computable, en esquema de 4 → (a) no, (b) no, (c) no",
 }
 
 
@@ -377,10 +408,19 @@ def indice(ind: dict) -> dict:
     if ind.get("C3") == 1 and bloques["C"] is not None and bloques["C"] < 0.60:
         bloques["C"] = 0.60
         operadas.append("tope del bloque C (C3=1 → C ≥ 0.60)")
-    # COMPUERTA 1 — sin protector no hay echada psicológica
+    # COMPUERTA 1 — sin protector no hay echada psicológica. El tope se aplica
+    # DESPUÉS del promedio, nunca antes: si no, el 0 de P1a entra dos veces.
     if ind.get("P1a") == 0 and bloques["P"] is not None and bloques["P"] > 0.5:
         bloques["P"] = 0.5
-        operadas.append("compuerta 1 (P1a=0 → bloque P topado en 0.5)")
+        operadas.append("compuerta 1 (P1a=0 → bloque P topado en 0.5, después del promedio)")
+    # DENOMINADOR VARIABLE DEL BLOQUE P. `P1a` ausente no es lo mismo que `P1a`
+    # en 0: sin salida del motor se declara sin dato y P se promedia sobre
+    # CINCO. `_promedio` ya lo hace —solo cuenta los presentes— pero el caso se
+    # declara, porque dividir cinco términos entre seis es el error silencioso
+    # que esta regla existe para evitar.
+    if ind.get("P1a") is None and usados["P"]:
+        operadas.append(f"P1a sin dato del motor: bloque P promediado sobre "
+                        f"{len(usados['P'])}, no sobre {len(INDICADORES['P'])}")
 
     faltan = [l for l in ("F", "C", "P", "S") if bloques[l] is None]
     if faltan:
@@ -423,6 +463,8 @@ def indice(ind: dict) -> dict:
                                             "el skill pide declarar las DOS ventanas")
     # los umbrales de color NO se inventan: ver docs/APRENDIZAJE.md
     out["nivel"] = ""
-    out["notaNivel"] = ("no hay umbrales verde/ámbar/rojo: el skill no los define y con "
-                        "21 casos ciegos cerrados y 2 echadas no hay con qué calibrarlos")
+    out["notaNivel"] = ("el IE no lleva semáforo: un color afirma que la escala ORDENA el "
+                        "riesgo, y hoy no lo hace — el único positivo ciego computable cae "
+                        "en la banda más baja y las dos altas tienen cero")
+    out["altaDelSemaforo"] = ALTA_DEL_SEMAFORO
     return out

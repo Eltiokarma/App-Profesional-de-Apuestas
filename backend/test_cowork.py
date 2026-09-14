@@ -296,10 +296,33 @@ def main():
 
     # no se inventan umbrales de color
     check("no hay nivel verde/ámbar/rojo y se explica por qué",
-          r["nivel"] == "" and "calibrar" in r["notaNivel"], r.get("notaNivel"))
-    check("y la calibración observada viaja con el índice",
-          r["calibracion"]["tasaObservada"] == 9.5 and r["calibracion"]["casosCiegosCerrados"] == 21,
-          r["calibracion"])
+          r["nivel"] == "" and "ORDENA" in r["notaNivel"], r.get("notaNivel"))
+    # LA CALIBRACIÓN EXCLUYE LO QUE EL SKILL MANDA EXCLUIR. La primera versión
+    # promedió los 21 ciegos sin sacar los `rama_abandonada` (disciplinas 24, 27
+    # y 31) y uno de los dos «positivos» era TDE-030, que su propia lección
+    # declara fuera de toda métrica de frecuencia.
+    cal = r["calibracion"]
+    check("la calibración declara el filtro que aplicó",
+          "rama_abandonada" in cal["filtro"], cal.get("filtro"))
+    check("y usa los computables, no todos los ciegos",
+          cal["casosComputables"] == 15 and cal["seEcharon"] == 1, cal)
+    check("el único positivo cae en la banda MÁS BAJA: la escala no ordena",
+          cal["porBanda"]["3-5"]["positivos"] == 1
+          and cal["porBanda"]["5-7"]["positivos"] == 0
+          and cal["porBanda"]["7-8.5"]["positivos"] == 0, cal["porBanda"])
+    check("y en el esquema vigente de 6 no hay ni un positivo",
+          cal["positivosEnEsquemaVigente"] == 0, cal)
+    check("el alta del semáforo pide las tres condiciones, no solo el N",
+          set("abc") <= set(r["altaDelSemaforo"]) and "esquema vigente" in r["altaDelSemaforo"]["c"],
+          r.get("altaDelSemaforo"))
+
+    # denominador VARIABLE del bloque P: P1a sin dato promedia sobre cinco
+    sin_p1a = {k: v for k, v in todos.items() if k != "P1a"}
+    rp = tdemod.indice(sin_p1a)
+    check("P1a sin dato promedia el bloque P sobre 5, no sobre 6",
+          len(rp["indicadoresUsados"]["P"]) == 5, rp["indicadoresUsados"]["P"])
+    check("y el denominador variable se DECLARA",
+          any("sobre 5" in x for x in rp["compuertasOperadas"]), rp["compuertasOperadas"])
 
     # de punta a punta: los indicadores entran por el parte y el índice sale calculado
     con_ind = _parte(sin_ficha)
