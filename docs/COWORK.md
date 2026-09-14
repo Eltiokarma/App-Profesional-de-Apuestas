@@ -363,6 +363,35 @@ que alguien acaba de escribir.
 > nunca sobre uno que ya tiene un parte bueno. Si igual pasa, el `aviso` te lo
 > dice y vuelves a depositar completo.
 
+### El contrato se lee, no se adivina
+
+`GET /analisis/cowork/contrato` devuelve la forma del cuerpo del POST: las
+claves de cada nivel, los indicadores del TDE por bloque, los ids de documento
+que la pantalla titula sola, y lo que NO hay que mandar porque se calcula.
+
+Sale de **las mismas constantes que validan el depósito**, así que no puede
+desincronizarse del código: un campo nuevo aparece ahí con solo agregarlo al
+validador. `/openapi.json` está apagado en despliegue —y con razón, expone
+también lo que gasta dinero—, pero dejar a quien deposita adivinando la forma
+garantiza depósitos a medias.
+
+### El `tde` es UNO, plano, y las otras formas se delatan
+
+El parte guarda **un solo bloque TDE**: el del equipo que administra el
+resultado. Tres formas que a cualquiera se le ocurren primero —una lista, un
+`{a, b}` como los equipos, un string con la tipología— se guardaban como `{}`
+**sin un solo rechazo**: el trabajo se perdía y el recibo decía que todo estaba
+bien. Ahora cada una se delata con la forma buena al lado.
+
+Lo mismo con `vias`: con strings adentro reventaba por 500, y **un 500 en un
+batch desatendido pierde el parte entero sin decir por qué**. Y `equipo` es el
+LADO (`"a"` / `"b"`), nunca el nombre del club — mandarlo como «Tigres FC» se
+guardaba vacío y con él se perdía de qué equipo era el índice.
+
+> **Límite conocido:** un parte = un TDE. Si querés el índice de los dos
+> equipos como bloques de primera clase, es cambio de contrato y de pantalla.
+> Por ahora el segundo va en `notas`, que es prosa y no se puede consultar.
+
 ### El once se cierra solo: no hay carrera de 30 minutos
 
 **Cerrar el bloque F no necesita al modelo.** Es cruzar dos listas de nombres y

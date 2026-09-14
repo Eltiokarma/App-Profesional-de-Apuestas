@@ -15,6 +15,8 @@ import tempfile
 
 fallos = 0
 
+from backend.analisis.parte import _CLAVES_PARTE as _CLAVES_ESPERADAS
+
 
 def check(nombre, cond, detalle=""):
     global fallos
@@ -205,6 +207,42 @@ def main():
     check("nombre que no casa → discrepancia declarada",
           any("Equipo Inventado" in d for d in r.json()["discrepancias"]), r.json().get("discrepancias"))
     check("re-depositar es actualizar, no duplicar", r.json()["estado"] == "actualizado")
+
+    # ── LO QUE SE TIRA SE DICE, TAMBIÉN EN EL TDE (3ª corrida real) ─────────
+    # Cowork probó tres formas de `tde` y las tres se guardaron como {} sin un
+    # solo rechazo; `vias` con strings adentro reventaba por 500. Un 500 en un
+    # batch desatendido pierde el parte entero y no dice por qué.
+    pel = {"fixtureId": sin_ficha, "equipos": {l: {"bloques": {"A": 3}} for l in ("a", "b")}}
+    for nombre, val, donde in (
+        ("tde como lista", [{"equipo": "a", "ie": 6}], "tde"),
+        ("tde partido por equipo", {"a": {"ie": 6}, "b": {"ie": 5}}, "tde"),
+        ("tde como string", "ECHADA-FIS", "tde"),
+        ("vias con strings", {"equipo": "a", "ie": 6, "vias": ["ECHADA"]}, "tde.vias[0]"),
+        ("vias como string suelto", {"equipo": "a", "ie": 6, "vias": "ECHADA"}, "tde.vias"),
+        ("equipo con el nombre del club", {"equipo": "Tigres FC", "ie": 6}, "tde.equipo"),
+    ):
+        r = c.post(f"{A}/analisis/cowork", json={**pel, "tde": val})
+        check(f"{nombre}: responde 200, no 500", r.status_code == 200, r.status_code)
+        rs = r.json().get("rechazos", []) if r.status_code == 200 else []
+        check(f"{nombre}: se DECLARA, no se traga",
+              any(x["donde"] == donde for x in rs), rs[:2])
+        check(f"{nombre}: y dice la forma buena",
+              any(x["donde"] == donde and x.get("esperado") for x in rs), rs[:2])
+    c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
+
+    # ── EL CONTRATO SE PUEDE LEER, NO SE ADIVINA ────────────────────────────
+    # `/openapi.json` está apagado en despliegue, así que Cowork reconstruyó la
+    # forma a golpe de recibo. Esto sale de las MISMAS constantes que validan.
+    ct = c.get(f"{A}/analisis/cowork/contrato").json()
+    check("el contrato lista las claves de la raíz",
+          set(ct["raiz"]) == _CLAVES_ESPERADAS, sorted(set(ct["raiz"]) ^ _CLAVES_ESPERADAS))
+    check("y avisa que `tde` NO se parte por equipo",
+          "NO una lista ni {a, b}" in ct["tde"]["forma"], ct["tde"]["forma"])
+    check("y publica los indicadores del TDE por bloque",
+          set("FCPS") <= set(ct["tde"]["indicadores"]) and "ISE" in ct["tde"]["indicadores"],
+          sorted(ct["tde"]["indicadores"]))
+    check("y los ids de documento que la pantalla titula sola",
+          "dtp" in ct["documentos"]["idsQueLaPantallaTitulaSola"], ct["documentos"])
 
     # ── EL ONCE SE CIERRA SOLO, SIN MODELO Y SIN RELOJ ──────────────────────
     # Seis partidos que arrancan juntos no son seis análisis contra el reloj:

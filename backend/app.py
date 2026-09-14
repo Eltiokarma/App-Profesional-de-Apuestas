@@ -2052,6 +2052,19 @@ def cowork_xi_auto(limite: int = Query(default=50, ge=1, le=200)):
     return cowork.cerrar_onces_pendientes(limite)
 
 
+@app.get(API + "/analisis/cowork/contrato")
+def cowork_contrato():
+    """La forma del cuerpo del POST, derivada de las constantes que validan.
+
+    `/openapi.json` está apagado en despliegue y con razón —expone también lo
+    que gasta dinero—, pero dejar al que deposita adivinando la forma garantiza
+    depósitos a medias. Esto sale de los mismos `_CLAVES_*` que rechazan, así
+    que no puede desincronizarse del código.
+    """
+    from backend.analisis import parte as cowork
+    return cowork.contrato()
+
+
 @app.get(API + "/analisis/cowork/latido")
 def cowork_latido(horas: int = Query(default=36, ge=1, le=336)):
     """¿Está corriendo el pipeline, o lleva dos días muerto y nadie se enteró?

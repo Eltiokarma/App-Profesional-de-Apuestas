@@ -236,6 +236,10 @@ _ECO_PARTE = {"partido", "estado", "creadoEn", "actualizadoEn", "xi", "veredicto
               "timeline", "rechazos", "perdido", "aviso", "entrada"}
 _ECO_EQUIPO = {"total", "maximoAlcanzable", "porcentaje", "clasificacion", "disponibilidad"}
 _ECO_JUGADOR = {"soloBaja"}
+# los indicadores del TDE, por bloque — para poder publicarlos en el contrato
+from backend.analisis.tde import INDICADORES as _IND_TDE, INDICADORES_ISE as _IND_ISE
+INDICADORES_TDE = {**_IND_TDE, "ISE": _IND_ISE}
+
 _CLAVES_VEREDICTO = {"seleccion", "modoEvaluacion", "mancha", "falsadorCumplido",
                      "porLado", "notas", "fixtureId"}
 
@@ -357,30 +361,74 @@ def _lectura_sad(x: dict) -> dict:
     }
 
 
-def _via_tde(v: dict) -> dict | None:
+def _via_tde(v, rechazos: list, donde: str) -> dict | None:
+    """Una vía del TDE. Tolera que no sea un objeto y lo DICE.
+
+    Antes esto hacía `v.get(...)` a ciegas: una vía mandada como string
+    —`["ECHADA", "SOB"]`, que es lo primero que a cualquiera se le ocurre—
+    reventaba con AttributeError y salía por 500. Un 500 en un batch
+    desatendido pierde el parte entero y no dice por qué.
+    """
+    if not isinstance(v, dict):
+        rechazos.append({"donde": donde, "porque": f"una vía tiene que ser un objeto, llegó {type(v).__name__}",
+                         "esperado": '{"nombre": "ECHADA", "indice": 6.4, "ventana": "60-75", "detalle": "…"}'})
+        return None
     nombre = _txt(v.get("nombre"))
     if not nombre:
+        rechazos.append({"donde": donde, "porque": "vía sin `nombre`",
+                         "esperado": "ECHADA / SOBREEXPOSICIÓN"})
         return None
     return {"nombre": nombre, "indice": _num(v.get("indice"), 1000),
             "ventana": _txt(v.get("ventana")), "detalle": _txt(v.get("detalle"))}
 
 
-def _tde(x: dict) -> dict:
+def _tde(x, rechazos: list) -> dict:
     """Teorema del Echado: los dos índices y su ventana.
 
     Los NIVELES (verde/ámbar/rojo) llegan del skill, no los inventa el backend:
     la escala del IE es suya y ponerle umbrales aquí sería duplicar —y con el
     tiempo desalinear— una tabla que vive en otro lado. Sin nivel, la pantalla
     pinta el número en neutro."""
+    # EL TDE ES UN OBJETO PLANO Y ÚNICO. Las formas que a cualquiera se le
+    # ocurren primero —una lista, un `{a, b}` como los equipos, un string con
+    # la tipología— se guardaban como `{}` SIN UN SOLO RECHAZO. El trabajo se
+    # perdía y el recibo decía que todo estaba bien. Ahora cada una se delata
+    # con la forma buena al lado.
     if not isinstance(x, dict):
+        rechazos.append({
+            "donde": "tde",
+            "porque": f"`tde` tiene que ser un objeto plano, llegó {type(x).__name__}",
+            "esperado": '{"equipo": "a", "indicadores": {...}, "tipologia": "…", "ventana": "…"}'})
         return {}
-    vias = [v for v in (_via_tde(y) for y in (x.get("vias") or [])) if v]
+    if set(x) & set(LADOS) and not (set(x) - set(LADOS)):
+        rechazos.append({
+            "donde": "tde",
+            "porque": "`tde` NO se parte por equipo como `equipos`: el parte guarda UN solo "
+                      "bloque, el del equipo que administra el resultado",
+            "esperado": 'un objeto plano con "equipo": "a" o "b" adentro. El otro equipo, '
+                        "por ahora, va en `notas`"})
+        return {}
+    vias_raw = x.get("vias")
+    if vias_raw is not None and not isinstance(vias_raw, list):
+        rechazos.append({"donde": "tde.vias", "porque": f"`vias` tiene que ser una lista, "
+                                                        f"llegó {type(vias_raw).__name__}",
+                         "esperado": '[{"nombre": "ECHADA", "indice": 6.4, …}]'})
+        vias_raw = []
+    vias = [v for v in (_via_tde(y, rechazos, f"tde.vias[{i}]")
+                        for i, y in enumerate(vias_raw or [])) if v]
     ind = x.get("indicadores") if isinstance(x.get("indicadores"), dict) else {}
     tiene = any([_txt(x.get("tipologia")), vias, ind,
                  x.get("ie") is not None, x.get("ise") is not None])
     if not tiene:
         return {}
+    # `equipo` es el LADO, no el nombre del club. Mandarlo como «Tigres FC» se
+    # guardaba vacío sin avisar, y con él se perdía de qué equipo era el índice
+    # —que es la mitad del sentido del TDE—.
     equipo = _txt(x.get("equipo")).lower()
+    if equipo and equipo not in LADOS:
+        rechazos.append({"donde": "tde.equipo",
+                         "porque": f"`equipo` es el lado, no el nombre del club: llegó {x.get('equipo')!r}",
+                         "esperado": '"a" (local) o "b" (visitante)'})
     return {
         # LOS INDICADORES MANDAN SOBRE EL ÍNDICE. Si llegan los 0/0.5/1, el IE y
         # el ISE los calcula el backend con sus compuertas: la cuenta se puede
@@ -521,7 +569,7 @@ def normalizar_parte(payload: dict) -> dict:
         "matchup": {},
         "pronostico": {},
         "lecturaSad": _lectura_sad(payload.get("lecturaSad") or payload.get("lectura_sad") or {}),
-        "tde": _tde(payload.get("tde") or {}),
+        "tde": _tde(payload.get("tde"), rechazos),
         "timelineEventos": [e for e in (_evento_tl(x) for x in (payload.get("timelineEventos") or [])) if e],
         "timelineNarrativa": _txt(payload.get("timelineNarrativa")),
         "cadena": {l: _txt(((payload.get("cadena") or {}).get(l) or {}).get("pronostico")
@@ -1406,6 +1454,65 @@ def _prioridad(liga: dict, etiquetas: set[str], pos_local: int, pos_visita: int)
             return 5, "partido con el líder"
         return 0, "europea sin top 6 ni líder"
     return 0, f"fuera del padrón de ligas cubiertas ({liga.get('nombre')})"
+
+
+def contrato() -> dict:
+    """La forma del cuerpo del POST, derivada de las MISMAS constantes que validan.
+
+    Cowork tuvo que reconstruir esta forma a golpe de recibo porque
+    `/openapi.json` está apagado en despliegue —y con razón: expone también lo
+    que gasta dinero—. Pero dejar al que deposita adivinando la forma es
+    garantizar depósitos a medias.
+
+    Sale de `_CLAVES_*`, no de un texto aparte: un campo nuevo aparece acá solo
+    con agregarlo al validador, así que esto NO se puede desincronizar del
+    código. Un contrato escrito a mano al lado del código siempre termina
+    mintiendo.
+    """
+    return {
+        "endpoint": "POST /api/v1/analisis/cowork",
+        "raiz": sorted(_CLAVES_PARTE),
+        "tambienSeAceptan": {
+            "porque": "son el eco de lo que devuelve el GET, para poder leer → modificar "
+                      "→ re-depositar sin desarmar nada. Se ignoran en silencio.",
+            "claves": sorted(_ECO_PARTE),
+        },
+        "equipos": {
+            "forma": '{"a": {...}, "b": {...}} — a = local, b = visitante',
+            "claves": sorted(_CLAVES_EQUIPO),
+            "jugador": sorted(_CLAVES_JUGADOR),
+            "fuera": sorted(_CLAVES_FUERA),
+            "bloques": {"letras": list(LETRAS), "maximos": MAX_BLOQUE, "pesos": PESO_BLOQUE,
+                        "nota": "el sub-score puede ir plano (3) o como objeto "
+                                '({"score": 3, "nota": "…"})'},
+        },
+        "tde": {
+            "forma": "UN objeto plano, NO una lista ni {a, b}: el parte guarda el bloque del "
+                     "equipo que administra el resultado",
+            "equipo": 'el LADO ("a" o "b"), nunca el nombre del club',
+            "indicadores": {k: list(v) for k, v in INDICADORES_TDE.items()},
+            "nota": "mandá `indicadores` en 0/0.5/1 y el backend calcula el IE, el ISE y las "
+                    "compuertas. NO mandes P(echada) ni riesgo_compuesto: están suspendidas",
+            "vias": '[{"nombre": "ECHADA", "indice": 6.4, "ventana": "60-75", "detalle": "…"}]',
+        },
+        "alertas": {"claves": sorted(_CLAVES_ALERTA),
+                    "equipo": list(_EQUIPOS_ALERTA)},
+        "documentos": {"forma": '[{"id": "…", "cuerpo": "markdown", "formato": "md|html|texto"}]',
+                       "idsQueLaPantallaTitulaSola": DOCUMENTOS},
+        "loQueNoSeManda": [
+            "total, porcentaje, clasificación — los calcula la app",
+            "ip, reducción por zona, ramas A/B, F3, F4 — salen de bloque_f.py",
+            "los nombres del partido — salen de nuestra base",
+            "ie / ise si mandás `indicadores` — se calculan y se delata la discrepancia",
+        ],
+        "elRecibo": {
+            "rechazos": "lo que NO se guardó, con el motivo y la forma esperada",
+            "faltan": "bloques ausentes y qué van a costar al cerrar el caso",
+            "perdido": "lo que este depósito borró de lo que ya había",
+        },
+        "nota": "esto sale de las mismas constantes que validan el depósito, así que no "
+                "puede desincronizarse del código.",
+    }
 
 
 def latido(horas: int = 36) -> dict:
