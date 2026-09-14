@@ -375,11 +375,18 @@ def _tde(x: dict) -> dict:
     if not isinstance(x, dict):
         return {}
     vias = [v for v in (_via_tde(y) for y in (x.get("vias") or [])) if v]
-    tiene = any([_txt(x.get("tipologia")), vias, x.get("ie") is not None, x.get("ise") is not None])
+    ind = x.get("indicadores") if isinstance(x.get("indicadores"), dict) else {}
+    tiene = any([_txt(x.get("tipologia")), vias, ind,
+                 x.get("ie") is not None, x.get("ise") is not None])
     if not tiene:
         return {}
     equipo = _txt(x.get("equipo")).lower()
     return {
+        # LOS INDICADORES MANDAN SOBRE EL ÍNDICE. Si llegan los 0/0.5/1, el IE y
+        # el ISE los calcula el backend con sus compuertas: la cuenta se puede
+        # equivocar y las compuertas se pueden olvidar, y las dos cosas pasaron
+        # en el registro. El `ie` suelto se conserva solo como lo que llegó.
+        "indicadores": {k: _num(v, 1) for k, v in ind.items() if v is not None},
         "ie": _num(x.get("ie"), 1000), "ieNivel": _sem(x.get("ieNivel")),
         "ise": _num(x.get("ise"), 1000), "iseNivel": _sem(x.get("iseNivel")),
         "equipo": equipo if equipo in LADOS else "",
@@ -844,6 +851,37 @@ def _guardar_cadena(fx, cadena: dict) -> tuple[list[str], list[str]]:
     return escritos, ignorados
 
 
+def _tde_calculado(tde: dict) -> dict:
+    """El TDE con su índice CALCULADO cuando llegaron los indicadores.
+
+    Igual que el bloque F y que los totales del EFE: si el dato de entrada está,
+    el número lo pone la aritmética. Lo que llegó escrito se conserva al lado en
+    `declarado`, y si no coincide se dice — un IE mal sumado que nadie compara
+    es una banda de probabilidad equivocada durante meses.
+    """
+    if not tde:
+        return {}
+    ind = tde.get("indicadores") or {}
+    if not ind:
+        return tde
+    from backend.analisis import tde as tdemod
+    calc = tdemod.indice(ind)
+    fuera = dict(tde)
+    fuera["calculado"] = calc
+    declarado = {"ie": tde.get("ie"), "ise": tde.get("ise")}
+    fuera["declarado"] = declarado
+    if not calc.get("sinDato"):
+        discrepa = []
+        for clave in ("ie", "ise"):
+            d, c = declarado.get(clave), calc.get(clave)
+            if d and c is not None and abs(float(d) - float(c)) > 0.1:
+                discrepa.append(f"{clave.upper()}: llegó {d} y la cuenta da {c}")
+        fuera["discrepancia"] = discrepa
+        # el número que manda es el calculado
+        fuera["ie"], fuera["ise"] = calc["ie"], calc.get("ise")
+    return fuera
+
+
 def dto(fixture_id: int) -> dict | None:
     """Todo lo que la pantalla necesita, con lo calculable ya calculado."""
     with _conectar() as con:
@@ -887,7 +925,7 @@ def dto(fixture_id: int) -> dict | None:
         "alertas": alertas,
         "matchup": parte["matchup"],
         "lecturaSad": parte.get("lecturaSad") or _lectura_sad({}),
-        "tde": parte.get("tde") or {},
+        "tde": _tde_calculado(parte.get("tde") or {}),
         "timeline": timeline,
         "pronostico": parte["pronostico"],
         "documentos": parte["documentos"],

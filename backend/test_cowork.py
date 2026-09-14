@@ -245,6 +245,73 @@ def main():
           tf["f1"]["a"].get("score") is not None or tf["f1"]["a"].get("porque"),
           tf["f1"]["a"])
 
+    # ── LA ARITMÉTICA DEL IE LA HACE EL BACKEND ─────────────────────────────
+    # La fórmula se verificó contra el registro del skill: reproduce 30 de 33
+    # casos. Lo que se calcula no se le pregunta al modelo.
+    from backend.analisis import tde as tdemod
+    todos = {k: 0.5 for k in ("F1", "F2", "F3", "F4", "C1", "C2", "C3",
+                              "P1a", "P1b", "P1c", "P2", "P3", "P4", "S1", "S2", "S3")}
+    r5 = tdemod.indice(todos)
+    check("con todos los indicadores en 0.5 el IE da 5.00", r5["ie"] == 5.0, r5.get("ie"))
+    check("y declara la fórmula y el esquema de P que usó",
+          "8.5" in r5["formula"] and "6 indicadores" in r5["esquemaP"], r5["esquemaP"])
+
+    # COMPUERTA 1: sin protector no hay echada psicológica
+    sin_prot = {**todos, "P1a": 0.0, "P1b": 1.0, "P1c": 1.0, "P2": 1.0, "P3": 1.0, "P4": 1.0}
+    r = tdemod.indice(sin_prot)
+    check("P1a=0 topa el bloque P en 0.5 (compuerta 1)", r["bloques"]["P"] == 0.5, r["bloques"])
+    check("y la compuerta se DECLARA aunque el número no lo delate",
+          any("compuerta 1" in x for x in r["compuertasOperadas"]), r["compuertasOperadas"])
+
+    # COMPUERTA 2: S2 solo puede valer 1 con repliegue documentado
+    r = tdemod.indice({**todos, "C1": 0.5, "S2": 1.0})
+    check("C1<1 topa S2 en 0.5 (compuerta 2)",
+          any("compuerta 2" in x for x in r["compuertasOperadas"]), r["compuertasOperadas"])
+
+    # S3 n/a cuando el bloque bajo es por diseño
+    r = tdemod.indice({**todos, "F4": 0.0, "C1": 0.0, "S3": 1.0})
+    check("F4=0 ∧ C1=0 saca a S3 del promedio",
+          r["indicadoresUsados"]["S"] == ["S1", "S2"], r["indicadoresUsados"]["S"])
+
+    # las dos reglas de piso
+    r = tdemod.indice({**todos, "F1": 1.0, "F3": 1.0, "F2": 0.0, "F4": 0.0})
+    check("F1=1 ∧ F3=1 sube el bloque F a 0.75", r["bloques"]["F"] == 0.75, r["bloques"]["F"])
+    r = tdemod.indice({**todos, "C1": 0.0, "C2": 0.0, "C3": 1.0})
+    check("C3=1 sube el bloque C a 0.60", r["bloques"]["C"] == 0.60, r["bloques"]["C"])
+
+    # Disciplina 21: F2 es dato del motor o el bloque F no existe
+    sin_f2 = {k: v for k, v in todos.items() if k != "F2"}
+    r = tdemod.indice(sin_f2)
+    check("sin F2 el bloque F entero se declara sin dato (Disciplina 21)",
+          r.get("sinDato") is True and r["bloque"] == "F", r)
+
+    # el ISE se emite siempre, y el riesgo es el MÁXIMO de las dos vías
+    r = tdemod.indice({**todos, "SOB1": 1.0, "SOB2": 1.0, "SOB3": 1.0})
+    check("el ISE se calcula aparte y sin pesos", r["ise"] == 10.0, r.get("ise"))
+    check("el riesgo es el máximo de las dos vías, nunca la suma",
+          r["riesgo"]["maximo"] == 10.0 and r["riesgo"]["via"] == "sobreexposicion", r["riesgo"])
+    r = tdemod.indice(todos)
+    check("sin SOB el ISE es null y se dice por qué, no se omite",
+          r["ise"] is None and "SIEMPRE" in r["iseNota"], r.get("iseNota"))
+
+    # no se inventan umbrales de color
+    check("no hay nivel verde/ámbar/rojo y se explica por qué",
+          r["nivel"] == "" and "calibrar" in r["notaNivel"], r.get("notaNivel"))
+    check("y la calibración observada viaja con el índice",
+          r["calibracion"]["tasaObservada"] == 9.5 and r["calibracion"]["casosCiegosCerrados"] == 21,
+          r["calibracion"])
+
+    # de punta a punta: los indicadores entran por el parte y el índice sale calculado
+    con_ind = _parte(sin_ficha)
+    con_ind["tde"] = {"equipo": "a", "ie": 9.9, "indicadores": todos}
+    c.post(f"{A}/analisis/cowork", json=con_ind)
+    leido = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["tde"]
+    check("el IE que se lee es el calculado, no el que llegó escrito",
+          leido["ie"] == 5.0, (leido.get("ie"), leido.get("declarado")))
+    check("y la discrepancia con lo declarado se delata",
+          any("IE" in x for x in leido["discrepancia"]), leido.get("discrepancia"))
+    c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
+
     # ── LO QUE FALTA SE AVISA AL DEPOSITAR, NO AL CERRAR ────────────────────
     # Caso real: dos partes sin `cadena` y sin `tde`. Nadie se enteró hasta el
     # cierre, 12 h después, cuando llenarlos ya habría sido hindsight.

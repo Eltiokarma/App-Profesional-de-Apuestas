@@ -282,3 +282,147 @@ def ficha(fixture_id: int) -> dict | None:
                 "(P1a es input inviolable; F2 es dato del motor o no es dato) más F1, "
                 "que sale de las alineaciones ya ingestadas. El resto lo escribe quien analiza.",
     }
+
+
+# ── la aritmética del IE y del ISE ──────────────────────────────────────────
+# La fórmula se verificó contra el registro del skill: reproduce 30 de 33 casos
+# con ≤0.06 de diferencia. Los tres que desvían (TDE-001, 003, 004) son los más
+# viejos y los tres son `por_resultado`, de antes de que el esquema se asentara.
+# Calcular esto en el backend no es una opinión sobre el método: es quitarle al
+# que analiza una cuenta que se puede equivocar y unas compuertas que se pueden
+# olvidar.
+
+PESOS_BLOQUE = {"F": 3.0, "C": 2.0, "P": 2.0, "S": 1.5}
+DIVISOR_IE = 8.5
+# esquema 6: es el que declara el propio registro de casos (columna `esquema_P`,
+# con su columna `IE_recomputado_esquema6` para reexpresar los viejos). La línea
+# de SKILL.md que dice «P tiene 5 desde v0.1.1» quedó vieja cuando entró P1c.
+INDICADORES = {
+    "F": ("F1", "F2", "F3", "F4"),
+    "C": ("C1", "C2", "C3"),
+    "P": ("P1a", "P1b", "P1c", "P2", "P3", "P4"),
+    "S": ("S1", "S2", "S3"),
+}
+INDICADORES_ISE = ("SOB1", "SOB2", "SOB3")
+
+BANDAS_ECHADA = ((3.0, 10, 25), (5.0, 25, 45), (7.0, 45, 70), (99.0, 70, 90))
+BANDAS_SOBRE = ((3.0, 10, 25), (5.0, 25, 45), (7.0, 45, 70), (99.0, 70, 90))
+
+# Lo que el registro observó de verdad, en casos CIEGOS y PRE cerrados. Viaja
+# con el índice a propósito: el propio skill declara su escala sobreestimada
+# (disciplina 20) y un 5.0 leído como «55%» es el error que esto evita.
+CALIBRACION = {
+    "casosCiegosCerrados": 21,
+    "seEcharon": 2,
+    "tasaObservada": 9.5,
+    "ieMedio": 4.96,
+    "porBanda": {"3-5": {"n": 12, "observado": 8}, "5-7": {"n": 7, "observado": 14},
+                 "7-8.5": {"n": 2, "observado": 0}},
+    "nota": "la escala del IE está declarada SOBREESTIMADA por el propio skill: "
+            "IE medio 4.96 contra 9.5% de echadas observadas. La banda que el IE "
+            "anuncia NO es la frecuencia con que pasó.",
+}
+
+
+def _banda(valor: float, tabla) -> dict:
+    for tope, lo, hi in tabla:
+        if valor < tope:
+            return {"min": lo, "max": hi, "texto": f"{lo}-{hi}%"}
+    return {"min": 70, "max": 90, "texto": "70-90%"}
+
+
+def _promedio(ind: dict, claves) -> tuple[float | None, list[str]]:
+    vals = [ind[k] for k in claves if ind.get(k) is not None]
+    return (sum(vals) / len(vals), [k for k in claves if ind.get(k) is not None]) if vals else (None, [])
+
+
+def indice(ind: dict) -> dict:
+    """IE, ISE y sus bandas, con TODAS las compuertas declaradas.
+
+    `ind` trae los indicadores en 0 / 0.5 / 1 (o ausentes si no hay dato). Lo
+    que devuelve no es solo el número: es qué compuerta operó y sobre qué, que
+    el skill obliga a declarar aunque no cambie el resultado.
+    """
+    ind = {k: (None if v is None else float(v)) for k, v in (ind or {}).items()}
+    operadas: list[str] = []
+
+    # Disciplina 21: F2 es dato del motor o el bloque F entero es sin dato.
+    if ind.get("F2") is None:
+        return {"sinDato": True, "bloque": "F",
+                "porque": "F2 (descanso y calendario) no tiene dato del motor, y el skill "
+                          "manda declarar el bloque F entero sin dato (Disciplina 21)",
+                "comoSeArregla": "GET /analisis/cowork/tde/{fixtureId} trae F2 calculado",
+                "calibracion": CALIBRACION}
+
+    # COMPUERTA 2 — C1 sobre S2: S2 solo puede valer 1 con repliegue documentado
+    if ind.get("C1") is not None and ind["C1"] < 1 and (ind.get("S2") or 0) > 0.5:
+        ind["S2"] = 0.5
+        operadas.append("compuerta 2 (C1<1 → S2 topado en 0.5)")
+    # regla n/a de S3: bloque medio o bajo por diseño
+    claves_s = INDICADORES["S"]
+    if ind.get("F4") == 0 and ind.get("C1") == 0:
+        claves_s = ("S1", "S2")
+        operadas.append("S3 marcado n/a (F4=0 ∧ C1=0): S promedia solo S1 y S2")
+
+    bloques, usados = {}, {}
+    for letra in ("F", "C", "P"):
+        bloques[letra], usados[letra] = _promedio(ind, INDICADORES[letra])
+    bloques["S"], usados["S"] = _promedio(ind, claves_s)
+
+    # regla especial F
+    if ind.get("F1") == 1 and ind.get("F3") == 1 and bloques["F"] is not None and bloques["F"] < 0.75:
+        bloques["F"] = 0.75
+        operadas.append("regla especial F (F1=1 ∧ F3=1 → F ≥ 0.75)")
+    # tope del bloque C
+    if ind.get("C3") == 1 and bloques["C"] is not None and bloques["C"] < 0.60:
+        bloques["C"] = 0.60
+        operadas.append("tope del bloque C (C3=1 → C ≥ 0.60)")
+    # COMPUERTA 1 — sin protector no hay echada psicológica
+    if ind.get("P1a") == 0 and bloques["P"] is not None and bloques["P"] > 0.5:
+        bloques["P"] = 0.5
+        operadas.append("compuerta 1 (P1a=0 → bloque P topado en 0.5)")
+
+    faltan = [l for l in ("F", "C", "P", "S") if bloques[l] is None]
+    if faltan:
+        return {"sinDato": True, "bloques": bloques,
+                "porque": f"sin ningún indicador en el bloque {', '.join(faltan)}",
+                "compuertasOperadas": operadas, "calibracion": CALIBRACION}
+
+    ie = sum(bloques[l] * PESOS_BLOQUE[l] for l in PESOS_BLOQUE) / DIVISOR_IE * 10
+    ise, usados_ise = _promedio(ind, INDICADORES_ISE)
+    out = {
+        "ie": round(ie, 2),
+        "bloques": {l: round(v, 4) for l, v in bloques.items()},
+        "indicadoresUsados": usados,
+        "pEchada": _banda(ie, BANDAS_ECHADA),
+        "compuertasOperadas": operadas,
+        "formula": "IE = (F·3 + C·2 + P·2 + S·1.5) / 8.5 × 10",
+        "esquemaP": "6 indicadores (P1a, P1b, P1c, P2, P3, P4)",
+        "calibracion": CALIBRACION,
+        # el skill pide el máximo de las dos vías, nunca la suma
+        "riesgo": {"regla": "el riesgo del tramo final es el MÁXIMO de las dos vías, "
+                            "nunca la suma"},
+    }
+    if ise is None:
+        out["ise"] = None
+        out["iseNota"] = ("sin SOB1/SOB2/SOB3 no hay ISE, y el skill manda emitirlo SIEMPRE "
+                          "—sobre todo con IE bajo—: el riesgo puede estar en la otra vía")
+    else:
+        ise_v = round(ise * 10, 2)
+        out["ise"] = ise_v
+        out["iseIndicadores"] = usados_ise
+        out["pSobreexposicion"] = _banda(ise_v, BANDAS_SOBRE)
+        out["riesgo"]["via"] = "echada" if out["ie"] >= ise_v else "sobreexposicion"
+        out["riesgo"]["maximo"] = max(out["ie"], ise_v)
+        if out["ie"] >= 5 and ise_v >= 5:
+            out["riesgo"]["dual"] = ("configuración dual: el skill manda declarar que la vía "
+                                     "echada fue 0 de 7 en el registro y publicar el IE como "
+                                     "valor de referencia, no como riesgo vivo")
+        if abs(out["ie"] - ise_v) < 0.5:
+            out["riesgo"]["dosVentanas"] = ("las dos vías están a menos de 5 décimas: "
+                                            "el skill pide declarar las DOS ventanas")
+    # los umbrales de color NO se inventan: ver docs/APRENDIZAJE.md
+    out["nivel"] = ""
+    out["notaNivel"] = ("no hay umbrales verde/ámbar/rojo: el skill no los define y con "
+                        "21 casos ciegos cerrados y 2 echadas no hay con qué calibrarlos")
+    return out
