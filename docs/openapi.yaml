@@ -675,6 +675,31 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ParteCowork' }
         '409': { description: 'No hay parte, o la ficha todavía no trae alineaciones' }
+  /analisis/cowork/tde/{fixtureId}:
+    get:
+      summary: Los insumos del Teorema del Echado que salen de NUESTRA base
+      description: >
+        No devuelve el IE: devuelve lo que el propio skill manda tomar del motor y que
+        hasta ahora se le pedía al modelo que escribiera a mano. `p1a` (rol de protector
+        del resultado) es «input inviolable» y sale de comparar los dos `μ_partido` contra
+        el umbral de 0.30 —el skill prohíbe derivarlo del gap o corregir μ por localía—;
+        `f2` (descanso y calendario) es «dato del motor o no es dato»; `f1` (rotación en
+        los últimos 3) sale de las alineaciones ya ingestadas.
+
+
+        Lo que NO se puede calcular se declara en `noCalculables`, uno por uno y con el
+        motivo: un insumo que falta tiene que verse, no adivinarse. `f2` devuelve un PISO
+        y no un score cerrado, porque el viaje y la altitud son parte de la rúbrica y no
+        están en nuestra base.
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FichaTde' }
+        '404': { description: el fixture no está en nuestra base }
   /analisis/cowork/veredictos/pendientes:
     get:
       summary: Partes sin veredicto cuyo partido ya arrancó hace rato (fase B)
@@ -1997,6 +2022,44 @@ components:
         enEspera: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
         descartados: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
         nota: { type: string }
+    FichaTde:
+      type: object
+      description: Insumos del TDE calculados desde nuestra base. NO incluye el IE.
+      properties:
+        fixtureId: { type: integer }
+        partido: { type: object, additionalProperties: true }
+        p1a:
+          type: object
+          description: >
+            Rol de protector del resultado, por μ del partido y nada más. `score` da 1 al
+            favorito y 0 al otro cuando el margen supera el umbral; 0.5 a los dos si están
+            dentro. `puedeBajar` recuerda lo único que el backend no puede saber: que un
+            equipo esté obligado a ganar lleva P1a a 0.
+          additionalProperties: true
+        f1:
+          type: object
+          description: >
+            Rotación en los últimos 3 partidos, por lado. Cuidado con el sentido de la
+            rúbrica: 0 rotados puntúa 1 (mismo once = carga acumulada). Sin dos onces
+            capturados devuelve `sinDato`, nunca un número inventado.
+          additionalProperties: true
+        f2:
+          type: object
+          description: 'Descanso antes y exigencia después, por lado. Devuelve `scorePiso`.'
+          additionalProperties: true
+        fiabilidadMu: { type: object, additionalProperties: true }
+        nivelDeDato:
+          type: string
+          enum: [B, C]
+          description: 'el nivel A del skill (tracking) es imposible con nuestras fuentes'
+        noCalculables:
+          type: array
+          description: 'los indicadores que siguen siendo juicio, con el motivo de cada uno'
+          items:
+            type: object
+            properties:
+              indicador: { type: string }
+              porque: { type: string }
     SobrePendientes:
       type: object
       required: [ventanaHoras, criterio, sinCerrar, pendientes, noListados]

@@ -49,6 +49,7 @@ se perdería.
 | lectura SAD | módulo operativo, 1X2, contexto, dato estructural, paradoja | pestaña **Lectura SAD** |
 | caja de sensibilidad | `sensibilidad` por equipo | pestaña **Lectura SAD** |
 | `sad-analysis` | las tres fuentes de probabilidad + falsador | pestaña **Lectura SAD** |
+| `teorema-del-echado` | P1a, F2 y F1 **los calcula el backend** (`GET /analisis/cowork/tde/{id}`); el resto lo escribís vos | pestaña **Teorema del Echado** |
 | `teorema-del-echado` | `tde`: IE, ISE, tipología, ventana, vías | pestaña **Teorema del Echado** |
 | `futbol-timeline` | `timelineEventos` (solo institucional) + narrativa | pestaña **Timeline** (fundida con los partidos calculados) |
 | `diagnostico-tactico` | documento `dtp` + `cadena.{a,b}.pronostico` | pestaña **Documentos** y la cadena de la página de **Equipo** |
@@ -361,6 +362,33 @@ que alguien acaba de escribir.
 > **Regla para probar formas de campo:** hazlo sobre un fixture de descarte,
 > nunca sobre uno que ya tiene un parte bueno. Si igual pasa, el `aviso` te lo
 > dice y vuelves a depositar completo.
+
+### El TDE no se escribe entero: la mitad ya está calculada
+
+`GET /analisis/cowork/tde/{fixtureId}` devuelve los insumos del Teorema del
+Echado que salen de nuestra base. **No devuelve el IE** — devuelve lo que el
+propio skill manda tomar del motor:
+
+| Insumo | De dónde sale | Por qué lo calcula el backend |
+|---|---|---|
+| `p1a` · protector del resultado | los dos `μ_partido` contra el umbral 0.30 | el skill lo llama **input inviolable** y prohíbe derivarlo del gap o corregir μ por localía a mano |
+| `f2` · descanso y calendario | días de descanso antes + señal duro/blando del próximo | **«dato del motor o no es dato»** (Disciplina 21): sin él, el bloque F entero se declara sin dato |
+| `f1` · rotación en los últimos 3 | `alineaciones` ya ingestadas | la ingesta captura justo 3 fichas por equipo, que es la ventana exacta de F1 |
+
+Tres cuidados que la respuesta trae escritos:
+
+- **`f2` da un PISO, no un score cerrado.** El viaje largo, el cambio de
+  altitud y el calor extremo son parte de la rúbrica y NO están en nuestra
+  base: si los hay, el score sube a mano.
+- **`p1a` puede bajar.** «Necesita ganar» lleva P1a a 0 y eso no sale de la
+  base. Y si P1a queda en 0, la compuerta 1 topa el bloque P entero en 0.5.
+- **`f1` dice `sinDato` en vez de inventar.** Sin dos onces capturados no hay
+  rotación que contar. Ojo con el sentido de la rúbrica: **0 rotados puntúa 1**
+  (mismo once = carga acumulada).
+
+Y `noCalculables` lista los **16 indicadores que siguen siendo tuyos**, con el
+motivo de cada uno. No es decoración: un insumo que falta tiene que verse, no
+adivinarse.
 
 ### Una baja que no está en la tabla F1 no pesa en el IP
 

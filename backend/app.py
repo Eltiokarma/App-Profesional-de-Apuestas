@@ -2093,6 +2093,23 @@ class VeredictoBody(BaseModel):
     notas: str = ""
 
 
+@app.get(API + "/analisis/cowork/tde/{fixture_id}")
+def cowork_tde(fixture_id: int):
+    """Los insumos del TDE que salen de NUESTRA base, ya calculados.
+
+    No devuelve el IE: devuelve lo que el skill manda tomar del motor —P1a es
+    «input inviolable», F2 es «dato del motor o no es dato»— más F1, que sale
+    de las alineaciones ya ingestadas. Y declara en `noCalculables` los 16
+    indicadores que siguen siendo juicio, con el motivo de cada uno: pedirle a
+    un modelo que escriba un μ que ya tenemos calculado es lento, caro y peor.
+    """
+    from backend.analisis import tde as tdemod
+    d = tdemod.ficha(fixture_id)
+    if not d:
+        raise HTTPException(404, f"el fixture {fixture_id} no está en nuestra base")
+    return d
+
+
 @app.get(API + "/analisis/cowork/veredictos/pendientes")
 def cowork_veredictos_pendientes(
     horas: int = Query(default=12, ge=0, le=720),

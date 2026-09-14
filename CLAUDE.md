@@ -114,8 +114,15 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   deliberado. Nunca le des el maestro a un agente que lee contenido de fuera.
 - Costo de la IA: `docs/efe-dtp/COSTO_IA.md`. Lo que está en nuestra base se
   calcula, no se le pregunta al modelo — y lo calculado no se le hace copiar a
-  la salida. Los dos bloques calculados hoy: el mapa de rivales del EFE
-  (`backend/calendario.py`) y los partidos del timeline (`backend/cronologia.py`).
+  la salida. Los bloques calculados hoy: el mapa de rivales del EFE
+  (`backend/calendario.py`), los partidos del timeline (`backend/cronologia.py`)
+  y los insumos del TDE que el propio skill manda tomar del motor
+  (`backend/analisis/tde.py`, `GET /analisis/cowork/tde/{id}`): P1a por
+  `μ_partido` contra el umbral 0.30 —es «input inviolable» y el skill prohíbe
+  derivarlo del gap—, F2 por días de descanso y señal de calendario —«dato del
+  motor o no es dato»— y F1 por las alineaciones ya ingestadas. Los 16
+  indicadores que siguen siendo juicio viajan en `noCalculables` con su motivo;
+  lo que no se puede calcular se declara, no se rellena.
 - Gráficas de K: tres valores a la vista (último · últimos dos de la condición
   que se analiza, saltando los que repiten valor) vía `puntosEtiquetados` de
   `src/lib/kview.ts`. Una gráfica nueva usa ese helper, no su propia regla.

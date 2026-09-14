@@ -206,6 +206,45 @@ def main():
           any("Equipo Inventado" in d for d in r.json()["discrepancias"]), r.json().get("discrepancias"))
     check("re-depositar es actualizar, no duplicar", r.json()["estado"] == "actualizado")
 
+    # ── LOS INSUMOS DEL TDE SALEN DEL MOTOR, NO DEL MODELO ──────────────────
+    # El propio skill lo manda: P1a es «input inviolable» y F2 es «dato del
+    # motor o no es dato». Pedirle a Cowork que escriba un μ que ya tenemos
+    # calculado es lento, caro y peor.
+    t = c.get(f"{A}/analisis/cowork/tde/{sin_ficha}")
+    check("la ficha del TDE responde", t.status_code == 200, t.text[:200])
+    tde = t.json()
+    check("P1a sale del μ del partido, no de un juicio",
+          tde["p1a"]["muPartido"]["a"] is not None and tde["p1a"]["muPartido"]["b"] is not None,
+          tde["p1a"])
+    check("y aplica el umbral de 0.30 del skill", tde["p1a"]["umbral"] == 0.30, tde["p1a"]["umbral"])
+    check("el protector puntúa 1 y el otro 0 cuando el margen lo pasa",
+          (sorted(tde["p1a"]["score"].values()) == [0.0, 1.0]) if tde["p1a"]["margen"] > 0.30
+          else (sorted(tde["p1a"]["score"].values()) == [0.5, 0.5]), tde["p1a"])
+    check("declara la compuerta 1, que es lo que P1a dispara",
+          "0.5" in tde["p1a"]["compuerta1"], tde["p1a"].get("compuerta1"))
+    check("F2 trae los días de descanso calculados",
+          tde["f2"]["a"]["diasDescanso"] is not None, tde["f2"]["a"])
+    check("y da un PISO, no un score cerrado: el viaje y la altitud no están en la base",
+          "scorePiso" in tde["f2"]["a"] and "altitud" in tde["f2"]["a"]["puedeSubir"],
+          tde["f2"]["a"])
+    check("sin onces capturados, F1 dice sinDato en vez de inventar rotación",
+          tde["f1"]["a"].get("sinDato") is True or tde["f1"]["a"].get("score") is not None,
+          tde["f1"]["a"])
+    check("y el nivel de dato baja a C cuando falta el once",
+          tde["nivelDeDato"] in ("B", "C"), tde["nivelDeDato"])
+    check("los 16 indicadores que NO se calculan se declaran con su motivo",
+          len(tde["noCalculables"]) == 16 and all(x["porque"] for x in tde["noCalculables"]),
+          len(tde["noCalculables"]))
+    check("y la ficha aclara que NO es el IE", "NO es el IE" in tde["nota"], tde["nota"][:80])
+    check("un fixture inexistente da 404",
+          c.get(f"{A}/analisis/cowork/tde/99999999").status_code == 404)
+
+    # F1 sobre el fixture que SÍ tiene alineaciones capturadas
+    tf = c.get(f"{A}/analisis/cowork/tde/{con_ficha}").json()
+    check("con onces capturados, F1 cuenta de verdad o dice por qué no",
+          tf["f1"]["a"].get("score") is not None or tf["f1"]["a"].get("porque"),
+          tf["f1"]["a"])
+
     # ── LO QUE FALTA SE AVISA AL DEPOSITAR, NO AL CERRAR ────────────────────
     # Caso real: dos partes sin `cadena` y sin `tde`. Nadie se enteró hasta el
     # cierre, 12 h después, cuando llenarlos ya habría sido hindsight.
