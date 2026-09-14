@@ -72,7 +72,8 @@ describe para que se lean juntas. No se tocó ninguna celda preexistente.
 | `hecho` | 15 | la celda tiene un valor trazable: reexpresión real (011, 012), copia correcta sobre fila ya `6ind`, o el recomputo de v0.1.5 (017, 018) |
 | `hecho_sin_procedencia` | 1 | **TDE-015**: hay un 5.3 que no reproduce ni el `IE` (5.5) ni el recomputo de v0.1.5 (5.5). Nadie sabe de dónde sale |
 | `no_requiere` | 10 | nació en el esquema vigente: 029-032, 043-048 |
-| `bloqueado` | 9 | **TDE-001…009**. No están atrasadas: reexpresarlas exige decidir fila por fila si se puntuaron sobre 4 o sobre 5 indicadores, y eso es cambio de fondo que decide el dueño |
+| `bloqueado` | 3 | **TDE-007, 008, 009**. Reexpresables en principio, pero no consta con qué esquema se puntuaron. No están atrasadas: falta una decisión de fondo |
+| `pre_rubrica` | 6 | **TDE-001…006**. **No reexpresables**: sus bloques no son promedios posibles de indicadores 0/0.5/1 con ningún denominador, así que se puntuaron con escala continua y no hay `P1a…P4` que convertir |
 
 **Sobre TDE-015 se decidió etiquetar y no aislar, porque no contamina.** Se
 comprobó contra cada métrica: es `modo_evaluacion = COND` **y** `modo = RETRO`,
@@ -81,10 +82,23 @@ que tampoco entra en (c) —que solo mira positivos—. El valor raro no partici
 de ninguna cuenta. Queda con nombre propio para que quien lo herede sepa que ahí
 hay algo sin resolver, en vez de creerle al número.
 
-**La condición (c) ahora se lee de esta columna**: un positivo `bloqueado` no
-cuenta. El único positivo ciego computable, TDE-005, está ahí. Por eso **(c) da
-falso y va a seguir dándolo aunque aparezcan cuatro positivos más** — y eso ya
-no depende de que nadie se acuerde: está en el dato.
+**La condición (c) se lee de esta columna, y distingue dos cosas que parecen
+iguales y no lo son:**
+
+- Un positivo **`bloqueado`** sí bloquea la (c). Se puede arreglar: falta una
+  decisión, no información.
+- Un positivo **`pre_rubrica`** no bloquea nada. **Sale del conteo de (a).** No
+  se puede arreglar ni con todo el trabajo del mundo, porque la información no
+  se perdió: nunca existió.
+
+Esa distinción es lo que impide que la (c) se vuelva un candado. Tal como
+estaba redactada —«todos los positivos en el esquema vigente»— bastaba TDE-005
+para tumbarla, y TDE-005 es inexpresable. Una condición de calidad que no se
+puede satisfacer deja de ser una condición.
+
+Hoy: **0 positivos que cuenten**. El único del registro es `pre_rubrica`. El
+semáforo se levantará con cinco positivos ciegos nuevos, en el esquema vigente,
+al menos dos fuera de la banda 3-5.
 
 
 ## Las nueve bloqueadas: qué consta y qué no

@@ -22,7 +22,7 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parent.parent
 REGISTRO = RAIZ / "docs/skills/teorema-del-echado/assets/casos/registro.csv"
 # el estado vigente del registro, fijado a mano cuando se declara un alta
-SHA_ESPERADO = "5f1744b9387312963bd48d20e295b7fcf1786a24c7337a49cdec8d47dc3314b0"
+SHA_ESPERADO = "b3649a7e4de1030e220d6111f871ad7c6bbb5bfa5e0005ee2d152248e0788c39"
 
 # las clases que el skill EXCLUYE de toda métrica de frecuencia
 CLASES_FUERA = ("rama_abandonada",)
@@ -88,7 +88,8 @@ def main() -> int:
                           ("seleccion", {"ciega", "por_resultado", "post_resultado"}),
                           ("se_echo", {"si", "no", "parcial"}),
                           ("estado_recomputo_esq6",
-                           {"hecho", "hecho_sin_procedencia", "no_requiere", "bloqueado"})):
+                           {"hecho", "hecho_sin_procedencia", "no_requiere",
+                            "bloqueado", "pre_rubrica"})):
         vistos = {f[col].strip() for f in filas if f[col].strip()}
         raros = sorted(vistos - esperado)
         if raros:
@@ -131,8 +132,19 @@ def main() -> int:
     # LA (c) SE LEE DE LA COLUMNA, YA NO SE INFIERE. Antes esta distinción vivía
     # en este script: si alguien calculaba la frecuencia con otra herramienta,
     # la perdía. Ahora está en el dato, que es donde tiene que estar.
+    #
+    # Y hay DOS formas de no estar en el esquema vigente, con salidas opuestas:
+    # `bloqueado` es reexpresable y falta una decisión, así que BLOQUEA la (c);
+    # `pre_rubrica` no es reexpresable —la fila se puntuó con escala continua y
+    # no hay indicadores que convertir— así que no bloquea nada: sale del
+    # conteo. Si bloqueara, (c) equivaldría a «nunca», porque esas filas no se
+    # pueden arreglar ni con todo el trabajo del mundo.
     viejos = [f["id"].strip() for f in pos
               if f["estado_recomputo_esq6"].strip() == "bloqueado"]
+    fuera_conteo = [f["id"].strip() for f in pos
+                    if f["estado_recomputo_esq6"].strip() == "pre_rubrica"]
+    en_esquema = [f["id"].strip() for f in pos
+                  if f["estado_recomputo_esq6"].strip() not in ("bloqueado", "pre_rubrica")]
     from collections import Counter
     est = Counter(f["estado_recomputo_esq6"].strip() for f in filas)
     print()
@@ -144,10 +156,12 @@ def main() -> int:
     if sp:
         print(f"    · sin procedencia (valor que no reproduce ni el IE ni v0.1.5): {sp}")
         print("      no contamina: queda fuera del filtro por modo y no es positivo")
+    if fuera_conteo:
+        print(f"  · positivos PRE-RÚBRICA, fuera del conteo (no reexpresables): {fuera_conteo}")
     if viejos:
-        print(f"  ⚠ positivos BLOQUEADOS, no expresables en el esquema vigente: {viejos}")
-        print("    → no son comparables con las filas nuevas: positivos en esquema 6 = "
-              f"{len(pos) - len(viejos)}")
+        print(f"  ⚠ positivos BLOQUEADOS, que sí bloquean la (c): {viejos}")
+    print(f"  → positivos que cuentan para el alta del semáforo: {len(en_esquema)} "
+          f"{en_esquema} · hacen falta 5, con ≥2 fuera de la banda 3-5")
 
     # ¿LOS BLOQUES SON PROMEDIOS POSIBLES DE LA RÚBRICA? Cada indicador vale
     # 0/0.5/1, así que un bloque solo puede valer (m/2)/k. Un valor que no

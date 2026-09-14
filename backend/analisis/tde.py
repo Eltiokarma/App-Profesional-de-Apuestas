@@ -391,29 +391,28 @@ TABLAS_SUSPENDIDAS = {
 # trabajo: sin ella, dentro de tres casos alguien cumple (a) y (b) mezclando
 # reglas de puntuación distintas.
 ALTA_DEL_SEMAFORO = {
-    "a": "N ≥ 5 echadas observadas con selección ciega (el mismo umbral binding que "
-         "gobierna la revisión de pesos, CALIBRACION.md y disciplina 22)",
+    "a": "N ≥ 5 echadas observadas con selección ciega Y EXPRESADAS EN EL ESQUEMA VIGENTE "
+         "de 6 indicadores (mismo umbral binding que gobierna la revisión de pesos)",
     "b": "al menos 2 de esos positivos FUERA de la banda 3-5: un semáforo afirma "
          "ordenamiento, y un ordenamiento sin positivos arriba no es testeable",
-    "c": "todos los positivos expresados en el esquema vigente de 6 indicadores",
-    "hoy": "1 positivo ciego computable (n=8), en esquema `4ind_o_5ind` → (a) no, (b) no, (c) no",
-    "porQueCSigueEnFalso": "el único positivo es TDE-005 y está `bloqueado`: no consta con qué "
-                           "esquema se puntuó. Basta UN positivo fuera del esquema vigente para "
-                           "que (c) caiga, así que da falso aunque aparezcan cuatro positivos "
-                           "más y se cumplan (a) y (b). Desbloquearlo es decisión de rúbrica "
-                           "sobre filas históricas, no trabajo de calibración.",
-    # La (c) NO se prueba con «tiene recomputo». `IE_recomputado_esquema6`
-    # mezcla tres poblaciones —2 reexpresiones reales, 11 copias literales del
-    # IE sobre filas ya 6ind, y 3 que traen el recomputo de v0.1.5—, así que una
-    # celda llena no significa que hiciera falta reexpresar. Lo limpio son las
-    # vacías. Detalle en docs/skills/teorema-del-echado/REGISTRO.md.
-    "comoSeLeeLaC": "se lee de la columna `estado_recomputo_esq6` del registro, ya no se "
-                    "infiere: un positivo `bloqueado` no cuenta para (c). El reparto es "
-                    "hecho 15 · hecho_sin_procedencia 1 · no_requiere 10 · BLOQUEADO 9 "
-                    "(TDE-001…009). Bloqueadas, no atrasadas: reexpresarlas exige decidir "
-                    "si se puntuaron sobre 4 o sobre 5 indicadores, y eso es cambio de "
-                    "fondo. El único positivo ciego computable está ahí, así que (c) da "
-                    "falso y va a seguir dándolo aunque aparezcan cuatro positivos más.",
+    "c": "ningún positivo COMPUTABLE fuera del esquema vigente. Un positivo `bloqueado` "
+         "—reexpresable, pendiente de una decisión— sí lo bloquea; uno `pre_rubrica` no, "
+         "porque no se puede arreglar: sale del conteo de (a) en vez de trabar la (c)",
+    "hoy": "0 positivos que cuenten. El único positivo ciego computable del registro "
+           "(TDE-005) es `pre_rubrica` y queda fuera del conteo → (a) no, (b) no, (c) sí",
+    # POR QUÉ LA (c) CAMBIÓ. Antes decía «todos los positivos en el esquema
+    # vigente», y con una fila estructuralmente inexpresable eso equivalía a
+    # NUNCA: bastaba TDE-005 para tumbarla, y TDE-005 no se puede arreglar ni
+    # con todo el trabajo del mundo. Una condición de calidad que no se puede
+    # satisfacer deja de ser una condición: es un candado. Ahora el semáforo
+    # puede levantarse con cinco positivos limpios nuevos.
+    "porQuePreRubricaNoBloquea": "sus bloques no son promedios posibles de indicadores "
+                                 "0/0.5/1 con ningún denominador: se puntuaron con escala "
+                                 "continua, así que no hay P1a…P4 que reexpresar. No es "
+                                 "información perdida, es información que nunca existió",
+    "comoSeLeeLaC": "de la columna `estado_recomputo_esq6` del registro. Reparto: hecho 15 · "
+                    "hecho_sin_procedencia 1 · no_requiere 10 · bloqueado 3 (TDE-007, 008, "
+                    "009) · pre_rubrica 6 (TDE-001…006)",
 }
 
 

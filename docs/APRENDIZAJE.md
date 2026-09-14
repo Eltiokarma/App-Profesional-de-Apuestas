@@ -286,6 +286,27 @@ es divergencia garantizada.
 perdido, qué es hueco declarado, y las tres poblaciones mezcladas en la columna
 de recomputo— está en `docs/skills/teorema-del-echado/REGISTRO.md`.
 
+### Una condición que no se puede satisfacer es un candado
+
+El alta del semáforo del TDE exigía que **todos** los positivos estuvieran
+expresados en el esquema vigente. Suena impecable, y era inalcanzable: el único
+positivo ciego del registro es de 2026 y sus bloques **no son promedios posibles
+de una rúbrica de indicadores** con ningún denominador. Se puntuó con escala
+continua. No hay nada que reexpresar, así que la condición daba falso para
+siempre.
+
+La regla que quedó distingue dos cosas que parecen iguales:
+
+> **Una condición de calidad se bloquea por lo que se puede arreglar, no por lo
+> que no.** Un caso al que le falta una decisión bloquea; uno estructuralmente
+> inexpresable **sale del conteo**. Si no, la condición deja de medir calidad y
+> pasa a ser un candado con buena redacción.
+
+El caso inexpresable no se borra ni se disimula: se marca (`pre_rubrica`), se
+explica por qué, y se declara que no cuenta. Lo que NO se hace es repuntuarlo
+hoy con el resultado a la vista para que «entre»: eso produciría una fila
+`post_resultado`, excluida de toda métrica el día que entrara.
+
 ### Un Brier sin línea de base no dice nada
 
 Recalculado con los dos filtros puestos, el Brier del TDE da **0.3051** sobre

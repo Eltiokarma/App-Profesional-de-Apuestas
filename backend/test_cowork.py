@@ -332,9 +332,18 @@ def main():
           and cal["porBanda"]["7-8.5"]["positivos"] == 0, cal["porBanda"])
     check("y en el esquema vigente de 6 no hay ni un positivo",
           cal["positivosEnEsquemaVigente"] == 0, cal)
+    alta = r["altaDelSemaforo"]
     check("el alta del semáforo pide las tres condiciones, no solo el N",
-          set("abc") <= set(r["altaDelSemaforo"]) and "esquema vigente" in r["altaDelSemaforo"]["c"],
-          r.get("altaDelSemaforo"))
+          set("abc") <= set(alta), sorted(alta))
+    # una condición que NO se puede satisfacer es un candado, no una condición:
+    # un positivo `pre_rubrica` no se puede reexpresar ni con todo el trabajo
+    # del mundo, así que sale del conteo en vez de trabar la (c) para siempre
+    check("un positivo pre_rubrica sale del conteo, no bloquea la (c)",
+          "pre_rubrica` no" in alta["c"] and "sale del conteo" in alta["c"], alta["c"])
+    check("pero uno `bloqueado` sí la bloquea: ese sí se puede arreglar",
+          "sí lo bloquea" in alta["c"], alta["c"])
+    check("y (a) exige los 5 positivos EN EL ESQUEMA VIGENTE",
+          "ESQUEMA VIGENTE" in alta["a"], alta["a"])
 
     # denominador VARIABLE del bloque P: P1a sin dato promedia sobre cinco
     sin_p1a = {k: v for k, v in todos.items() if k != "P1a"}
