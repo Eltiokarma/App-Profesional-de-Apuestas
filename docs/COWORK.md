@@ -330,7 +330,16 @@ enterara. Ahora el recibo trae `perdido` y `aviso`:
 reemplaza entero, corregir algo es `GET` → modificar → `POST`. Para que ese
 viaje no pierda nada, la lectura devuelve un bloque `entrada` con lo que no se
 puede deducir del resto: `timelineEventos`, `timelineNarrativa`, `cadena` y
-`descartados`. Al re-depositar, vuelca ese bloque tal cual en el cuerpo.
+`descartados`.
+
+**Toma la respuesta del `GET`, cambia lo que quieras cambiar y mándala de
+vuelta entera.** No hace falta desarmar nada: `entrada` va anidada tal como
+vino, y lo calculado que también trae la lectura (`partido`, `estado`,
+`timeline`, `veredicto`, `xi`, los `total`/`porcentaje`/`clasificacion` de
+cada equipo) se ignora en silencio — no es un campo desconocido, es nuestra
+propia respuesta. Si prefieres escribir un campo suelto en la raíz
+(`"timelineNarrativa": "…"` al lado de `entrada`), **lo suelto gana**: es lo
+que alguien acaba de escribir.
 
 > **Regla para probar formas de campo:** hazlo sobre un fixture de descarte,
 > nunca sobre uno que ya tiene un parte bueno. Si igual pasa, el `aviso` te lo

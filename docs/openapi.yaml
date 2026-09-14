@@ -1692,6 +1692,23 @@ components:
         fuentes: { type: array, items: { type: string } }
         descartados: { type: array, items: { type: string } }
         notas: { type: string }
+        entrada:
+          type: object
+          description: >
+            El eco que devuelve el GET, aceptado TAL CUAL. Corregir un parte es leer →
+            modificar → re-depositar, así que el cuerpo del POST puede ser la respuesta
+            del GET sin desarmar: `entrada` se desempaqueta aquí dentro y lo que venga
+            suelto en la raíz manda sobre lo que traiga este bloque. Lo calculado que
+            también vuelve en la lectura (partido, estado, equipos[].total, timeline,
+            veredicto, xi…) se ignora en silencio: no es un campo desconocido, es
+            nuestra propia respuesta.
+          properties:
+            timelineEventos:
+              type: array
+              items: { $ref: '#/components/schemas/EventoTimelineParte' }
+            timelineNarrativa: { type: string }
+            cadena: { type: object, additionalProperties: true }
+            descartados: { type: array, items: { type: string } }
     AlertaParte:
       type: object
       required: [codigo]

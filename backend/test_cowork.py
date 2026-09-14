@@ -236,21 +236,40 @@ def main():
     check("y la narrativa, y los pronósticos de la cadena",
           eco["timelineNarrativa"].startswith("Semestre") and eco["cadena"]["a"].startswith("A domina"),
           {k: eco[k] for k in ("timelineNarrativa", "cadena")})
-    # el viaje completo: leer, re-depositar tal cual, y que no se pierda nada
+    # el viaje completo: leer, re-depositar TAL CUAL, y que no se pierda nada.
+    # Tal cual es literal: el cuerpo del POST es la respuesta del GET sin tocar
+    # una coma —`entrada` anidada incluida, y también el eco de lo calculado—.
+    # Cualquier otra cosa obliga a quien corrige a desarmar la respuesta a mano,
+    # y ahí es donde se pierden campos.
     ida = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()
-    vuelta = {
-        "fixtureId": sin_ficha,
-        "equipos": {l: {"bloques": {k: b["score"] for k, b in ida["equipos"][l]["bloques"].items()},
-                        "plantel": ida["equipos"][l]["plantel"],
-                        "fuera": ida["equipos"][l]["fuera"]} for l in ("a", "b")},
-        "alertas": ida["alertas"], "matchup": ida["matchup"], "pronostico": ida["pronostico"],
-        "lecturaSad": ida["lecturaSad"], "tde": ida["tde"], "documentos": ida["documentos"],
-        "pendientes": ida["pendientes"], "fuentes": ida["fuentes"],
-        **ida["entrada"],
-    }
-    rec = c.post(f"{A}/analisis/cowork", json=vuelta).json()
-    check("leer y re-depositar tal cual NO pierde nada", rec["perdido"] == [], rec.get("perdido"))
-    check("ni inventa rechazos en el viaje de vuelta", rec["rechazos"] == [], rec.get("rechazos"))
+    rec = c.post(f"{A}/analisis/cowork", json=ida).json()
+    check("la respuesta del GET se vuelve a depositar tal cual, sin perder nada",
+          rec["perdido"] == [], rec.get("perdido"))
+    check("y sin un solo rechazo inventado en el viaje de vuelta",
+          rec["rechazos"] == [], rec.get("rechazos"))
+    vuelto = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()
+    check("los eventos del timeline sobreviven al viaje",
+          vuelto["entrada"]["timelineEventos"] == ida["entrada"]["timelineEventos"],
+          vuelto["entrada"]["timelineEventos"])
+    check("la cadena y los descartados también",
+          (vuelto["entrada"]["cadena"], vuelto["entrada"]["descartados"])
+          == (ida["entrada"]["cadena"], ida["entrada"]["descartados"]),
+          vuelto["entrada"])
+    check("y los totales calculados salen idénticos",
+          [vuelto["equipos"][l]["porcentaje"] for l in ("a", "b")]
+          == [ida["equipos"][l]["porcentaje"] for l in ("a", "b")],
+          [vuelto["equipos"][l]["porcentaje"] for l in ("a", "b")])
+
+    # lo suelto en la raíz manda sobre el eco: quien corrige escribe el campo
+    # nuevo arriba y no tiene que acordarse de limpiar `entrada`
+    mano = {**ida, "timelineNarrativa": "corregido a mano"}
+    c.post(f"{A}/analisis/cowork", json=mano)
+    vuelto = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()
+    check("un campo escrito suelto en la raíz le gana al que trae `entrada`",
+          vuelto["entrada"]["timelineNarrativa"] == "corregido a mano",
+          vuelto["entrada"]["timelineNarrativa"])
+
+    c.post(f"{A}/analisis/cowork", json=ida)
     d = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()
 
     # ── bloque F congelado: las dos ramas ───────────────────────────────────

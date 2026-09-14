@@ -159,7 +159,7 @@ def _alias(valor, tabla: dict) -> str:
 
 
 def _jugador(j: dict, rechazos: list, donde: str) -> dict | None:
-    _claves_raras(j, _CLAVES_JUGADOR, rechazos, donde)
+    _claves_raras(j, _CLAVES_JUGADOR | _ECO_JUGADOR, rechazos, donde)
     nombre = _txt(j.get("nombre")) or _txt(j.get("jugador"))
     if not nombre:
         rechazos.append({"donde": donde, "porque": "sin nombre"})
@@ -226,10 +226,21 @@ _CLAVES_PARTE = {"fixtureId", "version", "generadoEn", "equipos", "alertas", "ma
                  "cadena", "documentos", "pendientes", "fuentes", "descartados", "notas",
                  "pronostico"}
 
+# EL VIAJE DE IDA Y VUELTA. Corregir un parte es leer → modificar →
+# re-depositar, así que el POST tiene que aceptar TAL CUAL lo que devuelve el
+# GET. Lo que el backend calcula vuelve en la lectura como eco: no es un error
+# que aparezca en el cuerpo, es que el cuerpo salió de nuestra propia
+# respuesta. Se ignora en silencio; delatarlo llenaría el recibo de rechazos
+# falsos y escondería los de verdad.
+_ECO_PARTE = {"partido", "estado", "creadoEn", "actualizadoEn", "xi", "veredicto",
+              "timeline", "rechazos", "perdido", "aviso", "entrada"}
+_ECO_EQUIPO = {"total", "maximoAlcanzable", "porcentaje", "clasificacion", "disponibilidad"}
+_ECO_JUGADOR = {"soloBaja"}
+
 
 def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
             rechazos: list, lado: str) -> dict:
-    _claves_raras(bruto, _CLAVES_EQUIPO, rechazos, f"equipos.{lado}")
+    _claves_raras(bruto, _CLAVES_EQUIPO | _ECO_EQUIPO, rechazos, f"equipos.{lado}")
     bloques_in = bruto.get("bloques") or {}
     excluidos_in = bruto.get("excluidos") or {}
     notas_in = bruto.get("notas") or {}
@@ -484,7 +495,13 @@ def normalizar_parte(payload: dict) -> dict:
     # veía un 0 sin forma de saber por qué: cuarenta minutos de adivinar la forma
     # del campo en vez de cinco segundos de leer el motivo.
     rechazos: list[dict] = []
-    _claves_raras(payload, _CLAVES_PARTE, rechazos, "(raíz)")
+    # `entrada` es el bloque que la lectura devuelve para poder re-depositar sin
+    # pérdidas: aquí se desempaqueta. Lo que venga suelto en la raíz manda sobre
+    # lo que traiga el eco, porque lo suelto es lo que alguien acaba de escribir.
+    eco = payload.get("entrada")
+    if isinstance(eco, dict):
+        payload = {**{k: v for k, v in eco.items() if k in _CLAVES_PARTE}, **payload}
+    _claves_raras(payload, _CLAVES_PARTE | _ECO_PARTE, rechazos, "(raíz)")
     parte = {
         "fixtureId": fixture_id,
         "version": _txt(payload.get("version")) or VERSION,
