@@ -326,6 +326,12 @@ enterara. Ahora el recibo trae `perdido` y `aviso`:
 "aviso": "Este depósito dejó el parte con MENOS contenido del que tenía…"
 ```
 
+**4. El parte se puede reconstruir desde su propia lectura.** Como el POST
+reemplaza entero, corregir algo es `GET` → modificar → `POST`. Para que ese
+viaje no pierda nada, la lectura devuelve un bloque `entrada` con lo que no se
+puede deducir del resto: `timelineEventos`, `timelineNarrativa`, `cadena` y
+`descartados`. Al re-depositar, vuelca ese bloque tal cual en el cuerpo.
+
 > **Regla para probar formas de campo:** hazlo sobre un fixture de descarte,
 > nunca sobre uno que ya tiene un parte bueno. Si igual pasa, el `aviso` te lo
 > dice y vuelves a depositar completo.

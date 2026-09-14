@@ -830,6 +830,17 @@ def dto(fixture_id: int) -> dict | None:
         "fuentes": parte["fuentes"],
         "notas": parte["notas"],
         "xi": {l: {k: v for k, v in (xi.get(l) or {}).items() if k != "banca"} for l in LADOS},
+        # ECO DE LA ENTRADA: lo que se depositó y no se puede reconstruir desde
+        # el resto de la respuesta. El POST reemplaza el parte ENTERO, así que
+        # el flujo normal para corregir algo es leer → modificar → re-depositar;
+        # sin esto, ese viaje de ida y vuelta perdía los eventos del timeline,
+        # los pronósticos de la cadena y la lista de descartados, en silencio.
+        "entrada": {
+            "timelineEventos": parte.get("timelineEventos") or [],
+            "timelineNarrativa": parte.get("timelineNarrativa", ""),
+            "cadena": parte.get("cadena") or {},
+            "descartados": parte.get("descartados") or [],
+        },
         "veredicto": veredicto_de(fila["fixture_id"]),
         "creadoEn": fila["creado_en"],
         "actualizadoEn": fila["actualizado_en"],

@@ -227,6 +227,32 @@ def main():
     check("las tres fuentes del pronóstico viajan juntas",
           all(d["pronostico"][k] for k in ("motor", "matriz", "mercado")), d["pronostico"])
 
+    # ── el parte se puede reconstruir desde su propia lectura ───────────────
+    # El POST reemplaza el parte ENTERO: corregir algo es leer → modificar →
+    # re-depositar. Si la lectura no devuelve todo, ese viaje pierde datos.
+    eco = d["entrada"]
+    check("la lectura devuelve los eventos del timeline que se depositaron",
+          len(eco["timelineEventos"]) == 1, eco.get("timelineEventos"))
+    check("y la narrativa, y los pronósticos de la cadena",
+          eco["timelineNarrativa"].startswith("Semestre") and eco["cadena"]["a"].startswith("A domina"),
+          {k: eco[k] for k in ("timelineNarrativa", "cadena")})
+    # el viaje completo: leer, re-depositar tal cual, y que no se pierda nada
+    ida = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()
+    vuelta = {
+        "fixtureId": sin_ficha,
+        "equipos": {l: {"bloques": {k: b["score"] for k, b in ida["equipos"][l]["bloques"].items()},
+                        "plantel": ida["equipos"][l]["plantel"],
+                        "fuera": ida["equipos"][l]["fuera"]} for l in ("a", "b")},
+        "alertas": ida["alertas"], "matchup": ida["matchup"], "pronostico": ida["pronostico"],
+        "lecturaSad": ida["lecturaSad"], "tde": ida["tde"], "documentos": ida["documentos"],
+        "pendientes": ida["pendientes"], "fuentes": ida["fuentes"],
+        **ida["entrada"],
+    }
+    rec = c.post(f"{A}/analisis/cowork", json=vuelta).json()
+    check("leer y re-depositar tal cual NO pierde nada", rec["perdido"] == [], rec.get("perdido"))
+    check("ni inventa rechazos en el viaje de vuelta", rec["rechazos"] == [], rec.get("rechazos"))
+    d = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()
+
     # ── bloque F congelado: las dos ramas ───────────────────────────────────
     disp = a["disponibilidad"]
     check("sin once, el bloque F no se resuelve", disp["resuelto"] is False)

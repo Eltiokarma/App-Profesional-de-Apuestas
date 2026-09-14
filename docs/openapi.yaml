@@ -1859,6 +1859,18 @@ components:
           type: object
           description: 'el once guardado por lado (sin la banca), con su fuente'
           additionalProperties: true
+        entrada:
+          type: object
+          description: >
+            Eco de lo depositado que no se puede reconstruir desde el resto de la respuesta.
+            El POST reemplaza el parte ENTERO, así que corregir algo es leer → modificar →
+            re-depositar; sin este bloque ese viaje perdía los eventos del timeline, los
+            pronósticos de la cadena y los descartados, en silencio.
+          properties:
+            timelineEventos: { type: array, items: { $ref: '#/components/schemas/EventoTimelineParte' } }
+            timelineNarrativa: { type: string }
+            cadena: { type: object, additionalProperties: { type: string } }
+            descartados: { type: array, items: { type: string } }
         veredicto:
           nullable: true
           description: 'null mientras el caso no se haya cerrado'
