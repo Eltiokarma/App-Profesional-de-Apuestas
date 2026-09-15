@@ -109,21 +109,36 @@ function Documento({ d }: { d: DocumentoParte }) {
 // ── piezas del EFE ──────────────────────────────────────────────────────────
 
 function Anillo({ eq }: { eq: EquipoParte }) {
-  const cl = CLASIF[eq.clasificacion]
+  // UN PARTE SIN SUB-SCORES NO ES UN EQUIPO REPROBADO. Antes esto pintaba
+  // «0% · SIN FORMACIÓN», que es el peor juicio de la rúbrica, sobre un parte
+  // en el que nadie puntuó nada. La ausencia se dice, no se convierte en nota.
+  const sinDatos = eq.sinBloques || eq.porcentaje === null
+  const cl = eq.clasificacion ? CLASIF[eq.clasificacion] : null
   const R = 52
   const C = 2 * Math.PI * R
-  const frac = Math.max(0, Math.min(1, eq.porcentaje / 100))
+  const frac = sinDatos ? 0 : Math.max(0, Math.min(1, (eq.porcentaje ?? 0) / 100))
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
       <svg width="132" height="132" viewBox="0 0 132 132">
         <circle cx="66" cy="66" r={R} fill="none" stroke="var(--bg3)" strokeWidth="11" />
-        <circle cx="66" cy="66" r={R} fill="none" stroke={COLOR[cl.sem]} strokeWidth="11" strokeLinecap="round"
-          strokeDasharray={`${(frac * C).toFixed(1)} ${C.toFixed(1)}`} transform="rotate(-90 66 66)" />
-        <text x="66" y="62" textAnchor="middle" style={{ font: '800 26px var(--mono)', fill: 'var(--t1)' }}>{Math.round(eq.porcentaje)}%</text>
-        <text x="66" y="80" textAnchor="middle" style={{ font: '600 9px var(--mono)', fill: 'var(--t3)' }}>{eq.total.toFixed(1)} / {eq.maximoAlcanzable}</text>
+        {cl && (
+          <circle cx="66" cy="66" r={R} fill="none" stroke={COLOR[cl.sem]} strokeWidth="11" strokeLinecap="round"
+            strokeDasharray={`${(frac * C).toFixed(1)} ${C.toFixed(1)}`} transform="rotate(-90 66 66)" />
+        )}
+        <text x="66" y="62" textAnchor="middle" style={{ font: `800 ${sinDatos ? 22 : 26}px var(--mono)`, fill: sinDatos ? 'var(--t3)' : 'var(--t1)' }}>
+          {sinDatos ? '—' : `${Math.round(eq.porcentaje ?? 0)}%`}
+        </text>
+        <text x="66" y="80" textAnchor="middle" style={{ font: '600 9px var(--mono)', fill: 'var(--t3)' }}>
+          {sinDatos ? 'sin puntuar' : `${eq.total.toFixed(1)} / ${eq.maximoAlcanzable}`}
+        </text>
       </svg>
       <div style={{ font: '700 13px var(--sans)', color: 'var(--t1)', textAlign: 'center', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{eq.nombre}</div>
-      <span style={{ padding: '3px 10px', borderRadius: 7, background: SUAVE[cl.sem], color: COLOR[cl.sem], font: '700 10px var(--mono)', letterSpacing: '.4px' }}>{cl.label}</span>
+      {cl ? (
+        <span style={{ padding: '3px 10px', borderRadius: 7, background: SUAVE[cl.sem], color: COLOR[cl.sem], font: '700 10px var(--mono)', letterSpacing: '.4px' }}>{cl.label}</span>
+      ) : (
+        <span style={{ padding: '3px 10px', borderRadius: 7, background: 'var(--bg3)', color: 'var(--t2)', font: '700 10px var(--mono)', letterSpacing: '.4px' }}
+          title="El parte no trae ni un sub-score: no hay EFE que calcular">SIN BLOQUES DECLARADOS</span>
+      )}
       {eq.dt.nombre && (
         <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', textAlign: 'center' }}>
           DT {eq.dt.nombre}{eq.dt.meses > 0 ? ` · ${Math.round(eq.dt.meses)} meses` : ''}
@@ -138,6 +153,8 @@ function Bloques({ eq }: { eq: EquipoParte }) {
     <div>
       {(['A', 'B', 'C', 'D', 'E'] as const).map((letra) => {
         const b = eq.bloques[letra]
+        // un bloque que nadie puntuó no es una barra roja al 0%: es un hueco
+        const sinPuntuar = b.declarado === false && !b.excluido
         const frac = b.excluido ? 0 : b.topePonderado ? b.ponderado / b.topePonderado : 0
         const sem: Semaforo = frac >= 0.7 ? 'verde' : frac >= 0.4 ? 'ambar' : 'rojo'
         return (
@@ -146,21 +163,32 @@ function Bloques({ eq }: { eq: EquipoParte }) {
             <span style={{ font: '600 11.5px var(--sans)', color: 'var(--t1)', width: 118, flexShrink: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={b.nota || BLOQUE_NOMBRE[letra]}>{BLOQUE_NOMBRE[letra]}</span>
             {b.excluido ? (
               <span style={{ flex: 1, font: '600 10px var(--mono)', color: 'var(--t3)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={b.motivoExclusion}>N/A · {b.motivoExclusion || 'excluido'}</span>
+            ) : sinPuntuar ? (
+              <span style={{ flex: 1, font: '600 10px var(--mono)', color: 'var(--t3)', minWidth: 0 }}>
+                sin puntuar · cuenta como 0 en el total
+              </span>
             ) : (
               <span style={{ flex: 1, height: 7, borderRadius: 4, background: 'var(--bg3)', overflow: 'hidden' }}>
                 <span style={{ display: 'block', width: `${frac * 100}%`, height: '100%', borderRadius: 4, background: COLOR[sem] }}></span>
               </span>
             )}
             <span style={{ font: '700 11.5px var(--mono)', color: 'var(--t1)', width: 62, textAlign: 'right', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
-              {b.excluido ? '—' : `${b.ponderado.toFixed(1)}/${b.topePonderado}`}
+              {b.excluido || sinPuntuar ? '—' : `${b.ponderado.toFixed(1)}/${b.topePonderado}`}
             </span>
           </div>
         )
       })}
       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 2px 2px', font: '700 12px var(--mono)', color: 'var(--t1)' }}>
         <span style={{ color: 'var(--t3)' }}>TOTAL</span>
-        <span>{eq.total.toFixed(2)} / {eq.maximoAlcanzable} · {Math.round(eq.porcentaje)}%</span>
+        <span>
+          {eq.porcentaje === null
+            ? 'sin sub-scores declarados'
+            : `${eq.total.toFixed(2)} / ${eq.maximoAlcanzable} · ${Math.round(eq.porcentaje)}%`}
+        </span>
       </div>
+      {eq.notaTotales && (
+        <div style={{ font: '500 10.5px var(--sans)', color: 'var(--mark)', paddingTop: 6 }}>{eq.notaTotales}</div>
+      )}
     </div>
   )
 }
@@ -760,6 +788,8 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
   // forma preferida, porque entonces el índice lo calcula el backend— y el
   // bloque sale `sinDato` (por ejemplo, F2 sin salida del motor), no hay `ie`
   // que mirar y la pestaña desaparecería con el TDE adentro.
+  // ¿el parte trae rúbrica, o solo el envoltorio? cambia lo que se puede afirmar
+  const sinRubrica = (['a', 'b'] as const).every((l) => parte.equipos[l].sinBloques)
   const conTde = (parte.tde?.bloques ?? []).some((b) => b.tipologia || b.ie || b.ise
     || b.vias?.length || b.calculado || Object.keys(b.indicadores ?? {}).length)
   const tabs: { k: Tab; label: string }[] = [
@@ -784,8 +814,11 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
             {faltan.length === 2 ? '⚠️ XI NO CONFIRMADO' : '⚠️ FALTA UN XI'}
           </span>
           <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', flex: 1 }}>
+            {/* «todo lo demás ya está cerrado» era falso en un parte sin
+                rúbrica: el aviso decía que solo faltaba el once cuando no
+                había ni un sub-score */}
             {faltan.length === 2
-              ? 'Bloque F congelado en los dos: el impacto va en dos ramas hasta que llegue el once. Todo lo demás ya está cerrado.'
+              ? `Bloque F congelado en los dos: el impacto va en dos ramas hasta que llegue el once.${sinRubrica ? '' : ' Todo lo demás ya está cerrado.'}`
               : `Bloque F cerrado en ${nombreDe(faltan[0] === 'a' ? 'b' : 'a')}; falta el once de ${nombreDe(faltan[0])}, que sigue en dos ramas.`}
           </span>
         </div>

@@ -465,9 +465,13 @@ def indice(ind: dict) -> dict:
                 "calibracion": CALIBRACION}
 
     # COMPUERTA 2 — C1 sobre S2: S2 solo puede valer 1 con repliegue documentado
-    if ind.get("C1") is not None and ind["C1"] < 1 and (ind.get("S2") or 0) > 0.5:
-        ind["S2"] = 0.5
-        operadas.append("compuerta 2 (C1<1 → S2 topado en 0.5)")
+    if ind.get("C1") is not None and ind["C1"] < 1 and ind.get("S2") is not None:
+        if ind["S2"] > 0.5:
+            ind["S2"] = 0.5
+            operadas.append("compuerta 2 (C1<1 → S2 topado en 0.5)")
+        else:
+            operadas.append("compuerta 2 (C1<1) ACTIVA: el tope 0.5 no mueve el número, "
+                            f"S2 ya valía {ind['S2']:.2f}")
     # regla n/a de S3: bloque medio o bajo por diseño
     claves_s = INDICADORES["S"]
     if ind.get("F4") == 0 and ind.get("C1") == 0:
@@ -497,18 +501,34 @@ def indice(ind: dict) -> dict:
                             f"{nominal[letra]}: sin dato en {', '.join(faltan_ind)}")
 
     # regla especial F
-    if ind.get("F1") == 1 and ind.get("F3") == 1 and bloques["F"] is not None and bloques["F"] < 0.75:
-        bloques["F"] = 0.75
-        operadas.append("regla especial F (F1=1 ∧ F3=1 → F ≥ 0.75)")
+    # UNA COMPUERTA QUE SE ACTIVA SE DECLARA AUNQUE NO MUEVA EL NÚMERO. La
+    # condición se cumplió: que el promedio ya estuviera por debajo del tope es
+    # una casualidad del caso, no una razón para callarla. Quien audite el
+    # índice tiene que poder ver que la regla corrió, no deducirlo.
+    if ind.get("F1") == 1 and ind.get("F3") == 1 and bloques["F"] is not None:
+        if bloques["F"] < 0.75:
+            bloques["F"] = 0.75
+            operadas.append("regla especial F (F1=1 ∧ F3=1 → F ≥ 0.75)")
+        else:
+            operadas.append("regla especial F (F1=1 ∧ F3=1) ACTIVA: el piso 0.75 no mueve el "
+                            f"número, F ya valía {bloques['F']:.2f}")
     # tope del bloque C
-    if ind.get("C3") == 1 and bloques["C"] is not None and bloques["C"] < 0.60:
-        bloques["C"] = 0.60
-        operadas.append("tope del bloque C (C3=1 → C ≥ 0.60)")
+    if ind.get("C3") == 1 and bloques["C"] is not None:
+        if bloques["C"] < 0.60:
+            bloques["C"] = 0.60
+            operadas.append("tope del bloque C (C3=1 → C ≥ 0.60)")
+        else:
+            operadas.append("tope del bloque C (C3=1) ACTIVO: el piso 0.60 no mueve el número, "
+                            f"C ya valía {bloques['C']:.2f}")
     # COMPUERTA 1 — sin protector no hay echada psicológica. El tope se aplica
     # DESPUÉS del promedio, nunca antes: si no, el 0 de P1a entra dos veces.
-    if ind.get("P1a") == 0 and bloques["P"] is not None and bloques["P"] > 0.5:
-        bloques["P"] = 0.5
-        operadas.append("compuerta 1 (P1a=0 → bloque P topado en 0.5, después del promedio)")
+    if ind.get("P1a") == 0 and bloques["P"] is not None:
+        if bloques["P"] > 0.5:
+            bloques["P"] = 0.5
+            operadas.append("compuerta 1 (P1a=0 → bloque P topado en 0.5, después del promedio)")
+        else:
+            operadas.append("compuerta 1 (P1a=0) ACTIVA: el tope 0.5 no mueve el número, "
+                            f"el promedio de P ya era {bloques['P']:.2f}")
 
     faltan = [l for l in ("F", "C", "P", "S") if bloques[l] is None]
     if faltan:

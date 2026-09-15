@@ -320,6 +320,19 @@ def main():
           "no gasta tokens" in auto["nota"], auto.get("nota"))
     check("y los que no tienen ficha salen con su motivo, no en silencio",
           all(x.get("porque") for x in auto["sinFichaTodavia"]), auto.get("sinFichaTodavia"))
+    # «TODAVÍA» ES UNA PROMESA QUE EN ALGUNAS LIGAS NO SE CUMPLE NUNCA. Un
+    # partido ya TERMINADO sin alineación ingestada no está esperando nada:
+    # llamarlo «todavía» deja al usuario esperando para siempre.
+    terminados = {r["id"] for r in dbmod.query(
+        "sad", "SELECT id FROM fixtures WHERE status_short IN ('FT','AET','PEN')")}
+    check("un partido YA TERMINADO sin once no se llama `todavía`",
+          all(x["fixtureId"] not in terminados for x in auto["sinFichaTodavia"]),
+          [x["fixtureId"] for x in auto["sinFichaTodavia"]])
+    check("va a `nuncaVaALlegar`, con qué hacer en su lugar",
+          all(x.get("queHacer") and "procedimiento" in x["queHacer"]
+              for x in auto["nuncaVaALlegar"]), auto.get("nuncaVaALlegar"))
+    check("y se listan las ligas que no dan onces, para verlo como patrón",
+          isinstance(auto["ligasSinOnce"], list), auto.get("ligasSinOnce"))
     # idempotente: pasar dos veces no rehace nada
     otra = c.post(f"{A}/analisis/cowork/xi/auto").json()
     check("es idempotente: el ya cerrado no se vuelve a tocar",
@@ -1047,6 +1060,71 @@ def main():
     check("sin 1X2 declarado no hay acierto ni fallo, hay nota",
           o4["unXDos"]["acerto"] is False and "no se cuenta" in o4["unXDos"]["nota"], o4["unXDos"])
     check("y tampoco hay Brier", o4["brier"]["valor"] is None, o4["brier"])
+
+    # ── UN HUECO NO ES UN CERO (visto en producción) ───────────────────────
+    # Un parte sin sub-scores se pintaba «0.0/27 · 0% · SIN FORMACIÓN»: el
+    # veredicto más duro de la rúbrica, inventado sobre un dato que nadie
+    # puntuó. Y el re-depósito que los borró no lo declaró en `perdido`.
+    sin_scores = {"fixtureId": sin_ficha,
+                  "equipos": {l: {"plantel": [{"nombre": "Uno", "zona": "GK", "rol": "TF"}]}
+                              for l in ("a", "b")}}
+    c.post(f"{A}/analisis/cowork", json=sin_scores)
+    d0 = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["equipos"]["a"]
+    check("sin un solo sub-score el porcentaje es null, NO 0",
+          d0["porcentaje"] is None, d0["porcentaje"])
+    check("y no se clasifica lo que nadie evaluó",
+          d0["clasificacion"] == "" and d0["sinBloques"] is True,
+          (d0["clasificacion"], d0.get("sinBloques")))
+    check("y se dice que no es 0% ni SIN FORMACIÓN", "nadie puntuó" in d0["notaTotales"],
+          d0["notaTotales"])
+    check("cada bloque dice si lo puntuaron o no",
+          all(d0["bloques"][l]["declarado"] is False for l in "ABCDE"),
+          {l: d0["bloques"][l]["declarado"] for l in "ABCDE"})
+
+    # un cero DECLARADO sigue siendo un cero: la distinción es llegar o no
+    con_cero = {"fixtureId": sin_ficha,
+                "equipos": {l: {"bloques": {"A": 0, "B": 0, "C": 0, "D": 0, "E": 0}}
+                            for l in ("a", "b")}}
+    c.post(f"{A}/analisis/cowork", json=con_cero)
+    d1 = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["equipos"]["a"]
+    check("un 0 DECLARADO sí es 0% y sí clasifica",
+          d1["porcentaje"] == 0.0 and d1["clasificacion"] == "SIN_FORMACION",
+          (d1["porcentaje"], d1["clasificacion"]))
+
+    # un parte a medias declara el hueco en vez de dejar que arrastre callado
+    c.post(f"{A}/analisis/cowork", json={"fixtureId": sin_ficha,
+                                         "equipos": {l: {"bloques": {"A": 4, "B": 6}}
+                                                     for l in ("a", "b")}})
+    d2 = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["equipos"]["a"]
+    check("los bloques que faltan se declaran, no se disimulan",
+          d2["bloquesSinDeclarar"] == ["C", "D", "E"], d2.get("bloquesSinDeclarar"))
+    check("y se avisa que cuentan como 0 y bajan el porcentaje",
+          "bajan el porcentaje" in d2["notaTotales"], d2["notaTotales"])
+
+    # EL RE-DEPÓSITO QUE VACÍA LA RÚBRICA LO DICE
+    completo = _parte(sin_ficha)
+    c.post(f"{A}/analisis/cowork", json=completo)
+    # un cuerpo "vacío pero válido": el equipo existe, la rúbrica no
+    rec_v = c.post(f"{A}/analisis/cowork", json={"fixtureId": sin_ficha,
+                                                 "equipos": {l: {"plantel": []} for l in ("a", "b")}}).json()
+    perdido = " ".join(rec_v["perdido"])
+    check("borrar los sub-scores del EFE se declara en `perdido`",
+          "subScoresEfe" in perdido, rec_v["perdido"])
+    check("y también el TDE, la cadena y el reparto 1X2",
+          all(k in perdido for k in ("bloquesTde", "pronosticosDeCadena", "repartoUnXDos")),
+          rec_v["perdido"])
+    check("el aviso dice cómo se arregla", "vuelve a depositarlo completo" in rec_v["aviso"],
+          rec_v.get("aviso"))
+
+    # y la respuesta del GET se puede re-depositar sin inventar sub-scores
+    c.post(f"{A}/analisis/cowork", json=sin_scores)
+    ida0 = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()
+    c.post(f"{A}/analisis/cowork", json=ida0)
+    d3 = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["equipos"]["a"]
+    check("el viaje de ida y vuelta NO convierte el hueco en un 0 declarado",
+          d3["porcentaje"] is None and d3["sinBloques"] is True,
+          (d3["porcentaje"], d3.get("sinBloques")))
+    c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
 
     # ── FASE C: LAS LECCIONES, ACUMULADAS POR SKILL ────────────────────────
     # REGRESIÓN DE ORDEN DE RUTAS: `lecciones` es un segmento suelto y si se

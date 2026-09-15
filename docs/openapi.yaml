@@ -702,6 +702,17 @@ paths:
                   revisados: { type: integer }
                   cerrados: { type: array, items: { type: object, additionalProperties: true } }
                   conConflicto: { type: array, items: { type: object, additionalProperties: true } }
+                  nuncaVaALlegar:
+                    type: array
+                    description: >
+                      Partidos YA TERMINADOS cuya liga no da alineaciones por API-Football.
+                      No están esperando nada: reintentar no sirve, y el pantallazo a mano
+                      es el procedimiento para esa liga, no la excepción.
+                    items: { type: object, additionalProperties: true }
+                  ligasSinOnce:
+                    type: array
+                    description: 'ligas que no dan onces: para verlo como patrón, no caso por caso'
+                    items: { type: integer }
                   sinFichaTodavia: { type: array, items: { type: object, additionalProperties: true } }
                   nota: { type: string }
   /analisis/cowork/latido:
@@ -2015,6 +2026,12 @@ components:
         topePonderado: { type: number }
         excluido: { type: boolean }
         motivoExclusion: { type: string }
+        declarado:
+          type: boolean
+          description: >
+            false = nadie puntuó este bloque. Un hueco no es un cero: el eco del GET lo
+            devuelve así y el POST lo respeta, para que re-depositar la respuesta no
+            invente una nota que nunca existió.
         nota: { type: string }
     DisponibilidadParte:
       type: object
@@ -2082,8 +2099,22 @@ components:
           additionalProperties: { $ref: '#/components/schemas/BloqueParte' }
         total: { type: number }
         maximoAlcanzable: { type: number, description: '27 con bloque C, 23 sin él' }
-        porcentaje: { type: number }
-        clasificacion: { type: string, enum: [FORMADO, EN_FORMACION, SIN_FORMACION] }
+        porcentaje:
+          type: number
+          nullable: true
+          description: >
+            null = el parte no trae NI UN sub-score. No es 0%: es que nadie puntuó, y
+            pintarlo como 0 convierte una ausencia en el peor juicio de la rúbrica.
+        clasificacion:
+          type: string
+          enum: [FORMADO, EN_FORMACION, SIN_FORMACION, '']
+          description: "'' cuando no hay bloques declarados: no se clasifica lo que no se evaluó"
+        sinBloques: { type: boolean, description: 'true = ni un sub-score declarado' }
+        bloquesSinDeclarar:
+          type: array
+          description: 'letras que nadie puntuó: cuentan como 0 y arrastran el porcentaje'
+          items: { type: string }
+        notaTotales: { type: string }
         dt:
           type: object
           properties:

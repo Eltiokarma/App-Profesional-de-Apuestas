@@ -181,11 +181,23 @@ def _jugador(j: dict, rechazos: list, donde: str) -> dict | None:
             "rol": rol, "apps": _txt(j.get("apps"))}
 
 
+def _pron_cadena(v) -> str:
+    """El pronóstico de un lado de la cadena, venga plano o como objeto."""
+    if isinstance(v, dict):
+        return _txt(v.get("pronostico"))
+    return _txt(v)
+
+
 def _bloque_crudo(v):
     """El sub-score puede venir plano (`"A": 3`) o como objeto
     (`"A": {"score": 3, "nota": "…"}`). Las dos formas son razonables si vienes
     de leer la rúbrica; antes la segunda se convertía en 0 sin avisar."""
     if isinstance(v, dict):
+        # EL ECO DEL GET TRAE `declarado: false` EN LOS BLOQUES QUE NADIE
+        # PUNTUÓ. Sin mirarlo, re-depositar la respuesta convertía esos huecos
+        # en ceros declarados: el viaje de ida y vuelta inventaba una nota.
+        if v.get("declarado") is False:
+            return None, _txt(v.get("nota")), _txt(v.get("motivoExclusion") or v.get("motivo"))
         for clave in ("score", "valor", "puntaje", "subscore", "sub_score"):
             if clave in v:
                 return v[clave], _txt(v.get("nota")), _txt(v.get("motivoExclusion") or v.get("motivo"))
@@ -234,7 +246,8 @@ _CLAVES_PARTE = {"fixtureId", "version", "generadoEn", "equipos", "alertas", "ma
 # falsos y escondería los de verdad.
 _ECO_PARTE = {"partido", "estado", "creadoEn", "actualizadoEn", "xi", "veredicto",
               "timeline", "rechazos", "perdido", "aviso", "entrada"}
-_ECO_EQUIPO = {"total", "maximoAlcanzable", "porcentaje", "clasificacion", "disponibilidad"}
+_ECO_EQUIPO = {"total", "maximoAlcanzable", "porcentaje", "clasificacion", "disponibilidad",
+               "sinBloques", "bloquesSinDeclarar", "notaTotales"}
 _ECO_JUGADOR = {"soloBaja"}
 # los indicadores del TDE, por bloque — para poder publicarlos en el contrato
 from backend.analisis.tde import INDICADORES as _IND_TDE, INDICADORES_ISE as _IND_ISE
@@ -277,6 +290,11 @@ def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
             "peso": PESO_BLOQUE[letra],
             "excluido": bool(motivo),
             "motivoExclusion": motivo,
+            # UN BLOQUE QUE NADIE PUNTUÓ NO ES UN CERO. Sin esto, un parte al
+            # que le falta la mitad de la rúbrica se pintaba «0% · SIN
+            # FORMACIÓN», que es un veredicto durísimo inventado sobre un dato
+            # ausente — y el equipo salía en pantalla como el peor posible.
+            "declarado": crudo is not None or bool(motivo),
             "nota": _txt(notas_in.get(letra)) or nota_obj,
         }
     plantel = [j for j in (_jugador(x, rechazos, f"equipos.{lado}.plantel[{i}]")
@@ -722,6 +740,16 @@ def guardar(payload: dict) -> dict:
         except (ValueError, TypeError):
             antes = {}
         def _tam(p_: dict) -> dict:
+            # LO QUE ESTE CONTEO NO MIRE SE PUEDE BORRAR EN SILENCIO. La
+            # primera versión contaba listas —documentos, plantel, bajas— y
+            # dejaba fuera justo lo que hace al EFE: los sub-scores. Un
+            # re-depósito recortado vaciaba la rúbrica entera y el recibo decía
+            # `perdido: []`.
+            def _subscores(lado):
+                bl = ((p_.get("equipos", {}).get(lado) or {}).get("bloques") or {})
+                return sum(1 for l in LETRAS
+                           if isinstance(bl.get(l), dict) and bl[l].get("declarado"))
+            pron = p_.get("pronostico") or {}
             return {
                 "alertas": len(p_.get("alertas") or []),
                 "documentos": len(p_.get("documentos") or []),
@@ -729,6 +757,15 @@ def guardar(payload: dict) -> dict:
                 "jugadores": sum(len((p_.get("equipos", {}).get(l) or {}).get("plantel") or []) for l in LADOS),
                 "bajas": sum(len((p_.get("equipos", {}).get(l) or {}).get("fuera") or []) for l in LADOS),
                 "eventosTimeline": len(p_.get("timelineEventos") or []),
+                "subScoresEfe": sum(_subscores(l) for l in LADOS),
+                "bloquesTde": len(bloques_tde(p_.get("tde") or {})),
+                # `cadena[lado]` es el texto del pronóstico, pero también se
+                # acepta `{"pronostico": "…"}`: las dos formas se cuentan igual
+                "pronosticosDeCadena": sum(1 for l in LADOS if _pron_cadena((p_.get("cadena") or {}).get(l))),
+                "repartoUnXDos": 1 if sum((pron.get("probabilidades") or {}).values()) else 0,
+                "falsador": 1 if _txt(pron.get("falsador")) else 0,
+                "lecturaSad": 1 if (p_.get("lecturaSad") or {}).get("moduloOperativo") else 0,
+                "sensibilidad": sum(len((p_.get("equipos", {}).get(l) or {}).get("sensibilidad") or []) for l in LADOS),
             }
         t_antes, t_ahora = _tam(antes), _tam(parte)
         perdido = [f"{k}: {t_antes[k]} → {t_ahora[k]}" for k in t_antes if t_ahora[k] < t_antes[k]]
@@ -837,18 +874,41 @@ def borrar(fixture_id: int) -> bool:
 # ── lectura: el DTO que pinta la pantalla ───────────────────────────────────
 
 def _totales(equipo: dict) -> dict:
+    """El total ponderado, y —lo que faltaba— si hay algo que totalizar.
+
+    Un parte sin sub-scores daba 0/27 y clasificación SIN FORMACIÓN: el mismo
+    resultado que un equipo evaluado y reprobado. La ausencia se pintaba como
+    el peor juicio posible, que es la forma más cara de este error.
+    """
     total = maximo = 0.0
+    sin_declarar = []
     for letra in LETRAS:
         b = equipo["bloques"][letra]
         b["ponderado"] = round(b["score"] * b["peso"], 2)
         b["topePonderado"] = round(b["max"] * b["peso"], 2)
         if b["excluido"]:
             continue
+        if not b.get("declarado"):
+            sin_declarar.append(letra)
         total += b["ponderado"]
         maximo += b["topePonderado"]
+    declarados = [l for l in LETRAS
+                  if equipo["bloques"][l].get("declarado") and not equipo["bloques"][l]["excluido"]]
+    if not declarados:
+        return {"total": 0.0, "maximoAlcanzable": round(maximo, 2),
+                "porcentaje": None, "clasificacion": "",
+                "sinBloques": True, "bloquesSinDeclarar": list(sin_declarar),
+                "notaTotales": "el parte no trae ni un sub-score: no hay EFE que calcular. "
+                               "Esto NO es 0% ni SIN FORMACIÓN, es que nadie puntuó"}
     pct = round((total / maximo) * 100, 1) if maximo else 0.0
     return {"total": round(total, 2), "maximoAlcanzable": round(maximo, 2),
-            "porcentaje": pct, "clasificacion": clasificacion_de(pct)}
+            "porcentaje": pct, "clasificacion": clasificacion_de(pct),
+            "sinBloques": False, "bloquesSinDeclarar": sin_declarar,
+            # un bloque ausente arrastra el porcentaje hacia abajo como si
+            # fuera un cero: la cuenta se mantiene (la rúbrica los pide todos)
+            # pero el hueco se DICE, para que nadie lea el número como completo
+            "notaTotales": (f"faltan los sub-scores {', '.join(sin_declarar)}: cuentan como 0 "
+                            "y bajan el porcentaje" if sin_declarar else "")}
 
 
 def _disponibilidad(equipo: dict, xi: dict | None) -> dict:
@@ -1442,7 +1502,7 @@ def cerrar_onces_pendientes(limite: int = 50) -> dict:
             "SELECT fixture_id, equipo_a, equipo_b, xi_json FROM parte_cowork "
             "WHERE veredicto_json IS NULL AND estado != 'confirmado' "
             "ORDER BY fecha LIMIT ?", (limite,))]
-    cerrados, sin_ficha, conflictos = [], [], []
+    cerrados, sin_ficha, nunca, conflictos = [], [], [], []
     for f in filas:
         fid = f["fixture_id"]
         fx = _fixture(fid)
@@ -1458,8 +1518,25 @@ def cerrar_onces_pendientes(limite: int = 50) -> dict:
                 onces[lado] = de_ficha
         partido = f"{f['equipo_a']} vs {f['equipo_b']}"
         if not onces:
-            sin_ficha.append({"fixtureId": fid, "partido": partido,
-                              "porque": "la ficha todavía no trae la alineación"})
+            # «TODAVÍA» ES UNA PROMESA, Y HAY LIGAS DONDE NO SE CUMPLE NUNCA.
+            # Un partido TERMINADO sin alineación ingestada no está esperando
+            # nada: esa liga no trae onces, y el pantallazo a mano dejó de ser
+            # la excepción para ser el procedimiento. Decirlo cambia qué hace
+            # el usuario; llamarlo «todavía» lo deja esperando para siempre.
+            fila_fx = saddb.query_one(
+                "sad", "SELECT status_short, league_id FROM fixtures WHERE id=?", (fid,))
+            estado_fx = dict(fila_fx) if fila_fx else {}
+            if (estado_fx.get("status_short") or "") in _TERMINADO:
+                nunca.append({
+                    "fixtureId": fid, "partido": partido, "ligaId": estado_fx.get("league_id"),
+                    "porque": "el partido ya terminó y la ingesta nunca trajo la alineación: "
+                              "esta liga no da onces por API-Football",
+                    "queHacer": "pegá el once a mano (POST /analisis/cowork/{id}/xi). Para esta "
+                                "liga eso no es la excepción, es el procedimiento",
+                })
+            else:
+                sin_ficha.append({"fixtureId": fid, "partido": partido,
+                                  "porque": "la ficha todavía no trae la alineación"})
             continue
         listo = resolver_xi(fid, onces)
         # UN ONCE QUE NO CASA CON LA TABLA F1 NO CIERRA NADA. El conflicto se
@@ -1480,9 +1557,14 @@ def cerrar_onces_pendientes(limite: int = 50) -> dict:
         "cerrados": cerrados,
         "conConflicto": conflictos,
         "sinFichaTodavia": sin_ficha,
+        # separado a propósito de `sinFichaTodavia`: acá no hay nada que esperar
+        "nuncaVaALlegar": nunca,
+        "ligasSinOnce": sorted({x["ligaId"] for x in nunca if x.get("ligaId")}),
         "nota": "esto no gasta tokens ni llama a ningún modelo: cruza el once ingestado "
-                "con la tabla F1 y aplica los pesos de rol. Los que salen en "
-                "`sinFichaTodavia` son los que necesitan el pantallazo a mano.",
+                "con la tabla F1 y aplica los pesos de rol. `sinFichaTodavia` son los que "
+                "todavía pueden cerrar solos; `nuncaVaALlegar` son partidos YA TERMINADOS "
+                "cuya liga no da alineaciones: esos necesitan el pantallazo a mano y "
+                "reintentarlos no sirve de nada.",
     }
 
 

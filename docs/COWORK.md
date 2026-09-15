@@ -410,6 +410,38 @@ comprobar** cuando se cierre el caso. El veredicto devuelve
 `objetivo.tde.bloques`, una comprobación por bloque: la echada de cada equipo
 se mide en los goles que **recibe**.
 
+### Un hueco no es un cero
+
+Un parte sin sub-scores se pintaba **«0.0/27 · 0% · SIN FORMACIÓN»**: el
+veredicto más duro de la rúbrica, inventado sobre un dato que nadie puntuó. Y
+el re-depósito que los había borrado no lo decía, porque `perdido` contaba
+documentos y jugadores pero no la rúbrica.
+
+Ahora:
+
+- Cada bloque viaja con `declarado`. Sin puntuar → `porcentaje: null`,
+  `clasificacion: ""`, `sinBloques: true`, y la pantalla dice **SIN BLOQUES
+  DECLARADOS** en vez de un 0%.
+- Un parte a medias declara `bloquesSinDeclarar`: esos cuentan como 0 en el
+  total (la rúbrica los pide todos) pero el hueco se dice, para que nadie lea
+  el porcentaje como completo.
+- `perdido` mira ahora los sub-scores del EFE, los bloques del TDE, los
+  pronósticos de la cadena, el reparto 1X2, el falsador, la lectura SAD y la
+  caja de sensibilidad. **El POST reemplaza el parte entero**: un cuerpo
+  recortado borra lo anterior, y eso tiene que salir en el recibo.
+- El eco del GET devuelve `declarado: false` en los huecos y el POST lo
+  respeta: re-depositar la respuesta ya no inventa un 0 que nadie escribió.
+
+### Las fichas que no van a llegar nunca
+
+`xi/auto` separa dos cosas que antes se llamaban igual:
+
+- `sinFichaTodavia` — el partido no empezó o acaba de empezar: puede cerrar solo.
+- `nuncaVaALlegar` — el partido **ya terminó** y la ingesta nunca trajo la
+  alineación. Esa liga no da onces por API-Football: reintentar no sirve, y el
+  pantallazo a mano es el procedimiento para esa liga, no la excepción.
+  `ligasSinOnce` junta los ids para verlo como patrón.
+
 ### La lección es un campo, no una promesa
 
 Cada lado del veredicto puede traer `leccion` + `skill` + `reglaTocada`. Eso es

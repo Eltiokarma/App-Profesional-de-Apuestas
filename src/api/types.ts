@@ -869,6 +869,8 @@ export interface BloqueParte {
   topePonderado: number
   excluido: boolean
   motivoExclusion?: string
+  /** false = nadie puntuó este bloque. Un hueco no es un cero. */
+  declarado?: boolean
   nota?: string
 }
 
@@ -919,8 +921,15 @@ export interface EquipoParte {
   total: number
   /** 27 con bloque C, 23 sin él. */
   maximoAlcanzable: number
-  porcentaje: number
-  clasificacion: 'FORMADO' | 'EN_FORMACION' | 'SIN_FORMACION'
+  /** null = el parte no trae ni un sub-score. NO es 0%: es que nadie puntuó. */
+  porcentaje: number | null
+  /** '' cuando no hay bloques declarados: no se clasifica lo que no se evaluó. */
+  clasificacion: 'FORMADO' | 'EN_FORMACION' | 'SIN_FORMACION' | ''
+  /** true = ni un sub-score declarado; la pantalla no debe pintar un 0%. */
+  sinBloques?: boolean
+  /** Letras que nadie puntuó: cuentan como 0 y arrastran el porcentaje. */
+  bloquesSinDeclarar?: string[]
+  notaTotales?: string
   dt: { nombre: string; meses: number }
   perfil: { sistema: string; estilo: string; fortaleza: string; vulnerabilidad: string }
   plantel: JugadorParte[]

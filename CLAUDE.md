@@ -99,7 +99,13 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   llega. El bloque F viaja congelado y se cierra con `POST
   /analisis/cowork/{id}/xi` (ficha de API-Football o once pegado a mano); un
   once que casa con menos de 7 nombres de la tabla F1 NO cierra el bloque:
-  se devuelve el conflicto en vez de un IP inventado. Cada skill del pipeline
+  se devuelve el conflicto en vez de un IP inventado. **Un bloque sin puntuar
+  no es un cero**: cada uno viaja con `declarado`, y un parte sin ni un
+  sub-score da `porcentaje: null` y `clasificacion: ""` —la pantalla dice SIN
+  BLOQUES DECLARADOS, nunca «0% · SIN FORMACIÓN», que es inventar el peor
+  juicio de la rúbrica sobre algo que nadie evaluó—. `perdido` mira los
+  sub-scores, el TDE, la cadena, el 1X2 y la lectura SAD: el POST reemplaza el
+  parte entero y lo que un cuerpo recortado borre tiene que salir en el recibo. Cada skill del pipeline
   tiene su sitio en la pantalla (tabla en `docs/COWORK.md`): bloque G desde
   `backend/calendario.py`, timeline fundido con `backend/cronologia.py` y
   pintado con `TimelineComparativo`, TDE estructurado en `tde.bloques[]`
@@ -112,7 +118,10 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   bloque F es cruzar listas de nombres y aplicar pesos de rol, no un análisis.
   Seis partidos que arrancan juntos son seis cierres de milisegundos, no una
   carrera de 30 minutos. Idempotente, sin tokens ni cuota; `sinFichaTodavia`
-  son los del pantallazo a mano y `conConflicto` los que NO se fuerzan. La
+  son los del pantallazo a mano y `conConflicto` los que NO se fuerzan;
+  `nuncaVaALlegar` son partidos YA TERMINADOS cuya liga no da alineaciones
+  —ahí reintentar no sirve y el pantallazo es el procedimiento, no la
+  excepción—. La
   agenda trae `porHacer`/`yaHechos` para **retomar donde se cortó** una corrida
   que se quedó sin tokens.
 - **Vigilancia del pipeline**: `GET /analisis/cowork/latido` +
