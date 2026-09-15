@@ -9,6 +9,7 @@ backend. Si un día alguien le pide a Cowork que mande un total, estos tests
 siguen pasando pero el parte se vuelve más lento y más fácil de equivocar: por
 eso el contrato ignora los campos calculados en vez de creerles.
 """
+import json
 import os
 import sys
 import tempfile
@@ -1101,6 +1102,32 @@ def main():
     check("y se avisa que cuentan como 0 y bajan el porcentaje",
           "bajan el porcentaje" in d2["notaTotales"], d2["notaTotales"])
 
+    # UN PARTE VIEJO NO PIERDE SU EFE POR UN CAMPO QUE NO EXISTÍA. Los partes
+    # guardados antes de `declarado` no tienen la clave: tratar «ausente» como
+    # «no declarado» les borraba la rúbrica de la pantalla — el mismo error que
+    # el campo vino a arreglar, girado del otro lado.
+    import backend.analisis.parte as cowork_mod
+    c.post(f"{A}/analisis/cowork", json={"fixtureId": sin_ficha,
+                                         "equipos": {l: {"bloques": {"A": 4, "B": 5, "C": 3,
+                                                                     "D": 4, "E": 2}}
+                                                     for l in ("a", "b")}})
+    with cowork_mod._conectar() as _con:
+        _fila = _con.execute("SELECT parte_json FROM parte_cowork WHERE fixture_id=?",
+                             (sin_ficha,)).fetchone()
+        _p = json.loads(_fila["parte_json"])
+        for _l in ("a", "b"):          # simula el JSON viejo: sin la clave
+            for _x in _p["equipos"][_l]["bloques"].values():
+                _x.pop("declarado", None)
+        _con.execute("UPDATE parte_cowork SET parte_json=? WHERE fixture_id=?",
+                     (json.dumps(_p, ensure_ascii=False), sin_ficha))
+    viejo = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["equipos"]["a"]
+    check("un parte anterior al campo `declarado` NO pierde su EFE",
+          viejo["sinBloques"] is False and viejo["porcentaje"] > 0,
+          (viejo.get("sinBloques"), viejo.get("porcentaje")))
+    check("y se dice que la declaración fue INFERIDA, no leída",
+          all(viejo["bloques"][l].get("declaradoInferido") for l in "ABCDE")
+          and "se infirió" in viejo["notaTotales"], viejo["notaTotales"])
+
     # EL RE-DEPÓSITO QUE VACÍA LA RÚBRICA LO DICE
     completo = _parte(sin_ficha)
     c.post(f"{A}/analisis/cowork", json=completo)
@@ -1125,6 +1152,41 @@ def main():
           d3["porcentaje"] is None and d3["sinBloques"] is True,
           (d3["porcentaje"], d3.get("sinBloques")))
     c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
+
+    # ── EL VEREDICTO TAMBIÉN SE RE-DEPOSITA (reportado por Cowork) ─────────
+    # Re-postear la respuesta del GET —el flujo natural para corregir una
+    # lección— rechazaba media docena de claves propias, degradaba un
+    # `falsadorCumplido: false` a `null` y corría la fecha del cierre.
+    p_rt = _parte(pasado["id"])
+    c.post(f"{A}/analisis/cowork", json=p_rt)
+    c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto", json={
+        "seleccion": "ciega", "modoEvaluacion": "PRE", "falsadorCumplido": False,
+        "porLado": {"a": {"veredicto": "fallo", "queP": "…", "leccion": "una lección",
+                          "skill": "teorema-del-echado"}}})
+    v1 = c.get(f"{A}/analisis/cowork/{pasado['id']}/veredicto").json()
+    cerrado_1 = v1["cerradoEn"]
+    r_rt = c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto", json=v1)
+    check("la respuesta del veredicto se vuelve a depositar sin rechazos",
+          r_rt.status_code == 200 and r_rt.json()["rechazos"] == [],
+          r_rt.json().get("rechazos"))
+    v2 = c.get(f"{A}/analisis/cowork/{pasado['id']}/veredicto").json()
+    check("y `falsadorCumplido: false` NO se degrada a null en el viaje",
+          v2["falsador"]["cumplido"] is False, v2["falsador"])
+    check("la fecha de cierre es evidencia: no se re-sella",
+          v2["cerradoEn"] == cerrado_1, (cerrado_1, v2["cerradoEn"]))
+    # (`ahora()` tiene resolución de segundos: en el mismo segundo los dos
+    # sellos coinciden, así que lo que se comprueba es que la corrección SE
+    # MARCA como corrección, no que el reloj haya avanzado)
+    check("la corrección queda marcada como corrección",
+          bool(v2["actualizadoEn"]), v2.get("actualizadoEn"))
+    check("la lección sobrevive al re-depósito",
+          v2["porLado"]["a"]["leccion"] == "una lección", v2["porLado"]["a"])
+    # borrar el valor sigue siendo posible, pero hay que pedirlo
+    c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto", json={
+        "seleccion": "ciega", "modoEvaluacion": "PRE", "falsadorCumplido": None,
+        "porLado": {"a": {"veredicto": "fallo"}}})
+    check("mandar `falsadorCumplido: null` a propósito SÍ lo borra",
+          c.get(f"{A}/analisis/cowork/{pasado['id']}/veredicto").json()["falsador"]["cumplido"] is None)
 
     # ── FASE C: LAS LECCIONES, ACUMULADAS POR SKILL ────────────────────────
     # REGRESIÓN DE ORDEN DE RUTAS: `lecciones` es un segmento suelto y si se

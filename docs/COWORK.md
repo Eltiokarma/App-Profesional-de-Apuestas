@@ -431,6 +431,28 @@ Ahora:
   recortado borra lo anterior, y eso tiene que salir en el recibo.
 - El eco del GET devuelve `declarado: false` en los huecos y el POST lo
   respeta: re-depositar la respuesta ya no inventa un 0 que nadie escribió.
+- Los partes depositados ANTES de que existiera `declarado` no tienen la clave.
+  Para esos la declaración se INFIERE del sub-score (>0 lo puso alguien) y se
+  marca `declaradoInferido`: tratar «ausente» como «no declarado» les habría
+  borrado el EFE de la pantalla a todos — el mismo error, girado del otro lado.
+
+### El veredicto también se re-deposita
+
+`POST /analisis/cowork/{id}/veredicto` acepta la respuesta de su propio GET, igual
+que el parte: `acredita`, `falsador`, `rechazos`, `cerradoEn`, `actualizadoEn`,
+`objetivo` y `sinPronosticoPrevio` son eco y se ignoran, no se rechazan.
+
+Dos reglas que salieron de romperlo:
+
+- **Una clave ausente conserva lo que había.** Re-postear el eco (que trae
+  `falsador: {texto, cumplido}` y no `falsadorCumplido`) degradaba un
+  `cumplido: false` guardado a `null`: el caso perdía su prueba más dura sin que
+  nadie lo pidiera. Para borrarlo hay que mandar `falsadorCumplido: null` a
+  propósito.
+- **`cerradoEn` es evidencia, no un `updated_at`.** Es la fecha con la que se
+  comprueba que el juicio se escribió cuando se dice, así que el primer cierre
+  manda y un re-depósito no la re-sella. Una corrección posterior queda en
+  `actualizadoEn`, aparte.
 
 ### Las fichas que no van a llegar nunca
 

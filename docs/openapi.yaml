@@ -2394,6 +2394,15 @@ components:
         reglaTocada: { type: string }
     VeredictoEntrada:
       type: object
+      description: >
+        La respuesta del GET se puede re-depositar tal cual: `acredita`, `falsador`,
+        `rechazos`, `cerradoEn`, `actualizadoEn`, `objetivo` y `sinPronosticoPrevio` son
+        eco de lo calculado y se ignoran en silencio, no se rechazan.
+
+
+        Una clave AUSENTE conserva lo que ya había: `falsadorCumplido` que no viaja no
+        borra el `false` guardado. Para borrarlo hay que mandar `falsadorCumplido: null`
+        a propósito.
       required: [seleccion, modoEvaluacion, porLado]
       properties:
         seleccion:
@@ -2530,7 +2539,15 @@ components:
           type: object
           additionalProperties: { $ref: '#/components/schemas/LadoVeredicto' }
         notas: { type: string }
-        cerradoEn: { type: string }
+        cerradoEn:
+          type: string
+          description: >
+            Cuándo se cerró el caso POR PRIMERA VEZ. Es evidencia, no un `updated_at`: con
+            esa fecha se comprueba que el juicio se escribió cuando se dice. Un re-depósito
+            NO la re-sella.
+        actualizadoEn:
+          type: string
+          description: "'' si el caso solo se cerró una vez; con fecha si se corrigió después"
         objetivo: { $ref: '#/components/schemas/VeredictoObjetivo' }
         sinPronosticoPrevio:
           type: array

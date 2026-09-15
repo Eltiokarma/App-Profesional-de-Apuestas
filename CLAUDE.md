@@ -105,7 +105,11 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   BLOQUES DECLARADOS, nunca «0% · SIN FORMACIÓN», que es inventar el peor
   juicio de la rúbrica sobre algo que nadie evaluó—. `perdido` mira los
   sub-scores, el TDE, la cadena, el 1X2 y la lectura SAD: el POST reemplaza el
-  parte entero y lo que un cuerpo recortado borre tiene que salir en el recibo. Cada skill del pipeline
+  parte entero y lo que un cuerpo recortado borre tiene que salir en el recibo.
+  El veredicto TAMBIÉN acepta el eco de su propio GET, una clave ausente
+  conserva lo guardado (`falsadorCumplido` que no viaja no borra el `false`), y
+  `cerradoEn` NO se re-sella: es la evidencia de cuándo se cerró el caso, y una
+  corrección posterior va aparte en `actualizadoEn`. Cada skill del pipeline
   tiene su sitio en la pantalla (tabla en `docs/COWORK.md`): bloque G desde
   `backend/calendario.py`, timeline fundido con `backend/cronologia.py` y
   pintado con `TimelineComparativo`, TDE estructurado en `tde.bloques[]`

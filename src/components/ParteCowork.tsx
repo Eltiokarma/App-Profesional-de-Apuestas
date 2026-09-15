@@ -739,6 +739,7 @@ function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' 
           )}
           <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>
             {o.brier?.escala} · cerrado {v.cerradoEn}
+            {v.actualizadoEn ? ` · corregido ${v.actualizadoEn}` : ''}
           </div>
         </div>
       )}

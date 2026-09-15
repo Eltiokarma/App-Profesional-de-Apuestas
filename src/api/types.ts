@@ -871,6 +871,8 @@ export interface BloqueParte {
   motivoExclusion?: string
   /** false = nadie puntuó este bloque. Un hueco no es un cero. */
   declarado?: boolean
+  /** true = parte anterior al campo: la declaración se infirió del sub-score. */
+  declaradoInferido?: boolean
   nota?: string
 }
 
@@ -1088,7 +1090,10 @@ export interface VeredictoParte {
   falsador: { texto: string; cumplido: boolean | null }
   porLado: Partial<Record<'a' | 'b', LadoVeredicto>>
   notas: string
+  /** Cuándo se cerró el caso POR PRIMERA VEZ. No se re-sella: es evidencia. */
   cerradoEn: string
+  /** '' si solo se cerró una vez; con fecha si el juicio se corrigió después. */
+  actualizadoEn?: string
   objetivo: VeredictoObjetivo
   sinPronosticoPrevio?: string[]
 }

@@ -2224,7 +2224,11 @@ def cowork_veredicto(fixture_id: int, body: VeredictoBody):
     cadena del equipo: se dice en `sinPronosticoPrevio`."""
     from backend.analisis import parte as cowork
     try:
-        return cowork.guardar_veredicto(fixture_id, body.model_dump())
+        # `exclude_unset`: un campo con default rellenaba la clave aunque nadie
+        # la mandara, y `falsadorCumplido` (default None) pisaba con null lo que
+        # ya estaba guardado. Ausente tiene que llegar ausente para que el
+        # backend pueda distinguir «no lo mandé» de «borralo».
+        return cowork.guardar_veredicto(fixture_id, body.model_dump(exclude_unset=True))
     except cowork.ParteInvalido as e:
         raise HTTPException(422, str(e))
 

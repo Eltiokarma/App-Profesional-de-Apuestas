@@ -255,6 +255,12 @@ INDICADORES_TDE = {**_IND_TDE, "ISE": _IND_ISE}
 
 _CLAVES_VEREDICTO = {"seleccion", "modoEvaluacion", "mancha", "falsadorCumplido",
                      "porLado", "notas", "fixtureId"}
+# EL VEREDICTO TAMBIÉN TIENE QUE PODER RE-DEPOSITARSE. Su GET devuelve lo
+# calculado al lado del juicio; re-postear esa respuesta —el flujo natural para
+# corregir una lección— rechazaba media docena de claves propias, y una de
+# ellas (`falsador`) además degradaba un `cumplido: false` guardado a `null`.
+_ECO_VEREDICTO = {"acredita", "falsador", "rechazos", "cerradoEn", "objetivo",
+                  "actualizadoEn", "sinPronosticoPrevio"}
 
 
 def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
@@ -880,6 +886,17 @@ def _totales(equipo: dict) -> dict:
     resultado que un equipo evaluado y reprobado. La ausencia se pintaba como
     el peor juicio posible, que es la forma más cara de este error.
     """
+    # PARTES DEPOSITADOS ANTES DE QUE `declarado` EXISTIERA. Su JSON guardado no
+    # tiene la clave, y tratar «ausente» como «no declarado» le borraba el EFE
+    # de la pantalla a todo lo depositado hasta ayer — el mismo error que este
+    # campo vino a arreglar, girado del otro lado. Para esos se INFIERE (un
+    # sub-score > 0 lo puso alguien) y se dice que es una inferencia.
+    legado = not any("declarado" in equipo["bloques"][l] for l in LETRAS)
+    if legado:
+        for letra in LETRAS:
+            b = equipo["bloques"][letra]
+            b["declarado"] = bool(b["score"]) or b["excluido"]
+            b["declaradoInferido"] = True
     total = maximo = 0.0
     sin_declarar = []
     for letra in LETRAS:
@@ -894,12 +911,14 @@ def _totales(equipo: dict) -> dict:
         maximo += b["topePonderado"]
     declarados = [l for l in LETRAS
                   if equipo["bloques"][l].get("declarado") and not equipo["bloques"][l]["excluido"]]
+    nota_legado = (". Parte anterior al campo `declarado`: se infirió de los sub-scores, "
+                   "así que un 0 declarado de verdad puede figurar como hueco" if legado else "")
     if not declarados:
         return {"total": 0.0, "maximoAlcanzable": round(maximo, 2),
                 "porcentaje": None, "clasificacion": "",
                 "sinBloques": True, "bloquesSinDeclarar": list(sin_declarar),
                 "notaTotales": "el parte no trae ni un sub-score: no hay EFE que calcular. "
-                               "Esto NO es 0% ni SIN FORMACIÓN, es que nadie puntuó"}
+                               "Esto NO es 0% ni SIN FORMACIÓN, es que nadie puntuó" + nota_legado}
     pct = round((total / maximo) * 100, 1) if maximo else 0.0
     return {"total": round(total, 2), "maximoAlcanzable": round(maximo, 2),
             "porcentaje": pct, "clasificacion": clasificacion_de(pct),
@@ -907,8 +926,8 @@ def _totales(equipo: dict) -> dict:
             # un bloque ausente arrastra el porcentaje hacia abajo como si
             # fuera un cero: la cuenta se mantiene (la rúbrica los pide todos)
             # pero el hueco se DICE, para que nadie lea el número como completo
-            "notaTotales": (f"faltan los sub-scores {', '.join(sin_declarar)}: cuentan como 0 "
-                            "y bajan el porcentaje" if sin_declarar else "")}
+            "notaTotales": ((f"faltan los sub-scores {', '.join(sin_declarar)}: cuentan como 0 "
+                             "y bajan el porcentaje" if sin_declarar else "") + nota_legado).strip(". ")}
 
 
 def _disponibilidad(equipo: dict, xi: dict | None) -> dict:
@@ -1292,7 +1311,24 @@ def guardar_veredicto(fixture_id: int, payload: dict) -> dict:
         raise ParteInvalido("porLado vacío: hace falta el veredicto de al menos un lado "
                             "(acierto, parcial o fallo)")
 
-    cumplido = payload.get("falsadorCumplido")
+    # el veredicto anterior, si lo hay: hace falta para dos cosas que no se
+    # pueden reconstruir —cuándo se cerró y qué se había declarado—
+    with _conectar() as con:
+        fila_v = con.execute("SELECT veredicto_json FROM parte_cowork WHERE fixture_id=?",
+                             (fixture_id,)).fetchone()
+    previo_v = json.loads(fila_v["veredicto_json"]) if fila_v and fila_v["veredicto_json"] else {}
+
+    # AUSENTE NO ES `null`. Re-postear el eco del GET —que trae `falsador` como
+    # objeto y no `falsadorCumplido`— degradaba un `cumplido: false` guardado a
+    # `null`: el caso perdía su prueba más dura sin que nadie lo pidiera. Ahora
+    # la clave ausente CONSERVA lo anterior, y para borrarlo hay que mandar
+    # `falsadorCumplido: null` a propósito.
+    if "falsadorCumplido" in payload:
+        cumplido = payload["falsadorCumplido"]
+    elif isinstance(payload.get("falsador"), dict) and "cumplido" in payload["falsador"]:
+        cumplido = payload["falsador"]["cumplido"]      # el eco del propio GET
+    else:
+        cumplido = (previo_v.get("falsador") or {}).get("cumplido")
     # UNA EXCEPCIÓN DECLARADA. A veces el caso es `ciega` de verdad y aun así
     # hay algo que contar: el parte se tocó con el partido rodando aunque el
     # pronóstico no se movió, la alineación llegó por un pantallazo sin sellar,
@@ -1303,7 +1339,7 @@ def guardar_veredicto(fixture_id: int, payload: dict) -> dict:
     # entera dentro de seis meses cuando nadie se acuerde del caso.
     mancha = _txt(payload.get("mancha"))
     rechazos: list[dict] = []
-    _claves_raras(payload, _CLAVES_VEREDICTO, rechazos, "(veredicto)")
+    _claves_raras(payload, _CLAVES_VEREDICTO | _ECO_VEREDICTO, rechazos, "(veredicto)")
     guardado = {
         "seleccion": seleccion,
         "modoEvaluacion": modo,
@@ -1314,7 +1350,12 @@ def guardar_veredicto(fixture_id: int, payload: dict) -> dict:
         "porLado": por_lado,
         "notas": _txt(payload.get("notas")),
         "rechazos": rechazos,
-        "cerradoEn": efedb.ahora(),
+        # CUÁNDO SE CERRÓ EL CASO ES EVIDENCIA, NO UN `updated_at`. Re-sellarlo
+        # en cada depósito corría la fecha del cierre —justo el dato con el que
+        # se comprueba que el juicio se escribió antes de mirar otra cosa—. El
+        # primer cierre manda; las correcciones posteriores van aparte.
+        "cerradoEn": previo_v.get("cerradoEn") or efedb.ahora(),
+        "actualizadoEn": efedb.ahora() if previo_v else "",
     }
     with _conectar() as con:
         con.execute("UPDATE parte_cowork SET veredicto_json=?, actualizado_en=? WHERE fixture_id=?",
@@ -1383,6 +1424,7 @@ def veredicto_de(fixture_id: int) -> dict | None:
             # salvedad: vacía, no ausente, para que la pantalla no adivine
             "mancha": guardado.get("mancha", ""),
             "rechazos": guardado.get("rechazos", []),
+            "actualizadoEn": guardado.get("actualizadoEn", ""),
             "objetivo": vered.objetivo(fixture_id, parte)}
 
 
