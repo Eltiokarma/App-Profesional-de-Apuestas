@@ -158,7 +158,11 @@ def _alias(valor, tabla: dict) -> str:
     return ""
 
 
-def _jugador(j: dict, rechazos: list, donde: str) -> dict | None:
+def _jugador(j, rechazos: list, donde: str) -> dict | None:
+    if not isinstance(j, dict):
+        rechazos.append({"donde": donde, "porque": f"cada jugador es un objeto, llegó {type(j).__name__}",
+                         "esperado": '{"nombre": "…", "zona": "DEF", "rol": "TF", "apps": "18/20"}'})
+        return None
     _claves_raras(j, _CLAVES_JUGADOR | _ECO_JUGADOR, rechazos, donde)
     nombre = _txt(j.get("nombre")) or _txt(j.get("jugador"))
     if not nombre:
@@ -217,6 +221,12 @@ def _fuera(f: dict, rechazos: list, donde: str) -> dict | None:
     zona y rol, se incorpora a la tabla para el bloque F; y si no los trae y
     tampoco está en la F1, se avisa de que no va a pesar.
     """
+    if isinstance(f, str):
+        f = {"nombre": f}   # una baja como «Apellido» a secas: entra, sin motivo
+    if not isinstance(f, dict):
+        rechazos.append({"donde": donde, "porque": f"cada baja es un objeto, llegó {type(f).__name__}",
+                         "esperado": '{"nombre": "…", "estado": "baja", "motivo": "…"}'})
+        return None
     _claves_raras(f, _CLAVES_FUERA, rechazos, donde)
     nombre = _txt(f.get("nombre"))
     if not nombre:
@@ -265,10 +275,13 @@ _ECO_VEREDICTO = {"acredita", "falsador", "rechazos", "cerradoEn", "objetivo",
 
 def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
             rechazos: list, lado: str) -> dict:
+    bruto = _dict(bruto, rechazos, f"equipos.{lado}", '{"bloques": {…}, "plantel": [...], …}')
     _claves_raras(bruto, _CLAVES_EQUIPO | _ECO_EQUIPO, rechazos, f"equipos.{lado}")
-    bloques_in = bruto.get("bloques") or {}
-    excluidos_in = bruto.get("excluidos") or {}
-    notas_in = bruto.get("notas") or {}
+    bloques_in = _dict(bruto.get("bloques"), rechazos, f"equipos.{lado}.bloques",
+                       '{"A": 3, "B": 4.5, "C": 2, "D": 3, "E": 2}')
+    excluidos_in = _dict(bruto.get("excluidos"), rechazos, f"equipos.{lado}.excluidos",
+                         '{"C": "motivo de la exclusión"}')
+    notas_in = _dict(bruto.get("notas"), rechazos, f"equipos.{lado}.notas", '{"A": "…"}')
     bloques = {}
     for letra in LETRAS:
         crudo, nota_obj, motivo_obj = _bloque_crudo(bloques_in.get(letra))
@@ -304,9 +317,11 @@ def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
             "nota": _txt(notas_in.get(letra)) or nota_obj,
         }
     plantel = [j for j in (_jugador(x, rechazos, f"equipos.{lado}.plantel[{i}]")
-                           for i, x in enumerate(bruto.get("plantel") or [])) if j]
+                           for i, x in enumerate(_lista(bruto.get("plantel"), rechazos,
+                                                        f"equipos.{lado}.plantel"))) if j]
     fuera = [f for f in (_fuera(x, rechazos, f"equipos.{lado}.fuera[{i}]")
-                         for i, x in enumerate(bruto.get("fuera") or [])) if f]
+                         for i, x in enumerate(_lista(bruto.get("fuera"), rechazos,
+                                                      f"equipos.{lado}.fuera"))) if f]
     # UNA BAJA QUE NO ESTÁ EN LA F1 NO PESA EN EL IP. El protocolo pide que la
     # tabla F1 liste a todos los relevantes, disponibles y no disponibles; si
     # una baja quedó fuera, o se incorpora con su rol o el IP la ignora — y
@@ -329,7 +344,9 @@ def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
     dt = bruto.get("dt") or {}
     if isinstance(dt, str):
         dt = {"nombre": dt}
-    perfil = bruto.get("perfil") or {}
+    dt = _dict(dt, rechazos, f"equipos.{lado}.dt", '{"nombre": "…", "meses": 14}')
+    perfil = _dict(bruto.get("perfil"), rechazos, f"equipos.{lado}.perfil",
+                   '{"sistema": "4-3-3", "estilo": "…", "fortaleza": "…", "vulnerabilidad": "…"}')
     nombre = _txt(bruto.get("nombre"))
     return {
         "nombre": canonizar(nombre, equipos_db) if nombre else "",
@@ -339,7 +356,11 @@ def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
         "plantel": plantel,
         "fuera": fuera,
         "factorX": [{"nombre": _txt(x.get("nombre")), "contexto": _txt(x.get("contexto"))}
-                    for x in (bruto.get("factorX") or []) if _txt(x.get("nombre"))],
+                    for x in (_dict(y, rechazos, f"equipos.{lado}.factorX[{i}]",
+                                    '{"nombre": "…", "contexto": "…"}')
+                              for i, y in enumerate(_lista(bruto.get("factorX"), rechazos,
+                                                           f"equipos.{lado}.factorX")))
+                    if _txt(x.get("nombre"))],
         "sensibilidad": [x for x in (
             _sensibilidad(y, rechazos, f"equipos.{lado}.sensibilidad[{i}]")
             for i, y in enumerate(_lista(bruto.get("sensibilidad"), rechazos,
@@ -357,6 +378,24 @@ def _lista(v, rechazos: list, donde: str) -> list:
                      "porque": f"tiene que ser una lista, llegó {type(v).__name__}",
                      "esperado": "[…]"})
     return []
+
+
+def _dict(v, rechazos: list, donde: str, esperado: str = "{…}") -> dict:
+    """Lo que tiene que ser un objeto y no lo es se DICE, no revienta.
+
+    `lecturaSad` como string tumbaba el depósito con un 500 sin mensaje: era
+    el segundo campo del contrato (después de `sensibilidad`) que en vez de
+    rechazar con motivo reventaba el endpoint. En un batch desatendido un 500
+    pierde el parte entero y nadie sabe por qué. Cualquier rama del cuerpo
+    que se lea con `.get` pasa por aquí."""
+    if v is None:
+        return {}
+    if isinstance(v, dict):
+        return v
+    rechazos.append({"donde": donde,
+                     "porque": f"tiene que ser un objeto, llegó {type(v).__name__}",
+                     "esperado": esperado})
+    return {}
 
 
 def _sensibilidad(x, rechazos: list, donde: str) -> dict | None:
@@ -393,15 +432,20 @@ def _sem(v, con_na: bool = False) -> str:
     return "na" if con_na else ""
 
 
-def _lectura_sad(x: dict) -> dict:
+def _lectura_sad(x, rechazos: list | None = None) -> dict:
     """Lo que el protocolo llama la lectura SAD: el juicio que cierra el EFE.
 
     Es puro criterio —no hay forma de calcularlo— y es lo que el analista lee
     primero cuando ya vio los números. Sin sitio propio en el parte terminaba
     diluido dentro del ensayo."""
+    rechazos = rechazos if rechazos is not None else []
+    x = _dict(x, rechazos, "lecturaSad",
+              '{"moduloOperativo": "…", "unXDos": {"texto": "…", "rangoAmpliado": false}, '
+              '"contextoEmocional": "…", "datoEstructural": "…", "paradoja": "…"}')
     uxd = x.get("unXDos") or x.get("un_x_dos") or {}
     if isinstance(uxd, str):
         uxd = {"texto": uxd}
+    uxd = _dict(uxd, rechazos, "lecturaSad.unXDos", '{"texto": "…", "rangoAmpliado": false}')
     return {
         "moduloOperativo": _txt(x.get("moduloOperativo") or x.get("modulo_operativo")),
         "unXDos": {"texto": _txt(uxd.get("texto")),
@@ -549,10 +593,16 @@ def _tde(x, rechazos: list) -> dict:
     return {"bloques": bloques} if bloques else {}
 
 
-def _evento_tl(e: dict) -> dict | None:
+def _evento_tl(e, rechazos: list | None = None, donde: str = "timelineEventos") -> dict | None:
     """Un evento INSTITUCIONAL del timeline. Los partidos no entran por aquí:
     los calcula backend/cronologia.py de nuestra propia base."""
     from backend import cronologia as crono
+    if not isinstance(e, dict):
+        if rechazos is not None:
+            rechazos.append({"donde": donde,
+                             "porque": f"cada evento es un objeto, llegó {type(e).__name__}",
+                             "esperado": '{"fecha": "2026-03-02", "tipo": "tecnico", "titulo": "…"}'})
+        return None
     titulo = _txt(e.get("titulo"))
     fecha = _txt(e.get("fecha"))
     if not titulo or not fecha:
@@ -598,7 +648,13 @@ _CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto"}
 _EQUIPOS_ALERTA = ("a", "b", "ambos", "global")
 
 
-def _alerta(a: dict, rechazos: list, donde: str) -> dict | None:
+def _alerta(a, rechazos: list, donde: str) -> dict | None:
+    if isinstance(a, str):
+        a = {"codigo": a}   # «T.54» a secas: entra, y se delata que va sin texto
+    if not isinstance(a, dict):
+        rechazos.append({"donde": donde, "porque": f"cada alerta es un objeto, llegó {type(a).__name__}",
+                         "esperado": '{"codigo": "T.54", "equipo": "b", "tipo": "estructural", "detalle": "…"}'})
+        return None
     _claves_raras(a, _CLAVES_ALERTA, rechazos, donde)
     codigo = _txt(a.get("codigo"))
     if not codigo:
@@ -621,7 +677,13 @@ def _alerta(a: dict, rechazos: list, donde: str) -> dict | None:
             "detalle": detalle}
 
 
-def _documento(d: dict) -> dict | None:
+def _documento(d, rechazos: list | None = None, donde: str = "documentos") -> dict | None:
+    if not isinstance(d, dict):
+        if rechazos is not None:
+            rechazos.append({"donde": donde,
+                             "porque": f"cada documento es un objeto, llegó {type(d).__name__}",
+                             "esperado": '{"id": "ensayo", "cuerpo": "markdown"}'})
+        return None
     cuerpo = _txt(d.get("cuerpo"))
     if not cuerpo:
         return None
@@ -662,31 +724,37 @@ def normalizar_parte(payload: dict) -> dict:
     if isinstance(eco, dict):
         payload = {**{k: v for k, v in eco.items() if k in _CLAVES_PARTE}, **payload}
     _claves_raras(payload, _CLAVES_PARTE | _ECO_PARTE, rechazos, "(raíz)")
+    cadena_in = _dict(payload.get("cadena"), rechazos, "cadena",
+                      '{"a": {"pronostico": "…"}, "b": {"pronostico": "…"}}')
     parte = {
         "fixtureId": fixture_id,
         "version": _txt(payload.get("version")) or VERSION,
         "generadoEn": _txt(payload.get("generadoEn")),
         "equipos": {l: _equipo(equipos_in.get(l) or {}, equipos_db, rechazos, l) for l in LADOS},
         "alertas": [a for a in (_alerta(x, rechazos, f"alertas[{i}]")
-                                for i, x in enumerate(payload.get("alertas") or [])) if a],
+                                for i, x in enumerate(_lista(payload.get("alertas"), rechazos,
+                                                             "alertas"))) if a],
         "matchup": {},
         "pronostico": {},
-        "lecturaSad": _lectura_sad(payload.get("lecturaSad") or payload.get("lectura_sad") or {}),
+        "lecturaSad": _lectura_sad(payload.get("lecturaSad") or payload.get("lectura_sad") or {},
+                                   rechazos),
         "tde": _tde(payload.get("tde"), rechazos),
-        "timelineEventos": [e for e in (_evento_tl(x) for x in (payload.get("timelineEventos") or [])) if e],
+        "timelineEventos": [e for e in (_evento_tl(x, rechazos, f"timelineEventos[{i}]")
+                                        for i, x in enumerate(_lista(payload.get("timelineEventos"),
+                                                                     rechazos, "timelineEventos"))) if e],
         "timelineNarrativa": _txt(payload.get("timelineNarrativa")),
-        "cadena": {l: _txt(((payload.get("cadena") or {}).get(l) or {}).get("pronostico")
-                           if isinstance((payload.get("cadena") or {}).get(l), dict)
-                           else (payload.get("cadena") or {}).get(l))
-                   for l in LADOS},
-        "documentos": [d for d in (_documento(x) for x in (payload.get("documentos") or [])) if d],
+        "cadena": {l: _pron_cadena(cadena_in.get(l)) for l in LADOS},
+        "documentos": [d for d in (_documento(x, rechazos, f"documentos[{i}]")
+                                   for i, x in enumerate(_lista(payload.get("documentos"), rechazos,
+                                                                "documentos"))) if d],
         "pendientes": _lista_txt(payload.get("pendientes")),
         "fuentes": _lista_txt(payload.get("fuentes")),
         "descartados": _lista_txt(payload.get("descartados")),
         "notas": _txt(payload.get("notas")),
         "rechazos": rechazos,
     }
-    m = payload.get("matchup") or {}
+    m = _dict(payload.get("matchup"), rechazos, "matchup",
+              '{"diagnostico": "FAVORABLE", "favorece": "a", "razon": "…", "h2a": "verde", …}')
     diag = _txt(m.get("diagnostico")).upper().replace("MATCHUP ", "")
     parte["matchup"] = {
         "diagnostico": diag if diag in ("FAVORABLE", "NEUTRO", "DESFAVORABLE") else "NEUTRO",
@@ -698,8 +766,11 @@ def normalizar_parte(payload: dict) -> dict:
         "h2b": _sem(m.get("h2b"), con_na=True),
         "h2c": _sem(m.get("h2c"), con_na=True),
     }
-    p = payload.get("pronostico") or {}
-    prob = p.get("probabilidades") or {}
+    p = _dict(payload.get("pronostico"), rechazos, "pronostico",
+              '{"motor": "…", "matriz": "…", "mercado": "…", '
+              '"probabilidades": {"local": 52, "empate": 27, "visita": 21}, "marcador": "2-1", "falsador": "…"}')
+    prob = _dict(p.get("probabilidades"), rechazos, "pronostico.probabilidades",
+                 '{"local": 52, "empate": 27, "visita": 21}')
     parte["pronostico"] = {
         "motor": _txt(p.get("motor")),
         "matriz": _txt(p.get("matriz")),
@@ -1818,6 +1889,13 @@ def contrato() -> dict:
             "los nombres del partido — salen de nuestra base",
             "ie / ise si mandás `indicadores` — se calculan y se delata la discrepancia",
         ],
+        "laAgenda": {
+            "conflicto": "cada candidato lo trae: vacío casi siempre. Si un equipo «también "
+                         "figura en» otro partido a menos de 20 h, uno de los dos fixtures está "
+                         "mal (aplazado sin marcar o duplicado). Con los DOS equipos chocando el "
+                         "fixture va a `descartados` con ese motivo",
+            "porHacer": "los de `analizar` que todavía no tienen parte: la lista de trabajo",
+        },
         "elRecibo": {
             "rechazos": "lo que NO se guardó, con el motivo y la forma esperada",
             "faltan": "bloques ausentes y qué van a costar al cerrar el caso",
@@ -1908,6 +1986,63 @@ def latido(horas: int = 36) -> dict:
     }
 
 
+# un equipo no juega dos partidos oficiales con menos de esto de diferencia:
+# si figura en dos, uno de los fixtures es un aplazado sin marcar o un duplicado
+HORAS_CHOQUE = 20
+
+
+def _choques(filas) -> dict[int, dict[int, str]]:
+    """fixture_id → {team_id: «también figura en …»} para los equipos de `filas`
+    que aparecen en OTRO fixture a menos de HORAS_CHOQUE. Los aplazados y
+    cancelados no cuentan como choque: ya están marcados como que no se juegan."""
+    if not filas:
+        return {}
+    equipos = sorted({f["home_team_id"] for f in filas} | {f["away_team_id"] for f in filas})
+    fechas = [f["date"] for f in filas if f["date"]]
+    if not equipos or not fechas:
+        return {}
+    margen = timedelta(hours=HORAS_CHOQUE)
+    desde = (datetime.strptime(min(fechas)[:19], "%Y-%m-%d %H:%M:%S") - margen).strftime("%Y-%m-%d %H:%M:%S")
+    hasta = (datetime.strptime(max(fechas)[:19], "%Y-%m-%d %H:%M:%S") + margen).strftime("%Y-%m-%d %H:%M:%S")
+    marcas = ",".join("?" * len(equipos))
+    otros = saddb.query(
+        "sad",
+        "SELECT f.id, f.date, f.status_short, f.home_team_id, f.away_team_id, "
+        "ht.name AS home_name, at.name AS away_name FROM fixtures f "
+        "JOIN teams ht ON ht.id=f.home_team_id JOIN teams at ON at.id=f.away_team_id "
+        f"WHERE f.date >= ? AND f.date <= ? AND (f.home_team_id IN ({marcas}) OR f.away_team_id IN ({marcas}))",
+        (desde, hasta, *equipos, *equipos),
+    )
+    por_equipo: dict[int, list] = {}
+    for o in otros:
+        if (o["status_short"] or "").upper() in _NO_SE_JUGO:
+            continue
+        for tid in (o["home_team_id"], o["away_team_id"]):
+            por_equipo.setdefault(tid, []).append(o)
+    out: dict[int, dict[int, str]] = {}
+    for f in filas:
+        if (f["status_short"] or "").upper() in _NO_SE_JUGO:
+            continue   # un aplazado ya se descarta por lo que es; no hace falta el choque
+        try:
+            t0 = datetime.strptime((f["date"] or "")[:19], "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            continue
+        for tid, nombre in ((f["home_team_id"], f["home_name"]), (f["away_team_id"], f["away_name"])):
+            for o in por_equipo.get(tid, []):
+                if o["id"] == f["id"]:
+                    continue
+                try:
+                    t1 = datetime.strptime((o["date"] or "")[:19], "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    continue
+                if abs((t1 - t0).total_seconds()) < margen.total_seconds():
+                    out.setdefault(f["id"], {})[tid] = (
+                        f"{nombre} también figura en {o['id']} ({o['home_name']} vs {o['away_name']}, "
+                        f"{(o['date'] or '')[:16]} UTC)")
+                    break
+    return out
+
+
 def agenda(fecha: date_t | None = None, limite: int = 8, liga_id: int | None = None,
            desde_ahora: bool = False, horas: int = 12,
            incluir_descartados: bool = False) -> dict:
@@ -1952,12 +2087,13 @@ def agenda(fecha: date_t | None = None, limite: int = 8, liga_id: int | None = N
         params.append(liga_id)
     filas = saddb.query(
         "sad",
-        "SELECT f.id, f.date, f.league_id, f.league_season, f.league_round, "
+        "SELECT f.id, f.date, f.league_id, f.league_season, f.league_round, f.status_short, "
         "f.home_team_id, f.away_team_id, ht.name AS home_name, at.name AS away_name "
         "FROM fixtures f JOIN teams ht ON ht.id=f.home_team_id JOIN teams at ON at.id=f.away_team_id "
         "WHERE " + " AND ".join(cond) + " ORDER BY f.date",
         tuple(params),
     )
+    choques = _choques(filas)
     with _conectar() as con:
         ya = {r["fixture_id"]: r["estado"] for r in
               con.execute("SELECT fixture_id, estado FROM parte_cowork").fetchall()}
@@ -1982,6 +2118,22 @@ def agenda(fecha: date_t | None = None, limite: int = 8, liga_id: int | None = N
                                   posiciones.get(f["home_team_id"], 0),
                                   posiciones.get(f["away_team_id"], 0),
                                   f["league_id"], f["league_round"] or "")
+        estado_fx = (f["status_short"] or "").upper()
+        if estado_fx in _NO_SE_JUGO:
+            # un aplazado sigue en `fixtures` con su fecha vieja: sin esto
+            # entraba a la agenda como si fuera a jugarse
+            prio, motivo = 0, f"el partido está {_NO_SE_JUGO[estado_fx]} ({estado_fx}): no se analiza"
+        choque = choques.get(f["id"]) or {}
+        if len(choque) == len(LADOS):
+            # LOS DOS equipos figuran en OTRO partido a pocas horas: este fixture
+            # es casi seguro un aplazado que la ingesta todavía no marcó. Cowork
+            # gastó una sesión entera en un Pereira–Santa Fe con Santa Fe jugando
+            # cuartos de Sudamericana dos horas después y Pereira otro partido
+            # cinco horas más tarde.
+            prio, motivo = 0, ("probablemente aplazado o duplicado: los dos equipos figuran "
+                               "en otro partido a menos de "
+                               f"{HORAS_CHOQUE} h ({'; '.join(choque.values())}). Confirmalo "
+                               "con `ingesta.diagnostico --dia … --api` antes de analizarlo")
         item = {
             "fixtureId": f["id"],
             "hora": (f["date"] or "")[11:16],
@@ -1992,6 +2144,10 @@ def agenda(fecha: date_t | None = None, limite: int = 8, liga_id: int | None = N
             "prioridad": prio, "motivo": motivo,
             "etiquetas": sorted(etiquetas),
             "parte": ya.get(f["id"], ""),
+            # un equipo que también figura en otro partido a pocas horas: uno de
+            # los dos fixtures está mal, y el analista tiene que saberlo ANTES
+            # de gastar la sesión. Vacío cuando no hay choque.
+            "conflicto": "; ".join(choque.values()) if choque else "",
         }
         (candidatos if prio else descartados).append(item)
     candidatos.sort(key=lambda i: (i["prioridad"], i["hora"]))

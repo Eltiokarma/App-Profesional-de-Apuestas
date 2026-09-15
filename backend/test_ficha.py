@@ -134,6 +134,41 @@ def main():
     check("y reemplaza en vez de acumular",
           con.execute("SELECT COUNT(*) FROM fixture_eventos WHERE fixture_id=555").fetchone()[0] == 2)
 
+    # ── LA TANDA DE PENALES NO SON GOLES ───────────────────────────────────
+    # API-Football manda cada disparo de la definición como Goal/Penalty con
+    # elapsed 120 y `extra` creciente, marcado solo en `comments`. Un Santa
+    # Fe–River quedó con 24 goles entre el 121' y el 142'.
+    def _pen(k, comments="Penalty Shootout", detail="Penalty", elapsed=120):
+        return {"time": {"elapsed": elapsed, "extra": k}, "team": {"id": 100 if k % 2 else 200},
+                "player": {"id": 40 + k, "name": f"Penal {k}"}, "assist": {"id": None, "name": None},
+                "type": "Goal", "detail": detail, "comments": comments}
+    tanda = EVENTOS + [_pen(k) for k in range(1, 9)] + [_pen(9, detail="Missed Penalty")]
+    guardar_eventos(con, {"fixture_id": 556, "eventos": tanda})
+    goles = con.execute("SELECT COUNT(*) FROM fixture_eventos WHERE fixture_id=556 AND tipo='Goal'").fetchone()[0]
+    check("los penales de la tanda (por `comments`) no se guardan como Goal", goles == 1, goles)
+    check("se guardan como Shootout, con su minuto, para quien los quiera",
+          con.execute("SELECT COUNT(*) FROM fixture_eventos WHERE fixture_id=556 AND tipo='Shootout' "
+                      "AND minuto BETWEEN 121 AND 129").fetchone()[0] == 9)
+    # sin `comments` (a veces viene null): tres o más penales al 120+x son la tanda
+    sin_comments = EVENTOS + [_pen(k, comments=None) for k in range(1, 4)]
+    guardar_eventos(con, {"fixture_id": 557, "eventos": sin_comments})
+    check("tres penales al 120+x sin `comments` también son tanda",
+          con.execute("SELECT COUNT(*) FROM fixture_eventos WHERE fixture_id=557 AND tipo='Shootout'").fetchone()[0] == 3)
+    # pero UN penal al 120+2 en el alargue es un gol de verdad
+    uno = EVENTOS + [_pen(2, comments=None)]
+    guardar_eventos(con, {"fixture_id": 558, "eventos": uno})
+    check("un solo penal al 120+2 sigue siendo gol (alargue, no tanda)",
+          con.execute("SELECT COUNT(*) FROM fixture_eventos WHERE fixture_id=558 AND tipo='Goal'").fetchone()[0] == 2)
+    # lo ya ingestado como gol se corrige al preparar las tablas (sin red)
+    con.executemany("INSERT INTO fixture_eventos (fixture_id, minuto, extra, tipo, detalle, equipo_id) "
+                    "VALUES (?,?,?,?,?,?)", [(559, 120 + k, k, "Goal", "Penalty", 100) for k in range(1, 7)]
+                    + [(559, 120 + 1, 1, "Goal", "Normal Goal", 200), (560, 122, 2, "Goal", "Penalty", 100)])
+    preparar_tablas(con)
+    check("la migración retagea la tanda ya ingestada",
+          con.execute("SELECT COUNT(*) FROM fixture_eventos WHERE fixture_id=559 AND tipo='Shootout'").fetchone()[0] == 6)
+    check("y respeta el gol normal del 120+1 y el penal suelto de otro partido",
+          con.execute("SELECT COUNT(*) FROM fixture_eventos WHERE fixture_id IN (559, 560) AND tipo='Goal'").fetchone()[0] == 2)
+
     # ── stats en formato largo ─────────────────────────────────────────────
     n = guardar_stats(con, 555, STATS)
     check("guarda las métricas de ambos equipos", n == 5, n)

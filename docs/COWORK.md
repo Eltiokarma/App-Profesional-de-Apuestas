@@ -672,6 +672,14 @@ Devuelve `analizar` (los que tocan, ya ordenados por prioridad y con su
 `fixtureId`), `enEspera` y `descartados` con su motivo. Usá `analizar` tal
 cual. No re-ordenes, no agregues partidos por tu cuenta.
 
+Cada candidato trae `conflicto`: vacío casi siempre. Si dice que un equipo
+«también figura en» otro partido a pocas horas, uno de los dos fixtures está
+mal (un aplazado que la ingesta no marcó, o un duplicado). Si chocan LOS DOS
+equipos, la agenda ya lo manda a `descartados` con el motivo; si choca uno
+solo, se queda en la lista y lo decidís vos: analizalo si la fecha se
+confirma en prensa, y si no, saltalo y anotá el `conflicto` en el cierre.
+Nunca gastes una sesión en un partido que otra fuente dice que no se juega.
+
 RETOMAR DONDE SE CORTÓ: cada candidato trae `tieneParte`, `onceCerrado` y
 `conVeredicto`, y la agenda trae `porHacer` (los que faltan) y `yaHechos`. Si
 la corrida anterior se quedó sin tokens, arrancá por `porHacer` y NO vuelvas a
@@ -717,6 +725,13 @@ Escribís vos (es juicio, no se puede calcular):
   máximo: A ≤4, B ≤6, C ≤4, D ≤4, E ≤3. Una línea de justificación por bloque.
   Un valor fuera de rango vuelve en `rechazos` (se guarda topeado, pero se
   delata).
+- EL DT DE NUESTRA BASE PUEDE ESTAR VIEJO. El entrenador que traen la
+  plantilla y la ficha sale de una ingesta que no corre todos los días: en
+  una corrida, seis de ocho no coincidían con la realidad. Antes de puntuar el
+  bloque A, confirmá quién dirige en prensa de esta semana y escribí ese
+  nombre en `dt` con su fuente en `notas.A`. Si no podés establecerlo, dejá A
+  fuera y decilo en `pendientes`: un A puntuado sobre un DT que ya no está
+  mueve el parte diez puntos y dispara o calla T.54 en falso.
 - Un bloque que la RÚBRICA manda excluir (p. ej. C sin constantes K por
   R-KT.2 en un recién ascendido) va en `excluidos`: `{"C": "motivo"}`. Así el
   máximo baja a 23 y el porcentaje se calcula sobre lo evaluable. Es DISTINTO
