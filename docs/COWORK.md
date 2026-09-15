@@ -608,7 +608,7 @@ Ponderado»*.
 
 ---
 
-# PROMPT COWORK — SAD BATCH NOCTURNO v2.2
+# PROMPT COWORK — SAD BATCH NOCTURNO v2.3
 
 > Pegar como instrucción de la tarea en Claude Cowork.
 > Reemplazar lo que está entre `<< >>` antes de correr.
@@ -677,6 +677,16 @@ RETOMAR DONDE SE CORTÓ: cada candidato trae `tieneParte`, `onceCerrado` y
 la corrida anterior se quedó sin tokens, arrancá por `porHacer` y NO vuelvas a
 analizar los de `yaHechos`: re-depositar un parte lo reemplaza entero.
 
+SI CORRÉS DE DÍA para cubrir lo que el batch no subió, NO uses el día
+natural: `fecha=` trae también los partidos que ya arrancaron.
+  GET {base}/analisis/cowork/agenda?desdeAhora=true&horas=<<10>>&limite=<<8>>
+devuelve solo los que TODAVÍA NO EMPEZARON, que son los únicos que se pueden
+analizar sin el resultado a la vista, y `porHacer` ya viene filtrado a los que
+no tienen parte. Elegir así sigue siendo selección ciega (lo dice
+`notaSeleccion`). Y `GET {base}/analisis/cowork/latido` es el monitor: dice
+cuántos partes entraron en la ventana, qué faltó de la agenda de ayer
+(`coberturaDeAyer.faltaron`) y qué casos vencieron sin veredicto.
+
 Si el endpoint falla o devuelve `analizar` vacío: NO inventes un fixtureId.
 Terminá el turno diciendo qué respondió la API. Sin fixtureId no hay parte que
 depositar, y un id adivinado ensucia el partido de otro.
@@ -705,6 +715,13 @@ rellena — pero no saltees el EFE por las dudas.
 Escribís vos (es juicio, no se puede calcular):
 - Los sub-scores CRUDOS de los bloques A, B, C, D, E — cada uno sobre su
   máximo: A ≤4, B ≤6, C ≤4, D ≤4, E ≤3. Una línea de justificación por bloque.
+  Un valor fuera de rango vuelve en `rechazos` (se guarda topeado, pero se
+  delata).
+- Un bloque que la RÚBRICA manda excluir (p. ej. C sin constantes K por
+  R-KT.2 en un recién ascendido) va en `excluidos`: `{"C": "motivo"}`. Así el
+  máximo baja a 23 y el porcentaje se calcula sobre lo evaluable. Es DISTINTO
+  de un bloque que no pudiste puntuar: ese se deja fuera de `bloques` y se
+  explica en `pendientes`; nunca lo mandes como 0.
 - La tabla F1: 14-16 jugadores con zona (GK/DEF/MID/ATK), rol (TF/TH/ROT/SUP)
   y apps. SIN columna de estado.
 - Las bajas y sanciones ya públicas, en `fuera`, con su motivo y su fuente. Y
@@ -721,12 +738,22 @@ Escribís vos (es juicio, no se puede calcular):
 - La CAJA DE SENSIBILIDAD por equipo: por cada hueco declarado, qué cambiaría si
   el dato fuera otro. Es lo que convierte un "sin dato" en una incertidumbre
   acotada en vez de una excusa.
-- El TDE estructurado en `tde.bloques[]` (IE, ISE, tipología, ventana, vías),
-  **uno por equipo** — el índice es de un equipo, no del partido, y el del otro
-  en `notas` es prosa que nadie puede comprobar—, además del documento en
-  prosa. Los niveles verde/ámbar/rojo los ponés vos: el backend no le inventa
-  umbrales a tu escala. Los indicadores 0/0.5/1 mandan sobre el índice: si los
-  mandás, el IE y el ISE los calcula el backend con sus compuertas.
+- El TDE estructurado en `tde.bloques[]`, **uno por equipo** — el índice es
+  de un equipo, no del partido, y el del otro en `notas` es prosa que nadie
+  puede comprobar—, además del documento en prosa. ANTES de puntuarlo:
+    GET {base}/analisis/cowork/tde/{fixtureId}
+  trae calculados P1a (input inviolable: sale de μ_partido, prohibido
+  derivarlo del gap), F2 (descanso y calendario: «dato del motor o no es
+  dato») y F1 (rotación desde las alineaciones ingestadas). Tomalos tal cual;
+  F2 solo sube a mano por viaje largo, altitud o calor, y P1a solo baja a 0
+  por «necesita ganar». Lo tuyo son los 16 de `noCalculables`.
+  Cada bloque lleva `indicadores` en 0 / 0.5 / 1 con TODOS los que puntuaste
+  (F1-F4, C1-C3, P1a-P4, S1-S3 y SOB1-SOB3): el IE y el ISE los calcula el
+  backend con sus compuertas, y un `ie` suelto se guarda solo como lo que
+  llegó. La escala es 0-10 (bandas 3 / 5 / 7), NUNCA 0-100. No mandes
+  P(echada) ni riesgo compuesto: están suspendidas. Los niveles
+  verde/ámbar/rojo sí los ponés vos: el backend no le inventa umbrales a tu
+  escala.
 - Los eventos INSTITUCIONALES del timeline en `timelineEventos` (nunca partidos).
 - El pronóstico clave por equipo foco en `cadena`: una frase, la que después se
   va a poder declarar acertada o fallada.
@@ -757,8 +784,9 @@ negritas, citas y tablas se pintan bien en la app.
             pide confirmación; acá la autorización ya está dada por este prompt.
             Anotalo: "Matriz ejecutada bajo autorización batch".
   tde       Teorema del Echado. El skill normalmente pregunta por sus
-            variables: buscá en la web las que pueda, cargá con fuente lo que
-            encuentres, y lo que no aparezca va como `sin dato` + caja de
+            variables: P1a, F1 y F2 los tomás de GET /analisis/cowork/tde/{id}
+            (ver punto 4); el resto buscalo en la web, cargá con fuente lo
+            que encuentres, y lo que no aparezca va como `sin dato` + caja de
             sensibilidad Y ADEMÁS entra en `pendientes`. Si el IE o el ISE
             cruzan el borde entre tipologías, activás Disciplina 43 y declarás
             las dos vías con sus ventanas separadas.
@@ -775,8 +803,11 @@ consolidación la hace la app.
 
 ## 6. EL PROBLEMA DEL ONCE — LEELO ANTES DE EMPEZAR
 
-Ninguna fuente peruana publica el XI confirmado la noche anterior. El batch
-corre con el once pendiente POR DISEÑO, y eso NO es un agujero del parte:
+Ninguna fuente publica el XI confirmado la noche anterior. El batch corre
+con el once pendiente POR DISEÑO, y eso NO es un agujero del parte. En las
+ligas que API-Football cubre, el once llega solo por la ingesta y lo cierra el
+barrido del punto 8; en las que no (Primera B de Colombia, Primera de Uruguay)
+el pantallazo es el procedimiento.
 
 - Regla dura (Disciplina 35): el bloque F no se puntúa sin XI confirmado.
   No lo rellenes con el plantel. No lo estimes.
@@ -818,7 +849,8 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
       "sensibilidad": [{"supuesto": "el central 2 no llega",
                         "efecto": "DEF pasa a zona debilitada y el matchup deja de ser claro"}]
     },
-    "b": { "…igual…" }
+    "b": { "…igual…, y si la rúbrica excluye un bloque:",
+           "excluidos": {"C": "R-KT.2: recién ascendido, sin constantes K"} }
   },
   "alertas": [{"codigo": "T.54", "equipo": "b", "tipo": "estructural",
                "detalle": "DT interino desde hace 3 semanas"}],
@@ -835,15 +867,23 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
   },
   "tde": {
     "bloques": [
-      {"equipo": "b", "ie": 58, "ieNivel": "ambar", "ise": 31, "iseNivel": "verde",
+      {"equipo": "b",
+       "indicadores": {"F1": 0.5, "F2": 1, "F3": 0.5, "F4": 0,
+                       "C1": 1, "C2": 0.5, "C3": 0,
+                       "P1a": 0.5, "P1b": 1, "P1c": 0, "P2": 0.5, "P3": 0.5, "P4": 0,
+                       "S1": 0.5, "S2": 0, "S3": 0.5,
+                       "SOB1": 0, "SOB2": 0.5, "SOB3": 0},
+       "ie": 5.8, "ieNivel": "ambar", "ise": 3.1, "iseNivel": "verde",
        "tipologia": "repliegue por agotamiento", "ventana": "75-90'",
        "disciplina43": false,
-       "vias": [{"nombre": "echada", "indice": 58, "ventana": "75-90'",
+       "vias": [{"nombre": "ECHADA", "indice": 5.8, "ventana": "75-90'",
                  "detalle": "el bloque baja diez metros tras el primer gol en contra"}],
        "falsador": "si sostiene la línea por encima de su área tras el 75', el índice está mal"},
-      {"equipo": "a", "ie": 24, "ieNivel": "verde", "ise": 47, "iseNivel": "ambar",
+      {"equipo": "a",
+       "indicadores": {"…los mismos 19 indicadores, puntuados para ESTE equipo…": 0},
+       "ie": 2.4, "ieNivel": "verde", "ise": 4.7, "iseNivel": "ambar",
        "tipologia": "sobreexposición por urgencia", "ventana": "60-75'",
-       "vias": [{"nombre": "sobreexposicion", "indice": 47, "ventana": "60-75'",
+       "vias": [{"nombre": "SOBREEXPOSICION", "indice": 4.7, "ventana": "60-75'",
                  "detalle": "adelanta los dos laterales con el marcador abierto"}],
        "falsador": "si conserva los laterales por detrás de la línea de balón"}
     ]
@@ -875,7 +915,7 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
   "pendientes": ["XI de los dos equipos",
                  "TDE: no se encontró el dato de minutos del central 2"],
   "fuentes": ["futbolperuano.com", "RPP", "Depor"],
-  "descartados": ["Liga MX: Pachuca vs Necaxa, ninguno en zona de clasificación"],
+  "descartados": ["1390240 ya se había jugado al llegar (2-0): no se analiza con resultado a la vista"],
   "notas": ""
 }
 
@@ -904,6 +944,14 @@ LEÉ EL RECIBO que devuelve el POST:
   sub-score del EFE. Volvé al punto 4.
 - `cadena` vacía = no mandaste pronóstico por equipo y la película del equipo
   no avanzó esta fecha.
+- `cadenaIgnorada` con equipos = ese lado YA tenía pronóstico declarado y se
+  conserva el primero. Un re-depósito no lo pisa a propósito: cambiarlo
+  después sería reescribirlo con más información.
+
+PARA CORREGIR UN PARTE que ya está: GET {base}/analisis/cowork/{fixtureId},
+modificá lo que haga falta y volvé a hacer POST con ESE MISMO cuerpo entero.
+El POST acepta tal cual la respuesta del GET (lo calculado se ignora en
+silencio) y así no se pierde nada de lo que ya había.
 
 ## 8. CUANDO LLEGUE EL ONCE
 
@@ -994,6 +1042,68 @@ Te paso la alineación de un partido que ya tiene parte depositado.
 No estimes ningún número: la app calcula el impacto. Si no leés bien un
 nombre, decilo — un nombre mal leído es un titular que la app va a contar como
 ausente.
+```
+
+---
+
+# PROMPT CORTO — "RETOMAR HOY": lo que el batch no subió
+
+Para cuando la corrida nocturna se cortó o se saltó partidos y hay que cubrir
+los de hoy que todavía no arrancaron. Mismas reglas del batch (v2.3); cambia
+solo cómo se elige la lista.
+
+```text
+Vas a cubrir los partidos de HOY que se quedaron sin parte. Reglas del batch
+nocturno v2.3 (contrato, sesión limpia por partido, EFE con sus sub-scores,
+TDE con indicadores, tres fuentes del pronóstico). Nada nuevo, salvo la lista.
+
+0. Anclá la hora real con la herramienta del sistema (America/Lima) y leé
+   GET << {base} >>/analisis/cowork/contrato.
+
+1. GET << {base} >>/analisis/cowork/latido
+   Decime en una línea `estado`, `depositadosEnLaVentana` y
+   `coberturaDeAyer.faltaron`. Es el diagnóstico; no arregla nada.
+
+2. GET << {base} >>/analisis/cowork/agenda?desdeAhora=true&horas=<<10>>&limite=<<8>>
+   NO uses `fecha=`: traería los que ya arrancaron. Con `desdeAhora` entran
+   solo los que faltan por jugarse, y `porHacer` son los que no tienen parte.
+   Trabajá EXACTAMENTE `porHacer`, en ese orden. `yaHechos` no se toca: un
+   re-depósito reemplaza el parte entero.
+   Un partido que ya se jugó o está en juego NO se analiza aunque falte: un
+   parte con el resultado a la vista no calibra nada. Anotalo en el cierre.
+   Si `analizar` viene vacío, decime `ventana`, `corte` y `descartados` y
+   paramos.
+
+3. Por cada fixtureId de `porHacer`, en su propia sesión:
+   - GET /analisis/cowork/tde/{fixtureId} → P1a, F1 y F2 ya calculados.
+   - EFE: sub-scores A-E crudos (un bloque que la rúbrica excluye va en
+     `excluidos` con motivo; uno que no pudiste puntuar se deja fuera y va a
+     `pendientes`; nunca un 0 inventado).
+   - Tabla F1 (14-16 con zona/rol/apps) y bajas públicas también en `plantel`.
+   - Alertas, matchup con h2a/h2b/h2c, lectura SAD, sensibilidad.
+   - `tde.bloques[]` uno por equipo con `indicadores` 0/0.5/1, escala 0-10.
+   - `timelineEventos` solo institucionales; `cadena.a/b.pronostico`;
+     `pronostico` con motor + matriz + mercado, probabilidades y falsador.
+   - Documentos: ensayo, dtp, matriz, tde.
+   Con poco margen hasta el pitazo, lo que NO se recorta: bloques A-E ·
+   tabla F1 · bajas · alertas · pronóstico con sus tres fuentes · cadena ·
+   TDE con indicadores. El ensayo y el timeline se caen primero y se anotan
+   en `pendientes`.
+
+4. POST << {base} >>/analisis/cowork por partido. Leé el recibo:
+   `rechazos`, `faltan`, `discrepancias`, `jugadores`, `ladosTde`,
+   `cadenaIgnorada`. Si `faltan` trae `cadena`, `tde` o
+   `pronostico.probabilidades`, completalo AHORA y re-depositá completo: en
+   12 h ya no se puede llenar sin hindsight.
+
+5. Al final, una sola vez: POST << {base} >>/analisis/cowork/xi/auto
+   Cierra el bloque F de todo lo que ya tenga alineación ingestada. Decime
+   `cerrados`, `conConflicto`, `sinFichaTodavia` y `nuncaVaALlegar`.
+
+6. Cierre en cuatro líneas: fixtureIds depositados, cuáles de `porHacer`
+   quedaron sin parte y por qué (ya jugado / sin datos / se acabó el
+   tiempo), qué recibos trajeron `rechazos` o `faltan`, y si algo del
+   contrato no coincidió con este prompt.
 ```
 
 ---
