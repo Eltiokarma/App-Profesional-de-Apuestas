@@ -583,7 +583,7 @@ Ponderado»*.
 
 ---
 
-# PROMPT COWORK — SAD BATCH NOCTURNO v2.1
+# PROMPT COWORK — SAD BATCH NOCTURNO v2.2
 
 > Pegar como instrucción de la tarea en Claude Cowork.
 > Reemplazar lo que está entre `<< >>` antes de correr.
@@ -619,13 +619,27 @@ Token: << SAD_TOKEN_COWORK >>   → cabecera `Authorization: Bearer <token>`
 Anclá la fecha real con la herramienta de hora del sistema. No asumas qué día
 es. Zona de referencia: America/Lima.
 
+ANTES DE NADA, LEÉ EL CONTRATO:
+  GET {base}/analisis/cowork/contrato
+Sale de las mismas constantes que validan el depósito, así que no puede estar
+desactualizado. Si algo de este prompt y el contrato no coinciden, manda el
+contrato — y decilo al terminar.
+
 ## 2. QUÉ PARTIDOS (0 deducción: lo decide la base)
 
   GET {base}/analisis/cowork/agenda?limite=<<4>>
 
+SIN `fecha` devuelve los del DÍA SIGUIENTE (UTC), que es lo que quiere el
+batch nocturno. Si corrés a otra hora y querés otro día, pasá `fecha=YYYY-MM-DD`.
+
 Devuelve `analizar` (los que tocan, ya ordenados por prioridad y con su
 `fixtureId`), `enEspera` y `descartados` con su motivo. Usá `analizar` tal
 cual. No re-ordenes, no agregues partidos por tu cuenta.
+
+RETOMAR DONDE SE CORTÓ: cada candidato trae `tieneParte`, `onceCerrado` y
+`conVeredicto`, y la agenda trae `porHacer` (los que faltan) y `yaHechos`. Si
+la corrida anterior se quedó sin tokens, arrancá por `porHacer` y NO vuelvas a
+analizar los de `yaHechos`: re-depositar un parte lo reemplaza entero.
 
 Si el endpoint falla o devuelve `analizar` vacío: NO inventes un fixtureId.
 Terminá el turno diciendo qué respondió la API. Sin fixtureId no hay parte que
@@ -643,6 +657,14 @@ del otro. Si un partido falla, seguís con el próximo.
 ## 4. QUÉ ESCRIBIR (y qué NO)
 
 Leé la rúbrica de `efe-clasificador` ANTES de puntuar nada.
+
+EL EFE ES TUYO Y ES EL NÚCLEO DEL PARTE. Lo que la app calcula sola es el
+TOTAL, el porcentaje y la clasificación —no los sub-scores—. Un parte sin
+bloques A-E no es un parte incompleto: es un parte sin EFE, y la pantalla lo
+va a mostrar como SIN BLOQUES DECLARADOS. Ya pasó una corrida entera así por
+leer mal esta sección. Si de verdad no podés puntuar un bloque, dejalo fuera y
+decí por qué en `pendientes`; lo que no se puede evaluar se declara, no se
+rellena — pero no saltees el EFE por las dudas.
 
 Escribís vos (es juicio, no se puede calcular):
 - Los sub-scores CRUDOS de los bloques A, B, C, D, E — cada uno sobre su
@@ -837,14 +859,38 @@ LEÉ EL RECIBO que devuelve el POST:
   descartaron, o les faltaba fecha o título.
 - `conLecturaSad` o `conTde` en false = ese bloque no llegó y la pestaña va a
   salir vacía. Si fue a propósito (sin dato), anotalo en `pendientes`.
+- `ladosTde` = de qué equipos quedó índice. Si dice `["a"]` o `["b"]`, el otro
+  equipo se quedó sin TDE: el índice es POR EQUIPO y caben los dos.
+- `faltan` = bloques ausentes AHORA que se van a cobrar al cerrar el caso
+  dentro de 12 h, cuando llenarlos ya sería escribir con el resultado puesto.
+  Cada uno dice qué va a costar y cómo se arregla hoy. Leelo siempre.
+- `equipos.{a,b}.sinBloques` en true al releer el parte = no entró ni un
+  sub-score del EFE. Volvé al punto 4.
 - `cadena` vacía = no mandaste pronóstico por equipo y la película del equipo
   no avanzó esta fecha.
 
 ## 8. CUANDO LLEGUE EL ONCE
 
-Dos caminos; la app hace la cuenta en los dos, sin costo.
+Tres caminos; la app hace la cuenta en los tres, sin costo y sin modelo.
 
-a) Lo que ya capturó nuestra ingesta de API-Football:
+0) EL BARRIDO, que es el que tenés que usar por defecto:
+     POST {base}/analisis/cowork/xi/auto
+   Cierra el bloque F de TODOS los partes cuya alineación ya esté ingestada.
+   Es idempotente y no gasta nada, así que se puede disparar cuantas veces
+   haga falta. Seis partidos que arrancan juntos son seis cierres de
+   milisegundos: no hay carrera contra el reloj.
+   En la respuesta:
+     `cerrados`          los que quedaron listos.
+     `conConflicto`      el once no casa con la tabla F1: NO se fuerza. Revisá
+                         la tabla, no insistas con el mismo once.
+     `sinFichaTodavia`   todavía puede cerrar solo. Reintentá más tarde.
+     `nuncaVaALlegar`    el partido YA TERMINÓ y esa liga no da alineaciones
+                         por API-Football. Ahí reintentar no sirve: esos
+                         necesitan el pantallazo a mano, y para esas ligas eso
+                         es el procedimiento, no la excepción. `ligasSinOnce`
+                         te las junta para que lo veas como patrón.
+
+a) Un partido puntual que ya capturó nuestra ingesta:
      POST {base}/analisis/cowork/{fixtureId}/xi
      {"desdeFicha": true}
    Responde 409 si la ficha todavía no tiene alineaciones. No insistas: no es
@@ -996,15 +1042,17 @@ comprueba contra nuestra base.
 
 SOBRE la lección: una frase accionable y sobre el MECANISMO, no sobre el
 rival. "Barcos define solo" no sirve; "el favorito con ventaja desde el 42
-concede entre el 77 y el 90" sí. Poné `skill` solo si tenés claro a cuál le
-toca, y `reglaTocada` solo si podés nombrar la regla concreta.
+concede entre el 77 y el 90" sí. Poné `skill` SIEMPRE que la
+lección sea de un skill: sin él la lección queda en `sinSkill`, aparte, y no
+cuenta para nada. `reglaTocada` solo si podés nombrar la regla concreta
+("bloque F · indicador F2", "ventana de 15 minutos") — si no sale del propio
+texto de la lección, dejala vacía antes que inventarla.
 
-SOBRE `mancha` — vacía casi siempre. Es para el caso que SÍ es ciego y aun
-así tiene algo que contar: "el parte se retocó en el minuto 2 con el partido
-rodando; el pronóstico quedó intacto", "la alineación llegó por pantallazo sin
-sellar". No cambia la población ni el acredita, queda como salvedad visible.
-No la uses para maquillar: si lo que pasó es que miraste el marcador antes de
-puntuar, eso es `post_resultado` y ninguna salvedad lo arregla.
+Lo que la lección puede llegar a mover depende de la población, y eso lo
+calcula la app: un caso `ciega`+`PRE` puede sostener un cambio de peso; uno
+contaminado solo fija rúbrica. Se ve en `puedeMoverNumeros` en
+`GET /analisis/cowork/lecciones`.
+
 
 Si el POST devuelve `rechazos` con algo dentro, leelo: es un campo que
 escribiste mal y que NO se guardó, con la sugerencia de cómo se llama.
