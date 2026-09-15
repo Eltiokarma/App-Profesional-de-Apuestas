@@ -190,6 +190,32 @@ HHI + confianza A/B/C, sección Plantilla en Equipo, ficha de partido
 Camino Cowork (docs/COWORK.md): agenda priorizada del día, depósito del parte,
 bloque F calculado en local y cierre del once desde la ficha o a mano.
 
+## Deuda declarada (lo que se sabe roto o pendiente)
+
+Está acá y no en la cabeza de nadie porque un pendiente que solo existe en una
+conversación se pierde en la siguiente.
+
+1. **El frontend recibe un token de API.** `VITE_API_KEY` viaja al bundle del
+   navegador, así que cualquiera que abra la web tiene la llave que usa la app.
+   Arreglo: rotar `SAD_API_TOKEN`, sacar `VITE_API_KEY` de Vercel y dejar de
+   mandarle cualquier token al cliente — un proxy en el frontend, o un tercer
+   token de SOLO LECTURA que no abra nada que gaste. Aplazado a conciencia por
+   el usuario mientras se probaba la tubería; ya está probada.
+2. **Los DT de la ficha están viejos.** En la corrida del 15/09, seis de ocho
+   entrenadores no coincidían con la realidad (un DT figuraba dirigiendo al
+   equipo que enfrenta). Eso decide el bloque A y dispara o no T.54. Se arregla
+   corriendo `python -m backend.ingesta.jugadores`, que gasta cuota de
+   API-Football: no se puede hacer desde una sesión de análisis.
+3. **Colisión de nombres F3/F4.** El bloque F del EFE tiene F3 y F4, y el TDE
+   tiene los suyos. La instrucción «no mandes F3 ni F4» (que habla del EFE) se
+   puede leer al revés. Renombrar desalinea el prompt del skill, así que por
+   ahora está declarado y no tocado.
+4. **Fases D y A del bucle de aprendizaje**, en `docs/APRENDIZAJE.md`: el
+   dossier de revisión y los antecedentes. La C ya está.
+5. **Onces de ligas sin cobertura.** Primera B de Colombia y Primera de Uruguay
+   no dan alineaciones por API-Football: para esas, el pantallazo a mano es el
+   procedimiento. Salen en `nuncaVaALlegar` con su liga.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel

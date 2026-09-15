@@ -1908,7 +1908,7 @@ def latido(horas: int = 36) -> dict:
     }
 
 
-def agenda(fecha: date_t | None = None, limite: int = 4, liga_id: int | None = None,
+def agenda(fecha: date_t | None = None, limite: int = 8, liga_id: int | None = None,
            desde_ahora: bool = False, horas: int = 12,
            incluir_descartados: bool = False) -> dict:
     """Los partidos del día ordenados por prioridad — calculado, no preguntado.

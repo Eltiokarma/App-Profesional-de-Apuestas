@@ -572,7 +572,7 @@ paths:
         su motivo. Cero créditos.
       parameters:
         - { name: fecha, in: query, schema: { type: string, format: date } }
-        - { name: limite, in: query, schema: { type: integer, default: 4, minimum: 1, maximum: 20 } }
+        - { name: limite, in: query, schema: { type: integer, default: 8, minimum: 1, maximum: 20 } }
         - name: ligaId
           in: query
           schema: { type: integer }

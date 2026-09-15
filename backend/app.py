@@ -2010,7 +2010,10 @@ class XiBody(BaseModel):
 @app.get(API + "/analisis/cowork/agenda")
 def cowork_agenda(
     fecha: date_t | None = None,
-    limite: int = Query(default=4, ge=1, le=20),
+    # 8 y no 4: con el padrón entero (35 competencias) cuatro llaves
+    # internacionales del mismo día se comían el cupo y una jornada de LaLiga
+    # no entraba. `corte` dice siempre qué quedó fuera por este número.
+    limite: int = Query(default=8, ge=1, le=20),
     ligaId: int | None = None,
     desdeAhora: bool = False,
     horas: int = Query(default=12, ge=1, le=72),

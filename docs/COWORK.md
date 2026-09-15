@@ -652,7 +652,7 @@ contrato — y decilo al terminar.
 
 ## 2. QUÉ PARTIDOS (0 deducción: lo decide la base)
 
-  GET {base}/analisis/cowork/agenda?limite=<<4>>
+  GET {base}/analisis/cowork/agenda?limite=<<8>>
 
 SIN `fecha` devuelve los del DÍA SIGUIENTE (UTC), que es lo que quiere el
 batch nocturno. Si corrés a otra hora y querés otro día, pasá `fecha=YYYY-MM-DD`.
