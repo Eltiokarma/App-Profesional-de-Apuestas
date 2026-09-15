@@ -76,8 +76,11 @@ def _goles(fixture_id: int, home_id: int) -> list[dict]:
     for f in filas:
         autogol = "own" in (f["detalle"] or "").lower()
         de_local = (f["equipo_id"] == home_id) != autogol
+        # `minuto` ya trae sumado el añadido (ficha_partido.guardar_eventos:
+        # 90+4 se guarda como minuto 94, extra 4). Sumarlo otra vez ponía ese
+        # gol en el 98 y lo sacaba de la ventana 75-90 en la que cayó.
         out.append({
-            "minuto": (f["minuto"] or 0) + (f["extra"] or 0),
+            "minuto": f["minuto"] or 0,
             "lado": "a" if de_local else "b",
             "jugador": f["jugador"] or "",
             "autogol": autogol,

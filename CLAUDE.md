@@ -130,6 +130,11 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   descarte viaja SIEMPRE con su motivo y el id de la liga, y la respuesta trae
   `corte` con lo que quedó fuera SOLO por el `limite` —que es lo que hace que
   una jornada entera de LaLiga no aparezca sin que nadie entienda por qué—.
+  Un equipo que figura en DOS partidos a menos de 20 h viaja con `conflicto`
+  (uno de los dos fixtures es un aplazado sin marcar o un duplicado); si
+  chocan los dos equipos del fixture, se descarta con ese motivo. Un
+  aplazado/cancelado (`PST`/`CANC`/`ABD`) se descarta como tal. La tanda de
+  penales se guarda con tipo `Shootout`, nunca como `Goal`.
 - **El once se cierra solo** (`POST /analisis/cowork/xi/auto`): cerrar el
   bloque F es cruzar listas de nombres y aplicar pesos de rol, no un análisis.
   Seis partidos que arrancan juntos son seis cierres de milisegundos, no una
@@ -205,7 +210,9 @@ conversación se pierde en la siguiente.
    entrenadores no coincidían con la realidad (un DT figuraba dirigiendo al
    equipo que enfrenta). Eso decide el bloque A y dispara o no T.54. Se arregla
    corriendo `python -m backend.ingesta.jugadores`, que gasta cuota de
-   API-Football: no se puede hacer desde una sesión de análisis.
+   API-Football: no se puede hacer desde una sesión de análisis. Mientras
+   tanto el prompt (v2.3) obliga a confirmar el DT en prensa antes de puntuar
+   el bloque A, y a dejar A fuera si no se puede establecer.
 3. **Colisión de nombres F3/F4.** El bloque F del EFE tiene F3 y F4, y el TDE
    tiene los suyos. La instrucción «no mandes F3 ni F4» (que habla del EFE) se
    puede leer al revés. Renombrar desalinea el prompt del skill, así que por

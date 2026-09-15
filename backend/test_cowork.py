@@ -195,6 +195,60 @@ def main():
     check("los partidos pasados existen y es la ventana la que los excluye",
           len(r_pasado["analizar"]) > 0, pasado_dia)
 
+    # ── UN EQUIPO EN DOS PARTIDOS A POCAS HORAS (la sesión perdida de Cowork) ──
+    # Pereira–Santa Fe a las 20:00 con Santa Fe en cuartos de Sudamericana a
+    # las 22:00 y Pereira jugando otra vez cinco horas después: un aplazado
+    # sin marcar. La agenda lo tiene que decir ANTES de gastar la sesión.
+    fxr = dbmod.query_one("sad", "SELECT date, league_id, league_season, home_team_id, away_team_id "
+                                 "FROM fixtures WHERE id=?", (sin_ficha,))
+    import sqlite3 as _sq
+    t0 = _dt.datetime.strptime(fxr["date"][:19], "%Y-%m-%d %H:%M:%S")
+    otros_eq = [r["id"] for r in dbmod.query(
+        "sad", "SELECT id FROM teams WHERE id NOT IN (?,?) ORDER BY id LIMIT 3",
+        (fxr["home_team_id"], fxr["away_team_id"]))]
+    otro_equipo, otro_b, otro_c = otros_eq
+    base_ch = {i["fixtureId"]: i["conflicto"] for i in
+               (lambda a: a["analizar"] + a["enEspera"] + a["descartados"])(
+                   c.get(f"{A}/analisis/cowork/agenda", params={"fecha": fecha, "limite": 20}).json())}
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        # el visitante juega OTRO partido dos horas después (uno solo choca)
+        _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                     "home_team_id, away_team_id) VALUES (?,?,?,?,?,?,?,?)",
+                     (990001, (t0 + _dt.timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S"), "NS",
+                      "Not Started", fxr["league_id"], fxr["league_season"], otro_equipo, fxr["away_team_id"]))
+        # y un fixture donde chocan LOS DOS equipos: el local también juega en otro
+        _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                     "home_team_id, away_team_id) VALUES (?,?,?,?,?,?,?,?)",
+                     (990002, (t0 + _dt.timedelta(hours=5)).strftime("%Y-%m-%d %H:%M:%S"), "NS",
+                      "Not Started", fxr["league_id"], fxr["league_season"], fxr["home_team_id"], otro_b))
+        # y un aplazado con fecha vieja, que no es choque de nadie
+        _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                     "home_team_id, away_team_id) VALUES (?,?,?,?,?,?,?,?)",
+                     (990003, (t0 + _dt.timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S"), "PST",
+                      "Match Postponed", fxr["league_id"], fxr["league_season"], otro_c, fxr["away_team_id"]))
+    ag_ch = c.get(f"{A}/analisis/cowork/agenda", params={"fecha": fecha, "limite": 20, "incluirDescartados": "false"}).json()
+    todo_ch = {i["fixtureId"]: i for i in ag_ch["analizar"] + ag_ch["enEspera"] + ag_ch["descartados"]}
+    check("el fixture cuyos DOS equipos juegan en otro lado se descarta con motivo",
+          sin_ficha in {i["fixtureId"] for i in ag_ch["descartados"]}
+          and "probablemente aplazado" in todo_ch[sin_ficha]["motivo"], todo_ch.get(sin_ficha, {}).get("motivo"))
+    check("y el motivo nombra los otros fixtures",
+          "990001" in todo_ch[sin_ficha]["motivo"] and "990002" in todo_ch[sin_ficha]["motivo"],
+          todo_ch[sin_ficha]["motivo"])
+    check("el fixture donde choca UN solo equipo sigue en la lista, con `conflicto`",
+          990001 in todo_ch and 990001 not in {i["fixtureId"] for i in ag_ch["descartados"]}
+          and str(sin_ficha) in todo_ch[990001]["conflicto"], todo_ch.get(990001, {}).get("conflicto"))
+    check("un aplazado no cuenta como choque y sale descartado como tal",
+          "aplazado" in todo_ch[990003]["motivo"] and todo_ch[990003]["prioridad"] == 0
+          and "990003" not in todo_ch[990001]["conflicto"], todo_ch.get(990003, {}).get("motivo"))
+    tocados = {fxr["home_team_id"], fxr["away_team_id"], otro_equipo, otro_b, otro_c}
+    check("los partidos ajenos al choque no cambian su `conflicto`",
+          all(i["conflicto"] == base_ch.get(i["fixtureId"], "") for i in todo_ch.values()
+              if i["fixtureId"] < 990000 and not ({dbmod.query_one(
+                  "sad", "SELECT home_team_id AS h, away_team_id AS a FROM fixtures WHERE id=?",
+                  (i["fixtureId"],))[k] for k in ("h", "a")} & tocados)))
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM fixtures WHERE id IN (990001, 990002, 990003)")
+
     # ── depósito ────────────────────────────────────────────────────────────
     r = c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
     check("deposita el parte", r.status_code == 200, r.text[:300])
@@ -373,6 +427,52 @@ def main():
         "equipos": {"a": {"bloques": {"A": 3}, "sensibilidad": ["si el central no llega, cambia"]},
                     "b": {"bloques": {"A": 3}}}})
     check("`sensibilidad` mal formada responde 200, no 500", r_s.status_code == 200, r_s.status_code)
+    # ── NINGUNA FORMA MAL ESCRITA TUMBA EL DEPÓSITO (reportado por Cowork) ──
+    # `lecturaSad` como string respondía 500 sin mensaje: el segundo campo del
+    # contrato que reventaba en vez de rechazar. Acá van todas las ramas que
+    # se leen con `.get`: cada una tiene que dar 200 y un rechazo con su sitio.
+    formas = {
+        "lecturaSad": {"lecturaSad": "Regresión al Nivel con gap a favor del local"},
+        "lecturaSad.unXDos": {"lecturaSad": {"moduloOperativo": "x", "unXDos": ["1", "X"]}},
+        "matchup": {"matchup": "FAVORABLE al local"},
+        "pronostico": {"pronostico": "52 / 27 / 21"},
+        "pronostico.probabilidades": {"pronostico": {"probabilidades": "52/27/21"}},
+        "cadena": {"cadena": "domina por fuera"},
+        "alertas": {"alertas": "T.54"},
+        "alertas[0]": {"alertas": [7]},
+        "documentos": {"documentos": "## ensayo"},
+        "documentos[0]": {"documentos": ["## ensayo"]},
+        "timelineEventos[0]": {"timelineEventos": ["cambio de DT"]},
+        "equipos.a.bloques": {"equipos": {"a": {"bloques": "A3 B4"}}},
+        "equipos.a.excluidos": {"equipos": {"a": {"bloques": {"A": 3}, "excluidos": "C"}}},
+        "equipos.a.notas": {"equipos": {"a": {"bloques": {"A": 3}, "notas": "mismo DT"}}},
+        "equipos.a.dt": {"equipos": {"a": {"bloques": {"A": 3}, "dt": ["Nombre", 14]}}},
+        "equipos.a.perfil": {"equipos": {"a": {"bloques": {"A": 3}, "perfil": "4-3-3 presión alta"}}},
+        "equipos.a.plantel": {"equipos": {"a": {"bloques": {"A": 3}, "plantel": "Campos, Zambrano"}}},
+        "equipos.a.plantel[0]": {"equipos": {"a": {"bloques": {"A": 3}, "plantel": ["Campos"]}}},
+        "equipos.a.fuera[0]": {"equipos": {"a": {"bloques": {"A": 3}, "fuera": [3]}}},
+        "equipos.a.factorX[0]": {"equipos": {"a": {"bloques": {"A": 3}, "factorX": ["Barcos"]}}},
+        "equipos.b": {"equipos": {"a": {"bloques": {"A": 3}}, "b": "Visitante FC"}},
+    }
+    for donde, cuerpo in formas.items():
+        body = {"fixtureId": sin_ficha, "equipos": {"a": {"bloques": {"A": 3}}}}
+        body.update(cuerpo)
+        r_f = c.post(f"{A}/analisis/cowork", json=body)
+        ok = r_f.status_code == 200 and any(
+            x["donde"] == donde and x.get("esperado") for x in r_f.json().get("rechazos", []))
+        check(f"`{donde}` mal formado responde 200 con rechazo, no 500", ok,
+              (r_f.status_code, [x["donde"] for x in r_f.json().get("rechazos", [])]
+               if r_f.status_code == 200 else r_f.text[:120]))
+    # y las dos tolerancias que sí tienen sentido: una baja o una alerta «a secas»
+    r_f = c.post(f"{A}/analisis/cowork", json={
+        "fixtureId": sin_ficha, "alertas": ["T.54"],
+        "equipos": {"a": {"bloques": {"A": 3}, "fuera": ["Zambrano"]}}}).json()
+    check("una baja como string entra con su nombre",
+          any(x.get("jugador") == "Zambrano" for x in r_f["rechazos"]), r_f["rechazos"])
+    check("una alerta como string entra como código y se delata sin texto",
+          r_f["alertas"] == 1 and any(x.get("jugador") == "T.54" for x in r_f["rechazos"]),
+          r_f["rechazos"])
+    c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))  # dejarlo como estaba
     check("y se DECLARA con la forma buena al lado",
           any(x["donde"].startswith("equipos.a.sensibilidad") and x.get("esperado")
               for x in r_s.json().get("rechazos", [])), r_s.json().get("rechazos"))
@@ -1129,6 +1229,25 @@ def main():
     check("la evidencia trae los goles con su minuto",
           len(o2["evidencia"]["goles"]) >= 2 and o2["evidencia"]["primerGol"]["minuto"] == 34,
           o2["evidencia"].get("goles"))
+    # EL AÑADIDO SE SUMA UNA VEZ, Y LA TANDA NO SON GOLES. Un gol al 90+4 se
+    # guarda como minuto 94 / extra 4; el veredicto lo ponía en el 98. Y los
+    # 24 «goles» del 121' al 142' de un Santa Fe–River eran la definición por
+    # penales, ingestada como juego.
+    import sqlite3 as _sq2
+    hid = dbmod.query_one("sad", "SELECT home_team_id FROM fixtures WHERE id=?", (con_ficha,))["home_team_id"]
+    with _sq2.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT INTO fixture_eventos (fixture_id, minuto, extra, tipo, detalle, equipo_id, jugador) "
+                     "VALUES (?,?,?,?,?,?,?)", (con_ficha, 94, 4, "Goal", "Normal Goal", hid, "Añadido"))
+        _con.executemany("INSERT INTO fixture_eventos (fixture_id, minuto, extra, tipo, detalle, equipo_id, jugador) "
+                         "VALUES (?,?,?,?,?,?,?)",
+                         [(con_ficha, 120 + k, k, "Shootout", "Penalty", hid, f"Penal {k}") for k in range(1, 6)])
+    c.post(f"{A}/analisis/cowork/{con_ficha}/veredicto", json={
+        "seleccion": "ciega", "modoEvaluacion": "COND", "porLado": {"a": {"veredicto": "fallo"}}})
+    goles_min = [g["minuto"] for g in c.get(f"{A}/analisis/cowork/{con_ficha}/veredicto").json()["objetivo"]["evidencia"]["goles"]]
+    check("el gol del 90+4 queda en el 94, no en el 98", 94 in goles_min and 98 not in goles_min, goles_min)
+    check("la tanda de penales no entra como gol", all(m <= 94 for m in goles_min), goles_min)
+    with _sq2.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM fixture_eventos WHERE fixture_id=? AND minuto >= 94", (con_ficha,))
 
     # DOS EQUIPOS, DOS VENTANAS, DOS VEREDICTOS. Antes el segundo bloque vivía
     # en `notas` y no se comprobaba contra nada.

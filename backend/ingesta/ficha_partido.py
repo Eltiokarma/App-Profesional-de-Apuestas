@@ -103,6 +103,7 @@ def preparar_tablas(con: sqlite3.Connection) -> None:
     for col, tipo in COLUMNAS_EVENTOS.items():
         if col not in existentes:
             con.execute(f"ALTER TABLE fixture_eventos ADD COLUMN {col} {tipo}")
+    retagear_tandas(con)
     con.commit()
 
 
@@ -114,6 +115,55 @@ def _i(v):
 
 
 # ── guardado (compartido con el ciclo en vivo) ──────────────────────────────
+
+# LA TANDA DE PENALES NO SON GOLES. API-Football manda cada disparo de la
+# definición como un evento type=Goal / detail=Penalty (o Missed Penalty) con
+# elapsed=120 y `extra` creciente, y lo marca solo en `comments`. Guardado a
+# pelo, un Santa Fe–River terminaba con 24 «goles» entre el 121' y el 142':
+# el veredicto los contaba en la ventana del TDE y la ficha se los daba al DTP
+# como si fueran juego. Se guardan con tipo `Shootout`: siguen ahí para quien
+# los quiera, pero ningún lector que pida `tipo='Goal'` los ve.
+TIPO_TANDA = "Shootout"
+MINUTO_FIN_ALARGUE = 120
+MINIMO_TANDA = 3  # tres penales «después del 120» no son juego: son la definición
+
+
+def _es_tanda(ev: dict) -> bool:
+    return "shootout" in str(ev.get("comments") or "").lower()
+
+
+def _tanda_por_forma(eventos: list[dict]) -> set[int]:
+    """Índices de los penales que SON tanda aunque la API no lo diga en
+    `comments` (a veces viene null): penales con elapsed=120 y `extra`, y al
+    menos MINIMO_TANDA de ellos en el mismo partido. Un penal real al 120+2 en
+    el alargue existe, pero no vienen tres."""
+    idx = []
+    for i, ev in enumerate(eventos):
+        t = ev.get("time") or {}
+        if (str(ev.get("type") or "").lower() == "goal"
+                and "penalty" in str(ev.get("detail") or "").lower()
+                and _i(t.get("elapsed")) == MINUTO_FIN_ALARGUE and (_i(t.get("extra")) or 0) >= 1):
+            idx.append(i)
+    return set(idx) if len(idx) >= MINIMO_TANDA else set()
+
+
+def retagear_tandas(con: sqlite3.Connection) -> int:
+    """Lo ya ingestado como gol y que era tanda pasa a `Shootout`. Idempotente
+    y sin red: se corre en preparar_tablas, así que el ciclo en vivo lo aplica
+    solo en su próxima vuelta."""
+    filas = con.execute(
+        "SELECT fixture_id, COUNT(*) AS n FROM fixture_eventos WHERE tipo='Goal' "
+        "AND lower(detalle) LIKE '%penalty%' AND extra >= 1 AND minuto - extra = ? "
+        "GROUP BY fixture_id HAVING n >= ?", (MINUTO_FIN_ALARGUE, MINIMO_TANDA)).fetchall()
+    n = 0
+    for fid, _ in filas:
+        cur = con.execute(
+            "UPDATE fixture_eventos SET tipo=? WHERE fixture_id=? AND tipo='Goal' "
+            "AND lower(detalle) LIKE '%penalty%' AND extra >= 1 AND minuto - extra = ?",
+            (TIPO_TANDA, fid, MINUTO_FIN_ALARGUE))
+        n += cur.rowcount
+    return n
+
 
 def guardar_eventos(con: sqlite3.Connection, item: dict) -> int:
     """Eventos de un item de /fixtures?live=, /fixtures?ids= o /fixtures/events.
@@ -130,17 +180,19 @@ def guardar_eventos(con: sqlite3.Connection, item: dict) -> int:
         return 0
     con.execute("DELETE FROM fixture_eventos WHERE fixture_id=?", (fid,))
     n = 0
-    for ev in eventos:
+    tanda_forma = _tanda_por_forma(eventos)
+    for i, ev in enumerate(eventos):
         t = ev.get("time") or {}
         extra = _i(t.get("extra")) or 0
         minuto = (_i(t.get("elapsed")) or 0) + extra
         jug = ev.get("player") or {}
         asi = ev.get("assist") or {}
+        tipo = TIPO_TANDA if (_es_tanda(ev) or i in tanda_forma) else ev.get("type")
         con.execute(
             "INSERT INTO fixture_eventos (fixture_id, minuto, extra, tipo, detalle, "
             "equipo_id, jugador, jugador_id, asistente, asistente_id) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (fid, minuto, extra, ev.get("type"), ev.get("detail"),
+            (fid, minuto, extra, tipo, ev.get("detail"),
              (ev.get("team") or {}).get("id"), jug.get("name"), _i(jug.get("id")),
              asi.get("name"), _i(asi.get("id"))),
         )
