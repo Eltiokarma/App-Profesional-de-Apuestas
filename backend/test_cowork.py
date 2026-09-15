@@ -340,6 +340,46 @@ def main():
           all(x["fixtureId"] != con_ficha for x in otra["cerrados"]),
           [x["fixtureId"] for x in otra["cerrados"]])
 
+    # ── EL PADRÓN DE LA AGENDA (por ID, no por nombre) ─────────────────────
+    # El criterio por NOMBRE dejaba fuera a Brasil, Colombia, Chile, Uruguay,
+    # Ecuador, Paraguay, Bolivia, Venezuela, Portugal, Bélgica, la Europa
+    # League y la Conference: salían como «fuera del padrón» y nadie lo miraba.
+    from backend.analisis.parte import _prioridad, PRIMERAS, INTERNACIONALES
+    liga_x = {"nombre": "X"}
+    prio_de = lambda lid, ronda="", etq=None, pl=0, pv=0: _prioridad(
+        liga_x, etq or set(), pl, pv, lid, ronda)
+
+    check("la primera división de cada país entra a la agenda",
+          all(prio_de(lid)[0] > 0 for lid in PRIMERAS),
+          [lid for lid in PRIMERAS if not prio_de(lid)[0]])
+    check("y los torneos internacionales también",
+          all(prio_de(lid)[0] > 0 for lid in INTERNACIONALES),
+          [lid for lid in INTERNACIONALES if not prio_de(lid)[0]])
+    check("las once ligas que el criterio viejo tiraba ahora entran",
+          all(prio_de(lid)[0] > 0 for lid in (71, 239, 265, 268, 242, 250, 344,
+                                              299, 94, 144, 3, 848)),
+          [lid for lid in (71, 239, 265, 268, 242, 250, 344, 299, 94, 144, 3, 848)
+           if not prio_de(lid)[0]])
+    check("una fase decisiva manda sobre la fase de grupos",
+          prio_de(13, "Quarter-finals")[0] < prio_de(13, "Group Stage - 4")[0],
+          (prio_de(13, "Quarter-finals"), prio_de(13, "Group Stage - 4")))
+    check("y las cuatro maneras de nombrar una llave se reconocen",
+          all("fase decisiva" in prio_de(2, r)[1]
+              for r in ("Round of 16", "Quarter-finals", "Semi-finals", "Final")),
+          [prio_de(2, r)[1] for r in ("Round of 16", "Quarter-finals", "Semi-finals", "Final")])
+    check("la fase de grupos entra igual, solo que más abajo",
+          prio_de(13, "Group Stage - 4")[0] > 0, prio_de(13, "Group Stage - 4"))
+    check("la Liga 1 de Perú sigue primera",
+          prio_de(281)[0] == 1, prio_de(281))
+    check("dentro de una liga, el equipo en el top 6 o en crisis va antes",
+          prio_de(71, pl=3)[0] < prio_de(71, pl=14, pv=17)[0],
+          (prio_de(71, pl=3), prio_de(71, pl=14, pv=17)))
+    check("una segunda división NO entra sola",
+          prio_de(240)[0] == 0, prio_de(240))
+    check("pero el descarte dice la liga Y su id, que es lo que hace falta "
+          "para agregarla",
+          "id 240" in prio_de(240)[1], prio_de(240)[1])
+
     # ── LA AGENDA SE PUEDE RETOMAR DONDE SE CORTÓ ───────────────────────────
     ag = c.get(f"{A}/analisis/cowork/agenda",
                params={"fecha": fecha, "limite": 4, "incluirDescartados": True}).json()

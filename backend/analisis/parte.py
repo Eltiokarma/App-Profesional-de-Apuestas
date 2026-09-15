@@ -1636,31 +1636,80 @@ def pendientes(limite: int = 50) -> list[dict]:
 # Prioridad 1-5 del protocolo de batch. Lo que se puede decidir con datos se
 # decide con datos; lo que no (una rivalidad sin vecindad geográfica), se
 # declara parcial en vez de fingirse resuelto.
-_COPAS = ("libertadores", "sudamericana", "copa america", "mundial", "champions")
-_TOP_CONDICIONADAS = ("liga profesional", "liga mx", "primera division argentina")
-_EUROPA = ("premier league", "la liga", "laliga", "bundesliga", "serie a", "ligue 1")
+# ── EL PADRÓN DE LA AGENDA, POR ID ──────────────────────────────────────────
+# Antes esto se decidía por el NOMBRE de la liga («premier league», «serie a»…)
+# y con condiciones encima: el resultado es que Brasil, Colombia, Chile,
+# Uruguay, Ecuador, Paraguay, Bolivia, Venezuela, Portugal, Bélgica, la Europa
+# League y la Conference NUNCA entraban a la agenda. Salían como «fuera del
+# padrón» sin que nadie lo mirara, porque un descarte silencioso no se audita.
+#
+# El criterio es el del usuario y es simple: la PRIMERA DIVISIÓN de cada país
+# y los torneos INTERNACIONALES, con las fases decisivas primero. Por ID, no
+# por nombre: los nombres de la API cambian y ya nos costó una agenda entera.
+PRIMERAS = {
+    128: "Argentina · Liga Profesional", 1032: "Argentina · Copa de la Liga",
+    71: "Brasil · Serie A",
+    239: "Colombia · Primera A",
+    265: "Chile · Primera División",
+    281: "Perú · Liga 1",
+    268: "Uruguay · Primera (Apertura)", 270: "Uruguay · Primera (Clausura)",
+    242: "Ecuador · Liga Pro",
+    250: "Paraguay · División Profesional (Apertura)",
+    252: "Paraguay · División Profesional (Clausura)",
+    344: "Bolivia · Primera División", 964: "Bolivia · Copa de la División Profesional",
+    299: "Venezuela · Primera División",
+    262: "México · Liga MX",
+    39: "Inglaterra · Premier League",
+    140: "España · LaLiga",
+    135: "Italia · Serie A",
+    78: "Alemania · Bundesliga",
+    61: "Francia · Ligue 1",
+    94: "Portugal · Primeira Liga",
+    144: "Bélgica · Pro League",
+}
+INTERNACIONALES = {
+    1: "Copa del Mundo",
+    13: "CONMEBOL Libertadores", 11: "CONMEBOL Sudamericana",
+    2: "UEFA Champions League", 3: "UEFA Europa League", 848: "UEFA Conference League",
+}
+# fases que el usuario llama «importantes»: de octavos en adelante. «final»
+# cubre también «Quarter-finals», «Semi-finals» y «8th Finals», que es como las
+# nombra API-Football; la fase de grupos entra igual, pero más abajo.
+_FASE_DECISIVA = ("final", "octavos", "cuartos", "semi", "round of 16",
+                  "knockout", "playoff", "play-off", "repechaje")
 
 
-def _prioridad(liga: dict, etiquetas: set[str], pos_local: int, pos_visita: int) -> tuple[int, str]:
-    nombre = normalizar(liga.get("nombre") or "")
-    pais = normalizar(liga.get("pais") or "")
-    if "peru" in pais and ("liga 1" in nombre or "primera" in nombre):
-        return 1, "Liga 1 Perú"
+def _prioridad(liga: dict, etiquetas: set[str], pos_local: int, pos_visita: int,
+               liga_id: int = 0, ronda: str = "") -> tuple[int, str]:
+    """Qué merece análisis, en orden. 0 = no entra, y siempre con su motivo.
+
+    El orden sale del criterio del usuario: primero la casa, después los
+    torneos internacionales cuando se juegan de verdad, después los clásicos,
+    y después la primera división de cualquier país —con los partidos que
+    mueven la tabla adelante—. Nada de esto descarta por nombre: una liga que
+    no está en el padrón se dice con su ID, que es lo que hace falta para
+    agregarla en una línea.
+    """
+    ronda_n = normalizar(ronda or "")
+    if liga_id in INTERNACIONALES:
+        nombre_i = INTERNACIONALES[liga_id]
+        if any(f in ronda_n for f in _FASE_DECISIVA):
+            return 2, f"{nombre_i} · fase decisiva ({ronda or 'sin ronda declarada'})"
+        return 5, f"{nombre_i} · {ronda or 'fase de grupos'}"
+    if liga_id == 281:
+        return 1, "Liga 1 Perú (la casa)"
     if "CLASICO" in etiquetas:
-        return 2, "clásico / derbi detectado"
-    if any(c in nombre for c in _COPAS):
-        return 3, f"copa internacional ({liga.get('nombre')})"
-    if any(c in nombre for c in _TOP_CONDICIONADAS):
-        if "EN_CRISIS" in etiquetas or (0 < pos_local <= 8) or (0 < pos_visita <= 8):
-            return 4, "liga grande con equipo arriba o en crisis"
-        return 0, "liga grande sin equipo arriba ni cambio de DT"
-    if any(c in nombre for c in _EUROPA):
-        if (0 < pos_local <= 6) and (0 < pos_visita <= 6):
-            return 5, "choque directo del top 6"
-        if pos_local == 1 or pos_visita == 1:
-            return 5, "partido con el líder"
-        return 0, "europea sin top 6 ni líder"
-    return 0, f"fuera del padrón de ligas cubiertas ({liga.get('nombre')})"
+        return 3, "clásico / derbi detectado"
+    if liga_id in PRIMERAS:
+        nombre_p = PRIMERAS[liga_id]
+        if "EN_CRISIS" in etiquetas:
+            return 4, f"{nombre_p} · equipo en crisis"
+        if (0 < pos_local <= 6) or (0 < pos_visita <= 6):
+            return 4, f"{nombre_p} · equipo en el top 6"
+        return 6, nombre_p
+    return 0, (f"fuera del padrón de la agenda: {liga.get('nombre') or 'liga'} "
+               f"(id {liga_id}). El padrón es primera división de cada país + "
+               "torneos internacionales; si esta debería entrar, se agrega por ID")
 
 
 def contrato() -> dict:
@@ -1850,8 +1899,8 @@ def agenda(fecha: date_t | None = None, limite: int = 4, liga_id: int | None = N
         params.append(liga_id)
     filas = saddb.query(
         "sad",
-        "SELECT f.id, f.date, f.league_id, f.league_season, f.home_team_id, f.away_team_id, "
-        "ht.name AS home_name, at.name AS away_name "
+        "SELECT f.id, f.date, f.league_id, f.league_season, f.league_round, "
+        "f.home_team_id, f.away_team_id, ht.name AS home_name, at.name AS away_name "
         "FROM fixtures f JOIN teams ht ON ht.id=f.home_team_id JOIN teams at ON at.id=f.away_team_id "
         "WHERE " + " AND ".join(cond) + " ORDER BY f.date",
         tuple(params),
@@ -1878,13 +1927,15 @@ def agenda(fecha: date_t | None = None, limite: int = 4, liga_id: int | None = N
             pass
         prio, motivo = _prioridad(liga, etiquetas,
                                   posiciones.get(f["home_team_id"], 0),
-                                  posiciones.get(f["away_team_id"], 0))
+                                  posiciones.get(f["away_team_id"], 0),
+                                  f["league_id"], f["league_round"] or "")
         item = {
             "fixtureId": f["id"],
             "hora": (f["date"] or "")[11:16],
             "partido": f"{f['home_name']} vs {f['away_name']}",
             "equipoA": f["home_name"], "equipoB": f["away_name"],
             "liga": liga.get("nombre"), "pais": liga.get("pais"),
+            "ronda": f["league_round"] or "",
             "prioridad": prio, "motivo": motivo,
             "etiquetas": sorted(etiquetas),
             "parte": ya.get(f["id"], ""),

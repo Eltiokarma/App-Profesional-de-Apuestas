@@ -118,6 +118,15 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   pronóstico por equipo foco entra en `cadena_dtp` como apertura —el veredicto
   lo emite quien cierre el eslabón—. Un bloque nuevo del prompt necesita sitio en el parte:
   si no lo tiene, se pierde.
+- **El padrón de la agenda va por ID, no por nombre**
+  (`PRIMERAS`/`INTERNACIONALES` en `backend/analisis/parte.py`): primera
+  división de cada país (22) + los seis torneos internacionales, con las fases
+  decisivas —de octavos en adelante, leídas de `league_round`— por delante de
+  la fase de grupos. El criterio por nombre que había antes descartaba enteras
+  a Brasil, Colombia, Chile, Uruguay, Ecuador, Paraguay, Bolivia, Venezuela,
+  Portugal, Bélgica, Europa League y Conference, y lo hacía en silencio. Un
+  descarte viaja SIEMPRE con su motivo y el id de la liga: es lo que hace falta
+  para agregarla en una línea.
 - **El once se cierra solo** (`POST /analisis/cowork/xi/auto`): cerrar el
   bloque F es cruzar listas de nombres y aplicar pesos de rol, no un análisis.
   Seis partidos que arrancan juntos son seis cierres de milisegundos, no una

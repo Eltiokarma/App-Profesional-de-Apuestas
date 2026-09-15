@@ -176,26 +176,53 @@ analizar el partido equivocado es justo el error que ese campo hace visible.
 ## La prioridad del día la decide la base
 
 El paso 1 del batch era, antes, que el modelo dedujera qué partido importaba.
-Ahora lo resuelve `agenda()` con el criterio numérico del protocolo:
+Ahora lo resuelve `agenda()` con un padrón **por ID de liga**:
 
-| Prioridad | Criterio | De dónde sale |
-|---|---|---|
-| 1 | Liga 1 Perú | país + nombre de la liga |
-| 2 | clásico / derbi | `venue_city` compartida (**parcial**: solo derbis de ciudad) |
-| 3 | copa internacional | nombre del torneo |
-| 4 | liga grande con equipo en zona alta o en crisis | tabla + racha + cambio de DT |
-| 5 | choque del top 6 europeo o partido con el líder | tabla |
-| 0 | descartado | y viaja **con su motivo**, para poder auditarlo |
+| Prioridad | Criterio |
+|---|---|
+| 1 | Liga 1 Perú (la casa) |
+| 2 | torneo internacional en **fase decisiva** (de octavos en adelante) |
+| 3 | clásico / derbi detectado |
+| 4 | primera división de cualquier país **con equipo en el top 6 o en crisis** |
+| 5 | torneo internacional en fase de grupos |
+| 6 | primera división de cualquier país (resto) |
+| 0 | descartado, y viaja **con su motivo y el ID de la liga** |
 
-`CLÁSICO` es el que queda a medias, igual que en el bloque G: una rivalidad
-nacional sin vecindad geográfica (Alianza–Cienciano) no sale de nuestros datos
-y puede caer entre los descartados. Está declarado en la respuesta.
+**Primeras divisiones cubiertas (22):** Argentina (Liga Profesional y Copa de
+la Liga), Brasil, Colombia, Chile, Perú, Uruguay (Apertura y Clausura),
+Ecuador, Paraguay (Apertura y Clausura), Bolivia (Primera y Copa de la
+División Profesional), Venezuela, México, Inglaterra, España, Italia,
+Alemania, Francia, Portugal y Bélgica.
 
-Ojo con el efecto práctico de la fila 4: **una jornada de Liga MX o de la Liga
-Profesional en la que ningún equipo esté en zona de clasificación ni venga de
-un cambio de DT sale entera como descartada.** Es el filtro haciendo su
-trabajo —no se pueden analizar todas—, pero hay que saberlo antes de apuntar
-el batch a una liga concreta y encontrarse la lista vacía.
+**Internacionales (6):** Mundial, Libertadores, Sudamericana, Champions,
+Europa League y Conference.
+
+### Por qué esto se decide por ID y no por nombre
+
+La primera versión miraba el NOMBRE de la liga (`"premier league"`,
+`"serie a"`, `"libertadores"`) con condiciones encima. El efecto real, que
+nadie vio durante semanas: **Brasil, Colombia, Chile, Uruguay, Ecuador,
+Paraguay, Bolivia, Venezuela, Portugal, Bélgica, la Europa League y la
+Conference caían siempre en «fuera del padrón»** y se descartaban enteras. Un
+descarte silencioso no se audita, y este salía ordenadito en una lista que
+nadie leía.
+
+Por eso ahora: IDs explícitos en `PRIMERAS` e `INTERNACIONALES`
+(`backend/analisis/parte.py`), y el descarte **nombra la liga y su id**, que es
+exactamente lo que hace falta para agregarla en una línea.
+
+Las **fases decisivas** se leen de `league_round`: `final` cubre también
+*Quarter-finals*, *Semi-finals* y *8th Finals*, que es como las nombra
+API-Football. La fase de grupos entra igual, solo que más abajo.
+
+`CLÁSICO` sigue siendo el que queda a medias, igual que en el bloque G: una
+rivalidad nacional sin vecindad geográfica (Alianza–Cienciano) no sale de
+nuestros datos. Está declarado en la respuesta.
+
+Segunda división, copas nacionales y amistosos **no entran solos** — se
+ingestan igual, porque las constantes de un equipo los necesitan, pero no son
+candidatos de análisis. Para incluirlos en una corrida puntual está
+`incluirDescartados`.
 
 ### Los mandos manuales
 
@@ -631,6 +658,12 @@ contrato — y decilo al terminar.
 
 SIN `fecha` devuelve los del DÍA SIGUIENTE (UTC), que es lo que quiere el
 batch nocturno. Si corrés a otra hora y querés otro día, pasá `fecha=YYYY-MM-DD`.
+
+El padrón: primera división de cada país (22 ligas, de Argentina a Bélgica) y
+los seis torneos internacionales, con las fases decisivas primero. Cada
+candidato viene con su `prioridad`, su `motivo` y su `ronda`. Los `descartados`
+traen el motivo Y el id de la liga: si ves una liga descartada que debería
+entrar, decilo al terminar con su id — se agrega en una línea.
 
 Devuelve `analizar` (los que tocan, ya ordenados por prioridad y con su
 `fixtureId`), `enEspera` y `descartados` con su motivo. Usá `analizar` tal
