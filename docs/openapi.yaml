@@ -786,6 +786,68 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/SobrePendientes' }
+  /analisis/cowork/lecciones:
+    get:
+      summary: Las lecciones acumuladas por skill (fase C)
+      description: >
+        Lo que el bucle aprendió, indexado desde los veredictos. El CONTENIDO de cada
+        lección no se copia a ninguna tabla: se deriva del veredicto al leer, igual que el
+        marcador y el timeline. Si alguien corrige un veredicto, la lección corregida
+        aparece sola; una copia se habría quedado vieja sin que nadie se enterara. Lo único
+        que se guarda aparte es el ESTADO (pendiente / en_revision / aplicada / descartada),
+        que es lo que evita el bucle infinito y no se puede derivar de nada.
+
+
+        Las métricas se publican SOLO sobre la población acreditable (`ciega` + `PRE`), con
+        su `n` a la vista; las otras poblaciones se cuentan aparte y nunca se suman. Cada
+        lección trae `puedeMoverNumeros`: una lección de un caso contaminado puede fijar
+        rúbrica —aclarar cómo se aplica una regla— pero NO mueve un peso. Esa distinción la
+        lleva el dato, no el criterio de quien lo lea ese día.
+      parameters:
+        - { name: skill, in: query, description: 'filtra por skill', schema: { type: string } }
+        - name: estado
+          in: query
+          description: 'pendiente | en_revision | aplicada | descartada'
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InventarioLecciones' }
+  /analisis/cowork/lecciones/{clave}:
+    post:
+      summary: Mover una lección de estado — lo hace el usuario, no el agente
+      description: >
+        `clave` es `fixtureId:lado` (ej. `1550964:a`). Marcar `aplicada` EXIGE `aplicadaEn`
+        con la versión del skill donde entró: una lección aplicada sin versión no se puede
+        auditar después, y es justo el momento en que más barato es anotarla.
+
+
+        Este endpoint NO está en la lista de permitidos de `SAD_TOKEN_COWORK`: el agente
+        lee sus lecciones pero no declara aplicada la suya. Mover el estado es del usuario.
+      parameters:
+        - { name: clave, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [estado]
+              properties:
+                estado: { type: string, enum: [pendiente, en_revision, aplicada, descartada] }
+                aplicadaEn: { type: string, description: 'versión del skill; obligatoria para `aplicada`' }
+                nota: { type: string }
+      responses:
+        '200':
+          description: La lección con su estado nuevo
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LeccionItem' }
+        '403': { description: 'el token de Cowork no puede mover estados' }
+        '404': { description: 'no hay lección con esa clave' }
+        '422': { description: 'estado fuera del vocabulario, o `aplicada` sin `aplicadaEn`' }
   /analisis/cowork/{fixtureId}/veredicto:
     get:
       summary: El veredicto guardado, con su parte objetiva recalculada al leer
@@ -824,6 +886,76 @@ components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer }
   schemas:
+    LeccionItem:
+      type: object
+      description: >
+        Una lección: el contenido viene del veredicto (derivado al leer), el estado de su
+        propia tabla. `clave` es `fixtureId:lado`.
+      properties:
+        clave: { type: string, example: '1550964:a' }
+        fixtureId: { type: integer }
+        lado: { type: string, enum: [a, b] }
+        equipo: { type: string }
+        rival: { type: string }
+        partido: { type: string }
+        fecha: { type: string }
+        skill: { type: string, description: 'vacío = la lección no declaró de qué skill es' }
+        veredicto: { type: string, enum: [acierto, parcial, fallo] }
+        queP: { type: string }
+        leccion: { type: string }
+        reglaTocada: { type: string }
+        seleccion: { type: string, enum: [ciega, por_resultado, post_resultado] }
+        modoEvaluacion: { type: string, enum: [PRE, COND] }
+        acredita: { type: boolean }
+        mancha: { type: string, description: 'salvedad declarada; el caso acredita igual' }
+        puedeMoverNumeros:
+          type: boolean
+          description: >
+            Solo un caso acreditable (ciega + PRE) puede mover un peso. Los demás fijan
+            rúbrica: aclaran cómo se aplica una regla, sin tocar ningún número.
+        estado: { type: string, enum: [pendiente, en_revision, aplicada, descartada] }
+        aplicadaEn: { type: string }
+        nota: { type: string }
+        actualizadoEn: { type: string }
+    InventarioLecciones:
+      type: object
+      properties:
+        generadoEn: { type: string }
+        filtro:
+          type: object
+          properties:
+            skill: { type: string }
+            estado: { type: string }
+        poblacion:
+          type: object
+          description: 'los casos cerrados por población; NUNCA se suman entre sí'
+          additionalProperties: true
+        acreditables:
+          type: object
+          description: >
+            La única población medible (ciega + PRE): veredictos por lado, tasa de acierto
+            con su n, acierto del 1X2 y Brier con su línea de base.
+          additionalProperties: true
+        porSkill:
+          type: array
+          items:
+            type: object
+            properties:
+              skill: { type: string }
+              lecciones: { type: object, additionalProperties: { type: integer } }
+              atribuidos: { type: object, additionalProperties: { type: integer } }
+              sesgoDeAtribucion: { type: string }
+              revisionAbierta: { type: boolean, description: 'fase D: 4 fallos con lección pendiente' }
+              faltanParaDisparar: { type: integer }
+              liston: { type: object, nullable: true, additionalProperties: true }
+              items: { type: array, items: { $ref: '#/components/schemas/LeccionItem' } }
+        sinSkill:
+          type: object
+          description: 'lecciones que no declararon skill: se delatan, no se reparten a ojo'
+          additionalProperties: true
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/LeccionItem' }
     Health:
       type: object
       required: [status, version, dbOk, lastPipelineRun]

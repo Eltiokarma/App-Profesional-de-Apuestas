@@ -3,6 +3,7 @@ import type { SectionKey } from '../data/types'
 import { CONFIG } from '../config'
 import { estadoAnalisisEfe, loadMatches } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
+import { getDataSource } from '../services/datasource'
 import { useFeedStatus } from '../services/useFeedStatus'
 import { hoyStr } from '../store'
 
@@ -23,6 +24,9 @@ export function Sidebar({ store }: { store: SadStore }) {
   // Skills es contenido simulado: solo en la demo local (en producción el
   // botón quedaba "vacío" y confundía — el EFE vive en Análisis)
   const conSkills = CONFIG.dataSource === 'mock'
+  // contador real, con dato que ya existe: lecciones sin resolver
+  const lec = useAsync(() => getDataSource().lecciones({ estado: 'pendiente' }), 'lec-pend')
+  const pendientes = lec.data?.items.length ?? 0
   const feed = useFeedStatus()
   const feedColor = feed.checking ? 'var(--mark)' : feed.ok ? 'var(--up)' : 'var(--down)'
   const feedLabel = feed.mode === 'mock' ? 'MOTOR LOCAL · DEMO' : feed.checking ? 'CONECTANDO…' : feed.ok ? 'FEED CONECTADO' : 'SIN CONEXIÓN'
@@ -80,6 +84,14 @@ export function Sidebar({ store }: { store: SadStore }) {
             )}
           </button>
         )}
+        {/* Aprendizaje no necesita partido seleccionado: es lo ACUMULADO */}
+        <button onClick={store.go('aprendizaje')} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 12px', border: 0, borderRadius: 10, cursor: 'pointer', background: navB('aprendizaje'), color: navF('aprendizaje'), font: '600 13.5px var(--sans)', textAlign: 'left', transition: 'background .14s,color .14s' }}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6.5A2.5 2.5 0 015.5 4H11v16H5.5A2.5 2.5 0 013 17.5z" /><path d="M21 6.5A2.5 2.5 0 0018.5 4H13v16h5.5a2.5 2.5 0 002.5-2.5z" /></svg>
+          <span>Aprendizaje</span>
+          {pendientes ? (
+            <span style={{ marginLeft: 'auto', font: '600 9.5px var(--mono)', color: 'var(--t3)' }}>{pendientes} pend.</span>
+          ) : null}
+        </button>
         <button onClick={store.go('estadisticas')} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 12px', border: 0, borderRadius: 10, cursor: 'pointer', background: navB('estadisticas'), color: navF('estadisticas'), font: '600 13.5px var(--sans)', textAlign: 'left', transition: 'background .14s,color .14s' }}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M5 21V11M12 21V4M19 21v-8" /><path d="M3 21h18" /></svg>
           <span>Estadísticas</span>

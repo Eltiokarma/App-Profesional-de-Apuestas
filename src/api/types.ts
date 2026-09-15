@@ -1218,3 +1218,82 @@ export interface PartePendienteDTO {
   faltaXi: ('a' | 'b')[]
   actualizadoEn: string
 }
+
+/** Fase C del bucle de aprendizaje (docs/APRENDIZAJE.md). El CONTENIDO de la
+ *  lección se deriva del veredicto al leer; solo el estado se guarda aparte. */
+export interface LeccionItem {
+  clave: string
+  fixtureId: number
+  lado: 'a' | 'b'
+  equipo: string
+  rival: string
+  partido: string
+  fecha: string
+  /** '' = la lección no declaró de qué skill es; no se reparte a ojo. */
+  skill: string
+  veredicto: 'acierto' | 'parcial' | 'fallo'
+  queP: string
+  leccion: string
+  reglaTocada: string
+  seleccion: 'ciega' | 'por_resultado' | 'post_resultado'
+  modoEvaluacion: 'PRE' | 'COND'
+  acredita: boolean
+  mancha: string
+  /** Solo un caso ciego+PRE puede sostener un cambio de peso. El resto fija rúbrica. */
+  puedeMoverNumeros: boolean
+  queAutoriza: string
+  estado: 'pendiente' | 'en_revision' | 'aplicada' | 'descartada'
+  aplicadaEn: string
+  nota: string
+  actualizadoEn: string
+}
+
+export interface SkillAprendizaje {
+  skill: string
+  lecciones: Record<string, number>
+  atribuidos: Record<string, number>
+  sesgoDeAtribucion: string
+  acreditables: number
+  soloRubrica: number
+  revisionAbierta: boolean
+  fallosPendientes: number
+  faltanParaDisparar: number
+  disparador: string
+  liston: {
+    de: string
+    condiciones: Record<string, string>
+    observadoAca: string
+    semaforo: string
+    cumple: boolean
+    nota: string
+  } | null
+  items: LeccionItem[]
+}
+
+export interface InventarioLecciones {
+  generadoEn: string
+  filtro: { skill: string; estado: string }
+  poblacion: Record<string, { casos: number; lados: number } | string>
+  acreditables: {
+    criterio: string
+    casos: number
+    lados: number
+    veredictos: Record<string, number>
+    tasaAcierto: number | null
+    tasaNota: string
+    unXDos: { aciertos: number; de: number; tasa: number | null }
+    brier: {
+      media: number | null
+      n: number
+      lineaBase: number | null
+      mejorQueLaBase?: boolean
+      nota: string
+      escala: string
+    }
+    ventanaTde: { observadas: number; conGol: number; sinFicha: number; nota: string }
+  }
+  porSkill: SkillAprendizaje[]
+  sinSkill: { cuantas: number; porque: string; items: LeccionItem[] }
+  estados: string[]
+  items: LeccionItem[]
+}

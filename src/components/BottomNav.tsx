@@ -43,6 +43,10 @@ export function BottomNav({ store }: { store: SadStore }) {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M5 21V11M12 21V4M19 21v-8" /><path d="M3 21h18" /></svg>
         <span style={{ font: '600 10px var(--sans)' }}>Stats</span>
       </button>
+      <button onClick={store.go('aprendizaje')} style={{ ...btn, color: navF('aprendizaje') }}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6.5A2.5 2.5 0 015.5 4H11v16H5.5A2.5 2.5 0 013 17.5z" /><path d="M21 6.5A2.5 2.5 0 0018.5 4H13v16h5.5a2.5 2.5 0 002.5-2.5z" /></svg>
+        <span style={{ font: '600 10px var(--sans)' }}>Aprende</span>
+      </button>
     </nav>
   )
 }

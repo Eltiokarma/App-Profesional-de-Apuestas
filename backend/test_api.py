@@ -906,6 +906,13 @@ def main():
           c.post(A + "/analisis/cowork/xi/auto", headers=cw).status_code == 200)
     check("cowork: puede leer el latido del pipeline",
           c.get(A + "/analisis/cowork/latido", headers=cw).status_code == 200)
+    check("cowork: puede LEER sus lecciones",
+          c.get(A + "/analisis/cowork/lecciones", headers=cw).status_code == 200)
+    # QUIEN ESCRIBE LA LECCIÓN NO DECLARA APLICADA LA SUYA. El agente propone;
+    # mover el estado —y con él el disparador de la revisión— es del usuario.
+    check("cowork: NO puede mover una lección de estado",
+          c.post(A + "/analisis/cowork/lecciones/1:a",
+                 json={"estado": "descartada"}, headers=cw).status_code == 403)
     check("cowork: puede leer fixtures y equipos",
           c.get(A + "/fixtures?limit=1", headers=cw).status_code == 200
           and c.get(A + f"/equipos/{dbmod.query_one('sad', 'SELECT id FROM teams LIMIT 1')['id']}/calendario",

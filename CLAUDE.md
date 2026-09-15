@@ -58,7 +58,8 @@ src/services/      datasource.ts (Mock/Http, MISMO contrato) · appdata.ts (DTO�
 src/motor/         Motor SAD en TS: niveles ventana-20, q*/k* con reseteo,
                    fusión k = k⁺+k⁻, bins v6, regresión §5 — VERIFICADO contra
                    docs/MOTOR_SAD_EXTRACCION.md; no tocar fórmulas sin ese doc
-src/sections/      Partidos (inicio) · Cuotas · Burbujas · Skills · Estadísticas · Equipo
+src/sections/      Partidos (inicio) · Cuotas · Burbujas · Skills · Estadísticas ·
+                   Aprendizaje (lecciones por skill) · Equipo
 src/components/    KLineChart (picos K) · KBarChart (rachas de cuota) ·
                    TablaPosiciones (ÚNICA clasificación, con sus fases) ·
                    DtpPizarra (cierre+apertura del DTP y cadena) ·
@@ -195,8 +196,18 @@ bloque F calculado en local y cierre del once desde la ficha o a mano.
    si acredita. Solo `ciega` + `PRE` acredita: los contaminados fijan rúbrica
    pero NO acreditan, y ninguna métrica puede mezclarlos. Sin pronóstico
    previo la cadena no recibe veredicto, y re-depositar el parte no pisa el
-   pronóstico declarado ni borra el veredicto escrito. Faltan las fases C
-   (lecciones por skill), D (dossier cada 4 fallos, que ABRE la revisión pero
-   no autoriza mover nada) y A (antecedentes). La app nunca mueve un peso de
-   un skill por su cuenta. Snapshot de los skills en `docs/skills/`.
+   pronóstico declarado ni borra el veredicto escrito. **Fase C hecha**: las
+   lecciones acumuladas por skill (`backend/analisis/lecciones.py`,
+   `GET /analisis/cowork/lecciones`, sección **Aprendizaje**). El CONTENIDO de
+   cada lección se DERIVA del veredicto al leer —no hay copia que se quede
+   vieja cuando alguien corrige un caso—; aparte solo se guarda el ESTADO
+   (`leccion_estado`), que es lo que corta el bucle infinito. Marcar `aplicada`
+   EXIGE la versión del skill donde entró; cada lección viaja con
+   `puedeMoverNumeros` (solo `ciega`+`PRE` sostiene un cambio de peso, el resto
+   fija rúbrica); el sesgo de atribución se declara antes de los conteos; y
+   mover estados NO está abierto al token de Cowork: el agente lee sus
+   lecciones, declarar aplicada la suya es del usuario. Faltan D (dossier cada
+   4 fallos, que ABRE la revisión pero no autoriza mover nada) y A
+   (antecedentes). La app nunca mueve un peso de un skill por su cuenta.
+   Snapshot de los skills en `docs/skills/`.
 7. Fase nube completa cuando toque: `docs/SERVICIOS_EXTERNOS.md` (Postgres).

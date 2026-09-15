@@ -2079,6 +2079,44 @@ def cowork_latido(horas: int = Query(default=36, ge=1, le=336)):
     return cowork.latido(horas)
 
 
+class LeccionBody(BaseModel):
+    estado: str
+    aplicadaEn: str = ""
+    nota: str = ""
+
+
+@app.get(API + "/analisis/cowork/lecciones")
+def cowork_lecciones(skill: str = Query(default=""), estado: str = Query(default=""),
+                     limite: int = Query(default=400, ge=1, le=2000)):
+    """Lo que el bucle aprendió, indexado por skill (fase C).
+
+    El CONTENIDO de cada lección se deriva del veredicto al leer —no hay copia
+    que se quede vieja cuando alguien corrige un caso—; lo único guardado
+    aparte es el ESTADO, que es lo que corta el bucle infinito.
+
+    Las métricas salen SOLO de la población acreditable (ciega + PRE) y con su
+    `n` a la vista; las otras poblaciones se cuentan aparte y no se suman."""
+    from backend.analisis import lecciones
+    return lecciones.inventario(skill, estado, limite)
+
+
+@app.post(API + "/analisis/cowork/lecciones/{clave}")
+def cowork_leccion_mover(clave: str, body: LeccionBody):
+    """Mueve una lección de estado. NO está abierto al token de Cowork.
+
+    El agente lee sus lecciones; declarar aplicada la suya es del usuario. Y
+    marcar `aplicada` exige la versión del skill donde entró: sin eso el
+    cambio no se puede auditar seis meses después."""
+    from backend.analisis import lecciones
+    try:
+        return lecciones.mover(clave, body.estado, body.aplicadaEn, body.nota)
+    except lecciones.LeccionInvalida as e:
+        raise HTTPException(422, str(e))
+    except KeyError:
+        raise HTTPException(404, f"no hay lección con clave {clave!r} "
+                                 "(la clave es fixtureId:lado, ej. 1550964:a)")
+
+
 @app.post(API + "/analisis/cowork")
 def cowork_depositar(payload: dict):
     """Deposita el parte de un partido (idempotente por fixtureId).

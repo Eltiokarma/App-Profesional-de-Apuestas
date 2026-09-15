@@ -1,7 +1,7 @@
 // Análisis EFE y timeline de muestra para el modo demo (espejo de
 // backend/analisis/demo.py): permiten desarrollar y probar la sección
 // Análisis sin API ni créditos. Regla del proyecto: la simulación vive SOLO en demo.
-import type { BloqueParte, VeredictoParte, EfeBloque, EfeComparativo, EfeEquipo, EquipoParte, EslabonDtpDTO, JugadorParte, ParteCoworkDTO, RamaF, RolF, TimelineData, TlEvento, ZonaF } from '../api/types'
+import type { InventarioLecciones, LeccionItem, BloqueParte, VeredictoParte, EfeBloque, EfeComparativo, EfeEquipo, EquipoParte, EslabonDtpDTO, JugadorParte, ParteCoworkDTO, RamaF, RolF, TimelineData, TlEvento, ZonaF } from '../api/types'
 
 export function timelineDemo(equipoA: string, equipoB: string): TimelineData {
   const ev = (fecha: string, equipo: string, tipo: TlEvento['tipo'], titulo: string, detalle: string, marcador = '', jornada = 0, destacado = false): TlEvento => ({
@@ -346,5 +346,107 @@ function veredictoDemo(fixtureId: number, marcador: string): VeredictoParte {
         conFicha: true, nota: '',
       },
     },
+  }
+}
+
+/** Inventario de lecciones de muestra (fase C de docs/APRENDIZAJE.md).
+ *
+ *  Espejo de `backend/analisis/lecciones.py`: la demo trae a propósito un caso
+ *  ciego y uno contaminado, para que se vea en pantalla la distinción que el
+ *  dossier no puede dejar al criterio del día — solo lo acreditable puede mover
+ *  un número; lo demás fija rúbrica. */
+export function leccionesDemo(skill: string, estado: string): InventarioLecciones {
+  const base = (x: Partial<LeccionItem> & { clave: string }): LeccionItem => ({
+    fixtureId: 9001, lado: 'b', equipo: 'Villarreal', rival: 'Atlético',
+    partido: 'Atlético vs Villarreal', fecha: '2026-07-20',
+    skill: 'teorema-del-echado', veredicto: 'fallo', queP: '', leccion: '',
+    reglaTocada: '', seleccion: 'ciega', modoEvaluacion: 'PRE', acredita: true,
+    mancha: '', puedeMoverNumeros: true,
+    queAutoriza: 'puede sostener un cambio de peso',
+    estado: 'pendiente', aplicadaEn: '', nota: '', actualizadoEn: '2026-07-21 09:00:00',
+    ...x,
+  })
+  const items: LeccionItem[] = [
+    base({
+      clave: '9001:b', queP: 'no aguantó el tramo final como se le suponía',
+      leccion: 'el interino no sostiene el bloque sin el 5 titular: F2 no puede ir en 0.5 con el mediocentro fuera',
+      reglaTocada: 'bloque F · indicador F2',
+    }),
+    base({
+      clave: '9002:a', fixtureId: 9002, lado: 'a', equipo: 'Real Madrid', rival: 'Barcelona',
+      partido: 'Real Madrid vs Barcelona', fecha: '2026-07-19', veredicto: 'parcial',
+      queP: 'ganó por fuera pero sufrió el tramo final',
+      leccion: 'la ventana declarada empezó diez minutos tarde: con dos cambios ofensivos antes del 65 el tramo se adelanta',
+      reglaTocada: 'ventana de 15 minutos',
+      seleccion: 'post_resultado', acredita: false, puedeMoverNumeros: false,
+      queAutoriza: 'solo fija rúbrica: aclara cómo se aplica una regla, no mueve ningún número',
+    }),
+    base({
+      clave: '9003:a', fixtureId: 9003, lado: 'a', equipo: 'Liverpool', rival: 'Chelsea',
+      partido: 'Liverpool vs Chelsea', fecha: '2026-07-12', skill: 'efe-clasificador',
+      veredicto: 'fallo', queP: 'el EFE lo daba formado y se desarmó en 20 minutos',
+      leccion: 'tres titulares con menos de seis meses juntos no es "núcleo intacto" aunque el DT lleve dos años',
+      reglaTocada: 'bloque B · minutos compartidos', estado: 'aplicada', aplicadaEn: 'efe/v1.5',
+    }),
+  ]
+  const filtrados = items.filter((i) => (!skill || i.skill === skill) && (!estado || i.estado === estado))
+  const porSkill = [...new Set(items.map((i) => i.skill))].sort().map((nombre) => {
+    const suyas = items.filter((i) => i.skill === nombre)
+    const pend = suyas.filter((i) => i.veredicto === 'fallo' && i.estado === 'pendiente').length
+    return {
+      skill: nombre,
+      lecciones: Object.fromEntries(['pendiente', 'en_revision', 'aplicada', 'descartada']
+        .map((e) => [e, suyas.filter((i) => i.estado === e).length])),
+      atribuidos: Object.fromEntries(['acierto', 'parcial', 'fallo']
+        .map((v) => [v, suyas.filter((i) => i.veredicto === v).length])),
+      sesgoDeAtribucion: 'quien cierra el caso nombra el skill sobre todo cuando algo falla: estos conteos NO son una tasa de acierto del skill',
+      acreditables: suyas.filter((i) => i.puedeMoverNumeros).length,
+      soloRubrica: suyas.filter((i) => !i.puedeMoverNumeros).length,
+      revisionAbierta: pend >= 4,
+      fallosPendientes: pend,
+      faltanParaDisparar: Math.max(0, 4 - pend),
+      disparador: '4 fallos con lección pendiente del mismo skill ABREN la revisión; no autorizan ningún cambio',
+      liston: nombre === 'teorema-del-echado'
+        ? {
+          de: 'el skill teorema-del-echado (ALTA_DEL_SEMAFORO)',
+          condiciones: { a: 'N ≥ 5 echadas observadas con selección ciega en el esquema vigente' },
+          observadoAca: '1 ventana con gol de 2 comprobadas en población ciega',
+          semaforo: '1 echada(s) observada(s) en ciego · el skill pide 5',
+          cumple: false,
+          nota: 'modo demo: números de muestra',
+        }
+        : null,
+      items: filtrados.filter((i) => i.skill === nombre),
+    }
+  })
+  return {
+    generadoEn: '2026-07-21 09:05:00',
+    filtro: { skill, estado },
+    poblacion: {
+      ciega: { casos: 2, lados: 3 },
+      por_resultado: { casos: 0, lados: 0 },
+      post_resultado: { casos: 1, lados: 1 },
+      nota: 'las poblaciones no se suman entre sí: solo `ciega` + `PRE` acredita, las demás fijan rúbrica',
+    },
+    acreditables: {
+      criterio: 'ciega + PRE: la única combinación que acredita validación predictiva',
+      casos: 2, lados: 3,
+      veredictos: { acierto: 1, parcial: 0, fallo: 2 },
+      tasaAcierto: 0.333, tasaNota: '',
+      unXDos: { aciertos: 1, de: 2, tasa: 0.5 },
+      brier: {
+        media: 0.4712, n: 2, lineaBase: 0.4444, mejorQueLaBase: false,
+        nota: 'la línea de base es el reparto constante con la frecuencia observada de esta misma muestra: lo que sacaría quien no mira el partido',
+        escala: '0 perfecto · 2 máximo · TRES resultados (no comparable con un Brier binario)',
+      },
+      ventanaTde: {
+        observadas: 2, conGol: 1, sinFicha: 0,
+        nota: 'ventanas del TDE comprobadas contra los goles recibidos, en población ciega. `sinFicha` no cuenta como no ocurrido: no se pudo comprobar',
+      },
+    },
+    porSkill,
+    sinSkill: { cuantas: 0, porque: 'la lección no declaró de qué skill es: no se reparte a ojo', items: [] },
+    estados: ['pendiente', 'en_revision', 'aplicada', 'descartada'],
+    items: filtrados,
   }
 }

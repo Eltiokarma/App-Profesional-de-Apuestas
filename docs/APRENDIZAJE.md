@@ -85,12 +85,12 @@ Confundirlas es el error que este documento existe para evitar.
 |---|---|---|
 | Pronóstico declarado pre-partido | ✅ `parte_cowork` + `cadena_dtp.registro.pronostico_clave` | — |
 | Marcador final del partido | ✅ `fixtures` (ingesta) | — |
-| Cierre del eslabón (qué pasó, veredicto, lección) | ⚠️ el hueco existe en `cadena_dtp`, **nadie lo escribe** | endpoint + quien lo llame |
+| Cierre del eslabón (qué pasó, veredicto, lección) | ✅ `POST /analisis/cowork/{id}/veredicto` lo escribe (fase B) | — |
 | Casos de validación del EFE | ⚠️ tabla `casos_validacion` en efe.db, **vacía** | poblarla |
 | Registro del TDE | ❌ vive en el `.csv` del skill, fuera de la app | tabla propia |
 | Casos del `sad-analysis` | ❌ `references/casos_referencia.md`, a mano | — |
-| Métricas de acierto / Brier | ❌ | calcularlas (es aritmética: va en el backend) |
-| Pantalla de aprendizaje | ❌ | sección nueva |
+| Métricas de acierto / Brier | ✅ `GET /analisis/cowork/lecciones`, solo sobre población ciega y con línea de base | — |
+| Pantalla de aprendizaje | ✅ sección **Aprendizaje** (fase C) | — |
 
 La buena noticia: **la mitad del andamiaje ya está puesto** y quedó puesto por
 razones independientes. `cadena_dtp` tiene el campo `registro` con
@@ -428,10 +428,52 @@ significa nada.
 
 ---
 
-## C · Las lecciones, acumuladas por skill
+## C · Las lecciones, acumuladas por skill — **HECHA**
 
-Tabla nueva en `efe.db` (la capa de análisis sigue siendo la única que escribe
-ahí):
+`backend/analisis/lecciones.py` · `GET /analisis/cowork/lecciones` ·
+`POST /analisis/cowork/lecciones/{clave}` · sección **Aprendizaje**.
+
+### Se implementó con UNA diferencia deliberada respecto de este diseño
+
+El diseño de abajo proponía una tabla con el TEXTO de la lección adentro. Eso
+crea dos copias del mismo dato, y el día que alguien corrige un veredicto una de
+las dos se queda vieja **sin que nadie se entere** — que es la forma más cara de
+perder información y la que venimos arreglando en todo el resto del proyecto.
+
+Lo implementado: el **contenido** de cada lección se DERIVA del veredicto al
+leer (como el marcador y el timeline), y se guarda aparte **solo el estado**,
+que es lo único que no se puede derivar de nada:
+
+```sql
+CREATE TABLE leccion_estado (
+    clave TEXT PRIMARY KEY,          -- fixtureId:lado
+    estado TEXT NOT NULL DEFAULT 'pendiente',
+    aplicada_en TEXT,                -- versión del skill donde entró
+    nota TEXT,
+    actualizado_en TEXT NOT NULL
+);
+```
+
+Tres reglas que quedaron en el código, no en la buena voluntad de quien lea:
+
+- **`aplicada` exige `aplicadaEn`.** Una lección aplicada sin la versión donde
+  entró no se puede auditar seis meses después, y este es el momento más barato
+  para anotarlo.
+- **`puedeMoverNumeros` viaja con cada lección.** Solo un caso `ciega`+`PRE`
+  puede sostener un cambio de peso; el resto fija rúbrica. La distinción la
+  lleva el dato y se pinta pegada a la lección, no en una nota al pie.
+- **El sesgo de atribución se declara.** Quien cierra el caso nombra el skill
+  sobre todo cuando algo falla: los conteos por skill NO son una tasa de
+  acierto, y la pantalla lo dice antes de mostrarlos. La tasa que sí se publica
+  sale de TODOS los lados de la población ciega, con su `n` al lado.
+- **Cowork no puede mover estados.** `POST /analisis/cowork/lecciones/{clave}`
+  no está en la lista de permitidos del token acotado: el agente lee sus
+  lecciones, pero declarar aplicada la suya es del usuario.
+
+### El diseño original, para referencia
+
+Tabla propuesta en su momento (la capa de análisis sigue siendo la única que
+escribe en `efe.db`):
 
 ```sql
 CREATE TABLE lecciones (

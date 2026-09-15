@@ -51,6 +51,7 @@ se perdería.
 | `sad-analysis` | las tres fuentes de probabilidad + falsador | pestaña **Lectura SAD** |
 | `teorema-del-echado` | P1a, F2 y F1 **los calcula el backend** (`GET /analisis/cowork/tde/{id}`); el resto lo escribís vos | pestaña **Teorema del Echado** |
 | `teorema-del-echado` | `tde.bloques[]`: IE, ISE, tipología, ventana, vías — **uno por equipo** | pestaña **Teorema del Echado** |
+| *(cualquiera)* | `veredicto.porLado[l].leccion` + `skill` + `reglaTocada` | sección **Aprendizaje** |
 | `futbol-timeline` | `timelineEventos` (solo institucional) + narrativa | pestaña **Timeline** (fundida con los partidos calculados) |
 | `diagnostico-tactico` | documento `dtp` + `cadena.{a,b}.pronostico` | pestaña **Documentos** y la cadena de la página de **Equipo** |
 | matriz de escenarios | documento `matriz` | pestaña **Documentos** |
@@ -408,6 +409,26 @@ El recibo trae `ladosTde` con los equipos que quedaron, y si solo mandaste uno,
 comprobar** cuando se cierre el caso. El veredicto devuelve
 `objetivo.tde.bloques`, una comprobación por bloque: la echada de cada equipo
 se mide en los goles que **recibe**.
+
+### La lección es un campo, no una promesa
+
+Cada lado del veredicto puede traer `leccion` + `skill` + `reglaTocada`. Eso es
+lo que alimenta la sección **Aprendizaje** (`GET /analisis/cowork/lecciones`):
+las lecciones se agrupan por skill, y 4 fallos con lección pendiente del mismo
+skill ABREN la revisión —no autorizan ningún cambio—.
+
+Dos cosas que conviene saber al escribir el veredicto:
+
+- **Declará el `skill`.** Sin él la lección sale en `sinSkill`, aparte: no se
+  reparte a ojo.
+- **La población decide qué puede hacer la lección.** Un caso `ciega`+`PRE`
+  puede sostener un cambio de peso; uno contaminado solo fija rúbrica —aclara
+  cómo se aplica una regla, sin mover ningún número—. Eso viaja calculado en
+  `puedeMoverNumeros`, no queda al criterio de quien lea el dossier ese día.
+
+Mover una lección de estado (`pendiente` → `en_revision` / `aplicada` /
+`descartada`) **no** está abierto al token de Cowork: el agente lee sus
+lecciones, declarar aplicada la suya es del usuario.
 
 ### El once se cierra solo: no hay carrera de 30 minutos
 

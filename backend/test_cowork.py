@@ -1048,6 +1048,114 @@ def main():
           o4["unXDos"]["acerto"] is False and "no se cuenta" in o4["unXDos"]["nota"], o4["unXDos"])
     check("y tampoco hay Brier", o4["brier"]["valor"] is None, o4["brier"])
 
+    # ── FASE C: LAS LECCIONES, ACUMULADAS POR SKILL ────────────────────────
+    # REGRESIÓN DE ORDEN DE RUTAS: `lecciones` es un segmento suelto y si se
+    # declara después de /{fixture_id}, FastAPI intenta parsear "lecciones"
+    # como entero y devuelve 422. Ya pasó con `latido`.
+    rl = c.get(f"{A}/analisis/cowork/lecciones")
+    check("`lecciones` no se lo come /{fixture_id}", rl.status_code == 200, rl.text[:160])
+
+    # un caso ciego con lección por skill
+    p_lec = _parte(pasado["id"])
+    c.post(f"{A}/analisis/cowork", json=p_lec)
+    c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto", json={
+        "seleccion": "ciega", "modoEvaluacion": "PRE",
+        "porLado": {"a": {"veredicto": "fallo", "queP": "no aguantó el tramo final",
+                          "leccion": "el bloque bajo entrenado sostiene los 90",
+                          "skill": "teorema-del-echado", "reglaTocada": "escala de P(echada)"},
+                    "b": {"veredicto": "acierto", "queP": "aguantó"}}})
+    inv = c.get(f"{A}/analisis/cowork/lecciones").json()
+    mio = next((i for i in inv["items"] if i["clave"] == f"{pasado['id']}:a"), None)
+    check("la lección se indexa desde el veredicto", mio is not None,
+          [i["clave"] for i in inv["items"]][:5])
+    check("y trae el partido del que salió",
+          bool(mio["partido"]) and mio["fecha"] and mio["equipo"], mio)
+    check("un lado sin lección no inventa una entrada",
+          not any(i["clave"] == f"{pasado['id']}:b" for i in inv["items"]),
+          [i["clave"] for i in inv["items"]][:5])
+    check("nace pendiente", mio["estado"] == "pendiente", mio["estado"])
+    check("un caso ciego+PRE SÍ puede mover números", mio["puedeMoverNumeros"] is True, mio)
+
+    tde_skill = next((x for x in inv["porSkill"] if x["skill"] == "teorema-del-echado"), None)
+    check("las lecciones se agrupan por skill", tde_skill is not None,
+          [x["skill"] for x in inv["porSkill"]])
+    check("el sesgo de atribución se DECLARA, no se disimula",
+          "NO son una tasa" in tde_skill["sesgoDeAtribucion"], tde_skill.get("sesgoDeAtribucion"))
+    check("el disparador de la fase D dice que ABRE, no que autoriza",
+          "no autorizan" in tde_skill["disparador"], tde_skill["disparador"])
+    check("con 1 fallo pendiente la revisión NO está abierta",
+          tde_skill["revisionAbierta"] is False and tde_skill["faltanParaDisparar"] == 3,
+          (tde_skill["revisionAbierta"], tde_skill["faltanParaDisparar"]))
+    check("el listón del TDE sale del propio skill",
+          "5" in (tde_skill["liston"] or {}).get("semaforo", ""), (tde_skill["liston"] or {}).get("semaforo"))
+
+    # LO CONTAMINADO ENSEÑA PERO NO MUEVE UN NÚMERO
+    c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto", json={
+        "seleccion": "post_resultado", "modoEvaluacion": "PRE",
+        "porLado": {"a": {"veredicto": "fallo", "leccion": "misma lección, caso sembrado",
+                          "skill": "teorema-del-echado"}}})
+    inv2 = c.get(f"{A}/analisis/cowork/lecciones").json()
+    m2 = next(i for i in inv2["items"] if i["clave"] == f"{pasado['id']}:a")
+    check("una lección de caso contaminado NO puede mover números",
+          m2["puedeMoverNumeros"] is False, m2)
+    check("y dice qué sí autoriza: fijar rúbrica",
+          "fija rúbrica" in m2["queAutoriza"], m2["queAutoriza"])
+    check("las poblaciones se cuentan aparte y se avisa que no se suman",
+          "no se suman" in inv2["poblacion"]["nota"], inv2["poblacion"]["nota"])
+
+    # EL CONTENIDO SE DERIVA, NO SE COPIA: corregir el veredicto corrige la lección
+    c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto", json={
+        "seleccion": "ciega", "modoEvaluacion": "PRE",
+        "porLado": {"a": {"veredicto": "fallo", "leccion": "TEXTO CORREGIDO",
+                          "skill": "teorema-del-echado"}}})
+    m3 = next(i for i in c.get(f"{A}/analisis/cowork/lecciones").json()["items"]
+              if i["clave"] == f"{pasado['id']}:a")
+    check("corregir el veredicto corrige la lección (no hay copia vieja)",
+          m3["leccion"] == "TEXTO CORREGIDO", m3["leccion"])
+
+    # el estado sí se guarda aparte, y `aplicada` exige la versión
+    clave = f"{pasado['id']}:a"
+    r = c.post(f"{A}/analisis/cowork/lecciones/{clave}", json={"estado": "aplicada"})
+    check("marcar `aplicada` sin versión se rechaza", r.status_code == 422, r.status_code)
+    check("y el error dice por qué", "aplicadaEn" in r.text, r.text[:120])
+    r = c.post(f"{A}/analisis/cowork/lecciones/{clave}",
+               json={"estado": "aplicada", "aplicadaEn": "tde/v0.1.4"})
+    check("con versión sí entra", r.status_code == 200 and r.json()["estado"] == "aplicada",
+          r.text[:160])
+    check("un estado inventado se rechaza",
+          c.post(f"{A}/analisis/cowork/lecciones/{clave}",
+                 json={"estado": "casi"}).status_code == 422)
+    check("una clave que no existe es 404",
+          c.post(f"{A}/analisis/cowork/lecciones/99999999:a",
+                 json={"estado": "descartada"}).status_code == 404)
+    inv3 = c.get(f"{A}/analisis/cowork/lecciones", params={"estado": "aplicada"}).json()
+    check("el estado sobrevive al re-derivado",
+          [i["clave"] for i in inv3["items"]] == [clave], [i["clave"] for i in inv3["items"]])
+    check("y trae la versión donde entró",
+          inv3["items"][0]["aplicadaEn"] == "tde/v0.1.4", inv3["items"][0])
+    tde3 = next(x for x in inv3["porSkill"] if x["skill"] == "teorema-del-echado")
+    check("una lección aplicada deja de contar para el disparador",
+          tde3["fallosPendientes"] == 0, tde3["fallosPendientes"])
+
+    # las métricas salen SOLO de lo acreditable y el Brier viaja con su base
+    acr = inv3["acreditables"]
+    check("las métricas declaran su criterio", "ciega + PRE" in acr["criterio"], acr["criterio"])
+    check("el Brier viaja con su línea de base",
+          "lineaBase" in acr["brier"], acr["brier"])
+    check("sin n no se publica un 0% disfrazado de tasa",
+          acr["tasaAcierto"] is not None or acr["tasaNota"], acr)
+    check("la ventana del TDE observada no cuenta lo no comprobable",
+          "no cuenta como no ocurrido" in acr["ventanaTde"]["nota"], acr["ventanaTde"])
+
+    # una lección sin skill se delata en vez de repartirse a ojo
+    c.post(f"{A}/analisis/cowork/{virgen}/veredicto", json={
+        "seleccion": "ciega", "modoEvaluacion": "PRE",
+        "porLado": {"a": {"veredicto": "fallo", "leccion": "lección huérfana"}}})
+    inv4 = c.get(f"{A}/analisis/cowork/lecciones").json()
+    check("una lección sin skill se declara aparte",
+          inv4["sinSkill"]["cuantas"] >= 1 and "no se reparte a ojo" in inv4["sinSkill"]["porque"],
+          inv4["sinSkill"])
+
     # ── LO QUE SE RECHAZA SE DICE (reportado por Cowork en la 1ª corrida) ───
     # La rúbrica del EFE nombra los roles con 🔴🟠🟡⚪ y con su etiqueta, y las
     # posiciones en español. Quien escribe el parte viene de leer ESA rúbrica.

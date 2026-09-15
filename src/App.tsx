@@ -18,6 +18,7 @@ import { Burbujas } from './sections/Burbujas'
 import { Analisis } from './sections/Analisis'
 import { Skills } from './sections/Skills'
 import { Estadisticas } from './sections/Estadisticas'
+import { Aprendizaje } from './sections/Aprendizaje'
 
 const PAD = '16px'
 
@@ -141,6 +142,8 @@ export function App() {
             {showContent && m && s.section === 'analisis' && <Analisis m={m} isMobile={isMobile} />}
             {showContent && m && s.section === 'skills' && <Skills store={store} m={m} isMobile={isMobile} />}
             {showContent && m && s.section === 'estadisticas' && <Estadisticas store={store} m={m} isMobile={isMobile} />}
+            {/* Aprendizaje NO depende del partido seleccionado: es lo acumulado */}
+            {s.section === 'aprendizaje' && <Aprendizaje isMobile={isMobile} />}
           </main>
 
           {isMobile && <BottomNav store={store} />}

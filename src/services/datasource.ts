@@ -37,6 +37,8 @@ import type {
   NivelDTO,
   JugadorParte,
   ParteCoworkDTO,
+  InventarioLecciones,
+  LeccionItem,
   PartidoCalendarioDTO,
   PlantillaDTO,
   PreflightEfeDTO,
@@ -50,7 +52,7 @@ import type {
 } from '../api/types'
 import { CONFIG, type DataSourceMode } from '../config'
 import { MARKET_DEFS, MATCHES, STANDINGS, TEAMS } from '../data'
-import { dtpDemo, efeDemo, parteCoworkDemo, timelineDemo } from '../data/efeDemo'
+import { dtpDemo, efeDemo, leccionesDemo, parteCoworkDemo, timelineDemo } from '../data/efeDemo'
 import { oddsFor, rng } from '../lib/odds'
 import { levelBin } from '../motor/discretizer'
 import { teamEngine } from '../motor/engine'
@@ -147,6 +149,10 @@ export interface SadDataSource {
   /** Llega el once y el bloque F se cierra en el backend (aritmética, sin IA).
    *  Sin onces en el cuerpo, se intenta con la ficha ya ingestada. */
   resolverXi(fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }): Promise<ParteCoworkDTO>
+  /** Lo que el bucle aprendió, por skill (fase C de docs/APRENDIZAJE.md). */
+  lecciones(params?: { skill?: string; estado?: string }): Promise<InventarioLecciones>
+  /** Mueve una lección de estado. Lo hace el usuario, no el agente. */
+  moverLeccion(clave: string, body: { estado: string; aplicadaEn?: string; nota?: string }): Promise<LeccionItem>
 }
 
 // ---------- mapeo de ids internos (strings) ↔ contrato (números) ----------
@@ -781,6 +787,19 @@ class MockDataSource implements SadDataSource {
     return p
   }
 
+  async lecciones(params?: { skill?: string; estado?: string }): Promise<InventarioLecciones> {
+    return leccionesDemo(params?.skill ?? '', params?.estado ?? '')
+  }
+
+  async moverLeccion(clave: string, body: { estado: string; aplicadaEn?: string; nota?: string }): Promise<LeccionItem> {
+    // el modo demo no persiste: devuelve la lección con el estado pedido para
+    // que la pantalla se pueda probar sin backend
+    const inv = leccionesDemo('', '')
+    const it = inv.items.find((x) => x.clave === clave)
+    if (!it) throw new Error(`no hay lección ${clave}`)
+    return { ...it, estado: body.estado as LeccionItem['estado'], aplicadaEn: body.aplicadaEn ?? '', nota: body.nota ?? '' }
+  }
+
   async resolverXi(fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }): Promise<ParteCoworkDTO> {
     const p = await this.parteCowork(fixtureId)
     if (!p) throw new Error('no hay parte para ese partido')
@@ -1061,6 +1080,9 @@ class HttpDataSource implements SadDataSource {
     })
   resolverXi = (fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }) =>
     SadApi.resolverXi(fixtureId, body)
+  lecciones = (params?: { skill?: string; estado?: string }) => SadApi.lecciones(params)
+  moverLeccion = (clave: string, body: { estado: string; aplicadaEn?: string; nota?: string }) =>
+    SadApi.moverLeccion(clave, body)
 }
 
 let _ds: SadDataSource | null = null

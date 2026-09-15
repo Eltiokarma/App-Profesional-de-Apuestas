@@ -16,6 +16,8 @@ import type {
   EstadoFixture,
   FichaPartidoDTO,
   FixtureDTO,
+  InventarioLecciones,
+  LeccionItem,
   FixtureLiveDTO,
   RefrescoLigaDTO,
   VipEstadoDTO,
@@ -154,6 +156,14 @@ export const SadApi = {
    *  Sin onces, se intenta con la ficha que ya capturó la ingesta. */
   resolverXi: (fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }) =>
     apiPost<ParteCoworkDTO>(`/analisis/cowork/${fixtureId}/xi`, body, { timeoutMs: 20_000 }),
+
+  /** Lo que el bucle aprendió, por skill (fase C de docs/APRENDIZAJE.md). */
+  lecciones: (params?: { skill?: string; estado?: string }) =>
+    apiGet<InventarioLecciones>('/analisis/cowork/lecciones' + qs(params ?? {})),
+
+  /** Mueve una lección de estado. `aplicada` exige la versión del skill. */
+  moverLeccion: (clave: string, body: { estado: string; aplicadaEn?: string; nota?: string }) =>
+    apiPost<LeccionItem>(`/analisis/cowork/lecciones/${encodeURIComponent(clave)}`, body),
 
   /** Los partidos del día ordenados por prioridad (paso 1 del batch nocturno). */
   agendaCowork: (fecha?: string, limite?: number) =>
