@@ -135,6 +135,16 @@ def main():
           "RECIEN_ASCENDIDO" in e, list(e))
     check("y avisa de la cuarentena de sus K", "R-KT.2" in e.get("RECIEN_ASCENDIDO", {}).get("nota", ""), e)
 
+    # UNA COPA NO TIENE ASCENSO. No haber jugado la edición anterior es lo
+    # normal —se clasifica o no—, y la regla vieja marcaba como «recién
+    # ascendidos» a los cuatro equipos de una llave de Sudamericana, con la
+    # cuarentena R-KT.2 puesta sin motivo.
+    for copa in (11, 13, 2, 3, 848, 130, 930):
+        check(f"en la copa {copa} no se etiqueta ascenso",
+              not calendario._es_ascendido(ASCENDIDO, copa, TEMP), copa)
+    check("y sin evidencia de haber jugado en OTRA liga tampoco se etiqueta",
+          not calendario._es_ascendido(9999, LIGA, TEMP), "equipo sin histórico")
+
     e = etiquetas(cal, "En Caída")
     check("EN CRISIS con 3 derrotas seguidas", "EN_CRISIS" in e, list(e))
     check("y el dato que lo sostiene", "3 derrotas" in e.get("EN_CRISIS", {}).get("dato", ""), e)

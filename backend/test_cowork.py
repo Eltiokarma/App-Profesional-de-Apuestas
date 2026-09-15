@@ -340,22 +340,63 @@ def main():
           all(x["fixtureId"] != con_ficha for x in otra["cerrados"]),
           [x["fixtureId"] for x in otra["cerrados"]])
 
-    # ── EL PADRÓN DE LA AGENDA (por ID, no por nombre) ─────────────────────
+    # ── EL MISMO HUECO, LEÍDO AL REVÉS POR DOS ESCALAS ─────────────────────
+    # Un equipo salió «1.9% SIN FORMACIÓN» y «IE 8.14 · casi seguro» a la vez:
+    # el EFE cuenta el bloque ausente como 0 y hunde el porcentaje; el TDE
+    # promedia solo sobre los presentes y un 1 con denominador chico dispara el
+    # índice. Los dos números son artefactos del mismo vacío.
+    r_h = c.post(f"{A}/analisis/cowork", json={
+        "fixtureId": sin_ficha,
+        "equipos": {"a": {"bloques": {"A": 1}}, "b": {"bloques": {"A": 2, "B": 3}}},
+        "tde": {"bloques": [{"equipo": "a", "ventana": "75-90'",
+                             "indicadores": {"F1": 1, "C1": 1, "P1a": 1, "S1": 1}}]},
+    })
+    check("un TDE con pocos indicadores se deposita igual", r_h.status_code == 200, r_h.text[:150])
+    d_h = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()
+    cob = d_h["tde"]["bloques"][0]["calculado"]["cobertura"]
+    check("el TDE declara con cuántos indicadores se calculó",
+          cob["usados"] == 4 and cob["nominales"] == 16, cob)
+    check("y avisa que menos dato no es más riesgo",
+          "menos dato" in cob["nota"], cob["nota"])
+    check("la contradicción EFE/TDE se declara JUNTA, en una alerta",
+          any(x["codigo"] == "HUECO-DOBLE" and x["equipo"] == "a" for x in d_h["alertas"]),
+          [x["codigo"] for x in d_h["alertas"]])
+    check("y la alerta dice qué NO significa",
+          any("es un equipo sin datos" in x.get("detalle", "") for x in d_h["alertas"]),
+          [x.get("detalle", "")[:60] for x in d_h["alertas"]])
+    c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
+
+    # `sensibilidad` como lista de strings tumbaba el endpoint con un 500 sin
+    # recibo: en un batch desatendido eso pierde el parte entero sin decir por qué
+    r_s = c.post(f"{A}/analisis/cowork", json={
+        "fixtureId": sin_ficha,
+        "equipos": {"a": {"bloques": {"A": 3}, "sensibilidad": ["si el central no llega, cambia"]},
+                    "b": {"bloques": {"A": 3}}}})
+    check("`sensibilidad` mal formada responde 200, no 500", r_s.status_code == 200, r_s.status_code)
+    check("y se DECLARA con la forma buena al lado",
+          any(x["donde"].startswith("equipos.a.sensibilidad") and x.get("esperado")
+              for x in r_s.json().get("rechazos", [])), r_s.json().get("rechazos"))
+    c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
+
+    # ── EL PADRÓN DE LA AGENDA: UNA SOLA FUENTE ────────────────────────────
     # El criterio por NOMBRE dejaba fuera a Brasil, Colombia, Chile, Uruguay,
     # Ecuador, Paraguay, Bolivia, Venezuela, Portugal, Bélgica, la Europa
     # League y la Conference: salían como «fuera del padrón» y nadie lo miraba.
-    from backend.analisis.parte import _prioridad, PRIMERAS, INTERNACIONALES
+    # Ahora el padrón es EL MISMO que el de las cuotas en vivo, para que no
+    # haya dos listas de «ligas importantes» que se separen con el tiempo.
+    from backend.analisis.parte import _prioridad, _padron, SEGUNDAS, INTERNACIONALES
+    from backend.ingesta.extractor import ligas_vivo
     liga_x = {"nombre": "X"}
     prio_de = lambda lid, ronda="", etq=None, pl=0, pv=0: _prioridad(
         liga_x, etq or set(), pl, pv, lid, ronda)
 
-    check("la primera división de cada país entra a la agenda",
-          all(prio_de(lid)[0] > 0 for lid in PRIMERAS),
-          [lid for lid in PRIMERAS if not prio_de(lid)[0]])
-    check("y los torneos internacionales también",
-          all(prio_de(lid)[0] > 0 for lid in INTERNACIONALES),
-          [lid for lid in INTERNACIONALES if not prio_de(lid)[0]])
-    check("las once ligas que el criterio viejo tiraba ahora entran",
+    check("el padrón de la agenda ES el de las cuotas en vivo",
+          set(_padron()) == set(ligas_vivo()),
+          sorted(set(_padron()) ^ set(ligas_vivo())))
+    check("todas las ligas del padrón entran a la agenda",
+          all(prio_de(lid)[0] > 0 for lid in _padron()),
+          [lid for lid in _padron() if not prio_de(lid)[0]])
+    check("las doce que el criterio viejo tiraba ahora entran",
           all(prio_de(lid)[0] > 0 for lid in (71, 239, 265, 268, 242, 250, 344,
                                               299, 94, 144, 3, 848)),
           [lid for lid in (71, 239, 265, 268, 242, 250, 344, 299, 94, 144, 3, 848)
@@ -367,18 +408,36 @@ def main():
           all("fase decisiva" in prio_de(2, r)[1]
               for r in ("Round of 16", "Quarter-finals", "Semi-finals", "Final")),
           [prio_de(2, r)[1] for r in ("Round of 16", "Quarter-finals", "Semi-finals", "Final")])
-    check("la fase de grupos entra igual, solo que más abajo",
-          prio_de(13, "Group Stage - 4")[0] > 0, prio_de(13, "Group Stage - 4"))
-    check("la Liga 1 de Perú sigue primera",
-          prio_de(281)[0] == 1, prio_de(281))
+    check("la Liga 1 de Perú sigue primera", prio_de(281)[0] == 1, prio_de(281))
+    check("una segunda división entra, pero al final",
+          prio_de(141)[0] > prio_de(140)[0] > 0, (prio_de(141), prio_de(140)))
     check("dentro de una liga, el equipo en el top 6 o en crisis va antes",
           prio_de(71, pl=3)[0] < prio_de(71, pl=14, pv=17)[0],
           (prio_de(71, pl=3), prio_de(71, pl=14, pv=17)))
-    check("una segunda división NO entra sola",
-          prio_de(240)[0] == 0, prio_de(240))
-    check("pero el descarte dice la liga Y su id, que es lo que hace falta "
-          "para agregarla",
-          "id 240" in prio_de(240)[1], prio_de(240)[1])
+
+    # UN CLÁSICO NO PUEDE METER A UNA LIGA QUE NO ESTÁ EN EL PADRÓN. Antes el
+    # derbi se miraba ANTES del padrón: la Copa Uruguay entró para un partido y
+    # se descartó para otros tres del mismo torneo y el mismo día.
+    check("una copa nacional NO entra sola", prio_de(930)[0] == 0, prio_de(930))
+    check("y tampoco entra por ser clásico: el descarte es el mismo siempre",
+          prio_de(930, etq={"CLASICO"})[0] == 0, prio_de(930, etq={"CLASICO"}))
+    check("pero un clásico DENTRO del padrón sí sube",
+          prio_de(140, etq={"CLASICO"})[0] == 3, prio_de(140, etq={"CLASICO"}))
+    check("el descarte dice la liga Y su id, que es lo que hace falta para agregarla",
+          "id 930" in prio_de(930)[1], prio_de(930)[1])
+
+    # EL CORTE POR LÍMITE SE VE, NO SE DEDUCE. Con limite=4 y cuatro llaves
+    # internacionales el mismo día, una jornada entera de LaLiga no entra —y
+    # desde afuera parecía que la liga no estaba cubierta.
+    ag_corte = c.get(f"{A}/analisis/cowork/agenda", params={"limite": 1}).json()
+    check("la agenda declara el corte por límite", "corte" in ag_corte, sorted(ag_corte))
+    check("y dice cuántos candidatos quedaron fuera y de qué prioridad",
+          ag_corte["corte"]["limite"] == 1
+          and ag_corte["corte"]["quedanFuera"] == max(0, ag_corte["corte"]["candidatos"] - 1)
+          and isinstance(ag_corte["corte"]["porPrioridad"], dict), ag_corte["corte"])
+    check("y si quedó algo fuera, nombra las ligas",
+          (not ag_corte["corte"]["quedanFuera"]) or ag_corte["corte"]["ligasQueQuedanFuera"],
+          ag_corte["corte"])
 
     # ── LA AGENDA SE PUEDE RETOMAR DONDE SE CORTÓ ───────────────────────────
     ag = c.get(f"{A}/analisis/cowork/agenda",

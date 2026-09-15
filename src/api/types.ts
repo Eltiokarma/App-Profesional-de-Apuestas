@@ -1009,6 +1009,13 @@ export interface IndiceTde {
   bandaOrdinal?: { tramo: string; nota: string }
   bandaOrdinalIse?: { tramo: string; nota: string }
   compuertasOperadas?: string[]
+  /** Con cuántos indicadores se calculó. Pocos no es más riesgo: es menos dato. */
+  cobertura?: {
+    usados: number
+    nominales: number
+    porBloque: Record<string, string>
+    nota: string
+  }
   /** Lo que el registro observó de verdad, para que nadie lea el índice como frecuencia. */
   calibracion?: {
     filtro: string

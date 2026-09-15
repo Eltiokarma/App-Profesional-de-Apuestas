@@ -2282,6 +2282,13 @@ components:
             Si el caso sigue siendo `ciega` al escribir el veredicto. Un filtro puesto ANTES
             del pitazo (una liga, una ventana) es selección ex ante y no contamina; lo que
             contamina es elegir un partido PORQUE pasó algo en él.
+        corte:
+          type: object
+          description: >
+            Qué se quedó fuera SOLO por el límite, y de qué prioridad. Con `limite=4` y
+            cuatro llaves internacionales el mismo día, una jornada entera de LaLiga no
+            entra — y desde afuera parece que la liga no está cubierta.
+          additionalProperties: true
         analizar: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
         enEspera: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
         descartados: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }

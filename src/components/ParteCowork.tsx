@@ -488,6 +488,21 @@ function BloqueTdeVista({ tde, nombreDe }: { tde: BloqueTde; nombreDe: (l: 'a' |
           <div style={{ font: '700 10px var(--mono)', color: 'var(--t3)', letterSpacing: '.6px', marginBottom: 10 }}>
             CÓMO SE FORMÓ EL ÍNDICE
           </div>
+          {/* MENOS DATO NO ES MÁS RIESGO. El índice promedia sobre los
+              indicadores presentes: con pocos, un valor alto pesa como si
+              fuera todo el bloque — y el mismo hueco, en el EFE, tira el
+              porcentaje al piso. Sin esto se lee «riesgo altísimo». */}
+          {c.cobertura && c.cobertura.usados < c.cobertura.nominales && (
+            <div style={{ marginBottom: 10, padding: '9px 12px', borderRadius: 10, background: 'var(--mark-soft)' }}>
+              <span style={{ font: '700 10px var(--mono)', color: 'var(--mark)' }}>
+                {c.cobertura.usados} de {c.cobertura.nominales} indicadores ·{' '}
+              </span>
+              <span style={{ font: '600 10.5px var(--mono)', color: 'var(--t2)' }}>
+                {Object.entries(c.cobertura.porBloque).map(([l, v]) => `${l} ${v}`).join(' · ')}
+              </span>
+              <div style={{ font: '500 11px var(--sans)', color: 'var(--t1)', marginTop: 4 }}>{c.cobertura.nota}</div>
+            </div>
+          )}
           {c.bloques && (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
               {Object.entries(c.bloques).map(([l, v]) => {

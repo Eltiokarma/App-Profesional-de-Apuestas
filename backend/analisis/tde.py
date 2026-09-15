@@ -446,6 +446,28 @@ def _promedio(ind: dict, claves) -> tuple[float | None, list[str]]:
     return (sum(vals) / len(vals), [k for k in claves if ind.get(k) is not None]) if vals else (None, [])
 
 
+def _cobertura(ind: dict) -> dict:
+    """Cuánto del índice es dato y cuánto es denominador chico.
+
+    El TDE promedia sobre los indicadores PRESENTES, así que un bloque con un
+    solo indicador en 1 vale lo mismo que uno con cuatro en 1 — y con el peso
+    ×3 del bloque F eso dispara el índice. Es el mismo hueco que en el EFE tira
+    el porcentaje al piso, leído al revés.
+    """
+    por_bloque = {l: sum(1 for k in ks if ind.get(k) is not None)
+                  for l, ks in INDICADORES.items()}
+    usados = sum(por_bloque.values())
+    nominales = sum(len(v) for v in INDICADORES.values())
+    return {
+        "usados": usados, "nominales": nominales,
+        "porBloque": {l: f"{por_bloque[l]} de {len(INDICADORES[l])}" for l in INDICADORES},
+        "nota": ("cobertura completa" if usados == nominales else
+                 "el índice se promedió sobre los indicadores PRESENTES: con pocos, un "
+                 "valor alto pesa como si fuera todo el bloque. No es más riesgo, es "
+                 "menos dato"),
+    }
+
+
 def indice(ind: dict) -> dict:
     """IE, ISE y sus bandas, con TODAS las compuertas declaradas.
 
@@ -462,7 +484,7 @@ def indice(ind: dict) -> dict:
                 "porque": "F2 (descanso y calendario) no tiene dato del motor, y el skill "
                           "manda declarar el bloque F entero sin dato (Disciplina 21)",
                 "comoSeArregla": "GET /analisis/cowork/tde/{fixtureId} trae F2 calculado",
-                "calibracion": CALIBRACION}
+                "cobertura": _cobertura(ind), "calibracion": CALIBRACION}
 
     # COMPUERTA 2 — C1 sobre S2: S2 solo puede valer 1 con repliegue documentado
     if ind.get("C1") is not None and ind["C1"] < 1 and ind.get("S2") is not None:
@@ -534,7 +556,8 @@ def indice(ind: dict) -> dict:
     if faltan:
         return {"sinDato": True, "bloques": bloques,
                 "porque": f"sin ningún indicador en el bloque {', '.join(faltan)}",
-                "compuertasOperadas": operadas, "calibracion": CALIBRACION}
+                "compuertasOperadas": operadas, "cobertura": _cobertura(ind),
+                "calibracion": CALIBRACION}
 
     ie = sum(bloques[l] * PESOS_BLOQUE[l] for l in PESOS_BLOQUE) / DIVISOR_IE * 10
     ise, usados_ise = _promedio(ind, INDICADORES_ISE)
@@ -545,9 +568,7 @@ def indice(ind: dict) -> dict:
         # a la vista, lo que hizo cada transformación se ve en vez de creerse
         "bloquesCrudos": {l: (None if v is None else round(v, 4)) for l, v in crudos.items()},
         "indicadoresUsados": usados,
-        # BANDA ORDINAL, NO PROBABILIDAD. La tabla IE → P(echada) está
-        # suspendida: se dice en qué tramo cae y qué lo sostiene, no con qué
-        # frecuencia va a pasar.
+        "cobertura": _cobertura(ind),
         "bandaOrdinal": _ordinal(ie),
         "tablasSuspendidas": TABLAS_SUSPENDIDAS,
         "compuertasOperadas": operadas,

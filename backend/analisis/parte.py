@@ -340,16 +340,43 @@ def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
         "fuera": fuera,
         "factorX": [{"nombre": _txt(x.get("nombre")), "contexto": _txt(x.get("contexto"))}
                     for x in (bruto.get("factorX") or []) if _txt(x.get("nombre"))],
-        "sensibilidad": [x for x in (_sensibilidad(y) for y in (bruto.get("sensibilidad") or [])) if x],
+        "sensibilidad": [x for x in (
+            _sensibilidad(y, rechazos, f"equipos.{lado}.sensibilidad[{i}]")
+            for i, y in enumerate(_lista(bruto.get("sensibilidad"), rechazos,
+                                         f"equipos.{lado}.sensibilidad"))) if x],
     }
 
 
-def _sensibilidad(x: dict) -> dict | None:
+def _lista(v, rechazos: list, donde: str) -> list:
+    """Lo que tiene que ser una lista y no lo es se DICE, no revienta."""
+    if v is None:
+        return []
+    if isinstance(v, list):
+        return v
+    rechazos.append({"donde": donde,
+                     "porque": f"tiene que ser una lista, llegó {type(v).__name__}",
+                     "esperado": "[…]"})
+    return []
+
+
+def _sensibilidad(x, rechazos: list, donde: str) -> dict | None:
     """Caja de sensibilidad: qué cambiaría si el dato que falta fuera otro.
 
     Es la contrapartida honesta de "sin dato es una respuesta válida": el hueco
     se declara Y se dice cuánto movería el análisis. Un hueco sin esto es una
-    excusa; con esto es una incertidumbre acotada."""
+    excusa; con esto es una incertidumbre acotada.
+
+    UN STRING ACÁ TUMBABA EL DEPÓSITO CON UN 500. `["si el central no llega,
+    …"]` es lo primero que se le ocurre a cualquiera, y era el ÚNICO campo del
+    contrato que en vez de rechazar con motivo reventaba el endpoint: en un
+    batch desatendido eso pierde el parte entero sin decir por qué."""
+    if not isinstance(x, dict):
+        rechazos.append({
+            "donde": donde,
+            "porque": f"cada supuesto tiene que ser un objeto, llegó {type(x).__name__}",
+            "esperado": '{"supuesto": "el central 2 no llega", '
+                        '"efecto": "DEF pasa a zona debilitada"}'})
+        return None
     supuesto = _txt(x.get("supuesto"))
     if not supuesto:
         return None
@@ -1114,6 +1141,32 @@ def dto(fixture_id: int) -> dict | None:
         if f3:
             alertas.append({**f3, "equipo": lado})
         equipos[lado] = {**eq, **tot, "disponibilidad": disp}
+    tde_calc = _tde_calculado(parte.get("tde") or {})
+    # EL MISMO HUECO, LEÍDO AL REVÉS POR DOS ESCALAS. El EFE cuenta el bloque
+    # ausente como 0 y hunde el porcentaje; el TDE promedia solo sobre los
+    # indicadores presentes, así que uno alto con denominador chico dispara el
+    # índice. Un equipo salía «1.9% SIN FORMACIÓN» y «IE 8.14, casi seguro» a
+    # la vez: los dos números son artefactos del mismo vacío y apuntan en
+    # direcciones contrarias. Quien mira la pantalla lee «equipo pésimo con
+    # riesgo altísimo» cuando lo que hay es «no hay datos».
+    for b in tde_calc.get("bloques") or []:
+        lado = b.get("equipo")
+        cob = (b.get("calculado") or {}).get("cobertura") or {}
+        if lado not in LADOS or not cob:
+            continue
+        pocos = cob.get("usados", 0) < cob.get("nominales", 16) * 0.75
+        huecos = equipos[lado].get("bloquesSinDeclarar") or equipos[lado].get("sinBloques")
+        if pocos and huecos:
+            alertas.append({
+                "codigo": "HUECO-DOBLE", "equipo": lado, "tipo": "dato",
+                "detalle": f"al mismo equipo le faltan sub-scores del EFE "
+                           f"({', '.join(equipos[lado].get('bloquesSinDeclarar') or []) or 'todos'}) "
+                           f"y el TDE se calculó con {cob.get('usados')} de "
+                           f"{cob.get('nominales')} indicadores. El hueco tira el EFE hacia "
+                           "abajo y empuja el IE hacia arriba: los dos números salen del "
+                           "mismo vacío y apuntan al revés. No es un equipo pésimo con "
+                           "riesgo altísimo, es un equipo sin datos",
+            })
     fx = _fixture(fila["fixture_id"])
     # el timeline se funde AL LEER, no al depositar: si la ingesta corrige un
     # marcador, la próxima lectura ya lo trae — sellarlo sería congelar hoy lo
@@ -1135,7 +1188,7 @@ def dto(fixture_id: int) -> dict | None:
         "alertas": alertas,
         "matchup": parte["matchup"],
         "lecturaSad": parte.get("lecturaSad") or _lectura_sad({}),
-        "tde": _tde_calculado(parte.get("tde") or {}),
+        "tde": tde_calc,
         "timeline": timeline,
         "pronostico": parte["pronostico"],
         "documentos": parte["documentos"],
@@ -1636,42 +1689,37 @@ def pendientes(limite: int = 50) -> list[dict]:
 # Prioridad 1-5 del protocolo de batch. Lo que se puede decidir con datos se
 # decide con datos; lo que no (una rivalidad sin vecindad geográfica), se
 # declara parcial en vez de fingirse resuelto.
-# ── EL PADRÓN DE LA AGENDA, POR ID ──────────────────────────────────────────
-# Antes esto se decidía por el NOMBRE de la liga («premier league», «serie a»…)
-# y con condiciones encima: el resultado es que Brasil, Colombia, Chile,
-# Uruguay, Ecuador, Paraguay, Bolivia, Venezuela, Portugal, Bélgica, la Europa
-# League y la Conference NUNCA entraban a la agenda. Salían como «fuera del
-# padrón» sin que nadie lo mirara, porque un descarte silencioso no se audita.
+# ── EL PADRÓN DE LA AGENDA ──────────────────────────────────────────────────
+# UNA SOLA FUENTE: las mismas ligas a las que se les siguen las cuotas EN VIVO
+# (`extractor.ligas_vivo()` = LIGAS − LIGAS_MENORES). Tener dos listas de
+# "ligas importantes" en dos archivos garantiza que se separen, y ya se
+# separaron una vez: la agenda decidía por NOMBRE y descartaba enteras a
+# Brasil, Colombia, Chile, Uruguay, Ecuador, Paraguay, Bolivia, Venezuela,
+# Portugal, Bélgica, la Europa League y la Conference, en silencio.
 #
-# El criterio es el del usuario y es simple: la PRIMERA DIVISIÓN de cada país
-# y los torneos INTERNACIONALES, con las fases decisivas primero. Por ID, no
-# por nombre: los nombres de la API cambian y ya nos costó una agenda entera.
-PRIMERAS = {
-    128: "Argentina · Liga Profesional", 1032: "Argentina · Copa de la Liga",
-    71: "Brasil · Serie A",
-    239: "Colombia · Primera A",
-    265: "Chile · Primera División",
-    281: "Perú · Liga 1",
-    268: "Uruguay · Primera (Apertura)", 270: "Uruguay · Primera (Clausura)",
-    242: "Ecuador · Liga Pro",
-    250: "Paraguay · División Profesional (Apertura)",
-    252: "Paraguay · División Profesional (Clausura)",
-    344: "Bolivia · Primera División", 964: "Bolivia · Copa de la División Profesional",
-    299: "Venezuela · Primera División",
-    262: "México · Liga MX",
-    39: "Inglaterra · Premier League",
-    140: "España · LaLiga",
-    135: "Italia · Serie A",
-    78: "Alemania · Bundesliga",
-    61: "Francia · Ligue 1",
-    94: "Portugal · Primeira Liga",
-    144: "Bélgica · Pro League",
-}
+# Dentro del padrón hay un orden, y las segundas divisiones van últimas: están
+# cubiertas, pero no le sacan el turno a una primera división.
+SEGUNDAS = {40: "Inglaterra · Championship", 62: "Francia · Ligue 2",
+            72: "Brasil · Serie B", 79: "Alemania · 2. Bundesliga",
+            136: "Italia · Serie B", 141: "España · Segunda División",
+            263: "México · Liga de Expansión"}
 INTERNACIONALES = {
     1: "Copa del Mundo",
     13: "CONMEBOL Libertadores", 11: "CONMEBOL Sudamericana",
     2: "UEFA Champions League", 3: "UEFA Europa League", 848: "UEFA Conference League",
 }
+
+
+def _padron() -> dict[int, str]:
+    """Las ligas cubiertas, con su nombre. Sale de la ingesta, no de una copia."""
+    try:
+        from backend.ingesta.extractor import LIGAS, ligas_vivo
+        return {lid: LIGAS.get(lid, f"liga {lid}") for lid in ligas_vivo()}
+    except Exception:
+        # sin la ingesta a mano (tests aislados), el padrón mínimo declarado
+        return {**SEGUNDAS, **INTERNACIONALES, 281: "Perú · Liga 1"}
+
+
 # fases que el usuario llama «importantes»: de octavos en adelante. «final»
 # cubre también «Quarter-finals», «Semi-finals» y «8th Finals», que es como las
 # nombra API-Football; la fase de grupos entra igual, pero más abajo.
@@ -1683,33 +1731,38 @@ def _prioridad(liga: dict, etiquetas: set[str], pos_local: int, pos_visita: int,
                liga_id: int = 0, ronda: str = "") -> tuple[int, str]:
     """Qué merece análisis, en orden. 0 = no entra, y siempre con su motivo.
 
-    El orden sale del criterio del usuario: primero la casa, después los
-    torneos internacionales cuando se juegan de verdad, después los clásicos,
-    y después la primera división de cualquier país —con los partidos que
-    mueven la tabla adelante—. Nada de esto descarta por nombre: una liga que
-    no está en el padrón se dice con su ID, que es lo que hace falta para
-    agregarla en una línea.
+    El padrón es el de las cuotas en vivo; lo que ordena adentro es: la casa,
+    los torneos internacionales cuando se juegan de verdad, los clásicos, y
+    después la primera división de cualquier país —con los partidos que mueven
+    la tabla adelante—. Las segundas divisiones entran últimas.
     """
+    padron = _padron()
     ronda_n = normalizar(ronda or "")
     if liga_id in INTERNACIONALES:
         nombre_i = INTERNACIONALES[liga_id]
         if any(f in ronda_n for f in _FASE_DECISIVA):
             return 2, f"{nombre_i} · fase decisiva ({ronda or 'sin ronda declarada'})"
         return 5, f"{nombre_i} · {ronda or 'fase de grupos'}"
+    if liga_id not in padron:
+        # EL DESCARTE TIENE QUE SER EL MISMO SIEMPRE. Antes el clásico se
+        # miraba ANTES del padrón, así que un torneo fuera de él entraba o no
+        # según se activara el etiquetador de derbis: la Copa Uruguay entró
+        # para un partido y se descartó para otros tres, el mismo día.
+        return 0, (f"fuera del padrón: {liga.get('nombre') or 'liga'} (id {liga_id}). "
+                   "El padrón son las ligas con cuotas en vivo (primeras divisiones, "
+                   "segundas de Europa y los torneos internacionales); las copas "
+                   "nacionales y los amistosos quedan fuera a propósito")
     if liga_id == 281:
         return 1, "Liga 1 Perú (la casa)"
     if "CLASICO" in etiquetas:
-        return 3, "clásico / derbi detectado"
-    if liga_id in PRIMERAS:
-        nombre_p = PRIMERAS[liga_id]
-        if "EN_CRISIS" in etiquetas:
-            return 4, f"{nombre_p} · equipo en crisis"
-        if (0 < pos_local <= 6) or (0 < pos_visita <= 6):
-            return 4, f"{nombre_p} · equipo en el top 6"
-        return 6, nombre_p
-    return 0, (f"fuera del padrón de la agenda: {liga.get('nombre') or 'liga'} "
-               f"(id {liga_id}). El padrón es primera división de cada país + "
-               "torneos internacionales; si esta debería entrar, se agrega por ID")
+        return 3, f"clásico / derbi · {padron[liga_id]}"
+    if liga_id in SEGUNDAS:
+        return 7, f"{SEGUNDAS[liga_id]} (segunda división: entra, pero al final)"
+    if "EN_CRISIS" in etiquetas:
+        return 4, f"{padron[liga_id]} · equipo en crisis"
+    if (0 < pos_local <= 6) or (0 < pos_visita <= 6):
+        return 4, f"{padron[liga_id]} · equipo en el top 6"
+    return 6, padron[liga_id]
 
 
 def contrato() -> dict:
@@ -1984,6 +2037,22 @@ def agenda(fecha: date_t | None = None, limite: int = 4, liga_id: int | None = N
                    "incluirDescartados": incluir_descartados, "manual": manual},
         "analizar": candidatos[:limite],
         "enEspera": candidatos[limite:],
+        # QUÉ SE QUEDÓ AFUERA POR EL LÍMITE, Y DE QUÉ TIPO. Con `limite=4` y
+        # cuatro llaves internacionales el mismo día, una jornada entera de
+        # LaLiga no entra — y desde afuera parecía que la liga no estaba
+        # cubierta. El corte se ve, no se deduce.
+        "corte": {
+            "limite": limite,
+            "candidatos": len(candidatos),
+            "seAnalizan": len(candidatos[:limite]),
+            "quedanFuera": len(candidatos[limite:]),
+            "porPrioridad": {str(pr): sum(1 for x in candidatos if x["prioridad"] == pr)
+                             for pr in sorted({x["prioridad"] for x in candidatos})},
+            "ligasQueQuedanFuera": sorted({x["liga"] for x in candidatos[limite:] if x.get("liga")}),
+            "nota": ("todos los candidatos entran" if len(candidatos) <= limite else
+                     f"{len(candidatos) - limite} candidatos quedan fuera SOLO por el "
+                     f"límite de {limite}: subilo si querés cubrirlos"),
+        },
         "descartados": descartados,
         "nota": "CLÁSICO solo se detecta por derbi de ciudad: una rivalidad nacional sin "
                 "vecindad geográfica no sale de nuestros datos y puede estar entre los descartados",

@@ -143,11 +143,32 @@ def _formacion_dominante(team_id: int) -> str | None:
     return max(conteo, key=lambda k: conteo[k])
 
 
+# Competencias donde NO existe el ascenso: copas internacionales y copas
+# nacionales. No jugar la edición anterior es lo normal —se clasifica o no—,
+# así que la heurística de «no estaba el año pasado» no significa nada acá.
+SIN_ASCENSO = {
+    1, 2, 3, 11, 13, 848,                       # Mundial, UEFA y CONMEBOL
+    73, 130, 241, 267, 501, 502, 917, 930, 1113, 1220, 1232,   # copas nacionales
+    667,                                        # amistosos
+}
+
+
 def _es_ascendido(team_id: int, liga_id: int | None, temporada: int | None) -> bool:
-    """Sin partidos en ESA liga la temporada anterior, pero sí en el histórico:
-    subió de categoría. (Un equipo que nunca vimos no se etiqueta: sería un
-    falso positivo de nuestra propia falta de datos.)"""
-    if liga_id is None or temporada is None:
+    """¿Subió de categoría? Tres condiciones, y las tres hacen falta.
+
+    La primera versión preguntaba solo «¿jugó en ESTA liga la temporada
+    pasada?». En una copa eso es siempre que no, así que marcaba como recién
+    ascendidos a São Paulo, Boca, Atlético-MG y Santos a la vez —los cuatro de
+    una llave de Sudamericana— y les ponía las K en cuarentena (R-KT.2) sin
+    ningún motivo. Un ascenso son dos o tres clubes sobre veinte, no medio
+    torneo.
+
+    Ahora hace falta que: (1) la competencia tenga ascenso —una copa no lo
+    tiene—, (2) el equipo haya jugado la temporada pasada en OTRA liga de
+    nuestro histórico, que es la evidencia positiva del cambio de categoría, y
+    (3) no sea el torneo entero el que renovó participantes.
+    """
+    if liga_id is None or temporada is None or liga_id in SIN_ASCENSO:
         return False
     previos = _q(
         "SELECT COUNT(*) AS n FROM fixtures WHERE (home_team_id=? OR away_team_id=?) "
@@ -156,12 +177,49 @@ def _es_ascendido(team_id: int, liga_id: int | None, temporada: int | None) -> b
     )
     if previos and previos[0]["n"]:
         return False
-    historia = _q(
+    # EVIDENCIA POSITIVA: la temporada pasada jugó, pero en otra liga. Sin esto,
+    # un equipo que simplemente no está en nuestro histórico se etiquetaría por
+    # nuestra propia falta de datos.
+    otra = _q(
         "SELECT COUNT(*) AS n FROM fixtures WHERE (home_team_id=? OR away_team_id=?) "
-        "AND league_season < ?",
-        (team_id, team_id, temporada),
+        "AND league_season=? AND league_id<>?",
+        (team_id, team_id, temporada - 1, liga_id),
     )
-    return bool(historia and historia[0]["n"])
+    if not (otra and otra[0]["n"]):
+        return False
+    return not _renovacion_masiva(liga_id, temporada)
+
+
+def _renovacion_masiva(liga_id: int, temporada: int, umbral: float = 0.5) -> bool:
+    """¿Es el torneo el que cambió de participantes, y no los equipos?
+
+    Solo se puede contestar si tenemos la temporada anterior de ESE torneo. Sin
+    ella no se concluye nada: la ausencia de datos no es evidencia de nada.
+    """
+    filas = _q(
+        "SELECT DISTINCT t FROM ("
+        "  SELECT home_team_id AS t FROM fixtures WHERE league_id=? AND league_season=?"
+        "  UNION SELECT away_team_id FROM fixtures WHERE league_id=? AND league_season=?)",
+        (liga_id, temporada, liga_id, temporada),
+    )
+    equipos = [f["t"] for f in (filas or [])]
+    if len(equipos) < 4:
+        return False
+    previa = _q("SELECT COUNT(*) AS n FROM fixtures WHERE league_id=? AND league_season=?",
+                (liga_id, temporada - 1))
+    if not (previa and previa[0]["n"]):
+        return False   # no tenemos esa temporada: no hay renovación que medir
+    marcas = ",".join("?" * len(equipos))
+    antes = _q(
+        f"SELECT DISTINCT t FROM ("
+        f"  SELECT home_team_id AS t FROM fixtures WHERE league_id=? AND league_season=? "
+        f"    AND home_team_id IN ({marcas})"
+        f"  UNION SELECT away_team_id FROM fixtures WHERE league_id=? AND league_season=? "
+        f"    AND away_team_id IN ({marcas}))",
+        (liga_id, temporada - 1, *equipos, liga_id, temporada - 1, *equipos),
+    )
+    repiten = len(antes or [])
+    return (len(equipos) - repiten) / len(equipos) > umbral
 
 
 def _ciudad(team_id: int) -> str | None:

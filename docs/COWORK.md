@@ -175,54 +175,52 @@ analizar el partido equivocado es justo el error que ese campo hace visible.
 
 ## La prioridad del día la decide la base
 
-El paso 1 del batch era, antes, que el modelo dedujera qué partido importaba.
-Ahora lo resuelve `agenda()` con un padrón **por ID de liga**:
+El padrón de la agenda es **el mismo que el de las cuotas en vivo**
+(`extractor.ligas_vivo()` = `LIGAS − LIGAS_MENORES`). Una sola fuente: tener
+dos listas de "ligas importantes" en dos archivos garantiza que se separen, y
+ya se separaron una vez.
 
 | Prioridad | Criterio |
 |---|---|
 | 1 | Liga 1 Perú (la casa) |
 | 2 | torneo internacional en **fase decisiva** (de octavos en adelante) |
-| 3 | clásico / derbi detectado |
-| 4 | primera división de cualquier país **con equipo en el top 6 o en crisis** |
+| 3 | clásico / derbi **dentro del padrón** |
+| 4 | liga del padrón con equipo en el top 6 o en crisis |
 | 5 | torneo internacional en fase de grupos |
-| 6 | primera división de cualquier país (resto) |
+| 6 | resto de las primeras divisiones |
+| 7 | segundas divisiones (entran, pero al final) |
 | 0 | descartado, y viaja **con su motivo y el ID de la liga** |
 
-**Primeras divisiones cubiertas (22):** Argentina (Liga Profesional y Copa de
-la Liga), Brasil, Colombia, Chile, Perú, Uruguay (Apertura y Clausura),
-Ecuador, Paraguay (Apertura y Clausura), Bolivia (Primera y Copa de la
-División Profesional), Venezuela, México, Inglaterra, España, Italia,
-Alemania, Francia, Portugal y Bélgica.
+Quedan fuera a propósito las **copas nacionales** y los amistosos: se ingestan
+igual —las constantes de un equipo necesitan todos sus partidos— pero no son
+candidatos de análisis.
 
-**Internacionales (6):** Mundial, Libertadores, Sudamericana, Champions,
-Europa League y Conference.
+### Tres cosas que este criterio arregló
 
-### Por qué esto se decide por ID y no por nombre
+**El padrón se decidía por NOMBRE.** El efecto real, que nadie vio durante
+semanas: Brasil, Colombia, Chile, Uruguay, Ecuador, Paraguay, Bolivia,
+Venezuela, Portugal, Bélgica, la Europa League y la Conference caían siempre en
+«fuera del padrón» y se descartaban enteras. Un descarte silencioso no se
+audita.
 
-La primera versión miraba el NOMBRE de la liga (`"premier league"`,
-`"serie a"`, `"libertadores"`) con condiciones encima. El efecto real, que
-nadie vio durante semanas: **Brasil, Colombia, Chile, Uruguay, Ecuador,
-Paraguay, Bolivia, Venezuela, Portugal, Bélgica, la Europa League y la
-Conference caían siempre en «fuera del padrón»** y se descartaban enteras. Un
-descarte silencioso no se audita, y este salía ordenadito en una lista que
-nadie leía.
+**El clásico se miraba ANTES del padrón.** Así, un torneo fuera de él entraba o
+no según se activara el etiquetador de derbis: la Copa Uruguay entró para un
+partido y se descartó para otros tres del mismo torneo y el mismo día. Ahora el
+padrón manda primero y el descarte es el mismo siempre.
 
-Por eso ahora: IDs explícitos en `PRIMERAS` e `INTERNACIONALES`
-(`backend/analisis/parte.py`), y el descarte **nombra la liga y su id**, que es
-exactamente lo que hace falta para agregarla en una línea.
+**El corte por límite no se veía.** Con `limite=4` y cuatro llaves
+internacionales el mismo día, una jornada entera de LaLiga no entra — y desde
+afuera parece que la liga no está cubierta. La respuesta ahora trae `corte`:
+cuántos candidatos hubo, cuántos quedaron fuera, de qué prioridad y de qué
+ligas. Si querés cubrir más, el que se sube es `limite`.
 
 Las **fases decisivas** se leen de `league_round`: `final` cubre también
 *Quarter-finals*, *Semi-finals* y *8th Finals*, que es como las nombra
-API-Football. La fase de grupos entra igual, solo que más abajo.
+API-Football.
 
-`CLÁSICO` sigue siendo el que queda a medias, igual que en el bloque G: una
-rivalidad nacional sin vecindad geográfica (Alianza–Cienciano) no sale de
-nuestros datos. Está declarado en la respuesta.
-
-Segunda división, copas nacionales y amistosos **no entran solos** — se
-ingestan igual, porque las constantes de un equipo los necesitan, pero no son
-candidatos de análisis. Para incluirlos en una corrida puntual está
-`incluirDescartados`.
+`CLÁSICO` sigue siendo parcial, igual que en el bloque G: una rivalidad
+nacional sin vecindad geográfica (Alianza–Cienciano) no sale de nuestros datos.
+Está declarado en la respuesta.
 
 ### Los mandos manuales
 
@@ -659,11 +657,16 @@ contrato — y decilo al terminar.
 SIN `fecha` devuelve los del DÍA SIGUIENTE (UTC), que es lo que quiere el
 batch nocturno. Si corrés a otra hora y querés otro día, pasá `fecha=YYYY-MM-DD`.
 
-El padrón: primera división de cada país (22 ligas, de Argentina a Bélgica) y
-los seis torneos internacionales, con las fases decisivas primero. Cada
-candidato viene con su `prioridad`, su `motivo` y su `ronda`. Los `descartados`
-traen el motivo Y el id de la liga: si ves una liga descartada que debería
-entrar, decilo al terminar con su id — se agrega en una línea.
+El padrón es el mismo que el de las cuotas en vivo: primeras divisiones,
+segundas de Europa y los seis torneos internacionales, con las fases decisivas
+primero. Las copas nacionales quedan fuera a propósito. Cada candidato viene
+con su `prioridad`, su `motivo` y su `ronda`.
+
+Mirá también `corte`: dice cuántos candidatos quedaron FUERA solo por el
+`limite` y de qué ligas. Si ves ahí una liga que el usuario esperaba, decilo al
+terminar — se arregla subiendo el límite, no cambiando el padrón. Y los
+`descartados` traen el motivo Y el id de la liga: si una debería entrar, decí
+su id.
 
 Devuelve `analizar` (los que tocan, ya ordenados por prioridad y con su
 `fixtureId`), `enEspera` y `descartados` con su motivo. Usá `analizar` tal
