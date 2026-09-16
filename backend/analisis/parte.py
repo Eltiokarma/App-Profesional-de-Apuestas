@@ -1873,13 +1873,21 @@ _FASE_DECISIVA = ("final", "octavos", "cuartos", "semi", "round of 16",
 
 
 def _prioridad(liga: dict, etiquetas: set[str], pos_local: int, pos_visita: int,
-               liga_id: int = 0, ronda: str = "") -> tuple[int, str]:
+               liga_id: int = 0, ronda: str = "", grupos: bool = False,
+               segundas: bool = False) -> tuple[int, str]:
     """Qué merece análisis, en orden. 0 = no entra, y siempre con su motivo.
 
     El padrón es el de las cuotas en vivo; lo que ordena adentro es: la casa,
     los torneos internacionales cuando se juegan de verdad, los clásicos, y
     después la primera división de cualquier país —con los partidos que mueven
-    la tabla adelante—. Las segundas divisiones entran últimas.
+    la tabla adelante—.
+
+    Por defecto QUEDAN FUERA la fase de grupos / fase liga de los torneos
+    internacionales y las segundas divisiones: un jueves de Europa League son
+    dieciocho partidos de fase liga, y con prioridad 5 le sacaban el turno a
+    una primera división entera —la corrida del 16/09 gastó ocho partes en
+    Levski–Salzburg, OFI–Hoffenheim y compañía—. Entran solo con `grupos=true`
+    / `segundas=true`, y mientras tanto van a `descartados` con este motivo.
     """
     padron = _padron()
     ronda_n = normalizar(ronda or "")
@@ -1887,6 +1895,10 @@ def _prioridad(liga: dict, etiquetas: set[str], pos_local: int, pos_visita: int,
         nombre_i = INTERNACIONALES[liga_id]
         if any(f in ronda_n for f in _FASE_DECISIVA):
             return 2, f"{nombre_i} · fase decisiva ({ronda or 'sin ronda declarada'})"
+        if not grupos:
+            return 0, (f"{nombre_i} · {ronda or 'fase de grupos'}: la fase de grupos / fase liga "
+                       "queda fuera por defecto (de octavos en adelante entra sola); "
+                       "pasá grupos=true para incluirla")
         return 5, f"{nombre_i} · {ronda or 'fase de grupos'}"
     if liga_id not in padron:
         # EL DESCARTE TIENE QUE SER EL MISMO SIEMPRE. Antes el clásico se
@@ -1902,6 +1914,9 @@ def _prioridad(liga: dict, etiquetas: set[str], pos_local: int, pos_visita: int,
     if "CLASICO" in etiquetas:
         return 3, f"clásico / derbi · {padron[liga_id]}"
     if liga_id in SEGUNDAS:
+        if not segundas:
+            return 0, (f"{SEGUNDAS[liga_id]}: las segundas divisiones quedan fuera por "
+                       "defecto; pasá segundas=true para incluirlas")
         return 7, f"{SEGUNDAS[liga_id]} (segunda división: entra, pero al final)"
     if "EN_CRISIS" in etiquetas:
         return 4, f"{padron[liga_id]} · equipo en crisis"
@@ -2126,7 +2141,8 @@ def _choques(filas) -> dict[int, dict[int, str]]:
 
 def agenda(fecha: date_t | None = None, limite: int = 8, liga_id: int | None = None,
            desde_ahora: bool = False, horas: int = 12,
-           incluir_descartados: bool = False) -> dict:
+           incluir_descartados: bool = False, liga: str | None = None,
+           grupos: bool = False, segundas: bool = False) -> dict:
     """Los partidos del día ordenados por prioridad — calculado, no preguntado.
 
     Es el paso 1 del batch: en vez de hacerle deducir a Cowork qué partido
@@ -2139,10 +2155,21 @@ def agenda(fecha: date_t | None = None, limite: int = 8, liga_id: int | None = N
     padrón de prioridades:
 
       liga_id             solo esa liga
+      liga                solo las ligas cuyo país o nombre contiene ese texto
+                          («España», «LaLiga», «Perú»): lo que uno escribe
+                          cuando dice «la liga española, toda»
       desde_ahora + horas ventana rodante desde AHORA (no el día natural: a las
                           20:00 de Lima el día UTC ya cambió, y un filtro por
                           fecha se comería justo los partidos de la noche)
       incluir_descartados los de prioridad 0 entran al final, con su motivo
+      grupos / segundas   meten la fase de grupos internacional y las segundas
+                          divisiones, que por defecto quedan fuera
+
+    SIN `fecha` NI `desde_ahora` la ventana es «desde ahora y por 24 h». Antes
+    era «el día siguiente en UTC», pensado para el batch de las 23:00 de Lima:
+    corrido a las 07:00 del miércoles devolvía el JUEVES entero, y Cowork se
+    puso a analizar los del jueves. Un prompt que se manda a otra hora tiene
+    que entenderse igual: lo que viene, desde este momento.
 
     **Esto NO contamina la población del caso.** Elegir "Liga MX de esta noche"
     antes del pitazo es una selección ex ante: el caso sigue siendo `ciega`.
@@ -2158,14 +2185,34 @@ def agenda(fecha: date_t | None = None, limite: int = 8, liga_id: int | None = N
         hasta = (ahora + timedelta(hours=max(1, horas))).strftime("%Y-%m-%d %H:%M:%S")
         dia = ahora.date()
         ventana = f"desde ahora y por {horas} h"
-    else:
-        dia = fecha or (datetime.now(timezone.utc) + timedelta(days=1)).date()
+    elif fecha:
+        dia = fecha
         desde, hasta = dia.isoformat(), (dia + timedelta(days=1)).isoformat()
         ventana = f"día completo {dia.isoformat()} (UTC)"
+    else:
+        ahora = datetime.now(timezone.utc)
+        desde = ahora.strftime("%Y-%m-%d %H:%M:%S")
+        hasta = (ahora + timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
+        dia = ahora.date()
+        desde_ahora, horas = True, 24
+        ventana = ("sin fecha: desde ahora y por 24 h (lo que viene, a la hora que se corra; "
+                   "para un día concreto pasá fecha=YYYY-MM-DD)")
     cond, params = ["f.date >= ?", "f.date < ?"], [desde, hasta]
     if liga_id is not None:
         cond.append("f.league_id = ?")
         params.append(liga_id)
+    liga_txt = normalizar(liga or "").strip()
+    ligas_que_casan: set[int] = set()
+    if liga_txt:
+        # el texto casa contra el nombre de la ingesta («España - La Liga») y el de
+        # la tabla leagues con su país: «España», «LaLiga» y «Spain» encuentran lo mismo
+        for lid, nombre in _padron().items():
+            meta = sadapp.liga_meta(lid)
+            texto = normalizar(f"{nombre} {meta.get('nombre') or ''} {meta.get('pais') or ''}")
+            if liga_txt in texto:
+                ligas_que_casan.add(lid)
+        cond.append(f"f.league_id IN ({','.join('?' * len(ligas_que_casan)) or 'NULL'})")
+        params.extend(sorted(ligas_que_casan))
     filas = saddb.query(
         "sad",
         "SELECT f.id, f.date, f.league_id, f.league_season, f.league_round, f.status_short, "
@@ -2198,7 +2245,8 @@ def agenda(fecha: date_t | None = None, limite: int = 8, liga_id: int | None = N
         prio, motivo = _prioridad(liga, etiquetas,
                                   posiciones.get(f["home_team_id"], 0),
                                   posiciones.get(f["away_team_id"], 0),
-                                  f["league_id"], f["league_round"] or "")
+                                  f["league_id"], f["league_round"] or "",
+                                  grupos=grupos, segundas=segundas)
         estado_fx = (f["status_short"] or "").upper()
         if estado_fx in _NO_SE_JUGO:
             # un aplazado sigue en `fixtures` con su fecha vieja: sin esto
@@ -2237,7 +2285,8 @@ def agenda(fecha: date_t | None = None, limite: int = 8, liga_id: int | None = N
     if incluir_descartados:
         candidatos += sorted(descartados, key=lambda i: i["hora"])
         descartados = []
-    manual = bool(liga_id is not None or desde_ahora or incluir_descartados)
+    manual = bool(liga_id is not None or liga_txt or (desde_ahora and horas != 24) or incluir_descartados
+                  or grupos or segundas)
     # PARA PODER RETOMAR DONDE SE CORTÓ. Un batch que se queda sin tokens a
     # mitad de camino tiene que poder volver mañana y seguir, no empezar de
     # cero ni —peor— re-depositar encima de lo que ya estaba bien. Marcar cada
@@ -2269,9 +2318,12 @@ def agenda(fecha: date_t | None = None, limite: int = 8, liga_id: int | None = N
             "quieras rehacerlos."),
         "fecha": dia.isoformat(),
         "ventana": ventana,
-        "filtro": {"ligaId": liga_id, "desdeAhora": desde_ahora,
+        "filtro": {"ligaId": liga_id, "liga": liga or None,
+                   "ligasQueCasan": sorted(ligas_que_casan) if liga_txt else None,
+                   "desdeAhora": desde_ahora,
                    "horas": horas if desde_ahora else None,
-                   "incluirDescartados": incluir_descartados, "manual": manual},
+                   "incluirDescartados": incluir_descartados,
+                   "grupos": grupos, "segundas": segundas, "manual": manual},
         "analizar": candidatos[:limite],
         "enEspera": candidatos[limite:],
         # QUÉ SE QUEDÓ AFUERA POR EL LÍMITE, Y DE QUÉ TIPO. Con `limite=4` y

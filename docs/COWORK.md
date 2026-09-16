@@ -158,7 +158,7 @@ solo, sin tocar el acceso del frontend.
 
 | Método | Ruta | Para qué |
 |---|---|---|
-| GET | `/analisis/cowork/agenda?fecha=&limite=` | los partidos del día por prioridad, con motivo |
+| GET | `/analisis/cowork/agenda?limite=&liga=&fecha=&grupos=&segundas=` | lo que viene (24 h desde ahora, o el día de `fecha`) por prioridad, con motivo; `liga` acota por texto (país o nombre) |
 | POST | `/analisis/cowork` | depositar el parte (idempotente por `fixtureId`) |
 | GET | `/analisis/cowork/{fixtureId}` | leerlo con todo lo calculable ya calculado |
 | POST | `/analisis/cowork/{fixtureId}/xi` | llega el once → se cierra el bloque F |
@@ -188,14 +188,20 @@ ya se separaron una vez.
 | 2 | torneo internacional en **fase decisiva** (de octavos en adelante) |
 | 3 | clásico / derbi **dentro del padrón** |
 | 4 | liga del padrón con equipo en el top 6 o en crisis |
-| 5 | torneo internacional en fase de grupos |
+| 5 | torneo internacional en fase de grupos / fase liga — **solo con `grupos=true`**; por defecto va a `descartados` |
 | 6 | resto de las primeras divisiones |
-| 7 | segundas divisiones (entran, pero al final) |
+| 7 | segundas divisiones — **solo con `segundas=true`**; por defecto van a `descartados` |
 | 0 | descartado, y viaja **con su motivo y el ID de la liga** |
 
 Quedan fuera a propósito las **copas nacionales** y los amistosos: se ingestan
 igual —las constantes de un equipo necesitan todos sus partidos— pero no son
-candidatos de análisis.
+candidatos de análisis. La fase de grupos internacional y las segundas
+quedaron fuera por defecto después de la corrida del 16/09: un jueves de
+Europa League llenó los ocho cupos con Levski–Salzburg y OFI–Hoffenheim
+mientras la jornada de LaLiga esperaba. Sin `fecha` la agenda es «desde ahora
+y por 24 h» —antes era «mañana en UTC», y a las 07:00 de un miércoles
+devolvía el jueves entero—, y `liga=<texto>` acota por país o nombre
+(«España») sin buscar el id.
 
 ### Tres cosas que este criterio arregló
 
@@ -654,15 +660,31 @@ contrato — y decilo al terminar.
 
 ## 2. QUÉ PARTIDOS (0 deducción: lo decide la base)
 
-  GET {base}/analisis/cowork/agenda?limite=<<8>>
+  GET {base}/analisis/cowork/agenda?limite=<<5>>&liga=<<>>
 
-SIN `fecha` devuelve los del DÍA SIGUIENTE (UTC), que es lo que quiere el
-batch nocturno. Si corrés a otra hora y querés otro día, pasá `fecha=YYYY-MM-DD`.
+ALCANCE: <<todo el padrón / «España» / «Perú» / …>>. Si el alcance nombra un
+país o una liga, pasalo TAL CUAL en `liga=` (texto: casa por país o por nombre
+—«España» trae LaLiga; «Copa del Rey» no existe en el padrón y la agenda lo va
+a decir con `ligasQueCasan: []`, no lo busques por otro lado—). Si el alcance
+es «todo», dejá `liga=` vacío. No deduzcas el alcance de una palabra suelta:
+si no lo entendés, decilo y pará.
 
-El padrón es el mismo que el de las cuotas en vivo: primeras divisiones,
-segundas de Europa y los seis torneos internacionales, con las fases decisivas
-primero. Las copas nacionales quedan fuera a propósito. Cada candidato viene
-con su `prioridad`, su `motivo` y su `ronda`.
+SIN `fecha` la agenda es «desde ahora y por 24 h», a la hora que se corra:
+mandada a las 23:00 de Lima trae los de mañana, mandada a las 06:00 trae los
+de hoy. NO pases `fecha=` salvo que el usuario te dé un día concreto.
+
+El padrón es el mismo que el de las cuotas en vivo: primeras divisiones de
+cada país y los seis torneos internacionales EN FASE DECISIVA (de octavos en
+adelante). La fase de grupos / fase liga (Europa League un jueves son
+dieciocho partidos) y las segundas divisiones quedan FUERA por defecto y van a
+`descartados` con ese motivo; entran solo si el usuario lo pide, con
+`grupos=true` / `segundas=true`. Las copas nacionales quedan fuera a
+propósito. Cada candidato viene con su `prioridad`, su `motivo` y su `ronda`.
+
+TOPE POR CORRIDA: el `limite` es también el tope de partes de ESTA corrida.
+Una corrida de dieciséis partes en una sola conversación se cuelga antes de
+terminar (pasó el 16/09). Hacé los de `porHacer`, cerrá, y el usuario vuelve a
+mandar el prompt: la agenda trae `yaHechos` y seguís donde quedó.
 
 Mirá también `corte`: dice cuántos candidatos quedaron FUERA solo por el
 `limite` y de qué ligas. Si ves ahí una liga que el usuario esperaba, decilo al
@@ -688,11 +710,10 @@ la corrida anterior se quedó sin tokens, arrancá por `porHacer` y NO vuelvas a
 analizar los de `yaHechos`: re-depositar un parte lo reemplaza entero.
 
 SI CORRÉS DE DÍA para cubrir lo que el batch no subió, NO uses el día
-natural: `fecha=` trae también los partidos que ya arrancaron.
-  GET {base}/analisis/cowork/agenda?desdeAhora=true&horas=<<10>>&limite=<<8>>
-devuelve solo los que TODAVÍA NO EMPEZARON, que son los únicos que se pueden
-analizar sin el resultado a la vista, y `porHacer` ya viene filtrado a los que
-no tienen parte. Elegir así sigue siendo selección ciega (lo dice
+natural: `fecha=` trae también los partidos que ya arrancaron. La agenda sin
+`fecha` (o con `desdeAhora=true&horas=<<10>>`) devuelve solo los que TODAVÍA
+NO EMPEZARON, que son los únicos que se pueden analizar sin el resultado a la
+vista, y `porHacer` ya viene filtrado a los que no tienen parte. Elegir así sigue siendo selección ciega (lo dice
 `notaSeleccion`). Y `GET {base}/analisis/cowork/latido` es el monitor: dice
 cuántos partes entraron en la ventana, qué faltó de la agenda de ayer
 (`coberturaDeAyer.faltaron`) y qué casos vencieron sin veredicto.
@@ -1113,6 +1134,11 @@ nocturno v2.5 (contrato, sesión limpia por partido, EFE con sus sub-scores,
 TDE con indicadores, reventón de la burbuja leído antes del 1X2, tres
 fuentes del pronóstico). Nada nuevo, salvo la lista.
 
+ALCANCE: <<todo el padrón / «España» / «Perú» / …>>. Un país o una liga va
+TAL CUAL en `liga=`; «todo» deja `liga=` vacío. Si no entendés el alcance,
+preguntá y pará: no analices otra cosa. TOPE: <<5>> partes en esta corrida;
+lo que sobre queda para la próxima (la agenda lo retoma con `yaHechos`).
+
 0. Anclá la hora real con la herramienta del sistema (America/Lima) y leé
    GET << {base} >>/analisis/cowork/contrato.
 
@@ -1133,9 +1159,13 @@ fuentes del pronóstico). Nada nuevo, salvo la lista.
    Que el once haya llegado y el bloque F esté cerrado NO cierra el caso:
    el caso se cierra con el veredicto, y sin veredicto la lección no existe.
 
-2. GET << {base} >>/analisis/cowork/agenda?desdeAhora=true&horas=<<10>>&limite=<<8>>
-   NO uses `fecha=`: traería los que ya arrancaron. Con `desdeAhora` entran
-   solo los que faltan por jugarse, y `porHacer` son los que no tienen parte.
+2. GET << {base} >>/analisis/cowork/agenda?limite=<<5>>&liga=<<>>
+   NO uses `fecha=`: traería los que ya arrancaron. Sin fecha la agenda es
+   «desde ahora y por 24 h»: entran solo los que faltan por jugarse, y
+   `porHacer` son los que no tienen parte. La fase de grupos internacional y
+   las segundas quedan fuera solas; si el usuario las quiere, `grupos=true` /
+   `segundas=true`. Antes de arrancar decime en una línea `ventana`,
+   `filtro.ligasQueCasan` y cuántos hay en `porHacer`.
    Trabajá EXACTAMENTE `porHacer`, en ese orden. `yaHechos` no se toca: un
    re-depósito reemplaza el parte entero.
    Un partido que ya se jugó o está en juego NO se analiza aunque falte: un

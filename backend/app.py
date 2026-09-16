@@ -2145,24 +2145,31 @@ def cowork_agenda(
     # no entraba. `corte` dice siempre qué quedó fuera por este número.
     limite: int = Query(default=8, ge=1, le=20),
     ligaId: int | None = None,
+    liga: str | None = Query(default=None, max_length=60,
+                             description="solo las ligas cuyo país o nombre contiene este texto (España, LaLiga, Perú)"),
     desdeAhora: bool = False,
     horas: int = Query(default=12, ge=1, le=72),
     incluirDescartados: bool = False,
+    grupos: bool = Query(default=False, description="incluir la fase de grupos / fase liga internacional (fuera por defecto)"),
+    segundas: bool = Query(default=False, description="incluir las segundas divisiones (fuera por defecto)"),
 ):
     """Los partidos del día ordenados por prioridad — paso 1 del batch.
 
     Calculado de nuestra base con el criterio del protocolo (Liga 1 Perú,
     derbi de ciudad, copa internacional, liga grande con equipo arriba o en
-    crisis, choque del top 6 europeo). Sin `fecha`, el día siguiente en UTC.
+    crisis, choque del top 6 europeo). Sin `fecha` ni `desdeAhora`: desde
+    ahora y por 24 h, a la hora que se corra. La fase de grupos internacional
+    y las segundas divisiones quedan fuera salvo `grupos`/`segundas`.
     Los descartados viajan con su motivo: un descarte sin motivo no se audita.
 
-    Mandos manuales para apuntar el batch sin tocar el padrón: `ligaId` acota a
-    una liga, `desdeAhora`+`horas` abre una ventana rodante desde este momento
-    (útil de noche, cuando el día UTC ya cambió) e `incluirDescartados` mete a
-    los de prioridad 0 al final, con su motivo. Un filtro puesto ANTES del
-    pitazo no contamina la población: el caso sigue siendo `ciega`."""
+    Mandos manuales para apuntar el batch sin tocar el padrón: `ligaId` o
+    `liga` (texto: «España») acotan, `desdeAhora`+`horas` abre una ventana
+    rodante desde este momento e `incluirDescartados` mete a los de prioridad
+    0 al final, con su motivo. Un filtro puesto ANTES del pitazo no contamina
+    la población: el caso sigue siendo `ciega`."""
     from backend.analisis import parte as cowork
-    return cowork.agenda(fecha, limite, ligaId, desdeAhora, horas, incluirDescartados)
+    return cowork.agenda(fecha, limite, ligaId, desdeAhora, horas, incluirDescartados,
+                         liga=liga, grupos=grupos, segundas=segundas)
 
 
 @app.get(API + "/analisis/cowork/pendientes")
