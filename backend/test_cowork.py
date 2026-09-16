@@ -1187,6 +1187,29 @@ def main():
     check("un fixture sin veredicto responde 404",
           c.get(f"{A}/analisis/cowork/{sin_ficha}/veredicto").status_code == 404)
 
+    # UN PARTIDO TERMINADO ENTRA AUNQUE HAYA ARRANCADO HACE MENOS DE 12 H. Era el
+    # hueco de la validación de la mañana: un partido de las 21:00 revisado a
+    # las 8:00 (11 h) caía en noListados y Cowork cerraba cero casos.
+    import os as _os
+    import sqlite3 as _sq3
+    from datetime import datetime as _dt, timedelta as _td, timezone as _tz
+    _sad = _os.path.join(_os.environ["SAD_DATA_DIR"], "sad.db")
+    with _sq3.connect(_sad) as _con:
+        reciente, fecha_original = _con.execute(
+            "SELECT id, date FROM fixtures WHERE status_short='FT' AND goals_home IS NOT NULL AND id!=? "
+            "ORDER BY id DESC LIMIT 1", (pasado["id"],)).fetchone()
+        _con.execute("UPDATE fixtures SET date=? WHERE id=?",
+                     ((_dt.now(_tz.utc) - _td(hours=2)).strftime("%Y-%m-%d %H:%M:%S"), reciente))
+    c.post(f"{A}/analisis/cowork", json=_parte(reciente))
+    sobre2 = c.get(f"{A}/analisis/cowork/veredictos/pendientes").json()
+    with _sq3.connect(_sad) as _con:  # se devuelve la fecha: los checks de abajo eligen fixtures por fecha
+        _con.execute("UPDATE fixtures SET date=? WHERE id=?", (fecha_original, reciente))
+    check("un partido TERMINADO de hace 2 h ya entra como pendiente (no espera las 12 h desde el saque)",
+          any(x["fixtureId"] == reciente for x in sobre2["pendientes"]),
+          [x for x in sobre2["noListados"] if x["fixtureId"] == reciente])
+    check("el criterio lo dice: terminado con marcador entra aunque arrancó hace menos de 12 h",
+          "TERMINADO" in sobre2["criterio"] and "arrancó hace más de" in sobre2["criterio"], sobre2["criterio"])
+
     # REGRESIÓN: re-depositar el parte después del cierre no puede borrar el
     # veredicto ni cambiar el pronóstico ya declarado (sería hindsight)
     otro_pron = _parte(pasado["id"])

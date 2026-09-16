@@ -416,6 +416,12 @@ def correr_backtest(*, padron_: bool = False, liga: int | None = None, horizonte
     resumen["ligasEvaluadas"] = sorted(nombres.values()) if ligas else ["todas"]
     if calibrar_:
         resumen["calibracion"] = calibrar(obs)
+        # POR SIGNO, aparte: la logística conjunta puede esconder un efecto que
+        # va al revés en cada lado. Que la K alta no adelante el reventón en la
+        # burbuja + (equipo fuerte) no dice nada de la burbuja − (equipo hundido,
+        # donde la regresión a la media empuja a que se corte). Si los pesos
+        # difieren de verdad, la tabla de puntos tiene que ser una por signo.
+        resumen["calibracionPorSigno"] = {s: calibrar([o for o in obs if o["signo"] == s]) for s in ("+", "-")}
     return resumen
 
 
@@ -486,6 +492,19 @@ def imprimir(r: dict):
             print(f"  cortes propuestos: {cal['cortesPropuestos']} · monótona: {'sí' if cal['monotona'] else 'NO'} · "
                   f"separación propuesta {cal['separacionPropuesta']}")
             print(f"  {cal['aviso']}")
+    por_signo = r.get("calibracionPorSigno")
+    if por_signo:
+        print("\n— calibración POR SIGNO (¿la K pesa distinto en la burbuja + y en la −?) —")
+        print(f"  {'señal':16s} {'coef +':>8s} {'pts +':>6s} {'coef −':>8s} {'pts −':>6s}")
+        for s in SENALES:
+            cp, cn = por_signo["+"], por_signo["-"]
+            fp = (f"{cp['coeficientes'][s]:8.3f} {cp['puntosPropuestos'][s]:6d}" if "coeficientes" in cp else f"{'—':>8s} {'—':>6s}")
+            fn = (f"{cn['coeficientes'][s]:8.3f} {cn['puntosPropuestos'][s]:6d}" if "coeficientes" in cn else f"{'—':>8s} {'—':>6s}")
+            print(f"  {s:16s} {fp} {fn}")
+        for s, cs in por_signo.items():
+            if "coeficientes" in cs:
+                print(f"  signo {s}: n={cs['n']} · AUC logit {cs['aucLogit']} · AUC puntos {cs['aucPuntosPropuestos']} · "
+                      f"cortes {cs['cortesPropuestos']}")
     if r.get("ligasEvaluadas"):
         print(f"\nligas evaluadas: {', '.join(r['ligasEvaluadas'])} · equipos: {r.get('equipos')}")
 

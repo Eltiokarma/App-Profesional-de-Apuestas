@@ -555,6 +555,8 @@ export interface BurbujasEquipoDTO {
   estabilidad: EstabilidadEquipoDTO
   familias: Record<FamiliaBurbuja, FamiliaBurbujaDTO>
   aviso: string
+  /** Solo con `antesDe`: la vista «al día del partido» (docs/REVENTON.md §9). */
+  vistaAlDia?: { fixtureId: number; fecha: string | null }
 }
 
 /** Un partido de la cadena DTP (GET /equipos/{id}/cadena). */

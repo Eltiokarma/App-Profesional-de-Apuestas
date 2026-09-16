@@ -238,6 +238,22 @@ A horizonte 2 la K tampoco aparece (−0.19 / −0.20), así que no es cuestión
 de plazo. Lo que queda por probar cuando haya más historia: graduar también
 la racha, y si las copas internacionales merecen su propia mediana.
 
+### Pendiente: ¿la K pesa distinto por signo?
+
+Caso real (16/09/2026): Valencia llegaba a Mendizorroza con K −32 tras 4
+derrotas, la peor burbuja negativa de su historia (máximo previo 24), y la
+guía dijo **bajo** porque Alavés (3.08) quedaba lejos del nivel con el que
+Valencia suele cortar sus rachas (mediana 2.15). Valencia ganó 0-1.
+
+Un caso no refuta una calibración de 171 mil, pero sí señala un hueco del
+método: la logística se ajustó con los dos signos **juntos**, y un efecto
+que va al revés en cada lado se cancela. En la burbuja + una K alta es un
+equipo fuerte (sigue); en la − una K muy negativa es un equipo hundido, donde
+la regresión a la media empuja a que se corte. El backtest ahora devuelve
+`calibracionPorSigno` (`--calibrar`); si los pesos de la K difieren de verdad
+entre signos, la tabla de §5 pasa a ser una por signo. Hasta correrlo, la
+guía sigue con la tabla conjunta.
+
 ## 9. Vista «al día del partido» (releer el pasado sin el resultado)
 
 Un partido ya jugado se puede releer como se veía esa mañana:

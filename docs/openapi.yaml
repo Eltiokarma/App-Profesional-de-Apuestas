@@ -1605,6 +1605,12 @@ components:
             local: { $ref: '#/components/schemas/FamiliaBurbuja' }
             visita: { $ref: '#/components/schemas/FamiliaBurbuja' }
         aviso: { type: string }
+        vistaAlDia:
+          type: object
+          description: 'solo con antesDe: la vista «al día del partido» (docs/REVENTON.md §9)'
+          properties:
+            fixtureId: { type: integer }
+            fecha: { type: string, nullable: true }
     EslabonDtp:
       type: object
       description: 'Un partido de la cadena DTP de un equipo foco'
