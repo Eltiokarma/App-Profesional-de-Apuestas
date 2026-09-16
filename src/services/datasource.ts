@@ -99,8 +99,10 @@ export interface SadDataSource {
   /** Pide el refresco forzado del marcador de una liga (mock: no-op). */
   refrescarLiga(ligaId: number): Promise<RefrescoLigaDTO>
   buscarEquipos(buscar: string, limit?: number): Promise<EquipoDTO[]>
-  niveles(equipoId: number, limit?: number): Promise<NivelDTO[]>
-  constantes(equipoId: number, limit?: number): Promise<ConstantesDTO[]>
+  /** `antesDe` = id de fixture: solo lo ANTERIOR a ese partido — la vista «al
+   *  día del partido», para releer un análisis pasado sin el resultado a la vista. */
+  niveles(equipoId: number, limit?: number, antesDe?: number): Promise<NivelDTO[]>
+  constantes(equipoId: number, limit?: number, antesDe?: number): Promise<ConstantesDTO[]>
   /** k_cuota (§3.8): solo datos reales; en mock devuelve []. */
   constantesCuota(equipoId: number): Promise<ConstanteCuotaDTO[]>
   prediccion(fixtureId: number): Promise<PrediccionDTO>
@@ -147,7 +149,7 @@ export interface SadDataSource {
   calendario(equipoId: number, n?: number): Promise<PartidoCalendarioDTO[]>
   /** Reventón de la burbuja (docs/REVENTON.md): cuándo la K de resultado suele
    *  volver a cero, calculado de la historia del equipo. Guía, no probabilidad. */
-  burbujas(equipoId: number): Promise<BurbujasEquipoDTO>
+  burbujas(equipoId: number, antesDe?: number): Promise<BurbujasEquipoDTO>
   /** El parte que dejó Cowork para este partido (docs/COWORK.md); null si no hay.
    *  Es el camino barato: análisis escrito con la suscripción, cero créditos. */
   parteCowork(fixtureId: number): Promise<ParteCoworkDTO | null>
@@ -165,6 +167,14 @@ const TEAM_KEYS = Object.keys(TEAMS)
 export const TEAM_NUM: Record<string, number> = Object.fromEntries(TEAM_KEYS.map((k, i) => [k, 100 + i]))
 export const NUM_TEAM: Record<number, string> = Object.fromEntries(TEAM_KEYS.map((k, i) => [100 + i, k]))
 export const FIXTURE_NUM = (matchId: string) => parseInt(matchId.slice(1), 10)
+
+/** Vista «al día del partido» en el mock: lo anterior al fixture, si está en
+ *  la historia del motor; si no (la demo no lo tiene), toda la historia. */
+function cortarAntes<T extends { fixtureId: number }>(items: T[], antesDe?: number): T[] {
+  if (antesDe == null) return items
+  const i = items.findIndex((x) => x.fixtureId === antesDe)
+  return i >= 0 ? items.slice(0, i) : items
+}
 
 const LIGA_NUM: Record<string, number> = { laliga: 140, premier: 39, seriea: 135 }
 const LK_BY_NUM: Record<number, string> = Object.fromEntries(Object.entries(LIGA_NUM).map(([lk, n]) => [n, lk]))
@@ -457,11 +467,11 @@ class MockDataSource implements SadDataSource {
       .slice(0, Math.min(Math.max(params.limit ?? 50, 1), 500)) // mismo tope que el backend
   }
 
-  async niveles(equipoId: number, limit = 50): Promise<NivelDTO[]> {
+  async niveles(equipoId: number, limit = 50, antesDe?: number): Promise<NivelDTO[]> {
     const key = NUM_TEAM[equipoId]
     const eng = key ? teamEngine(key) : null
     if (!eng) return []
-    return eng.levels
+    return cortarAntes(eng.levels, antesDe)
       .slice(-limit)
       .reverse()
       .map((r) => {
@@ -470,11 +480,11 @@ class MockDataSource implements SadDataSource {
       })
   }
 
-  async constantes(equipoId: number, limit = 50): Promise<ConstantesDTO[]> {
+  async constantes(equipoId: number, limit = 50, antesDe?: number): Promise<ConstantesDTO[]> {
     const key = NUM_TEAM[equipoId]
     const eng = key ? teamEngine(key) : null
     if (!eng) return []
-    return eng.snaps
+    return cortarAntes(eng.snaps, antesDe)
       .slice(-limit)
       .reverse()
       .map((s) => constantesDTO(key, s))
@@ -716,13 +726,17 @@ class MockDataSource implements SadDataSource {
     })
   }
 
-  async burbujas(equipoId: number): Promise<BurbujasEquipoDTO> {
+  async burbujas(equipoId: number, antesDe?: number): Promise<BurbujasEquipoDTO> {
     const key = NUM_TEAM[equipoId]
     const eng = key ? teamEngine(key) : null
     if (!key || !eng) throw new Error(`equipo ${equipoId} no existe`)
-    // el mismo análisis que el backend (espejo TS), sobre las filas del contrato
-    const filas = eng.snaps.map((s) => constantesDTO(key, s))
-    const [prox] = await this.calendario(equipoId, 1)
+    // el mismo análisis que el backend (espejo TS), sobre las filas del contrato;
+    // con antesDe, la historia se corta antes de ese partido y él hace de próximo
+    const filas = cortarAntes(eng.snaps, antesDe).map((s) => constantesDTO(key, s))
+    const pasado = antesDe != null ? MATCHES.find((x) => FIXTURE_NUM(x.id) === antesDe) : undefined
+    const prox = pasado
+      ? { fixtureId: antesDe!, fecha: pasado.date, rivalId: TEAM_NUM[pasado.home === key ? pasado.away : pasado.home], rival: TEAMS[pasado.home === key ? pasado.away : pasado.home].name, condicion: (pasado.home === key ? 'L' : 'V') as 'L' | 'V' }
+      : (await this.calendario(equipoId, 1))[0]
     const proximo = prox
       ? {
           fixtureId: prox.fixtureId, fecha: prox.fecha, rivalId: prox.rivalId, rival: prox.rival, condicion: prox.condicion,
@@ -731,7 +745,7 @@ class MockDataSource implements SadDataSource {
       : null
     return analizarBurbujas(filas, {
       equipoId, nombre: TEAMS[key].name, nivel: eng.level, bin: levelBin(eng.level).bin,
-      proximo, plantilla: plantillaDemo(key), hoy: MOCK_NOW.slice(0, 10),
+      proximo, plantilla: antesDe != null ? null : plantillaDemo(key), hoy: MOCK_NOW.slice(0, 10),
     })
   }
 
@@ -1071,8 +1085,8 @@ class HttpDataSource implements SadDataSource {
   marcarVip = (fixtureId: number, activo: boolean) => SadApi.marcarVip(fixtureId, activo)
   refrescarLiga = (ligaId: number) => SadApi.refrescarLiga(ligaId)
   buscarEquipos = (buscar: string, limit?: number) => SadApi.buscarEquipos(buscar, limit)
-  niveles = (equipoId: number, limit?: number) => SadApi.niveles(equipoId, limit)
-  constantes = (equipoId: number, limit?: number) => SadApi.constantes(equipoId, limit)
+  niveles = (equipoId: number, limit?: number, antesDe?: number) => SadApi.niveles(equipoId, limit, antesDe)
+  constantes = (equipoId: number, limit?: number, antesDe?: number) => SadApi.constantes(equipoId, limit, antesDe)
   constantesCuota = (equipoId: number) => SadApi.constantesCuota(equipoId)
   prediccion = (fixtureId: number) => SadApi.prediccion(fixtureId)
   analisisPrepartido = (fixtureId: number) => SadApi.analisisPrepartido(fixtureId)
@@ -1091,7 +1105,7 @@ class HttpDataSource implements SadDataSource {
   estadoDtp = (fixtureId: number, equipoFoco: number) => SadApi.estadoDtp(fixtureId, equipoFoco)
   cadena = (equipoId: number, limit?: number) => SadApi.cadena(equipoId, limit)
   calendario = (equipoId: number, n?: number) => SadApi.calendario(equipoId, n)
-  burbujas = (equipoId: number) => SadApi.burbujas(equipoId)
+  burbujas = (equipoId: number, antesDe?: number) => SadApi.burbujas(equipoId, antesDe)
   equipoStats = (equipoId: number) => SadApi.equipoStats(equipoId)
   plantilla = (equipoId: number) => SadApi.plantilla(equipoId)
   fichaPartido = (fixtureId: number) => SadApi.fichaPartido(fixtureId)
