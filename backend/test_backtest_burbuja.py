@@ -93,6 +93,40 @@ def main():
     rm = bt.correr_backtest(muestra=2, horizonte=1)
     check("--muestra acota los equipos", rm["equipos"] == 2, rm["equipos"])
 
+    # calibración: logística sobre celdas, puntos enteros y tabla propuesta
+    rc = bt.correr_backtest(horizonte=1, calibrar_=True)
+    cal = rc["calibracion"]
+    check("calibrar: coeficientes y puntos para las 7 señales", set(cal["coeficientes"]) == set(bt.SENALES)
+          and all(isinstance(cal["puntosPropuestos"][s], int) and cal["puntosPropuestos"][s] >= 0 for s in bt.SENALES), cal.get("aviso"))
+    check("calibrar: AUC del logit y de los puntos propuestos en [0, 1]",
+          0 <= cal["aucLogit"] <= 1 and 0 <= cal["aucPuntosPropuestos"] <= 1, (cal["aucLogit"], cal["aucPuntosPropuestos"]))
+    check("calibrar: la tabla por puntos cierra al total calibrado",
+          sum(f["n"] for f in cal["porPuntosPropuestos"]) == cal["n"])
+    check("calibrar: cada fila de puntos lleva un nivel y hay cortes propuestos",
+          all(f["nivel"] in ("bajo", "medio", "alto", "muy alto") for f in cal["porPuntosPropuestos"]) and cal["cortesPropuestos"])
+    check("calibrar: declara que es ajuste en muestra", "en muestra" in cal["aviso"])
+    # la logística recupera un patrón conocido: celdas sintéticas donde solo una señal manda
+    celdas = {}
+    for k in (0, 1):
+        for j in (0, 1):
+            patron = (k, 0, j, 0, 0, 0, 0)
+            n = 1000
+            p = 0.3 + 0.4 * j          # solo la 3ª señal (rachaGeMediana) sube la tasa
+            celdas[patron] = [n, int(n * p)]
+    beta = bt._logistica(celdas)
+    check("logística sintética: la señal que manda sale positiva (~1.7) y la que no, ~0",
+          1.4 < beta[3] < 2.0 and abs(beta[1]) < 0.05, [round(b, 3) for b in beta])
+    check("sin muestra suficiente: aviso, no coeficientes inventados", "aviso" in bt.calibrar(obs[:50]) and "coeficientes" not in bt.calibrar(obs[:50]))
+    check("isotónica: aplana los retrocesos con media ponderada y respeta lo que ya crece",
+          bt._isotonica([(0.2, 10), (0.6, 10), (0.4, 10), (0.9, 10)]) == [0.2, 0.5, 0.5, 0.9]
+          and bt._isotonica([(0.1, 1), (0.2, 1), (0.3, 1)]) == [0.1, 0.2, 0.3])
+    iso = [f["tasaIso"] for f in cal["porPuntosPropuestos"]]
+    orden = ["bajo", "medio", "alto", "muy alto"]
+    niveles = [orden.index(f["nivel"]) for f in cal["porPuntosPropuestos"]]
+    check("los niveles por puntos propuestos no retroceden (van sobre la isotónica)",
+          iso == sorted(iso) and niveles == sorted(niveles), list(zip(iso, niveles)))
+    bt.imprimir(rc)
+
     # el informe se imprime sin romperse
     bt.imprimir(r)
 

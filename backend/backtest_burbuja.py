@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import random
 from bisect import bisect_left
 
@@ -130,6 +131,10 @@ def observar_equipo(team_id: int, horizonte: int, min_prefijo: int = MIN_PREFIJO
                 "rachaGeMediana": bool(base) and act["partidos"] >= base["partidos"]["mediana"],
                 "rivalEnZona": None if not fam["rival"] else fam["rival"]["enZona"],
                 "distanciaRival": None if not fam["rival"] else fam["rival"]["distancia"],
+                "rachaGeMax": bool(base) and act["partidos"] >= base["partidos"]["max"],
+                # distancia del rival EN LA DIRECCIÓN DEL RIESGO: burbuja + revienta ante
+                # rivales más fuertes que la mediana; la − se corta ante más flojos
+                "dRival": None if not fam["rival"] else (fam["rival"]["distancia"] if act["signo"] == "+" else -fam["rival"]["distancia"]),
                 "kActual": abs(act["k"]), "partidos": act["partidos"],
                 "revento": revento, "reventoAhora": revento_ahora,
             })
@@ -244,8 +249,153 @@ def correr(equipos: list[int], horizonte: int, min_prefijo: int = MIN_PREFIJO,
     return obs, resumir(obs, horizonte, nombres)
 
 
+# ── calibración (--calibrar) ─────────────────────────────────────────────────
+# Regresión logística sobre las señales de la guía, con el rival GRADUADO por
+# distancia a la mediana de reventón (lejos = referencia · zona · fuerte · muy
+# fuerte). Como todas las señales son binarias, las observaciones se agrupan
+# por patrón (≤ 2^4·4 = 64 celdas) y Newton-Raphson converge en un puñado de
+# iteraciones sin numpy. Es AJUSTE EN MUESTRA: sirve para ver qué pesa y
+# proponer puntos enteros, no para prometer una tasa.
+
+SENALES = ["kGeMediana", "kGeMax", "rachaGeMediana", "rachaGeMax", "rivalZona", "rivalFuerte", "rivalMuyFuerte"]
+RIVAL_FUERTE = 0.45           # distancia a la mediana desde la que el rival es «muy fuerte»
+PASO_PUNTO = 0.25             # un punto por cada 0.25 de log-odds (≈ 6 % de tasa cerca del 50 %)
+RIDGE = 1e-3
+NEWTON_ITER = 12
+
+
+def _senales_de(o: dict) -> tuple[int, ...] | None:
+    d = o["dRival"]
+    if d is None:
+        return None
+    tol = burbuja.ZONA_TOLERANCIA
+    return (
+        int(o["kGeMediana"]), int(o["kGeMax"]), int(o["rachaGeMediana"]), int(o["rachaGeMax"]),
+        int(-tol <= d < tol), int(tol <= d < RIVAL_FUERTE), int(d >= RIVAL_FUERTE),
+    )
+
+
+def _resolver(A: list[list[float]], b: list[float]) -> list[float]:
+    """Gauss con pivoteo parcial (sistemas chicos: 8×8)."""
+    n = len(b)
+    M = [fila[:] + [b[i]] for i, fila in enumerate(A)]
+    for c in range(n):
+        piv = max(range(c, n), key=lambda r: abs(M[r][c]))
+        M[c], M[piv] = M[piv], M[c]
+        if abs(M[c][c]) < 1e-12:
+            continue
+        for r in range(n):
+            if r != c and M[r][c]:
+                f = M[r][c] / M[c][c]
+                for k in range(c, n + 1):
+                    M[r][k] -= f * M[c][k]
+    return [M[i][n] / M[i][i] if abs(M[i][i]) > 1e-12 else 0.0 for i in range(n)]
+
+
+def _logistica(celdas: dict[tuple[int, ...], list[int]]) -> list[float]:
+    """β (intercepto + una por señal) por Newton-Raphson sobre celdas (n, reventones)."""
+    p = len(SENALES) + 1
+    beta = [0.0] * p
+    for _ in range(NEWTON_ITER):
+        g = [0.0] * p
+        H = [[0.0] * p for _ in range(p)]
+        for patron, (n, r) in celdas.items():
+            x = (1,) + patron
+            z = sum(b * xi for b, xi in zip(beta, x))
+            z = max(-30.0, min(30.0, z))
+            pr = 1.0 / (1.0 + math.exp(-z))
+            w = n * pr * (1 - pr)
+            res = r - n * pr
+            for i in range(p):
+                if not x[i]:
+                    continue
+                g[i] += res
+                for j in range(p):
+                    if x[j]:
+                        H[i][j] += w
+        for i in range(p):
+            g[i] -= RIDGE * beta[i]
+            H[i][i] += RIDGE
+        paso = _resolver(H, g)
+        beta = [b + d for b, d in zip(beta, paso)]
+        if max(abs(d) for d in paso) < 1e-7:
+            break
+    return beta
+
+
+def _isotonica(pares: list[tuple[float, int]]) -> list[float]:
+    """Regresión isotónica creciente (pool-adjacent-violators) de (valor, peso)."""
+    bloques: list[list[float]] = []  # [suma ponderada, peso, largo]
+    for v, w in pares:
+        bloques.append([v * w, w, 1])
+        while len(bloques) > 1 and bloques[-2][0] / bloques[-2][1] > bloques[-1][0] / bloques[-1][1]:
+            a = bloques.pop()
+            bloques[-1] = [bloques[-1][0] + a[0], bloques[-1][1] + a[1], bloques[-1][2] + a[2]]
+    out: list[float] = []
+    for s, w, largo in bloques:
+        out.extend([s / w if w else 0.0] * largo)
+    return out
+
+
+def calibrar(obs: list[dict]) -> dict:
+    con_base = [o for o in obs if o["nivel"] != "sin base" and o["dRival"] is not None]
+    if len(con_base) < 200:
+        return {"n": len(con_base), "aviso": "muestra insuficiente para calibrar (mínimo 200 observaciones con rival)"}
+    celdas: dict[tuple[int, ...], list[int]] = {}
+    for o in con_base:
+        s = _senales_de(o)
+        c = celdas.setdefault(s, [0, 0])
+        c[0] += 1
+        c[1] += int(o["revento"])
+    beta = _logistica(celdas)
+    coefs = {s: round(beta[i + 1], 3) for i, s in enumerate(SENALES)}
+    puntos = {s: max(0, math.floor(beta[i + 1] / PASO_PUNTO + 0.5)) for i, s in enumerate(SENALES)}
+
+    # evaluar la tabla de puntos propuesta sobre las mismas observaciones
+    for o in con_base:
+        s = _senales_de(o)
+        o["_logit"] = sum(b * xi for b, xi in zip(beta, (1,) + s))
+        o["_puntosProp"] = sum(puntos[n] for n, xi in zip(SENALES, s) if xi)
+    base = _tasa(con_base)["tasa"]
+    por_puntos = []
+    for pts in sorted({o["_puntosProp"] for o in con_base}):
+        g = [o for o in con_base if o["_puntosProp"] == pts]
+        por_puntos.append({"puntos": pts, **_tasa(g)})
+    # los niveles se asignan sobre la tasa ISOTÓNICA (pool-adjacent-violators,
+    # ponderada por n): con n chico la tasa cruda sube y baja, y cortar sobre
+    # ella da niveles desordenados. La cruda se conserva para verla.
+    for f, iso in zip(por_puntos, _isotonica([(f["tasa"], f["n"]) for f in por_puntos])):
+        f["tasaIso"] = round(iso, 3)
+        f["nivel"] = ("bajo" if iso < base - 0.10 else "medio" if iso < base
+                      else "alto" if iso < base + 0.10 else "muy alto")
+    cortes = {}
+    for fila in por_puntos:
+        cortes.setdefault(fila["nivel"], fila["puntos"])
+    tasas = [f["tasa"] for f in por_puntos]
+    nivel_de = {f["puntos"]: f["nivel"] for f in por_puntos}
+    alto = [o for o in con_base if nivel_de[o["_puntosProp"]] in ("alto", "muy alto")]
+    bajo = [o for o in con_base if nivel_de[o["_puntosProp"]] == "bajo"]
+    return {
+        "n": len(con_base),
+        "celdas": len(celdas),
+        "intercepto": round(beta[0], 3),
+        "coeficientes": coefs,
+        "aporta": {s: coefs[s] > 0.1 for s in SENALES},
+        "puntosPropuestos": puntos,
+        "pasoPunto": PASO_PUNTO,
+        "aucLogit": _auc(con_base, "_logit"),
+        "aucPuntosPropuestos": _auc(con_base, "_puntosProp"),
+        "porPuntosPropuestos": por_puntos,
+        "monotona": all(a <= b for a, b in zip(tasas, tasas[1:])),
+        "cortesPropuestos": cortes,
+        "separacionPropuesta": round(_tasa(alto)["tasa"] - _tasa(bajo)["tasa"], 3) if alto and bajo else None,
+        "aviso": "ajuste en muestra: dice qué señal pesa y propone puntos enteros; no es una tasa prometida",
+    }
+
+
 def correr_backtest(*, padron_: bool = False, liga: int | None = None, horizonte: int = 1,
-                    muestra: int = 0, min_filas: int = 12, semilla: int = 42) -> dict:
+                    muestra: int = 0, min_filas: int = 12, semilla: int = 42,
+                    calibrar_: bool = False) -> dict:
     """Lo que corren el CLI y el endpoint: elige los equipos y devuelve el resumen
     con la lista de ligas evaluadas (para que se vea QUÉ se calibró)."""
     ligas: set[int] | None = None
@@ -260,9 +410,11 @@ def correr_backtest(*, padron_: bool = False, liga: int | None = None, horizonte
     if muestra and muestra < len(equipos):
         random.seed(semilla)
         equipos = random.sample(equipos, muestra)
-    _, resumen = correr(equipos, horizonte, MIN_PREFIJO, ligas, nombres or None)
+    obs, resumen = correr(equipos, horizonte, MIN_PREFIJO, ligas, nombres or None)
     resumen["equipos"] = len(equipos)
     resumen["ligasEvaluadas"] = sorted(nombres.values()) if ligas else ["todas"]
+    if calibrar_:
+        resumen["calibracion"] = calibrar(obs)
     return resumen
 
 
@@ -316,6 +468,23 @@ def imprimir(r: dict):
         for l in r["porLiga"]:
             print(f"  {l['liga'][:34]:34s} {_pct(l['todas'])} n={l['todas']['n']:4d} · bajo {_pct(l['bajo'])} · "
                   f"alto+ {_pct(l['altoMuyAlto'])} · sep {l['separacion']} · AUC {l['auc']}")
+    cal = r.get("calibracion")
+    if cal:
+        print("\n=== Calibración (regresión logística sobre las señales; ajuste en muestra) ===")
+        if "coeficientes" not in cal:
+            print(f"  {cal['aviso']} (n={cal['n']})")
+        else:
+            print(f"  n={cal['n']} · celdas={cal['celdas']} · intercepto {cal['intercepto']} · "
+                  f"AUC logit {cal['aucLogit']} · AUC puntos propuestos {cal['aucPuntosPropuestos']}")
+            print(f"  {'señal':16s} {'coef':>7s} {'pts':>4s}  aporta")
+            for s in SENALES:
+                print(f"  {s:16s} {cal['coeficientes'][s]:7.3f} {cal['puntosPropuestos'][s]:4d}  {'sí' if cal['aporta'][s] else 'no'}")
+            print("\n  — tasa por puntos propuestos (cruda · isotónica) → nivel (bajo < base−10 · medio < base · alto < base+10 · muy alto) —")
+            for f in cal["porPuntosPropuestos"]:
+                print(f"  {f['puntos']:2d} pts  {_pct(f)} · iso {100 * f['tasaIso']:5.1f}%  n={f['n']:6d}  {f['nivel']}")
+            print(f"  cortes propuestos: {cal['cortesPropuestos']} · monótona: {'sí' if cal['monotona'] else 'NO'} · "
+                  f"separación propuesta {cal['separacionPropuesta']}")
+            print(f"  {cal['aviso']}")
     if r.get("ligasEvaluadas"):
         print(f"\nligas evaluadas: {', '.join(r['ligasEvaluadas'])} · equipos: {r.get('equipos')}")
 
@@ -334,11 +503,13 @@ def main():
     ap.add_argument("--horizonte", type=int, default=1, help="revienta dentro de N partidos de la condición (default 1)")
     ap.add_argument("--min-filas", type=int, default=12, help="filas mínimas por equipo")
     ap.add_argument("--semilla", type=int, default=42)
+    ap.add_argument("--calibrar", action="store_true",
+                    help="ajusta una regresión logística sobre las señales y propone la tabla de puntos")
     ap.add_argument("--json", help="guardar el resumen en este archivo")
     a = ap.parse_args()
 
     resumen = correr_backtest(padron_=a.padron, liga=a.liga, horizonte=a.horizonte, muestra=a.muestra,
-                              min_filas=a.min_filas, semilla=a.semilla)
+                              min_filas=a.min_filas, semilla=a.semilla, calibrar_=a.calibrar)
     print(f"equipos evaluados: {resumen['equipos']}")
     imprimir(resumen)
     if a.json:
