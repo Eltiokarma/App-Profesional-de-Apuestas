@@ -1516,19 +1516,20 @@ components:
           type: object
           nullable: true
           description: 'el próximo rival frente al nivel con el que suele reventar (solo si la familia aplica al próximo)'
-          required: [nivelProximo, medianaReventon, distancia, enZona]
+          required: [nivelProximo, medianaReventon, distancia, enZona, tramo]
           properties:
             nivelProximo: { type: number }
             medianaReventon: { type: number }
-            distancia: { type: number }
-            enZona: { type: boolean, description: 'burbuja +: nivel ≥ mediana − 0.15 · burbuja −: nivel ≤ mediana + 0.15' }
+            distancia: { type: number, description: 'nivelProximo − mediana (con signo, sin girar)' }
+            enZona: { type: boolean, description: 'tramo ≠ lejos' }
+            tramo: { type: string, enum: [lejos, zona, fuerte, muy fuerte], description: 'en la dirección del riesgo (más fuerte para la burbuja +, más flojo para la −): lejos < −0.15 · zona ±0.15 · fuerte ≥ 0.15 · muy fuerte ≥ 0.45' }
         riesgo:
           type: object
           nullable: true
           required: [nivel, puntos, motivos, confianza, confianzaMotivos]
           properties:
             nivel: { type: string, enum: [bajo, medio, alto, muy alto, sin base] }
-            puntos: { type: integer, description: 'K ≥ mediana +2 (≥ min +1) · K ≥ max +1 · racha ≥ mediana +1 · racha ≥ max +1 · rival en zona +2' }
+            puntos: { type: integer, description: 'calibrados con el backtest real (docs/REVENTON.md §8): la K NO puntúa · racha ≥ mediana +1 · rival en zona +3 · fuerte +5 · muy fuerte +7. bajo 0–1 · medio 2–3 · alto 4–5 · muy alto ≥ 6' }
             motivos: { type: array, items: { type: string } }
             confianza: { type: string, enum: [baja, media, alta], description: 'muestra de reventones y estabilidad; nunca mueve el riesgo' }
             confianzaMotivos: { type: array, items: { type: string } }
@@ -1567,11 +1568,20 @@ components:
         partidos: { type: integer, description: 'filas de constantes procesadas' }
         mandan:
           type: object
-          required: [tipo, familias, motivo]
+          description: 'qué familia pesa: la total, siempre (el backtest real la puso por delante en todos los niveles). reglaNivel conserva la hipótesis del nivel como dato'
+          required: [tipo, familias, motivo, reglaNivel]
           properties:
-            tipo: { type: string, enum: [globales, especificas], description: 'bin ≥ 7 o ≤ 2 → globales; 3–6 → la de la condición del próximo' }
+            tipo: { type: string, enum: [globales, especificas] }
             familias: { type: array, items: { type: string, enum: [total, local, visita] } }
             motivo: { type: string }
+            reglaNivel:
+              type: object
+              required: [tipo, familias, motivo, confirmada]
+              properties:
+                tipo: { type: string, enum: [globales, especificas], description: 'bin ≥ 7 o ≤ 2 → globales; 3–6 → la de la condición del próximo' }
+                familias: { type: array, items: { type: string, enum: [total, local, visita] } }
+                motivo: { type: string }
+                confirmada: { type: boolean, description: 'false: el backtest del 16/09/2026 no la confirmó' }
         proximo:
           type: object
           nullable: true

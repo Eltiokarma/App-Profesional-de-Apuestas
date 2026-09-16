@@ -70,33 +70,40 @@ lo dice.
 
 ## 4. Qué constante manda
 
-Por el nivel del equipo (bin 0–9 del motor):
+**La total, siempre.** La hipótesis original era que a nivel alto o bajo
+(bin ≥ 7 o ≤ 2) mandan las globales y a nivel medio las específicas de la
+condición del próximo. El backtest real (§8) no la confirmó: la familia total
+separa más que local/visita en nivel medio (0.25 vs 0.24) y en extremos
+(0.30 vs 0.26), y agrupar por «manda / no manda» según la regla da lo mismo
+(0.266 vs 0.266). La lectura más simple es que local y visita tienen la mitad
+de partidos y sus medianas son más ruidosas.
 
-| bin | mandan | familia |
-|---|---|---|
-| ≥ 7 (alto) o ≤ 2 (bajo) | **globales** | `total` |
-| 3–6 (medio) | **específicas** | la de la condición del próximo (`local` o `visita`); sin próximo, las dos |
+La regla viaja igual en `mandan.reglaNivel` (con `confirmada: false`) para
+verla, no para decidir. La pantalla marca con ★ la total; local y visita se
+ven como detalle.
 
-La pantalla marca con ★ la familia que manda; las demás se ven, pero el
-selector recuerda que no son las que pesan.
-
-## 5. Riesgo de reventón (puntos con motivo)
+## 5. Riesgo de reventón (puntos con motivo, calibrados)
 
 Solo con burbuja abierta y reventones previos del mismo signo. Cada punto
-viaja con su frase en `riesgo.motivos`:
+viaja con su frase en `riesgo.motivos`. Los puntos salen de la regresión
+logística del backtest real (§8): un punto por cada 0.25 de log-odds.
 
-| condición | pts |
-|---|---|
-| K actual ≥ mediana de K pico | +2 |
-| (si no) K actual ≥ mínimo de K pico | +1 |
-| K actual ≥ máximo de K pico («nunca aguantó tanta K») | +1 |
-| racha ≥ mediana de partidos | +1 |
-| racha ≥ máximo de partidos | +1 |
-| próximo rival en zona (si la familia aplica) | +2 |
+| condición | coef. | pts |
+|---|---|---|
+| K actual frente a la mediana / máximo de K pico | −0.15 / −0.15 | **0** (se describe, no puntúa) |
+| racha ≥ mediana de partidos | +0.32 | +1 |
+| próximo rival **en zona** (±0.15 de la mediana con la que revienta) | +0.82 | +3 |
+| próximo rival **fuerte** (≥ 0.15 por encima, en la dirección del riesgo) | +1.18 | +5 |
+| próximo rival **muy fuerte** (≥ 0.45) | +1.86 | +7 |
 
-`nivel`: 0–1 **bajo** · 2–3 **medio** · 4–5 **alto** · ≥ 6 **muy alto**.
-Sin reventones previos del signo: **sin base** (se dice; no se inventa un
-número).
+La «dirección del riesgo» es: para la burbuja positiva, rival más fuerte que
+la mediana; para la negativa (racha de derrotas), rival más flojo. El tramo
+viaja en `rival.tramo` (`lejos · zona · fuerte · muy fuerte`).
+
+`nivel`: 0–1 **bajo** · 2–3 **medio** · 4–5 **alto** · ≥ 6 **muy alto**. Con
+los datos reales eso da, aproximadamente: bajo 42–47 % de reventón, medio
+≈ 61 %, alto 67–69 %, muy alto 75–85 % (tasa base 60 %). Sin reventones
+previos del signo: **sin base** (se dice; no se inventa un número).
 
 ## 6. Confianza (aparte del riesgo)
 
@@ -205,8 +212,31 @@ equipo fuerte, no una burbuja a punto). La regla del nivel no se confirmó: la
 familia total separa más que las específicas en nivel medio (0.25 vs 0.24) y
 en extremos (0.30 vs 0.26), y «manda / no manda» da lo mismo. Por liga todas
 separan en positivo; las copas europeas son las más flojas (Europa League
-0.14, Conference 0.19). Pendiente: recalibrar §5 con `--calibrar` y correr
-`horizonte=2`.
+0.14, Conference 0.19).
+
+### Segunda corrida (niveles continuos, `calibrar=true`, horizonte 1) — APLICADA
+
+Mismas 171.260 observaciones, ahora con 36 celdas (el tramo «fuerte» ya se
+llena). Coeficientes de la logística: K ≥ mediana −0.15 · K ≥ máximo −0.15 ·
+racha ≥ mediana +0.32 · racha ≥ máximo +0.04 · rival en zona +0.82 · fuerte
++1.18 · muy fuerte +1.86. AUC del logit 0.68 (la tabla vieja daba 0.61).
+Puntos propuestos y **aplicados** en §5: racha 1 · zona 3 · fuerte 5 · muy
+fuerte 7; la K, 0. Tasa por puntos propuestos:
+
+| pts | tasa | n |
+|---|---|---|
+| 0 | 42.1 % | 13.959 |
+| 1 | 47.3 % | 76.343 |
+| 3 | 60.8 % | 3.933 |
+| 4 | 67.2 % | 23.089 |
+| 5 | 69.2 % | 3.074 |
+| 6 | 74.7 % | 19.445 |
+| 7 | 80.8 % | 4.771 |
+| 8 | 85.4 % | 26.646 |
+
+A horizonte 2 la K tampoco aparece (−0.19 / −0.20), así que no es cuestión
+de plazo. Lo que queda por probar cuando haya más historia: graduar también
+la racha, y si las copas internacionales merecen su propia mediana.
 
 Qué mirar en la salida:
 
