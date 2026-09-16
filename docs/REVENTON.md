@@ -238,21 +238,32 @@ A horizonte 2 la K tampoco aparece (−0.19 / −0.20), así que no es cuestión
 de plazo. Lo que queda por probar cuando haya más historia: graduar también
 la racha, y si las copas internacionales merecen su propia mediana.
 
-### Pendiente: ¿la K pesa distinto por signo?
+### Probado: ¿la K pesa distinto por signo? No.
 
 Caso real (16/09/2026): Valencia llegaba a Mendizorroza con K −32 tras 4
 derrotas, la peor burbuja negativa de su historia (máximo previo 24), y la
 guía dijo **bajo** porque Alavés (3.08) quedaba lejos del nivel con el que
 Valencia suele cortar sus rachas (mediana 2.15). Valencia ganó 0-1.
 
-Un caso no refuta una calibración de 171 mil, pero sí señala un hueco del
-método: la logística se ajustó con los dos signos **juntos**, y un efecto
-que va al revés en cada lado se cancela. En la burbuja + una K alta es un
-equipo fuerte (sigue); en la − una K muy negativa es un equipo hundido, donde
-la regresión a la media empuja a que se corte. El backtest ahora devuelve
-`calibracionPorSigno` (`--calibrar`); si los pesos de la K difieren de verdad
-entre signos, la tabla de §5 pasa a ser una por signo. Hasta correrlo, la
-guía sigue con la tabla conjunta.
+La sospecha era que la logística conjunta escondiera un efecto opuesto por
+signo (en la − una K muy negativa empujaría a cortarse por regresión a la
+media). Se corrió `calibracionPorSigno` sobre los mismos 171.260 casos:
+
+| señal | burbuja + (n 88.158) | burbuja − (n 83.102) |
+|---|---|---|
+| K ≥ mediana de reventón | −0.18 | −0.11 |
+| K ≥ máximo histórico | −0.13 | **−0.18** |
+| racha ≥ mediana | +0.36 | +0.24 |
+| rival en zona · fuerte · muy fuerte | +0.77 · +1.13 · +1.84 | +0.87 · +1.24 · +1.88 |
+
+Los dos signos dicen lo mismo, y en la negativa «K ≥ máximo» sale incluso
+más negativa: un equipo en su peor racha tiene un poco MENOS chance de
+cortarla en el siguiente partido. No hay regresión a la media a un partido
+vista; hay un equipo que está mal. La tabla conjunta de §5 queda, y el caso
+Valencia es lo que «bajo» significa: 46.5 % de reventón en esta base, no
+«no va a reventar». Con los puntos calibrados ya en producción la escala
+mide bajo 46.5 % · medio 60.8 % · alto 67.5 % · muy alto 80.9 %, y las tres
+familias separan igual (≈ 0.30), así que la total sigue mandando por simple.
 
 ## 9. Vista «al día del partido» (releer el pasado sin el resultado)
 
