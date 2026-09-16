@@ -669,10 +669,21 @@ def _evento_tl(e, rechazos: list | None = None, donde: str = "timelineEventos") 
     titulo = _txt(e.get("titulo"))
     fecha = _txt(e.get("fecha"))
     if not titulo or not fecha:
+        if rechazos is not None:
+            rechazos.append({"donde": donde, "porque": "evento sin `titulo` o sin `fecha`: no se guarda",
+                             "esperado": '{"fecha": "2026-03-02", "tipo": "tecnico", "titulo": "…"}'})
         return None
     tipo = _txt(e.get("tipo")).lower()
     if tipo in crono.TIPOS_PARTIDO or tipo not in TL_TIPOS:
-        # un resultado copiado a mano se descarta: el marcador es de la ingesta
+        # un resultado copiado a mano se descarta: el marcador es de la ingesta.
+        # ANTES SE DESCARTABA EN SILENCIO: Cowork mandaba eventos y el recibo
+        # devolvía «eventosTimeline: 0» sin decir por qué.
+        if rechazos is not None:
+            rechazos.append({"donde": donde,
+                             "porque": (f"tipo {tipo!r} no es institucional: los partidos los calcula la base"
+                                        if tipo in crono.TIPOS_PARTIDO else
+                                        f"tipo {tipo!r} desconocido: solo {', '.join(TL_TIPOS)}"),
+                             "esperado": f"tipo ∈ {list(TL_TIPOS)}"})
         return None
     return {
         "fecha": fecha, "aproximada": bool(e.get("aproximada")) or fecha.startswith("~"),
@@ -1977,8 +1988,19 @@ def contrato() -> dict:
                         "seguir y por qué. No copies los números: el backend los recalcula al leer "
                         "y los devuelve en `reventonCalculado`",
         },
-        "documentos": {"forma": '[{"id": "…", "cuerpo": "markdown", "formato": "md|html|texto"}]',
-                       "idsQueLaPantallaTitulaSola": DOCUMENTOS},
+        "documentos": {"forma": '[{"id": "…", "titulo": "…", "cuerpo": "markdown", "formato": "md|html|texto"}]',
+                       "idsQueLaPantallaTitulaSola": DOCUMENTOS,
+                       "nota": "`cuerpo` es obligatorio; sin `id` se guarda como `nota`; el título "
+                               "sale del id si no viene"},
+        "cadena": {"forma": '{"a": {"pronostico": "…"}, "b": {"pronostico": "…"}}',
+                   "nota": "un OBJETO por lado (a = local, b = visitante), no una lista de pasos. "
+                           "El pronóstico por equipo foco entra en la cadena del DTP como "
+                           "apertura; el veredicto lo emite quien cierre el eslabón"},
+        "timelineEventos": {"forma": '[{"fecha": "2026-03-02", "equipo": "…", "tipo": "tecnico", "titulo": "…", "detalle": "…", "fuente": "…"}]',
+                            "tipos": list(TL_TIPOS),
+                            "nota": "solo eventos INSTITUCIONALES; los partidos los calcula la base "
+                                    "(backend/cronologia.py) y un resultado copiado a mano se rechaza "
+                                    "con motivo"},
         "loQueNoSeManda": [
             "total, porcentaje, clasificación — los calcula la app",
             "ip, reducción por zona, ramas A/B, F3, F4 — salen de bloque_f.py",

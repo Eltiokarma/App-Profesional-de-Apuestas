@@ -1325,7 +1325,7 @@ def equipo_calendario(equipo_id: int, n: int = Query(default=4, ge=1, le=10)):
 
 
 @app.get(API + "/equipos/{equipo_id}/burbujas")
-def equipo_burbujas(equipo_id: int, antesDe: int | None = None):
+def equipo_burbujas(equipo_id: int, antesDe: int | None = None, proximo: int | None = None):
     """Reventón de la burbuja (docs/REVENTON.md): cuándo la K de resultado del
     equipo suele volver a cero. Todo sale de la base —constantes, niveles,
     calendario y plantilla— y se calcula en backend/analisis/burbuja.py.
@@ -1345,15 +1345,21 @@ def equipo_burbujas(equipo_id: int, antesDe: int | None = None):
     filas = list(reversed(constantes_de(equipo_id, 500, antes=antes)))  # el contrato entrega desc; el análisis va cronológico
     nv = niveles_de(equipo_id, 1, antes=antes)
     nivel, bin_ = (nv[0]["nivel"], nv[0]["bin"]) if nv else (0.5, level_bin(0.5)[0])
-    proximo = None
-    if antesDe is not None:
-        f = get_fixture(antesDe)
+    # `proximo=<fixtureId>`: ESE partido hace de próximo, con la historia entera.
+    # Sin él, el próximo sale del calendario del equipo, y si en la base quedó
+    # un fixture viejo sin marcar, se elige ese: al Betis le salió un rival que
+    # no era ni el del partido ni ninguno de sus dos siguientes. Cowork analiza
+    # un fixture concreto, así que pide ese.
+    fx_prox = antesDe if antesDe is not None else proximo
+    prox = None
+    if fx_prox is not None:
+        f = get_fixture(fx_prox)
         if equipo_id not in (f["home_team_id"], f["away_team_id"]):
-            raise HTTPException(400, f"el equipo {equipo_id} no juega el fixture {antesDe}")
+            raise HTTPException(400, f"el equipo {equipo_id} no juega el fixture {fx_prox}")
         es_local = f["home_team_id"] == equipo_id
         rid = f["away_team_id"] if es_local else f["home_team_id"]
         nr = niveles_de(rid, 1, antes=antes)
-        proximo = {
+        prox = {
             "fixtureId": f["id"], "fecha": str(f["date"])[:10], "rivalId": rid,
             "rival": f["away_name"] if es_local else f["home_name"],
             "condicion": "L" if es_local else "V",
@@ -1364,14 +1370,14 @@ def equipo_burbujas(equipo_id: int, antesDe: int | None = None):
         if proximos:
             p = proximos[0]
             nr = niveles_de(p["rivalId"], 1)
-            proximo = {
+            prox = {
                 "fixtureId": p["fixtureId"], "fecha": p["fecha"], "rivalId": p["rivalId"], "rival": p["rival"],
                 "condicion": p["condicion"],
                 # sin niveles del rival, el motor pondera con 1.0 (§3.1): misma regla
                 "nivelRival": nr[0]["nivel"] if nr else 1.0,
             }
     r = burbuja.analizar(
-        filas, equipo_id=equipo_id, nivel=nivel, bin_=bin_, proximo=proximo,
+        filas, equipo_id=equipo_id, nivel=nivel, bin_=bin_, proximo=prox,
         # en la vista al día del partido la plantilla de HOY no es la de entonces:
         # va sin dato (la confianza no pasa de media) en vez de fingir estabilidad
         plantilla=None if antesDe is not None else jug.plantilla_de(equipo_id),
@@ -1382,7 +1388,7 @@ def equipo_burbujas(equipo_id: int, antesDe: int | None = None):
         r["estabilidad"]["motivos"] = [
             "vista al día del partido: la plantilla de hoy no es la de entonces y no se usa; "
             "la estabilidad de ese día no está guardada"]
-        r["vistaAlDia"] = {"fixtureId": antesDe, "fecha": proximo["fecha"] if proximo else None}
+        r["vistaAlDia"] = {"fixtureId": antesDe, "fecha": prox["fecha"] if prox else None}
     return r
 
 

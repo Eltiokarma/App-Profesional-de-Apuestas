@@ -270,28 +270,66 @@ def guardar_traspasos(con: sqlite3.Connection, filas: list) -> int:
     return n
 
 
-def guardar_entrenador(con: sqlite3.Connection, team_id: int, filas: list) -> int:
-    """/coachs?team= trae la carrera completa de cada DT que pasó por el club:
-    se guarda SOLO el vigente (entrada de carrera en este equipo sin fecha fin)."""
-    ahora, n = _ahora(), 0
-    for item in filas:
+def elegir_entrenador(filas: list, team_id: int, dt_alineacion: str | None = None) -> dict | None:
+    """Quién dirige HOY, de la carrera que devuelve /coachs?team=.
+
+    La API devuelve a TODOS los que pasaron por el club, y muchas veces deja
+    la etapa vieja sin `end` (el que se fue en 2019 sigue «abierto»). El
+    código tomaba el PRIMERO con etapa abierta, que es el más antiguo: la
+    corrida del 16/09 encontró 17 de 22 DT mal, siempre el saliente
+    —Bucaramanga con S. Novoa desde 2019 cuando dirige Peirano desde mayo—.
+    El pipeline registraba el alta y nunca procesaba la baja.
+
+    Regla: (1) si la última alineación capturada trae un DT que casa con un
+    candidato, ese; (2) si no, la etapa abierta con el `start` MÁS RECIENTE;
+    (3) sin etapas abiertas, la de `start` más reciente. Devuelve el
+    candidato con `desde` = start tal como lo da la API (que suele traer el
+    día 01: la API conoce el mes, no el día)."""
+    candidatos = []
+    for item in filas or []:
         if not item.get("id"):
             continue
         for c in item.get("career") or []:
-            if (c.get("team") or {}).get("id") == team_id and not c.get("end"):
-                con.execute("DELETE FROM entrenadores WHERE team_id=?", (team_id,))
-                con.execute(
-                    "INSERT OR REPLACE INTO entrenadores (team_id, coach_id, nombre, foto, desde, actualizado_en) "
-                    "VALUES (?, ?, ?, ?, ?, ?)",
-                    (team_id, item["id"], item.get("name"), item.get("photo"),
-                     c.get("start"), ahora),
-                )
-                n += 1
-                break
-        if n:
-            break
+            if (c.get("team") or {}).get("id") != team_id:
+                continue
+            candidatos.append({"coach_id": item["id"], "nombre": item.get("name"),
+                               "foto": item.get("photo"), "desde": c.get("start") or "",
+                               "abierta": not c.get("end")})
+    if not candidatos:
+        return None
+    if dt_alineacion:
+        objetivo = _norm_dt(dt_alineacion)
+        casan = [c for c in candidatos if _norm_dt(c["nombre"] or "") == objetivo]
+        if casan:
+            return max(casan, key=lambda c: c["desde"])
+    abiertas = [c for c in candidatos if c["abierta"]]
+    return max(abiertas or candidatos, key=lambda c: c["desde"])
+
+
+def guardar_entrenador(con: sqlite3.Connection, team_id: int, filas: list) -> int:
+    """/coachs?team= trae la carrera completa de cada DT que pasó por el club:
+    se guarda SOLO el vigente, elegido por `elegir_entrenador` (la última
+    alineación manda; si no, la etapa abierta más reciente)."""
+    dt_alin = None
+    try:
+        fila = con.execute(
+            """SELECT a.entrenador FROM alineaciones a JOIN fixtures f ON f.id = a.fixture_id
+               WHERE a.team_id=? AND a.entrenador IS NOT NULL AND a.entrenador <> ''
+               ORDER BY f.date DESC LIMIT 1""", (team_id,)).fetchone()
+        dt_alin = fila[0] if fila else None
+    except sqlite3.Error:
+        pass
+    dt = elegir_entrenador(filas, team_id, dt_alin)
+    if not dt:
+        return 0
+    con.execute("DELETE FROM entrenadores WHERE team_id=?", (team_id,))
+    con.execute(
+        "INSERT OR REPLACE INTO entrenadores (team_id, coach_id, nombre, foto, desde, actualizado_en) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (team_id, dt["coach_id"], dt["nombre"], dt["foto"], dt["desde"] or None, _ahora()),
+    )
     con.commit()
-    return n
+    return 1
 
 
 def necesita_lentas(con: sqlite3.Connection, team_id: int,
@@ -388,7 +426,12 @@ def main() -> int:
     ap.add_argument("--equipo", type=int, help="ingestar SOLO este team_id (ignora ventana y TTL)")
     ap.add_argument("--temporada", type=int, help="temporada para --equipo (default: año actual)")
     ap.add_argument("--limite", type=int, default=None, help="tope fijo de requests")
+    ap.add_argument("--solo-dt", action="store_true",
+                    help="SOLO el entrenador (1 request por equipo con NS en la ventana, sin TTL): "
+                         "para rehacer los DT tras cambiar la regla del vigente. También con "
+                         "SAD_JUGADORES_SOLO_DT=1 (la corrida programada lo lee)")
     args = ap.parse_args()
+    solo_dt = args.solo_dt or os.environ.get("SAD_JUGADORES_SOLO_DT", "").strip() in ("1", "true", "sí", "si")
 
     if not os.path.exists(args.db):
         print(f"No existe {args.db}", file=sys.stderr)
@@ -401,6 +444,32 @@ def main() -> int:
 
     if args.equipo:
         pendientes = [(args.equipo, args.temporada or datetime.now(timezone.utc).year)]
+    elif solo_dt:
+        # REHACER LOS DT. La regla del vigente cambió (elegir_entrenador) y lo
+        # guardado con la regla vieja sigue ahí hasta que venza el TTL de 30
+        # días: 17 de 22 DT mal en la corrida del 16/09. Esto los rehace en una
+        # corrida a 1 request por equipo, sin tocar plantillas ni TTL.
+        pendientes = equipos_pendientes(con, args.dias, 0)
+        reserva = reserva_del_dia(cliente.limite, con)
+        print(f"Solo DT: {len(pendientes)} equipos con NS <= {args.dias} días · "
+              f"presupuesto restante {cliente.limite - cliente.usadas} · reserva {reserva}")
+        hechos = cambiados = 0
+        for team_id, _season in pendientes:
+            if cliente.limite - cliente.usadas <= reserva or not cliente.quedan(1):
+                print(f"reserva del día alcanzada: {hechos}/{len(pendientes)} equipos (el resto, en la próxima)")
+                break
+            antes = con.execute("SELECT nombre FROM entrenadores WHERE team_id=?", (team_id,)).fetchone()
+            data = cliente.get("coachs", {"team": team_id})
+            if guardar_entrenador(con, team_id, (data or {}).get("response", [])):
+                despues = con.execute("SELECT nombre FROM entrenadores WHERE team_id=?", (team_id,)).fetchone()
+                if (antes or [None])[0] != (despues or [None])[0]:
+                    cambiados += 1
+                    print(f"  equipo {team_id}: DT {(antes or ['—'])[0]!r} → {(despues or ['—'])[0]!r}")
+            hechos += 1
+        con.close()
+        print(f"DT rehechos: {hechos}/{len(pendientes)} equipos · {cambiados} cambiaron · "
+              f"consumo: {cliente.resumen()} · total {cliente.usadas}/{cliente.limite}")
+        return 0
     else:
         pendientes = equipos_pendientes(con, args.dias, args.ttl_horas)
     # reserva CONSCIENTE DEL CALENDARIO: con fútbol nuestro cerca sube a

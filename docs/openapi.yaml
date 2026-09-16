@@ -271,6 +271,7 @@ paths:
       parameters:
         - { name: equipoId, in: path, required: true, schema: { type: integer } }
         - { name: antesDe, in: query, schema: { type: integer }, description: 'id de fixture: la historia se corta ESTRICTAMENTE antes de ese partido y ese partido hace de próximo (rival, condición, nivel del rival a esa fecha); la plantilla de hoy no se usa (estabilidad sin dato). La misma construcción anti-hindsight del backtest. 404 si no existe, 400 si el equipo no lo juega' }
+        - { name: proximo, in: query, schema: { type: integer }, description: 'id de fixture: ESE partido hace de próximo, con la historia entera. Sin él el próximo sale del calendario del equipo, que puede elegir un fixture viejo sin marcar. Cowork lo pasa siempre. 404 si no existe, 400 si el equipo no lo juega; se ignora si viene antesDe' }
       responses:
         '200':
           description: OK

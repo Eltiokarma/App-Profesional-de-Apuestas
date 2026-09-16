@@ -91,6 +91,34 @@ def main():
           _norm_dt("M. Pellegrino") == _norm_dt("Mauricio Pellegrino")
           and _norm_dt("Gallardo") != _norm_dt("Costas"))
 
+    # --- 2b. EL DT VIGENTE, no el saliente (17 de 22 mal en la corrida del 16/09)
+    from backend.ingesta.jugadores import elegir_entrenador, guardar_entrenador
+    carrera = [
+        {"id": 1, "name": "S. Novoa", "career": [{"team": {"id": 700}, "start": "2019-01-01", "end": None}]},
+        {"id": 2, "name": "Leonel Álvarez", "career": [{"team": {"id": 700}, "start": "2024-07-01", "end": "2026-05-01"}]},
+        {"id": 3, "name": "Leonardo Peirano", "career": [{"team": {"id": 700}, "start": "2026-05-27", "end": None},
+                                                         {"team": {"id": 999}, "start": "2020-01-01", "end": None}]},
+    ]
+    e = elegir_entrenador(carrera, 700)
+    check("con dos etapas abiertas gana la de start MÁS RECIENTE (Peirano 2026, no Novoa 2019)",
+          e and e["nombre"] == "Leonardo Peirano" and e["desde"] == "2026-05-27", e)
+    check("una etapa cerrada más nueva que la abierta vieja no la desplaza a la abierta más nueva",
+          elegir_entrenador(carrera[:2], 700)["nombre"] == "S. Novoa")
+    check("sin etapas abiertas, la de start más reciente",
+          elegir_entrenador([carrera[1]], 700)["nombre"] == "Leonel Álvarez")
+    check("la última alineación manda cuando casa con un candidato",
+          elegir_entrenador(carrera, 700, "S. Novoa")["nombre"] == "S. Novoa")
+    check("una alineación que no casa con nadie no rompe la regla",
+          elegir_entrenador(carrera, 700, "Pep Guardiola")["nombre"] == "Leonardo Peirano")
+    check("otra etapa del mismo DT en OTRO club no cuenta", elegir_entrenador(carrera, 999) and
+          elegir_entrenador(carrera, 700)["desde"] == "2026-05-27")
+    check("sin carrera en este club, nada", elegir_entrenador(carrera, 123) is None)
+    con.execute("INSERT INTO fixtures (id, date, status_short, league_id) VALUES (10, ?, 'FT', 239)", (hace(24),))
+    con.execute("INSERT INTO alineaciones (fixture_id, team_id, entrenador) VALUES (10, 700, 'L. Peirano')")
+    con.commit()
+    check("guardar_entrenador deja UNA fila: el vigente", guardar_entrenador(con, 700, carrera) == 1
+          and [r[0] for r in con.execute("SELECT nombre FROM entrenadores WHERE team_id=700")] == ["Leonardo Peirano"])
+
     # --- 3. el padrón: ligas importantes, no las copas ---------------------
     con = db()
     prox = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
