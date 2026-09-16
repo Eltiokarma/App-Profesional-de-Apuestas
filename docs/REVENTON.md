@@ -157,6 +157,46 @@ Con `--padron` la historia previa de cada equipo (su K y sus reventones) usa
 ligas del padrón. La salida trae `ligasEvaluadas` y el desglose por liga para
 que se vea qué se calibró y dónde la separación es ruido por n chico.
 
+### `--calibrar` (o `calibrar=true` en el endpoint)
+
+Ajusta una **regresión logística** sobre las señales de la guía, con el rival
+graduado por distancia a la mediana de reventón (lejos = referencia · en zona
+· fuerte ≥ 0.15 · muy fuerte ≥ 0.45). Como las señales son binarias, se agrupa
+por patrón (≤ 64 celdas) y Newton converge sin numpy. Devuelve:
+
+- `coeficientes` por señal y `aporta` (coef > 0.1);
+- `puntosPropuestos`: un punto por cada 0.25 de log-odds, nunca negativo;
+- `porPuntosPropuestos`: tasa por puntos con el nivel que le tocaría
+  (bajo < base − 10 · medio < base · alto < base + 10 · muy alto) y
+  `cortesPropuestos`;
+- `aucLogit`, `aucPuntosPropuestos`, `separacionPropuesta`.
+
+Es **ajuste en muestra**: dice qué señal pesa y propone enteros; no promete
+una tasa. Cambiar los puntos de §5 se hace a mano con eso a la vista, en los
+dos lados (Python y TS) y con los vectores dorados.
+
+### Resultado de la primera corrida real (16/09/2026, padrón, horizonte 1)
+
+172.524 observaciones, 1.038 equipos, 35 ligas. Tasa base 60 %: seis de cada
+diez burbujas abiertas revientan en el partido siguiente.
+
+| riesgo | tasa | n |
+|---|---|---|
+| bajo | 43.8 % | 14.490 |
+| medio | 51.5 % | 71.899 |
+| alto | 70.0 % | 71.960 |
+| muy alto | 73.1 % | 12.902 |
+
+Monótona, AUC 0.61. Pero el lift por señal dice **quién trabaja**: rival en
+zona +0.29; racha ≥ mediana +0.06; K ≥ mediana **−0.02** y K ≥ máximo **−0.03**.
+La K actual contra la K de reventón no adelanta el reventón (una K alta es un
+equipo fuerte, no una burbuja a punto). La regla del nivel no se confirmó: la
+familia total separa más que las específicas en nivel medio (0.25 vs 0.24) y
+en extremos (0.30 vs 0.26), y «manda / no manda» da lo mismo. Por liga todas
+separan en positivo; las copas europeas son las más flojas (Europa League
+0.14, Conference 0.19). Pendiente: recalibrar §5 con `--calibrar` y correr
+`horizonte=2`.
+
 Qué mirar en la salida:
 
 | tabla | qué confirma |

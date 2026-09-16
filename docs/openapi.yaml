@@ -293,9 +293,10 @@ paths:
         - { name: muestra, in: query, schema: { type: integer, default: 0, minimum: 0, maximum: 2000 }, description: 'equipos al azar (0 = todos)' }
         - { name: liga, in: query, schema: { type: integer }, description: 'solo partidos de esta league_id (manda sobre padron)' }
         - { name: minFilas, in: query, schema: { type: integer, default: 12, minimum: 10, maximum: 200 } }
+        - { name: calibrar, in: query, schema: { type: boolean, default: false }, description: 'añade `calibracion`: regresión logística sobre las señales (rival graduado por distancia), coeficientes, puntos propuestos, tasa por puntos y cortes propuestos. Ajuste en muestra.' }
       responses:
         '200':
-          description: Resumen del backtest (tablas por nivel, puntos, señal, familia, liga; ligasEvaluadas y equipos)
+          description: Resumen del backtest (tablas por nivel, puntos, señal, familia, liga; ligasEvaluadas y equipos; calibracion si se pidió)
           content:
             application/json:
               schema: { type: object, additionalProperties: true }
