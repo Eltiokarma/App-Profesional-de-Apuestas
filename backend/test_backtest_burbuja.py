@@ -75,6 +75,24 @@ def main():
     check("horizonte 3 ≥ horizonte 1 en tasa base", r3["tasaBase"]["tasa"] >= r["tasaBase"]["tasa"],
           (r3["tasaBase"], r["tasaBase"]))
 
+    # padrón y filtro por liga: la lista de ligas importantes es UNA (extractor.ligas_vivo)
+    pad = bt.padron()
+    check("el padrón sale de extractor.ligas_vivo() con nombres", len(pad) > 5 and all(isinstance(v, str) for v in pad.values()), len(pad))
+    liga_demo = obs[0]["ligaId"]
+    rl = bt.correr_backtest(liga=liga_demo, horizonte=1)
+    check("--liga: solo se evalúan partidos de esa liga (la historia previa sigue completa)",
+          all(l["ligaId"] == liga_demo for l in rl["porLiga"]) and rl["porLiga"], rl["porLiga"])
+    check("--liga: ligasEvaluadas trae el nombre de la liga y el conteo de equipos",
+          rl["ligasEvaluadas"] and rl["equipos"] >= 1, (rl["ligasEvaluadas"], rl["equipos"]))
+    check("por liga: cada fila cierra (bajo + medio + alto/muy alto ≤ todas) y viene ordenada por n",
+          all(l["bajo"]["n"] + l["altoMuyAlto"]["n"] <= l["todas"]["n"] for l in r["porLiga"])
+          and [l["todas"]["n"] for l in r["porLiga"]] == sorted((l["todas"]["n"] for l in r["porLiga"]), reverse=True))
+    rp = bt.correr_backtest(padron_=True, horizonte=1)
+    check("--padron: evalúa solo ligas del padrón (o ninguna si la demo no lo cruza) y lo declara",
+          all(l["ligaId"] in pad for l in rp["porLiga"]) and rp["ligasEvaluadas"], rp["ligasEvaluadas"][:3])
+    rm = bt.correr_backtest(muestra=2, horizonte=1)
+    check("--muestra acota los equipos", rm["equipos"] == 2, rm["equipos"])
+
     # el informe se imprime sin romperse
     bt.imprimir(r)
 

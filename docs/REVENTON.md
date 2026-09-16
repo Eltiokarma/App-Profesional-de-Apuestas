@@ -138,10 +138,24 @@ que pasó: reventó en ese partido, o dentro de `--horizonte` partidos de la
 condición.
 
 ```bash
+python -m backend.backtest_burbuja --padron           # las ligas importantes (padrón único: extractor.ligas_vivo())
 python -m backend.backtest_burbuja                    # todos los equipos con ≥ 12 filas
 python -m backend.backtest_burbuja --horizonte 2 --liga 281 --json salida.json
 python -m backend.test_backtest_burbuja               # anti-fuga y conteos, sobre la demo
 ```
+
+Corre **donde viven las `.db`**: en tu PC junto a las cuatro bases (o con
+`SAD_DATA_DIR`), o en el servidor por `GET /analisis/burbujas/backtest`
+(`padron`, `horizonte`, `muestra`, `liga`, `minFilas`) con el **token
+maestro**. No está abierto a Cowork a propósito: es calibración de la guía,
+no un dato del parte, y Cowork no tiene que gastar una sesión en algo que
+se calcula solo. Lo que Cowork SÍ lee es la guía de cada equipo
+(`GET /equipos/{id}/burbujas`) al escribir el parte.
+
+Con `--padron` la historia previa de cada equipo (su K y sus reventones) usa
+**todos** sus partidos, como en la app; solo se **evalúan** los partidos de las
+ligas del padrón. La salida trae `ligasEvaluadas` y el desglose por liga para
+que se vea qué se calibró y dónde la separación es ruido por n chico.
 
 Qué mirar en la salida:
 

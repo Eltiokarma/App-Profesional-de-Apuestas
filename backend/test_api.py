@@ -318,6 +318,17 @@ def main():
     check("burbujas: el aviso dice que es guía, no probabilidad", "no probabilidad" in bu["aviso"])
     check("/equipos/999999/burbujas → 404", c.get(A + "/equipos/999999/burbujas").status_code == 404)
 
+    # /analisis/burbujas/backtest — calibración sobre las .db del servidor (maestro, no Cowork)
+    bk = c.get(A + "/analisis/burbujas/backtest?padron=false&muestra=3").json()
+    check("backtest: resumen con tasas por nivel, señales, por liga y ligas evaluadas",
+          set(bk["porNivel"]) == {"bajo", "medio", "alto", "muy alto"} and "senales" in bk and isinstance(bk["porLiga"], list)
+          and bk["ligasEvaluadas"] == ["todas"] and bk["equipos"] == 3, {k: bk.get(k) for k in ("ligasEvaluadas", "equipos")})
+    check("backtest: horizonte fuera de rango → 422", c.get(A + "/analisis/burbujas/backtest?horizonte=9").status_code == 422)
+    check("backtest: NO está en la lista de permitidos de Cowork (es calibración, no un dato del parte)",
+          not appmod._cowork_puede("GET", A + "/analisis/burbujas/backtest"))
+    check("burbujas del equipo SÍ está abierto a Cowork (GET /equipos/*)",
+          appmod._cowork_puede("GET", A + f"/equipos/{betis}/burbujas"))
+
     # /fixtures/{id}/ficha — puente con los skills
     fi = c.get(A + f"/fixtures/{vivo['id']}/ficha").json()
     check("ficha: ambos lados con plantilla y congestión",
