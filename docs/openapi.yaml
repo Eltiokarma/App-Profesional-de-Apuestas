@@ -619,15 +619,29 @@ paths:
       description: >
         Calculado de nuestra base con el criterio del protocolo (Liga 1 Perú, derbi de
         ciudad, copa internacional, liga grande con equipo arriba o en crisis, choque del
-        top 6 europeo). Sin `fecha`, el día siguiente en UTC. Los descartados viajan con
-        su motivo. Cero créditos.
+        top 6 europeo). Sin `fecha` ni `desdeAhora`: desde ahora y por 24 h, a la hora que
+        se corra. La fase de grupos / fase liga internacional y las segundas divisiones
+        quedan fuera por defecto (`grupos` / `segundas` las meten). Los descartados viajan
+        con su motivo. Cero créditos.
       parameters:
-        - { name: fecha, in: query, schema: { type: string, format: date } }
+        - { name: fecha, in: query, schema: { type: string, format: date }, description: 'un día concreto (UTC); sin él, desde ahora y por 24 h' }
         - { name: limite, in: query, schema: { type: integer, default: 8, minimum: 1, maximum: 20 } }
         - name: ligaId
           in: query
           schema: { type: integer }
           description: 'acota a una liga (mando manual para apuntar el batch sin tocar el padrón)'
+        - name: liga
+          in: query
+          schema: { type: string, maxLength: 60 }
+          description: 'acota por TEXTO: las ligas del padrón cuyo país o nombre contiene esto («España», «LaLiga», «Perú»); la respuesta lista `filtro.ligasQueCasan`'
+        - name: grupos
+          in: query
+          schema: { type: boolean, default: false }
+          description: 'incluir la fase de grupos / fase liga de los torneos internacionales (fuera por defecto; la fase decisiva entra siempre)'
+        - name: segundas
+          in: query
+          schema: { type: boolean, default: false }
+          description: 'incluir las segundas divisiones (fuera por defecto)'
         - name: desdeAhora
           in: query
           schema: { type: boolean, default: false }
@@ -2534,8 +2548,12 @@ components:
           description: 'los mandos manuales tal como se aplicaron'
           properties:
             ligaId: { type: integer, nullable: true }
+            liga: { type: string, nullable: true, description: 'el texto pedido' }
+            ligasQueCasan: { type: array, items: { type: integer }, nullable: true, description: 'ids del padrón que casaron con `liga`; [] = ninguna' }
             desdeAhora: { type: boolean }
             horas: { type: integer, nullable: true }
+            grupos: { type: boolean }
+            segundas: { type: boolean }
             incluirDescartados: { type: boolean }
             manual: { type: boolean, description: 'true si se usó algún mando' }
         notaSeleccion:

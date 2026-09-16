@@ -147,6 +147,9 @@ def main():
     check("ningún analizable tiene prioridad 0", all(i["prioridad"] > 0 for i in ag["analizar"]))
 
     # ── los mandos manuales de la agenda ────────────────────────────────────
+    import datetime as _dt0
+    _dt_now_txt = lambda: _dt0.datetime.now(_dt0.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    from backend.app import liga_meta as sadapp_liga_meta
     liga_del_dia = dbmod.query_one(
         "sad", "SELECT league_id, COUNT(*) AS n FROM fixtures WHERE substr(date,1,10)=? "
                "GROUP BY league_id ORDER BY n DESC LIMIT 1", (fecha,))["league_id"]
@@ -174,6 +177,29 @@ def main():
           [i["prioridad"] for i in con_todo["analizar"] if i["prioridad"]] ==
           sorted(i["prioridad"] for i in con_todo["analizar"] if i["prioridad"]),
           [i["prioridad"] for i in con_todo["analizar"]])
+
+    # SIN FECHA NI desdeAhora: desde ahora y por 24 h. Antes era «el día siguiente
+    # en UTC» y a las 07:00 de un miércoles devolvía el jueves entero.
+    r_def = c.get(f"{A}/analisis/cowork/agenda", params={"limite": 20}).json()
+    check("sin fecha, la agenda es «desde ahora y por 24 h» y lo declara (y NO cuenta como filtro manual)",
+          r_def["filtro"]["desdeAhora"] is True and r_def["filtro"]["horas"] == 24
+          and "desde ahora" in r_def["ventana"] and r_def["filtro"]["manual"] is False, r_def.get("filtro"))
+    _ahora = _dt_now_txt()
+    check("y no trae partidos ya empezados ni de pasado mañana",
+          all(_ahora <= dbmod.query_one("sad", "SELECT date FROM fixtures WHERE id=?", (i["fixtureId"],))["date"]
+              for i in r_def["analizar"] + r_def["enEspera"] + r_def["descartados"]))
+    # filtro por TEXTO de liga: «la liga española, toda» sin buscar el id
+    meta_dia = sadapp_liga_meta(liga_del_dia)
+    r_txt = c.get(f"{A}/analisis/cowork/agenda",
+                  params={"fecha": fecha, "liga": (meta_dia.get("pais") or meta_dia.get("nombre") or "")[:6], "limite": 20,
+                          "incluirDescartados": "true"}).json()
+    todos_txt = r_txt["analizar"] + r_txt["enEspera"] + r_txt["descartados"]
+    check("liga=<texto> deja solo las ligas que casan por país o nombre, y las lista",
+          todos_txt and liga_del_dia in r_txt["filtro"]["ligasQueCasan"]
+          and all(i["liga"] in {sadapp_liga_meta(l).get("nombre") for l in r_txt["filtro"]["ligasQueCasan"]} for i in todos_txt),
+          r_txt.get("filtro"))
+    check("un texto que no casa con ninguna liga deja la agenda vacía, declarado",
+          c.get(f"{A}/analisis/cowork/agenda", params={"fecha": fecha, "liga": "Narnia"}).json()["filtro"]["ligasQueCasan"] == [])
 
     # la ventana rodante ignora el día natural (a las 20:00 de Lima el día UTC ya cambió)
     r = c.get(f"{A}/analisis/cowork/agenda", params={"desdeAhora": "true", "horas": 48,
@@ -488,30 +514,40 @@ def main():
     from backend.analisis.parte import _prioridad, _padron, SEGUNDAS, INTERNACIONALES
     from backend.ingesta.extractor import ligas_vivo
     liga_x = {"nombre": "X"}
-    prio_de = lambda lid, ronda="", etq=None, pl=0, pv=0: _prioridad(
-        liga_x, etq or set(), pl, pv, lid, ronda)
+    prio_de = lambda lid, ronda="", etq=None, pl=0, pv=0, **kw: _prioridad(
+        liga_x, etq or set(), pl, pv, lid, ronda, **kw)
 
     check("el padrón de la agenda ES el de las cuotas en vivo",
           set(_padron()) == set(ligas_vivo()),
           sorted(set(_padron()) ^ set(ligas_vivo())))
-    check("todas las ligas del padrón entran a la agenda",
-          all(prio_de(lid)[0] > 0 for lid in _padron()),
-          [lid for lid in _padron() if not prio_de(lid)[0]])
+    check("todas las ligas del padrón entran a la agenda (con grupos y segundas abiertos)",
+          all(prio_de(lid, grupos=True, segundas=True)[0] > 0 for lid in _padron()),
+          [lid for lid in _padron() if not prio_de(lid, grupos=True, segundas=True)[0]])
     check("las doce que el criterio viejo tiraba ahora entran",
-          all(prio_de(lid)[0] > 0 for lid in (71, 239, 265, 268, 242, 250, 344,
-                                              299, 94, 144, 3, 848)),
+          all(prio_de(lid, grupos=True)[0] > 0 for lid in (71, 239, 265, 268, 242, 250, 344,
+                                                           299, 94, 144, 3, 848)),
           [lid for lid in (71, 239, 265, 268, 242, 250, 344, 299, 94, 144, 3, 848)
-           if not prio_de(lid)[0]])
+           if not prio_de(lid, grupos=True)[0]])
+    # LO QUE LLENÓ LA CORRIDA DEL 16/09: fase liga de Europa League y segundas
+    check("por defecto la fase de grupos / fase liga internacional QUEDA FUERA, con motivo",
+          prio_de(3, "League Stage - 1")[0] == 0 and "grupos=true" in prio_de(3, "League Stage - 1")[1],
+          prio_de(3, "League Stage - 1"))
+    check("y la fase decisiva entra igual sin pedirlo", prio_de(3, "Round of 16")[0] == 2, prio_de(3, "Round of 16"))
+    check("por defecto las segundas divisiones QUEDAN FUERA, con motivo",
+          all(prio_de(lid)[0] == 0 and "segundas=true" in prio_de(lid)[1] for lid in SEGUNDAS),
+          [prio_de(lid) for lid in SEGUNDAS if prio_de(lid)[0]])
+    check("con segundas=true entran, al final (7)", all(prio_de(lid, segundas=True)[0] == 7 for lid in SEGUNDAS))
+    check("una primera división sin equipo arriba sigue entrando (6)", prio_de(140)[0] == 6, prio_de(140))
     check("una fase decisiva manda sobre la fase de grupos",
-          prio_de(13, "Quarter-finals")[0] < prio_de(13, "Group Stage - 4")[0],
-          (prio_de(13, "Quarter-finals"), prio_de(13, "Group Stage - 4")))
+          prio_de(13, "Quarter-finals")[0] < prio_de(13, "Group Stage - 4", grupos=True)[0],
+          (prio_de(13, "Quarter-finals"), prio_de(13, "Group Stage - 4", grupos=True)))
     check("y las cuatro maneras de nombrar una llave se reconocen",
           all("fase decisiva" in prio_de(2, r)[1]
               for r in ("Round of 16", "Quarter-finals", "Semi-finals", "Final")),
           [prio_de(2, r)[1] for r in ("Round of 16", "Quarter-finals", "Semi-finals", "Final")])
     check("la Liga 1 de Perú sigue primera", prio_de(281)[0] == 1, prio_de(281))
-    check("una segunda división entra, pero al final",
-          prio_de(141)[0] > prio_de(140)[0] > 0, (prio_de(141), prio_de(140)))
+    check("una segunda división (con segundas=true) entra, pero al final",
+          prio_de(141, segundas=True)[0] > prio_de(140)[0] > 0, (prio_de(141, segundas=True), prio_de(140)))
     check("dentro de una liga, el equipo en el top 6 o en crisis va antes",
           prio_de(71, pl=3)[0] < prio_de(71, pl=14, pv=17)[0],
           (prio_de(71, pl=3), prio_de(71, pl=14, pv=17)))

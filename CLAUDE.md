@@ -131,8 +131,12 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   UNA sola fuente, porque dos listas de «ligas importantes» en dos archivos se
   separan solas —y ya se separaron—. Orden: Liga 1 Perú · internacional en fase
   decisiva (de octavos, leída de `league_round`) · clásico DENTRO del padrón ·
-  liga con equipo top 6 o en crisis · internacional en grupos · resto de
-  primeras · segundas divisiones. Las copas nacionales quedan fuera a
+  liga con equipo top 6 o en crisis · resto de primeras. La fase de grupos /
+  fase liga internacional y las segundas divisiones quedan FUERA por defecto
+  (`grupos=true` / `segundas=true` las meten, al final): un jueves de Europa
+  League llenaba los cupos con partidos de relleno. Sin `fecha` la agenda es
+  «desde ahora y por 24 h», a la hora que se corra (no «mañana en UTC»), y
+  `liga=<texto>` acota por país o nombre. Las copas nacionales quedan fuera a
   propósito. El clásico se evalúa DESPUÉS del padrón: mirarlo antes hacía que
   un mismo torneo entrara o no según se activara el etiquetador de derbis. Un
   descarte viaja SIEMPRE con su motivo y el id de la liga, y la respuesta trae
