@@ -985,6 +985,51 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
             </section>
           )}
 
+          {/* REVENTÓN DE LA BURBUJA: los números los calcula el backend al leer
+              (docs/REVENTON.md); la línea de abajo es la lectura de Cowork */}
+          {(ls.reventonCalculado || ls.reventon) && (
+            <section style={{ padding: '13px 16px', borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+              <div style={{ font: '700 10px var(--mono)', color: 'var(--accent)', letterSpacing: '.6px', textTransform: 'uppercase', marginBottom: 9 }}>Reventón de la burbuja · calculado al leer · guía, no probabilidad</div>
+              <div style={{ display: 'grid', gridTemplateColumns: dosCol, gap: 10 }}>
+                {(['a', 'b'] as const).map((l) => {
+                  const r = ls.reventonCalculado?.[l]
+                  const nombre = l === 'a' ? parte.partido.equipoA : parte.partido.equipoB
+                  const color = !r?.riesgo ? 'var(--t3)' : { bajo: 'var(--up)', medio: 'var(--mark)', alto: 'var(--down)', 'muy alto': 'var(--down)', 'sin base': 'var(--t3)' }[r.riesgo.nivel]
+                  return (
+                    <div key={l} style={{ padding: '10px 12px', borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--line)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ font: '700 12px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0 }}>{nombre}</span>
+                        {r?.riesgo ? (
+                          <>
+                            <span style={{ padding: '3px 8px', borderRadius: 6, background: `color-mix(in oklch, ${color}, transparent 84%)`, color, font: '700 9.5px var(--mono)', textTransform: 'uppercase' }}>riesgo {r.riesgo.nivel} · {r.riesgo.puntos} pts</span>
+                            <span style={{ font: '600 9.5px var(--mono)', color: 'var(--t3)' }}>confianza {r.riesgo.confianza}</span>
+                          </>
+                        ) : (
+                          <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)' }}>{r?.error ?? 'sin burbuja abierta'}</span>
+                        )}
+                      </div>
+                      {r?.actual && (
+                        <div style={{ font: '500 10.5px var(--mono)', color: 'var(--t2)', marginTop: 5 }}>
+                          burbuja {r.actual.signo} · K {r.actual.k > 0 ? '+' : ''}{r.actual.k.toFixed(1)} · {r.actual.partidos} partido{r.actual.partidos === 1 ? '' : 's'}
+                          {r.rival && <> · rival {r.rival.tramo === 'lejos' ? 'lejos de la zona' : r.rival.tramo === 'zona' ? 'en zona' : r.rival.tramo === 'fuerte' ? 'más allá de la zona' : 'muy por encima de la zona'} ({r.rival.nivelProximo.toFixed(2)} vs mediana {r.rival.medianaReventon.toFixed(2)})</>}
+                        </div>
+                      )}
+                      {r?.riesgo && (
+                        <ul style={{ margin: '6px 0 0', paddingLeft: 16, font: '500 11px var(--sans)', color: 'var(--t2)', lineHeight: 1.45 }}>
+                          {r.riesgo.motivos.map((m, i) => <li key={i}>{m}</li>)}
+                        </ul>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+              <div style={{ font: '500 12.5px var(--sans)', color: ls.reventon?.trim() ? 'var(--t1)' : 'var(--t3)', lineHeight: 1.5, marginTop: 10 }}>
+                <span style={{ font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.4px', marginRight: 6 }}>LECTURA DE COWORK</span>
+                {ls.reventon?.trim() || 'sin lectura — el parte llegó sin esta línea'}
+              </div>
+            </section>
+          )}
+
           <section style={{ padding: '14px 16px', borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
             <div style={{ font: '700 10px var(--mono)', color: 'var(--accent)', letterSpacing: '.6px', textTransform: 'uppercase', marginBottom: 9 }}>Pronóstico · tres fuentes declaradas</div>
             <div style={{ display: 'flex', gap: 10, marginBottom: 11, flexWrap: 'wrap' }}>

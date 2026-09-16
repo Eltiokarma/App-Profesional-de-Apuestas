@@ -2044,6 +2044,26 @@ components:
         contextoEmocional: { type: string }
         datoEstructural: { type: string }
         paradoja: { type: string, description: '"" si no hay paradoja' }
+        reventon: { type: string, description: 'la LECTURA de Cowork del reventón de la burbuja (docs/REVENTON.md): una línea por equipo, qué racha no se recomienda seguir y por qué. Los números no se copian' }
+        reventonCalculado:
+          type: object
+          nullable: true
+          readOnly: true
+          description: 'solo en el GET: el reventón de cada lado con este partido como próximo, familia total, calculado al leer (docs/REVENTON.md). error si no se pudo calcular'
+          properties:
+            a: { $ref: '#/components/schemas/ReventonLado' }
+            b: { $ref: '#/components/schemas/ReventonLado' }
+    ReventonLado:
+      type: object
+      required: [actual, riesgo, rival, estabilidad, partidos, aviso]
+      properties:
+        actual: { type: object, nullable: true, description: 'la burbuja abierta (signo, k, partidos, kPico, desde, aplicaAlProximo)' }
+        riesgo: { type: object, nullable: true, description: 'nivel, puntos, motivos, confianza, confianzaMotivos' }
+        rival: { type: object, nullable: true, description: 'nivelProximo, medianaReventon, distancia, enZona, tramo' }
+        estabilidad: { type: string, enum: [estable, en transición, inestable, sin dato] }
+        partidos: { type: integer }
+        aviso: { type: string }
+        error: { type: string }
     BloqueTde:
       type: object
       description: >

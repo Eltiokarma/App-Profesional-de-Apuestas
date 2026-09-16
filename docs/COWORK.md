@@ -48,6 +48,7 @@ se perdería.
 | reventón de la burbuja (K) | **nada**: se lee de `GET /equipos/{id}/burbujas` (`docs/REVENTON.md`), 0 tokens | tarjeta **Reventón · guía** en Burbujas y Equipo — `backend/analisis/burbuja.py` |
 | bloque H · matchup | diagnóstico, razón, perfiles y `h2a/h2b/h2c` | pestaña **Matchup** |
 | lectura SAD | módulo operativo, 1X2, contexto, dato estructural, paradoja | pestaña **Lectura SAD** |
+| reventón de la burbuja | `lecturaSad.reventon`: UNA línea por equipo con su lectura (qué racha no seguir y por qué), tras leer `GET /equipos/{id}/burbujas`; los números **no**: el backend los recalcula al leer en `reventonCalculado` (`docs/REVENTON.md`) | pestaña **Lectura SAD**, caja «Reventón de la burbuja» |
 | caja de sensibilidad | `sensibilidad` por equipo | pestaña **Lectura SAD** |
 | `sad-analysis` | las tres fuentes de probabilidad + falsador | pestaña **Lectura SAD** |
 | `teorema-del-echado` | P1a, F2 y F1 **los calcula el backend** (`GET /analisis/cowork/tde/{id}`); el resto lo escribís vos | pestaña **Teorema del Echado** |
@@ -609,7 +610,7 @@ Ponderado»*.
 
 ---
 
-# PROMPT COWORK — SAD BATCH NOCTURNO v2.3
+# PROMPT COWORK — SAD BATCH NOCTURNO v2.4
 
 > Pegar como instrucción de la tarea en Claude Cowork.
 > Reemplazar lo que está entre `<< >>` antes de correr.
@@ -748,6 +749,29 @@ Escribís vos (es juicio, no se puede calcular):
 - El matchup H: diagnóstico, razón, el perfil táctico de cada equipo Y los tres
   indicadores `h2a` / `h2b` / `h2c` (verde/ambar/rojo/na) que lo sostienen. Un
   "MATCHUP FAVORABLE" sin los tres es una etiqueta que nadie puede discutir.
+- EL REVENTÓN DE LA BURBUJA, ANTES de escribir la lectura SAD y el 1X2:
+    GET {base}/fixtures/{fixtureId}            → `local.id` y `visitante.id`
+    GET {base}/equipos/{local.id}/burbujas  y  GET {base}/equipos/{visitante.id}/burbujas
+  Es una guía CALCULADA de cuándo la K de resultado de cada equipo suele
+  volver a cero, calibrada con 171 mil burbujas reales. No es probabilidad y
+  no la reemplaces con tu impresión. Mirá `familias.total` (la que manda):
+  `riesgo.nivel`, `riesgo.puntos`, `riesgo.confianza`, `riesgo.motivos` y
+  `rival.tramo`. Reglas de uso:
+    · riesgo MUY ALTO o ALTO con confianza media o alta → NO recomiendes que
+      la racha siga. Si tu 1X2 iba por ahí, decilo en la lectura y bajá el
+      peso de esa fuente.
+    · riesgo BAJO no autoriza nada: es «sin señal de reventón», no «va a
+      seguir». Seis de cada diez burbujas revientan igual.
+    · la K alta NO es alarma (viene marcada «informativo, la K no puntúa»):
+      lo que revienta es el rival que viene frente al nivel con el que ese
+      equipo suele caer. Leé el `tramo` del rival.
+    · `sin base` = no hay reventones previos de ese signo: no lo uses.
+    · confianza baja (DT nuevo, plantel en obra, muestra corta) = la historia
+      es de otro equipo; anotalo y no apoyes nada solo en esto.
+  Escribí UNA línea por equipo en `lecturaSad.reventon`, por ejemplo:
+  «A: muy alto (8), rival mucho más fuerte que su zona de reventón → no
+  seguir la racha de A; B: bajo, sin señal». NO copies los números al
+  parte: el backend los recalcula al leer y los muestra al lado de tu línea.
 - La LECTURA SAD, que es lo que se lee primero cuando ya se vieron los números:
   módulo operativo, 1X2, contexto emocional, dato estructural y la paradoja del
   partido (vacía si no hay).
@@ -1065,13 +1089,14 @@ ausente.
 # PROMPT CORTO — "RETOMAR HOY": lo que el batch no subió
 
 Para cuando la corrida nocturna se cortó o se saltó partidos y hay que cubrir
-los de hoy que todavía no arrancaron. Mismas reglas del batch (v2.3); cambia
+los de hoy que todavía no arrancaron. Mismas reglas del batch (v2.4); cambia
 solo cómo se elige la lista.
 
 ```text
 Vas a cubrir los partidos de HOY que se quedaron sin parte. Reglas del batch
-nocturno v2.3 (contrato, sesión limpia por partido, EFE con sus sub-scores,
-TDE con indicadores, tres fuentes del pronóstico). Nada nuevo, salvo la lista.
+nocturno v2.4 (contrato, sesión limpia por partido, EFE con sus sub-scores,
+TDE con indicadores, reventón de la burbuja leído antes del 1X2, tres
+fuentes del pronóstico). Nada nuevo, salvo la lista.
 
 0. Anclá la hora real con la herramienta del sistema (America/Lima) y leé
    GET << {base} >>/analisis/cowork/contrato.
@@ -1096,6 +1121,14 @@ TDE con indicadores, tres fuentes del pronóstico). Nada nuevo, salvo la lista.
      `excluidos` con motivo; uno que no pudiste puntuar se deja fuera y va a
      `pendientes`; nunca un 0 inventado).
    - Tabla F1 (14-16 con zona/rol/apps) y bajas públicas también en `plantel`.
+   - Reventón de la burbuja ANTES del 1X2: GET /fixtures/{fixtureId} te da
+     `local.id` y `visitante.id`; GET /equipos/{id}/burbujas de los dos.
+     Mirá `familias.total.riesgo` (nivel, puntos, confianza, motivos) y
+     `familias.total.rival.tramo`. MUY ALTO o ALTO con confianza media o
+     alta = no recomendar que esa racha siga (y decirlo en la lectura);
+     BAJO no autoriza nada; la K alta no es alarma, el rival sí; `sin base`
+     no se usa. Una línea por equipo en `lecturaSad.reventon`, sin copiar
+     números (el backend los recalcula al leer).
    - Alertas, matchup con h2a/h2b/h2c, lectura SAD, sensibilidad.
    - `tde.bloques[]` uno por equipo con `indicadores` 0/0.5/1, escala 0-10.
    - `timelineEventos` solo institucionales; `cadena.a/b.pronostico`;
