@@ -48,8 +48,9 @@ def main():
 
     print("— cabecera —")
     check("20 partidos procesados", out["partidos"] == 20, out["partidos"])
-    check("nivel medio (bin 5) → mandan las específicas de la condición del próximo (visita)",
-          out["mandan"]["tipo"] == "especificas" and out["mandan"]["familias"] == ["visita"], out["mandan"])
+    check("manda la familia total (el backtest la puso por delante); la regla del nivel viaja como dato sin confirmar",
+          out["mandan"]["tipo"] == "globales" and out["mandan"]["familias"] == ["total"]
+          and out["mandan"]["reglaNivel"]["familias"] == ["visita"] and out["mandan"]["reglaNivel"]["confirmada"] is False, out["mandan"])
     check("el aviso dice que es guía, no probabilidad", "no probabilidad" in out["aviso"])
 
     print("\n— familia total —")
@@ -81,11 +82,13 @@ def main():
           (a["signo"], a["k"], a["partidos"], a["aplicaAlProximo"]) == ("+", 22.1, 6, True), a)
     check("posición: percentil 100 en K y en racha, K = 2.95× la mediana",
           t["posicion"] == {"percentilK": 100, "percentilRacha": 100, "kSobreMediana": 2.95}, t["posicion"])
-    check("rival próximo (2.6) en zona de reventón (mediana 2.0, distancia +0.6)",
-          t["rival"] == {"nivelProximo": 2.6, "medianaReventon": 2.0, "distancia": 0.6, "enZona": True}, t["rival"])
+    check("rival próximo (2.6) mucho más fuerte que la mediana de reventón (2.0, distancia +0.6) → tramo muy fuerte",
+          t["rival"] == {"nivelProximo": 2.6, "medianaReventon": 2.0, "distancia": 0.6, "enZona": True, "tramo": "muy fuerte"}, t["rival"])
     rg = t["riesgo"]
-    check("riesgo MUY ALTO con 7 puntos (K ≥ mediana +2, > máximo +1, racha ≥ mediana +1, > máxima +1, rival en zona +2)",
-          rg["nivel"] == "muy alto" and rg["puntos"] == 7 and len(rg["motivos"]) == 5, rg)
+    check("riesgo MUY ALTO con 8 puntos (racha ≥ mediana +1, rival muy fuerte +7; la K no puntúa) y 3 motivos",
+          rg["nivel"] == "muy alto" and rg["puntos"] == 8 and len(rg["motivos"]) == 3, rg)
+    check("la K se describe pero se declara informativa (no puntúa)",
+          any("la K no puntúa" in m and "22.1" in m for m in rg["motivos"]), rg["motivos"])
     check("confianza BAJA: muestra corta (3) y estabilidad inestable la tumban",
           rg["confianza"] == "baja" and any("inestable" in m for m in rg["confianzaMotivos"]), rg["confianzaMotivos"])
 
@@ -96,8 +99,8 @@ def main():
           (lo["actual"]["k"], lo["actual"]["partidos"], lo["actual"]["aplicaAlProximo"]) == (9.5, 3, False), lo["actual"])
     check("sin rival evaluado (otra condición) y motivo explícito",
           lo["rival"] is None and any("otra condición" in m for m in lo["riesgo"]["motivos"]), lo["riesgo"])
-    check("riesgo MEDIO con 2 puntos (K por encima del mínimo, racha ≥ mediana)",
-          lo["riesgo"]["nivel"] == "medio" and lo["riesgo"]["puntos"] == 2, lo["riesgo"])
+    check("riesgo BAJO con 1 punto (solo la racha ≥ mediana; sin rival que puntúe)",
+          lo["riesgo"]["nivel"] == "bajo" and lo["riesgo"]["puntos"] == 1, lo["riesgo"])
     check("historial − local: K pico 3.0 repetida → moda 3.0", lo["historial"]["negativo"]["kPico"]["moda"] == 3.0)
     check("percentil K 50 (una de dos por debajo)", lo["posicion"]["percentilK"] == 50, lo["posicion"])
 
@@ -105,7 +108,7 @@ def main():
     vi = out["familias"]["visita"]
     check("9 partidos de visita", vi["partidosEnCondicion"] == 9)
     check("burbuja abierta + K 12.6 · 3 partidos", (vi["actual"]["k"], vi["actual"]["partidos"]) == (12.6, 3))
-    check("riesgo MUY ALTO (7) y moda de partidos 1",
+    check("riesgo MUY ALTO (8) y moda de partidos 1",
           vi["riesgo"]["nivel"] == "muy alto" and vi["historial"]["positivo"]["partidos"]["moda"] == 1.0, vi["riesgo"])
 
     print("\n— estabilidad —")
@@ -128,19 +131,28 @@ def main():
           sd["estabilidad"]["grado"] == "sin dato" and sd["familias"]["total"]["riesgo"]["confianza"] == "media", sd["estabilidad"])
 
     print("\n— qué constante manda —")
-    check("bin 8 → globales", analizar(filas, ctx, bin=8)["mandan"] == {"tipo": "globales", "familias": ["total"],
-          "motivo": "nivel alto (bin 8): pesan más las constantes globales"})
-    check("bin 1 → globales (nivel bajo)", analizar(filas, ctx, bin=1)["mandan"]["tipo"] == "globales")
+    r8 = analizar(filas, ctx, bin=8)["mandan"]["reglaNivel"]
+    check("regla del nivel, bin 8 → globales (como dato, no confirmada)",
+          r8["tipo"] == "globales" and r8["familias"] == ["total"] and r8["confirmada"] is False, r8)
+    check("regla del nivel, bin 1 → globales (nivel bajo)", analizar(filas, ctx, bin=1)["mandan"]["reglaNivel"]["tipo"] == "globales")
     sp = analizar(filas, ctx, proximo=None)
-    check("sin próximo y nivel medio → las dos específicas", sp["mandan"]["familias"] == ["local", "visita"])
+    check("sin próximo y nivel medio → la regla diría las dos específicas; manda igual la total",
+          sp["mandan"]["reglaNivel"]["familias"] == ["local", "visita"] and sp["mandan"]["familias"] == ["total"])
     check("sin próximo: el rival no puntúa y se dice",
           sp["familias"]["total"]["rival"] is None and any("sin próximo" in m for m in sp["familias"]["total"]["riesgo"]["motivos"]))
     lejos = analizar(filas, ctx, proximo={**ctx["proximo"], "nivelRival": 1.5})
-    check("rival 1.5 con mediana 2.0 → fuera de zona, riesgo baja a ALTO (5)",
-          lejos["familias"]["total"]["rival"]["enZona"] is False and lejos["familias"]["total"]["riesgo"]["nivel"] == "alto"
-          and lejos["familias"]["total"]["riesgo"]["puntos"] == 5, lejos["familias"]["total"]["riesgo"])
+    check("rival 1.5 con mediana 2.0 → lejos (0 pts): solo queda la racha, riesgo BAJO (1)",
+          lejos["familias"]["total"]["rival"]["tramo"] == "lejos" and lejos["familias"]["total"]["rival"]["enZona"] is False
+          and lejos["familias"]["total"]["riesgo"]["nivel"] == "bajo" and lejos["familias"]["total"]["riesgo"]["puntos"] == 1,
+          lejos["familias"]["total"]["riesgo"])
     borde = analizar(filas, ctx, proximo={**ctx["proximo"], "nivelRival": 1.85})
-    check("tolerancia 0.15: rival 1.85 sigue en zona", borde["familias"]["total"]["rival"]["enZona"] is True)
+    check("tolerancia 0.15: rival 1.85 sigue en zona (+3 → 4, ALTO)",
+          borde["familias"]["total"]["rival"]["tramo"] == "zona" and borde["familias"]["total"]["riesgo"]["puntos"] == 4
+          and borde["familias"]["total"]["riesgo"]["nivel"] == "alto", borde["familias"]["total"]["riesgo"])
+    fuerte = analizar(filas, ctx, proximo={**ctx["proximo"], "nivelRival": 2.3})
+    check("rival 2.3 (distancia +0.3) → tramo fuerte (+5 → 6, MUY ALTO)",
+          fuerte["familias"]["total"]["rival"]["tramo"] == "fuerte" and fuerte["familias"]["total"]["riesgo"]["puntos"] == 6,
+          fuerte["familias"]["total"]["riesgo"])
 
     print("\n— bordes —")
     vacio = analizar([], ctx)
@@ -160,8 +172,8 @@ def main():
     check("burbuja NEGATIVA: signo −, K −6, 2 partidos", (tn["actual"]["signo"], tn["actual"]["k"], tn["actual"]["partidos"]) == ("-", -6.0, 2))
     check("racha de derrotas: se corta ante rivales de nivel ≤ mediana (1.5) → rival 1.2 en zona",
           tn["rival"]["enZona"] is True and any("cortarse" in m for m in tn["riesgo"]["motivos"]), tn)
-    check("K −6 supera la única K pico previa (1.5): puntúa como mediana y máximo",
-          tn["riesgo"]["puntos"] == 7 and tn["riesgo"]["nivel"] == "muy alto", tn["riesgo"])
+    check("burbuja −: rival 1.2 con mediana 1.5 es 0.3 más flojo → tramo fuerte (+5) + racha (+1) = 6, MUY ALTO",
+          tn["rival"]["tramo"] == "fuerte" and tn["riesgo"]["puntos"] == 6 and tn["riesgo"]["nivel"] == "muy alto", tn["riesgo"])
 
     print(f"\n{fallos} FALLAS" if fallos else "\nTODO OK")
     return 1 if fallos else 0

@@ -28,7 +28,7 @@ const out = analizar(filas)
 
 console.log('— cabecera —')
 check('20 partidos procesados', out.partidos === 20)
-check('nivel medio (bin 5) → mandan las específicas de la condición del próximo (visita)', out.mandan.tipo === 'especificas' && eq(out.mandan.familias, ['visita']), out.mandan)
+check('manda la familia total; la regla del nivel viaja como dato sin confirmar', out.mandan.tipo === 'globales' && eq(out.mandan.familias, ['total']) && eq(out.mandan.reglaNivel.familias, ['visita']) && out.mandan.reglaNivel.confirmada === false, out.mandan)
 check('el aviso dice que es guía, no probabilidad', out.aviso.includes('no probabilidad'))
 
 console.log('\n— familia total —')
@@ -51,9 +51,10 @@ check('historial −: n=2, K pico media 8 sin moda, nivel rival media 1.25', hn.
 const a = t.actual!
 check('burbuja abierta: + · K 22.1 · 6 partidos · aplica al próximo', eq([a.signo, a.k, a.partidos, a.aplicaAlProximo], ['+', 22.1, 6, true]), a)
 check('posición: percentil 100 en K y en racha, K = 2.95× la mediana', eq(t.posicion, { percentilK: 100, percentilRacha: 100, kSobreMediana: 2.95 }), t.posicion)
-check('rival próximo (2.6) en zona de reventón (mediana 2.0, distancia +0.6)', eq(t.rival, { nivelProximo: 2.6, medianaReventon: 2, distancia: 0.6, enZona: true }), t.rival)
+check('rival próximo (2.6) mucho más fuerte que la mediana (2.0) → tramo muy fuerte', eq(t.rival, { nivelProximo: 2.6, medianaReventon: 2, distancia: 0.6, enZona: true, tramo: 'muy fuerte' }), t.rival)
 const rg = t.riesgo!
-check('riesgo MUY ALTO con 7 puntos y 5 motivos', rg.nivel === 'muy alto' && rg.puntos === 7 && rg.motivos.length === 5, rg)
+check('riesgo MUY ALTO con 8 puntos (racha +1, rival muy fuerte +7) y 3 motivos', rg.nivel === 'muy alto' && rg.puntos === 8 && rg.motivos.length === 3, rg)
+check('la K se describe pero no puntúa', rg.motivos.some((m) => m.includes('la K no puntúa') && m.includes('22.1')), rg.motivos)
 check('confianza BAJA: muestra corta (3) y estabilidad inestable', rg.confianza === 'baja' && rg.confianzaMotivos.some((m) => m.includes('inestable')), rg.confianzaMotivos)
 
 console.log('\n— familia local —')
@@ -61,7 +62,7 @@ const lo = out.familias.local
 check('11 partidos de local', lo.partidosEnCondicion === 11)
 check('burbuja abierta + K 9.5, 3 partidos, NO aplica al próximo', eq([lo.actual!.k, lo.actual!.partidos, lo.actual!.aplicaAlProximo], [9.5, 3, false]), lo.actual)
 check('sin rival evaluado (otra condición) y motivo explícito', lo.rival === null && lo.riesgo!.motivos.some((m) => m.includes('otra condición')), lo.riesgo)
-check('riesgo MEDIO con 2 puntos', lo.riesgo!.nivel === 'medio' && lo.riesgo!.puntos === 2, lo.riesgo)
+check('riesgo BAJO con 1 punto (solo la racha)', lo.riesgo!.nivel === 'bajo' && lo.riesgo!.puntos === 1, lo.riesgo)
 check('historial − local: K pico 3.0 repetida → moda 3.0', lo.historial.negativo!.kPico.moda === 3)
 check('percentil K 50', lo.posicion!.percentilK === 50, lo.posicion)
 
@@ -69,7 +70,7 @@ console.log('\n— familia visita —')
 const vi = out.familias.visita
 check('9 partidos de visita', vi.partidosEnCondicion === 9)
 check('burbuja abierta + K 12.6 · 3 partidos', eq([vi.actual!.k, vi.actual!.partidos], [12.6, 3]))
-check('riesgo MUY ALTO (7) y moda de partidos 1', vi.riesgo!.nivel === 'muy alto' && vi.historial.positivo!.partidos.moda === 1, vi.riesgo)
+check('riesgo MUY ALTO (8) y moda de partidos 1', vi.riesgo!.nivel === 'muy alto' && vi.historial.positivo!.partidos.moda === 1, vi.riesgo)
 
 console.log('\n— estabilidad —')
 const e = out.estabilidad
@@ -87,15 +88,18 @@ const sd = analizar(filas, { plantilla: null })
 check('sin plantilla → SIN DATO y confianza no pasa de MEDIA', sd.estabilidad.grado === 'sin dato' && sd.familias.total.riesgo!.confianza === 'media', sd.estabilidad)
 
 console.log('\n— qué constante manda —')
-check('bin 8 → globales', eq(analizar(filas, { bin: 8 }).mandan, { tipo: 'globales', familias: ['total'], motivo: 'nivel alto (bin 8): pesan más las constantes globales' }))
-check('bin 1 → globales (nivel bajo)', analizar(filas, { bin: 1 }).mandan.tipo === 'globales')
+const r8 = analizar(filas, { bin: 8 }).mandan.reglaNivel
+check('regla del nivel, bin 8 → globales (dato, no confirmada)', r8.tipo === 'globales' && eq(r8.familias, ['total']) && r8.confirmada === false, r8)
+check('regla del nivel, bin 1 → globales', analizar(filas, { bin: 1 }).mandan.reglaNivel.tipo === 'globales')
 const sp = analizar(filas, { proximo: null })
-check('sin próximo y nivel medio → las dos específicas', eq(sp.mandan.familias, ['local', 'visita']))
+check('sin próximo: la regla diría las dos específicas; manda igual la total', eq(sp.mandan.reglaNivel.familias, ['local', 'visita']) && eq(sp.mandan.familias, ['total']))
 check('sin próximo: el rival no puntúa y se dice', sp.familias.total.rival === null && sp.familias.total.riesgo!.motivos.some((m) => m.includes('sin próximo')))
 const lejos = analizar(filas, { proximo: { ...ctx.proximo!, nivelRival: 1.5 } })
-check('rival 1.5 fuera de zona → riesgo ALTO (5)', lejos.familias.total.rival!.enZona === false && lejos.familias.total.riesgo!.nivel === 'alto' && lejos.familias.total.riesgo!.puntos === 5, lejos.familias.total.riesgo)
+check('rival 1.5 → lejos (0 pts), solo la racha: BAJO (1)', lejos.familias.total.rival!.tramo === 'lejos' && lejos.familias.total.rival!.enZona === false && lejos.familias.total.riesgo!.nivel === 'bajo' && lejos.familias.total.riesgo!.puntos === 1, lejos.familias.total.riesgo)
 const borde = analizar(filas, { proximo: { ...ctx.proximo!, nivelRival: 1.85 } })
-check('tolerancia 0.15: rival 1.85 sigue en zona', borde.familias.total.rival!.enZona === true)
+check('tolerancia 0.15: rival 1.85 sigue en zona (+3 → 4, ALTO)', borde.familias.total.rival!.tramo === 'zona' && borde.familias.total.riesgo!.puntos === 4 && borde.familias.total.riesgo!.nivel === 'alto', borde.familias.total.riesgo)
+const fuerte = analizar(filas, { proximo: { ...ctx.proximo!, nivelRival: 2.3 } })
+check('rival 2.3 (+0.3) → tramo fuerte (+5 → 6, MUY ALTO)', fuerte.familias.total.rival!.tramo === 'fuerte' && fuerte.familias.total.riesgo!.puntos === 6, fuerte.familias.total.riesgo)
 
 console.log('\n— bordes —')
 const vacio = analizar([])
@@ -111,7 +115,7 @@ const neg = analizar(
 const tn = neg.familias.total
 check('burbuja NEGATIVA: signo −, K −6, 2 partidos', eq([tn.actual!.signo, tn.actual!.k, tn.actual!.partidos], ['-', -6, 2]))
 check('racha de derrotas: rival 1.2 ≤ mediana 1.5 → en zona, «cortarse»', tn.rival!.enZona === true && tn.riesgo!.motivos.some((m) => m.includes('cortarse')), tn)
-check('K −6 supera la única K pico previa → 7 puntos, MUY ALTO', tn.riesgo!.puntos === 7 && tn.riesgo!.nivel === 'muy alto', tn.riesgo)
+check('burbuja −: rival 0.3 más flojo → tramo fuerte (+5) + racha (+1) = 6, MUY ALTO', tn.rival!.tramo === 'fuerte' && tn.riesgo!.puntos === 6 && tn.riesgo!.nivel === 'muy alto', tn.riesgo)
 
 console.log(failed ? `\n${failed} FALLAS` : '\nTODO OK')
 process.exit(failed ? 1 : 0)

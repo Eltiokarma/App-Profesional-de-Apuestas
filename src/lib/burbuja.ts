@@ -34,7 +34,14 @@ const CLAVE_FUSION: Record<FamiliaBurbuja, 'k' | 'kLocal' | 'kVisita'> = { total
 
 export const BIN_GLOBALES_ALTO = 7
 export const BIN_GLOBALES_BAJO = 2
+// rival frente a la mediana con la que suele reventar, en la dirección del
+// riesgo: lejos (< −0.15) · zona (±0.15) · fuerte (≥ 0.15) · muy fuerte (≥ 0.45).
+// Puntos calibrados con el backtest real del 16/09/2026 (docs/REVENTON.md §8).
 export const ZONA_TOLERANCIA = 0.15
+export const RIVAL_FUERTE = 0.45
+export const PUNTOS_RIVAL: Record<TramoRival, number> = { lejos: 0, zona: 3, fuerte: 5, 'muy fuerte': 7 }
+export const PUNTOS_RACHA = 1
+export type TramoRival = 'lejos' | 'zona' | 'fuerte' | 'muy fuerte'
 export const MUESTRA_BAJA = 3
 export const MUESTRA_ALTA = 6
 export const DT_ASENTADO_DIAS = 90
@@ -220,46 +227,40 @@ function analizarFamilia(filas: FilaK[], familia: FamiliaBurbuja, proximo: Proxi
 
   let puntos = 0
   const motivos: string[] = []
-  if (kAbs >= medK) {
-    puntos += 2
-    motivos.push(`K ${r2(kAbs)} ya está en la mediana con la que revienta (${medK})`)
-  } else if (kAbs >= base.kPico.min) {
-    puntos += 1
-    motivos.push(`ya reventó con menos K que la actual (mínimo ${base.kPico.min})`)
-  } else {
-    motivos.push(`K ${r2(kAbs)} por debajo de todo reventón previo (mínimo ${base.kPico.min})`)
-  }
+  // La K NO puntúa: el backtest real (docs/REVENTON.md §8) mostró que estar
+  // por encima de la K con la que suele reventar no adelanta el reventón.
   if (kAbs >= base.kPico.max) {
-    puntos += 1
-    motivos.push(`nunca aguantó tanta K (máximo previo ${base.kPico.max})`)
+    motivos.push(`K ${r2(kAbs)}: nunca aguantó tanta (máximo previo ${base.kPico.max}) · informativo, la K no puntúa`)
+  } else if (kAbs >= medK) {
+    motivos.push(`K ${r2(kAbs)} por encima de la mediana de reventón (${medK}) · informativo, la K no puntúa`)
+  } else {
+    motivos.push(`K ${r2(kAbs)} por debajo de la mediana de reventón (${medK}) · informativo, la K no puntúa`)
   }
   const medP = base.partidos.mediana
   if (ep.partidos >= medP) {
-    puntos += 1
-    motivos.push(`${ep.partidos} partidos: en la mediana de racha (${medP}) o más`)
+    puntos += PUNTOS_RACHA
+    motivos.push(`${ep.partidos} partidos: en la mediana de racha (${medP}) o más (+${PUNTOS_RACHA})`)
   } else {
     motivos.push(`${ep.partidos} partidos: por debajo de la mediana de racha (${medP})`)
-  }
-  if (ep.partidos >= base.partidos.max) {
-    puntos += 1
-    motivos.push(`nunca sostuvo una racha más larga (máximo previo ${Math.trunc(base.partidos.max)})`)
   }
 
   if (proximo && aplica) {
     const medN = base.nivelRival.mediana
     const nivelProx = proximo.nivelRival
-    const enZona = signo === '+' ? nivelProx >= medN - ZONA_TOLERANCIA : nivelProx <= medN + ZONA_TOLERANCIA
-    out.rival = { nivelProximo: r2(nivelProx), medianaReventon: medN, distancia: r2(nivelProx - medN), enZona }
-    if (enZona) {
-      puntos += 2
-      motivos.push(
-        `el próximo rival (${proximo.rival}, nivel ${r2(nivelProx)}) está en la zona donde suele ${signo === '+' ? 'reventar' : 'cortarse la racha'} (mediana ${medN})`,
-      )
-    } else {
-      motivos.push(
-        `el próximo rival (${proximo.rival}, nivel ${r2(nivelProx)}) queda ${signo === '+' ? 'por debajo' : 'por encima'} de la zona de reventón (mediana ${medN})`,
-      )
-    }
+    // distancia en la dirección del riesgo: la burbuja + revienta ante rivales
+    // más fuertes que la mediana; la − se corta ante rivales más flojos
+    const d = r2(signo === '+' ? nivelProx - medN : medN - nivelProx)
+    const tramo: TramoRival = d < -ZONA_TOLERANCIA ? 'lejos' : d < ZONA_TOLERANCIA ? 'zona' : d < RIVAL_FUERTE ? 'fuerte' : 'muy fuerte'
+    const pts = PUNTOS_RIVAL[tramo]
+    puntos += pts
+    out.rival = { nivelProximo: r2(nivelProx), medianaReventon: medN, distancia: r2(nivelProx - medN), enZona: tramo !== 'lejos', tramo }
+    const quien = `el próximo rival (${proximo.rival}, nivel ${r2(nivelProx)})`
+    const verbo = signo === '+' ? 'reventar' : 'cortarse la racha'
+    const lado = signo === '+' ? 'fuerte' : 'flojo'
+    if (tramo === 'lejos') motivos.push(`${quien} queda lejos del nivel con el que suele ${verbo} (mediana ${medN})`)
+    else if (tramo === 'zona') motivos.push(`${quien} está en la zona donde suele ${verbo} (mediana ${medN}) (+${pts})`)
+    else if (tramo === 'fuerte') motivos.push(`${quien} es más ${lado} que los rivales con los que suele ${verbo} (mediana ${medN}) (+${pts})`)
+    else motivos.push(`${quien} es mucho más ${lado} que los rivales con los que suele ${verbo} (mediana ${medN}) (+${pts})`)
   } else if (proximo) {
     motivos.push('la familia no se mueve en el próximo partido (otra condición): el rival no puntúa')
   } else {
@@ -336,12 +337,15 @@ export function estabilidadDe(plantilla: PlantillaBurbuja | null | undefined, ho
 
 // ── entrada ─────────────────────────────────────────────────────────────────
 
-export function mandanDe(bin: number, proximo: ProximoBurbuja | null): BurbujasEquipoDTO['mandan'] {
+/** La hipótesis del nivel (alto o bajo → globales; medio → la condición del
+ *  próximo). Viaja como dato porque el backtest real NO la confirmó. */
+export function reglaNivel(bin: number, proximo: ProximoBurbuja | null): BurbujasEquipoDTO['mandan']['reglaNivel'] {
   if (bin >= BIN_GLOBALES_ALTO || bin <= BIN_GLOBALES_BAJO) {
     return {
       tipo: 'globales',
       familias: ['total'],
-      motivo: `nivel ${bin >= BIN_GLOBALES_ALTO ? 'alto' : 'bajo'} (bin ${bin}): pesan más las constantes globales`,
+      motivo: `nivel ${bin >= BIN_GLOBALES_ALTO ? 'alto' : 'bajo'} (bin ${bin}): pesarían más las globales`,
+      confirmada: false,
     }
   }
   const familias: FamiliaBurbuja[] = !proximo ? ['local', 'visita'] : [proximo.condicion === 'L' ? 'local' : 'visita']
@@ -349,8 +353,20 @@ export function mandanDe(bin: number, proximo: ProximoBurbuja | null): BurbujasE
     tipo: 'especificas',
     familias,
     motivo:
-      `nivel medio (bin ${bin}): pesan más las constantes de la condición` +
+      `nivel medio (bin ${bin}): pesarían más las de la condición` +
       (!proximo ? '' : ` — el próximo es de ${proximo.condicion === 'L' ? 'local' : 'visita'}`),
+    confirmada: false,
+  }
+}
+
+/** Qué familia pesa: la TOTAL, siempre (en el backtest real separa más que
+ *  local/visita en todos los niveles). La regla del nivel va en reglaNivel. */
+export function mandanDe(bin: number, proximo: ProximoBurbuja | null): BurbujasEquipoDTO['mandan'] {
+  return {
+    tipo: 'globales',
+    familias: ['total'],
+    motivo: 'la familia total es la que más separa en el backtest (todos los niveles); local y visita quedan como detalle',
+    reglaNivel: reglaNivel(bin, proximo),
   }
 }
 

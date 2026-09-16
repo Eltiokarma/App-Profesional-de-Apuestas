@@ -517,8 +517,10 @@ export interface FamiliaBurbujaDTO {
   historial: { positivo: HistorialSignoDTO | null; negativo: HistorialSignoDTO | null }
   /** Dónde está la burbuja abierta frente a los reventones de su signo. */
   posicion: { percentilK: number; percentilRacha: number; kSobreMediana: number | null } | null
-  /** El próximo rival frente al nivel con el que suele reventar (solo si la familia aplica). */
-  rival: { nivelProximo: number; medianaReventon: number; distancia: number; enZona: boolean } | null
+  /** El próximo rival frente al nivel con el que suele reventar (solo si la
+   *  familia aplica). `tramo` va en la dirección del riesgo: lejos (< −0.15
+   *  de la mediana) · zona (±0.15) · fuerte (≥ 0.15) · muy fuerte (≥ 0.45). */
+  rival: { nivelProximo: number; medianaReventon: number; distancia: number; enZona: boolean; tramo: 'lejos' | 'zona' | 'fuerte' | 'muy fuerte' } | null
   riesgo: RiesgoReventonDTO | null
 }
 
@@ -540,8 +542,15 @@ export interface BurbujasEquipoDTO {
   bin: number
   /** Partidos procesados por el motor (filas de constantes). */
   partidos: number
-  /** Qué constantes pesan más para este equipo según su nivel. */
-  mandan: { tipo: 'globales' | 'especificas'; familias: FamiliaBurbuja[]; motivo: string }
+  /** Qué familia pesa: la total, siempre (el backtest real la puso por
+   *  delante en todos los niveles). `reglaNivel` conserva la hipótesis del
+   *  nivel (alto/bajo → globales; medio → la condición) como dato, no decide. */
+  mandan: {
+    tipo: 'globales' | 'especificas'
+    familias: FamiliaBurbuja[]
+    motivo: string
+    reglaNivel: { tipo: 'globales' | 'especificas'; familias: FamiliaBurbuja[]; motivo: string; confirmada: boolean }
+  }
   proximo: { fixtureId: number; fecha: string; rivalId: number; rival: string; condicion: 'L' | 'V'; nivelRival: number } | null
   estabilidad: EstabilidadEquipoDTO
   familias: Record<FamiliaBurbuja, FamiliaBurbujaDTO>

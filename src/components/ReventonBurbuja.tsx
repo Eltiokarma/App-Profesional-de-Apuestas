@@ -185,8 +185,8 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
               <div style={rotulo}>PRÓXIMO RIVAL</div>
               {fam.rival ? (
                 <>
-                  <div style={mono(fam.rival.enZona ? 'var(--down)' : 'var(--up)')}>
-                    {fam.rival.enZona ? 'EN ZONA' : 'FUERA DE ZONA'}
+                  <div style={mono(fam.rival.tramo === 'lejos' ? 'var(--up)' : fam.rival.tramo === 'zona' ? 'var(--mark)' : 'var(--down)')}>
+                    {{ lejos: 'LEJOS DE LA ZONA', zona: 'EN ZONA', fuerte: signo === '+' ? 'MÁS FUERTE' : 'MÁS FLOJO', 'muy fuerte': signo === '+' ? 'MUCHO MÁS FUERTE' : 'MUCHO MÁS FLOJO' }[fam.rival.tramo]}
                   </div>
                   <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>
                     {data.proximo?.rival} · nivel {num(fam.rival.nivelProximo, 2)} vs mediana {num(fam.rival.medianaReventon, 2)} ({fam.rival.distancia > 0 ? '+' : ''}{num(fam.rival.distancia, 2)})

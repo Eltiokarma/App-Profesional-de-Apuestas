@@ -226,7 +226,8 @@ def resumir(obs: list[dict], horizonte: int, nombres: dict[int, str] | None = No
         "porSigno": {s: _tasa([o for o in con_base if o["signo"] == s]) for s in ("+", "-")},
         "porNivel": por_nivel,
         "monotona": monotona,
-        "porPuntos": {str(p): _tasa([o for o in con_base if o["puntos"] == p]) for p in range(0, 8)},
+        "porPuntos": {str(p): _tasa([o for o in con_base if o["puntos"] == p])
+                      for p in range(0, max((o["puntos"] for o in con_base), default=0) + 1)},
         "aucPuntos": _auc(con_base, "puntos"),
         "senales": senales,
         "porFamilia": familias,

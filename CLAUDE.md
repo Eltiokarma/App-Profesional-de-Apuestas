@@ -182,12 +182,21 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   dos corren sobre `scripts/casos_burbuja.json`, y una regla que cambia en un
   lado sin el otro tumba un test. Es GUÍA, no probabilidad: por signo, media ·
   mediana · moda de la K pico, los partidos y el nivel del rival que reventó
-  cada burbuja; la abierta hoy se compara con eso y con el próximo rival. Qué
-  constante manda sale del nivel (bin ≥ 7 o ≤ 2 → globales; medio → la de la
-  condición del próximo). La estabilidad (DT, ventana, bajas) mueve la
-  CONFIANZA, nunca el riesgo; dueños/organización van en `sinDato`. Sin
-  reventones previos del signo → `sin base`, jamás un número. Las K de goles
-  quedan fuera a propósito hasta que se decida sumarlas.
+  cada burbuja; la abierta hoy se compara con eso y con el próximo rival. Los
+  puntos del riesgo están CALIBRADOS con el backtest real (`--calibrar`,
+  §8 del doc, 171k burbujas): la K NO puntúa —estar por encima de la K con la
+  que suele reventar no adelanta el reventón—, la racha ≥ mediana suma 1 y el
+  rival frente a la mediana con la que revienta suma 3 · 5 · 7 (zona · fuerte
+  · muy fuerte, en la dirección del riesgo). Manda la familia total: la regla
+  del nivel (alto/bajo → globales, medio → específicas) no se confirmó y viaja
+  en `mandan.reglaNivel` como dato. Mover un peso se hace con el backtest a la
+  vista, en los dos lados y en los vectores dorados. OJO: `/constantes` sirve
+  el nivel del rival CONTINUO recuperado de las q (`_nivel_rival_exacto`);
+  `processed_matches.nivel_rival` es el bin de ML y no es ese campo. La
+  estabilidad (DT, ventana, bajas) mueve la CONFIANZA, nunca el riesgo;
+  dueños/organización van en `sinDato`. Sin reventones previos del signo →
+  `sin base`, jamás un número. Las K de goles quedan fuera a propósito hasta
+  que se decida sumarlas.
 - Cuotas K (§3.8): las barras SIEMPRE vía `RachasCuotas` y su botonera
   `ControlesCuotas` (condición · mercado 1X2/Doble op./Ambos · ventana); cada
   mercado dibuja solo los partidos con SU cuota capturada — sin dato, la

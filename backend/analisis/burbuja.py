@@ -23,11 +23,15 @@ Reglas (las mismas en los dos lados):
   del rival del reventón. La moda se busca sobre valores redondeados (K a
   entero, nivel a un decimal); si nada se repite no hay moda, y en empate se
   toma la menor (avisar antes es más barato que avisar tarde).
-- Qué constante manda: nivel alto o bajo (bin ≥ 7 o ≤ 2) → las globales;
-  nivel medio → las específicas de la condición del próximo partido.
-- Riesgo de reventón por puntos, cada punto con su motivo. Confianza aparte:
-  la muestra de reventones y la estabilidad (DT, ventana, bajas) la suben o
-  la bajan, nunca el riesgo.
+- Qué constante manda: la total, siempre; la hipótesis del nivel (alto o bajo
+  → globales; medio → la condición del próximo) viaja en reglaNivel porque
+  el backtest real no la confirmó.
+- Riesgo de reventón por puntos CALIBRADOS con el backtest real (§8 del doc):
+  la K no puntúa (no adelanta el reventón), la racha ≥ mediana suma 1 y el
+  rival frente a la mediana con la que suele reventar suma 3 · 5 · 7 según
+  esté en zona, más fuerte o mucho más fuerte. Cada punto con su motivo.
+  Confianza aparte: la muestra de reventones y la estabilidad (DT, ventana,
+  bajas) la suben o la bajan, nunca el riesgo.
 """
 from __future__ import annotations
 
@@ -42,9 +46,15 @@ CLAVE_FUSION = {"total": "k", "local": "kLocal", "visita": "kVisita"}
 BIN_GLOBALES_ALTO = 7
 BIN_GLOBALES_BAJO = 2
 
-# rival en zona de reventón: a esta distancia (o más allá) de la mediana del
-# nivel con el que suele reventar
+# rival frente a la mediana del nivel con el que suele reventar, en la
+# dirección del riesgo (más fuerte para la burbuja +, más flojo para la −):
+# lejos (< −0.15) · zona (±0.15) · fuerte (≥ 0.15) · muy fuerte (≥ 0.45).
+# Puntos calibrados con el backtest real del 16/09/2026 (docs/REVENTON.md §8):
+# la logística dio 0.82 · 1.18 · 1.86 de log-odds, un punto cada 0.25.
 ZONA_TOLERANCIA = 0.15
+RIVAL_FUERTE = 0.45
+PUNTOS_RIVAL = {"lejos": 0, "zona": 3, "fuerte": 5, "muy fuerte": 7}
+PUNTOS_RACHA = 1               # racha ≥ mediana de partidos (coef 0.32)
 
 # muestra de reventones que sostiene una guía
 MUESTRA_BAJA = 3
@@ -258,49 +268,51 @@ def _analizar_familia(filas: list[dict], familia: str, proximo: dict | None, est
 
     puntos = 0
     motivos = []
-    if k_abs >= med_k:
-        puntos += 2
-        motivos.append(f"K {_r2(k_abs)} ya está en la mediana con la que revienta ({med_k})")
-    elif k_abs >= base["kPico"]["min"]:
-        puntos += 1
-        motivos.append(f"ya reventó con menos K que la actual (mínimo {base['kPico']['min']})")
-    else:
-        motivos.append(f"K {_r2(k_abs)} por debajo de todo reventón previo (mínimo {base['kPico']['min']})")
+    # La K NO puntúa. El backtest real (docs/REVENTON.md §8, 171k burbujas)
+    # mostró que estar por encima de la K con la que suele reventar no
+    # adelanta el reventón (coeficiente negativo): una K alta es un equipo
+    # fuerte, no una burbuja a punto. Se describe para ubicarla, nada más.
     if k_abs >= base["kPico"]["max"]:
-        puntos += 1
-        motivos.append(f"nunca aguantó tanta K (máximo previo {base['kPico']['max']})")
+        motivos.append(f"K {_r2(k_abs)}: nunca aguantó tanta (máximo previo {base['kPico']['max']}) · informativo, la K no puntúa")
+    elif k_abs >= med_k:
+        motivos.append(f"K {_r2(k_abs)} por encima de la mediana de reventón ({med_k}) · informativo, la K no puntúa")
+    else:
+        motivos.append(f"K {_r2(k_abs)} por debajo de la mediana de reventón ({med_k}) · informativo, la K no puntúa")
     med_p = base["partidos"]["mediana"]
     if ep["partidos"] >= med_p:
-        puntos += 1
-        motivos.append(f"{ep['partidos']} partidos: en la mediana de racha ({med_p}) o más")
+        puntos += PUNTOS_RACHA
+        motivos.append(f"{ep['partidos']} partidos: en la mediana de racha ({med_p}) o más (+{PUNTOS_RACHA})")
     else:
         motivos.append(f"{ep['partidos']} partidos: por debajo de la mediana de racha ({med_p})")
-    if ep["partidos"] >= base["partidos"]["max"]:
-        puntos += 1
-        motivos.append(f"nunca sostuvo una racha más larga (máximo previo {int(base['partidos']['max'])})")
 
     if proximo and aplica:
         med_n = base["nivelRival"]["mediana"]
         nivel_prox = float(proximo["nivelRival"])
-        distancia = _r2(nivel_prox - med_n)
-        # burbuja positiva: revienta ante rivales de este nivel o más;
-        # negativa: la racha de derrotas se corta ante rivales de este nivel o menos
-        en_zona = (nivel_prox >= med_n - ZONA_TOLERANCIA) if signo == "+" else (nivel_prox <= med_n + ZONA_TOLERANCIA)
+        # distancia EN LA DIRECCIÓN DEL RIESGO: la burbuja + revienta ante rivales
+        # más fuertes que la mediana; la − se corta ante rivales más flojos
+        d = _r2((nivel_prox - med_n) if signo == "+" else (med_n - nivel_prox))
+        tramo = ("lejos" if d < -ZONA_TOLERANCIA else "zona" if d < ZONA_TOLERANCIA
+                 else "fuerte" if d < RIVAL_FUERTE else "muy fuerte")
+        pts = PUNTOS_RIVAL[tramo]
+        puntos += pts
         out["rival"] = {
             "nivelProximo": _r2(nivel_prox),
             "medianaReventon": med_n,
-            "distancia": distancia,
-            "enZona": en_zona,
+            "distancia": _r2(nivel_prox - med_n),
+            "enZona": tramo != "lejos",
+            "tramo": tramo,
         }
-        if en_zona:
-            puntos += 2
-            motivos.append(
-                f"el próximo rival ({proximo['rival']}, nivel {_r2(nivel_prox)}) está en la zona "
-                f"donde suele {'reventar' if signo == '+' else 'cortarse la racha'} (mediana {med_n})")
+        quien = f"el próximo rival ({proximo['rival']}, nivel {_r2(nivel_prox)})"
+        verbo = "reventar" if signo == "+" else "cortarse la racha"
+        lado = "fuerte" if signo == "+" else "flojo"
+        if tramo == "lejos":
+            motivos.append(f"{quien} queda lejos del nivel con el que suele {verbo} (mediana {med_n})")
+        elif tramo == "zona":
+            motivos.append(f"{quien} está en la zona donde suele {verbo} (mediana {med_n}) (+{pts})")
+        elif tramo == "fuerte":
+            motivos.append(f"{quien} es más {lado} que los rivales con los que suele {verbo} (mediana {med_n}) (+{pts})")
         else:
-            motivos.append(
-                f"el próximo rival ({proximo['rival']}, nivel {_r2(nivel_prox)}) queda "
-                f"{'por debajo' if signo == '+' else 'por encima'} de la zona de reventón (mediana {med_n})")
+            motivos.append(f"{quien} es mucho más {lado} que los rivales con los que suele {verbo} (mediana {med_n}) (+{pts})")
     elif proximo:
         motivos.append("la familia no se mueve en el próximo partido (otra condición): el rival no puntúa")
     else:
@@ -386,19 +398,38 @@ def estabilidad_de(plantilla: dict | None, hoy: str) -> dict:
 
 # ── entrada ──────────────────────────────────────────────────────────────────
 
-def mandan_de(bin_: int, proximo: dict | None) -> dict:
+def regla_nivel(bin_: int, proximo: dict | None) -> dict:
+    """La hipótesis del nivel: alto o bajo → globales; medio → la condición del
+    próximo. Se conserva como dato porque el backtest NO la confirmó
+    (docs/REVENTON.md §8): la total separa más en todos los niveles."""
     if bin_ >= BIN_GLOBALES_ALTO or bin_ <= BIN_GLOBALES_BAJO:
         return {
             "tipo": "globales",
             "familias": ["total"],
-            "motivo": f"nivel {'alto' if bin_ >= BIN_GLOBALES_ALTO else 'bajo'} (bin {bin_}): pesan más las constantes globales",
+            "motivo": f"nivel {'alto' if bin_ >= BIN_GLOBALES_ALTO else 'bajo'} (bin {bin_}): pesarían más las globales",
+            "confirmada": False,
         }
     fams = ["local", "visita"] if not proximo else ["local" if proximo["condicion"] == "L" else "visita"]
     return {
         "tipo": "especificas",
         "familias": fams,
-        "motivo": f"nivel medio (bin {bin_}): pesan más las constantes de la condición"
+        "motivo": f"nivel medio (bin {bin_}): pesarían más las de la condición"
                   + ("" if not proximo else f" — el próximo es de {'local' if proximo['condicion'] == 'L' else 'visita'}"),
+        "confirmada": False,
+    }
+
+
+def mandan_de(bin_: int, proximo: dict | None) -> dict:
+    """Qué familia pesa: la TOTAL, siempre. En el backtest real la total separa
+    más que local/visita en nivel medio (0.25 vs 0.24) y en extremos (0.30 vs
+    0.26), y «manda / no manda» por la regla del nivel da lo mismo. La regla
+    viaja en reglaNivel para verla, no para decidir."""
+    return {
+        "tipo": "globales",
+        "familias": ["total"],
+        "motivo": "la familia total es la que más separa en el backtest (todos los niveles); "
+                  "local y visita quedan como detalle",
+        "reglaNivel": regla_nivel(bin_, proximo),
     }
 
 
