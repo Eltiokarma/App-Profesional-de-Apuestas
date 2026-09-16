@@ -1074,6 +1074,21 @@ export interface LecturaSadParte {
   contextoEmocional: string
   datoEstructural: string
   paradoja: string
+  /** La lectura de Cowork del reventón de la burbuja: una línea por equipo. */
+  reventon: string
+  /** Solo en el GET: el reventón de cada lado con este partido como próximo,
+   *  familia total, calculado al leer (docs/REVENTON.md). */
+  reventonCalculado?: Record<'a' | 'b', ReventonLadoDTO> | null
+}
+
+export interface ReventonLadoDTO {
+  actual: FamiliaBurbujaDTO['actual']
+  riesgo: RiesgoReventonDTO | null
+  rival: FamiliaBurbujaDTO['rival']
+  estabilidad: EstabilidadEquipoDTO['grado']
+  partidos: number
+  aviso: string
+  error?: string
 }
 
 /** El TDE de UN equipo. Los niveles llegan del skill: el backend no inventa

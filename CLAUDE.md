@@ -121,7 +121,11 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   niveles venidos del skill (el backend no le pone umbrales a esa escala), y el
   pronóstico por equipo foco entra en `cadena_dtp` como apertura —el veredicto
   lo emite quien cierre el eslabón—. Un bloque nuevo del prompt necesita sitio en el parte:
-  si no lo tiene, se pierde.
+  si no lo tiene, se pierde. El **reventón de la burbuja** tiene el suyo:
+  Cowork lee `GET /equipos/{id}/burbujas` de los dos equipos ANTES del 1X2
+  (prompt v2.4) y escribe UNA línea por equipo en `lecturaSad.reventon`; los
+  números no se copian, `parte.py` los recalcula al leer en
+  `lecturaSad.reventonCalculado` (familia total, uno por lado).
 - **El padrón de la agenda es el de las cuotas en vivo**
   (`extractor.ligas_vivo()`, vía `_padron()` en `backend/analisis/parte.py`):
   UNA sola fuente, porque dos listas de «ligas importantes» en dos archivos se
@@ -237,7 +241,7 @@ conversación se pierde en la siguiente.
    equipo que enfrenta). Eso decide el bloque A y dispara o no T.54. Se arregla
    corriendo `python -m backend.ingesta.jugadores`, que gasta cuota de
    API-Football: no se puede hacer desde una sesión de análisis. Mientras
-   tanto el prompt (v2.3) obliga a confirmar el DT en prensa antes de puntuar
+   tanto el prompt (v2.4) obliga a confirmar el DT en prensa antes de puntuar
    el bloque A, y a dejar A fuera si no se puede establecer.
 3. **Colisión de nombres F3/F4.** El bloque F del EFE tiene F3 y F4, y el TDE
    tiene los suyos. La instrucción «no mandes F3 ni F4» (que habla del EFE) se

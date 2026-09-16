@@ -441,7 +441,7 @@ def _lectura_sad(x, rechazos: list | None = None) -> dict:
     rechazos = rechazos if rechazos is not None else []
     x = _dict(x, rechazos, "lecturaSad",
               '{"moduloOperativo": "…", "unXDos": {"texto": "…", "rangoAmpliado": false}, '
-              '"contextoEmocional": "…", "datoEstructural": "…", "paradoja": "…"}')
+              '"contextoEmocional": "…", "datoEstructural": "…", "paradoja": "…", "reventon": "…"}')
     uxd = x.get("unXDos") or x.get("un_x_dos") or {}
     if isinstance(uxd, str):
         uxd = {"texto": uxd}
@@ -453,7 +453,45 @@ def _lectura_sad(x, rechazos: list | None = None) -> dict:
         "contextoEmocional": _txt(x.get("contextoEmocional") or x.get("contexto_emocional")),
         "datoEstructural": _txt(x.get("datoEstructural") or x.get("dato_estructural")),
         "paradoja": _txt(x.get("paradoja")),
+        # el reventón de la burbuja (docs/REVENTON.md): Cowork escribe su LECTURA
+        # (una línea por equipo: qué racha no se recomienda seguir y por qué);
+        # los números NO se copian: el backend los recalcula al leer y viajan
+        # al lado en `reventonCalculado`
+        "reventon": _txt(x.get("reventon")),
     }
+
+
+def _reventon_calculado(fx) -> dict | None:
+    """El reventón de la burbuja de cada equipo con ESTE partido como próximo
+    (docs/REVENTON.md), calculado AL LEER como el timeline y el bloque F: si la
+    historia cambia, la próxima lectura ya lo trae. Solo la familia total, que
+    es la que manda. Un fallo se declara en `error`, no tumba el parte."""
+    if not fx:
+        return None
+    from datetime import datetime, timezone
+    from backend import jugadores as jug
+    from backend.analisis import burbuja
+    from backend.app import constantes_de, niveles_de
+    hoy = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    lados = (("a", fx["home_team_id"], fx["away_team_id"], fx["away_name"], "L"),
+             ("b", fx["away_team_id"], fx["home_team_id"], fx["home_name"], "V"))
+    out = {}
+    for lado, tid, rid, rival, cond in lados:
+        try:
+            filas = list(reversed(constantes_de(tid, 500)))
+            nv, nr = niveles_de(tid, 1), niveles_de(rid, 1)
+            prox = {"fixtureId": fx["id"], "fecha": str(fx["date"])[:10], "rivalId": rid, "rival": rival,
+                    "condicion": cond, "nivelRival": nr[0]["nivel"] if nr else 1.0}
+            r = burbuja.analizar(filas, equipo_id=tid, nivel=nv[0]["nivel"] if nv else 0.5,
+                                 bin_=nv[0]["bin"] if nv else 0, proximo=prox,
+                                 plantilla=jug.plantilla_de(tid), hoy=hoy)
+            fam = r["familias"]["total"]
+            out[lado] = {"actual": fam["actual"], "riesgo": fam["riesgo"], "rival": fam["rival"],
+                         "estabilidad": r["estabilidad"]["grado"], "partidos": r["partidos"], "aviso": r["aviso"]}
+        except Exception as e:  # noqa: BLE001 — se declara, no se inventa ni se rompe la lectura
+            out[lado] = {"actual": None, "riesgo": None, "rival": None, "estabilidad": "sin dato",
+                         "partidos": 0, "aviso": "", "error": f"no se pudo calcular: {e}"}
+    return out
 
 
 def _via_tde(v, rechazos: list, donde: str) -> dict | None:
@@ -1258,7 +1296,8 @@ def dto(fixture_id: int) -> dict | None:
         "equipos": equipos,
         "alertas": alertas,
         "matchup": parte["matchup"],
-        "lecturaSad": parte.get("lecturaSad") or _lectura_sad({}),
+        # la lectura de Cowork + el reventón CALCULADO al leer, uno por lado
+        "lecturaSad": {**(parte.get("lecturaSad") or _lectura_sad({})), "reventonCalculado": _reventon_calculado(fx)},
         "tde": tde_calc,
         "timeline": timeline,
         "pronostico": parte["pronostico"],
@@ -1881,6 +1920,13 @@ def contrato() -> dict:
         },
         "alertas": {"claves": sorted(_CLAVES_ALERTA),
                     "equipo": list(_EQUIPOS_ALERTA)},
+        "lecturaSad": {
+            "claves": ["moduloOperativo", "unXDos", "contextoEmocional", "datoEstructural", "paradoja", "reventon"],
+            "reventon": "UNA línea por equipo con tu lectura del reventón de la burbuja "
+                        "(GET /equipos/{id}/burbujas, docs/REVENTON.md): qué racha NO se recomienda "
+                        "seguir y por qué. No copies los números: el backend los recalcula al leer "
+                        "y los devuelve en `reventonCalculado`",
+        },
         "documentos": {"forma": '[{"id": "…", "cuerpo": "markdown", "formato": "md|html|texto"}]',
                        "idsQueLaPantallaTitulaSola": DOCUMENTOS},
         "loQueNoSeManda": [

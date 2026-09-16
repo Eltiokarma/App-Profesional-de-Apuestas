@@ -260,6 +260,7 @@ export function parteCoworkDemo(fixtureId: number, equipoA: string, equipoB: str
       contextoEmocional: 'El visitante llega de dos derrotas y con el interino sin margen: la presión externa empuja a un planteo conservador.',
       datoEstructural: 'Núcleo del local intacto desde hace tres temporadas; el visitante renovó seis titulares en el último mercado.',
       paradoja: 'El equipo con mejor EFE es el que más depende de un solo hombre: si falta el arquero titular, la ventaja estructural se estrecha.',
+      reventon: 'Local: riesgo alto, el visitante entra en la zona donde suele reventar su racha → no apoyar el 1X2 solo en la racha; Visitante: bajo, sin señal.',
     },
     // EL ÍNDICE ES POR EQUIPO: caben los dos, y la demo enseña los dos
     tde: {

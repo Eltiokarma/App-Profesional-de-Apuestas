@@ -70,6 +70,7 @@ def _parte(fixture_id: int, nombre_a: str = "", nombre_b: str = "") -> dict:
             "contextoEmocional": "B llega de dos derrotas",
             "datoEstructural": "Núcleo de A intacto",
             "paradoja": "El mejor EFE es el más dependiente de un hombre",
+            "reventon": "A: muy alto, rival mucho más fuerte que su zona → no seguir la racha; B: bajo",
         },
         # el índice es POR EQUIPO: el parte modelo declara los dos
         "tde": {"bloques": [
@@ -963,6 +964,20 @@ def main():
     check("la lectura SAD tiene sitio propio", ls["moduloOperativo"].startswith("Regresión"), ls)
     check("el 1X2 conserva su rango ampliado", ls["unXDos"]["rangoAmpliado"] is True, ls["unXDos"])
     check("la paradoja viaja", ls["paradoja"].startswith("El mejor EFE"), ls)
+    check("la lectura del reventón de Cowork tiene sitio (una línea por equipo)",
+          ls["reventon"].startswith("A: muy alto"), ls.get("reventon"))
+    rc = ls["reventonCalculado"]
+    check("el reventón se CALCULA al leer, uno por lado, con la familia total",
+          rc and set(rc) == {"a", "b"} and all("riesgo" in rc[l] and "actual" in rc[l] and "rival" in rc[l]
+                                                and "error" not in rc[l] for l in ("a", "b")), rc)
+    check("cada lado trae la estabilidad y el aviso de que es guía, no probabilidad",
+          all(rc[l]["estabilidad"] in ("estable", "en transición", "inestable", "sin dato")
+              and "no probabilidad" in rc[l]["aviso"] for l in ("a", "b")), rc)
+    check("con burbuja abierta el riesgo trae nivel y motivos; sin ella, null",
+          all((rc[l]["actual"] is None) == (rc[l]["riesgo"] is None) for l in ("a", "b"))
+          and all(rc[l]["riesgo"] is None or (rc[l]["riesgo"]["nivel"] and rc[l]["riesgo"]["motivos"]) for l in ("a", "b")), rc)
+    check("el contrato declara la clave reventon de la lectura SAD",
+          "reventon" in c.get(A + "/analisis/cowork/contrato").json()["lecturaSad"]["claves"])
 
     # caja de sensibilidad
     sens = d["equipos"]["a"]["sensibilidad"]
