@@ -1105,6 +1105,19 @@ fuentes del pronóstico). Nada nuevo, salvo la lista.
    Decime en una línea `estado`, `depositadosEnLaVentana` y
    `coberturaDeAyer.faltaron`. Es el diagnóstico; no arregla nada.
 
+1b. CERRÁ LO DE AYER ANTES DE ABRIR LO DE HOY.
+   GET << {base} >>/analisis/cowork/veredictos/pendientes
+   Todo partido que figure TERMINADO con marcador entra, aunque haya
+   arrancado hace menos de 12 h. Por cada `pendientes[]`: leé el parte
+   (GET /analisis/cowork/{fixtureId}) y escribí el veredicto con las
+   reglas del prompt «VALIDAR LO DE AYER» (seleccion ciega salvo que
+   hayas mirado el marcador antes, modoEvaluacion PRE, porLado a/b con
+   veredicto + queP + leccion + skill). Si `pendientes` viene vacío, leé
+   `nota` y `noListados` y decime por qué cada uno no entró: «ya está en
+   check» no es un motivo, el motivo es el que trae `porque`.
+   Que el once haya llegado y el bloque F esté cerrado NO cierra el caso:
+   el caso se cierra con el veredicto, y sin veredicto la lección no existe.
+
 2. GET << {base} >>/analisis/cowork/agenda?desdeAhora=true&horas=<<10>>&limite=<<8>>
    NO uses `fecha=`: traería los que ya arrancaron. Con `desdeAhora` entran
    solo los que faltan por jugarse, y `porHacer` son los que no tienen parte.
@@ -1183,6 +1196,9 @@ Vas a cerrar los casos que quedaron abiertos. No analices nada nuevo.
    está en juego, su minuto y marcador parcial), `criterio`, `ventanaHoras` y
    `sinCerrar`. Si `pendientes` viene vacío, leé `nota` y `noListados` y
    contame qué dijeron: ahí está si hay que esperar, avisar o si no hay nada.
+   Un partido que figura TERMINADO con marcador entra aunque haya arrancado
+   hace menos de 12 h: a la mañana siguiente, lo de anoche ya está listo.
+   Que el once haya llegado y el bloque F esté cerrado NO cierra el caso.
 
 2. Para cada uno, leé el parte (GET /analisis/cowork/{fixtureId}) y compará lo
    que dijiste con lo que pasó. El marcador, el acierto del 1X2, el Brier y la

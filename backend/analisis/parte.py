@@ -1623,8 +1623,9 @@ def pendientes_veredicto(horas: int = 12, limite: int = 50) -> dict:
         # no desde el pitazo final (no guardamos la hora de término). Subirlo
         # ESTRECHA la búsqueda; bajarlo la abre. Cowork probó con 24 creyendo
         # lo contrario y no tenía cómo saberlo.
-        "criterio": f"partes sin veredicto cuyo partido arrancó hace más de {horas} h "
-                    f"y ya tiene marcador en nuestra base (subir `horas` estrecha)",
+        "criterio": f"partes sin veredicto cuyo partido figura TERMINADO con marcador en nuestra base "
+                    f"(entra aunque haya arrancado hace menos de {horas} h), o que sin figurar terminado "
+                    f"arrancó hace más de {horas} h y ya tiene marcador (subir `horas` estrecha solo a esos)",
         "sinCerrar": len(filas),
         "pendientes": [],
         "noListados": [],
@@ -1671,8 +1672,13 @@ def pendientes_veredicto(horas: int = 12, limite: int = 50) -> dict:
             fuera("todavía no tenemos el marcador en nuestra base"
                   + ("" if est in _TERMINADO else "; el partido tampoco figura terminado"), est)
             continue
-        if m["date"] > marca:
-            fuera(f"arrancó hace menos de {horas} h: todavía no entra en la ventana",
+        # TERMINADO en nuestra base = listo para cerrar, sin esperar las `horas`
+        # desde el saque. Antes un partido de las 21:00 revisado a las 8:00 (11 h)
+        # caía en noListados y la validación de la mañana cerraba cero casos
+        # creyendo que no había nada: la ventana existía porque no guardamos la
+        # hora de término, pero el status FT + marcador final YA es esa hora.
+        if est not in _TERMINADO and m["date"] > marca:
+            fuera(f"no figura terminado y arrancó hace menos de {horas} h: todavía no entra en la ventana",
                   f"{est or 'sin estado'}, {parcial}")
             continue
         if len(sobre["pendientes"]) >= limite:

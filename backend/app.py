@@ -1370,7 +1370,7 @@ def equipo_burbujas(equipo_id: int, antesDe: int | None = None):
                 # sin niveles del rival, el motor pondera con 1.0 (§3.1): misma regla
                 "nivelRival": nr[0]["nivel"] if nr else 1.0,
             }
-    return burbuja.analizar(
+    r = burbuja.analizar(
         filas, equipo_id=equipo_id, nivel=nivel, bin_=bin_, proximo=proximo,
         # en la vista al día del partido la plantilla de HOY no es la de entonces:
         # va sin dato (la confianza no pasa de media) en vez de fingir estabilidad
@@ -1378,6 +1378,12 @@ def equipo_burbujas(equipo_id: int, antesDe: int | None = None):
         hoy=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         nombre=team["name"],
     )
+    if antesDe is not None:
+        r["estabilidad"]["motivos"] = [
+            "vista al día del partido: la plantilla de hoy no es la de entonces y no se usa; "
+            "la estabilidad de ese día no está guardada"]
+        r["vistaAlDia"] = {"fixtureId": antesDe, "fecha": proximo["fecha"] if proximo else None}
+    return r
 
 
 @app.get(API + "/analisis/burbujas/backtest")

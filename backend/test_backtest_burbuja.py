@@ -105,6 +105,10 @@ def main():
     check("calibrar: cada fila de puntos lleva un nivel y hay cortes propuestos",
           all(f["nivel"] in ("bajo", "medio", "alto", "muy alto") for f in cal["porPuntosPropuestos"]) and cal["cortesPropuestos"])
     check("calibrar: declara que es ajuste en muestra", "en muestra" in cal["aviso"])
+    ps = rc["calibracionPorSigno"]
+    check("calibrar: también por signo (+ y −), cada uno con su n y su aviso o coeficientes",
+          set(ps) == {"+", "-"} and all("n" in ps[s] and ("coeficientes" in ps[s] or "aviso" in ps[s]) for s in ps)
+          and ps["+"]["n"] + ps["-"]["n"] == cal["n"], {s: ps[s].get("n") for s in ps})
     # la logística recupera un patrón conocido: celdas sintéticas donde solo una señal manda
     celdas = {}
     for k in (0, 1):
