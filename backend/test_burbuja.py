@@ -91,6 +91,14 @@ def main():
           any("la K no puntúa" in m and "22.1" in m for m in rg["motivos"]), rg["motivos"])
     check("confianza BAJA: muestra corta (3) y estabilidad inestable la tumban",
           rg["confianza"] == "baja" and any("inestable" in m for m in rg["confianzaMotivos"]), rg["confianzaMotivos"])
+    ex = t["extremo"]
+    check("ALERTA DE EXTREMO activa: K 22.1 ≥ máximo previo 13.3 y racha 6 ≥ máximo previo 3, sobre 20 partidos",
+          ex["activo"] and ex["kRecord"] and ex["rachaRecord"] and ex["partidosHistoria"] == 20
+          and ex["maximoPrevio"] == {"kPico": 13.3, "partidos": 3}, ex)
+    check("extremo: dos motivos con el N de partidos y un texto que pide no cargar la apuesta",
+          len(ex["motivos"]) == 2 and all("20 partidos" in m for m in ex["motivos"])
+          and "no cargar la apuesta" in ex["texto"], ex["motivos"])
+    check("el extremo NO mueve el riesgo: sigue en 8 puntos (la K no puntúa)", rg["puntos"] == 8)
 
     print("\n— familia local (no se mueve en el próximo, que es de visita) —")
     lo = out["familias"]["local"]
@@ -103,6 +111,9 @@ def main():
           lo["riesgo"]["nivel"] == "bajo" and lo["riesgo"]["puntos"] == 1, lo["riesgo"])
     check("historial − local: K pico 3.0 repetida → moda 3.0", lo["historial"]["negativo"]["kPico"]["moda"] == 3.0)
     check("percentil K 50 (una de dos por debajo)", lo["posicion"]["percentilK"] == 50, lo["posicion"])
+    check("local: K 9.5 < máximo previo 16 y racha 3 < 4 → extremo INACTIVO, sin motivos ni texto",
+          lo["extremo"] == {"activo": False, "kRecord": False, "rachaRecord": False, "partidosHistoria": 11,
+                            "maximoPrevio": {"kPico": 16.0, "partidos": 4}, "motivos": [], "texto": ""}, lo["extremo"])
 
     print("\n— familia visita —")
     vi = out["familias"]["visita"]
@@ -164,7 +175,8 @@ def main():
           cero["familias"]["total"]["actual"] is None and len(cero["familias"]["total"]["reventones"]) == 6)
     sinbase = analizar([fila(0, "Local", 2, 0, 2.0, 4.0, 4.0, 0.0), fila(1, "Visita", 1, 0, 2.0, 6.8, 4.0, 2.8)], ctx)
     check("burbuja abierta sin reventones previos → riesgo SIN BASE, nunca un número inventado",
-          sinbase["familias"]["total"]["riesgo"]["nivel"] == "sin base" and sinbase["familias"]["total"]["posicion"] is None)
+          sinbase["familias"]["total"]["riesgo"]["nivel"] == "sin base" and sinbase["familias"]["total"]["posicion"] is None
+          and sinbase["familias"]["total"]["extremo"] is None)
     neg = analizar([fila(0, "Local", 0, 1, 1.5, -1.5, -1.5, 0.0), fila(1, "Visita", 1, 1, 1.5, 0.0, -1.5, 0.0),
                     fila(2, "Local", 0, 2, 2.0, -4.0, -4.0, 0.0), fila(3, "Visita", 0, 1, 2.0, -6.0, -4.0, -2.0)],
                    ctx, proximo={**ctx["proximo"], "nivelRival": 1.2}, bin=8)

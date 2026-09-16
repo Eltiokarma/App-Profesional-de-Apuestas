@@ -978,6 +978,28 @@ def main():
           and all(rc[l]["riesgo"] is None or (rc[l]["riesgo"]["nivel"] and rc[l]["riesgo"]["motivos"]) for l in ("a", "b")), rc)
     check("el contrato declara la clave reventon de la lectura SAD",
           "reventon" in c.get(A + "/analisis/cowork/contrato").json()["lecturaSad"]["claves"])
+    # ALERTA DE EXTREMO: viaja por lado, y si está activa el parte la grita en la tira de alertas
+    check("cada lado trae `extremo` (null sin burbuja o sin base; con burbuja, el bloque completo)",
+          all("extremo" in rc[l] and (rc[l]["extremo"] is None or
+                                       {"activo", "kRecord", "rachaRecord", "partidosHistoria", "maximoPrevio", "motivos", "texto"}
+                                       <= set(rc[l]["extremo"])) for l in ("a", "b")), rc)
+    activos = {l for l in ("a", "b") if (rc[l]["extremo"] or {}).get("activo")}
+    kext = {a["equipo"] for a in d["alertas"] if a["codigo"] == "K-EXTREMO"}
+    check(f"la alerta K-EXTREMO del parte sale exactamente para los lados con extremo activo ({sorted(activos) or 'ninguno'})",
+          kext == activos, {"alertas": kext, "extremo": activos})
+    check("una alerta K-EXTREMO es estructural y pide no cargar la apuesta",
+          all(a["tipo"] == "estructural" and "NO cargar" in a["detalle"] for a in d["alertas"] if a["codigo"] == "K-EXTREMO"))
+    # el caso Alavés–Valencia, sintético: K −32 sobre máximo 24, riesgo bajo → la alerta sale igual
+    from backend.analisis.parte import alertas_extremo
+    sint = {"a": {"actual": {"k": 5.0}, "extremo": {"activo": False, "motivos": []}},
+            "b": {"actual": {"k": -32.0}, "riesgo": {"nivel": "bajo"},
+                  "extremo": {"activo": True, "kRecord": True, "rachaRecord": False, "partidosHistoria": 118,
+                              "motivos": ["K 32.0: la más baja de los 118 partidos que hay en la base (máximo previo 24.09)"]}}}
+    al = alertas_extremo(sint, {"a": "Alavés", "b": "Valencia"})
+    check("K −32 sobre máximo 24 con riesgo BAJO → UNA alerta K-EXTREMO para el lado b, con el nombre, la K y el N",
+          len(al) == 1 and al[0]["equipo"] == "b" and al[0]["codigo"] == "K-EXTREMO"
+          and "Valencia" in al[0]["detalle"] and "-32.00" in al[0]["detalle"] and "118 partidos" in al[0]["detalle"], al)
+    check("sin reventón calculado no hay alerta ni excepción", alertas_extremo(None, {}) == [])
 
     # caja de sensibilidad
     sens = d["equipos"]["a"]["sensibilidad"]

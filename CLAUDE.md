@@ -123,7 +123,7 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   lo emite quien cierre el eslabón—. Un bloque nuevo del prompt necesita sitio en el parte:
   si no lo tiene, se pierde. El **reventón de la burbuja** tiene el suyo:
   Cowork lee `GET /equipos/{id}/burbujas` de los dos equipos ANTES del 1X2
-  (prompt v2.4) y escribe UNA línea por equipo en `lecturaSad.reventon`; los
+  (prompt v2.5) y escribe UNA línea por equipo en `lecturaSad.reventon`; los
   números no se copian, `parte.py` los recalcula al leer en
   `lecturaSad.reventonCalculado` (familia total, uno por lado).
 - **El padrón de la agenda es el de las cuotas en vivo**
@@ -203,8 +203,13 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   partido finalizado, sin plantilla de hoy (estabilidad sin dato). La
   estabilidad (DT, ventana, bajas) mueve la CONFIANZA, nunca el riesgo;
   dueños/organización van en `sinDato`. Sin reventones previos del signo →
-  `sin base`, jamás un número. Las K de goles quedan fuera a propósito hasta
-  que se decida sumarlas.
+  `sin base`, jamás un número. **Alerta de extremo** (`familia.extremo`,
+  §10 del doc): la burbuja en su máximo histórico (K o racha récord sobre N
+  partidos) se grita APARTE del riesgo —en rojo en la tarjeta, como alerta
+  `K-EXTREMO` en la tira del parte y como regla dura del prompt—; no mueve
+  los puntos (la K no puntúa) pero sí cuánto se carga: es prudencia, no
+  probabilidad, y Cowork no se la puede saltar. Las K de goles quedan fuera
+  a propósito hasta que se decida sumarlas.
 - Cuotas K (§3.8): las barras SIEMPRE vía `RachasCuotas` y su botonera
   `ControlesCuotas` (condición · mercado 1X2/Doble op./Ambos · ventana); cada
   mercado dibuja solo los partidos con SU cuota capturada — sin dato, la
@@ -245,7 +250,7 @@ conversación se pierde en la siguiente.
    equipo que enfrenta). Eso decide el bloque A y dispara o no T.54. Se arregla
    corriendo `python -m backend.ingesta.jugadores`, que gasta cuota de
    API-Football: no se puede hacer desde una sesión de análisis. Mientras
-   tanto el prompt (v2.4) obliga a confirmar el DT en prensa antes de puntuar
+   tanto el prompt (v2.5) obliga a confirmar el DT en prensa antes de puntuar
    el bloque A, y a dejar A fuera si no se puede establecer.
 3. **Colisión de nombres F3/F4.** El bloque F del EFE tiene F3 y F4, y el TDE
    tiene los suyos. La instrucción «no mandes F3 ni F4» (que habla del EFE) se

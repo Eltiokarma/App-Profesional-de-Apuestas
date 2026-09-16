@@ -487,10 +487,35 @@ def _reventon_calculado(fx) -> dict | None:
                                  plantilla=jug.plantilla_de(tid), hoy=hoy)
             fam = r["familias"]["total"]
             out[lado] = {"actual": fam["actual"], "riesgo": fam["riesgo"], "rival": fam["rival"],
+                         "extremo": fam.get("extremo"),
                          "estabilidad": r["estabilidad"]["grado"], "partidos": r["partidos"], "aviso": r["aviso"]}
         except Exception as e:  # noqa: BLE001 — se declara, no se inventa ni se rompe la lectura
-            out[lado] = {"actual": None, "riesgo": None, "rival": None, "estabilidad": "sin dato",
+            out[lado] = {"actual": None, "riesgo": None, "rival": None, "extremo": None, "estabilidad": "sin dato",
                          "partidos": 0, "aviso": "", "error": f"no se pudo calcular: {e}"}
+    return out
+
+
+def alertas_extremo(reventon: dict | None, nombres: dict) -> list[dict]:
+    """La alerta K-EXTREMO del parte, una por lado con la burbuja total en su
+    máximo histórico. Va en la TIRA de alertas, arriba del todo, porque una
+    línea dentro de la lectura SAD se lee tarde o no se lee: en Alavés–Valencia
+    el riesgo decía «bajo» con la K de Valencia en su récord y nadie lo vio
+    hasta el 0-1. No cambia el riesgo (la K no puntúa); cambia cuánto se carga."""
+    out = []
+    for lado in LADOS:
+        ext = ((reventon or {}).get(lado) or {}).get("extremo") or {}
+        act = ((reventon or {}).get(lado) or {}).get("actual") or {}
+        if not ext.get("activo"):
+            continue
+        k = act.get("k")
+        out.append({
+            "codigo": "K-EXTREMO", "equipo": lado, "tipo": "estructural",
+            "detalle": f"{nombres.get(lado, lado)}: burbuja K {k:+.2f} en su máximo histórico "
+                       f"({' · '.join(ext.get('motivos') or [])}). El modelo no lo puntúa como "
+                       "riesgo (la tasa de reventón no sube con la K), pero es terreno sin "
+                       "precedente: NO cargar la apuesta a que la racha siga. Cowork tiene que "
+                       "declararlo en lecturaSad.reventon y en el pronóstico",
+        })
     return out
 
 
@@ -1277,6 +1302,10 @@ def dto(fixture_id: int) -> dict | None:
                            "riesgo altísimo, es un equipo sin datos",
             })
     fx = _fixture(fila["fixture_id"])
+    reventon = _reventon_calculado(fx)
+    # la burbuja en su máximo histórico va a la tira de alertas, no solo a la
+    # lectura: lo que decide cuánto se carga tiene que verse antes que nada
+    alertas.extend(alertas_extremo(reventon, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # el timeline se funde AL LEER, no al depositar: si la ingesta corrige un
     # marcador, la próxima lectura ya lo trae — sellarlo sería congelar hoy lo
     # que mañana se recalcula gratis
@@ -1297,7 +1326,7 @@ def dto(fixture_id: int) -> dict | None:
         "alertas": alertas,
         "matchup": parte["matchup"],
         # la lectura de Cowork + el reventón CALCULADO al leer, uno por lado
-        "lecturaSad": {**(parte.get("lecturaSad") or _lectura_sad({})), "reventonCalculado": _reventon_calculado(fx)},
+        "lecturaSad": {**(parte.get("lecturaSad") or _lectura_sad({})), "reventonCalculado": reventon},
         "tde": tde_calc,
         "timeline": timeline,
         "pronostico": parte["pronostico"],

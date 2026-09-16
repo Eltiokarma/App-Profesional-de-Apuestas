@@ -1008,6 +1008,11 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
                           <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)' }}>{r?.error ?? 'sin burbuja abierta'}</span>
                         )}
                       </div>
+                      {r?.extremo?.activo && (
+                        <div role="alert" style={{ marginTop: 7, padding: '7px 10px', borderRadius: 8, background: 'color-mix(in oklch, var(--down), transparent 82%)', border: '2px solid var(--down)', font: '700 11px var(--sans)', color: 'var(--down)', lineHeight: 1.4 }}>
+                          ⚠ EXTREMO · {r.extremo.motivos.join(' · ')}. No cargar la apuesta a que la racha siga: el riesgo de abajo no lo cuenta.
+                        </div>
+                      )}
                       {r?.actual && (
                         <div style={{ font: '500 10.5px var(--mono)', color: 'var(--t2)', marginTop: 5 }}>
                           burbuja {r.actual.signo} · K {r.actual.k > 0 ? '+' : ''}{r.actual.k.toFixed(1)} · {r.actual.partidos} partido{r.actual.partidos === 1 ? '' : 's'}

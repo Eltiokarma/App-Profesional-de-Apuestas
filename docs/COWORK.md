@@ -48,7 +48,7 @@ se perdería.
 | reventón de la burbuja (K) | **nada**: se lee de `GET /equipos/{id}/burbujas` (`docs/REVENTON.md`), 0 tokens | tarjeta **Reventón · guía** en Burbujas y Equipo — `backend/analisis/burbuja.py` |
 | bloque H · matchup | diagnóstico, razón, perfiles y `h2a/h2b/h2c` | pestaña **Matchup** |
 | lectura SAD | módulo operativo, 1X2, contexto, dato estructural, paradoja | pestaña **Lectura SAD** |
-| reventón de la burbuja | `lecturaSad.reventon`: UNA línea por equipo con su lectura (qué racha no seguir y por qué), tras leer `GET /equipos/{id}/burbujas`; los números **no**: el backend los recalcula al leer en `reventonCalculado` (`docs/REVENTON.md`) | pestaña **Lectura SAD**, caja «Reventón de la burbuja» |
+| reventón de la burbuja | `lecturaSad.reventon`: UNA línea por equipo con su lectura (qué racha no seguir y por qué), tras leer `GET /equipos/{id}/burbujas`; los números **no**: el backend los recalcula al leer en `reventonCalculado` (`docs/REVENTON.md`). Si `familias.total.extremo.activo` es true, la línea dice EXTREMO con el N de partidos y el pronóstico no recomienda carga a que esa racha siga | pestaña **Lectura SAD**, caja «Reventón de la burbuja»; la alerta **K-EXTREMO** la agrega el backend a la tira de alertas del parte |
 | caja de sensibilidad | `sensibilidad` por equipo | pestaña **Lectura SAD** |
 | `sad-analysis` | las tres fuentes de probabilidad + falsador | pestaña **Lectura SAD** |
 | `teorema-del-echado` | P1a, F2 y F1 **los calcula el backend** (`GET /analisis/cowork/tde/{id}`); el resto lo escribís vos | pestaña **Teorema del Echado** |
@@ -610,7 +610,7 @@ Ponderado»*.
 
 ---
 
-# PROMPT COWORK — SAD BATCH NOCTURNO v2.4
+# PROMPT COWORK — SAD BATCH NOCTURNO v2.5
 
 > Pegar como instrucción de la tarea en Claude Cowork.
 > Reemplazar lo que está entre `<< >>` antes de correr.
@@ -768,6 +768,21 @@ Escribís vos (es juicio, no se puede calcular):
     · `sin base` = no hay reventones previos de ese signo: no lo uses.
     · confianza baja (DT nuevo, plantel en obra, muestra corta) = la historia
       es de otro equipo; anotalo y no apoyes nada solo en esto.
+    · ALERTA DE EXTREMO — NO TE LA PODÉS SALTAR. Si `familias.total.extremo.activo`
+      es true en cualquiera de los dos, esa burbuja está en su máximo
+      histórico (`extremo.motivos` te dice si es la K o la racha y sobre
+      cuántos partidos: «la más alta en N partidos»). El riesgo NO lo cuenta
+      —la tasa de reventón no sube con la K— y por eso puede decir BAJO con
+      la K en récord: eso pasó en Alavés–Valencia (K de Valencia en −32
+      sobre un máximo de 24, «riesgo bajo», 0-1). Reglas duras:
+        1. escribí EXTREMO con el N de partidos en `lecturaSad.reventon`
+           («B: EXTREMO, K −32 la más baja en 118 partidos; riesgo bajo»);
+        2. en `pronostico`, NINGUNA recomendación de carga fuerte ni de
+           «apuesta segura» a que esa racha siga; si tu 1X2 va por ahí,
+           bajá la confianza declarada y decilo en el falsador;
+        3. no la conviertas en lo contrario: no es «va a reventar», es «acá
+           no se pone plata grande». El backend agrega la alerta K-EXTREMO
+           al parte por su cuenta: si tu lectura no la menciona, se nota.
   Escribí UNA línea por equipo en `lecturaSad.reventon`, por ejemplo:
   «A: muy alto (8), rival mucho más fuerte que su zona de reventón → no
   seguir la racha de A; B: bajo, sin señal». NO copies los números al
@@ -1089,12 +1104,12 @@ ausente.
 # PROMPT CORTO — "RETOMAR HOY": lo que el batch no subió
 
 Para cuando la corrida nocturna se cortó o se saltó partidos y hay que cubrir
-los de hoy que todavía no arrancaron. Mismas reglas del batch (v2.4); cambia
+los de hoy que todavía no arrancaron. Mismas reglas del batch (v2.5); cambia
 solo cómo se elige la lista.
 
 ```text
 Vas a cubrir los partidos de HOY que se quedaron sin parte. Reglas del batch
-nocturno v2.4 (contrato, sesión limpia por partido, EFE con sus sub-scores,
+nocturno v2.5 (contrato, sesión limpia por partido, EFE con sus sub-scores,
 TDE con indicadores, reventón de la burbuja leído antes del 1X2, tres
 fuentes del pronóstico). Nada nuevo, salvo la lista.
 
@@ -1140,7 +1155,12 @@ fuentes del pronóstico). Nada nuevo, salvo la lista.
      `familias.total.rival.tramo`. MUY ALTO o ALTO con confianza media o
      alta = no recomendar que esa racha siga (y decirlo en la lectura);
      BAJO no autoriza nada; la K alta no es alarma, el rival sí; `sin base`
-     no se usa. Una línea por equipo en `lecturaSad.reventon`, sin copiar
+     no se usa. Y la ALERTA DE EXTREMO no se salta: si
+     `familias.total.extremo.activo` es true, la burbuja está en su máximo
+     histórico y aunque el riesgo diga BAJO escribís EXTREMO con el N de
+     partidos en `lecturaSad.reventon` y NO recomendás carga fuerte a que
+     esa racha siga (bajá la confianza del pronóstico y decilo en el
+     falsador). Una línea por equipo en `lecturaSad.reventon`, sin copiar
      números (el backend los recalcula al leer).
    - Alertas, matchup con h2a/h2b/h2c, lectura SAD, sensibilidad.
    - `tde.bloques[]` uno por equipo con `indicadores` 0/0.5/1, escala 0-10.

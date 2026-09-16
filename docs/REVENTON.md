@@ -134,6 +134,9 @@ nuevo o el plantel cambió, la historia de K es de *otro* equipo.
   No es «va a seguir»: es «no hay señal de reventón en su historia».
 - Un reventón que ocurre con riesgo bajo no es un fallo del cálculo: es lo que
   la guía no puede ver (lesión, expulsión, un rival que jugó mejor de su nivel).
+- **Riesgo bajo + EXTREMO** (§10): la K está en su récord y el modelo no lo
+  cuenta porque la K no adelanta el reventón. Igual no se carga la apuesta a
+  que siga: si revienta, revienta desde lo más alto.
 
 ## 8. Backtest hacia atrás (calibrar y confirmar)
 
@@ -297,3 +300,35 @@ Sobre la demo (datos sintéticos, solo sirve de humo) la tasa ya sale monótona
 y el rival en zona es la señal con más lift. La calibración real se corre
 sobre las `.db` del usuario; los umbrales que se ajustan con ella son los
 puntos de §5, la tolerancia de zona (0.15) y los cortes de muestra de §6.
+
+## 10. Alerta de extremo (prudencia, no probabilidad)
+
+El backtest de §8 dejó claro que una K récord no revienta más que otra: por
+eso la K no puntúa. Pero Alavés–Valencia (septiembre 2026) enseñó lo que
+falta: la K de Valencia estaba en **−32 sobre un máximo previo de 24**, el
+riesgo decía **bajo** (correcto dentro de su tasa: 46 % de reventón) y el
+partido terminó 0-1. La K local del Alavés también reventó. Quien hubiera
+cargado con confianza sobre el pronóstico perdía, y la intuición de «acá
+mejor no» no tenía dónde apoyarse en la pantalla.
+
+Eso no es un fallo de calibración y no se arregla moviendo puntos: se arregla
+con una **bandera aparte** que dice cuánto se carga, no cuánto pasa.
+
+- **Qué es**: por familia, `extremo` con `activo`, `kRecord` (|K| ≥ la K pico
+  más alta con la que reventó ese signo), `rachaRecord` (racha ≥ la más larga
+  que reventó), `partidosHistoria` (el N de «la más alta en N partidos»),
+  `maximoPrevio`, `motivos` y `texto`. `null` sin base del signo.
+- **Qué NO es**: no mueve `riesgo.puntos` ni `riesgo.nivel`. Puede convivir
+  con «riesgo bajo», y ahí es justo donde más sirve.
+- **Dónde se ve**: en rojo, antes del riesgo, en la tarjeta de Burbujas y
+  Equipo; en la caja «Reventón de la burbuja» del parte; y como alerta
+  **K-EXTREMO** (tipo estructural) que el backend agrega a la tira de alertas
+  del parte al leer (`alertas_extremo` en `backend/analisis/parte.py`), para
+  que se vea antes que cualquier otra cosa.
+- **Qué le exige a Cowork** (prompt v2.5): escribir EXTREMO con el N de
+  partidos en `lecturaSad.reventon`, no recomendar carga fuerte a que esa
+  racha siga, bajar la confianza del pronóstico y decirlo en el falsador. No
+  se convierte en «va a reventar»: es «acá no se pone plata grande».
+- **Espejo**: `_extremo` en Python y `extremoDe` en TS, sobre los mismos
+  vectores dorados (el caso Foco tiene K 22.1 sobre máximo 13.3 y racha 6
+  sobre 3: activo en total y visita, inactivo en local).
