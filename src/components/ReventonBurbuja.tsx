@@ -131,7 +131,7 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '5px 9px', borderRadius: 8, cursor: onFamilia ? 'pointer' : 'default', background: sel ? 'var(--bg3)' : 'transparent', border: `1px solid ${mandaF ? color : 'var(--line)'}`, color: sel ? 'var(--t1)' : 'var(--t2)' }}
               >
                 <span style={{ font: '600 9.5px var(--sans)' }}>{mandaF ? '★ ' : ''}{FAMILIA_LABEL[f]}</span>
-                <span style={{ font: '700 9px var(--mono)', color, textTransform: 'uppercase', letterSpacing: '.3px' }}>{rf ? rf.nivel : '0'}</span>
+                <span style={{ font: '700 9px var(--mono)', color, textTransform: 'uppercase', letterSpacing: '.3px' }}>{rf ? rf.nivel : '—'}</span>
               </button>
             )
           })}
@@ -149,7 +149,7 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
         <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t2)', padding: '8px 10px', borderRadius: 8, background: 'var(--bg)', border: '1px solid var(--line)' }}>
           Sin burbuja abierta: la K de esta familia está en 0
           {fam.reventones.length > 0 && (
-            <> · la última reventó {fmtFecha(fam.reventones[fam.reventones.length - 1].fecha)} con K {signFmt((fam.reventones[fam.reventones.length - 1].signo === '+' ? 1 : -1) * fam.reventones[fam.reventones.length - 1].kPico)} tras {fam.reventones[fam.reventones.length - 1].partidos} partidos</>
+            <> · la última reventó {fmtFecha(fam.reventones[fam.reventones.length - 1].fecha)} con K {signFmt((fam.reventones[fam.reventones.length - 1].signo === '+' ? 1 : -1) * fam.reventones[fam.reventones.length - 1].kPico)} tras {fam.reventones[fam.reventones.length - 1].partidos} partido{fam.reventones[fam.reventones.length - 1].partidos === 1 ? '' : 's'}</>
           )}
           {fam.partidosEnCondicion === 0 && ' · sin partidos de esta condición'}
         </div>
@@ -163,7 +163,7 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
               <div style={rotulo}>BURBUJA ABIERTA</div>
               <div style={mono(signo === '+' ? 'var(--up)' : 'var(--down)')}>{signFmt(actual.k)}</div>
               <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>
-                {actual.partidos} partido{actual.partidos === 1 ? '' : 's'} desde {fmtFecha(actual.desde)}
+                {actual.partidos} partido{actual.partidos === 1 ? '' : 's'}{familia === 'total' ? '' : ` de ${familia}`} desde {fmtFecha(actual.desde)}
                 {fam.posicion && <> · percentil K {fam.posicion.percentilK} · racha {fam.posicion.percentilRacha}</>}
               </div>
             </div>

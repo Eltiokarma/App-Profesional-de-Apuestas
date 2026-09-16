@@ -127,3 +127,34 @@ nuevo o el plantel cambió, la historia de K es de *otro* equipo.
   No es «va a seguir»: es «no hay señal de reventón en su historia».
 - Un reventón que ocurre con riesgo bajo no es un fallo del cálculo: es lo que
   la guía no puede ver (lesión, expulsión, un rival que jugó mejor de su nivel).
+
+## 8. Backtest hacia atrás (calibrar y confirmar)
+
+`backend/backtest_burbuja.py` recorre la historia de cada equipo y, en cada
+partido donde había una burbuja abierta, reconstruye la guía **solo con las
+filas anteriores** (el rival real de ese partido hace de «próximo», el bin
+sale del último nivel previo, la estabilidad va sin dato) y la compara con lo
+que pasó: reventó en ese partido, o dentro de `--horizonte` partidos de la
+condición.
+
+```bash
+python -m backend.backtest_burbuja                    # todos los equipos con ≥ 12 filas
+python -m backend.backtest_burbuja --horizonte 2 --liga 281 --json salida.json
+python -m backend.test_backtest_burbuja               # anti-fuga y conteos, sobre la demo
+```
+
+Qué mirar en la salida:
+
+| tabla | qué confirma |
+|---|---|
+| tasa por nivel de riesgo | debe **crecer** de bajo a muy alto; si no, los puntos no están calibrados |
+| AUC de los puntos | 0.5 = no ordena nada; cuanto más cerca de 1, mejor ordena |
+| lift de cada señal | encendida debe reventar más que apagada; lift ≤ 0 → bajarle el peso |
+| separación por familia y «manda / noManda» | si la familia que manda separa más, la regla del nivel se confirma |
+| nivel medio vs extremo | en medio las específicas deberían separar más que la total; en extremos, al revés |
+| por tamaño de muestra | si con < 3 reventones la tasa se desordena, el umbral de confianza está bien puesto |
+
+Sobre la demo (datos sintéticos, solo sirve de humo) la tasa ya sale monótona
+y el rival en zona es la señal con más lift. La calibración real se corre
+sobre las `.db` del usuario; los umbrales que se ajustan con ella son los
+puntos de §5, la tolerancia de zona (0.15) y los cortes de muestra de §6.

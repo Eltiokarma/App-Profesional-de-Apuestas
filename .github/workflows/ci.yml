@@ -61,3 +61,5 @@ jobs:
         run: python -m backend.test_cowork
       - name: Tests del reventón de burbuja (guía calculada, vectores dorados compartidos con el TS)
         run: python -m backend.test_burbuja
+      - name: Tests del backtest del reventón (anti-fuga y conteos)
+        run: python -m backend.test_backtest_burbuja
