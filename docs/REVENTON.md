@@ -187,6 +187,17 @@ diez burbujas abiertas revientan en el partido siguiente.
 | alto | 70.0 % | 71.960 |
 | muy alto | 73.1 % | 12.902 |
 
+**Ojo con esa corrida**: el pipeline guarda en `processed_matches.nivel_rival`
+el **bin 0–9**, no el nivel continuo, y `/constantes` lo servía tal cual. La
+calibración salió con el tramo «rival fuerte» (0.15–0.45) vacío porque las
+distancias eran enteras: «en zona» era «mismo bin» y «muy fuerte» «un bin o
+más arriba». Y en la app, el próximo rival (continuo, de `levels.db`) se
+comparaba contra medianas en bins: la señal estaba rota en producción.
+Arreglado en la lectura (`_nivel_rival_exacto` en `backend/app.py`): el
+nivel se recupera de las q de la fila, como hace `backfill_kdc`. Las
+conclusiones de signo (qué señal aporta) se mantienen; los cortes por
+distancia hay que recalibrarlos con la base ya corregida.
+
 Monótona, AUC 0.61. Pero el lift por señal dice **quién trabaja**: rival en
 zona +0.29; racha ≥ mediana +0.06; K ≥ mediana **−0.02** y K ≥ máximo **−0.03**.
 La K actual contra la K de reventón no adelanta el reventón (una K alta es un

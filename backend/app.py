@@ -762,6 +762,19 @@ def contexto_calendario(team_id: int, fixture, g: dict) -> dict:
     }
 
 
+def _nivel_rival_exacto(c, gf: int, ga: int, rival_id: int) -> float:
+    """El nivel continuo del rival con el que el motor ponderó ESTA fila,
+    recuperado de sus q (§3.2: q_goles_anotado = gf·nivel, q_goles_recibido =
+    −ga·nivel). En un 0-0 no queda huella: se lee levels.db a la fecha, con el
+    1.0 de §3.1 si el rival no tiene niveles."""
+    qa, qr = c["q_goles_anotado"], c["q_goles_recibido"]
+    if gf and qa is not None:
+        return round(float(qa) / gf, 4)
+    if ga and qr is not None:
+        return round(-float(qr) / ga, 4)
+    return round(nivel_a_fecha(rival_id, c["date"], fallback=1.0), 4)
+
+
 def constantes_de(team_id: int, limit: int, hasta: str | None = None) -> list[dict]:
     cond, params = "", [team_id]
     if hasta:
@@ -795,7 +808,6 @@ def constantes_de(team_id: int, limit: int, hasta: str | None = None) -> list[di
             es_local = (p["condicion"] or "") == "Local"
             gf, ga = (p["goals_home"], p["goals_away"]) if es_local else (p["goals_away"], p["goals_home"])
             rival_id, rival_nombre = p["rival_id"], p["rival_nombre"]
-            nivel_rival = float(p["nivel_rival"] if p["nivel_rival"] is not None else 0)
             liga_id = p["league_id"] or 0
         else:  # fallback si el discretizador va por detrás de constants
             f = db.query_one("sad", FIXTURE_SQL + " WHERE f.id=?", (c["fixture_id"],))
@@ -808,8 +820,15 @@ def constantes_de(team_id: int, limit: int, hasta: str | None = None) -> list[di
             gf, ga = (g90h, g90a) if es_local else (g90a, g90h)
             rival_id = f["away_team_id"] if es_local else f["home_team_id"]
             rival_nombre = f["away_name"] if es_local else f["home_name"]
-            nivel_rival = 0.0
             liga_id = f["league_id"] or 0
+        # Nivel del rival CONTINUO (§3.1), el que ponderó el motor. OJO: el
+        # pipeline guarda en processed_matches.nivel_rival el BIN 0–9 (feature
+        # de ML, §4.1), y servir eso como «nivel» hacía que en producción el
+        # reventón comparara un próximo rival continuo (2.3) contra medianas en
+        # bins (5). Se recupera exacto de las q de la propia fila
+        # (q_goles_anotado = gf·nivel, q_goles_recibido = −ga·nivel) y solo en
+        # un 0-0 se lee levels.db a la fecha — el mismo criterio que backfill_kdc.
+        nivel_rival = _nivel_rival_exacto(c, gf or 0, ga or 0, rival_id)
         # Márgenes (§3.7): 18 columnas opcionales, leídas con degradación elegante.
         # kVicN/kDerN pasan tal cual (no llevan fusión ±) → mismo valor en k y fusion.
         mraw = {
