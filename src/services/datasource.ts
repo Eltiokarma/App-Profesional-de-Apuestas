@@ -2,6 +2,8 @@
 // - MockDataSource: el motor local (src/motor) sirviendo ese contrato (demo, default).
 // - HttpDataSource: el backend FastAPI real (VITE_DATA_SOURCE=http).
 // Migrar una pantalla a datos reales = consumirla vía getDataSource(); nada más.
+import type { BurbujasEquipoDTO } from '../api/types'
+import { analizarBurbujas } from '../lib/burbuja'
 import { ApiError } from '../api/client'
 import { SadApi } from '../api/sad'
 import type {
@@ -143,6 +145,9 @@ export interface SadDataSource {
   /** Calendario SAD: próximos partidos con el mapa de rivales (bloque G del EFE)
    *  ya calculado — la misma lectura en todas las pantallas, sin IA. */
   calendario(equipoId: number, n?: number): Promise<PartidoCalendarioDTO[]>
+  /** Reventón de la burbuja (docs/REVENTON.md): cuándo la K de resultado suele
+   *  volver a cero, calculado de la historia del equipo. Guía, no probabilidad. */
+  burbujas(equipoId: number): Promise<BurbujasEquipoDTO>
   /** El parte que dejó Cowork para este partido (docs/COWORK.md); null si no hay.
    *  Es el camino barato: análisis escrito con la suscripción, cero créditos. */
   parteCowork(fixtureId: number): Promise<ParteCoworkDTO | null>
@@ -711,6 +716,25 @@ class MockDataSource implements SadDataSource {
     })
   }
 
+  async burbujas(equipoId: number): Promise<BurbujasEquipoDTO> {
+    const key = NUM_TEAM[equipoId]
+    const eng = key ? teamEngine(key) : null
+    if (!key || !eng) throw new Error(`equipo ${equipoId} no existe`)
+    // el mismo análisis que el backend (espejo TS), sobre las filas del contrato
+    const filas = eng.snaps.map((s) => constantesDTO(key, s))
+    const [prox] = await this.calendario(equipoId, 1)
+    const proximo = prox
+      ? {
+          fixtureId: prox.fixtureId, fecha: prox.fecha, rivalId: prox.rivalId, rival: prox.rival, condicion: prox.condicion,
+          nivelRival: teamEngine(NUM_TEAM[prox.rivalId])?.level ?? 1, // §3.1: sin niveles, 1.0
+        }
+      : null
+    return analizarBurbujas(filas, {
+      equipoId, nombre: TEAMS[key].name, nivel: eng.level, bin: levelBin(eng.level).bin,
+      proximo, plantilla: plantillaDemo(key), hoy: MOCK_NOW.slice(0, 10),
+    })
+  }
+
   async cadena(equipoId: number): Promise<EslabonDtpDTO[]> {
     const nombre = TEAMS[NUM_TEAM[equipoId]]?.name
     if (!nombre) return []
@@ -1067,6 +1091,7 @@ class HttpDataSource implements SadDataSource {
   estadoDtp = (fixtureId: number, equipoFoco: number) => SadApi.estadoDtp(fixtureId, equipoFoco)
   cadena = (equipoId: number, limit?: number) => SadApi.cadena(equipoId, limit)
   calendario = (equipoId: number, n?: number) => SadApi.calendario(equipoId, n)
+  burbujas = (equipoId: number) => SadApi.burbujas(equipoId)
   equipoStats = (equipoId: number) => SadApi.equipoStats(equipoId)
   plantilla = (equipoId: number) => SadApi.plantilla(equipoId)
   fichaPartido = (fixtureId: number) => SadApi.fichaPartido(fixtureId)

@@ -287,6 +287,37 @@ def main():
     check("/equipos/999999/calendario → 404",
           c.get(A + "/equipos/999999/calendario").status_code == 404)
 
+    # /equipos/{id}/burbujas — reventón de la burbuja, calculado sin IA (docs/REVENTON.md)
+    bu = c.get(A + f"/equipos/{betis}/burbujas").json()
+    check("burbujas: cabecera con nivel, bin, mandan, estabilidad y las tres familias",
+          bu["equipoId"] == betis and bu["nombre"] and isinstance(bu["bin"], int)
+          and bu["mandan"]["tipo"] in ("globales", "especificas")
+          and set(bu["familias"]) == {"total", "local", "visita"}
+          and bu["estabilidad"]["grado"] in ("estable", "en transición", "inestable", "sin dato"), {k: bu.get(k) for k in ("equipoId", "bin", "mandan")})
+    check("burbujas: procesa toda la historia de constantes del equipo",
+          bu["partidos"] == len(c.get(A + f"/constantes/{betis}?limit=500").json()), bu["partidos"])
+    fam = bu["familias"]["total"]
+    check("burbujas: cada reventón viaja con el rival, su nivel, el resultado y la K pico",
+          all(r["rival"] and r["nivelRival"] >= 0 and "-" in r["resultado"] and r["kPico"] > 0 and r["partidos"] >= 1
+              for r in fam["reventones"]), fam["reventones"][:1])
+    check("burbujas: local + visita = total en partidos en condición",
+          bu["familias"]["local"]["partidosEnCondicion"] + bu["familias"]["visita"]["partidosEnCondicion"]
+          == fam["partidosEnCondicion"])
+    ult = c.get(A + f"/constantes/{betis}?limit=1").json()[0]["fusion"]["k"]
+    check("burbujas: la burbuja abierta coincide con la última K fusionada del contrato (o no hay si es 0)",
+          (fam["actual"] is None) == (ult == 0) and (fam["actual"] is None or abs(fam["actual"]["k"] - ult) < 0.01),
+          (fam["actual"], ult))
+    check("burbujas: con burbuja abierta hay riesgo con motivos y confianza; sin ella, riesgo null",
+          (fam["actual"] is None and fam["riesgo"] is None)
+          or (fam["riesgo"]["nivel"] in ("bajo", "medio", "alto", "muy alto", "sin base")
+              and fam["riesgo"]["motivos"] and fam["riesgo"]["confianza"] in ("baja", "media", "alta")), fam["riesgo"])
+    check("burbujas: el próximo rival viaja con su nivel (o no hay próximo)",
+          bu["proximo"] is None or (bu["proximo"]["condicion"] in ("L", "V") and bu["proximo"]["nivelRival"] > 0), bu["proximo"])
+    check("burbujas: dueños/organización declarado sin dato, jamás rellenado",
+          any("dueños" in s for s in bu["estabilidad"]["sinDato"]))
+    check("burbujas: el aviso dice que es guía, no probabilidad", "no probabilidad" in bu["aviso"])
+    check("/equipos/999999/burbujas → 404", c.get(A + "/equipos/999999/burbujas").status_code == 404)
+
     # /fixtures/{id}/ficha — puente con los skills
     fi = c.get(A + f"/fixtures/{vivo['id']}/ficha").json()
     check("ficha: ambos lados con plantilla y congestión",

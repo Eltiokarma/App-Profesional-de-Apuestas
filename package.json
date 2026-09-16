@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "test:motor": "tsx scripts/test-motor.ts",
-    "test:kview": "tsx scripts/test-kview.ts"
+    "test:kview": "tsx scripts/test-kview.ts",
+    "test:burbuja": "tsx scripts/test-burbuja.ts"
   },
   "dependencies": {
     "react": "^18.3.1",

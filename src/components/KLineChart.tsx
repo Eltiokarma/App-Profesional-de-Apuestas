@@ -15,6 +15,9 @@ interface Props {
    *  cuáles son los dos puntos extra con valor visible; con el toggle en Local
    *  o Visita manda el toggle (ver condEtiquetas). */
   rol?: Cond
+  /** Mediana de la K pico con la que esta familia suele reventar, por signo
+   *  (docs/REVENTON.md). Se dibuja como línea de referencia; null = sin base. */
+  techo?: { pos: number | null; neg: number | null }
 }
 
 const W = 460
@@ -38,7 +41,7 @@ const fmtFecha = (iso?: string): string => {
  * racha y caen a cero en el reseteo. Los partidos de torneos internacionales
  * se marcan con rombo ámbar; los que no actualizan la condición van atenuados.
  */
-export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20, rol }: Props) {
+export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20, rol, techo }: Props) {
   const key = FUSED_KEY[kType][kCond]
   const win = snaps.slice(-window)
   const n = win.length
@@ -166,6 +169,21 @@ export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20, rol }: Pr
       <text x={L} y={MID - AMP - 5} fontSize={10} fontWeight={600} style={{ fill: 'var(--up)', fontFamily: 'var(--mono)' }}>+{fmtK(maxAbs)}</text>
       <text x={L} y={MID + AMP + 13} fontSize={10} fontWeight={600} style={{ fill: 'var(--down)', fontFamily: 'var(--mono)' }}>−{fmtK(maxAbs)}</text>
 
+      {/* mediana de reventón por signo: dónde esta K suele volver a cero
+          (solo si cabe en la escala; fuera de ella no dice nada) */}
+      {techo?.pos != null && techo.pos > 0 && techo.pos <= maxAbs && (
+        <g>
+          <line x1={L} x2={R} y1={y(techo.pos)} y2={y(techo.pos)} stroke="var(--mark)" strokeWidth={1} strokeDasharray="6 4" opacity={0.85} />
+          <text x={L + 2} y={y(techo.pos) - 3} fontSize={8.5} fontWeight={600} style={{ fill: 'var(--mark)', fontFamily: 'var(--mono)' }}>revienta ~+{fmtK(techo.pos)}</text>
+        </g>
+      )}
+      {techo?.neg != null && techo.neg > 0 && techo.neg <= maxAbs && (
+        <g>
+          <line x1={L} x2={R} y1={y(-techo.neg)} y2={y(-techo.neg)} stroke="var(--mark)" strokeWidth={1} strokeDasharray="6 4" opacity={0.85} />
+          <text x={L + 2} y={y(-techo.neg) + 11} fontSize={8.5} fontWeight={600} style={{ fill: 'var(--mark)', fontFamily: 'var(--mono)' }}>se corta ~−{fmtK(techo.neg)}</text>
+        </g>
+      )}
+
       {/* línea de picos acumulados */}
       <path d={path} fill="none" stroke="var(--accent)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.9} />
 
@@ -236,6 +254,7 @@ export function KLineLegend() {
       <span style={item}><span style={{ width: 8, height: 8, borderRadius: '50%', border: '1.5px solid var(--t3)' }}></span>reset</span>
       <span style={item}><span style={{ width: 8, height: 8, background: 'var(--mark)', transform: 'rotate(45deg)' }}></span>torneo internacional</span>
       <span style={item}><span style={{ width: 9, height: 9, borderRadius: '50%', border: '1.2px solid var(--t2)' }}></span>L/V = últimos dos de local (o de visita)</span>
+      <span style={item}><span style={{ width: 14, height: 0, borderTop: '1.5px dashed var(--mark)' }}></span>mediana con la que revienta</span>
     </div>
   )
 }

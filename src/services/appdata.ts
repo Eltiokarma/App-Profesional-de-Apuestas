@@ -2,6 +2,7 @@
 // estas funciones (que hablan el contrato de docs/openapi.yaml vía
 // getDataSource()); en modo mock los datos salen del motor local y son
 // idénticos a los de antes, en modo http salen del backend real.
+import type { BurbujasEquipoDTO } from '../api/types'
 import type {
   AnalisisPrepartidoDTO,
   AnalisisRegistroDTO,
@@ -539,6 +540,15 @@ export async function loadPlantilla(teamKey: string): Promise<PlantillaDTO | nul
   const equipoId = TEAM_NUM[teamKey]
   if (equipoId == null) return null
   return getDataSource().plantilla(equipoId)
+}
+
+/** Reventón de la burbuja (docs/REVENTON.md): cuándo la K de resultado del
+ *  equipo suele volver a cero, calculado de su propia historia. Guía con sus
+ *  motivos, no probabilidad; 0 tokens. */
+export async function loadReventon(teamKey: string): Promise<BurbujasEquipoDTO | null> {
+  const equipoId = TEAM_NUM[teamKey]
+  if (equipoId == null) return null
+  return getDataSource().burbujas(equipoId)
 }
 
 /** DTP del partido visto desde un equipo (docs/efe-dtp/DTP_DISENO.md). */

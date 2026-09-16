@@ -1285,6 +1285,40 @@ def equipo_calendario(equipo_id: int, n: int = Query(default=4, ge=1, le=10)):
     return cal.calendario_de(equipo_id, n)
 
 
+@app.get(API + "/equipos/{equipo_id}/burbujas")
+def equipo_burbujas(equipo_id: int):
+    """Reventón de la burbuja (docs/REVENTON.md): cuándo la K de resultado del
+    equipo suele volver a cero. Todo sale de la base —constantes, niveles,
+    calendario y plantilla— y se calcula en backend/analisis/burbuja.py.
+    Es una guía con sus motivos, no una probabilidad; lo que no está en la
+    base (dueños, organización) viaja declarado en sinDato. 0 requests, 0
+    tokens: la plantilla se LEE, no se lanza su ingesta desde acá."""
+    team = db.query_one("sad", "SELECT id, name FROM teams WHERE id=?", (equipo_id,))
+    if not team:
+        raise HTTPException(404, f"equipo {equipo_id} no existe")
+    from backend import calendario as cal, jugadores as jug
+    from backend.analisis import burbuja
+    filas = list(reversed(constantes_de(equipo_id, 500)))  # el contrato entrega desc; el análisis va cronológico
+    nv = niveles_de(equipo_id, 1)
+    nivel, bin_ = (nv[0]["nivel"], nv[0]["bin"]) if nv else (0.5, level_bin(0.5)[0])
+    proximo = None
+    proximos = cal.calendario_de(equipo_id, 1)
+    if proximos:
+        p = proximos[0]
+        nr = niveles_de(p["rivalId"], 1)
+        proximo = {
+            "fixtureId": p["fixtureId"], "fecha": p["fecha"], "rivalId": p["rivalId"], "rival": p["rival"],
+            "condicion": p["condicion"],
+            # sin niveles del rival, el motor pondera con 1.0 (§3.1): misma regla
+            "nivelRival": nr[0]["nivel"] if nr else 1.0,
+        }
+    return burbuja.analizar(
+        filas, equipo_id=equipo_id, nivel=nivel, bin_=bin_, proximo=proximo,
+        plantilla=jug.plantilla_de(equipo_id), hoy=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        nombre=team["name"],
+    )
+
+
 @app.get(API + "/fixtures/{fixture_id}/ficha")
 def fixture_ficha(fixture_id: int):
     """Ficha de partido (docs/JUGADORES.md): plantillas con indicadores +

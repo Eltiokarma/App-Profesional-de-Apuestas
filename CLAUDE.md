@@ -12,11 +12,12 @@ npm install && npm run dev        # http://localhost:5173
 npm run build                     # typecheck + build (SIEMPRE antes de commitear)
 npm run test:motor                # motor TS verificado contra docs/MOTOR_SAD_EXTRACCION.md
 npm run test:kview                # capa de visualización de las K (3 valores por gráfica)
+npm run test:burbuja              # reventón de burbuja: espejo TS vs vectores dorados (docs/REVENTON.md)
 
 # backend (junto a las 4 .db en la raíz, o SAD_DATA_DIR)
 pip install -r backend/requirements.txt
 python -m uvicorn backend.app:app --port 8000
-python -m backend.test_api        # verificaciones del contrato (265 checks)
+python -m backend.test_api        # verificaciones del contrato (291 checks)
 python -m backend.test_en_vivo    # ciclo en vivo: cuotas en juego por liga (sin red)
 python -m backend.test_cuotas_lote # cuotas prepartido: lote por fecha vs por fixture (presupuesto)
 python -m backend.test_jugadores  # presupuesto de jugadores: TTL separado y padrón de ligas
@@ -27,6 +28,7 @@ python -m backend.test_calendario # calendario SAD: bloque G del EFE calculado (
 python -m backend.test_cronologia  # cronología SAD: los partidos del timeline, calculados
 python -m backend.test_preflight  # chequeo previo del EFE: qué va a costar antes de gastar
 python -m backend.test_cowork    # parte de Cowork: bloque F calculado y cruce del once
+python -m backend.test_burbuja   # reventón de burbuja: mismos vectores dorados que el TS
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
 python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--horizonte/--calibrar/--por-liga)
 
@@ -171,6 +173,19 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
 - Gráficas de K: tres valores a la vista (último · últimos dos de la condición
   que se analiza, saltando los que repiten valor) vía `puntosEtiquetados` de
   `src/lib/kview.ts`. Una gráfica nueva usa ese helper, no su propia regla.
+- **Reventón de la burbuja** (`docs/REVENTON.md`): cuándo la K de resultado
+  suele volver a cero, calculado de la historia del equipo en
+  `backend/analisis/burbuja.py` (`GET /equipos/{id}/burbujas`, abierto a
+  Cowork, 0 tokens) con espejo TS en `src/lib/burbuja.ts` para el mock; los
+  dos corren sobre `scripts/casos_burbuja.json`, y una regla que cambia en un
+  lado sin el otro tumba un test. Es GUÍA, no probabilidad: por signo, media ·
+  mediana · moda de la K pico, los partidos y el nivel del rival que reventó
+  cada burbuja; la abierta hoy se compara con eso y con el próximo rival. Qué
+  constante manda sale del nivel (bin ≥ 7 o ≤ 2 → globales; medio → la de la
+  condición del próximo). La estabilidad (DT, ventana, bajas) mueve la
+  CONFIANZA, nunca el riesgo; dueños/organización van en `sinDato`. Sin
+  reventones previos del signo → `sin base`, jamás un número. Las K de goles
+  quedan fuera a propósito hasta que se decida sumarlas.
 - Cuotas K (§3.8): las barras SIEMPRE vía `RachasCuotas` y su botonera
   `ControlesCuotas` (condición · mercado 1X2/Doble op./Ambos · ventana); cada
   mercado dibuja solo los partidos con SU cuota capturada — sin dato, la
