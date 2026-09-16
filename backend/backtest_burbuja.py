@@ -17,10 +17,15 @@ Sin fuga: el nivel del equipo (para el bin) se toma del último nivel con
 fecha ANTERIOR al partido, y la estabilidad va «sin dato» porque la plantilla
 de hoy no es la de entonces — el backtest mide el RIESGO, no la confianza.
 
+    python -m backend.backtest_burbuja --padron            # las ligas importantes (padrón de las cuotas en vivo)
     python -m backend.backtest_burbuja                     # todos los equipos con ≥ 12 filas
     python -m backend.backtest_burbuja --muestra 200 --horizonte 2
     python -m backend.backtest_burbuja --liga 281 --json salida.json
     SAD_DATA_DIR=demo_data python -m backend.backtest_burbuja   # contra la demo
+
+También corre en el servidor, donde viven las .db: `GET /analisis/burbujas/backtest`
+(token maestro; no está abierto a Cowork porque no es un dato del parte, es
+calibración). El padrón de ligas es UNO solo: `extractor.ligas_vivo()`.
 """
 from __future__ import annotations
 
@@ -38,10 +43,33 @@ FAMILIAS = ("total", "local", "visita")
 MIN_PREFIJO = 10          # filas previas mínimas para evaluar una burbuja
 
 
-def _equipos(min_filas: int) -> list[int]:
+def padron() -> dict[int, str]:
+    """Las ligas importantes con su nombre: el padrón de las cuotas en vivo,
+    la ÚNICA lista (dos listas de «ligas importantes» se separan solas)."""
+    from backend.ingesta.extractor import LIGAS, ligas_vivo
+    return {lid: LIGAS.get(lid, f"liga {lid}") for lid in ligas_vivo()}
+
+
+def _nombres_ligas(ids: set[int]) -> dict[int, str]:
+    if not ids:
+        return {}
+    marks = ",".join("?" * len(ids))
+    rows = db.query("sad", f"SELECT id, name FROM leagues WHERE id IN ({marks})", tuple(ids))
+    return {r["id"]: r["name"] for r in rows}
+
+
+def _equipos(min_filas: int, ligas: set[int] | None = None) -> list[int]:
+    """Equipos con ≥ min_filas de constantes; con `ligas`, solo los que tienen
+    partidos en alguna de ellas (su historia completa se usa igual)."""
     rows = db.query("constants", "SELECT team_id, COUNT(*) AS n FROM constants GROUP BY team_id HAVING n >= ?",
                     (min_filas,))
-    return [r["team_id"] for r in rows]
+    ids = [r["team_id"] for r in rows]
+    if not ligas:
+        return ids
+    marks = ",".join("?" * len(ligas))
+    en_liga = {r["equipo_id"] for r in db.query(
+        "discreto", f"SELECT DISTINCT equipo_id FROM processed_matches WHERE league_id IN ({marks})", tuple(ligas))}
+    return [t for t in ids if t in en_liga]
 
 
 def _bin_a_fecha(niveles: list[dict], fecha: str) -> int:
@@ -60,14 +88,19 @@ def _en_condicion(fila: dict, familia: str) -> bool:
     return familia == "total" or fila["condicion"] == ("Local" if familia == "local" else "Visita")
 
 
-def observar_equipo(team_id: int, horizonte: int, min_prefijo: int = MIN_PREFIJO) -> list[dict]:
-    """Una observación por (partido con burbuja abierta, familia que ese partido mueve)."""
+def observar_equipo(team_id: int, horizonte: int, min_prefijo: int = MIN_PREFIJO,
+                    ligas: set[int] | None = None) -> list[dict]:
+    """Una observación por (partido con burbuja abierta, familia que ese partido mueve).
+    Con `ligas`, solo se EVALÚAN los partidos de esas ligas; la historia previa
+    (la K y sus reventones) usa todos los partidos, como en la app."""
     filas = list(reversed(constantes_de(team_id, 500)))
     niveles = list(reversed(niveles_de(team_id, 500)))
     estab = burbuja.estabilidad_de(None, "1970-01-01")
     obs = []
     for i in range(min_prefijo, len(filas)):
         fila = filas[i]
+        if ligas and fila["ligaId"] not in ligas:
+            continue
         prefijo = filas[:i]
         bin_ = _bin_a_fecha(niveles, fila["fecha"])
         proximo = {
@@ -89,7 +122,7 @@ def observar_equipo(team_id: int, horizonte: int, min_prefijo: int = MIN_PREFIJO
             revento_ahora = _revento(fila, familia, act["signo"])
             base = fam["historial"]["positivo" if act["signo"] == "+" else "negativo"]
             obs.append({
-                "equipoId": team_id, "fixtureId": fila["fixtureId"], "fecha": fila["fecha"],
+                "equipoId": team_id, "fixtureId": fila["fixtureId"], "fecha": fila["fecha"], "ligaId": fila["ligaId"],
                 "familia": familia, "signo": act["signo"], "manda": familia in mandan["familias"],
                 "bin": bin_, "nivel": rg["nivel"], "puntos": rg["puntos"], "n": base["n"] if base else 0,
                 "kGeMediana": bool(base) and abs(act["k"]) >= base["kPico"]["mediana"],
@@ -136,7 +169,25 @@ def _separacion(sub: list[dict]) -> float | None:
     return round(_tasa(alto)["tasa"] - _tasa(bajo)["tasa"], 3)
 
 
-def resumir(obs: list[dict], horizonte: int) -> dict:
+def _por_liga(con_base: list[dict], nombres: dict[int, str]) -> list[dict]:
+    """Por liga: tasa base, tasa en bajo, tasa en alto/muy alto, separación y AUC.
+    Ordenado por n; con n chico la separación es ruido y se ve por el n."""
+    grupos: dict[int, list[dict]] = {}
+    for o in con_base:
+        grupos.setdefault(o["ligaId"], []).append(o)
+    salida = []
+    for lid, g in grupos.items():
+        salida.append({
+            "ligaId": lid, "liga": nombres.get(lid, f"liga {lid}"),
+            "todas": _tasa(g),
+            "bajo": _tasa([o for o in g if o["nivel"] == "bajo"]),
+            "altoMuyAlto": _tasa([o for o in g if o["nivel"] in ("alto", "muy alto")]),
+            "separacion": _separacion(g), "auc": _auc(g, "puntos"),
+        })
+    return sorted(salida, key=lambda x: -x["todas"]["n"])
+
+
+def resumir(obs: list[dict], horizonte: int, nombres: dict[int, str] | None = None) -> dict:
     con_base = [o for o in obs if o["nivel"] != "sin base"]
     por_nivel = {nv: _tasa([o for o in con_base if o["nivel"] == nv]) for nv in NIVELES}
     tasas = [por_nivel[nv]["tasa"] for nv in NIVELES if por_nivel[nv]["tasa"] is not None]
@@ -179,14 +230,40 @@ def resumir(obs: list[dict], horizonte: int) -> dict:
         "porMuestra": {"n<3": _tasa([o for o in con_base if o["n"] < 3]),
                        "3-5": _tasa([o for o in con_base if 3 <= o["n"] < 6]),
                        "≥6": _tasa([o for o in con_base if o["n"] >= 6])},
+        "porLiga": _por_liga(con_base, nombres or {}),
     }
 
 
-def correr(equipos: list[int], horizonte: int, min_prefijo: int = MIN_PREFIJO) -> tuple[list[dict], dict]:
+def correr(equipos: list[int], horizonte: int, min_prefijo: int = MIN_PREFIJO,
+           ligas: set[int] | None = None, nombres: dict[int, str] | None = None) -> tuple[list[dict], dict]:
     obs = []
     for t in equipos:
-        obs.extend(observar_equipo(t, horizonte, min_prefijo))
-    return obs, resumir(obs, horizonte)
+        obs.extend(observar_equipo(t, horizonte, min_prefijo, ligas))
+    if nombres is None:
+        nombres = _nombres_ligas({o["ligaId"] for o in obs})
+    return obs, resumir(obs, horizonte, nombres)
+
+
+def correr_backtest(*, padron_: bool = False, liga: int | None = None, horizonte: int = 1,
+                    muestra: int = 0, min_filas: int = 12, semilla: int = 42) -> dict:
+    """Lo que corren el CLI y el endpoint: elige los equipos y devuelve el resumen
+    con la lista de ligas evaluadas (para que se vea QUÉ se calibró)."""
+    ligas: set[int] | None = None
+    nombres: dict[int, str] = {}
+    if padron_:
+        nombres = padron()
+        ligas = set(nombres)
+    if liga:
+        ligas = {liga}
+        nombres = _nombres_ligas(ligas)
+    equipos = _equipos(min_filas, ligas)
+    if muestra and muestra < len(equipos):
+        random.seed(semilla)
+        equipos = random.sample(equipos, muestra)
+    _, resumen = correr(equipos, horizonte, MIN_PREFIJO, ligas, nombres or None)
+    resumen["equipos"] = len(equipos)
+    resumen["ligasEvaluadas"] = sorted(nombres.values()) if ligas else ["todas"]
+    return resumen
 
 
 # ── informe ──────────────────────────────────────────────────────────────────
@@ -234,6 +311,14 @@ def imprimir(r: dict):
     for k, t in r["porMuestra"].items():
         print(f"  {k:4s} {_pct(t)}  n={t['n']}")
 
+    if r.get("porLiga"):
+        print("\n— por liga (tasa base · bajo · alto/muy alto · separación · AUC) —")
+        for l in r["porLiga"]:
+            print(f"  {l['liga'][:34]:34s} {_pct(l['todas'])} n={l['todas']['n']:4d} · bajo {_pct(l['bajo'])} · "
+                  f"alto+ {_pct(l['altoMuyAlto'])} · sep {l['separacion']} · AUC {l['auc']}")
+    if r.get("ligasEvaluadas"):
+        print(f"\nligas evaluadas: {', '.join(r['ligasEvaluadas'])} · equipos: {r.get('equipos')}")
+
     print("\nLectura: si «alto/muy alto» no revienta más que «bajo», los puntos no están "
           "calibrados para esta base; si una señal tiene lift ≤ 0, no aporta y hay que "
           "bajarle el peso. Si en nivel medio las específicas separan más que la total "
@@ -242,23 +327,19 @@ def imprimir(r: dict):
 
 def main():
     ap = argparse.ArgumentParser(description="Backtest hacia atrás del reventón de burbuja")
+    ap.add_argument("--padron", action="store_true",
+                    help="solo las ligas importantes (padrón de las cuotas en vivo: extractor.ligas_vivo())")
     ap.add_argument("--muestra", type=int, default=0, help="equipos al azar (0 = todos)")
-    ap.add_argument("--liga", type=int, help="solo equipos con filas en esta league_id")
+    ap.add_argument("--liga", type=int, help="solo partidos de esta league_id")
     ap.add_argument("--horizonte", type=int, default=1, help="revienta dentro de N partidos de la condición (default 1)")
     ap.add_argument("--min-filas", type=int, default=12, help="filas mínimas por equipo")
     ap.add_argument("--semilla", type=int, default=42)
     ap.add_argument("--json", help="guardar el resumen en este archivo")
     a = ap.parse_args()
 
-    equipos = _equipos(a.min_filas)
-    if a.liga:
-        equipos = [t for t in equipos if db.query_one(
-            "discreto", "SELECT 1 FROM processed_matches WHERE equipo_id=? AND league_id=? LIMIT 1", (t, a.liga))]
-    if a.muestra and a.muestra < len(equipos):
-        random.seed(a.semilla)
-        equipos = random.sample(equipos, a.muestra)
-    print(f"equipos evaluados: {len(equipos)}")
-    _, resumen = correr(equipos, a.horizonte)
+    resumen = correr_backtest(padron_=a.padron, liga=a.liga, horizonte=a.horizonte, muestra=a.muestra,
+                              min_filas=a.min_filas, semilla=a.semilla)
+    print(f"equipos evaluados: {resumen['equipos']}")
     imprimir(resumen)
     if a.json:
         with open(a.json, "w", encoding="utf-8") as f:

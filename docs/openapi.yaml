@@ -275,6 +275,30 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/BurbujasEquipo' }
         '404': { description: No existe el equipo }
+  /analisis/burbujas/backtest:
+    get:
+      summary: Backtest hacia atrás del reventón de burbuja sobre las .db del servidor (token maestro)
+      description: >
+        Recorre la historia de cada equipo y, en cada partido con burbuja abierta,
+        rehace la guía solo con las filas anteriores (el rival real como próximo,
+        sin fuga) y la compara con lo que pasó dentro de `horizonte` partidos de la
+        condición. Devuelve la tasa de reventón por nivel de riesgo y por puntos
+        (con AUC), el lift de cada señal, la separación por familia y por «manda»,
+        la regla del nivel y el desglose por liga. `padron=true` = solo las ligas
+        importantes (padrón único de las cuotas en vivo). No abierto a Cowork:
+        es calibración, no un dato del parte (docs/REVENTON.md §8).
+      parameters:
+        - { name: padron, in: query, schema: { type: boolean, default: true } }
+        - { name: horizonte, in: query, schema: { type: integer, default: 1, minimum: 1, maximum: 5 } }
+        - { name: muestra, in: query, schema: { type: integer, default: 0, minimum: 0, maximum: 2000 }, description: 'equipos al azar (0 = todos)' }
+        - { name: liga, in: query, schema: { type: integer }, description: 'solo partidos de esta league_id (manda sobre padron)' }
+        - { name: minFilas, in: query, schema: { type: integer, default: 12, minimum: 10, maximum: 200 } }
+      responses:
+        '200':
+          description: Resumen del backtest (tablas por nivel, puntos, señal, familia, liga; ligasEvaluadas y equipos)
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
   /fixtures/{fixtureId}/ficha:
     get:
       summary: Ficha de partido — plantillas + congestión de ambos equipos

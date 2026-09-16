@@ -1319,6 +1319,19 @@ def equipo_burbujas(equipo_id: int):
     )
 
 
+@app.get(API + "/analisis/burbujas/backtest")
+def burbujas_backtest(padron: bool = True, horizonte: int = Query(default=1, ge=1, le=5),
+                      muestra: int = Query(default=0, ge=0, le=2000), liga: int | None = None,
+                      minFilas: int = Query(default=12, ge=10, le=200)):
+    """Backtest hacia atrás del reventón (docs/REVENTON.md §8) sobre las .db
+    del servidor, donde viven los datos reales. Token maestro: NO está en la
+    lista de permitidos de Cowork porque no es un dato del parte, es
+    calibración de la guía. 0 requests, 0 tokens; tarda segundos-minutos
+    según el padrón (usar `muestra` para acotar)."""
+    from backend import backtest_burbuja as bt
+    return bt.correr_backtest(padron_=padron, liga=liga, horizonte=horizonte, muestra=muestra, min_filas=minFilas)
+
+
 @app.get(API + "/fixtures/{fixture_id}/ficha")
 def fixture_ficha(fixture_id: int):
     """Ficha de partido (docs/JUGADORES.md): plantillas con indicadores +
