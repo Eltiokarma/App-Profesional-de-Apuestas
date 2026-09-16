@@ -45,6 +45,7 @@ se perdería.
 | `efe-clasificador` A-E | sub-scores crudos + una nota por bloque | pestaña **Bloques EFE** |
 | bloque F | tabla F1 + bajas públicas | pestaña **Bloque F** (IP, zonas y ramas calculadas aquí) |
 | bloque G · calendario | **nada** | pestaña **Calendario** — `backend/calendario.py` |
+| reventón de la burbuja (K) | **nada**: se lee de `GET /equipos/{id}/burbujas` (`docs/REVENTON.md`), 0 tokens | tarjeta **Reventón · guía** en Burbujas y Equipo — `backend/analisis/burbuja.py` |
 | bloque H · matchup | diagnóstico, razón, perfiles y `h2a/h2b/h2c` | pestaña **Matchup** |
 | lectura SAD | módulo operativo, 1X2, contexto, dato estructural, paradoja | pestaña **Lectura SAD** |
 | caja de sensibilidad | `sensibilidad` por equipo | pestaña **Lectura SAD** |

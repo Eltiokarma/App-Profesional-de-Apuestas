@@ -1,4 +1,5 @@
 // Endpoints del backend SAD (contrato: docs/openapi.yaml).
+import type { BurbujasEquipoDTO } from './types'
 import { apiGet, apiPost, qs } from './client'
 import type {
   AgendaCoworkDTO,
@@ -139,6 +140,8 @@ export const SadApi = {
    *  ya calculado de nuestra base (0 tokens). */
   calendario: (equipoId: number, n?: number) =>
     apiGet<PartidoCalendarioDTO[]>(`/equipos/${equipoId}/calendario` + qs({ n })),
+  /** Reventón de la burbuja (docs/REVENTON.md): guía calculada, 0 tokens. */
+  burbujas: (equipoId: number) => apiGet<BurbujasEquipoDTO>(`/equipos/${equipoId}/burbujas`),
 
   /** La película del equipo: pronóstico → qué pasó → veredicto → lección. */
   cadena: (equipoId: number, limit?: number) =>

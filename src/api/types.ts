@@ -448,6 +448,106 @@ export interface PartidoCalendarioDTO {
   etiquetas: EtiquetaRivalDTO[]
 }
 
+// ── Reventón de la burbuja (GET /equipos/{id}/burbujas) ─────────────────────
+// Guía calculada de la historia del equipo: cuánta K, cuántos partidos y con
+// qué nivel de rival reventó cada racha; comparado con la burbuja abierta hoy
+// y el rival que viene. Dueño: backend/analisis/burbuja.py (espejo TS en
+// src/lib/burbuja.ts para el mock). No es una probabilidad.
+
+export type FamiliaBurbuja = 'total' | 'local' | 'visita'
+export type SignoBurbuja = '+' | '-'
+
+/** media · mediana · moda · min · max de una lista (moda null si nada se repite). */
+export interface DistribucionDTO {
+  media: number
+  mediana: number
+  moda: number | null
+  min: number
+  max: number
+}
+
+/** Una burbuja cerrada: la racha y el partido que la reventó. */
+export interface ReventonDTO {
+  signo: SignoBurbuja
+  /** Partidos de la condición que duró la racha. */
+  partidos: number
+  /** |K| máxima que alcanzó antes de reventar. */
+  kPico: number
+  fixtureId: number
+  fecha: string
+  rivalId: number
+  rival: string
+  nivelRival: number
+  condicion: 'L' | 'V'
+  resultado: string
+  esInternacional: boolean
+}
+
+export interface HistorialSignoDTO {
+  n: number
+  kPico: DistribucionDTO
+  partidos: DistribucionDTO
+  nivelRival: DistribucionDTO
+}
+
+export interface RiesgoReventonDTO {
+  nivel: 'bajo' | 'medio' | 'alto' | 'muy alto' | 'sin base'
+  puntos: number
+  motivos: string[]
+  confianza: 'baja' | 'media' | 'alta'
+  confianzaMotivos: string[]
+}
+
+export interface FamiliaBurbujaDTO {
+  familia: FamiliaBurbuja
+  partidosEnCondicion: number
+  /** Burbuja abierta hoy; null si la K está en 0. */
+  actual: {
+    signo: SignoBurbuja
+    /** K con signo. */
+    k: number
+    partidos: number
+    kPico: number
+    desde: string
+    /** Si el próximo partido mueve esta familia (null sin próximo). */
+    aplicaAlProximo: boolean | null
+  } | null
+  /** Cerradas, cronológicas (las 40 más recientes; la estadística usa todas). */
+  reventones: ReventonDTO[]
+  historial: { positivo: HistorialSignoDTO | null; negativo: HistorialSignoDTO | null }
+  /** Dónde está la burbuja abierta frente a los reventones de su signo. */
+  posicion: { percentilK: number; percentilRacha: number; kSobreMediana: number | null } | null
+  /** El próximo rival frente al nivel con el que suele reventar (solo si la familia aplica). */
+  rival: { nivelProximo: number; medianaReventon: number; distancia: number; enZona: boolean } | null
+  riesgo: RiesgoReventonDTO | null
+}
+
+export interface EstabilidadEquipoDTO {
+  grado: 'estable' | 'en transición' | 'inestable' | 'sin dato'
+  motivos: string[]
+  /** Lo que no está en la base y NO se rellena (dueños, organización…). */
+  sinDato: string[]
+  dt: { nombre: string; desde: string | null; dias: number | null } | null
+  movimientos: { llegadas: number; salidas: number; ventanaDias: number } | null
+  bajas: number | null
+  actualizadoEn: string | null
+}
+
+export interface BurbujasEquipoDTO {
+  equipoId: number
+  nombre: string | null
+  nivel: number
+  bin: number
+  /** Partidos procesados por el motor (filas de constantes). */
+  partidos: number
+  /** Qué constantes pesan más para este equipo según su nivel. */
+  mandan: { tipo: 'globales' | 'especificas'; familias: FamiliaBurbuja[]; motivo: string }
+  proximo: { fixtureId: number; fecha: string; rivalId: number; rival: string; condicion: 'L' | 'V'; nivelRival: number } | null
+  estabilidad: EstabilidadEquipoDTO
+  familias: Record<FamiliaBurbuja, FamiliaBurbujaDTO>
+  aviso: string
+}
+
 /** Un partido de la cadena DTP (GET /equipos/{id}/cadena). */
 export interface EslabonDtpDTO {
   equipoFoco: string

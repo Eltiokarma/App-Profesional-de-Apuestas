@@ -252,6 +252,29 @@ paths:
             application/json:
               schema: { type: array, items: { $ref: '#/components/schemas/PartidoCalendario' } }
         '404': { description: No existe el equipo }
+  /equipos/{equipoId}/burbujas:
+    get:
+      summary: Reventón de la burbuja — cuándo la K del equipo suele volver a cero (guía calculada, no probabilidad)
+      description: >
+        Por familia (total · local · visita): las burbujas cerradas de la K de
+        resultado con la K pico, los partidos que duró y el rival que la reventó;
+        media, mediana y moda de esas tres cosas por signo; la burbuja abierta
+        hoy comparada con ellas (percentiles) y el próximo rival frente al nivel
+        con el que suele reventar; qué constantes mandan según el nivel del
+        equipo (alto o bajo → globales, medio → la de la condición); estabilidad
+        (DT, ventana, bajas) como CONFIANZA de la guía, con lo que no está en la
+        base declarado en `sinDato`. Riesgo por puntos, cada punto con su motivo.
+        0 requests y 0 tokens (docs/REVENTON.md). Las K de goles quedan fuera a
+        propósito por ahora.
+      parameters:
+        - { name: equipoId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BurbujasEquipo' }
+        '404': { description: No existe el equipo }
   /fixtures/{fixtureId}/ficha:
     get:
       summary: Ficha de partido — plantillas + congestión de ambos equipos
@@ -1396,6 +1419,154 @@ components:
         zonaRival: { type: string, nullable: true, enum: [alta, media, descenso, null] }
         diasDescanso: { type: integer, nullable: true, description: 'contra el partido anterior' }
         etiquetas: { type: array, items: { $ref: '#/components/schemas/EtiquetaRival' } }
+    Distribucion:
+      type: object
+      description: 'media · mediana · moda · min · max de una lista. moda null si ningún valor se repite (K a entero, nivel a un decimal); en empate, la menor.'
+      required: [media, mediana, moda, min, max]
+      properties:
+        media: { type: number }
+        mediana: { type: number }
+        moda: { type: number, nullable: true }
+        min: { type: number }
+        max: { type: number }
+    Reventon:
+      type: object
+      description: 'Una burbuja cerrada: la racha (signo, partidos, K pico) y el partido que la reventó'
+      required: [signo, partidos, kPico, fixtureId, fecha, rivalId, rival, nivelRival, condicion, resultado, esInternacional]
+      properties:
+        signo: { type: string, enum: ['+', '-'] }
+        partidos: { type: integer, description: 'partidos de la condición que duró la racha' }
+        kPico: { type: number, description: '|K| máxima antes de reventar' }
+        fixtureId: { type: integer }
+        fecha: { type: string, format: date-time }
+        rivalId: { type: integer }
+        rival: { type: string }
+        nivelRival: { type: number }
+        condicion: { type: string, enum: [L, V] }
+        resultado: { type: string, example: '0-1' }
+        esInternacional: { type: boolean }
+    HistorialSigno:
+      type: object
+      required: [n, kPico, partidos, nivelRival]
+      properties:
+        n: { type: integer }
+        kPico: { $ref: '#/components/schemas/Distribucion' }
+        partidos: { $ref: '#/components/schemas/Distribucion' }
+        nivelRival: { $ref: '#/components/schemas/Distribucion', description: 'nivel del rival que reventó cada burbuja' }
+    FamiliaBurbuja:
+      type: object
+      required: [familia, partidosEnCondicion, actual, reventones, historial, posicion, rival, riesgo]
+      properties:
+        familia: { type: string, enum: [total, local, visita] }
+        partidosEnCondicion: { type: integer }
+        actual:
+          type: object
+          nullable: true
+          description: 'Burbuja abierta hoy; null si la K está en 0'
+          required: [signo, k, partidos, kPico, desde, aplicaAlProximo]
+          properties:
+            signo: { type: string, enum: ['+', '-'] }
+            k: { type: number, description: 'K con signo' }
+            partidos: { type: integer }
+            kPico: { type: number }
+            desde: { type: string, format: date-time }
+            aplicaAlProximo: { type: boolean, nullable: true, description: 'si el próximo partido mueve esta familia (null sin próximo)' }
+        reventones: { type: array, items: { $ref: '#/components/schemas/Reventon' }, description: 'cerradas, cronológicas (las 40 más recientes; la estadística usa todas)' }
+        historial:
+          type: object
+          required: [positivo, negativo]
+          properties:
+            positivo: { $ref: '#/components/schemas/HistorialSigno', nullable: true }
+            negativo: { $ref: '#/components/schemas/HistorialSigno', nullable: true }
+        posicion:
+          type: object
+          nullable: true
+          description: 'la burbuja abierta frente a los reventones de su signo'
+          required: [percentilK, percentilRacha, kSobreMediana]
+          properties:
+            percentilK: { type: integer, description: '% de reventones con K pico ≤ K actual' }
+            percentilRacha: { type: integer }
+            kSobreMediana: { type: number, nullable: true }
+        rival:
+          type: object
+          nullable: true
+          description: 'el próximo rival frente al nivel con el que suele reventar (solo si la familia aplica al próximo)'
+          required: [nivelProximo, medianaReventon, distancia, enZona]
+          properties:
+            nivelProximo: { type: number }
+            medianaReventon: { type: number }
+            distancia: { type: number }
+            enZona: { type: boolean, description: 'burbuja +: nivel ≥ mediana − 0.15 · burbuja −: nivel ≤ mediana + 0.15' }
+        riesgo:
+          type: object
+          nullable: true
+          required: [nivel, puntos, motivos, confianza, confianzaMotivos]
+          properties:
+            nivel: { type: string, enum: [bajo, medio, alto, muy alto, sin base] }
+            puntos: { type: integer, description: 'K ≥ mediana +2 (≥ min +1) · K ≥ max +1 · racha ≥ mediana +1 · racha ≥ max +1 · rival en zona +2' }
+            motivos: { type: array, items: { type: string } }
+            confianza: { type: string, enum: [baja, media, alta], description: 'muestra de reventones y estabilidad; nunca mueve el riesgo' }
+            confianzaMotivos: { type: array, items: { type: string } }
+    EstabilidadEquipo:
+      type: object
+      required: [grado, motivos, sinDato, dt, movimientos, bajas, actualizadoEn]
+      properties:
+        grado: { type: string, enum: [estable, en transición, inestable, sin dato] }
+        motivos: { type: array, items: { type: string } }
+        sinDato: { type: array, items: { type: string }, description: 'lo que no está en la base y NO se rellena (dueños, organización…)' }
+        dt:
+          type: object
+          nullable: true
+          properties:
+            nombre: { type: string }
+            desde: { type: string, nullable: true }
+            dias: { type: integer, nullable: true }
+        movimientos:
+          type: object
+          nullable: true
+          properties:
+            llegadas: { type: integer }
+            salidas: { type: integer }
+            ventanaDias: { type: integer }
+        bajas: { type: integer, nullable: true }
+        actualizadoEn: { type: string, nullable: true }
+    BurbujasEquipo:
+      type: object
+      description: 'Reventón de la burbuja (docs/REVENTON.md): guía calculada de la historia del equipo, no una probabilidad'
+      required: [equipoId, nombre, nivel, bin, partidos, mandan, proximo, estabilidad, familias, aviso]
+      properties:
+        equipoId: { type: integer }
+        nombre: { type: string, nullable: true }
+        nivel: { type: number }
+        bin: { type: integer }
+        partidos: { type: integer, description: 'filas de constantes procesadas' }
+        mandan:
+          type: object
+          required: [tipo, familias, motivo]
+          properties:
+            tipo: { type: string, enum: [globales, especificas], description: 'bin ≥ 7 o ≤ 2 → globales; 3–6 → la de la condición del próximo' }
+            familias: { type: array, items: { type: string, enum: [total, local, visita] } }
+            motivo: { type: string }
+        proximo:
+          type: object
+          nullable: true
+          required: [fixtureId, fecha, rivalId, rival, condicion, nivelRival]
+          properties:
+            fixtureId: { type: integer }
+            fecha: { type: string }
+            rivalId: { type: integer }
+            rival: { type: string }
+            condicion: { type: string, enum: [L, V] }
+            nivelRival: { type: number, description: 'último nivel del rival (1.0 si no tiene, como el motor §3.1)' }
+        estabilidad: { $ref: '#/components/schemas/EstabilidadEquipo' }
+        familias:
+          type: object
+          required: [total, local, visita]
+          properties:
+            total: { $ref: '#/components/schemas/FamiliaBurbuja' }
+            local: { $ref: '#/components/schemas/FamiliaBurbuja' }
+            visita: { $ref: '#/components/schemas/FamiliaBurbuja' }
+        aviso: { type: string }
     EslabonDtp:
       type: object
       description: 'Un partido de la cadena DTP de un equipo foco'

@@ -6,11 +6,12 @@ import { KLineChart, KLineLegend } from '../components/KLineChart'
 import { CalendarioSad } from '../components/CalendarioSad'
 import { CadenaDtp } from '../components/DtpPizarra'
 import { ControlesCuotas, CUOTA_VISTA0, RachasCuotas, tituloMercado, type CuotaVista } from '../components/RachasCuotas'
+import { ReventonBurbuja } from '../components/ReventonBurbuja'
 import { TeamBadge } from '../components/TeamBadge'
 import { binBadge, FUSED_KEY, K_TYPE_GROUPS, K_WINDOW_OPTS, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
 import type { FusedK } from '../motor/types'
 import type { JugadorDTO } from '../api/types'
-import { loadBurbujas, loadCalendarioSad, loadPlantilla, loadTeamFixtures, loadTeamStats, loadCadena } from '../services/appdata'
+import { loadBurbujas, loadCalendarioSad, loadPlantilla, loadReventon, loadTeamFixtures, loadTeamStats, loadCadena } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
 
@@ -32,6 +33,8 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
   const cadena = useAsync(() => loadCadena(teamKey), teamKey)
   // el mismo calendario que lee el EFE (bloque G), sin gastar un token
   const cal = useAsync(() => loadCalendarioSad(teamKey), teamKey)
+  // reventón de la burbuja (docs/REVENTON.md): calculado de la historia, 0 tokens
+  const rev = useAsync(() => loadReventon(teamKey), teamKey)
 
   // ingesta on-demand: si el backend la lanzó (plantilla vacía), sondear
   // hasta que llegue (~5-6 requests del lado del servidor, unos segundos)
@@ -151,7 +154,10 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
                 </div>
               </div>
               <div style={{ borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--line)', padding: 6 }}>
-                <KLineChart snaps={snaps} kType={kType} kCond={kCond} maxAbs={maxAbs} window={s.kWindow} />
+                <KLineChart
+                  snaps={snaps} kType={kType} kCond={kCond} maxAbs={maxAbs} window={s.kWindow}
+                  techo={kType === 'res' && rev.data ? { pos: rev.data.familias[kCond].historial.positivo?.kPico.mediana ?? null, neg: rev.data.familias[kCond].historial.negativo?.kPico.mediana ?? null } : undefined}
+                />
               </div>
               <KLineLegend />
               <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
@@ -168,6 +174,18 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
                   <div style={{ font: '700 16px var(--mono)', color: q == null ? 'var(--t3)' : q > 0 ? 'var(--up)' : q < 0 ? 'var(--down)' : 'var(--t2)' }}>{q == null ? '—' : signFmt(q)}</div>
                 </div>
               </div>
+            </section>
+
+            {/* REVENTÓN DE LA BURBUJA — cuándo la K de resultado suele volver a cero (docs/REVENTON.md) */}
+            <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+              {kType === 'res' ? (
+                <ReventonBurbuja data={rev.data ?? null} loading={rev.loading} error={rev.error} familia={kCond} onFamilia={(f) => store.setKCond(f)()} />
+              ) : (
+                <>
+                  <div style={{ font: '700 12px var(--sans)' }}>Reventón · guía</div>
+                  <div style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)', marginTop: 2 }}>Solo para la K de resultado: elegí «K» en el selector de arriba. Las K de goles quedan fuera por ahora.</div>
+                </>
+              )}
             </section>
 
             {/* PLANTILLA — indicadores de jugadores (docs/JUGADORES.md) */}

@@ -1,0 +1,416 @@
+{
+ "_doc": "Vectores dorados del reventón de burbuja (backend/analisis/burbuja.py ↔ src/lib/burbuja.ts). La fusión está escrita a mano siguiendo §3.3 del motor; lo que se verifica es el ANÁLISIS sobre ella, no el motor.",
+ "filas": [
+  {
+   "equipoId": 1,
+   "fixtureId": 1000,
+   "fecha": "2026-01-01T20:00:00Z",
+   "condicion": "Local",
+   "rivalId": 101,
+   "rivalNombre": "A",
+   "nivelRival": 2.0,
+   "golesFavor": 2,
+   "golesContra": 0,
+   "ligaId": 281,
+   "esInternacional": false,
+   "fusion": {
+    "k": 4.0,
+    "kLocal": 4.0,
+    "kVisita": 0.0
+   }
+  },
+  {
+   "equipoId": 1,
+   "fixtureId": 1001,
+   "fecha": "2026-01-08T20:00:00Z",
+   "condicion": "Visita",
+   "rivalId": 102,
+   "rivalNombre": "B",
+   "nivelRival": 2.5,
+   "golesFavor": 1,
+   "golesContra": 0,
+   "ligaId": 281,
+   "esInternacional": false,
+   "fusion": {
+    "k": 7.5,
+    "kLocal": 4.0,
+    "kVisita": 3.5
+   }
+  },
+  {
+   "equipoId": 1,
+   "fixtureId": 1002,
+   "fecha": "2026-01-15T20:00:00Z",
+   "condicion": "Local",
+   "rivalId": 103,
+   "rivalNombre": "C",
+   "nivelRival": 3.0,
+   "golesFavor": 0,
+   "golesContra": 1,
+   "ligaId": 281,
+   "esInternacional": false,
+   "fusion": {
+    "k": -3.0,
+    "kLocal": -3.0,
+    "kVisita": 3.5
+   }
+  },
+  {
+   "equipoId": 1,
+   "fixtureId": 1003,
+   "fecha": "2026-01-22T20:00:00Z",
+   "condicion": "Visita",
+   "rivalId": 104,
+   "rivalNombre": "D",
+   "nivelRival": 2.0,
+   "golesFavor": 0,
+   "golesContra": 2,
+   "ligaId": 281,
+   "esInternacional": false,
+   "fusion": {
+    "k": -7.0,
+    "kLocal": -3.0,
+    "kVisita": -4.0
+   }
+  },
+  {
+   "equipoId": 1,
+   "fixtureId": 1004,
+   "fecha": "2026-01-29T20:00:00Z",
+   "condicion": "Local",
+   "rivalId": 105,
+   "rivalNombre": "E",
+   "nivelRival": 1.5,
+   "golesFavor": 1,
+   "golesContra": 1,
+   "ligaId": 281,
+   "esInternacional": false,
+   "fusion": {
+    "k": 0.0,
+    "kLocal": 0.0,
+    "kVisita": -4.0
+   }
+  },
+  {
+   "equipoId": 1,
+   "fixtureId": 1005,
+   "fecha": "2026-02-05T20:00:00Z",
+   "condicion": "Local",
+   "rivalId": 106,
+   "rivalNombre": "F",
+   "nivelRival": 1.0,
+   "golesFavor": 3,
+   "golesContra": 0,
+   "ligaId": 281,
+   "esInternacional": false,
+   "fusion": {
+    "k": 3.0,
+    "kLocal": 3.0,
+    "kVisita": -4.0
+   }
+  },
+  {
+   "equipoId": 1,
+   "fixtureId": 1006,
+   "fecha": "2026-02-12T20:00:00Z",
+   "condicion": "Visita",
+   "rivalId": 101,
+   "rivalNombre": "A",
+   "nivelRival": 2.0,
+   "golesFavor": 2,
+   "golesContra": 1,
+   "ligaId": 281,
+   "esInternacional": false,
+   "fusion": {
+    "k": 5.8,
+    "kLocal": 3.0,
+    "kVisita": 2.8
+   }
+  },
+  {
+   "equipoId": 1,
+   "fixtureId": 1007,
+   "fecha": "2026-02-19T20:00:00Z",
+   "condicion": "Local",
+   "rivalId": 107,
+   "rivalNombre": "G",
+   "nivelRival": 2.5,
+   "golesFavor": 4,
+   "golesContra": 1,
+   "ligaId": 281,
+   "esInternacional": true,
+   "fusion": {
+    "k": 13.3,
+    "kLocal": 10.5,
+    "kVisita": 2.8
+   }
+  },
+  {
+   "equipoId": 1,
+   "fixtureId": 1008,
+   "fecha": "2026-02-26T20:00:00Z",
+   "condicion": "Visita",
+   "rivalId": 108,
+   "rivalNombre": "H",
+   "nivelRival": 2.0,
+   "golesFavor": 1,
+   "golesContra": 1,
+   "ligaId": 281,
+   "esInternacional": false,
+   "fusion": {
+    "k": 0.0,
+    "kLocal": 10.5,
+    "kVisita": 0.0
+   }
+  },
+  {
+   "equipoId": 1,
+   "fixtureId": 1009,
+   "fecha": "2026-03-05T20:00:00Z",
+   "condicion": "Local",
+   "rivalId": 102,
+   "rivalNombre": "B",
+   "nivelRival": 2.5,
+   "golesFavor": 2,
+   "golesContra": 1,
+   "ligaId": 281,
+   "esInternacional": false,
+   "fusion": {
+    "k": 2.5,
+    "kLocal": 13.0,
+    "kVisita": 0.0
+   }
+  },
+  {
+   "equipoId": 1,
+   "fixtureId": 1010,
+   "fecha": "2026-03-12T20:00:00Z",
+   "condicion": "Local",
+   "rivalId": 103,
+   "rivalNombre": "C",
+   "nivelRival": 3.0,
+   "golesFavor": 1,
+   "golesContra": 0,
+   "ligaId": 281,
+   "esInternacional": false,
+   "fusion": {
+    "k": 5.5,
+    "kLocal": 16.0,
+    "kVisita": 0.0
+   }
+  },
+  {
+   "equipoId": 1,
+   "fixtureId": 1011,
+   "fecha": "2026-03-19T20:00:00Z",
+   "condicion": "Visita",
+   "rivalId": 104,
+   "rivalNombre": "D",
+   "nivelRival": 2.0,
+   "golesFavor": 0,
+   "golesContra": 3,
+   "ligaId": 281,
+   "esInternacional": false,
+   "fusion": {
+    "k": -6.0,
+    "kLocal": 16.0,
+    "kVisita": -6.0
+   }
+  },
+  {
+   "equipoId": 1,
+   "fixtureId": 1012,
+   "fecha": "2026-03-26T20:00:00Z",
+   "condicion": "Local",
+   "rivalId": 105,
+   "rivalNombre": "E",
+   "nivelRival": 1.5,
+   "golesFavor": 0,
+   "golesContra": 2,
+   "ligaId": 281,
+   "esInternacional": false,
+   "fusion": {
+    "k": -9.0,
+    "kLocal": -3.0,
+    "kVisita": -6.0
+   }
+  },
+  {
+   "equipoId": 1,
+   "fixtureId": 1013,
+   "fecha": "2026-04-02T20:00:00Z",
+   "condicion": "Visita",
+   "rivalId": 106,
+   "rivalNombre": "F",
+   "nivelRival": 1.0,
+   "golesFavor": 2,
+   "golesContra": 2,
+   "ligaId": 281,
+   "esInternacional": false,
+   "fusion": {
+    "k": 0.0,
+    "kLocal": -3.0,
+    "kVisita": 0.0
+   }
+  },
+  {
+   "equipoId": 1,
+   "fixtureId": 1014,
+   "fecha": "2026-04-09T20:00:00Z",
+   "condicion": "Local",
+   "rivalId": 101,
+   "rivalNombre": "A",
+   "nivelRival": 2.0,
+   "golesFavor": 1,
+   "golesContra": 0,
+   "ligaId": 281,
+   "esInternacional": false,
+   "fusion": {
+    "k": 2.0,
+    "kLocal": 2.0,
+    "kVisita": 0.0
+   }
+  },
+  {
+   "equipoId": 1,
+   "fixtureId": 1015,
+   "fecha": "2026-04-16T20:00:00Z",
+   "condicion": "Visita",
+   "rivalId": 102,
+   "rivalNombre": "B",
+   "nivelRival": 2.5,
+   "golesFavor": 3,
+   "golesContra": 1,
+   "ligaId": 281,
+   "esInternacional": false,
+   "fusion": {
+    "k": 9.0,
+    "kLocal": 2.0,
+    "kVisita": 7.0
+   }
+  },
+  {
+   "equipoId": 1,
+   "fixtureId": 1016,
+   "fecha": "2026-04-23T20:00:00Z",
+   "condicion": "Local",
+   "rivalId": 103,
+   "rivalNombre": "C",
+   "nivelRival": 3.0,
+   "golesFavor": 2,
+   "golesContra": 0,
+   "ligaId": 281,
+   "esInternacional": false,
+   "fusion": {
+    "k": 15.0,
+    "kLocal": 8.0,
+    "kVisita": 7.0
+   }
+  },
+  {
+   "equipoId": 1,
+   "fixtureId": 1017,
+   "fecha": "2026-04-30T20:00:00Z",
+   "condicion": "Visita",
+   "rivalId": 104,
+   "rivalNombre": "D",
+   "nivelRival": 2.0,
+   "golesFavor": 1,
+   "golesContra": 0,
+   "ligaId": 281,
+   "esInternacional": false,
+   "fusion": {
+    "k": 17.8,
+    "kLocal": 8.0,
+    "kVisita": 9.8
+   }
+  },
+  {
+   "equipoId": 1,
+   "fixtureId": 1018,
+   "fecha": "2026-05-07T20:00:00Z",
+   "condicion": "Local",
+   "rivalId": 105,
+   "rivalNombre": "E",
+   "nivelRival": 1.5,
+   "golesFavor": 2,
+   "golesContra": 1,
+   "ligaId": 281,
+   "esInternacional": false,
+   "fusion": {
+    "k": 19.3,
+    "kLocal": 9.5,
+    "kVisita": 9.8
+   }
+  },
+  {
+   "equipoId": 1,
+   "fixtureId": 1019,
+   "fecha": "2026-05-14T20:00:00Z",
+   "condicion": "Visita",
+   "rivalId": 106,
+   "rivalNombre": "F",
+   "nivelRival": 1.0,
+   "golesFavor": 2,
+   "golesContra": 0,
+   "ligaId": 281,
+   "esInternacional": false,
+   "fusion": {
+    "k": 22.1,
+    "kLocal": 9.5,
+    "kVisita": 12.6
+   }
+  }
+ ],
+ "ctx": {
+  "equipoId": 1,
+  "nombre": "Foco",
+  "nivel": 2.4,
+  "bin": 5,
+  "hoy": "2026-09-16",
+  "proximo": {
+   "fixtureId": 2000,
+   "fecha": "2026-09-19",
+   "rivalId": 109,
+   "rival": "Rival Próximo",
+   "condicion": "V",
+   "nivelRival": 2.6
+  },
+  "plantilla": {
+   "actualizadoEn": "2026-09-13T10:00:00Z",
+   "entrenador": {
+    "nombre": "Pérez",
+    "desde": "2026-08-07"
+   },
+   "revolucion": {
+    "llegadas": 4,
+    "salidas": 3,
+    "ventanaDias": 120
+   },
+   "jugadores": [
+    {
+     "id": 1,
+     "baja": null
+    },
+    {
+     "id": 2,
+     "baja": {
+      "tipo": "lesion",
+      "detalle": "rodilla"
+     }
+    },
+    {
+     "id": 3,
+     "baja": null
+    },
+    {
+     "id": 4,
+     "baja": {
+      "tipo": "suspension",
+      "detalle": null
+     }
+    }
+   ]
+  }
+ }
+}

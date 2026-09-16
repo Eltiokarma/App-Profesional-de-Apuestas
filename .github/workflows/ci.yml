@@ -20,6 +20,8 @@ jobs:
         run: npm run test:motor
       - name: Verificar la capa de visualización de las K
         run: npm run test:kview
+      - name: Verificar el reventón de burbuja (espejo TS vs vectores dorados)
+        run: npm run test:burbuja
       - name: Typecheck + build de producción
         run: npm run build
 
@@ -57,3 +59,7 @@ jobs:
         run: python -m backend.test_preflight
       - name: Tests del parte de Cowork (bloque F calculado y cruce del once)
         run: python -m backend.test_cowork
+      - name: Tests del reventón de burbuja (guía calculada, vectores dorados compartidos con el TS)
+        run: python -m backend.test_burbuja
+      - name: Tests del backtest del reventón (anti-fuga y conteos)
+        run: python -m backend.test_backtest_burbuja
