@@ -1397,8 +1397,22 @@ def burbujas_backtest(padron: bool = True, horizonte: int = Query(default=1, ge=
     según el padrón (usar `muestra` para acotar). `calibrar=true` añade la
     regresión logística sobre las señales y la tabla de puntos propuesta."""
     from backend import backtest_burbuja as bt
-    return bt.correr_backtest(padron_=padron, liga=liga, horizonte=horizonte, muestra=muestra,
-                              min_filas=minFilas, calibrar_=calibrar)
+    try:
+        return bt.correr_backtest(padron_=padron, liga=liga, horizonte=horizonte, muestra=muestra,
+                                  min_filas=minFilas, calibrar_=calibrar)
+    except Exception as e:  # noqa: BLE001
+        # Un «Internal Server Error» de 21 bytes no dice nada a quien corre la
+        # calibración desde su PC. Esto solo lo ve el token maestro: va el tipo
+        # de excepción y las últimas líneas de la traza. Ya pasó una vez: el
+        # backtest corrió mientras la ingesta regeneraba las bases derivadas.
+        import traceback
+        traza = [l.strip() for l in traceback.format_exc().strip().splitlines()[-4:]]
+        raise HTTPException(500, detail={
+            "error": f"{type(e).__name__}: {e}",
+            "donde": traza,
+            "pista": "si la ingesta acaba de correr (lastPipelineRun reciente en /health), las bases "
+                     "derivadas pueden estar regenerándose: reintentá en unos minutos",
+        })
 
 
 @app.get(API + "/fixtures/{fixture_id}/ficha")
