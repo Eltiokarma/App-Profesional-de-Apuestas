@@ -41,6 +41,7 @@ python -m backend.ingesta.extractor             # fixtures hoy−3d..+10d (por F
 python -m backend.ingesta.diagnostico --dia 2026-05-31 --api  # auditar huecos (NS/TBD vencidos) y contrastar un día con la API
 python -m backend.ingesta.extractor --ventana-horas 6  # refresco ligero: solo cuotas de NS próximos
 python -m backend.ingesta.jugadores             # plantillas/bajas/traspasos/DT de equipos con NS próximos (docs/JUGADORES.md)
+python -m backend.ingesta.jugadores --solo-dt   # rehacer SOLO el DT vigente (1 request/equipo, sin TTL); en Railway: SAD_JUGADORES_SOLO_DT=1 una corrida
 python -m backend.ingesta.en_vivo               # 1 ciclo en vivo: marcador/minuto + odds_live (WAL)
 python -m backend.ingesta.diag_vivo --hoy       # por qué un partido no tiene cuotas en juego (--fixture N, --api)
 python -m backend.ingesta.ficha_partido        # alineaciones+eventos+stats de los partidos anteriores (3 req c/u)
@@ -249,13 +250,17 @@ conversación se pierde en la siguiente.
    mandarle cualquier token al cliente — un proxy en el frontend, o un tercer
    token de SOLO LECTURA que no abra nada que gaste. Aplazado a conciencia por
    el usuario mientras se probaba la tubería; ya está probada.
-2. **Los DT de la ficha están viejos.** En la corrida del 15/09, seis de ocho
-   entrenadores no coincidían con la realidad (un DT figuraba dirigiendo al
-   equipo que enfrenta). Eso decide el bloque A y dispara o no T.54. Se arregla
-   corriendo `python -m backend.ingesta.jugadores`, que gasta cuota de
-   API-Football: no se puede hacer desde una sesión de análisis. Mientras
-   tanto el prompt (v2.5) obliga a confirmar el DT en prensa antes de puntuar
-   el bloque A, y a dejar A fuera si no se puede establecer.
+2. **Los DT de la ficha estaban viejos.** En la corrida del 16/09, 17 de 22
+   entrenadores eran el SALIENTE (Bucaramanga con un DT de 2019). Causa
+   encontrada: `/coachs?team=` devuelve a todos los que pasaron por el club
+   y deja etapas viejas sin `end`; la ingesta tomaba la PRIMERA etapa abierta,
+   que es la más antigua. Arreglado en `elegir_entrenador`
+   (`backend/ingesta/jugadores.py`): manda la última alineación capturada y,
+   si no, la etapa abierta con el `start` más reciente. Lo guardado con la
+   regla vieja se rehace con `SAD_JUGADORES_SOLO_DT=1` durante UNA corrida
+   programada (o `--solo-dt` a mano): 1 request por equipo. El `desde` trae
+   el día 01 porque la API conoce el mes, no el día. El prompt (v2.5) sigue
+   obligando a confirmar el DT en prensa antes de puntuar el bloque A.
 3. **Colisión de nombres F3/F4.** El bloque F del EFE tiene F3 y F4, y el TDE
    tiene los suyos. La instrucción «no mandes F3 ni F4» (que habla del EFE) se
    puede leer al revés. Renombrar desalinea el prompt del skill, así que por

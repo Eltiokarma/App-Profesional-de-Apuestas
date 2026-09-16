@@ -142,7 +142,7 @@ export const SadApi = {
   calendario: (equipoId: number, n?: number) =>
     apiGet<PartidoCalendarioDTO[]>(`/equipos/${equipoId}/calendario` + qs({ n })),
   /** Reventón de la burbuja (docs/REVENTON.md): guía calculada, 0 tokens. */
-  burbujas: (equipoId: number, antesDe?: number) => apiGet<BurbujasEquipoDTO>(`/equipos/${equipoId}/burbujas` + qs({ antesDe })),
+  burbujas: (equipoId: number, antesDe?: number, proximo?: number) => apiGet<BurbujasEquipoDTO>(`/equipos/${equipoId}/burbujas` + qs({ antesDe, proximo })),
 
   /** La película del equipo: pronóstico → qué pasó → veredicto → lección. */
   cadena: (equipoId: number, limit?: number) =>

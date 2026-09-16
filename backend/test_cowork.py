@@ -470,6 +470,8 @@ def main():
         "documentos": {"documentos": "## ensayo"},
         "documentos[0]": {"documentos": ["## ensayo"]},
         "timelineEventos[0]": {"timelineEventos": ["cambio de DT"]},
+        "timelineEventos[1]": {"timelineEventos": [{"fecha": "2026-03-02", "tipo": "partido", "titulo": "3-0 al Erzurumspor"},
+                                                   {"fecha": "2026-03-02", "tipo": "rumor", "titulo": "…"}]},
         "equipos.a.bloques": {"equipos": {"a": {"bloques": "A3 B4"}}},
         "equipos.a.excluidos": {"equipos": {"a": {"bloques": {"A": 3}, "excluidos": "C"}}},
         "equipos.a.notas": {"equipos": {"a": {"bloques": {"A": 3}, "notas": "mismo DT"}}},
@@ -1012,6 +1014,9 @@ def main():
     check("con burbuja abierta el riesgo trae nivel y motivos; sin ella, null",
           all((rc[l]["actual"] is None) == (rc[l]["riesgo"] is None) for l in ("a", "b"))
           and all(rc[l]["riesgo"] is None or (rc[l]["riesgo"]["nivel"] and rc[l]["riesgo"]["motivos"]) for l in ("a", "b")), rc)
+    check("el contrato documenta la forma de `cadena` (objeto por lado) y los tipos de `timelineEventos`",
+          (lambda ct: '"a"' in ct["cadena"]["forma"] and ct["timelineEventos"]["tipos"] == ["institucional", "tecnico", "sancion", "hito"]
+           and "titulo" in ct["documentos"]["forma"])(c.get(A + "/analisis/cowork/contrato").json()))
     check("el contrato declara la clave reventon de la lectura SAD",
           "reventon" in c.get(A + "/analisis/cowork/contrato").json()["lecturaSad"]["claves"])
     # ALERTA DE EXTREMO: viaja por lado, y si está activa el parte la grita en la tira de alertas

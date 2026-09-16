@@ -419,8 +419,8 @@ dos son dato de primera clase:
 
 ```json
 "tde": {"bloques": [
-  {"equipo": "a", "ie": 4.2, "ventana": "60-75'", "indicadores": {...}},
-  {"equipo": "b", "ie": 6.4, "ventana": "75-90'", "indicadores": {...}}
+  {"equipo": "a", "ieNivel": "verde", "ventana": "60-75'", "indicadores": {...}},
+  {"equipo": "b", "ieNivel": "rojo", "ventana": "75-90'", "indicadores": {...}}
 ]}
 ```
 
@@ -772,7 +772,11 @@ Escribís vos (es juicio, no se puede calcular):
   "MATCHUP FAVORABLE" sin los tres es una etiqueta que nadie puede discutir.
 - EL REVENTÓN DE LA BURBUJA, ANTES de escribir la lectura SAD y el 1X2:
     GET {base}/fixtures/{fixtureId}            → `local.id` y `visitante.id`
-    GET {base}/equipos/{local.id}/burbujas  y  GET {base}/equipos/{visitante.id}/burbujas
+    GET {base}/equipos/{local.id}/burbujas?proximo={fixtureId}
+    GET {base}/equipos/{visitante.id}/burbujas?proximo={fixtureId}
+  SIEMPRE con `proximo={fixtureId}`: sin él el próximo rival sale del
+  calendario del equipo, y un fixture viejo sin marcar lo desvía (al Betis le
+  salió un rival que no era el del partido).
   Es una guía CALCULADA de cuándo la K de resultado de cada equipo suele
   volver a cero, calibrada con 171 mil burbujas reales. No es probabilidad y
   no la reemplaces con tu impresión. Mirá `familias.total` (la que manda):
@@ -949,7 +953,7 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
                        "P1a": 0.5, "P1b": 1, "P1c": 0, "P2": 0.5, "P3": 0.5, "P4": 0,
                        "S1": 0.5, "S2": 0, "S3": 0.5,
                        "SOB1": 0, "SOB2": 0.5, "SOB3": 0},
-       "ie": 5.8, "ieNivel": "ambar", "ise": 3.1, "iseNivel": "verde",
+       "ieNivel": "ambar", "iseNivel": "verde",
        "tipologia": "repliegue por agotamiento", "ventana": "75-90'",
        "disciplina43": false,
        "vias": [{"nombre": "ECHADA", "indice": 5.8, "ventana": "75-90'",
@@ -957,7 +961,7 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
        "falsador": "si sostiene la línea por encima de su área tras el 75', el índice está mal"},
       {"equipo": "a",
        "indicadores": {"…los mismos 19 indicadores, puntuados para ESTE equipo…": 0},
-       "ie": 2.4, "ieNivel": "verde", "ise": 4.7, "iseNivel": "ambar",
+       "ieNivel": "verde", "iseNivel": "ambar",
        "tipologia": "sobreexposición por urgencia", "ventana": "60-75'",
        "vias": [{"nombre": "SOBREEXPOSICION", "indice": 4.7, "ventana": "60-75'",
                  "detalle": "adelanta los dos laterales con el marcador abierto"}],
@@ -1180,7 +1184,8 @@ lo que sobre queda para la próxima (la agenda lo retoma con `yaHechos`).
      `pendientes`; nunca un 0 inventado).
    - Tabla F1 (14-16 con zona/rol/apps) y bajas públicas también en `plantel`.
    - Reventón de la burbuja ANTES del 1X2: GET /fixtures/{fixtureId} te da
-     `local.id` y `visitante.id`; GET /equipos/{id}/burbujas de los dos.
+     `local.id` y `visitante.id`; GET /equipos/{id}/burbujas?proximo={fixtureId}
+     de los dos (siempre con `proximo=`, para que el rival sea ESTE partido).
      Mirá `familias.total.riesgo` (nivel, puntos, confianza, motivos) y
      `familias.total.rival.tramo`. MUY ALTO o ALTO con confianza media o
      alta = no recomendar que esa racha siga (y decirlo en la lectura);

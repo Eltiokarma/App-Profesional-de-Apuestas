@@ -358,6 +358,15 @@ def main():
     ajeno = next(f for f in fx if betis not in (f["local"]["id"], f["visitante"]["id"]))
     check("burbujas antesDe con un fixture que el equipo no juega → 400",
           c.get(A + f"/equipos/{betis}/burbujas?antesDe={ajeno['id']}").status_code == 400)
+    # proximo=<fixtureId>: ESE partido hace de próximo, con la historia ENTERA
+    # (al Betis le salía un rival que no era el del partido: un fixture viejo del calendario)
+    bu3 = c.get(A + f"/equipos/{betis}/burbujas?proximo={fin['id']}").json()
+    check("burbujas proximo=: ese partido es el próximo y la historia NO se corta",
+          bu3["proximo"]["fixtureId"] == fin["id"] and bu3["partidos"] == len(todas) and "vistaAlDia" not in bu3,
+          (bu3["proximo"], bu3["partidos"], len(todas)))
+    check("burbujas proximo= con un fixture que el equipo no juega → 400; inexistente → 404",
+          c.get(A + f"/equipos/{betis}/burbujas?proximo={ajeno['id']}").status_code == 400
+          and c.get(A + f"/equipos/{betis}/burbujas?proximo=999999").status_code == 404)
 
     # /analisis/burbujas/backtest — calibración sobre las .db del servidor (maestro, no Cowork)
     bk = c.get(A + "/analisis/burbujas/backtest?padron=false&muestra=3").json()
