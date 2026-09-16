@@ -422,7 +422,10 @@ def estabilidad_de(plantilla: dict | None, hoy: str) -> dict:
     else:
         motivos.append(f"{mov} {pal} en {movimientos['ventanaDias']} días: plantel quieto")
 
-    bajas = sum(1 for j in plantilla["jugadores"] if j.get("baja"))
+    # un flag «Missing Fixture» leído como ruido (media plantilla marcada) no
+    # es una baja: no puede mover la estabilidad (docs/JUGADORES.md)
+    bajas = sum(1 for j in plantilla["jugadores"]
+                if j.get("baja") and (j["baja"] or {}).get("lectura") != "ruido")
     if bajas >= BAJAS_TRANSICION:
         subir("en transición")
         motivos.append(f"{bajas} bajas en la plantilla")

@@ -3,7 +3,7 @@
 import { K0, qValues, stepK } from '../src/motor/constants'
 import { fuse, levelBin } from '../src/motor/discretizer'
 import { teamEngine } from '../src/motor/engine'
-import { computeTeamLevels } from '../src/motor/levels'
+import { computeTeamLevels, levelBreakdown } from '../src/motor/levels'
 import { CAL_UMBRAL, gapFor, mu, ptsEsperadosAjustados, ptsRecent, recuperabilidad, senalCalendario, senalDe } from '../src/motor/regression'
 import type { TeamMatch } from '../src/motor/types'
 
@@ -124,6 +124,24 @@ const lvMix = computeTeamLevels(hMix)
 // partido 21: ventana = 19 empates + 1 derrota → P=19/20=0.95; u5: 4 empates+derrota dg=−3 tg=4+3+...
 // u5 goles: 4×(1+1)=8 +3 =11? gf-ga: 4×0 + (0-3)=−3; gf+ga: 4×2+3=11 → G=−3/11
 check('nivel partido 21 = 0.95 − 3/11 + 1', lvMix[20].level.toFixed(4), (0.95 - 3 / 11 + 1).toFixed(4))
+// §2.5 el desglose P + G: la retícula del nivel. 3.2833 exacto sale de 39 pts
+// con 4-2 en los últimos 5 Y de 49 pts con 5-7 (dos historias, un número)
+const d21 = levelBreakdown(hMix, 20)!
+check('desglose partido 21: P=0.95, G=−3/11, 19 pts, 4-7 en los últimos 5',
+  [d21.puntos, d21.goles, d21.puntosVentana, d21.golesFavor5, d21.golesContra5], [0.95, Math.round((-3 / 11) * 10000) / 10000, 19, 4, 7])
+check('desglose con <20 partidos: null', levelBreakdown(shortHist, 6), null)
+check('desglose retroactivo: el partido 3 lleva las piezas del nº 20', levelBreakdown(h20, 3), levelBreakdown(h20, 19))
+// 39 pts = 10V 2E 3D en los primeros 15 (32) + 2D 1E 2V en los últimos 5 (7); últimos 5: 0-1, 0-1, 0-0, 2-0, 2-0 → 4-2, G=1/3
+const w39 = [...Array.from({ length: 10 }, (_, i) => mk(i, 1, 0)), mk(10, 0, 0), mk(11, 0, 0), mk(12, 0, 1), mk(13, 0, 1), mk(14, 0, 1),
+  mk(15, 0, 1), mk(16, 0, 1), mk(17, 0, 0), mk(18, 2, 0), mk(19, 2, 0)]
+// 49 pts = 14V 1D en los primeros 15 (42) + 2D 1E 2V en los últimos 5 (7); últimos 5: 0-2, 0-2, 1-1, 2-1, 2-1 → 5-7, G=−1/6
+const w49 = [...Array.from({ length: 14 }, (_, i) => mk(i, 1, 0)), mk(14, 0, 1),
+  mk(15, 0, 2), mk(16, 0, 2), mk(17, 1, 1), mk(18, 2, 1), mk(19, 2, 1)]
+const l39 = computeTeamLevels(w39)[19].level
+const l49 = computeTeamLevels(w49)[19].level
+check('3.2833 con 39 pts y 4-2 en los últimos 5 (dos 0-1, un 0-0, dos 2-0)', l39.toFixed(4), '3.2833')
+check('3.2833 TAMBIÉN con 49 pts y 5-7 en los últimos 5: mismo número, otra historia', l49.toFixed(4), '3.2833')
+check('y el desglose los distingue', [levelBreakdown(w39, 19)!.puntosVentana, levelBreakdown(w49, 19)!.puntosVentana], [39, 49])
 
 // ---- §4.1 bins fijos v6 ----
 console.log('— §4.1 bins —')

@@ -115,7 +115,9 @@ nuevo o el plantel cambió, la historia de K es de *otro* equipo.
 - Estabilidad (de la plantilla del contrato, `docs/JUGADORES.md`):
   - DT con menos de **90 días** → `inestable`.
   - `llegadas + salidas` de la ventana: ≥ 6 → `inestable`; ≥ 3 → `en transición`.
-  - ≥ 5 bajas → `en transición`.
+  - ≥ 5 bajas → `en transición`. Cuentan solo las de **señal**: una baja del
+    flag «Missing Fixture» leída como ruido (media plantilla marcada,
+    `docs/JUGADORES.md`) no es una baja, en los dos lados (Python y TS).
   - Plantilla sin capturar → `sin dato`.
   - Plantilla con **≥ 30 días** de edad: se avisa que el DT y las bajas pueden
     estar viejos (deuda 2 de `CLAUDE.md`).

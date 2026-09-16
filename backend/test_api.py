@@ -78,6 +78,13 @@ def main():
     # /niveles
     nv = c.get(A + f"/niveles/{betis}?limit=5").json()
     check("/niveles: 5 filas desc con bin/etiqueta", len(nv) == 5 and 0 <= nv[0]["bin"] <= 9 and nv[0]["binEtiqueta"], nv[:1])
+    # el desglose P + G (§2.1) se recalcula de la historia y cuadra con el nivel guardado
+    check("/niveles: cada fila trae el desglose y P + G + 1 = nivel",
+          all(r["desglose"] and abs(r["desglose"]["puntos"] + r["desglose"]["goles"] + 1 - r["nivel"]) < 1e-3
+              and r["desglose"]["partidosVentana"] == 20 for r in nv), [r.get("desglose") for r in nv[:2]])
+    check("/niveles: el desglose trae los goles de los últimos 5 y los puntos de la ventana",
+          all(r["desglose"]["puntosVentana"] == round(r["desglose"]["puntos"] * 20)
+              and r["desglose"]["golesFavor5"] >= 0 for r in nv))
     check("niveles orden desc por fecha", nv[0]["fecha"] >= nv[-1]["fecha"])
 
     # /constantes — invariantes del motor
@@ -415,6 +422,41 @@ def main():
     check("resumen skills: fuente citada", "[fuente: sad.db" in rs.get("plantel", ""))
     mv = jugcapa.movimientos_para_timeline(betis)
     check("movimientos timeline: traspaso y DT con fechas", "llega de" in mv and "DT vigente" in mv, mv)
+
+    # ── el flag Missing Fixture como señal CON UMBRAL (deuda 6, corrida del 16/09) ──
+    # Betis: 1 marcado de 16 (6%) → señal; la baja cuenta y viaja con su lectura
+    check("Missing Fixture: 1 de 16 marcados es señal (bajo el umbral del 25%)",
+          pl["missingFixture"] and pl["missingFixture"]["lectura"] == "senal"
+          and pl["missingFixture"]["marcados"] == 1 and pl["missingFixture"]["plantilla"] == 16
+          and baja[0]["baja"]["lectura"] == "senal", pl.get("missingFixture"))
+    # Sevilla: la API marca a 9 de 16 (56%) → ruido: ninguna cuenta como baja
+    import sqlite3 as _sq
+    sevilla = 536
+    con_mf = _sq.connect(os.path.join(tmp, "sad.db"))
+    con_mf.executemany(
+        "INSERT OR REPLACE INTO jugador_bajas (player_id, team_id, season, tipo, detalle, fecha) "
+        "VALUES (?, ?, 2025, 'Missing Fixture', 'Coach''s decision', '2026-09-10')",
+        [(sevilla * 1000 + i, sevilla) for i in range(8)],
+    )
+    con_mf.commit()
+    con_mf.close()
+    pl_r = c.get(A + f"/equipos/{sevilla}/plantilla").json()
+    marc = [j for j in pl_r["jugadores"] if j["baja"]]
+    check("Missing Fixture: 9 de 16 marcados (56%) → ruido, y cada baja lo dice",
+          pl_r["missingFixture"]["lectura"] == "ruido" and pl_r["missingFixture"]["marcados"] == 9
+          and len(marc) == 9 and all(j["baja"]["lectura"] == "ruido" for j in marc), pl_r.get("missingFixture"))
+    rs_r = jugcapa.resumen_para_skills(sevilla)
+    check("resumen skills con ruido: no lista bajas y avisa la densidad para confirmar en prensa",
+          "densidad de ruido" in rs_r.get("bajas", "") and "% de minutos" not in rs_r.get("bajas", ""), rs_r.get("bajas"))
+    check("la línea del plantel no marca BAJA a los de ruido",
+          "BAJA:" not in rs_r.get("plantel", ""), rs_r.get("plantel", "")[:200])
+    from backend.analisis.burbuja import estabilidad_de
+    est_r = estabilidad_de(pl_r, "2026-09-16")
+    check("estabilidad de la burbuja: las bajas de ruido no cuentan (0, no 9)", est_r["bajas"] == 0, est_r)
+    est_s = estabilidad_de(pl, "2026-09-16")
+    check("y la de señal sí (Betis: 1)", est_s["bajas"] == 1, est_s)
+    check("un equipo sin bajas marcadas viaja con missingFixture null",
+          c.get(A + "/equipos/599/plantilla").json().get("missingFixture") is None)
 
     # /analisis/despensa — carga manual desde el Claude de escritorio
     carga = c.post(A + "/analisis/despensa", json={

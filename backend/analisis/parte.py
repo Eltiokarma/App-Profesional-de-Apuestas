@@ -519,6 +519,94 @@ def alertas_extremo(reventon: dict | None, nombres: dict) -> list[dict]:
     return out
 
 
+# ── la escala del nivel entre ligas ──────────────────────────────────────────
+
+def _liga_domestica(team_id: int, fecha: str | None) -> dict | None:
+    """La liga contra la que se calcula el nivel de un equipo: la MÁS FRECUENTE
+    en sus partidos terminados del último año antes de `fecha`, fuera de los
+    torneos internacionales de clubes, el Mundial y los amistosos. None si no
+    hay partidos (equipo nuevo en la base)."""
+    from backend.app import liga_meta
+    fuera = _internacionales_de_clubes() | {1, 667}
+    hasta = (fecha or datetime.now(timezone.utc).strftime("%Y-%m-%d")).replace("T", " ").rstrip("Z")
+    try:
+        desde = (datetime.strptime(hasta[:10], "%Y-%m-%d") - timedelta(days=365)).strftime("%Y-%m-%d")
+    except ValueError:
+        return None
+    filas = saddb.query(
+        "sad",
+        f"""SELECT league_id, COUNT(*) AS n FROM fixtures
+            WHERE (home_team_id=? OR away_team_id=?) AND date < ? AND date >= ?
+              AND (status_short IN ('FT','AET','PEN') OR status_long='Match Finished')
+              AND league_id IS NOT NULL AND league_id NOT IN ({",".join("?" * len(fuera))})
+            GROUP BY league_id ORDER BY n DESC, league_id LIMIT 1""",
+        (team_id, team_id, hasta, desde, *sorted(fuera)),
+    )
+    if not filas:
+        return None
+    meta = liga_meta(filas[0]["league_id"])
+    return {"id": filas[0]["league_id"], "nombre": meta.get("nombre"), "pais": meta.get("pais"),
+            "partidos": filas[0]["n"]}
+
+
+def _segunda(liga_id: int) -> bool:
+    """Segunda división o torneo menor, con la lista de la ingesta si está a mano."""
+    if liga_id in SEGUNDAS:
+        return True
+    try:
+        from backend.ingesta.extractor import LIGAS_MENORES
+        return liga_id in LIGAS_MENORES
+    except Exception:
+        return False
+
+
+def misma_base(la: dict | None, lb: dict | None) -> bool:
+    """¿Los dos niveles salen de la misma base de rivales? Misma liga, o el
+    mismo país en la misma categoría (Uruguay y Paraguay parten la primera en
+    Apertura/Clausura con dos ids: son la misma base)."""
+    if not la or not lb:
+        return True  # sin dato no se grita nada: la alerta es para lo que se sabe
+    if la["id"] == lb["id"]:
+        return True
+    return bool(la.get("pais")) and la.get("pais") == lb.get("pais") and _segunda(la["id"]) == _segunda(lb["id"])
+
+
+def alerta_escala(fx, nombres: dict) -> list[dict]:
+    """La alerta ESCALA-LIGAS del parte: los dos equipos vienen de bases
+    distintas y el nivel NO compara entre ligas. Es de diseño —el nivel es
+    puntos y goles contra los rivales de cada uno—, pero el parte tiene que
+    decirlo cuando junta a un 12.º de LaLiga con un 15.º de la Premier: sin
+    la advertencia, el número invita a leerlo como si midiera lo mismo."""
+    if not fx:
+        return []
+    try:
+        fecha = str(fx["date"])[:10]
+        la = _liga_domestica(fx["home_team_id"], fecha)
+        lb = _liga_domestica(fx["away_team_id"], fecha)
+        if misma_base(la, lb):
+            return []
+        from backend.app import niveles_de
+        niv = {}
+        for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])):
+            nv = niveles_de(tid, 1, antes=str(fx["date"]))
+            niv[lado] = nv[0]["nivel"] if nv else None
+        fmt = lambda v: f"{v:.2f}" if v is not None else "sin nivel"  # noqa: E731
+        return [{
+            "codigo": "ESCALA-LIGAS", "equipo": "global", "tipo": "dato",
+            "detalle": (f"{nombres.get('a', 'A')} ({la['nombre']}) y {nombres.get('b', 'B')} ({lb['nombre']}) "
+                        f"vienen de bases distintas: el nivel SAD se calcula con los puntos y los goles "
+                        f"contra los rivales de cada uno y NO compara entre ligas (un 12.º de LaLiga puede "
+                        f"salir con menos nivel que un 15.º de la Premier). Leer {fmt(niv['a'])} y "
+                        f"{fmt(niv['b'])} como la posición de cada uno dentro de su propia liga; el gap §5 "
+                        f"y la μ del TDE cruzan esos dos niveles, así que van con esa reserva. El reventón "
+                        f"no la necesita: compara al rival con la propia historia del equipo"),
+            "ligas": {"a": la, "b": lb},
+        }]
+    except Exception as e:  # noqa: BLE001 — se declara, no tumba el parte
+        return [{"codigo": "ESCALA-LIGAS", "equipo": "global", "tipo": "dato",
+                 "detalle": f"no se pudo comparar las ligas de los dos equipos: {e}"}]
+
+
 def _via_tde(v, rechazos: list, donde: str) -> dict | None:
     """Una vía del TDE. Tolera que no sea un objeto y lo DICE.
 
@@ -1317,6 +1405,9 @@ def dto(fixture_id: int) -> dict | None:
     # la burbuja en su máximo histórico va a la tira de alertas, no solo a la
     # lectura: lo que decide cuánto se carga tiene que verse antes que nada
     alertas.extend(alertas_extremo(reventon, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
+    # dos equipos de ligas distintas: el nivel no compara entre bases, y el
+    # parte lo dice antes de que alguien lea los dos números uno contra otro
+    alertas.extend(alerta_escala(fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # el timeline se funde AL LEER, no al depositar: si la ingesta corrige un
     # marcador, la próxima lectura ya lo trae — sellarlo sería congelar hoy lo
     # que mañana se recalcula gratis
@@ -1864,6 +1955,16 @@ INTERNACIONALES = {
     13: "CONMEBOL Libertadores", 11: "CONMEBOL Sudamericana",
     2: "UEFA Champions League", 3: "UEFA Europa League", 848: "UEFA Conference League",
 }
+
+
+def _internacionales_de_clubes() -> set[int]:
+    """Los torneos internacionales DE CLUBES, de la ingesta (una sola lista:
+    `extractor.LIGAS_INTERNACIONALES`); sin la ingesta a mano, los de acá."""
+    try:
+        from backend.ingesta.extractor import LIGAS_INTERNACIONALES
+        return set(LIGAS_INTERNACIONALES)
+    except Exception:
+        return {lid for lid in INTERNACIONALES if lid != 1}
 
 
 def _padron() -> dict[int, str]:

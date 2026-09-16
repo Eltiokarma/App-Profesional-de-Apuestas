@@ -26,6 +26,16 @@ RECIEN_LLEGADO_DIAS = 90
 REVOLUCION_DIAS = 120
 CONGESTION_DIAS = 21
 EN_CAPILLA_AMARILLAS = 4
+# El flag «Missing Fixture» de /injuries como SEÑAL CON UMBRAL. La corrida de
+# Cowork del 16/09/2026 lo contrastó con prensa en 23 partes: acertó 10, con
+# separación clara por DENSIDAD —pocos jugadores marcados = baja real; media
+# plantilla marcada = ruido de la API (marca a todo el que no estuvo en un
+# partido, convocados o no)—. Se había catalogado como artefacto y se tiraba
+# entero; ahora cada baja viaja con su lectura y el resumen que llega al skill,
+# la estabilidad de la burbuja y las pantallas solo cuentan las de señal.
+# Umbral: por encima de este porcentaje de la plantilla marcada, es ruido.
+# Primer corte a partir de esa corrida (n=23): se recalibra con más casos.
+UMBRAL_MISSING_FIXTURE = 0.25
 
 POSICIONES = {
     "Goalkeeper": "Portero",
@@ -103,6 +113,7 @@ def plantilla_de(team_id: int) -> dict:
         "revolucion": {"llegadas": 0, "salidas": 0, "ventanaDias": REVOLUCION_DIAS},
         "jugadores": [],
         "golesPlantilla": 0,
+        "missingFixture": None,
     }
     if temporada is None:
         return base
@@ -145,6 +156,7 @@ def plantilla_de(team_id: int) -> dict:
             "SELECT player_id, tipo, detalle FROM jugador_bajas WHERE team_id=?", (team_id,)
         )
     }
+    missing = lectura_missing_fixture(bajas, {r["player_id"] for r in filas})
 
     max_minutos = max(r["minutos"] or 0 for r in filas) or 1
     goles_equipo = sum(r["goles"] or 0 for r in filas)
@@ -189,7 +201,9 @@ def plantilla_de(team_id: int) -> dict:
             "enCapilla": (r["amarillas"] or 0) >= EN_CAPILLA_AMARILLAS and not (r["rojas"] or 0),
             "paradasP90": _p90(r["paradas"] or 0, minutos) if es_gk else None,
             "golesEncajadosP90": _p90(r["goles_encajados"] or 0, minutos) if es_gk else None,
-            "baja": {"tipo": baja["tipo"], "detalle": baja["detalle"]} if baja else None,
+            "baja": ({"tipo": baja["tipo"], "detalle": baja["detalle"],
+                      "lectura": missing["lectura"] if _es_missing(baja["tipo"]) else "senal"}
+                     if baja else None),
             "recienLlegado": (
                 {"desde": llegada["team_out_nombre"], "fecha": llegada["fecha"]} if llegada else None
             ),
@@ -235,8 +249,38 @@ def plantilla_de(team_id: int) -> dict:
         "jugadores": jugadores,
         # goles del equipo según la plantilla (denominador de participación)
         "golesPlantilla": goles_equipo,
+        # el flag Missing Fixture leído por densidad (ver UMBRAL_MISSING_FIXTURE)
+        "missingFixture": missing if missing["marcados"] else None,
     })
     return base
+
+
+def _es_missing(tipo) -> bool:
+    return (tipo or "").strip().lower() == "missing fixture"
+
+
+def lectura_missing_fixture(bajas: dict, plantilla_ids: set) -> dict:
+    """Cuántos de la plantilla trae marcados como «Missing Fixture» y qué
+    lectura merece: `senal` (pocos: bajas reales) o `ruido` (media plantilla:
+    la API marcó a todo el que no jugó un partido). La densidad se mide
+    contra la plantilla capturada, no contra la lista de bajas."""
+    total = len(plantilla_ids)
+    marcados = sum(1 for pid, b in bajas.items() if pid in plantilla_ids and _es_missing(b["tipo"]))
+    densidad = round(marcados / total, 3) if total else 0.0
+    return {
+        "marcados": marcados,
+        "plantilla": total,
+        "densidad": densidad,
+        "umbral": UMBRAL_MISSING_FIXTURE,
+        "lectura": "ruido" if (marcados and densidad > UMBRAL_MISSING_FIXTURE) else "senal",
+    }
+
+
+def es_baja_real(j: dict) -> bool:
+    """Baja que cuenta: la que trae lectura de señal (o sin lectura, por si
+    llega de un DTO viejo). Un flag de ruido no es una baja."""
+    b = j.get("baja")
+    return bool(b) and b.get("lectura") != "ruido"
 
 
 def _congestion(team_id: int, fecha_fixture: str) -> dict:
@@ -307,7 +351,7 @@ def _linea_jugador(j: dict) -> str:
     if j["rating"] is not None:
         partes.append(f"rating {j['rating']}")
     partes.append(f"confianza {j['confianza']}")
-    if j["baja"]:
+    if es_baja_real(j):
         partes.append(f"BAJA: {j['baja']['detalle'] or j['baja']['tipo'] or 'sin detalle'}")
     if j["enCapilla"]:
         partes.append(f"en capilla ({j['amarillas']} amarillas)")
@@ -342,14 +386,21 @@ def resumen_para_skills(team_id: int) -> dict[str, str]:
         out["dt"] = (f"DT actual: {p['entrenador']['nombre']}"
                      + (f", en el cargo desde {p['entrenador']['desde']}" if p["entrenador"]["desde"] else "")
                      + ". [fuente: sad.db entrenadores]")
-    bajas = [j for j in p["jugadores"] if j["baja"]]
+    bajas = [j for j in p["jugadores"] if es_baja_real(j)]
+    mf = p.get("missingFixture")
+    ruido = (f" La API marca «Missing Fixture» a {mf['marcados']} de {mf['plantilla']} jugadores "
+             f"({round(mf['densidad'] * 100)}% de la plantilla, umbral {round(mf['umbral'] * 100)}%): "
+             "densidad de ruido, no se listan como bajas; confirmá las bajas en prensa."
+             if mf and mf["lectura"] == "ruido" else "")
     if bajas:
         out["bajas"] = ("Bajas con su peso real: " + "; ".join(
             f"{j['nombre']} ({j['baja']['detalle'] or j['baja']['tipo'] or 'baja'}) — "
             f"{round(j['pctMinutos'] * 100)}% de minutos, "
             f"{round(j['participacionOfensiva'] * 100)}% de la producción"
             for j in bajas
-        ) + ". [fuente: sad.db jugador_bajas]")
+        ) + "." + ruido + " [fuente: sad.db jugador_bajas]")
+    elif ruido:
+        out["bajas"] = "Sin bajas de señal en la base." + ruido + " [fuente: sad.db jugador_bajas]"
     return out
 
 

@@ -190,6 +190,26 @@ El nivel se consume de dos formas:
    `regresion_nivel_engine` para el Gap.
 2. **Discretizado (0–9)** — features para ML, ver §4.
 
+### 2.5 La retícula del nivel (valores repetidos entre equipos)
+
+El nivel NO es continuo: `P` toma 61 valores (`pts/20`) y `G` es una
+fracción de denominador chico (`Σ(gf−ga)/Σ(gf+ga)` de 5 partidos). Enumerando
+las combinaciones posibles quedan **~10.500 valores distintos**, y la misma
+suma sale de muchas historias: `3.2833` (= 197/60) tiene **24 combinaciones**
+con goles moderados —39 pts y 4-2 en los últimos 5 (G = 1/3), 49 pts y 5-7
+(G = −1/6), 29 pts y 11-1 (G = 5/6)…—. Que Juventus, Torreense y Medellín
+salieran con `3.2833` exacto en la corrida del 16/09/2026 no es un tope de la
+fórmula ni un bug de ventana corta: es la retícula (con cientos de equipos,
+la coincidencia es esperable). No hay nada que corregir en §2.1.
+
+Para que se vea de un vistazo, `/niveles` devuelve `desglose` (`puntos`,
+`goles`, `puntosVentana`, `golesFavor5`, `golesContra5`), recalculado de la
+historia al leer y **verificado** contra el nivel guardado: si la historia
+cambió desde que corrió el pipeline (un partido curado), va `null`, no un
+número que no cuadra. Espejo en `levelBreakdown` (`src/motor/levels.ts`) y
+`desglose_nivel` (`backend/ingesta/niveles.py`); los dos casos de 39 y 49
+puntos están en `scripts/test-motor.ts`.
+
 ---
 
 ## 3. Motor de Constantes K (`constants_calculator` → `constants.db`)

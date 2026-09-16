@@ -11,6 +11,7 @@ import { TeamBadge } from '../components/TeamBadge'
 import { binBadge, FUSED_KEY, K_TYPE_GROUPS, K_WINDOW_OPTS, lastQ, signedVal, signFmt, streakLen } from '../lib/kview'
 import type { FusedK } from '../motor/types'
 import type { JugadorDTO } from '../api/types'
+import { esBajaReal } from '../api/types'
 import { loadBurbujas, loadCalendarioSad, loadPlantilla, loadReventon, loadTeamFixtures, loadTeamStats, loadCadena } from '../services/appdata'
 import { useAsync } from '../services/useAsync'
 import type { SadStore } from '../store'
@@ -258,7 +259,7 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
                             const ratFg = j.rating == null ? 'var(--t3)' : j.rating >= 7 ? 'var(--up)' : j.rating < 6.5 ? 'var(--down)' : 'var(--t2)'
                             const pct = Math.round(j.pctMinutos * 100)
                             return (
-                              <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 9, border: '1px solid var(--line)', background: 'var(--bg)', opacity: j.baja ? 0.72 : 1 }}>
+                              <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 9, border: '1px solid var(--line)', background: 'var(--bg)', opacity: esBajaReal(j) ? 0.72 : 1 }}>
                                 {/* foto (de la API) o iniciales con el color de la posición */}
                                 {j.foto ? (
                                   <img src={j.foto} alt="" loading="lazy" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, background: 'var(--bg3)' }} />
@@ -268,8 +269,9 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
                                 <span title={j.posicion || 'posición desconocida'} style={{ font: '700 8px var(--mono)', color, width: 26, flexShrink: 0, textTransform: 'uppercase' }}>{j.posicion ? j.posicion.slice(0, 3) : '?'}</span>
                                 <span style={{ font: '600 12px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                   {j.nombre}
-                                  {j.baja && <span title={j.baja.detalle ?? undefined} style={{ marginLeft: 6, padding: '2px 6px', borderRadius: 5, background: 'var(--down-soft)', color: 'var(--down)', font: '700 8.5px var(--mono)' }}>BAJA{j.baja.detalle ? ` · ${j.baja.detalle}` : ''}</span>}
-                                  {j.enCapilla && !j.baja && <span title="Riesgo de sanción por acumulación de amarillas" style={{ marginLeft: 6, padding: '2px 6px', borderRadius: 5, background: 'color-mix(in oklch, #E6B450, transparent 82%)', color: '#B98A1D', font: '700 8.5px var(--mono)' }}>CAPILLA · {j.amarillas}🟨</span>}
+                                  {esBajaReal(j) && <span title={j.baja!.detalle ?? undefined} style={{ marginLeft: 6, padding: '2px 6px', borderRadius: 5, background: 'var(--down-soft)', color: 'var(--down)', font: '700 8.5px var(--mono)' }}>BAJA{j.baja!.detalle ? ` · ${j.baja!.detalle}` : ''}</span>}
+                                  {j.baja && !esBajaReal(j) && <span title={`La API lo marca «${j.baja.tipo ?? 'Missing Fixture'}»${j.baja.detalle ? ` (${j.baja.detalle})` : ''}, pero marcó a más del umbral de la plantilla: es ruido, no una baja. Confirmar en prensa.`} style={{ marginLeft: 6, padding: '2px 6px', borderRadius: 5, background: 'var(--bg3)', color: 'var(--t3)', font: '600 8.5px var(--mono)' }}>FLAG API · ruido</span>}
+                                  {j.enCapilla && !esBajaReal(j) && <span title="Riesgo de sanción por acumulación de amarillas" style={{ marginLeft: 6, padding: '2px 6px', borderRadius: 5, background: 'color-mix(in oklch, #E6B450, transparent 82%)', color: '#B98A1D', font: '700 8.5px var(--mono)' }}>CAPILLA · {j.amarillas}🟨</span>}
                                   {j.recienLlegado && <span style={{ marginLeft: 6, padding: '2px 6px', borderRadius: 5, background: 'color-mix(in oklch, var(--accent), transparent 84%)', color: 'var(--accent)', font: '700 8.5px var(--mono)' }}>NUEVO{j.recienLlegado.desde ? ` · ${j.recienLlegado.desde}` : ''}</span>}
                                 </span>
                                 {/* minutos: barra + % */}

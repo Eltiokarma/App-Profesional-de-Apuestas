@@ -49,6 +49,7 @@ se perdería.
 | bloque H · matchup | diagnóstico, razón, perfiles y `h2a/h2b/h2c` | pestaña **Matchup** |
 | lectura SAD | módulo operativo, 1X2, contexto, dato estructural, paradoja | pestaña **Lectura SAD** |
 | reventón de la burbuja | `lecturaSad.reventon`: UNA línea por equipo con su lectura (qué racha no seguir y por qué), tras leer `GET /equipos/{id}/burbujas`; los números **no**: el backend los recalcula al leer en `reventonCalculado` (`docs/REVENTON.md`). Si `familias.total.extremo.activo` es true, la línea dice EXTREMO con el N de partidos y el pronóstico no recomienda carga a que esa racha siga | pestaña **Lectura SAD**, caja «Reventón de la burbuja»; la alerta **K-EXTREMO** la agrega el backend a la tira de alertas del parte |
+| escala del nivel entre ligas | **nada** | alerta **ESCALA-LIGAS** en la tira del parte, la agrega el backend al leer cuando los dos equipos vienen de ligas distintas (el nivel se calcula contra los rivales de cada uno y NO compara entre bases; un 12.º de LaLiga puede salir con menos nivel que un 15.º de la Premier). Viaja con la liga doméstica de cada lado en `ligas` |
 | caja de sensibilidad | `sensibilidad` por equipo | pestaña **Lectura SAD** |
 | `sad-analysis` | las tres fuentes de probabilidad + falsador | pestaña **Lectura SAD** |
 | `teorema-del-echado` | P1a, F2 y F1 **los calcula el backend** (`GET /analisis/cowork/tde/{id}`); el resto lo escribís vos | pestaña **Teorema del Echado** |

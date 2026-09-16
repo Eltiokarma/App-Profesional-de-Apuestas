@@ -409,6 +409,38 @@
       "tipo": "suspension",
       "detalle": null
      }
+    },
+    {
+     "id": 5,
+     "baja": {
+      "tipo": "Missing Fixture",
+      "detalle": null,
+      "lectura": "ruido"
+     }
+    },
+    {
+     "id": 6,
+     "baja": {
+      "tipo": "Missing Fixture",
+      "detalle": null,
+      "lectura": "ruido"
+     }
+    },
+    {
+     "id": 7,
+     "baja": {
+      "tipo": "Missing Fixture",
+      "detalle": null,
+      "lectura": "ruido"
+     }
+    },
+    {
+     "id": 8,
+     "baja": {
+      "tipo": "Missing Fixture",
+      "detalle": "Knee Injury",
+      "lectura": "senal"
+     }
     }
    ]
   }

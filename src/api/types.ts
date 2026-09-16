@@ -67,6 +67,11 @@ export interface NivelDTO {
   nivel: number // continuo ~0.5–3.5
   bin: number // 0–9 (bins fijos v6)
   binEtiqueta: string // 'Sin datos' … 'Élite'
+  /** P + G del nivel (§2.1): puntos/20 de la ventana y balance de goles de los
+   *  últimos 5. null con <20 partidos o si la historia cambió desde el pipeline.
+   *  El nivel vive en una retícula: dos equipos con el mismo número no tienen
+   *  la misma historia, y esto muestra cuál es. */
+  desglose?: { puntos: number; goles: number; puntosVentana: number; partidosVentana: number; golesFavor5: number; golesContra5: number } | null
 }
 
 /** Fila de constants + fusión (§3 y §4.2): la foto completa tras un partido.
@@ -254,6 +259,12 @@ export interface EquipoStatsDTO {
 
 // ── capa de jugadores (docs/JUGADORES.md, capa 1) ───────────────────────────
 
+export type LecturaBaja = 'senal' | 'ruido'
+
+/** Una baja que CUENTA: la de señal (o sin lectura, de un DTO viejo). Un flag
+ *  de ruido no es una baja — misma regla en backend/jugadores.py. */
+export const esBajaReal = (j: Pick<JugadorDTO, 'baja'>): boolean => !!j.baja && j.baja.lectura !== 'ruido'
+
 /** Indicadores de un jugador: por-90 con encogimiento bayesiano, confianza
  *  por minutos y flags (baja, recién llegado, en capilla). */
 export interface JugadorDTO {
@@ -287,7 +298,9 @@ export interface JugadorDTO {
   /** Solo porteros (null en jugadores de campo). */
   paradasP90: number | null
   golesEncajadosP90: number | null
-  baja: { tipo: string | null; detalle: string | null } | null
+  /** Baja reportada por la API. `lectura`: 'senal' (pocos marcados: baja real) o
+   *  'ruido' (el flag Missing Fixture marcó más del umbral de la plantilla: no cuenta). */
+  baja: { tipo: string | null; detalle: string | null; lectura?: LecturaBaja } | null
   /** Traspaso hacia el equipo en ≤90 días: sus stats vienen de otro contexto. */
   recienLlegado: { desde: string | null; fecha: string | null } | null
 }
@@ -307,6 +320,9 @@ export interface PlantillaDTO {
   revolucion: { llegadas: number; salidas: number; ventanaDias: number }
   /** Σ goles de la plantilla (denominador de participación). */
   golesPlantilla: number
+  /** El flag «Missing Fixture» leído por densidad (docs/JUGADORES.md): null si no
+   *  marcó a nadie; por encima de `umbral` es ruido y ninguna de esas bajas cuenta. */
+  missingFixture?: { marcados: number; plantilla: number; densidad: number; umbral: number; lectura: LecturaBaja } | null
   jugadores: JugadorDTO[]
   /** Con jugadores=[]: true si el backend lanzó la ingesta on-demand del
    *  equipo — la UI sondea hasta que la plantilla llegue. */
@@ -1073,11 +1089,16 @@ export interface EquipoParte {
 }
 
 export interface AlertaParte {
+  /** Las del skill (T.54, R-KT.2…) y las que agrega el backend al leer:
+   *  K-EXTREMO, HUECO-DOBLE y ESCALA-LIGAS (ligas distintas: el nivel no compara entre bases). */
   codigo: string
   /** `ambos` = toca a los dos equipos (vocabulario del protocolo EFE). */
   equipo: 'a' | 'b' | 'ambos' | 'global'
-  tipo: 'estructural' | 'fecha'
+  /** `dato` = la pone el backend sobre los datos, no el skill. */
+  tipo: 'estructural' | 'fecha' | 'dato'
   detalle: string
+  /** Solo en ESCALA-LIGAS: la liga doméstica de cada lado. */
+  ligas?: Record<'a' | 'b', { id: number; nombre: string | null; pais: string | null; partidos: number } | null> | null
 }
 
 export interface DocumentoParte {

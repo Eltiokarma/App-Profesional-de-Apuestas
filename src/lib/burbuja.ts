@@ -27,7 +27,7 @@ export type ProximoBurbuja = NonNullable<BurbujasEquipoDTO['proximo']>
 
 /** Lo que el análisis lee de la plantilla (subconjunto del DTO). */
 export type PlantillaBurbuja = Pick<PlantillaDTO, 'actualizadoEn' | 'entrenador' | 'revolucion'> & {
-  jugadores: { baja?: unknown }[]
+  jugadores: { baja?: { lectura?: string } | null }[]
 }
 
 export const FAMILIAS: FamiliaBurbuja[] = ['total', 'local', 'visita']
@@ -347,7 +347,9 @@ export function estabilidadDe(plantilla: PlantillaBurbuja | null | undefined, ho
     motivos.push(`${mov} ${pal} en ${rev.ventanaDias} días: plantel quieto`)
   }
 
-  const bajas = plantilla.jugadores.filter((j) => !!j.baja).length
+  // un flag «Missing Fixture» leído como ruido (media plantilla marcada) no
+  // es una baja: no puede mover la estabilidad (docs/JUGADORES.md)
+  const bajas = plantilla.jugadores.filter((j) => !!j.baja && j.baja.lectura !== 'ruido').length
   if (bajas >= BAJAS_TRANSICION) {
     subir('en transición')
     motivos.push(`${bajas} bajas en la plantilla`)

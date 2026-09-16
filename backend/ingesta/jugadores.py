@@ -20,7 +20,7 @@ import sys
 import unicodedata
 from datetime import datetime, timedelta, timezone
 
-from backend.ingesta.extractor import LIGAS, Cliente, leer_clave, ligas_vivo, reserva_del_dia
+from backend.ingesta.extractor import LIGAS, Cliente, equipos_de_interes, leer_clave, ligas_vivo, reserva_del_dia
 
 TTL_HORAS_DEFAULT = 168  # 7 días: fuera de ventana de traspasos alcanza de sobra
 # Equipos que la API NO cubre (plantilla vacía): sellado LARGO. Repreguntarlos
@@ -151,17 +151,30 @@ def _rating(v) -> float | None:
 def equipos_pendientes(con: sqlite3.Connection, dias: int, ttl_horas: int) -> list[tuple[int, int]]:
     """(team_id, season) de equipos de NUESTRAS ligas con NS en <= dias,
     excluyendo los refrescados dentro del TTL. La temporada es la del fixture
-    próximo (así los torneos de año cruzado piden la temporada correcta)."""
+    próximo (así los torneos de año cruzado piden la temporada correcta).
+
+    Entran TAMBIÉN los equipos de interés (los del torneo internacional
+    vigente, `extractor.equipos_de_interes`) aunque su NS próximo sea en una
+    liga fuera del padrón: Marsella con Champions el jueves y Ligue 1 el
+    domingo entraba por la Champions, pero un equipo cuya liga doméstica no
+    está en LIGAS (Beşiktaş) solo entraba la semana que jugaba Europa —y la
+    otra semana su plantel envejecía y el parte lo sacaba del denominador."""
     ahora = datetime.now(timezone.utc)
     ligas = set(LIGAS) if JUGADORES_TODAS_LIGAS else ligas_vivo()
+    interes = equipos_de_interes(con)
     marcas = ",".join("?" * len(ligas))
+    cond, params = f"f.league_id IN ({marcas})", list(sorted(ligas))
+    if interes:
+        m_int = ",".join("?" * len(interes))
+        cond = f"({cond} OR f.home_team_id IN ({m_int}) OR f.away_team_id IN ({m_int}))"
+        params += sorted(interes) * 2
     filas = con.execute(
-        f"""SELECT f.home_team_id, f.away_team_id, f.league_season FROM fixtures f
+        f"""SELECT f.home_team_id, f.away_team_id, f.league_season, f.league_id FROM fixtures f
             WHERE f.status_short='NS' AND f.date >= ? AND f.date <= ?
-              AND f.league_id IN ({marcas})
+              AND {cond}
             ORDER BY f.date""",
         (ahora.strftime("%Y-%m-%d %H:%M:%S"),
-         (ahora + timedelta(days=dias)).strftime("%Y-%m-%d %H:%M:%S"), *sorted(ligas)),
+         (ahora + timedelta(days=dias)).strftime("%Y-%m-%d %H:%M:%S"), *params),
     ).fetchall()
     limite_ttl = (ahora - timedelta(hours=ttl_horas)).strftime("%Y-%m-%d %H:%M:%S")
     limite_sin = (ahora - timedelta(hours=max(TTL_HORAS_SIN_DATOS, ttl_horas))).strftime("%Y-%m-%d %H:%M:%S")
@@ -172,8 +185,12 @@ def equipos_pendientes(con: sqlite3.Connection, dias: int, ttl_horas: int) -> li
         ).fetchall()
     }
     vistos: dict[int, int] = {}
-    for home_id, away_id, season in filas:
+    for home_id, away_id, season, liga_id in filas:
         for tid in (home_id, away_id):
+            # en una liga fuera del padrón entra SOLO el equipo de interés, no
+            # su rival de esa liga: el rival no alimenta ningún parte
+            if liga_id not in ligas and tid not in interes:
+                continue
             if tid and tid not in vistos and tid not in frescos:
                 vistos[tid] = season or datetime.now(timezone.utc).year
     return list(vistos.items())
