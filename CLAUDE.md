@@ -261,6 +261,9 @@ conversación se pierde en la siguiente.
    programada (o `--solo-dt` a mano): 1 request por equipo. El `desde` trae
    el día 01 porque la API conoce el mes, no el día. El prompt (v2.5) sigue
    obligando a confirmar el DT en prensa antes de puntuar el bloque A.
+   **Pendiente del usuario (16/09/2026, 18:00 Lima):** la variable ya está
+   puesta en Railway; tras la primera corrida programada hay que QUITARLA,
+   y la siguiente corrida de Cowork dirá si los DT ya salen bien.
 3. **Colisión de nombres F3/F4.** El bloque F del EFE tiene F3 y F4, y el TDE
    tiene los suyos. La instrucción «no mandes F3 ni F4» (que habla del EFE) se
    puede leer al revés. Renombrar desalinea el prompt del skill, así que por
@@ -270,6 +273,36 @@ conversación se pierde en la siguiente.
 5. **Onces de ligas sin cobertura.** Primera B de Colombia y Primera de Uruguay
    no dan alineaciones por API-Football: para esas, el pantallazo a mano es el
    procedimiento. Salen en `nuncaVaALlegar` con su liga.
+6. **Lo que la corrida de Cowork del 16/09 vio y todavía no se tocó**
+   (23 partes verificados contra prensa; lo del DT, la agenda, el timeline,
+   el contrato y `proximo=` ya está arreglado):
+   - **Calendarios vacíos en equipos europeos** (diez de esa corrida; en
+     Beşiktaş y NEC probado por prensa). La ingesta baja fixtures solo de las
+     ligas del padrón, así que un equipo que juega Europa League tiene su
+     liga doméstica solo si está en `LIGAS`: F2 del TDE sale sin datos y el
+     bloque G no ve el calendario. Con la fase liga fuera de la agenda por
+     defecto pega menos, pero sigue ahí para Champions/Europa de octavos.
+   - **Cuatro planteles vacíos** (Marsella, Crystal Palace, Torreense,
+     Bournemouth: agregados y calendario sí, jugadores no). Mismo origen
+     probable: `jugadores` sigue `ligas_vivo()` y esos equipos entran por el
+     torneo internacional, no por su liga. Cowork les saca el bloque B del
+     denominador y lo declara; no es un bug del parte, es cobertura.
+   - **Nivel 3.2833 exacto en tres equipos** de ligas distintas (Juventus,
+     Torreense, Medellín). Huele a tope de la fórmula de nivel con ventana
+     corta; mirar con `docs/MOTOR_SAD_EXTRACCION.md` a la vista antes de
+     tocar nada. Solo observación.
+   - **Escala entre ligas**: el nivel compara dentro de la misma base, así
+     que un 12.º de LaLiga puede salir con menos nivel que un 15.º de la
+     Premier. Es de diseño, pero el parte debería decirlo cuando los dos
+     equipos son de ligas distintas.
+   - **El flag `Missing Fixture` de las bajas acertó 10 de 23** con
+     separación clara por densidad (pocos jugadores marcados = real; media
+     plantilla marcada = ruido). Se había catalogado como artefacto; vale
+     revisarlo como señal con umbral.
+   - **`timelineEventos` válidos entran** pero Cowork reportó
+     `eventosTimeline: 0` cuando mandaba tipos fuera de la lista; ahora se
+     rechaza con motivo. Si vuelve a salir 0 con tipos válidos, mirar
+     `timeline_del_parte`.
 
 ## Siguientes pasos (en orden)
 
