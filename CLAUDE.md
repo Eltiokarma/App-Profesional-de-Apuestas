@@ -17,7 +17,7 @@ npm run test:burbuja              # reventón de burbuja: espejo TS vs vectores 
 # backend (junto a las 4 .db en la raíz, o SAD_DATA_DIR)
 pip install -r backend/requirements.txt
 python -m uvicorn backend.app:app --port 8000
-python -m backend.test_api        # verificaciones del contrato (295 checks)
+python -m backend.test_api        # verificaciones del contrato (298 checks)
 python -m backend.test_en_vivo    # ciclo en vivo: cuotas en juego por liga (sin red)
 python -m backend.test_cuotas_lote # cuotas prepartido: lote por fecha vs por fixture (presupuesto)
 python -m backend.test_jugadores  # presupuesto de jugadores: TTL separado y padrón de ligas

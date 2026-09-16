@@ -1087,7 +1087,7 @@ components:
         condicion: { type: string, enum: [Local, Visita] }
         rivalId: { type: integer }
         rivalNombre: { type: string }
-        nivelRival: { type: number }
+        nivelRival: { type: number, description: 'nivel CONTINUO del rival con el que el motor ponderó la fila (§3.1), recuperado de las q; processed_matches guarda el bin 0–9 y ese NO es este campo' }
         golesFavor: { type: integer }
         golesContra: { type: integer }
         ligaId: { type: integer }

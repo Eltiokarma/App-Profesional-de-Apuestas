@@ -287,6 +287,23 @@ def main():
     check("/equipos/999999/calendario → 404",
           c.get(A + "/equipos/999999/calendario").status_code == 404)
 
+    # /constantes: nivelRival es el CONTINUO con el que ponderó el motor, aunque
+    # processed_matches guarde el bin 0–9 (como hace el pipeline real). Se
+    # simula esa base: se truncan los niveles a entero y el contrato no debe cambiar.
+    import sqlite3 as _sq
+    antes = c.get(A + f"/constantes/{betis}?limit=500").json()
+    with _sq.connect(os.path.join(tmp, "discreto.db")) as _d:
+        _d.execute("UPDATE processed_matches SET nivel_rival = CAST(nivel_rival AS INTEGER)")
+    despues = c.get(A + f"/constantes/{betis}?limit=500").json()
+    check("constantes: nivelRival se recupera de las q (gf·nivel) y no del bin de processed_matches",
+          all(abs(x["q"]["golesAnotado"] - x["golesFavor"] * x["nivelRival"]) < 1e-3 for x in despues if x["golesFavor"])
+          and any(x["nivelRival"] != int(x["nivelRival"]) for x in despues), [x["nivelRival"] for x in despues[:5]])
+    check("constantes: con la base en bins el contrato entrega LOS MISMOS niveles que antes",
+          all(abs(a["nivelRival"] - b["nivelRival"]) < 1e-3 for a, b in zip(antes, despues)),
+          [(a["nivelRival"], b["nivelRival"]) for a, b in list(zip(antes, despues))[:4]])
+    check("constantes: en un 0-0 el nivel sale de levels.db (nunca 0 ni el bin)",
+          all(x["nivelRival"] > 0 for x in despues if x["golesFavor"] == 0 and x["golesContra"] == 0))
+
     # /equipos/{id}/burbujas — reventón de la burbuja, calculado sin IA (docs/REVENTON.md)
     bu = c.get(A + f"/equipos/{betis}/burbujas").json()
     check("burbujas: cabecera con nivel, bin, mandan, estabilidad y las tres familias",
