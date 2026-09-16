@@ -17,7 +17,7 @@ npm run test:burbuja              # reventón de burbuja: espejo TS vs vectores 
 # backend (junto a las 4 .db en la raíz, o SAD_DATA_DIR)
 pip install -r backend/requirements.txt
 python -m uvicorn backend.app:app --port 8000
-python -m backend.test_api        # verificaciones del contrato (298 checks)
+python -m backend.test_api        # verificaciones del contrato (305 checks)
 python -m backend.test_en_vivo    # ciclo en vivo: cuotas en juego por liga (sin red)
 python -m backend.test_cuotas_lote # cuotas prepartido: lote por fecha vs por fixture (presupuesto)
 python -m backend.test_jugadores  # presupuesto de jugadores: TTL separado y padrón de ligas
@@ -196,7 +196,11 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   en `mandan.reglaNivel` como dato. Mover un peso se hace con el backtest a la
   vista, en los dos lados y en los vectores dorados. OJO: `/constantes` sirve
   el nivel del rival CONTINUO recuperado de las q (`_nivel_rival_exacto`);
-  `processed_matches.nivel_rival` es el bin de ML y no es ese campo. La
+  `processed_matches.nivel_rival` es el bin de ML y no es ese campo. Vista
+  «al día del partido»: `antesDe=<fixtureId>` en `/constantes`, `/niveles` y
+  `/burbujas` corta la historia ESTRICTAMENTE antes de ese partido y lo usa
+  como próximo (§9 del doc); la sección Burbujas lo hace sola para todo
+  partido finalizado, sin plantilla de hoy (estabilidad sin dato). La
   estabilidad (DT, ventana, bajas) mueve la CONFIANZA, nunca el riesgo;
   dueños/organización van en `sinDato`. Sin reventones previos del signo →
   `sin base`, jamás un número. Las K de goles quedan fuera a propósito hasta

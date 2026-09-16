@@ -775,11 +775,17 @@ def _nivel_rival_exacto(c, gf: int, ga: int, rival_id: int) -> float:
     return round(nivel_a_fecha(rival_id, c["date"], fallback=1.0), 4)
 
 
-def constantes_de(team_id: int, limit: int, hasta: str | None = None) -> list[dict]:
+def constantes_de(team_id: int, limit: int, hasta: str | None = None, antes: str | None = None) -> list[dict]:
+    """`hasta` = inclusive (foto a esa fecha); `antes` = ESTRICTO (date < fecha):
+    la vista «al día del partido» excluye el propio partido, que en constants
+    lleva la misma fecha que el fixture."""
     cond, params = "", [team_id]
     if hasta:
-        cond = " AND date<=?"
+        cond += " AND date<=?"
         params.append(hasta.replace("T", " ").rstrip("Z"))
+    if antes:
+        cond += " AND date<?"
+        params.append(antes.replace("T", " ").rstrip("Z"))
     consts = db.query(
         "constants",
         f"SELECT * FROM constants WHERE team_id=?{cond} ORDER BY date DESC, id DESC LIMIT ?",
@@ -945,11 +951,14 @@ def constantes_cuota_de(team_id: int) -> list[dict]:
     return out
 
 
-def niveles_de(team_id: int, limit: int, hasta: str | None = None) -> list[dict]:
+def niveles_de(team_id: int, limit: int, hasta: str | None = None, antes: str | None = None) -> list[dict]:
     cond, params = "", [team_id]
     if hasta:
-        cond = " AND date<=?"
+        cond += " AND date<=?"
         params.append(hasta.replace("T", " ").rstrip("Z"))
+    if antes:
+        cond += " AND date<?"
+        params.append(antes.replace("T", " ").rstrip("Z"))
     rows = db.query(
         "levels",
         f"SELECT fixture_id, date, level FROM team_levels WHERE team_id=?{cond} ORDER BY date DESC, id DESC LIMIT ?",
@@ -1097,14 +1106,25 @@ def fixture(fixture_id: int):
     return fixture_dto(get_fixture(fixture_id))
 
 
+def _fecha_antes_de(antes_de: int | None) -> str | None:
+    """Vista «al día del partido»: la fecha del fixture, para cortar la historia
+    ESTRICTAMENTE antes de él (docs/REVENTON.md §9). 404 si no existe."""
+    if antes_de is None:
+        return None
+    return iso(get_fixture(antes_de)["date"])
+
+
 @app.get(API + "/niveles/{equipo_id}")
-def niveles(equipo_id: int, limit: int = Query(default=50, ge=1, le=500)):
-    return niveles_de(equipo_id, limit)
+def niveles(equipo_id: int, limit: int = Query(default=50, ge=1, le=500), antesDe: int | None = None):
+    return niveles_de(equipo_id, limit, antes=_fecha_antes_de(antesDe))
 
 
 @app.get(API + "/constantes/{equipo_id}")
-def constantes(equipo_id: int, limit: int = Query(default=50, ge=1, le=500)):
-    return constantes_de(equipo_id, limit)
+def constantes(equipo_id: int, limit: int = Query(default=50, ge=1, le=500), antesDe: int | None = None):
+    """`antesDe=<fixtureId>`: solo las filas anteriores a ese partido (sin el
+    propio partido): lo que el motor sabía ese día, para releer un análisis
+    pasado sin el resultado a la vista."""
+    return constantes_de(equipo_id, limit, antes=_fecha_antes_de(antesDe))
 
 
 @app.get(API + "/constantes-cuota/{equipo_id}")
@@ -1305,7 +1325,7 @@ def equipo_calendario(equipo_id: int, n: int = Query(default=4, ge=1, le=10)):
 
 
 @app.get(API + "/equipos/{equipo_id}/burbujas")
-def equipo_burbujas(equipo_id: int):
+def equipo_burbujas(equipo_id: int, antesDe: int | None = None):
     """Reventón de la burbuja (docs/REVENTON.md): cuándo la K de resultado del
     equipo suele volver a cero. Todo sale de la base —constantes, niveles,
     calendario y plantilla— y se calcula en backend/analisis/burbuja.py.
@@ -1317,23 +1337,45 @@ def equipo_burbujas(equipo_id: int):
         raise HTTPException(404, f"equipo {equipo_id} no existe")
     from backend import calendario as cal, jugadores as jug
     from backend.analisis import burbuja
-    filas = list(reversed(constantes_de(equipo_id, 500)))  # el contrato entrega desc; el análisis va cronológico
-    nv = niveles_de(equipo_id, 1)
+    # Vista «al día del partido» (antesDe): la historia se corta ESTRICTAMENTE
+    # antes de ese fixture y ese fixture hace de próximo — la misma
+    # construcción anti-hindsight del backtest, para releer un análisis pasado
+    # sin el resultado a la vista.
+    antes = _fecha_antes_de(antesDe)
+    filas = list(reversed(constantes_de(equipo_id, 500, antes=antes)))  # el contrato entrega desc; el análisis va cronológico
+    nv = niveles_de(equipo_id, 1, antes=antes)
     nivel, bin_ = (nv[0]["nivel"], nv[0]["bin"]) if nv else (0.5, level_bin(0.5)[0])
     proximo = None
-    proximos = cal.calendario_de(equipo_id, 1)
-    if proximos:
-        p = proximos[0]
-        nr = niveles_de(p["rivalId"], 1)
+    if antesDe is not None:
+        f = get_fixture(antesDe)
+        if equipo_id not in (f["home_team_id"], f["away_team_id"]):
+            raise HTTPException(400, f"el equipo {equipo_id} no juega el fixture {antesDe}")
+        es_local = f["home_team_id"] == equipo_id
+        rid = f["away_team_id"] if es_local else f["home_team_id"]
+        nr = niveles_de(rid, 1, antes=antes)
         proximo = {
-            "fixtureId": p["fixtureId"], "fecha": p["fecha"], "rivalId": p["rivalId"], "rival": p["rival"],
-            "condicion": p["condicion"],
-            # sin niveles del rival, el motor pondera con 1.0 (§3.1): misma regla
+            "fixtureId": f["id"], "fecha": str(f["date"])[:10], "rivalId": rid,
+            "rival": f["away_name"] if es_local else f["home_name"],
+            "condicion": "L" if es_local else "V",
             "nivelRival": nr[0]["nivel"] if nr else 1.0,
         }
+    else:
+        proximos = cal.calendario_de(equipo_id, 1)
+        if proximos:
+            p = proximos[0]
+            nr = niveles_de(p["rivalId"], 1)
+            proximo = {
+                "fixtureId": p["fixtureId"], "fecha": p["fecha"], "rivalId": p["rivalId"], "rival": p["rival"],
+                "condicion": p["condicion"],
+                # sin niveles del rival, el motor pondera con 1.0 (§3.1): misma regla
+                "nivelRival": nr[0]["nivel"] if nr else 1.0,
+            }
     return burbuja.analizar(
         filas, equipo_id=equipo_id, nivel=nivel, bin_=bin_, proximo=proximo,
-        plantilla=jug.plantilla_de(equipo_id), hoy=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        # en la vista al día del partido la plantilla de HOY no es la de entonces:
+        # va sin dato (la confianza no pasa de media) en vez de fingir estabilidad
+        plantilla=None if antesDe is not None else jug.plantilla_de(equipo_id),
+        hoy=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         nombre=team["name"],
     )
 

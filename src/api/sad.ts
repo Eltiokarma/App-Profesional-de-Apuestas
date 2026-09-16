@@ -62,12 +62,13 @@ export const SadApi = {
     apiPost<RefrescoLigaDTO>(`/ligas/${ligaId}/refrescar`, {}),
 
   /** Historia de niveles de un equipo (desc por fecha; limit opcional). */
-  niveles: (equipoId: number, limit?: number) =>
-    apiGet<NivelDTO[]>(`/niveles/${equipoId}` + qs({ limit })),
+  niveles: (equipoId: number, limit?: number, antesDe?: number) =>
+    apiGet<NivelDTO[]>(`/niveles/${equipoId}` + qs({ limit, antesDe })),
 
   /** Historia de constantes K de un equipo (desc por fecha; limit opcional). */
-  constantes: (equipoId: number, limit?: number) =>
-    apiGet<ConstantesDTO[]>(`/constantes/${equipoId}` + qs({ limit })),
+  /** `antesDe` = id de fixture: solo lo anterior a ese partido (vista al día del partido). */
+  constantes: (equipoId: number, limit?: number, antesDe?: number) =>
+    apiGet<ConstantesDTO[]>(`/constantes/${equipoId}` + qs({ limit, antesDe })),
 
   /** k_cuota (§3.8): rachas de suma de cuota 1X2, solo 2026 (asc por fecha). */
   constantesCuota: (equipoId: number) =>
@@ -141,7 +142,7 @@ export const SadApi = {
   calendario: (equipoId: number, n?: number) =>
     apiGet<PartidoCalendarioDTO[]>(`/equipos/${equipoId}/calendario` + qs({ n })),
   /** Reventón de la burbuja (docs/REVENTON.md): guía calculada, 0 tokens. */
-  burbujas: (equipoId: number) => apiGet<BurbujasEquipoDTO>(`/equipos/${equipoId}/burbujas`),
+  burbujas: (equipoId: number, antesDe?: number) => apiGet<BurbujasEquipoDTO>(`/equipos/${equipoId}/burbujas` + qs({ antesDe })),
 
   /** La película del equipo: pronóstico → qué pasó → veredicto → lección. */
   cadena: (equipoId: number, limit?: number) =>

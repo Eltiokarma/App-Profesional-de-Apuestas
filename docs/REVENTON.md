@@ -238,6 +238,23 @@ A horizonte 2 la K tampoco aparece (−0.19 / −0.20), así que no es cuestión
 de plazo. Lo que queda por probar cuando haya más historia: graduar también
 la racha, y si las copas internacionales merecen su propia mediana.
 
+## 9. Vista «al día del partido» (releer el pasado sin el resultado)
+
+Un partido ya jugado se puede releer como se veía esa mañana:
+`antesDe=<fixtureId>` en `/constantes`, `/niveles` y `/equipos/{id}/burbujas`.
+
+- La historia se corta **estrictamente antes** de ese partido (`date <
+  fecha`): el propio partido, que en `constants` lleva la misma fecha que el
+  fixture, queda fuera, y todo lo posterior también.
+- En `/burbujas`, ese partido hace de **próximo**: rival real, condición y el
+  nivel del rival a esa fecha. Es exactamente la construcción del backtest.
+- La plantilla de hoy **no** se usa (la de entonces no está guardada): la
+  estabilidad va `sin dato` y la confianza no pasa de media. Fingir
+  estabilidad con datos de hoy sería hindsight.
+- La sección Burbujas lo hace sola para todo partido finalizado y lo anuncia
+  con una banda «VISTA AL DÍA DEL PARTIDO». Retrocediendo en el calendario se
+  ve, día por día, qué habría dicho la guía.
+
 Qué mirar en la salida:
 
 | tabla | qué confirma |

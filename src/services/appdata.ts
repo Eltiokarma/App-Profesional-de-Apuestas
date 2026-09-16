@@ -203,13 +203,16 @@ function constantesToSnap(c: ConstantesDTO, idx: number): KSnapshot {
   }
 }
 
-export async function loadBurbujas(teamKey: string): Promise<BurbujasData | null> {
+export async function loadBurbujas(teamKey: string, antesDeMatch?: string): Promise<BurbujasData | null> {
   const equipoId = TEAM_NUM[teamKey]
   if (equipoId == null) return null
   const ds = getDataSource()
+  // vista «al día del partido»: para un partido ya jugado, la historia se
+  // corta antes de él — releer el análisis de ese día sin el resultado a la vista
+  const antesDe = antesDeMatch ? fixtureNum(antesDeMatch) : undefined
   // 500 = tope del contrato; cubre la historia completa de prácticamente todos
   // los equipos. La ventana visible (20/50/Todo) se recorta luego en la gráfica.
-  const [constantes, niveles] = await Promise.all([ds.constantes(equipoId, 500), ds.niveles(equipoId, 1)])
+  const [constantes, niveles] = await Promise.all([ds.constantes(equipoId, 500, antesDe), ds.niveles(equipoId, 1, antesDe)])
   const snaps = constantes
     .slice()
     .reverse() // el contrato entrega desc por fecha; la UI trabaja cronológico
@@ -545,10 +548,10 @@ export async function loadPlantilla(teamKey: string): Promise<PlantillaDTO | nul
 /** Reventón de la burbuja (docs/REVENTON.md): cuándo la K de resultado del
  *  equipo suele volver a cero, calculado de su propia historia. Guía con sus
  *  motivos, no probabilidad; 0 tokens. */
-export async function loadReventon(teamKey: string): Promise<BurbujasEquipoDTO | null> {
+export async function loadReventon(teamKey: string, antesDeMatch?: string): Promise<BurbujasEquipoDTO | null> {
   const equipoId = TEAM_NUM[teamKey]
   if (equipoId == null) return null
-  return getDataSource().burbujas(equipoId)
+  return getDataSource().burbujas(equipoId, antesDeMatch ? fixtureNum(antesDeMatch) : undefined)
 }
 
 /** DTP del partido visto desde un equipo (docs/efe-dtp/DTP_DISENO.md). */

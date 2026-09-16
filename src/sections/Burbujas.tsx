@@ -94,10 +94,14 @@ export function Burbujas({ store, m, isMobile }: Props) {
   const gridBurbujas = isMobile ? '1fr' : '1fr 1fr 280px'
 
   // constantes K + niveles vía el contrato (/constantes, /niveles)
+  // VISTA AL DÍA DEL PARTIDO: para un partido ya jugado, la historia de K se
+  // corta ANTES de él y el reventón lo usa como próximo — lo que se sabía ese
+  // día, sin el resultado a la vista (docs/REVENTON.md §9)
+  const pasado = m.status === 'fin' ? m.id : undefined
   const engData = useAsync(async () => {
     // el reventón viaja aparte: si su cálculo falla, las gráficas de K siguen
-    const rev = (k: string) => loadReventon(k).catch(() => null)
-    const [h, a, proxH, proxA, revH, revA] = await Promise.all([loadBurbujas(m.home), loadBurbujas(m.away), loadCalendarioSad(m.home), loadCalendarioSad(m.away), rev(m.home), rev(m.away)])
+    const rev = (k: string) => loadReventon(k, pasado).catch(() => null)
+    const [h, a, proxH, proxA, revH, revA] = await Promise.all([loadBurbujas(m.home, pasado), loadBurbujas(m.away, pasado), loadCalendarioSad(m.home), loadCalendarioSad(m.away), rev(m.home), rev(m.away)])
     return { h, a, proxH, proxA, revH, revA }
   }, m.id)
   const engH = engData.data?.h ?? null
@@ -240,6 +244,14 @@ export function Burbujas({ store, m, isMobile }: Props) {
         </div>
       )}
 
+      {pasado && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', marginBottom: 14, borderRadius: 12, background: 'var(--mark-soft)', border: '1px solid color-mix(in oklch,var(--mark),transparent 55%)' }}>
+          <span style={{ font: '700 9.5px var(--mono)', color: 'var(--mark)', letterSpacing: '.5px', flexShrink: 0 }}>VISTA AL DÍA DEL PARTIDO</span>
+          <span style={{ font: '500 12px var(--sans)', color: 'var(--t1)', flex: 1, lineHeight: 1.4 }}>
+            La historia de K termina ANTES de {H.short} {m.score} {A.short} ({m.date}) y el reventón toma este partido como próximo: es lo que se sabía ese día, sin el resultado a la vista. La estabilidad va sin dato porque la plantilla de hoy no es la de entonces.
+          </span>
+        </div>
+      )}
       {engData.error && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', marginBottom: 14, borderRadius: 12, background: 'var(--down-soft)', border: '1px solid color-mix(in oklch,var(--down),transparent 55%)' }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--down)', flexShrink: 0 }}></span>

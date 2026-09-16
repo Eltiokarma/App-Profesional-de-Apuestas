@@ -335,6 +335,30 @@ def main():
     check("burbujas: el aviso dice que es guía, no probabilidad", "no probabilidad" in bu["aviso"])
     check("/equipos/999999/burbujas → 404", c.get(A + "/equipos/999999/burbujas").status_code == 404)
 
+    # vista «al día del partido» (antesDe): la historia se corta ANTES del fixture
+    # y ese fixture hace de próximo — releer un análisis pasado sin el resultado
+    fin = c.get(A + f"/fixtures?estado=finalizado&equipoId={betis}&orden=desc&limit=1").json()[0]
+    todas = c.get(A + f"/constantes/{betis}?limit=500").json()
+    antes = c.get(A + f"/constantes/{betis}?limit=500&antesDe={fin['id']}").json()
+    check("antesDe: excluye el propio partido y todo lo posterior (corte estricto por fecha)",
+          antes and len(antes) < len(todas) and all(x["fixtureId"] != fin["id"] and x["fecha"] < fin["fecha"] for x in antes),
+          (len(antes), len(todas), fin["fecha"], antes[:1]))
+    nva = c.get(A + f"/niveles/{betis}?limit=1&antesDe={fin['id']}").json()
+    check("antesDe en niveles: el último nivel es anterior al partido", nva and nva[0]["fecha"] < fin["fecha"], nva)
+    bu2 = c.get(A + f"/equipos/{betis}/burbujas?antesDe={fin['id']}").json()
+    check("burbujas antesDe: ese partido es el próximo (rival, condición, nivel) y la historia es la previa",
+          bu2["proximo"]["fixtureId"] == fin["id"] and bu2["proximo"]["condicion"] in ("L", "V")
+          and bu2["proximo"]["nivelRival"] > 0 and bu2["partidos"] == len(antes), (bu2["proximo"], bu2["partidos"]))
+    check("burbujas antesDe: la plantilla de HOY no se usa → estabilidad sin dato, confianza ≤ media",
+          bu2["estabilidad"]["grado"] == "sin dato"
+          and (bu2["familias"]["total"]["riesgo"] is None or bu2["familias"]["total"]["riesgo"]["confianza"] != "alta"), bu2["estabilidad"])
+    check("burbujas antesDe: es exactamente la construcción del backtest (rival real, historia previa)",
+          bu2["familias"]["total"]["actual"] is None or bu2["familias"]["total"]["actual"]["aplicaAlProximo"] is True)
+    check("antesDe de un fixture inexistente → 404", c.get(A + f"/constantes/{betis}?antesDe=999999").status_code == 404)
+    ajeno = next(f for f in fx if betis not in (f["local"]["id"], f["visitante"]["id"]))
+    check("burbujas antesDe con un fixture que el equipo no juega → 400",
+          c.get(A + f"/equipos/{betis}/burbujas?antesDe={ajeno['id']}").status_code == 400)
+
     # /analisis/burbujas/backtest — calibración sobre las .db del servidor (maestro, no Cowork)
     bk = c.get(A + "/analisis/burbujas/backtest?padron=false&muestra=3").json()
     check("backtest: resumen con tasas por nivel, señales, por liga y ligas evaluadas",
