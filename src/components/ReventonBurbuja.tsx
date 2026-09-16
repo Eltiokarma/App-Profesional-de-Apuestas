@@ -108,6 +108,7 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
   const manda = data.mandan.familias.includes(familia)
   const ultimos = fam.reventones.slice(-(compact ? 3 : 5)).reverse()
   const est = data.estabilidad
+  const extremo = fam.extremo?.activo ? fam.extremo : null
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -152,6 +153,26 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
             <> · la última reventó {fmtFecha(fam.reventones[fam.reventones.length - 1].fecha)} con K {signFmt((fam.reventones[fam.reventones.length - 1].signo === '+' ? 1 : -1) * fam.reventones[fam.reventones.length - 1].kPico)} tras {fam.reventones[fam.reventones.length - 1].partidos} partido{fam.reventones[fam.reventones.length - 1].partidos === 1 ? '' : 's'}</>
           )}
           {fam.partidosEnCondicion === 0 && ' · sin partidos de esta condición'}
+        </div>
+      )}
+
+      {/* ALERTA DE EXTREMO: aparte del riesgo y ANTES que él. La K no puntúa
+          (el backtest lo dice), pero una burbuja en su máximo histórico es
+          terreno sin precedente y ahí no se carga la apuesta a que siga. */}
+      {actual && extremo && (
+        <div role="alert" style={{ padding: '10px 12px', borderRadius: 9, background: 'color-mix(in oklch, var(--down), transparent 82%)', border: '2px solid var(--down)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+            <span style={{ padding: '2px 8px', borderRadius: 6, background: 'var(--down)', color: 'var(--bg)', font: '800 10px var(--mono)', letterSpacing: '.6px' }}>⚠ EXTREMO</span>
+            <span style={{ font: '800 12px var(--sans)', color: 'var(--down)', textTransform: 'uppercase', letterSpacing: '.3px' }}>
+              {extremo.kRecord ? `K ${actual.k > 0 ? '+' : ''}${actual.k.toFixed(1)}: la más ${signo === '+' ? 'alta' : 'baja'} en ${extremo.partidosHistoria} partidos` : `racha récord en ${extremo.partidosHistoria} partidos`}
+            </span>
+          </div>
+          <ul style={{ margin: 0, paddingLeft: 16, font: '600 11px var(--sans)', color: 'var(--t1)', lineHeight: 1.45 }}>
+            {extremo.motivos.map((m, i) => <li key={i}>{m}</li>)}
+          </ul>
+          <div style={{ font: '600 11px var(--sans)', color: 'var(--down)', marginTop: 5, lineHeight: 1.4 }}>
+            No cargar la apuesta a que la racha siga. El riesgo de abajo no lo cuenta: la tasa de reventón no sube con la K, pero si revienta, revienta desde lo más alto.
+          </div>
         </div>
       )}
 

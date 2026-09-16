@@ -522,6 +522,24 @@ export interface FamiliaBurbujaDTO {
    *  de la mediana) · zona (±0.15) · fuerte (≥ 0.15) · muy fuerte (≥ 0.45). */
   rival: { nivelProximo: number; medianaReventon: number; distancia: number; enZona: boolean; tramo: 'lejos' | 'zona' | 'fuerte' | 'muy fuerte' } | null
   riesgo: RiesgoReventonDTO | null
+  /** ALERTA DE EXTREMO (prudencia, no probabilidad): la burbuja abierta en su
+   *  máximo histórico. No mueve el riesgo —la K no puntúa—, pero no se puede
+   *  saltar: no cargar la apuesta a que la racha siga. null sin base. */
+  extremo: ExtremoBurbujaDTO | null
+}
+
+export interface ExtremoBurbujaDTO {
+  activo: boolean
+  /** |K| ≥ la K pico más alta con la que reventó este signo. */
+  kRecord: boolean
+  /** racha ≥ la más larga que reventó este signo. */
+  rachaRecord: boolean
+  /** N: partidos de esta condición en la base ("la más alta en N partidos"). */
+  partidosHistoria: number
+  maximoPrevio: { kPico: number; partidos: number }
+  motivos: string[]
+  /** '' si no está activo. */
+  texto: string
 }
 
 export interface EstabilidadEquipoDTO {
@@ -1087,6 +1105,9 @@ export interface ReventonLadoDTO {
   actual: FamiliaBurbujaDTO['actual']
   riesgo: RiesgoReventonDTO | null
   rival: FamiliaBurbujaDTO['rival']
+  /** La alerta de extremo de la familia total: si está activa, el parte trae
+   *  además la alerta K-EXTREMO y Cowork no puede saltársela. */
+  extremo: ExtremoBurbujaDTO | null
   estabilidad: EstabilidadEquipoDTO['grado']
   partidos: number
   aviso: string

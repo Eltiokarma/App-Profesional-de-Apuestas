@@ -1483,7 +1483,7 @@ components:
         nivelRival: { $ref: '#/components/schemas/Distribucion', description: 'nivel del rival que reventó cada burbuja' }
     FamiliaBurbuja:
       type: object
-      required: [familia, partidosEnCondicion, actual, reventones, historial, posicion, rival, riesgo]
+      required: [familia, partidosEnCondicion, actual, reventones, historial, posicion, rival, riesgo, extremo]
       properties:
         familia: { type: string, enum: [total, local, visita] }
         partidosEnCondicion: { type: integer }
@@ -1536,6 +1536,32 @@ components:
             motivos: { type: array, items: { type: string } }
             confianza: { type: string, enum: [baja, media, alta], description: 'muestra de reventones y estabilidad; nunca mueve el riesgo' }
             confianzaMotivos: { type: array, items: { type: string } }
+        extremo:
+          $ref: '#/components/schemas/ExtremoBurbuja'
+          nullable: true
+          description: 'ALERTA DE EXTREMO (prudencia, no probabilidad): null sin base del signo'
+    ExtremoBurbuja:
+      type: object
+      description: >
+        La burbuja abierta está en su máximo histórico para este equipo: |K| ≥ la K pico más
+        alta con la que reventó ese signo (`kRecord`) o racha ≥ la más larga (`rachaRecord`).
+        NO mueve el riesgo —el backtest dice que la K no puntúa—, pero es terreno sin
+        precedente y la pantalla y el parte lo gritan aparte: no cargar la apuesta a que la
+        racha siga. Cowork no se la puede saltar (docs/COWORK.md).
+      required: [activo, kRecord, rachaRecord, partidosHistoria, maximoPrevio, motivos, texto]
+      properties:
+        activo: { type: boolean }
+        kRecord: { type: boolean }
+        rachaRecord: { type: boolean }
+        partidosHistoria: { type: integer, description: 'N: partidos de la condición en la base («la más alta en N partidos»)' }
+        maximoPrevio:
+          type: object
+          required: [kPico, partidos]
+          properties:
+            kPico: { type: number }
+            partidos: { type: integer }
+        motivos: { type: array, items: { type: string } }
+        texto: { type: string, description: "'' si no está activa" }
     EstabilidadEquipo:
       type: object
       required: [grado, motivos, sinDato, dt, movimientos, bajas, actualizadoEn]
@@ -2064,11 +2090,12 @@ components:
             b: { $ref: '#/components/schemas/ReventonLado' }
     ReventonLado:
       type: object
-      required: [actual, riesgo, rival, estabilidad, partidos, aviso]
+      required: [actual, riesgo, rival, extremo, estabilidad, partidos, aviso]
       properties:
         actual: { type: object, nullable: true, description: 'la burbuja abierta (signo, k, partidos, kPico, desde, aplicaAlProximo)' }
         riesgo: { type: object, nullable: true, description: 'nivel, puntos, motivos, confianza, confianzaMotivos' }
         rival: { type: object, nullable: true, description: 'nivelProximo, medianaReventon, distancia, enZona, tramo' }
+        extremo: { $ref: '#/components/schemas/ExtremoBurbuja', nullable: true, description: 'la alerta de extremo de la familia total; activa ⇒ el parte trae la alerta K-EXTREMO' }
         estabilidad: { type: string, enum: [estable, en transición, inestable, sin dato] }
         partidos: { type: integer }
         aviso: { type: string }

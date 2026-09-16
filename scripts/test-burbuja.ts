@@ -56,6 +56,10 @@ const rg = t.riesgo!
 check('riesgo MUY ALTO con 8 puntos (racha +1, rival muy fuerte +7) y 3 motivos', rg.nivel === 'muy alto' && rg.puntos === 8 && rg.motivos.length === 3, rg)
 check('la K se describe pero no puntúa', rg.motivos.some((m) => m.includes('la K no puntúa') && m.includes('22.1')), rg.motivos)
 check('confianza BAJA: muestra corta (3) y estabilidad inestable', rg.confianza === 'baja' && rg.confianzaMotivos.some((m) => m.includes('inestable')), rg.confianzaMotivos)
+const ex = t.extremo!
+check('ALERTA DE EXTREMO activa: K 22.1 ≥ máximo previo 13.3 y racha 6 ≥ 3, sobre 20 partidos', ex.activo && ex.kRecord && ex.rachaRecord && ex.partidosHistoria === 20 && eq(ex.maximoPrevio, { kPico: 13.3, partidos: 3 }), ex)
+check('extremo: dos motivos con el N de partidos y texto que pide no cargar la apuesta', ex.motivos.length === 2 && ex.motivos.every((m) => m.includes('20 partidos')) && ex.texto.includes('no cargar la apuesta'), ex.motivos)
+check('el extremo NO mueve el riesgo: sigue en 8 puntos', rg.puntos === 8)
 
 console.log('\n— familia local —')
 const lo = out.familias.local
@@ -65,6 +69,7 @@ check('sin rival evaluado (otra condición) y motivo explícito', lo.rival === n
 check('riesgo BAJO con 1 punto (solo la racha)', lo.riesgo!.nivel === 'bajo' && lo.riesgo!.puntos === 1, lo.riesgo)
 check('historial − local: K pico 3.0 repetida → moda 3.0', lo.historial.negativo!.kPico.moda === 3)
 check('percentil K 50', lo.posicion!.percentilK === 50, lo.posicion)
+check('local: K 9.5 < máximo 16 y racha 3 < 4 → extremo INACTIVO', eq(lo.extremo, { activo: false, kRecord: false, rachaRecord: false, partidosHistoria: 11, maximoPrevio: { kPico: 16, partidos: 4 }, motivos: [], texto: '' }), lo.extremo)
 
 console.log('\n— familia visita —')
 const vi = out.familias.visita
@@ -107,7 +112,7 @@ check('sin historia: nada abierto, sin reventones, sin riesgo', vacio.familias.t
 const cero = analizar([...filas, fila(0, 'Local', 1, 1, 2.0, 0, 0, 12.6)])
 check('último partido en 0 → sin burbuja abierta, reventón registrado (6)', cero.familias.total.actual === null && cero.familias.total.reventones.length === 6)
 const sinbase = analizar([fila(0, 'Local', 2, 0, 2.0, 4, 4, 0), fila(1, 'Visita', 1, 0, 2.0, 6.8, 4, 2.8)])
-check('burbuja abierta sin reventones previos → SIN BASE', sinbase.familias.total.riesgo!.nivel === 'sin base' && sinbase.familias.total.posicion === null)
+check('burbuja abierta sin reventones previos → SIN BASE', sinbase.familias.total.riesgo!.nivel === 'sin base' && sinbase.familias.total.posicion === null && sinbase.familias.total.extremo === null)
 const neg = analizar(
   [fila(0, 'Local', 0, 1, 1.5, -1.5, -1.5, 0), fila(1, 'Visita', 1, 1, 1.5, 0, -1.5, 0), fila(2, 'Local', 0, 2, 2.0, -4, -4, 0), fila(3, 'Visita', 0, 1, 2.0, -6, -4, -2)],
   { proximo: { ...ctx.proximo!, nivelRival: 1.2 }, bin: 8 },

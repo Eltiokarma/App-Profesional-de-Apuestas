@@ -11,6 +11,7 @@ import type {
   FamiliaBurbuja,
   FamiliaBurbujaDTO,
   HistorialSignoDTO,
+  ExtremoBurbujaDTO,
   PlantillaDTO,
   ReventonDTO,
   SignoBurbuja,
@@ -191,6 +192,28 @@ function confianzaDe(n: number, estabilidad: EstabilidadEquipoDTO): [RiesgoConfi
 }
 type RiesgoConfianza = 'baja' | 'media' | 'alta'
 
+/** ALERTA DE EXTREMO: prudencia, no probabilidad. Una K récord no revienta
+ *  más que otra (por eso no puntúa), pero es terreno sin precedente para este
+ *  equipo y ahí no se carga la apuesta a que siga. Aparte del riesgo. */
+function extremoDe(kAbs: number, partidos: number, base: HistorialSignoDTO, nCond: number, signo: SignoBurbuja): ExtremoBurbujaDTO {
+  const kRecord = kAbs >= base.kPico.max
+  const rachaRecord = partidos >= base.partidos.max
+  const motivos: string[] = []
+  const lado = signo === '+' ? 'alta' : 'baja'
+  if (kRecord) motivos.push(`K ${r2(kAbs)}: la más ${lado} de los ${nCond} partidos que hay en la base (máximo previo ${base.kPico.max})`)
+  if (rachaRecord) motivos.push(`${partidos} partidos seguidos: la racha más larga de los ${nCond} partidos que hay en la base (máximo previo ${base.partidos.max})`)
+  return {
+    activo: kRecord || rachaRecord,
+    kRecord,
+    rachaRecord,
+    partidosHistoria: nCond,
+    maximoPrevio: { kPico: base.kPico.max, partidos: base.partidos.max },
+    motivos,
+    texto: !(kRecord || rachaRecord) ? '' :
+      'EXTREMO: la burbuja está en su máximo histórico. El modelo no lo puntúa como riesgo (la tasa de reventón no sube con la K), pero es terreno sin precedente para este equipo: no cargar la apuesta a que la racha siga',
+  }
+}
+
 function analizarFamilia(filas: FilaK[], familia: FamiliaBurbuja, proximo: ProximoBurbuja | null, estabilidad: EstabilidadEquipoDTO): FamiliaBurbujaDTO {
   const { cerrados, abierta: ep, nCond } = episodios(filas, familia)
   const hist = historialDe(cerrados)
@@ -204,6 +227,7 @@ function analizarFamilia(filas: FilaK[], familia: FamiliaBurbuja, proximo: Proxi
     posicion: null,
     rival: null,
     riesgo: null,
+    extremo: null,
   }
   if (!ep) return out
   const signo: SignoBurbuja = ep.signo > 0 ? '+' : '-'
@@ -224,6 +248,7 @@ function analizarFamilia(filas: FilaK[], familia: FamiliaBurbuja, proximo: Proxi
   const pctR = Math.floor((100 * de.filter((r) => r.partidos <= ep.partidos).length) / n + 0.5)
   const medK = base.kPico.mediana
   out.posicion = { percentilK: pctK, percentilRacha: pctR, kSobreMediana: medK <= 0 ? null : r2(kAbs / medK) }
+  out.extremo = extremoDe(kAbs, ep.partidos, base, nCond, signo)
 
   let puntos = 0
   const motivos: string[] = []

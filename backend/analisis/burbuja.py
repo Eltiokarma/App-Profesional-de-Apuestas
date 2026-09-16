@@ -218,6 +218,44 @@ def _confianza(n: int, estabilidad: dict) -> tuple[str, list[str]]:
     return c, motivos
 
 
+def _extremo(k_abs: float, partidos: int, base: dict, n_cond: int, signo: str) -> dict:
+    """ALERTA DE EXTREMO: prudencia, no probabilidad.
+
+    El backtest (docs/REVENTON.md §8) dice que una K récord no revienta más
+    que otra: por eso NO puntúa en el riesgo. Pero una burbuja en su máximo
+    histórico es terreno sin precedente para ESTE equipo, y ahí no se carga
+    la apuesta a que siga: si revienta, revienta desde lo más alto. Alavés–
+    Valencia (0-1, sept. 2026) salió «riesgo bajo» con la K de Valencia en
+    −32 sobre un máximo previo de 24: el modelo estaba dentro de su tasa y
+    quien puso la plata con esa confianza igual perdió. Esta bandera se
+    enciende aparte del riesgo, viaja con el N de partidos y NO se puede
+    saltar en el parte."""
+    k_rec = k_abs >= base["kPico"]["max"]
+    max_p = base["partidos"]["max"]
+    max_p = int(max_p) if float(max_p).is_integer() else max_p  # «3 partidos», no «3.0»
+    r_rec = partidos >= max_p
+    motivos = []
+    lado = "alta" if signo == "+" else "baja"
+    if k_rec:
+        motivos.append(f"K {_r2(k_abs)}: la más {lado} de los {n_cond} partidos que hay en la base "
+                       f"(máximo previo {base['kPico']['max']})")
+    if r_rec:
+        motivos.append(f"{partidos} partidos seguidos: la racha más larga de los {n_cond} partidos que hay "
+                       f"en la base (máximo previo {max_p})")
+    return {
+        "activo": k_rec or r_rec,
+        "kRecord": k_rec,
+        "rachaRecord": r_rec,
+        "partidosHistoria": n_cond,
+        "maximoPrevio": {"kPico": base["kPico"]["max"], "partidos": max_p},
+        "motivos": motivos,
+        "texto": ("" if not (k_rec or r_rec) else
+                  "EXTREMO: la burbuja está en su máximo histórico. El modelo no lo puntúa como riesgo "
+                  "(la tasa de reventón no sube con la K), pero es terreno sin precedente para este "
+                  "equipo: no cargar la apuesta a que la racha siga"),
+    }
+
+
 def _analizar_familia(filas: list[dict], familia: str, proximo: dict | None, estabilidad: dict) -> dict:
     cerrados, ep, n_cond = episodios(filas, familia)
     hist = _historial(cerrados)
@@ -232,6 +270,7 @@ def _analizar_familia(filas: list[dict], familia: str, proximo: dict | None, est
         "posicion": None,
         "rival": None,
         "riesgo": None,
+        "extremo": None,
     }
     if not ep:
         return out
@@ -265,6 +304,7 @@ def _analizar_familia(filas: list[dict], familia: str, proximo: dict | None, est
         "percentilRacha": pct_r,
         "kSobreMediana": None if med_k <= 0 else _r2(k_abs / med_k),
     }
+    out["extremo"] = _extremo(k_abs, ep["partidos"], base, n_cond, signo)
 
     puntos = 0
     motivos = []
