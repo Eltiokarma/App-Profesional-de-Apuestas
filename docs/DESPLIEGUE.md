@@ -19,6 +19,18 @@ en subproceso. El backend HTTP sigue siendo de solo lectura.
 
 ## 1. Backend en Railway
 
+> **Costo: es la memoria, no la CPU.** Railway cobra por GB de RAM por hora, y
+> un proceso Python que llegó a un pico de memoria no lo devuelve al sistema:
+> tras correr el backtest del reventón (171k burbujas) DENTRO del proceso web,
+> el backend quedó plano en 7 GB con la CPU casi en cero, y la factura de
+> septiembre de 2026 fue 61 dólares (22,63 de 24,69 del período siguiente eran
+> RAM). Por eso todo lo pesado —ingesta, pipeline, backfill y desde entonces
+> también el backtest— corre en **subprocesos**, que mueren al terminar y se
+> llevan su memoria. Dos candados más, en Railway: `Settings → Resource
+> Limits` con un techo de memoria (2 GB sobra) para que la factura tenga un
+> máximo conocido, y la gráfica `Metrics → Memory`: si está plana en varios
+> GB con la CPU en cero, algo retuvo memoria y un redeploy la libera.
+
 1. **Nuevo proyecto → Deploy from GitHub repo.** Railway detecta el
    `Dockerfile` de la raíz (solo empaqueta `backend/`; las DBs quedan fuera
    por `.dockerignore`).

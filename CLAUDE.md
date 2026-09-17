@@ -175,6 +175,12 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   fallo** (cero partes en la ventana = rojo) y la cobertura se mide **contra lo
   que la agenda habría elegido**, no contra lo depositado. La banda no se pinta
   cuando todo está verde: un aviso permanente se deja de leer.
+- **Nada pesado dentro del proceso web.** Railway cobra la RAM por hora y
+  Python no devuelve la memoria de un pico: el backtest del reventón corrido
+  dentro de la API dejó el backend en 7 GB planos (61 dólares en 09/2026).
+  Ingesta, pipeline, backfill y backtest corren en SUBPROCESOS; un subproceso
+  o CLI que importe `backend.app` lleva `SAD_SIN_HILOS=1` para no arrancar
+  hilos de fondo. Un cálculo nuevo sobre toda la base va por el mismo camino.
 - **Dos tokens** (`backend/app.py`): `SAD_API_TOKEN` es la llave maestra —abre
   también lo que gasta créditos de Claude y cuota de API-Football— y
   `SAD_TOKEN_COWORK` es el acotado que se le da a Cowork: solo

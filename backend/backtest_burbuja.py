@@ -35,9 +35,16 @@ import math
 import random
 from bisect import bisect_left
 
-from backend import db
-from backend.analisis import burbuja
-from backend.app import constantes_de, niveles_de
+import os
+
+# importar backend.app arranca sus hilos de fondo (ingesta, backfill, en vivo)
+# si el entorno los tiene configurados —en el servidor, siempre—: un backtest
+# no puede disparar un backfill. Ver SIN_HILOS en backend/app.py.
+os.environ.setdefault("SAD_SIN_HILOS", "1")
+
+from backend import db  # noqa: E402
+from backend.analisis import burbuja  # noqa: E402
+from backend.app import constantes_de, niveles_de  # noqa: E402
 
 NIVELES = ["bajo", "medio", "alto", "muy alto"]
 FAMILIAS = ("total", "local", "visita")
