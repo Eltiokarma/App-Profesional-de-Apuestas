@@ -58,7 +58,10 @@ function guardarLS(clave: string, v: string[]) {
 /** Pantalla inicial: los partidos del día elegido, agrupados por competición. */
 /** La marca de Cowork al costado del partido. Tres estados y nada más: el
  *  parte está (esperando once), el once ya cerró, o el caso ya tiene
- *  veredicto. Sin parte no se pinta nada. En móvil queda solo el punto. */
+ *  veredicto. Sin parte no se pinta nada. En escritorio ocupa un hueco fijo
+ *  que todas las filas reservan (con marca o sin ella) para que el marcador
+ *  no se corra; en móvil es solo un punto flotando en la esquina de la
+ *  tarjeta, sin quitarle ancho a los nombres. */
 function MarcaCowork({ marca, isMobile }: { marca?: MarcaCoworkDTO; isMobile: boolean }) {
   if (!marca) return null
   const [color, txt, title] = marca.conVeredicto
@@ -66,10 +69,13 @@ function MarcaCowork({ marca, isMobile }: { marca?: MarcaCoworkDTO; isMobile: bo
     : marca.onceCerrado
       ? ['var(--accent)', 'ANALIZADO', 'Parte de Cowork depositado, once cerrado']
       : ['var(--mark)', 'ANALIZADO · SIN ONCE', 'Parte de Cowork depositado; el bloque F espera el once']
+  if (isMobile) {
+    return <span title={title} style={{ position: 'absolute', top: 7, right: 7, width: 7, height: 7, borderRadius: '50%', background: color }}></span>
+  }
   return (
-    <span title={title} style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, padding: isMobile ? 0 : '2px 7px', borderRadius: 6, background: isMobile ? 'transparent' : `color-mix(in oklch, ${color}, transparent 86%)`, font: '700 8.5px var(--mono)', color, letterSpacing: '.3px', whiteSpace: 'nowrap' }}>
+    <span title={title} style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, padding: '2px 7px', borderRadius: 6, background: `color-mix(in oklch, ${color}, transparent 86%)`, font: '700 8.5px var(--mono)', color, letterSpacing: '.3px', whiteSpace: 'nowrap' }}>
       <span style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }}></span>
-      {!isMobile && txt}
+      {txt}
     </span>
   )
 }
@@ -315,8 +321,11 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
                   <button
                     key={m.id}
                     onClick={store.selectMatch(m)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '13px 16px', borderRadius: 13, cursor: 'pointer', textAlign: 'left', background: activo ? 'var(--accent-soft)' : 'var(--bg2)', border: `1px solid ${activo ? 'color-mix(in oklch,var(--accent),transparent 55%)' : 'var(--line)'}` }}
+                    style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '13px 16px', borderRadius: 13, cursor: 'pointer', textAlign: 'left', background: activo ? 'var(--accent-soft)' : 'var(--bg2)', border: `1px solid ${activo ? 'color-mix(in oklch,var(--accent),transparent 55%)' : 'var(--line)'}` }}
                   >
+                    {/* espejo del hueco de la marca (a la derecha): así el marcador
+                        queda en el centro exacto de la tarjeta, como antes */}
+                    {!isMobile && <span style={{ width: 158, flexShrink: 0 }}></span>}
                     <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
                       <span style={{ font: '600 13px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>{H?.name ?? m.home}</span>
                       <TeamBadge logo={H?.logo} short={H?.short ?? '?'} color={H?.color ?? 'var(--bg3)'} fg={H?.fg ?? 'var(--t2)'} size={28} />
@@ -334,7 +343,16 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
                       <TeamBadge logo={A?.logo} short={A?.short ?? '?'} color={A?.color ?? 'var(--bg3)'} fg={A?.fg ?? 'var(--t2)'} size={28} />
                       <span style={{ font: '600 13px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{A?.name ?? m.away}</span>
                     </span>
-                    <MarcaCowork marca={marcas[fixtureNum(m.id)]} isMobile={isMobile} />
+                    {/* hueco FIJO para la marca, tenga o no: si solo existiera en las
+                        filas con parte, el marcador y los nombres se correrían entre
+                        una fila y la siguiente */}
+                    {isMobile
+                      ? <MarcaCowork marca={marcas[fixtureNum(m.id)]} isMobile />
+                      : (
+                        <span style={{ width: 158, flexShrink: 0, display: 'flex', justifyContent: 'flex-end' }}>
+                          <MarcaCowork marca={marcas[fixtureNum(m.id)]} isMobile={false} />
+                        </span>
+                      )}
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M9 6l6 6-6 6" /></svg>
                   </button>
                 )
