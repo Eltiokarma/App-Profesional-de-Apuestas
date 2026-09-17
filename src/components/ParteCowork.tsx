@@ -805,7 +805,7 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, equipoAKey, equipoBKey])
-  const dosCol = isMobile ? '1fr' : '1fr 1fr'
+  const dosCol = isMobile ? 'minmax(0,1fr)' : '1fr 1fr'
   const pendienteXi = parte.estado !== 'confirmado'
   // qué lado sigue congelado: el once del local suele llegar antes que el del
   // visitante, y un aviso que dice "los dos" cuando ya hay uno cerrado se lee

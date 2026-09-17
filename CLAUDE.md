@@ -13,6 +13,7 @@ npm run build                     # typecheck + build (SIEMPRE antes de commitea
 npm run test:motor                # motor TS verificado contra docs/MOTOR_SAD_EXTRACCION.md
 npm run test:kview                # capa de visualización de las K (3 valores por gráfica)
 npm run test:burbuja              # reventón de burbuja: espejo TS vs vectores dorados (docs/REVENTON.md)
+node scripts/audit-movil.mjs /tmp/capturas 360 2400  # vista de teléfono: captura de cada pantalla + desbordes (instrucciones en el script)
 
 # backend (junto a las 4 .db en la raíz, o SAD_DATA_DIR)
 pip install -r backend/requirements.txt
@@ -89,6 +90,11 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   fecha real de la investigación. Ver `docs/DESPENSA_DESKTOP.md`.
 - Estilo UI: inline styles con las variables CSS del tema (`--bg`, `--t1`,
   `--up/--down`, fuentes `--sans`/`--mono`), números tabulares, todo en español.
+  **Teléfono**: una grilla de una columna en móvil es `minmax(0,1fr)`, nunca
+  `1fr` a secas (con `1fr` la columna toma el ancho mínimo del hijo más ancho y
+  las tarjetas se salen de la pantalla: pasó en Equipo con la botonera de las
+  K); una botonera que puede no entrar lleva `flexWrap`; y antes de dar por
+  bueno un cambio de layout se corre `scripts/audit-movil.mjs` a 360 y 390 px.
 - Tabla de posiciones: SIEMPRE `src/components/TablaPosiciones.tsx` (trae sus
   botones de fase Año/Apertura/Clausura). No duplicar tablas por sección.
 - Calendario: SIEMPRE `src/components/CalendarioSad.tsx` sobre

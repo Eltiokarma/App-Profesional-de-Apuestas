@@ -147,7 +147,8 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '20px 0 10px', flexWrap: 'wrap' }}>
         <span style={{ font: '700 10px var(--mono)', color: 'var(--t3)', letterSpacing: '.6px' }}>LECCIONES</span>
-        <div style={{ display: 'flex', padding: 3, borderRadius: 9, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+        {/* flexWrap: cinco estados no entran en una fila de teléfono (360 px) */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', padding: 3, borderRadius: 9, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
           {[['', 'todas'], ...d.estados.map((e) => [e, ETIQUETA_ESTADO[e]?.toLowerCase() ?? e])].map(([k, label]) => (
             <button key={k} onClick={() => setEstado(k)}
               style={{ padding: '5px 10px', border: 0, borderRadius: 7, cursor: 'pointer', background: estado === k ? 'var(--bg3)' : 'transparent', color: estado === k ? 'var(--t1)' : 'var(--t2)', font: '600 10.5px var(--sans)' }}>

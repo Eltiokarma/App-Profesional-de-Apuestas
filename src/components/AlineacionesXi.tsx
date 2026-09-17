@@ -591,7 +591,7 @@ export function AlineacionesXi({ local, visitante, localNombre, visitanteNombre,
         <CanchaXi local={local} visitante={visitante} localNombre={localNombre} visitanteNombre={visitanteNombre} eventos={eventos} jugadoresLocal={jugadoresLocal} jugadoresVisitante={jugadoresVisitante} isMobile={isMobile} />
       )}
       {hayXi && vista === 'lista' && (
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 18 : 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0,1fr)' : '1fr 1fr', gap: isMobile ? 18 : 24 }}>
           {local && local.titulares.length > 0 && <LadoXi ali={local} nombre={localNombre} cond="L" eventos={eventos} jugadores={indice(jugadoresLocal)} isMobile={isMobile} />}
           {visitante && visitante.titulares.length > 0 && <LadoXi ali={visitante} nombre={visitanteNombre} cond="V" eventos={eventos} jugadores={indice(jugadoresVisitante)} isMobile={isMobile} />}
         </div>

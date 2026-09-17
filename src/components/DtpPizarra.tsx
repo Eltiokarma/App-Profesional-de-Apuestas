@@ -57,7 +57,7 @@ function Campo({ label, children }: { label: string; children: React.ReactNode }
 
 export function DtpPizarra({ eslabon, isMobile }: { eslabon: EslabonDtpDTO; isMobile: boolean }) {
   const { apertura, cierre, registro } = eslabon
-  const dosCol = isMobile ? '1fr' : '1fr 1fr'
+  const dosCol = isMobile ? 'minmax(0,1fr)' : '1fr 1fr'
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -78,7 +78,7 @@ export function DtpPizarra({ eslabon, isMobile }: { eslabon: EslabonDtpDTO; isMo
                 {g.via && <Chip color="var(--accent)" soft="var(--accent-soft)">{VIA[g.via] ?? g.via}</Chip>}
               </div>
               {/* la cadena del gol: se lee de un vistazo, en orden */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 10, marginTop: 11 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0,1fr)' : 'repeat(3, 1fr)', gap: 10, marginTop: 11 }}>
                 {([['Disparador', g.disparador], ['Secuencia', g.secuencia], ['Definición', g.definicion]] as const).map(
                   ([lab, val]) => val ? (
                     <div key={lab}>
@@ -227,7 +227,7 @@ export function DtpPizarra({ eslabon, isMobile }: { eslabon: EslabonDtpDTO; isMo
               <span style={titulo}>Mapa de duelos por carril</span>
               <span style={sub}>M2 · {apertura.m2?.choque_sistemas}</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 10, marginTop: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0,1fr)' : 'repeat(3, 1fr)', gap: 10, marginTop: 12 }}>
               {CARRILES.map((c) => {
                 const d = apertura.m2?.duelos_carril?.find((x) => (x.carril || '').toLowerCase().includes(c))
                 return (
@@ -302,7 +302,7 @@ export function DtpPizarra({ eslabon, isMobile }: { eslabon: EslabonDtpDTO; isMo
                 <span style={titulo}>Plan por fases</span>
                 <span style={sub}>M3 · palancas concretas por tramo</span>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${apertura.m3_fases.length}, 1fr)`, gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0,1fr)' : `repeat(${apertura.m3_fases.length}, 1fr)`, gap: 10 }}>
                 {apertura.m3_fases.map((f, i) => (
                   <div key={i} style={{ padding: 13, borderRadius: 11, background: 'var(--bg)', border: '1px solid var(--line)' }}>
                     <div style={{ font: '700 12px var(--mono)', color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>{f.tramo}&#39;</div>
@@ -331,7 +331,7 @@ export function DtpPizarra({ eslabon, isMobile }: { eslabon: EslabonDtpDTO; isMo
                   {apertura.m6.competitivo ? 'competitivo' : 'amistoso'}
                 </Chip>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0,1fr)' : 'repeat(4, 1fr)', gap: 12 }}>
                 {([['Rotación', apertura.m6.rotacion], ['Fatiga', apertura.m6.fatiga],
                    ['Ausencias clave', apertura.m6.ausencias_clave], ['Otros', apertura.m6.otros]] as const).map(
                   ([lab, val]) => val ? (

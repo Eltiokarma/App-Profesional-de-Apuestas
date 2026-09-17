@@ -49,7 +49,9 @@ export function TablaPosiciones({ ligaId, temporada, fases, destacar = [], desta
 
   return (
     <section style={{ padding: 16, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)', alignSelf: 'start' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 2 }}>
+      {/* flexWrap: en teléfono las acciones (los dos prompts de la liga) bajan
+          de línea en vez de salirse de la tarjeta */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 2, flexWrap: 'wrap' }}>
         <div style={{ font: '700 12px var(--sans)' }}>Clasificación</div>
         {acciones?.(tabla)}
       </div>

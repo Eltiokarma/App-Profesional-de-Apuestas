@@ -23,8 +23,8 @@ export function Skills({ store, m, isMobile }: Props) {
   const { s } = store
   const H = TEAMS[m.home]
   const A = TEAMS[m.away]
-  const gridSkills = isMobile ? '1fr' : 'minmax(0,1fr) 290px'
-  const gridSkillCards = isMobile ? '1fr' : '1fr 1fr'
+  const gridSkills = isMobile ? 'minmax(0,1fr)' : 'minmax(0,1fr) 290px'
+  const gridSkillCards = isMobile ? 'minmax(0,1fr)' : '1fr 1fr'
 
   const skills = SKILL_DEFS.map((d) => {
     const st = s.skillStatus[d.key]

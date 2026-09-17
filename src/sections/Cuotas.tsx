@@ -59,7 +59,7 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
   const isLive = esDemo && s.oddsMode === 'live'
   const mv = matchView(m)
   const cmk = s.chartMarket || '1x2'
-  const gridCuotasCards = isMobile ? '1fr' : '1fr 1fr 1fr'
+  const gridCuotasCards = isMobile ? 'minmax(0,1fr)' : '1fr 1fr 1fr'
   // fuente del historial: null = media entre casas; o una casa de referencia
   // (Bet365, Pinnacle…) con su curva cruda, que no se suaviza al promediar
   const [fuente, setFuente] = useState<string | null>(null)
@@ -473,7 +473,7 @@ export function Cuotas({ store, m, isMobile, live }: Props) {
           <h3 style={{ margin: 0, font: '700 15px var(--sans)' }}>Apuestas que salieron</h3>
           <span style={{ font: '500 11px var(--mono)', color: 'var(--t3)' }}>últimos 3 partidos de cada equipo · cuota prepartido del 1X2 que ocurrió</span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0,1fr)' : '1fr 1fr', gap: 14 }}>
           {[{ k: mv.homeKey, nom: mv.homeName }, { k: mv.awayKey, nom: mv.awayName }].map((eq) => (
             <div key={eq.k}>
               <button className="sad-hover" onClick={() => store.openTeam(eq.k)} title={'Ver página de ' + eq.nom} style={{ background: 'transparent', border: 0, cursor: 'pointer', padding: '0 0 8px', font: '700 12.5px var(--sans)', color: 'var(--t1)' }}>{eq.nom}</button>
