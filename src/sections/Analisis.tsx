@@ -582,9 +582,9 @@ export function Analisis({ m, isMobile }: Props) {
           {r.alertas.length > 0 && (
             <section style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 14 }}>
               {r.alertas.map((a, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 13px', borderRadius: 11, background: a.tipo === 'estructural' ? 'var(--down-soft)' : 'var(--mark-soft)', border: `1px solid color-mix(in oklch,${a.tipo === 'estructural' ? 'var(--down)' : 'var(--mark)'},transparent 60%)` }}>
-                  <span style={{ padding: '2px 8px', borderRadius: 6, background: 'var(--bg)', font: '700 9.5px var(--mono)', color: a.tipo === 'estructural' ? 'var(--down)' : 'var(--mark)', flexShrink: 0, whiteSpace: 'nowrap' }}>{a.codigo}</span>
-                  <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>
+                <div key={i} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: '6px 10px', padding: '9px 13px', borderRadius: 11, background: a.tipo === 'estructural' ? 'var(--down-soft)' : 'var(--mark-soft)', border: `1px solid color-mix(in oklch,${a.tipo === 'estructural' ? 'var(--down)' : 'var(--mark)'},transparent 60%)` }}>
+                  <span style={{ padding: '2px 8px', borderRadius: 6, background: 'var(--bg)', font: '700 9.5px var(--mono)', color: a.tipo === 'estructural' ? 'var(--down)' : 'var(--mark)', flexShrink: 0, maxWidth: '100%', overflowWrap: 'anywhere' }}>{a.codigo}</span>
+                  <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', flex: '1 1 220px', minWidth: 0 }}>
                     {a.equipo !== 'global' && (
                       <b style={{ color: 'var(--t2)' }}>[{a.equipo === 'a' ? r.partido.equipo_a : a.equipo === 'b' ? r.partido.equipo_b : 'Ambos'}] </b>
                     )}

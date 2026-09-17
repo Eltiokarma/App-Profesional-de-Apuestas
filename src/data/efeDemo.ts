@@ -248,6 +248,9 @@ export function parteCoworkDemo(fixtureId: number, equipoA: string, equipoB: str
     alertas: [
       { codigo: 'T.54', equipo: 'b', tipo: 'estructural', detalle: 'DT interino con menos de 6 meses: las K del equipo pierden línea base.' },
       { codigo: 'DEMO', equipo: 'global', tipo: 'fecha', detalle: 'Parte de muestra: el modo demo no habla con Cowork ni con ninguna API.' },
+      // un código largo como los que escribe Cowork en producción: la tira de
+      // alertas tiene que aguantarlo en teléfono sin aplastar el detalle
+      { codigo: 'EL-EFE-VUELVE-A-QUEDAR-CORTO-CONTRA-EL-MOTOR', equipo: 'global', tipo: 'fecha', detalle: 'Cuarta corrida consecutiva con la misma tensión: el bloque A en cero de los dos lados aplana la comparación y el EFE se está calculando sobre dos bloques que no separan mucho.' },
     ],
     matchup: {
       diagnostico: 'FAVORABLE', favorece: 'a',
