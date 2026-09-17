@@ -104,14 +104,14 @@ export function Liga({ store, ligaId, isMobile }: Props) {
         </div>
       )}
       {liga.loading && (
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1fr) 320px', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0,1fr)' : 'minmax(0,1fr) 320px', gap: 14 }}>
           <div className="sad-sk" style={{ height: 420 }}></div>
           <div className="sad-sk" style={{ height: 420 }}></div>
         </div>
       )}
 
       {!liga.loading && !liga.error && d && (
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1fr) 320px', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0,1fr)' : 'minmax(0,1fr) 320px', gap: 14 }}>
           {/* CLASIFICACIÓN — misma tabla (y mismos botones de fase) que en Estadísticas */}
           <TablaPosiciones
             ligaId={ligaId}

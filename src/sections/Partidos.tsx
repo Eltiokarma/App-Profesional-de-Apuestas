@@ -314,6 +314,13 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
               {grp.rows.map((m) => {
                 const H = TEAMS[m.home]
                 const A = TEAMS[m.away]
+                // en teléfono el nombre va a DOS líneas en vez de cortarse en
+                // «Arse…»: a 360 px cada lado tiene ~65 px y ningún nombre entra
+                const nombreEq: React.CSSProperties = isMobile
+                  // break-word y no anywhere: «anywhere» deja que flex encoja el nombre
+                  // por debajo de la palabra más larga y partía «Tottenha·m» con sitio de sobra
+                  ? { font: '600 11.5px var(--sans)', color: 'var(--t1)', lineHeight: 1.15, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflowWrap: 'break-word' }
+                  : { font: '600 13px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }
                 const live = m.status === 'live'
                 const fin = m.status === 'fin'
                 const activo = store.s.matchId === m.id
@@ -321,17 +328,17 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
                   <button
                     key={m.id}
                     onClick={store.selectMatch(m)}
-                    style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '13px 16px', borderRadius: 13, cursor: 'pointer', textAlign: 'left', background: activo ? 'var(--accent-soft)' : 'var(--bg2)', border: `1px solid ${activo ? 'color-mix(in oklch,var(--accent),transparent 55%)' : 'var(--line)'}` }}
+                    style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12, width: '100%', padding: isMobile ? '12px 12px' : '13px 16px', borderRadius: 13, cursor: 'pointer', textAlign: 'left', background: activo ? 'var(--accent-soft)' : 'var(--bg2)', border: `1px solid ${activo ? 'color-mix(in oklch,var(--accent),transparent 55%)' : 'var(--line)'}` }}
                   >
                     {/* espejo del hueco de la marca (a la derecha): así el marcador
                         queda en el centro exacto de la tarjeta, como antes */}
                     {!isMobile && <span style={{ width: 158, flexShrink: 0 }}></span>}
-                    <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
-                      <span style={{ font: '600 13px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>{H?.name ?? m.home}</span>
-                      <TeamBadge logo={H?.logo} short={H?.short ?? '?'} color={H?.color ?? 'var(--bg3)'} fg={H?.fg ?? 'var(--t2)'} size={28} />
+                    <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: isMobile ? 6 : 10 }}>
+                      <span style={{ ...nombreEq, textAlign: 'right' }}>{H?.name ?? m.home}</span>
+                      <TeamBadge logo={H?.logo} short={H?.short ?? '?'} color={H?.color ?? 'var(--bg3)'} fg={H?.fg ?? 'var(--t2)'} size={isMobile ? 24 : 28} />
                     </span>
-                    <span style={{ width: 74, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                      <span style={{ font: '700 16px var(--mono)', color: m.status === 'sched' ? 'var(--t2)' : 'var(--t1)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+                    <span style={{ width: isMobile ? 58 : 74, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                      <span style={{ font: `700 ${isMobile ? 15 : 16}px var(--mono)`, color: m.status === 'sched' ? 'var(--t2)' : 'var(--t1)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
                         {m.status === 'sched' ? m.min : m.score}
                       </span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4, font: '700 9px var(--mono)', color: live ? 'var(--down)' : fin ? 'var(--t3)' : 'var(--accent)', letterSpacing: '.3px' }}>
@@ -339,9 +346,9 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
                         {live ? m.min : fin ? 'FIN' : 'PROX'}
                       </span>
                     </span>
-                    <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <TeamBadge logo={A?.logo} short={A?.short ?? '?'} color={A?.color ?? 'var(--bg3)'} fg={A?.fg ?? 'var(--t2)'} size={28} />
-                      <span style={{ font: '600 13px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{A?.name ?? m.away}</span>
+                    <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10 }}>
+                      <TeamBadge logo={A?.logo} short={A?.short ?? '?'} color={A?.color ?? 'var(--bg3)'} fg={A?.fg ?? 'var(--t2)'} size={isMobile ? 24 : 28} />
+                      <span style={nombreEq}>{A?.name ?? m.away}</span>
                     </span>
                     {/* hueco FIJO para la marca, tenga o no: si solo existiera en las
                         filas con parte, el marcador y los nombres se correrían entre

@@ -440,7 +440,7 @@ export function Analisis({ m, isMobile }: Props) {
     { k: 'lectura', label: 'Lectura SAD' },
     { k: 'calendario', label: 'Calendario' },
   ]
-  const dosCol = isMobile ? '1fr' : '1fr 1fr'
+  const dosCol = isMobile ? 'minmax(0,1fr)' : '1fr 1fr'
 
   return (
     <div>

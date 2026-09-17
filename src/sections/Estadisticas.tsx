@@ -86,7 +86,7 @@ export function Estadisticas({ store, m, isMobile }: Props) {
   const est = useAsync(() => loadEstadisticas(m), m.id)
   const H = TEAMS[m.home]
   const A = TEAMS[m.away]
-  const gridStats = isMobile ? '1fr' : 'minmax(0,1fr) 320px'
+  const gridStats = isMobile ? 'minmax(0,1fr)' : 'minmax(0,1fr) 320px'
 
   const formChip = (arr: string[]) => arr.map((r) => ({ r, bg: r === 'W' ? 'var(--up)' : r === 'D' ? 'var(--t3)' : 'var(--down)' }))
 
@@ -232,7 +232,7 @@ export function Estadisticas({ store, m, isMobile }: Props) {
         )}
         {pred.data && (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr auto 1fr', alignItems: 'stretch', gap: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0,1fr)' : '1fr auto 1fr', alignItems: 'stretch', gap: 14 }}>
               <GapCard g={pred.data.local} name={H.name} align="left" />
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '0 6px' }}>
                 <span style={{ font: '600 9px var(--mono)', color: 'var(--t3)', letterSpacing: '1px' }}>GAP DIFERENCIAL</span>

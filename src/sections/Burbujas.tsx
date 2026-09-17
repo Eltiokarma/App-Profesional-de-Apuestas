@@ -91,7 +91,7 @@ export function Burbujas({ store, m, isMobile }: Props) {
   const { s } = store
   const H = TEAMS[m.home]
   const A = TEAMS[m.away]
-  const gridBurbujas = isMobile ? '1fr' : '1fr 1fr 280px'
+  const gridBurbujas = isMobile ? 'minmax(0,1fr)' : '1fr 1fr 280px'
 
   // constantes K + niveles vía el contrato (/constantes, /niveles)
   // VISTA AL DÍA DEL PARTIDO: para un partido ya jugado, la historia de K se

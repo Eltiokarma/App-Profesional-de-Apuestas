@@ -111,15 +111,17 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
         </div>
       )}
       {cargando && (
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1fr) 320px', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0,1fr)' : 'minmax(0,1fr) 320px', gap: 14 }}>
           <div className="sad-sk" style={{ height: 420 }}></div>
           <div className="sad-sk" style={{ height: 420 }}></div>
         </div>
       )}
 
       {!cargando && !error && (
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1fr) 320px', gap: 14 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0,1fr)' : 'minmax(0,1fr) 320px', gap: 14 }}>
+          {/* minWidth 0: sin esto la columna toma el ancho de la botonera de las K
+              (511 px) y en el teléfono las tarjetas quedaban cortadas a la derecha */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
             {/* MOMENTUM K */}
             <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>

@@ -99,7 +99,7 @@ export function TimelineComparativo({ data, isMobile }: { data: TimelineData; is
       </div>
 
       {/* barra de stats por equipo */}
-      <div style={{ display: 'grid', gridTemplateColumns: unSolo || isMobile ? '1fr' : '1fr 1fr', gap: 8, marginBottom: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: unSolo || isMobile ? 'minmax(0,1fr)' : '1fr 1fr', gap: 8, marginBottom: 12 }}>
         {[eqA, eqB].filter(Boolean).map((eq) => (
           <div key={eq!.nombre} style={{ padding: '8px 12px', borderRadius: 10, background: '#11141f', border: `1px solid ${eq!.color}44` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
