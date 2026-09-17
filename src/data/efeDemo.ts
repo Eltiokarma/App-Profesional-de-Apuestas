@@ -346,6 +346,18 @@ function veredictoDemo(fixtureId: number, marcador: string): VeredictoParte {
         primerGol: { minuto: 23, lado: 'a' as const, jugador: 'Jugador de muestra' },
         conFicha: true, nota: '',
       },
+      // el reventón, comprobado: la burbuja de cada lado antes del partido y si
+      // este partido la cerró (observación, no veredicto)
+      reventon: {
+        nota: 'declarado = la burbuja total con la historia anterior al partido; observado = si la K de ESTE partido cerró la burbuja. Es observación, no veredicto',
+        a: { comprobable: true, sinBurbuja: false,
+             declarado: { signo: '+', k: 14.2, partidos: 4, riesgo: { nivel: 'alto', puntos: 5 }, rivalTramo: 'fuerte', extremo: false },
+             observado: real === 'local' ? { revento: false, kDespues: 18.9, signoDespues: '+', kPico: null, partidos: 5 }
+               : { revento: true, kDespues: real === 'empate' ? 0 : -2.4, signoDespues: real === 'empate' ? '0' : '-', kPico: 14.2, partidos: 4 },
+             nota: real === 'local' ? 'siguió: la burbuja + llega a 5 partidos (K +18.90)' : 'reventó: la burbuja + de 4 partidos (K +14.20) cerró con este partido' },
+        b: { comprobable: false, sinBurbuja: true, declarado: null, observado: null,
+             nota: 'sin burbuja abierta antes del partido: no había nada que reventar' },
+      },
     },
   }
 }
@@ -443,6 +455,19 @@ export function leccionesDemo(skill: string, estado: string): InventarioLeccione
       ventanaTde: {
         observadas: 2, conGol: 1, sinFicha: 0,
         nota: 'ventanas del TDE comprobadas contra los goles recibidos, en población ciega. `sinFicha` no cuenta como no ocurrido: no se pudo comprobar',
+      },
+      reventon: {
+        observadas: 3, reventadas: 2, tasa: 0.667, tasaBaseBacktest: 0.6,
+        porNivel: {
+          'bajo': { observadas: 0, reventadas: 0, tasa: null, esperadoBacktest: [0.421, 0.473], dentroDelBacktest: null, nMinimo: 10 },
+          'medio': { observadas: 1, reventadas: 0, tasa: 0, esperadoBacktest: [0.608, 0.608], dentroDelBacktest: null, nMinimo: 10 },
+          'alto': { observadas: 2, reventadas: 2, tasa: 1, esperadoBacktest: [0.672, 0.692], dentroDelBacktest: null, nMinimo: 10 },
+          'muy alto': { observadas: 0, reventadas: 0, tasa: null, esperadoBacktest: [0.747, 0.854], dentroDelBacktest: null, nMinimo: 10 },
+          'sin base': { observadas: 0, reventadas: 0, tasa: null, esperadoBacktest: null, dentroDelBacktest: null, nMinimo: 10 },
+        },
+        extremo: { observadas: 1, reventadas: 1, nota: 'burbujas con alerta K-EXTREMO declarada antes del partido: el backtest dice que la K no adelanta el reventón; esto lo mira en producción' },
+        sinBurbuja: 1, noComprobables: 0, fueraDelBacktest: [], revisionAbierta: false,
+        nota: 'por lado, en población ciega: la burbuja total tal como estaba antes del partido y si ese partido la reventó. La tasa por nivel se compara con la del backtest (docs/REVENTON.md §8) solo con n ≥ 10; un nivel fuera del rango ABRE la revisión de los puntos, no los mueve',
       },
     },
     porSkill,

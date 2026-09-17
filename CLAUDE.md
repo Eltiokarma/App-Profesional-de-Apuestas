@@ -340,7 +340,10 @@ conversación se pierde en la siguiente.
    veredicto a las 12 h (`POST /analisis/cowork/{id}/veredicto`,
    `backend/analisis/veredicto.py`). Lo objetivo lo calcula el backend
    —marcador, acierto del 1X2, Brier de tres resultados, si cayó gol en la
-   ventana del TDE, los goles con su minuto— y se RECALCULA al leer; Cowork
+   ventana del TDE, los goles con su minuto, y el **reventón** de cada lado:
+   la burbuja declarada antes del partido (vista «al día del partido») y si
+   ese partido la reventó, como observación sin acierto ni fallo— y se
+   RECALCULA al leer; Cowork
    solo escribe el juicio y, sobre todo, la POBLACIÓN del caso (`ciega` /
    `por_resultado` / `post_resultado`), que no se puede deducir y que decide
    si acredita. Solo `ciega` + `PRE` acredita: los contaminados fijan rúbrica
@@ -354,7 +357,11 @@ conversación se pierde en la siguiente.
    (`leccion_estado`), que es lo que corta el bucle infinito. Marcar `aplicada`
    EXIGE la versión del skill donde entró; cada lección viaja con
    `puedeMoverNumeros` (solo `ciega`+`PRE` sostiene un cambio de peso, el resto
-   fija rúbrica); el sesgo de atribución se declara antes de los conteos; y
+   fija rúbrica); el sesgo de atribución se declara antes de los conteos; la
+   tasa de reventón por nivel de riesgo se compara con la del backtest
+   (`acreditables.reventon`, `TASA_BACKTEST` en `burbuja.py`, solo con n ≥ 10
+   por nivel) y un nivel fuera del rango ABRE la revisión de los puntos sin
+   moverlos (`docs/REVENTON.md` §11); y
    mover estados NO está abierto al token de Cowork: el agente lee sus
    lecciones, declarar aplicada la suya es del usuario. Faltan D (dossier cada
    4 fallos, que ABRE la revisión pero no autoriza mover nada) y A

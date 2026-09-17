@@ -88,7 +88,40 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
             color={a.brier.media === null ? undefined : a.brier.mejorQueLaBase ? 'var(--up)' : 'var(--down)'} />
           <Cifra etiqueta="VENTANA TDE" valor={`${a.ventanaTde.conGol}/${a.ventanaTde.observadas}`}
             pie={a.ventanaTde.sinFicha ? `${a.ventanaTde.sinFicha} sin ficha: no comprobable` : 'comprobadas contra los goles recibidos'} />
+          {a.reventon && (
+            <Cifra etiqueta="REVENTÓN" valor={`${a.reventon.reventadas}/${a.reventon.observadas}`}
+              pie={a.reventon.observadas ? `burbujas que reventaron · tasa base del backtest ${Math.round(a.reventon.tasaBaseBacktest * 100)}%` : 'sin burbujas comprobadas en población ciega'}
+              color={a.reventon.revisionAbierta ? 'var(--down)' : undefined} />
+          )}
         </div>
+        {a.reventon && a.reventon.observadas > 0 && (
+          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <div style={{ font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px' }}>REVENTÓN POR NIVEL DE RIESGO · observado vs backtest</div>
+            {Object.entries(a.reventon.porNivel).filter(([, c]) => c.observadas > 0).map(([nivel, c]) => (
+              <div key={nivel} style={{ display: 'flex', alignItems: 'center', gap: 10, font: '500 11px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+                <span style={{ width: 70, color: 'var(--t1)', fontWeight: 700 }}>{nivel}</span>
+                <span>{c.reventadas}/{c.observadas}{c.tasa !== null ? ` · ${Math.round(c.tasa * 100)}%` : ''}</span>
+                <span style={{ color: 'var(--t3)' }}>
+                  {c.esperadoBacktest ? `backtest ${Math.round(c.esperadoBacktest[0] * 100)}–${Math.round(c.esperadoBacktest[1] * 100)}%` : 'sin base en el backtest'}
+                </span>
+                <span style={{ color: c.dentroDelBacktest === null ? 'var(--t3)' : c.dentroDelBacktest ? 'var(--up)' : 'var(--down)', fontWeight: 700 }}>
+                  {c.dentroDelBacktest === null ? `n < ${c.nMinimo}: no se compara` : c.dentroDelBacktest ? 'dentro' : 'FUERA'}
+                </span>
+              </div>
+            ))}
+            {a.reventon.extremo.observadas > 0 && (
+              <div style={{ font: '500 10.5px var(--sans)', color: 'var(--t3)' }} title={a.reventon.extremo.nota}>
+                con alerta K-EXTREMO: {a.reventon.extremo.reventadas}/{a.reventon.extremo.observadas} reventaron
+              </div>
+            )}
+            {a.reventon.revisionAbierta && (
+              <div style={{ marginTop: 4, padding: '9px 12px', borderRadius: 10, background: 'var(--down-soft)', font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>
+                Nivel{a.reventon.fueraDelBacktest.length > 1 ? 'es' : ''} <b>{a.reventon.fueraDelBacktest.join(', ')}</b> fuera del rango del backtest con n suficiente:
+                esto ABRE la revisión de los puntos del riesgo (docs/REVENTON.md §5); no los mueve.
+              </div>
+            )}
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 10, font: '600 10.5px var(--mono)', color: 'var(--t3)' }}>
           {(['acierto', 'parcial', 'fallo'] as const).map((v) => (
             <span key={v} style={{ color: COLOR_VER[v] }}>{a.veredictos[v] ?? 0} {v}</span>

@@ -1207,6 +1207,35 @@ def main():
     check("el Brier se calcula y declara su escala", o["brier"]["valor"] == 0.245
           and "binario" in o["brier"]["escala"], o["brier"])
 
+    # ── EL REVENTÓN, COMPROBADO (docs/REVENTON.md §11) ──────────────────────
+    # lo declarado se reconstruye con la vista «al día del partido» (la misma
+    # que sirve /burbujas?antesDe=) y lo observado sale de la K de ESE partido
+    rv = o["reventon"]
+    check("el objetivo trae el reventón por lado, con su nota de que es observación y no veredicto",
+          set(rv) >= {"a", "b", "nota"} and "no veredicto" in rv["nota"], list(rv))
+    fx_p = dbmod.query_one("sad", "SELECT home_team_id, away_team_id FROM fixtures WHERE id=?", (pasado["id"],))
+    for lado, tid in (("a", fx_p["home_team_id"]), ("b", fx_p["away_team_id"])):
+        r_l = rv[lado]
+        ant = c.get(f"{A}/equipos/{tid}/burbujas", params={"antesDe": pasado["id"]}).json()["familias"]["total"]
+        if not ant["actual"]:
+            check(f"lado {lado}: sin burbuja antes del partido → sinBurbuja y nada observado",
+                  r_l["sinBurbuja"] is True and r_l["observado"] is None, r_l)
+            continue
+        check(f"lado {lado}: lo declarado es EXACTAMENTE la burbuja de /burbujas?antesDe= (signo, K, racha, riesgo)",
+              r_l["comprobable"] and r_l["declarado"]["signo"] == ant["actual"]["signo"]
+              and r_l["declarado"]["k"] == ant["actual"]["k"]
+              and r_l["declarado"]["partidos"] == ant["actual"]["partidos"]
+              and r_l["declarado"]["riesgo"]["nivel"] == ant["riesgo"]["nivel"]
+              and r_l["declarado"]["extremo"] == bool((ant.get("extremo") or {}).get("activo")),
+              (r_l["declarado"], ant["actual"], ant["riesgo"]))
+        hoy_b = c.get(f"{A}/equipos/{tid}/burbujas").json()["familias"]["total"]
+        cerro = any(x["fixtureId"] == pasado["id"] for x in hoy_b["reventones"])
+        check(f"lado {lado}: lo observado coincide con la historia entera ({'reventó' if cerro else 'siguió'})",
+              r_l["observado"]["revento"] is cerro
+              and (("reventó" in r_l["nota"]) if cerro else ("siguió" in r_l["nota"])), r_l)
+    check("el reventón no emite acierto ni fallo: no hay `acerto` en el bloque",
+          all("acerto" not in (rv[l] or {}) for l in ("a", "b")))
+
     # UNA SALVEDAD SOBRE UN CASO QUE ACREDITA. La población la declara quien
     # escribe; la salvedad no la cambia, pero queda en campo propio para que se
     # pueda auditar sin leer prosa. Caso real: un parte retocado con el partido
@@ -1594,6 +1623,34 @@ def main():
           (tde_skill["revisionAbierta"], tde_skill["faltanParaDisparar"]))
     check("el listón del TDE sale del propio skill",
           "5" in (tde_skill["liston"] or {}).get("semaforo", ""), (tde_skill["liston"] or {}).get("semaforo"))
+
+    # ── el reventón en producción, contra el backtest (REVENTON.md §11) ─────
+    rvm = inv["acreditables"]["reventon"]
+    check("las métricas traen la tasa de reventón por nivel de riesgo con el rango del backtest al lado",
+          set(rvm["porNivel"]) >= {"bajo", "medio", "alto", "muy alto", "sin base"}
+          and rvm["porNivel"]["muy alto"]["esperadoBacktest"] == [0.747, 0.854]
+          and rvm["porNivel"]["sin base"]["esperadoBacktest"] is None, rvm["porNivel"])
+    n_casos_ciegos = inv["acreditables"]["casos"]
+    check("las observaciones son los lados de los casos ciegos (dos por caso) y suman por nivel",
+          rvm["observadas"] == sum(x["observadas"] for x in rvm["porNivel"].values())
+          and 0 < rvm["observadas"] + rvm["sinBurbuja"] + rvm["noComprobables"] <= 2 * n_casos_ciegos
+          and (rvm["observadas"] + rvm["sinBurbuja"] + rvm["noComprobables"]) % 2 == 0,
+          (rvm["observadas"], rvm["sinBurbuja"], rvm["noComprobables"], n_casos_ciegos))
+    check("con n < 10 por nivel no se compara con el backtest: `dentroDelBacktest` null y la revisión cerrada",
+          all(x["dentroDelBacktest"] is None for x in rvm["porNivel"].values())
+          and rvm["revisionAbierta"] is False and rvm["fueraDelBacktest"] == [], rvm)
+    check("y la nota dice que un nivel fuera del rango ABRE la revisión, no mueve los puntos",
+          "no los mueve" in rvm["nota"], rvm["nota"])
+    from backend.analisis.lecciones import _cerrar_reventon, _reventon_vacio
+    sint = _reventon_vacio()
+    sint["porNivel"]["bajo"] = {"observadas": 20, "reventadas": 16}     # 80 %: fuera de 42-47 %
+    sint["porNivel"]["alto"] = {"observadas": 25, "reventadas": 17}     # 68 %: dentro de 67.2-69.2 %
+    sint["porNivel"]["medio"] = {"observadas": 5, "reventadas": 5}      # n chico: no se compara
+    cerr = _cerrar_reventon(sint)
+    check("con n suficiente, un nivel fuera del rango del backtest se nombra y abre la revisión",
+          cerr["fueraDelBacktest"] == ["bajo"] and cerr["revisionAbierta"] is True
+          and cerr["porNivel"]["alto"]["dentroDelBacktest"] is True
+          and cerr["porNivel"]["medio"]["dentroDelBacktest"] is None, cerr["porNivel"])
 
     # LO CONTAMINADO ENSEÑA PERO NO MUEVE UN NÚMERO
     c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto", json={

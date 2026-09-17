@@ -154,7 +154,8 @@ que se puede calcular, se calcula.
 | ¿acertó el marcador exacto? | la lección, en una frase accionable |
 | error de la probabilidad (Brier por caso) | a qué skill le toca la lección |
 | ¿el gol del tramo final cayó en la ventana del TDE? | si el caso es `ciego` o está contaminado |
-| los goles con su minuto y su lado (la evidencia) | **si se cumplió el falsador** |
+| ¿reventó la burbuja de cada lado? (lo declarado antes y lo que pasó) | **si se cumplió el falsador** |
+| los goles con su minuto y su lado (la evidencia) | |
 
 **Corrección sobre la primera versión de este documento:** aquí decía que el
 falsador lo verificaría el backend. Al construirlo quedó claro que no: el
@@ -395,6 +396,38 @@ impedir, entrando por la puerta de atrás.
 el marcador, el caso es PRE. Si consulta el marcador y después puntúa, es
 `post_resultado` y no acredita. El endpoint no puede saberlo solo: **lo
 declara Cowork y el prompt tiene que decirlo con todas las letras.**
+
+### El reventón de la burbuja: observación, no veredicto
+
+El parte lleva, por lado, la burbuja abierta y su riesgo de reventón
+(`lecturaSad.reventonCalculado`, `docs/REVENTON.md`), pero ese bloque se
+recalcula al leer: después del partido ya no dice lo que decía antes. Por eso
+`objetivo.reventon` reconstruye lo **declarado** con la vista «al día del
+partido» (§9 del doc: historia estrictamente anterior al fixture y el fixture
+como próximo, la misma construcción anti-hindsight del backtest; da los mismos
+números que `GET /equipos/{id}/burbujas?antesDe=`) y pone al lado lo
+**observado**: si la K fusionada de ese partido cerró la burbuja, con la
+misma función que detecta los reventones en la historia.
+
+Lo que NO hace es emitir acierto o fallo. Un riesgo alto que revienta no es un
+acierto y uno bajo que revienta no es un fallo: el riesgo es una **tasa**, y
+una tasa se juzga en conjunto. Eso vive en las lecciones:
+`acreditables.reventon` trae, solo sobre los casos `ciega` + `PRE`, la tasa de
+reventón observada por nivel de riesgo con el rango que el backtest dejó para
+ese nivel (`docs/REVENTON.md` §8) y `dentroDelBacktest`, que solo se calcula
+con `n ≥ 10` por nivel. Un nivel fuera del rango con n suficiente sale en
+`fueraDelBacktest` y pone `revisionAbierta`: eso **abre** la revisión de los
+puntos del riesgo, y nada más —los puntos se mueven con el backtest a la vista,
+en los dos lados y en los vectores dorados, como dice `CLAUDE.md`—. Las
+burbujas que tenían la alerta K-EXTREMO se cuentan aparte, porque la pregunta
+ahí es otra: el backtest dice que la K no adelanta el reventón, y esto lo mira
+en producción.
+
+Sin burbuja abierta antes del partido no hay nada que observar
+(`sinBurbuja`); si el pipeline aún no calculó la constante del partido, el
+lado sale `comprobable: false` y no cuenta. Lo que sigue siendo de Cowork es
+el juicio sobre su propia línea: si recomendó no seguir la racha y la racha
+siguió, eso lo escribe quien cierra el caso.
 
 ### La salvedad: `mancha`
 

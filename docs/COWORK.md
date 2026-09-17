@@ -55,6 +55,7 @@ se perdería.
 | `teorema-del-echado` | P1a, F2 y F1 **los calcula el backend** (`GET /analisis/cowork/tde/{id}`); el resto lo escribís vos | pestaña **Teorema del Echado** |
 | `teorema-del-echado` | `tde.bloques[]`: IE, ISE, tipología, ventana, vías — **uno por equipo** | pestaña **Teorema del Echado** |
 | *(cualquiera)* | `veredicto.porLado[l].leccion` + `skill` + `reglaTocada` | sección **Aprendizaje** |
+| reventón, después del partido | **nada**: `objetivo.reventon` reconstruye la burbuja declarada antes del partido y dice si ese partido la reventó (`docs/REVENTON.md` §11); observación, no veredicto | banda del veredicto (`↯ reventó` / `→ siguió`) y sección **Aprendizaje** (tasa por nivel de riesgo contra el backtest) |
 | `futbol-timeline` | `timelineEventos` (solo institucional) + narrativa | pestaña **Timeline** (fundida con los partidos calculados) |
 | `diagnostico-tactico` | documento `dtp` + `cadena.{a,b}.pronostico` | pestaña **Documentos** y la cadena de la página de **Equipo** |
 | matriz de escenarios | documento `matriz` | pestaña **Documentos** |

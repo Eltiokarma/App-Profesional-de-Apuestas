@@ -669,6 +669,20 @@ function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' 
             Brier {o.brier.valor.toFixed(3)}
           </span>
         )}
+        {/* el reventón: observación, no veredicto — la burbuja que había antes y qué pasó con ella */}
+        {(['a', 'b'] as const).map((lado) => {
+          const r = o.reventon?.[lado]
+          if (!r || !r.declarado) return null
+          const obs = r.observado
+          const color = !obs ? 'var(--t3)' : obs.revento ? 'var(--down)' : 'var(--up)'
+          return (
+            <span key={lado} style={{ font: '600 11.5px var(--mono)', color }}
+              title={`${r.nota}${r.declarado.extremo ? ' · tenía alerta K-EXTREMO' : ''}`}>
+              {!obs ? '—' : obs.revento ? '↯' : '→'} burbuja {r.declarado.signo}{Math.abs(r.declarado.k).toFixed(0)} · riesgo {r.declarado.riesgo.nivel}
+              {!obs ? '' : obs.revento ? ' · reventó' : ' · siguió'} · {nombreDe(lado)}
+            </span>
+          )
+        })}
         <span style={{ flex: 1 }}></span>
         {/* la población del caso: lo que decide si esto cuenta o solo ilustra */}
         <span

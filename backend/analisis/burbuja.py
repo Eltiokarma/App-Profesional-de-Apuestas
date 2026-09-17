@@ -68,6 +68,17 @@ BAJAS_TRANSICION = 5
 PLANTILLA_VIEJA_DIAS = 30      # la ingesta de jugadores tiene esta edad o más
 MAX_REVENTONES_SALIDA = 40     # los más recientes; la estadística usa TODOS
 
+# Tasa de reventón OBSERVADA en el backtest real por nivel de riesgo (§8 del
+# doc, segunda corrida del 16/09/2026, 171.260 burbujas, horizonte 1): es la
+# referencia contra la que el bucle de aprendizaje compara lo que pasa en
+# producción con los casos ciegos. Rango (mín, máx) porque cada nivel junta
+# varios puntajes (bajo = 0-1 pts: 42.1-47.3 %; medio = 3 pts: 60.8 %; alto =
+# 4-5: 67.2-69.2 %; muy alto = 6-8: 74.7-85.4 %). NO es un peso: no se usa
+# para calcular nada, solo para decir «esperábamos esto».
+TASA_BACKTEST = {"bajo": (0.421, 0.473), "medio": (0.608, 0.608),
+                 "alto": (0.672, 0.692), "muy alto": (0.747, 0.854)}
+TASA_BASE_BACKTEST = 0.60
+
 AVISO = ("Guía, no probabilidad: compara la burbuja abierta con lo que este equipo aguantó "
          "antes de reventar (K, partidos y nivel del rival). Sirve para saber cuándo NO apostar.")
 
