@@ -12,6 +12,7 @@
 // pizarra del DTP no se toca: su contrato es texto por carril.
 import { useEffect, useState } from 'react'
 import type { AlineacionDTO, EventoPartidoDTO, JugadorDTO, JugadorAlineadoDTO } from '../api/types'
+import { esBajaReal } from '../api/types'
 import { MarcaCondicion } from './MarcaCondicion'
 
 const POS_LABEL: Record<string, string> = { G: 'POR', D: 'DEF', M: 'MED', F: 'DEL' }
@@ -37,7 +38,7 @@ const indice = (jugadores?: JugadorDTO[]) => new Map((jugadores ?? []).map((j) =
  *  de color en el chip de la cancha, con su explicación en el tooltip. */
 function bandera(j?: JugadorDTO): { color: string; nota: string } | null {
   if (!j) return null
-  if (j.baja) return { color: 'var(--down)', nota: `BAJA${j.baja.detalle ? ` · ${j.baja.detalle}` : ''}` }
+  if (esBajaReal(j)) return { color: 'var(--down)', nota: `BAJA${j.baja!.detalle ? ` · ${j.baja!.detalle}` : ''}` }
   if (j.enCapilla) return { color: AMBAR, nota: `en capilla (${j.amarillas} amarillas)` }
   if (j.recienLlegado) return { color: 'var(--accent)', nota: `recién llegado${j.recienLlegado.desde ? ` de ${j.recienLlegado.desde}` : ''}` }
   return null

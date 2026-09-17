@@ -58,7 +58,8 @@ import { dtpDemo, efeDemo, leccionesDemo, parteCoworkDemo, timelineDemo } from '
 import { oddsFor, rng } from '../lib/odds'
 import { levelBin } from '../motor/discretizer'
 import { teamEngine } from '../motor/engine'
-import { leagueOf } from '../motor/history'
+import { leagueOf, teamHistory } from '../motor/history'
+import { levelBreakdown } from '../motor/levels'
 import {
   gapDiff, gapDiffAjustado, gapFor, LOCALIA_NEUTRA, mu, recuperabilidad,
   RIVAL_PROMEDIO, senalCalendario, TRAMPA_DELTA_NIVEL,
@@ -203,6 +204,8 @@ function equipoDTO(key: string) {
 function nivelDTO(teamKey: string): NivelDTO {
   const eng = teamEngine(teamKey)!
   const last = eng.levels[eng.levels.length - 1]
+  const lk = leagueOf(teamKey)
+  const hist = lk ? teamHistory(lk, teamKey) : []
   return {
     equipoId: TEAM_NUM[teamKey],
     fixtureId: last ? last.fixtureId : 0,
@@ -210,6 +213,7 @@ function nivelDTO(teamKey: string): NivelDTO {
     nivel: eng.level,
     bin: eng.bin,
     binEtiqueta: eng.binLabel,
+    desglose: hist.length ? levelBreakdown(hist, hist.length - 1) : null,
   }
 }
 
@@ -377,7 +381,7 @@ function plantillaDemo(teamKey: string): PlantillaDTO {
       enCapilla: b.amarillas >= 4,
       paradasP90: esGK ? Math.round((2.4 + rng(b.nombre)() * 1.5) * 1000) / 1000 : null,
       golesEncajadosP90: esGK ? Math.round((0.8 + rng(b.nombre + 'gc')() * 0.7) * 1000) / 1000 : null,
-      baja: conBaja ? { tipo: 'Missing Fixture', detalle: 'Lesión muscular' } : null,
+      baja: conBaja ? { tipo: 'Missing Fixture', detalle: 'Lesión muscular', lectura: 'senal' as const } : null,
       recienLlegado: b.i === 15 ? { desde: 'Deportivo Demo', fecha: '2026-06-30' } : null,
     }
   }).sort((a, b) => b.minutos - a.minutos)
@@ -395,6 +399,8 @@ function plantillaDemo(teamKey: string): PlantillaDTO {
     },
     revolucion: { llegadas: 2, salidas: 1, ventanaDias: 120 },
     golesPlantilla: golesEquipo,
+    // 1 marcado de 16 = 6% de la plantilla: señal (umbral 25%, backend/jugadores.py)
+    missingFixture: { marcados: 1, plantilla: jugadores.length, densidad: Math.round((1 / jugadores.length) * 1000) / 1000, umbral: 0.25, lectura: 'senal' },
     jugadores,
   }
 }

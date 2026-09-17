@@ -125,7 +125,8 @@ def main():
     print("\n— estabilidad —")
     e = out["estabilidad"]
     check("DT de 40 días + 7 movimientos → INESTABLE", e["grado"] == "inestable", e)
-    check("dt.dias 40 · bajas 2 · movimientos 4+3", e["dt"]["dias"] == 40 and e["bajas"] == 2 and e["movimientos"] == {"llegadas": 4, "salidas": 3, "ventanaDias": 120}, e)
+    check("dt.dias 40 · bajas 3 (las 3 de Missing Fixture con lectura ruido NO cuentan) · movimientos 4+3",
+          e["dt"]["dias"] == 40 and e["bajas"] == 3 and e["movimientos"] == {"llegadas": 4, "salidas": 3, "ventanaDias": 120}, e)
     check("dueños/organización declarado SIN DATO, no rellenado", any("dueños" in s for s in e["sinDato"]))
     est = analizar(filas, ctx, plantilla={**ctx["plantilla"], "entrenador": {"nombre": "Viejo", "desde": "2024-01-01"},
                                           "revolucion": {"llegadas": 1, "salidas": 0, "ventanaDias": 120}})

@@ -144,6 +144,95 @@ def main():
     check("un equipo de 1ª que además juega copa no se pierde", 100 in ids, sorted(ids))
     check("pero su rival de ascenso sigue fuera", 202 not in ids, sorted(ids))
 
+    # --- 4. los equipos de interés: entran por el torneo, no por su liga ----
+    # (deuda 6 de CLAUDE.md, corrida del 16/09: Beşiktaş y NEC con el
+    # calendario vacío y cuatro planteles sin ingestar). El que juega la
+    # edición vigente de un torneo internacional se sigue AUNQUE su NS
+    # próximo sea en una liga fuera de LIGAS.
+    from backend.ingesta.extractor import (
+        LIGAS_INTERNACIONALES, equipos_de_interes, equipos_sin_liga_en_la_base,
+        purgar_ns_sin_mantenimiento, _es_nuestro,
+    )
+    lejos = (datetime.now(timezone.utc) + timedelta(days=6)).strftime("%Y-%m-%d %H:%M:%S")
+    con.executemany(
+        "INSERT INTO fixtures (id, date, status_short, league_id, league_season, "
+        "home_team_id, away_team_id) VALUES (?,?,?,?,?,?,?)",
+        [(20, lejos, "NS", 3, 2026, 500, 501),      # Europa League 2026-27: Beşiktaş (500) vs Real Betis (501)
+         (21, prox, "NS", 203, 2026, 500, 502),     # Süper Lig (fuera de LIGAS): Beşiktaş en 1 día
+         (22, prox, "NS", 203, 2026, 503, 504),     # Süper Lig entre equipos que NO nos interesan
+         (23, hace(24 * 400), "FT", 3, 2025, 600, 601),  # Europa League 2025-26: edición pasada
+         (24, prox, "NS", 88, 2026, 600, 602)],     # Eredivisie del que ya no juega Europa
+    )
+    con.commit()
+    interes = equipos_de_interes(con)
+    check("equipos de interés = los de la edición VIGENTE del torneo internacional",
+          interes == {500, 501}, sorted(interes))
+    check("la edición pasada no cuenta", not ({600, 601} & interes), sorted(interes))
+    check("un fixture de liga desconocida entra si lo juega un equipo de interés",
+          _es_nuestro({"league": {"id": 203}, "teams": {"home": {"id": 500}, "away": {"id": 502}}}, interes))
+    check("y no entra si no lo juega ninguno",
+          not _es_nuestro({"league": {"id": 203}, "teams": {"home": {"id": 503}, "away": {"id": 504}}}, interes))
+    check("los de LIGAS entran como siempre",
+          _es_nuestro({"league": {"id": 128}, "teams": {"home": {"id": 1}, "away": {"id": 2}}}, set()))
+    ids = {t for t, _ in equipos_pendientes(con, 3, 168)}
+    check("el plantel del equipo de interés se pide aunque su NS próximo sea en su liga fuera del padrón",
+          500 in ids, sorted(ids))
+    check("su rival de esa liga y los otros de la Süper Lig siguen fuera",
+          not ({502, 503, 504} & ids), sorted(ids))
+    check("el que ya no juega Europa no entra por su Eredivisie", 600 not in ids, sorted(ids))
+    faltan = equipos_sin_liga_en_la_base(con, interes)
+    check("sin partido doméstico en la base, a los dos se les pide la temporada (1 request, una vez)",
+          faltan == [(500, 2026), (501, 2026)], faltan)
+    con.execute("INSERT INTO fixtures (id, date, status_short, league_id, league_season, "
+                "home_team_id, away_team_id) VALUES (25, ?, 'FT', 140, 2026, 501, 505)", (hace(72),))
+    con.commit()
+    check("con su LaLiga en la base, el Betis sale de esa lista; Beşiktaş (Süper Lig fuera de LIGAS) queda",
+          equipos_sin_liga_en_la_base(con, interes) == [(500, 2026)])
+    purgados = purgar_ns_sin_mantenimiento(con)
+    quedan = {r[0] for r in con.execute("SELECT id FROM fixtures WHERE status_short='NS'")}
+    check("la purga de NS fuera de la lista respeta los partidos del equipo de interés",
+          21 in quedan and 22 not in quedan and 24 not in quedan and purgados == 2,
+          (sorted(quedan), purgados))
+    check("los torneos internacionales de clubes son una sola lista (la agenda la importa)",
+          LIGAS_INTERNACIONALES == {2, 3, 848, 13, 11})
+
+    # la temporada doméstica del equipo de interés se pide UNA vez (marcador),
+    # con /fixtures?team=&season= y sin tocar el guardado real (stub)
+    import json as _json, tempfile as _tmp
+    from backend.ingesta import extractor as _ext
+
+    class ClienteSanar:
+        limite, usadas = 10**6, 0
+        pedidos: list = []
+
+        def quedan(self, n: int = 1) -> bool:
+            return True
+
+        def paginado(self, endpoint, params, tope_paginas=0):
+            self.usadas += 1
+            self.pedidos.append((endpoint, dict(params)))
+            return [{"fixture": {"id": 1}}, {"fixture": {"id": 2}}]
+
+    guardados = []
+    original = _ext.guardar_fixtures
+    _ext.guardar_fixtures = lambda con_, filas: guardados.append(len(filas)) or len(filas)
+    cwd = os.getcwd()
+    with _tmp.TemporaryDirectory() as d:
+        os.chdir(d)
+        try:
+            cl = ClienteSanar()
+            n1 = _ext.sanar_equipos_interes(cl, con)
+            n2 = _ext.sanar_equipos_interes(cl, con)
+            marca = _json.load(open(_ext.SANARE_PATH, encoding="utf-8"))
+        finally:
+            os.chdir(cwd)
+            _ext.guardar_fixtures = original
+    check("sanar equipos: 1 request /fixtures?team=500&season=2026 y se guarda lo que vuelve",
+          n1 == 2 and cl.pedidos == [("fixtures", {"team": 500, "season": 2026})] and guardados == [2],
+          (n1, cl.pedidos, guardados))
+    check("la segunda corrida no lo repite (marcador por equipo:temporada)",
+          n2 == 0 and cl.usadas == 1 and list(marca) == ["500:2026"], (n2, cl.usadas, marca))
+
     # la vuelta atrás por env existe
     jug.JUGADORES_TODAS_LIGAS = True
     try:

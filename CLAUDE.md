@@ -127,6 +127,11 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   (prompt v2.5) y escribe UNA línea por equipo en `lecturaSad.reventon`; los
   números no se copian, `parte.py` los recalcula al leer en
   `lecturaSad.reventonCalculado` (familia total, uno por lado).
+- **Los equipos de interés se siguen enteros**: quien juega la edición
+  vigente de un torneo internacional de clubes (`extractor.equipos_de_interes`)
+  tiene TODOS sus partidos en la base aunque su liga no esté en `LIGAS`, y su
+  plantel se ingesta igual. Un equipo con calendario vacío en un parte es una
+  falla de esto, no «cobertura».
 - **El padrón de la agenda es el de las cuotas en vivo**
   (`extractor.ligas_vivo()`, vía `_padron()` en `backend/analisis/parte.py`):
   UNA sola fuente, porque dos listas de «ligas importantes» en dos archivos se
@@ -273,32 +278,38 @@ conversación se pierde en la siguiente.
 5. **Onces de ligas sin cobertura.** Primera B de Colombia y Primera de Uruguay
    no dan alineaciones por API-Football: para esas, el pantallazo a mano es el
    procedimiento. Salen en `nuncaVaALlegar` con su liga.
-6. **Lo que la corrida de Cowork del 16/09 vio y todavía no se tocó**
-   (23 partes verificados contra prensa; lo del DT, la agenda, el timeline,
-   el contrato y `proximo=` ya está arreglado):
-   - **Calendarios vacíos en equipos europeos** (diez de esa corrida; en
-     Beşiktaş y NEC probado por prensa). La ingesta baja fixtures solo de las
-     ligas del padrón, así que un equipo que juega Europa League tiene su
-     liga doméstica solo si está en `LIGAS`: F2 del TDE sale sin datos y el
-     bloque G no ve el calendario. Con la fase liga fuera de la agenda por
-     defecto pega menos, pero sigue ahí para Champions/Europa de octavos.
-   - **Cuatro planteles vacíos** (Marsella, Crystal Palace, Torreense,
-     Bournemouth: agregados y calendario sí, jugadores no). Mismo origen
-     probable: `jugadores` sigue `ligas_vivo()` y esos equipos entran por el
-     torneo internacional, no por su liga. Cowork les saca el bloque B del
-     denominador y lo declara; no es un bug del parte, es cobertura.
-   - **Nivel 3.2833 exacto en tres equipos** de ligas distintas (Juventus,
-     Torreense, Medellín). Huele a tope de la fórmula de nivel con ventana
-     corta; mirar con `docs/MOTOR_SAD_EXTRACCION.md` a la vista antes de
-     tocar nada. Solo observación.
-   - **Escala entre ligas**: el nivel compara dentro de la misma base, así
-     que un 12.º de LaLiga puede salir con menos nivel que un 15.º de la
-     Premier. Es de diseño, pero el parte debería decirlo cuando los dos
-     equipos son de ligas distintas.
-   - **El flag `Missing Fixture` de las bajas acertó 10 de 23** con
-     separación clara por densidad (pocos jugadores marcados = real; media
-     plantilla marcada = ruido). Se había catalogado como artefacto; vale
-     revisarlo como señal con umbral.
+6. **Lo que la corrida de Cowork del 16/09 vio** (23 partes verificados
+   contra prensa). Lo del DT, la agenda, el timeline, el contrato y
+   `proximo=` se arregló en su momento; los cuatro puntos que quedaban
+   anotados están hechos y quedan así:
+   - **Calendarios y planteles vacíos en equipos que entran por el torneo**
+     (Beşiktaş, NEC, Marsella, Crystal Palace, Torreense, Bournemouth).
+     HECHO: `extractor.equipos_de_interes()` = los equipos de la edición
+     vigente de un torneo internacional de clubes (`LIGAS_INTERNACIONALES`,
+     una sola lista que la agenda importa); del feed por fecha se guardan
+     TODOS sus partidos, estén en la liga que estén (0 requests), la purga
+     de NS los respeta, `sanar_equipos_interes` les pide UNA vez la
+     temporada doméstica entera (1 request por equipo, marcador en
+     `.sanar_equipos.json`, tope `SAD_SANAR_EQUIPOS_MAX`) y la ingesta de
+     jugadores los toma aunque su NS próximo sea fuera del padrón (su rival
+     de esa liga no). Pendiente de ver en la próxima corrida real: que a
+     esos equipos les aparezca el calendario y el plantel.
+   - **Nivel 3.2833 exacto en tres equipos**: NO es un tope ni un bug. El
+     nivel vive en una retícula (~10.500 valores; ese tiene 24 combinaciones
+     de puntos y goles). `docs/MOTOR_SAD_EXTRACCION.md` §2.5; `/niveles`
+     trae `desglose` (P y G, verificado contra el nivel guardado) para que
+     se vea de un vistazo. La fórmula no se tocó.
+   - **Escala entre ligas**: HECHO. El parte agrega la alerta `ESCALA-LIGAS`
+     (tipo `dato`, global) cuando la liga doméstica de cada lado —la más
+     frecuente en su último año fuera de internacionales y amistosos— no es
+     la misma base (`parte.misma_base`: mismo id, o mismo país en la misma
+     categoría; Apertura/Clausura de Uruguay son la misma base).
+   - **El flag `Missing Fixture`** (acertó 10 de 23, separado por densidad):
+     HECHO como señal con umbral. `PlantillaDTO.missingFixture` y
+     `baja.lectura` (`senal`/`ruido`, umbral 25 % de la plantilla,
+     `backend/jugadores.py`); una de ruido no cuenta en el resumen del
+     skill, en la estabilidad de la burbuja (los dos lados) ni en las
+     pantallas. El umbral es el primer corte: recalibrar con casos.
    - **`timelineEventos` válidos entran** pero Cowork reportó
      `eventosTimeline: 0` cuando mandaba tipos fuera de la lista; ahora se
      rechaza con motivo. Si vuelve a salir 0 con tipos válidos, mirar

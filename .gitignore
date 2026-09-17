@@ -41,3 +41,6 @@ __pycache__/
 *.pyc
 .extractor_cuota.json
 .backfill_hist.json
+.sanar90.json
+.sanar_fechas.json
+.sanar_equipos.json

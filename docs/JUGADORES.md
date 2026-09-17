@@ -30,7 +30,14 @@ python -m backend.ingesta.jugadores --equipo 541 --temporada 2026  # un equipo a
 python -m backend.ingesta.jugadores --ttl-horas 24  # refresco más agresivo
 ```
 
-- Selección: equipos de NUESTRAS ligas con fixtures NS próximos (default 3 días).
+- Selección: equipos de las ligas IMPORTANTES (`extractor.ligas_vivo()`) con
+  fixtures NS próximos (default 3 días) **más los equipos de interés**: los
+  que juegan la edición vigente de un torneo internacional de clubes
+  (`extractor.equipos_de_interes`), aunque su NS próximo sea en una liga
+  fuera del padrón. Un equipo cuya liga doméstica no está en `LIGAS`
+  (Beşiktaş, NEC) solo entraba la semana que jugaba Europa; el resto del
+  tiempo su plantel envejecía y Cowork lo sacaba del denominador. El rival de
+  esa liga NO entra: no alimenta ningún parte.
 - **Bajo demanda**: al entrar a un equipo sin plantilla, GET /equipos/{id}/plantilla
   lanza en segundo plano `--equipo ID` (mismo patrón de subprocesos que la
   ingesta programada; el HTTP sigue de solo lectura). La respuesta lleva
@@ -99,6 +106,29 @@ Todo se calcula EN LECTURA desde sad.db (0 requests). Reglas estadísticas:
 
 Sin datos de jugadores para un equipo → `jugadores: []` y agregados en null:
 la UI lo dice ("plantilla sin capturar") y NADA se inventa.
+
+## El flag «Missing Fixture» como señal con umbral
+
+`/injuries` marca a cada jugador con `type` («Missing Fixture» o
+«Questionable») y `reason`. La corrida de Cowork del 16/09/2026 contrastó el
+flag con prensa en 23 partes: **acertó 10**, con separación clara por
+**densidad**: pocos marcados = bajas reales; media plantilla marcada = ruido
+(la API marca a todo el que no estuvo en un partido, convocado o no). Se había
+catalogado como artefacto y se tiraba entero.
+
+Ahora se lee por densidad en `backend/jugadores.py` (`lectura_missing_fixture`):
+
+- `PlantillaDTO.missingFixture` = `{marcados, plantilla, densidad, umbral,
+  lectura}` (`null` si no marcó a nadie). Por encima del umbral
+  (`UMBRAL_MISSING_FIXTURE = 0.25` de la plantilla) la lectura es `ruido`.
+- Cada `baja` viaja con `lectura: senal | ruido`. Una de **ruido no es una
+  baja**: no entra al resumen que llega al skill (`resumen_para_skills` avisa
+  la densidad y pide confirmar en prensa), no cuenta en la estabilidad de la
+  burbuja (`docs/REVENTON.md` §6, en los dos lados) y las pantallas la
+  muestran como `FLAG API · ruido`, no como BAJA (`esBajaReal` en
+  `src/api/types.ts`).
+- El umbral es el primer corte (n = 23). Se recalibra con más casos, con el
+  registro a la vista, no a ojo.
 
 ## Contrato (docs/openapi.yaml)
 

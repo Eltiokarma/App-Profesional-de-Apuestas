@@ -34,6 +34,42 @@ export function computeTeamLevels(hist: TeamMatch[]): LevelRow[] {
   return hist.map((h, i) => ({ fixtureId: h.fixtureId, t: h.t, level: levels[i] }))
 }
 
+/** Las dos piezas del nivel (§2.1) del partido `i`: P = puntos/20 y G = balance de
+ *  goles de los últimos 5. null con <20 partidos; con i < 19 rige la regla
+ *  retroactiva (las piezas del partido nº 20). Espejo de `desglose_nivel`
+ *  (backend/ingesta/niveles.py): el nivel vive en una retícula y la misma suma
+ *  sale de muchas combinaciones — con el desglose a la vista se ve cuál. */
+export function levelBreakdown(hist: TeamMatch[], i: number): NivelDesglose | null {
+  const n = hist.length
+  if (n < 20) return null
+  i = Math.max(i, 19)
+  if (i >= n) return null
+  const ventana = hist.slice(i - 19, i + 1)
+  const pts = ventana.reduce((s, m) => s + points(m), 0)
+  const u5 = ventana.slice(-5)
+  const gf5 = u5.reduce((s, m) => s + m.gf, 0)
+  const ga5 = u5.reduce((s, m) => s + m.ga, 0)
+  const tg = gf5 + ga5
+  const g = tg === 0 ? 0 : (gf5 - ga5) / tg
+  return {
+    puntos: Math.round((pts / 20) * 10000) / 10000,
+    goles: Math.round(g * 10000) / 10000,
+    puntosVentana: pts,
+    partidosVentana: ventana.length,
+    golesFavor5: gf5,
+    golesContra5: ga5,
+  }
+}
+
+export interface NivelDesglose {
+  puntos: number
+  goles: number
+  puntosVentana: number
+  partidosVentana: number
+  golesFavor5: number
+  golesContra5: number
+}
+
 /**
  * Nivel a fecha (§2.3): último level con t <= consulta (bisect, como el cache
  * en memoria del original). `fallback` es 0.5 para consumo general y 1.0

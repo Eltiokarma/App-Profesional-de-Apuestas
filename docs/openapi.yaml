@@ -1094,6 +1094,17 @@ components:
         nivel: { type: number, description: 'continuo ~0.5–3.5' }
         bin: { type: integer, minimum: 0, maximum: 9 }
         binEtiqueta: { type: string }
+        desglose:
+          type: object
+          nullable: true
+          description: 'P + G del nivel (MOTOR_SAD_EXTRACCION.md §2.1 y §2.5): puntos/20 de la ventana de 20 y balance de goles de los últimos 5. null con <20 partidos o si la historia cambió desde que corrió el pipeline (se recalcula al leer y se verifica contra el nivel guardado; no se inventa). Dos equipos con el mismo nivel no tienen la misma historia: esto muestra cuál'
+          properties:
+            puntos: { type: number, description: 'P = Σ puntos / 20' }
+            goles: { type: number, description: 'G = Σ(gf−ga) / Σ(gf+ga) de los últimos 5 (0 si no hubo goles)' }
+            puntosVentana: { type: integer }
+            partidosVentana: { type: integer }
+            golesFavor5: { type: integer }
+            golesContra5: { type: integer }
     Constantes:
       type: object
       description: Fila de constants + processed_matches (rival, goles) + fusión
@@ -1356,9 +1367,11 @@ components:
         baja:
           type: object
           nullable: true
+          description: 'baja reportada por la API (/injuries). `lectura` dice si cuenta: `senal` (pocos marcados: baja real) o `ruido` (el flag Missing Fixture marcó más del umbral de la plantilla; no cuenta como baja en el resumen del skill, la estabilidad ni las pantallas)'
           properties:
             tipo: { type: string, nullable: true }
             detalle: { type: string, nullable: true }
+            lectura: { type: string, enum: [senal, ruido] }
         recienLlegado:
           type: object
           nullable: true
@@ -1402,6 +1415,16 @@ components:
             salidas: { type: integer }
             ventanaDias: { type: integer }
         golesPlantilla: { type: integer, description: Σ goles de la plantilla (denominador de participación) }
+        missingFixture:
+          type: object
+          nullable: true
+          description: 'el flag «Missing Fixture» de la API leído por DENSIDAD (docs/JUGADORES.md): null si no marcó a nadie. Por encima de `umbral` (fracción de la plantilla) es ruido —marcó a media plantilla— y ninguna de esas bajas cuenta'
+          properties:
+            marcados: { type: integer }
+            plantilla: { type: integer }
+            densidad: { type: number, description: marcados / plantilla }
+            umbral: { type: number }
+            lectura: { type: string, enum: [senal, ruido] }
         jugadores:
           type: array
           items: { $ref: '#/components/schemas/Jugador' }
@@ -2265,10 +2288,24 @@ components:
       type: object
       required: [codigo]
       properties:
-        codigo: { type: string, description: 'T.54, R-KT.2, GK-DOWNGRADE, F3…' }
+        codigo: { type: string, description: 'T.54, R-KT.2, GK-DOWNGRADE, F3… Las que agrega el backend al leer: K-EXTREMO (burbuja en su máximo), HUECO-DOBLE (EFE y TDE leídos del mismo vacío) y ESCALA-LIGAS (los dos equipos vienen de ligas distintas: el nivel no compara entre bases)' }
         equipo: { type: string, enum: [a, b, ambos, global] }
-        tipo: { type: string, enum: [estructural, fecha] }
+        tipo: { type: string, enum: [estructural, fecha, dato], description: '`dato` = la pone el backend sobre los datos, no el skill' }
         detalle: { type: string, description: '`texto` se acepta como alias' }
+        ligas:
+          type: object
+          nullable: true
+          description: 'solo en ESCALA-LIGAS: la liga doméstica de cada lado (la más frecuente en su último año, fuera de internacionales y amistosos)'
+          properties:
+            a: { $ref: '#/components/schemas/LigaDomestica' }
+            b: { $ref: '#/components/schemas/LigaDomestica' }
+    LigaDomestica:
+      type: object
+      properties:
+        id: { type: integer }
+        nombre: { type: string, nullable: true }
+        pais: { type: string, nullable: true }
+        partidos: { type: integer, description: partidos terminados en esa liga en el último año }
     PronosticoParte:
       type: object
       description: Las tres fuentes van declaradas en simultáneo (Disciplina 33); ninguna reemplaza a otra.

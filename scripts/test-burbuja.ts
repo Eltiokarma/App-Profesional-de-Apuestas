@@ -80,7 +80,7 @@ check('riesgo MUY ALTO (8) y moda de partidos 1', vi.riesgo!.nivel === 'muy alto
 console.log('\n— estabilidad —')
 const e = out.estabilidad
 check('DT de 40 días + 7 movimientos → INESTABLE', e.grado === 'inestable', e)
-check('dt.dias 40 · bajas 2 · movimientos 4+3', e.dt!.dias === 40 && e.bajas === 2 && eq(e.movimientos, { llegadas: 4, salidas: 3, ventanaDias: 120 }), e)
+check('dt.dias 40 · bajas 3 (las 3 de Missing Fixture con lectura ruido NO cuentan) · movimientos 4+3', e.dt!.dias === 40 && e.bajas === 3 && eq(e.movimientos, { llegadas: 4, salidas: 3, ventanaDias: 120 }), e)
 check('dueños/organización declarado SIN DATO', e.sinDato.some((s) => s.includes('dueños')))
 const pl = ctx.plantilla!
 const est = analizar(filas, { plantilla: { ...pl, entrenador: { nombre: 'Viejo', desde: '2024-01-01' }, revolucion: { llegadas: 1, salidas: 0, ventanaDias: 120 } } })

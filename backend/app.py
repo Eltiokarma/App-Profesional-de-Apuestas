@@ -951,7 +951,31 @@ def constantes_cuota_de(team_id: int) -> list[dict]:
     return out
 
 
+def _historia_nivel(team_id: int) -> list[tuple]:
+    """La historia con la que el pipeline calculó los niveles del equipo
+    (misma selección que `pipeline.leer_fixtures`: terminados con goles de
+    los 90', orden date,id): [(fixture_id, date, gf, ga)]."""
+    try:
+        filas = db.query(
+            "sad",
+            """SELECT id, date, home_team_id,
+                      COALESCE(fulltime_home, goals_home) AS gh, COALESCE(fulltime_away, goals_away) AS ga
+               FROM fixtures
+               WHERE (home_team_id=? OR away_team_id=?)
+                 AND (status_short IN ('FT','AET','PEN') OR status_long='Match Finished')
+                 AND COALESCE(fulltime_home, goals_home) IS NOT NULL
+                 AND COALESCE(fulltime_away, goals_away) IS NOT NULL
+               ORDER BY date, id""",
+            (team_id, team_id),
+        )
+    except Exception:
+        return []
+    return [(r["id"], r["date"], r["gh"], r["ga"]) if r["home_team_id"] == team_id
+            else (r["id"], r["date"], r["ga"], r["gh"]) for r in filas]
+
+
 def niveles_de(team_id: int, limit: int, hasta: str | None = None, antes: str | None = None) -> list[dict]:
+    from backend.ingesta.niveles import desglose_nivel
     cond, params = "", [team_id]
     if hasta:
         cond += " AND date<=?"
@@ -964,17 +988,30 @@ def niveles_de(team_id: int, limit: int, hasta: str | None = None, antes: str | 
         f"SELECT fixture_id, date, level FROM team_levels WHERE team_id=?{cond} ORDER BY date DESC, id DESC LIMIT ?",
         (*params, limit),
     )
+    # el desglose P + G del nivel (§2.1) se recalcula de la historia y se
+    # verifica contra el nivel guardado: si la historia cambió desde que
+    # corrió el pipeline (un partido curado), va null antes que inventarlo
+    hist = _historia_nivel(team_id) if rows else []
+    indice = {fid: i for i, (fid, *_r) in enumerate(hist)}
     out = []
     for r in rows:
+        nivel = round(float(r["level"]), 4)
         b, label = level_bin(float(r["level"]))
+        desglose = None
+        i = indice.get(r["fixture_id"])
+        if i is not None:
+            d = desglose_nivel(hist, i)
+            if d and abs(d["puntos"] + d["goles"] + 1 - nivel) < 1e-3:
+                desglose = d
         out.append(
             {
                 "equipoId": team_id,
                 "fixtureId": r["fixture_id"],
                 "fecha": iso(r["date"]),
-                "nivel": round(float(r["level"]), 4),
+                "nivel": nivel,
                 "bin": b,
                 "binEtiqueta": label,
+                "desglose": desglose,
             }
         )
     return out

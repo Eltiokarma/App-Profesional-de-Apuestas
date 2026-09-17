@@ -298,6 +298,53 @@ def main():
           any("Equipo Inventado" in d for d in r.json()["discrepancias"]), r.json().get("discrepancias"))
     check("re-depositar es actualizar, no duplicar", r.json()["estado"] == "actualizado")
 
+    # ── ESCALA-LIGAS: dos equipos de ligas distintas (deuda 6, corrida del 16/09)
+    # El nivel se calcula contra los rivales de cada uno y no compara entre
+    # bases; el parte lo tiene que DECIR cuando junta a dos ligas.
+    from backend.analisis.parte import misma_base, _liga_domestica
+    d_mismo = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()
+    check("dos equipos de LaLiga: sin alerta ESCALA-LIGAS",
+          not any(a["codigo"] == "ESCALA-LIGAS" for a in d_mismo["alertas"]),
+          [a for a in d_mismo["alertas"] if a["codigo"] == "ESCALA-LIGAS"])
+    ld = _liga_domestica(fxr["home_team_id"], None)
+    check("la liga doméstica es la más frecuente fuera de los torneos internacionales (LaLiga, no la Champions)",
+          ld and ld["id"] == 140 and ld["pais"] == "Spain", ld)
+    check("misma base: misma liga · Apertura y Clausura del mismo país · sin dato",
+          misma_base({"id": 140, "pais": "Spain"}, {"id": 140, "pais": "Spain"})
+          and misma_base({"id": 268, "pais": "Uruguay"}, {"id": 270, "pais": "Uruguay"})
+          and misma_base(None, {"id": 140, "pais": "Spain"}))
+    check("bases distintas: otro país · primera contra segunda del mismo país",
+          not misma_base({"id": 140, "pais": "Spain"}, {"id": 203, "pais": "Turkey"})
+          and not misma_base({"id": 239, "pais": "Colombia"}, {"id": 240, "pais": "Colombia"}))
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT OR REPLACE INTO teams (id, name, country) VALUES (990100, 'Beşiktaş', 'Turkey')")
+        _con.execute("INSERT OR REPLACE INTO teams (id, name, country) VALUES (990101, 'Galatasaray', 'Turkey')")
+        _con.execute("INSERT OR REPLACE INTO leagues (id, name, country, season) VALUES (203, 'Süper Lig', 'Turkey', 2026)")
+        _con.execute("INSERT OR REPLACE INTO leagues (id, name, country, season) VALUES (3, 'UEFA Europa League', 'World', 2026)")
+        for i in range(3):  # su Süper Lig, terminada, en el último año
+            _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                         "home_team_id, away_team_id, goals_home, goals_away) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                         (990110 + i, (t0 - _dt.timedelta(days=7 * (i + 1))).strftime("%Y-%m-%d %H:%M:%S"),
+                          "FT", "Match Finished", 203, 2026, 990100, 990101, 2, 1))
+        _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                     "home_team_id, away_team_id) VALUES (?,?,?,?,?,?,?,?)",
+                     (990120, (t0 + _dt.timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S"), "NS",
+                      "Not Started", 3, 2026, fxr["home_team_id"], 990100))
+    r = c.post(f"{A}/analisis/cowork", json=_parte(990120))
+    check("se deposita el parte del cruce europeo", r.status_code == 200, r.text[:200])
+    d_esc = c.get(f"{A}/analisis/cowork/990120").json()
+    esc = [a for a in d_esc["alertas"] if a["codigo"] == "ESCALA-LIGAS"]
+    check("LaLiga vs Süper Lig → UNA alerta ESCALA-LIGAS global, de tipo dato, con las dos ligas",
+          len(esc) == 1 and esc[0]["equipo"] == "global" and esc[0]["tipo"] == "dato"
+          and esc[0]["ligas"]["a"]["id"] == 140 and esc[0]["ligas"]["b"]["id"] == 203, esc)
+    check("la alerta nombra a los equipos y sus ligas y dice que el nivel no compara entre ligas",
+          esc and "Beşiktaş" in esc[0]["detalle"] and "Süper Lig" in esc[0]["detalle"]
+          and "NO compara entre ligas" in esc[0]["detalle"], esc and esc[0]["detalle"])
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM fixtures WHERE id BETWEEN 990100 AND 990199")
+    from backend.analisis.parte import borrar as _borrar_parte
+    _borrar_parte(990120)
+
     # ── LO QUE SE TIRA SE DICE, TAMBIÉN EN EL TDE (3ª corrida real) ─────────
     # Cowork probó tres formas de `tde` y las tres se guardaron como {} sin un
     # solo rechazo; `vias` con strings adentro reventaba por 500. Un 500 en un

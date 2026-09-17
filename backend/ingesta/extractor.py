@@ -9,7 +9,10 @@ Flujo: /fixtures POR FECHA en la ventana [--desde, --hasta] (default hoy−3d a
 hoy+10d; el feed del día trae todas las ligas y TODAS las temporadas, así que
 es inmune al desfase de temporadas cruzadas: en mayo de 2026 la Premier va por
 la temporada 2025 de la API mientras Brasil va por la 2026 — pedir por liga
-con un SEASON único global dejaba a media lista sin datos) y /odds de los
+con un SEASON único global dejaba a media lista sin datos; del feed se
+guardan NUESTRAS ligas y TODOS los partidos de los equipos de interés —los del
+torneo internacional vigente, `equipos_de_interes`—, para que un Beşiktaş que
+entra por la Europa League tenga su Süper Lig en la base) y /odds de los
 partidos NS (todos los bookmakers en 1 request):
 primera captura para los que no tienen cuotas, y re-captura de los que
 empiezan en <= 2 días para el historial de movimiento (odds_history guarda
@@ -320,6 +323,55 @@ def ligas_vivo() -> set[int]:
     """Ligas cuyas cuotas EN VIVO se siguen: las importantes = LIGAS − menores.
     (Las menores se ingestan igual en fixtures/histórico/cuotas prepartido.)"""
     return set(LIGAS) - LIGAS_MENORES
+
+
+# Torneos internacionales DE CLUBES: los que meten a la base equipos cuya liga
+# doméstica no está en LIGAS (Beşiktaş por la Europa League, NEC por la
+# Conference). Es UNA sola lista: la agenda (backend/analisis/parte.py) la
+# importa de acá en vez de copiarla.
+LIGAS_INTERNACIONALES = {2, 3, 848, 13, 11}
+
+
+def equipos_de_interes(con: sqlite3.Connection) -> set[int]:
+    """Equipos que juegan la EDICIÓN VIGENTE de un torneo internacional de
+    clubes (la temporada más alta que la base conoce de cada torneo).
+
+    Para ellos se guardan TODOS sus partidos del feed por fecha, jueguen en la
+    liga que jueguen: la corrida de Cowork del 16/09 encontró diez equipos
+    europeos con el calendario vacío —Beşiktaş y NEC probados por prensa— y
+    cuatro planteles sin ingestar, porque la ventana solo guardaba las ligas
+    de LIGAS y un equipo que entra por la Europa League tenía su Süper Lig
+    invisible: F2 del TDE sin datos, bloque G ciego, nivel con ventana corta.
+    Cuesta 0 requests (el feed del día ya trae el partido; solo dejábamos de
+    guardarlo). Cuando el torneo cambia de edición, el equipo que ya no está
+    sale solo del conjunto y sus NS se purgan como los de cualquier liga
+    fuera de la lista. DB sin fixtures → conjunto vacío."""
+    if not LIGAS_INTERNACIONALES:
+        return set()
+    marcas = ",".join("?" * len(LIGAS_INTERNACIONALES))
+    try:
+        filas = con.execute(
+            f"""SELECT f.home_team_id, f.away_team_id FROM fixtures f
+                JOIN (SELECT league_id, MAX(league_season) AS temporada FROM fixtures
+                      WHERE league_id IN ({marcas}) GROUP BY league_id) v
+                  ON v.league_id = f.league_id AND v.temporada = f.league_season""",
+            tuple(sorted(LIGAS_INTERNACIONALES)),
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return set()
+    return {tid for fila in filas for tid in fila if tid}
+
+
+def _es_nuestro(item: dict, interes: set[int]) -> bool:
+    """Un fixture del feed por fecha se guarda si es de NUESTRAS ligas o si lo
+    juega un equipo de interés (su liga doméstica, su copa, lo que sea)."""
+    if (item.get("league") or {}).get("id") in LIGAS:
+        return True
+    if not interes:
+        return False
+    teams = item.get("teams") or {}
+    return ((teams.get("home") or {}).get("id") in interes
+            or (teams.get("away") or {}).get("id") in interes)
 
 
 def leer_clave() -> str:
@@ -981,6 +1033,10 @@ def ventana_por_fecha(cliente: "Cliente", con: sqlite3.Connection,
     2026) desaparecían de la ventana — el hueco del 31/05 en muchas ligas.
     Además ahorra: ~1 request por día en vez de 1 por liga."""
     total = 0
+    interes = equipos_de_interes(con)
+    if interes:
+        print(f"  equipos de interés (torneo internacional vigente): {len(interes)} — "
+              f"se guardan todos sus partidos, estén en la liga que estén")
     dia = datetime.strptime(desde, "%Y-%m-%d")
     fin = datetime.strptime(hasta, "%Y-%m-%d")
     while dia <= fin:
@@ -990,7 +1046,7 @@ def ventana_por_fecha(cliente: "Cliente", con: sqlite3.Connection,
         fecha = dia.strftime("%Y-%m-%d")
         try:
             filas = cliente.paginado("fixtures", {"date": fecha})
-            nuestras = [it for it in filas if (it.get("league") or {}).get("id") in LIGAS]
+            nuestras = [it for it in filas if _es_nuestro(it, interes)]
             n = guardar_fixtures(con, nuestras)
         except Exception as e:  # un día con payload raro no corta a los demás
             print(f"  {fecha}: ERROR {e} — sigo con el día siguiente")
@@ -1065,13 +1121,14 @@ def sanar_fechas(cliente: "Cliente", con: sqlite3.Connection) -> int:
         return 0
     print(f"sanar fechas: {len(casos)} días pasados con partidos NS/TBD; re-pido {len(pendientes)} en esta corrida")
     total = 0
+    interes = equipos_de_interes(con)
     for fecha, c in pendientes:
         if not cliente.quedan():
             print("  presupuesto agotado; sanar fechas se reanuda en la próxima corrida")
             break
         try:
             filas = cliente.paginado("fixtures", {"date": fecha})
-            nuestras = [it for it in filas if (it.get("league") or {}).get("id") in LIGAS]
+            nuestras = [it for it in filas if _es_nuestro(it, interes)]
             n = guardar_fixtures(con, nuestras)
         except Exception as e:  # una fecha rara no corta la curación de las demás
             print(f"  {fecha}: ERROR {e} — se reintenta en {SANARF_REINTENTO_DIAS} días")
@@ -1081,6 +1138,108 @@ def sanar_fechas(cliente: "Cliente", con: sqlite3.Connection) -> int:
         intentos[fecha] = hoy
         with open(SANARF_PATH, "w", encoding="utf-8") as f:
             json.dump(intentos, f)
+    return total
+
+
+def purgar_ns_sin_mantenimiento(con: sqlite3.Connection) -> int:
+    """NS de ligas fuera de la lista que nadie va a actualizar (p. ej. los
+    Friendlies de la carga inicial). Se RESPETAN los partidos de los equipos
+    de interés, que sí se mantienen por fecha aunque su liga no esté en
+    LIGAS: purgarlos era volver a dejar a Beşiktaş sin calendario en cada
+    corrida. El historial terminado de cualquier liga se conserva siempre."""
+    marcas = ",".join("?" * len(LIGAS))
+    interes = equipos_de_interes(con)
+    cond, params = "", list(LIGAS)
+    if interes:
+        m_int = ",".join("?" * len(interes))
+        cond = f" AND home_team_id NOT IN ({m_int}) AND away_team_id NOT IN ({m_int})"
+        params += sorted(interes) * 2
+    purga = con.execute(
+        f"DELETE FROM fixtures WHERE status_short='NS' AND league_id NOT IN ({marcas}){cond}",
+        tuple(params),
+    )
+    con.commit()
+    return purga.rowcount
+
+
+SANARE_PATH = ".sanar_equipos.json"
+SANARE_MAX_EQUIPOS = int(os.environ.get("SAD_SANAR_EQUIPOS_MAX", "10") or "10")
+
+
+def equipos_sin_liga_en_la_base(con: sqlite3.Connection, interes: set[int] | None = None) -> list[tuple[int, int]]:
+    """(team_id, temporada) de los equipos de interés que NO tienen ningún
+    partido en una liga de LIGAS fuera del torneo internacional y los
+    amistosos: su liga doméstica no está en la base. Un equipo de LaLiga que
+    juega Champions no sale acá (su liga ya se ingesta); Beşiktaş sí."""
+    interes = equipos_de_interes(con) if interes is None else interes
+    if not interes:
+        return []
+    fuera = set(LIGAS_INTERNACIONALES) | LIGAS_RUIDO | {667}  # amistosos: nunca son «su liga»
+    domesticas = set(LIGAS) - fuera
+    out = []
+    for tid in sorted(interes):
+        temp = con.execute(
+            f"""SELECT MAX(league_season) FROM fixtures
+                WHERE (home_team_id=? OR away_team_id=?)
+                  AND league_id IN ({",".join("?" * len(LIGAS_INTERNACIONALES))})""",
+            (tid, tid, *sorted(LIGAS_INTERNACIONALES)),
+        ).fetchone()[0]
+        if not temp:
+            continue
+        marcas = ",".join("?" * len(domesticas)) or "NULL"
+        n = con.execute(
+            f"""SELECT COUNT(*) FROM fixtures
+                WHERE (home_team_id=? OR away_team_id=?) AND league_season=?
+                  AND league_id IN ({marcas})""",
+            (tid, tid, temp, *sorted(domesticas)),
+        ).fetchone()[0]
+        if not n:
+            out.append((tid, int(temp)))
+    return out
+
+
+def sanar_equipos_interes(cliente: "Cliente", con: sqlite3.Connection) -> int:
+    """La temporada doméstica COMPLETA de los equipos de interés cuya liga no
+    está en LIGAS: 1 request por equipo (`/fixtures?team=&season=`), UNA vez
+    por temporada (marcador en .sanar_equipos.json), con tope por corrida.
+
+    Sin esto, la ventana por fecha les guarda solo los partidos desde hoy: el
+    nivel arrancaría con ventana corta (§2.2: <20 partidos = 0.5 para todos)
+    y el gap §5 no tendría forma. Con esto, Beşiktaş entra con su Süper Lig
+    entera —lo jugado y lo por jugar— la primera vez que aparece."""
+    interes = equipos_de_interes(con)
+    casos = equipos_sin_liga_en_la_base(con, interes)
+    if not casos:
+        return 0
+    marcas: dict[str, str] = {}
+    try:
+        with open(SANARE_PATH, encoding="utf-8") as f:
+            marcas = json.load(f)
+    except (OSError, ValueError):
+        pass
+    pendientes = [(tid, temp) for tid, temp in casos if f"{tid}:{temp}" not in marcas][:SANARE_MAX_EQUIPOS]
+    if not pendientes:
+        return 0
+    print(f"sanar equipos: {len(casos)} equipos de interés sin su liga doméstica en la base; "
+          f"pido la temporada de {len(pendientes)} en esta corrida")
+    hoy = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    reserva = reserva_del_dia(cliente.limite, con)
+    total = 0
+    for tid, temp in pendientes:
+        if cliente.limite - cliente.usadas <= reserva or not cliente.quedan():
+            print("  reserva del día alcanzada; sanar equipos se reanuda en la próxima corrida")
+            break
+        try:
+            filas = cliente.paginado("fixtures", {"team": tid, "season": temp})
+            n = guardar_fixtures(con, filas)
+        except Exception as e:  # un equipo raro no corta a los demás
+            print(f"  equipo {tid} · {temp}: ERROR {e} — se reintenta en la próxima corrida")
+            continue
+        total += n
+        print(f"  [{cliente.usadas}/{cliente.limite}] equipo {tid} · temporada {temp}: {n} fixtures")
+        marcas[f"{tid}:{temp}"] = hoy
+        with open(SANARE_PATH, "w", encoding="utf-8") as f:
+            json.dump(marcas, f)
     return total
 
 
@@ -1298,17 +1457,16 @@ def main() -> int:
         # huecos por fecha: días pasados que quedaron con NS/TBD (p. ej. el
         # tramo final de las temporadas cruzadas antes de esta corrección)
         sanar_fechas(cliente, con)
+        # equipos que entran por el torneo internacional y cuya liga doméstica
+        # no está en LIGAS: su temporada entera, una vez (1 request por equipo)
+        sanar_equipos_interes(cliente, con)
         # limpieza de zombis: NS de ligas fuera de la lista (p. ej. Friendlies
         # de la carga inicial) jamás se actualizarán — se purgan; el historial
-        # terminado de cualquier liga se conserva (alimenta al motor)
-        marcas = ",".join("?" * len(LIGAS))
-        purga = con.execute(
-            f"DELETE FROM fixtures WHERE status_short='NS' AND league_id NOT IN ({marcas})",
-            tuple(LIGAS),
-        )
-        con.commit()
-        if purga.rowcount:
-            print(f"fixtures NS purgados (ligas sin mantenimiento): {purga.rowcount}")
+        # terminado de cualquier liga se conserva (alimenta al motor) y los
+        # partidos de los equipos de interés también
+        purga = purgar_ns_sin_mantenimiento(con)
+        if purga:
+            print(f"fixtures NS purgados (ligas sin mantenimiento): {purga}")
 
     if args.solo != "fixtures":
         pendientes = fixtures_para_cuotas(con)
