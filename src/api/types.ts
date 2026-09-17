@@ -1373,6 +1373,20 @@ export interface VeredictoPendienteDTO {
   jugadoEn: string
 }
 
+/** La marca al costado de cada partido: ¿ya pasó el análisis de Cowork?
+ *  Solo vienen los fixtures que tienen parte (GET /analisis/cowork/marcas). */
+export interface MarcaCoworkDTO {
+  estado: 'pendiente_xi' | 'confirmado'
+  onceCerrado: boolean
+  conVeredicto: boolean
+  actualizadoEn: string
+}
+export interface MarcasCoworkDTO {
+  total: number
+  /** fixtureId (como texto) → marca. */
+  partes: Record<string, MarcaCoworkDTO>
+}
+
 export interface ParteCoworkDTO {
   fixtureId: number
   estado: 'pendiente_xi' | 'confirmado'

@@ -810,6 +810,22 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/LatidoCowork' }
+  /analisis/cowork/marcas:
+    get:
+      summary: ¿Cuáles de estos partidos ya tienen parte de Cowork?
+      description: >
+        La marca al costado de cada tarjeta en la lista de partidos: sin abrir el partido
+        se ve si el análisis pasó y en qué punto está (once cerrado, veredicto). Se pide
+        por ids y no por fecha porque el día de la pantalla es local y el de la base es
+        UTC. Solo vienen los fixtures que tienen parte.
+      parameters:
+        - { name: ids, in: query, description: 'fixtureIds separados por coma (máx. 300)', schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MarcasCowork' }
   /analisis/cowork/tde/{fixtureId}:
     get:
       summary: Los insumos del Teorema del Echado que salen de NUESTRA base
@@ -2555,6 +2571,21 @@ components:
           type: array
           description: 'de qué equipos quedó índice ("a", "b"); vacío = ninguno'
           items: { type: string }
+    MarcasCowork:
+      type: object
+      required: [partes, total]
+      properties:
+        total: { type: integer }
+        partes:
+          type: object
+          description: 'fixtureId (como texto) → marca; los que no tienen parte no vienen'
+          additionalProperties:
+            type: object
+            properties:
+              estado: { type: string, enum: [pendiente_xi, confirmado] }
+              onceCerrado: { type: boolean }
+              conVeredicto: { type: boolean }
+              actualizadoEn: { type: string }
     PartePendiente:
       type: object
       required: [fixtureId, partido, faltaXi]

@@ -37,6 +37,7 @@ import type {
   PrediccionDTO,
   XiLadoDTO,
   StandingRowDTO,
+  MarcasCoworkDTO,
 } from './types'
 
 export const SadApi = {
@@ -178,6 +179,10 @@ export const SadApi = {
     apiGet<LatidoCoworkDTO>('/analisis/cowork/latido' + qs({ horas })),
   veredictosPendientes: (horas?: number, limite?: number) =>
     apiGet<SobrePendientesDTO>('/analisis/cowork/veredictos/pendientes' + qs({ horas, limite })),
+
+  /** ¿Cuáles de estos partidos ya tienen parte? La marca de la lista de partidos. */
+  coworkMarcas: (ids: number[]) =>
+    apiGet<MarcasCoworkDTO>('/analisis/cowork/marcas' + qs({ ids: ids.join(',') })),
 
   /** Partes que todavía esperan once. */
   partesPendientes: (limite?: number) =>

@@ -1910,6 +1910,32 @@ def cerrar_onces_pendientes(limite: int = 50) -> dict:
     }
 
 
+def marcas(fixture_ids: list[int]) -> dict:
+    """Qué partidos de una lista YA tienen parte de Cowork, y en qué punto está
+    cada uno (once cerrado, veredicto). Es lo que la lista de partidos pinta
+    al costado de cada tarjeta: sin abrir el partido se ve si el análisis
+    pasó. Se pide por ids, no por fecha, porque el día de la pantalla es
+    local y el de la base es UTC: cerca de medianoche no coinciden. Los ids
+    sin parte simplemente no vienen."""
+    ids = sorted({int(x) for x in fixture_ids if x is not None})[:300]
+    if not ids:
+        return {"partes": {}, "total": 0}
+    marcas_sql = ",".join("?" * len(ids))
+    with _conectar() as con:
+        filas = con.execute(
+            f"""SELECT fixture_id, estado, xi_json, veredicto_json, actualizado_en
+                FROM parte_cowork WHERE fixture_id IN ({marcas_sql})""", ids).fetchall()
+    partes = {}
+    for f in filas:
+        partes[str(f["fixture_id"])] = {
+            "estado": f["estado"],
+            "onceCerrado": bool(f["xi_json"]) and f["estado"] == "confirmado",
+            "conVeredicto": bool(f["veredicto_json"]),
+            "actualizadoEn": f["actualizado_en"],
+        }
+    return {"partes": partes, "total": len(partes)}
+
+
 def pendientes(limite: int = 50) -> list[dict]:
     """Partes esperando once — lo primero que mira el usuario al despertar."""
     with _conectar() as con:

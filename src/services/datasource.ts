@@ -39,6 +39,7 @@ import type {
   NivelDTO,
   JugadorParte,
   ParteCoworkDTO,
+  MarcasCoworkDTO,
   InventarioLecciones,
   LeccionItem,
   PartidoCalendarioDTO,
@@ -154,6 +155,9 @@ export interface SadDataSource {
   /** El parte que dejó Cowork para este partido (docs/COWORK.md); null si no hay.
    *  Es el camino barato: análisis escrito con la suscripción, cero créditos. */
   parteCowork(fixtureId: number): Promise<ParteCoworkDTO | null>
+  /** ¿Cuáles de estos partidos ya tienen parte? La marca al costado de cada
+   *  tarjeta en la lista de partidos; solo vienen los que lo tienen. */
+  marcasCowork(fixtureIds: number[]): Promise<MarcasCoworkDTO>
   /** Llega el once y el bloque F se cierra en el backend (aritmética, sin IA).
    *  Sin onces en el cuerpo, se intenta con la ficha ya ingestada. */
   resolverXi(fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }): Promise<ParteCoworkDTO>
@@ -831,6 +835,19 @@ class MockDataSource implements SadDataSource {
     return p
   }
 
+  async marcasCowork(fixtureIds: number[]): Promise<MarcasCoworkDTO> {
+    // la demo tiene parte para todo partido de la lista: el jugado, con su
+    // caso cerrado; el que viene, esperando once (como de noche)
+    const partes: MarcasCoworkDTO['partes'] = {}
+    for (const fid of fixtureIds) {
+      const m = MATCHES.find((x) => FIXTURE_NUM(x.id) === fid)
+      if (!m) continue
+      const fin = m.status === 'fin'
+      partes[String(fid)] = { estado: fin ? 'confirmado' : 'pendiente_xi', onceCerrado: fin, conVeredicto: fin, actualizadoEn: MOCK_NOW }
+    }
+    return { partes, total: Object.keys(partes).length }
+  }
+
   async lecciones(params?: { skill?: string; estado?: string }): Promise<InventarioLecciones> {
     return leccionesDemo(params?.skill ?? '', params?.estado ?? '')
   }
@@ -1123,6 +1140,8 @@ class HttpDataSource implements SadDataSource {
       if (e instanceof ApiError && e.status === 404) return null
       throw e
     })
+  marcasCowork = (fixtureIds: number[]) =>
+    fixtureIds.length ? SadApi.coworkMarcas(fixtureIds) : Promise.resolve({ partes: {}, total: 0 })
   resolverXi = (fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }) =>
     SadApi.resolverXi(fixtureId, body)
   lecciones = (params?: { skill?: string; estado?: string }) => SadApi.lecciones(params)

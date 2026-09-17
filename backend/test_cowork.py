@@ -640,6 +640,19 @@ def main():
     check("y se explica que re-depositar REEMPLAZA, para no rehacer de más",
           "REEMPLAZA" in ag["notaReanudacion"], ag.get("notaReanudacion"))
 
+    # ── LAS MARCAS: qué partidos de la lista ya tienen parte ────────────────
+    # Lo que la tarjeta de cada partido pinta al costado. Por ids, no por
+    # fecha: el día de la pantalla es local y el de la base es UTC.
+    mk_r = c.get(f"{A}/analisis/cowork/marcas", params={"ids": f"{sin_ficha},{con_ficha},999999"})
+    check("`marcas` no se lo come /{fixture_id}", mk_r.status_code == 200, mk_r.text[:160])
+    mk = mk_r.json()
+    check("el partido con parte viene con su estado; el que no lo tiene no viene",
+          str(sin_ficha) in mk["partes"] and "999999" not in mk["partes"]
+          and mk["partes"][str(sin_ficha)]["estado"] in ("pendiente_xi", "confirmado")
+          and mk["partes"][str(sin_ficha)]["conVeredicto"] is False, mk)
+    check("sin ids no hay marcas ni error", c.get(f"{A}/analisis/cowork/marcas").json() == {"partes": {}, "total": 0})
+    check("ids que no son enteros → 422", c.get(f"{A}/analisis/cowork/marcas", params={"ids": "a,b"}).status_code == 422)
+
     # ── EL LATIDO: QUE EL SILENCIO SE VEA ───────────────────────────────────
     # Una tubería automática sin vigilancia no falla con ruido, falla callada.
     lat_r = c.get(f"{A}/analisis/cowork/latido")
