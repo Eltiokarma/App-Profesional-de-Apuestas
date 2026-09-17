@@ -169,6 +169,12 @@ Con `--padron` la historia previa de cada equipo (su K y sus reventones) usa
 ligas del padrón. La salida trae `ligasEvaluadas` y el desglose por liga para
 que se vea qué se calibró y dónde la separación es ruido por n chico.
 
+El endpoint corre el backtest en un **subproceso** (`backend.backtest_burbuja
+--json`), no en el proceso web: cargar 171k burbujas dentro de la API dejó
+al backend en 7 GB de RAM permanentes (Railway los cobra cada hora,
+`docs/DESPLIEGUE.md`). El subproceso y el CLI van con `SAD_SIN_HILOS=1` para
+que importar `backend.app` no arranque ingestas ni backfills.
+
 ### `--calibrar` (o `calibrar=true` en el endpoint)
 
 Ajusta una **regresión logística** sobre las señales de la guía, con el rival

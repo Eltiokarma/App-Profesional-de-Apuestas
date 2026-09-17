@@ -173,6 +173,14 @@ app.add_middleware(
 # en subproceso a cada hora de la lista (varias corridas/día = varios snapshots
 # de cuotas en odds_history). El backend HTTP sigue siendo de solo lectura:
 # quien escribe es la capa de ingesta; aquí solo se programa.
+# SAD_SIN_HILOS=1: NINGÚN hilo de fondo (ingesta, backfill, refresco, en vivo,
+# despensa). Lo pone el propio backend cuando lanza un subproceso que importa
+# este módulo —el backtest del reventón importa `constantes_de` de acá— y el
+# CLI del backtest. Sin esto, cada `python -m backend.backtest_burbuja` en el
+# servidor arrancaba a los 30 s un backfill + pipeline enteros dentro del
+# proceso del backtest.
+SIN_HILOS = os.environ.get("SAD_SIN_HILOS", "").strip() == "1"
+
 INGESTA_HORA = os.environ.get("SAD_INGESTA_HORA", "").strip()
 
 
@@ -192,7 +200,7 @@ def _ingesta_diaria_loop() -> None:
         _correr_backfill("tras la corrida diaria")  # reanuda si quedó a medias
 
 
-if INGESTA_HORA:
+if INGESTA_HORA and not SIN_HILOS:
     threading.Thread(target=_ingesta_diaria_loop, daemon=True, name="ingesta-diaria").start()
 
 # SAD_INGESTA_AL_ARRANCAR=1 dispara UNA corrida diaria completa (ventana por
@@ -212,7 +220,7 @@ def _corrida_al_arranque() -> None:
     liga_meta.cache_clear()
 
 
-if INGESTA_AL_ARRANCAR:
+if INGESTA_AL_ARRANCAR and not SIN_HILOS:
     threading.Thread(target=_corrida_al_arranque, daemon=True, name="corrida-arranque").start()
 
 # Backfill histórico: SAD_BACKFILL_DESDE=2020 trae los fixtures de TODAS las
@@ -245,7 +253,7 @@ def _backfill_arranque() -> None:
     _correr_backfill("arranque")
 
 
-if BACKFILL_DESDE:
+if BACKFILL_DESDE and not SIN_HILOS:
     threading.Thread(target=_backfill_arranque, daemon=True, name="backfill-historico").start()
 
 # Relleno puntual de fechas (one-shot al arranque): SAD_RELLENO_FECHAS="2026-05-31"
@@ -286,7 +294,7 @@ def _relleno_fechas_arranque() -> None:
     liga_meta.cache_clear()
 
 
-if RELLENO_FECHAS:
+if RELLENO_FECHAS and not SIN_HILOS:
     threading.Thread(target=_relleno_fechas_arranque, daemon=True, name="relleno-fechas").start()
 
 # Refresco de día de partido (fase 2 de docs/EXTRACCION_TIEMPO_REAL.md):
@@ -310,7 +318,7 @@ def _refresco_cuotas_loop() -> None:
         )
 
 
-if REFRESCO_MIN:
+if REFRESCO_MIN and not SIN_HILOS:
     threading.Thread(target=_refresco_cuotas_loop, daemon=True, name="refresco-cuotas").start()
 
 # En vivo (fase 3 de docs/EXTRACCION_TIEMPO_REAL.md): SAD_LIVE_SEGUNDOS=60
@@ -332,14 +340,14 @@ def _en_vivo_loop() -> None:
         )
 
 
-if LIVE_SEGUNDOS:
+if LIVE_SEGUNDOS and not SIN_HILOS:
     threading.Thread(target=_en_vivo_loop, daemon=True, name="ingesta-en-vivo").start()
 
 # Despensa EN BLOQUE: la investigación versionada en el repo se deposita en
 # efe.db al arrancar. Es local, idempotente y no gasta ni un token — pero
 # ahorra la parte cara del EFE (las búsquedas web de dt/plantel). Se salta con
 # SAD_DESPENSA_BULK=0. Nunca pisa un dato más nuevo que ya esté cargado.
-if os.environ.get("SAD_DESPENSA_BULK", "1").strip() != "0":
+if os.environ.get("SAD_DESPENSA_BULK", "1").strip() != "0" and not SIN_HILOS:
     try:
         from backend.analisis import despensa_bulk
         despensa_bulk.cargar_todo()
@@ -1439,23 +1447,51 @@ def burbujas_backtest(padron: bool = True, horizonte: int = Query(default=1, ge=
     calibración de la guía. 0 requests, 0 tokens; tarda segundos-minutos
     según el padrón (usar `muestra` para acotar). `calibrar=true` añade la
     regresión logística sobre las señales y la tabla de puntos propuesta."""
-    from backend import backtest_burbuja as bt
+    # EN SUBPROCESO, NO EN EL PROCESO WEB. El backtest carga las constantes de
+    # todos los equipos del padrón (171k burbujas) y Python no devuelve al
+    # sistema la memoria de ese pico: tras la calibración del 16/09 el backend
+    # quedó plano en 7 GB de RAM, y Railway cobra ese tamaño cada hora del mes
+    # (22,63 de los 24,69 dólares de septiembre eran memoria con la CPU casi
+    # en cero). Un subproceso muere al terminar y se lleva todo. Igual que la
+    # ingesta; y con SAD_SIN_HILOS para que ese proceso no arranque a su vez
+    # ingestas ni backfills al importar backend.app.
+    import tempfile
+    raiz = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    env = {**os.environ, "PYTHONPATH": raiz, "PYTHONUTF8": "1", "SAD_SIN_HILOS": "1"}
+    args = [sys.executable, "-m", "backend.backtest_burbuja", "--horizonte", str(horizonte),
+            "--muestra", str(muestra), "--min-filas", str(minFilas)]
+    if padron:
+        args.append("--padron")
+    if liga is not None:
+        args += ["--liga", str(liga)]
+    if calibrar:
+        args.append("--calibrar")
+    fd, salida = tempfile.mkstemp(prefix="sad_backtest_", suffix=".json")
+    os.close(fd)
     try:
-        return bt.correr_backtest(padron_=padron, liga=liga, horizonte=horizonte, muestra=muestra,
-                                  min_filas=minFilas, calibrar_=calibrar)
-    except Exception as e:  # noqa: BLE001
-        # Un «Internal Server Error» de 21 bytes no dice nada a quien corre la
-        # calibración desde su PC. Esto solo lo ve el token maestro: va el tipo
-        # de excepción y las últimas líneas de la traza. Ya pasó una vez: el
-        # backtest corrió mientras la ingesta regeneraba las bases derivadas.
-        import traceback
-        traza = [l.strip() for l in traceback.format_exc().strip().splitlines()[-4:]]
-        raise HTTPException(500, detail={
-            "error": f"{type(e).__name__}: {e}",
-            "donde": traza,
-            "pista": "si la ingesta acaba de correr (lastPipelineRun reciente en /health), las bases "
-                     "derivadas pueden estar regenerándose: reintentá en unos minutos",
-        })
+        proc = subprocess.run(args + ["--json", salida], cwd=db.BASE_DIR, env=env,
+                              capture_output=True, text=True, timeout=1800)
+        if proc.returncode != 0:
+            # Un «Internal Server Error» de 21 bytes no dice nada a quien corre la
+            # calibración desde su PC: van las últimas líneas de la traza. Ya pasó
+            # una vez: el backtest corrió mientras la ingesta regeneraba las bases.
+            traza = [l.strip() for l in (proc.stderr or "").strip().splitlines()[-4:]]
+            raise HTTPException(500, detail={
+                "error": f"el backtest terminó con código {proc.returncode}",
+                "donde": traza,
+                "pista": "si la ingesta acaba de correr (lastPipelineRun reciente en /health), las bases "
+                         "derivadas pueden estar regenerándose: reintentá en unos minutos",
+            })
+        with open(salida, encoding="utf-8") as f:
+            return json.load(f)
+    except subprocess.TimeoutExpired:
+        raise HTTPException(504, detail={"error": "el backtest superó los 30 minutos",
+                                         "pista": "acotá con `muestra` o `liga`"})
+    finally:
+        try:
+            os.remove(salida)
+        except OSError:
+            pass
 
 
 @app.get(API + "/fixtures/{fixture_id}/ficha")
