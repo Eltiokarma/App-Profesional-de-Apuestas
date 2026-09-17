@@ -334,3 +334,31 @@ con una **bandera aparte** que dice cuánto se carga, no cuánto pasa.
 - **Espejo**: `_extremo` en Python y `extremoDe` en TS, sobre los mismos
   vectores dorados (el caso Foco tiene K 22.1 sobre máximo 13.3 y racha 6
   sobre 3: activo en total y visita, inactivo en local).
+
+## 11. El reventón en el bucle de aprendizaje (producción contra backtest)
+
+El backtest de §8 responde «¿los pesos son razonables en general?» sobre 171k
+burbujas históricas. Lo que no responde es lo que pasa con los partidos que SÍ
+se analizaron: si las burbujas de riesgo alto reventaron más que las de riesgo
+bajo, y en la proporción que el backtest decía. Eso lo hace el bucle de
+aprendizaje (`docs/APRENDIZAJE.md`), en dos piezas:
+
+- **En el veredicto** (`objetivo.reventon`, `backend/analisis/veredicto.py`):
+  por lado, `declarado` = la burbuja total tal como estaba antes del partido
+  (signo, K, racha, nivel y puntos de riesgo, tramo del rival, si tenía la
+  alerta K-EXTREMO), reconstruida con la vista «al día del partido» de §9 —los
+  mismos números de `/burbujas?antesDe=`—, y `observado` = si la K fusionada
+  de ese partido cerró la burbuja, con `episodios()`, la misma función que
+  detecta los reventones de la historia. Es observación, no veredicto: no hay
+  `acerto`.
+- **En las lecciones** (`acreditables.reventon`, `backend/analisis/lecciones.py`):
+  solo casos `ciega` + `PRE`. Tasa observada por nivel de riesgo contra
+  `TASA_BACKTEST` (la tabla de §8, segunda corrida, como rango por nivel),
+  comparada solo con `n ≥ 10` por nivel; las burbujas con K-EXTREMO aparte.
+  `fueraDelBacktest` / `revisionAbierta` **abren** la revisión de los puntos
+  de §5: no los mueven. `TASA_BACKTEST` no es un peso y no entra en ningún
+  cálculo de riesgo; por eso no tiene espejo TS ni vector dorado.
+
+Se ve en la banda del veredicto del parte (`↯ reventó` / `→ siguió`, con el
+riesgo que se había declarado) y en la sección Aprendizaje (reventadas sobre
+observadas y la tabla por nivel contra el backtest).

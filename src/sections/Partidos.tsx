@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CONFIG } from '../config'
 import { TEAMS } from '../data'
-import { refrescarLiga } from '../services/appdata'
+import { fixtureNum, loadMarcasCowork, refrescarLiga } from '../services/appdata'
+import type { MarcaCoworkDTO } from '../api/types'
 import type { Match, MatchStatus } from '../data/types'
 import { LatidoCowork } from '../components/LatidoCowork'
 import { TeamBadge } from '../components/TeamBadge'
@@ -55,6 +56,24 @@ function guardarLS(clave: string, v: string[]) {
 }
 
 /** Pantalla inicial: los partidos del día elegido, agrupados por competición. */
+/** La marca de Cowork al costado del partido. Tres estados y nada más: el
+ *  parte está (esperando once), el once ya cerró, o el caso ya tiene
+ *  veredicto. Sin parte no se pinta nada. En móvil queda solo el punto. */
+function MarcaCowork({ marca, isMobile }: { marca?: MarcaCoworkDTO; isMobile: boolean }) {
+  if (!marca) return null
+  const [color, txt, title] = marca.conVeredicto
+    ? ['var(--up)', 'ANALIZADO · VEREDICTO', 'Parte de Cowork depositado y caso cerrado con veredicto']
+    : marca.onceCerrado
+      ? ['var(--accent)', 'ANALIZADO', 'Parte de Cowork depositado, once cerrado']
+      : ['var(--mark)', 'ANALIZADO · SIN ONCE', 'Parte de Cowork depositado; el bloque F espera el once']
+  return (
+    <span title={title} style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, padding: isMobile ? 0 : '2px 7px', borderRadius: 6, background: isMobile ? 'transparent' : `color-mix(in oklch, ${color}, transparent 86%)`, font: '700 8.5px var(--mono)', color, letterSpacing: '.3px', whiteSpace: 'nowrap' }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }}></span>
+      {!isMobile && txt}
+    </span>
+  )
+}
+
 export function Partidos({ store, matches, loading, error, reload, isMobile }: Props) {
   const { s } = store
   const [filtro, setFiltro] = useState<Filtro>('todos')
@@ -93,6 +112,18 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
     nada: { txt: '–', color: 'var(--t3)', title: 'No hay partidos sin resultado que refrescar en esta liga (±12 h)' },
     error: { txt: '!', color: 'var(--down)', title: 'No se pudo pedir el refresco — reintenta' },
   }
+
+  // la marca de Cowork al costado de cada partido: ¿ya pasó el análisis? Se
+  // pide por los ids del día; sin parte no se pinta nada (una marca en todos
+  // los partidos no dice nada), y si la llamada falla la lista sigue igual
+  const [marcas, setMarcas] = useState<Record<number, MarcaCoworkDTO>>({})
+  const idsDia = matches.map((m) => m.id).join(',')
+  useEffect(() => {
+    if (!idsDia) { setMarcas({}); return }
+    let vivo = true
+    loadMarcasCowork(idsDia.split(',')).then((r) => { if (vivo) setMarcas(r) }).catch(() => { /* la marca no rompe la lista */ })
+    return () => { vivo = false }
+  }, [idsDia])
 
   const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
   const t = norm(texto.trim())
@@ -303,6 +334,7 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
                       <TeamBadge logo={A?.logo} short={A?.short ?? '?'} color={A?.color ?? 'var(--bg3)'} fg={A?.fg ?? 'var(--t2)'} size={28} />
                       <span style={{ font: '600 13px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{A?.name ?? m.away}</span>
                     </span>
+                    <MarcaCowork marca={marcas[fixtureNum(m.id)]} isMobile={isMobile} />
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M9 6l6 6-6 6" /></svg>
                   </button>
                 )

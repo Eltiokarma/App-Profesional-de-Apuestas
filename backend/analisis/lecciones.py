@@ -124,6 +124,7 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
     casos_acred, briers, reales, con_reparto = 0, [], [], 0
     unxdos_ok, unxdos_de = 0, 0
     tde_obs, tde_positivos, tde_sin_ficha = 0, 0, 0
+    rev = _reventon_vacio()
 
     for caso in casos:
         v = caso["veredicto"]
@@ -158,6 +159,7 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
                 continue
             tde_obs += 1
             tde_positivos += 1 if b["golEnVentana"] else 0
+        _acumular_reventon(rev, obj.get("reventon") or {})
 
     total_lados = sum(acred.values())
     decididos = acred["acierto"] + acred["fallo"] + acred["parcial"]
@@ -178,8 +180,89 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
             "nota": "ventanas del TDE comprobadas contra los goles recibidos, en población "
                     "ciega. `sinFicha` no cuenta como no ocurrido: no se pudo comprobar",
         },
+        "reventon": _cerrar_reventon(rev),
     }
     return poblacion, metricas
+
+
+# ── el reventón en producción, contra el backtest ───────────────────────────
+#
+# El backtest (docs/REVENTON.md §8) calibró los puntos del riesgo sobre 171k
+# burbujas históricas y dejó una tasa de reventón por nivel. Eso responde «¿los
+# pesos son razonables en general?». Esto responde lo otro: en los partidos que
+# SÍ se analizaron y se cerraron a ciegas, ¿las burbujas de riesgo alto
+# reventaron más que las de riesgo bajo, y en la proporción que el backtest
+# decía? Un nivel cuya tasa en producción se sale del rango del backtest con n
+# suficiente es lo único que autoriza a abrir la revisión de los puntos —y
+# abrirla, no moverlos: la app nunca mueve un peso por su cuenta—.
+
+NIVELES_RIESGO = ("bajo", "medio", "alto", "muy alto", "sin base")
+REVENTON_N_MINIMO = 10   # por nivel, para que la comparación con el backtest diga algo
+
+
+def _reventon_vacio() -> dict:
+    return {"porNivel": {n: {"observadas": 0, "reventadas": 0} for n in NIVELES_RIESGO},
+            "extremo": {"observadas": 0, "reventadas": 0},
+            "sinBurbuja": 0, "noComprobables": 0}
+
+
+def _acumular_reventon(acc: dict, reventon: dict) -> None:
+    for lado in ("a", "b"):
+        r = reventon.get(lado) or {}
+        if not r:
+            continue
+        if r.get("sinBurbuja"):
+            acc["sinBurbuja"] += 1
+            continue
+        if not r.get("comprobable") or not r.get("observado"):
+            acc["noComprobables"] += 1
+            continue
+        nivel = ((r.get("declarado") or {}).get("riesgo") or {}).get("nivel") or "sin base"
+        celda = acc["porNivel"].setdefault(nivel, {"observadas": 0, "reventadas": 0})
+        celda["observadas"] += 1
+        celda["reventadas"] += 1 if r["observado"].get("revento") else 0
+        if (r.get("declarado") or {}).get("extremo"):
+            acc["extremo"]["observadas"] += 1
+            acc["extremo"]["reventadas"] += 1 if r["observado"].get("revento") else 0
+
+
+def _cerrar_reventon(acc: dict) -> dict:
+    from backend.analisis.burbuja import TASA_BACKTEST, TASA_BASE_BACKTEST
+    por_nivel = {}
+    for nivel, c in acc["porNivel"].items():
+        n, k = c["observadas"], c["reventadas"]
+        tasa = round(k / n, 3) if n else None
+        esperado = TASA_BACKTEST.get(nivel)
+        dentro = None
+        if tasa is not None and esperado and n >= REVENTON_N_MINIMO:
+            dentro = esperado[0] <= tasa <= esperado[1]
+        por_nivel[nivel] = {
+            "observadas": n, "reventadas": k, "tasa": tasa,
+            "esperadoBacktest": list(esperado) if esperado else None,
+            "dentroDelBacktest": dentro,
+            "nMinimo": REVENTON_N_MINIMO,
+        }
+    obs = sum(c["observadas"] for c in acc["porNivel"].values())
+    revs = sum(c["reventadas"] for c in acc["porNivel"].values())
+    fuera = [n for n, c in por_nivel.items() if c["dentroDelBacktest"] is False]
+    return {
+        "observadas": obs, "reventadas": revs,
+        "tasa": round(revs / obs, 3) if obs else None,
+        "tasaBaseBacktest": TASA_BASE_BACKTEST,
+        "porNivel": por_nivel,
+        "extremo": {**acc["extremo"],
+                    "nota": "burbujas con alerta K-EXTREMO declarada antes del partido: el backtest "
+                            "dice que la K no adelanta el reventón; esto lo mira en producción"},
+        "sinBurbuja": acc["sinBurbuja"],
+        "noComprobables": acc["noComprobables"],
+        "fueraDelBacktest": fuera,
+        "revisionAbierta": bool(fuera),
+        "nota": ("por lado, en población ciega: la burbuja total tal como estaba antes del partido "
+                 "y si ese partido la reventó. La tasa por nivel se compara con la del backtest "
+                 f"(docs/REVENTON.md §8) solo con n ≥ {REVENTON_N_MINIMO}; un nivel fuera del rango "
+                 "ABRE la revisión de los puntos, no los mueve. `sinBurbuja` y `noComprobables` no "
+                 "cuentan: no había nada que reventar o el pipeline no calculó el partido"),
+    }
 
 
 def _brier_con_linea_base(briers: list[float], reales: list[str]) -> dict:

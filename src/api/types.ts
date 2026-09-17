@@ -1247,6 +1247,49 @@ export interface VeredictoObjetivo {
     conFicha: boolean
     nota: string
   }
+  /** El reventón de la burbuja, comprobado por lado (docs/REVENTON.md §11):
+   *  lo declarado antes del partido y si ese partido la reventó. Observación,
+   *  no veredicto: la tasa se compara con la del backtest en las lecciones. */
+  reventon?: { nota: string } & Partial<Record<'a' | 'b', ReventonObservado>>
+}
+
+export interface ReventonObservado {
+  comprobable: boolean
+  sinBurbuja: boolean
+  declarado: {
+    signo: '+' | '-'
+    k: number
+    partidos: number
+    riesgo: { nivel: 'bajo' | 'medio' | 'alto' | 'muy alto' | 'sin base'; puntos: number }
+    rivalTramo: string | null
+    extremo: boolean
+  } | null
+  observado: { revento: boolean; kDespues: number; signoDespues: '+' | '-' | '0'; kPico: number | null; partidos: number | null } | null
+  nota: string
+}
+
+export interface ReventonMetricas {
+  observadas: number
+  reventadas: number
+  tasa: number | null
+  tasaBaseBacktest: number
+  porNivel: Record<string, {
+    observadas: number
+    reventadas: number
+    tasa: number | null
+    /** [mín, máx] de la tasa del backtest para ese nivel; null sin base. */
+    esperadoBacktest: [number, number] | null
+    /** null = n < nMinimo: no se compara. */
+    dentroDelBacktest: boolean | null
+    nMinimo: number
+  }>
+  extremo: { observadas: number; reventadas: number; nota: string }
+  sinBurbuja: number
+  noComprobables: number
+  fueraDelBacktest: string[]
+  /** Un nivel fuera del rango con n suficiente ABRE la revisión de los puntos; no los mueve. */
+  revisionAbierta: boolean
+  nota: string
 }
 
 export interface VeredictoParte {
@@ -1328,6 +1371,20 @@ export interface VeredictoPendienteDTO {
   partido: string
   marcador: string
   jugadoEn: string
+}
+
+/** La marca al costado de cada partido: ¿ya pasó el análisis de Cowork?
+ *  Solo vienen los fixtures que tienen parte (GET /analisis/cowork/marcas). */
+export interface MarcaCoworkDTO {
+  estado: 'pendiente_xi' | 'confirmado'
+  onceCerrado: boolean
+  conVeredicto: boolean
+  actualizadoEn: string
+}
+export interface MarcasCoworkDTO {
+  total: number
+  /** fixtureId (como texto) → marca. */
+  partes: Record<string, MarcaCoworkDTO>
 }
 
 export interface ParteCoworkDTO {
@@ -1480,6 +1537,8 @@ export interface InventarioLecciones {
       escala: string
     }
     ventanaTde: { observadas: number; conGol: number; sinFicha: number; nota: string }
+    /** El reventón en producción contra el backtest (docs/REVENTON.md §11). */
+    reventon?: ReventonMetricas
   }
   porSkill: SkillAprendizaje[]
   sinSkill: { cuantas: number; porque: string; items: LeccionItem[] }

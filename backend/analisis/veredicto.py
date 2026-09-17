@@ -11,7 +11,8 @@ nuestra base y no hace falta preguntársela a nadie:
   ¿acertó el marcador exacto?     la lección, en una frase
   Brier del caso                  a qué skill le toca
   ¿cayó gol en la ventana del TDE? si el caso es ciego o está contaminado
-  la evidencia (goles con minuto)  si el falsador se cumplió
+  ¿reventó la burbuja de cada lado? si el falsador se cumplió
+  la evidencia (goles con minuto)
 
 La última línea es la frontera honesta del módulo. El falsador es prosa —"si
 el visitante abre el marcador antes del 20'"— y verificar prosa arbitraria no
@@ -197,4 +198,96 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
         })
     if bloques:
         out["tde"] = {"bloques": bloques}
+
+    # ── el reventón de la burbuja: lo que se dijo antes y lo que pasó ───────
+    out["reventon"] = reventon_objetivo(fixture_id, fx)
     return out
+
+
+# ── el reventón, comprobado ─────────────────────────────────────────────────
+#
+# El parte trae, por lado, la burbuja abierta y su riesgo (`reventonCalculado`,
+# docs/REVENTON.md). Eso se recalcula al leer, así que después del partido ya
+# no dice lo que decía antes: el «declarado» de acá se reconstruye con la
+# vista «al día del partido» (§9: historia ESTRICTAMENTE anterior al fixture y
+# el fixture como próximo), que es la misma construcción anti-hindsight del
+# backtest y da exactamente los números que el parte mostraba antes del pitazo.
+# Lo observado sale de la K fusionada de ESE partido, con la misma función que
+# detecta los reventones en la historia (`burbuja.episodios`): si el fixture
+# figura como el que cerró la burbuja, reventó; si no, siguió.
+#
+# Lo que esto NO dice: si Cowork leyó bien. Un riesgo alto que revienta no es
+# «acierto» y uno bajo que revienta no es «fallo» —el riesgo es una tasa, no
+# un pronóstico—; por eso acá no hay veredicto, hay observación, y la tasa se
+# arma en las lecciones sobre los casos ciegos, contra la del backtest.
+
+def reventon_objetivo(fixture_id: int, fx) -> dict:
+    """Por lado: la burbuja total tal como estaba ANTES del partido (signo, K,
+    racha, riesgo, extremo) y si ese partido la reventó. `comprobable` es
+    False cuando el pipeline aún no calculó la constante del partido; sin
+    burbuja abierta antes no hay nada que observar (`sinBurbuja`)."""
+    out = {"nota": ("declarado = la burbuja total con la historia anterior al partido (vista "
+                    "«al día del partido», §9 de docs/REVENTON.md); observado = si la K "
+                    "fusionada de ESTE partido cerró la burbuja. Es observación, no veredicto: "
+                    "el riesgo es una tasa, y la tasa se compara con la del backtest en las lecciones")}
+    fecha = str(fx["date"])
+    lados = (("a", fx["home_team_id"], fx["away_team_id"], fx["away_name"], "L"),
+             ("b", fx["away_team_id"], fx["home_team_id"], fx["home_name"], "V"))
+    for lado, tid, rid, rival, cond in lados:
+        try:
+            out[lado] = _reventon_lado(fixture_id, fecha, tid, rid, rival, cond)
+        except Exception as e:  # noqa: BLE001 — se declara, no tumba el veredicto
+            out[lado] = {"comprobable": False, "sinBurbuja": False, "declarado": None,
+                         "observado": None, "nota": f"no se pudo calcular: {e}"}
+    return out
+
+
+def _reventon_lado(fixture_id: int, fecha: str, tid: int, rid: int, rival: str, cond: str) -> dict:
+    from backend.analisis import burbuja
+    from backend.app import constantes_de, niveles_de
+    # antes del partido: estrictamente anterior (la constante del partido lleva su misma fecha)
+    previas = list(reversed(constantes_de(tid, 500, antes=fecha)))
+    nv, nr = niveles_de(tid, 1, antes=fecha), niveles_de(rid, 1, antes=fecha)
+    prox = {"fixtureId": fixture_id, "fecha": fecha[:10], "rivalId": rid, "rival": rival,
+            "condicion": cond, "nivelRival": nr[0]["nivel"] if nr else 1.0}
+    pre = burbuja.analizar(previas, equipo_id=tid, nivel=nv[0]["nivel"] if nv else 0.5,
+                           bin_=nv[0]["bin"] if nv else 0, proximo=prox, plantilla=None,
+                           hoy=fecha[:10])["familias"]["total"]
+    actual = pre.get("actual")
+    if not actual:
+        return {"comprobable": False, "sinBurbuja": True, "declarado": None, "observado": None,
+                "nota": "sin burbuja abierta antes del partido: no había nada que reventar"}
+    riesgo = pre.get("riesgo") or {}
+    declarado = {
+        "signo": actual["signo"], "k": actual["k"], "partidos": actual["partidos"],
+        "riesgo": {"nivel": riesgo.get("nivel", "sin base"), "puntos": riesgo.get("puntos", 0)},
+        "rivalTramo": (pre.get("rival") or {}).get("tramo"),
+        "extremo": bool((pre.get("extremo") or {}).get("activo")),
+    }
+    # después: la constante de ESTE partido, si el pipeline ya la calculó
+    hasta_hoy = list(reversed(constantes_de(tid, 500, hasta=fecha)))
+    fila = next((f for f in hasta_hoy if f["fixtureId"] == fixture_id), None)
+    if not fila:
+        return {"comprobable": False, "sinBurbuja": False, "declarado": declarado, "observado": None,
+                "nota": "el pipeline todavía no calculó la constante de este partido: "
+                        "corre `python -m backend.ingesta.pipeline` y vuelve a leer"}
+    cerrados, abierta, _n = burbuja.episodios(hasta_hoy, "total")
+    cerro = next((r for r in cerrados if r["fixtureId"] == fixture_id), None)
+    k_despues = float(fila["fusion"]["k"])
+    revento = cerro is not None
+    return {
+        "comprobable": True, "sinBurbuja": False,
+        "declarado": declarado,
+        "observado": {
+            "revento": revento,
+            "kDespues": burbuja._r2(k_despues),
+            "signoDespues": "+" if k_despues > 0 else "-" if k_despues < 0 else "0",
+            "kPico": cerro["kPico"] if cerro else None,
+            "partidos": cerro["partidos"] if cerro else (abierta or {}).get("partidos"),
+        },
+        "nota": (f"reventó: la burbuja {declarado['signo']} de {declarado['partidos']} partidos "
+                 f"(K {declarado['k']:+.2f}) cerró con este partido"
+                 if revento else
+                 f"siguió: la burbuja {declarado['signo']} llega a "
+                 f"{(abierta or {}).get('partidos', '?')} partidos (K {k_despues:+.2f})"),
+    }

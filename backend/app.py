@@ -2262,6 +2262,21 @@ def cowork_latido(horas: int = Query(default=36, ge=1, le=336)):
     return cowork.latido(horas)
 
 
+@app.get(API + "/analisis/cowork/marcas")
+def cowork_marcas(ids: str = Query(default="", description="fixtureIds separados por coma")):
+    """¿Cuáles de estos partidos ya tienen parte de Cowork? Para la marca al
+    costado de cada tarjeta en la lista de partidos. Solo vienen los que lo
+    tienen, con su estado (once cerrado, veredicto). Segmento suelto: va
+    declarado ANTES de /{fixture_id} para que el parámetro de camino no se lo
+    coma (la misma regresión que tuvo `latido`)."""
+    from backend.analisis import parte as cowork
+    try:
+        lista = [int(x) for x in ids.split(",") if x.strip()]
+    except ValueError:
+        raise HTTPException(422, "ids tiene que ser una lista de enteros separados por coma")
+    return cowork.marcas(lista)
+
+
 class LeccionBody(BaseModel):
     estado: str
     aplicadaEn: str = ""

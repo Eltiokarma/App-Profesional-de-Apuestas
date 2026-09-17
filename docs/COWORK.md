@@ -55,6 +55,7 @@ se perdería.
 | `teorema-del-echado` | P1a, F2 y F1 **los calcula el backend** (`GET /analisis/cowork/tde/{id}`); el resto lo escribís vos | pestaña **Teorema del Echado** |
 | `teorema-del-echado` | `tde.bloques[]`: IE, ISE, tipología, ventana, vías — **uno por equipo** | pestaña **Teorema del Echado** |
 | *(cualquiera)* | `veredicto.porLado[l].leccion` + `skill` + `reglaTocada` | sección **Aprendizaje** |
+| reventón, después del partido | **nada**: `objetivo.reventon` reconstruye la burbuja declarada antes del partido y dice si ese partido la reventó (`docs/REVENTON.md` §11); observación, no veredicto | banda del veredicto (`↯ reventó` / `→ siguió`) y sección **Aprendizaje** (tasa por nivel de riesgo contra el backtest) |
 | `futbol-timeline` | `timelineEventos` (solo institucional) + narrativa | pestaña **Timeline** (fundida con los partidos calculados) |
 | `diagnostico-tactico` | documento `dtp` + `cadena.{a,b}.pronostico` | pestaña **Documentos** y la cadena de la página de **Equipo** |
 | matriz de escenarios | documento `matriz` | pestaña **Documentos** |
@@ -164,6 +165,7 @@ solo, sin tocar el acceso del frontend.
 | GET | `/analisis/cowork/{fixtureId}` | leerlo con todo lo calculable ya calculado |
 | POST | `/analisis/cowork/{fixtureId}/xi` | llega el once → se cierra el bloque F |
 | GET | `/analisis/cowork/pendientes` | qué partes siguen esperando once |
+| GET | `/analisis/cowork/marcas?ids=1,2,3` | cuáles de esos partidos ya tienen parte (la marca al costado de cada tarjeta en la lista de partidos; no está abierto al token de Cowork) |
 | GET | `/analisis/cowork/veredictos/pendientes?horas=12` | qué casos jugados siguen sin cerrar |
 | POST | `/analisis/cowork/{fixtureId}/veredicto` | cerrar el caso: ¿acertó el pronóstico? |
 | GET | `/analisis/cowork/{fixtureId}/veredicto` | leerlo con su parte objetiva recalculada |
@@ -265,10 +267,11 @@ nuestra base**:
 | ¿acertó el marcador exacto? | la lección, en una frase accionable |
 | el Brier del caso | a qué skill le toca esa lección |
 | ¿cayó gol en la ventana del TDE? | **si el caso es ciego o está contaminado** |
-| los goles con su minuto y su lado | si el falsador se cumplió |
+| ¿reventó la burbuja de cada lado? (lo declarado antes y lo que pasó) | si el falsador se cumplió |
+| los goles con su minuto y su lado | si tu línea de `lecturaSad.reventon` se sostuvo |
 
-Dos fronteras que conviene entender, porque explican por qué el reparto es ese
-y no otro:
+Tres fronteras que conviene entender, porque explican por qué el reparto es
+ese y no otro:
 
 - **El falsador no lo verifica el backend.** Es prosa, y verificar prosa
   arbitraria con un 80% de acierto sería peor que no hacerlo: nadie sabría de
@@ -277,6 +280,15 @@ y no otro:
 - **La ventana del TDE sí se comprueba**, porque "75-90'" son dos números y un
   gol tiene un minuto. Se cuentan solo los goles CONTRA el equipo evaluado: la
   echada se observa en lo que recibe, no en lo que hace.
+- **El reventón se observa, no se juzga.** `objetivo.reventon` trae, por lado,
+  la burbuja tal como estaba antes del partido (signo, K, racha, riesgo, si
+  tenía K-EXTREMO) y si ese partido la reventó (`docs/REVENTON.md` §11). No
+  hay `acerto`: un riesgo alto que revienta no es un acierto ni uno bajo que
+  revienta un fallo, porque el riesgo es una tasa y se compara en conjunto
+  contra el backtest en `/analisis/cowork/lecciones`. Lo que sí es tuyo es la
+  línea que escribiste en `lecturaSad.reventon`: si recomendaste no seguir la
+  racha y la racha siguió (o al revés), eso va en `queP` y, si enseña algo, en
+  `leccion`, con `skill: "sad-analysis"`.
 
 ### La población del caso: el campo que decide si esto vale
 

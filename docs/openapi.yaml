@@ -810,6 +810,22 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/LatidoCowork' }
+  /analisis/cowork/marcas:
+    get:
+      summary: ¿Cuáles de estos partidos ya tienen parte de Cowork?
+      description: >
+        La marca al costado de cada tarjeta en la lista de partidos: sin abrir el partido
+        se ve si el análisis pasó y en qué punto está (once cerrado, veredicto). Se pide
+        por ids y no por fecha porque el día de la pantalla es local y el de la base es
+        UTC. Solo vienen los fixtures que tienen parte.
+      parameters:
+        - { name: ids, in: query, description: 'fixtureIds separados por coma (máx. 300)', schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MarcasCowork' }
   /analisis/cowork/tde/{fixtureId}:
     get:
       summary: Los insumos del Teorema del Echado que salen de NUESTRA base
@@ -1011,7 +1027,11 @@ components:
           type: object
           description: >
             La única población medible (ciega + PRE): veredictos por lado, tasa de acierto
-            con su n, acierto del 1X2 y Brier con su línea de base.
+            con su n, acierto del 1X2, Brier con su línea de base y `reventon`: la tasa de
+            reventón observada por nivel de riesgo (`porNivel`, con `esperadoBacktest` y
+            `dentroDelBacktest`, comparado solo con n ≥ `nMinimo`), las burbujas con K-EXTREMO,
+            y `fueraDelBacktest` / `revisionAbierta`: un nivel fuera del rango ABRE la revisión
+            de los puntos de docs/REVENTON.md §5, no los mueve.
           additionalProperties: true
         porSkill:
           type: array
@@ -2551,6 +2571,21 @@ components:
           type: array
           description: 'de qué equipos quedó índice ("a", "b"); vacío = ninguno'
           items: { type: string }
+    MarcasCowork:
+      type: object
+      required: [partes, total]
+      properties:
+        total: { type: integer }
+        partes:
+          type: object
+          description: 'fixtureId (como texto) → marca; los que no tienen parte no vienen'
+          additionalProperties:
+            type: object
+            properties:
+              estado: { type: string, enum: [pendiente_xi, confirmado] }
+              onceCerrado: { type: boolean }
+              conVeredicto: { type: boolean }
+              actualizadoEn: { type: string }
     PartePendiente:
       type: object
       required: [fixtureId, partido, faltaXi]
@@ -2847,6 +2882,47 @@ components:
             primerGol: { type: object, nullable: true, additionalProperties: true }
             conFicha: { type: boolean }
             nota: { type: string }
+        reventon:
+          type: object
+          description: >
+            El reventón de la burbuja, comprobado por lado (docs/REVENTON.md §11): `declarado` es
+            la burbuja total tal como estaba ANTES del partido (vista «al día del partido», la
+            misma de /burbujas?antesDe=) y `observado` si la K fusionada de ESE partido la cerró.
+            Es observación, no veredicto: el riesgo es una tasa, y la tasa se compara con la del
+            backtest en /analisis/cowork/lecciones.
+          properties:
+            nota: { type: string }
+            a: { $ref: '#/components/schemas/ReventonObservado' }
+            b: { $ref: '#/components/schemas/ReventonObservado' }
+    ReventonObservado:
+      type: object
+      properties:
+        comprobable: { type: boolean, description: 'false sin burbuja previa o si el pipeline aún no calculó la constante del partido' }
+        sinBurbuja: { type: boolean, description: 'no había burbuja abierta antes: nada que reventar' }
+        declarado:
+          type: object
+          nullable: true
+          properties:
+            signo: { type: string, enum: ['+', '-'] }
+            k: { type: number }
+            partidos: { type: integer }
+            riesgo:
+              type: object
+              properties:
+                nivel: { type: string, enum: [bajo, medio, alto, muy alto, sin base] }
+                puntos: { type: integer }
+            rivalTramo: { type: string, nullable: true }
+            extremo: { type: boolean, description: 'la alerta K-EXTREMO estaba activa antes del partido' }
+        observado:
+          type: object
+          nullable: true
+          properties:
+            revento: { type: boolean }
+            kDespues: { type: number }
+            signoDespues: { type: string, enum: ['+', '-', '0'] }
+            kPico: { type: number, nullable: true, description: 'la K pico de la burbuja que cerró' }
+            partidos: { type: integer, nullable: true }
+        nota: { type: string }
     Veredicto:
       type: object
       properties:
