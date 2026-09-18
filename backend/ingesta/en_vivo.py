@@ -40,6 +40,7 @@ import sqlite3
 import sys
 from datetime import datetime, timedelta, timezone
 
+from backend.cuota_mercados import es_del_contrato
 from backend.ingesta.extractor import (
     Cliente,
     guardar_fixtures,
@@ -772,6 +773,11 @@ def guardar_odds_live(con: sqlite3.Connection, item: dict, capturado: str) -> in
             handicap = valor.get("handicap")
             if handicap not in (None, "") and str(handicap) not in valor_txt:
                 valor_txt = f"{valor_txt} {handicap}"
+            # solo los mercados del contrato (ver backend/cuota_mercados.py):
+            # cada minuto de partido traía decenas que ninguna pantalla lee y
+            # odds_live llegó a 62 M filas
+            if not es_del_contrato(bet.get("name"), valor_txt):
+                continue
             con.execute(
                 "INSERT INTO odds_live (fixture_id, minuto, bet_id, bet_name, value, "
                 "odd, suspendida, captured_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -988,6 +994,38 @@ def capturar_odds_live(cliente, con: sqlite3.Connection, por_liga: dict,
     return n_odds, con_feed
 
 
+RETENCION_MARCA = ".retencion_live.json"
+
+
+def purgar_odds_live(con: sqlite3.Connection, dias: int = RETENCION_DIAS, hoy: str | None = None) -> int:
+    """Retención de odds_live: UNA vez al día y POR FIXTURE.
+
+    Corría al final de cada ciclo, cada minuto, con `DELETE … WHERE
+    captured_at < ?`, y esa columna no tiene índice: 1.440 recorridos diarios
+    de una tabla de 62 millones de filas, que mantenían 20 GB de la base en la
+    caché de memoria que Railway factura por hora (18/09/2026). Ahora se borra
+    por partido, con el índice (fixture_id, captured_at) que ya existe, y una
+    vez por día (marcador en .retencion_live.json, junto a las DBs)."""
+    hoy = hoy or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    try:
+        with open(RETENCION_MARCA, encoding="utf-8") as f:
+            if json.load(f).get("dia") == hoy:
+                return 0
+    except (OSError, ValueError):
+        pass
+    corte = (datetime.now(timezone.utc) - timedelta(days=dias)).strftime("%Y-%m-%d %H:%M:%S")
+    borradas = con.execute(
+        "DELETE FROM odds_live WHERE fixture_id IN (SELECT id FROM fixtures WHERE date < ?)",
+        (corte,)).rowcount
+    con.commit()
+    try:
+        with open(RETENCION_MARCA, "w", encoding="utf-8") as f:
+            json.dump({"dia": hoy, "borradas": borradas}, f)
+    except OSError:
+        pass
+    return borradas
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Un ciclo de ingesta en vivo → sad.db")
     ap.add_argument("--db", default="sad.db", help="ruta a sad.db")
@@ -1100,9 +1138,7 @@ def main() -> int:
     if terminados:
         print(f"cerrados (salieron del feed live): {n_fin} de {len(terminados)}")
 
-    corte = (datetime.now(timezone.utc) - timedelta(days=RETENCION_DIAS)).strftime("%Y-%m-%d %H:%M:%S")
-    borradas = con.execute("DELETE FROM odds_live WHERE captured_at < ?", (corte,)).rowcount
-    con.commit()
+    borradas = purgar_odds_live(con)
     con.close()
     print(f"fixtures actualizados: {n_fix} · cuotas live: {n_odds} · eventos: {n_ev} "
           f"· purgadas: {borradas} · requests usadas: {cliente.usadas}/{cliente.limite} "

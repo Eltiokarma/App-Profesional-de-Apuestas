@@ -6,6 +6,7 @@ cualquier liga del mundo, así que hay que pedirlo POR LIGA.
 
     python -m backend.test_en_vivo
 """
+import os
 import sqlite3
 import sys
 from datetime import datetime, timedelta, timezone
@@ -49,7 +50,11 @@ def item_odds(fid: int, minuto: int = 43, liga: int | None = None) -> dict:
             {"value": "Home", "odd": "1.69"},
             {"value": "Draw", "odd": "3.75"},
             {"value": "Away", "odd": "4.52", "suspended": True},
-        ]}],
+        ]},
+        # mercados en vivo que ninguna pantalla lee: no se guardan (odds_live
+        # llegó a 62 M filas guardándolos)
+        {"id": 33, "name": "Corners Over/Under", "values": [{"value": "Over", "handicap": "9.5", "odd": "1.80"}]},
+        {"id": 36, "name": "Over/Under Line", "values": [{"value": "Over", "handicap": "1.5", "odd": "1.20"}]}],
     }
 
 
@@ -214,6 +219,31 @@ def main():
     check("marca las suspendidas", susp == 3, susp)
     minuto = con.execute("SELECT minuto FROM odds_live WHERE fixture_id=? LIMIT 1", (MELGAR_CRISTAL,)).fetchone()[0]
     check("guarda el minuto de la captura", minuto == 43, minuto)
+    fuera = con.execute("SELECT COUNT(*) FROM odds_live WHERE bet_name NOT LIKE 'Fulltime%'").fetchone()[0]
+    check("los mercados que ninguna pantalla lee (córners, línea 1.5) no entran a odds_live", fuera == 0, fuera)
+
+    # ── retención: una vez al día y por fixture, no un recorrido por minuto ──
+    import tempfile as _tf
+    from backend.ingesta.en_vivo import purgar_odds_live
+    con.execute("CREATE TABLE IF NOT EXISTS fixtures (id INTEGER PRIMARY KEY, date TEXT, status_short TEXT, league_id INTEGER)")
+    con.execute("INSERT INTO fixtures (id, date, status_short, league_id) VALUES (555001, '2026-05-01 20:00:00', 'FT', 281)")
+    con.executemany("INSERT INTO odds_live (fixture_id, minuto, bet_id, bet_name, value, odd, suspendida, captured_at) "
+                    "VALUES (555001, 80, 59, 'Fulltime Result', 'Home', 1.5, 0, '2026-05-01 21:00:00.000')", [()] * 5)
+    con.commit()
+    cwd0 = os.getcwd()
+    with _tf.TemporaryDirectory() as d_ret:
+        os.chdir(d_ret)
+        try:
+            b1 = purgar_odds_live(con, dias=30, hoy="2026-07-26")
+            b2 = purgar_odds_live(con, dias=30, hoy="2026-07-26")
+            b3 = purgar_odds_live(con, dias=30, hoy="2026-07-27")
+        finally:
+            os.chdir(cwd0)
+    check("la retención borra las cuotas en vivo de un partido de hace más de 30 días (por fixture)",
+          b1 == 5 and con.execute("SELECT COUNT(*) FROM odds_live WHERE fixture_id=555001").fetchone()[0] == 0, b1)
+    check("las de los partidos de hoy siguen ahí",
+          con.execute("SELECT COUNT(*) FROM odds_live WHERE fixture_id=?", (MELGAR_CRISTAL,)).fetchone()[0] == 3)
+    check("el mismo día no vuelve a recorrer la tabla; al día siguiente sí", b2 == 0 and b3 == 0)
 
     # la liga sin cobertura real de la API no rompe a las demás
     con = db()
