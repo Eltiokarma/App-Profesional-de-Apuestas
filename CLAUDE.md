@@ -48,7 +48,7 @@ python -m backend.ingesta.diag_vivo --hoy       # por qué un partido no tiene c
 python -m backend.ingesta.ficha_partido        # alineaciones+eventos+stats de los partidos anteriores (3 req c/u)
 python -m backend.ingesta.ficha_partido --estado  # qué ficha hay capturada y si trae grid/xG (0 requests)
 python -m backend.analisis.despensa_bulk --listar  # despensa del repo: qué hay y qué edad tiene
-python -m backend.ingesta.adelgazar [--aplicar]  # sad.db: borra mercados que nadie lee + retención + VACUUM (sin --aplicar solo mide)
+python -m backend.ingesta.adelgazar [--aplicar]  # sad.db ($SAD_DATA_DIR o --db): borra mercados que nadie lee + retención + VACUUM (sin --aplicar solo mide); en Railway desde /app, no desde /data
 python -m backend.ingesta.pipeline --out .      # regenera levels/constants/discreto desde sad.db
 python -m backend.ingesta.test_paridad          # test dorado vs DBs del pipeline viejo
 ```
