@@ -19,17 +19,45 @@ en subproceso. El backend HTTP sigue siendo de solo lectura.
 
 ## 1. Backend en Railway
 
-> **Costo: es la memoria, no la CPU.** Railway cobra por GB de RAM por hora, y
-> un proceso Python que llegó a un pico de memoria no lo devuelve al sistema:
-> tras correr el backtest del reventón (171k burbujas) DENTRO del proceso web,
-> el backend quedó plano en 7 GB con la CPU casi en cero, y la factura de
-> septiembre de 2026 fue 61 dólares (22,63 de 24,69 del período siguiente eran
-> RAM). Por eso todo lo pesado —ingesta, pipeline, backfill y desde entonces
-> también el backtest— corre en **subprocesos**, que mueren al terminar y se
-> llevan su memoria. Dos candados más, en Railway: `Settings → Resource
-> Limits` con un techo de memoria (2 GB sobra) para que la factura tenga un
-> máximo conocido, y la gráfica `Metrics → Memory`: si está plana en varios
-> GB con la CPU en cero, algo retuvo memoria y un redeploy la libera.
+> **Costo: es la memoria, y la memoria es el TAMAÑO de `sad.db`.** Railway
+> cobra por GB de RAM por hora y cuenta como memoria del contenedor la **caché
+> de archivos** del sistema: cada página de la base que algo lee queda en RAM
+> y se factura. El 18/09/2026 `sad.db` pesaba **30 GB** (odds_history 190 M
+> filas, odds_live 62 M, odds 27 M; el resto, menos de 1 GB), los programas
+> usaban 41 MB y la caché 19 GB: la factura de septiembre fueron 61 dólares
+> con la CPU en cero. Tres causas, las tres corregidas ese día:
+>
+> 1. Se guardaban **decenas de mercados por partido** (córners, tarjetas,
+>    medios tiempos, todas las líneas de goles…) y las pantallas leen cinco.
+>    Ahora la ingesta solo guarda lo que `backend/cuota_mercados.py` mapea.
+> 2. El ciclo en vivo borraba la retención **cada minuto** con un `DELETE`
+>    por fecha sin índice: 1.440 recorridos diarios de la tabla más grande,
+>    que mantenían la base entera caliente en caché. Ahora es una vez al día
+>    y por fixture (índice). La limpieza de duplicados de `odds` (otro
+>    recorrido completo) corría en cada refresco de 30 min; ahora solo en la
+>    corrida diaria, junto con la retención de `odds_history`
+>    (`SAD_ODDS_HISTORY_DIAS`, 90 por defecto).
+> 3. Nada de eso achica un archivo SQLite ya crecido: hace falta
+>    `python -m backend.ingesta.adelgazar --aplicar` UNA vez (ver más abajo).
+>
+> Candados en Railway: `Settings → Resource Limits` con techo de memoria
+> (2 GB sobra: los programas usan menos de 100 MB y el pipeline pica a
+> ~1,6 GB) para que la factura tenga máximo conocido —la caché es recuperable
+> y el sistema la recorta sola al llegar al tope—; y `Metrics → Memory`:
+> plana en varios GB con la CPU en cero = algo está releyendo una base
+> grande. Lo pesado (ingesta, pipeline, backfill, backtest) corre en
+> subprocesos para que su memoria vuelva al terminar.
+>
+> **Adelgazar una base ya crecida** (en `Console` del servicio):
+>
+> ```
+> cd /data && python -m backend.ingesta.adelgazar            # mide: cuánto se iría
+> cd /data && python -m backend.ingesta.adelgazar --aplicar  # borra por lotes + retención + VACUUM
+> ```
+>
+> Borra en lotes con commit (el ciclo en vivo se cuela entre lotes); el
+> `VACUUM` final bloquea escrituras unos minutos y necesita disco libre por el
+> tamaño final. Después, un redeploy suelta la caché vieja.
 
 1. **Nuevo proyecto → Deploy from GitHub repo.** Railway detecta el
    `Dockerfile` de la raíz (solo empaqueta `backend/`; las DBs quedan fuera
@@ -62,6 +90,7 @@ en subproceso. El backend HTTP sigue siendo de solo lectura.
    | `SAD_DESPENSA_CADENCIA_DIAS` | `15` | (opcional) cada cuántos días se corre el barrido de la despensa. El TTL de `dt`/`plantel` se DERIVA de aquí (+2 de margen) y hay un ciclo extra de gracia, así que la vieja "ventana cara" no existe aunque un barrido se atrase (`docs/DESPENSA_DESKTOP.md`) |
    | `SAD_DESPENSA_TTL_DIAS` | — | (opcional) fija el TTL a mano y anula el derivado. No hace falta tocarlo |
    | `SAD_DESPENSA_BULK` | `1` | (opcional) carga al arrancar la despensa versionada en el repo (`backend/analisis/despensa/*.json`). Es local, idempotente y no gasta tokens; `0` la apaga. Ese es el default |
+   | `SAD_ODDS_HISTORY_DIAS` | `90` | (opcional) retención del historial de movimiento de cuotas (`odds_history` y la foto `odds`) por fecha del partido, aplicada en la corrida diaria por fixture (índice). `0` la apaga. Es la tabla que llevó `sad.db` a 30 GB |
    | `SAD_LIGAS_EXTRA` | `414:Copa Chile,999:Copa de la Liga Perú` | torneos extra sin tocar código; IDs con `--buscar` |
    | `SAD_CASAS_REFERENCIA` | `bet365,pinnacle,1xbet,betano` | casas cuyo historial crudo se guarda aparte (selector Media/casa en la gráfica); ese es el default — solo definirla para cambiar la lista |
    | `SAD_JUGADORES_TTL_LENTO` | `720` | (opcional) TTL en horas de los dos datos LENTOS de jugadores: **traspasos y DT**. Los cuatro endpoints iban con el TTL de la plantilla (7 días) y eso era la mitad del gasto tirada: las bajas y las stats cambian cada semana, pero los traspasos solo se mueven en ventana de mercado y un DT dura meses. No se pierde el cambio de DT — cada alineación capturada trae el nombre del entrenador y, si no coincide con el guardado, se refresca el mismo día. En ventana de mercado, bájalo a `24` |

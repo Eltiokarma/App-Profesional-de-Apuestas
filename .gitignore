@@ -44,3 +44,4 @@ __pycache__/
 .sanar90.json
 .sanar_fechas.json
 .sanar_equipos.json
+.retencion_live.json

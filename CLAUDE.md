@@ -48,6 +48,7 @@ python -m backend.ingesta.diag_vivo --hoy       # por qué un partido no tiene c
 python -m backend.ingesta.ficha_partido        # alineaciones+eventos+stats de los partidos anteriores (3 req c/u)
 python -m backend.ingesta.ficha_partido --estado  # qué ficha hay capturada y si trae grid/xG (0 requests)
 python -m backend.analisis.despensa_bulk --listar  # despensa del repo: qué hay y qué edad tiene
+python -m backend.ingesta.adelgazar [--aplicar]  # sad.db: borra mercados que nadie lee + retención + VACUUM (sin --aplicar solo mide)
 python -m backend.ingesta.pipeline --out .      # regenera levels/constants/discreto desde sad.db
 python -m backend.ingesta.test_paridad          # test dorado vs DBs del pipeline viejo
 ```
@@ -175,12 +176,18 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   fallo** (cero partes en la ventana = rojo) y la cobertura se mide **contra lo
   que la agenda habría elegido**, no contra lo depositado. La banda no se pinta
   cuando todo está verde: un aviso permanente se deja de leer.
-- **Nada pesado dentro del proceso web.** Railway cobra la RAM por hora y
-  Python no devuelve la memoria de un pico: el backtest del reventón corrido
-  dentro de la API dejó el backend en 7 GB planos (61 dólares en 09/2026).
-  Ingesta, pipeline, backfill y backtest corren en SUBPROCESOS; un subproceso
-  o CLI que importe `backend.app` lleva `SAD_SIN_HILOS=1` para no arrancar
-  hilos de fondo. Un cálculo nuevo sobre toda la base va por el mismo camino.
+- **El tamaño de `sad.db` es la factura de Railway.** Cobra la RAM por hora
+  y cuenta la caché de archivos: cada página de la base que algo lee queda en
+  memoria facturada. En 09/2026 la base llegó a 30 GB y costó 61 dólares con
+  la CPU en cero (`docs/DESPLIEGUE.md`). Reglas: la ingesta guarda SOLO los
+  mercados que `backend/cuota_mercados.py` mapea (leer y escribir con la
+  misma tabla); un `DELETE` de retención va por fixture con índice y una vez
+  al día, nunca por fecha sin índice en un ciclo de un minuto; una tabla que
+  crece necesita retención (`SAD_ODDS_HISTORY_DIAS`, `RETENCION_DIAS`) y
+  `backend/ingesta/adelgazar.py` compacta lo acumulado. Lo pesado —ingesta,
+  pipeline, backfill, backtest— corre en SUBPROCESOS para que su memoria
+  vuelva al terminar; un subproceso o CLI que importe `backend.app` lleva
+  `SAD_SIN_HILOS=1` para no arrancar hilos de fondo.
 - **Dos tokens** (`backend/app.py`): `SAD_API_TOKEN` es la llave maestra —abre
   también lo que gasta créditos de Claude y cuota de API-Football— y
   `SAD_TOKEN_COWORK` es el acotado que se le da a Cowork: solo

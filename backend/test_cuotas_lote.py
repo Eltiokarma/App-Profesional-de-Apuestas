@@ -43,7 +43,15 @@ def item_odds(fid: int) -> dict:
                 {"value": "Home", "odd": "1.80"},
                 {"value": "Draw", "odd": "3.40"},
                 {"value": "Away", "odd": "4.20"},
-            ]}]}],
+            ]},
+            # lo que el feed trae de más y NINGUNA pantalla lee: no se guarda
+            # (sad.db llegó a 30 GB guardándolo, docs/DESPLIEGUE.md)
+            {"id": 45, "name": "Corners Over/Under", "values": [{"value": "Over 9.5", "odd": "1.85"}]},
+            {"id": 5, "name": "Goals Over/Under", "values": [
+                {"value": "Over 1.5", "odd": "1.30"}, {"value": "Over 2.5", "odd": "1.90"}, {"value": "Under 2.5", "odd": "1.95"},
+            ]},
+            {"id": 8, "name": "Goals Over/Under First Half", "values": [{"value": "Over 0.5", "odd": "1.40"}]},
+        ]}],
     }
 
 
@@ -104,6 +112,12 @@ def main():
     check("y las cuotas de los 4 quedan guardadas",
           cubiertos == 4 and con.execute("SELECT COUNT(DISTINCT fixture_id) FROM odds").fetchone()[0] == 4,
           (total, cubiertos))
+    mercados = sorted({(b, v) for b, v in con.execute("SELECT bet_name, value FROM odds")})
+    check("solo se guardan los mercados del contrato: 1X2 y más/menos 2.5, ni córners ni 1.5 ni 1er tiempo",
+          mercados == [("Goals Over/Under", "Over 2.5"), ("Goals Over/Under", "Under 2.5"),
+                       ("Match Winner", "Away"), ("Match Winner", "Draw"), ("Match Winner", "Home")], mercados)
+    hist = sorted({(b, v) for b, v in con.execute("SELECT bet_name, value FROM odds_history")})
+    check("el historial de movimiento tampoco guarda lo que nadie lee", hist == mercados, hist)
 
     # EL CASO MUNDIAL: 60 pendientes el mismo día → el lote amortiza (7 páginas
     # de 100 items contra 60 requests por fixture)

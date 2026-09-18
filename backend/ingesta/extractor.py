@@ -38,6 +38,8 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
+from backend.cuota_mercados import es_del_contrato
+
 # API-Football directo (clave de dashboard.api-football.com): mismo API v3
 # que servía RapidAPI, cambian solo el host y la cabecera de autenticación.
 BASE_URL = "https://v3.football.api-sports.io"
@@ -771,6 +773,13 @@ def guardar_odds(con: sqlite3.Connection, fixture_id: int, respuesta: list) -> i
                 bet_nombre = bet.get("name") or ""
                 for valor in bet.get("values", []):
                     v = _VALOR_CANON.get(str(valor.get("value")), valor.get("value"))
+                    # SOLO LOS MERCADOS QUE ALGUNA PANTALLA LEE. El feed trae
+                    # decenas (córners, tarjetas, medios tiempos, marcador
+                    # exacto, todas las líneas de goles…) y guardarlos todos
+                    # dejó sad.db en 30 GB —190 M filas en odds_history— que
+                    # Railway cobra como memoria cada vez que algo la lee.
+                    if not es_del_contrato(bet_nombre, v):
+                        continue
                     try:
                         odd = float(valor.get("odd"))
                     except (TypeError, ValueError):
@@ -886,6 +895,34 @@ def capturar_cuotas_lote(cliente: "Cliente", con: sqlite3.Connection,
         print(f"  [{cliente.usadas}/{cliente.limite}] {fecha}: cuotas de "
               f"{len(por_fixture)}/{len(objetivo)} partidos nuestros · {via}")
     return total, len(cubiertos)
+
+
+# Retención del historial de movimiento: la curva apertura → cierre de un
+# partido jugado hace meses no la mira nadie, y odds_history era la tabla más
+# grande de la base (190 millones de filas al 18/09/2026). Se borra POR
+# FIXTURE, con el índice (fixture_id, captured_at) que ya existe: un DELETE por
+# fecha recorrería la tabla entera. SAD_ODDS_HISTORY_DIAS=0 la apaga.
+ODDS_HISTORY_DIAS = int(os.environ.get("SAD_ODDS_HISTORY_DIAS", "90") or "0")
+
+
+def purgar_historial_viejo(con: sqlite3.Connection, dias: int = ODDS_HISTORY_DIAS) -> int:
+    """Borra de odds_history (y de la foto `odds`) los partidos jugados hace
+    más de `dias`. Por fixture: usa el índice, no recorre la tabla."""
+    if dias <= 0:
+        return 0
+    corte = (datetime.now(timezone.utc) - timedelta(days=dias)).strftime("%Y-%m-%d %H:%M:%S")
+    total = 0
+    for tabla in ("odds_history", "odds"):
+        try:
+            cur = con.execute(
+                f"DELETE FROM {tabla} WHERE fixture_id IN "
+                "(SELECT id FROM fixtures WHERE date < ? AND status_short IN ('FT','AET','PEN','AWD','WO','CANC','ABD'))",
+                (corte,))
+            total += cur.rowcount
+        except sqlite3.OperationalError:
+            pass  # DB vieja sin la tabla
+    con.commit()
+    return total
 
 
 def fixtures_para_cuotas(con: sqlite3.Connection, dias: int = DIAS_ADELANTE,
@@ -1422,9 +1459,6 @@ def main() -> int:
     con.execute("PRAGMA busy_timeout=30000")  # convive con el ciclo en vivo y las lecturas
     con.execute("PRAGMA journal_mode=WAL")   # en WAL solo hay UN escritor: sin esperar, el ciclo muere
     preparar_historial(con)  # idempotente: crea/migra odds_history en DBs viejas
-    borradas = limpiar_odds_duplicadas(con)  # autocuración del volumen contaminado
-    if borradas:
-        print(f"odds duplicadas purgadas: {borradas} filas (upsert viejo por ids nulos / variantes de valor)")
 
     if args.ventana_horas:
         pendientes = fixtures_proximos(con, args.ventana_horas)
@@ -1449,6 +1483,16 @@ def main() -> int:
         return 0
 
     if args.solo != "cuotas":
+        # LA LIMPIEZA DE DUPLICADOS Y LA RETENCIÓN VAN ACÁ, en la corrida, y no
+        # antes del refresco: ese DELETE ... GROUP BY recorre `odds` entera
+        # (27 M filas) y corría cada 30 minutos, manteniendo la base caliente
+        # en la caché de memoria que Railway factura por hora.
+        borradas = limpiar_odds_duplicadas(con)  # autocuración del volumen contaminado
+        if borradas:
+            print(f"odds duplicadas purgadas: {borradas} filas (upsert viejo por ids nulos / variantes de valor)")
+        viejas = purgar_historial_viejo(con)
+        if viejas:
+            print(f"historial de cuotas purgado: {viejas} filas de partidos jugados hace más de {ODDS_HISTORY_DIAS} días")
         print(f"Fixtures {desde} → {hasta} · por fecha (todas las temporadas) · filtro a {len(LIGAS)} ligas")
         total = ventana_por_fecha(cliente, con, desde, hasta)
         print(f"fixtures guardados: {total}")
