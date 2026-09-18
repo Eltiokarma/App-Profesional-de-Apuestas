@@ -244,7 +244,7 @@ def _adelgazar_arranque() -> None:
         return
     raiz = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     env = {**os.environ, "PYTHONPATH": raiz, "PYTHONUTF8": "1", "PYTHONUNBUFFERED": "1", "SAD_SIN_HILOS": "1"}
-    print(f"[adelgazar] arranca {datetime.now(timezone.utc).isoformat()} sobre {db.path('sad')}", flush=True)
+    print(f"[adelgazar] arranca {datetime.now(timezone.utc).isoformat()} sobre {db.db_path('sad')}", flush=True)
     proc = subprocess.run(
         [sys.executable, "-u", "-m", "backend.ingesta.adelgazar", "--db", db.db_path("sad"), "--aplicar"],
         cwd=raiz, env=env,
