@@ -48,18 +48,24 @@ en subproceso. El backend HTTP sigue siendo de solo lectura.
 > grande. Lo pesado (ingesta, pipeline, backfill, backtest) corre en
 > subprocesos para que su memoria vuelva al terminar.
 >
-> **Adelgazar una base ya crecida** (en `Console` del servicio, DESDE `/app`,
-> que es donde vive el paquete `backend`; desde `/data` Python no lo
-> encuentra). La base la toma de `SAD_DATA_DIR`; si no está, `--db /data/sad.db`:
+> **Adelgazar una base ya crecida**: poner `SAD_ADELGAZAR=1` en `Variables`
+> (Railway redespliega solo), mirar `Deploy Logs` (líneas `[adelgazar]` y el
+> avance por tabla) y, cuando salga `terminó con código 0`, QUITAR la
+> variable. NO se corre desde la `Console` web: la sesión se cierra sola a los
+> minutos y se lleva el proceso (pasó el 18/09/2026 durante el primer conteo
+> de una base de 30 GB). Al terminar queda `.adelgazar_hecho.json` en el
+> volumen con lo borrado y no se repite aunque la variable siga puesta; para
+> repetirlo, borrar ese marcador. Borra en lotes con commit (el ciclo en vivo
+> se cuela entre lotes); el `VACUUM` final bloquea escrituras unos minutos,
+> escribe su copia temporal junto a la base (hace falta disco libre en el
+> volumen por el tamaño final) y al terminar el archivo ya está chico. Después,
+> un redeploy suelta la caché vieja. Solo medir (rápido en una base chica,
+> un recorrido entero en una grande), desde `/app`, que es donde vive el
+> paquete `backend`:
 >
 > ```
-> cd /app && python -m backend.ingesta.adelgazar --db /data/sad.db            # mide: cuánto se iría
-> cd /app && python -m backend.ingesta.adelgazar --db /data/sad.db --aplicar  # borra por lotes + retención + VACUUM
+> cd /app && python -m backend.ingesta.adelgazar --db /data/sad.db   # mide: cuánto se iría
 > ```
->
-> Borra en lotes con commit (el ciclo en vivo se cuela entre lotes); el
-> `VACUUM` final bloquea escrituras unos minutos y necesita disco libre por el
-> tamaño final. Después, un redeploy suelta la caché vieja.
 
 1. **Nuevo proyecto → Deploy from GitHub repo.** Railway detecta el
    `Dockerfile` de la raíz (solo empaqueta `backend/`; las DBs quedan fuera
@@ -101,6 +107,7 @@ en subproceso. El backend HTTP sigue siendo de solo lectura.
    | `SAD_JUGADORES_TTL_SIN_DATOS` | `720` | (opcional) horas de sellado de los equipos que la API no cubre (plantilla vacía) antes de repreguntar. Ese es el default (30 días); el TTL normal de 7 días solo aplica a equipos CON datos. Sin este sellado largo, ~78% del gasto de jugadores eran equipos sin cobertura repreguntados cada semana |
    | `SAD_BACKFILL_RESERVA` | `1500` | (opcional) requests del día que la ingesta EN BLOQUE (backfill histórico, jugadores, ficha de partido) deja SIN gastar, para que las cuotas live y los XI de la noche nunca se queden sin presupuesto. Ese es el default (acotado a la mitad del tope en planes chicos); lo que no entra hoy se reanuda solo en la próxima corrida |
    | `SAD_BACKFILL_DESDE` | `2020` | backfill: fixtures de TODAS las ligas de la lista desde esa temporada **hasta la vigente incluida** (la vigente se re-barre cada 30 días; lo demás una sola vez). Corre al arrancar y tras cada corrida diaria, con progreso reanudable en el volumen (`.backfill_hist.json`); al día = 0 requests, puede quedarse puesta |
+   | `SAD_ADELGAZAR` | *(vacía)* | (opcional, **one-shot**) `1` corre al arrancar `backend.ingesta.adelgazar --aplicar` en un subproceso (salida en Deploy Logs): borra de `sad.db` los mercados que ninguna pantalla lee, aplica la retención y compacta con `VACUUM`. Deja `.adelgazar_hecho.json` en el volumen y no se repite; quitarla al ver `terminó con código 0`. Ver «Adelgazar una base ya crecida» |
    | `SAD_INGESTA_AL_ARRANCAR` | `1` | (opcional, one-shot) dispara una corrida diaria completa (ventana por fecha + cuotas + `sanar_fechas` + purga de ligas no seguidas) a los ~40 s del arranque, **sin esperar a `SAD_INGESTA_HORA`**. Para aplicar un parche de ingesta lo antes posible tras un deploy; quitarla después |
    | `SAD_LIGAS_RUIDO` | `667` | (opcional) ligas de "ruido": amistosos cuyos NS la API casi nunca resuelve. No se re-barren ni se persiguen por fecha (se bajan solo en la primera pasada del backfill). Ese es el default; `667` = Amistosos de Clubes. NO afecta a temporadas pasadas de ligas reales, que se curan igual |
    | `SAD_LIGAS_MENORES` | *(2ª divisiones y copas nacionales de Sudamérica)* | (opcional) ligas "menores": se ingestan IGUAL que las demás — fixtures, histórico y cuotas **prepartido**, para tener TODOS los partidos de un equipo (constantes/burbujas) — pero quedan FUERA del ciclo **en vivo** (odds live solo en las importantes). El default trae las 2ª divisiones (Argentina Primera Nacional, Perú Liga 2, Colombia Primera B, Chile Primera B, Ecuador Serie B, Uruguay Segunda), las copas nacionales (Copa Argentina, Copa do Brasil, Copa Colombia, Copa Chile, Copa Bicentenario, Copa Uruguay, Copa Ecuador) y los Amistosos de Clubes (667, la liga que más NS zombis produce: comían turnos del ciclo en vivo sin partido real que cubrir); define la variable para ampliar/cambiar la lista, o vacíala para tratarlas a todas como importantes |
