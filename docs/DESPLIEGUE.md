@@ -48,11 +48,13 @@ en subproceso. El backend HTTP sigue siendo de solo lectura.
 > grande. Lo pesado (ingesta, pipeline, backfill, backtest) corre en
 > subprocesos para que su memoria vuelva al terminar.
 >
-> **Adelgazar una base ya crecida** (en `Console` del servicio):
+> **Adelgazar una base ya crecida** (en `Console` del servicio, DESDE `/app`,
+> que es donde vive el paquete `backend`; desde `/data` Python no lo
+> encuentra). La base la toma de `SAD_DATA_DIR`; si no está, `--db /data/sad.db`:
 >
 > ```
-> cd /data && python -m backend.ingesta.adelgazar            # mide: cuánto se iría
-> cd /data && python -m backend.ingesta.adelgazar --aplicar  # borra por lotes + retención + VACUUM
+> cd /app && python -m backend.ingesta.adelgazar --db /data/sad.db            # mide: cuánto se iría
+> cd /app && python -m backend.ingesta.adelgazar --db /data/sad.db --aplicar  # borra por lotes + retención + VACUUM
 > ```
 >
 > Borra en lotes con commit (el ciclo en vivo se cuela entre lotes); el

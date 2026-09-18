@@ -11,6 +11,9 @@ por hora. La ingesta ya no guarda esos mercados; esto limpia lo acumulado.
     python -m backend.ingesta.adelgazar --aplicar       # borra + retención + VACUUM
     python -m backend.ingesta.adelgazar --aplicar --sin-vacuum
 
+Se corre desde la raíz del repo (donde está el paquete `backend`); en Railway
+eso es /app, y la base la toma de $SAD_DATA_DIR (o se pasa con --db).
+
 Corre con cwd en el directorio de las DBs (en Railway: `cd /data` primero, o
 --db /data/sad.db). Borra por lotes de rowid con commit por lote, así el ciclo
 en vivo (busy_timeout 30 s) se cuela entre lotes. El VACUUM final necesita
@@ -66,7 +69,8 @@ def _borrar_por_lotes(con: sqlite3.Connection, tabla: str, cond: str, params: li
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Adelgazar sad.db: mercados fuera del contrato, retención y VACUUM")
-    ap.add_argument("--db", default="sad.db")
+    ap.add_argument("--db", default=os.path.join(os.environ.get("SAD_DATA_DIR", "."), "sad.db"),
+                    help="ruta de sad.db (por defecto $SAD_DATA_DIR/sad.db, o ./sad.db)")
     ap.add_argument("--aplicar", action="store_true", help="sin esto solo mide")
     ap.add_argument("--sin-vacuum", action="store_true")
     ap.add_argument("--historial-dias", type=int, default=int(os.environ.get("SAD_ODDS_HISTORY_DIAS", "90") or "0"),
