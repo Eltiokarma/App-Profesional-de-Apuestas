@@ -14,13 +14,21 @@ por hora. La ingesta ya no guarda esos mercados; esto limpia lo acumulado.
 Se corre desde la raíz del repo (donde está el paquete `backend`); en Railway
 eso es /app, y la base la toma de $SAD_DATA_DIR (o se pasa con --db).
 
-Corre con cwd en el directorio de las DBs (en Railway: `cd /data` primero, o
---db /data/sad.db). Borra por lotes de rowid con commit por lote, así el ciclo
-en vivo (busy_timeout 30 s) se cuela entre lotes. El VACUUM final necesita
+En Railway NO se corre desde la consola web: la sesión se cierra sola a los
+minutos y se lleva el proceso (pasó el 18/09 durante el primer conteo). Se pone
+`SAD_ADELGAZAR=1` en las variables, el backend lo lanza en un subproceso al
+arrancar (`backend/app.py`), la salida va a los Deploy Logs y al terminar deja
+`.adelgazar_hecho.json` junto a la base para no repetirse; después se quita la
+variable. Con --aplicar NO hay pasada de conteo previa (sobre 190 M filas era
+un recorrido entero de la base solo para informar): borra directo por lotes
+de rowid, con commit por lote, así el ciclo en vivo se cuela entre lotes. El
+VACUUM final escribe su copia temporal JUNTO a la base (SQLITE_TMPDIR), no en
+el disco efímero del contenedor, que es más chico. El VACUUM necesita
 disco libre por el tamaño final de la base y bloquea escrituras mientras dura
 (minutos): los ciclos en vivo de ese rato fallan y el siguiente sigue solo.
 """
 import argparse
+import json
 import os
 import sqlite3
 import sys
@@ -31,6 +39,12 @@ from backend.cuota_mercados import es_del_contrato
 
 TABLAS = ("odds_history", "odds_live", "odds")
 LOTE = 500_000  # rowids por transacción
+MARCA = ".adelgazar_hecho.json"  # junto a la base: cuándo se aplicó y qué borró
+
+
+def _fuera_del_contrato(bet_name, value) -> int:
+    """Función SQL registrada: 1 si la fila no la lee ninguna pantalla."""
+    return 0 if es_del_contrato(bet_name, value) else 1
 
 
 def _pares_a_conservar(con: sqlite3.Connection, tabla: str) -> tuple[list, int]:
@@ -39,13 +53,6 @@ def _pares_a_conservar(con: sqlite3.Connection, tabla: str) -> tuple[list, int]:
     conservar = [(b, v) for b, v, _ in pares if es_del_contrato(b, v)]
     fuera = sum(n for b, v, n in pares if not es_del_contrato(b, v))
     return conservar, fuera
-
-
-def _cond_fuera(conservar: list) -> tuple[str, list]:
-    if not conservar:
-        return "1", []
-    partes = " OR ".join("(bet_name IS ? AND value IS ?)" for _ in conservar)
-    return f"NOT ({partes})", [x for par in conservar for x in par]
 
 
 def _borrar_por_lotes(con: sqlite3.Connection, tabla: str, cond: str, params: list) -> int:
@@ -81,25 +88,36 @@ def main() -> int:
         print(f"No existe {a.db}", file=sys.stderr)
         return 1
     tam0 = os.path.getsize(a.db) / 2**30
+    carpeta = os.path.dirname(os.path.abspath(a.db))
+    # el temporal del VACUUM (del tamaño de la base final) va junto a la base,
+    # no al /tmp del contenedor
+    os.environ.setdefault("SQLITE_TMPDIR", carpeta)
     con = sqlite3.connect(a.db)
     con.execute("PRAGMA busy_timeout=60000")
     con.execute("PRAGMA journal_mode=WAL")
-    print(f"{a.db}: {tam0:.2f} GB · {'APLICANDO' if a.aplicar else 'solo medición (pasá --aplicar para borrar)'}")
+    con.create_function("sad_fuera", 2, _fuera_del_contrato, deterministic=True)
+    print(f"{a.db}: {tam0:.2f} GB · {'APLICANDO' if a.aplicar else 'solo medición (pasá --aplicar para borrar)'}",
+          flush=True)
 
     ahora = datetime.now(timezone.utc)
+    borradas: dict[str, int] = {}
     for tabla in TABLAS:
         try:
-            n = con.execute(f"SELECT COUNT(*) FROM {tabla}").fetchone()[0]
+            n = con.execute(f"SELECT MAX(rowid) FROM {tabla}").fetchone()[0] or 0
         except sqlite3.OperationalError:
             continue
-        conservar, fuera = _pares_a_conservar(con, tabla)
-        print(f"{tabla}: {n:,} filas · fuera del contrato: {fuera:,} ({100 * fuera / n if n else 0:.0f} %) · "
-              f"mercados que quedan: {len(conservar)}")
-        if a.aplicar and fuera:
-            cond, params = _cond_fuera(conservar)
-            print(f"  borrando en lotes de {LOTE:,} rowids…", flush=True)
-            b = _borrar_por_lotes(con, tabla, cond, params)
-            print(f"  {tabla}: {b:,} filas borradas")
+        if a.aplicar:
+            # sin conteo previo: sobre 190 M filas era un recorrido entero de la
+            # base solo para informar, y el borrado ya recorre lo mismo
+            print(f"{tabla}: hasta rowid {n:,} · borrando lo fuera del contrato en lotes de {LOTE:,}…", flush=True)
+            b = _borrar_por_lotes(con, tabla, "sad_fuera(bet_name, value)", [])
+            borradas[tabla] = b
+            print(f"  {tabla}: {b:,} filas borradas", flush=True)
+        else:
+            n = con.execute(f"SELECT COUNT(*) FROM {tabla}").fetchone()[0]
+            conservar, fuera = _pares_a_conservar(con, tabla)
+            print(f"{tabla}: {n:,} filas · fuera del contrato: {fuera:,} ({100 * fuera / n if n else 0:.0f} %) · "
+                  f"mercados que quedan: {len(conservar)}", flush=True)
         dias = a.live_dias if tabla == "odds_live" else a.historial_dias
         if dias > 0:
             corte = (ahora - timedelta(days=dias)).strftime("%Y-%m-%d %H:%M:%S")
@@ -111,7 +129,8 @@ def main() -> int:
                 cur = con.execute(f"DELETE FROM {tabla} WHERE fixture_id IN {sub}", (corte,))
                 con.commit()
                 con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-                print(f"  {tabla}: {cur.rowcount:,} filas borradas por retención")
+                borradas[tabla] = borradas.get(tabla, 0) + cur.rowcount
+                print(f"  {tabla}: {cur.rowcount:,} filas borradas por retención", flush=True)
 
     if a.aplicar and not a.sin_vacuum:
         print("VACUUM… (bloquea escrituras mientras dura; los ciclos en vivo de este rato fallan y el siguiente sigue)", flush=True)
@@ -121,7 +140,11 @@ def main() -> int:
     con.close()
     tam1 = os.path.getsize(a.db) / 2**30
     print(f"{a.db}: {tam0:.2f} GB → {tam1:.2f} GB"
-          + ("" if a.aplicar else " (sin cambios: medición)"))
+          + ("" if a.aplicar else " (sin cambios: medición)"), flush=True)
+    if a.aplicar:
+        with open(os.path.join(carpeta, MARCA), "w", encoding="utf-8") as f:
+            json.dump({"aplicado_en": ahora.isoformat(), "gb_antes": round(tam0, 2), "gb_despues": round(tam1, 2),
+                       "borradas": borradas, "vacuum": not a.sin_vacuum}, f, ensure_ascii=False, indent=1)
     return 0
 
 

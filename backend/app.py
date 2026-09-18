@@ -223,6 +223,38 @@ def _corrida_al_arranque() -> None:
 if INGESTA_AL_ARRANCAR and not SIN_HILOS:
     threading.Thread(target=_corrida_al_arranque, daemon=True, name="corrida-arranque").start()
 
+# SAD_ADELGAZAR=1 (one-shot): a los ~60 s del arranque corre
+# `backend.ingesta.adelgazar --aplicar` en un subproceso —borra de sad.db los
+# mercados que ninguna pantalla lee, aplica la retención y compacta con VACUUM—
+# con la salida en los Deploy Logs. Desde la consola web de Railway no se puede:
+# la sesión se cierra sola y se lleva el proceso. Al terminar deja
+# `.adelgazar_hecho.json` junto a la base y no vuelve a correr aunque la
+# variable siga puesta; para repetirlo, borrar el marcador. Quitar la variable
+# después. El VACUUM bloquea escrituras unos minutos: los ciclos en vivo de ese
+# rato fallan y el siguiente sigue solo.
+ADELGAZAR = os.environ.get("SAD_ADELGAZAR", "").strip() == "1"
+
+
+def _adelgazar_arranque() -> None:
+    time.sleep(60)
+    from backend.ingesta.adelgazar import MARCA as _MARCA
+    marca = os.path.join(db.BASE_DIR, _MARCA)
+    if os.path.exists(marca):
+        print(f"[adelgazar] ya aplicado ({marca}); quitá SAD_ADELGAZAR o borrá el marcador para repetir", flush=True)
+        return
+    raiz = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    env = {**os.environ, "PYTHONPATH": raiz, "PYTHONUTF8": "1", "PYTHONUNBUFFERED": "1", "SAD_SIN_HILOS": "1"}
+    print(f"[adelgazar] arranca {datetime.now(timezone.utc).isoformat()} sobre {db.path('sad')}", flush=True)
+    proc = subprocess.run(
+        [sys.executable, "-u", "-m", "backend.ingesta.adelgazar", "--db", db.db_path("sad"), "--aplicar"],
+        cwd=raiz, env=env,
+    )
+    print(f"[adelgazar] terminó con código {proc.returncode}", flush=True)
+
+
+if ADELGAZAR and not SIN_HILOS:
+    threading.Thread(target=_adelgazar_arranque, daemon=True, name="adelgazar").start()
+
 # Backfill histórico: SAD_BACKFILL_DESDE=2020 trae los fixtures de TODAS las
 # ligas de la lista desde esa temporada. Corre al arrancar y tras cada corrida
 # diaria; el extractor lleva el progreso en .backfill_hist.json (en el volumen)
