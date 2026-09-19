@@ -673,6 +673,76 @@ def misma_base(la: dict | None, lb: dict | None) -> bool:
     return bool(la.get("pais")) and la.get("pais") == lb.get("pais") and _segunda(la["id"]) == _segunda(lb["id"])
 
 
+DT_FIABLE_DIAS = 14   # un registro más viejo que esto se marca para confirmar en prensa
+
+
+def dt_de_base(team_id: int) -> dict | None:
+    """El DT que tiene la base para un equipo, con su edad en días y si se
+    puede tomar sin confirmar: `fiable` = viene de la alineación del último
+    partido (el que se sentó en el banco) o tiene menos de DT_FIABLE_DIAS."""
+    from backend import jugadores as jug
+    try:
+        filas = jug._entrenador_filas(team_id)
+    except sqlite3.Error:
+        return None
+    if not filas:
+        return None
+    e = jug._entrenador_dto(filas[0])
+    edad = None
+    if e.get("actualizadoEn"):
+        try:
+            act = datetime.strptime(str(e["actualizadoEn"])[:19].replace("T", " "), "%Y-%m-%d %H:%M:%S")
+            edad = max(0, (datetime.now(timezone.utc).replace(tzinfo=None) - act).days)
+        except ValueError:
+            edad = None
+    fiable = e.get("fuente") == "alineacion" or (edad is not None and edad <= DT_FIABLE_DIAS)
+    return {**e, "edadDias": edad, "fiable": fiable,
+            "nota": ("visto en el banco en el último partido" if e.get("fuente") == "alineacion" else
+                     f"carrera de la API, registro de hace {edad} días" if edad is not None else
+                     "carrera de la API, sin fecha de registro")
+                    + ("" if fiable else " · CONFIRMAR EN PRENSA: si la red dice otro, manda la red")}
+
+
+def sin_dt(parte: dict) -> list[str]:
+    """Los lados cuyo bloque A no tiene DT: «sin establecer» o vacío. Un caso
+    así no entra al aprendizaje (cuarentena automática en lecciones.py)."""
+    fuera = []
+    for lado in LADOS:
+        nombre = _txt(((parte.get("equipos") or {}).get(lado) or {}).get("dt", {}).get("nombre")
+                      if isinstance(((parte.get("equipos") or {}).get(lado) or {}).get("dt"), dict) else "")
+        if not nombre or nombre.lower() in _DT_DESCONOCIDO:
+            fuera.append(lado)
+    return fuera
+
+
+def alertas_dt(parte: dict, fx, nombres: dict) -> list[dict]:
+    """DT-DISCREPANCIA cuando el parte (la prensa) y la base no dicen el mismo
+    DT: manda el parte, y la base queda marcada para refrescarse. DT-SIN-DT
+    cuando el bloque A no tiene entrenador: el caso no entra al aprendizaje."""
+    from backend.ingesta.jugadores import _norm_dt
+    out = []
+    if not fx:
+        return out
+    for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])):
+        dt = ((parte.get("equipos") or {}).get(lado) or {}).get("dt") or {}
+        nombre = _txt(dt.get("nombre")) if isinstance(dt, dict) else ""
+        quien = nombres.get(lado, lado)
+        if lado in sin_dt(parte):
+            out.append({"codigo": "DT-SIN-DT", "equipo": lado, "tipo": "dato",
+                        "detalle": f"{quien}: el bloque A no tiene DT («sin establecer»). Sin entrenador "
+                                   "confirmado no hay continuidad que puntuar: este caso queda FUERA del "
+                                   "aprendizaje (cuarentena automática) hasta que se re-deposite con el DT"})
+            continue
+        base = dt_de_base(tid)
+        if base and base.get("nombre") and _norm_dt(nombre) != _norm_dt(base["nombre"]):
+            out.append({"codigo": "DT-DISCREPANCIA", "equipo": lado, "tipo": "dato",
+                        "detalle": f"{quien}: el parte dice «{nombre}» y la base tiene «{base['nombre']}» "
+                                   f"({base['nota']}). Manda el parte —es lo verificado en prensa—; el registro "
+                                   "de la base se refresca en la próxima corrida (DT de la agenda)",
+                        "dtBase": base})
+    return out
+
+
 def alerta_escala(fx, nombres: dict) -> list[dict]:
     """La alerta ESCALA-LIGAS del parte: los dos equipos vienen de bases
     distintas y el nivel NO compara entre ligas. Es de diseño —el nivel es
@@ -948,7 +1018,12 @@ def _claves_raras(bruto: dict, conocidas: set, rechazos: list, donde: str) -> No
         })
 
 
-_CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto"}
+_CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto", "ligas", "dtBase"}
+# LAS ALERTAS CALCULADAS NO SE DEPOSITAN. K-EXTREMO, ESCALA-LIGAS, HUECO-DOBLE,
+# F3 y las de DT las pone la lectura a partir de la base y del propio parte;
+# si el eco del GET vuelve con ellas, se descartan sin rechazo (se van a
+# recalcular igual) en vez de guardarse por duplicado.
+_ALERTAS_CALCULADAS = {"K-EXTREMO", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT"}
 # el protocolo usa `ambos` para una alerta que toca a los dos equipos: estaba
 # en el esquema del EFE viejo y se perdió al escribir este contrato
 _EQUIPOS_ALERTA = ("a", "b", "ambos", "global")
@@ -957,6 +1032,8 @@ _EQUIPOS_ALERTA = ("a", "b", "ambos", "global")
 def _alerta(a, rechazos: list, donde: str) -> dict | None:
     if isinstance(a, str):
         a = {"codigo": a}   # «T.54» a secas: entra, y se delata que va sin texto
+    if isinstance(a, dict) and _txt(a.get("codigo")) in _ALERTAS_CALCULADAS:
+        return None
     if not isinstance(a, dict):
         rechazos.append({"donde": donde, "porque": f"cada alerta es un objeto, llegó {type(a).__name__}",
                          "esperado": '{"codigo": "T.54", "equipo": "b", "tipo": "estructural", "detalle": "…"}'})
@@ -1568,6 +1645,7 @@ def dto(fixture_id: int) -> dict | None:
     # dos equipos de ligas distintas: el nivel no compara entre bases, y el
     # parte lo dice antes de que alguien lea los dos números uno contra otro
     alertas.extend(alerta_escala(fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
+    alertas.extend(alertas_dt(parte, fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # el timeline se funde AL LEER, no al depositar: si la ingesta corrige un
     # marcador, la próxima lectura ya lo trae — sellarlo sería congelar hoy lo
     # que mañana se recalcula gratis
@@ -2659,6 +2737,10 @@ def agenda(fecha: date_t | None = None, limite: int = 8, liga_id: int | None = N
             "hora": (f["date"] or "")[11:16],
             "partido": f"{f['home_name']} vs {f['away_name']}",
             "equipoA": f["home_name"], "equipoB": f["away_name"],
+            # EL DT DE LA BASE VIAJA CON SU EDAD Y SU PROCEDENCIA. Es una
+            # alarma, no la verdad: si la prensa de la semana dice otro, manda
+            # la prensa y este registro se refresca solo en la próxima corrida
+            "dt": {"a": dt_de_base(f["home_team_id"]), "b": dt_de_base(f["away_team_id"])},
             "liga": liga.get("nombre"), "pais": liga.get("pais"),
             "ronda": f["league_round"] or "",
             "prioridad": prio, "motivo": motivo,

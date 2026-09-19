@@ -118,6 +118,28 @@ Todo se calcula EN LECTURA desde sad.db (0 requests). Reglas estadísticas:
 Sin datos de jugadores para un equipo → `jugadores: []` y agregados en null:
 la UI lo dice ("plantilla sin capturar") y NADA se inventa.
 
+## El DT de la agenda: fresco cada día para los que juegan
+
+`python -m backend.ingesta.jugadores --dt-agenda` (corre en la corrida
+diaria, después de la ficha). El DT se pedía a `/coachs` cada 30 días y el
+cambio solo se detectaba si había una alineación capturada, que va con el
+presupuesto de la ficha: el 16/09 estaban mal 17 de 22 y el 18/09 4 de 19,
+y Cowork discutía con la base en vez de analizar. Para los equipos con
+partido en ≤ `SAD_DT_AGENDA_DIAS` (2) —el padrón de la agenda más los de
+interés—: si no tenemos la alineación de su ÚLTIMO partido terminado, se
+trae (1 request; ahí está el DT que se sentó en el banco, y una ficha sellada
+sin alineaciones no se repregunta); y si el registro tiene más de
+`SAD_DT_AGENDA_EDAD_DIAS` (7) o la alineación lo contradice, se vuelve a
+pedir `/coachs` (1 request) y `guardar_entrenador` aplica la regla del banco.
+Dos requests por equipo, unos 30 equipos: menos que un ciclo en vivo.
+
+La agenda (`GET /analisis/cowork/agenda`) lleva ese DT por lado con
+`fuente`, `edadDias`, `fiable` (banco, o registro de ≤ 14 días) y una `nota`;
+el parte avisa con `DT-DISCREPANCIA` cuando lo que escribió Cowork (la
+prensa) no coincide con la base, y con `DT-SIN-DT` cuando el bloque A no
+tiene entrenador. **La red manda, la base es una alarma**; y un parte sin DT
+en un lado no entra al aprendizaje (cuarentena automática, `docs/APRENDIZAJE.md`).
+
 ## El flag «Missing Fixture» como señal con umbral
 
 `/injuries` marca a cada jugador con `type` («Missing Fixture» o
@@ -174,7 +196,8 @@ rumores, contexto. División del trabajo: números de la base, criterio del skil
 | Plantilla + stats | `players?team&season` | ~2-3/equipo, TTL 7d |
 | Bajas | `injuries?team&season` | 1/equipo, TTL 7d (la corrida diaria la refresca) |
 | Traspasos | `transfers?team` | 1/equipo, TTL 7d |
-| DT | `coachs?team` | 1/equipo, TTL 7d |
+| DT | `coachs?team` | 1/equipo, TTL 30 d (lento) |
+| DT de la agenda | `fixtures/lineups` del último partido + `coachs?team` | ≤ 2/equipo, cada corrida, solo los que juegan en ≤ 2 días (`--dt-agenda`) |
 | Indicadores + ficha | — | 0 (lectura de sad.db) |
 | Congestión | — | 0 (fixtures ya capturados) |
 

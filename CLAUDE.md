@@ -43,6 +43,7 @@ python -m backend.ingesta.diagnostico --dia 2026-05-31 --api  # auditar huecos (
 python -m backend.ingesta.extractor --ventana-horas 6  # refresco ligero: solo cuotas de NS próximos
 python -m backend.ingesta.jugadores             # plantillas/bajas/traspasos/DT de equipos con NS próximos (docs/JUGADORES.md)
 python -m backend.ingesta.jugadores --solo-dt   # rehacer SOLO el DT vigente (1 request/equipo, sin TTL); en Railway: SAD_JUGADORES_SOLO_DT=1 una corrida
+python -m backend.ingesta.jugadores --dt-agenda # DT fresco de los que juegan en <= 2 días: alineación del último partido + /coachs si está viejo (corre en la corrida diaria)
 python -m backend.ingesta.en_vivo               # 1 ciclo en vivo: marcador/minuto + odds_live (WAL)
 python -m backend.ingesta.diag_vivo --hoy       # por qué un partido no tiene cuotas en juego (--fixture N, --api)
 python -m backend.ingesta.ficha_partido        # alineaciones+eventos+stats de los partidos anteriores (3 req c/u)
@@ -350,6 +351,14 @@ conversación se pierde en la siguiente.
      Victor») y `PlantillaDTO.entrenador` trae `fuente` y `actualizadoEn`.
      Lo guardado con la regla vieja se rehace en la próxima corrida de
      jugadores de cada equipo (TTL lento) o de una vez con `--solo-dt`.
+     Y desde el 19/09 **el DT de la agenda se refresca cada día**
+     (`jugadores --dt-agenda`, en la corrida diaria: alineación del último
+     partido + `/coachs` si el registro tiene > 7 días o lo contradice; ≤ 2
+     requests por equipo). La agenda lleva `dt.a/b` con `fuente`, `edadDias`
+     y `fiable`; el parte avisa `DT-DISCREPANCIA` (la prensa manda, la base
+     es alarma) y `DT-SIN-DT`; un parte con «sin establecer» en un lado va a
+     cuarentena automática en el aprendizaje. Las alertas calculadas
+     (`_ALERTAS_CALCULADAS`) no se depositan: el eco del GET las descarta.
    - **`timelineEventos` válidos entran** pero Cowork reportó
      `eventosTimeline: 0` cuando mandaba tipos fuera de la lista; ahora se
      rechaza con motivo. Si vuelve a salir 0 con tipos válidos, mirar

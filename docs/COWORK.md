@@ -783,17 +783,26 @@ Escribís vos (es juicio, no se puede calcular):
   máximo: A ≤4, B ≤6, C ≤4, D ≤4, E ≤3. Una línea de justificación por bloque.
   Un valor fuera de rango vuelve en `rechazos` (se guarda topeado, pero se
   delata).
-- EL DT DE NUESTRA BASE PUEDE ESTAR VIEJO. El entrenador que traen la
-  plantilla y la ficha sale de una ingesta que no corre todos los días: en
-  una corrida, seis de ocho no coincidían con la realidad (el 18/09, 4 de 19,
-  siempre el saliente, de 3 a 27 meses atrás). La plantilla ya trae
-  `entrenador.fuente` (`coachs` = la carrera de la API; `alineacion` = el que
-  se sentó en el banco en el último partido, que es el más fiable) y
-  `entrenador.actualizadoEn`: un registro viejo se marca, no se copia. Antes
-  de puntuar el bloque A, confirmá quién dirige en prensa de esta semana y
-  escribí ese nombre en `dt` con su fuente en `notas.A`. Si no podés
-  establecerlo, dejá A fuera y decilo en `pendientes`: un A puntuado sobre un
-  DT que ya no está mueve el parte diez puntos y dispara o calla T.54 en falso.
+- EL DT: LA RED MANDA, LA BASE ES UNA ALARMA. Cada candidato de la agenda
+  trae `dt.a` / `dt.b`: el entrenador que tiene nuestra base, con `fuente`
+  (`alineacion` = el que se sentó en el banco en el último partido, el más
+  fiable; `coachs` = la carrera de la API, que llega meses tarde),
+  `edadDias`, `fiable` y una `nota`. Es un punto de partida, no la verdad:
+  el 18/09 la base tenía al saliente en 4 de 19 equipos, de 3 a 27 meses
+  atrás. La regla, sin excepción:
+    1. Buscá en prensa de ESTA semana quién dirige. Si la prensa dice un
+       nombre, ES ESE, aunque la base diga otro y aunque `fiable` sea true.
+       Escribilo en `dt` con la fuente en `notas.A`; la app marca la
+       discrepancia sola (alerta `DT-DISCREPANCIA`) y la base se corrige en
+       la próxima corrida. No discutas con la base, no promedies, no dejes el
+       bloque A a medias por la duda.
+    2. Si la prensa no dice nada y `fiable` es true, tomá el de la base y
+       decilo en `notas.A` («según la base, visto en el banco el 14/09»).
+    3. Si no podés establecerlo de ninguna de las dos formas, `dt` va como
+       `"sin establecer"`, el bloque A queda fuera y lo decís en
+       `pendientes`. Ese parte NO entra al aprendizaje (cuarentena
+       automática): mejor un caso fuera que un A puntuado sobre un DT que ya
+       no está, que mueve el parte diez puntos y dispara o calla T.54 en falso.
 - LA FORMA DE `dt` ES `{"nombre": "Diego Simeone", "desde": "2011-12-23"}`
   (el día 01 si solo se sabe el mes) o `{"nombre": "…", "meses": 14}`. La
   antigüedad —insumo de A, F3 y S1— la calcula la app: `meses` declarado
