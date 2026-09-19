@@ -354,10 +354,16 @@ que reventó, media · mediana · moda— acotadas en el tiempo, en
 
 | clave | corte | de dónde sale |
 |---|---|---|
-| `temporada` | la temporada del torneo del último partido | `ConstantesDTO.temporada` (league_season) |
-| `anio` | el 1 de enero del año del último partido | la fecha |
+| `temporada:<t>` | UNA por cada temporada de la historia: del primer partido de esa temporada al primero de la siguiente | `ConstantesDTO.temporada` (league_season) |
+| `anio:<a>` | UNA por cada año: del 1 de enero al 1 de enero siguiente | la fecha |
 | `dt` | la asunción del DT vigente | `plantilla.entrenador.desde` |
 | `ultimos20` | los últimos 20 partidos | las filas |
+
+Cada período lleva `desde` (inclusivo), `hasta` (exclusivo, vacío = abierto) y
+`vigente` (la temporada y el año del último partido, el DT y los últimos N).
+La tarjeta muestra los vigentes; en la gráfica se elige cualquiera: los chips
+de temporada y año abren una segunda fila con todos los que hay en la historia,
+y la gráfica marca el principio y el fin del elegido.
 
 Reglas: se filtra por **la fecha en la que reventó** cada burbuja sobre los
 mismos reventones de `episodios()` —los episodios no se recortan, así uno

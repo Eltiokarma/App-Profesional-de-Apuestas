@@ -520,10 +520,15 @@ export interface RiesgoReventonDTO {
 }
 
 export interface PeriodoBurbujaDTO {
+  /** 'temporada:2025' · 'anio:2025' · 'dt' · 'ultimos20' ('temporada' a secas = sin dato). */
   clave: string
   etiqueta: string
   /** YYYY-MM-DD inclusivo; '' cuando el período no se pudo cortar (ver `sinDato`). */
   desde: string
+  /** YYYY-MM-DD exclusivo; '' = abierto hasta hoy. */
+  hasta: string
+  /** El período en curso (temporada y año del último partido, DT, últimos N). */
+  vigente: boolean
   sinDato: string
 }
 

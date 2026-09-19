@@ -58,14 +58,20 @@ check('la K se describe pero no puntúa', rg.motivos.some((m) => m.includes('la 
 check('confianza BAJA: muestra corta (3) y estabilidad inestable', rg.confianza === 'baja' && rg.confianzaMotivos.some((m) => m.includes('inestable')), rg.confianzaMotivos)
 console.log('\n— por período —')
 const per = t.historialPorPeriodo
-check('cuatro períodos en orden fijo: temporada · año · dt · últimos 20', eq(per.map((p) => p.clave), ['temporada', 'anio', 'dt', 'ultimos20']), per.map((p) => p.clave))
-check('sin `temporada` en las filas el período viaja con sinDato, no con un corte inventado', per[0].sinDato !== '' && per[0].positivo === null, per[0])
-check('año 2026: los 5 reventones y los 20 partidos, mismas medidas que la global', per[1].desde === '2026-01-01' && per[1].reventones === 5 && per[1].partidos === 20 && eq(per[1].positivo, t.historial.positivo), per[1])
+check('sin temporada en las filas: temporada (sin dato) · año 2026 · dt · últimos 20', eq(per.map((p) => p.clave), ['temporada', 'anio:2026', 'dt', 'ultimos20']), per.map((p) => p.clave))
+check('el período sin dato viaja con sinDato, no con un corte inventado', per[0].sinDato !== '' && per[0].positivo === null, per[0])
+check('año 2026: desde el 1 de enero hasta el 1 de enero siguiente, vigente, los 5 reventones y los 20 partidos', per[1].desde === '2026-01-01' && per[1].hasta === '2027-01-01' && per[1].vigente && per[1].reventones === 5 && per[1].partidos === 20 && eq(per[1].positivo, t.historial.positivo), per[1])
 check('con el DT actual (desde 2026-08-07): ningún reventón, referencia vacía con su n', per[2].desde === '2026-08-07' && per[2].reventones === 0 && per[2].positivo === null && per[2].negativo === null, per[2])
 check('últimos 20 partidos = toda la muestra de 20', per[3].partidos === 20 && per[3].reventones === 5, per[3])
 const conTemporada = analizar(filas.map((f, i) => ({ ...f, temporada: i < 8 ? 2025 : 2026 })))
-const pt = conTemporada.familias.total.historialPorPeriodo[0]
-check('con temporada en las filas, «temporada 2026» corta en su primer partido y cuenta solo lo que reventó desde ahí', pt.etiqueta === 'temporada 2026' && pt.desde === filas[8].fecha.slice(0, 10) && pt.partidos === 12 && pt.reventones === t.reventones.filter((r) => r.fecha.slice(0, 10) >= filas[8].fecha.slice(0, 10)).length, pt)
+const pts = conTemporada.familias.total.historialPorPeriodo
+const corte = filas[8].fecha.slice(0, 10)
+check('con temporada en las filas hay UNA por temporada, en orden: 2025 (cerrada en el 1.º de 2026) y 2026 (vigente, abierta)',
+  pts[0].clave === 'temporada:2025' && pts[0].desde === filas[0].fecha.slice(0, 10) && pts[0].hasta === corte && !pts[0].vigente
+  && pts[1].clave === 'temporada:2026' && pts[1].desde === corte && pts[1].hasta === '' && pts[1].vigente, pts.slice(0, 2))
+check('cada temporada cuenta solo lo que reventó dentro de sus fechas, y entre las dos suman la historia',
+  pts[0].partidos === 8 && pts[1].partidos === 12 && pts[0].reventones + pts[1].reventones === 5
+  && pts[1].reventones === t.reventones.filter((r) => r.fecha.slice(0, 10) >= corte).length, pts.slice(0, 2))
 check('los períodos viajan también en la cabecera', eq(out.periodos.map((p) => p.clave), per.map((p) => p.clave)))
 
 const ex = t.extremo!

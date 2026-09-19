@@ -1652,15 +1652,20 @@ components:
       type: object
       description: >
         Un corte en el tiempo para releer la misma referencia: el Universitario de hoy no es
-        el de Fossati ni el City de ahora el del primer Guardiola. Cuatro en orden fijo:
-        `temporada` (la del torneo del último partido), `anio` (calendario), `dt` (desde la
-        asunción del DT de la plantilla) y `ultimos20`. Un período que no se pudo cortar viaja
-        con `sinDato`, nunca con un corte inventado.
-      required: [clave, etiqueta, desde, sinDato]
+        el de Fossati ni el City de ahora el del primer Guardiola. En orden fijo: UNA por cada
+        temporada de la historia (`temporada:2025`, cerrada en el primer partido de la
+        siguiente), UNA por cada año (`anio:2025`), `dt` (desde la asunción del DT de la
+        plantilla) y `ultimos20`. `vigente` marca las en curso (la temporada y el año del
+        último partido, el DT, los últimos N): la tarjeta muestra esas y la gráfica deja
+        elegir cualquiera. Un período que no se pudo cortar viaja con `sinDato`, nunca con un
+        corte inventado (`temporada` a secas cuando las filas no traen la temporada).
+      required: [clave, etiqueta, desde, hasta, vigente, sinDato]
       properties:
         clave: { type: string }
         etiqueta: { type: string }
         desde: { type: string, description: 'YYYY-MM-DD inclusivo; vacío con sinDato' }
+        hasta: { type: string, description: 'YYYY-MM-DD exclusivo; vacío = abierto' }
+        vigente: { type: boolean }
         sinDato: { type: string }
     HistorialPeriodo:
       allOf:

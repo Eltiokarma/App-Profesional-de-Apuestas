@@ -19,7 +19,7 @@ interface Props {
    *  (docs/REVENTON.md). Se dibuja como línea de referencia; null = sin base.
    *  `etiqueta` dice de qué período es (vacío = toda la historia) y `desde`
    *  marca con una línea vertical dónde arranca ese período en la gráfica. */
-  techo?: { pos: number | null; neg: number | null; etiqueta?: string; desde?: string }
+  techo?: { pos: number | null; neg: number | null; etiqueta?: string; desde?: string; hasta?: string }
 }
 
 const W = 460
@@ -204,6 +204,13 @@ export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20, rol, tech
             </text>
           </g>
         )
+      })()}
+      {/* y dónde termina, si el período ya cerró dentro de la ventana */}
+      {techo?.hasta && (() => {
+        const idx = win.findIndex((sn) => (sn.fecha ?? '').slice(0, 10) >= techo.hasta!)
+        if (idx <= 0) return null
+        const xv = (x(idx - 1) + x(idx)) / 2
+        return <line x1={xv} x2={xv} y1={MID - AMP - 2} y2={MID + AMP + 2} stroke="var(--mark)" strokeWidth={1} strokeDasharray="2 3" opacity={0.7} />
       })()}
 
       {/* línea de picos acumulados */}
