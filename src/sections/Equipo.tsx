@@ -3,6 +3,8 @@ import { TEAMS } from '../data'
 import type { KCondKey, KTypeKey } from '../data/types'
 import { ApuestasSalidas } from '../components/ApuestasSalidas'
 import { KLineChart, KLineLegend } from '../components/KLineChart'
+import { PeriodoReventon } from '../components/PeriodoReventon'
+import { referenciaReventon } from '../lib/reventonRef'
 import { CalendarioSad } from '../components/CalendarioSad'
 import { CadenaDtp } from '../components/DtpPizarra'
 import { ControlesCuotas, CUOTA_VISTA0, RachasCuotas, tituloMercado, type CuotaVista } from '../components/RachasCuotas'
@@ -58,6 +60,8 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
   const snaps = bur.data?.snaps ?? []
   let maxAbs = 0.001
   for (const sn of snaps.slice(-s.kWindow)) maxAbs = Math.max(maxAbs, Math.abs(sn.fused[key]))
+  // la referencia de reventón de la gráfica, según el período elegido
+  const refRev = kType === 'res' ? referenciaReventon(rev.data?.familias[kCond], s.kPeriodo) : null
 
   const kv = (kk: keyof FusedK) => (snaps.length ? snaps[snaps.length - 1].fused[kk] : 0)
   const kColor = (v: number) => (v === 0 ? 'var(--t3)' : v > 0 ? 'var(--up)' : 'var(--down)')
@@ -159,10 +163,11 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
               <div style={{ borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--line)', padding: 6 }}>
                 <KLineChart
                   snaps={snaps} kType={kType} kCond={kCond} maxAbs={maxAbs} window={s.kWindow}
-                  techo={kType === 'res' && rev.data ? { pos: rev.data.familias[kCond].historial.positivo?.kPico.mediana ?? null, neg: rev.data.familias[kCond].historial.negativo?.kPico.mediana ?? null } : undefined}
+                  techo={refRev ? { pos: refRev.pos, neg: refRev.neg, etiqueta: refRev.etiqueta, desde: refRev.desde } : undefined}
                 />
               </div>
-              <KLineLegend />
+              <KLineLegend periodo={refRev?.etiqueta} />
+              {kType === 'res' && <PeriodoReventon fam={rev.data?.familias[kCond]} periodo={s.kPeriodo} onPeriodo={store.setKPeriodo} />}
               <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                 <div style={{ flex: 1, padding: '8px 10px', borderRadius: 9, background: 'var(--bg)', border: '1px solid var(--line)' }}>
                   <div style={{ font: '500 9px var(--mono)', color: 'var(--t3)', marginBottom: 2 }}>K ACTUAL</div>

@@ -369,6 +369,15 @@ dato. Espejo TS en `src/lib/burbuja.ts` (`periodosDe`) y vectores dorados en
 los dos tests. La sección Burbujas muestra temporada y DT; la página de
 Equipo, los cuatro.
 
+**En la gráfica de K** (`KLineChart`, botonera `PeriodoReventon`, estado
+`kPeriodo` del store compartido por Burbujas y Equipo): las dos líneas
+punteadas «revienta ~ / se corta ~» toman la mediana del período elegido
+(`src/lib/reventonRef.ts`) y llevan su etiqueta; una línea vertical marca el
+partido donde arranca el período (la asunción del DT, el primero de la
+temporada) o «←» en el borde si quedó antes de la ventana visible. Por defecto
+la referencia es toda la historia; un período sin base se puede elegir y la
+gráfica dice por qué no dibuja línea, en vez de volver a la global en silencio.
+
 ## 11. El reventón en el bucle de aprendizaje (producción contra backtest)
 
 El backtest de §8 responde «¿los pesos son razonables en general?» sobre 171k
