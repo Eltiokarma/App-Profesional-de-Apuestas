@@ -252,7 +252,10 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   `historialPorPeriodo` repite las medidas acotadas a temporada · año · DT
   vigente · últimos 20, filtrando por la fecha del reventón sobre los mismos
   episodios; la global sigue mandando en el riesgo (es la calibrada) y un
-  período sin corte viaja con `sinDato`. Espejo TS y vectores dorados.
+  período sin corte viaja con `sinDato`. Espejo TS y vectores dorados. En la
+  gráfica de K la referencia punteada es elegible por período (`kPeriodo`,
+  `PeriodoReventon`, `src/lib/reventonRef.ts`) con una línea vertical donde
+  arranca el período; sin base se dice, no se vuelve a la global callado.
 - Cuotas K (§3.8): las barras SIEMPRE vía `RachasCuotas` y su botonera
   `ControlesCuotas` (condición · mercado 1X2/Doble op./Ambos · ventana); cada
   mercado dibuja solo los partidos con SU cuota capturada — sin dato, la

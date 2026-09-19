@@ -37,6 +37,9 @@ export interface SadState {
   kCond: KCondKey
   /** Ventana de la gráfica de K: nº de partidos (Infinity = toda la historia). */
   kWindow: number
+  /** Período de la referencia de reventón que se dibuja en la gráfica
+   *  ('historia' = toda la historia; o la clave de `historialPorPeriodo`). */
+  kPeriodo: string
   chartMarket: string
   skillStatus: Record<string, SkillState>
   skillTime: Record<string, string>
@@ -75,6 +78,7 @@ const initialState: SadState = {
   kType: 'res',
   kCond: 'total',
   kWindow: Infinity, // por defecto: toda la historia
+  kPeriodo: 'historia',
   chartMarket: '1x2',
   skillStatus: { efe: 'idle', sad: 'idle', tac: 'idle', tl: 'idle' },
   skillTime: {},
@@ -101,6 +105,7 @@ export interface SadStore {
   setKType: (c: KTypeKey) => () => void
   setKCond: (c: KCondKey) => () => void
   setWindow: (n: number) => () => void
+  setKPeriodo: (p: string) => () => void
   setChartMarket: (key: string) => void
   generate: (key: string) => () => void
   openReport: (key: string) => () => void
@@ -219,6 +224,7 @@ export function useSad(): SadStore {
   const setKType = useCallback((c: KTypeKey) => () => patch({ kType: c }), [patch])
   const setKCond = useCallback((c: KCondKey) => () => patch({ kCond: c }), [patch])
   const setWindow = useCallback((n: number) => () => patch({ kWindow: n }), [patch])
+  const setKPeriodo = useCallback((p: string) => () => patch({ kPeriodo: p }), [patch])
   const setChartMarket = useCallback((key: string) => patch({ chartMarket: key }), [patch])
 
   const generate = useCallback(
@@ -257,6 +263,7 @@ export function useSad(): SadStore {
     setKType,
     setKCond,
     setWindow,
+    setKPeriodo,
     setChartMarket,
     generate,
     openReport,

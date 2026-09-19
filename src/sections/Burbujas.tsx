@@ -3,6 +3,8 @@ import { TEAMS } from '../data'
 import type { KCondKey, KTypeKey, Match } from '../data/types'
 import { AlineacionesXi } from '../components/AlineacionesXi'
 import { KLineChart, KLineLegend } from '../components/KLineChart'
+import { PeriodoReventon } from '../components/PeriodoReventon'
+import { referenciaReventon } from '../lib/reventonRef'
 import { MarcaCondicion } from '../components/MarcaCondicion'
 import { ControlesCuotas, CUOTA_VISTA0, RachasCuotas, tituloMercado, type CuotaVista } from '../components/RachasCuotas'
 import { CalendarioSad } from '../components/CalendarioSad'
@@ -21,7 +23,7 @@ interface Props {
   isMobile: boolean
 }
 
-function TeamPanel({ eng, rev, teamId, role, rol, kType, kCond, maxAbs, chartWindow, onOpen, onFamilia }: { eng: BurbujasData; rev: BurbujasEquipoDTO | null; teamId: string; role: string; rol: Cond; kType: KTypeKey; kCond: KCondKey; maxAbs: number; chartWindow: number; onOpen: () => void; onFamilia: (f: KCondKey) => void }) {
+function TeamPanel({ eng, rev, teamId, role, rol, kType, kCond, maxAbs, chartWindow, kPeriodo, onPeriodo, onOpen, onFamilia }: { eng: BurbujasData; rev: BurbujasEquipoDTO | null; teamId: string; role: string; rol: Cond; kType: KTypeKey; kCond: KCondKey; maxAbs: number; chartWindow: number; kPeriodo: string; onPeriodo: (p: string) => () => void; onOpen: () => void; onFamilia: (f: KCondKey) => void }) {
   const T = TEAMS[teamId]
   const key = FUSED_KEY[kType][kCond]
   const cur = eng.snaps.length ? eng.snaps[eng.snaps.length - 1].fused[key] : 0
@@ -33,9 +35,8 @@ function TeamPanel({ eng, rev, teamId, role, rol, kType, kCond, maxAbs, chartWin
   // la mediana con la que esta K suele reventar, sobre la gráfica: solo para
   // la K de resultado (el reventón de goles queda fuera a propósito por ahora)
   const famRev = rev?.familias[kCond]
-  const techo = kType === 'res' && famRev
-    ? { pos: famRev.historial.positivo?.kPico.mediana ?? null, neg: famRev.historial.negativo?.kPico.mediana ?? null }
-    : undefined
+  const ref = kType === 'res' ? referenciaReventon(famRev, kPeriodo) : null
+  const techo = ref ? { pos: ref.pos, neg: ref.neg, etiqueta: ref.etiqueta, desde: ref.desde } : undefined
 
   return (
     <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
@@ -56,7 +57,8 @@ function TeamPanel({ eng, rev, teamId, role, rol, kType, kCond, maxAbs, chartWin
       <div style={{ marginTop: 6, borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--line)', padding: 6 }}>
         <KLineChart snaps={eng.snaps} kType={kType} kCond={kCond} maxAbs={maxAbs} window={chartWindow} rol={rol} techo={techo} />
       </div>
-      <KLineLegend />
+      <KLineLegend periodo={ref?.etiqueta} />
+      {kType === 'res' && <PeriodoReventon fam={famRev} periodo={kPeriodo} onPeriodo={onPeriodo} />}
 
       <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
         <div style={{ flex: 1, padding: '8px 10px', borderRadius: 9, background: 'var(--bg)', border: '1px solid var(--line)' }}>
@@ -269,11 +271,11 @@ export function Burbujas({ store, m, isMobile }: Props) {
       {!engData.loading && !engData.error && (
       <div style={{ display: 'grid', gridTemplateColumns: gridBurbujas, gap: 14 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
-          {engH && <TeamPanel eng={engH} rev={engData.data?.revH ?? null} teamId={m.home} role="Local" rol="local" kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} chartWindow={s.kWindow} onOpen={() => store.openTeam(m.home)} onFamilia={(f) => store.setKCond(f)()} />}
+          {engH && <TeamPanel eng={engH} rev={engData.data?.revH ?? null} teamId={m.home} role="Local" rol="local" kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} chartWindow={s.kWindow} kPeriodo={s.kPeriodo} onPeriodo={store.setKPeriodo} onOpen={() => store.openTeam(m.home)} onFamilia={(f) => store.setKCond(f)()} />}
           {rachasCard(m.home, 'local')}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
-          {engA && <TeamPanel eng={engA} rev={engData.data?.revA ?? null} teamId={m.away} role="Visitante" rol="visita" kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} chartWindow={s.kWindow} onOpen={() => store.openTeam(m.away)} onFamilia={(f) => store.setKCond(f)()} />}
+          {engA && <TeamPanel eng={engA} rev={engData.data?.revA ?? null} teamId={m.away} role="Visitante" rol="visita" kType={s.kType} kCond={s.kCond} maxAbs={maxAbs} chartWindow={s.kWindow} kPeriodo={s.kPeriodo} onPeriodo={store.setKPeriodo} onOpen={() => store.openTeam(m.away)} onFamilia={(f) => store.setKCond(f)()} />}
           {rachasCard(m.away, 'visita')}
         </div>
 

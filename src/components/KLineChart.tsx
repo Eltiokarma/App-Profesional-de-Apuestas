@@ -16,8 +16,10 @@ interface Props {
    *  o Visita manda el toggle (ver condEtiquetas). */
   rol?: Cond
   /** Mediana de la K pico con la que esta familia suele reventar, por signo
-   *  (docs/REVENTON.md). Se dibuja como línea de referencia; null = sin base. */
-  techo?: { pos: number | null; neg: number | null }
+   *  (docs/REVENTON.md). Se dibuja como línea de referencia; null = sin base.
+   *  `etiqueta` dice de qué período es (vacío = toda la historia) y `desde`
+   *  marca con una línea vertical dónde arranca ese período en la gráfica. */
+  techo?: { pos: number | null; neg: number | null; etiqueta?: string; desde?: string }
 }
 
 const W = 460
@@ -174,15 +176,35 @@ export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20, rol, tech
       {techo?.pos != null && techo.pos > 0 && techo.pos <= maxAbs && (
         <g>
           <line x1={L} x2={R} y1={y(techo.pos)} y2={y(techo.pos)} stroke="var(--mark)" strokeWidth={1} strokeDasharray="6 4" opacity={0.85} />
-          <text x={L + 2} y={y(techo.pos) - 3} fontSize={8.5} fontWeight={600} style={{ fill: 'var(--mark)', fontFamily: 'var(--mono)' }}>revienta ~+{fmtK(techo.pos)}</text>
+          <text x={L + 2} y={y(techo.pos) - 3} fontSize={8.5} fontWeight={600} style={{ fill: 'var(--mark)', fontFamily: 'var(--mono)' }}>revienta ~+{fmtK(techo.pos)}{techo.etiqueta ? ` · ${techo.etiqueta}` : ''}</text>
         </g>
       )}
       {techo?.neg != null && techo.neg > 0 && techo.neg <= maxAbs && (
         <g>
           <line x1={L} x2={R} y1={y(-techo.neg)} y2={y(-techo.neg)} stroke="var(--mark)" strokeWidth={1} strokeDasharray="6 4" opacity={0.85} />
-          <text x={L + 2} y={y(-techo.neg) + 11} fontSize={8.5} fontWeight={600} style={{ fill: 'var(--mark)', fontFamily: 'var(--mono)' }}>se corta ~−{fmtK(techo.neg)}</text>
+          <text x={L + 2} y={y(-techo.neg) + 11} fontSize={8.5} fontWeight={600} style={{ fill: 'var(--mark)', fontFamily: 'var(--mono)' }}>se corta ~−{fmtK(techo.neg)}{techo.etiqueta ? ` · ${techo.etiqueta}` : ''}</text>
         </g>
       )}
+
+      {/* dónde arranca el período de la referencia: el partido con el que
+          cambia la época (la asunción del DT, el 1.º de la temporada…). Si
+          queda antes de la ventana visible, se dice al borde izquierdo. */}
+      {techo?.desde && (() => {
+        const idx = win.findIndex((sn) => (sn.fecha ?? '').slice(0, 10) >= techo.desde!)
+        if (idx < 0) return null
+        const antes = idx === 0 && (win[0].fecha ?? '').slice(0, 10) > techo.desde
+        const xv = antes ? L + 1 : x(idx)
+        // la etiqueta va a la derecha del corte, salvo que no quepa: entonces a la izquierda
+        const aLaIzquierda = xv > R - 130
+        return (
+          <g>
+            <line x1={xv} x2={xv} y1={MID - AMP - 2} y2={MID + AMP + 2} stroke="var(--mark)" strokeWidth={1} strokeDasharray="2 3" opacity={0.7} />
+            <text x={aLaIzquierda ? xv - 3 : xv + 3} y={MID + AMP - 2} fontSize={8} fontWeight={600} textAnchor={aLaIzquierda ? 'end' : 'start'} style={{ fill: 'var(--mark)', fontFamily: 'var(--mono)' }}>
+              {antes ? '← ' : ''}{techo.etiqueta || 'período'} desde {fmtFecha(techo.desde)}{aLaIzquierda ? ' →' : ''}
+            </text>
+          </g>
+        )
+      })()}
 
       {/* línea de picos acumulados */}
       <path d={path} fill="none" stroke="var(--accent)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.9} />
@@ -245,7 +267,7 @@ export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20, rol, tech
   )
 }
 
-export function KLineLegend() {
+export function KLineLegend({ periodo }: { periodo?: string } = {}) {
   const item: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 5, font: '500 9.5px var(--mono)', color: 'var(--t3)' }
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 6 }}>
@@ -254,7 +276,7 @@ export function KLineLegend() {
       <span style={item}><span style={{ width: 8, height: 8, borderRadius: '50%', border: '1.5px solid var(--t3)' }}></span>reset</span>
       <span style={item}><span style={{ width: 8, height: 8, background: 'var(--mark)', transform: 'rotate(45deg)' }}></span>torneo internacional</span>
       <span style={item}><span style={{ width: 9, height: 9, borderRadius: '50%', border: '1.2px solid var(--t2)' }}></span>L/V = últimos dos de local (o de visita)</span>
-      <span style={item}><span style={{ width: 14, height: 0, borderTop: '1.5px dashed var(--mark)' }}></span>mediana con la que revienta</span>
+      <span style={item}><span style={{ width: 14, height: 0, borderTop: '1.5px dashed var(--mark)' }}></span>mediana con la que revienta{periodo ? ` · ${periodo}` : ''}</span>
     </div>
   )
 }
