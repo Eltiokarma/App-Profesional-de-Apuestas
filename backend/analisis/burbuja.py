@@ -283,33 +283,55 @@ ULTIMOS_N = 20
 
 
 def periodos_de(filas: list[dict], plantilla: dict | None) -> list[dict]:
-    """[{clave, etiqueta, desde, sinDato}] en orden fijo. `desde` = 'YYYY-MM-DD'
-    inclusivo; un período sin forma de cortar viaja con `sinDato`."""
+    """[{clave, etiqueta, desde, hasta, vigente, sinDato}] en orden fijo: todas
+    las temporadas y todos los años que hay en la historia (uno por cada),
+    el DT vigente y los últimos N. `desde` inclusivo y `hasta` exclusivo, en
+    'YYYY-MM-DD'; `hasta` vacío = abierto. `vigente` marca el período en
+    curso (la temporada y el año del último partido, el DT, los últimos N):
+    la tarjeta muestra esos; la gráfica deja elegir cualquiera. Un período sin
+    forma de cortar viaja con `sinDato`."""
     out = []
     if not filas:
         return out
+    fecha = lambda f: str(f.get("fecha") or "")[:10]  # noqa: E731
     ultima = filas[-1]
-    fecha_ultima = str(ultima.get("fecha") or "")[:10]
-    temporada = ultima.get("temporada")
-    if temporada is not None:
-        primera = next((str(f.get("fecha") or "")[:10] for f in filas if f.get("temporada") == temporada), fecha_ultima)
-        out.append({"clave": "temporada", "etiqueta": f"temporada {temporada}", "desde": primera, "sinDato": ""})
+    fecha_ultima = fecha(ultima)
+    temporadas = sorted({f.get("temporada") for f in filas if f.get("temporada") is not None})
+    if temporadas:
+        inicio = {}
+        for f in filas:
+            t = f.get("temporada")
+            if t is not None and t not in inicio:
+                inicio[t] = fecha(f)
+        for i, t in enumerate(temporadas):
+            sig = temporadas[i + 1] if i + 1 < len(temporadas) else None
+            out.append({"clave": f"temporada:{t}", "etiqueta": f"temporada {t}", "desde": inicio[t],
+                        "hasta": inicio[sig] if sig is not None else "",
+                        "vigente": t == ultima.get("temporada"), "sinDato": ""})
     else:
-        out.append({"clave": "temporada", "etiqueta": "esta temporada", "desde": "",
-                    "sinDato": "las filas no traen la temporada del torneo"})
-    anio = fecha_ultima[:4]
-    out.append({"clave": "anio", "etiqueta": f"año {anio}", "desde": f"{anio}-01-01", "sinDato": ""})
+        out.append({"clave": "temporada", "etiqueta": "esta temporada", "desde": "", "hasta": "",
+                    "vigente": True, "sinDato": "las filas no traen la temporada del torneo"})
+    anios = sorted({fecha(f)[:4] for f in filas if fecha(f)})
+    for a in anios:
+        out.append({"clave": f"anio:{a}", "etiqueta": f"año {a}", "desde": f"{a}-01-01",
+                    "hasta": f"{int(a) + 1}-01-01", "vigente": a == fecha_ultima[:4], "sinDato": ""})
     ent = (plantilla or {}).get("entrenador") or {}
     desde_dt = str(ent.get("desde") or "")[:10]
     if ent.get("nombre") and len(desde_dt) == 10:
-        out.append({"clave": "dt", "etiqueta": f"con {ent['nombre']} (desde {desde_dt})", "desde": desde_dt, "sinDato": ""})
+        out.append({"clave": "dt", "etiqueta": f"con {ent['nombre']} (desde {desde_dt})", "desde": desde_dt,
+                    "hasta": "", "vigente": True, "sinDato": ""})
     else:
-        out.append({"clave": "dt", "etiqueta": "con el DT actual", "desde": "",
+        out.append({"clave": "dt", "etiqueta": "con el DT actual", "desde": "", "hasta": "", "vigente": True,
                     "sinDato": "sin DT con fecha de asunción en la plantilla"})
     corte = filas[-ULTIMOS_N] if len(filas) >= ULTIMOS_N else filas[0]
     out.append({"clave": f"ultimos{ULTIMOS_N}", "etiqueta": f"últimos {min(ULTIMOS_N, len(filas))} partidos",
-                "desde": str(corte.get("fecha") or "")[:10], "sinDato": ""})
+                "desde": fecha(corte), "hasta": "", "vigente": True, "sinDato": ""})
     return out
+
+
+def _en_periodo(fecha: str, per: dict) -> bool:
+    f = str(fecha or "")[:10]
+    return f >= per["desde"] and (not per.get("hasta") or f < per["hasta"])
 
 
 def _historial_por_periodo(filas: list[dict], cerrados: list[dict], periodos: list[dict], familia: str) -> list[dict]:
@@ -318,9 +340,8 @@ def _historial_por_periodo(filas: list[dict], cerrados: list[dict], periodos: li
         if per["sinDato"] or not per["desde"]:
             out.append({**per, "partidos": 0, "reventones": 0, "positivo": None, "negativo": None})
             continue
-        desde = per["desde"]
-        de = [r for r in cerrados if str(r["fecha"])[:10] >= desde]
-        partidos = sum(1 for f in filas if str(f.get("fecha") or "")[:10] >= desde
+        de = [r for r in cerrados if _en_periodo(r["fecha"], per)]
+        partidos = sum(1 for f in filas if _en_periodo(f.get("fecha"), per)
                        and (familia == "total" or f["condicion"] == ("Local" if familia == "local" else "Visita")))
         hist = _historial(de)
         out.append({**per, "partidos": partidos, "reventones": len(de),

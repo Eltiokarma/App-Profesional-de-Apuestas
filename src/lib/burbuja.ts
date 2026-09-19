@@ -224,35 +224,46 @@ export const ULTIMOS_N = 20
 export function periodosDe(filas: FilaK[], plantilla: PlantillaBurbuja | null | undefined): PeriodoBurbujaDTO[] {
   const out: PeriodoBurbujaDTO[] = []
   if (!filas.length) return out
+  const fecha = (f: FilaK) => String(f.fecha ?? '').slice(0, 10)
   const ultima = filas[filas.length - 1]
-  const fechaUltima = String(ultima.fecha ?? '').slice(0, 10)
-  const temporada = ultima.temporada
-  if (temporada != null) {
-    const primera = filas.find((f) => f.temporada === temporada)
-    out.push({ clave: 'temporada', etiqueta: `temporada ${temporada}`, desde: String(primera?.fecha ?? fechaUltima).slice(0, 10), sinDato: '' })
+  const fechaUltima = fecha(ultima)
+  const temporadas = [...new Set(filas.map((f) => f.temporada).filter((t): t is number => t != null))].sort((x, y) => x - y)
+  if (temporadas.length) {
+    const inicio = new Map<number, string>()
+    for (const f of filas) if (f.temporada != null && !inicio.has(f.temporada)) inicio.set(f.temporada, fecha(f))
+    temporadas.forEach((t, i) => {
+      const sig = i + 1 < temporadas.length ? temporadas[i + 1] : null
+      out.push({ clave: `temporada:${t}`, etiqueta: `temporada ${t}`, desde: inicio.get(t)!, hasta: sig != null ? inicio.get(sig)! : '', vigente: t === ultima.temporada, sinDato: '' })
+    })
   } else {
-    out.push({ clave: 'temporada', etiqueta: 'esta temporada', desde: '', sinDato: 'las filas no traen la temporada del torneo' })
+    out.push({ clave: 'temporada', etiqueta: 'esta temporada', desde: '', hasta: '', vigente: true, sinDato: 'las filas no traen la temporada del torneo' })
   }
-  const anio = fechaUltima.slice(0, 4)
-  out.push({ clave: 'anio', etiqueta: `año ${anio}`, desde: `${anio}-01-01`, sinDato: '' })
+  const anios = [...new Set(filas.map(fecha).filter(Boolean).map((f) => f.slice(0, 4)))].sort()
+  for (const a of anios) {
+    out.push({ clave: `anio:${a}`, etiqueta: `año ${a}`, desde: `${a}-01-01`, hasta: `${Number(a) + 1}-01-01`, vigente: a === fechaUltima.slice(0, 4), sinDato: '' })
+  }
   const ent = plantilla?.entrenador
   const desdeDt = String(ent?.desde ?? '').slice(0, 10)
   if (ent?.nombre && desdeDt.length === 10) {
-    out.push({ clave: 'dt', etiqueta: `con ${ent.nombre} (desde ${desdeDt})`, desde: desdeDt, sinDato: '' })
+    out.push({ clave: 'dt', etiqueta: `con ${ent.nombre} (desde ${desdeDt})`, desde: desdeDt, hasta: '', vigente: true, sinDato: '' })
   } else {
-    out.push({ clave: 'dt', etiqueta: 'con el DT actual', desde: '', sinDato: 'sin DT con fecha de asunción en la plantilla' })
+    out.push({ clave: 'dt', etiqueta: 'con el DT actual', desde: '', hasta: '', vigente: true, sinDato: 'sin DT con fecha de asunción en la plantilla' })
   }
   const corte = filas.length >= ULTIMOS_N ? filas[filas.length - ULTIMOS_N] : filas[0]
-  out.push({ clave: `ultimos${ULTIMOS_N}`, etiqueta: `últimos ${Math.min(ULTIMOS_N, filas.length)} partidos`, desde: String(corte.fecha ?? '').slice(0, 10), sinDato: '' })
+  out.push({ clave: `ultimos${ULTIMOS_N}`, etiqueta: `últimos ${Math.min(ULTIMOS_N, filas.length)} partidos`, desde: fecha(corte), hasta: '', vigente: true, sinDato: '' })
   return out
+}
+
+function enPeriodo(fecha: string | undefined, per: PeriodoBurbujaDTO): boolean {
+  const f = String(fecha ?? '').slice(0, 10)
+  return f >= per.desde && (!per.hasta || f < per.hasta)
 }
 
 function historialPorPeriodo(filas: FilaK[], cerrados: ReventonDTO[], periodos: PeriodoBurbujaDTO[], familia: FamiliaBurbuja): HistorialPeriodoDTO[] {
   return periodos.map((per) => {
     if (per.sinDato || !per.desde) return { ...per, partidos: 0, reventones: 0, positivo: null, negativo: null }
-    const desde = per.desde
-    const de = cerrados.filter((r) => String(r.fecha).slice(0, 10) >= desde)
-    const partidos = filas.filter((f) => String(f.fecha ?? '').slice(0, 10) >= desde
+    const de = cerrados.filter((r) => enPeriodo(r.fecha, per))
+    const partidos = filas.filter((f) => enPeriodo(f.fecha, per)
       && (familia === 'total' || f.condicion === (familia === 'local' ? 'Local' : 'Visita'))).length
     const hist = historialDe(de)
     return { ...per, partidos, reventones: de.length, positivo: hist.positivo, negativo: hist.negativo }

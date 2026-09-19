@@ -68,22 +68,27 @@ def main():
           t["reventones"][0]["fixtureId"] == 1002 and t["reventones"][1]["signo"] == "-")
     print("\n— por período —")
     per = t["historialPorPeriodo"]
-    check("cuatro períodos en orden fijo: temporada · año · dt · últimos 20",
-          [p["clave"] for p in per] == ["temporada", "anio", "dt", "ultimos20"], [p["clave"] for p in per])
-    check("sin `temporada` en las filas el período viaja con sinDato, no con un corte inventado",
+    check("sin temporada en las filas: temporada (sin dato) · año 2026 · dt · últimos 20",
+          [p["clave"] for p in per] == ["temporada", "anio:2026", "dt", "ultimos20"], [p["clave"] for p in per])
+    check("el período sin dato viaja con sinDato, no con un corte inventado",
           per[0]["sinDato"] and per[0]["positivo"] is None, per[0])
-    check("año 2026: los 5 reventones y los 20 partidos, mismas medidas que la global",
-          per[1]["desde"] == "2026-01-01" and per[1]["reventones"] == 5 and per[1]["partidos"] == 20
+    check("año 2026: desde el 1 de enero hasta el 1 de enero siguiente, vigente, los 5 reventones y los 20 partidos",
+          per[1]["desde"] == "2026-01-01" and per[1]["hasta"] == "2027-01-01" and per[1]["vigente"]
+          and per[1]["reventones"] == 5 and per[1]["partidos"] == 20
           and per[1]["positivo"] == t["historial"]["positivo"], per[1])
     check("con el DT actual (desde 2026-08-07): ningún reventón, referencia vacía con su n",
           per[2]["desde"] == "2026-08-07" and per[2]["reventones"] == 0 and per[2]["positivo"] is None, per[2])
     check("últimos 20 partidos = toda la muestra de 20", per[3]["partidos"] == 20 and per[3]["reventones"] == 5, per[3])
     con_temp = analizar([{**f, "temporada": 2025 if i < 8 else 2026} for i, f in enumerate(filas)], ctx)
-    pt = con_temp["familias"]["total"]["historialPorPeriodo"][0]
+    pts = con_temp["familias"]["total"]["historialPorPeriodo"]
     corte = filas[8]["fecha"][:10]
-    check("con temporada en las filas, «temporada 2026» corta en su primer partido y cuenta solo lo que reventó desde ahí",
-          pt["etiqueta"] == "temporada 2026" and pt["desde"] == corte and pt["partidos"] == 12
-          and pt["reventones"] == sum(1 for r in t["reventones"] if r["fecha"][:10] >= corte), pt)
+    check("con temporada en las filas hay UNA por temporada, en orden: 2025 (cerrada en el 1.º de 2026) y 2026 (vigente, abierta)",
+          pts[0]["clave"] == "temporada:2025" and pts[0]["desde"] == filas[0]["fecha"][:10] and pts[0]["hasta"] == corte
+          and not pts[0]["vigente"] and pts[1]["clave"] == "temporada:2026" and pts[1]["desde"] == corte
+          and pts[1]["hasta"] == "" and pts[1]["vigente"], pts[:2])
+    check("cada temporada cuenta solo lo que reventó dentro de sus fechas, y entre las dos suman la historia",
+          pts[0]["partidos"] == 8 and pts[1]["partidos"] == 12 and pts[0]["reventones"] + pts[1]["reventones"] == 5
+          and pts[1]["reventones"] == sum(1 for r in t["reventones"] if r["fecha"][:10] >= corte), pts[:2])
     check("los períodos viajan también en la cabecera", [p["clave"] for p in out["periodos"]] == [p["clave"] for p in per])
 
     hp = t["historial"]["positivo"]

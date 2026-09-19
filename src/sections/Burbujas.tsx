@@ -36,7 +36,7 @@ function TeamPanel({ eng, rev, teamId, role, rol, kType, kCond, maxAbs, chartWin
   // la K de resultado (el reventón de goles queda fuera a propósito por ahora)
   const famRev = rev?.familias[kCond]
   const ref = kType === 'res' ? referenciaReventon(famRev, kPeriodo) : null
-  const techo = ref ? { pos: ref.pos, neg: ref.neg, etiqueta: ref.etiqueta, desde: ref.desde } : undefined
+  const techo = ref ? { pos: ref.pos, neg: ref.neg, etiqueta: ref.etiqueta, desde: ref.desde, hasta: ref.hasta } : undefined
 
   return (
     <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>

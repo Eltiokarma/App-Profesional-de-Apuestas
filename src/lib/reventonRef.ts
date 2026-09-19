@@ -12,6 +12,8 @@ export interface ReferenciaReventon {
   etiqueta: string
   /** Desde dónde corre el período (YYYY-MM-DD) para marcarlo en la gráfica. */
   desde: string
+  /** Hasta dónde (exclusivo); '' = abierto. */
+  hasta: string
   /** Por qué no hay línea para este período, o ''. */
   sinBase: string
   n: { pos: number; neg: number }
@@ -19,15 +21,30 @@ export interface ReferenciaReventon {
 
 export const PERIODO_HISTORIA = 'historia'
 
-export function periodosDisponibles(fam: FamiliaBurbujaDTO | null | undefined): { clave: string; etiqueta: string; sinDato: string }[] {
-  const base = [{ clave: PERIODO_HISTORIA, etiqueta: 'toda la historia', sinDato: '' }]
+/** Grupo de un período: para la botonera (un chip por grupo, y los años dentro). */
+export type GrupoPeriodo = 'historia' | 'temporada' | 'anio' | 'dt' | 'ultimos'
+
+export function grupoDe(clave: string): GrupoPeriodo {
+  if (clave === PERIODO_HISTORIA) return 'historia'
+  if (clave.startsWith('temporada')) return 'temporada'
+  if (clave.startsWith('anio')) return 'anio'
+  if (clave === 'dt') return 'dt'
+  return 'ultimos'
+}
+
+export const ETIQUETA_GRUPO: Record<GrupoPeriodo, string> = {
+  historia: 'toda la historia', temporada: 'temporada', anio: 'año', dt: 'DT actual', ultimos: 'últimos 20',
+}
+
+export function periodosDisponibles(fam: FamiliaBurbujaDTO | null | undefined): { clave: string; etiqueta: string; grupo: GrupoPeriodo; vigente: boolean; sinDato: string }[] {
+  const base = [{ clave: PERIODO_HISTORIA, etiqueta: 'toda la historia', grupo: 'historia' as GrupoPeriodo, vigente: true, sinDato: '' }]
   if (!fam?.historialPorPeriodo) return base
-  return base.concat(fam.historialPorPeriodo.map((p) => ({ clave: p.clave, etiqueta: etiquetaCorta(p), sinDato: p.sinDato })))
+  return base.concat(fam.historialPorPeriodo.map((p) => ({ clave: p.clave, etiqueta: etiquetaCorta(p), grupo: grupoDe(p.clave), vigente: p.vigente, sinDato: p.sinDato })))
 }
 
 export function etiquetaCorta(p: HistorialPeriodoDTO | { clave: string; etiqueta: string }): string {
-  if (p.clave === 'temporada') return p.etiqueta.replace('temporada ', 'temp. ')
-  if (p.clave === 'anio') return p.etiqueta
+  if (p.clave.startsWith('temporada')) return p.etiqueta.replace('temporada ', 'temp. ')
+  if (p.clave.startsWith('anio')) return p.etiqueta
   if (p.clave === 'dt') {
     if (p.etiqueta === 'con el DT actual') return 'DT actual'
     return p.etiqueta.startsWith('con ') ? `DT ${p.etiqueta.slice(4).replace(/ \(desde .*\)$/, '')}` : p.etiqueta
@@ -42,19 +59,19 @@ export function referenciaReventon(fam: FamiliaBurbujaDTO | null | undefined, pe
     return {
       pos: fam.historial.positivo?.kPico.mediana ?? null,
       neg: fam.historial.negativo?.kPico.mediana ?? null,
-      etiqueta: '', desde: '', sinBase: '',
+      etiqueta: '', desde: '', hasta: '', sinBase: '',
       n: { pos: fam.historial.positivo?.n ?? 0, neg: fam.historial.negativo?.n ?? 0 },
     }
   }
   const per = fam.historialPorPeriodo.find((p) => p.clave === periodo)
   if (!per) return null
   const etiqueta = etiquetaCorta(per)
-  if (per.sinDato) return { pos: null, neg: null, etiqueta, desde: '', sinBase: per.sinDato, n: { pos: 0, neg: 0 } }
+  if (per.sinDato) return { pos: null, neg: null, etiqueta, desde: '', hasta: '', sinBase: per.sinDato, n: { pos: 0, neg: 0 } }
   const sinBase = !per.positivo && !per.negativo ? `sin reventones en ${etiqueta}` : ''
   return {
     pos: per.positivo?.kPico.mediana ?? null,
     neg: per.negativo?.kPico.mediana ?? null,
-    etiqueta, desde: per.desde, sinBase,
+    etiqueta, desde: per.desde, hasta: per.hasta, sinBase,
     n: { pos: per.positivo?.n ?? 0, neg: per.negativo?.n ?? 0 },
   }
 }

@@ -163,7 +163,7 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
               <div style={{ borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--line)', padding: 6 }}>
                 <KLineChart
                   snaps={snaps} kType={kType} kCond={kCond} maxAbs={maxAbs} window={s.kWindow}
-                  techo={refRev ? { pos: refRev.pos, neg: refRev.neg, etiqueta: refRev.etiqueta, desde: refRev.desde } : undefined}
+                  techo={refRev ? { pos: refRev.pos, neg: refRev.neg, etiqueta: refRev.etiqueta, desde: refRev.desde, hasta: refRev.hasta } : undefined}
                 />
               </div>
               <KLineLegend periodo={refRev?.etiqueta} />

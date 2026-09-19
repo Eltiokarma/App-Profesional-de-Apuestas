@@ -48,7 +48,10 @@ function Chip({ texto, color, title }: { texto: string; color: string; title?: s
 /** Tabla media · mediana · moda · mín–máx de las tres cosas que definen un reventón. */
 function PorPeriodo({ periodos, signo, global, compact }: { periodos: HistorialPeriodoDTO[]; signo: '+' | '-'; global: HistorialSignoDTO | null; compact?: boolean }) {
   const de = (p: HistorialPeriodoDTO) => (signo === '+' ? p.positivo : p.negativo)
-  const filas = compact ? periodos.filter((p) => p.clave === 'temporada' || p.clave === 'dt') : periodos
+  // en la tarjeta van los períodos EN CURSO; las temporadas y años pasados se
+  // eligen en la gráfica, donde se ven sobre la K
+  const vigentes = periodos.filter((p) => p.vigente)
+  const filas = compact ? vigentes.filter((p) => p.clave.startsWith('temporada') || p.clave === 'dt') : vigentes
   return (
     <div style={{ padding: '7px 10px 5px', borderRadius: 9, background: 'var(--bg)', border: '1px solid var(--line)' }}>
       <div style={{ ...rotulo, marginBottom: 4 }}>
