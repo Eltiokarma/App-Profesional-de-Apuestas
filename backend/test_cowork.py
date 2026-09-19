@@ -1711,6 +1711,57 @@ def main():
     check("nace pendiente", mio["estado"] == "pendiente", mio["estado"])
     check("un caso ciego+PRE SÍ puede mover números", mio["puedeMoverNumeros"] is True, mio)
 
+    # ── COHORTE: la época del proceso se sella al depositar ──
+    check("la cohorte del parte es la vigente y viaja en la lectura",
+          c.get(f"{A}/analisis/cowork/{pasado['id']}").json()["cohorte"]["vigente"] is True
+          and inv["cohorteVigente"] and any(x["vigente"] and x["casos"] >= 1 for x in inv["cohortes"]),
+          (inv.get("cohorteVigente"), inv.get("cohortes")))
+    check("la lección trae su cohorte", mio["cohorte"] == inv["cohorteVigente"], mio.get("cohorte"))
+    inv_rod = c.get(f"{A}/analisis/cowork/lecciones", params={"cohorte": "rodaje"}).json()
+    check("filtrar por otra cohorte deja las métricas en cero y el resumen de cohortes entero",
+          inv_rod["acreditables"]["casos"] == 0 and inv_rod["filtro"]["cohorte"] == "rodaje"
+          and inv_rod["cohortes"] == inv["cohortes"], (inv_rod["acreditables"]["casos"], inv_rod["filtro"]))
+    inv_vig = c.get(f"{A}/analisis/cowork/lecciones", params={"cohorte": "vigente"}).json()
+    check("`cohorte=vigente` resuelve a la clave vigente y conserva el caso",
+          inv_vig["filtro"]["cohorte"] == inv["cohorteVigente"]
+          and any(i["clave"] == f"{pasado['id']}:a" for i in inv_vig["items"]), inv_vig["filtro"])
+    # un re-depósito NO cambia de época
+    import backend.analisis.parte as cowork_mod2
+    with cowork_mod2._conectar() as con_c:
+        con_c.execute("UPDATE parte_cowork SET cohorte=NULL WHERE fixture_id=?", (pasado["id"],))
+    c.post(f"{A}/analisis/cowork", json=p_lec)
+    check("un parte sin cohorte (anterior) es «rodaje» y un re-depósito no lo trae a la vigente",
+          c.get(f"{A}/analisis/cowork/{pasado['id']}").json()["cohorte"]["clave"] == "rodaje")
+    with cowork_mod2._conectar() as con_c:
+        con_c.execute("UPDATE parte_cowork SET cohorte=? WHERE fixture_id=?", (cowork_mod2.COHORTE, pasado["id"]))
+    inv = c.get(f"{A}/analisis/cowork/lecciones").json()
+
+    # ── CUARENTENA: por criterio, con motivo, y fuera de toda métrica ──
+    r_q = c.post(f"{A}/analisis/cowork/{pasado['id']}/cuarentena", json={"motivo": "falló"})
+    check("cuarentena sin motivo de verdad → 422 (un fallo no es motivo)", r_q.status_code == 422, r_q.text[:120])
+    r_q = c.post(f"{A}/analisis/cowork/{pasado['id']}/cuarentena", json={"motivo": "rodaje: DT viejo en la ficha"})
+    check("cuarentena con motivo → 200 y guarda el veredicto que tenía el caso al ponerla",
+          r_q.status_code == 200 and r_q.json()["cuarentena"]["veredictoAlPoner"]["a"] == "fallo", r_q.text[:200])
+    inv_q = c.get(f"{A}/analisis/cowork/lecciones").json()
+    check("el caso en cuarentena sale de la población ciega y de las métricas",
+          inv_q["poblacion"]["cuarentena"]["casos"] == 1
+          and inv_q["poblacion"]["ciega"]["casos"] == inv["poblacion"]["ciega"]["casos"] - 1
+          and inv_q["acreditables"]["casos"] == inv["acreditables"]["casos"] - 1,
+          (inv_q["poblacion"], inv_q["acreditables"]["casos"], inv["acreditables"]["casos"]))
+    check("su lección se lista aparte, en `enCuarentena`, sin poder mover números, y no en los conteos por skill",
+          any(i["clave"] == f"{pasado['id']}:a" and i["puedeMoverNumeros"] is False and i["cuarentena"]
+              for i in inv_q["enCuarentena"]["items"])
+          and not any(i["clave"] == f"{pasado['id']}:a" for i in inv_q["items"]), inv_q["enCuarentena"])
+    check("la lectura del parte trae la cuarentena",
+          c.get(f"{A}/analisis/cowork/{pasado['id']}").json()["cuarentena"]["motivo"].startswith("rodaje"))
+    r_q = c.delete(f"{A}/analisis/cowork/{pasado['id']}/cuarentena")
+    check("quitar la cuarentena devuelve lo quitado y el caso vuelve a contar",
+          r_q.status_code == 200 and r_q.json()["quitada"]["motivo"].startswith("rodaje")
+          and c.get(f"{A}/analisis/cowork/lecciones").json()["poblacion"]["cuarentena"]["casos"] == 0, r_q.text[:200])
+    check("cuarentena sobre un fixture sin parte → 404",
+          c.post(f"{A}/analisis/cowork/999999/cuarentena", json={"motivo": "rodaje: primera semana"}).status_code == 404)
+    inv = c.get(f"{A}/analisis/cowork/lecciones").json()
+
     tde_skill = next((x for x in inv["porSkill"] if x["skill"] == "teorema-del-echado"), None)
     check("las lecciones se agrupan por skill", tde_skill is not None,
           [x["skill"] for x in inv["porSkill"]])
@@ -1751,6 +1802,21 @@ def main():
           cerr["fueraDelBacktest"] == ["bajo"] and cerr["revisionAbierta"] is True
           and cerr["porNivel"]["alto"]["dentroDelBacktest"] is True
           and cerr["porNivel"]["medio"]["dentroDelBacktest"] is None, cerr["porNivel"])
+    # EL INTERVALO, NO EL PUNTO: 6 de 21 (29 %) contra 42-47 % parecía FUERA en
+    # la pantalla del 19/09; el intervalo de Wilson [14 %, 50 %] dice que es ruido
+    sint2 = _reventon_vacio()
+    sint2["porNivel"]["bajo"] = {"observadas": 21, "reventadas": 6}
+    sint2["porNivel"]["muy alto"] = {"observadas": 19, "reventadas": 13}   # 68 % vs 75-85 %
+    cerr2 = _cerrar_reventon(sint2)
+    check("6/21 contra 42-47 % es COMPATIBLE por intervalo (Wilson 95 %), no FUERA por el punto",
+          cerr2["porNivel"]["bajo"]["dentroDelBacktest"] is True and cerr2["porNivel"]["bajo"]["lectura"] == "compatible"
+          and cerr2["porNivel"]["bajo"]["intervalo"][0] < 0.42 < cerr2["porNivel"]["bajo"]["intervalo"][1]
+          and cerr2["porNivel"]["muy alto"]["dentroDelBacktest"] is True
+          and cerr2["revisionAbierta"] is False, cerr2["porNivel"])
+    check("la nota dice que se compara por intervalo", "Wilson" in cerr2["nota"], cerr2["nota"])
+    from backend.analisis.lecciones import intervalo_wilson
+    check("intervalo de Wilson: 16/20 → [0.584, 0.919] (80 % no toca 42-47 %) y n=0 → None",
+          intervalo_wilson(16, 20) == (0.584, 0.919) and intervalo_wilson(0, 0) is None, intervalo_wilson(16, 20))
 
     # LO CONTAMINADO ENSEÑA PERO NO MUEVE UN NÚMERO
     c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto", json={

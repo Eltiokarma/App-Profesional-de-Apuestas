@@ -162,7 +162,10 @@ export interface SadDataSource {
    *  Sin onces en el cuerpo, se intenta con la ficha ya ingestada. */
   resolverXi(fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }): Promise<ParteCoworkDTO>
   /** Lo que el bucle aprendió, por skill (fase C de docs/APRENDIZAJE.md). */
-  lecciones(params?: { skill?: string; estado?: string }): Promise<InventarioLecciones>
+  lecciones(params?: { skill?: string; estado?: string; cohorte?: string }): Promise<InventarioLecciones>
+  /** Cuarentena por criterio (docs/APRENDIZAJE.md): la pone el usuario, con motivo. */
+  cuarentena(fixtureId: number, motivo: string): Promise<unknown>
+  quitarCuarentena(fixtureId: number): Promise<unknown>
   /** Mueve una lección de estado. Lo hace el usuario, no el agente. */
   moverLeccion(clave: string, body: { estado: string; aplicadaEn?: string; nota?: string }): Promise<LeccionItem>
 }
@@ -235,6 +238,8 @@ function constantesDTO(teamKey: string, s: KSnapshot): ConstantesDTO {
     golesContra: s.ga,
     ligaId: s.esInternacional ? 2 : (lk ? LIGA_NUM[lk] : 0),
     esInternacional: !!s.esInternacional,
+    // la demo es de ligas de año natural: la temporada es el año del partido
+    temporada: Number(tToIso(s.t).slice(0, 4)),
     q: {
       local: s.q.local,
       visita: s.q.visita,
@@ -848,8 +853,15 @@ class MockDataSource implements SadDataSource {
     return { partes, total: Object.keys(partes).length }
   }
 
-  async lecciones(params?: { skill?: string; estado?: string }): Promise<InventarioLecciones> {
-    return leccionesDemo(params?.skill ?? '', params?.estado ?? '')
+  async lecciones(params?: { skill?: string; estado?: string; cohorte?: string }): Promise<InventarioLecciones> {
+    return leccionesDemo(params?.skill ?? '', params?.estado ?? '', params?.cohorte ?? '')
+  }
+  async cuarentena(fixtureId: number, motivo: string): Promise<unknown> {
+    if (motivo.trim().length < 12) throw new Error('la cuarentena lleva motivo: qué le faltaba a ESTE parte antes del pitazo')
+    return { fixtureId, cuarentena: { motivo, puestaEn: new Date().toISOString() } }
+  }
+  async quitarCuarentena(fixtureId: number): Promise<unknown> {
+    return { fixtureId, cuarentena: null }
   }
 
   async moverLeccion(clave: string, body: { estado: string; aplicadaEn?: string; nota?: string }): Promise<LeccionItem> {
@@ -1144,7 +1156,9 @@ class HttpDataSource implements SadDataSource {
     fixtureIds.length ? SadApi.coworkMarcas(fixtureIds) : Promise.resolve({ partes: {}, total: 0 })
   resolverXi = (fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }) =>
     SadApi.resolverXi(fixtureId, body)
-  lecciones = (params?: { skill?: string; estado?: string }) => SadApi.lecciones(params)
+  lecciones = (params?: { skill?: string; estado?: string; cohorte?: string }) => SadApi.lecciones(params)
+  cuarentena = (fixtureId: number, motivo: string) => SadApi.cuarentena(fixtureId, motivo)
+  quitarCuarentena = (fixtureId: number) => SadApi.quitarCuarentena(fixtureId)
   moverLeccion = (clave: string, body: { estado: string; aplicadaEn?: string; nota?: string }) =>
     SadApi.moverLeccion(clave, body)
 }

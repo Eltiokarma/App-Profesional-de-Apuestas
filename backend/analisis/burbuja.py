@@ -267,7 +267,69 @@ def _extremo(k_abs: float, partidos: int, base: dict, n_cond: int, signo: str) -
     }
 
 
-def _analizar_familia(filas: list[dict], familia: str, proximo: dict | None, estabilidad: dict) -> dict:
+# ── períodos: la misma referencia, acotada en el tiempo ──────────────────────
+#
+# El Universitario de hoy no es el de Fossati ni el de la gestión de Ferrari,
+# y el City del primer Guardiola no es el de ahora: un cambio institucional
+# grande cambia con qué K y ante qué rival revienta un equipo. La referencia
+# global (toda la historia) sigue mandando en el riesgo —es la calibrada con
+# el backtest—, pero al lado viajan las mismas medidas acotadas: esta
+# temporada, este año, con el DT actual y los últimos N partidos. Son
+# referencia para el que lee; con n chico dicen `n` y no dicen más. Se
+# calculan sobre los MISMOS reventones (fecha en la que reventó dentro del
+# período), no sobre episodios recortados: así un episodio nunca cambia de
+# forma según la ventana.
+ULTIMOS_N = 20
+
+
+def periodos_de(filas: list[dict], plantilla: dict | None) -> list[dict]:
+    """[{clave, etiqueta, desde, sinDato}] en orden fijo. `desde` = 'YYYY-MM-DD'
+    inclusivo; un período sin forma de cortar viaja con `sinDato`."""
+    out = []
+    if not filas:
+        return out
+    ultima = filas[-1]
+    fecha_ultima = str(ultima.get("fecha") or "")[:10]
+    temporada = ultima.get("temporada")
+    if temporada is not None:
+        primera = next((str(f.get("fecha") or "")[:10] for f in filas if f.get("temporada") == temporada), fecha_ultima)
+        out.append({"clave": "temporada", "etiqueta": f"temporada {temporada}", "desde": primera, "sinDato": ""})
+    else:
+        out.append({"clave": "temporada", "etiqueta": "esta temporada", "desde": "",
+                    "sinDato": "las filas no traen la temporada del torneo"})
+    anio = fecha_ultima[:4]
+    out.append({"clave": "anio", "etiqueta": f"año {anio}", "desde": f"{anio}-01-01", "sinDato": ""})
+    ent = (plantilla or {}).get("entrenador") or {}
+    desde_dt = str(ent.get("desde") or "")[:10]
+    if ent.get("nombre") and len(desde_dt) == 10:
+        out.append({"clave": "dt", "etiqueta": f"con {ent['nombre']} (desde {desde_dt})", "desde": desde_dt, "sinDato": ""})
+    else:
+        out.append({"clave": "dt", "etiqueta": "con el DT actual", "desde": "",
+                    "sinDato": "sin DT con fecha de asunción en la plantilla"})
+    corte = filas[-ULTIMOS_N] if len(filas) >= ULTIMOS_N else filas[0]
+    out.append({"clave": f"ultimos{ULTIMOS_N}", "etiqueta": f"últimos {min(ULTIMOS_N, len(filas))} partidos",
+                "desde": str(corte.get("fecha") or "")[:10], "sinDato": ""})
+    return out
+
+
+def _historial_por_periodo(filas: list[dict], cerrados: list[dict], periodos: list[dict], familia: str) -> list[dict]:
+    out = []
+    for per in periodos:
+        if per["sinDato"] or not per["desde"]:
+            out.append({**per, "partidos": 0, "reventones": 0, "positivo": None, "negativo": None})
+            continue
+        desde = per["desde"]
+        de = [r for r in cerrados if str(r["fecha"])[:10] >= desde]
+        partidos = sum(1 for f in filas if str(f.get("fecha") or "")[:10] >= desde
+                       and (familia == "total" or f["condicion"] == ("Local" if familia == "local" else "Visita")))
+        hist = _historial(de)
+        out.append({**per, "partidos": partidos, "reventones": len(de),
+                    "positivo": hist["positivo"], "negativo": hist["negativo"]})
+    return out
+
+
+def _analizar_familia(filas: list[dict], familia: str, proximo: dict | None, estabilidad: dict,
+                      periodos: list[dict] | None = None) -> dict:
     cerrados, ep, n_cond = episodios(filas, familia)
     hist = _historial(cerrados)
     aplica = None if not proximo else (
@@ -278,6 +340,7 @@ def _analizar_familia(filas: list[dict], familia: str, proximo: dict | None, est
         "actual": None,
         "reventones": cerrados[-MAX_REVENTONES_SALIDA:],
         "historial": hist,
+        "historialPorPeriodo": _historial_por_periodo(filas, cerrados, periodos or [], familia),
         "posicion": None,
         "rival": None,
         "riesgo": None,
@@ -492,6 +555,7 @@ def analizar(filas: list[dict], *, equipo_id: int, nivel: float, bin_: int,
     """`filas`: ConstantesDTO en orden CRONOLÓGICO. `proximo`: {fixtureId, fecha,
     rivalId, rival, condicion 'L'|'V', nivelRival} o None. `hoy`: 'YYYY-MM-DD'."""
     estabilidad = estabilidad_de(plantilla, hoy)
+    periodos = periodos_de(filas, plantilla)
     return {
         "equipoId": equipo_id,
         "nombre": nombre,
@@ -501,6 +565,7 @@ def analizar(filas: list[dict], *, equipo_id: int, nivel: float, bin_: int,
         "mandan": mandan_de(int(bin_), proximo),
         "proximo": None if not proximo else {**proximo, "nivelRival": _r2(float(proximo["nivelRival"]))},
         "estabilidad": estabilidad,
-        "familias": {f: _analizar_familia(filas, f, proximo, estabilidad) for f in FAMILIAS},
+        "familias": {f: _analizar_familia(filas, f, proximo, estabilidad, periodos) for f in FAMILIAS},
+        "periodos": periodos,
         "aviso": AVISO,
     }

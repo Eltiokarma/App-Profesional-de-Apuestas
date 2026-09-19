@@ -23,9 +23,14 @@ const ETIQUETA_ESTADO: Record<string, string> = {
 
 export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
   const [estado, setEstado] = useState('')
+  // LA COHORTE VIGENTE ES LA VISTA POR DEFECTO. Los casos de la primera semana
+  // se hicieron con el DT viejo y el TDE sin nivel: la etiqueta de población
+  // dice «ciega» y el insumo estaba roto. Se ven, pero aparte.
+  const [cohorte, setCohorte] = useState('vigente')
   const [recarga, setRecarga] = useState(0)
   const inv = useAsync<InventarioLecciones>(
-    () => getDataSource().lecciones(estado ? { estado } : undefined), `${estado}|${recarga}`)
+    () => getDataSource().lecciones({ ...(estado ? { estado } : {}), ...(cohorte ? { cohorte } : {}) }),
+    `${estado}|${cohorte}|${recarga}`)
 
   if (inv.loading && !inv.data) {
     return <Marco><span style={{ font: '500 12px var(--sans)', color: 'var(--t3)' }}>Cargando lo aprendido…</span></Marco>
@@ -51,18 +56,44 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
         recalculan al leer
       </div>
 
+      {/* LA COHORTE: de qué época del proceso son los casos que se están
+          mirando. Se sella al depositar y no cambia con un re-depósito. */}
+      {d.cohortes && d.cohortes.length > 0 && (
+        <Seccion titulo="LA COHORTE" nota={d.notaCohortes}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+            {[{ clave: '', etiqueta: 'todas', casos: d.cohortes.reduce((a, c) => a + c.casos, 0), cuarentena: 0, descripcion: 'todas las épocas juntas: sirve para contar, no para calibrar' },
+              ...d.cohortes.map((c) => ({ clave: c.vigente ? 'vigente' : c.clave, etiqueta: c.vigente ? `vigente · ${c.clave}` : c.clave, casos: c.casos, cuarentena: c.enCuarentena, descripcion: c.descripcion }))]
+              .map((c) => {
+                const sel = cohorte === c.clave
+                return (
+                  <button key={c.clave || 'todas'} onClick={() => setCohorte(c.clave)} title={c.descripcion}
+                    style={{ padding: '6px 11px', borderRadius: 8, border: `1px solid ${sel ? 'var(--accent)' : 'var(--line)'}`, background: sel ? 'var(--bg3)' : 'transparent', color: sel ? 'var(--t1)' : 'var(--t2)', cursor: 'pointer', font: '600 10.5px var(--sans)' }}>
+                    {c.etiqueta} <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)' }}>· {c.casos} {c.casos === 1 ? 'caso' : 'casos'}{c.cuarentena ? ` · ${c.cuarentena} en cuarentena` : ''}</span>
+                  </button>
+                )
+              })}
+          </div>
+          {(() => {
+            const sel = d.cohortes.find((c) => (cohorte === 'vigente' ? c.vigente : c.clave === cohorte))
+            return sel ? <div style={{ font: '500 11px var(--sans)', color: 'var(--t2)', marginTop: 8 }}>{sel.descripcion}</div> : null
+          })()}
+        </Seccion>
+      )}
+
       {/* LA POBLACIÓN VA ANTES QUE CUALQUIER NÚMERO. Un porcentaje que mezcla
           casos ciegos con casos sembrados no es una métrica pesimista ni
           optimista: es otra cosa con el mismo nombre. */}
       <Seccion titulo="LA POBLACIÓN MANDA" >
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
-          {(['ciega', 'por_resultado', 'post_resultado'] as const).map((k) => {
+          {(['ciega', 'por_resultado', 'post_resultado', 'cuarentena'] as const).map((k) => {
             const p = d.poblacion[k]
             const n = typeof p === 'object' ? p : { casos: 0, lados: 0 }
             const ciega = k === 'ciega'
+            const cuar = k === 'cuarentena'
             return (
-              <div key={k} style={{ flex: 1, minWidth: 140, padding: '11px 13px', borderRadius: 11, background: ciega ? 'var(--up-soft)' : 'var(--bg3)' }}>
-                <div style={{ font: '700 9.5px var(--mono)', color: ciega ? 'var(--up)' : 'var(--t3)', letterSpacing: '.4px' }}>
+              <div key={k} title={cuar ? 'apartados por criterio (qué le faltaba al parte antes del pitazo), nunca por resultado: no cuentan ni fijan rúbrica' : undefined}
+                style={{ flex: 1, minWidth: 140, padding: '11px 13px', borderRadius: 11, background: ciega ? 'var(--up-soft)' : cuar ? 'var(--down-soft)' : 'var(--bg3)' }}>
+                <div style={{ font: '700 9.5px var(--mono)', color: ciega ? 'var(--up)' : cuar ? 'var(--down)' : 'var(--t3)', letterSpacing: '.4px' }}>
                   {k.replace('_', ' ').toUpperCase()}
                 </div>
                 <div style={{ font: '800 21px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>{n.casos}</div>
@@ -98,14 +129,21 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
             <div style={{ font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px' }}>REVENTÓN POR NIVEL DE RIESGO · observado vs backtest</div>
             {Object.entries(a.reventon.porNivel).filter(([, c]) => c.observadas > 0).map(([nivel, c]) => (
-              <div key={nivel} style={{ display: 'flex', alignItems: 'center', gap: 10, font: '500 11px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+              <div key={nivel} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', font: '500 11px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
                 <span style={{ width: 70, color: 'var(--t1)', fontWeight: 700 }}>{nivel}</span>
                 <span>{c.reventadas}/{c.observadas}{c.tasa !== null ? ` · ${Math.round(c.tasa * 100)}%` : ''}</span>
+                {/* EL INTERVALO, NO EL PUNTO. 6 de 21 (29 %) contra 42–47 % parece
+                    fuera; el intervalo [14 %, 50 %] dice que es ruido. */}
+                {c.intervalo && (
+                  <span style={{ color: 'var(--t3)' }} title="intervalo de Wilson al 95 % de la tasa observada">
+                    [{Math.round(c.intervalo[0] * 100)}–{Math.round(c.intervalo[1] * 100)}%]
+                  </span>
+                )}
                 <span style={{ color: 'var(--t3)' }}>
                   {c.esperadoBacktest ? `backtest ${Math.round(c.esperadoBacktest[0] * 100)}–${Math.round(c.esperadoBacktest[1] * 100)}%` : 'sin base en el backtest'}
                 </span>
                 <span style={{ color: c.dentroDelBacktest === null ? 'var(--t3)' : c.dentroDelBacktest ? 'var(--up)' : 'var(--down)', fontWeight: 700 }}>
-                  {c.dentroDelBacktest === null ? `n < ${c.nMinimo}: no se compara` : c.dentroDelBacktest ? 'dentro' : 'FUERA'}
+                  {c.dentroDelBacktest === null ? `n < ${c.nMinimo}: no se compara` : c.dentroDelBacktest ? 'compatible' : 'FUERA'}
                 </span>
               </div>
             ))}
@@ -116,8 +154,8 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
             )}
             {a.reventon.revisionAbierta && (
               <div style={{ marginTop: 4, padding: '9px 12px', borderRadius: 10, background: 'var(--down-soft)', font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>
-                Nivel{a.reventon.fueraDelBacktest.length > 1 ? 'es' : ''} <b>{a.reventon.fueraDelBacktest.join(', ')}</b> fuera del rango del backtest con n suficiente:
-                esto ABRE la revisión de los puntos del riesgo (docs/REVENTON.md §5); no los mueve.
+                Nivel{a.reventon.fueraDelBacktest.length > 1 ? 'es' : ''} <b>{a.reventon.fueraDelBacktest.join(', ')}</b>: el rango del backtest no toca el intervalo observado, con n suficiente.
+                Esto ABRE la revisión de los puntos del riesgo (docs/REVENTON.md §11); no los mueve.
               </div>
             )}
           </div>
@@ -142,6 +180,13 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
             Ningún veredicto dejó lección todavía. Esto se llena solo: cada caso que se cierra
             con una lección por lado aparece acá con su partido.
           </div>
+        </Seccion>
+      )}
+
+      {/* LO APARTADO SE VE, PARA QUE NADIE LO OLVIDE NI LO DISIMULE. */}
+      {d.enCuarentena && d.enCuarentena.cuantas > 0 && (
+        <Seccion titulo={`EN CUARENTENA · ${d.enCuarentena.cuantas}`} nota={d.enCuarentena.porque}>
+          {d.enCuarentena.items.map((i) => <Leccion key={i.clave} it={i} onCambio={() => setRecarga((n) => n + 1)} />)}
         </Seccion>
       )}
 
@@ -232,6 +277,8 @@ function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
   const [version, setVersion] = useState(it.aplicadaEn)
   const [error, setError] = useState('')
   const [yendo, setYendo] = useState('')
+  const [cuarAbierta, setCuarAbierta] = useState(false)
+  const [motivo, setMotivo] = useState('')
 
   async function mover(estado: string) {
     setError('')
@@ -241,6 +288,24 @@ function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
       onCambio()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'no se pudo mover')
+    } finally {
+      setYendo('')
+    }
+  }
+
+  // CUARENTENA POR CRITERIO, NUNCA POR RESULTADO: el motivo es qué le faltaba
+  // al parte antes del pitazo. Es del caso entero (los dos lados), y la pone
+  // el usuario con el token maestro.
+  async function cuarentena(poner: boolean) {
+    setError('')
+    setYendo('cuarentena')
+    try {
+      if (poner) await getDataSource().cuarentena(it.fixtureId, motivo)
+      else await getDataSource().quitarCuarentena(it.fixtureId)
+      setCuarAbierta(false)
+      onCambio()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'no se pudo cambiar la cuarentena')
     } finally {
       setYendo('')
     }
@@ -270,13 +335,47 @@ function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
       {it.mancha && (
         <div style={{ font: '500 10.5px var(--sans)', color: 'var(--mark)', marginTop: 4 }}>salvedad declarada: {it.mancha}</div>
       )}
+      {(it.cohorte || it.cuarentena) && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 5 }}>
+          {it.cohorte && <span style={{ font: '600 9.5px var(--mono)', color: 'var(--t3)', padding: '2px 7px', borderRadius: 6, border: '1px solid var(--line)' }}>cohorte {it.cohorte}</span>}
+          {it.cuarentena && <span style={{ font: '600 9.5px var(--mono)', color: 'var(--down)', padding: '2px 7px', borderRadius: 6, background: 'var(--down-soft)' }}>en cuarentena: {it.cuarentena}</span>}
+        </div>
+      )}
 
-      <div style={{ marginTop: 7 }}>
+      <div style={{ marginTop: 7, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         <button onClick={() => setAbierto(!abierto)}
           style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid var(--line)', background: 'transparent', color: 'var(--t2)', cursor: 'pointer', font: '600 10px var(--sans)' }}>
           {abierto ? 'Cerrar' : 'Mover de estado'}
         </button>
+        {it.cuarentena ? (
+          <button onClick={() => cuarentena(false)} disabled={!!yendo}
+            style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid var(--line)', background: 'transparent', color: 'var(--t2)', cursor: 'pointer', font: '600 10px var(--sans)' }}>
+            {yendo === 'cuarentena' ? '…' : 'Quitar la cuarentena'}
+          </button>
+        ) : (
+          <button onClick={() => setCuarAbierta(!cuarAbierta)}
+            title="aparta el caso entero del aprendizaje, por lo que le faltaba al parte antes del pitazo; nunca porque falló"
+            style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid var(--line)', background: 'transparent', color: 'var(--t3)', cursor: 'pointer', font: '600 10px var(--sans)' }}>
+            {cuarAbierta ? 'Cancelar' : 'Cuarentena…'}
+          </button>
+        )}
       </div>
+      {cuarAbierta && !it.cuarentena && (
+        <div style={{ marginTop: 8, padding: '10px 12px', borderRadius: 10, background: 'var(--down-soft)' }}>
+          <div style={{ font: '500 10.5px var(--sans)', color: 'var(--t1)', marginBottom: 6 }}>
+            Motivo: qué le faltaba a ESTE parte antes del pitazo («DT viejo», «TDE sin nivel», «rodaje: primera semana»).
+            Un fallo no es motivo. Se guarda el veredicto que tenía el caso al ponerla.
+          </div>
+          <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+            <input value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="motivo (mínimo 12 caracteres)"
+              style={{ flex: 1, minWidth: 190, padding: '6px 9px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--t1)', font: '500 11px var(--mono)' }} />
+            <button onClick={() => cuarentena(true)} disabled={!!yendo || motivo.trim().length < 12}
+              style={{ padding: '6px 11px', borderRadius: 8, border: 0, cursor: 'pointer', background: 'var(--down)', color: '#fff', font: '600 10.5px var(--sans)', opacity: motivo.trim().length < 12 ? 0.5 : 1 }}>
+              {yendo === 'cuarentena' ? '…' : 'Poner en cuarentena'}
+            </button>
+          </div>
+        </div>
+      )}
       {abierto && (
         <div style={{ marginTop: 8, padding: '10px 12px', borderRadius: 10, background: 'var(--bg3)' }}>
           <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center' }}>

@@ -855,6 +855,7 @@ def constantes_de(team_id: int, limit: int, hasta: str | None = None, antes: str
             gf, ga = (p["goals_home"], p["goals_away"]) if es_local else (p["goals_away"], p["goals_home"])
             rival_id, rival_nombre = p["rival_id"], p["rival_nombre"]
             liga_id = p["league_id"] or 0
+            temporada = p["league_season"] if "league_season" in p.keys() else None
         else:  # fallback si el discretizador va por detrás de constants
             f = db.query_one("sad", FIXTURE_SQL + " WHERE f.id=?", (c["fixture_id"],))
             if not f:
@@ -867,6 +868,7 @@ def constantes_de(team_id: int, limit: int, hasta: str | None = None, antes: str
             rival_id = f["away_team_id"] if es_local else f["home_team_id"]
             rival_nombre = f["away_name"] if es_local else f["home_name"]
             liga_id = f["league_id"] or 0
+            temporada = f["league_season"]
         # Nivel del rival CONTINUO (§3.1), el que ponderó el motor. OJO: el
         # pipeline guarda en processed_matches.nivel_rival el BIN 0–9 (feature
         # de ML, §4.1), y servir eso como «nivel» hacía que en producción el
@@ -895,6 +897,9 @@ def constantes_de(team_id: int, limit: int, hasta: str | None = None, antes: str
                 "nivelRival": nivel_rival,
                 "ligaId": liga_id,
                 "esInternacional": liga_id in INTL_LEAGUE_IDS,
+                # la temporada del torneo (2026, o 2025 para una 2025/26 europea):
+                # el período «esta temporada» del reventón corta por acá
+                "temporada": int(temporada) if temporada is not None else None,
                 "golesFavor": gf or 0,
                 "golesContra": ga or 0,
                 "q": {
@@ -2328,7 +2333,8 @@ class LeccionBody(BaseModel):
 
 @app.get(API + "/analisis/cowork/lecciones")
 def cowork_lecciones(skill: str = Query(default=""), estado: str = Query(default=""),
-                     limite: int = Query(default=400, ge=1, le=2000)):
+                     limite: int = Query(default=400, ge=1, le=2000),
+                     cohorte: str = Query(default="", description="'' = todas · 'vigente' · o una clave")):
     """Lo que el bucle aprendió, indexado por skill (fase C).
 
     El CONTENIDO de cada lección se deriva del veredicto al leer —no hay copia
@@ -2338,7 +2344,37 @@ def cowork_lecciones(skill: str = Query(default=""), estado: str = Query(default
     Las métricas salen SOLO de la población acreditable (ciega + PRE) y con su
     `n` a la vista; las otras poblaciones se cuentan aparte y no se suman."""
     from backend.analisis import lecciones
-    return lecciones.inventario(skill, estado, limite)
+    return lecciones.inventario(skill, estado, limite, cohorte)
+
+
+class CuarentenaBody(BaseModel):
+    motivo: str = ""
+
+
+@app.post(API + "/analisis/cowork/{fixture_id}/cuarentena")
+def cowork_cuarentena(fixture_id: int, body: CuarentenaBody):
+    """Aparta un caso del aprendizaje, con motivo. NO está abierto a Cowork.
+
+    Cuarentena POR CRITERIO, NUNCA POR RESULTADO: se pone por lo que le faltaba
+    al parte antes del pitazo (DT viejo, TDE sin nivel, rodaje), no porque el
+    veredicto salió fallo. Se guarda el veredicto que tenía el caso al ponerla,
+    para que una auditoría vea si se puso después de saber cómo terminó."""
+    from backend.analisis import parte as cowork
+    try:
+        return cowork.poner_cuarentena(fixture_id, body.motivo)
+    except cowork.ParteInvalido as e:
+        raise HTTPException(422, str(e))
+    except KeyError:
+        raise HTTPException(404, f"no hay parte de Cowork para el fixture {fixture_id}")
+
+
+@app.delete(API + "/analisis/cowork/{fixture_id}/cuarentena")
+def cowork_cuarentena_quitar(fixture_id: int):
+    from backend.analisis import parte as cowork
+    try:
+        return cowork.quitar_cuarentena(fixture_id)
+    except KeyError:
+        raise HTTPException(404, f"no hay parte de Cowork para el fixture {fixture_id}")
 
 
 @app.post(API + "/analisis/cowork/lecciones/{clave}")

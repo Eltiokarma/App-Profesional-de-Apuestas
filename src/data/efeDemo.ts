@@ -371,7 +371,7 @@ function veredictoDemo(fixtureId: number, marcador: string): VeredictoParte {
  *  ciego y uno contaminado, para que se vea en pantalla la distinción que el
  *  dossier no puede dejar al criterio del día — solo lo acreditable puede mover
  *  un número; lo demás fija rúbrica. */
-export function leccionesDemo(skill: string, estado: string): InventarioLecciones {
+export function leccionesDemo(skill: string, estado: string, cohorte = ''): InventarioLecciones {
   const base = (x: Partial<LeccionItem> & { clave: string }): LeccionItem => ({
     fixtureId: 9001, lado: 'b', equipo: 'Villarreal', rival: 'Atlético',
     partido: 'Atlético vs Villarreal', fecha: '2026-07-20',
@@ -437,12 +437,24 @@ export function leccionesDemo(skill: string, estado: string): InventarioLeccione
   })
   return {
     generadoEn: '2026-07-21 09:05:00',
-    filtro: { skill, estado },
+    filtro: { skill, estado, cohorte },
+    cohortes: [
+      { clave: 'rodaje', vigente: false, descripcion: 'partes anteriores al 19/09/2026: DT viejo, TDE sin nivel. Enseñan, no calibran', casos: 1, enCuarentena: 1 },
+      { clave: 'c2-2026-09-19', vigente: true, descripcion: 'desde el 19/09/2026: dt {nombre, desde}, niveles del TDE rechazados si llegan mal', casos: 3, enCuarentena: 0 },
+    ],
+    cohorteVigente: 'c2-2026-09-19',
+    notaCohortes: 'la cohorte se sella al depositar y no cambia con un re-depósito; las métricas de arriba son SOLO de la cohorte elegida (vacío = todas)',
+    enCuarentena: {
+      cuantas: 1,
+      porque: 'casos apartados por criterio (qué le faltaba al parte antes del pitazo), nunca por resultado: no cuentan ni fijan rúbrica',
+      items: [base({ clave: '8990:a', fixtureId: 8990, lado: 'a', equipo: 'Girona', rival: 'Sevilla', partido: 'Girona vs Sevilla', fecha: '2026-07-12', veredicto: 'fallo', leccion: 'rodaje: DT viejo en la ficha', cohorte: 'rodaje', cuarentena: 'rodaje: DT viejo en 17 de 22 equipos', puedeMoverNumeros: false, queAutoriza: 'en cuarentena: no cuenta ni fija rúbrica' })],
+    },
     poblacion: {
       ciega: { casos: 2, lados: 3 },
       por_resultado: { casos: 0, lados: 0 },
       post_resultado: { casos: 1, lados: 1 },
-      nota: 'las poblaciones no se suman entre sí: solo `ciega` + `PRE` acredita, las demás fijan rúbrica',
+      cuarentena: { casos: 1, lados: 1 },
+      nota: 'las poblaciones no se suman entre sí: solo `ciega` + `PRE` acredita, las demás fijan rúbrica; `cuarentena` no cuenta en nada',
     },
     acreditables: {
       criterio: 'ciega + PRE: la única combinación que acredita validación predictiva',
@@ -462,11 +474,11 @@ export function leccionesDemo(skill: string, estado: string): InventarioLeccione
       reventon: {
         observadas: 3, reventadas: 2, tasa: 0.667, tasaBaseBacktest: 0.6,
         porNivel: {
-          'bajo': { observadas: 0, reventadas: 0, tasa: null, esperadoBacktest: [0.421, 0.473], dentroDelBacktest: null, nMinimo: 10 },
-          'medio': { observadas: 1, reventadas: 0, tasa: 0, esperadoBacktest: [0.608, 0.608], dentroDelBacktest: null, nMinimo: 10 },
-          'alto': { observadas: 2, reventadas: 2, tasa: 1, esperadoBacktest: [0.672, 0.692], dentroDelBacktest: null, nMinimo: 10 },
-          'muy alto': { observadas: 0, reventadas: 0, tasa: null, esperadoBacktest: [0.747, 0.854], dentroDelBacktest: null, nMinimo: 10 },
-          'sin base': { observadas: 0, reventadas: 0, tasa: null, esperadoBacktest: null, dentroDelBacktest: null, nMinimo: 10 },
+          'bajo': { observadas: 0, reventadas: 0, tasa: null, intervalo: null, esperadoBacktest: [0.421, 0.473], dentroDelBacktest: null, lectura: 'sin n', nMinimo: 10 },
+          'medio': { observadas: 1, reventadas: 0, tasa: 0, intervalo: [0, 0.793], esperadoBacktest: [0.608, 0.608], dentroDelBacktest: null, lectura: 'sin n', nMinimo: 10 },
+          'alto': { observadas: 2, reventadas: 2, tasa: 1, intervalo: [0.342, 1], esperadoBacktest: [0.672, 0.692], dentroDelBacktest: null, lectura: 'sin n', nMinimo: 10 },
+          'muy alto': { observadas: 0, reventadas: 0, tasa: null, intervalo: null, esperadoBacktest: [0.747, 0.854], dentroDelBacktest: null, lectura: 'sin n', nMinimo: 10 },
+          'sin base': { observadas: 0, reventadas: 0, tasa: null, intervalo: null, esperadoBacktest: null, dentroDelBacktest: null, lectura: 'sin n', nMinimo: 10 },
         },
         extremo: { observadas: 1, reventadas: 1, nota: 'burbujas con alerta K-EXTREMO declarada antes del partido: el backtest dice que la K no adelanta el reventón; esto lo mira en producción' },
         sinBurbuja: 1, noComprobables: 0, fueraDelBacktest: [], revisionAbierta: false,

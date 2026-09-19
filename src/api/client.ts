@@ -49,13 +49,22 @@ export { qs }
 
 /** POST JSON. El análisis EFE puede tardar 1-3 min: pasar timeoutMs generoso. */
 export async function apiPost<T>(path: string, body: unknown, opts: RequestOpts = {}): Promise<T> {
+  return apiEnviar<T>('POST', path, body, opts)
+}
+
+export async function apiDelete<T>(path: string, opts: RequestOpts = {}): Promise<T> {
+  return apiEnviar<T>('DELETE', path, undefined, opts)
+}
+
+async function apiEnviar<T>(method: 'POST' | 'DELETE', path: string, body: unknown, opts: RequestOpts = {}): Promise<T> {
   const ctrl = new AbortController()
   const timeout = setTimeout(() => ctrl.abort(), opts.timeoutMs ?? 30_000)
   opts.signal?.addEventListener('abort', () => ctrl.abort(), { once: true })
   try {
-    const headers: Record<string, string> = { Accept: 'application/json', 'Content-Type': 'application/json' }
+    const headers: Record<string, string> = { Accept: 'application/json' }
+    if (body !== undefined) headers['Content-Type'] = 'application/json'
     if (CONFIG.apiKey) headers.Authorization = `Bearer ${CONFIG.apiKey}`
-    const res = await fetch(CONFIG.apiBaseUrl + path, { method: 'POST', headers, body: JSON.stringify(body), signal: ctrl.signal })
+    const res = await fetch(CONFIG.apiBaseUrl + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), signal: ctrl.signal })
     if (!res.ok) {
       let resBody: unknown
       try {
@@ -64,7 +73,7 @@ export async function apiPost<T>(path: string, body: unknown, opts: RequestOpts 
         /* cuerpo no-JSON */
       }
       const detalle = (resBody as { detail?: string } | undefined)?.detail
-      throw new ApiError(res.status, detalle || `POST ${path} → ${res.status} ${res.statusText}`, resBody)
+      throw new ApiError(res.status, detalle || `${method} ${path} → ${res.status} ${res.statusText}`, resBody)
     }
     return (await res.json()) as T
   } finally {

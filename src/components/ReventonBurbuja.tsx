@@ -2,7 +2,7 @@
 // de resultado del equipo suele volver a cero, tal como llega del contrato
 // (GET /equipos/{id}/burbujas). La pantalla no calcula nada: pinta los números
 // y los motivos que vienen con ellos. No es una probabilidad y se dice.
-import type { BurbujasEquipoDTO, DistribucionDTO, FamiliaBurbuja, FamiliaBurbujaDTO, ReventonDTO } from '../api/types'
+import type { BurbujasEquipoDTO, DistribucionDTO, FamiliaBurbuja, FamiliaBurbujaDTO, HistorialPeriodoDTO, HistorialSignoDTO, ReventonDTO } from '../api/types'
 import type { KCondKey } from '../data/types'
 import { fmtK, signFmt } from '../lib/kview'
 
@@ -46,6 +46,65 @@ function Chip({ texto, color, title }: { texto: string; color: string; title?: s
 }
 
 /** Tabla media · mediana · moda · mín–máx de las tres cosas que definen un reventón. */
+function PorPeriodo({ periodos, signo, global, compact }: { periodos: HistorialPeriodoDTO[]; signo: '+' | '-'; global: HistorialSignoDTO | null; compact?: boolean }) {
+  const de = (p: HistorialPeriodoDTO) => (signo === '+' ? p.positivo : p.negativo)
+  const filas = compact ? periodos.filter((p) => p.clave === 'temporada' || p.clave === 'dt') : periodos
+  return (
+    <div style={{ padding: '7px 10px 5px', borderRadius: 9, background: 'var(--bg)', border: '1px solid var(--line)' }}>
+      <div style={{ ...rotulo, marginBottom: 4 }}>
+        REVENTÓN TÍPICO {signo === '+' ? '+' : '−'} POR PERÍODO · <span style={{ color: 'var(--t3)' }}>la global manda en el riesgo; esto es referencia</span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: compact ? 'minmax(0,1fr)' : 'minmax(0,1.6fr) repeat(4, minmax(0,1fr))', gap: compact ? 3 : '2px 8px', font: '500 10.5px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+        {!compact && (
+          <>
+            <span style={{ color: 'var(--t3)' }}>período</span>
+            <span style={{ color: 'var(--t3)' }}>n</span>
+            <span style={{ color: 'var(--t3)' }}>K pico med.</span>
+            <span style={{ color: 'var(--t3)' }}>racha med.</span>
+            <span style={{ color: 'var(--t3)' }}>rival med.</span>
+          </>
+        )}
+        {global && (
+          <Linea compact={compact} etiqueta="toda la historia" h={global} destacada />
+        )}
+        {filas.map((p) => {
+          const h = de(p)
+          if (p.sinDato) return <Linea key={p.clave} compact={compact} etiqueta={p.etiqueta} h={null} nota={p.sinDato} />
+          return <Linea key={p.clave} compact={compact} etiqueta={`${p.etiqueta} · ${p.partidos} pj`} h={h} nota={h ? (h.n < 3 ? 'muestra corta' : '') : 'sin reventones de este signo'} />
+        })}
+      </div>
+    </div>
+  )
+}
+
+function Linea({ etiqueta, h, nota, destacada, compact }: { etiqueta: string; h: HistorialSignoDTO | null; nota?: string; destacada?: boolean; compact?: boolean }) {
+  const color = destacada ? 'var(--t1)' : 'var(--t2)'
+  if (compact) {
+    return (
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', color }}>
+        <span style={{ fontWeight: destacada ? 700 : 500 }}>{etiqueta}:</span>
+        {h ? <span>n {h.n} · K {num(h.kPico.mediana, 1)} · {num(h.partidos.mediana, 1)} pj · rival {num(h.nivelRival.mediana, 2)}{nota ? ` · ${nota}` : ''}</span>
+          : <span style={{ color: 'var(--t3)' }}>{nota}</span>}
+      </div>
+    )
+  }
+  return (
+    <>
+      <span style={{ color, fontWeight: destacada ? 700 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={etiqueta}>{etiqueta}</span>
+      {h ? (
+        <>
+          <span style={{ color }}>{h.n}{nota ? <span style={{ color: 'var(--t3)' }}> · {nota}</span> : null}</span>
+          <span style={{ color }}>{num(h.kPico.mediana, 1)}</span>
+          <span style={{ color }}>{num(h.partidos.mediana, 1)}</span>
+          <span style={{ color }}>{num(h.nivelRival.mediana, 2)}</span>
+        </>
+      ) : (
+        <span style={{ gridColumn: 'span 4', color: 'var(--t3)' }}>{nota}</span>
+      )}
+    </>
+  )
+}
+
 function TablaHistorial({ h, signo }: { h: NonNullable<FamiliaBurbujaDTO['historial']['positivo']>; signo: '+' | '-' }) {
   const filas: [string, (d: DistribucionDTO) => string][] = [
     ['Media', (d) => num(d.media, 2)],
@@ -240,6 +299,16 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
             </div>
           )}
         </>
+      )}
+
+      {/* LA MISMA REFERENCIA, ACOTADA EN EL TIEMPO. El Universitario de hoy no es
+          el de Fossati, ni el City de ahora el del primer Guardiola: la global
+          (toda la historia) sigue mandando en el riesgo porque es la calibrada
+          con el backtest, pero al lado van las mismas medidas de esta temporada,
+          este año, con el DT actual y los últimos 20. Con n chico dicen n y no
+          dicen más. */}
+      {fam.historialPorPeriodo && fam.historialPorPeriodo.length > 0 && (
+        <PorPeriodo periodos={fam.historialPorPeriodo} signo={signo} global={base} compact={compact} />
       )}
 
       {/* estabilidad: sube o baja la confianza, nunca el riesgo */}
