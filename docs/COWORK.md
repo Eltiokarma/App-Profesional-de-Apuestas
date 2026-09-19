@@ -881,7 +881,11 @@ Escribís vos (es juicio, no se puede calcular):
   llegó. La escala es 0-10 (bandas 3 / 5 / 7), NUNCA 0-100. No mandes
   P(echada) ni riesgo compuesto: están suspendidas. Los niveles
   verde/ámbar/rojo sí los ponés vos: el backend no le inventa umbrales a tu
-  escala.
+  escala. DOS CAMPOS, NO UNO: en `ie`/`ise` va el NÚMERO y en
+  `ieNivel`/`iseNivel` va la ETIQUETA ("verde" | "ambar" | "rojo"). Diez
+  partes llegaron con el número en `ieNivel` y quedaron sin nivel: ahora eso
+  vuelve en `rechazos` (y el número se rescata en `ie`). `disciplina43` solo
+  va en true si mandás las dos vías (o los indicadores): sin eso se rechaza.
 - Los eventos INSTITUCIONALES del timeline en `timelineEventos` (nunca partidos).
 - El pronóstico clave por equipo foco en `cadena`: una frase, la que después se
   va a poder declarar acertada o fallada.
@@ -1056,7 +1060,11 @@ LEÉ EL RECIBO que devuelve el POST:
 - `jugadores` con menos de los que escribiste = a esos les faltaba zona o rol
   y no entraron. Completalos y re-depositá (es idempotente: el último manda).
 - `rechazos` con contenido = eso NO entró. Cada uno dice dónde estaba, por qué
-  y qué se esperaba. Corrígelo y re-depositá completo.
+  y qué se esperaba. Corrígelo y re-depositá completo. Los tres que más
+  salieron el 18/09 y que antes pasaban callados: `tde.bloques[i].ieNivel`
+  (mandaste el número donde va la etiqueta), `equipos.{a,b}.dt` (el DT llegó
+  sin `desde` ni `meses`: la antigüedad quedó en null) y
+  `equipos.{a,b}.dt.nombre` (una oración donde va un nombre).
 - `perdido`/`aviso` con contenido = este depósito dejó el parte con MENOS de lo
   que tenía. El POST reemplaza entero: si fue sin querer, re-depositá completo.
 - `eventosTimeline` en 0 habiendo mandado eventos = eran de tipo partido y se
