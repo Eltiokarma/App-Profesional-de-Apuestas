@@ -911,12 +911,63 @@ paths:
           in: query
           description: 'pendiente | en_revision | aplicada | descartada'
           schema: { type: string }
+        - name: cohorte
+          in: query
+          description: >
+            La ÉPOCA del proceso: '' = todas, 'vigente' = la actual, o una clave concreta
+            (`rodaje` = lo anterior a la primera cohorte sellada). Las métricas y los conteos
+            por skill son SOLO de la cohorte elegida; `cohortes` viaja siempre entero. La
+            cohorte se sella al depositar y un re-depósito no la cambia.
+          schema: { type: string }
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema: { $ref: '#/components/schemas/InventarioLecciones' }
+  /analisis/cowork/{fixtureId}/cuarentena:
+    post:
+      summary: Apartar un caso del aprendizaje, con motivo — lo hace el usuario, no el agente
+      description: >
+        CUARENTENA POR CRITERIO, NUNCA POR RESULTADO. Se pone por lo que le faltaba al parte
+        antes del pitazo (DT viejo, TDE sin nivel, rodaje), no porque el veredicto salió
+        fallo: si no, es la forma elegante de borrar los fallos y la métrica deja de
+        significar. El motivo es obligatorio (≥ 12 caracteres), se guarda el veredicto que
+        tenía el caso al ponerla (`veredictoAlPoner`, para que una auditoría vea si se puso
+        después de saber cómo terminó) y NO está en la lista de permitidos del token de
+        Cowork. Un caso en cuarentena sale de todas las métricas y sus lecciones no cuentan
+        ni fijan rúbrica; se listan aparte en `enCuarentena`.
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [motivo]
+              properties:
+                motivo: { type: string, description: 'qué le faltaba a ESTE parte antes del pitazo' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fixtureId: { type: integer }
+                  cuarentena: { $ref: '#/components/schemas/Cuarentena' }
+        '403': { description: 'el token de Cowork no pone cuarentenas' }
+        '404': { description: 'no hay parte para ese fixture' }
+        '422': { description: 'sin motivo, o un motivo que no lo es' }
+    delete:
+      summary: Quitar la cuarentena; devuelve lo quitado
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: 'OK: `quitada` trae la marca que había' }
+        '404': { description: 'no hay parte para ese fixture' }
   /analisis/cowork/lecciones/{clave}:
     post:
       summary: Mover una lección de estado — lo hace el usuario, no el agente
@@ -1014,11 +1065,36 @@ components:
           type: boolean
           description: >
             Solo un caso acreditable (ciega + PRE) puede mover un peso. Los demás fijan
-            rúbrica: aclaran cómo se aplica una regla, sin tocar ningún número.
+            rúbrica: aclaran cómo se aplica una regla, sin tocar ningún número. Uno en
+            cuarentena ni siquiera fija rúbrica.
+        cohorte: { type: string, description: 'época del proceso en la que se depositó el parte' }
+        cuarentena: { type: string, description: 'motivo de la cuarentena; vacío si el caso cuenta' }
         estado: { type: string, enum: [pendiente, en_revision, aplicada, descartada] }
         aplicadaEn: { type: string }
         nota: { type: string }
         actualizadoEn: { type: string }
+    Cuarentena:
+      type: object
+      properties:
+        motivo: { type: string }
+        puestaEn: { type: string }
+        veredictoAlPoner:
+          type: object
+          nullable: true
+          description: 'el veredicto por lado que tenía el caso al ponerla: evidencia para la auditoría'
+          additionalProperties: { type: string }
+    Cohorte:
+      type: object
+      description: >
+        Una época del proceso. Se sella al depositar (`ParteCowork.cohorte`) y no cambia con un
+        re-depósito; lo anterior a la primera cohorte sellada es `rodaje`. La vigente es la
+        única que vale para calibrar; las demás enseñan.
+      properties:
+        clave: { type: string }
+        vigente: { type: boolean }
+        descripcion: { type: string }
+        casos: { type: integer }
+        enCuarentena: { type: integer }
     InventarioLecciones:
       type: object
       properties:
@@ -1028,17 +1104,30 @@ components:
           properties:
             skill: { type: string }
             estado: { type: string }
+            cohorte: { type: string }
+        cohortes: { type: array, items: { $ref: '#/components/schemas/Cohorte' } }
+        cohorteVigente: { type: string }
+        notaCohortes: { type: string }
+        enCuarentena:
+          type: object
+          description: 'casos apartados por criterio: no cuentan ni fijan rúbrica'
+          properties:
+            cuantas: { type: integer }
+            porque: { type: string }
+            items: { type: array, items: { $ref: '#/components/schemas/LeccionItem' } }
         poblacion:
           type: object
-          description: 'los casos cerrados por población; NUNCA se suman entre sí'
+          description: 'los casos cerrados por población (más `cuarentena`, que no cuenta en nada); NUNCA se suman entre sí'
           additionalProperties: true
         acreditables:
           type: object
           description: >
             La única población medible (ciega + PRE): veredictos por lado, tasa de acierto
             con su n, acierto del 1X2, Brier con su línea de base y `reventon`: la tasa de
-            reventón observada por nivel de riesgo (`porNivel`, con `esperadoBacktest` y
-            `dentroDelBacktest`, comparado solo con n ≥ `nMinimo`), las burbujas con K-EXTREMO,
+            reventón observada por nivel de riesgo (`porNivel`, con `intervalo` de Wilson al
+            95 %, `esperadoBacktest`, `dentroDelBacktest` y `lectura` compatible/fuera/sin n:
+            FUERA es que el rango del backtest no toca el intervalo, nunca que el punto quede
+            afuera; comparado solo con n ≥ `nMinimo`), las burbujas con K-EXTREMO,
             y `fueraDelBacktest` / `revisionAbierta`: un nivel fuera del rango ABRE la revisión
             de los puntos de docs/REVENTON.md §5, no los mueve.
           additionalProperties: true
@@ -1149,6 +1238,7 @@ components:
         golesFavor: { type: integer }
         golesContra: { type: integer }
         ligaId: { type: integer }
+        temporada: { type: integer, nullable: true, description: 'temporada del torneo (2026, o 2025 para una 2025/26 europea); corta el período «esta temporada» del reventón' }
         esInternacional: { type: boolean, description: 'true si fue torneo internacional (UCL, UEL, Libertadores…)' }
         q:
           type: object
@@ -1556,12 +1646,42 @@ components:
         kPico: { $ref: '#/components/schemas/Distribucion' }
         partidos: { $ref: '#/components/schemas/Distribucion' }
         nivelRival: { $ref: '#/components/schemas/Distribucion', description: 'nivel del rival que reventó cada burbuja' }
+    PeriodoBurbuja:
+      type: object
+      description: >
+        Un corte en el tiempo para releer la misma referencia: el Universitario de hoy no es
+        el de Fossati ni el City de ahora el del primer Guardiola. Cuatro en orden fijo:
+        `temporada` (la del torneo del último partido), `anio` (calendario), `dt` (desde la
+        asunción del DT de la plantilla) y `ultimos20`. Un período que no se pudo cortar viaja
+        con `sinDato`, nunca con un corte inventado.
+      required: [clave, etiqueta, desde, sinDato]
+      properties:
+        clave: { type: string }
+        etiqueta: { type: string }
+        desde: { type: string, description: 'YYYY-MM-DD inclusivo; vacío con sinDato' }
+        sinDato: { type: string }
+    HistorialPeriodo:
+      allOf:
+        - { $ref: '#/components/schemas/PeriodoBurbuja' }
+        - type: object
+          description: >
+            Las mismas medidas de `historial`, sobre los reventones ocurridos DESDE `desde`
+            (se filtra por la fecha en la que reventó; los episodios no se recortan). La
+            global sigue mandando en el riesgo —es la calibrada con el backtest—; esto es
+            referencia para el que lee, y con n chico dice n.
+          required: [partidos, reventones, positivo, negativo]
+          properties:
+            partidos: { type: integer, description: 'partidos de la familia dentro del período' }
+            reventones: { type: integer }
+            positivo: { $ref: '#/components/schemas/HistorialSigno', nullable: true }
+            negativo: { $ref: '#/components/schemas/HistorialSigno', nullable: true }
     FamiliaBurbuja:
       type: object
-      required: [familia, partidosEnCondicion, actual, reventones, historial, posicion, rival, riesgo, extremo]
+      required: [familia, partidosEnCondicion, actual, reventones, historial, historialPorPeriodo, posicion, rival, riesgo, extremo]
       properties:
         familia: { type: string, enum: [total, local, visita] }
         partidosEnCondicion: { type: integer }
+        historialPorPeriodo: { type: array, items: { $ref: '#/components/schemas/HistorialPeriodo' } }
         actual:
           type: object
           nullable: true
@@ -1663,13 +1783,14 @@ components:
     BurbujasEquipo:
       type: object
       description: 'Reventón de la burbuja (docs/REVENTON.md): guía calculada de la historia del equipo, no una probabilidad'
-      required: [equipoId, nombre, nivel, bin, partidos, mandan, proximo, estabilidad, familias, aviso]
+      required: [equipoId, nombre, nivel, bin, partidos, mandan, proximo, estabilidad, familias, periodos, aviso]
       properties:
         equipoId: { type: integer }
         nombre: { type: string, nullable: true }
         nivel: { type: number }
         bin: { type: integer }
         partidos: { type: integer, description: 'filas de constantes procesadas' }
+        periodos: { type: array, items: { $ref: '#/components/schemas/PeriodoBurbuja' } }
         mandan:
           type: object
           description: 'qué familia pesa: la total, siempre (el backtest real la puso por delante en todos los niveles). reglaNivel conserva la hipótesis del nivel como dato'
@@ -2554,6 +2675,14 @@ components:
             timelineNarrativa: { type: string }
             cadena: { type: object, additionalProperties: { type: string } }
             descartados: { type: array, items: { type: string } }
+        cohorte:
+          type: object
+          description: 'época del proceso en la que se depositó (se sella al depositar; un re-depósito no la cambia)'
+          properties:
+            clave: { type: string }
+            vigente: { type: boolean }
+            descripcion: { type: string }
+        cuarentena: { $ref: '#/components/schemas/Cuarentena', nullable: true }
         veredicto:
           nullable: true
           description: 'null mientras el caso no se haya cerrado'

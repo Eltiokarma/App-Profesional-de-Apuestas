@@ -10,6 +10,8 @@ import type {
   EstabilidadEquipoDTO,
   FamiliaBurbuja,
   FamiliaBurbujaDTO,
+  HistorialPeriodoDTO,
+  PeriodoBurbujaDTO,
   HistorialSignoDTO,
   ExtremoBurbujaDTO,
   PlantillaDTO,
@@ -21,7 +23,7 @@ import type {
 export type FilaK = Pick<
   ConstantesDTO,
   'fixtureId' | 'fecha' | 'condicion' | 'rivalId' | 'rivalNombre' | 'nivelRival' | 'golesFavor' | 'golesContra' | 'esInternacional'
-> & { fusion: Pick<ConstantesDTO['fusion'], 'k' | 'kLocal' | 'kVisita'> }
+> & { fusion: Pick<ConstantesDTO['fusion'], 'k' | 'kLocal' | 'kVisita'>; temporada?: number | null }
 
 export type ProximoBurbuja = NonNullable<BurbujasEquipoDTO['proximo']>
 
@@ -214,7 +216,50 @@ function extremoDe(kAbs: number, partidos: number, base: HistorialSignoDTO, nCon
   }
 }
 
-function analizarFamilia(filas: FilaK[], familia: FamiliaBurbuja, proximo: ProximoBurbuja | null, estabilidad: EstabilidadEquipoDTO): FamiliaBurbujaDTO {
+/** Los mismos reventones, acotados en el tiempo (espejo de `periodos_de`): la
+ *  referencia global manda en el riesgo; estas son referencia para el que lee.
+ *  Se filtra por la fecha en la que reventó, nunca se recortan episodios. */
+export const ULTIMOS_N = 20
+
+export function periodosDe(filas: FilaK[], plantilla: PlantillaBurbuja | null | undefined): PeriodoBurbujaDTO[] {
+  const out: PeriodoBurbujaDTO[] = []
+  if (!filas.length) return out
+  const ultima = filas[filas.length - 1]
+  const fechaUltima = String(ultima.fecha ?? '').slice(0, 10)
+  const temporada = ultima.temporada
+  if (temporada != null) {
+    const primera = filas.find((f) => f.temporada === temporada)
+    out.push({ clave: 'temporada', etiqueta: `temporada ${temporada}`, desde: String(primera?.fecha ?? fechaUltima).slice(0, 10), sinDato: '' })
+  } else {
+    out.push({ clave: 'temporada', etiqueta: 'esta temporada', desde: '', sinDato: 'las filas no traen la temporada del torneo' })
+  }
+  const anio = fechaUltima.slice(0, 4)
+  out.push({ clave: 'anio', etiqueta: `año ${anio}`, desde: `${anio}-01-01`, sinDato: '' })
+  const ent = plantilla?.entrenador
+  const desdeDt = String(ent?.desde ?? '').slice(0, 10)
+  if (ent?.nombre && desdeDt.length === 10) {
+    out.push({ clave: 'dt', etiqueta: `con ${ent.nombre} (desde ${desdeDt})`, desde: desdeDt, sinDato: '' })
+  } else {
+    out.push({ clave: 'dt', etiqueta: 'con el DT actual', desde: '', sinDato: 'sin DT con fecha de asunción en la plantilla' })
+  }
+  const corte = filas.length >= ULTIMOS_N ? filas[filas.length - ULTIMOS_N] : filas[0]
+  out.push({ clave: `ultimos${ULTIMOS_N}`, etiqueta: `últimos ${Math.min(ULTIMOS_N, filas.length)} partidos`, desde: String(corte.fecha ?? '').slice(0, 10), sinDato: '' })
+  return out
+}
+
+function historialPorPeriodo(filas: FilaK[], cerrados: ReventonDTO[], periodos: PeriodoBurbujaDTO[], familia: FamiliaBurbuja): HistorialPeriodoDTO[] {
+  return periodos.map((per) => {
+    if (per.sinDato || !per.desde) return { ...per, partidos: 0, reventones: 0, positivo: null, negativo: null }
+    const desde = per.desde
+    const de = cerrados.filter((r) => String(r.fecha).slice(0, 10) >= desde)
+    const partidos = filas.filter((f) => String(f.fecha ?? '').slice(0, 10) >= desde
+      && (familia === 'total' || f.condicion === (familia === 'local' ? 'Local' : 'Visita'))).length
+    const hist = historialDe(de)
+    return { ...per, partidos, reventones: de.length, positivo: hist.positivo, negativo: hist.negativo }
+  })
+}
+
+function analizarFamilia(filas: FilaK[], familia: FamiliaBurbuja, proximo: ProximoBurbuja | null, estabilidad: EstabilidadEquipoDTO, periodos: PeriodoBurbujaDTO[] = []): FamiliaBurbujaDTO {
   const { cerrados, abierta: ep, nCond } = episodios(filas, familia)
   const hist = historialDe(cerrados)
   const aplica = !proximo ? null : familia === 'total' ? true : proximo.condicion === (familia === 'local' ? 'L' : 'V')
@@ -224,6 +269,7 @@ function analizarFamilia(filas: FilaK[], familia: FamiliaBurbuja, proximo: Proxi
     actual: null,
     reventones: cerrados.slice(-MAX_REVENTONES_SALIDA),
     historial: hist,
+    historialPorPeriodo: historialPorPeriodo(filas, cerrados, periodos, familia),
     posicion: null,
     rival: null,
     riesgo: null,
@@ -411,8 +457,9 @@ export interface ContextoBurbuja {
 /** `filas` en orden CRONOLÓGICO (el contrato /constantes entrega desc: invertir antes). */
 export function analizarBurbujas(filas: FilaK[], ctx: ContextoBurbuja): BurbujasEquipoDTO {
   const estabilidad = estabilidadDe(ctx.plantilla, ctx.hoy)
+  const periodos = periodosDe(filas, ctx.plantilla)
   const familias = {} as Record<FamiliaBurbuja, FamiliaBurbujaDTO>
-  for (const f of FAMILIAS) familias[f] = analizarFamilia(filas, f, ctx.proximo, estabilidad)
+  for (const f of FAMILIAS) familias[f] = analizarFamilia(filas, f, ctx.proximo, estabilidad, periodos)
   return {
     equipoId: ctx.equipoId,
     nombre: ctx.nombre ?? null,
@@ -423,6 +470,7 @@ export function analizarBurbujas(filas: FilaK[], ctx: ContextoBurbuja): Burbujas
     proximo: ctx.proximo ? { ...ctx.proximo, nivelRival: r2(ctx.proximo.nivelRival) } : null,
     estabilidad,
     familias,
+    periodos,
     aviso: AVISO_REVENTON,
   }
 }

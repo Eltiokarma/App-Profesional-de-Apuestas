@@ -1,6 +1,6 @@
 // Endpoints del backend SAD (contrato: docs/openapi.yaml).
 import type { BurbujasEquipoDTO } from './types'
-import { apiGet, apiPost, qs } from './client'
+import { apiDelete, apiGet, apiPost, qs } from './client'
 import type {
   AgendaCoworkDTO,
   AnalisisPrepartidoDTO,
@@ -163,8 +163,14 @@ export const SadApi = {
     apiPost<ParteCoworkDTO>(`/analisis/cowork/${fixtureId}/xi`, body, { timeoutMs: 20_000 }),
 
   /** Lo que el bucle aprendió, por skill (fase C de docs/APRENDIZAJE.md). */
-  lecciones: (params?: { skill?: string; estado?: string }) =>
+  lecciones: (params?: { skill?: string; estado?: string; cohorte?: string }) =>
     apiGet<InventarioLecciones>('/analisis/cowork/lecciones' + qs(params ?? {})),
+
+  /** Aparta un caso del aprendizaje POR CRITERIO (qué le faltaba al parte), nunca por resultado. Token maestro. */
+  cuarentena: (fixtureId: number, motivo: string) =>
+    apiPost<{ fixtureId: number; cuarentena: unknown }>(`/analisis/cowork/${fixtureId}/cuarentena`, { motivo }),
+  quitarCuarentena: (fixtureId: number) =>
+    apiDelete<{ fixtureId: number; cuarentena: null }>(`/analisis/cowork/${fixtureId}/cuarentena`),
 
   /** Mueve una lección de estado. `aplicada` exige la versión del skill. */
   moverLeccion: (clave: string, body: { estado: string; aplicadaEn?: string; nota?: string }) =>

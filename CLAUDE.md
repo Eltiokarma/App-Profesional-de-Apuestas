@@ -247,7 +247,11 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   `K-EXTREMO` en la tira del parte y como regla dura del prompt—; no mueve
   los puntos (la K no puntúa) pero sí cuánto se carga: es prudencia, no
   probabilidad, y Cowork no se la puede saltar. Las K de goles quedan fuera
-  a propósito hasta que se decida sumarlas.
+  a propósito hasta que se decida sumarlas. **Por período** (§10-bis):
+  `historialPorPeriodo` repite las medidas acotadas a temporada · año · DT
+  vigente · últimos 20, filtrando por la fecha del reventón sobre los mismos
+  episodios; la global sigue mandando en el riesgo (es la calibrada) y un
+  período sin corte viaja con `sinDato`. Espejo TS y vectores dorados.
 - Cuotas K (§3.8): las barras SIEMPRE vía `RachasCuotas` y su botonera
   `ControlesCuotas` (condición · mercado 1X2/Doble op./Ambos · ventana); cada
   mercado dibuja solo los partidos con SU cuota capturada — sin dato, la
@@ -399,7 +403,14 @@ conversación se pierde en la siguiente.
    por nivel) y un nivel fuera del rango ABRE la revisión de los puntos sin
    moverlos (`docs/REVENTON.md` §11); y
    mover estados NO está abierto al token de Cowork: el agente lee sus
-   lecciones, declarar aplicada la suya es del usuario. Faltan D (dossier cada
+   lecciones, declarar aplicada la suya es del usuario. **Cuarentena y
+   cohortes** (C-bis, hechas): la cuarentena es POR CRITERIO y NUNCA POR
+   RESULTADO (motivo obligatorio, `veredictoAlPoner` como evidencia, token
+   maestro), saca el caso de toda métrica; la cohorte se sella AL DEPOSITAR
+   (`parte.COHORTE`, lo anterior es `rodaje`), un re-depósito no la cambia,
+   y las métricas se leen por cohorte (`?cohorte=vigente`, la vista por
+   defecto). El reventón por nivel se compara con el backtest por INTERVALO
+   (Wilson 95 %), no por el punto. Faltan D (dossier cada
    4 fallos, que ABRE la revisión pero no autoriza mover nada) y A
    (antecedentes). La app nunca mueve un peso de un skill por su cuenta.
    Snapshot de los skills en `docs/skills/`.

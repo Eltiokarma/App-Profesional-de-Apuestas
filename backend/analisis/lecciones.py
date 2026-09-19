@@ -22,6 +22,7 @@ DOS DECISIONES QUE EXPLICAN TODO EL MÓDULO:
 from __future__ import annotations
 
 import json
+import math
 
 from backend.analisis import db as efedb, veredicto as vered
 
@@ -57,10 +58,12 @@ def _casos(limite: int = 400) -> list[dict]:
     """Los partes con veredicto, con su parte y su juicio ya cargados."""
     from backend.analisis.parte import _conectar as conectar_parte
 
+    from backend.analisis.parte import cohorte_de
+
     with conectar_parte() as con:
         filas = con.execute(
-            "SELECT fixture_id, fecha, equipo_a, equipo_b, parte_json, veredicto_json "
-            "FROM parte_cowork WHERE veredicto_json IS NOT NULL "
+            "SELECT fixture_id, fecha, equipo_a, equipo_b, parte_json, veredicto_json, "
+            "cohorte, cuarentena_json FROM parte_cowork WHERE veredicto_json IS NOT NULL "
             "ORDER BY fecha DESC LIMIT ?", (limite,)).fetchall()
     fuera = []
     for f in filas:
@@ -69,6 +72,8 @@ def _casos(limite: int = 400) -> list[dict]:
             "equipoA": f["equipo_a"], "equipoB": f["equipo_b"],
             "parte": json.loads(f["parte_json"]),
             "veredicto": json.loads(f["veredicto_json"]),
+            "cohorte": cohorte_de(f["cohorte"])["clave"],
+            "cuarentena": json.loads(f["cuarentena_json"]) if f["cuarentena_json"] else None,
         })
     return fuera
 
@@ -103,10 +108,14 @@ def _items_de(caso: dict, estados: dict) -> list[dict]:
             "reglaTocada": (lv.get("reglaTocada") or "").strip(),
             "seleccion": seleccion, "modoEvaluacion": modo, "acredita": acredita,
             "mancha": v.get("mancha", ""),
+            "cohorte": caso.get("cohorte", ""),
+            "cuarentena": (caso.get("cuarentena") or {}).get("motivo", "") if caso.get("cuarentena") else "",
             # LA DISTINCIÓN QUE EL DOSSIER NO PUEDE DEJAR AL CRITERIO DEL DÍA:
-            # un caso contaminado enseña, pero no mueve un número.
-            "puedeMoverNumeros": acredita,
-            "queAutoriza": ("puede sostener un cambio de peso" if acredita else
+            # un caso contaminado enseña, pero no mueve un número. Uno en
+            # cuarentena ni siquiera enseña: su insumo estaba roto.
+            "puedeMoverNumeros": acredita and not caso.get("cuarentena"),
+            "queAutoriza": ("en cuarentena: no cuenta ni fija rúbrica" if caso.get("cuarentena") else
+                            "puede sostener un cambio de peso" if acredita else
                             "solo fija rúbrica: aclara cómo se aplica una regla, "
                             "no mueve ningún número"),
             "estado": st.get("estado") or "pendiente",
@@ -118,8 +127,13 @@ def _items_de(caso: dict, estados: dict) -> list[dict]:
 
 
 def _metricas(casos: list[dict]) -> tuple[dict, dict]:
-    """Población por separado, y las métricas SOLO de lo acreditable."""
+    """Población por separado, y las métricas SOLO de lo acreditable.
+
+    Un caso en cuarentena se cuenta en su propia población y NO entra en
+    ninguna métrica: la etiqueta ciega describe cuánto se sabía del
+    resultado, la cuarentena describe que el insumo estaba roto."""
     poblacion = {s: {"casos": 0, "lados": 0} for s in vered.SELECCIONES}
+    poblacion["cuarentena"] = {"casos": 0, "lados": 0}
     acred = {"acierto": 0, "parcial": 0, "fallo": 0}
     casos_acred, briers, reales, con_reparto = 0, [], [], 0
     unxdos_ok, unxdos_de = 0, 0
@@ -130,6 +144,10 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
         v = caso["veredicto"]
         sel = v.get("seleccion", "")
         lados = [l for l in ("a", "b") if (v.get("porLado") or {}).get(l)]
+        if caso.get("cuarentena"):
+            poblacion["cuarentena"]["casos"] += 1
+            poblacion["cuarentena"]["lados"] += len(lados)
+            continue
         if sel in poblacion:
             poblacion[sel]["casos"] += 1
             poblacion[sel]["lados"] += len(lados)
@@ -226,6 +244,20 @@ def _acumular_reventon(acc: dict, reventon: dict) -> None:
             acc["extremo"]["reventadas"] += 1 if r["observado"].get("revento") else 0
 
 
+def intervalo_wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float] | None:
+    """Intervalo de Wilson al 95 % para una proporción k/n. Con n chico el
+    punto engaña: 6 de 21 (29 %) contra un backtest de 42-47 % parece FUERA, y
+    el intervalo [14 %, 50 %] dice que es ruido. Se compara el RANGO del
+    backtest con el intervalo, no con el punto."""
+    if n <= 0:
+        return None
+    p = k / n
+    den = 1 + z * z / n
+    centro = (p + z * z / (2 * n)) / den
+    medio = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / den
+    return (round(max(0.0, centro - medio), 3), round(min(1.0, centro + medio), 3))
+
+
 def _cerrar_reventon(acc: dict) -> dict:
     from backend.analisis.burbuja import TASA_BACKTEST, TASA_BASE_BACKTEST
     por_nivel = {}
@@ -233,13 +265,19 @@ def _cerrar_reventon(acc: dict) -> dict:
         n, k = c["observadas"], c["reventadas"]
         tasa = round(k / n, 3) if n else None
         esperado = TASA_BACKTEST.get(nivel)
+        intervalo = intervalo_wilson(k, n)
         dentro = None
-        if tasa is not None and esperado and n >= REVENTON_N_MINIMO:
-            dentro = esperado[0] <= tasa <= esperado[1]
+        lectura = "sin n" if n < REVENTON_N_MINIMO else ("sin base en el backtest" if not esperado else "")
+        if tasa is not None and esperado and n >= REVENTON_N_MINIMO and intervalo:
+            # FUERA solo si el rango del backtest y el intervalo no se tocan
+            dentro = not (intervalo[1] < esperado[0] or intervalo[0] > esperado[1])
+            lectura = "compatible" if dentro else "fuera"
         por_nivel[nivel] = {
             "observadas": n, "reventadas": k, "tasa": tasa,
+            "intervalo": list(intervalo) if intervalo else None,
             "esperadoBacktest": list(esperado) if esperado else None,
             "dentroDelBacktest": dentro,
+            "lectura": lectura,
             "nMinimo": REVENTON_N_MINIMO,
         }
     obs = sum(c["observadas"] for c in acc["porNivel"].values())
@@ -259,8 +297,9 @@ def _cerrar_reventon(acc: dict) -> dict:
         "revisionAbierta": bool(fuera),
         "nota": ("por lado, en población ciega: la burbuja total tal como estaba antes del partido "
                  "y si ese partido la reventó. La tasa por nivel se compara con la del backtest "
-                 f"(docs/REVENTON.md §8) solo con n ≥ {REVENTON_N_MINIMO}; un nivel fuera del rango "
-                 "ABRE la revisión de los puntos, no los mueve. `sinBurbuja` y `noComprobables` no "
+                 f"(docs/REVENTON.md §8) solo con n ≥ {REVENTON_N_MINIMO}, y por INTERVALO (Wilson 95 %), "
+                 "no por el punto: FUERA es que el rango del backtest no toca el intervalo. Un nivel "
+                 "fuera ABRE la revisión de los puntos, no los mueve. `sinBurbuja` y `noComprobables` no "
                  "cuentan: no había nada que reventar o el pipeline no calculó el partido"),
     }
 
@@ -309,12 +348,31 @@ def _liston(skill: str, metricas: dict) -> dict | None:
     }
 
 
-def inventario(skill: str = "", estado: str = "", limite: int = 400) -> dict:
-    """Todo lo aprendido, por skill, con las métricas de la población ciega."""
+COHORTE_VIGENTE = "vigente"
+
+
+def inventario(skill: str = "", estado: str = "", limite: int = 400, cohorte: str = "") -> dict:
+    """Todo lo aprendido, por skill, con las métricas de la población ciega.
+
+    `cohorte`: "" = todas; "vigente" = la del proceso actual; o una clave
+    concreta. Las métricas y los conteos por skill se calculan SOBRE LA
+    COHORTE ELEGIDA; el resumen de cohortes viaja siempre entero para que se
+    vea cuánto queda fuera. Lo que está en cuarentena se lista aparte y no
+    entra en ningún conteo."""
+    from backend.analisis.parte import COHORTE, COHORTES, cohorte_de
     estados = _estados()
-    casos = _casos(limite)
+    todos_los_casos = _casos(limite)
+    clave_cohorte = COHORTE if cohorte == COHORTE_VIGENTE else cohorte
+    cohortes = []
+    for clave in sorted({c["cohorte"] for c in todos_los_casos} | {COHORTE}):
+        de = [c for c in todos_los_casos if c["cohorte"] == clave]
+        cohortes.append({**cohorte_de(clave), "casos": len(de),
+                         "enCuarentena": sum(1 for c in de if c.get("cuarentena"))})
+    casos = [c for c in todos_los_casos if not clave_cohorte or c["cohorte"] == clave_cohorte]
     todos = [i for caso in casos for i in _items_de(caso, estados)]
     poblacion, metricas = _metricas(casos)
+    en_cuarentena = [i for i in todos if i["cuarentena"]]
+    todos = [i for i in todos if not i["cuarentena"]]
 
     filtrados = [i for i in todos
                  if (not skill or i["skill"] == skill)
@@ -351,11 +409,22 @@ def inventario(skill: str = "", estado: str = "", limite: int = 400) -> dict:
     huerfanas = [i for i in todos if not i["skill"]]
     return {
         "generadoEn": efedb.ahora(),
-        "filtro": {"skill": skill, "estado": estado},
+        "filtro": {"skill": skill, "estado": estado, "cohorte": clave_cohorte},
+        "cohortes": cohortes,
+        "cohorteVigente": COHORTE,
+        "notaCohortes": ("la cohorte se sella al depositar y no cambia con un re-depósito; "
+                         "las métricas de arriba son SOLO de la cohorte elegida (vacío = todas). "
+                         + COHORTES.get(COHORTE, "")),
+        "enCuarentena": {
+            "cuantas": len(en_cuarentena),
+            "porque": "casos apartados por criterio (qué le faltaba al parte antes del pitazo), "
+                      "nunca por resultado: no cuentan ni fijan rúbrica",
+            "items": en_cuarentena,
+        },
         "poblacion": {
             **poblacion,
             "nota": "las poblaciones no se suman entre sí: solo `ciega` + `PRE` acredita, "
-                    "las demás fijan rúbrica",
+                    "las demás fijan rúbrica; `cuarentena` no cuenta en nada",
         },
         "acreditables": metricas,
         "porSkill": por_skill,

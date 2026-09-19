@@ -341,6 +341,34 @@ con una **bandera aparte** que dice cuánto se carga, no cuánto pasa.
   vectores dorados (el caso Foco tiene K 22.1 sobre máximo 13.3 y racha 6
   sobre 3: activo en total y visita, inactivo en local).
 
+## 10-bis. La misma referencia, por período
+
+El Universitario de hoy no es el de Fossati ni el de la gestión de Ferrari, y
+el City del primer Guardiola no es el de ahora: un cambio institucional grande
+cambia con qué K y ante qué rival revienta un equipo. La referencia global
+(toda la historia del equipo) **sigue mandando en el riesgo**, porque es la
+que está calibrada con el backtest de §8 y no hay backtest por período. Pero
+al lado viajan las mismas medidas —n, K pico, racha y nivel del rival con el
+que reventó, media · mediana · moda— acotadas en el tiempo, en
+`familias.*.historialPorPeriodo[]` (y los cortes en `periodos[]`):
+
+| clave | corte | de dónde sale |
+|---|---|---|
+| `temporada` | la temporada del torneo del último partido | `ConstantesDTO.temporada` (league_season) |
+| `anio` | el 1 de enero del año del último partido | la fecha |
+| `dt` | la asunción del DT vigente | `plantilla.entrenador.desde` |
+| `ultimos20` | los últimos 20 partidos | las filas |
+
+Reglas: se filtra por **la fecha en la que reventó** cada burbuja sobre los
+mismos reventones de `episodios()` —los episodios no se recortan, así uno
+nunca cambia de forma según la ventana—; un período que no se puede cortar
+(sin temporada en las filas, sin DT con fecha) viaja con `sinDato` y sin
+número; y con n chico la pantalla dice «muestra corta». En la vista «al día
+del partido» (§9) la plantilla no se usa, así que el período del DT queda sin
+dato. Espejo TS en `src/lib/burbuja.ts` (`periodosDe`) y vectores dorados en
+los dos tests. La sección Burbujas muestra temporada y DT; la página de
+Equipo, los cuatro.
+
 ## 11. El reventón en el bucle de aprendizaje (producción contra backtest)
 
 El backtest de §8 responde «¿los pesos son razonables en general?» sobre 171k
@@ -358,9 +386,14 @@ aprendizaje (`docs/APRENDIZAJE.md`), en dos piezas:
   detecta los reventones de la historia. Es observación, no veredicto: no hay
   `acerto`.
 - **En las lecciones** (`acreditables.reventon`, `backend/analisis/lecciones.py`):
-  solo casos `ciega` + `PRE`. Tasa observada por nivel de riesgo contra
-  `TASA_BACKTEST` (la tabla de §8, segunda corrida, como rango por nivel),
-  comparada solo con `n ≥ 10` por nivel; las burbujas con K-EXTREMO aparte.
+  solo casos `ciega` + `PRE`, de la cohorte elegida y sin los de cuarentena.
+  Tasa observada por nivel de riesgo contra `TASA_BACKTEST` (la tabla de §8,
+  segunda corrida, como rango por nivel), comparada solo con `n ≥ 10` por
+  nivel **y por intervalo, no por el punto**: `porNivel[nivel].intervalo` es
+  el de Wilson al 95 % de la tasa observada, y `lectura` es `compatible`
+  cuando el rango del backtest lo toca y `fuera` cuando no. Con 6 de 21
+  (29 %) contra 42-47 % el punto está afuera y el intervalo [14 %, 50 %] dice
+  que es ruido; eso salía en rojo el 19/09. Las burbujas con K-EXTREMO aparte.
   `fueraDelBacktest` / `revisionAbierta` **abren** la revisión de los puntos
   de §5: no los mueven. `TASA_BACKTEST` no es un peso y no entra en ningún
   cálculo de riesgo; por eso no tiene espejo TS ni vector dorado.

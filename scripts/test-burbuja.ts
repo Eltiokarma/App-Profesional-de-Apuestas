@@ -56,6 +56,18 @@ const rg = t.riesgo!
 check('riesgo MUY ALTO con 8 puntos (racha +1, rival muy fuerte +7) y 3 motivos', rg.nivel === 'muy alto' && rg.puntos === 8 && rg.motivos.length === 3, rg)
 check('la K se describe pero no puntúa', rg.motivos.some((m) => m.includes('la K no puntúa') && m.includes('22.1')), rg.motivos)
 check('confianza BAJA: muestra corta (3) y estabilidad inestable', rg.confianza === 'baja' && rg.confianzaMotivos.some((m) => m.includes('inestable')), rg.confianzaMotivos)
+console.log('\n— por período —')
+const per = t.historialPorPeriodo
+check('cuatro períodos en orden fijo: temporada · año · dt · últimos 20', eq(per.map((p) => p.clave), ['temporada', 'anio', 'dt', 'ultimos20']), per.map((p) => p.clave))
+check('sin `temporada` en las filas el período viaja con sinDato, no con un corte inventado', per[0].sinDato !== '' && per[0].positivo === null, per[0])
+check('año 2026: los 5 reventones y los 20 partidos, mismas medidas que la global', per[1].desde === '2026-01-01' && per[1].reventones === 5 && per[1].partidos === 20 && eq(per[1].positivo, t.historial.positivo), per[1])
+check('con el DT actual (desde 2026-08-07): ningún reventón, referencia vacía con su n', per[2].desde === '2026-08-07' && per[2].reventones === 0 && per[2].positivo === null && per[2].negativo === null, per[2])
+check('últimos 20 partidos = toda la muestra de 20', per[3].partidos === 20 && per[3].reventones === 5, per[3])
+const conTemporada = analizar(filas.map((f, i) => ({ ...f, temporada: i < 8 ? 2025 : 2026 })))
+const pt = conTemporada.familias.total.historialPorPeriodo[0]
+check('con temporada en las filas, «temporada 2026» corta en su primer partido y cuenta solo lo que reventó desde ahí', pt.etiqueta === 'temporada 2026' && pt.desde === filas[8].fecha.slice(0, 10) && pt.partidos === 12 && pt.reventones === t.reventones.filter((r) => r.fecha.slice(0, 10) >= filas[8].fecha.slice(0, 10)).length, pt)
+check('los períodos viajan también en la cabecera', eq(out.periodos.map((p) => p.clave), per.map((p) => p.clave)))
+
 const ex = t.extremo!
 check('ALERTA DE EXTREMO activa: K 22.1 ≥ máximo previo 13.3 y racha 6 ≥ 3, sobre 20 partidos', ex.activo && ex.kRecord && ex.rachaRecord && ex.partidosHistoria === 20 && eq(ex.maximoPrevio, { kPico: 13.3, partidos: 3 }), ex)
 check('extremo: dos motivos con el N de partidos y texto que pide no cargar la apuesta', ex.motivos.length === 2 && ex.motivos.every((m) => m.includes('20 partidos')) && ex.texto.includes('no cargar la apuesta'), ex.motivos)

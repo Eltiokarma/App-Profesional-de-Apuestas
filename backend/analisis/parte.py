@@ -84,7 +84,25 @@ class ParteInvalido(ValueError):
 # el veredicto llegó después de la primera versión de la tabla: se añade en
 # caliente para no perder los partes ya depositados (en SQLite un ALTER que ya
 # existe es un error, no un problema)
-_COLUMNAS_NUEVAS = (("veredicto_json", "TEXT"),)
+_COLUMNAS_NUEVAS = (("veredicto_json", "TEXT"), ("cohorte", "TEXT"), ("cuarentena_json", "TEXT"))
+
+# ── COHORTES: de qué época del proceso es cada caso ─────────────────────────
+#
+# Un caso «ciego» de la primera semana se hizo con el DT viejo en 17 de 22
+# equipos, el TDE sin nivel en diez partes y la agenda sin padrón: la etiqueta
+# de población dice que es limpio y el insumo estaba roto. La cohorte se sella
+# AL DEPOSITAR con la versión vigente del proceso y no cambia con un
+# re-depósito (un parte viejo re-depositado hoy sigue siendo de su época). Lo
+# anterior a la primera cohorte sellada es «rodaje». Las métricas se leen por
+# cohorte; la vigente es la única que vale para calibrar.
+COHORTE_RODAJE = "rodaje"
+COHORTE = "c2-2026-09-19"
+COHORTES = {
+    COHORTE_RODAJE: "partes anteriores al 19/09/2026: DT viejo en 17 de 22 equipos, TDE sin nivel "
+                    "en diez partes, agenda sin padrón. Enseñan, no calibran",
+    "c2-2026-09-19": "desde el 19/09/2026: dt {nombre, desde}, niveles del TDE rechazados si "
+                     "llegan mal, DT de la ingesta desde la alineación, once de la ficha con procedencia",
+}
 
 
 def _conectar():
@@ -255,7 +273,8 @@ _CLAVES_PARTE = {"fixtureId", "version", "generadoEn", "equipos", "alertas", "ma
 # respuesta. Se ignora en silencio; delatarlo llenaría el recibo de rechazos
 # falsos y escondería los de verdad.
 _ECO_PARTE = {"partido", "estado", "creadoEn", "actualizadoEn", "xi", "veredicto",
-              "timeline", "rechazos", "perdido", "aviso", "entrada"}
+              "timeline", "rechazos", "perdido", "aviso", "entrada", "cohorte", "cuarentena",
+              "xiConservados"}
 _ECO_EQUIPO = {"total", "maximoAlcanzable", "porcentaje", "clasificacion", "disponibilidad",
                "sinBloques", "bloquesSinDeclarar", "notaTotales"}
 _ECO_JUGADOR = {"soloBaja"}
@@ -1122,14 +1141,17 @@ def guardar(payload: dict) -> dict:
                              (parte["fixtureId"],)).fetchone()
         con.execute(
             "INSERT INTO parte_cowork (fixture_id, fecha, equipo_a, equipo_b, estado, version, "
-            "parte_json, xi_json, creado_en, actualizado_en) VALUES (?,?,?,?,?,?,?,?,?,?) "
+            "parte_json, xi_json, creado_en, actualizado_en, cohorte) VALUES (?,?,?,?,?,?,?,?,?,?,?) "
             "ON CONFLICT(fixture_id) DO UPDATE SET fecha=excluded.fecha, equipo_a=excluded.equipo_a, "
             "equipo_b=excluded.equipo_b, version=excluded.version, parte_json=excluded.parte_json, "
-            "actualizado_en=excluded.actualizado_en",
+            "actualizado_en=excluded.actualizado_en, "
+            # la cohorte es de la PRIMERA vez: un re-depósito no cambia de época, y un
+            # parte que ya existía sin marca es de antes de la primera cohorte (rodaje)
+            f"cohorte=COALESCE(parte_cowork.cohorte, '{COHORTE_RODAJE}')",
             (parte["fixtureId"], (fx["date"] or "")[:10], fx["home_name"], fx["away_name"],
              "pendiente_xi", parte["version"], json.dumps(parte, ensure_ascii=False),
              previo["xi_json"] if previo else None,
-             previo["creado_en"] if previo else ahora, ahora),
+             previo["creado_en"] if previo else ahora, ahora, COHORTE),
         )
     # un parte nuevo sobre un fixture que ya tenía once resuelto se recalcula
     # solo al leerlo: el once vive aparte, justamente para sobrevivir al parte
@@ -1495,7 +1517,7 @@ def dto(fixture_id: int) -> dict | None:
     with _conectar() as con:
         fila = con.execute(
             "SELECT fixture_id, fecha, equipo_a, equipo_b, estado, version, parte_json, "
-            "xi_json, creado_en, actualizado_en FROM parte_cowork WHERE fixture_id=?",
+            "xi_json, creado_en, actualizado_en, cohorte, cuarentena_json FROM parte_cowork WHERE fixture_id=?",
             (fixture_id,),
         ).fetchone()
     if not fila:
@@ -1587,9 +1609,63 @@ def dto(fixture_id: int) -> dict | None:
             "descartados": parte.get("descartados") or [],
         },
         "veredicto": veredicto_de(fila["fixture_id"]),
+        "cohorte": cohorte_de(fila["cohorte"]),
+        "cuarentena": json.loads(fila["cuarentena_json"]) if fila["cuarentena_json"] else None,
         "creadoEn": fila["creado_en"],
         "actualizadoEn": fila["actualizado_en"],
     }
+
+
+def cohorte_de(valor: str | None) -> dict:
+    clave = valor or COHORTE_RODAJE
+    return {"clave": clave, "vigente": clave == COHORTE,
+            "descripcion": COHORTES.get(clave, "cohorte sin descripción registrada")}
+
+
+# ── cuarentena: un caso que no cuenta, con su motivo ────────────────────────
+#
+# Cuarentena POR CRITERIO, NUNCA POR RESULTADO. Se pone por lo que le faltaba
+# al parte antes del pitazo (DT viejo, TDE sin nivel, agenda equivocada), no
+# porque el veredicto salió fallo: si no, es la forma elegante de borrar los
+# fallos y la métrica deja de significar. Por eso el motivo es obligatorio,
+# se guarda el veredicto que tenía el caso en ese momento (para que una
+# auditoría vea si se puso después de saber cómo terminó) y la pone el
+# usuario con el token maestro: no está abierta a Cowork.
+CUARENTENA_MOTIVO_MIN = 12
+
+
+def poner_cuarentena(fixture_id: int, motivo: str) -> dict:
+    motivo = _txt(motivo)
+    if len(motivo) < CUARENTENA_MOTIVO_MIN:
+        raise ParteInvalido("la cuarentena lleva motivo: qué le faltaba a ESTE parte antes del pitazo "
+                            "(«DT viejo», «TDE sin nivel», «rodaje: primera semana»). Un fallo no es motivo")
+    with _conectar() as con:
+        fila = con.execute("SELECT veredicto_json FROM parte_cowork WHERE fixture_id=?",
+                           (fixture_id,)).fetchone()
+        if not fila:
+            raise KeyError(fixture_id)
+        ver = json.loads(fila["veredicto_json"]) if fila["veredicto_json"] else {}
+        marca = {
+            "motivo": motivo,
+            "puestaEn": efedb.ahora(),
+            # evidencia para la auditoría: qué se sabía del caso al ponerla
+            "veredictoAlPoner": {l: ((ver.get("porLado") or {}).get(l) or {}).get("veredicto", "")
+                                 for l in LADOS} if ver else None,
+        }
+        con.execute("UPDATE parte_cowork SET cuarentena_json=? WHERE fixture_id=?",
+                    (json.dumps(marca, ensure_ascii=False), fixture_id))
+    return {"fixtureId": fixture_id, "cuarentena": marca}
+
+
+def quitar_cuarentena(fixture_id: int) -> dict:
+    with _conectar() as con:
+        fila = con.execute("SELECT cuarentena_json FROM parte_cowork WHERE fixture_id=?",
+                           (fixture_id,)).fetchone()
+        if not fila:
+            raise KeyError(fixture_id)
+        con.execute("UPDATE parte_cowork SET cuarentena_json=NULL WHERE fixture_id=?", (fixture_id,))
+    return {"fixtureId": fixture_id, "cuarentena": None,
+            "quitada": json.loads(fila["cuarentena_json"]) if fila["cuarentena_json"] else None}
 
 
 # ── el once: de la ficha o a mano ───────────────────────────────────────────

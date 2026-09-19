@@ -548,6 +548,47 @@ veredicto → lección. Eso ya sabe pintarlo `DtpPizarra`.
 
 ---
 
+## C-bis · Cuarentena y cohortes: qué casos cuentan — **HECHA**
+
+Dos filtros que la población no cubre. Los tres nombres de población dicen
+**cuánto se sabía del resultado** al escribir; no dicen si el insumo estaba
+roto. Los partes de la primera semana se hicieron con el DT viejo en 17 de 22
+equipos, el TDE sin nivel en diez partes y la agenda sin padrón: son `ciega`
+por etiqueta y contaminados por proceso, y hasta el 19/09 pesaban igual que
+uno de hoy.
+
+**Cuarentena** (`POST/DELETE /analisis/cowork/{id}/cuarentena`, token
+maestro; `parte_cowork.cuarentena_json`). Una marca por caso, con motivo
+obligatorio. Un caso en cuarentena sale de todas las métricas, se cuenta en
+su propia población y sus lecciones se listan aparte (`enCuarentena`) sin
+poder mover números ni fijar rúbrica. La regla dura, y la razón de que exista
+`veredictoAlPoner`:
+
+> **Cuarentena POR CRITERIO, NUNCA POR RESULTADO.** Se pone por lo que le
+> faltaba al parte antes del pitazo («DT viejo», «TDE sin nivel», «rodaje»),
+> no porque el veredicto salió fallo. Si no, es la forma elegante de borrar
+> los fallos y la métrica deja de significar. Por eso se guarda el veredicto
+> que tenía el caso al ponerla: una auditoría ve de un vistazo si se puso
+> después de saber cómo terminó.
+
+**Cohortes** (`parte_cowork.cohorte`, `parte.COHORTE` / `COHORTES`). La
+época del proceso se sella **al depositar** y un re-depósito no la cambia (un
+parte viejo re-depositado hoy sigue siendo de su época; lo que ya existía sin
+marca es `rodaje`). `GET /analisis/cowork/lecciones?cohorte=vigente|<clave>|`
+calcula las métricas y los conteos por skill **solo sobre la cohorte elegida**;
+`cohortes` viaja siempre entero para que se vea cuánto queda fuera. La pantalla
+arranca en la vigente. Cuando cambie algo que invalide los casos anteriores
+(otra regla de DT, otro contrato del TDE), se abre una cohorte nueva en
+`COHORTES` con su descripción, y las anteriores quedan como referencia: enseñan,
+no calibran.
+
+**El intervalo, no el punto.** La tabla de reventón por nivel decía FUERA
+con 6 de 21 (29 %) contra un backtest de 42-47 %. El intervalo de Wilson al
+95 % de esa observación es [14 %, 50 %]: es ruido. Ahora `porNivel` trae
+`intervalo` y `lectura`, y FUERA es que el rango del backtest **no toca el
+intervalo**, con n ≥ 10. Con 46 burbujas contra 171 mil del backtest, lo raro
+sería que el punto cayera dentro.
+
 ## D · La revisión: del montón de lecciones al `.zip`
 
 **Disparador:** 4 partidos fallados con lección pendiente para un mismo skill.

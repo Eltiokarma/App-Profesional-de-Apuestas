@@ -66,6 +66,26 @@ def main():
           (r2["signo"], r2["partidos"], r2["kPico"], r2["rival"], r2["resultado"]) == ("+", 3, 13.3, "H", "1-1"), r2)
     check("un cambio de signo en el mismo partido cierra la burbuja y abre la contraria (fila 3: +7.5 → −3)",
           t["reventones"][0]["fixtureId"] == 1002 and t["reventones"][1]["signo"] == "-")
+    print("\n— por período —")
+    per = t["historialPorPeriodo"]
+    check("cuatro períodos en orden fijo: temporada · año · dt · últimos 20",
+          [p["clave"] for p in per] == ["temporada", "anio", "dt", "ultimos20"], [p["clave"] for p in per])
+    check("sin `temporada` en las filas el período viaja con sinDato, no con un corte inventado",
+          per[0]["sinDato"] and per[0]["positivo"] is None, per[0])
+    check("año 2026: los 5 reventones y los 20 partidos, mismas medidas que la global",
+          per[1]["desde"] == "2026-01-01" and per[1]["reventones"] == 5 and per[1]["partidos"] == 20
+          and per[1]["positivo"] == t["historial"]["positivo"], per[1])
+    check("con el DT actual (desde 2026-08-07): ningún reventón, referencia vacía con su n",
+          per[2]["desde"] == "2026-08-07" and per[2]["reventones"] == 0 and per[2]["positivo"] is None, per[2])
+    check("últimos 20 partidos = toda la muestra de 20", per[3]["partidos"] == 20 and per[3]["reventones"] == 5, per[3])
+    con_temp = analizar([{**f, "temporada": 2025 if i < 8 else 2026} for i, f in enumerate(filas)], ctx)
+    pt = con_temp["familias"]["total"]["historialPorPeriodo"][0]
+    corte = filas[8]["fecha"][:10]
+    check("con temporada en las filas, «temporada 2026» corta en su primer partido y cuenta solo lo que reventó desde ahí",
+          pt["etiqueta"] == "temporada 2026" and pt["desde"] == corte and pt["partidos"] == 12
+          and pt["reventones"] == sum(1 for r in t["reventones"] if r["fecha"][:10] >= corte), pt)
+    check("los períodos viajan también en la cabecera", [p["clave"] for p in out["periodos"]] == [p["clave"] for p in per])
+
     hp = t["historial"]["positivo"]
     check("historial +: n=3", hp["n"] == 3, hp)
     check("K pico +: media 8.77 · mediana 7.5 · sin moda · min 5.5 · max 13.3",

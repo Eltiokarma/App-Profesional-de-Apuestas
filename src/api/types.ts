@@ -87,6 +87,8 @@ export interface ConstantesDTO {
   golesFavor: number
   golesContra: number
   ligaId: number
+  /** Temporada del torneo (2026, o 2025 para una 2025/26 europea); null si no se conoce. */
+  temporada?: number | null
   /** true si el partido fue de torneo internacional (UCL, UEL, Libertadores…). */
   esInternacional: boolean
   q: {
@@ -517,6 +519,21 @@ export interface RiesgoReventonDTO {
   confianzaMotivos: string[]
 }
 
+export interface PeriodoBurbujaDTO {
+  clave: string
+  etiqueta: string
+  /** YYYY-MM-DD inclusivo; '' cuando el período no se pudo cortar (ver `sinDato`). */
+  desde: string
+  sinDato: string
+}
+
+export interface HistorialPeriodoDTO extends PeriodoBurbujaDTO {
+  partidos: number
+  reventones: number
+  positivo: HistorialSignoDTO | null
+  negativo: HistorialSignoDTO | null
+}
+
 export interface FamiliaBurbujaDTO {
   familia: FamiliaBurbuja
   partidosEnCondicion: number
@@ -534,6 +551,10 @@ export interface FamiliaBurbujaDTO {
   /** Cerradas, cronológicas (las 40 más recientes; la estadística usa todas). */
   reventones: ReventonDTO[]
   historial: { positivo: HistorialSignoDTO | null; negativo: HistorialSignoDTO | null }
+  /** La misma referencia acotada en el tiempo (esta temporada · este año · con el DT
+   *  actual · últimos 20): la global manda en el riesgo, estas son para leer.
+   *  Filtra por la fecha en la que reventó; los episodios no se recortan. */
+  historialPorPeriodo: HistorialPeriodoDTO[]
   /** Dónde está la burbuja abierta frente a los reventones de su signo. */
   posicion: { percentilK: number; percentilRacha: number; kSobreMediana: number | null } | null
   /** El próximo rival frente al nivel con el que suele reventar (solo si la
@@ -589,6 +610,8 @@ export interface BurbujasEquipoDTO {
     reglaNivel: { tipo: 'globales' | 'especificas'; familias: FamiliaBurbuja[]; motivo: string; confirmada: boolean }
   }
   proximo: { fixtureId: number; fecha: string; rivalId: number; rival: string; condicion: 'L' | 'V'; nivelRival: number } | null
+  /** Los períodos con los que se acotó `historialPorPeriodo` de cada familia. */
+  periodos: PeriodoBurbujaDTO[]
   estabilidad: EstabilidadEquipoDTO
   familias: Record<FamiliaBurbuja, FamiliaBurbujaDTO>
   aviso: string
@@ -1283,10 +1306,14 @@ export interface ReventonMetricas {
     observadas: number
     reventadas: number
     tasa: number | null
+    /** Intervalo de Wilson al 95 % de la tasa observada; null sin observaciones. */
+    intervalo?: [number, number] | null
     /** [mín, máx] de la tasa del backtest para ese nivel; null sin base. */
     esperadoBacktest: [number, number] | null
-    /** null = n < nMinimo: no se compara. */
+    /** null = n < nMinimo: no se compara. true = el rango del backtest toca el intervalo. */
     dentroDelBacktest: boolean | null
+    /** 'compatible' | 'fuera' | 'sin n' | 'sin base en el backtest' */
+    lectura?: string
     nMinimo: number
   }>
   extremo: { observadas: number; reventadas: number; nota: string }
@@ -1429,6 +1456,10 @@ export interface ParteCoworkDTO {
   xi: Record<'a' | 'b', { once?: string[]; formacion?: string; fuente?: string; capturadoEn?: string }>
   /** null mientras el caso no se haya cerrado. */
   veredicto: VeredictoParte | null
+  /** Época del proceso en la que se depositó (docs/APRENDIZAJE.md, cohortes). */
+  cohorte?: { clave: string; vigente: boolean; descripcion: string }
+  /** Apartado del aprendizaje por criterio; null si cuenta. */
+  cuarentena?: { motivo: string; puestaEn: string; veredictoAlPoner: Record<'a' | 'b', string> | null } | null
   creadoEn: string
   actualizadoEn: string
 }
@@ -1494,6 +1525,10 @@ export interface LeccionItem {
   /** Solo un caso ciego+PRE puede sostener un cambio de peso. El resto fija rúbrica. */
   puedeMoverNumeros: boolean
   queAutoriza: string
+  /** Época del proceso en la que se depositó el parte (se sella al depositar). */
+  cohorte?: string
+  /** Motivo de la cuarentena; '' si el caso cuenta. */
+  cuarentena?: string
   estado: 'pendiente' | 'en_revision' | 'aplicada' | 'descartada'
   aplicadaEn: string
   nota: string
@@ -1522,9 +1557,23 @@ export interface SkillAprendizaje {
   items: LeccionItem[]
 }
 
+export interface CohorteDTO {
+  clave: string
+  vigente: boolean
+  descripcion: string
+  casos: number
+  enCuarentena: number
+}
+
 export interface InventarioLecciones {
   generadoEn: string
-  filtro: { skill: string; estado: string }
+  filtro: { skill: string; estado: string; cohorte?: string }
+  /** Todas las épocas, siempre enteras: las métricas de abajo son solo de la elegida. */
+  cohortes?: CohorteDTO[]
+  cohorteVigente?: string
+  notaCohortes?: string
+  /** Casos apartados por criterio (nunca por resultado): no cuentan ni fijan rúbrica. */
+  enCuarentena?: { cuantas: number; porque: string; items: LeccionItem[] }
   poblacion: Record<string, { casos: number; lados: number } | string>
   acreditables: {
     criterio: string
