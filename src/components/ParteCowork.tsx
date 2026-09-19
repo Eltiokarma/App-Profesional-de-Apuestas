@@ -140,8 +140,10 @@ function Anillo({ eq }: { eq: EquipoParte }) {
           title="El parte no trae ni un sub-score: no hay EFE que calcular">SIN BLOQUES DECLARADOS</span>
       )}
       {eq.dt.nombre && (
-        <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', textAlign: 'center' }}>
-          DT {eq.dt.nombre}{eq.dt.meses > 0 ? ` · ${Math.round(eq.dt.meses)} meses` : ''}
+        <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', textAlign: 'center' }}
+          title={eq.dt.meses == null ? 'antigüedad sin establecer: el parte no trajo `desde` ni `meses`' : (eq.dt.origenMeses === 'base' ? 'antigüedad tomada del DT de nuestra base' : undefined)}>
+          DT {eq.dt.nombre}
+          {eq.dt.meses != null ? ` · ${Math.round(eq.dt.meses)} meses` : (eq.dt.nombre !== 'sin establecer' ? ' · antigüedad sin dato' : '')}
         </div>
       )}
     </div>

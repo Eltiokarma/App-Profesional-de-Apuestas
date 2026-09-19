@@ -2212,6 +2212,8 @@ class XiLadoBody(BaseModel):
     banca: list[str] = []
     formacion: str = ""
     fuente: str = ""   # "pantallazo BeSoccer", "rueda de prensa", …
+    # un lado que ya viene de la ficha de API-Football no se pisa a mano sin esto
+    reemplazar: bool = False
 
 
 class XiBody(BaseModel):

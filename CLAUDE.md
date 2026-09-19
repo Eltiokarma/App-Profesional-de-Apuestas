@@ -133,7 +133,16 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   Cowork lee `GET /equipos/{id}/burbujas` de los dos equipos ANTES del 1X2
   (prompt v2.5) y escribe UNA línea por equipo en `lecturaSad.reventon`; los
   números no se copian, `parte.py` los recalcula al leer en
-  `lecturaSad.reventonCalculado` (familia total, uno por lado).
+  `lecturaSad.reventonCalculado` (familia total, uno por lado). En el TDE
+  **el índice es un número (`ie`/`ise`) y el nivel una etiqueta
+  (`ieNivel`/`iseNivel`)**: un número en el nivel se RECHAZA y se rescata en
+  `ie`, no se tira en silencio (pasó en diez partes). El `dt` del parte es
+  `{nombre, desde|meses}`: la antigüedad la calcula `parte._dt_equipo`
+  (declarado → `desde` → DT de la base con el mismo apellido → `null`, NUNCA
+  0), «sin establecer» es el canónico de DT desconocido y una oración como
+  nombre se rechaza. La procedencia del once es dato: `POST …/xi` no pisa un
+  lado de la ficha sin `reemplazar: true` (vuelve en `xiConservados`) y
+  `xi/auto` reemplaza lo manual cuando la ficha llega (`reemplazados`).
 - **Los equipos de interés se siguen enteros**: quien juega la edición
   vigente de un torneo internacional de clubes (`extractor.equipos_de_interes`)
   tiene TODOS sus partidos en la base aunque su liga no esté en `LIGAS`, y su
@@ -329,6 +338,14 @@ conversación se pierde en la siguiente.
      `backend/jugadores.py`); una de ruido no cuenta en el resumen del
      skill, en la estabilidad de la burbuja (los dos lados) ni en las
      pantallas. El umbral es el primer corte: recalibrar con casos.
+   - **El DT de la base, de nuevo (18/09, 4 de 19 con el saliente, de 3 a 27
+     meses)**: la carrera de `/coachs` no lista al que llega. HECHO: la
+     última alineación manda aunque no case con la carrera (`fuente`
+     `alineacion`, `desde` = su primer partido en el banco), el nombre se
+     arma con `firstname`/`lastname` (Tigres devolvía «Manuel Vucetich Rojas
+     Victor») y `PlantillaDTO.entrenador` trae `fuente` y `actualizadoEn`.
+     Lo guardado con la regla vieja se rehace en la próxima corrida de
+     jugadores de cada equipo (TTL lento) o de una vez con `--solo-dt`.
    - **`timelineEventos` válidos entran** pero Cowork reportó
      `eventosTimeline: 0` cuando mandaba tipos fuera de la lista; ahora se
      rechaza con motivo. Si vuelve a salir 0 con tipos válidos, mirar

@@ -221,7 +221,7 @@ def seed(base_dir: str):
         CREATE TABLE traspasos (player_id INTEGER NOT NULL, fecha TEXT NOT NULL, tipo TEXT,
             team_in INTEGER, team_in_nombre TEXT, team_out INTEGER, team_out_nombre TEXT,
             PRIMARY KEY (player_id, fecha));
-        CREATE TABLE entrenadores (team_id INTEGER NOT NULL, coach_id INTEGER NOT NULL,
+        CREATE TABLE entrenadores (team_id INTEGER NOT NULL, coach_id INTEGER NOT NULL, fuente TEXT NOT NULL DEFAULT 'coachs',
             nombre TEXT, foto TEXT, desde TEXT, actualizado_en TEXT, PRIMARY KEY (team_id, coach_id));
         CREATE TABLE plantillas_meta (team_id INTEGER PRIMARY KEY, season INTEGER, actualizado_en TEXT);
     """)

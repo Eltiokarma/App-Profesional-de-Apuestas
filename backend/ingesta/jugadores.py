@@ -127,6 +127,12 @@ def preparar_tablas(con: sqlite3.Connection) -> None:
         # NO cambian a ritmo semanal). NULL en lo ya sellado: la primera
         # corrida tras el deploy los pide una vez y a partir de ahí rota lento
         con.execute("ALTER TABLE plantillas_meta ADD COLUMN lento_en TEXT")
+    cols_dt = {r[1] for r in con.execute("PRAGMA table_info(entrenadores)")}
+    if "fuente" not in cols_dt:
+        # de dónde salió el vigente: "coachs" (la carrera de la API) o
+        # "alineacion" (el DT que se sentó en el banco en el último partido y
+        # que la carrera todavía no lista). Lo viejo sin marca era de /coachs.
+        con.execute("ALTER TABLE entrenadores ADD COLUMN fuente TEXT NOT NULL DEFAULT 'coachs'")
     con.commit()
 
 
@@ -287,21 +293,41 @@ def guardar_traspasos(con: sqlite3.Connection, filas: list) -> int:
     return n
 
 
-def elegir_entrenador(filas: list, team_id: int, dt_alineacion: str | None = None) -> dict | None:
-    """Quién dirige HOY, de la carrera que devuelve /coachs?team=.
+def nombre_coach(item: dict) -> str:
+    """El nombre del DT en el orden de una persona.
+
+    `name` de /coachs viene a veces reordenado: Tigres devolvía «Manuel
+    Vucetich Rojas Victor» por Víctor Manuel Vucetich Rojas, y eso rompe
+    cualquier cruce contra prensa o contra la alineación. Con `firstname` y
+    `lastname` se arma «Nombre Apellido»; `name` queda de respaldo."""
+    nombre = (item.get("firstname") or "").strip()
+    apellido = (item.get("lastname") or "").strip()
+    if nombre and apellido:
+        return f"{nombre} {apellido}"
+    return (item.get("name") or "").strip()
+
+
+def elegir_entrenador(filas: list, team_id: int, dt_alineacion: str | None = None,
+                      desde_alineacion: str | None = None) -> dict | None:
+    """Quién dirige HOY: la última alineación manda, y después /coachs?team=.
 
     La API devuelve a TODOS los que pasaron por el club, y muchas veces deja
     la etapa vieja sin `end` (el que se fue en 2019 sigue «abierto»). El
     código tomaba el PRIMERO con etapa abierta, que es el más antiguo: la
     corrida del 16/09 encontró 17 de 22 DT mal, siempre el saliente
     —Bucaramanga con S. Novoa desde 2019 cuando dirige Peirano desde mayo—.
-    El pipeline registraba el alta y nunca procesaba la baja.
+    El pipeline registraba el alta y nunca procesaba la baja. Y la carrera
+    tampoco alcanza: el 18/09, 4 de 19 seguían atrasados de 3 a 27 meses
+    (Sassuolo, Aucas, Comerciantes Unidos, ADT) porque /coachs no lista al
+    que llegó. LA SALIDA SE VE EN LA ALINEACIÓN: el DT que se sentó en el
+    banco en el último partido es el vigente aunque la carrera no lo tenga.
 
     Regla: (1) si la última alineación capturada trae un DT que casa con un
-    candidato, ese; (2) si no, la etapa abierta con el `start` MÁS RECIENTE;
-    (3) sin etapas abiertas, la de `start` más reciente. Devuelve el
-    candidato con `desde` = start tal como lo da la API (que suele traer el
-    día 01: la API conoce el mes, no el día)."""
+    candidato, ese; (2) si trae uno que NO casa con nadie, ese mismo, con
+    `desde` = el primer partido de su racha en el banco y `fuente` =
+    "alineacion"; (3) sin alineación, la etapa abierta con el `start` MÁS
+    RECIENTE; (4) sin etapas abiertas, la de `start` más reciente. `desde`
+    de la API suele traer el día 01: conoce el mes, no el día."""
     candidatos = []
     for item in filas or []:
         if not item.get("id"):
@@ -309,44 +335,64 @@ def elegir_entrenador(filas: list, team_id: int, dt_alineacion: str | None = Non
         for c in item.get("career") or []:
             if (c.get("team") or {}).get("id") != team_id:
                 continue
-            candidatos.append({"coach_id": item["id"], "nombre": item.get("name"),
+            candidatos.append({"coach_id": item["id"], "nombre": nombre_coach(item),
                                "foto": item.get("photo"), "desde": c.get("start") or "",
-                               "abierta": not c.get("end")})
-    if not candidatos:
-        return None
+                               "abierta": not c.get("end"), "fuente": "coachs"})
     if dt_alineacion:
         objetivo = _norm_dt(dt_alineacion)
         casan = [c for c in candidatos if _norm_dt(c["nombre"] or "") == objetivo]
         if casan:
             return max(casan, key=lambda c: c["desde"])
+        return {"coach_id": 0, "nombre": dt_alineacion.strip(), "foto": None,
+                "desde": (desde_alineacion or "")[:10], "abierta": True, "fuente": "alineacion"}
+    if not candidatos:
+        return None
     abiertas = [c for c in candidatos if c["abierta"]]
     return max(abiertas or candidatos, key=lambda c: c["desde"])
+
+
+def dt_de_alineaciones(con: sqlite3.Connection, team_id: int) -> tuple[str | None, str | None]:
+    """(DT de la última alineación capturada, fecha del primer partido de su
+    racha en el banco). La racha corta cuando cambia el apellido normalizado:
+    así un DT nuevo trae la fecha de su primer partido, no la del último."""
+    try:
+        filas = con.execute(
+            """SELECT DISTINCT a.entrenador, substr(f.date, 1, 10) AS d
+               FROM alineaciones a JOIN fixtures f ON f.id = a.fixture_id
+               WHERE a.team_id=? AND a.entrenador IS NOT NULL AND a.entrenador <> ''
+               ORDER BY f.date DESC LIMIT 40""", (team_id,)).fetchall()
+    except sqlite3.Error:
+        return None, None
+    if not filas:
+        return None, None
+    actual = filas[0][0]
+    desde = filas[0][1]
+    for nombre, fecha in filas:
+        if _norm_dt(nombre) != _norm_dt(actual):
+            break
+        desde = fecha
+    return actual, desde
 
 
 def guardar_entrenador(con: sqlite3.Connection, team_id: int, filas: list) -> int:
     """/coachs?team= trae la carrera completa de cada DT que pasó por el club:
     se guarda SOLO el vigente, elegido por `elegir_entrenador` (la última
     alineación manda; si no, la etapa abierta más reciente)."""
-    dt_alin = None
-    try:
-        fila = con.execute(
-            """SELECT a.entrenador FROM alineaciones a JOIN fixtures f ON f.id = a.fixture_id
-               WHERE a.team_id=? AND a.entrenador IS NOT NULL AND a.entrenador <> ''
-               ORDER BY f.date DESC LIMIT 1""", (team_id,)).fetchone()
-        dt_alin = fila[0] if fila else None
-    except sqlite3.Error:
-        pass
-    dt = elegir_entrenador(filas, team_id, dt_alin)
+    dt_alin, desde_alin = dt_de_alineaciones(con, team_id)
+    dt = elegir_entrenador(filas, team_id, dt_alin, desde_alin)
     if not dt:
         return 0
     con.execute("DELETE FROM entrenadores WHERE team_id=?", (team_id,))
     con.execute(
-        "INSERT OR REPLACE INTO entrenadores (team_id, coach_id, nombre, foto, desde, actualizado_en) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
-        (team_id, dt["coach_id"], dt["nombre"], dt["foto"], dt["desde"] or None, _ahora()),
+        "INSERT OR REPLACE INTO entrenadores (team_id, coach_id, nombre, foto, desde, actualizado_en, fuente) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (team_id, dt["coach_id"], dt["nombre"], dt["foto"], dt["desde"] or None, _ahora(),
+         dt.get("fuente") or "coachs"),
     )
     con.commit()
     return 1
+
+
 
 
 def necesita_lentas(con: sqlite3.Connection, team_id: int,

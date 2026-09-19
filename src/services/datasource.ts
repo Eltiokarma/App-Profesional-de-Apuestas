@@ -396,7 +396,7 @@ function plantillaDemo(teamKey: string): PlantillaDTO {
     nombre: T.name,
     temporada: 2026,
     actualizadoEn: MOCK_NOW,
-    entrenador: { nombre: 'E. Domínguez', desde: '2025-12-01' },
+    entrenador: { nombre: 'E. Domínguez', desde: '2025-12-01', actualizadoEn: '2026-09-10T06:30:00Z', fuente: 'coachs' },
     dependencia: {
       hhi: shares.length ? Math.round(shares.reduce((s, x) => s + x * x, 0) * 1000) / 1000 : null,
       top: top.map((j) => ({ jugadorId: j.id, nombre: j.nombre, participacion: j.participacionOfensiva })),

@@ -721,7 +721,9 @@ paths:
         `a`/`b` (el pantallazo que el usuario le pasa a Cowork), o los dos mezclados.
         Recalcula IP, reducción por zona, F3 y F4 con las fórmulas del protocolo: ningún
         modelo interviene. Si el once no casa con la tabla del parte (menos de 7 nombres),
-        el bloque NO se cierra y se devuelve el conflicto declarado.
+        el bloque NO se cierra y se devuelve el conflicto declarado. La procedencia es
+        dato: un lado que ya viene de la ficha no se pisa a mano salvo `reemplazar: true`;
+        lo conservado vuelve en `xiConservados` (lado → {fuente, capturadoEn, porque}).
       parameters:
         - { name: fixtureId, in: path, required: true, schema: { type: integer } }
       requestBody:
@@ -751,10 +753,13 @@ paths:
         cierres de milisegundos — la carrera de 30 minutos no existe.
 
 
-        Idempotente: un lado ya cerrado no se vuelve a tocar. Lo que no se pudo cerrar sale
-        con el motivo. `sinFichaTodavia` son los que necesitan el pantallazo a mano, y
-        `conConflicto` los que casan con menos de 7 nombres de la tabla F1 — ahí no se
-        fuerza nada: un IP inventado es peor que un bloque abierto.
+        Idempotente: un lado que ya viene de la ficha no se vuelve a tocar. LA FICHA MANDA
+        SOBRE LA CARGA MANUAL: un lado pegado a mano (el pantallazo existe porque la ficha
+        no había llegado) se reemplaza cuando la ficha llega, y sale en `reemplazados` con
+        su `fuenteAnterior`. Lo que no se pudo cerrar sale con el motivo. `sinFichaTodavia`
+        son los que necesitan el pantallazo a mano, y `conConflicto` los que casan con
+        menos de 7 nombres de la tabla F1 — ahí no se fuerza nada: un IP inventado es peor
+        que un bloque abierto.
       parameters:
         - { name: limite, in: query, schema: { type: integer, default: 50, minimum: 1, maximum: 200 } }
       responses:
@@ -767,6 +772,10 @@ paths:
                 properties:
                   revisados: { type: integer }
                   cerrados: { type: array, items: { type: object, additionalProperties: true } }
+                  reemplazados:
+                    type: array
+                    description: 'lados que estaban a mano y ahora vienen de la ficha: {fixtureId, lado, fuenteAnterior}'
+                    items: { type: object, additionalProperties: true }
                   conConflicto: { type: array, items: { type: object, additionalProperties: true } }
                   nuncaVaALlegar:
                     type: array
@@ -1411,9 +1420,17 @@ components:
         entrenador:
           type: object
           nullable: true
+          description: >
+            El DT vigente con su procedencia y su edad: sobre 19 verificados contra prensa el
+            18/09/2026, 4 eran el saliente (3 a 27 meses atrás) y sin `actualizadoEn` no había
+            forma de marcarlos. `fuente` = coachs (la carrera de /coachs) o alineacion (el DT
+            que se sentó en el banco en el último partido y que la carrera no lista: así se
+            captura la SALIDA, no solo el alta).
           properties:
             nombre: { type: string, nullable: true }
-            desde: { type: string, nullable: true }
+            desde: { type: string, nullable: true, description: 'asunción; con fuente alineacion, el primer partido de su racha en el banco' }
+            actualizadoEn: { type: string, nullable: true, description: 'cuándo se fijó este registro' }
+            fuente: { type: string, enum: [coachs, alineacion] }
         dependencia:
           type: object
           description: 'HHI de shares de G+A: ~1/n coral · →1 él-dependiente'
@@ -2044,6 +2061,12 @@ components:
         banca: { type: array, items: { type: string } }
         formacion: { type: string }
         fuente: { type: string, description: 'pantallazo BeSoccer, rueda de prensa, cuenta oficial…' }
+        reemplazar:
+          type: boolean
+          default: false
+          description: >
+            Un lado que ya viene de la ficha de API-Football NO se pisa con una carga manual:
+            se conserva y vuelve en `xiConservados` con el motivo. Con `true` sí se reemplaza.
     JugadorParte:
       type: object
       description: Una fila de la tabla F1. Sin zona o sin rol no entra (no pesaría en ninguna fórmula).
@@ -2080,9 +2103,19 @@ components:
           additionalProperties: { type: string }
         dt:
           type: object
+          description: >
+            El DT del bloque A. Se manda `{nombre, desde}` (la fecha de asunción, el día 01 si
+            solo se sabe el mes) o `{nombre, meses}`; un texto suelto vale como `nombre`. La
+            antigüedad la calcula el backend: `meses` declarado manda; si no, de `desde` a la
+            fecha del partido; si no, del DT de NUESTRA base cuando el apellido coincide; y si
+            nada de eso, `meses: null` —NUNCA 0, que significa «recién llegado» y entra en A, F3
+            y S1—. `nombre` vacío o desconocido se guarda como el canónico «sin establecer»;
+            una oración (>60 caracteres o 7+ palabras) se rechaza: la fuente va en `notas.A`.
           properties:
-            nombre: { type: string }
-            meses: { type: number }
+            nombre: { type: string, description: 'el DT a secas; «sin establecer» si no se sabe' }
+            desde: { type: string, description: 'YYYY-MM-DD, fecha de asunción' }
+            meses: { type: number, nullable: true, description: 'antigüedad al día del partido; null = no se pudo establecer' }
+            origenMeses: { type: string, enum: [declarado, desde, base, ''], description: 'de dónde salió `meses` (solo en la lectura)' }
         perfil:
           type: object
           properties:
@@ -2161,14 +2194,18 @@ components:
     BloqueTde:
       type: object
       description: >
-        El TDE de UN equipo. Los NIVELES (ieNivel/iseNivel) llegan del skill: el backend no
-        pone umbrales a una escala que vive en otro lado, y sin nivel la pantalla pinta el
-        número en neutro.
+        El TDE de UN equipo. EL ÍNDICE ES UN NÚMERO Y EL NIVEL UNA ETIQUETA, en dos campos:
+        `ie`/`ise` llevan el valor (es el «ieValor»: no hay otro campo numérico) y
+        `ieNivel`/`iseNivel` la banda verde/ambar/rojo que pone el skill —el backend no pone
+        umbrales a una escala que vive en otro lado, y sin nivel la pantalla pinta el número
+        en neutro—. Un número en `ieNivel` se RECHAZA con su sitio (y, si `ie` venía vacío, se
+        rescata ahí); una etiqueta fuera de las tres se rechaza y queda ''. `disciplina43: true`
+        sin vías, indicadores ni índice se rechaza y queda false.
       properties:
-        ie: { type: number, description: 'Índice de Echada' }
-        ieNivel: { type: string, enum: [verde, ambar, rojo, ''] }
-        ise: { type: number, description: 'Índice de Sobreexposición' }
-        iseNivel: { type: string, enum: [verde, ambar, rojo, ''] }
+        ie: { type: number, description: 'Índice de Echada (el valor numérico)' }
+        ieNivel: { type: string, enum: [verde, ambar, rojo, ''], description: 'la etiqueta, nunca el número' }
+        ise: { type: number, description: 'Índice de Sobreexposición (el valor numérico)' }
+        iseNivel: { type: string, enum: [verde, ambar, rojo, ''], description: 'la etiqueta, nunca el número' }
         equipo: { type: string, enum: [a, b, ''], description: 'de quién se estima' }
         tipologia: { type: string, description: 'la causa modal entre las seis tipologías' }
         ventana: { type: string, description: "la ventana de 15 minutos, ej. \"75-90'\"" }
