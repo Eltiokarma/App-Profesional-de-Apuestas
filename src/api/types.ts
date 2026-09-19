@@ -313,7 +313,10 @@ export interface PlantillaDTO {
   temporada: number | null
   /** Última ingesta de jugadores del equipo (null si nunca corrió). */
   actualizadoEn: string | null
-  entrenador: { nombre: string | null; desde: string | null } | null
+  /** El DT vigente con su procedencia: `coachs` (carrera de la API) o `alineacion` (el que
+   *  se sentó en el banco en el último partido y la carrera no lista). `actualizadoEn` es
+   *  cuándo se fijó: sin eso no hay forma de marcar un DT viejo. */
+  entrenador: { nombre: string | null; desde: string | null; actualizadoEn?: string | null; fuente?: 'coachs' | 'alineacion' } | null
   /** HHI de shares de G+A: ~1/n coral · →1 él-dependiente. */
   dependencia: { hhi: number | null; top: { jugadorId: number; nombre: string; participacion: number }[] }
   /** Traspasos de la ventana reciente (estabilidad de plantel). */
@@ -1077,7 +1080,9 @@ export interface EquipoParte {
   /** Letras que nadie puntuó: cuentan como 0 y arrastran el porcentaje. */
   bloquesSinDeclarar?: string[]
   notaTotales?: string
-  dt: { nombre: string; meses: number }
+  /** El DT del bloque A. `meses` null = no se pudo establecer (NUNCA 0, que es «recién
+   *  llegado»); `nombre` «sin establecer» es el canónico de DT desconocido. */
+  dt: { nombre: string; meses: number | null; desde?: string; origenMeses?: 'declarado' | 'desde' | 'base' | '' }
   perfil: { sistema: string; estilo: string; fortaleza: string; vulnerabilidad: string }
   plantel: JugadorParte[]
   /** Las bajas públicas. Con `zona` y `rol` pesan en el IP aunque no estén en la F1. */
@@ -1135,8 +1140,9 @@ export interface ReventonLadoDTO {
   error?: string
 }
 
-/** El TDE de UN equipo. Los niveles llegan del skill: el backend no inventa
- *  umbrales para una escala que vive en otro lado. '' = píntalo en neutro. */
+/** El TDE de UN equipo. `ie`/`ise` son el NÚMERO; `ieNivel`/`iseNivel` la ETIQUETA
+ *  que pone el skill (el backend no inventa umbrales para una escala que vive en otro
+ *  lado). '' = píntalo en neutro. Un número en el nivel lo rechaza el backend. */
 export interface BloqueTde {
   ie?: number
   ieNivel?: Semaforo | ''

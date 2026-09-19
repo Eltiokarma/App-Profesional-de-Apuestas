@@ -10,6 +10,7 @@ base. Sin tablas o sin datos, degrada a plantilla vacía — nada se inventa.
 Consumidores: los endpoints /equipos/{id}/plantilla y /fixtures/{id}/ficha
 (backend/app.py) y el cruce con los skills (backend/analisis/motor.py).
 """
+import sqlite3
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 
@@ -97,6 +98,27 @@ def _confianza(minutos: int, recien_llegado: bool) -> str:
         # regla de reseteo (spec §9): sus stats vienen de otro contexto
         grado = "B" if grado == "A" else "C"
     return grado
+
+
+def _entrenador_filas(team_id: int) -> list:
+    try:
+        return _query(
+            "SELECT nombre, desde, actualizado_en, fuente FROM entrenadores WHERE team_id=? "
+            "ORDER BY actualizado_en DESC LIMIT 1", (team_id,))
+    except sqlite3.OperationalError:  # base anterior a la columna `fuente`
+        return _query(
+            "SELECT nombre, desde, actualizado_en, 'coachs' AS fuente FROM entrenadores WHERE team_id=? "
+            "ORDER BY actualizado_en DESC LIMIT 1", (team_id,))
+
+
+def _entrenador_dto(fila) -> dict:
+    """El DT con su procedencia y su edad: quien lo lee decide si se fía.
+    Sobre 19 verificados contra prensa el 18/09, 4 eran el saliente (de 3 a
+    27 meses atrás), y sin `actualizadoEn` no había forma de marcarlos."""
+    act = fila["actualizado_en"]
+    return {"nombre": fila["nombre"], "desde": fila["desde"],
+            "actualizadoEn": (act.replace(" ", "T") + "Z") if act and "T" not in act else act,
+            "fuente": fila["fuente"] or "coachs"}
 
 
 def plantilla_de(team_id: int) -> dict:
@@ -220,10 +242,7 @@ def plantilla_de(team_id: int) -> dict:
         key=lambda j: -j["participacionOfensiva"],
     )[:3]
 
-    dt_filas = _query(
-        "SELECT nombre, desde FROM entrenadores WHERE team_id=? ORDER BY actualizado_en DESC LIMIT 1",
-        (team_id,),
-    )
+    dt_filas = _entrenador_filas(team_id)
     salidas = _query(
         "SELECT COUNT(*) AS n FROM traspasos WHERE team_out=? AND fecha >= ?",
         (team_id, (hoy - timedelta(days=REVOLUCION_DIAS)).strftime("%Y-%m-%d")),
@@ -233,7 +252,7 @@ def plantilla_de(team_id: int) -> dict:
         (team_id, (hoy - timedelta(days=REVOLUCION_DIAS)).strftime("%Y-%m-%d")),
     )
     base.update({
-        "entrenador": {"nombre": dt_filas[0]["nombre"], "desde": dt_filas[0]["desde"]} if dt_filas else None,
+        "entrenador": _entrenador_dto(dt_filas[0]) if dt_filas else None,
         "dependencia": {
             "hhi": hhi,
             "top": [

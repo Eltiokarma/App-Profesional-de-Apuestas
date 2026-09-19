@@ -273,8 +273,94 @@ _ECO_VEREDICTO = {"acredita", "falsador", "rechazos", "cerradoEn", "objetivo",
                   "actualizadoEn", "sinPronosticoPrevio"}
 
 
+FUENTE_FICHA = "ficha de API-Football"   # procedencia del once que trae la ingesta
+FUENTE_MANUAL = "carga manual"           # el pantallazo pegado a mano
+DT_SIN_ESTABLECER = "sin establecer"   # el valor canónico de «no sé quién dirige»
+_DT_DESCONOCIDO = {"", "sin establecer", "desconocido", "no establecido", "sin dato", "sin datos",
+                   "n/a", "na", "?", "-", "—", "null", "none", "por confirmar", "sin confirmar"}
+DT_NOMBRE_MAX = 60   # más que esto no es un nombre, es una oración
+_DIAS_MES = 365.25 / 12
+
+
+def _fecha(v) -> date_t | None:
+    t = _txt(v)[:10]
+    try:
+        return datetime.strptime(t, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _dt_equipo(crudo, rechazos: list, lado: str, fecha_partido: str,
+               entrenador_base: dict | None) -> dict:
+    """El DT del bloque A: `{nombre, desde}` o `{nombre, meses}`, nunca prosa.
+
+    Tres cosas que pasaron en el registro y que esto corta: (1) `dt` como texto
+    se guardaba con `meses: 0`, y ese cero —que es «acaba de llegar»— entraba
+    en A, F3 y S1 como si fuera un dato; (2) en el parte 1549491 entró una
+    oración de cien caracteres como nombre; (3) un DT desconocido se escribía
+    de siete formas. Ahora: `meses` manda si viene; si no, se calcula de
+    `desde` a la fecha del partido; si tampoco, se toma del DT de NUESTRA base
+    cuando el nombre es el mismo (así el nombre verificado en prensa no pierde
+    la continuidad); y si nada de eso, `meses: null` —que no es cero—. Un
+    nombre vacío o desconocido se guarda como «sin establecer», y uno más largo
+    que DT_NOMBRE_MAX se rechaza: la fuente va en `notas.A`, no en el nombre.
+    """
+    if crudo is None:
+        crudo = {}
+    if isinstance(crudo, str):
+        crudo = {"nombre": crudo}
+    crudo = _dict(crudo, rechazos, f"equipos.{lado}.dt", '{"nombre": "…", "desde": "2025-06-15"}')
+    nombre = _txt(crudo.get("nombre"))
+    if len(nombre) > DT_NOMBRE_MAX or nombre.count(" ") >= 6:
+        rechazos.append({
+            "donde": f"equipos.{lado}.dt.nombre",
+            "porque": f"eso no es un nombre, es una oración ({len(nombre)} caracteres): se guardó "
+                      f"«{DT_SIN_ESTABLECER}»",
+            "esperado": '`nombre` con el DT a secas ("Diego Simeone"); la fuente y el contexto '
+                        'van en `notas.A`'})
+        nombre = ""
+    if nombre.lower() in _DT_DESCONOCIDO:
+        nombre = ""
+    origen = ""
+    meses = None
+    if crudo.get("meses") not in (None, ""):
+        try:
+            meses = max(0.0, min(600.0, round(float(crudo["meses"]), 1)))
+            origen = "declarado"
+        except (TypeError, ValueError):
+            rechazos.append({"donde": f"equipos.{lado}.dt.meses",
+                             "porque": f"`meses` tiene que ser un número, llegó {crudo['meses']!r}",
+                             "esperado": '`meses`: 14 — o mejor `desde`: "2025-06-15" y se calcula'})
+    desde = _txt(crudo.get("desde"))[:10]
+    if desde and _fecha(desde) is None:
+        rechazos.append({"donde": f"equipos.{lado}.dt.desde",
+                         "porque": f"`desde` no es una fecha, llegó {crudo.get('desde')!r}",
+                         "esperado": '"YYYY-MM-DD" (el día 01 si solo se sabe el mes)'})
+        desde = ""
+    partido = _fecha(fecha_partido)
+    if meses is None and desde and partido:
+        meses = round(max(0, (partido - _fecha(desde)).days) / _DIAS_MES, 1)
+        origen = "desde"
+    if meses is None and nombre and entrenador_base and entrenador_base.get("nombre"):
+        # el mismo apellido que el DT de la base → su fecha de asunción sirve
+        from backend.ingesta.jugadores import _norm_dt
+        if _norm_dt(nombre) == _norm_dt(entrenador_base["nombre"]) and _fecha(entrenador_base.get("desde")) and partido:
+            desde = desde or _txt(entrenador_base.get("desde"))[:10]
+            meses = round(max(0, (partido - _fecha(entrenador_base["desde"])).days) / _DIAS_MES, 1)
+            origen = "base"
+    if nombre and meses is None:
+        rechazos.append({
+            "donde": f"equipos.{lado}.dt",
+            "porque": f"el DT «{nombre}» llegó sin `desde` ni `meses` y no casa con el de la base"
+                      + (f" ({entrenador_base['nombre']})" if entrenador_base and entrenador_base.get("nombre") else "")
+                      + ": la antigüedad queda en null, no en cero",
+            "esperado": '`desde`: "YYYY-MM-DD" (la fecha de asunción, del mes si no se sabe el día)'})
+    return {"nombre": nombre or DT_SIN_ESTABLECER, "meses": meses, "desde": desde, "origenMeses": origen}
+
+
 def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
-            rechazos: list, lado: str) -> dict:
+            rechazos: list, lado: str, fecha_partido: str = "",
+            entrenador_base: dict | None = None) -> dict:
     bruto = _dict(bruto, rechazos, f"equipos.{lado}", '{"bloques": {…}, "plantel": [...], …}')
     _claves_raras(bruto, _CLAVES_EQUIPO | _ECO_EQUIPO, rechazos, f"equipos.{lado}")
     bloques_in = _dict(bruto.get("bloques"), rechazos, f"equipos.{lado}.bloques",
@@ -341,17 +427,14 @@ def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
                           "NO pesa en el Impacto Ponderado",
                 "esperado": "inclúyela en `plantel`, o dale `zona` y `rol` aquí mismo",
             })
-    dt = bruto.get("dt") or {}
-    if isinstance(dt, str):
-        dt = {"nombre": dt}
-    dt = _dict(dt, rechazos, f"equipos.{lado}.dt", '{"nombre": "…", "meses": 14}')
+    dt = _dt_equipo(bruto.get("dt"), rechazos, lado, fecha_partido, entrenador_base)
     perfil = _dict(bruto.get("perfil"), rechazos, f"equipos.{lado}.perfil",
                    '{"sistema": "4-3-3", "estilo": "…", "fortaleza": "…", "vulnerabilidad": "…"}')
     nombre = _txt(bruto.get("nombre"))
     return {
         "nombre": canonizar(nombre, equipos_db) if nombre else "",
         "bloques": bloques,
-        "dt": {"nombre": _txt(dt.get("nombre")), "meses": _num(dt.get("meses"), 600)},
+        "dt": dt,
         "perfil": {k: _txt(perfil.get(k)) for k in ("sistema", "estilo", "fortaleza", "vulnerabilidad")},
         "plantel": plantel,
         "fuera": fuera,
@@ -670,18 +753,60 @@ def _bloque_tde(x, rechazos: list, donde: str, lado: str = "") -> dict:
                          "porque": f"el bloque está bajo {lado!r} pero adentro dice {equipo!r}: "
                                    f"se guarda como {lado!r}",
                          "esperado": "que la llave y el `equipo` de adentro digan lo mismo"})
+    # EL NIVEL ES UNA ETIQUETA Y EL ÍNDICE ES UN NÚMERO, en dos campos. El
+    # pipeline mandó el índice numérico en `ieNivel` durante diez partes y el
+    # backend lo tiraba guardando "" sin un rechazo: nueve partes sin nivel y
+    # sin nadie que lo viera. Un número ahí se delata y, si `ie` venía vacío,
+    # se guarda en `ie` —que es el campo numérico del contrato— para no perderlo.
+    ie, ise = x.get("ie"), x.get("ise")
+    niveles = {}
+    for clave_nivel, clave_num, valor_num in (("ieNivel", "ie", ie), ("iseNivel", "ise", ise)):
+        crudo = x.get(clave_nivel)
+        niveles[clave_nivel] = _sem(crudo)
+        if crudo in (None, "") or niveles[clave_nivel]:
+            continue
+        numero = None
+        try:
+            numero = float(crudo)
+        except (TypeError, ValueError):
+            pass
+        if numero is not None and valor_num in (None, ""):
+            if clave_num == "ie":
+                ie = numero
+            else:
+                ise = numero
+            rechazos.append({
+                "donde": f"{donde}.{clave_nivel}",
+                "porque": f"`{clave_nivel}` es la etiqueta de color y llegó el número {crudo!r}: "
+                          f"se guardó en `{clave_num}` y el nivel quedó vacío",
+                "esperado": f'`{clave_nivel}`: "verde" | "ambar" | "rojo" · `{clave_num}`: el índice numérico'})
+        else:
+            rechazos.append({
+                "donde": f"{donde}.{clave_nivel}",
+                "porque": f"`{clave_nivel}` es la etiqueta de color y llegó {crudo!r}: no se guardó",
+                "esperado": f'`{clave_nivel}`: "verde" | "ambar" | "rojo" · `{clave_num}`: el índice numérico'})
+    disciplina = bool(x.get("disciplina43"))
+    if disciplina and not vias and not ind and ie in (None, "") and ise in (None, ""):
+        rechazos.append({
+            "donde": f"{donde}.disciplina43",
+            "porque": "`disciplina43: true` declara las dos vías por separado, pero no llegó ni "
+                      "una vía, ni indicadores, ni `ie`/`ise`: no hay índice que lo sostenga, "
+                      "se guardó false",
+            "esperado": '`vias`: [{"nombre": "ECHADA", "indice": …}, {"nombre": "SOBREEXPOSICION", …}] '
+                        'o `indicadores` con los 0/0.5/1'})
+        disciplina = False
     return {
         # LOS INDICADORES MANDAN SOBRE EL ÍNDICE. Si llegan los 0/0.5/1, el IE y
         # el ISE los calcula el backend con sus compuertas: la cuenta se puede
         # equivocar y las compuertas se pueden olvidar, y las dos cosas pasaron
         # en el registro. El `ie` suelto se conserva solo como lo que llegó.
         "indicadores": {k: _num(v, 1) for k, v in ind.items() if v is not None},
-        "ie": _num(x.get("ie"), 1000), "ieNivel": _sem(x.get("ieNivel")),
-        "ise": _num(x.get("ise"), 1000), "iseNivel": _sem(x.get("iseNivel")),
+        "ie": _num(ie, 1000), "ieNivel": niveles["ieNivel"],
+        "ise": _num(ise, 1000), "iseNivel": niveles["iseNivel"],
         "equipo": lado or equipo,
         "tipologia": _txt(x.get("tipologia")),
         "ventana": _txt(x.get("ventana")),
-        "disciplina43": bool(x.get("disciplina43")),
+        "disciplina43": disciplina,
         "vias": vias,
         "falsador": _txt(x.get("falsador")),
     }
@@ -888,11 +1013,24 @@ def normalizar_parte(payload: dict) -> dict:
     _claves_raras(payload, _CLAVES_PARTE | _ECO_PARTE, rechazos, "(raíz)")
     cadena_in = _dict(payload.get("cadena"), rechazos, "cadena",
                       '{"a": {"pronostico": "…"}, "b": {"pronostico": "…"}}')
+    # la fecha del partido y el DT de nuestra base, para calcular la antigüedad
+    # del DT del parte (`desde` → meses) sin pedírsela al modelo
+    fx_dt = _fixture(fixture_id)
+    fecha_partido = _txt(fx_dt["date"])[:10] if fx_dt else ""
+    entrenadores_base: dict[str, dict | None] = {"a": None, "b": None}
+    if fx_dt:
+        from backend import jugadores as jug
+        for l, tid in (("a", fx_dt["home_team_id"]), ("b", fx_dt["away_team_id"])):
+            try:
+                entrenadores_base[l] = jug.plantilla_de(tid).get("entrenador")
+            except sqlite3.Error:
+                entrenadores_base[l] = None
     parte = {
         "fixtureId": fixture_id,
         "version": _txt(payload.get("version")) or VERSION,
         "generadoEn": _txt(payload.get("generadoEn")),
-        "equipos": {l: _equipo(equipos_in.get(l) or {}, equipos_db, rechazos, l) for l in LADOS},
+        "equipos": {l: _equipo(equipos_in.get(l) or {}, equipos_db, rechazos, l,
+                               fecha_partido, entrenadores_base[l]) for l in LADOS},
         "alertas": [a for a in (_alerta(x, rechazos, f"alertas[{i}]")
                                 for i, x in enumerate(_lista(payload.get("alertas"), rechazos,
                                                              "alertas"))) if a],
@@ -1474,7 +1612,7 @@ def xi_de_ficha(fixture_id: int, team_id: int) -> dict | None:
         "once": titulares,
         "banca": [f["jugador"] for f in filas if not f["titular"] and f["jugador"]],
         "formacion": filas[0]["formacion"] or "",
-        "fuente": "ficha de API-Football",
+        "fuente": FUENTE_FICHA,
         "capturadoEn": efedb.ahora(),
     }
 
@@ -1485,7 +1623,14 @@ def resolver_xi(fixture_id: int, onces: dict) -> dict:
     `onces` = {"a": {"once": [...], "banca": [...], "fuente": "..."}, "b": {...}}
     Un lado ausente en `onces` conserva el que ya tuviera guardado: el once
     del local suele llegar antes que el del visitante.
+
+    LA FICHA NO SE PISA A MANO SIN DECIRLO. Un POST de prueba dejó el once
+    del 1549492 idéntico pero etiquetado «carga manual» en vez de «ficha de
+    API-Football»: la procedencia es dato. Un lado que ya viene de la ficha
+    se conserva salvo `reemplazar: true`, y lo conservado se devuelve en
+    `xiConservados` con su motivo.
     """
+    conservados: dict[str, dict] = {}
     with _conectar() as con:
         fila = con.execute("SELECT xi_json FROM parte_cowork WHERE fixture_id=?",
                            (fixture_id,)).fetchone()
@@ -1499,16 +1644,28 @@ def resolver_xi(fixture_id: int, onces: dict) -> dict:
             once = _lista_txt(nuevo.get("once"))
             if not once:
                 continue
+            fuente = _txt(nuevo.get("fuente")) or FUENTE_MANUAL
+            previo = guardado.get(lado) or {}
+            if (previo.get("fuente") == FUENTE_FICHA and fuente != FUENTE_FICHA
+                    and not nuevo.get("reemplazar")):
+                conservados[lado] = {
+                    "fuente": FUENTE_FICHA, "capturadoEn": previo.get("capturadoEn", ""),
+                    "porque": "este lado ya tiene el once de la ficha de API-Football: no se pisa "
+                              "con una carga manual. Si la ficha está mal, mandá `reemplazar: true`",
+                }
+                continue
             guardado[lado] = {
                 "once": once,
                 "banca": _lista_txt(nuevo.get("banca")),
                 "formacion": _txt(nuevo.get("formacion")),
-                "fuente": _txt(nuevo.get("fuente")) or "carga manual",
+                "fuente": fuente,
                 "capturadoEn": efedb.ahora(),
             }
         con.execute("UPDATE parte_cowork SET xi_json=?, actualizado_en=? WHERE fixture_id=?",
                     (json.dumps(guardado, ensure_ascii=False), efedb.ahora(), fixture_id))
     listo = dto(fixture_id)
+    if conservados:
+        listo["xiConservados"] = conservados
     # confirmado solo si los DOS bloques F quedaron cerrados de verdad
     estado = ("confirmado" if all(listo["equipos"][l]["disponibilidad"].get("resuelto")
                                   for l in LADOS) else "pendiente_xi")
@@ -1844,7 +2001,7 @@ def cerrar_onces_pendientes(limite: int = 50) -> dict:
             "SELECT fixture_id, equipo_a, equipo_b, xi_json FROM parte_cowork "
             "WHERE veredicto_json IS NULL AND estado != 'confirmado' "
             "ORDER BY fecha LIMIT ?", (limite,))]
-    cerrados, sin_ficha, nunca, conflictos = [], [], [], []
+    cerrados, sin_ficha, nunca, conflictos, reemplazados = [], [], [], [], []
     for f in filas:
         fid = f["fixture_id"]
         fx = _fixture(fid)
@@ -1853,10 +2010,17 @@ def cerrar_onces_pendientes(limite: int = 50) -> dict:
         ya = json.loads(f["xi_json"]) if f["xi_json"] else {}
         onces = {}
         for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])):
-            if ya.get(lado):
-                continue  # ese lado ya estaba cerrado: no se pisa
+            if (ya.get(lado) or {}).get("fuente") == FUENTE_FICHA:
+                continue  # ese lado ya viene de la ficha: no hay nada mejor
             de_ficha = xi_de_ficha(fid, tid)
             if de_ficha:
+                # LA FICHA MANDA SOBRE LA CARGA MANUAL. El pantallazo existe
+                # porque la ficha no había llegado; cuando llega, es la fuente.
+                # Antes un lado manual se salteaba para siempre y la procedencia
+                # quedaba mal etiquetada (1549492).
+                if ya.get(lado):
+                    reemplazados.append({"fixtureId": fid, "lado": lado,
+                                         "fuenteAnterior": ya[lado].get("fuente", "")})
                 onces[lado] = de_ficha
         partido = f"{f['equipo_a']} vs {f['equipo_b']}"
         if not onces:
@@ -1897,6 +2061,8 @@ def cerrar_onces_pendientes(limite: int = 50) -> dict:
     return {
         "revisados": len(filas),
         "cerrados": cerrados,
+        # lados que estaban a mano y ahora tienen la ficha: la ficha manda
+        "reemplazados": reemplazados,
         "conConflicto": conflictos,
         "sinFichaTodavia": sin_ficha,
         # separado a propósito de `sinFichaTodavia`: acá no hay nada que esperar

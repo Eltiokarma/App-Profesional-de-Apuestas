@@ -1023,6 +1023,29 @@ def main():
     check("y los nombres que no casaron se listan",
           len(dispf["noReconocidos"]) >= len(titulares), dispf.get("noReconocidos"))
 
+    # ── LA FICHA NO SE PISA A MANO SIN DECIRLO (reportado por Cowork, 1549492) ──
+    once_manual = [f"Home Jugador{i}" for i in range(1, 12)]
+    r = c.post(f"{A}/analisis/cowork/{con_ficha}/xi", json={"a": {"once": once_manual, "fuente": "prueba"}})
+    check("un POST manual sobre un lado que ya viene de la ficha responde 200", r.status_code == 200, r.text[:200])
+    check("…pero NO lo pisa: el lado se conserva y se dice por qué",
+          r.json().get("xiConservados", {}).get("a", {}).get("porque")
+          and "API-Football" in r.json()["equipos"]["a"]["disponibilidad"].get("fuente", ""),
+          (r.json().get("xiConservados"), r.json()["equipos"]["a"]["disponibilidad"].get("fuente")))
+    r = c.post(f"{A}/analisis/cowork/{con_ficha}/xi",
+               json={"a": {"once": once_manual, "fuente": "prueba", "reemplazar": True}})
+    check("con `reemplazar: true` sí se pisa y la procedencia cambia",
+          r.json()["equipos"]["a"]["disponibilidad"].get("fuente") == "prueba"
+          and not r.json().get("xiConservados"), r.json()["equipos"]["a"]["disponibilidad"].get("fuente"))
+    auto_r = c.post(f"{A}/analisis/cowork/xi/auto").json()
+    check("xi/auto NO saltea el lado manual: cuando la ficha está, la ficha manda y lo dice en `reemplazados`",
+          any(x["fixtureId"] == con_ficha and x["lado"] == "a" and x["fuenteAnterior"] == "prueba"
+              for x in auto_r["reemplazados"]), auto_r.get("reemplazados"))
+    check("y la procedencia vuelve a ser la ficha",
+          "API-Football" in c.get(f"{A}/analisis/cowork/{con_ficha}").json()["equipos"]["a"]["disponibilidad"].get("fuente", ""))
+    otra_r = c.post(f"{A}/analisis/cowork/xi/auto").json()
+    check("un lado que ya viene de la ficha no se vuelve a reemplazar",
+          all(x["fixtureId"] != con_ficha for x in otra_r["reemplazados"]), otra_r.get("reemplazados"))
+
     # sin ficha ni once a mano: 409 que dice qué correr, no un 500
     c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
     c.delete(f"{A}/analisis/cowork/{sin_ficha}")
@@ -1115,6 +1138,70 @@ def main():
     check("el ISE sin nivel queda vacío en vez de inventado", t["iseNivel"] == "", t)
     check("el TDE trae su ventana y su causa", t["ventana"] and t["tipologia"], t)
     check("las vías del TDE viajan", len(t["vias"]) == 1, t.get("vias"))
+    # EL NIVEL ES UNA ETIQUETA Y EL ÍNDICE UN NÚMERO (reportado por Cowork: diez
+    # partes con el índice en `ieNivel`, nueve guardados con "" y sin un rechazo)
+    p_niv = _parte(sin_ficha)
+    p_niv["tde"] = {"bloques": [
+        {"equipo": "a", "ieNivel": 6.4, "ise": 3, "iseNivel": "alto", "ventana": "75-90'", "tipologia": "x"},
+        {"equipo": "b", "disciplina43": True, "ventana": "60-75'", "tipologia": "y"},
+    ]}
+    r_niv = c.post(f"{A}/analisis/cowork", json=p_niv).json()
+    rz = {x["donde"]: x for x in r_niv["rechazos"]}
+    r_niv = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()
+    check("un número en `ieNivel` se RECHAZA con su sitio, no se tira en silencio",
+          "tde.bloques[0].ieNivel" in rz and "verde" in rz["tde.bloques[0].ieNivel"]["esperado"], list(rz))
+    ta = next(b for b in r_niv["tde"]["bloques"] if b["equipo"] == "a")
+    check("y el número se rescata en `ie`, que es el campo numérico del contrato",
+          ta["ie"] == 6.4 and ta["ieNivel"] == "", ta)
+    check("una etiqueta fuera de verde/ambar/rojo también se rechaza",
+          "tde.bloques[0].iseNivel" in rz and ta["iseNivel"] == "" and ta["ise"] == 3, (list(rz), ta))
+    tb = next(b for b in r_niv["tde"]["bloques"] if b["equipo"] == "b")
+    check("`disciplina43: true` sin vías, indicadores ni índice se rechaza y queda false",
+          "tde.bloques[1].disciplina43" in rz and tb["disciplina43"] is False, (list(rz), tb))
+
+    # ── EL DT DEL PARTE: {nombre, desde} sin perder la antigüedad (Cowork, B y C) ──
+    fx_dt = dbmod.query_one("sad", "SELECT substr(date,1,10) AS d, ht.name AS a FROM fixtures f "
+                            "JOIN teams ht ON ht.id=f.home_team_id WHERE f.id=?", (sin_ficha,))
+    dt_base = dbmod.query_one("sad", "SELECT e.nombre, e.desde FROM entrenadores e JOIN fixtures f "
+                              "ON f.home_team_id=e.team_id WHERE f.id=?", (sin_ficha,))
+    from datetime import date as _date
+    dias = (_date.fromisoformat(fx_dt["d"]) - _date.fromisoformat("2025-06-15")).days
+    p_dt = _parte(sin_ficha)
+    p_dt["equipos"]["a"]["dt"] = {"nombre": "Diego Simeone", "desde": "2025-06-15"}
+    p_dt["equipos"]["b"]["dt"] = "Edin Terzić"
+    d_dt = c.post(f"{A}/analisis/cowork", json=p_dt).json()
+    d_dt = {**c.get(f"{A}/analisis/cowork/{sin_ficha}").json(), "rechazos": d_dt["rechazos"]}
+    da, db_ = d_dt["equipos"]["a"]["dt"], d_dt["equipos"]["b"]["dt"]
+    check("`dt: {nombre, desde}` calcula los meses hasta el partido",
+          da["nombre"] == "Diego Simeone" and da["meses"] == round(dias / (365.25 / 12), 1)
+          and da["origenMeses"] == "desde" and da["desde"] == "2025-06-15", da)
+    check("`dt` como texto ya NO guarda meses 0: queda null y se rechaza pidiendo `desde`",
+          db_["nombre"] == "Edin Terzić" and db_["meses"] is None
+          and any(x["donde"] == "equipos.b.dt" for x in d_dt["rechazos"]), (db_, d_dt["rechazos"]))
+    p_dt["equipos"]["a"]["dt"] = {"nombre": dt_base["nombre"]}
+    d_dt = c.post(f"{A}/analisis/cowork", json=p_dt).json()
+    d_dt = {**c.get(f"{A}/analisis/cowork/{sin_ficha}").json(), "rechazos": d_dt["rechazos"]}
+    da = d_dt["equipos"]["a"]["dt"]
+    check("el nombre que coincide con el DT de la base toma la fecha de asunción de la base",
+          da["meses"] is not None and da["origenMeses"] == "base" and da["desde"] == dt_base["desde"],
+          (da, dict(dt_base)))
+    p_dt["equipos"]["a"]["dt"] = {"nombre": "Según prensa de esta semana dirige el interino tras la salida "
+                                            "del técnico anterior el pasado martes por malos resultados"}
+    p_dt["equipos"]["b"]["dt"] = "desconocido"
+    d_dt = c.post(f"{A}/analisis/cowork", json=p_dt).json()
+    d_dt = {**c.get(f"{A}/analisis/cowork/{sin_ficha}").json(), "rechazos": d_dt["rechazos"]}
+    check("una oración en `dt.nombre` se rechaza y queda «sin establecer»",
+          d_dt["equipos"]["a"]["dt"]["nombre"] == "sin establecer"
+          and any(x["donde"] == "equipos.a.dt.nombre" for x in d_dt["rechazos"]), d_dt["equipos"]["a"]["dt"])
+    check("«desconocido», vacío o ausente se guardan como el canónico «sin establecer», meses null",
+          d_dt["equipos"]["b"]["dt"] == {"nombre": "sin establecer", "meses": None, "desde": "", "origenMeses": ""},
+          d_dt["equipos"]["b"]["dt"])
+    p_dt["equipos"]["a"]["dt"] = {"nombre": "Diego Simeone", "meses": 177.5, "desde": "2011-12-23"}
+    c.post(f"{A}/analisis/cowork", json=p_dt)
+    d_dt = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()
+    check("`meses` declarado manda sobre `desde`",
+          d_dt["equipos"]["a"]["dt"]["meses"] == 177.5 and d_dt["equipos"]["a"]["dt"]["origenMeses"] == "declarado")
+    c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
 
     # timeline: lo institucional entra, el partido copiado se descarta y los
     # partidos de NUESTRA base se funden

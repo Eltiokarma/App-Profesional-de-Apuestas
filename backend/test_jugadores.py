@@ -108,8 +108,19 @@ def main():
           elegir_entrenador([carrera[1]], 700)["nombre"] == "Leonel Álvarez")
     check("la última alineación manda cuando casa con un candidato",
           elegir_entrenador(carrera, 700, "S. Novoa")["nombre"] == "S. Novoa")
-    check("una alineación que no casa con nadie no rompe la regla",
-          elegir_entrenador(carrera, 700, "Pep Guardiola")["nombre"] == "Leonardo Peirano")
+    # LA SALIDA SE VE EN LA ALINEACIÓN (18/09: Sassuolo, Aucas, Comerciantes
+    # Unidos y ADT seguían con el saliente porque /coachs no lista al nuevo)
+    nuevo = elegir_entrenador(carrera, 700, "Pep Guardiola", "2026-09-01")
+    check("un DT que se sentó en el banco y NO está en la carrera es el vigente, con fuente alineacion",
+          nuevo["nombre"] == "Pep Guardiola" and nuevo["desde"] == "2026-09-01" and nuevo["fuente"] == "alineacion", nuevo)
+    check("el que sale de la carrera lleva fuente coachs", elegir_entrenador(carrera, 700)["fuente"] == "coachs")
+    check("sin carrera pero con alineación, el de la alineación",
+          elegir_entrenador([], 700, "Pep Guardiola", "2026-09-01")["nombre"] == "Pep Guardiola")
+    from backend.ingesta.jugadores import nombre_coach, dt_de_alineaciones
+    check("el nombre se arma Nombre Apellido con firstname/lastname (Tigres devolvía «Manuel Vucetich Rojas Victor»)",
+          nombre_coach({"name": "Manuel Vucetich Rojas Victor", "firstname": "Víctor Manuel",
+                        "lastname": "Vucetich Rojas"}) == "Víctor Manuel Vucetich Rojas")
+    check("sin firstname/lastname queda name", nombre_coach({"name": "S. Novoa"}) == "S. Novoa")
     check("otra etapa del mismo DT en OTRO club no cuenta", elegir_entrenador(carrera, 999) and
           elegir_entrenador(carrera, 700)["desde"] == "2026-05-27")
     check("sin carrera en este club, nada", elegir_entrenador(carrera, 123) is None)
@@ -118,6 +129,24 @@ def main():
     con.commit()
     check("guardar_entrenador deja UNA fila: el vigente", guardar_entrenador(con, 700, carrera) == 1
           and [r[0] for r in con.execute("SELECT nombre FROM entrenadores WHERE team_id=700")] == ["Leonardo Peirano"])
+    # la racha en el banco: el `desde` del DT nuevo es su PRIMER partido, no el último
+    con.executemany("INSERT INTO fixtures (id, date, status_short, league_id) VALUES (?, ?, 'FT', 239)",
+                    [(11, hace(24 * 20)), (12, hace(24 * 12)), (13, hace(24 * 5))])
+    con.executemany("INSERT INTO alineaciones (fixture_id, team_id, entrenador) VALUES (?, 700, ?)",
+                    [(11, "L. Peirano"), (12, "Pep Guardiola"), (13, "P. Guardiola")])
+    con.commit()
+    dt_a, desde_a = dt_de_alineaciones(con, 700)
+    check("la racha del DT en el banco arranca en su primer partido (dos grafías del mismo apellido)",
+          dt_a == "L. Peirano" and desde_a == hace(24)[:10], (dt_a, desde_a))
+    con.execute("UPDATE fixtures SET date=? WHERE id=10", (hace(24 * 30),))
+    con.commit()
+    dt_a, desde_a = dt_de_alineaciones(con, 700)
+    check("cuando el último partido lo dirigió otro, la racha es la suya",
+          dt_a == "P. Guardiola" and desde_a == hace(24 * 12)[:10], (dt_a, desde_a))
+    guardar_entrenador(con, 700, carrera)
+    fila = con.execute("SELECT nombre, desde, fuente FROM entrenadores WHERE team_id=700").fetchone()
+    check("guardar_entrenador registra la salida: el del banco, con fuente alineacion y su primer partido",
+          fila and fila[0] == "P. Guardiola" and fila[1] == hace(24 * 12)[:10] and fila[2] == "alineacion", fila)
 
     # --- 3. el padrón: ligas importantes, no las copas ---------------------
     con = db()

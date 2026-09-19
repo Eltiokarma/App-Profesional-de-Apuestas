@@ -201,7 +201,14 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
                 {plant.data && plant.data.jugadores.length > 0 && (
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     {plant.data.entrenador?.nombre && (
-                      <span style={{ padding: '4px 9px', borderRadius: 7, background: 'var(--bg3)', border: '1px solid var(--line)', font: '600 10px var(--mono)', color: 'var(--t2)' }}>DT {plant.data.entrenador.nombre}</span>
+                      <span style={{ padding: '4px 9px', borderRadius: 7, background: 'var(--bg3)', border: '1px solid var(--line)', font: '600 10px var(--mono)', color: 'var(--t2)' }}
+                        title={[
+                          plant.data.entrenador.desde ? `desde ${plant.data.entrenador.desde}` : 'sin fecha de asunción',
+                          plant.data.entrenador.fuente === 'alineacion' ? 'visto en el banco en el último partido (la carrera de la API no lo lista)' : 'según la carrera de la API',
+                          plant.data.entrenador.actualizadoEn ? `registro del ${plant.data.entrenador.actualizadoEn.slice(0, 10)}` : '',
+                        ].filter(Boolean).join(' · ')}>
+                        DT {plant.data.entrenador.nombre}{plant.data.entrenador.fuente === 'alineacion' ? ' · del banco' : ''}
+                      </span>
                     )}
                     {plant.data.dependencia.hhi != null && (
                       <span style={{ padding: '4px 9px', borderRadius: 7, background: 'var(--bg3)', border: '1px solid var(--line)', font: '600 10px var(--mono)', color: plant.data.dependencia.hhi >= 0.18 ? 'var(--down)' : 'var(--t2)' }}>

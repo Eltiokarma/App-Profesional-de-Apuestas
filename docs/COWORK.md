@@ -450,6 +450,17 @@ sin decir por qué**), `equipo` con el nombre del club en vez del LADO
 (`"a"` / `"b"`), **dos bloques del mismo lado** —no se elige uno en silencio— y
 la llave que contradice al `equipo` de adentro.
 
+**El índice es un número y el nivel es una etiqueta, en dos campos.** `ie` y
+`ise` llevan el valor —no hay ningún `ieValor`: ese campo es `ie`— y
+`ieNivel`/`iseNivel` la banda `verde`/`ambar`/`rojo` que decide el skill. El
+pipeline mandó el índice numérico en `ieNivel` durante diez partes (1550133,
+1557408, 1549491…) y el backend lo tiraba guardando `""` **sin un rechazo**:
+nueve partes sin nivel que nadie vio hasta el décimo. Ahora un número en
+`ieNivel` vuelve en `rechazos` con su sitio y, si `ie` venía vacío, se rescata
+ahí; una etiqueta fuera de las tres se rechaza y queda `""`; y
+`disciplina43: true` sin vías, sin indicadores y sin índice se rechaza y queda
+`false`, porque no hay nada que sostenga esa declaración.
+
 El recibo trae `ladosTde` con los equipos que quedaron, y si solo mandaste uno,
 `faltan` cobra el otro: del lado que no declaraste **no hay ventana que
 comprobar** cuando se cierre el caso. El veredicto devuelve
@@ -544,8 +555,19 @@ API-Football. Devuelve tres listas:
 | | qué es |
 |---|---|
 | `cerrados` | quedaron resueltos, con el lado y el estado |
+| `reemplazados` | lados que estaban a mano y ahora vienen de la ficha (`fuenteAnterior` dice de dónde venían) |
 | `sinFichaTodavia` | la ficha aún no trae la alineación → **estos son los del pantallazo a mano** |
 | `conConflicto` | el once casa con menos de 7 nombres de la tabla F1: **no se fuerza**, un IP inventado es peor que un bloque abierto |
+
+**La procedencia del once es dato, y la ficha manda.** Un POST de prueba dejó
+el once del 1549492 idéntico pero etiquetado «carga manual» en vez de «ficha
+de API-Football», y el barrido lo salteaba para siempre porque «ese lado ya
+estaba cerrado». Dos reglas: `POST /analisis/cowork/{id}/xi` **no pisa** un
+lado que ya viene de la ficha —lo conserva y lo devuelve en `xiConservados`
+con el motivo— salvo `reemplazar: true` en ese lado; y `xi/auto` **reemplaza**
+un lado manual cuando la ficha llega (el pantallazo existía porque la ficha no
+estaba), listándolo en `reemplazados`. Un lado que ya viene de la ficha no se
+vuelve a tocar.
 
 La consecuencia para el diseño del batch: **el análisis pesado va la noche
 anterior, sin prisa**, y el once se cierra solo cuando aparece. Lo único que
@@ -763,11 +785,24 @@ Escribís vos (es juicio, no se puede calcular):
   delata).
 - EL DT DE NUESTRA BASE PUEDE ESTAR VIEJO. El entrenador que traen la
   plantilla y la ficha sale de una ingesta que no corre todos los días: en
-  una corrida, seis de ocho no coincidían con la realidad. Antes de puntuar el
-  bloque A, confirmá quién dirige en prensa de esta semana y escribí ese
-  nombre en `dt` con su fuente en `notas.A`. Si no podés establecerlo, dejá A
-  fuera y decilo en `pendientes`: un A puntuado sobre un DT que ya no está
-  mueve el parte diez puntos y dispara o calla T.54 en falso.
+  una corrida, seis de ocho no coincidían con la realidad (el 18/09, 4 de 19,
+  siempre el saliente, de 3 a 27 meses atrás). La plantilla ya trae
+  `entrenador.fuente` (`coachs` = la carrera de la API; `alineacion` = el que
+  se sentó en el banco en el último partido, que es el más fiable) y
+  `entrenador.actualizadoEn`: un registro viejo se marca, no se copia. Antes
+  de puntuar el bloque A, confirmá quién dirige en prensa de esta semana y
+  escribí ese nombre en `dt` con su fuente en `notas.A`. Si no podés
+  establecerlo, dejá A fuera y decilo en `pendientes`: un A puntuado sobre un
+  DT que ya no está mueve el parte diez puntos y dispara o calla T.54 en falso.
+- LA FORMA DE `dt` ES `{"nombre": "Diego Simeone", "desde": "2011-12-23"}`
+  (el día 01 si solo se sabe el mes) o `{"nombre": "…", "meses": 14}`. La
+  antigüedad —insumo de A, F3 y S1— la calcula la app: `meses` declarado
+  manda; si no, de `desde` a la fecha del partido; si no, del DT de nuestra
+  base cuando el apellido coincide; y si nada de eso, `meses: null`, **nunca
+  0** (0 es «recién llegado» y así entraba cada `dt` mandado como texto).
+  `nombre` va a secas: una oración de cien caracteres (pasó en el 1549491) se
+  rechaza y la fuente va en `notas.A`. Si no sabés quién dirige, el valor
+  canónico es `"sin establecer"` —no «desconocido», no vacío, no un guion—.
 - Un bloque que la RÚBRICA manda excluir (p. ej. C sin constantes K por
   R-KT.2 en un recién ascendido) va en `excluidos`: `{"C": "motivo"}`. Así el
   máximo baja a 23 y el porcentaje se calcula sobre lo evaluable. Es DISTINTO
@@ -927,7 +962,7 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
       "bloques": {"A": 3, "B": 4.5, "C": 2, "D": 3, "E": 2},
       "notas": {"A": "mismo DT hace 14 meses, contrato hasta fin de año",
                 "E": "1.62 ppp, 1 derrota en los últimos 6"},
-      "dt": {"nombre": "Nombre del DT", "meses": 14},
+      "dt": {"nombre": "Nombre del DT", "desde": "2025-06-15"},
       "perfil": {"sistema": "4-3-3", "estilo": "presión alta",
                  "fortaleza": "juego asociado por dentro",
                  "vulnerabilidad": "espalda de los laterales"},
@@ -1058,6 +1093,8 @@ Tres caminos; la app hace la cuenta en los tres, sin costo y sin modelo.
    milisegundos: no hay carrera contra el reloj.
    En la respuesta:
      `cerrados`          los que quedaron listos.
+     `reemplazados`      lados pegados a mano que ahora tienen la ficha: la
+                         ficha manda, no hace falta hacer nada.
      `conConflicto`      el once no casa con la tabla F1: NO se fuerza. Revisá
                          la tabla, no insistas con el mismo once.
      `sinFichaTodavia`   todavía puede cerrar solo. Reintentá más tarde.

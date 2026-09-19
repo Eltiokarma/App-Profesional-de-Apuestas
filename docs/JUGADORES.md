@@ -65,7 +65,18 @@ si no existen):
 - `jugador_bajas` (player_id, team_id, season, tipo, detalle, fecha)
   — de `injuries` (lesiones Y sanciones reportadas por la API).
 - `traspasos` (player_id, fecha, tipo, team_in, team_in_nombre, team_out, team_out_nombre)
-- `entrenadores` (team_id, coach_id, nombre, foto, desde)
+- `entrenadores` (team_id, coach_id, nombre, foto, desde, actualizado_en,
+  fuente) — SOLO el vigente. `fuente` = `coachs` (la carrera de `/coachs?team=`)
+  o `alineacion` (el DT del banco en el último partido, que la carrera no
+  lista; `coach_id` 0). La API deja etapas viejas sin `end` y tarda meses en
+  listar al que llega (18/09: Sassuolo, Aucas, Comerciantes Unidos y ADT con
+  el saliente): **la salida se ve en la alineación**, así que
+  `elegir_entrenador` da prioridad al DT de la última alineación capturada;
+  si casa con la carrera toma esa etapa, y si no, lo guarda igual con `desde`
+  = el primer partido de su racha en el banco (`dt_de_alineaciones`). El
+  nombre se arma «Nombre Apellido» con `firstname`/`lastname` (`name` venía
+  reordenado: «Manuel Vucetich Rojas Victor»). `PlantillaDTO.entrenador`
+  expone `fuente` y `actualizadoEn` para que quien lo lea marque el viejo.
 - `plantillas_meta` (team_id, season, actualizado_en, con_datos) — el TTL
   (con_datos=0 → sellado largo de equipos sin cobertura).
 
