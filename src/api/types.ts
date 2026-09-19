@@ -1477,6 +1477,9 @@ export interface ParteAgendaItemDTO {
   partido: string
   equipoA: string
   equipoB: string
+  /** El DT que tiene la base por lado, con edad y procedencia: es una ALARMA, no la
+   *  verdad. Si la prensa de la semana dice otro, manda la prensa. */
+  dt?: Record<'a' | 'b', { nombre: string | null; desde: string | null; actualizadoEn?: string | null; fuente?: string; edadDias: number | null; fiable: boolean; nota: string } | null>
   liga: string
   pais: string | null
   /** 1-5 del protocolo; 0 = descartado (y `motivo` dice por qué). */
@@ -1529,6 +1532,8 @@ export interface LeccionItem {
   cohorte?: string
   /** Motivo de la cuarentena; '' si el caso cuenta. */
   cuarentena?: string
+  /** true = la puso la app por criterio (parte sin DT declarado); se levanta re-depositando con el DT. */
+  cuarentenaAutomatica?: boolean
   estado: 'pendiente' | 'en_revision' | 'aplicada' | 'descartada'
   aplicadaEn: string
   nota: string
@@ -1573,7 +1578,7 @@ export interface InventarioLecciones {
   cohorteVigente?: string
   notaCohortes?: string
   /** Casos apartados por criterio (nunca por resultado): no cuentan ni fijan rúbrica. */
-  enCuarentena?: { cuantas: number; porque: string; items: LeccionItem[] }
+  enCuarentena?: { cuantas: number; automaticas?: number; porque: string; items: LeccionItem[] }
   poblacion: Record<string, { casos: number; lados: number } | string>
   acreditables: {
     criterio: string

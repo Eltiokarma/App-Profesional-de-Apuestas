@@ -1758,6 +1758,42 @@ def main():
     check("quitar la cuarentena devuelve lo quitado y el caso vuelve a contar",
           r_q.status_code == 200 and r_q.json()["quitada"]["motivo"].startswith("rodaje")
           and c.get(f"{A}/analisis/cowork/lecciones").json()["poblacion"]["cuarentena"]["casos"] == 0, r_q.text[:200])
+    # ── SIN DT NO HAY CASO: cuarentena automática ──
+    p_sin = dict(p_lec)
+    import copy as _copy
+    p_sin = _copy.deepcopy(p_lec)
+    p_sin["equipos"]["a"]["dt"] = "sin establecer"
+    c.post(f"{A}/analisis/cowork", json=p_sin)
+    lect = c.get(f"{A}/analisis/cowork/{pasado['id']}").json()
+    check("el parte con DT «sin establecer» lleva la alerta DT-SIN-DT del lado",
+          any(x["codigo"] == "DT-SIN-DT" and x["equipo"] == "a" for x in lect["alertas"]),
+          [x["codigo"] for x in lect["alertas"]])
+    inv_sin = c.get(f"{A}/analisis/cowork/lecciones").json()
+    check("…y el caso queda en cuarentena AUTOMÁTICA, fuera de las métricas",
+          inv_sin["poblacion"]["cuarentena"]["casos"] == 1 and inv_sin["enCuarentena"]["automaticas"] == 1
+          and any(i["clave"] == f"{pasado['id']}:a" and i["cuarentenaAutomatica"] for i in inv_sin["enCuarentena"]["items"]),
+          (inv_sin["poblacion"], inv_sin["enCuarentena"].get("automaticas")))
+    p_sin["equipos"]["a"]["dt"] = {"nombre": "Otro Técnico", "desde": "2026-01-01"}
+    c.post(f"{A}/analisis/cowork", json=p_sin)
+    lect = c.get(f"{A}/analisis/cowork/{pasado['id']}").json()
+    check("re-depositar con el DT levanta la cuarentena automática",
+          c.get(f"{A}/analisis/cowork/lecciones").json()["poblacion"]["cuarentena"]["casos"] == 0)
+    check("un DT que no es el de la base dispara DT-DISCREPANCIA con el registro de la base al lado",
+          any(x["codigo"] == "DT-DISCREPANCIA" and x["equipo"] == "a" and x.get("dtBase", {}).get("nombre")
+              for x in lect["alertas"]), [x["codigo"] for x in lect["alertas"]])
+    r_eco = c.post(f"{A}/analisis/cowork", json={**lect, "fixtureId": pasado["id"]}).json()
+    check("el eco con las alertas calculadas no genera rechazos ni las duplica",
+          not any("alertas[" in x["donde"] for x in r_eco["rechazos"])
+          and sum(1 for x in c.get(f"{A}/analisis/cowork/{pasado['id']}").json()["alertas"]
+                  if x["codigo"] == "DT-DISCREPANCIA" and x["equipo"] == "a") == 1,
+          (r_eco["rechazos"], [x["codigo"] for x in c.get(f"{A}/analisis/cowork/{pasado['id']}").json()["alertas"]]))
+    c.post(f"{A}/analisis/cowork", json=p_lec)
+    ag_dt = c.get(f"{A}/analisis/cowork/agenda", params={"fecha": fecha, "limite": 2}).json()
+    check("la agenda lleva el DT de la base por lado, con edad, procedencia y si es fiable",
+          all("dt" in x and set(x["dt"]) == {"a", "b"} for x in ag_dt["analizar"])
+          and any((x["dt"]["a"] or {}).get("nombre") and "fiable" in x["dt"]["a"] and "nota" in x["dt"]["a"]
+                  for x in ag_dt["analizar"]), [x.get("dt") for x in ag_dt["analizar"]][:2])
+
     check("cuarentena sobre un fixture sin parte → 404",
           c.post(f"{A}/analisis/cowork/999999/cuarentena", json={"motivo": "rodaje: primera semana"}).status_code == 404)
     inv = c.get(f"{A}/analisis/cowork/lecciones").json()

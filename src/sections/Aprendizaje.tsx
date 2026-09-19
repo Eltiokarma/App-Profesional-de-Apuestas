@@ -347,7 +347,12 @@ function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
           style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid var(--line)', background: 'transparent', color: 'var(--t2)', cursor: 'pointer', font: '600 10px var(--sans)' }}>
           {abierto ? 'Cerrar' : 'Mover de estado'}
         </button>
-        {it.cuarentena ? (
+        {it.cuarentena && it.cuarentenaAutomatica ? (
+          <span title="la puso la app: el parte no declara DT en un lado. Se levanta re-depositando el parte con el DT"
+            style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid var(--line)', color: 'var(--t3)', font: '600 10px var(--sans)' }}>
+            automática · se levanta con el DT en el parte
+          </span>
+        ) : it.cuarentena ? (
           <button onClick={() => cuarentena(false)} disabled={!!yendo}
             style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid var(--line)', background: 'transparent', color: 'var(--t2)', cursor: 'pointer', font: '600 10px var(--sans)' }}>
             {yendo === 'cuarentena' ? '…' : 'Quitar la cuarentena'}

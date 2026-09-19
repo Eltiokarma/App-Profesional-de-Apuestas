@@ -1069,6 +1069,7 @@ components:
             cuarentena ni siquiera fija rúbrica.
         cohorte: { type: string, description: 'época del proceso en la que se depositó el parte' }
         cuarentena: { type: string, description: 'motivo de la cuarentena; vacío si el caso cuenta' }
+        cuarentenaAutomatica: { type: boolean, description: 'la puso la app por criterio: parte sin DT declarado en un lado. Se levanta re-depositando con el DT' }
         estado: { type: string, enum: [pendiente, en_revision, aplicada, descartada] }
         aplicadaEn: { type: string }
         nota: { type: string }
@@ -1113,6 +1114,7 @@ components:
           description: 'casos apartados por criterio: no cuentan ni fijan rúbrica'
           properties:
             cuantas: { type: integer }
+            automaticas: { type: integer, description: 'de las cuales sin DT declarado (criterio automático)' }
             porque: { type: string }
             items: { type: array, items: { $ref: '#/components/schemas/LeccionItem' } }
         poblacion:
@@ -2770,6 +2772,25 @@ components:
         partido: { type: string }
         equipoA: { type: string }
         equipoB: { type: string }
+        dt:
+          type: object
+          description: >
+            El DT que tiene la base por lado, con su edad y su procedencia. ES UNA ALARMA, NO
+            LA VERDAD: si la prensa de la semana dice otro, manda la prensa; el registro se
+            refresca solo en la próxima corrida (DT de la agenda: alineación del último partido
+            + /coachs). `fiable` = visto en el banco en el último partido, o registro de menos
+            de 14 días; si no, `nota` pide confirmarlo en prensa.
+          additionalProperties:
+            type: object
+            nullable: true
+            properties:
+              nombre: { type: string, nullable: true }
+              desde: { type: string, nullable: true }
+              actualizadoEn: { type: string, nullable: true }
+              fuente: { type: string, enum: [coachs, alineacion] }
+              edadDias: { type: integer, nullable: true }
+              fiable: { type: boolean }
+              nota: { type: string }
         liga: { type: string }
         pais: { type: string, nullable: true }
         prioridad: { type: integer, description: '1-5 del protocolo; 0 = descartado' }

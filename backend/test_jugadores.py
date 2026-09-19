@@ -148,6 +148,63 @@ def main():
     check("guardar_entrenador registra la salida: el del banco, con fuente alineacion y su primer partido",
           fila and fila[0] == "P. Guardiola" and fila[1] == hace(24 * 12)[:10] and fila[2] == "alineacion", fila)
 
+    # --- 2c. DT FRESCO PARA LA AGENDA: alineación del último partido + /coachs ---
+    from backend.ingesta.jugadores import dt_agenda, ultimo_terminado
+    from backend.ingesta import ficha_partido as ficha
+    con = sqlite3.connect(":memory:")   # con el esquema REAL de alineaciones (el de la ficha)
+    con.executescript("""
+        CREATE TABLE fixtures (id INTEGER PRIMARY KEY, date TEXT, status_short TEXT,
+            league_id INTEGER, league_season INTEGER, home_team_id INTEGER, away_team_id INTEGER);
+        CREATE TABLE teams (id INTEGER PRIMARY KEY, name TEXT);
+        INSERT INTO teams VALUES (700, 'Foco'), (701, 'Rival');
+    """)
+    ficha.preparar_tablas(con)
+    preparar_tablas(con)
+    prox = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
+    con.executemany("INSERT INTO fixtures (id, date, status_short, league_id, league_season, home_team_id, away_team_id) "
+                    "VALUES (?,?,?,?,?,?,?)",
+                    [(20, prox, "NS", 281, 2026, 700, 701),
+                     (21, hace(24 * 4), "FT", 281, 2026, 701, 700),
+                     (22, hace(24 * 30), "FT", 281, 2026, 700, 701)])
+    con.execute("INSERT INTO entrenadores (team_id, coach_id, nombre, desde, actualizado_en, fuente) "
+                "VALUES (700, 9, 'S. Novoa', '2019-01-01', ?, 'coachs')", (hace(24 * 40),))
+    con.commit()
+    check("el último partido terminado es el de hace 4 días, no el NS", ultimo_terminado(con, 700) == 21)
+
+    class Falso:
+        limite, usadas = 1000, 0
+        pedidos: list = []
+        def quedan(self, n=1): return True
+        def resumen(self): return "falso"
+        def get(self, endpoint, params):
+            self.usadas += 1
+            self.pedidos.append((endpoint, dict(params)))
+            if endpoint == "fixtures/lineups":
+                return {"response": [{"team": {"id": 700}, "coach": {"name": "P. Guardiola"}, "formation": "4-3-3",
+                                      "startXI": [{"player": {"id": 1, "name": "A", "number": 1, "pos": "G"}}],
+                                      "substitutes": []},
+                                     {"team": {"id": 701}, "coach": {"name": "Otro"}, "formation": "4-4-2",
+                                      "startXI": [{"player": {"id": 2, "name": "B", "number": 1, "pos": "G"}}],
+                                      "substitutes": []}]}
+            if endpoint == "coachs":
+                return {"response": [{"id": 9, "name": "S. Novoa", "career": [{"team": {"id": 700}, "start": "2019-01-01", "end": None}]}]}
+            return {"response": []}
+    falso = Falso()
+    r = dt_agenda(falso, con, dias=2, edad_dias=7)
+    lineups = [p for e, p in falso.pedidos if e == "fixtures/lineups"]
+    check("pide la alineación del último partido terminado de cada equipo de la agenda (una vez por fixture compartido)",
+          lineups == [{"fixture": 21}], falso.pedidos)
+    check("y /coachs del equipo con registro viejo (40 días > 7)",
+          ("coachs", {"team": 700}) in falso.pedidos, falso.pedidos)
+    fila = con.execute("SELECT nombre, fuente, desde FROM entrenadores WHERE team_id=700").fetchone()
+    check("el DT queda el del banco aunque /coachs siga trayendo al saliente: fuente alineacion, desde = ese partido",
+          fila and fila[0] == "P. Guardiola" and fila[1] == "alineacion" and fila[2] == hace(24 * 4)[:10], fila)
+    check("el resumen cuenta el cambio", r["coachs"] >= 1 and any(c["equipo"] == 700 for c in r["cambiados"]), r)
+    antes = len(falso.pedidos)
+    dt_agenda(falso, con, dias=2, edad_dias=7)
+    check("una segunda pasada no vuelve a pedir nada: alineación ya guardada y registro fresco",
+          len(falso.pedidos) == antes, falso.pedidos[antes:])
+
     # --- 3. el padrón: ligas importantes, no las copas ---------------------
     con = db()
     prox = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")

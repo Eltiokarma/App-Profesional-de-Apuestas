@@ -446,6 +446,7 @@ export function leccionesDemo(skill: string, estado: string, cohorte = ''): Inve
     notaCohortes: 'la cohorte se sella al depositar y no cambia con un re-depósito; las métricas de arriba son SOLO de la cohorte elegida (vacío = todas)',
     enCuarentena: {
       cuantas: 1,
+      automaticas: 0,
       porque: 'casos apartados por criterio (qué le faltaba al parte antes del pitazo), nunca por resultado: no cuentan ni fijan rúbrica',
       items: [base({ clave: '8990:a', fixtureId: 8990, lado: 'a', equipo: 'Girona', rival: 'Sevilla', partido: 'Girona vs Sevilla', fecha: '2026-07-12', veredicto: 'fallo', leccion: 'rodaje: DT viejo en la ficha', cohorte: 'rodaje', cuarentena: 'rodaje: DT viejo en 17 de 22 equipos', puedeMoverNumeros: false, queAutoriza: 'en cuarentena: no cuenta ni fija rúbrica' })],
     },

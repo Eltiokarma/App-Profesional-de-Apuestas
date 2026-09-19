@@ -58,7 +58,7 @@ def _casos(limite: int = 400) -> list[dict]:
     """Los partes con veredicto, con su parte y su juicio ya cargados."""
     from backend.analisis.parte import _conectar as conectar_parte
 
-    from backend.analisis.parte import cohorte_de
+    from backend.analisis.parte import cohorte_de, sin_dt
 
     with conectar_parte() as con:
         filas = con.execute(
@@ -67,13 +67,22 @@ def _casos(limite: int = 400) -> list[dict]:
             "ORDER BY fecha DESC LIMIT ?", (limite,)).fetchall()
     fuera = []
     for f in filas:
+        parte = json.loads(f["parte_json"])
+        cuarentena = json.loads(f["cuarentena_json"]) if f["cuarentena_json"] else None
+        # SIN DT NO HAY CASO. El bloque A, F3 y S1 se apoyan en la continuidad
+        # del entrenador; un parte con «sin establecer» en un lado se hizo sin
+        # ese insumo y no calibra nada. Cuarentena automática, por criterio.
+        lados_sin = sin_dt(parte)
+        if lados_sin and not cuarentena:
+            cuarentena = {"motivo": "automática: sin DT declarado (lado " + ", ".join(lados_sin) + ")",
+                          "automatica": True, "puestaEn": "", "veredictoAlPoner": None}
         fuera.append({
             "fixtureId": f["fixture_id"], "fecha": (f["fecha"] or "")[:10],
             "equipoA": f["equipo_a"], "equipoB": f["equipo_b"],
-            "parte": json.loads(f["parte_json"]),
+            "parte": parte,
             "veredicto": json.loads(f["veredicto_json"]),
             "cohorte": cohorte_de(f["cohorte"])["clave"],
-            "cuarentena": json.loads(f["cuarentena_json"]) if f["cuarentena_json"] else None,
+            "cuarentena": cuarentena,
         })
     return fuera
 
@@ -110,6 +119,7 @@ def _items_de(caso: dict, estados: dict) -> list[dict]:
             "mancha": v.get("mancha", ""),
             "cohorte": caso.get("cohorte", ""),
             "cuarentena": (caso.get("cuarentena") or {}).get("motivo", "") if caso.get("cuarentena") else "",
+            "cuarentenaAutomatica": bool((caso.get("cuarentena") or {}).get("automatica")),
             # LA DISTINCIÓN QUE EL DOSSIER NO PUEDE DEJAR AL CRITERIO DEL DÍA:
             # un caso contaminado enseña, pero no mueve un número. Uno en
             # cuarentena ni siquiera enseña: su insumo estaba roto.
@@ -417,8 +427,10 @@ def inventario(skill: str = "", estado: str = "", limite: int = 400, cohorte: st
                          + COHORTES.get(COHORTE, "")),
         "enCuarentena": {
             "cuantas": len(en_cuarentena),
+            "automaticas": sum(1 for i in en_cuarentena if i["cuarentenaAutomatica"]),
             "porque": "casos apartados por criterio (qué le faltaba al parte antes del pitazo), "
-                      "nunca por resultado: no cuentan ni fijan rúbrica",
+                      "nunca por resultado: no cuentan ni fijan rúbrica. Las automáticas son "
+                      "partes sin DT declarado en un lado; se levantan re-depositando el parte con el DT",
             "items": en_cuarentena,
         },
         "poblacion": {

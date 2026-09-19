@@ -571,6 +571,13 @@ poder mover números ni fijar rúbrica. La regla dura, y la razón de que exista
 > que tenía el caso al ponerla: una auditoría ve de un vistazo si se puso
 > después de saber cómo terminó.
 
+**Cuarentena automática: sin DT no hay caso.** El bloque A, F3 y S1 se
+apoyan en la continuidad del entrenador. Un parte con `dt` «sin establecer»
+(o vacío, en los de rodaje) en un lado se hizo sin ese insumo: `lecciones.py`
+lo pone en cuarentena solo, con motivo «automática: sin DT declarado (lado
+a)», `cuarentenaAutomatica: true` y sin botón de quitar. Se levanta
+re-depositando el parte con el DT (`parte.sin_dt`).
+
 **Cohortes** (`parte_cowork.cohorte`, `parte.COHORTE` / `COHORTES`). La
 época del proceso se sella **al depositar** y un re-depósito no la cambia (un
 parte viejo re-depositado hoy sigue siendo de su época; lo que ya existía sin

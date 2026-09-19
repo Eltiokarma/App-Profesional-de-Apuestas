@@ -479,6 +479,76 @@ def ingestar_equipo(cliente: Cliente, con: sqlite3.Connection, team_id: int, sea
     return True
 
 
+# ── DT FRESCO PARA LA AGENDA ────────────────────────────────────────────────
+#
+# El DT se pedía a /coachs cada 30 días y el cambio solo se detectaba si había
+# una alineación capturada (la ficha, que va con presupuesto aparte). Resultado:
+# 17 de 22 mal el 16/09, 4 de 19 el 18/09, y Cowork discutiendo con la base en
+# vez de analizar. Esto no es caro: para los equipos que juegan en <= N días
+# (el padrón de la agenda) trae la alineación de su ÚLTIMO partido terminado
+# si no la tenemos (1 request: ahí está el DT que se sentó en el banco) y, si
+# el registro tiene más de `edad_dias` o la alineación contradice lo guardado,
+# vuelve a pedir /coachs (1 request). Dos requests por equipo, ~30 equipos:
+# menos de lo que gasta un solo ciclo en vivo.
+DT_AGENDA_DIAS = int(os.environ.get("SAD_DT_AGENDA_DIAS", "2") or "2")
+DT_AGENDA_EDAD_DIAS = int(os.environ.get("SAD_DT_AGENDA_EDAD_DIAS", "7") or "7")
+_TERMINADOS = ("FT", "AET", "PEN")
+
+
+def ultimo_terminado(con: sqlite3.Connection, team_id: int) -> int | None:
+    marcas = ",".join("?" * len(_TERMINADOS))
+    fila = con.execute(
+        f"SELECT id FROM fixtures WHERE (home_team_id=? OR away_team_id=?) AND status_short IN ({marcas}) "
+        "ORDER BY date DESC LIMIT 1", (team_id, team_id, *_TERMINADOS)).fetchone()
+    return fila[0] if fila else None
+
+
+def dt_agenda(cliente, con: sqlite3.Connection, dias: int = DT_AGENDA_DIAS,
+              edad_dias: int = DT_AGENDA_EDAD_DIAS, reserva: int = 0) -> dict:
+    """DT al día de los equipos que juegan en <= `dias`. Devuelve el resumen."""
+    from backend.ingesta import ficha_partido as ficha
+    ficha.preparar_tablas(con)
+    equipos = [tid for tid, _ in equipos_pendientes(con, dias, 0)]
+    ahora = datetime.now(timezone.utc)
+    corte = (ahora - timedelta(days=edad_dias)).strftime("%Y-%m-%d %H:%M:%S")
+    out = {"equipos": len(equipos), "alineaciones": 0, "coachs": 0, "cambiados": [], "sinPresupuesto": 0}
+    for tid in equipos:
+        if cliente.limite - cliente.usadas <= reserva or not cliente.quedan(1):
+            out["sinPresupuesto"] += 1
+            continue
+        # 1) la alineación del último partido terminado: ahí está el DT del banco
+        fid = ultimo_terminado(con, tid)
+        if fid is not None:
+            tiene = con.execute("SELECT 1 FROM alineaciones WHERE fixture_id=? AND team_id=? LIMIT 1",
+                                (fid, tid)).fetchone()
+            sellada_vacia = con.execute(
+                "SELECT 1 FROM fichas_meta WHERE fixture_id=? AND alineaciones=0", (fid,)).fetchone()
+            if not tiene and not sellada_vacia:
+                data = cliente.get("fixtures/lineups", {"fixture": fid})
+                n = ficha.guardar_alineaciones(con, fid, (data or {}).get("response", []))
+                con.commit()
+                out["alineaciones"] += 1 if n else 0
+        # 2) /coachs si el registro está viejo, falta, o la alineación lo contradice
+        fila = con.execute("SELECT nombre, actualizado_en FROM entrenadores WHERE team_id=? "
+                           "ORDER BY actualizado_en DESC LIMIT 1", (tid,)).fetchone()
+        viejo = not fila or not fila[1] or fila[1] <= corte
+        dt_alin, _desde = dt_de_alineaciones(con, tid)
+        contradice = bool(dt_alin and fila and fila[0] and _norm_dt(dt_alin) != _norm_dt(fila[0]))
+        if not (viejo or contradice):
+            continue
+        if not cliente.quedan(1) or cliente.limite - cliente.usadas <= reserva:
+            out["sinPresupuesto"] += 1
+            continue
+        antes = fila[0] if fila else None
+        data = cliente.get("coachs", {"team": tid})
+        if guardar_entrenador(con, tid, (data or {}).get("response", [])):
+            out["coachs"] += 1
+            despues = con.execute("SELECT nombre FROM entrenadores WHERE team_id=?", (tid,)).fetchone()
+            if despues and despues[0] != antes:
+                out["cambiados"].append({"equipo": tid, "antes": antes, "despues": despues[0]})
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Ingesta de jugadores (plantillas, bajas, traspasos, DT)")
     ap.add_argument("--db", default="sad.db", help="ruta a sad.db")
@@ -493,6 +563,10 @@ def main() -> int:
                     help="SOLO el entrenador (1 request por equipo con NS en la ventana, sin TTL): "
                          "para rehacer los DT tras cambiar la regla del vigente. También con "
                          "SAD_JUGADORES_SOLO_DT=1 (la corrida programada lo lee)")
+    ap.add_argument("--dt-agenda", action="store_true",
+                    help=f"DT fresco de los equipos que juegan en <= {DT_AGENDA_DIAS} días: alineación del "
+                         "último partido (1 req) y /coachs si el registro está viejo o contradicho (1 req). "
+                         "Corre en la corrida diaria")
     args = ap.parse_args()
     solo_dt = args.solo_dt or os.environ.get("SAD_JUGADORES_SOLO_DT", "").strip() in ("1", "true", "sí", "si")
 
@@ -505,6 +579,17 @@ def main() -> int:
     con.execute("PRAGMA journal_mode=WAL")   # en WAL solo hay UN escritor: sin esperar, el ciclo muere
     preparar_tablas(con)
 
+    if args.dt_agenda:
+        reserva = reserva_del_dia(cliente.limite, con)
+        r = dt_agenda(cliente, con, reserva=reserva)
+        con.close()
+        print(f"DT de la agenda: {r['equipos']} equipos · {r['alineaciones']} alineaciones traídas · "
+              f"{r['coachs']} /coachs · {len(r['cambiados'])} DT cambiados"
+              + (f" · {r['sinPresupuesto']} sin presupuesto" if r["sinPresupuesto"] else "")
+              + f" · consumo: {cliente.resumen()} · total {cliente.usadas}/{cliente.limite}")
+        for c in r["cambiados"]:
+            print(f"  equipo {c['equipo']}: DT {c['antes']!r} → {c['despues']!r}")
+        return 0
     if args.equipo:
         pendientes = [(args.equipo, args.temporada or datetime.now(timezone.utc).year)]
     elif solo_dt:

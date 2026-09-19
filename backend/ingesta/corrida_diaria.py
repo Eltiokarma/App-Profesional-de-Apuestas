@@ -37,6 +37,13 @@ def main() -> int:
     if fic.returncode != 0:
         print(f"ficha de partido terminó con código {fic.returncode}; el pipeline corre igual",
               file=sys.stderr)
+    # DT fresco de los equipos de la agenda (docs/JUGADORES.md): la alineación
+    # del último partido y /coachs si el registro está viejo. Va DESPUÉS de la
+    # ficha para aprovechar las alineaciones que esta ya trajo; ~2 requests
+    # por equipo, así que nunca compite con el en vivo
+    dta = subprocess.run([sys.executable, "-m", "backend.ingesta.jugadores", "--dt-agenda"], cwd=data, env=env)
+    if dta.returncode != 0:
+        print(f"DT de la agenda terminó con código {dta.returncode}; el pipeline corre igual", file=sys.stderr)
     pipe = subprocess.run([sys.executable, "-m", "backend.ingesta.pipeline", "--out", "."], cwd=data, env=env)
     return pipe.returncode
 
