@@ -304,7 +304,9 @@ conversación se pierde en la siguiente.
    obligando a confirmar el DT en prensa antes de puntuar el bloque A.
    **Pendiente del usuario (16/09/2026, 18:00 Lima):** la variable ya está
    puesta en Railway; tras la primera corrida programada hay que QUITARLA,
-   y la siguiente corrida de Cowork dirá si los DT ya salen bien.
+   y la siguiente corrida de Cowork dirá si los DT ya salen bien. Desde el
+   19/09 el refresco diario de `--dt-agenda` (punto 6) hace este trabajo
+   solo para los equipos que juegan; la variable sobra.
 3. **Colisión de nombres F3/F4.** El bloque F del EFE tiene F3 y F4, y el TDE
    tiene los suyos. La instrucción «no mandes F3 ni F4» (que habla del EFE) se
    puede leer al revés. Renombrar desalinea el prompt del skill, así que por
@@ -366,6 +368,48 @@ conversación se pierde en la siguiente.
      `eventosTimeline: 0` cuando mandaba tipos fuera de la lista; ahora se
      rechaza con motivo. Si vuelve a salir 0 con tipos válidos, mirar
      `timeline_del_parte`.
+7. **Cierre de la sesión del 18-19/09/2026** (PR #66 a #75): `sad.db` de 30 GB
+   a 0,54 GB (`adelgazar`, solo mercados del contrato, retención por fixture);
+   los seis reportes de Cowork (niveles del TDE, `dt {nombre, desde}`, «sin
+   establecer», DT desde la alineación, nombre del DT, procedencia del once);
+   cuarentena, cohortes e intervalo de Wilson en Aprendizaje; reventón por
+   período (todas las temporadas y años, DT, últimos 20) en la tarjeta y en la
+   gráfica; DT fresco de la agenda cada día con alertas `DT-DISCREPANCIA` /
+   `DT-SIN-DT` y cuarentena automática sin DT. **Lo que queda en manos del
+   usuario, en orden:**
+   - **Railway**: quitar `SAD_ADELGAZAR` (ya corrió; el marcador
+     `.adelgazar_hecho.json` impide que se repita) y `SAD_JUGADORES_SOLO_DT`
+     (punto 2); poner `Settings → Resource Limits` en 2 GB; mirar
+     `Metrics → Memory` unos días: tiene que quedar plana por debajo de 1 GB.
+     La factura del 08/10 todavía trae los días caros; la de noviembre es la
+     primera limpia.
+   - **Primera corrida con `--dt-agenda`** (06:30 del 20/09): en Deploy Logs la
+     línea «DT de la agenda: N equipos · … · X DT cambiados» y que Sassuolo,
+     Aucas, Comerciantes Unidos y ADT salgan con el DT vigente y `fuente`
+     `alineacion`. Si un equipo sigue viejo, `ficha_partido --estado` dice si
+     su liga da alineaciones; sin alineaciones la regla del banco no tiene de
+     dónde sacar el DT y manda `/coachs` (que llega tarde): ahí la prensa es
+     la única fuente y el prompt ya lo dice.
+   - **Cowork**: los nueve partes con el índice en `ieNivel` (1550133,
+     1557408, 1549491, 1549492, 1493146, 1493147, 1550967, 1639788, 1639849)
+     se re-depositan con el nivel en la etiqueta y el número en `ie`; una
+     pasada de `xi/auto` devuelve la procedencia del 1549492 a la ficha; el
+     prompt vigente es el de `docs/COWORK.md` (dt con `desde`, la red manda
+     sobre el DT de la base, `rechazos` se leen en cada depósito). Los partes
+     de rodaje con `dt` vacío ya están en cuarentena automática.
+   - **Aprendizaje**: la cohorte vigente (`c2-2026-09-19`) arranca vacía; los
+     42 casos de rodaje se miran con el selector y calibran nada. La
+     cuarentena a mano queda para el caso puntual con motivo. Fases D y A
+     siguen pendientes.
+   - **Reventón**: no hay backtest por período (la global sigue mandando en
+     el riesgo, a propósito); «fase» (Apertura/Clausura) no está como período
+     porque no vive en las filas del motor; las K de goles siguen fuera. Con
+     datos reales, `temporada` en Europa es la 2025/26 entera y en Sudamérica
+     el año natural: por eso viajan las dos.
+   - **Sin cambios y aún abiertos**: deuda 1 (token en el bundle), 3 (F3/F4),
+     5 (onces de ligas sin cobertura), el umbral de `Missing Fixture` a
+     recalibrar con casos, y ver en la próxima corrida real que a los equipos
+     de interés (Beşiktaş y compañía) les aparezcan calendario y plantel.
 
 ## Siguientes pasos (en orden)
 
