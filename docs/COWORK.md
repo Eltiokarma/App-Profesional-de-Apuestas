@@ -240,9 +240,12 @@ noche) sin tocar el padrón:
 
 | Parámetro | Qué hace |
 |---|---|
-| `ligaId=262` | solo esa liga |
-| `desdeAhora=true&horas=6` | ventana rodante desde este momento, no el día natural |
+| `ligaId=262` | solo esa liga, por id |
+| `liga=España` | solo las ligas **del padrón** cuyo país o nombre contiene ese texto; la respuesta lista `filtro.ligasQueCasan` (vacío = esa liga no está en el padrón, y ahí se para) |
+| `desdeAhora=true&horas=6` | ventana rodante desde este momento, no el día natural (1 a 72 h) |
+| `grupos=true` / `segundas=true` | meten la fase de grupos internacional y las segundas divisiones, que quedan fuera por defecto |
 | `incluirDescartados=true` | los de prioridad 0 entran al final, **con su motivo** |
+| `limite=N` | tope de la lista (1 a 20) y tope de partes de la corrida; `corte` dice qué quedó fuera solo por él |
 
 `desdeAhora` existe por una razón concreta: a las 20:00 de Lima el día UTC ya
 es el siguiente, así que un filtro por fecha se comería justo los partidos de
@@ -648,6 +651,30 @@ Dos formas de evitarlo, y la primera es la buena:
 Si no haces ninguna de las dos, el recibo te lo dice con nombre y apellido:
 *«esta baja no está en la tabla F1 y no trae zona/rol: NO pesa en el Impacto
 Ponderado»*.
+
+---
+
+## Los prompts que hay, y cuál mandar
+
+Cinco, y se eligen por lo que querés cubrir, no por la hora:
+
+| Prompt | Cuándo | Cómo elige los partidos |
+|---|---|---|
+| **BATCH NOCTURNO v2.5** | la corrida programada | padrón de prioridades, ventana «desde ahora y por 24 h» |
+| **«LA LIGA X, AHORA»** | a cualquier hora, una liga entera | `liga=` por texto + ventana rodante (`desdeAhora&horas`), sin tocar el padrón |
+| **«RETOMAR HOY»** | el batch se cortó o se saltó partidos | padrón, pero solo `porHacer` de lo que todavía no arrancó |
+| **«LLEGÓ EL ONCE»** | llegó un pantallazo de alineación | ninguno: cierra el bloque F de un parte ya depositado |
+| **«VALIDAR LO DE AYER»** | 12 h después de los partidos | `veredictos/pendientes`; no analiza nada nuevo |
+
+La **CORRIDA DE PRUEBA SOBRE UNA LIGA** del final es la versión mínima de la
+segunda (por `ligaId`, tres partidos, sin veredictos ni `xi/auto`): sirve para
+probar la tubería, no para cubrir una jornada.
+
+**Ninguno de los cinco depende de la hora.** La agenda sin `fecha` es «desde
+ahora y por N horas», así que el mismo prompt mandado a las 07:18 y a las 14:00
+devuelve cosas distintas y las dos correctas: lo que falta por jugarse en ese
+momento. Lo único que NO se puede hacer a ninguna hora es analizar un partido
+que ya arrancó — eso no es un parte, es hindsight.
 
 ---
 
@@ -1404,6 +1431,9 @@ cuántas lecciones dejaste con su skill.
 # PROMPT CORTO — CORRIDA DE PRUEBA SOBRE UNA LIGA
 
 Para probar el pipeline sobre unos partidos concretos, sin esperar al batch.
+Es la versión mínima: por `ligaId`, tres partidos, sin veredictos ni
+`xi/auto`. Para cubrir una liga entera a cualquier hora está el prompt
+«LA LIGA X, AHORA», más abajo.
 
 ```text
 Corrida de prueba del pipeline SAD. Mismas reglas del batch nocturno, pero la
@@ -1438,3 +1468,119 @@ lista de partidos la fijo yo con un filtro, no el padrón de prioridades.
 El bloque F va congelado: no busques el XI confirmado, que a esta hora no
 existe. Cuando salga te paso el pantallazo y lo cerramos por su endpoint.
 ```
+
+---
+
+# PROMPT CORTO — "LA LIGA X, AHORA"
+
+Para pedir una liga entera a cualquier hora, sin esperar al batch y sin tocar
+el padrón de prioridades. A las 07:18 trae lo que se juega desde las 07:18; a
+las 14:00, lo que se juega desde las 14:00. Mismas reglas del batch nocturno
+v2.5: lo único que cambia es cómo se arma la lista.
+
+Reemplazar lo que está entre `<< >>` antes de mandarlo.
+
+```text
+Corrida a pedido sobre UNA liga. Reglas del batch nocturno v2.5 (contrato,
+sesión limpia por partido, EFE con sus sub-scores, tabla F1, reventón de la
+burbuja leído antes del 1X2, TDE con indicadores, cadena, pronóstico con sus
+tres fuentes, "sin dato" es respuesta válida). Nada nuevo salvo la lista.
+
+ALCANCE: << «Perú» / «España» / «Liga MX» / … >>
+VENTANA: << 24 >> horas desde este momento (1 a 72; una jornada repartida en
+          viernes-domingo necesita 72, la fecha de esta noche 12).
+TOPE:    << 5 >> partes en esta corrida.
+
+0. Anclá la hora real con la herramienta del sistema (America/Lima). No
+   asumas qué día es. Después:
+   GET << {base} >>/analisis/cowork/contrato
+   Token acotado en `Authorization: Bearer <token>`. Un 403 significa que ese
+   endpoint no es para vos: anotalo y seguí, no cambies de token.
+
+1. LA LISTA:
+   GET << {base} >>/analisis/cowork/agenda
+       ?liga=<<ALCANCE>>&desdeAhora=true&horas=<<VENTANA>>&limite=<<TOPE>>
+
+   - `liga=` va TAL CUAL, en texto: casa por país o por nombre («España» trae
+     LaLiga). NO lo traduzcas a un `ligaId` que no te dieron.
+   - Si `filtro.ligasQueCasan` viene VACÍO, esa liga no está en el padrón
+     (copas nacionales y amistosos quedan fuera a propósito): decímelo y
+     paramos. No la busques por otro lado ni la cambies por otra parecida.
+   - Si es una SEGUNDA división, agregá `segundas=true`; si es fase de grupos
+     / fase liga de un torneo internacional, `grupos=true`. Sin eso van a
+     `descartados` con ese motivo escrito, y ahí se ve.
+   - `desdeAhora=true` es lo que hace que esto funcione a cualquier hora:
+     devuelve SOLO los partidos que todavía no empezaron. Nunca pases
+     `fecha=`: traería también los que ya arrancaron.
+
+   Antes de arrancar decime en una línea: `ventana`,
+   `filtro.ligasQueCasan`, cuántos hay en `porHacer`, y `corte.quedanFuera`.
+
+   Trabajá EXACTAMENTE `porHacer`, en ese orden. `yaHechos` NO se toca: un
+   re-depósito reemplaza el parte entero.
+
+   Si `analizar` viene vacío: NO inventes fixtureIds. Decime `ventana`,
+   `corte` y los `descartados` con su motivo, y paramos. Vacío casi siempre
+   quiere decir que esa liga no juega en esta ventana — se arregla subiendo
+   `horas`, no cambiando de liga.
+
+   TOPE Y CONTINUACIÓN: el `limite` es el tope de partes de ESTA corrida.
+   Dieciséis partes en una sola conversación se cuelgan antes de terminar
+   (pasó el 16/09). Si `corte` dice que quedaron partidos fuera, hacé los de
+   `porHacer`, cerrá, y avisame: mando el prompt otra vez y la agenda sigue
+   donde quedó (`yaHechos` / `porHacer`).
+
+   Esto SIGUE SIENDO SELECCIÓN CIEGA: elegir una liga y una ventana antes del
+   pitazo es selección ex ante. Lo dice `notaSeleccion`, y el veredicto se
+   escribe con `seleccion: "ciega"` igual. Lo que contaminaría es elegir un
+   partido PORQUE pasó algo en él.
+
+2. Por cada fixtureId de `porHacer`, en su propia sesión:
+   - GET /analisis/cowork/tde/{fixtureId} → P1a, F1 y F2 ya calculados, y
+     `noCalculables` con lo que sigue siendo tuyo.
+   - EFE: sub-scores A-E crudos. Un bloque que la rúbrica excluye va en
+     `excluidos` con su motivo; uno que no pudiste puntuar se deja fuera y va
+     a `pendientes`. Nunca un 0 inventado.
+   - Tabla F1 (14-16 nombres con zona/rol/apps) y las bajas públicas también
+     en `plantel`, o no pesan en el Impacto Ponderado.
+   - Reventón ANTES del 1X2: GET /fixtures/{fixtureId} da `local.id` y
+     `visitante.id`; GET /equipos/{id}/burbujas?proximo={fixtureId} de los
+     dos, SIEMPRE con `proximo=`. Mirá `familias.total.riesgo` y
+     `familias.total.rival.tramo`; si `familias.total.extremo.activo` es
+     true, escribí EXTREMO con su N y no recomiendes carga fuerte a que esa
+     racha siga. Una línea por equipo en `lecturaSad.reventon`, sin copiar
+     números: el backend los recalcula al leer.
+   - Alertas, matchup con h2a/h2b/h2c, lectura SAD, sensibilidad.
+   - `tde.bloques[]` uno por equipo, con `indicadores` 0/0.5/1 y el nivel en
+     `ieNivel`/`iseNivel` (etiqueta) y el número en `ie`/`ise`.
+   - `timelineEventos` solo institucionales; `cadena.a/b.pronostico`;
+     `pronostico` con motor + matriz + mercado, probabilidades y falsador.
+   - Documentos: ensayo, dtp, matriz, tde.
+
+   Con poco margen hasta el pitazo, lo que NO se recorta: bloques A-E · tabla
+   F1 · bajas · alertas · pronóstico con sus tres fuentes · cadena · TDE con
+   indicadores. El ensayo y el timeline se caen primero y se anotan en
+   `pendientes`.
+
+   Un partido que ya arrancó no se analiza aunque esté en la lista: un parte
+   con el resultado a la vista no calibra nada. Anotalo en el cierre.
+
+3. POST << {base} >>/analisis/cowork por partido. Leé el recibo: `rechazos`,
+   `faltan`, `discrepancias`, `jugadores`, `ladosTde`, `cadenaIgnorada`. Si
+   `faltan` trae `cadena`, `tde` o `pronostico.probabilidades`, completalo
+   AHORA y re-depositá completo: después del pitazo ya no se puede llenar sin
+   hindsight.
+
+4. Al final, una sola vez: POST << {base} >>/analisis/cowork/xi/auto
+   Cierra el bloque F de todo lo que ya tenga alineación ingestada. Decime
+   `cerrados`, `conConflicto`, `sinFichaTodavia` y `nuncaVaALlegar`.
+
+5. Cierre en cuatro líneas: fixtureIds depositados, cuáles de `porHacer`
+   quedaron sin parte y por qué (ya jugado / sin datos / se acabó el tope),
+   qué recibos trajeron `rechazos` o `faltan`, y cuántos partidos de la liga
+   quedaron fuera por el `limite` (para saber si hay que mandar otra vuelta).
+```
+
+**Si además querés cerrar lo de ayer en la misma corrida**, mandá primero el
+prompt «VALIDAR LO DE AYER» y después este: son dos trabajos distintos y
+mezclarlos en una conversación es lo que la deja sin tokens a mitad de camino.
