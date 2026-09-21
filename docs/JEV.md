@@ -114,6 +114,86 @@ mover un peso exige el backtest a la vista y la población `ciega`+`PRE`
 (`docs/APRENDIZAJE.md`). Un modelo rápido y barato que opina de fútbol es la
 forma más cómoda de contaminar una rúbrica que costó 171k burbujas calibrar.
 
+## Catálogo completo — todo lo que Jev puede hacer aquí
+
+Los candidatos de arriba son los primeros; este es el barrido entero del
+proyecto. El patrón se repite: **texto de una fuente ajena que hoy se descarta
+en silencio**, o **una elección entre candidatos resuelta con heurística de
+tokens**. Nada de esto decide solo: todos PROPONEN y un humano confirma, salvo
+donde se diga.
+
+### Ingesta — texto de una API que cambia sin avisar
+
+| Dónde | Qué haría | Por qué hoy duele |
+|---|---|---|
+| `backend/cuota_mercados.py` | `choice` sobre los mercados del contrato + «ninguno», para cada `bet_name` que hoy cae en `None` | `cuota_key` descarta lo que no mapea **en silencio**, y desde el 18/09 eso además decide lo que se GUARDA. Si mañana el catálogo renombra «Match Winner», el 1X2 deja de entrar y nadie se entera hasta que una gráfica sale vacía |
+| `extractor --buscar` | `choice` entre los candidatos de `/leagues` (nombre · país · tipo) | Descubrir el id de un torneo nuevo es leer una lista a ojo |
+| `_fase_de_round` (`app.py`) | `choice` al vocabulario nuestro para la ronda que no casa con la regex | «1/8 Finals», «Relegation Round», «Final Stage - 2». Y `league_round` decide también la fase decisiva del padrón de la agenda: una ronda desconocida ahí mueve qué partidos se analizan |
+| `backend/nombres.py` | `choice` entre los candidatos cuando `canonizar` queda AMBIGUO | Hoy vuelve tal cual y el dato se deposita bajo un nombre que nadie consulta: se paga la búsqueda igual |
+
+En las cuatro, la salida es una **propuesta en un informe** (o un PR), nunca
+una escritura. La regla de que un mapeo mal hecho es peor que un hueco declarado
+no cambia porque el que lo proponga sea rápido y barato.
+
+### Bloque F — el once pegado a mano (deuda 5)
+
+`bloque_f._casa()` cruza por tokens, y con menos de 7 nombres casados el bloque
+NO cierra: devuelve el conflicto en vez de un IP inventado. Correcto, y también
+el sitio donde más trabajo manual se pierde — Primera B de Colombia y Primera de
+Uruguay no dan alineaciones, así que el pantallazo es el procedimiento.
+
+Un `noul` «¿estos dos nombres son la misma persona?» **solo sobre los que NO
+casaron** desatasca los fallos de tipeo, acento, apellido compuesto e inicial
+(«M. Vucetich» vs «Manuel Vucetich Rojas»). Condiciones, porque este es el único
+de la lista que toca un cálculo:
+
+- solo desempata lo que quedó sin casar; **nunca deshace** un match de tokens,
+- exige confianza alta y deja la procedencia declarada, como `xi/auto`,
+- si el bloque sigue sin llegar a 7, sigue sin cerrar. El umbral no se toca.
+
+### Operación
+
+- **Triage de la corrida diaria**: `choice` sobre el log de Deploy —¿corrida
+  normal, degradada o fallida?— para que el silencio no sea el único aviso. Lo
+  que NO hace es contar ni comparar fechas: los números de la corrida los pone
+  el latido, que ya existe.
+
+### Frontend — el buscador inteligente
+
+Una consulta en lenguaje natural («el equipo peruano que juega el jueves»)
+resuelta como `choice` sobre los candidatos es el caso de libro. **No mientras
+siga abierta la deuda 1**: `VITE_API_KEY` viaja al bundle, así que un endpoint
+que gasta expuesto al navegador es una llave de gasto regalada. Primero el
+proxy o el token de solo lectura; después esto.
+
+## Lo que Jev NO puede hacer aquí — la lista corta
+
+No es cautela: cada una tiene su motivo y es definitiva.
+
+1. **Pronosticar.** 1X2, marcador, puntos del reventón, sub-scores del EFE,
+   índices del TDE, pesos de un skill. No está calibrado contra resultados.
+2. **La población del caso** en el aprendizaje (`ciega` / `por_resultado` /
+   `post_resultado`). Es justo lo que no se puede deducir y lo que decide si un
+   caso acredita; lo declara quien analizó. Deducirlo con un modelo es romper
+   el bucle por dentro y no se notaría hasta que las métricas mientan.
+3. **Cualquier cosa con fechas o cuentas**: TTL, `edadDias` del DT, ventanas del
+   TDE, retención, días de descanso. El modelo declara que cuenta mal y que lee
+   las fechas como texto sin orden.
+4. **Poner en cuarentena.** Es por criterio y con motivo, nunca por resultado.
+5. **Leer el pantallazo del once.** No procesa imágenes.
+6. **Ser la defensa contra contenido hostil.** Él mismo admite inyección desde
+   el estado: no puede ser el que vigile lo que no sabe mirar.
+
+## El costo real no son los centavos
+
+$0.042 por millón de tokens de entrada hace que cualquiera de estos usos sea
+gratis en la práctica. Lo que sí se paga es **una dependencia externa más**: un
+servicio que puede caerse, cambiar de precio o de versión de modelo. Por eso
+todo uso entra por `jev.disponible()` y **degrada a lo que hace hoy** —el hueco
+declarado, el conflicto devuelto, el descarte silencioso que ya existía—, nunca
+a un valor inventado. Un sitio donde apagar Jev rompa el pipeline es un sitio
+donde Jev estaba decidiendo, y eso ya es un error de diseño.
+
 ## Orden propuesto
 
 1. Adaptador + tests. **Hecho** (`backend/analisis/jev.py`, `backend/test_jev.py`).
