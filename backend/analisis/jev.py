@@ -60,12 +60,42 @@ REINTENTOS = int(os.environ.get("SAD_JEV_REINTENTOS", "2"))
 # Los umbrales que recomienda la documentación (docs.typesafe.ai/confidence),
 # con la lectura de este proyecto: actuar solo con confianza alta, y "actuar"
 # aquí no es nunca mover un número —es levantar una alerta de tipo dato—.
+# OJO: son el DEFECTO, no la política. El cookbook de guardrails usa la
+# PROBABILIDAD del noul (actuar ≥ 0.70, revisar ≥ 0.35) y el de emparejamiento
+# de entidades no usa umbral ninguno: redondea el score a su nivel. Cada uso
+# elige el suyo y lo justifica; un 0.9 global aplicado a un noul equivale a
+# exigir p ≥ 0.95, que en la práctica es no decidir nunca.
 UMBRAL_ALTO = float(os.environ.get("SAD_JEV_UMBRAL", "0.9"))
 UMBRAL_MEDIO = 0.5
+
+# Límites del servicio (docs.typesafe.ai/models): 64k tokens por petición, de
+# los que 32k son para el estado más la pregunta más larga; 1200 peticiones por
+# minuto y 250k tokens/s, "ajustados dinámicamente". Como el estado se mide en
+# tokens y aquí solo tenemos caracteres, el tope va con margen: ~4 caracteres
+# por token. Pasarse no es un error del servicio que se descubre en producción:
+# se corta antes y el llamador reparte el trabajo.
+TOPE_ESTADO_CARACTERES = int(os.environ.get("SAD_JEV_TOPE_ESTADO", "100000"))
 
 # $0.042 por millón de tokens de entrada; la salida es gratis. Solo para el
 # log de costo por corrida, igual que en backend/analisis/cliente.py.
 PRECIO_ENTRADA = 0.042
+
+
+class Lote(dict):
+    """Las respuestas de UNA petición, con el recibo pegado.
+
+    Sigue siendo un dict {clave: Respuesta} para quien solo quiera leer, y
+    además trae qué modelo respondió y cuántos tokens de entrada costó. El
+    recibo importa porque el alias `jev-latest` se mueve solo: un cambio de
+    versión puede correr un umbral, y sin el sello no hay forma de saber que
+    la respuesta guardada la dio otro modelo.
+    """
+    modelo: str = ""
+    tokens_entrada: int = 0
+
+    @property
+    def costo(self) -> float:
+        return costo(self.tokens_entrada)
 
 
 class JevError(RuntimeError):
@@ -74,16 +104,40 @@ class JevError(RuntimeError):
 
 @dataclass
 class Respuesta:
-    """Una respuesta tipada. `valor` es str (choice), float (score/noul)."""
+    """Una respuesta tipada. `valor` es str (choice), float (score/noul).
+
+    `modelo` es la versión EXACTA que respondió (jev-1.13.0), no el alias. Va
+    en cada respuesta porque Jev NO es determinista: el propio cookbook de
+    self-consistency corre la misma rúbrica 15 veces sobre el mismo texto y la
+    etiqueta se mueve en los casos de borde. Una salida así no se puede
+    RECALCULAR al leer, como hace el resto del proyecto con lo derivado: hay
+    que guardarla sellada con su modelo y tratarla como dato capturado.
+    """
     tipo: str
     valor: object
     confianza: float
     probabilidades: dict = field(default_factory=dict)
     simulado: bool = False
+    modelo: str = ""
 
     def fiable(self, umbral: float = UMBRAL_ALTO) -> bool:
         """Confianza suficiente para actuar sin que lo mire una persona."""
         return (not self.simulado) and self.confianza >= umbral
+
+    def probabilidad(self) -> float:
+        """Solo noul: probabilidad de que la afirmación sea VERDADERA.
+
+        No es lo mismo que la confianza, y confundirlas es el error fácil: el
+        cookbook de guardrails actúa sobre esta probabilidad (≥ 0.70 actuar,
+        ≥ 0.35 revisar), mientras que `fiable()` mira cuán concentrada está la
+        distribución. Un noul en 0.72 es un "sí" accionable para ese cookbook
+        y a la vez una confianza de 0.44 —por debajo incluso de la zona
+        media—: son dos preguntas distintas, y medir una con el umbral de la
+        otra es no decidir nunca.
+        """
+        if self.tipo != "noul":
+            raise ValueError(f"probabilidad() es de noul, no de {self.tipo}")
+        return float(self.valor)
 
     def dudosa(self) -> bool:
         """Zona media: se puede mostrar, no se puede dar por cierto."""
@@ -127,8 +181,10 @@ def _confianza_noul(p: float) -> float:
     return abs(float(p) - 0.5) * 2
 
 
-def _normalizar(bruto: dict, preguntas: dict) -> dict:
-    salida = {}
+def _normalizar(bruto: dict, preguntas: dict) -> Lote:
+    salida = Lote()
+    salida.modelo = str(bruto.get("model") or "")
+    salida.tokens_entrada = int((bruto.get("usage") or {}).get("input_tokens") or 0)
     for clave, pregunta in preguntas.items():
         dato = (bruto.get("answers") or {}).get(clave)
         if not isinstance(dato, dict):
@@ -148,7 +204,8 @@ def _normalizar(bruto: dict, preguntas: dict) -> dict:
             valor = float(dato.get("score", 0.0))
             confianza = float(dato.get("confidence", 0.0))
         salida[clave] = Respuesta(tipo=tipo, valor=valor, confianza=confianza,
-                                  probabilidades=dato.get("probabilities") or {})
+                                  probabilidades=dato.get("probabilities") or {},
+                                  modelo=salida.modelo)
     return salida
 
 
@@ -161,7 +218,7 @@ def _guion(estado, preguntas: dict) -> dict | None:
         return json.load(fh)
 
 
-def _simular(estado, preguntas: dict) -> dict:
+def _simular(estado, preguntas: dict) -> Lote:
     """Determinista por el estado: la misma entrada da la misma salida.
 
     Confianza 0 y simulado=True SIEMPRE: sin clave se puede recorrer el
@@ -170,14 +227,16 @@ def _simular(estado, preguntas: dict) -> dict:
     guion = _guion(estado, preguntas)
     semilla = hashlib.sha256(json.dumps(estado, sort_keys=True, ensure_ascii=False,
                                         default=str).encode("utf-8")).hexdigest()
-    salida = {}
+    salida = Lote()
+    salida.modelo = "simulado"
     for i, (clave, pregunta) in enumerate(sorted(preguntas.items())):
         if guion and clave in guion:
             fijo = guion[clave]
             salida[clave] = Respuesta(tipo=pregunta["type"], valor=fijo.get("valor"),
                                       confianza=float(fijo.get("confianza", 0.0)),
                                       probabilidades=fijo.get("probabilidades") or {},
-                                      simulado=not bool(fijo.get("comoReal")))
+                                      simulado=not bool(fijo.get("comoReal")),
+                                      modelo="guion")
             continue
         n = int(semilla[i * 4:i * 4 + 4] or "0", 16)
         if pregunta["type"] == "choice":
@@ -188,11 +247,11 @@ def _simular(estado, preguntas: dict) -> dict:
         else:
             valor = round((n % 1000) / 1000, 3)
         salida[clave] = Respuesta(tipo=pregunta["type"], valor=valor,
-                                  confianza=0.0, simulado=True)
+                                  confianza=0.0, simulado=True, modelo="simulado")
     return salida
 
 
-def preguntar(estado, preguntas: dict, modelo: str = "") -> dict:
+def preguntar(estado, preguntas: dict, modelo: str = "") -> Lote:
     """Una llamada, todas las preguntas: cada una ve el MISMO estado.
 
     `estado` es texto/dict/lista sin estructurar (lo de fuera). `preguntas`
@@ -201,6 +260,12 @@ def preguntar(estado, preguntas: dict, modelo: str = "") -> dict:
     """
     if not preguntas:
         raise ValueError("no hay nada que preguntar")
+    medida = len(estado if isinstance(estado, str)
+                 else json.dumps(estado, ensure_ascii=False, default=str))
+    if medida > TOPE_ESTADO_CARACTERES:
+        raise ValueError(
+            f"el estado mide {medida} caracteres y el tope es {TOPE_ESTADO_CARACTERES}: "
+            "repartilo en varias peticiones (el servicio corta en 32k tokens)")
     if not disponible():
         return _simular(estado, preguntas)
 

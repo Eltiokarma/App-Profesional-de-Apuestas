@@ -120,6 +120,38 @@ for nombre, cuerpo in [
     except jev.JevError:
         check(nombre, True)
 
+print("\n== el recibo y el sello de versión ==")
+check("el lote sigue siendo un dict de respuestas", n["tipo"].valor == "dt" and len(n) == 3)
+check("el lote sella qué modelo respondió", n.modelo == "jev-1.13.0")
+check("cada respuesta lleva su modelo", n["tipo"].modelo == "jev-1.13.0")
+check("el lote trae los tokens de entrada", n.tokens_entrada == 392)
+check("y su costo", abs(n.costo - jev.costo(392)) < 1e-12)
+check("el simulado se sella como simulado", r1.modelo == "simulado")
+
+print("\n== probabilidad y confianza no son lo mismo ==")
+n3 = jev._normalizar({"answers": {"urgente": {"type": "noul", "noul": 0.72}}},
+                     {"urgente": preguntas["urgente"]})
+check("un noul de 0.72 es un sí utilizable", n3["urgente"].probabilidad() == 0.72)
+# 0.72 → confianza |0.72-0.5|*2 = 0.44: ni fiable ni zona media. Medir una
+# probabilidad con el umbral de la confianza es no decidir nunca.
+check("...pero su confianza (0.44) no llega ni a la zona media",
+      not n3["urgente"].dudosa() and not n3["urgente"].fiable())
+check("la confianza del noul se deriva de su distancia a 0.5",
+      abs(n3["urgente"].confianza - 0.44) < 1e-9)
+try:
+    n3["urgente"] = n["tipo"]
+    n["tipo"].probabilidad()
+    check("probabilidad() sobre una elección se rechaza", False)
+except ValueError:
+    check("probabilidad() sobre una elección se rechaza", True)
+
+print("\n== el estado que no cabe se corta antes de salir ==")
+try:
+    jev.preguntar("x" * (jev.TOPE_ESTADO_CARACTERES + 1), preguntas)
+    check("un estado gigante se rechaza", False, "pasó sin error")
+except ValueError as exc:
+    check("un estado gigante se rechaza", "repartilo" in str(exc))
+
 print("\n== costo ==")
 check("la salida no se cobra y la entrada es calderilla",
       abs(jev.costo(392) - 392 / 1_000_000 * 0.042) < 1e-12)

@@ -35,6 +35,8 @@ borde de lo que se le puede preguntar.
 | Indirección y dobles negaciones | Una pregunta, un salto |
 | Lectura literal | Los criterios se escriben con sus casos límite |
 | No procesa imágenes | El pantallazo del once a mano NO es trabajo suyo |
+| **No es determinista** (cookbook de self-consistency: 15 corridas del mismo texto y la etiqueta se mueve en los bordes) | Su salida NO se recalcula al leer, como todo lo demás aquí: se guarda sellada con la versión que respondió |
+| 64k tokens por petición · 32k para el estado · 1200 req/min | Un barrido grande se reparte; `preguntar()` corta antes de salir |
 
 La tercera fila es la de seguridad: el modelo admite inyección de instrucciones
 desde el contenido. Por eso la salida es siempre un enum de una lista que
@@ -64,11 +66,22 @@ en `fuera`. Eso es juicio de sentido común sobre prosa: el dominio exacto de
 Jev, y el único trabajo del parte que no es calculable ni es análisis.
 
 - Forma: `noul` por invariante, sobre el parte ya normalizado como estado.
+  **El trabajo se parte**: Jev clasifica la PROSA sola («¿este texto describe
+  un plantel estable?») y el CÓDIGO compara esa etiqueta con el sub-score. No
+  se le pide comparar «bloque A = 9» con las notas: eso es aritmética, que es
+  su falla declarada nº 2. Todas las preguntas en UNA petición: 13 preguntas
+  batcheadas salen 12x más baratas y 10x más rápidas que 13 llamadas, porque
+  el estado se manda una vez.
 - Salida: alertas de tipo `dato` (`COHERENCIA-*`), junto a `rechazos` en el
   recibo del POST. **No mueve un solo número** y no pone nada en cuarentena
   sola: la cuarentena es por criterio y con motivo.
 - Costo: un parte son ~2–4k tokens → menos de una diezmilésima de dólar.
   Con 70–500 ms cabe dentro del POST sin que se note.
+- **El resultado se guarda, no se deriva.** El proyecto recalcula lo derivado
+  al leer para que no haya copias viejas; con una salida no determinista esa
+  regla se da vuelta: dos GET del mismo parte darían alertas distintas sin que
+  nadie tocara nada. La alerta se sella con `jev-1.13.0` y la fecha, y se
+  rehace solo cuando cambia el parte.
 - Sitio: `backend/analisis/coherencia.py`, llamado desde `POST /analisis/cowork`.
 
 ### 2. Validador semántico de la despensa — **SÍ, y es el más barato**
@@ -126,9 +139,9 @@ donde se diga.
 
 | Dónde | Qué haría | Por qué hoy duele |
 |---|---|---|
-| `backend/cuota_mercados.py` | `choice` sobre los mercados del contrato + «ninguno», para cada `bet_name` que hoy cae en `None` | `cuota_key` descarta lo que no mapea **en silencio**, y desde el 18/09 eso además decide lo que se GUARDA. Si mañana el catálogo renombra «Match Winner», el 1X2 deja de entrar y nadie se entera hasta que una gráfica sale vacía |
+| `backend/cuota_mercados.py` | `choice` a la FAMILIA del mercado (1X2 · doble oportunidad · over/under · ambos marcan · hándicap · ninguna), para cada `bet_name` que hoy cae en `None`. **La LÍNEA no**: «Over 2.5» vs «Over 1.5» y «Home -0.5» vs «-1.5» son números, su falla declarada — eso lo saca una regex sobre el `value`, y si la regex no la reconoce, el mercado queda fuera como hoy | `cuota_key` descarta lo que no mapea **en silencio**, y desde el 18/09 eso además decide lo que se GUARDA. Si mañana el catálogo renombra «Match Winner», el 1X2 deja de entrar y nadie se entera hasta que una gráfica sale vacía |
 | `extractor --buscar` | `choice` entre los candidatos de `/leagues` (nombre · país · tipo) | Descubrir el id de un torneo nuevo es leer una lista a ojo |
-| `_fase_de_round` (`app.py`) | `choice` al vocabulario nuestro para la ronda que no casa con la regex | «1/8 Finals», «Relegation Round», «Final Stage - 2». Y `league_round` decide también la fase decisiva del padrón de la agenda: una ronda desconocida ahí mueve qué partidos se analizan |
+| `_fase_de_round` (`app.py`) | `choice` al vocabulario nuestro para la ronda que no casa con la regex. Mapear «1/8 Finals» → octavos es traducir un nombre, no ordenar magnitudes: eso sí lo hace. Decidir si octavos es «más decisivo» que cuartos, no — ese orden ya vive en el código | «Relegation Round», «Final Stage - 2». Y `league_round` decide también la fase decisiva del padrón de la agenda: una ronda desconocida ahí mueve qué partidos se analizan |
 | `backend/nombres.py` | `choice` entre los candidatos cuando `canonizar` queda AMBIGUO | Hoy vuelve tal cual y el dato se deposita bajo un nombre que nadie consulta: se paga la búsqueda igual |
 
 En las cuatro, la salida es una **propuesta en un informe** (o un PR), nunca
@@ -142,10 +155,19 @@ NO cierra: devuelve el conflicto en vez de un IP inventado. Correcto, y también
 el sitio donde más trabajo manual se pierde — Primera B de Colombia y Primera de
 Uruguay no dan alineaciones, así que el pantallazo es el procedimiento.
 
-Un `noul` «¿estos dos nombres son la misma persona?» **solo sobre los que NO
-casaron** desatasca los fallos de tipeo, acento, apellido compuesto e inicial
-(«M. Vucetich» vs «Manuel Vucetich Rojas»). Condiciones, porque este es el único
-de la lista que toca un cálculo:
+El patrón no es el `noul` binario que propuse primero: el cookbook de
+*knowledge graph entity alignment* resuelve esto con un **`score` de tres
+niveles** —distinto · posiblemente el mismo · el mismo— acompañado de `noul`
+por campo, todo en una petición. Y sin constante de umbral: el nivel sale de
+redondear. El nivel del medio es lo que hace que valga la pena, porque es
+exactamente lo que el bloque F ya hace hoy: **no cierra, va a revisión**. Un
+match perdido cuesta un pantallazo; un match falso mete a otro jugador en el
+once y contamina el IP.
+
+Así desatasca los fallos de tipeo, acento, apellido compuesto e inicial
+(«M. Vucetich» vs «Manuel Vucetich Rojas»), **solo sobre los que NO casaron**
+por tokens. Condiciones, porque este es el único de la lista que toca un
+cálculo:
 
 - solo desempata lo que quedó sin casar; **nunca deshace** un match de tokens,
 - exige confianza alta y deja la procedencia declarada, como `xi/auto`,
@@ -165,6 +187,67 @@ resuelta como `choice` sobre los candidatos es el caso de libro. **No mientras
 siga abierta la deuda 1**: `VITE_API_KEY` viaja al bundle, así que un endpoint
 que gasta expuesto al navegador es una llave de gasto regalada. Primero el
 proxy o el token de solo lectura; después esto.
+
+## Revisión del 21/09 — lo que no se sostuvo y lo que apareció
+
+Segunda pasada por la documentación, buscando dónde se cae lo propuesto.
+
+**Tres cosas que había dicho mal**, ya corregidas arriba:
+
+1. **Los mercados no se clasifican de una vez.** «Over 2.5» y «Over 1.5» se
+   distinguen por un número, y el modelo declara que trabaja peor con
+   representaciones numéricas que semánticas («convierta valores numéricos a
+   categorías nombradas antes de pasarlos»). La familia sí, la línea con
+   regex — clasificación en dos etapas, que es su cookbook jerárquico.
+2. **El guardrail no compara la prosa con el sub-score.** Eso es aritmética.
+   Jev etiqueta la prosa, el código compara con el número.
+3. **El cruce de nombres no es un sí/no**, es el score de tres niveles del
+   cookbook de entidades, con el nivel medio yendo a revisión.
+
+**Y tres que cambian el diseño, no solo el detalle:**
+
+4. **Jev no es determinista.** El cookbook de self-consistency corre la misma
+   rúbrica 15 veces sobre el mismo texto y la etiqueta se mueve en los casos
+   de borde; con un umbral de abstención el acuerdo sube a 99,2 % automatizando
+   el 74 %. Aquí eso choca con una regla del proyecto —lo derivado se recalcula
+   al leer— y gana la regla nueva: **lo que responda Jev se guarda sellado con
+   su versión de modelo**, nunca se vuelve a derivar. Si no, dos lecturas del
+   mismo parte dan alertas distintas y nadie sabe por qué.
+5. **Probabilidad y confianza no son lo mismo, y el umbral es por uso.** Un
+   `noul` en 0.72 es accionable para el cookbook de guardrails (actuar ≥ 0.70)
+   y a la vez tiene confianza 0.44, por debajo de la zona media. Un 0.9 global
+   sobre un noul equivale a exigir p ≥ 0.95: no decidir nunca. El cookbook de
+   entidades directamente no usa umbral.
+6. **Hay límites y conviene batchear.** 64k tokens por petición, 32k para el
+   estado, 1200 req/min. Trece preguntas en una llamada cuestan 12x menos y
+   tardan 10x menos que trece llamadas, porque el estado se manda una vez: la
+   unidad natural es «un estado, todas sus preguntas».
+
+**Usos nuevos que aparecieron en los cookbooks:**
+
+- **Recuperación de estructura** (*autoformat*): el once pegado a mano llega
+  como texto crudo —una lista mal cortada, con dorsales y posiciones
+  mezcladas—. Convertirlo en lista de nombres ataca la deuda 5 por delante,
+  antes del cruce.
+- **Extracción de fechas con opciones cerradas**: el `desde` del DT que hoy
+  sale de prensa («llegó en julio de 2025»). Rehabilita parcialmente lo que
+  había descartado: el modelo NO ordena fechas, pero sí puede elegir mes y año
+  de listas cerradas, y la aritmética la hace `parte._dt_equipo`. Con eso, el
+  `desde` de prensa deja de depender de que alguien lo escriba en formato.
+- **Verificación de citas**: la despensa exige `fuentes[]`. Preguntar si la
+  fuente citada respalda el dato es el complemento del lint de generalidades.
+- **Sugerencia de skill / function calling**: enrutar una petición al skill del
+  SAD que le toca (EFE, DTP, TDE, burbujas). Útil el día que el pipeline tenga
+  entrada en lenguaje natural; hoy no la tiene.
+- **Re-ranking y búsqueda línea a línea**: el buscador inteligente, que sigue
+  bloqueado por la deuda 1.
+
+**El criterio de aceptación, que faltaba.** Antes de cablear cualquiera de
+estos: correr el mismo caso N veces (el cookbook usa 15, con un `uid` distinto
+por corrida para aislar la volatilidad del modelo) y medir cuánto baila la
+respuesta. Si baila en los casos que importan, ese uso no entra — o entra con
+abstención, que es lo que sube el acuerdo a 99,2 %. **Ningún uso se da por
+bueno porque suene razonable en una tabla.**
 
 ## Lo que Jev NO puede hacer aquí — la lista corta
 
