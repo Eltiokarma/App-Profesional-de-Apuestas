@@ -30,6 +30,7 @@ python -m backend.test_cronologia  # cronología SAD: los partidos del timeline,
 python -m backend.test_preflight  # chequeo previo del EFE: qué va a costar antes de gastar
 python -m backend.test_cowork    # parte de Cowork: bloque F calculado y cruce del once
 python -m backend.test_burbuja   # reventón de burbuja: mismos vectores dorados que el TS
+python -m backend.test_jev       # adaptador de Jev (System One): sin clave corre simulado y no decide
 python -m backend.backtest_burbuja --padron --calibrar # backtest del reventón en las ligas importantes: tasa por riesgo, lift por señal, regla del nivel, por liga, y la logística que propone los puntos (--horizonte/--liga/--muestra/--json; en el servidor: GET /analisis/burbujas/backtest?calibrar=true, maestro)
 python -m backend.test_backtest_burbuja # anti-fuga y conteos del backtest, sobre la demo
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
@@ -204,6 +205,17 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   `/analisis/cowork/*` (sin DELETE) y los GET del pipeline, por LISTA DE
   PERMITIDOS. Un endpoint nuevo nace denegado para Cowork; abrirlo es
   deliberado. Nunca le des el maestro a un agente que lee contenido de fuera.
+- **Jev** (`docs/JEV.md`, `backend/analisis/jev.py`): modelo System One de
+  TypeSafe que devuelve valores TIPADOS (elección · puntaje · sí/no) con
+  confianza, no texto. Es un CLASIFICADOR DE TEXTO, no un pronosticador: está
+  calibrado contra LLMs, no contra resultados, así que no toca el motor ni nada
+  calculable, y jamás el 1X2, el pronóstico ni un peso del skill. Declara que
+  cuenta mal, que lee las fechas como texto y que **no trata el estado como
+  hostil**: el texto de fuera viaja en `estado` y NUNCA en las instrucciones ni
+  en los criterios, y su salida no dispara acciones con efectos —solo alertas
+  de tipo `dato`—. Sin `TYPESAFE_API_KEY` responde simulado con confianza 0:
+  el código corre pero no decide, que es lo que impide que un simulado se cuele
+  como juicio en un parte.
 - Costo de la IA: `docs/efe-dtp/COSTO_IA.md`. Lo que está en nuestra base se
   calcula, no se le pregunta al modelo — y lo calculado no se le hace copiar a
   la salida. Los bloques calculados hoy: el mapa de rivales del EFE
