@@ -32,6 +32,7 @@ python -m backend.test_cowork    # parte de Cowork: bloque F calculado y cruce d
 python -m backend.test_burbuja   # reventón de burbuja: mismos vectores dorados que el TS
 python -m backend.test_jev       # adaptador de Jev (System One): sin clave corre simulado y no decide
 python -m backend.test_coherencia # guardrail semántico del parte (Jev): etiqueta la prosa, el código compara con el número
+python -m backend.test_modo_fallo # modo de fallo del veredicto (Jev): etiqueta para el dossier, no toca población ni métricas
 python -m backend.backtest_burbuja --padron --calibrar # backtest del reventón en las ligas importantes: tasa por riesgo, lift por señal, regla del nivel, por liga, y la logística que propone los puntos (--horizonte/--liga/--muestra/--json; en el servidor: GET /analisis/burbujas/backtest?calibrar=true, maestro)
 python -m backend.test_backtest_burbuja # anti-fuga y conteos del backtest, sobre la demo
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
@@ -235,6 +236,18 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   `noEvaluado`— más el costo del día; `paraMirar` son los que Cowork no
   corrigió. Sin apuestas de por medio, Cowork queda solo y el reporte del día
   es la medición; a la primera apuesta real, se re-evalúa esa decisión.
+  **Segundo uso, el aprendizaje** (`backend/analisis/modo_fallo.py`): al
+  cerrar un veredicto, Jev lee la prosa del lado fallado o parcial (`queP`,
+  `leccion`, `reglaTocada`) y la ubica en una taxonomía CERRADA —insumo ·
+  lectura_efe · tde · reventon · mercado · imprevisto · varianza · no_lo_dice—
+  y dice si la lección PIDE MOVER UN NÚMERO del skill (noul: sí ≥ 0.70, no ≤
+  0.30, en medio `null`). Sellado en `modo_fallo_json` al cerrar, viaja en
+  `veredicto.modoFallo` (eco aceptado) y en cada `LeccionItem` (`modoFallo`,
+  `proponeMoverNumero`); `porModoFallo` agrupa los fallos por causa, global y
+  por skill, y `pidenMoverSinPoder` es la alarma del dossier: una lección de
+  caso contaminado o en cuarentena que propone mover un peso. **No toca la
+  población, ninguna métrica, el estado de la lección ni la cuarentena**: es
+  el insumo de la fase D, no un juez.
 - Costo de la IA: `docs/efe-dtp/COSTO_IA.md`. Lo que está en nuestra base se
   calcula, no se le pregunta al modelo — y lo calculado no se le hace copiar a
   la salida. Los bloques calculados hoy: el mapa de rivales del EFE

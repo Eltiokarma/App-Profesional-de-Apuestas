@@ -63,7 +63,7 @@ def _casos(limite: int = 400) -> list[dict]:
     with conectar_parte() as con:
         filas = con.execute(
             "SELECT fixture_id, fecha, equipo_a, equipo_b, parte_json, veredicto_json, "
-            "cohorte, cuarentena_json FROM parte_cowork WHERE veredicto_json IS NOT NULL "
+            "cohorte, cuarentena_json, modo_fallo_json FROM parte_cowork WHERE veredicto_json IS NOT NULL "
             "ORDER BY fecha DESC LIMIT ?", (limite,)).fetchall()
     fuera = []
     for f in filas:
@@ -83,6 +83,7 @@ def _casos(limite: int = 400) -> list[dict]:
             "veredicto": json.loads(f["veredicto_json"]),
             "cohorte": cohorte_de(f["cohorte"])["clave"],
             "cuarentena": cuarentena,
+            "modoFallo": json.loads(f["modo_fallo_json"]) if f["modo_fallo_json"] else None,
         })
     return fuera
 
@@ -104,9 +105,17 @@ def _items_de(caso: dict, estados: dict) -> list[dict]:
         st = estados.get(clave) or {}
         propio = caso["equipoA"] if lado == "a" else caso["equipoB"]
         rival = caso["equipoB"] if lado == "a" else caso["equipoA"]
+        mf = ((caso.get("modoFallo") or {}).get("lados") or {}).get(lado) or {}
         fuera.append({
             "clave": clave,
             "fixtureId": caso["fixtureId"], "lado": lado,
+            # LA ETIQUETA DE JEV (backend/analisis/modo_fallo.py): de qué
+            # naturaleza fue el fallo y si la lección pide mover un número.
+            # Sellada al cerrar el caso; None = sin clave, sin confianza o
+            # cerrado antes de que existiera. No entra en ninguna métrica.
+            "modoFallo": mf.get("modo"),
+            "modoFalloConfianza": mf.get("modoConfianza"),
+            "proponeMoverNumero": mf.get("proponeMoverNumero"),
             "equipo": propio, "rival": rival,
             "partido": f"{caso['equipoA']} vs {caso['equipoB']}",
             "fecha": caso["fecha"],
@@ -395,6 +404,31 @@ def _liston(skill: str, metricas: dict) -> dict | None:
     }
 
 
+def _por_modo_fallo(items: list[dict]) -> dict:
+    """Los fallos y parciales agrupados por la etiqueta de Jev, más la alarma
+    del dossier: lecciones que piden mover un número y no pueden sostenerlo."""
+    from backend.analisis.modo_fallo import MODOS
+    con_fallo = [i for i in items if i["veredicto"] in ("fallo", "parcial")]
+    conteo = {m: 0 for m in MODOS}
+    sin_etiqueta = 0
+    for i in con_fallo:
+        if i.get("modoFallo") in conteo:
+            conteo[i["modoFallo"]] += 1
+        else:
+            sin_etiqueta += 1
+    piden = [i for i in items if i.get("proponeMoverNumero") is True]
+    return {
+        "fallos": len(con_fallo),
+        "porModo": {m: n for m, n in conteo.items() if n},
+        "sinEtiqueta": sin_etiqueta,
+        "pidenMoverNumero": len(piden),
+        "pidenMoverSinPoder": [i["clave"] for i in piden if not i["puedeMoverNumeros"]],
+        "nota": "etiquetas de Jev sobre la prosa del veredicto (backend/analisis/modo_fallo.py): "
+                "agrupan, no puntúan. `pidenMoverSinPoder` son lecciones de casos contaminados o en "
+                "cuarentena que proponen mover un peso: el dossier las muestra, no las aplica",
+    }
+
+
 COHORTE_VIGENTE = "vigente"
 
 
@@ -450,12 +484,16 @@ def inventario(skill: str = "", estado: str = "", limite: int = 400, cohorte: st
             "disparador": f"{DISPARADOR_REVISION} fallos con lección pendiente del mismo skill "
                           "ABREN la revisión; no autorizan ningún cambio",
             "liston": _liston(nombre, metricas),
+            "porModoFallo": _por_modo_fallo(suyas),
             "items": [i for i in filtrados if i["skill"] == nombre],
         })
 
     huerfanas = [i for i in todos if not i["skill"]]
     return {
         "generadoEn": efedb.ahora(),
+        # PARA EL DOSSIER (fase D): los fallos agrupados por causa, y la alarma
+        # que importa: lecciones que PIDEN mover un número sin poder sostenerlo
+        "porModoFallo": _por_modo_fallo(todos),
         "filtro": {"skill": skill, "estado": estado, "cohorte": clave_cohorte},
         "cohortes": cohortes,
         "cohorteVigente": COHORTE,

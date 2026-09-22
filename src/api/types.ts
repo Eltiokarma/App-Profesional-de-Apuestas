@@ -1592,10 +1592,27 @@ export interface LeccionItem {
   cuarentena?: string
   /** true = la puso la app por criterio (parte sin DT declarado); se levanta re-depositando con el DT. */
   cuarentenaAutomatica?: boolean
+  /** Etiqueta de Jev sobre la prosa del veredicto: de qué naturaleza fue el fallo. null sin etiqueta. */
+  modoFallo?: ModoFalloEtiqueta | null
+  modoFalloConfianza?: number | null
+  /** La lección pide mover un número del skill (Jev). Con puedeMoverNumeros=false es la alarma del dossier. */
+  proponeMoverNumero?: boolean | null
   estado: 'pendiente' | 'en_revision' | 'aplicada' | 'descartada'
   aplicadaEn: string
   nota: string
   actualizadoEn: string
+}
+
+export type ModoFalloEtiqueta = 'insumo' | 'lectura_efe' | 'tde' | 'reventon' | 'mercado' | 'imprevisto' | 'varianza' | 'no_lo_dice'
+
+/** Los fallos agrupados por la etiqueta de Jev, para el dossier de la fase D. */
+export interface PorModoFallo {
+  fallos: number
+  porModo: Partial<Record<ModoFalloEtiqueta, number>>
+  sinEtiqueta: number
+  pidenMoverNumero: number
+  pidenMoverSinPoder: string[]
+  nota: string
 }
 
 export interface SkillAprendizaje {
@@ -1609,6 +1626,7 @@ export interface SkillAprendizaje {
   fallosPendientes: number
   faltanParaDisparar: number
   disparador: string
+  porModoFallo?: PorModoFallo
   liston: {
     de: string
     condiciones: Record<string, string>
@@ -1659,6 +1677,7 @@ export interface InventarioLecciones {
     reventon?: ReventonMetricas
   }
   porSkill: SkillAprendizaje[]
+  porModoFallo?: PorModoFallo
   sinSkill: { cuantas: number; porque: string; items: LeccionItem[] }
   estados: string[]
   items: LeccionItem[]

@@ -337,11 +337,14 @@ HTTP se mueve; mientras tanto, `_normalizar` rechaza lo que no cuadra.
   lista, hoy se rechaza con motivo. Jev puede **sugerir el tipo válido más
   cercano dentro de `rechazos`**: va en el recibo, no se guarda nada, riesgo
   cero, y Cowork corrige en el siguiente depósito.
-- **Aprendizaje, con pinzas**: etiquetar el *modo de fallo* del juicio escrito
-  en cada veredicto (taxonomía cerrada) para que el dossier de la fase D agrupe
-  los cuatro fallos por causa. Solo etiqueta, jamás alimenta una métrica ni
-  toca la población. Es el sitio más sensible del sistema: entra último o no
-  entra.
+- **Aprendizaje — HECHO (22/09)**, `backend/analisis/modo_fallo.py`: al cerrar
+  un veredicto, Jev etiqueta el *modo de fallo* del lado fallado o parcial en
+  una taxonomía cerrada (insumo · lectura_efe · tde · reventon · mercado ·
+  imprevisto · varianza · no_lo_dice) y dice si la lección pide mover un número
+  del skill. Sellado al cerrar (`modo_fallo_json`), viaja en `veredicto.modoFallo`
+  y en cada lección; `porModoFallo` agrupa para el dossier y
+  `pidenMoverSinPoder` es su alarma. No toca población, métricas, estado ni
+  cuarentena. Tests: `python -m backend.test_modo_fallo`.
 
 ### El techo, dicho sin adornos
 

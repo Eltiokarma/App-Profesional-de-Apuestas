@@ -1059,6 +1059,32 @@ components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer }
   schemas:
+    ModoFallo:
+      type: object
+      nullable: true
+      description: >
+        La etiqueta de Jev sobre la prosa del veredicto (backend/analisis/modo_fallo.py,
+        docs/JEV.md): de qué naturaleza fue el fallo de cada lado y si la lección pide
+        mover un número del skill. Sellada AL CERRAR el caso —Jev no es determinista—;
+        null en casos cerrados antes de que existiera. No toca la población, ninguna
+        métrica ni el estado de la lección: agrupa para el dossier de la fase D.
+      properties:
+        evaluadoEn: { type: string }
+        modelo: { type: string }
+        simulado: { type: boolean }
+        preguntas: { type: integer }
+        tokensEntrada: { type: integer }
+        error: { type: string, nullable: true }
+        taxonomia: { type: array, items: { type: string } }
+        lados:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              modo: { type: string, nullable: true, enum: [insumo, lectura_efe, tde, reventon, mercado, imprevisto, varianza, no_lo_dice, null], description: 'null = sin confianza suficiente o simulado' }
+              modoConfianza: { type: number }
+              proponeMoverNumero: { type: boolean, nullable: true, description: 'true ≥ 0.70 · false ≤ 0.30 · null en medio o sin lección' }
+              proponeMoverP: { type: number, nullable: true }
     LeccionItem:
       type: object
       description: >
@@ -1090,6 +1116,9 @@ components:
         cohorte: { type: string, description: 'época del proceso en la que se depositó el parte' }
         cuarentena: { type: string, description: 'motivo de la cuarentena; vacío si el caso cuenta' }
         cuarentenaAutomatica: { type: boolean, description: 'la puso la app por criterio: parte sin DT declarado en un lado. Se levanta re-depositando con el DT' }
+        modoFallo: { type: string, nullable: true, description: 'etiqueta de Jev: insumo · lectura_efe · tde · reventon · mercado · imprevisto · varianza · no_lo_dice; null sin etiqueta' }
+        modoFalloConfianza: { type: number, nullable: true }
+        proponeMoverNumero: { type: boolean, nullable: true, description: 'la lección pide mover un número del skill (Jev); cruzado con puedeMoverNumeros da la alarma del dossier' }
         estado: { type: string, enum: [pendiente, en_revision, aplicada, descartada] }
         aplicadaEn: { type: string }
         nota: { type: string }
@@ -3259,6 +3288,8 @@ components:
       type: object
       properties:
         fixtureId: { type: integer }
+        modoFallo:
+          $ref: '#/components/schemas/ModoFallo'
         seleccion: { type: string, enum: [ciega, por_resultado, post_resultado] }
         modoEvaluacion: { type: string, enum: [PRE, COND] }
         acredita: { type: boolean, description: 'ciega + PRE, y solo eso' }

@@ -33,6 +33,7 @@ from datetime import date as date_t, datetime, timedelta, timezone
 from backend import db as saddb
 from backend.analisis import bloque_f, db as efedb, veredicto as vered
 from backend.analisis import coherencia as _coherencia
+from backend.analisis import modo_fallo as _modo_fallo
 from backend.nombres import canonizar, normalizar
 
 VERSION = "cowork/1"
@@ -97,7 +98,7 @@ class ParteInvalido(ValueError):
 # caliente para no perder los partes ya depositados (en SQLite un ALTER que ya
 # existe es un error, no un problema)
 _COLUMNAS_NUEVAS = (("veredicto_json", "TEXT"), ("cohorte", "TEXT"), ("cuarentena_json", "TEXT"),
-                    ("coherencia_json", "TEXT"))
+                    ("coherencia_json", "TEXT"), ("modo_fallo_json", "TEXT"))
 
 # ── COHORTES: de qué época del proceso es cada caso ─────────────────────────
 #
@@ -302,7 +303,7 @@ _CLAVES_VEREDICTO = {"seleccion", "modoEvaluacion", "mancha", "falsadorCumplido"
 # corregir una lección— rechazaba media docena de claves propias, y una de
 # ellas (`falsador`) además degradaba un `cumplido: false` guardado a `null`.
 _ECO_VEREDICTO = {"acredita", "falsador", "rechazos", "cerradoEn", "objetivo",
-                  "actualizadoEn", "sinPronosticoPrevio"}
+                  "actualizadoEn", "sinPronosticoPrevio", "modoFallo"}
 
 
 FUENTE_FICHA = "ficha de API-Football"   # procedencia del once que trae la ingesta
@@ -2113,9 +2114,21 @@ def guardar_veredicto(fixture_id: int, payload: dict) -> dict:
         "cerradoEn": previo_v.get("cerradoEn") or efedb.ahora(),
         "actualizadoEn": efedb.ahora() if previo_v else "",
     }
+    # EL MODO DE FALLO (Jev, docs/JEV.md): se etiqueta AL CERRAR y se sella
+    # aparte —no es determinista— para que el dossier de la fase D agrupe los
+    # fallos por causa. No toca la población, ni una métrica, ni el estado de
+    # la lección. Un fallo de Jev se declara y el veredicto se guarda igual.
+    fx_v = _fixture(fixture_id)
+    nombres_v = {"a": fx_v["home_name"], "b": fx_v["away_name"]} if fx_v else {}
+    try:
+        modo_fallo = _modo_fallo.evaluar(por_lado, nombres_v)
+    except Exception as e:  # noqa: BLE001
+        modo_fallo = {"error": f"no se pudo etiquetar: {e}", "lados": {}, "preguntas": 0}
     with _conectar() as con:
-        con.execute("UPDATE parte_cowork SET veredicto_json=?, actualizado_en=? WHERE fixture_id=?",
-                    (json.dumps(guardado, ensure_ascii=False), efedb.ahora(), fixture_id))
+        con.execute("UPDATE parte_cowork SET veredicto_json=?, modo_fallo_json=?, actualizado_en=? "
+                    "WHERE fixture_id=?",
+                    (json.dumps(guardado, ensure_ascii=False),
+                     json.dumps(modo_fallo, ensure_ascii=False), efedb.ahora(), fixture_id))
 
     sin_pronostico = _cerrar_cadena(fixture_id, por_lado)
     listo = veredicto_de(fixture_id)
@@ -2169,13 +2182,16 @@ def veredicto_de(fixture_id: int) -> dict | None:
     """
     with _conectar() as con:
         fila = con.execute(
-            "SELECT parte_json, veredicto_json FROM parte_cowork WHERE fixture_id=?",
+            "SELECT parte_json, veredicto_json, modo_fallo_json FROM parte_cowork WHERE fixture_id=?",
             (fixture_id,)).fetchone()
     if not fila or not fila["veredicto_json"]:
         return None
     parte = json.loads(fila["parte_json"])
     guardado = json.loads(fila["veredicto_json"])
     return {**guardado, "fixtureId": fixture_id,
+            # la etiqueta de Jev se LEE sellada, no se rehace (null en casos
+            # cerrados antes de que existiera)
+            "modoFallo": json.loads(fila["modo_fallo_json"]) if fila["modo_fallo_json"] else None,
             # los veredictos cerrados antes de que existiera el campo no tienen
             # salvedad: vacía, no ausente, para que la pantalla no adivine
             "mancha": guardado.get("mancha", ""),

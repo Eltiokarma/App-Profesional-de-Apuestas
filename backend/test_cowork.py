@@ -1349,6 +1349,39 @@ def main():
     check("el veredicto se acepta", r.status_code == 200, r.text[:300])
     v = r.json()
     check("sin salvedad, el campo viene vacío y no ausente", v["mancha"] == "", v.get("mancha"))
+    # ── EL MODO DE FALLO (Jev): sellado al cerrar, para el dossier ────────────
+    check("el veredicto trae la etiqueta de Jev sellada (sin clave: simulada, sin modo)",
+          v["modoFallo"] and v["modoFallo"]["simulado"] is True
+          and v["modoFallo"]["lados"].get("b", {}).get("modo") is None
+          and "a" not in v["modoFallo"]["lados"], v.get("modoFallo"))
+    eco = c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto", json=v).json()
+    check("re-depositar el eco con `modoFallo` no produce rechazos",
+          not any(x["donde"].endswith("modoFallo") for x in eco.get("rechazos", [])), eco.get("rechazos"))
+    # con guion, la etiqueta entra y llega a la lección
+    import tempfile as _tf
+    with _tf.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as fh:
+        json.dump({"modo_b": {"valor": "tde", "confianza": 0.9, "comoReal": True},
+                   "mueve_b": {"valor": 0.9, "comoReal": True}}, fh)
+        guion_mf = fh.name
+    os.environ["SAD_JEV_GUION"] = guion_mf
+    v2 = c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto", json=v).json()
+    os.environ.pop("SAD_JEV_GUION", None)
+    os.unlink(guion_mf)
+    check("con respuesta real el lado fallado queda etiquetado y dice si pide mover un número",
+          v2["modoFallo"]["lados"]["b"]["modo"] == "tde"
+          and v2["modoFallo"]["lados"]["b"]["proponeMoverNumero"] is True
+          and v2["modoFallo"]["modelo"] == "guion", v2.get("modoFallo"))
+    check("el modo de fallo no toca la población ni el acredita",
+          v2["seleccion"] == "ciega" and v2["acredita"] is True)
+    inv_mf = c.get(f"{A}/analisis/cowork/lecciones").json()
+    it_mf = next((i for i in inv_mf["items"] if i["fixtureId"] == pasado["id"] and i["lado"] == "b"), None)
+    check("la lección lleva la etiqueta y el «pide mover»",
+          it_mf and it_mf["modoFallo"] == "tde" and it_mf["proponeMoverNumero"] is True, it_mf)
+    check("el inventario agrupa los fallos por modo para el dossier",
+          inv_mf["porModoFallo"]["porModo"].get("tde", 0) >= 1
+          and "pidenMoverSinPoder" in inv_mf["porModoFallo"], inv_mf.get("porModoFallo"))
+    sk_mf = next((x for x in inv_mf["porSkill"] if x["skill"] == "teorema-del-echado"), None)
+    check("y cada skill trae su propio agrupado", sk_mf and sk_mf["porModoFallo"]["fallos"] >= 1)
     o = v["objetivo"]
     check("el marcador lo pone la base, no el veredicto", o["marcador"]["texto"] == marcador_real, o["marcador"])
     check("dice si el partido está terminado", o["marcador"]["terminado"] is True, o["marcador"])

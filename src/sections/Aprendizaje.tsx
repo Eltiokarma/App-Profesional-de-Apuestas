@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { InventarioLecciones, LeccionItem, SkillAprendizaje } from '../api/types'
+import type { InventarioLecciones, LeccionItem, ModoFalloEtiqueta, SkillAprendizaje } from '../api/types'
 import { getDataSource } from '../services/datasource'
 import { useAsync } from '../services/useAsync'
 
@@ -11,6 +11,10 @@ import { useAsync } from '../services/useAsync'
  *  puede mover un peso. La app tampoco mueve nada sola: abrir la revisión es
  *  abrirla, no autorizarla. */
 
+const MODO_FALLO_NOMBRE: Record<ModoFalloEtiqueta, string> = {
+  insumo: 'insumo', lectura_efe: 'lectura EFE', tde: 'TDE', reventon: 'reventón',
+  mercado: 'mercado', imprevisto: 'imprevisto', varianza: 'varianza', no_lo_dice: 'no lo dice',
+}
 const COLOR_VER: Record<string, string> = {
   acierto: 'var(--up)', parcial: 'var(--mark)', fallo: 'var(--down)',
 }
@@ -259,6 +263,13 @@ function PanelSkill({ sk, onCambio }: { sk: SkillAprendizaje; onCambio: () => vo
       {/* EL SESGO SE LEE ANTES QUE LOS CONTEOS, NO DESPUÉS. */}
       <div style={{ padding: '0 16px 10px', font: '500 10.5px var(--sans)', color: 'var(--t3)' }}>
         {sk.sesgoDeAtribucion}
+        {sk.porModoFallo && sk.porModoFallo.fallos > 0 && (
+          <span style={{ display: 'block', marginTop: 4, font: '500 10.5px var(--mono)', color: 'var(--t2)' }}>
+            fallos por causa: {Object.entries(sk.porModoFallo.porModo).map(([m, n]) => `${MODO_FALLO_NOMBRE[m as ModoFalloEtiqueta] ?? m} ${n}`).join(' · ') || '—'}
+            {sk.porModoFallo.sinEtiqueta ? ` · sin etiqueta ${sk.porModoFallo.sinEtiqueta}` : ''}
+            {sk.porModoFallo.pidenMoverSinPoder.length ? <b style={{ color: 'var(--down)' }}> · {sk.porModoFallo.pidenMoverSinPoder.length} piden mover un número sin poder sostenerlo</b> : null}
+          </span>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: 10, padding: '0 16px 12px', flexWrap: 'wrap' }}>
@@ -345,6 +356,23 @@ function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
       <div style={{ font: '500 12px var(--sans)', color: 'var(--t1)', marginTop: 5 }}>{it.leccion}</div>
       {it.reglaTocada && (
         <div style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)', marginTop: 3 }}>regla tocada: {it.reglaTocada}</div>
+      )}
+      {/* LA ETIQUETA DE JEV: de qué naturaleza fue el fallo y si la lección pide
+          mover un número. Agrupa para el dossier, no puntúa nada. La alarma es
+          «pide mover un número» sobre un caso que no puede sostenerlo. */}
+      {(it.modoFallo || it.proponeMoverNumero !== undefined) && (it.modoFallo || it.proponeMoverNumero !== null) && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 5 }}>
+          {it.modoFallo && (
+            <span style={{ padding: '2px 8px', borderRadius: 6, background: 'var(--bg3)', color: 'var(--t2)', font: '700 9px var(--mono)' }}>
+              {MODO_FALLO_NOMBRE[it.modoFallo] ?? it.modoFallo}{it.modoFalloConfianza != null ? ` · ${Math.round(it.modoFalloConfianza * 100)}%` : ''}
+            </span>
+          )}
+          {it.proponeMoverNumero === true && (
+            <span style={{ padding: '2px 8px', borderRadius: 6, background: it.puedeMoverNumeros ? 'var(--up-soft)' : 'var(--down-soft)', color: it.puedeMoverNumeros ? 'var(--up)' : 'var(--down)', font: '700 9px var(--mono)' }}>
+              {it.puedeMoverNumeros ? 'PIDE MOVER UN NÚMERO' : 'PIDE MOVER UN NÚMERO · NO PUEDE SOSTENERLO'}
+            </span>
+          )}
+        </div>
       )}
 
       {/* LO CONTAMINADO ENSEÑA, PERO NO MUEVE UN NÚMERO. Esto va pegado a la
