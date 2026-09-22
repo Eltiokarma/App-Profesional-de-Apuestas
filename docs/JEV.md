@@ -249,6 +249,83 @@ respuesta. Si baila en los casos que importan, ese uso no entra — o entra con
 abstención, que es lo que sube el acuerdo a 99,2 %. **Ningún uso se da por
 bueno porque suene razonable en una tabla.**
 
+## Tercera pasada (22/09) — lo que le falta a la integración, no al catálogo
+
+Otra lectura, con otra pregunta: no «qué más puede clasificar» sino «qué hace
+falta para que lo ya propuesto no se rompa en producción». Cinco cosas, y una
+honestidad al final.
+
+### 1. Una tercera clase de alerta
+
+Hoy hay dos: las **depositadas** por Cowork y las **calculadas** por el backend
+(`_ALERTAS_CALCULADAS` en `parte.py`: `K-EXTREMO`, `ESCALA-LIGAS`, `F3`,
+`DT-*`…), que el eco del GET descarta al depositar y que se rehacen al leer.
+Lo que diga Jev no es ninguna de las dos: nace en el backend pero **no se
+puede rehacer al leer** (no es determinista). Si `COHERENCIA-*` entrara en
+`_ALERTAS_CALCULADAS`, el eco la descartaría y el POST no la recalcularía
+igual: la alerta parpadearía o desaparecería sola. Hace falta el tercer cajón,
+**capturadas**: se guardan con `modelo` y fecha, se descartan del depósito
+(Cowork no puede inyectarlas), NO se rehacen al leer, y se rehacen solo cuando
+cambia el parte. Es un cambio de contrato (`docs/openapi.yaml` primero).
+
+### 2. Casetes: vectores dorados, como el motor
+
+El simulado responde con confianza 0, así que **ningún consumidor puede probar
+su camino positivo** sin un guion escrito a mano. Cuando llegue la clave: grabar
+respuestas reales en `scripts/casos_jev.json` —el mismo patrón que
+`casos_burbuja.json`—, correr los tests contra el casete sin red, y **cuando
+`jev-latest` cambie de versión, re-grabar y mirar el diff**: eso es el chequeo
+de deriva que el sello de modelo hace posible. Sin casete, el sello es un dato
+que nadie lee.
+
+### 3. Datos que salen a un tercero
+
+Hasta ahora el proyecto manda datos a API-Football (pide) y a Anthropic (el EFE
+de emergencia). Jev sería el tercero: nombres de jugadores y DT, prosa de
+Cowork, texto de prensa. Su legal dice que **no entrenan con datos de usuario**
+y que la retención cero es solo para clientes empresariales. Nada de esto es
+sensible —es fútbol público—, pero es una decisión que se toma a conciencia,
+no que se descubre. Y por lo mismo: al estado no viaja jamás un token, una
+clave ni el email de nadie.
+
+### 4. El token de Cowork
+
+Cualquier endpoint que llame a Jev **gasta**. Por la regla de la casa nace
+denegado para `SAD_TOKEN_COWORK` y abrirlo es deliberado. Cuatro centavos por
+millón de tokens suena a nada, pero un agente que lee contenido de fuera y
+entra en bucle es un vector de gasto sin techo: si se abre, con tope por
+petición y por día, como las búsquedas del EFE.
+
+### 5. SDK oficial o HTTP crudo
+
+Existe `typesafe-sdk` (pip) con reintentos y tipos. El adaptador usa `httpx`
+crudo a propósito: una dependencia menos, y `httpx` ya estaba. El costo es que
+si cambia la forma de la API, la seguimos nosotros. Se revisa si el contrato
+HTTP se mueve; mientras tanto, `_normalizar` rechaza lo que no cuadra.
+
+### Dos usos chicos que sí aparecieron
+
+- **Timeline**: cuando Cowork manda un `timelineEventos` con tipo fuera de la
+  lista, hoy se rechaza con motivo. Jev puede **sugerir el tipo válido más
+  cercano dentro de `rechazos`**: va en el recibo, no se guarda nada, riesgo
+  cero, y Cowork corrige en el siguiente depósito.
+- **Aprendizaje, con pinzas**: etiquetar el *modo de fallo* del juicio escrito
+  en cada veredicto (taxonomía cerrada) para que el dossier de la fase D agrupe
+  los cuatro fallos por causa. Solo etiqueta, jamás alimenta una métrica ni
+  toca la población. Es el sitio más sensible del sistema: entra último o no
+  entra.
+
+### El techo, dicho sin adornos
+
+Sumado, esto es un puñado de clasificadores pequeños que ahorran silencio,
+trabajo manual y algún centavo. **No transforma el sistema**, y está bien que
+no lo haga: el sistema se apoya en matemática verificada y en juicio humano
+sobre fútbol, y Jev no aporta a ninguna de las dos. Los dos usos que valen por
+sí solos: el auditor de `cuota_mercados` (evita perder datos que no se
+recuperan) y la recuperación de estructura del once pegado a mano (deuda 5).
+El resto es pulido. Si solo se hicieran esos dos, la integración habría
+valido la pena; si se hicieran todos, no sería diez veces mejor.
+
 ## Lo que Jev NO puede hacer aquí — la lista corta
 
 No es cautela: cada una tiene su motivo y es definitiva.
