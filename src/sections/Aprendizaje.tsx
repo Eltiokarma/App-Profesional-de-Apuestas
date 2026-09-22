@@ -147,6 +147,27 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
                 </span>
               </div>
             ))}
+            {/* ¿EL 1X2 RESPETÓ LA BURBUJA? Solo lados con riesgo alto: si el
+                pronóstico siguió la racha o no, y cómo le fue a cada grupo. Un
+                Brier peor en «a favor» es la evidencia de que el riesgo vale. */}
+            {a.reventon.respetoRiesgo && (['aFavor', 'enContra', 'neutro'] as const).some((g) => (a.reventon!.respetoRiesgo![g].lados > 0)) && (
+              <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px' }}>CON RIESGO ALTO · ¿EL 1X2 SIGUIÓ LA RACHA?</div>
+                {(['aFavor', 'enContra', 'neutro'] as const).map((g) => {
+                  const c = a.reventon!.respetoRiesgo![g]
+                  if (!c.lados) return null
+                  return (
+                    <div key={g} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', font: '500 11px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+                      <span style={{ width: 70, color: 'var(--t1)', fontWeight: 700 }}>{g === 'aFavor' ? 'a favor' : g === 'enContra' ? 'en contra' : 'empate'}</span>
+                      <span>{c.lados} {c.lados === 1 ? 'lado' : 'lados'}</span>
+                      <span style={{ color: 'var(--t3)' }}>1X2 {c.aciertos1x2}/{c.lados}{c.tasa1x2 !== null ? ` · ${Math.round(c.tasa1x2 * 100)}%` : ''}</span>
+                      <span style={{ color: 'var(--t3)' }}>{c.brierMedio !== null ? `Brier ${c.brierMedio.toFixed(3)}` : 'sin Brier'}</span>
+                      <span style={{ color: 'var(--t3)' }}>reventó {c.reventadas}/{c.lados}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
             {a.reventon.extremo.observadas > 0 && (
               <div style={{ font: '500 10.5px var(--sans)', color: 'var(--t3)' }} title={a.reventon.extremo.nota}>
                 con alerta K-EXTREMO: {a.reventon.extremo.reventadas}/{a.reventon.extremo.observadas} reventaron

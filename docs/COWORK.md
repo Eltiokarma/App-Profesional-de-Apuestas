@@ -446,11 +446,7 @@ recibo del POST.
 
 Dos modos, y el que está puesto se ve en el recibo:
 
-- **`sombra`** (arranque): el recibo trae solo CUÁNTAS preguntas y CUÁNTOS
-  hallazgos. No ves cuáles, a propósito: en esta fase se mide al revisor
-  contra el criterio humano, y si lo vieras corregirías para conformarlo y la
-  medición saldría sesgada. No tenés que hacer nada.
-- **`alertas`**: el recibo trae `coherencia.detalle` con cada hallazgo, y las
+- **`alertas`** (el que está puesto): el recibo trae `coherencia.detalle` con cada hallazgo, y las
   alertas `COHERENCIA-*` salen en la tira del parte con `origen: jev`. Ahí sí
   reaccionás, igual que con `rechazos`: **o re-depositás el parte corregido,
   o lo sostenés y decís por qué en `notas` del bloque**. Lo que NUNCA: cambiar
@@ -459,6 +455,14 @@ Dos modos, y el que está puesto se ve en el recibo:
   los dos tienen razón y el revisor no entendió, sostené y explicá —esa
   explicación es la que después decide si se sube el umbral o se quita la
   pregunta—.
+- **`sombra`**: el recibo trae solo CUÁNTAS preguntas y CUÁNTOS hallazgos, no
+  cuáles: es para medir al revisor contra el criterio humano sin que lo
+  conformes. No hacés nada.
+
+Al final del día, quien te supervisa lee `GET /analisis/cowork/revisor`: por
+parte, qué encontró el revisor y qué hiciste con eso (`corrigio` · `sostuvo` ·
+`sinReaccion`…). Un `sinReaccion` no es un pecado —a veces no volvés a pasar
+por ese parte—, pero un `sostuvo` sin explicación en `notas` sí lo es.
 
 Los códigos `COHERENCIA-*` no se depositan: si los mandás, el eco los descarta
 como a las alertas calculadas.

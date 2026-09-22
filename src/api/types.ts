@@ -1320,6 +1320,10 @@ export interface ReventonObservado {
     extremo: boolean
   } | null
   observado: { revento: boolean; kDespues: number; signoDespues: '+' | '-' | '0'; kPico: number | null; partidos: number | null } | null
+  /** Si el 1X2 declarado apostó a que la racha SIGUE (aFavor), se corta (enContra) o al empate (neutro); null sin burbuja o sin 1X2. */
+  pronosticoVsRacha?: 'aFavor' | 'enContra' | 'neutro' | null
+  /** Solo con riesgo alto/muy alto: true si el 1X2 no siguió la racha. null = no aplica, no es un fallo. */
+  respetoRiesgo?: boolean | null
   nota: string
 }
 
@@ -1343,6 +1347,11 @@ export interface ReventonMetricas {
     nMinimo: number
   }>
   extremo: { observadas: number; reventadas: number; nota: string }
+  /** Solo lados con riesgo alto/muy alto: cómo le fue al 1X2 según siguió la racha o no. */
+  respetoRiesgo?: Record<'aFavor' | 'enContra' | 'neutro', {
+    lados: number; reventadas: number; tasaReventon: number | null
+    aciertos1x2: number; tasa1x2: number | null; brierMedio: number | null
+  }> & { nota: string }
   sinBurbuja: number
   noComprobables: number
   fueraDelBacktest: string[]
@@ -1400,6 +1409,27 @@ export interface PendienteNoListadoDTO {
   /** «2do tiempo, minuto 67, 1-0», «PST», … */
   estado: string
   porque: string
+}
+
+/** El reporte del día del revisor de coherencia (Jev): qué encontró, qué hizo
+ *  Cowork con eso y cuánto costó. */
+export interface RevisorDiarioDTO {
+  modo: 'off' | 'sombra' | 'alertas'
+  ventana: { dia: string | null; horas: number | null }
+  totales: {
+    partesEvaluados: number; conHallazgos: number; limpios: number
+    corrigio: number; corrigioParte: number; sostuvo: number; sinReaccion: number; noEvaluados: number
+    evaluaciones: number; hallazgosPorCodigo: Record<string, number>
+    sinConfianza: number; tokensEntrada: number; costoUsd: number; errores: number
+  }
+  partes: {
+    fixtureId: number; partido: string; fecha: string
+    reaccion: 'limpio' | 'corrigio' | 'corrigioParte' | 'sostuvo' | 'sinReaccion' | 'noEvaluado'
+    hallazgosEncontrados: string[]; hallazgosAhora: string[]
+    evaluaciones: { evaluadoEn: string; modo: string; preguntas: number; hallazgos: string[]; sinConfianza: number; simulado: boolean; error: string | null; redeposito: boolean }[]
+  }[]
+  paraMirar: number[]
+  nota: string
 }
 
 /** El latido del pipeline: ¿corrió, o lleva días muerto en silencio? */

@@ -790,6 +790,26 @@ paths:
                     items: { type: integer }
                   sinFichaTodavia: { type: array, items: { type: object, additionalProperties: true } }
                   nota: { type: string }
+  /analisis/cowork/revisor:
+    get:
+      summary: El reporte del día del revisor de coherencia (Jev)
+      description: >
+        Qué encontró el revisor (docs/JEV.md), qué hizo Cowork con eso y cuánto costó,
+        para quien mira el pipeline al final del día y no parte por parte. Por fixture se
+        lee la SECUENCIA de evaluaciones (cada depósito vuelve a evaluar) y de ahí sale la
+        reacción: `limpio`, `corrigio`, `corrigioParte`, `sostuvo`, `sinReaccion` o
+        `noEvaluado` (simulado sin clave, o error). `paraMirar` son los partes con
+        hallazgos que Cowork no corrigió. Sin `dia`, las últimas `horas` hacia atrás.
+      tags: [analisis]
+      parameters:
+        - { name: horas, in: query, schema: { type: integer, default: 24, minimum: 1, maximum: 336 } }
+        - { name: dia, in: query, schema: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }, description: 'YYYY-MM-DD en UTC; acota a ese día en vez de a las últimas horas' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RevisorDiario' }
   /analisis/cowork/latido:
     get:
       summary: ¿Está corriendo el pipeline, o lleva días muerto en silencio?
@@ -2890,6 +2910,59 @@ components:
         enEspera: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
         descartados: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
         nota: { type: string }
+    RevisorDiario:
+      type: object
+      required: [modo, ventana, totales, partes, paraMirar]
+      properties:
+        modo: { type: string, enum: [off, sombra, alertas], description: 'el modo vigente del revisor' }
+        ventana:
+          type: object
+          properties:
+            dia: { type: string, nullable: true }
+            horas: { type: integer, nullable: true }
+        totales:
+          type: object
+          properties:
+            partesEvaluados: { type: integer, description: 'fixtures con al menos una evaluación real (no simulada, sin error)' }
+            conHallazgos: { type: integer }
+            limpios: { type: integer }
+            corrigio: { type: integer }
+            corrigioParte: { type: integer }
+            sostuvo: { type: integer }
+            sinReaccion: { type: integer }
+            noEvaluados: { type: integer }
+            evaluaciones: { type: integer, description: 'filas del registro en la ventana (un depósito = una evaluación)' }
+            hallazgosPorCodigo: { type: object, additionalProperties: { type: integer } }
+            sinConfianza: { type: integer, description: 'preguntas sin confianza suficiente en la última evaluación de cada parte' }
+            tokensEntrada: { type: integer }
+            costoUsd: { type: number }
+            errores: { type: integer }
+        partes:
+          type: array
+          items:
+            type: object
+            properties:
+              fixtureId: { type: integer }
+              partido: { type: string }
+              fecha: { type: string }
+              reaccion: { type: string, enum: [limpio, corrigio, corrigioParte, sostuvo, sinReaccion, noEvaluado] }
+              hallazgosEncontrados: { type: array, items: { type: string }, description: 'códigos de la primera evaluación con hallazgos' }
+              hallazgosAhora: { type: array, items: { type: string }, description: 'códigos de la última evaluación' }
+              evaluaciones:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    evaluadoEn: { type: string }
+                    modo: { type: string }
+                    preguntas: { type: integer }
+                    hallazgos: { type: array, items: { type: string } }
+                    sinConfianza: { type: integer }
+                    simulado: { type: boolean }
+                    error: { type: string, nullable: true }
+                    redeposito: { type: boolean }
+        paraMirar: { type: array, items: { type: integer }, description: 'fixtures con hallazgos que Cowork no corrigió (sinReaccion o sostuvo)' }
+        nota: { type: string }
     LatidoCowork:
       type: object
       required: [estado, porque, depositadosEnLaVentana, coberturaDeAyer]
@@ -3166,6 +3239,21 @@ components:
             signoDespues: { type: string, enum: ['+', '-', '0'] }
             kPico: { type: number, nullable: true, description: 'la K pico de la burbuja que cerró' }
             partidos: { type: integer, nullable: true }
+        pronosticoVsRacha:
+          type: string
+          nullable: true
+          enum: [aFavor, enContra, neutro, null]
+          description: >
+            Si el 1X2 declarado apostó a que la racha de este lado SIGUE (aFavor: gana con
+            burbuja «+», pierde con «−»), se corta (enContra) o al empate (neutro). null sin
+            burbuja o sin 1X2 declarado.
+        respetoRiesgo:
+          type: boolean
+          nullable: true
+          description: >
+            SOLO con riesgo alto o muy alto antes del partido: true si el 1X2 no siguió la
+            racha (lo que pide el protocolo), false si la siguió. null = no aplica (riesgo
+            bajo/medio, sin base, sin burbuja o sin 1X2): un null no es un fallo.
         nota: { type: string }
     Veredicto:
       type: object

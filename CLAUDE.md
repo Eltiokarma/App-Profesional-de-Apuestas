@@ -222,12 +222,19 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   parte** (`backend/analisis/coherencia.py`): Jev etiqueta la PROSA —notas por
   bloque, lectura del 1X2, razón del matchup, texto de reventón— y el código la
   compara con el número que Cowork declaró; se evalúa AL DEPOSITAR y viaja en
-  `coherencia` del GET y en el recibo. `SAD_JEV_COHERENCIA`: `sombra` (defecto:
-  evalúa y guarda, nada a la tira) · `alertas` (COHERENCIA-* a la tira, con
-  `origen: jev`) · `off`. Los códigos COHERENCIA-* son la TERCERA clase de
-  alerta (`_ALERTAS_CAPTURADAS`): se descartan del depósito como las calculadas
-  pero al leer se LEEN, no se recalculan. Encender `alertas` exige antes medir
-  la sombra contra el criterio humano en ≥ 20 partes reales (`docs/JEV.md`).
+  `coherencia` del GET y en el recibo. `SAD_JEV_COHERENCIA`: `alertas` (defecto
+  desde el 22/09: COHERENCIA-* a la tira con `origen: jev`, el detalle y
+  `queHacer` en el recibo para que Cowork corrija o sostenga en `notas`) ·
+  `sombra` (evalúa y guarda, Cowork ve solo conteos, nada a la tira: para medir
+  sin sesgar) · `off`. Los códigos COHERENCIA-* son la TERCERA clase de alerta
+  (`_ALERTAS_CAPTURADAS`): se descartan del depósito como las calculadas pero
+  al leer se LEEN, no se recalculan. **Vigilancia**: cada evaluación queda en
+  `coherencia_log` y `GET /analisis/cowork/revisor` (`parte.revisor`, tarjeta
+  `RevisorDiario` en Partidos) dice, por parte, qué encontró y qué hizo Cowork
+  —`corrigio` · `corrigioParte` · `sostuvo` · `sinReaccion` · `limpio` ·
+  `noEvaluado`— más el costo del día; `paraMirar` son los que Cowork no
+  corrigió. Sin apuestas de por medio, Cowork queda solo y el reporte del día
+  es la medición; a la primera apuesta real, se re-evalúa esa decisión.
 - Costo de la IA: `docs/efe-dtp/COSTO_IA.md`. Lo que está en nuestra base se
   calcula, no se le pregunta al modelo — y lo calculado no se le hace copiar a
   la salida. Los bloques calculados hoy: el mapa de rivales del EFE
@@ -481,7 +488,13 @@ conversación se pierde en la siguiente.
    tasa de reventón por nivel de riesgo se compara con la del backtest
    (`acreditables.reventon`, `TASA_BACKTEST` en `burbuja.py`, solo con n ≥ 10
    por nivel) y un nivel fuera del rango ABRE la revisión de los puntos sin
-   moverlos (`docs/REVENTON.md` §11); y
+   moverlos (`docs/REVENTON.md` §11); **¿el 1X2 respetó la burbuja?** —por
+   lado, `pronosticoVsRacha` (aFavor · enContra · neutro: si el 1X2 declarado
+   apostó a que la racha sigue o se corta) y `respetoRiesgo` (SOLO con riesgo
+   alto/muy alto; `null` es «no aplica», nunca un fallo), calculados en
+   `veredicto.pronostico_vs_racha`; las lecciones cruzan cada grupo con su
+   1X2 y su Brier (`acreditables.reventon.respetoRiesgo`): un Brier peor en
+   «a favor» es la evidencia de que el riesgo vale para el pronóstico—; y
    mover estados NO está abierto al token de Cowork: el agente lee sus
    lecciones, declarar aplicada la suya es del usuario. **Cuarentena y
    cohortes** (C-bis, hechas): la cuarentena es POR CRITERIO y NUNCA POR

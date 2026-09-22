@@ -27,9 +27,11 @@ Tres reglas que este módulo hace cumplir:
 3. Un hallazgo es una alerta de tipo `dato`. No mueve un número, no cambia la
    clasificación, no pone en cuarentena. Dice «esto no cuadra, miralo».
 
-Modos (SAD_JEV_COHERENCIA): `off` no evalúa; `sombra` (defecto) evalúa y
-guarda pero NO saca alertas —es para medir contra el criterio humano antes de
-encender—; `alertas` las saca en la tira del parte. Sin clave de Jev el
+Modos (SAD_JEV_COHERENCIA): `off` no evalúa; `sombra` evalúa y guarda pero
+NO saca alertas ni le muestra el detalle a Cowork —para medir contra el
+criterio humano—; `alertas` (defecto desde el 22/09) las saca en la tira, le
+da el detalle a Cowork en el recibo, y el reporte del día (`parte.revisor()`,
+GET /analisis/cowork/revisor) dice qué hizo Cowork con cada una. Sin clave de Jev el
 adaptador responde simulado con confianza 0 y no hay hallazgo posible: el
 código corre entero y decide nada, que es lo que se quiere sin credenciales.
 """
@@ -38,7 +40,10 @@ from datetime import datetime, timezone
 
 from backend.analisis import jev
 
-MODO = os.environ.get("SAD_JEV_COHERENCIA", "sombra").strip().lower() or "sombra"
+# Por defecto ALERTAS (decisión del 22/09: sin apuestas de por medio, Cowork
+# reacciona solo y el usuario mira el reporte del día, `revisor()`). `sombra`
+# sigue disponible para medir sin que Cowork vea el detalle.
+MODO = os.environ.get("SAD_JEV_COHERENCIA", "alertas").strip().lower() or "alertas"
 MODOS = ("off", "sombra", "alertas")
 
 # Primer corte, a calibrar en sombra con partes reales (docs/JEV.md, criterio
@@ -229,6 +234,9 @@ def evaluar(parte: dict, nombres: dict, reventon: dict | None) -> dict:
         return base
     base["modelo"] = lote.modelo
     base["tokensEntrada"] = lote.tokens_entrada
+    # simulada es la evaluación cuyas respuestas fueron TODAS simuladas; un
+    # guion que pasa por real (tests, casetes) cuenta como evaluación real
+    base["simulado"] = all(r.simulado for r in lote.values())
     for clave, r in lote.items():
         if not r.fiable(UMBRAL):
             base["sinConfianza"].append({"pregunta": clave, "confianza": round(r.confianza, 3),

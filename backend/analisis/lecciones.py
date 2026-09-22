@@ -187,7 +187,7 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
                 continue
             tde_obs += 1
             tde_positivos += 1 if b["golEnVentana"] else 0
-        _acumular_reventon(rev, obj.get("reventon") or {})
+        _acumular_reventon(rev, obj.get("reventon") or {}, ux, br)
 
     total_lados = sum(acred.values())
     decididos = acred["acierto"] + acred["fallo"] + acred["parcial"]
@@ -228,13 +228,22 @@ NIVELES_RIESGO = ("bajo", "medio", "alto", "muy alto", "sin base")
 REVENTON_N_MINIMO = 10   # por nivel, para que la comparación con el backtest diga algo
 
 
+GRUPOS_RESPETO = ("aFavor", "enContra", "neutro")
+
+
 def _reventon_vacio() -> dict:
     return {"porNivel": {n: {"observadas": 0, "reventadas": 0} for n in NIVELES_RIESGO},
             "extremo": {"observadas": 0, "reventadas": 0},
-            "sinBurbuja": 0, "noComprobables": 0}
+            "sinBurbuja": 0, "noComprobables": 0,
+            # SOLO con riesgo alto o muy alto: ¿el 1X2 siguió la racha o no, y
+            # cómo le fue? Es la pregunta que decide si el riesgo vale algo
+            # para el pronóstico o solo lo decora (docs/REVENTON.md §11)
+            "respeto": {g: {"lados": 0, "reventadas": 0, "aciertos1x2": 0, "briers": []}
+                        for g in GRUPOS_RESPETO}}
 
 
-def _acumular_reventon(acc: dict, reventon: dict) -> None:
+def _acumular_reventon(acc: dict, reventon: dict, unxdos: dict | None = None,
+                       brier: float | None = None) -> None:
     for lado in ("a", "b"):
         r = reventon.get(lado) or {}
         if not r:
@@ -252,6 +261,16 @@ def _acumular_reventon(acc: dict, reventon: dict) -> None:
         if (r.get("declarado") or {}).get("extremo"):
             acc["extremo"]["observadas"] += 1
             acc["extremo"]["reventadas"] += 1 if r["observado"].get("revento") else 0
+        # el respeto se juzga solo con riesgo alto/muy alto (None = no aplica)
+        grupo = r.get("pronosticoVsRacha")
+        if r.get("respetoRiesgo") is not None and grupo in acc["respeto"]:
+            cel = acc["respeto"][grupo]
+            cel["lados"] += 1
+            cel["reventadas"] += 1 if r["observado"].get("revento") else 0
+            if unxdos and unxdos.get("declarado"):
+                cel["aciertos1x2"] += 1 if unxdos.get("acerto") else 0
+            if brier is not None:
+                cel["briers"].append(float(brier))
 
 
 def intervalo_wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float] | None:
@@ -293,8 +312,26 @@ def _cerrar_reventon(acc: dict) -> dict:
     obs = sum(c["observadas"] for c in acc["porNivel"].values())
     revs = sum(c["reventadas"] for c in acc["porNivel"].values())
     fuera = [n for n, c in por_nivel.items() if c["dentroDelBacktest"] is False]
+    respeto = {}
+    for g, c in (acc.get("respeto") or {}).items():
+        n = c["lados"]
+        respeto[g] = {
+            "lados": n,
+            "reventadas": c["reventadas"],
+            "tasaReventon": round(c["reventadas"] / n, 3) if n else None,
+            "aciertos1x2": c["aciertos1x2"],
+            "tasa1x2": round(c["aciertos1x2"] / n, 3) if n else None,
+            "brierMedio": round(sum(c["briers"]) / len(c["briers"]), 3) if c["briers"] else None,
+        }
     return {
         "observadas": obs, "reventadas": revs,
+        "respetoRiesgo": {
+            **respeto,
+            "nota": "solo lados con riesgo alto o muy alto antes del partido: si el 1X2 declarado "
+                    "apostó a que la racha sigue (aFavor), se corta (enContra) o al empate (neutro), "
+                    "y cómo le fue a cada grupo. Un Brier peor en aFavor que en enContra es la "
+                    "evidencia de que el riesgo vale para el pronóstico; igual, de que solo lo decora",
+        },
         "tasa": round(revs / obs, 3) if obs else None,
         "tasaBaseBacktest": TASA_BASE_BACKTEST,
         "porNivel": por_nivel,

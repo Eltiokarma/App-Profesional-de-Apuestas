@@ -673,6 +673,59 @@ def main():
           sorted(lat))
     check("y declara que el silencio cuenta como fallo",
           "ROJO" in lat["nota"] and "silencio" in lat["nota"].lower(), lat.get("nota"))
+    # ── EL REVISOR DE COHERENCIA: QUÉ ENCONTRÓ Y QUÉ HIZO COWORK ─────────────
+    rev_r = c.get(f"{A}/analisis/cowork/revisor")
+    check("`revisor` no se lo come /{fixture_id}", rev_r.status_code == 200, rev_r.text[:160])
+    rev = rev_r.json()
+    check("el reporte trae totales, partes, el modo vigente y la lista para mirar",
+          {"totales", "partes", "modo", "paraMirar", "ventana"} <= set(rev), sorted(rev))
+    check("sin clave de Jev, todo lo depositado hasta acá figura como noEvaluado",
+          rev["totales"]["evaluaciones"] >= 1 and rev["totales"]["partesEvaluados"] == 0
+          and all(p_["reaccion"] == "noEvaluado" for p_ in rev["partes"]), rev["totales"])
+    # con un guion, el revisor «encuentra» una contradicción en el 1X2 (el texto
+    # inclina a la visita, el reparto pone 52 en local) y luego Cowork corrige
+    from backend.analisis import coherencia as coh_mod
+    modo_antes = coh_mod.MODO
+    coh_mod.MODO = "alertas"
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as fh:
+        json.dump({"unXDos": {"valor": "visita", "confianza": 0.95, "comoReal": True}}, fh)
+        guion = fh.name
+    os.environ["SAD_JEV_GUION"] = guion
+    r1 = c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha)).json()
+    check("el recibo en modo alertas trae el hallazgo y qué hacer",
+          r1["coherencia"]["hallazgos"] == 1 and r1["coherencia"]["detalle"][0]["codigo"] == "COHERENCIA-1X2"
+          and "queHacer" in r1["coherencia"], r1.get("coherencia"))
+    g1 = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()
+    check("en modo alertas la COHERENCIA-1X2 sale en la tira con origen jev",
+          any(a["codigo"] == "COHERENCIA-1X2" and a.get("origen") == "jev" for a in g1["alertas"]), g1["alertas"])
+    check("y el GET trae la evaluación sellada con el modelo del guion",
+          g1["coherencia"]["modelo"] == "guion" and len(g1["coherencia"]["hallazgos"]) == 1, g1.get("coherencia"))
+    rev1 = c.get(f"{A}/analisis/cowork/revisor").json()
+    p1 = next(p_ for p_ in rev1["partes"] if p_["fixtureId"] == sin_ficha)
+    check("el reporte lo cuenta como hallazgo sin reacción y lo pone para mirar",
+          p1["reaccion"] == "sinReaccion" and p1["hallazgosEncontrados"] == ["COHERENCIA-1X2"]
+          and sin_ficha in rev1["paraMirar"], p1)
+    # Cowork corrige: el mismo texto ahora inclina al local → concuerda
+    with open(guion, "w", encoding="utf-8") as fh:
+        json.dump({"unXDos": {"valor": "local", "confianza": 0.95, "comoReal": True}}, fh)
+    r2 = c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha)).json()
+    check("el re-depósito corregido ya no tiene hallazgos", r2["coherencia"]["hallazgos"] == 0, r2.get("coherencia"))
+    rev2 = c.get(f"{A}/analisis/cowork/revisor").json()
+    p2 = next(p_ for p_ in rev2["partes"] if p_["fixtureId"] == sin_ficha)
+    check("el reporte ve la secuencia y dice que Cowork corrigió",
+          p2["reaccion"] == "corrigio" and len(p2["evaluaciones"]) >= 2
+          and p2["evaluaciones"][-1]["redeposito"] is True and sin_ficha not in rev2["paraMirar"], p2)
+    check("los totales cuentan el hallazgo por código y el costo del día",
+          rev2["totales"]["hallazgosPorCodigo"].get("COHERENCIA-1X2") == 1
+          and rev2["totales"]["corrigio"] == 1 and "costoUsd" in rev2["totales"], rev2["totales"])
+    check("`dia` acota por fecha UTC y un día sin nada devuelve vacío",
+          c.get(f"{A}/analisis/cowork/revisor", params={"dia": "2000-01-01"}).json()["partes"] == [])
+    check("un `dia` mal formado es 422",
+          c.get(f"{A}/analisis/cowork/revisor", params={"dia": "ayer"}).status_code == 422)
+    os.environ.pop("SAD_JEV_GUION", None)
+    os.unlink(guion)
+    coh_mod.MODO = modo_antes
+
     # sobre una ventana de 1 hora, lo que se depositó hace rato ya no cuenta:
     # es la prueba de que el silencio se detecta
     corto = c.get(f"{A}/analisis/cowork/latido", params={"horas": 1}).json()
@@ -1335,6 +1388,33 @@ def main():
               and (("reventó" in r_l["nota"]) if cerro else ("siguió" in r_l["nota"])), r_l)
     check("el reventón no emite acierto ni fallo: no hay `acerto` en el bloque",
           all("acerto" not in (rv[l] or {}) for l in ("a", "b")))
+    # ¿EL 1X2 RESPETÓ LA BURBUJA? Por lado: a favor / en contra / neutro, y con
+    # riesgo alto si lo respetó. Sin burbuja o sin 1X2 declarado, None.
+    check("cada lado dice si el 1X2 fue a favor o en contra de su racha",
+          all("pronosticoVsRacha" in rv[l] and "respetoRiesgo" in rv[l] for l in ("a", "b")), rv)
+    for lado in ("a", "b"):
+        r_l = rv[lado]
+        if r_l.get("sinBurbuja") or not r_l.get("declarado"):
+            check(f"lado {lado}: sin burbuja no hay racha que seguir → None",
+                  r_l["pronosticoVsRacha"] is None and r_l["respetoRiesgo"] is None, r_l)
+        else:
+            gana = (o["unXDos"]["declarado"] == "local") if lado == "a" else (o["unXDos"]["declarado"] == "visita")
+            sigue = gana if r_l["declarado"]["signo"] == "+" else not gana
+            esperado = "neutro" if o["unXDos"]["declarado"] == "empate" else ("aFavor" if sigue else "enContra")
+            check(f"lado {lado}: 1X2 «{o['unXDos']['declarado']}» contra burbuja {r_l['declarado']['signo']} → {esperado}",
+                  r_l["pronosticoVsRacha"] == esperado, r_l)
+            alto = r_l["declarado"]["riesgo"]["nivel"] in ("alto", "muy alto")
+            check(f"lado {lado}: el respeto solo se juzga con riesgo alto (acá {r_l['declarado']['riesgo']['nivel']})",
+                  (r_l["respetoRiesgo"] is None) if not alto else (r_l["respetoRiesgo"] == (esperado != "aFavor")), r_l)
+    from backend.analisis.veredicto import pronostico_vs_racha
+    check("burbuja «−» de la visita con 1X2 local = la visita pierde = sigue la racha = aFavor, y no respeta el riesgo alto",
+          pronostico_vs_racha("b", {"signo": "-", "riesgo": {"nivel": "muy alto"}}, "local")
+          == {"pronosticoVsRacha": "aFavor", "respetoRiesgo": False})
+    check("el empate es neutro y con riesgo alto cuenta como respetado",
+          pronostico_vs_racha("a", {"signo": "+", "riesgo": {"nivel": "alto"}}, "empate")
+          == {"pronosticoVsRacha": "neutro", "respetoRiesgo": True})
+    check("con riesgo bajo seguir la racha no es error: None, no False",
+          pronostico_vs_racha("a", {"signo": "+", "riesgo": {"nivel": "bajo"}}, "local")["respetoRiesgo"] is None)
 
     # UNA SALVEDAD SOBRE UN CASO QUE ACREDITA. La población la declara quien
     # escribe; la salvedad no la cambia, pero queda en campo propio para que se
@@ -1828,7 +1908,25 @@ def main():
           and rvm["revisionAbierta"] is False and rvm["fueraDelBacktest"] == [], rvm)
     check("y la nota dice que un nivel fuera del rango ABRE la revisión, no mueve los puntos",
           "no los mueve" in rvm["nota"], rvm["nota"])
-    from backend.analisis.lecciones import _cerrar_reventon, _reventon_vacio
+    check("las métricas del reventón traen el respeto del riesgo por grupo, con su nota",
+          set(rvm["respetoRiesgo"]) >= {"aFavor", "enContra", "neutro", "nota"}
+          and "alto" in rvm["respetoRiesgo"]["nota"], rvm.get("respetoRiesgo"))
+    from backend.analisis.lecciones import _acumular_reventon, _cerrar_reventon, _reventon_vacio
+    sr = _reventon_vacio()
+    obs_alto = {"comprobable": True, "sinBurbuja": False,
+                "declarado": {"signo": "+", "riesgo": {"nivel": "alto"}, "extremo": False},
+                "observado": {"revento": True}, "pronosticoVsRacha": "aFavor", "respetoRiesgo": False}
+    obs_bajo = {**obs_alto, "declarado": {"signo": "+", "riesgo": {"nivel": "bajo"}, "extremo": False},
+                "respetoRiesgo": None}
+    _acumular_reventon(sr, {"a": obs_alto, "b": obs_bajo}, {"declarado": "local", "acerto": False}, 0.9)
+    _acumular_reventon(sr, {"a": {**obs_alto, "pronosticoVsRacha": "enContra", "respetoRiesgo": True}},
+                       {"declarado": "visita", "acerto": True}, 0.2)
+    cr = _cerrar_reventon(sr)["respetoRiesgo"]
+    check("solo los lados con riesgo alto entran al respeto (el bajo queda fuera)",
+          cr["aFavor"]["lados"] == 1 and cr["enContra"]["lados"] == 1 and cr["neutro"]["lados"] == 0, cr)
+    check("cada grupo lleva su tasa de reventón, su 1X2 y su Brier medio",
+          cr["aFavor"]["brierMedio"] == 0.9 and cr["aFavor"]["tasa1x2"] == 0.0
+          and cr["enContra"]["brierMedio"] == 0.2 and cr["enContra"]["tasa1x2"] == 1.0, cr)
     sint = _reventon_vacio()
     sint["porNivel"]["bajo"] = {"observadas": 20, "reventadas": 16}     # 80 %: fuera de 42-47 %
     sint["porNivel"]["alto"] = {"observadas": 25, "reventadas": 17}     # 68 %: dentro de 67.2-69.2 %

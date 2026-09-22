@@ -248,6 +248,10 @@ def _simular(estado, preguntas: dict) -> Lote:
             valor = round((n % 1000) / 1000, 3)
         salida[clave] = Respuesta(tipo=pregunta["type"], valor=valor,
                                   confianza=0.0, simulado=True, modelo="simulado")
+    # un guion que pasa por real convierte el lote en «guion»: quien lo lea
+    # sabe que esas respuestas cuentan, y de dónde salieron
+    if any(not r.simulado for r in salida.values()):
+        salida.modelo = "guion"
     return salida
 
 

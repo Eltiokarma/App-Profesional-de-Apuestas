@@ -31,7 +31,7 @@ import type {
   PlantillaDTO,
   ParteCoworkDTO,
   PartePendienteDTO,
-  LatidoCoworkDTO,
+  LatidoCoworkDTO, RevisorDiarioDTO,
   SobrePendientesDTO,
   PreflightEfeDTO,
   PrediccionDTO,
@@ -183,6 +183,9 @@ export const SadApi = {
   /** Partes de partidos ya jugados y sin veredicto (fase B). */
   coworkLatido: (horas?: number) =>
     apiGet<LatidoCoworkDTO>('/analisis/cowork/latido' + qs({ horas })),
+  /** El reporte del día del revisor de coherencia (Jev). */
+  coworkRevisor: (horas?: number, dia?: string) =>
+    apiGet<RevisorDiarioDTO>('/analisis/cowork/revisor' + qs({ horas, dia })),
   veredictosPendientes: (horas?: number, limite?: number) =>
     apiGet<SobrePendientesDTO>('/analisis/cowork/veredictos/pendientes' + qs({ horas, limite })),
 

@@ -94,18 +94,23 @@ Jev, y el único trabajo del parte que no es calculable ni es análisis.
   - `lecturaSad.reventon` contra el nivel calculado por lado (alto/medio/bajo;
     «sin base» no se compara) → `COHERENCIA-REVENTON`.
   «Ninguno» / «no lo dice» nunca contradicen: abstenerse no es error.
-- **Modos** (`SAD_JEV_COHERENCIA`): `sombra` por defecto —evalúa, guarda en
-  `coherencia_json`, lo muestra en `coherencia` del GET y resume en el recibo,
-  y NO toca la tira—; `alertas` las saca con `origen: jev`, `modelo`,
-  `evaluadoEn`; `off`. Umbral de confianza `SAD_JEV_COHERENCIA_UMBRAL` (0.7,
-  primer corte).
-- **Cómo se enciende**: con la clave puesta y en sombra, se dejan pasar ≥ 20
-  partes reales; se leen los `hallazgos`, `concuerdan` y `sinConfianza` de cada
-  GET y se anota a mano cuáles eran incoherencias de verdad. Si los hallazgos
-  aciertan y lo que concuerda no esconde incoherencias evidentes, se pasa a
-  `alertas`. Si la etiqueta baila entre depósitos del mismo parte, se sube el
-  umbral o se quita esa pregunta. Ningún hallazgo mueve un número: nunca lo
-  hará.
+- **Modos** (`SAD_JEV_COHERENCIA`): `alertas` por defecto desde el 22/09
+  —las saca en la tira con `origen: jev`, `modelo`, `evaluadoEn`, y el recibo
+  lleva `detalle` y `queHacer` para que Cowork corrija o sostenga en `notas`—;
+  `sombra` —evalúa y guarda, Cowork ve solo conteos, nada a la tira: para
+  medir sin sesgar—; `off`. Umbral `SAD_JEV_COHERENCIA_UMBRAL` (0.7, primer
+  corte).
+- **Cómo se vigila** (la decisión del 22/09: sin apuestas de por medio, Cowork
+  queda solo y el usuario mira al final del día): cada evaluación queda en
+  `coherencia_log`, y `GET /analisis/cowork/revisor` (tarjeta `RevisorDiario`
+  en Partidos) dice por parte qué encontró y qué hizo Cowork —`corrigio`,
+  `corrigioParte`, `sostuvo`, `sinReaccion`, `limpio`, `noEvaluado`—, los
+  hallazgos por código, cuántas preguntas quedaron sin confianza y el costo del
+  día. `paraMirar` son los partes con hallazgos que Cowork no corrigió: o el
+  revisor se equivocó, o Cowork sostuvo con razón, o no volvió a pasar. Si la
+  etiqueta baila entre depósitos del mismo parte, se sube el umbral o se quita
+  esa pregunta. Ningún hallazgo mueve un número: nunca lo hará. **A la primera
+  apuesta real se re-evalúa** si Cowork puede seguir solo o vuelve la sombra.
 
 ### 2. Validador semántico de la despensa — **SÍ, y es el más barato**
 

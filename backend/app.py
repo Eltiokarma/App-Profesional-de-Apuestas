@@ -2296,6 +2296,16 @@ def cowork_contrato():
     return cowork.contrato()
 
 
+@app.get(API + "/analisis/cowork/revisor")
+def cowork_revisor(horas: int = Query(default=24, ge=1, le=336),
+                   dia: str | None = Query(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")):
+    """El reporte del día del revisor de coherencia (Jev, docs/JEV.md): qué
+    encontró, qué hizo Cowork con eso y cuánto costó. Sin `dia`, las últimas
+    `horas` hacia atrás. Es lectura del pipeline: el token de Cowork lo ve."""
+    from backend.analisis import parte as cowork
+    return cowork.revisor(horas, dia)
+
+
 @app.get(API + "/analisis/cowork/latido")
 def cowork_latido(horas: int = Query(default=36, ge=1, le=336)):
     """¿Está corriendo el pipeline, o lleva dos días muerto y nadie se enteró?
