@@ -63,7 +63,7 @@ def _casos(limite: int = 400) -> list[dict]:
     with conectar_parte() as con:
         filas = con.execute(
             "SELECT fixture_id, fecha, equipo_a, equipo_b, parte_json, veredicto_json, "
-            "cohorte, cuarentena_json FROM parte_cowork WHERE veredicto_json IS NOT NULL "
+            "cohorte, cuarentena_json, modo_fallo_json FROM parte_cowork WHERE veredicto_json IS NOT NULL "
             "ORDER BY fecha DESC LIMIT ?", (limite,)).fetchall()
     fuera = []
     for f in filas:
@@ -83,6 +83,7 @@ def _casos(limite: int = 400) -> list[dict]:
             "veredicto": json.loads(f["veredicto_json"]),
             "cohorte": cohorte_de(f["cohorte"])["clave"],
             "cuarentena": cuarentena,
+            "modoFallo": json.loads(f["modo_fallo_json"]) if f["modo_fallo_json"] else None,
         })
     return fuera
 
@@ -104,9 +105,17 @@ def _items_de(caso: dict, estados: dict) -> list[dict]:
         st = estados.get(clave) or {}
         propio = caso["equipoA"] if lado == "a" else caso["equipoB"]
         rival = caso["equipoB"] if lado == "a" else caso["equipoA"]
+        mf = ((caso.get("modoFallo") or {}).get("lados") or {}).get(lado) or {}
         fuera.append({
             "clave": clave,
             "fixtureId": caso["fixtureId"], "lado": lado,
+            # LA ETIQUETA DE JEV (backend/analisis/modo_fallo.py): de qué
+            # naturaleza fue el fallo y si la lección pide mover un número.
+            # Sellada al cerrar el caso; None = sin clave, sin confianza o
+            # cerrado antes de que existiera. No entra en ninguna métrica.
+            "modoFallo": mf.get("modo"),
+            "modoFalloConfianza": mf.get("modoConfianza"),
+            "proponeMoverNumero": mf.get("proponeMoverNumero"),
             "equipo": propio, "rival": rival,
             "partido": f"{caso['equipoA']} vs {caso['equipoB']}",
             "fecha": caso["fecha"],
@@ -187,7 +196,7 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
                 continue
             tde_obs += 1
             tde_positivos += 1 if b["golEnVentana"] else 0
-        _acumular_reventon(rev, obj.get("reventon") or {})
+        _acumular_reventon(rev, obj.get("reventon") or {}, ux, br)
 
     total_lados = sum(acred.values())
     decididos = acred["acierto"] + acred["fallo"] + acred["parcial"]
@@ -228,13 +237,22 @@ NIVELES_RIESGO = ("bajo", "medio", "alto", "muy alto", "sin base")
 REVENTON_N_MINIMO = 10   # por nivel, para que la comparación con el backtest diga algo
 
 
+GRUPOS_RESPETO = ("aFavor", "enContra", "neutro")
+
+
 def _reventon_vacio() -> dict:
     return {"porNivel": {n: {"observadas": 0, "reventadas": 0} for n in NIVELES_RIESGO},
             "extremo": {"observadas": 0, "reventadas": 0},
-            "sinBurbuja": 0, "noComprobables": 0}
+            "sinBurbuja": 0, "noComprobables": 0,
+            # SOLO con riesgo alto o muy alto: ¿el 1X2 siguió la racha o no, y
+            # cómo le fue? Es la pregunta que decide si el riesgo vale algo
+            # para el pronóstico o solo lo decora (docs/REVENTON.md §11)
+            "respeto": {g: {"lados": 0, "reventadas": 0, "aciertos1x2": 0, "briers": []}
+                        for g in GRUPOS_RESPETO}}
 
 
-def _acumular_reventon(acc: dict, reventon: dict) -> None:
+def _acumular_reventon(acc: dict, reventon: dict, unxdos: dict | None = None,
+                       brier: float | None = None) -> None:
     for lado in ("a", "b"):
         r = reventon.get(lado) or {}
         if not r:
@@ -252,6 +270,16 @@ def _acumular_reventon(acc: dict, reventon: dict) -> None:
         if (r.get("declarado") or {}).get("extremo"):
             acc["extremo"]["observadas"] += 1
             acc["extremo"]["reventadas"] += 1 if r["observado"].get("revento") else 0
+        # el respeto se juzga solo con riesgo alto/muy alto (None = no aplica)
+        grupo = r.get("pronosticoVsRacha")
+        if r.get("respetoRiesgo") is not None and grupo in acc["respeto"]:
+            cel = acc["respeto"][grupo]
+            cel["lados"] += 1
+            cel["reventadas"] += 1 if r["observado"].get("revento") else 0
+            if unxdos and unxdos.get("declarado"):
+                cel["aciertos1x2"] += 1 if unxdos.get("acerto") else 0
+            if brier is not None:
+                cel["briers"].append(float(brier))
 
 
 def intervalo_wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float] | None:
@@ -293,8 +321,26 @@ def _cerrar_reventon(acc: dict) -> dict:
     obs = sum(c["observadas"] for c in acc["porNivel"].values())
     revs = sum(c["reventadas"] for c in acc["porNivel"].values())
     fuera = [n for n, c in por_nivel.items() if c["dentroDelBacktest"] is False]
+    respeto = {}
+    for g, c in (acc.get("respeto") or {}).items():
+        n = c["lados"]
+        respeto[g] = {
+            "lados": n,
+            "reventadas": c["reventadas"],
+            "tasaReventon": round(c["reventadas"] / n, 3) if n else None,
+            "aciertos1x2": c["aciertos1x2"],
+            "tasa1x2": round(c["aciertos1x2"] / n, 3) if n else None,
+            "brierMedio": round(sum(c["briers"]) / len(c["briers"]), 3) if c["briers"] else None,
+        }
     return {
         "observadas": obs, "reventadas": revs,
+        "respetoRiesgo": {
+            **respeto,
+            "nota": "solo lados con riesgo alto o muy alto antes del partido: si el 1X2 declarado "
+                    "apostó a que la racha sigue (aFavor), se corta (enContra) o al empate (neutro), "
+                    "y cómo le fue a cada grupo. Un Brier peor en aFavor que en enContra es la "
+                    "evidencia de que el riesgo vale para el pronóstico; igual, de que solo lo decora",
+        },
         "tasa": round(revs / obs, 3) if obs else None,
         "tasaBaseBacktest": TASA_BASE_BACKTEST,
         "porNivel": por_nivel,
@@ -358,6 +404,31 @@ def _liston(skill: str, metricas: dict) -> dict | None:
     }
 
 
+def _por_modo_fallo(items: list[dict]) -> dict:
+    """Los fallos y parciales agrupados por la etiqueta de Jev, más la alarma
+    del dossier: lecciones que piden mover un número y no pueden sostenerlo."""
+    from backend.analisis.modo_fallo import MODOS
+    con_fallo = [i for i in items if i["veredicto"] in ("fallo", "parcial")]
+    conteo = {m: 0 for m in MODOS}
+    sin_etiqueta = 0
+    for i in con_fallo:
+        if i.get("modoFallo") in conteo:
+            conteo[i["modoFallo"]] += 1
+        else:
+            sin_etiqueta += 1
+    piden = [i for i in items if i.get("proponeMoverNumero") is True]
+    return {
+        "fallos": len(con_fallo),
+        "porModo": {m: n for m, n in conteo.items() if n},
+        "sinEtiqueta": sin_etiqueta,
+        "pidenMoverNumero": len(piden),
+        "pidenMoverSinPoder": [i["clave"] for i in piden if not i["puedeMoverNumeros"]],
+        "nota": "etiquetas de Jev sobre la prosa del veredicto (backend/analisis/modo_fallo.py): "
+                "agrupan, no puntúan. `pidenMoverSinPoder` son lecciones de casos contaminados o en "
+                "cuarentena que proponen mover un peso: el dossier las muestra, no las aplica",
+    }
+
+
 COHORTE_VIGENTE = "vigente"
 
 
@@ -413,12 +484,16 @@ def inventario(skill: str = "", estado: str = "", limite: int = 400, cohorte: st
             "disparador": f"{DISPARADOR_REVISION} fallos con lección pendiente del mismo skill "
                           "ABREN la revisión; no autorizan ningún cambio",
             "liston": _liston(nombre, metricas),
+            "porModoFallo": _por_modo_fallo(suyas),
             "items": [i for i in filtrados if i["skill"] == nombre],
         })
 
     huerfanas = [i for i in todos if not i["skill"]]
     return {
         "generadoEn": efedb.ahora(),
+        # PARA EL DOSSIER (fase D): los fallos agrupados por causa, y la alarma
+        # que importa: lecciones que PIDEN mover un número sin poder sostenerlo
+        "porModoFallo": _por_modo_fallo(todos),
         "filtro": {"skill": skill, "estado": estado, "cohorte": clave_cohorte},
         "cohortes": cohortes,
         "cohorteVigente": COHORTE,

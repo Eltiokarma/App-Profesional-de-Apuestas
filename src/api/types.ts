@@ -1132,6 +1132,27 @@ export interface AlertaParte {
   detalle: string
   /** Solo en ESCALA-LIGAS: la liga doméstica de cada lado. */
   ligas?: Record<'a' | 'b', { id: number; nombre: string | null; pais: string | null; partidos: number } | null> | null
+  /** Solo en COHERENCIA-*: la puso Jev al depositar y se lee sellada, no se recalcula. */
+  origen?: 'jev'
+  modelo?: string
+  evaluadoEn?: string
+  jev?: { pregunta: string; valor: unknown; confianza: number } | null
+}
+
+/** El guardrail semántico del parte (docs/JEV.md), sellado al depositar.
+ *  Sin clave de Jev viaja `simulado: true` y no puede haber hallazgos. */
+export interface CoherenciaParte {
+  modo: 'off' | 'sombra' | 'alertas'
+  evaluadoEn: string
+  modelo: string
+  simulado: boolean
+  umbral: number
+  preguntas: number
+  tokensEntrada?: number
+  hallazgos: AlertaParte[]
+  concuerdan: string[]
+  sinConfianza: { pregunta: string; confianza: number; simulado: boolean }[]
+  error: string | null
 }
 
 export interface DocumentoParte {
@@ -1299,6 +1320,10 @@ export interface ReventonObservado {
     extremo: boolean
   } | null
   observado: { revento: boolean; kDespues: number; signoDespues: '+' | '-' | '0'; kPico: number | null; partidos: number | null } | null
+  /** Si el 1X2 declarado apostó a que la racha SIGUE (aFavor), se corta (enContra) o al empate (neutro); null sin burbuja o sin 1X2. */
+  pronosticoVsRacha?: 'aFavor' | 'enContra' | 'neutro' | null
+  /** Solo con riesgo alto/muy alto: true si el 1X2 no siguió la racha. null = no aplica, no es un fallo. */
+  respetoRiesgo?: boolean | null
   nota: string
 }
 
@@ -1322,6 +1347,11 @@ export interface ReventonMetricas {
     nMinimo: number
   }>
   extremo: { observadas: number; reventadas: number; nota: string }
+  /** Solo lados con riesgo alto/muy alto: cómo le fue al 1X2 según siguió la racha o no. */
+  respetoRiesgo?: Record<'aFavor' | 'enContra' | 'neutro', {
+    lados: number; reventadas: number; tasaReventon: number | null
+    aciertos1x2: number; tasa1x2: number | null; brierMedio: number | null
+  }> & { nota: string }
   sinBurbuja: number
   noComprobables: number
   fueraDelBacktest: string[]
@@ -1379,6 +1409,27 @@ export interface PendienteNoListadoDTO {
   /** «2do tiempo, minuto 67, 1-0», «PST», … */
   estado: string
   porque: string
+}
+
+/** El reporte del día del revisor de coherencia (Jev): qué encontró, qué hizo
+ *  Cowork con eso y cuánto costó. */
+export interface RevisorDiarioDTO {
+  modo: 'off' | 'sombra' | 'alertas'
+  ventana: { dia: string | null; horas: number | null }
+  totales: {
+    partesEvaluados: number; conHallazgos: number; limpios: number
+    corrigio: number; corrigioParte: number; sostuvo: number; sinReaccion: number; noEvaluados: number
+    evaluaciones: number; hallazgosPorCodigo: Record<string, number>
+    sinConfianza: number; tokensEntrada: number; costoUsd: number; errores: number
+  }
+  partes: {
+    fixtureId: number; partido: string; fecha: string
+    reaccion: 'limpio' | 'corrigio' | 'corrigioParte' | 'sostuvo' | 'sinReaccion' | 'noEvaluado'
+    hallazgosEncontrados: string[]; hallazgosAhora: string[]
+    evaluaciones: { evaluadoEn: string; modo: string; preguntas: number; hallazgos: string[]; sinConfianza: number; simulado: boolean; error: string | null; redeposito: boolean }[]
+  }[]
+  paraMirar: number[]
+  nota: string
 }
 
 /** El latido del pipeline: ¿corrió, o lleva días muerto en silencio? */
@@ -1456,6 +1507,8 @@ export interface ParteCoworkDTO {
   }
   documentos: DocumentoParte[]
   pendientes: string[]
+  /** Evaluación de coherencia (Jev) sellada al depositar; null en partes anteriores. */
+  coherencia?: CoherenciaParte | null
   fuentes: string[]
   notas: string
   xi: Record<'a' | 'b', { once?: string[]; formacion?: string; fuente?: string; capturadoEn?: string }>
@@ -1539,10 +1592,27 @@ export interface LeccionItem {
   cuarentena?: string
   /** true = la puso la app por criterio (parte sin DT declarado); se levanta re-depositando con el DT. */
   cuarentenaAutomatica?: boolean
+  /** Etiqueta de Jev sobre la prosa del veredicto: de qué naturaleza fue el fallo. null sin etiqueta. */
+  modoFallo?: ModoFalloEtiqueta | null
+  modoFalloConfianza?: number | null
+  /** La lección pide mover un número del skill (Jev). Con puedeMoverNumeros=false es la alarma del dossier. */
+  proponeMoverNumero?: boolean | null
   estado: 'pendiente' | 'en_revision' | 'aplicada' | 'descartada'
   aplicadaEn: string
   nota: string
   actualizadoEn: string
+}
+
+export type ModoFalloEtiqueta = 'insumo' | 'lectura_efe' | 'tde' | 'reventon' | 'mercado' | 'imprevisto' | 'varianza' | 'no_lo_dice'
+
+/** Los fallos agrupados por la etiqueta de Jev, para el dossier de la fase D. */
+export interface PorModoFallo {
+  fallos: number
+  porModo: Partial<Record<ModoFalloEtiqueta, number>>
+  sinEtiqueta: number
+  pidenMoverNumero: number
+  pidenMoverSinPoder: string[]
+  nota: string
 }
 
 export interface SkillAprendizaje {
@@ -1556,6 +1626,7 @@ export interface SkillAprendizaje {
   fallosPendientes: number
   faltanParaDisparar: number
   disparador: string
+  porModoFallo?: PorModoFallo
   liston: {
     de: string
     condiciones: Record<string, string>
@@ -1606,6 +1677,7 @@ export interface InventarioLecciones {
     reventon?: ReventonMetricas
   }
   porSkill: SkillAprendizaje[]
+  porModoFallo?: PorModoFallo
   sinSkill: { cuantas: number; porque: string; items: LeccionItem[] }
   estados: string[]
   items: LeccionItem[]

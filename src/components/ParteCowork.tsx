@@ -792,6 +792,48 @@ interface Props {
 
 type Tab = 'bloques' | 'f' | 'matchup' | 'lectura' | 'tde' | 'calendario' | 'timeline' | 'documentos'
 
+/** El revisor de coherencia (Jev, docs/JEV.md): qué se le preguntó al parte y
+ *  qué no cuadró. En SOMBRA es la única ventana para verlo —la tira no lo
+ *  muestra— y sirve para medirlo contra el criterio humano antes de encender
+ *  las alertas. Sin clave de Jev dice que no evaluó, no finge un «todo bien». */
+function RevisorCoherencia({ parte }: { parte: ParteCoworkDTO }) {
+  const c = parte.coherencia
+  if (!c || c.modo === 'off') return null
+  const nombreLado = (eq: string) => eq === 'a' ? parte.partido.equipoA : eq === 'b' ? parte.partido.equipoB : ''
+  const enSombra = c.modo === 'sombra'
+  const hallazgos = c.hallazgos ?? []
+  const titulo = c.simulado ? 'REVISOR SIN CLAVE · NO EVALUÓ'
+    : c.error ? 'REVISOR · ERROR'
+    : `REVISOR ${enSombra ? 'EN SOMBRA' : 'ACTIVO'} · ${c.preguntas} preguntas · ${hallazgos.length} ${hallazgos.length === 1 ? 'hallazgo' : 'hallazgos'}`
+  const color = c.simulado || c.error ? 'var(--t3)' : hallazgos.length ? 'var(--mark)' : 'var(--up)'
+  return (
+    <section style={{ marginBottom: 14, padding: '10px 13px', borderRadius: 12, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '4px 10px' }}>
+        <span style={{ font: '700 9.5px var(--mono)', letterSpacing: '.4px', color }}>{titulo}</span>
+        <span style={{ font: '500 9.5px var(--mono)', color: 'var(--t3)', minWidth: 0, overflowWrap: 'anywhere' }}>
+          {c.simulado ? 'Jev responde simulado con confianza 0: no puede haber hallazgos'
+            : c.error ? c.error
+            : `${c.concuerdan?.length ?? 0} cuadran · ${c.sinConfianza?.length ?? 0} sin confianza · ${c.modelo}${enSombra ? ' · nada de esto va a la tira' : ''}`}
+        </span>
+      </div>
+      {hallazgos.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', gap: 6, marginTop: 8 }}>
+          {hallazgos.map((h, i) => (
+            <div key={i} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: '4px 8px', minWidth: 0 }}>
+              <span style={{ padding: '2px 7px', borderRadius: 6, background: 'var(--bg)', font: '700 9px var(--mono)', color: 'var(--mark)', flexShrink: 0 }}>{h.codigo}</span>
+              <span style={{ font: '500 11px var(--sans)', color: 'var(--t1)', flex: '1 1 200px', minWidth: 0 }}>
+                {h.equipo !== 'global' && <b style={{ color: 'var(--t2)' }}>[{nombreLado(h.equipo)}] </b>}
+                {h.detalle}
+                {h.jev && <span style={{ color: 'var(--t3)' }}> · confianza {Math.round(h.jev.confianza * 100)} %</span>}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
 export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, isMobile }: Props) {
   const [tab, setTab] = useState<Tab>('bloques')
 
@@ -875,6 +917,8 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
         </div>
         <Anillo eq={parte.equipos.b} />
       </section>
+
+      <RevisorCoherencia parte={parte} />
 
       {parte.alertas.length > 0 && (
         <section style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 14 }}>

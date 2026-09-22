@@ -30,6 +30,9 @@ python -m backend.test_cronologia  # cronología SAD: los partidos del timeline,
 python -m backend.test_preflight  # chequeo previo del EFE: qué va a costar antes de gastar
 python -m backend.test_cowork    # parte de Cowork: bloque F calculado y cruce del once
 python -m backend.test_burbuja   # reventón de burbuja: mismos vectores dorados que el TS
+python -m backend.test_jev       # adaptador de Jev (System One): sin clave corre simulado y no decide
+python -m backend.test_coherencia # guardrail semántico del parte (Jev): etiqueta la prosa, el código compara con el número
+python -m backend.test_modo_fallo # modo de fallo del veredicto (Jev): etiqueta para el dossier, no toca población ni métricas
 python -m backend.backtest_burbuja --padron --calibrar # backtest del reventón en las ligas importantes: tasa por riesgo, lift por señal, regla del nivel, por liga, y la logística que propone los puntos (--horizonte/--liga/--muestra/--json; en el servidor: GET /analisis/burbujas/backtest?calibrar=true, maestro)
 python -m backend.test_backtest_burbuja # anti-fuga y conteos del backtest, sobre la demo
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
@@ -204,6 +207,47 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   `/analisis/cowork/*` (sin DELETE) y los GET del pipeline, por LISTA DE
   PERMITIDOS. Un endpoint nuevo nace denegado para Cowork; abrirlo es
   deliberado. Nunca le des el maestro a un agente que lee contenido de fuera.
+- **Jev** (`docs/JEV.md`, `backend/analisis/jev.py`): modelo System One de
+  TypeSafe que devuelve valores TIPADOS (elección · puntaje · sí/no) con
+  confianza, no texto. Es un CLASIFICADOR DE TEXTO, no un pronosticador: está
+  calibrado contra LLMs, no contra resultados, así que no toca el motor ni nada
+  calculable, y jamás el 1X2, el pronóstico ni un peso del skill. Declara que
+  cuenta mal, que lee las fechas como texto y que **no trata el estado como
+  hostil**: el texto de fuera viaja en `estado` y NUNCA en las instrucciones ni
+  en los criterios, y su salida no dispara acciones con efectos —solo alertas
+  de tipo `dato`—. Sin `TYPESAFE_API_KEY` responde simulado con confianza 0:
+  el código corre pero no decide, que es lo que impide que un simulado se cuele
+  como juicio en un parte. **No es determinista**: lo que responda se guarda
+  SELLADO con la versión del modelo y no se rehace al leer (al revés que todo lo
+  derivado). Primer uso, HECHO en sombra: el **guardrail de coherencia del
+  parte** (`backend/analisis/coherencia.py`): Jev etiqueta la PROSA —notas por
+  bloque, lectura del 1X2, razón del matchup, texto de reventón— y el código la
+  compara con el número que Cowork declaró; se evalúa AL DEPOSITAR y viaja en
+  `coherencia` del GET y en el recibo. `SAD_JEV_COHERENCIA`: `alertas` (defecto
+  desde el 22/09: COHERENCIA-* a la tira con `origen: jev`, el detalle y
+  `queHacer` en el recibo para que Cowork corrija o sostenga en `notas`) ·
+  `sombra` (evalúa y guarda, Cowork ve solo conteos, nada a la tira: para medir
+  sin sesgar) · `off`. Los códigos COHERENCIA-* son la TERCERA clase de alerta
+  (`_ALERTAS_CAPTURADAS`): se descartan del depósito como las calculadas pero
+  al leer se LEEN, no se recalculan. **Vigilancia**: cada evaluación queda en
+  `coherencia_log` y `GET /analisis/cowork/revisor` (`parte.revisor`, tarjeta
+  `RevisorDiario` en Partidos) dice, por parte, qué encontró y qué hizo Cowork
+  —`corrigio` · `corrigioParte` · `sostuvo` · `sinReaccion` · `limpio` ·
+  `noEvaluado`— más el costo del día; `paraMirar` son los que Cowork no
+  corrigió. Sin apuestas de por medio, Cowork queda solo y el reporte del día
+  es la medición; a la primera apuesta real, se re-evalúa esa decisión.
+  **Segundo uso, el aprendizaje** (`backend/analisis/modo_fallo.py`): al
+  cerrar un veredicto, Jev lee la prosa del lado fallado o parcial (`queP`,
+  `leccion`, `reglaTocada`) y la ubica en una taxonomía CERRADA —insumo ·
+  lectura_efe · tde · reventon · mercado · imprevisto · varianza · no_lo_dice—
+  y dice si la lección PIDE MOVER UN NÚMERO del skill (noul: sí ≥ 0.70, no ≤
+  0.30, en medio `null`). Sellado en `modo_fallo_json` al cerrar, viaja en
+  `veredicto.modoFallo` (eco aceptado) y en cada `LeccionItem` (`modoFallo`,
+  `proponeMoverNumero`); `porModoFallo` agrupa los fallos por causa, global y
+  por skill, y `pidenMoverSinPoder` es la alarma del dossier: una lección de
+  caso contaminado o en cuarentena que propone mover un peso. **No toca la
+  población, ninguna métrica, el estado de la lección ni la cuarentena**: es
+  el insumo de la fase D, no un juez.
 - Costo de la IA: `docs/efe-dtp/COSTO_IA.md`. Lo que está en nuestra base se
   calcula, no se le pregunta al modelo — y lo calculado no se le hace copiar a
   la salida. Los bloques calculados hoy: el mapa de rivales del EFE
@@ -457,7 +501,13 @@ conversación se pierde en la siguiente.
    tasa de reventón por nivel de riesgo se compara con la del backtest
    (`acreditables.reventon`, `TASA_BACKTEST` en `burbuja.py`, solo con n ≥ 10
    por nivel) y un nivel fuera del rango ABRE la revisión de los puntos sin
-   moverlos (`docs/REVENTON.md` §11); y
+   moverlos (`docs/REVENTON.md` §11); **¿el 1X2 respetó la burbuja?** —por
+   lado, `pronosticoVsRacha` (aFavor · enContra · neutro: si el 1X2 declarado
+   apostó a que la racha sigue o se corta) y `respetoRiesgo` (SOLO con riesgo
+   alto/muy alto; `null` es «no aplica», nunca un fallo), calculados en
+   `veredicto.pronostico_vs_racha`; las lecciones cruzan cada grupo con su
+   1X2 y su Brier (`acreditables.reventon.respetoRiesgo`): un Brier peor en
+   «a favor» es la evidencia de que el riesgo vale para el pronóstico—; y
    mover estados NO está abierto al token de Cowork: el agente lee sus
    lecciones, declarar aplicada la suya es del usuario. **Cuarentena y
    cohortes** (C-bis, hechas): la cuarentena es POR CRITERIO y NUNCA POR

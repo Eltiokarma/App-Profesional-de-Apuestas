@@ -790,6 +790,50 @@ paths:
                     items: { type: integer }
                   sinFichaTodavia: { type: array, items: { type: object, additionalProperties: true } }
                   nota: { type: string }
+  /analisis/jev/ping:
+    get:
+      summary: ¿La clave de Jev sirve? Una pregunta trivial, con su modelo, latencia y costo
+      description: >
+        Hace UNA llamada mínima a Jev (docs/JEV.md) y devuelve qué modelo respondió, cuánto
+        tardó y cuántos tokens costó. Sin clave no sale a la red y lo dice; con clave mala
+        o límite excedido devuelve el error tal cual. Gasta milésimas de centavo: token
+        MAESTRO, denegado para Cowork.
+      tags: [analisis]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  disponible: { type: boolean, description: 'la clave está puesta' }
+                  ok: { type: boolean, description: 'respondió y contestó bien a la pregunta trivial' }
+                  modelo: { type: string, nullable: true, description: 'la versión exacta (jev-1.13.0)' }
+                  ms: { type: integer }
+                  tokensEntrada: { type: integer }
+                  respuesta: { type: object, additionalProperties: true }
+                  error: { type: string, nullable: true }
+  /analisis/cowork/revisor:
+    get:
+      summary: El reporte del día del revisor de coherencia (Jev)
+      description: >
+        Qué encontró el revisor (docs/JEV.md), qué hizo Cowork con eso y cuánto costó,
+        para quien mira el pipeline al final del día y no parte por parte. Por fixture se
+        lee la SECUENCIA de evaluaciones (cada depósito vuelve a evaluar) y de ahí sale la
+        reacción: `limpio`, `corrigio`, `corrigioParte`, `sostuvo`, `sinReaccion` o
+        `noEvaluado` (simulado sin clave, o error). `paraMirar` son los partes con
+        hallazgos que Cowork no corrigió. Sin `dia`, las últimas `horas` hacia atrás.
+      tags: [analisis]
+      parameters:
+        - { name: horas, in: query, schema: { type: integer, default: 24, minimum: 1, maximum: 336 } }
+        - { name: dia, in: query, schema: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }, description: 'YYYY-MM-DD en UTC; acota a ese día en vez de a las últimas horas' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RevisorDiario' }
   /analisis/cowork/latido:
     get:
       summary: ¿Está corriendo el pipeline, o lleva días muerto en silencio?
@@ -1039,6 +1083,32 @@ components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer }
   schemas:
+    ModoFallo:
+      type: object
+      nullable: true
+      description: >
+        La etiqueta de Jev sobre la prosa del veredicto (backend/analisis/modo_fallo.py,
+        docs/JEV.md): de qué naturaleza fue el fallo de cada lado y si la lección pide
+        mover un número del skill. Sellada AL CERRAR el caso —Jev no es determinista—;
+        null en casos cerrados antes de que existiera. No toca la población, ninguna
+        métrica ni el estado de la lección: agrupa para el dossier de la fase D.
+      properties:
+        evaluadoEn: { type: string }
+        modelo: { type: string }
+        simulado: { type: boolean }
+        preguntas: { type: integer }
+        tokensEntrada: { type: integer }
+        error: { type: string, nullable: true }
+        taxonomia: { type: array, items: { type: string } }
+        lados:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              modo: { type: string, nullable: true, enum: [insumo, lectura_efe, tde, reventon, mercado, imprevisto, varianza, no_lo_dice, null], description: 'null = sin confianza suficiente o simulado' }
+              modoConfianza: { type: number }
+              proponeMoverNumero: { type: boolean, nullable: true, description: 'true ≥ 0.70 · false ≤ 0.30 · null en medio o sin lección' }
+              proponeMoverP: { type: number, nullable: true }
     LeccionItem:
       type: object
       description: >
@@ -1070,6 +1140,9 @@ components:
         cohorte: { type: string, description: 'época del proceso en la que se depositó el parte' }
         cuarentena: { type: string, description: 'motivo de la cuarentena; vacío si el caso cuenta' }
         cuarentenaAutomatica: { type: boolean, description: 'la puso la app por criterio: parte sin DT declarado en un lado. Se levanta re-depositando con el DT' }
+        modoFallo: { type: string, nullable: true, description: 'etiqueta de Jev: insumo · lectura_efe · tde · reventon · mercado · imprevisto · varianza · no_lo_dice; null sin etiqueta' }
+        modoFalloConfianza: { type: number, nullable: true }
+        proponeMoverNumero: { type: boolean, nullable: true, description: 'la lección pide mover un número del skill (Jev); cruzado con puedeMoverNumeros da la alarma del dossier' }
         estado: { type: string, enum: [pendiente, en_revision, aplicada, descartada] }
         aplicadaEn: { type: string }
         nota: { type: string }
@@ -1161,6 +1234,13 @@ components:
         version: { type: string }
         dbOk: { type: boolean }
         lastPipelineRun: { type: string, format: date-time, nullable: true }
+        jev:
+          type: object
+          description: 'si TYPESAFE_API_KEY está puesta (nunca la clave), el modo del revisor de coherencia y el alias de modelo. Probarla de verdad: GET /analisis/jev/ping (maestro)'
+          properties:
+            disponible: { type: boolean }
+            modo: { type: string, enum: [off, sombra, alertas] }
+            modelo: { type: string }
     EstadoFixture:
       type: string
       enum: [programado, en_vivo, finalizado]
@@ -2473,10 +2553,21 @@ components:
       type: object
       required: [codigo]
       properties:
-        codigo: { type: string, description: 'T.54, R-KT.2, GK-DOWNGRADE, F3… Las que agrega el backend al leer: K-EXTREMO (burbuja en su máximo), HUECO-DOBLE (EFE y TDE leídos del mismo vacío) y ESCALA-LIGAS (los dos equipos vienen de ligas distintas: el nivel no compara entre bases)' }
+        codigo: { type: string, description: 'T.54, R-KT.2, GK-DOWNGRADE, F3… Las que agrega el backend al leer: K-EXTREMO (burbuja en su máximo), HUECO-DOBLE (EFE y TDE leídos del mismo vacío) y ESCALA-LIGAS (los dos equipos vienen de ligas distintas: el nivel no compara entre bases). Las CAPTURADAS al depositar por el guardrail de coherencia (Jev, docs/JEV.md): COHERENCIA-BLOQUE, COHERENCIA-1X2, COHERENCIA-MATCHUP, COHERENCIA-REVENTON — solo salen en la tira con SAD_JEV_COHERENCIA=alertas; en sombra viven en `coherencia`' }
         equipo: { type: string, enum: [a, b, ambos, global] }
         tipo: { type: string, enum: [estructural, fecha, dato], description: '`dato` = la pone el backend sobre los datos, no el skill' }
         detalle: { type: string, description: '`texto` se acepta como alias' }
+        origen: { type: string, enum: [jev], description: 'solo en COHERENCIA-*: la puso Jev al depositar; no se recalcula al leer' }
+        modelo: { type: string, description: 'solo en COHERENCIA-*: la versión exacta que respondió (jev-1.13.0)' }
+        evaluadoEn: { type: string, description: 'solo en COHERENCIA-*: cuándo se evaluó (al depositar)' }
+        jev:
+          type: object
+          nullable: true
+          description: 'solo en COHERENCIA-*: la pregunta, la etiqueta que eligió y su confianza'
+          properties:
+            pregunta: { type: string }
+            valor: {}
+            confianza: { type: number }
         ligas:
           type: object
           nullable: true
@@ -2663,6 +2754,8 @@ components:
             de la ingesta se refleje sin re-depositar nada.
         pronostico: { $ref: '#/components/schemas/PronosticoParte' }
         documentos: { type: array, items: { $ref: '#/components/schemas/DocumentoParte' } }
+        coherencia:
+          $ref: '#/components/schemas/CoherenciaParte'
         pendientes: { type: array, items: { type: string } }
         fuentes: { type: array, items: { type: string } }
         notas: { type: string }
@@ -2696,6 +2789,36 @@ components:
           allOf: [{ $ref: '#/components/schemas/Veredicto' }]
         creadoEn: { type: string }
         actualizadoEn: { type: string }
+    CoherenciaParte:
+      type: object
+      nullable: true
+      description: >
+        El guardrail semántico del parte (docs/JEV.md): Jev etiqueta la PROSA
+        (notas por bloque, lectura del 1X2, razón del matchup, texto de reventón)
+        y el backend compara la etiqueta con el número que Cowork declaró. Se
+        evalúa AL DEPOSITAR y se guarda sellada con el modelo —Jev no es
+        determinista y rehacerla al leer la haría parpadear—. Sin clave de Jev
+        viaja `simulado: true`, sin hallazgos posibles. Es lo único que muestra
+        la evaluación en modo `sombra`.
+      properties:
+        modo: { type: string, enum: [off, sombra, alertas] }
+        evaluadoEn: { type: string }
+        modelo: { type: string, description: 'jev-1.13.0, o «simulado» sin clave' }
+        simulado: { type: boolean }
+        umbral: { type: number, description: 'confianza mínima para que una etiqueta cuente' }
+        preguntas: { type: integer }
+        tokensEntrada: { type: integer }
+        hallazgos: { type: array, items: { $ref: '#/components/schemas/AlertaParte' } }
+        concuerdan: { type: array, items: { type: string }, description: 'claves de las preguntas cuya etiqueta cuadró con el número' }
+        sinConfianza:
+          type: array
+          items:
+            type: object
+            properties:
+              pregunta: { type: string }
+              confianza: { type: number }
+              simulado: { type: boolean }
+        error: { type: string, nullable: true }
     ReciboParte:
       type: object
       required: [fixtureId, partido, estado]
@@ -2716,6 +2839,15 @@ components:
           items: { type: string }
           description: 'nombres que mandó Cowork y no casan con el fixture: se declaran, no se corrigen en silencio'
         xiResuelto: { type: boolean }
+        coherencia:
+          type: object
+          description: 'resumen del guardrail de coherencia (Jev): modo, preguntas hechas, hallazgos, si fue simulado, y el error si lo hubo. El detalle va en el GET'
+          properties:
+            modo: { type: string, enum: [off, sombra, alertas] }
+            preguntas: { type: integer }
+            hallazgos: { type: integer }
+            simulado: { type: boolean }
+            error: { type: string, nullable: true }
         rechazos:
           type: array
           description: >
@@ -2837,6 +2969,59 @@ components:
         analizar: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
         enEspera: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
         descartados: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
+        nota: { type: string }
+    RevisorDiario:
+      type: object
+      required: [modo, ventana, totales, partes, paraMirar]
+      properties:
+        modo: { type: string, enum: [off, sombra, alertas], description: 'el modo vigente del revisor' }
+        ventana:
+          type: object
+          properties:
+            dia: { type: string, nullable: true }
+            horas: { type: integer, nullable: true }
+        totales:
+          type: object
+          properties:
+            partesEvaluados: { type: integer, description: 'fixtures con al menos una evaluación real (no simulada, sin error)' }
+            conHallazgos: { type: integer }
+            limpios: { type: integer }
+            corrigio: { type: integer }
+            corrigioParte: { type: integer }
+            sostuvo: { type: integer }
+            sinReaccion: { type: integer }
+            noEvaluados: { type: integer }
+            evaluaciones: { type: integer, description: 'filas del registro en la ventana (un depósito = una evaluación)' }
+            hallazgosPorCodigo: { type: object, additionalProperties: { type: integer } }
+            sinConfianza: { type: integer, description: 'preguntas sin confianza suficiente en la última evaluación de cada parte' }
+            tokensEntrada: { type: integer }
+            costoUsd: { type: number }
+            errores: { type: integer }
+        partes:
+          type: array
+          items:
+            type: object
+            properties:
+              fixtureId: { type: integer }
+              partido: { type: string }
+              fecha: { type: string }
+              reaccion: { type: string, enum: [limpio, corrigio, corrigioParte, sostuvo, sinReaccion, noEvaluado] }
+              hallazgosEncontrados: { type: array, items: { type: string }, description: 'códigos de la primera evaluación con hallazgos' }
+              hallazgosAhora: { type: array, items: { type: string }, description: 'códigos de la última evaluación' }
+              evaluaciones:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    evaluadoEn: { type: string }
+                    modo: { type: string }
+                    preguntas: { type: integer }
+                    hallazgos: { type: array, items: { type: string } }
+                    sinConfianza: { type: integer }
+                    simulado: { type: boolean }
+                    error: { type: string, nullable: true }
+                    redeposito: { type: boolean }
+        paraMirar: { type: array, items: { type: integer }, description: 'fixtures con hallazgos que Cowork no corrigió (sinReaccion o sostuvo)' }
         nota: { type: string }
     LatidoCowork:
       type: object
@@ -3114,11 +3299,28 @@ components:
             signoDespues: { type: string, enum: ['+', '-', '0'] }
             kPico: { type: number, nullable: true, description: 'la K pico de la burbuja que cerró' }
             partidos: { type: integer, nullable: true }
+        pronosticoVsRacha:
+          type: string
+          nullable: true
+          enum: [aFavor, enContra, neutro, null]
+          description: >
+            Si el 1X2 declarado apostó a que la racha de este lado SIGUE (aFavor: gana con
+            burbuja «+», pierde con «−»), se corta (enContra) o al empate (neutro). null sin
+            burbuja o sin 1X2 declarado.
+        respetoRiesgo:
+          type: boolean
+          nullable: true
+          description: >
+            SOLO con riesgo alto o muy alto antes del partido: true si el 1X2 no siguió la
+            racha (lo que pide el protocolo), false si la siguió. null = no aplica (riesgo
+            bajo/medio, sin base, sin burbuja o sin 1X2): un null no es un fallo.
         nota: { type: string }
     Veredicto:
       type: object
       properties:
         fixtureId: { type: integer }
+        modoFallo:
+          $ref: '#/components/schemas/ModoFallo'
         seleccion: { type: string, enum: [ciega, por_resultado, post_resultado] }
         modoEvaluacion: { type: string, enum: [PRE, COND] }
         acredita: { type: boolean, description: 'ciega + PRE, y solo eso' }

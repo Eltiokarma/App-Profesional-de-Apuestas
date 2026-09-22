@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { InventarioLecciones, LeccionItem, SkillAprendizaje } from '../api/types'
+import type { InventarioLecciones, LeccionItem, ModoFalloEtiqueta, SkillAprendizaje } from '../api/types'
 import { getDataSource } from '../services/datasource'
 import { useAsync } from '../services/useAsync'
 
@@ -11,6 +11,10 @@ import { useAsync } from '../services/useAsync'
  *  puede mover un peso. La app tampoco mueve nada sola: abrir la revisión es
  *  abrirla, no autorizarla. */
 
+const MODO_FALLO_NOMBRE: Record<ModoFalloEtiqueta, string> = {
+  insumo: 'insumo', lectura_efe: 'lectura EFE', tde: 'TDE', reventon: 'reventón',
+  mercado: 'mercado', imprevisto: 'imprevisto', varianza: 'varianza', no_lo_dice: 'no lo dice',
+}
 const COLOR_VER: Record<string, string> = {
   acierto: 'var(--up)', parcial: 'var(--mark)', fallo: 'var(--down)',
 }
@@ -147,6 +151,27 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
                 </span>
               </div>
             ))}
+            {/* ¿EL 1X2 RESPETÓ LA BURBUJA? Solo lados con riesgo alto: si el
+                pronóstico siguió la racha o no, y cómo le fue a cada grupo. Un
+                Brier peor en «a favor» es la evidencia de que el riesgo vale. */}
+            {a.reventon.respetoRiesgo && (['aFavor', 'enContra', 'neutro'] as const).some((g) => (a.reventon!.respetoRiesgo![g].lados > 0)) && (
+              <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px' }}>CON RIESGO ALTO · ¿EL 1X2 SIGUIÓ LA RACHA?</div>
+                {(['aFavor', 'enContra', 'neutro'] as const).map((g) => {
+                  const c = a.reventon!.respetoRiesgo![g]
+                  if (!c.lados) return null
+                  return (
+                    <div key={g} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', font: '500 11px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+                      <span style={{ width: 70, color: 'var(--t1)', fontWeight: 700 }}>{g === 'aFavor' ? 'a favor' : g === 'enContra' ? 'en contra' : 'empate'}</span>
+                      <span>{c.lados} {c.lados === 1 ? 'lado' : 'lados'}</span>
+                      <span style={{ color: 'var(--t3)' }}>1X2 {c.aciertos1x2}/{c.lados}{c.tasa1x2 !== null ? ` · ${Math.round(c.tasa1x2 * 100)}%` : ''}</span>
+                      <span style={{ color: 'var(--t3)' }}>{c.brierMedio !== null ? `Brier ${c.brierMedio.toFixed(3)}` : 'sin Brier'}</span>
+                      <span style={{ color: 'var(--t3)' }}>reventó {c.reventadas}/{c.lados}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
             {a.reventon.extremo.observadas > 0 && (
               <div style={{ font: '500 10.5px var(--sans)', color: 'var(--t3)' }} title={a.reventon.extremo.nota}>
                 con alerta K-EXTREMO: {a.reventon.extremo.reventadas}/{a.reventon.extremo.observadas} reventaron
@@ -238,6 +263,13 @@ function PanelSkill({ sk, onCambio }: { sk: SkillAprendizaje; onCambio: () => vo
       {/* EL SESGO SE LEE ANTES QUE LOS CONTEOS, NO DESPUÉS. */}
       <div style={{ padding: '0 16px 10px', font: '500 10.5px var(--sans)', color: 'var(--t3)' }}>
         {sk.sesgoDeAtribucion}
+        {sk.porModoFallo && sk.porModoFallo.fallos > 0 && (
+          <span style={{ display: 'block', marginTop: 4, font: '500 10.5px var(--mono)', color: 'var(--t2)' }}>
+            fallos por causa: {Object.entries(sk.porModoFallo.porModo).map(([m, n]) => `${MODO_FALLO_NOMBRE[m as ModoFalloEtiqueta] ?? m} ${n}`).join(' · ') || '—'}
+            {sk.porModoFallo.sinEtiqueta ? ` · sin etiqueta ${sk.porModoFallo.sinEtiqueta}` : ''}
+            {sk.porModoFallo.pidenMoverSinPoder.length ? <b style={{ color: 'var(--down)' }}> · {sk.porModoFallo.pidenMoverSinPoder.length} piden mover un número sin poder sostenerlo</b> : null}
+          </span>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: 10, padding: '0 16px 12px', flexWrap: 'wrap' }}>
@@ -324,6 +356,23 @@ function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
       <div style={{ font: '500 12px var(--sans)', color: 'var(--t1)', marginTop: 5 }}>{it.leccion}</div>
       {it.reglaTocada && (
         <div style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)', marginTop: 3 }}>regla tocada: {it.reglaTocada}</div>
+      )}
+      {/* LA ETIQUETA DE JEV: de qué naturaleza fue el fallo y si la lección pide
+          mover un número. Agrupa para el dossier, no puntúa nada. La alarma es
+          «pide mover un número» sobre un caso que no puede sostenerlo. */}
+      {(it.modoFallo || it.proponeMoverNumero !== undefined) && (it.modoFallo || it.proponeMoverNumero !== null) && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 5 }}>
+          {it.modoFallo && (
+            <span style={{ padding: '2px 8px', borderRadius: 6, background: 'var(--bg3)', color: 'var(--t2)', font: '700 9px var(--mono)' }}>
+              {MODO_FALLO_NOMBRE[it.modoFallo] ?? it.modoFallo}{it.modoFalloConfianza != null ? ` · ${Math.round(it.modoFalloConfianza * 100)}%` : ''}
+            </span>
+          )}
+          {it.proponeMoverNumero === true && (
+            <span style={{ padding: '2px 8px', borderRadius: 6, background: it.puedeMoverNumeros ? 'var(--up-soft)' : 'var(--down-soft)', color: it.puedeMoverNumeros ? 'var(--up)' : 'var(--down)', font: '700 9px var(--mono)' }}>
+              {it.puedeMoverNumeros ? 'PIDE MOVER UN NÚMERO' : 'PIDE MOVER UN NÚMERO · NO PUEDE SOSTENERLO'}
+            </span>
+          )}
+        </div>
       )}
 
       {/* LO CONTAMINADO ENSEÑA, PERO NO MUEVE UN NÚMERO. Esto va pegado a la

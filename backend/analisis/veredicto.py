@@ -200,7 +200,7 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
         out["tde"] = {"bloques": bloques}
 
     # ── el reventón de la burbuja: lo que se dijo antes y lo que pasó ───────
-    out["reventon"] = reventon_objetivo(fixture_id, fx)
+    out["reventon"] = reventon_objetivo(fixture_id, fx, declarado)
     return out
 
 
@@ -221,15 +221,22 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
 # un pronóstico—; por eso acá no hay veredicto, hay observación, y la tasa se
 # arma en las lecciones sobre los casos ciegos, contra la del backtest.
 
-def reventon_objetivo(fixture_id: int, fx) -> dict:
+def reventon_objetivo(fixture_id: int, fx, declarado_1x2: str = "") -> dict:
     """Por lado: la burbuja total tal como estaba ANTES del partido (signo, K,
     racha, riesgo, extremo) y si ese partido la reventó. `comprobable` es
     False cuando el pipeline aún no calculó la constante del partido; sin
-    burbuja abierta antes no hay nada que observar (`sinBurbuja`)."""
+    burbuja abierta antes no hay nada que observar (`sinBurbuja`).
+
+    Y, por lado, si el 1X2 declarado FUE A FAVOR de la racha o en contra
+    (`pronosticoVsRacha`) y, cuando el riesgo era alto, si el pronóstico lo
+    respetó (`respetoRiesgo`). Es lo que hace medible la pregunta que importa:
+    ¿el Brier es mejor cuando Cowork le hace caso al riesgo que cuando no?"""
     out = {"nota": ("declarado = la burbuja total con la historia anterior al partido (vista "
                     "«al día del partido», §9 de docs/REVENTON.md); observado = si la K "
                     "fusionada de ESTE partido cerró la burbuja. Es observación, no veredicto: "
-                    "el riesgo es una tasa, y la tasa se compara con la del backtest en las lecciones")}
+                    "el riesgo es una tasa, y la tasa se compara con la del backtest en las lecciones. "
+                    "pronosticoVsRacha = si el 1X2 declarado apostó a que la racha SIGUE (aFavor) "
+                    "o se corta (enContra); respetoRiesgo solo se juzga con riesgo alto o muy alto")}
     fecha = str(fx["date"])
     lados = (("a", fx["home_team_id"], fx["away_team_id"], fx["away_name"], "L"),
              ("b", fx["away_team_id"], fx["home_team_id"], fx["home_name"], "V"))
@@ -239,7 +246,35 @@ def reventon_objetivo(fixture_id: int, fx) -> dict:
         except Exception as e:  # noqa: BLE001 — se declara, no tumba el veredicto
             out[lado] = {"comprobable": False, "sinBurbuja": False, "declarado": None,
                          "observado": None, "nota": f"no se pudo calcular: {e}"}
+        out[lado].update(pronostico_vs_racha(lado, out[lado].get("declarado"), declarado_1x2))
     return out
+
+
+def pronostico_vs_racha(lado: str, declarado: dict | None, unxdos: str) -> dict:
+    """¿El 1X2 declarado apostó a que la racha de este lado SIGUE o se corta?
+
+    Una burbuja «+» es una racha de resultados por encima del nivel (el equipo
+    viene ganando más de lo que le toca); «−», por debajo. Seguir la racha es
+    pronosticar que el equipo gana con «+» o pierde con «−»; ir en contra, lo
+    opuesto; el empate es neutro. Sin 1X2 declarado no hay nada que juzgar.
+
+    `respetoRiesgo` se juzga SOLO con riesgo alto o muy alto: ahí «no seguir
+    la racha» es lo que el protocolo pide (prompt v2.5, lecturaSad.reventon).
+    Con riesgo bajo o medio seguirla no es un error, así que queda en None,
+    no en False: un None es «no aplica», no «falló».
+    """
+    if not declarado or not unxdos or unxdos not in ("local", "empate", "visita"):
+        return {"pronosticoVsRacha": None, "respetoRiesgo": None}
+    signo = declarado.get("signo")
+    if unxdos == "empate":
+        vs = "neutro"
+    else:
+        gana = (unxdos == "local") if lado == "a" else (unxdos == "visita")
+        sigue = gana if signo == "+" else (not gana)
+        vs = "aFavor" if sigue else "enContra"
+    nivel = (declarado.get("riesgo") or {}).get("nivel") or ""
+    respeto = (vs != "aFavor") if nivel in ("alto", "muy alto") else None
+    return {"pronosticoVsRacha": vs, "respetoRiesgo": respeto}
 
 
 def _reventon_lado(fixture_id: int, fecha: str, tid: int, rid: int, rival: str, cond: str) -> dict:

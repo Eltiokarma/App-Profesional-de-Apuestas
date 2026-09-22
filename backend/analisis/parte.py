@@ -32,6 +32,8 @@ from datetime import date as date_t, datetime, timedelta, timezone
 
 from backend import db as saddb
 from backend.analisis import bloque_f, db as efedb, veredicto as vered
+from backend.analisis import coherencia as _coherencia
+from backend.analisis import modo_fallo as _modo_fallo
 from backend.nombres import canonizar, normalizar
 
 VERSION = "cowork/1"
@@ -50,6 +52,17 @@ CREATE TABLE IF NOT EXISTS parte_cowork (
 );
 CREATE INDEX IF NOT EXISTS idx_parte_fecha ON parte_cowork(fecha);
 CREATE INDEX IF NOT EXISTS idx_parte_estado ON parte_cowork(estado);
+CREATE TABLE IF NOT EXISTS coherencia_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fixture_id INTEGER NOT NULL,
+    evaluado_en TEXT NOT NULL,
+    modo TEXT, modelo TEXT,
+    preguntas INTEGER, hallazgos INTEGER, sin_confianza INTEGER,
+    simulado INTEGER, error TEXT, tokens INTEGER,
+    redeposito INTEGER,
+    hallazgos_json TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_coherencia_log_fecha ON coherencia_log(evaluado_en);
 """
 
 # TABLA DE PUNTUACIÓN del protocolo: TOTAL = A + B×1.5 + C + D + E×2
@@ -84,7 +97,8 @@ class ParteInvalido(ValueError):
 # el veredicto llegó después de la primera versión de la tabla: se añade en
 # caliente para no perder los partes ya depositados (en SQLite un ALTER que ya
 # existe es un error, no un problema)
-_COLUMNAS_NUEVAS = (("veredicto_json", "TEXT"), ("cohorte", "TEXT"), ("cuarentena_json", "TEXT"))
+_COLUMNAS_NUEVAS = (("veredicto_json", "TEXT"), ("cohorte", "TEXT"), ("cuarentena_json", "TEXT"),
+                    ("coherencia_json", "TEXT"), ("modo_fallo_json", "TEXT"))
 
 # ── COHORTES: de qué época del proceso es cada caso ─────────────────────────
 #
@@ -274,7 +288,7 @@ _CLAVES_PARTE = {"fixtureId", "version", "generadoEn", "equipos", "alertas", "ma
 # falsos y escondería los de verdad.
 _ECO_PARTE = {"partido", "estado", "creadoEn", "actualizadoEn", "xi", "veredicto",
               "timeline", "rechazos", "perdido", "aviso", "entrada", "cohorte", "cuarentena",
-              "xiConservados"}
+              "xiConservados", "coherencia"}
 _ECO_EQUIPO = {"total", "maximoAlcanzable", "porcentaje", "clasificacion", "disponibilidad",
                "sinBloques", "bloquesSinDeclarar", "notaTotales"}
 _ECO_JUGADOR = {"soloBaja"}
@@ -289,7 +303,7 @@ _CLAVES_VEREDICTO = {"seleccion", "modoEvaluacion", "mancha", "falsadorCumplido"
 # corregir una lección— rechazaba media docena de claves propias, y una de
 # ellas (`falsador`) además degradaba un `cumplido: false` guardado a `null`.
 _ECO_VEREDICTO = {"acredita", "falsador", "rechazos", "cerradoEn", "objetivo",
-                  "actualizadoEn", "sinPronosticoPrevio"}
+                  "actualizadoEn", "sinPronosticoPrevio", "modoFallo"}
 
 
 FUENTE_FICHA = "ficha de API-Football"   # procedencia del once que trae la ingesta
@@ -1024,6 +1038,11 @@ _CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto", "ligas", "dtBa
 # si el eco del GET vuelve con ellas, se descartan sin rechazo (se van a
 # recalcular igual) en vez de guardarse por duplicado.
 _ALERTAS_CALCULADAS = {"K-EXTREMO", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT"}
+# LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
+# selladas (coherencia_json), porque no son deterministas y rehacerlas al leer
+# las haría parpadear. Del depósito se descartan igual que las calculadas
+# —Cowork no puede inyectarlas—, pero al leer NO se recalculan: se leen.
+_ALERTAS_CAPTURADAS = {"COHERENCIA-BLOQUE", "COHERENCIA-1X2", "COHERENCIA-MATCHUP", "COHERENCIA-REVENTON"}
 # el protocolo usa `ambos` para una alerta que toca a los dos equipos: estaba
 # en el esquema del EFE viejo y se perdió al escribir este contrato
 _EQUIPOS_ALERTA = ("a", "b", "ambos", "global")
@@ -1032,7 +1051,7 @@ _EQUIPOS_ALERTA = ("a", "b", "ambos", "global")
 def _alerta(a, rechazos: list, donde: str) -> dict | None:
     if isinstance(a, str):
         a = {"codigo": a}   # «T.54» a secas: entra, y se delata que va sin texto
-    if isinstance(a, dict) and _txt(a.get("codigo")) in _ALERTAS_CALCULADAS:
+    if isinstance(a, dict) and _txt(a.get("codigo")) in (_ALERTAS_CALCULADAS | _ALERTAS_CAPTURADAS):
         return None
     if not isinstance(a, dict):
         rechazos.append({"donde": donde, "porque": f"cada alerta es un objeto, llegó {type(a).__name__}",
@@ -1230,6 +1249,34 @@ def guardar(payload: dict) -> dict:
              previo["xi_json"] if previo else None,
              previo["creado_en"] if previo else ahora, ahora, COHORTE),
         )
+    # COHERENCIA (Jev): se evalúa AQUÍ y se guarda sellada, no al leer —Jev no
+    # es determinista y dos lecturas darían hallazgos distintos—. Nunca tumba
+    # el depósito: un fallo se declara dentro del propio JSON.
+    nombres = {"a": fx["home_name"], "b": fx["away_name"]}
+    try:
+        # el reventón calculado solo hace falta si de verdad se va a preguntar:
+        # sin clave el adaptador responde simulado y no hay hallazgo posible
+        rev = (_reventon_calculado(fx)
+               if _coherencia.modo() != "off" and _coherencia.jev.disponible() else None)
+        coh = _coherencia.evaluar(parte, nombres, rev)
+    except Exception as e:  # noqa: BLE001 — se declara, no se rompe el POST
+        coh = {"modo": _coherencia.modo(), "error": f"no se pudo evaluar: {e}", "hallazgos": []}
+    with _conectar() as con:
+        con.execute("UPDATE parte_cowork SET coherencia_json=? WHERE fixture_id=?",
+                    (json.dumps(coh, ensure_ascii=False), parte["fixtureId"]))
+        # EL REGISTRO. coherencia_json guarda la ÚLTIMA evaluación; para saber
+        # cómo reaccionó Cowork (¿re-depositó corregido? ¿sostuvo?) hace falta
+        # la secuencia: es lo que lee el reporte del revisor (revisor()).
+        con.execute(
+            "INSERT INTO coherencia_log (fixture_id, evaluado_en, modo, modelo, preguntas, hallazgos, "
+            "sin_confianza, simulado, error, tokens, redeposito, hallazgos_json) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            (parte["fixtureId"], coh.get("evaluadoEn") or ahora, coh.get("modo"), coh.get("modelo"),
+             coh.get("preguntas", 0), len(coh.get("hallazgos") or []),
+             len(coh.get("sinConfianza") or []), 1 if coh.get("simulado") else 0,
+             coh.get("error"), coh.get("tokensEntrada", 0), 1 if previo else 0,
+             json.dumps([{"codigo": h["codigo"], "equipo": h["equipo"]} for h in coh.get("hallazgos") or []],
+                        ensure_ascii=False)))
     # un parte nuevo sobre un fixture que ya tenía once resuelto se recalcula
     # solo al leerlo: el once vive aparte, justamente para sobrevivir al parte
     # AVISO DE DEPÓSITO DESTRUCTIVO: el POST reemplaza el parte entero (es
@@ -1348,6 +1395,9 @@ def guardar(payload: dict) -> dict:
         "rechazos": parte.get("rechazos") or [],
         # lo que este depósito BORRÓ de lo que ya había guardado
         "perdido": perdido,
+        # el guardrail semántico (Jev): qué se preguntó y qué no cuadró. En modo
+        # sombra se ve acá y en el GET, no en la tira de alertas
+        "coherencia": _coherencia.resumen_recibo(coh),
         "aviso": ("Este depósito dejó el parte con MENOS contenido del que tenía "
                   f"({'; '.join(perdido)}). El POST reemplaza el parte entero: si fue sin "
                   "querer, vuelve a depositarlo completo." if perdido else ""),
@@ -1594,7 +1644,8 @@ def dto(fixture_id: int) -> dict | None:
     with _conectar() as con:
         fila = con.execute(
             "SELECT fixture_id, fecha, equipo_a, equipo_b, estado, version, parte_json, "
-            "xi_json, creado_en, actualizado_en, cohorte, cuarentena_json FROM parte_cowork WHERE fixture_id=?",
+            "xi_json, creado_en, actualizado_en, cohorte, cuarentena_json, coherencia_json "
+            "FROM parte_cowork WHERE fixture_id=?",
             (fixture_id,),
         ).fetchone()
     if not fila:
@@ -1646,6 +1697,9 @@ def dto(fixture_id: int) -> dict | None:
     # parte lo dice antes de que alguien lea los dos números uno contra otro
     alertas.extend(alerta_escala(fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     alertas.extend(alertas_dt(parte, fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
+    # las de coherencia se LEEN, no se rehacen (ver _ALERTAS_CAPTURADAS)
+    coherencia = json.loads(fila["coherencia_json"]) if fila["coherencia_json"] else None
+    alertas.extend(_coherencia.alertas_de(coherencia))
     # el timeline se funde AL LEER, no al depositar: si la ingesta corrige un
     # marcador, la próxima lectura ya lo trae — sellarlo sería congelar hoy lo
     # que mañana se recalcula gratis
@@ -1687,10 +1741,108 @@ def dto(fixture_id: int) -> dict | None:
             "descartados": parte.get("descartados") or [],
         },
         "veredicto": veredicto_de(fila["fixture_id"]),
+        # la evaluación de coherencia sellada al depositar; en sombra es lo
+        # único que la muestra (para medirla contra el criterio humano)
+        "coherencia": coherencia,
         "cohorte": cohorte_de(fila["cohorte"]),
         "cuarentena": json.loads(fila["cuarentena_json"]) if fila["cuarentena_json"] else None,
         "creadoEn": fila["creado_en"],
         "actualizadoEn": fila["actualizado_en"],
+    }
+
+
+def revisor(horas: int = 24, dia: str | None = None) -> dict:
+    """El reporte del día: cómo le fue a Cowork con el revisor de coherencia.
+
+    Para quien no mira los partes uno por uno y quiere saber, al final del
+    día, tres cosas: qué encontró el revisor, qué hizo Cowork con eso, y
+    cuánto costó. Por fixture se lee la SECUENCIA de evaluaciones (un
+    re-depósito vuelve a evaluar) y de ahí sale la reacción:
+
+      limpio       nunca hubo hallazgos
+      corrigio     hubo hallazgos y el último depósito ya no los tiene
+      corrigioParte  el último depósito tiene menos, no cero
+      sostuvo      re-depositó y los hallazgos siguen iguales (o más)
+      sinReaccion  hubo hallazgos y no volvió a depositar (todavía)
+      noEvaluado   todas las evaluaciones fueron simuladas (sin clave) o con error
+
+    `dia` (YYYY-MM-DD, UTC) acota a ese día; sin `dia`, las últimas `horas`
+    —«desde ahora hacia atrás», que es lo que uno quiere a las 22:00 de Lima—.
+    """
+    from datetime import datetime, timedelta, timezone
+    from backend.analisis import coherencia as coh_mod
+    with _conectar() as con:
+        if dia:
+            filas = con.execute(
+                "SELECT * FROM coherencia_log WHERE substr(evaluado_en,1,10)=? "
+                "ORDER BY fixture_id, evaluado_en, id", (dia,)).fetchall()
+        else:
+            desde = (datetime.now(timezone.utc) - timedelta(hours=horas)).isoformat(timespec="seconds")
+            filas = con.execute(
+                "SELECT * FROM coherencia_log WHERE evaluado_en >= ? "
+                "ORDER BY fixture_id, evaluado_en, id", (desde,)).fetchall()
+    por_fixture: dict[int, list] = {}
+    for f in filas:
+        por_fixture.setdefault(f["fixture_id"], []).append(dict(f))
+
+    partes, totales = [], {
+        "partesEvaluados": 0, "conHallazgos": 0, "limpios": 0, "corrigio": 0, "corrigioParte": 0,
+        "sostuvo": 0, "sinReaccion": 0, "noEvaluados": 0, "evaluaciones": len(filas),
+        "hallazgosPorCodigo": {}, "sinConfianza": 0, "tokensEntrada": 0, "errores": 0,
+    }
+    for fid, evs in por_fixture.items():
+        fx = _fixture(fid)
+        reales = [e for e in evs if not e["simulado"] and not e["error"]]
+        totales["tokensEntrada"] += sum(int(e["tokens"] or 0) for e in evs)
+        totales["errores"] += sum(1 for e in evs if e["error"])
+        secuencia = [{"evaluadoEn": e["evaluado_en"], "modo": e["modo"], "preguntas": e["preguntas"],
+                      "hallazgos": [h["codigo"] for h in json.loads(e["hallazgos_json"] or "[]")],
+                      "sinConfianza": e["sin_confianza"], "simulado": bool(e["simulado"]),
+                      "error": e["error"], "redeposito": bool(e["redeposito"])} for e in evs]
+        if not reales:
+            reaccion = "noEvaluado"
+            totales["noEvaluados"] += 1
+        else:
+            totales["partesEvaluados"] += 1
+            totales["sinConfianza"] += int(reales[-1]["sin_confianza"] or 0)
+            primera = next((e for e in reales if e["hallazgos"]), None)
+            if not primera:
+                reaccion = "limpio"
+                totales["limpios"] += 1
+            else:
+                totales["conHallazgos"] += 1
+                for h in json.loads(primera["hallazgos_json"] or "[]"):
+                    totales["hallazgosPorCodigo"][h["codigo"]] = totales["hallazgosPorCodigo"].get(h["codigo"], 0) + 1
+                despues = [e for e in reales if e["id"] > primera["id"]]
+                if not despues:
+                    reaccion = "sinReaccion"
+                elif despues[-1]["hallazgos"] == 0:
+                    reaccion = "corrigio"
+                elif despues[-1]["hallazgos"] < primera["hallazgos"]:
+                    reaccion = "corrigioParte"
+                else:
+                    reaccion = "sostuvo"
+                totales[reaccion] += 1
+        partes.append({
+            "fixtureId": fid,
+            "partido": f"{fx['home_name']} vs {fx['away_name']}" if fx else f"fixture {fid}",
+            "fecha": (fx["date"] or "")[:10] if fx else "",
+            "reaccion": reaccion,
+            "hallazgosEncontrados": next((s_["hallazgos"] for s_ in secuencia if s_["hallazgos"]), []),
+            "hallazgosAhora": secuencia[-1]["hallazgos"],
+            "evaluaciones": secuencia,
+        })
+    orden = {"sinReaccion": 0, "sostuvo": 1, "corrigioParte": 2, "corrigio": 3, "limpio": 4, "noEvaluado": 5}
+    partes.sort(key=lambda p_: (orden.get(p_["reaccion"], 9), p_["fecha"], p_["fixtureId"]))
+    return {
+        "modo": coh_mod.modo(),
+        "ventana": {"dia": dia, "horas": None if dia else horas},
+        "totales": {**totales, "costoUsd": round(coh_mod.jev.costo(totales["tokensEntrada"]), 5)},
+        "partes": partes,
+        "paraMirar": [p_["fixtureId"] for p_ in partes if p_["reaccion"] in ("sinReaccion", "sostuvo")],
+        "nota": ("lo que Jev marcó y qué hizo Cowork con eso. `paraMirar` son los partes con hallazgos "
+                 "que Cowork no corrigió: o el revisor se equivocó, o Cowork sostuvo con razón en "
+                 "`notas`, o no volvió a pasar por ahí. Las tres cosas se ven abriendo el parte"),
     }
 
 
@@ -1962,9 +2114,21 @@ def guardar_veredicto(fixture_id: int, payload: dict) -> dict:
         "cerradoEn": previo_v.get("cerradoEn") or efedb.ahora(),
         "actualizadoEn": efedb.ahora() if previo_v else "",
     }
+    # EL MODO DE FALLO (Jev, docs/JEV.md): se etiqueta AL CERRAR y se sella
+    # aparte —no es determinista— para que el dossier de la fase D agrupe los
+    # fallos por causa. No toca la población, ni una métrica, ni el estado de
+    # la lección. Un fallo de Jev se declara y el veredicto se guarda igual.
+    fx_v = _fixture(fixture_id)
+    nombres_v = {"a": fx_v["home_name"], "b": fx_v["away_name"]} if fx_v else {}
+    try:
+        modo_fallo = _modo_fallo.evaluar(por_lado, nombres_v)
+    except Exception as e:  # noqa: BLE001
+        modo_fallo = {"error": f"no se pudo etiquetar: {e}", "lados": {}, "preguntas": 0}
     with _conectar() as con:
-        con.execute("UPDATE parte_cowork SET veredicto_json=?, actualizado_en=? WHERE fixture_id=?",
-                    (json.dumps(guardado, ensure_ascii=False), efedb.ahora(), fixture_id))
+        con.execute("UPDATE parte_cowork SET veredicto_json=?, modo_fallo_json=?, actualizado_en=? "
+                    "WHERE fixture_id=?",
+                    (json.dumps(guardado, ensure_ascii=False),
+                     json.dumps(modo_fallo, ensure_ascii=False), efedb.ahora(), fixture_id))
 
     sin_pronostico = _cerrar_cadena(fixture_id, por_lado)
     listo = veredicto_de(fixture_id)
@@ -2018,13 +2182,16 @@ def veredicto_de(fixture_id: int) -> dict | None:
     """
     with _conectar() as con:
         fila = con.execute(
-            "SELECT parte_json, veredicto_json FROM parte_cowork WHERE fixture_id=?",
+            "SELECT parte_json, veredicto_json, modo_fallo_json FROM parte_cowork WHERE fixture_id=?",
             (fixture_id,)).fetchone()
     if not fila or not fila["veredicto_json"]:
         return None
     parte = json.loads(fila["parte_json"])
     guardado = json.loads(fila["veredicto_json"])
     return {**guardado, "fixtureId": fixture_id,
+            # la etiqueta de Jev se LEE sellada, no se rehace (null en casos
+            # cerrados antes de que existiera)
+            "modoFallo": json.loads(fila["modo_fallo_json"]) if fila["modo_fallo_json"] else None,
             # los veredictos cerrados antes de que existiera el campo no tienen
             # salvedad: vacía, no ausente, para que la pantalla no adivine
             "mancha": guardado.get("mancha", ""),

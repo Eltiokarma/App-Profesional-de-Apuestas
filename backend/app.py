@@ -1084,7 +1084,13 @@ def health():
         last_run = iso(row["m"]) if row and row["m"] else None
     except Exception:
         db_ok = False
-    return {"status": "ok" if db_ok else "degraded", "version": app.version, "dbOk": db_ok, "lastPipelineRun": last_run}
+    # ¿ESTÁ LA CLAVE DE JEV? Sin esto, la única forma de saberlo era hacer un
+    # depósito y leer el recibo. Dice si está y en qué modo corre el revisor;
+    # nunca la clave. Probarla de verdad es /analisis/jev/ping (maestro).
+    from backend.analisis import coherencia as _coh, jev as _jev
+    return {"status": "ok" if db_ok else "degraded", "version": app.version, "dbOk": db_ok,
+            "lastPipelineRun": last_run,
+            "jev": {"disponible": _jev.disponible(), "modo": _coh.modo(), "modelo": _jev.MODELO}}
 
 
 def _norm(s: str) -> str:
@@ -2294,6 +2300,26 @@ def cowork_contrato():
     """
     from backend.analisis import parte as cowork
     return cowork.contrato()
+
+
+@app.get(API + "/analisis/jev/ping")
+def jev_ping():
+    """¿La clave de Jev sirve? UNA pregunta trivial: modelo, latencia, tokens,
+    y el error tal cual si algo falla (401 = clave mala, 429 = límite). Gasta
+    milésimas de centavo, así que es del token MAESTRO: nace denegado para
+    Cowork como todo lo que sale a la red."""
+    from backend.analisis import jev
+    return jev.ping()
+
+
+@app.get(API + "/analisis/cowork/revisor")
+def cowork_revisor(horas: int = Query(default=24, ge=1, le=336),
+                   dia: str | None = Query(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")):
+    """El reporte del día del revisor de coherencia (Jev, docs/JEV.md): qué
+    encontró, qué hizo Cowork con eso y cuánto costó. Sin `dia`, las últimas
+    `horas` hacia atrás. Es lectura del pipeline: el token de Cowork lo ve."""
+    from backend.analisis import parte as cowork
+    return cowork.revisor(horas, dia)
 
 
 @app.get(API + "/analisis/cowork/latido")

@@ -368,6 +368,12 @@ También se aceptan dos alias que salían naturales y se perdían:
 Y una alerta que llega sin texto se declara como cáscara vacía en vez de
 guardarse muda.
 
+**2-bis. El recibo también trae `coherencia`.** En modo `sombra` son solo
+conteos y no hacés nada; en modo `alertas` trae `detalle` y `queHacer`: cada
+hallazgo es un texto tuyo contra un número tuyo, y se responde re-depositando
+corregido o sosteniendo con explicación en `notas` (ver «El revisor de
+coherencia»). Nunca cambiando un número para conformar al revisor.
+
 **2. Lo que se rechaza se DICE.** El recibo trae `rechazos`, con dónde estaba,
 por qué no entró y qué se esperaba:
 
@@ -421,6 +427,45 @@ desincronizarse del código: un campo nuevo aparece ahí con solo agregarlo al
 validador. `/openapi.json` está apagado en despliegue —y con razón, expone
 también lo que gasta dinero—, pero dejar a quien deposita adivinando la forma
 garantiza depósitos a medias.
+
+### El revisor de coherencia: un texto tuyo contra un número tuyo
+
+`rechazos` atrapa lo que llega con la forma equivocada. Lo que NO atrapaba es
+un parte que se contradice a sí mismo: la nota del bloque A describe un DT
+que llegó hace nueve días con el plantel en contra y el sub-score dice 4 de 4;
+la lectura del 1X2 inclina a la visita con el 55 % puesto en el local; el
+texto de reventón dice «riesgo alto» donde el cálculo dice «bajo».
+
+Desde el 22/09 eso lo mira un revisor (Jev, `docs/JEV.md`) **al depositar**:
+lee SOLO tu prosa —notas por bloque, `unXDos`, `matchup.razon`, `reventon`—,
+la etiqueta (malo · intermedio · bueno; local · empate · visita · ninguno;
+alto · medio · bajo · no lo dice) y el backend compara la etiqueta con el
+número que declaraste. No pronostica, no toca un número, no pone en
+cuarentena. El resultado va sellado en `coherencia` del GET y resumido en el
+recibo del POST.
+
+Dos modos, y el que está puesto se ve en el recibo:
+
+- **`alertas`** (el que está puesto): el recibo trae `coherencia.detalle` con cada hallazgo, y las
+  alertas `COHERENCIA-*` salen en la tira del parte con `origen: jev`. Ahí sí
+  reaccionás, igual que con `rechazos`: **o re-depositás el parte corregido,
+  o lo sostenés y decís por qué en `notas` del bloque**. Lo que NUNCA: cambiar
+  un número solo para que el revisor se calle. Si la nota tiene razón y el
+  número no, corregí el número; si el número tiene razón, corregí la nota; si
+  los dos tienen razón y el revisor no entendió, sostené y explicá —esa
+  explicación es la que después decide si se sube el umbral o se quita la
+  pregunta—.
+- **`sombra`**: el recibo trae solo CUÁNTAS preguntas y CUÁNTOS hallazgos, no
+  cuáles: es para medir al revisor contra el criterio humano sin que lo
+  conformes. No hacés nada.
+
+Al final del día, quien te supervisa lee `GET /analisis/cowork/revisor`: por
+parte, qué encontró el revisor y qué hiciste con eso (`corrigio` · `sostuvo` ·
+`sinReaccion`…). Un `sinReaccion` no es un pecado —a veces no volvés a pasar
+por ese parte—, pero un `sostuvo` sin explicación en `notas` sí lo es.
+
+Los códigos `COHERENCIA-*` no se depositan: si los mandás, el eco los descarta
+como a las alertas calculadas.
 
 ### El `tde` es POR EQUIPO y caben los dos
 

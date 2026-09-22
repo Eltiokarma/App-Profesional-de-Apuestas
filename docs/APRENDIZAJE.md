@@ -598,6 +598,17 @@ sería que el punto cayera dentro.
 
 ## D · La revisión: del montón de lecciones al `.zip`
 
+> **Insumo nuevo para el dossier (22/09/2026, `backend/analisis/modo_fallo.py`,
+> `docs/JEV.md`)**: al cerrar cada veredicto, Jev etiqueta el modo de fallo del
+> lado fallado o parcial en una taxonomía cerrada —insumo · lectura_efe · tde ·
+> reventon · mercado · imprevisto · varianza · no_lo_dice— y dice si la lección
+> pide mover un número del skill. Viaja en cada lección (`modoFallo`,
+> `proponeMoverNumero`) y agrupado en `porModoFallo` (global y por skill), con
+> `pidenMoverSinPoder`: lecciones de casos contaminados o en cuarentena que
+> proponen mover un peso. Es lo que permite que «4 fallos» se lean como «4
+> imprevistos» o «4 lecturas del EFE», que no piden lo mismo. No toca la
+> población, ninguna métrica ni el estado de la lección: agrupa, no autoriza.
+
 **Disparador:** 4 partidos fallados con lección pendiente para un mismo skill.
 La app lo detecta y lo marca; **no** escribe nada ni genera nada.
 

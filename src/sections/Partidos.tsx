@@ -5,6 +5,7 @@ import { fixtureNum, loadMarcasCowork, refrescarLiga } from '../services/appdata
 import type { MarcaCoworkDTO } from '../api/types'
 import type { Match, MatchStatus } from '../data/types'
 import { LatidoCowork } from '../components/LatidoCowork'
+import { RevisorDiario } from '../components/RevisorDiario'
 import { TeamBadge } from '../components/TeamBadge'
 import { TeamSearch } from '../components/TeamSearch'
 import type { SadStore } from '../store'
@@ -173,6 +174,9 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
           es un monitor. Y no se pinta cuando todo está bien — un aviso que sale
           siempre se deja de leer a la semana. */}
       <LatidoCowork isMobile={isMobile} />
+      {/* El reporte del día del revisor de coherencia: qué marcó Jev y qué hizo
+          Cowork con eso. Solo aparece cuando hubo evaluaciones reales. */}
+      <RevisorDiario isMobile={isMobile} />
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ margin: 0, font: '800 22px var(--sans)', letterSpacing: '-.3px' }}>Partidos</h1>
