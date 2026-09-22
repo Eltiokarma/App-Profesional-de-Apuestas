@@ -301,3 +301,30 @@ def preguntar(estado, preguntas: dict, modelo: str = "") -> Lote:
 def costo(tokens_entrada: int) -> float:
     """Dólares de una corrida. La salida de Jev no se cobra."""
     return tokens_entrada / 1_000_000 * PRECIO_ENTRADA
+
+
+def ping() -> dict:
+    """¿La clave sirve? UNA llamada mínima: un noul sobre una frase fija.
+
+    Devuelve qué modelo respondió, cuánto tardó y cuántos tokens costó (unos
+    cientos: milésimas de centavo). Sin clave no sale a la red y lo dice.
+    Nunca lanza: un fallo se declara en `error`, que es justamente lo que
+    quien pregunta quiere ver (401 = clave mala, 429 = límite, sin red…).
+    """
+    import time as _t
+    if not disponible():
+        return {"disponible": False, "ok": False, "modelo": None, "ms": 0, "tokensEntrada": 0,
+                "error": "TYPESAFE_API_KEY no está puesta: Jev corre simulado y no decide"}
+    t0 = _t.monotonic()
+    try:
+        lote = preguntar("El partido terminó 2-1 y el equipo local ganó.",
+                         {"gano_local": sino("¿El texto dice que el equipo local ganó?")})
+    except (JevError, ValueError) as exc:
+        return {"disponible": True, "ok": False, "modelo": None,
+                "ms": int((_t.monotonic() - t0) * 1000), "tokensEntrada": 0, "error": str(exc)}
+    r = lote["gano_local"]
+    return {"disponible": True, "ok": r.probabilidad() >= 0.7, "modelo": lote.modelo,
+            "ms": int((_t.monotonic() - t0) * 1000), "tokensEntrada": lote.tokens_entrada,
+            "respuesta": {"probabilidad": round(r.probabilidad(), 3), "esperado": "≥ 0.7"},
+            "error": None if r.probabilidad() >= 0.7 else
+                     "respondió, pero a una pregunta trivial contestó que no: mirá el modelo"}

@@ -790,6 +790,30 @@ paths:
                     items: { type: integer }
                   sinFichaTodavia: { type: array, items: { type: object, additionalProperties: true } }
                   nota: { type: string }
+  /analisis/jev/ping:
+    get:
+      summary: ¿La clave de Jev sirve? Una pregunta trivial, con su modelo, latencia y costo
+      description: >
+        Hace UNA llamada mínima a Jev (docs/JEV.md) y devuelve qué modelo respondió, cuánto
+        tardó y cuántos tokens costó. Sin clave no sale a la red y lo dice; con clave mala
+        o límite excedido devuelve el error tal cual. Gasta milésimas de centavo: token
+        MAESTRO, denegado para Cowork.
+      tags: [analisis]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  disponible: { type: boolean, description: 'la clave está puesta' }
+                  ok: { type: boolean, description: 'respondió y contestó bien a la pregunta trivial' }
+                  modelo: { type: string, nullable: true, description: 'la versión exacta (jev-1.13.0)' }
+                  ms: { type: integer }
+                  tokensEntrada: { type: integer }
+                  respuesta: { type: object, additionalProperties: true }
+                  error: { type: string, nullable: true }
   /analisis/cowork/revisor:
     get:
       summary: El reporte del día del revisor de coherencia (Jev)
@@ -1210,6 +1234,13 @@ components:
         version: { type: string }
         dbOk: { type: boolean }
         lastPipelineRun: { type: string, format: date-time, nullable: true }
+        jev:
+          type: object
+          description: 'si TYPESAFE_API_KEY está puesta (nunca la clave), el modo del revisor de coherencia y el alias de modelo. Probarla de verdad: GET /analisis/jev/ping (maestro)'
+          properties:
+            disponible: { type: boolean }
+            modo: { type: string, enum: [off, sombra, alertas] }
+            modelo: { type: string }
     EstadoFixture:
       type: string
       enum: [programado, en_vivo, finalizado]
