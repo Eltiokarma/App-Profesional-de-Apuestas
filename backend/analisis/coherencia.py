@@ -250,3 +250,25 @@ def alertas_de(coherencia: dict | None) -> list[dict]:
         return []
     return [{**h, "origen": "jev", "modelo": coherencia.get("modelo"),
              "evaluadoEn": coherencia.get("evaluadoEn")} for h in coherencia.get("hallazgos") or []]
+
+
+def resumen_recibo(coherencia: dict | None) -> dict:
+    """Lo que Cowork ve en el recibo del POST.
+
+    En SOMBRA solo los conteos: si Cowork viera el detalle corregiría para
+    conformar al revisor y la medición contra el criterio humano quedaría
+    sesgada. En ALERTAS va el detalle, porque ahí el flujo es «leer el recibo
+    → re-depositar corregido o sostener y explicar en `notas`», igual que
+    con `rechazos` (docs/COWORK.md).
+    """
+    c = coherencia or {}
+    out = {"modo": c.get("modo"), "preguntas": c.get("preguntas", 0),
+           "hallazgos": len(c.get("hallazgos") or []),
+           "simulado": bool(c.get("simulado")), "error": c.get("error")}
+    if c.get("modo") == "alertas" and c.get("hallazgos"):
+        out["detalle"] = [{"codigo": h["codigo"], "equipo": h["equipo"], "detalle": h["detalle"]}
+                          for h in c["hallazgos"]]
+        out["queHacer"] = ("cada hallazgo es una contradicción entre un texto tuyo y un número tuyo: "
+                           "o re-depositás el parte corregido, o lo sostenés y decís por qué en "
+                           "`notas`. Nunca cambies un número solo para conformar al revisor")
+    return out

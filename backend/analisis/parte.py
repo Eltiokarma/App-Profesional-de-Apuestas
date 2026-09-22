@@ -1372,9 +1372,7 @@ def guardar(payload: dict) -> dict:
         "perdido": perdido,
         # el guardrail semántico (Jev): qué se preguntó y qué no cuadró. En modo
         # sombra se ve acá y en el GET, no en la tira de alertas
-        "coherencia": {"modo": coh.get("modo"), "preguntas": coh.get("preguntas", 0),
-                       "hallazgos": len(coh.get("hallazgos") or []),
-                       "simulado": bool(coh.get("simulado")), "error": coh.get("error")},
+        "coherencia": _coherencia.resumen_recibo(coh),
         "aviso": ("Este depósito dejó el parte con MENOS contenido del que tenía "
                   f"({'; '.join(perdido)}). El POST reemplaza el parte entero: si fue sin "
                   "querer, vuelve a depositarlo completo." if perdido else ""),

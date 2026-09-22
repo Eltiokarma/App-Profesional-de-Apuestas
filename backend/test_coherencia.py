@@ -167,6 +167,14 @@ check("salen las dos alertas", len(tira) == 2)
 check("cada una dice que vino de Jev y con qué modelo",
       all(a["origen"] == "jev" and a["modelo"] == "jev-1.13.0" and a["evaluadoEn"] for a in tira))
 
+print("\n== el recibo: en sombra conteos, en alertas el detalle ==")
+rs = coherencia.resumen_recibo({**ev5, "modo": "sombra"})
+check("en sombra el recibo trae cuántos, no cuáles", rs["hallazgos"] == 2 and "detalle" not in rs)
+ra = coherencia.resumen_recibo(ev5)
+check("en alertas el recibo trae el detalle", len(ra["detalle"]) == 2 and ra["detalle"][0]["codigo"].startswith("COHERENCIA-"))
+check("y le dice a Cowork qué hacer (y qué no)", "Nunca cambies un número" in ra["queHacer"])
+check("un recibo sin evaluación no rompe", coherencia.resumen_recibo(None)["preguntas"] == 0)
+
 print("\n== la tira del parte no acepta estos códigos desde el depósito ==")
 from backend.analisis import parte as parte_mod  # noqa: E402
 check("los cuatro códigos están en la lista de capturadas",
