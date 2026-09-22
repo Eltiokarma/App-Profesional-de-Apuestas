@@ -31,6 +31,7 @@ python -m backend.test_preflight  # chequeo previo del EFE: qué va a costar ant
 python -m backend.test_cowork    # parte de Cowork: bloque F calculado y cruce del once
 python -m backend.test_burbuja   # reventón de burbuja: mismos vectores dorados que el TS
 python -m backend.test_jev       # adaptador de Jev (System One): sin clave corre simulado y no decide
+python -m backend.test_coherencia # guardrail semántico del parte (Jev): etiqueta la prosa, el código compara con el número
 python -m backend.backtest_burbuja --padron --calibrar # backtest del reventón en las ligas importantes: tasa por riesgo, lift por señal, regla del nivel, por liga, y la logística que propone los puntos (--horizonte/--liga/--muestra/--json; en el servidor: GET /analisis/burbujas/backtest?calibrar=true, maestro)
 python -m backend.test_backtest_burbuja # anti-fuga y conteos del backtest, sobre la demo
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
@@ -215,7 +216,18 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   en los criterios, y su salida no dispara acciones con efectos —solo alertas
   de tipo `dato`—. Sin `TYPESAFE_API_KEY` responde simulado con confianza 0:
   el código corre pero no decide, que es lo que impide que un simulado se cuele
-  como juicio en un parte.
+  como juicio en un parte. **No es determinista**: lo que responda se guarda
+  SELLADO con la versión del modelo y no se rehace al leer (al revés que todo lo
+  derivado). Primer uso, HECHO en sombra: el **guardrail de coherencia del
+  parte** (`backend/analisis/coherencia.py`): Jev etiqueta la PROSA —notas por
+  bloque, lectura del 1X2, razón del matchup, texto de reventón— y el código la
+  compara con el número que Cowork declaró; se evalúa AL DEPOSITAR y viaja en
+  `coherencia` del GET y en el recibo. `SAD_JEV_COHERENCIA`: `sombra` (defecto:
+  evalúa y guarda, nada a la tira) · `alertas` (COHERENCIA-* a la tira, con
+  `origen: jev`) · `off`. Los códigos COHERENCIA-* son la TERCERA clase de
+  alerta (`_ALERTAS_CAPTURADAS`): se descartan del depósito como las calculadas
+  pero al leer se LEEN, no se recalculan. Encender `alertas` exige antes medir
+  la sombra contra el criterio humano en ≥ 20 partes reales (`docs/JEV.md`).
 - Costo de la IA: `docs/efe-dtp/COSTO_IA.md`. Lo que está en nuestra base se
   calcula, no se le pregunta al modelo — y lo calculado no se le hace copiar a
   la salida. Los bloques calculados hoy: el mapa de rivales del EFE

@@ -32,6 +32,7 @@ from datetime import date as date_t, datetime, timedelta, timezone
 
 from backend import db as saddb
 from backend.analisis import bloque_f, db as efedb, veredicto as vered
+from backend.analisis import coherencia as _coherencia
 from backend.nombres import canonizar, normalizar
 
 VERSION = "cowork/1"
@@ -84,7 +85,8 @@ class ParteInvalido(ValueError):
 # el veredicto llegó después de la primera versión de la tabla: se añade en
 # caliente para no perder los partes ya depositados (en SQLite un ALTER que ya
 # existe es un error, no un problema)
-_COLUMNAS_NUEVAS = (("veredicto_json", "TEXT"), ("cohorte", "TEXT"), ("cuarentena_json", "TEXT"))
+_COLUMNAS_NUEVAS = (("veredicto_json", "TEXT"), ("cohorte", "TEXT"), ("cuarentena_json", "TEXT"),
+                    ("coherencia_json", "TEXT"))
 
 # ── COHORTES: de qué época del proceso es cada caso ─────────────────────────
 #
@@ -274,7 +276,7 @@ _CLAVES_PARTE = {"fixtureId", "version", "generadoEn", "equipos", "alertas", "ma
 # falsos y escondería los de verdad.
 _ECO_PARTE = {"partido", "estado", "creadoEn", "actualizadoEn", "xi", "veredicto",
               "timeline", "rechazos", "perdido", "aviso", "entrada", "cohorte", "cuarentena",
-              "xiConservados"}
+              "xiConservados", "coherencia"}
 _ECO_EQUIPO = {"total", "maximoAlcanzable", "porcentaje", "clasificacion", "disponibilidad",
                "sinBloques", "bloquesSinDeclarar", "notaTotales"}
 _ECO_JUGADOR = {"soloBaja"}
@@ -1024,6 +1026,11 @@ _CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto", "ligas", "dtBa
 # si el eco del GET vuelve con ellas, se descartan sin rechazo (se van a
 # recalcular igual) en vez de guardarse por duplicado.
 _ALERTAS_CALCULADAS = {"K-EXTREMO", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT"}
+# LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
+# selladas (coherencia_json), porque no son deterministas y rehacerlas al leer
+# las haría parpadear. Del depósito se descartan igual que las calculadas
+# —Cowork no puede inyectarlas—, pero al leer NO se recalculan: se leen.
+_ALERTAS_CAPTURADAS = {"COHERENCIA-BLOQUE", "COHERENCIA-1X2", "COHERENCIA-MATCHUP", "COHERENCIA-REVENTON"}
 # el protocolo usa `ambos` para una alerta que toca a los dos equipos: estaba
 # en el esquema del EFE viejo y se perdió al escribir este contrato
 _EQUIPOS_ALERTA = ("a", "b", "ambos", "global")
@@ -1032,7 +1039,7 @@ _EQUIPOS_ALERTA = ("a", "b", "ambos", "global")
 def _alerta(a, rechazos: list, donde: str) -> dict | None:
     if isinstance(a, str):
         a = {"codigo": a}   # «T.54» a secas: entra, y se delata que va sin texto
-    if isinstance(a, dict) and _txt(a.get("codigo")) in _ALERTAS_CALCULADAS:
+    if isinstance(a, dict) and _txt(a.get("codigo")) in (_ALERTAS_CALCULADAS | _ALERTAS_CAPTURADAS):
         return None
     if not isinstance(a, dict):
         rechazos.append({"donde": donde, "porque": f"cada alerta es un objeto, llegó {type(a).__name__}",
@@ -1230,6 +1237,21 @@ def guardar(payload: dict) -> dict:
              previo["xi_json"] if previo else None,
              previo["creado_en"] if previo else ahora, ahora, COHORTE),
         )
+    # COHERENCIA (Jev): se evalúa AQUÍ y se guarda sellada, no al leer —Jev no
+    # es determinista y dos lecturas darían hallazgos distintos—. Nunca tumba
+    # el depósito: un fallo se declara dentro del propio JSON.
+    nombres = {"a": fx["home_name"], "b": fx["away_name"]}
+    try:
+        # el reventón calculado solo hace falta si de verdad se va a preguntar:
+        # sin clave el adaptador responde simulado y no hay hallazgo posible
+        rev = (_reventon_calculado(fx)
+               if _coherencia.modo() != "off" and _coherencia.jev.disponible() else None)
+        coh = _coherencia.evaluar(parte, nombres, rev)
+    except Exception as e:  # noqa: BLE001 — se declara, no se rompe el POST
+        coh = {"modo": _coherencia.modo(), "error": f"no se pudo evaluar: {e}", "hallazgos": []}
+    with _conectar() as con:
+        con.execute("UPDATE parte_cowork SET coherencia_json=? WHERE fixture_id=?",
+                    (json.dumps(coh, ensure_ascii=False), parte["fixtureId"]))
     # un parte nuevo sobre un fixture que ya tenía once resuelto se recalcula
     # solo al leerlo: el once vive aparte, justamente para sobrevivir al parte
     # AVISO DE DEPÓSITO DESTRUCTIVO: el POST reemplaza el parte entero (es
@@ -1348,6 +1370,11 @@ def guardar(payload: dict) -> dict:
         "rechazos": parte.get("rechazos") or [],
         # lo que este depósito BORRÓ de lo que ya había guardado
         "perdido": perdido,
+        # el guardrail semántico (Jev): qué se preguntó y qué no cuadró. En modo
+        # sombra se ve acá y en el GET, no en la tira de alertas
+        "coherencia": {"modo": coh.get("modo"), "preguntas": coh.get("preguntas", 0),
+                       "hallazgos": len(coh.get("hallazgos") or []),
+                       "simulado": bool(coh.get("simulado")), "error": coh.get("error")},
         "aviso": ("Este depósito dejó el parte con MENOS contenido del que tenía "
                   f"({'; '.join(perdido)}). El POST reemplaza el parte entero: si fue sin "
                   "querer, vuelve a depositarlo completo." if perdido else ""),
@@ -1594,7 +1621,8 @@ def dto(fixture_id: int) -> dict | None:
     with _conectar() as con:
         fila = con.execute(
             "SELECT fixture_id, fecha, equipo_a, equipo_b, estado, version, parte_json, "
-            "xi_json, creado_en, actualizado_en, cohorte, cuarentena_json FROM parte_cowork WHERE fixture_id=?",
+            "xi_json, creado_en, actualizado_en, cohorte, cuarentena_json, coherencia_json "
+            "FROM parte_cowork WHERE fixture_id=?",
             (fixture_id,),
         ).fetchone()
     if not fila:
@@ -1646,6 +1674,9 @@ def dto(fixture_id: int) -> dict | None:
     # parte lo dice antes de que alguien lea los dos números uno contra otro
     alertas.extend(alerta_escala(fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     alertas.extend(alertas_dt(parte, fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
+    # las de coherencia se LEEN, no se rehacen (ver _ALERTAS_CAPTURADAS)
+    coherencia = json.loads(fila["coherencia_json"]) if fila["coherencia_json"] else None
+    alertas.extend(_coherencia.alertas_de(coherencia))
     # el timeline se funde AL LEER, no al depositar: si la ingesta corrige un
     # marcador, la próxima lectura ya lo trae — sellarlo sería congelar hoy lo
     # que mañana se recalcula gratis
@@ -1687,6 +1718,9 @@ def dto(fixture_id: int) -> dict | None:
             "descartados": parte.get("descartados") or [],
         },
         "veredicto": veredicto_de(fila["fixture_id"]),
+        # la evaluación de coherencia sellada al depositar; en sombra es lo
+        # único que la muestra (para medirla contra el criterio humano)
+        "coherencia": coherencia,
         "cohorte": cohorte_de(fila["cohorte"]),
         "cuarentena": json.loads(fila["cuarentena_json"]) if fila["cuarentena_json"] else None,
         "creadoEn": fila["creado_en"],

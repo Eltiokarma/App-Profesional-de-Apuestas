@@ -1132,6 +1132,27 @@ export interface AlertaParte {
   detalle: string
   /** Solo en ESCALA-LIGAS: la liga doméstica de cada lado. */
   ligas?: Record<'a' | 'b', { id: number; nombre: string | null; pais: string | null; partidos: number } | null> | null
+  /** Solo en COHERENCIA-*: la puso Jev al depositar y se lee sellada, no se recalcula. */
+  origen?: 'jev'
+  modelo?: string
+  evaluadoEn?: string
+  jev?: { pregunta: string; valor: unknown; confianza: number } | null
+}
+
+/** El guardrail semántico del parte (docs/JEV.md), sellado al depositar.
+ *  Sin clave de Jev viaja `simulado: true` y no puede haber hallazgos. */
+export interface CoherenciaParte {
+  modo: 'off' | 'sombra' | 'alertas'
+  evaluadoEn: string
+  modelo: string
+  simulado: boolean
+  umbral: number
+  preguntas: number
+  tokensEntrada?: number
+  hallazgos: AlertaParte[]
+  concuerdan: string[]
+  sinConfianza: { pregunta: string; confianza: number; simulado: boolean }[]
+  error: string | null
 }
 
 export interface DocumentoParte {
@@ -1456,6 +1477,8 @@ export interface ParteCoworkDTO {
   }
   documentos: DocumentoParte[]
   pendientes: string[]
+  /** Evaluación de coherencia (Jev) sellada al depositar; null en partes anteriores. */
+  coherencia?: CoherenciaParte | null
   fuentes: string[]
   notas: string
   xi: Record<'a' | 'b', { once?: string[]; formacion?: string; fuente?: string; capturadoEn?: string }>

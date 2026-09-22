@@ -53,7 +53,7 @@ concreta se le pone un guion fijo con `SAD_JEV_GUION=/ruta/respuestas.json`.
 
 ## Los candidatos, con veredicto
 
-### 1. Guardrail de coherencia del parte de Cowork — **SÍ, es el primero**
+### 1. Guardrail de coherencia del parte de Cowork — **HECHO, en sombra** (22/09)
 
 Hoy `backend/analisis/parte.py` atrapa errores de **tipo y estructura**: un
 número en `ieNivel`, una oración como nombre de DT, claves raras, un once que
@@ -82,7 +82,30 @@ Jev, y el único trabajo del parte que no es calculable ni es análisis.
   regla se da vuelta: dos GET del mismo parte darían alertas distintas sin que
   nadie tocara nada. La alerta se sella con `jev-1.13.0` y la fecha, y se
   rehace solo cuando cambia el parte.
-- Sitio: `backend/analisis/coherencia.py`, llamado desde `POST /analisis/cowork`.
+- Sitio: `backend/analisis/coherencia.py`, llamado desde `parte.guardar()`
+  (el POST). Tests: `python -m backend.test_coherencia`.
+- **Qué pregunta hoy**, y con qué compara el código:
+  - por cada bloque A–E con nota, declarado y no excluido: `score` de 3 niveles
+    (malo · intermedio · bueno) contra el tercio del sub-score; hallazgo
+    `COHERENCIA-BLOQUE` solo a distancia 2 (malo con 4/4, bueno con 1/6);
+  - `lecturaSad.unXDos` contra el reparto 1X2, solo si el reparto se inclina
+    (≥ 10 puntos entre primero y segundo) → `COHERENCIA-1X2`;
+  - `matchup.razon` contra `matchup.favorece` → `COHERENCIA-MATCHUP`;
+  - `lecturaSad.reventon` contra el nivel calculado por lado (alto/medio/bajo;
+    «sin base» no se compara) → `COHERENCIA-REVENTON`.
+  «Ninguno» / «no lo dice» nunca contradicen: abstenerse no es error.
+- **Modos** (`SAD_JEV_COHERENCIA`): `sombra` por defecto —evalúa, guarda en
+  `coherencia_json`, lo muestra en `coherencia` del GET y resume en el recibo,
+  y NO toca la tira—; `alertas` las saca con `origen: jev`, `modelo`,
+  `evaluadoEn`; `off`. Umbral de confianza `SAD_JEV_COHERENCIA_UMBRAL` (0.7,
+  primer corte).
+- **Cómo se enciende**: con la clave puesta y en sombra, se dejan pasar ≥ 20
+  partes reales; se leen los `hallazgos`, `concuerdan` y `sinConfianza` de cada
+  GET y se anota a mano cuáles eran incoherencias de verdad. Si los hallazgos
+  aciertan y lo que concuerda no esconde incoherencias evidentes, se pasa a
+  `alertas`. Si la etiqueta baila entre depósitos del mismo parte, se sube el
+  umbral o se quita esa pregunta. Ningún hallazgo mueve un número: nunca lo
+  hará.
 
 ### 2. Validador semántico de la despensa — **SÍ, y es el más barato**
 
@@ -357,9 +380,9 @@ donde Jev estaba decidiendo, y eso ya es un error de diseño.
 ## Orden propuesto
 
 1. Adaptador + tests. **Hecho** (`backend/analisis/jev.py`, `backend/test_jev.py`).
-2. Guardrail de coherencia del parte, con las alertas apagadas hasta ver 20
-   partes reales: se miden contra lo que un humano habría marcado antes de
-   dejarlas salir en el recibo.
+2. Guardrail de coherencia del parte. **Hecho en sombra** (22/09): evalúa y
+   guarda desde el primer depósito con clave; se enciende a `alertas` tras medir
+   ≥ 20 partes reales contra el criterio humano.
 3. Lint de la despensa en CI.
 4. Triage del preflight del EFE, midiendo búsquedas ahorradas contra el costo.
 

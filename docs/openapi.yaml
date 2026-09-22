@@ -2473,10 +2473,21 @@ components:
       type: object
       required: [codigo]
       properties:
-        codigo: { type: string, description: 'T.54, R-KT.2, GK-DOWNGRADE, F3… Las que agrega el backend al leer: K-EXTREMO (burbuja en su máximo), HUECO-DOBLE (EFE y TDE leídos del mismo vacío) y ESCALA-LIGAS (los dos equipos vienen de ligas distintas: el nivel no compara entre bases)' }
+        codigo: { type: string, description: 'T.54, R-KT.2, GK-DOWNGRADE, F3… Las que agrega el backend al leer: K-EXTREMO (burbuja en su máximo), HUECO-DOBLE (EFE y TDE leídos del mismo vacío) y ESCALA-LIGAS (los dos equipos vienen de ligas distintas: el nivel no compara entre bases). Las CAPTURADAS al depositar por el guardrail de coherencia (Jev, docs/JEV.md): COHERENCIA-BLOQUE, COHERENCIA-1X2, COHERENCIA-MATCHUP, COHERENCIA-REVENTON — solo salen en la tira con SAD_JEV_COHERENCIA=alertas; en sombra viven en `coherencia`' }
         equipo: { type: string, enum: [a, b, ambos, global] }
         tipo: { type: string, enum: [estructural, fecha, dato], description: '`dato` = la pone el backend sobre los datos, no el skill' }
         detalle: { type: string, description: '`texto` se acepta como alias' }
+        origen: { type: string, enum: [jev], description: 'solo en COHERENCIA-*: la puso Jev al depositar; no se recalcula al leer' }
+        modelo: { type: string, description: 'solo en COHERENCIA-*: la versión exacta que respondió (jev-1.13.0)' }
+        evaluadoEn: { type: string, description: 'solo en COHERENCIA-*: cuándo se evaluó (al depositar)' }
+        jev:
+          type: object
+          nullable: true
+          description: 'solo en COHERENCIA-*: la pregunta, la etiqueta que eligió y su confianza'
+          properties:
+            pregunta: { type: string }
+            valor: {}
+            confianza: { type: number }
         ligas:
           type: object
           nullable: true
@@ -2663,6 +2674,8 @@ components:
             de la ingesta se refleje sin re-depositar nada.
         pronostico: { $ref: '#/components/schemas/PronosticoParte' }
         documentos: { type: array, items: { $ref: '#/components/schemas/DocumentoParte' } }
+        coherencia:
+          $ref: '#/components/schemas/CoherenciaParte'
         pendientes: { type: array, items: { type: string } }
         fuentes: { type: array, items: { type: string } }
         notas: { type: string }
@@ -2696,6 +2709,36 @@ components:
           allOf: [{ $ref: '#/components/schemas/Veredicto' }]
         creadoEn: { type: string }
         actualizadoEn: { type: string }
+    CoherenciaParte:
+      type: object
+      nullable: true
+      description: >
+        El guardrail semántico del parte (docs/JEV.md): Jev etiqueta la PROSA
+        (notas por bloque, lectura del 1X2, razón del matchup, texto de reventón)
+        y el backend compara la etiqueta con el número que Cowork declaró. Se
+        evalúa AL DEPOSITAR y se guarda sellada con el modelo —Jev no es
+        determinista y rehacerla al leer la haría parpadear—. Sin clave de Jev
+        viaja `simulado: true`, sin hallazgos posibles. Es lo único que muestra
+        la evaluación en modo `sombra`.
+      properties:
+        modo: { type: string, enum: [off, sombra, alertas] }
+        evaluadoEn: { type: string }
+        modelo: { type: string, description: 'jev-1.13.0, o «simulado» sin clave' }
+        simulado: { type: boolean }
+        umbral: { type: number, description: 'confianza mínima para que una etiqueta cuente' }
+        preguntas: { type: integer }
+        tokensEntrada: { type: integer }
+        hallazgos: { type: array, items: { $ref: '#/components/schemas/AlertaParte' } }
+        concuerdan: { type: array, items: { type: string }, description: 'claves de las preguntas cuya etiqueta cuadró con el número' }
+        sinConfianza:
+          type: array
+          items:
+            type: object
+            properties:
+              pregunta: { type: string }
+              confianza: { type: number }
+              simulado: { type: boolean }
+        error: { type: string, nullable: true }
     ReciboParte:
       type: object
       required: [fixtureId, partido, estado]
@@ -2716,6 +2759,15 @@ components:
           items: { type: string }
           description: 'nombres que mandó Cowork y no casan con el fixture: se declaran, no se corrigen en silencio'
         xiResuelto: { type: boolean }
+        coherencia:
+          type: object
+          description: 'resumen del guardrail de coherencia (Jev): modo, preguntas hechas, hallazgos, si fue simulado, y el error si lo hubo. El detalle va en el GET'
+          properties:
+            modo: { type: string, enum: [off, sombra, alertas] }
+            preguntas: { type: integer }
+            hallazgos: { type: integer }
+            simulado: { type: boolean }
+            error: { type: string, nullable: true }
         rechazos:
           type: array
           description: >
