@@ -928,7 +928,16 @@ Escribís vos (es juicio, no se puede calcular):
   derivarlo del gap), F2 (descanso y calendario: «dato del motor o no es
   dato») y F1 (rotación desde las alineaciones ingestadas). Tomalos tal cual;
   F2 solo sube a mano por viaje largo, altitud o calor, y P1a solo baja a 0
-  por «necesita ganar». Lo tuyo son los 16 de `noCalculables`.
+  por «necesita ganar». Lo tuyo son los 16 de `noCalculables` — Y SU
+  DEFINICIÓN ES LA QUE VIAJA AHÍ, en `porque`, no la que recuerdes: C1 es
+  «bloque bajo ensayado y probado bajo presión», C2 «coordinación
+  línea-volantes», C3 «ventajas de un gol sostenidas», P1b «coste percibido
+  de perder», P1c «riesgo de descenso y de cese». Quince partes del 15-22/09
+  puntuaron C1 como días de descanso, C2 como localía y C3 como estado del
+  rival: números razonables bajo nombres que significan otra cosa, e IE que
+  no comparan con nada. Leé `noCalculables[*].porque` ANTES de puntuar, y si
+  un indicador te resulta imposible con lo que tenés (F4 pide PPDA), lo
+  excluís con motivo en vez de rellenarlo con otra cosa.
   Cada bloque lleva `indicadores` en 0 / 0.5 / 1 con TODOS los que puntuaste
   (F1-F4, C1-C3, P1a-P4, S1-S3 y SOB1-SOB3): el IE y el ISE los calcula el
   backend con sus compuertas, y un `ie` suelto se guarda solo como lo que
