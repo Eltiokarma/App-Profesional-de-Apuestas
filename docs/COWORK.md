@@ -910,6 +910,13 @@ Escribís vos (es juicio, no se puede calcular):
         3. no la conviertas en lo contrario: no es «va a reventar», es «acá
            no se pone plata grande». El backend agrega la alerta K-EXTREMO
            al parte por su cuenta: si tu lectura no la menciona, se nota.
+    · CERCA DEL EXTREMO (ámbar). Si `familias.total.extremo.cerca` es true,
+      la burbuja no es récord pero ya supera al 90 % de sus reventones
+      (`extremo.motivos` dice cuánto y a qué distancia del récord).
+      Nombrala en `lecturaSad.reventon` («A: cerca del extremo, K −17.9 a
+      1.6 del récord; riesgo bajo») y no recomiendes carga fuerte a que esa
+      racha siga. No es regla dura: es prudencia en la carga. El backend
+      agrega la alerta K-CERCA-EXTREMO (tipo dato) al parte.
   Escribí UNA línea por equipo en `lecturaSad.reventon`, por ejemplo:
   «A: muy alto (8), rival mucho más fuerte que su zona de reventón → no
   seguir la racha de A; B: bajo, sin señal». NO copies los números al

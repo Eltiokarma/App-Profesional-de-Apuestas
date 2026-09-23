@@ -4,7 +4,8 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { analizarBurbujas, type ContextoBurbuja, type FilaK } from '../src/lib/burbuja'
+import { analizarBurbujas, extremoDe, type ContextoBurbuja, type FilaK } from '../src/lib/burbuja'
+import type { HistorialSignoDTO, ReventonDTO } from '../src/api/types'
 
 let failed = 0
 function check(name: string, cond: boolean, detalle?: unknown) {
@@ -87,7 +88,23 @@ check('sin rival evaluado (otra condición) y motivo explícito', lo.rival === n
 check('riesgo BAJO con 1 punto (solo la racha)', lo.riesgo!.nivel === 'bajo' && lo.riesgo!.puntos === 1, lo.riesgo)
 check('historial − local: K pico 3.0 repetida → moda 3.0', lo.historial.negativo!.kPico.moda === 3)
 check('percentil K 50', lo.posicion!.percentilK === 50, lo.posicion)
-check('local: K 9.5 < máximo 16 y racha 3 < 4 → extremo INACTIVO', eq(lo.extremo, { activo: false, kRecord: false, rachaRecord: false, partidosHistoria: 11, maximoPrevio: { kPico: 16, partidos: 4 }, motivos: [], texto: '' }), lo.extremo)
+check('local: K 9.5 < máximo 16 y racha 3 < 4 → extremo INACTIVO', eq(lo.extremo, { activo: false, kRecord: false, rachaRecord: false, cerca: false, partidosHistoria: 11, maximoPrevio: { kPico: 16, partidos: 4 }, motivos: [], texto: '' }), lo.extremo)
+
+// CERCA DEL EXTREMO (§10): el caso ADT sintético, el mismo que en Python
+{
+  const deC = [2, 3, 4, 5, 6, 7, 8, 9, 10, 19.54].map((k, i) => ({ kPico: k, partidos: [1, 1, 1, 1, 1, 2, 2, 2, 1, 4][i] })) as ReventonDTO[]
+  const baseC = { kPico: { max: 19.54 }, partidos: { max: 4 } } as HistorialSignoDTO
+  const ce = extremoDe(17.93, 3, baseC, 280, '-', deC)
+  check('CERCA: K −17.93 sobre récord −19.54 y racha 3 sobre 4 → cerca, NO activo', ce.cerca && !ce.activo && !ce.kRecord && !ce.rachaRecord, ce)
+  check('cerca: los mismos dos motivos que en Python y texto que pide no cargar fuerte',
+    eq(ce.motivos, ['K -17.93: más baja que el 90 % de las 10 burbujas - que reventaron (récord previo -19.54, a 1.61)',
+      '3 partidos seguidos: más que el 90 % de las 10 burbujas - que reventaron (máximo previo 4)'])
+    && ce.texto.startsWith('CERCA DEL EXTREMO') && ce.texto.includes('no cargar fuerte'), ce.motivos)
+  const rec = extremoDe(26.04, 1, baseC, 280, '-', deC)
+  check('récord negativo: el motivo lleva el signo y cerca queda en false', rec.activo && !rec.cerca && rec.motivos[0].startsWith('K -26.04: la más baja') && rec.motivos[0].includes('récord previo -19.54'), rec)
+  const lejos = extremoDe(9.5, 1, baseC, 280, '-', deC)
+  check('K −9.5 (80 %) y racha 1 → ni extremo ni cerca', !lejos.activo && !lejos.cerca && lejos.motivos.length === 0 && lejos.texto === '', lejos)
+}
 
 console.log('\n— familia visita —')
 const vi = out.familias.visita

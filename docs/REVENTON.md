@@ -341,6 +341,45 @@ con una **bandera aparte** que dice cuánto se carga, no cuánto pasa.
   vectores dorados (el caso Foco tiene K 22.1 sobre máximo 13.3 y racha 6
   sobre 3: activo en total y visita, inactivo en local).
 
+### 10.1 Cerca del extremo (el escalón ámbar)
+
+ADT–Cienciano (septiembre 2026) enseñó el hueco de la bandera: la K total de
+ADT estaba en **−17.9 con un récord previo de −19.5**, por encima del 95 % de
+sus 39 reventones negativos, y como no era récord no se encendía nada. La
+tarjeta decía «riesgo bajo · 1 pt» a secas, que se lee como luz verde.
+
+- **Qué es**: `extremo.cerca` = sin récord, la K o la racha ya superan
+  (ESTRICTO: «más alta que») al `CERCA_PCT` = **90 %** de los reventones de
+  ese signo. Los motivos dicen el porcentaje, el n, el récord previo y a
+  cuánto queda («K -17.93: más baja que el 95 % de las 39 burbujas - que
+  reventaron (récord previo -19.54, a 1.61)»).
+- **Qué NO es**: no mueve el riesgo ni cambia `activo`, que sigue siendo
+  SOLO el récord (la alerta K-EXTREMO, el veredicto y las lecciones leen
+  `activo` y no cambian de significado).
+- **Dónde se ve**: caja ámbar «CERCA DEL EXTREMO» antes del riesgo en la
+  tarjeta, una línea ámbar en la caja del reventón del parte, y la alerta
+  **K-CERCA-EXTREMO** (tipo `dato`, calculada, no se deposita) en la tira.
+- **Qué le pide a Cowork**: nombrarla en `lecturaSad.reventon` y no
+  recomendar carga fuerte a que la racha siga. No es regla dura como el
+  récord: es prudencia en la carga.
+- Con muestra corta (menos de 10 reventones del signo) el 90 % estricto solo
+  se alcanza siendo récord, así que la bandera ámbar no aparece sola: no
+  hay franja alta que medir.
+- **Espejo**: `CERCA_PCT` y `_extremo` en Python, `extremoDe` (exportada) en
+  TS, con el mismo caso sintético en los dos tests.
+- **Calibración** (`franjaAlta` del backtest, `--padron`; en el servidor
+  `GET /analisis/burbujas/backtest`): como la K no adelanta el reventón, el
+  umbral NO se elige por tasa sino por **ruido**. Para cada candidato (75 ·
+  80 · 85 · 90 · 95) el backtest dice en qué fracción de las burbujas
+  abiertas saltaría el aviso (solo K, solo racha, K o racha; sin contar las
+  que ya son récord) y cuánto revientan ahí. `propuesto` = el más bajo que
+  salta en ≤ 10 % (`TECHO_AVISO`). El 90 vigente es un primer corte hasta
+  correrlo con la base real; moverlo es cambiar `CERCA_PCT` en los dos lados.
+
+De paso, los motivos del récord llevan el signo de la K («K -26.04 … récord
+previo -19.54»): antes decían «K 26.04 … máximo previo 19.54» bajo un título
+«K -26.0: la más baja», que se leía como contradicción.
+
 ## 10-bis. La misma referencia, por período
 
 El Universitario de hoy no es el de Fossati ni el de la gestión de Ferrari, y

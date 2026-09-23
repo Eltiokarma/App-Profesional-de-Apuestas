@@ -291,7 +291,10 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   partidos) se grita APARTE del riesgo —en rojo en la tarjeta, como alerta
   `K-EXTREMO` en la tira del parte y como regla dura del prompt—; no mueve
   los puntos (la K no puntúa) pero sí cuánto se carga: es prudencia, no
-  probabilidad, y Cowork no se la puede saltar. Las K de goles quedan fuera
+  probabilidad, y Cowork no se la puede saltar. Un escalón más abajo,
+  `extremo.cerca` (§10.1): sin récord pero por encima del 90 % de sus
+  reventones del signo → caja ámbar y alerta `K-CERCA-EXTREMO` (tipo `dato`);
+  `activo` sigue siendo solo el récord. Las K de goles quedan fuera
   a propósito hasta que se decida sumarlas. **Por período** (§10-bis):
   `historialPorPeriodo` repite las medidas acotadas a temporada · año · DT
   vigente · últimos 20, filtrando por la fecha del reventón sobre los mismos
@@ -456,7 +459,11 @@ conversación se pierde en la siguiente.
      prompt vigente es el de `docs/COWORK.md` (dt con `desde`, la red manda
      sobre el DT de la base, `rechazos` se leen en cada depósito). Los partes
      de rodaje con `dt` vacío ya están en cuarentena automática.
-   - **Aprendizaje**: la cohorte vigente (`c2-2026-09-19`) arranca vacía; los
+   - **Aprendizaje** (actualizado 23/09): la cohorte vigente es ahora
+     `c3-2026-09-23` (la `c2` tenía la alineación rancia del DT: referencia) y
+     arranca vacía; un parte con el DT distinto del que se sentó en el banco va
+     a cuarentena automática (`parte.dt_equivocado`, APRENDIZAJE.md C-bis). En
+     la `c2`: la cohorte anterior (`c2-2026-09-19`) arrancó vacía; los
      42 casos de rodaje se miran con el selector y calibran nada. La
      cuarentena a mano queda para el caso puntual con motivo. Fases D y A
      siguen pendientes.

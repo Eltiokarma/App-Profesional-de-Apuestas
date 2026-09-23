@@ -194,25 +194,48 @@ function confianzaDe(n: number, estabilidad: EstabilidadEquipoDTO): [RiesgoConfi
 }
 type RiesgoConfianza = 'baja' | 'media' | 'alta'
 
+/** Franja alta (espejo de CERCA_PCT): sin récord, la K o la racha ya superan
+ *  a este % de los reventones del signo. Mismo principio que el extremo, un
+ *  escalón más suave: no puntúa, dice cuánto se carga (docs/REVENTON.md §10). */
+export const CERCA_PCT = 90
+
+const conSigno = (v: number, signo: SignoBurbuja) => `${signo === '+' ? '+' : '-'}${r2(Math.abs(v))}`
+
 /** ALERTA DE EXTREMO: prudencia, no probabilidad. Una K récord no revienta
  *  más que otra (por eso no puntúa), pero es terreno sin precedente para este
- *  equipo y ahí no se carga la apuesta a que siga. Aparte del riesgo. */
-function extremoDe(kAbs: number, partidos: number, base: HistorialSignoDTO, nCond: number, signo: SignoBurbuja): ExtremoBurbujaDTO {
+ *  equipo y ahí no se carga la apuesta a que siga. Aparte del riesgo.
+ *  `cerca` es el escalón de abajo; `activo` sigue siendo solo el récord. */
+export function extremoDe(kAbs: number, partidos: number, base: HistorialSignoDTO, nCond: number, signo: SignoBurbuja, de: ReventonDTO[] = []): ExtremoBurbujaDTO {
   const kRecord = kAbs >= base.kPico.max
   const rachaRecord = partidos >= base.partidos.max
+  const n = de.length
+  const pctK = n ? Math.floor((100 * de.filter((r) => r.kPico < kAbs).length) / n + 0.5) : 0
+  const pctR = n ? Math.floor((100 * de.filter((r) => r.partidos < partidos).length) / n + 0.5) : 0
+  const kCerca = !kRecord && pctK >= CERCA_PCT
+  const rCerca = !rachaRecord && pctR >= CERCA_PCT
+  const cerca = !(kRecord || rachaRecord) && (kCerca || rCerca)
   const motivos: string[] = []
   const lado = signo === '+' ? 'alta' : 'baja'
-  if (kRecord) motivos.push(`K ${r2(kAbs)}: la más ${lado} de los ${nCond} partidos que hay en la base (máximo previo ${base.kPico.max})`)
+  const kTxt = conSigno(kAbs, signo)
+  const maxTxt = conSigno(base.kPico.max, signo)
+  if (kRecord) motivos.push(`K ${kTxt}: la más ${lado} de los ${nCond} partidos que hay en la base (récord previo ${maxTxt})`)
   if (rachaRecord) motivos.push(`${partidos} partidos seguidos: la racha más larga de los ${nCond} partidos que hay en la base (máximo previo ${base.partidos.max})`)
+  if (cerca && kCerca) motivos.push(`K ${kTxt}: más ${lado} que el ${pctK} % de las ${n} burbujas ${signo} que reventaron (récord previo ${maxTxt}, a ${r2(base.kPico.max - kAbs)})`)
+  if (cerca && rCerca) motivos.push(`${partidos} partidos seguidos: más que el ${pctR} % de las ${n} burbujas ${signo} que reventaron (máximo previo ${base.partidos.max})`)
+  const texto = kRecord || rachaRecord
+    ? 'EXTREMO: la burbuja está en su máximo histórico. El modelo no lo puntúa como riesgo (la tasa de reventón no sube con la K), pero es terreno sin precedente para este equipo: no cargar la apuesta a que la racha siga'
+    : cerca
+      ? `CERCA DEL EXTREMO: la burbuja está en la franja más alta de su historia (por encima del ${CERCA_PCT} % de las que reventaron). El modelo no lo puntúa como riesgo, pero queda poco margen antes del récord: no cargar fuerte a que la racha siga`
+      : ''
   return {
     activo: kRecord || rachaRecord,
     kRecord,
     rachaRecord,
+    cerca,
     partidosHistoria: nCond,
     maximoPrevio: { kPico: base.kPico.max, partidos: base.partidos.max },
     motivos,
-    texto: !(kRecord || rachaRecord) ? '' :
-      'EXTREMO: la burbuja está en su máximo histórico. El modelo no lo puntúa como riesgo (la tasa de reventón no sube con la K), pero es terreno sin precedente para este equipo: no cargar la apuesta a que la racha siga',
+    texto,
   }
 }
 
@@ -305,7 +328,7 @@ function analizarFamilia(filas: FilaK[], familia: FamiliaBurbuja, proximo: Proxi
   const pctR = Math.floor((100 * de.filter((r) => r.partidos <= ep.partidos).length) / n + 0.5)
   const medK = base.kPico.mediana
   out.posicion = { percentilK: pctK, percentilRacha: pctR, kSobreMediana: medK <= 0 ? null : r2(kAbs / medK) }
-  out.extremo = extremoDe(kAbs, ep.partidos, base, nCond, signo)
+  out.extremo = extremoDe(kAbs, ep.partidos, base, nCond, signo, de)
 
   let puntos = 0
   const motivos: string[] = []

@@ -578,6 +578,19 @@ lo pone en cuarentena solo, con motivo «automática: sin DT declarado (lado
 a)», `cuarentenaAutomatica: true` y sin botón de quitar. Se levanta
 re-depositando el parte con el DT (`parte.sin_dt`).
 
+**Cuarentena automática: DT equivocado tampoco** (23/09/2026). El error de
+la alineación rancia (Santa Fe–Cali, la Roma, arreglado el 22/09) no dejaba el
+DT vacío: lo dejaba EQUIVOCADO, y esos partes contaban como buenos.
+`parte.dt_equivocado` compara el DT que declaró el parte con el que se sentó en
+el banco de ESE partido (la alineación que capturó la ficha); si no comparten
+ni un apellido (`mismo_dt`: «R. Dudamel» y «Rafael Dudamel» casan, «Hernán
+Torres Oliveros» y «H. Torres» también), el caso va a cuarentena automática
+con los dos nombres en el motivo. Es criterio de INSUMO —qué traía el parte
+antes del pitazo—, comprobado después solo porque el banco se conoce
+entonces; no mira el resultado. Sin alineación capturada (Colombia, Uruguay,
+ficha que aún no corrió) o sin apellido comparable («DT A») no se marca nada:
+ahí la cuarentena es a mano. Se levanta re-depositando con el DT del banco.
+
 **Cohortes** (`parte_cowork.cohorte`, `parte.COHORTE` / `COHORTES`). La
 época del proceso se sella **al depositar** y un re-depósito no la cambia (un
 parte viejo re-depositado hoy sigue siendo de su época; lo que ya existía sin
@@ -588,6 +601,12 @@ arranca en la vigente. Cuando cambie algo que invalide los casos anteriores
 (otra regla de DT, otro contrato del TDE), se abre una cohorte nueva en
 `COHORTES` con su descripción, y las anteriores quedan como referencia: enseñan,
 no calibran.
+
+Cohortes abiertas: `rodaje` (antes del 19/09) · `c2-2026-09-19` (con la
+alineación rancia todavía ganándole a `/coachs`: referencia) ·
+**`c3-2026-09-23`, la vigente**: DT de la alineación solo si es de los últimos 3
+partidos, cuarentena automática por DT equivocado y aviso CERCA DEL EXTREMO.
+Arranca vacía; se llena con lo que se deposite DESPUÉS del despliegue.
 
 **El intervalo, no el punto.** La tabla de reventón por nivel decía FUERA
 con 6 de 21 (29 %) contra un backtest de 42-47 %. El intervalo de Wilson al

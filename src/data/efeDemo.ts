@@ -440,9 +440,9 @@ export function leccionesDemo(skill: string, estado: string, cohorte = ''): Inve
     filtro: { skill, estado, cohorte },
     cohortes: [
       { clave: 'rodaje', vigente: false, descripcion: 'partes anteriores al 19/09/2026: DT viejo, TDE sin nivel. Enseñan, no calibran', casos: 1, enCuarentena: 1 },
-      { clave: 'c2-2026-09-19', vigente: true, descripcion: 'desde el 19/09/2026: dt {nombre, desde}, niveles del TDE rechazados si llegan mal', casos: 3, enCuarentena: 0 },
+      { clave: 'c3-2026-09-23', vigente: true, descripcion: 'desde el 23/09/2026: DT de la alineación solo si es reciente, cuarentena automática si el DT del parte no es el del banco', casos: 3, enCuarentena: 0 },
     ],
-    cohorteVigente: 'c2-2026-09-19',
+    cohorteVigente: 'c3-2026-09-23',
     notaCohortes: 'la cohorte se sella al depositar y no cambia con un re-depósito; las métricas de arriba son SOLO de la cohorte elegida (vacío = todas)',
     enCuarentena: {
       cuantas: 1,

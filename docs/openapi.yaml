@@ -288,7 +288,9 @@ paths:
         sin fuga) y la compara con lo que pasó dentro de `horizonte` partidos de la
         condición. Devuelve la tasa de reventón por nivel de riesgo y por puntos
         (con AUC), el lift de cada señal, la separación por familia y por «manda»,
-        la regla del nivel y el desglose por liga. `padron=true` = solo las ligas
+        la regla del nivel, el desglose por liga y `franjaAlta` (con qué umbral de
+        percentil avisar «cerca del extremo»: frecuencia y tasa por candidato, y el
+        propuesto por ruido, docs/REVENTON.md §10.1). `padron=true` = solo las ligas
         importantes (padrón único de las cuotas en vivo). No abierto a Cowork:
         es calibración, no un dato del parte (docs/REVENTON.md §8).
       parameters:
@@ -1833,12 +1835,16 @@ components:
         alta con la que reventó ese signo (`kRecord`) o racha ≥ la más larga (`rachaRecord`).
         NO mueve el riesgo —el backtest dice que la K no puntúa—, pero es terreno sin
         precedente y la pantalla y el parte lo gritan aparte: no cargar la apuesta a que la
-        racha siga. Cowork no se la puede saltar (docs/COWORK.md).
-      required: [activo, kRecord, rachaRecord, partidosHistoria, maximoPrevio, motivos, texto]
+        racha siga. Cowork no se la puede saltar (docs/COWORK.md). `cerca` es el escalón
+        de abajo: sin récord, la K o la racha ya superan (estricto) al 90 % de los reventones
+        del signo; se avisa en ámbar (alerta K-CERCA-EXTREMO en el parte) y `activo` sigue
+        siendo solo el récord.
+      required: [activo, kRecord, rachaRecord, cerca, partidosHistoria, maximoPrevio, motivos, texto]
       properties:
         activo: { type: boolean }
         kRecord: { type: boolean }
         rachaRecord: { type: boolean }
+        cerca: { type: boolean, description: 'franja alta sin récord: K o racha por encima del 90 % de los reventones del signo' }
         partidosHistoria: { type: integer, description: 'N: partidos de la condición en la base («la más alta en N partidos»)' }
         maximoPrevio:
           type: object
@@ -1847,7 +1853,7 @@ components:
             kPico: { type: number }
             partidos: { type: integer }
         motivos: { type: array, items: { type: string } }
-        texto: { type: string, description: "'' si no está activa" }
+        texto: { type: string, description: "'' si no está activa ni cerca" }
     EstabilidadEquipo:
       type: object
       required: [grado, motivos, sinDato, dt, movimientos, bajas, actualizadoEn]
@@ -2557,7 +2563,7 @@ components:
       type: object
       required: [codigo]
       properties:
-        codigo: { type: string, description: 'T.54, R-KT.2, GK-DOWNGRADE, F3… Las que agrega el backend al leer: K-EXTREMO (burbuja en su máximo), HUECO-DOBLE (EFE y TDE leídos del mismo vacío) y ESCALA-LIGAS (los dos equipos vienen de ligas distintas: el nivel no compara entre bases). Las CAPTURADAS al depositar por el guardrail de coherencia (Jev, docs/JEV.md): COHERENCIA-BLOQUE, COHERENCIA-1X2, COHERENCIA-MATCHUP, COHERENCIA-REVENTON — solo salen en la tira con SAD_JEV_COHERENCIA=alertas; en sombra viven en `coherencia`' }
+        codigo: { type: string, description: 'T.54, R-KT.2, GK-DOWNGRADE, F3… Las que agrega el backend al leer: K-EXTREMO (burbuja en su máximo), K-CERCA-EXTREMO (franja alta sin récord, tipo dato), HUECO-DOBLE (EFE y TDE leídos del mismo vacío) y ESCALA-LIGAS (los dos equipos vienen de ligas distintas: el nivel no compara entre bases). Las CAPTURADAS al depositar por el guardrail de coherencia (Jev, docs/JEV.md): COHERENCIA-BLOQUE, COHERENCIA-1X2, COHERENCIA-MATCHUP, COHERENCIA-REVENTON — solo salen en la tira con SAD_JEV_COHERENCIA=alertas; en sombra viven en `coherencia`' }
         equipo: { type: string, enum: [a, b, ambos, global] }
         tipo: { type: string, enum: [estructural, fecha, dato], description: '`dato` = la pone el backend sobre los datos, no el skill' }
         detalle: { type: string, description: '`texto` se acepta como alias' }
