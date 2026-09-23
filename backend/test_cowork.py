@@ -2059,6 +2059,33 @@ def main():
     check("re-depositar NO pisa la apertura de la cadena: manda la primera, y el recibo lo dice",
           (_efedb_dtp.eslabon_de_fixture(fxn["a"], ns_dtp) or {})["apertura"]["m1"]["sistema"] == "4-3-3"
           and r_dtp2["dtp"]["aperturaNoGuardada"], r_dtp2.get("dtp"))
+    # ── herencia DTP → TDE: C1 del bloque rival y SOB2 del rest defense ──
+    p_her = _copy.deepcopy(p_dtp)
+    p_her["dtp"]["bloques"][0]["apertura"]["m2"]["restDefense"].update({"nivelFoco": "pivote fijo",
+                                                                         "nivelRival": "sin seguro"})
+    ind_h = {"F1": 1, "F2": 0.5, "F3": 1, "F4": 0, "C1": 0, "C2": 0.5, "C3": 0,
+             "P1a": 1, "P1b": 0.5, "P2": 0, "S1": 1, "S2": 0.5, "SOB1": 0.5, "SOB2": 0, "SOB3": 0.5}
+    p_her["tde"] = {"bloques": [{"equipo": "a", "indicadores": dict(ind_h)},
+                                {"equipo": "b", "indicadores": dict(ind_h)}]}
+    c.post(f"{A}/analisis/cowork", json=p_her)
+    lect_h = c.get(f"{A}/analisis/cowork/{ns_dtp}").json()
+    tb = {b["equipo"]: b for b in lect_h["tde"]["bloques"]}
+    her_b = {h["indicador"]: h for h in tb["b"].get("heredadoDtp") or []}
+    check("C1 del TDE de b = 0.5: lo hereda de la clase «no probado» que calculó el DTP de a (Cowork había puesto 0)",
+          tb["b"]["indicadores"]["C1"] == 0.5 and her_b["C1"]["declarado"] == 0 and her_b["C1"]["discrepa"], her_b)
+    check("SOB2 de b = 1 (sin seguro, leído desde el DTP de a) y SOB2 de a = 0 (pivote fijo, de su propio DTP)",
+          tb["b"]["indicadores"]["SOB2"] == 1.0 and tb["a"]["indicadores"]["SOB2"] == 0.0
+          and not any(h["indicador"] == "C1" for h in tb["a"].get("heredadoDtp") or []), tb["a"].get("heredadoDtp"))
+    check("la discrepancia heredada sale como alerta HERENCIA-DTP del lado b, y la de SOB2 de a no (coincidía)",
+          any(x["codigo"] == "HERENCIA-DTP" and x["equipo"] == "b" and "C1" in x["detalle"] for x in lect_h["alertas"])
+          and not any(x["codigo"] == "HERENCIA-DTP" and x["equipo"] == "a" for x in lect_h["alertas"]),
+          [x for x in lect_h["alertas"] if x["codigo"] == "HERENCIA-DTP"])
+    check("el índice del TDE de b se calcula YA con lo heredado (el ISE sube con SOB2 = 1)",
+          tb["b"]["ise"] is not None and tb["a"]["ise"] is not None and tb["b"]["ise"] > tb["a"]["ise"],
+          (tb["a"].get("ise"), tb["b"].get("ise")))
+    r_eco_h = c.post(f"{A}/analisis/cowork", json={**lect_h, "fixtureId": ns_dtp}).json()
+    check("el eco del GET no arrastra HERENCIA-DTP como alerta declarada",
+          not any("alertas[" in x["donde"] for x in r_eco_h["rechazos"]), r_eco_h["rechazos"])
     p_dtp3 = _copy.deepcopy(p_dtp)
     del p_dtp3["dtp"]
     r_dtp3 = c.post(f"{A}/analisis/cowork", json=p_dtp3).json()

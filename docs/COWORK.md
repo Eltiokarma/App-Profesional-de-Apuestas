@@ -1014,7 +1014,8 @@ negritas, citas y tablas se pintan bien en la app.
                                        "p6": "si"|"no"|"sin dato", "casoP6": "partido concreto",
                                        "notas"},
               "viasGol": {"foco": [], "rival": []},
-              "restDefense": {"foco", "rival"},
+              "restDefense": {"foco", "rival",
+                              "nivelFoco": "fijo"|"depende"|"sin", "nivelRival": "fijo"|"depende"|"sin"},
               "posesion": {"valor", "contraQuien", "marcador", "sede"},
               "veredicto": "FAVORABLE"|"NEUTRO"|"DESFAVORABLE", "razon"},
        "m3Fases": [{"tramo": "0-25"|"25-65"|"65-80+", "plan", "palancas": []}],
@@ -1035,6 +1036,13 @@ negritas, citas y tablas se pintan bien en la app.
       (improvisado 55-65' · estructural 80-90' · `estructural no probado` si
       la 6 es no o no nombrás el partido en `casoP6` · ambiguo si no hay 3 de
       un lado). Vuelven en el recibo (`dtp.claseBloqueRival`) y en el GET.
+    · HERENCIA AL TDE: la clase del bloque rival da el C1 del TDE de ESE
+      equipo (estructural probado 0 · no probado 0.5 · improvisado 1) y el
+      nivel del rest defense da el SOB2 (pivote fijo 0 · depende del
+      marcador 0.5 · sin contención con los laterales arriba 1). NO los
+      re-estimes en `tde.bloques[].indicadores`: el backend los pisa con lo
+      del DTP y, si pusiste otro valor, avisa HERENCIA-DTP. Si el DTP está
+      mal, se corrige el DTP.
     · POSESIÓN CONDICIONAL: nunca un porcentaje suelto; contra quién y con qué
       marcador. No fabriques mecánica de gol: si la fuente solo da autor y
       asistente, disparador y secuencia van vacíos.

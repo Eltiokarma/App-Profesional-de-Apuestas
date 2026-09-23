@@ -19,6 +19,7 @@ import { parsearMd, type MdBloque, type MdInline } from '../lib/md'
 import { parsearOnce } from '../lib/once'
 import { loadCalendarioSad, resolverXiParte, type PartidoCalendarioUI } from '../services/appdata'
 import { CalendarioSad } from './CalendarioSad'
+import { PanelDtpCowork } from './DtpPizarra'
 import { TimelineComparativo } from './TimelineComparativo'
 
 const COLOR: Record<Semaforo, string> = { verde: 'var(--up)', ambar: 'var(--mark)', rojo: 'var(--down)' }
@@ -473,6 +474,20 @@ function BloqueTdeVista({ tde, nombreDe }: { tde: BloqueTde; nombreDe: (l: 'a' |
       {/* UN ÍNDICE MAL SUMADO QUE NADIE COMPARA ES UNA LECTURA EQUIVOCADA
           DURANTE MESES. Si llegaron los indicadores, el número lo pone la
           aritmética y lo que llegó escrito se muestra al lado. */}
+      {/* C1 y SOB2 vienen del DTP: el skill prohíbe re-estimarlos en el TDE */}
+      {(tde.heredadoDtp ?? []).length > 0 && (
+        <section style={{ padding: '11px 15px', borderRadius: 13, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+          <div style={{ font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px', marginBottom: 4 }}>
+            HEREDADO DEL DTP · no se re-estima
+          </div>
+          {tde.heredadoDtp!.map((h, i) => (
+            <div key={i} style={{ font: '500 11.5px var(--sans)', color: h.discrepa ? 'var(--down)' : 'var(--t1)' }}>
+              {h.indicador} = {h.valor} · {h.de}{h.discrepa ? ` · se había declarado ${h.declarado}` : ''}
+            </div>
+          ))}
+        </section>
+      )}
+
       {(tde.discrepancia ?? []).length > 0 && (
         <section style={{ padding: '11px 15px', borderRadius: 13, background: 'var(--down-soft)', border: '1px solid color-mix(in oklch,var(--down),transparent 55%)' }}>
           <div style={{ font: '700 9.5px var(--mono)', color: 'var(--down)', letterSpacing: '.5px', marginBottom: 4 }}>
@@ -790,7 +805,7 @@ interface Props {
   isMobile: boolean
 }
 
-type Tab = 'bloques' | 'f' | 'matchup' | 'lectura' | 'tde' | 'calendario' | 'timeline' | 'documentos'
+type Tab = 'bloques' | 'f' | 'matchup' | 'lectura' | 'tde' | 'dtp' | 'calendario' | 'timeline' | 'documentos'
 
 /** El revisor de coherencia (Jev, docs/JEV.md): qué se le preguntó al parte y
  *  qué no cuadró. En SOMBRA es la única ventana para verlo —la tira no lo
@@ -866,12 +881,17 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
   const sinRubrica = (['a', 'b'] as const).every((l) => parte.equipos[l].sinBloques)
   const conTde = (parte.tde?.bloques ?? []).some((b) => b.tipologia || b.ie || b.ise
     || b.vias?.length || b.calculado || Object.keys(b.indicadores ?? {}).length)
+  // el DTP estructurado (un bloque por equipo foco) con el toggle de foco
+  const dtpBloques = parte.dtp?.bloques ?? []
+  const [dtpFoco, setDtpFoco] = useState<'a' | 'b'>('a')
+  const dtpSel = dtpBloques.find((b) => b.equipo === dtpFoco) ?? dtpBloques[0]
   const tabs: { k: Tab; label: string }[] = [
     { k: 'bloques', label: 'Bloques EFE' },
     { k: 'f', label: pendienteXi ? 'Bloque F · congelado' : 'Bloque F' },
     { k: 'matchup', label: 'Matchup' },
     { k: 'lectura', label: 'Lectura SAD' },
     ...(conTde ? [{ k: 'tde' as Tab, label: 'Teorema del Echado' }] : []),
+    ...(dtpBloques.length ? [{ k: 'dtp' as Tab, label: 'DTP' }] : []),
     { k: 'calendario', label: 'Calendario' },
     ...(parte.timeline ? [{ k: 'timeline' as Tab, label: 'Timeline' }] : []),
     { k: 'documentos', label: `Documentos (${parte.documentos.length})` },
@@ -1170,6 +1190,26 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
       )}
 
       {tab === 'tde' && <PanelTde tde={parte.tde} nombreDe={nombreDe} />}
+
+      {/* DTP de Cowork: checklist del bloque rival (clase calculada) + pizarra */}
+      {tab === 'dtp' && dtpSel && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {dtpBloques.length > 1 && (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {dtpBloques.map((b) => (
+                <button key={b.equipo} onClick={() => setDtpFoco(b.equipo)}
+                  style={{ padding: '6px 12px', borderRadius: 8, cursor: 'pointer', border: '1px solid var(--line)',
+                           background: dtpSel.equipo === b.equipo ? 'var(--bg3)' : 'transparent',
+                           color: dtpSel.equipo === b.equipo ? 'var(--t1)' : 'var(--t2)', font: '600 11.5px var(--sans)' }}>
+                  foco: {nombreDe(b.equipo)}
+                </button>
+              ))}
+            </div>
+          )}
+          <PanelDtpCowork b={dtpSel} foco={nombreDe(dtpSel.equipo)} rival={nombreDe(dtpSel.equipo === 'a' ? 'b' : 'a')}
+                          fixtureId={parte.fixtureId} isMobile={isMobile} />
+        </div>
+      )}
 
       {/* BLOQUE G: el calendario NO viene en el parte — se calcula de nuestra
           base y se pinta con la misma pieza que el resto de la app */}

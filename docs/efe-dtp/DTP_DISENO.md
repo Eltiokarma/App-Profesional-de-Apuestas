@@ -257,5 +257,14 @@ la clase del bloque sin llegar al TDE. Ahora (`backend/analisis/dtp_cowork.py`):
    `c1Tde` para el TDE del equipo del bloque. La apertura entra a
    `cadena_dtp.apertura_json` solo antes del pitazo y sin pisar la primera.
 
-Pendiente (paso 3): que el TDE herede `c1Tde` y el rest defense en vez de
-re-estimarlos, y que `DtpPizarra` dibuje los bloques de Cowork.
+3. **Paso 3, HECHO** — el TDE HEREDA del DTP (`dtp_cowork.herencia_tde`,
+   aplicado al leer en `parte._heredar`): C1 del equipo X = `c1Tde` de la
+   clase del bloque de X que calculó el DTP del rival; SOB2 de X = el nivel del
+   rest defense (`nivelFoco` del DTP propio o `nivelRival` del ajeno: fijo 0 ·
+   depende 0.5 · sin 1). Solo sobre un bloque TDE con indicadores; manda el
+   DTP, lo declarado queda en `heredadoDtp` y si difiere sale la alerta
+   calculada `HERENCIA-DTP`. En la pantalla, la pestaña **DTP** del parte
+   (`PanelDtpCowork`): checklist con la clase calculada, rest defense,
+   posesión condicional, MECANISMO-ABIERTO y la pizarra de siempre
+   (`eslabonDeBloque` adapta el bloque de Cowork al eslabón), con toggle de
+   equipo foco; el TDE muestra lo heredado.

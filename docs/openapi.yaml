@@ -2512,6 +2512,17 @@ components:
           type: array
           description: 'diferencias entre lo declarado y la cuenta; vacío es lo normal'
           items: { type: string }
+        heredadoDtp:
+          type: array
+          description: 'C1 (clase del bloque que calculó el DTP del rival) y SOB2 (rest defense) HEREDADOS del DTP: mandan sobre lo declarado —el skill prohíbe re-estimarlos— y el índice se calcula con ellos; si difieren, alerta HERENCIA-DTP'
+          items:
+            type: object
+            properties:
+              indicador: { type: string }
+              valor: { type: number }
+              declarado: { type: number, nullable: true }
+              de: { type: string }
+              discrepa: { type: boolean }
     DtpParte:
       type: object
       description: >
@@ -2535,7 +2546,7 @@ components:
                 type: object
                 properties:
                   m1: { type: object, additionalProperties: true, description: 'sistema, xiReferencia, senalXi, rolesReasignados[], vulnerabilidad, formaSinBalon, minutosCompartidos' }
-                  m2: { type: object, additionalProperties: true, description: 'choqueSistemas, duelosCarril[{carril, duelo, mismatch}], checklistBloqueRival{p1..p6, casoP6, notas}, viasGol{foco[], rival[]}, restDefense{foco, rival}, posesion{valor, contraQuien, marcador, sede}, veredicto (FAVORABLE|NEUTRO|DESFAVORABLE), razon' }
+                  m2: { type: object, additionalProperties: true, description: 'choqueSistemas, duelosCarril[{carril, duelo, mismatch}], checklistBloqueRival{p1..p6, casoP6, notas}, viasGol{foco[], rival[]}, restDefense{foco, rival, nivelFoco, nivelRival: fijo|depende|sin → SOB2 0|0.5|1 del TDE}, posesion{valor, contraQuien, marcador, sede}, veredicto (FAVORABLE|NEUTRO|DESFAVORABLE), razon' }
                   m3Fases: { type: array, items: { type: object, additionalProperties: true }, description: 'tramo 0-25 | 25-65 | 65-80+, plan, palancas[]' }
                   m6: { type: object, additionalProperties: true, description: 'competitivo, rotacion, fatiga, ausencias, otros' }
               cierre:
@@ -2674,7 +2685,7 @@ components:
       type: object
       required: [codigo]
       properties:
-        codigo: { type: string, description: 'T.54, R-KT.2, GK-DOWNGRADE, F3… Las que agrega el backend al leer: K-EXTREMO (burbuja en su máximo), K-CERCA-EXTREMO (franja alta sin récord, tipo dato), HUECO-DOBLE (EFE y TDE leídos del mismo vacío) y ESCALA-LIGAS (los dos equipos vienen de ligas distintas: el nivel no compara entre bases). Las CAPTURADAS al depositar por el guardrail de coherencia (Jev, docs/JEV.md): COHERENCIA-BLOQUE, COHERENCIA-1X2, COHERENCIA-MATCHUP, COHERENCIA-REVENTON — solo salen en la tira con SAD_JEV_COHERENCIA=alertas; en sombra viven en `coherencia`' }
+        codigo: { type: string, description: 'T.54, R-KT.2, GK-DOWNGRADE, F3… Las que agrega el backend al leer: K-EXTREMO (burbuja en su máximo), K-CERCA-EXTREMO (franja alta sin récord, tipo dato), HERENCIA-DTP (C1/SOB2 del TDE declarados distinto de lo que dice el DTP; manda el DTP), HUECO-DOBLE (EFE y TDE leídos del mismo vacío) y ESCALA-LIGAS (los dos equipos vienen de ligas distintas: el nivel no compara entre bases). Las CAPTURADAS al depositar por el guardrail de coherencia (Jev, docs/JEV.md): COHERENCIA-BLOQUE, COHERENCIA-1X2, COHERENCIA-MATCHUP, COHERENCIA-REVENTON — solo salen en la tira con SAD_JEV_COHERENCIA=alertas; en sombra viven en `coherencia`' }
         equipo: { type: string, enum: [a, b, ambos, global] }
         tipo: { type: string, enum: [estructural, fecha, dato], description: '`dato` = la pone el backend sobre los datos, no el skill' }
         detalle: { type: string, description: '`texto` se acepta como alias' }

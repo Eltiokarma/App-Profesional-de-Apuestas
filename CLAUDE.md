@@ -315,7 +315,9 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   checklist del bloque rival; la CLASE (improvisado · estructural ·
   estructural no probado · ambiguo) y `c1Tde` las calcula el backend al leer.
   La apertura entra a `cadena_dtp` solo antes del pitazo y sin pisar la
-  primera. Falta que el TDE herede C1/SOB2 y que la pizarra lo dibuje.
+  primera. El TDE HEREDA del DTP (C1 de la clase del bloque, SOB2 del nivel
+  del rest defense; manda el DTP, alerta `HERENCIA-DTP` si difiere) y la
+  pestaña **DTP** del parte lo dibuja (`PanelDtpCowork`).
 - Cuotas K (§3.8): las barras SIEMPRE vía `RachasCuotas` y su botonera
   `ControlesCuotas` (condición · mercado 1X2/Doble op./Ambos · ventana); cada
   mercado dibuja solo los partidos con SU cuota capturada — sin dato, la

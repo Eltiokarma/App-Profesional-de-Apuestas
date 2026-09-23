@@ -1178,7 +1178,7 @@ _CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto", "ligas", "dtBa
 # F3 y las de DT las pone la lectura a partir de la base y del propio parte;
 # si el eco del GET vuelve con ellas, se descartan sin rechazo (se van a
 # recalcular igual) en vez de guardarse por duplicado.
-_ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT"}
+_ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "HERENCIA-DTP", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT"}
 # LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
 # selladas (coherencia_json), porque no son deterministas y rehacerlas al leer
 # las haría parpadear. Del depósito se descartan igual que las calculadas
@@ -1790,7 +1790,7 @@ def bloques_tde(tde) -> list[dict]:
     return [tde]   # forma vieja: un bloque plano
 
 
-def _tde_calculado(tde: dict) -> dict:
+def _tde_calculado(tde: dict, herencia: dict | None = None) -> dict:
     """El TDE con su índice CALCULADO, un bloque por equipo.
 
     Igual que el bloque F y que los totales del EFE: si el dato de entrada está,
@@ -1801,7 +1801,23 @@ def _tde_calculado(tde: dict) -> dict:
     bloques = bloques_tde(tde)
     if not bloques:
         return {}
-    return {"bloques": [_bloque_calculado(b) for b in bloques]}
+    return {"bloques": [_bloque_calculado(_heredar(b, (herencia or {}).get(b.get("equipo") or ""))) for b in bloques]}
+
+
+def _heredar(bloque: dict, her: dict | None) -> dict:
+    """C1 y SOB2 vienen del DTP (skill teorema-del-echado: «no se re-estiman»).
+    Solo sobre un bloque que ya trae indicadores —con dos sueltos no se arma un
+    índice—; lo que Cowork había declarado queda al lado para auditar."""
+    ind = bloque.get("indicadores") or {}
+    if not her or not ind:
+        return bloque
+    nuevo, heredados = dict(ind), []
+    for clave, h in her.items():
+        declarado = ind.get(clave)
+        nuevo[clave] = h["valor"]
+        heredados.append({"indicador": clave, "valor": h["valor"], "declarado": declarado, "de": h["de"],
+                          "discrepa": declarado is not None and abs(float(declarado) - h["valor"]) > 1e-9})
+    return {**bloque, "indicadores": nuevo, "heredadoDtp": heredados}
 
 
 def _bloque_calculado(tde: dict) -> dict:
@@ -1849,7 +1865,18 @@ def dto(fixture_id: int) -> dict | None:
         if f3:
             alertas.append({**f3, "equipo": lado})
         equipos[lado] = {**eq, **tot, "disponibilidad": disp}
-    tde_calc = _tde_calculado(parte.get("tde") or {})
+    tde_calc = _tde_calculado(parte.get("tde") or {}, _dtp.herencia_tde(parte.get("dtp") or {}))
+    # la herencia que contradice lo declarado se dice: el DTP manda, pero un
+    # C1 o un SOB2 escritos distinto en el TDE son dos juicios del mismo hecho
+    for b in tde_calc.get("bloques") or []:
+        for h in b.get("heredadoDtp") or []:
+            if h["discrepa"] and b.get("equipo") in LADOS:
+                alertas.append({
+                    "codigo": "HERENCIA-DTP", "equipo": b["equipo"], "tipo": "dato",
+                    "detalle": f"{h['indicador']} del TDE: se declaró {h['declarado']} y el DTP dice "
+                               f"{h['valor']} ({h['de']}). Manda el DTP —el skill prohíbe re-estimarlo—; "
+                               "si el DTP está mal, se corrige el DTP",
+                })
     # EL MISMO HUECO, LEÍDO AL REVÉS POR DOS ESCALAS. El EFE cuenta el bloque
     # ausente como 0 y hunde el porcentaje; el TDE promedia solo sobre los
     # indicadores presentes, así que uno alto con denominador chico dispara el

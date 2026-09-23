@@ -1217,6 +1217,9 @@ export interface BloqueTde {
   declarado?: { ie?: number | null; ise?: number | null }
   /** Diferencias entre lo declarado y lo calculado. Vacío es lo normal. */
   discrepancia?: string[]
+  /** C1 y SOB2 heredados del DTP (el skill prohíbe re-estimarlos): valor que
+   *  manda, lo que Cowork había declarado y de dónde sale. */
+  heredadoDtp?: { indicador: string; valor: number; declarado: number | null; de: string; discrepa: boolean }[]
 }
 
 /** El TDE del PARTIDO: hasta un bloque por equipo. El índice es por equipo, y
@@ -1720,7 +1723,8 @@ export interface DtpBloque {
       duelosCarril: { carril: string; duelo: string; mismatch: string }[]
       checklistBloqueRival: Record<'p1' | 'p2' | 'p3' | 'p4' | 'p5' | 'p6', string> & { casoP6: string; notas: string }
       viasGol: { foco: string[]; rival: string[] }
-      restDefense: { foco: string; rival: string }
+      /** nivelFoco/nivelRival: fijo · depende · sin → SOB2 0 · 0.5 · 1 del TDE. */
+      restDefense: { foco: string; rival: string; nivelFoco: '' | 'fijo' | 'depende' | 'sin'; nivelRival: '' | 'fijo' | 'depende' | 'sin' }
       posesion: { valor: string; contraQuien: string; marcador: string; sede: string }
       veredicto: string
       razon: string
