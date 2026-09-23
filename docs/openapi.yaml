@@ -973,6 +973,47 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/InventarioLecciones' }
+  /analisis/cowork/{fixtureId}/dt:
+    post:
+      summary: Corregir SOLO el DT de un parte ya depositado (abierto a Cowork)
+      description: >
+        El POST del parte reemplaza el parte entero; para cambiar un DT eso obligaba a
+        re-depositarlo completo y un cuerpo recortado lo vaciaba (Everton–Ipswich, 23/09).
+        Esto toca `equipos.{lado}.dt` y nada más: no re-sella la cohorte, no rehace la
+        coherencia, no mueve el pronóstico ni el veredicto. El DT pasa por la misma
+        normalización que el depósito; un lado rechazado no se aplica y vuelve en
+        `rechazos`. `dtEquivocado` dice si el DT sigue sin casar con el que se sentó en el
+        banco (vacío = casa o no hay alineación).
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                a: { description: '`{nombre, desde}` o `{nombre, meses}` o solo `{nombre}`' }
+                b: { description: 'ídem para el visitante' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [fixtureId, antes, ahora, rechazos, dtEquivocado, sinDt]
+                properties:
+                  fixtureId: { type: integer }
+                  antes: { type: object, additionalProperties: true }
+                  ahora: { type: object, additionalProperties: true }
+                  rechazos: { type: array, items: { type: object, additionalProperties: true } }
+                  dtEquivocado:
+                    type: array
+                    items: { type: object, properties: { lado: { type: string }, parte: { type: string }, banco: { type: string } } }
+                  sinDt: { type: array, items: { type: string } }
+        '404': { description: no hay parte para ese fixture }
+        '422': { description: sin lados en el cuerpo }
   /analisis/cowork/{fixtureId}/cuarentena:
     post:
       summary: Apartar un caso del aprendizaje, con motivo — lo hace el usuario, no el agente

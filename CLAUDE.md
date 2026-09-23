@@ -462,7 +462,10 @@ conversación se pierde en la siguiente.
    - **Aprendizaje** (actualizado 23/09): la cohorte vigente es ahora
      `c3-2026-09-23` (la `c2` tenía la alineación rancia del DT: referencia) y
      arranca vacía; un parte con el DT distinto del que se sentó en el banco va
-     a cuarentena automática (`parte.dt_equivocado`, APRENDIZAJE.md C-bis). En
+     a cuarentena automática (`parte.dt_equivocado`, APRENDIZAJE.md C-bis; el
+     apellido se compara tolerando la ß y una letra corrupta de la base). Un DT
+     se corrige SOLO con `POST /analisis/cowork/{id}/dt` (abierto a Cowork;
+     no toca nada más del parte), nunca re-depositando el parte entero. En
      la `c2`: la cohorte anterior (`c2-2026-09-19`) arrancó vacía; los
      42 casos de rodaje se miran con el selector y calibran nada. La
      cuarentena a mano queda para el caso puntual con motivo. Fases D y A
