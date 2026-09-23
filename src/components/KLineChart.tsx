@@ -274,10 +274,21 @@ export function KLineChart({ snaps, kType, kCond, maxAbs, window = 20, rol, tech
   )
 }
 
-export function KLineLegend({ periodo }: { periodo?: string } = {}) {
+const MARGEN_TXT: Partial<Record<KTypeKey, string>> = {
+  vic1: 'ganar', vic2: 'ganar por 2 o más', vic3: 'ganar por 3 o más',
+  der1: 'perder', der2: 'perder por 2 o más', der3: 'perder por 3 o más',
+}
+
+export function KLineLegend({ periodo, kType }: { periodo?: string; kType?: KTypeKey } = {}) {
   const item: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 5, font: '500 9.5px var(--mono)', color: 'var(--t3)' }
+  const margen = kType ? MARGEN_TXT[kType] : undefined
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 6 }}>
+      {margen && (
+        <span style={{ ...item, color: 'var(--t2)', flexBasis: '100%' }}>
+          la burbuja suma el nivel del rival en cada partido sin {margen} y revienta (vuelve a 0) el día que lo hace
+        </span>
+      )}
       <span style={item}><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--up)' }}></span>racha +</span>
       <span style={item}><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--down)' }}></span>racha −</span>
       <span style={item}><span style={{ width: 8, height: 8, borderRadius: '50%', border: '1.5px solid var(--t3)' }}></span>reset</span>

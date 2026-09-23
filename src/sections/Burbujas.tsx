@@ -57,7 +57,7 @@ function TeamPanel({ eng, rev, teamId, role, rol, kType, kCond, maxAbs, chartWin
       <div style={{ marginTop: 6, borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--line)', padding: 6 }}>
         <KLineChart snaps={eng.snaps} kType={kType} kCond={kCond} maxAbs={maxAbs} window={chartWindow} rol={rol} techo={techo} />
       </div>
-      <KLineLegend periodo={ref?.etiqueta} />
+      <KLineLegend periodo={ref?.etiqueta} kType={kType} />
       {kType === 'res' && <PeriodoReventon fam={famRev} periodo={kPeriodo} onPeriodo={onPeriodo} />}
 
       <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>

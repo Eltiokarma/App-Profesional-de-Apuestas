@@ -12,8 +12,10 @@ export const K_TYPE_GROUPS: { label: string; opts: [KTypeKey, string][] }[] = [
   { label: 'Goles', opts: [['ga', 'Anotados'], ['gr', 'Recibidos']] },
   { label: 'Mercados', opts: [['dc', 'Doble op.']] },
   {
-    label: 'Márgenes',
-    opts: [['vic1', 'V·1'], ['vic2', 'V·2'], ['vic3', 'V·3+'], ['der1', 'D·1'], ['der2', 'D·2'], ['der3', 'D·3+']],
+    // burbujas de SEQUÍA por margen: crecen mientras no pasa, revientan el
+    // día que el equipo gana (o pierde) por N o más (ver sequiaMargen)
+    label: 'Margen · hasta que pasa',
+    opts: [['vic1', 'Gana 1+'], ['vic2', 'Gana 2+'], ['vic3', 'Gana 3+'], ['der1', 'Pierde 1+'], ['der2', 'Pierde 2+'], ['der3', 'Pierde 3+']],
   },
 ]
 
@@ -30,28 +32,61 @@ export const FUSED_KEY: Record<KTypeKey, Record<KCondKey, keyof FusedK>> = {
   der3: { total: 'kDer3', local: 'kDer3Local', visita: 'kDer3Visita' },
 }
 
-/** Tipos "hacia abajo": la racha alta es desfavorable (goles recibidos, derrotas). */
-const DOWN_TYPES = new Set<KTypeKey>(['gr', 'der1', 'der2', 'der3'])
+/** Tipos "hacia abajo": la racha alta es desfavorable (goles recibidos, y las
+ *  sequías de victoria: «sin ganar por N+» es mala señal; «sin perder por N+»
+ *  va hacia arriba). */
+const DOWN_TYPES = new Set<KTypeKey>(['gr', 'vic1', 'vic2', 'vic3'])
 
 /** Valor con signo de display: los tipos desfavorables se pintan en negativo. */
 export const signedVal = (kType: KTypeKey, v: number) => (DOWN_TYPES.has(kType) ? -v : v)
 
-/** Aporte q por partido de las familias de márgenes (§3.7): nivel_rival si el
- *  partido casa con el signo+margen de la familia, si no 0. Se calcula inline
- *  (no viaja en el contrato) desde los goles y el nivel del rival del snapshot. */
+/** Umbral de margen de cada familia: gana/pierde por N o más. */
+const MARGEN: Record<string, { signo: 1 | -1; n: number }> = {
+  vic1: { signo: 1, n: 1 }, vic2: { signo: 1, n: 2 }, vic3: { signo: 1, n: 3 },
+  der1: { signo: -1, n: 1 }, der2: { signo: -1, n: 2 }, der3: { signo: -1, n: 3 },
+}
+
+/** ¿Este marcador revienta la burbuja de la familia? (ganó / perdió por N o más) */
+export function margenPasa(kType: KTypeKey, gf: number, ga: number): boolean {
+  const m = MARGEN[kType]
+  return !!m && m.signo * (gf - ga) >= m.n
+}
+
+/** Aporte q por partido de las burbujas de margen: el nivel del rival si la
+ *  burbuja crece (el margen NO pasó), 0 si revienta. Con signo de display:
+ *  «hasta ganar por N+» va hacia abajo, «hasta perder por N+» hacia arriba. */
 export function marginQ(kType: KTypeKey, gf: number, ga: number, rivalLevel: number): number {
-  const bucket = Math.min(Math.abs(gf - ga), 3)
-  const win = gf > ga
-  const loss = gf < ga
-  switch (kType) {
-    case 'vic1': return win && bucket === 1 ? rivalLevel : 0
-    case 'vic2': return win && bucket === 2 ? rivalLevel : 0
-    case 'vic3': return win && bucket === 3 ? rivalLevel : 0
-    case 'der1': return loss && bucket === 1 ? rivalLevel : 0
-    case 'der2': return loss && bucket === 2 ? rivalLevel : 0
-    case 'der3': return loss && bucket === 3 ? rivalLevel : 0
-    default: return 0
-  }
+  if (!MARGEN[kType] || margenPasa(kType, gf, ga)) return 0
+  return MARGEN[kType].signo === 1 ? -rivalLevel : rivalLevel
+}
+
+/**
+ * Las familias de margen como BURBUJAS DE SEQUÍA (pedido del usuario, 23/09):
+ * la de «Gana 2+» crece con el nivel del rival cada partido en que el equipo NO
+ * gana por 2 o más goles y revienta (vuelve a 0) el día que lo hace; «Pierde
+ * 2+» igual con las derrotas. Las variantes local/visita solo se mueven en su
+ * condición. Reemplaza en la vista los kVic/kDer del motor (rachas de margen
+ * EXACTO repetido, que casi nunca pasan de un partido y se leían como picos
+ * sueltos); el motor y el contrato no cambian, esto se deriva de los goles y
+ * del nivel del rival de cada fila. La historia arranca en 0 en la primera
+ * fila cargada.
+ */
+export function sequiaMargen(snaps: KSnapshot[]): KSnapshot[] {
+  const acc: Record<string, number> = {}
+  return snaps.map((s) => {
+    const fused = { ...s.fused }
+    for (const kType of Object.keys(MARGEN) as KTypeKey[]) {
+      const pasa = margenPasa(kType, s.gf, s.ga)
+      const claves = FUSED_KEY[kType]
+      for (const cond of ['total', 'local', 'visita'] as KCondKey[]) {
+        const k = claves[cond]
+        const mueve = cond === 'total' || (cond === 'local') === s.isLocal
+        if (mueve) acc[k] = pasa ? 0 : (acc[k] ?? 0) + s.rivalLevel
+        ;(fused as Record<string, number>)[k] = acc[k] ?? 0
+      }
+    }
+    return { ...s, fused }
+  })
 }
 
 /** true para las 6 familias de márgenes (§3.7). */

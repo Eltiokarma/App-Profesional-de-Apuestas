@@ -303,6 +303,11 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   gráfica de K la referencia punteada es elegible por período (`kPeriodo`,
   `PeriodoReventon`, `src/lib/reventonRef.ts`) con una línea vertical donde
   arranca el período; sin base se dice, no se vuelve a la global callado.
+- Márgenes en la pantalla = burbujas de SEQUÍA (`sequiaMargen`,
+  `src/lib/kview.ts`, aplicada en `loadBurbujas`): «Gana N+» crece con el nivel
+  del rival mientras no gana por N o más y revienta cuando lo hace; «Pierde
+  N+» igual. Vista derivada de goles y nivel del rival: el motor y el contrato
+  (`kVic/kDer`, margen exacto) no se tocaron (ROADMAP_BURBUJAS §2).
 - Cuotas K (§3.8): las barras SIEMPRE vía `RachasCuotas` y su botonera
   `ControlesCuotas` (condición · mercado 1X2/Doble op./Ambos · ventana); cada
   mercado dibuja solo los partidos con SU cuota capturada — sin dato, la
