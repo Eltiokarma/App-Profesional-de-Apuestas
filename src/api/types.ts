@@ -1505,6 +1505,9 @@ export interface ParteCoworkDTO {
   }
   lecturaSad: LecturaSadParte
   tde: TdeParte
+  /** DTP estructurado, un bloque por equipo foco; la clase del bloque rival
+   *  viene CALCULADA al leer (`calculado.bloqueRival`). */
+  dtp: DtpParte
   /** Institucional de Cowork + partidos calculados por el backend; null si no
    *  hay ni lo uno ni lo otro. Se pinta con el TimelineComparativo de siempre. */
   timeline: TimelineData | null
@@ -1692,4 +1695,54 @@ export interface InventarioLecciones {
   sinSkill: { cuantas: number; porque: string; items: LeccionItem[] }
   estados: string[]
   items: LeccionItem[]
+}
+
+/** Clase del bloque rival que calcula el backend desde el checklist de 6
+ *  preguntas del DTP (skill diagnostico-tactico v1.2). */
+export interface ClaseBloqueDTO {
+  clase: '' | 'improvisado' | 'estructural' | 'estructural no probado' | 'ambiguo'
+  vidaUtilMin: string
+  alertaDegradacion: boolean | null
+  /** C1 del TDE del equipo del bloque: 0 probado · 0.5 no probado · 1 improvisado. */
+  c1Tde: number | null
+  equipoDelBloque?: 'a' | 'b'
+  motivo: string
+  conteo: { izquierda: number; derecha: number; sinDato: number }
+  respuestas: Record<string, string>
+}
+
+export interface DtpBloque {
+  equipo: 'a' | 'b'
+  apertura: {
+    m1: { sistema: string; xiReferencia: string; senalXi: string; rolesReasignados: string[]; vulnerabilidad: string; formaSinBalon: string; minutosCompartidos: string }
+    m2: {
+      choqueSistemas: string
+      duelosCarril: { carril: string; duelo: string; mismatch: string }[]
+      checklistBloqueRival: Record<'p1' | 'p2' | 'p3' | 'p4' | 'p5' | 'p6', string> & { casoP6: string; notas: string }
+      viasGol: { foco: string[]; rival: string[] }
+      restDefense: { foco: string; rival: string }
+      posesion: { valor: string; contraQuien: string; marcador: string; sede: string }
+      veredicto: string
+      razon: string
+    }
+    m3Fases: { tramo: '0-25' | '25-65' | '65-80+'; plan: string; palancas: string[] }[]
+    m6: { competitivo: boolean | null; rotacion: string; fatiga: string; ausencias: string; otros: string }
+  }
+  cierre: {
+    sinAnterior: boolean
+    m4Goles: {
+      gol: string; minuto: number | null; via: '' | 'pelota_parada' | 'transicion' | 'juego_abierto'
+      disparador: string; secuencia: string; definicion: string
+      responsablesMerito: string[]
+      responsablesError: { jugador: string; nivel: '' | 'principal' | 'secundario' | 'estructural'; detalle: string }[]
+      absolucion: string
+    }[]
+    m5: { planFuncionoHastaMin: number | null; peligroReal: string; cronologiaGiro: string; contraste: { aciertos: string[]; fallos: string[] }; preguntaChecklistFallida: string }
+    mecanismoAbierto: { activo: boolean; mecanismo: string; lineaRepite: boolean | null; correccionEnVivo: boolean | null }
+  }
+  calculado?: { bloqueRival: ClaseBloqueDTO }
+}
+
+export interface DtpParte {
+  bloques?: DtpBloque[]
 }

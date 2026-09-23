@@ -1960,6 +1960,111 @@ def main():
     check("POST …/dt sin lados → 422; fixture sin parte → 404",
           c.post(f"{A}/analisis/cowork/{pasado['id']}/dt", json={}).status_code == 422
           and c.post(f"{A}/analisis/cowork/999999999/dt", json={"a": {"nombre": "X Y"}}).status_code == 404)
+    # ── DTP estructurado (skill diagnostico-tactico) ──
+    from backend.analisis import dtp_cowork as dtpc
+    check("checklist: 3+ a la izquierda → improvisado, 55-65', C1 del TDE = 1",
+          dtpc.clasificar_bloque({"p1": "improvisado", "p2": "improvisado", "p3": "improvisado",
+                                  "p4": "estructural", "p5": "estructural"})["clase"] == "improvisado"
+          and dtpc.clasificar_bloque({"p1": "izq", "p2": "izq", "p3": "izq"})["c1Tde"] == 1.0)
+    moq = dtpc.clasificar_bloque({"p1": "estructural", "p2": "estructural", "p3": "estructural",
+                                  "p4": "estructural", "p5": "estructural", "p6": "no"})
+    check("Moquegua: 5 de 5 estructural con la p6 en no → estructural NO PROBADO, 80-90, alerta SÍ, C1 0.5",
+          moq["clase"] == "estructural no probado" and moq["vidaUtilMin"] == "80-90"
+          and moq["alertaDegradacion"] is True and moq["c1Tde"] == 0.5, moq)
+    sin_caso = dtpc.clasificar_bloque({"p1": "der", "p2": "der", "p3": "der", "p6": "si"})
+    check("p6 en sí pero sin caso concreto nombrado → sigue no probado (sin prueba no se suprime la alerta)",
+          sin_caso["clase"] == "estructural no probado", sin_caso)
+    hull = dtpc.clasificar_bloque({"p1": "der", "p2": "der", "p3": "der", "p4": "der", "p5": "izq",
+                                   "p6": "si", "casoP6": "1-0 ante el Leeds con 20 min en desventaja"})
+    check("estructural y probado con caso nombrado → estructural, alerta suprimida, C1 0",
+          hull["clase"] == "estructural" and hull["alertaDegradacion"] is False and hull["c1Tde"] == 0.0, hull)
+    amb = dtpc.clasificar_bloque({"p1": "izq", "p2": "izq", "p3": "der", "p4": "der"})
+    check("2-2 con una sin dato → ambiguo: las dos lecturas, sin C1",
+          amb["clase"] == "ambiguo" and amb["c1Tde"] is None and "dos" in amb["motivo"], amb)
+    check("checklist vacío → sin clase ni minutos (el skill prohíbe dar vida útil sin clasificar)",
+          dtpc.clasificar_bloque({})["clase"] == "" and dtpc.clasificar_bloque({})["vidaUtilMin"] == "")
+
+    # insumos calculados, sobre un partido cuyo equipo tiene ficha del anterior
+    fx_dtp = dbmod.query_one(
+        "sad", "SELECT f.id FROM fixtures f WHERE f.status_short='NS' AND EXISTS ("
+               "SELECT 1 FROM alineaciones a JOIN fixtures g ON g.id=a.fixture_id "
+               "WHERE a.team_id IN (f.home_team_id, f.away_team_id) AND g.date < f.date) "
+               "ORDER BY f.date DESC LIMIT 1")
+    fx_dtp = fx_dtp["id"] if fx_dtp else sin_ficha
+    ins = c.get(f"{A}/analisis/cowork/dtp/{fx_dtp}")
+    check("GET /analisis/cowork/dtp/{id}: insumos por lado, noCalculables y nota", ins.status_code == 200
+          and {"a", "b", "noCalculables", "nota"} <= set(ins.json()), ins.text[:300])
+    ia = ins.json()["a"]
+    pa = ia.get("partidoAnterior")
+    check("el partido anterior trae marcador, goles con minuto y la posesión atada al rival y al marcador",
+          pa is None or ({"marcador", "goles", "posesion", "xi"} <= set(pa)
+                         and pa["posesion"]["rival"] == pa["rival"] and "marcadorFinal" in pa["posesion"]),
+          pa and {k: pa[k] for k in ("marcador", "posesion")})
+    check("el DTP del partido abierto a Cowork (GET) y 404 si el fixture no existe",
+          appmod._cowork_puede("GET", A + f"/analisis/cowork/dtp/{fx_dtp}")
+          and c.get(f"{A}/analisis/cowork/dtp/999999999").status_code == 404)
+    check("estado por tiempo desde los minutos de gol (0-1 al 30, 1-1 al 60)",
+          dtpc._estado_por_tiempo([{"minuto": 30, "extra": 0, "aFavor": False},
+                                   {"minuto": 60, "extra": 0, "aFavor": True}])
+          == {"ganando": 0, "empatando": 60, "perdiendo": 30, "dominante": "empatando"})
+
+    # el DTP en el parte: normaliza, calcula la clase al leer, entra a la cadena
+    ns_dtp = next((f["id"] for f in dbmod.query("sad", "SELECT id FROM fixtures WHERE status_short='NS' "
+                                                        "ORDER BY date DESC LIMIT 40")
+                   if c.get(f"{A}/analisis/cowork/{f['id']}").status_code == 404), sin_ficha)
+    p_dtp = _parte(ns_dtp)
+    p_dtp["dtp"] = {"bloques": [
+        {"equipo": "a",
+         "apertura": {"m1": {"sistema": "4-3-3", "senalXi": "plan ofensivo"},
+                      "m2": {"choqueSistemas": "4-3-3 vs 5-3-2",
+                             "duelosCarril": [{"carril": "derecha", "duelo": "extremo vs carrilero", "mismatch": "velocidad"}],
+                             "checklistBloqueRival": {"p1": "estructural", "p2": "estructural", "p3": "estructural",
+                                                      "p4": "estructural", "p5": "estructural", "p6": "no"},
+                             "restDefense": {"foco": "dos centrales y pivote", "rival": "sin seguro"},
+                             "posesion": {"valor": "60%", "contraQuien": "rival que cede", "marcador": "empatado"},
+                             "veredicto": "matchup favorable"},
+                      "m3Fases": [{"tramo": "0-25", "plan": "aguantar", "palancas": ["pelota parada"]},
+                                  {"tramo": "90+", "plan": "tramo inventado"}]},
+         "cierre": {"m4Goles": [{"gol": "1-0", "minuto": 17, "via": "pelota parada",
+                                 "responsablesError": [{"jugador": "X", "nivel": "principal"}]}],
+                    "mecanismoAbierto": {"activo": True, "mecanismo": "rechace de córner no atacado"}}},
+        {"equipo": "c", "apertura": {}},
+    ]}
+    r_dtp = c.post(f"{A}/analisis/cowork", json=p_dtp).json()
+    check("el recibo trae el DTP: lado, clase del bloque rival calculada y apertura en la cadena",
+          r_dtp.get("dtp", {}).get("lados") == ["a"]
+          and r_dtp["dtp"]["claseBloqueRival"] == {"a": "estructural no probado"}
+          and r_dtp["dtp"]["aperturaEnCadena"], r_dtp.get("dtp"))
+    check("un bloque con equipo inválido se rechaza con motivo",
+          any(x["donde"].startswith("dtp.bloques[1]") for x in r_dtp["rechazos"]), r_dtp["rechazos"])
+    g_dtp = c.get(f"{A}/analisis/cowork/{ns_dtp}").json()["dtp"]["bloques"][0]
+    check("GET: el bloque vuelve normalizado (tramo inválido fuera, vía canónica, veredicto sin «MATCHUP»)",
+          [f["tramo"] for f in g_dtp["apertura"]["m3Fases"]] == ["0-25"]
+          and g_dtp["cierre"]["m4Goles"][0]["via"] == "pelota_parada"
+          and g_dtp["apertura"]["m2"]["veredicto"] == "FAVORABLE", g_dtp["apertura"]["m3Fases"])
+    check("GET: la clase del bloque rival se CALCULA al leer, del lado del rival, con su C1 para el TDE",
+          g_dtp["calculado"]["bloqueRival"]["clase"] == "estructural no probado"
+          and g_dtp["calculado"]["bloqueRival"]["equipoDelBloque"] == "b"
+          and g_dtp["calculado"]["bloqueRival"]["c1Tde"] == 0.5, g_dtp["calculado"])
+    from backend.analisis import db as _efedb_dtp
+    fxn = dbmod.query_one("sad", "SELECT ht.name AS a FROM fixtures f JOIN teams ht ON ht.id=f.home_team_id "
+                                 "WHERE f.id=?", (ns_dtp,))
+    esl = _efedb_dtp.eslabon_de_fixture(fxn["a"], ns_dtp) or {}
+    check("la apertura estructurada entra en cadena_dtp (el próximo parte la cierra contra esto)",
+          (esl.get("apertura") or {}).get("fuente") == "cowork"
+          and esl["apertura"]["bloqueRival"]["clase"] == "estructural no probado", esl.get("apertura"))
+    p_dtp2 = _copy.deepcopy(p_dtp)
+    p_dtp2["dtp"]["bloques"][0]["apertura"]["m1"]["sistema"] = "5-4-1"
+    r_dtp2 = c.post(f"{A}/analisis/cowork", json=p_dtp2).json()
+    check("re-depositar NO pisa la apertura de la cadena: manda la primera, y el recibo lo dice",
+          (_efedb_dtp.eslabon_de_fixture(fxn["a"], ns_dtp) or {})["apertura"]["m1"]["sistema"] == "4-3-3"
+          and r_dtp2["dtp"]["aperturaNoGuardada"], r_dtp2.get("dtp"))
+    p_dtp3 = _copy.deepcopy(p_dtp)
+    del p_dtp3["dtp"]
+    r_dtp3 = c.post(f"{A}/analisis/cowork", json=p_dtp3).json()
+    check("un re-depósito sin el DTP lo delata en `perdido`",
+          any(x.startswith("bloquesDtp") for x in r_dtp3["perdido"]), r_dtp3["perdido"])
+
     from backend.analisis.parte import mismo_dt
     check("mismo_dt: apellido compuesto y abreviado casan; apellidos distintos no",
           mismo_dt("Hernán Torres Oliveros", "H. Torres") and mismo_dt("Mauricio Pellegrino", "M. Pellegrino")

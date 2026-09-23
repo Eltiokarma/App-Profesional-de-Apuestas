@@ -308,6 +308,14 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   del rival mientras no gana por N o más y revienta cuando lo hace; «Pierde
   N+» igual. Vista derivada de goles y nivel del rival: el motor y el contrato
   (`kVic/kDer`, margen exacto) no se tocaron (ROADMAP_BURBUJAS §2).
+- **DTP por Cowork** (`backend/analisis/dtp_cowork.py`, DTP_DISENO §7): los
+  insumos salen de la ficha (`GET /analisis/cowork/dtp/{id}`, con la
+  `aperturaPrevia` contra la que se cierra) y el DTP va ESTRUCTURADO en
+  `dtp.bloques[]` (uno por equipo foco). Cowork responde las 6 preguntas del
+  checklist del bloque rival; la CLASE (improvisado · estructural ·
+  estructural no probado · ambiguo) y `c1Tde` las calcula el backend al leer.
+  La apertura entra a `cadena_dtp` solo antes del pitazo y sin pisar la
+  primera. Falta que el TDE herede C1/SOB2 y que la pizarra lo dibuje.
 - Cuotas K (§3.8): las barras SIEMPRE vía `RachasCuotas` y su botonera
   `ControlesCuotas` (condición · mercado 1X2/Doble op./Ambos · ventana); cada
   mercado dibuja solo los partidos con SU cuota capturada — sin dato, la

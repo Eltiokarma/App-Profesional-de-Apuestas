@@ -2501,6 +2501,20 @@ class VeredictoBody(BaseModel):
     notas: str = ""
 
 
+@app.get(API + "/analisis/cowork/dtp/{fixture_id}")
+def cowork_dtp(fixture_id: int):
+    """Los insumos del DTP que salen de NUESTRA base (ficha de partido ya
+    ingestada): partido anterior con goles, posesión y el marcador que la
+    produjo, XI de referencia con carriles, cambios, parejas nuevas, descanso y
+    la apertura declarada antes del partido anterior (lo que el CIERRE valida).
+    0 tokens, 0 requests. No es el DTP: el juicio lo escribe quien analiza."""
+    from backend.analisis import dtp_cowork
+    d = dtp_cowork.ficha(fixture_id)
+    if not d:
+        raise HTTPException(404, f"el fixture {fixture_id} no está en nuestra base")
+    return d
+
+
 @app.get(API + "/analisis/cowork/tde/{fixture_id}")
 def cowork_tde(fixture_id: int):
     """Los insumos del TDE que salen de NUESTRA base, ya calculados.

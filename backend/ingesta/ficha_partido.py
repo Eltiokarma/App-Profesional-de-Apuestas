@@ -331,7 +331,9 @@ def _estado(con: sqlite3.Connection) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Ficha de partido (alineaciones, eventos, stats) → sad.db")
-    ap.add_argument("--db", default="sad.db")
+    # en Railway las bases viven en el volumen ($SAD_DATA_DIR = /data), no en
+    # /app: con «sad.db» a secas, `--estado` desde la consola decía «No existe»
+    ap.add_argument("--db", default=os.path.join(os.environ.get("SAD_DATA_DIR", "."), "sad.db"))
     ap.add_argument("--dias", type=int, default=DIAS_NS_DEFAULT,
                     help=f"equipos con NS en <= N días (default {DIAS_NS_DEFAULT})")
     ap.add_argument("--ultimos", type=int, default=ULTIMOS_DEFAULT,

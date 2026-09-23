@@ -265,6 +265,38 @@ export function parteCoworkDemo(fixtureId: number, equipoA: string, equipoB: str
       paradoja: 'El equipo con mejor EFE es el que más depende de un solo hombre: si falta el arquero titular, la ventaja estructural se estrecha.',
       reventon: 'Local: riesgo alto, el visitante entra en la zona donde suele reventar su racha → no apoyar el 1X2 solo en la racha; Visitante: bajo, sin señal.',
     },
+    // DTP estructurado (demo): un bloque, con la clase del bloque rival ya
+    // calculada como la devuelve el backend al leer
+    dtp: {
+      bloques: [{
+        equipo: 'a',
+        apertura: {
+          m1: { sistema: '4-3-3', xiReferencia: 'XI de la última fecha', senalXi: 'plan de presión alta', rolesReasignados: ['lateral derecho de central'], vulnerabilidad: 'espalda del lateral reconvertido', formaSinBalon: '4-5-1 medio', minutosCompartidos: 'la pareja de centrales nunca arrancó junta' },
+          m2: {
+            choqueSistemas: '4-3-3 contra 5-3-2: superioridad por fuera',
+            duelosCarril: [{ carril: 'derecha', duelo: 'extremo vs carrilero', mismatch: 'velocidad a la espalda' }],
+            checklistBloqueRival: { p1: 'der', p2: 'der', p3: 'der', p4: 'der', p5: 'der', p6: 'izq', casoP6: '', notas: 'vallas invictas sin presión real' },
+            viasGol: { foco: ['desborde por derecha', 'pelota parada'], rival: ['transición por el carril del lateral reconvertido'] },
+            restDefense: { foco: 'dos centrales y pivote', rival: 'sin seguro tras la pérdida' },
+            posesion: { valor: '58%', contraQuien: 'rival que cede el balón', marcador: 'empatado la mayor parte', sede: 'local' },
+            veredicto: 'FAVORABLE', razon: 'superioridad por fuera contra un bloque no probado',
+          },
+          m3Fases: [
+            { tramo: '0-25', plan: 'golpear si el rival arranca frío', palancas: ['presión tras pérdida'] },
+            { tramo: '25-65', plan: 'cargar el carril derecho', palancas: ['lateral alto', 'pivote de seguro'] },
+            { tramo: '65-80+', plan: 'piernas frescas por fuera', palancas: ['córner con dos centrales altos'] },
+          ],
+          m6: { competitivo: true, rotacion: 'sin rotación', fatiga: 'tres días de descanso', ausencias: 'baja del central titular', otros: '' },
+        },
+        cierre: {
+          sinAnterior: false,
+          m4Goles: [{ gol: '0-1', minuto: 17, via: 'pelota_parada', disparador: 'córner', secuencia: 'rechace no atacado', definicion: 'remate de segunda jugada', responsablesMerito: ['el 9 rival'], responsablesError: [{ jugador: 'el 6', nivel: 'principal', detalle: 'no atacó el rechace' }], absolucion: '' }],
+          m5: { planFuncionoHastaMin: 60, peligroReal: 'pelota parada', cronologiaGiro: 'el gol del 17 cambió el plan', contraste: { aciertos: ['la vía de pelota parada'], fallos: ['el bloque aguantó menos'] }, preguntaChecklistFallida: 'la 6: el bloque nunca había sido probado' },
+          mecanismoAbierto: { activo: false, mecanismo: '', lineaRepite: null, correccionEnVivo: null },
+        },
+        calculado: { bloqueRival: { clase: 'estructural no probado', vidaUtilMin: '80-90', alertaDegradacion: true, c1Tde: 0.5, equipoDelBloque: 'b', motivo: '5 de 5 insumos del lado estructural, pero la pregunta 6 dice que nunca sostuvo un resultado contra un rival obligado', conteo: { izquierda: 0, derecha: 5, sinDato: 0 }, respuestas: { p1: 'der', p2: 'der', p3: 'der', p4: 'der', p5: 'der', p6: 'izq' } } },
+      }],
+    },
     // EL ÍNDICE ES POR EQUIPO: caben los dos, y la demo enseña los dos
     tde: {
       bloques: [

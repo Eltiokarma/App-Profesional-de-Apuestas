@@ -36,6 +36,7 @@ from backend import db as saddb
 from backend.analisis import bloque_f, db as efedb, veredicto as vered
 from backend.analisis import coherencia as _coherencia
 from backend.analisis import modo_fallo as _modo_fallo
+from backend.analisis import dtp_cowork as _dtp
 from backend.nombres import canonizar, normalizar
 
 VERSION = "cowork/1"
@@ -292,7 +293,7 @@ _CLAVES_JUGADOR = {"nombre", "jugador", "posicion", "zona", "rol", "apps", "esta
 _CLAVES_PARTE = {"fixtureId", "version", "generadoEn", "equipos", "alertas", "matchup",
                  "lecturaSad", "lectura_sad", "tde", "timelineEventos", "timelineNarrativa",
                  "cadena", "documentos", "pendientes", "fuentes", "descartados", "notas",
-                 "pronostico"}
+                 "pronostico", "dtp"}
 
 # EL VIAJE DE IDA Y VUELTA. Corregir un parte es leer → modificar →
 # re-depositar, así que el POST tiene que aceptar TAL CUAL lo que devuelve el
@@ -1294,6 +1295,8 @@ def normalizar_parte(payload: dict) -> dict:
         "lecturaSad": _lectura_sad(payload.get("lecturaSad") or payload.get("lectura_sad") or {},
                                    rechazos),
         "tde": _tde(payload.get("tde"), rechazos),
+        # el DTP estructurado, uno por equipo foco (backend/analisis/dtp_cowork.py)
+        "dtp": _dtp.normalizar_dtp(payload.get("dtp"), rechazos),
         "timelineEventos": [e for e in (_evento_tl(x, rechazos, f"timelineEventos[{i}]")
                                         for i, x in enumerate(_lista(payload.get("timelineEventos"),
                                                                      rechazos, "timelineEventos"))) if e],
@@ -1450,6 +1453,7 @@ def guardar(payload: dict) -> dict:
                 "eventosTimeline": len(p_.get("timelineEventos") or []),
                 "subScoresEfe": sum(_subscores(l) for l in LADOS),
                 "bloquesTde": len(bloques_tde(p_.get("tde") or {})),
+                "bloquesDtp": len((p_.get("dtp") or {}).get("bloques") or []),
                 # las vías (ECHADA / SOBREEXPOSICIÓN) se perdían en silencio en
                 # un re-depósito que mandaba el TDE sin ellas (Cowork, 23/09)
                 "viasTde": sum(len(b.get("vias") or []) for b in bloques_tde(p_.get("tde") or {})),
@@ -1465,6 +1469,7 @@ def guardar(payload: dict) -> dict:
         perdido = [f"{k}: {t_antes[k]} → {t_ahora[k]}" for k in t_antes if t_ahora[k] < t_antes[k]]
 
     cadena, cadena_ignorada = _guardar_cadena(fx, parte.get("cadena") or {})
+    dtp_guardado, dtp_no_guardado = _guardar_apertura_dtp(fx, parte.get("dtp") or {})
     # LO QUE FALTA AHORA Y SE COBRA DENTRO DE 12 HORAS. Un bloque vacío no es
     # un error al depositar —se puede completar después, y a veces no hay dato—,
     # pero algunos se pagan al cerrar el caso, cuando ya NO se pueden llenar sin
@@ -1532,6 +1537,12 @@ def guardar(payload: dict) -> dict:
         "conTde": bool(tde_bloques),
         # de QUÉ equipos quedó índice: el TDE es por equipo y caben los dos
         "ladosTde": [b.get("equipo") or "" for b in tde_bloques],
+        # el DTP estructurado: de qué equipos llegó, la clase del bloque rival
+        # que calculó el backend y si la apertura entró a la cadena rodante
+        "dtp": {"lados": [b["equipo"] for b in (parte.get("dtp") or {}).get("bloques") or []],
+                "claseBloqueRival": {b["equipo"]: b["calculado"]["bloqueRival"]["clase"]
+                                     for b in _dtp.leer_dtp(parte.get("dtp") or {})["bloques"]},
+                "aperturaEnCadena": dtp_guardado, "aperturaNoGuardada": dtp_no_guardado},
         # lo que falta y se va a cobrar al cerrar el caso, mientras todavía se
         # puede llenar sin mirar el resultado
         "faltan": faltan,
@@ -1732,6 +1743,38 @@ def _guardar_cadena(fx, cadena: dict) -> tuple[list[str], list[str]]:
     return escritos, ignorados
 
 
+def _guardar_apertura_dtp(fx, dtp: dict) -> tuple[list[str], list[dict]]:
+    """La APERTURA estructurada del DTP entra en `cadena_dtp` para que el
+    próximo parte del equipo la cierre (M4/M5) contra lo que se dijo ANTES, y
+    no contra la memoria. Dos candados: solo si el partido todavía no arrancó
+    (una apertura escrita con el partido rodando es hindsight) y nunca pisa una
+    apertura ya guardada (`guardar_cadena` conserva la primera)."""
+    from backend.analisis.motor import _partido_n
+    bloques = (dtp or {}).get("bloques") or []
+    if not bloques:
+        return [], []
+    est = saddb.query_one("sad", "SELECT status_short FROM fixtures WHERE id=?", (fx["id"],))
+    arranco = ((est["status_short"] if est else None) or "NS") not in ("NS", "TBD", "PST", "")
+    guardados, no = [], []
+    for b in bloques:
+        lado = b["equipo"]
+        foco, rival, tid = ((fx["home_name"], fx["away_name"], fx["home_team_id"]) if lado == "a"
+                            else (fx["away_name"], fx["home_name"], fx["away_team_id"]))
+        if arranco:
+            no.append({"equipo": foco, "porque": "el partido ya arrancó: la apertura se guarda solo "
+                                                 "antes del pitazo (anti-hindsight)"})
+            continue
+        previo = efedb.eslabon_de_fixture(foco, fx["id"]) or {}
+        if previo.get("apertura"):
+            no.append({"equipo": foco, "porque": "ya había una apertura guardada para este partido: "
+                                                 "manda la primera"})
+            continue
+        efedb.guardar_cadena(foco, _partido_n(tid, fx["date"] or ""), rival, (fx["date"] or "")[:10] or None,
+                             fx["id"], _dtp.apertura_para_cadena(b))
+        guardados.append(foco)
+    return guardados, no
+
+
 def bloques_tde(tde) -> list[dict]:
     """Los bloques del TDE, entienda o no la forma vieja.
 
@@ -1866,6 +1909,7 @@ def dto(fixture_id: int) -> dict | None:
         # la lectura de Cowork + el reventón CALCULADO al leer, uno por lado
         "lecturaSad": {**(parte.get("lecturaSad") or _lectura_sad({})), "reventonCalculado": reventon},
         "tde": tde_calc,
+        "dtp": _dtp.leer_dtp(parte.get("dtp") or {}),
         "timeline": timeline,
         "pronostico": parte["pronostico"],
         "documentos": parte["documentos"],
