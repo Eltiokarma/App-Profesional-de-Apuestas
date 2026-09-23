@@ -390,7 +390,10 @@ def _historial_por_periodo(filas: list[dict], cerrados: list[dict], periodos: li
 
 
 def _analizar_familia(filas: list[dict], familia: str, proximo: dict | None, estabilidad: dict,
-                      periodos: list[dict] | None = None) -> dict:
+                      periodos: list[dict] | None = None, *, franja: bool = False) -> dict:
+    """`franja=True` solo lo pide el backtest: agrega `_franja` con los
+    percentiles ESTRICTOS de K y racha (los de `extremo.cerca`) para medir el
+    umbral de la franja alta sin rehacer los episodios. La API no lo lleva."""
     cerrados, ep, n_cond = episodios(filas, familia)
     hist = _historial(cerrados)
     aplica = None if not proximo else (
@@ -440,6 +443,9 @@ def _analizar_familia(filas: list[dict], familia: str, proximo: dict | None, est
         "kSobreMediana": None if med_k <= 0 else _r2(k_abs / med_k),
     }
     out["extremo"] = _extremo(k_abs, ep["partidos"], base, n_cond, signo, de)
+    if franja:
+        out["_franja"] = {"pctK": 100 * sum(1 for r in de if r["kPico"] < k_abs) / n,
+                          "pctR": 100 * sum(1 for r in de if r["partidos"] < ep["partidos"]) / n}
 
     puntos = 0
     motivos = []

@@ -367,6 +367,14 @@ tarjeta decía «riesgo bajo · 1 pt» a secas, que se lee como luz verde.
   hay franja alta que medir.
 - **Espejo**: `CERCA_PCT` y `_extremo` en Python, `extremoDe` (exportada) en
   TS, con el mismo caso sintético en los dos tests.
+- **Calibración** (`franjaAlta` del backtest, `--padron`; en el servidor
+  `GET /analisis/burbujas/backtest`): como la K no adelanta el reventón, el
+  umbral NO se elige por tasa sino por **ruido**. Para cada candidato (75 ·
+  80 · 85 · 90 · 95) el backtest dice en qué fracción de las burbujas
+  abiertas saltaría el aviso (solo K, solo racha, K o racha; sin contar las
+  que ya son récord) y cuánto revientan ahí. `propuesto` = el más bajo que
+  salta en ≤ 10 % (`TECHO_AVISO`). El 90 vigente es un primer corte hasta
+  correrlo con la base real; moverlo es cambiar `CERCA_PCT` en los dos lados.
 
 De paso, los motivos del récord llevan el signo de la K («K -26.04 … récord
 previo -19.54»): antes decían «K 26.04 … máximo previo 19.54» bajo un título

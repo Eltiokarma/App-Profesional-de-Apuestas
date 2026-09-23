@@ -120,7 +120,7 @@ def observar_equipo(team_id: int, horizonte: int, min_prefijo: int = MIN_PREFIJO
         for familia in FAMILIAS:
             if not _en_condicion(fila, familia):
                 continue
-            fam = burbuja._analizar_familia(prefijo, familia, proximo, estab)
+            fam = burbuja._analizar_familia(prefijo, familia, proximo, estab, franja=True)
             act, rg = fam["actual"], fam["riesgo"]
             if not act or not rg:
                 continue
@@ -143,6 +143,11 @@ def observar_equipo(team_id: int, horizonte: int, min_prefijo: int = MIN_PREFIJO
                 # rivales más fuertes que la mediana; la − se corta ante más flojos
                 "dRival": None if not fam["rival"] else (fam["rival"]["distancia"] if act["signo"] == "+" else -fam["rival"]["distancia"]),
                 "kActual": abs(act["k"]), "partidos": act["partidos"],
+                # la franja alta (docs/REVENTON.md §10.1): récord y percentiles estrictos
+                "extremo": bool((fam["extremo"] or {}).get("activo")),
+                "cerca": bool((fam["extremo"] or {}).get("cerca")),
+                "pctK": (fam.get("_franja") or {}).get("pctK"),
+                "pctR": (fam.get("_franja") or {}).get("pctR"),
                 "revento": revento, "reventoAhora": revento_ahora,
             })
     return obs
@@ -199,6 +204,48 @@ def _por_liga(con_base: list[dict], nombres: dict[int, str]) -> list[dict]:
     return sorted(salida, key=lambda x: -x["todas"]["n"])
 
 
+# ── la franja alta: con qué umbral avisar «cerca del extremo» ─────────────────
+# La K no adelanta el reventón (§8), así que el umbral NO se elige por tasa:
+# se elige por RUIDO. Un aviso que salta en un tercio de los partidos se deja
+# de leer (la regla del latido). Por cada umbral candidato: en qué fracción de
+# las burbujas abiertas saltaría (sin contar las que ya son récord) y cuánto
+# revientan ahí, al lado de la tasa del récord y de la del resto.
+UMBRALES_CERCA = (75, 80, 85, 90, 95)
+TECHO_AVISO = 0.10   # un aviso ámbar que salta en más del 10 % de las burbujas es ruido
+
+
+def _franja_alta(con_base: list[dict]) -> dict:
+    con = [o for o in con_base if o.get("pctK") is not None]
+    n = len(con)
+    if not n:
+        return {"n": 0}
+    rec = [o for o in con if o["extremo"]]
+    no_rec = [o for o in con if not o["extremo"]]
+    umbrales = []
+    for u in UMBRALES_CERCA:
+        k_ = [o for o in no_rec if o["pctK"] >= u]
+        r_ = [o for o in no_rec if o["pctR"] >= u]
+        am = [o for o in no_rec if o["pctK"] >= u or o["pctR"] >= u]
+        umbrales.append({"umbral": u,
+                         "soloK": {**_tasa(k_), "frecuencia": round(len(k_) / n, 3)},
+                         "soloRacha": {**_tasa(r_), "frecuencia": round(len(r_) / n, 3)},
+                         "kORacha": {**_tasa(am), "frecuencia": round(len(am) / n, 3)}})
+    # propuesta: el umbral más bajo cuyo aviso (K o racha) no pasa del techo
+    ok = [u for u in umbrales if u["kORacha"]["frecuencia"] <= TECHO_AVISO]
+    return {
+        "n": n,
+        "record": {**_tasa(rec), "frecuencia": round(len(rec) / n, 3)},
+        "resto": _tasa([o for o in no_rec if not o["cerca"]]),
+        "cercaVigente": {**_tasa([o for o in no_rec if o["cerca"]]),
+                         "frecuencia": round(sum(1 for o in no_rec if o["cerca"]) / n, 3)},
+        "umbrales": umbrales,
+        "techo": TECHO_AVISO,
+        "propuesto": ok[0]["umbral"] if ok else None,
+        "aviso": ("el umbral se elige por ruido, no por tasa: la K no adelanta el reventón (§8). "
+                  "Propuesto = el más bajo cuyo aviso salta en ≤ el techo de las burbujas abiertas"),
+    }
+
+
 def resumir(obs: list[dict], horizonte: int, nombres: dict[int, str] | None = None) -> dict:
     con_base = [o for o in obs if o["nivel"] != "sin base"]
     por_nivel = {nv: _tasa([o for o in con_base if o["nivel"] == nv]) for nv in NIVELES}
@@ -244,6 +291,7 @@ def resumir(obs: list[dict], horizonte: int, nombres: dict[int, str] | None = No
                        "3-5": _tasa([o for o in con_base if 3 <= o["n"] < 6]),
                        "≥6": _tasa([o for o in con_base if o["n"] >= 6])},
         "porLiga": _por_liga(con_base, nombres or {}),
+        "franjaAlta": _franja_alta(con_base),
     }
 
 
@@ -482,6 +530,17 @@ def imprimir(r: dict):
         for l in r["porLiga"]:
             print(f"  {l['liga'][:34]:34s} {_pct(l['todas'])} n={l['todas']['n']:4d} · bajo {_pct(l['bajo'])} · "
                   f"alto+ {_pct(l['altoMuyAlto'])} · sep {l['separacion']} · AUC {l['auc']}")
+    fa = r.get("franjaAlta") or {}
+    if fa.get("n"):
+        print("\n— franja alta: umbral del aviso «cerca del extremo» (frecuencia = en qué parte de las burbujas salta) —")
+        print(f"  récord (EXTREMO): {_pct(fa['record'])} n={fa['record']['n']} · frecuencia {100 * fa['record']['frecuencia']:.1f}%")
+        print(f"  cerca con el umbral vigente: {_pct(fa['cercaVigente'])} n={fa['cercaVigente']['n']} · "
+              f"frecuencia {100 * fa['cercaVigente']['frecuencia']:.1f}% · resto {_pct(fa['resto'])} n={fa['resto']['n']}")
+        print(f"  {'umbral':>6s}  {'solo K':>22s}  {'solo racha':>22s}  {'K o racha':>22s}")
+        for u in fa["umbrales"]:
+            c = lambda t: f"{_pct(t)} · {100 * t['frecuencia']:4.1f}% n={t['n']}"  # noqa: E731
+            print(f"  {u['umbral']:>6d}  {c(u['soloK']):>22s}  {c(u['soloRacha']):>22s}  {c(u['kORacha']):>22s}")
+        print(f"  propuesto: {fa['propuesto']} (techo {100 * fa['techo']:.0f}%) · {fa['aviso']}")
     cal = r.get("calibracion")
     if cal:
         print("\n=== Calibración (regresión logística sobre las señales; ajuste en muestra) ===")

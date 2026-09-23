@@ -109,6 +109,23 @@ def main():
     check("calibrar: también por signo (+ y −), cada uno con su n y su aviso o coeficientes",
           set(ps) == {"+", "-"} and all("n" in ps[s] and ("coeficientes" in ps[s] or "aviso" in ps[s]) for s in ps)
           and ps["+"]["n"] + ps["-"]["n"] == cal["n"], {s: ps[s].get("n") for s in ps})
+    # la franja alta (§10.1): el umbral del aviso ámbar se mide por ruido
+    fa = rc["franjaAlta"]
+    check("franja alta: un umbral por candidato, frecuencias en [0, 1] y que no crecen al subir el umbral",
+          [u["umbral"] for u in fa["umbrales"]] == list(bt.UMBRALES_CERCA)
+          and all(0 <= u["kORacha"]["frecuencia"] <= 1 for u in fa["umbrales"])
+          and all(a["kORacha"]["n"] >= b["kORacha"]["n"] for a, b in zip(fa["umbrales"], fa["umbrales"][1:])), fa)
+    check("franja alta: récord, cerca vigente y resto se reparten las observaciones sin solaparse",
+          fa["record"]["n"] + fa["cercaVigente"]["n"] + fa["resto"]["n"] == fa["n"], fa)
+    check("franja alta: el aviso ámbar nunca cuenta una burbuja que ya es récord",
+          all(u["kORacha"]["n"] <= fa["n"] - fa["record"]["n"] for u in fa["umbrales"]))
+    from backend.analisis import burbuja as _b
+    _filas = list(reversed(bt.constantes_de(bt._equipos(12)[0], 500)))
+    _est = _b.estabilidad_de(None, "1970-01-01")
+    check("franja alta: la API no lleva el detalle interno del backtest (_franja); el backtest sí",
+          "_franja" not in _b._analizar_familia(_filas, "total", None, _est)
+          and ("_franja" in _b._analizar_familia(_filas, "total", None, _est, franja=True)
+               or _b._analizar_familia(_filas, "total", None, _est)["extremo"] is None))
     # la logística recupera un patrón conocido: celdas sintéticas donde solo una señal manda
     celdas = {}
     for k in (0, 1):

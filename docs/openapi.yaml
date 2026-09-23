@@ -288,7 +288,9 @@ paths:
         sin fuga) y la compara con lo que pasó dentro de `horizonte` partidos de la
         condición. Devuelve la tasa de reventón por nivel de riesgo y por puntos
         (con AUC), el lift de cada señal, la separación por familia y por «manda»,
-        la regla del nivel y el desglose por liga. `padron=true` = solo las ligas
+        la regla del nivel, el desglose por liga y `franjaAlta` (con qué umbral de
+        percentil avisar «cerca del extremo»: frecuencia y tasa por candidato, y el
+        propuesto por ruido, docs/REVENTON.md §10.1). `padron=true` = solo las ligas
         importantes (padrón único de las cuotas en vivo). No abierto a Cowork:
         es calibración, no un dato del parte (docs/REVENTON.md §8).
       parameters:
