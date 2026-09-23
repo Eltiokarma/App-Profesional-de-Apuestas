@@ -620,7 +620,8 @@ def _reventon_calculado(fx) -> dict | None:
 
 def alertas_extremo(reventon: dict | None, nombres: dict) -> list[dict]:
     """La alerta K-EXTREMO del parte, una por lado con la burbuja total en su
-    máximo histórico. Va en la TIRA de alertas, arriba del todo, porque una
+    máximo histórico (y K-CERCA-EXTREMO, ámbar, si está en la franja alta sin
+    llegar al récord). Va en la TIRA de alertas, arriba del todo, porque una
     línea dentro de la lectura SAD se lee tarde o no se lee: en Alavés–Valencia
     el riesgo decía «bajo» con la K de Valencia en su récord y nadie lo vio
     hasta el 0-1. No cambia el riesgo (la K no puntúa); cambia cuánto se carga."""
@@ -628,9 +629,18 @@ def alertas_extremo(reventon: dict | None, nombres: dict) -> list[dict]:
     for lado in LADOS:
         ext = ((reventon or {}).get(lado) or {}).get("extremo") or {}
         act = ((reventon or {}).get(lado) or {}).get("actual") or {}
+        k = act.get("k")
+        if ext.get("cerca") and not ext.get("activo") and k is not None:
+            out.append({
+                "codigo": "K-CERCA-EXTREMO", "equipo": lado, "tipo": "dato",
+                "detalle": f"{nombres.get(lado, lado)}: burbuja K {k:+.2f} en la franja más alta de su "
+                           f"historia ({' · '.join(ext.get('motivos') or [])}). No es récord y el modelo "
+                           "no lo puntúa como riesgo, pero queda poco margen: no cargar fuerte a que la "
+                           "racha siga",
+            })
+            continue
         if not ext.get("activo"):
             continue
-        k = act.get("k")
         out.append({
             "codigo": "K-EXTREMO", "equipo": lado, "tipo": "estructural",
             "detalle": f"{nombres.get(lado, lado)}: burbuja K {k:+.2f} en su máximo histórico "
@@ -1044,7 +1054,7 @@ _CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto", "ligas", "dtBa
 # F3 y las de DT las pone la lectura a partir de la base y del propio parte;
 # si el eco del GET vuelve con ellas, se descartan sin rechazo (se van a
 # recalcular igual) en vez de guardarse por duplicado.
-_ALERTAS_CALCULADAS = {"K-EXTREMO", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT"}
+_ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT"}
 # LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
 # selladas (coherencia_json), porque no son deterministas y rehacerlas al leer
 # las haría parpadear. Del depósito se descartan igual que las calculadas

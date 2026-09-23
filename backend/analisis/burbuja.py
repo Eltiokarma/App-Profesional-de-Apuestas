@@ -229,7 +229,21 @@ def _confianza(n: int, estabilidad: dict) -> tuple[str, list[str]]:
     return c, motivos
 
 
-def _extremo(k_abs: float, partidos: int, base: dict, n_cond: int, signo: str) -> dict:
+# Franja alta: la burbuja abierta ya pasó al CERCA_PCT % de las de su signo
+# que reventaron, sin llegar al récord. ADT (sept. 2026): K −17.9 con un
+# récord previo de −19.5 y por encima del 95 % de sus 39 reventones negativos
+# no encendía nada porque no era récord, y la pantalla decía «riesgo bajo» a
+# secas. Es el mismo principio del extremo en un escalón más suave: no puntúa,
+# no mueve el riesgo, dice cuánto se carga.
+CERCA_PCT = 90
+
+
+def _con_signo(v: float, signo: str) -> str:
+    return f"{'+' if signo == '+' else '-'}{_r2(abs(v))}"
+
+
+def _extremo(k_abs: float, partidos: int, base: dict, n_cond: int, signo: str,
+             de: list[dict] | None = None) -> dict:
     """ALERTA DE EXTREMO: prudencia, no probabilidad.
 
     El backtest (docs/REVENTON.md §8) dice que una K récord no revienta más
@@ -240,30 +254,56 @@ def _extremo(k_abs: float, partidos: int, base: dict, n_cond: int, signo: str) -
     −32 sobre un máximo previo de 24: el modelo estaba dentro de su tasa y
     quien puso la plata con esa confianza igual perdió. Esta bandera se
     enciende aparte del riesgo, viaja con el N de partidos y NO se puede
-    saltar en el parte."""
+    saltar en el parte.
+
+    `cerca` es el escalón de abajo (§10): sin récord, la K o la racha ya
+    superan al CERCA_PCT % de los reventones del signo (estricto: «más alta
+    que»). Se avisa en ámbar, no en rojo, y `activo` sigue siendo solo el
+    récord: la alerta K-EXTREMO y el veredicto no cambian de significado."""
     k_rec = k_abs >= base["kPico"]["max"]
     max_p = base["partidos"]["max"]
     max_p = int(max_p) if float(max_p).is_integer() else max_p  # «3 partidos», no «3.0»
     r_rec = partidos >= max_p
+    de = de or []
+    n = len(de)
+    pct_k = math.floor(100 * sum(1 for r in de if r["kPico"] < k_abs) / n + 0.5) if n else 0
+    pct_r = math.floor(100 * sum(1 for r in de if r["partidos"] < partidos) / n + 0.5) if n else 0
+    k_cerca = not k_rec and pct_k >= CERCA_PCT
+    r_cerca = not r_rec and pct_r >= CERCA_PCT
+    cerca = not (k_rec or r_rec) and (k_cerca or r_cerca)
     motivos = []
     lado = "alta" if signo == "+" else "baja"
+    k_txt, max_txt = _con_signo(k_abs, signo), _con_signo(base["kPico"]["max"], signo)
     if k_rec:
-        motivos.append(f"K {_r2(k_abs)}: la más {lado} de los {n_cond} partidos que hay en la base "
-                       f"(máximo previo {base['kPico']['max']})")
+        motivos.append(f"K {k_txt}: la más {lado} de los {n_cond} partidos que hay en la base "
+                       f"(récord previo {max_txt})")
     if r_rec:
         motivos.append(f"{partidos} partidos seguidos: la racha más larga de los {n_cond} partidos que hay "
                        f"en la base (máximo previo {max_p})")
+    if cerca and k_cerca:
+        motivos.append(f"K {k_txt}: más {lado} que el {pct_k} % de las {n} burbujas {signo} que reventaron "
+                       f"(récord previo {max_txt}, a {_r2(base['kPico']['max'] - k_abs)})")
+    if cerca and r_cerca:
+        motivos.append(f"{partidos} partidos seguidos: más que el {pct_r} % de las {n} burbujas {signo} que "
+                       f"reventaron (máximo previo {max_p})")
+    texto = ""
+    if k_rec or r_rec:
+        texto = ("EXTREMO: la burbuja está en su máximo histórico. El modelo no lo puntúa como riesgo "
+                 "(la tasa de reventón no sube con la K), pero es terreno sin precedente para este "
+                 "equipo: no cargar la apuesta a que la racha siga")
+    elif cerca:
+        texto = (f"CERCA DEL EXTREMO: la burbuja está en la franja más alta de su historia (por encima "
+                 f"del {CERCA_PCT} % de las que reventaron). El modelo no lo puntúa como riesgo, pero "
+                 "queda poco margen antes del récord: no cargar fuerte a que la racha siga")
     return {
         "activo": k_rec or r_rec,
         "kRecord": k_rec,
         "rachaRecord": r_rec,
+        "cerca": cerca,
         "partidosHistoria": n_cond,
         "maximoPrevio": {"kPico": base["kPico"]["max"], "partidos": max_p},
         "motivos": motivos,
-        "texto": ("" if not (k_rec or r_rec) else
-                  "EXTREMO: la burbuja está en su máximo histórico. El modelo no lo puntúa como riesgo "
-                  "(la tasa de reventón no sube con la K), pero es terreno sin precedente para este "
-                  "equipo: no cargar la apuesta a que la racha siga"),
+        "texto": texto,
     }
 
 
@@ -399,7 +439,7 @@ def _analizar_familia(filas: list[dict], familia: str, proximo: dict | None, est
         "percentilRacha": pct_r,
         "kSobreMediana": None if med_k <= 0 else _r2(k_abs / med_k),
     }
-    out["extremo"] = _extremo(k_abs, ep["partidos"], base, n_cond, signo)
+    out["extremo"] = _extremo(k_abs, ep["partidos"], base, n_cond, signo, de)
 
     puntos = 0
     motivos = []

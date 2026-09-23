@@ -137,8 +137,30 @@ def main():
     check("historial − local: K pico 3.0 repetida → moda 3.0", lo["historial"]["negativo"]["kPico"]["moda"] == 3.0)
     check("percentil K 50 (una de dos por debajo)", lo["posicion"]["percentilK"] == 50, lo["posicion"])
     check("local: K 9.5 < máximo previo 16 y racha 3 < 4 → extremo INACTIVO, sin motivos ni texto",
-          lo["extremo"] == {"activo": False, "kRecord": False, "rachaRecord": False, "partidosHistoria": 11,
+          lo["extremo"] == {"activo": False, "kRecord": False, "rachaRecord": False, "cerca": False, "partidosHistoria": 11,
                             "maximoPrevio": {"kPico": 16.0, "partidos": 4}, "motivos": [], "texto": ""}, lo["extremo"])
+
+    # CERCA DEL EXTREMO (§10): el caso ADT, sintético y el mismo que en el TS.
+    # Diez reventones negativos, récord K 19.54 y racha 4; la abierta en −17.93
+    # tras 3 partidos supera (estricto) al 90 % en K y en racha sin ser récord.
+    from backend.analisis.burbuja import _extremo
+    de_c = [{"kPico": k, "partidos": p} for k, p in
+            zip([2, 3, 4, 5, 6, 7, 8, 9, 10, 19.54], [1, 1, 1, 1, 1, 2, 2, 2, 1, 4])]
+    base_c = {"kPico": {"max": 19.54}, "partidos": {"max": 4}}
+    ce = _extremo(17.93, 3, base_c, 280, "-", de_c)
+    check("CERCA: K −17.93 sobre récord −19.54 y racha 3 sobre 4 → cerca, NO activo (la alerta roja no cambia)",
+          ce["cerca"] and not ce["activo"] and not ce["kRecord"] and not ce["rachaRecord"], ce)
+    check("cerca: dos motivos con el signo de la K, el 90 % y el récord previo, y texto que pide no cargar fuerte",
+          ce["motivos"] == ["K -17.93: más baja que el 90 % de las 10 burbujas - que reventaron (récord previo -19.54, a 1.61)",
+                            "3 partidos seguidos: más que el 90 % de las 10 burbujas - que reventaron (máximo previo 4)"]
+          and ce["texto"].startswith("CERCA DEL EXTREMO") and "no cargar fuerte" in ce["texto"], ce)
+    rec = _extremo(26.04, 1, base_c, 280, "-", de_c)
+    check("récord negativo: el motivo lleva el signo (K -26.04 … récord previo -19.54) y cerca queda en false",
+          rec["activo"] and not rec["cerca"] and rec["motivos"][0].startswith("K -26.04: la más baja")
+          and "récord previo -19.54" in rec["motivos"][0], rec)
+    lejos = _extremo(9.5, 1, base_c, 280, "-", de_c)
+    check("K −9.5 (80 %) y racha 1 → ni extremo ni cerca, sin motivos",
+          not lejos["activo"] and not lejos["cerca"] and lejos["motivos"] == [] and lejos["texto"] == "", lejos)
 
     print("\n— familia visita —")
     vi = out["familias"]["visita"]

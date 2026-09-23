@@ -171,6 +171,7 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
   const ultimos = fam.reventones.slice(-(compact ? 3 : 5)).reverse()
   const est = data.estabilidad
   const extremo = fam.extremo?.activo ? fam.extremo : null
+  const cerca = !extremo && fam.extremo?.cerca ? fam.extremo : null
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -234,6 +235,26 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
           </ul>
           <div style={{ font: '600 11px var(--sans)', color: 'var(--down)', marginTop: 5, lineHeight: 1.4 }}>
             No cargar la apuesta a que la racha siga. El riesgo de abajo no lo cuenta: la tasa de reventón no sube con la K, pero si revienta, revienta desde lo más alto.
+          </div>
+        </div>
+      )}
+
+      {/* CERCA DEL EXTREMO: el escalón de abajo, en ámbar. Sin récord, pero
+          la K o la racha ya pasaron al 90 % de sus reventones: un «riesgo
+          bajo» a secas se leía como luz verde (ADT −17.9 con récord −19.5). */}
+      {actual && cerca && (
+        <div role="alert" style={{ padding: '10px 12px', borderRadius: 9, background: 'color-mix(in oklch, var(--mark), transparent 82%)', border: '2px solid var(--mark)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+            <span style={{ padding: '2px 8px', borderRadius: 6, background: 'var(--mark)', color: 'var(--bg)', font: '800 10px var(--mono)', letterSpacing: '.6px' }}>⚠ CERCA DEL EXTREMO</span>
+            <span style={{ font: '800 12px var(--sans)', color: 'var(--mark)', textTransform: 'uppercase', letterSpacing: '.3px' }}>
+              K {actual.k > 0 ? '+' : ''}{actual.k.toFixed(1)} · récord {signo === '+' ? '+' : '-'}{cerca.maximoPrevio.kPico.toFixed(1)}
+            </span>
+          </div>
+          <ul style={{ margin: 0, paddingLeft: 16, font: '600 11px var(--sans)', color: 'var(--t1)', lineHeight: 1.45 }}>
+            {cerca.motivos.map((m, i) => <li key={i}>{m}</li>)}
+          </ul>
+          <div style={{ font: '600 11px var(--sans)', color: 'var(--mark)', marginTop: 5, lineHeight: 1.4 }}>
+            No cargar fuerte a que la racha siga. El riesgo de abajo no lo cuenta: la K no puntúa, pero la burbuja ya está en la franja más alta de su historia.
           </div>
         </div>
       )}

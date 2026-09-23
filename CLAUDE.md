@@ -291,7 +291,10 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   partidos) se grita APARTE del riesgo —en rojo en la tarjeta, como alerta
   `K-EXTREMO` en la tira del parte y como regla dura del prompt—; no mueve
   los puntos (la K no puntúa) pero sí cuánto se carga: es prudencia, no
-  probabilidad, y Cowork no se la puede saltar. Las K de goles quedan fuera
+  probabilidad, y Cowork no se la puede saltar. Un escalón más abajo,
+  `extremo.cerca` (§10.1): sin récord pero por encima del 90 % de sus
+  reventones del signo → caja ámbar y alerta `K-CERCA-EXTREMO` (tipo `dato`);
+  `activo` sigue siendo solo el récord. Las K de goles quedan fuera
   a propósito hasta que se decida sumarlas. **Por período** (§10-bis):
   `historialPorPeriodo` repite las medidas acotadas a temporada · año · DT
   vigente · últimos 20, filtrando por la fecha del reventón sobre los mismos

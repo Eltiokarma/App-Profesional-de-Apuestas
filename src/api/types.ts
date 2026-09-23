@@ -579,11 +579,14 @@ export interface ExtremoBurbujaDTO {
   kRecord: boolean
   /** racha ≥ la más larga que reventó este signo. */
   rachaRecord: boolean
+  /** Sin récord, pero la K o la racha ya superan al 90 % de los reventones de
+   *  este signo (franja alta). Aviso ámbar; `activo` sigue siendo solo el récord. */
+  cerca: boolean
   /** N: partidos de esta condición en la base ("la más alta en N partidos"). */
   partidosHistoria: number
   maximoPrevio: { kPico: number; partidos: number }
   motivos: string[]
-  /** '' si no está activo. */
+  /** '' si no está activo ni cerca. */
   texto: string
 }
 

@@ -1180,6 +1180,14 @@ def main():
           len(al) == 1 and al[0]["equipo"] == "b" and al[0]["codigo"] == "K-EXTREMO"
           and "Valencia" in al[0]["detalle"] and "-32.00" in al[0]["detalle"] and "118 partidos" in al[0]["detalle"], al)
     check("sin reventón calculado no hay alerta ni excepción", alertas_extremo(None, {}) == [])
+    sint_c = {"a": {"actual": {"k": -17.93}, "riesgo": {"nivel": "bajo"},
+                    "extremo": {"activo": False, "cerca": True, "motivos": ["K -17.93: más baja que el 95 % de las 39 burbujas - que reventaron (récord previo -19.54, a 1.61)"]}},
+              "b": {"actual": {"k": 3.0}, "extremo": {"activo": False, "cerca": False, "motivos": []}}}
+    alc = alertas_extremo(sint_c, {"a": "ADT", "b": "Cienciano"})
+    check("K −17.9 a 1.6 del récord con riesgo BAJO → UNA alerta K-CERCA-EXTREMO (tipo dato) para el lado a, sin K-EXTREMO",
+          len(alc) == 1 and alc[0]["codigo"] == "K-CERCA-EXTREMO" and alc[0]["equipo"] == "a"
+          and alc[0]["tipo"] == "dato" and "ADT" in alc[0]["detalle"] and "95 %" in alc[0]["detalle"], alc)
+
 
     # caja de sensibilidad
     sens = d["equipos"]["a"]["sensibilidad"]
