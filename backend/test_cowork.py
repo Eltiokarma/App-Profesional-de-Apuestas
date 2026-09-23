@@ -1911,6 +1911,35 @@ def main():
           and sum(1 for x in c.get(f"{A}/analisis/cowork/{pasado['id']}").json()["alertas"]
                   if x["codigo"] == "DT-DISCREPANCIA" and x["equipo"] == "a") == 1,
           (r_eco["rechazos"], [x["codigo"] for x in c.get(f"{A}/analisis/cowork/{pasado['id']}").json()["alertas"]]))
+    # ── DT EQUIVOCADO: el parte nombra a uno y en el banco se sentó otro ──
+    import sqlite3 as _sq3
+    with _sq3.connect(os.path.join(tmp, "sad.db")) as _con:
+        _fx = _con.execute("SELECT home_team_id FROM fixtures WHERE id=?", (pasado["id"],)).fetchone()
+        _con.execute("UPDATE alineaciones SET entrenador=? WHERE fixture_id=? AND team_id=?",
+                     ("R. Dudamel", pasado["id"], _fx[0]))
+        _hay = _con.execute("SELECT COUNT(*) FROM alineaciones WHERE fixture_id=? AND team_id=?",
+                            (pasado["id"], _fx[0])).fetchone()[0]
+        if not _hay:
+            _con.execute("INSERT INTO alineaciones (fixture_id, team_id, entrenador, player_id, jugador, titular) "
+                         "VALUES (?, ?, ?, ?, ?, 1)", (pasado["id"], _fx[0], "R. Dudamel", 999001, "Jugador Demo"))
+    p_eq = _copy.deepcopy(p_lec)
+    p_eq["equipos"]["a"]["dt"] = {"nombre": "Pablo Repetto", "desde": "2026-01-01"}
+    c.post(f"{A}/analisis/cowork", json=p_eq)
+    inv_eq = c.get(f"{A}/analisis/cowork/lecciones").json()
+    item_eq = [i for i in inv_eq["enCuarentena"]["items"] if i["clave"].startswith(f"{pasado['id']}:")]
+    check("DT del parte (Repetto) distinto del que se sentó en el banco (Dudamel) → cuarentena AUTOMÁTICA con los dos nombres",
+          item_eq and all(i["cuarentenaAutomatica"] for i in item_eq)
+          and "Repetto" in item_eq[0]["cuarentena"] and "Dudamel" in item_eq[0]["cuarentena"],
+          [i.get("cuarentena") for i in item_eq] or inv_eq["enCuarentena"])
+    p_eq["equipos"]["a"]["dt"] = {"nombre": "Rafael Dudamel", "desde": "2026-01-01"}
+    c.post(f"{A}/analisis/cowork", json=p_eq)
+    check("re-depositar con el DT del banco («Rafael Dudamel» vs «R. Dudamel») la levanta",
+          not any(i["clave"].startswith(f"{pasado['id']}:") for i in
+                  c.get(f"{A}/analisis/cowork/lecciones").json()["enCuarentena"]["items"]))
+    from backend.analisis.parte import mismo_dt
+    check("mismo_dt: apellido compuesto y abreviado casan; apellidos distintos no",
+          mismo_dt("Hernán Torres Oliveros", "H. Torres") and mismo_dt("Mauricio Pellegrino", "M. Pellegrino")
+          and not mismo_dt("Pablo Repetto", "R. Dudamel"))
     c.post(f"{A}/analisis/cowork", json=p_lec)
     ag_dt = c.get(f"{A}/analisis/cowork/agenda", params={"fecha": fecha, "limite": 2}).json()
     check("la agenda lleva el DT de la base por lado, con edad, procedencia y si es fiable",

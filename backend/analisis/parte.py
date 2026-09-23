@@ -27,6 +27,8 @@ DBs del SAD.
 """
 import difflib
 import json
+import re
+import unicodedata
 import sqlite3
 from datetime import date as date_t, datetime, timedelta, timezone
 
@@ -112,12 +114,17 @@ _COLUMNAS_LOG = (("via", "TEXT"),)
 # anterior a la primera cohorte sellada es «rodaje». Las métricas se leen por
 # cohorte; la vigente es la única que vale para calibrar.
 COHORTE_RODAJE = "rodaje"
-COHORTE = "c2-2026-09-19"
+COHORTE = "c3-2026-09-23"
 COHORTES = {
     COHORTE_RODAJE: "partes anteriores al 19/09/2026: DT viejo en 17 de 22 equipos, TDE sin nivel "
                     "en diez partes, agenda sin padrón. Enseñan, no calibran",
     "c2-2026-09-19": "desde el 19/09/2026: dt {nombre, desde}, niveles del TDE rechazados si "
-                     "llegan mal, DT de la ingesta desde la alineación, once de la ficha con procedencia",
+                     "llegan mal, DT de la ingesta desde la alineación, once de la ficha con procedencia. "
+                     "Todavía con la alineación RANCIA ganándole a /coachs (Santa Fe–Cali, la Roma): "
+                     "referencia, no calibra",
+    "c3-2026-09-23": "desde el 23/09/2026: la alineación manda en el DT solo si es de los últimos 3 "
+                     "partidos (arreglo del 22/09), cuarentena automática si el DT del parte no es el "
+                     "que se sentó en el banco, aviso CERCA DEL EXTREMO en el reventón",
 }
 
 
@@ -744,6 +751,54 @@ def sin_dt(parte: dict) -> list[str]:
         if not nombre or nombre.lower() in _DT_DESCONOCIDO:
             fuera.append(lado)
     return fuera
+
+
+def _tokens_dt(nombre: str) -> set[str]:
+    n = unicodedata.normalize("NFD", (nombre or "").lower())
+    n = "".join(c for c in n if unicodedata.category(c) != "Mn")
+    return {t for t in re.split(r"[^a-z]+", n) if len(t) >= 3}
+
+
+def mismo_dt(a: str, b: str) -> bool:
+    """¿Nombran al mismo entrenador? La API y la prensa los escriben distinto
+    («M. Pellegrino» · «Mauricio Pellegrino» · «Hernán Torres Oliveros» ·
+    «H. Torres»): basta un apellido en común. Laxo a propósito: una
+    cuarentena falsa saca un caso bueno, y eso también ensucia la métrica."""
+    return bool(_tokens_dt(a) & _tokens_dt(b))
+
+
+def dt_equivocado(parte: dict, fixture_id: int) -> list[dict]:
+    """Los lados donde el DT que declaró el parte NO es el que se sentó en el
+    banco de ESE partido (la alineación que capturó la ficha).
+
+    Es un criterio de INSUMO, no de resultado: dice que el parte se escribió
+    con el entrenador equivocado —el error de la alineación rancia del 22/09—,
+    no cómo terminó el partido. Se mira después del pitazo solo porque el
+    banco se conoce entonces. Sin alineación capturada (Colombia, Uruguay, o
+    la ficha aún no corrió) no se puede comprobar y no se marca nada: ahí la
+    cuarentena es a mano."""
+    fx = _fixture(fixture_id)
+    if not fx:
+        return []
+    out = []
+    malos = set(sin_dt(parte))
+    for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])):
+        if lado in malos:
+            continue
+        dt = ((parte.get("equipos") or {}).get(lado) or {}).get("dt") or {}
+        nombre = _txt(dt.get("nombre")) if isinstance(dt, dict) else ""
+        try:
+            fila = saddb.query_one(
+                "sad", "SELECT entrenador FROM alineaciones WHERE fixture_id=? AND team_id=? "
+                       "AND entrenador IS NOT NULL AND entrenador <> '' LIMIT 1", (fixture_id, tid))
+        except Exception:  # noqa: BLE001 — sin tabla de alineaciones no hay con qué comparar
+            fila = None
+        banco = (fila["entrenador"] if fila else "") or ""
+        # sin un apellido comparable de algún lado («DT A») no se puede decir
+        # que sean distintos: no se marca
+        if banco and _tokens_dt(nombre) and _tokens_dt(banco) and not mismo_dt(nombre, banco):
+            out.append({"lado": lado, "parte": nombre, "banco": banco})
+    return out
 
 
 def alertas_dt(parte: dict, fx, nombres: dict) -> list[dict]:

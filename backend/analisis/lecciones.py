@@ -58,7 +58,7 @@ def _casos(limite: int = 400) -> list[dict]:
     """Los partes con veredicto, con su parte y su juicio ya cargados."""
     from backend.analisis.parte import _conectar as conectar_parte
 
-    from backend.analisis.parte import cohorte_de, sin_dt
+    from backend.analisis.parte import cohorte_de, dt_equivocado, sin_dt
 
     with conectar_parte() as con:
         filas = con.execute(
@@ -76,6 +76,17 @@ def _casos(limite: int = 400) -> list[dict]:
         if lados_sin and not cuarentena:
             cuarentena = {"motivo": "automática: sin DT declarado (lado " + ", ".join(lados_sin) + ")",
                           "automatica": True, "puestaEn": "", "veredictoAlPoner": None}
+        # DT EQUIVOCADO TAMPOCO. El parte nombró a un DT y en el banco se sentó
+        # otro (la alineación rancia del 22/09: Santa Fe–Cali, la Roma). Es el
+        # mismo criterio de insumo —qué traía el parte antes del pitazo—,
+        # comprobado contra la alineación de ese partido cuando la hay.
+        if not cuarentena:
+            malos = dt_equivocado(parte, f["fixture_id"])
+            if malos:
+                cuarentena = {"motivo": "automática: DT del parte distinto del que dirigió el partido ("
+                                        + " · ".join(f"lado {m['lado']}: parte «{m['parte']}», banco «{m['banco']}»"
+                                                     for m in malos) + ")",
+                              "automatica": True, "puestaEn": "", "veredictoAlPoner": None}
         fuera.append({
             "fixtureId": f["fixture_id"], "fecha": (f["fecha"] or "")[:10],
             "equipoA": f["equipo_a"], "equipoB": f["equipo_b"],
