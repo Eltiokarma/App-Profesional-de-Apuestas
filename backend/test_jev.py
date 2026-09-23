@@ -152,6 +152,15 @@ try:
 except ValueError as exc:
     check("un estado gigante se rechaza", "repartilo" in str(exc))
 
+print("\n== una clave mal pegada no es una clave mala ==")
+for cruda, limpia in (('"ts-abc"', "ts-abc"), ("'ts-abc'", "ts-abc"), ("Bearer ts-abc", "ts-abc"),
+                      ("  ts-abc  ", "ts-abc"), ('"Bearer ts-abc"', "ts-abc")):
+    os.environ["TYPESAFE_API_KEY"] = cruda
+    check(f"{cruda!r} → {limpia!r}", jev._clave() == limpia and jev.disponible(), jev._clave())
+os.environ["TYPESAFE_API_KEY"] = '""'
+check("solo comillas es no tener clave", not jev.disponible())
+os.environ.pop("TYPESAFE_API_KEY", None)
+
 print("\n== costo ==")
 check("la salida no se cobra y la entrada es calderilla",
       abs(jev.costo(392) - 392 / 1_000_000 * 0.042) < 1e-12)

@@ -172,8 +172,19 @@ def sino(instrucciones: str, criterios: dict | None = None) -> dict:
 
 # ------------------------------------------------------------------ cliente
 
+def _clave() -> str:
+    """La clave tal como hay que mandarla. Una variable pegada con comillas o
+    con `Bearer ` delante —el error de copia más común en un panel— da un 401
+    idéntico al de una clave mala; se limpia acá para que un 401 signifique
+    de verdad «clave inválida» y no «clave mal pegada»."""
+    k = os.environ.get("TYPESAFE_API_KEY", "").strip().strip('"').strip("'").strip()
+    if k.lower().startswith("bearer "):
+        k = k[7:].strip()
+    return k
+
+
 def disponible() -> bool:
-    return bool(os.environ.get("TYPESAFE_API_KEY", "").strip())
+    return bool(_clave())
 
 
 def _confianza_noul(p: float) -> float:
@@ -276,7 +287,7 @@ def preguntar(estado, preguntas: dict, modelo: str = "") -> Lote:
     import httpx  # import tardío: el resto del backend no lo necesita
 
     cuerpo = {"state": estado, "model": modelo or MODELO, "questions": preguntas}
-    cabeceras = {"Authorization": f"Bearer {os.environ['TYPESAFE_API_KEY'].strip()}",
+    cabeceras = {"Authorization": f"Bearer {_clave()}",
                  "Content-Type": "application/json"}
     espera = 1.0
     ultimo = ""
