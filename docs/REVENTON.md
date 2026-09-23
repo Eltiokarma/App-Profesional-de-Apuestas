@@ -375,6 +375,17 @@ tarjeta decía «riesgo bajo · 1 pt» a secas, que se lee como luz verde.
   que ya son récord) y cuánto revientan ahí. `propuesto` = el más bajo que
   salta en ≤ 10 % (`TECHO_AVISO`). El 90 vigente es un primer corte hasta
   correrlo con la base real; moverlo es cambiar `CERCA_PCT` en los dos lados.
+- **Resultado con la base real (23/09, muestra de 100 equipos, 16.639
+  burbujas abiertas):** el aviso con 90 salta en el **5,2 %** (tasa de
+  reventón 58,8 %); con 85, en el 9,3 %; con 75, en el 18,2 %. La tasa casi no
+  cambia entre umbrales ni contra el resto (61,5 %) ni contra el récord
+  (60,3 %): confirma §8, la K alta no adelanta el reventón, y el umbral es
+  solo cuestión de ruido. **Se queda en 90**: el backtest propone 85 (el más
+  bajo bajo el techo del 10 %), pero el récord rojo ya salta en el **18,5 %**
+  de las burbujas, y sumarle un 9 % de ámbar deja más de una de cada cuatro
+  burbujas con algún aviso. Hallazgo aparte, sin tocar: que el EXTREMO salte
+  en casi una de cada cinco burbujas sugiere que en historias cortas el
+  récord es fácil de batir; revisar si pide un mínimo de reventones del signo.
 
 De paso, los motivos del récord llevan el signo de la K («K -26.04 … récord
 previo -19.54»): antes decían «K 26.04 … máximo previo 19.54» bajo un título

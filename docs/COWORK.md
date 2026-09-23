@@ -57,7 +57,7 @@ se perdería.
 | *(cualquiera)* | `veredicto.porLado[l].leccion` + `skill` + `reglaTocada` | sección **Aprendizaje** |
 | reventón, después del partido | **nada**: `objetivo.reventon` reconstruye la burbuja declarada antes del partido y dice si ese partido la reventó (`docs/REVENTON.md` §11); observación, no veredicto | banda del veredicto (`↯ reventó` / `→ siguió`) y sección **Aprendizaje** (tasa por nivel de riesgo contra el backtest) |
 | `futbol-timeline` | `timelineEventos` (solo institucional) + narrativa | pestaña **Timeline** (fundida con los partidos calculados) |
-| `diagnostico-tactico` | documento `dtp` + `cadena.{a,b}.pronostico` | pestaña **Documentos** y la cadena de la página de **Equipo** |
+| `diagnostico-tactico` | los insumos **los calcula el backend** (`GET /analisis/cowork/dtp/{id}`: partido anterior con goles y posesión atada al marcador, XI de referencia con carriles, cambios, parejas nuevas, descanso y la **apertura previa** contra la que se cierra); vos escribís `dtp.bloques[]` —uno por equipo foco— con M1, M2 (incluidas las 6 respuestas del checklist del bloque rival: la CLASE la calcula el backend), M3, M6 y el cierre (M4, M5, mecanismo abierto); más `cadena.{a,b}.pronostico` y el documento `dtp` en prosa si querés | recibo (`dtp.claseBloqueRival`), la cadena de la página de **Equipo** y la pestaña **Documentos** |
 | matriz de escenarios | documento `matriz` | pestaña **Documentos** |
 | ensayo | documento `ensayo` | pestaña **Documentos** |
 
@@ -990,7 +990,56 @@ negritas, citas y tablas se pintan bien en la app.
   dtp       diagnóstico táctico (skill diagnostico-tactico): cadena rodante —
             cerrás el partido anterior de cada equipo y abrís el de esta fecha.
             La lectura de alineación va con el XI DE REFERENCIA (última fecha
-            jugada, no el plantel), declarado como tal.
+            jugada, no el plantel), declarado como tal. EL DOCUMENTO EN PROSA
+            YA NO ALCANZA: el DTP va ESTRUCTURADO en `dtp.bloques[]` (abajo);
+            la prosa es opcional y va aparte.
+
+  DTP ESTRUCTURADO — `dtp.bloques[]`, UNO POR EQUIPO FOCO (como el TDE):
+    Antes de escribir, GET /analisis/cowork/dtp/{id}: trae por lado el
+    partido anterior (goles con minuto, autor y asistente; posesión con el
+    rival y el marcador que la produjeron; minutos ganando/empatando/
+    perdiendo), el XI de referencia con carriles, los cambios de XI, las
+    parejas de la misma línea que nunca arrancaron juntas, los días de
+    descanso, si es primera fecha, el candidato a MECANISMO-ABIERTO y
+    `aperturaPrevia`: LO QUE SE DECLARÓ ANTES del partido anterior. El
+    CIERRE se valida contra eso, no contra tu memoria; sin apertura previa,
+    el cierre no emite veredicto (anti-hindsight). No copies esos números
+    al parte: úsalos.
+    {"equipo": "a",
+     "apertura": {
+       "m1": {"sistema", "xiReferencia", "senalXi", "rolesReasignados": [],
+              "vulnerabilidad", "formaSinBalon", "minutosCompartidos"},
+       "m2": {"choqueSistemas", "duelosCarril": [{"carril", "duelo", "mismatch"}],
+              "checklistBloqueRival": {"p1".."p5": "improvisado"|"estructural"|"sin dato",
+                                       "p6": "si"|"no"|"sin dato", "casoP6": "partido concreto",
+                                       "notas"},
+              "viasGol": {"foco": [], "rival": []},
+              "restDefense": {"foco", "rival"},
+              "posesion": {"valor", "contraQuien", "marcador", "sede"},
+              "veredicto": "FAVORABLE"|"NEUTRO"|"DESFAVORABLE", "razon"},
+       "m3Fases": [{"tramo": "0-25"|"25-65"|"65-80+", "plan", "palancas": []}],
+       "m6": {"competitivo": true, "rotacion", "fatiga", "ausencias", "otros"}},
+     "cierre": {"sinAnterior": false,
+       "m4Goles": [{"gol", "minuto", "via": "pelota_parada"|"transicion"|"juego_abierto",
+                    "disparador", "secuencia", "definicion", "responsablesMerito": [],
+                    "responsablesError": [{"jugador", "nivel": "principal"|"secundario"|"estructural", "detalle"}],
+                    "absolucion"}],
+       "m5": {"planFuncionoHastaMin", "peligroReal", "cronologiaGiro",
+              "contraste": {"aciertos": [], "fallos": []}, "preguntaChecklistFallida"},
+       "mecanismoAbierto": {"activo", "mecanismo", "lineaRepite", "correccionEnVivo"}}}
+    · El CHECKLIST es el del skill v1.2: respondé las SEIS preguntas del
+      bloque RIVAL (meses con el modelo · minutos de la línea · centrales de
+      oficio · banco de recambio · repliegue como plan · ¿sostuvo un
+      resultado estando empatado o abajo contra un rival obligado?). NO
+      escribas la clase ni los minutos de vida útil: el backend los calcula
+      (improvisado 55-65' · estructural 80-90' · `estructural no probado` si
+      la 6 es no o no nombrás el partido en `casoP6` · ambiguo si no hay 3 de
+      un lado). Vuelven en el recibo (`dtp.claseBloqueRival`) y en el GET.
+    · POSESIÓN CONDICIONAL: nunca un porcentaje suelto; contra quién y con qué
+      marcador. No fabriques mecánica de gol: si la fuente solo da autor y
+      asistente, disparador y secuencia van vacíos.
+    · La apertura entra a la cadena del equipo SOLO si depositás antes del
+      pitazo y no había una: el recibo lo dice en `dtp.aperturaNoGuardada`.
   matriz    Matriz de Escenarios Tácticos v2.0. En sesión interactiva el skill
             pide confirmación; acá la autorización ya está dada por este prompt.
             Anotalo: "Matriz ejecutada bajo autorización batch".
@@ -1338,7 +1387,9 @@ lo que sobre queda para la próxima (la agenda lo retoma con `yaHechos`).
    - `tde.bloques[]` uno por equipo con `indicadores` 0/0.5/1, escala 0-10.
    - `timelineEventos` solo institucionales; `cadena.a/b.pronostico`;
      `pronostico` con motor + matriz + mercado, probabilidades y falsador.
-   - Documentos: ensayo, dtp, matriz, tde.
+   - `dtp.bloques[]` uno por equipo foco (leé antes GET /analisis/cowork/dtp/{id}),
+     con las 6 respuestas del checklist del bloque rival.
+   - Documentos: ensayo, dtp (opcional si ya va estructurado), matriz, tde.
    Con poco margen hasta el pitazo, lo que NO se recorta: bloques A-E ·
    tabla F1 · bajas · alertas · pronóstico con sus tres fuentes · cadena ·
    TDE con indicadores. El ensayo y el timeline se caen primero y se anotan

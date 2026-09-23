@@ -233,3 +233,29 @@ ficha de partido mejora el EFE y la UI), B sin C ya deja la cadena escrita.
   El DTP debe negarse a abrir y decir por qué, como hace el candado de frío.
 - **xG** si el plan no lo sirve: M5 pierde el respaldo numérico del peligro
   real y se queda en la cronología del giro.
+
+---
+
+## 7. El DTP por el camino de Cowork (23/09/2026)
+
+Las fases A-C se hicieron para el motor por API, que hoy es de emergencia. Con
+Cowork escribiendo los partes, el DTP había quedado en un documento en prosa y
+una frase de pronóstico: la pizarra vacía, la cadena sin apertura que cerrar y
+la clase del bloque sin llegar al TDE. Ahora (`backend/analisis/dtp_cowork.py`):
+
+1. **Insumos calculados** — `GET /analisis/cowork/dtp/{id}` (abierto a
+   Cowork, 0 tokens): por lado, el partido anterior (goles con minuto, autor
+   y asistente, si cuadran con el marcador, minutos ganando/empatando/
+   perdiendo, posesión atada al rival y al marcador, stats, XI con carriles),
+   cambios de XI, parejas de la misma línea que nunca arrancaron juntas,
+   descanso, primera fecha, candidato a MECANISMO-ABIERTO y la
+   `aperturaPrevia` guardada antes del partido anterior.
+2. **El DTP estructurado en el parte** — `dtp.bloques[]`, uno por equipo foco,
+   con M1, M2 (checklist de 6 preguntas, rest defense, posesión condicional),
+   M3, M6 y el cierre (M4, M5, mecanismo abierto). La clase del bloque rival
+   (`clasificar_bloque`, regla del skill v1.2) se calcula al leer y trae
+   `c1Tde` para el TDE del equipo del bloque. La apertura entra a
+   `cadena_dtp.apertura_json` solo antes del pitazo y sin pisar la primera.
+
+Pendiente (paso 3): que el TDE herede `c1Tde` y el rest defense en vez de
+re-estimarlos, y que `DtpPizarra` dibuje los bloques de Cowork.

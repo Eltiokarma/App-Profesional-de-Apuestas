@@ -883,6 +883,27 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/MarcasCowork' }
+  /analisis/cowork/dtp/{fixtureId}:
+    get:
+      summary: Los insumos del DTP que salen de NUESTRA base (abierto a Cowork)
+      description: >
+        No es el DTP: son los insumos de la ficha de partido ya ingestada, por lado. El partido
+        anterior (marcador, goles con minuto, autor y asistente, si cuadran con el marcador,
+        minutos ganando/empatando/perdiendo, posesión atada al rival y al marcador —regla de
+        posesión condicional—, stats, XI de referencia con carriles), los cambios de XI contra el
+        anterior, las parejas de la misma línea que nunca arrancaron juntas en lo capturado, los
+        días de descanso, si es primera fecha, el candidato a MECANISMO-ABIERTO (≥2 recibidos) y
+        `aperturaPrevia`: lo que se declaró ANTES del partido anterior, contra lo que se valida el
+        cierre. Lo que es juicio va en `noCalculables`. 0 tokens, 0 requests.
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '404': { description: el fixture no está en nuestra base }
   /analisis/cowork/tde/{fixtureId}:
     get:
       summary: Los insumos del Teorema del Echado que salen de NUESTRA base
@@ -2491,6 +2512,54 @@ components:
           type: array
           description: 'diferencias entre lo declarado y la cuenta; vacío es lo normal'
           items: { type: string }
+    DtpParte:
+      type: object
+      description: >
+        El Diagnóstico Táctico de Partido (skill `diagnostico-tactico` v1.2) estructurado, UN
+        bloque por equipo foco. Cowork responde las 6 preguntas del checklist del bloque rival
+        (`p1`-`p5`: `improvisado` | `estructural` | `sin dato`; `p6`: `no` | `si` + `casoP6`);
+        la clase la calcula el backend: 3+ improvisado → improvisado (55-65'); 3+ estructural →
+        estructural (80-90') si la p6 es sí CON caso nombrado, si no `estructural no probado`
+        (alerta de degradación sin suprimir, `c1Tde` 0.5); sin 3 de un lado → ambiguo. La
+        apertura entra a `cadena_dtp` (antes del pitazo, sin pisar la primera) para que el
+        próximo parte la cierre.
+      properties:
+        bloques:
+          type: array
+          items:
+            type: object
+            required: [equipo]
+            properties:
+              equipo: { type: string, enum: [a, b] }
+              apertura:
+                type: object
+                properties:
+                  m1: { type: object, additionalProperties: true, description: 'sistema, xiReferencia, senalXi, rolesReasignados[], vulnerabilidad, formaSinBalon, minutosCompartidos' }
+                  m2: { type: object, additionalProperties: true, description: 'choqueSistemas, duelosCarril[{carril, duelo, mismatch}], checklistBloqueRival{p1..p6, casoP6, notas}, viasGol{foco[], rival[]}, restDefense{foco, rival}, posesion{valor, contraQuien, marcador, sede}, veredicto (FAVORABLE|NEUTRO|DESFAVORABLE), razon' }
+                  m3Fases: { type: array, items: { type: object, additionalProperties: true }, description: 'tramo 0-25 | 25-65 | 65-80+, plan, palancas[]' }
+                  m6: { type: object, additionalProperties: true, description: 'competitivo, rotacion, fatiga, ausencias, otros' }
+              cierre:
+                type: object
+                properties:
+                  sinAnterior: { type: boolean }
+                  m4Goles: { type: array, items: { type: object, additionalProperties: true }, description: 'gol, minuto, via (pelota_parada|transicion|juego_abierto), disparador, secuencia, definicion, responsablesMerito[], responsablesError[{jugador, nivel principal|secundario|estructural, detalle}], absolucion' }
+                  m5: { type: object, additionalProperties: true, description: 'planFuncionoHastaMin, peligroReal, cronologiaGiro, contraste{aciertos[], fallos[]}, preguntaChecklistFallida' }
+                  mecanismoAbierto: { type: object, additionalProperties: true, description: 'activo, mecanismo, lineaRepite, correccionEnVivo' }
+              calculado:
+                type: object
+                description: 'SOLO en la lectura; se ignora si llega'
+                properties:
+                  bloqueRival:
+                    type: object
+                    properties:
+                      clase: { type: string, enum: ['', improvisado, estructural, 'estructural no probado', ambiguo] }
+                      vidaUtilMin: { type: string }
+                      alertaDegradacion: { type: boolean, nullable: true }
+                      c1Tde: { type: number, nullable: true, description: 'C1 del TDE del equipo del bloque: 0 estructural probado · 0.5 no probado · 1 improvisado' }
+                      equipoDelBloque: { type: string, enum: [a, b] }
+                      motivo: { type: string }
+                      conteo: { type: object, additionalProperties: { type: integer } }
+                      respuestas: { type: object, additionalProperties: { type: string } }
     TdeParte:
       type: object
       description: >
@@ -2561,6 +2630,7 @@ components:
             h2c: { type: string, enum: [verde, ambar, rojo, na] }
         lecturaSad: { $ref: '#/components/schemas/LecturaSadParte' }
         tde: { $ref: '#/components/schemas/TdeEntrada' }
+        dtp: { $ref: '#/components/schemas/DtpParte' }
         timelineEventos:
           type: array
           description: 'solo lo institucional; los partidos los pone el backend'
@@ -2795,6 +2865,9 @@ components:
           additionalProperties: true
         lecturaSad: { $ref: '#/components/schemas/LecturaSadParte' }
         tde: { $ref: '#/components/schemas/TdeParte' }
+        dtp:
+          allOf: [{ $ref: '#/components/schemas/DtpParte' }]
+          description: 'el DTP estructurado; cada bloque vuelve con `calculado.bloqueRival` (la clase del bloque rival que calcula el backend a partir del checklist)'
         timeline:
           type: object
           nullable: true
@@ -2929,6 +3002,14 @@ components:
           type: array
           description: 'de qué equipos quedó índice ("a", "b"); vacío = ninguno'
           items: { type: string }
+        dtp:
+          type: object
+          description: 'de qué equipos llegó el DTP, la clase del bloque rival calculada y si la apertura entró a la cadena rodante (solo antes del pitazo y sin pisar una anterior)'
+          properties:
+            lados: { type: array, items: { type: string } }
+            claseBloqueRival: { type: object, additionalProperties: { type: string } }
+            aperturaEnCadena: { type: array, items: { type: string } }
+            aperturaNoGuardada: { type: array, items: { type: object, additionalProperties: true } }
     MarcasCowork:
       type: object
       required: [partes, total]
