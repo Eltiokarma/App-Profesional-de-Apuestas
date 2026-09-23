@@ -391,6 +391,9 @@ def main():
           not appmod._cowork_puede("GET", A + "/analisis/burbujas/backtest"))
     check("burbujas del equipo SÍ está abierto a Cowork (GET /equipos/*)",
           appmod._cowork_puede("GET", A + f"/equipos/{betis}/burbujas"))
+    check("corregir el DT de un parte SÍ está abierto a Cowork; la cuarentena NO",
+          appmod._cowork_puede("POST", A + "/analisis/cowork/123/dt")
+          and not appmod._cowork_puede("POST", A + "/analisis/cowork/123/cuarentena"))
 
     # /fixtures/{id}/ficha — puente con los skills
     fi = c.get(A + f"/fixtures/{vivo['id']}/ficha").json()

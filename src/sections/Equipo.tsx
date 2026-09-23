@@ -166,7 +166,7 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
                   techo={refRev ? { pos: refRev.pos, neg: refRev.neg, etiqueta: refRev.etiqueta, desde: refRev.desde, hasta: refRev.hasta } : undefined}
                 />
               </div>
-              <KLineLegend periodo={refRev?.etiqueta} />
+              <KLineLegend periodo={refRev?.etiqueta} kType={kType} />
               {kType === 'res' && <PeriodoReventon fam={rev.data?.familias[kCond]} periodo={s.kPeriodo} onPeriodo={store.setKPeriodo} />}
               <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                 <div style={{ flex: 1, padding: '8px 10px', borderRadius: 9, background: 'var(--bg)', border: '1px solid var(--line)' }}>

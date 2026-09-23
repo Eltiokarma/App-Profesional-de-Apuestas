@@ -82,6 +82,9 @@ _COWORK_PERMITIDO = tuple(
         # tiene que poder disparar solo cuando salen los onces.
         ("POST", r"/analisis/cowork/xi/auto"),
         ("POST", r"/analisis/cowork/\d+/veredicto"),
+        # corregir SOLO el DT de un parte: sin esto, el único camino era
+        # re-depositar el parte entero y un cuerpo recortado lo vaciaba
+        ("POST", r"/analisis/cowork/\d+/dt"),
         # lo que el pipeline necesita LEER para escribir el parte
         ("GET", r"/(?:health|fixtures|equipos|ligas|cuotas|constantes|constantes-cuota"
                 r"|niveles|predicciones|analisis-prepartido)(?:/.*)?"),
@@ -2372,6 +2375,24 @@ def cowork_lecciones(skill: str = Query(default=""), estado: str = Query(default
     `n` a la vista; las otras poblaciones se cuentan aparte y no se suman."""
     from backend.analisis import lecciones
     return lecciones.inventario(skill, estado, limite, cohorte)
+
+
+class DtBody(BaseModel):
+    a: dict | str | None = None
+    b: dict | str | None = None
+
+
+@app.post(API + "/analisis/cowork/{fixture_id}/dt")
+def cowork_corregir_dt(fixture_id: int, body: DtBody):
+    """Cambia SOLO el `dt` de uno o los dos lados; el resto del parte queda
+    intacto (ni cohorte, ni coherencia, ni pronóstico, ni veredicto)."""
+    from backend.analisis import parte as cowork
+    try:
+        return cowork.corregir_dt(fixture_id, {"a": body.a, "b": body.b})
+    except cowork.ParteInvalido as e:
+        raise HTTPException(422, str(e))
+    except KeyError:
+        raise HTTPException(404, f"no hay parte de Cowork para el fixture {fixture_id}")
 
 
 class CuarentenaBody(BaseModel):

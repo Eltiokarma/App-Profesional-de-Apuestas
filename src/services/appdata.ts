@@ -30,6 +30,7 @@ import { TEAMS } from '../data'
 import type { Match, Team } from '../data/types'
 import type { KSnapshot } from '../motor/types'
 import { getDataSource, NUM_TEAM, TEAM_NUM } from './datasource'
+import { sequiaMargen } from '../lib/kview'
 
 // ── registro dinámico de equipos ───────────────────────────────────────────
 // La estética (color del escudo) y las stats de temporada no viajan en el
@@ -221,10 +222,12 @@ export async function loadBurbujas(teamKey: string, antesDeMatch?: string): Prom
   // 500 = tope del contrato; cubre la historia completa de prácticamente todos
   // los equipos. La ventana visible (20/50/Todo) se recorta luego en la gráfica.
   const [constantes, niveles] = await Promise.all([ds.constantes(equipoId, 500, antesDe), ds.niveles(equipoId, 1, antesDe)])
-  const snaps = constantes
+  const snapsMotor = constantes
     .slice()
     .reverse() // el contrato entrega desc por fecha; la UI trabaja cronológico
     .map((c, i) => constantesToSnap(c, i))
+  // las familias de margen se ven como burbujas de sequía (kview.sequiaMargen)
+  const snaps = sequiaMargen(snapsMotor)
   const nv = niveles[0]
   return {
     snaps,

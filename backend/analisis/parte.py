@@ -754,17 +754,31 @@ def sin_dt(parte: dict) -> list[str]:
 
 
 def _tokens_dt(nombre: str) -> set[str]:
-    n = unicodedata.normalize("NFD", (nombre or "").lower())
+    n = (nombre or "").lower().replace("ß", "ss")
+    n = unicodedata.normalize("NFD", n)
     n = "".join(c for c in n if unicodedata.category(c) != "Mn")
     return {t for t in re.split(r"[^a-z]+", n) if len(t) >= 3}
+
+
+def _mismo_apellido(x: str, y: str) -> bool:
+    if x == y:
+        return True
+    # la base trae letras corruptas («S. Hoeneb» por «S. Hoeneß», Stuttgart
+    # 23/09): un apellido largo que coincide en las primeras 5 letras, o que
+    # se parece en ≥ 80 %, es el mismo apellido mal escrito
+    if min(len(x), len(y)) >= 5 and x[:5] == y[:5]:
+        return True
+    return min(len(x), len(y)) >= 4 and difflib.SequenceMatcher(None, x, y).ratio() >= 0.8
 
 
 def mismo_dt(a: str, b: str) -> bool:
     """¿Nombran al mismo entrenador? La API y la prensa los escriben distinto
     («M. Pellegrino» · «Mauricio Pellegrino» · «Hernán Torres Oliveros» ·
-    «H. Torres»): basta un apellido en común. Laxo a propósito: una
+    «H. Torres» · «S. Hoeneß» y la base con «S. Hoeneb»): basta un apellido en
+    común, tolerando una letra mal codificada. Laxo a propósito: una
     cuarentena falsa saca un caso bueno, y eso también ensucia la métrica."""
-    return bool(_tokens_dt(a) & _tokens_dt(b))
+    ta, tb = _tokens_dt(a), _tokens_dt(b)
+    return any(_mismo_apellido(x, y) for x in ta for y in tb)
 
 
 def dt_equivocado(parte: dict, fixture_id: int) -> list[dict]:
@@ -799,6 +813,60 @@ def dt_equivocado(parte: dict, fixture_id: int) -> list[dict]:
         if banco and _tokens_dt(nombre) and _tokens_dt(banco) and not mismo_dt(nombre, banco):
             out.append({"lado": lado, "parte": nombre, "banco": banco})
     return out
+
+
+def corregir_dt(fixture_id: int, cambios: dict) -> dict:
+    """Cambia SOLO el `dt` de uno o los dos lados de un parte ya depositado.
+
+    El POST del parte reemplaza el parte entero (a propósito: es la única forma
+    de quitar una alerta que ya no aplica). Para corregir un DT eso obligaba a
+    rearmar el parte completo desde el GET, y el 23/09 un intento con cuerpo
+    parcial vació Everton–Ipswich (documentos, plantel, marcador, TDE) hasta
+    que Cowork lo reconstruyó a mano. Esto toca un campo y nada más: no re-sella
+    la cohorte, no rehace la coherencia, no mueve el pronóstico ni el veredicto.
+    El DT pasa por la MISMA normalización que en el depósito (`_dt_equipo`); un
+    lado rechazado no se aplica y vuelve con su motivo."""
+    cambios = {l: v for l, v in (cambios or {}).items() if l in LADOS and v is not None}
+    if not cambios:
+        raise ParteInvalido("manda al menos un lado: {\"a\": {\"nombre\": \"…\", \"desde\": \"AAAA-MM-DD\"}}")
+    fx = _fixture(fixture_id)
+    with _conectar() as con:
+        fila = con.execute("SELECT parte_json FROM parte_cowork WHERE fixture_id=?", (fixture_id,)).fetchone()
+        if not fila:
+            raise KeyError(fixture_id)
+        parte = json.loads(fila["parte_json"])
+        fecha_partido = _txt(fx["date"])[:10] if fx else ""
+        antes, ahora, rechazos = {}, {}, []
+        for lado, crudo in cambios.items():
+            base = None
+            if fx:
+                from backend import jugadores as jug
+                try:
+                    base = jug.plantilla_de(fx["home_team_id"] if lado == "a" else fx["away_team_id"]).get("entrenador")
+                except sqlite3.Error:
+                    base = None
+            r_lado: list = []
+            nuevo = _dt_equipo(crudo, r_lado, lado, fecha_partido, base)
+            equipo = (parte.setdefault("equipos", {}).setdefault(lado, {}))
+            if r_lado:
+                rechazos.extend(r_lado)
+                continue
+            antes[lado] = equipo.get("dt")
+            equipo["dt"] = nuevo
+            ahora[lado] = nuevo
+        if ahora:
+            con.execute("UPDATE parte_cowork SET parte_json=?, actualizado_en=? WHERE fixture_id=?",
+                        (json.dumps(parte, ensure_ascii=False), efedb.ahora(), fixture_id))
+    return {
+        "fixtureId": fixture_id,
+        "antes": antes,
+        "ahora": ahora,
+        "rechazos": rechazos,
+        # lo que ve el aprendizaje después del cambio: vacío = el DT del parte
+        # ya casa con el que se sentó en el banco (o no hay alineación)
+        "dtEquivocado": dt_equivocado(parte, fixture_id),
+        "sinDt": sin_dt(parte),
+    }
 
 
 def alertas_dt(parte: dict, fx, nombres: dict) -> list[dict]:
@@ -1382,6 +1450,9 @@ def guardar(payload: dict) -> dict:
                 "eventosTimeline": len(p_.get("timelineEventos") or []),
                 "subScoresEfe": sum(_subscores(l) for l in LADOS),
                 "bloquesTde": len(bloques_tde(p_.get("tde") or {})),
+                # las vías (ECHADA / SOBREEXPOSICIÓN) se perdían en silencio en
+                # un re-depósito que mandaba el TDE sin ellas (Cowork, 23/09)
+                "viasTde": sum(len(b.get("vias") or []) for b in bloques_tde(p_.get("tde") or {})),
                 # `cadena[lado]` es el texto del pronóstico, pero también se
                 # acepta `{"pronostico": "…"}`: las dos formas se cuentan igual
                 "pronosticosDeCadena": sum(1 for l in LADOS if _pron_cadena((p_.get("cadena") or {}).get(l))),

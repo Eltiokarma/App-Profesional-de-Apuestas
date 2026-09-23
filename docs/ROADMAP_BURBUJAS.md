@@ -21,6 +21,17 @@ con la misma regla de condición que las K actuales.
 
 ## 2. Burbujas por margen: derrota/victoria por N goles
 
+> **En la pantalla, desde el 23/09/2026, son burbujas de SEQUÍA** (pedido del
+> usuario: las rachas de margen exacto casi nunca pasaban de un partido y se
+> leían como picos sueltos). «Gana N+» suma el nivel del rival en cada partido
+> en que el equipo NO gana por N o más y revienta a 0 el día que lo hace;
+> «Pierde N+» igual con las derrotas (N = 1, 2, 3+; total/local/visita). La
+> de victoria se dibuja hacia abajo (sequía = mala señal) y la de derrota
+> hacia arriba. Se deriva en la vista (`sequiaMargen` en `src/lib/kview.ts`,
+> aplicada en `loadBurbujas`) desde los goles y el nivel del rival de cada
+> fila: el motor, el pipeline y el contrato siguen con los `kVic/kDer` de
+> abajo, que ya no se dibujan. Test: `npm run test:kview`.
+
 Familias paramétricas por margen exacto de goles `N ∈ {1, 2, 3+}`:
 
 - `k_derrota_1`: acumula `nivel_rival` cada partido consecutivo perdido por

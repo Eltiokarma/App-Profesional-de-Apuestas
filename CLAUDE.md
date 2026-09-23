@@ -303,6 +303,11 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   gráfica de K la referencia punteada es elegible por período (`kPeriodo`,
   `PeriodoReventon`, `src/lib/reventonRef.ts`) con una línea vertical donde
   arranca el período; sin base se dice, no se vuelve a la global callado.
+- Márgenes en la pantalla = burbujas de SEQUÍA (`sequiaMargen`,
+  `src/lib/kview.ts`, aplicada en `loadBurbujas`): «Gana N+» crece con el nivel
+  del rival mientras no gana por N o más y revienta cuando lo hace; «Pierde
+  N+» igual. Vista derivada de goles y nivel del rival: el motor y el contrato
+  (`kVic/kDer`, margen exacto) no se tocaron (ROADMAP_BURBUJAS §2).
 - Cuotas K (§3.8): las barras SIEMPRE vía `RachasCuotas` y su botonera
   `ControlesCuotas` (condición · mercado 1X2/Doble op./Ambos · ventana); cada
   mercado dibuja solo los partidos con SU cuota capturada — sin dato, la
@@ -462,7 +467,10 @@ conversación se pierde en la siguiente.
    - **Aprendizaje** (actualizado 23/09): la cohorte vigente es ahora
      `c3-2026-09-23` (la `c2` tenía la alineación rancia del DT: referencia) y
      arranca vacía; un parte con el DT distinto del que se sentó en el banco va
-     a cuarentena automática (`parte.dt_equivocado`, APRENDIZAJE.md C-bis). En
+     a cuarentena automática (`parte.dt_equivocado`, APRENDIZAJE.md C-bis; el
+     apellido se compara tolerando la ß y una letra corrupta de la base). Un DT
+     se corrige SOLO con `POST /analisis/cowork/{id}/dt` (abierto a Cowork;
+     no toca nada más del parte), nunca re-depositando el parte entero. En
      la `c2`: la cohorte anterior (`c2-2026-09-19`) arrancó vacía; los
      42 casos de rodaje se miran con el selector y calibran nada. La
      cuarentena a mano queda para el caso puntual con motivo. Fases D y A

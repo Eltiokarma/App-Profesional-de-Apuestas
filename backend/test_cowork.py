@@ -1936,10 +1936,36 @@ def main():
     check("re-depositar con el DT del banco («Rafael Dudamel» vs «R. Dudamel») la levanta",
           not any(i["clave"].startswith(f"{pasado['id']}:") for i in
                   c.get(f"{A}/analisis/cowork/lecciones").json()["enCuarentena"]["items"]))
+    # ── corregir SOLO el DT: el resto del parte no se toca ──
+    p_eq["equipos"]["a"]["dt"] = {"nombre": "Pablo Repetto", "desde": "2026-01-01"}
+    c.post(f"{A}/analisis/cowork", json=p_eq)
+    antes_dt = c.get(f"{A}/analisis/cowork/{pasado['id']}").json()
+    r_dt = c.post(f"{A}/analisis/cowork/{pasado['id']}/dt", json={"a": {"nombre": "Rafael Dudamel", "desde": "2026-02-01"}})
+    despues_dt = c.get(f"{A}/analisis/cowork/{pasado['id']}").json()
+    _sin = lambda d: {k: v for k, v in d.items() if k not in ("equipos", "actualizadoEn", "coherencia", "alertas")}  # noqa: E731
+    check("POST …/dt cambia el DT del lado a, dice que ya casa con el banco y deja el resto del parte igual",
+          r_dt.status_code == 200 and r_dt.json()["ahora"]["a"]["nombre"] == "Rafael Dudamel"
+          and r_dt.json()["dtEquivocado"] == [] and despues_dt["equipos"]["a"]["dt"]["nombre"] == "Rafael Dudamel"
+          and _sin(antes_dt) == _sin(despues_dt)
+          and {k: v for k, v in despues_dt["equipos"]["a"].items() if k != "dt"}
+              == {k: v for k, v in antes_dt["equipos"]["a"].items() if k != "dt"}
+          and despues_dt["equipos"]["b"] == antes_dt["equipos"]["b"],
+          r_dt.text[:300])
+    r_dt_mal = c.post(f"{A}/analisis/cowork/{pasado['id']}/dt",
+                      json={"a": {"nombre": "Según la prensa dirige el interino tras la salida del anterior DT del club"}})
+    check("un DT en prosa se rechaza con motivo y NO pisa el que había",
+          r_dt_mal.status_code == 200 and r_dt_mal.json()["rechazos"] and r_dt_mal.json()["ahora"] == {}
+          and c.get(f"{A}/analisis/cowork/{pasado['id']}").json()["equipos"]["a"]["dt"]["nombre"] == "Rafael Dudamel",
+          r_dt_mal.text[:300])
+    check("POST …/dt sin lados → 422; fixture sin parte → 404",
+          c.post(f"{A}/analisis/cowork/{pasado['id']}/dt", json={}).status_code == 422
+          and c.post(f"{A}/analisis/cowork/999999999/dt", json={"a": {"nombre": "X Y"}}).status_code == 404)
     from backend.analisis.parte import mismo_dt
     check("mismo_dt: apellido compuesto y abreviado casan; apellidos distintos no",
           mismo_dt("Hernán Torres Oliveros", "H. Torres") and mismo_dt("Mauricio Pellegrino", "M. Pellegrino")
-          and not mismo_dt("Pablo Repetto", "R. Dudamel"))
+          and not mismo_dt("Pablo Repetto", "R. Dudamel")
+          and mismo_dt("S. Hoeneß", "S. Hoeneb") and mismo_dt("Sebastian Hoeneß", "S. Hoeness")
+          and not mismo_dt("Gustavo Álvarez", "Tiago Nunes"))
     c.post(f"{A}/analisis/cowork", json=p_lec)
     ag_dt = c.get(f"{A}/analisis/cowork/agenda", params={"fecha": fecha, "limite": 2}).json()
     check("la agenda lleva el DT de la base por lado, con edad, procedencia y si es fiable",

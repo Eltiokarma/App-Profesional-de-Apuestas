@@ -1,6 +1,7 @@
 // Verificación de la capa de visualización de las K (src/lib/kview.ts).
 // Ejecutar: npm run test:kview
-import { condEtiquetas, puntosEtiquetados } from '../src/lib/kview'
+import { condEtiquetas, FUSED_KEY, marginQ, puntosEtiquetados, sequiaMargen, signedVal } from '../src/lib/kview'
+import type { KSnapshot } from '../src/motor/types'
 
 let failed = 0
 function check(name: string, got: unknown, want: unknown) {
@@ -50,6 +51,22 @@ check(
   puntosEtiquetados(5, local, () => '+5.0'),
   [4],
 )
+
+// ---- burbujas de sequía por margen ----
+console.log('\n— margen: crece hasta que pasa —')
+// L 1-0 (niv 2) · V 0-0 (niv 1) · L 2-1 (niv 3) · V 3-1 (niv 2) · L 0-2 (niv 1)
+const partidos: [boolean, number, number, number][] = [[true, 1, 0, 2], [false, 0, 0, 1], [true, 2, 1, 3], [false, 3, 1, 2], [true, 0, 2, 1]]
+const snapsM = partidos.map(([isLocal, gf, ga, rivalLevel]) => ({ isLocal, gf, ga, rivalLevel, fused: {} } as unknown as KSnapshot))
+const sq = sequiaMargen(snapsM)
+const serie = (t: 'vic1' | 'vic2' | 'der1' | 'der2', c: 'total' | 'local' | 'visita') => sq.map((s) => s.fused[FUSED_KEY[t][c]])
+check('Gana 2+ total: crece 2→3→6, revienta con el 3-1, vuelve a crecer', serie('vic2', 'total'), [2, 3, 6, 0, 1])
+check('Gana 1+ total: cada victoria revienta, el 0-0 y el 0-2 suman', serie('vic1', 'total'), [0, 1, 0, 0, 1])
+check('Pierde 2+ total: crece hasta el 0-2 y ahí revienta', serie('der2', 'total'), [2, 3, 6, 8, 0])
+check('Gana 2+ LOCAL: solo se mueve de local, conserva en visita', serie('vic2', 'local'), [2, 2, 5, 5, 6])
+check('Pierde 1+ VISITA: los partidos de local no la tocan', serie('der1', 'visita'), [0, 1, 1, 3, 3])
+check('q: «Gana 2+» crece hacia abajo, «Pierde 2+» hacia arriba, 0 si revienta',
+  [marginQ('vic2', 1, 0, 2), marginQ('der2', 1, 0, 2), marginQ('vic2', 3, 1, 2), marginQ('der2', 0, 2, 1)], [-2, 2, 0, 0])
+check('display: la sequía de victoria va negativa, la de derrota positiva', [signedVal('vic2', 6), signedVal('der2', 6)], [-6, 6])
 
 console.log(failed ? `\n${failed} FALLAS` : '\nTODO OK')
 process.exit(failed ? 1 : 0)

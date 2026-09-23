@@ -916,7 +916,16 @@ Escribís vos (es juicio, no se puede calcular):
       Nombrala en `lecturaSad.reventon` («A: cerca del extremo, K −17.9 a
       1.6 del récord; riesgo bajo») y no recomiendes carga fuerte a que esa
       racha siga. No es regla dura: es prudencia en la carga. El backend
-      agrega la alerta K-CERCA-EXTREMO (tipo dato) al parte.
+      agrega la alerta K-CERCA-EXTREMO (tipo dato) al parte. NO la declares
+      vos en `alertas` (ni «CERCA_DEL_EXTREMO» ni con otro nombre): sale
+      duplicada. Va en `lecturaSad.reventon` y en el falsador.
+    · CORREGIR SOLO EL DT de un parte ya depositado: `POST
+      /analisis/cowork/{id}/dt` con `{"a": {"nombre": "…", "desde":
+      "AAAA-MM-DD"}}` (o `b`, o los dos; `desde` solo si lo verificaste). NO
+      re-deposites el parte entero para eso: el POST del parte reemplaza TODO
+      y un cuerpo recortado lo vacía (Everton–Ipswich, 23/09). La respuesta
+      trae `antes`/`ahora`, `rechazos` y `dtEquivocado` (vacío = ya casa con
+      el que se sentó en el banco).
   Escribí UNA línea por equipo en `lecturaSad.reventon`, por ejemplo:
   «A: muy alto (8), rival mucho más fuerte que su zona de reventón → no
   seguir la racha de A; B: bajo, sin señal». NO copies los números al
