@@ -201,12 +201,17 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   pipeline, backfill, backtest— corre en SUBPROCESOS para que su memoria
   vuelva al terminar; un subproceso o CLI que importe `backend.app` lleva
   `SAD_SIN_HILOS=1` para no arrancar hilos de fondo.
-- **Dos tokens** (`backend/app.py`): `SAD_API_TOKEN` es la llave maestra —abre
+- **Tres tokens** (`backend/app.py`): `SAD_API_TOKEN` es la llave maestra —abre
   también lo que gasta créditos de Claude y cuota de API-Football— y
   `SAD_TOKEN_COWORK` es el acotado que se le da a Cowork: solo
   `/analisis/cowork/*` (sin DELETE) y los GET del pipeline, por LISTA DE
   PERMITIDOS. Un endpoint nuevo nace denegado para Cowork; abrirlo es
   deliberado. Nunca le des el maestro a un agente que lee contenido de fuera.
+  `SAD_TOKEN_WEB` es el de la web (`VITE_API_KEY`, viaja en el bundle): SOLO
+  LEE (todo GET menos el backtest; la plantilla no lanza ingesta con él). Lo
+  que escribe o gasta lo hace la web en **modo administrador** (🔑,
+  `src/lib/admin.ts` + `BotonAdmin`): la maestra se pega una vez y queda solo
+  en ese navegador, y el cliente la usa en vez del token de lectura.
 - **Jev** (`docs/JEV.md`, `backend/analisis/jev.py`): modelo System One de
   TypeSafe que devuelve valores TIPADOS (elección · puntaje · sí/no) con
   confianza, no texto. Es un CLASIFICADOR DE TEXTO, no un pronosticador: está
@@ -347,12 +352,13 @@ bloque F calculado en local y cierre del once desde la ficha o a mano.
 Está acá y no en la cabeza de nadie porque un pendiente que solo existe en una
 conversación se pierde en la siguiente.
 
-1. **El frontend recibe un token de API.** `VITE_API_KEY` viaja al bundle del
-   navegador, así que cualquiera que abra la web tiene la llave que usa la app.
-   Arreglo: rotar `SAD_API_TOKEN`, sacar `VITE_API_KEY` de Vercel y dejar de
-   mandarle cualquier token al cliente — un proxy en el frontend, o un tercer
-   token de SOLO LECTURA que no abra nada que gaste. Aplazado a conciencia por
-   el usuario mientras se probaba la tubería; ya está probada.
+1. **El frontend recibía la llave maestra.** HECHO en código (23/09): tercer
+   token `SAD_TOKEN_WEB` de solo lectura en el bundle y modo administrador
+   (🔑) para escribir. **Pendiente del usuario**: crear `SAD_TOKEN_WEB` en
+   Railway, poner ese valor en `VITE_API_KEY` de Vercel (redeploy), rotar
+   `SAD_API_TOKEN` (se filtró en un chat el 23/09) y pegar la nueva en el 🔑
+   de la web. Queda abierto: cualquiera con el link LEE los datos (no los
+   modifica ni gasta); cerrarlo del todo pide un login.
 2. **Los DT de la ficha estaban viejos.** En la corrida del 16/09, 17 de 22
    entrenadores eran el SALIENTE (Bucaramanga con un DT de 2019). Causa
    encontrada: `/coachs?team=` devuelve a todos los que pasaron por el club

@@ -62,8 +62,16 @@ API = "/api/v1"
 # paranoia ahí — es que un texto en una página de resultados no debería tener
 # ni la posibilidad teórica de acabar en una llamada que cuesta dinero. Y de
 # paso el token se rota solo, sin tocar el acceso del frontend.
+#   SAD_TOKEN_WEB     el de la WEB (deuda 1): viaja en el bundle del navegador,
+#                     así que cualquiera que abra la página lo tiene. Por eso
+#                     solo LEE: todo GET menos el backtest (calibración pesada),
+#                     y el GET de la plantilla NO lanza ingesta con él. Lo que
+#                     escribe o gasta lo hace la web en «modo administrador»,
+#                     con la llave maestra pegada en TU navegador, nunca en el
+#                     código.
 API_TOKEN = os.environ.get("SAD_API_TOKEN", "")
 TOKEN_COWORK = os.environ.get("SAD_TOKEN_COWORK", "")
+TOKEN_WEB = os.environ.get("SAD_TOKEN_WEB", "")
 _AUTH_EXEMPT = {f"{API}/health", "/docs", "/redoc", "/openapi.json"}
 
 # Lista de PERMITIDOS, no de prohibidos: un endpoint nuevo nace denegado para
@@ -92,6 +100,14 @@ _COWORK_PERMITIDO = tuple(
 )
 
 
+# lo único que el token de la web NO puede leer: la calibración pesada
+_WEB_DENEGADO = (re.compile(re.escape(API) + r"/analisis/burbujas/backtest$"),)
+
+
+def _web_puede(metodo: str, ruta: str) -> bool:
+    return metodo in ("GET", "HEAD") and not any(rx.match(ruta) for rx in _WEB_DENEGADO)
+
+
 def _cowork_puede(metodo: str, ruta: str) -> bool:
     return any(m == metodo and rx.match(ruta) for m, rx in _COWORK_PERMITIDO)
 
@@ -108,7 +124,19 @@ async def auth_bearer(request: Request, call_next):
     auth = request.headers.get("authorization", "")
     presentado = auth[7:] if auth.startswith("Bearer ") else ""
     if _igual(presentado, API_TOKEN):
+        request.state.maestro = True
         return await call_next(request)
+    request.state.maestro = False
+    if TOKEN_WEB and TOKEN_WEB != API_TOKEN and _igual(presentado, TOKEN_WEB):
+        if _web_puede(request.method, request.url.path):
+            return await call_next(request)
+        return JSONResponse(
+            {"detail": f"La web no puede {request.method} {request.url.path} con su token de "
+                       "lectura (SAD_TOKEN_WEB). Para escribir o gastar, activá el modo "
+                       "administrador (🔑 arriba a la derecha) con la llave maestra.",
+             "necesitaAdmin": True},
+            status_code=403,
+        )
     # el token acotado: si el valor es el mismo que el maestro no hay recorte
     # que valga (ya habría pasado arriba), así que se ignora y se avisa al
     # arrancar en vez de fingir que protege algo
@@ -127,6 +155,9 @@ async def auth_bearer(request: Request, call_next):
     )
 
 
+if TOKEN_WEB and TOKEN_WEB == API_TOKEN:
+    print("[auth] SAD_TOKEN_WEB es idéntico a SAD_API_TOKEN: la web seguiría llevando la llave "
+          "maestra en el bundle. Pon un valor distinto.", flush=True)
 if TOKEN_COWORK and TOKEN_COWORK == API_TOKEN:
     print("[auth] SAD_TOKEN_COWORK es idéntico a SAD_API_TOKEN: no recorta nada "
           "y se ignora. Pon un valor distinto o quítalo.", flush=True)
@@ -1361,7 +1392,7 @@ def _lanzar_ingesta_plantilla(equipo_id: int) -> bool:
 
 
 @app.get(API + "/equipos/{equipo_id}/plantilla")
-def equipo_plantilla(equipo_id: int):
+def equipo_plantilla(equipo_id: int, request: Request):
     """Plantilla con indicadores (docs/JUGADORES.md): por-90 con encogimiento,
     dependencia HHI, bajas, traspasos, DT. Calculado en lectura de las tablas
     de jugadores de sad.db (backend.ingesta.jugadores); sin ingesta aún,
@@ -1373,7 +1404,11 @@ def equipo_plantilla(equipo_id: int):
     from backend import jugadores as jug
     p = jug.plantilla_de(equipo_id)
     p["nombre"] = team["name"]
-    p["ingestaLanzada"] = False if p["jugadores"] else _lanzar_ingesta_plantilla(equipo_id)
+    # la ingesta on-demand gasta cuota de API-Football: con el token de la web
+    # (solo lectura) no se lanza; sin auth configurada (local) o con la
+    # maestra, sí
+    puede_lanzar = not API_TOKEN or getattr(request.state, "maestro", False)
+    p["ingestaLanzada"] = False if p["jugadores"] or not puede_lanzar else _lanzar_ingesta_plantilla(equipo_id)
     return p
 
 

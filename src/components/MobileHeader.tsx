@@ -1,4 +1,5 @@
 import type { SadStore } from '../store'
+import { BotonAdmin } from './BotonAdmin'
 import type { MatchView } from '../lib/view'
 import { TeamBadge } from './TeamBadge'
 
@@ -30,6 +31,7 @@ export function MobileHeader({ store, mv, phonePreview, liveBadge, liveMinute, l
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="13" rx="2" /><path d="M8 21h8M12 17v4" /></svg>
           </button>
         )}
+        <BotonAdmin size={34} />
         <button onClick={store.toggleTheme} title="Tema" style={{ width: 34, height: 34, borderRadius: 9, border: '1px solid var(--line)', background: 'var(--bg2)', color: 'var(--t2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
           {isDark ? (
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z" /></svg>

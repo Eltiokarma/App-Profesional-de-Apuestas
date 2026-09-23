@@ -1094,6 +1094,29 @@ def main():
     check("sin SAD_TOKEN_COWORK ese token deja de valer",
           c.get(A + "/analisis/cowork/agenda", headers=cw).status_code == 401)
 
+    # token de la WEB (SAD_TOKEN_WEB, deuda 1): viaja en el bundle → solo lee
+    appmod.TOKEN_WEB = "token-web"
+    wb = {"Authorization": "Bearer token-web"}
+    check("web: lee (GET de partidos, partes y burbujas)",
+          c.get(A + "/fixtures?limit=1", headers=wb).status_code == 200
+          and c.get(A + "/analisis/cowork/agenda", headers=wb).status_code == 200)
+    r_w = c.post(A + "/analisis/efe", json={"fixtureId": fx}, headers=wb)
+    check("web: NO gasta ni escribe (POST de EFE → 403 que pide el modo administrador)",
+          r_w.status_code == 403 and r_w.json().get("necesitaAdmin") is True, r_w.text[:200])
+    check("web: NO borra ni pone cuarentenas",
+          c.delete(A + f"/analisis/cowork/{fx}", headers=wb).status_code == 403
+          and c.post(A + f"/analisis/cowork/{fx}/cuarentena", json={"motivo": "x" * 20}, headers=wb).status_code == 403)
+    check("web: el backtest (calibración pesada) tampoco", 
+          c.get(A + "/analisis/burbujas/backtest", headers=wb).status_code == 403)
+    eq_w = c.get(A + "/fixtures?limit=1", headers=wb).json()[0]["local"]["id"]
+    check("web: la plantilla se lee pero NO lanza la ingesta que gasta cuota",
+          c.get(A + f"/equipos/{eq_w}/plantilla", headers=wb).json().get("ingestaLanzada") is False)
+    appmod.TOKEN_WEB = "token-de-prueba"
+    check("web: si es idéntico al maestro no recorta (se avisa al arrancar)",
+          c.post(A + "/analisis/efe", json={"fixtureId": fx}, headers={"Authorization": "Bearer token-de-prueba"}).status_code != 403)
+    appmod.TOKEN_WEB = ""
+    check("sin SAD_TOKEN_WEB ese token deja de valer", c.get(A + "/fixtures?limit=1", headers=wb).status_code == 401)
+
     appmod.API_TOKEN = ""
     check("auth: sin SAD_API_TOKEN la API queda abierta", c.get(A + "/fixtures?limit=1").status_code == 200)
 
