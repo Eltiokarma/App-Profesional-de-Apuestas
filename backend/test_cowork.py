@@ -715,6 +715,9 @@ def main():
     check("el reporte ve la secuencia y dice que Cowork corrigió",
           p2["reaccion"] == "corrigio" and len(p2["evaluaciones"]) >= 2
           and p2["evaluaciones"][-1]["redeposito"] is True and sin_ficha not in rev2["paraMirar"], p2)
+    check("cada evaluación del reporte dice por dónde pasó y el reporte dice el host de hoy",
+          all("via" in e for e in p2["evaluaciones"]) and rev2["via"] and "oficial" in rev2
+          and isinstance(rev2["totales"]["porVia"], dict), (rev2.get("via"), p2["evaluaciones"][-1]))
     check("los totales cuentan el hallazgo por código y el costo del día",
           rev2["totales"]["hallazgosPorCodigo"].get("COHERENCIA-1X2") == 1
           and rev2["totales"]["corrigio"] == 1 and "costoUsd" in rev2["totales"], rev2["totales"])

@@ -101,6 +101,10 @@ def evaluar(por_lado: dict, nombres: dict) -> dict:
         return base
     base["modelo"] = lote.modelo
     base["simulado"] = all(r.simulado for r in lote.values())
+    # POR DÓNDE PASÓ. Un intermediario no afiliado no vale lo que el oficial:
+    # la evaluación se sella con el host para poder apartarla después.
+    base["via"] = lote.via
+    base["oficial"] = jev.oficial() and not all(r.simulado for r in lote.values())
     base["tokensEntrada"] = lote.tokens_entrada
     for lado in por_lado:
         modo_r, mueve_r = lote.get(f"modo_{lado}"), lote.get(f"mueve_{lado}")

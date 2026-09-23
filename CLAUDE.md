@@ -408,6 +408,21 @@ conversación se pierde en la siguiente.
      es alarma) y `DT-SIN-DT`; un parte con «sin establecer» en un lado va a
      cuarentena automática en el aprendizaje. Las alertas calculadas
      (`_ALERTAS_CALCULADAS`) no se depositan: el eco del GET las descarta.
+   - **El DT de la base, tercera vez (22/09, Santa Fe–Cali con los dos DT
+     cruzados; la Roma el sábado)**: NO era un cruce de equipos en la ficha
+     —la alineación guarda al DT con el `team.id` de la API—. Era una
+     ALINEACIÓN RANCIA: `dt_de_alineaciones` tomaba la última capturada sin
+     mirar de cuándo era, y la liga colombiana dejó de publicar onces, así que
+     «la última» era de meses atrás (Repetto sí dirigía a Santa Fe entonces)
+     y le ganaba por regla a `/coachs`; el Cali salía con Dudamel por su
+     etapa vieja abierta en la carrera. HECHO: la alineación cuenta solo si
+     es de uno de los últimos `DT_ALINEACION_PARTIDOS` (3) partidos
+     terminados del equipo; si no, manda la carrera. Y `dt_agenda` rehace
+     con `/coachs` un registro `alineacion` que ninguna alineación fresca
+     sostenga (`rancio`), aunque sea de ayer. `necesita_lentas` usa la misma
+     regla. En la próxima corrida de `--dt-agenda` Santa Fe y Cali salen con
+     `fuente: coachs` — y si `/coachs` también está atrasado, DT-DISCREPANCIA
+     y la prensa mandan, como ya dice el prompt.
    - **`timelineEventos` válidos entran** pero Cowork reportó
      `eventosTimeline: 0` cuando mandaba tipos fuera de la lista; ahora se
      rechaza con motivo. Si vuelve a salir 0 con tipos válidos, mirar

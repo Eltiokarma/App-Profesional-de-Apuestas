@@ -1090,7 +1090,8 @@ def health():
     from backend.analisis import coherencia as _coh, jev as _jev
     return {"status": "ok" if db_ok else "degraded", "version": app.version, "dbOk": db_ok,
             "lastPipelineRun": last_run,
-            "jev": {"disponible": _jev.disponible(), "modo": _coh.modo(), "modelo": _jev.MODELO}}
+            "jev": {"disponible": _jev.disponible(), "modo": _coh.modo(), "modelo": _jev.MODELO,
+                    "via": _jev.via(), "oficial": _jev.oficial()}}
 
 
 def _norm(s: str) -> str:

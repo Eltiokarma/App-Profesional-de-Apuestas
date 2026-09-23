@@ -351,10 +351,24 @@ def elegir_entrenador(filas: list, team_id: int, dt_alineacion: str | None = Non
     return max(abiertas or candidatos, key=lambda c: c["desde"])
 
 
-def dt_de_alineaciones(con: sqlite3.Connection, team_id: int) -> tuple[str | None, str | None]:
+# La alineación cuenta como «el DT del banco» solo si es de uno de los últimos
+# N partidos TERMINADOS del equipo. Si el equipo jugó N partidos después de esa
+# alineación sin que se capturara ninguna otra, no es «la última», es historia.
+DT_ALINEACION_PARTIDOS = 3
+
+
+def dt_de_alineaciones(con: sqlite3.Connection, team_id: int,
+                       partidos_atras: int = DT_ALINEACION_PARTIDOS) -> tuple[str | None, str | None]:
     """(DT de la última alineación capturada, fecha del primer partido de su
     racha en el banco). La racha corta cuando cambia el apellido normalizado:
-    así un DT nuevo trae la fecha de su primer partido, no la del último."""
+    así un DT nuevo trae la fecha de su primer partido, no la del último.
+
+    UNA ALINEACIÓN RANCIA NO ES «LA ÚLTIMA». El 22/09 Santa Fe salió con
+    Repetto y fuente `alineacion` cuando la prensa ya lo tenía en el Cali: la
+    liga colombiana no publica onces, así que la «última alineación capturada»
+    era de meses atrás, de cuando Repetto sí dirigía a Santa Fe, y le ganaba
+    por regla a /coachs. Si el equipo jugó `partidos_atras` partidos terminados
+    DESPUÉS de esa alineación, se devuelve (None, None) y manda la carrera."""
     try:
         filas = con.execute(
             """SELECT DISTINCT a.entrenador, substr(f.date, 1, 10) AS d
@@ -364,6 +378,17 @@ def dt_de_alineaciones(con: sqlite3.Connection, team_id: int) -> tuple[str | Non
     except sqlite3.Error:
         return None, None
     if not filas:
+        return None, None
+    try:
+        marcas = ",".join("?" * len(_TERMINADOS))
+        ultimos = con.execute(
+            f"SELECT substr(date, 1, 10) FROM fixtures WHERE (home_team_id=? OR away_team_id=?) "
+            f"AND status_short IN ({marcas}) ORDER BY date DESC LIMIT ?",
+            (team_id, team_id, *_TERMINADOS, partidos_atras)).fetchall()
+    except sqlite3.Error:
+        ultimos = []
+    # con menos de N terminados conocidos no hay base para llamarla rancia
+    if len(ultimos) >= partidos_atras and str(filas[0][1]) < str(ultimos[-1][0]):
         return None, None
     actual = filas[0][0]
     desde = filas[0][1]
@@ -412,18 +437,15 @@ def necesita_lentas(con: sqlite3.Connection, team_id: int,
     if fila[0] <= limite:
         return True
     try:
-        dt_alin = con.execute(
-            """SELECT a.entrenador FROM alineaciones a JOIN fixtures f ON f.id = a.fixture_id
-               WHERE a.team_id=? AND a.entrenador IS NOT NULL AND a.entrenador <> ''
-               ORDER BY f.date DESC LIMIT 1""", (team_id,)).fetchone()
+        dt_alin, _ = dt_de_alineaciones(con, team_id)   # la misma regla de frescura que el resto
         dt_guardado = con.execute(
             "SELECT nombre FROM entrenadores WHERE team_id=? ORDER BY actualizado_en DESC LIMIT 1",
             (team_id,)).fetchone()
     except sqlite3.Error:
         return False  # DB sin esas tablas: el TTL manda
-    if dt_alin and dt_guardado and dt_alin[0] and dt_guardado[0]:
-        if _norm_dt(dt_alin[0]) != _norm_dt(dt_guardado[0]):
-            print(f"  equipo {team_id}: la alineación trae DT '{dt_alin[0]}' y teníamos "
+    if dt_alin and dt_guardado and dt_guardado[0]:
+        if _norm_dt(dt_alin) != _norm_dt(dt_guardado[0]):
+            print(f"  equipo {team_id}: la alineación trae DT '{dt_alin}' y teníamos "
                   f"'{dt_guardado[0]}' → se refresca traspasos y DT sin esperar al TTL")
             return True
     return False
@@ -529,12 +551,17 @@ def dt_agenda(cliente, con: sqlite3.Connection, dias: int = DT_AGENDA_DIAS,
                 con.commit()
                 out["alineaciones"] += 1 if n else 0
         # 2) /coachs si el registro está viejo, falta, o la alineación lo contradice
-        fila = con.execute("SELECT nombre, actualizado_en FROM entrenadores WHERE team_id=? "
+        fila = con.execute("SELECT nombre, actualizado_en, fuente FROM entrenadores WHERE team_id=? "
                            "ORDER BY actualizado_en DESC LIMIT 1", (tid,)).fetchone()
         viejo = not fila or not fila[1] or fila[1] <= corte
         dt_alin, _desde = dt_de_alineaciones(con, tid)
         contradice = bool(dt_alin and fila and fila[0] and _norm_dt(dt_alin) != _norm_dt(fila[0]))
-        if not (viejo or contradice):
+        # EL REGISTRO QUE SALIÓ DE UNA ALINEACIÓN QUE YA NO CUENTA. Si lo guardado
+        # dice `alineacion` y hoy ninguna alineación fresca lo sostiene, ese DT
+        # vino de un banco de hace meses (Santa Fe–Cali, 22/09): se rehace con
+        # /coachs aunque el registro sea de ayer, porque ayer también estaba mal.
+        rancio = bool(fila and (fila[2] or "") == "alineacion" and not dt_alin)
+        if not (viejo or contradice or rancio):
             continue
         if not cliente.quedan(1) or cliente.limite - cliente.usadas <= reserva:
             out["sinPresupuesto"] += 1

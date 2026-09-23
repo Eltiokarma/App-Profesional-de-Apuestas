@@ -152,6 +152,29 @@ try:
 except ValueError as exc:
     check("un estado gigante se rechaza", "repartilo" in str(exc))
 
+print("\n== una clave mal pegada no es una clave mala ==")
+for cruda, limpia in (('"ts-abc"', "ts-abc"), ("'ts-abc'", "ts-abc"), ("Bearer ts-abc", "ts-abc"),
+                      ("  ts-abc  ", "ts-abc"), ('"Bearer ts-abc"', "ts-abc")):
+    os.environ["TYPESAFE_API_KEY"] = cruda
+    check(f"{cruda!r} → {limpia!r}", jev._clave() == limpia and jev.disponible(), jev._clave())
+os.environ["TYPESAFE_API_KEY"] = '""'
+check("solo comillas es no tener clave", not jev.disponible())
+os.environ.pop("TYPESAFE_API_KEY", None)
+
+print("\n== por dónde pasó: el oficial o un intermediario ==")
+check("por defecto el endpoint es el oficial", jev.oficial() and jev.via() == "api.typesafe.ai")
+check("un lote simulado se sella como simulado", r1.via == "simulado" and n.via == "api.typesafe.ai")
+ep_antes = jev.ENDPOINT
+jev.ENDPOINT = "https://jevtypesafeai.com/api/v1/decide"
+check("con SAD_JEV_ENDPOINT apuntando a un intermediario, oficial() es False y via() lo nombra",
+      not jev.oficial() and jev.via() == "jevtypesafeai.com")
+n_inter = jev._normalizar(crudo, preguntas)
+check("y cada lote que vuelva por ahí queda sellado con ese host", n_inter.via == "jevtypesafeai.com")
+p_sin = jev.ping()
+check("el ping sin clave también dice por dónde saldría y que no es oficial",
+      p_sin["via"] == "jevtypesafeai.com" and p_sin["oficial"] is False and p_sin["disponible"] is False)
+jev.ENDPOINT = ep_antes
+
 print("\n== costo ==")
 check("la salida no se cobra y la entrada es calderilla",
       abs(jev.costo(392) - 392 / 1_000_000 * 0.042) < 1e-12)

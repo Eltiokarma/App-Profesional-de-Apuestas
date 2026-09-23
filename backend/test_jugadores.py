@@ -147,6 +147,36 @@ def main():
     fila = con.execute("SELECT nombre, desde, fuente FROM entrenadores WHERE team_id=700").fetchone()
     check("guardar_entrenador registra la salida: el del banco, con fuente alineacion y su primer partido",
           fila and fila[0] == "P. Guardiola" and fila[1] == hace(24 * 12)[:10] and fila[2] == "alineacion", fila)
+    # UNA ALINEACIÓN RANCIA NO ES «LA ÚLTIMA» (Santa Fe–Cali, 22/09): si el
+    # equipo jugó 3 partidos terminados DESPUÉS de la última alineación
+    # capturada —la liga dejó de publicar onces—, ese DT es historia y manda
+    # la carrera, no el banco de hace meses.
+    con.executemany("INSERT INTO fixtures (id, date, status_short, league_id, home_team_id) "
+                    "VALUES (?, ?, 'FT', 239, 700)",
+                    [(14, hace(24 * 4)), (15, hace(24 * 3)), (16, hace(24 * 2))])
+    con.commit()
+    dt_r, desde_r = dt_de_alineaciones(con, 700)
+    check("tres terminados después de la última alineación → la alineación no cuenta",
+          dt_r is None and desde_r is None, (dt_r, desde_r))
+    guardar_entrenador(con, 700, carrera)
+    fila = con.execute("SELECT nombre, fuente FROM entrenadores WHERE team_id=700").fetchone()
+    check("y el DT guardado vuelve a la carrera, con fuente coachs, no al del banco viejo",
+          fila and fila[1] == "coachs" and fila[0] != "P. Guardiola", fila)
+    con.execute("INSERT INTO fixtures (id, date, status_short, league_id, home_team_id) VALUES (17, ?, 'NS', 239, 700)",
+                (hace(-24),))
+    con.execute("INSERT INTO alineaciones (fixture_id, team_id, entrenador) VALUES (16, 700, 'R. Dudamel')")
+    con.commit()
+    dt_r, _ = dt_de_alineaciones(con, 700)
+    check("una alineación de uno de los últimos 3 terminados sí cuenta",
+          dt_r == "R. Dudamel", dt_r)
+    con.execute("DELETE FROM alineaciones WHERE fixture_id=16")
+    con.execute("INSERT INTO alineaciones (fixture_id, team_id, entrenador) VALUES (17, 700, 'XI probable')")
+    con.commit()
+    check("un XI probable del próximo partido es lo más fresco que hay y también cuenta",
+          dt_de_alineaciones(con, 700)[0] == "XI probable")
+    con.execute("DELETE FROM alineaciones WHERE fixture_id=17")
+    con.execute("DELETE FROM fixtures WHERE id IN (14, 15, 16, 17)")
+    con.commit()
 
     # --- 2c. DT FRESCO PARA LA AGENDA: alineación del último partido + /coachs ---
     from backend.ingesta.jugadores import dt_agenda, ultimo_terminado
@@ -204,6 +234,31 @@ def main():
     dt_agenda(falso, con, dias=2, edad_dias=7)
     check("una segunda pasada no vuelve a pedir nada: alineación ya guardada y registro fresco",
           len(falso.pedidos) == antes, falso.pedidos[antes:])
+    # SANTA FE–CALI (22/09): la liga deja de publicar onces. El equipo juega
+    # tres partidos más sin alineación capturada; el registro dice «P.
+    # Guardiola · alineacion» y es de hoy, pero ese banco es de hace meses.
+    # Sin la regla, `viejo` y `contradice` son False y nadie lo rehace.
+    con.executemany("INSERT INTO fixtures (id, date, status_short, league_id, league_season, home_team_id, away_team_id) "
+                    "VALUES (?,?,'FT',281,2026,700,701)",
+                    [(23, hace(24 * 3)), (24, hace(24 * 2)), (25, hace(24 * 1))])
+    con.commit()
+    falso.sin_onces = True
+    _get = falso.get
+    def get_sin_onces(endpoint, params, _g=_get):
+        if endpoint == "fixtures/lineups" and params.get("fixture", 0) > 22:
+            falso.usadas += 1
+            falso.pedidos.append((endpoint, dict(params)))
+            return {"response": []}
+        return _g(endpoint, params)
+    falso.get = get_sin_onces
+    from backend.ingesta.jugadores import dt_de_alineaciones as _dta
+    check("con tres terminados sin alineación después, la alineación vieja ya no cuenta",
+          _dta(con, 700) == (None, None), _dta(con, 700))
+    r3 = dt_agenda(falso, con, dias=2, edad_dias=7)
+    fila = con.execute("SELECT nombre, fuente FROM entrenadores WHERE team_id=700").fetchone()
+    check("un registro `alineacion` sin alineación fresca que lo sostenga se rehace con /coachs aunque sea de hoy",
+          fila and fila[1] == "coachs" and fila[0] == "S. Novoa"
+          and any(c["equipo"] == 700 and c["antes"] == "P. Guardiola" for c in r3["cambiados"]), (fila, r3))
 
     # --- 3. el padrón: ligas importantes, no las copas ---------------------
     con = db()
