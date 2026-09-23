@@ -98,6 +98,7 @@ check("no hay hallazgos posibles sin confianza", ev["hallazgos"] == [])
 check("todas quedan como sin confianza, marcadas simuladas",
       len(ev["sinConfianza"]) == len(preg) and all(x["simulado"] for x in ev["sinConfianza"]))
 check("el modelo sellado dice simulado", ev["modelo"] == "simulado")
+check("y el sello dice por dónde pasó: simulado, no oficial", ev["via"] == "simulado" and ev["oficial"] is False)
 check("en sombra no va nada a la tira", coherencia.alertas_de(ev) == [])
 
 print("\n== con guion: la comparación la hace el código ==")
@@ -127,6 +128,7 @@ check("dos hallazgos: el bloque A de la visita y el 1X2", codigos == ["COHERENCI
 bloq = next(h for h in ev["hallazgos"] if h["codigo"] == "COHERENCIA-BLOQUE")
 check("el hallazgo del bloque apunta al lado y la letra", bloq["equipo"] == "b" and "bloque A" in bloq["detalle"])
 check("el hallazgo lleva la respuesta de Jev sellada", bloq["jev"]["pregunta"] == "nota_b_A" and bloq["jev"]["confianza"] == 0.92)
+check("con guion el sello dice guion y el host del endpoint", ev["via"] == "guion" and "oficial" in ev)
 check("lo que concuerda se lista aparte", {"nota_a_A", "nota_a_B", "matchup", "reventon_a"} <= set(ev["concuerdan"]))
 check("un hallazgo es siempre tipo dato", all(h["tipo"] == "dato" for h in ev["hallazgos"]))
 check("sigue sin ir a la tira en modo sombra", coherencia.alertas_de(ev) == [])

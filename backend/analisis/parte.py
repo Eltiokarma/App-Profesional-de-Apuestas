@@ -99,6 +99,8 @@ class ParteInvalido(ValueError):
 # existe es un error, no un problema)
 _COLUMNAS_NUEVAS = (("veredicto_json", "TEXT"), ("cohorte", "TEXT"), ("cuarentena_json", "TEXT"),
                     ("coherencia_json", "TEXT"), ("modo_fallo_json", "TEXT"))
+# el registro del revisor nació sin `via`; se añade en caliente igual
+_COLUMNAS_LOG = (("via", "TEXT"),)
 
 # ── COHORTES: de qué época del proceso es cada caso ─────────────────────────
 #
@@ -127,6 +129,11 @@ def _conectar():
             con.execute(f"ALTER TABLE parte_cowork ADD COLUMN {columna} {tipo}")
         except sqlite3.OperationalError:
             pass  # ya existe: el caso normal a partir de la segunda conexión
+    for columna, tipo in _COLUMNAS_LOG:
+        try:
+            con.execute(f"ALTER TABLE coherencia_log ADD COLUMN {columna} {tipo}")
+        except sqlite3.OperationalError:
+            pass
     return con
 
 
@@ -1269,14 +1276,15 @@ def guardar(payload: dict) -> dict:
         # la secuencia: es lo que lee el reporte del revisor (revisor()).
         con.execute(
             "INSERT INTO coherencia_log (fixture_id, evaluado_en, modo, modelo, preguntas, hallazgos, "
-            "sin_confianza, simulado, error, tokens, redeposito, hallazgos_json) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            "sin_confianza, simulado, error, tokens, redeposito, hallazgos_json, via) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (parte["fixtureId"], coh.get("evaluadoEn") or ahora, coh.get("modo"), coh.get("modelo"),
              coh.get("preguntas", 0), len(coh.get("hallazgos") or []),
              len(coh.get("sinConfianza") or []), 1 if coh.get("simulado") else 0,
              coh.get("error"), coh.get("tokensEntrada", 0), 1 if previo else 0,
              json.dumps([{"codigo": h["codigo"], "equipo": h["equipo"]} for h in coh.get("hallazgos") or []],
-                        ensure_ascii=False)))
+                        ensure_ascii=False),
+             coh.get("via") or ("simulado" if coh.get("simulado") else None)))
     # un parte nuevo sobre un fixture que ya tenía once resuelto se recalcula
     # solo al leerlo: el once vive aparte, justamente para sobrevivir al parte
     # AVISO DE DEPÓSITO DESTRUCTIVO: el POST reemplaza el parte entero (es
@@ -1789,6 +1797,8 @@ def revisor(horas: int = 24, dia: str | None = None) -> dict:
         "partesEvaluados": 0, "conHallazgos": 0, "limpios": 0, "corrigio": 0, "corrigioParte": 0,
         "sostuvo": 0, "sinReaccion": 0, "noEvaluados": 0, "evaluaciones": len(filas),
         "hallazgosPorCodigo": {}, "sinConfianza": 0, "tokensEntrada": 0, "errores": 0,
+        # POR DÓNDE PASARON las evaluaciones reales: el oficial o un intermediario
+        "porVia": {},
     }
     for fid, evs in por_fixture.items():
         fx = _fixture(fid)
@@ -1798,7 +1808,12 @@ def revisor(horas: int = 24, dia: str | None = None) -> dict:
         secuencia = [{"evaluadoEn": e["evaluado_en"], "modo": e["modo"], "preguntas": e["preguntas"],
                       "hallazgos": [h["codigo"] for h in json.loads(e["hallazgos_json"] or "[]")],
                       "sinConfianza": e["sin_confianza"], "simulado": bool(e["simulado"]),
-                      "error": e["error"], "redeposito": bool(e["redeposito"])} for e in evs]
+                      "error": e["error"], "redeposito": bool(e["redeposito"]),
+                      "via": e.get("via")} for e in evs]
+        for e in evs:
+            if not e["simulado"] and not e["error"]:
+                v = e.get("via") or "?"
+                totales["porVia"][v] = totales["porVia"].get(v, 0) + 1
         if not reales:
             reaccion = "noEvaluado"
             totales["noEvaluados"] += 1
@@ -1836,6 +1851,8 @@ def revisor(horas: int = 24, dia: str | None = None) -> dict:
     partes.sort(key=lambda p_: (orden.get(p_["reaccion"], 9), p_["fecha"], p_["fixtureId"]))
     return {
         "modo": coh_mod.modo(),
+        "via": coh_mod.jev.via(),
+        "oficial": coh_mod.jev.oficial(),
         "ventana": {"dia": dia, "horas": None if dia else horas},
         "totales": {**totales, "costoUsd": round(coh_mod.jev.costo(totales["tokensEntrada"]), 5)},
         "partes": partes,

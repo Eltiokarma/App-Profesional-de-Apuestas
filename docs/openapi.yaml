@@ -810,6 +810,8 @@ paths:
                   disponible: { type: boolean, description: 'la clave está puesta' }
                   ok: { type: boolean, description: 'respondió y contestó bien a la pregunta trivial' }
                   modelo: { type: string, nullable: true, description: 'la versión exacta (jev-1.13.0)' }
+                  via: { type: string, description: 'host que respondió' }
+                  oficial: { type: boolean }
                   ms: { type: integer }
                   tokensEntrada: { type: integer }
                   respuesta: { type: object, additionalProperties: true }
@@ -1241,6 +1243,8 @@ components:
             disponible: { type: boolean }
             modo: { type: string, enum: [off, sombra, alertas] }
             modelo: { type: string }
+            via: { type: string, description: 'host del endpoint configurado' }
+            oficial: { type: boolean }
     EstadoFixture:
       type: string
       enum: [programado, en_vivo, finalizado]
@@ -2804,6 +2808,8 @@ components:
         modo: { type: string, enum: [off, sombra, alertas] }
         evaluadoEn: { type: string }
         modelo: { type: string, description: 'jev-1.13.0, o «simulado» sin clave' }
+        via: { type: string, description: 'host que respondió (api.typesafe.ai, o un intermediario; «simulado» sin clave)' }
+        oficial: { type: boolean, description: 'false = la evaluación pasó por un intermediario no afiliado o fue simulada: no vale lo que una del oficial' }
         simulado: { type: boolean }
         umbral: { type: number, description: 'confianza mínima para que una etiqueta cuente' }
         preguntas: { type: integer }
@@ -2975,6 +2981,8 @@ components:
       required: [modo, ventana, totales, partes, paraMirar]
       properties:
         modo: { type: string, enum: [off, sombra, alertas], description: 'el modo vigente del revisor' }
+        via: { type: string, description: 'host al que salen las preguntas hoy' }
+        oficial: { type: boolean, description: 'false = intermediario no afiliado (SAD_JEV_ENDPOINT distinto del oficial)' }
         ventana:
           type: object
           properties:
@@ -2997,6 +3005,7 @@ components:
             tokensEntrada: { type: integer }
             costoUsd: { type: number }
             errores: { type: integer }
+            porVia: { type: object, additionalProperties: { type: integer }, description: 'evaluaciones reales por host' }
         partes:
           type: array
           items:

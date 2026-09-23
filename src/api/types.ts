@@ -1145,6 +1145,9 @@ export interface CoherenciaParte {
   modo: 'off' | 'sombra' | 'alertas'
   evaluadoEn: string
   modelo: string
+  /** Host que respondió ('simulado' sin clave). `oficial: false` = pasó por un intermediario no afiliado. */
+  via?: string
+  oficial?: boolean
   simulado: boolean
   umbral: number
   preguntas: number
@@ -1415,18 +1418,23 @@ export interface PendienteNoListadoDTO {
  *  Cowork con eso y cuánto costó. */
 export interface RevisorDiarioDTO {
   modo: 'off' | 'sombra' | 'alertas'
+  /** Host al que salen las preguntas hoy; `oficial: false` = intermediario no afiliado. */
+  via?: string
+  oficial?: boolean
   ventana: { dia: string | null; horas: number | null }
   totales: {
     partesEvaluados: number; conHallazgos: number; limpios: number
     corrigio: number; corrigioParte: number; sostuvo: number; sinReaccion: number; noEvaluados: number
     evaluaciones: number; hallazgosPorCodigo: Record<string, number>
     sinConfianza: number; tokensEntrada: number; costoUsd: number; errores: number
+    /** Evaluaciones reales por host: separa las del oficial de las de un intermediario. */
+    porVia?: Record<string, number>
   }
   partes: {
     fixtureId: number; partido: string; fecha: string
     reaccion: 'limpio' | 'corrigio' | 'corrigioParte' | 'sostuvo' | 'sinReaccion' | 'noEvaluado'
     hallazgosEncontrados: string[]; hallazgosAhora: string[]
-    evaluaciones: { evaluadoEn: string; modo: string; preguntas: number; hallazgos: string[]; sinConfianza: number; simulado: boolean; error: string | null; redeposito: boolean }[]
+    evaluaciones: { evaluadoEn: string; modo: string; preguntas: number; hallazgos: string[]; sinConfianza: number; simulado: boolean; error: string | null; redeposito: boolean; via?: string | null }[]
   }[]
   paraMirar: number[]
   nota: string

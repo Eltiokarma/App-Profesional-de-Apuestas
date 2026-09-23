@@ -51,8 +51,22 @@ import json
 import os
 import time
 from dataclasses import dataclass, field
+from urllib.parse import urlparse
 
 ENDPOINT = os.environ.get("SAD_JEV_ENDPOINT", "https://api.typesafe.ai/v1/systemone")
+ENDPOINT_OFICIAL = "https://api.typesafe.ai/v1/systemone"
+
+
+def via() -> str:
+    """El host al que salen las preguntas. Importa porque existen
+    intermediarios no afiliados (jevtypesafeai.com, 22/09: $5 y claves que el
+    oficial no reconoce) y una evaluación que pasó por uno no vale lo mismo
+    que una del oficial: se sella en cada lote para poder apartarlas."""
+    return urlparse(ENDPOINT).hostname or ENDPOINT
+
+
+def oficial() -> bool:
+    return ENDPOINT.rstrip("/") == ENDPOINT_OFICIAL
 MODELO = os.environ.get("SAD_JEV_MODELO", "jev-latest")
 TIMEOUT = float(os.environ.get("SAD_JEV_TIMEOUT", "10"))
 REINTENTOS = int(os.environ.get("SAD_JEV_REINTENTOS", "2"))
@@ -92,6 +106,7 @@ class Lote(dict):
     """
     modelo: str = ""
     tokens_entrada: int = 0
+    via: str = ""          # host que respondió; "simulado" sin clave
 
     @property
     def costo(self) -> float:
@@ -196,6 +211,7 @@ def _normalizar(bruto: dict, preguntas: dict) -> Lote:
     salida = Lote()
     salida.modelo = str(bruto.get("model") or "")
     salida.tokens_entrada = int((bruto.get("usage") or {}).get("input_tokens") or 0)
+    salida.via = via()
     for clave, pregunta in preguntas.items():
         dato = (bruto.get("answers") or {}).get(clave)
         if not isinstance(dato, dict):
@@ -240,6 +256,7 @@ def _simular(estado, preguntas: dict) -> Lote:
                                         default=str).encode("utf-8")).hexdigest()
     salida = Lote()
     salida.modelo = "simulado"
+    salida.via = "simulado"
     for i, (clave, pregunta) in enumerate(sorted(preguntas.items())):
         if guion and clave in guion:
             fijo = guion[clave]
@@ -263,6 +280,7 @@ def _simular(estado, preguntas: dict) -> Lote:
     # sabe que esas respuestas cuentan, y de dónde salieron
     if any(not r.simulado for r in salida.values()):
         salida.modelo = "guion"
+        salida.via = "guion"
     return salida
 
 
@@ -324,17 +342,19 @@ def ping() -> dict:
     """
     import time as _t
     if not disponible():
-        return {"disponible": False, "ok": False, "modelo": None, "ms": 0, "tokensEntrada": 0,
+        return {"disponible": False, "ok": False, "modelo": None, "via": via(), "oficial": oficial(),
+                "ms": 0, "tokensEntrada": 0,
                 "error": "TYPESAFE_API_KEY no está puesta: Jev corre simulado y no decide"}
     t0 = _t.monotonic()
     try:
         lote = preguntar("El partido terminó 2-1 y el equipo local ganó.",
                          {"gano_local": sino("¿El texto dice que el equipo local ganó?")})
     except (JevError, ValueError) as exc:
-        return {"disponible": True, "ok": False, "modelo": None,
+        return {"disponible": True, "ok": False, "modelo": None, "via": via(), "oficial": oficial(),
                 "ms": int((_t.monotonic() - t0) * 1000), "tokensEntrada": 0, "error": str(exc)}
     r = lote["gano_local"]
     return {"disponible": True, "ok": r.probabilidad() >= 0.7, "modelo": lote.modelo,
+            "via": lote.via, "oficial": oficial(),
             "ms": int((_t.monotonic() - t0) * 1000), "tokensEntrada": lote.tokens_entrada,
             "respuesta": {"probabilidad": round(r.probabilidad(), 3), "esperado": "≥ 0.7"},
             "error": None if r.probabilidad() >= 0.7 else

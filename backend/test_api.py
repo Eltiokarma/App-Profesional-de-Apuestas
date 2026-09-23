@@ -42,7 +42,7 @@ def main():
     check("/health ok + dbOk + lastPipelineRun", h["status"] == "ok" and h["dbOk"] and h["lastPipelineRun"], h)
     check("/health dice si la clave de Jev está (sin exponerla) y el modo del revisor",
           h["jev"]["disponible"] is False and h["jev"]["modo"] in ("off", "sombra", "alertas")
-          and "TYPESAFE" not in str(h), h.get("jev"))
+          and "TYPESAFE" not in str(h) and h["jev"]["via"] == "api.typesafe.ai" and h["jev"]["oficial"] is True, h.get("jev"))
     ping = c.get(A + "/analisis/jev/ping").json()
     check("/analisis/jev/ping sin clave no sale a la red y lo dice",
           ping["disponible"] is False and ping["ok"] is False and "TYPESAFE_API_KEY" in ping["error"], ping)

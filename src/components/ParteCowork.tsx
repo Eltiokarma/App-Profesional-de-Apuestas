@@ -813,7 +813,7 @@ function RevisorCoherencia({ parte }: { parte: ParteCoworkDTO }) {
         <span style={{ font: '500 9.5px var(--mono)', color: 'var(--t3)', minWidth: 0, overflowWrap: 'anywhere' }}>
           {c.simulado ? 'Jev responde simulado con confianza 0: no puede haber hallazgos'
             : c.error ? c.error
-            : `${c.concuerdan?.length ?? 0} cuadran · ${c.sinConfianza?.length ?? 0} sin confianza · ${c.modelo}${enSombra ? ' · nada de esto va a la tira' : ''}`}
+            : `${c.concuerdan?.length ?? 0} cuadran · ${c.sinConfianza?.length ?? 0} sin confianza · ${c.modelo}${c.oficial === false && c.via ? ` · VÍA ${c.via} (NO OFICIAL)` : ''}${enSombra ? ' · nada de esto va a la tira' : ''}`}
         </span>
       </div>
       {hallazgos.length > 0 && (

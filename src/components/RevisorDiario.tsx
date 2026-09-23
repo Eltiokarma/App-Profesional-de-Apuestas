@@ -37,7 +37,7 @@ export function RevisorDiario({ isMobile }: { isMobile: boolean }) {
     <section style={{ padding: isMobile ? '11px 13px' : '13px 16px', marginBottom: 14, borderRadius: 13, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px 10px', flexWrap: 'wrap' }}>
         <span style={{ font: '700 9.5px var(--mono)', color, letterSpacing: '.6px' }}>
-          REVISOR · ÚLTIMAS {d.ventana.horas ?? 24} H{d.modo === 'sombra' ? ' · EN SOMBRA' : ''}
+          REVISOR · ÚLTIMAS {d.ventana.horas ?? 24} H{d.modo === 'sombra' ? ' · EN SOMBRA' : ''}{d.oficial === false ? ` · VÍA ${d.via} (NO OFICIAL)` : ''}
         </span>
         <span style={{ font: '600 10.5px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
           {t.partesEvaluados} partes · {t.conHallazgos} con hallazgos

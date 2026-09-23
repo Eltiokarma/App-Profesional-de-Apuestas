@@ -234,6 +234,10 @@ def evaluar(parte: dict, nombres: dict, reventon: dict | None) -> dict:
         return base
     base["modelo"] = lote.modelo
     base["tokensEntrada"] = lote.tokens_entrada
+    # POR DÓNDE PASÓ. Un intermediario no afiliado no vale lo que el oficial:
+    # la evaluación se sella con el host para poder apartarla después.
+    base["via"] = lote.via
+    base["oficial"] = jev.oficial() and not all(r.simulado for r in lote.values())
     # simulada es la evaluación cuyas respuestas fueron TODAS simuladas; un
     # guion que pasa por real (tests, casetes) cuenta como evaluación real
     base["simulado"] = all(r.simulado for r in lote.values())
