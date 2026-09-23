@@ -247,7 +247,11 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   por skill, y `pidenMoverSinPoder` es la alarma del dossier: una lección de
   caso contaminado o en cuarentena que propone mover un peso. **No toca la
   población, ninguna métrica, el estado de la lección ni la cuarentena**: es
-  el insumo de la fase D, no un juez.
+  el insumo de la fase D, no un juez. **OJO al intermediario**:
+  `jevtypesafeai.com` NO es TypeSafe (claves `jv_live_`, 10x el precio, «not
+  affiliated»); lo oficial es `console.typesafe.ai`. Se prueba con su saldo en
+  `sombra` y con `SAD_JEV_ENDPOINT`, y cada evaluación va sellada con `via` /
+  `oficial` para apartarla cuando llegue la clave real (`docs/JEV.md`).
 - Costo de la IA: `docs/efe-dtp/COSTO_IA.md`. Lo que está en nuestra base se
   calcula, no se le pregunta al modelo — y lo calculado no se le hace copiar a
   la salida. Los bloques calculados hoy: el mapa de rivales del EFE

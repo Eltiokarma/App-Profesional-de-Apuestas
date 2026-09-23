@@ -357,6 +357,28 @@ recuperan) y la recuperación de estructura del once pegado a mano (deuda 5).
 El resto es pulido. Si solo se hicieran esos dos, la integración habría
 valido la pena; si se hicieran todos, no sería diez veces mejor.
 
+## El intermediario (22-23/09): jevtypesafeai.com no es TypeSafe
+
+Existe `jevtypesafeai.com`, un sitio «independent developer platform, not
+affiliated with or endorsed by TypeSafe AI» que usa el nombre del modelo en el
+dominio, emite claves `jv_live_…`, expone `/api/v1/decide` y cobra $0,42/M —
+diez veces el oficial—. Se cayó en él ($5 de saldo) antes de notar la
+diferencia; TypeSafe hoy no abre cuentas nuevas (early access). Lo oficial es
+`typesafe.ai` · `console.typesafe.ai/keys` · `api.typesafe.ai/v1/systemone`.
+
+Decisión: **probar con ese saldo, sin confiar.** `SAD_JEV_ENDPOINT` apunta al
+intermediario, `SAD_JEV_COHERENCIA=sombra` (Cowork no ve el detalle ni le
+salen alertas), y **cada evaluación queda sellada con `via` y `oficial`**
+(lote, parte, veredicto, `coherencia_log`, reporte del día con `porVia`) para
+apartarlas el día que llegue la clave real. El ping del 23/09 devolvió
+`modelo: jev-1.13.0`, 763 ms (el oficial promete 70–500: el salto extra es
+suyo), 289 tokens, p = 0,99 en la pregunta trivial: **compatible con un
+reenvío** al oficial, no una prueba de que lo sea. Hasta la clave oficial, lo
+que diga el revisor por esa vía sirve para *ver* cómo trabaja, no para mover
+nada. Correo a `hello@typesafe.ai` pidiendo acceso; cuando llegue: quitar
+`SAD_JEV_ENDPOINT`, poner la clave oficial, y `SAD_JEV_COHERENCIA` vuelve a
+`alertas`.
+
 ## Lo que Jev NO puede hacer aquí — la lista corta
 
 No es cautela: cada una tiene su motivo y es definitiva.
