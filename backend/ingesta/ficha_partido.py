@@ -313,20 +313,69 @@ def ingestar_fixture(cliente: Cliente, con: sqlite3.Connection, fixture_id: int)
 
 
 def _estado(con: sqlite3.Connection) -> None:
-    """Qué hay ya capturado, sin gastar requests."""
-    fichas = con.execute("SELECT COUNT(*) FROM fichas_meta").fetchone()[0]
-    sin_ali = con.execute("SELECT COUNT(*) FROM fichas_meta WHERE alineaciones=0").fetchone()[0]
-    con_grid = con.execute("SELECT COUNT(*) FROM alineaciones WHERE grid IS NOT NULL AND grid<>''").fetchone()[0]
-    total_ali = con.execute("SELECT COUNT(*) FROM alineaciones").fetchone()[0]
+    """Qué hay ya capturado, sin gastar requests.
+
+    Los porcentajes van sobre lo que corresponde: el grid solo lo traen los
+    TITULARES (la banca no tiene carril), y el xG se mide por ficha, no por su
+    puesto en el catálogo (el 24/09 el aviso «sin expected_goals» salía porque
+    no estaba entre las 12 métricas más vistas, no porque faltara)."""
+    uno = lambda sql, *a: con.execute(sql, a).fetchone()[0]  # noqa: E731
+    pct = lambda a, b: f"{100 * a / b:.0f} %" if b else "—"  # noqa: E731
+    fichas = uno("SELECT COUNT(*) FROM fichas_meta")
+    sin_ali = uno("SELECT COUNT(*) FROM fichas_meta WHERE alineaciones=0")
+    print(f"fichas selladas: {fichas} ({sin_ali} sin alineaciones, {pct(sin_ali, fichas)})")
+
+    total_ali = uno("SELECT COUNT(*) FROM alineaciones")
+    tit = uno("SELECT COUNT(*) FROM alineaciones WHERE titular=1")
+    tit_grid = uno("SELECT COUNT(*) FROM alineaciones WHERE titular=1 AND grid IS NOT NULL AND grid<>''")
+    lados = uno("SELECT COUNT(*) FROM (SELECT 1 FROM alineaciones GROUP BY fixture_id, team_id)")
+    lados_grid = uno("SELECT COUNT(*) FROM (SELECT 1 FROM alineaciones WHERE titular=1 "
+                     "GROUP BY fixture_id, team_id HAVING SUM(grid IS NOT NULL AND grid<>'') >= 10)")
+    print(f"filas de alineación: {total_ali} · titulares {tit}, con grid {tit_grid} ({pct(tit_grid, tit)})")
+    print(f"onces (equipo × partido): {lados} · con grid completo {lados_grid} ({pct(lados_grid, lados)})"
+          " ← los que M2 puede leer por carril")
+    if tit and not tit_grid:
+        print("  ⚠ NINGUNA trae grid: M2 tendría que degradarse a carriles por posición (G/D/M/F)")
+
+    con_stats = uno("SELECT COUNT(DISTINCT fixture_id) FROM fixture_stats")
+    con_xg = uno("SELECT COUNT(DISTINCT fixture_id) FROM fixture_stats WHERE clave='expected_goals' "
+                 "AND valor IS NOT NULL")
     claves = [r[0] for r in con.execute(
         "SELECT clave FROM fixture_stats GROUP BY clave ORDER BY COUNT(*) DESC LIMIT 12")]
-    print(f"fichas selladas: {fichas} ({sin_ali} sin alineaciones)")
-    print(f"filas de alineación: {total_ali} · con grid (carril de M2): {con_grid}")
-    if total_ali and not con_grid:
-        print("  ⚠ NINGUNA trae grid: M2 tendría que degradarse a carriles por posición (G/D/M/F)")
     print(f"métricas de stats más vistas: {', '.join(claves) if claves else '—'}")
-    if claves and not any("xpected" in c for c in claves):
-        print("  ⚠ sin expected_goals en el catálogo: M5 se queda sin respaldo numérico")
+    print(f"fichas con stats: {con_stats} · con xG: {con_xg} ({pct(con_xg, con_stats)})")
+    if con_stats and not con_xg:
+        print("  ⚠ ninguna ficha trae expected_goals: M5 y el xG de Equipo/Estadísticas quedan sin dato")
+
+    # por liga: dónde faltan onces y dónde falta el grid (lo que decide si
+    # para esa liga el pantallazo es el procedimiento o M2 va por posición)
+    try:
+        filas = con.execute(
+            "SELECT COALESCE(l.name, '?') AS liga, COALESCE(l.country, '') AS pais, f.league_id, "
+            "COUNT(*) AS n, SUM(m.alineaciones=0) AS sin_ali "
+            "FROM fichas_meta m JOIN fixtures f ON f.id=m.fixture_id "
+            "LEFT JOIN leagues l ON l.id=f.league_id "
+            "GROUP BY f.league_id HAVING n >= 5 ORDER BY sin_ali DESC, n DESC").fetchall()
+    except sqlite3.Error:
+        filas = []
+    sin = [r for r in filas if r[4]]
+    if sin:
+        print("ligas con fichas SIN alineaciones (≥ 5 fichas; sin/total):")
+        for liga, pais, lid, n, s_ali in sin[:12]:
+            print(f"  {s_ali:>4}/{n:<4} {pais} · {liga} (id {lid})" + ("  ← nunca" if s_ali == n else ""))
+    try:
+        grid_liga = con.execute(
+            "SELECT COALESCE(l.name, '?'), COALESCE(l.country, ''), f.league_id, COUNT(*) AS t, "
+            "SUM(a.grid IS NOT NULL AND a.grid<>'') AS g "
+            "FROM alineaciones a JOIN fixtures f ON f.id=a.fixture_id "
+            "LEFT JOIN leagues l ON l.id=f.league_id WHERE a.titular=1 "
+            "GROUP BY f.league_id HAVING t >= 110 AND g * 1.0 / t < 0.5 ORDER BY t DESC").fetchall()
+    except sqlite3.Error:
+        grid_liga = []
+    if grid_liga:
+        print("ligas CON onces pero sin grid (< 50 % de titulares; M2 por posición):")
+        for liga, pais, lid, t, g in grid_liga[:12]:
+            print(f"  {pct(g, t):>5} de {t:<5} {pais} · {liga} (id {lid})")
 
 
 def main() -> int:
