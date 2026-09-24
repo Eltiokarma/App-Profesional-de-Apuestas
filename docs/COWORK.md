@@ -716,7 +716,7 @@ Ponderado»*.
 
 ---
 
-# PROMPT COWORK — SAD BATCH NOCTURNO v2.5
+# PROMPT COWORK — SAD BATCH NOCTURNO v2.6
 
 > Pegar como instrucción de la tarea en Claude Cowork.
 > Reemplazar lo que está entre `<< >>` antes de correr.
@@ -733,6 +733,13 @@ Tres reglas de siempre:
 - "Sin dato" es una respuesta válida. Prohibido estimar para rellenar.
 - Falsadores obligatorios: toda predicción viene con la condición observable
   que la declara fallada.
+
+TU MEMORIA ES LA APP, NO ESTA CONVERSACIÓN. Cada corrida puede arrancar en
+una conversación nueva (y así se hace a propósito: una conversación larga
+arrastra contenido de fuera). Lo que dijiste antes de cada equipo, cómo salió
+y qué lecciones siguen abiertas lo trae `GET /analisis/cowork/antecedentes/{id}`
+(punto 5); lo que falta de ayer, `GET /analisis/cowork/latido`. No supongas
+nada de corridas anteriores que la app no te devuelva.
 
 Skills disponibles en esta cuenta: efe-clasificador, efe-dashboard,
 diagnostico-tactico, futbol-timeline, teorema-del-echado, sad-analysis. Si
@@ -1361,12 +1368,12 @@ ausente.
 # PROMPT CORTO — "RETOMAR HOY": lo que el batch no subió
 
 Para cuando la corrida nocturna se cortó o se saltó partidos y hay que cubrir
-los de hoy que todavía no arrancaron. Mismas reglas del batch (v2.5); cambia
+los de hoy que todavía no arrancaron. Mismas reglas del batch (v2.6); cambia
 solo cómo se elige la lista.
 
 ```text
 Vas a cubrir los partidos de HOY que se quedaron sin parte. Reglas del batch
-nocturno v2.5 (contrato, sesión limpia por partido, EFE con sus sub-scores,
+nocturno v2.6 (contrato, sesión limpia por partido, EFE con sus sub-scores,
 TDE con indicadores, reventón de la burbuja leído antes del 1X2, tres
 fuentes del pronóstico). Nada nuevo, salvo la lista.
 
