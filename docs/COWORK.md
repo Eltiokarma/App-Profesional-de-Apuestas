@@ -573,6 +573,16 @@ lo que alimenta la sección **Aprendizaje** (`GET /analisis/cowork/lecciones`):
 las lecciones se agrupan por skill, y 4 fallos con lección pendiente del mismo
 skill ABREN la revisión —no autorizan ningún cambio—.
 
+**Cuando el usuario autoriza una versión nueva de un skill**, tu insumo es el
+dossier: `GET /analisis/cowork/revision/{skill}`. Trae las lecciones abiertas
+agrupadas por la regla que tocan, cuáles son acreditables (`ciega`+`PRE`) y
+cuáles solo fijan rúbrica, la `lectura` calculada de lo que la revisión puede
+concluir y la `versionVigente` del skill. Reglas: un número del skill solo se
+mueve con lecciones acreditables y con el listón del skill cumplido (si la
+`lectura` dice que espera, espera); `pidenMoverSinPoder` NUNCA mueve un peso;
+el diff cita la clave de cada lección que lo sostiene. Abrir la revisión y
+marcar `aplicada` NO son tuyos: los hace el usuario.
+
 Dos cosas que conviene saber al escribir el veredicto:
 
 - **Declará el `skill`.** Sin él la lección sale en `sinSkill`, aparte: no se

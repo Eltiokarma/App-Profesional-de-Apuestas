@@ -41,6 +41,7 @@ import type {
   ParteCoworkDTO,
   MarcasCoworkDTO,
   InventarioLecciones,
+  RevisionSkillDTO,
   LeccionItem,
   PartidoCalendarioDTO,
   PlantillaDTO,
@@ -168,6 +169,9 @@ export interface SadDataSource {
   quitarCuarentena(fixtureId: number): Promise<unknown>
   /** Mueve una lección de estado. Lo hace el usuario, no el agente. */
   moverLeccion(clave: string, body: { estado: string; aplicadaEn?: string; nota?: string }): Promise<LeccionItem>
+  /** Dossier de revisión de un skill (fase D) y su apertura (token maestro). */
+  revisionSkill(skill: string, cohorte?: string): Promise<RevisionSkillDTO>
+  abrirRevision(skill: string, cohorte?: string): Promise<{ skill: string; movidas: string[]; versionVigente: string }>
 }
 
 // ---------- mapeo de ids internos (strings) ↔ contrato (números) ----------
@@ -864,6 +868,48 @@ class MockDataSource implements SadDataSource {
     return { fixtureId, cuarentena: null }
   }
 
+  async revisionSkill(skill: string, cohorte = 'vigente'): Promise<RevisionSkillDTO> {
+    // la demo arma el dossier con la MISMA regla que el backend (lecciones.revision)
+    const inv = leccionesDemo(skill, '', cohorte)
+    const sk = inv.porSkill.find((x) => x.skill === skill)
+    const flujo = ['la app detecta y abre la revisión (esto): no escribe nada ni genera nada',
+      'el usuario lee el dossier y decide si se arma una versión nueva',
+      'con la autorización, Cowork toma el skill vigente + este dossier y redacta el diff',
+      'el usuario instala el skill nuevo en la cuenta',
+      'el usuario marca `aplicada` cada lección, con la versión donde entró']
+    const VERSIONES: Record<string, string> = { 'teorema-del-echado': 'v0.1.18', 'diagnostico-tactico': 'v1.2', 'efe-dashboard': 'v1.7', 'sad-analysis': 'v3.1' }
+    const base = { skill, versionVigente: VERSIONES[skill] ?? '', cohorte, generadoEn: MOCK_NOW, flujo }
+    if (!sk) return { ...base, existe: false, abierta: false, fallosPendientes: 0, faltanParaDisparar: 4, lecciones: [], porRegla: [], poblacion: null, metricas: null, liston: null, porModoFallo: null, enCuarentena: [], lectura: 'sin lecciones de este skill en la cohorte elegida' }
+    const abiertas = sk.items.filter((i) => i.estado === 'pendiente' || i.estado === 'en_revision')
+    const fallos = abiertas.filter((i) => i.veredicto === 'fallo').length
+    const abierta = fallos >= 4 || abiertas.some((i) => i.estado === 'en_revision')
+    const grupos = new Map<string, LeccionItem[]>()
+    for (const i of abiertas) grupos.set(i.reglaTocada || '(sin regla declarada)', [...(grupos.get(i.reglaTocada || '(sin regla declarada)') ?? []), i])
+    const porRegla = [...grupos.entries()].sort((a, b) => b[1].length - a[1].length).map(([regla, its]) => ({
+      regla, lecciones: its.length, claves: its.map((i) => i.clave),
+      fallos: its.filter((i) => i.veredicto === 'fallo').length, parciales: its.filter((i) => i.veredicto === 'parcial').length,
+      acreditables: its.filter((i) => i.puedeMoverNumeros).length,
+      pidenMoverNumero: its.filter((i) => i.proponeMoverNumero === true).length,
+      pidenMoverYPueden: its.filter((i) => i.proponeMoverNumero === true && i.puedeMoverNumeros).length,
+      porModoFallo: its.reduce<Record<string, number>>((m, i) => (i.modoFallo ? { ...m, [i.modoFallo]: (m[i.modoFallo] ?? 0) + 1 } : m), {}),
+    }))
+    const acred = porRegla.reduce((n, r) => n + r.acreditables, 0)
+    const lectura = !abierta ? `revisión NO disparada: ${fallos} fallo(s) con lección pendiente, faltan ${Math.max(0, 4 - fallos)}`
+      : !acred ? 'ninguna lección abierta viene de un caso ciega + PRE: esta revisión solo puede FIJAR RÚBRICA'
+      : 'hay lecciones acreditables: la decisión es del usuario, con el dossier a la vista'
+    return { ...base, existe: true, abierta, fallosPendientes: fallos, faltanParaDisparar: Math.max(0, 4 - fallos),
+      disparador: sk.disparador, sesgoDeAtribucion: sk.sesgoDeAtribucion, enRevision: abiertas.filter((i) => i.estado === 'en_revision').length,
+      lecciones: abiertas, porRegla, poblacion: inv.poblacion as unknown as Record<string, unknown>, metricas: inv.acreditables as unknown as Record<string, unknown>,
+      liston: sk.liston, porModoFallo: sk.porModoFallo,
+      pidenMoverSinPoder: abiertas.filter((i) => i.proponeMoverNumero === true && !i.puedeMoverNumeros),
+      enCuarentena: inv.enCuarentena?.items.filter((i) => i.skill === skill) ?? [], lectura }
+  }
+  async abrirRevision(skill: string): Promise<{ skill: string; movidas: string[]; versionVigente: string }> {
+    const d = await this.revisionSkill(skill)
+    if (!d.abierta) throw new Error(`la revisión de ${skill} no está disparada: ${d.lectura}`)
+    return { skill, movidas: d.lecciones.filter((i) => i.estado === 'pendiente').map((i) => i.clave), versionVigente: d.versionVigente }
+  }
+
   async moverLeccion(clave: string, body: { estado: string; aplicadaEn?: string; nota?: string }): Promise<LeccionItem> {
     // el modo demo no persiste: devuelve la lección con el estado pedido para
     // que la pantalla se pueda probar sin backend
@@ -1161,6 +1207,8 @@ class HttpDataSource implements SadDataSource {
   quitarCuarentena = (fixtureId: number) => SadApi.quitarCuarentena(fixtureId)
   moverLeccion = (clave: string, body: { estado: string; aplicadaEn?: string; nota?: string }) =>
     SadApi.moverLeccion(clave, body)
+  revisionSkill = (skill: string, cohorte?: string) => SadApi.revisionSkill(skill, cohorte)
+  abrirRevision = (skill: string, cohorte?: string) => SadApi.abrirRevision(skill, cohorte)
 }
 
 let _ds: SadDataSource | null = null

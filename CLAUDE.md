@@ -352,13 +352,13 @@ bloque F calculado en local y cierre del once desde la ficha o a mano.
 Está acá y no en la cabeza de nadie porque un pendiente que solo existe en una
 conversación se pierde en la siguiente.
 
-1. **El frontend recibía la llave maestra.** HECHO en código (23/09): tercer
-   token `SAD_TOKEN_WEB` de solo lectura en el bundle y modo administrador
-   (🔑) para escribir. **Pendiente del usuario**: crear `SAD_TOKEN_WEB` en
-   Railway, poner ese valor en `VITE_API_KEY` de Vercel (redeploy), rotar
-   `SAD_API_TOKEN` (se filtró en un chat el 23/09) y pegar la nueva en el 🔑
-   de la web. Queda abierto: cualquiera con el link LEE los datos (no los
-   modifica ni gasta); cerrarlo del todo pide un login.
+1. **El frontend recibía la llave maestra.** CERRADA (24/09/2026): la web
+   lleva `SAD_TOKEN_WEB` (solo lectura) en `VITE_API_KEY` —en Vercel va como
+   tipo **Config**: un Secret con prefijo `VITE_` no se puede guardar—, la
+   maestra se rotó (se había filtrado en un chat el 23/09) y vive solo en el
+   🔑 del navegador del dueño. Verificado por el usuario: la web carga y el
+   modo administrador escribe. Queda, a conciencia: cualquiera con el link
+   LEE los datos (no modifica ni gasta); cerrarlo del todo pide un login.
 2. **Los DT de la ficha estaban viejos.** En la corrida del 16/09, 17 de 22
    entrenadores eran el SALIENTE (Bucaramanga con un DT de 2019). Causa
    encontrada: `/coachs?team=` devuelve a todos los que pasaron por el club
@@ -379,8 +379,9 @@ conversación se pierde en la siguiente.
    tiene los suyos. La instrucción «no mandes F3 ni F4» (que habla del EFE) se
    puede leer al revés. Renombrar desalinea el prompt del skill, así que por
    ahora está declarado y no tocado.
-4. **Fases D y A del bucle de aprendizaje**, en `docs/APRENDIZAJE.md`: el
-   dossier de revisión y los antecedentes. La C ya está.
+4. **Fase A del bucle de aprendizaje** (antecedentes), en `docs/APRENDIZAJE.md`.
+   La D (dossier, `GET /analisis/cowork/revision/{skill}` + «Ver dossier» en
+   Aprendizaje, 24/09) y la C ya están.
 5. **Onces de ligas sin cobertura.** Primera B de Colombia y Primera de Uruguay
    no dan alineaciones por API-Football: para esas, el pantallazo a mano es el
    procedimiento. Salen en `nuncaVaALlegar` con su liga.
@@ -496,7 +497,7 @@ conversación se pierde en la siguiente.
      porque no vive en las filas del motor; las K de goles siguen fuera. Con
      datos reales, `temporada` en Europa es la 2025/26 entera y en Sudamérica
      el año natural: por eso viajan las dos.
-   - **Sin cambios y aún abiertos**: deuda 1 (token en el bundle), 3 (F3/F4),
+   - **Sin cambios y aún abiertos**: deuda 3 (F3/F4),
      5 (onces de ligas sin cobertura), el umbral de `Missing Fixture` a
      recalibrar con casos, y ver en la próxima corrida real que a los equipos
      de interés (Beşiktaş y compañía) les aparezcan calendario y plantel.
@@ -562,8 +563,11 @@ conversación se pierde en la siguiente.
    (`parte.COHORTE`, lo anterior es `rodaje`), un re-depósito no la cambia,
    y las métricas se leen por cohorte (`?cohorte=vigente`, la vista por
    defecto). El reventón por nivel se compara con el backtest por INTERVALO
-   (Wilson 95 %), no por el punto. Faltan D (dossier cada
-   4 fallos, que ABRE la revisión pero no autoriza mover nada) y A
-   (antecedentes). La app nunca mueve un peso de un skill por su cuenta.
+   (Wilson 95 %), no por el punto. **Fase D hecha**: el dossier
+   (`lecciones.revision`, `GET /analisis/cowork/revision/{skill}`, botón «Ver
+   dossier»): lecciones abiertas por regla, acreditables vs. solo rúbrica,
+   métricas ciegas del skill contra su listón, versión vigente del snapshot y
+   una lectura calculada de lo que la revisión puede concluir; `POST …/abrir`
+   (maestro) las pasa a `en_revision`. Falta A (antecedentes). La app nunca mueve un peso de un skill por su cuenta.
    Snapshot de los skills en `docs/skills/`.
 7. Fase nube completa cuando toque: `docs/SERVICIOS_EXTERNOS.md` (Postgres).

@@ -994,6 +994,40 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/InventarioLecciones' }
+  /analisis/cowork/revision/{skill}:
+    get:
+      summary: El dossier de revisión de un skill (fase D del aprendizaje; abierto a Cowork en lectura)
+      description: >
+        ABRE la revisión, no autoriza nada. Las lecciones abiertas (pendiente o en_revision) del
+        skill agrupadas por la regla que tocan (`porRegla`: lecciones, fallos, acreditables,
+        cuántas piden mover un número y cuántas pueden sostenerlo, modo de fallo de Jev), su
+        población, las métricas ciegas SOLO de los casos de este skill, el listón del propio skill,
+        `pidenMoverSinPoder`, los casos en cuarentena, la versión vigente del snapshot
+        (`versionVigente`, la que va en `aplicadaEn`), el flujo y una `lectura` calculada: sin
+        acreditables la revisión solo fija rúbrica; con el listón sin cumplir el cambio de peso
+        espera. `abierta` = 4+ fallos abiertos del skill, o lecciones ya en revisión.
+      parameters:
+        - { name: skill, in: path, required: true, schema: { type: string } }
+        - { name: cohorte, in: query, schema: { type: string, default: vigente }, description: "'' = todas · 'vigente' · o una clave" }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+  /analisis/cowork/revision/{skill}/abrir:
+    post:
+      summary: Pasa a en_revision las lecciones pendientes del dossier (token maestro; NO Cowork ni la web en lectura)
+      parameters:
+        - { name: skill, in: path, required: true, schema: { type: string } }
+        - { name: cohorte, in: query, schema: { type: string, default: vigente } }
+      responses:
+        '200':
+          description: 'lo movido: { skill, movidas[], versionVigente }'
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '422': { description: la revisión no está disparada }
   /analisis/cowork/{fixtureId}/dt:
     post:
       summary: Corregir SOLO el DT de un parte ya depositado (abierto a Cowork)
