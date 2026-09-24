@@ -465,7 +465,15 @@ def ingestar_equipo(cliente: Cliente, con: sqlite3.Connection, team_id: int, sea
     presupuesto se agotó antes de completarlo (no se sella el TTL)."""
     if not cliente.quedan(2):
         return False
+    fallos_antes = getattr(cliente, "fallos", 0)
     filas = cliente.paginado("players", {"team": team_id, "season": season})
+    if not filas and getattr(cliente, "fallos", 0) > fallos_antes:
+        # la consulta FALLÓ (red, límite, error de la API): eso no es «la API
+        # no tiene jugadores». Sellarlo como vacío lo dejaba 30 días fuera —
+        # el 17/09 quedaron así 65 equipos de una vez, Rennes y Shakhtar
+        # incluidos—. No se sella: la próxima corrida lo vuelve a pedir.
+        print(f"  equipo {team_id} t{season}: /players falló (no se sella; se reintenta)")
+        return True
     stats = guardar_plantilla(con, team_id, season, filas)
     con_datos = 1 if (stats or filas) else 0
     if not con_datos:
@@ -578,9 +586,14 @@ def dt_agenda(cliente, con: sqlite3.Connection, dias: int = DT_AGENDA_DIAS,
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Ingesta de jugadores (plantillas, bajas, traspasos, DT)")
-    ap.add_argument("--db", default="sad.db", help="ruta a sad.db")
+    # en Railway las bases viven en el volumen ($SAD_DATA_DIR = /data)
+    ap.add_argument("--db", default=os.path.join(os.environ.get("SAD_DATA_DIR", "."), "sad.db"),
+                    help="ruta a sad.db")
     ap.add_argument("--dias", type=int, default=DIAS_NS_DEFAULT,
                     help=f"equipos con NS en <= N días (default {DIAS_NS_DEFAULT})")
+    ap.add_argument("--reintentar-vacios", action="store_true",
+                    help="vuelve a pedir YA los equipos sellados «sin datos en la API» (con_datos=0): "
+                         "antes del 24/09 un error de la API se sellaba así por 30 días")
     ap.add_argument("--ttl-horas", type=int, default=TTL_HORAS_DEFAULT,
                     help=f"no repedir equipos refrescados hace menos de N horas (default {TTL_HORAS_DEFAULT})")
     ap.add_argument("--equipo", type=int, help="ingestar SOLO este team_id (ignora ventana y TTL)")
@@ -616,6 +629,27 @@ def main() -> int:
               + f" · consumo: {cliente.resumen()} · total {cliente.usadas}/{cliente.limite}")
         for c in r["cambiados"]:
             print(f"  equipo {c['equipo']}: DT {c['antes']!r} → {c['despues']!r}")
+        return 0
+    if args.reintentar_vacios:
+        vacios = [(r[0], r[1] or datetime.now(timezone.utc).year) for r in con.execute(
+            "SELECT team_id, season FROM plantillas_meta WHERE con_datos=0 ORDER BY actualizado_en")]
+        reserva = reserva_del_dia(cliente.limite, con)
+        print(f"Reintentar vacíos: {len(vacios)} equipos sellados sin datos · presupuesto restante "
+              f"{cliente.limite - cliente.usadas} · reserva {reserva}")
+        con_datos_ahora = siguen = 0
+        for team_id, season in vacios:
+            if cliente.limite - cliente.usadas <= reserva or not ingestar_equipo(cliente, con, team_id, season):
+                print("reserva/presupuesto alcanzado: el resto, en otra corrida con --reintentar-vacios")
+                break
+            fila = con.execute("SELECT con_datos FROM plantillas_meta WHERE team_id=?", (team_id,)).fetchone()
+            if fila and fila[0]:
+                con_datos_ahora += 1
+            else:
+                siguen += 1
+        con.close()
+        print(f"Reintentados: {con_datos_ahora} ahora CON jugadores (era un error, no falta de "
+              f"cobertura) · {siguen} siguen vacíos · consumo: {cliente.resumen()} · "
+              f"total {cliente.usadas}/{cliente.limite}")
         return 0
     if args.equipo:
         pendientes = [(args.equipo, args.temporada or datetime.now(timezone.utc).year)]
