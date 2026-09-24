@@ -1088,6 +1088,10 @@ negritas, citas y tablas se pintan bien en la app.
       re-estimes en `tde.bloques[].indicadores`: el backend los pisa con lo
       del DTP y, si pusiste otro valor, avisa HERENCIA-DTP. Si el DTP está
       mal, se corrige el DTP.
+    · SIN CARRILES: si el XI de referencia trae `sinCarriles`, la ficha de
+      esa liga no da el grid (un tercio de los onces). La posición dice la
+      línea, no el lado: los `duelosCarril` van con carril «sin dato» o con
+      la fuente externa que los sostenga, nunca deducidos de la posición.
     · POSESIÓN CONDICIONAL: nunca un porcentaje suelto; contra quién y con qué
       marcador. No fabriques mecánica de gol: si la fuente solo da autor y
       asistente, disparador y secuencia van vacíos.

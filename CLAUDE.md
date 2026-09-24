@@ -385,9 +385,15 @@ conversación se pierde en la siguiente.
    `GET /analisis/cowork/antecedentes/{id}`, solo partidos anteriores), B, C y
    D (dossier, `GET /analisis/cowork/revision/{skill}` + «Ver dossier»). Lo que
    falta es USO: casos ciegos en la cohorte vigente.
-5. **Onces de ligas sin cobertura.** Primera B de Colombia y Primera de Uruguay
-   no dan alineaciones por API-Football: para esas, el pantallazo a mano es el
-   procedimiento. Salen en `nuncaVaALlegar` con su liga.
+5. **Onces de ligas sin cobertura.** Medido el 24/09 con `ficha_partido
+   --estado` (6.651 fichas, 44 % sin once): NUNCA dan alineaciones Paraguay
+   División Intermedia (251), Venezuela Segunda (300), Bolivia Nacional B
+   (710), Uruguay Segunda (269), Ecuador Serie B (243) y Copa Colombia (241);
+   la mitad de las veces, Primera B de Chile (266) y de Colombia (240). Para
+   esas el pantallazo a mano es el procedimiento (`nuncaVaALlegar`). La
+   ingesta ya no paga por ellas: aprende la cobertura por liga (≥ 10 fichas
+   sin un endpoint → no se pide; 1 de cada 20 sondea por si empieza a darlo)
+   y no pide fichas de amistosos (`LIGAS_RUIDO`).
 6. **Lo que la corrida de Cowork del 16/09 vio** (23 partes verificados
    contra prensa). Lo del DT, la agenda, el timeline, el contrato y
    `proximo=` se arregló en su momento; los cuatro puntos que quedaban
@@ -536,9 +542,12 @@ conversación se pierde en la siguiente.
    `/fixtures/{id}/ficha.tactica`) y motor (`POST /analisis/dtp` por equipo
    foco, cadena rodante en `cadena_dtp`, `GET /equipos/{id}/cadena`). Queda la
    fase C **también hecha**: pizarra en la sección Análisis (toggle de equipo
-   foco) y cadena en la página de Equipo. Queda correr
-   `ficha_partido --estado` tras la primera corrida real: de si el plan sirve
-   `grid` depende que M2 hable de carriles reales.
+   foco) y cadena en la página de Equipo. **Grid medido (24/09)**: 63 % de
+   los onces trae el grid completo (carriles reales); sin grid —Primera
+   Nacional de Argentina, Liga de Expansión MX, Segunda de Perú, las Primera
+   B, Copa del Rey— el XI viaja con `sinCarriles`: la posición da la línea,
+   no el lado, y M2 va por línea o con fuente externa citada. xG en el 48 %
+   de las fichas con stats.
 6. **Bucle de aprendizaje** — `docs/APRENDIZAJE.md`. **Fase B hecha**: el
    veredicto a las 12 h (`POST /analisis/cowork/{id}/veredicto`,
    `backend/analisis/veredicto.py`). Lo objetivo lo calcula el backend

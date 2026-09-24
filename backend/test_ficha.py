@@ -221,6 +221,42 @@ def main():
     check("y no queda ficha a medias sellada",
           con.execute("SELECT COUNT(*) FROM fichas_meta WHERE fixture_id=3").fetchone()[0] == 0)
 
+    # ── amistosos de clubes: fuera, y no ocupan el cupo de «últimos N» ────
+    from backend.ingesta.extractor import LIGAS_RUIDO
+    from backend.ingesta.ficha_partido import COBERTURA_MIN, COBERTURA_SONDA, cobertura_por_liga, endpoints_a_pedir
+    ruido = sorted(LIGAS_RUIDO)[0]
+    con.executemany("INSERT INTO fixtures (id, date, status_short, league_id, home_team_id, away_team_id) "
+                    "VALUES (?,?,?,?,?,?)", [
+        (20, dia(+2), "NS", liga, 900, 901),
+        (21, dia(-2), "FT", ruido, 900, 902),    # amistoso: el más reciente
+        (22, dia(-9), "FT", liga, 903, 900),     # el último que cuenta
+    ])
+    con.commit()
+    pend = fixtures_pendientes(con, dias=3, ultimos=1)
+    check("el amistoso no se pide y no ocupa el cupo (entra el 22)", 21 not in pend and 22 in pend, pend)
+
+    # ── cobertura aprendida por liga ───────────────────────────────────────
+    cob = {liga: {"n": COBERTURA_MIN, "alineaciones": 0, "eventos": 7, "stats": 0}}
+    fid_no_sonda = COBERTURA_SONDA * 50 + 1
+    check("liga que nunca dio onces ni stats: solo eventos",
+          endpoints_a_pedir(fid_no_sonda, liga, cob) == ("eventos",), endpoints_a_pedir(fid_no_sonda, liga, cob))
+    check("la sonda (1 de cada N) pide todo: si la liga empieza a dar onces, se ve",
+          len(endpoints_a_pedir(COBERTURA_SONDA * 3, liga, cob)) == 3)
+    check("sin muestra suficiente se pide todo",
+          len(endpoints_a_pedir(fid_no_sonda, liga, {liga: {**cob[liga], "n": COBERTURA_MIN - 1}})) == 3)
+    check("liga sin fichas previas: todo", len(endpoints_a_pedir(fid_no_sonda, 12345, cob)) == 3)
+    # extremo a extremo: una ficha de esa liga cuesta 1 request y se sella
+    con.execute("INSERT INTO fixtures (id, date, status_short, league_id, home_team_id, away_team_id) "
+                "VALUES (?,?,?,?,?,?)", (fid_no_sonda, dia(-3), "FT", liga, 910, 911))
+    cliente = ClienteFalso()
+    ok = ingestar_fixture(cliente, con, fid_no_sonda, cob)
+    check("liga sin cobertura de onces: 1 request en vez de 3, y sellada",
+          ok and cliente.usadas == 1 and con.execute(
+              "SELECT COUNT(*) FROM fichas_meta WHERE fixture_id=?", (fid_no_sonda,)).fetchone()[0] == 1,
+          cliente.usadas)
+    check("cobertura_por_liga cuenta lo sellado", cobertura_por_liga(con).get(liga, {}).get("n", 0) >= 2,
+          cobertura_por_liga(con))
+
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
 

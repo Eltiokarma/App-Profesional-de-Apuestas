@@ -203,6 +203,14 @@ def insumos_equipo(team_id: int, nombre: str, fx) -> dict:
                "titulares": [{"nombre": j["nombre"], "posicion": j["posicion"], "carril": j["carril"]}
                              for j in xi]},
     }
+    # un tercio de los onces capturados no trae grid (24/09: Primera Nacional
+    # de Argentina, Liga de Expansión, las Primera B…). Sin grid la posición
+    # dice la LÍNEA (D/M/F) pero no el lado: el carril no se deduce de ella.
+    if xi and not ali.get("conGrid"):
+        anterior["xi"]["sinCarriles"] = (
+            "la ficha no trae grid: la posición da la línea (G/D/M/F) pero no el lado. "
+            "M2 por carril solo con fuente externa (citala); si no, duelos por línea y "
+            "carril «sin dato»")
     # ≥2 recibidos: el skill manda chequear MECANISMO-ABIERTO. El mecanismo en
     # sí (centro y cabezazo, rechace…) NO está en nuestros datos: se señala,
     # no se decide.
