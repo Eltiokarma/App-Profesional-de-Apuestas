@@ -1,5 +1,10 @@
 // Cliente HTTP mínimo del backend SAD: fetch + timeout + errores tipados.
 import { CONFIG } from '../config'
+import { llaveAdmin } from '../lib/admin'
+
+/** La llave de administrador (si el dueño la pegó en este navegador) manda
+ *  sobre el token de lectura del bundle. */
+const token = () => llaveAdmin() || CONFIG.apiKey
 
 export class ApiError extends Error {
   constructor(
@@ -23,7 +28,7 @@ export async function apiGet<T>(path: string, opts: RequestOpts = {}): Promise<T
   opts.signal?.addEventListener('abort', () => ctrl.abort(), { once: true })
   try {
     const headers: Record<string, string> = { Accept: 'application/json' }
-    if (CONFIG.apiKey) headers.Authorization = `Bearer ${CONFIG.apiKey}`
+    if (token()) headers.Authorization = `Bearer ${token()}`
     const res = await fetch(CONFIG.apiBaseUrl + path, { headers, signal: ctrl.signal })
     if (!res.ok) {
       let body: unknown
@@ -63,7 +68,7 @@ async function apiEnviar<T>(method: 'POST' | 'DELETE', path: string, body: unkno
   try {
     const headers: Record<string, string> = { Accept: 'application/json' }
     if (body !== undefined) headers['Content-Type'] = 'application/json'
-    if (CONFIG.apiKey) headers.Authorization = `Bearer ${CONFIG.apiKey}`
+    if (token()) headers.Authorization = `Bearer ${token()}`
     const res = await fetch(CONFIG.apiBaseUrl + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), signal: ctrl.signal })
     if (!res.ok) {
       let resBody: unknown

@@ -1,4 +1,4 @@
-import type { EslabonDtpDTO } from '../api/types'
+import type { ClaseBloqueDTO, DtpBloque, EslabonDtpDTO } from '../api/types'
 
 /** Pizarra del DTP (docs/efe-dtp/DTP_DISENO.md §4): CIERRE del partido
  *  anterior arriba (autopsia de goles con responsables) y APERTURA del próximo
@@ -383,6 +383,137 @@ export function CadenaDtp({ eslabones }: { eslabones: EslabonDtpDTO[] }) {
           )}
         </div>
       ))}
+    </div>
+  )
+}
+
+/** El bloque del DTP que escribe Cowork (camelCase, `dtp.bloques[]` del parte)
+ *  llevado a la forma del eslabón que ya dibuja la pizarra. La vida útil del
+ *  planteo rival NO la escribe nadie: sale de la clase que calculó el backend. */
+export function eslabonDeBloque(b: DtpBloque, foco: string, rival: string, fixtureId: number | null): EslabonDtpDTO {
+  const ap = b.apertura
+  const ci = b.cierre
+  const clase = b.calculado?.bloqueRival
+  const conCierre = ci.m4Goles.length > 0 || !!ci.m5.peligroReal || !!ci.m5.cronologiaGiro
+  return {
+    equipoFoco: foco, partidoN: 0, rival, fecha: null, fixtureId,
+    apertura: {
+      m1: { sistema: ap.m1.sistema, cambios_vs_anterior: [], roles_reasignados: ap.m1.rolesReasignados,
+            senal_del_xi: ap.m1.senalXi, vulnerabilidad_propia: ap.m1.vulnerabilidad, forma_sin_balon: ap.m1.formaSinBalon },
+      m2: { choque_sistemas: ap.m2.choqueSistemas, duelos_carril: ap.m2.duelosCarril,
+            vida_util_rival: { tipo: clase?.clase === 'improvisado' ? 'improvisado' : 'estructural', minutos: clase?.vidaUtilMin ?? '' },
+            vias_gol: ap.m2.viasGol, veredicto: ap.m2.veredicto, razon: ap.m2.razon },
+      m3_fases: ap.m3Fases,
+      m6: { competitivo: ap.m6.competitivo ?? true, rotacion: ap.m6.rotacion, fatiga: ap.m6.fatiga,
+            ausencias_clave: ap.m6.ausencias, otros: ap.m6.otros },
+    },
+    cierre: conCierre ? {
+      m4_goles: ci.m4Goles.map((g) => ({
+        gol: g.gol, minuto: g.minuto ?? 0, via: (g.via || 'juego_abierto') as 'pelota_parada' | 'transicion' | 'juego_abierto',
+        disparador: g.disparador, secuencia: g.secuencia, definicion: g.definicion,
+        responsables_merito: g.responsablesMerito,
+        responsables_error: g.responsablesError.filter((r) => r.nivel) as CierreResp[],
+        absolucion: g.absolucion,
+      })),
+      m5: { plan_funciono_hasta_min: ci.m5.planFuncionoHastaMin ?? 0, peligro_real: ci.m5.peligroReal,
+            cronologia_giro: ci.m5.cronologiaGiro, contraste_pronostico: ci.m5.contraste },
+    } : null,
+    registro: null,
+  }
+}
+type CierreResp = { jugador: string; nivel: 'principal' | 'secundario' | 'estructural'; detalle: string }
+
+const PREGUNTAS: [string, string][] = [
+  ['p1', 'Meses con el modelo defensivo'],
+  ['p2', 'Minutos competitivos de esa línea de fondo'],
+  ['p3', 'Centrales de oficio'],
+  ['p4', 'Capacidad de refresco en el banco'],
+  ['p5', 'Repliegue documentado como plan'],
+  ['p6', '¿Sostuvo un resultado contra un rival obligado a atacar?'],
+]
+const CLASE_COLOR: Record<string, [string, string]> = {
+  improvisado: ['var(--down)', 'var(--down-soft)'],
+  estructural: ['var(--up)', 'var(--up-soft)'],
+  'estructural no probado': ['var(--mark)', 'var(--mark-soft)'],
+  ambiguo: ['var(--t2)', 'var(--bg3)'],
+}
+const SEGURO: Record<string, string> = { fijo: 'pivote fijo', depende: 'depende del marcador', sin: 'sin seguro' }
+
+/** El checklist de clasificación del bloque rival (skill v1.2) con la clase
+ *  que calculó el backend, y lo que viaja al TDE. Más lo que la pizarra vieja
+ *  no tenía: rest defense, posesión condicional y MECANISMO-ABIERTO. */
+function ChecklistBloque({ b, rival, isMobile }: { b: DtpBloque; rival: string; isMobile: boolean }) {
+  const clase: ClaseBloqueDTO | undefined = b.calculado?.bloqueRival
+  const chk = b.apertura.m2.checklistBloqueRival
+  const rd = b.apertura.m2.restDefense
+  const pos = b.apertura.m2.posesion
+  const mec = b.cierre.mecanismoAbierto
+  const [col, soft] = CLASE_COLOR[clase?.clase ?? ''] ?? ['var(--t3)', 'var(--bg3)']
+  const resp = (v: string) => (v === 'izq' ? ['improvisado', 'var(--down)'] : v === 'der' ? ['estructural', 'var(--up)'] : ['sin dato', 'var(--t3)'])
+  return (
+    <section style={card}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+        <span style={titulo}>Bloque de {rival}</span>
+        <span style={sub}>M2 · checklist de clasificación · la clase la calcula la app</span>
+      </div>
+      {clase?.clase ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <Chip color={col} soft={soft}>{clase.clase.toUpperCase()}</Chip>
+          {clase.vidaUtilMin && <Chip>vida útil {clase.vidaUtilMin}&#39;</Chip>}
+          {clase.alertaDegradacion && <Chip color="var(--down)" soft="var(--down-soft)">alerta de degradación</Chip>}
+          {clase.c1Tde != null && <Chip>C1 del TDE = {clase.c1Tde}</Chip>}
+        </div>
+      ) : (
+        <div style={{ ...texto, color: 'var(--t3)' }}>Sin checklist respondido: sin clase no hay minutos de vida útil.</div>
+      )}
+      {clase?.motivo && <div style={{ ...texto, fontSize: 11.5, color: 'var(--t2)', marginTop: 6 }}>{clase.motivo}</div>}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', gap: 4, marginTop: 10 }}>
+        {PREGUNTAS.map(([k, lab]) => {
+          const v = chk[k as keyof typeof chk] as string
+          const [txt, c] = k === 'p6' ? (v === 'der' ? ['sí', 'var(--up)'] : v === 'izq' ? ['no', 'var(--down)'] : ['sin dato', 'var(--t3)']) : resp(v)
+          return (
+            <div key={k} style={{ display: 'flex', gap: 8, alignItems: 'baseline', flexWrap: 'wrap' }}>
+              <span style={{ font: '700 10px var(--mono)', color: 'var(--t3)', width: 18 }}>{k.slice(1)}</span>
+              <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0 }}>{lab}</span>
+              <span style={{ font: '700 10px var(--mono)', color: c }}>{txt}</span>
+            </div>
+          )
+        })}
+      </div>
+      {chk.casoP6 && <Campo label="Caso de la pregunta 6">{chk.casoP6}</Campo>}
+      <Campo label="Notas">{chk.notas}</Campo>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0,1fr)' : '1fr 1fr', gap: 12, marginTop: 6 }}>
+        {(rd.foco || rd.rival) && (
+          <div>
+            <Campo label="Rest defense / seguro tras la pérdida (→ SOB2 del TDE)">
+              {rd.foco && <div>propio: {rd.foco}{rd.nivelFoco ? ` · ${SEGURO[rd.nivelFoco] ?? rd.nivelFoco}` : ''}</div>}
+              {rd.rival && <div>rival: {rd.rival}{rd.nivelRival ? ` · ${SEGURO[rd.nivelRival] ?? rd.nivelRival}` : ''}</div>}
+            </Campo>
+          </div>
+        )}
+        {pos.valor && (
+          <Campo label="Posesión (condicional al marcador)">
+            {pos.valor}{pos.contraQuien ? ` contra ${pos.contraQuien}` : ''}{pos.marcador ? ` · ${pos.marcador}` : ''}{pos.sede ? ` · ${pos.sede}` : ''}
+          </Campo>
+        )}
+      </div>
+      {mec.activo && (
+        <div role="alert" style={{ marginTop: 10, padding: '7px 10px', borderRadius: 8, background: 'var(--down-soft)', border: '1px solid var(--down)', font: '600 11.5px var(--sans)', color: 'var(--down)' }}>
+          MECANISMO-ABIERTO · {mec.mecanismo || 'sin nombrar'}
+          {mec.lineaRepite != null && ` · la línea ${mec.lineaRepite ? 'repite' : 'no repite'} intérpretes`}
+          {mec.correccionEnVivo != null && ` · ${mec.correccionEnVivo ? 'hubo' : 'sin'} corrección en vivo`}
+        </div>
+      )}
+    </section>
+  )
+}
+
+/** El DTP de Cowork completo para un equipo foco: checklist + pizarra. */
+export function PanelDtpCowork({ b, foco, rival, fixtureId, isMobile }: { b: DtpBloque; foco: string; rival: string; fixtureId: number; isMobile: boolean }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <ChecklistBloque b={b} rival={rival} isMobile={isMobile} />
+      <DtpPizarra eslabon={eslabonDeBloque(b, foco, rival, fixtureId)} isMobile={isMobile} />
     </div>
   )
 }

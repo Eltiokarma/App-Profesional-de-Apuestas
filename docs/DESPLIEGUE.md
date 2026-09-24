@@ -78,7 +78,8 @@ en subproceso. El backend HTTP sigue siendo de solo lectura.
    |---|---|---|
    | `API_FOOTBALL_KEY` | *(clave de dashboard.api-football.com)* | solo la usa la ingesta |
    | `SAD_CORS_ORIGINS` | `https://<tu-app>.vercel.app` | el dominio real del frontend |
-   | `SAD_API_TOKEN` | *(token largo aleatorio)* | apaga `/docs` y protege la API. **Llave maestra**: abre también lo que gasta créditos de Claude y cuota de API-Football. Es el que usa el frontend |
+   | `SAD_API_TOKEN` | *(token largo aleatorio)* | apaga `/docs` y protege la API. **Llave maestra**: abre también lo que gasta créditos de Claude y cuota de API-Football. **NO va en Vercel**: el dueño la pega en la web con el botón 🔑 (modo administrador) y queda solo en su navegador |
+   | `SAD_TOKEN_WEB` | *(otro token largo, distinto)* | el de la **web** (va en `VITE_API_KEY` de Vercel). SOLO LECTURA: todo GET menos el backtest, y la plantilla no lanza ingesta con él. Cualquiera que abra la web lo puede ver, y por eso no escribe ni gasta nada |
    | `SAD_TOKEN_COWORK` | *(otro token largo, distinto)* | el que se le da a **Cowork**. Acotado a `/analisis/cowork/*` (sin DELETE) y a las lecturas del pipeline: no puede gastar créditos ni cuota aunque se lo pidan. Rótalo sin tocar el del frontend. Ver `docs/COWORK.md` |
    | `SAD_INGESTA_HORA` | `06:30,12:30,18:30` | horas de corrida (UTC, lista = varios snapshots de cuotas/día); vacía = sin ingesta. **Costo**: cada corrida completa gasta cientos de requests (extractor + jugadores + ficha); con un backlog grande de plantillas/fichas, dos corridas el mismo día pueden pasar de 3 000. La reserva del día (`SAD_BACKFILL_RESERVA`) frena la parte en bloque antes de dejar sin presupuesto al ciclo en vivo |
    | `SAD_REFRESCO_MIN` | `30` | fase 2: cada N min refresca cuotas de NS que empiezan en <6 h (0 requests si no hay); vacía = apagado. Con pocos pendientes pide `/odds?fixture=` (1 request por partido); el lote por fecha —que paga el feed MUNDIAL, 40-90 páginas— solo se usa con más de `SAD_CUOTAS_LOTE_UMBRAL` pendientes ese día. Antes de esa regla, este refresco solo quemaba 2.000-4.300 requests/día y fue lo que agotó el plan el 29/07/2026 |
@@ -190,7 +191,7 @@ python -m backend.ingesta.extractor --desde 2026-05-31 --hasta 2026-05-31 --solo
    |---|---|
    | `VITE_DATA_SOURCE` | `http` |
    | `VITE_API_BASE_URL` | `https://<backend>/api/v1` |
-   | `VITE_API_KEY` | el mismo valor que `SAD_API_TOKEN` |
+   | `VITE_API_KEY` | el valor de `SAD_TOKEN_WEB` (**nunca** el de `SAD_API_TOKEN`: todo `VITE_*` viaja al navegador) |
 
    ⚠ Todo `VITE_*` queda visible en el bundle: el token bearer es de
    staging/uso personal, no un secreto fuerte (la clave de API-Football jamás

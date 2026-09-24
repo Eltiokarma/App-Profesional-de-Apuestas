@@ -1,4 +1,5 @@
 import type { SadStore } from '../store'
+import { BotonAdmin } from './BotonAdmin'
 import type { SectionKey } from '../data/types'
 import { CONFIG } from '../config'
 import { estadoAnalisisEfe, loadMatches } from '../services/appdata'
@@ -107,6 +108,7 @@ export function Sidebar({ store }: { store: SadStore }) {
           <div style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)', lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={feedDetail}>{feedDetail}</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+          <BotonAdmin size={38} />
           <button onClick={store.toggleTheme} title="Cambiar tema" style={{ width: 38, height: 38, flexShrink: 0, borderRadius: 10, border: '1px solid var(--line)', background: 'var(--bg2)', color: 'var(--t2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             {isDark ? (
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z" /></svg>

@@ -379,7 +379,9 @@ def _bloque(x: dict, lado: str) -> dict:
                    "checklistBloqueRival": {**{p: _col(chk.get(p)) for p in PREGUNTAS},
                                             "casoP6": _txt(chk.get("casoP6")), "notas": _txt(chk.get("notas"))},
                    "viasGol": {"foco": _lista_txt(vias.get("foco")), "rival": _lista_txt(vias.get("rival"))},
-                   "restDefense": {"foco": _txt(rest.get("foco")), "rival": _txt(rest.get("rival"))},
+                   "restDefense": {"foco": _txt(rest.get("foco")), "rival": _txt(rest.get("rival")),
+                                   "nivelFoco": _nivel_seguro(rest.get("nivelFoco")),
+                                   "nivelRival": _nivel_seguro(rest.get("nivelRival"))},
                    "posesion": {"valor": _txt(pos.get("valor")), "contraQuien": _txt(pos.get("contraQuien")),
                                 "marcador": _txt(pos.get("marcador")), "sede": _txt(pos.get("sede"))},
                    "veredicto": _txt(m2.get("veredicto")).upper().replace("MATCHUP ", ""),
@@ -404,6 +406,50 @@ def _bloque(x: dict, lado: str) -> dict:
                                  if isinstance(mec.get("correccionEnVivo"), bool) else None},
         },
     }
+
+
+# SOB2 del TDE («seguro tras la pérdida») con la rúbrica de INDICE_IE.md:
+# 0 pivote fijo por delante de los centrales · 0.5 depende del intérprete o
+# del marcador · 1 sin contención con los dos laterales arriba. El skill manda
+# que el rest defense del M2 del DTP viaje DIRECTO a SOB2, sin re-estimarlo.
+SOB2_DE_NIVEL = {"fijo": 0.0, "depende": 0.5, "sin": 1.0}
+_SINONIMOS_SEGURO = {"fijo": "fijo", "pivote fijo": "fijo", "con seguro": "fijo", "0": "fijo",
+                     "depende": "depende", "parcial": "depende", "0.5": "depende",
+                     "sin": "sin", "sin seguro": "sin", "sin contencion": "sin", "sin contención": "sin", "1": "sin"}
+
+
+def _nivel_seguro(v) -> str:
+    t = _txt(v).lower() if isinstance(v, str) else (str(v) if isinstance(v, (int, float)) else "")
+    return _SINONIMOS_SEGURO.get(t, "")
+
+
+def herencia_tde(dtp: dict) -> dict:
+    """Lo que el TDE de cada equipo HEREDA del DTP, por lado.
+
+    - C1 (repliegue entrenado) del equipo X sale de la clase del bloque de X
+      que calculó el DTP del RIVAL (el checklist mira el bloque rival).
+    - SOB2 (seguro tras la pérdida) de X sale del rest defense: primero del
+      DTP del propio X (`nivelFoco`), si no del DTP del rival (`nivelRival`).
+    """
+    out: dict[str, dict] = {l: {} for l in LADOS}
+    bloques = {b["equipo"]: b for b in (dtp or {}).get("bloques") or []}
+    for foco, b in bloques.items():
+        rival = "b" if foco == "a" else "a"
+        clase = clasificar_bloque(b["apertura"]["m2"]["checklistBloqueRival"])
+        if clase["c1Tde"] is not None:
+            out[rival]["C1"] = {"valor": clase["c1Tde"], "de": f"checklist del DTP del lado {foco}: "
+                                                               f"bloque {clase['clase']}"}
+    for lado in LADOS:
+        rd_propio = ((bloques.get(lado) or {}).get("apertura") or {}).get("m2", {}).get("restDefense") or {}
+        otro = bloques.get("b" if lado == "a" else "a") or {}
+        rd_rival = (otro.get("apertura") or {}).get("m2", {}).get("restDefense") or {}
+        if rd_propio.get("nivelFoco"):
+            out[lado]["SOB2"] = {"valor": SOB2_DE_NIVEL[rd_propio["nivelFoco"]],
+                                 "de": f"rest defense del DTP del lado {lado} ({rd_propio['nivelFoco']})"}
+        elif rd_rival.get("nivelRival"):
+            out[lado]["SOB2"] = {"valor": SOB2_DE_NIVEL[rd_rival["nivelRival"]],
+                                 "de": f"rest defense leído desde el DTP del rival ({rd_rival['nivelRival']})"}
+    return out
 
 
 def normalizar_dtp(x, rechazos: list) -> dict:

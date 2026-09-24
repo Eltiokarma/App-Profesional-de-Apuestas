@@ -277,7 +277,7 @@ export function parteCoworkDemo(fixtureId: number, equipoA: string, equipoB: str
             duelosCarril: [{ carril: 'derecha', duelo: 'extremo vs carrilero', mismatch: 'velocidad a la espalda' }],
             checklistBloqueRival: { p1: 'der', p2: 'der', p3: 'der', p4: 'der', p5: 'der', p6: 'izq', casoP6: '', notas: 'vallas invictas sin presión real' },
             viasGol: { foco: ['desborde por derecha', 'pelota parada'], rival: ['transición por el carril del lateral reconvertido'] },
-            restDefense: { foco: 'dos centrales y pivote', rival: 'sin seguro tras la pérdida' },
+            restDefense: { foco: 'dos centrales y pivote', rival: 'sin seguro tras la pérdida', nivelFoco: 'fijo', nivelRival: 'sin' },
             posesion: { valor: '58%', contraQuien: 'rival que cede el balón', marcador: 'empatado la mayor parte', sede: 'local' },
             veredicto: 'FAVORABLE', razon: 'superioridad por fuera contra un bloque no probado',
           },
