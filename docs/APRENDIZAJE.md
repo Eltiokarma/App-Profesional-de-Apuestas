@@ -615,7 +615,22 @@ con 6 de 21 (29 %) contra un backtest de 42-47 %. El intervalo de Wilson al
 intervalo**, con n ≥ 10. Con 46 burbujas contra 171 mil del backtest, lo raro
 sería que el punto cayera dentro.
 
-## D · La revisión: del montón de lecciones al `.zip`
+## D · La revisión: del montón de lecciones al `.zip` — **HECHA** (24/09/2026)
+
+> **Cómo quedó**: `lecciones.revision(skill)` → `GET /analisis/cowork/revision/{skill}`
+> (abierto a Cowork en lectura: es lo que toma para redactar el diff) y el
+> botón **Ver dossier** de cada skill en la sección Aprendizaje. Trae las
+> lecciones abiertas agrupadas por la regla que tocan (`porRegla`), cuántas
+> son acreditables y cuántas piden mover un número (y cuántas de esas pueden
+> sostenerlo), las métricas ciegas SOLO de los casos del skill contra su
+> listón, `pidenMoverSinPoder`, los casos en cuarentena, la **versión
+> vigente** del snapshot en `docs/skills/` (la que va en `aplicadaEn`) y una
+> `lectura` CALCULADA: sin acreditables, la revisión solo fija rúbrica; con
+> acreditables que no piden mover nada, también; con el listón sin cumplir, el
+> cambio de peso espera. «Abrir la revisión» (`POST …/abrir`, solo maestro)
+> pasa las pendientes a `en_revision` y deja constancia; una revisión sigue
+> abierta mientras tenga lecciones en revisión. Nada de esto mueve un peso ni
+> marca `aplicada`.
 
 > **Insumo nuevo para el dossier (22/09/2026, `backend/analisis/modo_fallo.py`,
 > `docs/JEV.md`)**: al cerrar cada veredicto, Jev etiqueta el modo de fallo del

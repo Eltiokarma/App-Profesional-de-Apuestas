@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { InventarioLecciones, LeccionItem, ModoFalloEtiqueta, SkillAprendizaje } from '../api/types'
+import type { InventarioLecciones, LeccionItem, ModoFalloEtiqueta, RevisionSkillDTO, SkillAprendizaje } from '../api/types'
 import { getDataSource } from '../services/datasource'
 import { useAsync } from '../services/useAsync'
 
@@ -295,12 +295,115 @@ function PanelSkill({ sk, onCambio }: { sk: SkillAprendizaje; onCambio: () => vo
         )}
       </div>
 
+      <Dossier skill={sk.skill} abierta={sk.revisionAbierta} onCambio={onCambio} />
+
       <div style={{ padding: '0 16px 14px' }}>
         {sk.items.length === 0
           ? <div style={{ font: '500 11px var(--sans)', color: 'var(--t3)' }}>Ninguna lección con este filtro.</div>
           : sk.items.map((i) => <Leccion key={i.clave} it={i} onCambio={onCambio} />)}
       </div>
     </section>
+  )
+}
+
+/** Fase D: el dossier de revisión del skill. Se pide al abrirlo (no en cada
+ *  carga) y dice, calculado, qué puede y qué no puede salir de la revisión.
+ *  «Abrir la revisión» pasa las lecciones a EN REVISIÓN: no aplica nada. */
+function Dossier({ skill, abierta, onCambio }: { skill: string; abierta: boolean; onCambio: () => void }) {
+  const [ver, setVer] = useState(false)
+  const [d, setD] = useState<RevisionSkillDTO | null>(null)
+  const [error, setError] = useState('')
+  const [yendo, setYendo] = useState(false)
+
+  async function cargar() {
+    setError('')
+    try {
+      setD(await getDataSource().revisionSkill(skill))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'no se pudo leer el dossier')
+    }
+  }
+  async function abrir() {
+    setError('')
+    setYendo(true)
+    try {
+      await getDataSource().abrirRevision(skill)
+      await cargar()
+      onCambio()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'no se pudo abrir la revisión')
+    } finally {
+      setYendo(false)
+    }
+  }
+
+  const boton: React.CSSProperties = { padding: '6px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--t1)', font: '600 11px var(--sans)', cursor: 'pointer' }
+  return (
+    <div style={{ padding: '0 16px 12px' }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button style={{ ...boton, borderColor: abierta ? 'var(--mark)' : 'var(--line)' }}
+          onClick={() => { const v = !ver; setVer(v); if (v && !d) cargar() }}>
+          {ver ? 'Cerrar dossier' : abierta ? 'Ver dossier de la revisión' : 'Ver dossier'}
+        </button>
+        {ver && d?.abierta && d.lecciones.some((i) => i.estado === 'pendiente') && (
+          <button style={boton} disabled={yendo} onClick={abrir}>
+            {yendo ? 'Abriendo…' : `Abrir la revisión (${d.lecciones.filter((i) => i.estado === 'pendiente').length} a en revisión)`}
+          </button>
+        )}
+      </div>
+      {error && <div style={{ font: '500 11px var(--sans)', color: 'var(--down)', marginTop: 6 }}>{error}</div>}
+      {ver && d && (
+        <div style={{ marginTop: 10, padding: '12px 14px', borderRadius: 11, background: 'var(--bg)', border: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'baseline' }}>
+            <span style={{ font: '700 9.5px var(--mono)', color: d.abierta ? 'var(--mark)' : 'var(--t3)', letterSpacing: '.4px' }}>
+              DOSSIER · {d.abierta ? 'REVISIÓN ABIERTA' : 'NO DISPARADA'}
+            </span>
+            {d.versionVigente && <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)' }}>versión vigente {d.versionVigente}</span>}
+            {!!d.enRevision && <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)' }}>{d.enRevision} en revisión</span>}
+          </div>
+          <div style={{ font: '600 12px var(--sans)', color: 'var(--t1)', lineHeight: 1.45 }}>{d.lectura}</div>
+
+          {d.porRegla.length > 0 && (
+            <div>
+              <div style={{ font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.4px', marginBottom: 5 }}>POR REGLA DEL SKILL</div>
+              {d.porRegla.map((r) => (
+                <div key={r.regla} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'baseline', padding: '5px 0', borderTop: '1px solid var(--line)' }}>
+                  <span style={{ font: '700 11.5px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 120 }}>{r.regla}</span>
+                  <span style={{ font: '600 10px var(--mono)', color: 'var(--t2)' }}>
+                    {r.lecciones} lección{r.lecciones === 1 ? '' : 'es'} · {r.fallos} fallo{r.fallos === 1 ? '' : 's'}
+                    {r.parciales ? ` · ${r.parciales} parcial${r.parciales === 1 ? '' : 'es'}` : ''}
+                  </span>
+                  <span style={{ font: '700 10px var(--mono)', color: r.acreditables ? 'var(--up)' : 'var(--t3)' }}>
+                    {r.acreditables ? `${r.acreditables} acreditable${r.acreditables === 1 ? '' : 's'}` : 'solo rúbrica'}
+                  </span>
+                  {r.pidenMoverNumero > 0 && (
+                    <span style={{ font: '700 10px var(--mono)', color: r.pidenMoverYPueden ? 'var(--mark)' : 'var(--down)' }}>
+                      {r.pidenMoverNumero} piden mover un número{r.pidenMoverYPueden < r.pidenMoverNumero ? ` (${r.pidenMoverNumero - r.pidenMoverYPueden} sin poder)` : ''}
+                    </span>
+                  )}
+                  {Object.keys(r.porModoFallo).length > 0 && (
+                    <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)', flexBasis: '100%' }}>
+                      causa: {Object.entries(r.porModoFallo).map(([m, n]) => `${MODO_FALLO_NOMBRE[m as ModoFalloEtiqueta] ?? m} ${n}`).join(' · ')}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {d.liston && (
+            <div style={{ font: '500 11px var(--sans)', color: 'var(--t2)' }}>
+              <b style={{ color: d.liston.cumple ? 'var(--up)' : 'var(--t1)' }}>Listón del skill:</b> {d.liston.semaforo}
+            </div>
+          )}
+          {d.sesgoDeAtribucion && <div style={{ font: '500 10.5px var(--sans)', color: 'var(--t3)' }}>{d.sesgoDeAtribucion}</div>}
+
+          <ol style={{ margin: 0, paddingLeft: 18, font: '500 10.5px var(--sans)', color: 'var(--t3)', lineHeight: 1.5 }}>
+            {d.flujo.map((f, i) => <li key={i}>{f}</li>)}
+          </ol>
+        </div>
+      )}
+    </div>
   )
 }
 

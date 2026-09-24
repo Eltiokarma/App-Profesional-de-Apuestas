@@ -1750,3 +1750,44 @@ export interface DtpBloque {
 export interface DtpParte {
   bloques?: DtpBloque[]
 }
+
+/** Una regla del skill con las lecciones abiertas que la tocan (fase D). */
+export interface ReglaRevision {
+  regla: string
+  lecciones: number
+  claves: string[]
+  fallos: number
+  parciales: number
+  /** Cuántas vienen de ciega + PRE (las únicas que pueden sostener un cambio de peso). */
+  acreditables: number
+  pidenMoverNumero: number
+  pidenMoverYPueden: number
+  porModoFallo: Record<string, number>
+}
+
+/** El dossier de revisión de un skill (fase D de docs/APRENDIZAJE.md): ABRE la
+ *  revisión, no autoriza nada. `lectura` dice, calculado, qué puede concluir. */
+export interface RevisionSkillDTO {
+  skill: string
+  /** Versión del snapshot en docs/skills: la que va en `aplicadaEn`. */
+  versionVigente: string
+  cohorte: string
+  generadoEn: string
+  flujo: string[]
+  existe: boolean
+  abierta: boolean
+  fallosPendientes: number
+  faltanParaDisparar: number
+  disparador?: string
+  sesgoDeAtribucion?: string
+  enRevision?: number
+  lecciones: LeccionItem[]
+  porRegla: ReglaRevision[]
+  poblacion: Record<string, unknown> | null
+  metricas: Record<string, unknown> | null
+  liston: SkillAprendizaje['liston']
+  porModoFallo: PorModoFallo | null | undefined
+  pidenMoverSinPoder?: LeccionItem[]
+  enCuarentena: LeccionItem[]
+  lectura: string
+}

@@ -379,8 +379,9 @@ conversación se pierde en la siguiente.
    tiene los suyos. La instrucción «no mandes F3 ni F4» (que habla del EFE) se
    puede leer al revés. Renombrar desalinea el prompt del skill, así que por
    ahora está declarado y no tocado.
-4. **Fases D y A del bucle de aprendizaje**, en `docs/APRENDIZAJE.md`: el
-   dossier de revisión y los antecedentes. La C ya está.
+4. **Fase A del bucle de aprendizaje** (antecedentes), en `docs/APRENDIZAJE.md`.
+   La D (dossier, `GET /analisis/cowork/revision/{skill}` + «Ver dossier» en
+   Aprendizaje, 24/09) y la C ya están.
 5. **Onces de ligas sin cobertura.** Primera B de Colombia y Primera de Uruguay
    no dan alineaciones por API-Football: para esas, el pantallazo a mano es el
    procedimiento. Salen en `nuncaVaALlegar` con su liga.
@@ -562,8 +563,11 @@ conversación se pierde en la siguiente.
    (`parte.COHORTE`, lo anterior es `rodaje`), un re-depósito no la cambia,
    y las métricas se leen por cohorte (`?cohorte=vigente`, la vista por
    defecto). El reventón por nivel se compara con el backtest por INTERVALO
-   (Wilson 95 %), no por el punto. Faltan D (dossier cada
-   4 fallos, que ABRE la revisión pero no autoriza mover nada) y A
-   (antecedentes). La app nunca mueve un peso de un skill por su cuenta.
+   (Wilson 95 %), no por el punto. **Fase D hecha**: el dossier
+   (`lecciones.revision`, `GET /analisis/cowork/revision/{skill}`, botón «Ver
+   dossier»): lecciones abiertas por regla, acreditables vs. solo rúbrica,
+   métricas ciegas del skill contra su listón, versión vigente del snapshot y
+   una lectura calculada de lo que la revisión puede concluir; `POST …/abrir`
+   (maestro) las pasa a `en_revision`. Falta A (antecedentes). La app nunca mueve un peso de un skill por su cuenta.
    Snapshot de los skills en `docs/skills/`.
 7. Fase nube completa cuando toque: `docs/SERVICIOS_EXTERNOS.md` (Postgres).

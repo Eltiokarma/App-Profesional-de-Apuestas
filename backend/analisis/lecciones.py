@@ -536,6 +536,150 @@ def inventario(skill: str = "", estado: str = "", limite: int = 400, cohorte: st
     }
 
 
+# ── fase D: el dossier de revisión de un skill ──────────────────────────────
+#
+# El disparador (4 fallos con lección pendiente del mismo skill) ABRE la
+# revisión; esto es lo que se abre: todo lo que hace falta para decidir,
+# ordenado para que la decisión no dependa del criterio del día. Qué NO hace:
+# no genera el .zip, no mueve un peso y no marca nada `aplicada`. El flujo es
+# el de docs/APRENDIZAJE.md § D: la app detecta, el usuario decide, Cowork
+# redacta el diff con autorización, el usuario lo instala y marca `aplicada`
+# con la versión donde entró.
+
+_RAIZ = __import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.dirname(
+    __import__("os").path.abspath(__file__))))
+
+
+def version_skill(skill: str) -> str:
+    """La versión vigente del snapshot del skill (docs/skills/<skill>/SKILL.md):
+    la que va en `aplicadaEn` cuando una lección entra. '' si no hay snapshot."""
+    import os
+    import re
+    ruta = os.path.join(_RAIZ, "docs", "skills", skill, "SKILL.md")
+    try:
+        with open(ruta, encoding="utf-8") as f:
+            m = re.search(r"\*\*v(\d+(?:\.\d+)+)", f.read(20000))
+    except OSError:
+        return ""
+    return f"v{m.group(1)}" if m else ""
+
+
+FLUJO_REVISION = [
+    "la app detecta y abre la revisión (esto): no escribe nada ni genera nada",
+    "el usuario lee el dossier y decide si se arma una versión nueva",
+    "con la autorización, Cowork toma el skill vigente + este dossier y redacta el diff",
+    "el usuario instala el skill nuevo en la cuenta",
+    "el usuario marca `aplicada` cada lección, con la versión donde entró",
+]
+
+
+def revision(skill: str, cohorte: str = COHORTE_VIGENTE, limite: int = 400) -> dict:
+    """El dossier del skill: lecciones pendientes agrupadas por la regla que
+    tocan, con su población y lo que autoriza cada una; métricas ciegas SOLO
+    de los casos de este skill contra su listón; y una lectura calculada de lo
+    que la revisión puede y no puede concluir."""
+    from backend.analisis.parte import COHORTE
+    inv = inventario(skill=skill, cohorte=cohorte, limite=limite)
+    sk = next((x for x in inv["porSkill"] if x["skill"] == skill), None)
+    clave_cohorte = COHORTE if cohorte == COHORTE_VIGENTE else cohorte
+    base = {"skill": skill, "versionVigente": version_skill(skill), "cohorte": clave_cohorte,
+            "generadoEn": efedb.ahora(), "flujo": FLUJO_REVISION}
+    if not sk:
+        return {**base, "existe": False, "abierta": False, "fallosPendientes": 0,
+                "faltanParaDisparar": DISPARADOR_REVISION, "lecciones": [], "porRegla": [],
+                "metricas": None, "poblacion": None, "liston": None, "porModoFallo": None,
+                "enCuarentena": [], "lectura": "sin lecciones de este skill en la cohorte elegida"}
+    abiertas = [i for i in sk["items"] if i["estado"] in ("pendiente", "en_revision")]
+    # una revisión ya abierta sigue abierta mientras tenga lecciones en ella: el
+    # disparador del inventario cuenta solo `pendiente`, y abrirla las mueve
+    fallos_abiertos = sum(1 for i in abiertas if i["veredicto"] == "fallo")
+    abierta = fallos_abiertos >= DISPARADOR_REVISION or any(i["estado"] == "en_revision" for i in abiertas)
+    faltan = max(0, DISPARADOR_REVISION - fallos_abiertos)
+    # métricas ciegas SOLO de los casos donde algún lado nombró este skill
+    estados = _estados()
+    casos = [c for c in _casos(limite)
+             if (not clave_cohorte or c["cohorte"] == clave_cohorte)
+             and any(((c["veredicto"].get("porLado") or {}).get(l) or {}).get("skill", "").strip() == skill
+                     for l in ("a", "b"))]
+    poblacion, metricas = _metricas(casos)
+    del estados
+    grupos: dict[str, list[dict]] = {}
+    for i in abiertas:
+        grupos.setdefault(i["reglaTocada"] or "(sin regla declarada)", []).append(i)
+    por_regla = []
+    for regla, its in sorted(grupos.items(), key=lambda kv: -len(kv[1])):
+        modos: dict[str, int] = {}
+        for i in its:
+            if i.get("modoFallo"):
+                modos[i["modoFallo"]] = modos.get(i["modoFallo"], 0) + 1
+        por_regla.append({
+            "regla": regla, "lecciones": len(its), "claves": [i["clave"] for i in its],
+            "fallos": sum(1 for i in its if i["veredicto"] == "fallo"),
+            "parciales": sum(1 for i in its if i["veredicto"] == "parcial"),
+            "acreditables": sum(1 for i in its if i["puedeMoverNumeros"]),
+            "pidenMoverNumero": sum(1 for i in its if i.get("proponeMoverNumero") is True),
+            "pidenMoverYPueden": sum(1 for i in its
+                                     if i.get("proponeMoverNumero") is True and i["puedeMoverNumeros"]),
+            "porModoFallo": modos,
+        })
+    acred_piden = sum(r["pidenMoverYPueden"] for r in por_regla)
+    acred = sum(r["acreditables"] for r in por_regla)
+    liston = sk.get("liston")
+    if not abierta:
+        lectura = (f"revisión NO disparada: {fallos_abiertos} fallo(s) con lección pendiente, "
+                   f"faltan {faltan}. El dossier se puede leer, pero no hay nada que decidir")
+    elif not acred:
+        lectura = ("ninguna lección abierta viene de un caso ciega + PRE: esta revisión solo puede FIJAR "
+                   "RÚBRICA (aclarar cómo se aplica una regla), no mover ningún número del skill")
+    elif not acred_piden:
+        lectura = (f"{acred} lección(es) acreditable(s), pero ninguna pide mover un número (según Jev): la "
+                   "revisión fija rúbrica; un cambio de peso no tiene quien lo sostenga")
+    elif liston and not liston.get("cumple"):
+        lectura = (f"{acred_piden} lección(es) acreditable(s) piden mover un número, pero el listón del "
+                   f"propio skill no se cumple ({liston.get('semaforo')}): el cambio de peso espera; la "
+                   "rúbrica se puede fijar ya")
+    else:
+        lectura = (f"{acred_piden} lección(es) acreditable(s) piden mover un número y nada del listón lo "
+                   "impide: la decisión es del usuario, con el dossier a la vista")
+    return {
+        **base, "existe": True,
+        "abierta": abierta, "fallosPendientes": fallos_abiertos,
+        "faltanParaDisparar": faltan, "disparador": sk["disparador"],
+        "sesgoDeAtribucion": sk["sesgoDeAtribucion"],
+        "enRevision": sum(1 for i in abiertas if i["estado"] == "en_revision"),
+        "lecciones": abiertas, "porRegla": por_regla,
+        "poblacion": {**poblacion, "nota": inv["poblacion"]["nota"]},
+        "metricas": metricas, "liston": liston,
+        "porModoFallo": sk.get("porModoFallo"),
+        "pidenMoverSinPoder": [i for i in abiertas
+                               if i.get("proponeMoverNumero") is True and not i["puedeMoverNumeros"]],
+        "enCuarentena": [i for i in inv["enCuarentena"]["items"] if i["skill"] == skill],
+        "lectura": lectura,
+    }
+
+
+def abrir_revision(skill: str, cohorte: str = COHORTE_VIGENTE) -> dict:
+    """Pasa a `en_revision` las lecciones PENDIENTES del dossier (solo si la
+    revisión está disparada). Deja constancia de qué entró en la revisión;
+    no autoriza ni aplica nada. Lo hace el usuario, no el agente."""
+    d = revision(skill, cohorte)
+    if not d.get("abierta"):
+        raise LeccionInvalida(f"la revisión de {skill} no está disparada: {d.get('lectura', '')}")
+    movidas = []
+    for i in d["lecciones"]:
+        if i["estado"] != "pendiente":
+            continue
+        with _conectar() as con:
+            con.execute(
+                "INSERT INTO leccion_estado (clave, estado, aplicada_en, nota, actualizado_en) "
+                "VALUES (?,?,?,?,?) ON CONFLICT(clave) DO UPDATE SET "
+                "estado=excluded.estado, actualizado_en=excluded.actualizado_en",
+                (i["clave"], "en_revision", "", f"revisión de {skill} abierta", efedb.ahora()))
+        movidas.append(i["clave"])
+    print(f"[cowork] revisión de {skill} abierta: {len(movidas)} lección(es) a en_revision", flush=True)
+    return {"skill": skill, "movidas": movidas, "versionVigente": d["versionVigente"]}
+
+
 class LeccionInvalida(ValueError):
     """El cambio de estado no se puede aplicar tal cual llegó."""
 

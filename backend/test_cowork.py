@@ -1960,6 +1960,48 @@ def main():
     check("POST …/dt sin lados → 422; fixture sin parte → 404",
           c.post(f"{A}/analisis/cowork/{pasado['id']}/dt", json={}).status_code == 422
           and c.post(f"{A}/analisis/cowork/999999999/dt", json={"a": {"nombre": "X Y"}}).status_code == 404)
+    # ── fase D: el dossier de revisión de un skill ──
+    from backend.analisis import lecciones as _lec
+    from backend.analisis.parte import COHORTE as _COH
+    d_vacio = c.get(f"{A}/analisis/cowork/revision/skill-que-no-existe").json()
+    check("dossier de un skill sin lecciones: existe false, no abierta, con el flujo declarado",
+          d_vacio["existe"] is False and d_vacio["abierta"] is False and len(d_vacio["flujo"]) == 5, d_vacio)
+    check("el dossier trae la versión vigente del snapshot del skill (la que va en aplicadaEn)",
+          c.get(f"{A}/analisis/cowork/revision/teorema-del-echado").json()["versionVigente"].startswith("v0."))
+    def _caso_d(k, regla, modo="tde"):
+        return {"fixtureId": 870000 + k, "fecha": "2026-09-20", "equipoA": f"A{k}", "equipoB": f"B{k}",
+                "parte": {}, "cohorte": _COH, "cuarentena": None,
+                "veredicto": {"seleccion": "por_resultado", "modoEvaluacion": "PRE", "acredita": False,
+                              "porLado": {"a": {"veredicto": "fallo", "skill": "teorema-del-echado",
+                                                "leccion": f"lección {k}", "reglaTocada": regla, "queP": "x"}}},
+                "modoFallo": {"lados": {"a": {"modo": modo, "proponeMoverNumero": True}}}}
+    _casos_orig = _lec._casos
+    _lec._casos = lambda limite=400: [_caso_d(1, "C1"), _caso_d(2, "C1"), _caso_d(3, "SOB2"),
+                                      _caso_d(4, "C1", "varianza")]
+    try:
+        dd = c.get(f"{A}/analisis/cowork/revision/teorema-del-echado").json()
+        check("4 fallos con lección pendiente del mismo skill → revisión ABIERTA",
+              dd["abierta"] is True and dd["fallosPendientes"] == 4 and len(dd["lecciones"]) == 4, dd.get("lectura"))
+        check("agrupado por la regla que tocan, la más cargada primero, con su modo de fallo",
+              [(r["regla"], r["lecciones"]) for r in dd["porRegla"]] == [("C1", 3), ("SOB2", 1)]
+              and dd["porRegla"][0]["porModoFallo"] == {"tde": 2, "varianza": 1}, dd["porRegla"])
+        check("todos contaminados (por_resultado) → la lectura dice que SOLO puede fijar rúbrica",
+              "solo puede FIJAR RÚBRICA" in dd["lectura"] and dd["porRegla"][0]["acreditables"] == 0, dd["lectura"])
+        check("los 4 piden mover un número sin poder sostenerlo: la alarma del dossier los lista",
+              len(dd["pidenMoverSinPoder"]) == 4, len(dd["pidenMoverSinPoder"]))
+        check("abrir la revisión NO está abierto a Cowork ni a la web; leer el dossier sí (Cowork)",
+              not appmod._cowork_puede("POST", A + "/analisis/cowork/revision/teorema-del-echado/abrir")
+              and appmod._cowork_puede("GET", A + "/analisis/cowork/revision/teorema-del-echado"))
+        ab = c.post(f"{A}/analisis/cowork/revision/teorema-del-echado/abrir").json()
+        dd2 = c.get(f"{A}/analisis/cowork/revision/teorema-del-echado").json()
+        check("abrir pasa las 4 a en_revision; siguen en el dossier y un segundo abrir no mueve nada",
+              len(ab["movidas"]) == 4 and dd2["enRevision"] == 4 and len(dd2["lecciones"]) == 4
+              and c.post(f"{A}/analisis/cowork/revision/teorema-del-echado/abrir").json()["movidas"] == [], ab)
+    finally:
+        _lec._casos = _casos_orig
+    check("abrir una revisión no disparada → 422 con el motivo",
+          c.post(f"{A}/analisis/cowork/revision/skill-que-no-existe/abrir").status_code == 422)
+
     # ── DTP estructurado (skill diagnostico-tactico) ──
     from backend.analisis import dtp_cowork as dtpc
     check("checklist: 3+ a la izquierda → improvisado, 55-65', C1 del TDE = 1",

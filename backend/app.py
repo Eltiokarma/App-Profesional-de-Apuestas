@@ -2412,6 +2412,31 @@ def cowork_lecciones(skill: str = Query(default=""), estado: str = Query(default
     return lecciones.inventario(skill, estado, limite, cohorte)
 
 
+@app.get(API + "/analisis/cowork/revision/{skill}")
+def cowork_revision(skill: str, cohorte: str = Query(default="vigente", description="'' = todas · 'vigente' · o una clave")):
+    """El dossier de revisión de un skill (fase D, docs/APRENDIZAJE.md § D).
+
+    Las lecciones abiertas agrupadas por la regla que tocan, con su población
+    y lo que autoriza cada una; las métricas ciegas SOLO de los casos de este
+    skill contra su listón; la etiqueta de Jev; la versión vigente del skill; y
+    una lectura calculada de lo que la revisión puede concluir. ABRE la
+    revisión, no autoriza nada. Abierto a Cowork (lectura): es lo que toma para
+    redactar el diff cuando el usuario lo autoriza."""
+    from backend.analisis import lecciones
+    return lecciones.revision(skill, cohorte)
+
+
+@app.post(API + "/analisis/cowork/revision/{skill}/abrir")
+def cowork_revision_abrir(skill: str, cohorte: str = Query(default="vigente")):
+    """Pasa a `en_revision` las lecciones pendientes del dossier. NO está
+    abierto a Cowork ni a la web en lectura: es una decisión del usuario."""
+    from backend.analisis import lecciones
+    try:
+        return lecciones.abrir_revision(skill, cohorte)
+    except lecciones.LeccionInvalida as e:
+        raise HTTPException(422, str(e))
+
+
 class DtBody(BaseModel):
     a: dict | str | None = None
     b: dict | str | None = None

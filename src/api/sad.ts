@@ -18,6 +18,7 @@ import type {
   FichaPartidoDTO,
   FixtureDTO,
   InventarioLecciones,
+  RevisionSkillDTO,
   LeccionItem,
   FixtureLiveDTO,
   RefrescoLigaDTO,
@@ -171,6 +172,14 @@ export const SadApi = {
     apiPost<{ fixtureId: number; cuarentena: unknown }>(`/analisis/cowork/${fixtureId}/cuarentena`, { motivo }),
   quitarCuarentena: (fixtureId: number) =>
     apiDelete<{ fixtureId: number; cuarentena: null }>(`/analisis/cowork/${fixtureId}/cuarentena`),
+
+  /** El dossier de revisión de un skill (fase D): abre la revisión, no autoriza nada. */
+  revisionSkill: (skill: string, cohorte = 'vigente') =>
+    apiGet<RevisionSkillDTO>(`/analisis/cowork/revision/${encodeURIComponent(skill)}` + qs({ cohorte })),
+  /** Pasa a `en_revision` las lecciones pendientes del dossier. Token maestro (modo administrador). */
+  abrirRevision: (skill: string, cohorte = 'vigente') =>
+    apiPost<{ skill: string; movidas: string[]; versionVigente: string }>(
+      `/analisis/cowork/revision/${encodeURIComponent(skill)}/abrir` + qs({ cohorte }), {}),
 
   /** Mueve una lección de estado. `aplicada` exige la versión del skill. */
   moverLeccion: (clave: string, body: { estado: string; aplicadaEn?: string; nota?: string }) =>
