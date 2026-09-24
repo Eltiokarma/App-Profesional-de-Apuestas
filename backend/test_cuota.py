@@ -89,6 +89,29 @@ def main():
     check("DC derivada: X2 < min(cuota_draw, cuota_away)", cx2 < min(e, a), (cx2, e, a))
     check("DC derivada: 1/1X ≈ 1/h + 1/e", abs(1 / c1x - (1 / h + 1 / e)) < 0.01, (c1x, h, e))
 
+    # favorito / tapado (ROADMAP_BURBUJAS §3), derivados al leer
+    from backend.cuota_engine import favorito_tapado, rol_de_mercado
+    check("rol: su cuota de victoria es la menor → favorito; la del rival menor → tapado; pareja → None",
+          rol_de_mercado(1.5, 4.0, 6.0) is True and rol_de_mercado(5.0, 3.5, 1.7) is False
+          and rol_de_mercado(2.8, 3.0, 2.8) is None and rol_de_mercado(None, 3, 2) is None)
+    fs = [
+        {"fixtureId": 1, "esLocal": True, "resultado": 1, "cuotaV": 1.5, "cuotaE": 4.0, "cuotaD": 6.0},   # fav, gana
+        {"fixtureId": 2, "esLocal": False, "resultado": 1, "cuotaV": 5.0, "cuotaE": 3.5, "cuotaD": 1.7},  # tapado, gana
+        {"fixtureId": 3, "esLocal": True, "resultado": 1, "cuotaV": 2.0, "cuotaE": 3.3, "cuotaD": 3.6},   # fav, gana
+        {"fixtureId": 4, "esLocal": False, "resultado": 0, "cuotaV": 1.8, "cuotaE": 3.5, "cuotaD": 4.5},  # fav, empata
+        {"fixtureId": 5, "esLocal": True, "resultado": 1, "cuotaV": None, "cuotaE": None, "cuotaD": None}, # sin cuota
+    ]
+    ft = favorito_tapado(fs, {1: 3.0, 2: 2.0, 3: 1.0, 4: 2.5, 5: 2.0})
+    check("favorito: (1/1.5)·3 = 2 → sigue en 2 en el partido de tapado → +(1/2)·1 = 2.5 → revienta al empatar",
+          [r["k"]["favorito"] for r in ft] == [2.0, 2.0, 2.5, 0.0, 0.0], [r["k"]["favorito"] for r in ft])
+    check("tapado: 5·2 = 10 en la sorpresa y se conserva donde es favorito",
+          [r["k"]["tapado"] for r in ft] == [0.0, 10.0, 10.0, 10.0, 10.0], [r["k"]["tapado"] for r in ft])
+    check("local/visita: el favorito local no se toca con el empate de visita",
+          ft[3]["k"]["favoritoLocal"] == 2.5 and ft[3]["k"]["favoritoVisita"] == 0.0, ft[3]["k"])
+    check("sin cuota o sin nivel se salta (rol None, nada se mueve)",
+          ft[4]["rol"] is None and ft[4]["k"] == ft[3]["k"]
+          and favorito_tapado([fs[0]], {})[0]["k"]["favorito"] == 0.0)
+
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
 

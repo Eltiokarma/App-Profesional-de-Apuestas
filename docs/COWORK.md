@@ -20,12 +20,20 @@ que escribir cuesta tiempo:
 > Y lo calculado no se le hace copiar a la salida.
 
 Es la misma de `docs/efe-dtp/COSTO_IA.md`, aplicada ahora al **tiempo de
-escritura** en vez de a la factura. Por eso el parte **no lleva**:
+escritura** en vez de a la factura. 
+> **OJO, dos F3 y dos F4 con el mismo nombre.** El bloque F del **EFE** tiene
+> la alerta F3 y la rotación voluntaria F4: esas NO se mandan (las calcula
+> `bloque_f.py`). El **TDE** tiene sus propios indicadores F3 (impacto desde
+> el banco) y F4 (costo energético del modelo): esos SÍ van, en
+> `tde.bloques[].indicadores`, como el resto de F1-F4. «No mandes F3 ni F4»
+> habla siempre del EFE.
+
+Por eso el parte **no lleva**:
 
 | No se manda | Porque lo pone | Dónde |
 |---|---|---|
 | `total`, `maximoAlcanzable`, `porcentaje`, `clasificacion` | la tabla de puntuación (A + B×1.5 + C + D + E×2, sobre 27 o 23) | `backend/analisis/parte.py` |
-| `ip`, `reduccion` por zona, `multiplicadorGk`, `F3`, `F4` | las fórmulas del bloque F | `backend/analisis/bloque_f.py` |
+| `ip`, `reduccion` por zona, `multiplicadorGk`, la alerta **F3 del EFE** y la rotación voluntaria **F4 del EFE** | las fórmulas del bloque F del EFE | `backend/analisis/bloque_f.py` |
 | las ramas A y B del impacto | se derivan de la tabla F1 + las bajas públicas | `bloque_f.ramas()` |
 | nombres de los equipos, fecha, liga | el fixture de `sad.db` | `parte.guardar()` |
 | el calendario de próximos rivales (bloque G) | ya se calcula con criterio numérico | `backend/calendario.py` |
@@ -78,6 +86,8 @@ Dos matices que se ganan al mandar estructura en vez de prosa:
 ```
   1. GET  /analisis/cowork/agenda        ¿qué partidos importan mañana?   (lo decide la base)
   2. …análisis por partido, sesión limpia cada uno…
+       · antes que nada: GET /analisis/cowork/antecedentes/{id}  lo que ya dijiste
+         de estos dos equipos en partidos ANTERIORES y cómo salió (fase A)
   3. POST /analisis/cowork               el parte, con el bloque F congelado
   ────────── dormir ──────────
   4. POST /analisis/cowork/{id}/xi       llega el once → bloque F cerrado, gratis
@@ -706,7 +716,7 @@ Ponderado»*.
 
 ---
 
-# PROMPT COWORK — SAD BATCH NOCTURNO v2.5
+# PROMPT COWORK — SAD BATCH NOCTURNO v2.6
 
 > Pegar como instrucción de la tarea en Claude Cowork.
 > Reemplazar lo que está entre `<< >>` antes de correr.
@@ -723,6 +733,13 @@ Tres reglas de siempre:
 - "Sin dato" es una respuesta válida. Prohibido estimar para rellenar.
 - Falsadores obligatorios: toda predicción viene con la condición observable
   que la declara fallada.
+
+TU MEMORIA ES LA APP, NO ESTA CONVERSACIÓN. Cada corrida puede arrancar en
+una conversación nueva (y así se hace a propósito: una conversación larga
+arrastra contenido de fuera). Lo que dijiste antes de cada equipo, cómo salió
+y qué lecciones siguen abiertas lo trae `GET /analisis/cowork/antecedentes/{id}`
+(punto 5); lo que falta de ayer, `GET /analisis/cowork/latido`. No supongas
+nada de corridas anteriores que la app no te devuelva.
 
 Skills disponibles en esta cuenta: efe-clasificador, efe-dashboard,
 diagnostico-tactico, futbol-timeline, teorema-del-echado, sad-analysis. Si
@@ -986,7 +1003,8 @@ Escribís vos (es juicio, no se puede calcular):
 NO escribas, porque lo calcula la app y se ignora si llega:
   total · máximo alcanzable · porcentaje · clasificación FORMADO/EN FORMACIÓN/
   SIN FORMACIÓN · Impacto Ponderado · reducción por zona · multiplicador ×1.5
-  del arquero · las ramas A y B · alerta F3 · F4 · el nombre de los equipos ·
+  del arquero · las ramas A y B · la alerta F3 DEL EFE · la F4 DEL EFE (los
+  indicadores F3 y F4 del TDE SÍ van, en tde.bloques[].indicadores) · el nombre de los equipos ·
   la fecha · el calendario de próximos rivales · los resultados del timeline.
 
 Esto no es un recorte de alcance: es que esas cifras ya existen calculadas y
@@ -1003,6 +1021,23 @@ negritas, citas y tablas se pintan bien en la app.
             jugada, no el plantel), declarado como tal. EL DOCUMENTO EN PROSA
             YA NO ALCANZA: el DTP va ESTRUCTURADO en `dtp.bloques[]` (abajo);
             la prosa es opcional y va aparte.
+
+  ANTECEDENTES (fase A del aprendizaje) — ANTES de investigar nada, GET
+    /analisis/cowork/antecedentes/{id}. Por equipo trae tus últimos partes de
+    partidos ANTERIORES (nunca este): la clasificación del EFE, tu pronóstico
+    de la cadena, el 1X2, la ventana del TDE, la clase del bloque, el marcador,
+    el veredicto y la lección; el acierto a ciegas del equipo y las lecciones
+    abiertas que le tocan. Reglas:
+    · Lo que ya dijiste y sigue siendo cierto (DT, sistema, perfil, bloque),
+      NO lo vuelvas a investigar: citalo con su fixtureId y verificá solo lo
+      que pudo cambiar desde esa fecha (bajas, DT, rotación).
+    · Lo que fallaste, corregilo y decí por qué en `notas`.
+    · Una lección abierta que toca a este equipo se tiene en cuenta: si la
+      aplicás, nombrala; si no, decí por qué no.
+    · Un antecedente con `cuarentena` tenía el insumo roto (DT equivocado,
+      rodaje): NO se cita como precedente.
+    · Leer antecedentes no contamina la población: son desenlaces de OTROS
+      partidos. El caso de hoy sigue siendo `ciega`.
 
   DTP ESTRUCTURADO — `dtp.bloques[]`, UNO POR EQUIPO FOCO (como el TDE):
     Antes de escribir, GET /analisis/cowork/dtp/{id}: trae por lado el
@@ -1333,12 +1368,12 @@ ausente.
 # PROMPT CORTO — "RETOMAR HOY": lo que el batch no subió
 
 Para cuando la corrida nocturna se cortó o se saltó partidos y hay que cubrir
-los de hoy que todavía no arrancaron. Mismas reglas del batch (v2.5); cambia
+los de hoy que todavía no arrancaron. Mismas reglas del batch (v2.6); cambia
 solo cómo se elige la lista.
 
 ```text
 Vas a cubrir los partidos de HOY que se quedaron sin parte. Reglas del batch
-nocturno v2.5 (contrato, sesión limpia por partido, EFE con sus sub-scores,
+nocturno v2.6 (contrato, sesión limpia por partido, EFE con sus sub-scores,
 TDE con indicadores, reventón de la burbuja leído antes del 1X2, tres
 fuentes del pronóstico). Nada nuevo, salvo la lista.
 

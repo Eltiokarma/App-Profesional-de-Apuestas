@@ -170,7 +170,15 @@ export interface ConstanteCuotaDTO {
     dc1x: number; dc1xLocal: number; dc1xVisita: number
     dc12: number; dc12Local: number; dc12Visita: number
     dcX2: number; dcX2Local: number; dcX2Visita: number
+    /** ROADMAP_BURBUJAS §3, derivadas al leer: gana cerrando favorito ((1/cuota)·nivel rival)
+     *  y gana cerrando NO favorito (cuota·nivel rival). Revientan cuando, con ese rol, no gana. */
+    favorito: number; favoritoLocal: number; favoritoVisita: number
+    tapado: number; tapadoLocal: number; tapadoVisita: number
   }
+  /** true cerró favorito · false tapado · null sin cuota o parejo (la fila no mueve esas rachas). */
+  favorito: boolean | null
+  /** Nivel del rival (de /constantes) con el que se ponderó; null = sin nivel, se salta. */
+  nivelRival: number | null
 }
 
 export type SenalGap = 'fuerte' | 'leve' | 'equilibrio'

@@ -76,6 +76,52 @@ def step_cuota(st, resultado, is_local, cuota_v, cuota_e, cuota_d,
     return out
 
 
+# --- favorito / tapado (ROADMAP_BURBUJAS §3) --------------------------------
+# Se derivan AL LEER (como todo lo derivado): de la cuota 1X2 de cada fila y
+# del nivel del rival de /constantes. Ponderan por nivel —a diferencia de las
+# 6 de arriba, que son suma pura— porque la spec lo pide: ganar como favorito
+# ante un rival fuerte vale más, y la sorpresa grande (cuota alta) contra uno
+# fuerte, más todavía.
+#   favorito: el equipo cierra FAVORITO (su cuota de victoria es la menor del
+#             1X2). Gana → += (1/cuota) × nivel_rival. No gana → 0 (revienta).
+#   tapado:   cierra NO favorito (el rival paga menos por ganar). Gana →
+#             += cuota × nivel_rival. No gana → 0.
+# El partido donde no aplica (sin cuota, sin nivel, o el otro rol) se SALTA:
+# no aporta ni revienta, como los huecos de cuota de §3.8.
+FAV_K_COLS = tuple(f"{b}{suf}" for b in ("favorito", "tapado") for suf in ("", "Local", "Visita"))
+
+
+def rol_de_mercado(cuota_v, cuota_e, cuota_d):
+    """True favorito · False tapado · None sin cuota o parejo (sin rol claro)."""
+    if cuota_v is None or cuota_d is None:
+        return None
+    if cuota_v < cuota_d and (cuota_e is None or cuota_v < cuota_e):
+        return True
+    if cuota_v > cuota_d:
+        return False
+    return None
+
+
+def favorito_tapado(filas: list[dict], nivel_rival: dict) -> list[dict]:
+    """Por fila (en orden cronológico): {rol, k: {favorito, favoritoLocal, …}}.
+    `filas` = [{fixtureId, esLocal, resultado, cuotaV, cuotaE, cuotaD}];
+    `nivel_rival` = {fixtureId: nivel} (sin nivel, la fila se salta)."""
+    st = {k: 0.0 for k in FAV_K_COLS}
+    out = []
+    for f in filas:
+        rol = rol_de_mercado(f.get("cuotaV"), f.get("cuotaE"), f.get("cuotaD"))
+        nivel = nivel_rival.get(f["fixtureId"])
+        if rol is not None and nivel is not None:
+            base = "favorito" if rol else "tapado"
+            aporte = (1.0 / f["cuotaV"]) * nivel if rol else f["cuotaV"] * nivel
+            suf = "Local" if f["esLocal"] else "Visita"
+            gana = f["resultado"] == 1
+            st[base] = st[base] + aporte if gana else 0.0
+            st[base + suf] = st[base + suf] + aporte if gana else 0.0
+        out.append({"rol": rol, "k": {k: round(v, 4) for k, v in st.items()}})
+    return out
+
+
 # --- cuotas sintéticas (relleno de huecos §7) -------------------------------
 HOME_ADV = 0.35   # ventaja de localía en "niveles"
 P_DRAW = 0.26     # masa fija de empate

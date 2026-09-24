@@ -375,13 +375,16 @@ conversación se pierde en la siguiente.
    y la siguiente corrida de Cowork dirá si los DT ya salen bien. Desde el
    19/09 el refresco diario de `--dt-agenda` (punto 6) hace este trabajo
    solo para los equipos que juegan; la variable sobra.
-3. **Colisión de nombres F3/F4.** El bloque F del EFE tiene F3 y F4, y el TDE
-   tiene los suyos. La instrucción «no mandes F3 ni F4» (que habla del EFE) se
-   puede leer al revés. Renombrar desalinea el prompt del skill, así que por
-   ahora está declarado y no tocado.
-4. **Fase A del bucle de aprendizaje** (antecedentes), en `docs/APRENDIZAJE.md`.
-   La D (dossier, `GET /analisis/cowork/revision/{skill}` + «Ver dossier» en
-   Aprendizaje, 24/09) y la C ya están.
+3. **Colisión de nombres F3/F4.** RESUELTA sin renombrar (24/09): cada mención
+   dice de qué skill habla. «No mandes F3 ni F4» es la alerta F3 y la
+   rotación F4 DEL EFE (las calcula `bloque_f.py`); los indicadores F3/F4 del
+   TDE SÍ van en `tde.bloques[].indicadores`. Lo dicen el prompt
+   (`docs/COWORK.md`, con un recuadro) y el contrato que devuelve el backend
+   (`loQueNoSeManda`). Renombrar habría desalineado los skills.
+4. **Bucle de aprendizaje COMPLETO** (24/09): A (antecedentes,
+   `GET /analisis/cowork/antecedentes/{id}`, solo partidos anteriores), B, C y
+   D (dossier, `GET /analisis/cowork/revision/{skill}` + «Ver dossier»). Lo que
+   falta es USO: casos ciegos en la cohorte vigente.
 5. **Onces de ligas sin cobertura.** Primera B de Colombia y Primera de Uruguay
    no dan alineaciones por API-Football: para esas, el pantallazo a mano es el
    procedimiento. Salen en `nuncaVaALlegar` con su liga.
@@ -497,8 +500,8 @@ conversación se pierde en la siguiente.
      porque no vive en las filas del motor; las K de goles siguen fuera. Con
      datos reales, `temporada` en Europa es la 2025/26 entera y en Sudamérica
      el año natural: por eso viajan las dos.
-   - **Sin cambios y aún abiertos**: deuda 3 (F3/F4),
-     5 (onces de ligas sin cobertura), el umbral de `Missing Fixture` a
+   - **Sin cambios y aún abiertos**:
+     deuda 5 (onces de ligas sin cobertura), el umbral de `Missing Fixture` a
      recalibrar con casos, y ver en la próxima corrida real que a los equipos
      de interés (Beşiktaş y compañía) les aparezcan calendario y plantel.
 
@@ -508,8 +511,9 @@ conversación se pierde en la siguiente.
    (frontend) — guía paso a paso en `docs/DESPLIEGUE.md`.
 2. **Familias nuevas de burbujas** — spec completa en `docs/ROADMAP_BURBUJAS.md`:
    `k_dc`, márgenes (±1/2/3+ goles) y k_cuota_* sobre cuotas prepartido (1X2 y
-   doble oportunidad, con su regla de huecos) hechos; siguen
-   `k_cuota_favorito`/`k_cuota_tapado`.
+   doble oportunidad, con su regla de huecos) hechos, y `favorito`/`tapado`
+   (24/09, derivados al leer en `/constantes-cuota` con el nivel del rival;
+   botón «Favorito» en `ControlesCuotas`). La familia está completa.
 3. Backend: xG/posesión desde estadísticas por partido.
 4. Historial de cuotas por fixture para que la gráfica de movimiento sea real —
    plan completo por fases (historial → día de partido → en vivo) en
@@ -568,6 +572,10 @@ conversación se pierde en la siguiente.
    dossier»): lecciones abiertas por regla, acreditables vs. solo rúbrica,
    métricas ciegas del skill contra su listón, versión vigente del snapshot y
    una lectura calculada de lo que la revisión puede concluir; `POST …/abrir`
-   (maestro) las pasa a `en_revision`. Falta A (antecedentes). La app nunca mueve un peso de un skill por su cuenta.
+   (maestro) las pasa a `en_revision`. **Fase A hecha**: los antecedentes
+   (`backend/analisis/antecedentes.py`, `GET /analisis/cowork/antecedentes/{id}`):
+   por equipo, lo dicho en partidos ANTERIORES y cómo salió, acierto a ciegas
+   y lecciones abiertas; Cowork los lee antes de investigar y el caso nuevo
+   sigue siendo ciego. La app nunca mueve un peso de un skill por su cuenta.
    Snapshot de los skills en `docs/skills/`.
 7. Fase nube completa cuando toque: `docs/SERVICIOS_EXTERNOS.md` (Postgres).

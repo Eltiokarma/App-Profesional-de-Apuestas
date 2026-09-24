@@ -994,6 +994,26 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/InventarioLecciones' }
+  /analisis/cowork/antecedentes/{fixtureId}:
+    get:
+      summary: Fase A del aprendizaje — lo que el sistema ya dijo de estos equipos en partidos ANTERIORES (abierto a Cowork)
+      description: >
+        Por lado: `partes[]` (los últimos N de partidos anteriores al que se analiza, nunca este ni
+        uno posterior), cada uno con clasificación y % del EFE, pronóstico de la cadena, 1X2,
+        marcador pronosticado, TDE (ie, nivel, ventana), la clase de su bloque según el DTP del
+        rival, marcador real, veredicto, queP, lección, skill, población y `cuarentena`;
+        `aciertoCiego` (solo ciega + PRE fuera de cuarentena) y `leccionesVigentes` (pendientes o en
+        revisión). El caso nuevo sigue siendo ciego: son desenlaces de OTROS partidos. 0 tokens.
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+        - { name: n, in: query, schema: { type: integer, default: 5, minimum: 1, maximum: 20 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '404': { description: el fixture no está en nuestra base }
   /analisis/cowork/revision/{skill}:
     get:
       summary: El dossier de revisión de un skill (fase D del aprendizaje; abierto a Cowork en lectura)
@@ -1530,7 +1550,11 @@ components:
             dcX2: { type: number, nullable: true, description: 'doble oportunidad: no gana' }
         k:
           type: object
-          description: 18 acumuladores de suma de cuota (6 familias × total/local/visita)
+          description: >-
+            24 acumuladores: los 18 de suma de cuota (6 familias × total/local/visita) + favorito y
+            tapado × total/local/visita (ROADMAP_BURBUJAS §3, DERIVADOS al leer con el nivel del
+            rival: gana cerrando favorito suma (1/cuota)·nivel; gana cerrando no favorito suma
+            cuota·nivel; con ese rol y sin ganar revienta; sin rol o sin nivel se salta)
           properties:
             victoria: { type: number }
             victoriaLocal: { type: number }
@@ -1550,6 +1574,14 @@ components:
             dcX2: { type: number }
             dcX2Local: { type: number }
             dcX2Visita: { type: number }
+            favorito: { type: number }
+            favoritoLocal: { type: number }
+            favoritoVisita: { type: number }
+            tapado: { type: number }
+            tapadoLocal: { type: number }
+            tapadoVisita: { type: number }
+        favorito: { type: boolean, nullable: true, description: 'true cerró favorito (su cuota de victoria es la menor del 1X2) · false tapado · null sin cuota o parejo' }
+        nivelRival: { type: number, nullable: true, description: 'nivel del rival (de /constantes) con el que se ponderan favorito y tapado; null = se salta' }
     GapEquipo:
       type: object
       required: [equipoId, nivel, ptsEsperados, proximos, partidoTrampa]

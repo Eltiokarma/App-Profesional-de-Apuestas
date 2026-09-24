@@ -427,6 +427,17 @@ Implementación (este repo):
   panel de Burbujas, con la botonera de `ControlesCuotas`: condición
   (TODOS/LOCAL/VISITA) · mercado (1X2 / Doble op. / Ambos) · ventana (8/15/30/50/Todo).
   La barra cae a 0 donde revienta la racha.
+- **Favorito y tapado** (ROADMAP_BURBUJAS §3, 24/09/2026): DERIVADOS al leer en
+  `GET /constantes-cuota/{id}` (`cuota_engine.favorito_tapado`, test en
+  `backend/test_cuota.py`), no guardados. Rol por fila: favorito si su cuota de
+  victoria es la menor del 1X2; tapado si la del rival es menor; sin rol si
+  falta el 1X2 o es parejo. `favorito`: gana siendo favorito → += (1/cuota) ×
+  nivel del rival; siendo favorito y sin ganar → 0. `tapado`: gana siendo no
+  favorito → += cuota × nivel del rival; con ese rol y sin ganar → 0. Sin rol o
+  sin nivel del rival (de `/constantes`) la fila se salta. A diferencia de las 6
+  de arriba (suma pura), estas ponderan por nivel, como pide la spec. En la UI,
+  botón **Favorito** de `ControlesCuotas`: cada gráfica dibuja solo las filas de
+  su rol.
 
 ---
 

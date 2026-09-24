@@ -584,8 +584,23 @@ def main():
           len(cq) > 0 and [r["fecha"] for r in cq] == sorted(r["fecha"] for r in cq), len(cq))
     fam1x2 = ("victoria", "empate", "derrota")
     famdc = ("dc1x", "dc12", "dcX2")
-    check("constantes-cuota: 18 acumuladores (1X2 + doble oportunidad × total/local/visita)",
-          set(cq[0]["k"]) == {f + suf for f in fam1x2 + famdc for suf in ("", "Local", "Visita")}, sorted(cq[0]["k"]))
+    famft = ("favorito", "tapado")
+    check("constantes-cuota: 24 acumuladores (1X2 + doble oportunidad + favorito/tapado × total/local/visita)",
+          set(cq[0]["k"]) == {f + suf for f in fam1x2 + famdc + famft for suf in ("", "Local", "Visita")}, sorted(cq[0]["k"]))
+    con_rol = [r for r in cq if r.get("favorito") is not None]
+    check("constantes-cuota: cada fila dice si cerró favorito (true), tapado (false) o sin rol (null)",
+          con_rol and all(isinstance(r["favorito"], bool) for r in con_rol)
+          and all((r["cuota"]["victoria"] < r["cuota"]["derrota"]) == r["favorito"] for r in con_rol), len(con_rol))
+    ok_fav = True
+    for prev, r in zip(cq, cq[1:]):
+        if r.get("favorito") is True and r.get("nivelRival") is not None:
+            if r["resultado"] != 1 and r["k"]["favorito"] != 0:
+                ok_fav = False
+            if r["resultado"] == 1 and r["k"]["favorito"] <= prev["k"]["favorito"]:
+                ok_fav = False
+        elif r.get("favorito") is None and r["k"]["favorito"] != prev["k"]["favorito"]:
+            ok_fav = False
+    check("constantes-cuota: la racha favorito crece si gana siendo favorito, revienta si no, y se salta sin rol", ok_fav)
     check("constantes-cuota: la cuota de los 6 mercados viaja con su fila",
           set(cq[0]["cuota"]) == set(fam1x2 + famdc), sorted(cq[0]["cuota"]))
     con_dc = [r for r in cq if r["cuota"]["dc1x"] is not None]
