@@ -187,44 +187,67 @@ def _tabla(con: sqlite3.Connection, nombre: str) -> bool:
 
 
 def interes(con: sqlite3.Connection) -> int:
-    """¿Los equipos que entran por un torneo internacional tienen calendario y
+    """¿Los equipos que entran por un torneo internacional tienen historia y
     plantel? (deuda 6 del CLAUDE.md: Beşiktaş, NEC, Marsella… salían vacíos).
-    Calendario = partidos del último año fuera de internacionales y amistosos;
-    plantel = jugadores con stats y DT en la base. 0 requests."""
+
+    - historia: partidos COMPETITIVOS jugados en el último año (con los
+      internacionales, sin amistosos). Con menos de 20 el nivel (ventana 20,
+      §2.2 del motor) no tiene base: esa es la medida que importa, no los
+      domésticos solos (la temporada europea arranca en agosto).
+    - plantel: jugadores con stats, y si no hay, POR QUÉ —nunca se pidió, o la
+      API respondió vacío (se re-pregunta con el TTL largo)—. 0 requests."""
     eq = sorted(equipos_de_interes(con))
     if not eq:
         print("equipos de interés: ninguno (no hay torneo internacional de clubes en la base)")
         return 0
-    fuera = tuple(sorted(set(LIGAS_INTERNACIONALES) | set(LIGAS_RUIDO) | {667}))
-    marcas = ",".join("?" * len(fuera))
+    ruido = tuple(sorted(set(LIGAS_RUIDO) | {667}))
+    intl = tuple(sorted(LIGAS_INTERNACIONALES))
+    m_r, m_i = ",".join("?" * len(ruido)), ",".join("?" * len(intl))
     desde = (datetime.now(timezone.utc) - timedelta(days=365)).strftime("%Y-%m-%d")
-    hay_stats, hay_dt = _tabla(con, "jugador_stats"), _tabla(con, "entrenadores")
+    hay_stats, hay_dt, hay_meta = _tabla(con, "jugador_stats"), _tabla(con, "entrenadores"), _tabla(con, "plantillas_meta")
+    cols_meta = {c[1] for c in con.execute("PRAGMA table_info(plantillas_meta)")} if hay_meta else set()
     filas = []
     for tid in eq:
         nombre = (con.execute("SELECT name FROM teams WHERE id=?", (tid,)).fetchone() or ["?"])[0]
-        dom = con.execute(
-            f"SELECT COUNT(*), SUM(status_short IN ('FT','AET','PEN')), SUM(status_short='NS') "
+        tot, dom, ns = con.execute(
+            f"SELECT SUM(status_short IN ('FT','AET','PEN')), "
+            f"SUM(status_short IN ('FT','AET','PEN') AND COALESCE(league_id,-1) NOT IN ({m_i})), "
+            f"SUM(status_short='NS') "
             f"FROM fixtures WHERE (home_team_id=? OR away_team_id=?) AND date >= ? "
-            f"AND COALESCE(league_id, -1) NOT IN ({marcas})", (tid, tid, desde, *fuera)).fetchone()
+            f"AND COALESCE(league_id, -1) NOT IN ({m_r})", (*intl, tid, tid, desde, *ruido)).fetchone()
         jug = con.execute("SELECT COUNT(DISTINCT player_id) FROM jugador_stats WHERE team_id=?",
                           (tid,)).fetchone()[0] if hay_stats else 0
+        estado = ""
+        if not jug:
+            meta = con.execute(
+                "SELECT actualizado_en" + (", con_datos" if "con_datos" in cols_meta else ", 1") +
+                " FROM plantillas_meta WHERE team_id=?", (tid,)).fetchone() if hay_meta else None
+            estado = ("nunca pedido" if not meta else
+                      f"API vacía {str(meta[0])[:10]}" if not meta[1] else f"pedido {str(meta[0])[:10]}")
         dt = con.execute("SELECT nombre FROM entrenadores WHERE team_id=? ORDER BY actualizado_en DESC LIMIT 1",
                          (tid,)).fetchone() if hay_dt else None
-        filas.append((nombre, tid, dom[0] or 0, dom[1] or 0, dom[2] or 0, jug, dt[0] if dt else ""))
-    sin_cal = [f for f in filas if f[3] < 10]
+        filas.append((nombre, tid, tot or 0, dom or 0, ns or 0, jug, estado, dt[0] if dt else ""))
+    corto = [f for f in filas if f[2] < 20]
     sin_pl = [f for f in filas if not f[5]]
-    sin_dt = [f for f in filas if not f[6]]
-    print(f"equipos de interés: {len(filas)} · calendario doméstico corto (< 10 jugados en el año): "
-          f"{len(sin_cal)} · sin plantel: {len(sin_pl)} · sin DT: {len(sin_dt)}")
-    malos = sorted({f for f in sin_cal + sin_pl + sin_dt}, key=lambda f: f[0])
+    por_estado: dict[str, int] = defaultdict(int)
+    for f in sin_pl:
+        por_estado[f[6].split(" 2")[0]] += 1
+    print(f"equipos de interés: {len(filas)} · historia corta (< 20 jugados en el año, nivel sin base): "
+          f"{len(corto)} · sin plantel: {len(sin_pl)} "
+          f"({', '.join(f'{k}: {v}' for k, v in sorted(por_estado.items())) or '—'}) · "
+          f"sin DT: {sum(1 for f in filas if not f[7])}")
+    malos = sorted(set(corto + sin_pl), key=lambda f: (f[2], f[0]))
     if malos:
-        print("  equipo (id)                        jugados · próximos · jugadores · DT")
-        for nombre, tid, _n, jug_, ns, jugs, dt in malos:
-            print(f"  {nombre[:28]:<28} ({tid:>6})  {jug_:>7} · {ns:>8} · {jugs:>9} · {dt or '—'}")
-        print("  (calendario corto: sanar_equipos_interes lo pide una vez por temporada en la corrida "
-              "diaria; plantel/DT: la ingesta de jugadores los toma si juegan en <= 2 días)")
+        print("  equipo (id)                        jugados (dom) · próximos · jugadores · DT")
+        for nombre, tid, tot, dom, ns, jugs, estado, dt in malos:
+            print(f"  {nombre[:28]:<28} ({tid:>6})  {tot:>4} ({dom:>3}) · {ns:>8} · "
+                  f"{jugs if jugs else estado:>9} · {dt or '—'}")
+        print("  historia corta: sanar_equipos_interes pide la temporada vigente y la anterior "
+              "(SAD_SANAR_EQUIPOS_MAX por corrida); «API vacía»: API-Football no tiene "
+              "jugadores de esa liga y se re-pregunta con el TTL largo; «nunca pedido»: entra "
+              "cuando juegue en <= 2 días")
     else:
-        print("  todos con calendario, plantel y DT")
+        print("  todos con historia, plantel y DT")
     return 1 if malos else 0
 
 

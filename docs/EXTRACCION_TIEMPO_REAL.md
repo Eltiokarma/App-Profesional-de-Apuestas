@@ -367,6 +367,11 @@ Postgres gestionado (`docs/SERVICIOS_EXTERNOS.md`) si el volumen de
    ahorrarse la request. `python -m backend.ingesta.diag_vivo --cobertura`
    lo mide contra lo jugado: capturados/jugados por liga en los últimos 21
    días, y «← nunca» para las que no dieron cuotas en ningún partido.
+   **Primera medición (24/09/2026, 30 ligas)**: ninguna en cero. Liga MX
+   (262) 1 de 25 con 46 rondas vacías seguidas: la única candidata a dejar
+   de consultarse (confirmar con `diag_vivo --liga 262`, 1 request). Las
+   demás entre 40 % (Venezuela) y 100 % (los cuatro internacionales): el
+   hueco parcial es de rotación o de feed tardío, no de cobertura.
 2. ~~Retención de `odds_live` y de snapshots viejos de `odds_history`.~~
    RESUELTA: `SAD_ODDS_HISTORY_DIAS` (90, por fixture con índice, una vez al
    día) y `odds_live` se borra por fixture pasado (`en_vivo.py`);

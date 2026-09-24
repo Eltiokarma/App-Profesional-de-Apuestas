@@ -412,7 +412,14 @@ conversación se pierde en la siguiente.
      jugadores los toma aunque su NS próximo sea fuera del padrón (su rival
      de esa liga no). Pendiente de ver en la próxima corrida real: que a
      esos equipos les aparezca el calendario y el plantel
-     (`diagnostico --interes` lo lista).
+     (`diagnostico --interes` lo lista). **Medido el 24/09**: 328 equipos de
+     interés (entran los de las previas de UEFA), 84 con < 10 domésticos en
+     el año —la temporada europea arrancó en agosto y solo estaba la
+     vigente— y 67 sin plantel. Desde entonces `sanar_equipos_interes` pide
+     también la temporada ANTERIOR (una vez, después de las vigentes de todos)
+     para que el nivel tenga sus 20 partidos, y el diagnóstico mide la
+     historia con los internacionales y dice por qué falta un plantel
+     (`nunca pedido` · `API vacía`).
    - **Nivel 3.2833 exacto en tres equipos**: NO es un tope ni un bug. El
      nivel vive en una retícula (~10.500 valores; ese tiene 24 combinaciones
      de puntos y goles). `docs/MOTOR_SAD_EXTRACCION.md` §2.5; `/niveles`
@@ -538,8 +545,10 @@ conversación se pierde en la siguiente.
    pitazo, y el tramo en vivo con su escala), solo con ≥ 2 capturas por
    selección: con menos, la pantalla lo dice y muestra la cuota actual a
    secas. Retención: `SAD_ODDS_HISTORY_DIAS` (90) y `odds_live` por fixture.
-   Queda abierto medir qué ligas no dan cuotas en vivo (fase 3, decisión 1):
-   `diag_vivo --cobertura` lo mide contra los partidos jugados.
+   Qué ligas dan cuotas en vivo (fase 3, decisión 1): `diag_vivo
+   --cobertura` lo mide contra los partidos jugados. **24/09** (21 días, 30
+   ligas): ninguna en cero; Liga MX en 4 % (1 de 25, 46 rondas vacías
+   seguidas) es la única sospechosa; el resto entre 40 y 100 %.
 5. **DTP** (Diagnóstico Táctico de Partido) — diseño en
    `docs/efe-dtp/DTP_DISENO.md`. **Fases A y B hechas**: ficha de partido
    (alineaciones con `grid`→carriles, eventos con asistente y stats en

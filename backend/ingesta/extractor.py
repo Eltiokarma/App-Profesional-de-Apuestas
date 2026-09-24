@@ -1254,11 +1254,17 @@ def sanar_equipos_interes(cliente: "Cliente", con: sqlite3.Connection) -> int:
             marcas = json.load(f)
     except (OSError, ValueError):
         pass
-    pendientes = [(tid, temp) for tid, temp in casos if f"{tid}:{temp}" not in marcas][:SANARE_MAX_EQUIPOS]
+    # la vigente de todos primero y DESPUÉS la anterior: con la temporada
+    # europea arrancada en agosto, la vigente sola deja 8-9 partidos
+    # domésticos y el nivel (ventana 20, §2.2) se queda en 0.5 hasta
+    # noviembre. La anterior se pide una vez y listo (24/09/2026: 84 de 328
+    # equipos de interés con menos de 10 jugados en el año)
+    orden = [(tid, temp) for tid, temp in casos] + [(tid, temp - 1) for tid, temp in casos]
+    pendientes = [(tid, temp) for tid, temp in orden if f"{tid}:{temp}" not in marcas][:SANARE_MAX_EQUIPOS]
     if not pendientes:
         return 0
     print(f"sanar equipos: {len(casos)} equipos de interés sin su liga doméstica en la base; "
-          f"pido la temporada de {len(pendientes)} en esta corrida")
+          f"pido {len(pendientes)} temporadas (vigente y anterior) en esta corrida")
     hoy = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     reserva = reserva_del_dia(cliente.limite, con)
     total = 0
