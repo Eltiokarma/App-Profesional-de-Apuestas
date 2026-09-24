@@ -1312,7 +1312,9 @@ def analisis_prepartido(fixture_id: int):
 @app.get(API + "/equipos/{equipo_id}/stats")
 def equipo_stats(equipo_id: int):
     """Stats de temporada calculadas de los fixtures terminados (siempre al día).
-    xG/posesión/tiros/córners quedan null en v0 (no se derivan de fixtures)."""
+    xG/posesión/tiros/córners salen de las stats por partido ya ingestadas
+    (`ficha_tactica.promedios_avanzados`): últimos partidos con ficha, cada
+    promedio con su muestra en `avanzadas.n`; sin ficha, null (no un cero)."""
     team = db.query_one("sad", "SELECT id, name FROM teams WHERE id=?", (equipo_id,))
     if not team:
         raise HTTPException(404, f"equipo {equipo_id} no existe")
@@ -1337,6 +1339,8 @@ def equipo_stats(equipo_id: int):
         if i < RECENT_WINDOW:
             forma.append(res)  # más reciente primero
     pj = len(rows)
+    from backend.ficha_tactica import VENTANA_AVANZADAS, promedios_avanzados
+    av = promedios_avanzados(equipo_id)
     return {
         "equipoId": equipo_id,
         "nombre": team["name"],
@@ -1345,10 +1349,12 @@ def equipo_stats(equipo_id: int):
         "forma": forma,
         "golesFavorProm": round(gf_tot / pj, 2) if pj else 0,
         "golesContraProm": round(gc_tot / pj, 2) if pj else 0,
-        "xgProm": None,
-        "posesionProm": None,
-        "tirosPuertaProm": None,
-        "cornersProm": None,
+        "xgProm": av["xg"],
+        "xgContraProm": av["xgContra"],
+        "posesionProm": av["posesion"],
+        "tirosPuertaProm": av["tirosPuerta"],
+        "cornersProm": av["corners"],
+        "avanzadas": {"partidos": av["partidos"], "ventana": VENTANA_AVANZADAS, "n": av["n"]},
     }
 
 

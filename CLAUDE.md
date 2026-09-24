@@ -494,7 +494,7 @@ conversación se pierde en la siguiente.
      la `c2`: la cohorte anterior (`c2-2026-09-19`) arrancó vacía; los
      42 casos de rodaje se miran con el selector y calibran nada. La
      cuarentena a mano queda para el caso puntual con motivo. Fases D y A
-     siguen pendientes.
+     hechas el 24/09 (punto 4).
    - **Reventón**: no hay backtest por período (la global sigue mandando en
      el riesgo, a propósito); «fase» (Apertura/Clausura) no está como período
      porque no vive en las filas del motor; las K de goles siguen fuera. Con
@@ -514,7 +514,14 @@ conversación se pierde en la siguiente.
    doble oportunidad, con su regla de huecos) hechos, y `favorito`/`tapado`
    (24/09, derivados al leer en `/constantes-cuota` con el nivel del rival;
    botón «Favorito» en `ControlesCuotas`). La familia está completa.
-3. Backend: xG/posesión desde estadísticas por partido.
+3. **xG/posesión desde estadísticas por partido**: HECHO (24/09).
+   `/equipos/{id}/stats` promedia xG (a favor y en contra), posesión, tiros a
+   puerta y córners de `fixture_stats` (`ficha_tactica.promedios_avanzados`,
+   últimos 10 terminados con ficha) y cada promedio viaja con su muestra en
+   `avanzadas.n`: la ingesta de fichas solo cubre los últimos partidos de
+   equipos con un NS próximo, y un null de la API es «sin dato», no cero. Se
+   ve en Estadísticas (comparativa) y en Equipo (Temporada). El gap §5 NO
+   los usa: la matemática del motor no se tocó.
 4. Historial de cuotas por fixture para que la gráfica de movimiento sea real —
    plan completo por fases (historial → día de partido → en vivo) en
    `docs/EXTRACCION_TIEMPO_REAL.md`.

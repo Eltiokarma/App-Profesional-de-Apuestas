@@ -1,6 +1,6 @@
 import { TEAMS } from '../data'
 import type { Match } from '../data/types'
-import type { GapEquipoDTO } from '../api/types'
+import type { EquipoStatsDTO, GapEquipoDTO } from '../api/types'
 import { MarcaCondicion } from '../components/MarcaCondicion'
 import { TablaPosiciones } from '../components/TablaPosiciones'
 import { TeamBadge } from '../components/TeamBadge'
@@ -13,6 +13,15 @@ interface Props {
   store: SadStore
   m: Match
   isMobile: boolean
+}
+
+/** De dónde salen xG/posesión/tiros/córners: un promedio sin su muestra se
+ *  lee como la verdad del equipo aunque sean dos partidos. */
+function muestraAvanzadas(nombre: string, st: EquipoStatsDTO): string {
+  const av = st.avanzadas
+  if (!av || av.partidos === 0) return `${nombre}: sin estadísticas por partido capturadas`
+  const xg = av.n.xg === 0 ? ', sin xG' : av.n.xg < av.partidos ? `, xG en ${av.n.xg}` : ''
+  return `${nombre}: últimos ${av.partidos} partidos con ficha${xg}`
 }
 
 function GapCard({ g, name, align }: { g: GapEquipoDTO; name: string; align: 'left' | 'right' }) {
@@ -93,7 +102,9 @@ export function Estadisticas({ store, m, isMobile }: Props) {
   // filas de comparativa desde el contrato; las avanzadas solo si el backend las sirve
   const row = (label: string, hv: number, av: number) => {
     const tot = hv + av || 1
-    const fmt = (v: number) => (v % 1 ? v.toFixed(2) : String(v)) + (label.includes('%') ? '%' : '')
+    // posesión, tiros y córners van con un decimal; goles y xG con dos
+    const dec = /%|TIROS|CÓRNERS/.test(label) ? 1 : 2
+    const fmt = (v: number) => (v % 1 ? v.toFixed(dec) : String(v)) + (label.includes('%') ? '%' : '')
     return {
       label,
       homeVal: fmt(hv),
@@ -110,6 +121,7 @@ export function Estadisticas({ store, m, isMobile }: Props) {
         ['GOLES A FAVOR / P', d.home.golesFavorProm, d.away.golesFavorProm],
         ['GOLES EN CONTRA / P', d.home.golesContraProm, d.away.golesContraProm],
         ['xG POR PARTIDO', d.home.xgProm, d.away.xgProm],
+        ['xG EN CONTRA / P', d.home.xgContraProm ?? null, d.away.xgContraProm ?? null],
         ['POSESIÓN %', d.home.posesionProm, d.away.posesionProm],
         ['TIROS A PUERTA', d.home.tirosPuertaProm, d.away.tirosPuertaProm],
         ['CÓRNERS / P', d.home.cornersProm, d.away.cornersProm],
@@ -276,9 +288,9 @@ export function Estadisticas({ store, m, isMobile }: Props) {
               </div>
             ))}
           </div>
-          {d.home.xgProm == null && (
-            <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginTop: 12 }}>xG, posesión, tiros y córners llegarán cuando el backend los derive de las estadísticas por partido.</div>
-          )}
+          <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginTop: 12, lineHeight: 1.5 }}>
+            {muestraAvanzadas(TEAMS[m.home].short, d.home)} · {muestraAvanzadas(TEAMS[m.away].short, d.away)}
+          </div>
         </section>
 
         <aside style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

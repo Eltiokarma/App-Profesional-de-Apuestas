@@ -1039,11 +1039,14 @@ class MockDataSource implements SadDataSource {
       forma: T.form,
       golesFavorProm: T.gf,
       golesContraProm: T.gc,
-      // igual que el backend v0: los promedios avanzados aún no se derivan
-      xgProm: null,
-      posesionProm: null,
-      tirosPuertaProm: null,
-      cornersProm: null,
+      // demo: derivados de los goles del equipo (el backend los promedia de
+      // las stats por partido ingestadas, con su muestra en `avanzadas`)
+      xgProm: +(T.gf * 0.93).toFixed(2),
+      xgContraProm: +(T.gc * 1.04).toFixed(2),
+      posesionProm: +Math.min(65, Math.max(35, 50 + (T.gf - T.gc) * 9)).toFixed(1),
+      tirosPuertaProm: +(T.gf * 2.7).toFixed(1),
+      cornersProm: +(3.6 + T.gf * 1.2).toFixed(1),
+      avanzadas: { partidos: 10, ventana: 10, n: { xg: 10, xgContra: 10, posesion: 10, tirosPuerta: 10, corners: 10 } },
     }
   }
 
