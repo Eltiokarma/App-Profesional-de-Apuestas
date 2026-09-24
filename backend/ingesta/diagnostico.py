@@ -21,9 +21,10 @@ import os
 import sqlite3
 import sys
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
-from .extractor import LIGAS, LIGAS_RUIDO, Cliente, fechas_zombi, leer_clave
+from .extractor import (LIGAS, LIGAS_INTERNACIONALES, LIGAS_RUIDO, Cliente, equipos_de_interes,
+                        fechas_zombi, leer_clave)
 
 JUGADO = ("FT", "AET", "PEN")
 ZOMBI = ("NS", "TBD")
@@ -181,9 +182,59 @@ def dia_api(con: sqlite3.Connection, fecha: str) -> int:
     return 1 if (faltan or desactualizados) else 0
 
 
+def _tabla(con: sqlite3.Connection, nombre: str) -> bool:
+    return con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (nombre,)).fetchone() is not None
+
+
+def interes(con: sqlite3.Connection) -> int:
+    """¿Los equipos que entran por un torneo internacional tienen calendario y
+    plantel? (deuda 6 del CLAUDE.md: Beşiktaş, NEC, Marsella… salían vacíos).
+    Calendario = partidos del último año fuera de internacionales y amistosos;
+    plantel = jugadores con stats y DT en la base. 0 requests."""
+    eq = sorted(equipos_de_interes(con))
+    if not eq:
+        print("equipos de interés: ninguno (no hay torneo internacional de clubes en la base)")
+        return 0
+    fuera = tuple(sorted(set(LIGAS_INTERNACIONALES) | set(LIGAS_RUIDO) | {667}))
+    marcas = ",".join("?" * len(fuera))
+    desde = (datetime.now(timezone.utc) - timedelta(days=365)).strftime("%Y-%m-%d")
+    hay_stats, hay_dt = _tabla(con, "jugador_stats"), _tabla(con, "entrenadores")
+    filas = []
+    for tid in eq:
+        nombre = (con.execute("SELECT name FROM teams WHERE id=?", (tid,)).fetchone() or ["?"])[0]
+        dom = con.execute(
+            f"SELECT COUNT(*), SUM(status_short IN ('FT','AET','PEN')), SUM(status_short='NS') "
+            f"FROM fixtures WHERE (home_team_id=? OR away_team_id=?) AND date >= ? "
+            f"AND COALESCE(league_id, -1) NOT IN ({marcas})", (tid, tid, desde, *fuera)).fetchone()
+        jug = con.execute("SELECT COUNT(DISTINCT player_id) FROM jugador_stats WHERE team_id=?",
+                          (tid,)).fetchone()[0] if hay_stats else 0
+        dt = con.execute("SELECT nombre FROM entrenadores WHERE team_id=? ORDER BY actualizado_en DESC LIMIT 1",
+                         (tid,)).fetchone() if hay_dt else None
+        filas.append((nombre, tid, dom[0] or 0, dom[1] or 0, dom[2] or 0, jug, dt[0] if dt else ""))
+    sin_cal = [f for f in filas if f[3] < 10]
+    sin_pl = [f for f in filas if not f[5]]
+    sin_dt = [f for f in filas if not f[6]]
+    print(f"equipos de interés: {len(filas)} · calendario doméstico corto (< 10 jugados en el año): "
+          f"{len(sin_cal)} · sin plantel: {len(sin_pl)} · sin DT: {len(sin_dt)}")
+    malos = sorted({f for f in sin_cal + sin_pl + sin_dt}, key=lambda f: f[0])
+    if malos:
+        print("  equipo (id)                        jugados · próximos · jugadores · DT")
+        for nombre, tid, _n, jug_, ns, jugs, dt in malos:
+            print(f"  {nombre[:28]:<28} ({tid:>6})  {jug_:>7} · {ns:>8} · {jugs:>9} · {dt or '—'}")
+        print("  (calendario corto: sanar_equipos_interes lo pide una vez por temporada en la corrida "
+              "diaria; plantel/DT: la ingesta de jugadores los toma si juegan en <= 2 días)")
+    else:
+        print("  todos con calendario, plantel y DT")
+    return 1 if malos else 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Diagnóstico de huecos de ingesta en sad.db")
-    ap.add_argument("--db", default="sad.db", help="ruta a sad.db")
+    # en Railway las bases viven en el volumen ($SAD_DATA_DIR = /data)
+    ap.add_argument("--db", default=os.path.join(os.environ.get("SAD_DATA_DIR", "."), "sad.db"),
+                    help="ruta a sad.db")
+    ap.add_argument("--interes", action="store_true",
+                    help="equipos de interés (torneos internacionales): ¿calendario, plantel y DT?")
     ap.add_argument("--dia", metavar="YYYY-MM-DD", help="radiografía de un día concreto")
     ap.add_argument("--api", action="store_true",
                     help="con --dia: contrastar el día contra API-Football (gasta 1 request)")
@@ -194,6 +245,8 @@ def main() -> int:
     con = sqlite3.connect(args.db)
     con.execute("PRAGMA busy_timeout=15000")
     try:
+        if args.interes:
+            return interes(con)
         if args.dia:
             codigo = dia(con, args.dia)
             if args.api:

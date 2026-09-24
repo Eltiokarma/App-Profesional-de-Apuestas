@@ -307,9 +307,59 @@ def de_hoy(con: sqlite3.Connection) -> list[int]:
         f"ORDER BY date", (hoy, *sorted(ligas_vivo())))]
 
 
+def cobertura_vivo(con: sqlite3.Connection, dias: int) -> int:
+    """Decisión abierta 1 de docs/EXTRACCION_TIEMPO_REAL.md: ¿qué ligas NO dan
+    cuotas en vivo? Se mide contra lo que pasó, no contra una consulta suelta:
+    de los partidos terminados en los últimos `dias` de cada liga del ciclo,
+    cuántos dejaron al menos una fila en odds_live. Una liga con varios
+    partidos y NINGUNO con cuotas es la candidata a dejar de consultarse (o a
+    SAD_LIVE_ODDS_LIGAS). odds_live se retiene 30 días: más atrás no mide."""
+    from backend.ingesta.extractor import LIGAS, ligas_vivo
+    if not tabla_existe(con, "odds_live"):
+        print("sin tabla odds_live: el ciclo en vivo todavía no corrió en esta base")
+        return 1
+    desde = (datetime.now(timezone.utc) - timedelta(days=dias)).strftime("%Y-%m-%d %H:%M:%S")
+    ligas = sorted(ligas_vivo())
+    marcas = ",".join("?" * len(ligas))
+    filas = con.execute(
+        f"""SELECT f.league_id, COUNT(*) AS n,
+                   SUM(EXISTS (SELECT 1 FROM odds_live o WHERE o.fixture_id=f.id)) AS con
+            FROM fixtures f
+            WHERE f.league_id IN ({marcas}) AND f.date >= ?
+              AND f.status_short IN ('FT','AET','PEN')
+            GROUP BY f.league_id""", (*ligas, desde)).fetchall()
+    consulta = {}
+    if tabla_existe(con, "odds_live_consultas"):
+        cols = {c[1] for c in con.execute("PRAGMA table_info(odds_live_consultas)")}
+        if "estado" in cols:
+            extra = ", vacias_seguidas" if "vacias_seguidas" in cols else ", 0"
+            consulta = {r[0]: (r[1], r[2]) for r in con.execute(
+                f"SELECT league_id, estado{extra} FROM odds_live_consultas")}
+    filas = sorted(filas, key=lambda r: (r[2] / r[1] if r[1] else 1, -r[1]))
+    nunca = [r for r in filas if r[1] >= 3 and not r[2]]
+    print(f"cuotas en vivo, últimos {dias} días: {len(filas)} ligas con partidos terminados · "
+          f"{len(nunca)} sin un solo partido con cuotas en juego (≥ 3 jugados)")
+    print("  capturados/jugados  liga (id)                                 última consulta")
+    for lid, n, conv in filas:
+        est, vac = consulta.get(lid, ("—", 0))
+        marca = "  ← nunca" if n >= 3 and not conv else ""
+        nombre = LIGAS.get(lid, "?")
+        print(f"  {conv or 0:>5}/{n:<5} {100 * (conv or 0) / n:>4.0f} %  {nombre[:38]:<38} ({lid:>4})  "
+              f"{est}{f' · {vac} vacías seguidas' if vac else ''}{marca}")
+    sin_partidos = [l for l in ligas if l not in {r[0] for r in filas}]
+    if sin_partidos:
+        print(f"  sin partidos terminados en la ventana: {len(sin_partidos)} ligas (no miden)")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Por qué un partido no tiene cuotas en juego")
-    ap.add_argument("--db", default="sad.db")
+    # en Railway las bases viven en el volumen ($SAD_DATA_DIR = /data)
+    ap.add_argument("--db", default=os.path.join(os.environ.get("SAD_DATA_DIR", "."), "sad.db"))
+    ap.add_argument("--cobertura", action="store_true",
+                    help="por liga del ciclo en vivo: de los partidos terminados en los últimos "
+                         "--dias, cuántos tienen cuotas en juego capturadas (0 requests)")
+    ap.add_argument("--dias", type=int, default=21)
     ap.add_argument("--fixture", type=int, action="append", default=[],
                     help="id del fixture (repetible)")
     ap.add_argument("--hoy", action="store_true", help="todos los de hoy de las ligas en vivo")
@@ -332,6 +382,8 @@ def main() -> int:
         print(f"No existe {args.db}", file=sys.stderr)
         return 1
     con = sqlite3.connect(args.db)
+    if args.cobertura:
+        return cobertura_vivo(con, args.dias)
     ids = list(args.fixture)
     if args.hoy:
         ids += de_hoy(con)
