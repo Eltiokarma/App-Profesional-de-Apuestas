@@ -368,11 +368,12 @@ def main():
         finally:
             os.chdir(cwd)
             _ext.guardar_fixtures = original
-    check("sanar equipos: 1 request /fixtures?team=500&season=2026 y se guarda lo que vuelve",
-          n1 == 2 and cl.pedidos == [("fixtures", {"team": 500, "season": 2026})] and guardados == [2],
+    check("sanar equipos: la vigente y DESPUÉS la anterior (/fixtures?team=500&season=2026, 2025)",
+          n1 == 4 and cl.pedidos == [("fixtures", {"team": 500, "season": 2026}),
+                                     ("fixtures", {"team": 500, "season": 2025})] and guardados == [2, 2],
           (n1, cl.pedidos, guardados))
     check("la segunda corrida no lo repite (marcador por equipo:temporada)",
-          n2 == 0 and cl.usadas == 1 and list(marca) == ["500:2026"], (n2, cl.usadas, marca))
+          n2 == 0 and cl.usadas == 2 and sorted(marca) == ["500:2025", "500:2026"], (n2, cl.usadas, marca))
 
     # la vuelta atrás por env existe
     jug.JUGADORES_TODAS_LIGAS = True
