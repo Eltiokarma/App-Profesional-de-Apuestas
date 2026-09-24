@@ -1228,8 +1228,23 @@ def constantes_cuota(equipo_id: int):
     """k_cuota (§3.8): rachas de suma de cuota del 1X2 y de la Doble
     Oportunidad (1X/12/X2), solo 2026. La tabla
     constants_cuota se reconstruye en cada corrida del pipeline (y también con
-    backend/backfill_cuota, que además puede inyectar cuotas sintéticas)."""
-    return constantes_cuota_de(equipo_id)
+    backend/backfill_cuota, que además puede inyectar cuotas sintéticas).
+    Favorito y tapado (ROADMAP_BURBUJAS §3) se DERIVAN al leer: la cuota 1X2
+    de cada fila + el nivel del rival de /constantes."""
+    filas = constantes_cuota_de(equipo_id)
+    if not filas:
+        return filas
+    from backend.cuota_engine import favorito_tapado
+    niveles = {c["fixtureId"]: c.get("nivelRival") for c in constantes_de(equipo_id, 1000)
+               if c.get("nivelRival") is not None}
+    ft = favorito_tapado([{"fixtureId": r["fixtureId"], "esLocal": r["esLocal"], "resultado": r["resultado"],
+                           "cuotaV": r["cuota"]["victoria"], "cuotaE": r["cuota"]["empate"],
+                           "cuotaD": r["cuota"]["derrota"]} for r in filas], niveles)
+    for r, x in zip(filas, ft):
+        r["favorito"] = x["rol"]
+        r["nivelRival"] = niveles.get(r["fixtureId"])
+        r["k"].update(x["k"])
+    return filas
 
 
 @app.get(API + "/predicciones/{fixture_id}")

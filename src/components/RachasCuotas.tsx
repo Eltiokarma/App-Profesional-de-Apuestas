@@ -7,7 +7,7 @@ import { useAsync } from '../services/useAsync'
 
 export type CuotaCond = 'TODOS' | 'LOCAL' | 'VISITA'
 /** Mercado a la vista: el 1X2 exacto, la doble oportunidad, o los dos. */
-export type CuotaMercado = '1X2' | 'DC' | 'AMBOS'
+export type CuotaMercado = '1X2' | 'DC' | 'AMBOS' | 'FAV'
 
 /** Estado de la vista de las gráficas de cuotas (lo controlan los botones). */
 export interface CuotaVista {
@@ -22,9 +22,9 @@ export const CUOTA_VISTA0: CuotaVista = { cond: 'TODOS', mercado: '1X2', ventana
 /** Ventanas del selector VER de las cuotas (Infinity = toda la historia). */
 export const CUOTA_VENTANAS: [number, string][] = [[8, '8'], [15, '15'], [30, '30'], [50, '50'], [Infinity, 'Todo']]
 
-const MERCADOS: [CuotaMercado, string][] = [['1X2', '1X2'], ['DC', 'Doble op.'], ['AMBOS', 'Ambos']]
+const MERCADOS: [CuotaMercado, string][] = [['1X2', '1X2'], ['DC', 'Doble op.'], ['AMBOS', 'Ambos'], ['FAV', 'Favorito']]
 
-type FamKey = 'victoria' | 'empate' | 'derrota' | 'dc1x' | 'dc12' | 'dcX2'
+type FamKey = 'victoria' | 'empate' | 'derrota' | 'dc1x' | 'dc12' | 'dcX2' | 'favorito' | 'tapado'
 
 interface Familia {
   key: FamKey
@@ -49,12 +49,21 @@ const FAMILIAS_DC: Familia[] = [
   { key: 'dcX2', label: 'Racha X2 · no gana', color: 'var(--down)', soft: 'var(--down-soft)' },
 ]
 
+/** Favorito y tapado (ROADMAP_BURBUJAS §3): la racha de victorias cerrando
+ *  como favorito ((1/cuota)·nivel del rival) y la de victorias cerrando como
+ *  NO favorito (cuota·nivel del rival). Cada una dibuja solo los partidos con
+ *  ESE rol; revienta cuando, con ese rol, no gana. */
+const FAMILIAS_FAV: Familia[] = [
+  { key: 'favorito', label: 'Gana siendo favorito', color: 'var(--up)', soft: 'var(--up-soft)' },
+  { key: 'tapado', label: 'Gana siendo tapado', color: 'var(--accent)', soft: 'var(--accent-soft)' },
+]
+
 export const familiasDe = (mercado: CuotaMercado): Familia[] =>
-  mercado === '1X2' ? FAMILIAS_1X2 : mercado === 'DC' ? FAMILIAS_DC : [...FAMILIAS_1X2, ...FAMILIAS_DC]
+  mercado === '1X2' ? FAMILIAS_1X2 : mercado === 'DC' ? FAMILIAS_DC : mercado === 'FAV' ? FAMILIAS_FAV : [...FAMILIAS_1X2, ...FAMILIAS_DC]
 
 /** Etiqueta del mercado para los títulos de las tarjetas. */
 export const tituloMercado = (mercado: CuotaMercado) =>
-  mercado === '1X2' ? 'rachas 1X2' : mercado === 'DC' ? 'rachas doble oportunidad' : 'rachas 1X2 y doble oportunidad'
+  mercado === '1X2' ? 'rachas 1X2' : mercado === 'DC' ? 'rachas doble oportunidad' : mercado === 'FAV' ? 'rachas de favorito y tapado' : 'rachas 1X2 y doble oportunidad'
 
 /** Cuotas K (§3.8): rachas 1X2 y de doble oportunidad de un equipo, con carga
  *  propia; los botones de vista viven fuera (compartibles entre dos instancias). */
@@ -67,6 +76,15 @@ export function RachasCuotas({ teamKey, vista, rol }: { teamKey: string; vista: 
   // no entra en su gráfica (la racha lo saltó, dibujarlo mentiría)
   const barsFor = (fam: FamKey): CuotaBar[] => {
     const kk = (fam + condSuffix) as keyof ConstanteCuotaDTO['k']
+    // favorito / tapado: solo las filas con ESE rol (y con nivel del rival);
+    // la cuota que se muestra es la de victoria del equipo
+    if (fam === 'favorito' || fam === 'tapado') {
+      const rol = fam === 'favorito'
+      return filas
+        .filter((r) => r.favorito === rol && r.nivelRival != null)
+        .map((r) => ({ fecha: r.fecha, value: r.k[kk], burst: r.k[kk] === 0, cuota: r.cuota.victoria, res: r.resultado, esLocal: r.esLocal }))
+        .slice(-ventana)
+    }
     return filas
       .filter((r) => r.cuota[fam] != null)
       .map((r) => ({ fecha: r.fecha, value: r.k[kk], burst: r.k[kk] === 0, cuota: r.cuota[fam], res: r.resultado, esLocal: r.esLocal }))

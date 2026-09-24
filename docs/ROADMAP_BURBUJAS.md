@@ -55,7 +55,8 @@ empata · X2 = no gana)—, cada mercado con sus huecos propios. La doble
 oportunidad acopla dos resultados, así que sus rachas duran más: es donde las
 burbujas se ven mejor.
 
-Pendientes de este bloque:
+**Hecho también (24/09/2026)**: `k_cuota_favorito` y `k_cuota_tapado`, derivados
+al leer (ver `MOTOR_SAD_EXTRACCION.md` §3.8). La spec original, conservada:
 
 - `k_cuota_favorito`: acumula mientras el equipo cierra como favorito
   (cuota 1X2 propia mínima del mercado) y **cumple**; se resetea cuando siendo

@@ -509,8 +509,9 @@ conversación se pierde en la siguiente.
    (frontend) — guía paso a paso en `docs/DESPLIEGUE.md`.
 2. **Familias nuevas de burbujas** — spec completa en `docs/ROADMAP_BURBUJAS.md`:
    `k_dc`, márgenes (±1/2/3+ goles) y k_cuota_* sobre cuotas prepartido (1X2 y
-   doble oportunidad, con su regla de huecos) hechos; siguen
-   `k_cuota_favorito`/`k_cuota_tapado`.
+   doble oportunidad, con su regla de huecos) hechos, y `favorito`/`tapado`
+   (24/09, derivados al leer en `/constantes-cuota` con el nivel del rival;
+   botón «Favorito» en `ControlesCuotas`). La familia está completa.
 3. Backend: xG/posesión desde estadísticas por partido.
 4. Historial de cuotas por fixture para que la gráfica de movimiento sea real —
    plan completo por fases (historial → día de partido → en vivo) en

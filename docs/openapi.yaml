@@ -1550,7 +1550,11 @@ components:
             dcX2: { type: number, nullable: true, description: 'doble oportunidad: no gana' }
         k:
           type: object
-          description: 18 acumuladores de suma de cuota (6 familias × total/local/visita)
+          description: >-
+            24 acumuladores: los 18 de suma de cuota (6 familias × total/local/visita) + favorito y
+            tapado × total/local/visita (ROADMAP_BURBUJAS §3, DERIVADOS al leer con el nivel del
+            rival: gana cerrando favorito suma (1/cuota)·nivel; gana cerrando no favorito suma
+            cuota·nivel; con ese rol y sin ganar revienta; sin rol o sin nivel se salta)
           properties:
             victoria: { type: number }
             victoriaLocal: { type: number }
@@ -1570,6 +1574,14 @@ components:
             dcX2: { type: number }
             dcX2Local: { type: number }
             dcX2Visita: { type: number }
+            favorito: { type: number }
+            favoritoLocal: { type: number }
+            favoritoVisita: { type: number }
+            tapado: { type: number }
+            tapadoLocal: { type: number }
+            tapadoVisita: { type: number }
+        favorito: { type: boolean, nullable: true, description: 'true cerró favorito (su cuota de victoria es la menor del 1X2) · false tapado · null sin cuota o parejo' }
+        nivelRival: { type: number, nullable: true, description: 'nivel del rival (de /constantes) con el que se ponderan favorito y tapado; null = se salta' }
     GapEquipo:
       type: object
       required: [equipoId, nivel, ptsEsperados, proximos, partidoTrampa]
