@@ -522,9 +522,14 @@ conversación se pierde en la siguiente.
    equipos con un NS próximo, y un null de la API es «sin dato», no cero. Se
    ve en Estadísticas (comparativa) y en Equipo (Temporada). El gap §5 NO
    los usa: la matemática del motor no se tocó.
-4. Historial de cuotas por fixture para que la gráfica de movimiento sea real —
-   plan completo por fases (historial → día de partido → en vivo) en
-   `docs/EXTRACCION_TIEMPO_REAL.md`.
+4. **Historial de cuotas por fixture**: HECHO (fases 1-3 de
+   `docs/EXTRACCION_TIEMPO_REAL.md`). `odds_history` con 3 fotos al día +
+   refresco de las últimas 6 h (`SAD_REFRESCO_MIN`) y `odds_live` en juego;
+   `GET /cuotas/{id}/historial` dibuja la curva real en Cuotas (apertura →
+   pitazo, y el tramo en vivo con su escala), solo con ≥ 2 capturas por
+   selección: con menos, la pantalla lo dice y muestra la cuota actual a
+   secas. Retención: `SAD_ODDS_HISTORY_DIAS` (90) y `odds_live` por fixture.
+   Queda abierto medir qué ligas no dan cuotas en vivo (fase 3, decisión 1).
 5. **DTP** (Diagnóstico Táctico de Partido) — diseño en
    `docs/efe-dtp/DTP_DISENO.md`. **Fases A y B hechas**: ficha de partido
    (alineaciones con `grid`→carriles, eventos con asistente y stats en

@@ -5,7 +5,10 @@ controlados, sin romper la regla de oro (el backend HTTP es de solo lectura;
 solo `backend/ingesta/` escribe). Presupuesto: plan pago de API-Football,
 tope y ritmo autoajustados por cabeceras `x-ratelimit-*` (ya hecho).
 
-## Estado actual (fase 0)
+> **Estado (24/09/2026): fases 1, 2 y 3 HECHAS.** Lo que sigue describe
+> la fase 0 como punto de partida histórico.
+
+## Punto de partida (fase 0, ya superada)
 
 Una corrida diaria (`SAD_INGESTA_HORA`): fixtures hoy−3d..+10d + **una sola
 foto** de cuotas por fixture NS (los que ya tienen odds se saltan). La gráfica
@@ -362,7 +365,10 @@ Postgres gestionado (`docs/SERVICIOS_EXTERNOS.md`) si el volumen de
    `odds_live_consultas.con_datos` guarda el resultado de la última consulta;
    si alguna sale vacía siempre, vale la pena dejar de preguntarle y
    ahorrarse la request.
-2. Retención de `odds_live` y de snapshots viejos de `odds_history`.
+2. ~~Retención de `odds_live` y de snapshots viejos de `odds_history`.~~
+   RESUELTA: `SAD_ODDS_HISTORY_DIAS` (90, por fixture con índice, una vez al
+   día) y `odds_live` se borra por fixture pasado (`en_vivo.py`);
+   `adelgazar.py` compacta lo acumulado.
 3. Si el poll en vivo vive en el mismo servicio Railway (hilo como el
    scheduler actual) o en un worker separado — empezar en el mismo, separar
    solo si compite con el backend.
