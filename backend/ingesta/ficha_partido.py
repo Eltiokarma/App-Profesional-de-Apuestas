@@ -33,11 +33,21 @@ import sqlite3
 import sys
 from datetime import datetime, timedelta, timezone
 
-from backend.ingesta.extractor import LIGAS, Cliente, leer_clave, reserva_del_dia
+from backend.ingesta.extractor import LIGAS, LIGAS_RUIDO, Cliente, leer_clave, reserva_del_dia
 
 DIAS_NS_DEFAULT = 3
 ULTIMOS_DEFAULT = int(os.environ.get("SAD_FICHA_PARTIDOS", "3"))
 TERMINADOS = ("FT", "AET", "PEN")
+
+# Cobertura APRENDIDA por liga (24/09/2026: 2.959 de 6.651 fichas sin
+# alineaciones; seis ligas no dieron un once NUNCA en 50-100 partidos, y cada
+# partido nuevo de esas ligas seguía pagando las 3 requests). Si una liga lleva
+# >= COBERTURA_MIN fichas selladas y NINGUNA trajo ese endpoint, se deja de
+# pedir. Una de cada COBERTURA_SONDA fichas se pide entera igual: si la liga
+# empieza a dar alineaciones, la sonda lo ve y la regla se levanta sola.
+COBERTURA_MIN = int(os.environ.get("SAD_FICHA_COBERTURA_MIN", "10"))
+COBERTURA_SONDA = int(os.environ.get("SAD_FICHA_SONDA", "20"))
+ENDPOINTS = ("alineaciones", "eventos", "stats")
 
 DDL = """
 CREATE TABLE IF NOT EXISTS alineaciones (
@@ -274,30 +284,63 @@ def fixtures_pendientes(con: sqlite3.Connection, dias: int, ultimos: int) -> lis
     if not equipos:
         return []
     sellados = {r[0] for r in con.execute("SELECT fixture_id FROM fichas_meta")}
+    # amistosos de clubes (LIGAS_RUIDO): 1.893 de 2.416 fichas sin once (24/09)
+    # y M6 los marca no competitivos. Fuera de la consulta, así los «últimos N»
+    # son los N últimos partidos que cuentan, no un amistoso de pretemporada
+    ruido = tuple(LIGAS_RUIDO) or (-1,)
     marcas_fin = ",".join("?" * len(TERMINADOS))
     pendientes: list[int] = []
     for tid in equipos:
         for (fid,) in con.execute(
                 f"""SELECT id FROM fixtures
                     WHERE (home_team_id=? OR away_team_id=?) AND status_short IN ({marcas_fin})
+                      AND COALESCE(league_id, -1) NOT IN ({",".join("?" * len(ruido))})
                     ORDER BY date DESC LIMIT ?""",
-                (tid, tid, *TERMINADOS, ultimos)):
+                (tid, tid, *TERMINADOS, *ruido, ultimos)):
             if fid not in sellados and fid not in pendientes:
                 pendientes.append(fid)
     return pendientes
 
 
-def ingestar_fixture(cliente: Cliente, con: sqlite3.Connection, fixture_id: int) -> bool:
-    """Las 3 requests de un partido. False si el presupuesto no da para las
-    tres: media ficha no se sella (se repetiría entera igual)."""
-    if not cliente.quedan(3):
+def cobertura_por_liga(con: sqlite3.Connection) -> dict[int, dict]:
+    """Por liga: cuántas fichas selladas y cuántas trajeron cada endpoint."""
+    out: dict[int, dict] = {}
+    for liga, n, ali, ev, st in con.execute(
+            "SELECT f.league_id, COUNT(*), SUM(m.alineaciones>0), SUM(m.eventos>0), SUM(m.stats>0) "
+            "FROM fichas_meta m JOIN fixtures f ON f.id=m.fixture_id GROUP BY f.league_id"):
+        out[liga] = {"n": n, "alineaciones": ali or 0, "eventos": ev or 0, "stats": st or 0}
+    return out
+
+
+def endpoints_a_pedir(fixture_id: int, liga: int | None, cobertura: dict[int, dict]) -> tuple[str, ...]:
+    """Los endpoints que vale la pena pedir para este partido: los que su liga
+    alguna vez dio, o todos si todavía no hay muestra o si es la sonda."""
+    c = cobertura.get(liga) if liga is not None else None
+    if not c or c["n"] < COBERTURA_MIN or (COBERTURA_SONDA and fixture_id % COBERTURA_SONDA == 0):
+        return ENDPOINTS
+    return tuple(e for e in ENDPOINTS if c[e] > 0)
+
+
+def ingestar_fixture(cliente: Cliente, con: sqlite3.Connection, fixture_id: int,
+                     cobertura: dict[int, dict] | None = None) -> bool:
+    """Hasta 3 requests por partido (las que su liga alguna vez dio: ver
+    `endpoints_a_pedir`). False si el presupuesto no da para todas: media
+    ficha no se sella (se repetiría entera igual)."""
+    fila = con.execute("SELECT league_id FROM fixtures WHERE id=?", (fixture_id,)).fetchone()
+    pedir = endpoints_a_pedir(fixture_id, fila[0] if fila else None,
+                              cobertura if cobertura is not None else {})
+    if not cliente.quedan(len(pedir)):
         return False
-    data = cliente.get("fixtures/lineups", {"fixture": fixture_id})
-    n_ali = guardar_alineaciones(con, fixture_id, (data or {}).get("response", []))
-    data = cliente.get("fixtures/events", {"fixture": fixture_id})
-    n_ev = guardar_eventos(con, {"fixture_id": fixture_id, "eventos": (data or {}).get("response", [])})
-    data = cliente.get("fixtures/statistics", {"fixture": fixture_id})
-    n_st = guardar_stats(con, fixture_id, (data or {}).get("response", []))
+    n_ali = n_ev = n_st = 0
+    if "alineaciones" in pedir:
+        data = cliente.get("fixtures/lineups", {"fixture": fixture_id})
+        n_ali = guardar_alineaciones(con, fixture_id, (data or {}).get("response", []))
+    if "eventos" in pedir:
+        data = cliente.get("fixtures/events", {"fixture": fixture_id})
+        n_ev = guardar_eventos(con, {"fixture_id": fixture_id, "eventos": (data or {}).get("response", [])})
+    if "stats" in pedir:
+        data = cliente.get("fixtures/statistics", {"fixture": fixture_id})
+        n_st = guardar_stats(con, fixture_id, (data or {}).get("response", []))
     # se sella aunque venga vacío: hay ligas sin cobertura de alineaciones y
     # repreguntarlas cada corrida quemaría requests para siempre
     con.execute(
@@ -306,9 +349,11 @@ def ingestar_fixture(cliente: Cliente, con: sqlite3.Connection, fixture_id: int)
         (fixture_id, datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), n_ali, n_ev, n_st),
     )
     con.commit()
+    salteados = [e for e in ENDPOINTS if e not in pedir]
     print(f"  [{cliente.usadas}/{cliente.limite}] fixture {fixture_id}: "
           f"{n_ali} en alineaciones · {n_ev} eventos · {n_st} stats"
-          + ("" if n_ali else "  ⚠ sin alineaciones (¿liga sin cobertura?): M1/M2 del DTP no podrán abrir"))
+          + (f"  (no pedidos, su liga nunca los dio: {', '.join(salteados)})" if salteados else
+             "" if n_ali else "  ⚠ sin alineaciones (¿liga sin cobertura?): M1/M2 del DTP no podrán abrir"))
     return True
 
 
@@ -422,15 +467,16 @@ def main() -> int:
     reserva = 0 if args.fixture else reserva_del_dia(cliente.limite, con)
     print(f"Ficha de partido: {len(pendientes)} partidos pendientes "
           f"(NS <= {args.dias} días, últimos {args.ultimos} por equipo) · "
-          f"3 requests c/u · presupuesto restante {cliente.limite - cliente.usadas}"
+          f"hasta 3 requests c/u · presupuesto restante {cliente.limite - cliente.usadas}"
           f" · reserva {reserva}")
     hechos = 0
+    cobertura = cobertura_por_liga(con)
     for fid in pendientes:
         if cliente.limite - cliente.usadas <= reserva:
             print(f"reserva del día alcanzada ({cliente.usadas}/{cliente.limite}, reserva {reserva}): "
                   f"{hechos}/{len(pendientes)} partidos (el resto, en la próxima corrida)")
             break
-        if not ingestar_fixture(cliente, con, fid):
+        if not ingestar_fixture(cliente, con, fid, cobertura):
             print(f"presupuesto agotado: {hechos}/{len(pendientes)} partidos "
                   f"(el resto, en la próxima corrida)")
             break
