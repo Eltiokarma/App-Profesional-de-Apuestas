@@ -591,6 +591,9 @@ def main() -> int:
                     help="ruta a sad.db")
     ap.add_argument("--dias", type=int, default=DIAS_NS_DEFAULT,
                     help=f"equipos con NS en <= N días (default {DIAS_NS_DEFAULT})")
+    ap.add_argument("--sondear", type=int, metavar="TEAM_ID", action="append", default=[],
+                    help="qué devuelve la API para este equipo: /players temporada vigente y anterior, "
+                         "y /players/squads (3 requests; no guarda nada)")
     ap.add_argument("--reintentar-vacios", action="store_true",
                     help="vuelve a pedir YA los equipos sellados «sin datos en la API» (con_datos=0): "
                          "antes del 24/09 un error de la API se sellaba así por 30 días")
@@ -629,6 +632,28 @@ def main() -> int:
               + f" · consumo: {cliente.resumen()} · total {cliente.usadas}/{cliente.limite}")
         for c in r["cambiados"]:
             print(f"  equipo {c['equipo']}: DT {c['antes']!r} → {c['despues']!r}")
+        return 0
+    if args.sondear:
+        for tid in dict.fromkeys(args.sondear):
+            fila = con.execute("SELECT season, con_datos, actualizado_en FROM plantillas_meta WHERE team_id=?",
+                               (tid,)).fetchone()
+            nombre = (con.execute("SELECT name FROM teams WHERE id=?", (tid,)).fetchone() or ["?"])[0]
+            temp = (fila[0] if fila and fila[0] else None) or datetime.now(timezone.utc).year
+            print(f"{nombre} ({tid}) · sellado: {fila if fila else 'nunca'}")
+            for endpoint, params in (("players", {"team": tid, "season": temp}),
+                                     ("players", {"team": tid, "season": temp - 1}),
+                                     ("players/squads", {"team": tid})):
+                data = cliente.get(endpoint, params) or {}
+                resp = data.get("response") or []
+                n = (len((resp[0] or {}).get("players") or []) if endpoint == "players/squads" and resp
+                     else len(resp))
+                ligas = sorted({(st.get("league") or {}).get("name") or "?"
+                                for it in resp if endpoint == "players"
+                                for st in (it.get("statistics") or [])})[:5]
+                print(f"  {endpoint} {params}: {n} jugadores · páginas {(data.get('paging') or {}).get('total')}"
+                      f" · errores {data.get('errors') or '—'}" + (f" · ligas {', '.join(ligas)}" if ligas else ""))
+        con.close()
+        print(f"requests: {cliente.usadas}/{cliente.limite}")
         return 0
     if args.reintentar_vacios:
         vacios = [(r[0], r[1] or datetime.now(timezone.utc).year) for r in con.execute(

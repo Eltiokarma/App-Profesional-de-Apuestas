@@ -47,6 +47,7 @@ python -m backend.ingesta.extractor --ventana-horas 6  # refresco ligero: solo c
 python -m backend.ingesta.jugadores             # plantillas/bajas/traspasos/DT de equipos con NS próximos (docs/JUGADORES.md)
 python -m backend.ingesta.jugadores --solo-dt   # rehacer SOLO el DT vigente (1 request/equipo, sin TTL); en Railway: SAD_JUGADORES_SOLO_DT=1 una corrida
 python -m backend.ingesta.jugadores --reintentar-vacios # re-pide YA los equipos sellados «sin datos» (antes del 24/09 un error de la API se sellaba así 30 días)
+python -m backend.ingesta.jugadores --sondear 566 # qué devuelve la API de jugadores para un equipo (vigente, anterior, squads; 3 requests, no guarda)
 python -m backend.ingesta.jugadores --dt-agenda # DT fresco de los que juegan en <= 2 días: alineación del último partido + /coachs si está viejo (corre en la corrida diaria)
 python -m backend.ingesta.en_vivo               # 1 ciclo en vivo: marcador/minuto + odds_live (WAL)
 python -m backend.ingesta.diag_vivo --hoy       # por qué un partido no tiene cuotas en juego (--fixture N, --api)
@@ -425,7 +426,11 @@ conversación se pierde en la siguiente.
      `/players` que FALLABA (red, límite) devolvía `[]` y se sellaba como
      «sin cobertura» por 30 días. Ya no se sella un fallo, y
      `jugadores --reintentar-vacios` re-pide los sellados así (dice cuántos
-     eran error y cuántos siguen vacíos de verdad).
+     eran error y cuántos siguen vacíos de verdad). Corrido el 24/09: 415
+     sellados vacíos, 84 volvieron CON jugadores (eran error), 331 siguen
+     vacíos —incluidos Ludogorets y Spartak Trnava, que la API sí cubre—:
+     `jugadores --sondear <id>` dice si es la temporada (vigente vacía,
+     anterior con datos) o que la liga no tiene cobertura.
    - **Nivel 3.2833 exacto en tres equipos**: NO es un tope ni un bug. El
      nivel vive en una retícula (~10.500 valores; ese tiene 24 combinaciones
      de puntos y goles). `docs/MOTOR_SAD_EXTRACCION.md` §2.5; `/niveles`
