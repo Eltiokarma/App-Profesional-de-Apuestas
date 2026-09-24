@@ -2841,7 +2841,8 @@ def contrato() -> dict:
                                     "con motivo"},
         "loQueNoSeManda": [
             "total, porcentaje, clasificación — los calcula la app",
-            "ip, reducción por zona, ramas A/B, F3, F4 — salen de bloque_f.py",
+            "ip, reducción por zona, ramas A/B, la alerta F3 y la F4 DEL EFE — salen de bloque_f.py "
+            "(los indicadores F3 y F4 del TDE son OTROS y SÍ van en tde.bloques[].indicadores)",
             "los nombres del partido — salen de nuestra base",
             "ie / ise si mandás `indicadores` — se calculan y se delata la discrepancia",
         ],

@@ -20,12 +20,20 @@ que escribir cuesta tiempo:
 > Y lo calculado no se le hace copiar a la salida.
 
 Es la misma de `docs/efe-dtp/COSTO_IA.md`, aplicada ahora al **tiempo de
-escritura** en vez de a la factura. Por eso el parte **no lleva**:
+escritura** en vez de a la factura. 
+> **OJO, dos F3 y dos F4 con el mismo nombre.** El bloque F del **EFE** tiene
+> la alerta F3 y la rotación voluntaria F4: esas NO se mandan (las calcula
+> `bloque_f.py`). El **TDE** tiene sus propios indicadores F3 (impacto desde
+> el banco) y F4 (costo energético del modelo): esos SÍ van, en
+> `tde.bloques[].indicadores`, como el resto de F1-F4. «No mandes F3 ni F4»
+> habla siempre del EFE.
+
+Por eso el parte **no lleva**:
 
 | No se manda | Porque lo pone | Dónde |
 |---|---|---|
 | `total`, `maximoAlcanzable`, `porcentaje`, `clasificacion` | la tabla de puntuación (A + B×1.5 + C + D + E×2, sobre 27 o 23) | `backend/analisis/parte.py` |
-| `ip`, `reduccion` por zona, `multiplicadorGk`, `F3`, `F4` | las fórmulas del bloque F | `backend/analisis/bloque_f.py` |
+| `ip`, `reduccion` por zona, `multiplicadorGk`, la alerta **F3 del EFE** y la rotación voluntaria **F4 del EFE** | las fórmulas del bloque F del EFE | `backend/analisis/bloque_f.py` |
 | las ramas A y B del impacto | se derivan de la tabla F1 + las bajas públicas | `bloque_f.ramas()` |
 | nombres de los equipos, fecha, liga | el fixture de `sad.db` | `parte.guardar()` |
 | el calendario de próximos rivales (bloque G) | ya se calcula con criterio numérico | `backend/calendario.py` |
@@ -988,7 +996,8 @@ Escribís vos (es juicio, no se puede calcular):
 NO escribas, porque lo calcula la app y se ignora si llega:
   total · máximo alcanzable · porcentaje · clasificación FORMADO/EN FORMACIÓN/
   SIN FORMACIÓN · Impacto Ponderado · reducción por zona · multiplicador ×1.5
-  del arquero · las ramas A y B · alerta F3 · F4 · el nombre de los equipos ·
+  del arquero · las ramas A y B · la alerta F3 DEL EFE · la F4 DEL EFE (los
+  indicadores F3 y F4 del TDE SÍ van, en tde.bloques[].indicadores) · el nombre de los equipos ·
   la fecha · el calendario de próximos rivales · los resultados del timeline.
 
 Esto no es un recorte de alcance: es que esas cifras ya existen calculadas y

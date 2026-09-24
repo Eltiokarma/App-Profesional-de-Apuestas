@@ -375,10 +375,12 @@ conversación se pierde en la siguiente.
    y la siguiente corrida de Cowork dirá si los DT ya salen bien. Desde el
    19/09 el refresco diario de `--dt-agenda` (punto 6) hace este trabajo
    solo para los equipos que juegan; la variable sobra.
-3. **Colisión de nombres F3/F4.** El bloque F del EFE tiene F3 y F4, y el TDE
-   tiene los suyos. La instrucción «no mandes F3 ni F4» (que habla del EFE) se
-   puede leer al revés. Renombrar desalinea el prompt del skill, así que por
-   ahora está declarado y no tocado.
+3. **Colisión de nombres F3/F4.** RESUELTA sin renombrar (24/09): cada mención
+   dice de qué skill habla. «No mandes F3 ni F4» es la alerta F3 y la
+   rotación F4 DEL EFE (las calcula `bloque_f.py`); los indicadores F3/F4 del
+   TDE SÍ van en `tde.bloques[].indicadores`. Lo dicen el prompt
+   (`docs/COWORK.md`, con un recuadro) y el contrato que devuelve el backend
+   (`loQueNoSeManda`). Renombrar habría desalineado los skills.
 4. **Bucle de aprendizaje COMPLETO** (24/09): A (antecedentes,
    `GET /analisis/cowork/antecedentes/{id}`, solo partidos anteriores), B, C y
    D (dossier, `GET /analisis/cowork/revision/{skill}` + «Ver dossier»). Lo que
@@ -498,8 +500,8 @@ conversación se pierde en la siguiente.
      porque no vive en las filas del motor; las K de goles siguen fuera. Con
      datos reales, `temporada` en Europa es la 2025/26 entera y en Sudamérica
      el año natural: por eso viajan las dos.
-   - **Sin cambios y aún abiertos**: deuda 3 (F3/F4),
-     5 (onces de ligas sin cobertura), el umbral de `Missing Fixture` a
+   - **Sin cambios y aún abiertos**:
+     deuda 5 (onces de ligas sin cobertura), el umbral de `Missing Fixture` a
      recalibrar con casos, y ver en la próxima corrida real que a los equipos
      de interés (Beşiktaş y compañía) les aparezcan calendario y plantel.
 
