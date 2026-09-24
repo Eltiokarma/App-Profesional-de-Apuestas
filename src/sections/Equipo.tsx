@@ -420,12 +420,33 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
                     <span style={{ font: '600 12.5px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>{v}</span>
                   </div>
                 ))}
-                {stats.data.xgProm != null && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0' }}>
-                    <span style={{ font: '600 11.5px var(--sans)', color: 'var(--t2)', flex: 1 }}>xG por partido</span>
-                    <span style={{ font: '600 12.5px var(--mono)', color: 'var(--t1)' }}>{stats.data.xgProm.toFixed(2)}</span>
-                  </div>
-                )}
+                {(() => {
+                  const st = stats.data
+                  const filas = ([
+                    ['xG por partido', st.xgProm, 2, ''],
+                    ['xG en contra / P', st.xgContraProm ?? null, 2, ''],
+                    ['Posesión', st.posesionProm, 1, '%'],
+                    ['Tiros a puerta / P', st.tirosPuertaProm, 1, ''],
+                    ['Córners / P', st.cornersProm, 1, ''],
+                  ] as [string, number | null, number, string][]).filter(([, v]) => v != null)
+                  const av = st.avanzadas
+                  return (
+                    <>
+                      {filas.map(([l, v, dec, suf]) => (
+                        <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderBottom: '1px solid var(--line)' }}>
+                          <span style={{ font: '600 11.5px var(--sans)', color: 'var(--t2)', flex: 1 }}>{l}</span>
+                          <span style={{ font: '600 12.5px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>{v!.toFixed(dec)}{suf}</span>
+                        </div>
+                      ))}
+                      <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginTop: 8 }}>
+                        {!av || av.partidos === 0
+                          ? 'xG, posesión, tiros y córners: sin estadísticas por partido capturadas'
+                          : `xG, posesión, tiros y córners: últimos ${av.partidos} partidos con ficha` +
+                            (av.n.xg === 0 ? ' (sin xG en su liga)' : av.n.xg < av.partidos ? ` (xG en ${av.n.xg})` : '')}
+                      </div>
+                    </>
+                  )
+                })()}
               </section>
             )}
           </aside>

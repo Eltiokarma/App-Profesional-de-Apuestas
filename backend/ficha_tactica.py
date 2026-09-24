@@ -114,3 +114,81 @@ def tactica_de(fixture_id: int, home_id: int, away_id: int) -> dict:
         # lo que el DTP mira antes de decidir si puede abrir
         "capturada": bool(local["titulares"] or visitante["titulares"] or eventos),
     }
+
+
+# ── promedios avanzados de un equipo (xG, posesión, tiros, córners) ──────────
+# Salen de las stats por partido que ya ingestó ficha_partido. La ingesta no
+# las pide para todos los partidos (solo los últimos de equipos con un NS
+# próximo), así que cada promedio viaja con SU muestra: un xG sobre 2 partidos
+# no es el xG del equipo, y la pantalla lo tiene que poder decir.
+VENTANA_AVANZADAS = 10
+_CLAVES_AVANZADAS = {
+    "xg": "expected_goals",
+    "posesion": "Ball Possession",
+    "tirosPuerta": "Shots on Goal",
+    "corners": "Corner Kicks",
+}
+
+
+def _num(valor) -> float | None:
+    """'58%' → 58, '1.42' → 1.42. Lo que no se lee como número no cuenta
+    (un null de la API es «sin dato», no un cero)."""
+    if valor is None:
+        return None
+    try:
+        return float(str(valor).strip().rstrip("%"))
+    except ValueError:
+        return None
+
+
+def promedios_avanzados(team_id: int, ventana: int = VENTANA_AVANZADAS) -> dict:
+    """Promedio de los últimos `ventana` partidos TERMINADOS del equipo que
+    tienen stats capturadas. Cada métrica se promedia sobre los partidos
+    donde vino (el xG llega en menos ligas que la posesión) y trae su `n`;
+    sin partidos con esa métrica, None. `xgContra` es el xG del rival."""
+    vacio = {"partidos": 0, **{k: None for k in _CLAVES_AVANZADAS}, "xgContra": None,
+             "n": {**{k: 0 for k in _CLAVES_AVANZADAS}, "xgContra": 0}}
+    try:
+        fxs = db.query(
+            "sad",
+            "SELECT f.id FROM fixtures f "
+            "WHERE (f.home_team_id=? OR f.away_team_id=?) "
+            "AND (f.status_short IN ('FT','AET','PEN') OR f.status_long='Match Finished') "
+            "AND EXISTS (SELECT 1 FROM fixture_stats s WHERE s.fixture_id=f.id AND s.team_id=?) "
+            "ORDER BY f.date DESC LIMIT ?",
+            (team_id, team_id, team_id, ventana),
+        )
+    except Exception:
+        return vacio  # DB anterior a la tabla fixture_stats
+    ids = [f["id"] for f in fxs]
+    if not ids:
+        return vacio
+    marcas = ",".join("?" * len(ids))
+    filas = db.query(
+        "sad",
+        f"SELECT fixture_id, team_id, clave, valor FROM fixture_stats "
+        f"WHERE fixture_id IN ({marcas}) AND clave IN ({','.join('?' * len(_CLAVES_AVANZADAS))})",
+        (*ids, *_CLAVES_AVANZADAS.values()),
+    )
+    propio: dict[str, list[float]] = {k: [] for k in _CLAVES_AVANZADAS}
+    xg_contra: list[float] = []
+    clave_a_campo = {v: k for k, v in _CLAVES_AVANZADAS.items()}
+    for f in filas:
+        v = _num(f["valor"])
+        if v is None:
+            continue
+        campo = clave_a_campo[f["clave"]]
+        if f["team_id"] == team_id:
+            propio[campo].append(v)
+        elif campo == "xg":
+            xg_contra.append(v)
+    prom = lambda xs, d: round(sum(xs) / len(xs), d) if xs else None  # noqa: E731
+    return {
+        "partidos": len(ids),
+        "xg": prom(propio["xg"], 2),
+        "posesion": prom(propio["posesion"], 1),
+        "tirosPuerta": prom(propio["tirosPuerta"], 1),
+        "corners": prom(propio["corners"], 1),
+        "xgContra": prom(xg_contra, 2),
+        "n": {**{k: len(v) for k, v in propio.items()}, "xgContra": len(xg_contra)},
+    }

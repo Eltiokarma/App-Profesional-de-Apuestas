@@ -262,9 +262,18 @@ export interface EquipoStatsDTO {
   golesFavorProm: number
   golesContraProm: number
   xgProm: number | null
+  /** xG del rival por partido. */
+  xgContraProm?: number | null
+  /** 0-100. */
   posesionProm: number | null
   tirosPuertaProm: number | null
   cornersProm: number | null
+  /** Muestra de los promedios avanzados: partidos con ficha y dónde vino cada métrica. */
+  avanzadas?: {
+    partidos: number
+    ventana: number
+    n: { xg: number; xgContra: number; posesion: number; tirosPuerta: number; corners: number }
+  }
 }
 
 // ── capa de jugadores (docs/JUGADORES.md, capa 1) ───────────────────────────

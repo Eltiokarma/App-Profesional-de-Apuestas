@@ -1654,7 +1654,12 @@ components:
         resumen: { type: string }
     EquipoStats:
       type: object
-      description: Calculadas de fixtures; los promedios avanzados son null hasta que el backend los derive
+      description: >-
+        Calculadas de fixtures. Los promedios avanzados (xG, posesión, tiros a
+        puerta, córners) salen de las stats por partido ya ingestadas: los
+        últimos `avanzadas.ventana` partidos terminados con ficha, cada uno
+        sobre los partidos donde vino esa métrica (`avanzadas.n`). Sin ficha,
+        null — nunca un cero.
       required: [equipoId, nombre, partidosJugados, puntos, forma, golesFavorProm, golesContraProm]
       properties:
         equipoId: { type: integer }
@@ -1668,9 +1673,26 @@ components:
         golesFavorProm: { type: number }
         golesContraProm: { type: number }
         xgProm: { type: number, nullable: true }
-        posesionProm: { type: number, nullable: true }
+        xgContraProm: { type: number, nullable: true, description: xG del rival por partido }
+        posesionProm: { type: number, nullable: true, description: 0-100 }
         tirosPuertaProm: { type: number, nullable: true }
         cornersProm: { type: number, nullable: true }
+        avanzadas:
+          type: object
+          description: La muestra de los promedios avanzados
+          required: [partidos, ventana, n]
+          properties:
+            partidos: { type: integer, description: partidos terminados con stats capturadas (≤ ventana) }
+            ventana: { type: integer }
+            n:
+              type: object
+              description: partidos donde vino cada métrica
+              properties:
+                xg: { type: integer }
+                xgContra: { type: integer }
+                posesion: { type: integer }
+                tirosPuerta: { type: integer }
+                corners: { type: integer }
     Jugador:
       type: object
       description: Indicadores de un jugador (docs/JUGADORES.md, capa 1)

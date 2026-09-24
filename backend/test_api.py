@@ -242,7 +242,19 @@ def main():
     check("stats: 40 PJ y forma de 5", st["partidosJugados"] == 40 and len(st["forma"]) == 5, st)
     check("stats: promedios plausibles", 0 < st["golesFavorProm"] < 4 and 0 < st["golesContraProm"] < 4, st)
     check("stats: puntos coherentes (0–120)", 0 <= st["puntos"] <= 3 * st["partidosJugados"])
-    check("stats: xG/posesión null en v0", st["xgProm"] is None and st["posesionProm"] is None)
+    # promedios avanzados desde fixture_stats (seed: 3 partidos, xG en 2, un córner null)
+    av = st.get("avanzadas") or {}
+    check("stats: avanzadas sobre los 3 partidos con ficha", av.get("partidos") == 3 and av.get("ventana") == 10, av)
+    check("stats: xG promedio sobre los 2 que lo traen", st["xgProm"] == 1.4 and av["n"]["xg"] == 2, (st["xgProm"], av))
+    check("stats: xG en contra = el del rival", st["xgContraProm"] == 0.9 and av["n"]["xgContra"] == 2, st["xgContraProm"])
+    check("stats: posesión '56%' → número (55,56,57 → 56)", st["posesionProm"] == 56.0, st["posesionProm"])
+    check("stats: tiros a puerta 4,5,6 → 5", st["tirosPuertaProm"] == 5.0, st["tirosPuertaProm"])
+    check("stats: córner null NO cuenta como cero (5,7 → 6 sobre 2)",
+          st["cornersProm"] == 6.0 and av["n"]["corners"] == 2, (st["cornersProm"], av))
+    sv = c.get(A + "/equipos/599/stats").json()
+    check("stats: sin ficha → avanzadas en 0 y todo null (nunca un cero)",
+          sv["avanzadas"]["partidos"] == 0 and all(sv[k] is None for k in
+          ("xgProm", "xgContraProm", "posesionProm", "tirosPuertaProm", "cornersProm")), sv)
     check("/equipos/999999/stats → 404", c.get(A + "/equipos/999999/stats").status_code == 404)
 
     # /equipos/{id}/plantilla — capa de jugadores (docs/JUGADORES.md)

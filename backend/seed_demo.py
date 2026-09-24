@@ -392,6 +392,22 @@ def seed(base_dir: str):
          (vivo["id"], vivo["away"], "expected_goals", "0.87")])
     sad.execute("INSERT INTO fichas_meta (fixture_id, capturado_en, alineaciones, eventos, stats) "
                 "VALUES (?,?,?,?,?)", (vivo["id"], "2026-07-02 22:10:00", 24, 6, 4))
+    # stats de los 3 últimos TERMINADOS del local del vivo: los promedios
+    # avanzados de /equipos/{id}/stats. El más viejo sin xG (hay ligas que no
+    # lo dan) y un córner null de la API: «sin dato», no cero.
+    term = sorted((f for f in fixtures if f["status_short"] == "FT"
+                   and vivo["home"] in (f["home"], f["away"])), key=lambda f: f["date"], reverse=True)[:3]
+    filas_st = []
+    for i, f in enumerate(term):
+        rival = f["away"] if f["home"] == vivo["home"] else f["home"]
+        filas_st += [(f["id"], vivo["home"], "Ball Possession", f"{55 + i}%"),
+                     (f["id"], vivo["home"], "Shots on Goal", str(4 + i)),
+                     (f["id"], vivo["home"], "Corner Kicks", None if i == 1 else str(5 + i)),
+                     (f["id"], rival, "Ball Possession", f"{45 - i}%")]
+        if i < 2:
+            filas_st += [(f["id"], vivo["home"], "expected_goals", ("1.60", "1.20")[i]),
+                         (f["id"], rival, "expected_goals", ("0.80", "1.00")[i])]
+    sad.executemany("INSERT INTO fixture_stats (fixture_id, team_id, clave, valor) VALUES (?,?,?,?)", filas_st)
 
     # ---- capa de jugadores (docs/JUGADORES.md): plantillas demo -----------
     # Misma forma que deja backend.ingesta.jugadores: stats por competición,
