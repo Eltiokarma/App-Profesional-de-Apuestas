@@ -49,6 +49,8 @@ python -m backend.ingesta.jugadores --solo-dt   # rehacer SOLO el DT vigente (1 
 python -m backend.ingesta.jugadores --dt-agenda # DT fresco de los que juegan en <= 2 días: alineación del último partido + /coachs si está viejo (corre en la corrida diaria)
 python -m backend.ingesta.en_vivo               # 1 ciclo en vivo: marcador/minuto + odds_live (WAL)
 python -m backend.ingesta.diag_vivo --hoy       # por qué un partido no tiene cuotas en juego (--fixture N, --api)
+python -m backend.ingesta.diag_vivo --cobertura # qué ligas NO dan cuotas en vivo: capturados/jugados por liga, últimos 21 días (0 requests)
+python -m backend.ingesta.diagnostico --interes # equipos de interés (torneos internacionales): ¿calendario, plantel y DT? (0 requests)
 python -m backend.ingesta.ficha_partido        # alineaciones+eventos+stats de los partidos anteriores (3 req c/u)
 python -m backend.ingesta.ficha_partido --estado  # qué ficha hay capturada y si trae grid/xG (0 requests)
 python -m backend.analisis.despensa_bulk --listar  # despensa del repo: qué hay y qué edad tiene
@@ -409,7 +411,8 @@ conversación se pierde en la siguiente.
      `.sanar_equipos.json`, tope `SAD_SANAR_EQUIPOS_MAX`) y la ingesta de
      jugadores los toma aunque su NS próximo sea fuera del padrón (su rival
      de esa liga no). Pendiente de ver en la próxima corrida real: que a
-     esos equipos les aparezca el calendario y el plantel.
+     esos equipos les aparezca el calendario y el plantel
+     (`diagnostico --interes` lo lista).
    - **Nivel 3.2833 exacto en tres equipos**: NO es un tope ni un bug. El
      nivel vive en una retícula (~10.500 valores; ese tiene 24 combinaciones
      de puntos y goles). `docs/MOTOR_SAD_EXTRACCION.md` §2.5; `/niveles`
@@ -535,7 +538,8 @@ conversación se pierde en la siguiente.
    pitazo, y el tramo en vivo con su escala), solo con ≥ 2 capturas por
    selección: con menos, la pantalla lo dice y muestra la cuota actual a
    secas. Retención: `SAD_ODDS_HISTORY_DIAS` (90) y `odds_live` por fixture.
-   Queda abierto medir qué ligas no dan cuotas en vivo (fase 3, decisión 1).
+   Queda abierto medir qué ligas no dan cuotas en vivo (fase 3, decisión 1):
+   `diag_vivo --cobertura` lo mide contra los partidos jugados.
 5. **DTP** (Diagnóstico Táctico de Partido) — diseño en
    `docs/efe-dtp/DTP_DISENO.md`. **Fases A y B hechas**: ficha de partido
    (alineaciones con `grid`→carriles, eventos con asistente y stats en

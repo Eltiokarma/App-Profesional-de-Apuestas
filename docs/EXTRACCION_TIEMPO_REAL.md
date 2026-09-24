@@ -364,7 +364,9 @@ Postgres gestionado (`docs/SERVICIOS_EXTERNOS.md`) si el volumen de
    dicen liga por liga ("ligas sin odds en el feed live") y
    `odds_live_consultas.con_datos` guarda el resultado de la última consulta;
    si alguna sale vacía siempre, vale la pena dejar de preguntarle y
-   ahorrarse la request.
+   ahorrarse la request. `python -m backend.ingesta.diag_vivo --cobertura`
+   lo mide contra lo jugado: capturados/jugados por liga en los últimos 21
+   días, y «← nunca» para las que no dieron cuotas en ningún partido.
 2. ~~Retención de `odds_live` y de snapshots viejos de `odds_history`.~~
    RESUELTA: `SAD_ODDS_HISTORY_DIAS` (90, por fixture con índice, una vez al
    día) y `odds_live` se borra por fixture pasado (`en_vivo.py`);
