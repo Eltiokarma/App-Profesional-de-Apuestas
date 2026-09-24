@@ -384,6 +384,37 @@ def main():
     finally:
         jug.JUGADORES_TODAS_LIGAS = False
 
+    # --- un error de la API NO es «sin datos» (24/09: 65 equipos sellados
+    #     como vacíos el mismo día, Rennes y Shakhtar incluidos) -----------
+    from backend.ingesta.jugadores import ingestar_equipo
+
+    class ClienteVacio:
+        limite, usadas = 10**6, 0
+
+        def __init__(self, falla: bool):
+            self.falla, self.fallos = falla, 0
+
+        def quedan(self, n: int = 1) -> bool:
+            return True
+
+        def paginado(self, endpoint, params, tope_paginas=0):
+            self.usadas += 1
+            if self.falla:
+                self.fallos += 1  # lo que hace Cliente._pedir al agotar los intentos
+            return []
+
+        def get(self, endpoint, params):
+            self.usadas += 1
+            return {"response": []}
+
+    con.execute("DELETE FROM plantillas_meta WHERE team_id IN (7001, 7002)")
+    ok = ingestar_equipo(ClienteVacio(falla=True), con, 7001, 2026)
+    check("/players que FALLA: no se sella (la próxima corrida lo reintenta)",
+          ok and not con.execute("SELECT 1 FROM plantillas_meta WHERE team_id=7001").fetchone())
+    ingestar_equipo(ClienteVacio(falla=False), con, 7002, 2026)
+    check("/players que responde vacío de verdad: se sella con con_datos=0 (TTL largo)",
+          con.execute("SELECT con_datos FROM plantillas_meta WHERE team_id=7002").fetchone() == (0,))
+
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     return 1 if fallos else 0
 
