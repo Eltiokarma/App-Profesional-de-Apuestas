@@ -1960,6 +1960,27 @@ def main():
     check("POST …/dt sin lados → 422; fixture sin parte → 404",
           c.post(f"{A}/analisis/cowork/{pasado['id']}/dt", json={}).status_code == 422
           and c.post(f"{A}/analisis/cowork/999999999/dt", json={"a": {"nombre": "X Y"}}).status_code == 404)
+    # ── fase A: antecedentes (solo partidos ANTERIORES) ──
+    fx_pas = dbmod.query_one("sad", "SELECT id, date, home_team_id FROM fixtures WHERE id=?", (pasado["id"],))
+    posterior = dbmod.query_one(
+        "sad", "SELECT id FROM fixtures WHERE (home_team_id=? OR away_team_id=?) AND date > ? "
+               "ORDER BY date LIMIT 1", (fx_pas["home_team_id"], fx_pas["home_team_id"], fx_pas["date"]))
+    if posterior:
+        an = c.get(f"{A}/analisis/cowork/antecedentes/{posterior['id']}").json()
+        lado_eq = "a" if an["a"]["equipoId"] == fx_pas["home_team_id"] else "b"
+        prev = [p_ for p_ in an[lado_eq]["partes"] if p_["fixtureId"] == pasado["id"]]
+        check("antecedentes: el partido posterior del equipo trae el parte anterior con su marcador, "
+              "veredicto y lección",
+              prev and prev[0]["marcador"] and "veredicto" in prev[0] and "leccion" in prev[0]
+              and {"aciertoCiego", "leccionesVigentes"} <= set(an[lado_eq]), an[lado_eq])
+    an_propio = c.get(f"{A}/analisis/cowork/antecedentes/{pasado['id']}").json()
+    check("antecedentes: NUNCA el partido que se analiza ni uno posterior (anti-hindsight)",
+          all(p_["fixtureId"] != pasado["id"] and p_["fecha"] <= str(fx_pas["date"])[:10]
+              for l in ("a", "b") for p_ in an_propio[l]["partes"]), an_propio)
+    check("antecedentes abiertos a Cowork (GET) y 404 si el fixture no existe",
+          appmod._cowork_puede("GET", A + f"/analisis/cowork/antecedentes/{pasado['id']}")
+          and c.get(f"{A}/analisis/cowork/antecedentes/999999999").status_code == 404)
+
     # ── fase D: el dossier de revisión de un skill ──
     from backend.analisis import lecciones as _lec
     from backend.analisis.parte import COHORTE as _COH

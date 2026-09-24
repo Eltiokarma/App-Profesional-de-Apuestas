@@ -994,6 +994,26 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/InventarioLecciones' }
+  /analisis/cowork/antecedentes/{fixtureId}:
+    get:
+      summary: Fase A del aprendizaje — lo que el sistema ya dijo de estos equipos en partidos ANTERIORES (abierto a Cowork)
+      description: >
+        Por lado: `partes[]` (los últimos N de partidos anteriores al que se analiza, nunca este ni
+        uno posterior), cada uno con clasificación y % del EFE, pronóstico de la cadena, 1X2,
+        marcador pronosticado, TDE (ie, nivel, ventana), la clase de su bloque según el DTP del
+        rival, marcador real, veredicto, queP, lección, skill, población y `cuarentena`;
+        `aciertoCiego` (solo ciega + PRE fuera de cuarentena) y `leccionesVigentes` (pendientes o en
+        revisión). El caso nuevo sigue siendo ciego: son desenlaces de OTROS partidos. 0 tokens.
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+        - { name: n, in: query, schema: { type: integer, default: 5, minimum: 1, maximum: 20 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '404': { description: el fixture no está en nuestra base }
   /analisis/cowork/revision/{skill}:
     get:
       summary: El dossier de revisión de un skill (fase D del aprendizaje; abierto a Cowork en lectura)

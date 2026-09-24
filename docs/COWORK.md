@@ -78,6 +78,8 @@ Dos matices que se ganan al mandar estructura en vez de prosa:
 ```
   1. GET  /analisis/cowork/agenda        ¿qué partidos importan mañana?   (lo decide la base)
   2. …análisis por partido, sesión limpia cada uno…
+       · antes que nada: GET /analisis/cowork/antecedentes/{id}  lo que ya dijiste
+         de estos dos equipos en partidos ANTERIORES y cómo salió (fase A)
   3. POST /analisis/cowork               el parte, con el bloque F congelado
   ────────── dormir ──────────
   4. POST /analisis/cowork/{id}/xi       llega el once → bloque F cerrado, gratis
@@ -1003,6 +1005,23 @@ negritas, citas y tablas se pintan bien en la app.
             jugada, no el plantel), declarado como tal. EL DOCUMENTO EN PROSA
             YA NO ALCANZA: el DTP va ESTRUCTURADO en `dtp.bloques[]` (abajo);
             la prosa es opcional y va aparte.
+
+  ANTECEDENTES (fase A del aprendizaje) — ANTES de investigar nada, GET
+    /analisis/cowork/antecedentes/{id}. Por equipo trae tus últimos partes de
+    partidos ANTERIORES (nunca este): la clasificación del EFE, tu pronóstico
+    de la cadena, el 1X2, la ventana del TDE, la clase del bloque, el marcador,
+    el veredicto y la lección; el acierto a ciegas del equipo y las lecciones
+    abiertas que le tocan. Reglas:
+    · Lo que ya dijiste y sigue siendo cierto (DT, sistema, perfil, bloque),
+      NO lo vuelvas a investigar: citalo con su fixtureId y verificá solo lo
+      que pudo cambiar desde esa fecha (bajas, DT, rotación).
+    · Lo que fallaste, corregilo y decí por qué en `notas`.
+    · Una lección abierta que toca a este equipo se tiene en cuenta: si la
+      aplicás, nombrala; si no, decí por qué no.
+    · Un antecedente con `cuarentena` tenía el insumo roto (DT equivocado,
+      rodaje): NO se cita como precedente.
+    · Leer antecedentes no contamina la población: son desenlaces de OTROS
+      partidos. El caso de hoy sigue siendo `ciega`.
 
   DTP ESTRUCTURADO — `dtp.bloques[]`, UNO POR EQUIPO FOCO (como el TDE):
     Antes de escribir, GET /analisis/cowork/dtp/{id}: trae por lado el

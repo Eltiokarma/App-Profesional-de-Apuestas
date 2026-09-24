@@ -99,7 +99,21 @@ anti-hindsight ya funciona.
 
 ---
 
-## A · Antecedentes: que Cowork no reescriba lo que ya sabe
+## A · Antecedentes: que Cowork no reescriba lo que ya sabe — **HECHA** (24/09/2026)
+
+> **Cómo quedó**: `backend/analisis/antecedentes.py` →
+> `GET /analisis/cowork/antecedentes/{fixtureId}?n=5` (abierto a Cowork, 0
+> tokens). Por equipo: sus últimos N partes de partidos ANTERIORES (fecha
+> estrictamente menor y otro fixture), cada uno con lo que se dijo
+> (clasificación y % del EFE, pronóstico de la cadena, 1X2, marcador
+> pronosticado, IE y ventana del TDE, la clase de su bloque que calculó el DTP
+> del rival) y cómo salió (marcador, veredicto, `queP`, lección, población,
+> cohorte y `cuarentena` si la hubo); `aciertoCiego` (solo ciega + PRE fuera
+> de cuarentena, con la nota de muestra corta) y `leccionesVigentes` del
+> equipo (pendientes o en revisión, de fechas anteriores). El prompt de
+> Cowork lo lee ANTES de investigar (docs/COWORK.md, «ANTECEDENTES»). Lo
+> diseñado abajo se respetó; la única diferencia es que el TDE viaja sin
+> `acerto` (la ventana se comprueba en el veredicto de ese caso, no acá).
 
 **Problema.** Cowork analiza Alianza vs Cristal hoy sin recordar que analizó a
 Alianza hace dos fechas, que dijo "se echa entre el 75 y el 90" y que acertó.

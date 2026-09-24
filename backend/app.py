@@ -2412,6 +2412,19 @@ def cowork_lecciones(skill: str = Query(default=""), estado: str = Query(default
     return lecciones.inventario(skill, estado, limite, cohorte)
 
 
+@app.get(API + "/analisis/cowork/antecedentes/{fixture_id}")
+def cowork_antecedentes(fixture_id: int, n: int = Query(default=5, ge=1, le=20)):
+    """Fase A del aprendizaje: por equipo, lo que el sistema ya dijo en partidos
+    ANTERIORES y cómo salió (EFE, pronóstico, 1X2, TDE, clase del bloque,
+    marcador, veredicto, lección), el acierto a ciegas y las lecciones abiertas.
+    Nunca el partido que se analiza: el caso nuevo sigue siendo ciego. 0 tokens."""
+    from backend.analisis import antecedentes
+    d = antecedentes.antecedentes(fixture_id, n)
+    if not d:
+        raise HTTPException(404, f"el fixture {fixture_id} no está en nuestra base")
+    return d
+
+
 @app.get(API + "/analisis/cowork/revision/{skill}")
 def cowork_revision(skill: str, cohorte: str = Query(default="vigente", description="'' = todas · 'vigente' · o una clave")):
     """El dossier de revisión de un skill (fase D, docs/APRENDIZAJE.md § D).

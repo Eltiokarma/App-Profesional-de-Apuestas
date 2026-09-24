@@ -379,9 +379,10 @@ conversación se pierde en la siguiente.
    tiene los suyos. La instrucción «no mandes F3 ni F4» (que habla del EFE) se
    puede leer al revés. Renombrar desalinea el prompt del skill, así que por
    ahora está declarado y no tocado.
-4. **Fase A del bucle de aprendizaje** (antecedentes), en `docs/APRENDIZAJE.md`.
-   La D (dossier, `GET /analisis/cowork/revision/{skill}` + «Ver dossier» en
-   Aprendizaje, 24/09) y la C ya están.
+4. **Bucle de aprendizaje COMPLETO** (24/09): A (antecedentes,
+   `GET /analisis/cowork/antecedentes/{id}`, solo partidos anteriores), B, C y
+   D (dossier, `GET /analisis/cowork/revision/{skill}` + «Ver dossier»). Lo que
+   falta es USO: casos ciegos en la cohorte vigente.
 5. **Onces de ligas sin cobertura.** Primera B de Colombia y Primera de Uruguay
    no dan alineaciones por API-Football: para esas, el pantallazo a mano es el
    procedimiento. Salen en `nuncaVaALlegar` con su liga.
@@ -568,6 +569,10 @@ conversación se pierde en la siguiente.
    dossier»): lecciones abiertas por regla, acreditables vs. solo rúbrica,
    métricas ciegas del skill contra su listón, versión vigente del snapshot y
    una lectura calculada de lo que la revisión puede concluir; `POST …/abrir`
-   (maestro) las pasa a `en_revision`. Falta A (antecedentes). La app nunca mueve un peso de un skill por su cuenta.
+   (maestro) las pasa a `en_revision`. **Fase A hecha**: los antecedentes
+   (`backend/analisis/antecedentes.py`, `GET /analisis/cowork/antecedentes/{id}`):
+   por equipo, lo dicho en partidos ANTERIORES y cómo salió, acierto a ciegas
+   y lecciones abiertas; Cowork los lee antes de investigar y el caso nuevo
+   sigue siendo ciego. La app nunca mueve un peso de un skill por su cuenta.
    Snapshot de los skills en `docs/skills/`.
 7. Fase nube completa cuando toque: `docs/SERVICIOS_EXTERNOS.md` (Postgres).
