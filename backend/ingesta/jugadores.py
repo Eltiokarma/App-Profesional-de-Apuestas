@@ -527,10 +527,13 @@ def ingestar_equipo(cliente: Cliente, con: sqlite3.Connection, team_id: int, sea
             print(f"  equipo {team_id} t{season - 1}: /players falló (no se sella; se reintenta)")
             return True
         ids_squad = {p.get("id") for p in squad if p.get("id")}
-        if previas:
-            filas = [it for it in previas if not ids_squad or (it.get("player") or {}).get("id") in ids_squad]
-            origen, season_meta = "anterior", season - 1
+        siguen = [it for it in previas if not ids_squad or (it.get("player") or {}).get("id") in ids_squad]
+        if siguen:
+            filas, origen, season_meta = siguen, "anterior", season - 1
         elif squad:
+            # stats de la anterior pero NINGUNO sigue (plantel renovado, o ids
+            # que no casan): la lista actual es lo único cierto — el 25/09
+            # tres equipos con 25-40 en la lista se sellaban «sin datos»
             origen = "plantel"
         if origen != "vigente":
             print(f"  equipo {team_id} t{season}: la API aún no publica la temporada; "
