@@ -232,7 +232,22 @@ export function Equipo({ store, teamKey, isMobile }: Props) {
               {!plant.loading && plant.error && (
                 <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t3)', padding: '10px 0' }}>No se pudo cargar la plantilla: {plant.error}</div>
               )}
-              {!plant.loading && !plant.error && (!plant.data || plant.data.jugadores.length === 0) && (
+              {!plant.loading && !plant.error && plant.data && (plant.data.origenTemporada === 'anterior' || plant.data.origenTemporada === 'plantel' || (plant.data.plantelSinStats?.length ?? 0) > 0) && (
+                <div style={{ marginTop: 10, padding: '8px 10px', borderRadius: 8, background: 'var(--bg3)', font: '500 11px var(--sans)', color: 'var(--t2)', lineHeight: 1.5 }}>
+                  {plant.data.origenTemporada === 'anterior' && (
+                    <div>La API todavía no publica esta temporada para este equipo: los minutos y la producción son de la <b>temporada {plant.data.temporada}</b>, solo de los que siguen en el plantel.</div>
+                  )}
+                  {plant.data.origenTemporada === 'plantel' && (
+                    <div>La API solo da la lista del plantel actual, sin estadísticas.</div>
+                  )}
+                  {(plant.data.plantelSinStats?.length ?? 0) > 0 && (
+                    <div style={{ marginTop: 4, color: 'var(--t3)' }}>
+                      En el plantel sin minutos en esa temporada ({plant.data.plantelSinStats!.length}): {plant.data.plantelSinStats!.map((j) => j.nombre).join(', ')}
+                    </div>
+                  )}
+                </div>
+              )}
+              {!plant.loading && !plant.error && (!plant.data || plant.data.jugadores.length === 0) && plant.data?.origenTemporada !== 'plantel' && (
                 plant.data?.ingestaLanzada ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, font: '500 11.5px var(--sans)', color: 'var(--t2)', padding: '10px 0' }}>
                     <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', animation: 'sadpulse 1.1s infinite' }}></span>

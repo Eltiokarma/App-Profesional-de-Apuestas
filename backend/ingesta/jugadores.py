@@ -112,6 +112,19 @@ CREATE TABLE IF NOT EXISTS plantillas_meta (
     season INTEGER,
     actualizado_en TEXT
 );
+-- el plantel ACTUAL según /players/squads (quién está hoy, sin stats): se pide
+-- cuando la temporada vigente viene vacía, para filtrar las stats de la
+-- anterior a los que siguen en el club y nombrar a los que llegaron después
+CREATE TABLE IF NOT EXISTS plantel_actual (
+    team_id INTEGER NOT NULL,
+    player_id INTEGER NOT NULL,
+    nombre TEXT,
+    edad INTEGER,
+    posicion TEXT,
+    numero INTEGER,
+    actualizado_en TEXT,
+    PRIMARY KEY (team_id, player_id)
+);
 """
 
 
@@ -122,6 +135,11 @@ def preparar_tablas(con: sqlite3.Connection) -> None:
         # default 1: lo ya sellado sin la marca se trata como equipo con datos
         # (TTL corto), que es el comportamiento previo a la columna
         con.execute("ALTER TABLE plantillas_meta ADD COLUMN con_datos INTEGER NOT NULL DEFAULT 1")
+    if "origen" not in columnas:
+        # de qué temporada salen las stats: `vigente`, `anterior` (la vigente
+        # vino vacía en la API: Ludogorets y Spartak Trnava el 25/09) o
+        # `plantel` (solo la lista de /players/squads, sin stats)
+        con.execute("ALTER TABLE plantillas_meta ADD COLUMN origen TEXT NOT NULL DEFAULT 'vigente'")
     if "lento_en" not in columnas:
         # cuándo se pidieron por última vez traspasos y DT (los dos datos que
         # NO cambian a ritmo semanal). NULL en lo ya sellado: la primera
@@ -246,6 +264,25 @@ def guardar_plantilla(con: sqlite3.Connection, team_id: int, season: int, filas:
             )
             n += 1
     con.commit()
+    return n
+
+
+def guardar_plantel_actual(con: sqlite3.Connection, team_id: int, jugadores: list) -> int:
+    """La lista de /players/squads: quién está HOY en el club. Se reemplaza
+    entera (el que se fue desaparece). Sin respuesta no se toca lo guardado."""
+    if not jugadores:
+        return 0
+    con.execute("DELETE FROM plantel_actual WHERE team_id=?", (team_id,))
+    ahora, n = _ahora(), 0
+    for p in jugadores:
+        if not p.get("id"):
+            continue
+        con.execute(
+            "INSERT OR REPLACE INTO plantel_actual (team_id, player_id, nombre, edad, posicion, numero, "
+            "actualizado_en) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (team_id, p["id"], p.get("name"), _i(p.get("age")) or None, p.get("position"),
+             _i(p.get("number")) or None, ahora))
+        n += 1
     return n
 
 
@@ -474,8 +511,33 @@ def ingestar_equipo(cliente: Cliente, con: sqlite3.Connection, team_id: int, sea
         # incluidos—. No se sella: la próxima corrida lo vuelve a pedir.
         print(f"  equipo {team_id} t{season}: /players falló (no se sella; se reintenta)")
         return True
-    stats = guardar_plantilla(con, team_id, season, filas)
-    con_datos = 1 if (stats or filas) else 0
+    origen, season_meta = "vigente", season
+    if not filas and cliente.quedan(2):
+        # vigente vacía DE VERDAD (no un fallo): en muchas ligas la API publica
+        # las stats de la temporada nueva con semanas de retraso. La lista del
+        # plantel actual (/players/squads) sí está, y la anterior tiene stats.
+        # Se guardan las de la anterior SOLO de los que siguen en el club; los
+        # que llegaron después quedan nombrados en plantel_actual, sin stats.
+        data = cliente.get("players/squads", {"team": team_id})
+        squad = ((((data or {}).get("response") or [{}])[0]) or {}).get("players") or []
+        guardar_plantel_actual(con, team_id, squad)
+        fallos_antes = getattr(cliente, "fallos", 0)
+        previas = cliente.paginado("players", {"team": team_id, "season": season - 1})
+        if not previas and getattr(cliente, "fallos", 0) > fallos_antes:
+            print(f"  equipo {team_id} t{season - 1}: /players falló (no se sella; se reintenta)")
+            return True
+        ids_squad = {p.get("id") for p in squad if p.get("id")}
+        if previas:
+            filas = [it for it in previas if not ids_squad or (it.get("player") or {}).get("id") in ids_squad]
+            origen, season_meta = "anterior", season - 1
+        elif squad:
+            origen = "plantel"
+        if origen != "vigente":
+            print(f"  equipo {team_id} t{season}: la API aún no publica la temporada; "
+                  + (f"stats de t{season - 1} de {len(filas)} que siguen en el plantel ({len(squad)})"
+                     if origen == "anterior" else f"solo el plantel actual ({len(squad)}), sin stats"))
+    stats = guardar_plantilla(con, team_id, season_meta, filas)
+    con_datos = 1 if (stats or filas or origen == "plantel") else 0
     if not con_datos:
         # sin cobertura de la API para este equipo/temporada: se sella con el
         # TTL LARGO (reintentarlo cada corrida quemaría requests sin fruto)
@@ -496,11 +558,12 @@ def ingestar_equipo(cliente: Cliente, con: sqlite3.Connection, team_id: int, sea
         dt = guardar_entrenador(con, team_id, (data or {}).get("response", []))
         lento_en = _ahora()
     con.execute(
-        "INSERT INTO plantillas_meta (team_id, season, actualizado_en, con_datos, lento_en) "
-        "VALUES (?, ?, ?, ?, ?) ON CONFLICT(team_id) DO UPDATE SET "
+        "INSERT INTO plantillas_meta (team_id, season, actualizado_en, con_datos, lento_en, origen) "
+        "VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(team_id) DO UPDATE SET "
         "season=excluded.season, actualizado_en=excluded.actualizado_en, "
-        "con_datos=excluded.con_datos, lento_en=COALESCE(excluded.lento_en, plantillas_meta.lento_en)",
-        (team_id, season, _ahora(), con_datos, lento_en),
+        "con_datos=excluded.con_datos, lento_en=COALESCE(excluded.lento_en, plantillas_meta.lento_en), "
+        "origen=excluded.origen",
+        (team_id, season_meta, _ahora(), con_datos, lento_en, origen),
     )
     con.commit()
     print(f"  [{cliente.usadas}/{cliente.limite}] equipo {team_id} t{season}: "

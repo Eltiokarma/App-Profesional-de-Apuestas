@@ -259,6 +259,9 @@ def main():
 
     # /equipos/{id}/plantilla — capa de jugadores (docs/JUGADORES.md)
     pl = c.get(A + f"/equipos/{betis}/plantilla").json()
+    check("plantilla: origen de la temporada y plantel sin stats viajan (vigente · [] en la demo)",
+          pl.get("origenTemporada") == "vigente" and pl.get("plantelSinStats") == [],
+          (pl.get("origenTemporada"), pl.get("plantelSinStats")))
     check("plantilla: 16 jugadores orden minutos desc",
           len(pl["jugadores"]) == 16 and all(pl["jugadores"][i]["minutos"] >= pl["jugadores"][i + 1]["minutos"]
                                             for i in range(len(pl["jugadores"]) - 1)), len(pl.get("jugadores", [])))

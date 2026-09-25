@@ -121,6 +121,27 @@ def _entrenador_dto(fila) -> dict:
             "fuente": fila["fuente"] or "coachs"}
 
 
+def _origen_de(team_id: int) -> str:
+    try:
+        filas = _query("SELECT origen FROM plantillas_meta WHERE team_id=?", (team_id,))
+    except sqlite3.OperationalError:  # base anterior a la columna
+        return "vigente"
+    return (filas[0]["origen"] if filas and filas[0]["origen"] else "vigente")
+
+
+def _plantel_sin_stats(team_id: int, con_stats: set) -> list[dict]:
+    """Los del plantel ACTUAL (/players/squads) que no tienen stats en la
+    temporada servida: los que llegaron después, o todos si solo hay lista."""
+    try:
+        filas = _query("SELECT player_id, nombre, posicion, numero FROM plantel_actual WHERE team_id=? "
+                       "ORDER BY posicion, numero", (team_id,))
+    except sqlite3.OperationalError:  # base sin la tabla
+        return []
+    return [{"jugadorId": f["player_id"], "nombre": f["nombre"] or "?",
+             "posicion": POSICIONES.get(f["posicion"] or "", f["posicion"] or ""), "numero": f["numero"]}
+            for f in filas if f["player_id"] not in con_stats]
+
+
 def plantilla_de(team_id: int) -> dict:
     """PlantillaDTO del contrato: jugadores con indicadores + agregados del
     equipo (dependencia HHI, DT, revolución). Vacía si no hay ingesta."""
@@ -136,6 +157,11 @@ def plantilla_de(team_id: int) -> dict:
         "jugadores": [],
         "golesPlantilla": 0,
         "missingFixture": None,
+        # de qué temporada salen las stats: la API publica la nueva con
+        # semanas de retraso en muchas ligas; mientras tanto se sirven las de
+        # la ANTERIOR de los que siguen en el club, y se dice
+        "origenTemporada": _origen_de(team_id),
+        "plantelSinStats": [],
     }
     if temporada is None:
         return base
@@ -161,6 +187,10 @@ def plantilla_de(team_id: int) -> dict:
            ORDER BY SUM(s.minutos) DESC""",
         (team_id, temporada),
     )
+    # solo cuando la lista actual se pidió POR esto (vigente vacía): con la
+    # vigente publicada, plantel_actual puede ser de hace semanas
+    if base["origenTemporada"] != "vigente":
+        base["plantelSinStats"] = _plantel_sin_stats(team_id, {r["player_id"] for r in filas})
     if not filas:
         return base
 
@@ -399,6 +429,12 @@ def resumen_para_skills(team_id: int) -> dict[str, str]:
     rev = p["revolucion"]
     if rev["llegadas"] or rev["salidas"]:
         extra += f" Ventana reciente ({rev['ventanaDias']}d): {rev['llegadas']} llegadas, {rev['salidas']} salidas."
+    if p.get("origenTemporada") == "anterior":
+        extra += (f" OJO: la API aún no publica la temporada en curso; estas stats son de la ANTERIOR "
+                  f"({p['temporada']}), solo de los que siguen en el plantel.")
+    if p.get("plantelSinStats"):
+        extra += (" En el plantel actual sin stats de esa temporada (llegaron después): "
+                  + ", ".join(j["nombre"] for j in p["plantelSinStats"][:12]) + ".")
     out["plantel"] = (f"Plantilla con indicadores calculados de nuestra base (temporada {p['temporada']}): "
                       + lineas + "." + extra + " [fuente: sad.db jugadores]")
     if p["entrenador"]:

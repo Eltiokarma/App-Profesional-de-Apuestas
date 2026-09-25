@@ -210,3 +210,22 @@ rumores, contexto. División del trabajo: números de la base, criterio del skil
   mejora la calibración) y cruce baja-vs-movimiento-de-cuota con odds_history.
 - Valor de mercado: **descartado** (Transfermarkt sin API; scraping frágil y
   contra ToS). Los niveles SAD ya miden calidad real del equipo.
+
+## Temporada vigente vacía en la API (25/09/2026)
+
+En muchas ligas API-Football publica las stats de la temporada nueva con
+semanas de retraso: Ludogorets y Spartak Trnava daban 0 jugadores en 2026, 20
+en 2025 y 27-31 en `/players/squads`. Antes eso se sellaba como «sin datos» y
+el equipo quedaba 30 días sin plantel.
+
+Ahora, si `/players?season=S` viene vacío de verdad (no un fallo):
+
+1. `/players/squads` (1 request) → `plantel_actual`: quién está HOY.
+2. `/players?season=S-1` → stats de la anterior, SOLO de los que siguen en el
+   club. `plantillas_meta.origen = 'anterior'`, `season = S-1`.
+3. Sin stats en ninguna pero con lista: `origen = 'plantel'`.
+
+La plantilla viaja con `origenTemporada` y `plantelSinStats` (los del plantel
+sin minutos en esa temporada: los que llegaron después). Cuando la API publica
+la vigente, el TTL normal (7 días) la toma y `origen` vuelve a `vigente`.
+

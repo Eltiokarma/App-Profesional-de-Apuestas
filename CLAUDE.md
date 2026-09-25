@@ -430,7 +430,15 @@ conversación se pierde en la siguiente.
      sellados vacíos, 84 volvieron CON jugadores (eran error), 331 siguen
      vacíos —incluidos Ludogorets y Spartak Trnava, que la API sí cubre—:
      `jugadores --sondear <id>` dice si es la temporada (vigente vacía,
-     anterior con datos) o que la liga no tiene cobertura.
+     anterior con datos) o que la liga no tiene cobertura. **Sondeado el
+     25/09**: era la temporada —Ludogorets y Spartak Trnava con 0 jugadores en
+     2026, 20 en 2025 y 27-31 en `/players/squads`—. HECHO: con la vigente
+     vacía de verdad, la ingesta pide la lista actual (`plantel_actual`) y la
+     temporada ANTERIOR filtrada a los que siguen en el club, y lo marca
+     (`plantillas_meta.origen` = `anterior` · `plantel`); la plantilla viaja
+     con `origenTemporada` y `plantelSinStats` (los que llegaron después), la
+     pantalla de Equipo lo dice y el resumen para el EFE también. Cuando la
+     API publica la vigente, el TTL normal (7 días) la toma sola.
    - **Nivel 3.2833 exacto en tres equipos**: NO es un tope ni un bug. El
      nivel vive en una retícula (~10.500 valores; ese tiene 24 combinaciones
      de puntos y goles). `docs/MOTOR_SAD_EXTRACCION.md` §2.5; `/niveles`
