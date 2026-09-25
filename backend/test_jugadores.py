@@ -415,6 +415,54 @@ def main():
     check("/players que responde vacío de verdad: se sella con con_datos=0 (TTL largo)",
           con.execute("SELECT con_datos FROM plantillas_meta WHERE team_id=7002").fetchone() == (0,))
 
+    # --- vigente vacía en la API: la anterior, filtrada al plantel actual
+    #     (Ludogorets y Spartak Trnava el 25/09: 0 en 2026, 20 en 2025) ----
+    def item(pid, nombre, season, team=8001):
+        return {"player": {"id": pid, "name": nombre},
+                "statistics": [{"team": {"id": team}, "league": {"id": 172, "season": season},
+                                "games": {"position": "Midfielder", "appearences": 5, "minutes": 400}}]}
+
+    class ClienteTemporadas:
+        limite, usadas, fallos = 10**6, 0, 0
+
+        def __init__(self, vigente, anterior, squad):
+            self.vigente, self.anterior, self.squad = vigente, anterior, squad
+
+        def quedan(self, n: int = 1) -> bool:
+            return True
+
+        def paginado(self, endpoint, params, tope_paginas=0):
+            self.usadas += 1
+            return self.vigente if params["season"] == 2026 else self.anterior
+
+        def get(self, endpoint, params):
+            self.usadas += 1
+            if endpoint == "players/squads":
+                return {"response": [{"players": self.squad}]}
+            return {"response": []}
+
+    cl = ClienteTemporadas([], [item(1, "Sigue", 2025), item(2, "Se fue", 2025)],
+                           [{"id": 1, "name": "Sigue", "position": "Midfielder"},
+                            {"id": 3, "name": "Llegó", "position": "Attacker", "number": 9}])
+    ingestar_equipo(cl, con, 8001, 2026)
+    meta = con.execute("SELECT season, con_datos, origen FROM plantillas_meta WHERE team_id=8001").fetchone()
+    check("vigente vacía: se sirve la ANTERIOR, marcada como tal", meta == (2025, 1, "anterior"), meta)
+    ids = {r[0] for r in con.execute("SELECT player_id FROM jugador_stats WHERE team_id=8001")}
+    check("solo de los que siguen en el plantel (el que se fue no entra)", ids == {1}, ids)
+    plantel = {r[0] for r in con.execute("SELECT player_id FROM plantel_actual WHERE team_id=8001")}
+    check("el plantel actual queda guardado (el que llegó, sin stats)", plantel == {1, 3}, plantel)
+
+    cl = ClienteTemporadas([], [], [{"id": 5, "name": "Solo lista", "position": "Defender"}])
+    ingestar_equipo(cl, con, 8002, 2026)
+    meta = con.execute("SELECT season, con_datos, origen FROM plantillas_meta WHERE team_id=8002").fetchone()
+    check("sin stats en ninguna temporada pero con lista: origen plantel (no «sin datos»)",
+          meta == (2026, 1, "plantel"), meta)
+
+    cl = ClienteTemporadas([item(7, "Vigente", 2026, 8003)], [], [])
+    ingestar_equipo(cl, con, 8003, 2026)
+    check("con la vigente publicada no se pide nada más (1 /players + injuries + lentas)",
+          con.execute("SELECT origen FROM plantillas_meta WHERE team_id=8003").fetchone() == ("vigente",))
+
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     return 1 if fallos else 0
 

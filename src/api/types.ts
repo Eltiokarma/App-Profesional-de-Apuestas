@@ -349,6 +349,12 @@ export interface PlantillaDTO {
   /** Con jugadores=[]: true si el backend lanzó la ingesta on-demand del
    *  equipo — la UI sondea hasta que la plantilla llegue. */
   ingestaLanzada?: boolean
+  /** De qué temporada salen las stats: la API publica la nueva con retraso en muchas
+   *  ligas; `anterior` = stats de la anterior de los que siguen en el club,
+   *  `plantel` = solo la lista actual sin stats. */
+  origenTemporada?: 'vigente' | 'anterior' | 'plantel'
+  /** Del plantel actual, los que no tienen stats en la temporada servida. */
+  plantelSinStats?: { jugadorId: number; nombre: string; posicion: string; numero: number | null }[]
 }
 
 /** Lado de la ficha: plantilla + congestión de calendario (0 requests). */

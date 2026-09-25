@@ -1794,6 +1794,24 @@ components:
           type: array
           items: { $ref: '#/components/schemas/Jugador' }
         ingestaLanzada: { type: boolean, description: 'con jugadores=[]: true si la ingesta on-demand del equipo quedó lanzada en segundo plano (la UI sondea)' }
+        origenTemporada:
+          type: string
+          enum: [vigente, anterior, plantel]
+          description: >
+            De qué temporada salen las stats. En muchas ligas la API publica la temporada
+            nueva con semanas de retraso (Ludogorets, Spartak Trnava: 25/09/2026). Mientras
+            tanto, `anterior` = stats de la temporada anterior SOLO de los que siguen en el
+            club (según /players/squads); `plantel` = solo la lista actual, sin stats.
+        plantelSinStats:
+          type: array
+          description: los del plantel actual sin stats en la temporada servida (llegaron después, o todos si origen=plantel)
+          items:
+            type: object
+            properties:
+              jugadorId: { type: integer }
+              nombre: { type: string }
+              posicion: { type: string }
+              numero: { type: integer, nullable: true }
     FichaEquipo:
       allOf:
         - $ref: '#/components/schemas/Plantilla'

@@ -414,6 +414,8 @@ function plantillaDemo(teamKey: string): PlantillaDTO {
     golesPlantilla: golesEquipo,
     // 1 marcado de 16 = 6% de la plantilla: señal (umbral 25%, backend/jugadores.py)
     missingFixture: { marcados: 1, plantilla: jugadores.length, densidad: Math.round((1 / jugadores.length) * 1000) / 1000, umbral: 0.25, lectura: 'senal' },
+    origenTemporada: 'vigente',
+    plantelSinStats: [],
     jugadores,
   }
 }
