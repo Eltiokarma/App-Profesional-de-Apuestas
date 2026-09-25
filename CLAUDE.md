@@ -438,7 +438,11 @@ conversación se pierde en la siguiente.
      (`plantillas_meta.origen` = `anterior` · `plantel`); la plantilla viaja
      con `origenTemporada` y `plantelSinStats` (los que llegaron después), la
      pantalla de Equipo lo dice y el resumen para el EFE también. Cuando la
-     API publica la vigente, el TTL normal (7 días) la toma sola.
+     API publica la vigente, el TTL normal (7 días) la toma sola. **Resultado
+     (25/09)**: de los 331 que seguían vacíos, 307 quedaron con plantel
+     (temporada anterior o solo la lista) y 24 son vacíos de verdad (la API no
+     tiene ni lista). Un proceso largo desde la consola de Railway se corre
+     con `nohup … > /data/x.log 2>&1 &`: la consola web lo corta.
    - **Nivel 3.2833 exacto en tres equipos**: NO es un tope ni un bug. El
      nivel vive en una retícula (~10.500 valores; ese tiene 24 combinaciones
      de puntos y goles). `docs/MOTOR_SAD_EXTRACCION.md` §2.5; `/niveles`
