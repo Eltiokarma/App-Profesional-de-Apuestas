@@ -458,6 +458,13 @@ def main():
     check("sin stats en ninguna temporada pero con lista: origen plantel (no «sin datos»)",
           meta == (2026, 1, "plantel"), meta)
 
+    cl = ClienteTemporadas([], [item(11, "Se fue todo", 2025, 8004)],
+                           [{"id": 12, "name": "Nuevo", "position": "Defender"}])
+    ingestar_equipo(cl, con, 8004, 2026)
+    meta = con.execute("SELECT season, con_datos, origen FROM plantillas_meta WHERE team_id=8004").fetchone()
+    check("anterior con stats pero NINGUNO sigue: origen plantel, no «sin datos»",
+          meta == (2026, 1, "plantel"), meta)
+
     cl = ClienteTemporadas([item(7, "Vigente", 2026, 8003)], [], [])
     ingestar_equipo(cl, con, 8003, 2026)
     check("con la vigente publicada no se pide nada más (1 /players + injuries + lentas)",
