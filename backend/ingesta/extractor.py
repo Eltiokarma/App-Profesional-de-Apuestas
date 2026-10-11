@@ -890,8 +890,15 @@ def capturar_cuotas_lote(cliente: "Cliente", con: sqlite3.Connection,
                     por_fixture.setdefault(fid, []).append(item)
             via = f"en lote ({len(filas)} items del feed mundial)"
         for fid, items in por_fixture.items():
-            total += guardar_odds(con, fid, items)
-            cubiertos.add(fid)
+            # UN PARTIDO CON UN FEED RARO NO TUMBA LA CORRIDA: antes una
+            # excepción en guardar_odds cortaba el extractor y las requests ya
+            # pagadas del resto se perdían (18/09-11/10/2026, ver cuota_key)
+            try:
+                total += guardar_odds(con, fid, items)
+                cubiertos.add(fid)
+            except Exception as e:  # noqa: BLE001
+                con.rollback()
+                print(f"  fixture {fid}: cuotas NO guardadas ({type(e).__name__}: {e})")
         print(f"  [{cliente.usadas}/{cliente.limite}] {fecha}: cuotas de "
               f"{len(por_fixture)}/{len(objetivo)} partidos nuestros · {via}")
     return total, len(cubiertos)

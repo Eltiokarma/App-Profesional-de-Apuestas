@@ -51,6 +51,10 @@ def item_odds(fid: int) -> dict:
                 {"value": "Over 1.5", "odd": "1.30"}, {"value": "Over 2.5", "odd": "1.90"}, {"value": "Under 2.5", "odd": "1.95"},
             ]},
             {"id": 8, "name": "Goals Over/Under First Half", "values": [{"value": "Over 0.5", "odd": "1.40"}]},
+            # el feed real trae valores NUMÉRICOS: tumbaron el extractor del
+            # 18/09 al 11/10/2026 (AttributeError: 'int' object has no attribute 'strip')
+            {"id": 38, "name": "Exact Goals Number", "values": [{"value": 0, "odd": "9.00"},
+                                                                 {"value": 1, "odd": "4.50"}]},
         ]}],
     }
 
@@ -154,6 +158,32 @@ def main():
               all(p[1] is None for p in cliente.pedidos), cliente.pedidos[:3])
     finally:
         ex.UMBRAL_LOTE = umbral
+
+    # un valor numérico en el feed no tumba la captura ni se guarda
+    from backend.cuota_mercados import cuota_key
+    check("cuota_key con un valor numérico devuelve None (no AttributeError)",
+          cuota_key("Exact Goals Number", 1) is None and cuota_key("Match Winner", None) is None)
+    con = db([(700001, "2026-07-30 20:00:00", "NS")])
+    total, cub = capturar_cuotas_lote(ClienteFalso([700001], mundo=0), con, [700001])
+    filas = {r[0] for r in con.execute("SELECT bet_name FROM odds WHERE fixture_id=700001")}
+    check("un feed con valores numéricos guarda el 1X2 y descarta el resto",
+          cub == 1 and "Match Winner" in filas and "Exact Goals Number" not in filas, (total, cub, filas))
+
+    # una excepción en un partido no tumba a los demás
+    original = ex.guardar_odds
+    def guardar_que_falla(con, fid, items):
+        if fid == 700011:
+            raise ValueError("feed roto")
+        return original(con, fid, items)
+    ex.guardar_odds = guardar_que_falla
+    try:
+        con = db([(700011, "2026-07-30 20:00:00", "NS"), (700012, "2026-07-30 21:00:00", "NS")])
+        total, cub = capturar_cuotas_lote(ClienteFalso([700011, 700012], mundo=0), con, [700011, 700012])
+        check("un partido que falla al guardar no corta la captura de los otros",
+              cub == 1 and con.execute("SELECT COUNT(*) FROM odds WHERE fixture_id=700012").fetchone()[0] > 0,
+              (total, cub))
+    finally:
+        ex.guardar_odds = original
 
     print(f"\n{'TODO OK' if not fallos else f'{fallos} FALLAS'}")
     return 1 if fallos else 0
