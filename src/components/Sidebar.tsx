@@ -25,8 +25,11 @@ export function Sidebar({ store }: { store: SadStore }) {
   // Skills es contenido simulado: solo en la demo local (en producción el
   // botón quedaba "vacío" y confundía — el EFE vive en Análisis)
   const conSkills = CONFIG.dataSource === 'mock'
-  // contador real, con dato que ya existe: lecciones sin resolver
-  const lec = useAsync(() => getDataSource().lecciones({ estado: 'pendiente' }), 'lec-pend')
+  // contador real, con dato que ya existe: lecciones sin resolver DE LA
+  // COHORTE VIGENTE, la misma que abre la pantalla. Sin cohorte contaba las
+  // 107 del rodaje —insumos rotos, no mueven ningún peso— y el «111 pend.»
+  // parecía trabajo atrasado cuando la cohorte vigente estaba vacía (11/10/2026)
+  const lec = useAsync(() => getDataSource().lecciones({ estado: 'pendiente', cohorte: 'vigente' }), 'lec-pend')
   const pendientes = lec.data?.items.length ?? 0
   const feed = useFeedStatus()
   const feedColor = feed.checking ? 'var(--mark)' : feed.ok ? 'var(--up)' : 'var(--down)'
@@ -90,7 +93,7 @@ export function Sidebar({ store }: { store: SadStore }) {
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6.5A2.5 2.5 0 015.5 4H11v16H5.5A2.5 2.5 0 013 17.5z" /><path d="M21 6.5A2.5 2.5 0 0018.5 4H13v16h5.5a2.5 2.5 0 002.5-2.5z" /></svg>
           <span>Aprendizaje</span>
           {pendientes ? (
-            <span style={{ marginLeft: 'auto', font: '600 9.5px var(--mono)', color: 'var(--t3)' }}>{pendientes} pend.</span>
+            <span title="lecciones pendientes de la cohorte vigente" style={{ marginLeft: 'auto', font: '600 9.5px var(--mono)', color: 'var(--t3)' }}>{pendientes} pend.</span>
           ) : null}
         </button>
         <button onClick={store.go('estadisticas')} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 12px', border: 0, borderRadius: 10, cursor: 'pointer', background: navB('estadisticas'), color: navF('estadisticas'), font: '600 13.5px var(--sans)', textAlign: 'left', transition: 'background .14s,color .14s' }}>
