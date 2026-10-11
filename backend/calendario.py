@@ -13,7 +13,7 @@ por un dato propio:
 | ✈️ VISITA DÉBIL     | <25% de victorias como visitante              | cuenta de sus partidos fuera |
 | 📉 EN CRISIS        | 3+ derrotas seguidas o cambio de DT en 4 sem. | resultados + tabla `entrenadores` |
 | 🛡️ BLOQUE BAJO      | esquema con 5 defensores                      | formación dominante en `alineaciones` (fase A del DTP) |
-| ⚔️ CLÁSICO          | rivalidad histórica documentada               | PARCIAL: solo derbi de ciudad (mismo `venue_city`) |
+| ⚔️ CLÁSICO          | rivalidad histórica documentada               | PARCIAL: derbi de ciudad (mismo `venue_city`); con ≥ 4 clubes de la liga en esa ciudad, solo `CLASICOS_DOCUMENTADOS` |
 
 Cada etiqueta viaja con el DATO que la sostiene ("3 derrotas seguidas",
 "78% en casa"): sin el número es una opinión, y una opinión no debería costar
@@ -24,6 +24,7 @@ vecindad geográfica (Boca–River es de ciudad, pero Alianza–Cienciano no) no
 está en los datos. Se marca `parcial: true` para que quien lo lea sepa que ahí
 la ausencia de etiqueta no prueba nada.
 """
+import unicodedata
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 
@@ -222,6 +223,58 @@ def _renovacion_masiva(liga_id: int, temporada: int, umbral: float = 0.5) -> boo
     return (len(equipos) - repiten) / len(equipos) > umbral
 
 
+# CIUDAD DENSA: con 4 o más clubes de la misma liga en la misma ciudad,
+# compartirla no hace derbi. En Montevideo o Asunción casi toda la primera
+# juega en la capital y «misma ciudad» marcaba como clásico a medio fixture
+# (Central Español–Nacional, Libertad–Guaraní, 11/10/2026), y el clásico sube
+# un partido en la agenda. Ahí solo cuentan los documentados.
+CIUDAD_DENSA = 4
+
+# Rivalidades documentadas en ciudades densas, por nombre normalizado (cada
+# lado se busca como texto dentro del nombre del club). Lista corta a
+# propósito: un par que falta no se inventa, se agrega con su fuente.
+CLASICOS_DOCUMENTADOS = (
+    ("penarol", "nacional"),                       # Montevideo · Clásico del fútbol uruguayo
+    ("olimpia", "cerro porteno"),                  # Asunción · Superclásico paraguayo
+    ("olimpia", "guarani"),                        # Asunción · el clásico más antiguo
+    ("libertad", "guarani"),                       # Asunción · «clásico moderno» (ABC Color, 09/10/2026)
+    ("boca juniors", "river plate"),               # Buenos Aires · Superclásico
+    ("san lorenzo", "huracan"),                    # Buenos Aires · clásico de barrio
+    ("alianza lima", "universitario"),             # Lima · Clásico del fútbol peruano
+    ("flamengo", "fluminense"), ("flamengo", "vasco"), ("flamengo", "botafogo"),
+    ("fluminense", "vasco"), ("fluminense", "botafogo"), ("vasco", "botafogo"),  # Río · clássicos cariocas
+    ("arsenal", "tottenham"), ("chelsea", "tottenham"), ("arsenal", "chelsea"),   # Londres
+)
+
+
+def _norm_nombre(nombre: str) -> str:
+    n = unicodedata.normalize("NFD", (nombre or "").lower())
+    return "".join(c for c in n if unicodedata.category(c) != "Mn")
+
+
+def clasico_documentado(nombre_a: str, nombre_b: str) -> bool:
+    a, b = _norm_nombre(nombre_a), _norm_nombre(nombre_b)
+    return any((x in a and y in b) or (x in b and y in a) for x, y in CLASICOS_DOCUMENTADOS)
+
+
+@lru_cache(maxsize=256)
+def _clubes_en_ciudad(liga_id: int | None, temporada: int | None, ciudad: str) -> int:
+    """Cuántos clubes de esa liga (y temporada, si se sabe) son locales en `ciudad`."""
+    if not liga_id or not ciudad:
+        return 0
+    cond, params = "league_id=? AND lower(trim(venue_city))=?", [liga_id, ciudad.strip().lower()]
+    if temporada:
+        cond += " AND league_season=?"
+        params.append(temporada)
+    filas = _q(f"SELECT COUNT(DISTINCT home_team_id) AS n FROM fixtures WHERE {cond}", tuple(params))
+    return int(filas[0]["n"]) if filas else 0
+
+
+def _nombre_equipo(team_id: int) -> str:
+    filas = _q("SELECT name FROM teams WHERE id=?", (team_id,))
+    return filas[0]["name"] if filas else ""
+
+
 def _ciudad(team_id: int) -> str | None:
     filas = _q("SELECT venue_city, COUNT(*) AS n FROM fixtures WHERE home_team_id=? "
                "AND venue_city IS NOT NULL AND venue_city<>'' "
@@ -251,7 +304,7 @@ def _gap(team_id: int, fecha: str | None) -> dict | None:
 
 def etiquetas_de_rival(rival_id: int, rival_local: bool, liga_id: int | None,
                        temporada: int | None, fecha: str | None,
-                       ciudad_equipo: str | None) -> list[dict]:
+                       ciudad_equipo: str | None, equipo_id: int | None = None) -> list[dict]:
     """Las etiquetas G2 que los DATOS sostienen, cada una con su número."""
     et: list[dict] = []
     res = _resultados(rival_id)
@@ -295,9 +348,17 @@ def etiquetas_de_rival(rival_id: int, rival_local: bool, liga_id: int | None,
 
     ciudad_rival = _ciudad(rival_id)
     if ciudad_equipo and ciudad_rival and ciudad_equipo.strip().lower() == ciudad_rival.strip().lower():
-        et.append({"codigo": "CLASICO", "label": "CLÁSICO", "dato": f"derbi de {ciudad_rival}",
-                   "parcial": True,
-                   "nota": "solo detectamos derbis de ciudad: una rivalidad nacional no sale de los datos"})
+        n_clubes = _clubes_en_ciudad(liga_id, temporada, ciudad_rival)
+        if n_clubes < CIUDAD_DENSA:
+            et.append({"codigo": "CLASICO", "label": "CLÁSICO", "dato": f"derbi de {ciudad_rival}",
+                       "parcial": True,
+                       "nota": "solo detectamos derbis de ciudad: una rivalidad nacional no sale de los datos"})
+        elif equipo_id and clasico_documentado(_nombre_equipo(equipo_id), _nombre_equipo(rival_id)):
+            et.append({"codigo": "CLASICO", "label": "CLÁSICO",
+                       "dato": f"clásico documentado de {ciudad_rival}",
+                       "parcial": True,
+                       "nota": f"{n_clubes} clubes de la liga en {ciudad_rival}: ahí la misma ciudad no "
+                               "basta, cuenta la lista de clásicos documentados"})
     return et
 
 
@@ -358,7 +419,8 @@ def calendario_de(team_id: int, n: int = PROXIMOS_DEFAULT) -> list[dict]:
                 "alta" if pos <= 4 else "descenso" if pos > total - 3 else "media"),
             "diasDescanso": dias,
             "etiquetas": etiquetas_de_rival(rival_id, not es_local, f["league_id"],
-                                            f["league_season"], fecha, ciudad_equipo),
+                                            f["league_season"], fecha, ciudad_equipo,
+                                            equipo_id=team_id),
         })
     return salida
 

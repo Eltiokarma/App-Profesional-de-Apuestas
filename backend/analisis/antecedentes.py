@@ -116,16 +116,35 @@ def antecedentes(fixture_id: int, n: int = N_DEFECTO) -> dict | None:
     from backend.analisis import lecciones as lec
     from backend.analisis.parte import _conectar
     fecha = str(fx["date"])
+    equipos = {fx["home_team_id"], fx["away_team_id"]}
+    # SOLO LOS PARTES DE ESTOS DOS EQUIPOS. Antes se cargaban 800 partes con su
+    # JSON y se armaba el inventario ENTERO del aprendizaje (dos veces: casos y
+    # lecciones, cada caso con su chequeo de DT contra las alineaciones) para
+    # quedarse con cinco por lado: de 30 s a más de 2 min con doce agentes a
+    # la vez (11/10/2026). El resultado es el mismo; lo que cambia es qué se lee.
     with _conectar() as con:
-        filas = con.execute(
-            "SELECT fixture_id, fecha, equipo_a, equipo_b, parte_json, veredicto_json, cohorte "
-            "FROM parte_cowork WHERE fixture_id<>? ORDER BY fecha DESC LIMIT 800",
-            (fixture_id,)).fetchall()
-    fxs = _fixtures_de([f["fixture_id"] for f in filas])
+        ids = [r["fixture_id"] for r in con.execute(
+            "SELECT fixture_id FROM parte_cowork WHERE fixture_id<>? ORDER BY fecha DESC LIMIT 800",
+            (fixture_id,)).fetchall()]
+    fxs = _fixtures_de(ids)
+    suyos = [i for i in ids if fxs.get(i) and str(fxs[i]["date"]) < fecha
+             and ({fxs[i]["home_team_id"], fxs[i]["away_team_id"]} & equipos)]
+    filas = []
+    if suyos:
+        with _conectar() as con:
+            filas = con.execute(
+                "SELECT fixture_id, fecha, equipo_a, equipo_b, parte_json, veredicto_json, cohorte "
+                f"FROM parte_cowork WHERE fixture_id IN ({','.join('?' * len(suyos))}) "
+                "ORDER BY fecha DESC", tuple(suyos)).fetchall()
+    casos = lec._casos(ids=suyos)
     # la cuarentena (manual o automática) como la ve el aprendizaje
     cuarentenas = {c["fixtureId"]: (c.get("cuarentena") or {}).get("motivo", "")
-                   for c in lec._casos() if c.get("cuarentena")}
-    inv = lec.inventario()
+                   for c in casos if c.get("cuarentena")}
+    estados = lec._estados()
+    # las lecciones de estos casos como las arma el inventario: fuera de
+    # cuarentena (el inventario las aparta), con su estado guardado
+    items = [i for c in casos for i in lec._items_de(c, estados) if not i["cuarentena"]]
+    inv = {"items": items}
     out = {"fixtureId": fixture_id,
            "partido": {"equipoA": fx["home_name"], "equipoB": fx["away_name"], "fecha": fecha[:10]}}
     for lado, tid, nombre in (("a", fx["home_team_id"], fx["home_name"]),

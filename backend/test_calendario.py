@@ -172,6 +172,25 @@ def main():
     check("CLÁSICO por derbi de ciudad", cl is not None, [x["codigo"] for x in et_vecino])
     check("y se marca PARCIAL (una rivalidad nacional no sale de los datos)",
           bool(cl and cl.get("parcial")), cl)
+    # CIUDAD DENSA (11/10/2026: Central Español–Nacional y Libertad–Guaraní
+    # salían «clásico» por compartir Montevideo / Asunción con media liga)
+    densa = calendario.CIUDAD_DENSA
+    try:
+        calendario.CIUDAD_DENSA = 1
+        calendario._clubes_en_ciudad.cache_clear()
+        et_densa = calendario.etiquetas_de_rival(LOCALON, True, 281, 2026, "2026-08-20", "Ciudad F")
+        check("en una ciudad densa, compartir ciudad ya NO hace clásico",
+              all(x["codigo"] != "CLASICO" for x in et_densa), [x["codigo"] for x in et_densa])
+    finally:
+        calendario.CIUDAD_DENSA = densa
+        calendario._clubes_en_ciudad.cache_clear()
+    check("los clásicos documentados casan por nombre, en cualquier orden y con acentos",
+          calendario.clasico_documentado("Peñarol", "Club Nacional")
+          and calendario.clasico_documentado("Cerro Porteño", "Olimpia")
+          and calendario.clasico_documentado("Boca Juniors", "River Plate"))
+    check("y un partido de capital cualquiera no es clásico",
+          not calendario.clasico_documentado("Central Espanol", "Club Nacional")
+          and not calendario.clasico_documentado("Sportivo Ameliano", "Tacuary"))
 
     # el bloque G del EFE relleno por código: lo que antes copiaba el modelo
     items = calendario.items_para_efe(FOCO)
