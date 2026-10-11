@@ -391,8 +391,8 @@ def _dt_equipo(crudo, rechazos: list, lado: str, fecha_partido: str,
         origen = "desde"
     if meses is None and nombre and entrenador_base and entrenador_base.get("nombre"):
         # el mismo apellido que el DT de la base → su fecha de asunción sirve
-        from backend.ingesta.jugadores import _norm_dt
-        if _norm_dt(nombre) == _norm_dt(entrenador_base["nombre"]) and _fecha(entrenador_base.get("desde")) and partido:
+        from backend.ingesta.jugadores import mismo_nombre_dt
+        if mismo_nombre_dt(nombre, entrenador_base["nombre"]) and _fecha(entrenador_base.get("desde")) and partido:
             desde = desde or _txt(entrenador_base.get("desde"))[:10]
             meses = round(max(0, (partido - _fecha(entrenador_base["desde"])).days) / _DIAS_MES, 1)
             origen = "base"
@@ -874,7 +874,7 @@ def alertas_dt(parte: dict, fx, nombres: dict) -> list[dict]:
     """DT-DISCREPANCIA cuando el parte (la prensa) y la base no dicen el mismo
     DT: manda el parte, y la base queda marcada para refrescarse. DT-SIN-DT
     cuando el bloque A no tiene entrenador: el caso no entra al aprendizaje."""
-    from backend.ingesta.jugadores import _norm_dt
+    from backend.ingesta.jugadores import mismo_nombre_dt
     out = []
     if not fx:
         return out
@@ -889,7 +889,7 @@ def alertas_dt(parte: dict, fx, nombres: dict) -> list[dict]:
                                    "aprendizaje (cuarentena automática) hasta que se re-deposite con el DT"})
             continue
         base = dt_de_base(tid)
-        if base and base.get("nombre") and _norm_dt(nombre) != _norm_dt(base["nombre"]):
+        if base and base.get("nombre") and not mismo_nombre_dt(nombre, base["nombre"]):
             out.append({"codigo": "DT-DISCREPANCIA", "equipo": lado, "tipo": "dato",
                         "detalle": f"{quien}: el parte dice «{nombre}» y la base tiene «{base['nombre']}» "
                                    f"({base['nota']}). Manda el parte —es lo verificado en prensa—; el registro "

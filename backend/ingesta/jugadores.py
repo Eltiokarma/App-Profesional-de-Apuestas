@@ -15,6 +15,7 @@ frescas. Los indicadores NO se calculan aquí: backend/jugadores.py los deriva
 en lectura (0 requests)."""
 import argparse
 import os
+import re
 import sqlite3
 import sys
 import unicodedata
@@ -376,8 +377,7 @@ def elegir_entrenador(filas: list, team_id: int, dt_alineacion: str | None = Non
                                "foto": item.get("photo"), "desde": c.get("start") or "",
                                "abierta": not c.get("end"), "fuente": "coachs"})
     if dt_alineacion:
-        objetivo = _norm_dt(dt_alineacion)
-        casan = [c for c in candidatos if _norm_dt(c["nombre"] or "") == objetivo]
+        casan = [c for c in candidatos if mismo_nombre_dt(c["nombre"] or "", dt_alineacion)]
         if casan:
             return max(casan, key=lambda c: c["desde"])
         return {"coach_id": 0, "nombre": dt_alineacion.strip(), "foto": None,
@@ -430,9 +430,16 @@ def dt_de_alineaciones(con: sqlite3.Connection, team_id: int,
     actual = filas[0][0]
     desde = filas[0][1]
     for nombre, fecha in filas:
-        if _norm_dt(nombre) != _norm_dt(actual):
+        if not mismo_nombre_dt(nombre, actual):
             break
         desde = fecha
+    else:
+        # LA RACHA NO CORTÓ: en lo capturado no se ve su llegada, solo el
+        # primer once que tenemos. Esa fecha es una cota, no la asunción
+        # (Betis «desde 2022-02-17» con Pellegrini desde 2020): sin cambio
+        # visto, `desde` va vacío y la antigüedad sale de la carrera o de la
+        # prensa, nunca de un número que parece dato.
+        desde = None
     return actual, desde
 
 
@@ -481,7 +488,7 @@ def necesita_lentas(con: sqlite3.Connection, team_id: int,
     except sqlite3.Error:
         return False  # DB sin esas tablas: el TTL manda
     if dt_alin and dt_guardado and dt_guardado[0]:
-        if _norm_dt(dt_alin) != _norm_dt(dt_guardado[0]):
+        if not mismo_nombre_dt(dt_alin, dt_guardado[0]):
             print(f"  equipo {team_id}: la alineación trae DT '{dt_alin}' y teníamos "
                   f"'{dt_guardado[0]}' → se refresca traspasos y DT sin esperar al TTL")
             return True
@@ -495,6 +502,31 @@ def _norm_dt(nombre: str) -> str:
     n = "".join(c for c in n if unicodedata.category(c) != "Mn")
     partes = [p for p in n.replace(".", " ").split() if len(p) > 1]
     return partes[-1] if partes else n.strip()
+
+
+def _tokens_nombre_dt(nombre: str) -> list[str]:
+    n = unicodedata.normalize("NFD", (nombre or "").lower())
+    n = "".join(c for c in n if unicodedata.category(c) != "Mn")
+    return [p for p in re.split(r"[^a-z]+", n) if len(p) >= 3]
+
+
+def mismo_nombre_dt(a: str, b: str) -> bool:
+    """¿Nombran al mismo DT? `_norm_dt` compara la ÚLTIMA palabra y desde que
+    `nombre_coach` arma «Nombre Apellidos» con firstname/lastname, en España
+    la última es el apellido MATERNO: «Manuel Luis Pellegrini Ripamonti» daba
+    «ripamonti» contra «pellegrini» de la alineación, y «Miguel Ramis Luis»
+    (alineación) daba «luis» contra «ramis». No casaban, el DT del banco se
+    guardaba como desconocido con `desde` = su primer once capturado (Betis
+    desde 2022, Osasuna desde 19/09/2026: EN_CRISIS falso) y el parte
+    disparaba DT-DISCREPANCIA sobre el mismo entrenador (11/10/2026).
+    Regla: la última palabra de uno está entre las del otro (en cualquier
+    sentido), o comparten dos palabras. Las iniciales no cuentan."""
+    ta, tb = _tokens_nombre_dt(a), _tokens_nombre_dt(b)
+    if not ta or not tb:
+        return _norm_dt(a) == _norm_dt(b)
+    if ta[-1] in tb or tb[-1] in ta:
+        return True
+    return len(set(ta) & set(tb)) >= 2
 
 
 def ingestar_equipo(cliente: Cliente, con: sqlite3.Connection, team_id: int, season: int) -> bool:
@@ -629,7 +661,7 @@ def dt_agenda(cliente, con: sqlite3.Connection, dias: int = DT_AGENDA_DIAS,
                            "ORDER BY actualizado_en DESC LIMIT 1", (tid,)).fetchone()
         viejo = not fila or not fila[1] or fila[1] <= corte
         dt_alin, _desde = dt_de_alineaciones(con, tid)
-        contradice = bool(dt_alin and fila and fila[0] and _norm_dt(dt_alin) != _norm_dt(fila[0]))
+        contradice = bool(dt_alin and fila and fila[0] and not mismo_nombre_dt(dt_alin, fila[0]))
         # EL REGISTRO QUE SALIÓ DE UNA ALINEACIÓN QUE YA NO CUENTA. Si lo guardado
         # dice `alineacion` y hoy ninguna alineación fresca lo sostiene, ese DT
         # vino de un banco de hace meses (Santa Fe–Cali, 22/09): se rehace con
