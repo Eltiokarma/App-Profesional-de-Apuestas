@@ -2879,6 +2879,46 @@ def contrato() -> dict:
     }
 
 
+# con menos NS por delante no hay base para gritar: un martes sin fútbol no es
+# una ingesta caída
+CUOTAS_MIN_PROXIMOS = 10
+CUOTAS_HORAS = 48
+
+
+def cuotas_prepartido(ahora: datetime | None = None, horas: int = CUOTAS_HORAS) -> dict:
+    """¿Están entrando las cuotas prepartido? De los NS de las próximas `horas`,
+    cuántos tienen alguna captura en `odds_history` y cuándo fue la última.
+
+    LA FASE QUE NO GUARDA NADA TIENE QUE VERSE. Del 18/09 al 11/10/2026 el
+    extractor se cayó en la fase de cuotas en cada corrida (deuda 8) y nadie
+    lo vio en tres semanas: los fixtures y el en vivo seguían entrando. Se
+    pregunta POR FIXTURE contra el índice (fixture_id, captured_at): un MAX
+    sobre la tabla entera la recorrería, y eso es la factura de Railway."""
+    ahora = ahora or datetime.now(timezone.utc)
+    desde = ahora.strftime("%Y-%m-%d %H:%M:%S")
+    hasta = (ahora + timedelta(hours=horas)).strftime("%Y-%m-%d %H:%M:%S")
+    out = {"ventanaHoras": horas, "proximos": 0, "conCuota": 0, "ultimaCaptura": None, "alarma": ""}
+    try:
+        ids = [r["id"] for r in saddb.query(
+            "sad", "SELECT id FROM fixtures WHERE status_short='NS' AND date BETWEEN ? AND ?",
+            (desde, hasta))]
+        ultimas = []
+        for fid in ids:
+            fila = saddb.query_one(
+                "sad", "SELECT MAX(captured_at) AS m FROM odds_history WHERE fixture_id=?", (fid,))
+            if fila and fila["m"]:
+                ultimas.append(str(fila["m"]))
+    except Exception:  # noqa: BLE001 — DB sin la tabla: no hay nada que vigilar
+        return out
+    out.update(proximos=len(ids), conCuota=len(ultimas),
+               ultimaCaptura=(max(ultimas)[:19] if ultimas else None))
+    if len(ids) >= CUOTAS_MIN_PROXIMOS and not ultimas:
+        out["alarma"] = (f"ninguno de los {len(ids)} partidos de las próximas {horas} h tiene cuota "
+                         "prepartido: la fase de cuotas de la ingesta no está guardando (mirá los "
+                         "Deploy Logs de la corrida)")
+    return out
+
+
 def latido(horas: int = 36) -> dict:
     """¿Está corriendo esto, o lleva dos días muerto y nadie se enteró?
 
@@ -2920,6 +2960,8 @@ def latido(horas: int = 36) -> dict:
     pend = pendientes_veredicto(horas=12, limite=50)
     vencidos = pend.get("pendientes") or []
 
+    cuotas = cuotas_prepartido(ahora)
+
     horas_sin_nada = None
     if ultimo:
         try:
@@ -2936,6 +2978,8 @@ def latido(horas: int = 36) -> dict:
                        "se quedaron sin parte")
     if vencidos:
         motivos.append(f"{len(vencidos)} caso(s) llevan más de 12 h terminados y sin veredicto")
+    if cuotas["alarma"]:
+        motivos.append(cuotas["alarma"])
     estado = "rojo" if depositados == 0 else ("ambar" if motivos else "verde")
     return {
         "estado": estado,
@@ -2954,6 +2998,7 @@ def latido(horas: int = 36) -> dict:
         "veredictosVencidos": [{"fixtureId": v["fixtureId"], "partido": v["partido"],
                                 "marcador": v["marcador"]} for v in vencidos],
         "sinOnceCerrado": sin_xi,
+        "cuotasPrepartido": cuotas,
         "nota": "esto solo mira; no dispara nada. El silencio cuenta como fallo: "
                 "cero partes en la ventana es ROJO, no «sin novedad».",
     }

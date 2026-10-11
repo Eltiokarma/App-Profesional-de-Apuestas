@@ -1488,6 +1488,8 @@ export interface LatidoCoworkDTO {
   sinCerrar: number
   veredictosVencidos: { fixtureId: number; partido: string; marcador: string }[]
   sinOnceCerrado: { fixtureId: number; fecha: string; equipo_a: string; equipo_b: string }[]
+  /** ¿Entran las cuotas prepartido? Con ≥ 10 NS próximos y ninguno con cuota, `alarma`. */
+  cuotasPrepartido?: { ventanaHoras: number; proximos: number; conCuota: number; ultimaCaptura: string | null; alarma: string }
   nota: string
 }
 
