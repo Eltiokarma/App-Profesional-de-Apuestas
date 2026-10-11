@@ -2023,6 +2023,25 @@ def main():
     check("antecedentes: NUNCA el partido que se analiza ni uno posterior (anti-hindsight)",
           all(p_["fixtureId"] != pasado["id"] and p_["fecha"] <= str(fx_pas["date"])[:10]
               for l in ("a", "b") for p_ in an_propio[l]["partes"]), an_propio)
+    # LA MISMA RESPUESTA, LEYENDO SOLO DOS EQUIPOS (11/10/2026: de 30 s a más de
+    # 2 min por armar el inventario entero). Referencia: la cuarentena y las
+    # lecciones vigentes como las ve el inventario completo.
+    from backend.analisis import antecedentes as _ant, lecciones as _lec_a
+    _cuar_ref = {c_["fixtureId"]: (c_.get("cuarentena") or {}).get("motivo", "")
+                 for c_ in _lec_a._casos() if c_.get("cuarentena")}
+    _inv_ref = _lec_a.inventario()
+    _iguales = True
+    for _fid in {pasado["id"], *( [posterior["id"]] if posterior else [] )}:
+        _an = _ant.antecedentes(_fid)
+        for _l in ("a", "b"):
+            for _p in _an[_l]["partes"]:
+                _iguales &= _p["cuarentena"] == (_cuar_ref.get(_p["fixtureId"]) or "")
+            _ref = sorted(i["clave"] for i in _inv_ref["items"]
+                          if i["equipo"] == _an[_l]["equipo"] and i["estado"] in ("pendiente", "en_revision")
+                          and str(i["fecha"]) < _an["partido"]["fecha"])
+            _iguales &= sorted(v["clave"] for v in _an[_l]["leccionesVigentes"]) == _ref
+    check("antecedentes acotado a los dos equipos da la misma cuarentena y las mismas lecciones "
+          "que el inventario completo", _iguales)
     check("antecedentes abiertos a Cowork (GET) y 404 si el fixture no existe",
           appmod._cowork_puede("GET", A + f"/analisis/cowork/antecedentes/{pasado['id']}")
           and c.get(f"{A}/analisis/cowork/antecedentes/999999999").status_code == 404)

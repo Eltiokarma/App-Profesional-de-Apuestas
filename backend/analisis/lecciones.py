@@ -54,17 +54,29 @@ def _estados() -> dict[str, dict]:
     return {f["clave"]: dict(f) for f in filas}
 
 
-def _casos(limite: int = 400) -> list[dict]:
-    """Los partes con veredicto, con su parte y su juicio ya cargados."""
+def _casos(limite: int = 400, ids=None) -> list[dict]:
+    """Los partes con veredicto, con su parte y su juicio ya cargados.
+
+    `ids` acota a esos fixtures: los antecedentes de un partido miran los
+    partes de DOS equipos y armaban el inventario entero (cada caso con su
+    chequeo de DT contra las alineaciones) para quedarse con cinco; con doce
+    agentes a la vez el GET tardaba de 30 s a más de 2 min (11/10/2026)."""
     from backend.analisis.parte import _conectar as conectar_parte
 
     from backend.analisis.parte import cohorte_de, dt_equivocado, sin_dt
 
+    if ids is not None and not ids:
+        return []
+    filtro, params = "", ()
+    if ids is not None:
+        ids = sorted({int(i) for i in ids})
+        filtro = f" AND fixture_id IN ({','.join('?' * len(ids))})"
+        params = tuple(ids)
     with conectar_parte() as con:
         filas = con.execute(
             "SELECT fixture_id, fecha, equipo_a, equipo_b, parte_json, veredicto_json, "
-            "cohorte, cuarentena_json, modo_fallo_json FROM parte_cowork WHERE veredicto_json IS NOT NULL "
-            "ORDER BY fecha DESC LIMIT ?", (limite,)).fetchall()
+            "cohorte, cuarentena_json, modo_fallo_json FROM parte_cowork WHERE veredicto_json IS NOT NULL"
+            + filtro + " ORDER BY fecha DESC LIMIT ?", (*params, limite)).fetchall()
     fuera = []
     for f in filas:
         parte = json.loads(f["parte_json"])
