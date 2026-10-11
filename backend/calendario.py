@@ -237,6 +237,7 @@ CLASICOS_DOCUMENTADOS = (
     ("penarol", "nacional"),                       # Montevideo · Clásico del fútbol uruguayo
     ("olimpia", "cerro porteno"),                  # Asunción · Superclásico paraguayo
     ("olimpia", "guarani"),                        # Asunción · el clásico más antiguo
+    ("libertad", "guarani"),                       # Asunción · «clásico moderno» (ABC Color, 09/10/2026)
     ("boca juniors", "river plate"),               # Buenos Aires · Superclásico
     ("san lorenzo", "huracan"),                    # Buenos Aires · clásico de barrio
     ("alianza lima", "universitario"),             # Lima · Clásico del fútbol peruano

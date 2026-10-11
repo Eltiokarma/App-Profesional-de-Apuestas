@@ -190,7 +190,7 @@ def main():
           and calendario.clasico_documentado("Boca Juniors", "River Plate"))
     check("y un partido de capital cualquiera no es clásico",
           not calendario.clasico_documentado("Central Espanol", "Club Nacional")
-          and not calendario.clasico_documentado("Libertad Asuncion", "Club Guarani"))
+          and not calendario.clasico_documentado("Sportivo Ameliano", "Tacuary"))
 
     # el bloque G del EFE relleno por código: lo que antes copiaba el modelo
     items = calendario.items_para_efe(FOCO)
