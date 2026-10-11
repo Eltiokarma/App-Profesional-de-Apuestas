@@ -3171,7 +3171,8 @@ def agenda(fecha: date_t | None = None, limite: int = 8, liga_id: int | None = N
         try:
             ciudad = cal._ciudad(f["home_team_id"])
             for e in cal.etiquetas_de_rival(f["away_team_id"], False, f["league_id"],
-                                            f["league_season"], (f["date"] or "")[:10], ciudad):
+                                            f["league_season"], (f["date"] or "")[:10], ciudad,
+                                            equipo_id=f["home_team_id"]):
                 etiquetas.add(e["codigo"])
         except Exception:
             pass
@@ -3280,8 +3281,9 @@ def agenda(fecha: date_t | None = None, limite: int = 8, liga_id: int | None = N
                      f"límite de {limite}: subilo si querés cubrirlos"),
         },
         "descartados": descartados,
-        "nota": "CLÁSICO solo se detecta por derbi de ciudad: una rivalidad nacional sin "
-                "vecindad geográfica no sale de nuestros datos y puede estar entre los descartados",
+        "nota": "CLÁSICO solo se detecta por derbi de ciudad (y en una ciudad con 4 o más clubes "
+                "de la liga, solo los clásicos documentados): una rivalidad nacional sin vecindad "
+                "geográfica no sale de nuestros datos y puede estar entre los descartados",
         "notaSeleccion": (
             "Filtro manual puesto: elegir una liga o una ventana ANTES del pitazo es "
             "selección ex ante y el caso sigue siendo `ciega` al escribir el veredicto. "
