@@ -91,6 +91,19 @@ def main():
           _norm_dt("M. Pellegrino") == _norm_dt("Mauricio Pellegrino")
           and _norm_dt("Gallardo") != _norm_dt("Costas"))
 
+    # el mismo DT con dos apellidos (firstname/lastname de /coachs) o con el
+    # orden cambiado en la alineación (11/10/2026: Pellegrini y Ramis)
+    from backend.ingesta.jugadores import mismo_nombre_dt
+    check("Pellegrini de la alineación = «Manuel Luis Pellegrini Ripamonti» de /coachs",
+          mismo_nombre_dt("Manuel Pellegrini", "Manuel Luis Pellegrini Ripamonti"))
+    check("«Miguel Ramis Luis» (alineación) = «Luis Miguel Ramis» (prensa)",
+          mismo_nombre_dt("Miguel Ramis Luis", "Luis Miguel Ramis"))
+    check("inicial + apellido = nombre completo", mismo_nombre_dt("M. Pellegrino", "Mauricio Pellegrino")
+          and mismo_nombre_dt("Pep Guardiola", "Josep Guardiola Sala"))
+    check("dos DT distintos no casan", not mismo_nombre_dt("Gallardo", "Costas")
+          and not mismo_nombre_dt("Marcelo Gallardo", "Gustavo Costas")
+          and not mismo_nombre_dt("Leonardo Peirano", "S. Novoa"))
+
     # --- 2b. EL DT VIGENTE, no el saliente (17 de 22 mal en la corrida del 16/09)
     from backend.ingesta.jugadores import elegir_entrenador, guardar_entrenador
     carrera = [
@@ -227,8 +240,11 @@ def main():
     check("y /coachs del equipo con registro viejo (40 días > 7)",
           ("coachs", {"team": 700}) in falso.pedidos, falso.pedidos)
     fila = con.execute("SELECT nombre, fuente, desde FROM entrenadores WHERE team_id=700").fetchone()
-    check("el DT queda el del banco aunque /coachs siga trayendo al saliente: fuente alineacion, desde = ese partido",
-          fila and fila[0] == "P. Guardiola" and fila[1] == "alineacion" and fila[2] == hace(24 * 4)[:10], fila)
+    # sin un once anterior de OTRO DT, ese partido es el primero capturado, no
+    # su llegada: `desde` vacío (11/10: Betis «desde 2022» con Pellegrini desde 2020)
+    check("el DT queda el del banco aunque /coachs siga trayendo al saliente: fuente alineacion, desde vacío "
+          "(no se vio su llegada)",
+          fila and fila[0] == "P. Guardiola" and fila[1] == "alineacion" and fila[2] is None, fila)
     check("el resumen cuenta el cambio", r["coachs"] >= 1 and any(c["equipo"] == 700 for c in r["cambiados"]), r)
     antes = len(falso.pedidos)
     dt_agenda(falso, con, dias=2, edad_dias=7)

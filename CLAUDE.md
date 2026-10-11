@@ -543,6 +543,19 @@ conversación se pierde en la siguiente.
      deuda 5 (onces de ligas sin cobertura), el umbral de `Missing Fixture` a
      recalibrar con casos, y ver en la próxima corrida real que a los equipos
      de interés (Beşiktaş y compañía) les aparezcan calendario y plantel.
+8. **Tres semanas sin cuotas prepartido** (18/09 → 11/10/2026). El filtro
+   de mercados del 18/09 (`cuota_key`) hacía `.strip()` sobre el valor y el
+   feed trae valores numéricos («Exact Goals Number»): el extractor se caía
+   en la fase de cuotas con `AttributeError` en CADA corrida y refresco, sin
+   guardar nada y quemando ~1.500 requests/día de `/odds`; los fixtures sí
+   entraban (fase anterior) y el en vivo también (otro camino), por eso nadie
+   lo vio. Arreglado en `cuota_key` (cualquier tipo) y `capturar_cuotas_lote`
+   (un partido que falla al guardar no corta la corrida). Lección: una fase
+   que no guarda NADA tres semanas seguidas tiene que verse — se notó porque
+   los partes de LaLiga salieron con el mercado vacío. Pendiente: que el
+   latido mire la edad de la última cuota prepartido. El mismo día: el DT
+   con dos apellidos no casaba (`mismo_nombre_dt`) y `xi/auto` mandaba a
+   `nuncaVaALlegar` un once de la ficha en conflicto.
 
 ## Siguientes pasos (en orden)
 

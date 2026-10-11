@@ -20,9 +20,13 @@ guarda. Sin efectos al importar: este módulo no toca la app ni arranca hilos.
 _BETS_FUERA = ("half", "1st", "2nd", "first", "second", "corner", "card", "extra", "period", "halftime")
 
 
-def cuota_key(bet_name: str, value: str):
-    b = (bet_name or "").lower()
-    v = (value or "").strip()
+def cuota_key(bet_name, value):
+    # el feed trae valores NUMÉRICOS en algunos mercados («Exact Goals
+    # Number»: 0, 1, 2…). Con `(value or "").strip()` el primer int tumbaba
+    # el extractor entero: del 18/09 al 11/10/2026 no entró ni una cuota
+    # prepartido y cada corrida quemaba sus requests de /odds para nada.
+    b = str(bet_name or "").lower()
+    v = "" if value is None else str(value).strip()
     if any(t in b for t in _BETS_FUERA):
         return None
     # "fulltime result": nombre del 1X2 en el catálogo de /odds/live

@@ -391,8 +391,8 @@ def _dt_equipo(crudo, rechazos: list, lado: str, fecha_partido: str,
         origen = "desde"
     if meses is None and nombre and entrenador_base and entrenador_base.get("nombre"):
         # el mismo apellido que el DT de la base → su fecha de asunción sirve
-        from backend.ingesta.jugadores import _norm_dt
-        if _norm_dt(nombre) == _norm_dt(entrenador_base["nombre"]) and _fecha(entrenador_base.get("desde")) and partido:
+        from backend.ingesta.jugadores import mismo_nombre_dt
+        if mismo_nombre_dt(nombre, entrenador_base["nombre"]) and _fecha(entrenador_base.get("desde")) and partido:
             desde = desde or _txt(entrenador_base.get("desde"))[:10]
             meses = round(max(0, (partido - _fecha(entrenador_base["desde"])).days) / _DIAS_MES, 1)
             origen = "base"
@@ -874,7 +874,7 @@ def alertas_dt(parte: dict, fx, nombres: dict) -> list[dict]:
     """DT-DISCREPANCIA cuando el parte (la prensa) y la base no dicen el mismo
     DT: manda el parte, y la base queda marcada para refrescarse. DT-SIN-DT
     cuando el bloque A no tiene entrenador: el caso no entra al aprendizaje."""
-    from backend.ingesta.jugadores import _norm_dt
+    from backend.ingesta.jugadores import mismo_nombre_dt
     out = []
     if not fx:
         return out
@@ -889,7 +889,7 @@ def alertas_dt(parte: dict, fx, nombres: dict) -> list[dict]:
                                    "aprendizaje (cuarentena automática) hasta que se re-deposite con el DT"})
             continue
         base = dt_de_base(tid)
-        if base and base.get("nombre") and _norm_dt(nombre) != _norm_dt(base["nombre"]):
+        if base and base.get("nombre") and not mismo_nombre_dt(nombre, base["nombre"]):
             out.append({"codigo": "DT-DISCREPANCIA", "equipo": lado, "tipo": "dato",
                         "detalle": f"{quien}: el parte dice «{nombre}» y la base tiene «{base['nombre']}» "
                                    f"({base['nota']}). Manda el parte —es lo verificado en prensa—; el registro "
@@ -2568,6 +2568,22 @@ def cerrar_onces_pendientes(limite: int = 50) -> dict:
                                          "fuenteAnterior": ya[lado].get("fuente", "")})
                 onces[lado] = de_ficha
         partido = f"{f['equipo_a']} vs {f['equipo_b']}"
+        ya_ficha = [l for l in LADOS if (ya.get(l) or {}).get("fuente") == FUENTE_FICHA]
+        if not onces and ya_ficha:
+            # LA FICHA YA LLEGÓ: lo que quede abierto no es «esta liga no da
+            # onces». Un once de la ficha que no casa con la tabla F1 se
+            # quedaba en `pendiente_xi` y la pasada siguiente lo mandaba a
+            # `nuncaVaALlegar` (ADT–Cienciano y América–Águilas, 11/10/2026):
+            # el conflicto se reporta en cada pasada hasta que se corrija.
+            listo = dto(fid)
+            malos = [l for l in LADOS if listo["equipos"][l]["disponibilidad"].get("conflicto")]
+            if malos:
+                conflictos.append({"fixtureId": fid, "partido": partido, "lados": malos,
+                                   "porque": listo["equipos"][malos[0]]["disponibilidad"]["conflicto"],
+                                   "onceDeLaFicha": True})
+                continue
+            if len(ya_ficha) == len(LADOS):
+                continue  # los dos lados de la ficha y sin conflicto: nada que hacer
         if not onces:
             # «TODAVÍA» ES UNA PROMESA, Y HAY LIGAS DONDE NO SE CUMPLE NUNCA.
             # Un partido TERMINADO sin alineación ingestada no está esperando
