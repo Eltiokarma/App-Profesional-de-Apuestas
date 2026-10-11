@@ -419,6 +419,19 @@ def main():
     check("la discrepancia se delata en el bloque que la tiene",
           bool(bl[0].get("discrepancia")) and not bl[1].get("discrepancia"),
           [b.get("discrepancia") for b in bl])
+    # UN ÍNDICE QUE NO SE PUEDE CALCULAR NO ES UN CERO (11/10/2026: Rennes–
+    # Auxerre y San Lorenzo–Riestra salían «IE 0.0 · ISE 0.0» con el bloque S
+    # sin puntuar: el riesgo más bajo de la escala sobre algo que nadie midió)
+    sin_s = {k: v for k, v in ind.items() if not k.startswith("S")}
+    r = c.post(f"{A}/analisis/cowork", json={**pel, "tde": {"bloques": [
+        {"equipo": "a", "ventana": "60-75'", "indicadores": sin_s, "ieNivel": "ambar"},
+        {"equipo": "b", "ventana": "75-90'", "indicadores": ind}]}})
+    bl = {b["equipo"]: b for b in c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["tde"]["bloques"]}
+    check("sin bloque S el índice no se calcula y sale null, no 0.0",
+          bl["a"]["calculado"].get("sinDato") and bl["a"].get("ie") is None and bl["a"].get("ise") is None,
+          (bl["a"].get("ie"), bl["a"].get("ise"), bl["a"].get("calculado", {}).get("porque")))
+    check("…y el nivel declarado se conserva, y el otro equipo sí trae su número",
+          bl["a"].get("ieNivel") == "ambar" and isinstance(bl["b"].get("ie"), float), (bl["a"], bl["b"].get("ie")))
     c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
 
     # ── EL CONTRATO SE PUEDE LEER, NO SE ADIVINA ────────────────────────────

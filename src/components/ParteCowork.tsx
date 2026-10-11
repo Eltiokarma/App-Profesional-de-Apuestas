@@ -408,14 +408,14 @@ function CajaOnce({ parte, matchId, onParte }: { parte: ParteCoworkDTO; matchId:
   )
 }
 
-function Indice({ etiqueta, valor, nivel, nota }: { etiqueta: string; valor: number; nivel?: Semaforo | ''; nota: string }) {
+function Indice({ etiqueta, valor, nivel, nota }: { etiqueta: string; valor: number | null; nivel?: Semaforo | ''; nota: string }) {
   // sin nivel del skill se pinta en neutro: el backend no inventa umbrales
   const col = nivel ? COLOR[nivel] : 'var(--t1)'
   const fondo = nivel ? SUAVE[nivel] : 'var(--bg3)'
   return (
     <div style={{ flex: 1, minWidth: 120, padding: '11px 13px', borderRadius: 11, background: fondo, textAlign: 'center' }}>
       <div style={{ font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px' }}>{etiqueta}</div>
-      <div style={{ font: '800 22px var(--mono)', color: col, fontVariantNumeric: 'tabular-nums' }}>{valor}</div>
+      <div style={{ font: '800 22px var(--mono)', color: valor == null ? 'var(--t3)' : col, fontVariantNumeric: 'tabular-nums' }}>{valor ?? '—'}</div>
       <div style={{ font: '500 10px var(--sans)', color: 'var(--t3)' }}>{nota}</div>
     </div>
   )
@@ -437,10 +437,10 @@ function BloqueTdeVista({ tde, nombreDe }: { tde: BloqueTde; nombreDe: (l: 'a' |
           )}
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 11 }}>
-          <Indice etiqueta="IE · ECHADA" valor={tde.ie ?? 0} nivel={tde.ieNivel}
-            nota={c?.bandaOrdinal ? `tramo ${c.bandaOrdinal.tramo} · sin probabilidad` : 'repliegue sin control'} />
-          <Indice etiqueta="ISE · SOBREEXPOSICIÓN" valor={tde.ise ?? 0} nivel={tde.iseNivel}
-            nota={c?.bandaOrdinalIse ? `tramo ${c.bandaOrdinalIse.tramo} · sin probabilidad` : 'no replegar a tiempo'} />
+          <Indice etiqueta="IE · ECHADA" valor={tde.ie ?? null} nivel={tde.ieNivel}
+            nota={tde.ie == null ? (c?.porque ? `sin calcular: ${c.porque}` : 'sin dato') : c?.bandaOrdinal ? `tramo ${c.bandaOrdinal.tramo} · sin probabilidad` : 'repliegue sin control'} />
+          <Indice etiqueta="ISE · SOBREEXPOSICIÓN" valor={tde.ise ?? null} nivel={tde.iseNivel}
+            nota={tde.ise == null ? (c?.porque ? `sin calcular: ${c.porque}` : 'sin dato') : c?.bandaOrdinalIse ? `tramo ${c.bandaOrdinalIse.tramo} · sin probabilidad` : 'no replegar a tiempo'} />
           {tde.ventana && (
             <div style={{ flex: 1, minWidth: 120, padding: '11px 13px', borderRadius: 11, background: 'var(--accent-soft)', textAlign: 'center' }}>
               <div style={{ font: '700 9.5px var(--mono)', color: 'var(--accent)', letterSpacing: '.5px' }}>VENTANA</div>
