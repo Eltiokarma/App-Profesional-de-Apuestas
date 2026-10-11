@@ -3301,6 +3301,19 @@ components:
         sinCerrar: { type: integer }
         veredictosVencidos: { type: array, items: { type: object, additionalProperties: true } }
         sinOnceCerrado: { type: array, items: { type: object, additionalProperties: true } }
+        cuotasPrepartido:
+          type: object
+          description: >
+            ¿Entran las cuotas prepartido? De los NS de las próximas `ventanaHoras`, cuántos
+            tienen alguna captura y cuándo fue la última. Con 10 o más próximos y ninguno con
+            cuota, `alarma` trae el motivo y el latido pasa a ámbar (deuda 8: tres semanas
+            sin cuotas sin que nadie lo viera).
+          properties:
+            ventanaHoras: { type: integer }
+            proximos: { type: integer }
+            conCuota: { type: integer }
+            ultimaCaptura: { type: string, nullable: true }
+            alarma: { type: string }
         nota: { type: string }
     FichaTde:
       type: object

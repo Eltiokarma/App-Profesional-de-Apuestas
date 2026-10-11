@@ -552,8 +552,10 @@ conversación se pierde en la siguiente.
    lo vio. Arreglado en `cuota_key` (cualquier tipo) y `capturar_cuotas_lote`
    (un partido que falla al guardar no corta la corrida). Lección: una fase
    que no guarda NADA tres semanas seguidas tiene que verse — se notó porque
-   los partes de LaLiga salieron con el mercado vacío. Pendiente: que el
-   latido mire la edad de la última cuota prepartido. El mismo día: el DT
+   los partes de LaLiga salieron con el mercado vacío. HECHO: el latido
+   mira las cuotas prepartido (`cuotasPrepartido`: de los NS de las próximas
+   48 h cuántos tienen captura y cuándo fue la última; con ≥ 10 y ninguno,
+   ámbar con el motivo), por fixture contra el índice. El mismo día: el DT
    con dos apellidos no casaba (`mismo_nombre_dt`) y `xi/auto` mandaba a
    `nuncaVaALlegar` un once de la ficha en conflicto.
 

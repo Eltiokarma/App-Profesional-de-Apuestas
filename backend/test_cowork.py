@@ -692,6 +692,18 @@ def main():
     check("lista los veredictos vencidos y los onces sin cerrar",
           isinstance(lat["veredictosVencidos"], list) and isinstance(lat["sinOnceCerrado"], list),
           sorted(lat))
+    cp = lat.get("cuotasPrepartido") or {}
+    check("vigila las cuotas prepartido de los próximos NS (deuda 8)",
+          {"proximos", "conCuota", "ultimaCaptura", "alarma"} <= set(cp), cp)
+    from backend.analisis import parte as _parte_mod
+    _min = _parte_mod.CUOTAS_MIN_PROXIMOS
+    try:
+        _parte_mod.CUOTAS_MIN_PROXIMOS = 0
+        sin = _parte_mod.cuotas_prepartido(horas=24 * 365 * 5)
+        check("la alarma suena SOLO cuando ningún NS próximo tiene cuota",
+              sin["proximos"] > 0 and bool(sin["alarma"]) == (sin["conCuota"] == 0), sin)
+    finally:
+        _parte_mod.CUOTAS_MIN_PROXIMOS = _min
     check("y declara que el silencio cuenta como fallo",
           "ROJO" in lat["nota"] and "silencio" in lat["nota"].lower(), lat.get("nota"))
     # ── EL REVISOR DE COHERENCIA: QUÉ ENCONTRÓ Y QUÉ HIZO COWORK ─────────────
