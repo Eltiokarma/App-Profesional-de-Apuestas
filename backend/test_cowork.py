@@ -467,6 +467,27 @@ def main():
     check("es idempotente: el ya cerrado no se vuelve a tocar",
           all(x["fixtureId"] != con_ficha for x in otra["cerrados"]),
           [x["fixtureId"] for x in otra["cerrados"]])
+    # UN ONCE DE LA FICHA QUE NO CASA NO ES «ESTA LIGA NO DA ONCES» (11/10/2026:
+    # ADT–Cienciano y América–Águilas salieron en conflicto y, en la pasada
+    # siguiente, en `nuncaVaALlegar`, porque sus lados ya venían de la ficha)
+    malo = _parte(con_ficha)
+    for lado in ("a", "b"):
+        for j in malo["equipos"][lado]["plantel"]:
+            j["nombre"] = "Zz" + j["nombre"].replace(" ", "")
+        malo["equipos"][lado]["fuera"] = []
+    c.delete(f"{A}/analisis/cowork/{con_ficha}")
+    c.post(f"{A}/analisis/cowork", json=malo)
+    primera = c.post(f"{A}/analisis/cowork/xi/auto").json()
+    segunda = c.post(f"{A}/analisis/cowork/xi/auto").json()
+    check("un once de la ficha que no casa con la tabla F1 sale en `conConflicto`",
+          any(x["fixtureId"] == con_ficha for x in primera["conConflicto"]), primera.get("conConflicto"))
+    check("…y en la pasada siguiente SIGUE en conflicto, no en `nuncaVaALlegar`",
+          any(x["fixtureId"] == con_ficha and x.get("onceDeLaFicha") for x in segunda["conConflicto"])
+          and all(x["fixtureId"] != con_ficha for x in segunda["nuncaVaALlegar"] + segunda["sinFichaTodavia"]),
+          (segunda.get("conConflicto"), segunda.get("nuncaVaALlegar")))
+    c.delete(f"{A}/analisis/cowork/{con_ficha}")
+    c.post(f"{A}/analisis/cowork", json=_parte(con_ficha))
+    c.post(f"{A}/analisis/cowork/xi/auto")
 
     # ── EL MISMO HUECO, LEÍDO AL REVÉS POR DOS ESCALAS ─────────────────────
     # Un equipo salió «1.9% SIN FORMACIÓN» y «IE 8.14 · casi seguro» a la vez:

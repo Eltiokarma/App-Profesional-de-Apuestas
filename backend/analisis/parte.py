@@ -2568,6 +2568,22 @@ def cerrar_onces_pendientes(limite: int = 50) -> dict:
                                          "fuenteAnterior": ya[lado].get("fuente", "")})
                 onces[lado] = de_ficha
         partido = f"{f['equipo_a']} vs {f['equipo_b']}"
+        ya_ficha = [l for l in LADOS if (ya.get(l) or {}).get("fuente") == FUENTE_FICHA]
+        if not onces and ya_ficha:
+            # LA FICHA YA LLEGÓ: lo que quede abierto no es «esta liga no da
+            # onces». Un once de la ficha que no casa con la tabla F1 se
+            # quedaba en `pendiente_xi` y la pasada siguiente lo mandaba a
+            # `nuncaVaALlegar` (ADT–Cienciano y América–Águilas, 11/10/2026):
+            # el conflicto se reporta en cada pasada hasta que se corrija.
+            listo = dto(fid)
+            malos = [l for l in LADOS if listo["equipos"][l]["disponibilidad"].get("conflicto")]
+            if malos:
+                conflictos.append({"fixtureId": fid, "partido": partido, "lados": malos,
+                                   "porque": listo["equipos"][malos[0]]["disponibilidad"]["conflicto"],
+                                   "onceDeLaFicha": True})
+                continue
+            if len(ya_ficha) == len(LADOS):
+                continue  # los dos lados de la ficha y sin conflicto: nada que hacer
         if not onces:
             # «TODAVÍA» ES UNA PROMESA, Y HAY LIGAS DONDE NO SE CUMPLE NUNCA.
             # Un partido TERMINADO sin alineación ingestada no está esperando
