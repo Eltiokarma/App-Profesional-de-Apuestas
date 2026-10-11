@@ -1045,8 +1045,12 @@ def _bloque_tde(x, rechazos: list, donde: str, lado: str = "") -> dict:
         # equivocar y las compuertas se pueden olvidar, y las dos cosas pasaron
         # en el registro. El `ie` suelto se conserva solo como lo que llegó.
         "indicadores": {k: _num(v, 1) for k, v in ind.items() if v is not None},
-        "ie": _num(ie, 1000), "ieNivel": niveles["ieNivel"],
-        "ise": _num(ise, 1000), "iseNivel": niveles["iseNivel"],
+        # UN ÍNDICE QUE NO LLEGÓ NO ES UN CERO. `_num(None)` daba 0.0, y con el
+        # bloque S sin puntuar (el backend no puede calcular) el parte mostraba
+        # «IE 0.0 · ISE 0.0»: el riesgo más bajo de la escala sobre algo que
+        # nadie midió (Rennes–Auxerre y San Lorenzo–Riestra, 11/10/2026).
+        "ie": None if ie in (None, "") else _num(ie, 1000), "ieNivel": niveles["ieNivel"],
+        "ise": None if ise in (None, "") else _num(ise, 1000), "iseNivel": niveles["iseNivel"],
         "equipo": lado or equipo,
         "tipologia": _txt(x.get("tipologia")),
         "ventana": _txt(x.get("ventana")),
@@ -1830,7 +1834,14 @@ def _bloque_calculado(tde: dict) -> dict:
     fuera["calculado"] = calc
     declarado = {"ie": tde.get("ie"), "ise": tde.get("ise")}
     fuera["declarado"] = declarado
-    if not calc.get("sinDato"):
+    if calc.get("sinDato"):
+        # sin índice calculable, el 0.0 guardado antes del 11/10/2026 es el
+        # relleno de `_num(None)`, no un valor declarado: un IE de 0 exacto con
+        # indicadores puntuados no lo produce nadie a mano
+        for clave in ("ie", "ise"):
+            if fuera.get(clave) in (0, 0.0):
+                fuera[clave] = None
+    else:
         discrepa = []
         for clave in ("ie", "ise"):
             d, c = declarado.get(clave), calc.get(clave)

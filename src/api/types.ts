@@ -1222,9 +1222,9 @@ export interface ReventonLadoDTO {
  *  que pone el skill (el backend no inventa umbrales para una escala que vive en otro
  *  lado). '' = píntalo en neutro. Un número en el nivel lo rechaza el backend. */
 export interface BloqueTde {
-  ie?: number
+  ie?: number | null
   ieNivel?: Semaforo | ''
-  ise?: number
+  ise?: number | null
   iseNivel?: Semaforo | ''
   equipo?: 'a' | 'b' | ''
   tipologia?: string
@@ -1254,7 +1254,7 @@ export interface TdeParte {
 export interface IndiceTde {
   sinDato?: boolean
   porque?: string
-  ie?: number
+  ie?: number | null
   ise?: number | null
   /** Promedio de cada bloque DESPUÉS de compuertas y reglas de piso. */
   bloques?: Record<string, number>
