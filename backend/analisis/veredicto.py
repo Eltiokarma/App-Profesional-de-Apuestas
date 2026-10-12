@@ -58,7 +58,12 @@ def _fixture(fixture_id: int):
 
 
 def _goles(fixture_id: int, home_id: int) -> list[dict]:
-    """Goles con minuto y lado. El autogol cuenta para el rival del que lo hizo.
+    """Goles con minuto y lado.
+
+    En API-Football el `team` de un autogol es el equipo BENEFICIADO, no el del
+    jugador (Libertad–Guaraní 2-2 del 11/10/2026 sumaba 3-1 al invertirlo), así
+    que el lado sale del equipo del evento tal cual, como en `dtp_cowork`. Un
+    penal errado viaja como `Goal` / `Missed Penalty` y no es gol.
 
     Si la ficha del partido no se capturó, la lista sale vacía: el marcador
     sigue siendo bueno (viene del fixture) pero la ventana del TDE no se puede
@@ -75,8 +80,11 @@ def _goles(fixture_id: int, home_id: int) -> list[dict]:
         return []  # DB anterior a la migración de eventos
     out = []
     for f in filas:
-        autogol = "own" in (f["detalle"] or "").lower()
-        de_local = (f["equipo_id"] == home_id) != autogol
+        detalle = (f["detalle"] or "").lower()
+        if "missed" in detalle:
+            continue
+        autogol = "own" in detalle
+        de_local = f["equipo_id"] == home_id
         # `minuto` ya trae sumado el añadido (ficha_partido.guardar_eventos:
         # 90+4 se guarda como minuto 94, extra 4). Sumarlo otra vez ponía ese
         # gol en el 98 y lo sacaba de la ventana 75-90 en la que cayó.

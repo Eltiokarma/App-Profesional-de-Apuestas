@@ -1695,6 +1695,22 @@ def main():
     check("la tanda de penales no entra como gol", all(m <= 94 for m in goles_min), goles_min)
     with _sq2.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM fixture_eventos WHERE fixture_id=? AND minuto >= 94", (con_ficha,))
+    # EL AUTOGOL VA CON EL EQUIPO DEL EVENTO Y EL PENAL ERRADO NO ES GOL. La API
+    # pone en el autogol al equipo beneficiado (Libertad–Guaraní 2-2 sumaba 3-1)
+    # y un `Missed Penalty` viaja como `Goal` (Palmeiras–Corinthians).
+    with _sq2.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.executemany("INSERT INTO fixture_eventos (fixture_id, minuto, extra, tipo, detalle, equipo_id, jugador) "
+                         "VALUES (?,?,?,?,?,?,?)",
+                         [(con_ficha, 60, 0, "Goal", "Own Goal", hid, "Autogol rival"),
+                          (con_ficha, 70, 0, "Goal", "Missed Penalty", hid, "Penal errado")])
+    ev = c.get(f"{A}/analisis/cowork/{con_ficha}/veredicto").json()["objetivo"]["evidencia"]["goles"]
+    og = [g for g in ev if g["minuto"] == 60]
+    check("el autogol cuenta para el equipo que figura en el evento (el beneficiado)",
+          len(og) == 1 and og[0]["lado"] == "a" and og[0]["autogol"] is True, og)
+    check("el penal errado no entra como gol", all(g["minuto"] != 70 for g in ev), ev)
+    with _sq2.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM fixture_eventos WHERE fixture_id=? AND minuto IN (60, 70) "
+                     "AND jugador IN ('Autogol rival', 'Penal errado')", (con_ficha,))
 
     # DOS EQUIPOS, DOS VENTANAS, DOS VEREDICTOS. Antes el segundo bloque vivía
     # en `notas` y no se comprobaba contra nada.
