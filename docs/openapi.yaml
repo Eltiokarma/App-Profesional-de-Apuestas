@@ -3314,7 +3314,31 @@ components:
             conCuota: { type: integer }
             ultimaCaptura: { type: string, nullable: true }
             alarma: { type: string }
+        presupuestoApi:
+          type: object
+          description: >
+            El plan diario de API-Football, leído del marcador de la ingesta (0 requests):
+            `hoy` y `ayer` con lo usado, el consumo por endpoint (de mayor a menor) y por hora
+            UTC, y cuándo tocó el tope (`agotadoEn` UTC, `agotadoEnLima`). Si hoy o ayer se
+            agotó antes de las 22:00 UTC, `alarma` trae el motivo y el latido pasa a ámbar: el
+            11/10/2026 se agotó a las 12:40 de Lima y la tarde sudamericana se quedó sin cuotas
+            en juego. Sin marcador, `hoy` y `ayer` son null.
+          properties:
+            hoy: { $ref: '#/components/schemas/PresupuestoDia' }
+            ayer: { $ref: '#/components/schemas/PresupuestoDia' }
+            alarma: { type: string }
         nota: { type: string }
+    PresupuestoDia:
+      type: object
+      nullable: true
+      properties:
+        dia: { type: string, nullable: true }
+        usadas: { type: integer }
+        limite: { type: integer, nullable: true }
+        porEndpoint: { type: object, additionalProperties: { type: integer } }
+        porHora: { type: object, additionalProperties: { type: integer } }
+        agotadoEn: { type: string, nullable: true }
+        agotadoEnLima: { type: string, nullable: true }
     FichaTde:
       type: object
       description: Insumos del TDE calculados desde nuestra base. NO incluye el IE.

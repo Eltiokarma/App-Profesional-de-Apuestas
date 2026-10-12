@@ -559,6 +559,20 @@ conversación se pierde en la siguiente.
    con dos apellidos no casaba (`mismo_nombre_dt`) y `xi/auto` mandaba a
    `nuncaVaALlegar` un once de la ficha en conflicto.
 
+9. **El plan de API-Football se agotó al mediodía** (11/10/2026, 12:40 de
+   Lima). El en vivo servía cuotas a quien llegara primero: el fútbol europeo
+   de la mañana se comió el plan y la tarde sudamericana —Liga 1 incluida—
+   quedó sin una cuota en juego hasta el reset (19:00 Lima). HECHO: reparto
+   en el tiempo (`backend/ingesta/en_vivo.py`): una consulta por liga cada
+   `SAD_LIVE_ODDS_INTERVALO_MIN` (2) minutos, cola por rango del padrón
+   (Perú · internacionales · resto, `rango_liga`) y un ritmo que compara lo
+   que queda del plan con lo que cuesta cubrir lo que falta hasta el reset
+   (de igual o mejor rango) y, si no alcanza, ESTIRA el intervalo en
+   proporción (tope `SAD_LIVE_ODDS_INTERVALO_MAX_MIN`, 15) en vez de dejar a
+   alguien en cero. Y se ve: el marcador de la ingesta guarda el consumo por
+   hora, la hora de agotado y el resumen de ayer; el latido lo trae en
+   `presupuestoApi` y pasa a ámbar si el plan se agotó antes de las 22:00 UTC.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel

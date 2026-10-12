@@ -719,6 +719,37 @@ def main():
         _parte_mod.CUOTAS_MIN_PROXIMOS = _min
     check("y declara que el silencio cuenta como fallo",
           "ROJO" in lat["nota"] and "silencio" in lat["nota"].lower(), lat.get("nota"))
+    # EL PLAN DE API-FOOTBALL: cuánto, en qué y a qué hora se acabó (11/10/2026:
+    # agotado a las 12:40 de Lima y la tarde sudamericana sin cuotas en juego)
+    check("sin marcador de la ingesta, el presupuesto no afirma nada",
+          lat.get("presupuestoApi") == {"hoy": None, "ayer": None, "alarma": ""}, lat.get("presupuestoApi"))
+    from datetime import datetime as _dtp, timezone as _tzp
+    _hoy = _dtp.now(_tzp.utc).strftime("%Y-%m-%d")
+    with open(os.path.join(tmp, ".extractor_cuota.json"), "w", encoding="utf-8") as _f:
+        json.dump({"dia": _hoy, "usadas": 1200, "limite_api": 7500,
+                   "usadas_por": {"odds/live": 900, "fixtures": 300},
+                   "usadas_por_hora": {"12": 700, "13": 500}, "agotado_en": None,
+                   "anterior": {"dia": "2026-10-11", "usadas": 7495, "limite_api": 7500,
+                                "usadas_por": {"odds/live": 5100, "odds": 1500, "fixtures": 895},
+                                "usadas_por_hora": {"12": 1300, "17": 1100},
+                                "agotado_en": "2026-10-11T17:40:12Z"}}, _f)
+    pa = c.get(f"{A}/analisis/cowork/latido").json()
+    pr = pa.get("presupuestoApi") or {}
+    check("el latido trae el consumo de hoy por endpoint y por hora",
+          (pr.get("hoy") or {}).get("usadas") == 1200
+          and list((pr.get("hoy") or {}).get("porEndpoint", {}))[0] == "odds/live"
+          and (pr.get("hoy") or {}).get("porHora") == {"12": 700, "13": 500}, pr.get("hoy"))
+    check("y el de ayer, con la hora de Lima en que se agotó",
+          (pr.get("ayer") or {}).get("agotadoEnLima") == "12:40", pr.get("ayer"))
+    check("un plan agotado antes de la noche es alarma y pasa al motivo del latido",
+          "12:40" in pr.get("alarma", "") and "odds/live 5100" in pr["alarma"]
+          and pr["alarma"] in pa["porque"] and pa["estado"] in ("ambar", "rojo"), pr.get("alarma"))
+    with open(os.path.join(tmp, ".extractor_cuota.json"), "w", encoding="utf-8") as _f:
+        json.dump({"dia": _hoy, "usadas": 7495, "limite_api": 7500, "usadas_por": {},
+                   "agotado_en": f"{_hoy}T23:30:00Z"}, _f)
+    check("agotarse a las 23:30 UTC (media hora del reset) no es alarma",
+          _parte_mod.presupuesto_api()["alarma"] == "", _parte_mod.presupuesto_api())
+    os.remove(os.path.join(tmp, ".extractor_cuota.json"))
     # ── EL REVISOR DE COHERENCIA: QUÉ ENCONTRÓ Y QUÉ HIZO COWORK ─────────────
     rev_r = c.get(f"{A}/analisis/cowork/revisor")
     check("`revisor` no se lo come /{fixture_id}", rev_r.status_code == 200, rev_r.text[:160])

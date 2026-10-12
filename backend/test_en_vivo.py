@@ -184,7 +184,117 @@ def hace(minutos: int) -> str:
     return (datetime.now(timezone.utc) - timedelta(minutes=minutos)).strftime("%Y-%m-%d %H:%M:%S.%f")
 
 
+def test_reparto_en_el_tiempo():
+    """El plan se reparte entre los partidos del día, con Perú primero (11/10/2026:
+    el fútbol europeo de la mañana se comió el plan y la tarde sudamericana se
+    quedó sin una sola cuota en juego)."""
+    en_vivo_mod.INTERVALO_LIGA_MIN = 2
+    COLOMBIA, PARAGUAY = 239, 250
+    ahora = datetime(2026, 10, 11, 12, 0, tzinfo=timezone.utc)
+    f = lambda h, m=0: f"2026-10-11 {h:02d}:{m:02d}:00.000000"
+    con = db(con_fixtures=True)
+    con.executemany("INSERT INTO fixtures (id, date, status_short, league_id) VALUES (?,?,?,?)", [
+        (1, f(11, 30), "2H", PREMIER),   # en juego: le quedan 85 min
+        (2, f(20), "NS", PERU),           # 115 min
+        (3, f(21), "NS", COLOMBIA),       # 115 min
+        (4, f(21), "NS", COLOMBIA),       # simultáneo: la misma consulta lo cubre
+        (5, f(22), "NS", PARAGUAY),       # 115 min
+        (6, "2026-10-12 01:15:00.000000", "NS", PERU),  # después del reset: es del plan de mañana
+        (7, f(9), "FT", PREMIER),         # terminado: no cuesta nada
+    ])
+    con.commit()
+    d = en_vivo_mod.demanda_por_rango(con, {PERU, PREMIER, COLOMBIA, PARAGUAY}, ahora)
+    # Perú 115/2×1.5 = 86.25 → 87; resto (85+115+115)/2×1.5 = 236.25; acumulado 322.5 → 323
+    check("demanda: Perú solo cuenta lo suyo de aquí al reset", d[0] == 87, d)
+    check("demanda: los simultáneos de una liga comparten la consulta y lo de después del reset no cuenta",
+          d[2] == 323, d)
+
+    holgado = ClienteFalso({}, limite=10**4, usadas=0)
+    check("con plan de sobra, todas las ligas a su intervalo normal",
+          set(en_vivo_mod.intervalos_por_rango(holgado, con, {PERU, PREMIER, COLOMBIA, PARAGUAY}, ahora).values()) == {2})
+    reserva = en_vivo_mod.reserva_viva(ahora)
+    justo = ClienteFalso({}, limite=10**4, usadas=10**4 - reserva - 150)  # quedan 150 para cuotas
+    iv = en_vivo_mod.intervalos_por_rango(justo, con, {PERU, PREMIER, COLOMBIA, PARAGUAY}, ahora)
+    check("plan justo: Perú sigue a su intervalo (le alcanza para lo suyo)", iv[0] == 2, iv)
+    check("plan justo: el resto se estira en proporción (2 × 323/150 → 5 min)", iv[2] == 5, iv)
+    seco = ClienteFalso({}, limite=10**4, usadas=10**4 - reserva)
+    check("sin plan para cuotas, el intervalo topa en el máximo (nunca infinito)",
+          en_vivo_mod.intervalos_por_rango(seco, con, {PREMIER}, ahora)[2] == en_vivo_mod.INTERVALO_MAX_MIN)
+
+    con.executemany(
+        "INSERT INTO odds_live_consultas (league_id, consultada_en, con_datos, estado) VALUES (?,?,?,?)",
+        [(PREMIER, "2026-10-11 11:57:00.000", 1, "ok"),
+         (PERU, "2026-10-11 11:59:45.000", 0, "fallo")])
+    con.commit()
+    check("una liga consultada hace 3 min descansa si su intervalo estirado es 5",
+          en_vivo_mod.ligas_descansando(con, {PREMIER}, ahora, iv) == {PREMIER})
+    check("…y no descansa con el intervalo normal de 2",
+          en_vivo_mod.ligas_descansando(con, {PREMIER}, ahora, {2: 2}) == set())
+    check("una ronda que FALLÓ no cuenta como consulta: se reintenta ya",
+          en_vivo_mod.ligas_descansando(con, {PERU}, ahora, iv) == set())
+
+    # el ciclo: con plan de sobra, la misma liga no se pide dos minutos seguidos
+    con2 = db()
+    feed = {PREMIER: [item_odds(OTRO_PAIS)], PERU: [item_odds(MELGAR_CRISTAL)]}
+    cli = ClienteFalso(feed)
+    por_liga = {PREMIER: {OTRO_PAIS}, PERU: {MELGAR_CRISTAL}}
+    ids = {OTRO_PAIS, MELGAR_CRISTAL}
+    capturar_odds_live(cli, con2, por_liga, ids, "2026-10-11 12:00:00.000", en_juego={PREMIER, PERU})
+    check("el ciclo pide primero Perú y después el resto (orden del padrón)",
+          [p[1] for p in cli.pedidos if p[0] == "odds/live"] == [PERU, PREMIER], cli.pedidos)
+    cli.pedidos.clear()
+    _, cf = capturar_odds_live(cli, con2, por_liga, ids, "2026-10-11 12:01:00.000",
+                               en_juego={PREMIER, PERU}, ids_en_juego=ids)
+    check("al minuto siguiente las dos ligas descansan: 0 requests (ni rescate por fixture)",
+          cli.pedidos == [], cli.pedidos)
+    capturar_odds_live(cli, con2, por_liga, ids, "2026-10-11 12:02:00.000", en_juego={PREMIER, PERU})
+    check("a los dos minutos vuelven a pedirse", len(cli.pedidos) == 2, cli.pedidos)
+    en_vivo_mod.INTERVALO_LIGA_MIN = 1
+
+
+def test_cuota_por_hora_y_dia_anterior():
+    """El marcador de la ingesta guarda a qué hora se gasta, cuándo se agotó y
+    el resumen de ayer (lo que el latido muestra a la mañana siguiente)."""
+    import json
+    import tempfile
+    from backend.ingesta import extractor as ex
+    previo = os.getcwd()
+    os.chdir(tempfile.mkdtemp(prefix="sad_cuota_"))
+    try:
+        with open(ex.CUOTA_PATH, "w", encoding="utf-8") as f:
+            json.dump({"dia": "2026-10-11", "usadas": 7495, "limite_api": 7500,
+                       "usadas_por": {"odds/live": 5100}, "usadas_por_hora": {"17": 900},
+                       "agotado_en": "2026-10-11T17:40:12Z"}, f)
+        c = ex.Cliente("x")
+        check("cuota: el día nuevo arranca de cero", c.usadas == 0 and c.usadas_por_hora == {}, c.usadas)
+        check("cuota: el resumen de ayer se conserva con su hora de agotado",
+              (c.anterior or {}).get("agotado_en") == "2026-10-11T17:40:12Z", c.anterior)
+        c._pedir = lambda *a, **k: {"response": []}  # sin red
+        c.limite = 2
+        c.get("fixtures", {"live": "all"})
+        check("cuota: sin tocar el tope no hay hora de agotado", c.agotado_en is None, c.agotado_en)
+        c.get("odds/live", {"league": 39})
+        check("cuota: cuenta las requests por hora UTC", sum(c.usadas_por_hora.values()) == 2,
+              c.usadas_por_hora)
+        check("cuota: marca cuándo tocó el tope", bool(c.agotado_en), c.agotado_en)
+        c2 = ex.Cliente("x")
+        check("cuota: otro proceso del mismo día lee la hora, el agotado y el ayer",
+              c2.usadas_por_hora == c.usadas_por_hora and c2.agotado_en == c.agotado_en
+              and (c2.anterior or {}).get("dia") == "2026-10-11", (c2.usadas_por_hora, c2.anterior))
+    finally:
+        os.chdir(previo)
+
+
 def main():
+    test_cuota_por_hora_y_dia_anterior()
+    # los tests de rotación, backoff y rescate corren minuto a minuto: con el
+    # intervalo de 1 se prueba esa lógica sola; el reparto va en su propio test
+    en_vivo_mod.INTERVALO_LIGA_MIN = 1
+    test_reparto_en_el_tiempo()
+    # …y con todas las ligas en el mismo rango: lo que se prueba ahí es la
+    # rotación por antigüedad, que es la que rige entre ligas de igual prioridad
+    rango_real = en_vivo_mod.rango_liga
+    en_vivo_mod.rango_liga = lambda lid: 2
     vivos = [
         {"fixture": {"id": MELGAR_CRISTAL}, "league": {"id": PERU}},
         {"fixture": {"id": OTRO_PERU}, "league": {"id": PERU}},
@@ -943,6 +1053,7 @@ def main():
     quedan = con.execute("SELECT COUNT(*) FROM alineaciones WHERE fixture_id=21").fetchone()[0]
     check("XI: una respuesta vacía no pisa el XI ya capturado", quedan == 1, quedan)
 
+    en_vivo_mod.rango_liga = rango_real
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
 

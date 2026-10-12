@@ -27,6 +27,7 @@ DBs del SAD.
 """
 import difflib
 import json
+import os
 import re
 import unicodedata
 import sqlite3
@@ -2930,6 +2931,70 @@ def cuotas_prepartido(ahora: datetime | None = None, horas: int = CUOTAS_HORAS) 
     return out
 
 
+# el plan diario de API-Football resetea a las 00:00 UTC: agotarlo antes de
+# esta hora deja sin cuotas en juego ni alineaciones lo que queda del día
+PRESUPUESTO_HORA_SANA = 22
+CUOTA_ARCHIVO = ".extractor_cuota.json"
+
+
+def _resumen_cuota(d: dict) -> dict:
+    """Un día del marcador de la ingesta, en el formato del contrato."""
+    por = d.get("usadas_por") if isinstance(d.get("usadas_por"), dict) else {}
+    por_hora = d.get("usadas_por_hora") if isinstance(d.get("usadas_por_hora"), dict) else {}
+    agotado = d.get("agotado_en") or None
+    lima = None
+    if agotado:
+        try:
+            t = datetime.strptime(str(agotado)[:19], "%Y-%m-%dT%H:%M:%S") - timedelta(hours=5)
+            lima = t.strftime("%H:%M")
+        except ValueError:
+            pass
+    return {
+        "dia": d.get("dia"),
+        "usadas": int(d.get("usadas") or 0),
+        "limite": d.get("limite_api"),
+        "porEndpoint": dict(sorted(((str(k), int(v)) for k, v in por.items()), key=lambda kv: -kv[1])),
+        "porHora": {k: int(v) for k, v in sorted(por_hora.items())},
+        "agotadoEn": agotado,
+        "agotadoEnLima": lima,
+    }
+
+
+def presupuesto_api() -> dict:
+    """¿Cuánto del plan de API-Football se gastó, en qué y a qué hora se acabó?
+
+    Lo lee del marcador que comparten todas las corridas de la ingesta (0
+    requests). El 11/10/2026 el plan se agotó a las 12:40 de Lima y la tarde
+    sudamericana —Liga 1 incluida— se quedó sin cuotas en juego: nadie lo vio
+    hasta revisar partido por partido. `alarma` sale cuando hoy o ayer el plan
+    tocó el tope antes de las PRESUPUESTO_HORA_SANA UTC."""
+    out = {"hoy": None, "ayer": None, "alarma": ""}
+    try:
+        with open(os.path.join(saddb.BASE_DIR, CUOTA_ARCHIVO), encoding="utf-8") as f:
+            d = json.load(f)
+    except (OSError, ValueError):
+        return out
+    if not isinstance(d, dict):
+        return out
+    out["hoy"] = _resumen_cuota(d)
+    if isinstance(d.get("anterior"), dict) and d["anterior"].get("dia"):
+        out["ayer"] = _resumen_cuota(d["anterior"])
+    for cual, r in (("hoy", out["hoy"]), ("ayer", out["ayer"])):
+        if not r or not r["agotadoEn"]:
+            continue
+        try:
+            hora = int(str(r["agotadoEn"])[11:13])
+        except ValueError:
+            continue
+        if hora < PRESUPUESTO_HORA_SANA:
+            top = ", ".join(f"{k} {v}" for k, v in list(r["porEndpoint"].items())[:3])
+            out["alarma"] = (f"el plan de API-Football se agotó {cual} ({r['dia']}) a las "
+                             f"{r['agotadoEnLima']} de Lima: desde ahí no entraron cuotas en juego "
+                             f"ni alineaciones hasta el reset (19:00 Lima). Se lo comieron: {top}")
+            break
+    return out
+
+
 def latido(horas: int = 36) -> dict:
     """¿Está corriendo esto, o lleva dos días muerto y nadie se enteró?
 
@@ -2972,6 +3037,7 @@ def latido(horas: int = 36) -> dict:
     vencidos = pend.get("pendientes") or []
 
     cuotas = cuotas_prepartido(ahora)
+    presupuesto = presupuesto_api()
 
     horas_sin_nada = None
     if ultimo:
@@ -2991,6 +3057,8 @@ def latido(horas: int = 36) -> dict:
         motivos.append(f"{len(vencidos)} caso(s) llevan más de 12 h terminados y sin veredicto")
     if cuotas["alarma"]:
         motivos.append(cuotas["alarma"])
+    if presupuesto["alarma"]:
+        motivos.append(presupuesto["alarma"])
     estado = "rojo" if depositados == 0 else ("ambar" if motivos else "verde")
     return {
         "estado": estado,
@@ -3010,6 +3078,7 @@ def latido(horas: int = 36) -> dict:
                                 "marcador": v["marcador"]} for v in vencidos],
         "sinOnceCerrado": sin_xi,
         "cuotasPrepartido": cuotas,
+        "presupuestoApi": presupuesto,
         "nota": "esto solo mira; no dispara nada. El silencio cuenta como fallo: "
                 "cero partes en la ventana es ROJO, no «sin novedad».",
     }

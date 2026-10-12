@@ -42,6 +42,7 @@ from datetime import datetime, timedelta, timezone
 
 from backend.cuota_mercados import es_del_contrato
 from backend.ingesta.extractor import (
+    LIGAS_INTERNACIONALES,
     Cliente,
     guardar_fixtures,
     leer_clave,
@@ -234,6 +235,135 @@ def cupo_del_ciclo(cliente, tope: int, ahora: datetime | None = None) -> int:
     if margen <= 0:
         return 0
     return max(0, min(tope, margen // COSTE_LIGA))
+
+
+# REPARTO DEL PLAN EN EL TIEMPO (12/10/2026). El freno de arriba solo protege
+# el marcador; las cuotas se servían a quien llegara primero. El domingo
+# 11/10 el fútbol europeo de la mañana se comió el plan a las 17:40 UTC y
+# desde ahí hasta el reset NINGÚN partido tuvo cuotas en juego: la Liga 1 de
+# Perú —primera del padrón— y Colombia, Paraguay, Uruguay se quedaron en
+# blanco mientras el Betis–Osasuna se cortaba en el 66'. Tres piezas:
+#
+# 1. INTERVALO por liga: una consulta cada SAD_LIVE_ODDS_INTERVALO_MIN (2)
+#    minutos. 45 puntos por partido dibujan la curva igual que 90 y cuestan
+#    la mitad. Una ronda que FALLÓ no cuenta: se reintenta al ciclo siguiente.
+# 2. ORDEN DEL PADRÓN dentro de cada grupo de la cola: Liga 1 de Perú, luego
+#    los torneos internacionales de clubes, luego el resto (RANGO_LIGA).
+# 3. RITMO: lo que queda del plan se compara con lo que costaría cubrir, al
+#    intervalo normal, todos los partidos que siguen en juego o arrancan antes
+#    del reset —de la misma prioridad o mejor—. Si no alcanza, el intervalo de
+#    esa liga se estira en la misma proporción (hasta INTERVALO_MAX_MIN): cada
+#    partido recibe menos puntos, pero ninguno se queda en cero porque otro
+#    llegó antes. Se recalcula cada ciclo, así que se corrige solo.
+INTERVALO_LIGA_MIN = max(1, _tope("SAD_LIVE_ODDS_INTERVALO_MIN", 2))
+INTERVALO_MAX_MIN = max(INTERVALO_LIGA_MIN, _tope("SAD_LIVE_ODDS_INTERVALO_MAX_MIN", 15))
+# holgura del reloj: el ciclo no arranca en el segundo exacto, y sin ella un
+# intervalo de 2 min se volvería de 3 por unos segundos de deriva
+HOLGURA_INTERVALO_S = 15
+MIN_PARTIDO = 115  # del saque al pitazo final, con el descanso y el añadido
+# requests medias de una consulta de liga (casi siempre 1 página; a veces 2-3)
+COSTE_CONSULTA = 1.5
+LIGA_PERU = 281
+
+
+def rango_liga(lid: int) -> int:
+    """Prioridad de una liga para el en vivo (menor = antes): el orden del
+    padrón de la agenda (backend/analisis/parte.py) reducido a lo que se sabe
+    por LIGA —el clásico o el top 6 son de cada partido, no de la liga—."""
+    if lid == LIGA_PERU:
+        return 0
+    if lid in LIGAS_INTERNACIONALES:
+        return 1
+    return 2
+
+
+def _reset_utc(ahora: datetime) -> datetime:
+    return (ahora + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+def demanda_por_rango(con: sqlite3.Connection, ligas: "set[int]",
+                      ahora: datetime) -> dict[int, int]:
+    """Requests que costaría cubrir al INTERVALO normal los partidos de `ligas`
+    que siguen en juego o arrancan antes del reset del plan, acumuladas por
+    rango: `{r: requests de las ligas con rango <= r}`.
+
+    Por liga se UNEN los tramos de sus partidos: los simultáneos comparten la
+    misma consulta. 0 requests de API: solo lee fixtures. Sin la tabla (o sin
+    partidos) devuelve ceros y el ritmo no frena nada."""
+    reset = _reset_utc(ahora)
+    desde = (ahora - timedelta(minutes=MIN_PARTIDO)).strftime("%Y-%m-%d %H:%M:%S")
+    hasta = reset.strftime("%Y-%m-%d %H:%M:%S")
+    estados = PREVIOS + EN_JUEGO
+    tramos: dict[int, list] = {}
+    if ligas:
+        try:
+            filas = con.execute(
+                f"SELECT league_id, date FROM fixtures WHERE league_id IN "
+                f"({','.join('?' * len(ligas))}) AND status_short IN "
+                f"({','.join('?' * len(estados))}) AND date >= ? AND date < ?",
+                (*sorted(ligas), *estados, desde, hasta)).fetchall()
+        except sqlite3.Error:
+            filas = []
+        for lid, fecha in filas:
+            saque = fecha_de(fecha)
+            if saque is None:
+                continue
+            ini, fin = max(saque, ahora), min(saque + timedelta(minutes=MIN_PARTIDO), reset)
+            if fin > ini:
+                tramos.setdefault(lid, []).append((ini, fin))
+    por_rango = {0: 0.0, 1: 0.0, 2: 0.0}
+    for lid, ts in tramos.items():
+        minutos, fin_prev = 0.0, None
+        for ini, fin in sorted(ts):
+            if fin_prev is not None and ini < fin_prev:
+                ini = fin_prev
+            if fin > ini:
+                minutos += (fin - ini).total_seconds() / 60
+                fin_prev = fin
+        por_rango[rango_liga(lid)] += minutos / INTERVALO_LIGA_MIN * COSTE_CONSULTA
+    acumulado, total = {}, 0.0
+    for r in sorted(por_rango):
+        total += por_rango[r]
+        acumulado[r] = int(total + 0.999)
+    return acumulado
+
+
+def intervalos_por_rango(cliente, con: sqlite3.Connection, ligas: "set[int]",
+                         ahora: datetime) -> dict[int, int]:
+    """Minutos entre consultas de una liga según su rango: el normal si el plan
+    alcanza para todo lo que falta hasta el reset, estirado si no."""
+    disponible = (cliente.limite - cliente.usadas) - reserva_viva(ahora)
+    demanda = demanda_por_rango(con, ligas, ahora)
+    out = {}
+    for r, d in demanda.items():
+        if d <= 0 or disponible >= d:
+            out[r] = INTERVALO_LIGA_MIN
+        elif disponible <= 0:
+            out[r] = INTERVALO_MAX_MIN
+        else:
+            out[r] = min(INTERVALO_MAX_MIN, max(INTERVALO_LIGA_MIN,
+                                                -(-INTERVALO_LIGA_MIN * d // disponible)))
+    return out
+
+
+def ligas_descansando(con: sqlite3.Connection, ligas: "set[int]", ahora: datetime,
+                      intervalos: "dict[int, int]") -> set[int]:
+    """Ligas consultadas hace menos de su intervalo (0 requests este ciclo).
+    Un `fallo` no cuenta como consulta: la API no dio nada que dibujar."""
+    if not ligas:
+        return set()
+    marcas = ",".join("?" * len(ligas))
+    saltar = set()
+    for lid, consultada_en, estado in con.execute(
+            f"SELECT league_id, consultada_en, estado FROM odds_live_consultas "
+            f"WHERE league_id IN ({marcas})", tuple(sorted(ligas))):
+        cuando = fecha_de(consultada_en)
+        if cuando is None or estado == "fallo":
+            continue
+        minutos = intervalos.get(rango_liga(lid), INTERVALO_LIGA_MIN)
+        if (ahora - cuando).total_seconds() < minutos * 60 - HOLGURA_INTERVALO_S:
+            saltar.add(lid)
+    return saltar
 
 # Alineaciones ANTES del saque: la API las publica ~20-60 min antes y el
 # análisis las necesita en cuanto existen (el EFE/DTP y los skills leen la
@@ -658,7 +788,8 @@ def orden_por_antiguedad(con: sqlite3.Connection, por_liga: dict[int, set[int]],
             f"WHERE league_id IN ({marcas})",
             tuple(sorted(por_liga)))
     }
-    return sorted(por_liga, key=lambda lid: (lid not in en_juego, ultima.get(lid, ""), lid))
+    return sorted(por_liga, key=lambda lid: (lid not in en_juego, rango_liga(lid),
+                                             ultima.get(lid, ""), lid))
 
 
 def orden_rescate(con: sqlite3.Connection, fixtures: "list[int]") -> list[int]:
@@ -819,12 +950,22 @@ def capturar_odds_live(cliente, con: sqlite3.Connection, por_liga: dict,
     dormidas = ligas_en_backoff(con, set(por_liga))
     if dormidas:
         print(f"  ligas en espera por rondas vacías seguidas (backoff): {sorted(dormidas)}")
-    orden = [lid for lid in orden_por_antiguedad(con, por_liga, en_juego) if lid not in dormidas]
-    if not orden:
-        return 0, set()
     # la marca del ciclo ES el reloj: así la reserva no depende del reloj real
     # (y los tests dejan de ser una lotería según la hora a la que corran)
-    ahora = fecha_de(capturado)
+    ahora = fecha_de(capturado) or datetime.now(timezone.utc)
+    # el ritmo se mide contra TODAS las ligas del en vivo, no solo las de este
+    # ciclo: lo que importa es lo que viene de aquí al reset
+    intervalos = intervalos_por_rango(cliente, con, ligas_vivo() | set(por_liga), ahora)
+    descansan = ligas_descansando(con, set(por_liga) - dormidas, ahora, intervalos)
+    if descansan:
+        estirados = {r: m for r, m in intervalos.items() if m > INTERVALO_LIGA_MIN}
+        print(f"  ligas en su intervalo (consultadas hace < {INTERVALO_LIGA_MIN} min"
+              + (f"; estirado por ritmo del plan: {estirados}" if estirados else "")
+              + f"): {sorted(descansan)}")
+    orden = [lid for lid in orden_por_antiguedad(con, por_liga, en_juego)
+             if lid not in dormidas and lid not in descansan]
+    if not orden:
+        return 0, set()
     cupo = cupo_del_ciclo(cliente, TOPE_LIGAS, ahora)
     if cupo <= 0:
         print(f"  cuotas en juego EN PAUSA: quedan {cliente.limite - cliente.usadas} requests y "
@@ -935,8 +1076,10 @@ def capturar_odds_live(cliente, con: sqlite3.Connection, por_liga: dict,
     # entró en espera, y ese es justo el caso que no hay que reintentar.
     dormidas = ligas_en_backoff(con, set(por_liga))
     liga_de = {f: lid for lid, fids in por_liga.items() for f in fids}
+    # ni en ligas que descansan por intervalo: su ronda vuelve en un minuto, y
+    # rescatarlas por fixture gastaría justo lo que el intervalo ahorra
     candidatos_resc = [f for f in (ids_en_juego or set()) - con_feed
-                       if liga_de.get(f) not in dormidas]
+                       if liga_de.get(f) not in dormidas and liga_de.get(f) not in descansan]
     # ROTACIÓN: por intento más viejo primero (los nunca intentados, delante).
     # Antes era `sorted(faltan)[:TOPE]`, o sea SIEMPRE los mismos ids bajos:
     # con 6 partidos en juego y tope 4, los dos de id más alto no se rescataban

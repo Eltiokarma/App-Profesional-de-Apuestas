@@ -28,6 +28,9 @@ export function LatidoCowork({ isMobile }: { isMobile: boolean }) {
   const color = rojo ? 'var(--down)' : 'var(--mark)'
   const fondo = rojo ? 'var(--down-soft)' : 'var(--mark-soft)'
   const faltaron = d.coberturaDeAyer?.faltaron ?? []
+  // el día que disparó la alarma del plan (hoy o ayer): en qué se fue
+  const pa = d.presupuestoApi
+  const presu = pa?.alarma ? ([pa.hoy, pa.ayer].find((x) => x?.agotadoEn && pa.alarma.includes(x.dia ?? '—')) ?? null) : null
   return (
     <section style={{
       padding: isMobile ? '11px 13px' : '13px 16px', marginBottom: 14, borderRadius: 13,
@@ -53,6 +56,12 @@ export function LatidoCowork({ isMobile }: { isMobile: boolean }) {
         <div style={{ font: '500 10.5px var(--sans)', color: 'var(--t2)', marginTop: 6 }}>
           Sin parte: {faltaron.slice(0, 4).map((f) => f.partido || f.fixtureId).join(' · ')}
           {faltaron.length > 4 && ` y ${faltaron.length - 4} más`}
+        </div>
+      )}
+      {presu && (
+        <div style={{ font: '500 10.5px var(--mono)', color: 'var(--t2)', marginTop: 4, overflowWrap: 'anywhere' }}>
+          API-Football {presu.dia}: {presu.usadas}{presu.limite ? `/${presu.limite}` : ''} ·{' '}
+          {Object.entries(presu.porEndpoint).slice(0, 4).map(([k, v]) => `${k} ${v}`).join(' · ')}
         </div>
       )}
       {(d.veredictosVencidos ?? []).length > 0 && (
