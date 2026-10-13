@@ -427,6 +427,15 @@ class Cliente:
         # concurrentes pueden pisarse algún conteo — vale como orden de
         # magnitud, que es lo que la auditoría necesita.
         self.usadas_por: dict[str, int] = {}
+        # CUÁNDO se gasta, además de en qué: requests por hora UTC ("HH") y el
+        # momento en que el plan tocó el tope. El 11/10/2026 se agotó a las
+        # 17:40 UTC y nadie lo supo hasta mirar partido por partido que la tarde
+        # sudamericana no tenía cuotas en juego. El latido lo lee de acá.
+        self.usadas_por_hora: dict[str, int] = {}
+        self.agotado_en: str | None = None
+        # el resumen del día ANTERIOR sobrevive al cambio de día: a la mañana
+        # siguiente es lo único que dice qué pasó anoche
+        self.anterior: dict | None = None
         # requests que volvieron sin datos por FALLO (red, HTTP, errors de la
         # API, presupuesto): get() devuelve None igual que ante una respuesta
         # legítimamente vacía, y quien llama no podía distinguirlas. Comparar
@@ -482,6 +491,8 @@ class Cliente:
                     print(f"  cuota sincronizada con la API: {self.usadas} → {usadas_api} "
                           f"(la ventana del plan resetea a la hora de la suscripción)")
                 self.usadas = usadas_api
+                if self.agotado_en is None and self.usadas >= self.limite:
+                    self.agotado_en = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
             self._guardar_cuota()
         por_minuto = _cabecera_int(headers, "x-ratelimit-limit")
         if por_minuto:
@@ -501,7 +512,17 @@ class Cliente:
             self.limite_api = limite_api
             if not self.limite_fijo:
                 self.limite = max(limite_api - MARGEN_DIARIO, 1)
+        if datos.get("dia") and datos.get("dia") != self.hoy:
+            self.anterior = {k: datos.get(k) for k in (
+                "dia", "usadas", "limite_api", "usadas_por", "usadas_por_hora", "agotado_en")}
+        elif isinstance(datos.get("anterior"), dict):
+            self.anterior = datos["anterior"]
         if datos.get("dia") == self.hoy:
+            por_hora = datos.get("usadas_por_hora")
+            if isinstance(por_hora, dict):
+                self.usadas_por_hora = {str(k): int(v) for k, v in por_hora.items()
+                                        if isinstance(v, (int, float))}
+            self.agotado_en = datos.get("agotado_en") or None
             self.usadas = int(datos.get("usadas", 0) or 0)
             self.usadas_respaldo = int(datos.get("usadas_respaldo", 0) or 0)
             self.usadas_emergencia = int(datos.get("usadas_emergencia", 0) or 0)
@@ -517,7 +538,10 @@ class Cliente:
                        "usadas_respaldo": self.usadas_respaldo,
                        "usadas_emergencia": self.usadas_emergencia,
                        "sondeo_epoch": self._sondeo_epoch,
-                       "usadas_por": self.usadas_por}, f)
+                       "usadas_por": self.usadas_por,
+                       "usadas_por_hora": self.usadas_por_hora,
+                       "agotado_en": self.agotado_en,
+                       "anterior": self.anterior}, f)
 
     def _quedan_respaldo(self, n: int = 1) -> bool:
         return bool(self.clave_respaldo) and self.limite_respaldo - self.usadas_respaldo >= n
@@ -566,6 +590,11 @@ class Cliente:
         else:
             self.usadas += 1
             self.usadas_por[endpoint] = self.usadas_por.get(endpoint, 0) + 1
+            ahora = datetime.now(timezone.utc)
+            hora = ahora.strftime("%H")
+            self.usadas_por_hora[hora] = self.usadas_por_hora.get(hora, 0) + 1
+            if self.agotado_en is None and self.usadas >= self.limite:
+                self.agotado_en = ahora.strftime("%Y-%m-%dT%H:%M:%SZ")
             url = f"{BASE_URL}/{endpoint}?{urllib.parse.urlencode(params)}"
             cabeceras = {"x-apisports-key": self.clave}
         self._guardar_cuota()

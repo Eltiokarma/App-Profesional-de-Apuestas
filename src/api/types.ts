@@ -1490,7 +1490,21 @@ export interface LatidoCoworkDTO {
   sinOnceCerrado: { fixtureId: number; fecha: string; equipo_a: string; equipo_b: string }[]
   /** ¿Entran las cuotas prepartido? Con ≥ 10 NS próximos y ninguno con cuota, `alarma`. */
   cuotasPrepartido?: { ventanaHoras: number; proximos: number; conCuota: number; ultimaCaptura: string | null; alarma: string }
+  /** El plan diario de API-Football: lo usado, en qué, por hora y cuándo se agotó (hoy y ayer). */
+  presupuestoApi?: { hoy: PresupuestoDiaDTO | null; ayer: PresupuestoDiaDTO | null; alarma: string }
   nota: string
+}
+
+export interface PresupuestoDiaDTO {
+  dia: string | null
+  usadas: number
+  limite: number | null
+  /** requests por endpoint, de mayor a menor */
+  porEndpoint: Record<string, number>
+  /** requests por hora UTC ("HH") */
+  porHora: Record<string, number>
+  agotadoEn: string | null
+  agotadoEnLima: string | null
 }
 
 export interface VeredictoPendienteDTO {
