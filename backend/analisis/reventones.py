@@ -51,6 +51,9 @@ MECANISMOS = {
     "rotacion_o_fatiga": "rotación, fatiga o calendario cargado",
     "cambio_dt": "un DT nuevo (propio o del rival) cambió el plan",
     "superioridad_rival": "el rival fue simplemente mejor: el nivel mandó",
+    "altura": "la altura decidió: el de llano no sostuvo el ritmo a 2.500+ m (o al revés al bajar)",
+    "racha_de_otra_competicion": "la racha se armó en otra competición (copa, amistosos, alternativos) y no "
+                                 "representaba al equipo que jugó este partido",
     "varianza": "sin mecanismo identificable: el partido no explica el resultado",
     "otro": "otro (se explica en notas)",
 }
@@ -68,9 +71,24 @@ SENALES = {
     "altura": "partido en altura para uno de los dos",
     "racha_en_extremo": "la burbuja estaba en su récord o cerca (K-EXTREMO / K-CERCA)",
     "riesgo_alto": "el riesgo calculado del reventón era alto o muy alto",
+    "racha_en_otra_competicion": "la mitad o más de la racha se jugó en otra competición que este partido "
+                                 "(o en amistosos) — CALCULADA",
+    "condicion_a_contramano": "dos tercios o más de la racha se jugaron en la condición contraria "
+                              "(local/visita) a la de este partido — CALCULADA",
     "ninguna_visible": "nada visible antes del pitazo",
 }
 LECCIONES_MAX = 8
+SENALES_CALCULADAS = ("racha_en_otra_competicion", "condicion_a_contramano")
+# el reventón no es un skill: sus reglas (docs/REVENTON.md) viven en sad-analysis.
+# La primera tanda (13/10/2026) dejó lecciones con «reventon» como skill y el
+# dossier las abría en un grupo aparte que nadie revisa.
+_ALIAS_SKILL = {"reventon": "sad-analysis", "reventón": "sad-analysis", "burbuja": "sad-analysis",
+                "sad": "sad-analysis"}
+
+
+def skill_canonico(s: str) -> str:
+    s = (s or "").strip()
+    return _ALIAS_SKILL.get(s.lower(), s)
 DDL = """
 CREATE TABLE IF NOT EXISTS reventon_estudio (
     fixture_id   INTEGER NOT NULL,
@@ -128,12 +146,54 @@ def significativo(r: dict, medianas: dict) -> bool:
     return r["partidos"] >= 2 and med is not None and r["kPico"] >= med
 
 
+def _ligas_ruido() -> set[int]:
+    try:
+        from backend.ingesta.extractor import LIGAS_RUIDO
+        return set(LIGAS_RUIDO)
+    except Exception:  # noqa: BLE001
+        return {667}
+
+
+def composicion(racha: list[dict], fila: dict) -> dict:
+    """De qué estaba hecha la racha, contra el partido que la cerró. Las dos
+    señales que se repitieron en la primera tanda de Perú (13/10/2026) y que la
+    base sabe sola: rachas armadas en la Copa de la Liga o en amistosos durante
+    la pausa que reventaron al volver la liga (Alianza Lima, Huancayo, Cienciano,
+    Alianza Atlético), y rachas de local que revientan de visita."""
+    ruido = _ligas_ruido()
+    otra = [f for f in racha if f.get("ligaId") != fila.get("ligaId") or f.get("ligaId") in ruido]
+    contra = [f for f in racha if f.get("condicion") != fila.get("condicion")]
+    n = len(racha) or 1
+    senales = []
+    if len(otra) * 2 >= n and racha:
+        senales.append("racha_en_otra_competicion")
+    if len(contra) * 3 >= 2 * n and racha:
+        senales.append("condicion_a_contramano")
+    return {
+        "partidos": [{"fixtureId": f["fixtureId"], "fecha": str(f["fecha"])[:10], "ligaId": f.get("ligaId"),
+                      "condicion": "L" if f.get("condicion") == "Local" else "V",
+                      "resultado": f"{f.get('golesFavor')}-{f.get('golesContra')}",
+                      "amistoso": f.get("ligaId") in ruido} for f in racha],
+        "enOtraCompeticion": len(otra), "aContramano": len(contra),
+        "ligaDelReventon": fila.get("ligaId"),
+        "senalesCalculadas": senales,
+    }
+
+
 def reventones_de(team_id: int) -> list[dict]:
     filas = list(reversed(_app().constantes_de(team_id, 2000)))
     cerrados, _, _ = burbuja.episodios(filas, "total")
     medianas = {s: statistics.median([r["kPico"] for r in cerrados if r["signo"] == s])
                 for s in ("+", "-") if any(r["signo"] == s for r in cerrados)}
-    return [{**r, "medianaKPico": medianas.get(r["signo"])} for r in cerrados if significativo(r, medianas)]
+    pos = {f["fixtureId"]: i for i, f in enumerate(filas)}
+    fuera = []
+    for r in cerrados:
+        if not significativo(r, medianas):
+            continue
+        i = pos.get(r["fixtureId"])
+        comp = composicion(filas[max(0, i - r["partidos"]):i], filas[i]) if i is not None else None
+        fuera.append({**r, "medianaKPico": medianas.get(r["signo"]), "composicion": comp})
+    return fuera
 
 
 def estudiados() -> dict[tuple[int, int], dict]:
@@ -164,6 +224,7 @@ def candidatos(liga_id: int, meses: int = 6, limite: int = 60, solo_con_ficha: b
                 "tipo": TIPOS[r["signo"]], "signo": r["signo"], "partidos": r["partidos"],
                 "kPico": r["kPico"], "medianaKPico": r["medianaKPico"], "nivelRival": r["nivelRival"],
                 "resultado": r["resultado"], "esInternacional": r["esInternacional"],
+                "senalesCalculadas": (r.get("composicion") or {}).get("senalesCalculadas") or [],
                 "conFicha": ficha, "estudiado": (r["fixtureId"], tid) in hechos,
             })
     # primero lo que tiene ficha y no está estudiado; dentro, las rachas más largas
@@ -235,7 +296,7 @@ def guardar_estudio(fixture_id: int, team_id: int, cuerpo: dict) -> dict:
     fx = _app().get_fixture(fixture_id)
     if team_id not in (fx["home_team_id"], fx["away_team_id"]):
         raise EstudioInvalido(f"el equipo {team_id} no juega el fixture {fixture_id}")
-    if not any(r["fixtureId"] == fixture_id for r in reventones_de(team_id)):
+    if not any(r["fixtureId"] == fixture_id for r in reventones_de(team_id)):  # noqa: SIM102
         raise EstudioInvalido("ese partido no cerró una burbuja significativa de ese equipo: "
                               "pedí la lista en GET /analisis/cowork/reventones")
     rechazos = []
@@ -259,7 +320,7 @@ def guardar_estudio(fixture_id: int, team_id: int, cuerpo: dict) -> dict:
         if not isinstance(x, dict) or not _txt(x.get("skill")) or not _txt(x.get("leccion")):
             rechazos.append({"donde": f"lecciones[{i}]", "porque": "una lección necesita `skill` y `leccion`"})
             continue
-        lecciones.append({"skill": _txt(x["skill"]), "reglaTocada": _txt(x.get("reglaTocada")),
+        lecciones.append({"skill": skill_canonico(_txt(x["skill"])), "reglaTocada": _txt(x.get("reglaTocada")),
                           "leccion": _txt(x["leccion"])})
     if len(lecciones) > LECCIONES_MAX:
         rechazos.append({"donde": "lecciones", "porque": f"se guardan las primeras {LECCIONES_MAX}"})
@@ -269,8 +330,14 @@ def guardar_estudio(fixture_id: int, team_id: int, cuerpo: dict) -> dict:
         v = cuerpo.get(k)
         return v if isinstance(v, dict) else {}
 
+    # LAS SEÑALES QUE LA BASE SABE SOLA ENTRAN SOLAS: un estudio que se las
+    # olvida no puede bajar su frecuencia en el resumen
+    r_ = next(x for x in reventones_de(team_id) if x["fixtureId"] == fixture_id)
+    calculadas = (r_.get("composicion") or {}).get("senalesCalculadas") or []
+    senales = [x for x in senales if x not in SENALES_CALCULADAS] + list(calculadas)
     estudio = {
         "mecanismo": mec, "mecanismoSecundario": sec, "senales": senales,
+        "senalesCalculadas": list(calculadas),
         "senalPrevia": _txt(cuerpo.get("senalPrevia")),
         "queP": _txt(cuerpo.get("queP")),
         "tde": {"equipo": _dict("tde").get("equipo") or {}, "rival": _dict("tde").get("rival") or {}},
@@ -350,7 +417,7 @@ def items_leccion(estados: dict, cohorte: str) -> list[dict]:
                 "fixtureId": fx, "lado": "a" if local else "b",
                 "equipo": f["a"] if local else f["b"], "rival": f["b"] if local else f["a"],
                 "partido": f"{f['a']} vs {f['b']}", "fecha": str(f["date"])[:10],
-                "skill": lx["skill"], "veredicto": "", "queP": e.get("queP", ""),
+                "skill": skill_canonico(lx["skill"]), "veredicto": "", "queP": e.get("queP", ""),
                 "leccion": lx["leccion"], "reglaTocada": lx.get("reglaTocada", ""),
                 "seleccion": "post_resultado", "modoEvaluacion": "PRE", "acredita": False,
                 "mancha": "", "cohorte": cohorte, "cuarentena": "", "cuarentenaAutomatica": False,

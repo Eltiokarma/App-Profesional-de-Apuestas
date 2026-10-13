@@ -169,6 +169,18 @@ nuestras probabilidades, no de la casa.
 >    que toque una regla, también las confirmaciones. Leé `rechazos`.
 > 4. Respuesta final: mecanismo, señales, y las lecciones (skill · regla).
 >
+> Notas de la primera tanda (Perú, 13/10/2026):
+> - **No uses `GET …/analisis/cowork/tde/{id}` para un partido jugado**: mete ese
+>   mismo partido en el F1 (no es anti-hindsight). El TDE del estudio se puntúa
+>   a mano con lo que había antes, y se dice que es aproximado.
+> - Las reglas del reventón (docs/REVENTON.md) son de `sad-analysis`: no existe
+>   un skill «reventon» (la app lo corrige sola, pero escribilo bien).
+> - `altura` y `racha_de_otra_competicion` son mecanismos: no los mandes como
+>   `otro`. Las señales `racha_en_otra_competicion` y `condicion_a_contramano`
+>   las calcula la app (vienen en `reventon.composicion`): no las declares.
+> - Confirmá en la ficha quién fue LOCAL: la lista dice «equipo vs rival», no
+>   «local vs visita».
+>
 > Es un estudio CON el resultado a la vista: la población es `post_resultado`,
 > lo pone la app. No disfraces de «se veía venir» lo que solo se ve después:
 > una señal es previa si estaba en la prensa o en la base antes del partido.
