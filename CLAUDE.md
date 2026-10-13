@@ -594,7 +594,21 @@ conversación se pierde en la siguiente.
    `SAD_API_BASE` y `SAD_TOKEN_COWORK` (el acotado; el maestro nunca). El
    once ya no espera a nadie: el ciclo en vivo, al capturar alineaciones
    prepartido, corre `parte.cerrar_onces_pendientes` (lo mismo que
-   `xi/auto`).
+   `xi/auto`). **Las variables viven en DOS sitios**: Railway (el servidor
+   que valida el token) y el entorno de Claude Code (las rutinas que lo
+   usan); rotar el token o cambiar la URL es hacerlo en los dos. En el
+   entorno de Code van en formato `.env` y un `#` abre un comentario: el
+   token lleva uno, así que va ENTRE COMILLAS DOBLES (sin comillas se
+   guardaba cortado en 11 de 20 caracteres y respondía 401). Ese campo es
+   visible para quien use el entorno: vale para la fase de prueba con el
+   token ACOTADO; al salir de prueba, rotarlo (9 de sus 20 caracteres se
+   pegaron en un chat el 13/10) y pasarlo a una sección de secretos si el
+   producto la ofrece. Rutinas (hora de Lima): partes 04:47 y 12:48 en la
+   sesión «SAD · corrida de partes (rutina)», veredictos 06:52 en «SAD ·
+   corrida de veredictos (rutina)». Corren en sesiones FIJAS con el repo
+   (cada disparo es un mensaje nuevo que hace `git pull` de main): una
+   rutina de sesión nueva arrancaba sin el repo, sin `add_repo` y con otro
+   modelo, y no pudo leer el skill (13/10, 12:48).
 
 ## Siguientes pasos (en orden)
 
