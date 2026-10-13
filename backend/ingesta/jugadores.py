@@ -394,6 +394,9 @@ def elegir_entrenador(filas: list, team_id: int, dt_alineacion: str | None = Non
 DT_ALINEACION_PARTIDOS = 3
 
 
+DT_HUECO_PARTIDOS = 2   # partidos sin once entre el DT anterior y el actual: la llegada no se vio
+
+
 def dt_de_alineaciones(con: sqlite3.Connection, team_id: int,
                        partidos_atras: int = DT_ALINEACION_PARTIDOS) -> tuple[str | None, str | None]:
     """(DT de la última alineación capturada, fecha del primer partido de su
@@ -431,6 +434,23 @@ def dt_de_alineaciones(con: sqlite3.Connection, team_id: int,
     desde = filas[0][1]
     for nombre, fecha in filas:
         if not mismo_nombre_dt(nombre, actual):
+            # EL CORTE SE VE, PERO LA LLEGADA PUEDE ESTAR EN UN HUECO. Águilas
+            # tenía un once de abril con el DT anterior y el siguiente capturado
+            # era del 09/10 con Robatto, que llegó en junio: «desde 2026-10-09»
+            # y la agenda lo marcó EN CRISIS por «DT nuevo» (13/10/2026). Si
+            # entre el último once del anterior y el primero del actual hay
+            # partidos jugados sin once capturado, la llegada es desconocida.
+            try:
+                sin_once = con.execute(
+                    f"SELECT COUNT(*) FROM fixtures f WHERE (f.home_team_id=? OR f.away_team_id=?) "
+                    f"AND f.status_short IN ({','.join('?' * len(_TERMINADOS))}) "
+                    f"AND substr(f.date, 1, 10) > ? AND substr(f.date, 1, 10) < ? "
+                    f"AND NOT EXISTS (SELECT 1 FROM alineaciones a WHERE a.fixture_id=f.id AND a.team_id=?)",
+                    (team_id, team_id, *_TERMINADOS, str(fecha), str(desde), team_id)).fetchone()[0]
+            except sqlite3.Error:
+                sin_once = 0
+            if sin_once >= DT_HUECO_PARTIDOS:
+                desde = None
             break
         desde = fecha
     else:
