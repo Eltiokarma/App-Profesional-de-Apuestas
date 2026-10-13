@@ -54,6 +54,8 @@ MECANISMOS = {
     "altura": "la altura decidió: el de llano no sostuvo el ritmo a 2.500+ m (o al revés al bajar)",
     "racha_de_otra_competicion": "la racha se armó en otra competición (copa, amistosos, alternativos) y no "
                                  "representaba al equipo que jugó este partido",
+    "regresion_al_nivel": "sin un hecho que lo explique: la racha corta se cortó ante un rival de su nivel y "
+                          "el equipo volvió a rendir lo suyo",
     "varianza": "sin mecanismo identificable: el partido no explica el resultado",
     "otro": "otro (se explica en notas)",
 }
@@ -74,11 +76,18 @@ SENALES = {
     "racha_en_otra_competicion": "la mitad o más de la racha se jugó en otra competición que este partido "
                                  "(o en amistosos) — CALCULADA",
     "condicion_a_contramano": "dos tercios o más de la racha se jugaron en la condición contraria "
-                              "(local/visita) a la de este partido — CALCULADA",
+                              "(local/visita) a la de este partido — CALCULADA (no salta si el partido es "
+                              "en su propio estadio, como un clásico de estadio compartido)",
+    "rival_tambien_en_burbuja": "el rival llegaba con su propia burbuja abierta de 2+ partidos — CALCULADA",
+    "racha_concediendo": "racha positiva en la que el equipo recibió gol en todos los partidos — CALCULADA",
+    "derrota_internacional_reciente": "perdió un partido internacional en los 10 días previos (resaca de "
+                                      "una eliminación) — CALCULADA",
     "ninguna_visible": "nada visible antes del pitazo",
 }
 LECCIONES_MAX = 8
-SENALES_CALCULADAS = ("racha_en_otra_competicion", "condicion_a_contramano")
+SENALES_CALCULADAS = ("racha_en_otra_competicion", "condicion_a_contramano", "rival_tambien_en_burbuja",
+                      "racha_concediendo", "derrota_internacional_reciente")
+DIAS_RESACA = 10
 # el reventón no es un skill: sus reglas (docs/REVENTON.md) viven en sad-analysis.
 # La primera tanda (13/10/2026) dejó lecciones con «reventon» como skill y el
 # dossier las abría en un grupo aparte que nadie revisa.
@@ -154,7 +163,8 @@ def _ligas_ruido() -> set[int]:
         return {667}
 
 
-def composicion(racha: list[dict], fila: dict) -> dict:
+def composicion(racha: list[dict], fila: dict, previas: list[dict] | None = None,
+                en_su_estadio: bool = False) -> dict:
     """De qué estaba hecha la racha, contra el partido que la cerró. Las dos
     señales que se repitieron en la primera tanda de Perú (13/10/2026) y que la
     base sabe sola: rachas armadas en la Copa de la Liga o en amistosos durante
@@ -167,8 +177,26 @@ def composicion(racha: list[dict], fila: dict) -> dict:
     senales = []
     if len(otra) * 2 >= n and racha:
         senales.append("racha_en_otra_competicion")
-    if len(contra) * 3 >= 2 * n and racha:
+    # en su propio estadio (Cienciano–Garcilaso comparten el Inca Garcilaso)
+    # la visita es nominal: ni viaje ni altura (segunda tanda, 13/10/2026)
+    if len(contra) * 3 >= 2 * n and racha and not en_su_estadio:
         senales.append("condicion_a_contramano")
+    # una racha de victorias que concede en todos los partidos es frágil
+    # (Universitario 3-2 y 4-2 antes del 2-2 con Comerciantes)
+    signo = "+" if racha and all((f.get("golesFavor") or 0) >= (f.get("golesContra") or 0) for f in racha) else ""
+    if signo and len(racha) >= 2 and all((f.get("golesContra") or 0) > 0 for f in racha):
+        senales.append("racha_concediendo")
+    # la resaca de una eliminación continental (Cienciano tras Torque: ADT y Chankas)
+    try:
+        hoy = datetime.fromisoformat(str(fila["fecha"]).replace("Z", "+00:00"))
+        for f in previas or []:
+            d = datetime.fromisoformat(str(f["fecha"]).replace("Z", "+00:00"))
+            if (f.get("esInternacional") and 0 < (hoy - d).days <= DIAS_RESACA
+                    and (f.get("golesFavor") or 0) < (f.get("golesContra") or 0)):
+                senales.append("derrota_internacional_reciente")
+                break
+    except (KeyError, ValueError, TypeError):
+        pass
     return {
         "partidos": [{"fixtureId": f["fixtureId"], "fecha": str(f["fecha"])[:10], "ligaId": f.get("ligaId"),
                       "condicion": "L" if f.get("condicion") == "Local" else "V",
@@ -180,18 +208,39 @@ def composicion(racha: list[dict], fila: dict) -> dict:
     }
 
 
+def _sede_propia(team_id: int):
+    """El estadio donde más juega de local (venue_id más frecuente)."""
+    try:
+        f = saddb.query_one("sad", "SELECT venue_id, COUNT(*) AS n FROM fixtures WHERE home_team_id=? "
+                                   "AND venue_id IS NOT NULL GROUP BY venue_id ORDER BY n DESC LIMIT 1", (team_id,))
+    except Exception:  # noqa: BLE001
+        return None
+    return f["venue_id"] if f else None
+
+
+def _sede_de(fixture_id: int):
+    try:
+        f = saddb.query_one("sad", "SELECT venue_id FROM fixtures WHERE id=?", (fixture_id,))
+    except Exception:  # noqa: BLE001
+        return None
+    return f["venue_id"] if f else None
+
+
 def reventones_de(team_id: int) -> list[dict]:
     filas = list(reversed(_app().constantes_de(team_id, 2000)))
     cerrados, _, _ = burbuja.episodios(filas, "total")
     medianas = {s: statistics.median([r["kPico"] for r in cerrados if r["signo"] == s])
                 for s in ("+", "-") if any(r["signo"] == s for r in cerrados)}
     pos = {f["fixtureId"]: i for i, f in enumerate(filas)}
+    sede = _sede_propia(team_id)
     fuera = []
     for r in cerrados:
         if not significativo(r, medianas):
             continue
         i = pos.get(r["fixtureId"])
-        comp = composicion(filas[max(0, i - r["partidos"]):i], filas[i]) if i is not None else None
+        comp = (composicion(filas[max(0, i - r["partidos"]):i], filas[i], filas[max(0, i - 6):i],
+                            en_su_estadio=bool(sede) and _sede_de(r["fixtureId"]) == sede)
+                if i is not None else None)
         fuera.append({**r, "medianaKPico": medianas.get(r["signo"]), "composicion": comp})
     return fuera
 
@@ -333,7 +382,12 @@ def guardar_estudio(fixture_id: int, team_id: int, cuerpo: dict) -> dict:
     # LAS SEÑALES QUE LA BASE SABE SOLA ENTRAN SOLAS: un estudio que se las
     # olvida no puede bajar su frecuencia en el resumen
     r_ = next(x for x in reventones_de(team_id) if x["fixtureId"] == fixture_id)
-    calculadas = (r_.get("composicion") or {}).get("senalesCalculadas") or []
+    calculadas = list((r_.get("composicion") or {}).get("senalesCalculadas") or [])
+    # la otra burbuja del partido (3 casos de la segunda tanda: el empate cortó las dos)
+    rival = fx["away_team_id"] if fx["home_team_id"] == team_id else fx["home_team_id"]
+    act = (_burbuja_al_dia(rival, fixture_id) or {}).get("actual") or {}
+    if (act.get("partidos") or 0) >= 2:
+        calculadas.append("rival_tambien_en_burbuja")
     senales = [x for x in senales if x not in SENALES_CALCULADAS] + list(calculadas)
     estudio = {
         "mecanismo": mec, "mecanismoSecundario": sec, "senales": senales,
