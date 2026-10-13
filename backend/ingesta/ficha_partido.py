@@ -31,6 +31,7 @@ import argparse
 import os
 import sqlite3
 import sys
+import zlib
 from datetime import datetime, timedelta, timezone
 
 from backend.ingesta.extractor import LIGAS, LIGAS_RUIDO, Cliente, leer_clave, reserva_del_dia
@@ -227,7 +228,15 @@ def guardar_alineaciones(con: sqlite3.Connection, fixture_id: int, respuesta: li
                 p = it.get("player") or {}
                 pid = _i(p.get("id"))
                 if pid is None:
-                    continue  # sin id no hay clave: la API a veces manda null
+                    # LA API A VECES MANDA EL ID EN NULL Y EL JUGADOR SÍ JUGÓ.
+                    # Saltarlo dejaba onces de 10 (Tolima 11/10/2026 sin Aguayo,
+                    # titular): el bloque F lo daba de baja. Con nombre, se guarda
+                    # con un id SINTÉTICO negativo (estable por nombre): nunca
+                    # choca con uno real y ningún cruce por id lo toma por otro.
+                    nombre = (p.get("name") or "").strip()
+                    if not nombre:
+                        continue
+                    pid = -(zlib.crc32(nombre.encode("utf-8")) % 2_000_000_000 + 1)
                 con.execute(
                     "INSERT OR REPLACE INTO alineaciones (fixture_id, team_id, formacion, "
                     "entrenador, player_id, jugador, numero, posicion, grid, titular) "

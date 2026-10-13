@@ -1936,15 +1936,18 @@ def _bloque_calculado(tde: dict) -> dict:
     calc = tdemod.indice(ind)
     fuera = dict(tde)
     fuera["calculado"] = calc
-    declarado = {"ie": tde.get("ie"), "ise": tde.get("ise")}
+    # UN 0.0 NO DECLARA NADA. Es el relleno de `_num(None)` de los partes
+    # anteriores al 11/10/2026: un IE o ISE de 0 exacto con indicadores
+    # puntuados no lo escribe nadie a mano. Se lee como «no declarado».
+    declarado = {k: (None if tde.get(k) in (0, 0.0) else tde.get(k)) for k in ("ie", "ise")}
     fuera["declarado"] = declarado
     if calc.get("sinDato"):
-        # sin índice calculable, el 0.0 guardado antes del 11/10/2026 es el
-        # relleno de `_num(None)`, no un valor declarado: un IE de 0 exacto con
-        # indicadores puntuados no lo produce nadie a mano
         for clave in ("ie", "ise"):
             if fuera.get(clave) in (0, 0.0):
                 fuera[clave] = None
+        # el ISE no depende de los bloques del IE: si hay SOB, se publica igual
+        if calc.get("ise") is not None:
+            fuera["ise"] = calc["ise"]
     else:
         discrepa = []
         for clave in ("ie", "ise"):
@@ -1954,6 +1957,25 @@ def _bloque_calculado(tde: dict) -> dict:
         fuera["discrepancia"] = discrepa
         # el número que manda es el calculado
         fuera["ie"], fuera["ise"] = calc["ie"], calc.get("ise")
+        # la configuración dual la dice la cuenta, no la casilla: San Lorenzo
+        # (IE 5.78 · ISE 6.67) llegó con `disciplina43: false`
+        if (calc.get("riesgo") or {}).get("dual"):
+            fuera["disciplina43"] = True
+    # el índice de cada vía es el calculado de su vía: un 0.0 en `vias[].indice`
+    # (San Lorenzo, Grêmio–Inter) no lo es, y una discrepancia se dice
+    vias = []
+    for v in fuera.get("vias") or []:
+        v = dict(v)
+        nombre = (v.get("nombre") or "").upper()
+        calc_v = calc.get("ise") if nombre.startswith("SOB") else (calc.get("ie") if nombre.startswith("ECHADA") else None)
+        if calc_v is not None:
+            if v.get("indice") not in (None, "", 0, 0.0) and abs(float(v["indice"]) - float(calc_v)) > 0.1:
+                fuera.setdefault("discrepancia", []).append(
+                    f"vía {nombre}: llegó {v['indice']} y la cuenta da {calc_v}")
+            v["indice"] = calc_v
+        vias.append(v)
+    if vias:
+        fuera["vias"] = vias
     return fuera
 
 
@@ -1976,7 +1998,9 @@ def dto(fixture_id: int) -> dict | None:
         eq = parte["equipos"][lado]
         tot = _totales(eq)
         disp = _disponibilidad(eq, xi.get(lado))
-        f3 = bloque_f.alerta_f3(tot["clasificacion"], disp.get("ipNivel", "verde")) if disp.get("resuelto") else None
+        f3 = (bloque_f.alerta_f3(tot["clasificacion"], disp.get("ipNivel", "verde"),
+                                 bloque_f.titulares_fijos_fuera(disp.get("jugadores") or []))
+              if disp.get("resuelto") else None)
         if f3:
             alertas.append({**f3, "equipo": lado})
         equipos[lado] = {**eq, **tot, "disponibilidad": disp}
@@ -2259,7 +2283,8 @@ def xi_de_ficha(fixture_id: int, team_id: int) -> dict | None:
         "once": titulares,
         "banca": [f["jugador"] for f in filas if not f["titular"] and f["jugador"]],
         # nombre de la hoja → id de la API: el cruce exacto con la tabla F1
-        "ids": {f["jugador"]: int(f["player_id"]) for f in filas if f["jugador"] and f["player_id"]},
+        "ids": {f["jugador"]: int(f["player_id"]) for f in filas
+                if f["jugador"] and f["player_id"] and int(f["player_id"]) > 0},
         "formacion": filas[0]["formacion"] or "",
         "fuente": FUENTE_FICHA,
         "capturadoEn": efedb.ahora(),
