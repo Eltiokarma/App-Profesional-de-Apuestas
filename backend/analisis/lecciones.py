@@ -187,7 +187,7 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
     acred = {"acierto": 0, "parcial": 0, "fallo": 0}
     casos_acred, briers, reales, con_reparto = 0, [], [], 0
     unxdos_ok, unxdos_de = 0, 0
-    tde_obs, tde_positivos, tde_sin_ficha = 0, 0, 0
+    tde_obs, tde_positivos, tde_sin_ficha, tde_contaminadas = 0, 0, 0, 0
     rev = _reventon_vacio()
 
     for caso in casos:
@@ -225,6 +225,11 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
             if b.get("golEnVentana") is None:
                 tde_sin_ficha += 1
                 continue
+            # una ventana con roja antes del gol no puso a prueba el mecanismo
+            # declarado (disciplina 24): no cuenta ni a favor ni en contra
+            if b.get("cobrable") is False:
+                tde_contaminadas += 1
+                continue
             tde_obs += 1
             tde_positivos += 1 if b["golEnVentana"] else 0
         _acumular_reventon(rev, obj.get("reventon") or {}, ux, br)
@@ -244,7 +249,7 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
         "brier": _brier_con_linea_base(briers, reales),
         "ventanaTde": {
             "observadas": tde_obs, "conGol": tde_positivos,
-            "sinFicha": tde_sin_ficha,
+            "sinFicha": tde_sin_ficha, "conRojaAntes": tde_contaminadas,
             "nota": "ventanas del TDE comprobadas contra los goles recibidos, en población "
                     "ciega. `sinFicha` no cuenta como no ocurrido: no se pudo comprobar",
         },

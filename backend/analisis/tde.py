@@ -469,6 +469,22 @@ def _cobertura(ind: dict) -> dict:
 
 
 def indice(ind: dict) -> dict:
+    """IE, ISE y sus bandas (ver `_indice`). SIN IE NO QUIERE DECIR SIN ISE: el
+    ISE sale de SOB1-3 y no depende de ningún bloque del IE, y el skill manda
+    emitirlo SIEMPRE (disciplina 8). Rennes–Auxerre (11/10/2026) tenía los tres
+    SOB y el ISE salía null porque al IE le faltaba el bloque S."""
+    out = _indice(ind)
+    if out.get("sinDato") and out.get("ise") is None:
+        limpio = {k: (None if v is None else float(v)) for k, v in (ind or {}).items()}
+        ise, usados = _promedio(limpio, INDICADORES_ISE)
+        if ise is not None:
+            out["ise"] = round(ise * 10, 2)
+            out["iseIndicadores"] = usados
+            out["bandaOrdinalIse"] = _ordinal(out["ise"])
+    return out
+
+
+def _indice(ind: dict) -> dict:
     """IE, ISE y sus bandas, con TODAS las compuertas declaradas.
 
     `ind` trae los indicadores en 0 / 0.5 / 1 (o ausentes si no hay dato). Lo
@@ -554,6 +570,10 @@ def indice(ind: dict) -> dict:
 
     faltan = [l for l in ("F", "C", "P", "S") if bloques[l] is None]
     if faltan:
+        # SIN IE NO QUIERE DECIR SIN ISE. El ISE sale de SOB1-3 y no depende de
+        # ningún bloque del IE; el skill manda emitirlo SIEMPRE (disciplina 8).
+        # Rennes–Auxerre (11/10/2026) tenía los tres SOB y el ISE salía null
+        # porque al bloque S le faltaba todo.
         return {"sinDato": True, "bloques": bloques,
                 "porque": f"sin ningún indicador en el bloque {', '.join(faltan)}",
                 "compuertasOperadas": operadas, "cobertura": _cobertura(ind),

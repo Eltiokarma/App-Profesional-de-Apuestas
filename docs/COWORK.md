@@ -889,8 +889,12 @@ Escribís vos (es juicio, no se puede calcular):
   máximo baja a 23 y el porcentaje se calcula sobre lo evaluable. Es DISTINTO
   de un bloque que no pudiste puntuar: ese se deja fuera de `bloques` y se
   explica en `pendientes`; nunca lo mandes como 0.
-- La tabla F1: 14-16 jugadores con zona (GK/DEF/MID/ATK), rol (TF/TH/ROT/SUP)
-  y apps. SIN columna de estado.
+- La tabla F1: 14-16 jugadores con zona (GK/DEF/MID/ATK), rol (TF/TH/ROT/SUP),
+  apps y **`jugadorId`** (el `id` de ese jugador en GET /equipos/{id}/plantilla).
+  SIN columna de estado. El id es lo que deja cerrar el once solo: la API y la
+  prensa escriben distinto al mismo jugador («J. Cerro» es Joshua Cantt, «Cris
+  Silva» es Cristiano) y por nombre ese cruce no se puede hacer. Un jugador que
+  no está en la plantilla de la base va sin id y se cruza por nombre.
 - Las bajas y sanciones ya públicas, en `fuera`, con su motivo y su fuente. Y
   a esos mismos jugadores, TAMBIÉN en `plantel` con su zona y su rol: una baja
   que no está en la tabla F1 no pesa en el Impacto Ponderado.
@@ -1157,7 +1161,7 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
                  "vulnerabilidad": "espalda de los laterales"},
       "plantel": [
         {"nombre": "Nombre Apellido", "posicion": "Portero",
-         "zona": "GK", "rol": "TF", "apps": "18/20"}
+         "zona": "GK", "rol": "TF", "apps": "18/20", "jugadorId": 39614}
       ],
       "fuera": [{"nombre": "Nombre Apellido", "estado": "baja",
                  "motivo": "lesión muscular — Depor, 10/09"}],

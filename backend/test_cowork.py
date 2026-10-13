@@ -1757,6 +1757,26 @@ def main():
           porlado["b"]["golEnVentana"] is True and all(g["lado"] == "a" for g in porlado["b"]["goles"]),
           porlado["b"])
 
+    # UNA ROJA ANTES DEL GOL DE LA VENTANA: hay gol, pero no se cobra (disc. 16/24)
+    _hid_r = dbmod.query_one("sad", "SELECT home_team_id FROM fixtures WHERE id=?", (con_ficha,))["home_team_id"]
+    with _sq2.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT INTO fixture_eventos (fixture_id, minuto, extra, tipo, detalle, equipo_id, jugador, jugador_id) "
+                     "VALUES (?,?,?,?,?,?,?,?)", (con_ficha, 47, 0, "Card", "Red Card", _hid_r, "Expulsado", 777))
+        _con.execute("INSERT INTO fixture_eventos (fixture_id, minuto, extra, tipo, detalle, equipo_id, jugador) "
+                     "VALUES (?,?,?,?,?,?,?)", (con_ficha, 46, 0, "Card", "Red Card", _hid_r, "DT expulsado"))
+        _con.execute("INSERT INTO fixture_eventos (fixture_id, minuto, extra, tipo, detalle, equipo_id, jugador) "
+                     "VALUES (?,?,?,?,?,?,?)", (con_ficha, 47, 2, "Goal", "Normal Goal", _hid_r, "Añadido 1T"))
+    od_r = {b["equipo"]: b for b in c.get(f"{A}/analisis/cowork/{con_ficha}/veredicto").json()["objetivo"]["tde"]["bloques"]}
+    check("una roja de jugador antes del gol de la ventana: hay gol pero NO se cobra, y la roja del DT no cuenta",
+          od_r["a"]["golEnVentana"] is True and od_r["a"]["cobrable"] is False
+          and [r["jugador"] for r in od_r["a"]["rojasAntes"]] == ["Expulsado"], od_r["a"])
+    check("la ventana sin roja previa se cobra normal", od_r["b"]["cobrable"] is True, od_r["b"])
+    check("un gol del añadido del primer tiempo (45+2 guardado como 47) no cae en la 45-60",
+          all(g["jugador"] != "Añadido 1T" for g in od_r["a"]["goles"]), od_r["a"]["goles"])
+    with _sq2.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM fixture_eventos WHERE fixture_id=? AND jugador IN "
+                     "('Expulsado', 'DT expulsado', 'Añadido 1T')", (con_ficha,))
+
     # una ventana fuera de los goles no se da por cumplida
     p_tde["tde"] = {"ie": 60, "equipo": "a", "ventana": "75-90'", "tipologia": "prueba"}
     c.post(f"{A}/analisis/cowork", json=p_tde)
@@ -2616,6 +2636,58 @@ def main():
 
     # ── el cruce de nombres, al detalle ─────────────────────────────────────
     from backend.analisis import bloque_f as bf
+    from backend.analisis import tde as _tdem
+    _sin_s = _tdem.indice({"F1": 1, "F2": 0.5, "C1": 1, "P1a": 1, "P2": 0.5,
+                           "SOB1": 1, "SOB2": 0.5, "SOB3": 1})
+    check("sin bloque S no hay IE, pero el ISE sale igual (Rennes–Auxerre)",
+          _sin_s.get("sinDato") and _sin_s.get("ise") == 8.33, _sin_s)
+    _bc = _parte_mod._bloque_calculado({"ie": 0.0, "ise": 0.0, "equipo": "a",
+                                        "indicadores": {"F1": 1, "F2": 0.5, "C1": 1, "P1a": 1, "S1": 1, "SOB1": 1},
+                                        "vias": [{"nombre": "ECHADA", "indice": 0.0},
+                                                 {"nombre": "SOBREEXPOSICION", "indice": 3.0}]})
+    check("un 0.0 declarado se lee como no declarado y las vías toman el índice calculado (la de 3.0 discrepa)",
+          _bc["declarado"] == {"ie": None, "ise": None}
+          and _bc["vias"][0]["indice"] == _bc["calculado"]["ie"]
+          and _bc["vias"][1]["indice"] == _bc["calculado"]["ise"]
+          and any("SOBREEXPOSICION" in x for x in _bc.get("discrepancia", [])), _bc)
+
+    # EL ID CASA LO QUE EL NOMBRE NO (UTC–Cristal 11/10/2026): la API llama
+    # «J. Cerro» a Joshua Cantt y «Cris Silva» a Cristiano
+    t_id = [{"nombre": "Joshua Cantt", "zona": "MID", "rol": "ROT", "jugadorId": 354001},
+            {"nombre": "Cristiano", "zona": "DEF", "rol": "TF", "jugadorId": 105501},
+            {"nombre": "Luis Iberico", "zona": "ATK", "rol": "TF"}]
+    d_sin = bf.resolver(t_id, [], ["J. Cerro", "Cris Silva", "L. Iberico"])
+    d_con = bf.resolver(t_id, [], ["J. Cerro", "Cris Silva", "L. Iberico"],
+                        ids={"J. Cerro": 354001, "Cris Silva": 105501, "L. Iberico": 39646})
+    check("por nombre «J. Cerro» y «Cris Silva» no casan con la tabla de la prensa",
+          d_sin["casados"] == 1 and set(d_sin["noReconocidos"]) == {"J. Cerro", "Cris Silva"}, d_sin["noReconocidos"])
+    check("con el jugadorId de la tabla y los ids de la ficha casan los tres (el sin id, por nombre)",
+          d_con["casados"] == 3 and not d_con["noReconocidos"], (d_con["casados"], d_con["noReconocidos"]))
+    d_duda = bf.resolver(t_id, [{"nombre": "Luis Iberico", "estado": "duda", "motivo": "molestia"}],
+                         ["J. Cerro", "Cris Silva"], ids={"J. Cerro": 354001, "Cris Silva": 105501})
+    _ib = next(j for j in d_duda["jugadores"] if j["nombre"] == "Luis Iberico")
+    check("con el once resuelto, una duda que no figura en la hoja pasa a baja (con su motivo)",
+          _ib["estado"] == "baja" and "molestia" in _ib["motivo"], _ib)
+    t_br = [{"nombre": "Saúl Ñíguez", "zona": "MID", "rol": "TF"},
+            {"nombre": "Paulo Henrique Ganso", "zona": "MID", "rol": "ROT"},
+            {"nombre": "Breno Bidon", "zona": "MID", "rol": "TF"},
+            {"nombre": "André", "zona": "MID", "rol": "TF"},
+            {"nombre": "Saúl Pérez", "zona": "DEF", "rol": "SUP"}]
+    d_br = bf.resolver(t_br[:4], [], ["Saúl", "Breno", "Andre"], ["PH Ganso", "André Ramalho"])
+    _est = {j["nombre"]: j.get("hoja") for j in d_br["jugadores"]}
+    check("la hoja con solo la pila casa («Saúl», «Breno»); las iniciales también («PH Ganso»)",
+          _est["Saúl Ñíguez"] == "titular" and _est["Breno Bidon"] == "titular"
+          and _est["Paulo Henrique Ganso"] == "banca", _est)
+    check("un suplente que casa con un titular ya resuelto no lo pisa (André / André Ramalho)",
+          _est["André"] == "titular" and d_br["f4"]["rotados"] == 0, (_est, d_br["f4"]))
+    d_amb = bf.resolver(t_br, [], ["Saúl"])
+    check("si dos jugadores comparten la pila, la hoja con solo la pila va a dudas",
+          any("Saúl" in x for x in d_amb["dudas"]), d_amb["dudas"])
+    _rech: list = []
+    check("el parte acepta jugadorId en la tabla y rechaza uno que no es número",
+          _parte_mod._jugador({"nombre": "Joshua Cantt", "zona": "MID", "rol": "ROT", "jugadorId": "354001"}, _rech, "t")["jugadorId"] == 354001
+          and "jugadorId" not in _parte_mod._jugador({"nombre": "X Y", "zona": "MID", "rol": "ROT", "jugadorId": "abc"}, _rech, "t")
+          and any("jugadorId" in r["porque"] for r in _rech), _rech)
 
     tabla = [
         {"nombre": "Ángelo Campos", "zona": "GK", "rol": "TF"},
@@ -2653,16 +2725,25 @@ def main():
     check("un apellido compartido va a dudas, no se resuelve a ojo",
           any("Campos" in x for x in d["dudas"]), d["dudas"])
 
-    # una duda pública pesa la mitad
+    # una duda pública pesa la mitad MIENTRAS no hay hoja (ramas)…
+    r_duda = bf.ramas(tabla, [{"nombre": "Paolo Guerrero", "estado": "duda", "motivo": "molestia"}])
+    check("sin hoja, la duda pesa la mitad que la baja", r_duda["a"]["ip"] == 1.5, r_duda["a"]["ip"])
+    # …y con la hoja a la vista, si no figura, es baja con su motivo público
     d = bf.resolver(tabla, [{"nombre": "Paolo Guerrero", "estado": "duda", "motivo": "molestia"}],
                     ["A. Campos", "Zambrano", "Trauco", "Concha", "Ceppelini", "Barcos"], ["Valera"])
-    check("la duda pesa la mitad que la baja", d["ip"] == 1.5, d["ip"])
+    check("con la hoja, la duda que no figura pesa como baja", d["ip"] == 3.0, d["ip"])
     check("y conserva su motivo público",
-          any(f["motivo"] == "molestia" for f in d["fuera"]), d["fuera"])
+          any("molestia" in f["motivo"] for f in d["fuera"]), d["fuera"])
 
     check("F3 salta con EFE formado e impacto rojo",
           (bf.alerta_f3("FORMADO", "rojo") or {}).get("codigo") == "F3")
     check("F3 no salta si el impacto no es rojo", bf.alerta_f3("FORMADO", "ambar") is None)
+    check("F3 salta con ≥ 2 titulares fijos ausentes aunque el IP no sea rojo (Juve 11/10)",
+          "Yildiz" in ((bf.alerta_f3("FORMADO", "ambar", ["Yildiz", "Locatelli"]) or {}).get("detalle") or "")
+          and bf.alerta_f3("FORMADO", "ambar", ["Yildiz"]) is None
+          and bf.titulares_fijos_fuera([{"nombre": "A", "rol": "TF", "estado": "baja"},
+                                        {"nombre": "B", "rol": "TH", "estado": "baja"},
+                                        {"nombre": "C", "rol": "TF", "estado": "disponible"}]) == ["A"])
 
     print()
     print(f"{'TODO OK' if not fallos else f'{fallos} FALLAS'}")

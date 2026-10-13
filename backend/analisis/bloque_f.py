@@ -177,12 +177,20 @@ def _casa(tokens_plantel: list[str], tokens_hoja: list[str]) -> bool:
         return False
     apellidos = set(tokens_plantel[1:]) or set(tokens_plantel)
     if not set(tokens_hoja) & apellidos:
-        return False
+        # LA HOJA A VECES TRAE SOLO EL NOMBRE DE PILA: API-Football escribe
+        # «Saúl», «Breno», «Andre» (Flamengo, Corinthians 11/10/2026) y la tabla
+        # dice «Saúl Ñíguez», «Breno Bidon». Un solo token que es la pila del
+        # jugador casa; si dos jugadores comparten esa pila, `resolver` lo manda
+        # a dudas en vez de adivinar.
+        return len(tokens_hoja) == 1 and len(tokens_plantel) > 1 and tokens_hoja[0] == tokens_plantel[0]
     pila_plantel = tokens_plantel[0] if len(tokens_plantel) > 1 else ""
     pila_hoja = [t for t in tokens_hoja if t not in apellidos]
     if not pila_hoja or not pila_plantel:
         return True
-    return any(_misma_pila(t, pila_plantel) for t in pila_hoja)
+    # «PH Ganso» = Paulo Henrique Ganso: la pila en iniciales pegadas
+    iniciales = "".join(t[0] for t in tokens_plantel[:-1])
+    return any(_misma_pila(t, pila_plantel) or (1 < len(t) <= 3 and t == iniciales[:len(t)])
+               for t in pila_hoja)
 
 
 def _buscar(plantel: list[dict], nombre_hoja: str) -> list[int]:
@@ -191,13 +199,17 @@ def _buscar(plantel: list[dict], nombre_hoja: str) -> list[int]:
 
 
 def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
-             banca: list[str] | None = None) -> dict:
+             banca: list[str] | None = None, ids: dict[str, int] | None = None) -> dict:
     """Cruza la hoja del partido con la tabla de Cowork y cierra el bloque F.
 
     - en el once  → disponible (y titular)
     - en la banca → disponible; si es 🔴/🟠 cuenta como rotación voluntaria (F4)
     - en ninguna  → baja para esta fecha, con el motivo público si ya se sabía
     - nombre que casa con dos jugadores → NO se resuelve: va a `dudas`
+
+    `ids` (nombre de la hoja → id de API-Football) manda sobre el nombre cuando
+    la tabla trae `jugadorId`: la API y la prensa escriben distinto al mismo
+    jugador («J. Cerro» / «Joshua Cantt») y ninguna regla de nombres los une.
 
     Devuelve el plantel con estados, el diagnóstico F2 y lo que no se pudo
     casar, para que la pantalla lo muestre en vez de esconderlo.
@@ -209,9 +221,17 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
     dudas: list[str] = []
     no_reconocidos: list[str] = []
 
+    por_id = {j["jugadorId"]: i for i, j in enumerate(plantel) if j.get("jugadorId") is not None}
+    ids = ids or {}
     for lista, destino in ((once, "titular"), (banca, "banca")):
         for nombre in lista:
-            idx = _buscar(plantel, nombre)
+            jid = ids.get(nombre)
+            idx = [por_id[jid]] if jid in por_id else _buscar(plantel, nombre)
+            if destino == "banca":
+                # un suplente que también casa con un titular ya resuelto no lo
+                # pisa: «André Ramalho» (banca) casaba con «André» (titular)
+                # y lo pasaba a rotado (Corinthians 11/10/2026)
+                idx = [i for i in idx if estados.get(i, ("", ""))[1] != "titular"]
             if len(idx) == 1:
                 estados[idx[0]] = ("disponible", destino)
             elif len(idx) > 1:
@@ -228,6 +248,12 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
                              "hoja": estados[i][1]})
         elif clave in conocidas:
             estado, motivo = conocidas[clave]
+            # CON LA HOJA A LA VISTA YA NO HAY DUDA: quien estaba en duda y no
+            # figura en la hoja no jugó. Seguir contándolo como duda le pesaba la
+            # mitad (Paradela, titular fijo de Cruz Azul, 11/10/2026: IP 3.0 en
+            # vez de 4.5).
+            if estado == "duda":
+                estado, motivo = "baja", (f"{motivo} · " if motivo else "") + "no figura en la hoja del partido"
             resuelto.append({**j, "estado": estado, "motivo": motivo, "hoja": "fuera"})
         else:
             resuelto.append({**j, "estado": "baja",
@@ -256,14 +282,28 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
     return diag
 
 
-def alerta_f3(clasificacion: str, ip_nivel: str) -> dict | None:
-    """F3 · formación fraccionada: EFE 🟢/🟡 pero impacto 🔴 para esta fecha."""
-    if ip_nivel != "rojo" or clasificacion not in ("FORMADO", "EN_FORMACION"):
+def titulares_fijos_fuera(jugadores: list[dict]) -> list[str]:
+    """Los 🔴 Titular fijo que no están disponibles para esta fecha."""
+    return [j.get("nombre", "") for j in jugadores
+            if (j.get("rol") or "").upper() == "TF" and (j.get("estado") or "") == "baja"]
+
+
+def alerta_f3(clasificacion: str, ip_nivel: str, tf_fuera: list[str] | None = None) -> dict | None:
+    """F3 · formación fraccionada: EFE 🟢/🟡 pero, para esta fecha, IP > 7 (🔴)
+    **o** ≥ 2 titulares fijos ausentes — las dos condiciones de la rúbrica.
+    Solo con la primera, la Juve del 11/10/2026 (Yildiz y Locatelli fuera, IP
+    6.5) se quedaba sin alerta."""
+    tf_fuera = tf_fuera or []
+    if clasificacion not in ("FORMADO", "EN_FORMACION"):
         return None
+    if ip_nivel != "rojo" and len(tf_fuera) < 2:
+        return None
+    motivo = ("impacto 🔴" if ip_nivel == "rojo" else
+              f"{len(tf_fuera)} titulares fijos ausentes ({', '.join(tf_fuera)})")
     return {
         "codigo": "F3",
         "tipo": "fecha",
         "detalle": f"El EFE es {clasificacion.replace('_', ' ')}, pero para esta fecha el equipo "
-                   "opera degradado (impacto 🔴). Reducir confianza en las K históricas y bajar "
+                   f"opera degradado ({motivo}). Reducir confianza en las K históricas y bajar "
                    "un nivel la confianza efectiva.",
     }

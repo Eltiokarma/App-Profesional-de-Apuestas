@@ -93,7 +93,38 @@ def _goles(fixture_id: int, home_id: int) -> list[dict]:
             "lado": "a" if de_local else "b",
             "jugador": f["jugador"] or "",
             "autogol": autogol,
+            # EL AÑADIDO NO TIENE VENTANA (disciplina 23 del TDE): las seis
+            # ventanas de 15' terminan en el 45 y en el 90. Un 45+2 guardado
+            # como 47 caía en la 45-60 (Westerlo–Antwerp, Pumas–Cruz Azul).
+            "enAnadido": bool(f["extra"]),
         })
+    return out
+
+
+def _rojas(fixture_id: int, home_id: int) -> list[dict]:
+    """Expulsiones de JUGADORES con minuto y lado. Una roja reordena el partido
+    entero (disciplina 16 del TDE): un gol en la ventana que llega después ya
+    no comprueba el mecanismo declarado (disciplina 24). La roja a un
+    entrenador también viaja como `Card` y no reordena nada: sin jugador_id no
+    se cuenta."""
+    try:
+        filas = saddb.query(
+            "sad",
+            "SELECT minuto, detalle, equipo_id, jugador, jugador_id FROM fixture_eventos "
+            "WHERE fixture_id=? AND tipo='Card' ORDER BY minuto, id",
+            (fixture_id,),
+        )
+    except Exception:
+        return []
+    out = []
+    for f in filas:
+        detalle = (f["detalle"] or "").lower()
+        if "red" not in detalle and "second yellow" not in detalle:
+            continue
+        if not f["jugador_id"]:
+            continue
+        out.append({"minuto": f["minuto"] or 0, "lado": "a" if f["equipo_id"] == home_id else "b",
+                    "jugador": f["jugador"] or ""})
     return out
 
 
@@ -181,6 +212,7 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     # los dos, son dos ventanas y dos veredictos. Antes solo se miraba uno y el
     # otro no existía para ninguna métrica.
     from backend.analisis.parte import bloques_tde
+    rojas = _rojas(fixture_id, fx["home_team_id"])
     bloques = []
     for tde in bloques_tde(parte.get("tde") or {}):
         rango = _ventana(tde.get("ventana") or "")
@@ -193,16 +225,33 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
         foco = tde.get("equipo") or ""
         # la echada del equipo foco se observa en los goles que RECIBE
         contra = "b" if foco == "a" else ("a" if foco == "b" else "")
-        en_ventana = [g for g in goles if desde <= g["minuto"] <= hasta
+        en_ventana = [g for g in goles if desde <= g["minuto"] <= hasta and not g.get("enAnadido")
                       and (not contra or g["lado"] == contra)]
+        en_anadido = [g for g in goles if g.get("enAnadido") and (not contra or g["lado"] == contra)]
+        # UN GOL EN LA VENTANA DESPUÉS DE UNA ROJA NO COMPRUEBA EL MECANISMO
+        # (disciplinas 16 y 24): Liverpool 0-3 City, Pumas 3-3 Cruz Azul y
+        # América 1-2 Medellín se contaban como acierto de ventana con goles
+        # que llegaron con un hombre menos. Se sigue diciendo que hubo gol en la
+        # ventana, pero no se cobra.
+        primera = min((g["minuto"] for g in en_ventana), default=None)
+        rojas_antes = [r for r in rojas if primera is not None and r["minuto"] < primera]
+        cobrable = None if not out["evidencia"]["conFicha"] else not rojas_antes
         bloques.append({
             "ventana": tde.get("ventana"), "desde": desde, "hasta": hasta,
             "equipo": foco,
             "comprobable": out["evidencia"]["conFicha"],
             "golEnVentana": bool(en_ventana) if out["evidencia"]["conFicha"] else None,
             "goles": en_ventana,
-            "nota": ("" if out["evidencia"]["conFicha"] else
-                     "sin ficha de eventos no se puede comprobar la ventana: queda sin veredicto"),
+            "golesEnAnadido": en_anadido,
+            "rojasAntes": rojas_antes,
+            "cobrable": cobrable,
+            "nota": ("sin ficha de eventos no se puede comprobar la ventana: queda sin veredicto"
+                     if not out["evidencia"]["conFicha"] else
+                     "hubo una roja antes del gol de la ventana: el mecanismo declarado no se puso a "
+                     "prueba (disciplina 24, acierto no testeado) y no cuenta en ninguna métrica"
+                     if rojas_antes else
+                     "gol(es) en el añadido: no tienen ventana (disciplina 23), se anotan aparte"
+                     if en_anadido and not en_ventana else ""),
         })
     if bloques:
         out["tde"] = {"bloques": bloques}

@@ -230,8 +230,22 @@ def _jugador(j, rechazos: list, donde: str) -> dict | None:
                          "porque": f"rol no reconocido: {j.get('rol')!r}",
                          "esperado": "TF / TH / ROT / SUP (o 🔴 🟠 🟡 ⚪, o «Titular fijo»)"})
         return None
-    return {"nombre": nombre, "posicion": _txt(j.get("posicion")), "zona": zona,
-            "rol": rol, "apps": _txt(j.get("apps"))}
+    fuera = {"nombre": nombre, "posicion": _txt(j.get("posicion")), "zona": zona,
+             "rol": rol, "apps": _txt(j.get("apps"))}
+    # EL ID DE LA API CASA LO QUE EL NOMBRE NO PUEDE. La prensa escribe «Joshua
+    # Cantt» y «Cristiano»; API-Football los llama «J. Cerro» y «Cris Silva».
+    # Por nombre no hay regla que los una (UTC–Cristal, 11/10/2026: el bloque F
+    # cerró con dos bajas falsas). Con el `jugadorId` de GET /equipos/{id}/plantilla
+    # el cruce con la ficha es exacto.
+    jid = j.get("jugadorId")
+    if jid not in (None, ""):
+        try:
+            fuera["jugadorId"] = int(jid)
+        except (TypeError, ValueError):
+            rechazos.append({"donde": donde, "jugador": nombre,
+                             "porque": f"jugadorId no es un número: {jid!r}",
+                             "esperado": "el `id` del jugador en GET /equipos/{id}/plantilla"})
+    return fuera
 
 
 def _pron_cadena(v) -> str:
@@ -291,7 +305,7 @@ def _fuera(f: dict, rechazos: list, donde: str) -> dict | None:
 
 _CLAVES_EQUIPO = {"nombre", "bloques", "excluidos", "notas", "dt", "perfil",
                   "plantel", "fuera", "factorX", "sensibilidad"}
-_CLAVES_JUGADOR = {"nombre", "jugador", "posicion", "zona", "rol", "apps", "estado", "motivo"}
+_CLAVES_JUGADOR = {"nombre", "jugador", "jugadorId", "posicion", "zona", "rol", "apps", "estado", "motivo"}
 _CLAVES_PARTE = {"fixtureId", "version", "generadoEn", "equipos", "alertas", "matchup",
                  "lecturaSad", "lectura_sad", "tde", "timelineEventos", "timelineNarrativa",
                  "cadena", "documentos", "pendientes", "fuentes", "descartados", "notas",
@@ -1739,7 +1753,8 @@ def _disponibilidad(equipo: dict, xi: dict | None) -> dict:
     }
     if not (xi and xi.get("once")):
         return congelado
-    d = bloque_f.resolver(plantel, fuera, xi.get("once") or [], xi.get("banca") or [])
+    d = bloque_f.resolver(plantel, fuera, xi.get("once") or [], xi.get("banca") or [],
+                          ids=xi.get("ids") or None)
     if d["casados"] < MINIMO_CASADOS:
         # un once que casa con 3 de 11 no describe a un equipo diezmado: describe
         # una hoja que no corresponde a esta tabla (otro partido, otro equipo, o
@@ -1921,15 +1936,18 @@ def _bloque_calculado(tde: dict) -> dict:
     calc = tdemod.indice(ind)
     fuera = dict(tde)
     fuera["calculado"] = calc
-    declarado = {"ie": tde.get("ie"), "ise": tde.get("ise")}
+    # UN 0.0 NO DECLARA NADA. Es el relleno de `_num(None)` de los partes
+    # anteriores al 11/10/2026: un IE o ISE de 0 exacto con indicadores
+    # puntuados no lo escribe nadie a mano. Se lee como «no declarado».
+    declarado = {k: (None if tde.get(k) in (0, 0.0) else tde.get(k)) for k in ("ie", "ise")}
     fuera["declarado"] = declarado
     if calc.get("sinDato"):
-        # sin índice calculable, el 0.0 guardado antes del 11/10/2026 es el
-        # relleno de `_num(None)`, no un valor declarado: un IE de 0 exacto con
-        # indicadores puntuados no lo produce nadie a mano
         for clave in ("ie", "ise"):
             if fuera.get(clave) in (0, 0.0):
                 fuera[clave] = None
+        # el ISE no depende de los bloques del IE: si hay SOB, se publica igual
+        if calc.get("ise") is not None:
+            fuera["ise"] = calc["ise"]
     else:
         discrepa = []
         for clave in ("ie", "ise"):
@@ -1939,6 +1957,25 @@ def _bloque_calculado(tde: dict) -> dict:
         fuera["discrepancia"] = discrepa
         # el número que manda es el calculado
         fuera["ie"], fuera["ise"] = calc["ie"], calc.get("ise")
+        # la configuración dual la dice la cuenta, no la casilla: San Lorenzo
+        # (IE 5.78 · ISE 6.67) llegó con `disciplina43: false`
+        if (calc.get("riesgo") or {}).get("dual"):
+            fuera["disciplina43"] = True
+    # el índice de cada vía es el calculado de su vía: un 0.0 en `vias[].indice`
+    # (San Lorenzo, Grêmio–Inter) no lo es, y una discrepancia se dice
+    vias = []
+    for v in fuera.get("vias") or []:
+        v = dict(v)
+        nombre = (v.get("nombre") or "").upper()
+        calc_v = calc.get("ise") if nombre.startswith("SOB") else (calc.get("ie") if nombre.startswith("ECHADA") else None)
+        if calc_v is not None:
+            if v.get("indice") not in (None, "", 0, 0.0) and abs(float(v["indice"]) - float(calc_v)) > 0.1:
+                fuera.setdefault("discrepancia", []).append(
+                    f"vía {nombre}: llegó {v['indice']} y la cuenta da {calc_v}")
+            v["indice"] = calc_v
+        vias.append(v)
+    if vias:
+        fuera["vias"] = vias
     return fuera
 
 
@@ -1961,7 +1998,9 @@ def dto(fixture_id: int) -> dict | None:
         eq = parte["equipos"][lado]
         tot = _totales(eq)
         disp = _disponibilidad(eq, xi.get(lado))
-        f3 = bloque_f.alerta_f3(tot["clasificacion"], disp.get("ipNivel", "verde")) if disp.get("resuelto") else None
+        f3 = (bloque_f.alerta_f3(tot["clasificacion"], disp.get("ipNivel", "verde"),
+                                 bloque_f.titulares_fijos_fuera(disp.get("jugadores") or []))
+              if disp.get("resuelto") else None)
         if f3:
             alertas.append({**f3, "equipo": lado})
         equipos[lado] = {**eq, **tot, "disponibilidad": disp}
@@ -2233,7 +2272,7 @@ def xi_de_ficha(fixture_id: int, team_id: int) -> dict | None:
     devuelve None y no inventa nada."""
     filas = saddb.query(
         "sad",
-        "SELECT jugador, titular, formacion FROM alineaciones WHERE fixture_id=? AND team_id=? "
+        "SELECT jugador, player_id, titular, formacion FROM alineaciones WHERE fixture_id=? AND team_id=? "
         "ORDER BY titular DESC",
         (fixture_id, team_id),
     )
@@ -2243,6 +2282,9 @@ def xi_de_ficha(fixture_id: int, team_id: int) -> dict | None:
     return {
         "once": titulares,
         "banca": [f["jugador"] for f in filas if not f["titular"] and f["jugador"]],
+        # nombre de la hoja → id de la API: el cruce exacto con la tabla F1
+        "ids": {f["jugador"]: int(f["player_id"]) for f in filas
+                if f["jugador"] and f["player_id"] and int(f["player_id"]) > 0},
         "formacion": filas[0]["formacion"] or "",
         "fuente": FUENTE_FICHA,
         "capturadoEn": efedb.ahora(),
@@ -2286,9 +2328,16 @@ def resolver_xi(fixture_id: int, onces: dict) -> dict:
                               "con una carga manual. Si la ficha está mal, mandá `reemplazar: true`",
                 }
                 continue
+            ids = {}
+            for k, v in (nuevo.get("ids") or {}).items() if isinstance(nuevo.get("ids"), dict) else []:
+                try:
+                    ids[_txt(k)] = int(v)
+                except (TypeError, ValueError):
+                    pass
             guardado[lado] = {
                 "once": once,
                 "banca": _lista_txt(nuevo.get("banca")),
+                **({"ids": ids} if ids else {}),
                 "formacion": _txt(nuevo.get("formacion")),
                 "fuente": fuente,
                 "capturadoEn": efedb.ahora(),

@@ -2549,6 +2549,7 @@ components:
         zona: { type: string, enum: [GK, DEF, MID, ATK] }
         rol: { type: string, enum: [TF, TH, ROT, SUP], description: 'TF 🔴×3 · TH 🟠×2 · ROT 🟡×1 · SUP ⚪×0.5' }
         apps: { type: string, description: 'titularidades, ej. "12/15"' }
+        jugadorId: { type: integer, description: 'el `id` del jugador en GET /equipos/{id}/plantilla. Con él, el once de la ficha casa por id y no por nombre (la API llama «J. Cerro» a Joshua Cantt): sin él, se cruza por nombre como antes' }
         estado: { type: string, enum: ['', disponible, baja, duda], description: 'lo pone el backend al resolver el once' }
         motivo: { type: string }
     EquipoParteEntrada:

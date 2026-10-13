@@ -114,6 +114,20 @@ def main():
     check("el banco queda marcado como no titular", suplente == 0, suplente)
     check("las dos alineaciones del partido",
           con.execute("SELECT COUNT(DISTINCT team_id) FROM alineaciones WHERE fixture_id=555").fetchone()[0] == 2)
+    # EL ID NULL NO SACA AL JUGADOR DEL ONCE (Tolima 11/10/2026: Aguayo, titular,
+    # llegó con id null y el XI quedó de 10): se guarda con un id sintético < 0
+    con_null = [{"team": {"id": 300}, "coach": {"name": "DT"}, "formation": "4-4-2",
+                 "startXI": [{"player": {"id": None, "name": "Sergio Aguayo", "number": 8, "pos": "M"}},
+                             {"player": {"id": None, "name": None, "number": 9, "pos": "F"}}],
+                 "substitutes": []}]
+    guardar_alineaciones(con, 556, con_null)
+    filas_null = con.execute("SELECT player_id, jugador, titular FROM alineaciones WHERE fixture_id=556").fetchall()
+    check("un titular con id null y nombre se guarda con id sintético negativo; sin nombre, no",
+          len(filas_null) == 1 and filas_null[0][0] < 0 and filas_null[0][1] == "Sergio Aguayo"
+          and filas_null[0][2] == 1, filas_null)
+    guardar_alineaciones(con, 556, con_null)
+    check("el id sintético es estable entre ingestas (no duplica)",
+          con.execute("SELECT COUNT(*) FROM alineaciones WHERE fixture_id=556").fetchone()[0] == 1)
     # re-ingesta: reemplaza, no duplica (un XI probable puede volverse oficial)
     guardar_alineaciones(con, 555, LINEUPS)
     check("re-ingestar no duplica filas",
