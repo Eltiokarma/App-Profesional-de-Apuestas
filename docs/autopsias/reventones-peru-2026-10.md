@@ -60,9 +60,11 @@ candidatos; no mueve ningún número.
 
 ### Lo nuevo de esta tanda
 
-1. **El riesgo alto/muy alto acertó en 6 de 8** (en la primera tanda el bajo
-   falló en 6 de 9): con los dos equipos de la misma liga y sin cambio de
-   competición, el riesgo calibrado funciona. Donde falla es donde no mira.
+1. **6 de 8 llegaban con riesgo alto o muy alto** (en la primera tanda, 6 de 9
+   llegaban con riesgo BAJO). Los dos de esta tanda con riesgo bajo
+   (Universitario, UTC) tienen justo lo que el riesgo no mira: racha
+   concediendo y racha de otra competición. Ojo: entre reventones estudiados
+   no hay denominador; si el riesgo «acierta» lo dice el backtest, no esto.
 2. **Dos burbujas enfrentadas** (3 casos: Chankas–Cienciano, UTC–ADT,
    Cienciano–Garcilaso): el empate corta las dos. Pasa a señal CALCULADA
    (`rival_tambien_en_burbuja`).
