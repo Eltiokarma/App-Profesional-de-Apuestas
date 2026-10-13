@@ -2891,6 +2891,66 @@ def main():
                                         {"nombre": "B", "rol": "TH", "estado": "baja"},
                                         {"nombre": "C", "rol": "TF", "estado": "disponible"}]) == ["A"])
 
+    # ── EL ESTUDIO DE LOS REVENTONES HACIA ATRÁS (13/10/2026) ────────────────
+    from backend.analisis import reventones as rv
+    check("una burbuja de 1 partido es ruido; de 3, candidata; de 2, solo sobre la mediana",
+          not rv.significativo({"partidos": 1, "kPico": 99, "signo": "+"}, {"+": 2})
+          and rv.significativo({"partidos": 3, "kPico": 0.1, "signo": "+"}, {"+": 2})
+          and rv.significativo({"partidos": 2, "kPico": 3, "signo": "-"}, {"-": 2})
+          and not rv.significativo({"partidos": 2, "kPico": 1, "signo": "-"}, {"-": 2}))
+    _liga = dbmod.query_one("sad", "SELECT league_id, COUNT(*) AS n FROM fixtures GROUP BY league_id "
+                                   "ORDER BY n DESC LIMIT 1")["league_id"]
+    r_rv = c.get(f"{A}/analisis/cowork/reventones", params={"liga": _liga, "meses": 36})
+    j_rv = r_rv.json()
+    check("la lista de reventones sale de la base, con los dos tipos y la ficha disponible",
+          r_rv.status_code == 200 and j_rv["total"] > 0 and set(j_rv["porTipo"]) == set(rv.TIPOS.values())
+          and all("conFicha" in x and x["partidos"] >= 2 for x in j_rv["candidatos"]), j_rv.get("porTipo"))
+    _x = j_rv["candidatos"][0]
+    _ruta = f"{A}/analisis/cowork/reventones/{_x['fixtureId']}/{_x['equipoId']}"
+    f_rv = c.get(_ruta).json()
+    check("la ficha del reventón trae la burbuja de los dos AL DÍA del partido y la táctica",
+          f_rv["esCandidato"] and f_rv["reventon"]["tipo"] == _x["tipo"]
+          and "riesgo" in f_rv["alDia"]["equipo"] and "riesgo" in f_rv["alDia"]["rival"]
+          and "tactica" in f_rv and f_rv["estudio"] is None, list(f_rv))
+    check("un mecanismo fuera de la lista no se guarda (422)",
+          c.post(_ruta + "/estudio", json={"mecanismo": "mala suerte"}).status_code == 422)
+    p_rv = c.post(_ruta + "/estudio", json={
+        "mecanismo": "echada_del_que_ganaba", "senales": ["riesgo_alto", "inventada"],
+        "tde": {"equipo": {"ie": 6.1}, "rival": {"ise": 3}},
+        "lecciones": [{"skill": "teorema-del-echado", "reglaTocada": "disciplina 16", "leccion": "se echó"},
+                      {"leccion": "sin skill"}]}).json()
+    check("el estudio se guarda; una señal inventada y una lección sin skill se rechazan con motivo",
+          p_rv["estado"] == "guardado" and p_rv["estudio"]["senales"] == ["riesgo_alto"]
+          and len(p_rv["rechazos"]) == 2 and p_rv["estudio"]["seleccion"] == "post_resultado", p_rv)
+    check("la población no se declara: es post_resultado aunque llegue otra",
+          c.post(_ruta + "/estudio", json={"mecanismo": "roja", "seleccion": "ciega"}).json()["estudio"]["seleccion"]
+          == "post_resultado")
+    c.post(_ruta + "/estudio", json=p_rv["estudio"])
+    _otro = next((x for x in j_rv["candidatos"] if x["equipoId"] != _x["equipoId"]), None)
+    _fx_no = dbmod.query_one("sad", "SELECT id FROM fixtures WHERE (home_team_id=? OR away_team_id=?) "
+                                    "AND status_short='NS' LIMIT 1", (_x["equipoId"], _x["equipoId"]))
+    if _fx_no:
+        check("un partido que no cerró una burbuja de ese equipo no se estudia (422)",
+              c.post(f"{A}/analisis/cowork/reventones/{_fx_no['id']}/{_x['equipoId']}/estudio",
+                     json={"mecanismo": "roja"}).status_code == 422)
+    j_rv2 = c.get(f"{A}/analisis/cowork/reventones", params={"liga": _liga, "meses": 36}).json()
+    check("el estudiado sale marcado y al final de la lista",
+          j_rv2["estudiados"] == 1 and not j_rv2["candidatos"][0]["estudiado"]
+          and any(x["estudiado"] for x in j_rv2["candidatos"]), j_rv2["estudiados"])
+    res_rv = c.get(f"{A}/analisis/cowork/reventones/resumen").json()
+    check("el resumen cuenta por mecanismo y señal, y dice que no es probabilidad",
+          res_rv[_x["tipo"]]["porMecanismo"] == {"echada_del_que_ganaba": 1}
+          and "no probabilidad" in res_rv[_x["tipo"]]["nota"], res_rv)
+    inv_rv = c.get(f"{A}/analisis/cowork/lecciones").json()
+    it_rv = [i for i in inv_rv["items"] if i.get("origen") == "reventon"]
+    check("sus lecciones entran a Aprendizaje como rúbrica: post_resultado, no mueven números",
+          len(it_rv) == 1 and it_rv[0]["clave"] == f"rev:{_x['fixtureId']}:{_x['equipoId']}:1"
+          and it_rv[0]["puedeMoverNumeros"] is False and it_rv[0]["skill"] == "teorema-del-echado", it_rv)
+    import backend.app as _appmod
+    check("el token de Cowork puede escribir el estudio y nada más nuevo",
+          _appmod._cowork_puede("POST", f"{A}/analisis/cowork/reventones/1/2/estudio")
+          and not _appmod._cowork_puede("POST", f"{A}/analisis/cowork/reventones/1/2"))
+
     print()
     print(f"{'TODO OK' if not fallos else f'{fallos} FALLAS'}")
     return 1 if fallos else 0

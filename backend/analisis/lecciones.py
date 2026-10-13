@@ -505,6 +505,11 @@ def inventario(skill: str = "", estado: str = "", limite: int = 400, cohorte: st
     poblacion, metricas = _metricas(casos)
     en_cuarentena = [i for i in todos if i["cuarentena"]]
     todos = [i for i in todos if not i["cuarentena"]]
+    # los estudios de reventones hacia atrás (backend/analisis/reventones.py):
+    # mismas lecciones por skill, población post_resultado (fijan rúbrica)
+    if clave_cohorte in ("", COHORTE):
+        from backend.analisis import reventones as _rev
+        todos += _rev.items_leccion(estados, COHORTE)
 
     filtrados = [i for i in todos
                  if (not skill or i["skill"] == skill)

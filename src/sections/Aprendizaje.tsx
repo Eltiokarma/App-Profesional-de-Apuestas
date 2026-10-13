@@ -523,7 +523,12 @@ function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
   return (
     <div style={{ padding: '10px 0', borderTop: '1px solid var(--line)' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, flexWrap: 'wrap' }}>
-        <span style={{ font: '700 10px var(--mono)', color: COLOR_VER[it.veredicto], textTransform: 'uppercase' }}>{it.veredicto}</span>
+        {it.origen === 'reventon'
+          ? <span title={`estudio de un reventón hacia atrás · mecanismo: ${it.mecanismo ?? ''}`}
+              style={{ font: '700 10px var(--mono)', color: 'var(--accent)', textTransform: 'uppercase' }}>
+              reventón{it.mecanismo ? ` · ${it.mecanismo.replace(/_/g, ' ')}` : ''}
+            </span>
+          : <span style={{ font: '700 10px var(--mono)', color: COLOR_VER[it.veredicto as 'acierto'], textTransform: 'uppercase' }}>{it.veredicto}</span>}
         <span style={{ font: '600 11.5px var(--sans)', color: 'var(--t1)' }}>{it.equipo}</span>
         <span style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)' }}>{it.partido} · {it.fecha}</span>
         <span style={{ marginLeft: 'auto', padding: '2px 8px', borderRadius: 6, background: 'var(--bg3)', color: 'var(--t2)', font: '700 9px var(--mono)' }}>

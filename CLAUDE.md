@@ -610,6 +610,21 @@ conversación se pierde en la siguiente.
    rutina de sesión nueva arrancaba sin el repo, sin `add_repo` y con otro
    modelo, y no pudo leer el skill (13/10, 12:48).
 
+12. **El estudio de los reventones hacia atrás** (13/10/2026,
+   `backend/analisis/reventones.py`, modo `reventones` de `corrida-sad`).
+   Las probabilidades propias salen de entender POR QUÉ revienta una burbuja,
+   no de la cuota: `GET /analisis/cowork/reventones?liga=` lista las burbujas
+   significativas (≥ 3 partidos, o 2 sobre la mediana de la K pico) que
+   reventaron —racha positiva que revienta / racha negativa que se corta—;
+   `GET …/reventones/{fx}/{equipo}` las da «al día del partido» (burbuja y
+   nivel de los dos con `antesDe`, ficha táctica, DT del banco); el estudio
+   (`POST …/estudio`) aplica el TDE a LOS DOS equipos, el DTP y el EFE de ese
+   día y guarda el MECANISMO y las SEÑALES PREVIAS de listas cerradas más
+   lecciones por skill, que entran a Aprendizaje (`rev:…`). Población siempre
+   `post_resultado`: fija rúbrica, no mueve números; el resumen por mecanismo
+   es frecuencia entre estudiados, no probabilidad (falta el denominador de
+   las burbujas que no reventaron). Primera tanda: Liga 1 Perú, 6 meses.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
