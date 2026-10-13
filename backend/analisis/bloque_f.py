@@ -191,13 +191,17 @@ def _buscar(plantel: list[dict], nombre_hoja: str) -> list[int]:
 
 
 def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
-             banca: list[str] | None = None) -> dict:
+             banca: list[str] | None = None, ids: dict[str, int] | None = None) -> dict:
     """Cruza la hoja del partido con la tabla de Cowork y cierra el bloque F.
 
     - en el once  → disponible (y titular)
     - en la banca → disponible; si es 🔴/🟠 cuenta como rotación voluntaria (F4)
     - en ninguna  → baja para esta fecha, con el motivo público si ya se sabía
     - nombre que casa con dos jugadores → NO se resuelve: va a `dudas`
+
+    `ids` (nombre de la hoja → id de API-Football) manda sobre el nombre cuando
+    la tabla trae `jugadorId`: la API y la prensa escriben distinto al mismo
+    jugador («J. Cerro» / «Joshua Cantt») y ninguna regla de nombres los une.
 
     Devuelve el plantel con estados, el diagnóstico F2 y lo que no se pudo
     casar, para que la pantalla lo muestre en vez de esconderlo.
@@ -209,9 +213,12 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
     dudas: list[str] = []
     no_reconocidos: list[str] = []
 
+    por_id = {j["jugadorId"]: i for i, j in enumerate(plantel) if j.get("jugadorId") is not None}
+    ids = ids or {}
     for lista, destino in ((once, "titular"), (banca, "banca")):
         for nombre in lista:
-            idx = _buscar(plantel, nombre)
+            jid = ids.get(nombre)
+            idx = [por_id[jid]] if jid in por_id else _buscar(plantel, nombre)
             if len(idx) == 1:
                 estados[idx[0]] = ("disponible", destino)
             elif len(idx) > 1:

@@ -230,8 +230,22 @@ def _jugador(j, rechazos: list, donde: str) -> dict | None:
                          "porque": f"rol no reconocido: {j.get('rol')!r}",
                          "esperado": "TF / TH / ROT / SUP (o 🔴 🟠 🟡 ⚪, o «Titular fijo»)"})
         return None
-    return {"nombre": nombre, "posicion": _txt(j.get("posicion")), "zona": zona,
-            "rol": rol, "apps": _txt(j.get("apps"))}
+    fuera = {"nombre": nombre, "posicion": _txt(j.get("posicion")), "zona": zona,
+             "rol": rol, "apps": _txt(j.get("apps"))}
+    # EL ID DE LA API CASA LO QUE EL NOMBRE NO PUEDE. La prensa escribe «Joshua
+    # Cantt» y «Cristiano»; API-Football los llama «J. Cerro» y «Cris Silva».
+    # Por nombre no hay regla que los una (UTC–Cristal, 11/10/2026: el bloque F
+    # cerró con dos bajas falsas). Con el `jugadorId` de GET /equipos/{id}/plantilla
+    # el cruce con la ficha es exacto.
+    jid = j.get("jugadorId")
+    if jid not in (None, ""):
+        try:
+            fuera["jugadorId"] = int(jid)
+        except (TypeError, ValueError):
+            rechazos.append({"donde": donde, "jugador": nombre,
+                             "porque": f"jugadorId no es un número: {jid!r}",
+                             "esperado": "el `id` del jugador en GET /equipos/{id}/plantilla"})
+    return fuera
 
 
 def _pron_cadena(v) -> str:
@@ -291,7 +305,7 @@ def _fuera(f: dict, rechazos: list, donde: str) -> dict | None:
 
 _CLAVES_EQUIPO = {"nombre", "bloques", "excluidos", "notas", "dt", "perfil",
                   "plantel", "fuera", "factorX", "sensibilidad"}
-_CLAVES_JUGADOR = {"nombre", "jugador", "posicion", "zona", "rol", "apps", "estado", "motivo"}
+_CLAVES_JUGADOR = {"nombre", "jugador", "jugadorId", "posicion", "zona", "rol", "apps", "estado", "motivo"}
 _CLAVES_PARTE = {"fixtureId", "version", "generadoEn", "equipos", "alertas", "matchup",
                  "lecturaSad", "lectura_sad", "tde", "timelineEventos", "timelineNarrativa",
                  "cadena", "documentos", "pendientes", "fuentes", "descartados", "notas",
@@ -1739,7 +1753,8 @@ def _disponibilidad(equipo: dict, xi: dict | None) -> dict:
     }
     if not (xi and xi.get("once")):
         return congelado
-    d = bloque_f.resolver(plantel, fuera, xi.get("once") or [], xi.get("banca") or [])
+    d = bloque_f.resolver(plantel, fuera, xi.get("once") or [], xi.get("banca") or [],
+                          ids=xi.get("ids") or None)
     if d["casados"] < MINIMO_CASADOS:
         # un once que casa con 3 de 11 no describe a un equipo diezmado: describe
         # una hoja que no corresponde a esta tabla (otro partido, otro equipo, o
@@ -2233,7 +2248,7 @@ def xi_de_ficha(fixture_id: int, team_id: int) -> dict | None:
     devuelve None y no inventa nada."""
     filas = saddb.query(
         "sad",
-        "SELECT jugador, titular, formacion FROM alineaciones WHERE fixture_id=? AND team_id=? "
+        "SELECT jugador, player_id, titular, formacion FROM alineaciones WHERE fixture_id=? AND team_id=? "
         "ORDER BY titular DESC",
         (fixture_id, team_id),
     )
@@ -2243,6 +2258,8 @@ def xi_de_ficha(fixture_id: int, team_id: int) -> dict | None:
     return {
         "once": titulares,
         "banca": [f["jugador"] for f in filas if not f["titular"] and f["jugador"]],
+        # nombre de la hoja → id de la API: el cruce exacto con la tabla F1
+        "ids": {f["jugador"]: int(f["player_id"]) for f in filas if f["jugador"] and f["player_id"]},
         "formacion": filas[0]["formacion"] or "",
         "fuente": FUENTE_FICHA,
         "capturadoEn": efedb.ahora(),
@@ -2286,9 +2303,16 @@ def resolver_xi(fixture_id: int, onces: dict) -> dict:
                               "con una carga manual. Si la ficha está mal, mandá `reemplazar: true`",
                 }
                 continue
+            ids = {}
+            for k, v in (nuevo.get("ids") or {}).items() if isinstance(nuevo.get("ids"), dict) else []:
+                try:
+                    ids[_txt(k)] = int(v)
+                except (TypeError, ValueError):
+                    pass
             guardado[lado] = {
                 "once": once,
                 "banca": _lista_txt(nuevo.get("banca")),
+                **({"ids": ids} if ids else {}),
                 "formacion": _txt(nuevo.get("formacion")),
                 "fuente": fuente,
                 "capturadoEn": efedb.ahora(),

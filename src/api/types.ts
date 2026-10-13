@@ -1054,6 +1054,8 @@ export interface JugadorParte {
   zona: ZonaF
   rol: RolF
   apps?: string
+  /** id del jugador en la plantilla de la base: el once de la ficha casa por id, no por nombre. */
+  jugadorId?: number
   estado?: EstadoJugadorF
   motivo?: string
   /** true = entró a la tabla F1 desde `fuera`, para que su baja pese en el IP. */

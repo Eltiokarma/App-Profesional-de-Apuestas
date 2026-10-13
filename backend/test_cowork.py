@@ -2617,6 +2617,24 @@ def main():
     # ── el cruce de nombres, al detalle ─────────────────────────────────────
     from backend.analisis import bloque_f as bf
 
+    # EL ID CASA LO QUE EL NOMBRE NO (UTC–Cristal 11/10/2026): la API llama
+    # «J. Cerro» a Joshua Cantt y «Cris Silva» a Cristiano
+    t_id = [{"nombre": "Joshua Cantt", "zona": "MID", "rol": "ROT", "jugadorId": 354001},
+            {"nombre": "Cristiano", "zona": "DEF", "rol": "TF", "jugadorId": 105501},
+            {"nombre": "Luis Iberico", "zona": "ATK", "rol": "TF"}]
+    d_sin = bf.resolver(t_id, [], ["J. Cerro", "Cris Silva", "L. Iberico"])
+    d_con = bf.resolver(t_id, [], ["J. Cerro", "Cris Silva", "L. Iberico"],
+                        ids={"J. Cerro": 354001, "Cris Silva": 105501, "L. Iberico": 39646})
+    check("por nombre «J. Cerro» y «Cris Silva» no casan con la tabla de la prensa",
+          d_sin["casados"] == 1 and set(d_sin["noReconocidos"]) == {"J. Cerro", "Cris Silva"}, d_sin["noReconocidos"])
+    check("con el jugadorId de la tabla y los ids de la ficha casan los tres (el sin id, por nombre)",
+          d_con["casados"] == 3 and not d_con["noReconocidos"], (d_con["casados"], d_con["noReconocidos"]))
+    _rech: list = []
+    check("el parte acepta jugadorId en la tabla y rechaza uno que no es número",
+          _parte_mod._jugador({"nombre": "Joshua Cantt", "zona": "MID", "rol": "ROT", "jugadorId": "354001"}, _rech, "t")["jugadorId"] == 354001
+          and "jugadorId" not in _parte_mod._jugador({"nombre": "X Y", "zona": "MID", "rol": "ROT", "jugadorId": "abc"}, _rech, "t")
+          and any("jugadorId" in r["porque"] for r in _rech), _rech)
+
     tabla = [
         {"nombre": "Ángelo Campos", "zona": "GK", "rol": "TF"},
         {"nombre": "Carlos Zambrano", "zona": "DEF", "rol": "TF"},
