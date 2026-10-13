@@ -169,6 +169,8 @@ export interface SadDataSource {
   quitarCuarentena(fixtureId: number): Promise<unknown>
   /** Mueve una lección de estado. Lo hace el usuario, no el agente. */
   moverLeccion(clave: string, body: { estado: string; aplicadaEn?: string; nota?: string }): Promise<LeccionItem>
+  desmentirBanco(fixtureId: number, body: { lado: 'a' | 'b'; fuente: string; nota?: string }): Promise<unknown>
+  descartarCohorte(cohorte: string, nota?: string): Promise<{ cohorte: string; descartadas: number; claves: string[]; nota: string }>
   /** Dossier de revisión de un skill (fase D) y su apertura (token maestro). */
   revisionSkill(skill: string, cohorte?: string): Promise<RevisionSkillDTO>
   abrirRevision(skill: string, cohorte?: string): Promise<{ skill: string; movidas: string[]; versionVigente: string }>
@@ -921,6 +923,16 @@ class MockDataSource implements SadDataSource {
     return { ...it, estado: body.estado as LeccionItem['estado'], aplicadaEn: body.aplicadaEn ?? '', nota: body.nota ?? '' }
   }
 
+  async desmentirBanco(fixtureId: number, body: { lado: 'a' | 'b'; fuente: string; nota?: string }): Promise<unknown> {
+    if (body.fuente.trim().length < 8) throw new Error('desmentir el banco lleva FUENTE: el link o la nota que prueba que ese DT no dirigió')
+    return { fixtureId, bancoDesmentido: { [body.lado]: { fuente: body.fuente } }, dtEquivocado: [] }
+  }
+  async descartarCohorte(cohorte: string, nota = ''): Promise<{ cohorte: string; descartadas: number; claves: string[]; nota: string }> {
+    if (!cohorte || cohorte === 'vigente') throw new Error('la cohorte vigente no se descarta en bloque')
+    const claves = leccionesDemo('', 'pendiente', cohorte).items.map((i) => i.clave)
+    return { cohorte, descartadas: claves.length, claves, nota }
+  }
+
   async resolverXi(fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }): Promise<ParteCoworkDTO> {
     const p = await this.parteCowork(fixtureId)
     if (!p) throw new Error('no hay parte para ese partido')
@@ -1212,6 +1224,9 @@ class HttpDataSource implements SadDataSource {
   quitarCuarentena = (fixtureId: number) => SadApi.quitarCuarentena(fixtureId)
   moverLeccion = (clave: string, body: { estado: string; aplicadaEn?: string; nota?: string }) =>
     SadApi.moverLeccion(clave, body)
+  desmentirBanco = (fixtureId: number, body: { lado: 'a' | 'b'; fuente: string; nota?: string }) =>
+    SadApi.desmentirBanco(fixtureId, body)
+  descartarCohorte = (cohorte: string, nota?: string) => SadApi.descartarCohorte(cohorte, nota)
   revisionSkill = (skill: string, cohorte?: string) => SadApi.revisionSkill(skill, cohorte)
   abrirRevision = (skill: string, cohorte?: string) => SadApi.abrirRevision(skill, cohorte)
 }

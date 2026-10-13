@@ -102,7 +102,8 @@ class ParteInvalido(ValueError):
 # caliente para no perder los partes ya depositados (en SQLite un ALTER que ya
 # existe es un error, no un problema)
 _COLUMNAS_NUEVAS = (("veredicto_json", "TEXT"), ("cohorte", "TEXT"), ("cuarentena_json", "TEXT"),
-                    ("coherencia_json", "TEXT"), ("modo_fallo_json", "TEXT"))
+                    ("coherencia_json", "TEXT"), ("modo_fallo_json", "TEXT"),
+                    ("banco_desmentido_json", "TEXT"))
 # el registro del revisor nació sin `via`; se añade en caliente igual
 _COLUMNAS_LOG = (("via", "TEXT"),)
 
@@ -303,7 +304,7 @@ _CLAVES_PARTE = {"fixtureId", "version", "generadoEn", "equipos", "alertas", "ma
 # respuesta. Se ignora en silencio; delatarlo llenaría el recibo de rechazos
 # falsos y escondería los de verdad.
 _ECO_PARTE = {"partido", "estado", "creadoEn", "actualizadoEn", "xi", "veredicto",
-              "timeline", "rechazos", "perdido", "aviso", "entrada", "cohorte", "cuarentena",
+              "timeline", "rechazos", "perdido", "aviso", "entrada", "cohorte", "cuarentena", "bancoDesmentido",
               "xiConservados", "coherencia"}
 _ECO_EQUIPO = {"total", "maximoAlcanzable", "porcentaje", "clasificacion", "disponibilidad",
                "sinBloques", "bloquesSinDeclarar", "notaTotales"}
@@ -783,7 +784,7 @@ def mismo_dt(a: str, b: str) -> bool:
     return any(_mismo_apellido(x, y) for x in ta for y in tb)
 
 
-def dt_equivocado(parte: dict, fixture_id: int) -> list[dict]:
+def dt_equivocado(parte: dict, fixture_id: int, desmentidos: "dict | None" = None) -> list[dict]:
     """Los lados donde el DT que declaró el parte NO es el que se sentó en el
     banco de ESE partido (la alineación que capturó la ficha).
 
@@ -792,12 +793,17 @@ def dt_equivocado(parte: dict, fixture_id: int) -> list[dict]:
     no cómo terminó el partido. Se mira después del pitazo solo porque el
     banco se conoce entonces. Sin alineación capturada (Colombia, Uruguay, o
     la ficha aún no corrió) no se puede comprobar y no se marca nada: ahí la
-    cuarentena es a mano."""
+    cuarentena es a mano.
+
+    `desmentidos` son los lados donde el usuario probó con una fuente que el
+    BANCO de la API es el que está mal (Jaguares 11/10/2026: la alineación
+    traía a Bodhert, que se había ido el 28/09). Esos lados no se comparan:
+    el criterio sigue siendo de insumo, pero el insumo que falla es la API."""
     fx = _fixture(fixture_id)
     if not fx:
         return []
     out = []
-    malos = set(sin_dt(parte))
+    malos = set(sin_dt(parte)) | set(desmentidos or {})
     for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])):
         if lado in malos:
             continue
@@ -866,9 +872,81 @@ def corregir_dt(fixture_id: int, cambios: dict) -> dict:
         "rechazos": rechazos,
         # lo que ve el aprendizaje después del cambio: vacío = el DT del parte
         # ya casa con el que se sentó en el banco (o no hay alineación)
-        "dtEquivocado": dt_equivocado(parte, fixture_id),
+        "dtEquivocado": dt_equivocado(parte, fixture_id, bancos_desmentidos(fixture_id)),
         "sinDt": sin_dt(parte),
     }
+
+
+# EL BANCO DE LA API TAMBIÉN SE EQUIVOCA. La cuarentena automática por DT
+# equivocado le cree a la alineación que trae API-Football, y esa alineación a
+# veces arrastra a un DT que ya se fue (Jaguares–Tolima del 11/10/2026: «H.
+# Bodhert», salido el 28/09; antes Cusco, Nacional, Libertad, Auxerre). Sin esto
+# el único camino era cambiar el DT del parte por el de la API, o sea mentir.
+# Lo pone el usuario con el token maestro, POR LADO y con la FUENTE que prueba
+# que el banco está mal; no toca el parte, ni el veredicto, ni la cohorte.
+DESMENTIDO_FUENTE_MIN = 8
+
+
+def bancos_desmentidos(fixture_id: int) -> dict:
+    with _conectar() as con:
+        fila = con.execute("SELECT banco_desmentido_json FROM parte_cowork WHERE fixture_id=?",
+                           (fixture_id,)).fetchone()
+    if not fila or not fila["banco_desmentido_json"]:
+        return {}
+    try:
+        return json.loads(fila["banco_desmentido_json"]) or {}
+    except ValueError:
+        return {}
+
+
+def desmentir_banco(fixture_id: int, lado: str, fuente: str, nota: str = "") -> dict:
+    """Marca que el DT del banco que trae la alineación de la API está mal en
+    `lado`. Exige que hoy ESE lado figure como DT equivocado: no se desmiente
+    lo que nadie afirmó."""
+    lado = _txt(lado).lower()
+    fuente = _txt(fuente)
+    if lado not in LADOS:
+        raise ParteInvalido("lado tiene que ser «a» (local) o «b» (visitante)")
+    if len(fuente) < DESMENTIDO_FUENTE_MIN:
+        raise ParteInvalido("desmentir el banco lleva FUENTE: el link o la nota de prensa que prueba "
+                            "que ese DT no dirigió el partido (p. ej. su salida anunciada antes)")
+    with _conectar() as con:
+        fila = con.execute("SELECT parte_json, banco_desmentido_json FROM parte_cowork WHERE fixture_id=?",
+                           (fixture_id,)).fetchone()
+        if not fila:
+            raise KeyError(fixture_id)
+        parte = json.loads(fila["parte_json"])
+        previos = json.loads(fila["banco_desmentido_json"]) if fila["banco_desmentido_json"] else {}
+        malos = {m["lado"]: m for m in dt_equivocado(parte, fixture_id, previos)}
+        if lado not in malos and lado not in previos:
+            raise ParteInvalido(f"el lado {lado} no figura con DT equivocado: el DT del parte ya casa "
+                                "con el banco (o no hay alineación con qué comparar)")
+        previos[lado] = {
+            "bancoDeLaApi": (malos.get(lado) or previos.get(lado) or {}).get("banco", ""),
+            "dtDelParte": (malos.get(lado) or previos.get(lado) or {}).get("parte", "")
+                          or (previos.get(lado) or {}).get("dtDelParte", ""),
+            "fuente": fuente,
+            "nota": _txt(nota),
+            "puestoEn": efedb.ahora(),
+        }
+        con.execute("UPDATE parte_cowork SET banco_desmentido_json=? WHERE fixture_id=?",
+                    (json.dumps(previos, ensure_ascii=False), fixture_id))
+    return {"fixtureId": fixture_id, "bancoDesmentido": previos,
+            "dtEquivocado": dt_equivocado(parte, fixture_id, previos)}
+
+
+def quitar_desmentido(fixture_id: int, lado: str) -> dict:
+    lado = _txt(lado).lower()
+    with _conectar() as con:
+        fila = con.execute("SELECT banco_desmentido_json FROM parte_cowork WHERE fixture_id=?",
+                           (fixture_id,)).fetchone()
+        if not fila:
+            raise KeyError(fixture_id)
+        previos = json.loads(fila["banco_desmentido_json"]) if fila["banco_desmentido_json"] else {}
+        quitado = previos.pop(lado, None)
+        con.execute("UPDATE parte_cowork SET banco_desmentido_json=? WHERE fixture_id=?",
+                    (json.dumps(previos, ensure_ascii=False) if previos else None, fixture_id))
+    return {"fixtureId": fixture_id, "bancoDesmentido": previos, "quitado": quitado}
 
 
 def alertas_dt(parte: dict, fx, nombres: dict) -> list[dict]:
@@ -1859,8 +1937,8 @@ def dto(fixture_id: int) -> dict | None:
     with _conectar() as con:
         fila = con.execute(
             "SELECT fixture_id, fecha, equipo_a, equipo_b, estado, version, parte_json, "
-            "xi_json, creado_en, actualizado_en, cohorte, cuarentena_json, coherencia_json "
-            "FROM parte_cowork WHERE fixture_id=?",
+            "xi_json, creado_en, actualizado_en, cohorte, cuarentena_json, coherencia_json, "
+            "banco_desmentido_json FROM parte_cowork WHERE fixture_id=?",
             (fixture_id,),
         ).fetchone()
     if not fila:
@@ -1973,6 +2051,8 @@ def dto(fixture_id: int) -> dict | None:
         "coherencia": coherencia,
         "cohorte": cohorte_de(fila["cohorte"]),
         "cuarentena": json.loads(fila["cuarentena_json"]) if fila["cuarentena_json"] else None,
+        "bancoDesmentido": (json.loads(fila["banco_desmentido_json"])
+                            if fila["banco_desmentido_json"] else {}),
         "creadoEn": fila["creado_en"],
         "actualizadoEn": fila["actualizado_en"],
     }

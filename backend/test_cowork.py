@@ -2024,6 +2024,54 @@ def main():
           item_eq and all(i["cuarentenaAutomatica"] for i in item_eq)
           and "Repetto" in item_eq[0]["cuarentena"] and "Dudamel" in item_eq[0]["cuarentena"],
           [i.get("cuarentena") for i in item_eq] or inv_eq["enCuarentena"])
+    # ── EL BANCO DE LA API TAMBIÉN SE EQUIVOCA (Jaguares 11/10: «H. Bodhert», ido el 28/09) ──
+    _pid = pasado["id"]
+    check("la lección en cuarentena dice qué lado y qué nombres chocaron",
+          item_eq and item_eq[0]["dtEquivocado"] and item_eq[0]["dtEquivocado"][0]["lado"] == "a",
+          item_eq[0].get("dtEquivocado") if item_eq else None)
+    r_sin = c.post(f"{A}/analisis/cowork/{_pid}/banco-desmentido", json={"lado": "a", "fuente": "x"})
+    r_otro = c.post(f"{A}/analisis/cowork/{_pid}/banco-desmentido",
+                    json={"lado": "b", "fuente": "https://prensa.example/salida-del-dt"})
+    check("desmentir el banco exige fuente, y solo en un lado que figure con DT equivocado (422)",
+          r_sin.status_code == 422 and r_otro.status_code == 422, (r_sin.text[:120], r_otro.text[:120]))
+    r_des = c.post(f"{A}/analisis/cowork/{_pid}/banco-desmentido",
+                   json={"lado": "a", "fuente": "https://prensa.example/dudamel-se-fue", "nota": "salió dos semanas antes"})
+    inv_des = c.get(f"{A}/analisis/cowork/lecciones").json()
+    check("con el banco desmentido el caso sale de la cuarentena automática, sin tocar el DT del parte",
+          r_des.status_code == 200 and r_des.json()["dtEquivocado"] == []
+          and not any(i["clave"].startswith(f"{_pid}:") for i in inv_des["enCuarentena"]["items"])
+          and c.get(f"{A}/analisis/cowork/{_pid}").json()["equipos"]["a"]["dt"]["nombre"] == "Pablo Repetto",
+          r_des.text[:300])
+    check("el GET del parte trae el desmentido con la fuente y el banco que traía la API",
+          c.get(f"{A}/analisis/cowork/{_pid}").json()["bancoDesmentido"]["a"]["bancoDeLaApi"] == "R. Dudamel",
+          c.get(f"{A}/analisis/cowork/{_pid}").json().get("bancoDesmentido"))
+    c.delete(f"{A}/analisis/cowork/{_pid}/banco-desmentido/a")
+    check("quitar el desmentido devuelve el caso a la cuarentena",
+          any(i["clave"].startswith(f"{_pid}:") for i in
+              c.get(f"{A}/analisis/cowork/lecciones").json()["enCuarentena"]["items"]))
+    from backend import app as _app_mod
+    check("desmentir el banco y descartar una cohorte NO están abiertos a Cowork",
+          not _app_mod._cowork_puede("POST", f"{A}/analisis/cowork/{_pid}/banco-desmentido")
+          and not _app_mod._cowork_puede("POST", f"{A}/analisis/cowork/cohortes/rodaje/descartar"))
+    # ── DESCARTE EN BLOQUE de una cohorte vieja (113 pendientes de rodaje/c2 al 12/10) ──
+    from backend.analisis import parte as _pm_desc, lecciones as _lec_desc
+    check("la cohorte vigente no se descarta en bloque (422) y una sin casos da 404",
+          c.post(f"{A}/analisis/cowork/cohortes/vigente/descartar", json={}).status_code == 422
+          and c.post(f"{A}/analisis/cowork/cohortes/{_pm_desc.COHORTE}/descartar", json={}).status_code == 422
+          and c.post(f"{A}/analisis/cowork/cohortes/c9-no-existe/descartar", json={}).status_code == 404)
+    with _pm_desc._conectar() as _cn:
+        _cn.execute("UPDATE parte_cowork SET cohorte='c2-2026-09-19' WHERE fixture_id=?", (_pid,))
+    r_desc = c.post(f"{A}/analisis/cowork/cohortes/c2-2026-09-19/descartar", json={"nota": "no calibra"})
+    _vieja = c.get(f"{A}/analisis/cowork/lecciones?cohorte=c2-2026-09-19").json()
+    _todas_c2 = [i for i in _vieja["items"] + _vieja["enCuarentena"]["items"] if i["cohorte"] == "c2-2026-09-19"]
+    check("descartar la cohorte vieja pasa TODAS sus pendientes a descartada, cuarentena incluida",
+          r_desc.status_code == 200 and r_desc.json()["descartadas"] >= 1
+          and _todas_c2 and all(i["estado"] == "descartada" for i in _todas_c2),
+          (r_desc.text[:200], [(i["clave"], i["estado"]) for i in _todas_c2]))
+    with _pm_desc._conectar() as _cn:
+        _cn.execute("UPDATE parte_cowork SET cohorte=? WHERE fixture_id=?", (_pm_desc.COHORTE, _pid))
+    with _lec_desc._conectar() as _cn:
+        _cn.executemany("DELETE FROM leccion_estado WHERE clave=?", [(k,) for k in r_desc.json().get("claves", [])])
     p_eq["equipos"]["a"]["dt"] = {"nombre": "Rafael Dudamel", "desde": "2026-01-01"}
     c.post(f"{A}/analisis/cowork", json=p_eq)
     check("re-depositar con el DT del banco («Rafael Dudamel» vs «R. Dudamel») la levanta",

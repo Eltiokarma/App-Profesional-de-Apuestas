@@ -1574,6 +1574,8 @@ export interface ParteCoworkDTO {
   cohorte?: { clave: string; vigente: boolean; descripcion: string }
   /** Apartado del aprendizaje por criterio; null si cuenta. */
   cuarentena?: { motivo: string; puestaEn: string; veredictoAlPoner: Record<'a' | 'b', string> | null } | null
+  /** Lados donde el usuario probó que el DT del banco de la API está mal. */
+  bancoDesmentido?: Partial<Record<'a' | 'b', BancoDesmentidoLado>>
   creadoEn: string
   actualizadoEn: string
 }
@@ -1648,6 +1650,8 @@ export interface LeccionItem {
   cuarentena?: string
   /** true = la puso la app por criterio (parte sin DT declarado); se levanta re-depositando con el DT. */
   cuarentenaAutomatica?: boolean
+  /** Si la automática es por DT equivocado: qué lado y qué nombres chocaron. */
+  dtEquivocado?: { lado: 'a' | 'b'; parte: string; banco: string }[]
   /** Etiqueta de Jev sobre la prosa del veredicto: de qué naturaleza fue el fallo. null sin etiqueta. */
   modoFallo?: ModoFalloEtiqueta | null
   modoFalloConfianza?: number | null
@@ -1829,4 +1833,12 @@ export interface RevisionSkillDTO {
   pidenMoverSinPoder?: LeccionItem[]
   enCuarentena: LeccionItem[]
   lectura: string
+}
+
+export interface BancoDesmentidoLado {
+  bancoDeLaApi: string
+  dtDelParte: string
+  fuente: string
+  nota: string
+  puestoEn: string
 }

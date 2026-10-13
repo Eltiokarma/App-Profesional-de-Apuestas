@@ -173,6 +173,15 @@ export const SadApi = {
   quitarCuarentena: (fixtureId: number) =>
     apiDelete<{ fixtureId: number; cuarentena: null }>(`/analisis/cowork/${fixtureId}/cuarentena`),
 
+  /** El DT del banco que trae la API está mal en ese lado (con fuente). Token maestro. */
+  desmentirBanco: (fixtureId: number, body: { lado: 'a' | 'b'; fuente: string; nota?: string }) =>
+    apiPost<{ fixtureId: number; bancoDesmentido: unknown; dtEquivocado: unknown[] }>(
+      `/analisis/cowork/${fixtureId}/banco-desmentido`, body),
+  /** Descarta en bloque las pendientes de una cohorte vieja (no la vigente). Token maestro. */
+  descartarCohorte: (cohorte: string, nota = '') =>
+    apiPost<{ cohorte: string; descartadas: number; claves: string[]; nota: string }>(
+      `/analisis/cowork/cohortes/${encodeURIComponent(cohorte)}/descartar`, { nota }),
+
   /** El dossier de revisión de un skill (fase D): abre la revisión, no autoriza nada. */
   revisionSkill: (skill: string, cohorte = 'vigente') =>
     apiGet<RevisionSkillDTO>(`/analisis/cowork/revision/${encodeURIComponent(skill)}` + qs({ cohorte })),
