@@ -1,6 +1,6 @@
 ---
 name: corrida-sad
-description: Corrida del pipeline SAD con Claude Code (reemplaza a Cowork desde el 13/10/2026). Modo `partes` analiza los partidos de la agenda con los skills (EFE, Teorema del Echado, DTP, sad-analysis) y deposita un parte por partido; modo `veredictos` cierra con autopsia por skill los partidos jugados. Usar cuando una rutina programada o el usuario pida «la corrida», «los partes de hoy», «validar lo de ayer» o «los veredictos».
+description: Corrida del pipeline SAD con Claude Code (reemplaza a Cowork desde el 13/10/2026). Modo `partes` analiza los partidos de la agenda con los skills (EFE, Teorema del Echado, DTP, sad-analysis) y deposita un parte por partido; modo `veredictos` cierra con autopsia por skill los partidos jugados; modo `reventones` estudia hacia atrás burbujas que reventaron (TDE de los dos equipos, DTP, EFE de ese día). Usar cuando una rutina programada o el usuario pida «la corrida», «los partes de hoy», «validar lo de ayer» o «los veredictos».
 ---
 
 # Corrida SAD con Claude Code
@@ -125,6 +125,64 @@ commitea nada.
 
 3. Respuesta final, tres líneas: veredictos cerrados, lecciones por skill, y
    qué no se pudo cerrar y por qué.
+
+## Modo `reventones` (estudio hacia atrás)
+
+Una burbuja que revienta es donde el partido dejó de parecerse a la racha. Si
+era de victorias, el Teorema del Echado del que ganaba suele explicarlo; si
+era de derrotas y el equipo la cortó, hay que mirar con el TDE **al rival**:
+alguien con tan bajo rendimiento no gana solo. De esos estudios salen
+nuestras probabilidades, no de la casa.
+
+1. `GET $B/analisis/cowork/reventones?liga=<id>&meses=6&conFicha=true` (Liga 1
+   Perú = 281). La lista ya viene ordenada: primero los que tienen ficha y no
+   están estudiados. Tomá hasta **8** con `estudiado: false` (o los que pida
+   quien te disparó), mezclando los dos tipos si los hay.
+2. Un subagente por caso, en paralelo, con este encargo:
+
+> Estudiá el reventón del equipo {equipoId} en el fixture {fixtureId}
+> ({partido}, {fecha}): {tipo}, racha de {partidos} partidos, K pico {kPico}.
+> Credenciales en `$SAD_API_BASE` / `$SAD_TOKEN_COWORK` (nunca las imprimas).
+>
+> 1. `GET $B/analisis/cowork/reventones/{fixtureId}/{equipoId}`: la burbuja y el
+>    nivel de los DOS equipos AL DÍA del partido (lo que se veía antes), la ficha
+>    táctica (once, goles con minuto, rojas, stats), el DT de cada banco y las
+>    listas cerradas de `mecanismos` y `senales`. Prensa de ESA fecha con
+>    WebSearch/WebFetch (cargalos con ToolSearch `select:WebSearch,WebFetch`):
+>    previa y crónica, DT, bajas, contexto (eliminatoria, descenso, altura).
+> 2. Cargá `anthropic-skills:teorema-del-echado`, `anthropic-skills:diagnostico-tactico`
+>    y `anthropic-skills:efe-clasificador`. Aplicá:
+>    - **TDE a los DOS equipos**, con lo que se sabía antes (IE/ISE por bloques,
+>      tipología, ventana) y contra lo que pasó (¿quién se echó, quién se
+>      sobreexpuso, en qué minuto, qué rama de la reasignación jugó?). Si la
+>      racha era negativa y se cortó, el foco es el rival: ¿qué hizo para perder
+>      con alguien así?
+>    - **DTP**: autopsia de cada gol con responsables y si hubo MECANISMO-ABIERTO.
+>    - **EFE de ese día**: DT, bajas, rotación, lo que pesaba.
+> 3. `POST $B/analisis/cowork/reventones/{fixtureId}/{equipoId}/estudio` con:
+>    `mecanismo` (uno de la lista; el que MÁS explica el reventón),
+>    `mecanismoSecundario` opcional, `senales` (de la lista: SOLO lo que era
+>    visible ANTES del pitazo; si no había nada, `ninguna_visible`),
+>    `senalPrevia` (una frase), `queP` (qué pasó, una frase), `tde.equipo` y
+>    `tde.rival` (IE, ISE, tipología, ventana, qué rama jugó), `dtp`, `efe`,
+>    `fuentes`, y `lecciones` [{skill, reglaTocada, leccion}]: una por hallazgo
+>    que toque una regla, también las confirmaciones. Leé `rechazos`.
+> 4. Respuesta final: mecanismo, señales, y las lecciones (skill · regla).
+>
+> Es un estudio CON el resultado a la vista: la población es `post_resultado`,
+> lo pone la app. No disfraces de «se veía venir» lo que solo se ve después:
+> una señal es previa si estaba en la prensa o en la base antes del partido.
+
+3. Respuesta final, tres líneas: estudios guardados (por tipo), los
+   mecanismos que más se repitieron (`GET …/reventones/resumen?liga=<id>`), y
+   qué no se pudo estudiar y por qué.
+
+## Al terminar cualquier modo: avisá al celular
+
+Las rutinas corren solas y el usuario no mira la sesión. Mandá las tres
+líneas finales al celular con la herramienta **PushNotification** (cargala con
+ToolSearch `select:PushNotification`), también si la corrida falló o no tenía
+nada que hacer. Sin el token, sin datos sensibles.
 
 ## Lo que NO hace esta corrida
 

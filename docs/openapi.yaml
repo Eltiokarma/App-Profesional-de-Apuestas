@@ -904,6 +904,66 @@ paths:
             application/json:
               schema: { type: object, additionalProperties: true }
         '404': { description: el fixture no está en nuestra base }
+  /analisis/cowork/reventones:
+    get:
+      summary: Los reventones que valen un estudio hacia atrás
+      description: >
+        Burbujas de la familia total con ≥ 3 partidos, o de 2 con la K pico sobre la mediana
+        de su signo en ese equipo, de los equipos de la liga en los últimos `meses`. Dos tipos:
+        `racha_positiva_revienta` y `racha_negativa_se_corta`. Cada uno dice si hay ficha del
+        partido (`conFicha.eventos`, `conFicha.once`) y si ya está estudiado; primero los que
+        tienen ficha y no están estudiados. 0 tokens, 0 requests. Abierto a Cowork.
+      parameters:
+        - { name: liga, in: query, required: true, schema: { type: integer }, description: 'Liga 1 Perú = 281' }
+        - { name: meses, in: query, schema: { type: integer, default: 6, minimum: 1, maximum: 36 } }
+        - { name: limite, in: query, schema: { type: integer, default: 60, minimum: 1, maximum: 300 } }
+        - { name: conFicha, in: query, schema: { type: boolean, default: false } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+  /analisis/cowork/reventones/resumen:
+    get:
+      summary: Lo estudiado junto, por tipo de reventón
+      description: >
+        Por tipo, cuántos estudios por mecanismo y por señal previa. Frecuencia entre
+        reventones ESTUDIADOS, no probabilidad de reventar (falta el denominador de las
+        burbujas que no reventaron).
+      parameters:
+        - { name: liga, in: query, schema: { type: integer } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+  /analisis/cowork/reventones/{fixtureId}/{equipoId}:
+    get:
+      summary: El reventón al día del partido
+      description: >
+        La burbuja y el nivel de los dos equipos con la historia cortada ESTRICTAMENTE antes del
+        partido (`alDia`), la ficha táctica, el DT de cada banco, el estudio si existe y las
+        listas cerradas de `mecanismos` y `senales`.
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+        - { name: equipoId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+        '400': { description: el equipo no juega ese partido }
+  /analisis/cowork/reventones/{fixtureId}/{equipoId}/estudio:
+    post:
+      summary: Guarda el estudio de un reventón
+      description: >
+        `mecanismo` (obligatorio) y `mecanismoSecundario` de la lista cerrada; `senales` (lo
+        visible ANTES del pitazo) de su lista cerrada —lo que no está se rechaza con motivo—;
+        `tde.equipo` / `tde.rival`, `dtp`, `efe` libres; `lecciones` [{skill, reglaTocada,
+        leccion}] (hasta 8) que entran a Aprendizaje con clave `rev:fixture:equipo:n`.
+        La población es SIEMPRE `post_resultado` (se elige porque ya reventó): fija rúbrica, no
+        mueve números. Re-postear reemplaza. 422 si el partido no cerró una burbuja
+        significativa de ese equipo o el mecanismo no está en la lista. Abierto a Cowork.
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+        - { name: equipoId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: true } } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+        '422': { description: no es un reventón de ese equipo, o el mecanismo no está en la lista }
   /analisis/cowork/f1/{fixtureId}:
     get:
       summary: La tabla F1 del EFE armada desde la base (con jugadorId)
@@ -1337,6 +1397,8 @@ components:
       properties:
         clave: { type: string, example: '1550964:a', description: "`fixture:lado` la primera lección del lado; `fixture:lado:N` las de `otrasLecciones`" }
         orden: { type: integer, description: '1 = la lección principal del lado; 2+ = otrasLecciones' }
+        origen: { type: string, enum: [veredicto, reventon], description: "`reventon` = de un estudio hacia atrás (clave `rev:…`, veredicto vacío, post_resultado)" }
+        mecanismo: { type: string, description: 'solo en origen reventon: el mecanismo del reventón' }
         fixtureId: { type: integer }
         lado: { type: string, enum: [a, b] }
         equipo: { type: string }

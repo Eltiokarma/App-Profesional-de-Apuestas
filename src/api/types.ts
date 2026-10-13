@@ -1654,6 +1654,10 @@ export interface LeccionItem {
   clave: string
   /** 1 = la lección principal del lado; 2+ = otrasLecciones. */
   orden?: number
+  /** `reventon` = de un estudio de reventón hacia atrás (veredicto vacío, post_resultado). */
+  origen?: 'veredicto' | 'reventon'
+  /** Solo con origen `reventon`: el mecanismo del reventón. */
+  mecanismo?: string
   fixtureId: number
   lado: 'a' | 'b'
   equipo: string
@@ -1662,7 +1666,7 @@ export interface LeccionItem {
   fecha: string
   /** '' = la lección no declaró de qué skill es; no se reparte a ojo. */
   skill: string
-  veredicto: 'acierto' | 'parcial' | 'fallo'
+  veredicto: 'acierto' | 'parcial' | 'fallo' | ''
   queP: string
   leccion: string
   reglaTocada: string

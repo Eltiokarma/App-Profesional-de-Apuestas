@@ -21,7 +21,7 @@ from datetime import date as date_t, datetime, timedelta, timezone
 from functools import lru_cache
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import Body, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
@@ -93,6 +93,8 @@ _COWORK_PERMITIDO = tuple(
         # corregir SOLO el DT de un parte: sin esto, el único camino era
         # re-depositar el parte entero y un cuerpo recortado lo vaciaba
         ("POST", r"/analisis/cowork/\d+/dt"),
+        # el estudio de un reventón hacia atrás: escribe SOLO su tabla, 0 cuota
+        ("POST", r"/analisis/cowork/reventones/\d+/\d+/estudio"),
         # lo que el pipeline necesita LEER para escribir el parte
         ("GET", r"/(?:health|fixtures|equipos|ligas|cuotas|constantes|constantes-cuota"
                 r"|niveles|predicciones|analisis-prepartido)(?:/.*)?"),
@@ -2593,6 +2595,48 @@ def cowork_depositar(payload: dict):
     try:
         return cowork.guardar(payload)
     except cowork.ParteInvalido as e:
+        raise HTTPException(422, str(e))
+
+
+@app.get(API + "/analisis/cowork/reventones")
+def cowork_reventones(liga: int = Query(..., description="id de la liga (Liga 1 Perú = 281)"),
+                      meses: int = Query(default=6, ge=1, le=36), limite: int = Query(default=60, ge=1, le=300),
+                      conFicha: bool = False):
+    """Los reventones que valen un estudio hacia atrás (backend/analisis/reventones.py):
+    burbujas de ≥ 3 partidos, o de 2 con la K pico sobre la mediana del equipo, con
+    si hay ficha del partido y si ya están estudiadas. 0 tokens, 0 requests."""
+    from backend.analisis import reventones
+    return reventones.candidatos(liga, meses, limite, conFicha)
+
+
+@app.get(API + "/analisis/cowork/reventones/resumen")
+def cowork_reventones_resumen(liga: int | None = None):
+    """Lo estudiado junto: por tipo de reventón, cuántos por mecanismo y por señal
+    previa. Frecuencia descriptiva, NO probabilidad de reventar."""
+    from backend.analisis import reventones
+    return reventones.resumen_global(liga)
+
+
+@app.get(API + "/analisis/cowork/reventones/{fixture_id}/{equipo_id}")
+def cowork_reventon_ficha(fixture_id: int, equipo_id: int):
+    """El reventón al día del partido: burbuja y nivel de los dos con la historia
+    cortada antes, ficha táctica, DT de cada banco y el estudio si ya existe."""
+    from backend.analisis import reventones
+    try:
+        return reventones.ficha(fixture_id, equipo_id)
+    except reventones.EstudioInvalido as e:
+        raise HTTPException(400, str(e))
+
+
+@app.post(API + "/analisis/cowork/reventones/{fixture_id}/{equipo_id}/estudio")
+def cowork_reventon_estudio(fixture_id: int, equipo_id: int, body: dict = Body(...)):
+    """Guarda el estudio de un reventón: mecanismo y señales previas de listas
+    cerradas, TDE de los dos, DTP, EFE y lecciones por skill. Población
+    post_resultado: fija rúbrica, no mueve números. Re-postear reemplaza."""
+    from backend.analisis import reventones
+    try:
+        return reventones.guardar_estudio(fixture_id, equipo_id, body)
+    except reventones.EstudioInvalido as e:
         raise HTTPException(422, str(e))
 
 
