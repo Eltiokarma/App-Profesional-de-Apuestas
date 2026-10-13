@@ -453,6 +453,18 @@ conversación se pierde en la siguiente.
      frecuente en su último año fuera de internacionales y amistosos— no es
      la misma base (`parte.misma_base`: mismo id, o mismo país en la misma
      categoría; Apertura/Clausura de Uruguay son la misma base).
+     **Copas y divisiones (13/10/2026, Cristal–Bentín)**: una copa NO es una
+     base (`backend/analisis/escala.py`, por lista o por nombre: FA Cup,
+     Copa del Rey…); un equipo con solo partidos de copa en la base es
+     `fuera del padrón` (casi siempre de abajo), no «primera». La alerta dice
+     la relación (rival de categoría inferior · superior · fuera del padrón ·
+     otra liga) y que el RIESGO DEL REVENTÓN también va con reserva: compara
+     el nivel del rival con los que reventaron las burbujas en SU liga.
+     `GET /equipos/{id}/burbujas` trae `escala` (las dos bases, la nota y el
+     historial del equipo en copas contra otra base, con sus reventones) y la
+     tarjeta lo pinta; los puntos calibrados no se mueven. En el estudio de
+     reventones, `rival_de_otra_base` es señal CALCULADA, y un amistoso que
+     cierra la burbuja ya no es candidato.
    - **El flag `Missing Fixture`** (acertó 10 de 23, separado por densidad):
      HECHO como señal con umbral. `PlantillaDTO.missingFixture` y
      `baja.lectura` (`senal`/`ruido`, umbral 25 % de la plantilla,

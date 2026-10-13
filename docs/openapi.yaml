@@ -2270,6 +2270,21 @@ components:
           properties:
             fixtureId: { type: integer }
             fecha: { type: string, nullable: true }
+        escala:
+          type: object
+          description: >-
+            De qué base sale el nivel del próximo rival (backend/analisis/escala.py). La liga
+            doméstica es la más frecuente del último año SIN copas, internacionales ni amistosos;
+            con solo copas, `categoria: fuera del padrón`. `comparable: false` = el nivel del rival
+            no está en la escala del equipo y el riesgo va con reserva (no se mueve: es el
+            calibrado). `historial` = cómo le fue en copas contra rivales de otra base.
+          properties:
+            equipo: { type: object, nullable: true, additionalProperties: true }
+            rival: { type: object, nullable: true, additionalProperties: true }
+            relacion: { type: string, enum: [misma, sin dato, rival de categoría inferior, rival fuera del padrón, rival de categoría superior, otra liga] }
+            comparable: { type: boolean }
+            nota: { type: string }
+            historial: { type: object, additionalProperties: true }
     EslabonDtp:
       type: object
       description: 'Un partido de la cadena DTP de un equipo foco'

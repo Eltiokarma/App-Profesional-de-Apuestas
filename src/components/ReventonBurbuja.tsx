@@ -2,7 +2,7 @@
 // de resultado del equipo suele volver a cero, tal como llega del contrato
 // (GET /equipos/{id}/burbujas). La pantalla no calcula nada: pinta los números
 // y los motivos que vienen con ellos. No es una probabilidad y se dice.
-import type { BurbujasEquipoDTO, DistribucionDTO, FamiliaBurbuja, FamiliaBurbujaDTO, HistorialPeriodoDTO, HistorialSignoDTO, ReventonDTO } from '../api/types'
+import type { BaseNivelDTO, BurbujasEquipoDTO, DistribucionDTO, EscalaRivalDTO, FamiliaBurbuja, FamiliaBurbujaDTO, HistorialPeriodoDTO, HistorialSignoDTO, ReventonDTO } from '../api/types'
 import type { KCondKey } from '../data/types'
 import { fmtK, signFmt } from '../lib/kview'
 
@@ -304,6 +304,9 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
             </div>
           </div>
 
+          {/* la escala del rival: copa, ascendido, otra liga (Cristal–Bentín) */}
+          {data.escala && !data.escala.comparable && <EscalaRival escala={data.escala} rival={data.proximo?.rival ?? 'el rival'} />}
+
           {/* el veredicto con sus motivos, uno por punto */}
           <div style={{ padding: '9px 11px', borderRadius: 9, background: `color-mix(in oklch, ${RIESGO_COLOR[riesgo.nivel]}, transparent 90%)`, border: `1px solid color-mix(in oklch, ${RIESGO_COLOR[riesgo.nivel]}, transparent 60%)` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 5 }}>
@@ -356,6 +359,35 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
       )}
 
       <div style={{ font: '500 9.5px var(--mono)', color: 'var(--t3)', lineHeight: 1.4 }}>{data.aviso}</div>
+    </div>
+  )
+}
+
+function EscalaRival({ escala, rival }: { escala: EscalaRivalDTO; rival: string }) {
+  const base = (b?: BaseNivelDTO | null) =>
+    !b ? 'sin dato' : b.nombre ? `${b.nombre} · ${b.categoria}` : `liga fuera del padrón (solo ${b.soloCopa?.join(', ') || 'copas'})`
+  const grupos = Object.entries(escala.historial?.porRelacion ?? {})
+  return (
+    <div style={{ padding: '9px 11px', borderRadius: 9, background: 'color-mix(in oklch, var(--mark), transparent 90%)', border: '1px solid color-mix(in oklch, var(--mark), transparent 60%)' }}>
+      <div style={{ font: '800 11px var(--sans)', color: 'var(--mark)', textTransform: 'uppercase', letterSpacing: '.3px', marginBottom: 4 }}>
+        Escala distinta · {escala.relacion}
+      </div>
+      <div style={{ font: '500 11px var(--sans)', color: 'var(--t2)', lineHeight: 1.45 }}>
+        Equipo: {base(escala.equipo)} · {rival}: {base(escala.rival)}
+      </div>
+      <div style={{ font: '500 10.5px var(--sans)', color: 'var(--t3)', lineHeight: 1.45, marginTop: 3 }}>{escala.nota}</div>
+      {grupos.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+          {grupos.map(([rel, g]) => (
+            <span key={rel} style={{ font: '600 10px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+              vs {rel.replace('rival ', '')}: {g.G}G {g.E}E {g.P}P · {g.reventones} reventón{g.reventones === 1 ? '' : 'es'} en {g.partidos}
+            </span>
+          ))}
+        </div>
+      )}
+      {escala.historial && grupos.length === 0 && (
+        <div style={{ font: '500 10px var(--sans)', color: 'var(--t3)', marginTop: 4 }}>sin partidos de copa contra otra base en la historia del equipo</div>
+      )}
     </div>
   )
 }

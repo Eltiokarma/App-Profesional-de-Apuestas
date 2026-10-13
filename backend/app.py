@@ -1507,6 +1507,17 @@ def equipo_burbujas(equipo_id: int, antesDe: int | None = None, proximo: int | N
         hoy=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         nombre=team["name"],
     )
+    # LA ESCALA DEL RIVAL (copas, ascendidos): el riesgo compara su nivel con
+    # los rivales que reventaron las burbujas en la liga del equipo; si el
+    # rival viene de otra base, se dice y se trae lo que sí compara.
+    if prox:
+        from backend.analisis import escala
+        try:
+            cerrados, _, _ = burbuja.episodios(filas, "total")
+            r["escala"] = {**escala.entre(equipo_id, prox["rivalId"], prox["fecha"]),
+                           "historial": escala.historial(equipo_id, filas, {c["fixtureId"] for c in cerrados})}
+        except Exception as e:  # noqa: BLE001 — se declara, no tumba la tarjeta
+            r["escala"] = {"relacion": "sin dato", "comparable": True, "nota": f"no se pudo calcular: {e}"}
     if antesDe is not None:
         r["estabilidad"]["motivos"] = [
             "vista al día del partido: la plantilla de hoy no es la de entonces y no se usa; "

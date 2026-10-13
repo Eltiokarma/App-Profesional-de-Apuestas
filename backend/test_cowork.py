@@ -342,11 +342,56 @@ def main():
           and esc[0]["ligas"]["a"]["id"] == 140 and esc[0]["ligas"]["b"]["id"] == 203, esc)
     check("la alerta nombra a los equipos y sus ligas y dice que el nivel no compara entre ligas",
           esc and "Beşiktaş" in esc[0]["detalle"] and "Süper Lig" in esc[0]["detalle"]
-          and "NO compara entre ligas" in esc[0]["detalle"], esc and esc[0]["detalle"])
+          and "NO compara entre bases" in esc[0]["detalle"] and "REVENTÓN" in esc[0]["detalle"],
+          esc and esc[0]["detalle"])
+    # ── LA COPA NO ES UNA BASE (Cristal–Bentín, tercera tanda de Perú) ──────
+    from backend.analisis import escala as _esc
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT OR REPLACE INTO teams (id, name, country) VALUES (990102, 'Bentín Tacna', 'Peru')")
+        _con.execute("INSERT OR REPLACE INTO teams (id, name, country) VALUES (990103, 'Millwall', 'England')")
+        _con.execute("INSERT OR REPLACE INTO leagues (id, name, country, season) VALUES (502, 'Copa Bicentenario', 'Peru', 2026)")
+        _con.execute("INSERT OR REPLACE INTO leagues (id, name, country, season) VALUES (40, 'Championship', 'England', 2026)")
+        for i in range(2):  # Bentín: en la base solo hay partidos de copa
+            _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                         "home_team_id, away_team_id, goals_home, goals_away) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                         (990130 + i, (t0 - _dt.timedelta(days=9 * (i + 1))).strftime("%Y-%m-%d %H:%M:%S"),
+                          "FT", "Match Finished", 502, 2026, 990102, 990101, 1, 0))
+        for i in range(3):  # Millwall: su Championship
+            _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                         "home_team_id, away_team_id, goals_home, goals_away) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                         (990140 + i, (t0 - _dt.timedelta(days=7 * (i + 1))).strftime("%Y-%m-%d %H:%M:%S"),
+                          "FT", "Match Finished", 40, 2026, 990103, 990101, 1, 1))
+        _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                     "home_team_id, away_team_id) VALUES (?,?,?,?,?,?,?,?)",
+                     (990150, (t0 + _dt.timedelta(days=4)).strftime("%Y-%m-%d %H:%M:%S"), "NS",
+                      "Not Started", 502, 2026, fxr["home_team_id"], 990102))
+    check("una copa se reconoce por la lista o por el nombre (FA Cup, Copa del Rey, Coppa, Pokal)",
+          _esc.es_copa(502) and _esc.es_copa(999, "FA Cup") and _esc.es_copa(999, "Coppa Italia")
+          and _esc.es_copa(999, "DFB Pokal") and not _esc.es_copa(999, "Premier League"))
+    _bb = _esc.base_de(990102, None)
+    check("un equipo con solo partidos de copa no es «primera»: su liga está fuera del padrón",
+          _bb and _bb["categoria"] == "fuera del padrón" and _bb["id"] is None, _bb)
+    check("la segunda inglesa es segunda; la relación se lee desde el equipo",
+          _esc.base_de(990103, None)["categoria"] == "segunda"
+          and _esc.relacion({"id": 39, "pais": "England", "categoria": "primera"},
+                            _esc.base_de(990103, None)) == "rival de categoría inferior"
+          and _esc.relacion(_esc.base_de(990103, None),
+                            {"id": 39, "pais": "England", "categoria": "primera"}) == "rival de categoría superior"
+          and _esc.relacion({"id": 268, "pais": "Uruguay", "categoria": "primera"},
+                            {"id": 270, "pais": "Uruguay", "categoria": "primera"}) == "misma")
+    r = c.post(f"{A}/analisis/cowork", json=_parte(990150))
+    esc2 = [a for a in c.get(f"{A}/analisis/cowork/990150").json()["alertas"] if a["codigo"] == "ESCALA-LIGAS"]
+    check("cruce de copa con un rival fuera del padrón → ESCALA-LIGAS (antes la copa contaba como su liga)",
+          len(esc2) == 1 and esc2[0]["relacion"] == "rival fuera del padrón", esc2)
+    j_esc = c.get(f"{A}/equipos/{fxr['home_team_id']}/burbujas", params={"proximo": 990150}).json()
+    check("la burbuja trae la escala del próximo rival: no comparable, con su nota y el historial en copas",
+          j_esc.get("escala", {}).get("comparable") is False and "reserva" in j_esc["escala"]["nota"]
+          and "porRelacion" in j_esc["escala"]["historial"], j_esc.get("escala"))
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM fixtures WHERE id BETWEEN 990100 AND 990199")
     from backend.analisis.parte import borrar as _borrar_parte
     _borrar_parte(990120)
+    _borrar_parte(990150)
 
     # ── LO QUE SE TIRA SE DICE, TAMBIÉN EN EL TDE (3ª corrida real) ─────────
     # Cowork probó tres formas de `tde` y las tres se guardaron como {} sin un
