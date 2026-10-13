@@ -90,8 +90,9 @@ SENALES = {
     "once_distinto": "el once del partido cambió 5 o más titulares respecto del último de la racha EN LA MISMA "
                      "competición "
                      "(se ve ~60 min antes del pitazo) — CALCULADA, solo con los dos onces en la base",
-    "rival_de_otra_base": "el rival venía de otra división o de una liga que no se sigue (copa nacional, "
-                          "ascendido): su nivel no está en la escala del equipo — CALCULADA",
+    "rival_de_otra_base": "el rival venía de otra división o de una liga que no se sigue (copa nacional), o "
+                          "el equipo acaba de cambiar de categoría (ascendido/descendido): el nivel o las "
+                          "medianas no están en la misma escala — CALCULADA",
     "ninguna_visible": "nada visible antes del pitazo",
 }
 LECCIONES_MAX = 8
@@ -344,11 +345,11 @@ def _dt_en_el_banco(fixture_id: int, team_id: int) -> str:
     return (f["entrenador"] if f else "") or ""
 
 
-def _escala(team_id: int, rival: int, fecha: str) -> dict:
+def _escala(team_id: int, rival: int, fecha: str, liga: int | None = None) -> dict:
     """De qué base sale el nivel de cada uno (Cristal–Bentín: Liga 1 contra Liga 2)."""
     from backend.analisis import escala
     try:
-        return escala.entre(team_id, rival, fecha)
+        return escala.entre(team_id, rival, fecha, liga)
     except Exception as e:  # noqa: BLE001
         return {"relacion": "sin dato", "comparable": True, "nota": f"no se pudo calcular: {e}"}
 
@@ -369,7 +370,7 @@ def ficha(fixture_id: int, team_id: int) -> dict | None:
         "alDia": {"equipo": _burbuja_al_dia(team_id, fixture_id), "rival": _burbuja_al_dia(rival, fixture_id),
                   "nota": "historia cortada ESTRICTAMENTE antes de este partido (antesDe): lo que se "
                           "podía ver antes del pitazo"},
-        "escala": _escala(team_id, rival, str(fx["date"])[:10]),
+        "escala": _escala(team_id, rival, str(fx["date"])[:10], fx["league_id"]),
         "dtEnElBanco": {"equipo": _dt_en_el_banco(fixture_id, team_id),
                         "rival": _dt_en_el_banco(fixture_id, rival)},
         "tactica": ficha_tactica.tactica_de(fixture_id, fx["home_team_id"], fx["away_team_id"]),
@@ -440,7 +441,7 @@ def guardar_estudio(fixture_id: int, team_id: int, cuerpo: dict) -> dict:
         cambios = cambios_en_el_once(fixture_id, team_id, previos[-1]["fixtureId"])
         if cambios is not None and cambios >= ONCE_CAMBIOS:
             calculadas.append("once_distinto")
-    if not _escala(team_id, rival, str(fx["date"])[:10]).get("comparable", True):
+    if not _escala(team_id, rival, str(fx["date"])[:10], fx["league_id"]).get("comparable", True):
         calculadas.append("rival_de_otra_base")
     senales = [x for x in senales if x not in SENALES_CALCULADAS] + list(calculadas)
     estudio = {

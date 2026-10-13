@@ -119,8 +119,37 @@ def relacion(a: dict | None, b: dict | None) -> str:
     return "otra liga"
 
 
-def entre(team_id: int, rival_id: int, fecha: str | None) -> dict:
+def cambio_de_categoria(base: dict | None, liga_partido: int | None) -> str:
+    """«ascendido» / «descendido» si el partido es de liga y de otra categoría
+    que la base donde el equipo armó su historia (West Ham en el Championship,
+    Coventry en la Premier: las medianas del reventón son de la otra)."""
+    if not base or base.get("id") is None or not liga_partido or liga_partido == base["id"]:
+        return ""
+    if liga_partido in _fuera_de_liga() or es_copa(liga_partido):
+        return ""
+    nueva = categoria(liga_partido)
+    if nueva == base["categoria"]:
+        return ""
+    return "ascendido" if _ORDEN[nueva] < _ORDEN[base["categoria"]] else "descendido"
+
+
+def entre(team_id: int, rival_id: int, fecha: str | None, liga_partido: int | None = None) -> dict:
     a, b = base_de(team_id, fecha), base_de(rival_id, fecha)
+    cambio = cambio_de_categoria(a, liga_partido)
+    if cambio and b and b.get("id") == liga_partido:
+        # el rival es de la liga nueva del equipo: lo que no compara es la HISTORIA del equipo
+        from backend.app import liga_meta
+        nueva = liga_meta(liga_partido).get("nombre")
+        return {"equipo": a, "rival": b, "relacion": f"equipo {cambio}", "comparable": False,
+                "cambioDeCategoria": cambio,
+                "nota": (f"el equipo armó su historia en {a.get('nombre')} ({a['categoria']}) y ahora juega "
+                         f"{nueva} ({categoria(liga_partido)}): las medianas del reventón (K, partidos, nivel "
+                         f"del rival que la revienta) son de la categoría vieja. "
+                         + ("Recién descendido: casi todo rival le queda «lejos» y el riesgo sale bajo por la "
+                            "escala, no por el partido" if cambio == "descendido" else
+                            "Recién ascendido: casi todo rival le queda «fuerte» y cualquier mala racha supera "
+                            "su récord (el extremo grita en parte por la escala)")
+                         + " · tomalo con esa reserva")}
     rel = relacion(a, b)
     comparable = rel in ("misma", "sin dato")
     nota = ""

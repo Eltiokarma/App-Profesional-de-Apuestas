@@ -1514,7 +1514,9 @@ def equipo_burbujas(equipo_id: int, antesDe: int | None = None, proximo: int | N
         from backend.analisis import escala
         try:
             cerrados, _, _ = burbuja.episodios(filas, "total")
-            r["escala"] = {**escala.entre(equipo_id, prox["rivalId"], prox["fecha"]),
+            _f = db.query_one("sad", "SELECT league_id FROM fixtures WHERE id=?", (prox["fixtureId"],))
+            liga_px = _f["league_id"] if _f else None
+            r["escala"] = {**escala.entre(equipo_id, prox["rivalId"], prox["fecha"], liga_px),
                            "historial": escala.historial(equipo_id, filas, {c["fixtureId"] for c in cerrados})}
         except Exception as e:  # noqa: BLE001 — se declara, no tumba la tarjeta
             r["escala"] = {"relacion": "sin dato", "comparable": True, "nota": f"no se pudo calcular: {e}"}

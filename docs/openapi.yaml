@@ -2281,7 +2281,8 @@ components:
           properties:
             equipo: { type: object, nullable: true, additionalProperties: true }
             rival: { type: object, nullable: true, additionalProperties: true }
-            relacion: { type: string, enum: [misma, sin dato, rival de categoría inferior, rival fuera del padrón, rival de categoría superior, otra liga] }
+            relacion: { type: string, enum: [misma, sin dato, rival de categoría inferior, rival fuera del padrón, rival de categoría superior, otra liga, equipo ascendido, equipo descendido] }
+            cambioDeCategoria: { type: string, enum: [ascendido, descendido], description: 'el partido es de liga y de otra categoría que la base del equipo: las medianas del reventón son de la vieja' }
             comparable: { type: boolean }
             nota: { type: string }
             historial: { type: object, additionalProperties: true }

@@ -379,6 +379,16 @@ def main():
                             {"id": 39, "pais": "England", "categoria": "primera"}) == "rival de categoría superior"
           and _esc.relacion({"id": 268, "pais": "Uruguay", "categoria": "primera"},
                             {"id": 270, "pais": "Uruguay", "categoria": "primera"}) == "misma")
+    check("cambio de categoría: el de la Championship jugando Premier es ascendido; al revés, descendido; "
+          "una copa no es cambio",
+          _esc.cambio_de_categoria(_esc.base_de(990103, None), 39) == "ascendido"
+          and _esc.cambio_de_categoria({"id": 39, "categoria": "primera"}, 40) == "descendido"
+          and _esc.cambio_de_categoria({"id": 39, "categoria": "primera"}, 45) == ""
+          and _esc.cambio_de_categoria({"id": 39, "categoria": "primera"}, 39) == "")
+    _wh = _esc.entre(fxr["home_team_id"], 990103, None, 40)   # uno de LaLiga jugando la liga de Millwall
+    check("con el rival de su liga nueva, lo que no compara es la HISTORIA del equipo (West Ham en The Den)",
+          _wh["relacion"] == "equipo descendido" and _wh["comparable"] is False
+          and "categoría vieja" in _wh["nota"] and "lejos" in _wh["nota"], _wh)
     r = c.post(f"{A}/analisis/cowork", json=_parte(990150))
     esc2 = [a for a in c.get(f"{A}/analisis/cowork/990150").json()["alertas"] if a["codigo"] == "ESCALA-LIGAS"]
     check("cruce de copa con un rival fuera del padrón → ESCALA-LIGAS (antes la copa contaba como su liga)",
