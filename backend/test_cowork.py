@@ -2898,6 +2898,20 @@ def main():
           and rv.significativo({"partidos": 3, "kPico": 0.1, "signo": "+"}, {"+": 2})
           and rv.significativo({"partidos": 2, "kPico": 3, "signo": "-"}, {"-": 2})
           and not rv.significativo({"partidos": 2, "kPico": 1, "signo": "-"}, {"-": 2}))
+    # LA COMPOSICIÓN DE LA RACHA LA SABE LA BASE (primera tanda de Perú, 13/10):
+    # rachas de la Copa de la Liga o de amistosos que revientan al volver la liga
+    _fila = {"ligaId": 281, "condicion": "Visita"}
+    _racha = [{"fixtureId": 1, "fecha": "2026-06-01", "ligaId": 1232, "condicion": "Local", "golesFavor": 2, "golesContra": 0},
+              {"fixtureId": 2, "fecha": "2026-06-08", "ligaId": 667, "condicion": "Local", "golesFavor": 1, "golesContra": 0},
+              {"fixtureId": 3, "fecha": "2026-06-15", "ligaId": 281, "condicion": "Visita", "golesFavor": 1, "golesContra": 0}]
+    _comp = rv.composicion(_racha, _fila)
+    check("racha de copa y amistoso que revienta en liga: racha_en_otra_competicion; 2 de 3 de local: a contramano",
+          _comp["senalesCalculadas"] == ["racha_en_otra_competicion", "condicion_a_contramano"]
+          and _comp["enOtraCompeticion"] == 2 and _comp["partidos"][1]["amistoso"] is True, _comp)
+    check("una racha de la misma liga y condición no levanta ninguna señal",
+          rv.composicion(_racha[2:], _fila)["senalesCalculadas"] == [])
+    check("«reventon» no es un skill: sus lecciones van a sad-analysis",
+          rv.skill_canonico("reventon") == "sad-analysis" and rv.skill_canonico("teorema-del-echado") == "teorema-del-echado")
     _liga = dbmod.query_one("sad", "SELECT league_id, COUNT(*) AS n FROM fixtures GROUP BY league_id "
                                    "ORDER BY n DESC LIMIT 1")["league_id"]
     r_rv = c.get(f"{A}/analisis/cowork/reventones", params={"liga": _liga, "meses": 36})
@@ -2920,7 +2934,8 @@ def main():
         "lecciones": [{"skill": "teorema-del-echado", "reglaTocada": "disciplina 16", "leccion": "se echó"},
                       {"leccion": "sin skill"}]}).json()
     check("el estudio se guarda; una señal inventada y una lección sin skill se rechazan con motivo",
-          p_rv["estado"] == "guardado" and p_rv["estudio"]["senales"] == ["riesgo_alto"]
+          p_rv["estado"] == "guardado" and p_rv["estudio"]["senales"][0] == "riesgo_alto"
+          and set(p_rv["estudio"]["senales"][1:]) == set(p_rv["estudio"]["senalesCalculadas"])
           and len(p_rv["rechazos"]) == 2 and p_rv["estudio"]["seleccion"] == "post_resultado", p_rv)
     check("la población no se declara: es post_resultado aunque llegue otra",
           c.post(_ruta + "/estudio", json={"mecanismo": "roja", "seleccion": "ciega"}).json()["estudio"]["seleccion"]
