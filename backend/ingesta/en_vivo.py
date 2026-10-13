@@ -884,6 +884,25 @@ def capturar_xi(cliente, con: sqlite3.Connection, fixtures: list[int], capturado
     return con_xi
 
 
+def cerrar_onces() -> None:
+    """Con alineaciones nuevas, cierra el bloque F de los partes que las
+    esperaban (`parte.cerrar_onces_pendientes`, lo mismo que `xi/auto`).
+
+    DESDE QUE EL ANÁLISIS LO HACE CLAUDE CODE (13/10/2026) nadie se queda
+    esperando el once con la sesión abierta: cerrarlo es aritmética sobre
+    datos que este ciclo acaba de guardar, 0 requests y 0 tokens, así que se
+    hace acá. Un fallo no corta el ciclo en vivo: se dice y se sigue."""
+    os.environ.setdefault("SAD_SIN_HILOS", "1")   # importar el backend no arranca hilos
+    try:
+        from backend.analisis.parte import cerrar_onces_pendientes
+        r = cerrar_onces_pendientes()
+        print(f"onces cerrados solos: {len(r.get('cerrados') or [])} · en conflicto: "
+              f"{len(r.get('conConflicto') or [])} · sin ficha todavía: {len(r.get('sinFichaTodavia') or [])}",
+              flush=True)
+    except Exception as e:  # noqa: BLE001
+        print(f"no se pudieron cerrar los onces: {e}", flush=True)
+
+
 def guardar_odds_live(con: sqlite3.Connection, item: dict, capturado: str) -> int:
     """Un item de /odds/live: {fixture:{id,status:{elapsed}}, odds:[{id,name,values:[…]}]}."""
     f = item.get("fixture", {})
@@ -1203,8 +1222,8 @@ def main() -> int:
     capturado = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
 
     # el XI primero: es lo que le falta al análisis prepartido y caduca al saque
-    if xi_pendientes:
-        capturar_xi(cliente, con, xi_pendientes, capturado)
+    if xi_pendientes and capturar_xi(cliente, con, xi_pendientes, capturado):
+        cerrar_onces()
     if not candidatos and not vip and not ligas_a_refrescar():
         con.close()
         print(f"sin partidos en ventana de juego · requests usadas: {cliente.usadas}/{cliente.limite}")

@@ -1054,6 +1054,29 @@ def main():
     check("XI: una respuesta vacía no pisa el XI ya capturado", quedan == 1, quedan)
 
     en_vivo_mod.rango_liga = rango_real
+    # CON EL ONCE NUEVO SE CIERRA EL BLOQUE F SOLO (sin sesión esperando) y
+    # un fallo de ese cierre no corta el ciclo en vivo
+    import io, contextlib
+    import backend.analisis.parte as _parte
+    import backend.ingesta.en_vivo as _ev
+    _orig = _parte.cerrar_onces_pendientes
+    llamadas = []
+    _parte.cerrar_onces_pendientes = lambda limite=50: llamadas.append(1) or {
+        "cerrados": [{"fixtureId": 11}], "conConflicto": [], "sinFichaTodavia": []}
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        _ev.cerrar_onces()
+    check("cerrar_onces llama al cierre del bloque F y lo dice", llamadas == [1] and "onces cerrados solos: 1" in buf.getvalue(),
+          buf.getvalue())
+    def _revienta(limite=50):
+        raise RuntimeError("base de partes caída")
+    _parte.cerrar_onces_pendientes = _revienta
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        _ev.cerrar_onces()
+    check("un fallo del cierre se dice y no corta el ciclo", "no se pudieron cerrar" in buf.getvalue(), buf.getvalue())
+    _parte.cerrar_onces_pendientes = _orig
+
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
 

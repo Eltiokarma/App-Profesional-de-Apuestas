@@ -3454,6 +3454,7 @@ def agenda(fecha: date_t | None = None, limite: int = 8, liga_id: int | None = N
     if liga_id is not None:
         cond.append("f.league_id = ?")
         params.append(liga_id)
+    liga_pedida = (liga or "").strip()   # `liga` se reusa abajo como la liga de cada fila
     liga_txt = normalizar(liga or "").strip()
     ligas_que_casan: set[int] = set()
     if liga_txt:
@@ -3576,7 +3577,7 @@ def agenda(fecha: date_t | None = None, limite: int = 8, liga_id: int | None = N
             "quieras rehacerlos."),
         "fecha": dia.isoformat(),
         "ventana": ventana,
-        "filtro": {"ligaId": liga_id, "liga": liga or None,
+        "filtro": {"ligaId": liga_id, "liga": liga_pedida or None,
                    "ligasQueCasan": sorted(ligas_que_casan) if liga_txt else None,
                    "desdeAhora": desde_ahora,
                    "horas": horas if desde_ahora else None,
