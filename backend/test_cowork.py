@@ -2926,6 +2926,15 @@ def main():
               _conc, _fila_f, [{**_prev[0], "fecha": "2026-09-01T23:00:00Z"}])["senalesCalculadas"])
     check("una racha de la misma liga y condición no levanta ninguna señal",
           rv.composicion(_racha[2:], _fila)["senalesCalculadas"] == [])
+    _eq = dbmod.query_one("sad", "SELECT team_id, fixture_id FROM alineaciones WHERE titular=1 "
+                                 "GROUP BY team_id, fixture_id HAVING COUNT(*)>=11 LIMIT 1")
+    if _eq:
+        check("el mismo once contra sí mismo no cambia a nadie; sin el otro once, None (sin dato no es cero)",
+              rv.cambios_en_el_once(_eq["fixture_id"], _eq["team_id"], _eq["fixture_id"]) == 0
+              and rv.cambios_en_el_once(_eq["fixture_id"], _eq["team_id"], -1) is None)
+    check("once_distinto es calculada: un estudio no la declara ni la borra",
+          "once_distinto" in rv.SENALES_CALCULADAS and "bloque_bajo_del_rival" in rv.MECANISMOS
+          and "arquero_rival" in rv.MECANISMOS and "clasico" in rv.SENALES)
     check("«reventon» no es un skill: sus lecciones van a sad-analysis",
           rv.skill_canonico("reventon") == "sad-analysis" and rv.skill_canonico("teorema-del-echado") == "teorema-del-echado")
     _liga = dbmod.query_one("sad", "SELECT league_id, COUNT(*) AS n FROM fixtures GROUP BY league_id "

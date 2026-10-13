@@ -80,3 +80,50 @@ candidatos; no mueve ningún número.
    ya no salta si el partido es en su propio estadio.
 7. **Mecanismo nuevo `regresion_al_nivel`** (pedido por dos estudios): la racha
    corta se corta ante un rival de su nivel sin un hecho que lo explique.
+
+## Tercera tanda (8 estudios más, 25 en total)
+
+| Partido | Equipo · tipo | Mecanismo (secundario) | Señales previas |
+|---|---|---|---|
+| Sporting Cristal 1-1 Bentín Tacna (11/07, Copa) | Cristal · racha + | regresión al nivel (error del arquero) | riesgo alto, DT nuevo, rival necesitado |
+| UCV Moquegua 0-0 Melgar (02/08) | Melgar · racha + | bloque bajo del rival (regresión al nivel) | rival inferior · la racha concedía |
+| Sporting Cristal 2-0 Juan Pablo II (02/08) | Cristal · racha − | regresión al nivel (el rival se sobreexpuso) | riesgo alto, DT nuevo, fatiga · racha de otra competición, resaca internacional, de visita |
+| Alianza Atlético 1-0 Cienciano (06/08) | Cienciano · racha + | rotación/fatiga (racha de otra competición) | cerca del extremo, rotación (6 cambios en el once) · riesgo BAJO |
+| Alianza Lima 1-1 Sporting Cristal (09/05, clásico) | Alianza · racha + | varianza (el empate al 90+2) | K récord, DT nuevo del rival, Advíncula suspendido · riesgo BAJO |
+| ADT 0-0 FC Cajamarca (10/10) | ADT · racha − | racha de otra competición (roja; lo sostuvo el arquero) | riesgo muy alto, cerca del extremo, DT nuevo, rival directo |
+| Cusco 1-0 FC Cajamarca (22/04) | Cusco · racha − | regresión al nivel (penal) | K récord (un 0-8 y dos de Libertadores), riesgo muy alto, DT nuevos, resaca internacional |
+| ADT 4-0 Los Chankas (27/04) | Chankas · racha + | cambio de DT del rival: estreno del interino (sobreexposición) | K récord (8 partidos, máx. previo 3), rival inferior, fatiga · riesgo BAJO |
+
+### Lo nuevo de esta tanda
+
+1. **El extremo vuelve a ser la única alarma con riesgo bajo.** Los tres
+   reventones positivos con riesgo BAJO (Cienciano, Alianza, Chankas) tenían
+   K-EXTREMO o K-CERCA encendido. En la suma de las tres tandas, el extremo
+   está en casi todos los estudiados; sin el denominador no es probabilidad,
+   pero la prudencia de §10 se sostiene.
+2. **`regresion_al_nivel` es el mecanismo más frecuente de la tanda** (3 + 1
+   secundario). Las rachas negativas de Cusco y Cristal se armaron con rivales
+   de otra escala (Flamengo, Estudiantes, el líder con un 0-8) y se cortaron
+   al volver a su nivel: la K récord era de la escala del rival, no del equipo.
+   Candidato a backtest: rachas negativas armadas por una goleada aislada.
+3. **El once que jugó no era el que armó la racha** (Cienciano en Sullana: 6
+   cambios, con la Sudamericana a 7 días). Pasa a señal CALCULADA
+   `once_distinto` (≥ 5 titulares distintos respecto del último partido de la
+   racha), solo con los dos onces en la base: se ve ~60 min antes del pitazo.
+4. **Mecanismos nuevos**: `bloque_bajo_del_rival` (Melgar ante UCV: un
+   repliegue POR PLAN desde el arranque no es una echada) y `arquero_rival`
+   (Medina, de Cajamarca, sostuvo el 0-0 ante ADT: el espejo de
+   GK-FALLA-ACTIVA, que el bloque C no mira).
+5. **Señales nuevas a declarar**: `clasico` (6 empates en los últimos 10
+   Alianza–Cristal: la paridad del cruce no la ve la regla del nivel) y
+   `rival_directo` (ADT–Cajamarca, 15.º contra 16.º).
+6. **Bug arreglado**: `condicion_a_contramano` se apagaba con el equipo de
+   LOCAL en su estadio (Cristal–JP2: la racha negativa era toda de visita).
+   Ahora solo se apaga si figura de visita en su propio estadio.
+7. **Estreno de DT interino del rival** (ADT con Ripacolli: cambio de planteo
+   en el descanso y el banco decidió): segundo caso de efecto estreno
+   inmediato, candidato a vigilar, no regla.
+8. **La escala de la liga dentro del riesgo**: el nivel de Bentín (Copa,
+   recién ascendido) venía de la base de Liga 2; el riesgo lo comparó como si
+   fuera de la misma escala. Es el mismo problema que `ESCALA-LIGAS` en el
+   parte, sin alerta en la burbuja: pendiente.

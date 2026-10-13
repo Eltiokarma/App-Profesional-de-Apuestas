@@ -54,6 +54,9 @@ MECANISMOS = {
     "altura": "la altura decidió: el de llano no sostuvo el ritmo a 2.500+ m (o al revés al bajar)",
     "racha_de_otra_competicion": "la racha se armó en otra competición (copa, amistosos, alternativos) y no "
                                  "representaba al equipo que jugó este partido",
+    "bloque_bajo_del_rival": "el rival se cerró atrás POR PLAN desde el arranque (no una echada tras ponerse "
+                             "arriba) y el de la racha no supo romperlo",
+    "arquero_rival": "el arquero rival sostuvo el resultado con atajadas decisivas",
     "regresion_al_nivel": "sin un hecho que lo explique: la racha corta se cortó ante un rival de su nivel y "
                           "el equipo volvió a rendir lo suyo",
     "varianza": "sin mecanismo identificable: el partido no explica el resultado",
@@ -82,11 +85,16 @@ SENALES = {
     "racha_concediendo": "racha positiva en la que el equipo recibió gol en todos los partidos — CALCULADA",
     "derrota_internacional_reciente": "perdió un partido internacional en los 10 días previos (resaca de "
                                       "una eliminación) — CALCULADA",
+    "clasico": "clásico o derbi: la paridad propia del cruce, que la regla del nivel no ve",
+    "rival_directo": "rival directo en la tabla (descenso, clasificación): los dos necesitaban el resultado",
+    "once_distinto": "el once del partido cambió 5 o más titulares respecto del último de la racha "
+                     "(se ve ~60 min antes del pitazo) — CALCULADA, solo con los dos onces en la base",
     "ninguna_visible": "nada visible antes del pitazo",
 }
 LECCIONES_MAX = 8
 SENALES_CALCULADAS = ("racha_en_otra_competicion", "condicion_a_contramano", "rival_tambien_en_burbuja",
-                      "racha_concediendo", "derrota_internacional_reciente")
+                      "racha_concediendo", "derrota_internacional_reciente", "once_distinto")
+ONCE_CAMBIOS = 5         # Cienciano en Sullana (tercera tanda): 6 cambios, el alterno
 DIAS_RESACA = 10
 # el reventón no es un skill: sus reglas (docs/REVENTON.md) viven en sad-analysis.
 # La primera tanda (13/10/2026) dejó lecciones con «reventon» como skill y el
@@ -208,6 +216,21 @@ def composicion(racha: list[dict], fila: dict, previas: list[dict] | None = None
         "ligaDelReventon": fila.get("ligaId"),
         "senalesCalculadas": senales,
     }
+
+
+def cambios_en_el_once(fixture_id: int, team_id: int, previo_id: int) -> int | None:
+    """Cuántos titulares de este partido no fueron titulares en `previo_id`.
+    `None` si falta alguno de los dos onces: sin dato no es «sin cambios»."""
+    try:
+        filas = saddb.query("sad", "SELECT fixture_id, player_id FROM alineaciones WHERE team_id=? AND titular=1 "
+                                   "AND fixture_id IN (?,?)", (team_id, fixture_id, previo_id))
+    except Exception:  # noqa: BLE001 — base sin la tabla de alineaciones
+        return None
+    hoy = {f["player_id"] for f in filas if f["fixture_id"] == fixture_id}
+    antes = {f["player_id"] for f in filas if f["fixture_id"] == previo_id}
+    if len(hoy) < 11 or len(antes) < 11:
+        return None
+    return len(hoy - antes)
 
 
 def _sede_propia(team_id: int):
@@ -390,6 +413,12 @@ def guardar_estudio(fixture_id: int, team_id: int, cuerpo: dict) -> dict:
     act = (_burbuja_al_dia(rival, fixture_id) or {}).get("actual") or {}
     if (act.get("partidos") or 0) >= 2:
         calculadas.append("rival_tambien_en_burbuja")
+    # el once que armó la racha no es el que jugó (Cienciano en Sullana: 6 cambios)
+    previos = (r_.get("composicion") or {}).get("partidos") or []
+    if previos:
+        cambios = cambios_en_el_once(fixture_id, team_id, previos[-1]["fixtureId"])
+        if cambios is not None and cambios >= ONCE_CAMBIOS:
+            calculadas.append("once_distinto")
     senales = [x for x in senales if x not in SENALES_CALCULADAS] + list(calculadas)
     estudio = {
         "mecanismo": mec, "mecanismoSecundario": sec, "senales": senales,
