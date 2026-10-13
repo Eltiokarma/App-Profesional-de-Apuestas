@@ -910,7 +910,10 @@ paths:
       description: >
         Por lado, los candidatos a la tabla F1 sacados de la plantilla ingestada (los 16
         con más minutos más los decisivos que queden fuera): `jugadorId` —el cruce exacto
-        con la hoja del partido—, zona, `rolSugerido` por fracción de minutos (TF ≥ 75 %,
+        con la hoja del partido—, zona, `rolSugerido` y `rolPor`: con ≥ 5 onces recientes
+        en la base, por titularidades en los últimos 10 (`titularEnUltimos`, TF ≥ 80 %,
+        TH ≥ 50 %, ROT ≥ 20 %; los titulares recientes sin stats de temporada entran con
+        `sinStatsDeTemporada`); si no, por fracción de minutos de la temporada (TF ≥ 75 %,
         TH ≥ 50 %, ROT ≥ 25 %, SUP) y `decisivo` con su porqué (titular habitual o top 3
         en goles+asistencias). El rol es SUGERIDO: lo confirma la prensa. Un decisivo que
         no figura en la tabla depositada dispara `F1-DECISIVO-FUERA` en el parte. 0 tokens,

@@ -20,6 +20,7 @@ titularidades, goles y asistencias de la temporada; 0 requests):
 """
 from __future__ import annotations
 
+from backend import db as saddb
 from backend import jugadores as jug
 from backend.analisis import bloque_f
 
@@ -29,6 +30,45 @@ DECISIVO_PCT = 0.75      # titular habitual: ≥ 75 % de los minutos del que má
 DECISIVO_MIN_MINUTOS = 450   # con menos, la temporada recién arranca y el % no dice nada
 DECISIVO_GA = 3          # top 3 en goles+asistencias, con al menos esto
 _ZONA = {"Portero": "GK", "Defensa": "DEF", "Centrocampista": "MID", "Delantero": "ATK"}
+_ZONA_API = {"G": "GK", "D": "DEF", "M": "MID", "F": "ATK"}
+ONCES_RECIENTES = 10     # onces que se miran para el rol
+ONCES_MINIMOS = 5        # con menos, el rol sale de los minutos de la temporada
+_FIN = "(f.status_short IN ('FT','AET','PEN') OR f.status_long='Match Finished')"
+
+
+def onces_recientes(team_id: int, antes: str) -> dict:
+    """Titularidades en los últimos ONCES_RECIENTES partidos terminados con
+    alineación, estrictamente antes de `antes`.
+
+    POR QUÉ. Las stats de la plantilla son de la TEMPORADA, y en Sudamérica la
+    temporada es el año: el rol de Millonarios del Clausura salía mezclado con
+    el del Apertura (corrida del 13/10/2026). Lo que el once de hoy va a ser
+    se parece más a los últimos diez onces que al año."""
+    try:
+        fx = [r["id"] for r in saddb.query(
+            "sad", f"""SELECT f.id FROM fixtures f
+                       WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.date < ? AND {_FIN}
+                         AND EXISTS (SELECT 1 FROM alineaciones a WHERE a.fixture_id=f.id AND a.team_id=?)
+                       ORDER BY f.date DESC LIMIT ?""", (team_id, team_id, antes, team_id, ONCES_RECIENTES))]
+        if not fx:
+            return {"onces": 0, "jugadores": {}}
+        filas = saddb.query(
+            "sad", f"SELECT player_id, jugador, posicion, titular FROM alineaciones "
+                   f"WHERE team_id=? AND fixture_id IN ({','.join('?' * len(fx))})", (team_id, *fx))
+    except Exception:  # noqa: BLE001 — base sin la tabla de alineaciones
+        return {"onces": 0, "jugadores": {}}
+    js: dict[int, dict] = {}
+    for f in filas:
+        j = js.setdefault(f["player_id"], {"nombre": f["jugador"] or "", "posicion": f["posicion"] or "",
+                                           "titular": 0, "convocado": 0})
+        j["convocado"] += 1
+        j["titular"] += 1 if f["titular"] else 0
+    return {"onces": len(fx), "jugadores": js}
+
+
+def rol_por_onces(titular: int, onces: int) -> str:
+    frac = titular / onces if onces else 0
+    return "TF" if frac >= 0.8 else "TH" if frac >= 0.5 else "ROT" if frac >= 0.2 else "SUP"
 
 
 def rol_sugerido(pct_minutos: float) -> str:
@@ -70,17 +110,43 @@ def _fila(j: dict) -> dict:
     }
 
 
-def tabla_equipo(team_id: int, nombre: str) -> dict:
+def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     p = jug.plantilla_de(team_id)
     js = p.get("jugadores") or []
     dec = {d["id"]: d["porQue"] for d in decisivos(p)}
-    elegidos = js[:CANDIDATOS]                       # ya vienen por minutos
+    rec = onces_recientes(team_id, antes)
+    con_onces = rec["onces"] >= ONCES_MINIMOS
+    tit = {pid: j["titular"] for pid, j in rec["jugadores"].items()}
+    # con onces recientes, el orden y el rol salen de ahí; la temporada desempata
+    if con_onces:
+        js = sorted(js, key=lambda j: (-tit.get(j["id"], 0), -j["minutos"]))
+    elegidos = js[:CANDIDATOS]
     ids = {j["id"] for j in elegidos}
     elegidos += [j for j in js if j["id"] in dec and j["id"] not in ids]
+    filas = []
+    for j in elegidos:
+        f = {**_fila(j), "decisivo": dec.get(j["id"], "")}
+        if con_onces:
+            f["titularEnUltimos"] = f"{tit.get(j['id'], 0)}/{rec['onces']}"
+            f["rolSugerido"] = rol_por_onces(tit.get(j["id"], 0), rec["onces"])
+        filas.append(f)
+    # titulares recientes que la plantilla de la temporada no tiene (fichajes,
+    # juveniles subidos): sin ellos la tabla se queda con el equipo de antes
+    ids = {j["id"] for j in elegidos}
+    if con_onces:
+        for pid, r in sorted(rec["jugadores"].items(), key=lambda kv: -kv[1]["titular"]):
+            if pid in ids or pid <= 0 or r["titular"] < 2:
+                continue
+            filas.append({"jugadorId": pid, "nombre": r["nombre"], "zona": _ZONA_API.get(r["posicion"], ""),
+                          "posicion": r["posicion"], "rolSugerido": rol_por_onces(r["titular"], rec["onces"]),
+                          "titularEnUltimos": f"{r['titular']}/{rec['onces']}", "apps": None, "minutos": None,
+                          "decisivo": "", "sinStatsDeTemporada": True})
     return {
         "equipo": nombre, "teamId": team_id, "temporada": p.get("temporada"),
         "origenTemporada": p.get("origenTemporada"),
-        "candidatos": [{**_fila(j), "decisivo": dec.get(j["id"], "")} for j in elegidos],
+        "rolPor": (f"titularidades en los últimos {rec['onces']} onces" if con_onces else
+                   f"minutos de la temporada (solo {rec['onces']} onces recientes en la base)"),
+        "candidatos": filas,
         # los que la API lista sin un minuto (recién llegados): la prensa dirá
         "plantelSinStats": p.get("plantelSinStats") or [],
         "sinDato": "" if js else "sin plantilla ingestada para este equipo: la tabla sale de la prensa",
@@ -94,11 +160,11 @@ def tabla(fixture_id: int) -> dict | None:
         return None
     return {
         "fixtureId": fixture_id,
-        "a": tabla_equipo(fx["home_team_id"], fx["home_name"]),
-        "b": tabla_equipo(fx["away_team_id"], fx["away_name"]),
+        "a": tabla_equipo(fx["home_team_id"], fx["home_name"], fx["date"]),
+        "b": tabla_equipo(fx["away_team_id"], fx["away_name"], fx["date"]),
         "nota": ("punto de partida de la tabla F1, calculado de la temporada ingestada: copiá el "
                  "`jugadorId` (es el cruce exacto con la hoja del partido) y confirmá el rol con la "
-                 "prensa —`rolSugerido` sale solo de los minutos y no sabe de un DT nuevo ni de una "
+                 "prensa —`rolSugerido` sale de los últimos onces (o de los minutos, ver `rolPor`) y no sabe de un DT nuevo ni de una "
                  "lesión larga—. Los `decisivo` no pueden faltar: si faltan, el parte avisa "
                  "F1-DECISIVO-FUERA"),
     }

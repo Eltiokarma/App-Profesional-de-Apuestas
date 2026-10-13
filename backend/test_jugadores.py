@@ -156,6 +156,21 @@ def main():
     dt_a, desde_a = dt_de_alineaciones(con, 700)
     check("cuando el último partido lo dirigió otro, la racha es la suya",
           dt_a == "P. Guardiola" and desde_a == hace(24 * 12)[:10], (dt_a, desde_a))
+    # LA LLEGADA EN UN HUECO (Robatto en Águilas, 13/10/2026): entre el último
+    # once del DT anterior y el primero del actual hubo partidos sin once
+    # capturado → no se sabe cuándo llegó, y no se inventa que fue ayer
+    con.executemany("INSERT INTO fixtures (id, date, status_short, league_id, home_team_id) "
+                    "VALUES (?, ?, 'FT', 239, 700)", [(18, hace(24 * 17)), (19, hace(24 * 15))])
+    con.commit()
+    dt_h, desde_h = dt_de_alineaciones(con, 700)
+    check("con dos partidos sin once entre el DT anterior y el actual, la llegada es desconocida",
+          dt_h == "P. Guardiola" and desde_h is None, (dt_h, desde_h))
+    con.execute("DELETE FROM fixtures WHERE id=19")
+    con.commit()
+    check("con uno solo, la llegada se sigue leyendo del primer once",
+          dt_de_alineaciones(con, 700)[1] == hace(24 * 12)[:10])
+    con.execute("DELETE FROM fixtures WHERE id=18")
+    con.commit()
     guardar_entrenador(con, 700, carrera)
     fila = con.execute("SELECT nombre, desde, fuente FROM entrenadores WHERE team_id=700").fetchone()
     check("guardar_entrenador registra la salida: el del banco, con fuente alineacion y su primer partido",
