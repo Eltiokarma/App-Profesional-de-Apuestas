@@ -87,7 +87,8 @@ SENALES = {
                                       "una eliminación) — CALCULADA",
     "clasico": "clásico o derbi: la paridad propia del cruce, que la regla del nivel no ve",
     "rival_directo": "rival directo en la tabla (descenso, clasificación): los dos necesitaban el resultado",
-    "once_distinto": "el once del partido cambió 5 o más titulares respecto del último de la racha "
+    "once_distinto": "el once del partido cambió 5 o más titulares respecto del último de la racha EN LA MISMA "
+                     "competición "
                      "(se ve ~60 min antes del pitazo) — CALCULADA, solo con los dos onces en la base",
     "rival_de_otra_base": "el rival venía de otra división o de una liga que no se sigue (copa nacional, "
                           "ascendido): su nivel no está en la escala del equipo — CALCULADA",
@@ -431,7 +432,10 @@ def guardar_estudio(fixture_id: int, team_id: int, cuerpo: dict) -> dict:
     if (act.get("partidos") or 0) >= 2:
         calculadas.append("rival_tambien_en_burbuja")
     # el once que armó la racha no es el que jugó (Cienciano en Sullana: 6 cambios)
-    previos = (r_.get("composicion") or {}).get("partidos") or []
+    # contra el último de la MISMA competición: el de copa con 9 rotados
+    # disparaba la señal con el once tipo en cancha (Arsenal en Brighton)
+    comp = r_.get("composicion") or {}
+    previos = [p for p in comp.get("partidos") or [] if p.get("ligaId") == comp.get("ligaDelReventon")]
     if previos:
         cambios = cambios_en_el_once(fixture_id, team_id, previos[-1]["fixtureId"])
         if cambios is not None and cambios >= ONCE_CAMBIOS:
