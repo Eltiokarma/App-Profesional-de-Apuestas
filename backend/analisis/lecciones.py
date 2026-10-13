@@ -75,7 +75,8 @@ def _casos(limite: int = 400, ids=None) -> list[dict]:
     with conectar_parte() as con:
         filas = con.execute(
             "SELECT fixture_id, fecha, equipo_a, equipo_b, parte_json, veredicto_json, "
-            "cohorte, cuarentena_json, modo_fallo_json FROM parte_cowork WHERE veredicto_json IS NOT NULL"
+            "cohorte, cuarentena_json, modo_fallo_json, banco_desmentido_json FROM parte_cowork "
+            "WHERE veredicto_json IS NOT NULL"
             + filtro + " ORDER BY fecha DESC LIMIT ?", (*params, limite)).fetchall()
     fuera = []
     for f in filas:
@@ -92,13 +93,17 @@ def _casos(limite: int = 400, ids=None) -> list[dict]:
         # otro (la alineación rancia del 22/09: Santa Fe–Cali, la Roma). Es el
         # mismo criterio de insumo —qué traía el parte antes del pitazo—,
         # comprobado contra la alineación de ese partido cuando la hay.
+        # …salvo los lados donde el usuario probó que el banco de la API es el
+        # que está mal (parte.desmentir_banco): esos ya no se comparan
+        desmentidos = json.loads(f["banco_desmentido_json"]) if f["banco_desmentido_json"] else {}
         if not cuarentena:
-            malos = dt_equivocado(parte, f["fixture_id"])
+            malos = dt_equivocado(parte, f["fixture_id"], desmentidos)
             if malos:
                 cuarentena = {"motivo": "automática: DT del parte distinto del que dirigió el partido ("
                                         + " · ".join(f"lado {m['lado']}: parte «{m['parte']}», banco «{m['banco']}»"
                                                      for m in malos) + ")",
-                              "automatica": True, "puestaEn": "", "veredictoAlPoner": None}
+                              "automatica": True, "puestaEn": "", "veredictoAlPoner": None,
+                              "dtEquivocado": malos}
         fuera.append({
             "fixtureId": f["fixture_id"], "fecha": (f["fecha"] or "")[:10],
             "equipoA": f["equipo_a"], "equipoB": f["equipo_b"],
@@ -152,6 +157,9 @@ def _items_de(caso: dict, estados: dict) -> list[dict]:
             "cohorte": caso.get("cohorte", ""),
             "cuarentena": (caso.get("cuarentena") or {}).get("motivo", "") if caso.get("cuarentena") else "",
             "cuarentenaAutomatica": bool((caso.get("cuarentena") or {}).get("automatica")),
+            # por qué lado y con qué nombres saltó la automática por DT: es lo que
+            # el usuario desmiente cuando el banco de la API es el equivocado
+            "dtEquivocado": (caso.get("cuarentena") or {}).get("dtEquivocado") or [],
             # LA DISTINCIÓN QUE EL DOSSIER NO PUEDE DEJAR AL CRITERIO DEL DÍA:
             # un caso contaminado enseña, pero no mueve un número. Uno en
             # cuarentena ni siquiera enseña: su insumo estaba roto.
@@ -694,6 +702,34 @@ def abrir_revision(skill: str, cohorte: str = COHORTE_VIGENTE) -> dict:
 
 class LeccionInvalida(ValueError):
     """El cambio de estado no se puede aplicar tal cual llegó."""
+
+
+def descartar_cohorte(cohorte: str, nota: str = "") -> dict:
+    """Pasa a `descartada` TODAS las lecciones pendientes de una cohorte que no
+    es la vigente. Las de rodaje y c2 no calibran nada (su insumo era el viejo:
+    DT rancio, TDE sin nivel) y llenaban la pantalla de Aprendizaje con 113
+    pendientes que nadie iba a revisar. Lo hace el usuario, no el agente; la
+    vigente no se descarta en bloque: sus lecciones se miran una por una."""
+    from backend.analisis.parte import COHORTE
+    cohorte = (cohorte or "").strip()
+    if not cohorte or cohorte in (COHORTE, COHORTE_VIGENTE):
+        raise LeccionInvalida("la cohorte vigente no se descarta en bloque: sus lecciones son las que "
+                              "calibran y se revisan una por una")
+    nota = (nota or "").strip() or f"descarte en bloque de la cohorte {cohorte}: no calibra"
+    estados = _estados()
+    casos = [c for c in _casos(100000) if c["cohorte"] == cohorte]
+    if not casos:
+        raise KeyError(cohorte)
+    claves = [i["clave"] for c in casos for i in _items_de(c, estados) if i["estado"] == "pendiente"]
+    ahora = efedb.ahora()
+    with _conectar() as con:
+        con.executemany(
+            "INSERT INTO leccion_estado (clave, estado, aplicada_en, nota, actualizado_en) "
+            "VALUES (?,'descartada','',?,?) ON CONFLICT(clave) DO UPDATE SET "
+            "estado=excluded.estado, nota=excluded.nota, actualizado_en=excluded.actualizado_en",
+            [(k, nota, ahora) for k in claves])
+    print(f"[cowork] cohorte {cohorte}: {len(claves)} lecciones pendientes → descartada", flush=True)
+    return {"cohorte": cohorte, "descartadas": len(claves), "claves": claves, "nota": nota}
 
 
 def mover(clave: str, estado: str, aplicada_en: str = "", nota: str = "") -> dict:

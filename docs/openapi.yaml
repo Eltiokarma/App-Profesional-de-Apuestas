@@ -1089,6 +1089,83 @@ paths:
                   sinDt: { type: array, items: { type: string } }
         '404': { description: no hay parte para ese fixture }
         '422': { description: sin lados en el cuerpo }
+  /analisis/cowork/{fixtureId}/banco-desmentido:
+    post:
+      summary: El DT del banco que trae la API está mal en un lado — lo hace el usuario, no el agente
+      description: >
+        La cuarentena automática por DT equivocado compara el DT del parte con el entrenador de
+        la alineación de API-Football, y esa alineación a veces arrastra a un DT que ya se fue
+        (Jaguares–Tolima del 11/10/2026: «H. Bodhert», salido el 28/09). Esto marca, POR LADO y con
+        la FUENTE que lo prueba (≥ 8 caracteres), que el banco de la API es el equivocado: ese lado
+        deja de compararse y el caso vuelve a contar. No toca el parte, el veredicto ni la cohorte.
+        Solo se puede poner en un lado que hoy figure con DT equivocado (422 si no). NO está en la
+        lista de permitidos del token de Cowork.
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lado, fuente]
+              properties:
+                lado: { type: string, enum: [a, b] }
+                fuente: { type: string, description: 'link o nota de prensa que prueba que ese DT no dirigió' }
+                nota: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fixtureId: { type: integer }
+                  bancoDesmentido: { $ref: '#/components/schemas/BancoDesmentido' }
+                  dtEquivocado: { type: array, items: { type: object, additionalProperties: true } }
+        '404': { description: No hay parte para ese fixture }
+        '422': { description: Sin fuente, lado inválido o lado sin DT equivocado }
+  /analisis/cowork/{fixtureId}/banco-desmentido/{lado}:
+    delete:
+      summary: Quita el desmentido de un lado (el caso vuelve a compararse contra el banco)
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+        - { name: lado, in: path, required: true, schema: { type: string, enum: [a, b] } }
+      responses:
+        '200': { description: OK }
+        '404': { description: No hay parte para ese fixture }
+  /analisis/cowork/cohortes/{cohorte}/descartar:
+    post:
+      summary: Descarta en bloque las lecciones pendientes de una cohorte vieja — lo hace el usuario
+      description: >
+        Pasa a `descartada` TODAS las lecciones pendientes de la cohorte (las en cuarentena
+        incluidas). Las de `rodaje` y `c2` no calibran nada y llenaban la pantalla de Aprendizaje.
+        La cohorte vigente se rechaza (422): sus lecciones se revisan una por una. NO está en la
+        lista de permitidos del token de Cowork.
+      parameters:
+        - { name: cohorte, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nota: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cohorte: { type: string }
+                  descartadas: { type: integer }
+                  claves: { type: array, items: { type: string } }
+                  nota: { type: string }
+        '404': { description: Sin casos cerrados en esa cohorte }
+        '422': { description: Es la cohorte vigente }
   /analisis/cowork/{fixtureId}/cuarentena:
     post:
       summary: Apartar un caso del aprendizaje, con motivo — lo hace el usuario, no el agente
@@ -1259,7 +1336,16 @@ components:
             cuarentena ni siquiera fija rúbrica.
         cohorte: { type: string, description: 'época del proceso en la que se depositó el parte' }
         cuarentena: { type: string, description: 'motivo de la cuarentena; vacío si el caso cuenta' }
-        cuarentenaAutomatica: { type: boolean, description: 'la puso la app por criterio: parte sin DT declarado en un lado. Se levanta re-depositando con el DT' }
+        cuarentenaAutomatica: { type: boolean, description: 'la puso la app por criterio: parte sin DT declarado en un lado, o DT del parte distinto del banco. Se levanta re-depositando con el DT o desmintiendo el banco' }
+        dtEquivocado:
+          type: array
+          description: 'si la automática es por DT equivocado: qué lado y qué nombres chocaron (parte vs banco de la API)'
+          items:
+            type: object
+            properties:
+              lado: { type: string }
+              parte: { type: string }
+              banco: { type: string }
         modoFallo: { type: string, nullable: true, description: 'etiqueta de Jev: insumo · lectura_efe · tde · reventon · mercado · imprevisto · varianza · no_lo_dice; null sin etiqueta' }
         modoFalloConfianza: { type: number, nullable: true }
         proponeMoverNumero: { type: boolean, nullable: true, description: 'la lección pide mover un número del skill (Jev); cruzado con puedeMoverNumeros da la alarma del dossier' }
@@ -3328,6 +3414,17 @@ components:
             ayer: { $ref: '#/components/schemas/PresupuestoDia' }
             alarma: { type: string }
         nota: { type: string }
+    BancoDesmentido:
+      type: object
+      description: 'por lado (a/b): el banco de la API que se desmintió y la fuente que lo prueba'
+      additionalProperties:
+        type: object
+        properties:
+          bancoDeLaApi: { type: string }
+          dtDelParte: { type: string }
+          fuente: { type: string }
+          nota: { type: string }
+          puestoEn: { type: string }
     PresupuestoDia:
       type: object
       nullable: true

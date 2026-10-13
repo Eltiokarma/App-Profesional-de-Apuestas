@@ -81,6 +81,11 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
             const sel = d.cohortes.find((c) => (cohorte === 'vigente' ? c.vigente : c.clave === cohorte))
             return sel ? <div style={{ font: '500 11px var(--sans)', color: 'var(--t2)', marginTop: 8 }}>{sel.descripcion}</div> : null
           })()}
+          {cohorte && cohorte !== 'vigente' && (
+            <DescartarCohorte cohorte={cohorte}
+              pendientes={[...d.items, ...(d.enCuarentena?.items ?? [])].filter((i) => i.estado === 'pendiente').length}
+              onHecho={() => setRecarga((n) => n + 1)} />
+          )}
         </Seccion>
       )}
 
@@ -407,8 +412,60 @@ function Dossier({ skill, abierta, onCambio }: { skill: string; abierta: boolean
   )
 }
 
+/** Las cohortes viejas (rodaje, c2) no calibran: sus pendientes se descartan
+ *  de una vez en vez de una por una. La vigente no tiene este botón. */
+function DescartarCohorte({ cohorte, pendientes, onHecho }: { cohorte: string; pendientes: number; onHecho: () => void }) {
+  const [confirmar, setConfirmar] = useState(false)
+  const [yendo, setYendo] = useState(false)
+  const [msg, setMsg] = useState('')
+  if (!pendientes && !msg) return null
+  async function descartar() {
+    setYendo(true)
+    setMsg('')
+    try {
+      const r = await getDataSource().descartarCohorte(cohorte, `descarte en bloque de la cohorte ${cohorte}: no calibra`)
+      setMsg(`${r.descartadas} lecciones pasaron a descartada`)
+      setConfirmar(false)
+      onHecho()
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'no se pudo descartar')
+    } finally {
+      setYendo(false)
+    }
+  }
+  return (
+    <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+      {pendientes > 0 && !confirmar && (
+        <button onClick={() => setConfirmar(true)}
+          title="esta cohorte no calibra nada: sus lecciones pendientes pasan a descartada de una vez (modo administrador)"
+          style={{ padding: '6px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'transparent', color: 'var(--t2)', cursor: 'pointer', font: '600 10.5px var(--sans)' }}>
+          Descartar las {pendientes} pendientes de {cohorte}
+        </button>
+      )}
+      {confirmar && (
+        <>
+          <span style={{ font: '500 11px var(--sans)', color: 'var(--t1)' }}>
+            ¿Pasar las {pendientes} pendientes de {cohorte} a descartada? Se puede deshacer una por una.
+          </span>
+          <button onClick={descartar} disabled={yendo}
+            style={{ padding: '6px 11px', borderRadius: 8, border: 0, cursor: 'pointer', background: 'var(--down)', color: '#fff', font: '600 10.5px var(--sans)' }}>
+            {yendo ? '…' : 'Sí, descartar'}
+          </button>
+          <button onClick={() => setConfirmar(false)} disabled={yendo}
+            style={{ padding: '6px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'transparent', color: 'var(--t2)', cursor: 'pointer', font: '600 10.5px var(--sans)' }}>
+            Cancelar
+          </button>
+        </>
+      )}
+      {msg && <span style={{ font: '600 11px var(--sans)', color: 'var(--t2)' }}>{msg}</span>}
+    </div>
+  )
+}
+
 function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
   const [abierto, setAbierto] = useState(false)
+  const [desmAbierto, setDesmAbierto] = useState(false)
+  const [fuente, setFuente] = useState('')
   const [version, setVersion] = useState(it.aplicadaEn)
   const [error, setError] = useState('')
   const [yendo, setYendo] = useState('')
@@ -423,6 +480,23 @@ function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
       onCambio()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'no se pudo mover')
+    } finally {
+      setYendo('')
+    }
+  }
+
+  // EL BANCO DE LA API TAMBIÉN SE EQUIVOCA: la automática por DT equivocado le
+  // cree a la alineación de API-Football, que a veces trae a un DT que ya se
+  // fue. Se desmiente por lado y con la fuente que lo prueba; el parte no se toca.
+  async function desmentir(lado: 'a' | 'b') {
+    setError('')
+    setYendo('desmentir')
+    try {
+      await getDataSource().desmentirBanco(it.fixtureId, { lado, fuente })
+      setDesmAbierto(false)
+      onCambio()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'no se pudo desmentir el banco')
     } finally {
       setYendo('')
     }
@@ -499,7 +573,13 @@ function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
           style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid var(--line)', background: 'transparent', color: 'var(--t2)', cursor: 'pointer', font: '600 10px var(--sans)' }}>
           {abierto ? 'Cerrar' : 'Mover de estado'}
         </button>
-        {it.cuarentena && it.cuarentenaAutomatica ? (
+        {it.cuarentena && it.cuarentenaAutomatica && (it.dtEquivocado ?? []).length > 0 ? (
+          <button onClick={() => setDesmAbierto(!desmAbierto)}
+            title="la puso la app porque el DT del parte no es el del banco de la API. Si el que está mal es el banco (un DT que ya se fue), se desmiente con la fuente"
+            style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid var(--line)', background: 'transparent', color: 'var(--t2)', cursor: 'pointer', font: '600 10px var(--sans)' }}>
+            {desmAbierto ? 'Cancelar' : 'El banco de la API está mal…'}
+          </button>
+        ) : it.cuarentena && it.cuarentenaAutomatica ? (
           <span title="la puso la app: el parte no declara DT en un lado. Se levanta re-depositando el parte con el DT"
             style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid var(--line)', color: 'var(--t3)', font: '600 10px var(--sans)' }}>
             automática · se levanta con el DT en el parte
@@ -517,6 +597,25 @@ function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
           </button>
         )}
       </div>
+      {desmAbierto && (
+        <div style={{ marginTop: 8, padding: '10px 12px', borderRadius: 10, background: 'var(--bg3)' }}>
+          <div style={{ font: '500 10.5px var(--sans)', color: 'var(--t1)', marginBottom: 6 }}>
+            Fuente que prueba que ese DT NO dirigió el partido (su salida anunciada antes, la crónica con el banco real).
+            El DT del parte no se cambia; ese lado deja de compararse contra la alineación de la API.
+          </div>
+          <input value={fuente} onChange={(e) => setFuente(e.target.value)} placeholder="link o nota de prensa (mínimo 8 caracteres)"
+            style={{ width: '100%', boxSizing: 'border-box', padding: '6px 9px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--t1)', font: '500 11px var(--mono)', marginBottom: 7 }} />
+          <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+            {(it.dtEquivocado ?? []).map((m) => (
+              <button key={m.lado} onClick={() => desmentir(m.lado)} disabled={!!yendo || fuente.trim().length < 8}
+                style={{ padding: '6px 11px', borderRadius: 8, border: 0, cursor: 'pointer', background: 'var(--accent)', color: '#fff', font: '600 10.5px var(--sans)', opacity: fuente.trim().length < 8 ? 0.5 : 1, overflowWrap: 'anywhere', textAlign: 'left' }}>
+                {yendo === 'desmentir' ? '…' : `Lado ${m.lado}: el banco «${m.banco}» está mal (el parte dice «${m.parte}»)`}
+              </button>
+            ))}
+          </div>
+          {error && <div style={{ font: '600 11px var(--sans)', color: 'var(--down)', marginTop: 5 }}>{error}</div>}
+        </div>
+      )}
       {cuarAbierta && !it.cuarentena && (
         <div style={{ marginTop: 8, padding: '10px 12px', borderRadius: 10, background: 'var(--down-soft)' }}>
           <div style={{ font: '500 10.5px var(--sans)', color: 'var(--t1)', marginBottom: 6 }}>

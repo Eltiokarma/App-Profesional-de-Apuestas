@@ -2519,6 +2519,52 @@ def cowork_cuarentena_quitar(fixture_id: int):
         raise HTTPException(404, f"no hay parte de Cowork para el fixture {fixture_id}")
 
 
+class DescarteCohorteBody(BaseModel):
+    nota: str = ""
+
+
+@app.post(API + "/analisis/cowork/cohortes/{cohorte}/descartar")
+def cowork_descartar_cohorte(cohorte: str, body: DescarteCohorteBody):
+    """Descarta en bloque las lecciones pendientes de una cohorte vieja. NO está
+    abierto a Cowork, y la vigente se rechaza: sus lecciones se miran una a una."""
+    from backend.analisis import lecciones
+    try:
+        return lecciones.descartar_cohorte(cohorte, body.nota)
+    except lecciones.LeccionInvalida as e:
+        raise HTTPException(422, str(e))
+    except KeyError:
+        raise HTTPException(404, f"no hay casos cerrados en la cohorte {cohorte!r}")
+
+
+class DesmentidoBody(BaseModel):
+    lado: str = ""
+    fuente: str = ""
+    nota: str = ""
+
+
+@app.post(API + "/analisis/cowork/{fixture_id}/banco-desmentido")
+def cowork_desmentir_banco(fixture_id: int, body: DesmentidoBody):
+    """El DT del banco que trae la alineación de la API está mal en ese lado, y
+    la fuente lo prueba: la cuarentena automática por DT equivocado deja de
+    comparar ese lado. NO está abierto a Cowork (es un criterio del usuario)."""
+    from backend.analisis import parte as cowork
+    try:
+        return cowork.desmentir_banco(fixture_id, body.lado, body.fuente, body.nota)
+    except cowork.ParteInvalido as e:
+        raise HTTPException(422, str(e))
+    except KeyError:
+        raise HTTPException(404, f"no hay parte de Cowork para el fixture {fixture_id}")
+
+
+@app.delete(API + "/analisis/cowork/{fixture_id}/banco-desmentido/{lado}")
+def cowork_quitar_desmentido(fixture_id: int, lado: str):
+    from backend.analisis import parte as cowork
+    try:
+        return cowork.quitar_desmentido(fixture_id, lado)
+    except KeyError:
+        raise HTTPException(404, f"no hay parte de Cowork para el fixture {fixture_id}")
+
+
 @app.post(API + "/analisis/cowork/lecciones/{clave}")
 def cowork_leccion_mover(clave: str, body: LeccionBody):
     """Mueve una lección de estado. NO está abierto al token de Cowork.
