@@ -87,13 +87,17 @@ SENALES = {
                                       "una eliminación) — CALCULADA",
     "clasico": "clásico o derbi: la paridad propia del cruce, que la regla del nivel no ve",
     "rival_directo": "rival directo en la tabla (descenso, clasificación): los dos necesitaban el resultado",
-    "once_distinto": "el once del partido cambió 5 o más titulares respecto del último de la racha "
+    "once_distinto": "el once del partido cambió 5 o más titulares respecto del último de la racha EN LA MISMA "
+                     "competición "
                      "(se ve ~60 min antes del pitazo) — CALCULADA, solo con los dos onces en la base",
+    "rival_de_otra_base": "el rival venía de otra división o de una liga que no se sigue (copa nacional), o "
+                          "el equipo acaba de cambiar de categoría (ascendido/descendido): el nivel o las "
+                          "medianas no están en la misma escala — CALCULADA",
     "ninguna_visible": "nada visible antes del pitazo",
 }
 LECCIONES_MAX = 8
 SENALES_CALCULADAS = ("racha_en_otra_competicion", "condicion_a_contramano", "rival_tambien_en_burbuja",
-                      "racha_concediendo", "derrota_internacional_reciente", "once_distinto")
+                      "racha_concediendo", "derrota_internacional_reciente", "once_distinto", "rival_de_otra_base")
 ONCE_CAMBIOS = 5         # Cienciano en Sullana (tercera tanda): 6 cambios, el alterno
 DIAS_RESACA = 10
 # el reventón no es un skill: sus reglas (docs/REVENTON.md) viven en sad-analysis.
@@ -258,11 +262,16 @@ def reventones_de(team_id: int) -> list[dict]:
                 for s in ("+", "-") if any(r["signo"] == s for r in cerrados)}
     pos = {f["fixtureId"]: i for i, f in enumerate(filas)}
     sede = _sede_propia(team_id)
+    ruido = _ligas_ruido()
     fuera = []
     for r in cerrados:
         if not significativo(r, medianas):
             continue
         i = pos.get(r["fixtureId"])
+        # un amistoso que cierra la burbuja es ruido: pretemporada, once de
+        # prueba (Aston Villa–Porto, Roma–Cannes en la lista de otras ligas)
+        if i is not None and filas[i].get("ligaId") in ruido:
+            continue
         comp = (composicion(filas[max(0, i - r["partidos"]):i], filas[i], filas[max(0, i - 6):i],
                             en_su_estadio=bool(sede) and _sede_de(r["fixtureId"]) == sede)
                 if i is not None else None)
@@ -336,6 +345,15 @@ def _dt_en_el_banco(fixture_id: int, team_id: int) -> str:
     return (f["entrenador"] if f else "") or ""
 
 
+def _escala(team_id: int, rival: int, fecha: str, liga: int | None = None) -> dict:
+    """De qué base sale el nivel de cada uno (Cristal–Bentín: Liga 1 contra Liga 2)."""
+    from backend.analisis import escala
+    try:
+        return escala.entre(team_id, rival, fecha, liga)
+    except Exception as e:  # noqa: BLE001
+        return {"relacion": "sin dato", "comparable": True, "nota": f"no se pudo calcular: {e}"}
+
+
 def ficha(fixture_id: int, team_id: int) -> dict | None:
     from backend import ficha_tactica
     fx = _app().get_fixture(fixture_id)
@@ -352,6 +370,7 @@ def ficha(fixture_id: int, team_id: int) -> dict | None:
         "alDia": {"equipo": _burbuja_al_dia(team_id, fixture_id), "rival": _burbuja_al_dia(rival, fixture_id),
                   "nota": "historia cortada ESTRICTAMENTE antes de este partido (antesDe): lo que se "
                           "podía ver antes del pitazo"},
+        "escala": _escala(team_id, rival, str(fx["date"])[:10], fx["league_id"]),
         "dtEnElBanco": {"equipo": _dt_en_el_banco(fixture_id, team_id),
                         "rival": _dt_en_el_banco(fixture_id, rival)},
         "tactica": ficha_tactica.tactica_de(fixture_id, fx["home_team_id"], fx["away_team_id"]),
@@ -414,11 +433,16 @@ def guardar_estudio(fixture_id: int, team_id: int, cuerpo: dict) -> dict:
     if (act.get("partidos") or 0) >= 2:
         calculadas.append("rival_tambien_en_burbuja")
     # el once que armó la racha no es el que jugó (Cienciano en Sullana: 6 cambios)
-    previos = (r_.get("composicion") or {}).get("partidos") or []
+    # contra el último de la MISMA competición: el de copa con 9 rotados
+    # disparaba la señal con el once tipo en cancha (Arsenal en Brighton)
+    comp = r_.get("composicion") or {}
+    previos = [p for p in comp.get("partidos") or [] if p.get("ligaId") == comp.get("ligaDelReventon")]
     if previos:
         cambios = cambios_en_el_once(fixture_id, team_id, previos[-1]["fixtureId"])
         if cambios is not None and cambios >= ONCE_CAMBIOS:
             calculadas.append("once_distinto")
+    if not _escala(team_id, rival, str(fx["date"])[:10], fx["league_id"]).get("comparable", True):
+        calculadas.append("rival_de_otra_base")
     senales = [x for x in senales if x not in SENALES_CALCULADAS] + list(calculadas)
     estudio = {
         "mecanismo": mec, "mecanismoSecundario": sec, "senales": senales,

@@ -692,29 +692,12 @@ def alertas_extremo(reventon: dict | None, nombres: dict) -> list[dict]:
 def _liga_domestica(team_id: int, fecha: str | None) -> dict | None:
     """La liga contra la que se calcula el nivel de un equipo: la MÁS FRECUENTE
     en sus partidos terminados del último año antes de `fecha`, fuera de los
-    torneos internacionales de clubes, el Mundial y los amistosos. None si no
-    hay partidos (equipo nuevo en la base)."""
-    from backend.app import liga_meta
-    fuera = _internacionales_de_clubes() | {1, 667}
-    hasta = (fecha or datetime.now(timezone.utc).strftime("%Y-%m-%d")).replace("T", " ").rstrip("Z")
-    try:
-        desde = (datetime.strptime(hasta[:10], "%Y-%m-%d") - timedelta(days=365)).strftime("%Y-%m-%d")
-    except ValueError:
-        return None
-    filas = saddb.query(
-        "sad",
-        f"""SELECT league_id, COUNT(*) AS n FROM fixtures
-            WHERE (home_team_id=? OR away_team_id=?) AND date < ? AND date >= ?
-              AND (status_short IN ('FT','AET','PEN') OR status_long='Match Finished')
-              AND league_id IS NOT NULL AND league_id NOT IN ({",".join("?" * len(fuera))})
-            GROUP BY league_id ORDER BY n DESC, league_id LIMIT 1""",
-        (team_id, team_id, hasta, desde, *sorted(fuera)),
-    )
-    if not filas:
-        return None
-    meta = liga_meta(filas[0]["league_id"])
-    return {"id": filas[0]["league_id"], "nombre": meta.get("nombre"), "pais": meta.get("pais"),
-            "partidos": filas[0]["n"]}
+    torneos internacionales de clubes, el Mundial, los amistosos y las COPAS
+    nacionales (una copa no es una base: Bentín en la Copa Bicentenario, la FA
+    Cup). Con solo copas, `categoria: "fuera del padrón"` (`escala.base_de`).
+    None si no hay partidos (equipo nuevo en la base)."""
+    from backend.analisis import escala
+    return escala.base_de(team_id, fecha)
 
 
 def _segunda(liga_id: int) -> bool:
@@ -1014,7 +997,9 @@ def alerta_escala(fx, nombres: dict) -> list[dict]:
         fecha = str(fx["date"])[:10]
         la = _liga_domestica(fx["home_team_id"], fecha)
         lb = _liga_domestica(fx["away_team_id"], fecha)
-        if misma_base(la, lb):
+        from backend.analisis import escala
+        rel = escala.relacion(la, lb)
+        if rel in ("misma", "sin dato"):
             return []
         from backend.app import niveles_de
         niv = {}
@@ -1022,15 +1007,21 @@ def alerta_escala(fx, nombres: dict) -> list[dict]:
             nv = niveles_de(tid, 1, antes=str(fx["date"]))
             niv[lado] = nv[0]["nivel"] if nv else None
         fmt = lambda v: f"{v:.2f}" if v is not None else "sin nivel"  # noqa: E731
+        def nom(x):
+            return x["nombre"] if x.get("nombre") else "liga fuera del padrón: solo copas en la base"
         return [{
             "codigo": "ESCALA-LIGAS", "equipo": "global", "tipo": "dato",
-            "detalle": (f"{nombres.get('a', 'A')} ({la['nombre']}) y {nombres.get('b', 'B')} ({lb['nombre']}) "
-                        f"vienen de bases distintas: el nivel SAD se calcula con los puntos y los goles "
-                        f"contra los rivales de cada uno y NO compara entre ligas (un 12.º de LaLiga puede "
-                        f"salir con menos nivel que un 15.º de la Premier). Leer {fmt(niv['a'])} y "
-                        f"{fmt(niv['b'])} como la posición de cada uno dentro de su propia liga; el gap §5 "
-                        f"y la μ del TDE cruzan esos dos niveles, así que van con esa reserva. El reventón "
-                        f"no la necesita: compara al rival con la propia historia del equipo"),
+            "detalle": (f"{nombres.get('a', 'A')} ({nom(la)}, {la['categoria']}) y {nombres.get('b', 'B')} "
+                        f"({nom(lb)}, {lb['categoria']}) vienen de bases distintas ({rel}, mirado desde "
+                        f"{nombres.get('a', 'A')}): el nivel SAD se calcula con los puntos y los goles contra "
+                        f"los rivales de cada uno y NO compara entre bases (la cima de una segunda sale con "
+                        f"más nivel que un equipo del medio de la primera). Leer {fmt(niv['a'])} y "
+                        f"{fmt(niv['b'])} como la posición de cada uno dentro de su propia base; el gap §5, la "
+                        f"μ del TDE y el RIESGO DEL REVENTÓN (que compara el nivel del rival con los rivales "
+                        f"que reventaron las burbujas en su liga) cruzan esos niveles: van con esa reserva. "
+                        f"`escala` en GET /equipos/{{id}}/burbujas trae cómo le fue a cada uno contra rivales "
+                        f"de otra base"),
+            "relacion": rel,
             "ligas": {"a": la, "b": lb},
         }]
     except Exception as e:  # noqa: BLE001 — se declara, no tumba el parte
