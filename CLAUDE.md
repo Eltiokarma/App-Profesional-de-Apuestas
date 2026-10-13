@@ -585,6 +585,17 @@ conversación se pierde en la siguiente.
    `fixture:lado:N`). Pendiente: cargar las lecciones de las autopsias en los
    veredictos del 11/10 y que el usuario abra la revisión de cada skill.
 
+11. **Cowork queda sustituido por Claude Code** (13/10/2026; el 12/10 Cowork
+   dejó sin parte 6 de los 8 partidos de la agenda). La corrida la hace una
+   sesión de Code en la nube lanzada por rutinas, con el skill del repo
+   `.claude/skills/corrida-sad/SKILL.md` (modos `partes` y `veredictos`, un
+   subagente por partido) sobre el mismo contrato y prompt de
+   `docs/COWORK.md`. Credenciales en las variables del entorno de la nube:
+   `SAD_API_BASE` y `SAD_TOKEN_COWORK` (el acotado; el maestro nunca). El
+   once ya no espera a nadie: el ciclo en vivo, al capturar alineaciones
+   prepartido, corre `parte.cerrar_onces_pendientes` (lo mismo que
+   `xi/auto`).
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel

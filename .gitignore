@@ -25,7 +25,8 @@ npm-debug.log*
 
 # respaldos y configuración local del agente
 *.bundle
-.claude/
+.claude/*
+!.claude/skills/
 
 # typescript incremental build info
 *.tsbuildinfo

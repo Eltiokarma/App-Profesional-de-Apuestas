@@ -1,5 +1,10 @@
 # Cowork → la app: el parte de análisis
 
+> **Desde el 13/10/2026 quien escribe el parte es Claude Code**, no Cowork: una
+> sesión en la nube lanzada por rutinas, siguiendo `.claude/skills/corrida-sad/SKILL.md`.
+> El contrato, el prompt y las reglas de este documento no cambian; donde dice
+> «Cowork» léase «quien escribe el parte». El token sigue siendo `SAD_TOKEN_COWORK`.
+
 El análisis pre-partido lo escribe **Cowork** con la suscripción plana y lo
 **deposita** en la app. La app lo guarda, calcula lo que es aritmética y lo
 pinta. El motor por API de Claude (`/analisis/efe`, `backend/analisis/motor.py`)
