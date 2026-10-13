@@ -603,8 +603,12 @@ conversación se pierde en la siguiente.
    visible para quien use el entorno: vale para la fase de prueba con el
    token ACOTADO; al salir de prueba, rotarlo (9 de sus 20 caracteres se
    pegaron en un chat el 13/10) y pasarlo a una sección de secretos si el
-   producto la ofrece. Rutinas (hora de Lima): partes 04:47 y 12:48,
-   veredictos 06:52, cada una en sesión nueva.
+   producto la ofrece. Rutinas (hora de Lima): partes 04:47 y 12:48 en la
+   sesión «SAD · corrida de partes (rutina)», veredictos 06:52 en «SAD ·
+   corrida de veredictos (rutina)». Corren en sesiones FIJAS con el repo
+   (cada disparo es un mensaje nuevo que hace `git pull` de main): una
+   rutina de sesión nueva arrancaba sin el repo, sin `add_repo` y con otro
+   modelo, y no pudo leer el skill (13/10, 12:48).
 
 ## Siguientes pasos (en orden)
 
