@@ -604,20 +604,30 @@ def _reventon_calculado(fx) -> dict | None:
     from datetime import datetime, timezone
     from backend import jugadores as jug
     from backend.analisis import burbuja
-    from backend.app import constantes_de, niveles_de
+    from backend.app import constantes_de, iso, niveles_de
     hoy = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    # LA VISTA ES SIEMPRE «AL DÍA DEL PARTIDO» (docs/REVENTON.md §9): la historia
+    # se corta ESTRICTAMENTE antes de este fixture. Sin el corte, un partido ya
+    # jugado entraba en su propia burbuja y la tira del parte terminado gritaba
+    # un K-EXTREMO que Cowork no vio antes del pitazo (Sport Boys–Alianza
+    # Atlético, 11/10/2026: −18.97 en 2 al depositar, −25.73 en 3 al releer).
+    # Para un partido que todavía no se jugó el corte no cambia nada.
+    antes = iso(fx["date"])
+    jugado = str(fx["date"])[:10] < hoy
     lados = (("a", fx["home_team_id"], fx["away_team_id"], fx["away_name"], "L"),
              ("b", fx["away_team_id"], fx["home_team_id"], fx["home_name"], "V"))
     out = {}
     for lado, tid, rid, rival, cond in lados:
         try:
-            filas = list(reversed(constantes_de(tid, 500)))
-            nv, nr = niveles_de(tid, 1), niveles_de(rid, 1)
+            filas = list(reversed(constantes_de(tid, 500, antes=antes)))
+            nv, nr = niveles_de(tid, 1, antes=antes), niveles_de(rid, 1, antes=antes)
             prox = {"fixtureId": fx["id"], "fecha": str(fx["date"])[:10], "rivalId": rid, "rival": rival,
                     "condicion": cond, "nivelRival": nr[0]["nivel"] if nr else 1.0}
+            # la plantilla de hoy no es la de un partido ya jugado: sin dato,
+            # como en /burbujas?antesDe (la confianza no pasa de media)
             r = burbuja.analizar(filas, equipo_id=tid, nivel=nv[0]["nivel"] if nv else 0.5,
                                  bin_=nv[0]["bin"] if nv else 0, proximo=prox,
-                                 plantilla=jug.plantilla_de(tid), hoy=hoy)
+                                 plantilla=None if jugado else jug.plantilla_de(tid), hoy=hoy)
             fam = r["familias"]["total"]
             out[lado] = {"actual": fam["actual"], "riesgo": fam["riesgo"], "rival": fam["rival"],
                          "extremo": fam.get("extremo"),

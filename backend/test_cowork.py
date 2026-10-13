@@ -2024,6 +2024,15 @@ def main():
           item_eq and all(i["cuarentenaAutomatica"] for i in item_eq)
           and "Repetto" in item_eq[0]["cuarentena"] and "Dudamel" in item_eq[0]["cuarentena"],
           [i.get("cuarentena") for i in item_eq] or inv_eq["enCuarentena"])
+    # ── EL REVENTÓN DE UN PARTIDO YA JUGADO SE LEE «AL DÍA DEL PARTIDO» ──
+    # (Sport Boys–Alianza Atlético 11/10: el GET del parte terminado metía ese
+    # mismo partido en su burbuja y gritaba un K-EXTREMO que Cowork no vio)
+    _rc_p = c.get(f"{A}/analisis/cowork/{pasado['id']}").json()["lecturaSad"]["reventonCalculado"]
+    _fxp = dbmod.query_one("sad", "SELECT home_team_id FROM fixtures WHERE id=?", (pasado["id"],))
+    _bur = c.get(f"{A}/equipos/{_fxp['home_team_id']}/burbujas?antesDe={pasado['id']}").json()
+    check("el reventón del parte de un partido jugado es el mismo que /burbujas?antesDe (sin ese partido)",
+          (_rc_p.get("a") or {}).get("actual") == _bur["familias"]["total"]["actual"],
+          ((_rc_p.get("a") or {}).get("actual"), _bur["familias"]["total"]["actual"]))
     # ── EL BANCO DE LA API TAMBIÉN SE EQUIVOCA (Jaguares 11/10: «H. Bodhert», ido el 28/09) ──
     _pid = pasado["id"]
     check("la lección en cuarentena dice qué lado y qué nombres chocaron",
