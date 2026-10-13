@@ -215,10 +215,11 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     rojas = _rojas(fixture_id, fx["home_team_id"])
     bloques = []
     for tde in bloques_tde(parte.get("tde") or {}):
+        reasig = rama_jugada(tde, goles, gl + gv, out["evidencia"]["conFicha"])
         rango = _ventana(tde.get("ventana") or "")
         if not rango:
             bloques.append({"ventana": tde.get("ventana", ""), "equipo": tde.get("equipo") or "",
-                            "comprobable": False, "golEnVentana": None,
+                            "comprobable": False, "golEnVentana": None, "reasignacion": reasig,
                             "nota": "la ventana declarada no trae dos minutos: no hay nada que comprobar"})
             continue
         desde, hasta = rango
@@ -245,6 +246,7 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
             "golesEnAnadido": en_anadido,
             "rojasAntes": rojas_antes,
             "cobrable": cobrable,
+            "reasignacion": reasig,
             "nota": ("sin ficha de eventos no se puede comprobar la ventana: queda sin veredicto"
                      if not out["evidencia"]["conFicha"] else
                      "hubo una roja antes del gol de la ventana: el mecanismo declarado no se puso a "
@@ -259,6 +261,34 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     # ── el reventón de la burbuja: lo que se dijo antes y lo que pasó ───────
     out["reventon"] = reventon_objetivo(fixture_id, fx, declarado)
     return out
+
+
+def rama_jugada(tde: dict, goles: list[dict], total_goles: int, con_ficha: bool) -> dict:
+    """Qué rama de la reasignación (disciplina 44) jugó el partido para el
+    equipo del bloque, y si estaba declarada. Es observación: no hay acierto
+    —la rama no es un pronóstico—, pero un lado sin la rama que se dio es la
+    lección que la autopsia del 11/10 encontró once veces."""
+    foco = tde.get("equipo") or ""
+    declarada = tde.get("reasignacion") or {}
+    if not foco:
+        return {"rama": None, "declarada": bool(declarado_ok(declarada)), "nota": "bloque sin lado"}
+    if total_goles == 0:
+        return {"rama": "sinGoles", "minuto": None, "declarada": bool(declarado_ok(declarada)),
+                "loDeclarado": None, "nota": "sin goles: ninguna rama se activó"}
+    if not con_ficha or not goles:
+        return {"rama": None, "minuto": None, "declarada": bool(declarado_ok(declarada)),
+                "loDeclarado": None, "nota": "sin ficha de eventos no se sabe quién marcó primero"}
+    primero = goles[0]
+    rama = "siMarcaPrimero" if primero["lado"] == foco else "siRecibePrimero"
+    lo = declarada.get(rama)
+    return {"rama": rama, "minuto": primero["minuto"], "declarada": lo is not None, "loDeclarado": lo,
+            "nota": "" if lo is not None else
+                    "la rama que jugó el partido no estaba declarada (disciplina 44): "
+                    "el bloque P quedó viejo desde ese minuto sin nada escrito"}
+
+
+def declarado_ok(reasig: dict) -> bool:
+    return all(r in (reasig or {}) for r in ("siMarcaPrimero", "siRecibePrimero"))
 
 
 # ── el reventón, comprobado ─────────────────────────────────────────────────

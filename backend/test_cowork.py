@@ -77,12 +77,15 @@ def _parte(fixture_id: int, nombre_a: str = "", nombre_b: str = "") -> dict:
             {"ie": 58, "ieNivel": "ambar", "ise": 31, "equipo": "b",
              "tipologia": "repliegue por agotamiento", "ventana": "75-90'",
              "vias": [{"nombre": "echada", "indice": 58, "ventana": "75-90'", "detalle": "baja el bloque"}],
-             "falsador": "si sostiene la línea tras el 75'"},
+             "falsador": "si sostiene la línea tras el 75'",
+             "reasignacion": {"siMarcaPrimero": {"sob1": 0, "tipologia": "ECHADA-VOL", "nota": "administra"},
+                              "siRecibePrimero": {"sob1": 1, "nota": "persigue y se expone"}}},
             {"ie": 24, "ieNivel": "verde", "ise": 47, "iseNivel": "ambar", "equipo": "a",
              "tipologia": "sobreexposición por urgencia", "ventana": "60-75'",
              "vias": [{"nombre": "sobreexposicion", "indice": 47, "ventana": "60-75'",
                        "detalle": "adelanta los laterales"}],
-             "falsador": "si conserva los laterales por detrás del balón"},
+             "falsador": "si conserva los laterales por detrás del balón",
+             "reasignacion": {"siMarcaPrimero": {"sob1": 0}, "siRecibePrimero": "sigue igual"}},
         ]},
         "timelineEventos": [
             {"fecha": "2026-03-02", "equipo": nombre_b or "B", "tipo": "tecnico",
@@ -1757,6 +1760,64 @@ def main():
           porlado["b"]["golEnVentana"] is True and all(g["lado"] == "a" for g in porlado["b"]["goles"]),
           porlado["b"])
 
+    # LA REASIGNACIÓN ES UN CAMPO Y EL VEREDICTO DICE QUÉ RAMA JUGÓ EL PARTIDO
+    # (disciplina 44; faltó en ~11 lados del 11/10/2026). El 34' es de 'a'.
+    p_tde["tde"] = {"bloques": [
+        {"ie": 60, "equipo": "a", "ventana": "45-60'", "tipologia": "prueba",
+         "reasignacion": {"siMarcaPrimero": {"sob1": 0, "tipologia": "ECHADA-VOL"}}},
+        {"ie": 40, "equipo": "b", "ventana": "20-40'", "tipologia": "prueba",
+         "reasignacion": {"siMarcaPrimero": {"sob1": 0}, "siRecibePrimero": {"sob1": 2},
+                          "siEmpata": {"sob1": 1}}}]}
+    rec_r = c.post(f"{A}/analisis/cowork", json=p_tde).json()
+    check("una rama desconocida y un SOB1 fuera de 0/0.5/1 se rechazan con motivo",
+          any(x["donde"].endswith("reasignacion.siEmpata") for x in rec_r["rechazos"])
+          and any(x["donde"].endswith("siRecibePrimero.sob1") for x in rec_r["rechazos"]), rec_r["rechazos"])
+    check("y una reasignación a medias se avisa en `faltan` (se cobra al cerrar)",
+          any(x["bloque"] == "tde.reasignacion" for x in rec_r["faltan"]), rec_r["faltan"])
+    od_ra = {b["equipo"]: b for b in c.get(f"{A}/analisis/cowork/{con_ficha}/veredicto").json()["objetivo"]["tde"]["bloques"]}
+    check("el que marcó primero juega la rama siMarcaPrimero, declarada",
+          od_ra["a"]["reasignacion"]["rama"] == "siMarcaPrimero" and od_ra["a"]["reasignacion"]["declarada"] is True
+          and od_ra["a"]["reasignacion"]["loDeclarado"]["tipologia"] == "ECHADA-VOL", od_ra["a"]["reasignacion"])
+    check("el otro juega siRecibePrimero y, sin declararla, lo dice",
+          od_ra["b"]["reasignacion"]["rama"] == "siRecibePrimero" and od_ra["b"]["reasignacion"]["declarada"] is False
+          and "disciplina 44" in od_ra["b"]["reasignacion"]["nota"], od_ra["b"]["reasignacion"])
+    p_tde["tde"] = {"bloques": [{"ie": 60, "equipo": "a", "ventana": "45-60'", "tipologia": "prueba"},
+                                {"ie": 40, "equipo": "b", "ventana": "20-40'", "tipologia": "prueba"}]}
+    c.post(f"{A}/analisis/cowork", json=p_tde)
+
+    # VARIAS LECCIONES POR LADO: una autopsia toca más de un skill (Cusco–Cristal)
+    rv = c.post(f"{A}/analisis/cowork/{con_ficha}/veredicto", json={
+        "seleccion": "ciega", "modoEvaluacion": "COND",
+        "porLado": {"a": {"veredicto": "fallo", "skill": "teorema-del-echado", "reglaTocada": "disciplina 16",
+                          "leccion": "con diez y perdiendo, atacó más",
+                          "otrasLecciones": [
+                              {"skill": "efe-clasificador", "reglaTocada": "COLAPSO EN CASCADA",
+                               "leccion": "el favorito administró y no hubo colapso"},
+                              {"skill": "diagnostico-tactico", "leccion": "el M2 se escribió sobre otro once"},
+                              {"leccion": "sin skill no entra"}]}}}).json()
+    check("una lección extra sin skill se rechaza con motivo",
+          any("otrasLecciones[2]" in x["donde"] for x in rv["rechazos"]), rv["rechazos"])
+    check("el GET devuelve las otras lecciones (y el eco las acepta)",
+          len(rv["porLado"]["a"].get("otrasLecciones") or []) == 2, rv["porLado"]["a"])
+    rv2 = c.post(f"{A}/analisis/cowork/{con_ficha}/veredicto",
+                 json={k: v for k, v in rv.items() if k != "rechazos"}).json()
+    check("re-depositar el eco conserva las otras lecciones",
+          len(rv2["porLado"]["a"].get("otrasLecciones") or []) == 2 and not rv2["rechazos"], rv2.get("rechazos"))
+    inv_l = c.get(f"{A}/analisis/cowork/lecciones", params={"cohorte": ""}).json()
+    mias = sorted(i["clave"] for i in inv_l["items"] if i["fixtureId"] == con_ficha)
+    check("cada lección es un item con su clave (fixture:lado, :2, :3)",
+          mias == sorted([f"{con_ficha}:a", f"{con_ficha}:a:2", f"{con_ficha}:a:3"]), mias)
+    extra = next(i for i in inv_l["items"] if i["clave"] == f"{con_ficha}:a:2")
+    check("la extra hereda el veredicto del lado y va a su skill",
+          extra["veredicto"] == "fallo" and extra["skill"] == "efe-clasificador"
+          and extra["reglaTocada"] == "COLAPSO EN CASCADA", extra)
+    check("un lado fallado sigue siendo UN fallo para el modo de fallo",
+          inv_l["porModoFallo"]["fallos"] == sum(1 for i in inv_l["items"]
+                                                 if i["veredicto"] in ("fallo", "parcial") and i["orden"] == 1),
+          inv_l["porModoFallo"])
+    c.post(f"{A}/analisis/cowork/{con_ficha}/veredicto", json={
+        "seleccion": "ciega", "modoEvaluacion": "COND", "porLado": {"a": {"veredicto": "fallo"}}})
+
     # UNA ROJA ANTES DEL GOL DE LA VENTANA: hay gol, pero no se cobra (disc. 16/24)
     _hid_r = dbmod.query_one("sad", "SELECT home_team_id FROM fixtures WHERE id=?", (con_ficha,))["home_team_id"]
     with _sq2.connect(os.path.join(tmp, "sad.db")) as _con:
@@ -2343,6 +2404,62 @@ def main():
     r_dtp3 = c.post(f"{A}/analisis/cowork", json=p_dtp3).json()
     check("un re-depósito sin el DTP lo delata en `perdido`",
           any(x.startswith("bloquesDtp") for x in r_dtp3["perdido"]), r_dtp3["perdido"])
+
+    # EL DTP A REHACER: el once oficial contradice la apertura (9 de 24 el 11/10)
+    _hid_d = dbmod.query_one("sad", "SELECT home_team_id FROM fixtures WHERE id=?", (con_ficha,))["home_team_id"]
+    _form = dbmod.query_one("sad", "SELECT formacion FROM alineaciones WHERE fixture_id=? AND team_id=? LIMIT 1",
+                            (con_ficha, _hid_d))["formacion"]
+    _xi = [r["jugador"] for r in dbmod.query("sad", "SELECT jugador FROM alineaciones WHERE fixture_id=? "
+                                                     "AND team_id=? AND titular=1", (con_ficha, _hid_d))]
+    p_reh = _parte(con_ficha)
+    p_reh["dtp"] = {"bloques": [{"equipo": "a", "apertura": {"m1": {
+        "sistema": "3-5-2 con carrileros",
+        "xiReferencia": "Arquero; Uno, Dos, Tres; Cuatro, Cinco, Seis, Siete, Ocho; Nueve, Diez"}}}]}
+    c.post(f"{A}/analisis/cowork", json=p_reh)
+    g_reh = c.get(f"{A}/analisis/cowork/{con_ficha}").json()
+    ce = g_reh["dtp"]["bloques"][0]["calculado"]["contraElOnce"]
+    check("con el once oficial distinto, el bloque del DTP queda a rehacer (sistema y once)",
+          ce["rehacer"] is True and ce["sistemaOficial"] == _form and len(ce["motivos"]) == 2
+          and len(ce["ausentesDeLaReferencia"]) >= 3, ce)
+    check("y la alerta DTP-REHACER va a la tira",
+          any(a["codigo"] == "DTP-REHACER" and a["equipo"] == "a" for a in g_reh["alertas"]), g_reh["alertas"])
+    p_reh["dtp"]["bloques"][0]["apertura"]["m1"] = {"sistema": _form, "xiReferencia": ", ".join(_xi)}
+    c.post(f"{A}/analisis/cowork", json=p_reh)
+    g_ok = c.get(f"{A}/analisis/cowork/{con_ficha}").json()
+    check("con el sistema y el once de la ficha, no hay nada que rehacer",
+          g_ok["dtp"]["bloques"][0]["calculado"]["contraElOnce"]["rehacer"] is False
+          and not any(a["codigo"] == "DTP-REHACER" for a in g_ok["alertas"]),
+          g_ok["dtp"]["bloques"][0]["calculado"])
+    c.post(f"{A}/analisis/cowork", json=p_dtp)
+    sin_once = c.get(f"{A}/analisis/cowork/{ns_dtp}").json()["dtp"]["bloques"][0]["calculado"]
+    check("sin once oficial no se dice nada (no es «cuadra»)", "contraElOnce" not in sin_once, sin_once)
+    r_eco_reh = c.post(f"{A}/analisis/cowork", json={**g_reh, "fixtureId": con_ficha}).json()
+    check("el eco del GET no arrastra DTP-REHACER ni F1-DECISIVO-FUERA como declaradas",
+          not any("alertas[" in x["donde"] for x in r_eco_reh["rechazos"]), r_eco_reh["rechazos"])
+    c.post(f"{A}/analisis/cowork", json=_parte(con_ficha))
+
+    # LA TABLA F1 DESDE LA BASE: 14+ decisivos faltaron el 11/10
+    f1 = c.get(f"{A}/analisis/cowork/f1/{con_ficha}").json()
+    cand = f1["a"]["candidatos"]
+    check("la tabla F1 de la base trae candidatos con jugadorId, zona y rol sugerido",
+          cand and all(x["jugadorId"] and x["rolSugerido"] in ("TF", "TH", "ROT", "SUP") for x in cand)
+          and cand[0]["rolSugerido"] == "TF", cand[:2])
+    dec = [x for x in cand if x["decisivo"]]
+    check("y marca los decisivos con su porqué", dec and all(x["decisivo"] for x in dec), dec[:2])
+    check("un fixture que no existe da 404", c.get(f"{A}/analisis/cowork/f1/1").status_code == 404)
+    g_f1 = c.get(f"{A}/analisis/cowork/{con_ficha}").json()
+    al_f1 = [a for a in g_f1["alertas"] if a["codigo"] == "F1-DECISIVO-FUERA" and a["equipo"] == "a"]
+    check("un decisivo fuera de la tabla F1 depositada dispara F1-DECISIVO-FUERA",
+          al_f1 and dec[0]["nombre"] in al_f1[0]["detalle"], al_f1)
+    p_f1 = _parte(con_ficha)
+    p_f1["equipos"]["a"]["plantel"] += [{"nombre": "Otro Nombre", "jugadorId": x["jugadorId"], "zona": x["zona"] or "MID",
+                                         "rol": x["rolSugerido"], "apps": x["apps"]} for x in dec]
+    c.post(f"{A}/analisis/cowork", json=p_f1)
+    g_f1b = c.get(f"{A}/analisis/cowork/{con_ficha}").json()
+    check("con los decisivos en la tabla (por jugadorId), la alerta se va",
+          not any(a["codigo"] == "F1-DECISIVO-FUERA" and a["equipo"] == "a" for a in g_f1b["alertas"]),
+          [a for a in g_f1b["alertas"] if a["codigo"] == "F1-DECISIVO-FUERA"])
+    c.post(f"{A}/analisis/cowork", json=_parte(con_ficha))
 
     from backend.analisis.parte import mismo_dt
     check("mismo_dt: apellido compuesto y abreviado casan; apellidos distintos no",

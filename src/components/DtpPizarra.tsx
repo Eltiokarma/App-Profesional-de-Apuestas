@@ -509,9 +509,27 @@ function ChecklistBloque({ b, rival, isMobile }: { b: DtpBloque; rival: string; 
 }
 
 /** El DTP de Cowork completo para un equipo foco: checklist + pizarra. */
+/** El once oficial contra la apertura: si no cuadra, el M2 se escribió sobre
+ *  otro equipo (9 de 24 partidos del 11/10/2026). Sin once, no dice nada. */
+function ContraElOnce({ b, foco }: { b: DtpBloque; foco: string }) {
+  const r = b.calculado?.contraElOnce
+  if (!r) return null
+  return (
+    <section style={{ padding: '10px 13px', borderRadius: 12, background: r.rehacer ? 'var(--mark-soft)' : 'var(--bg2)', border: '1px solid var(--line)' }}>
+      <div style={{ font: '700 9.5px var(--mono)', letterSpacing: '.4px', color: r.rehacer ? 'var(--mark)' : 'var(--up)' }}>
+        {r.rehacer ? `DTP A REHACER · el once oficial de ${foco} no es el de la apertura` : `ONCE OFICIAL · cuadra con la apertura${r.sistemaOficial ? ` (${r.sistemaOficial})` : ''}`}
+      </div>
+      {r.motivos.map((m, i) => (
+        <div key={i} style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', marginTop: 4, overflowWrap: 'anywhere' }}>{m}</div>
+      ))}
+    </section>
+  )
+}
+
 export function PanelDtpCowork({ b, foco, rival, fixtureId, isMobile }: { b: DtpBloque; foco: string; rival: string; fixtureId: number; isMobile: boolean }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <ContraElOnce b={b} foco={foco} />
       <ChecklistBloque b={b} rival={rival} isMobile={isMobile} />
       <DtpPizarra eslabon={eslabonDeBloque(b, foco, rival, fixtureId)} isMobile={isMobile} />
     </div>

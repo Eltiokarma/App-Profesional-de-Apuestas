@@ -463,6 +463,9 @@ function BloqueTdeVista({ tde, nombreDe }: { tde: BloqueTde; nombreDe: (l: 'a' |
             <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0 }}>{v.detalle}</span>
           </div>
         ))}
+        {/* la disciplina 44 como campo: si faltan las dos ramas se dice, porque
+            el primer gol reasigna las vías y eso se cobra al cerrar */}
+        <Reasignacion r={tde.reasignacion} />
         {tde.falsador && (
           <div style={{ marginTop: 10, padding: '9px 12px', borderRadius: 10, background: 'var(--bg3)' }}>
             <span style={{ font: '700 9.5px var(--mono)', color: 'var(--mark)', letterSpacing: '.5px' }}>FALSADOR · </span>
@@ -744,6 +747,11 @@ function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' 
                     <b style={{ color: 'var(--t3)', font: '700 9.5px var(--mono)' }}>LECCIÓN · </b>{l.leccion}
                   </div>
                 )}
+                {(l.otrasLecciones ?? []).map((x, i) => (
+                  <div key={i} style={{ font: '500 11.5px var(--sans)', color: 'var(--t2)', marginTop: 4 }}>
+                    <b style={{ color: 'var(--t3)', font: '700 9.5px var(--mono)' }}>LECCIÓN {i + 2} · {x.skill}{x.reglaTocada ? ` · ${x.reglaTocada}` : ''} · </b>{x.leccion}
+                  </div>
+                ))}
               </div>
             )
           })}
@@ -763,6 +771,16 @@ function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' 
               <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{v.falsador.texto}</span>
             </div>
           )}
+
+          {/* qué rama de la reasignación jugó el partido, por bloque del TDE */}
+          {(o.tde?.bloques ?? []).filter((b) => b.reasignacion?.rama && b.reasignacion.rama !== 'sinGoles').map((b, i) => (
+            <div key={i} style={{ font: '500 10.5px var(--sans)', color: b.reasignacion!.declarada ? 'var(--t2)' : 'var(--mark)' }}>
+              <b style={{ font: '700 9.5px var(--mono)' }}>REASIGNACIÓN · {nombreDe((b.equipo || 'a') as 'a' | 'b')} · </b>
+              {b.reasignacion!.rama === 'siMarcaPrimero' ? 'marcó primero' : 'recibió primero'}
+              {b.reasignacion!.minuto != null ? ` (${b.reasignacion!.minuto}')` : ''}
+              {b.reasignacion!.declarada ? ' · estaba declarada' : ' · NO estaba declarada (disciplina 44)'}
+            </div>
+          ))}
 
           {/* la evidencia con la que se comprueba todo lo de arriba */}
           {!!o.evidencia?.goles?.length && (
@@ -790,6 +808,34 @@ function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' 
         </div>
       )}
     </section>
+  )
+}
+
+function Reasignacion({ r }: { r?: BloqueTde['reasignacion'] }) {
+  const ramas = [['siMarcaPrimero', 'SI MARCA PRIMERO'], ['siRecibePrimero', 'SI RECIBE PRIMERO']] as const
+  const falta = ramas.filter(([k]) => !r?.[k]).length
+  return (
+    <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {ramas.map(([k, etiqueta]) => {
+        const x = r?.[k]
+        if (!x) return null
+        return (
+          <div key={k} style={{ display: 'flex', gap: 10, padding: '5px 0', borderBottom: '1px solid var(--line)', flexWrap: 'wrap' }}>
+            <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)', width: 130, flexShrink: 0, letterSpacing: '.3px' }}>{etiqueta}</span>
+            {x.sob1 != null && <span style={{ font: '700 10.5px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>SOB1 {x.sob1}</span>}
+            <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0 }}>
+              {[x.tipologia, x.nota].filter(Boolean).join(' · ')}
+            </span>
+          </div>
+        )
+      })}
+      {falta > 0 && (
+        <div style={{ font: '500 10.5px var(--sans)', color: 'var(--mark)' }}>
+          {falta === 2 ? 'Sin reasignación por primer gol' : 'Reasignación a medias'} (disciplina 44): el primer gol
+          reasigna las vías y el veredicto va a decir qué rama jugó el partido.
+        </div>
+      )}
+    </div>
   )
 }
 

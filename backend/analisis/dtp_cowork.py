@@ -22,6 +22,8 @@ calcula; lo que es juicio lo escribe quien analiza, estructurado.**
 """
 from __future__ import annotations
 
+import re
+import unicodedata
 from datetime import datetime
 from itertools import combinations
 
@@ -492,15 +494,104 @@ def normalizar_dtp(x, rechazos: list) -> dict:
     return {"bloques": bloques} if bloques else {}
 
 
-def leer_dtp(dtp: dict) -> dict:
-    """Lo guardado + lo calculado al leer (la clase del bloque rival). Lo
-    calculado no se guarda: una regla que cambia no deja copias viejas."""
+# ── el DTP a rehacer: el once oficial contradice la apertura ───────────────
+#
+# En la autopsia del 11/10/2026, en 9 de 24 partidos el sistema o el once que
+# salió no era el de la previa, y el mapa de duelos se quedó escrito sobre un
+# equipo que no jugó (el M2 de Botafogo–Cienciano en TDE-026 ya lo había
+# hecho: un mismatch contra un lateral que no fue titular). Cuando la ficha
+# trae el once, la comparación es aritmética: el sistema por sus cifras y el
+# XI de referencia por apellido. No reescribe nada; marca el bloque.
+
+REHACER_AUSENTES = 3   # titulares oficiales que no figuran en el XI de referencia
+
+
+def _cifras_sistema(texto: str) -> str:
+    m = re.search(r"\d(?:\s*[-–]\s*\d){2,4}", texto or "")
+    return re.sub(r"\D", "", m.group(0)) if m else ""
+
+
+def _plano(t: str) -> str:
+    t = unicodedata.normalize("NFKD", t or "").encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z ]+", " ", t)
+
+
+def _apellido(nombre: str) -> str:
+    partes = [p for p in _plano(nombre).split() if len(p) > 1]
+    return partes[-1] if partes else ""
+
+
+def oficial_de(fixture_id: int) -> dict:
+    """El once que salió, por lado: formación y titulares. Vacío sin ficha."""
+    fx = _fixture(fixture_id)
+    if not fx:
+        return {}
+    fuera = {}
+    for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])):
+        xi = _titulares(fixture_id, tid)
+        if not xi:
+            continue
+        try:
+            f = saddb.query_one("sad", "SELECT formacion FROM alineaciones WHERE fixture_id=? AND team_id=? "
+                                       "AND formacion IS NOT NULL LIMIT 1", (fixture_id, tid))
+        except Exception:  # noqa: BLE001
+            f = None
+        fuera[lado] = {"formacion": (f["formacion"] if f else "") or "",
+                       "titulares": [j["jugador"] or "" for j in xi]}
+    return fuera
+
+
+def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
+    """Si el once oficial del equipo foco contradice la apertura. None = sin
+    once oficial todavía (no se sabe); {"rehacer": False} = cuadra."""
+    of = (oficial or {}).get(bloque.get("equipo") or "")
+    if not of:
+        return None
+    m1 = (bloque.get("apertura") or {}).get("m1") or {}
+    motivos = []
+    decl, real = _cifras_sistema(m1.get("sistema") or ""), _cifras_sistema(of.get("formacion") or "")
+    if decl and real and decl != real:
+        motivos.append(f"sistema: la apertura dice {m1.get('sistema')!r} y salió {of['formacion']}")
+    ref = _plano(m1.get("xiReferencia") or "")
+    ausentes = []
+    if len(ref.split()) >= 8:   # un XI de referencia escrito, no una frase
+        ausentes = [n for n in of["titulares"] if _apellido(n) and f" {_apellido(n)} " not in f" {ref} "]
+        if len(ausentes) >= REHACER_AUSENTES:
+            motivos.append(f"once: {len(ausentes)} titulares que no estaban en el XI de referencia "
+                           f"({', '.join(ausentes)})")
+    return {"rehacer": bool(motivos), "motivos": motivos,
+            "sistemaDeclarado": m1.get("sistema") or "", "sistemaOficial": of.get("formacion") or "",
+            "ausentesDeLaReferencia": ausentes}
+
+
+def leer_dtp(dtp: dict, oficial: dict | None = None) -> dict:
+    """Lo guardado + lo calculado al leer (la clase del bloque rival y, con el
+    once oficial, si la apertura hay que rehacerla). Lo calculado no se
+    guarda: una regla que cambia no deja copias viejas."""
     out = []
     for b in (dtp or {}).get("bloques") or []:
         clase = clasificar_bloque(b["apertura"]["m2"]["checklistBloqueRival"])
         rival = "b" if b["equipo"] == "a" else "a"
-        out.append({**b, "calculado": {"bloqueRival": {**clase, "equipoDelBloque": rival}}})
+        calc = {"bloqueRival": {**clase, "equipoDelBloque": rival}}
+        r = rehacer(b, oficial)
+        if r is not None:
+            calc["contraElOnce"] = r
+        out.append({**b, "calculado": calc})
     return {"bloques": out}
+
+
+def alertas_rehacer(dtp_leido: dict, nombres: dict) -> list[dict]:
+    fuera = []
+    for b in dtp_leido.get("bloques") or []:
+        r = (b.get("calculado") or {}).get("contraElOnce") or {}
+        if r.get("rehacer"):
+            fuera.append({"codigo": "DTP-REHACER", "equipo": b["equipo"], "tipo": "dato",
+                          "detalle": f"El once oficial de {nombres.get(b['equipo'], b['equipo'])} contradice "
+                                     f"la apertura del DTP ({'; '.join(r['motivos'])}): el mapa de duelos "
+                                     "(M2) y las vías de gol se escribieron sobre otro equipo. Rehacer M1/M2 "
+                                     "con el once oficial antes del pitazo, o leerlo como apertura caída en "
+                                     "la autopsia."})
+    return fuera
 
 
 def apertura_para_cadena(bloque: dict) -> dict:

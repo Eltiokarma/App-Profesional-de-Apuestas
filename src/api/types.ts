@@ -1151,7 +1151,7 @@ export interface EquipoParte {
 
 export interface AlertaParte {
   /** Las del skill (T.54, R-KT.2…) y las que agrega el backend al leer:
-   *  K-EXTREMO, HUECO-DOBLE y ESCALA-LIGAS (ligas distintas: el nivel no compara entre bases). */
+   *  K-EXTREMO, HUECO-DOBLE, ESCALA-LIGAS (ligas distintas: el nivel no compara entre bases), F1-DECISIVO-FUERA y DTP-REHACER. */
   codigo: string
   /** `ambos` = toca a los dos equipos (vocabulario del protocolo EFE). */
   equipo: 'a' | 'b' | 'ambos' | 'global'
@@ -1223,6 +1223,13 @@ export interface ReventonLadoDTO {
 /** El TDE de UN equipo. `ie`/`ise` son el NÚMERO; `ieNivel`/`iseNivel` la ETIQUETA
  *  que pone el skill (el backend no inventa umbrales para una escala que vive en otro
  *  lado). '' = píntalo en neutro. Un número en el nivel lo rechaza el backend. */
+export interface RamaReasignacion {
+  /** el valor que tomaría SOB1 en esa rama */
+  sob1: 0 | 0.5 | 1 | null
+  tipologia: string
+  nota: string
+}
+
 export interface BloqueTde {
   ie?: number | null
   ieNivel?: Semaforo | ''
@@ -1234,6 +1241,9 @@ export interface BloqueTde {
   disciplina43?: boolean
   vias?: { nombre: string; indice: number; ventana: string; detalle: string }[]
   falsador?: string
+  /** Disciplina 44 como campo: qué le pasa a las vías de este equipo si marca
+   *  primero y si recibe primero. Obligatoria en PRE. */
+  reasignacion?: { siMarcaPrimero?: RamaReasignacion; siRecibePrimero?: RamaReasignacion }
   /** Los 0/0.5/1 que mandó quien analiza. Si llegan, el índice lo calcula el backend. */
   indicadores?: Record<string, number>
   /** El índice CALCULADO, con sus compuertas declaradas. Ver backend/analisis/tde.py. */
@@ -1297,6 +1307,9 @@ export interface LadoVeredicto {
   leccion: string
   skill: string
   reglaTocada: string
+  /** Las lecciones después de la primera: cada una es un item del inventario
+   *  (clave `fixture:lado:2`, `:3`…) y hereda el veredicto del lado. */
+  otrasLecciones?: { skill: string; reglaTocada: string; leccion: string; queP: string }[]
 }
 
 /** Lo que la base responde sola. Se recalcula al leer: no se sella. */
@@ -1327,6 +1340,17 @@ export interface VeredictoObjetivo {
       /** null = no se pudo comprobar (sin ficha de eventos o sin ventana legible). */
       golEnVentana: boolean | null
       goles?: { minuto: number; lado: 'a' | 'b'; jugador: string }[]
+      /** false = hubo una roja antes del gol de la ventana: no se cobra. */
+      cobrable?: boolean | null
+      /** Qué rama de la reasignación jugó el partido (quién marcó primero) y si
+       *  estaba declarada. Observación, no acierto. */
+      reasignacion?: {
+        rama: 'siMarcaPrimero' | 'siRecibePrimero' | 'sinGoles' | null
+        minuto?: number | null
+        declarada: boolean
+        loDeclarado?: RamaReasignacion | null
+        nota: string
+      }
       nota: string
     }[]
   }
@@ -1626,7 +1650,10 @@ export interface PartePendienteDTO {
 /** Fase C del bucle de aprendizaje (docs/APRENDIZAJE.md). El CONTENIDO de la
  *  lección se deriva del veredicto al leer; solo el estado se guarda aparte. */
 export interface LeccionItem {
+  /** `fixture:lado` la principal; `fixture:lado:N` las de `otrasLecciones`. */
   clave: string
+  /** 1 = la lección principal del lado; 2+ = otrasLecciones. */
+  orden?: number
   fixtureId: number
   lado: 'a' | 'b'
   equipo: string
@@ -1789,7 +1816,17 @@ export interface DtpBloque {
     m5: { planFuncionoHastaMin: number | null; peligroReal: string; cronologiaGiro: string; contraste: { aciertos: string[]; fallos: string[] }; preguntaChecklistFallida: string }
     mecanismoAbierto: { activo: boolean; mecanismo: string; lineaRepite: boolean | null; correccionEnVivo: boolean | null }
   }
-  calculado?: { bloqueRival: ClaseBloqueDTO }
+  calculado?: {
+    bloqueRival: ClaseBloqueDTO
+    /** Solo con el once oficial en la ficha: si contradice la apertura. */
+    contraElOnce?: {
+      rehacer: boolean
+      motivos: string[]
+      sistemaDeclarado: string
+      sistemaOficial: string
+      ausentesDeLaReferencia: string[]
+    }
+  }
 }
 
 export interface DtpParte {

@@ -2621,6 +2621,8 @@ class LadoVeredictoBody(BaseModel):
     leccion: str = ""
     skill: str = ""              # a qué skill le toca la lección
     reglaTocada: str = ""
+    # las lecciones después de la primera: [{skill, reglaTocada, leccion, queP}]
+    otrasLecciones: list = []
 
 
 class VeredictoBody(BaseModel):
@@ -2650,6 +2652,19 @@ def cowork_dtp(fixture_id: int):
     0 tokens, 0 requests. No es el DTP: el juicio lo escribe quien analiza."""
     from backend.analisis import dtp_cowork
     d = dtp_cowork.ficha(fixture_id)
+    if not d:
+        raise HTTPException(404, f"el fixture {fixture_id} no está en nuestra base")
+    return d
+
+
+@app.get(API + "/analisis/cowork/f1/{fixture_id}")
+def cowork_f1(fixture_id: int):
+    """La tabla F1 armada desde la base: por lado, los candidatos con su
+    `jugadorId`, zona, rol SUGERIDO por minutos y los `decisivo` que no pueden
+    faltar (los que, si faltan, disparan F1-DECISIVO-FUERA en el parte).
+    0 tokens, 0 requests: sale de la plantilla ya ingestada."""
+    from backend.analisis import f1_base
+    d = f1_base.tabla(fixture_id)
     if not d:
         raise HTTPException(404, f"el fixture {fixture_id} no está en nuestra base")
     return d

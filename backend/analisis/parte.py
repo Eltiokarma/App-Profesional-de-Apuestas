@@ -38,6 +38,7 @@ from backend.analisis import bloque_f, db as efedb, veredicto as vered
 from backend.analisis import coherencia as _coherencia
 from backend.analisis import modo_fallo as _modo_fallo
 from backend.analisis import dtp_cowork as _dtp
+from backend.analisis import f1_base as _f1_base
 from backend.nombres import canonizar, normalizar
 
 VERSION = "cowork/1"
@@ -1058,6 +1059,58 @@ def _via_tde(v, rechazos: list, donde: str) -> dict | None:
             "ventana": _txt(v.get("ventana")), "detalle": _txt(v.get("detalle"))}
 
 
+RAMAS_REASIGNACION = ("siMarcaPrimero", "siRecibePrimero")
+_CLAVES_RAMA = {"sob1", "tipologia", "nota"}
+
+
+def _reasignacion(x, rechazos: list, donde: str) -> dict:
+    """La disciplina 44 del TDE como CAMPO: qué le pasa a las vías de ESTE
+    equipo si marca primero y si recibe primero.
+
+    Se escribía en prosa y en la autopsia del 11/10/2026 faltó en unos once
+    lados de 48; donde estaba escrita, funcionó (Inter, Guaraní, Racing). En
+    prosa no se puede contar si está ni cobrar al cerrar cuál de las dos ramas
+    jugó el partido: como campo, el veredicto dice qué rama se dio y si estaba
+    declarada (`objetivo.tde.bloques[].reasignacion`)."""
+    if x is None or x == {}:
+        return {}
+    if not isinstance(x, dict):
+        rechazos.append({"donde": donde, "porque": f"`reasignacion` tiene que ser un objeto, llegó {type(x).__name__}",
+                         "esperado": '{"siMarcaPrimero": {"sob1": 0, "tipologia": "…", "nota": "…"}, '
+                                     '"siRecibePrimero": {"sob1": 1, …}}'})
+        return {}
+    fuera = {}
+    for clave in x:
+        if clave not in RAMAS_REASIGNACION:
+            rechazos.append({"donde": f"{donde}.{clave}", "porque": f"rama desconocida {clave!r}: no se guardó",
+                             "esperado": " · ".join(RAMAS_REASIGNACION)})
+    for rama in RAMAS_REASIGNACION:
+        r = x.get(rama)
+        if r is None:
+            continue
+        if isinstance(r, str):          # una línea suelta se acepta como nota
+            r = {"nota": r}
+        if not isinstance(r, dict):
+            rechazos.append({"donde": f"{donde}.{rama}", "porque": f"tiene que ser un objeto, llegó {type(r).__name__}",
+                             "esperado": '{"sob1": 0 | 0.5 | 1, "tipologia": "…", "nota": "…"}'})
+            continue
+        sob1 = r.get("sob1")
+        if sob1 is not None:
+            try:
+                sob1 = float(sob1)
+            except (TypeError, ValueError):
+                sob1 = None
+            if sob1 not in (0.0, 0.5, 1.0):
+                rechazos.append({"donde": f"{donde}.{rama}.sob1", "porque": f"llegó {r.get('sob1')!r}: no se guardó",
+                                 "esperado": "0 · 0.5 · 1 (el valor que tomaría SOB1 en esa rama)"})
+                sob1 = None
+        rama_ok = {"sob1": sob1, "tipologia": _txt(r.get("tipologia")), "nota": _txt(r.get("nota"))}
+        if rama_ok["sob1"] is None and not rama_ok["tipologia"] and not rama_ok["nota"]:
+            continue
+        fuera[rama] = rama_ok
+    return fuera
+
+
 def _bloque_tde(x, rechazos: list, donde: str, lado: str = "") -> dict:
     """El TDE de UN equipo: los dos índices, su ventana y su causa.
 
@@ -1160,6 +1213,7 @@ def _bloque_tde(x, rechazos: list, donde: str, lado: str = "") -> dict:
         "disciplina43": disciplina,
         "vias": vias,
         "falsador": _txt(x.get("falsador")),
+        "reasignacion": _reasignacion(x.get("reasignacion"), rechazos, f"{donde}.reasignacion"),
     }
 
 
@@ -1285,7 +1339,8 @@ _CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto", "ligas", "dtBa
 # F3 y las de DT las pone la lectura a partir de la base y del propio parte;
 # si el eco del GET vuelve con ellas, se descartan sin rechazo (se van a
 # recalcular igual) en vez de guardarse por duplicado.
-_ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "HERENCIA-DTP", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT"}
+_ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "HERENCIA-DTP", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT",
+                        "F1-DECISIVO-FUERA", "DTP-REHACER"}
 # LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
 # selladas (coherencia_json), porque no son deterministas y rehacerlas al leer
 # las haría parpadear. Del depósito se descartan igual que las calculadas
@@ -1564,6 +1619,7 @@ def guardar(payload: dict) -> dict:
                 # las vías (ECHADA / SOBREEXPOSICIÓN) se perdían en silencio en
                 # un re-depósito que mandaba el TDE sin ellas (Cowork, 23/09)
                 "viasTde": sum(len(b.get("vias") or []) for b in bloques_tde(p_.get("tde") or {})),
+                "reasignacionesTde": sum(len(b.get("reasignacion") or {}) for b in bloques_tde(p_.get("tde") or {})),
                 # `cadena[lado]` es el texto del pronóstico, pero también se
                 # acepta `{"pronostico": "…"}`: las dos formas se cuentan igual
                 "pronosticosDeCadena": sum(1 for l in LADOS if _pron_cadena((p_.get("cadena") or {}).get(l))),
@@ -1608,6 +1664,18 @@ def guardar(payload: dict) -> dict:
             "costara": f"solo se comprueba la ventana del lado {tde_bloques[0]['equipo']!r}: "
                        "del otro no queda nada medible",
             "comoSeArregla": 'mandá los dos: {"bloques": [{"equipo": "a", …}, {"equipo": "b", …}]}',
+        })
+    # LA REASIGNACIÓN POR PRIMER GOL (disciplina 44) es obligatoria en PRE y
+    # se cobra al cerrar: el veredicto dice qué rama jugó el partido
+    sin_reasig = [b.get("equipo") or "?" for b in tde_bloques
+                  if len(b.get("reasignacion") or {}) < len(RAMAS_REASIGNACION)]
+    if tde_bloques and sin_reasig:
+        faltan.append({
+            "bloque": "tde.reasignacion",
+            "costara": f"lado(s) {', '.join(sin_reasig)} sin las dos ramas: al cerrar, el veredicto "
+                       "va a decir qué equipo marcó primero y no habrá nada declarado contra qué comprobarlo",
+            "comoSeArregla": 'en cada bloque: "reasignacion": {"siMarcaPrimero": {"sob1": …, "tipologia": "…"}, '
+                             '"siRecibePrimero": {…}} (disciplina 44)',
         })
     pron = parte.get("pronostico") or {}
     # el normalizador siempre deja las tres claves, así que "vacío" es que
@@ -2050,6 +2118,12 @@ def dto(fixture_id: int) -> dict | None:
     # parte lo dice antes de que alguien lea los dos números uno contra otro
     alertas.extend(alerta_escala(fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     alertas.extend(alertas_dt(parte, fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
+    # un decisivo de la base que no está en la tabla F1 no pesa en el IP
+    alertas.extend(_f1_base.alertas(parte, fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
+    # el once oficial contra la apertura del DTP: si no cuadra, el M2 se
+    # escribió sobre otro equipo
+    dtp_leido = _dtp.leer_dtp(parte.get("dtp") or {}, _dtp.oficial_de(fila["fixture_id"]))
+    alertas.extend(_dtp.alertas_rehacer(dtp_leido, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # las de coherencia se LEEN, no se rehacen (ver _ALERTAS_CAPTURADAS)
     coherencia = json.loads(fila["coherencia_json"]) if fila["coherencia_json"] else None
     alertas.extend(_coherencia.alertas_de(coherencia))
@@ -2075,7 +2149,7 @@ def dto(fixture_id: int) -> dict | None:
         # la lectura de Cowork + el reventón CALCULADO al leer, uno por lado
         "lecturaSad": {**(parte.get("lecturaSad") or _lectura_sad({})), "reventonCalculado": reventon},
         "tde": tde_calc,
-        "dtp": _dtp.leer_dtp(parte.get("dtp") or {}),
+        "dtp": dtp_leido,
         "timeline": timeline,
         "pronostico": parte["pronostico"],
         "documentos": parte["documentos"],
@@ -2386,14 +2460,52 @@ def resolver_desde_ficha(fixture_id: int) -> dict:
 
 # ── el veredicto: 12 h después (fase B de docs/APRENDIZAJE.md) ─────────────
 
-def _lado_veredicto(x) -> dict | None:
+OTRAS_LECCIONES_MAX = 6
+
+
+def _otras_lecciones(v, rechazos: list, donde: str) -> list[dict]:
+    """Las lecciones de un lado después de la primera.
+
+    UNA AUTOPSIA ENSEÑA MÁS DE UNA COSA. Cusco–Cristal (11/10/2026) tocó la
+    disciplina 16 del TDE, el COLAPSO EN CASCADA del EFE y el mapa de duelos
+    del DTP, y el veredicto tenía lugar para una: las otras dos quedaron en
+    `notas`, que el inventario no lee. Cada una es un item con su skill y su
+    regla, y se acumula como cualquier otra lección (clave `fixture:lado:n`)."""
+    if v is None:
+        return []
+    if not isinstance(v, list):
+        rechazos.append({"donde": donde, "porque": f"`otrasLecciones` tiene que ser una lista, llegó {type(v).__name__}",
+                         "esperado": '[{"skill": "…", "reglaTocada": "…", "leccion": "…"}]'})
+        return []
+    fuera = []
+    for i, x in enumerate(v):
+        if not isinstance(x, dict) or not _txt(x.get("leccion")) or not _txt(x.get("skill")):
+            rechazos.append({"donde": f"{donde}[{i}]", "porque": "una lección necesita `skill` y `leccion`: no se guardó",
+                             "esperado": '{"skill": "efe-clasificador", "reglaTocada": "…", "leccion": "…"}'})
+            continue
+        fuera.append({"skill": _txt(x.get("skill")), "reglaTocada": _txt(x.get("reglaTocada")),
+                      "leccion": _txt(x.get("leccion")), "queP": _txt(x.get("queP"))})
+    if len(fuera) > OTRAS_LECCIONES_MAX:
+        rechazos.append({"donde": donde, "porque": f"llegaron {len(fuera)}: se guardan las primeras "
+                                                   f"{OTRAS_LECCIONES_MAX}",
+                         "esperado": "las que tocan una regla; el resto va en `notas`"})
+        fuera = fuera[:OTRAS_LECCIONES_MAX]
+    return fuera
+
+
+def _lado_veredicto(x, rechazos: list | None = None, donde: str = "porLado") -> dict | None:
     if not isinstance(x, dict):
         return None
     v = _txt(x.get("veredicto")).lower()
     if v not in vered.VEREDICTOS:
         return None
-    return {"veredicto": v, "queP": _txt(x.get("queP")), "leccion": _txt(x.get("leccion")),
-            "skill": _txt(x.get("skill")), "reglaTocada": _txt(x.get("reglaTocada"))}
+    out = {"veredicto": v, "queP": _txt(x.get("queP")), "leccion": _txt(x.get("leccion")),
+           "skill": _txt(x.get("skill")), "reglaTocada": _txt(x.get("reglaTocada"))}
+    otras = _otras_lecciones(x.get("otrasLecciones"), rechazos if rechazos is not None else [],
+                             f"{donde}.otrasLecciones")
+    if otras:
+        out["otrasLecciones"] = otras
+    return out
 
 
 def guardar_veredicto(fixture_id: int, payload: dict) -> dict:
@@ -2435,8 +2547,9 @@ def guardar_veredicto(fixture_id: int, payload: dict) -> dict:
             "volvé cuando el fixture figure terminado en nuestra base")
 
     por_lado = {}
+    rechazos: list[dict] = []
     for l in LADOS:
-        v = _lado_veredicto((payload.get("porLado") or {}).get(l))
+        v = _lado_veredicto((payload.get("porLado") or {}).get(l), rechazos, f"porLado.{l}")
         if v:
             por_lado[l] = v
     if not por_lado:
@@ -2470,7 +2583,6 @@ def guardar_veredicto(fixture_id: int, payload: dict) -> dict:
     # solo se puede encontrar leyendo no se encuentra nunca, y la duda vuelve
     # entera dentro de seis meses cuando nadie se acuerde del caso.
     mancha = _txt(payload.get("mancha"))
-    rechazos: list[dict] = []
     _claves_raras(payload, _CLAVES_VEREDICTO | _ECO_VEREDICTO, rechazos, "(veredicto)")
     guardado = {
         "seleccion": seleccion,

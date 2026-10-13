@@ -895,6 +895,13 @@ Escribís vos (es juicio, no se puede calcular):
   prensa escriben distinto al mismo jugador («J. Cerro» es Joshua Cantt, «Cris
   Silva» es Cristiano) y por nombre ese cruce no se puede hacer. Un jugador que
   no está en la plantilla de la base va sin id y se cruza por nombre.
+  **Arrancá de `GET /analisis/cowork/f1/{fixtureId}`**: trae, por lado, los
+  candidatos de la base con su `jugadorId`, zona, `rolSugerido` (por minutos)
+  y los `decisivo` —titulares habituales y top 3 en goles+asistencias—. El
+  rol lo confirmás con la prensa (un DT nuevo, una lesión larga); lo que NO
+  se hace es dejar fuera a un decisivo: el 11/10 faltaron al menos 14, y un
+  jugador fuera de la tabla no pesa en el IP. Si falta, el parte lo grita como
+  `F1-DECISIVO-FUERA`.
 - Las bajas y sanciones ya públicas, en `fuera`, con su motivo y su fuente. Y
   a esos mismos jugadores, TAMBIÉN en `plantel` con su zona y su rol: una baja
   que no está en la tabla F1 no pesa en el Impacto Ponderado.
@@ -1132,8 +1139,19 @@ el pantallazo es el procedimiento.
 
 - Regla dura (Disciplina 35): el bloque F no se puntúa sin XI confirmado.
   No lo rellenes con el plantel. No lo estimes.
-- Vos preparás la tabla F1 (14-16 jugadores con zona, rol y apps) y las bajas
-  públicas. Eso es todo lo que tiene que existir esta noche.
+- Vos preparás la tabla F1 (14-16 jugadores con zona, rol y apps, desde
+  `GET /analisis/cowork/f1/{id}`) y las bajas públicas. Eso es todo lo que
+  tiene que existir esta noche.
+- **`reasignacion` en cada bloque del TDE (disciplina 44, obligatoria en PRE)**:
+  qué valor toma `SOB1` y si cambia el tipo modal si ESTE equipo marca
+  primero y si recibe primero. En prosa faltó en ~11 lados de 48 el 11/10 y
+  donde estaba escrita funcionó; ahora es campo, el recibo avisa en `faltan`
+  si está a medias y el veredicto dice qué rama jugó el partido.
+- **Cuando salga el once oficial, mirá `DTP-REHACER`**: si el sistema o el XI
+  de referencia de tu apertura no son los que salieron (9 de 24 el 11/10), el
+  mapa de duelos se escribió sobre otro equipo. Antes del pitazo: rehacé M1/M2
+  y re-depositá. Después: en la autopsia, es una apertura caída, no un fallo
+  del mecanismo.
 - Las dos ramas del impacto (piso y techo) las calcula la app con los pesos
   del protocolo. NO las escribas.
 - La marca "XI NO CONFIRMADO" la pinta la app sola mientras el parte esté en
@@ -1199,14 +1217,21 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
        "disciplina43": false,
        "vias": [{"nombre": "ECHADA", "indice": 5.8, "ventana": "75-90'",
                  "detalle": "el bloque baja diez metros tras el primer gol en contra"}],
-       "falsador": "si sostiene la línea por encima de su área tras el 75', el índice está mal"},
+       "falsador": "si sostiene la línea por encima de su área tras el 75', el índice está mal",
+       "reasignacion": {
+         "siMarcaPrimero": {"sob1": 0, "tipologia": "ECHADA-VOL",
+                            "nota": "administra: la ventana cuenta desde el minuto del gol"},
+         "siRecibePrimero": {"sob1": 1, "tipologia": "SOBREEXPOSICION",
+                             "nota": "persigue con los laterales arriba"}}},
       {"equipo": "a",
        "indicadores": {"…los mismos 19 indicadores, puntuados para ESTE equipo…": 0},
        "ieNivel": "verde", "iseNivel": "ambar",
        "tipologia": "sobreexposición por urgencia", "ventana": "60-75'",
        "vias": [{"nombre": "SOBREEXPOSICION", "indice": 4.7, "ventana": "60-75'",
                  "detalle": "adelanta los dos laterales con el marcador abierto"}],
-       "falsador": "si conserva los laterales por detrás de la línea de balón"}
+       "falsador": "si conserva los laterales por detrás de la línea de balón",
+       "reasignacion": {"siMarcaPrimero": {"sob1": 0, "nota": "deja de perseguir"},
+                        "siRecibePrimero": {"sob1": 1, "nota": "sigue igual, más urgido"}}}
     ]
   },
   "timelineEventos": [
@@ -1521,7 +1546,10 @@ Vas a cerrar los casos que quedaron abiertos. No analices nada nuevo.
              "queP": "aguantó el tramo final que se le daba por perdido",
              "leccion": "el bloque bajo entrenado sostiene los 90: no asumir vida útil corta sin dato",
              "skill": "teorema-del-echado",
-             "reglaTocada": "escala de P(echada)"}
+             "reglaTocada": "escala de P(echada)",
+             "otrasLecciones": [
+               {"skill": "efe-clasificador", "reglaTocada": "COLAPSO EN CASCADA",
+                "leccion": "con el favorito administrando la ventaja, el colapso no llegó"}]}
      }
    }
 
@@ -1562,6 +1590,12 @@ lección sea de un skill: sin él la lección queda en `sinSkill`, aparte, y no
 cuenta para nada. `reglaTocada` solo si podés nombrar la regla concreta
 ("bloque F · indicador F2", "ventana de 15 minutos") — si no sale del propio
 texto de la lección, dejala vacía antes que inventarla.
+
+UNA AUTOPSIA PUEDE TOCAR VARIOS SKILLS: la primera lección va en `leccion`; las
+demás en `otrasLecciones` (hasta 6, cada una con `skill` y `leccion`
+obligatorios). Cada una es un item propio en Aprendizaje (`fixture:lado:2`…)
+y cuenta para la revisión de SU skill. No las metas en `notas`: ahí no las lee
+nadie. El lado sigue siendo UN veredicto: las extras heredan el suyo.
 
 Lo que la lección puede llegar a mover depende de la población, y eso lo
 calcula la app: un caso `ciega`+`PRE` puede sostener un cambio de peso; uno
