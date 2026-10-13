@@ -126,54 +126,68 @@ def _items_de(caso: dict, estados: dict) -> list[dict]:
         lv = (v.get("porLado") or {}).get(lado)
         if not lv:
             continue
-        leccion = (lv.get("leccion") or "").strip()
-        if not leccion:
-            continue   # sin lección no hay nada que acumular: el veredicto ya está en el parte
-        clave = f"{caso['fixtureId']}:{lado}"
-        st = estados.get(clave) or {}
         propio = caso["equipoA"] if lado == "a" else caso["equipoB"]
         rival = caso["equipoB"] if lado == "a" else caso["equipoA"]
-        mf = ((caso.get("modoFallo") or {}).get("lados") or {}).get(lado) or {}
-        fuera.append({
-            "clave": clave,
-            "fixtureId": caso["fixtureId"], "lado": lado,
-            # LA ETIQUETA DE JEV (backend/analisis/modo_fallo.py): de qué
-            # naturaleza fue el fallo y si la lección pide mover un número.
-            # Sellada al cerrar el caso; None = sin clave, sin confianza o
-            # cerrado antes de que existiera. No entra en ninguna métrica.
-            "modoFallo": mf.get("modo"),
-            "modoFalloConfianza": mf.get("modoConfianza"),
-            "proponeMoverNumero": mf.get("proponeMoverNumero"),
-            "equipo": propio, "rival": rival,
-            "partido": f"{caso['equipoA']} vs {caso['equipoB']}",
-            "fecha": caso["fecha"],
-            "skill": (lv.get("skill") or "").strip(),
-            "veredicto": lv.get("veredicto", ""),
-            "queP": lv.get("queP", ""),
-            "leccion": leccion,
-            "reglaTocada": (lv.get("reglaTocada") or "").strip(),
-            "seleccion": seleccion, "modoEvaluacion": modo, "acredita": acredita,
-            "mancha": v.get("mancha", ""),
-            "cohorte": caso.get("cohorte", ""),
-            "cuarentena": (caso.get("cuarentena") or {}).get("motivo", "") if caso.get("cuarentena") else "",
-            "cuarentenaAutomatica": bool((caso.get("cuarentena") or {}).get("automatica")),
-            # por qué lado y con qué nombres saltó la automática por DT: es lo que
-            # el usuario desmiente cuando el banco de la API es el equivocado
-            "dtEquivocado": (caso.get("cuarentena") or {}).get("dtEquivocado") or [],
-            # LA DISTINCIÓN QUE EL DOSSIER NO PUEDE DEJAR AL CRITERIO DEL DÍA:
-            # un caso contaminado enseña, pero no mueve un número. Uno en
-            # cuarentena ni siquiera enseña: su insumo estaba roto.
-            "puedeMoverNumeros": acredita and not caso.get("cuarentena"),
-            "queAutoriza": ("en cuarentena: no cuenta ni fija rúbrica" if caso.get("cuarentena") else
-                            "puede sostener un cambio de peso" if acredita else
-                            "solo fija rúbrica: aclara cómo se aplica una regla, "
-                            "no mueve ningún número"),
-            "estado": st.get("estado") or "pendiente",
-            "aplicadaEn": st.get("aplicada_en") or "",
-            "nota": st.get("nota") or "",
-            "actualizadoEn": st.get("actualizado_en") or "",
-        })
+        mf_lado = ((caso.get("modoFallo") or {}).get("lados") or {}).get(lado) or {}
+        # la primera lección conserva su clave de siempre (`fixture:lado`, con
+        # su estado guardado); las siguientes son `fixture:lado:2`, `:3`…
+        # La etiqueta de Jev se selló sobre la PRIMERA: las otras van sin ella.
+        candidatas = [(f"{caso['fixtureId']}:{lado}", lv, mf_lado, 1)]
+        candidatas += [(f"{caso['fixtureId']}:{lado}:{i}", {**o, "veredicto": lv.get("veredicto", "")}, {}, i)
+                       for i, o in enumerate(lv.get("otrasLecciones") or [], start=2)]
+        for clave, lx, mf, orden in candidatas:
+            item = _item(caso, lado, clave, lx, mf, orden, propio, rival, estados,
+                         seleccion, modo, acredita, v)
+            if item:
+                fuera.append(item)
     return fuera
+
+
+def _item(caso, lado, clave, lv, mf, orden, propio, rival, estados, seleccion, modo, acredita, v) -> dict | None:
+    leccion = (lv.get("leccion") or "").strip()
+    if not leccion:
+        return None   # sin lección no hay nada que acumular: el veredicto ya está en el parte
+    st = estados.get(clave) or {}
+    return {
+        "clave": clave,
+        "orden": orden,
+        "fixtureId": caso["fixtureId"], "lado": lado,
+        # LA ETIQUETA DE JEV (backend/analisis/modo_fallo.py): de qué
+        # naturaleza fue el fallo y si la lección pide mover un número.
+        # Sellada al cerrar el caso; None = sin clave, sin confianza o
+        # cerrado antes de que existiera. No entra en ninguna métrica.
+        "modoFallo": mf.get("modo"),
+        "modoFalloConfianza": mf.get("modoConfianza"),
+        "proponeMoverNumero": mf.get("proponeMoverNumero"),
+        "equipo": propio, "rival": rival,
+        "partido": f"{caso['equipoA']} vs {caso['equipoB']}",
+        "fecha": caso["fecha"],
+        "skill": (lv.get("skill") or "").strip(),
+        "veredicto": lv.get("veredicto", ""),
+        "queP": lv.get("queP", ""),
+        "leccion": leccion,
+        "reglaTocada": (lv.get("reglaTocada") or "").strip(),
+        "seleccion": seleccion, "modoEvaluacion": modo, "acredita": acredita,
+        "mancha": v.get("mancha", ""),
+        "cohorte": caso.get("cohorte", ""),
+        "cuarentena": (caso.get("cuarentena") or {}).get("motivo", "") if caso.get("cuarentena") else "",
+        "cuarentenaAutomatica": bool((caso.get("cuarentena") or {}).get("automatica")),
+        # por qué lado y con qué nombres saltó la automática por DT: es lo que
+        # el usuario desmiente cuando el banco de la API es el equivocado
+        "dtEquivocado": (caso.get("cuarentena") or {}).get("dtEquivocado") or [],
+        # LA DISTINCIÓN QUE EL DOSSIER NO PUEDE DEJAR AL CRITERIO DEL DÍA:
+        # un caso contaminado enseña, pero no mueve un número. Uno en
+        # cuarentena ni siquiera enseña: su insumo estaba roto.
+        "puedeMoverNumeros": acredita and not caso.get("cuarentena"),
+        "queAutoriza": ("en cuarentena: no cuenta ni fija rúbrica" if caso.get("cuarentena") else
+                        "puede sostener un cambio de peso" if acredita else
+                        "solo fija rúbrica: aclara cómo se aplica una regla, "
+                        "no mueve ningún número"),
+        "estado": st.get("estado") or "pendiente",
+        "aplicadaEn": st.get("aplicada_en") or "",
+        "nota": st.get("nota") or "",
+        "actualizadoEn": st.get("actualizado_en") or "",
+    }
 
 
 def _metricas(casos: list[dict]) -> tuple[dict, dict]:
@@ -444,7 +458,8 @@ def _por_modo_fallo(items: list[dict]) -> dict:
     """Los fallos y parciales agrupados por la etiqueta de Jev, más la alarma
     del dossier: lecciones que piden mover un número y no pueden sostenerlo."""
     from backend.analisis.modo_fallo import MODOS
-    con_fallo = [i for i in items if i["veredicto"] in ("fallo", "parcial")]
+    # un lado fallado es UN fallo aunque deje varias lecciones: se cuenta la primera
+    con_fallo = [i for i in items if i["veredicto"] in ("fallo", "parcial") and i.get("orden", 1) == 1]
     conteo = {m: 0 for m in MODOS}
     sin_etiqueta = 0
     for i in con_fallo:

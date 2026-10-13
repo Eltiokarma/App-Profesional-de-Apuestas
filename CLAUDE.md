@@ -573,6 +573,18 @@ conversación se pierde en la siguiente.
    hora, la hora de agotado y el resumen de ayer; el latido lo trae en
    `presupuestoApi` y pasa a ámbar si el plan se agotó antes de las 22:00 UTC.
 
+10. **Las autopsias del 11/10/2026** (`docs/autopsias/2026-10-11.md`, 24
+   partidos cerrados con los skills) dejaron tres huecos de FORMATO, no de
+   juicio, y ahora son campos que se cobran solos: la reasignación por primer
+   gol del TDE (disciplina 44) va en `tde.bloques[].reasignacion` —el recibo
+   avisa si falta y el veredicto dice qué rama jugó el partido—; la tabla F1
+   se arma desde la base (`GET /analisis/cowork/f1/{id}`, `f1_base.py`) y un
+   decisivo que falta grita `F1-DECISIVO-FUERA`; y el once oficial contra la
+   apertura del DTP marca el bloque a rehacer (`contraElOnce`, `DTP-REHACER`).
+   Un lado del veredicto lleva varias lecciones (`otrasLecciones`, items
+   `fixture:lado:N`). Pendiente: cargar las lecciones de las autopsias en los
+   veredictos del 11/10 y que el usuario abra la revisión de cada skill.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel

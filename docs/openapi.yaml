@@ -904,6 +904,26 @@ paths:
             application/json:
               schema: { type: object, additionalProperties: true }
         '404': { description: el fixture no está en nuestra base }
+  /analisis/cowork/f1/{fixtureId}:
+    get:
+      summary: La tabla F1 del EFE armada desde la base (con jugadorId)
+      description: >
+        Por lado, los candidatos a la tabla F1 sacados de la plantilla ingestada (los 16
+        con más minutos más los decisivos que queden fuera): `jugadorId` —el cruce exacto
+        con la hoja del partido—, zona, `rolSugerido` por fracción de minutos (TF ≥ 75 %,
+        TH ≥ 50 %, ROT ≥ 25 %, SUP) y `decisivo` con su porqué (titular habitual o top 3
+        en goles+asistencias). El rol es SUGERIDO: lo confirma la prensa. Un decisivo que
+        no figura en la tabla depositada dispara `F1-DECISIVO-FUERA` en el parte. 0 tokens,
+        0 requests. Abierto a Cowork.
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '404': { description: el fixture no está en nuestra base }
   /analisis/cowork/tde/{fixtureId}:
     get:
       summary: Los insumos del Teorema del Echado que salen de NUESTRA base
@@ -1312,7 +1332,8 @@ components:
         Una lección: el contenido viene del veredicto (derivado al leer), el estado de su
         propia tabla. `clave` es `fixtureId:lado`.
       properties:
-        clave: { type: string, example: '1550964:a' }
+        clave: { type: string, example: '1550964:a', description: "`fixture:lado` la primera lección del lado; `fixture:lado:N` las de `otrasLecciones`" }
+        orden: { type: integer, description: '1 = la lección principal del lado; 2+ = otrasLecciones' }
         fixtureId: { type: integer }
         lado: { type: string, enum: [a, b] }
         equipo: { type: string }
@@ -2693,6 +2714,17 @@ components:
               ventana: { type: string }
               detalle: { type: string }
         falsador: { type: string }
+        reasignacion:
+          type: object
+          description: >
+            Disciplina 44 como CAMPO (obligatoria en PRE): qué le pasa a las vías de ESTE
+            equipo si marca primero y si recibe primero. Una rama suelta como texto se
+            guarda como `nota`; un `sob1` fuera de 0/0.5/1 o una rama desconocida se
+            rechazan con motivo. Sin las dos ramas, el recibo lo avisa en `faltan`
+            (`tde.reasignacion`) y el veredicto dice qué rama jugó el partido.
+          properties:
+            siMarcaPrimero: { $ref: '#/components/schemas/RamaReasignacion' }
+            siRecibePrimero: { $ref: '#/components/schemas/RamaReasignacion' }
         calculado:
           type: object
           description: 'el índice CALCULADO con sus compuertas (solo en la respuesta)'
@@ -2764,6 +2796,26 @@ components:
                       motivo: { type: string }
                       conteo: { type: object, additionalProperties: { type: integer } }
                       respuestas: { type: object, additionalProperties: { type: string } }
+                  contraElOnce:
+                    type: object
+                    description: >
+                      Solo cuando la ficha ya trae el once oficial del equipo foco (sin once, la
+                      clave no viaja: no es «cuadra»). `rehacer` si el sistema declarado en M1
+                      tiene otras cifras que la formación oficial, o si ≥ 3 titulares oficiales
+                      no figuran en `xiReferencia` (por apellido). Va también a la tira como
+                      `DTP-REHACER` (tipo dato). No reescribe la apertura.
+                    properties:
+                      rehacer: { type: boolean }
+                      motivos: { type: array, items: { type: string } }
+                      sistemaDeclarado: { type: string }
+                      sistemaOficial: { type: string }
+                      ausentesDeLaReferencia: { type: array, items: { type: string } }
+    RamaReasignacion:
+      type: object
+      properties:
+        sob1: { type: number, nullable: true, enum: [0, 0.5, 1, null], description: 'el valor que tomaría SOB1 en esa rama' }
+        tipologia: { type: string, description: 'el tipo modal en esa rama, si cambia' }
+        nota: { type: string }
     TdeParte:
       type: object
       description: >
@@ -2878,7 +2930,7 @@ components:
       type: object
       required: [codigo]
       properties:
-        codigo: { type: string, description: 'T.54, R-KT.2, GK-DOWNGRADE, F3… Las que agrega el backend al leer: K-EXTREMO (burbuja en su máximo), K-CERCA-EXTREMO (franja alta sin récord, tipo dato), HERENCIA-DTP (C1/SOB2 del TDE declarados distinto de lo que dice el DTP; manda el DTP), HUECO-DOBLE (EFE y TDE leídos del mismo vacío) y ESCALA-LIGAS (los dos equipos vienen de ligas distintas: el nivel no compara entre bases). Las CAPTURADAS al depositar por el guardrail de coherencia (Jev, docs/JEV.md): COHERENCIA-BLOQUE, COHERENCIA-1X2, COHERENCIA-MATCHUP, COHERENCIA-REVENTON — solo salen en la tira con SAD_JEV_COHERENCIA=alertas; en sombra viven en `coherencia`' }
+        codigo: { type: string, description: 'T.54, R-KT.2, GK-DOWNGRADE, F3… Las que agrega el backend al leer: K-EXTREMO (burbuja en su máximo), K-CERCA-EXTREMO (franja alta sin récord, tipo dato), HERENCIA-DTP (C1/SOB2 del TDE declarados distinto de lo que dice el DTP; manda el DTP), HUECO-DOBLE (EFE y TDE leídos del mismo vacío) ESCALA-LIGAS (los dos equipos vienen de ligas distintas: el nivel no compara entre bases), F1-DECISIVO-FUERA (un titular habitual o goleador de la base que no está en la tabla F1: no pesa en el IP) y DTP-REHACER (el once oficial contradice el sistema o el XI de referencia de la apertura del DTP). Las CAPTURADAS al depositar por el guardrail de coherencia (Jev, docs/JEV.md): COHERENCIA-BLOQUE, COHERENCIA-1X2, COHERENCIA-MATCHUP, COHERENCIA-REVENTON — solo salen en la tira con SAD_JEV_COHERENCIA=alertas; en sombra viven en `coherencia`' }
         equipo: { type: string, enum: [a, b, ambos, global] }
         tipo: { type: string, enum: [estructural, fecha, dato], description: '`dato` = la pone el backend sobre los datos, no el skill' }
         detalle: { type: string, description: '`texto` se acepta como alias' }
@@ -3518,6 +3570,22 @@ components:
         leccion: { type: string }
         skill: { type: string, description: 'a qué skill le toca la lección' }
         reglaTocada: { type: string }
+        otrasLecciones:
+          type: array
+          maxItems: 6
+          description: >
+            Las lecciones del lado después de la primera: una autopsia toca más de un skill.
+            Cada una necesita `skill` y `leccion` (si no, se rechaza con motivo) y es un
+            item propio del inventario con clave `fixture:lado:2`, `:3`…; hereda el
+            veredicto del lado y no lleva etiqueta de Jev (se sella sobre la primera).
+          items:
+            type: object
+            required: [skill, leccion]
+            properties:
+              skill: { type: string }
+              reglaTocada: { type: string }
+              leccion: { type: string }
+              queP: { type: string }
     VeredictoEntrada:
       type: object
       description: >
@@ -3632,6 +3700,21 @@ components:
                   comprobable: { type: boolean }
                   golEnVentana: { type: boolean, nullable: true }
                   goles: { type: array, items: { type: object, additionalProperties: true } }
+                  golesEnAnadido: { type: array, items: { type: object, additionalProperties: true } }
+                  rojasAntes: { type: array, items: { type: object, additionalProperties: true } }
+                  cobrable: { type: boolean, nullable: true, description: 'false = hubo una roja antes del gol de la ventana: no se cobra' }
+                  reasignacion:
+                    type: object
+                    description: >
+                      Qué rama de la reasignación (disciplina 44) jugó el partido para este
+                      equipo —quién marcó primero— y si estaba declarada. Observación, no
+                      acierto: la rama no es un pronóstico.
+                    properties:
+                      rama: { type: string, nullable: true, enum: [siMarcaPrimero, siRecibePrimero, sinGoles, null] }
+                      minuto: { type: integer, nullable: true }
+                      declarada: { type: boolean }
+                      loDeclarado: { $ref: '#/components/schemas/RamaReasignacion' }
+                      nota: { type: string }
                   nota: { type: string }
         evidencia:
           type: object
