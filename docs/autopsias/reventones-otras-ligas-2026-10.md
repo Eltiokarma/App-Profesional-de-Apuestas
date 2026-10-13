@@ -41,7 +41,7 @@ burbujas que no reventaron, nada de esto es probabilidad.
    Liga; en Europa son **los amistosos de pretemporada**, que inflan la K y
    el récord (Lazio 5 de 9, Madrid 3 de 6). La alerta de extremo sonó en los
    dos, pero «inflada». Ver *decisión pendiente*.
-3. **Balón parado y arquero** pesan más (5 de 9 entre principal y
+3. **Balón parado y arquero** pesan más (6 de 9 entre principal y
    secundario). El arquero —propio o rival— no tiene casillero previo en
    ninguna capa: candidato GK-FALLA-ACTIVA (Palmeiras, segundo caso) y su
    espejo (Valles, Medina).
