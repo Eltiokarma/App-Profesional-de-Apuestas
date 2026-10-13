@@ -2908,6 +2908,18 @@ def main():
     check("racha de copa y amistoso que revienta en liga: racha_en_otra_competicion; 2 de 3 de local: a contramano",
           _comp["senalesCalculadas"] == ["racha_en_otra_competicion", "condicion_a_contramano"]
           and _comp["enOtraCompeticion"] == 2 and _comp["partidos"][1]["amistoso"] is True, _comp)
+    check("en su propio estadio la visita es nominal: no hay condicion_a_contramano (clásico de estadio compartido)",
+          "condicion_a_contramano" not in rv.composicion(_racha, _fila, en_su_estadio=True)["senalesCalculadas"])
+    _fila_f = {"ligaId": 281, "condicion": "Local", "fecha": "2026-09-23T20:00:00Z"}
+    _conc = [{"fixtureId": 7, "fecha": "2026-08-30", "ligaId": 281, "condicion": "Local", "golesFavor": 3, "golesContra": 2},
+             {"fixtureId": 8, "fecha": "2026-09-01", "ligaId": 281, "condicion": "Local", "golesFavor": 4, "golesContra": 2}]
+    _prev = [{"fixtureId": 9, "fecha": "2026-09-17T23:00:00Z", "esInternacional": True, "golesFavor": 0, "golesContra": 3}]
+    _c2 = rv.composicion(_conc, _fila_f, _prev)["senalesCalculadas"]
+    check("racha de victorias concediendo en todos y derrota internacional 6 días antes: las dos señales salen solas",
+          "racha_concediendo" in _c2 and "derrota_internacional_reciente" in _c2, _c2)
+    check("una derrota internacional de hace 20 días ya no es resaca",
+          "derrota_internacional_reciente" not in rv.composicion(
+              _conc, _fila_f, [{**_prev[0], "fecha": "2026-09-01T23:00:00Z"}])["senalesCalculadas"])
     check("una racha de la misma liga y condición no levanta ninguna señal",
           rv.composicion(_racha[2:], _fila)["senalesCalculadas"] == [])
     check("«reventon» no es un skill: sus lecciones van a sad-analysis",

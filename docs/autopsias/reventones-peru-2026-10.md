@@ -44,3 +44,37 @@ candidatos; no mueve ningún número.
 
 - `/coachs` atrasado: Pellejero (Huancayo) desde marzo, la base dice julio;
   Orfila figuraba en el banco de Cusco cuando ya dirigía Rabanal.
+
+## Segunda tanda (8 estudios más, 17 en total)
+
+| Partido | Equipo · tipo | Mecanismo (secundario) | Señales previas |
+|---|---|---|---|
+| Cienciano 1-1 Los Chankas (30/09) | Cienciano · racha − | racha de otra competición (varianza) | rival inferior, riesgo muy alto, DT nuevo del rival |
+| FC Cajamarca 2-5 Cienciano (04/09) | Cienciano · racha − | superioridad del rival (el rival se sobreexpuso) | riesgo alto, cerca del extremo, rival en descenso, rotación |
+| Universitario 2-2 Comerciantes (05/09) | Universitario · racha + | balón parado (penal) | rival inferior · riesgo BAJO · la racha concedía 2 por partido |
+| UTC 1-1 ADT (08/08) | ADT · racha − | otro → regresión al nivel (varianza: penal al 90+15) | riesgo muy alto, cerca del extremo, DT nuevos, rival necesitado |
+| Cienciano 0-0 Garcilaso (16/08, clásico) | Garcilaso · racha + | penal fallado (superioridad del rival en el juego) | riesgo muy alto, cerca del extremo, DT interino, rival necesitado |
+| Torque 3-0 Cienciano (17/09, Sudamericana) | Cienciano · racha + | superioridad del rival (altura) | rival superior, riesgo muy alto, cerca del extremo, bajas |
+| ADT 2-1 Cienciano (23/09) | ADT · racha − | rotación/fatiga del rival (balón parado) | riesgo alto, cerca del extremo, DT nuevo, fatiga del rival |
+| Grau 3-1 UTC (18/07) | UTC · racha + | racha de otra competición | cerca del extremo, DT nuevo, rival necesitado · riesgo BAJO |
+
+### Lo nuevo de esta tanda
+
+1. **El riesgo alto/muy alto acertó en 6 de 8** (en la primera tanda el bajo
+   falló en 6 de 9): con los dos equipos de la misma liga y sin cambio de
+   competición, el riesgo calibrado funciona. Donde falla es donde no mira.
+2. **Dos burbujas enfrentadas** (3 casos: Chankas–Cienciano, UTC–ADT,
+   Cienciano–Garcilaso): el empate corta las dos. Pasa a señal CALCULADA
+   (`rival_tambien_en_burbuja`).
+3. **La resaca de una eliminación continental** (Cienciano tras Torque: perdió
+   con ADT y empató con Chankas en 13 días). Pasa a señal CALCULADA
+   (`derrota_internacional_reciente`, 10 días); candidato EFE «OBJETIVO-PERDIDO».
+4. **Racha de victorias que concede en todos los partidos** (Universitario):
+   frágil aunque el rival sea inferior. Señal CALCULADA (`racha_concediendo`).
+5. **Patrón de equipo**: Cienciano concede poco después de ponerse arriba o
+   igualar (Copa de la Liga con ADT, Sudamericana, Chankas) — candidato DTP de
+   MECANISMO-ABIERTO entre partidos, a confirmar con video.
+6. **«Condición a contramano» es nominal en un clásico de estadio compartido**:
+   ya no salta si el partido es en su propio estadio.
+7. **Mecanismo nuevo `regresion_al_nivel`** (pedido por dos estudios): la racha
+   corta se corta ante un rival de su nivel sin un hecho que lo explique.
