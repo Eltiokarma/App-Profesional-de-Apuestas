@@ -179,7 +179,9 @@ def composicion(racha: list[dict], fila: dict, previas: list[dict] | None = None
         senales.append("racha_en_otra_competicion")
     # en su propio estadio (Cienciano–Garcilaso comparten el Inca Garcilaso)
     # la visita es nominal: ni viaje ni altura (segunda tanda, 13/10/2026)
-    if len(contra) * 3 >= 2 * n and racha and not en_su_estadio:
+    # (solo cuenta si figura de VISITA: de local en su estadio es lo normal y la
+    # racha de visita a contramano sí pesa — Cristal 2-0 JP2, tercera tanda)
+    if len(contra) * 3 >= 2 * n and racha and not (en_su_estadio and fila.get("condicion") == "Visita"):
         senales.append("condicion_a_contramano")
     # una racha de victorias que concede en todos los partidos es frágil
     # (Universitario 3-2 y 4-2 antes del 2-2 con Comerciantes)

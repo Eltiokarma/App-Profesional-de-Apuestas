@@ -2910,6 +2910,10 @@ def main():
           and _comp["enOtraCompeticion"] == 2 and _comp["partidos"][1]["amistoso"] is True, _comp)
     check("en su propio estadio la visita es nominal: no hay condicion_a_contramano (clásico de estadio compartido)",
           "condicion_a_contramano" not in rv.composicion(_racha, _fila, en_su_estadio=True)["senalesCalculadas"])
+    _vis = [{**f, "condicion": "Visita"} for f in _racha]
+    check("de LOCAL en su estadio, una racha hecha de visita sí es a contramano (Cristal 2-0 JP2)",
+          "condicion_a_contramano" in rv.composicion(_vis, {"ligaId": 281, "condicion": "Local"},
+                                                     en_su_estadio=True)["senalesCalculadas"])
     _fila_f = {"ligaId": 281, "condicion": "Local", "fecha": "2026-09-23T20:00:00Z"}
     _conc = [{"fixtureId": 7, "fecha": "2026-08-30", "ligaId": 281, "condicion": "Local", "golesFavor": 3, "golesContra": 2},
              {"fixtureId": 8, "fecha": "2026-09-01", "ligaId": 281, "condicion": "Local", "golesFavor": 4, "golesContra": 2}]
