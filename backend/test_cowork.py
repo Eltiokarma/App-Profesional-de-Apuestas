@@ -2461,6 +2461,35 @@ def main():
           [a for a in g_f1b["alertas"] if a["codigo"] == "F1-DECISIVO-FUERA"])
     c.post(f"{A}/analisis/cowork", json=_parte(con_ficha))
 
+    # EL ROL SALE DE LOS ÚLTIMOS ONCES, NO DEL AÑO (Millonarios 13/10: el
+    # Clausura mezclado con el Apertura) y un titular reciente sin stats entra
+    import sqlite3 as _sq3
+    _tid = dbmod.query_one("sad", "SELECT home_team_id FROM fixtures WHERE id=?", (con_ficha,))["home_team_id"]
+    _fecha = dbmod.query_one("sad", "SELECT date FROM fixtures WHERE id=?", (con_ficha,))["date"]
+    _prev = [r["id"] for r in dbmod.query(
+        "sad", "SELECT id FROM fixtures WHERE (home_team_id=? OR away_team_id=?) AND date < ? "
+               "AND status_short='FT' ORDER BY date DESC LIMIT 6", (_tid, _tid, _fecha))]
+    _pl = [x["jugadorId"] for x in cand]
+    _ultimo = _pl[-1]   # el de menos minutos: en los onces recientes es titular siempre
+    with _sq3.connect(os.path.join(tmp, "sad.db")) as _con:
+        for _f in _prev:
+            for _pid in [_ultimo] + _pl[:9]:
+                _con.execute("INSERT OR REPLACE INTO alineaciones (fixture_id, team_id, player_id, jugador, posicion, titular) "
+                             "VALUES (?,?,?,?,?,1)", (_f, _tid, _pid, f"J{_pid}", "M"))
+            _con.execute("INSERT OR REPLACE INTO alineaciones (fixture_id, team_id, player_id, jugador, posicion, titular) "
+                         "VALUES (?,?,?,?,?,1)", (_f, _tid, 990001, "Fichaje Nuevo", "D"))
+    f1r = c.get(f"{A}/analisis/cowork/f1/{con_ficha}").json()["a"]
+    _por = {x["jugadorId"]: x for x in f1r["candidatos"]}
+    check("con ≥ 5 onces recientes el rol sale de ahí (no de los minutos del año)",
+          f1r["rolPor"].startswith("titularidades en los últimos 6")
+          and _por[_ultimo]["rolSugerido"] == "TF" and _por[_ultimo]["titularEnUltimos"] == "6/6"
+          and f1r["candidatos"][0]["titularEnUltimos"] == "6/6", f1r["candidatos"][:3])
+    check("y un titular reciente sin stats de temporada entra a la tabla",
+          _por.get(990001, {}).get("sinStatsDeTemporada") is True and _por[990001]["zona"] == "DEF",
+          _por.get(990001))
+    with _sq3.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute(f"DELETE FROM alineaciones WHERE fixture_id IN ({','.join('?' * len(_prev))})", _prev)
+
     from backend.analisis.parte import mismo_dt
     check("mismo_dt: apellido compuesto y abreviado casan; apellidos distintos no",
           mismo_dt("Hernán Torres Oliveros", "H. Torres") and mismo_dt("Mauricio Pellegrino", "M. Pellegrino")
