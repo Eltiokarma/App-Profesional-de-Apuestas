@@ -145,7 +145,7 @@ def _dias_entre(desde: str | None, hoy: str) -> int | None:
 
 # ── episodios ────────────────────────────────────────────────────────────────
 
-def _reventon(ep: dict, fila: dict) -> dict:
+def _reventon(ep: dict, fila: dict, termina: str) -> dict:
     return {
         "signo": "+" if ep["signo"] > 0 else "-",
         "partidos": ep["partidos"],
@@ -158,6 +158,10 @@ def _reventon(ep: dict, fila: dict) -> dict:
         "condicion": "L" if fila["condicion"] == "Local" else "V",
         "resultado": f"{fila['golesFavor']}-{fila['golesContra']}",
         "esInternacional": bool(fila.get("esInternacional")),
+        # CÓMO se cortó (14/10/2026): la K se REINICIÓ a 0 (empate) o pasó
+        # directo al otro signo (la racha + perdió, la − ganó). Para leer el
+        # partido no es lo mismo un equipo que primero empata que uno que se cae
+        "termina": termina,
     }
 
 
@@ -178,7 +182,7 @@ def episodios(filas: list[dict], familia: str) -> tuple[list[dict], dict | None,
         s = _signo(v)
         if s == 0:
             if ep:
-                cerrados.append(_reventon(ep, fila))
+                cerrados.append(_reventon(ep, fila, "cero"))
                 ep = None
             continue
         amistoso = 1 if fila.get("ligaId") in AMISTOSOS else 0
@@ -189,7 +193,7 @@ def episodios(filas: list[dict], familia: str) -> tuple[list[dict], dict | None,
             ep["k"] = v
             continue
         if ep:  # cambio de signo en el mismo partido: revienta y arranca la contraria
-            cerrados.append(_reventon(ep, fila))
+            cerrados.append(_reventon(ep, fila, "cambio"))
         ep = {"signo": s, "partidos": 1, "kPico": abs(v), "k": v, "desde": fila["fecha"], "amistosos": amistoso}
     return cerrados, ep, n_cond
 
@@ -206,6 +210,9 @@ def _historial(cerrados: list[dict]) -> dict:
             "kPico": _dist([r["kPico"] for r in de], 1),
             "partidos": _dist([float(r["partidos"]) for r in de], 1),
             "nivelRival": _dist([r["nivelRival"] for r in de], 10),
+            # cómo se cortaron: a 0 (empate) o al otro signo (resultado opuesto)
+            "termina": {"cero": sum(1 for r in de if r["termina"] == "cero"),
+                        "cambio": sum(1 for r in de if r["termina"] == "cambio")},
         }
     return out
 

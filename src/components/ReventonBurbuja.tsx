@@ -153,6 +153,7 @@ function FilaReventon({ r }: { r: ReventonDTO }) {
       <span title="nivel del rival que la reventó" style={{ color: 'var(--t3)' }}>rival {num(r.nivelRival, 2)}</span>
       <span title="K pico antes de reventar" style={{ color, fontWeight: 700 }}>{r.signo === '+' ? '+' : '−'}{fmtK(r.kPico)}</span>
       <span title="partidos que duró" style={{ color: 'var(--t3)', width: 28, textAlign: 'right' }}>{r.partidos} pj</span>
+      <span title={r.termina === 'cero' ? 'la K se reinició a 0 (empate)' : 'la K pasó directo al otro signo'} style={{ color: 'var(--t3)', width: 14, textAlign: 'center' }}>{r.termina === 'cero' ? '↺' : r.signo === '+' ? '↘' : '↗'}</span>
     </div>
   )
 }
@@ -282,6 +283,13 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
                     a los {num(base.partidos.mediana, 1)} partidos · rival {num(base.nivelRival.mediana, 2)}
                     {fam.posicion?.kSobreMediana != null && <> · hoy ×{num(fam.posicion.kSobreMediana, 2)}</>}
                   </div>
+                  {/* CÓMO SE CORTAN las de este signo: primero empata (K a 0) o se cae de golpe al otro signo */}
+                  {base.termina && (base.termina.cero + base.termina.cambio) > 0 && (
+                    <div style={{ font: '500 10px var(--mono)', color: 'var(--t2)', marginTop: 2 }}
+                      title="cómo se cortaron sus burbujas de este signo: la K se reinició a 0 (empate) o pasó directo al otro signo">
+                      se cortaron: {base.termina.cero} a cero · {base.termina.cambio} {signo === '+' ? 'a negativa' : 'a positiva'}
+                    </div>
+                  )}
                 </>
               ) : (
                 <div style={{ font: '600 11px var(--sans)', color: 'var(--t3)' }}>sin reventones previos de este signo</div>

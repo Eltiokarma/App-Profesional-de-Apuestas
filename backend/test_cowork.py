@@ -71,8 +71,8 @@ def _parte(fixture_id: int, nombre_a: str = "", nombre_b: str = "") -> dict:
             "datoEstructural": "Núcleo de A intacto",
             "paradoja": "El mejor EFE es el más dependiente de un hombre",
             "reventon": "A: muy alto, rival mucho más fuerte que su zona → no seguir la racha; B: bajo",
-            "espina": {"a": {"lectura": "buena", "porque": "rachas parejas de temporada en temporada, lejos de su tope"},
-                       "b": "mala"},
+            "espina": {"a": {"lectura": "positiva", "porque": "rachas parejas de temporada en temporada, lejos de su tope"},
+                       "b": "se reinicia"},
         },
         # el índice es POR EQUIPO: el parte modelo declara los dos
         "tde": {"bloques": [
@@ -2600,19 +2600,22 @@ def main():
     from backend.analisis.parte import _espina
     from backend.analisis.veredicto import espina_objetivo
     _rz = []
-    check("la espina entra por lado (objeto o palabra) y una lectura inventada se rechaza con motivo",
-          _espina({"a": {"lectura": "Buena", "porque": "x"}, "b": "regular"}, _rz) == {"a": {"lectura": "buena", "porque": "x"}}
+    check("la espina entra por lado (objeto o palabra, con las palabras del usuario) y una inventada se rechaza",
+          _espina({"a": {"lectura": "Crece", "porque": "x"}, "b": "buena"}, _rz) == {"a": {"lectura": "positiva", "porque": "x"}}
           and any(r["donde"] == "lecturaSad.espina.b.lectura" for r in _rz), (_rz,))
-    _eo = espina_objetivo({"a": {"lectura": "buena"}, "b": {"lectura": "mala"}}, "empate")
-    check("buena se cumple si no pierde y mala si pierde; un empate cumple la buena y no la mala",
-          _eo["a"]["cumplida"] is True and _eo["b"]["cumplida"] is False and _eo["b"]["resultado"] == "empata", _eo)
+    _eo = espina_objetivo({"a": {"lectura": "cero"}, "b": {"lectura": "positiva"}}, "empate")
+    check("un empate deja la K en 0: acierta «cero» y no «positiva»",
+          _eo["a"]["cumplida"] is True and _eo["b"]["cumplida"] is False and _eo["b"]["movimiento"] == "cero", _eo)
+    _ev = espina_objetivo({"a": {"lectura": "negativa"}, "b": {"lectura": "positiva"}}, "visita")
+    check("gana la visita: la K del local va a negativa y la del visitante crece",
+          _ev["a"]["cumplida"] is True and _ev["b"]["cumplida"] is True and _ev["a"]["movimiento"] == "negativa", _ev)
     _en = espina_objetivo({"a": {"lectura": "neutra"}}, "visita")
     check("neutra no se juzga, y un lado sin espina tampoco",
           _en["a"]["cumplida"] is None and _en["a"]["resultado"] == "pierde" and _en["b"]["lectura"] is None, _en)
     esm = inv["acreditables"]["espina"]
-    check("las lecciones miden si la espina separa (buena contra mala, con intervalo) y con pocos lados lo dicen",
-          set(esm) >= {"buena", "mala", "neutra", "separacion", "lectura"} and esm["lectura"] == "sin n"
-          and esm["buena"]["lados"] >= 1, esm)
+    check("las lecciones miden la espina contra la frecuencia de cada movimiento y con pocos lados lo dicen",
+          set(esm) >= {"positiva", "cero", "negativa", "neutra", "lectura"} and esm["lectura"] == "sin n"
+          and "frecuenciaDelMovimiento" in esm["positiva"], esm)
 
     rvm = inv["acreditables"]["reventon"]
     check("las métricas traen la tasa de reventón por nivel de riesgo con el rango del backtest al lado",

@@ -763,3 +763,24 @@ alrededor de un tercio de lo que sabe el mercado. Siguiente pregunta (sin
 rentabilidad): ¿el motor agrega algo SOBRE el mercado? Si no, toda su
 información ya está en la cuota y el valor del SAD tiene que salir del análisis
 del partido; si sí, hay información propia mal expresada.
+
+## 14. Cómo se corta: a cero o al otro signo (14/10/2026)
+
+La K total de un equipo, después de un partido, queda positiva si ganó, en 0
+si empató y negativa si perdió (MOTOR_SAD_EXTRACCION §3.3). El riesgo de
+reventón dice si la burbuja se corta; esto dice CÓMO:
+
+- **Por equipo** (`historial.positivo|negativo.termina` y `termina` en cada
+  reventón de `/equipos/{id}/burbujas`): cuántas de sus burbujas se cortaron
+  a 0 —primero empata— y cuántas pasaron directo al otro signo —se cae de
+  golpe—. Espejo TS y vector dorado (`scripts/casos_burbuja.json`: las
+  derrotas 0-1 y 0-3 cambian de signo, los empates 1-1 y 2-2 van a 0).
+- **Calibrado** (`backtest_burbuja --calibrar`, bloque «cómo se mueve la K
+  total en el partido siguiente», `movimiento` en `.backtest_calibracion.json`):
+  por signo y nivel de riesgo, qué parte sigue, va a cero o cambia de signo.
+  Resultado: pendiente de la corrida.
+- **En el parte**: la espina (`lecturaSad.espina`) es la lectura del analista
+  de adónde va la K de cada equipo (positiva · cero · negativa · neutra); el
+  veredicto la compara con lo que hizo la K y Aprendizaje mide cada lectura
+  contra la frecuencia de ese movimiento. No es un número del 1X2: es la
+  lectura por equipo, y se mide como tal.

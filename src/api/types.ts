@@ -525,6 +525,8 @@ export interface ReventonDTO {
   condicion: 'L' | 'V'
   resultado: string
   esInternacional: boolean
+  /** Cómo se cortó: la K se reinició a 0 (empate) o pasó al otro signo. */
+  termina: 'cero' | 'cambio'
 }
 
 export interface HistorialSignoDTO {
@@ -532,6 +534,8 @@ export interface HistorialSignoDTO {
   kPico: DistribucionDTO
   partidos: DistribucionDTO
   nivelRival: DistribucionDTO
+  /** Cuántas burbujas de este signo se cortaron a 0 y cuántas al otro signo. */
+  termina: { cero: number; cambio: number }
 }
 
 export interface RiesgoReventonDTO {
@@ -1244,8 +1248,8 @@ export interface LecturaSadParte {
   paradoja: string
   /** La lectura de Cowork del reventón de la burbuja: una línea por equipo. */
   reventon: string
-  /** La buena espina de la burbuja, por equipo: si la historia de sus K le da
-   *  buena espina para ESTE partido (no pierde), mala (pierde) o neutra. */
+  /** La espina de la burbuja, por equipo: adónde va su K total después de
+   *  ESTE partido (positiva = crece o arranca · cero = se reinicia · negativa · neutra). */
   espina?: Partial<Record<'a' | 'b', EspinaLado>>
   /** Solo en el GET: el reventón de cada lado con este partido como próximo,
    *  familia total, calculado al leer (docs/REVENTON.md). */
@@ -1409,36 +1413,42 @@ export interface VeredictoObjetivo {
    *  lo declarado antes del partido y si ese partido la reventó. Observación,
    *  no veredicto: la tasa se compara con la del backtest en las lecciones. */
   reventon?: { nota: string } & Partial<Record<'a' | 'b', ReventonObservado>>
-  /** La buena espina declarada contra el resultado (buena = no pierde, mala = pierde). */
+  /** La espina declarada contra lo que hizo la K total del equipo. */
   espina?: { nota: string } & Partial<Record<'a' | 'b', EspinaObservada>>
 }
 
+export type LecturaEspina = 'positiva' | 'cero' | 'negativa' | 'neutra'
+
 export interface EspinaLado {
-  lectura: 'buena' | 'mala' | 'neutra'
+  lectura: LecturaEspina
   porque: string
 }
 
 export interface EspinaObservada {
-  lectura: 'buena' | 'mala' | 'neutra' | null
+  lectura: LecturaEspina | null
   porque?: string
   resultado: 'gana' | 'empata' | 'pierde' | null
+  /** adónde fue la K total: positiva (ganó) · cero (empató) · negativa (perdió) */
+  movimiento: 'positiva' | 'cero' | 'negativa' | null
   cumplida: boolean | null
 }
 
 export interface EspinaCelda {
   lados: number
-  noPierde: number
-  gana: number
-  tasaNoPierde: number | null
+  aciertos: number
+  tasa: number | null
   intervalo: number[] | null
+  frecuenciaDelMovimiento: number | null
+  sobreLaFrecuencia: boolean | null
 }
 
 export interface EspinaMetricas {
-  buena: EspinaCelda
-  mala: EspinaCelda
+  positiva: EspinaCelda
+  cero: EspinaCelda
+  negativa: EspinaCelda
   neutra: EspinaCelda
-  separacion: number | null
-  lectura: 'separa' | 'no separa todavía' | 'sin n'
+  lados: number
+  lectura: 'acierta más que la frecuencia' | 'no supera la frecuencia todavía' | 'sin n'
   nMinimo: number
   nota: string
 }
@@ -1845,7 +1855,7 @@ export interface InventarioLecciones {
     ventanaTde: { observadas: number; conGol: number; sinFicha: number; nota: string }
     /** El reventón en producción contra el backtest (docs/REVENTON.md §11). */
     reventon?: ReventonMetricas
-    /** ¿La buena espina de la burbuja separa? (buena pierde menos que mala) */
+    /** ¿La espina de la burbuja acierta más que la frecuencia de cada movimiento? */
     espina?: EspinaMetricas
   }
   porSkill: SkillAprendizaje[]

@@ -265,25 +265,30 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     return out
 
 
+_MOVIMIENTO_DE = {"gana": "positiva", "empata": "cero", "pierde": "negativa"}
+
+
 def espina_objetivo(espina: dict, real: str) -> dict:
-    """Por lado: la espina declarada (buena · mala · neutra) y si se cumplió.
-    Buena = el equipo NO pierde; mala = pierde; neutra no se juzga (None). Lo
-    que dice si la lectura vale algo no es este caso: es, en las lecciones,
-    si los lados con «buena» pierden menos que los de «mala»."""
-    out = {"nota": "buena = no pierde · mala = pierde · neutra = no se juzga. Lo que mide si la "
-                   "lectura sirve es la separación en las lecciones, no un caso suelto"}
+    """Por lado: adónde dijo el analista que iba la K total (positiva · cero ·
+    negativa) y adónde fue. Después de un partido la K total es positiva si el
+    equipo ganó, 0 si empató y negativa si perdió (MOTOR_SAD_EXTRACCION §3.3:
+    la victoria suma o arranca k⁺, el empate resetea las dos, la derrota abre
+    k⁻), así que se comprueba con el marcador. `neutra` no se juzga."""
+    out = {"nota": "positiva = la K creció o arrancó (ganó) · cero = se reinició (empató) · negativa = "
+                   "perdió · neutra no se juzga. Lo que mide si la lectura sirve es la tasa en las "
+                   "lecciones contra la frecuencia de cada movimiento, no un caso suelto"}
     for lado in ("a", "b"):
         e = espina.get(lado) or {}
         lectura = e.get("lectura") or ""
         if not lectura:
-            out[lado] = {"lectura": None, "resultado": None, "cumplida": None}
+            out[lado] = {"lectura": None, "resultado": None, "movimiento": None, "cumplida": None}
             continue
         gana = (real == "local") if lado == "a" else (real == "visita")
         resultado = "gana" if gana else ("empata" if real == "empate" else "pierde")
-        cumplida = None if lectura == "neutra" else ((resultado != "pierde") if lectura == "buena"
-                                                     else (resultado == "pierde"))
+        movimiento = _MOVIMIENTO_DE[resultado]
         out[lado] = {"lectura": lectura, "porque": e.get("porque") or "", "resultado": resultado,
-                     "cumplida": cumplida}
+                     "movimiento": movimiento,
+                     "cumplida": None if lectura == "neutra" else lectura == movimiento}
     return out
 
 

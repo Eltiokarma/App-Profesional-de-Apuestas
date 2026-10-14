@@ -76,10 +76,12 @@ commitea nada.
 >   ancla al minuto de la ventaja, no al reloj; COLAPSO EN CASCADA solo si el
 >   rival con D3 superior va a seguir atacando; la posesión y el rest defense
 >   valen contra ESTE rival y con ESTE once.
-> - **La buena espina de la burbuja** (`lecturaSad.espina`, desde el 14/10):
->   por equipo `buena` (no pierde) · `mala` (pierde) · `neutra`, con `porque`,
->   leyendo la gráfica de K de cada uno (tope, forma de las rachas, lo regular
->   que es). No la acomodes a tu 1X2: lo que se mide es si acierta sola.
+> - **La espina de la burbuja** (`lecturaSad.espina`, desde el 14/10): por
+>   equipo, adónde va su K TOTAL después de este partido —`positiva` (crece:
+>   gana) · `cero` (se reinicia: empata) · `negativa` (pierde) · `neutra`—, con
+>   `porque`, leyendo su gráfica de K y cómo se le cortan las burbujas
+>   (`historial.*.termina` en `/burbujas`). No la acomodes a tu 1X2: lo que se
+>   mide es si acierta sola.
 > - **Alertas: solo códigos que existen en los skills** (T.54, T.54-B,
 >   R-KT.2, GK-DOWNGRADE, FACTOR-X, G-BLOQUE, G-SORPRESA, COLAPSO EN
 >   CASCADA… los que nombra la rúbrica). Una observación que no tiene código
