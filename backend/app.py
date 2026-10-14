@@ -2654,10 +2654,12 @@ def cowork_reventones_backtest():
     reventones necesita para saber qué lección tiene denominador."""
     from backend import backtest_lecciones
     r = backtest_lecciones.leer()
-    if r is None:
+    cal = backtest_lecciones.leer("calibracion")
+    if r is None and cal is None:
         raise HTTPException(404, "todavía no se corrió el backtest de las lecciones: "
                                  "python -m backend.backtest_burbuja --padron --lecciones (o el endpoint maestro)")
-    return r
+    # la última calibración (--calibrar) viaja aparte: es la que propone los puntos
+    return {**(r or {}), "calibracionGuardada": cal}
 
 
 @app.get(API + "/analisis/cowork/reventones/{fixture_id}/{equipo_id}")

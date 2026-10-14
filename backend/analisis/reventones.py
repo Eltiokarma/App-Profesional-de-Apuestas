@@ -179,6 +179,13 @@ def _con_ficha(fixture_id: int) -> dict:
     return {"eventos": ev > 0, "once": xi >= 20}
 
 
+def orden_azar(fixture_id: int, team_id: int) -> float:
+    """Un orden al azar pero ESTABLE por caso (no cambia entre llamadas)."""
+    import hashlib
+    h = hashlib.sha256(f"{fixture_id}:{team_id}".encode()).hexdigest()
+    return int(h[:12], 16) / 16 ** 12
+
+
 def significativo(r: dict, medianas: dict) -> bool:
     """≥ 3 partidos, o 2 con la K pico por encima de la mediana de su signo.
     Las de un partido son ruido: la K salta y vuelve sin que haya racha."""
@@ -352,15 +359,20 @@ def candidatos(liga_id: int, meses: int = 6, limite: int = 60, solo_con_ficha: b
                 "senalesCalculadas": (r.get("composicion") or {}).get("senalesCalculadas") or [],
                 "conFicha": ficha, "estudiado": (r["fixtureId"], tid) in hechos,
             })
-    # primero lo que tiene ficha y no está estudiado; dentro, las rachas más largas
-    lista.sort(key=lambda c: (c["estudiado"], not c["conFicha"]["eventos"], -c["partidos"], -c["kPico"]))
+    # primero lo que tiene ficha y no está estudiado; dentro, AL AZAR. Antes iban
+    # las rachas más largas y la K más alta: los 52 estudios vieron el récord en
+    # casi todos los reventones porque estudiábamos las burbujas más grandes, y
+    # contra el denominador el récord no revienta más (REVENTON §12.1). El azar
+    # es estable (hash del caso): la lista no cambia de una llamada a otra.
+    lista.sort(key=lambda c: (c["estudiado"], not c["conFicha"]["eventos"], orden_azar(c["fixtureId"], c["equipoId"])))
     return {
         "ligaId": liga_id, "desde": desde, "total": len(lista),
         "porTipo": {t: sum(1 for c in lista if c["tipo"] == t) for t in TIPOS.values()},
         "estudiados": sum(1 for c in lista if c["estudiado"]),
         "candidatos": lista[:limite],
         "criterio": "burbuja de la familia total con ≥ 3 partidos, o de 2 con la K pico por encima de la "
-                    "mediana de su signo en ese equipo; primero los que tienen ficha y no están estudiados",
+                    "mediana de su signo en ese equipo; primero los que tienen ficha y no están estudiados, "
+                    "y dentro AL AZAR (estable): ordenar por tamaño sesgó los estudios hacia el récord",
         "resumen": resumen([hechos[k] for k in hechos if any(
             (c["fixtureId"], c["equipoId"]) == k for c in lista)]),
     }
