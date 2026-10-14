@@ -175,6 +175,23 @@ def main():
           (bl.leer() or {}).get("lecciones", {}).get("observaciones") == L["observaciones"])
     bl.imprimir(L)
 
+    # FUGA DEL RESULTADO (14/10/2026): el nivel del rival de la fila es el de
+    # DESPUÉS del partido (si el equipo ganó, el rival ya bajó). El backtest
+    # tiene que usar el de ANTES, el mismo que la app ve para un próximo.
+    from backend.app import niveles_de as _nd
+    movidos, iguales, total = 0, 0, 0
+    for t in equipos[:6]:
+        for f in constantes_de(t, 200):
+            previo = bt.nivel_rival_previo(f["rivalId"], f["fecha"])
+            nr = _nd(f["rivalId"], 1, antes=f["fecha"])
+            total += 1
+            iguales += abs(previo - (nr[0]["nivel"] if nr else 1.0)) < 1e-9
+            movidos += abs(previo - float(f["nivelRival"])) > 1e-6
+    check("el rival del backtest es el nivel ANTES del partido (el de niveles_de(antes=), como la app)",
+          total and iguales == total, (iguales, total))
+    check("y no el de la fila, que ya trae el resultado (en la demo difieren en la mayoría)",
+          movidos * 2 > total, (movidos, total))
+
     print(f"\n{fallos} FALLAS" if fallos else "\nTODO OK")
     return 1 if fallos else 0
 
