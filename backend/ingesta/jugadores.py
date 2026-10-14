@@ -525,7 +525,7 @@ def _norm_dt(nombre: str) -> str:
 
 
 def _tokens_nombre_dt(nombre: str) -> list[str]:
-    n = unicodedata.normalize("NFD", (nombre or "").lower())
+    n = unicodedata.normalize("NFD", (nombre or "").lower().replace("ß", "ss"))
     n = "".join(c for c in n if unicodedata.category(c) != "Mn")
     return [p for p in re.split(r"[^a-z]+", n) if len(p) >= 3]
 
@@ -540,13 +540,33 @@ def mismo_nombre_dt(a: str, b: str) -> bool:
     desde 2022, Osasuna desde 19/09/2026: EN_CRISIS falso) y el parte
     disparaba DT-DISCREPANCIA sobre el mismo entrenador (11/10/2026).
     Regla: la última palabra de uno está entre las del otro (en cualquier
-    sentido), o comparten dos palabras. Las iniciales no cuentan."""
+    sentido), o comparten dos palabras. Las iniciales no cuentan.
+
+    UNA LETRA CORRUPTA NO ES OTRO DT. La alineación de Stuttgart llega como
+    «S. Hoeneb» (la ß mal codificada) y /coachs como «Sebastian Hoeneß»: no
+    casaban, la racha del banco se cortaba en el primer once con la ß rota y
+    la base lo dio «desde 10/10/2026» con tres años en el club (14/10/2026).
+    La última palabra de uno casa también con una del otro que tiene la
+    misma forma salvo una letra (`_casi_igual`)."""
     ta, tb = _tokens_nombre_dt(a), _tokens_nombre_dt(b)
     if not ta or not tb:
         return _norm_dt(a) == _norm_dt(b)
     if ta[-1] in tb or tb[-1] in ta:
         return True
+    if any(_casi_igual(x[-1], y) for x, ys in ((ta, tb), (tb, ta)) for y in ys):
+        return True
     return len(set(ta) & set(tb)) >= 2
+
+
+def _casi_igual(x: str, y: str) -> bool:
+    """El mismo apellido con una letra mal codificada: la ß que la base guarda
+    como «b» (hoeneb/hoeness), o una sola letra cambiada con el mismo largo.
+    Martínez/Martino NO: no es una letra, es otro apellido."""
+    if min(len(x), len(y)) < 5:
+        return False
+    if x.replace("ss", "b") == y.replace("ss", "b"):
+        return True
+    return len(x) == len(y) and sum(a != b for a, b in zip(x, y)) == 1
 
 
 def ingestar_equipo(cliente: Cliente, con: sqlite3.Connection, team_id: int, season: int) -> bool:
@@ -677,8 +697,8 @@ def dt_agenda(cliente, con: sqlite3.Connection, dias: int = DT_AGENDA_DIAS,
                 con.commit()
                 out["alineaciones"] += 1 if n else 0
         # 2) /coachs si el registro está viejo, falta, o la alineación lo contradice
-        fila = con.execute("SELECT nombre, actualizado_en, fuente FROM entrenadores WHERE team_id=? "
-                           "ORDER BY actualizado_en DESC LIMIT 1", (tid,)).fetchone()
+        fila = con.execute("SELECT nombre, actualizado_en, fuente, substr(desde, 1, 10) FROM entrenadores "
+                           "WHERE team_id=? ORDER BY actualizado_en DESC LIMIT 1", (tid,)).fetchone()
         viejo = not fila or not fila[1] or fila[1] <= corte
         dt_alin, _desde = dt_de_alineaciones(con, tid)
         contradice = bool(dt_alin and fila and fila[0] and not mismo_nombre_dt(dt_alin, fila[0]))
@@ -687,7 +707,18 @@ def dt_agenda(cliente, con: sqlite3.Connection, dias: int = DT_AGENDA_DIAS,
         # vino de un banco de hace meses (Santa Fe–Cali, 22/09): se rehace con
         # /coachs aunque el registro sea de ayer, porque ayer también estaba mal.
         rancio = bool(fila and (fila[2] or "") == "alineacion" and not dt_alin)
-        if not (viejo or contradice or rancio):
+        # EL `desde` QUE SE CALCULÓ CON UNA REGLA VIEJA. PSG quedó «Enrique Luis
+        # desde 20/09/2026» (Luis Enrique dirige desde 2023) y la Roma con
+        # Gasperini «desde 14/09»: el registro se escribió el 09/10 con la
+        # comparación de apellidos de antes del 11/10, que cortaba la racha
+        # entre «Luis Enrique» y «Enrique Luis». El nombre casa, así que ni
+        # `contradice` ni `rancio` lo tocaban, y el registro era fresco: la
+        # agenda los marcó EN_CRISIS por «DT nuevo» (14/10/2026). Si lo
+        # guardado salió de la alineación y la racha de HOY da otra fecha, se
+        # rehace (1 request: /coachs trae la llegada real si casa el nombre).
+        desfasado = bool(fila and (fila[2] or "") == "alineacion" and dt_alin
+                         and (fila[3] or None) != (_desde or None))
+        if not (viejo or contradice or rancio or desfasado):
             continue
         if not cliente.quedan(1) or cliente.limite - cliente.usadas <= reserva:
             out["sinPresupuesto"] += 1
