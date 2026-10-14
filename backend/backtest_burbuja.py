@@ -93,6 +93,27 @@ def _nivel_a_fecha(niveles: list[dict], fecha: str) -> float | None:
     return niveles[i - 1]["nivel"] if i > 0 else None
 
 
+_NIVELES_RIVAL: dict[int, tuple[list[str], list[dict]]] = {}
+
+
+def nivel_rival_previo(rival_id: int, fecha: str) -> float:
+    """El nivel del rival ANTES del partido, como lo ve la app para un próximo
+    (`niveles_de(rival, antes=…)`, 1.0 sin niveles: §3.1).
+
+    NO `fila["nivelRival"]`: ese es el nivel con el que el motor ponderó la
+    fila, y la fila se escribe DESPUÉS del partido — el nivel del rival ya
+    incluye ese resultado (si el equipo ganó, el rival bajó). Usarlo como
+    «próximo» le filtraba el marcador al backtest: el del 1X2 (14/10/2026)
+    dio 47 % → 54 % de acierto con el riesgo y el coeficiente del motor al
+    revés, y la calibración de §12.2 se ajustó con la misma fuga."""
+    if rival_id not in _NIVELES_RIVAL:
+        nv = list(reversed(niveles_de(rival_id, 500)))
+        _NIVELES_RIVAL[rival_id] = ([n["fecha"] for n in nv], nv)
+    fechas, nv = _NIVELES_RIVAL[rival_id]
+    i = bisect_left(fechas, fecha)
+    return float(nv[i - 1]["nivel"]) if i > 0 else 1.0
+
+
 def _revento(fila: dict, familia: str, signo: str) -> bool:
     v = float(fila["fusion"][burbuja.CLAVE_FUSION[familia]])
     return v == 0 or (v > 0) != (signo == "+")
@@ -120,10 +141,11 @@ def observar_equipo(team_id: int, horizonte: int, min_prefijo: int = MIN_PREFIJO
             continue
         prefijo = filas[:i]
         bin_ = _bin_a_fecha(niveles, fila["fecha"])
+        nv_rival = nivel_rival_previo(fila["rivalId"], fila["fecha"])
         proximo = {
             "fixtureId": fila["fixtureId"], "fecha": fila["fecha"], "rivalId": fila["rivalId"],
             "rival": fila["rivalNombre"], "condicion": "L" if fila["condicion"] == "Local" else "V",
-            "nivelRival": float(fila["nivelRival"]),
+            "nivelRival": nv_rival,
         }
         mandan = burbuja.mandan_de(bin_, proximo)
         for familia in FAMILIAS:
@@ -146,7 +168,7 @@ def observar_equipo(team_id: int, horizonte: int, min_prefijo: int = MIN_PREFIJO
             contra = sum(1 for f in racha if f["condicion"] != fila["condicion"])
             nv_eq = _nivel_a_fecha(niveles, fila["fecha"])
             g_fav = (None if nv_eq is None else
-                     (nv_eq - float(fila["nivelRival"])) if act["signo"] == "+" else (float(fila["nivelRival"]) - nv_eq))
+                     (nv_eq - nv_rival) if act["signo"] == "+" else (nv_rival - nv_eq))
             obs.append({
                 "contramano": bool(racha) and contra * 3 >= 2 * len(racha),
                 "gFavor": None if g_fav is None else round(g_fav, 3),

@@ -551,6 +551,10 @@ categoría y la resaca internacional.
 
 ### 12.2 Recalibración (14/10/2026, `--calibrar`, 173.615 observaciones de las tres familias)
 
+> **En duda desde el 14/10/2026 (§13.1):** esta corrida y la §12.1 usaron el nivel
+> del rival de DESPUÉS del partido. Los puntos siguen vigentes en la app hasta
+> que la corrida limpia diga otra cosa.
+
 | Señal | Coeficiente (log-odds) | + | − | Puntos |
 |---|---|---|---|---|
 | K ≥ mediana / K récord | −0.006 / −0.090 | | | 0 (no puntúa) |
@@ -602,4 +606,30 @@ sintéticos de verdad conocida en `backend/test_backtest_1x2.py`.
 
 Se corre en Railway (las `.db` viven ahí), como el resto de los backtests:
 `nohup python -m backend.backtest_burbuja_1x2 --padron > /data/b1x2.log 2>&1 &`
-y el resumen queda en `/data/.backtest_1x2.json`. Resultados: pendientes.
+y el resumen queda en `/data/.backtest_1x2.json`.
+
+### 13.1 Primera corrida: CONTAMINADA (14/10/2026)
+
+58.588 partidos, 47 % → 54 % de acierto con el riesgo y el coeficiente del
+motor AL REVÉS (más ventaja de nivel del local, menos chance de que gane).
+Demasiado bueno para ser cierto, y no lo era: el «próximo rival» se armaba
+con `fila["nivelRival"]`, el nivel con el que el motor ponderó la fila, que
+se escribe DESPUÉS del partido y ya trae el resultado (en la demo, el rival
+de una victoria quedó 0.075 más abajo en promedio; el de una derrota, 0.084
+más arriba). El riesgo lo usa dos veces (tramo del rival y favorito), así que
+leía el marcador. Arreglado con `backtest_burbuja.nivel_rival_previo` (el
+nivel ANTES del partido, el mismo que la app usa para un próximo con
+`niveles_de(antes=)`), con su test en `test_backtest_burbuja`.
+
+**La misma fuga estaba en la calibración de §12.1 y §12.2**: el lift del
+«favorito por nivel», los puntos del tramo del rival y la tasa por nivel se
+midieron con ella. La app en producción NO tiene la fuga (arma el próximo
+con el nivel previo), pero los PUNTOS que usa salieron de un backtest que sí.
+Hay que volver a correr `--lecciones`, `--calibrar` y este backtest; hasta
+entonces los puntos de §12.2 están en duda, sobre todo el −2/−4 del favorito.
+
+Queda aparte, y NO es fuga: el historial de reventones (`burbuja.py`, «el
+nivel del rival que reventó cada burbuja») también guarda el nivel de
+después. Es pasado, no filtra el partido que se predice, pero compara la
+mediana de esos niveles (post) con un próximo medido antes: un sesgo de
+escala chico, a revisar con el backtest limpio a la vista.

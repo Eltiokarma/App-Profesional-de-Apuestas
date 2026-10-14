@@ -50,7 +50,7 @@ from backend import db  # noqa: E402
 from backend.analisis import burbuja  # noqa: E402
 from backend.app import constantes_de, mu, niveles_de  # noqa: E402
 from backend.backtest_burbuja import (MIN_PREFIJO, _equipos, _nivel_a_fecha, _nombres_ligas,  # noqa: E402
-                                      _resolver, padron)
+                                      _resolver, nivel_rival_previo, padron)
 
 GUARDADO = ".backtest_1x2.json"
 CLASES = ("L", "E", "V")          # local · empate · visita (E es la referencia)
@@ -85,7 +85,8 @@ def lado_equipo(team_id: int, ligas: set[int] | None) -> dict[int, dict]:
         proximo = {
             "fixtureId": fila["fixtureId"], "fecha": fila["fecha"], "rivalId": fila["rivalId"],
             "rival": fila["rivalNombre"], "condicion": "L" if fila["condicion"] == "Local" else "V",
-            "nivelRival": float(fila["nivelRival"]),
+            # el nivel del rival ANTES del partido (el de la fila ya trae el resultado)
+            "nivelRival": nivel_rival_previo(fila["rivalId"], fila["fecha"]),
         }
         fam = burbuja._analizar_familia(filas[:i], "total", proximo, estab, nivel_equipo=nv)
         act, rg, ext = fam["actual"], fam["riesgo"], fam["extremo"] or {}

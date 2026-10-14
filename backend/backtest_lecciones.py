@@ -236,7 +236,10 @@ def rasgos(o: dict) -> dict:
     except Exception:  # noqa: BLE001 — base sin alineaciones
         r["arqueroSuplente"] = r["arqueroSuplenteRival"] = r["onceDistinto"] = r["dtDistinto"] = None
     # ARQUERO-NO-FAVORITO: la burbuja depende de ganarle al arquero del débil
-    ne, nr = _nivel_a(team, fila["fecha"]), fila.get("nivelRival")
+    # el nivel del rival ANTES del partido: el de la fila ya trae el resultado
+    from backend.backtest_burbuja import nivel_rival_previo
+    ne = _nivel_a(team, fila["fecha"])
+    nr = nivel_rival_previo(o["rivalId"], fila["fecha"]) if o.get("rivalId") else None
     fav = None if ne is None or nr is None else (
         "equipo" if ne - nr >= NIVEL_FAVORITO else "rival" if nr - ne >= NIVEL_FAVORITO else "parejo")
     r["favorito"] = fav

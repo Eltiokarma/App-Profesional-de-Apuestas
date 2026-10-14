@@ -652,6 +652,15 @@ conversación se pierde en la siguiente.
    es frecuencia entre estudiados, no probabilidad (falta el denominador de
    las burbujas que no reventaron). Primera tanda: Liga 1 Perú, 6 meses.
 
+13. **Fuga del resultado en los backtests del reventón** (14/10/2026,
+   `docs/REVENTON.md` §13.1). El «próximo rival» de los backtests salía de
+   `fila["nivelRival"]`, que se escribe DESPUÉS del partido y ya trae el
+   marcador; lo destapó el backtest del 1X2 (47 % → 54 % de acierto, demasiado
+   bueno). Arreglado con `backtest_burbuja.nivel_rival_previo` y su test. La
+   app no la tenía, pero los puntos de §12.2 (favorito −2/−4, tramo del rival)
+   se calibraron con ella: hay que volver a correr `--lecciones`, `--calibrar`
+   y `backtest_burbuja_1x2` en Railway antes de tocar la fórmula del 1X2.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
