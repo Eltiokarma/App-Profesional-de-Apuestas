@@ -2194,6 +2194,14 @@ components:
             partidos: { type: integer }
         motivos: { type: array, items: { type: string } }
         texto: { type: string, description: "'' si no está activa ni cerca" }
+        inflada:
+          type: object
+          nullable: true
+          description: 'la alerta está encendida y la mitad o más de la racha son amistosos (liga 667): cuentan, pero el récord se armó fuera de la competición (REVENTON §10.2). No apaga la alerta ni mueve el riesgo'
+          properties:
+            amistosos: { type: integer }
+            partidos: { type: integer }
+            texto: { type: string }
     EstabilidadEquipo:
       type: object
       required: [grado, motivos, sinDato, dt, movimientos, bajas, actualizadoEn]

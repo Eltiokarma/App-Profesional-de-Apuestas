@@ -303,7 +303,11 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   probabilidad, y Cowork no se la puede saltar. Un escalón más abajo,
   `extremo.cerca` (§10.1): sin récord pero por encima del 90 % de sus
   reventones del signo → caja ámbar y alerta `K-CERCA-EXTREMO` (tipo `dato`);
-  `activo` sigue siendo solo el récord. Las K de goles quedan fuera
+  `activo` sigue siendo solo el récord. **Los amistosos CUENTAN** (decisión
+  del usuario, 14/10/2026: el espectáculo se arma para el hincha, y una burbuja
+  se arma y se rompe ahí con causas que interesan); un extremo hecho con la
+  mitad o más de amistosos se marca `extremo.inflada` (§10.2, chip «INFLADA»)
+  sin apagar la alerta ni mover el riesgo. Las K de goles quedan fuera
   a propósito hasta que se decida sumarlas. **Por período** (§10-bis):
   `historialPorPeriodo` repite las medidas acotadas a temporada · año · DT
   vigente · últimos 20, filtrando por la fecha del reventón sobre los mismos
@@ -463,8 +467,8 @@ conversación se pierde en la siguiente.
      `GET /equipos/{id}/burbujas` trae `escala` (las dos bases, la nota y el
      historial del equipo en copas contra otra base, con sus reventones) y la
      tarjeta lo pinta; los puntos calibrados no se mueven. En el estudio de
-     reventones, `rival_de_otra_base` es señal CALCULADA, y un amistoso que
-     cierra la burbuja ya no es candidato.
+     reventones, `rival_de_otra_base` es señal CALCULADA; un amistoso que
+     cierra la burbuja sigue siendo candidato (`enAmistoso`).
    - **El flag `Missing Fixture`** (acertó 10 de 23, separado por densidad):
      HECHO como señal con umbral. `PlantillaDTO.missingFixture` y
      `baja.lectura` (`senal`/`ruido`, umbral 25 % de la plantilla,

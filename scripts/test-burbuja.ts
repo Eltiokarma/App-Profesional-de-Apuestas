@@ -88,7 +88,13 @@ check('sin rival evaluado (otra condición) y motivo explícito', lo.rival === n
 check('riesgo BAJO con 1 punto (solo la racha)', lo.riesgo!.nivel === 'bajo' && lo.riesgo!.puntos === 1, lo.riesgo)
 check('historial − local: K pico 3.0 repetida → moda 3.0', lo.historial.negativo!.kPico.moda === 3)
 check('percentil K 50', lo.posicion!.percentilK === 50, lo.posicion)
-check('local: K 9.5 < máximo 16 y racha 3 < 4 → extremo INACTIVO', eq(lo.extremo, { activo: false, kRecord: false, rachaRecord: false, cerca: false, partidosHistoria: 11, maximoPrevio: { kPico: 16, partidos: 4 }, motivos: [], texto: '' }), lo.extremo)
+check('local: K 9.5 < máximo 16 y racha 3 < 4 → extremo INACTIVO', eq(lo.extremo, { activo: false, kRecord: false, rachaRecord: false, cerca: false, partidosHistoria: 11, maximoPrevio: { kPico: 16, partidos: 4 }, motivos: [], texto: '', inflada: null }), lo.extremo)
+// AMISTOSOS: cuentan, pero el extremo hecho con la mitad o más se marca inflado (mismo vector que el Python)
+const conAm = analizar(filas.map((f, i) => (i >= filas.length - 3 ? { ...f, ligaId: 667 } : f)))
+const exAm = conAm.familias.total.extremo!
+check('3 de 6 de la racha en amistosos → extremo INFLADO, sigue activo y el riesgo no se mueve', exAm.activo && exAm.inflada?.amistosos === 3 && exAm.inflada?.partidos === 6 && conAm.familias.total.riesgo!.puntos === t.riesgo!.puntos && conAm.familias.total.actual!.amistosos === 3, exAm)
+const dosAm = analizar(filas.map((f, i) => (i >= filas.length - 2 ? { ...f, ligaId: 667 } : f)))
+check('2 de 6 → no está inflado', dosAm.familias.total.extremo!.inflada === null)
 
 // CERCA DEL EXTREMO (§10): el caso ADT sintético, el mismo que en Python
 {

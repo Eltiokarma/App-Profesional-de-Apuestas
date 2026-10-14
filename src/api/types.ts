@@ -573,6 +573,8 @@ export interface FamiliaBurbujaDTO {
     partidos: number
     kPico: number
     desde: string
+    /** Amistosos (liga 667) dentro de la racha abierta: cuentan, y marcan el extremo como inflado. */
+    amistosos?: number
     /** Si el próximo partido mueve esta familia (null sin próximo). */
     aplicaAlProximo: boolean | null
   } | null
@@ -611,6 +613,9 @@ export interface ExtremoBurbujaDTO {
   motivos: string[]
   /** '' si no está activo ni cerca. */
   texto: string
+  /** La mitad o más de la racha son amistosos: la alerta sigue, pero el récord
+   *  se armó en buena parte fuera de la competición (null si no). */
+  inflada?: { amistosos: number; partidos: number; texto: string } | null
 }
 
 export interface EstabilidadEquipoDTO {

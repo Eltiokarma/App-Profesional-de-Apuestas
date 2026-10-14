@@ -168,14 +168,16 @@ def episodios(filas: list[dict], familia: str) -> tuple[list[dict], dict | None,
                 cerrados.append(_reventon(ep, fila))
                 ep = None
             continue
+        amistoso = 1 if fila.get("ligaId") in AMISTOSOS else 0
         if ep and ep["signo"] == s:
             ep["partidos"] += 1
+            ep["amistosos"] += amistoso
             ep["kPico"] = max(ep["kPico"], abs(v))
             ep["k"] = v
             continue
         if ep:  # cambio de signo en el mismo partido: revienta y arranca la contraria
             cerrados.append(_reventon(ep, fila))
-        ep = {"signo": s, "partidos": 1, "kPico": abs(v), "k": v, "desde": fila["fecha"]}
+        ep = {"signo": s, "partidos": 1, "kPico": abs(v), "k": v, "desde": fila["fecha"], "amistosos": amistoso}
     return cerrados, ep, n_cond
 
 
@@ -237,13 +239,22 @@ def _confianza(n: int, estabilidad: dict) -> tuple[str, list[str]]:
 # no mueve el riesgo, dice cuánto se carga.
 CERCA_PCT = 90
 
+# Amistosos de clubes (la liga de la API). CUENTAN en la burbuja —el
+# espectáculo se arma para el hincha también en pretemporada, y una racha se
+# construye o se rompe ahí con causas que interesan—, pero el extremo hecho
+# con la mitad o más de amistosos se marca INFLADO: Lazio llegó a su racha
+# récord de 9 con 5 de pretemporada y la Real Madrid a K-CERCA con 3 de 6
+# (estudios de reventones fuera de Perú, 13/10/2026). La marca no apaga la
+# alerta ni mueve el riesgo: dice de qué está hecho el récord.
+AMISTOSOS = {667}
+
 
 def _con_signo(v: float, signo: str) -> str:
     return f"{'+' if signo == '+' else '-'}{_r2(abs(v))}"
 
 
 def _extremo(k_abs: float, partidos: int, base: dict, n_cond: int, signo: str,
-             de: list[dict] | None = None) -> dict:
+             de: list[dict] | None = None, amistosos: int = 0) -> dict:
     """ALERTA DE EXTREMO: prudencia, no probabilidad.
 
     El backtest (docs/REVENTON.md §8) dice que una K récord no revienta más
@@ -295,9 +306,17 @@ def _extremo(k_abs: float, partidos: int, base: dict, n_cond: int, signo: str,
         texto = (f"CERCA DEL EXTREMO: la burbuja está en la franja más alta de su historia (por encima "
                  f"del {CERCA_PCT} % de las que reventaron). El modelo no lo puntúa como riesgo, pero "
                  "queda poco margen antes del récord: no cargar fuerte a que la racha siga")
+    inflada = None
+    if (k_rec or r_rec or cerca) and amistosos * 2 >= partidos:
+        inflada = {"amistosos": amistosos, "partidos": partidos,
+                   "texto": f"INFLADA: {amistosos} de los {partidos} partidos de la racha son amistosos. "
+                            "Cuentan (la racha es del equipo), pero el récord se armó en buena parte fuera de "
+                            "la competición: leer la alerta con eso a la vista"}
+        motivos.append(f"inflada: {amistosos} de {partidos} partidos de la racha son amistosos")
     return {
         "activo": k_rec or r_rec,
         "kRecord": k_rec,
+        "inflada": inflada,
         "rachaRecord": r_rec,
         "cerca": cerca,
         "partidosHistoria": n_cond,
@@ -420,6 +439,7 @@ def _analizar_familia(filas: list[dict], familia: str, proximo: dict | None, est
         "partidos": ep["partidos"],
         "kPico": _r2(ep["kPico"]),
         "desde": ep["desde"],
+        "amistosos": ep.get("amistosos", 0),
         "aplicaAlProximo": aplica,
     }
     base = hist["positivo" if signo == "+" else "negativo"]
@@ -442,7 +462,7 @@ def _analizar_familia(filas: list[dict], familia: str, proximo: dict | None, est
         "percentilRacha": pct_r,
         "kSobreMediana": None if med_k <= 0 else _r2(k_abs / med_k),
     }
-    out["extremo"] = _extremo(k_abs, ep["partidos"], base, n_cond, signo, de)
+    out["extremo"] = _extremo(k_abs, ep["partidos"], base, n_cond, signo, de, ep.get("amistosos", 0))
     if franja:
         out["_franja"] = {"pctK": 100 * sum(1 for r in de if r["kPico"] < k_abs) / n,
                           "pctR": 100 * sum(1 for r in de if r["partidos"] < ep["partidos"]) / n}
