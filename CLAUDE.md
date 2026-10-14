@@ -61,6 +61,7 @@ python -m backend.analisis.despensa_bulk --listar  # despensa del repo: qué hay
 python -m backend.ingesta.adelgazar [--aplicar]  # sad.db ($SAD_DATA_DIR o --db): borra mercados que nadie lee + retención + VACUUM (sin --aplicar solo mide); en Railway con SAD_ADELGAZAR=1 (la consola web mata el proceso)
 python -m backend.ingesta.pipeline --out .      # regenera levels/constants/discreto desde sad.db
 python -m backend.ingesta.test_paridad          # test dorado vs DBs del pipeline viejo
+python -m backend.ingesta.test_pipeline         # el pipeline rehace las derivadas en UNA transacción: quien lee nunca ve «no such table»
 ```
 
 Modo de datos por `.env`: `VITE_DATA_SOURCE=mock` (motor local demo) o
