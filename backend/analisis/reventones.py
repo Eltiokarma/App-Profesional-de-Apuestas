@@ -105,12 +105,15 @@ SENALES = {
                           "medianas no están en la misma escala — CALCULADA",
     "dt_distinto_al_de_la_racha": "el DT en el banco no es el que armó la racha (el del primer partido de la "
                                   "racha, por las alineaciones) — CALCULADA, solo con los dos bancos en la base",
+    "arquero_suplente": "el arquero titular de hoy no es el habitual de sus últimos partidos — CALCULADA, con "
+                        "la alineación oficial (~60 min antes)",
+    "arquero_suplente_rival": "el arquero titular del rival no es su habitual — CALCULADA",
     "ninguna_visible": "nada visible antes del pitazo",
 }
 LECCIONES_MAX = 8
 SENALES_CALCULADAS = ("racha_en_otra_competicion", "condicion_a_contramano", "rival_tambien_en_burbuja",
                       "racha_concediendo", "derrota_internacional_reciente", "once_distinto", "rival_de_otra_base",
-                      "dt_distinto_al_de_la_racha")
+                      "dt_distinto_al_de_la_racha", "arquero_suplente", "arquero_suplente_rival")
 ONCE_CAMBIOS = 5         # Cienciano en Sullana (tercera tanda): 6 cambios, el alterno
 DIAS_RESACA = 10
 # el reventón no es un skill: sus reglas (docs/REVENTON.md) viven en sad-analysis.
@@ -379,6 +382,16 @@ def _escala(team_id: int, rival: int, fecha: str, liga: int | None = None) -> di
         return {"relacion": "sin dato", "comparable": True, "nota": f"no se pudo calcular: {e}"}
 
 
+def _arqueros(fixture_id: int, team_id: int, rival: int, fecha: str) -> dict:
+    """El arquero de cada lado ANTES del partido (backend/analisis/arquero.py)."""
+    from backend.analisis import arquero
+    try:
+        return {"equipo": arquero.perfil(team_id, fecha, fixture_id),
+                "rival": arquero.perfil(rival, fecha, fixture_id)}
+    except Exception as e:  # noqa: BLE001
+        return {"sinDato": f"no se pudo calcular: {e}"}
+
+
 def ficha(fixture_id: int, team_id: int) -> dict | None:
     from backend import ficha_tactica
     fx = _app().get_fixture(fixture_id)
@@ -396,6 +409,7 @@ def ficha(fixture_id: int, team_id: int) -> dict | None:
                   "nota": "historia cortada ESTRICTAMENTE antes de este partido (antesDe): lo que se "
                           "podía ver antes del pitazo"},
         "escala": _escala(team_id, rival, str(fx["date"])[:10], fx["league_id"]),
+        "arqueros": _arqueros(fixture_id, team_id, rival, str(fx["date"])),
         "dtEnElBanco": {"equipo": _dt_en_el_banco(fixture_id, team_id),
                         "rival": _dt_en_el_banco(fixture_id, rival)},
         "tactica": ficha_tactica.tactica_de(fixture_id, fx["home_team_id"], fx["away_team_id"]),
@@ -466,6 +480,11 @@ def guardar_estudio(fixture_id: int, team_id: int, cuerpo: dict) -> dict:
         cambios = cambios_en_el_once(fixture_id, team_id, previos[-1]["fixtureId"])
         if cambios is not None and cambios >= ONCE_CAMBIOS:
             calculadas.append("once_distinto")
+    arq = _arqueros(fixture_id, team_id, rival, str(fx["date"]))
+    if (arq.get("equipo") or {}).get("suplente"):
+        calculadas.append("arquero_suplente")
+    if (arq.get("rival") or {}).get("suplente"):
+        calculadas.append("arquero_suplente_rival")
     if dt_distinto(fixture_id, team_id, [p["fixtureId"] for p in comp.get("partidos") or []]):
         calculadas.append("dt_distinto_al_de_la_racha")
     if not _escala(team_id, rival, str(fx["date"])[:10], fx["league_id"]).get("comparable", True):
@@ -478,6 +497,9 @@ def guardar_estudio(fixture_id: int, team_id: int, cuerpo: dict) -> dict:
         "queP": _txt(cuerpo.get("queP")),
         "tde": {"equipo": _dict("tde").get("equipo") or {}, "rival": _dict("tde").get("rival") or {}},
         "dtp": _dict("dtp"), "efe": _dict("efe"),
+        # el arquero de cada lado: qué hizo y qué se veía antes (forma, suplente,
+        # errores previos). Estructurado para armar la regla con casos.
+        "arquero": {"equipo": _dict("arquero").get("equipo") or {}, "rival": _dict("arquero").get("rival") or {}},
         "lecciones": lecciones,
         "fuentes": [_txt(f) for f in (cuerpo.get("fuentes") or []) if _txt(f)],
         "notas": _txt(cuerpo.get("notas")),
