@@ -2991,6 +2991,11 @@ def main():
     _c2 = rv.composicion(_conc, _fila_f, _prev)["senalesCalculadas"]
     check("racha de victorias concediendo en todos y derrota internacional 6 días antes: las dos señales salen solas",
           "racha_concediendo" in _c2 and "derrota_internacional_reciente" in _c2, _c2)
+    check("21 días sin partido antes del reventón → paron_largo (Union SG); 4 días, no",
+          "paron_largo" in rv.composicion(_racha[2:], {**_fila, "fecha": "2026-07-06T20:00:00Z"},
+                                           [{"fecha": "2026-06-15T20:00:00Z", "ligaId": 281}])["senalesCalculadas"]
+          and "paron_largo" not in rv.composicion(_racha[2:], {**_fila, "fecha": "2026-06-19T20:00:00Z"},
+                                                  [{"fecha": "2026-06-15T20:00:00Z", "ligaId": 281}])["senalesCalculadas"])
     check("una derrota internacional de hace 20 días ya no es resaca",
           "derrota_internacional_reciente" not in rv.composicion(
               _conc, _fila_f, [{**_prev[0], "fecha": "2026-09-01T23:00:00Z"}])["senalesCalculadas"])
@@ -3022,7 +3027,10 @@ def main():
     check("el perfil del arquero: habitual (2 de 3), el de hoy es otro → suplente; goles vs xG con su n",
           _p["habitual"]["nombre"] == "Arquero 1" and _p["habitual"]["titularEn"] == 2
           and _p["hoy"]["nombre"] == "Arquero 2" and _p["suplente"] is True
-          and _p["golesVsXg"] == {"recibidos": 3, "xgContra": 4.0, "evitados": 1.0, "n": 3}, _p)
+          and {k: _p["golesVsXg"][k] for k in ("recibidos", "xgContra", "evitados", "n")}
+          == {"recibidos": 3, "xgContra": 4.0, "evitados": 1.0, "n": 3}
+          and _p["golesVsXg"]["muestraCorta"] is True and len(_p["golesVsXg"]["porPartido"]) == 3
+          and _p["hoyPerfil"] == {"titularEn": 1, "evitados": -1.5, "nXg": 1}, _p)
     check("sin partidos antes de la fecha: sinDato, no un perfil inventado",
           "sinDato" in _arq.perfil(990300, "1900-01-01"))
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:

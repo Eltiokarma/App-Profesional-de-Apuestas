@@ -63,6 +63,8 @@ MECANISMOS = {
                    "un shock que ni la echada ni la sobreexposición describen — IDV 2-2 Católica, 61' y 62'",
     "cambio_masivo": "una ola de cambios (5+ a la vez, típica de pretemporada) decidió el partido: los goles "
                      "salieron de los que entraron o de la descoordinación — Mallorca–Elversberg",
+    "bajas_forzadas": "las bajas obligaron a un once remendado (jugadores fuera de puesto, línea nueva) y eso "
+                      "decidió — Union SG–OH Leuven, cinco bajas y un central improvisado",
     "regresion_al_nivel": "sin un hecho que lo explique: la racha corta se cortó ante un rival de su nivel y "
                           "el equipo volvió a rendir lo suyo",
     "varianza": "sin mecanismo identificable: el partido no explica el resultado",
@@ -108,12 +110,15 @@ SENALES = {
     "arquero_suplente": "el arquero titular de hoy no es el habitual de sus últimos partidos — CALCULADA, con "
                         "la alineación oficial (~60 min antes)",
     "arquero_suplente_rival": "el arquero titular del rival no es su habitual — CALCULADA",
+    "paron_largo": "14 días o más sin partido oficial antes de este (parón de selecciones, receso) — CALCULADA",
     "ninguna_visible": "nada visible antes del pitazo",
 }
 LECCIONES_MAX = 8
 SENALES_CALCULADAS = ("racha_en_otra_competicion", "condicion_a_contramano", "rival_tambien_en_burbuja",
                       "racha_concediendo", "derrota_internacional_reciente", "once_distinto", "rival_de_otra_base",
-                      "dt_distinto_al_de_la_racha", "arquero_suplente", "arquero_suplente_rival")
+                      "dt_distinto_al_de_la_racha", "arquero_suplente", "arquero_suplente_rival",
+                      "paron_largo")
+PARON_DIAS = 14
 ONCE_CAMBIOS = 5         # Cienciano en Sullana (tercera tanda): 6 cambios, el alterno
 DIAS_RESACA = 10
 # el reventón no es un skill: sus reglas (docs/REVENTON.md) viven en sad-analysis.
@@ -216,6 +221,15 @@ def composicion(racha: list[dict], fila: dict, previas: list[dict] | None = None
     signo = "+" if racha and all((f.get("golesFavor") or 0) >= (f.get("golesContra") or 0) for f in racha) else ""
     if signo and len(racha) >= 2 and all((f.get("golesContra") or 0) > 0 for f in racha):
         senales.append("racha_concediendo")
+    # el parón: 21 días sin jugar (Union SG, parón de selecciones, 14/10/2026)
+    try:
+        hoy_ = datetime.fromisoformat(str(fila["fecha"]).replace("Z", "+00:00"))
+        ult = max((datetime.fromisoformat(str(f["fecha"]).replace("Z", "+00:00")) for f in previas or []
+                   if f.get("ligaId") not in ruido), default=None)
+        if ult is not None and (hoy_ - ult).days >= PARON_DIAS:
+            senales.append("paron_largo")
+    except (KeyError, ValueError, TypeError):
+        pass
     # la resaca de una eliminación continental (Cienciano tras Torque: ADT y Chankas)
     try:
         hoy = datetime.fromisoformat(str(fila["fecha"]).replace("Z", "+00:00"))
@@ -485,7 +499,9 @@ def guardar_estudio(fixture_id: int, team_id: int, cuerpo: dict) -> dict:
         calculadas.append("arquero_suplente")
     if (arq.get("rival") or {}).get("suplente"):
         calculadas.append("arquero_suplente_rival")
-    if dt_distinto(fixture_id, team_id, [p["fixtureId"] for p in comp.get("partidos") or []]):
+    # sin amistosos: en pretemporada el banco que carga la base suele ser un
+    # ayudante o el de prueba (OH Leuven–Cercle, 14/10/2026)
+    if dt_distinto(fixture_id, team_id, [p["fixtureId"] for p in comp.get("partidos") or [] if not p.get("amistoso")]):
         calculadas.append("dt_distinto_al_de_la_racha")
     if not _escala(team_id, rival, str(fx["date"])[:10], fx["league_id"]).get("comparable", True):
         calculadas.append("rival_de_otra_base")
