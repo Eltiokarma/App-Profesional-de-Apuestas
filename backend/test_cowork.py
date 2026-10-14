@@ -397,6 +397,10 @@ def main():
     check("la burbuja trae la escala del próximo rival: no comparable, con su nota y el historial en copas",
           j_esc.get("escala", {}).get("comparable") is False and "reserva" in j_esc["escala"]["nota"]
           and "porRelacion" in j_esc["escala"]["historial"], j_esc.get("escala"))
+    check("con escala distinta la confianza del riesgo baja a «baja» y lo dice; los puntos no se tocan",
+          all(f["riesgo"]["confianza"] == "baja" and any("escala distinta" in m for m in f["riesgo"]["confianzaMotivos"])
+              for f in j_esc["familias"].values() if f.get("riesgo") and f["riesgo"]["nivel"] != "sin base"),
+          [f.get("riesgo") for f in j_esc["familias"].values()])
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM fixtures WHERE id BETWEEN 990100 AND 990199")
     from backend.analisis.parte import borrar as _borrar_parte

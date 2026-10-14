@@ -236,11 +236,13 @@ export function extremoDe(kAbs: number, partidos: number, base: HistorialSignoDT
       ? `CERCA DEL EXTREMO: la burbuja está en la franja más alta de su historia (por encima del ${CERCA_PCT} % de las que reventaron). El modelo no lo puntúa como riesgo, pero queda poco margen antes del récord: no cargar fuerte a que la racha siga`
       : ''
   let inflada: ExtremoBurbujaDTO['inflada'] = null
-  if ((kRecord || rachaRecord || cerca) && amistosos * 2 >= partidos) {
+  // o la racha récord solo es récord contando los amistosos (Saint-Étienne 2 de 7, Elversberg 1 de 3)
+  const soloPorAmistosos = rachaRecord && !kRecord && amistosos > 0 && partidos - amistosos < base.partidos.max
+  if ((kRecord || rachaRecord || cerca) && amistosos > 0 && (amistosos * 2 >= partidos || soloPorAmistosos)) {
     inflada = {
       amistosos,
       partidos,
-      texto: `INFLADA: ${amistosos} de los ${partidos} partidos de la racha son amistosos. Cuentan (la racha es del equipo), pero el récord se armó en buena parte fuera de la competición: leer la alerta con eso a la vista`,
+      texto: `INFLADA: ${amistosos} de los ${partidos} partidos de la racha son amistosos${soloPorAmistosos ? ` y sin ellos la racha (${partidos - amistosos}) no sería récord (máximo previo ${base.partidos.max})` : ''}. Cuentan (la racha es del equipo), pero el récord se armó en buena parte fuera de la competición: leer la alerta con eso a la vista`,
     }
     motivos.push(`inflada: ${amistosos} de ${partidos} partidos de la racha son amistosos`)
   }
