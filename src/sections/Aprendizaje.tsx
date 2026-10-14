@@ -190,6 +190,30 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
             )}
           </div>
         )}
+        {/* ¿LA BUENA ESPINA DE LA BURBUJA SIRVE? Si los lados con «buena» pierden
+            menos que los de «mala», la lectura del analista sobre las K vale algo */}
+        {a.espina && (a.espina.buena.lados + a.espina.mala.lados) > 0 && (
+          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }} title={a.espina.nota}>
+            <div style={{ font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px' }}>BUENA ESPINA DE LA BURBUJA · ¿no pierde?</div>
+            {(['buena', 'mala', 'neutra'] as const).map((k) => {
+              const c = a.espina![k]
+              if (!c.lados) return null
+              return (
+                <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', font: '500 11px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+                  <span style={{ width: 70, color: k === 'buena' ? 'var(--up)' : k === 'mala' ? 'var(--down)' : 'var(--t1)', fontWeight: 700 }}>{k}</span>
+                  <span>no perdió {c.noPierde}/{c.lados}{c.tasaNoPierde !== null ? ` · ${Math.round(c.tasaNoPierde * 100)}%` : ''}</span>
+                  {c.intervalo && <span style={{ color: 'var(--t3)' }}>[{Math.round(c.intervalo[0] * 100)}–{Math.round(c.intervalo[1] * 100)}%]</span>}
+                  <span style={{ color: 'var(--t3)' }}>ganó {c.gana}</span>
+                </div>
+              )
+            })}
+            <div style={{ font: '600 10.5px var(--mono)', color: a.espina.lectura === 'separa' ? 'var(--up)' : 'var(--t3)' }}>
+              {a.espina.lectura === 'sin n' ? `menos de ${a.espina.nMinimo} lados en buena o en mala: todavía no se compara`
+                : a.espina.lectura === 'separa' ? `SEPARA: «buena» pierde menos que «mala» (${Math.round((a.espina.separacion ?? 0) * 100)} puntos)`
+                : `no separa todavía (${a.espina.separacion === null ? '—' : `${Math.round(a.espina.separacion * 100)} puntos`}, los intervalos se tocan)`}
+            </div>
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 10, font: '600 10.5px var(--mono)', color: 'var(--t3)' }}>
           {(['acierto', 'parcial', 'fallo'] as const).map((v) => (
             <span key={v} style={{ color: COLOR_VER[v] }}>{a.veredictos[v] ?? 0} {v}</span>

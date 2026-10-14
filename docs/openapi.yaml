@@ -1508,7 +1508,9 @@ components:
             FUERA es que el rango del backtest no toca el intervalo, nunca que el punto quede
             afuera; comparado solo con n ≥ `nMinimo`), las burbujas con K-EXTREMO,
             y `fueraDelBacktest` / `revisionAbierta`: un nivel fuera del rango ABRE la revisión
-            de los puntos de docs/REVENTON.md §5, no los mueve.
+            de los puntos de docs/REVENTON.md §5, no los mueve. `espina`: por lectura (buena ·
+            mala · neutra) cuántos lados no perdieron, con intervalo, la `separacion` entre buena
+            y mala y la `lectura` (separa · no separa todavía · sin n).
           additionalProperties: true
         porSkill:
           type: array
@@ -2767,6 +2769,17 @@ components:
         datoEstructural: { type: string }
         paradoja: { type: string, description: '"" si no hay paradoja' }
         reventon: { type: string, description: 'la LECTURA de Cowork del reventón de la burbuja (docs/REVENTON.md): una línea por equipo, qué racha no se recomienda seguir y por qué. Los números no se copian' }
+        espina:
+          type: object
+          description: >
+            La buena espina de la burbuja, por equipo (14/10/2026): si la historia de sus burbujas
+            (el tope, la forma de las rachas, lo regular que es) le da buena espina para ESTE
+            partido (no pierde), mala (pierde) o no dice nada (neutra). Las K no mejoran el 1X2 en
+            ninguna fórmula (docs/REVENTON.md §13.3-13.4): esto mide si sirven para la LECTURA.
+            Una lectura fuera de las tres se rechaza con motivo.
+          properties:
+            a: { $ref: '#/components/schemas/EspinaLado' }
+            b: { $ref: '#/components/schemas/EspinaLado' }
         reventonCalculado:
           type: object
           nullable: true
@@ -3845,6 +3858,25 @@ components:
             nota: { type: string }
             a: { $ref: '#/components/schemas/ReventonObservado' }
             b: { $ref: '#/components/schemas/ReventonObservado' }
+        espina:
+          type: object
+          description: 'la buena espina declarada contra el resultado, por lado. Lo que dice si sirve es la separación en /analisis/cowork/lecciones (acreditables.espina), no un caso'
+          properties:
+            nota: { type: string }
+            a: { $ref: '#/components/schemas/EspinaObservada' }
+            b: { $ref: '#/components/schemas/EspinaObservada' }
+    EspinaLado:
+      type: object
+      properties:
+        lectura: { type: string, enum: [buena, mala, neutra] }
+        porque: { type: string }
+    EspinaObservada:
+      type: object
+      properties:
+        lectura: { type: string, nullable: true, enum: [buena, mala, neutra, null] }
+        porque: { type: string }
+        resultado: { type: string, nullable: true, enum: [gana, empata, pierde, null] }
+        cumplida: { type: boolean, nullable: true, description: 'buena = no pierde · mala = pierde · neutra o sin lectura = null' }
     ReventonObservado:
       type: object
       properties:

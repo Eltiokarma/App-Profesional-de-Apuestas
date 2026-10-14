@@ -203,6 +203,7 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
     unxdos_ok, unxdos_de = 0, 0
     tde_obs, tde_positivos, tde_sin_ficha, tde_contaminadas = 0, 0, 0, 0
     rev = _reventon_vacio()
+    espina = {e: {"lados": 0, "noPierde": 0, "gana": 0} for e in ("buena", "mala", "neutra")}
 
     for caso in casos:
         v = caso["veredicto"]
@@ -247,6 +248,13 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
             tde_obs += 1
             tde_positivos += 1 if b["golEnVentana"] else 0
         _acumular_reventon(rev, obj.get("reventon") or {}, ux, br)
+        for lado in ("a", "b"):
+            e = (obj.get("espina") or {}).get(lado) or {}
+            if e.get("lectura") in espina:
+                c = espina[e["lectura"]]
+                c["lados"] += 1
+                c["noPierde"] += 1 if e.get("resultado") != "pierde" else 0
+                c["gana"] += 1 if e.get("resultado") == "gana" else 0
 
     total_lados = sum(acred.values())
     decididos = acred["acierto"] + acred["fallo"] + acred["parcial"]
@@ -268,8 +276,31 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
                     "ciega. `sinFicha` no cuenta como no ocurrido: no se pudo comprobar",
         },
         "reventon": _cerrar_reventon(rev),
+        "espina": _cerrar_espina(espina),
     }
     return poblacion, metricas
+
+
+def _cerrar_espina(acc: dict) -> dict:
+    """¿La buena espina de la burbuja separa? Si los lados con «buena» pierden
+    menos que los de «mala», la lectura del analista sobre las K vale algo;
+    si no, decora. Con intervalo de Wilson: con pocos lados se dice."""
+    out = {}
+    for lectura, c in acc.items():
+        n = c["lados"]
+        out[lectura] = {"lados": n, "noPierde": c["noPierde"], "gana": c["gana"],
+                        "tasaNoPierde": round(c["noPierde"] / n, 3) if n else None,
+                        "intervalo": list(intervalo_wilson(c["noPierde"], n) or []) or None}
+    b, m = out["buena"], out["mala"]
+    sep = (round(b["tasaNoPierde"] - m["tasaNoPierde"], 3)
+           if b["tasaNoPierde"] is not None and m["tasaNoPierde"] is not None else None)
+    lectura = ("sin n" if min(b["lados"], m["lados"]) < REVENTON_N_MINIMO else
+               "separa" if b["intervalo"] and m["intervalo"] and b["intervalo"][0] > m["intervalo"][1] else
+               "no separa todavía")
+    return {**out, "separacion": sep, "lectura": lectura, "nMinimo": REVENTON_N_MINIMO,
+            "nota": "lados ciegos con espina declarada: buena = la historia de las burbujas sugería "
+                    "que no pierde; mala = que pierde. Separa si el intervalo de «buena» queda "
+                    "entero por encima del de «mala»"}
 
 
 # ── el reventón en producción, contra el backtest ───────────────────────────
