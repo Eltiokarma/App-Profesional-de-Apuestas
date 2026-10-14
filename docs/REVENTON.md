@@ -717,4 +717,23 @@ prueba, contra 26 % real) y `gaL` «predijo» con coeficiente +10 lo que él
 mismo había armado. Arreglado con claves propias (`kRes`, `kGa`, …), una
 guardia que corta si algo pisa el marcador, un test que compara el resultado
 con el real y un control de cordura que aborta si los empates salen fuera de
-15-35 %. Resultado: pendiente de la corrida limpia.
+15-35 %.
+
+**Corrida limpia (14/10/2026, 58.590 partidos; prueba 11.718 con local 45 %
+· empate 26 % · visita 29 %): NINGUNA constante agrega al 1X2.**
+
+| contra el motor (M0, log-loss 1.0428, acierto 47.4 %) | Δ log-loss | IC 95 % |
+|---|---|---|
+| M4 · K de resultado (total y por condición) | +0.00011 | [−0.00034, +0.00059] |
+| M5 · K de goles (total y por condición) | −0.00018 | [−0.00116, +0.00079] |
+| M6 · todas las K | −0.00023 | [−0.00121, +0.00073] |
+
+Igual en riesgo alto y con extremo. Los coeficientes de las K quedan todos
+cerca de cero (|β| < 0.1 por desvío) y solo pesa la diferencia de nivel. Es
+coherente: el nivel ventana-20 ya resume puntos y goles ponderados por rival,
+y las K son otra lectura de esa misma historia. Límite declarado: es una
+logística lineal; un cruce no lineal de K extremas no queda descartado del
+todo, pero con estos pesos no hay ahí nada grande. **Decisión: las K no entran
+a la fórmula del 1X2.** Mejorar el 1X2 pasa por el motor (47 % contra 45 % de
+«siempre local») o por lo que el nivel no ve —bajas, DT, contexto: el EFE/TDE
+del analista, medido con los veredictos—.
