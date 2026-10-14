@@ -923,22 +923,23 @@ Escribís vos (es juicio, no se puede calcular):
   calendario del equipo, y un fixture viejo sin marcar lo desvía (al Betis le
   salió un rival que no era el del partido).
   Es una guía CALCULADA de cuándo la K de resultado de cada equipo suele
-  volver a cero, recalibrada el 14/10/2026 con 173.615 observaciones reales
-  (`docs/REVENTON.md` §12.2). No es probabilidad y no la reemplaces con tu
+  volver a cero, recalibrada el 14/10/2026 con 173.615 observaciones reales y
+  el rival medido ANTES de cada partido (`docs/REVENTON.md` §13.2). No es probabilidad y no la reemplaces con tu
   impresión. Mirá `familias.total` (la que manda): `riesgo.nivel`,
   `riesgo.puntos`, `riesgo.confianza`, `riesgo.motivos` y `rival.tramo`.
   Qué suma y qué resta (los motivos lo dicen, no lo recalcules):
-    · el rival frente al nivel con el que ese equipo suele caer: +2 · +3 · +5
-      (zona · fuerte · muy fuerte);
+    · el rival frente al nivel con el que ese equipo suele caer: +1 si es
+      «fuerte», +2 si es «muy fuerte» (en la zona sola no suma);
     · la racha en o sobre su mediana de partidos: +1;
     · CONTRAMANO (`actual.contramano`): la racha se hizo de local y el
       próximo es de visita, o al revés: +1;
     · FAVORITO POR NIVEL (`rival.aFavor`/`rival.favorito`): la diferencia de
       nivel juega a que la racha SIGA —el más fuerte con racha positiva, el
-      más débil con racha negativa—: −2 (≥ 0.5) · −4 (≥ 1.0). Es la señal
+      más débil con racha negativa—: −1 (≥ 0.5) · −3 (≥ 1.0). Es la señal
       protectora más fuerte del backtest: un favorito claro rompe su racha
       bastante menos que el resto.
-  Cortes: bajo < 0 · medio 0-1 · alto 2-3 · muy alto ≥ 4. Lo que el backtest
+  Cortes: bajo < 0 · medio 0 · alto 1-2 · muy alto ≥ 3. Es GUÍA y separa
+  poco: del nivel bajo al muy alto la tasa de reventón va de ~45 % a ~72 %. Lo que el backtest
   NO sostuvo y por eso no suma: la K alta o récord, la burbuja inflada por
   amistosos, el parón largo, el rival también en burbuja, la forma previa
   del arquero. Puede ir en la lectura como contexto, nunca como «más riesgo».

@@ -2597,7 +2597,7 @@ def main():
     rvm = inv["acreditables"]["reventon"]
     check("las métricas traen la tasa de reventón por nivel de riesgo con el rango del backtest al lado",
           set(rvm["porNivel"]) >= {"bajo", "medio", "alto", "muy alto", "sin base"}
-          and rvm["porNivel"]["muy alto"]["esperadoBacktest"] == [0.745, 0.882]
+          and rvm["porNivel"]["muy alto"]["esperadoBacktest"] == [0.71, 0.75]
           and rvm["porNivel"]["sin base"]["esperadoBacktest"] is None, rvm["porNivel"])
     n_casos_ciegos = inv["acreditables"]["casos"]
     check("las observaciones son los lados de los casos ciegos (dos por caso) y suman por nivel",

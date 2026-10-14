@@ -283,15 +283,16 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   mediana · moda de la K pico, los partidos y el nivel del rival que reventó
   cada burbuja; la abierta hoy se compara con eso y con el próximo rival. Los
   puntos del riesgo están CALIBRADOS con el backtest real (`--calibrar`,
-  recalibrados el 14/10/2026 con 173.615 observaciones, §12.2 del doc): la K
+  recalibrados el 14/10/2026 con 173.615 observaciones y el rival medido
+  ANTES del partido, §13.2 del doc): la K
   NO puntúa —estar por encima de la K con la que suele reventar no adelanta
   el reventón—, la racha ≥ mediana suma 1, el rival frente a la mediana con
-  la que revienta suma 2 · 3 · 5 (zona · fuerte · muy fuerte, en la dirección
+  la que revienta suma 0 · 1 · 2 (zona · fuerte · muy fuerte, en la dirección
   del riesgo), la racha hecha en la condición CONTRARIA a la del próximo suma
   1 (`actual.contramano`), y la diferencia de nivel A FAVOR de que la racha
-  siga —el favorito con racha +, el débil con racha −— RESTA 2 · 4 (≥ 0.5 ·
-  ≥ 1.0, `rival.aFavor`/`rival.favorito`). Cortes: bajo < 0 · medio 0-1 ·
-  alto 2-3 · muy alto ≥ 4. Lo que los 52 estudios de reventones creyeron ver
+  siga —el favorito con racha +, el débil con racha −— RESTA 1 · 3 (≥ 0.5 ·
+  ≥ 1.0, `rival.aFavor`/`rival.favorito`). Cortes: bajo < 0 · medio 0 ·
+  alto 1-2 · muy alto ≥ 3 (AUC 0.615: guía, separa ~45 % de ~72 %). Lo que los 52 estudios de reventones creyeron ver
   y el backtest de las lecciones (`--lecciones`, §12) NO sostuvo —récord,
   inflada, parón, burbujas enfrentadas, forma del arquero— no puntúa; los
   candidatos a estudiar salen AL AZAR, no por tamaño. Manda la familia total: la regla
@@ -658,8 +659,10 @@ conversación se pierde en la siguiente.
    marcador; lo destapó el backtest del 1X2 (47 % → 54 % de acierto, demasiado
    bueno). Arreglado con `backtest_burbuja.nivel_rival_previo` y su test. La
    app no la tenía, pero los puntos de §12.2 (favorito −2/−4, tramo del rival)
-   se calibraron con ella: hay que volver a correr `--lecciones`, `--calibrar`
-   y `backtest_burbuja_1x2` en Railway antes de tocar la fórmula del 1X2.
+   se calibraron con ella. Re-corrido limpio el mismo día (§13.2): AUC 0.715 →
+   0.615, puntos nuevos (rival 0·1·2, favorito −1/−3, cortes 0/1/3) y
+   `TASA_BACKTEST` rehecha; contramano y favorito siguen siendo reales, más
+   chicos.
 
 ## Siguientes pasos (en orden)
 

@@ -53,19 +53,20 @@ BIN_GLOBALES_BAJO = 2
 # la logística dio 0.82 · 1.18 · 1.86 de log-odds, un punto cada 0.25.
 ZONA_TOLERANCIA = 0.15
 RIVAL_FUERTE = 0.45
-# Recalibrado el 14/10/2026 (backtest --calibrar, 173.615 observaciones, AUC 0.715)
-# con las dos señales nuevas en la logística: parte de lo que el rival medía era
-# la diferencia de nivel, y al separarla bajan sus puntos (antes 3 · 5 · 7)
-PUNTOS_RIVAL = {"lejos": 0, "zona": 2, "fuerte": 3, "muy fuerte": 5}
-PUNTOS_RACHA = 1               # racha ≥ mediana de partidos (coef 0.32)
+# Recalibrado el 14/10/2026 con el backtest LIMPIO (REVENTON §13.1: el rival
+# medido ANTES del partido; la corrida de la mañana leía el nivel de después y
+# daba AUC 0.715 con 2 · 3 · 5). Limpio: AUC 0.615, coef 0.10 · 0.19 · 0.38 →
+# la zona sola ya no suma (medio punto, por debajo del paso).
+PUNTOS_RIVAL = {"lejos": 0, "zona": 0, "fuerte": 1, "muy fuerte": 2}
+PUNTOS_RACHA = 1               # racha ≥ mediana de partidos (coef 0.25 limpio)
 # Las dos señales del backtest de las lecciones (REVENTON §12, 14/10/2026):
 # la racha hecha en la condición contraria a la del próximo (+5,8 puntos de
-# tasa SOBRE el riesgo, 52.726 casos) y la diferencia de nivel a favor de que
-# la racha siga —el favorito con racha +, el débil con racha −— (−20,6: la
-# burbuja revienta MENOS y el riesgo no lo veía). Los puntos salen de
-# `backtest_burbuja --calibrar`; los de favor RESTAN.
-PUNTOS_CONTRAMANO = 1           # coef 0.207 (0.226 en +, 0.187 en −)
-PUNTOS_FAVOR = {"no": 0, "favorito": -2, "muy favorito": -4}   # coef −0.528 / −1.057, igual en los dos signos
+# tasa SOBRE el riesgo; +2,2 en la corrida limpia) y la diferencia de nivel a
+# favor de que la racha siga —el favorito con racha +, el débil con racha −—
+# (−14,8 limpio, −20,6 con la fuga: la burbuja revienta MENOS y el riesgo no lo
+# veía). Los puntos salen de `backtest_burbuja --calibrar`; los de favor RESTAN.
+PUNTOS_CONTRAMANO = 1           # coef 0.207 (no depende del nivel del rival: igual con y sin fuga)
+PUNTOS_FAVOR = {"no": 0, "favorito": -1, "muy favorito": -3}   # coef limpio −0.371 / −0.709
 FAVORITO, MUY_FAVORITO = 0.5, 1.0
 
 # muestra de reventones que sostiene una guía
@@ -80,15 +81,15 @@ BAJAS_TRANSICION = 5
 PLANTILLA_VIEJA_DIAS = 30      # la ingesta de jugadores tiene esta edad o más
 MAX_REVENTONES_SALIDA = 40     # los más recientes; la estadística usa TODOS
 
-# Tasa de reventón OBSERVADA en el backtest real por nivel de riesgo (§12.2 del
-# doc, recalibración del 14/10/2026, 173.615 observaciones, horizonte 1): es la
+# Tasa de reventón OBSERVADA en el backtest real por nivel de riesgo (§13.2 del
+# doc, corrida LIMPIA del 14/10/2026, 173.615 observaciones, horizonte 1): es la
 # referencia contra la que el bucle de aprendizaje compara lo que pasa en
 # producción con los casos ciegos. Rango (mín, máx) porque cada nivel junta
-# varios puntajes (bajo = −4 a −1 pts: 29.1-47.0 %; medio = 0-1: 52.6-59.3 %;
-# alto = 2-3: 64.0-69.1 %; muy alto = 4-7: 74.5-88.2 %). NO es un peso: no se
+# varios puntajes (bajo = −4 a −1 pts: 39.7-50.0 %; medio = 0: 55.2 %;
+# alto = 1-2: 62.0-67.1 %; muy alto = 3+: 71.0-75.0 %). NO es un peso: no se
 # usa para calcular nada, solo para decir «esperábamos esto».
-TASA_BACKTEST = {"bajo": (0.291, 0.470), "medio": (0.526, 0.593),
-                 "alto": (0.640, 0.691), "muy alto": (0.745, 0.882)}
+TASA_BACKTEST = {"bajo": (0.397, 0.500), "medio": (0.552, 0.552),
+                 "alto": (0.620, 0.671), "muy alto": (0.710, 0.750)}
 TASA_BASE_BACKTEST = 0.60
 
 AVISO = ("Guía, no probabilidad: compara la burbuja abierta con lo que este equipo aguantó "
@@ -212,11 +213,11 @@ def _historial(cerrados: list[dict]) -> dict:
 # ── riesgo ───────────────────────────────────────────────────────────────────
 
 def _nivel_riesgo(puntos: int) -> str:
-    # cortes de la recalibración del 14/10/2026 sobre la tasa isotónica: con los
-    # puntos que RESTAN (favorito) el puntaje puede ser negativo
-    if puntos >= 4:
+    # cortes de la corrida LIMPIA del 14/10/2026 sobre la tasa isotónica (§13.2):
+    # con los puntos que RESTAN (favorito) el puntaje puede ser negativo
+    if puntos >= 3:
         return "muy alto"
-    if puntos >= 2:
+    if puntos >= 1:
         return "alto"
     if puntos >= 0:
         return "medio"
@@ -529,11 +530,11 @@ def _analizar_familia(filas: list[dict], familia: str, proximo: dict | None, est
         if tramo == "lejos":
             motivos.append(f"{quien} queda lejos del nivel con el que suele {verbo} (mediana {med_n})")
         elif tramo == "zona":
-            motivos.append(f"{quien} está en la zona donde suele {verbo} (mediana {med_n}) (+{pts})")
+            motivos.append(f"{quien} está en la zona donde suele {verbo} (mediana {med_n})" + (f" (+{pts})" if pts else ""))
         elif tramo == "fuerte":
-            motivos.append(f"{quien} es más {lado} que los rivales con los que suele {verbo} (mediana {med_n}) (+{pts})")
+            motivos.append(f"{quien} es más {lado} que los rivales con los que suele {verbo} (mediana {med_n})" + (f" (+{pts})" if pts else ""))
         else:
-            motivos.append(f"{quien} es mucho más {lado} que los rivales con los que suele {verbo} (mediana {med_n}) (+{pts})")
+            motivos.append(f"{quien} es mucho más {lado} que los rivales con los que suele {verbo} (mediana {med_n})" + (f" (+{pts})" if pts else ""))
         # A FAVOR DE QUE LA RACHA SIGA: el favorito con racha +, el débil con racha −
         if nivel_equipo is not None:
             g = _r2((float(nivel_equipo) - nivel_prox) if signo == "+" else (nivel_prox - float(nivel_equipo)))

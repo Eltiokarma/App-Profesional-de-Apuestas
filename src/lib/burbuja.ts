@@ -42,12 +42,12 @@ export const BIN_GLOBALES_BAJO = 2
 // Puntos calibrados con el backtest real del 16/09/2026 (docs/REVENTON.md §8).
 export const ZONA_TOLERANCIA = 0.15
 export const RIVAL_FUERTE = 0.45
-// recalibrado el 14/10/2026 (espejo de burbuja.py): antes 3 · 5 · 7
-export const PUNTOS_RIVAL: Record<TramoRival, number> = { lejos: 0, zona: 2, fuerte: 3, 'muy fuerte': 5 }
+// corrida limpia del 14/10/2026 (espejo de burbuja.py, REVENTON §13.2): antes 2 · 3 · 5 con la fuga
+export const PUNTOS_RIVAL: Record<TramoRival, number> = { lejos: 0, zona: 0, fuerte: 1, 'muy fuerte': 2 }
 export const PUNTOS_RACHA = 1
 /** Las dos señales del backtest de las lecciones (espejo de burbuja.py, REVENTON §12). */
 export const PUNTOS_CONTRAMANO = 1
-export const PUNTOS_FAVOR: Record<'no' | 'favorito' | 'muy favorito', number> = { no: 0, favorito: -2, 'muy favorito': -4 }
+export const PUNTOS_FAVOR: Record<'no' | 'favorito' | 'muy favorito', number> = { no: 0, favorito: -1, 'muy favorito': -3 }
 export const FAVORITO = 0.5
 export const MUY_FAVORITO = 1.0
 export type TramoRival = 'lejos' | 'zona' | 'fuerte' | 'muy fuerte'
@@ -176,7 +176,7 @@ function historialDe(cerrados: ReventonDTO[]): FamiliaBurbujaDTO['historial'] {
 // ── riesgo ──────────────────────────────────────────────────────────────────
 
 // cortes de la recalibración del 14/10/2026 (espejo de _nivel_riesgo): el puntaje puede ser negativo
-const nivelRiesgo = (p: number): 'bajo' | 'medio' | 'alto' | 'muy alto' => (p >= 4 ? 'muy alto' : p >= 2 ? 'alto' : p >= 0 ? 'medio' : 'bajo')
+const nivelRiesgo = (p: number): 'bajo' | 'medio' | 'alto' | 'muy alto' => (p >= 3 ? 'muy alto' : p >= 1 ? 'alto' : p >= 0 ? 'medio' : 'bajo')
 
 function confianzaDe(n: number, estabilidad: EstabilidadEquipoDTO): [RiesgoConfianza, string[]] {
   const orden: RiesgoConfianza[] = ['baja', 'media', 'alta']
@@ -390,9 +390,9 @@ function analizarFamilia(filas: FilaK[], familia: FamiliaBurbuja, proximo: Proxi
     const verbo = signo === '+' ? 'reventar' : 'cortarse la racha'
     const lado = signo === '+' ? 'fuerte' : 'flojo'
     if (tramo === 'lejos') motivos.push(`${quien} queda lejos del nivel con el que suele ${verbo} (mediana ${medN})`)
-    else if (tramo === 'zona') motivos.push(`${quien} está en la zona donde suele ${verbo} (mediana ${medN}) (+${pts})`)
-    else if (tramo === 'fuerte') motivos.push(`${quien} es más ${lado} que los rivales con los que suele ${verbo} (mediana ${medN}) (+${pts})`)
-    else motivos.push(`${quien} es mucho más ${lado} que los rivales con los que suele ${verbo} (mediana ${medN}) (+${pts})`)
+    else if (tramo === 'zona') motivos.push(`${quien} está en la zona donde suele ${verbo} (mediana ${medN})` + (pts ? ` (+${pts})` : ''))
+    else if (tramo === 'fuerte') motivos.push(`${quien} es más ${lado} que los rivales con los que suele ${verbo} (mediana ${medN})` + (pts ? ` (+${pts})` : ''))
+    else motivos.push(`${quien} es mucho más ${lado} que los rivales con los que suele ${verbo} (mediana ${medN})` + (pts ? ` (+${pts})` : ''))
     // a favor de que la racha siga: el favorito con racha +, el débil con racha −
     if (nivelEquipo != null) {
       const g = r2(signo === '+' ? nivelEquipo - nivelProx : nivelProx - nivelEquipo)
