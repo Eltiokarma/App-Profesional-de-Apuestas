@@ -606,7 +606,45 @@ def _lectura_sad(x, rechazos: list | None = None) -> dict:
         # los números NO se copian: el backend los recalcula al leer y viajan
         # al lado en `reventonCalculado`
         "reventon": _txt(x.get("reventon")),
+        "espina": _espina(x.get("espina"), rechazos),
     }
+
+
+ESPINAS = ("buena", "mala", "neutra")
+
+
+def _espina(x, rechazos: list) -> dict:
+    """LA BUENA ESPINA DE LA BURBUJA (14/10/2026, pedido del usuario). Las K no
+    mejoran el 1X2 del motor en ninguna fórmula (REVENTON §13.3-13.4), pero la
+    gráfica —el tope del equipo, la forma de sus rachas, lo regular que es de
+    temporada en temporada— le sirve al analista para LEER el partido. Esto le
+    pide que lo diga en una palabra por equipo: la historia de sus burbujas,
+    ¿le da buena espina para ESTE partido (no pierde), mala (pierde) o no dice
+    nada (neutra)?, y por qué. El veredicto la compara con el resultado
+    (`objetivo.espina`) y las lecciones dicen si «buena» pierde menos que
+    «mala»: es la única forma de saber si esa lectura vale algo."""
+    if not x:
+        return {}
+    x = _dict(x, rechazos, "lecturaSad.espina",
+              '{"a": {"lectura": "buena|mala|neutra", "porque": "…"}, "b": {…}}')
+    out = {}
+    for lado in ("a", "b"):
+        v = x.get(lado)
+        if v is None:
+            continue
+        if isinstance(v, str):
+            v = {"lectura": v}
+        if not isinstance(v, dict):
+            rechazos.append({"donde": f"lecturaSad.espina.{lado}", "porque": "va un objeto",
+                             "esperado": '{"lectura": "buena|mala|neutra", "porque": "…"}'})
+            continue
+        lectura = _txt(v.get("lectura")).lower()
+        if lectura not in ESPINAS:
+            rechazos.append({"donde": f"lecturaSad.espina.{lado}.lectura",
+                             "porque": f"«{lectura}» no es una lectura", "esperado": "buena · mala · neutra"})
+            continue
+        out[lado] = {"lectura": lectura, "porque": _txt(v.get("porque"))}
+    return out
 
 
 def _reventon_calculado(fx) -> dict | None:
@@ -3101,7 +3139,12 @@ def contrato() -> dict:
         "alertas": {"claves": sorted(_CLAVES_ALERTA),
                     "equipo": list(_EQUIPOS_ALERTA)},
         "lecturaSad": {
-            "claves": ["moduloOperativo", "unXDos", "contextoEmocional", "datoEstructural", "paradoja", "reventon"],
+            "claves": ["moduloOperativo", "unXDos", "contextoEmocional", "datoEstructural", "paradoja", "reventon",
+                       "espina"],
+            "espina": '{"a": {"lectura": "buena|mala|neutra", "porque": "…"}, "b": {…}}: por equipo, '
+                      "si la historia de sus burbujas (el tope, la forma de las rachas, lo regular que es) "
+                      "le da buena espina para ESTE partido (no pierde), mala (pierde) o no dice nada. "
+                      "El veredicto la compara con el resultado",
             "reventon": "UNA línea por equipo con tu lectura del reventón de la burbuja "
                         "(GET /equipos/{id}/burbujas, docs/REVENTON.md): qué racha NO se recomienda "
                         "seguir y por qué. No copies los números: el backend los recalcula al leer "

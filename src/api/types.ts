@@ -1244,6 +1244,9 @@ export interface LecturaSadParte {
   paradoja: string
   /** La lectura de Cowork del reventón de la burbuja: una línea por equipo. */
   reventon: string
+  /** La buena espina de la burbuja, por equipo: si la historia de sus K le da
+   *  buena espina para ESTE partido (no pierde), mala (pierde) o neutra. */
+  espina?: Partial<Record<'a' | 'b', EspinaLado>>
   /** Solo en el GET: el reventón de cada lado con este partido como próximo,
    *  familia total, calculado al leer (docs/REVENTON.md). */
   reventonCalculado?: Record<'a' | 'b', ReventonLadoDTO> | null
@@ -1406,6 +1409,38 @@ export interface VeredictoObjetivo {
    *  lo declarado antes del partido y si ese partido la reventó. Observación,
    *  no veredicto: la tasa se compara con la del backtest en las lecciones. */
   reventon?: { nota: string } & Partial<Record<'a' | 'b', ReventonObservado>>
+  /** La buena espina declarada contra el resultado (buena = no pierde, mala = pierde). */
+  espina?: { nota: string } & Partial<Record<'a' | 'b', EspinaObservada>>
+}
+
+export interface EspinaLado {
+  lectura: 'buena' | 'mala' | 'neutra'
+  porque: string
+}
+
+export interface EspinaObservada {
+  lectura: 'buena' | 'mala' | 'neutra' | null
+  porque?: string
+  resultado: 'gana' | 'empata' | 'pierde' | null
+  cumplida: boolean | null
+}
+
+export interface EspinaCelda {
+  lados: number
+  noPierde: number
+  gana: number
+  tasaNoPierde: number | null
+  intervalo: number[] | null
+}
+
+export interface EspinaMetricas {
+  buena: EspinaCelda
+  mala: EspinaCelda
+  neutra: EspinaCelda
+  separacion: number | null
+  lectura: 'separa' | 'no separa todavía' | 'sin n'
+  nMinimo: number
+  nota: string
 }
 
 export interface ReventonObservado {
@@ -1810,6 +1845,8 @@ export interface InventarioLecciones {
     ventanaTde: { observadas: number; conGol: number; sinFicha: number; nota: string }
     /** El reventón en producción contra el backtest (docs/REVENTON.md §11). */
     reventon?: ReventonMetricas
+    /** ¿La buena espina de la burbuja separa? (buena pierde menos que mala) */
+    espina?: EspinaMetricas
   }
   porSkill: SkillAprendizaje[]
   porModoFallo?: PorModoFallo

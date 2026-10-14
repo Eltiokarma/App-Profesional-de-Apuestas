@@ -671,6 +671,13 @@ conversación se pierde en la siguiente.
    del mismo día, con su guardia: una K con clave `ga` pisó el marcador (7 %
    de empates; ahora aborta fuera de 15-35 %) y el pipeline dejaba «no such
    table» mientras rehacía las derivadas (ahora en una transacción).
+   **Las K se quedan en la LECTURA** (decisión del usuario, 14/10/2026): cada
+   parte declara la **buena espina de la burbuja** por equipo
+   (`lecturaSad.espina`: buena = no pierde · mala = pierde · neutra, con
+   `porque`, leyendo el tope y la forma de sus K), el veredicto la compara con
+   el resultado (`objetivo.espina`) y Aprendizaje mide si «buena» pierde menos
+   que «mala» (`acreditables.espina`, Wilson, n ≥ 10 por lado). Una lectura
+   fuera de las tres se rechaza con motivo.
 
 ## Siguientes pasos (en orden)
 
