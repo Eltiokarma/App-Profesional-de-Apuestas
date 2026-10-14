@@ -63,3 +63,5 @@ jobs:
         run: python -m backend.test_burbuja
       - name: Tests del backtest del reventón (anti-fuga y conteos)
         run: python -m backend.test_backtest_burbuja
+      - name: Backtest de la burbuja en el 1X2 (método sobre sintéticos + demo)
+        run: python -m backend.test_backtest_1x2
