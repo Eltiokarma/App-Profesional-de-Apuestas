@@ -103,6 +103,10 @@ def main():
     check("dos DT distintos no casan", not mismo_nombre_dt("Gallardo", "Costas")
           and not mismo_nombre_dt("Marcelo Gallardo", "Gustavo Costas")
           and not mismo_nombre_dt("Leonardo Peirano", "S. Novoa"))
+    check("una ß mal codificada no es otro DT (Stuttgart 14/10: «S. Hoeneb» vs «Sebastian Hoeneß»)",
+          mismo_nombre_dt("S. Hoeneb", "Sebastian Hoeneß") and mismo_nombre_dt("Luis Enrique", "Enrique Luis"))
+    check("y la tolerancia no junta apellidos parecidos de verdad",
+          not mismo_nombre_dt("Gallardo", "Gallegos") and not mismo_nombre_dt("M. Martínez", "Martino"))
 
     # --- 2b. EL DT VIGENTE, no el saliente (17 de 22 mal en la corrida del 16/09)
     from backend.ingesta.jugadores import elegir_entrenador, guardar_entrenador
@@ -290,6 +294,28 @@ def main():
     check("un registro `alineacion` sin alineación fresca que lo sostenga se rehace con /coachs aunque sea de hoy",
           fila and fila[1] == "coachs" and fila[0] == "S. Novoa"
           and any(c["equipo"] == 700 and c["antes"] == "P. Guardiola" for c in r3["cambiados"]), (fila, r3))
+
+    # PSG (14/10/2026): «Enrique Luis · alineacion · desde 20/09» escrito con la
+    # regla vieja de apellidos; el nombre casa y el registro es fresco, pero la
+    # racha de hoy no corta (desde vacío). Se rehace con /coachs.
+    con.execute("DELETE FROM entrenadores WHERE team_id=700")
+    con.execute("INSERT INTO entrenadores (team_id, coach_id, nombre, desde, actualizado_en, fuente) "
+                "VALUES (700, 0, 'S. Novoa', '2026-09-20', ?, 'alineacion')", (hace(1),))
+    con.execute("UPDATE alineaciones SET entrenador='S. Novoa' WHERE team_id=700")
+    for fx in (23, 24, 25):
+        con.execute("INSERT INTO alineaciones (fixture_id, team_id, entrenador, player_id, titular) "
+                    "VALUES (?, 700, 'S. Novoa', 1, 1)", (fx,))
+    con.commit()
+    antes = len(falso.pedidos)
+    dt_agenda(falso, con, dias=2, edad_dias=7)
+    fila = con.execute("SELECT nombre, fuente, desde FROM entrenadores WHERE team_id=700").fetchone()
+    check("un `desde` de alineación que la racha de hoy no sostiene se rehace con /coachs (la llegada real)",
+          ("coachs", {"team": 700}) in falso.pedidos[antes:] and fila and fila[1] == "coachs"
+          and str(fila[2]).startswith("2019"), (fila, falso.pedidos[antes:]))
+    antes = len(falso.pedidos)
+    dt_agenda(falso, con, dias=2, edad_dias=7)
+    check("y una vez rehecho no se vuelve a pedir",
+          ("coachs", {"team": 700}) not in falso.pedidos[antes:], falso.pedidos[antes:])
 
     # --- 3. el padrón: ligas importantes, no las copas ---------------------
     con = db()
