@@ -570,3 +570,36 @@ rangos nuevos. Las dos señales nuevas son iguales en los dos signos: una sola
 tabla. Aplicado en `burbuja.py` y su espejo `src/lib/burbuja.ts`, con vectores
 nuevos en los dos tests (contramano, favorito, muy favorito).
 
+## 13. ¿La burbuja mejora el 1X2? (`backend/backtest_burbuja_1x2.py`, 14/10/2026)
+
+El riesgo está calibrado para decir si una RACHA se corta, no quién gana: una
+racha de victorias se corta también con un empate. Hoy entra al pronóstico
+solo como FRENO de la carga (reglas del prompt en `docs/COWORK.md`), nunca en
+una fórmula. Antes de meterlo en una, se mide con la historia y sin cuotas:
+
+| modelo | variables (por partido, todo «a favor del local») |
+|---|---|
+| M0 · motor | d = μ_partido local − μ_partido visita, y d² (el empate vive cerca de d = 0) |
+| M1 · + racha | más la racha abierta de cada lado: signo × log(1 + partidos) |
+| M2 · + riesgo | más los puntos del riesgo de cada lado, con el signo de su racha |
+| M3 · + extremo | más el récord (2) y el «cerca» (1), con signo |
+
+Logística multinomial (local · empate · visita), ajustada con el 80 % más
+VIEJO de los partidos y evaluada en el 20 % más NUEVO; log-loss y Brier en la
+prueba y la diferencia contra el modelo anterior con IC 95 % por bootstrap
+emparejado por partido, también en los partidos con algún lado en riesgo alto
+y con extremo. Sin fuga: burbuja, riesgo y nivel salen solo de lo anterior al
+partido; un partido entra solo si los DOS equipos tienen historia (un lado sin
+datos no es un lado sin burbuja).
+
+Regla de decisión (la `lectura` del resultado la calcula el script): si el IC
+de **M2 − M1** queda entero por debajo de cero, el riesgo AGREGA al 1X2 más
+allá de la racha y tiene sentido llevarlo a la fórmula con esos coeficientes
+(en los dos lados y con su propio test); si cruza cero, la burbuja se queda
+como freno de la carga. M1 − M0 dice si la racha sola ya aporta (la «forma»
+que el nivel ventana-20 no termina de ver). El método se prueba con datos
+sintéticos de verdad conocida en `backend/test_backtest_1x2.py`.
+
+Se corre en Railway (las `.db` viven ahí), como el resto de los backtests:
+`nohup python -m backend.backtest_burbuja_1x2 --padron > /data/b1x2.log 2>&1 &`
+y el resumen queda en `/data/.backtest_1x2.json`. Resultados: pendientes.
