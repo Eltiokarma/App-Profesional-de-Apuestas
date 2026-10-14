@@ -385,6 +385,17 @@ def main():
           and _esc.cambio_de_categoria({"id": 39, "categoria": "primera"}, 40) == "descendido"
           and _esc.cambio_de_categoria({"id": 39, "categoria": "primera"}, 45) == ""
           and _esc.cambio_de_categoria({"id": 39, "categoria": "primera"}, 39) == "")
+    # pretemporada: Millwall (base Championship) con su próximo partido de liga en la Premier
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT OR REPLACE INTO leagues (id, name, country, season) VALUES (39, 'Premier League', 'England', 2026)")
+        _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                     "home_team_id, away_team_id) VALUES (?,?,?,?,?,?,?,?)",
+                     (990160, (t0 + _dt.timedelta(days=20)).strftime("%Y-%m-%d %H:%M:%S"), "NS",
+                      "Not Started", 39, 2027, 990103, 990101))
+    _pre = _esc.entre(fxr["home_team_id"], 990103, t0.strftime("%Y-%m-%d"), 667)
+    check("amistoso de pretemporada con un rival que ya ascendió: la escala lo dice (Mallorca–Elversberg)",
+          _pre["comparable"] is False and _pre.get("cambioDeCategoriaRival") == "ascendido"
+          and "receso" in _pre["nota"], _pre)
     _wh = _esc.entre(fxr["home_team_id"], 990103, None, 40)   # uno de LaLiga jugando la liga de Millwall
     check("con el rival de su liga nueva, lo que no compara es la HISTORIA del equipo (West Ham en The Den)",
           _wh["relacion"] == "equipo descendido" and _wh["comparable"] is False
@@ -397,6 +408,10 @@ def main():
     check("la burbuja trae la escala del próximo rival: no comparable, con su nota y el historial en copas",
           j_esc.get("escala", {}).get("comparable") is False and "reserva" in j_esc["escala"]["nota"]
           and "porRelacion" in j_esc["escala"]["historial"], j_esc.get("escala"))
+    check("con escala distinta la confianza del riesgo baja a «baja» y lo dice; los puntos no se tocan",
+          all(f["riesgo"]["confianza"] == "baja" and any("escala distinta" in m for m in f["riesgo"]["confianzaMotivos"])
+              for f in j_esc["familias"].values() if f.get("riesgo") and f["riesgo"]["nivel"] != "sin base"),
+          [f.get("riesgo") for f in j_esc["familias"].values()])
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM fixtures WHERE id BETWEEN 990100 AND 990199")
     from backend.analisis.parte import borrar as _borrar_parte

@@ -77,3 +77,62 @@ burbujas que no reventaron, nada de esto es probabilidad.
   Argentina.
 - **Sede**: Coventry–Villa por copa figura de local en la base; la previa lo
   da en Villa Park.
+
+# Segunda tanda fuera de Perú (14/10/2026) — 43 estudios en total
+
+| Partido | Equipo · tipo | Mecanismo (secundario) | Riesgo · extremo | Lo nuevo |
+|---|---|---|---|---|
+| Eintracht 2-2 Freiburg (19/09, Bundesliga) | Freiburg · racha + (8) | balón parado (arquero rival) | bajo · RÉCORD | 5 de 8 de la racha fuera de liga (amistosos y previa de Conference) |
+| Schalke 0-0 Bayern (05/09, Bundesliga) | Bayern · racha + (6) | arquero rival (rotación) | ALTO · — | el ALTO salió de un +3 con el nivel de Schalke medido en la 2. Bundesliga |
+| Elversberg 1-2 Bayern (13/09, Bundesliga) | Elversberg · racha + (3) | superioridad del rival | MUY ALTO · RÉCORD | ascendido: MUY ALTO tres semanas seguidas, reventó 1 de 3 |
+| Dunkerque 2-1 Saint-Étienne (12/09, Ligue 2) | Saint-Étienne · racha + (7) | arquero rival (varianza) | bajo · RÉCORD | sin los 2 amistosos la racha no era récord |
+| Juárez 2-0 Tigres (19/09, Liga MX) | Juárez · racha − (8) | penal (cambio de DT) | ALTO · RÉCORD | la racha cruzó tres bancos; cortó en el 2.º partido de Lema |
+| San Luis 4-0 U. Católica (11/07, Copa Chile) | U. Católica · racha + (9) | rotación (balón parado) | bajo · RÉCORD | ya clasificada, rival de Primera B |
+| IDV 2-2 U. Católica (29/08, LigaPro) | IDV · racha + (16) | otro → doble golpe (superioridad) | MUY ALTO · RÉCORD | la racha la armaron DOS onces, uno por competición |
+| Progreso 1-0 Danubio (29/08, Uruguay) | Progreso · racha − (5) | varianza (arquero propio) | MUY ALTO · RÉCORD | lo sostuvo el arquero del que venía perdiendo |
+| Mallorca 1-1 Elversberg (08/08, amistoso) | Mallorca · racha + (4) | roja (racha de otra competición) | MUY ALTO · cerca, inflada | escala al revés: Mallorca descendido y Elversberg ascendido en el receso |
+
+## Una corrección antes de los conteos
+
+Todos los casos estudiados **reventaron**: así se eligen. Decir «el riesgo
+MUY ALTO se cumplió» en la primera tanda no prueba nada sin las burbujas que
+NO reventaron con ese riesgo — Elversberg lo mostró: MUY ALTO tres semanas
+seguidas y reventó una. Lo que sí se puede leer de los estudios es el
+MECANISMO y qué datos le faltaron a la página; la tasa la mide el backtest.
+
+## Lo que se repite
+
+1. **El extremo encendido** en 8 de 9 (en 3 de ellos con riesgo bajo).
+   Sumando todo: es la alarma que más acompaña a un reventón, con la misma
+   reserva de denominador.
+2. **El arquero**, propio o rival, en 4 de 9 (Freiburg, Bayern,
+   Saint-Étienne, Progreso), con 6 en la tanda anterior. No tiene casillero en
+   ningún skill: es el candidato más repetido de los 43 estudios.
+3. **`regresion_al_nivel`: cero** otra vez fuera de Perú.
+4. **Los amistosos** arman récords: Freiburg, Saint-Étienne, Elversberg y
+   Mallorca. Cuentan (decisión del 14/10), y la marca `inflada` ahora salta
+   también cuando el récord de racha solo existe contándolos.
+5. **La escala** pesó en 4 de 9 (Bayern–Schalke, Elversberg, U. Católica,
+   Mallorca), y en Mallorca salió al revés.
+
+## Arreglado en el código con esta tanda
+
+- **La escala mueve la confianza**: con `comparable: false` el riesgo va con
+  confianza «baja» y el motivo (nunca se mueven los puntos).
+- **Cambio de categoría en el receso**: en un amistoso o una copa de
+  pretemporada la escala mira la liga del próximo partido de liga de cada uno
+  (`escala.liga_vigente`), no solo la del año anterior.
+- **`inflada`** cuando sin los amistosos la racha no sería récord.
+- **`dt_distinto_al_de_la_racha`** (calculada): el DT del banco contra el del
+  primer partido de la racha (Juárez).
+- Listas: mecanismos `arquero_propio`, `doble_golpe`, `cambio_masivo`;
+  señales `sin_nada_en_juego`, `rival_con_once_alternativo`,
+  `plantel_renovado`.
+
+## Abierto (candidatos sin aplicar)
+
+- Una burbuja armada por **dos onces** (IDV): medirla por competición u once.
+- **Nada en juego** (U. Católica) podría calcularse desde la tabla del grupo.
+- `dt_nuevo_rival` podría encenderse solo desde el DT del banco.
+- La base de DT sigue inconsistente en rachas con varios bancos (Juárez: la
+  ficha del 5/09 daba a Caixinha cuando dirigía Valero).

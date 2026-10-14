@@ -57,6 +57,12 @@ MECANISMOS = {
     "bloque_bajo_del_rival": "el rival se cerró atrás POR PLAN desde el arranque (no una echada tras ponerse "
                              "arriba) y el de la racha no supo romperlo",
     "arquero_rival": "el arquero rival sostuvo el resultado con atajadas decisivas",
+    "arquero_propio": "el arquero del equipo de la racha sostuvo el partido (el espejo: una racha negativa que "
+                      "se corta porque el propio arquero aguanta — Progreso–Danubio)",
+    "doble_golpe": "el rival marcó dos goles en pocos minutos (el segundo en la jugada siguiente al primero): "
+                   "un shock que ni la echada ni la sobreexposición describen — IDV 2-2 Católica, 61' y 62'",
+    "cambio_masivo": "una ola de cambios (5+ a la vez, típica de pretemporada) decidió el partido: los goles "
+                     "salieron de los que entraron o de la descoordinación — Mallorca–Elversberg",
     "regresion_al_nivel": "sin un hecho que lo explique: la racha corta se cortó ante un rival de su nivel y "
                           "el equipo volvió a rendir lo suyo",
     "varianza": "sin mecanismo identificable: el partido no explica el resultado",
@@ -86,6 +92,10 @@ SENALES = {
     "derrota_internacional_reciente": "perdió un partido internacional en los 10 días previos (resaca de "
                                       "una eliminación) — CALCULADA",
     "clasico": "clásico o derbi: la paridad propia del cruce, que la regla del nivel no ve",
+    "sin_nada_en_juego": "el de la racha ya tenía el objetivo cumplido o nada que ganar (clasificado, "
+                         "eliminado, torneo menor) — U. Católica ya clasificada en la Copa Chile",
+    "rival_con_once_alternativo": "el rival salió con filial, sub-21 o un once alternativo (dato de prensa)",
+    "plantel_renovado": "5 o más altas o salidas de peso desde la temporada anterior (pretemporada, mercado)",
     "rival_directo": "rival directo en la tabla (descenso, clasificación): los dos necesitaban el resultado",
     "once_distinto": "el once del partido cambió 5 o más titulares respecto del último de la racha EN LA MISMA "
                      "competición "
@@ -93,11 +103,14 @@ SENALES = {
     "rival_de_otra_base": "el rival venía de otra división o de una liga que no se sigue (copa nacional), o "
                           "el equipo acaba de cambiar de categoría (ascendido/descendido): el nivel o las "
                           "medianas no están en la misma escala — CALCULADA",
+    "dt_distinto_al_de_la_racha": "el DT en el banco no es el que armó la racha (el del primer partido de la "
+                                  "racha, por las alineaciones) — CALCULADA, solo con los dos bancos en la base",
     "ninguna_visible": "nada visible antes del pitazo",
 }
 LECCIONES_MAX = 8
 SENALES_CALCULADAS = ("racha_en_otra_competicion", "condicion_a_contramano", "rival_tambien_en_burbuja",
-                      "racha_concediendo", "derrota_internacional_reciente", "once_distinto", "rival_de_otra_base")
+                      "racha_concediendo", "derrota_internacional_reciente", "once_distinto", "rival_de_otra_base",
+                      "dt_distinto_al_de_la_racha")
 ONCE_CAMBIOS = 5         # Cienciano en Sullana (tercera tanda): 6 cambios, el alterno
 DIAS_RESACA = 10
 # el reventón no es un skill: sus reglas (docs/REVENTON.md) viven en sad-analysis.
@@ -235,6 +248,20 @@ def cambios_en_el_once(fixture_id: int, team_id: int, previo_id: int) -> int | N
     if len(hoy) < 11 or len(antes) < 11:
         return None
     return len(hoy - antes)
+
+
+def dt_distinto(fixture_id: int, team_id: int, racha_ids: list[int]) -> bool | None:
+    """¿El DT del banco hoy es otro que el del primer partido de la racha?
+    Juárez cortó 8 derrotas en el segundo partido de Lema, con tres bancos en
+    la racha (14/10/2026). None sin los dos bancos: sin dato no es «igual»."""
+    if not racha_ids:
+        return None
+    hoy = _dt_en_el_banco(fixture_id, team_id)
+    antes = next((d for d in (_dt_en_el_banco(f, team_id) for f in racha_ids) if d), "")
+    if not hoy or not antes:
+        return None
+    from backend.analisis.parte import mismo_dt
+    return not mismo_dt(hoy, antes)
 
 
 def _sede_propia(team_id: int):
@@ -439,6 +466,8 @@ def guardar_estudio(fixture_id: int, team_id: int, cuerpo: dict) -> dict:
         cambios = cambios_en_el_once(fixture_id, team_id, previos[-1]["fixtureId"])
         if cambios is not None and cambios >= ONCE_CAMBIOS:
             calculadas.append("once_distinto")
+    if dt_distinto(fixture_id, team_id, [p["fixtureId"] for p in comp.get("partidos") or []]):
+        calculadas.append("dt_distinto_al_de_la_racha")
     if not _escala(team_id, rival, str(fx["date"])[:10], fx["league_id"]).get("comparable", True):
         calculadas.append("rival_de_otra_base")
     senales = [x for x in senales if x not in SENALES_CALCULADAS] + list(calculadas)

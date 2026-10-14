@@ -150,6 +150,12 @@ def main():
           and con_am["familias"]["total"]["actual"]["amistosos"] == 3, ext_am)
     dos_am = analizar([{**f, "ligaId": 667} if i >= len(filas) - 2 else f for i, f in enumerate(filas)], ctx)
     check("2 de 6 → no está inflado", dos_am["familias"]["total"]["extremo"]["inflada"] is None)
+    _base = {"kPico": {"max": 30.0}, "partidos": {"max": 5}}
+    _ex = b._extremo(20.0, 6, _base, 100, "+", [], 2)
+    check("racha récord de 6 sobre un máximo de 5 con 2 amistosos: sin ellos no sería récord → INFLADA",
+          _ex["rachaRecord"] and not _ex["kRecord"] and _ex["inflada"] and "no sería récord" in _ex["inflada"]["texto"], _ex)
+    check("con 1 amistoso (6 − 1 = 5, igual al máximo) sigue siendo récord sin él → no inflada",
+          b._extremo(20.0, 6, _base, 100, "+", [], 1)["inflada"] is None)
 
     # CERCA DEL EXTREMO (§10): el caso ADT, sintético y el mismo que en el TS.
     # Diez reventones negativos, récord K 19.54 y racha 4; la abierta en −17.93

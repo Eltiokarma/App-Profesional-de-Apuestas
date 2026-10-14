@@ -176,12 +176,14 @@ nuestras probabilidades, no de la casa.
 > - Las reglas del reventón (docs/REVENTON.md) son de `sad-analysis`: no existe
 >   un skill «reventon» (la app lo corrige sola, pero escribilo bien).
 > - `altura`, `racha_de_otra_competicion`, `regresion_al_nivel`,
->   `bloque_bajo_del_rival` (repliegue por PLAN, no echada) y `arquero_rival`
->   son mecanismos: no los mandes como `otro`. `clasico` y `rival_directo` son
->   señales a declarar. Las señales marcadas CALCULADA en la
+>   `bloque_bajo_del_rival` (repliegue por PLAN, no echada), `arquero_rival`,
+>   `arquero_propio`, `doble_golpe` y `cambio_masivo` son mecanismos: no los
+>   mandes como `otro`. `clasico`, `rival_directo`, `sin_nada_en_juego`,
+>   `rival_con_once_alternativo` y `plantel_renovado` son señales a declarar. Las señales marcadas CALCULADA en la
 >   lista (`racha_en_otra_competicion`, `condicion_a_contramano`,
 >   `rival_tambien_en_burbuja`, `racha_concediendo`,
->   `derrota_internacional_reciente`, `once_distinto`) las pone la app: no las declares.
+>   `derrota_internacional_reciente`, `once_distinto`, `rival_de_otra_base`,
+>   `dt_distinto_al_de_la_racha`) las pone la app: no las declares.
 > - **Cargar los tres skills con la herramienta Skill es obligatorio**, no
 >   copiar el formato de otro estudio: la autopsia sale de la rúbrica del skill.
 > - Máximo **8 lecciones**: fundí las confirmaciones del mismo skill en una.

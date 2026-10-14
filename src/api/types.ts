@@ -671,9 +671,11 @@ export interface BaseNivelDTO {
 export interface EscalaRivalDTO {
   equipo?: BaseNivelDTO | null
   rival?: BaseNivelDTO | null
-  relacion: 'misma' | 'sin dato' | 'rival de categoría inferior' | 'rival fuera del padrón' | 'rival de categoría superior' | 'otra liga' | 'equipo ascendido' | 'equipo descendido'
+  relacion: 'misma' | 'sin dato' | 'rival de categoría inferior' | 'rival fuera del padrón' | 'rival de categoría superior' | 'otra liga' | 'equipo ascendido' | 'equipo descendido' | 'rival ascendido' | 'rival descendido'
   /** El partido es de liga y de otra categoría que la base del equipo: sus medianas son de la vieja. */
-  cambioDeCategoria?: 'ascendido' | 'descendido'
+  cambioDeCategoria?: 'ascendido' | 'descendido' | null
+  /** En pretemporada (amistoso o copa), el rival ya cambió de categoría para la temporada que arranca. */
+  cambioDeCategoriaRival?: 'ascendido' | 'descendido' | null
   comparable: boolean
   nota: string
   historial?: {

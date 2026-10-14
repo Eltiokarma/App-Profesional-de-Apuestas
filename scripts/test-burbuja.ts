@@ -95,6 +95,10 @@ const exAm = conAm.familias.total.extremo!
 check('3 de 6 de la racha en amistosos → extremo INFLADO, sigue activo y el riesgo no se mueve', exAm.activo && exAm.inflada?.amistosos === 3 && exAm.inflada?.partidos === 6 && conAm.familias.total.riesgo!.puntos === t.riesgo!.puntos && conAm.familias.total.actual!.amistosos === 3, exAm)
 const dosAm = analizar(filas.map((f, i) => (i >= filas.length - 2 ? { ...f, ligaId: 667 } : f)))
 check('2 de 6 → no está inflado', dosAm.familias.total.extremo!.inflada === null)
+const baseRec = { kPico: { max: 30 }, partidos: { max: 5 } } as unknown as Parameters<typeof extremoDe>[2]
+const exRec = extremoDe(20, 6, baseRec, 100, '+', [], 2)
+check('racha récord de 6 sobre un máximo de 5 con 2 amistosos: sin ellos no sería récord → INFLADA', exRec.rachaRecord && !exRec.kRecord && !!exRec.inflada && exRec.inflada.texto.includes('no sería récord'), exRec)
+check('con 1 amistoso (6 − 1 = 5, igual al máximo) sigue siendo récord sin él → no inflada', extremoDe(20, 6, baseRec, 100, '+', [], 1).inflada === null)
 
 // CERCA DEL EXTREMO (§10): el caso ADT sintético, el mismo que en Python
 {

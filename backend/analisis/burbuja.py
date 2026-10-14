@@ -307,11 +307,16 @@ def _extremo(k_abs: float, partidos: int, base: dict, n_cond: int, signo: str,
                  f"del {CERCA_PCT} % de las que reventaron). El modelo no lo puntúa como riesgo, pero "
                  "queda poco margen antes del récord: no cargar fuerte a que la racha siga")
     inflada = None
-    if (k_rec or r_rec or cerca) and amistosos * 2 >= partidos:
+    # o la racha récord solo es récord contando los amistosos (Saint-Étienne,
+    # 2 de 7; Elversberg, 1 de 3 igualando un máximo de 3 — 14/10/2026)
+    solo_por_amistosos = r_rec and not k_rec and amistosos > 0 and partidos - amistosos < max_p
+    if (k_rec or r_rec or cerca) and amistosos > 0 and (amistosos * 2 >= partidos or solo_por_amistosos):
         inflada = {"amistosos": amistosos, "partidos": partidos,
-                   "texto": f"INFLADA: {amistosos} de los {partidos} partidos de la racha son amistosos. "
-                            "Cuentan (la racha es del equipo), pero el récord se armó en buena parte fuera de "
-                            "la competición: leer la alerta con eso a la vista"}
+                   "texto": f"INFLADA: {amistosos} de los {partidos} partidos de la racha son amistosos"
+                            + (f" y sin ellos la racha ({partidos - amistosos}) no sería récord (máximo previo "
+                               f"{max_p})" if solo_por_amistosos else "")
+                            + ". Cuentan (la racha es del equipo), pero el récord se armó en buena parte fuera "
+                              "de la competición: leer la alerta con eso a la vista"}
         motivos.append(f"inflada: {amistosos} de {partidos} partidos de la racha son amistosos")
     return {
         "activo": k_rec or r_rec,
