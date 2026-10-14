@@ -708,5 +708,13 @@ El cruce local × visita lo hace la logística: cada equipo con su variable y su
 coeficiente por resultado. Se compara cada una contra M0 y M6 contra M3. El
 test (`test_backtest_1x2`) siembra un cruce real (anota de local × recibe de
 visita) y comprueba que M5/M6 lo detectan y que los coeficientes que pesan
-son esos; con K de ruido, no inventa nada. Resultado: pendiente de la corrida
-en Railway.
+son esos; con K de ruido, no inventa nada.
+
+**Primera corrida (14/10/2026): INVÁLIDA.** La K de goles anotados se guardó
+con la clave `ga`, la misma de «goles en contra» del lado, y pisó el marcador:
+el resultado salió de comparar goles con constantes (7 % de empates en la
+prueba, contra 26 % real) y `gaL` «predijo» con coeficiente +10 lo que él
+mismo había armado. Arreglado con claves propias (`kRes`, `kGa`, …), una
+guardia que corta si algo pisa el marcador, un test que compara el resultado
+con el real y un control de cordura que aborta si los empates salen fuera de
+15-35 %. Resultado: pendiente de la corrida limpia.

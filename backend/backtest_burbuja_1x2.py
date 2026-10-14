@@ -68,16 +68,19 @@ MODELOS = {
     # el signo y el largo de la burbuja total. Acá entra el VALOR de cada K antes
     # del partido, cruzando la condición: la K local del que juega de local con
     # la K visita del que juega de visita (lo mismo con los goles).
-    "M4 + K resultado": ["d", "d2", "kL", "kV", "kCondL", "kCondV"],
-    "M5 + K goles": ["d", "d2", "gaL", "grL", "gaV", "grV", "gaCondL", "grCondL", "gaCondV", "grCondV"],
-    "M6 + todas las K": ["d", "d2", "kL", "kV", "kCondL", "kCondV",
-                         "gaL", "grL", "gaV", "grV", "gaCondL", "grCondL", "gaCondV", "grCondV"],
+    "M4 + K resultado": ["d", "d2", "kResL", "kResV", "kResCondL", "kResCondV"],
+    "M5 + K goles": ["d", "d2", "kGaL", "kGrL", "kGaV", "kGrV", "kGaCondL", "kGrCondL", "kGaCondV", "kGrCondV"],
+    "M6 + todas las K": ["d", "d2", "kResL", "kResV", "kResCondL", "kResCondV",
+                         "kGaL", "kGrL", "kGaV", "kGrV", "kGaCondL", "kGrCondL", "kGaCondV", "kGrCondV"],
 }
 
 
 # ── observaciones ────────────────────────────────────────────────────────────
 
-_CLAVES_K = ("k", "kCond", "ga", "gr", "gaCond", "grCond")
+# con prefijo propio: «ga» ya es «goles en contra» del lado, y una K con la
+# misma clave PISABA el marcador (14/10/2026: el resultado salió de comparar
+# goles con constantes, 7 % de empates y una K «prediciendo» lo que la armó)
+_CLAVES_K = ("kRes", "kResCond", "kGa", "kGr", "kGaCond", "kGrCond")
 
 
 def _slog(x) -> float:
@@ -90,9 +93,9 @@ def _slog(x) -> float:
 def _ks(prev: dict, local_hoy: bool) -> dict:
     f = prev["fusion"]
     cond = "Local" if local_hoy else "Visita"
-    return {"k": _slog(f["k"]), "kCond": _slog(f["k" + cond]),
-            "ga": _slog(f["golesAnotado"]), "gr": _slog(f["golesRecibido"]),
-            "gaCond": _slog(f[f"goles{cond}Anotado"]), "grCond": _slog(f[f"goles{cond}Recibido"])}
+    return {"kRes": _slog(f["k"]), "kResCond": _slog(f["k" + cond]),
+            "kGa": _slog(f["golesAnotado"]), "kGr": _slog(f["golesRecibido"]),
+            "kGaCond": _slog(f[f"goles{cond}Anotado"]), "kGrCond": _slog(f[f"goles{cond}Recibido"])}
 
 def lado_equipo(team_id: int, ligas: set[int] | None) -> dict[int, dict]:
     """Por fixture: lo que se sabía de ESTE equipo antes del partido."""
@@ -130,6 +133,8 @@ def lado_equipo(team_id: int, ligas: set[int] | None) -> dict[int, dict]:
             # lado en que juega HOY: local para el local, visita para el visitante.
             **_ks(filas[i - 1], fila["condicion"] == "Local"),
         }
+        assert out[fila["fixtureId"]]["gf"] == fila["golesFavor"] and out[fila["fixtureId"]]["ga"] == fila["golesContra"], \
+            "una clave pisó el marcador del lado"
     return out
 
 
@@ -284,6 +289,11 @@ def correr(obs: list[dict]) -> dict:
         for a, b in ((nombres[1], nombres[2]), (nombres[0], nombres[3]), (nombres[0], nombres[6])):
             subgrupos[clave][f"{b} vs {a}"] = _ic_dif([perd[a][0][i] for i in idx], [perd[b][0][i] for i in idx])
     base = {c: round(sum(1 for y in Yte if y == c) / len(Yte), 4) for c in CLASES}
+    # control de cordura: en fútbol los empates rondan el 25 %. Muy lejos de
+    # eso, el resultado está mal armado y nada de lo de abajo vale (14/10/2026)
+    if not 0.15 <= base["E"] <= 0.35:
+        raise SystemExit(f"RESULTADO ROTO: {base['E']:.1%} de empates en la prueba (fuera de 15-35 %); "
+                         "revisar cómo se arma el marcador antes de leer nada")
     return {"partidos": len(obs), "entrenamiento": len(train), "prueba": len(test),
             "desde": train[0]["fecha"][:10], "corte": test[0]["fecha"][:10], "hasta": test[-1]["fecha"][:10],
             "frecuenciasPrueba": base, "modelos": res, "comparaciones": comparaciones, "subgrupos": subgrupos,
