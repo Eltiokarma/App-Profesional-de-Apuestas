@@ -665,7 +665,12 @@ conversación se pierde en la siguiente.
    `TASA_BACKTEST` rehecha; contramano y favorito siguen siendo reales, más
    chicos. Y el 1X2 limpio (§13.3): la burbuja NO mejora
    el pronóstico del motor (log-loss idéntico, IC cruzando cero, también con
-   riesgo alto o extremo): no entra a la fórmula, queda como freno de la carga.
+   riesgo alto o extremo): no entra a la fórmula, queda como freno de la carga. Las K mismas tampoco (§13.4: resultado y goles,
+   totales y por condición, cruzadas local × visita: Δ log-loss < 0.001 con
+   IC cruzando cero): el nivel del motor ya contiene esa historia. Dos tropiezos
+   del mismo día, con su guardia: una K con clave `ga` pisó el marcador (7 %
+   de empates; ahora aborta fuera de 15-35 %) y el pipeline dejaba «no such
+   table» mientras rehacía las derivadas (ahora en una transacción).
 
 ## Siguientes pasos (en orden)
 
