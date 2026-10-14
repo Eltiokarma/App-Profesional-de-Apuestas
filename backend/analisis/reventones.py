@@ -485,7 +485,9 @@ def guardar_estudio(fixture_id: int, team_id: int, cuerpo: dict) -> dict:
         calculadas.append("arquero_suplente")
     if (arq.get("rival") or {}).get("suplente"):
         calculadas.append("arquero_suplente_rival")
-    if dt_distinto(fixture_id, team_id, [p["fixtureId"] for p in comp.get("partidos") or []]):
+    # sin amistosos: en pretemporada el banco que carga la base suele ser un
+    # ayudante o el de prueba (OH Leuven–Cercle, 14/10/2026)
+    if dt_distinto(fixture_id, team_id, [p["fixtureId"] for p in comp.get("partidos") or [] if not p.get("amistoso")]):
         calculadas.append("dt_distinto_al_de_la_racha")
     if not _escala(team_id, rival, str(fx["date"])[:10], fx["league_id"]).get("comparable", True):
         calculadas.append("rival_de_otra_base")
