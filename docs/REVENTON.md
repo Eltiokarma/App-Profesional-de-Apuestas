@@ -747,4 +747,19 @@ las cuotas SINTÉTICAS de `backfill_cuota` (`bookmaker_name='SYNTHETIC'`) no
 entran. Sale en el log como «el MERCADO sobre los mismos partidos» con su
 cobertura, casas promedio, margen y la diferencia de log-loss con IC. No es
 rentabilidad: es cuánto mejor (o peor) acierta el mercado que el motor.
-Resultado: pendiente de la corrida.
+
+**Primera corrida (14/10/2026):** 2.379 partidos de la prueba con cuota 1X2
+(20 %, del 16/07 al 14/10/2026: antes no se capturaban cuotas, y del 18/09 al
+11/10 hubo el hueco del extractor), 12,2 casas en promedio, margen 7,7 %.
+
+| mismos partidos | log-loss | Brier | acierto |
+|---|---|---|---|
+| mercado | 0.9908 | 0.5912 | 51.2 % |
+| motor (M0) | 1.0405 | 0.6257 | 46.9 % |
+
+Mercado − motor: −0.0497 [−0.0624, −0.0378]. Contra la línea de base de las
+frecuencias (~1.068), el mercado mejora ~0.08 y el motor ~0.03: el motor capta
+alrededor de un tercio de lo que sabe el mercado. Siguiente pregunta (sin
+rentabilidad): ¿el motor agrega algo SOBRE el mercado? Si no, toda su
+información ya está en la cuota y el valor del SAD tiene que salir del análisis
+del partido; si sí, hay información propia mal expresada.
