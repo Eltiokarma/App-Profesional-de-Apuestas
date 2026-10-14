@@ -64,10 +64,35 @@ MODELOS = {
     "M1 + racha": ["d", "d2", "rachaL", "rachaV"],
     "M2 + riesgo": ["d", "d2", "rachaL", "rachaV", "riesgoL", "riesgoV"],
     "M3 + extremo": ["d", "d2", "rachaL", "rachaV", "riesgoL", "riesgoV", "extremoL", "extremoV"],
+    # LAS CONSTANTES MISMAS (14/10/2026, pedido del usuario): M1-M3 solo miraban
+    # el signo y el largo de la burbuja total. Acá entra el VALOR de cada K antes
+    # del partido, cruzando la condición: la K local del que juega de local con
+    # la K visita del que juega de visita (lo mismo con los goles).
+    "M4 + K resultado": ["d", "d2", "kL", "kV", "kCondL", "kCondV"],
+    "M5 + K goles": ["d", "d2", "gaL", "grL", "gaV", "grV", "gaCondL", "grCondL", "gaCondV", "grCondV"],
+    "M6 + todas las K": ["d", "d2", "kL", "kV", "kCondL", "kCondV",
+                         "gaL", "grL", "gaV", "grV", "gaCondL", "grCondL", "gaCondV", "grCondV"],
 }
 
 
 # ── observaciones ────────────────────────────────────────────────────────────
+
+_CLAVES_K = ("k", "kCond", "ga", "gr", "gaCond", "grCond")
+
+
+def _slog(x) -> float:
+    """sign(x)·log(1+|x|): la K crece sin techo (rachas de 30 partidos); sin
+    comprimirla, un puñado de valores extremos manda en la logística."""
+    x = float(x or 0.0)
+    return math.copysign(math.log1p(abs(x)), x)
+
+
+def _ks(prev: dict, local_hoy: bool) -> dict:
+    f = prev["fusion"]
+    cond = "Local" if local_hoy else "Visita"
+    return {"k": _slog(f["k"]), "kCond": _slog(f["k" + cond]),
+            "ga": _slog(f["golesAnotado"]), "gr": _slog(f["golesRecibido"]),
+            "gaCond": _slog(f[f"goles{cond}Anotado"]), "grCond": _slog(f[f"goles{cond}Recibido"])}
 
 def lado_equipo(team_id: int, ligas: set[int] | None) -> dict[int, dict]:
     """Por fixture: lo que se sabía de ESTE equipo antes del partido."""
@@ -100,6 +125,10 @@ def lado_equipo(team_id: int, ligas: set[int] | None) -> dict[int, dict]:
             "riesgo": s * rg["puntos"] if (act and con_base) else 0.0,
             "riesgoNivel": rg["nivel"] if (act and con_base) else None,
             "extremo": s * (2 if ext.get("activo") else 1 if ext.get("cerca") else 0) if act else 0,
+            # las K tal como estaban ANTES del partido: la fila anterior (la de
+            # este partido ya trae su resultado). La de la condición es la del
+            # lado en que juega HOY: local para el local, visita para el visitante.
+            **_ks(filas[i - 1], fila["condicion"] == "Local"),
         }
     return out
 
@@ -125,7 +154,10 @@ def observaciones(equipos: list[int], ligas: set[int] | None) -> list[dict]:
             "x": {"d": d, "d2": d * d,
                   "rachaL": L["racha"], "rachaV": -V["racha"],
                   "riesgoL": L["riesgo"], "riesgoV": -V["riesgo"],
-                  "extremoL": L["extremo"], "extremoV": -V["extremo"]},
+                  "extremoL": L["extremo"], "extremoV": -V["extremo"],
+                  # las K van con su signo propio, una variable por equipo: la
+                  # logística aprende el sentido de cada una (sin invertir nada)
+                  **{f"{k}L": L[k] for k in _CLAVES_K}, **{f"{k}V": V[k] for k in _CLAVES_K}},
             "riesgoAlto": any(n in ("alto", "muy alto") for n in (L["riesgoNivel"], V["riesgoNivel"])),
             "conExtremo": bool(L["extremo"] or V["extremo"]),
         })
@@ -240,7 +272,8 @@ def correr(obs: list[dict]) -> dict:
         }
     nombres = list(MODELOS)
     comparaciones = {}
-    for a, b in ((nombres[0], nombres[1]), (nombres[0], nombres[2]), (nombres[1], nombres[2]), (nombres[2], nombres[3])):
+    for a, b in ((nombres[0], nombres[1]), (nombres[0], nombres[2]), (nombres[1], nombres[2]), (nombres[2], nombres[3]),
+                 (nombres[0], nombres[4]), (nombres[0], nombres[5]), (nombres[0], nombres[6]), (nombres[3], nombres[6])):
         comparaciones[f"{b} vs {a}"] = {"logLoss": _ic_dif(perd[a][0], perd[b][0]),
                                         "brier": _ic_dif(perd[a][1], perd[b][1])}
     # dónde debería notarse: partidos con algún lado en riesgo alto / con extremo
@@ -248,7 +281,7 @@ def correr(obs: list[dict]) -> dict:
     for clave, filtro in (("riesgoAlto", lambda o: o["riesgoAlto"]), ("conExtremo", lambda o: o["conExtremo"])):
         idx = [i for i, o in enumerate(test) if filtro(o)]
         subgrupos[clave] = {"n": len(idx)}
-        for a, b in ((nombres[1], nombres[2]), (nombres[0], nombres[3])):
+        for a, b in ((nombres[1], nombres[2]), (nombres[0], nombres[3]), (nombres[0], nombres[6])):
             subgrupos[clave][f"{b} vs {a}"] = _ic_dif([perd[a][0][i] for i in idx], [perd[b][0][i] for i in idx])
     base = {c: round(sum(1 for y in Yte if y == c) / len(Yte), 4) for c in CLASES}
     return {"partidos": len(obs), "entrenamiento": len(train), "prueba": len(test),
@@ -273,6 +306,14 @@ def lectura(comp: dict) -> str:
     else:
         txt.append("→ el riesgo no agrega al 1X2 más allá de lo que ya hay: se queda como freno de la carga, "
                    "no entra a la fórmula")
+    if "M6 + todas las K vs M0 motor" in comp:
+        r4 = veredicto("M4 + K resultado vs M0 motor")
+        r5 = veredicto("M5 + K goles vs M0 motor")
+        r6 = veredicto("M6 + todas las K vs M0 motor")
+        txt += [f"las K de resultado (total y por condición) sobre el motor: {r4}",
+                f"las K de goles sobre el motor: {r5}", f"todas las K juntas: {r6}"]
+        txt.append("→ las constantes AGREGAN al 1X2: candidatas a la fórmula (con estos coeficientes)" if r6 == "mejora"
+                   else "→ las constantes no agregan al 1X2 más allá del nivel que ya usa el motor")
     return " · ".join(txt)
 
 
@@ -325,6 +366,11 @@ def imprimir(r: dict):
     print(f"\ncoeficientes de M2 (por desvío; local / visita contra empate):")
     for v in m2["coefLocal"]:
         print(f"  {v:<10} {m2['coefLocal'][v]:+.3f} / {m2['coefVisita'][v]:+.3f}")
+    m6 = r["modelos"].get("M6 + todas las K")
+    if m6:
+        print(f"\ncoeficientes de M6 (por desvío; local / visita contra empate; L = el local, V = el visitante):")
+        for v in m6["coefLocal"]:
+            print(f"  {v:<10} {m6['coefLocal'][v]:+.3f} / {m6['coefVisita'][v]:+.3f}")
     print(f"\n{r['lectura']}")
 
 

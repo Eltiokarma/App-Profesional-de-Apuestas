@@ -689,3 +689,24 @@ tiene el motor en μ_partido.
 Dato al margen que queda anotado: el motor solo acierta 47.4 % con log-loss
 1.043, contra 45 % y ~1.068 de las frecuencias a secas. Mejorar el 1X2 pasa
 por el motor (o por el EFE/TDE del analista), no por la burbuja.
+
+### 13.4 Las constantes mismas, cruzadas (M4-M6, 14/10/2026)
+
+§13.3 solo midió la burbuja TOTAL de resultado (signo y largo de la racha, y
+los puntos del riesgo): nunca entró el VALOR de las K ni las familias por
+condición ni las de goles. M4-M6 las agregan, tomadas de la fila ANTERIOR al
+partido (la del partido ya trae su resultado) y comprimidas con
+sign·log(1+|x|):
+
+| modelo | variables además del motor (d, d²) |
+|---|---|
+| M4 · + K resultado | k total de los dos, k local del local y k visita del visitante |
+| M5 · + K goles | goles anotado/recibido total de los dos, y por condición: los del local DE LOCAL, los del visitante DE VISITA |
+| M6 · + todas las K | M4 + M5 |
+
+El cruce local × visita lo hace la logística: cada equipo con su variable y su
+coeficiente por resultado. Se compara cada una contra M0 y M6 contra M3. El
+test (`test_backtest_1x2`) siembra un cruce real (anota de local × recibe de
+visita) y comprueba que M5/M6 lo detectan y que los coeficientes que pesan
+son esos; con K de ruido, no inventa nada. Resultado: pendiente de la corrida
+en Railway.
