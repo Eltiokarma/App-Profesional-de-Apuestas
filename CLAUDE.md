@@ -662,7 +662,9 @@ conversación se pierde en la siguiente.
    se calibraron con ella. Re-corrido limpio el mismo día (§13.2): AUC 0.715 →
    0.615, puntos nuevos (rival 0·1·2, favorito −1/−3, cortes 0/1/3) y
    `TASA_BACKTEST` rehecha; contramano y favorito siguen siendo reales, más
-   chicos.
+   chicos. Y el 1X2 limpio (§13.3): la burbuja NO mejora
+   el pronóstico del motor (log-loss idéntico, IC cruzando cero, también con
+   riesgo alto o extremo): no entra a la fórmula, queda como freno de la carga.
 
 ## Siguientes pasos (en orden)
 

@@ -664,3 +664,28 @@ la revisión del aprendizaje por un error nuestro.
 
 Lectura honesta: la guía ordena el riesgo (de ~45 % a ~72 %) pero separa poco.
 Sirve para frenar la carga, no para prometer un reventón.
+
+### 13.3 El 1X2, limpio: la burbuja NO agrega al resultado (14/10/2026)
+
+58.588 partidos, entrenamiento 2019-04 → 2025-08 (46.870), prueba 2025-08 →
+2026-10 (11.718; local 45 % · empate 26 % · visita 29 %):
+
+| modelo | log-loss | Brier | acierto |
+|---|---|---|---|
+| M0 · motor | 1.0428 | 0.6273 | 47.4 % |
+| M1 · + racha | 1.0428 | 0.6273 | 47.6 % |
+| M2 · + riesgo | 1.0428 | 0.6273 | 47.5 % |
+| M3 · + extremo | 1.0429 | 0.6274 | 47.6 % |
+
+Todas las diferencias con el IC cruzando cero, también en los partidos con
+riesgo alto (n = 7.319) y con extremo (n = 2.537). El coeficiente del motor
+vuelve al sentido correcto (+0.24 local), y los de racha y riesgo quedan en
+casi cero. **Decisión: la burbuja no entra a la fórmula del 1X2.** Se queda
+como lo que el backtest sí sostiene: guía de si la RACHA se corta y freno de
+cuánto se carga. Es coherente: lo que más pesa en el riesgo (el favorito por
+nivel, el rival frente a su mediana) es diferencia de nivel, y esa ya la
+tiene el motor en μ_partido.
+
+Dato al margen que queda anotado: el motor solo acierta 47.4 % con log-loss
+1.043, contra 45 % y ~1.068 de las frecuencias a secas. Mejorar el 1X2 pasa
+por el motor (o por el EFE/TDE del analista), no por la burbuja.
