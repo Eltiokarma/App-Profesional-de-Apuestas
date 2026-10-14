@@ -136,3 +136,67 @@ MECANISMO y qué datos le faltaron a la página; la tasa la mide el backtest.
 - `dt_nuevo_rival` podría encenderse solo desde el DT del banco.
 - La base de DT sigue inconsistente en rachas con varios bancos (Juárez: la
   ficha del 5/09 daba a Caixinha cuando dirigía Valero).
+
+# Tercera tanda fuera de Perú — FOCO EN EL ARQUERO (14/10/2026) — 52 estudios
+
+Con el perfil calculado del arquero en la ficha (`backend/analisis/arquero.py`)
+y un bloque `arquero` por lado en cada estudio.
+
+| Partido | Equipo · tipo | Mecanismo (secundario) | El arquero |
+|---|---|---|---|
+| OH Leuven 1-1 Cercle (12/09, Bélgica) | Leuven · racha − (6) | regresión al nivel (arquero propio) | van den Heuvel, atajada al 88' con 1-0 |
+| Vitória SC 0-0 Casa Pia (06/09, Portugal) | Casa Pia · racha − (6) | **arquero propio** (varianza) | Mandić entró lesionado Gomes al 29' y ganó tres mano a mano |
+| Shelbourne 2-2 Ajax (13/08, previa Conference) | Ajax · racha + (7) | rotación con la serie resuelta (arquero rival) | Beach, atajada del 2-3 al 89' |
+| Ponte Preta 1-0 CRB (20/09, Serie B) | Ponte · racha − (6) | **arquero propio** (el rival se sobreexpuso) | Vinícius Ferrari, 7 atajadas |
+| Union SG 1-1 OH Leuven (11/10, Bélgica) | Union · racha + (6) | otro: bajas forzadas tras 21 días de parón | no decisivo (suplente rival, señal bien encendida) |
+| Porto 3-1 Benfica (20/09, Portugal) | Benfica · racha + (8) | roja | no decisivo |
+| Famalicão 1-1 Sporting (13/09, Portugal) | Sporting · racha + (5) | **arquero rival** (varianza) | Carević, 4 de 5 al arco, dos en el 90+ |
+| River 2-0 Argentinos (16/08, Argentina) | River · racha − (5) | regresión al nivel del plantel | no decisivo |
+| San Lorenzo 2-1 4 de Mayo (23/09, Copa Paraguay) | San Lorenzo · racha − (7) | racha de otra competición (penal) | el arquero rival (aficionado) en los dos goles |
+
+## Lo que dice el arquero
+
+**Es un mecanismo, y tiene dirección.** En los 52 estudios aparece en ~16. En
+casi todos es **el arquero del equipo más débil**:
+
+- la racha positiva de un favorito que domina revienta contra el arquero
+  RIVAL (Valles, Karius, Carević, Beach, Ramos, Atubolu);
+- la racha negativa de un débil se corta sostenida por su arquero PROPIO
+  (Bacchia, Mandić, Vinícius Ferrari, van den Heuvel, Medina);
+- los errores son el espejo: Carlos Miguel, Marquínez (suplente), Cristaldo.
+
+**El perfil calculado NO lo anticipa.** De los arqueros decisivos de esta
+tanda, ninguno se veía en su perfil: Vinícius Ferrari y Rui Silva llegaban
+NEGATIVOS y jugaron bien; Carević, neutro; Mandić no tenía perfil. Con n ≤ 8
+y detrás de defensas malas, goles contra xG mide a la defensa tanto como al
+arquero, y una goleada lo domina (Casa Pia). La «goals prevented» de la API
+contradice al xG en la mitad de los casos. **La forma del arquero, medida así,
+no sirve para pronosticar.** Lo único objetivo que funcionó es
+`arquero_suplente` (Union SG, bien encendida).
+
+**Propuesta (sin aplicar, la decide el usuario):** el arquero no entra como
+señal de forma sino como **varianza del no favorito**. Cuando una burbuja
+depende de que el que domina le gane al arquero del débil —favorito con racha
+positiva contra un rival de bloque bajo, o débil con racha negativa contra un
+favorito que va a acumular remates—, el riesgo de la burbuja tiene una cola
+que la K no ve. Candidato para el TDE (bloque C) y para la lectura del
+reventón: una marca «ARQUERO-NO-FAVORITO» de dispersión, sin dirección y sin
+puntos, igual que el extremo. Medirla requiere el denominador (backtest con
+remates al arco del favorito), no más estudios de reventones.
+
+## Arreglado en el código con esta tanda
+
+- Arquero: detalle partido a partido y `muestraCorta` (< 5 partidos con xG);
+  el habitual sale de la competición del partido (Ajax: un arquero en Europa y
+  otro en la liga); el suplente trae sus números (`hoyPerfil`).
+- `paron_largo` (calculada, 14+ días sin partido) y mecanismo `bajas_forzadas`.
+- `dt_distinto_al_de_la_racha` ya no mira los amistosos (banco de prueba).
+
+## Datos de la base a revisar
+
+- **DT del banco, otra vez**: San Lorenzo (Paraguay) con dos DT que se habían
+  ido meses antes en las alineaciones; Shelbourne con otro nombre que la
+  prensa. La regla «la alineación fresca manda» elige mal cuando la fuente de
+  la alineación está mal.
+- Ponte Preta: la API trae 6 titulares y un asistente con el id de otro.
+- Copas de sede neutral o en casa del rival figuran con local nominal.
