@@ -633,3 +633,59 @@ nivel del rival que reventó cada burbuja») también guarda el nivel de
 después. Es pasado, no filtra el partido que se predice, pero compara la
 mediana de esos niveles (post) con un próximo medido antes: un sesgo de
 escala chico, a revisar con el backtest limpio a la vista.
+
+### 13.2 La corrida limpia y los puntos vigentes (14/10/2026, tarde)
+
+Mismas 173.615 observaciones (1.078 equipos, padrón, horizonte 1), con el rival
+medido antes del partido:
+
+| | con la fuga (§12.2) | limpia |
+|---|---|---|
+| AUC de la logística | 0.715 | **0.615** |
+| coef. racha ≥ mediana | 0.32 | 0.247 |
+| coef. rival zona · fuerte · muy fuerte | 0.47 · 0.74 · 1.34 | **0.10 · 0.19 · 0.38** |
+| coef. contramano | 0.207 | 0.207 |
+| coef. favorito · muy favorito | −0.53 · −1.06 | **−0.37 · −0.71** |
+| lift sobre el riesgo: contramano · favorito | +5,8 · −20,6 | **+2,2 · −14,8** |
+
+Casi toda la «fuerza» del rival era la fuga: el nivel de después dice quién
+ganó. Contramano no cambia (no usa el nivel del rival) y el favorito sigue
+siendo la señal más fuerte, más chica. Ninguna otra lección gana lift.
+
+Puntos vigentes (paso 0.25 de log-odds, los que propone `--calibrar`): racha
+≥ mediana +1 · rival zona 0 · fuerte +1 · muy fuerte +2 · contramano +1 ·
+favorito −1 · muy favorito −3. Cortes: **bajo < 0 · medio 0 · alto 1-2 · muy
+alto ≥ 3**. Tasa por puntaje (isotónica, monótona): −3 39.7 % · −2 44.7 % ·
+−1 50.0 % · 0 55.2 % · 1 62.0 % · 2 67.1 % · 3 71.0 % · 4 75.0 % — de ahí
+`TASA_BACKTEST`. Con los puntos de la mañana y datos limpios la tasa por nivel
+daba 48 · 60 · 64 · 70 %: el orden se sostenía, lo que estaba mal eran los
+rangos esperados (bajo 29-47 %, muy alto 75-88 %), que habrían hecho saltar
+la revisión del aprendizaje por un error nuestro.
+
+Lectura honesta: la guía ordena el riesgo (de ~45 % a ~72 %) pero separa poco.
+Sirve para frenar la carga, no para prometer un reventón.
+
+### 13.3 El 1X2, limpio: la burbuja NO agrega al resultado (14/10/2026)
+
+58.588 partidos, entrenamiento 2019-04 → 2025-08 (46.870), prueba 2025-08 →
+2026-10 (11.718; local 45 % · empate 26 % · visita 29 %):
+
+| modelo | log-loss | Brier | acierto |
+|---|---|---|---|
+| M0 · motor | 1.0428 | 0.6273 | 47.4 % |
+| M1 · + racha | 1.0428 | 0.6273 | 47.6 % |
+| M2 · + riesgo | 1.0428 | 0.6273 | 47.5 % |
+| M3 · + extremo | 1.0429 | 0.6274 | 47.6 % |
+
+Todas las diferencias con el IC cruzando cero, también en los partidos con
+riesgo alto (n = 7.319) y con extremo (n = 2.537). El coeficiente del motor
+vuelve al sentido correcto (+0.24 local), y los de racha y riesgo quedan en
+casi cero. **Decisión: la burbuja no entra a la fórmula del 1X2.** Se queda
+como lo que el backtest sí sostiene: guía de si la RACHA se corta y freno de
+cuánto se carga. Es coherente: lo que más pesa en el riesgo (el favorito por
+nivel, el rival frente a su mediana) es diferencia de nivel, y esa ya la
+tiene el motor en μ_partido.
+
+Dato al margen que queda anotado: el motor solo acierta 47.4 % con log-loss
+1.043, contra 45 % y ~1.068 de las frecuencias a secas. Mejorar el 1X2 pasa
+por el motor (o por el EFE/TDE del analista), no por la burbuja.
