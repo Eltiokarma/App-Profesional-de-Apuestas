@@ -737,3 +737,14 @@ todo, pero con estos pesos no hay ahí nada grande. **Decisión: las K no entran
 a la fórmula del 1X2.** Mejorar el 1X2 pasa por el motor (47 % contra 45 % de
 «siempre local») o por lo que el nivel no ve —bajas, DT, contexto: el EFE/TDE
 del analista, medido con los veredictos—.
+
+### 13.5 El mercado sobre los mismos partidos (sin rentabilidad)
+
+Para saber dónde estamos parados, el mismo backtest compara al motor con el
+MERCADO en los partidos de la prueba que tienen cuota 1X2 capturada en
+`sad.db` (`odds`): probabilidad = 1/cuota sin margen, promediada entre casas;
+las cuotas SINTÉTICAS de `backfill_cuota` (`bookmaker_name='SYNTHETIC'`) no
+entran. Sale en el log como «el MERCADO sobre los mismos partidos» con su
+cobertura, casas promedio, margen y la diferencia de log-loss con IC. No es
+rentabilidad: es cuánto mejor (o peor) acierta el mercado que el motor.
+Resultado: pendiente de la corrida.

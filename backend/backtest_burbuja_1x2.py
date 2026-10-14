@@ -255,7 +255,9 @@ def _ic_dif(a: list[float], b: list[float], semilla: int = 7) -> dict:
 
 # ── el backtest ──────────────────────────────────────────────────────────────
 
-def correr(obs: list[dict]) -> dict:
+def correr(obs: list[dict], mercado_de=None) -> dict:
+    """`mercado_de(fixture_ids) -> {fx: (pL, pE, pV, casas, margen)}` agrega la
+    comparación con el MERCADO sobre los mismos partidos de la prueba."""
     corte = int(len(obs) * (1 - PRUEBA))
     train, test = obs[:corte], obs[corte:]
     if len(train) < 50 or len(test) < 20:
@@ -266,7 +268,7 @@ def correr(obs: list[dict]) -> dict:
         esc = _escala(train, vars_)
         beta = ajustar(_matriz(train, vars_, esc), Ytr)
         ll, br, ac = _perdidas(beta, _matriz(test, vars_, esc), Yte)
-        perd[nombre] = (ll, br)
+        perd[nombre] = (ll, br, ac)
         p = len(vars_) + 1
         res[nombre] = {
             "logLoss": round(sum(ll) / len(ll), 5), "brier": round(sum(br) / len(br), 5),
@@ -294,10 +296,93 @@ def correr(obs: list[dict]) -> dict:
     if not 0.15 <= base["E"] <= 0.35:
         raise SystemExit(f"RESULTADO ROTO: {base['E']:.1%} de empates en la prueba (fuera de 15-35 %); "
                          "revisar cómo se arma el marcador antes de leer nada")
-    return {"partidos": len(obs), "entrenamiento": len(train), "prueba": len(test),
-            "desde": train[0]["fecha"][:10], "corte": test[0]["fecha"][:10], "hasta": test[-1]["fecha"][:10],
-            "frecuenciasPrueba": base, "modelos": res, "comparaciones": comparaciones, "subgrupos": subgrupos,
-            "lectura": lectura(comparaciones)}
+    out = {"partidos": len(obs), "entrenamiento": len(train), "prueba": len(test),
+           "desde": train[0]["fecha"][:10], "corte": test[0]["fecha"][:10], "hasta": test[-1]["fecha"][:10],
+           "frecuenciasPrueba": base, "modelos": res, "comparaciones": comparaciones, "subgrupos": subgrupos,
+           "lectura": lectura(comparaciones)}
+    if mercado_de is not None:
+        out["mercado"] = contra_mercado(test, perd[nombres[0]], mercado_de([o["fixtureId"] for o in test]))
+    return out
+
+
+# ── el mercado sobre los mismos partidos ─────────────────────────────────────
+#
+# No es rentabilidad (eso queda para cuando el usuario lo pida): es cuánto
+# acierta el mercado contra nuestro motor en los MISMOS partidos de la prueba,
+# para saber dónde estamos parados. La probabilidad del mercado es la cuota
+# 1X2 de cada casa sin su margen (1/cuota normalizado), promediada entre casas.
+# Las cuotas SINTÉTICAS de backfill_cuota (bookmaker_name='SYNTHETIC') se
+# excluyen: las inventamos nosotros a partir del nivel.
+
+def cuotas_1x2(fixture_ids: list[int]) -> dict:
+    from backend.cuota_mercados import cuota_key
+    por_fx: dict[int, dict] = {}
+    ids = list(dict.fromkeys(fixture_ids))
+    for i in range(0, len(ids), 500):
+        lote = ids[i:i + 500]
+        marcas = ",".join("?" * len(lote))
+        try:
+            filas = db.query(
+                "sad",
+                f"SELECT fixture_id, bookmaker_id, bookmaker_name, bet_name, value, odd FROM odds "
+                f"WHERE fixture_id IN ({marcas}) AND odd > 1 "
+                f"AND (bookmaker_name IS NULL OR bookmaker_name <> 'SYNTHETIC')", tuple(lote))
+        except Exception:  # noqa: BLE001 — base sin tabla de cuotas: sin mercado
+            return {}
+        for f in filas:
+            k = cuota_key(f["bet_name"], f["value"])
+            if not k or k[0] != "1x2":
+                continue
+            casa = f["bookmaker_id"] if f["bookmaker_id"] is not None else f["bookmaker_name"]
+            por_fx.setdefault(f["fixture_id"], {}).setdefault(casa, {})[k[1]] = float(f["odd"])
+    out = {}
+    for fx, casas in por_fx.items():
+        probs, margenes = [], []
+        for c in casas.values():
+            if all(s_ in c for s_ in ("1", "X", "2")):
+                inv = [1 / c["1"], 1 / c["X"], 1 / c["2"]]
+                tot = sum(inv)
+                probs.append([x / tot for x in inv])
+                margenes.append(tot - 1)
+        if probs:
+            n = len(probs)
+            out[fx] = (sum(p[0] for p in probs) / n, sum(p[1] for p in probs) / n,
+                       sum(p[2] for p in probs) / n, n, sum(margenes) / n)
+    return out
+
+
+def contra_mercado(test: list[dict], perd_motor: tuple, cuotas: dict) -> dict:
+    idx = [i for i, o in enumerate(test) if o["fixtureId"] in cuotas]
+    if len(idx) < 20:
+        return {"partidos": len(idx), "cobertura": round(len(idx) / len(test), 3) if test else 0,
+                "nota": "menos de 20 partidos de la prueba con cuota 1X2 capturada: no se compara"}
+    ll_m, br_m, ac_m = [], [], []
+    for i in idx:
+        o = test[i]
+        pl, pe, pv, _, _ = cuotas[o["fixtureId"]]
+        pr = {"L": pl, "E": pe, "V": pv}
+        ll_m.append(-math.log(max(pr[o["y"]], 1e-12)))
+        br_m.append(sum((pr[c] - (c == o["y"])) ** 2 for c in CLASES))
+        ac_m.append(int(max(pr, key=pr.get) == o["y"]))
+    ll_0 = [perd_motor[0][i] for i in idx]
+    br_0 = [perd_motor[1][i] for i in idx]
+    ac_0 = [perd_motor[2][i] for i in idx]
+    n = len(idx)
+    fechas = sorted(test[i]["fecha"] for i in idx)
+    return {
+        "partidos": n, "cobertura": round(n / len(test), 3),
+        "desde": fechas[0][:10], "hasta": fechas[-1][:10],
+        "casasPromedio": round(sum(cuotas[test[i]["fixtureId"]][3] for i in idx) / n, 1),
+        "margenPromedio": round(sum(cuotas[test[i]["fixtureId"]][4] for i in idx) / n, 4),
+        "mercado": {"logLoss": round(sum(ll_m) / n, 5), "brier": round(sum(br_m) / n, 5),
+                    "acierto": round(sum(ac_m) / n, 4)},
+        "motor": {"logLoss": round(sum(ll_0) / n, 5), "brier": round(sum(br_0) / n, 5),
+                  "acierto": round(sum(ac_0) / n, 4)},
+        "mercadoVsMotor": {"logLoss": _ic_dif(ll_0, ll_m), "brier": _ic_dif(br_0, br_m)},
+        "nota": "los MISMOS partidos de la prueba que tienen cuota 1X2 capturada; probabilidad del "
+                "mercado = 1/cuota sin margen, promedio entre casas; sin cuotas sintéticas. "
+                "mercadoVsMotor negativo = el mercado acierta mejor que el motor",
+    }
 
 
 def lectura(comp: dict) -> str:
@@ -341,7 +426,7 @@ def correr_backtest(*, padron_: bool = False, liga: int | None = None, muestra: 
         random.seed(semilla)
         equipos = random.sample(equipos, muestra)
     obs = observaciones(equipos, ligas)
-    r = correr(obs)
+    r = correr(obs, mercado_de=cuotas_1x2)
     r["equipos"] = len(equipos)
     r["ligasEvaluadas"] = sorted(nombres.values()) if ligas else ["todas"]
     return r
@@ -381,6 +466,20 @@ def imprimir(r: dict):
         print(f"\ncoeficientes de M6 (por desvío; local / visita contra empate; L = el local, V = el visitante):")
         for v in m6["coefLocal"]:
             print(f"  {v:<10} {m6['coefLocal'][v]:+.3f} / {m6['coefVisita'][v]:+.3f}")
+    mk = r.get("mercado")
+    if mk:
+        print("\n— el MERCADO sobre los mismos partidos de la prueba —")
+        if "mercado" not in mk:
+            print(f"  {mk['nota']} (partidos con cuota: {mk['partidos']})")
+        else:
+            print(f"  {mk['partidos']} partidos con cuota 1X2 ({mk['cobertura']:.0%} de la prueba, {mk['desde']} → "
+                  f"{mk['hasta']}) · {mk['casasPromedio']} casas en promedio · margen {mk['margenPromedio']:.1%}")
+            print(f"  {'':<10}{'log-loss':>10}{'Brier':>9}{'acierto':>9}")
+            for k in ("mercado", "motor"):
+                m = mk[k]
+                print(f"  {k:<10}{m['logLoss']:>10.4f}{m['brier']:>9.4f}{m['acierto']:>9.1%}")
+            d = mk["mercadoVsMotor"]["logLoss"]
+            print(f"  mercado − motor en log-loss: {d['media']:+.5f}  {d['ic95']}  (negativo = el mercado acierta mejor)")
     print(f"\n{r['lectura']}")
 
 
