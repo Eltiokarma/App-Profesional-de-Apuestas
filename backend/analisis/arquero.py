@@ -51,7 +51,7 @@ def perfil(team_id: int, antes: str, fixture_id: int | None = None) -> dict:
     `antes` (anti-hindsight). Con `fixture_id`, el titular de ese partido."""
     try:
         fxs = saddb.query(
-            "sad", f"""SELECT f.id, f.home_team_id, f.goals_home, f.goals_away FROM fixtures f
+            "sad", f"""SELECT f.id, f.home_team_id, f.goals_home, f.goals_away, f.league_id FROM fixtures f
                        WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.date < ? AND {_FIN}
                        ORDER BY f.date DESC LIMIT ?""", (team_id, team_id, antes, VENTANA))
     except Exception:  # noqa: BLE001
@@ -69,6 +69,19 @@ def perfil(team_id: int, antes: str, fixture_id: int | None = None) -> dict:
         gks, stats = [], []
     cuenta = Counter((g["player_id"], g["jugador"]) for g in gks)
     habitual = cuenta.most_common(1)[0] if cuenta else None
+    # un arquero por competición (Ajax: Paes en Europa, ter Stegen en la liga):
+    # con 2+ onces de la competición de este partido, el habitual sale de ahí
+    habitual_por = "todas las competiciones"
+    if fixture_id is not None:
+        try:
+            liga = (saddb.query_one("sad", "SELECT league_id FROM fixtures WHERE id=?", (fixture_id,)) or {})["league_id"]
+        except Exception:  # noqa: BLE001
+            liga = None
+        misma = {f["id"] for f in fxs if f["league_id"] == liga}
+        c_liga = Counter((g["player_id"], g["jugador"]) for g in gks if g["fixture_id"] in misma)
+        if sum(c_liga.values()) >= 2:
+            habitual = c_liga.most_common(1)[0]
+            habitual_por = "esta competición"
     recibidos, xg_contra, atajadas, n_xg, n_at = 0, 0.0, 0.0, 0, 0
     prevenidos, n_prev = 0.0, 0
     detalle = []
@@ -97,7 +110,7 @@ def perfil(team_id: int, antes: str, fixture_id: int | None = None) -> dict:
     out = {
         "partidos": len(fxs),
         "habitual": ({"id": habitual[0][0], "nombre": habitual[0][1], "titularEn": habitual[1],
-                      "onces": len({g["fixture_id"] for g in gks})} if habitual else None),
+                      "onces": len({g["fixture_id"] for g in gks}), "por": habitual_por} if habitual else None),
         "golesVsXg": ({"recibidos": recibidos, "xgContra": round(xg_contra, 2),
                        "evitados": round(xg_contra - recibidos, 2), "n": n_xg,
                        "muestraCorta": n_xg < MUESTRA_MINIMA,
@@ -114,4 +127,11 @@ def perfil(team_id: int, antes: str, fixture_id: int | None = None) -> dict:
         hoy = titular_de(fixture_id, team_id)
         out["hoy"] = hoy
         out["suplente"] = (None if not hoy or not habitual else hoy["id"] != habitual[0][0])
+        if out["suplente"]:
+            # el suplente con SUS números: el perfil del titular no le corresponde (Vroman, OH Leuven)
+            suyos = {g["fixture_id"] for g in gks if g["player_id"] == hoy["id"]}
+            pp = [d for d in detalle if d["fixtureId"] in suyos]
+            out["hoyPerfil"] = {"titularEn": len(suyos),
+                                "evitados": round(sum(d["evitados"] for d in pp), 2) if pp else None,
+                                "nXg": len(pp)}
     return out
