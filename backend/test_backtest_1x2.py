@@ -92,6 +92,19 @@ def main() -> int:
     co = r["modelos"]["M6 + todas las K"]["coefLocal"]
     check("los coeficientes que pesan son los del cruce (kGaCondL y kGrCondV), no el ruido",
           min(co["kGaCondL"], co["kGrCondV"]) > 2 * max(abs(co[k]) for k in co if k not in ("d", "d2", "kGaCondL", "kGrCondV")), co)
+    # EL MERCADO sobre los mismos partidos: uno que «sabe» el resultado tiene que
+    # ganarle al motor; uno sin cuotas no se compara
+    datos = sinteticos(3000, 0.0, 5)
+    def sabe(ids):
+        y = {o["fixtureId"]: o["y"] for o in datos}
+        return {fx: ((0.8, 0.1, 0.1) if y[fx] == "L" else (0.1, 0.8, 0.1) if y[fx] == "E" else (0.1, 0.1, 0.8))
+                + (5, 0.05) for fx in ids[::2]}
+    mk = bt.correr(datos, mercado_de=sabe)["mercado"]
+    check("un mercado que acierta le gana al motor en los mismos partidos (IC entero por debajo de 0)",
+          mk["mercadoVsMotor"]["logLoss"]["ic95"][1] < 0 and mk["mercado"]["acierto"] > mk["motor"]["acierto"]
+          and 0.45 < mk["cobertura"] < 0.55, mk)
+    mk0 = bt.correr(datos, mercado_de=lambda ids: {})["mercado"]
+    check("sin cuotas capturadas no compara y lo dice", "mercado" not in mk0 and mk0["partidos"] == 0, mk0)
     check("con pocos partidos no inventa un resultado", "error" in bt.correr(sinteticos(30, 0.2, 3)))
 
     # sobre la demo: observaciones reales del pipeline, sin fuga
@@ -118,6 +131,18 @@ def main() -> int:
     check("las observaciones van ordenadas por fecha", [o["fecha"] for o in obs] == sorted(o["fecha"] for o in obs))
     check("las K de la demo entran con los dos lados y la de la condición de hoy",
           all(all(k + lado in o["x"] for k in bt._CLAVES_K for lado in "LV") for o in obs), obs[0]["x"] if obs else None)
+    cu = bt.cuotas_1x2([o["fixtureId"] for o in obs])
+    check("las cuotas 1X2 de la demo salen sin margen (suman 1) y con sus casas",
+          cu and all(abs(v[0] + v[1] + v[2] - 1) < 1e-9 and v[3] >= 1 and v[4] > 0 for v in cu.values()),
+          list(cu.items())[:2])
+    import sqlite3 as _sq
+    _fx = next(iter(cu))
+    with _sq.connect(os.path.join(_tmp, "sad.db")) as _c:
+        for _v, _o in (("Home", 1.01), ("Draw", 30.0), ("Away", 50.0)):
+            _c.execute("INSERT INTO odds (fixture_id, league_id, bookmaker_id, bookmaker_name, bet_id, bet_name, "
+                       "value, odd) VALUES (?, 1, 999, 'SYNTHETIC', 1, 'Match Winner', ?, ?)", (_fx, _v, _o))
+    check("las cuotas SINTÉTICAS (las inventamos nosotros) no entran al mercado",
+          bt.cuotas_1x2([_fx])[_fx][3] == cu[_fx][3], (bt.cuotas_1x2([_fx])[_fx], cu[_fx]))
     check("el riesgo solo viaja con racha abierta (sin burbuja, 0)",
           all(not (o["x"]["riesgoL"] and not o["x"]["rachaL"]) for o in obs))
 
