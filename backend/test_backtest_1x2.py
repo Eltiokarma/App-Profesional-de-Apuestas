@@ -45,7 +45,7 @@ def sinteticos(n: int, efecto_riesgo: float, semilla: int, efecto_goles: float =
         ks = {f"{k}{lado}": rnd.gauss(0, 1) for k in bt._CLAVES_K for lado in "LV"}
         # verdad opcional: el local que viene anotando de local contra el visitante
         # que viene recibiendo de visita (el cruce de condiciones)
-        cruce = efecto_goles * (ks["gaCondL"] + ks["grCondV"])
+        cruce = efecto_goles * (ks["kGaCondL"] + ks["kGrCondV"])
         # verdad: el riesgo con signo EMPUJA contra el lado que trae la racha
         zl = 0.3 + 1.6 * d - efecto_riesgo * rl + efecto_riesgo * rv + cruce
         zv = 0.0 - 1.6 * d + efecto_riesgo * rl - efecto_riesgo * rv - cruce
@@ -90,8 +90,8 @@ def main() -> int:
           (c["M5 + K goles vs M0 motor"], c["M6 + todas las K vs M0 motor"]))
     check("y la lectura dice que las constantes agregan", "las constantes AGREGAN" in r["lectura"], r["lectura"])
     co = r["modelos"]["M6 + todas las K"]["coefLocal"]
-    check("los coeficientes que pesan son los del cruce (gaCondL y grCondV), no el ruido",
-          min(co["gaCondL"], co["grCondV"]) > 2 * max(abs(co[k]) for k in co if k not in ("d", "d2", "gaCondL", "grCondV")), co)
+    check("los coeficientes que pesan son los del cruce (kGaCondL y kGrCondV), no el ruido",
+          min(co["kGaCondL"], co["kGrCondV"]) > 2 * max(abs(co[k]) for k in co if k not in ("d", "d2", "kGaCondL", "kGrCondV")), co)
     check("con pocos partidos no inventa un resultado", "error" in bt.correr(sinteticos(30, 0.2, 3)))
 
     # sobre la demo: observaciones reales del pipeline, sin fuga
@@ -102,6 +102,19 @@ def main() -> int:
     obs = bt.observaciones(equipos, None)
     check("cada partido trae los DOS lados (un fixture no aparece dos veces)",
           len({o["fixtureId"] for o in obs}) == len(obs) and len(obs) > 0, len(obs))
+    # 14/10/2026: una K guardada con la clave «ga» pisó los goles en contra y el
+    # resultado salió de comparar goles con constantes (7 % de empates)
+    from backend.app import constantes_de
+    reales = {}
+    for t in equipos:
+        for f in constantes_de(t, 500):
+            if f["condicion"] == "Local":
+                g, c = f["golesFavor"], f["golesContra"]
+                reales[f["fixtureId"]] = "L" if g > c else "V" if g < c else "E"
+    check("el resultado de cada partido es el del marcador real (ninguna K pisa los goles)",
+          obs and all(o["y"] == reales[o["fixtureId"]] for o in obs if o["fixtureId"] in reales),
+          [(o["fixtureId"], o["y"], reales.get(o["fixtureId"])) for o in obs if reales.get(o["fixtureId"]) != o["y"]][:5])
+    check("y la demo tiene empates (un 1X2 sin empates es un resultado roto)", any(o["y"] == "E" for o in obs))
     check("las observaciones van ordenadas por fecha", [o["fecha"] for o in obs] == sorted(o["fecha"] for o in obs))
     check("las K de la demo entran con los dos lados y la de la condición de hoy",
           all(all(k + lado in o["x"] for k in bt._CLAVES_K for lado in "LV") for o in obs), obs[0]["x"] if obs else None)
