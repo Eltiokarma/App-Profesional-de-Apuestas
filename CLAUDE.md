@@ -280,10 +280,18 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   mediana · moda de la K pico, los partidos y el nivel del rival que reventó
   cada burbuja; la abierta hoy se compara con eso y con el próximo rival. Los
   puntos del riesgo están CALIBRADOS con el backtest real (`--calibrar`,
-  §8 del doc, 171k burbujas): la K NO puntúa —estar por encima de la K con la
-  que suele reventar no adelanta el reventón—, la racha ≥ mediana suma 1 y el
-  rival frente a la mediana con la que revienta suma 3 · 5 · 7 (zona · fuerte
-  · muy fuerte, en la dirección del riesgo). Manda la familia total: la regla
+  recalibrados el 14/10/2026 con 173.615 observaciones, §12.2 del doc): la K
+  NO puntúa —estar por encima de la K con la que suele reventar no adelanta
+  el reventón—, la racha ≥ mediana suma 1, el rival frente a la mediana con
+  la que revienta suma 2 · 3 · 5 (zona · fuerte · muy fuerte, en la dirección
+  del riesgo), la racha hecha en la condición CONTRARIA a la del próximo suma
+  1 (`actual.contramano`), y la diferencia de nivel A FAVOR de que la racha
+  siga —el favorito con racha +, el débil con racha −— RESTA 2 · 4 (≥ 0.5 ·
+  ≥ 1.0, `rival.aFavor`/`rival.favorito`). Cortes: bajo < 0 · medio 0-1 ·
+  alto 2-3 · muy alto ≥ 4. Lo que los 52 estudios de reventones creyeron ver
+  y el backtest de las lecciones (`--lecciones`, §12) NO sostuvo —récord,
+  inflada, parón, burbujas enfrentadas, forma del arquero— no puntúa; los
+  candidatos a estudiar salen AL AZAR, no por tamaño. Manda la familia total: la regla
   del nivel (alto/bajo → globales, medio → específicas) no se confirmó y viaja
   en `mandan.reglaNivel` como dato. Mover un peso se hace con el backtest a la
   vista, en los dos lados y en los vectores dorados. OJO: `/constantes` sirve

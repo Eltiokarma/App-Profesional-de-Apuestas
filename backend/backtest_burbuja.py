@@ -129,7 +129,8 @@ def observar_equipo(team_id: int, horizonte: int, min_prefijo: int = MIN_PREFIJO
         for familia in FAMILIAS:
             if not _en_condicion(fila, familia):
                 continue
-            fam = burbuja._analizar_familia(prefijo, familia, proximo, estab, franja=True)
+            fam = burbuja._analizar_familia(prefijo, familia, proximo, estab, franja=True,
+                                            nivel_equipo=_nivel_a_fecha(niveles, fila["fecha"]))
             act, rg = fam["actual"], fam["riesgo"]
             if not act or not rg:
                 continue
@@ -300,8 +301,10 @@ def resumir(obs: list[dict], horizonte: int, nombres: dict[int, str] | None = No
         "porSigno": {s: _tasa([o for o in con_base if o["signo"] == s]) for s in ("+", "-")},
         "porNivel": por_nivel,
         "monotona": monotona,
+        # desde el mínimo: con los puntos que RESTAN (favorito, 14/10/2026) el puntaje puede ser negativo
         "porPuntos": {str(p): _tasa([o for o in con_base if o["puntos"] == p])
-                      for p in range(0, max((o["puntos"] for o in con_base), default=0) + 1)},
+                      for p in range(min((o["puntos"] for o in con_base), default=0),
+                                     max((o["puntos"] for o in con_base), default=0) + 1)},
         "aucPuntos": _auc(con_base, "puntos"),
         "senales": senales,
         "porFamilia": familias,

@@ -42,8 +42,14 @@ export const BIN_GLOBALES_BAJO = 2
 // Puntos calibrados con el backtest real del 16/09/2026 (docs/REVENTON.md §8).
 export const ZONA_TOLERANCIA = 0.15
 export const RIVAL_FUERTE = 0.45
-export const PUNTOS_RIVAL: Record<TramoRival, number> = { lejos: 0, zona: 3, fuerte: 5, 'muy fuerte': 7 }
+// recalibrado el 14/10/2026 (espejo de burbuja.py): antes 3 · 5 · 7
+export const PUNTOS_RIVAL: Record<TramoRival, number> = { lejos: 0, zona: 2, fuerte: 3, 'muy fuerte': 5 }
 export const PUNTOS_RACHA = 1
+/** Las dos señales del backtest de las lecciones (espejo de burbuja.py, REVENTON §12). */
+export const PUNTOS_CONTRAMANO = 1
+export const PUNTOS_FAVOR: Record<'no' | 'favorito' | 'muy favorito', number> = { no: 0, favorito: -2, 'muy favorito': -4 }
+export const FAVORITO = 0.5
+export const MUY_FAVORITO = 1.0
 export type TramoRival = 'lejos' | 'zona' | 'fuerte' | 'muy fuerte'
 export const MUESTRA_BAJA = 3
 export const MUESTRA_ALTA = 6
@@ -169,7 +175,8 @@ function historialDe(cerrados: ReventonDTO[]): FamiliaBurbujaDTO['historial'] {
 
 // ── riesgo ──────────────────────────────────────────────────────────────────
 
-const nivelRiesgo = (p: number): 'bajo' | 'medio' | 'alto' | 'muy alto' => (p >= 6 ? 'muy alto' : p >= 4 ? 'alto' : p >= 2 ? 'medio' : 'bajo')
+// cortes de la recalibración del 14/10/2026 (espejo de _nivel_riesgo): el puntaje puede ser negativo
+const nivelRiesgo = (p: number): 'bajo' | 'medio' | 'alto' | 'muy alto' => (p >= 4 ? 'muy alto' : p >= 2 ? 'alto' : p >= 0 ? 'medio' : 'bajo')
 
 function confianzaDe(n: number, estabilidad: EstabilidadEquipoDTO): [RiesgoConfianza, string[]] {
   const orden: RiesgoConfianza[] = ['baja', 'media', 'alta']
@@ -313,7 +320,7 @@ function historialPorPeriodo(filas: FilaK[], cerrados: ReventonDTO[], periodos: 
   })
 }
 
-function analizarFamilia(filas: FilaK[], familia: FamiliaBurbuja, proximo: ProximoBurbuja | null, estabilidad: EstabilidadEquipoDTO, periodos: PeriodoBurbujaDTO[] = []): FamiliaBurbujaDTO {
+function analizarFamilia(filas: FilaK[], familia: FamiliaBurbuja, proximo: ProximoBurbuja | null, estabilidad: EstabilidadEquipoDTO, periodos: PeriodoBurbujaDTO[] = [], nivelEquipo: number | null = null): FamiliaBurbujaDTO {
   const { cerrados, abierta: ep, nCond } = episodios(filas, familia)
   const hist = historialDe(cerrados)
   const aplica = !proximo ? null : familia === 'total' ? true : proximo.condicion === (familia === 'local' ? 'L' : 'V')
@@ -386,6 +393,30 @@ function analizarFamilia(filas: FilaK[], familia: FamiliaBurbuja, proximo: Proxi
     else if (tramo === 'zona') motivos.push(`${quien} está en la zona donde suele ${verbo} (mediana ${medN}) (+${pts})`)
     else if (tramo === 'fuerte') motivos.push(`${quien} es más ${lado} que los rivales con los que suele ${verbo} (mediana ${medN}) (+${pts})`)
     else motivos.push(`${quien} es mucho más ${lado} que los rivales con los que suele ${verbo} (mediana ${medN}) (+${pts})`)
+    // a favor de que la racha siga: el favorito con racha +, el débil con racha −
+    if (nivelEquipo != null) {
+      const g = r2(signo === '+' ? nivelEquipo - nivelProx : nivelProx - nivelEquipo)
+      const fav = g >= MUY_FAVORITO ? 'muy favorito' : g >= FAVORITO ? 'favorito' : 'no'
+      out.rival.aFavor = g
+      out.rival.favorito = fav
+      const pf = PUNTOS_FAVOR[fav]
+      puntos += pf
+      if (fav !== 'no') {
+        const quienF = signo === '+' ? 'el equipo es favorito' : 'el rival es mucho más fuerte'
+        motivos.push(`${quienF}: ${Math.abs(g)} de nivel a favor de que la racha siga (${fav})` + (pf ? ` (${pf > 0 ? '+' : ''}${pf})` : ''))
+      }
+    }
+    // la racha hecha en la condición CONTRARIA a la del próximo partido
+    const racha = filas.filter((f) => familia === 'total' || f.condicion === (familia === 'local' ? 'Local' : 'Visita')).slice(-ep.partidos)
+    const condProx = proximo.condicion === 'L' ? 'Local' : 'Visita'
+    const contra = racha.filter((f) => f.condicion !== condProx).length
+    if (racha.length && contra * 3 >= 2 * racha.length) {
+      out.actual!.contramano = true
+      puntos += PUNTOS_CONTRAMANO
+      motivos.push(`${contra} de ${racha.length} partidos de la racha en la otra condición: el próximo es de ${condProx === 'Local' ? 'local' : 'visita'}` + (PUNTOS_CONTRAMANO ? ` (+${PUNTOS_CONTRAMANO})` : ''))
+    } else {
+      out.actual!.contramano = false
+    }
   } else if (proximo) {
     motivos.push('la familia no se mueve en el próximo partido (otra condición): el rival no puntúa')
   } else {
@@ -513,7 +544,7 @@ export function analizarBurbujas(filas: FilaK[], ctx: ContextoBurbuja): Burbujas
   const estabilidad = estabilidadDe(ctx.plantilla, ctx.hoy)
   const periodos = periodosDe(filas, ctx.plantilla)
   const familias = {} as Record<FamiliaBurbuja, FamiliaBurbujaDTO>
-  for (const f of FAMILIAS) familias[f] = analizarFamilia(filas, f, ctx.proximo, estabilidad, periodos)
+  for (const f of FAMILIAS) familias[f] = analizarFamilia(filas, f, ctx.proximo, estabilidad, periodos, ctx.nivel)
   return {
     equipoId: ctx.equipoId,
     nombre: ctx.nombre ?? null,
