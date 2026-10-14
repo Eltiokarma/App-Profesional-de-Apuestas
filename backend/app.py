@@ -1543,7 +1543,8 @@ def equipo_burbujas(equipo_id: int, antesDe: int | None = None, proximo: int | N
 @app.get(API + "/analisis/burbujas/backtest")
 def burbujas_backtest(padron: bool = True, horizonte: int = Query(default=1, ge=1, le=5),
                       muestra: int = Query(default=0, ge=0, le=2000), liga: int | None = None,
-                      minFilas: int = Query(default=12, ge=10, le=200), calibrar: bool = False):
+                      minFilas: int = Query(default=12, ge=10, le=200), calibrar: bool = False,
+                      lecciones: bool = False):
     """Backtest hacia atrás del reventón (docs/REVENTON.md §8) sobre las .db
     del servidor, donde viven los datos reales. Token maestro: NO está en la
     lista de permitidos de Cowork porque no es un dato del parte, es
@@ -1569,6 +1570,8 @@ def burbujas_backtest(padron: bool = True, horizonte: int = Query(default=1, ge=
         args += ["--liga", str(liga)]
     if calibrar:
         args.append("--calibrar")
+    if lecciones:
+        args.append("--lecciones")
     fd, salida = tempfile.mkstemp(prefix="sad_backtest_", suffix=".json")
     os.close(fd)
     try:
@@ -2640,6 +2643,21 @@ def cowork_reventones_resumen(liga: int | None = None):
     previa. Frecuencia descriptiva, NO probabilidad de reventar."""
     from backend.analisis import reventones
     return reventones.resumen_global(liga)
+
+
+@app.get(API + "/analisis/cowork/reventones/backtest")
+def cowork_reventones_backtest():
+    """El ÚLTIMO backtest de las lecciones (backend/backtest_lecciones.py), GUARDADO:
+    se LEE, no se corre. Correrlo es calibración pesada y sigue siendo del token
+    maestro (`GET /analisis/burbujas/backtest?lecciones=true` o el CLI con
+    --lecciones); leer el resultado no cuesta nada y es lo que el estudio de
+    reventones necesita para saber qué lección tiene denominador."""
+    from backend import backtest_lecciones
+    r = backtest_lecciones.leer()
+    if r is None:
+        raise HTTPException(404, "todavía no se corrió el backtest de las lecciones: "
+                                 "python -m backend.backtest_burbuja --padron --lecciones (o el endpoint maestro)")
+    return r
 
 
 @app.get(API + "/analisis/cowork/reventones/{fixture_id}/{equipo_id}")

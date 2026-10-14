@@ -3093,6 +3093,12 @@ def main():
           len(it_rv) == 1 and it_rv[0]["clave"] == f"rev:{_x['fixtureId']}:{_x['equipoId']}:1"
           and it_rv[0]["puedeMoverNumeros"] is False and it_rv[0]["skill"] == "teorema-del-echado", it_rv)
     import backend.app as _appmod
+    check("el backtest de las lecciones se LEE con el token de Cowork; correrlo sigue siendo maestro",
+          _appmod._cowork_puede("GET", f"{A}/analisis/cowork/reventones/backtest")
+          and not _appmod._cowork_puede("GET", f"{A}/analisis/burbujas/backtest"))
+    _rb = c.get(f"{A}/analisis/cowork/reventones/backtest")
+    check("sin correrlo todavía responde 404 con cómo correrlo (o 200 si ya hay uno guardado)",
+          _rb.status_code == 200 or (_rb.status_code == 404 and "--lecciones" in _rb.text), _rb.text[:200])
     check("el token de Cowork puede escribir el estudio y nada más nuevo",
           _appmod._cowork_puede("POST", f"{A}/analisis/cowork/reventones/1/2/estudio")
           and not _appmod._cowork_puede("POST", f"{A}/analisis/cowork/reventones/1/2"))

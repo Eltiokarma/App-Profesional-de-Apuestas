@@ -300,6 +300,7 @@ paths:
         - { name: liga, in: query, schema: { type: integer }, description: 'solo partidos de esta league_id (manda sobre padron)' }
         - { name: minFilas, in: query, schema: { type: integer, default: 12, minimum: 10, maximum: 200 } }
         - { name: calibrar, in: query, schema: { type: boolean, default: false }, description: 'añade `calibracion`: regresión logística sobre las señales (rival graduado por distancia), coeficientes, puntos propuestos, tasa por puntos y cortes propuestos. Ajuste en muestra.' }
+        - { name: lecciones, in: query, schema: { type: boolean, default: false }, description: 'añade `lecciones`: cada lección de los estudios de reventones (extremo, inflada, racha de otra competición, contramano, parón, burbujas enfrentadas, escala, DT/once/arquero suplente, ARQUERO-NO-FAVORITO, Perú vs resto) contra TODAS las burbujas abiertas: tasa encendida/apagada, lift, lift sobre el riesgo (estratificado por nivel), Wilson y cobertura. Lo guarda para GET /analisis/cowork/reventones/backtest' }
       responses:
         '200':
           description: Resumen del backtest (tablas por nivel, puntos, señal, familia, liga; ligasEvaluadas y equipos; calibracion si se pidió)
@@ -920,6 +921,17 @@ paths:
         - { name: conFicha, in: query, schema: { type: boolean, default: false } }
       responses:
         '200': { description: OK, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+  /analisis/cowork/reventones/backtest:
+    get:
+      summary: El último backtest de las lecciones, GUARDADO (se lee, no se corre)
+      description: >-
+        Lo que dejó la última corrida con `lecciones=true` (o el CLI `backtest_burbuja --lecciones`):
+        por lección, tasa de reventón encendida/apagada, lift, lift sobre el riesgo y cobertura, más el
+        bloque descriptivo del arquero del no favorito. Abierto a Cowork: leer no cuesta; correrlo sigue
+        siendo del token maestro.
+      responses:
+        '200': { description: el resumen guardado con `corridoEn`, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+        '404': { description: todavía no se corrió }
   /analisis/cowork/reventones/resumen:
     get:
       summary: Lo estudiado junto, por tipo de reventón
