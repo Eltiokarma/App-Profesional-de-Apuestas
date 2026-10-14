@@ -672,6 +672,7 @@ def alertas_extremo(reventon: dict | None, nombres: dict) -> list[dict]:
                            f"historia ({' · '.join(ext.get('motivos') or [])}). No es récord y el modelo "
                            "no lo puntúa como riesgo, pero queda poco margen: no cargar fuerte a que la "
                            "racha siga",
+                "inflada": ext.get("inflada"),
             })
             continue
         if not ext.get("activo"):
@@ -682,7 +683,10 @@ def alertas_extremo(reventon: dict | None, nombres: dict) -> list[dict]:
                        f"({' · '.join(ext.get('motivos') or [])}). El modelo no lo puntúa como "
                        "riesgo (la tasa de reventón no sube con la K), pero es terreno sin "
                        "precedente: NO cargar la apuesta a que la racha siga. Cowork tiene que "
-                       "declararlo en lecturaSad.reventon y en el pronóstico",
+                       "declararlo en lecturaSad.reventon y en el pronóstico"
+                       + (" · INFLADA: la mitad o más de la racha son amistosos —cuentan, pero el "
+                          "récord se armó fuera de la competición—" if ext.get("inflada") else ""),
+            "inflada": ext.get("inflada"),
         })
     return out
 

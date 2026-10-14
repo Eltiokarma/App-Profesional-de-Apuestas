@@ -262,20 +262,17 @@ def reventones_de(team_id: int) -> list[dict]:
                 for s in ("+", "-") if any(r["signo"] == s for r in cerrados)}
     pos = {f["fixtureId"]: i for i, f in enumerate(filas)}
     sede = _sede_propia(team_id)
-    ruido = _ligas_ruido()
+    ruido = _ligas_ruido()   # los amistosos CUENTAN (14/10/2026): una burbuja se arma y se rompe ahí
     fuera = []
     for r in cerrados:
         if not significativo(r, medianas):
             continue
         i = pos.get(r["fixtureId"])
-        # un amistoso que cierra la burbuja es ruido: pretemporada, once de
-        # prueba (Aston Villa–Porto, Roma–Cannes en la lista de otras ligas)
-        if i is not None and filas[i].get("ligaId") in ruido:
-            continue
         comp = (composicion(filas[max(0, i - r["partidos"]):i], filas[i], filas[max(0, i - 6):i],
                             en_su_estadio=bool(sede) and _sede_de(r["fixtureId"]) == sede)
                 if i is not None else None)
-        fuera.append({**r, "medianaKPico": medianas.get(r["signo"]), "composicion": comp})
+        fuera.append({**r, "medianaKPico": medianas.get(r["signo"]), "composicion": comp,
+                      "enAmistoso": i is not None and filas[i].get("ligaId") in ruido})
     return fuera
 
 
@@ -307,6 +304,7 @@ def candidatos(liga_id: int, meses: int = 6, limite: int = 60, solo_con_ficha: b
                 "tipo": TIPOS[r["signo"]], "signo": r["signo"], "partidos": r["partidos"],
                 "kPico": r["kPico"], "medianaKPico": r["medianaKPico"], "nivelRival": r["nivelRival"],
                 "resultado": r["resultado"], "esInternacional": r["esInternacional"],
+                "enAmistoso": r.get("enAmistoso", False),
                 "senalesCalculadas": (r.get("composicion") or {}).get("senalesCalculadas") or [],
                 "conFicha": ficha, "estudiado": (r["fixtureId"], tid) in hechos,
             })

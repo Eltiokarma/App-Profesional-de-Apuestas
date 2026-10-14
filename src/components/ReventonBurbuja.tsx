@@ -226,6 +226,7 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
         <div role="alert" style={{ padding: '10px 12px', borderRadius: 9, background: 'color-mix(in oklch, var(--down), transparent 82%)', border: '2px solid var(--down)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
             <span style={{ padding: '2px 8px', borderRadius: 6, background: 'var(--down)', color: 'var(--bg)', font: '800 10px var(--mono)', letterSpacing: '.6px' }}>⚠ EXTREMO</span>
+            {extremo.inflada && <ChipInflada inf={extremo.inflada} />}
             <span style={{ font: '800 12px var(--sans)', color: 'var(--down)', textTransform: 'uppercase', letterSpacing: '.3px' }}>
               {extremo.kRecord ? `K ${actual.k > 0 ? '+' : ''}${actual.k.toFixed(1)}: la más ${signo === '+' ? 'alta' : 'baja'} en ${extremo.partidosHistoria} partidos` : `racha récord en ${extremo.partidosHistoria} partidos`}
             </span>
@@ -246,6 +247,7 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
         <div role="alert" style={{ padding: '10px 12px', borderRadius: 9, background: 'color-mix(in oklch, var(--mark), transparent 82%)', border: '2px solid var(--mark)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
             <span style={{ padding: '2px 8px', borderRadius: 6, background: 'var(--mark)', color: 'var(--bg)', font: '800 10px var(--mono)', letterSpacing: '.6px' }}>⚠ CERCA DEL EXTREMO</span>
+            {cerca.inflada && <ChipInflada inf={cerca.inflada} />}
             <span style={{ font: '800 12px var(--sans)', color: 'var(--mark)', textTransform: 'uppercase', letterSpacing: '.3px' }}>
               K {actual.k > 0 ? '+' : ''}{actual.k.toFixed(1)} · récord {signo === '+' ? '+' : '-'}{cerca.maximoPrevio.kPico.toFixed(1)}
             </span>
@@ -389,5 +391,14 @@ function EscalaRival({ escala, rival }: { escala: EscalaRivalDTO; rival: string 
         <div style={{ font: '500 10px var(--sans)', color: 'var(--t3)', marginTop: 4 }}>sin partidos de copa contra otra base en la historia del equipo</div>
       )}
     </div>
+  )
+}
+
+/** El récord se armó con la mitad o más de amistosos: la alerta sigue (cuentan), pero se dice. */
+function ChipInflada({ inf }: { inf: { amistosos: number; partidos: number; texto: string } }) {
+  return (
+    <span title={inf.texto} style={{ padding: '2px 7px', borderRadius: 6, border: '1px solid var(--t3)', color: 'var(--t2)', font: '700 10px var(--mono)', fontVariantNumeric: 'tabular-nums' }}>
+      INFLADA · {inf.amistosos}/{inf.partidos} amistosos
+    </span>
   )
 }

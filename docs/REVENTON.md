@@ -391,6 +391,22 @@ De paso, los motivos del récord llevan el signo de la K («K -26.04 … récord
 previo -19.54»): antes decían «K 26.04 … máximo previo 19.54» bajo un título
 «K -26.0: la más baja», que se leía como contradicción.
 
+### 10.2 Extremo inflado por amistosos (14/10/2026)
+
+Los amistosos **cuentan** en la burbuja: el espectáculo se arma para el hincha
+también en pretemporada, y una racha se construye o se rompe ahí con causas
+que interesan para leer al equipo. Pero en los estudios fuera de Perú dos
+alertas de extremo salieron de rachas hechas en buena parte en pretemporada
+(Lazio, racha récord de 9 con 5 amistosos; Real Madrid, K-CERCA con 3 de 6).
+Por eso `extremo.inflada` = `{amistosos, partidos, texto}` cuando la alerta
+(récord o cerca) está encendida y **la mitad o más** de la racha abierta son
+amistosos (liga 667, `AMISTOSOS`); si no, `null`. `actual.amistosos` trae el
+conteo siempre. La marca **no apaga la alerta ni mueve el riesgo**: dice de
+qué está hecho el récord. Espejo en `src/lib/burbuja.ts` y check en los dos
+tests sobre el mismo vector (los 3 últimos partidos como amistosos → inflada;
+los 2 últimos → no). La tarjeta pinta el chip «INFLADA · n/N amistosos» y
+las alertas K-EXTREMO / K-CERCA-EXTREMO del parte lo dicen.
+
 ## 10-bis. La misma referencia, por período
 
 El Universitario de hoy no es el de Fossati ni el de la gestión de Ferrari, y

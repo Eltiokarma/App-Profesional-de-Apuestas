@@ -138,7 +138,18 @@ def main():
     check("percentil K 50 (una de dos por debajo)", lo["posicion"]["percentilK"] == 50, lo["posicion"])
     check("local: K 9.5 < máximo previo 16 y racha 3 < 4 → extremo INACTIVO, sin motivos ni texto",
           lo["extremo"] == {"activo": False, "kRecord": False, "rachaRecord": False, "cerca": False, "partidosHistoria": 11,
-                            "maximoPrevio": {"kPico": 16.0, "partidos": 4}, "motivos": [], "texto": ""}, lo["extremo"])
+                            "maximoPrevio": {"kPico": 16.0, "partidos": 4}, "motivos": [], "texto": "",
+                            "inflada": None}, lo["extremo"])
+    # AMISTOSOS: cuentan, pero el extremo hecho con la mitad o más se marca
+    # inflado (Lazio, Real Madrid, 13/10/2026). Mismo vector en el TS.
+    con_am = analizar([{**f, "ligaId": 667} if i >= len(filas) - 3 else f for i, f in enumerate(filas)], ctx)
+    ext_am = con_am["familias"]["total"]["extremo"]
+    check("3 de 6 de la racha en amistosos → extremo INFLADO, sigue activo y el riesgo no se mueve",
+          ext_am["activo"] and ext_am["inflada"] == {"amistosos": 3, "partidos": 6, "texto": ext_am["inflada"]["texto"]}
+          and con_am["familias"]["total"]["riesgo"]["puntos"] == t["riesgo"]["puntos"]
+          and con_am["familias"]["total"]["actual"]["amistosos"] == 3, ext_am)
+    dos_am = analizar([{**f, "ligaId": 667} if i >= len(filas) - 2 else f for i, f in enumerate(filas)], ctx)
+    check("2 de 6 → no está inflado", dos_am["familias"]["total"]["extremo"]["inflada"] is None)
 
     # CERCA DEL EXTREMO (§10): el caso ADT, sintético y el mismo que en el TS.
     # Diez reventones negativos, récord K 19.54 y racha 4; la abierta en −17.93

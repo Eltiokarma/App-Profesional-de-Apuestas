@@ -23,7 +23,7 @@ import type {
 export type FilaK = Pick<
   ConstantesDTO,
   'fixtureId' | 'fecha' | 'condicion' | 'rivalId' | 'rivalNombre' | 'nivelRival' | 'golesFavor' | 'golesContra' | 'esInternacional'
-> & { fusion: Pick<ConstantesDTO['fusion'], 'k' | 'kLocal' | 'kVisita'>; temporada?: number | null }
+> & { fusion: Pick<ConstantesDTO['fusion'], 'k' | 'kLocal' | 'kVisita'>; temporada?: number | null; ligaId?: number }
 
 export type ProximoBurbuja = NonNullable<BurbujasEquipoDTO['proximo']>
 
@@ -101,6 +101,7 @@ interface Episodio {
   kPico: number
   k: number
   desde: string
+  amistosos: number
 }
 
 function reventonDe(ep: Episodio, fila: FilaK): ReventonDTO {
@@ -138,14 +139,16 @@ export function episodios(filas: FilaK[], familia: FamiliaBurbuja): { cerrados: 
       }
       continue
     }
+    const amistoso = fila.ligaId != null && AMISTOSOS.has(fila.ligaId) ? 1 : 0
     if (ep && ep.signo === s) {
       ep.partidos++
+      ep.amistosos += amistoso
       ep.kPico = Math.max(ep.kPico, Math.abs(v))
       ep.k = v
       continue
     }
     if (ep) cerrados.push(reventonDe(ep, fila)) // cambio de signo en el mismo partido
-    ep = { signo: s, partidos: 1, kPico: Math.abs(v), k: v, desde: fila.fecha }
+    ep = { signo: s, partidos: 1, kPico: Math.abs(v), k: v, desde: fila.fecha, amistosos: amistoso }
   }
   return { cerrados, abierta: ep, nCond }
 }
@@ -199,13 +202,18 @@ type RiesgoConfianza = 'baja' | 'media' | 'alta'
  *  escalón más suave: no puntúa, dice cuánto se carga (docs/REVENTON.md §10). */
 export const CERCA_PCT = 90
 
+/** Amistosos de clubes (espejo de AMISTOSOS): cuentan en la burbuja, pero un
+ *  extremo hecho con la mitad o más de amistosos se marca INFLADO (Lazio,
+ *  Real Madrid; docs/REVENTON.md §10.2). No apaga la alerta ni mueve el riesgo. */
+export const AMISTOSOS = new Set([667])
+
 const conSigno = (v: number, signo: SignoBurbuja) => `${signo === '+' ? '+' : '-'}${r2(Math.abs(v))}`
 
 /** ALERTA DE EXTREMO: prudencia, no probabilidad. Una K récord no revienta
  *  más que otra (por eso no puntúa), pero es terreno sin precedente para este
  *  equipo y ahí no se carga la apuesta a que siga. Aparte del riesgo.
  *  `cerca` es el escalón de abajo; `activo` sigue siendo solo el récord. */
-export function extremoDe(kAbs: number, partidos: number, base: HistorialSignoDTO, nCond: number, signo: SignoBurbuja, de: ReventonDTO[] = []): ExtremoBurbujaDTO {
+export function extremoDe(kAbs: number, partidos: number, base: HistorialSignoDTO, nCond: number, signo: SignoBurbuja, de: ReventonDTO[] = [], amistosos = 0): ExtremoBurbujaDTO {
   const kRecord = kAbs >= base.kPico.max
   const rachaRecord = partidos >= base.partidos.max
   const n = de.length
@@ -227,6 +235,15 @@ export function extremoDe(kAbs: number, partidos: number, base: HistorialSignoDT
     : cerca
       ? `CERCA DEL EXTREMO: la burbuja está en la franja más alta de su historia (por encima del ${CERCA_PCT} % de las que reventaron). El modelo no lo puntúa como riesgo, pero queda poco margen antes del récord: no cargar fuerte a que la racha siga`
       : ''
+  let inflada: ExtremoBurbujaDTO['inflada'] = null
+  if ((kRecord || rachaRecord || cerca) && amistosos * 2 >= partidos) {
+    inflada = {
+      amistosos,
+      partidos,
+      texto: `INFLADA: ${amistosos} de los ${partidos} partidos de la racha son amistosos. Cuentan (la racha es del equipo), pero el récord se armó en buena parte fuera de la competición: leer la alerta con eso a la vista`,
+    }
+    motivos.push(`inflada: ${amistosos} de ${partidos} partidos de la racha son amistosos`)
+  }
   return {
     activo: kRecord || rachaRecord,
     kRecord,
@@ -236,6 +253,7 @@ export function extremoDe(kAbs: number, partidos: number, base: HistorialSignoDT
     maximoPrevio: { kPico: base.kPico.max, partidos: base.partidos.max },
     motivos,
     texto,
+    inflada,
   }
 }
 
@@ -312,7 +330,7 @@ function analizarFamilia(filas: FilaK[], familia: FamiliaBurbuja, proximo: Proxi
   if (!ep) return out
   const signo: SignoBurbuja = ep.signo > 0 ? '+' : '-'
   const kAbs = Math.abs(ep.k)
-  out.actual = { signo, k: r2(ep.k), partidos: ep.partidos, kPico: r2(ep.kPico), desde: ep.desde, aplicaAlProximo: aplica }
+  out.actual = { signo, k: r2(ep.k), partidos: ep.partidos, kPico: r2(ep.kPico), desde: ep.desde, amistosos: ep.amistosos, aplicaAlProximo: aplica }
   const base = signo === '+' ? hist.positivo : hist.negativo
   if (!base) {
     out.riesgo = {
@@ -328,7 +346,7 @@ function analizarFamilia(filas: FilaK[], familia: FamiliaBurbuja, proximo: Proxi
   const pctR = Math.floor((100 * de.filter((r) => r.partidos <= ep.partidos).length) / n + 0.5)
   const medK = base.kPico.mediana
   out.posicion = { percentilK: pctK, percentilRacha: pctR, kSobreMediana: medK <= 0 ? null : r2(kAbs / medK) }
-  out.extremo = extremoDe(kAbs, ep.partidos, base, nCond, signo, de)
+  out.extremo = extremoDe(kAbs, ep.partidos, base, nCond, signo, de, ep.amistosos)
 
   let puntos = 0
   const motivos: string[] = []
