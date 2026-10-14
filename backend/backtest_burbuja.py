@@ -87,6 +87,12 @@ def _bin_a_fecha(niveles: list[dict], fecha: str) -> int:
     return niveles[i - 1]["bin"] if i > 0 else 0
 
 
+def _nivel_a_fecha(niveles: list[dict], fecha: str) -> float | None:
+    fechas = [n["fecha"] for n in niveles]
+    i = bisect_left(fechas, fecha)
+    return niveles[i - 1]["nivel"] if i > 0 else None
+
+
 def _revento(fila: dict, familia: str, signo: str) -> bool:
     v = float(fila["fusion"][burbuja.CLAVE_FUSION[familia]])
     return v == 0 or (v > 0) != (signo == "+")
@@ -132,7 +138,17 @@ def observar_equipo(team_id: int, horizonte: int, min_prefijo: int = MIN_PREFIJO
             revento = any(_revento(f, familia, act["signo"]) for f in siguientes)
             revento_ahora = _revento(fila, familia, act["signo"])
             base = fam["historial"]["positivo" if act["signo"] == "+" else "negativo"]
+            # LAS DOS SEÑALES NUEVAS (backtest de las lecciones, 14/10/2026):
+            # la racha hecha en la condición contraria y la diferencia de nivel
+            # A FAVOR de que la racha siga (favorito con racha +, débil con racha −)
+            racha = [f for f in prefijo if _en_condicion(f, familia)][-act["partidos"]:]
+            contra = sum(1 for f in racha if f["condicion"] != fila["condicion"])
+            nv_eq = _nivel_a_fecha(niveles, fila["fecha"])
+            g_fav = (None if nv_eq is None else
+                     (nv_eq - float(fila["nivelRival"])) if act["signo"] == "+" else (float(fila["nivelRival"]) - nv_eq))
             obs.append({
+                "contramano": bool(racha) and contra * 3 >= 2 * len(racha),
+                "gFavor": None if g_fav is None else round(g_fav, 3),
                 "equipoId": team_id, "fixtureId": fila["fixtureId"], "fecha": fila["fecha"], "ligaId": fila["ligaId"],
                 "rivalId": fila["rivalId"],
                 "familia": familia, "signo": act["signo"], "manda": familia in mandan["familias"],
@@ -318,7 +334,13 @@ def correr(equipos: list[int], horizonte: int, min_prefijo: int = MIN_PREFIJO,
 # iteraciones sin numpy. Es AJUSTE EN MUESTRA: sirve para ver qué pesa y
 # proponer puntos enteros, no para prometer una tasa.
 
-SENALES = ["kGeMediana", "kGeMax", "rachaGeMediana", "rachaGeMax", "rivalZona", "rivalFuerte", "rivalMuyFuerte"]
+SENALES = ["kGeMediana", "kGeMax", "rachaGeMediana", "rachaGeMax", "rivalZona", "rivalFuerte", "rivalMuyFuerte",
+           # 14/10/2026: las dos que el backtest de las lecciones encontró por encima del riesgo
+           "contramano", "favorito", "muyFavorito"]
+FAVORITO, MUY_FAVORITO = 0.5, 1.0   # diferencia de nivel a favor de que la racha siga
+# las que PROTEGEN (coeficiente negativo) pueden restar puntos: la del favorito
+# baja la tasa 20 puntos dentro de cada nivel de riesgo
+PUEDEN_RESTAR = {"favorito", "muyFavorito"}
 RIVAL_FUERTE = 0.45           # distancia a la mediana desde la que el rival es «muy fuerte»
 PASO_PUNTO = 0.25             # un punto por cada 0.25 de log-odds (≈ 6 % de tasa cerca del 50 %)
 RIDGE = 1e-3
@@ -333,6 +355,9 @@ def _senales_de(o: dict) -> tuple[int, ...] | None:
     return (
         int(o["kGeMediana"]), int(o["kGeMax"]), int(o["rachaGeMediana"]), int(o["rachaGeMax"]),
         int(-tol <= d < tol), int(tol <= d < RIVAL_FUERTE), int(d >= RIVAL_FUERTE),
+        int(bool(o.get("contramano"))),
+        int(o.get("gFavor") is not None and FAVORITO <= o["gFavor"] < MUY_FAVORITO),
+        int(o.get("gFavor") is not None and o["gFavor"] >= MUY_FAVORITO),
     )
 
 
@@ -410,7 +435,8 @@ def calibrar(obs: list[dict]) -> dict:
         c[1] += int(o["revento"])
     beta = _logistica(celdas)
     coefs = {s: round(beta[i + 1], 3) for i, s in enumerate(SENALES)}
-    puntos = {s: max(0, math.floor(beta[i + 1] / PASO_PUNTO + 0.5)) for i, s in enumerate(SENALES)}
+    puntos = {s: (math.floor(beta[i + 1] / PASO_PUNTO + 0.5) if s in PUEDEN_RESTAR
+                  else max(0, math.floor(beta[i + 1] / PASO_PUNTO + 0.5))) for i, s in enumerate(SENALES)}
 
     # evaluar la tabla de puntos propuesta sobre las mismas observaciones
     for o in con_base:
@@ -441,7 +467,7 @@ def calibrar(obs: list[dict]) -> dict:
         "celdas": len(celdas),
         "intercepto": round(beta[0], 3),
         "coeficientes": coefs,
-        "aporta": {s: coefs[s] > 0.1 for s in SENALES},
+        "aporta": {s: (coefs[s] < -0.1 if s in PUEDEN_RESTAR else coefs[s] > 0.1) for s in SENALES},
         "puntosPropuestos": puntos,
         "pasoPunto": PASO_PUNTO,
         "aucLogit": _auc(con_base, "_logit"),
@@ -492,6 +518,11 @@ def correr_backtest(*, padron_: bool = False, liga: int | None = None, horizonte
         # donde la regresión a la media empuja a que se corte). Si los pesos
         # difieren de verdad, la tabla de puntos tiene que ser una por signo.
         resumen["calibracionPorSigno"] = {s: calibrar([o for o in obs if o["signo"] == s]) for s in ("+", "-")}
+        from backend import backtest_lecciones
+        backtest_lecciones.guardar({"calibracion": resumen["calibracion"],
+                                    "calibracionPorSigno": resumen["calibracionPorSigno"],
+                                    "porNivel": resumen["porNivel"], "tasaBase": resumen["tasaBase"],
+                                    "equipos": len(equipos), "horizonte": horizonte}, clave="calibracion")
     return resumen
 
 

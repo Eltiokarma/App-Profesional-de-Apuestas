@@ -96,8 +96,12 @@ def main():
     # calibración: logística sobre celdas, puntos enteros y tabla propuesta
     rc = bt.correr_backtest(horizonte=1, calibrar_=True)
     cal = rc["calibracion"]
-    check("calibrar: coeficientes y puntos para las 7 señales", set(cal["coeficientes"]) == set(bt.SENALES)
-          and all(isinstance(cal["puntosPropuestos"][s], int) and cal["puntosPropuestos"][s] >= 0 for s in bt.SENALES), cal.get("aviso"))
+    check("calibrar: coeficientes y puntos para las 10 señales; solo las que protegen pueden restar",
+          set(cal["coeficientes"]) == set(bt.SENALES)
+          and all(isinstance(cal["puntosPropuestos"][s], int) and (cal["puntosPropuestos"][s] >= 0 or s in bt.PUEDEN_RESTAR)
+                  for s in bt.SENALES), cal.get("aviso"))
+    check("cada observación trae la condición a contramano y la diferencia de nivel a favor de la racha",
+          all("contramano" in o and "gFavor" in o for o in obs[:50]))
     check("calibrar: AUC del logit y de los puntos propuestos en [0, 1]",
           0 <= cal["aucLogit"] <= 1 and 0 <= cal["aucPuntosPropuestos"] <= 1, (cal["aucLogit"], cal["aucPuntosPropuestos"]))
     check("calibrar: la tabla por puntos cierra al total calibrado",
@@ -130,7 +134,7 @@ def main():
     celdas = {}
     for k in (0, 1):
         for j in (0, 1):
-            patron = (k, 0, j, 0, 0, 0, 0)
+            patron = (k, 0, j, 0, 0, 0, 0, 0, 0, 0)
             n = 1000
             p = 0.3 + 0.4 * j          # solo la 3ª señal (rachaGeMediana) sube la tasa
             celdas[patron] = [n, int(n * p)]

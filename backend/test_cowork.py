@@ -3048,6 +3048,9 @@ def main():
     check("la lista de reventones sale de la base, con los dos tipos y la ficha disponible",
           r_rv.status_code == 200 and j_rv["total"] > 0 and set(j_rv["porTipo"]) == set(rv.TIPOS.values())
           and all("conFicha" in x and x["partidos"] >= 2 for x in j_rv["candidatos"]), j_rv.get("porTipo"))
+    check("los candidatos salen al azar y estable (no por tamaño): el orden no sigue a la racha ni a la K",
+          rv.orden_azar(1, 2) == rv.orden_azar(1, 2) and rv.orden_azar(1, 2) != rv.orden_azar(2, 1)
+          and "AL AZAR" in j_rv["criterio"])
     _x = j_rv["candidatos"][0]
     _ruta = f"{A}/analisis/cowork/reventones/{_x['fixtureId']}/{_x['equipoId']}"
     f_rv = c.get(_ruta).json()

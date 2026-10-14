@@ -507,3 +507,44 @@ Railway, en subproceso) o `GET /analisis/burbujas/backtest?padron=true&lecciones
 (maestro). El resultado queda en `$SAD_DATA_DIR/.backtest_lecciones.json` y se
 lee con `GET /analisis/cowork/reventones/backtest`.
 
+
+### 12.1 Primera corrida real (14/10/2026, padrón, 1.078 equipos, 87.361 burbujas abiertas, familia total)
+
+Tasa base 61,7 %. El riesgo calibrado separa: bajo 46,5 % · medio 60,7 % ·
+alto 67,3 % · muy alto 80,8 %.
+
+| Lección | Encendida | Apagada | Lift | Sobre el riesgo | Lectura |
+|---|---|---|---|---|---|
+| **condición a contramano** | 64,0 % (52.726) | 58,3 % | +5,7 | **+5,8** | real, en los dos signos |
+| **favorito por nivel** (la marca ARQUERO-NO-FAVORITO) | 44,0 % (36.493) | 74,4 % | −30,4 | **−20,6** | PROTEGE: la burbuja del favorito (o la − del débil) revienta MENOS, y el riesgo no lo ve |
+| cambio de categoría, racha + | 68,7 % (2.635) | 61,7 % | +7,0 | — | el ascendido/descendido en racha positiva revienta más |
+| cambio de categoría, racha − | 56,9 % (3.257) | 62,6 % | −5,7 | — | …y en racha negativa, menos |
+| resaca internacional, racha − | 65,7 % (3.518) | 61,4 % | +4,3 | — | la − se corta más tras perder afuera |
+| racha de otra competición, + / − | 57,5 % / 64,6 % | 63,1 % / 61,1 % | −5,6 / +3,5 | — | va al revés en cada signo |
+| récord (K-EXTREMO) | 61,0 % (11.466) | 61,8 % | −0,8 | −1,7 | NO adelanta el reventón (confirma §8) |
+| cerca del récord | 59,4 % | 61,9 % | −2,5 | −2,8 | ídem |
+| inflada | 59,8 % (405) | 61,7 % | −1,9 | −1,4 | sin efecto |
+| rival con su burbuja · parón · concediendo · rival de otra base | | | ±0,7 | ±1,7 | sin efecto |
+| DT / once / arquero suplente | n ≈ 3.000 (cobertura 4 %) | | | | sin evidencia (IC anchos) |
+| Perú contra el resto | 62,4 % | 61,7 % | +0,7 | 0,0 | Perú NO es distinto |
+
+**El arquero.** Con las stats del partido (n = 1.413, autopsia): cuantos MÁS
+tiros al arco tiene el fuerte, MENOS revienta (59 % → 45 % → 21 % por
+terciles), y las atajadas del débil casi no separan (45 · 45 · 37 %). El
+reventón típico del favorito no es «dominó y el arquero lo paró»: es que el
+favorito NO generó. El perfil previo del arquero (goles evitados contra xG,
+n ≥ 5) no ordena la tasa (56 · 34 · 50 %, IC superpuestos): no sirve para
+pronosticar. La marca ARQUERO-NO-FAVORITO como riesgo extra queda REFUTADA.
+
+**El sesgo de los estudios.** Los 52 estudios vieron el récord en casi todos
+los reventones porque la lista de candidatos se ordenaba por racha y K pico
+(`reventones.candidatos`): estudiamos las burbujas más grandes. Contra el
+denominador el récord no revienta más. Sigue como PRUDENCIA (no cargar la
+apuesta a que la racha siga, porque si revienta revienta desde lo más alto),
+nunca como probabilidad.
+
+**Lo que pide recalibrar** (con el backtest a la vista, en los dos lados y en
+los vectores dorados; sin aplicar): sumar a la logística la condición a
+contramano y la diferencia de nivel equipo − rival (hoy el riesgo solo mira la
+distancia del rival a la mediana de SUS reventones), y por signo el cambio de
+categoría y la resaca internacional.

@@ -366,23 +366,24 @@ def resumir(obs: list[dict]) -> dict:
 
 
 GUARDADO = ".backtest_lecciones.json"   # en SAD_DATA_DIR: lo lee GET /analisis/cowork/reventones/backtest
+GUARDADO_CAL = ".backtest_calibracion.json"
 
 
-def guardar(resumen: dict) -> str:
+def guardar(resumen: dict, clave: str = "lecciones") -> str:
     import json
     import os
     from datetime import timezone
-    ruta = os.path.join(db.BASE_DIR, GUARDADO)
+    ruta = os.path.join(db.BASE_DIR, GUARDADO_CAL if clave == "calibracion" else GUARDADO)
     with open(ruta, "w", encoding="utf-8") as f:
         json.dump({**resumen, "corridoEn": datetime.now(timezone.utc).isoformat(timespec="seconds")}, f,
                   ensure_ascii=False)
     return ruta
 
 
-def leer() -> dict | None:
+def leer(clave: str = "lecciones") -> dict | None:
     import json
     import os
-    ruta = os.path.join(db.BASE_DIR, GUARDADO)
+    ruta = os.path.join(db.BASE_DIR, GUARDADO_CAL if clave == "calibracion" else GUARDADO)
     if not os.path.exists(ruta):
         return None
     with open(ruta, encoding="utf-8") as f:

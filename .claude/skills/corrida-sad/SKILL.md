@@ -136,7 +136,8 @@ nuestras probabilidades, no de la casa.
 
 1. `GET $B/analisis/cowork/reventones?liga=<id>&meses=6&conFicha=true` (Liga 1
    Perú = 281). La lista ya viene ordenada: primero los que tienen ficha y no
-   están estudiados. Tomá hasta **8** con `estudiado: false` (o los que pida
+   están estudiados, y dentro AL AZAR (no por tamaño: eso sesgó los primeros
+   52 estudios hacia el récord). Tomá los primeros, sin elegir los «grandes». Tomá hasta **8** con `estudiado: false` (o los que pida
    quien te disparó), mezclando los dos tipos si los hay.
 2. Un subagente por caso, en paralelo, con este encargo:
 
