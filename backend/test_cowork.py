@@ -689,6 +689,9 @@ def main():
           prio_de(3, "League Stage - 1")[0] == 0 and "grupos=true" in prio_de(3, "League Stage - 1")[1],
           prio_de(3, "League Stage - 1"))
     check("y la fase decisiva entra igual sin pedirlo", prio_de(3, "Round of 16")[0] == 2, prio_de(3, "Round of 16"))
+    check("la Champions entra sola también en fase liga (14/10/2026), con prioridad de top 6; Europa y Conference no",
+          prio_de(2, "League Stage - 3")[0] == 4 and prio_de(3, "League Stage - 3")[0] == 0
+          and prio_de(848, "League Stage - 3")[0] == 0, (prio_de(2, "League Stage - 3"), prio_de(848, "League Stage - 3")))
     check("por defecto las segundas divisiones QUEDAN FUERA, con motivo",
           all(prio_de(lid)[0] == 0 and "segundas=true" in prio_de(lid)[1] for lid in SEGUNDAS),
           [prio_de(lid) for lid in SEGUNDAS if prio_de(lid)[0]])
