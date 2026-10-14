@@ -133,9 +133,53 @@ def cambio_de_categoria(base: dict | None, liga_partido: int | None) -> str:
     return "ascendido" if _ORDEN[nueva] < _ORDEN[base["categoria"]] else "descendido"
 
 
+RECESO_DIAS = 60   # cuánto hacia adelante se busca la liga de la temporada que arranca
+
+
+def es_liga(liga_id: int | None) -> bool:
+    return bool(liga_id) and liga_id not in _fuera_de_liga() and not es_copa(liga_id)
+
+
+def liga_vigente(team_id: int, fecha: str | None) -> int | None:
+    """La liga de la temporada que se está jugando o que arranca: la del
+    próximo partido de LIGA del equipo desde `fecha` (hasta RECESO_DIAS). En
+    pretemporada la base del último año es la temporada vieja: Mallorca
+    (descendido) y Elversberg (ascendido) se cruzaron en un amistoso con la
+    escala al revés (14/10/2026)."""
+    if not fecha:
+        return None
+    desde = fecha.replace("T", " ").rstrip("Z")[:19]
+    try:
+        hasta = (datetime.strptime(desde[:10], "%Y-%m-%d") + timedelta(days=RECESO_DIAS)).strftime("%Y-%m-%d")
+        filas = saddb.query("sad", "SELECT league_id FROM fixtures WHERE (home_team_id=? OR away_team_id=?) "
+                                   "AND date >= ? AND date < ? AND league_id IS NOT NULL ORDER BY date",
+                            (team_id, team_id, desde, hasta))
+    except Exception:  # noqa: BLE001
+        return None
+    return next((f["league_id"] for f in filas if es_liga(f["league_id"])), None)
+
+
+def _cambio_en_receso(base: dict | None, team_id: int, fecha: str | None, liga_partido: int | None) -> str:
+    vig = liga_partido if es_liga(liga_partido) else liga_vigente(team_id, fecha)
+    return cambio_de_categoria(base, vig)
+
+
 def entre(team_id: int, rival_id: int, fecha: str | None, liga_partido: int | None = None) -> dict:
     a, b = base_de(team_id, fecha), base_de(rival_id, fecha)
-    cambio = cambio_de_categoria(a, liga_partido)
+    cambio = _cambio_en_receso(a, team_id, fecha, liga_partido)
+    cambio_r = _cambio_en_receso(b, rival_id, fecha, liga_partido)
+    if not es_liga(liga_partido) and (cambio or cambio_r):
+        # amistoso o copa en pretemporada: alguno de los dos ya cambió de categoría
+        partes = []
+        if cambio:
+            partes.append(f"el equipo {cambio} (su historia es de {a.get('nombre')}, {a['categoria']})")
+        if cambio_r:
+            partes.append(f"el rival {cambio_r} (su nivel es de {b.get('nombre')}, {b['categoria']})")
+        return {"equipo": a, "rival": b, "relacion": f"equipo {cambio}" if cambio else f"rival {cambio_r}",
+                "comparable": False, "cambioDeCategoria": cambio or None, "cambioDeCategoriaRival": cambio_r or None,
+                "nota": ("cambio de categoría en el receso: " + " y ".join(partes) + ". La base mira el año "
+                         "anterior, así que la relación entre los dos está medida en la temporada vieja · "
+                         "tomalo con esa reserva")}
     if cambio and b and b.get("id") == liga_partido:
         # el rival es de la liga nueva del equipo: lo que no compara es la HISTORIA del equipo
         from backend.app import liga_meta

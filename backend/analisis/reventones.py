@@ -61,6 +61,8 @@ MECANISMOS = {
                       "se corta porque el propio arquero aguanta — Progreso–Danubio)",
     "doble_golpe": "el rival marcó dos goles en pocos minutos (el segundo en la jugada siguiente al primero): "
                    "un shock que ni la echada ni la sobreexposición describen — IDV 2-2 Católica, 61' y 62'",
+    "cambio_masivo": "una ola de cambios (5+ a la vez, típica de pretemporada) decidió el partido: los goles "
+                     "salieron de los que entraron o de la descoordinación — Mallorca–Elversberg",
     "regresion_al_nivel": "sin un hecho que lo explique: la racha corta se cortó ante un rival de su nivel y "
                           "el equipo volvió a rendir lo suyo",
     "varianza": "sin mecanismo identificable: el partido no explica el resultado",
@@ -92,6 +94,8 @@ SENALES = {
     "clasico": "clásico o derbi: la paridad propia del cruce, que la regla del nivel no ve",
     "sin_nada_en_juego": "el de la racha ya tenía el objetivo cumplido o nada que ganar (clasificado, "
                          "eliminado, torneo menor) — U. Católica ya clasificada en la Copa Chile",
+    "rival_con_once_alternativo": "el rival salió con filial, sub-21 o un once alternativo (dato de prensa)",
+    "plantel_renovado": "5 o más altas o salidas de peso desde la temporada anterior (pretemporada, mercado)",
     "rival_directo": "rival directo en la tabla (descenso, clasificación): los dos necesitaban el resultado",
     "once_distinto": "el once del partido cambió 5 o más titulares respecto del último de la racha EN LA MISMA "
                      "competición "

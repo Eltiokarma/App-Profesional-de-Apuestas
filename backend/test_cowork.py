@@ -385,6 +385,17 @@ def main():
           and _esc.cambio_de_categoria({"id": 39, "categoria": "primera"}, 40) == "descendido"
           and _esc.cambio_de_categoria({"id": 39, "categoria": "primera"}, 45) == ""
           and _esc.cambio_de_categoria({"id": 39, "categoria": "primera"}, 39) == "")
+    # pretemporada: Millwall (base Championship) con su próximo partido de liga en la Premier
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT OR REPLACE INTO leagues (id, name, country, season) VALUES (39, 'Premier League', 'England', 2026)")
+        _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                     "home_team_id, away_team_id) VALUES (?,?,?,?,?,?,?,?)",
+                     (990160, (t0 + _dt.timedelta(days=20)).strftime("%Y-%m-%d %H:%M:%S"), "NS",
+                      "Not Started", 39, 2027, 990103, 990101))
+    _pre = _esc.entre(fxr["home_team_id"], 990103, t0.strftime("%Y-%m-%d"), 667)
+    check("amistoso de pretemporada con un rival que ya ascendió: la escala lo dice (Mallorca–Elversberg)",
+          _pre["comparable"] is False and _pre.get("cambioDeCategoriaRival") == "ascendido"
+          and "receso" in _pre["nota"], _pre)
     _wh = _esc.entre(fxr["home_team_id"], 990103, None, 40)   # uno de LaLiga jugando la liga de Millwall
     check("con el rival de su liga nueva, lo que no compara es la HISTORIA del equipo (West Ham en The Den)",
           _wh["relacion"] == "equipo descendido" and _wh["comparable"] is False

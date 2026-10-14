@@ -177,8 +177,9 @@ nuestras probabilidades, no de la casa.
 >   un skill «reventon» (la app lo corrige sola, pero escribilo bien).
 > - `altura`, `racha_de_otra_competicion`, `regresion_al_nivel`,
 >   `bloque_bajo_del_rival` (repliegue por PLAN, no echada), `arquero_rival`,
->   `arquero_propio` y `doble_golpe` son mecanismos: no los mandes como `otro`.
->   `clasico`, `rival_directo` y `sin_nada_en_juego` son señales a declarar. Las señales marcadas CALCULADA en la
+>   `arquero_propio`, `doble_golpe` y `cambio_masivo` son mecanismos: no los
+>   mandes como `otro`. `clasico`, `rival_directo`, `sin_nada_en_juego`,
+>   `rival_con_once_alternativo` y `plantel_renovado` son señales a declarar. Las señales marcadas CALCULADA en la
 >   lista (`racha_en_otra_competicion`, `condicion_a_contramano`,
 >   `rival_tambien_en_burbuja`, `racha_concediendo`,
 >   `derrota_internacional_reciente`, `once_distinto`, `rival_de_otra_base`,
