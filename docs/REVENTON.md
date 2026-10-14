@@ -778,7 +778,23 @@ reventón dice si la burbuja se corta; esto dice CÓMO:
 - **Calibrado** (`backtest_burbuja --calibrar`, bloque «cómo se mueve la K
   total en el partido siguiente», `movimiento` en `.backtest_calibracion.json`):
   por signo y nivel de riesgo, qué parte sigue, va a cero o cambia de signo.
-  Resultado: pendiente de la corrida.
+  Corrida limpia del 14/10/2026 (87.379 burbujas de la familia total):
+
+  | burbuja | riesgo | n | sigue | a cero | al otro signo |
+  |---|---|---|---|---|---|
+  | + | bajo | 9.927 | 53.9 % | 24.7 % | 21.3 % |
+  | + | medio | 4.074 | 45.9 % | 26.4 % | 27.6 % |
+  | + | alto | 19.873 | 35.2 % | 27.7 % | 37.1 % |
+  | + | muy alto | 11.108 | 27.2 % | 26.9 % | 45.9 % |
+  | − | bajo | 8.881 | 52.3 % | 25.0 % | 22.7 % |
+  | − | medio | 3.744 | 46.2 % | 27.2 % | 26.6 % |
+  | − | alto | 20.199 | 35.4 % | 26.9 % | 37.8 % |
+  | − | muy alto | 9.573 | 28.0 % | 27.3 % | 44.6 % |
+
+  El «a cero» casi no se mueve (25-28 %: es la tasa de empates); el riesgo
+  separa SEGUIR de DARSE VUELTA, y los dos signos se comportan igual. Viaja
+  en `riesgo.movimiento` (`MOVIMIENTO_BACKTEST`, espejo TS y vector dorado),
+  solo en la familia total.
 - **En el parte**: la espina (`lecturaSad.espina`) es la lectura del analista
   de adónde va la K de cada equipo (positiva · cero · negativa · neutra); el
   veredicto la compara con lo que hizo la K y Aprendizaje mide cada lectura

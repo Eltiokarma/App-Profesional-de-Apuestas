@@ -178,6 +178,18 @@ function historialDe(cerrados: ReventonDTO[]): FamiliaBurbujaDTO['historial'] {
 
 // ── riesgo ──────────────────────────────────────────────────────────────────
 
+/** Cómo se mueve la K total en el partido siguiente por signo y riesgo (espejo de MOVIMIENTO_BACKTEST). */
+export const MOVIMIENTO_BACKTEST: Record<SignoBurbuja, Record<'bajo' | 'medio' | 'alto' | 'muy alto', [number, number, number]>> = {
+  '+': { bajo: [0.539, 0.247, 0.213], medio: [0.459, 0.264, 0.276], alto: [0.352, 0.277, 0.371], 'muy alto': [0.272, 0.269, 0.459] },
+  '-': { bajo: [0.523, 0.25, 0.227], medio: [0.462, 0.272, 0.266], alto: [0.354, 0.269, 0.378], 'muy alto': [0.28, 0.273, 0.446] },
+}
+
+function movimientoEsperado(familia: FamiliaBurbuja, signo: SignoBurbuja, nivel: 'bajo' | 'medio' | 'alto' | 'muy alto'): { sigue: number; cero: number; cambio: number } | null {
+  if (familia !== 'total') return null
+  const m = MOVIMIENTO_BACKTEST[signo][nivel]
+  return { sigue: m[0], cero: m[1], cambio: m[2] }
+}
+
 // cortes de la recalibración del 14/10/2026 (espejo de _nivel_riesgo): el puntaje puede ser negativo
 const nivelRiesgo = (p: number): 'bajo' | 'medio' | 'alto' | 'muy alto' => (p >= 3 ? 'muy alto' : p >= 1 ? 'alto' : p >= 0 ? 'medio' : 'bajo')
 
@@ -427,7 +439,8 @@ function analizarFamilia(filas: FilaK[], familia: FamiliaBurbuja, proximo: Proxi
   }
 
   const [confianza, confianzaMotivos] = confianzaDe(n, estabilidad)
-  out.riesgo = { nivel: nivelRiesgo(puntos), puntos, motivos, confianza, confianzaMotivos }
+  const nivel = nivelRiesgo(puntos)
+  out.riesgo = { nivel, puntos, motivos, confianza, confianzaMotivos, movimiento: movimientoEsperado(familia, signo, nivel) }
   return out
 }
 

@@ -130,6 +130,8 @@ def main():
           len(ex["motivos"]) == 2 and all("20 partidos" in m for m in ex["motivos"])
           and "no cargar la apuesta" in ex["texto"], ex["motivos"])
     check("el extremo NO mueve el riesgo: sigue en 3 puntos (la K no puntúa)", rg["puntos"] == 3)
+    check("la guía calibrada de adónde va la K: muy alto + → sigue 27 % · a cero 27 % · al otro signo 46 %",
+          rg["movimiento"] == {"sigue": 0.272, "cero": 0.269, "cambio": 0.459}, rg.get("movimiento"))
 
     print("\n— familia local (no se mueve en el próximo, que es de visita) —")
     lo = out["familias"]["local"]
@@ -140,6 +142,7 @@ def main():
           lo["rival"] is None and any("otra condición" in m for m in lo["riesgo"]["motivos"]), lo["riesgo"])
     check("riesgo ALTO con 1 punto (solo la racha ≥ mediana; sin rival que puntúe; cortes limpios del 14/10)",
           lo["riesgo"]["nivel"] == "alto" and lo["riesgo"]["puntos"] == 1, lo["riesgo"])
+    check("la guía de movimiento es solo de la familia total (la local no la trae)", lo["riesgo"]["movimiento"] is None)
     check("historial − local: K pico 3.0 repetida → moda 3.0", lo["historial"]["negativo"]["kPico"]["moda"] == 3.0)
     check("percentil K 50 (una de dos por debajo)", lo["posicion"]["percentilK"] == 50, lo["posicion"])
     check("local: K 9.5 < máximo previo 16 y racha 3 < 4 → extremo INACTIVO, sin motivos ni texto",

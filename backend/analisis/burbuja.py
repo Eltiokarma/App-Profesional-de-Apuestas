@@ -92,6 +92,23 @@ TASA_BACKTEST = {"bajo": (0.397, 0.500), "medio": (0.552, 0.552),
                  "alto": (0.620, 0.671), "muy alto": (0.710, 0.750)}
 TASA_BASE_BACKTEST = 0.60
 
+# Cómo se mueve la K TOTAL en el partido siguiente, por signo y nivel de riesgo
+# (backtest --calibrar limpio del 14/10/2026, 87.379 burbujas de la familia
+# total, REVENTON §14): sigue · a cero (empate) · al otro signo. El «a cero»
+# casi no cambia con el riesgo (25-28 %: la tasa de empates); lo que el riesgo
+# mueve es seguir contra darse vuelta. Guía para la espina del parte, no peso.
+MOVIMIENTO_BACKTEST = {
+    "+": {"bajo": (0.539, 0.247, 0.213), "medio": (0.459, 0.264, 0.276),
+          "alto": (0.352, 0.277, 0.371), "muy alto": (0.272, 0.269, 0.459)},
+    "-": {"bajo": (0.523, 0.250, 0.227), "medio": (0.462, 0.272, 0.266),
+          "alto": (0.354, 0.269, 0.378), "muy alto": (0.280, 0.273, 0.446)},
+}
+
+
+def _movimiento_esperado(familia: str, signo: str, nivel: str) -> dict | None:
+    m = MOVIMIENTO_BACKTEST.get(signo, {}).get(nivel) if familia == "total" else None
+    return None if not m else {"sigue": m[0], "cero": m[1], "cambio": m[2]}
+
 AVISO = ("Guía, no probabilidad: compara la burbuja abierta con lo que este equipo aguantó "
          "antes de reventar (K, partidos y nivel del rival). Sirve para saber cuándo NO apostar.")
 
@@ -573,12 +590,15 @@ def _analizar_familia(filas: list[dict], familia: str, proximo: dict | None, est
         motivos.append("sin próximo partido programado: el rival no puntúa")
 
     conf, conf_motivos = _confianza(n, estabilidad)
+    nivel = _nivel_riesgo(puntos)
     out["riesgo"] = {
-        "nivel": _nivel_riesgo(puntos),
+        "nivel": nivel,
         "puntos": puntos,
         "motivos": motivos,
         "confianza": conf,
         "confianzaMotivos": conf_motivos,
+        # la guía calibrada de adónde va la K con este riesgo (solo familia total)
+        "movimiento": _movimiento_esperado(familia, signo, nivel),
     }
     return out
 

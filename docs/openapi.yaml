@@ -2185,6 +2185,14 @@ components:
             motivos: { type: array, items: { type: string } }
             confianza: { type: string, enum: [baja, media, alta], description: 'muestra de reventones y estabilidad; nunca mueve el riesgo' }
             confianzaMotivos: { type: array, items: { type: string } }
+            movimiento:
+              type: object
+              nullable: true
+              description: 'guía calibrada (backtest, REVENTON §14), solo familia total: con este signo y nivel de riesgo, qué parte de las burbujas siguió, se reinició a 0 (empate) o pasó al otro signo en el partido siguiente'
+              properties:
+                sigue: { type: number }
+                cero: { type: number }
+                cambio: { type: number }
         extremo:
           $ref: '#/components/schemas/ExtremoBurbuja'
           nullable: true
@@ -2800,7 +2808,7 @@ components:
       required: [actual, riesgo, rival, extremo, estabilidad, partidos, aviso]
       properties:
         actual: { type: object, nullable: true, description: 'la burbuja abierta (signo, k, partidos, kPico, desde, aplicaAlProximo)' }
-        riesgo: { type: object, nullable: true, description: 'nivel, puntos, motivos, confianza, confianzaMotivos' }
+        riesgo: { type: object, nullable: true, description: 'nivel, puntos, motivos, confianza, confianzaMotivos, movimiento (guía de adónde va la K)' }
         rival: { type: object, nullable: true, description: 'nivelProximo, medianaReventon, distancia, enZona, tramo' }
         extremo: { $ref: '#/components/schemas/ExtremoBurbuja', nullable: true, description: 'la alerta de extremo de la familia total; activa ⇒ el parte trae la alerta K-EXTREMO' }
         estabilidad: { type: string, enum: [estable, en transición, inestable, sin dato] }
