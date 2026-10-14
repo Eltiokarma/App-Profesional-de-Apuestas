@@ -122,8 +122,22 @@ def construir_historias(fixtures) -> dict[int, list[tuple]]:
 
 
 def _crear_db(path: str, ddl: str) -> sqlite3.Connection:
-    con = sqlite3.connect(path)
-    con.executescript(ddl)
+    """Abre la base con el DROP + CREATE YA DENTRO de una transacción abierta:
+    el `with con:` del llamador inserta y hace COMMIT de todo junto.
+
+    Antes `executescript` confirmaba el DROP solo, y mientras se llenaba la
+    tabla nueva quien leía la base caía en «no such table: team_levels»
+    (14/10/2026: un backtest lanzado tras el redeploy, que corre el backfill y
+    este pipeline; a la web le pasaba lo mismo en cada corrida). Ahora quien
+    lee ve la tabla vieja entera hasta el COMMIT y después la nueva entera.
+    En el mismo archivo y no con un archivo nuevo: `constants.db` guarda
+    también `constants_cuota`, que escribe otro proceso y no se toca."""
+    con = sqlite3.connect(path, isolation_level=None)
+    con.execute("PRAGMA busy_timeout=30000")
+    con.execute("BEGIN IMMEDIATE")
+    for sentencia in ddl.split(";"):
+        if sentencia.strip():
+            con.execute(sentencia)
     return con
 
 
