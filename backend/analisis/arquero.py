@@ -1,0 +1,110 @@
+"""El arquero antes del pitazo: lo que la base ya sabe, calculado (0 requests).
+
+POR QUÉ. En los 43 estudios de reventones (Perú y 13 ligas más, 13-14/10/2026)
+el arquero —propio o rival— apareció como mecanismo en 10: Valles (Betis) y
+Karius (Schalke) sosteniendo el resultado, Medina (Cajamarca) el 0-0, Bacchia
+(Progreso) cortando 5 derrotas, Carlos Miguel (Palmeiras) y Marquínez
+(Nacional, suplente) regalando el gol. Ningún skill tiene un casillero para eso:
+el TDE mira la estructura, el EFE la continuidad (B6), no la FORMA del arquero.
+Antes de escribir una regla hace falta el dato, y parte del dato está en casa:
+
+- quién ataja hoy (alineación oficial, ~60 min antes) y si es el HABITUAL;
+- goles recibidos contra el xG del rival en sus últimos partidos: un arquero
+  que recibe menos de lo que le patean está sosteniendo; uno que recibe más,
+  regalando. Es una aproximación (el xG no mide la calidad del remate al arco
+  ni los rebotes), con su `n`: sin xG en la liga, `sinDato`.
+- atajadas por partido (`Goalkeeper Saves`) cuando la ficha las trae.
+
+Es DATO, no regla: no hay umbral ni señal de forma hasta que los estudios lo
+pidan con casos. La única señal calculada es objetiva: `arquero_suplente`
+(el titular de hoy no es el que más atajó en los últimos partidos).
+"""
+from __future__ import annotations
+
+from collections import Counter
+
+from backend import db as saddb
+
+VENTANA = 10
+_FIN = "(f.status_short IN ('FT','AET','PEN') OR f.status_long='Match Finished')"
+
+
+def _num(v):
+    try:
+        return float(str(v).replace("%", "").strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def titular_de(fixture_id: int, team_id: int) -> dict | None:
+    try:
+        f = saddb.query_one("sad", "SELECT player_id, jugador FROM alineaciones WHERE fixture_id=? AND team_id=? "
+                                   "AND titular=1 AND posicion='G' LIMIT 1", (fixture_id, team_id))
+    except Exception:  # noqa: BLE001 — base sin alineaciones
+        return None
+    return {"id": f["player_id"], "nombre": f["jugador"]} if f else None
+
+
+def perfil(team_id: int, antes: str, fixture_id: int | None = None) -> dict:
+    """El arquero del equipo con la historia cortada ESTRICTAMENTE antes de
+    `antes` (anti-hindsight). Con `fixture_id`, el titular de ese partido."""
+    try:
+        fxs = saddb.query(
+            "sad", f"""SELECT f.id, f.home_team_id, f.goals_home, f.goals_away FROM fixtures f
+                       WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.date < ? AND {_FIN}
+                       ORDER BY f.date DESC LIMIT ?""", (team_id, team_id, antes, VENTANA))
+    except Exception:  # noqa: BLE001
+        return {"sinDato": "sin partidos en la base"}
+    if not fxs:
+        return {"sinDato": "sin partidos terminados antes de esta fecha"}
+    ids = [f["id"] for f in fxs]
+    marcas = ",".join("?" * len(ids))
+    try:
+        gks = saddb.query("sad", f"SELECT fixture_id, player_id, jugador FROM alineaciones WHERE team_id=? "
+                                 f"AND titular=1 AND posicion='G' AND fixture_id IN ({marcas})", (team_id, *ids))
+        stats = saddb.query("sad", f"SELECT fixture_id, team_id, clave, valor FROM fixture_stats WHERE fixture_id "
+                                   f"IN ({marcas}) AND clave IN ('expected_goals','Goalkeeper Saves','goals_prevented')", tuple(ids))
+    except Exception:  # noqa: BLE001
+        gks, stats = [], []
+    cuenta = Counter((g["player_id"], g["jugador"]) for g in gks)
+    habitual = cuenta.most_common(1)[0] if cuenta else None
+    recibidos, xg_contra, atajadas, n_xg, n_at = 0, 0.0, 0.0, 0, 0
+    prevenidos, n_prev = 0.0, 0
+    por_fx = {}
+    for s in stats:
+        por_fx.setdefault(s["fixture_id"], []).append(s)
+    for f in fxs:
+        local = f["home_team_id"] == team_id
+        ga = (f["goals_away"] if local else f["goals_home"]) or 0
+        filas = por_fx.get(f["id"], [])
+        xg = next((_num(s["valor"]) for s in filas if s["clave"] == "expected_goals" and s["team_id"] != team_id), None)
+        at = next((_num(s["valor"]) for s in filas if s["clave"] == "Goalkeeper Saves" and s["team_id"] == team_id), None)
+        gp = next((_num(s["valor"]) for s in filas if s["clave"] == "goals_prevented" and s["team_id"] == team_id), None)
+        if gp is not None:
+            prevenidos += gp
+            n_prev += 1
+        if xg is not None:
+            recibidos += ga
+            xg_contra += xg
+            n_xg += 1
+        if at is not None:
+            atajadas += at
+            n_at += 1
+    out = {
+        "partidos": len(fxs),
+        "habitual": ({"id": habitual[0][0], "nombre": habitual[0][1], "titularEn": habitual[1],
+                      "onces": len({g["fixture_id"] for g in gks})} if habitual else None),
+        "golesVsXg": ({"recibidos": recibidos, "xgContra": round(xg_contra, 2),
+                       "evitados": round(xg_contra - recibidos, 2), "n": n_xg} if n_xg else None),
+        "atajadasPorPartido": round(atajadas / n_at, 2) if n_at else None,
+        "nAtajadas": n_at,
+        # el «goals prevented» de la API (post-shot xG − goles), cuando la liga lo trae: mejor que el xG a secas
+        "golesPrevenidosApi": ({"total": round(prevenidos, 2), "n": n_prev} if n_prev else None),
+        "nota": ("`evitados` = xG en contra − goles recibidos en los partidos con xG: positivo, el arco "
+                 "sostuvo más de lo que le patearon; negativo, recibió de más. Aproximación con su n"),
+    }
+    if fixture_id is not None:
+        hoy = titular_de(fixture_id, team_id)
+        out["hoy"] = hoy
+        out["suplente"] = (None if not hoy or not habitual else hoy["id"] != habitual[0][0])
+    return out

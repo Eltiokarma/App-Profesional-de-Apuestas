@@ -3005,6 +3005,32 @@ def main():
     check("once_distinto es calculada: un estudio no la declara ni la borra",
           "once_distinto" in rv.SENALES_CALCULADAS and "bloque_bajo_del_rival" in rv.MECANISMOS
           and "arquero_rival" in rv.MECANISMOS and "clasico" in rv.SENALES)
+    # EL ARQUERO ANTES DEL PITAZO (14/10/2026): dato calculado, no regla
+    from backend.analisis import arquero as _arq
+    # caso propio: el arquero 1 atajó los dos primeros, el 2 el tercero (suplente)
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        for i, (gk, ga, xg) in enumerate([(1, 0, 1.5), (1, 1, 2.0), (2, 2, 0.5)]):
+            fid = 990301 + i
+            _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                         "home_team_id, away_team_id, goals_home, goals_away) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                         (fid, f"2026-03-0{i + 1} 20:00:00", "FT", "Match Finished", 140, 2026, 990300, 990101, 1, ga))
+            _con.execute("INSERT INTO alineaciones (fixture_id, team_id, player_id, jugador, posicion, titular) "
+                         "VALUES (?,?,?,?,?,1)", (fid, 990300, 9903000 + gk, f"Arquero {gk}", "G"))
+            _con.execute("INSERT INTO fixture_stats (fixture_id, team_id, clave, valor) VALUES (?,?,?,?)",
+                         (fid, 990101, "expected_goals", str(xg)))
+    _p = _arq.perfil(990300, "2026-03-10", 990303)
+    check("el perfil del arquero: habitual (2 de 3), el de hoy es otro → suplente; goles vs xG con su n",
+          _p["habitual"]["nombre"] == "Arquero 1" and _p["habitual"]["titularEn"] == 2
+          and _p["hoy"]["nombre"] == "Arquero 2" and _p["suplente"] is True
+          and _p["golesVsXg"] == {"recibidos": 3, "xgContra": 4.0, "evitados": 1.0, "n": 3}, _p)
+    check("sin partidos antes de la fecha: sinDato, no un perfil inventado",
+          "sinDato" in _arq.perfil(990300, "1900-01-01"))
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM fixtures WHERE id BETWEEN 990301 AND 990303")
+        _con.execute("DELETE FROM alineaciones WHERE fixture_id BETWEEN 990301 AND 990303")
+        _con.execute("DELETE FROM fixture_stats WHERE fixture_id BETWEEN 990301 AND 990303")
+    check("arquero_suplente es calculada y el estudio tiene campo para el arquero",
+          "arquero_suplente" in rv.SENALES_CALCULADAS and "arquero_suplente_rival" in rv.SENALES_CALCULADAS)
     check("«reventon» no es un skill: sus lecciones van a sad-analysis",
           rv.skill_canonico("reventon") == "sad-analysis" and rv.skill_canonico("teorema-del-echado") == "teorema-del-echado")
     _liga = dbmod.query_one("sad", "SELECT league_id, COUNT(*) AS n FROM fixtures GROUP BY league_id "
@@ -3026,12 +3052,14 @@ def main():
     p_rv = c.post(_ruta + "/estudio", json={
         "mecanismo": "echada_del_que_ganaba", "senales": ["riesgo_alto", "inventada"],
         "tde": {"equipo": {"ie": 6.1}, "rival": {"ise": 3}},
+        "arquero": {"rival": {"forma": "en racha", "decisivo": True}},
         "lecciones": [{"skill": "teorema-del-echado", "reglaTocada": "disciplina 16", "leccion": "se echó"},
                       {"leccion": "sin skill"}]}).json()
     check("el estudio se guarda; una señal inventada y una lección sin skill se rechazan con motivo",
           p_rv["estado"] == "guardado" and p_rv["estudio"]["senales"][0] == "riesgo_alto"
           and set(p_rv["estudio"]["senales"][1:]) == set(p_rv["estudio"]["senalesCalculadas"])
-          and len(p_rv["rechazos"]) == 2 and p_rv["estudio"]["seleccion"] == "post_resultado", p_rv)
+          and len(p_rv["rechazos"]) == 2 and p_rv["estudio"]["seleccion"] == "post_resultado"
+          and p_rv["estudio"]["arquero"]["rival"]["decisivo"] is True, p_rv)
     check("la población no se declara: es post_resultado aunque llegue otra",
           c.post(_ruta + "/estudio", json={"mecanismo": "roja", "seleccion": "ciega"}).json()["estudio"]["seleccion"]
           == "post_resultado")

@@ -183,7 +183,17 @@ nuestras probabilidades, no de la casa.
 >   lista (`racha_en_otra_competicion`, `condicion_a_contramano`,
 >   `rival_tambien_en_burbuja`, `racha_concediendo`,
 >   `derrota_internacional_reciente`, `once_distinto`, `rival_de_otra_base`,
->   `dt_distinto_al_de_la_racha`) las pone la app: no las declares.
+>   `dt_distinto_al_de_la_racha`, `arquero_suplente`, `arquero_suplente_rival`)
+>   las pone la app: no las declares.
+> - **El arquero** (14/10/2026: apareció en 10 de 43 estudios y no tiene
+>   casillero en ningún skill). La ficha trae `arqueros` de los dos lados AL
+>   DÍA: habitual, el de hoy y si es suplente, goles recibidos contra el xG en
+>   contra (`evitados`, con su n) y atajadas por partido. En el POST va
+>   `arquero.equipo` y `arquero.rival` con: `nombre`, `queHizo` (atajadas
+>   decisivas, error, nada relevante), `decisivo` (sí/no: ¿cambió el
+>   resultado?), `formaPrevia` (lo que se sabía ANTES: errores recientes,
+>   racha de vallas, lesión, recién llegado, suplente), `visibleAntes` (sí/no)
+>   y `fuente`. Sin prensa sobre el arquero, se dice; no se rellena.
 > - **Cargar los tres skills con la herramienta Skill es obligatorio**, no
 >   copiar el formato de otro estudio: la autopsia sale de la rúbrica del skill.
 > - Máximo **8 lecciones**: fundí las confirmaciones del mismo skill en una.
