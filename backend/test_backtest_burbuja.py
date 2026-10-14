@@ -151,6 +151,26 @@ def main():
     # el informe se imprime sin romperse
     bt.imprimir(r)
 
+    # ── LAS LECCIONES DE LOS ESTUDIOS (14/10/2026): contra TODAS las burbujas ──
+    from backend import backtest_lecciones as bl
+    rl = bt.correr_backtest(lecciones=True)
+    L = rl["lecciones"]
+    check("las lecciones se miden sobre la familia total, con su tasa base",
+          L["observaciones"] > 0 and L["tasaBase"]["n"] == L["observaciones"], L["tasaBase"])
+    check("cada lección trae encendida, apagada, lift, lift sobre el riesgo y cobertura",
+          all({"encendida", "apagada", "lift", "liftSobreElRiesgo", "cobertura"} <= set(v)
+              for v in L["lecciones"].values()), list(L["lecciones"])[:3])
+    check("el récord de la burbuja se lee de la observación (no queda sin cobertura)",
+          L["lecciones"]["extremo"]["cobertura"] == 1.0 and L["lecciones"]["extremo"]["encendida"]["n"] > 0,
+          L["lecciones"]["extremo"])
+    check("una lección sin alineaciones en la base va SIN cobertura, no con un falso «apagada»",
+          L["lecciones"]["arqueroSuplente"]["encendida"]["n"] + L["lecciones"]["arqueroSuplente"]["apagada"]["n"]
+          == round(L["lecciones"]["arqueroSuplente"]["cobertura"] * L["observaciones"]))
+    check("el intervalo de Wilson acompaña a cada tasa", bl._wilson(5, 10) == [0.237, 0.763])
+    check("el resultado queda guardado para leerlo sin correrlo",
+          (bl.leer() or {}).get("lecciones", {}).get("observaciones") == L["observaciones"])
+    bl.imprimir(L)
+
     print(f"\n{fallos} FALLAS" if fallos else "\nTODO OK")
     return 1 if fallos else 0
 

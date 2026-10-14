@@ -482,3 +482,28 @@ aprendizaje (`docs/APRENDIZAJE.md`), en dos piezas:
 Se ve en la banda del veredicto del parte (`↯ reventó` / `→ siguió`, con el
 riesgo que se había declarado) y en la sección Aprendizaje (reventadas sobre
 observadas y la tabla por nivel contra el backtest).
+
+## 12. Las lecciones de los estudios, contra el denominador (14/10/2026)
+
+Los 52 estudios hacia atrás (`docs/autopsias/reventones-*.md`) explican POR
+QUÉ revientan las burbujas, pero solo miraron burbujas que reventaron. El
+backtest con `--lecciones` (`backend/backtest_lecciones.py`) pone cada lección
+contra TODAS las burbujas abiertas de la familia total: tasa encendida y
+apagada, lift, intervalo de Wilson, cobertura (las que dependen de las
+alineaciones solo cuentan donde la base las tiene) y, sobre todo, el **lift
+sobre el riesgo**: el mismo lift DENTRO de cada nivel de riesgo, que es lo que
+la señal suma a lo calibrado. Una lección sin lift sobre el riesgo no entra a
+los puntos aunque los estudios la hayan visto en muchos reventones.
+
+El arquero del no favorito va aparte: la marca (favorito con racha + o débil
+con racha −) se mide como las demás, y con las estadísticas DEL partido se
+mira, como autopsia, cuánto revienta según las atajadas del débil y los tiros
+al arco del fuerte; el único insumo previo, el perfil del arquero (goles
+evitados contra xG, n ≥ 5), se mide por terciles: si no separan, la forma del
+arquero no sirve para pronosticar.
+
+Correrlo: `python -m backend.backtest_burbuja --padron --lecciones` (en
+Railway, en subproceso) o `GET /analisis/burbujas/backtest?padron=true&lecciones=true`
+(maestro). El resultado queda en `$SAD_DATA_DIR/.backtest_lecciones.json` y se
+lee con `GET /analisis/cowork/reventones/backtest`.
+

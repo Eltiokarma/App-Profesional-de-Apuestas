@@ -97,13 +97,16 @@ def _en_condicion(fila: dict, familia: str) -> bool:
 
 
 def observar_equipo(team_id: int, horizonte: int, min_prefijo: int = MIN_PREFIJO,
-                    ligas: set[int] | None = None) -> list[dict]:
+                    ligas: set[int] | None = None, lecciones: bool = False) -> list[dict]:
     """Una observación por (partido con burbuja abierta, familia que ese partido mueve).
     Con `ligas`, solo se EVALÚAN los partidos de esas ligas; la historia previa
     (la K y sus reventones) usa todos los partidos, como en la app."""
     filas = list(reversed(constantes_de(team_id, 500)))
     niveles = list(reversed(niveles_de(team_id, 500)))
     estab = burbuja.estabilidad_de(None, "1970-01-01")
+    if lecciones:  # las lecciones necesitan la historia de cada equipo (y la del rival)
+        from backend import backtest_lecciones
+        backtest_lecciones.registrar(team_id, filas, niveles)
     obs = []
     for i in range(min_prefijo, len(filas)):
         fila = filas[i]
@@ -131,6 +134,7 @@ def observar_equipo(team_id: int, horizonte: int, min_prefijo: int = MIN_PREFIJO
             base = fam["historial"]["positivo" if act["signo"] == "+" else "negativo"]
             obs.append({
                 "equipoId": team_id, "fixtureId": fila["fixtureId"], "fecha": fila["fecha"], "ligaId": fila["ligaId"],
+                "rivalId": fila["rivalId"],
                 "familia": familia, "signo": act["signo"], "manda": familia in mandan["familias"],
                 "bin": bin_, "nivel": rg["nivel"], "puntos": rg["puntos"], "n": base["n"] if base else 0,
                 "kGeMediana": bool(base) and abs(act["k"]) >= base["kPico"]["mediana"],
@@ -296,10 +300,11 @@ def resumir(obs: list[dict], horizonte: int, nombres: dict[int, str] | None = No
 
 
 def correr(equipos: list[int], horizonte: int, min_prefijo: int = MIN_PREFIJO,
-           ligas: set[int] | None = None, nombres: dict[int, str] | None = None) -> tuple[list[dict], dict]:
+           ligas: set[int] | None = None, nombres: dict[int, str] | None = None,
+           lecciones: bool = False) -> tuple[list[dict], dict]:
     obs = []
     for t in equipos:
-        obs.extend(observar_equipo(t, horizonte, min_prefijo, ligas))
+        obs.extend(observar_equipo(t, horizonte, min_prefijo, ligas, lecciones))
     if nombres is None:
         nombres = _nombres_ligas({o["ligaId"] for o in obs})
     return obs, resumir(obs, horizonte, nombres)
@@ -451,7 +456,7 @@ def calibrar(obs: list[dict]) -> dict:
 
 def correr_backtest(*, padron_: bool = False, liga: int | None = None, horizonte: int = 1,
                     muestra: int = 0, min_filas: int = 12, semilla: int = 42,
-                    calibrar_: bool = False) -> dict:
+                    calibrar_: bool = False, lecciones: bool = False) -> dict:
     """Lo que corren el CLI y el endpoint: elige los equipos y devuelve el resumen
     con la lista de ligas evaluadas (para que se vea QUÉ se calibró)."""
     ligas: set[int] | None = None
@@ -466,7 +471,17 @@ def correr_backtest(*, padron_: bool = False, liga: int | None = None, horizonte
     if muestra and muestra < len(equipos):
         random.seed(semilla)
         equipos = random.sample(equipos, muestra)
-    obs, resumen = correr(equipos, horizonte, MIN_PREFIJO, ligas, nombres or None)
+    obs, resumen = correr(equipos, horizonte, MIN_PREFIJO, ligas, nombres or None, lecciones)
+    if lecciones:
+        # lo que dijeron los 52 estudios, contra TODAS las burbujas abiertas (docs/autopsias)
+        from backend import backtest_lecciones
+        backtest_lecciones.enriquecer(obs)
+        resumen["lecciones"] = backtest_lecciones.resumir(obs)
+        # guardado en la carpeta de datos: Cowork / Claude Code lo LEEN sin correrlo
+        backtest_lecciones.guardar({"lecciones": resumen["lecciones"], "equipos": len(equipos),
+                                    "ligasEvaluadas": sorted(nombres.values()) if ligas else ["todas"],
+                                    "horizonte": horizonte, "tasaBase": resumen["tasaBase"],
+                                    "porNivel": resumen["porNivel"]})
     resumen["equipos"] = len(equipos)
     resumen["ligasEvaluadas"] = sorted(nombres.values()) if ligas else ["todas"]
     if calibrar_:
@@ -591,13 +606,19 @@ def main():
     ap.add_argument("--semilla", type=int, default=42)
     ap.add_argument("--calibrar", action="store_true",
                     help="ajusta una regresión logística sobre las señales y propone la tabla de puntos")
+    ap.add_argument("--lecciones", action="store_true",
+                    help="mide las lecciones de los estudios de reventones contra todas las burbujas abiertas")
     ap.add_argument("--json", help="guardar el resumen en este archivo")
     a = ap.parse_args()
 
     resumen = correr_backtest(padron_=a.padron, liga=a.liga, horizonte=a.horizonte, muestra=a.muestra,
-                              min_filas=a.min_filas, semilla=a.semilla, calibrar_=a.calibrar)
+                              min_filas=a.min_filas, semilla=a.semilla, calibrar_=a.calibrar,
+                              lecciones=a.lecciones)
     print(f"equipos evaluados: {resumen['equipos']}")
     imprimir(resumen)
+    if resumen.get("lecciones"):
+        from backend import backtest_lecciones
+        backtest_lecciones.imprimir(resumen["lecciones"])
     if a.json:
         with open(a.json, "w", encoding="utf-8") as f:
             json.dump(resumen, f, ensure_ascii=False, indent=1)
