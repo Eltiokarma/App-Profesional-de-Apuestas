@@ -53,8 +53,20 @@ BIN_GLOBALES_BAJO = 2
 # la logística dio 0.82 · 1.18 · 1.86 de log-odds, un punto cada 0.25.
 ZONA_TOLERANCIA = 0.15
 RIVAL_FUERTE = 0.45
-PUNTOS_RIVAL = {"lejos": 0, "zona": 3, "fuerte": 5, "muy fuerte": 7}
+# Recalibrado el 14/10/2026 (backtest --calibrar, 173.615 observaciones, AUC 0.715)
+# con las dos señales nuevas en la logística: parte de lo que el rival medía era
+# la diferencia de nivel, y al separarla bajan sus puntos (antes 3 · 5 · 7)
+PUNTOS_RIVAL = {"lejos": 0, "zona": 2, "fuerte": 3, "muy fuerte": 5}
 PUNTOS_RACHA = 1               # racha ≥ mediana de partidos (coef 0.32)
+# Las dos señales del backtest de las lecciones (REVENTON §12, 14/10/2026):
+# la racha hecha en la condición contraria a la del próximo (+5,8 puntos de
+# tasa SOBRE el riesgo, 52.726 casos) y la diferencia de nivel a favor de que
+# la racha siga —el favorito con racha +, el débil con racha −— (−20,6: la
+# burbuja revienta MENOS y el riesgo no lo veía). Los puntos salen de
+# `backtest_burbuja --calibrar`; los de favor RESTAN.
+PUNTOS_CONTRAMANO = 1           # coef 0.207 (0.226 en +, 0.187 en −)
+PUNTOS_FAVOR = {"no": 0, "favorito": -2, "muy favorito": -4}   # coef −0.528 / −1.057, igual en los dos signos
+FAVORITO, MUY_FAVORITO = 0.5, 1.0
 
 # muestra de reventones que sostiene una guía
 MUESTRA_BAJA = 3
@@ -68,15 +80,15 @@ BAJAS_TRANSICION = 5
 PLANTILLA_VIEJA_DIAS = 30      # la ingesta de jugadores tiene esta edad o más
 MAX_REVENTONES_SALIDA = 40     # los más recientes; la estadística usa TODOS
 
-# Tasa de reventón OBSERVADA en el backtest real por nivel de riesgo (§8 del
-# doc, segunda corrida del 16/09/2026, 171.260 burbujas, horizonte 1): es la
+# Tasa de reventón OBSERVADA en el backtest real por nivel de riesgo (§12.2 del
+# doc, recalibración del 14/10/2026, 173.615 observaciones, horizonte 1): es la
 # referencia contra la que el bucle de aprendizaje compara lo que pasa en
 # producción con los casos ciegos. Rango (mín, máx) porque cada nivel junta
-# varios puntajes (bajo = 0-1 pts: 42.1-47.3 %; medio = 3 pts: 60.8 %; alto =
-# 4-5: 67.2-69.2 %; muy alto = 6-8: 74.7-85.4 %). NO es un peso: no se usa
-# para calcular nada, solo para decir «esperábamos esto».
-TASA_BACKTEST = {"bajo": (0.421, 0.473), "medio": (0.608, 0.608),
-                 "alto": (0.672, 0.692), "muy alto": (0.747, 0.854)}
+# varios puntajes (bajo = −4 a −1 pts: 29.1-47.0 %; medio = 0-1: 52.6-59.3 %;
+# alto = 2-3: 64.0-69.1 %; muy alto = 4-7: 74.5-88.2 %). NO es un peso: no se
+# usa para calcular nada, solo para decir «esperábamos esto».
+TASA_BACKTEST = {"bajo": (0.291, 0.470), "medio": (0.526, 0.593),
+                 "alto": (0.640, 0.691), "muy alto": (0.745, 0.882)}
 TASA_BASE_BACKTEST = 0.60
 
 AVISO = ("Guía, no probabilidad: compara la burbuja abierta con lo que este equipo aguantó "
@@ -200,11 +212,13 @@ def _historial(cerrados: list[dict]) -> dict:
 # ── riesgo ───────────────────────────────────────────────────────────────────
 
 def _nivel_riesgo(puntos: int) -> str:
-    if puntos >= 6:
-        return "muy alto"
+    # cortes de la recalibración del 14/10/2026 sobre la tasa isotónica: con los
+    # puntos que RESTAN (favorito) el puntaje puede ser negativo
     if puntos >= 4:
-        return "alto"
+        return "muy alto"
     if puntos >= 2:
+        return "alto"
+    if puntos >= 0:
         return "medio"
     return "bajo"
 
@@ -414,7 +428,8 @@ def _historial_por_periodo(filas: list[dict], cerrados: list[dict], periodos: li
 
 
 def _analizar_familia(filas: list[dict], familia: str, proximo: dict | None, estabilidad: dict,
-                      periodos: list[dict] | None = None, *, franja: bool = False) -> dict:
+                      periodos: list[dict] | None = None, *, franja: bool = False,
+                      nivel_equipo: float | None = None) -> dict:
     """`franja=True` solo lo pide el backtest: agrega `_franja` con los
     percentiles ESTRICTOS de K y racha (los de `extremo.cerca`) para medir el
     umbral de la franja alta sin rehacer los episodios. La API no lo lleva."""
@@ -519,6 +534,31 @@ def _analizar_familia(filas: list[dict], familia: str, proximo: dict | None, est
             motivos.append(f"{quien} es más {lado} que los rivales con los que suele {verbo} (mediana {med_n}) (+{pts})")
         else:
             motivos.append(f"{quien} es mucho más {lado} que los rivales con los que suele {verbo} (mediana {med_n}) (+{pts})")
+        # A FAVOR DE QUE LA RACHA SIGA: el favorito con racha +, el débil con racha −
+        if nivel_equipo is not None:
+            g = _r2((float(nivel_equipo) - nivel_prox) if signo == "+" else (nivel_prox - float(nivel_equipo)))
+            fav = "muy favorito" if g >= MUY_FAVORITO else "favorito" if g >= FAVORITO else "no"
+            out["rival"]["aFavor"] = g
+            out["rival"]["favorito"] = fav
+            pf = PUNTOS_FAVOR[fav]
+            puntos += pf
+            if fav != "no":
+                quien_f = "el equipo es favorito" if signo == "+" else "el rival es mucho más fuerte"
+                motivos.append(f"{quien_f}: {abs(g)} de nivel a favor de que la racha siga ({fav})"
+                               + (f" ({pf:+d})" if pf else ""))
+        # la racha hecha en la condición CONTRARIA a la del próximo partido
+        racha = [f for f in filas if familia == "total" or f["condicion"] == ("Local" if familia == "local" else "Visita")]
+        racha = racha[-ep["partidos"]:]
+        cond_prox = "Local" if proximo["condicion"] == "L" else "Visita"
+        contra = sum(1 for f in racha if f["condicion"] != cond_prox)
+        if racha and contra * 3 >= 2 * len(racha):
+            out["actual"]["contramano"] = True
+            puntos += PUNTOS_CONTRAMANO
+            motivos.append(f"{contra} de {len(racha)} partidos de la racha en la otra condición: el próximo es de "
+                           f"{'local' if cond_prox == 'Local' else 'visita'}"
+                           + (f" (+{PUNTOS_CONTRAMANO})" if PUNTOS_CONTRAMANO else ""))
+        else:
+            out["actual"]["contramano"] = False
     elif proximo:
         motivos.append("la familia no se mueve en el próximo partido (otra condición): el rival no puntúa")
     else:
@@ -657,7 +697,8 @@ def analizar(filas: list[dict], *, equipo_id: int, nivel: float, bin_: int,
         "mandan": mandan_de(int(bin_), proximo),
         "proximo": None if not proximo else {**proximo, "nivelRival": _r2(float(proximo["nivelRival"]))},
         "estabilidad": estabilidad,
-        "familias": {f: _analizar_familia(filas, f, proximo, estabilidad, periodos) for f in FAMILIAS},
+        "familias": {f: _analizar_familia(filas, f, proximo, estabilidad, periodos, nivel_equipo=nivel)
+                     for f in FAMILIAS},
         "periodos": periodos,
         "aviso": AVISO,
     }

@@ -548,3 +548,25 @@ los vectores dorados; sin aplicar): sumar a la logística la condición a
 contramano y la diferencia de nivel equipo − rival (hoy el riesgo solo mira la
 distancia del rival a la mediana de SUS reventones), y por signo el cambio de
 categoría y la resaca internacional.
+
+### 12.2 Recalibración (14/10/2026, `--calibrar`, 173.615 observaciones de las tres familias)
+
+| Señal | Coeficiente (log-odds) | + | − | Puntos |
+|---|---|---|---|---|
+| K ≥ mediana / K récord | −0.006 / −0.090 | | | 0 (no puntúa) |
+| racha ≥ mediana / récord | 0.227 / 0.081 | 0.273 | 0.162 | 1 / 0 |
+| rival en zona · fuerte · muy fuerte | 0.473 · 0.743 · 1.340 | | | 2 · 3 · 5 (antes 3 · 5 · 7) |
+| **contramano** | 0.207 | 0.226 | 0.187 | **+1** |
+| **favorito** (≥ 0.5 a favor) | −0.528 | −0.540 | −0.512 | **−2** |
+| **muy favorito** (≥ 1.0 a favor) | −1.057 | −1.053 | −1.058 | **−4** |
+
+Un punto cada 0.25 de log-odds, como en §8. AUC del logit 0.716 y de los
+puntos 0.715. Por puntos la tasa sube sin retroceder: −4 → 29 % · −3 → 33 % ·
+−2 → 38 % · −1 → 47 % · 0 → 53 % · 1 → 59 % · 2 → 64 % · 3 → 69 % · 4 → 75 %
+· 5 → 80 % · 6 → 85 % · 7 → 88 %. Cortes sobre la isotónica (base 60 %):
+**bajo < 0 · medio 0-1 · alto 2-3 · muy alto ≥ 4**, separación bajo/muy alto
+37,8 puntos. `TASA_BACKTEST` (el listón del bucle de aprendizaje) va con los
+rangos nuevos. Las dos señales nuevas son iguales en los dos signos: una sola
+tabla. Aplicado en `burbuja.py` y su espejo `src/lib/burbuja.ts`, con vectores
+nuevos en los dos tests (contramano, favorito, muy favorito).
+

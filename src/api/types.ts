@@ -577,6 +577,8 @@ export interface FamiliaBurbujaDTO {
     amistosos?: number
     /** Si el próximo partido mueve esta familia (null sin próximo). */
     aplicaAlProximo: boolean | null
+    /** Dos tercios o más de la racha en la condición contraria a la del próximo partido. */
+    contramano?: boolean
   } | null
   /** Cerradas, cronológicas (las 40 más recientes; la estadística usa todas). */
   reventones: ReventonDTO[]
@@ -590,7 +592,12 @@ export interface FamiliaBurbujaDTO {
   /** El próximo rival frente al nivel con el que suele reventar (solo si la
    *  familia aplica). `tramo` va en la dirección del riesgo: lejos (< −0.15
    *  de la mediana) · zona (±0.15) · fuerte (≥ 0.15) · muy fuerte (≥ 0.45). */
-  rival: { nivelProximo: number; medianaReventon: number; distancia: number; enZona: boolean; tramo: 'lejos' | 'zona' | 'fuerte' | 'muy fuerte' } | null
+  rival: {
+    nivelProximo: number; medianaReventon: number; distancia: number; enZona: boolean; tramo: 'lejos' | 'zona' | 'fuerte' | 'muy fuerte'
+    /** Diferencia de nivel A FAVOR de que la racha siga (favorito con racha +, débil con racha −). REVENTON §12. */
+    aFavor?: number
+    favorito?: 'no' | 'favorito' | 'muy favorito'
+  } | null
   riesgo: RiesgoReventonDTO | null
   /** ALERTA DE EXTREMO (prudencia, no probabilidad): la burbuja abierta en su
    *  máximo histórico. No mueve el riesgo —la K no puntúa—, pero no se puede
