@@ -26,6 +26,7 @@ from collections import Counter
 from backend import db as saddb
 
 VENTANA = 10
+MUESTRA_MINIMA = 5   # con menos partidos con xG, una goleada domina el número (Casa Pia: el 0-7 con Benfica)
 _FIN = "(f.status_short IN ('FT','AET','PEN') OR f.status_long='Match Finished')"
 
 
@@ -70,6 +71,7 @@ def perfil(team_id: int, antes: str, fixture_id: int | None = None) -> dict:
     habitual = cuenta.most_common(1)[0] if cuenta else None
     recibidos, xg_contra, atajadas, n_xg, n_at = 0, 0.0, 0.0, 0, 0
     prevenidos, n_prev = 0.0, 0
+    detalle = []
     por_fx = {}
     for s in stats:
         por_fx.setdefault(s["fixture_id"], []).append(s)
@@ -84,6 +86,8 @@ def perfil(team_id: int, antes: str, fixture_id: int | None = None) -> dict:
             prevenidos += gp
             n_prev += 1
         if xg is not None:
+            detalle.append({"fixtureId": f["id"], "recibidos": ga, "xgContra": round(xg, 2),
+                            "evitados": round(xg - ga, 2)})
             recibidos += ga
             xg_contra += xg
             n_xg += 1
@@ -95,7 +99,10 @@ def perfil(team_id: int, antes: str, fixture_id: int | None = None) -> dict:
         "habitual": ({"id": habitual[0][0], "nombre": habitual[0][1], "titularEn": habitual[1],
                       "onces": len({g["fixture_id"] for g in gks})} if habitual else None),
         "golesVsXg": ({"recibidos": recibidos, "xgContra": round(xg_contra, 2),
-                       "evitados": round(xg_contra - recibidos, 2), "n": n_xg} if n_xg else None),
+                       "evitados": round(xg_contra - recibidos, 2), "n": n_xg,
+                       "muestraCorta": n_xg < MUESTRA_MINIMA,
+                       # partido a partido: que una goleada no se esconda en el total
+                       "porPartido": detalle} if n_xg else None),
         "atajadasPorPartido": round(atajadas / n_at, 2) if n_at else None,
         "nAtajadas": n_at,
         # el «goals prevented» de la API (post-shot xG − goles), cuando la liga lo trae: mejor que el xG a secas
