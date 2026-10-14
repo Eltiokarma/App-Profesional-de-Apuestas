@@ -328,6 +328,17 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
               {riesgo.motivos.map((m, i) => <li key={i}>{m}</li>)}
             </ul>
             <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', marginTop: 5 }}>confianza: {riesgo.confianzaMotivos.join(' · ')}</div>
+            {/* ADÓNDE SUELE IR LA K con este riesgo (backtest de 87 mil burbujas,
+                REVENTON §14): guía para la espina, no probabilidad de este partido */}
+            {riesgo.movimiento && actual && (
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 6, font: '600 10.5px var(--mono)', fontVariantNumeric: 'tabular-nums' }}
+                title="con este signo y nivel de riesgo, en el backtest: qué parte de las burbujas siguió, se reinició a 0 (empate) o pasó al otro signo en el partido siguiente">
+                <span style={{ color: 'var(--t3)' }}>con este riesgo, la K suele:</span>
+                <span style={{ color: signo === '+' ? 'var(--up)' : 'var(--down)' }}>seguir {Math.round(riesgo.movimiento.sigue * 100)}%</span>
+                <span style={{ color: 'var(--mark)' }}>a cero {Math.round(riesgo.movimiento.cero * 100)}%</span>
+                <span style={{ color: signo === '+' ? 'var(--down)' : 'var(--up)' }}>{signo === '+' ? 'a negativa' : 'a positiva'} {Math.round(riesgo.movimiento.cambio * 100)}%</span>
+              </div>
+            )}
           </div>
 
           {base && !compact && (

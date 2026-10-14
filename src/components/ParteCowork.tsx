@@ -1171,6 +1171,12 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
                           {r.riesgo.motivos.map((m, i) => <li key={i}>{m}</li>)}
                         </ul>
                       )}
+                      {r?.riesgo?.movimiento && r.actual && (
+                        <div style={{ font: '600 10px var(--mono)', color: 'var(--t3)', marginTop: 5, fontVariantNumeric: 'tabular-nums' }}
+                          title="guía del backtest (REVENTON §14): con este signo y riesgo, adónde fue la K en el partido siguiente">
+                          la K suele: seguir {Math.round(r.riesgo.movimiento.sigue * 100)}% · a cero {Math.round(r.riesgo.movimiento.cero * 100)}% · {r.actual.signo === '+' ? 'a negativa' : 'a positiva'} {Math.round(r.riesgo.movimiento.cambio * 100)}%
+                        </div>
+                      )}
                     </div>
                   )
                 })}

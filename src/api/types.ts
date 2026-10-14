@@ -544,6 +544,9 @@ export interface RiesgoReventonDTO {
   motivos: string[]
   confianza: 'baja' | 'media' | 'alta'
   confianzaMotivos: string[]
+  /** Guía calibrada (familia total): con este signo y riesgo, cuánto sigue,
+   *  va a cero (empate) o pasa al otro signo en el partido siguiente. */
+  movimiento?: { sigue: number; cero: number; cambio: number } | null
 }
 
 export interface PeriodoBurbujaDTO {

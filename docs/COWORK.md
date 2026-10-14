@@ -1000,9 +1000,18 @@ Escribís vos (es juicio, no se puede calcular):
     · `cero`: la K se reinicia → empata;
     · `negativa`: la K se va (o se hunde más) en negativo → pierde;
     · `neutra`: la historia no dice nada para este partido (válido y honesto).
-  Con `porque` en una frase. Guía calibrada para no inventar: el backtest da,
-  por signo y nivel de riesgo, cuánto sigue, cuánto va a cero y cuánto cambia
-  de signo (docs/REVENTON.md §14). La espina es TU lectura de la K: puede ir
+  Con `porque` en una frase. Guía calibrada para no inventar (backtest de 87
+  mil burbujas, REVENTON §14; viaja en `riesgo.movimiento` de cada burbuja y
+  la tarjeta la muestra):
+    | riesgo   | sigue | a cero | al otro signo |
+    | bajo     |  53 % |  25 %  |     22 %      |
+    | medio    |  46 % |  27 %  |     27 %      |
+    | alto     |  35 % |  27 %  |     37 %      |
+    | muy alto |  28 % |  27 %  |     45 %      |
+  (igual para burbujas + y −). Lo que mueve el riesgo es SEGUIR contra DARSE
+  VUELTA; ir a cero queda en 25-28 % siempre —es la tasa de empates—: no
+  escribas `cero` sin un motivo de ESTE partido que lo empuje. «Sigue» en una
+  burbuja + es `positiva`; en una − es `negativa`. La espina es TU lectura de la K: puede ir
   contra tu 1X2 — si va contra, decilo en la lectura del 1X2 y no la acomodes
   para que coincida: lo que se mide es si acierta sola. El veredicto la
   compara con lo que hizo la K y Aprendizaje mide si cada lectura acierta más

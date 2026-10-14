@@ -80,6 +80,7 @@ const ex = t.extremo!
 check('ALERTA DE EXTREMO activa: K 22.1 ≥ máximo previo 13.3 y racha 6 ≥ 3, sobre 20 partidos', ex.activo && ex.kRecord && ex.rachaRecord && ex.partidosHistoria === 20 && eq(ex.maximoPrevio, { kPico: 13.3, partidos: 3 }), ex)
 check('extremo: dos motivos con el N de partidos y texto que pide no cargar la apuesta', ex.motivos.length === 2 && ex.motivos.every((m) => m.includes('20 partidos')) && ex.texto.includes('no cargar la apuesta'), ex.motivos)
 check('el extremo NO mueve el riesgo: sigue en 3 puntos', rg.puntos === 3)
+check('la guía calibrada de adónde va la K: muy alto + → 27 · 27 · 46 %', eq(rg.movimiento, { sigue: 0.272, cero: 0.269, cambio: 0.459 }), rg.movimiento)
 
 console.log('\n— familia local —')
 const lo = out.familias.local
@@ -87,6 +88,7 @@ check('11 partidos de local', lo.partidosEnCondicion === 11)
 check('burbuja abierta + K 9.5, 3 partidos, NO aplica al próximo', eq([lo.actual!.k, lo.actual!.partidos, lo.actual!.aplicaAlProximo], [9.5, 3, false]), lo.actual)
 check('sin rival evaluado (otra condición) y motivo explícito', lo.rival === null && lo.riesgo!.motivos.some((m) => m.includes('otra condición')), lo.riesgo)
 check('riesgo ALTO con 1 punto (solo la racha; cortes limpios del 14/10)', lo.riesgo!.nivel === 'alto' && lo.riesgo!.puntos === 1, lo.riesgo)
+check('la guía de movimiento es solo de la familia total', lo.riesgo!.movimiento === null)
 check('historial − local: K pico 3.0 repetida → moda 3.0', lo.historial.negativo!.kPico.moda === 3)
 check('percentil K 50', lo.posicion!.percentilK === 50, lo.posicion)
 check('local: K 9.5 < máximo 16 y racha 3 < 4 → extremo INACTIVO', eq(lo.extremo, { activo: false, kRecord: false, rachaRecord: false, cerca: false, partidosHistoria: 11, maximoPrevio: { kPico: 16, partidos: 4 }, motivos: [], texto: '', inflada: null }), lo.extremo)
