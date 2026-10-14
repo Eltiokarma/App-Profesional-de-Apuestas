@@ -2961,6 +2961,7 @@ SEGUNDAS = {40: "Inglaterra · Championship", 62: "Francia · Ligue 2",
             72: "Brasil · Serie B", 79: "Alemania · 2. Bundesliga",
             136: "Italia · Serie B", 141: "España · Segunda División",
             263: "México · Liga de Expansión"}
+CHAMPIONS = 2
 INTERNACIONALES = {
     1: "Copa del Mundo",
     13: "CONMEBOL Libertadores", 11: "CONMEBOL Sudamericana",
@@ -3018,6 +3019,12 @@ def _prioridad(liga: dict, etiquetas: set[str], pos_local: int, pos_visita: int,
         nombre_i = INTERNACIONALES[liga_id]
         if any(f in ronda_n for f in _FASE_DECISIVA):
             return 2, f"{nombre_i} · fase decisiva ({ronda or 'sin ronda declarada'})"
+        # LA CHAMPIONS ENTRA SOLA, también en fase liga (pedido del usuario,
+        # 14/10/2026: Roma–Real Madrid o Bayern–Arsenal no son relleno). El
+        # relleno que motivó la exclusión era la Europa League y la Conference:
+        # esas siguen fuera sin grupos=true.
+        if liga_id == CHAMPIONS:
+            return 4, f"{nombre_i} · {ronda or 'fase liga'} (la Champions entra también en fase liga)"
         if not grupos:
             return 0, (f"{nombre_i} · {ronda or 'fase de grupos'}: la fase de grupos / fase liga "
                        "queda fuera por defecto (de octavos en adelante entra sola); "
