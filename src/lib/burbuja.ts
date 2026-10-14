@@ -110,7 +110,7 @@ interface Episodio {
   amistosos: number
 }
 
-function reventonDe(ep: Episodio, fila: FilaK): ReventonDTO {
+function reventonDe(ep: Episodio, fila: FilaK, termina: 'cero' | 'cambio'): ReventonDTO {
   return {
     signo: ep.signo > 0 ? '+' : '-',
     partidos: ep.partidos,
@@ -123,6 +123,8 @@ function reventonDe(ep: Episodio, fila: FilaK): ReventonDTO {
     condicion: fila.condicion === 'Local' ? 'L' : 'V',
     resultado: `${fila.golesFavor}-${fila.golesContra}`,
     esInternacional: !!fila.esInternacional,
+    // cómo se cortó: a 0 (empate) o al otro signo (espejo de _reventon)
+    termina,
   }
 }
 
@@ -140,7 +142,7 @@ export function episodios(filas: FilaK[], familia: FamiliaBurbuja): { cerrados: 
     const s = signoDe(v)
     if (s === 0) {
       if (ep) {
-        cerrados.push(reventonDe(ep, fila))
+        cerrados.push(reventonDe(ep, fila, 'cero'))
         ep = null
       }
       continue
@@ -153,7 +155,7 @@ export function episodios(filas: FilaK[], familia: FamiliaBurbuja): { cerrados: 
       ep.k = v
       continue
     }
-    if (ep) cerrados.push(reventonDe(ep, fila)) // cambio de signo en el mismo partido
+    if (ep) cerrados.push(reventonDe(ep, fila, 'cambio')) // cambio de signo en el mismo partido
     ep = { signo: s, partidos: 1, kPico: Math.abs(v), k: v, desde: fila.fecha, amistosos: amistoso }
   }
   return { cerrados, abierta: ep, nCond }
@@ -168,6 +170,7 @@ function historialDe(cerrados: ReventonDTO[]): FamiliaBurbujaDTO['historial'] {
       kPico: dist(rs.map((r) => r.kPico), 1)!,
       partidos: dist(rs.map((r) => r.partidos), 1)!,
       nivelRival: dist(rs.map((r) => r.nivelRival), 10)!,
+      termina: { cero: rs.filter((r) => r.termina === 'cero').length, cambio: rs.filter((r) => r.termina === 'cambio').length },
     }
   }
   return { positivo: de('+'), negativo: de('-') }

@@ -68,7 +68,7 @@ se perdería.
 | `teorema-del-echado` | P1a, F2 y F1 **los calcula el backend** (`GET /analisis/cowork/tde/{id}`); el resto lo escribís vos | pestaña **Teorema del Echado** |
 | `teorema-del-echado` | `tde.bloques[]`: IE, ISE, tipología, ventana, vías — **uno por equipo** | pestaña **Teorema del Echado** |
 | *(cualquiera)* | `veredicto.porLado[l].leccion` + `skill` + `reglaTocada` | sección **Aprendizaje** |
-| buena espina de la burbuja | `lecturaSad.espina`: por equipo `{lectura: buena\|mala\|neutra, porque}` — si la historia de sus K (tope, forma, regularidad) le da buena espina para ESTE partido | caja «Reventón de la burbuja» del parte; el veredicto la compara con el resultado y **Aprendizaje** mide si «buena» pierde menos que «mala» |
+| espina de la burbuja | `lecturaSad.espina`: por equipo `{lectura: positiva\|cero\|negativa\|neutra, porque}` — adónde va su K total después de ESTE partido según la historia de sus burbujas (tope, forma, cómo se cortan) | caja «Reventón de la burbuja» del parte; el veredicto la compara con lo que hizo la K y **Aprendizaje** mide cada lectura contra la frecuencia de ese movimiento |
 | reventón, después del partido | **nada**: `objetivo.reventon` reconstruye la burbuja declarada antes del partido y dice si ese partido la reventó (`docs/REVENTON.md` §11); observación, no veredicto | banda del veredicto (`↯ reventó` / `→ siguió`) y sección **Aprendizaje** (tasa por nivel de riesgo contra el backtest) |
 | `futbol-timeline` | `timelineEventos` (solo institucional) + narrativa | pestaña **Timeline** (fundida con los partidos calculados) |
 | `diagnostico-tactico` | los insumos **los calcula el backend** (`GET /analisis/cowork/dtp/{id}`: partido anterior con goles y posesión atada al marcador, XI de referencia con carriles, cambios, parejas nuevas, descanso y la **apertura previa** contra la que se cierra); vos escribís `dtp.bloques[]` —uno por equipo foco— con M1, M2 (incluidas las 6 respuestas del checklist del bloque rival: la CLASE la calcula el backend), M3, M6 y el cierre (M4, M5, mecanismo abierto); más `cadena.{a,b}.pronostico` y el documento `dtp` en prosa si querés | recibo (`dtp.claseBloqueRival`), la cadena de la página de **Equipo** y la pestaña **Documentos** |
@@ -987,25 +987,29 @@ Escribís vos (es juicio, no se puede calcular):
       y un cuerpo recortado lo vacía (Everton–Ipswich, 23/09). La respuesta
       trae `antes`/`ahora`, `rechazos` y `dtEquivocado` (vacío = ya casa con
       el que se sentó en el banco).
-  LA BUENA ESPINA (`lecturaSad.espina`, obligatoria desde el 14/10/2026). Las K
-  NO mejoran el 1X2 en ninguna fórmula (REVENTON §13.3-13.4): el motor ya trae
-  esa historia. Lo que sí pueden hacer es ayudarte a LEER el partido: mirá la
-  gráfica de K de cada equipo (sección Burbujas / `GET /constantes/{id}`) —su
-  tope, la forma de sus rachas, lo regular que es de temporada en temporada,
-  dónde está hoy contra eso— y decí en UNA palabra por equipo si esa historia
-  le da para ESTE partido:
-    · `buena`: espina de que NO pierde;
-    · `mala`: espina de que pierde;
-    · `neutra`: la historia no dice nada para este partido (válido y honesto;
-      no la fuerces).
-  Con `porque` en una frase. Va con tu 1X2 o contra él: si va contra, decilo en
-  la lectura del 1X2 y no la cambies para que coincida — la medición es
-  justamente si la espina acierta sola. El veredicto la compara con el
-  resultado (buena = no perdió, mala = perdió) y Aprendizaje mide si los lados
-  con «buena» pierden menos que los de «mala». Ejemplo:
-  `"espina": {"a": {"lectura": "buena", "porque": "rachas parejas de temporada
-  en temporada y hoy lejos de su tope"}, "b": {"lectura": "neutra", "porque":
-  "DT nuevo: la historia de las K es de otro equipo"}}`.
+  LA ESPINA DE LA BURBUJA (`lecturaSad.espina`, obligatoria desde el 14/10/2026).
+  Las K NO mejoran el 1X2 en ninguna fórmula (REVENTON §13.3-13.4): el motor ya
+  trae esa historia. Lo que sí hacen es ayudarte a LEER a cada equipo. Mirá su
+  gráfica de K (sección Burbujas / `GET /constantes/{id}`) y su tarjeta
+  (`GET /equipos/{id}/burbujas`): el tope, la forma de las rachas, lo regular
+  que es de temporada en temporada, y CÓMO se le cortan las burbujas
+  (`historial.positivo|negativo.termina`: cuántas se fueron a 0 —primero
+  empata— y cuántas al otro signo —se cae de golpe—). Con eso decí, por equipo,
+  adónde va su K TOTAL después de ESTE partido:
+    · `positiva`: la K crece (o arranca si estaba en 0) → gana;
+    · `cero`: la K se reinicia → empata;
+    · `negativa`: la K se va (o se hunde más) en negativo → pierde;
+    · `neutra`: la historia no dice nada para este partido (válido y honesto).
+  Con `porque` en una frase. Guía calibrada para no inventar: el backtest da,
+  por signo y nivel de riesgo, cuánto sigue, cuánto va a cero y cuánto cambia
+  de signo (docs/REVENTON.md §14). La espina es TU lectura de la K: puede ir
+  contra tu 1X2 — si va contra, decilo en la lectura del 1X2 y no la acomodes
+  para que coincida: lo que se mide es si acierta sola. El veredicto la
+  compara con lo que hizo la K y Aprendizaje mide si cada lectura acierta más
+  que la frecuencia de ese movimiento. Ejemplo:
+  `"espina": {"a": {"lectura": "positiva", "porque": "rachas regulares, lejos de
+  su tope y sus burbujas se cortan empatando, no perdiendo"}, "b": {"lectura":
+  "neutra", "porque": "DT nuevo: la historia de las K es de otro equipo"}}`.
   Escribí UNA línea por equipo en `lecturaSad.reventon`, por ejemplo:
   «A: muy alto (8), rival mucho más fuerte que su zona de reventón → no
   seguir la racha de A; B: bajo, sin señal». NO copies los números al
@@ -1246,8 +1250,8 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
     "datoEstructural": "Núcleo del local intacto hace tres temporadas; el visitante renovó seis titulares",
     "paradoja": "El del mejor EFE es el que más depende de un solo hombre",
     "reventon": "A: medio, sin señal; B: alto (3), rival en su zona de corte → no seguir la racha de B",
-    "espina": {"a": {"lectura": "buena", "porque": "rachas regulares y hoy lejos de su tope"},
-               "b": {"lectura": "mala", "porque": "en su tope de los dos últimos años y de visita"}}
+    "espina": {"a": {"lectura": "positiva", "porque": "rachas regulares y hoy lejos de su tope"},
+               "b": {"lectura": "negativa", "porque": "en su tope de dos años, de visita, y sus burbujas se cortan de golpe"}}
   },
   "tde": {
     "bloques": [

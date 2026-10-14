@@ -1508,9 +1508,9 @@ components:
             FUERA es que el rango del backtest no toca el intervalo, nunca que el punto quede
             afuera; comparado solo con n ≥ `nMinimo`), las burbujas con K-EXTREMO,
             y `fueraDelBacktest` / `revisionAbierta`: un nivel fuera del rango ABRE la revisión
-            de los puntos de docs/REVENTON.md §5, no los mueve. `espina`: por lectura (buena ·
-            mala · neutra) cuántos lados no perdieron, con intervalo, la `separacion` entre buena
-            y mala y la `lectura` (separa · no separa todavía · sin n).
+            de los puntos de docs/REVENTON.md §5, no los mueve. `espina`: por lectura (positiva ·
+            cero · negativa · neutra) cuántas acertaron adónde fue la K, con intervalo, la
+            `frecuenciaDelMovimiento` y si la supera; `lectura` resume.
           additionalProperties: true
         porSkill:
           type: array
@@ -2080,14 +2080,21 @@ components:
         condicion: { type: string, enum: [L, V] }
         resultado: { type: string, example: '0-1' }
         esInternacional: { type: boolean }
+        termina: { type: string, enum: [cero, cambio], description: 'cómo se cortó: la K se reinició a 0 (empate) o pasó al otro signo' }
     HistorialSigno:
       type: object
-      required: [n, kPico, partidos, nivelRival]
+      required: [n, kPico, partidos, nivelRival, termina]
       properties:
         n: { type: integer }
         kPico: { $ref: '#/components/schemas/Distribucion' }
         partidos: { $ref: '#/components/schemas/Distribucion' }
         nivelRival: { $ref: '#/components/schemas/Distribucion', description: 'nivel del rival que reventó cada burbuja' }
+        termina:
+          type: object
+          description: 'cuántas burbujas de este signo se cortaron a 0 (primero empata) y cuántas al otro signo (se cae de golpe)'
+          properties:
+            cero: { type: integer }
+            cambio: { type: integer }
     PeriodoBurbuja:
       type: object
       description: >
@@ -2772,11 +2779,11 @@ components:
         espina:
           type: object
           description: >
-            La buena espina de la burbuja, por equipo (14/10/2026): si la historia de sus burbujas
-            (el tope, la forma de las rachas, lo regular que es) le da buena espina para ESTE
-            partido (no pierde), mala (pierde) o no dice nada (neutra). Las K no mejoran el 1X2 en
-            ninguna fórmula (docs/REVENTON.md §13.3-13.4): esto mide si sirven para la LECTURA.
-            Una lectura fuera de las tres se rechaza con motivo.
+            La espina de la burbuja, por equipo (14/10/2026): adónde va su K total después de ESTE
+            partido según la historia de sus burbujas (tope, forma, cómo se cortan): positiva
+            (crece o arranca: gana), cero (se reinicia: empata), negativa (pierde) o neutra. Las K
+            no mejoran el 1X2 en ninguna fórmula (docs/REVENTON.md §13.3-13.4): esto mide si sirven
+            para la LECTURA. Entran también «crece» y «se reinicia»; otra lectura se rechaza.
           properties:
             a: { $ref: '#/components/schemas/EspinaLado' }
             b: { $ref: '#/components/schemas/EspinaLado' }
@@ -3860,7 +3867,7 @@ components:
             b: { $ref: '#/components/schemas/ReventonObservado' }
         espina:
           type: object
-          description: 'la buena espina declarada contra el resultado, por lado. Lo que dice si sirve es la separación en /analisis/cowork/lecciones (acreditables.espina), no un caso'
+          description: 'la espina declarada contra lo que hizo la K, por lado. Lo que dice si sirve es la tasa contra la frecuencia en /analisis/cowork/lecciones (acreditables.espina), no un caso'
           properties:
             nota: { type: string }
             a: { $ref: '#/components/schemas/EspinaObservada' }
@@ -3868,15 +3875,16 @@ components:
     EspinaLado:
       type: object
       properties:
-        lectura: { type: string, enum: [buena, mala, neutra] }
+        lectura: { type: string, enum: [positiva, cero, negativa, neutra] }
         porque: { type: string }
     EspinaObservada:
       type: object
       properties:
-        lectura: { type: string, nullable: true, enum: [buena, mala, neutra, null] }
+        lectura: { type: string, nullable: true, enum: [positiva, cero, negativa, neutra, null] }
         porque: { type: string }
         resultado: { type: string, nullable: true, enum: [gana, empata, pierde, null] }
-        cumplida: { type: boolean, nullable: true, description: 'buena = no pierde · mala = pierde · neutra o sin lectura = null' }
+        movimiento: { type: string, nullable: true, enum: [positiva, cero, negativa, null], description: 'adónde fue la K total del equipo' }
+        cumplida: { type: boolean, nullable: true, description: 'lectura == movimiento; neutra o sin lectura = null' }
     ReventonObservado:
       type: object
       properties:

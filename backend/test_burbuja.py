@@ -93,6 +93,11 @@ def main():
 
     hp = t["historial"]["positivo"]
     check("historial +: n=3", hp["n"] == 3, hp)
+    # cómo se cortaron: las derrotas (0-1, 0-3) pasan al otro signo, los empates (1-1, 2-2) a 0
+    check("cómo terminan: + 1 a cero y 2 al otro signo; − 2 a cero (los empates reinician)",
+          hp["termina"] == {"cero": 1, "cambio": 2} and t["historial"]["negativo"]["termina"] == {"cero": 2, "cambio": 0}
+          and [r["termina"] for r in t["reventones"]][:2] in (["cambio", "cero"], ["cero", "cambio"]),
+          (hp["termina"], t["historial"]["negativo"]["termina"]))
     check("K pico +: media 8.77 · mediana 7.5 · sin moda · min 5.5 · max 13.3",
           hp["kPico"] == {"media": 8.77, "mediana": 7.5, "moda": None, "min": 5.5, "max": 13.3}, hp["kPico"])
     check("partidos +: media 2.33 · mediana 2 · moda 2",

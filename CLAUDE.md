@@ -672,12 +672,15 @@ conversación se pierde en la siguiente.
    de empates; ahora aborta fuera de 15-35 %) y el pipeline dejaba «no such
    table» mientras rehacía las derivadas (ahora en una transacción).
    **Las K se quedan en la LECTURA** (decisión del usuario, 14/10/2026): cada
-   parte declara la **buena espina de la burbuja** por equipo
-   (`lecturaSad.espina`: buena = no pierde · mala = pierde · neutra, con
-   `porque`, leyendo el tope y la forma de sus K), el veredicto la compara con
-   el resultado (`objetivo.espina`) y Aprendizaje mide si «buena» pierde menos
-   que «mala» (`acreditables.espina`, Wilson, n ≥ 10 por lado). Una lectura
-   fuera de las tres se rechaza con motivo.
+   parte declara la **espina de la burbuja** por equipo (`lecturaSad.espina`:
+   adónde va su K total después del partido —`positiva` crece/gana · `cero`
+   se reinicia/empata · `negativa` pierde · `neutra`—, con `porque`), el
+   veredicto la compara con lo que hizo la K (`objetivo.espina`) y Aprendizaje
+   mide cada lectura contra la frecuencia de ese movimiento
+   (`acreditables.espina`, Wilson, n ≥ 10). La tarjeta de burbujas dice cómo
+   se le cortan al equipo (`historial.*.termina`: a cero o al otro signo) y
+   el backtest da la guía calibrada por signo y riesgo (`movimiento`,
+   REVENTON §14). Una lectura fuera de las cuatro se rechaza con motivo.
 
 ## Siguientes pasos (en orden)
 

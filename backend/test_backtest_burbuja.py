@@ -71,6 +71,26 @@ def main():
     check("AUC dentro de [0, 1] o None", r["aucPuntos"] is None or 0 <= r["aucPuntos"] <= 1, r["aucPuntos"])
 
     # horizonte: reventar dentro de 3 partidos es al menos tan frecuente como en 1
+    # CÓMO se mueve la K (14/10/2026): sigue · a cero · al otro signo, y cada
+    # movimiento tiene que casar con la K del partido y con el reventón
+    tot = [o for o in obs if o["familia"] == "total"]
+    filas_por = {}
+    for t in equipos:
+        for f in constantes_de(t, 500):
+            filas_por[(t, f["fixtureId"])] = float(f["fusion"]["k"])
+    def _casa(o):
+        v = filas_por[(o["equipoId"], o["fixtureId"])]
+        if o["movimiento"] == "sigue":
+            return not o["reventoAhora"] and (v > 0) == (o["signo"] == "+") and v != 0
+        if o["movimiento"] == "cero":
+            return o["reventoAhora"] and v == 0
+        return o["reventoAhora"] and v != 0 and (v > 0) != (o["signo"] == "+")
+    check("cada movimiento casa con la K de ESE partido (sigue / a cero / al otro signo)",
+          tot and all(_casa(o) for o in tot), [o for o in tot if not _casa(o)][:2])
+    mv = r["movimiento"]
+    check("por signo y nivel los tres movimientos suman 1",
+          all(abs(c["sigue"] + c["cero"] + c["cambio"] - 1) < 0.01 for sg in mv.values() for c in sg.values() if c["n"]),
+          mv)
     _, r3 = bt.correr(equipos, horizonte=3)
     check("horizonte 3 ≥ horizonte 1 en tasa base", r3["tasaBase"]["tasa"] >= r["tasaBase"]["tasa"],
           (r3["tasaBase"], r["tasaBase"]))

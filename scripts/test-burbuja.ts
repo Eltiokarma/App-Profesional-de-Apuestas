@@ -44,6 +44,7 @@ check('3er reventón: + de 3 partidos, K pico 13.3, empate con H', eq([r2.signo,
 check('un cambio de signo en el mismo partido cierra la burbuja y abre la contraria', t.reventones[0].fixtureId === 1002 && t.reventones[1].signo === '-')
 const hp = t.historial.positivo!
 check('historial +: n=3', hp.n === 3, hp)
+check('cómo terminan: + 1 a cero y 2 al otro signo; − 2 a cero (los empates reinician)', eq(hp.termina, { cero: 1, cambio: 2 }) && eq(t.historial.negativo!.termina, { cero: 2, cambio: 0 }), [hp.termina, t.historial.negativo!.termina])
 check('K pico +: media 8.77 · mediana 7.5 · sin moda · min 5.5 · max 13.3', eq(hp.kPico, { media: 8.77, mediana: 7.5, moda: null, min: 5.5, max: 13.3 }), hp.kPico)
 check('partidos +: media 2.33 · mediana 2 · moda 2', eq([hp.partidos.media, hp.partidos.mediana, hp.partidos.moda], [2.33, 2, 2]), hp.partidos)
 check('nivel del rival que revienta +: media 2.33 · mediana 2.0 · moda 2.0', eq([hp.nivelRival.media, hp.nivelRival.mediana, hp.nivelRival.moda], [2.33, 2, 2]), hp.nivelRival)

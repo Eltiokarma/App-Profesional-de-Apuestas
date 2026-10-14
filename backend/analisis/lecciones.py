@@ -203,7 +203,8 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
     unxdos_ok, unxdos_de = 0, 0
     tde_obs, tde_positivos, tde_sin_ficha, tde_contaminadas = 0, 0, 0, 0
     rev = _reventon_vacio()
-    espina = {e: {"lados": 0, "noPierde": 0, "gana": 0} for e in ("buena", "mala", "neutra")}
+    espina = {e: {"lados": 0, "aciertos": 0} for e in ("positiva", "cero", "negativa", "neutra")}
+    movimientos = {m: 0 for m in ("positiva", "cero", "negativa")}
 
     for caso in casos:
         v = caso["veredicto"]
@@ -253,8 +254,9 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
             if e.get("lectura") in espina:
                 c = espina[e["lectura"]]
                 c["lados"] += 1
-                c["noPierde"] += 1 if e.get("resultado") != "pierde" else 0
-                c["gana"] += 1 if e.get("resultado") == "gana" else 0
+                c["aciertos"] += 1 if e.get("cumplida") else 0
+                if e.get("movimiento") in movimientos:
+                    movimientos[e["movimiento"]] += 1
 
     total_lados = sum(acred.values())
     decididos = acred["acierto"] + acred["fallo"] + acred["parcial"]
@@ -276,31 +278,36 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
                     "ciega. `sinFicha` no cuenta como no ocurrido: no se pudo comprobar",
         },
         "reventon": _cerrar_reventon(rev),
-        "espina": _cerrar_espina(espina),
+        "espina": _cerrar_espina(espina, movimientos),
     }
     return poblacion, metricas
 
 
-def _cerrar_espina(acc: dict) -> dict:
-    """¿La buena espina de la burbuja separa? Si los lados con «buena» pierden
-    menos que los de «mala», la lectura del analista sobre las K vale algo;
-    si no, decora. Con intervalo de Wilson: con pocos lados se dice."""
+def _cerrar_espina(acc: dict, movimientos: dict) -> dict:
+    """¿La lectura de la K acierta más que la frecuencia de cada movimiento?
+    Decir «positiva» en todos los partidos acierta lo que ganan los equipos (~37 %
+    por lado): la lectura vale si su tasa, con intervalo de Wilson, queda por
+    ENCIMA de esa frecuencia. Con pocos lados se dice."""
+    total = sum(movimientos.values())
     out = {}
     for lectura, c in acc.items():
         n = c["lados"]
-        out[lectura] = {"lados": n, "noPierde": c["noPierde"], "gana": c["gana"],
-                        "tasaNoPierde": round(c["noPierde"] / n, 3) if n else None,
-                        "intervalo": list(intervalo_wilson(c["noPierde"], n) or []) or None}
-    b, m = out["buena"], out["mala"]
-    sep = (round(b["tasaNoPierde"] - m["tasaNoPierde"], 3)
-           if b["tasaNoPierde"] is not None and m["tasaNoPierde"] is not None else None)
-    lectura = ("sin n" if min(b["lados"], m["lados"]) < REVENTON_N_MINIMO else
-               "separa" if b["intervalo"] and m["intervalo"] and b["intervalo"][0] > m["intervalo"][1] else
-               "no separa todavía")
-    return {**out, "separacion": sep, "lectura": lectura, "nMinimo": REVENTON_N_MINIMO,
-            "nota": "lados ciegos con espina declarada: buena = la historia de las burbujas sugería "
-                    "que no pierde; mala = que pierde. Separa si el intervalo de «buena» queda "
-                    "entero por encima del de «mala»"}
+        base = round(movimientos[lectura] / total, 3) if total and lectura in movimientos else None
+        ic = intervalo_wilson(c["aciertos"], n)
+        out[lectura] = {"lados": n, "aciertos": c["aciertos"],
+                        "tasa": round(c["aciertos"] / n, 3) if n else None,
+                        "intervalo": list(ic) if ic else None,
+                        "frecuenciaDelMovimiento": base,
+                        "sobreLaFrecuencia": (None if n < REVENTON_N_MINIMO or base is None or not ic
+                                              else ic[0] > base)}
+    juzgadas = [l for l in ("positiva", "cero", "negativa") if out[l]["lados"] >= REVENTON_N_MINIMO]
+    lectura = ("sin n" if not juzgadas else
+               "acierta más que la frecuencia" if any(out[l]["sobreLaFrecuencia"] for l in juzgadas) else
+               "no supera la frecuencia todavía")
+    return {**out, "lectura": lectura, "nMinimo": REVENTON_N_MINIMO, "lados": total,
+            "nota": "lados ciegos con espina: adónde dijo el analista que iba la K total y adónde fue. "
+                    "Vale si la tasa de una lectura, con intervalo, queda por encima de la frecuencia de "
+                    "ese movimiento entre todos los lados con espina"}
 
 
 # ── el reventón en producción, contra el backtest ───────────────────────────

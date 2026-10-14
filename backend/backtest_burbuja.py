@@ -192,6 +192,10 @@ def observar_equipo(team_id: int, horizonte: int, min_prefijo: int = MIN_PREFIJO
                 "pctK": (fam.get("_franja") or {}).get("pctK"),
                 "pctR": (fam.get("_franja") or {}).get("pctR"),
                 "revento": revento, "reventoAhora": revento_ahora,
+                # CÓMO se movió la K en ESTE partido (14/10/2026): siguió, se
+                # reinició a 0 (empate) o pasó al otro signo (resultado opuesto)
+                "movimiento": ("sigue" if not revento_ahora else
+                               "cero" if float(fila["fusion"][burbuja.CLAVE_FUSION[familia]]) == 0 else "cambio"),
             })
     return obs
 
@@ -337,7 +341,28 @@ def resumir(obs: list[dict], horizonte: int, nombres: dict[int, str] | None = No
                        "≥6": _tasa([o for o in con_base if o["n"] >= 6])},
         "porLiga": _por_liga(con_base, nombres or {}),
         "franjaAlta": _franja_alta(con_base),
+        "movimiento": _movimiento(con_base),
     }
+
+
+MOVIMIENTOS = ("sigue", "cero", "cambio")
+
+
+def _movimiento(con_base: list[dict]) -> dict:
+    """Por signo y nivel de riesgo, cómo se movió la K TOTAL en el partido
+    siguiente: sigue · a cero (empate) · al otro signo. Es la guía calibrada
+    que el analista usa para escribir la espina por equipo (crece / se reinicia
+    / pasa a negativa o positiva)."""
+    total = [o for o in con_base if o["familia"] == "total" and o.get("movimiento")]
+    out = {}
+    for signo in ("+", "-"):
+        out[signo] = {}
+        for nv in NIVELES:
+            g = [o for o in total if o["signo"] == signo and o["nivel"] == nv]
+            n = len(g)
+            out[signo][nv] = {"n": n, **{m: (round(sum(1 for o in g if o["movimiento"] == m) / n, 3) if n else None)
+                                         for m in MOVIMIENTOS}}
+    return out
 
 
 def correr(equipos: list[int], horizonte: int, min_prefijo: int = MIN_PREFIJO,
@@ -545,6 +570,7 @@ def correr_backtest(*, padron_: bool = False, liga: int | None = None, horizonte
         resumen["calibracionPorSigno"] = {s: calibrar([o for o in obs if o["signo"] == s]) for s in ("+", "-")}
         from backend import backtest_lecciones
         backtest_lecciones.guardar({"calibracion": resumen["calibracion"],
+                                    "movimiento": resumen.get("movimiento"),
                                     "calibracionPorSigno": resumen["calibracionPorSigno"],
                                     "porNivel": resumen["porNivel"], "tasaBase": resumen["tasaBase"],
                                     "equipos": len(equipos), "horizonte": horizonte}, clave="calibracion")
@@ -570,6 +596,16 @@ def imprimir(r: dict):
         t = r["porNivel"][nv]
         print(f"  {nv:9s} {_pct(t)}  n={t['n']}")
     print(f"  monótona: {'sí' if r['monotona'] else 'NO'} · AUC de los puntos: {r['aucPuntos']}")
+
+    mv = r.get("movimiento")
+    if mv:
+        print("\n— cómo se mueve la K total en el partido siguiente (sigue · a cero · al otro signo) —")
+        for signo in ("+", "-"):
+            for nv in NIVELES:
+                c = mv[signo][nv]
+                if c["n"]:
+                    print(f"  burbuja {signo} {nv:9s} n={c['n']:6d} · sigue {c['sigue']:.1%} · a cero {c['cero']:.1%} "
+                          f"· al otro signo {c['cambio']:.1%}")
 
     print("\n— por puntos —")
     for p, t in r["porPuntos"].items():

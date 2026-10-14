@@ -31,6 +31,8 @@ const CLASIF = {
 }
 const BLOQUE_NOMBRE = { A: 'Cuerpo técnico', B: 'Plantel', C: 'Constantes K', D: 'Coherencia táctica', E: 'Rendimiento' } as const
 const ROL_LABEL: Record<string, string> = { TF: '🔴 Titular fijo', TH: '🟠 Titular habitual', ROT: '🟡 Rotación', SUP: '⚪ Suplente' }
+/** La espina de la burbuja: adónde va la K total del equipo después del partido. */
+const ESPINA_TXT = { positiva: '↗ K crece (gana)', cero: '↺ K se reinicia (empata)', negativa: '↘ K negativa (pierde)', neutra: '· la K no dice nada' } as const
 const ZONAS: ZonaF[] = ['GK', 'DEF', 'MID', 'ATK']
 
 // ── markdown ────────────────────────────────────────────────────────────────
@@ -710,7 +712,7 @@ function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' 
           return (
             <span key={`esp-${lado}`} style={{ font: '600 11.5px var(--mono)', color: e.cumplida ? 'var(--up)' : 'var(--down)' }}
               title={o.espina?.nota}>
-              {e.cumplida ? '✓' : '✗'} {e.lectura} espina · {e.resultado} · {nombreDe(lado)}
+              {e.cumplida ? '✓' : '✗'} K {e.lectura} → fue {e.movimiento} · {nombreDe(lado)}
             </span>
           )
         })}
@@ -1185,11 +1187,11 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
                   {(['a', 'b'] as const).map((l) => {
                     const e = ls.espina?.[l]
                     if (!e) return null
-                    const color = e.lectura === 'buena' ? 'var(--up)' : e.lectura === 'mala' ? 'var(--down)' : 'var(--t3)'
+                    const color = e.lectura === 'positiva' ? 'var(--up)' : e.lectura === 'negativa' ? 'var(--down)' : e.lectura === 'cero' ? 'var(--mark)' : 'var(--t3)'
                     return (
                       <div key={l} style={{ flex: '1 1 220px', minWidth: 0, padding: '8px 10px', borderRadius: 9, background: `color-mix(in oklch, ${color}, transparent 88%)`, border: `1px solid color-mix(in oklch, ${color}, transparent 60%)` }}>
                         <div style={{ font: '700 10px var(--mono)', color, letterSpacing: '.4px', textTransform: 'uppercase' }}>
-                          {e.lectura === 'buena' ? '👍 buena espina' : e.lectura === 'mala' ? '👎 mala espina' : '· espina neutra'} · {l === 'a' ? parte.partido.equipoA : parte.partido.equipoB}
+                          {ESPINA_TXT[e.lectura]} · {l === 'a' ? parte.partido.equipoA : parte.partido.equipoB}
                         </div>
                         {e.porque && <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t2)', lineHeight: 1.45, marginTop: 4 }}>{e.porque}</div>}
                       </div>
