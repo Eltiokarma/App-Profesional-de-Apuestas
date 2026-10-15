@@ -2800,7 +2800,7 @@ components:
           type: object
           nullable: true
           readOnly: true
-          description: 'solo en el GET: el reventón de cada lado con este partido como próximo, familia total, calculado al leer (docs/REVENTON.md). error si no se pudo calcular'
+          description: 'solo en el GET: el reventón de cada lado con este partido como próximo, familia total (y en `condicion` la de local/visita de hoy), calculado al leer (docs/REVENTON.md). error si no se pudo calcular'
           properties:
             a: { $ref: '#/components/schemas/ReventonLado' }
             b: { $ref: '#/components/schemas/ReventonLado' }
@@ -2812,6 +2812,15 @@ components:
         riesgo: { type: object, nullable: true, description: 'nivel, puntos, motivos, confianza, confianzaMotivos, movimiento (guía de adónde va la K)' }
         rival: { type: object, nullable: true, description: 'nivelProximo, medianaReventon, distancia, enZona, tramo' }
         extremo: { $ref: '#/components/schemas/ExtremoBurbuja', nullable: true, description: 'la alerta de extremo de la familia total; activa ⇒ el parte trae la alerta K-EXTREMO' }
+        condicion:
+          type: object
+          description: 'la K de la condición en que juega hoy (local para a, visita para b): actual, riesgo, rival y extremo de esa familia. La que lee una espina con guia condicion; no dispara alertas (manda la total)'
+          properties:
+            familia: { type: string, enum: [local, visita] }
+            actual: { type: object, nullable: true }
+            riesgo: { type: object, nullable: true }
+            rival: { type: object, nullable: true }
+            extremo: { $ref: '#/components/schemas/ExtremoBurbuja', nullable: true }
         estabilidad: { type: string, enum: [estable, en transición, inestable, sin dato] }
         partidos: { type: integer }
         aviso: { type: string }

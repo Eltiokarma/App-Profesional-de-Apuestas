@@ -677,8 +677,11 @@ def _espina(x, rechazos: list) -> dict:
 def _reventon_calculado(fx) -> dict | None:
     """El reventón de la burbuja de cada equipo con ESTE partido como próximo
     (docs/REVENTON.md), calculado AL LEER como el timeline y el bloque F: si la
-    historia cambia, la próxima lectura ya lo trae. Solo la familia total, que
-    es la que manda. Un fallo se declara en `error`, no tumba el parte."""
+    historia cambia, la próxima lectura ya lo trae. La familia total, que es
+    la que manda (alertas de extremo incluidas), y al lado en `condicion` la K
+    de la condición en que juega hoy (local o visita), que es la que la espina
+    puede leer con `guia: condicion`. Un fallo se declara en `error`, no tumba
+    el parte."""
     if not fx:
         return None
     from datetime import datetime, timezone
@@ -709,8 +712,17 @@ def _reventon_calculado(fx) -> dict | None:
                                  bin_=nv[0]["bin"] if nv else 0, proximo=prox,
                                  plantilla=None if jugado else jug.plantilla_de(tid), hoy=hoy)
             fam = r["familias"]["total"]
+            # LA K DE LA CONDICIÓN DE HOY, al lado de la total (15/10/2026,
+            # Boca–Vasco: la total estaba en 0 tras un 2-2 y el parte leyó, con
+            # razón, la K local de Boca +18 y la de visita de Vasco +6, las dos
+            # en riesgo muy alto; la pantalla mostraba todo en null y la línea
+            # del analista quedaba sin un número que la sostuviera)
+            fc = r["familias"]["local" if cond == "L" else "visita"]
             out[lado] = {"actual": fam["actual"], "riesgo": fam["riesgo"], "rival": fam["rival"],
                          "extremo": fam.get("extremo"),
+                         "condicion": {"familia": "local" if cond == "L" else "visita",
+                                       "actual": fc["actual"], "riesgo": fc["riesgo"], "rival": fc["rival"],
+                                       "extremo": fc.get("extremo")},
                          "estabilidad": r["estabilidad"]["grado"], "partidos": r["partidos"], "aviso": r["aviso"]}
         except Exception as e:  # noqa: BLE001 — se declara, no se inventa ni se rompe la lectura
             out[lado] = {"actual": None, "riesgo": None, "rival": None, "extremo": None, "estabilidad": "sin dato",

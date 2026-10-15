@@ -1244,6 +1244,19 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
                           la K suele: seguir {Math.round(r.riesgo.movimiento.sigue * 100)}% · a cero {Math.round(r.riesgo.movimiento.cero * 100)}% · {r.actual.signo === '+' ? 'a negativa' : 'a positiva'} {Math.round(r.riesgo.movimiento.cambio * 100)}%
                         </div>
                       )}
+                      {/* la K de la condición de hoy: la que lee una espina con guía «condición» */}
+                      {r?.condicion?.actual && r.condicion.riesgo && (() => {
+                        const c = r.condicion!
+                        const cc = { bajo: 'var(--up)', medio: 'var(--mark)', alto: 'var(--down)', 'muy alto': 'var(--down)', 'sin base': 'var(--t3)' }[c.riesgo!.nivel]
+                        return (
+                          <div style={{ marginTop: 7, paddingTop: 7, borderTop: '1px dashed var(--line)', font: '500 10.5px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+                            <span style={{ fontWeight: 700 }}>K de {c.familia}</span> · burbuja {c.actual!.signo} · K {c.actual!.k > 0 ? '+' : ''}{c.actual!.k.toFixed(1)} · {c.actual!.partidos} partido{c.actual!.partidos === 1 ? '' : 's'} ·{' '}
+                            <span style={{ color: cc, fontWeight: 700, textTransform: 'uppercase' }}>riesgo {c.riesgo!.nivel}</span>
+                            {c.extremo?.activo && <span style={{ color: 'var(--down)', fontWeight: 700 }}> · EXTREMO</span>}
+                            {c.riesgo!.movimiento && <div style={{ color: 'var(--t3)', marginTop: 2 }}>la K de {c.familia} suele: seguir {Math.round(c.riesgo!.movimiento.sigue * 100)}% · a cero {Math.round(c.riesgo!.movimiento.cero * 100)}% · al otro signo {Math.round(c.riesgo!.movimiento.cambio * 100)}%</div>}
+                          </div>
+                        )
+                      })()}
                     </div>
                   )
                 })}
