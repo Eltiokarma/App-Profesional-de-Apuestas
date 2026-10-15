@@ -692,6 +692,18 @@ conversación se pierde en la siguiente.
    familia se mueve en el próximo partido. La + de local aguanta más que la
    total y la + de visita menos; la − de visita es la que más se sostiene.
 
+14. **Integridad del partido: solo ANOTACIÓN** (15/10/2026, decisión del
+   usuario tras el Roma 3-4 Real Madrid de la Champions: un gol de pelota
+   parada con dos defensores que saltan y el rematador solo). El sistema NO
+   juzga amaño, ni de jugadores ni de árbitros, y nada de esto entra a la base,
+   al parte ni a una métrica: con un video no alcanza y una etiqueta así sobre
+   un partido o un jugador no se pone sin pruebas. El usuario irá contando
+   estos casos en la conversación. Pendiente de RASTREAR, sin construir:
+   si algún indicador medible podría alertar —el candidato es un movimiento
+   anómalo de las cuotas en vivo (`odds_live`) contra el marcador, que es lo
+   que usan los servicios de integridad—. Una remontada sola NO es señal: lo
+   que se predice es el resultado final.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
