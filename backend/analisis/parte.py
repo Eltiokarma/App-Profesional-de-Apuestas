@@ -310,7 +310,7 @@ _CLAVES_JUGADOR = {"nombre", "jugador", "jugadorId", "posicion", "zona", "rol", 
 _CLAVES_PARTE = {"fixtureId", "version", "generadoEn", "equipos", "alertas", "matchup",
                  "lecturaSad", "lectura_sad", "tde", "timelineEventos", "timelineNarrativa",
                  "cadena", "documentos", "pendientes", "fuentes", "descartados", "notas",
-                 "pronostico", "dtp"}
+                 "pronostico", "dtp", "matriz"}
 
 # EL VIAJE DE IDA Y VUELTA. Corregir un parte es leer → modificar →
 # re-depositar, así que el POST tiene que aceptar TAL CUAL lo que devuelve el
@@ -1460,6 +1460,108 @@ def _documento(d, rechazos: list | None = None, donde: str = "documentos") -> di
             "cuerpo": cuerpo}
 
 
+# ── la matriz de escenarios: NARRATIVA, no estadística ─────────────────────
+#
+# (15/10/2026, decisión del usuario) La matriz se creó para contar CÓMO puede
+# darse el partido —cómo gana, empata y pierde cada equipo, con sus palancas—,
+# no para dar un número. En la corrida automática se había achatado a una
+# tabla de tres filas con porcentajes, y ese porcentaje terminó haciendo de 1X2
+# oficial. Ahora el número vive en `pronostico.probabilidades` y la matriz es
+# estructurada, por equipo y por escenario, con las filas que pide el skill
+# (efe-dashboard, PASO 6, v2.0). Sin probabilidades adentro: se rechazan.
+ESCENARIOS_MATRIZ = {
+    "ganar": ("tactica", "pelotaParada", "reloj", "base"),
+    "empatar": ("tactica", "campo", "dato"),
+    "perder": ("gatillo", "errorSistemico", "psicologico", "goleada"),
+}
+_FILA_ALIAS = {
+    "tacticacentral": "tactica", "tactica_central": "tactica", "táctica": "tactica",
+    "pelota_parada": "pelotaParada", "pelotaparada": "pelotaParada", "balonparado": "pelotaParada",
+    "balon_parado": "pelotaParada", "abp": "pelotaParada",
+    "gestionreloj": "reloj", "gestion_reloj": "reloj", "gestiondelreloj": "reloj",
+    "basecientifica": "base", "base_cientifica": "base", "evidencia": "base",
+    "condicionescampo": "campo", "condiciones": "campo", "condiciones_de_campo": "campo",
+    "datoestadistico": "dato", "dato_estadistico": "dato",
+    "gatilloprincipal": "gatillo", "gatillo_principal": "gatillo",
+    "error": "errorSistemico", "error_sistemico": "errorSistemico", "errorsistemico": "errorSistemico",
+    "factorpsicologico": "psicologico", "factor_psicologico": "psicologico", "psicológico": "psicologico",
+    "riesgogoleada": "goleada", "riesgo_goleada": "goleada", "riesgodegoleada": "goleada",
+}
+_ESCENARIO_ALIAS = {"gana": "ganar", "victoria": "ganar", "empata": "empatar", "empate": "empatar",
+                    "pierde": "perder", "derrota": "perder"}
+_PRIMERA_FILA = {"ganar": "tactica", "empatar": "tactica", "perder": "gatillo"}
+
+
+def _fila_matriz(k: str, escenario: str) -> str:
+    if k in ESCENARIOS_MATRIZ[escenario]:
+        return k
+    return _FILA_ALIAS.get(k.lower().replace(" ", "").replace("-", "_"), _FILA_ALIAS.get(k.lower(), k))
+
+
+def _matriz(x, rechazos: list) -> dict:
+    """{a: {ganar: {...}, empatar: {...}, perder: {...}}, b: {...}, confirma, contradice}.
+
+    Un escenario puede llegar como texto suelto (entra en su primera fila). Una
+    fila desconocida o una probabilidad se rechazan con su motivo: el número va
+    en `pronostico.probabilidades`, y una fila que nadie lee se pierde."""
+    if not x:
+        return {}
+    x = _dict(x, rechazos, "matriz",
+              '{"a": {"ganar": {"tactica": "…", "pelotaParada": "…", "reloj": "…", "base": "…"}, '
+              '"empatar": {…}, "perder": {…}}, "b": {…}, "confirma": "…", "contradice": "…"}')
+    out: dict = {}
+    for lado in LADOS:
+        v = x.get(lado)
+        if v is None:
+            continue
+        if not isinstance(v, dict):
+            rechazos.append({"donde": f"matriz.{lado}", "porque": "va un objeto por escenario",
+                             "esperado": '{"ganar": {…}, "empatar": {…}, "perder": {…}}'})
+            continue
+        lado_out = {}
+        for esc_in, filas in v.items():
+            esc = _ESCENARIO_ALIAS.get(_txt(esc_in).lower(), _txt(esc_in).lower())
+            if esc not in ESCENARIOS_MATRIZ:
+                rechazos.append({"donde": f"matriz.{lado}.{esc_in}", "porque": "no es un escenario de la matriz",
+                                 "esperado": "ganar · empatar · perder"})
+                continue
+            if isinstance(filas, str):
+                filas = {_PRIMERA_FILA[esc]: filas}
+            if not isinstance(filas, dict):
+                rechazos.append({"donde": f"matriz.{lado}.{esc}", "porque": "va un objeto con sus filas",
+                                 "esperado": ", ".join(ESCENARIOS_MATRIZ[esc])})
+                continue
+            fo = {}
+            for k_in, t in filas.items():
+                if _txt(k_in).lower().startswith("prob"):
+                    rechazos.append({"donde": f"matriz.{lado}.{esc}.{k_in}",
+                                     "porque": "la matriz es narrativa: el número va en "
+                                               "`pronostico.probabilidades`, no acá",
+                                     "esperado": ", ".join(ESCENARIOS_MATRIZ[esc])})
+                    continue
+                k = _fila_matriz(_txt(k_in), esc)
+                if k not in ESCENARIOS_MATRIZ[esc]:
+                    rechazos.append({"donde": f"matriz.{lado}.{esc}.{k_in}",
+                                     "porque": f"«{k_in}» no es una fila de «{esc}»",
+                                     "esperado": ", ".join(ESCENARIOS_MATRIZ[esc])})
+                    continue
+                if _txt(t):
+                    fo[k] = _txt(t)
+            if fo:
+                lado_out[esc] = fo
+        if lado_out:
+            out[lado] = lado_out
+    for k in ("confirma", "contradice"):
+        if _txt(x.get(k)):
+            out[k] = _txt(x.get(k))
+    return out
+
+
+def filas_matriz(m: dict) -> int:
+    """Cuántas filas declaradas trae la matriz (para el recibo y `perdido`)."""
+    return sum(len(f) for l in LADOS for f in ((m or {}).get(l) or {}).values())
+
+
 def normalizar_parte(payload: dict) -> dict:
     """Deja el depósito en la forma exacta del contrato.
 
@@ -1514,6 +1616,7 @@ def normalizar_parte(payload: dict) -> dict:
                                                              "alertas"))) if a],
         "matchup": {},
         "pronostico": {},
+        "matriz": _matriz(payload.get("matriz"), rechazos),
         "lecturaSad": _lectura_sad(payload.get("lecturaSad") or payload.get("lectura_sad") or {},
                                    rechazos),
         "tde": _tde(payload.get("tde"), rechazos),
@@ -1687,6 +1790,7 @@ def guardar(payload: dict) -> dict:
                 "falsador": 1 if _txt(pron.get("falsador")) else 0,
                 "lecturaSad": 1 if (p_.get("lecturaSad") or {}).get("moduloOperativo") else 0,
                 "sensibilidad": sum(len((p_.get("equipos", {}).get(l) or {}).get("sensibilidad") or []) for l in LADOS),
+                "filasMatriz": filas_matriz(p_.get("matriz") or {}),
             }
         t_antes, t_ahora = _tam(antes), _tam(parte)
         perdido = [f"{k}: {t_antes[k]} → {t_ahora[k]}" for k in t_antes if t_ahora[k] < t_antes[k]]
@@ -1755,6 +1859,18 @@ def guardar(payload: dict) -> dict:
             "comoSeArregla": "una condición OBSERVABLE que, si ocurre, declara fallado "
                              "el pronóstico",
         })
+    # la matriz por equipo: un lado sin escenarios es una narrativa a medias
+    m_ = parte.get("matriz") or {}
+    lados_sin = [l for l in LADOS if not m_.get(l)]
+    if lados_sin:
+        faltan.append({
+            "bloque": "matriz",
+            "costara": ("sin matriz no hay narrativa de cómo puede darse el partido" if len(lados_sin) == 2 else
+                        f"la matriz del lado {lados_sin[0]} está vacía: falta cómo gana, empata y pierde ese equipo"),
+            "comoSeArregla": '"matriz": {"a": {"ganar": {"tactica": …, "pelotaParada": …, "reloj": …, "base": …}, '
+                             '"empatar": {…}, "perder": {"gatillo": …, "errorSistemico": …, "psicologico": …, '
+                             '"goleada": …}}, "b": {…}}',
+        })
     resumen = {
         "fixtureId": parte["fixtureId"],
         "partido": f"{fx['home_name']} vs {fx['away_name']}",
@@ -1762,6 +1878,7 @@ def guardar(payload: dict) -> dict:
         "estado": "actualizado" if previo else "guardado",
         "jugadores": {l: len(parte["equipos"][l]["plantel"]) for l in LADOS},
         "documentos": [d["id"] for d in parte["documentos"]],
+        "filasMatriz": filas_matriz(parte.get("matriz") or {}),
         "alertas": len(parte["alertas"]),
         "discrepancias": discrepancias,
         "xiResuelto": bool(previo and previo["xi_json"]),
@@ -2212,6 +2329,7 @@ def dto(fixture_id: int) -> dict | None:
         "dtp": dtp_leido,
         "timeline": timeline,
         "pronostico": parte["pronostico"],
+        "matriz": parte.get("matriz") or {},
         "documentos": parte["documentos"],
         "pendientes": parte["pendientes"],
         "fuentes": parte["fuentes"],
@@ -2565,6 +2683,19 @@ def _lado_veredicto(x, rechazos: list | None = None, donde: str = "porLado") -> 
                              f"{donde}.otrasLecciones")
     if otras:
         out["otrasLecciones"] = otras
+    # ¿LA NARRATIVA DE LA MATRIZ APARECIÓ? Cuál escenario se jugó lo dice el
+    # marcador (lo calcula el backend en `objetivo.matriz`); si lo que se
+    # escribió para ese escenario —la palanca, el gatillo— fue lo que pasó es
+    # juicio, y va como observación: sin acierto ni tasa, para la autopsia.
+    esc = x.get("escenario")
+    if isinstance(esc, dict) and (esc.get("aparecio") or esc.get("que")):
+        ap = _txt(esc.get("aparecio")).lower().replace("í", "i")
+        if ap not in ("si", "parcial", "no", ""):
+            if rechazos is not None:
+                rechazos.append({"donde": f"{donde}.escenario.aparecio", "porque": f"«{ap}» no es una respuesta",
+                                 "esperado": "si · parcial · no"})
+            ap = ""
+        out["escenario"] = {"aparecio": ap, "que": _txt(esc.get("que"))}
     return out
 
 
@@ -3165,6 +3296,14 @@ def contrato() -> dict:
         },
         "alertas": {"claves": sorted(_CLAVES_ALERTA),
                     "equipo": list(_EQUIPOS_ALERTA)},
+        "matriz": {
+            "forma": '{"a": {"ganar": {…}, "empatar": {…}, "perder": {…}}, "b": {…}, '
+                     '"confirma": "…", "contradice": "…"}',
+            "filas": {k: list(v) for k, v in ESCENARIOS_MATRIZ.items()},
+            "nota": "NARRATIVA, no estadística: cómo gana, empata y pierde CADA equipo, con sus "
+                    "palancas (Matriz de Escenarios v2.0). Sin probabilidades adentro: el número va "
+                    "en `pronostico.probabilidades`. `confirma`/`contradice`: un caso real de cada lado",
+        },
         "lecturaSad": {
             "claves": ["moduloOperativo", "unXDos", "contextoEmocional", "datoEstructural", "paradoja", "reventon",
                        "espina"],

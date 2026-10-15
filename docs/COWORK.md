@@ -72,7 +72,7 @@ se perdería.
 | reventón, después del partido | **nada**: `objetivo.reventon` reconstruye la burbuja declarada antes del partido y dice si ese partido la reventó (`docs/REVENTON.md` §11); observación, no veredicto | banda del veredicto (`↯ reventó` / `→ siguió`) y sección **Aprendizaje** (tasa por nivel de riesgo contra el backtest) |
 | `futbol-timeline` | `timelineEventos` (solo institucional) + narrativa | pestaña **Timeline** (fundida con los partidos calculados) |
 | `diagnostico-tactico` | los insumos **los calcula el backend** (`GET /analisis/cowork/dtp/{id}`: partido anterior con goles y posesión atada al marcador, XI de referencia con carriles, cambios, parejas nuevas, descanso y la **apertura previa** contra la que se cierra); vos escribís `dtp.bloques[]` —uno por equipo foco— con M1, M2 (incluidas las 6 respuestas del checklist del bloque rival: la CLASE la calcula el backend), M3, M6 y el cierre (M4, M5, mecanismo abierto); más `cadena.{a,b}.pronostico` y el documento `dtp` en prosa si querés | recibo (`dtp.claseBloqueRival`), la cadena de la página de **Equipo** y la pestaña **Documentos** |
-| matriz de escenarios | documento `matriz` | pestaña **Documentos** |
+| matriz de escenarios | `matriz`: por equipo, `ganar` / `empatar` / `perder` con sus filas (narrativa, sin números) | pestaña **Lectura** («Matriz de escenarios»); el veredicto dice qué escenario jugó cada uno y si lo escrito apareció |
 | ensayo | documento `ensayo` | pestaña **Documentos** |
 
 Dos matices que se ganan al mandar estructura en vez de prosa:
@@ -1182,7 +1182,22 @@ negritas, citas y tablas se pintan bien en la app.
       pitazo y no había una: el recibo lo dice en `dtp.aperturaNoGuardada`.
   matriz    Matriz de Escenarios Tácticos v2.0. En sesión interactiva el skill
             pide confirmación; acá la autorización ya está dada por este prompt.
-            Anotalo: "Matriz ejecutada bajo autorización batch".
+            Desde el 15/10/2026 va ESTRUCTURADA en la clave `matriz` del parte,
+            no como documento: la matriz es NARRATIVA —cómo puede darse el
+            partido—, no estadística. Por CADA equipo los tres escenarios con
+            las filas del skill:
+              ganar    tactica · pelotaParada · reloj · base
+              empatar  tactica · campo · dato
+              perder   gatillo · errorSistemico · psicologico · goleada
+            más `confirma` y `contradice` (un caso real de cada lado). SIN
+            porcentajes adentro: el número del 1X2 es tu estimación y va en
+            `pronostico.probabilidades` (y su texto en `pronostico.matriz`, que
+            se lee como «estimación propia»). Una fila que no sabés va vacía,
+            no inventada. La pelota parada y el gatillo del que pierde son las
+            filas que más se olvidan y las que más castigan (Roma–Madrid,
+            14/10: la vuelta salió de un tiro libre en el 85'). El «checklist de
+            9 puntos» y la «Ficha de Mecanismo» que cita el skill NO existen en
+            disco: no los cites como hechos.
   tde       Teorema del Echado. El skill normalmente pregunta por sus
             variables: P1a, F1 y F2 los tomás de GET /analisis/cowork/tde/{id}
             (ver punto 4); el resto buscalo en la web, cargá con fuente lo
@@ -1327,10 +1342,24 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
     "marcador": "2-1",
     "falsador": "si el visitante abre el marcador antes del 20', la lectura de bloque bajo queda fallada"
   },
+  "matriz": {
+    "a": {"ganar": {"tactica": "acumula por fuera y carga el segundo palo",
+                    "pelotaParada": "córner cerrado al primer palo",
+                    "reloj": "doble pivote desde el 70' si va arriba",
+                    "base": "Lago-Peñas 2014: el local gana por ataque posicional"},
+          "empatar": {"tactica": "bloque medio sin hundirse antes del 80'"},
+          "perder": {"gatillo": "gol del visitante antes del 20'",
+                     "errorSistemico": "lateral derecho a la espalda",
+                     "psicologico": "ansiedad de la tribuna sin gol en la primera hora",
+                     "goleada": "banda base 8-15 %"}},
+    "b": {"ganar": {"tactica": "bloque bajo y salida por el carril derecho rival"},
+          "perder": {"gatillo": "el bloque baja diez metros entre el 55' y el 70'"}},
+    "confirma": "el 2-0 de la fecha 5 con el mismo plan",
+    "contradice": "el 1-1 en casa contra un bloque bajo"
+  },
   "documentos": [
     {"id": "ensayo", "cuerpo": "## La lectura\n\nTexto…"},
     {"id": "dtp", "cuerpo": "…"},
-    {"id": "matriz", "cuerpo": "…"},
     {"id": "tde", "cuerpo": "…"}
   ],
   "pendientes": ["XI de los dos equipos",
@@ -1616,7 +1645,8 @@ Vas a cerrar los casos que quedaron abiertos. No analices nada nuevo.
      "mancha": "",
      "falsadorCumplido": false,
      "porLado": {
-       "a": {"veredicto": "acierto", "queP": "ganó por fuera, como se dijo", "leccion": ""},
+       "a": {"veredicto": "acierto", "queP": "ganó por fuera, como se dijo", "leccion": "",
+             "escenario": {"aparecio": "si", "que": "el segundo gol fue el córner al primer palo"}},
        "b": {"veredicto": "fallo",
              "queP": "aguantó el tramo final que se le daba por perdido",
              "leccion": "el bloque bajo entrenado sostiene los 90: no asumir vida útil corta sin dato",
@@ -1627,6 +1657,13 @@ Vas a cerrar los casos que quedaron abiertos. No analices nada nuevo.
                 "leccion": "con el favorito administrando la ventaja, el colapso no llegó"}]}
      }
    }
+
+SOBRE `escenario` (por lado, opcional) — la matriz es narrativa: qué escenario
+se jugó lo dice el marcador (`objetivo.matriz` del GET trae, por lado, el
+escenario y lo que habías escrito para él). Vos decís si eso escrito —la
+palanca para ganar, el gatillo del que perdió— fue lo que pasó: `si`,
+`parcial` o `no`, y `que` en una frase. No es acierto ni entra en ninguna
+tasa: es la materia de la autopsia, para que la próxima matriz aprenda.
 
 SOBRE `seleccion` — es el campo que decide si el caso sirve para calibrar:
   ciega            el partido salió de la agenda, se eligió sin saber nada.

@@ -2712,6 +2712,9 @@ class LadoVeredictoBody(BaseModel):
     reglaTocada: str = ""
     # las lecciones después de la primera: [{skill, reglaTocada, leccion, queP}]
     otrasLecciones: list = []
+    # ¿apareció lo que la matriz escribió para el escenario jugado?
+    # {aparecio: si|parcial|no, que: "…"} — observación, sin tasa
+    escenario: dict = {}
 
 
 class VeredictoBody(BaseModel):

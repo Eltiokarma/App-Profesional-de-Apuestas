@@ -262,6 +262,26 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     out["reventon"] = reventon_objetivo(fixture_id, fx, declarado)
     # ── la buena espina de la burbuja: la lectura del analista, contra el resultado
     out["espina"] = espina_objetivo((parte.get("lecturaSad") or {}).get("espina") or {}, real)
+    # ── la matriz: qué escenario se jugó y qué se había escrito para él ────
+    out["matriz"] = matriz_objetivo(parte.get("matriz") or {}, real)
+    return out
+
+
+_ESCENARIO_DE = {"gana": "ganar", "empata": "empatar", "pierde": "perder"}
+
+
+def matriz_objetivo(matriz: dict, real: str) -> dict:
+    """Por lado, el escenario que el marcador dice que se jugó (ganar · empatar
+    · perder) y lo que la matriz había escrito para ese escenario. No hay
+    acierto: la matriz es narrativa. Si lo escrito apareció lo juzga quien
+    cierra el caso (`porLado.*.escenario`)."""
+    out = {"nota": "la matriz es narrativa: el escenario lo da el marcador; si la palanca o el "
+                   "gatillo escrito fue el que apareció es juicio de la autopsia, sin tasa"}
+    for lado in ("a", "b"):
+        gana = (real == "local") if lado == "a" else (real == "visita")
+        esc = _ESCENARIO_DE["gana" if gana else ("empata" if real == "empate" else "pierde")]
+        escrito = ((matriz or {}).get(lado) or {}).get(esc) or {}
+        out[lado] = {"escenario": esc, "escrito": escrito, "declarado": bool(escrito)}
     return out
 
 

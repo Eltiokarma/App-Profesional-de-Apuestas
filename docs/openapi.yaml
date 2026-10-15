@@ -3264,6 +3264,7 @@ components:
             partidos calculados. Se arma AL LEER, no al depositar, para que una corrección
             de la ingesta se refleje sin re-depositar nada.
         pronostico: { $ref: '#/components/schemas/PronosticoParte' }
+        matriz: { $ref: '#/components/schemas/MatrizParte' }
         documentos: { type: array, items: { $ref: '#/components/schemas/DocumentoParte' } }
         coherencia:
           $ref: '#/components/schemas/CoherenciaParte'
@@ -3701,6 +3702,12 @@ components:
         leccion: { type: string }
         skill: { type: string, description: 'a qué skill le toca la lección' }
         reglaTocada: { type: string }
+        escenario:
+          type: object
+          description: '¿apareció lo que la matriz escribió para el escenario jugado (la palanca, el gatillo)? Observación para la autopsia, sin tasa'
+          properties:
+            aparecio: { type: string, enum: [si, parcial, no, ''] }
+            que: { type: string }
         otrasLecciones:
           type: array
           maxItems: 6
@@ -3881,6 +3888,44 @@ components:
             nota: { type: string }
             a: { $ref: '#/components/schemas/EspinaObservada' }
             b: { $ref: '#/components/schemas/EspinaObservada' }
+        matriz:
+          type: object
+          description: 'por lado, el escenario que dio el marcador (ganar · empatar · perder) y lo que la matriz había escrito para él. Sin acierto: la matriz es narrativa; si lo escrito apareció lo dice `porLado.*.escenario`'
+          properties:
+            nota: { type: string }
+            a: { $ref: '#/components/schemas/MatrizObservada' }
+            b: { $ref: '#/components/schemas/MatrizObservada' }
+    MatrizObservada:
+      type: object
+      properties:
+        escenario: { type: string, enum: [ganar, empatar, perder] }
+        escrito: { type: object, additionalProperties: { type: string } }
+        declarado: { type: boolean }
+    MatrizLado:
+      type: object
+      properties:
+        ganar:
+          type: object
+          properties: { tactica: { type: string }, pelotaParada: { type: string }, reloj: { type: string }, base: { type: string } }
+        empatar:
+          type: object
+          properties: { tactica: { type: string }, campo: { type: string }, dato: { type: string } }
+        perder:
+          type: object
+          properties: { gatillo: { type: string }, errorSistemico: { type: string }, psicologico: { type: string }, goleada: { type: string } }
+    MatrizParte:
+      type: object
+      description: >
+        Matriz de Escenarios v2.0 (15/10/2026): NARRATIVA, no estadística. Cómo gana,
+        empata y pierde CADA equipo con sus palancas. Sin probabilidades: el número va en
+        `pronostico.probabilidades` (una `probabilidad` acá se rechaza con motivo). Un
+        escenario como texto suelto entra en su primera fila; alias del skill aceptados
+        (`pelota_parada`, `gestionReloj`, `gana`/`empata`/`pierde`…).
+      properties:
+        a: { $ref: '#/components/schemas/MatrizLado' }
+        b: { $ref: '#/components/schemas/MatrizLado' }
+        confirma: { type: string, description: 'un caso real que confirma la lectura' }
+        contradice: { type: string, description: 'un caso real que la contradice' }
     EspinaLado:
       type: object
       properties:

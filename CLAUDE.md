@@ -261,6 +261,21 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   caso contaminado o en cuarentena que propone mover un peso. **No toca la
   población, ninguna métrica, el estado de la lección ni la cuarentena**: es
   el insumo de la fase D, no un juez.
+- **Los skills son narrativa, no modelos probabilísticos** (decisión del
+  usuario, 15/10/2026). EFE, TDE, DTP, la matriz y la lectura SAD aportan a
+  CÓMO puede darse el partido y al análisis posterior con IA (autopsias,
+  lecciones, antecedentes), no a un número que le gane al mercado: el 1X2 se
+  mide aparte (`pronostico.probabilidades`, Brier) y ningún skill se juzga por
+  él. La **matriz de escenarios** va estructurada en el parte (`matriz`: por
+  equipo, `ganar`/`empatar`/`perder` con las filas del skill v2.0, sin
+  porcentajes —una `probabilidad` adentro se rechaza—), se pinta en Lectura
+  (`MatrizEscenarios`) y el veredicto dice qué escenario jugó cada lado
+  (`objetivo.matriz`) y si lo escrito apareció (`porLado.*.escenario`), como
+  observación sin tasa. Auditoría del 15/10: en la corrida se había achatado a
+  tres filas con porcentajes y el porcentaje hacía de 1X2 oficial; sobre 36
+  casos ciegos esa estimación quedó a la par del mercado (Brier 0,589 contra
+  0,603, n chico). El «checklist de 9 puntos» y la «Ficha de Mecanismo» que
+  cita el skill no existen en disco.
 - Costo de la IA: `docs/efe-dtp/COSTO_IA.md`. Lo que está en nuestra base se
   calcula, no se le pregunta al modelo — y lo calculado no se le hace copiar a
   la salida. Los bloques calculados hoy: el mapa de rivales del EFE
