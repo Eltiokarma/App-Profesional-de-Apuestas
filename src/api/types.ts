@@ -1366,12 +1366,14 @@ export interface LadoVeredicto {
   escenario?: { aparecio: 'si' | 'parcial' | 'no' | ''; que: string }
 }
 
-/** Matriz de Escenarios v2.0: NARRATIVA, no estadística (el número va en `pronostico`). */
+/** Matriz de Escenarios v2.0: cómo puede darse el partido por equipo, con la
+ *  probabilidad estimada de cada escenario (analítica del skill; el 1X2
+ *  oficial es `pronostico.probabilidades` y el recibo avisa si no cuadran). */
 export type EscenarioMatriz = 'ganar' | 'empatar' | 'perder'
 export interface MatrizLado {
-  ganar?: { tactica?: string; pelotaParada?: string; reloj?: string; base?: string }
-  empatar?: { tactica?: string; campo?: string; dato?: string }
-  perder?: { gatillo?: string; errorSistemico?: string; psicologico?: string; goleada?: string }
+  ganar?: { tactica?: string; pelotaParada?: string; reloj?: string; base?: string; probabilidad?: number }
+  empatar?: { tactica?: string; campo?: string; dato?: string; probabilidad?: number }
+  perder?: { gatillo?: string; errorSistemico?: string; psicologico?: string; goleada?: string; probabilidad?: number }
 }
 export interface MatrizParte {
   a?: MatrizLado

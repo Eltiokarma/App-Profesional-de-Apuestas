@@ -72,7 +72,7 @@ se perdería.
 | reventón, después del partido | **nada**: `objetivo.reventon` reconstruye la burbuja declarada antes del partido y dice si ese partido la reventó (`docs/REVENTON.md` §11); observación, no veredicto | banda del veredicto (`↯ reventó` / `→ siguió`) y sección **Aprendizaje** (tasa por nivel de riesgo contra el backtest) |
 | `futbol-timeline` | `timelineEventos` (solo institucional) + narrativa | pestaña **Timeline** (fundida con los partidos calculados) |
 | `diagnostico-tactico` | los insumos **los calcula el backend** (`GET /analisis/cowork/dtp/{id}`: partido anterior con goles y posesión atada al marcador, XI de referencia con carriles, cambios, parejas nuevas, descanso y la **apertura previa** contra la que se cierra); vos escribís `dtp.bloques[]` —uno por equipo foco— con M1, M2 (incluidas las 6 respuestas del checklist del bloque rival: la CLASE la calcula el backend), M3, M6 y el cierre (M4, M5, mecanismo abierto); más `cadena.{a,b}.pronostico` y el documento `dtp` en prosa si querés | recibo (`dtp.claseBloqueRival`), la cadena de la página de **Equipo** y la pestaña **Documentos** |
-| matriz de escenarios | `matriz`: por equipo, `ganar` / `empatar` / `perder` con sus filas (narrativa, sin números) | pestaña **Lectura** («Matriz de escenarios»); el veredicto dice qué escenario jugó cada uno y si lo escrito apareció |
+| matriz de escenarios | `matriz`: por equipo, `ganar` / `empatar` / `perder` con sus filas y su probabilidad estimada | pestaña **Lectura** («Matriz de escenarios»); el veredicto dice qué escenario jugó cada uno y si lo escrito apareció |
 | ensayo | documento `ensayo` | pestaña **Documentos** |
 
 Dos matices que se ganan al mandar estructura en vez de prosa:
@@ -1183,17 +1183,18 @@ negritas, citas y tablas se pintan bien en la app.
   matriz    Matriz de Escenarios Tácticos v2.0. En sesión interactiva el skill
             pide confirmación; acá la autorización ya está dada por este prompt.
             Desde el 15/10/2026 va ESTRUCTURADA en la clave `matriz` del parte,
-            no como documento: la matriz es NARRATIVA —cómo puede darse el
-            partido—, no estadística. Por CADA equipo los tres escenarios con
-            las filas del skill:
-              ganar    tactica · pelotaParada · reloj · base
-              empatar  tactica · campo · dato
-              perder   gatillo · errorSistemico · psicologico · goleada
-            más `confirma` y `contradice` (un caso real de cada lado). SIN
-            porcentajes adentro: el número del 1X2 es tu estimación y va en
-            `pronostico.probabilidades` (y su texto en `pronostico.matriz`, que
-            se lee como «estimación propia»). Una fila que no sabés va vacía,
-            no inventada. La pelota parada y el gatillo del que pierde son las
+            no como documento: cómo puede darse el partido. Por CADA equipo
+            los tres escenarios con las filas del skill y su probabilidad:
+              ganar    probabilidad · tactica · pelotaParada · reloj · base
+              empatar  probabilidad · tactica · campo · dato
+              perder   probabilidad · gatillo · errorSistemico · psicologico · goleada
+            más `confirma` y `contradice` (un caso real de cada lado). La
+            `probabilidad` de cada escenario (0-100) es la «Probabilidad
+            estimada» del skill y TIENE QUE CUADRAR con tu 1X2 de
+            `pronostico.probabilidades` (ganar de a = local, empatar = empate,
+            perder de a = visita; al revés para b): si se aparta más de 5
+            puntos, el recibo lo avisa en `matrizVsPronostico` y lo explicás en
+            `notas` o lo corregís. Una fila que no sabés va vacía, no inventada. La pelota parada y el gatillo del que pierde son las
             filas que más se olvidan y las que más castigan (Roma–Madrid,
             14/10: la vuelta salió de un tiro libre en el 85'). El «checklist de
             9 puntos» y la «Ficha de Mecanismo» que cita el skill NO existen en
@@ -1343,12 +1344,12 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
     "falsador": "si el visitante abre el marcador antes del 20', la lectura de bloque bajo queda fallada"
   },
   "matriz": {
-    "a": {"ganar": {"tactica": "acumula por fuera y carga el segundo palo",
+    "a": {"ganar": {"probabilidad": 52, "tactica": "acumula por fuera y carga el segundo palo",
                     "pelotaParada": "córner cerrado al primer palo",
                     "reloj": "doble pivote desde el 70' si va arriba",
                     "base": "Lago-Peñas 2014: el local gana por ataque posicional"},
-          "empatar": {"tactica": "bloque medio sin hundirse antes del 80'"},
-          "perder": {"gatillo": "gol del visitante antes del 20'",
+          "empatar": {"probabilidad": 27, "tactica": "bloque medio sin hundirse antes del 80'"},
+          "perder": {"probabilidad": 21, "gatillo": "gol del visitante antes del 20'",
                      "errorSistemico": "lateral derecho a la espalda",
                      "psicologico": "ansiedad de la tribuna sin gol en la primera hora",
                      "goleada": "banda base 8-15 %"}},

@@ -322,9 +322,9 @@ export function parteCoworkDemo(fixtureId: number, equipoA: string, equipoB: str
     },
     matriz: {
       a: {
-        ganar: { tactica: 'acumular por fuera y cargar el segundo palo', pelotaParada: 'córner cerrado al primer palo con los dos centrales', reloj: 'doble pivote desde el 70′ si va arriba', base: 'Lago-Peñas 2014: el local gana más por ataque posicional' },
-        empatar: { tactica: 'bloque medio sin hundirse antes del 80′', dato: 'tres de sus últimos cinco empates fueron 1-1' },
-        perder: { gatillo: 'gol del visitante antes del 20′', errorSistemico: 'lateral derecho a la espalda en la transición', psicologico: 'ansiedad de la tribuna si no marca en la primera hora', goleada: 'banda base 8-15 %' },
+        ganar: { probabilidad: 54, tactica: 'acumular por fuera y cargar el segundo palo', pelotaParada: 'córner cerrado al primer palo con los dos centrales', reloj: 'doble pivote desde el 70′ si va arriba', base: 'Lago-Peñas 2014: el local gana más por ataque posicional' },
+        empatar: { probabilidad: 26, tactica: 'bloque medio sin hundirse antes del 80′', dato: 'tres de sus últimos cinco empates fueron 1-1' },
+        perder: { probabilidad: 20, gatillo: 'gol del visitante antes del 20′', errorSistemico: 'lateral derecho a la espalda en la transición', psicologico: 'ansiedad de la tribuna si no marca en la primera hora', goleada: 'banda base 8-15 %' },
       },
       b: {
         ganar: { tactica: 'bloque bajo y salida por el carril del lateral derecho rival', pelotaParada: 'segunda jugada de los tiros libres laterales' },

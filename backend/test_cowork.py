@@ -2623,16 +2623,22 @@ def main():
     from backend.analisis.parte import _matriz, filas_matriz
     from backend.analisis.veredicto import matriz_objetivo
     _rz = []
-    _m = _matriz({"a": {"gana": {"tactica central": "x", "pelota_parada": "y", "probabilidad": 40},
-                        "no perder": "z", "perder": {"error": "w", "inventada": "q"}},
+    _m = _matriz({"a": {"gana": {"tactica central": "x", "pelota_parada": "y", "probabilidad": "40 %"},
+                        "no perder": "z", "perder": {"error": "w", "inventada": "q", "prob": "mucha"}},
                   "b": "texto suelto", "confirma": "caso"}, _rz)
-    check("la matriz entra por equipo y escenario con las palabras del skill; una probabilidad, un "
-          "escenario y una fila inventados se rechazan con motivo",
-          _m == {"a": {"ganar": {"tactica": "x", "pelotaParada": "y"}, "perder": {"errorSistemico": "w"}},
-                 "confirma": "caso"}
-          and {r["donde"] for r in _rz} >= {"matriz.a.ganar.probabilidad", "matriz.a.no perder",
-                                            "matriz.a.perder.inventada", "matriz.b"}
-          and any("pronostico.probabilidades" in r["porque"] for r in _rz), (_m, _rz))
+    check("la matriz entra por equipo y escenario con las palabras del skill y su probabilidad estimada; "
+          "un escenario, una fila y una probabilidad que no es número se rechazan con motivo",
+          _m == {"a": {"ganar": {"tactica": "x", "pelotaParada": "y", "probabilidad": 40.0},
+                       "perder": {"errorSistemico": "w"}}, "confirma": "caso"}
+          and {r["donde"] for r in _rz} >= {"matriz.a.no perder", "matriz.a.perder.inventada",
+                                            "matriz.a.perder.prob", "matriz.b"}, (_m, _rz))
+    from backend.analisis.parte import matriz_vs_pronostico
+    _vs = matriz_vs_pronostico({"a": {"ganar": {"probabilidad": 52.0}, "perder": {"probabilidad": 30}},
+                                "b": {"empatar": {"probabilidad": 27}}},
+                               {"probabilidades": {"local": 52, "empate": 27, "visita": 21}})
+    check("la probabilidad de la matriz se compara con el 1X2 del pronóstico: solo AVISA lo que se aparta "
+          "más de 5 puntos (perder de a = visita)",
+          [x["donde"] for x in _vs] == ["matriz.a.perder.probabilidad"] and _vs[0]["pronostico"] == 21.0, _vs)
     check("las filas de la matriz se cuentan (recibo y `perdido`)", filas_matriz(_m) == 3, filas_matriz(_m))
     _mo = matriz_objetivo({"a": {"perder": {"gatillo": "g"}}, "b": {"ganar": {"tactica": "t"}}}, "visita")
     check("el veredicto dice qué escenario jugó cada equipo y qué se había escrito para él, sin acierto",

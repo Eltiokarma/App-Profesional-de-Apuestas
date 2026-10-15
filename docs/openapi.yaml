@@ -3906,19 +3906,20 @@ components:
       properties:
         ganar:
           type: object
-          properties: { tactica: { type: string }, pelotaParada: { type: string }, reloj: { type: string }, base: { type: string } }
+          properties: { tactica: { type: string }, pelotaParada: { type: string }, reloj: { type: string }, base: { type: string }, probabilidad: { type: number, description: 'probabilidad estimada del escenario, 0-100' } }
         empatar:
           type: object
-          properties: { tactica: { type: string }, campo: { type: string }, dato: { type: string } }
+          properties: { tactica: { type: string }, campo: { type: string }, dato: { type: string }, probabilidad: { type: number, description: 'probabilidad estimada del escenario, 0-100' } }
         perder:
           type: object
-          properties: { gatillo: { type: string }, errorSistemico: { type: string }, psicologico: { type: string }, goleada: { type: string } }
+          properties: { gatillo: { type: string }, errorSistemico: { type: string }, psicologico: { type: string }, goleada: { type: string }, probabilidad: { type: number, description: 'probabilidad estimada del escenario, 0-100' } }
     MatrizParte:
       type: object
       description: >
-        Matriz de Escenarios v2.0 (15/10/2026): NARRATIVA, no estadística. Cómo gana,
-        empata y pierde CADA equipo con sus palancas. Sin probabilidades: el número va en
-        `pronostico.probabilidades` (una `probabilidad` acá se rechaza con motivo). Un
+        Matriz de Escenarios v2.0 (15/10/2026): cómo gana, empata y pierde CADA equipo con
+        sus palancas, y la `probabilidad` estimada de cada escenario (32 · «32 %» · 0.32).
+        Si se aparta más de 5 puntos del 1X2 de `pronostico.probabilidades`, el recibo lo
+        avisa en `matrizVsPronostico` (no se rechaza). Un
         escenario como texto suelto entra en su primera fila; alias del skill aceptados
         (`pelota_parada`, `gestionReloj`, `gana`/`empata`/`pierde`…).
       properties:

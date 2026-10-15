@@ -85,10 +85,11 @@ commitea nada.
 >   de la condición de hoy (`familias.local` / `familias.visita`) y declaralo
 >   con `"guia": "condicion"`.
 > - **La matriz de escenarios va estructurada en `matriz`** (desde el 15/10):
->   por equipo, `ganar` / `empatar` / `perder` con las filas del skill, SIN
->   porcentajes (el número va en `pronostico.probabilidades`). Es narrativa:
->   cómo puede darse el partido. No olvides la pelota parada ni el gatillo del
->   que pierde. Ya no va como documento.
+>   por equipo, `ganar` / `empatar` / `perder` con las filas del skill y la
+>   `probabilidad` estimada de cada escenario, que tiene que cuadrar con tu 1X2
+>   de `pronostico.probabilidades` (el recibo avisa en `matrizVsPronostico`).
+>   Es cómo puede darse el partido: no olvides la pelota parada ni el gatillo
+>   del que pierde. Ya no va como documento.
 > - **Alertas: solo códigos que existen en los skills** (T.54, T.54-B,
 >   R-KT.2, GK-DOWNGRADE, FACTOR-X, G-BLOQUE, G-SORPRESA, COLAPSO EN
 >   CASCADA… los que nombra la rúbrica). Una observación que no tiene código

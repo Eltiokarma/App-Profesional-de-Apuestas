@@ -650,8 +650,8 @@ const FILA_TXT: Record<string, string> = {
   psicologico: 'Factor psicológico', goleada: 'Riesgo de goleada',
 }
 
-/** LA MATRIZ DE ESCENARIOS: cómo puede darse el partido para cada equipo.
- *  Es narrativa, no estadística: el número del 1X2 vive en el pronóstico. */
+/** LA MATRIZ DE ESCENARIOS: cómo puede darse el partido para cada equipo,
+ *  con la probabilidad estimada de cada escenario cuando el skill la da. */
 function MatrizEscenarios({ m, nombreDe, dosCol }: { m: MatrizParte; nombreDe: (l: 'a' | 'b') => string; dosCol: string }) {
   if (!m.a && !m.b) return null
   return (
@@ -667,12 +667,15 @@ function MatrizEscenarios({ m, nombreDe, dosCol }: { m: MatrizParte; nombreDe: (
               <div style={{ font: '700 12px var(--sans)', color: 'var(--t1)' }}>{nombreDe(lado)}</div>
               {!ml && <div style={{ font: '500 11px var(--sans)', color: 'var(--t3)' }}>sin escenarios declarados</div>}
               {ml && (['ganar', 'empatar', 'perder'] as const).map((esc) => {
-                const filas = ml[esc] as Record<string, string> | undefined
-                if (!filas || !Object.keys(filas).length) return null
+                const { probabilidad, ...filas } = (ml[esc] ?? {}) as Record<string, string> & { probabilidad?: number }
+                if (!Object.keys(filas).length && probabilidad == null) return null
                 const color = esc === 'ganar' ? 'var(--up)' : esc === 'perder' ? 'var(--down)' : 'var(--mark)'
                 return (
                   <div key={esc} style={{ padding: '8px 10px', borderRadius: 9, background: `color-mix(in oklch, ${color}, transparent 90%)`, borderLeft: `3px solid ${color}` }}>
-                    <div style={{ font: '700 9.5px var(--mono)', color, letterSpacing: '.4px', textTransform: 'uppercase', marginBottom: 4 }}>{ESCENARIO_TXT[esc]}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, font: '700 9.5px var(--mono)', color, letterSpacing: '.4px', textTransform: 'uppercase', marginBottom: 4 }}>
+                      <span>{ESCENARIO_TXT[esc]}</span>
+                      {probabilidad != null && <span style={{ fontVariantNumeric: 'tabular-nums' }}>{probabilidad} %</span>}
+                    </div>
                     {Object.entries(filas).map(([k, t]) => (
                       <div key={k} style={{ font: '500 11.5px var(--sans)', color: 'var(--t2)', lineHeight: 1.45 }}>
                         <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)' }}>{FILA_TXT[k] ?? k} · </span>{t}
@@ -1293,7 +1296,7 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
                 </div>
               )}
             </div>
-            {([['Motor de regresión', p.motor], ['Estimación propia', p.matriz], ['Mercado', p.mercado]] as const).map(([k, v]) => (
+            {([['Motor de regresión', p.motor], ['Matriz (estimación)', p.matriz], ['Mercado', p.mercado]] as const).map(([k, v]) => (
               <div key={k} style={{ display: 'flex', gap: 10, padding: '5px 0', borderBottom: '1px solid var(--line)' }}>
                 <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)', width: 128, flexShrink: 0, textTransform: 'uppercase', letterSpacing: '.3px' }}>{k}</span>
                 <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{v || '— no se pudo correr (y no se reemplaza por estimación)'}</span>
