@@ -11,7 +11,7 @@
 // razonable del impacto. Cuando el once aparece —de la ficha ya ingestada o
 // del pantallazo que el usuario pega aquí— el bloque se cierra al instante.
 import { useEffect, useMemo, useState } from 'react'
-import type {
+import type { MatrizParte,
   BloqueTde, DisponibilidadParte, DocumentoParte, EquipoParte, JugadorParte, ParteCoworkDTO, RamaF, Semaforo, TdeParte,
   VeredictoParte, ZonaF,
 } from '../api/types'
@@ -643,6 +643,58 @@ function PanelTde({ tde, nombreDe }: { tde: TdeParte; nombreDe: (l: 'a' | 'b') =
  *  ingesta; lo que está en prosa lo escribió Cowork. La distinción importa
  *  porque es lo que hace auditable el pronóstico: nadie puede ajustar el
  *  marcador a la explicación después. */
+const ESCENARIO_TXT = { ganar: 'Para ganar', empatar: 'Para empatar', perder: 'Si pierde' } as const
+const FILA_TXT: Record<string, string> = {
+  tactica: 'Táctica central', pelotaParada: 'Pelota parada', reloj: 'Gestión del reloj', base: 'Base',
+  campo: 'Condiciones de campo', dato: 'Dato', gatillo: 'Gatillo', errorSistemico: 'Error sistémico',
+  psicologico: 'Factor psicológico', goleada: 'Riesgo de goleada',
+}
+
+/** LA MATRIZ DE ESCENARIOS: cómo puede darse el partido para cada equipo.
+ *  Es narrativa, no estadística: el número del 1X2 vive en el pronóstico. */
+function MatrizEscenarios({ m, nombreDe, dosCol }: { m: MatrizParte; nombreDe: (l: 'a' | 'b') => string; dosCol: string }) {
+  if (!m.a && !m.b) return null
+  return (
+    <section style={{ padding: '14px 16px', borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+      <div style={{ font: '700 10px var(--mono)', color: 'var(--accent)', letterSpacing: '.6px', textTransform: 'uppercase', marginBottom: 9 }}>
+        Matriz de escenarios · cómo puede darse el partido
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: dosCol, gap: 12 }}>
+        {(['a', 'b'] as const).map((lado) => {
+          const ml = m[lado]
+          return (
+            <div key={lado} style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ font: '700 12px var(--sans)', color: 'var(--t1)' }}>{nombreDe(lado)}</div>
+              {!ml && <div style={{ font: '500 11px var(--sans)', color: 'var(--t3)' }}>sin escenarios declarados</div>}
+              {ml && (['ganar', 'empatar', 'perder'] as const).map((esc) => {
+                const filas = ml[esc] as Record<string, string> | undefined
+                if (!filas || !Object.keys(filas).length) return null
+                const color = esc === 'ganar' ? 'var(--up)' : esc === 'perder' ? 'var(--down)' : 'var(--mark)'
+                return (
+                  <div key={esc} style={{ padding: '8px 10px', borderRadius: 9, background: `color-mix(in oklch, ${color}, transparent 90%)`, borderLeft: `3px solid ${color}` }}>
+                    <div style={{ font: '700 9.5px var(--mono)', color, letterSpacing: '.4px', textTransform: 'uppercase', marginBottom: 4 }}>{ESCENARIO_TXT[esc]}</div>
+                    {Object.entries(filas).map(([k, t]) => (
+                      <div key={k} style={{ font: '500 11.5px var(--sans)', color: 'var(--t2)', lineHeight: 1.45 }}>
+                        <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)' }}>{FILA_TXT[k] ?? k} · </span>{t}
+                      </div>
+                    ))}
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })}
+      </div>
+      {(m.confirma || m.contradice) && (
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 10, font: '500 11px var(--sans)', color: 'var(--t2)' }}>
+          {m.confirma && <span><b style={{ color: 'var(--up)' }}>Confirma ·</b> {m.confirma}</span>}
+          {m.contradice && <span><b style={{ color: 'var(--down)' }}>Contradice ·</b> {m.contradice}</span>}
+        </div>
+      )}
+    </section>
+  )
+}
+
 function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' | 'b') => string }) {
   const [abierto, setAbierto] = useState(false)
   const o = v.objetivo
@@ -713,6 +765,18 @@ function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' 
             <span key={`esp-${lado}`} style={{ font: '600 11.5px var(--mono)', color: e.cumplida ? 'var(--up)' : 'var(--down)' }}
               title={o.espina?.nota}>
               {e.cumplida ? '✓' : '✗'} K{e.guia === 'condicion' ? (lado === 'a' ? ' local' : ' visita') : ''} {e.lectura} → fue {e.movimiento} · {nombreDe(lado)}
+            </span>
+          )
+        })}
+        {/* la matriz: qué escenario jugó cada uno y si lo escrito para él apareció */}
+        {(['a', 'b'] as const).map((lado) => {
+          const mo = o.matriz?.[lado]
+          if (!mo || !mo.declarado) return null
+          const ap = v.porLado[lado]?.escenario?.aparecio
+          return (
+            <span key={`mz-${lado}`} style={{ font: '600 11.5px var(--mono)', color: ap === 'si' ? 'var(--up)' : ap === 'no' ? 'var(--down)' : 'var(--t2)' }}
+              title={v.porLado[lado]?.escenario?.que || o.matriz?.nota}>
+              ▦ {ESCENARIO_TXT[mo.escenario].toLowerCase()}{ap ? ` · lo escrito ${ap === 'si' ? 'apareció' : ap === 'parcial' ? 'apareció en parte' : 'no apareció'}` : ''} · {nombreDe(lado)}
             </span>
           )
         })}
@@ -1211,6 +1275,8 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
             </section>
           )}
 
+          {parte.matriz && <MatrizEscenarios m={parte.matriz} nombreDe={nombreDe} dosCol={dosCol} />}
+
           <section style={{ padding: '14px 16px', borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
             <div style={{ font: '700 10px var(--mono)', color: 'var(--accent)', letterSpacing: '.6px', textTransform: 'uppercase', marginBottom: 9 }}>Pronóstico · tres fuentes declaradas</div>
             <div style={{ display: 'flex', gap: 10, marginBottom: 11, flexWrap: 'wrap' }}>
@@ -1227,7 +1293,7 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
                 </div>
               )}
             </div>
-            {([['Motor de regresión', p.motor], ['Matriz manual', p.matriz], ['Mercado', p.mercado]] as const).map(([k, v]) => (
+            {([['Motor de regresión', p.motor], ['Estimación propia', p.matriz], ['Mercado', p.mercado]] as const).map(([k, v]) => (
               <div key={k} style={{ display: 'flex', gap: 10, padding: '5px 0', borderBottom: '1px solid var(--line)' }}>
                 <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)', width: 128, flexShrink: 0, textTransform: 'uppercase', letterSpacing: '.3px' }}>{k}</span>
                 <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{v || '— no se pudo correr (y no se reemplaza por estimación)'}</span>

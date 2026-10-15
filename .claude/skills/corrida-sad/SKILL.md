@@ -84,6 +84,11 @@ commitea nada.
 >   mide es si acierta sola. Si el equipo es otro en casa que afuera, leé la K
 >   de la condición de hoy (`familias.local` / `familias.visita`) y declaralo
 >   con `"guia": "condicion"`.
+> - **La matriz de escenarios va estructurada en `matriz`** (desde el 15/10):
+>   por equipo, `ganar` / `empatar` / `perder` con las filas del skill, SIN
+>   porcentajes (el número va en `pronostico.probabilidades`). Es narrativa:
+>   cómo puede darse el partido. No olvides la pelota parada ni el gatillo del
+>   que pierde. Ya no va como documento.
 > - **Alertas: solo códigos que existen en los skills** (T.54, T.54-B,
 >   R-KT.2, GK-DOWNGRADE, FACTOR-X, G-BLOQUE, G-SORPRESA, COLAPSO EN
 >   CASCADA… los que nombra la rúbrica). Una observación que no tiene código
@@ -125,6 +130,10 @@ commitea nada.
 > primera en `leccion`, las demás en `otrasLecciones` (hasta 6). Una
 > confirmación de una regla también es lección («disciplina 44 declarada y
 > cumplida»): es lo que cuenta casos a favor.
+>
+> La matriz: `objetivo.matriz` del GET dice qué escenario jugó cada equipo y
+> qué se había escrito para él. Por lado, `escenario: {aparecio: si|parcial|no,
+> que}`: si la palanca o el gatillo escrito fue lo que pasó (sin tasa).
 >
 > `seleccion`: `ciega` si el partido salió de la agenda; `modoEvaluacion`:
 > `PRE` si terminó. Con duda entre ciega y post_resultado, es post_resultado.

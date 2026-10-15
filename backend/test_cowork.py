@@ -64,6 +64,16 @@ def _parte(fixture_id: int, nombre_a: str = "", nombre_b: str = "") -> dict:
         "pronostico": {"motor": "gap §5 a favor de A", "matriz": "55/25/20", "mercado": "1.85 / 3.4 / 4.2",
                        "probabilidades": {"local": 52, "empate": 26, "visita": 22},
                        "marcador": "2-1", "falsador": "si B abre el marcador antes del 20'"},
+        "matriz": {
+            "a": {"ganar": {"tactica": "presión alta los primeros 25'", "pelota_parada": "córner al primer palo",
+                            "gestionReloj": "doble pivote desde el 70'", "base": "Lago-Peñas 2014"},
+                  "empatar": "bloque medio sin hundirse antes del 80'",
+                  "perder": {"gatillo": "gol temprano de B", "errorSistemico": "lateral derecho a la espalda",
+                             "psicologico": "ansiedad local", "goleada": "banda base"}},
+            "b": {"gana": {"tactica": "transición por el carril de A"},
+                  "perder": {"gatillo": "roja temprana"}},
+            "confirma": "el 2-0 de la fecha 5", "contradice": "el 1-1 en su cancha",
+        },
         "lecturaSad": {
             "moduloOperativo": "Regresión al Nivel con gap a favor de A",
             "unXDos": {"texto": "A con ventaja estructural", "rangoAmpliado": True},
@@ -1508,7 +1518,8 @@ def main():
 
     r = c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto", json={
         "seleccion": "ciega", "modoEvaluacion": "PRE", "falsadorCumplido": False,
-        "porLado": {"a": {"veredicto": "acierto", "queP": "ganó como se dijo", "leccion": ""},
+        "porLado": {"a": {"veredicto": "acierto", "queP": "ganó como se dijo", "leccion": "",
+                          "escenario": {"aparecio": "sí", "que": "la presión de los primeros 25'"}},
                     "b": {"veredicto": "fallo", "queP": "no llegó por fuera",
                           "leccion": "el bloque bajo entrenado sostiene los 90",
                           "skill": "teorema-del-echado"}},
@@ -1516,6 +1527,17 @@ def main():
     check("el veredicto se acepta", r.status_code == 200, r.text[:300])
     v = r.json()
     check("sin salvedad, el campo viene vacío y no ausente", v["mancha"] == "", v.get("mancha"))
+    check("la autopsia dice si lo escrito para el escenario jugado apareció (observación, se guarda tal cual)",
+          v["porLado"]["a"].get("escenario") == {"aparecio": "si", "que": "la presión de los primeros 25'"}
+          and "escenario" not in v["porLado"]["b"], v["porLado"])
+    _pg = c.get(f"{A}/analisis/cowork/{pasado['id']}").json()
+    check("el parte devuelve la matriz estructurada por equipo",
+          (_pg.get("matriz") or {}).get("a", {}).get("ganar", {}).get("pelotaParada") == "córner al primer palo"
+          and _pg["matriz"]["b"]["ganar"] == {"tactica": "transición por el carril de A"}, _pg.get("matriz"))
+    check("y el objetivo trae, por lado, el escenario que dio el marcador",
+          set((v.get("objetivo") or {}).get("matriz", {})) >= {"a", "b", "nota"}
+          and v["objetivo"]["matriz"]["a"]["escenario"] in ("ganar", "empatar", "perder"),
+          (v.get("objetivo") or {}).get("matriz"))
     # ── EL MODO DE FALLO (Jev): sellado al cerrar, para el dossier ────────────
     check("el veredicto trae la etiqueta de Jev sellada (sin clave: simulada, sin modo)",
           v["modoFallo"] and v["modoFallo"]["simulado"] is True
@@ -2597,6 +2619,29 @@ def main():
           "5" in (tde_skill["liston"] or {}).get("semaforo", ""), (tde_skill["liston"] or {}).get("semaforo"))
 
     # ── el reventón en producción, contra el backtest (REVENTON.md §11) ─────
+    # ── la matriz de escenarios: narrativa por equipo, sin números ──────────
+    from backend.analisis.parte import _matriz, filas_matriz
+    from backend.analisis.veredicto import matriz_objetivo
+    _rz = []
+    _m = _matriz({"a": {"gana": {"tactica central": "x", "pelota_parada": "y", "probabilidad": 40},
+                        "no perder": "z", "perder": {"error": "w", "inventada": "q"}},
+                  "b": "texto suelto", "confirma": "caso"}, _rz)
+    check("la matriz entra por equipo y escenario con las palabras del skill; una probabilidad, un "
+          "escenario y una fila inventados se rechazan con motivo",
+          _m == {"a": {"ganar": {"tactica": "x", "pelotaParada": "y"}, "perder": {"errorSistemico": "w"}},
+                 "confirma": "caso"}
+          and {r["donde"] for r in _rz} >= {"matriz.a.ganar.probabilidad", "matriz.a.no perder",
+                                            "matriz.a.perder.inventada", "matriz.b"}
+          and any("pronostico.probabilidades" in r["porque"] for r in _rz), (_m, _rz))
+    check("las filas de la matriz se cuentan (recibo y `perdido`)", filas_matriz(_m) == 3, filas_matriz(_m))
+    _mo = matriz_objetivo({"a": {"perder": {"gatillo": "g"}}, "b": {"ganar": {"tactica": "t"}}}, "visita")
+    check("el veredicto dice qué escenario jugó cada equipo y qué se había escrito para él, sin acierto",
+          _mo["a"] == {"escenario": "perder", "escrito": {"gatillo": "g"}, "declarado": True}
+          and _mo["b"]["escenario"] == "ganar" and "acerto" not in _mo["a"], _mo)
+    _me = matriz_objetivo({"a": {"ganar": {"tactica": "t"}}}, "empate")
+    check("un escenario sin escribir viaja como no declarado", _me["a"]["escenario"] == "empatar"
+          and _me["a"]["declarado"] is False and _me["b"]["declarado"] is False, _me)
+
     # ── la buena espina de la burbuja: la lectura del analista, medida ──────
     from backend.analisis.parte import _espina
     from backend.analisis.veredicto import espina_objetivo

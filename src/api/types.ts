@@ -1362,6 +1362,23 @@ export interface LadoVeredicto {
   /** Las lecciones después de la primera: cada una es un item del inventario
    *  (clave `fixture:lado:2`, `:3`…) y hereda el veredicto del lado. */
   otrasLecciones?: { skill: string; reglaTocada: string; leccion: string; queP: string }[]
+  /** ¿Apareció lo que la matriz escribió para el escenario jugado? Observación, sin tasa. */
+  escenario?: { aparecio: 'si' | 'parcial' | 'no' | ''; que: string }
+}
+
+/** Matriz de Escenarios v2.0: NARRATIVA, no estadística (el número va en `pronostico`). */
+export type EscenarioMatriz = 'ganar' | 'empatar' | 'perder'
+export interface MatrizLado {
+  ganar?: { tactica?: string; pelotaParada?: string; reloj?: string; base?: string }
+  empatar?: { tactica?: string; campo?: string; dato?: string }
+  perder?: { gatillo?: string; errorSistemico?: string; psicologico?: string; goleada?: string }
+}
+export interface MatrizParte {
+  a?: MatrizLado
+  b?: MatrizLado
+  /** un caso real que confirma la lectura y uno que la contradice */
+  confirma?: string
+  contradice?: string
 }
 
 /** Lo que la base responde sola. Se recalcula al leer: no se sella. */
@@ -1418,6 +1435,8 @@ export interface VeredictoObjetivo {
   reventon?: { nota: string } & Partial<Record<'a' | 'b', ReventonObservado>>
   /** La espina declarada contra lo que hizo la K total del equipo. */
   espina?: { nota: string } & Partial<Record<'a' | 'b', EspinaObservada>>
+  /** El escenario que dio el marcador para cada lado y lo que la matriz había escrito para él. */
+  matriz?: { nota: string } & Partial<Record<'a' | 'b', { escenario: EscenarioMatriz; escrito: Record<string, string>; declarado: boolean }>>
 }
 
 export type LecturaEspina = 'positiva' | 'cero' | 'negativa' | 'neutra'
@@ -1685,6 +1704,8 @@ export interface ParteCoworkDTO {
     marcador: string
     falsador: string
   }
+  /** La matriz de escenarios por equipo (vacía en partes anteriores al 15/10/2026). */
+  matriz?: MatrizParte
   documentos: DocumentoParte[]
   pendientes: string[]
   /** Evaluación de coherencia (Jev) sellada al depositar; null en partes anteriores. */

@@ -320,6 +320,18 @@ export function parteCoworkDemo(fixtureId: number, equipoA: string, equipoB: str
       probabilidades: { local: 54, empate: 26, visita: 20 }, marcador: '2-1',
       falsador: 'si el visitante abre el marcador antes del minuto 20, la lectura de bloque bajo queda fallada.',
     },
+    matriz: {
+      a: {
+        ganar: { tactica: 'acumular por fuera y cargar el segundo palo', pelotaParada: 'córner cerrado al primer palo con los dos centrales', reloj: 'doble pivote desde el 70′ si va arriba', base: 'Lago-Peñas 2014: el local gana más por ataque posicional' },
+        empatar: { tactica: 'bloque medio sin hundirse antes del 80′', dato: 'tres de sus últimos cinco empates fueron 1-1' },
+        perder: { gatillo: 'gol del visitante antes del 20′', errorSistemico: 'lateral derecho a la espalda en la transición', psicologico: 'ansiedad de la tribuna si no marca en la primera hora', goleada: 'banda base 8-15 %' },
+      },
+      b: {
+        ganar: { tactica: 'bloque bajo y salida por el carril del lateral derecho rival', pelotaParada: 'segunda jugada de los tiros libres laterales' },
+        perder: { gatillo: 'el bloque baja diez metros entre el 55′ y el 70′', errorSistemico: 'sin respuesta a la adversidad con el interino' },
+      },
+      confirma: 'el 2-0 de la fecha 5 con el mismo plan', contradice: 'el 1-1 en casa contra un bloque bajo',
+    },
     documentos: [
       { id: 'ensayo', titulo: 'Cómo puede darse el partido', formato: 'md', cuerpo: '## La lectura\n\nEl local llega con el bloque intacto y el rival con un interino de dos meses. La pregunta no es quién es mejor, sino **cuánto aguanta** el planteo defensivo del visitante.\n\n- Primer tramo: el local acumula por fuera y el visitante se ordena.\n- Entre el 55′ y el 70′ aparece la grieta, cuando el bloque baja diez metros.\n\n> Modo demo: texto de muestra, sin fuentes reales.' },
       { id: 'tde', titulo: 'Teorema del Echado', formato: 'md', cuerpo: '**IE 58** · tipología: repliegue por agotamiento.\n\nVentana de riesgo: **75-90′**. Falsador: si el visitante mantiene la línea por encima de su propio área tras el 75′, el índice está mal calculado.' },
