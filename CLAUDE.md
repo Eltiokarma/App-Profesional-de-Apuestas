@@ -722,6 +722,40 @@ conversación se pierde en la siguiente.
    que usan los servicios de integridad—. Una remontada sola NO es señal: lo
    que se predice es el resultado final.
 
+15. **Cierre de la sesión del 14-15/10/2026** (PR #120 a #142). Hecho: el
+   backtest del reventón y del 1X2 limpios de fuga (deuda 13), la espina de la
+   burbuja con guía total o de la condición y su guía de movimiento calibrada
+   (REVENTON §14-14.1), la matriz estructurada por equipo con su probabilidad
+   por escenario, el reventón calculado con la K de la condición al lado de la
+   total, `DTP-REHACER` con varios sistemas y una carpeta por subagente en
+   `corrida-sad`. **Para revisar en la próxima sesión, en orden:**
+   - **Partes con la matriz nueva** (primeros: corrida del 15/10, 12:48 Lima):
+     que traigan los escenarios por equipo con sus filas y su probabilidad, si
+     el recibo avisó `matrizVsPronostico` y cómo se ve el cuadro en Lectura.
+   - **Espina**: primeros veredictos que la miden el 16/10 (06:52 Lima);
+     cuántos partes usaron `guia: condicion` y cuántos la total. Aprendizaje
+     compara recién con n ≥ 10 por lectura.
+   - **Reventón con la K de la condición**: que `reventonCalculado.*.condicion`
+     salga con número en partes como Boca–Vasco (1639863: total en 0 tras un
+     2-2, K local de Boca +18 y de visita de Vasco +6, las dos muy alto) y que
+     la guía de movimiento por condición aparezca en la tarjeta.
+   - **Fichas**: que la corrida de fichas complete las stats del 1549745
+     (Bucaramanga–Águilas, `capturada` con stats vacías: alineación y eventos
+     venían del ciclo en vivo); su falsador quedó sin evaluar y el veredicto
+     ya está cerrado. El once de Águilas trae a «Eduar Arízalas» titular sin
+     id (id negativo nuestro) y además entrando al 86': es dato de la API; si
+     se repite, marcar como anomalía al titular que también entra de cambio.
+   - **Skill `efe-dashboard`** (fuera del repo, del usuario): decidir si dice
+     que la matriz es narrativa con números y si se escriben o se quitan el
+     «checklist de 9 puntos» y la «Ficha de Mecanismo», que no existen.
+   - **Ideas propuestas, NO pedidas**: medir en Aprendizaje la estimación
+     propia contra el mercado y el motor (las cuotas ya están en la base);
+     juntar el marcador exacto (19 de 46 partes dieron 1-1, 6 exactos); espina
+     de goles (las K de goles siguen fuera del reventón por decisión).
+   - **Del usuario, sin cambios**: levantar con 🔑 las cuarentenas falsas,
+     abrir la revisión del TDE, decidir Jev y rotar el token acotado al salir
+     de prueba (deuda 11).
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
