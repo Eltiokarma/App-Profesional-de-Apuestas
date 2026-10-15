@@ -1468,7 +1468,11 @@ def _documento(d, rechazos: list | None = None, donde: str = "documentos") -> di
 # tabla de tres filas con porcentajes, y ese porcentaje terminó haciendo de 1X2
 # oficial. Ahora el número vive en `pronostico.probabilidades` y la matriz es
 # estructurada, por equipo y por escenario, con las filas que pide el skill
-# (efe-dashboard, PASO 6, v2.0). Sin probabilidades adentro: se rechazan.
+# (efe-dashboard, PASO 6, v2.0), incluida su «Probabilidad estimada» por
+# escenario (el usuario, 15/10: las analíticas con número se quedan). Esa
+# probabilidad es analítica del skill, no el 1X2 oficial: si no cuadra con
+# `pronostico.probabilidades` el recibo lo AVISA (`matrizVsPronostico`), no la
+# rechaza.
 ESCENARIOS_MATRIZ = {
     "ganar": ("tactica", "pelotaParada", "reloj", "base"),
     "empatar": ("tactica", "campo", "dato"),
@@ -1534,10 +1538,13 @@ def _matriz(x, rechazos: list) -> dict:
             fo = {}
             for k_in, t in filas.items():
                 if _txt(k_in).lower().startswith("prob"):
-                    rechazos.append({"donde": f"matriz.{lado}.{esc}.{k_in}",
-                                     "porque": "la matriz es narrativa: el número va en "
-                                               "`pronostico.probabilidades`, no acá",
-                                     "esperado": ", ".join(ESCENARIOS_MATRIZ[esc])})
+                    pr = _prob_matriz(t)
+                    if pr is None:
+                        rechazos.append({"donde": f"matriz.{lado}.{esc}.{k_in}",
+                                         "porque": f"«{t}» no es una probabilidad",
+                                         "esperado": "un número de 0 a 100 (32, «32 %» o 0.32)"})
+                    else:
+                        fo["probabilidad"] = pr
                     continue
                 k = _fila_matriz(_txt(k_in), esc)
                 if k not in ESCENARIOS_MATRIZ[esc]:
@@ -1557,9 +1564,50 @@ def _matriz(x, rechazos: list) -> dict:
     return out
 
 
+def _prob_matriz(v) -> float | None:
+    """32 · «32 %» · 0.32 → 32.0; lo que no es número, None."""
+    if isinstance(v, str):
+        v = v.replace("%", "").replace(",", ".").strip()
+    try:
+        n = float(v)
+    except (TypeError, ValueError):
+        return None
+    if 0 < n <= 1:
+        n *= 100
+    return round(n, 1) if 0 <= n <= 100 else None
+
+
 def filas_matriz(m: dict) -> int:
     """Cuántas filas declaradas trae la matriz (para el recibo y `perdido`)."""
-    return sum(len(f) for l in LADOS for f in ((m or {}).get(l) or {}).values())
+    return sum(sum(1 for k in f if k != "probabilidad")
+               for l in LADOS for f in ((m or {}).get(l) or {}).values())
+
+
+# a qué resultado del 1X2 corresponde cada escenario de cada lado
+_ESCENARIO_A_1X2 = {("a", "ganar"): "local", ("a", "empatar"): "empate", ("a", "perder"): "visita",
+                    ("b", "ganar"): "visita", ("b", "empatar"): "empate", ("b", "perder"): "local"}
+MATRIZ_TOLERANCIA = 5.0
+
+
+def matriz_vs_pronostico(m: dict, pron: dict) -> list[dict]:
+    """Las probabilidades de la matriz que no cuadran con el 1X2 del pronóstico
+    (más de 5 puntos). Es un aviso: las dos son analítica del mismo parte y una
+    diferencia puede ser a propósito, pero tiene que verse."""
+    probs = (pron or {}).get("probabilidades") or {}
+    if not sum(probs.values()):
+        return []
+    fuera = []
+    for (lado, esc), res in _ESCENARIO_A_1X2.items():
+        pm = (((m or {}).get(lado) or {}).get(esc) or {}).get("probabilidad")
+        if pm is None:
+            continue
+        pp = float(probs.get(res) or 0)
+        if abs(pm - pp) > MATRIZ_TOLERANCIA:
+            fuera.append({"donde": f"matriz.{lado}.{esc}.probabilidad", "matriz": pm,
+                          "pronostico": pp, "resultado": res,
+                          "nota": f"la matriz dice {pm:g} % y el 1X2 del pronóstico {pp:g} %: "
+                                  "si es a propósito, decí por qué en las notas"})
+    return fuera
 
 
 def normalizar_parte(payload: dict) -> dict:
@@ -1879,6 +1927,7 @@ def guardar(payload: dict) -> dict:
         "jugadores": {l: len(parte["equipos"][l]["plantel"]) for l in LADOS},
         "documentos": [d["id"] for d in parte["documentos"]],
         "filasMatriz": filas_matriz(parte.get("matriz") or {}),
+        "matrizVsPronostico": matriz_vs_pronostico(parte.get("matriz") or {}, parte.get("pronostico") or {}),
         "alertas": len(parte["alertas"]),
         "discrepancias": discrepancias,
         "xiResuelto": bool(previo and previo["xi_json"]),
@@ -3300,9 +3349,11 @@ def contrato() -> dict:
             "forma": '{"a": {"ganar": {…}, "empatar": {…}, "perder": {…}}, "b": {…}, '
                      '"confirma": "…", "contradice": "…"}',
             "filas": {k: list(v) for k, v in ESCENARIOS_MATRIZ.items()},
-            "nota": "NARRATIVA, no estadística: cómo gana, empata y pierde CADA equipo, con sus "
-                    "palancas (Matriz de Escenarios v2.0). Sin probabilidades adentro: el número va "
-                    "en `pronostico.probabilidades`. `confirma`/`contradice`: un caso real de cada lado",
+            "nota": "cómo gana, empata y pierde CADA equipo, con sus palancas (Matriz de Escenarios "
+                    "v2.0), y la `probabilidad` estimada de cada escenario (0-100) como pide el skill. "
+                    "Tiene que cuadrar con `pronostico.probabilidades` (ganar de a = local, empatar = "
+                    "empate, perder de a = visita…): si se aparta más de 5 puntos el recibo lo avisa en "
+                    "`matrizVsPronostico`. `confirma`/`contradice`: un caso real de cada lado",
         },
         "lecturaSad": {
             "claves": ["moduloOperativo", "unXDos", "contextoEmocional", "datoEstructural", "paradoja", "reventon",
