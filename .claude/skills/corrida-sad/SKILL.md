@@ -25,7 +25,12 @@ escribe el parte, hoy vos). Esta guía dice cómo correrlo desde Code.
 
 Hora: `TZ=America/Lima date` (la referencia del proyecto es Lima). Archivos de
 trabajo en el scratchpad de la sesión, nunca en el repo: esta corrida NO
-commitea nada.
+commitea nada. **Una carpeta por subagente** (`<scratchpad>/<fixtureId>/`),
+y se lo decís en el encargo: los subagentes corren en paralelo y, con la misma
+carpeta, uno leía el JSON que el otro acababa de escribir (15/10/2026: el de
+Boca–Vasco recibió el veredicto y la ficha de Bucaramanga–Águilas en sus dos
+primeras consultas). Nunca un nombre de archivo fijo como `ficha.json` fuera
+de esa carpeta.
 
 ## Modo `partes` (antes del partido)
 
@@ -50,7 +55,9 @@ commitea nada.
 
 ### Encargo de un partido (copiar entero al subagente)
 
-> Sos el analista SAD de UN partido, en modo batch desatendido. Nadie te va
+> Sos el analista SAD de UN partido, en modo batch desatendido. Tus archivos
+> de trabajo van SOLO en `<scratchpad>/<fixtureId>/` (otros subagentes corren
+> en paralelo: no uses otra carpeta ni nombres de archivo compartidos). Nadie te va
 > a contestar: toda duda se declara en el parte, nunca se inventa.
 >
 > - Leé `docs/COWORK.md` desde «# PROMPT COWORK — SAD BATCH NOCTURNO» hasta
@@ -116,7 +123,8 @@ commitea nada.
    veredicto. Si no hay, decilo en una línea y terminá.
 2. Un subagente por partido, en paralelo, con este encargo:
 
-> Cerrá el caso del fixture {id} con el prompt «# PROMPT CORTO — "VALIDAR LO
+> Tus archivos de trabajo van SOLO en `<scratchpad>/{id}/` (otros subagentes
+> corren en paralelo). Cerrá el caso del fixture {id} con el prompt «# PROMPT CORTO — "VALIDAR LO
 > DE AYER"» de `docs/COWORK.md` (leelo entero). Lo objetivo (marcador, 1X2,
 > Brier, ventana del TDE, rama de la reasignación, reventón) lo calcula la
 > app: leelo de `GET $B/analisis/cowork/{id}/veredicto` y de la ficha
@@ -159,6 +167,7 @@ nuestras probabilidades, no de la casa.
    quien te disparó), mezclando los dos tipos si los hay.
 2. Un subagente por caso, en paralelo, con este encargo:
 
+> Tus archivos de trabajo van SOLO en `<scratchpad>/{fixtureId}-{equipoId}/`.
 > Estudiá el reventón del equipo {equipoId} en el fixture {fixtureId}
 > ({partido}, {fecha}): {tipo}, racha de {partidos} partidos, K pico {kPico}.
 > Credenciales en `$SAD_API_BASE` / `$SAD_TOKEN_COWORK` (nunca las imprimas).

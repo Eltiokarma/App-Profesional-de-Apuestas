@@ -1266,6 +1266,15 @@ export interface ReventonLadoDTO {
   /** La alerta de extremo de la familia total: si está activa, el parte trae
    *  además la alerta K-EXTREMO y Cowork no puede saltársela. */
   extremo: ExtremoBurbujaDTO | null
+  /** La K de la condición en que juega hoy (local para a, visita para b): la
+   *  que lee una espina con `guia: condicion`. */
+  condicion?: {
+    familia: 'local' | 'visita'
+    actual: FamiliaBurbujaDTO['actual']
+    riesgo: RiesgoReventonDTO | null
+    rival: FamiliaBurbujaDTO['rival']
+    extremo: ExtremoBurbujaDTO | null
+  }
   estabilidad: EstabilidadEquipoDTO['grado']
   partidos: number
   aviso: string

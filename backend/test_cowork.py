@@ -1313,6 +1313,9 @@ def main():
     check("el reventón se CALCULA al leer, uno por lado, con la familia total",
           rc and set(rc) == {"a", "b"} and all("riesgo" in rc[l] and "actual" in rc[l] and "rival" in rc[l]
                                                 and "error" not in rc[l] for l in ("a", "b")), rc)
+    check("y al lado la K de la condición de hoy (local para a, visita para b) con su riesgo",
+          rc["a"].get("condicion", {}).get("familia") == "local" and rc["b"].get("condicion", {}).get("familia") == "visita"
+          and all({"actual", "riesgo", "rival", "extremo"} <= set(rc[l]["condicion"]) for l in ("a", "b")), rc)
     check("cada lado trae la estabilidad y el aviso de que es guía, no probabilidad",
           all(rc[l]["estabilidad"] in ("estable", "en transición", "inestable", "sin dato")
               and "no probabilidad" in rc[l]["aviso"] for l in ("a", "b")), rc)
@@ -2515,6 +2518,13 @@ def main():
         "xiReferencia": "Arquero; Uno, Dos, Tres; Cuatro, Cinco, Seis, Siete, Ocho; Nueve, Diez"}}}]}
     c.post(f"{A}/analisis/cowork", json=p_reh)
     g_reh = c.get(f"{A}/analisis/cowork/{con_ficha}").json()
+    from backend.analisis.dtp_cowork import rehacer as _rehacer
+    _alt = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-2-3-1 / 4-3-3"}}},
+                    {"a": {"formacion": "4-3-3", "titulares": []}})
+    _no = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-2-3-1 / 4-3-3"}}},
+                   {"a": {"formacion": "3-5-2", "titulares": []}})
+    check("una apertura con dos sistemas («4-2-3-1 / 4-3-3») no pide rehacer si salió con cualquiera; "
+          "con otro, sí", _alt["rehacer"] is False and _no["rehacer"] is True, (_alt, _no))
     ce = g_reh["dtp"]["bloques"][0]["calculado"]["contraElOnce"]
     check("con el once oficial distinto, el bloque del DTP queda a rehacer (sistema y once)",
           ce["rehacer"] is True and ce["sistemaOficial"] == _form and len(ce["motivos"]) == 2

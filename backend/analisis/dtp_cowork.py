@@ -511,6 +511,13 @@ def _cifras_sistema(texto: str) -> str:
     return re.sub(r"\D", "", m.group(0)) if m else ""
 
 
+def _sistemas(texto: str) -> set[str]:
+    """TODOS los sistemas que nombra la apertura: «4-2-3-1 / 4-3-3» son dos
+    opciones declaradas, y salir con cualquiera de ellas no contradice nada
+    (Boca–Vasco, 15/10/2026: el aviso DTP-REHACER salía falso)."""
+    return {re.sub(r"\D", "", m) for m in re.findall(r"\d(?:\s*[-–]\s*\d){2,4}", texto or "")}
+
+
 def _plano(t: str) -> str:
     t = unicodedata.normalize("NFKD", t or "").encode("ascii", "ignore").decode().lower()
     return re.sub(r"[^a-z ]+", " ", t)
@@ -549,8 +556,8 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
         return None
     m1 = (bloque.get("apertura") or {}).get("m1") or {}
     motivos = []
-    decl, real = _cifras_sistema(m1.get("sistema") or ""), _cifras_sistema(of.get("formacion") or "")
-    if decl and real and decl != real:
+    decl, real = _sistemas(m1.get("sistema") or ""), _cifras_sistema(of.get("formacion") or "")
+    if decl and real and real not in decl:
         motivos.append(f"sistema: la apertura dice {m1.get('sistema')!r} y salió {of['formacion']}")
     ref = _plano(m1.get("xiReferencia") or "")
     ausentes = []
