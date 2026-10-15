@@ -1029,7 +1029,11 @@ Escribís vos (es juicio, no se puede calcular):
   juzga igual —ganar hace crecer las dos K—, pero Aprendizaje mide cada guía
   aparte, y eso dirá si para leer a un equipo conviene su K de local/visita.
   Usá `condicion` cuando la diferencia se VE en la tarjeta (rachas de local
-  largas y de visita cortas, o al revés), no por defecto. Ejemplo:
+  largas y de visita cortas, o al revés), no por defecto. La guía de
+  movimiento de la familia de la condición viaja en su `riesgo.movimiento`
+  (REVENTON §14.1) y es distinta de la total: con riesgo bajo, una racha
+  ganadora de LOCAL sigue el 63 % de las veces (la total, 54 %) y una de
+  VISITA el 47 %; la perdedora de visita sigue el 61 %, la de local el 45 %. Ejemplo:
   `"a": {"lectura": "positiva", "guia": "condicion", "porque": "de local no
   pierde hace 9 y sus burbujas de local se cortan empatando"}`.
   Escribí UNA línea por equipo en `lecturaSad.reventon`, por ejemplo:

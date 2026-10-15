@@ -105,8 +105,32 @@ MOVIMIENTO_BACKTEST = {
 }
 
 
+# Lo mismo para las K de la condición, en su próximo partido de esa condición
+# (backtest --calibrar del 15/10/2026, padrón): la asimetría que el usuario ve
+# en la cancha está en los números. La burbuja + DE LOCAL aguanta más que la
+# total (sigue 63 % con riesgo bajo, contra 54 %) y la + DE VISITA menos (47 %);
+# la − de visita es la que más se sostiene (61 %: el que pierde afuera sigue
+# perdiendo afuera) y la − de local la que más se corta. Guía para la espina
+# leída con la K de la condición (`guia: condicion`), no peso.
+MOVIMIENTO_CONDICION = {
+    "local": {
+        "+": {"bajo": (0.627, 0.219, 0.154), "medio": (0.500, 0.262, 0.238),
+              "alto": (0.426, 0.275, 0.299), "muy alto": (0.346, 0.288, 0.366)},
+        "-": {"bajo": (0.454, 0.266, 0.280), "medio": (0.346, 0.292, 0.363),
+              "alto": (0.267, 0.270, 0.463), "muy alto": (0.214, 0.255, 0.530)},
+    },
+    "visita": {
+        "+": {"bajo": (0.468, 0.261, 0.272), "medio": (0.331, 0.289, 0.379),
+              "alto": (0.273, 0.271, 0.456), "muy alto": (0.197, 0.256, 0.546)},
+        "-": {"bajo": (0.607, 0.227, 0.166), "medio": (0.509, 0.257, 0.234),
+              "alto": (0.418, 0.285, 0.297), "muy alto": (0.355, 0.276, 0.370)},
+    },
+}
+
+
 def _movimiento_esperado(familia: str, signo: str, nivel: str) -> dict | None:
-    m = MOVIMIENTO_BACKTEST.get(signo, {}).get(nivel) if familia == "total" else None
+    tabla = MOVIMIENTO_BACKTEST if familia == "total" else MOVIMIENTO_CONDICION.get(familia, {})
+    m = tabla.get(signo, {}).get(nivel)
     return None if not m else {"sigue": m[0], "cero": m[1], "cambio": m[2]}
 
 AVISO = ("Guía, no probabilidad: compara la burbuja abierta con lo que este equipo aguantó "
@@ -597,8 +621,9 @@ def _analizar_familia(filas: list[dict], familia: str, proximo: dict | None, est
         "motivos": motivos,
         "confianza": conf,
         "confianzaMotivos": conf_motivos,
-        # la guía calibrada de adónde va la K con este riesgo (solo familia total)
-        "movimiento": _movimiento_esperado(familia, signo, nivel),
+        # la guía calibrada de adónde va la K con este riesgo; una familia que
+        # no se mueve en el próximo (otra condición) no tiene adónde ir
+        "movimiento": None if aplica is False else _movimiento_esperado(familia, signo, nivel),
     }
     return out
 

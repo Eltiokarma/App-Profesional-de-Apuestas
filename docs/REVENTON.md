@@ -800,3 +800,26 @@ reventón dice si la burbuja se corta; esto dice CÓMO:
   veredicto la compara con lo que hizo la K y Aprendizaje mide cada lectura
   contra la frecuencia de ese movimiento. No es un número del 1X2: es la
   lectura por equipo, y se mide como tal.
+### 14.1 Las K de la condición (15/10/2026, `--calibrar`, padrón)
+
+La misma guía para la K local (en el próximo partido de local) y la de visita
+(en el próximo de visita). Viaja en `riesgo.movimiento` de `familias.local` /
+`familias.visita` cuando esa familia se mueve en el próximo partido (si no, `null`),
+y es la que acompaña a una espina con `guia: condicion`.
+
+| familia · signo | bajo | medio | alto | muy alto |
+|---|---|---|---|---|
+| local + (n 26.698) | 63 · 22 · 15 | 50 · 26 · 24 | 43 · 28 · 30 | 35 · 29 · 37 |
+| local − (n 16.506) | 45 · 27 · 28 | 35 · 29 · 36 | 27 · 27 · 46 | 21 · 26 · 53 |
+| visita + (n 17.993) | 47 · 26 · 27 | 33 · 29 · 38 | 27 · 27 · 46 | 20 · 26 · 55 |
+| visita − (n 25.080) | 61 · 23 · 17 | 51 · 26 · 23 | 42 · 29 · 30 | 36 · 28 · 37 |
+
+(sigue · a cero · al otro signo, en %). La asimetría local/visita que se ve en la
+cancha está en los números: con el mismo riesgo, la racha ganadora DE LOCAL
+aguanta bastante más que la total (63 % contra 54 % con riesgo bajo) y la DE
+VISITA bastante menos (47 %); la racha perdedora de visita es la que más se
+sostiene y la de local la que más se corta. «A cero» sigue en 22-29 %: el
+empate no depende de la burbuja. Ojo con leerla como ventaja sobre el 1X2: el
+motor ya trae la localía en el nivel (§13.4); esto es la guía para LEER a un
+equipo por condición, y Aprendizaje (`acreditables.espina.porGuia`) dirá si la
+lectura con la K de la condición acierta más que con la total.
