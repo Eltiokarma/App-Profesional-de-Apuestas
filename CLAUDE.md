@@ -681,6 +681,13 @@ conversación se pierde en la siguiente.
    se le cortan al equipo (`historial.*.termina`: a cero o al otro signo) y
    el backtest da la guía calibrada por signo y riesgo (`movimiento`,
    REVENTON §14). Una lectura fuera de las cuatro se rechaza con motivo.
+   **La espina puede leerse con la K de la condición** (15/10/2026, pedido del
+   usuario: hay equipos que en casa ganan siempre y afuera no): `guia: total |
+   condicion` por lado (la K local si juega de local, la de visita si es
+   visitante); el movimiento se juzga con el mismo marcador y Aprendizaje mide
+   cada guía aparte (`acreditables.espina.porGuia`). La guía de movimiento por
+   condición sale del backtest (`movimientoCondicion` en `--calibrar`); hasta
+   correrlo, `riesgo.movimiento` de las familias local/visita viaja `null`.
 
 ## Siguientes pasos (en orden)
 

@@ -1422,13 +1422,19 @@ export interface VeredictoObjetivo {
 
 export type LecturaEspina = 'positiva' | 'cero' | 'negativa' | 'neutra'
 
+/** Qué K guió la espina: la total, o la de la condición en que juega hoy
+ *  (la local si es local, la de visita si es visitante). */
+export type GuiaEspina = 'total' | 'condicion'
+
 export interface EspinaLado {
   lectura: LecturaEspina
+  guia?: GuiaEspina
   porque: string
 }
 
 export interface EspinaObservada {
   lectura: LecturaEspina | null
+  guia?: GuiaEspina
   porque?: string
   resultado: 'gana' | 'empata' | 'pierde' | null
   /** adónde fue la K total: positiva (ganó) · cero (empató) · negativa (perdió) */
@@ -1454,6 +1460,8 @@ export interface EspinaMetricas {
   lectura: 'acierta más que la frecuencia' | 'no supera la frecuencia todavía' | 'sin n'
   nMinimo: number
   nota: string
+  /** la misma cuenta por guía, cada una contra la frecuencia de SUS lados */
+  porGuia?: Record<GuiaEspina, Omit<EspinaMetricas, 'porGuia'>>
 }
 
 export interface ReventonObservado {

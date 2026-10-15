@@ -273,7 +273,9 @@ def espina_objetivo(espina: dict, real: str) -> dict:
     negativa) y adónde fue. Después de un partido la K total es positiva si el
     equipo ganó, 0 si empató y negativa si perdió (MOTOR_SAD_EXTRACCION §3.3:
     la victoria suma o arranca k⁺, el empate resetea las dos, la derrota abre
-    k⁻), así que se comprueba con el marcador. `neutra` no se juzga."""
+    k⁻), así que se comprueba con el marcador. `neutra` no se juzga. La K de la
+    condición (`guia: condicion`) se mueve en la misma dirección: el marcador
+    la comprueba igual."""
     out = {"nota": "positiva = la K creció o arrancó (ganó) · cero = se reinició (empató) · negativa = "
                    "perdió · neutra no se juzga. Lo que mide si la lectura sirve es la tasa en las "
                    "lecciones contra la frecuencia de cada movimiento, no un caso suelto"}
@@ -286,7 +288,8 @@ def espina_objetivo(espina: dict, real: str) -> dict:
         gana = (real == "local") if lado == "a" else (real == "visita")
         resultado = "gana" if gana else ("empata" if real == "empate" else "pierde")
         movimiento = _MOVIMIENTO_DE[resultado]
-        out[lado] = {"lectura": lectura, "porque": e.get("porque") or "", "resultado": resultado,
+        out[lado] = {"lectura": lectura, "guia": e.get("guia") or "total",
+                     "porque": e.get("porque") or "", "resultado": resultado,
                      "movimiento": movimiento,
                      "cumplida": None if lectura == "neutra" else lectura == movimiento}
     return out

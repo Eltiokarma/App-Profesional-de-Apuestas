@@ -614,6 +614,14 @@ ESPINAS = ("positiva", "cero", "negativa", "neutra")
 # las palabras del usuario también entran: «crece», «se reinicia», «se va a negativo»
 _ESPINA_ALIAS = {"crece": "positiva", "sube": "positiva", "reinicia": "cero", "se reinicia": "cero",
                  "baja": "negativa", "negativo": "negativa", "positivo": "positiva"}
+# qué K guió la lectura: la total o la de la condición en que juega HOY (la
+# local si es local, la de visita si es visitante). Pedido del usuario
+# (15/10/2026): hay equipos que en casa ganan siempre y afuera no, y otros al
+# revés; para esos la burbuja que cuenta es la de la condición
+GUIAS = ("total", "condicion")
+_GUIA_ALIAS = {"condición": "condicion", "local": "condicion", "visita": "condicion",
+               "visitante": "condicion", "k local": "condicion", "k visita": "condicion",
+               "general": "total", "k total": "total"}
 
 
 def _espina(x, rechazos: list) -> dict:
@@ -626,11 +634,17 @@ def _espina(x, rechazos: list) -> dict:
     gana), `cero` (se reinicia: empata), `negativa` (pierde) o `neutra` (la
     historia no dice nada), con su porqué. El veredicto lo compara con lo que
     hizo la K (`objetivo.espina`) y las lecciones dicen si la lectura acierta
-    más que la frecuencia de cada movimiento."""
+    más que la frecuencia de cada movimiento.
+
+    `guia` dice qué K guió la lectura: `total` (por defecto) o `condicion` (la
+    K local si el equipo juega de local, la de visita si es visitante: la
+    burbuja que solo se mueve en esa condición, con su tope y sus reventones).
+    El movimiento es el MISMO —ganar hace crecer las dos—; lo que cambia es la
+    historia con que se lee, y las lecciones miden cada guía por separado."""
     if not x:
         return {}
     x = _dict(x, rechazos, "lecturaSad.espina",
-              '{"a": {"lectura": "positiva|cero|negativa|neutra", "porque": "…"}, "b": {…}}')
+              '{"a": {"lectura": "positiva|cero|negativa|neutra", "guia": "total|condicion", "porque": "…"}, "b": {…}}')
     out = {}
     for lado in ("a", "b"):
         v = x.get(lado)
@@ -649,7 +663,14 @@ def _espina(x, rechazos: list) -> dict:
                              "porque": f"«{lectura}» no es una lectura",
                              "esperado": "positiva (crece) · cero (se reinicia) · negativa · neutra"})
             continue
-        out[lado] = {"lectura": lectura, "porque": _txt(v.get("porque"))}
+        guia = _txt(v.get("guia")).lower() or "total"
+        guia = _GUIA_ALIAS.get(guia, guia)
+        if guia not in GUIAS:
+            rechazos.append({"donde": f"lecturaSad.espina.{lado}.guia",
+                             "porque": f"«{guia}» no es una guía: se tomó la total",
+                             "esperado": "total · condicion (la K local si juega de local, la de visita si es visitante)"})
+            guia = "total"
+        out[lado] = {"lectura": lectura, "guia": guia, "porque": _txt(v.get("porque"))}
     return out
 
 
@@ -3147,11 +3168,14 @@ def contrato() -> dict:
         "lecturaSad": {
             "claves": ["moduloOperativo", "unXDos", "contextoEmocional", "datoEstructural", "paradoja", "reventon",
                        "espina"],
-            "espina": '{"a": {"lectura": "positiva|cero|negativa|neutra", "porque": "…"}, "b": {…}}: por '
-                      "equipo, adónde va su K total después de ESTE partido según la historia de sus burbujas "
+            "espina": '{"a": {"lectura": "positiva|cero|negativa|neutra", "guia": "total|condicion", '
+                      '"porque": "…"}, "b": {…}}: por '
+                      "equipo, adónde va su K después de ESTE partido según la historia de sus burbujas "
                       "(tope, forma de las rachas, cómo se cortaron: `historial.*.termina`): positiva = crece "
                       "o arranca (gana), cero = se reinicia (empata), negativa (pierde), neutra = no dice nada. "
-                      "El veredicto la compara con lo que hizo la K",
+                      "`guia`: qué burbuja leíste — `total`, o `condicion` (familias.local si juega de local, "
+                      "familias.visita si es visitante) cuando el equipo es otro en casa que afuera. "
+                      "El veredicto la compara con lo que hizo la K y Aprendizaje mide cada guía aparte",
             "reventon": "UNA línea por equipo con tu lectura del reventón de la burbuja "
                         "(GET /equipos/{id}/burbujas, docs/REVENTON.md): qué racha NO se recomienda "
                         "seguir y por qué. No copies los números: el backend los recalcula al leer "
