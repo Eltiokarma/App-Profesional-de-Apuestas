@@ -342,18 +342,22 @@ def resumir(obs: list[dict], horizonte: int, nombres: dict[int, str] | None = No
         "porLiga": _por_liga(con_base, nombres or {}),
         "franjaAlta": _franja_alta(con_base),
         "movimiento": _movimiento(con_base),
+        # la misma guía para las K de la condición (local · visita): la espina
+        # puede leerse con la burbuja de la condición en que juega hoy
+        "movimientoCondicion": {f: _movimiento(con_base, f) for f in ("local", "visita")},
     }
 
 
 MOVIMIENTOS = ("sigue", "cero", "cambio")
 
 
-def _movimiento(con_base: list[dict]) -> dict:
-    """Por signo y nivel de riesgo, cómo se movió la K TOTAL en el partido
-    siguiente: sigue · a cero (empate) · al otro signo. Es la guía calibrada
-    que el analista usa para escribir la espina por equipo (crece / se reinicia
-    / pasa a negativa o positiva)."""
-    total = [o for o in con_base if o["familia"] == "total" and o.get("movimiento")]
+def _movimiento(con_base: list[dict], familia: str = "total") -> dict:
+    """Por signo y nivel de riesgo, cómo se movió la K de la familia en el
+    partido siguiente que la mueve (para la local, el próximo de local): sigue
+    · a cero (empate) · al otro signo. Es la guía calibrada que el analista usa
+    para escribir la espina por equipo (crece / se reinicia / pasa a negativa o
+    positiva)."""
+    total = [o for o in con_base if o["familia"] == familia and o.get("movimiento")]
     out = {}
     for signo in ("+", "-"):
         out[signo] = {}
@@ -571,6 +575,7 @@ def correr_backtest(*, padron_: bool = False, liga: int | None = None, horizonte
         from backend import backtest_lecciones
         backtest_lecciones.guardar({"calibracion": resumen["calibracion"],
                                     "movimiento": resumen.get("movimiento"),
+                                    "movimientoCondicion": resumen.get("movimientoCondicion"),
                                     "calibracionPorSigno": resumen["calibracionPorSigno"],
                                     "porNivel": resumen["porNivel"], "tasaBase": resumen["tasaBase"],
                                     "equipos": len(equipos), "horizonte": horizonte}, clave="calibracion")
@@ -603,6 +608,14 @@ def imprimir(r: dict):
         for signo in ("+", "-"):
             for nv in NIVELES:
                 c = mv[signo][nv]
+                if c["n"]:
+                    print(f"  burbuja {signo} {nv:9s} n={c['n']:6d} · sigue {c['sigue']:.1%} · a cero {c['cero']:.1%} "
+                          f"· al otro signo {c['cambio']:.1%}")
+    for fam, mvf in (r.get("movimientoCondicion") or {}).items():
+        print(f"\n— lo mismo con la K de {fam} (en su próximo partido de {fam}) —")
+        for signo in ("+", "-"):
+            for nv in NIVELES:
+                c = mvf[signo][nv]
                 if c["n"]:
                     print(f"  burbuja {signo} {nv:9s} n={c['n']:6d} · sigue {c['sigue']:.1%} · a cero {c['cero']:.1%} "
                           f"· al otro signo {c['cambio']:.1%}")

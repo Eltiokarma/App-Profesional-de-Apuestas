@@ -87,6 +87,27 @@ def main():
         return o["reventoAhora"] and v != 0 and (v > 0) != (o["signo"] == "+")
     check("cada movimiento casa con la K de ESE partido (sigue / a cero / al otro signo)",
           tot and all(_casa(o) for o in tot), [o for o in tot if not _casa(o)][:2])
+    # y en las K de la condición, contra SU K (la local solo se mueve de local)
+    from backend.analisis.burbuja import CLAVE_FUSION
+    for t in equipos:
+        for f in constantes_de(t, 500):
+            for fam in ("local", "visita"):
+                filas_por[(t, f["fixtureId"], fam)] = float(f["fusion"][CLAVE_FUSION[fam]])
+    def _casa_fam(o):
+        v = filas_por[(o["equipoId"], o["fixtureId"], o["familia"])]
+        if o["movimiento"] == "sigue":
+            return not o["reventoAhora"] and (v > 0) == (o["signo"] == "+") and v != 0
+        if o["movimiento"] == "cero":
+            return o["reventoAhora"] and v == 0
+        return o["reventoAhora"] and v != 0 and (v > 0) != (o["signo"] == "+")
+    cond = [o for o in obs if o["familia"] in ("local", "visita")]
+    check("en las K de local y de visita el movimiento casa con SU K, en un partido de esa condición",
+          cond and all(_casa_fam(o) for o in cond), [o for o in cond if not _casa_fam(o)][:2])
+    mvc = r["movimientoCondicion"]
+    check("la guía de movimiento viene también por condición y suma 1",
+          set(mvc) == {"local", "visita"} and any(c["n"] for f in mvc.values() for sg in f.values() for c in sg.values())
+          and all(abs(c["sigue"] + c["cero"] + c["cambio"] - 1) < 0.01
+                  for f in mvc.values() for sg in f.values() for c in sg.values() if c["n"]), mvc)
     mv = r["movimiento"]
     check("por signo y nivel los tres movimientos suman 1",
           all(abs(c["sigue"] + c["cero"] + c["cambio"] - 1) < 0.01 for sg in mv.values() for c in sg.values() if c["n"]),

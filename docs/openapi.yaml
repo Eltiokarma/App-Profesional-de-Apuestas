@@ -1510,7 +1510,8 @@ components:
             y `fueraDelBacktest` / `revisionAbierta`: un nivel fuera del rango ABRE la revisión
             de los puntos de docs/REVENTON.md §5, no los mueve. `espina`: por lectura (positiva ·
             cero · negativa · neutra) cuántas acertaron adónde fue la K, con intervalo, la
-            `frecuenciaDelMovimiento` y si la supera; `lectura` resume.
+            `frecuenciaDelMovimiento` y si la supera; `lectura` resume; `porGuia` repite la
+            cuenta para la K total y la K de la condición, cada una contra sus lados.
           additionalProperties: true
         porSkill:
           type: array
@@ -3884,11 +3885,16 @@ components:
       type: object
       properties:
         lectura: { type: string, enum: [positiva, cero, negativa, neutra] }
+        guia:
+          type: string
+          enum: [total, condicion]
+          description: 'qué K guió la lectura: la total (por defecto) o la de la condición en que juega hoy (local si es local, visita si es visitante). Una guía desconocida se rechaza con motivo y se toma la total'
         porque: { type: string }
     EspinaObservada:
       type: object
       properties:
         lectura: { type: string, nullable: true, enum: [positiva, cero, negativa, neutra, null] }
+        guia: { type: string, enum: [total, condicion] }
         porque: { type: string }
         resultado: { type: string, nullable: true, enum: [gana, empata, pierde, null] }
         movimiento: { type: string, nullable: true, enum: [positiva, cero, negativa, null], description: 'adónde fue la K total del equipo' }

@@ -712,7 +712,7 @@ function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' 
           return (
             <span key={`esp-${lado}`} style={{ font: '600 11.5px var(--mono)', color: e.cumplida ? 'var(--up)' : 'var(--down)' }}
               title={o.espina?.nota}>
-              {e.cumplida ? '✓' : '✗'} K {e.lectura} → fue {e.movimiento} · {nombreDe(lado)}
+              {e.cumplida ? '✓' : '✗'} K{e.guia === 'condicion' ? (lado === 'a' ? ' local' : ' visita') : ''} {e.lectura} → fue {e.movimiento} · {nombreDe(lado)}
             </span>
           )
         })}
@@ -1198,6 +1198,9 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
                       <div key={l} style={{ flex: '1 1 220px', minWidth: 0, padding: '8px 10px', borderRadius: 9, background: `color-mix(in oklch, ${color}, transparent 88%)`, border: `1px solid color-mix(in oklch, ${color}, transparent 60%)` }}>
                         <div style={{ font: '700 10px var(--mono)', color, letterSpacing: '.4px', textTransform: 'uppercase' }}>
                           {ESPINA_TXT[e.lectura]} · {l === 'a' ? parte.partido.equipoA : parte.partido.equipoB}
+                        </div>
+                        <div style={{ font: '600 9.5px var(--mono)', color: 'var(--t3)', marginTop: 2 }}>
+                          {e.guia === 'condicion' ? `leída con la K de ${l === 'a' ? 'local' : 'visita'}` : 'leída con la K total'}
                         </div>
                         {e.porque && <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t2)', lineHeight: 1.45, marginTop: 4 }}>{e.porque}</div>}
                       </div>

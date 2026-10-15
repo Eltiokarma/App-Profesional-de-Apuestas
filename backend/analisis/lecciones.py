@@ -205,6 +205,10 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
     rev = _reventon_vacio()
     espina = {e: {"lados": 0, "aciertos": 0} for e in ("positiva", "cero", "negativa", "neutra")}
     movimientos = {m: 0 for m in ("positiva", "cero", "negativa")}
+    # la misma cuenta por guía (K total o K de la condición): la que lee mejor
+    # se ve aparte, cada una contra la frecuencia de SUS lados
+    por_guia = {g: ({e: {"lados": 0, "aciertos": 0} for e in espina}, {m: 0 for m in movimientos})
+                for g in ("total", "condicion")}
 
     for caso in casos:
         v = caso["veredicto"]
@@ -252,11 +256,13 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
         for lado in ("a", "b"):
             e = (obj.get("espina") or {}).get(lado) or {}
             if e.get("lectura") in espina:
-                c = espina[e["lectura"]]
-                c["lados"] += 1
-                c["aciertos"] += 1 if e.get("cumplida") else 0
-                if e.get("movimiento") in movimientos:
-                    movimientos[e["movimiento"]] += 1
+                g_acc, g_mov = por_guia.get(e.get("guia") or "total", por_guia["total"])
+                for acc, mov in ((espina, movimientos), (g_acc, g_mov)):
+                    c = acc[e["lectura"]]
+                    c["lados"] += 1
+                    c["aciertos"] += 1 if e.get("cumplida") else 0
+                    if e.get("movimiento") in mov:
+                        mov[e["movimiento"]] += 1
 
     total_lados = sum(acred.values())
     decididos = acred["acierto"] + acred["fallo"] + acred["parcial"]
@@ -278,7 +284,8 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
                     "ciega. `sinFicha` no cuenta como no ocurrido: no se pudo comprobar",
         },
         "reventon": _cerrar_reventon(rev),
-        "espina": _cerrar_espina(espina, movimientos),
+        "espina": {**_cerrar_espina(espina, movimientos),
+                   "porGuia": {g: _cerrar_espina(*por_guia[g]) for g in por_guia}},
     }
     return poblacion, metricas
 

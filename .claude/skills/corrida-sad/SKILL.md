@@ -81,7 +81,9 @@ commitea nada.
 >   gana) · `cero` (se reinicia: empata) · `negativa` (pierde) · `neutra`—, con
 >   `porque`, leyendo su gráfica de K y cómo se le cortan las burbujas
 >   (`historial.*.termina` en `/burbujas`). No la acomodes a tu 1X2: lo que se
->   mide es si acierta sola.
+>   mide es si acierta sola. Si el equipo es otro en casa que afuera, leé la K
+>   de la condición de hoy (`familias.local` / `familias.visita`) y declaralo
+>   con `"guia": "condicion"`.
 > - **Alertas: solo códigos que existen en los skills** (T.54, T.54-B,
 >   R-KT.2, GK-DOWNGRADE, FACTOR-X, G-BLOQUE, G-SORPRESA, COLAPSO EN
 >   CASCADA… los que nombra la rúbrica). Una observación que no tiene código
