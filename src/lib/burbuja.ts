@@ -184,9 +184,20 @@ export const MOVIMIENTO_BACKTEST: Record<SignoBurbuja, Record<'bajo' | 'medio' |
   '-': { bajo: [0.523, 0.25, 0.227], medio: [0.462, 0.272, 0.266], alto: [0.354, 0.269, 0.378], 'muy alto': [0.28, 0.273, 0.446] },
 }
 
+/** Lo mismo para las K de la condición, en su próximo partido de esa condición (espejo de MOVIMIENTO_CONDICION). */
+export const MOVIMIENTO_CONDICION: Record<'local' | 'visita', typeof MOVIMIENTO_BACKTEST> = {
+  local: {
+    '+': { bajo: [0.627, 0.219, 0.154], medio: [0.5, 0.262, 0.238], alto: [0.426, 0.275, 0.299], 'muy alto': [0.346, 0.288, 0.366] },
+    '-': { bajo: [0.454, 0.266, 0.28], medio: [0.346, 0.292, 0.363], alto: [0.267, 0.27, 0.463], 'muy alto': [0.214, 0.255, 0.53] },
+  },
+  visita: {
+    '+': { bajo: [0.468, 0.261, 0.272], medio: [0.331, 0.289, 0.379], alto: [0.273, 0.271, 0.456], 'muy alto': [0.197, 0.256, 0.546] },
+    '-': { bajo: [0.607, 0.227, 0.166], medio: [0.509, 0.257, 0.234], alto: [0.418, 0.285, 0.297], 'muy alto': [0.355, 0.276, 0.37] },
+  },
+}
+
 function movimientoEsperado(familia: FamiliaBurbuja, signo: SignoBurbuja, nivel: 'bajo' | 'medio' | 'alto' | 'muy alto'): { sigue: number; cero: number; cambio: number } | null {
-  if (familia !== 'total') return null
-  const m = MOVIMIENTO_BACKTEST[signo][nivel]
+  const m = (familia === 'total' ? MOVIMIENTO_BACKTEST : MOVIMIENTO_CONDICION[familia])[signo][nivel]
   return { sigue: m[0], cero: m[1], cambio: m[2] }
 }
 
@@ -440,7 +451,7 @@ function analizarFamilia(filas: FilaK[], familia: FamiliaBurbuja, proximo: Proxi
 
   const [confianza, confianzaMotivos] = confianzaDe(n, estabilidad)
   const nivel = nivelRiesgo(puntos)
-  out.riesgo = { nivel, puntos, motivos, confianza, confianzaMotivos, movimiento: movimientoEsperado(familia, signo, nivel) }
+  out.riesgo = { nivel, puntos, motivos, confianza, confianzaMotivos, movimiento: aplica === false ? null : movimientoEsperado(familia, signo, nivel) }
   return out
 }
 

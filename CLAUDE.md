@@ -686,8 +686,11 @@ conversación se pierde en la siguiente.
    condicion` por lado (la K local si juega de local, la de visita si es
    visitante); el movimiento se juzga con el mismo marcador y Aprendizaje mide
    cada guía aparte (`acreditables.espina.porGuia`). La guía de movimiento por
-   condición sale del backtest (`movimientoCondicion` en `--calibrar`); hasta
-   correrlo, `riesgo.movimiento` de las familias local/visita viaja `null`.
+   condición sale del backtest (`movimientoCondicion` en `--calibrar`,
+   `MOVIMIENTO_CONDICION` en `burbuja.py` y su espejo TS, REVENTON §14.1) y
+   viaja en `riesgo.movimiento` de `familias.local`/`visita` solo si esa
+   familia se mueve en el próximo partido. La + de local aguanta más que la
+   total y la + de visita menos; la − de visita es la que más se sostiene.
 
 ## Siguientes pasos (en orden)
 

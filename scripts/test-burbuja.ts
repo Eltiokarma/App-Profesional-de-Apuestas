@@ -88,7 +88,7 @@ check('11 partidos de local', lo.partidosEnCondicion === 11)
 check('burbuja abierta + K 9.5, 3 partidos, NO aplica al próximo', eq([lo.actual!.k, lo.actual!.partidos, lo.actual!.aplicaAlProximo], [9.5, 3, false]), lo.actual)
 check('sin rival evaluado (otra condición) y motivo explícito', lo.rival === null && lo.riesgo!.motivos.some((m) => m.includes('otra condición')), lo.riesgo)
 check('riesgo ALTO con 1 punto (solo la racha; cortes limpios del 14/10)', lo.riesgo!.nivel === 'alto' && lo.riesgo!.puntos === 1, lo.riesgo)
-check('la guía de movimiento es solo de la familia total', lo.riesgo!.movimiento === null)
+check('la K local no se mueve en el próximo (es de visita): sin guía de movimiento', lo.riesgo!.movimiento === null)
 check('historial − local: K pico 3.0 repetida → moda 3.0', lo.historial.negativo!.kPico.moda === 3)
 check('percentil K 50', lo.posicion!.percentilK === 50, lo.posicion)
 check('local: K 9.5 < máximo 16 y racha 3 < 4 → extremo INACTIVO', eq(lo.extremo, { activo: false, kRecord: false, rachaRecord: false, cerca: false, partidosHistoria: 11, maximoPrevio: { kPico: 16, partidos: 4 }, motivos: [], texto: '', inflada: null }), lo.extremo)
@@ -124,6 +124,7 @@ const vi = out.familias.visita
 check('9 partidos de visita', vi.partidosEnCondicion === 9)
 check('burbuja abierta + K 12.6 · 3 partidos', eq([vi.actual!.k, vi.actual!.partidos], [12.6, 3]))
 check('riesgo MUY ALTO (8) y moda de partidos 1', vi.riesgo!.nivel === 'muy alto' && vi.historial.positivo!.partidos.moda === 1, vi.riesgo)
+check('la K de visita SÍ se mueve en el próximo: su guía (muy alto +) → 20 · 26 · 55 %', eq(vi.riesgo!.movimiento, { sigue: 0.197, cero: 0.256, cambio: 0.546 }), vi.riesgo!.movimiento)
 
 console.log('\n— estabilidad —')
 const e = out.estabilidad
