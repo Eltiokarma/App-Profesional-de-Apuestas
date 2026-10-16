@@ -1337,6 +1337,30 @@ paths:
         '403': { description: 'el token de Cowork no puede mover estados' }
         '404': { description: 'no hay lección con esa clave' }
         '422': { description: 'estado fuera del vocabulario, o `aplicada` sin `aplicadaEn`' }
+  /analisis/cowork/{fixtureId}/objetivo:
+    get:
+      summary: Lo objetivo del caso ANTES de escribir el veredicto
+      description: >
+        La misma parte objetiva que trae el veredicto (marcador, 1X2, Brier, ventana del
+        TDE, reventón, espina, `matriz`: qué escenario jugó cada lado y qué había escrito
+        el parte), calculada sobre el parte depositado sin que haya veredicto todavía.
+        `GET …/veredicto` da 404 hasta el primer POST, y quien cierra el caso necesita
+        leer qué escenario se jugó para juzgarlo. Se recalcula al leer; no se guarda nada.
+        Abierto a Cowork, 0 tokens.
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fixtureId: { type: integer }
+                  tieneVeredicto: { type: boolean }
+                  objetivo: { type: object, additionalProperties: true }
+        '404': { description: el fixture no tiene parte depositado }
   /analisis/cowork/{fixtureId}/veredicto:
     get:
       summary: El veredicto guardado, con su parte objetiva recalculada al leer

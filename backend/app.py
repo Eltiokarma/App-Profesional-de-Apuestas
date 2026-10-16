@@ -2819,6 +2819,18 @@ def cowork_veredicto(fixture_id: int, body: VeredictoBody):
         raise HTTPException(422, str(e))
 
 
+@app.get(API + "/analisis/cowork/{fixture_id}/objetivo")
+def cowork_objetivo(fixture_id: int):
+    """Lo objetivo del caso sin veredicto todavía: el GET del veredicto da 404
+    hasta el primer POST, y quien lo escribe necesita saber antes qué
+    escenario de la matriz se jugó (corrida de veredictos, 16/10/2026)."""
+    from backend.analisis import parte as cowork
+    o = cowork.objetivo_de(fixture_id)
+    if o is None:
+        raise HTTPException(404, f"el fixture {fixture_id} no tiene parte depositado")
+    return o
+
+
 @app.get(API + "/analisis/cowork/{fixture_id}/veredicto")
 def cowork_veredicto_leer(fixture_id: int):
     """El veredicto guardado con su parte objetiva recalculada al leer."""

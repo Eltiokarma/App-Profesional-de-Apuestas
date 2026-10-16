@@ -277,6 +277,12 @@ def matriz_objetivo(matriz: dict, real: str) -> dict:
     cierra el caso (`porLado.*.escenario`)."""
     out = {"nota": "la matriz es narrativa: el escenario lo da el marcador; si la palanca o el "
                    "gatillo escrito fue el que apareció es juicio de la autopsia, sin tasa"}
+    if not any((matriz or {}).get(l) for l in ("a", "b")):
+        # no es un fallo del depósito: los partes anteriores al 15/10/2026
+        # (12:05 UTC) traían la matriz solo en prosa, en `documentos`
+        out["sinMatriz"] = ("el parte no trae la matriz estructurada (`matriz`): si se depositó antes "
+                            "del 15/10/2026 la tenía solo en prosa (`documentos`); el escenario se "
+                            "juzga contra esa prosa y no cuenta como «no declarada»")
     for lado in ("a", "b"):
         gana = (real == "local") if lado == "a" else (real == "visita")
         esc = _ESCENARIO_DE["gana" if gana else ("empata" if real == "empate" else "pierde")]

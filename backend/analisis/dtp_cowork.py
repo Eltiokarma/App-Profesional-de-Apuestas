@@ -518,14 +518,34 @@ def _sistemas(texto: str) -> set[str]:
     return {re.sub(r"\D", "", m) for m in re.findall(r"\d(?:\s*[-–]\s*\d){2,4}", texto or "")}
 
 
+def _familia(cifras: str) -> str:
+    """Defensores y delanteros: la línea de atrás y la de arriba. «4-2-2-2» y
+    «4-4-2» son el mismo equipo contado con más o menos líneas en el medio
+    (Huracán–Gimnasia, 16/10/2026: la API dijo 4-4-2 y el aviso salió falso);
+    lo mismo «4-2-3-1» con «4-4-1-1» o «4-5-1». «4-3-3» contra «4-4-2» sí es
+    otro sistema: cambia la línea de arriba."""
+    return cifras[0] + cifras[-1] if len(cifras) >= 3 else cifras
+
+
 def _plano(t: str) -> str:
     t = unicodedata.normalize("NFKD", t or "").encode("ascii", "ignore").decode().lower()
     return re.sub(r"[^a-z ]+", " ", t)
 
 
-def _apellido(nombre: str) -> str:
-    partes = [p for p in _plano(nombre).split() if len(p) > 1]
-    return partes[-1] if partes else ""
+_PARTICULAS = {"de", "del", "la", "las", "los", "da", "do", "dos", "das", "van", "von", "di", "le"}
+
+
+def _apellidos(nombre: str) -> list[str]:
+    """Todo lo que puede ser apellido: sin iniciales ni partículas. Con dos
+    apellidos la ficha y la referencia eligen distinto —«B. Gallego» contra
+    «Baltasar Gallego Rodríguez» (Estudiantes–Flamengo, 16/10/2026)— y mirar
+    solo el último dejaba al jugador fuera de la referencia."""
+    partes = [p for p in _plano(nombre).split() if len(p) > 1 and p not in _PARTICULAS]
+    return partes[1:] if len(partes) > 1 else partes
+
+
+def _en_referencia(nombre: str, ref: str) -> bool:
+    return any(f" {a} " in f" {ref} " for a in _apellidos(nombre))
 
 
 def oficial_de(fixture_id: int) -> dict:
@@ -557,12 +577,12 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
     m1 = (bloque.get("apertura") or {}).get("m1") or {}
     motivos = []
     decl, real = _sistemas(m1.get("sistema") or ""), _cifras_sistema(of.get("formacion") or "")
-    if decl and real and real not in decl:
+    if decl and real and _familia(real) not in {_familia(d) for d in decl}:
         motivos.append(f"sistema: la apertura dice {m1.get('sistema')!r} y salió {of['formacion']}")
     ref = _plano(m1.get("xiReferencia") or "")
     ausentes = []
     if len(ref.split()) >= 8:   # un XI de referencia escrito, no una frase
-        ausentes = [n for n in of["titulares"] if _apellido(n) and f" {_apellido(n)} " not in f" {ref} "]
+        ausentes = [n for n in of["titulares"] if _apellidos(n) and not _en_referencia(n, ref)]
         if len(ausentes) >= REHACER_AUSENTES:
             motivos.append(f"once: {len(ausentes)} titulares que no estaban en el XI de referencia "
                            f"({', '.join(ausentes)})")

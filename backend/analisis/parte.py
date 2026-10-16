@@ -2966,6 +2966,17 @@ def veredicto_de(fixture_id: int) -> dict | None:
             "objetivo": vered.objetivo(fixture_id, parte)}
 
 
+def objetivo_de(fixture_id: int) -> dict | None:
+    """La parte objetiva del caso, haya veredicto o no. None = sin parte."""
+    with _conectar() as con:
+        fila = con.execute("SELECT parte_json, veredicto_json FROM parte_cowork WHERE fixture_id=?",
+                           (fixture_id,)).fetchone()
+    if not fila:
+        return None
+    return {"fixtureId": fixture_id, "tieneVeredicto": bool(fila["veredicto_json"]),
+            "objetivo": vered.objetivo(fixture_id, json.loads(fila["parte_json"]))}
+
+
 # cómo se lee `status_short` de API-Football cuando hay que explicar una ausencia
 _EN_CURSO = {"1H": "1er tiempo", "HT": "entretiempo", "2H": "2do tiempo",
              "ET": "alargue", "BT": "descanso del alargue", "P": "penales",

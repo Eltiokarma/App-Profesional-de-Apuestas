@@ -170,6 +170,33 @@ def tabla(fixture_id: int) -> dict | None:
     }
 
 
+def _casi_igual(uno: str, otro: str) -> bool:
+    """El mismo apellido mal escrito: una letra cambiada, puesta de más o de
+    menos, o las mismas letras en otro orden. La API tiene a Huracán con «Juan
+    Bizans» (406291) y la hoja del partido con «F. Bisanz» (304389): el mismo
+    jugador con dos ids (16/10/2026). Solo apellidos de 5 letras o más: en uno
+    corto una letra ya es otra persona."""
+    if min(len(uno), len(otro)) < 5 or abs(len(uno) - len(otro)) > 1:
+        return False
+    if sorted(uno) == sorted(otro):
+        return True
+    if len(uno) == len(otro):
+        return sum(a != b for a, b in zip(uno, otro)) <= 1
+    corto, largo = sorted((uno, otro), key=len)
+    return any(largo[:i] + largo[i + 1:] == corto for i in range(len(largo)))
+
+
+def _parecido(tok_api: list[str], tok_tabla: list[str]) -> bool:
+    """Último recurso, solo para AVISAR que falta alguien: la misma pila (o su
+    inicial) y un apellido casi igual. Un falso «está» cuesta un aviso de
+    menos; un falso «no está» manda a rehacer una tabla que estaba bien."""
+    if len(tok_api) < 2 or len(tok_tabla) < 2:
+        return False
+    if not bloque_f._misma_pila(tok_api[0], tok_tabla[0]):
+        return False
+    return any(_casi_igual(a, t) for a in tok_api[1:] for t in tok_tabla[1:])
+
+
 def _en_tabla(j: dict, plantel: list[dict]) -> bool:
     for p in plantel:
         if p.get("jugadorId") and int(p["jugadorId"]) == int(j["id"]):
@@ -177,6 +204,7 @@ def _en_tabla(j: dict, plantel: list[dict]) -> bool:
     tok_api = bloque_f._tokens(j["nombre"])
     return any(bloque_f._casa(bloque_f._tokens(p.get("nombre") or ""), tok_api)
                or bloque_f._casa(tok_api, bloque_f._tokens(p.get("nombre") or ""))
+               or _parecido(tok_api, bloque_f._tokens(p.get("nombre") or ""))
                for p in plantel)
 
 

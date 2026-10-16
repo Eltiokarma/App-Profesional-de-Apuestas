@@ -1509,6 +1509,14 @@ def main():
     check("un partido sin jugar NO aparece como pendiente",
           all(x["fixtureId"] != sin_ficha for x in pend), pend[:2])
 
+    # LO OBJETIVO ANTES DEL VEREDICTO: el GET del veredicto da 404 hasta el
+    # primer POST y quien lo escribe necesita saber qué escenario se jugó
+    ob = c.get(f"{A}/analisis/cowork/{pasado['id']}/objetivo")
+    check("lo objetivo se lee antes de escribir el veredicto (marcador y matriz)",
+          ob.status_code == 200 and ob.json()["tieneVeredicto"] is False
+          and "matriz" in ob.json()["objetivo"], ob.text[:300])
+    check("sin parte depositado, 404", c.get(f"{A}/analisis/cowork/1/objetivo").status_code == 404)
+
     # la población es obligatoria y no se deduce
     r = c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto",
                json={"seleccion": "cualquiera", "modoEvaluacion": "PRE",
@@ -2525,6 +2533,18 @@ def main():
                    {"a": {"formacion": "3-5-2", "titulares": []}})
     check("una apertura con dos sistemas («4-2-3-1 / 4-3-3») no pide rehacer si salió con cualquiera; "
           "con otro, sí", _alt["rehacer"] is False and _no["rehacer"] is True, (_alt, _no))
+    # Huracán–Gimnasia y Estudiantes–Flamengo (16/10/2026): dos avisos falsos
+    _fam = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-2-2-2"}}},
+                    {"a": {"formacion": "4-4-2", "titulares": []}})
+    _fam_no = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3"}}},
+                       {"a": {"formacion": "4-4-2", "titulares": []}})
+    check("«4-2-2-2» y «4-4-2» son el mismo sistema (misma línea de atrás y de arriba); «4-3-3» y «4-4-2» no",
+          _fam["rehacer"] is False and _fam_no["rehacer"] is True, (_fam, _fam_no))
+    _ref = "Muslera; Mancuso, Núñez, Rojo, Benedetti; Piovi, Castro, B. Gallego; Palacios, Carrillo, Burgos"
+    _dos = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3", "xiReferencia": _ref}}},
+                    {"a": {"formacion": "4-3-3", "titulares": ["Baltasar Gallego Rodríguez", "Fernando Muslera"]}})
+    check("un titular con dos apellidos casa con la referencia por cualquiera de ellos",
+          _dos["ausentesDeLaReferencia"] == [], _dos)
     ce = g_reh["dtp"]["bloques"][0]["calculado"]["contraElOnce"]
     check("con el once oficial distinto, el bloque del DTP queda a rehacer (sistema y once)",
           ce["rehacer"] is True and ce["sistemaOficial"] == _form and len(ce["motivos"]) == 2
@@ -2564,6 +2584,11 @@ def main():
                                          "rol": x["rolSugerido"], "apps": x["apps"]} for x in dec]
     c.post(f"{A}/analisis/cowork", json=p_f1)
     g_f1b = c.get(f"{A}/analisis/cowork/{con_ficha}").json()
+    from backend.analisis.f1_base import _en_tabla as _f1_en_tabla
+    check("el mismo jugador con dos ids y el apellido mal escrito («Juan Bizans» / «Juan Bisanz») está en la tabla",
+          _f1_en_tabla({"id": 406291, "nombre": "Juan Bizans"}, [{"nombre": "Juan Bisanz", "jugadorId": 304371}]))
+    check("pero otra pila con un apellido parecido es otra persona",
+          not _f1_en_tabla({"id": 1, "nombre": "Juan Gomez"}, [{"nombre": "Pedro Gomes", "jugadorId": 2}]))
     check("con los decisivos en la tabla (por jugadorId), la alerta se va",
           not any(a["codigo"] == "F1-DECISIVO-FUERA" and a["equipo"] == "a" for a in g_f1b["alertas"]),
           [a for a in g_f1b["alertas"] if a["codigo"] == "F1-DECISIVO-FUERA"])

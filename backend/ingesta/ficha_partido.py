@@ -311,6 +311,41 @@ def fixtures_pendientes(con: sqlite3.Connection, dias: int, ultimos: int) -> lis
     return pendientes
 
 
+CON_PARTE_DIAS = 4   # partidos con parte jugados en los últimos N días
+
+
+def fixtures_con_parte(con: sqlite3.Connection, db: str, dias: int = CON_PARTE_DIAS) -> list[int]:
+    """Los partidos TERMINADOS con un parte depositado (efe.db, junto a sad.db)
+    que todavía no tienen ficha sellada. El veredicto se escribe a las 12 h y
+    necesita las stats del partido; por la regla del NS próximo solo entraban
+    si alguno de los dos volvía a jugar en <= 3 días, y Huracán–Gimnasia
+    (16/10/2026) quedó con las stats vacías hasta una semana después: el ciclo
+    en vivo trae alineación y eventos, nunca las stats."""
+    efe = os.path.join(os.path.dirname(os.path.abspath(db)), "efe.db")
+    if not os.path.exists(efe):
+        return []
+    try:
+        e = sqlite3.connect(f"file:{efe}?mode=ro", uri=True)
+        try:
+            ids = [r[0] for r in e.execute("SELECT fixture_id FROM parte_cowork")]
+        finally:
+            e.close()
+    except sqlite3.Error:
+        return []      # sin la tabla de partes: no hay nada que priorizar
+    if not ids:
+        return []
+    sellados = {r[0] for r in con.execute("SELECT fixture_id FROM fichas_meta")}
+    desde = (datetime.now(timezone.utc) - timedelta(days=dias)).strftime("%Y-%m-%d %H:%M:%S")
+    fuera = []
+    for i in range(0, len(ids), 500):
+        lote = ids[i:i + 500]
+        fuera += [fid for (fid,) in con.execute(
+            f"""SELECT id FROM fixtures WHERE id IN ({','.join('?' * len(lote))})
+                AND status_short IN ({','.join('?' * len(TERMINADOS))}) AND date >= ?
+                ORDER BY date DESC""", (*lote, *TERMINADOS, desde)) if fid not in sellados]
+    return fuera
+
+
 def cobertura_por_liga(con: sqlite3.Connection) -> dict[int, dict]:
     """Por liga: cuántas fichas selladas y cuántas trajeron cada endpoint."""
     out: dict[int, dict] = {}
@@ -460,7 +495,15 @@ def main() -> int:
         con.close()
         return 0
 
-    pendientes = args.fixture or fixtures_pendientes(con, args.dias, args.ultimos)
+    if args.fixture:
+        pendientes = args.fixture
+    else:
+        # primero los que esperan veredicto: son los que alguien va a leer hoy
+        con_parte = fixtures_con_parte(con, args.db)
+        pendientes = con_parte + [f for f in fixtures_pendientes(con, args.dias, args.ultimos)
+                                  if f not in con_parte]
+        if con_parte:
+            print(f"ficha de partido: {len(con_parte)} partidos jugados con parte, primero en la cola")
     if not pendientes:
         con.close()
         print("ficha de partido: nada pendiente · 0 requests")

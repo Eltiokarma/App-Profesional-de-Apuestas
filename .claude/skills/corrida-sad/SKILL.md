@@ -141,8 +141,11 @@ de esa carpeta.
 > confirmación de una regla también es lección («disciplina 44 declarada y
 > cumplida»): es lo que cuenta casos a favor.
 >
-> La matriz: `objetivo.matriz` del GET dice qué escenario jugó cada equipo y
-> qué se había escrito para él. Por lado, `escenario: {aparecio: si|parcial|no,
+> La matriz: `GET $B/analisis/cowork/{id}/objetivo` (antes del veredicto; el
+> GET de `…/veredicto` da 404 hasta el primer POST) trae en `objetivo.matriz`
+> qué escenario jugó cada equipo y qué se había escrito para él. Con
+> `sinMatriz` el parte es anterior a la matriz estructurada: juzgá el
+> escenario contra la prosa de `documentos[id=matriz]`. Por lado, `escenario: {aparecio: si|parcial|no,
 > que}`: si la palanca o el gatillo escrito fue lo que pasó (sin tasa).
 >
 > `seleccion`: `ciega` si el partido salió de la agenda; `modoEvaluacion`:
