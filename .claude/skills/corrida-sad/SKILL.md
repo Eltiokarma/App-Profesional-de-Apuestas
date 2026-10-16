@@ -88,7 +88,8 @@ de esa carpeta.
 >   gana) · `cero` (se reinicia: empata) · `negativa` (pierde) · `neutra`—, con
 >   `porque`, leyendo su gráfica de K y cómo se le cortan las burbujas
 >   (`historial.*.termina` en `/burbujas`). No la acomodes a tu 1X2: lo que se
->   mide es si acierta sola. Si el equipo es otro en casa que afuera, leé la K
+>   mide es si acierta sola. Y el ENSAYO la cuenta en un párrafo de las
+>   burbujas (si no, el recibo avisa `ensayo.espina`). Si el equipo es otro en casa que afuera, leé la K
 >   de la condición de hoy (`familias.local` / `familias.visita`) y declaralo
 >   con `"guia": "condicion"`.
 > - **La matriz de escenarios va estructurada en `matriz`** (desde el 15/10):
