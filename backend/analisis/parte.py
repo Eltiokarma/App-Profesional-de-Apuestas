@@ -858,7 +858,9 @@ def _mismo_apellido(x: str, y: str) -> bool:
     # la base trae letras corruptas («S. Hoeneb» por «S. Hoeneß», Stuttgart
     # 23/09): un apellido largo que coincide en las primeras 5 letras, o que
     # se parece en ≥ 80 %, es el mismo apellido mal escrito
-    if min(len(x), len(y)) >= 5 and x[:5] == y[:5]:
+    if min(len(x), len(y)) >= 5 and (x[:5] == y[:5] or sorted(x) == sorted(y)):
+        # …o las mismas letras en otro orden («Balazar» por «Bazalar»,
+        # Los Chankas 16/10/2026)
         return True
     return min(len(x), len(y)) >= 4 and difflib.SequenceMatcher(None, x, y).ratio() >= 0.8
 

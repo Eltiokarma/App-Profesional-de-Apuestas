@@ -153,8 +153,10 @@ def main():
                     [(11, "L. Peirano"), (12, "Pep Guardiola"), (13, "P. Guardiola")])
     con.commit()
     dt_a, desde_a = dt_de_alineaciones(con, 700)
-    check("la racha del DT en el banco arranca en su primer partido (dos grafías del mismo apellido)",
-          dt_a == "L. Peirano" and desde_a == hace(24)[:10], (dt_a, desde_a))
+    # Peirano → Guardiola → Peirano: desde fuera no se distingue de un banco
+    # que la API alterna (Cusco, 16/10/2026), así que la llegada no se inventa
+    check("un DT que ya estaba en el banco antes del otro no trae «desde» (no se lo da por nuevo)",
+          dt_a == "L. Peirano" and desde_a is None, (dt_a, desde_a))
     con.execute("UPDATE fixtures SET date=? WHERE id=10", (hace(24 * 30),))
     con.commit()
     dt_a, desde_a = dt_de_alineaciones(con, 700)
@@ -209,6 +211,21 @@ def main():
     con.execute("DELETE FROM alineaciones WHERE fixture_id=17")
     con.execute("DELETE FROM fixtures WHERE id IN (14, 15, 16, 17)")
     con.commit()
+    # UN BANCO QUE VA Y VIENE (Cusco, 16/10/2026): el actual ya aparecía antes
+    # del corte, así que el corte no es su llegada
+    con.execute("INSERT INTO fixtures (id, date, status_short, league_id) VALUES (20, ?, 'FT', 239)",
+                (hace(24 * 25),))
+    con.execute("INSERT INTO alineaciones (fixture_id, team_id, entrenador) VALUES (20, 700, 'Pep Guardiola')")
+    con.commit()
+    dt_v, desde_v = dt_de_alineaciones(con, 700)
+    check("si el DT actual ya estaba en el banco antes del corte, su llegada es desconocida (no «DT nuevo»)",
+          dt_v == "P. Guardiola" and desde_v is None, (dt_v, desde_v))
+    con.execute("DELETE FROM alineaciones WHERE fixture_id=20")
+    con.execute("DELETE FROM fixtures WHERE id=20")
+    con.commit()
+    from backend.ingesta.jugadores import mismo_nombre_dt as _mnd
+    check("las mismas letras en otro orden son el mismo DT («J. Balazar» / «Juan Carlos Bazalar»)",
+          _mnd("J. Balazar", "Juan Carlos Bazalar") and not _mnd("Martínez", "Martino"))
 
     # --- 2c. DT FRESCO PARA LA AGENDA: alineación del último partido + /coachs ---
     from backend.ingesta.jugadores import dt_agenda, ultimo_terminado
