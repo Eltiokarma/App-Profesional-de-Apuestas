@@ -1212,7 +1212,13 @@ negritas, citas y tablas se pintan bien en la app.
             fusión y sin el tema de la app: no lo hagas.
   ensayo    cómo puede darse el partido, en prosa de periodista, sin siglas,
             con fundamento técnico. Cierra con probabilidad de marcador y de
-            ganador. Es lo primero que se lee: escribilo para eso.
+            ganador. Es lo primero que se lee: escribilo para eso. Lleva UN
+            PÁRRAFO DE LAS BURBUJAS: si las K de cada equipo le dan buena
+            espina o no —la espina que declaraste en `lecturaSad.espina`
+            (crece, se reinicia, negativa o neutra), con qué K la leíste (total,
+            de local, de visita) y por qué, contada en prosa—. Si el ensayo no
+            nombra la espina ni las burbujas, el recibo lo avisa en `faltan`
+            (`ensayo.espina`).
 
 No escribas un CSV de registro ni toques ningún archivo compartido: la
 consolidación la hace la app.

@@ -1589,6 +1589,21 @@ def _prob_matriz(v) -> float | None:
     return round(n, 1) if 0 <= n <= 100 else None
 
 
+_PALABRAS_ESPINA = ("espina", "burbuja", "reventón", "reventon")
+
+
+def ensayo_cuenta_espina(parte: dict) -> bool:
+    """True si no hay nada que contar (sin espina o sin ensayo) o si el ensayo
+    nombra la espina o las burbujas. Es un chequeo de presencia, no de
+    contenido: dice que el ensayo habla del tema, no que lo diga bien."""
+    espina = (parte.get("lecturaSad") or {}).get("espina") or {}
+    ensayo = next((d for d in parte.get("documentos") or [] if d.get("id") == "ensayo"), None)
+    if not espina or not ensayo:
+        return True
+    texto = (ensayo.get("cuerpo") or "").lower()
+    return any(p in texto for p in _PALABRAS_ESPINA)
+
+
 def filas_matriz(m: dict) -> int:
     """Cuántas filas declaradas trae la matriz (para el recibo y `perdido`)."""
     return sum(sum(1 for k in f if k != "probabilidad")
@@ -1930,6 +1945,18 @@ def guardar(payload: dict) -> dict:
             "comoSeArregla": '"matriz": {"a": {"ganar": {"tactica": …, "pelotaParada": …, "reloj": …, "base": …}, '
                              '"empatar": {…}, "perder": {"gatillo": …, "errorSistemico": …, "psicologico": …, '
                              '"goleada": …}}, "b": {…}}',
+        })
+    # EL ENSAYO CUENTA LA ESPINA (pedido del usuario, 14/10: «el ensayo tiene
+    # que decir si las burbujas le dan buena espina o no»). En Huracán–Gimnasia
+    # (15/10) la espina estaba declarada y el ensayo no nombraba ni una burbuja:
+    # quien lee el ensayo, que es lo primero que se lee, no se enteraba.
+    if not ensayo_cuenta_espina(parte):
+        faltan.append({
+            "bloque": "ensayo.espina",
+            "costara": "la espina está declarada pero el ensayo no la cuenta: quien lee el ensayo "
+                       "no se entera de qué dicen las burbujas de cada equipo",
+            "comoSeArregla": "un párrafo en el ensayo: la espina de cada equipo (crece, se reinicia, "
+                             "negativa o neutra), con qué K se leyó (total, de local, de visita) y por qué",
         })
     resumen = {
         "fixtureId": parte["fixtureId"],

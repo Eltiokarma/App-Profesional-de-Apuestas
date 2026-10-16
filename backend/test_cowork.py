@@ -109,7 +109,7 @@ def _parte(fixture_id: int, nombre_a: str = "", nombre_b: str = "") -> dict:
         "timelineNarrativa": "Semestre de curva ascendente para A.",
         "cadena": {"a": {"pronostico": "A domina por fuera y define antes del 70'"},
                    "b": {"pronostico": "B aguanta con bloque bajo y busca el contragolpe"}},
-        "documentos": [{"id": "ensayo", "cuerpo": "# Cómo puede darse\n\nTexto largo."},
+        "documentos": [{"id": "ensayo", "cuerpo": "# Cómo puede darse\n\nTexto largo. Las burbujas le dan buena espina al local."},
                        {"id": "tde", "titulo": "TDE", "cuerpo": "IE 62 · ventana 75-90"},
                        {"id": "vacio", "cuerpo": "   "}],
         "pendientes": ["XI de ambos equipos"],
@@ -2657,6 +2657,14 @@ def main():
     _me = matriz_objetivo({"a": {"ganar": {"tactica": "t"}}}, "empate")
     check("un escenario sin escribir viaja como no declarado", _me["a"]["escenario"] == "empatar"
           and _me["a"]["declarado"] is False and _me["b"]["declarado"] is False, _me)
+
+    from backend.analisis.parte import ensayo_cuenta_espina
+    _esp = {"lecturaSad": {"espina": {"a": {"lectura": "positiva"}}}}
+    check("el ensayo tiene que contar la espina: sin nombrarla ni a las burbujas, el recibo lo avisa",
+          ensayo_cuenta_espina({**_esp, "documentos": [{"id": "ensayo", "cuerpo": "Huracán gana de local."}]}) is False
+          and ensayo_cuenta_espina({**_esp, "documentos": [{"id": "ensayo", "cuerpo": "La burbuja de local crece."}]})
+          and ensayo_cuenta_espina({"lecturaSad": {}, "documentos": [{"id": "ensayo", "cuerpo": "x"}]})
+          and ensayo_cuenta_espina({**_esp, "documentos": []}))
 
     # ── la buena espina de la burbuja: la lectura del analista, medida ──────
     from backend.analisis.parte import _espina
