@@ -276,6 +276,8 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
 
     # ── el reventón de la burbuja: lo que se dijo antes y lo que pasó ───────
     out["reventon"] = reventon_objetivo(fixture_id, fx, declarado)
+    # ── las OTRAS burbujas que este partido cortó: lo que hay que rastrear ──
+    out["otrasFamilias"] = familias_objetivo(fx)
     # ── la buena espina de la burbuja: la lectura del analista, contra el resultado
     out["espina"] = espina_objetivo((parte.get("lecturaSad") or {}).get("espina") or {}, real)
     # ── la matriz: qué escenario se jugó y qué se había escrito para él ────
@@ -409,6 +411,55 @@ def reventon_objetivo(fixture_id: int, fx, declarado_1x2: str = "") -> dict:
                          "observado": None, "nota": f"no se pudo calcular: {e}"}
         out[lado].update(pronostico_vs_racha(lado, out[lado].get("declarado"), declarado_1x2))
     return out
+
+
+# LAS OTRAS BURBUJAS, DESPUÉS DEL PARTIDO (usuario, 17/10/2026: «un 0 a 2 para
+# alguien que al menos marca gol de local debe ser entendible y rastreable»).
+# Se reconstruyen las destacadas con la historia ESTRICTAMENTE anterior al
+# fixture (la misma vista del parte) y se mira si el marcador las cortó. Un
+# corte de una burbuja grande o en su récord queda `porExplicar`: como el
+# récord no se corta más que lo normal (REVENTON §15), algo lo causó, y quien
+# cierra el caso lo escribe en `porLado.*.cortes` con un mecanismo de la lista
+# cerrada del estudio de reventones. Observación, sin acierto ni tasa.
+POR_EXPLICAR_DESDE = 5
+
+
+def familias_objetivo(fx) -> dict:
+    out = {"nota": ("las burbujas de doble oportunidad, márgenes y goles destacadas ANTES del partido "
+                    "(vista «al día del partido») y cuáles cortó este marcador; `porExplicar` = grande o en "
+                    "su récord: el corte tiene una causa que va en porLado.*.cortes (mecanismo de la lista "
+                    "del estudio de reventones). Observación, sin tasa")}
+    fecha = str(fx["date"])
+    lados = (("a", fx["home_team_id"], fx["home_name"], "L", fx["g_local"], fx["g_visita"]),
+             ("b", fx["away_team_id"], fx["away_name"], "V", fx["g_visita"], fx["g_local"]))
+    for lado, tid, nombre, cond, gf, gc in lados:
+        try:
+            out[lado] = _familias_lado(tid, nombre, cond, fecha, int(gf), int(gc))
+        except Exception as e:  # noqa: BLE001 — se declara, no tumba el veredicto
+            out[lado] = {"cortadas": [], "siguieron": 0, "nota": f"no se pudo calcular: {e}"}
+    return out
+
+
+def _familias_lado(tid: int, nombre: str, cond: str, fecha: str, gf: int, gc: int) -> dict:
+    from backend.analisis import familias
+    from backend.app import constantes_de
+    from backend.backtest_familias import FAMILIAS
+    previas = list(reversed(constantes_de(tid, 500, antes=fecha)))
+    desc = familias.describir(previas, cond, nombre)
+    cortadas, siguieron = [], 0
+    for f in desc["familias"]:
+        if not f["destacada"]:
+            continue
+        if bool(FAMILIAS[f["familia"]](gf, gc)) == f["valor"]:
+            siguieron += 1
+            continue
+        cortadas.append({
+            "familia": f["familia"], "ambito": f["ambito"], "partidos": f["partidos"],
+            "record": f["record"], "cuidado": f["cuidado"], "antes": f["texto"],
+            "porExplicar": f["cuidado"] or f["partidos"] >= POR_EXPLICAR_DESDE,
+        })
+    return {"cortadas": cortadas, "siguieron": siguieron,
+            "porExplicar": sum(1 for c in cortadas if c["porExplicar"])}
 
 
 def pronostico_vs_racha(lado: str, declarado: dict | None, unxdos: str) -> dict:

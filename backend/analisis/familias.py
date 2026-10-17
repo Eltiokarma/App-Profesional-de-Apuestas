@@ -9,8 +9,13 @@ no las veía. Esto las DESCRIBE para la narrativa del parte y de /burbujas
 - §15: ni el largo de la burbuja ni su récord predicen el partido siguiente
   mejor que la frecuencia propia del equipo, y en su récord estas burbujas se
   SOSTIENEN algo más de lo esperado (no revientan). Por eso aquí no hay
-  riesgo ni puntos: la burbuja es descripción, y el récord se cuenta con la
-  dirección que midió el backtest.
+  riesgo ni puntos: la burbuja es descripción.
+- Pero una burbuja GRANDE en su récord es terreno sin precedente, y se lee
+  como CUIDADO (`cuidado`, alerta FAMILIA-RECORD del parte; usuario,
+  17/10/2026, tras el Everton 0-2 Chelsea con su doble oportunidad de local
+  enorme): prudencia con la carga, igual que K-EXTREMO, no probabilidad. Y
+  como el récord no se corta más que lo normal, un corte tiene una causa que
+  el veredicto tiene que poder rastrear (`objetivo.otrasFamilias`).
 - §15.1: el PERFIL de doble oportunidad por condición (con qué frecuencia no
   pierde y no gana de local, o de visita) SÍ agrega al 1X2 del motor. Va
   aparte, como dato que pesa.
@@ -35,6 +40,7 @@ NARRADAS = (
     ("mas2.5", "con más de 2,5 goles", "con 2 goles o menos"),
 )
 DESTACADA_DESDE = 3      # una burbuja de 3+ partidos (o en su récord) va a las líneas
+CUIDADO_DESDE = 5        # en su récord y de 5+ partidos: cuidado con la carga
 _AMBITO = {"local": "de local", "visita": "de visita", "total": "en total"}
 
 
@@ -60,16 +66,21 @@ def _burbuja(filas: list[dict], clave: str) -> dict | None:
             "frecuencia": redondear(sum(serie) / len(serie), 3), "n": len(serie)}
 
 
+def es_cuidado(b: dict) -> bool:
+    return b["record"] in ("supera", "iguala") and b["partidos"] >= CUIDADO_DESDE
+
+
 def _texto(nombre: str, ambito: str, b: dict, si: str, no: str) -> str:
     estado = si if b["valor"] else no
     t = f"{nombre} lleva {b['partidos']} {'partido' if b['partidos'] == 1 else 'partidos'} {_AMBITO[ambito]} {estado}"
     if b["maximoPrevio"] is not None:
         t += f" (su máximo previo era {b['maximoPrevio']})"
-    if b["record"] == "supera":
-        t += ": está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su " \
-             "frecuencia, no menos (REVENTON §15)"
-    elif b["record"] == "iguala":
-        t += ": iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15)"
+    if b["record"] in ("supera", "iguala"):
+        t += (": está en terreno nuevo, por encima de su récord" if b["record"] == "supera"
+              else ": iguala su récord")
+        if es_cuidado(b):
+            t += " — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más " \
+                 "(§15), así que si se corta hay una causa que buscar"
     # la frecuencia del ESTADO en que está hoy, para que la línea no se contradiga
     frec = b["frecuencia"] if b["valor"] else 1 - b["frecuencia"]
     t += f". En {b['n']} partidos {_AMBITO[ambito]} va {estado} el {int(redondear(frec * 100))} %."
@@ -115,7 +126,7 @@ def describir(filas: list[dict], condicion: str | None, nombre: str = "El equipo
             texto = _texto(nombre, ambito, b, si, no)
             destacada = b["partidos"] >= DESTACADA_DESDE or b["record"] in ("supera", "iguala")
             out["familias"].append({"familia": clave, "ambito": ambito, **b, "destacada": destacada,
-                                    "texto": texto})
+                                    "cuidado": es_cuidado(b), "texto": texto})
             if destacada:
                 out["lineas"].append(texto)
     return out

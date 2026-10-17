@@ -108,7 +108,9 @@ de esa carpeta.
 > - **Las otras burbujas** (`otrasFamilias` en `/burbujas`, desde el 17/10):
 >   doble oportunidad, márgenes y goles ya contados en `lineas[]`. Narrativa:
 >   su largo y su récord NO predicen el partido siguiente y en el récord se
->   sostienen, no revientan (REVENTON §15) —no las uses como alarma—. El
+>   sostienen, no revientan (REVENTON §15). Pero una GRANDE en su récord
+>   (`cuidado`, alerta FAMILIA-RECORD) es CUIDADO con la carga, como K-EXTREMO:
+>   nombrala en el ensayo y en el falsador. El
 >   `perfilDc` (no pierde / no gana en la condición de hoy) SÍ agrega al 1X2
 >   del motor (§15.1): miralo antes de fijar las probabilidades y contalo en el
 >   párrafo de las burbujas del ensayo. Sin copiar números.
@@ -170,6 +172,14 @@ de esa carpeta.
 > `sinMatriz` el parte es anterior a la matriz estructurada: juzgá el
 > escenario contra la prosa de `documentos[id=matriz]`. Por lado, `escenario: {aparecio: si|parcial|no,
 > que}`: si la palanca o el gatillo escrito fue lo que pasó (sin tasa).
+>
+> Las otras burbujas cortadas: `objetivo.otrasFamilias` lista, por lado, las
+> burbujas de doble oportunidad, márgenes y goles que el marcador cortó. Por
+> cada una con `porExplicar` (grande o en su récord), escribí en
+> `porLado.<lado>.cortes` `{familia, ambito, mecanismo, porque}`, con el
+> mecanismo de la lista del estudio de reventones y el HECHO que lo prueba
+> (ficha, once, DT, pelota parada). Un 0-2 de local del que siempre marca en
+> casa tiene que quedar explicado (REVENTON §15.2); sin hecho, `varianza`.
 >
 > `seleccion`: `ciega` si el partido salió de la agenda; `modoEvaluacion`:
 > `PRE` si terminó. Con duda entre ciega y post_resultado, es post_resultado.

@@ -2720,6 +2720,9 @@ class LadoVeredictoBody(BaseModel):
     # ¿apareció lo que la matriz escribió para el escenario jugado?
     # {aparecio: si|parcial|no, que: "…"} — observación, sin tasa
     escenario: dict = {}
+    # por qué se cortó cada burbuja de objetivo.otrasFamilias marcada porExplicar:
+    # [{familia, ambito, mecanismo (lista del estudio de reventones), porque}]
+    cortes: list = []
 
 
 class VeredictoBody(BaseModel):

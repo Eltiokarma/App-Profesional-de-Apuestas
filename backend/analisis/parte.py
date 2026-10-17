@@ -780,6 +780,39 @@ def alertas_extremo(reventon: dict | None, nombres: dict) -> list[dict]:
     return out
 
 
+def alertas_familias(reventon: dict | None, nombres: dict) -> list[dict]:
+    """FAMILIA-RECORD: una por lado con alguna de las OTRAS burbujas (doble
+    oportunidad, márgenes, goles) grande y en su récord (`familias.es_cuidado`).
+    Pedido del usuario (17/10/2026, Everton 0-2 Chelsea con su doble
+    oportunidad de local enorme): se lee como CUIDADO con la carga, igual que
+    K-EXTREMO, pero de tipo `dato` porque el backtest no dice que se corte más
+    (§15). No mueve el riesgo ni el 1X2; si se corta, el veredicto lo rastrea
+    (`objetivo.otrasFamilias`)."""
+    out = []
+    for lado in LADOS:
+        of = (((reventon or {}).get(lado) or {}).get("otrasFamilias") or {})
+        grandes = [f for f in of.get("familias") or [] if f.get("cuidado")]
+        if not grandes:
+            continue
+        out.append({
+            "codigo": "FAMILIA-RECORD", "equipo": lado, "tipo": "dato",
+            "detalle": f"{nombres.get(lado, lado)}: " + " · ".join(
+                f"{f['partidos']} {_AMBITO_TXT.get(f['ambito'], f['ambito'])} "
+                f"{_FAMILIA_TXT.get(f['familia'], f['familia'])} (récord{'' if f['record'] == 'supera' else ' igualado'})"
+                for f in grandes)
+                + ". Terreno sin precedente: cuidado con cargar a que siga. No es probabilidad de corte "
+                  "(en su récord estas burbujas se sostienen, REVENTON §15); si se corta, hay una causa que "
+                  "rastrear en el veredicto",
+        })
+    return out
+
+
+_AMBITO_TXT = {"local": "de local", "visita": "de visita", "total": "en total"}
+_FAMILIA_TXT = {"noPierde": "sin perder", "noGana": "sin ganar", "gana2+": "ganando por 2+",
+                "gana3+": "ganando por 3+", "pierde2+": "perdiendo por 2+", "anota": "anotando",
+                "recibe": "recibiendo gol", "ambosMarcan": "con goles de los dos", "mas2.5": "con más de 2,5"}
+
+
 # ── la escala del nivel entre ligas ──────────────────────────────────────────
 
 def _liga_domestica(team_id: int, fecha: str | None) -> dict | None:
@@ -1450,7 +1483,7 @@ _CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto", "ligas", "dtBa
 # F3 y las de DT las pone la lectura a partir de la base y del propio parte;
 # si el eco del GET vuelve con ellas, se descartan sin rechazo (se van a
 # recalcular igual) en vez de guardarse por duplicado.
-_ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "HERENCIA-DTP", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT",
+_ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "FAMILIA-RECORD", "HERENCIA-DTP", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT",
                         "F1-DECISIVO-FUERA", "DTP-REHACER"}
 # LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
 # selladas (coherencia_json), porque no son deterministas y rehacerlas al leer
@@ -2431,6 +2464,7 @@ def dto(fixture_id: int) -> dict | None:
     # la burbuja en su máximo histórico va a la tira de alertas, no solo a la
     # lectura: lo que decide cuánto se carga tiene que verse antes que nada
     alertas.extend(alertas_extremo(reventon, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
+    alertas.extend(alertas_familias(reventon, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # dos equipos de ligas distintas: el nivel no compara entre bases, y el
     # parte lo dice antes de que alguien lea los dos números uno contra otro
     alertas.extend(alerta_escala(fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
@@ -2836,6 +2870,40 @@ def _lado_veredicto(x, rechazos: list | None = None, donde: str = "porLado") -> 
                                  "esperado": "si · parcial · no"})
             ap = ""
         out["escenario"] = {"aparecio": ap, "que": _txt(esc.get("que"))}
+    # ¿POR QUÉ SE CORTÓ? Las otras burbujas que el partido cortó vienen en
+    # `objetivo.otrasFamilias`; la causa es juicio y va con un mecanismo de la
+    # lista cerrada del estudio de reventones, para que se pueda contar.
+    cortes = _cortes_veredicto(x.get("cortes"), rechazos, f"{donde}.cortes")
+    if cortes:
+        out["cortes"] = cortes
+    return out
+
+
+def _cortes_veredicto(x, rechazos: list | None, donde: str) -> list[dict]:
+    from backend.analisis.familias import NARRADAS
+    from backend.analisis.reventones import MECANISMOS
+    familias_ok = {c for c, _s, _n in NARRADAS}
+    out = []
+    for i, c in enumerate(x if isinstance(x, list) else []):
+        if not isinstance(c, dict):
+            continue
+        fam, amb = _txt(c.get("familia")), _txt(c.get("ambito")).lower() or "total"
+        mec, porque = _txt(c.get("mecanismo")).lower(), _txt(c.get("porque"))
+        if fam not in familias_ok:
+            if rechazos is not None:
+                rechazos.append({"donde": f"{donde}[{i}].familia", "porque": f"«{fam}» no es una familia narrada",
+                                 "esperado": " · ".join(sorted(familias_ok))})
+            continue
+        if amb not in ("local", "visita", "total"):
+            amb = "total"
+        if mec and mec not in MECANISMOS:
+            if rechazos is not None:
+                rechazos.append({"donde": f"{donde}[{i}].mecanismo", "porque": f"«{mec}» no está en la lista",
+                                 "esperado": " · ".join(MECANISMOS)})
+            mec = "otro"
+        if not (mec or porque):
+            continue
+        out.append({"familia": fam, "ambito": amb, "mecanismo": mec, "porque": porque})
     return out
 
 

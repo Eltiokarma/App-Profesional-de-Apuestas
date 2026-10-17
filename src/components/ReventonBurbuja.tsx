@@ -388,21 +388,25 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
 
 /** Las OTRAS burbujas contadas (doble oportunidad, márgenes, goles; REVENTON
  *  §15-15.1): el perfil de doble oportunidad —que sí agrega al 1X2— y las
- *  burbujas destacadas, como texto. Descripción, no riesgo: sin colores de alarma. */
+ *  burbujas destacadas, como texto. Descripción, no riesgo; la burbuja grande
+ *  en su récord va primero y en ámbar (`cuidado`): prudencia con la carga. */
 function OtrasFamilias({ of, compact }: { of: OtrasFamiliasDTO; compact?: boolean }) {
-  const [perfil, ...resto] = of.perfilDc ? of.lineas : [null, ...of.lineas]
-  const visibles = compact ? resto.slice(0, 4) : resto
+  const destacadas = of.familias.filter((f) => f.destacada)
+  const ordenadas = [...destacadas.filter((f) => f.cuidado), ...destacadas.filter((f) => !f.cuidado)]
+  const visibles = compact ? ordenadas.slice(0, Math.max(4, ordenadas.filter((f) => f.cuidado).length)) : ordenadas
   return (
     <div style={{ padding: '8px 10px', borderRadius: 9, background: 'var(--bg)', border: '1px solid var(--line)' }}>
       <div style={{ ...rotulo, marginBottom: 5 }}>OTRAS BURBUJAS · DOBLE OPORTUNIDAD, MÁRGENES Y GOLES</div>
-      {perfil && (
-        <div style={{ font: '600 11px var(--sans)', color: 'var(--t1)', lineHeight: 1.45, marginBottom: 6, paddingLeft: 8, borderLeft: '2px solid var(--accent)' }}>{perfil}</div>
+      {of.perfilDc && (
+        <div style={{ font: '600 11px var(--sans)', color: 'var(--t1)', lineHeight: 1.45, marginBottom: 6, paddingLeft: 8, borderLeft: '2px solid var(--accent)' }}>{of.perfilDc.texto}</div>
       )}
       <ul style={{ margin: 0, paddingLeft: 16, font: '500 10.5px var(--sans)', color: 'var(--t2)', lineHeight: 1.45 }}>
-        {visibles.map((l, i) => <li key={i} style={{ marginBottom: 2 }}>{l}</li>)}
+        {visibles.map((f) => (
+          <li key={`${f.ambito}-${f.familia}`} style={{ marginBottom: 2, ...(f.cuidado ? { color: 'var(--mark)', fontWeight: 700 } : {}) }}>{f.texto}</li>
+        ))}
       </ul>
-      {compact && resto.length > visibles.length && (
-        <div style={{ font: '500 9.5px var(--mono)', color: 'var(--t3)', marginTop: 3 }}>y {resto.length - visibles.length} más en la página del equipo</div>
+      {compact && ordenadas.length > visibles.length && (
+        <div style={{ font: '500 9.5px var(--mono)', color: 'var(--t3)', marginTop: 3 }}>y {ordenadas.length - visibles.length} más en la página del equipo</div>
       )}
       <div style={{ font: '500 9.5px var(--mono)', color: 'var(--t3)', marginTop: 5, lineHeight: 1.4 }}>{of.nota}</div>
     </div>

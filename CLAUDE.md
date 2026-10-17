@@ -350,7 +350,12 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   puntos. Lo que SÍ agrega al 1X2 es el PERFIL de doble oportunidad
   por condición (§15.1: con qué frecuencia el local no pierde / no gana de
   local y el visitante de visita; M7 − motor −0.011 de log-loss con el
-  intervalo bajo cero): falta medirlo contra el mercado antes de la fórmula. La narrativa viaja en `otrasFamilias` (`backend/analisis/familias.py`, espejo `src/lib/familias.ts`, vectores `scripts/casos_familias.json`) de `/burbujas` y de `reventonCalculado`, con la tarjeta «Otras burbujas» y el prompt (v. COWORK.md) que pide el perfil DC antes del 1X2. **Por período** (§10-bis):
+  intervalo bajo cero): falta medirlo contra el mercado antes de la fórmula. La narrativa viaja en `otrasFamilias` (`backend/analisis/familias.py`, espejo `src/lib/familias.ts`, vectores `scripts/casos_familias.json`) de `/burbujas` y de `reventonCalculado`, con la tarjeta «Otras burbujas» y el prompt (v. COWORK.md) que pide el perfil DC antes del 1X2. **No se
+  corre el backtest contra el mercado** (usuario, 17/10/2026: lo que importa es la narrativa). Una
+  de estas burbujas GRANDE en su récord (`cuidado`, 5+) es CUIDADO con la carga —ámbar, alerta
+  `FAMILIA-RECORD` tipo `dato`—, y el veredicto lista en `objetivo.otrasFamilias` las que el
+  marcador cortó: las `porExplicar` llevan su causa en `porLado.*.cortes` con un mecanismo de
+  `reventones.MECANISMOS` (§15.2, el Everton 0-2 Chelsea). **Por período** (§10-bis):
   `historialPorPeriodo` repite las medidas acotadas a temporada · año · DT
   vigente · últimos 20, filtrando por la fecha del reventón sobre los mismos
   episodios; la global sigue mandando en el riesgo (es la calibrada) y un

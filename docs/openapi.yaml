@@ -2319,6 +2319,7 @@ components:
               frecuencia: { type: number }
               n: { type: integer }
               destacada: { type: boolean }
+              cuidado: { type: boolean, description: "en su récord y de 5+ partidos: cuidado con la carga (alerta FAMILIA-RECORD del parte); prudencia, no probabilidad" }
               texto: { type: string }
         lineas: { type: array, items: { type: string } }
     BurbujasEquipo:
@@ -3787,6 +3788,16 @@ components:
           properties:
             aparecio: { type: string, enum: [si, parcial, no, ''] }
             que: { type: string }
+        cortes:
+          type: array
+          description: 'por qué se cortó cada burbuja de objetivo.otrasFamilias marcada porExplicar. `mecanismo` de la lista cerrada del estudio de reventones (fuera de ella se rechaza con motivo y queda «otro»); `familia` fuera de las narradas se rechaza'
+          items:
+            type: object
+            properties:
+              familia: { type: string }
+              ambito: { type: string, enum: [local, visita, total] }
+              mecanismo: { type: string }
+              porque: { type: string }
         otrasLecciones:
           type: array
           maxItems: 6
@@ -3974,6 +3985,31 @@ components:
             nota: { type: string }
             a: { $ref: '#/components/schemas/MatrizObservada' }
             b: { $ref: '#/components/schemas/MatrizObservada' }
+        otrasFamilias:
+          type: object
+          description: 'las burbujas de doble oportunidad, márgenes y goles destacadas ANTES del partido que este marcador cortó (REVENTON §15). `porExplicar` = grande (5+) o en su récord: la causa va en porLado.*.cortes. Observación, sin tasa'
+          properties:
+            nota: { type: string }
+            a: { $ref: '#/components/schemas/FamiliasCortadas' }
+            b: { $ref: '#/components/schemas/FamiliasCortadas' }
+    FamiliasCortadas:
+      type: object
+      properties:
+        cortadas:
+          type: array
+          items:
+            type: object
+            properties:
+              familia: { type: string }
+              ambito: { type: string, enum: [local, visita, total] }
+              partidos: { type: integer }
+              record: { type: string, nullable: true }
+              cuidado: { type: boolean }
+              antes: { type: string, description: 'la línea de la narrativa como se leía antes del partido' }
+              porExplicar: { type: boolean }
+        siguieron: { type: integer }
+        porExplicar: { type: integer }
+        nota: { type: string }
     MatrizObservada:
       type: object
       properties:

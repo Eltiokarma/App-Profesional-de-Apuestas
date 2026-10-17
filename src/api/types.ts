@@ -695,6 +695,8 @@ export interface BurbujaFamiliaDTO {
   frecuencia: number
   n: number
   destacada: boolean
+  /** en su récord y de 5+ partidos: terreno sin precedente, cuidado con la carga (alerta FAMILIA-RECORD) */
+  cuidado: boolean
   texto: string
 }
 
@@ -1420,6 +1422,8 @@ export interface LadoVeredicto {
   otrasLecciones?: { skill: string; reglaTocada: string; leccion: string; queP: string }[]
   /** ¿Apareció lo que la matriz escribió para el escenario jugado? Observación, sin tasa. */
   escenario?: { aparecio: 'si' | 'parcial' | 'no' | ''; que: string }
+  /** por qué se cortó cada burbuja de `objetivo.otrasFamilias` marcada porExplicar */
+  cortes?: CorteFamilia[]
 }
 
 /** Matriz de Escenarios v2.0: cómo puede darse el partido por equipo, con la
@@ -1495,6 +1499,37 @@ export interface VeredictoObjetivo {
   espina?: { nota: string } & Partial<Record<'a' | 'b', EspinaObservada>>
   /** El escenario que dio el marcador para cada lado y lo que la matriz había escrito para él. */
   matriz?: { nota: string } & Partial<Record<'a' | 'b', { escenario: EscenarioMatriz; escrito: Record<string, string>; declarado: boolean }>>
+  /** Las otras burbujas (DC, márgenes, goles) destacadas antes del partido que
+   *  este marcador cortó; `porExplicar` (grande o en su récord) pide la causa en
+   *  `porLado.*.cortes`. Observación, sin tasa. */
+  otrasFamilias?: { nota: string } & Partial<Record<'a' | 'b', FamiliasCortadas>>
+}
+
+export interface FamiliaCortada {
+  familia: string
+  ambito: 'local' | 'visita' | 'total'
+  partidos: number
+  record: 'supera' | 'iguala' | 'no' | null
+  cuidado: boolean
+  /** la línea de la narrativa tal como se leía antes del partido */
+  antes: string
+  porExplicar: boolean
+}
+
+export interface FamiliasCortadas {
+  cortadas: FamiliaCortada[]
+  siguieron: number
+  porExplicar?: number
+  nota?: string
+}
+
+/** Por qué se cortó una burbuja de otra familia (juicio del veredicto). */
+export interface CorteFamilia {
+  familia: string
+  ambito: 'local' | 'visita' | 'total'
+  /** de la lista cerrada del estudio de reventones (`reventones.MECANISMOS`) */
+  mecanismo: string
+  porque: string
 }
 
 export type LecturaEspina = 'positiva' | 'cero' | 'negativa' | 'neutra'
