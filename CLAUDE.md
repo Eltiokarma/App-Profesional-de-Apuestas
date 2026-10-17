@@ -656,6 +656,10 @@ conversación se pierde en la siguiente.
    (cada disparo es un mensaje nuevo que hace `git pull` de main): una
    rutina de sesión nueva arrancaba sin el repo, sin `add_repo` y con otro
    modelo, y no pudo leer el skill (13/10, 12:48).
+   **Disparar la rutina a mano** («ejecutar ahora», `fire_trigger`) tampoco
+   sirve: abre una sesión NUEVA sin repo y con otro modelo, que termina sin
+   hacer nada (17/10, 06:09). Una corrida fuera de horario se lanza mandando
+   el mismo mensaje de la rutina a la sesión fija (`send_message`).
 
 12. **El estudio de los reventones hacia atrás** (13/10/2026,
    `backend/analisis/reventones.py`, modo `reventones` de `corrida-sad`).
