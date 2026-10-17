@@ -910,3 +910,13 @@ partidos —en el servidor, con `--padron`, que trae las cuotas—: si la cuota 
 lo tiene, el valor es de lectura, no de apuesta; (2) qué ventana del perfil
 sirve más (toda la historia, la temporada, los últimos 20 de la condición).
 Mientras tanto entra al análisis como DATO con su frecuencia por condición.
+
+**Primera mirada al mercado (17/10/2026, con las cuotas de `/cuotas/{id}/casas`,
+sin sintéticas):** solo 940 de los 7.490 partidos de la prueba tienen cuota por
+esa vía (se capturan desde julio), y no alcanza para concluir. En esos 940:
+mercado 1.0276 · motor 1.0412 · motor + perfil 1.0345 (perfil − motor −0.0067
+[−0.0132, +0.0010]). Sobre el mercado, ajustando en la mitad vieja y probando
+en la nueva (470/470): mercado + perfil − mercado +0.0031 [−0.0108, +0.0163],
+mercado + motor − mercado −0.0073 [−0.0164, +0.0029]. Sin evidencia de que el
+perfil agregue SOBRE la cuota; la respuesta firme sale de `--padron` en el
+servidor, con todas las cuotas guardadas.
