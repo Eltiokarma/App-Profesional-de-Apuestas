@@ -3598,9 +3598,11 @@ components:
         coberturaDeAyer:
           type: object
           description: >
-            Lo que la agenda de ayer habría elegido contra lo que tiene parte. Es la señal
-            que delata que el batch no corrió y que NO se puede deducir mirando solo los
-            partes depositados.
+            TODOS los candidatos del padrón de ayer (no solo el cupo de una corrida) contra
+            lo que tiene parte: `porcentaje` contra `meta` (0.80); por debajo, ámbar. Es la
+            señal que delata que el batch no corrió o no alcanzó, y que NO se puede deducir
+            mirando solo los partes depositados. `faltaron` lista hasta 25; `faltaronTotal`
+            los cuenta todos.
           additionalProperties: true
         sinCerrar: { type: integer }
         veredictosVencidos: { type: array, items: { type: object, additionalProperties: true } }

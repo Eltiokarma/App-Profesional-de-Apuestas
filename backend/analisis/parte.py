@@ -122,6 +122,8 @@ _COLUMNAS_LOG = (("via", "TEXT"),)
 # solo por ese número (LaLiga, Serie A, Bundesliga, Ligue 1). Un solo sitio,
 # para que la corrida y el latido que mide su cobertura no se separen.
 AGENDA_LIMITE = max(1, min(30, int(os.environ.get("SAD_AGENDA_LIMITE", "16") or 16)))
+# de TODOS los candidatos del padrón de un día, cuántos tienen que tener parte
+COBERTURA_META = 0.80
 
 COHORTE_RODAJE = "rodaje"
 COHORTE = "c3-2026-09-23"
@@ -3635,10 +3637,13 @@ def latido(horas: int = 36) -> dict:
         sin_xi = [dict(r) for r in con.execute(
             "SELECT fixture_id, fecha, equipo_a, equipo_b FROM parte_cowork "
             "WHERE xi_json IS NULL AND veredicto_json IS NULL ORDER BY fecha LIMIT 20")]
-    # COBERTURA: de los partidos que la agenda habría elegido ayer, ¿cuántos
-    # tienen parte? Es la señal que delata que el batch no corrió, y no se puede
-    # deducir mirando solo los partes: hay que comparar contra lo que TOCABA.
-    ayer = agenda(fecha=(ahora - timedelta(days=1)).date(), limite=AGENDA_LIMITE)
+    # COBERTURA: de TODOS los candidatos del padrón de ayer (no solo los que
+    # entraban en el cupo de una corrida), ¿cuántos tienen parte? Es la señal
+    # que delata que el batch no corrió o no alcanzó, y no se puede deducir
+    # mirando solo los partes: hay que comparar contra lo que TOCABA. La meta es
+    # COBERTURA_META (80 %, usuario 17/10/2026): un fin de semana trae 50-65
+    # candidatos y el cupo de 8 dejaba fuera 47 sin que nada se pusiera ámbar.
+    ayer = agenda(fecha=(ahora - timedelta(days=1)).date(), limite=500)
     tocaban = [x["fixtureId"] for x in (ayer.get("analizar") or [])]
     con_parte = set()
     if tocaban:
@@ -3666,9 +3671,10 @@ def latido(horas: int = 36) -> dict:
     motivos = []
     if depositados == 0:
         motivos.append(f"no se depositó ningún parte en {horas} h")
-    if tocaban and faltaron:
-        motivos.append(f"{len(faltaron)} de {len(tocaban)} partidos de la agenda de ayer "
-                       "se quedaron sin parte")
+    cobertura = round(len(con_parte) / len(tocaban), 3) if tocaban else None
+    if cobertura is not None and cobertura < COBERTURA_META:
+        motivos.append(f"cobertura de ayer {round(cobertura * 100)} % ({len(con_parte)} de {len(tocaban)} "
+                       f"partidos del padrón), por debajo de la meta del {round(COBERTURA_META * 100)} %")
     if vencidos:
         motivos.append(f"{len(vencidos)} caso(s) llevan más de 12 h terminados y sin veredicto")
     if cuotas["alarma"]:
@@ -3687,8 +3693,10 @@ def latido(horas: int = 36) -> dict:
                          "partido": f"{ultimo['equipo_a']} vs {ultimo['equipo_b']}",
                          "cuando": ultimo["actualizado_en"]} if ultimo else None),
         "coberturaDeAyer": {"tocaban": len(tocaban), "conParte": len(con_parte),
+                            "porcentaje": cobertura, "meta": COBERTURA_META,
                             "faltaron": [{"fixtureId": x["fixtureId"], "partido": x.get("partido", ""),
-                                          "porque": x.get("motivo", "")} for x in faltaron]},
+                                          "porque": x.get("motivo", "")} for x in faltaron[:25]],
+                            "faltaronTotal": len(faltaron)},
         "sinCerrar": sin_cerrar,
         "veredictosVencidos": [{"fixtureId": v["fixtureId"], "partido": v["partido"],
                                 "marcador": v["marcador"]} for v in vencidos],

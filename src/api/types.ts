@@ -1635,9 +1635,14 @@ export interface LatidoCoworkDTO {
   ultimoParte: { fixtureId: number; partido: string; cuando: string } | null
   /** La señal que delata que el batch no corrió: lo que TOCABA contra lo que hay. */
   coberturaDeAyer: {
+    /** TODOS los candidatos del padrón de ayer, no solo el cupo de una corrida */
     tocaban: number
     conParte: number
+    /** conParte / tocaban; por debajo de `meta` (0.80) el latido va en ámbar */
+    porcentaje?: number | null
+    meta?: number
     faltaron: { fixtureId: number; partido: string; porque: string }[]
+    faltaronTotal?: number
   }
   sinCerrar: number
   veredictosVencidos: { fixtureId: number; partido: string; marcador: string }[]

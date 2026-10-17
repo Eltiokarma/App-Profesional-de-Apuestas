@@ -53,6 +53,7 @@ from backend.ingesta.extractor import (
 from backend.ingesta.ficha_partido import (
     guardar_alineaciones,
     guardar_eventos,
+    guardar_stats,
     preparar_tablas as preparar_ficha,
 )
 
@@ -368,6 +369,34 @@ def ligas_descansando(con: sqlite3.Connection, ligas: "set[int]", ahora: datetim
 # Alineaciones ANTES del saque: la API las publica ~20-60 min antes y el
 # análisis las necesita en cuanto existen (el EFE/DTP y los skills leen la
 # ficha /fixtures/{id}/ficha, que sirve la tabla `alineaciones` al instante).
+def completar_ficha_al_cierre(con: sqlite3.Connection, item: dict) -> int:
+    """`/fixtures?ids=` —la consulta con la que se cierra un partido que salió
+    del feed en vivo— trae también las alineaciones y las estadísticas. Se
+    tiraban: solo se guardaban los eventos, y el veredicto de esa noche salía
+    con las stats vacías (los 8 del 17/10/2026) porque la ficha post-partido
+    recién corre a la mañana siguiente, y solo si alguno vuelve a jugar pronto.
+    0 requests. La alineación se guarda solo si trae AL MENOS los equipos que ya
+    había (guardar_alineaciones reemplaza todo el partido: una respuesta con un
+    solo lado borraría el otro)."""
+    try:
+        fid = int((item.get("fixture") or {}).get("id"))
+    except (TypeError, ValueError):
+        return 0
+    hecho = 0
+    stats = [x for x in item.get("statistics") or [] if x.get("statistics")]
+    if stats:
+        guardar_stats(con, fid, stats)
+        hecho = 1
+    onces = [x for x in item.get("lineups") or [] if x.get("startXI")]
+    if onces:
+        ya = con.execute("SELECT COUNT(DISTINCT team_id) FROM alineaciones WHERE fixture_id=?",
+                         (fid,)).fetchone()[0]
+        if len(onces) >= ya:
+            guardar_alineaciones(con, fid, onces)
+            hecho = 1
+    return hecho
+
+
 # La ficha post-partido (ficha_partido.py) solo baja partidos TERMINADOS, así
 # que sin este paso el XI confirmado no llegaba nunca antes del pitazo.
 # 1 request por partido (fixtures/lineups), desde XI_VENTANA_PREVIA_MIN antes
@@ -1288,7 +1317,7 @@ def main() -> int:
     # cerrar los que se cayeron del feed live (terminaron): /fixtures?ids= trae
     # su estado y marcador finales sin esperar a la corrida diaria (lotes de 20)
     terminados = sorted(fixtures_marcados_en_juego(con) - ids_vivos)
-    n_fin = 0
+    n_fin = n_ficha = 0
     for i in range(0, len(terminados), 20):
         if not cliente.quedan():
             break
@@ -1296,9 +1325,11 @@ def main() -> int:
         cerrados = (data or {}).get("response", [])
         n_fin += guardar_fixtures(con, cerrados)
         n_ev += sum(guardar_eventos(con, item) for item in cerrados)  # eventos finales del partido
+        n_ficha += sum(completar_ficha_al_cierre(con, item) for item in cerrados)
         con.commit()
     if terminados:
-        print(f"cerrados (salieron del feed live): {n_fin} de {len(terminados)}")
+        print(f"cerrados (salieron del feed live): {n_fin} de {len(terminados)}"
+              + (f" · fichas completadas al cierre: {n_ficha}" if n_ficha else ""))
 
     borradas = purgar_odds_live(con)
     con.close()

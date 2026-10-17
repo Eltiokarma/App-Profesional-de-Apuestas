@@ -37,7 +37,10 @@ de esa carpeta.
 1. `GET $B/analisis/cowork/contrato` (manda sobre cualquier ejemplo) y
    `GET $B/analisis/cowork/latido` (qué quedó roto de ayer: decilo al final).
 2. `GET $B/analisis/cowork/agenda` (sin `limite`: el cupo lo fija el
-   servidor, el mismo que mide el latido) → la lista de trabajo es
+   servidor, el mismo que mide el latido). **Si el mensaje del disparo trae
+   parámetros de agenda** (`desdeAhora=true&horas=N&limite=M`: el TRAMO de
+   esta corrida, que termina donde empieza la siguiente), usalos tal cual en
+   este paso y en el 4 → la lista de trabajo es
    `porHacer` (lo ya depositado está en `yaHechos`: no se rehace). Descartá
    los que arrancan en menos de 60 minutos: un parte no se escribe con el
    pitazo encima y JAMÁS después del pitazo.
@@ -122,7 +125,9 @@ de esa carpeta.
 ## Modo `veredictos` (después del partido)
 
 1. `GET $B/analisis/cowork/veredictos/pendientes` → los partes jugados sin
-   veredicto. Si no hay, decilo en una línea y terminá.
+   veredicto (si el disparo trae `limite=N`, pasalo: lo que no entra queda
+   para la próxima corrida, los más viejos primero). Si no hay, decilo en una
+   línea y terminá.
 2. Un subagente por partido, en paralelo, con este encargo:
 
 > Tus archivos de trabajo van SOLO en `<scratchpad>/{id}/` (otros subagentes

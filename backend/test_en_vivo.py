@@ -1077,6 +1077,28 @@ def main():
     check("un fallo del cierre se dice y no corta el ciclo", "no se pudieron cerrar" in buf.getvalue(), buf.getvalue())
     _parte.cerrar_onces_pendientes = _orig
 
+    # AL CIERRE, LA FICHA SE COMPLETA SOLA (17/10/2026: stats vacías en los 8
+    # veredictos): /fixtures?ids= ya trae alineaciones y estadísticas
+    from backend.ingesta.en_vivo import completar_ficha_al_cierre
+    cf = sqlite3.connect(":memory:")
+    preparar_ficha(cf)
+    def _lado(tid, n=11):
+        return {"team": {"id": tid}, "formation": "4-4-2", "coach": {"name": "DT"},
+                "startXI": [{"player": {"id": tid * 100 + i, "name": f"J{i}", "pos": "M"}} for i in range(n)],
+                "substitutes": []}
+    item = {"fixture": {"id": 77},
+            "statistics": [{"team": {"id": 1}, "statistics": [{"type": "Ball Possession", "value": "55%"}]},
+                           {"team": {"id": 2}, "statistics": [{"type": "Ball Possession", "value": "45%"}]}],
+            "lineups": [_lado(1), _lado(2)]}
+    check("al cierre se guardan las stats y las dos alineaciones (0 requests)",
+          completar_ficha_al_cierre(cf, item) == 1
+          and cf.execute("SELECT COUNT(*) FROM fixture_stats WHERE fixture_id=77").fetchone()[0] == 2
+          and cf.execute("SELECT COUNT(DISTINCT team_id) FROM alineaciones WHERE fixture_id=77").fetchone()[0] == 2)
+    completar_ficha_al_cierre(cf, {"fixture": {"id": 77}, "lineups": [_lado(1)]})
+    check("una respuesta con UN solo lado no borra el otro ya guardado",
+          cf.execute("SELECT COUNT(DISTINCT team_id) FROM alineaciones WHERE fixture_id=77").fetchone()[0] == 2)
+    check("sin stats ni onces no toca nada", completar_ficha_al_cierre(cf, {"fixture": {"id": 78}}) == 0)
+
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
 

@@ -836,6 +836,9 @@ def main():
           "depositadosEnLaVentana" in lat and "horasDesdeElUltimo" in lat, sorted(lat))
     check("mide la COBERTURA contra lo que tocaba, no solo lo depositado",
           "tocaban" in lat["coberturaDeAyer"], lat.get("coberturaDeAyer"))
+    check("y la mide contra la meta del 80 % de TODO el padrón, no contra el cupo",
+          lat["coberturaDeAyer"].get("meta") == 0.8 and "porcentaje" in lat["coberturaDeAyer"]
+          and "faltaronTotal" in lat["coberturaDeAyer"], lat.get("coberturaDeAyer"))
     check("lista los veredictos vencidos y los onces sin cerrar",
           isinstance(lat["veredictosVencidos"], list) and isinstance(lat["sinOnceCerrado"], list),
           sorted(lat))
