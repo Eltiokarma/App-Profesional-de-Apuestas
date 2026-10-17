@@ -49,6 +49,7 @@ os.environ.setdefault("SAD_SIN_HILOS", "1")
 from backend import db  # noqa: E402
 from backend.analisis import burbuja  # noqa: E402
 from backend.app import constantes_de, mu, niveles_de  # noqa: E402
+from backend.backtest_familias import _logit, perfil_dc  # noqa: E402
 from backend.backtest_burbuja import (MIN_PREFIJO, _equipos, _nivel_a_fecha, _nombres_ligas,  # noqa: E402
                                       _resolver, nivel_rival_previo, padron)
 
@@ -72,6 +73,14 @@ MODELOS = {
     "M5 + K goles": ["d", "d2", "kGaL", "kGrL", "kGaV", "kGrV", "kGaCondL", "kGrCondL", "kGaCondV", "kGrCondV"],
     "M6 + todas las K": ["d", "d2", "kResL", "kResV", "kResCondL", "kResCondV",
                          "kGaL", "kGrL", "kGaV", "kGrV", "kGaCondL", "kGrCondL", "kGaCondV", "kGrCondV"],
+    # EL PERFIL DE DOBLE OPORTUNIDAD (17/10/2026, pedido del usuario: «hay
+    # equipos que pueden empatar como locales o jugarse un empate como
+    # visitas»): la frecuencia con que cada uno no pierde y no gana EN SU
+    # CONDICIÓN DE HOY. M8 suma la burbuja de «no pierde» abierta y su récord,
+    # que el §15 ya midió contra la frecuencia sola.
+    "M7 + perfil DC": ["d", "d2", "dcNPL", "dcNGL", "dcNPV", "dcNGV"],
+    "M8 + perfil y burbuja DC": ["d", "d2", "dcNPL", "dcNGL", "dcNPV", "dcNGV",
+                                 "dcBurL", "dcBurV", "dcRecL", "dcRecV"],
 }
 
 
@@ -80,7 +89,7 @@ MODELOS = {
 # con prefijo propio: «ga» ya es «goles en contra» del lado, y una K con la
 # misma clave PISABA el marcador (14/10/2026: el resultado salió de comparar
 # goles con constantes, 7 % de empates y una K «prediciendo» lo que la armó)
-_CLAVES_K = ("kRes", "kResCond", "kGa", "kGr", "kGaCond", "kGrCond")
+_CLAVES_K = ("kRes", "kResCond", "kGa", "kGr", "kGaCond", "kGrCond", "dcNP", "dcNG", "dcBur", "dcRec")
 
 
 def _slog(x) -> float:
@@ -96,6 +105,13 @@ def _ks(prev: dict, local_hoy: bool) -> dict:
     return {"kRes": _slog(f["k"]), "kResCond": _slog(f["k" + cond]),
             "kGa": _slog(f["golesAnotado"]), "kGr": _slog(f["golesRecibido"]),
             "kGaCond": _slog(f[f"goles{cond}Anotado"]), "kGrCond": _slog(f[f"goles{cond}Recibido"])}
+
+def _dc(prefijo: list[dict], local_hoy: bool) -> dict:
+    """El perfil de doble oportunidad en la condición de hoy (sin fuga)."""
+    p = perfil_dc(prefijo, local_hoy)
+    return {"dcNP": _logit(p["noPierde"]), "dcNG": _logit(p["noGana"]),
+            "dcBur": _slog(p["burbuja"]), "dcRec": p["record"] * (1 if p["burbuja"] > 0 else -1)}
+
 
 def lado_equipo(team_id: int, ligas: set[int] | None) -> dict[int, dict]:
     """Por fixture: lo que se sabía de ESTE equipo antes del partido."""
@@ -132,6 +148,7 @@ def lado_equipo(team_id: int, ligas: set[int] | None) -> dict[int, dict]:
             # este partido ya trae su resultado). La de la condición es la del
             # lado en que juega HOY: local para el local, visita para el visitante.
             **_ks(filas[i - 1], fila["condicion"] == "Local"),
+            **_dc(filas[:i], fila["condicion"] == "Local"),
         }
         assert out[fila["fixtureId"]]["gf"] == fila["golesFavor"] and out[fila["fixtureId"]]["ga"] == fila["golesContra"], \
             "una clave pisó el marcador del lado"
@@ -280,7 +297,8 @@ def correr(obs: list[dict], mercado_de=None) -> dict:
     nombres = list(MODELOS)
     comparaciones = {}
     for a, b in ((nombres[0], nombres[1]), (nombres[0], nombres[2]), (nombres[1], nombres[2]), (nombres[2], nombres[3]),
-                 (nombres[0], nombres[4]), (nombres[0], nombres[5]), (nombres[0], nombres[6]), (nombres[3], nombres[6])):
+                 (nombres[0], nombres[4]), (nombres[0], nombres[5]), (nombres[0], nombres[6]), (nombres[3], nombres[6]),
+                 (nombres[0], nombres[7]), (nombres[7], nombres[8])):
         comparaciones[f"{b} vs {a}"] = {"logLoss": _ic_dif(perd[a][0], perd[b][0]),
                                         "brier": _ic_dif(perd[a][1], perd[b][1])}
     # dónde debería notarse: partidos con algún lado en riesgo alto / con extremo
@@ -409,6 +427,13 @@ def lectura(comp: dict) -> str:
                 f"las K de goles sobre el motor: {r5}", f"todas las K juntas: {r6}"]
         txt.append("→ las constantes AGREGAN al 1X2: candidatas a la fórmula (con estos coeficientes)" if r6 == "mejora"
                    else "→ las constantes no agregan al 1X2 más allá del nivel que ya usa el motor")
+    if "M7 + perfil DC vs M0 motor" in comp:
+        r7 = veredicto("M7 + perfil DC vs M0 motor")
+        r8 = veredicto("M8 + perfil y burbuja DC vs M7 + perfil DC")
+        txt += [f"el perfil de doble oportunidad por condición sobre el motor: {r7}",
+                f"la burbuja de doble oportunidad sobre el perfil: {r8}"]
+        txt.append("→ el perfil de doble oportunidad AGREGA al 1X2: candidato a la fórmula" if r7 == "mejora"
+                   else "→ el perfil de doble oportunidad no agrega al 1X2 más allá del nivel del motor")
     return " · ".join(txt)
 
 
@@ -446,12 +471,12 @@ def imprimir(r: dict):
     print(f"partidos: {r['partidos']} ({r['equipos']} equipos) · entrenamiento {r['desde']} → {r['corte']} "
           f"({r['entrenamiento']}) · prueba {r['corte']} → {r['hasta']} ({r['prueba']})")
     print(f"frecuencias en la prueba: {r['frecuenciasPrueba']}\n")
-    print(f"{'modelo':<16}{'log-loss':>10}{'Brier':>9}{'acierto':>9}")
+    print(f"{'modelo':<26}{'log-loss':>10}{'Brier':>9}{'acierto':>9}")
     for n, m in r["modelos"].items():
-        print(f"{n:<16}{m['logLoss']:>10.4f}{m['brier']:>9.4f}{m['acierto']:>9.1%}")
+        print(f"{n:<26}{m['logLoss']:>10.4f}{m['brier']:>9.4f}{m['acierto']:>9.1%}")
     print("\ndiferencia de log-loss (negativa = mejora), IC 95 % bootstrap emparejado:")
     for k, v in r["comparaciones"].items():
-        print(f"  {k:<28} {v['logLoss']['media']:+.5f}  {v['logLoss']['ic95']}")
+        print(f"  {k:<44} {v['logLoss']['media']:+.5f}  {v['logLoss']['ic95']}")
     for k, v in r["subgrupos"].items():
         print(f"\nsubgrupo {k} (n={v['n']}):")
         for kk, vv in v.items():
@@ -466,6 +491,12 @@ def imprimir(r: dict):
         print(f"\ncoeficientes de M6 (por desvío; local / visita contra empate; L = el local, V = el visitante):")
         for v in m6["coefLocal"]:
             print(f"  {v:<10} {m6['coefLocal'][v]:+.3f} / {m6['coefVisita'][v]:+.3f}")
+    m7 = r["modelos"].get("M7 + perfil DC")
+    if m7:
+        print(f"\ncoeficientes de M7 (por desvío; local / visita contra empate; NP = no pierde, NG = no gana "
+              f"en su condición de hoy):")
+        for v in m7["coefLocal"]:
+            print(f"  {v:<10} {m7['coefLocal'][v]:+.3f} / {m7['coefVisita'][v]:+.3f}")
     mk = r.get("mercado")
     if mk:
         print("\n— el MERCADO sobre los mismos partidos de la prueba —")

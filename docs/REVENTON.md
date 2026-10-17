@@ -823,3 +823,100 @@ empate no depende de la burbuja. Ojo con leerla como ventaja sobre el 1X2: el
 motor ya trae la localía en el nivel (§13.4); esto es la guía para LEER a un
 equipo por condición, y Aprendizaje (`acreditables.espina.porGuia`) dirá si la
 lectura con la K de la condición acierta más que con la total.
+
+## 15. Las otras familias: doble oportunidad, márgenes y goles (17/10/2026)
+
+Pedido del usuario: la burbuja de doble oportunidad de local de Everton estaba
+en su récord (4 partidos en casa sin perder; nunca había llegado a 4) y Everton
+perdió 0-2 con Chelsea. ¿Las burbujas de las otras familias avisan algo que la
+K de resultado no? `backend/backtest_familias.py` (test:
+`backend/test_backtest_familias.py`, detecta un reventón plantado y no inventa
+uno con resultados independientes).
+
+**Qué mide.** Cada familia es un sí/no por partido —no pierde · no gana · gana
+por 1+…4+ · pierde por 1+…4+ · anota · anota 2+ · recibe · recibe 2+ · ambos
+marcan · más de 2,5— en total, de local y de visita. En cada partido, solo con
+lo anterior: la frecuencia propia del equipo, el largo de la burbuja abierta
+(racha o sequía) y si está en su récord (lo iguala · lo supera · lejos, con ≥ 3
+burbujas previas del valor). Se compara la predicción del partido siguiente con
+la frecuencia sola (A) contra frecuencia + largo + récord (B), corte temporal
+80/20 y bootstrap por equipo. No usa el nivel del rival (no hereda §13.1).
+
+**Datos.** 518 equipos de las 30 ligas del padrón (historias de `/constantes`,
+hasta 500 partidos), 119.584 partidos, 3,58 M observaciones.
+
+**Resultado: la burbuja no aporta en ninguna familia.** De 48 combinaciones
+(16 familias × 3 ámbitos; `noGana` y `pierde1+` son el complemento de `gana1+`
+y `noPierde` y dan lo mismo), UNA queda con el intervalo bajo cero —pierde 3+
+en total, Δ log-loss −0.0009—, que es lo que se espera por azar con 48 pruebas
+al 95 %. Cuatro EMPEORAN fuera de muestra (ambos marcan, más de 2,5, recibe y
+recibe 2+, de local): el largo y el récord sobreajustan.
+
+**El récord no revienta: se sostiene un poco más.** Sobre todas las familias,
+la racha que supera su récord sigue el 59,9 % de las veces contra 58,0 % que
+esperaba la frecuencia (+1,9 pts); la que lo iguala, +1,2; la sequía en récord,
++1,9 a +2,4. En «no pierde de local» —el caso de Everton—: igualando el récord
+sigue 76 % contra 68 % esperado (n = 1.049), superándolo 77 % contra 73 %
+(n = 3.538). Es INERCIA, no reventón, y casi seguro es forma reciente (la
+frecuencia de toda la historia va atrasada respecto de un equipo que mejoró).
+Es la misma conclusión que §12 para la K: el récord no adelanta el corte.
+
+**Qué se hace con esto.** Las otras familias entran al análisis como
+DESCRIPCIÓN —cuánto lleva la burbuja, su récord, cuánto suele durar y la
+frecuencia propia— sin riesgo ni puntos, y con la lectura correcta del récord
+(«en su récord estas burbujas se sostienen algo más de lo que dice la
+frecuencia, no menos»). Everton–Chelsea no lo habría corregido: la guía
+histórica decía que esa racha tendía a seguir. Re-correr con
+`python -m backend.backtest_familias --padron` (servidor) o `--desde-json`
+(historias bajadas) cuando haya más temporada.
+
+### 15.1 El PERFIL de doble oportunidad sí agrega al 1X2 (17/10/2026)
+
+El §15 midió la burbuja (largo y récord) contra la frecuencia del equipo, no
+la frecuencia misma contra el motor. El usuario: «hay equipos que, como no
+tienen tan buen rendimiento, pueden empatar como locales o jugarse un empate
+como visitas». `backtest_burbuja_1x2` suma dos modelos sobre el motor (M0):
+
+- **M7 + perfil DC**: la frecuencia (Laplace, solo partidos ANTERIORES) con que
+  el local no pierde y no gana DE LOCAL, y el visitante DE VISITA
+  (`backtest_familias.perfil_dc`).
+- **M8 + perfil y burbuja DC**: más la burbuja abierta de «no pierde» en la
+  condición y su récord.
+
+Corrido sobre las historias y niveles reales bajados de `/constantes` y
+`/niveles` (518 equipos del padrón, corte temporal 80/20, sin cuotas):
+
+| modelo | log-loss | Brier | acierto |
+|---|---|---|---|
+| M0 motor | 1.0430 | 0.6275 | 47.3 % |
+| M7 + perfil DC | **1.0316** | **0.6193** | **47.9 %** |
+| M8 + perfil y burbuja DC | 1.0313 | 0.6192 | 47.8 % |
+
+M7 − M0: **−0.0114 [−0.0142, −0.0084]**: el perfil MEJORA al motor. M8 − M7:
+−0.0003 [−0.0006, +0.0001]: la burbuja no agrega sobre el perfil (lo mismo
+que el §15). M1-M6 dan lo del §13 (la racha, el riesgo y las K no agregan),
+así que la corrida reproduce lo conocido. Para dimensionarlo: el mercado le
+saca 0,050 al motor (§13.5); el perfil recupera ~0,011, casi un cuarto.
+
+Coeficientes (por desvío, contra el empate): que el local NO GANE de local
+baja su victoria (−0.14) y que el visitante NO GANE de visita baja la suya
+(−0.13); que el visitante NO PIERDA de visita sube su victoria (+0.07). Lectura
+probable: el motor usa una localía igual para todos y el perfil trae la de
+CADA equipo (el que en casa empata mucho, el que afuera se planta).
+
+**Qué queda por medir antes de tocar la fórmula** (la matemática del motor
+es sagrada, `MOTOR_SAD_EXTRACCION.md`): (1) contra el MERCADO sobre los mismos
+partidos —en el servidor, con `--padron`, que trae las cuotas—: si la cuota ya
+lo tiene, el valor es de lectura, no de apuesta; (2) qué ventana del perfil
+sirve más (toda la historia, la temporada, los últimos 20 de la condición).
+Mientras tanto entra al análisis como DATO con su frecuencia por condición.
+
+**Primera mirada al mercado (17/10/2026, con las cuotas de `/cuotas/{id}/casas`,
+sin sintéticas):** solo 940 de los 7.490 partidos de la prueba tienen cuota por
+esa vía (se capturan desde julio), y no alcanza para concluir. En esos 940:
+mercado 1.0276 · motor 1.0412 · motor + perfil 1.0345 (perfil − motor −0.0067
+[−0.0132, +0.0010]). Sobre el mercado, ajustando en la mitad vieja y probando
+en la nueva (470/470): mercado + perfil − mercado +0.0031 [−0.0108, +0.0163],
+mercado + motor − mercado −0.0073 [−0.0164, +0.0029]. Sin evidencia de que el
+perfil agregue SOBRE la cuota; la respuesta firme sale de `--padron` en el
+servidor, con todas las cuotas guardadas.

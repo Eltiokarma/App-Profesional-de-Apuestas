@@ -1,0 +1,78 @@
+"""Las otras burbujas contadas (backend/analisis/familias.py): el texto dice lo
+que el backtest midió, y el espejo TS (src/lib/familias.ts) da lo mismo sobre
+scripts/casos_familias.json.
+
+    python -m backend.test_familias            # chequea
+    python -m backend.test_familias --regenerar  # reescribe los vectores dorados
+"""
+import json
+import os
+import random
+import sys
+
+from backend.analisis.familias import describir
+
+CASOS = os.path.join(os.path.dirname(__file__), "..", "scripts", "casos_familias.json")
+fallos = 0
+
+
+def check(nombre, cond, detalle=""):
+    global fallos
+    if not cond:
+        fallos += 1
+    print(f"{'OK ' if cond else 'FALLA'} {nombre}" + (f" -> {detalle}" if detalle and not cond else ""))
+
+
+def _filas(res, conds):
+    return [{"fecha": f"2025-{1 + i // 28:02d}-{1 + i % 28:02d}T20:00:00Z", "condicion": c,
+             "golesFavor": a, "golesContra": b} for i, ((a, b), c) in enumerate(zip(res, conds))]
+
+
+def casos():
+    rnd = random.Random(2026)
+    out = []
+    for i in range(12):
+        n = rnd.randint(8, 70)
+        res = [(rnd.choice([0, 0, 1, 1, 1, 2, 2, 3, 4]), rnd.choice([0, 0, 0, 1, 1, 2, 3])) for _ in range(n)]
+        conds = [rnd.choice(["Local", "Visita"]) for _ in range(n)]
+        if i % 4 == 0:   # una racha larga al final, para que haya récord
+            res[-6:] = [(2, 0)] * 6
+            conds[-6:] = ["Local"] * 6
+        out.append({"nombre": f"Equipo {i}", "condicion": ["L", "V", None][i % 3], "filas": _filas(res, conds)})
+    # Everton antes del 0-2 con Chelsea: 4 de local sin perder, récord previo 3
+    loc = [(1, 0), (1, 1), (2, 0), (0, 1), (1, 0), (0, 1), (2, 1), (1, 1), (0, 2), (1, 0), (1, 1), (2, 2), (1, 0)]
+    out.append({"nombre": "Everton", "condicion": "L", "filas": _filas(loc, ["Local"] * len(loc))})
+    out.append({"nombre": "Vacío", "condicion": "V", "filas": []})
+    return [{**c, "esperado": describir(c["filas"], c["condicion"], c["nombre"])} for c in out]
+
+
+def main():
+    if "--regenerar" in sys.argv:
+        json.dump(casos(), open(CASOS, "w"), ensure_ascii=False, indent=1)
+        print(f"vectores dorados reescritos en {CASOS}")
+        return
+    guardados = json.load(open(CASOS))
+    check("los vectores dorados siguen siendo los del Python (si cambió la regla: --regenerar y el TS)",
+          all(describir(c["filas"], c["condicion"], c["nombre"]) == c["esperado"] for c in guardados),
+          [c["nombre"] for c in guardados if describir(c["filas"], c["condicion"], c["nombre"]) != c["esperado"]])
+    ev = next(c for c in guardados if c["nombre"] == "Everton")["esperado"]
+    np_local = next(f for f in ev["familias"] if f["familia"] == "noPierde" and f["ambito"] == "local")
+    check("Everton: 4 de local sin perder, supera su récord de 3, y va destacada",
+          np_local["partidos"] == 4 and np_local["record"] == "supera" and np_local["destacada"], np_local)
+    check("el récord se cuenta con la dirección del backtest: se sostiene MÁS, no revienta",
+          "se sostienen algo MÁS" in np_local["texto"] and "revient" not in np_local["texto"], np_local["texto"])
+    check("el perfil de doble oportunidad va primero y dice que SÍ agrega al 1X2",
+          ev["lineas"][0].startswith("Perfil de doble oportunidad de local") and "SÍ agrega" in ev["lineas"][0],
+          ev["lineas"][:1])
+    check("sin próximo solo se cuenta el total y no hay perfil",
+          all(f["ambito"] == "total" for c in guardados if c["condicion"] is None for f in c["esperado"]["familias"])
+          and all("perfilDc" not in c["esperado"] for c in guardados if c["condicion"] is None))
+    vacio = next(c for c in guardados if c["nombre"] == "Vacío")["esperado"]
+    check("sin historia no se inventa nada", not vacio["familias"] and not vacio["lineas"], vacio)
+    check("la nota dice que es descripción, no riesgo", "descripción, no riesgo" in ev["nota"])
+    print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
+    sys.exit(1 if fallos else 0)
+
+
+if __name__ == "__main__":
+    main()

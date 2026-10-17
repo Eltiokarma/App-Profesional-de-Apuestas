@@ -2279,6 +2279,48 @@ components:
             ventanaDias: { type: integer }
         bajas: { type: integer, nullable: true }
         actualizadoEn: { type: string, nullable: true }
+    OtrasFamilias:
+      type: object
+      description: >
+        Las OTRAS burbujas contadas para la narrativa (backend/analisis/familias.py, espejo
+        src/lib/familias.ts, vectores dorados scripts/casos_familias.json): doble oportunidad,
+        gana/pierde por 2+ y 3+, anota, recibe, ambos marcan, más de 2,5 — en la condición del
+        próximo y en total. DESCRIPCIÓN, no riesgo: el largo y el récord no predicen el partido
+        siguiente mejor que la frecuencia del equipo y en su récord se sostienen algo más
+        (REVENTON §15). `perfilDc` (con qué frecuencia no pierde y no gana en la condición de hoy)
+        SÍ agrega al 1X2 del motor (§15.1). `lineas` son las frases listas para leer: el perfil y
+        las burbujas destacadas (3+ partidos o en su récord).
+      properties:
+        nota: { type: string }
+        condicion: { type: string, nullable: true, enum: [local, visita, null] }
+        perfilDc:
+          type: object
+          properties:
+            condicion: { type: string, enum: [Local, Visita] }
+            partidos: { type: integer }
+            noPierde: { type: number }
+            noGana: { type: number }
+            burbuja: { type: integer, description: '+ racha sin perder · − racha perdiendo' }
+            maximoPrevio: { type: integer }
+            record: { type: integer, description: '2 supera · 1 iguala · 0 no o sin base' }
+            texto: { type: string }
+        familias:
+          type: array
+          items:
+            type: object
+            properties:
+              familia: { type: string }
+              ambito: { type: string, enum: [total, local, visita] }
+              valor: { type: boolean, description: 'true = racha (sí) · false = sequía (no)' }
+              partidos: { type: integer }
+              maximoPrevio: { type: integer, nullable: true }
+              burbujasPrevias: { type: integer }
+              record: { type: string, nullable: true, enum: [supera, iguala, 'no', null] }
+              frecuencia: { type: number }
+              n: { type: integer }
+              destacada: { type: boolean }
+              texto: { type: string }
+        lineas: { type: array, items: { type: string } }
     BurbujasEquipo:
       type: object
       description: 'Reventón de la burbuja (docs/REVENTON.md): guía calculada de la historia del equipo, no una probabilidad'
@@ -2332,6 +2374,7 @@ components:
           properties:
             fixtureId: { type: integer }
             fecha: { type: string, nullable: true }
+        otrasFamilias: { $ref: '#/components/schemas/OtrasFamilias' }
         escala:
           type: object
           description: >-
@@ -2848,6 +2891,7 @@ components:
         estabilidad: { type: string, enum: [estable, en transición, inestable, sin dato] }
         partidos: { type: integer }
         aviso: { type: string }
+        otrasFamilias: { $ref: '#/components/schemas/OtrasFamilias' }
         error: { type: string }
     BloqueTde:
       type: object

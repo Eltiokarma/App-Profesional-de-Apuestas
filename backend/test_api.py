@@ -334,6 +334,11 @@ def main():
 
     # /equipos/{id}/burbujas — reventón de la burbuja, calculado sin IA (docs/REVENTON.md)
     bu = c.get(A + f"/equipos/{betis}/burbujas").json()
+    of = bu.get("otrasFamilias") or {}
+    check("burbujas: trae las otras familias contadas (descripción, no riesgo) con su perfil de doble oportunidad",
+          "descripción, no riesgo" in of.get("nota", "") and isinstance(of.get("lineas"), list)
+          and isinstance(of.get("familias"), list) and of["familias"]
+          and (of.get("condicion") is None or "perfilDc" in of), {k: of.get(k) for k in ("condicion", "lineas")})
     check("burbujas: cabecera con nivel, bin, mandan, estabilidad y las tres familias",
           bu["equipoId"] == betis and bu["nombre"] and isinstance(bu["bin"], int)
           and bu["mandan"]["tipo"] in ("globales", "especificas")

@@ -694,7 +694,7 @@ def _reventon_calculado(fx) -> dict | None:
         return None
     from datetime import datetime, timezone
     from backend import jugadores as jug
-    from backend.analisis import burbuja
+    from backend.analisis import burbuja, familias as _familias
     from backend.app import constantes_de, iso, niveles_de
     hoy = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     # LA VISTA ES SIEMPRE «AL DÍA DEL PARTIDO» (docs/REVENTON.md §9): la historia
@@ -731,7 +731,11 @@ def _reventon_calculado(fx) -> dict | None:
                          "condicion": {"familia": "local" if cond == "L" else "visita",
                                        "actual": fc["actual"], "riesgo": fc["riesgo"], "rival": fc["rival"],
                                        "extremo": fc.get("extremo")},
-                         "estabilidad": r["estabilidad"]["grado"], "partidos": r["partidos"], "aviso": r["aviso"]}
+                         "estabilidad": r["estabilidad"]["grado"], "partidos": r["partidos"], "aviso": r["aviso"],
+                         # las OTRAS burbujas contadas (REVENTON §15-15.1): para
+                         # la narrativa del parte, con la misma historia cortada
+                         "otrasFamilias": _familias.describir(
+                             filas, cond, fx["home_name"] if lado == "a" else fx["away_name"])}
         except Exception as e:  # noqa: BLE001 — se declara, no se inventa ni se rompe la lectura
             out[lado] = {"actual": None, "riesgo": None, "rival": None, "extremo": None, "estabilidad": "sin dato",
                          "partidos": 0, "aviso": "", "error": f"no se pudo calcular: {e}"}

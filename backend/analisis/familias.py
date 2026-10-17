@@ -1,0 +1,121 @@
+"""Las OTRAS burbujas, contadas: doble oportunidad, márgenes y goles.
+
+La K de resultado tiene su reventón calculado (`burbuja.py`, docs/REVENTON.md).
+Las demás familias que la app dibuja —doble oportunidad, gana o pierde por 2+
+y 3+, anota, recibe, ambos marcan, más de 2,5— no tenían lectura: el análisis
+no las veía. Esto las DESCRIBE para la narrativa del parte y de /burbujas
+(pedido del usuario, 17/10/2026), con lo que los backtests dejaron dicho:
+
+- §15: ni el largo de la burbuja ni su récord predicen el partido siguiente
+  mejor que la frecuencia propia del equipo, y en su récord estas burbujas se
+  SOSTIENEN algo más de lo esperado (no revientan). Por eso aquí no hay
+  riesgo ni puntos: la burbuja es descripción, y el récord se cuenta con la
+  dirección que midió el backtest.
+- §15.1: el PERFIL de doble oportunidad por condición (con qué frecuencia no
+  pierde y no gana de local, o de visita) SÍ agrega al 1X2 del motor. Va
+  aparte, como dato que pesa.
+
+Todo sale de la historia que se le pasa (cronológica y, en la vista «al día
+del partido», ya cortada antes del fixture): 0 requests, 0 tokens, sin modelo.
+"""
+from __future__ import annotations
+
+from backend.backtest_familias import FAMILIAS, MIN_RACHAS_RECORD, _filas_validas, perfil_dc, redondear
+
+# qué se cuenta y cómo se dice: (clave, cuando es SÍ, cuando es NO)
+NARRADAS = (
+    ("noPierde", "sin perder", "perdiendo"),
+    ("noGana", "sin ganar", "ganando"),
+    ("gana2+", "ganando por 2 o más", "sin ganar por 2 o más"),
+    ("gana3+", "ganando por 3 o más", "sin ganar por 3 o más"),
+    ("pierde2+", "perdiendo por 2 o más", "sin perder por 2 o más"),
+    ("anota", "anotando", "sin anotar"),
+    ("recibe", "recibiendo gol", "con la valla invicta"),
+    ("ambosMarcan", "con goles de los dos", "sin que marquen los dos"),
+    ("mas2.5", "con más de 2,5 goles", "con 2 goles o menos"),
+)
+DESTACADA_DESDE = 3      # una burbuja de 3+ partidos (o en su récord) va a las líneas
+_AMBITO = {"local": "de local", "visita": "de visita", "total": "en total"}
+
+
+def _burbuja(filas: list[dict], clave: str) -> dict | None:
+    pred = FAMILIAS[clave]
+    serie = [bool(pred(int(f["golesFavor"]), int(f["golesContra"]))) for f in filas]
+    if not serie:
+        return None
+    largo, maximos, cortadas = 0, {True: 0, False: 0}, {True: 0, False: 0}
+    for t, x in enumerate(serie):
+        if t > 0 and x != serie[t - 1]:
+            maximos[serie[t - 1]] = max(maximos[serie[t - 1]], largo)
+            cortadas[serie[t - 1]] += 1
+            largo = 1
+        else:
+            largo += 1
+    v = serie[-1]
+    rec = None
+    if cortadas[v] >= MIN_RACHAS_RECORD:
+        rec = "supera" if largo > maximos[v] else "iguala" if largo == maximos[v] else "no"
+    return {"valor": v, "partidos": largo, "maximoPrevio": maximos[v] if cortadas[v] else None,
+            "burbujasPrevias": cortadas[v], "record": rec,
+            "frecuencia": redondear(sum(serie) / len(serie), 3), "n": len(serie)}
+
+
+def _texto(nombre: str, ambito: str, b: dict, si: str, no: str) -> str:
+    estado = si if b["valor"] else no
+    t = f"{nombre} lleva {b['partidos']} {'partido' if b['partidos'] == 1 else 'partidos'} {_AMBITO[ambito]} {estado}"
+    if b["maximoPrevio"] is not None:
+        t += f" (su máximo previo era {b['maximoPrevio']})"
+    if b["record"] == "supera":
+        t += ": está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su " \
+             "frecuencia, no menos (REVENTON §15)"
+    elif b["record"] == "iguala":
+        t += ": iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15)"
+    # la frecuencia del ESTADO en que está hoy, para que la línea no se contradiga
+    frec = b["frecuencia"] if b["valor"] else 1 - b["frecuencia"]
+    t += f". En {b['n']} partidos {_AMBITO[ambito]} va {estado} el {int(redondear(frec * 100))} %."
+    return t
+
+
+def describir(filas: list[dict], condicion: str | None, nombre: str = "El equipo") -> dict:
+    """`filas` en orden cronológico (o el que sea: se ordenan); `condicion` =
+    "L"/"V" del próximo partido (None = sin próximo: solo el total)."""
+    filas = _filas_validas(filas)
+    ambitos = ["total"]
+    cond = {"L": "local", "V": "visita"}.get(condicion or "")
+    if cond:
+        ambitos.insert(0, cond)
+    out = {
+        "nota": ("descripción, no riesgo: el largo y el récord de estas burbujas no predicen el partido "
+                 "siguiente mejor que la frecuencia del equipo, y en su récord se sostienen algo más, no "
+                 "revientan (REVENTON §15). El PERFIL de doble oportunidad por condición sí agrega al 1X2 "
+                 "del motor (§15.1)"),
+        "condicion": cond, "familias": [], "lineas": [],
+    }
+    if cond:
+        p = perfil_dc(filas, condicion == "L")
+        if p["partidos"]:
+            # el texto cuenta lo observado; noPierde/noGana van suavizados para el modelo (§15.1)
+            sub = [f for f in filas if f.get("condicion") == p["condicion"]]
+            n_np = sum(1 for f in sub if f["golesFavor"] >= f["golesContra"])
+            n_ng = sum(1 for f in sub if f["golesFavor"] <= f["golesContra"])
+            n = p["partidos"]
+            out["perfilDc"] = {**p, "texto": (
+                f"Perfil de doble oportunidad {_AMBITO[cond]}: no pierde {n_np} de {n} "
+                f"({int(redondear(n_np / n * 100))} %) y no gana {n_ng} de {n} "
+                f"({int(redondear(n_ng / n * 100))} %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que "
+                f"{_AMBITO[cond]} empata mucho o se planta a no perder no está del todo en el nivel")}
+            out["lineas"].append(out["perfilDc"]["texto"])
+    for ambito in ambitos:
+        sub = filas if ambito == "total" else [
+            f for f in filas if f.get("condicion") == ("Local" if ambito == "local" else "Visita")]
+        for clave, si, no in NARRADAS:
+            b = _burbuja(sub, clave)
+            if not b:
+                continue
+            texto = _texto(nombre, ambito, b, si, no)
+            destacada = b["partidos"] >= DESTACADA_DESDE or b["record"] in ("supera", "iguala")
+            out["familias"].append({"familia": clave, "ambito": ambito, **b, "destacada": destacada,
+                                    "texto": texto})
+            if destacada:
+                out["lineas"].append(texto)
+    return out

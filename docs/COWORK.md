@@ -1037,6 +1037,19 @@ Escribís vos (es juicio, no se puede calcular):
   VISITA el 47 %; la perdedora de visita sigue el 61 %, la de local el 45 %. Ejemplo:
   `"a": {"lectura": "positiva", "guia": "condicion", "porque": "de local no
   pierde hace 9 y sus burbujas de local se cortan empatando"}`.
+  LAS OTRAS BURBUJAS (`otrasFamilias` en la misma respuesta de `/burbujas`,
+  desde el 17/10/2026): doble oportunidad, márgenes (gana/pierde por 2+, gana
+  por 3+), anota, recibe, ambos marcan y más de 2,5, ya contadas en
+  `lineas[]` (las destacadas: 3+ partidos o en su récord). Son NARRATIVA:
+  el largo y el récord no predicen el siguiente partido mejor que la
+  frecuencia del equipo, y en su récord se SOSTIENEN algo más —no revientan—
+  (REVENTON §15): una racha récord de «sin perder» no es alarma de que la
+  pierda. Lo que SÍ pesa es `perfilDc` (no pierde / no gana en la condición
+  de hoy): agrega al 1X2 del motor (§15.1) —un equipo que de visita empata
+  mucho o se planta a no perder no está del todo en su nivel—; tenelo a la
+  vista al fijar las probabilidades y nombralo en el párrafo de las burbujas
+  del ensayo y en el `porque` de la espina si mueve tu lectura. Los números no
+  se copian: el backend los recalcula en `reventonCalculado.*.otrasFamilias`.
   Escribí UNA línea por equipo en `lecturaSad.reventon`, por ejemplo:
   «A: muy alto (8), rival mucho más fuerte que su zona de reventón → no
   seguir la racha de A; B: bajo, sin señal». NO copies los números al
@@ -1581,6 +1594,9 @@ lo que sobre queda para la próxima (la agenda lo retoma con `yaHechos`).
      esa racha siga (bajá la confianza del pronóstico y decilo en el
      falsador). Una línea por equipo en `lecturaSad.reventon`, sin copiar
      números (el backend los recalcula al leer).
+     Leé también `otrasFamilias` de los dos: el `perfilDc` de la condición
+     de hoy pesa en el 1X2 (§15.1); el resto es narrativa, y un récord de
+     esas familias se sostiene, no revienta (§15).
    - Alertas, matchup con h2a/h2b/h2c, lectura SAD, sensibilidad.
    - `tde.bloques[]` uno por equipo con `indicadores` 0/0.5/1, escala 0-10.
    - `timelineEventos` solo institucionales; `cadena.a/b.pronostico`;

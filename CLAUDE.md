@@ -13,6 +13,7 @@ npm run build                     # typecheck + build (SIEMPRE antes de commitea
 npm run test:motor                # motor TS verificado contra docs/MOTOR_SAD_EXTRACCION.md
 npm run test:kview                # capa de visualización de las K (3 valores por gráfica)
 npm run test:burbuja              # reventón de burbuja: espejo TS vs vectores dorados (docs/REVENTON.md)
+npm run test:familias             # otras burbujas (DC, márgenes, goles): espejo TS vs vectores dorados (python -m backend.test_familias)
 node scripts/audit-movil.mjs /tmp/capturas 360 2400  # vista de teléfono: captura de cada pantalla + desbordes (instrucciones en el script)
 
 # backend (junto a las 4 .db en la raíz, o SAD_DATA_DIR)
@@ -37,6 +38,8 @@ python -m backend.backtest_burbuja --padron --calibrar # backtest del reventón 
 python -m backend.test_backtest_burbuja # anti-fuga y conteos del backtest, sobre la demo
 python -m backend.backtest_burbuja_1x2 --padron # ¿la burbuja / las K mejoran el 1X2 del motor? M0-M6, corte temporal 80/20 y bootstrap, y el MERCADO sobre los mismos partidos (REVENTON §13; guarda .backtest_1x2.json)
 python -m backend.test_backtest_1x2  # el método detecta un efecto real y no inventa uno (sintéticos + demo)
+python -m backend.backtest_familias --padron # ¿las burbujas de doble oportunidad, márgenes (1+…4+) y goles predicen el partido siguiente mejor que la frecuencia del equipo? (REVENTON §15; --desde-json para historias bajadas de /constantes)
+python -m backend.test_backtest_familias  # detecta un reventón plantado y no inventa uno
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
 python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--horizonte/--calibrar/--por-liga)
 
@@ -339,7 +342,15 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   se arma y se rompe ahí con causas que interesan); un extremo hecho con la
   mitad o más de amistosos se marca `extremo.inflada` (§10.2, chip «INFLADA»)
   sin apagar la alerta ni mover el riesgo. Las K de goles quedan fuera
-  a propósito hasta que se decida sumarlas. **Por período** (§10-bis):
+  a propósito hasta que se decida sumarlas. **Las otras familias** (doble
+  oportunidad, márgenes 1+…4+, goles; §15, 17/10/2026, 518 equipos): ni el
+  largo ni el récord predicen el partido siguiente mejor que la frecuencia
+  propia (1 de 48 combinaciones, lo esperable por azar), y el récord se
+  SOSTIENE algo más, no revienta: entran al análisis como descripción, sin
+  puntos. Lo que SÍ agrega al 1X2 es el PERFIL de doble oportunidad
+  por condición (§15.1: con qué frecuencia el local no pierde / no gana de
+  local y el visitante de visita; M7 − motor −0.011 de log-loss con el
+  intervalo bajo cero): falta medirlo contra el mercado antes de la fórmula. La narrativa viaja en `otrasFamilias` (`backend/analisis/familias.py`, espejo `src/lib/familias.ts`, vectores `scripts/casos_familias.json`) de `/burbujas` y de `reventonCalculado`, con la tarjeta «Otras burbujas» y el prompt (v. COWORK.md) que pide el perfil DC antes del 1X2. **Por período** (§10-bis):
   `historialPorPeriodo` repite las medidas acotadas a temporada · año · DT
   vigente · últimos 20, filtrando por la fecha del reventón sobre los mismos
   episodios; la global sigue mandando en el riesgo (es la calibrada) y un

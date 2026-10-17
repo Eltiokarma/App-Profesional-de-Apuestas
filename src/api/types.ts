@@ -670,6 +670,51 @@ export interface BurbujasEquipoDTO {
   /** De qué base sale el nivel del próximo rival (copas, ascendidos): si no es
    *  la del equipo, su nivel no compara y el riesgo va con reserva. */
   escala?: EscalaRivalDTO
+  /** Doble oportunidad, márgenes y goles contados para la narrativa (descripción,
+   *  no riesgo, §15) con el perfil de doble oportunidad por condición (§15.1). */
+  otrasFamilias?: OtrasFamiliasDTO
+}
+
+// ── las OTRAS burbujas contadas (backend/analisis/familias.py, REVENTON §15-15.1) ──
+/** Lo mínimo de una fila de /constantes que usan las otras familias. */
+export interface FilaFamilia {
+  fecha?: string | null
+  condicion?: string | null
+  golesFavor?: number | null
+  golesContra?: number | null
+}
+
+export interface BurbujaFamiliaDTO {
+  familia: string
+  ambito: 'total' | 'local' | 'visita'
+  valor: boolean
+  partidos: number
+  maximoPrevio: number | null
+  burbujasPrevias: number
+  record: 'supera' | 'iguala' | 'no' | null
+  frecuencia: number
+  n: number
+  destacada: boolean
+  texto: string
+}
+
+export interface PerfilDcDTO {
+  condicion: 'Local' | 'Visita'
+  partidos: number
+  noPierde: number
+  noGana: number
+  burbuja: number
+  maximoPrevio: number
+  record: number
+  texto: string
+}
+
+export interface OtrasFamiliasDTO {
+  nota: string
+  condicion: 'local' | 'visita' | null
+  perfilDc?: PerfilDcDTO
+  familias: BurbujaFamiliaDTO[]
+  lineas: string[]
 }
 
 export interface BaseNivelDTO {
@@ -1279,6 +1324,8 @@ export interface ReventonLadoDTO {
   partidos: number
   aviso: string
   error?: string
+  /** Las otras burbujas contadas para la narrativa del parte (REVENTON §15-15.1). */
+  otrasFamilias?: OtrasFamiliasDTO
 }
 
 /** El TDE de UN equipo. `ie`/`ise` son el NÚMERO; `ieNivel`/`iseNivel` la ETIQUETA
