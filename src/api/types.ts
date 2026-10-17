@@ -1820,6 +1820,8 @@ export interface LeccionItem {
   cuarentenaAutomatica?: boolean
   /** Si la automática es por DT equivocado: qué lado y qué nombres chocaron. */
   dtEquivocado?: { lado: 'a' | 'b'; parte: string; banco: string }[]
+  /** El parte contradijo a la base con la prensa y el banco de la API no le da la razón: se ve, no aparta el caso. */
+  dtDisputado?: { lado: 'a' | 'b'; parte: string; banco: string; disputado: true; baseAlDepositar: string }[]
   /** Etiqueta de Jev sobre la prosa del veredicto: de qué naturaleza fue el fallo. null sin etiqueta. */
   modoFallo?: ModoFalloEtiqueta | null
   modoFalloConfianza?: number | null

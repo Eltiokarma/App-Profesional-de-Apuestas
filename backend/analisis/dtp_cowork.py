@@ -527,6 +527,14 @@ def _familia(cifras: str) -> str:
     return cifras[0] + cifras[-1] if len(cifras) >= 3 else cifras
 
 
+def _linea(d: str) -> str:
+    """Línea de cuatro contra línea de tres/cinco. Por la POSICIÓN de los
+    titulares (sin formación en la ficha) un carrilero sale a veces como D y a
+    veces como M: un 5-3-2 cuenta 3 o 5 defensores según la planilla, y eso
+    no es un cambio de sistema; pasar de cuatro a tres/cinco sí lo es."""
+    return "4" if d == "4" else "3/5"
+
+
 def _plano(t: str) -> str:
     t = unicodedata.normalize("NFKD", t or "").encode("ascii", "ignore").decode().lower()
     return re.sub(r"[^a-z ]+", " ", t)
@@ -544,8 +552,26 @@ def _apellidos(nombre: str) -> list[str]:
     return partes[1:] if len(partes) > 1 else partes
 
 
+def _sz(t: str) -> str:
+    """Seseo: «Quirós» y «Quiroz» son el mismo apellido escrito por dos
+    fuentes (Atlas, 17/10/2026)."""
+    return t.replace("z", "s")
+
+
+def _casi(uno: str, otro: str) -> bool:
+    """Una letra cambiada en un apellido largo (5+), tras igualar s/z."""
+    uno, otro = _sz(uno), _sz(otro)
+    if uno == otro:
+        return True
+    return (min(len(uno), len(otro)) >= 5 and len(uno) == len(otro)
+            and sum(a != b for a, b in zip(uno, otro)) <= 1)
+
+
 def _en_referencia(nombre: str, ref: str) -> bool:
-    return any(f" {a} " in f" {ref} " for a in _apellidos(nombre))
+    if any(f" {a} " in f" {ref} " for a in _apellidos(nombre)):
+        return True
+    palabras = ref.split()
+    return any(_casi(a, p) for a in _apellidos(nombre) for p in palabras)
 
 
 def oficial_de(fixture_id: int) -> dict:
@@ -564,7 +590,10 @@ def oficial_de(fixture_id: int) -> dict:
         except Exception:  # noqa: BLE001
             f = None
         fuera[lado] = {"formacion": (f["formacion"] if f else "") or "",
-                       "titulares": [j["jugador"] or "" for j in xi]}
+                       "titulares": [j["jugador"] or "" for j in xi],
+                       # sin formación en la ficha, la línea de atrás se cuenta
+                       # por la posición de los titulares (D)
+                       "defensores": sum(1 for j in xi if (j["posicion"] or "") == "D")}
     return fuera
 
 
@@ -579,6 +608,14 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
     decl, real = _sistemas(m1.get("sistema") or ""), _cifras_sistema(of.get("formacion") or "")
     if decl and real and _familia(real) not in {_familia(d) for d in decl}:
         motivos.append(f"sistema: la apertura dice {m1.get('sistema')!r} y salió {of['formacion']}")
+    elif decl and not real and 3 <= (of.get("defensores") or 0) <= 5 \
+            and _linea(str(of["defensores"])) not in {_linea(d[0]) for d in decl if d}:
+        # LA FICHA SIN FORMACIÓN NO TAPA UN CAMBIO DE LÍNEA. Atlas jugó con
+        # cuatro atrás contra una apertura de línea de cinco y no saltó nada
+        # (17/10/2026): con las posiciones de los titulares se cuenta la línea
+        # de atrás, que es lo que cambia el mapa de duelos por carril.
+        motivos.append(f"sistema: la apertura dice {m1.get('sistema')!r} y el once oficial salió con "
+                       f"{of['defensores']} defensores (la ficha no trae la formación)")
     ref = _plano(m1.get("xiReferencia") or "")
     ausentes = []
     if len(ref.split()) >= 8:   # un XI de referencia escrito, no una frase
@@ -588,7 +625,13 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
                            f"({', '.join(ausentes)})")
     return {"rehacer": bool(motivos), "motivos": motivos,
             "sistemaDeclarado": m1.get("sistema") or "", "sistemaOficial": of.get("formacion") or "",
-            "ausentesDeLaReferencia": ausentes}
+            "defensoresOficiales": of.get("defensores"),
+            # el nombre se presta a leerlo al revés: son los TITULARES OFICIALES
+            # que no estaban en el XI de referencia, no los de la referencia que
+            # faltaron en el once
+            "ausentesDeLaReferencia": ausentes,
+            "nota": ("`ausentesDeLaReferencia`: titulares del once OFICIAL que no figuraban en el XI de "
+                     f"referencia de la apertura; con {REHACER_AUSENTES} o más, el bloque se rehace")}
 
 
 def leer_dtp(dtp: dict, oficial: dict | None = None) -> dict:

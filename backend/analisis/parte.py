@@ -104,7 +104,7 @@ class ParteInvalido(ValueError):
 # existe es un error, no un problema)
 _COLUMNAS_NUEVAS = (("veredicto_json", "TEXT"), ("cohorte", "TEXT"), ("cuarentena_json", "TEXT"),
                     ("coherencia_json", "TEXT"), ("modo_fallo_json", "TEXT"),
-                    ("banco_desmentido_json", "TEXT"))
+                    ("banco_desmentido_json", "TEXT"), ("dt_base_json", "TEXT"))
 # el registro del revisor nació sin `via`; se añade en caliente igual
 _COLUMNAS_LOG = (("via", "TEXT"),)
 
@@ -903,6 +903,7 @@ def dt_equivocado(parte: dict, fixture_id: int, desmentidos: "dict | None" = Non
         return []
     out = []
     malos = set(sin_dt(parte)) | set(desmentidos or {})
+    base_al_depositar = dt_base_al_depositar(fixture_id)
     for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])):
         if lado in malos:
             continue
@@ -918,8 +919,32 @@ def dt_equivocado(parte: dict, fixture_id: int, desmentidos: "dict | None" = Non
         # sin un apellido comparable de algún lado («DT A») no se puede decir
         # que sean distintos: no se marca
         if banco and _tokens_dt(nombre) and _tokens_dt(banco) and not mismo_dt(nombre, banco):
-            out.append({"lado": lado, "parte": nombre, "banco": banco})
+            # EL PARTE QUE CONTRADIJO A LA BASE NO COPIÓ UN DT RANCIO. El error
+            # que esto atrapa es el del 22/09: el parte se escribió con el DT
+            # viejo que tenía la base y en el banco se sentó otro. Si al
+            # depositar la base decía OTRO nombre que el parte (saltó
+            # DT-DISCREPANCIA), el parte fue a la prensa a propósito, y que el
+            # banco de la API no le dé la razón es prensa contra API, no un
+            # insumo roto: San José (Costa / banco «Baldivieso», el DT viejo) y
+            # Real Potosí (tres nombres) caían en cuarentena falsa (17/10/2026).
+            # Va como `disputado`: se ve, pero no aparta el caso.
+            base = (base_al_depositar.get(lado) or "") if base_al_depositar else ""
+            disputado = bool(_tokens_dt(base)) and not mismo_dt(nombre, base)
+            out.append({"lado": lado, "parte": nombre, "banco": banco,
+                        **({"disputado": True, "baseAlDepositar": base} if disputado else {})})
     return out
+
+
+def dt_base_al_depositar(fixture_id: int) -> dict:
+    """{lado: nombre} del DT que tenía la base cuando se depositó el parte por
+    primera vez. Vacío en los partes anteriores al 17/10/2026."""
+    try:
+        with _conectar() as con:
+            fila = con.execute("SELECT dt_base_json FROM parte_cowork WHERE fixture_id=?",
+                               (fixture_id,)).fetchone()
+        return json.loads(fila["dt_base_json"]) if fila and fila["dt_base_json"] else {}
+    except (sqlite3.Error, ValueError):
+        return {}
 
 
 def corregir_dt(fixture_id: int, cambios: dict) -> dict:
@@ -1785,22 +1810,35 @@ def guardar(payload: dict) -> dict:
         parte["equipos"][lado]["nombre"] = nuestro
 
     ahora = efedb.ahora()
+    # qué DT tenía la base al depositar: es lo que separa un parte que copió un
+    # DT rancio de uno que lo contradijo con la prensa (dt_equivocado)
+    dt_base = {}
+    for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])):
+        try:
+            b = dt_de_base(tid)
+        except Exception:  # noqa: BLE001 — sin capa de jugadores no hay base que guardar
+            b = None
+        if b and b.get("nombre"):
+            dt_base[lado] = b["nombre"]
     with _conectar() as con:
         previo = con.execute("SELECT creado_en, xi_json, parte_json FROM parte_cowork WHERE fixture_id=?",
                              (parte["fixtureId"],)).fetchone()
         con.execute(
             "INSERT INTO parte_cowork (fixture_id, fecha, equipo_a, equipo_b, estado, version, "
-            "parte_json, xi_json, creado_en, actualizado_en, cohorte) VALUES (?,?,?,?,?,?,?,?,?,?,?) "
+            "parte_json, xi_json, creado_en, actualizado_en, cohorte, dt_base_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?) "
             "ON CONFLICT(fixture_id) DO UPDATE SET fecha=excluded.fecha, equipo_a=excluded.equipo_a, "
             "equipo_b=excluded.equipo_b, version=excluded.version, parte_json=excluded.parte_json, "
             "actualizado_en=excluded.actualizado_en, "
             # la cohorte es de la PRIMERA vez: un re-depósito no cambia de época, y un
             # parte que ya existía sin marca es de antes de la primera cohorte (rodaje)
-            f"cohorte=COALESCE(parte_cowork.cohorte, '{COHORTE_RODAJE}')",
+            f"cohorte=COALESCE(parte_cowork.cohorte, '{COHORTE_RODAJE}'), "
+            # la base de la PRIMERA vez, igual que la cohorte
+            "dt_base_json=COALESCE(parte_cowork.dt_base_json, excluded.dt_base_json)",
             (parte["fixtureId"], (fx["date"] or "")[:10], fx["home_name"], fx["away_name"],
              "pendiente_xi", parte["version"], json.dumps(parte, ensure_ascii=False),
              previo["xi_json"] if previo else None,
-             previo["creado_en"] if previo else ahora, ahora, COHORTE),
+             previo["creado_en"] if previo else ahora, ahora, COHORTE,
+             json.dumps(dt_base, ensure_ascii=False) if dt_base else None),
         )
     # COHERENCIA (Jev): se evalúa AQUÍ y se guarda sellada, no al leer —Jev no
     # es determinista y dos lecturas darían hallazgos distintos—. Nunca tumba

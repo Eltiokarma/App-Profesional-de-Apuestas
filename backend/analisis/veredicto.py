@@ -97,6 +97,9 @@ def _goles(fixture_id: int, home_id: int) -> list[dict]:
             # ventanas de 15' terminan en el 45 y en el 90. Un 45+2 guardado
             # como 47 caía en la 45-60 (Westerlo–Antwerp, Pumas–Cruz Azul).
             "enAnadido": bool(f["extra"]),
+            # 45 o 90: el tiempo al que se sumó el añadido (45+4 → minuto 49,
+            # extra 4 → base 45). Sirve para no listarlo en ventanas lejanas
+            "baseAnadido": ((f["minuto"] or 0) - (f["extra"] or 0)) if f["extra"] else None,
         })
     return out
 
@@ -228,14 +231,23 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
         contra = "b" if foco == "a" else ("a" if foco == "b" else "")
         en_ventana = [g for g in goles if desde <= g["minuto"] <= hasta and not g.get("enAnadido")
                       and (not contra or g["lado"] == contra)]
-        en_anadido = [g for g in goles if g.get("enAnadido") and (not contra or g["lado"] == contra)]
+        # el añadido se anota aparte, y solo en la ventana que cierra ESE tiempo
+        # (la que termina en el 45 o en el 90): un 45+4 aparecía también en la
+        # 60-75 (Chankas–ADT, 17/10/2026)
+        en_anadido = [g for g in goles if g.get("enAnadido") and (not contra or g["lado"] == contra)
+                      and (g.get("baseAnadido") is None or g["baseAnadido"] == hasta)]
         # UN GOL EN LA VENTANA DESPUÉS DE UNA ROJA NO COMPRUEBA EL MECANISMO
         # (disciplinas 16 y 24): Liverpool 0-3 City, Pumas 3-3 Cruz Azul y
         # América 1-2 Medellín se contaban como acierto de ventana con goles
         # que llegaron con un hombre menos. Se sigue diciendo que hubo gol en la
         # ventana, pero no se cobra.
         primera = min((g["minuto"] for g in en_ventana), default=None)
-        rojas_antes = [r for r in rojas if primera is not None and r["minuto"] < primera]
+        # SIN GOL TAMBIÉN: una roja antes de que termine la ventana reordena el
+        # partido (disciplinas 16 y 17) y el «no hubo gol» deja de ser un
+        # acierto limpio. ABB (roja al 45+3) y Mirassol (roja al 14') se
+        # cobraban como ventana sin gol (17/10/2026).
+        corte = primera if primera is not None else hasta
+        rojas_antes = [r for r in rojas if r["minuto"] < corte]
         cobrable = None if not out["evidencia"]["conFicha"] else not rojas_antes
         bloques.append({
             "ventana": tde.get("ventana"), "desde": desde, "hasta": hasta,
@@ -251,6 +263,10 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
                      if not out["evidencia"]["conFicha"] else
                      "hubo una roja antes del gol de la ventana: el mecanismo declarado no se puso a "
                      "prueba (disciplina 24, acierto no testeado) y no cuenta en ninguna métrica"
+                     if rojas_antes and en_ventana else
+                     "hubo una roja antes de que terminara la ventana y no hubo gol en ella: el partido "
+                     "se jugó con otro mecanismo (disciplinas 16 y 17), queda no testeada y no cuenta "
+                     "en ninguna métrica"
                      if rojas_antes else
                      "gol(es) en el añadido: no tienen ventana (disciplina 23), se anotan aparte"
                      if en_anadido and not en_ventana else ""),

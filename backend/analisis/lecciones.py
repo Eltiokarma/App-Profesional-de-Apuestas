@@ -96,8 +96,13 @@ def _casos(limite: int = 400, ids=None) -> list[dict]:
         # …salvo los lados donde el usuario probó que el banco de la API es el
         # que está mal (parte.desmentir_banco): esos ya no se comparan
         desmentidos = json.loads(f["banco_desmentido_json"]) if f["banco_desmentido_json"] else {}
+        disputados = []
         if not cuarentena:
-            malos = dt_equivocado(parte, f["fixture_id"], desmentidos)
+            todos = dt_equivocado(parte, f["fixture_id"], desmentidos)
+            # los `disputados` (el parte contradijo a la base con la prensa) se
+            # ven en el item pero no apartan el caso
+            disputados = [m for m in todos if m.get("disputado")]
+            malos = [m for m in todos if not m.get("disputado")]
             if malos:
                 cuarentena = {"motivo": "automática: DT del parte distinto del que dirigió el partido ("
                                         + " · ".join(f"lado {m['lado']}: parte «{m['parte']}», banco «{m['banco']}»"
@@ -112,6 +117,7 @@ def _casos(limite: int = 400, ids=None) -> list[dict]:
             "cohorte": cohorte_de(f["cohorte"])["clave"],
             "cuarentena": cuarentena,
             "modoFallo": json.loads(f["modo_fallo_json"]) if f["modo_fallo_json"] else None,
+            "dtDisputado": disputados,
         })
     return fuera
 
@@ -175,6 +181,9 @@ def _item(caso, lado, clave, lv, mf, orden, propio, rival, estados, seleccion, m
         # por qué lado y con qué nombres saltó la automática por DT: es lo que
         # el usuario desmiente cuando el banco de la API es el equivocado
         "dtEquivocado": (caso.get("cuarentena") or {}).get("dtEquivocado") or [],
+        # el parte contradijo a la base con la prensa y el banco de la API no le
+        # da la razón: no aparta el caso, pero queda a la vista para revisarlo
+        "dtDisputado": caso.get("dtDisputado") or [],
         # LA DISTINCIÓN QUE EL DOSSIER NO PUEDE DEJAR AL CRITERIO DEL DÍA:
         # un caso contaminado enseña, pero no mueve un número. Uno en
         # cuarentena ni siquiera enseña: su insumo estaba roto.

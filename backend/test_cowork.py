@@ -1991,6 +1991,24 @@ def main():
     check("la ventana sin roja previa se cobra normal", od_r["b"]["cobrable"] is True, od_r["b"])
     check("un gol del añadido del primer tiempo (45+2 guardado como 47) no cae en la 45-60",
           all(g["jugador"] != "Añadido 1T" for g in od_r["a"]["goles"]), od_r["a"]["goles"])
+    # (17/10/2026) sin gol en la ventana, una roja ANTES de que termine tampoco
+    # deja cobrar el «no hubo gol», y el añadido se anota solo en la ventana
+    # que cierra su tiempo
+    from backend.analisis import veredicto as _vd
+    _g = [{"minuto": 49, "lado": "a", "jugador": "x", "autogol": False, "enAnadido": True, "baseAnadido": 45},
+          {"minuto": 46, "lado": "b", "jugador": "y", "autogol": False, "enAnadido": True, "baseAnadido": 45}]
+    _orig_g, _orig_r = _vd._goles, _vd._rojas
+    _vd._goles = lambda fid, hid: _g
+    _vd._rojas = lambda fid, hid: [{"minuto": 14, "lado": "b", "jugador": "Rojo"}]
+    try:
+        _p = {"tde": {"bloques": [{"equipo": "a", "ventana": "75-90'"}, {"equipo": "b", "ventana": "30-45'"}]}}
+        _ob = {b["equipo"]: b for b in _vd.objetivo(con_ficha, _p)["tde"]["bloques"]}
+    finally:
+        _vd._goles, _vd._rojas = _orig_g, _orig_r
+    check("sin gol en la ventana pero con una roja antes de que termine: no se cobra",
+          _ob["a"]["golEnVentana"] is False and _ob["a"]["cobrable"] is False and _ob["a"]["rojasAntes"], _ob["a"])
+    check("un gol del 45+4 se anota en la ventana que cierra el primer tiempo y no en la 75-90",
+          _ob["b"]["golesEnAnadido"] and not _ob["a"]["golesEnAnadido"], (_ob["a"], _ob["b"]))
     with _sq2.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM fixture_eventos WHERE fixture_id=? AND jugador IN "
                      "('Expulsado', 'DT expulsado', 'Añadido 1T')", (con_ficha,))
@@ -2253,12 +2271,30 @@ def main():
         if not _hay:
             _con.execute("INSERT INTO alineaciones (fixture_id, team_id, entrenador, player_id, jugador, titular) "
                          "VALUES (?, ?, ?, ?, ?, 1)", (pasado["id"], _fx[0], "R. Dudamel", 999001, "Jugador Demo"))
+    from backend.analisis.parte import dt_base_al_depositar as _dtb
+    check("al depositar se guarda qué DT tenía la base", bool(_dtb(pasado["id"]).get("a")), _dtb(pasado["id"]))
+    def _base_fue(nombre):  # qué decía la base al depositar (sellado en la primera vez)
+        with _sq3.connect(os.path.join(tmp, "efe.db")) as _e:
+            _e.execute("UPDATE parte_cowork SET dt_base_json=? WHERE fixture_id=?",
+                       (json.dumps({"a": nombre}), pasado["id"]))
+    # (17/10/2026) un parte que CONTRADIJO a la base con la prensa no copió un
+    # DT rancio: si el banco de la API no le da la razón es «disputado», no cuarentena
     p_eq = _copy.deepcopy(p_lec)
     p_eq["equipos"]["a"]["dt"] = {"nombre": "Pablo Repetto", "desde": "2026-01-01"}
     c.post(f"{A}/analisis/cowork", json=p_eq)
+    _base_fue("Mariano Messera")
+    inv_d = c.get(f"{A}/analisis/cowork/lecciones").json()
+    _todos_d = [i for s in inv_d["porSkill"] for i in s["items"]]
+    check("el parte que contradijo a la base y no casa con el banco NO va a cuarentena: va como disputado",
+          not [i for i in inv_d["enCuarentena"]["items"] if i["clave"].startswith(f"{pasado['id']}:")]
+          and any(i["fixtureId"] == pasado["id"] and i["dtDisputado"] for i in _todos_d),
+          [i.get("dtDisputado") for i in _todos_d if i["fixtureId"] == pasado["id"]])
+    # el caso que la cuarentena SÍ atrapa (22/09): el parte copió el DT de la
+    # base (Repetto) y en el banco se sentó otro (Dudamel)
+    _base_fue("Pablo Repetto")
     inv_eq = c.get(f"{A}/analisis/cowork/lecciones").json()
     item_eq = [i for i in inv_eq["enCuarentena"]["items"] if i["clave"].startswith(f"{pasado['id']}:")]
-    check("DT del parte (Repetto) distinto del que se sentó en el banco (Dudamel) → cuarentena AUTOMÁTICA con los dos nombres",
+    check("DT del parte (Repetto, copiado de la base) distinto del que se sentó en el banco (Dudamel) → cuarentena AUTOMÁTICA con los dos nombres",
           item_eq and all(i["cuarentenaAutomatica"] for i in item_eq)
           and "Repetto" in item_eq[0]["cuarentena"] and "Dudamel" in item_eq[0]["cuarentena"],
           [i.get("cuarentena") for i in item_eq] or inv_eq["enCuarentena"])
@@ -2593,6 +2629,15 @@ def main():
                     {"a": {"formacion": "4-3-3", "titulares": ["Baltasar Gallego Rodríguez", "Fernando Muslera"]}})
     check("un titular con dos apellidos casa con la referencia por cualquiera de ellos",
           _dos["ausentesDeLaReferencia"] == [], _dos)
+    # (17/10/2026) Quirós/Quiroz y la ficha sin formación (Atlas con línea de 4)
+    _sz = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-4-2", "xiReferencia": _ref.replace("Rojo", "Quiroz")}}},
+                   {"a": {"formacion": "4-4-2", "titulares": ["C. Quirós"]}})
+    check("«Quirós» en la ficha casa con «Quiroz» en la referencia", _sz["ausentesDeLaReferencia"] == [], _sz)
+    _sin = lambda sis, d: _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": sis}}},
+                                   {"a": {"formacion": "", "titulares": [], "defensores": d}})["rehacer"]
+    check("sin formación en la ficha, una línea de 4 contra una apertura de 5 pide rehacer; 3 contra 5 no",
+          _sin("5-3-2", 4) is True and _sin("5-3-2", 3) is False and _sin("4-4-2", 4) is False)
+    check("y el campo de ausentes explica qué lista", "OFICIAL" in _sz.get("nota", ""), _sz)
     ce = g_reh["dtp"]["bloques"][0]["calculado"]["contraElOnce"]
     check("con el once oficial distinto, el bloque del DTP queda a rehacer (sistema y once)",
           ce["rehacer"] is True and ce["sistemaOficial"] == _form and len(ce["motivos"]) == 2
