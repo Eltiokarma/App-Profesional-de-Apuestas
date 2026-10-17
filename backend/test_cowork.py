@@ -588,6 +588,51 @@ def main():
     c.post(f"{A}/analisis/cowork", json=_parte(con_ficha))
     c.post(f"{A}/analisis/cowork/xi/auto")
 
+    # MEDIO ONCE NO ES «ESTA LIGA NO DA ONCES» (Necaxa–Atlas, ABB–Real Potosí,
+    # Atlante–Pumas, 17/10/2026): la API trajo el once de un lado solo
+    import sqlite3 as _sq3m
+    from datetime import datetime as _dtm, timedelta as _tdm, timezone as _tzm
+    _sadm = os.path.join(tmp, "sad.db")
+    with _sq3m.connect(_sadm) as _con:
+        _fxm = _con.execute("SELECT home_team_id, away_team_id, date, status_short FROM fixtures WHERE id=?",
+                            (con_ficha,)).fetchone()
+        _ali_b = _con.execute("SELECT * FROM alineaciones WHERE fixture_id=? AND team_id=?",
+                              (con_ficha, _fxm[1])).fetchall()
+        _cols = [d[0] for d in _con.execute("SELECT * FROM alineaciones LIMIT 1").description]
+        _con.execute("DELETE FROM alineaciones WHERE fixture_id=? AND team_id=?", (con_ficha, _fxm[1]))
+        _con.execute("UPDATE fixtures SET status_short='FT', date=? WHERE id=?",
+                     ((_dtm.now(_tzm.utc) - _tdm(hours=8)).strftime("%Y-%m-%d %H:%M:%S"), con_ficha))
+        _con.execute("CREATE TABLE IF NOT EXISTS fichas_meta (fixture_id INTEGER PRIMARY KEY, capturado_en TEXT, "
+                     "alineaciones INTEGER, eventos INTEGER, stats INTEGER)")
+        _con.execute("DELETE FROM fichas_meta WHERE fixture_id=?", (con_ficha,))
+        _tit_a = [r[0] for r in _con.execute("SELECT jugador FROM alineaciones WHERE fixture_id=? AND team_id=? "
+                                             "AND titular=1", (con_ficha, _fxm[0]))]
+    _pm = _parte(con_ficha)
+    for _j, _nom in zip(_pm["equipos"]["a"]["plantel"], _tit_a):
+        _j["nombre"] = _nom    # el lado que SÍ llegó casa con su tabla: sin conflicto
+    c.delete(f"{A}/analisis/cowork/{con_ficha}")
+    c.post(f"{A}/analisis/cowork", json=_pm)
+    c.post(f"{A}/analisis/cowork/xi/auto")
+    medio = c.post(f"{A}/analisis/cowork/xi/auto").json()
+    check("con el once de un solo lado y la ficha post-partido sin pedir, espera (no es «la liga no da onces»)",
+          any(x["fixtureId"] == con_ficha and x.get("lados") == ["b"] for x in medio["sinFichaTodavia"])
+          and all(x["fixtureId"] != con_ficha for x in medio["nuncaVaALlegar"]),
+          (medio.get("sinFichaTodavia"), medio.get("nuncaVaALlegar")))
+    with _sq3m.connect(_sadm) as _con:
+        _con.execute("INSERT INTO fichas_meta VALUES (?, '2026-10-17 00:00:00', 11, 10, 0)", (con_ficha,))
+    sellado = c.post(f"{A}/analisis/cowork/xi/auto").json()
+    _n = [x for x in sellado["nuncaVaALlegar"] if x["fixtureId"] == con_ficha]
+    check("con la ficha post-partido ya pedida, va a `nuncaVaALlegar` pidiendo SOLO el lado que falta",
+          _n and _n[0]["lados"] == ["b"] and "SÍ da onces" in _n[0]["porque"], _n)
+    with _sq3m.connect(_sadm) as _con:
+        _con.execute("DELETE FROM fichas_meta WHERE fixture_id=?", (con_ficha,))
+        _con.execute("UPDATE fixtures SET status_short=?, date=? WHERE id=?", (_fxm[3], _fxm[2], con_ficha))
+        _con.executemany(f"INSERT INTO alineaciones ({','.join(_cols)}) VALUES ({','.join('?' * len(_cols))})",
+                         _ali_b)
+    c.delete(f"{A}/analisis/cowork/{con_ficha}")
+    c.post(f"{A}/analisis/cowork", json=_parte(con_ficha))
+    c.post(f"{A}/analisis/cowork/xi/auto")
+
     # ── EL MISMO HUECO, LEÍDO AL REVÉS POR DOS ESCALAS ─────────────────────
     # Un equipo salió «1.9% SIN FORMACIÓN» y «IE 8.14 · casi seguro» a la vez:
     # el EFE cuenta el bloque ausente como 0 y hunde el porcentaje; el TDE
@@ -791,6 +836,9 @@ def main():
           "depositadosEnLaVentana" in lat and "horasDesdeElUltimo" in lat, sorted(lat))
     check("mide la COBERTURA contra lo que tocaba, no solo lo depositado",
           "tocaban" in lat["coberturaDeAyer"], lat.get("coberturaDeAyer"))
+    check("y la mide contra la meta del 80 % de TODO el padrón, no contra el cupo",
+          lat["coberturaDeAyer"].get("meta") == 0.8 and "porcentaje" in lat["coberturaDeAyer"]
+          and "faltaronTotal" in lat["coberturaDeAyer"], lat.get("coberturaDeAyer"))
     check("lista los veredictos vencidos y los onces sin cerrar",
           isinstance(lat["veredictosVencidos"], list) and isinstance(lat["sinOnceCerrado"], list),
           sorted(lat))
@@ -1509,6 +1557,14 @@ def main():
     check("un partido sin jugar NO aparece como pendiente",
           all(x["fixtureId"] != sin_ficha for x in pend), pend[:2])
 
+    # LO OBJETIVO ANTES DEL VEREDICTO: el GET del veredicto da 404 hasta el
+    # primer POST y quien lo escribe necesita saber qué escenario se jugó
+    ob = c.get(f"{A}/analisis/cowork/{pasado['id']}/objetivo")
+    check("lo objetivo se lee antes de escribir el veredicto (marcador y matriz)",
+          ob.status_code == 200 and ob.json()["tieneVeredicto"] is False
+          and "matriz" in ob.json()["objetivo"], ob.text[:300])
+    check("sin parte depositado, 404", c.get(f"{A}/analisis/cowork/1/objetivo").status_code == 404)
+
     # la población es obligatoria y no se deduce
     r = c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto",
                json={"seleccion": "cualquiera", "modoEvaluacion": "PRE",
@@ -1935,6 +1991,24 @@ def main():
     check("la ventana sin roja previa se cobra normal", od_r["b"]["cobrable"] is True, od_r["b"])
     check("un gol del añadido del primer tiempo (45+2 guardado como 47) no cae en la 45-60",
           all(g["jugador"] != "Añadido 1T" for g in od_r["a"]["goles"]), od_r["a"]["goles"])
+    # (17/10/2026) sin gol en la ventana, una roja ANTES de que termine tampoco
+    # deja cobrar el «no hubo gol», y el añadido se anota solo en la ventana
+    # que cierra su tiempo
+    from backend.analisis import veredicto as _vd
+    _g = [{"minuto": 49, "lado": "a", "jugador": "x", "autogol": False, "enAnadido": True, "baseAnadido": 45},
+          {"minuto": 46, "lado": "b", "jugador": "y", "autogol": False, "enAnadido": True, "baseAnadido": 45}]
+    _orig_g, _orig_r = _vd._goles, _vd._rojas
+    _vd._goles = lambda fid, hid: _g
+    _vd._rojas = lambda fid, hid: [{"minuto": 14, "lado": "b", "jugador": "Rojo"}]
+    try:
+        _p = {"tde": {"bloques": [{"equipo": "a", "ventana": "75-90'"}, {"equipo": "b", "ventana": "30-45'"}]}}
+        _ob = {b["equipo"]: b for b in _vd.objetivo(con_ficha, _p)["tde"]["bloques"]}
+    finally:
+        _vd._goles, _vd._rojas = _orig_g, _orig_r
+    check("sin gol en la ventana pero con una roja antes de que termine: no se cobra",
+          _ob["a"]["golEnVentana"] is False and _ob["a"]["cobrable"] is False and _ob["a"]["rojasAntes"], _ob["a"])
+    check("un gol del 45+4 se anota en la ventana que cierra el primer tiempo y no en la 75-90",
+          _ob["b"]["golesEnAnadido"] and not _ob["a"]["golesEnAnadido"], (_ob["a"], _ob["b"]))
     with _sq2.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM fixture_eventos WHERE fixture_id=? AND jugador IN "
                      "('Expulsado', 'DT expulsado', 'Añadido 1T')", (con_ficha,))
@@ -2197,12 +2271,30 @@ def main():
         if not _hay:
             _con.execute("INSERT INTO alineaciones (fixture_id, team_id, entrenador, player_id, jugador, titular) "
                          "VALUES (?, ?, ?, ?, ?, 1)", (pasado["id"], _fx[0], "R. Dudamel", 999001, "Jugador Demo"))
+    from backend.analisis.parte import dt_base_al_depositar as _dtb
+    check("al depositar se guarda qué DT tenía la base", bool(_dtb(pasado["id"]).get("a")), _dtb(pasado["id"]))
+    def _base_fue(nombre):  # qué decía la base al depositar (sellado en la primera vez)
+        with _sq3.connect(os.path.join(tmp, "efe.db")) as _e:
+            _e.execute("UPDATE parte_cowork SET dt_base_json=? WHERE fixture_id=?",
+                       (json.dumps({"a": nombre}), pasado["id"]))
+    # (17/10/2026) un parte que CONTRADIJO a la base con la prensa no copió un
+    # DT rancio: si el banco de la API no le da la razón es «disputado», no cuarentena
     p_eq = _copy.deepcopy(p_lec)
     p_eq["equipos"]["a"]["dt"] = {"nombre": "Pablo Repetto", "desde": "2026-01-01"}
     c.post(f"{A}/analisis/cowork", json=p_eq)
+    _base_fue("Mariano Messera")
+    inv_d = c.get(f"{A}/analisis/cowork/lecciones").json()
+    _todos_d = [i for s in inv_d["porSkill"] for i in s["items"]]
+    check("el parte que contradijo a la base y no casa con el banco NO va a cuarentena: va como disputado",
+          not [i for i in inv_d["enCuarentena"]["items"] if i["clave"].startswith(f"{pasado['id']}:")]
+          and any(i["fixtureId"] == pasado["id"] and i["dtDisputado"] for i in _todos_d),
+          [i.get("dtDisputado") for i in _todos_d if i["fixtureId"] == pasado["id"]])
+    # el caso que la cuarentena SÍ atrapa (22/09): el parte copió el DT de la
+    # base (Repetto) y en el banco se sentó otro (Dudamel)
+    _base_fue("Pablo Repetto")
     inv_eq = c.get(f"{A}/analisis/cowork/lecciones").json()
     item_eq = [i for i in inv_eq["enCuarentena"]["items"] if i["clave"].startswith(f"{pasado['id']}:")]
-    check("DT del parte (Repetto) distinto del que se sentó en el banco (Dudamel) → cuarentena AUTOMÁTICA con los dos nombres",
+    check("DT del parte (Repetto, copiado de la base) distinto del que se sentó en el banco (Dudamel) → cuarentena AUTOMÁTICA con los dos nombres",
           item_eq and all(i["cuarentenaAutomatica"] for i in item_eq)
           and "Repetto" in item_eq[0]["cuarentena"] and "Dudamel" in item_eq[0]["cuarentena"],
           [i.get("cuarentena") for i in item_eq] or inv_eq["enCuarentena"])
@@ -2525,6 +2617,27 @@ def main():
                    {"a": {"formacion": "3-5-2", "titulares": []}})
     check("una apertura con dos sistemas («4-2-3-1 / 4-3-3») no pide rehacer si salió con cualquiera; "
           "con otro, sí", _alt["rehacer"] is False and _no["rehacer"] is True, (_alt, _no))
+    # Huracán–Gimnasia y Estudiantes–Flamengo (16/10/2026): dos avisos falsos
+    _fam = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-2-2-2"}}},
+                    {"a": {"formacion": "4-4-2", "titulares": []}})
+    _fam_no = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3"}}},
+                       {"a": {"formacion": "4-4-2", "titulares": []}})
+    check("«4-2-2-2» y «4-4-2» son el mismo sistema (misma línea de atrás y de arriba); «4-3-3» y «4-4-2» no",
+          _fam["rehacer"] is False and _fam_no["rehacer"] is True, (_fam, _fam_no))
+    _ref = "Muslera; Mancuso, Núñez, Rojo, Benedetti; Piovi, Castro, B. Gallego; Palacios, Carrillo, Burgos"
+    _dos = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3", "xiReferencia": _ref}}},
+                    {"a": {"formacion": "4-3-3", "titulares": ["Baltasar Gallego Rodríguez", "Fernando Muslera"]}})
+    check("un titular con dos apellidos casa con la referencia por cualquiera de ellos",
+          _dos["ausentesDeLaReferencia"] == [], _dos)
+    # (17/10/2026) Quirós/Quiroz y la ficha sin formación (Atlas con línea de 4)
+    _sz = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-4-2", "xiReferencia": _ref.replace("Rojo", "Quiroz")}}},
+                   {"a": {"formacion": "4-4-2", "titulares": ["C. Quirós"]}})
+    check("«Quirós» en la ficha casa con «Quiroz» en la referencia", _sz["ausentesDeLaReferencia"] == [], _sz)
+    _sin = lambda sis, d: _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": sis}}},
+                                   {"a": {"formacion": "", "titulares": [], "defensores": d}})["rehacer"]
+    check("sin formación en la ficha, una línea de 4 contra una apertura de 5 pide rehacer; 3 contra 5 no",
+          _sin("5-3-2", 4) is True and _sin("5-3-2", 3) is False and _sin("4-4-2", 4) is False)
+    check("y el campo de ausentes explica qué lista", "OFICIAL" in _sz.get("nota", ""), _sz)
     ce = g_reh["dtp"]["bloques"][0]["calculado"]["contraElOnce"]
     check("con el once oficial distinto, el bloque del DTP queda a rehacer (sistema y once)",
           ce["rehacer"] is True and ce["sistemaOficial"] == _form and len(ce["motivos"]) == 2
@@ -2564,6 +2677,11 @@ def main():
                                          "rol": x["rolSugerido"], "apps": x["apps"]} for x in dec]
     c.post(f"{A}/analisis/cowork", json=p_f1)
     g_f1b = c.get(f"{A}/analisis/cowork/{con_ficha}").json()
+    from backend.analisis.f1_base import _en_tabla as _f1_en_tabla
+    check("el mismo jugador con dos ids y el apellido mal escrito («Juan Bizans» / «Juan Bisanz») está en la tabla",
+          _f1_en_tabla({"id": 406291, "nombre": "Juan Bizans"}, [{"nombre": "Juan Bisanz", "jugadorId": 304371}]))
+    check("pero otra pila con un apellido parecido es otra persona",
+          not _f1_en_tabla({"id": 1, "nombre": "Juan Gomez"}, [{"nombre": "Pedro Gomes", "jugadorId": 2}]))
     check("con los decisivos en la tabla (por jugadorId), la alerta se va",
           not any(a["codigo"] == "F1-DECISIVO-FUERA" and a["equipo"] == "a" for a in g_f1b["alertas"]),
           [a for a in g_f1b["alertas"] if a["codigo"] == "F1-DECISIVO-FUERA"])

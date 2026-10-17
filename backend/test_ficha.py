@@ -5,6 +5,7 @@ goles) y M6 (rotación) se quedan sin materia prima y el DTP no puede abrir.
 
     python -m backend.test_ficha
 """
+import os
 import sqlite3
 import sys
 
@@ -234,6 +235,31 @@ def main():
     check("sin presupuesto para las 3 requests, no empieza", ok is False and cliente.usadas == 0, cliente.usadas)
     check("y no queda ficha a medias sellada",
           con.execute("SELECT COUNT(*) FROM fichas_meta WHERE fixture_id=3").fetchone()[0] == 0)
+
+    # ── un partido jugado con parte entra aunque nadie juegue en 3 días ────
+    # (Huracán–Gimnasia, 16/10/2026: el veredicto salió con las stats vacías)
+    import tempfile
+    from backend.ingesta.ficha_partido import fixtures_con_parte
+    with tempfile.TemporaryDirectory() as tmp:
+        sad_path = os.path.join(tmp, "sad.db")
+        e = sqlite3.connect(os.path.join(tmp, "efe.db"))
+        e.execute("CREATE TABLE parte_cowork (fixture_id INTEGER PRIMARY KEY)")
+        e.executemany("INSERT INTO parte_cowork VALUES (?)", [(30,), (31,), (32,), (2,)])
+        e.commit()
+        e.close()
+        con.executemany("INSERT INTO fixtures (id, date, status_short, league_id, home_team_id, away_team_id) "
+                        "VALUES (?,?,?,?,?,?)", [
+            (30, dia(-1), "FT", liga, 950, 951),     # jugado ayer, con parte: entra
+            (31, dia(-10), "FT", liga, 952, 953),    # con parte pero viejo: no
+            (32, dia(+1), "NS", liga, 954, 955),     # con parte, no jugado: no
+        ])
+        con.commit()
+        cp = fixtures_con_parte(con, sad_path)
+        check("un partido jugado con parte entra a la cola aunque ninguno juegue pronto",
+              30 in cp and 31 not in cp and 32 not in cp, cp)
+        check("y uno ya sellado no se repide", 2 not in cp, cp)
+        check("sin efe.db no hay nada que priorizar",
+              fixtures_con_parte(con, os.path.join(tmp, "otro", "sad.db")) == [])
 
     # ── amistosos de clubes: fuera, y no ocupan el cupo de «últimos N» ────
     from backend.ingesta.extractor import LIGAS_RUIDO

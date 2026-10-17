@@ -1635,9 +1635,14 @@ export interface LatidoCoworkDTO {
   ultimoParte: { fixtureId: number; partido: string; cuando: string } | null
   /** La señal que delata que el batch no corrió: lo que TOCABA contra lo que hay. */
   coberturaDeAyer: {
+    /** TODOS los candidatos del padrón de ayer, no solo el cupo de una corrida */
     tocaban: number
     conParte: number
+    /** conParte / tocaban; por debajo de `meta` (0.80) el latido va en ámbar */
+    porcentaje?: number | null
+    meta?: number
     faltaron: { fixtureId: number; partido: string; porque: string }[]
+    faltaronTotal?: number
   }
   sinCerrar: number
   veredictosVencidos: { fixtureId: number; partido: string; marcador: string }[]
@@ -1815,6 +1820,8 @@ export interface LeccionItem {
   cuarentenaAutomatica?: boolean
   /** Si la automática es por DT equivocado: qué lado y qué nombres chocaron. */
   dtEquivocado?: { lado: 'a' | 'b'; parte: string; banco: string }[]
+  /** El parte contradijo a la base con la prensa y el banco de la API no le da la razón: se ve, no aparta el caso. */
+  dtDisputado?: { lado: 'a' | 'b'; parte: string; banco: string; disputado: true; baseAlDepositar: string }[]
   /** Etiqueta de Jev sobre la prosa del veredicto: de qué naturaleza fue el fallo. null sin etiqueta. */
   modoFallo?: ModoFalloEtiqueta | null
   modoFalloConfianza?: number | null

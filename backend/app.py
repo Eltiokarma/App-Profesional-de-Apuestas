@@ -2327,10 +2327,10 @@ class XiBody(BaseModel):
 @app.get(API + "/analisis/cowork/agenda")
 def cowork_agenda(
     fecha: date_t | None = None,
-    # 8 y no 4: con el padrón entero (35 competencias) cuatro llaves
-    # internacionales del mismo día se comían el cupo y una jornada de LaLiga
-    # no entraba. `corte` dice siempre qué quedó fuera por este número.
-    limite: int = Query(default=8, ge=1, le=20),
+    # sin `limite`, el cupo del día (`parte.AGENDA_LIMITE`, 16 o
+    # SAD_AGENDA_LIMITE): el mismo número para la corrida y para el latido que
+    # mide su cobertura. `corte` dice siempre qué quedó fuera por este número.
+    limite: int | None = Query(default=None, ge=1, le=30),
     ligaId: int | None = None,
     liga: str | None = Query(default=None, max_length=60,
                              description="solo las ligas cuyo país o nombre contiene este texto (España, LaLiga, Perú)"),
@@ -2355,7 +2355,7 @@ def cowork_agenda(
     0 al final, con su motivo. Un filtro puesto ANTES del pitazo no contamina
     la población: el caso sigue siendo `ciega`."""
     from backend.analisis import parte as cowork
-    return cowork.agenda(fecha, limite, ligaId, desdeAhora, horas, incluirDescartados,
+    return cowork.agenda(fecha, limite or cowork.AGENDA_LIMITE, ligaId, desdeAhora, horas, incluirDescartados,
                          liga=liga, grupos=grupos, segundas=segundas)
 
 
@@ -2817,6 +2817,18 @@ def cowork_veredicto(fixture_id: int, body: VeredictoBody):
         return cowork.guardar_veredicto(fixture_id, body.model_dump(exclude_unset=True))
     except cowork.ParteInvalido as e:
         raise HTTPException(422, str(e))
+
+
+@app.get(API + "/analisis/cowork/{fixture_id}/objetivo")
+def cowork_objetivo(fixture_id: int):
+    """Lo objetivo del caso sin veredicto todavía: el GET del veredicto da 404
+    hasta el primer POST, y quien lo escribe necesita saber antes qué
+    escenario de la matriz se jugó (corrida de veredictos, 16/10/2026)."""
+    from backend.analisis import parte as cowork
+    o = cowork.objetivo_de(fixture_id)
+    if o is None:
+        raise HTTPException(404, f"el fixture {fixture_id} no tiene parte depositado")
+    return o
 
 
 @app.get(API + "/analisis/cowork/{fixture_id}/veredicto")

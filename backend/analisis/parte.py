@@ -104,7 +104,7 @@ class ParteInvalido(ValueError):
 # existe es un error, no un problema)
 _COLUMNAS_NUEVAS = (("veredicto_json", "TEXT"), ("cohorte", "TEXT"), ("cuarentena_json", "TEXT"),
                     ("coherencia_json", "TEXT"), ("modo_fallo_json", "TEXT"),
-                    ("banco_desmentido_json", "TEXT"))
+                    ("banco_desmentido_json", "TEXT"), ("dt_base_json", "TEXT"))
 # el registro del revisor nació sin `via`; se añade en caliente igual
 _COLUMNAS_LOG = (("via", "TEXT"),)
 
@@ -117,6 +117,14 @@ _COLUMNAS_LOG = (("via", "TEXT"),)
 # re-depósito (un parte viejo re-depositado hoy sigue siendo de su época). Lo
 # anterior a la primera cohorte sellada es «rodaje». Las métricas se leen por
 # cohorte; la vigente es la única que vale para calibrar.
+# CUÁNTOS PARTIDOS SE ESTUDIAN POR CORRIDA. Era 8, fijo en la llamada de la
+# corrida y repetido en el latido; el 16/10/2026 quedaron 47 candidatos fuera
+# solo por ese número (LaLiga, Serie A, Bundesliga, Ligue 1). Un solo sitio,
+# para que la corrida y el latido que mide su cobertura no se separen.
+AGENDA_LIMITE = max(1, min(30, int(os.environ.get("SAD_AGENDA_LIMITE", "16") or 16)))
+# de TODOS los candidatos del padrón de un día, cuántos tienen que tener parte
+COBERTURA_META = 0.80
+
 COHORTE_RODAJE = "rodaje"
 COHORTE = "c3-2026-09-23"
 COHORTES = {
@@ -858,7 +866,9 @@ def _mismo_apellido(x: str, y: str) -> bool:
     # la base trae letras corruptas («S. Hoeneb» por «S. Hoeneß», Stuttgart
     # 23/09): un apellido largo que coincide en las primeras 5 letras, o que
     # se parece en ≥ 80 %, es el mismo apellido mal escrito
-    if min(len(x), len(y)) >= 5 and x[:5] == y[:5]:
+    if min(len(x), len(y)) >= 5 and (x[:5] == y[:5] or sorted(x) == sorted(y)):
+        # …o las mismas letras en otro orden («Balazar» por «Bazalar»,
+        # Los Chankas 16/10/2026)
         return True
     return min(len(x), len(y)) >= 4 and difflib.SequenceMatcher(None, x, y).ratio() >= 0.8
 
@@ -893,6 +903,7 @@ def dt_equivocado(parte: dict, fixture_id: int, desmentidos: "dict | None" = Non
         return []
     out = []
     malos = set(sin_dt(parte)) | set(desmentidos or {})
+    base_al_depositar = dt_base_al_depositar(fixture_id)
     for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])):
         if lado in malos:
             continue
@@ -908,8 +919,32 @@ def dt_equivocado(parte: dict, fixture_id: int, desmentidos: "dict | None" = Non
         # sin un apellido comparable de algún lado («DT A») no se puede decir
         # que sean distintos: no se marca
         if banco and _tokens_dt(nombre) and _tokens_dt(banco) and not mismo_dt(nombre, banco):
-            out.append({"lado": lado, "parte": nombre, "banco": banco})
+            # EL PARTE QUE CONTRADIJO A LA BASE NO COPIÓ UN DT RANCIO. El error
+            # que esto atrapa es el del 22/09: el parte se escribió con el DT
+            # viejo que tenía la base y en el banco se sentó otro. Si al
+            # depositar la base decía OTRO nombre que el parte (saltó
+            # DT-DISCREPANCIA), el parte fue a la prensa a propósito, y que el
+            # banco de la API no le dé la razón es prensa contra API, no un
+            # insumo roto: San José (Costa / banco «Baldivieso», el DT viejo) y
+            # Real Potosí (tres nombres) caían en cuarentena falsa (17/10/2026).
+            # Va como `disputado`: se ve, pero no aparta el caso.
+            base = (base_al_depositar.get(lado) or "") if base_al_depositar else ""
+            disputado = bool(_tokens_dt(base)) and not mismo_dt(nombre, base)
+            out.append({"lado": lado, "parte": nombre, "banco": banco,
+                        **({"disputado": True, "baseAlDepositar": base} if disputado else {})})
     return out
+
+
+def dt_base_al_depositar(fixture_id: int) -> dict:
+    """{lado: nombre} del DT que tenía la base cuando se depositó el parte por
+    primera vez. Vacío en los partes anteriores al 17/10/2026."""
+    try:
+        with _conectar() as con:
+            fila = con.execute("SELECT dt_base_json FROM parte_cowork WHERE fixture_id=?",
+                               (fixture_id,)).fetchone()
+        return json.loads(fila["dt_base_json"]) if fila and fila["dt_base_json"] else {}
+    except (sqlite3.Error, ValueError):
+        return {}
 
 
 def corregir_dt(fixture_id: int, cambios: dict) -> dict:
@@ -1775,22 +1810,35 @@ def guardar(payload: dict) -> dict:
         parte["equipos"][lado]["nombre"] = nuestro
 
     ahora = efedb.ahora()
+    # qué DT tenía la base al depositar: es lo que separa un parte que copió un
+    # DT rancio de uno que lo contradijo con la prensa (dt_equivocado)
+    dt_base = {}
+    for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])):
+        try:
+            b = dt_de_base(tid)
+        except Exception:  # noqa: BLE001 — sin capa de jugadores no hay base que guardar
+            b = None
+        if b and b.get("nombre"):
+            dt_base[lado] = b["nombre"]
     with _conectar() as con:
         previo = con.execute("SELECT creado_en, xi_json, parte_json FROM parte_cowork WHERE fixture_id=?",
                              (parte["fixtureId"],)).fetchone()
         con.execute(
             "INSERT INTO parte_cowork (fixture_id, fecha, equipo_a, equipo_b, estado, version, "
-            "parte_json, xi_json, creado_en, actualizado_en, cohorte) VALUES (?,?,?,?,?,?,?,?,?,?,?) "
+            "parte_json, xi_json, creado_en, actualizado_en, cohorte, dt_base_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?) "
             "ON CONFLICT(fixture_id) DO UPDATE SET fecha=excluded.fecha, equipo_a=excluded.equipo_a, "
             "equipo_b=excluded.equipo_b, version=excluded.version, parte_json=excluded.parte_json, "
             "actualizado_en=excluded.actualizado_en, "
             # la cohorte es de la PRIMERA vez: un re-depósito no cambia de época, y un
             # parte que ya existía sin marca es de antes de la primera cohorte (rodaje)
-            f"cohorte=COALESCE(parte_cowork.cohorte, '{COHORTE_RODAJE}')",
+            f"cohorte=COALESCE(parte_cowork.cohorte, '{COHORTE_RODAJE}'), "
+            # la base de la PRIMERA vez, igual que la cohorte
+            "dt_base_json=COALESCE(parte_cowork.dt_base_json, excluded.dt_base_json)",
             (parte["fixtureId"], (fx["date"] or "")[:10], fx["home_name"], fx["away_name"],
              "pendiente_xi", parte["version"], json.dumps(parte, ensure_ascii=False),
              previo["xi_json"] if previo else None,
-             previo["creado_en"] if previo else ahora, ahora, COHORTE),
+             previo["creado_en"] if previo else ahora, ahora, COHORTE,
+             json.dumps(dt_base, ensure_ascii=False) if dt_base else None),
         )
     # COHERENCIA (Jev): se evalúa AQUÍ y se guarda sellada, no al leer —Jev no
     # es determinista y dos lecturas darían hallazgos distintos—. Nunca tumba
@@ -2966,6 +3014,17 @@ def veredicto_de(fixture_id: int) -> dict | None:
             "objetivo": vered.objetivo(fixture_id, parte)}
 
 
+def objetivo_de(fixture_id: int) -> dict | None:
+    """La parte objetiva del caso, haya veredicto o no. None = sin parte."""
+    with _conectar() as con:
+        fila = con.execute("SELECT parte_json, veredicto_json FROM parte_cowork WHERE fixture_id=?",
+                           (fixture_id,)).fetchone()
+    if not fila:
+        return None
+    return {"fixtureId": fixture_id, "tieneVeredicto": bool(fila["veredicto_json"]),
+            "objetivo": vered.objetivo(fixture_id, json.loads(fila["parte_json"]))}
+
+
 # cómo se lee `status_short` de API-Football cuando hay que explicar una ausencia
 _EN_CURSO = {"1H": "1er tiempo", "HT": "entretiempo", "2H": "2do tiempo",
              "ET": "alargue", "BT": "descanso del alargue", "P": "penales",
@@ -3133,9 +3192,50 @@ def cerrar_onces_pendientes(limite: int = 50) -> dict:
             # la excepción para ser el procedimiento. Decirlo cambia qué hace
             # el usuario; llamarlo «todavía» lo deja esperando para siempre.
             fila_fx = saddb.query_one(
-                "sad", "SELECT status_short, league_id FROM fixtures WHERE id=?", (fid,))
+                "sad", "SELECT status_short, league_id, date FROM fixtures WHERE id=?", (fid,))
             estado_fx = dict(fila_fx) if fila_fx else {}
-            if (estado_fx.get("status_short") or "") in _TERMINADO:
+            faltan = [l for l in LADOS if l not in ya_ficha]
+            try:
+                meta = saddb.query_one("sad", "SELECT alineaciones FROM fichas_meta WHERE fixture_id=?", (fid,))
+            except Exception:  # noqa: BLE001 — base sin la tabla de fichas
+                meta = None
+            terminado = (estado_fx.get("status_short") or "") in _TERMINADO
+            # la ficha post-partido pide los jugados con parte de los últimos
+            # días (ficha_partido.CON_PARTE_DIAS); pasado eso no va a llegar
+            from backend.ingesta.ficha_partido import CON_PARTE_DIAS
+            reciente = str(estado_fx.get("date") or "")[:19].replace("T", " ") >= (
+                datetime.now(timezone.utc) - timedelta(days=CON_PARTE_DIAS)).strftime("%Y-%m-%d %H:%M:%S")
+            if not reciente:
+                meta = meta or {"alineaciones": 0}
+            if terminado and ya_ficha and meta is None:
+                # MEDIO ONCE NO ES «ESTA LIGA NO DA ONCES». Necaxa–Atlas, ABB–Real
+                # Potosí y Atlante–Pumas (17/10/2026): la API trajo el once de un
+                # lado y el otro no; la segunda pasada lo mandaba a `nuncaVaALlegar`
+                # con «la liga no da onces», que es falso —el otro lado llegó— y
+                # la ficha post-partido todavía no lo había vuelto a pedir.
+                sin_ficha.append({"fixtureId": fid, "partido": partido, "lados": faltan,
+                                  "porque": f"la API trajo solo el once del lado {', '.join(ya_ficha)}; "
+                                            "el otro puede llegar con la ficha post-partido "
+                                            "(próxima corrida diaria)"})
+                continue
+            if terminado and ya_ficha:
+                nunca.append({
+                    "fixtureId": fid, "partido": partido, "ligaId": estado_fx.get("league_id"),
+                    "lados": faltan,
+                    "porque": f"la API trajo el once del lado {', '.join(ya_ficha)} y el del lado "
+                              f"{', '.join(faltan)} no llegó ni con la ficha post-partido: la liga SÍ da "
+                              "onces, este partido vino incompleto",
+                    "queHacer": f"pegá solo el lado {', '.join(faltan)} a mano (POST /analisis/cowork/{{id}}/xi); "
+                                "el lado de la ficha no se toca sin `reemplazar: true`",
+                })
+                continue
+            if terminado and meta is None:
+                sin_ficha.append({"fixtureId": fid, "partido": partido,
+                                  "porque": "el partido terminó y la ficha post-partido todavía no se pidió "
+                                            "(próxima corrida diaria): recién después se sabe si la liga "
+                                            "no da onces"})
+                continue
+            if terminado:
                 nunca.append({
                     "fixtureId": fid, "partido": partido, "ligaId": estado_fx.get("league_id"),
                     "porque": "el partido ya terminó y la ingesta nunca trajo la alineación: "
@@ -3575,10 +3675,13 @@ def latido(horas: int = 36) -> dict:
         sin_xi = [dict(r) for r in con.execute(
             "SELECT fixture_id, fecha, equipo_a, equipo_b FROM parte_cowork "
             "WHERE xi_json IS NULL AND veredicto_json IS NULL ORDER BY fecha LIMIT 20")]
-    # COBERTURA: de los partidos que la agenda habría elegido ayer, ¿cuántos
-    # tienen parte? Es la señal que delata que el batch no corrió, y no se puede
-    # deducir mirando solo los partes: hay que comparar contra lo que TOCABA.
-    ayer = agenda(fecha=(ahora - timedelta(days=1)).date(), limite=8)
+    # COBERTURA: de TODOS los candidatos del padrón de ayer (no solo los que
+    # entraban en el cupo de una corrida), ¿cuántos tienen parte? Es la señal
+    # que delata que el batch no corrió o no alcanzó, y no se puede deducir
+    # mirando solo los partes: hay que comparar contra lo que TOCABA. La meta es
+    # COBERTURA_META (80 %, usuario 17/10/2026): un fin de semana trae 50-65
+    # candidatos y el cupo de 8 dejaba fuera 47 sin que nada se pusiera ámbar.
+    ayer = agenda(fecha=(ahora - timedelta(days=1)).date(), limite=500)
     tocaban = [x["fixtureId"] for x in (ayer.get("analizar") or [])]
     con_parte = set()
     if tocaban:
@@ -3606,9 +3709,10 @@ def latido(horas: int = 36) -> dict:
     motivos = []
     if depositados == 0:
         motivos.append(f"no se depositó ningún parte en {horas} h")
-    if tocaban and faltaron:
-        motivos.append(f"{len(faltaron)} de {len(tocaban)} partidos de la agenda de ayer "
-                       "se quedaron sin parte")
+    cobertura = round(len(con_parte) / len(tocaban), 3) if tocaban else None
+    if cobertura is not None and cobertura < COBERTURA_META:
+        motivos.append(f"cobertura de ayer {round(cobertura * 100)} % ({len(con_parte)} de {len(tocaban)} "
+                       f"partidos del padrón), por debajo de la meta del {round(COBERTURA_META * 100)} %")
     if vencidos:
         motivos.append(f"{len(vencidos)} caso(s) llevan más de 12 h terminados y sin veredicto")
     if cuotas["alarma"]:
@@ -3627,8 +3731,10 @@ def latido(horas: int = 36) -> dict:
                          "partido": f"{ultimo['equipo_a']} vs {ultimo['equipo_b']}",
                          "cuando": ultimo["actualizado_en"]} if ultimo else None),
         "coberturaDeAyer": {"tocaban": len(tocaban), "conParte": len(con_parte),
+                            "porcentaje": cobertura, "meta": COBERTURA_META,
                             "faltaron": [{"fixtureId": x["fixtureId"], "partido": x.get("partido", ""),
-                                          "porque": x.get("motivo", "")} for x in faltaron]},
+                                          "porque": x.get("motivo", "")} for x in faltaron[:25]],
+                            "faltaronTotal": len(faltaron)},
         "sinCerrar": sin_cerrar,
         "veredictosVencidos": [{"fixtureId": v["fixtureId"], "partido": v["partido"],
                                 "marcador": v["marcador"]} for v in vencidos],
@@ -3697,7 +3803,7 @@ def _choques(filas) -> dict[int, dict[int, str]]:
     return out
 
 
-def agenda(fecha: date_t | None = None, limite: int = 8, liga_id: int | None = None,
+def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: int | None = None,
            desde_ahora: bool = False, horas: int = 12,
            incluir_descartados: bool = False, liga: str | None = None,
            grupos: bool = False, segundas: bool = False) -> dict:

@@ -518,14 +518,60 @@ def _sistemas(texto: str) -> set[str]:
     return {re.sub(r"\D", "", m) for m in re.findall(r"\d(?:\s*[-–]\s*\d){2,4}", texto or "")}
 
 
+def _familia(cifras: str) -> str:
+    """Defensores y delanteros: la línea de atrás y la de arriba. «4-2-2-2» y
+    «4-4-2» son el mismo equipo contado con más o menos líneas en el medio
+    (Huracán–Gimnasia, 16/10/2026: la API dijo 4-4-2 y el aviso salió falso);
+    lo mismo «4-2-3-1» con «4-4-1-1» o «4-5-1». «4-3-3» contra «4-4-2» sí es
+    otro sistema: cambia la línea de arriba."""
+    return cifras[0] + cifras[-1] if len(cifras) >= 3 else cifras
+
+
+def _linea(d: str) -> str:
+    """Línea de cuatro contra línea de tres/cinco. Por la POSICIÓN de los
+    titulares (sin formación en la ficha) un carrilero sale a veces como D y a
+    veces como M: un 5-3-2 cuenta 3 o 5 defensores según la planilla, y eso
+    no es un cambio de sistema; pasar de cuatro a tres/cinco sí lo es."""
+    return "4" if d == "4" else "3/5"
+
+
 def _plano(t: str) -> str:
     t = unicodedata.normalize("NFKD", t or "").encode("ascii", "ignore").decode().lower()
     return re.sub(r"[^a-z ]+", " ", t)
 
 
-def _apellido(nombre: str) -> str:
-    partes = [p for p in _plano(nombre).split() if len(p) > 1]
-    return partes[-1] if partes else ""
+_PARTICULAS = {"de", "del", "la", "las", "los", "da", "do", "dos", "das", "van", "von", "di", "le"}
+
+
+def _apellidos(nombre: str) -> list[str]:
+    """Todo lo que puede ser apellido: sin iniciales ni partículas. Con dos
+    apellidos la ficha y la referencia eligen distinto —«B. Gallego» contra
+    «Baltasar Gallego Rodríguez» (Estudiantes–Flamengo, 16/10/2026)— y mirar
+    solo el último dejaba al jugador fuera de la referencia."""
+    partes = [p for p in _plano(nombre).split() if len(p) > 1 and p not in _PARTICULAS]
+    return partes[1:] if len(partes) > 1 else partes
+
+
+def _sz(t: str) -> str:
+    """Seseo: «Quirós» y «Quiroz» son el mismo apellido escrito por dos
+    fuentes (Atlas, 17/10/2026)."""
+    return t.replace("z", "s")
+
+
+def _casi(uno: str, otro: str) -> bool:
+    """Una letra cambiada en un apellido largo (5+), tras igualar s/z."""
+    uno, otro = _sz(uno), _sz(otro)
+    if uno == otro:
+        return True
+    return (min(len(uno), len(otro)) >= 5 and len(uno) == len(otro)
+            and sum(a != b for a, b in zip(uno, otro)) <= 1)
+
+
+def _en_referencia(nombre: str, ref: str) -> bool:
+    if any(f" {a} " in f" {ref} " for a in _apellidos(nombre)):
+        return True
+    palabras = ref.split()
+    return any(_casi(a, p) for a in _apellidos(nombre) for p in palabras)
 
 
 def oficial_de(fixture_id: int) -> dict:
@@ -544,7 +590,10 @@ def oficial_de(fixture_id: int) -> dict:
         except Exception:  # noqa: BLE001
             f = None
         fuera[lado] = {"formacion": (f["formacion"] if f else "") or "",
-                       "titulares": [j["jugador"] or "" for j in xi]}
+                       "titulares": [j["jugador"] or "" for j in xi],
+                       # sin formación en la ficha, la línea de atrás se cuenta
+                       # por la posición de los titulares (D)
+                       "defensores": sum(1 for j in xi if (j["posicion"] or "") == "D")}
     return fuera
 
 
@@ -557,18 +606,32 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
     m1 = (bloque.get("apertura") or {}).get("m1") or {}
     motivos = []
     decl, real = _sistemas(m1.get("sistema") or ""), _cifras_sistema(of.get("formacion") or "")
-    if decl and real and real not in decl:
+    if decl and real and _familia(real) not in {_familia(d) for d in decl}:
         motivos.append(f"sistema: la apertura dice {m1.get('sistema')!r} y salió {of['formacion']}")
+    elif decl and not real and 3 <= (of.get("defensores") or 0) <= 5 \
+            and _linea(str(of["defensores"])) not in {_linea(d[0]) for d in decl if d}:
+        # LA FICHA SIN FORMACIÓN NO TAPA UN CAMBIO DE LÍNEA. Atlas jugó con
+        # cuatro atrás contra una apertura de línea de cinco y no saltó nada
+        # (17/10/2026): con las posiciones de los titulares se cuenta la línea
+        # de atrás, que es lo que cambia el mapa de duelos por carril.
+        motivos.append(f"sistema: la apertura dice {m1.get('sistema')!r} y el once oficial salió con "
+                       f"{of['defensores']} defensores (la ficha no trae la formación)")
     ref = _plano(m1.get("xiReferencia") or "")
     ausentes = []
     if len(ref.split()) >= 8:   # un XI de referencia escrito, no una frase
-        ausentes = [n for n in of["titulares"] if _apellido(n) and f" {_apellido(n)} " not in f" {ref} "]
+        ausentes = [n for n in of["titulares"] if _apellidos(n) and not _en_referencia(n, ref)]
         if len(ausentes) >= REHACER_AUSENTES:
             motivos.append(f"once: {len(ausentes)} titulares que no estaban en el XI de referencia "
                            f"({', '.join(ausentes)})")
     return {"rehacer": bool(motivos), "motivos": motivos,
             "sistemaDeclarado": m1.get("sistema") or "", "sistemaOficial": of.get("formacion") or "",
-            "ausentesDeLaReferencia": ausentes}
+            "defensoresOficiales": of.get("defensores"),
+            # el nombre se presta a leerlo al revés: son los TITULARES OFICIALES
+            # que no estaban en el XI de referencia, no los de la referencia que
+            # faltaron en el once
+            "ausentesDeLaReferencia": ausentes,
+            "nota": ("`ausentesDeLaReferencia`: titulares del once OFICIAL que no figuraban en el XI de "
+                     f"referencia de la apertura; con {REHACER_AUSENTES} o más, el bloque se rehace")}
 
 
 def leer_dtp(dtp: dict, oficial: dict | None = None) -> dict:

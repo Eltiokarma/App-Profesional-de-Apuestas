@@ -36,7 +36,20 @@ de esa carpeta.
 
 1. `GET $B/analisis/cowork/contrato` (manda sobre cualquier ejemplo) y
    `GET $B/analisis/cowork/latido` (qué quedó roto de ayer: decilo al final).
-2. `GET $B/analisis/cowork/agenda?limite=8` → la lista de trabajo es
+2. `GET $B/analisis/cowork/agenda?desdeAhora=true&horas=N&limite=20` con
+   el TRAMO de esta corrida, que termina donde empieza la siguiente (cada
+   tramo cae en su propia ventana de 5 h del plan; un fin de semana trae
+   15-23 partidos por tramo y la meta es el 80 % del padrón). N lo fija la
+   HORA DE LIMA a la que corrés, aunque el disparo diga «24 h»:
+
+   | Corrés entre (Lima) | Tramo | `horas` |
+   |---|---|---|
+   | 03:00 y 08:59 | 1 (hasta ~11:45) | 7 |
+   | 09:00 y 13:59 | 2 (hasta ~16:00) | 6 |
+   | 14:00 y 02:59 | 3 (hasta la madrugada) | 14 |
+
+   Si el mensaje del disparo trae otros parámetros de agenda, mandan esos.
+   Usá la misma consulta en el paso 4 → la lista de trabajo es
    `porHacer` (lo ya depositado está en `yaHechos`: no se rehace). Descartá
    los que arrancan en menos de 60 minutos: un parte no se escribe con el
    pitazo encima y JAMÁS después del pitazo.
@@ -48,7 +61,7 @@ de esa carpeta.
    las instrucciones de la sección «Encargo de un partido» de abajo, entera.
 4. Al volver todos: `POST $B/analisis/cowork/xi/auto` (cierra los onces que
    ya estén; el ciclo en vivo del backend lo vuelve a hacer solo cuando salen
-   las alineaciones). `GET …/agenda?limite=8` de nuevo: `porHacer` tiene que
+   las alineaciones). `GET …/agenda` de nuevo: `porHacer` tiene que
    haber quedado vacío salvo lo que se descartó a propósito.
 5. Respuesta final, tres líneas: partes depositados (fixtureId y partido),
    cuáles no y por qué, y qué se rompió (incluido lo que dijo el latido).
@@ -120,8 +133,11 @@ de esa carpeta.
 
 ## Modo `veredictos` (después del partido)
 
-1. `GET $B/analisis/cowork/veredictos/pendientes` → los partes jugados sin
-   veredicto. Si no hay, decilo en una línea y terminá.
+1. `GET $B/analisis/cowork/veredictos/pendientes?limite=30` → los partes
+   jugados sin veredicto (lo que no entra queda para la próxima corrida, los
+   más viejos primero: un fin de semana deja ~55 y en una sola ventana de 5 h
+   no caben; si el disparo trae otro `limite`, manda ese). Si no hay, decilo en una
+   línea y terminá.
 2. Un subagente por partido, en paralelo, con este encargo:
 
 > Tus archivos de trabajo van SOLO en `<scratchpad>/{id}/` (otros subagentes
@@ -141,8 +157,11 @@ de esa carpeta.
 > confirmación de una regla también es lección («disciplina 44 declarada y
 > cumplida»): es lo que cuenta casos a favor.
 >
-> La matriz: `objetivo.matriz` del GET dice qué escenario jugó cada equipo y
-> qué se había escrito para él. Por lado, `escenario: {aparecio: si|parcial|no,
+> La matriz: `GET $B/analisis/cowork/{id}/objetivo` (antes del veredicto; el
+> GET de `…/veredicto` da 404 hasta el primer POST) trae en `objetivo.matriz`
+> qué escenario jugó cada equipo y qué se había escrito para él. Con
+> `sinMatriz` el parte es anterior a la matriz estructurada: juzgá el
+> escenario contra la prosa de `documentos[id=matriz]`. Por lado, `escenario: {aparecio: si|parcial|no,
 > que}`: si la palanca o el gatillo escrito fue lo que pasó (sin tasa).
 >
 > `seleccion`: `ciega` si el partido salió de la agenda; `modoEvaluacion`:

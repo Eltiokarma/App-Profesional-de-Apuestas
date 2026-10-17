@@ -183,6 +183,7 @@ solo, sin tocar el acceso del frontend.
 | GET | `/analisis/cowork/pendientes` | qué partes siguen esperando once |
 | GET | `/analisis/cowork/marcas?ids=1,2,3` | cuáles de esos partidos ya tienen parte (la marca al costado de cada tarjeta en la lista de partidos; no está abierto al token de Cowork) |
 | GET | `/analisis/cowork/veredictos/pendientes?horas=12` | qué casos jugados siguen sin cerrar |
+| GET | `/analisis/cowork/{fixtureId}/objetivo` | lo objetivo del caso (marcador, matriz…) ANTES de escribir el veredicto |
 | POST | `/analisis/cowork/{fixtureId}/veredicto` | cerrar el caso: ¿acertó el pronóstico? |
 | GET | `/analisis/cowork/{fixtureId}/veredicto` | leerlo con su parte objetiva recalculada |
 | DELETE | `/analisis/cowork/{fixtureId}` | descartarlo y volver a depositar limpio |

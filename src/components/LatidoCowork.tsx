@@ -55,7 +55,8 @@ export function LatidoCowork({ isMobile }: { isMobile: boolean }) {
       {faltaron.length > 0 && (
         <div style={{ font: '500 10.5px var(--sans)', color: 'var(--t2)', marginTop: 6 }}>
           Sin parte: {faltaron.slice(0, 4).map((f) => f.partido || f.fixtureId).join(' · ')}
-          {faltaron.length > 4 && ` y ${faltaron.length - 4} más`}
+          {(d.coberturaDeAyer?.faltaronTotal ?? faltaron.length) > 4 &&
+            ` y ${(d.coberturaDeAyer?.faltaronTotal ?? faltaron.length) - 4} más`}
         </div>
       )}
       {presu && (

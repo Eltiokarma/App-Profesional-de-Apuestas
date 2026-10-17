@@ -650,12 +650,24 @@ conversación se pierde en la siguiente.
    visible para quien use el entorno: vale para la fase de prueba con el
    token ACOTADO; al salir de prueba, rotarlo (9 de sus 20 caracteres se
    pegaron en un chat el 13/10) y pasarlo a una sección de secretos si el
-   producto la ofrece. Rutinas (hora de Lima): partes 04:47 y 12:48 en la
-   sesión «SAD · corrida de partes (rutina)», veredictos 06:52 en «SAD ·
-   corrida de veredictos (rutina)». Corren en sesiones FIJAS con el repo
+   producto la ofrece. Rutinas (hora de Lima, desde el 17/10/2026): partes en TRES tramos, cada
+   uno en su propia ventana de 5 h del plan y con los partidos que arrancan
+   antes del siguiente —04:47 (`desdeAhora&horas=7`), 09:52 (`horas=6`) y
+   14:56 (`horas=14`), `limite=20`; el tramo lo fija el SKILL por la hora de
+   Lima, porque el texto de una rutina solo se cambia desde su propia
+   conversación— en la sesión «SAD · corrida de partes
+   (rutina)»; veredictos 20:12 (`limite=30`) en «SAD · corrida de veredictos
+   (rutina)». Un fin de semana trae 50-65 candidatos del padrón (15-23 por
+   tramo) y la meta es el 80 % (`COBERTURA_META`, latido); medido el 17/10:
+   ~5 dólares por parte y ~2,7 por veredicto a precio de lista, y una ventana
+   de 5 h da ~150-200. Corren en sesiones FIJAS con el repo
    (cada disparo es un mensaje nuevo que hace `git pull` de main): una
    rutina de sesión nueva arrancaba sin el repo, sin `add_repo` y con otro
    modelo, y no pudo leer el skill (13/10, 12:48).
+   **Disparar la rutina a mano** («ejecutar ahora», `fire_trigger`) tampoco
+   sirve: abre una sesión NUEVA sin repo y con otro modelo, que termina sin
+   hacer nada (17/10, 06:09). Una corrida fuera de horario se lanza mandando
+   el mismo mensaje de la rutina a la sesión fija (`send_message`).
 
 12. **El estudio de los reventones hacia atrás** (13/10/2026,
    `backend/analisis/reventones.py`, modo `reventones` de `corrida-sad`).

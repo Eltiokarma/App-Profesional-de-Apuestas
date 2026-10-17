@@ -432,8 +432,18 @@ def dt_de_alineaciones(con: sqlite3.Connection, team_id: int,
         return None, None
     actual = filas[0][0]
     desde = filas[0][1]
-    for nombre, fecha in filas:
+    for i, (nombre, fecha) in enumerate(filas):
         if not mismo_nombre_dt(nombre, actual):
+            # UN BANCO QUE VA Y VIENE NO ES UNA LLEGADA. Cusco (16/10/2026):
+            # Orfila hasta el 19/09, pero Rabanal ya en el banco el 12/09 y de
+            # nuevo el 11/10, con Rabanal en el cargo desde junio según la
+            # prensa. La API alterna nombres en el once (ayudante, dato
+            # rancio) y el corte en el último cambio daba «desde 2026-10-11»
+            # y EN_CRISIS por «DT nuevo». Si el actual aparece también ANTES
+            # del corte, su llegada no se ve: `desde` vacío.
+            if any(mismo_nombre_dt(n, actual) for n, _ in filas[i + 1:]):
+                desde = None
+                break
             # EL CORTE SE VE, PERO LA LLEGADA PUEDE ESTAR EN UN HUECO. Águilas
             # tenía un once de abril con el DT anterior y el siguiente capturado
             # era del 09/10 con Robatto, que llegó en junio: «desde 2026-10-09»
@@ -565,6 +575,10 @@ def _casi_igual(x: str, y: str) -> bool:
     if min(len(x), len(y)) < 5:
         return False
     if x.replace("ss", "b") == y.replace("ss", "b"):
+        return True
+    # las mismas letras en otro orden: «J. Balazar» en el banco de Los Chankas
+    # por Juan Carlos Bazalar (16/10/2026)
+    if sorted(x) == sorted(y):
         return True
     return len(x) == len(y) and sum(a != b for a, b in zip(x, y)) == 1
 
