@@ -208,11 +208,37 @@ def _en_tabla(j: dict, plantel: list[dict]) -> bool:
                for p in plantel)
 
 
-def faltantes(team_id: int, plantel: list[dict]) -> list[dict]:
+# LOS QUE YA NO ESTÁN NO SON DECISIVOS DE HOY. Medellín (17/10/2026): la
+# alerta gritaba por jugadores que se habían ido del club; las stats de la
+# temporada los siguen teniendo arriba en minutos y goles. Fuera de la cuenta:
+# una salida registrada del club, o ninguna convocatoria en los últimos onces
+# capturados (con al menos ONCES_PARA_AUSENTE para que el silencio diga algo).
+ONCES_PARA_AUSENTE = 5
+
+
+def salidos(team_id: int, antes: str = "9999") -> set[int]:
+    """Jugadores con una salida registrada del club antes de `antes` (y sin
+    vuelta posterior)."""
+    try:
+        return {r["player_id"] for r in saddb.query(
+            "sad", "SELECT DISTINCT t.player_id FROM traspasos t WHERE t.team_out=? AND t.fecha < ? "
+                   "AND NOT EXISTS (SELECT 1 FROM traspasos v WHERE v.player_id=t.player_id "
+                   "AND v.team_in=? AND v.fecha > t.fecha)", (team_id, antes, team_id))}
+    except Exception:  # noqa: BLE001 — base sin la capa de jugadores
+        return set()
+
+
+def faltantes(team_id: int, plantel: list[dict], antes: str = "9999") -> list[dict]:
     if not plantel:
         return []          # sin tabla F1 no hay nada que comparar (ya lo dice el bloque F)
+    fuera = salidos(team_id, antes)
+    rec = onces_recientes(team_id, antes)
+    # con pocos onces capturados el silencio no dice nada: solo cuenta la salida
+    presentes = set(rec["jugadores"]) if rec["onces"] >= ONCES_PARA_AUSENTE else None
     return [{"jugadorId": d["id"], "nombre": d["nombre"], "porQue": d["porQue"]}
-            for d in decisivos(jug.plantilla_de(team_id)) if not _en_tabla(d, plantel)]
+            for d in decisivos(jug.plantilla_de(team_id))
+            if d["id"] not in fuera and (presentes is None or d["id"] in presentes)
+            and not _en_tabla(d, plantel)]
 
 
 def alertas(parte: dict, fx, nombres: dict) -> list[dict]:
@@ -221,7 +247,8 @@ def alertas(parte: dict, fx, nombres: dict) -> list[dict]:
     fuera = []
     for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])):
         try:
-            faltan = faltantes(tid, ((parte.get("equipos") or {}).get(lado) or {}).get("plantel") or [])
+            faltan = faltantes(tid, ((parte.get("equipos") or {}).get(lado) or {}).get("plantel") or [],
+                               str(fx["date"]))
         except Exception:  # noqa: BLE001 — base sin la capa de jugadores
             faltan = []
         if faltan:

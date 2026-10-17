@@ -807,6 +807,17 @@ def main():
           (ag["porHacer"], ag["yaHechos"]))
     check("y se explica que re-depositar REEMPLAZA, para no rehacer de más",
           "REEMPLAZA" in ag["notaReanudacion"], ag.get("notaReanudacion"))
+    # EL CUPO ES DE TRABAJO (tramo de la tarde del 17/10/2026): los que ya
+    # tienen parte no ocupan lugar; el límite cuenta solo los que faltan
+    ag1 = c.get(f"{A}/analisis/cowork/agenda",
+                params={"fecha": fecha, "limite": 1, "incluirDescartados": True}).json()
+    check("con limite=1, entra a lo sumo UNO sin parte y además todos los que ya tienen parte",
+          len(ag1["porHacer"]) <= 1
+          and len(ag1["analizar"]) == len(ag1["porHacer"]) + len(ag1["yaHechos"]),
+          (ag1["porHacer"], ag1["yaHechos"], ag1["corte"]))
+    check("los ya hechos no quedan en espera por el límite",
+          not any(x["tieneParte"] for x in ag1["enEspera"]) and ag1["corte"]["limite"] == 1,
+          [x["fixtureId"] for x in ag1["enEspera"] if x["tieneParte"]])
 
     # ── LAS MARCAS: qué partidos de la lista ya tienen parte ────────────────
     # Lo que la tarjeta de cada partido pinta al costado. Por ids, no por
@@ -1972,6 +1983,14 @@ def main():
           and any(x["donde"].endswith("siRecibePrimero.sob1") for x in rec_r["rechazos"]), rec_r["rechazos"])
     check("y una reasignación a medias se avisa en `faltan` (se cobra al cerrar)",
           any(x["bloque"] == "tde.reasignacion" for x in rec_r["faltan"]), rec_r["faltan"])
+    # UN IE QUE NO SE PUEDE CALCULAR SE AVISA (Athletico-PR, 17/10/2026: sin un S)
+    p_ie = json.loads(json.dumps(p_tde))
+    p_ie["tde"]["bloques"][0]["indicadores"] = {"F1": 1, "F2": 0.5, "C1": 0.5, "P1a": 1}
+    rec_ie = c.post(f"{A}/analisis/cowork", json=p_ie).json()
+    check("un bloque del TDE sin indicadores S → el recibo avisa que el IE queda en null, con el bloque",
+          any(x["bloque"] == "tde.ie (lado a)" and "bloque S" in x["costara"] for x in rec_ie["faltan"]),
+          [x for x in rec_ie["faltan"] if x["bloque"].startswith("tde")])
+    c.post(f"{A}/analisis/cowork", json=p_tde)
     od_ra = {b["equipo"]: b for b in c.get(f"{A}/analisis/cowork/{con_ficha}/veredicto").json()["objetivo"]["tde"]["bloques"]}
     check("el que marcó primero juega la rama siMarcaPrimero, declarada",
           od_ra["a"]["reasignacion"]["rama"] == "siMarcaPrimero" and od_ra["a"]["reasignacion"]["declarada"] is True
@@ -2713,6 +2732,20 @@ def main():
     al_f1 = [a for a in g_f1["alertas"] if a["codigo"] == "F1-DECISIVO-FUERA" and a["equipo"] == "a"]
     check("un decisivo fuera de la tabla F1 depositada dispara F1-DECISIVO-FUERA",
           al_f1 and dec[0]["nombre"] in al_f1[0]["detalle"], al_f1)
+    # UNO QUE YA SE FUE DEL CLUB NO ES UN DECISIVO DE HOY (Medellín, 17/10/2026)
+    import sqlite3 as _sq3f
+    _tid_f1 = dbmod.query_one("sad", "SELECT home_team_id, date FROM fixtures WHERE id=?", (con_ficha,))
+    with _sq3f.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("CREATE TABLE IF NOT EXISTS traspasos (player_id INTEGER NOT NULL, fecha TEXT NOT NULL, tipo TEXT, "
+                     "team_in INTEGER, team_in_nombre TEXT, team_out INTEGER, team_out_nombre TEXT, PRIMARY KEY (player_id, fecha))")
+        _con.execute("INSERT OR REPLACE INTO traspasos VALUES (?, '2000-01-01', 'Transfer', 999999, 'Otro club', ?, 'este')",
+                     (dec[0]["jugadorId"], _tid_f1["home_team_id"]))
+    al_f1s = [a for a in c.get(f"{A}/analisis/cowork/{con_ficha}").json()["alertas"]
+              if a["codigo"] == "F1-DECISIVO-FUERA" and a["equipo"] == "a"]
+    check("un decisivo con salida registrada del club ya no dispara F1-DECISIVO-FUERA",
+          not any(dec[0]["nombre"] in a["detalle"] for a in al_f1s), al_f1s)
+    with _sq3f.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM traspasos WHERE fecha='2000-01-01'")
     p_f1 = _parte(con_ficha)
     p_f1["equipos"]["a"]["plantel"] += [{"nombre": "Otro Nombre", "jugadorId": x["jugadorId"], "zona": x["zona"] or "MID",
                                          "rol": x["rolSugerido"], "apps": x["apps"]} for x in dec]

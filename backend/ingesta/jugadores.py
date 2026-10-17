@@ -461,6 +461,15 @@ def dt_de_alineaciones(con: sqlite3.Connection, team_id: int,
                 sin_once = 0
             if sin_once >= DT_HUECO_PARTIDOS:
                 desde = None
+            # UN SOLO ONCE DEL OTRO, Y ES EL MÁS VIEJO QUE TENEMOS, NO PRUEBA UNA
+            # LLEGADA. Gimnasia de Mendoza (17/10/2026): el primer once capturado
+            # con Darío Franco era del 12/10 y el único anterior traía otro
+            # nombre en el banco (ayudante o dato malo de la API): «desde
+            # 2026-10-12» con Franco en el cargo desde marzo, y la confianza del
+            # reventón rebajada por «DT nuevo». Sin una racha del anterior que
+            # se vea, la llegada no se conoce.
+            if i == len(filas) - 1:
+                desde = None
             break
         desde = fecha
     else:
@@ -473,11 +482,37 @@ def dt_de_alineaciones(con: sqlite3.Connection, team_id: int,
     return actual, desde
 
 
+def _norm_dt(nombre: str) -> str:
+    import unicodedata
+    t = unicodedata.normalize("NFKD", nombre or "").encode("ascii", "ignore").decode().lower()
+    return " ".join(t.replace(".", " ").split())
+
+
+def nombres_que_no_son_dt(con: sqlite3.Connection) -> set[str]:
+    """Países y nombres de equipo: un «DT» que se llama así es basura de la API.
+    San Antonio Bulo Bulo (17/10/2026) tenía de entrenador «Bolivia» por
+    /coachs, y el parte tuvo que poner «sin establecer» y se fue a cuarentena.
+    Mejor ningún DT (la prensa manda) que un país con fuente `coachs`."""
+    out: set[str] = set()
+    for sql in ("SELECT DISTINCT country FROM leagues", "SELECT DISTINCT country FROM teams",
+                "SELECT DISTINCT name FROM teams"):
+        try:
+            out |= {_norm_dt(r[0]) for r in con.execute(sql) if r[0]}
+        except sqlite3.Error:
+            pass
+    out.discard("")
+    return out
+
+
 def guardar_entrenador(con: sqlite3.Connection, team_id: int, filas: list) -> int:
     """/coachs?team= trae la carrera completa de cada DT que pasó por el club:
     se guarda SOLO el vigente, elegido por `elegir_entrenador` (la última
     alineación manda; si no, la etapa abierta más reciente)."""
     dt_alin, desde_alin = dt_de_alineaciones(con, team_id)
+    no_son = nombres_que_no_son_dt(con)
+    if dt_alin and _norm_dt(dt_alin) in no_son:
+        dt_alin, desde_alin = None, None
+    filas = [f for f in filas or [] if _norm_dt(nombre_coach(f)) not in no_son]
     dt = elegir_entrenador(filas, team_id, dt_alin, desde_alin)
     if not dt:
         return 0
@@ -732,7 +767,9 @@ def dt_agenda(cliente, con: sqlite3.Connection, dias: int = DT_AGENDA_DIAS,
         # rehace (1 request: /coachs trae la llegada real si casa el nombre).
         desfasado = bool(fila and (fila[2] or "") == "alineacion" and dt_alin
                          and (fila[3] or None) != (_desde or None))
-        if not (viejo or contradice or rancio or desfasado):
+        # UN PAÍS O UN EQUIPO COMO DT (Bulo Bulo con «Bolivia»): se rehace ya
+        basura = bool(fila and fila[0] and _norm_dt(fila[0]) in nombres_que_no_son_dt(con))
+        if not (viejo or contradice or rancio or desfasado or basura):
             continue
         if not cliente.quedan(1) or cliente.limite - cliente.usadas <= reserva:
             out["sinPresupuesto"] += 1

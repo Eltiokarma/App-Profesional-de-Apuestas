@@ -31,6 +31,8 @@ carpeta, uno leía el JSON que el otro acababa de escribir (15/10/2026: el de
 Boca–Vasco recibió el veredicto y la ficha de Bucaramanga–Águilas en sus dos
 primeras consultas). Nunca un nombre de archivo fijo como `ficha.json` fuera
 de esa carpeta.
+Usá SIEMPRE rutas absolutas (`-o <scratchpad>/<fixtureId>/x.json`): un `-o get.json` relativo
+cae en la raíz del repo (17/10/2026).
 
 ## Modo `partes` (antes del partido)
 

@@ -223,6 +223,28 @@ def main():
     con.execute("DELETE FROM alineaciones WHERE fixture_id=20")
     con.execute("DELETE FROM fixtures WHERE id=20")
     con.commit()
+    # UN SOLO ONCE DEL OTRO, EL MÁS VIEJO (Gimnasia de Mendoza, 17/10/2026):
+    # no se ve la racha del anterior, así que la llegada no se conoce
+    con.execute("DELETE FROM alineaciones WHERE fixture_id IN (11, 10)")
+    con.commit()
+    dt_g, desde_g = dt_de_alineaciones(con, 700)
+    check("con un único once anterior de otro DT (el más viejo capturado), la llegada es desconocida",
+          dt_g == "P. Guardiola" and desde_g is None, (dt_g, desde_g))
+    con.executemany("INSERT INTO alineaciones (fixture_id, team_id, entrenador) VALUES (?, 700, 'L. Peirano')",
+                    [(10,), (11,)])
+    con.commit()
+    check("con la racha del anterior a la vista, la llegada vuelve a leerse",
+          dt_de_alineaciones(con, 700)[1] == hace(24 * 12)[:10])
+    # UN PAÍS COMO DT (Bulo Bulo con «Bolivia», 17/10/2026): basura de la API
+    from backend.ingesta.jugadores import nombres_que_no_son_dt as _nqs
+    con.execute("CREATE TABLE IF NOT EXISTS leagues (id INTEGER PRIMARY KEY, name TEXT, country TEXT, logo TEXT, flag TEXT, season INTEGER)")
+    con.execute("INSERT OR REPLACE INTO leagues (id, name, country) VALUES (344, 'Primera División', 'Bolivia')")
+    con.commit()
+    check("los países de la base cuentan como «no es un DT»", "bolivia" in _nqs(con))
+    _pais = [{"id": 99, "name": "Bolivia", "career": [{"team": {"id": 701}, "start": "2026-08-01", "end": None}]}]
+    check("un «DT» que se llama como un país no se guarda: mejor ninguno que uno falso",
+          guardar_entrenador(con, 701, _pais) == 0
+          and con.execute("SELECT COUNT(*) FROM entrenadores WHERE team_id=701").fetchone()[0] == 0)
     from backend.ingesta.jugadores import mismo_nombre_dt as _mnd
     check("las mismas letras en otro orden son el mismo DT («J. Balazar» / «Juan Carlos Bazalar»)",
           _mnd("J. Balazar", "Juan Carlos Bazalar") and not _mnd("Martínez", "Martino"))

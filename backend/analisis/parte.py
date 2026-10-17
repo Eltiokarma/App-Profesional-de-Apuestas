@@ -2001,6 +2001,23 @@ def guardar(payload: dict) -> dict:
             "comoSeArregla": 'en cada bloque: "reasignacion": {"siMarcaPrimero": {"sob1": …, "tipologia": "…"}, '
                              '"siRecibePrimero": {…}} (disciplina 44)',
         })
+    # UN IE QUE NO SE PUEDE CALCULAR SE DICE AL DEPOSITAR. Athletico-PR y
+    # Gimnasia de Mendoza (17/10/2026) llegaron sin un solo indicador S: el IE
+    # quedaba en null y el recibo callaba; los analistas lo vieron al releer.
+    from backend.analisis import tde as _tdemod
+    for b in tde_bloques:
+        ind = b.get("indicadores") or {}
+        if not ind:
+            continue
+        calc = _tdemod.indice(dict(ind))
+        if calc.get("sinDato"):
+            faltan.append({
+                "bloque": f"tde.ie (lado {b.get('equipo') or '?'})",
+                "costara": f"el IE no se calcula —{calc.get('porque', 'faltan indicadores')}— y queda en null: "
+                           "la ventana se comprueba igual, pero el índice no entra a ninguna métrica",
+                "comoSeArregla": "puntuá al menos un indicador de cada bloque (F, C, P y S; 0 · 0.5 · 1) "
+                                 "y re-depositá; sin dato de verdad, decilo en `notas`",
+            })
     pron = parte.get("pronostico") or {}
     # el normalizador siempre deja las tres claves, así que "vacío" es que
     # sumen cero — no que el diccionario no esté
@@ -4049,7 +4066,18 @@ def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: in
     for x in candidatos + descartados:
         x.update(estados.get(x["fixtureId"],
                              {"tieneParte": False, "onceCerrado": False, "conVeredicto": False}))
-    faltan = [x for x in candidatos[:limite] if not x["tieneParte"]]
+    # EL CUPO ES DE TRABAJO, NO DE LISTA. El límite existe por los tokens, y un
+    # partido que ya tiene parte no cuesta nada. Antes los `yaHechos` ocupaban
+    # cupo: en el tramo de la tarde del 17/10/2026 Platense–Lanús y Botafogo–
+    # Chapecoense entraron recién cuando otros arrancaron y se liberó lugar, a
+    # menos de una hora del pitazo, y quedaron sin parte (y dos más ni entraron).
+    # Ahora el límite cuenta solo los que faltan; los hechos van aparte.
+    sin_parte = [x for x in candidatos if not x["tieneParte"]]
+    faltan = sin_parte[:limite]
+    entran = {x["fixtureId"] for x in faltan} | {x["fixtureId"] for x in candidatos if x["tieneParte"]}
+    cola = [x for x in candidatos if x["fixtureId"] not in entran]
+    candidatos = [x for x in candidatos if x["fixtureId"] in entran] + cola
+    limite_pedido, limite = limite, len(candidatos) - len(cola)
     return {
         "porHacer": [x["fixtureId"] for x in faltan],
         "yaHechos": [x["fixtureId"] for x in candidatos[:limite] if x["tieneParte"]],
@@ -4073,7 +4101,8 @@ def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: in
         # LaLiga no entra — y desde afuera parecía que la liga no estaba
         # cubierta. El corte se ve, no se deduce.
         "corte": {
-            "limite": limite,
+            "limite": limite_pedido,
+            "cuenta": "solo los que no tienen parte: los ya hechos no ocupan cupo",
             "candidatos": len(candidatos),
             "seAnalizan": len(candidatos[:limite]),
             "quedanFuera": len(candidatos[limite:]),
@@ -4082,7 +4111,7 @@ def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: in
             "ligasQueQuedanFuera": sorted({x["liga"] for x in candidatos[limite:] if x.get("liga")}),
             "nota": ("todos los candidatos entran" if len(candidatos) <= limite else
                      f"{len(candidatos) - limite} candidatos quedan fuera SOLO por el "
-                     f"límite de {limite}: subilo si querés cubrirlos"),
+                     f"límite de {limite_pedido} sin parte: subilo si querés cubrirlos"),
         },
         "descartados": descartados,
         "nota": "CLÁSICO solo se detecta por derbi de ciudad (y en una ciudad con 4 o más clubes "
