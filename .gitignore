@@ -47,3 +47,12 @@ __pycache__/
 .sanar_equipos.json
 .retencion_live.json
 .adelgazar_hecho.json
+
+# Archivos de trabajo de la corrida que caen en la raíz por una ruta relativa
+# (un `get.json` suelto el 17/10/2026). Los JSON del proyecto se listan aparte.
+/*.json
+!/package.json
+!/package-lock.json
+!/tsconfig.json
+!/tsconfig.app.json
+!/tsconfig.node.json
