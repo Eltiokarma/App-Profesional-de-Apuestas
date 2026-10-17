@@ -823,3 +823,49 @@ empate no depende de la burbuja. Ojo con leerla como ventaja sobre el 1X2: el
 motor ya trae la localía en el nivel (§13.4); esto es la guía para LEER a un
 equipo por condición, y Aprendizaje (`acreditables.espina.porGuia`) dirá si la
 lectura con la K de la condición acierta más que con la total.
+
+## 15. Las otras familias: doble oportunidad, márgenes y goles (17/10/2026)
+
+Pedido del usuario: la burbuja de doble oportunidad de local de Everton estaba
+en su récord (4 partidos en casa sin perder; nunca había llegado a 4) y Everton
+perdió 0-2 con Chelsea. ¿Las burbujas de las otras familias avisan algo que la
+K de resultado no? `backend/backtest_familias.py` (test:
+`backend/test_backtest_familias.py`, detecta un reventón plantado y no inventa
+uno con resultados independientes).
+
+**Qué mide.** Cada familia es un sí/no por partido —no pierde · no gana · gana
+por 1+…4+ · pierde por 1+…4+ · anota · anota 2+ · recibe · recibe 2+ · ambos
+marcan · más de 2,5— en total, de local y de visita. En cada partido, solo con
+lo anterior: la frecuencia propia del equipo, el largo de la burbuja abierta
+(racha o sequía) y si está en su récord (lo iguala · lo supera · lejos, con ≥ 3
+burbujas previas del valor). Se compara la predicción del partido siguiente con
+la frecuencia sola (A) contra frecuencia + largo + récord (B), corte temporal
+80/20 y bootstrap por equipo. No usa el nivel del rival (no hereda §13.1).
+
+**Datos.** 518 equipos de las 30 ligas del padrón (historias de `/constantes`,
+hasta 500 partidos), 119.584 partidos, 3,58 M observaciones.
+
+**Resultado: la burbuja no aporta en ninguna familia.** De 48 combinaciones
+(16 familias × 3 ámbitos; `noGana` y `pierde1+` son el complemento de `gana1+`
+y `noPierde` y dan lo mismo), UNA queda con el intervalo bajo cero —pierde 3+
+en total, Δ log-loss −0.0009—, que es lo que se espera por azar con 48 pruebas
+al 95 %. Cuatro EMPEORAN fuera de muestra (ambos marcan, más de 2,5, recibe y
+recibe 2+, de local): el largo y el récord sobreajustan.
+
+**El récord no revienta: se sostiene un poco más.** Sobre todas las familias,
+la racha que supera su récord sigue el 59,9 % de las veces contra 58,0 % que
+esperaba la frecuencia (+1,9 pts); la que lo iguala, +1,2; la sequía en récord,
++1,9 a +2,4. En «no pierde de local» —el caso de Everton—: igualando el récord
+sigue 76 % contra 68 % esperado (n = 1.049), superándolo 77 % contra 73 %
+(n = 3.538). Es INERCIA, no reventón, y casi seguro es forma reciente (la
+frecuencia de toda la historia va atrasada respecto de un equipo que mejoró).
+Es la misma conclusión que §12 para la K: el récord no adelanta el corte.
+
+**Qué se hace con esto.** Las otras familias entran al análisis como
+DESCRIPCIÓN —cuánto lleva la burbuja, su récord, cuánto suele durar y la
+frecuencia propia— sin riesgo ni puntos, y con la lectura correcta del récord
+(«en su récord estas burbujas se sostienen algo más de lo que dice la
+frecuencia, no menos»). Everton–Chelsea no lo habría corregido: la guía
+histórica decía que esa racha tendía a seguir. Re-correr con
+`python -m backend.backtest_familias --padron` (servidor) o `--desde-json`
+(historias bajadas) cuando haya más temporada.
