@@ -36,11 +36,20 @@ de esa carpeta.
 
 1. `GET $B/analisis/cowork/contrato` (manda sobre cualquier ejemplo) y
    `GET $B/analisis/cowork/latido` (qué quedó roto de ayer: decilo al final).
-2. `GET $B/analisis/cowork/agenda` (sin `limite`: el cupo lo fija el
-   servidor, el mismo que mide el latido). **Si el mensaje del disparo trae
-   parámetros de agenda** (`desdeAhora=true&horas=N&limite=M`: el TRAMO de
-   esta corrida, que termina donde empieza la siguiente), usalos tal cual en
-   este paso y en el 4 → la lista de trabajo es
+2. `GET $B/analisis/cowork/agenda?desdeAhora=true&horas=N&limite=20` con
+   el TRAMO de esta corrida, que termina donde empieza la siguiente (cada
+   tramo cae en su propia ventana de 5 h del plan; un fin de semana trae
+   15-23 partidos por tramo y la meta es el 80 % del padrón). N lo fija la
+   HORA DE LIMA a la que corrés, aunque el disparo diga «24 h»:
+
+   | Corrés entre (Lima) | Tramo | `horas` |
+   |---|---|---|
+   | 03:00 y 08:59 | 1 (hasta ~11:45) | 7 |
+   | 09:00 y 13:59 | 2 (hasta ~16:00) | 6 |
+   | 14:00 y 02:59 | 3 (hasta la madrugada) | 14 |
+
+   Si el mensaje del disparo trae otros parámetros de agenda, mandan esos.
+   Usá la misma consulta en el paso 4 → la lista de trabajo es
    `porHacer` (lo ya depositado está en `yaHechos`: no se rehace). Descartá
    los que arrancan en menos de 60 minutos: un parte no se escribe con el
    pitazo encima y JAMÁS después del pitazo.
@@ -124,9 +133,10 @@ de esa carpeta.
 
 ## Modo `veredictos` (después del partido)
 
-1. `GET $B/analisis/cowork/veredictos/pendientes` → los partes jugados sin
-   veredicto (si el disparo trae `limite=N`, pasalo: lo que no entra queda
-   para la próxima corrida, los más viejos primero). Si no hay, decilo en una
+1. `GET $B/analisis/cowork/veredictos/pendientes?limite=30` → los partes
+   jugados sin veredicto (lo que no entra queda para la próxima corrida, los
+   más viejos primero: un fin de semana deja ~55 y en una sola ventana de 5 h
+   no caben; si el disparo trae otro `limite`, manda ese). Si no hay, decilo en una
    línea y terminá.
 2. Un subagente por partido, en paralelo, con este encargo:
 

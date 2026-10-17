@@ -653,7 +653,9 @@ conversación se pierde en la siguiente.
    producto la ofrece. Rutinas (hora de Lima, desde el 17/10/2026): partes en TRES tramos, cada
    uno en su propia ventana de 5 h del plan y con los partidos que arrancan
    antes del siguiente —04:47 (`desdeAhora&horas=7`), 09:52 (`horas=6`) y
-   14:56 (`horas=14`), `limite=25`— en la sesión «SAD · corrida de partes
+   14:56 (`horas=14`), `limite=20`; el tramo lo fija el SKILL por la hora de
+   Lima, porque el texto de una rutina solo se cambia desde su propia
+   conversación— en la sesión «SAD · corrida de partes
    (rutina)»; veredictos 20:12 (`limite=30`) en «SAD · corrida de veredictos
    (rutina)». Un fin de semana trae 50-65 candidatos del padrón (15-23 por
    tramo) y la meta es el 80 % (`COBERTURA_META`, latido); medido el 17/10:
