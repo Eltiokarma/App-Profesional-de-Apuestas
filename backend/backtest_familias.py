@@ -124,6 +124,14 @@ def observar_equipo(team: int, filas: list[dict]) -> list[tuple]:
     return obs
 
 
+def redondear(x: float, decimales: int = 0) -> float:
+    """Redondeo hacia arriba en el .5, igual que Math.round del espejo TS
+    (src/lib/familias.ts): el round de Python va al par (12,5 → 12) y un
+    texto distinto en cada lado tumbaría los vectores dorados."""
+    f = 10 ** decimales
+    return math.floor(x * f + 0.5) / f
+
+
 def _logit(p: float) -> float:
     p = min(max(p, 1e-4), 1 - 1e-4)
     return math.log(p / (1 - p))
@@ -159,7 +167,7 @@ def perfil_dc(prefijo: list[dict], local_hoy: bool) -> dict:
         rec = 2 if largo > maximos[v] else 1 if largo == maximos[v] else 0
     return {
         "condicion": cond, "partidos": n,
-        "noPierde": round((np_ + 1) / (n + 2), 4), "noGana": round((ng + 1) / (n + 2), 4),
+        "noPierde": redondear((np_ + 1) / (n + 2), 4), "noGana": redondear((ng + 1) / (n + 2), 4),
         "burbuja": (largo if v else -largo) if v is not None else 0,
         "maximoPrevio": maximos[v] if v is not None else 0,
         "record": rec,                       # 2 supera · 1 iguala · 0 no (o sin base)

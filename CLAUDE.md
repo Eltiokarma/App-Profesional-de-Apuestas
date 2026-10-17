@@ -13,6 +13,7 @@ npm run build                     # typecheck + build (SIEMPRE antes de commitea
 npm run test:motor                # motor TS verificado contra docs/MOTOR_SAD_EXTRACCION.md
 npm run test:kview                # capa de visualización de las K (3 valores por gráfica)
 npm run test:burbuja              # reventón de burbuja: espejo TS vs vectores dorados (docs/REVENTON.md)
+npm run test:familias             # otras burbujas (DC, márgenes, goles): espejo TS vs vectores dorados (python -m backend.test_familias)
 node scripts/audit-movil.mjs /tmp/capturas 360 2400  # vista de teléfono: captura de cada pantalla + desbordes (instrucciones en el script)
 
 # backend (junto a las 4 .db en la raíz, o SAD_DATA_DIR)
@@ -349,7 +350,7 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   puntos. Lo que SÍ agrega al 1X2 es el PERFIL de doble oportunidad
   por condición (§15.1: con qué frecuencia el local no pierde / no gana de
   local y el visitante de visita; M7 − motor −0.011 de log-loss con el
-  intervalo bajo cero): falta medirlo contra el mercado antes de la fórmula. **Por período** (§10-bis):
+  intervalo bajo cero): falta medirlo contra el mercado antes de la fórmula. La narrativa viaja en `otrasFamilias` (`backend/analisis/familias.py`, espejo `src/lib/familias.ts`, vectores `scripts/casos_familias.json`) de `/burbujas` y de `reventonCalculado`, con la tarjeta «Otras burbujas» y el prompt (v. COWORK.md) que pide el perfil DC antes del 1X2. **Por período** (§10-bis):
   `historialPorPeriodo` repite las medidas acotadas a temporada · año · DT
   vigente · últimos 20, filtrando por la fecha del reventón sobre los mismos
   episodios; la global sigue mandando en el riesgo (es la calibrada) y un

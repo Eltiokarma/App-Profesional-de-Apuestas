@@ -1507,6 +1507,11 @@ def equipo_burbujas(equipo_id: int, antesDe: int | None = None, proximo: int | N
         hoy=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         nombre=team["name"],
     )
+    # LAS OTRAS BURBUJAS (doble oportunidad, márgenes, goles), contadas para la
+    # narrativa: descripción sin puntos (REVENTON §15) y el perfil de doble
+    # oportunidad por condición, que sí agrega al 1X2 (§15.1)
+    from backend.analisis import familias as _familias
+    r["otrasFamilias"] = _familias.describir(filas, prox["condicion"] if prox else None, team["name"])
     # LA ESCALA DEL RIVAL (copas, ascendidos): el riesgo compara su nivel con
     # los rivales que reventaron las burbujas en la liga del equipo; si el
     # rival viene de otra base, se dice y se trae lo que sí compara.

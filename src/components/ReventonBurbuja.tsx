@@ -2,7 +2,7 @@
 // de resultado del equipo suele volver a cero, tal como llega del contrato
 // (GET /equipos/{id}/burbujas). La pantalla no calcula nada: pinta los números
 // y los motivos que vienen con ellos. No es una probabilidad y se dice.
-import type { BaseNivelDTO, BurbujasEquipoDTO, DistribucionDTO, EscalaRivalDTO, FamiliaBurbuja, FamiliaBurbujaDTO, HistorialPeriodoDTO, HistorialSignoDTO, ReventonDTO } from '../api/types'
+import type { BaseNivelDTO, BurbujasEquipoDTO, OtrasFamiliasDTO, DistribucionDTO, EscalaRivalDTO, FamiliaBurbuja, FamiliaBurbujaDTO, HistorialPeriodoDTO, HistorialSignoDTO, ReventonDTO } from '../api/types'
 import type { KCondKey } from '../data/types'
 import { fmtK, signFmt } from '../lib/kview'
 
@@ -379,7 +379,32 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
         </div>
       )}
 
+      {data.otrasFamilias && data.otrasFamilias.lineas.length > 0 && <OtrasFamilias of={data.otrasFamilias} compact={compact} />}
+
       <div style={{ font: '500 9.5px var(--mono)', color: 'var(--t3)', lineHeight: 1.4 }}>{data.aviso}</div>
+    </div>
+  )
+}
+
+/** Las OTRAS burbujas contadas (doble oportunidad, márgenes, goles; REVENTON
+ *  §15-15.1): el perfil de doble oportunidad —que sí agrega al 1X2— y las
+ *  burbujas destacadas, como texto. Descripción, no riesgo: sin colores de alarma. */
+function OtrasFamilias({ of, compact }: { of: OtrasFamiliasDTO; compact?: boolean }) {
+  const [perfil, ...resto] = of.perfilDc ? of.lineas : [null, ...of.lineas]
+  const visibles = compact ? resto.slice(0, 4) : resto
+  return (
+    <div style={{ padding: '8px 10px', borderRadius: 9, background: 'var(--bg)', border: '1px solid var(--line)' }}>
+      <div style={{ ...rotulo, marginBottom: 5 }}>OTRAS BURBUJAS · DOBLE OPORTUNIDAD, MÁRGENES Y GOLES</div>
+      {perfil && (
+        <div style={{ font: '600 11px var(--sans)', color: 'var(--t1)', lineHeight: 1.45, marginBottom: 6, paddingLeft: 8, borderLeft: '2px solid var(--accent)' }}>{perfil}</div>
+      )}
+      <ul style={{ margin: 0, paddingLeft: 16, font: '500 10.5px var(--sans)', color: 'var(--t2)', lineHeight: 1.45 }}>
+        {visibles.map((l, i) => <li key={i} style={{ marginBottom: 2 }}>{l}</li>)}
+      </ul>
+      {compact && resto.length > visibles.length && (
+        <div style={{ font: '500 9.5px var(--mono)', color: 'var(--t3)', marginTop: 3 }}>y {resto.length - visibles.length} más en la página del equipo</div>
+      )}
+      <div style={{ font: '500 9.5px var(--mono)', color: 'var(--t3)', marginTop: 5, lineHeight: 1.4 }}>{of.nota}</div>
     </div>
   )
 }

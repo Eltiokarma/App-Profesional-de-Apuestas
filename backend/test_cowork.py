@@ -1364,6 +1364,10 @@ def main():
     check("y al lado la K de la condición de hoy (local para a, visita para b) con su riesgo",
           rc["a"].get("condicion", {}).get("familia") == "local" and rc["b"].get("condicion", {}).get("familia") == "visita"
           and all({"actual", "riesgo", "rival", "extremo"} <= set(rc[l]["condicion"]) for l in ("a", "b")), rc)
+    check("y las otras burbujas contadas por lado, en la condición de hoy (local para a, visita para b)",
+          rc["a"]["otrasFamilias"]["condicion"] == "local" and rc["b"]["otrasFamilias"]["condicion"] == "visita"
+          and all(isinstance(rc[l]["otrasFamilias"]["lineas"], list) for l in ("a", "b")),
+          {l: (rc[l].get("otrasFamilias") or {}).get("condicion") for l in ("a", "b")})
     check("cada lado trae la estabilidad y el aviso de que es guía, no probabilidad",
           all(rc[l]["estabilidad"] in ("estable", "en transición", "inestable", "sin dato")
               and "no probabilidad" in rc[l]["aviso"] for l in ("a", "b")), rc)

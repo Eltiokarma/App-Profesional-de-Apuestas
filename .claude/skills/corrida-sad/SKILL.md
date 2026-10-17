@@ -105,6 +105,13 @@ de esa carpeta.
 >   burbujas (si no, el recibo avisa `ensayo.espina`). Si el equipo es otro en casa que afuera, leé la K
 >   de la condición de hoy (`familias.local` / `familias.visita`) y declaralo
 >   con `"guia": "condicion"`.
+> - **Las otras burbujas** (`otrasFamilias` en `/burbujas`, desde el 17/10):
+>   doble oportunidad, márgenes y goles ya contados en `lineas[]`. Narrativa:
+>   su largo y su récord NO predicen el partido siguiente y en el récord se
+>   sostienen, no revientan (REVENTON §15) —no las uses como alarma—. El
+>   `perfilDc` (no pierde / no gana en la condición de hoy) SÍ agrega al 1X2
+>   del motor (§15.1): miralo antes de fijar las probabilidades y contalo en el
+>   párrafo de las burbujas del ensayo. Sin copiar números.
 > - **La matriz de escenarios va estructurada en `matriz`** (desde el 15/10):
 >   por equipo, `ganar` / `empatar` / `perder` con las filas del skill y la
 >   `probabilidad` estimada de cada escenario, que tiene que cuadrar con tu 1X2

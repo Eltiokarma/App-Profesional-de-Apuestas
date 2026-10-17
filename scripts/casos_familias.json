@@ -1,0 +1,5746 @@
+[
+ {
+  "nombre": "Equipo 0",
+  "condicion": "L",
+  "filas": [
+   {
+    "fecha": "2025-01-01T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-02T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-03T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-04T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-05T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-06T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-07T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-08T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-09T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-10T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-11T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-12T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-13T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-14T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-15T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   }
+  ],
+  "esperado": {
+   "nota": "descripción, no riesgo: el largo y el récord de estas burbujas no predicen el partido siguiente mejor que la frecuencia del equipo, y en su récord se sostienen algo más, no revientan (REVENTON §15). El PERFIL de doble oportunidad por condición sí agrega al 1X2 del motor (§15.1)",
+   "condicion": "local",
+   "familias": [
+    {
+     "familia": "noPierde",
+     "ambito": "local",
+     "valor": true,
+     "partidos": 8,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 1.0,
+     "n": 8,
+     "destacada": true,
+     "texto": "Equipo 0 lleva 8 partidos de local sin perder. En 8 partidos de local va sin perder el 100 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 6,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.125,
+     "n": 8,
+     "destacada": true,
+     "texto": "Equipo 0 lleva 6 partidos de local ganando (su máximo previo era 1). En 8 partidos de local va ganando el 88 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "local",
+     "valor": true,
+     "partidos": 6,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.875,
+     "n": 8,
+     "destacada": true,
+     "texto": "Equipo 0 lleva 6 partidos de local ganando por 2 o más (su máximo previo era 1). En 8 partidos de local va ganando por 2 o más el 88 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 7,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 0.125,
+     "n": 8,
+     "destacada": true,
+     "texto": "Equipo 0 lleva 7 partidos de local sin ganar por 3 o más. En 8 partidos de local va sin ganar por 3 o más el 88 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 8,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 0.0,
+     "n": 8,
+     "destacada": true,
+     "texto": "Equipo 0 lleva 8 partidos de local sin perder por 2 o más. En 8 partidos de local va sin perder por 2 o más el 100 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "local",
+     "valor": true,
+     "partidos": 8,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 1.0,
+     "n": 8,
+     "destacada": true,
+     "texto": "Equipo 0 lleva 8 partidos de local anotando. En 8 partidos de local va anotando el 100 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 6,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 0.25,
+     "n": 8,
+     "destacada": true,
+     "texto": "Equipo 0 lleva 6 partidos de local con la valla invicta. En 8 partidos de local va con la valla invicta el 75 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 6,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 0.25,
+     "n": 8,
+     "destacada": true,
+     "texto": "Equipo 0 lleva 6 partidos de local sin que marquen los dos. En 8 partidos de local va sin que marquen los dos el 75 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 6,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 0.25,
+     "n": 8,
+     "destacada": true,
+     "texto": "Equipo 0 lleva 6 partidos de local con 2 goles o menos. En 8 partidos de local va con 2 goles o menos el 75 %."
+    },
+    {
+     "familia": "noPierde",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 7,
+     "maximoPrevio": 7,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.933,
+     "n": 15,
+     "destacada": true,
+     "texto": "Equipo 0 lleva 7 partidos en total sin perder (su máximo previo era 7). En 15 partidos en total va sin perder el 93 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 6,
+     "maximoPrevio": 2,
+     "burbujasPrevias": 3,
+     "record": "supera",
+     "frecuencia": 0.267,
+     "n": 15,
+     "destacada": true,
+     "texto": "Equipo 0 lleva 6 partidos en total ganando (su máximo previo era 2): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 15 partidos en total va ganando el 73 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 6,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 3,
+     "record": "supera",
+     "frecuencia": 0.6,
+     "n": 15,
+     "destacada": true,
+     "texto": "Equipo 0 lleva 6 partidos en total ganando por 2 o más (su máximo previo era 1): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 15 partidos en total va ganando por 2 o más el 60 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 8,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.133,
+     "n": 15,
+     "destacada": true,
+     "texto": "Equipo 0 lleva 8 partidos en total sin ganar por 3 o más (su máximo previo era 3). En 15 partidos en total va sin ganar por 3 o más el 87 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 15,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 0.0,
+     "n": 15,
+     "destacada": true,
+     "texto": "Equipo 0 lleva 15 partidos en total sin perder por 2 o más. En 15 partidos en total va sin perder por 2 o más el 100 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 6,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.8,
+     "n": 15,
+     "destacada": true,
+     "texto": "Equipo 0 lleva 6 partidos en total anotando (su máximo previo era 4). En 15 partidos en total va anotando el 80 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 7,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.4,
+     "n": 15,
+     "destacada": true,
+     "texto": "Equipo 0 lleva 7 partidos en total con la valla invicta (su máximo previo era 1). En 15 partidos en total va con la valla invicta el 60 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 9,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.333,
+     "n": 15,
+     "destacada": true,
+     "texto": "Equipo 0 lleva 9 partidos en total sin que marquen los dos (su máximo previo era 1). En 15 partidos en total va sin que marquen los dos el 67 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 8,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.4,
+     "n": 15,
+     "destacada": true,
+     "texto": "Equipo 0 lleva 8 partidos en total con 2 goles o menos (su máximo previo era 1). En 15 partidos en total va con 2 goles o menos el 60 %."
+    }
+   ],
+   "lineas": [
+    "Perfil de doble oportunidad de local: no pierde 8 de 8 (100 %) y no gana 1 de 8 (13 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de local empata mucho o se planta a no perder no está del todo en el nivel",
+    "Equipo 0 lleva 8 partidos de local sin perder. En 8 partidos de local va sin perder el 100 %.",
+    "Equipo 0 lleva 6 partidos de local ganando (su máximo previo era 1). En 8 partidos de local va ganando el 88 %.",
+    "Equipo 0 lleva 6 partidos de local ganando por 2 o más (su máximo previo era 1). En 8 partidos de local va ganando por 2 o más el 88 %.",
+    "Equipo 0 lleva 7 partidos de local sin ganar por 3 o más. En 8 partidos de local va sin ganar por 3 o más el 88 %.",
+    "Equipo 0 lleva 8 partidos de local sin perder por 2 o más. En 8 partidos de local va sin perder por 2 o más el 100 %.",
+    "Equipo 0 lleva 8 partidos de local anotando. En 8 partidos de local va anotando el 100 %.",
+    "Equipo 0 lleva 6 partidos de local con la valla invicta. En 8 partidos de local va con la valla invicta el 75 %.",
+    "Equipo 0 lleva 6 partidos de local sin que marquen los dos. En 8 partidos de local va sin que marquen los dos el 75 %.",
+    "Equipo 0 lleva 6 partidos de local con 2 goles o menos. En 8 partidos de local va con 2 goles o menos el 75 %.",
+    "Equipo 0 lleva 7 partidos en total sin perder (su máximo previo era 7). En 15 partidos en total va sin perder el 93 %.",
+    "Equipo 0 lleva 6 partidos en total ganando (su máximo previo era 2): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 15 partidos en total va ganando el 73 %.",
+    "Equipo 0 lleva 6 partidos en total ganando por 2 o más (su máximo previo era 1): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 15 partidos en total va ganando por 2 o más el 60 %.",
+    "Equipo 0 lleva 8 partidos en total sin ganar por 3 o más (su máximo previo era 3). En 15 partidos en total va sin ganar por 3 o más el 87 %.",
+    "Equipo 0 lleva 15 partidos en total sin perder por 2 o más. En 15 partidos en total va sin perder por 2 o más el 100 %.",
+    "Equipo 0 lleva 6 partidos en total anotando (su máximo previo era 4). En 15 partidos en total va anotando el 80 %.",
+    "Equipo 0 lleva 7 partidos en total con la valla invicta (su máximo previo era 1). En 15 partidos en total va con la valla invicta el 60 %.",
+    "Equipo 0 lleva 9 partidos en total sin que marquen los dos (su máximo previo era 1). En 15 partidos en total va sin que marquen los dos el 67 %.",
+    "Equipo 0 lleva 8 partidos en total con 2 goles o menos (su máximo previo era 1). En 15 partidos en total va con 2 goles o menos el 60 %."
+   ],
+   "perfilDc": {
+    "condicion": "Local",
+    "partidos": 8,
+    "noPierde": 0.9,
+    "noGana": 0.2,
+    "burbuja": 8,
+    "maximoPrevio": 0,
+    "record": 0,
+    "texto": "Perfil de doble oportunidad de local: no pierde 8 de 8 (100 %) y no gana 1 de 8 (13 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de local empata mucho o se planta a no perder no está del todo en el nivel"
+   }
+  }
+ },
+ {
+  "nombre": "Equipo 1",
+  "condicion": "V",
+  "filas": [
+   {
+    "fecha": "2025-01-01T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-02T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-03T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-04T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-05T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-06T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-07T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-08T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-09T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-10T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-11T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-12T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-13T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-14T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-15T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-16T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-17T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-18T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-19T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-20T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-21T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-22T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-23T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-24T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-25T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-26T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-27T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-28T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-01T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-02T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-03T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-02-04T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-05T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-06T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-02-07T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 1
+   }
+  ],
+  "esperado": {
+   "nota": "descripción, no riesgo: el largo y el récord de estas burbujas no predicen el partido siguiente mejor que la frecuencia del equipo, y en su récord se sostienen algo más, no revientan (REVENTON §15). El PERFIL de doble oportunidad por condición sí agrega al 1X2 del motor (§15.1)",
+   "condicion": "visita",
+   "familias": [
+    {
+     "familia": "noPierde",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 7,
+     "maximoPrevio": 6,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.722,
+     "n": 18,
+     "destacada": true,
+     "texto": "Equipo 1 lleva 7 partidos de visita sin perder (su máximo previo era 6). En 18 partidos de visita va sin perder el 72 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 2,
+     "maximoPrevio": 6,
+     "burbujasPrevias": 3,
+     "record": "no",
+     "frecuencia": 0.389,
+     "n": 18,
+     "destacada": false,
+     "texto": "Equipo 1 lleva 2 partidos de visita ganando (su máximo previo era 6). En 18 partidos de visita va ganando el 61 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 2,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 3,
+     "record": "no",
+     "frecuencia": 0.389,
+     "n": 18,
+     "destacada": false,
+     "texto": "Equipo 1 lleva 2 partidos de visita ganando por 2 o más (su máximo previo era 3). En 18 partidos de visita va ganando por 2 o más el 39 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 9,
+     "burbujasPrevias": 4,
+     "record": "no",
+     "frecuencia": 0.222,
+     "n": 18,
+     "destacada": false,
+     "texto": "Equipo 1 lleva 1 partido de visita sin ganar por 3 o más (su máximo previo era 9). En 18 partidos de visita va sin ganar por 3 o más el 78 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 7,
+     "maximoPrevio": 8,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.167,
+     "n": 18,
+     "destacada": true,
+     "texto": "Equipo 1 lleva 7 partidos de visita sin perder por 2 o más (su máximo previo era 8). En 18 partidos de visita va sin perder por 2 o más el 83 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 7,
+     "maximoPrevio": 6,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.778,
+     "n": 18,
+     "destacada": true,
+     "texto": "Equipo 1 lleva 7 partidos de visita anotando (su máximo previo era 6). En 18 partidos de visita va anotando el 78 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.833,
+     "n": 18,
+     "destacada": false,
+     "texto": "Equipo 1 lleva 1 partido de visita con la valla invicta (su máximo previo era 1). En 18 partidos de visita va con la valla invicta el 17 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 2,
+     "burbujasPrevias": 5,
+     "record": "no",
+     "frecuencia": 0.611,
+     "n": 18,
+     "destacada": false,
+     "texto": "Equipo 1 lleva 1 partido de visita sin que marquen los dos (su máximo previo era 2). En 18 partidos de visita va sin que marquen los dos el 39 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 2,
+     "burbujasPrevias": 4,
+     "record": "no",
+     "frecuencia": 0.667,
+     "n": 18,
+     "destacada": false,
+     "texto": "Equipo 1 lleva 1 partido de visita con 2 goles o menos (su máximo previo era 2). En 18 partidos de visita va con 2 goles o menos el 33 %."
+    },
+    {
+     "familia": "noPierde",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 14,
+     "burbujasPrevias": 5,
+     "record": "no",
+     "frecuencia": 0.714,
+     "n": 35,
+     "destacada": false,
+     "texto": "Equipo 1 lleva 1 partido en total sin perder (su máximo previo era 14). En 35 partidos en total va sin perder el 71 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 6,
+     "burbujasPrevias": 8,
+     "record": "no",
+     "frecuencia": 0.429,
+     "n": 35,
+     "destacada": false,
+     "texto": "Equipo 1 lleva 1 partido en total ganando (su máximo previo era 6). En 35 partidos en total va ganando el 57 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 2,
+     "burbujasPrevias": 7,
+     "record": "no",
+     "frecuencia": 0.314,
+     "n": 35,
+     "destacada": false,
+     "texto": "Equipo 1 lleva 1 partido en total ganando por 2 o más (su máximo previo era 2). En 35 partidos en total va ganando por 2 o más el 31 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 3,
+     "maximoPrevio": 15,
+     "burbujasPrevias": 4,
+     "record": "no",
+     "frecuencia": 0.143,
+     "n": 35,
+     "destacada": true,
+     "texto": "Equipo 1 lleva 3 partidos en total sin ganar por 3 o más (su máximo previo era 15). En 35 partidos en total va sin ganar por 3 o más el 86 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 16,
+     "maximoPrevio": 10,
+     "burbujasPrevias": 3,
+     "record": "supera",
+     "frecuencia": 0.171,
+     "n": 35,
+     "destacada": true,
+     "texto": "Equipo 1 lleva 16 partidos en total sin perder por 2 o más (su máximo previo era 10): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 35 partidos en total va sin perder por 2 o más el 83 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 5,
+     "maximoPrevio": 10,
+     "burbujasPrevias": 6,
+     "record": "no",
+     "frecuencia": 0.8,
+     "n": 35,
+     "destacada": true,
+     "texto": "Equipo 1 lleva 5 partidos en total anotando (su máximo previo era 10). En 35 partidos en total va anotando el 80 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 2,
+     "maximoPrevio": 15,
+     "burbujasPrevias": 4,
+     "record": "no",
+     "frecuencia": 0.829,
+     "n": 35,
+     "destacada": false,
+     "texto": "Equipo 1 lleva 2 partidos en total recibiendo gol (su máximo previo era 15). En 35 partidos en total va recibiendo gol el 83 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 2,
+     "maximoPrevio": 5,
+     "burbujasPrevias": 9,
+     "record": "no",
+     "frecuencia": 0.657,
+     "n": 35,
+     "destacada": false,
+     "texto": "Equipo 1 lleva 2 partidos en total con goles de los dos (su máximo previo era 5). En 35 partidos en total va con goles de los dos el 66 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 2,
+     "maximoPrevio": 6,
+     "burbujasPrevias": 9,
+     "record": "no",
+     "frecuencia": 0.657,
+     "n": 35,
+     "destacada": false,
+     "texto": "Equipo 1 lleva 2 partidos en total con más de 2,5 goles (su máximo previo era 6). En 35 partidos en total va con más de 2,5 goles el 66 %."
+    }
+   ],
+   "lineas": [
+    "Perfil de doble oportunidad de visita: no pierde 13 de 18 (72 %) y no gana 7 de 18 (39 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de visita empata mucho o se planta a no perder no está del todo en el nivel",
+    "Equipo 1 lleva 7 partidos de visita sin perder (su máximo previo era 6). En 18 partidos de visita va sin perder el 72 %.",
+    "Equipo 1 lleva 7 partidos de visita sin perder por 2 o más (su máximo previo era 8). En 18 partidos de visita va sin perder por 2 o más el 83 %.",
+    "Equipo 1 lleva 7 partidos de visita anotando (su máximo previo era 6). En 18 partidos de visita va anotando el 78 %.",
+    "Equipo 1 lleva 3 partidos en total sin ganar por 3 o más (su máximo previo era 15). En 35 partidos en total va sin ganar por 3 o más el 86 %.",
+    "Equipo 1 lleva 16 partidos en total sin perder por 2 o más (su máximo previo era 10): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 35 partidos en total va sin perder por 2 o más el 83 %.",
+    "Equipo 1 lleva 5 partidos en total anotando (su máximo previo era 10). En 35 partidos en total va anotando el 80 %."
+   ],
+   "perfilDc": {
+    "condicion": "Visita",
+    "partidos": 18,
+    "noPierde": 0.7,
+    "noGana": 0.4,
+    "burbuja": 7,
+    "maximoPrevio": 6,
+    "record": 0,
+    "texto": "Perfil de doble oportunidad de visita: no pierde 13 de 18 (72 %) y no gana 7 de 18 (39 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de visita empata mucho o se planta a no perder no está del todo en el nivel"
+   }
+  }
+ },
+ {
+  "nombre": "Equipo 2",
+  "condicion": null,
+  "filas": [
+   {
+    "fecha": "2025-01-01T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-02T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-03T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-04T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-05T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-06T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-07T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-08T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-09T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-10T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-11T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-12T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-13T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-14T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-15T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-16T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-17T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-18T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-19T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-20T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-21T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-22T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-23T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-24T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-25T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-26T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-27T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-28T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 1
+   }
+  ],
+  "esperado": {
+   "nota": "descripción, no riesgo: el largo y el récord de estas burbujas no predicen el partido siguiente mejor que la frecuencia del equipo, y en su récord se sostienen algo más, no revientan (REVENTON §15). El PERFIL de doble oportunidad por condición sí agrega al 1X2 del motor (§15.1)",
+   "condicion": null,
+   "familias": [
+    {
+     "familia": "noPierde",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 2,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 3,
+     "record": "supera",
+     "frecuencia": 0.821,
+     "n": 28,
+     "destacada": true,
+     "texto": "Equipo 2 lleva 2 partidos en total perdiendo (su máximo previo era 1): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 28 partidos en total va perdiendo el 18 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 2,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 6,
+     "record": "no",
+     "frecuencia": 0.571,
+     "n": 28,
+     "destacada": false,
+     "texto": "Equipo 2 lleva 2 partidos en total sin ganar (su máximo previo era 4). En 28 partidos en total va sin ganar el 57 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 4,
+     "maximoPrevio": 7,
+     "burbujasPrevias": 5,
+     "record": "no",
+     "frecuencia": 0.214,
+     "n": 28,
+     "destacada": true,
+     "texto": "Equipo 2 lleva 4 partidos en total sin ganar por 2 o más (su máximo previo era 7). En 28 partidos en total va sin ganar por 2 o más el 79 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 4,
+     "maximoPrevio": 12,
+     "burbujasPrevias": 3,
+     "record": "no",
+     "frecuencia": 0.107,
+     "n": 28,
+     "destacada": true,
+     "texto": "Equipo 2 lleva 4 partidos en total sin ganar por 3 o más (su máximo previo era 12). En 28 partidos en total va sin ganar por 3 o más el 89 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 14,
+     "maximoPrevio": 13,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.036,
+     "n": 28,
+     "destacada": true,
+     "texto": "Equipo 2 lleva 14 partidos en total sin perder por 2 o más (su máximo previo era 13). En 28 partidos en total va sin perder por 2 o más el 96 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 4,
+     "record": "iguala",
+     "frecuencia": 0.821,
+     "n": 28,
+     "destacada": true,
+     "texto": "Equipo 2 lleva 1 partido en total sin anotar (su máximo previo era 1): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 28 partidos en total va sin anotar el 18 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 4,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 6,
+     "record": "iguala",
+     "frecuencia": 0.714,
+     "n": 28,
+     "destacada": true,
+     "texto": "Equipo 2 lleva 4 partidos en total recibiendo gol (su máximo previo era 4): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 28 partidos en total va recibiendo gol el 71 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 5,
+     "record": "no",
+     "frecuencia": 0.607,
+     "n": 28,
+     "destacada": false,
+     "texto": "Equipo 2 lleva 1 partido en total sin que marquen los dos (su máximo previo era 3). En 28 partidos en total va sin que marquen los dos el 39 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 6,
+     "record": "no",
+     "frecuencia": 0.464,
+     "n": 28,
+     "destacada": false,
+     "texto": "Equipo 2 lleva 1 partido en total con 2 goles o menos (su máximo previo era 4). En 28 partidos en total va con 2 goles o menos el 54 %."
+    }
+   ],
+   "lineas": [
+    "Equipo 2 lleva 2 partidos en total perdiendo (su máximo previo era 1): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 28 partidos en total va perdiendo el 18 %.",
+    "Equipo 2 lleva 4 partidos en total sin ganar por 2 o más (su máximo previo era 7). En 28 partidos en total va sin ganar por 2 o más el 79 %.",
+    "Equipo 2 lleva 4 partidos en total sin ganar por 3 o más (su máximo previo era 12). En 28 partidos en total va sin ganar por 3 o más el 89 %.",
+    "Equipo 2 lleva 14 partidos en total sin perder por 2 o más (su máximo previo era 13). En 28 partidos en total va sin perder por 2 o más el 96 %.",
+    "Equipo 2 lleva 1 partido en total sin anotar (su máximo previo era 1): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 28 partidos en total va sin anotar el 18 %.",
+    "Equipo 2 lleva 4 partidos en total recibiendo gol (su máximo previo era 4): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 28 partidos en total va recibiendo gol el 71 %."
+   ]
+  }
+ },
+ {
+  "nombre": "Equipo 3",
+  "condicion": "L",
+  "filas": [
+   {
+    "fecha": "2025-01-01T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-02T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-03T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-04T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-05T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-06T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-07T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-08T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-09T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-10T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-11T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-12T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-13T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-14T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-15T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-16T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-17T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-18T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-19T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-20T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-21T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-22T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-23T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-24T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-25T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-26T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-27T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-28T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-02-01T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-02-02T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-02-03T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-02-04T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-05T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-06T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-07T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-08T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-09T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-10T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-02-11T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-12T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-13T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-14T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-15T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-16T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-17T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-18T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-19T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-20T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-21T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-22T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-23T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-02-24T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-02-25T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-02-26T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-27T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-02-28T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-01T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   }
+  ],
+  "esperado": {
+   "nota": "descripción, no riesgo: el largo y el récord de estas burbujas no predicen el partido siguiente mejor que la frecuencia del equipo, y en su récord se sostienen algo más, no revientan (REVENTON §15). El PERFIL de doble oportunidad por condición sí agrega al 1X2 del motor (§15.1)",
+   "condicion": "local",
+   "familias": [
+    {
+     "familia": "noPierde",
+     "ambito": "local",
+     "valor": true,
+     "partidos": 2,
+     "maximoPrevio": 5,
+     "burbujasPrevias": 7,
+     "record": "no",
+     "frecuencia": 0.677,
+     "n": 31,
+     "destacada": false,
+     "texto": "Equipo 3 lleva 2 partidos de local sin perder (su máximo previo era 5). En 31 partidos de local va sin perder el 68 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 2,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 7,
+     "record": "no",
+     "frecuencia": 0.484,
+     "n": 31,
+     "destacada": false,
+     "texto": "Equipo 3 lleva 2 partidos de local ganando (su máximo previo era 4). En 31 partidos de local va ganando el 52 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "local",
+     "valor": true,
+     "partidos": 2,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 6,
+     "record": "no",
+     "frecuencia": 0.323,
+     "n": 31,
+     "destacada": false,
+     "texto": "Equipo 3 lleva 2 partidos de local ganando por 2 o más (su máximo previo era 3). En 31 partidos de local va ganando por 2 o más el 32 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 9,
+     "maximoPrevio": 21,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.032,
+     "n": 31,
+     "destacada": true,
+     "texto": "Equipo 3 lleva 9 partidos de local sin ganar por 3 o más (su máximo previo era 21). En 31 partidos de local va sin ganar por 3 o más el 97 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 2,
+     "maximoPrevio": 11,
+     "burbujasPrevias": 4,
+     "record": "no",
+     "frecuencia": 0.129,
+     "n": 31,
+     "destacada": false,
+     "texto": "Equipo 3 lleva 2 partidos de local sin perder por 2 o más (su máximo previo era 11). En 31 partidos de local va sin perder por 2 o más el 87 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "local",
+     "valor": true,
+     "partidos": 5,
+     "maximoPrevio": 10,
+     "burbujasPrevias": 5,
+     "record": "no",
+     "frecuencia": 0.774,
+     "n": 31,
+     "destacada": true,
+     "texto": "Equipo 3 lleva 5 partidos de local anotando (su máximo previo era 10). En 31 partidos de local va anotando el 77 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 2,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 6,
+     "record": "no",
+     "frecuencia": 0.677,
+     "n": 31,
+     "destacada": false,
+     "texto": "Equipo 3 lleva 2 partidos de local con la valla invicta (su máximo previo era 3). En 31 partidos de local va con la valla invicta el 32 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 2,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 7,
+     "record": "no",
+     "frecuencia": 0.516,
+     "n": 31,
+     "destacada": false,
+     "texto": "Equipo 3 lleva 2 partidos de local sin que marquen los dos (su máximo previo era 4). En 31 partidos de local va sin que marquen los dos el 48 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 2,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 7,
+     "record": "no",
+     "frecuencia": 0.516,
+     "n": 31,
+     "destacada": false,
+     "texto": "Equipo 3 lleva 2 partidos de local con 2 goles o menos (su máximo previo era 4). En 31 partidos de local va con 2 goles o menos el 48 %."
+    },
+    {
+     "familia": "noPierde",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 2,
+     "maximoPrevio": 8,
+     "burbujasPrevias": 12,
+     "record": "no",
+     "frecuencia": 0.719,
+     "n": 57,
+     "destacada": false,
+     "texto": "Equipo 3 lleva 2 partidos en total sin perder (su máximo previo era 8). En 57 partidos en total va sin perder el 72 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 2,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 13,
+     "record": "no",
+     "frecuencia": 0.526,
+     "n": 57,
+     "destacada": false,
+     "texto": "Equipo 3 lleva 2 partidos en total ganando (su máximo previo era 4). En 57 partidos en total va ganando el 47 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 2,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 10,
+     "record": "no",
+     "frecuencia": 0.281,
+     "n": 57,
+     "destacada": false,
+     "texto": "Equipo 3 lleva 2 partidos en total ganando por 2 o más (su máximo previo era 3). En 57 partidos en total va ganando por 2 o más el 28 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 13,
+     "maximoPrevio": 19,
+     "burbujasPrevias": 4,
+     "record": "no",
+     "frecuencia": 0.07,
+     "n": 57,
+     "destacada": true,
+     "texto": "Equipo 3 lleva 13 partidos en total sin ganar por 3 o más (su máximo previo era 19). En 57 partidos en total va sin ganar por 3 o más el 93 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 2,
+     "maximoPrevio": 21,
+     "burbujasPrevias": 5,
+     "record": "no",
+     "frecuencia": 0.123,
+     "n": 57,
+     "destacada": false,
+     "texto": "Equipo 3 lleva 2 partidos en total sin perder por 2 o más (su máximo previo era 21). En 57 partidos en total va sin perder por 2 o más el 88 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 6,
+     "maximoPrevio": 8,
+     "burbujasPrevias": 12,
+     "record": "no",
+     "frecuencia": 0.719,
+     "n": 57,
+     "destacada": true,
+     "texto": "Equipo 3 lleva 6 partidos en total anotando (su máximo previo era 8). En 57 partidos en total va anotando el 72 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 2,
+     "maximoPrevio": 5,
+     "burbujasPrevias": 10,
+     "record": "no",
+     "frecuencia": 0.614,
+     "n": 57,
+     "destacada": false,
+     "texto": "Equipo 3 lleva 2 partidos en total con la valla invicta (su máximo previo era 5). En 57 partidos en total va con la valla invicta el 39 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 2,
+     "maximoPrevio": 6,
+     "burbujasPrevias": 12,
+     "record": "no",
+     "frecuencia": 0.456,
+     "n": 57,
+     "destacada": false,
+     "texto": "Equipo 3 lleva 2 partidos en total sin que marquen los dos (su máximo previo era 6). En 57 partidos en total va sin que marquen los dos el 54 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 2,
+     "maximoPrevio": 6,
+     "burbujasPrevias": 14,
+     "record": "no",
+     "frecuencia": 0.456,
+     "n": 57,
+     "destacada": false,
+     "texto": "Equipo 3 lleva 2 partidos en total con 2 goles o menos (su máximo previo era 6). En 57 partidos en total va con 2 goles o menos el 54 %."
+    }
+   ],
+   "lineas": [
+    "Perfil de doble oportunidad de local: no pierde 21 de 31 (68 %) y no gana 15 de 31 (48 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de local empata mucho o se planta a no perder no está del todo en el nivel",
+    "Equipo 3 lleva 9 partidos de local sin ganar por 3 o más (su máximo previo era 21). En 31 partidos de local va sin ganar por 3 o más el 97 %.",
+    "Equipo 3 lleva 5 partidos de local anotando (su máximo previo era 10). En 31 partidos de local va anotando el 77 %.",
+    "Equipo 3 lleva 13 partidos en total sin ganar por 3 o más (su máximo previo era 19). En 57 partidos en total va sin ganar por 3 o más el 93 %.",
+    "Equipo 3 lleva 6 partidos en total anotando (su máximo previo era 8). En 57 partidos en total va anotando el 72 %."
+   ],
+   "perfilDc": {
+    "condicion": "Local",
+    "partidos": 31,
+    "noPierde": 0.6667,
+    "noGana": 0.4848,
+    "burbuja": 2,
+    "maximoPrevio": 5,
+    "record": 0,
+    "texto": "Perfil de doble oportunidad de local: no pierde 21 de 31 (68 %) y no gana 15 de 31 (48 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de local empata mucho o se planta a no perder no está del todo en el nivel"
+   }
+  }
+ },
+ {
+  "nombre": "Equipo 4",
+  "condicion": "V",
+  "filas": [
+   {
+    "fecha": "2025-01-01T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-02T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-03T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-04T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-05T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-06T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-07T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-08T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-09T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-10T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-11T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-12T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-13T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-14T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-15T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-16T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-17T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-18T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-19T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-20T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-21T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-22T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-23T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-24T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-25T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-26T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-27T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-28T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-01T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-02-02T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-03T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-04T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-05T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-06T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-07T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-08T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-09T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-10T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-02-11T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-12T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-02-13T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-14T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-15T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-16T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-17T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-18T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-19T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-02-20T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-21T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-22T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-23T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-24T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-25T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-26T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-27T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-28T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-03-01T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-03-02T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-03T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-03-04T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-03-05T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-06T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-07T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-08T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-09T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-10T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-11T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   }
+  ],
+  "esperado": {
+   "nota": "descripción, no riesgo: el largo y el récord de estas burbujas no predicen el partido siguiente mejor que la frecuencia del equipo, y en su récord se sostienen algo más, no revientan (REVENTON §15). El PERFIL de doble oportunidad por condición sí agrega al 1X2 del motor (§15.1)",
+   "condicion": "visita",
+   "familias": [
+    {
+     "familia": "noPierde",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 5,
+     "burbujasPrevias": 10,
+     "record": "no",
+     "frecuencia": 0.756,
+     "n": 41,
+     "destacada": false,
+     "texto": "Equipo 4 lleva 1 partido de visita sin perder (su máximo previo era 5). En 41 partidos de visita va sin perder el 76 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 10,
+     "record": "no",
+     "frecuencia": 0.39,
+     "n": 41,
+     "destacada": false,
+     "texto": "Equipo 4 lleva 1 partido de visita ganando (su máximo previo era 4). En 41 partidos de visita va ganando el 61 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 9,
+     "record": "no",
+     "frecuencia": 0.366,
+     "n": 41,
+     "destacada": false,
+     "texto": "Equipo 4 lleva 1 partido de visita ganando por 2 o más (su máximo previo era 3). En 41 partidos de visita va ganando por 2 o más el 37 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 5,
+     "record": "no",
+     "frecuencia": 0.195,
+     "n": 41,
+     "destacada": false,
+     "texto": "Equipo 4 lleva 1 partido de visita ganando por 3 o más (su máximo previo era 3). En 41 partidos de visita va ganando por 3 o más el 20 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 16,
+     "maximoPrevio": 13,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.049,
+     "n": 41,
+     "destacada": true,
+     "texto": "Equipo 4 lleva 16 partidos de visita sin perder por 2 o más (su máximo previo era 13). En 41 partidos de visita va sin perder por 2 o más el 95 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 10,
+     "burbujasPrevias": 6,
+     "record": "no",
+     "frecuencia": 0.829,
+     "n": 41,
+     "destacada": false,
+     "texto": "Equipo 4 lleva 1 partido de visita anotando (su máximo previo era 10). En 41 partidos de visita va anotando el 83 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 11,
+     "record": "no",
+     "frecuencia": 0.512,
+     "n": 41,
+     "destacada": false,
+     "texto": "Equipo 4 lleva 1 partido de visita con la valla invicta (su máximo previo era 4). En 41 partidos de visita va con la valla invicta el 49 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 3,
+     "maximoPrevio": 6,
+     "burbujasPrevias": 9,
+     "record": "no",
+     "frecuencia": 0.39,
+     "n": 41,
+     "destacada": true,
+     "texto": "Equipo 4 lleva 3 partidos de visita sin que marquen los dos (su máximo previo era 6). En 41 partidos de visita va sin que marquen los dos el 61 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 7,
+     "burbujasPrevias": 10,
+     "record": "no",
+     "frecuencia": 0.561,
+     "n": 41,
+     "destacada": false,
+     "texto": "Equipo 4 lleva 1 partido de visita con más de 2,5 goles (su máximo previo era 7). En 41 partidos de visita va con más de 2,5 goles el 56 %."
+    },
+    {
+     "familia": "noPierde",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 7,
+     "maximoPrevio": 8,
+     "burbujasPrevias": 12,
+     "record": "no",
+     "frecuencia": 0.791,
+     "n": 67,
+     "destacada": true,
+     "texto": "Equipo 4 lleva 7 partidos en total sin perder (su máximo previo era 8). En 67 partidos en total va sin perder el 79 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 7,
+     "maximoPrevio": 8,
+     "burbujasPrevias": 14,
+     "record": "no",
+     "frecuencia": 0.388,
+     "n": 67,
+     "destacada": true,
+     "texto": "Equipo 4 lleva 7 partidos en total ganando (su máximo previo era 8). En 67 partidos en total va ganando el 61 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 7,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 13,
+     "record": "supera",
+     "frecuencia": 0.388,
+     "n": 67,
+     "destacada": true,
+     "texto": "Equipo 4 lleva 7 partidos en total ganando por 2 o más (su máximo previo era 3): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 67 partidos en total va ganando por 2 o más el 39 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 6,
+     "maximoPrevio": 11,
+     "burbujasPrevias": 8,
+     "record": "no",
+     "frecuencia": 0.134,
+     "n": 67,
+     "destacada": true,
+     "texto": "Equipo 4 lleva 6 partidos en total sin ganar por 3 o más (su máximo previo era 11). En 67 partidos en total va sin ganar por 3 o más el 87 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 20,
+     "maximoPrevio": 21,
+     "burbujasPrevias": 3,
+     "record": "no",
+     "frecuencia": 0.045,
+     "n": 67,
+     "destacada": true,
+     "texto": "Equipo 4 lleva 20 partidos en total sin perder por 2 o más (su máximo previo era 21). En 67 partidos en total va sin perder por 2 o más el 96 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 7,
+     "maximoPrevio": 15,
+     "burbujasPrevias": 10,
+     "record": "no",
+     "frecuencia": 0.836,
+     "n": 67,
+     "destacada": true,
+     "texto": "Equipo 4 lleva 7 partidos en total anotando (su máximo previo era 15). En 67 partidos en total va anotando el 84 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 7,
+     "maximoPrevio": 8,
+     "burbujasPrevias": 11,
+     "record": "no",
+     "frecuencia": 0.448,
+     "n": 67,
+     "destacada": true,
+     "texto": "Equipo 4 lleva 7 partidos en total con la valla invicta (su máximo previo era 8). En 67 partidos en total va con la valla invicta el 55 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 8,
+     "maximoPrevio": 9,
+     "burbujasPrevias": 11,
+     "record": "no",
+     "frecuencia": 0.343,
+     "n": 67,
+     "destacada": true,
+     "texto": "Equipo 4 lleva 8 partidos en total sin que marquen los dos (su máximo previo era 9). En 67 partidos en total va sin que marquen los dos el 66 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 6,
+     "maximoPrevio": 6,
+     "burbujasPrevias": 16,
+     "record": "iguala",
+     "frecuencia": 0.418,
+     "n": 67,
+     "destacada": true,
+     "texto": "Equipo 4 lleva 6 partidos en total con 2 goles o menos (su máximo previo era 6): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 67 partidos en total va con 2 goles o menos el 58 %."
+    }
+   ],
+   "lineas": [
+    "Perfil de doble oportunidad de visita: no pierde 31 de 41 (76 %) y no gana 16 de 41 (39 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de visita empata mucho o se planta a no perder no está del todo en el nivel",
+    "Equipo 4 lleva 16 partidos de visita sin perder por 2 o más (su máximo previo era 13). En 41 partidos de visita va sin perder por 2 o más el 95 %.",
+    "Equipo 4 lleva 3 partidos de visita sin que marquen los dos (su máximo previo era 6). En 41 partidos de visita va sin que marquen los dos el 61 %.",
+    "Equipo 4 lleva 7 partidos en total sin perder (su máximo previo era 8). En 67 partidos en total va sin perder el 79 %.",
+    "Equipo 4 lleva 7 partidos en total ganando (su máximo previo era 8). En 67 partidos en total va ganando el 61 %.",
+    "Equipo 4 lleva 7 partidos en total ganando por 2 o más (su máximo previo era 3): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 67 partidos en total va ganando por 2 o más el 39 %.",
+    "Equipo 4 lleva 6 partidos en total sin ganar por 3 o más (su máximo previo era 11). En 67 partidos en total va sin ganar por 3 o más el 87 %.",
+    "Equipo 4 lleva 20 partidos en total sin perder por 2 o más (su máximo previo era 21). En 67 partidos en total va sin perder por 2 o más el 96 %.",
+    "Equipo 4 lleva 7 partidos en total anotando (su máximo previo era 15). En 67 partidos en total va anotando el 84 %.",
+    "Equipo 4 lleva 7 partidos en total con la valla invicta (su máximo previo era 8). En 67 partidos en total va con la valla invicta el 55 %.",
+    "Equipo 4 lleva 8 partidos en total sin que marquen los dos (su máximo previo era 9). En 67 partidos en total va sin que marquen los dos el 66 %.",
+    "Equipo 4 lleva 6 partidos en total con 2 goles o menos (su máximo previo era 6): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 67 partidos en total va con 2 goles o menos el 58 %."
+   ],
+   "perfilDc": {
+    "condicion": "Visita",
+    "partidos": 41,
+    "noPierde": 0.7442,
+    "noGana": 0.3953,
+    "burbuja": 1,
+    "maximoPrevio": 5,
+    "record": 0,
+    "texto": "Perfil de doble oportunidad de visita: no pierde 31 de 41 (76 %) y no gana 16 de 41 (39 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de visita empata mucho o se planta a no perder no está del todo en el nivel"
+   }
+  }
+ },
+ {
+  "nombre": "Equipo 5",
+  "condicion": null,
+  "filas": [
+   {
+    "fecha": "2025-01-01T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-02T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-03T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-04T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-05T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-06T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-07T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-08T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-09T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-10T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-11T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-12T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-13T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-14T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-15T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-16T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-17T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-18T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-19T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-20T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-21T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-22T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-23T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-24T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-25T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-26T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-27T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-28T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-01T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-02T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-03T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-04T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-05T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-06T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-07T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-02-08T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-09T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-10T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-02-11T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-02-12T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-02-13T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-02-14T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-02-15T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-16T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-02-17T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-18T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-19T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-02-20T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 0
+   }
+  ],
+  "esperado": {
+   "nota": "descripción, no riesgo: el largo y el récord de estas burbujas no predicen el partido siguiente mejor que la frecuencia del equipo, y en su récord se sostienen algo más, no revientan (REVENTON §15). El PERFIL de doble oportunidad por condición sí agrega al 1X2 del motor (§15.1)",
+   "condicion": null,
+   "familias": [
+    {
+     "familia": "noPierde",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 4,
+     "maximoPrevio": 16,
+     "burbujasPrevias": 5,
+     "record": "no",
+     "frecuencia": 0.813,
+     "n": 48,
+     "destacada": true,
+     "texto": "Equipo 5 lleva 4 partidos en total sin perder (su máximo previo era 16). En 48 partidos en total va sin perder el 81 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 9,
+     "burbujasPrevias": 10,
+     "record": "no",
+     "frecuencia": 0.438,
+     "n": 48,
+     "destacada": false,
+     "texto": "Equipo 5 lleva 1 partido en total ganando (su máximo previo era 9). En 48 partidos en total va ganando el 56 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 10,
+     "record": "no",
+     "frecuencia": 0.396,
+     "n": 48,
+     "destacada": false,
+     "texto": "Equipo 5 lleva 1 partido en total ganando por 2 o más (su máximo previo era 4). En 48 partidos en total va ganando por 2 o más el 40 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 3,
+     "maximoPrevio": 17,
+     "burbujasPrevias": 6,
+     "record": "no",
+     "frecuencia": 0.146,
+     "n": 48,
+     "destacada": true,
+     "texto": "Equipo 5 lleva 3 partidos en total sin ganar por 3 o más (su máximo previo era 17). En 48 partidos en total va sin ganar por 3 o más el 85 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 4,
+     "maximoPrevio": 33,
+     "burbujasPrevias": 4,
+     "record": "no",
+     "frecuencia": 0.125,
+     "n": 48,
+     "destacada": true,
+     "texto": "Equipo 5 lleva 4 partidos en total sin perder por 2 o más (su máximo previo era 33). En 48 partidos en total va sin perder por 2 o más el 88 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 4,
+     "maximoPrevio": 9,
+     "burbujasPrevias": 8,
+     "record": "no",
+     "frecuencia": 0.813,
+     "n": 48,
+     "destacada": true,
+     "texto": "Equipo 5 lleva 4 partidos en total anotando (su máximo previo era 9). En 48 partidos en total va anotando el 81 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 6,
+     "burbujasPrevias": 10,
+     "record": "no",
+     "frecuencia": 0.583,
+     "n": 48,
+     "destacada": false,
+     "texto": "Equipo 5 lleva 1 partido en total con la valla invicta (su máximo previo era 6). En 48 partidos en total va con la valla invicta el 42 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 10,
+     "burbujasPrevias": 12,
+     "record": "no",
+     "frecuencia": 0.458,
+     "n": 48,
+     "destacada": false,
+     "texto": "Equipo 5 lleva 1 partido en total sin que marquen los dos (su máximo previo era 10). En 48 partidos en total va sin que marquen los dos el 54 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 5,
+     "burbujasPrevias": 12,
+     "record": "no",
+     "frecuencia": 0.5,
+     "n": 48,
+     "destacada": false,
+     "texto": "Equipo 5 lleva 1 partido en total con 2 goles o menos (su máximo previo era 5). En 48 partidos en total va con 2 goles o menos el 50 %."
+    }
+   ],
+   "lineas": [
+    "Equipo 5 lleva 4 partidos en total sin perder (su máximo previo era 16). En 48 partidos en total va sin perder el 81 %.",
+    "Equipo 5 lleva 3 partidos en total sin ganar por 3 o más (su máximo previo era 17). En 48 partidos en total va sin ganar por 3 o más el 85 %.",
+    "Equipo 5 lleva 4 partidos en total sin perder por 2 o más (su máximo previo era 33). En 48 partidos en total va sin perder por 2 o más el 88 %.",
+    "Equipo 5 lleva 4 partidos en total anotando (su máximo previo era 9). En 48 partidos en total va anotando el 81 %."
+   ]
+  }
+ },
+ {
+  "nombre": "Equipo 6",
+  "condicion": "L",
+  "filas": [
+   {
+    "fecha": "2025-01-01T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-02T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-03T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-04T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-05T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-06T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-07T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-08T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-09T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-10T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-11T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-12T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-13T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-14T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-15T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-16T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-17T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-18T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-19T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-20T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-21T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-22T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-23T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-24T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-25T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-26T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-27T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-28T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-01T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-02T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-03T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-04T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-05T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-06T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-07T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-02-08T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-09T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-10T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-11T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-12T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-13T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-02-14T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-15T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-02-16T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-17T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-18T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-02-19T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-02-20T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-21T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-22T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-23T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   }
+  ],
+  "esperado": {
+   "nota": "descripción, no riesgo: el largo y el récord de estas burbujas no predicen el partido siguiente mejor que la frecuencia del equipo, y en su récord se sostienen algo más, no revientan (REVENTON §15). El PERFIL de doble oportunidad por condición sí agrega al 1X2 del motor (§15.1)",
+   "condicion": "local",
+   "familias": [
+    {
+     "familia": "noPierde",
+     "ambito": "local",
+     "valor": true,
+     "partidos": 3,
+     "maximoPrevio": 11,
+     "burbujasPrevias": 4,
+     "record": "no",
+     "frecuencia": 0.846,
+     "n": 26,
+     "destacada": true,
+     "texto": "Equipo 6 lleva 3 partidos de local sin perder (su máximo previo era 11). En 26 partidos de local va sin perder el 85 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "local",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 7,
+     "record": "iguala",
+     "frecuencia": 0.308,
+     "n": 26,
+     "destacada": true,
+     "texto": "Equipo 6 lleva 1 partido de local sin ganar (su máximo previo era 1): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 26 partidos de local va sin ganar el 31 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 8,
+     "record": "no",
+     "frecuencia": 0.346,
+     "n": 26,
+     "destacada": false,
+     "texto": "Equipo 6 lleva 1 partido de local sin ganar por 2 o más (su máximo previo era 4). En 26 partidos de local va sin ganar por 2 o más el 65 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 9,
+     "burbujasPrevias": 5,
+     "record": "no",
+     "frecuencia": 0.192,
+     "n": 26,
+     "destacada": false,
+     "texto": "Equipo 6 lleva 1 partido de local sin ganar por 3 o más (su máximo previo era 9). En 26 partidos de local va sin ganar por 3 o más el 81 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 7,
+     "maximoPrevio": 18,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.038,
+     "n": 26,
+     "destacada": true,
+     "texto": "Equipo 6 lleva 7 partidos de local sin perder por 2 o más (su máximo previo era 18). En 26 partidos de local va sin perder por 2 o más el 96 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.885,
+     "n": 26,
+     "destacada": false,
+     "texto": "Equipo 6 lleva 1 partido de local sin anotar (su máximo previo era 1). En 26 partidos de local va sin anotar el 12 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 2,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 7,
+     "record": "no",
+     "frecuencia": 0.538,
+     "n": 26,
+     "destacada": false,
+     "texto": "Equipo 6 lleva 2 partidos de local con la valla invicta (su máximo previo era 3). En 26 partidos de local va con la valla invicta el 46 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 2,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 6,
+     "record": "no",
+     "frecuencia": 0.462,
+     "n": 26,
+     "destacada": false,
+     "texto": "Equipo 6 lleva 2 partidos de local sin que marquen los dos (su máximo previo era 4). En 26 partidos de local va sin que marquen los dos el 54 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 6,
+     "record": "no",
+     "frecuencia": 0.577,
+     "n": 26,
+     "destacada": false,
+     "texto": "Equipo 6 lleva 1 partido de local con 2 goles o menos (su máximo previo era 3). En 26 partidos de local va con 2 goles o menos el 42 %."
+    },
+    {
+     "familia": "noPierde",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 7,
+     "maximoPrevio": 9,
+     "burbujasPrevias": 7,
+     "record": "no",
+     "frecuencia": 0.843,
+     "n": 51,
+     "destacada": true,
+     "texto": "Equipo 6 lleva 7 partidos en total sin perder (su máximo previo era 9). En 51 partidos en total va sin perder el 84 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 2,
+     "maximoPrevio": 2,
+     "burbujasPrevias": 13,
+     "record": "iguala",
+     "frecuencia": 0.314,
+     "n": 51,
+     "destacada": true,
+     "texto": "Equipo 6 lleva 2 partidos en total sin ganar (su máximo previo era 2): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 51 partidos en total va sin ganar el 31 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 3,
+     "maximoPrevio": 5,
+     "burbujasPrevias": 10,
+     "record": "no",
+     "frecuencia": 0.353,
+     "n": 51,
+     "destacada": true,
+     "texto": "Equipo 6 lleva 3 partidos en total sin ganar por 2 o más (su máximo previo era 5). En 51 partidos en total va sin ganar por 2 o más el 65 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 3,
+     "maximoPrevio": 7,
+     "burbujasPrevias": 9,
+     "record": "no",
+     "frecuencia": 0.196,
+     "n": 51,
+     "destacada": true,
+     "texto": "Equipo 6 lleva 3 partidos en total sin ganar por 3 o más (su máximo previo era 7). En 51 partidos en total va sin ganar por 3 o más el 80 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 10,
+     "maximoPrevio": 34,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.039,
+     "n": 51,
+     "destacada": true,
+     "texto": "Equipo 6 lleva 10 partidos en total sin perder por 2 o más (su máximo previo era 34). En 51 partidos en total va sin perder por 2 o más el 96 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 2,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 7,
+     "record": "supera",
+     "frecuencia": 0.824,
+     "n": 51,
+     "destacada": true,
+     "texto": "Equipo 6 lleva 2 partidos en total sin anotar (su máximo previo era 1): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 51 partidos en total va sin anotar el 18 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 4,
+     "maximoPrevio": 8,
+     "burbujasPrevias": 11,
+     "record": "no",
+     "frecuencia": 0.412,
+     "n": 51,
+     "destacada": true,
+     "texto": "Equipo 6 lleva 4 partidos en total con la valla invicta (su máximo previo era 8). En 51 partidos en total va con la valla invicta el 59 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 4,
+     "maximoPrevio": 8,
+     "burbujasPrevias": 11,
+     "record": "no",
+     "frecuencia": 0.333,
+     "n": 51,
+     "destacada": true,
+     "texto": "Equipo 6 lleva 4 partidos en total sin que marquen los dos (su máximo previo era 8). En 51 partidos en total va sin que marquen los dos el 67 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 3,
+     "maximoPrevio": 6,
+     "burbujasPrevias": 12,
+     "record": "no",
+     "frecuencia": 0.49,
+     "n": 51,
+     "destacada": true,
+     "texto": "Equipo 6 lleva 3 partidos en total con 2 goles o menos (su máximo previo era 6). En 51 partidos en total va con 2 goles o menos el 51 %."
+    }
+   ],
+   "lineas": [
+    "Perfil de doble oportunidad de local: no pierde 22 de 26 (85 %) y no gana 8 de 26 (31 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de local empata mucho o se planta a no perder no está del todo en el nivel",
+    "Equipo 6 lleva 3 partidos de local sin perder (su máximo previo era 11). En 26 partidos de local va sin perder el 85 %.",
+    "Equipo 6 lleva 1 partido de local sin ganar (su máximo previo era 1): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 26 partidos de local va sin ganar el 31 %.",
+    "Equipo 6 lleva 7 partidos de local sin perder por 2 o más (su máximo previo era 18). En 26 partidos de local va sin perder por 2 o más el 96 %.",
+    "Equipo 6 lleva 7 partidos en total sin perder (su máximo previo era 9). En 51 partidos en total va sin perder el 84 %.",
+    "Equipo 6 lleva 2 partidos en total sin ganar (su máximo previo era 2): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 51 partidos en total va sin ganar el 31 %.",
+    "Equipo 6 lleva 3 partidos en total sin ganar por 2 o más (su máximo previo era 5). En 51 partidos en total va sin ganar por 2 o más el 65 %.",
+    "Equipo 6 lleva 3 partidos en total sin ganar por 3 o más (su máximo previo era 7). En 51 partidos en total va sin ganar por 3 o más el 80 %.",
+    "Equipo 6 lleva 10 partidos en total sin perder por 2 o más (su máximo previo era 34). En 51 partidos en total va sin perder por 2 o más el 96 %.",
+    "Equipo 6 lleva 2 partidos en total sin anotar (su máximo previo era 1): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 51 partidos en total va sin anotar el 18 %.",
+    "Equipo 6 lleva 4 partidos en total con la valla invicta (su máximo previo era 8). En 51 partidos en total va con la valla invicta el 59 %.",
+    "Equipo 6 lleva 4 partidos en total sin que marquen los dos (su máximo previo era 8). En 51 partidos en total va sin que marquen los dos el 67 %.",
+    "Equipo 6 lleva 3 partidos en total con 2 goles o menos (su máximo previo era 6). En 51 partidos en total va con 2 goles o menos el 51 %."
+   ],
+   "perfilDc": {
+    "condicion": "Local",
+    "partidos": 26,
+    "noPierde": 0.8214,
+    "noGana": 0.3214,
+    "burbuja": 3,
+    "maximoPrevio": 11,
+    "record": 0,
+    "texto": "Perfil de doble oportunidad de local: no pierde 22 de 26 (85 %) y no gana 8 de 26 (31 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de local empata mucho o se planta a no perder no está del todo en el nivel"
+   }
+  }
+ },
+ {
+  "nombre": "Equipo 7",
+  "condicion": "V",
+  "filas": [
+   {
+    "fecha": "2025-01-01T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-02T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-03T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-04T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-05T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-06T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-07T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-08T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-09T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-10T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-11T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-12T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-13T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-14T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-15T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-16T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-17T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-18T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-19T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-20T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-21T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-22T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-23T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-24T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-25T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 2
+   }
+  ],
+  "esperado": {
+   "nota": "descripción, no riesgo: el largo y el récord de estas burbujas no predicen el partido siguiente mejor que la frecuencia del equipo, y en su récord se sostienen algo más, no revientan (REVENTON §15). El PERFIL de doble oportunidad por condición sí agrega al 1X2 del motor (§15.1)",
+   "condicion": "visita",
+   "familias": [
+    {
+     "familia": "noPierde",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 4,
+     "maximoPrevio": 2,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.7,
+     "n": 10,
+     "destacada": true,
+     "texto": "Equipo 7 lleva 4 partidos de visita sin perder (su máximo previo era 2). En 10 partidos de visita va sin perder el 70 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 2,
+     "maximoPrevio": 2,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.5,
+     "n": 10,
+     "destacada": false,
+     "texto": "Equipo 7 lleva 2 partidos de visita sin ganar (su máximo previo era 2). En 10 partidos de visita va sin ganar el 50 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 2,
+     "maximoPrevio": 6,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.2,
+     "n": 10,
+     "destacada": false,
+     "texto": "Equipo 7 lleva 2 partidos de visita sin ganar por 2 o más (su máximo previo era 6). En 10 partidos de visita va sin ganar por 2 o más el 80 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 2,
+     "maximoPrevio": 6,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.2,
+     "n": 10,
+     "destacada": false,
+     "texto": "Equipo 7 lleva 2 partidos de visita sin ganar por 3 o más (su máximo previo era 6). En 10 partidos de visita va sin ganar por 3 o más el 80 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 4,
+     "maximoPrevio": 5,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.1,
+     "n": 10,
+     "destacada": true,
+     "texto": "Equipo 7 lleva 4 partidos de visita sin perder por 2 o más (su máximo previo era 5). En 10 partidos de visita va sin perder por 2 o más el 90 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 8,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.9,
+     "n": 10,
+     "destacada": false,
+     "texto": "Equipo 7 lleva 1 partido de visita anotando (su máximo previo era 8). En 10 partidos de visita va anotando el 90 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.5,
+     "n": 10,
+     "destacada": false,
+     "texto": "Equipo 7 lleva 1 partido de visita recibiendo gol (su máximo previo era 3). En 10 partidos de visita va recibiendo gol el 50 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.5,
+     "n": 10,
+     "destacada": false,
+     "texto": "Equipo 7 lleva 1 partido de visita con goles de los dos (su máximo previo era 3). En 10 partidos de visita va con goles de los dos el 50 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 3,
+     "record": "no",
+     "frecuencia": 0.7,
+     "n": 10,
+     "destacada": false,
+     "texto": "Equipo 7 lleva 1 partido de visita con más de 2,5 goles (su máximo previo era 4). En 10 partidos de visita va con más de 2,5 goles el 70 %."
+    },
+    {
+     "familia": "noPierde",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 5,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 5,
+     "record": "supera",
+     "frecuencia": 0.68,
+     "n": 25,
+     "destacada": true,
+     "texto": "Equipo 7 lleva 5 partidos en total sin perder (su máximo previo era 4): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 25 partidos en total va sin perder el 68 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 2,
+     "burbujasPrevias": 6,
+     "record": "no",
+     "frecuencia": 0.64,
+     "n": 25,
+     "destacada": false,
+     "texto": "Equipo 7 lleva 1 partido en total ganando (su máximo previo era 2). En 25 partidos en total va ganando el 36 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 2,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.2,
+     "n": 25,
+     "destacada": false,
+     "texto": "Equipo 7 lleva 1 partido en total ganando por 2 o más (su máximo previo era 2). En 25 partidos en total va ganando por 2 o más el 20 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 4,
+     "maximoPrevio": 16,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.12,
+     "n": 25,
+     "destacada": true,
+     "texto": "Equipo 7 lleva 4 partidos en total sin ganar por 3 o más (su máximo previo era 16). En 25 partidos en total va sin ganar por 3 o más el 88 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 10,
+     "maximoPrevio": 9,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.12,
+     "n": 25,
+     "destacada": true,
+     "texto": "Equipo 7 lleva 10 partidos en total sin perder por 2 o más (su máximo previo era 9). En 25 partidos en total va sin perder por 2 o más el 88 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 2,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 6,
+     "record": "no",
+     "frecuencia": 0.72,
+     "n": 25,
+     "destacada": false,
+     "texto": "Equipo 7 lleva 2 partidos en total anotando (su máximo previo era 4). En 25 partidos en total va anotando el 72 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 2,
+     "maximoPrevio": 8,
+     "burbujasPrevias": 5,
+     "record": "no",
+     "frecuencia": 0.6,
+     "n": 25,
+     "destacada": false,
+     "texto": "Equipo 7 lleva 2 partidos en total recibiendo gol (su máximo previo era 8). En 25 partidos en total va recibiendo gol el 60 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 2,
+     "maximoPrevio": 2,
+     "burbujasPrevias": 7,
+     "record": "iguala",
+     "frecuencia": 0.48,
+     "n": 25,
+     "destacada": true,
+     "texto": "Equipo 7 lleva 2 partidos en total con goles de los dos (su máximo previo era 2): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 25 partidos en total va con goles de los dos el 48 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 2,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 5,
+     "record": "no",
+     "frecuencia": 0.56,
+     "n": 25,
+     "destacada": false,
+     "texto": "Equipo 7 lleva 2 partidos en total con más de 2,5 goles (su máximo previo era 4). En 25 partidos en total va con más de 2,5 goles el 56 %."
+    }
+   ],
+   "lineas": [
+    "Perfil de doble oportunidad de visita: no pierde 7 de 10 (70 %) y no gana 5 de 10 (50 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de visita empata mucho o se planta a no perder no está del todo en el nivel",
+    "Equipo 7 lleva 4 partidos de visita sin perder (su máximo previo era 2). En 10 partidos de visita va sin perder el 70 %.",
+    "Equipo 7 lleva 4 partidos de visita sin perder por 2 o más (su máximo previo era 5). En 10 partidos de visita va sin perder por 2 o más el 90 %.",
+    "Equipo 7 lleva 5 partidos en total sin perder (su máximo previo era 4): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 25 partidos en total va sin perder el 68 %.",
+    "Equipo 7 lleva 4 partidos en total sin ganar por 3 o más (su máximo previo era 16). En 25 partidos en total va sin ganar por 3 o más el 88 %.",
+    "Equipo 7 lleva 10 partidos en total sin perder por 2 o más (su máximo previo era 9). En 25 partidos en total va sin perder por 2 o más el 88 %.",
+    "Equipo 7 lleva 2 partidos en total con goles de los dos (su máximo previo era 2): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 25 partidos en total va con goles de los dos el 48 %."
+   ],
+   "perfilDc": {
+    "condicion": "Visita",
+    "partidos": 10,
+    "noPierde": 0.6667,
+    "noGana": 0.5,
+    "burbuja": 4,
+    "maximoPrevio": 2,
+    "record": 0,
+    "texto": "Perfil de doble oportunidad de visita: no pierde 7 de 10 (70 %) y no gana 5 de 10 (50 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de visita empata mucho o se planta a no perder no está del todo en el nivel"
+   }
+  }
+ },
+ {
+  "nombre": "Equipo 8",
+  "condicion": null,
+  "filas": [
+   {
+    "fecha": "2025-01-01T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-02T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-03T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-04T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-05T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-06T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-07T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-08T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-09T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-10T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-11T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-12T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-13T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-14T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-15T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-16T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-17T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-18T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-19T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-20T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-21T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-22T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-23T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   }
+  ],
+  "esperado": {
+   "nota": "descripción, no riesgo: el largo y el récord de estas burbujas no predicen el partido siguiente mejor que la frecuencia del equipo, y en su récord se sostienen algo más, no revientan (REVENTON §15). El PERFIL de doble oportunidad por condición sí agrega al 1X2 del motor (§15.1)",
+   "condicion": null,
+   "familias": [
+    {
+     "familia": "noPierde",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 7,
+     "maximoPrevio": 9,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.913,
+     "n": 23,
+     "destacada": true,
+     "texto": "Equipo 8 lleva 7 partidos en total sin perder (su máximo previo era 9). En 23 partidos en total va sin perder el 91 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 6,
+     "maximoPrevio": 8,
+     "burbujasPrevias": 3,
+     "record": "no",
+     "frecuencia": 0.304,
+     "n": 23,
+     "destacada": true,
+     "texto": "Equipo 8 lleva 6 partidos en total ganando (su máximo previo era 8). En 23 partidos en total va ganando el 70 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 6,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 3,
+     "record": "supera",
+     "frecuencia": 0.391,
+     "n": 23,
+     "destacada": true,
+     "texto": "Equipo 8 lleva 6 partidos en total ganando por 2 o más (su máximo previo era 1): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 23 partidos en total va ganando por 2 o más el 39 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 16,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.087,
+     "n": 23,
+     "destacada": true,
+     "texto": "Equipo 8 lleva 16 partidos en total sin ganar por 3 o más (su máximo previo era 3). En 23 partidos en total va sin ganar por 3 o más el 91 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 7,
+     "maximoPrevio": 15,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.043,
+     "n": 23,
+     "destacada": true,
+     "texto": "Equipo 8 lleva 7 partidos en total sin perder por 2 o más (su máximo previo era 15). En 23 partidos en total va sin perder por 2 o más el 96 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 11,
+     "maximoPrevio": 10,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.913,
+     "n": 23,
+     "destacada": true,
+     "texto": "Equipo 8 lleva 11 partidos en total anotando (su máximo previo era 10). En 23 partidos en total va anotando el 91 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 6,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 4,
+     "record": "supera",
+     "frecuencia": 0.435,
+     "n": 23,
+     "destacada": true,
+     "texto": "Equipo 8 lleva 6 partidos en total con la valla invicta (su máximo previo era 3): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 23 partidos en total va con la valla invicta el 56 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 6,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 4,
+     "record": "supera",
+     "frecuencia": 0.435,
+     "n": 23,
+     "destacada": true,
+     "texto": "Equipo 8 lleva 6 partidos en total sin que marquen los dos (su máximo previo era 3): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 23 partidos en total va sin que marquen los dos el 56 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 6,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 3,
+     "record": "supera",
+     "frecuencia": 0.435,
+     "n": 23,
+     "destacada": true,
+     "texto": "Equipo 8 lleva 6 partidos en total con 2 goles o menos (su máximo previo era 4): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 23 partidos en total va con 2 goles o menos el 56 %."
+    }
+   ],
+   "lineas": [
+    "Equipo 8 lleva 7 partidos en total sin perder (su máximo previo era 9). En 23 partidos en total va sin perder el 91 %.",
+    "Equipo 8 lleva 6 partidos en total ganando (su máximo previo era 8). En 23 partidos en total va ganando el 70 %.",
+    "Equipo 8 lleva 6 partidos en total ganando por 2 o más (su máximo previo era 1): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 23 partidos en total va ganando por 2 o más el 39 %.",
+    "Equipo 8 lleva 16 partidos en total sin ganar por 3 o más (su máximo previo era 3). En 23 partidos en total va sin ganar por 3 o más el 91 %.",
+    "Equipo 8 lleva 7 partidos en total sin perder por 2 o más (su máximo previo era 15). En 23 partidos en total va sin perder por 2 o más el 96 %.",
+    "Equipo 8 lleva 11 partidos en total anotando (su máximo previo era 10). En 23 partidos en total va anotando el 91 %.",
+    "Equipo 8 lleva 6 partidos en total con la valla invicta (su máximo previo era 3): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 23 partidos en total va con la valla invicta el 56 %.",
+    "Equipo 8 lleva 6 partidos en total sin que marquen los dos (su máximo previo era 3): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 23 partidos en total va sin que marquen los dos el 56 %.",
+    "Equipo 8 lleva 6 partidos en total con 2 goles o menos (su máximo previo era 4): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 23 partidos en total va con 2 goles o menos el 56 %."
+   ]
+  }
+ },
+ {
+  "nombre": "Equipo 9",
+  "condicion": "L",
+  "filas": [
+   {
+    "fecha": "2025-01-01T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-02T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-03T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-04T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-05T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-06T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-07T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-08T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-09T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-10T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-11T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-12T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-13T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-14T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-15T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-16T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-17T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-18T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-19T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-20T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-21T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-22T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-23T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-24T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-25T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-26T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-27T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-28T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-01T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-02T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-03T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-04T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-02-05T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-06T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-07T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-08T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-09T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-02-10T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-11T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-12T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-13T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-14T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-15T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-02-16T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-02-17T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-18T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 2
+   }
+  ],
+  "esperado": {
+   "nota": "descripción, no riesgo: el largo y el récord de estas burbujas no predicen el partido siguiente mejor que la frecuencia del equipo, y en su récord se sostienen algo más, no revientan (REVENTON §15). El PERFIL de doble oportunidad por condición sí agrega al 1X2 del motor (§15.1)",
+   "condicion": "local",
+   "familias": [
+    {
+     "familia": "noPierde",
+     "ambito": "local",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 11,
+     "burbujasPrevias": 4,
+     "record": "no",
+     "frecuencia": 0.762,
+     "n": 21,
+     "destacada": false,
+     "texto": "Equipo 9 lleva 1 partido de local sin perder (su máximo previo era 11). En 21 partidos de local va sin perder el 76 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "local",
+     "valor": true,
+     "partidos": 3,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 5,
+     "record": "iguala",
+     "frecuencia": 0.524,
+     "n": 21,
+     "destacada": true,
+     "texto": "Equipo 9 lleva 3 partidos de local sin ganar (su máximo previo era 3): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 21 partidos de local va sin ganar el 52 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 5,
+     "maximoPrevio": 6,
+     "burbujasPrevias": 3,
+     "record": "no",
+     "frecuencia": 0.238,
+     "n": 21,
+     "destacada": true,
+     "texto": "Equipo 9 lleva 5 partidos de local sin ganar por 2 o más (su máximo previo era 6). En 21 partidos de local va sin ganar por 2 o más el 76 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 5,
+     "maximoPrevio": 8,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.19,
+     "n": 21,
+     "destacada": true,
+     "texto": "Equipo 9 lleva 5 partidos de local sin ganar por 3 o más (su máximo previo era 8). En 21 partidos de local va sin ganar por 3 o más el 81 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 12,
+     "burbujasPrevias": 3,
+     "record": "no",
+     "frecuencia": 0.143,
+     "n": 21,
+     "destacada": false,
+     "texto": "Equipo 9 lleva 1 partido de local sin perder por 2 o más (su máximo previo era 12). En 21 partidos de local va sin perder por 2 o más el 86 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "local",
+     "valor": true,
+     "partidos": 9,
+     "maximoPrevio": 9,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.905,
+     "n": 21,
+     "destacada": true,
+     "texto": "Equipo 9 lleva 9 partidos de local anotando (su máximo previo era 9). En 21 partidos de local va anotando el 91 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "local",
+     "valor": true,
+     "partidos": 3,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 4,
+     "record": "no",
+     "frecuencia": 0.619,
+     "n": 21,
+     "destacada": true,
+     "texto": "Equipo 9 lleva 3 partidos de local recibiendo gol (su máximo previo era 4). En 21 partidos de local va recibiendo gol el 62 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "local",
+     "valor": true,
+     "partidos": 3,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 4,
+     "record": "iguala",
+     "frecuencia": 0.571,
+     "n": 21,
+     "destacada": true,
+     "texto": "Equipo 9 lleva 3 partidos de local con goles de los dos (su máximo previo era 3): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 21 partidos de local va con goles de los dos el 57 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 2,
+     "burbujasPrevias": 6,
+     "record": "no",
+     "frecuencia": 0.571,
+     "n": 21,
+     "destacada": false,
+     "texto": "Equipo 9 lleva 1 partido de local con 2 goles o menos (su máximo previo era 2). En 21 partidos de local va con 2 goles o menos el 43 %."
+    },
+    {
+     "familia": "noPierde",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 3,
+     "maximoPrevio": 15,
+     "burbujasPrevias": 7,
+     "record": "no",
+     "frecuencia": 0.826,
+     "n": 46,
+     "destacada": true,
+     "texto": "Equipo 9 lleva 3 partidos en total sin perder (su máximo previo era 15). En 46 partidos en total va sin perder el 83 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 4,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 12,
+     "record": "iguala",
+     "frecuencia": 0.457,
+     "n": 46,
+     "destacada": true,
+     "texto": "Equipo 9 lleva 4 partidos en total sin ganar (su máximo previo era 4): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 46 partidos en total va sin ganar el 46 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 7,
+     "maximoPrevio": 8,
+     "burbujasPrevias": 9,
+     "record": "no",
+     "frecuencia": 0.283,
+     "n": 46,
+     "destacada": true,
+     "texto": "Equipo 9 lleva 7 partidos en total sin ganar por 2 o más (su máximo previo era 8). En 46 partidos en total va sin ganar por 2 o más el 72 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 7,
+     "maximoPrevio": 19,
+     "burbujasPrevias": 6,
+     "record": "no",
+     "frecuencia": 0.152,
+     "n": 46,
+     "destacada": true,
+     "texto": "Equipo 9 lleva 7 partidos en total sin ganar por 3 o más (su máximo previo era 19). En 46 partidos en total va sin ganar por 3 o más el 85 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 3,
+     "maximoPrevio": 20,
+     "burbujasPrevias": 4,
+     "record": "no",
+     "frecuencia": 0.087,
+     "n": 46,
+     "destacada": true,
+     "texto": "Equipo 9 lleva 3 partidos en total sin perder por 2 o más (su máximo previo era 20). En 46 partidos en total va sin perder por 2 o más el 91 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 16,
+     "maximoPrevio": 14,
+     "burbujasPrevias": 4,
+     "record": "supera",
+     "frecuencia": 0.87,
+     "n": 46,
+     "destacada": true,
+     "texto": "Equipo 9 lleva 16 partidos en total anotando (su máximo previo era 14): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 46 partidos en total va anotando el 87 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 4,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 12,
+     "record": "iguala",
+     "frecuencia": 0.565,
+     "n": 46,
+     "destacada": true,
+     "texto": "Equipo 9 lleva 4 partidos en total recibiendo gol (su máximo previo era 4): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 46 partidos en total va recibiendo gol el 56 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 4,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 11,
+     "record": "iguala",
+     "frecuencia": 0.5,
+     "n": 46,
+     "destacada": true,
+     "texto": "Equipo 9 lleva 4 partidos en total con goles de los dos (su máximo previo era 4): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 46 partidos en total va con goles de los dos el 50 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 13,
+     "record": "no",
+     "frecuencia": 0.543,
+     "n": 46,
+     "destacada": false,
+     "texto": "Equipo 9 lleva 1 partido en total con más de 2,5 goles (su máximo previo era 4). En 46 partidos en total va con más de 2,5 goles el 54 %."
+    }
+   ],
+   "lineas": [
+    "Perfil de doble oportunidad de local: no pierde 16 de 21 (76 %) y no gana 11 de 21 (52 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de local empata mucho o se planta a no perder no está del todo en el nivel",
+    "Equipo 9 lleva 3 partidos de local sin ganar (su máximo previo era 3): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 21 partidos de local va sin ganar el 52 %.",
+    "Equipo 9 lleva 5 partidos de local sin ganar por 2 o más (su máximo previo era 6). En 21 partidos de local va sin ganar por 2 o más el 76 %.",
+    "Equipo 9 lleva 5 partidos de local sin ganar por 3 o más (su máximo previo era 8). En 21 partidos de local va sin ganar por 3 o más el 81 %.",
+    "Equipo 9 lleva 9 partidos de local anotando (su máximo previo era 9). En 21 partidos de local va anotando el 91 %.",
+    "Equipo 9 lleva 3 partidos de local recibiendo gol (su máximo previo era 4). En 21 partidos de local va recibiendo gol el 62 %.",
+    "Equipo 9 lleva 3 partidos de local con goles de los dos (su máximo previo era 3): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 21 partidos de local va con goles de los dos el 57 %.",
+    "Equipo 9 lleva 3 partidos en total sin perder (su máximo previo era 15). En 46 partidos en total va sin perder el 83 %.",
+    "Equipo 9 lleva 4 partidos en total sin ganar (su máximo previo era 4): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 46 partidos en total va sin ganar el 46 %.",
+    "Equipo 9 lleva 7 partidos en total sin ganar por 2 o más (su máximo previo era 8). En 46 partidos en total va sin ganar por 2 o más el 72 %.",
+    "Equipo 9 lleva 7 partidos en total sin ganar por 3 o más (su máximo previo era 19). En 46 partidos en total va sin ganar por 3 o más el 85 %.",
+    "Equipo 9 lleva 3 partidos en total sin perder por 2 o más (su máximo previo era 20). En 46 partidos en total va sin perder por 2 o más el 91 %.",
+    "Equipo 9 lleva 16 partidos en total anotando (su máximo previo era 14): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 46 partidos en total va anotando el 87 %.",
+    "Equipo 9 lleva 4 partidos en total recibiendo gol (su máximo previo era 4): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 46 partidos en total va recibiendo gol el 56 %.",
+    "Equipo 9 lleva 4 partidos en total con goles de los dos (su máximo previo era 4): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 46 partidos en total va con goles de los dos el 50 %."
+   ],
+   "perfilDc": {
+    "condicion": "Local",
+    "partidos": 21,
+    "noPierde": 0.7391,
+    "noGana": 0.5217,
+    "burbuja": 1,
+    "maximoPrevio": 11,
+    "record": 0,
+    "texto": "Perfil de doble oportunidad de local: no pierde 16 de 21 (76 %) y no gana 11 de 21 (52 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de local empata mucho o se planta a no perder no está del todo en el nivel"
+   }
+  }
+ },
+ {
+  "nombre": "Equipo 10",
+  "condicion": "V",
+  "filas": [
+   {
+    "fecha": "2025-01-01T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-02T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-03T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-04T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-05T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-06T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-07T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-08T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-09T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-10T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-11T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-12T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-13T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-14T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-15T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-16T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-17T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-18T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-19T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-20T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-21T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-22T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-23T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-24T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-25T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-26T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-27T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 4,
+    "golesContra": 1
+   }
+  ],
+  "esperado": {
+   "nota": "descripción, no riesgo: el largo y el récord de estas burbujas no predicen el partido siguiente mejor que la frecuencia del equipo, y en su récord se sostienen algo más, no revientan (REVENTON §15). El PERFIL de doble oportunidad por condición sí agrega al 1X2 del motor (§15.1)",
+   "condicion": "visita",
+   "familias": [
+    {
+     "familia": "noPierde",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 5,
+     "maximoPrevio": 5,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.733,
+     "n": 15,
+     "destacada": true,
+     "texto": "Equipo 10 lleva 5 partidos de visita sin perder (su máximo previo era 5). En 15 partidos de visita va sin perder el 73 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 4,
+     "record": "no",
+     "frecuencia": 0.467,
+     "n": 15,
+     "destacada": false,
+     "texto": "Equipo 10 lleva 1 partido de visita ganando (su máximo previo era 4). En 15 partidos de visita va ganando el 53 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 5,
+     "record": "iguala",
+     "frecuencia": 0.4,
+     "n": 15,
+     "destacada": true,
+     "texto": "Equipo 10 lleva 1 partido de visita ganando por 2 o más (su máximo previo era 1): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 15 partidos de visita va ganando por 2 o más el 40 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.2,
+     "n": 15,
+     "destacada": false,
+     "texto": "Equipo 10 lleva 1 partido de visita ganando por 3 o más (su máximo previo era 1). En 15 partidos de visita va ganando por 3 o más el 20 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 7,
+     "maximoPrevio": 6,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.133,
+     "n": 15,
+     "destacada": true,
+     "texto": "Equipo 10 lleva 7 partidos de visita sin perder por 2 o más (su máximo previo era 6). En 15 partidos de visita va sin perder por 2 o más el 87 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 6,
+     "burbujasPrevias": 4,
+     "record": "no",
+     "frecuencia": 0.667,
+     "n": 15,
+     "destacada": false,
+     "texto": "Equipo 10 lleva 1 partido de visita anotando (su máximo previo era 6). En 15 partidos de visita va anotando el 67 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 5,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.6,
+     "n": 15,
+     "destacada": false,
+     "texto": "Equipo 10 lleva 1 partido de visita recibiendo gol (su máximo previo era 5). En 15 partidos de visita va recibiendo gol el 60 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 2,
+     "burbujasPrevias": 3,
+     "record": "no",
+     "frecuencia": 0.4,
+     "n": 15,
+     "destacada": false,
+     "texto": "Equipo 10 lleva 1 partido de visita con goles de los dos (su máximo previo era 2). En 15 partidos de visita va con goles de los dos el 40 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 2,
+     "burbujasPrevias": 5,
+     "record": "no",
+     "frecuencia": 0.533,
+     "n": 15,
+     "destacada": false,
+     "texto": "Equipo 10 lleva 1 partido de visita con más de 2,5 goles (su máximo previo era 2). En 15 partidos de visita va con más de 2,5 goles el 53 %."
+    },
+    {
+     "familia": "noPierde",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 8,
+     "maximoPrevio": 6,
+     "burbujasPrevias": 5,
+     "record": "supera",
+     "frecuencia": 0.741,
+     "n": 27,
+     "destacada": true,
+     "texto": "Equipo 10 lleva 8 partidos en total sin perder (su máximo previo era 6): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 27 partidos en total va sin perder el 74 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 7,
+     "record": "no",
+     "frecuencia": 0.556,
+     "n": 27,
+     "destacada": false,
+     "texto": "Equipo 10 lleva 1 partido en total ganando (su máximo previo era 3). En 27 partidos en total va ganando el 44 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 2,
+     "burbujasPrevias": 6,
+     "record": "no",
+     "frecuencia": 0.296,
+     "n": 27,
+     "destacada": false,
+     "texto": "Equipo 10 lleva 1 partido en total ganando por 2 o más (su máximo previo era 2). En 27 partidos en total va ganando por 2 o más el 30 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.111,
+     "n": 27,
+     "destacada": false,
+     "texto": "Equipo 10 lleva 1 partido en total ganando por 3 o más (su máximo previo era 1). En 27 partidos en total va ganando por 3 o más el 11 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 10,
+     "maximoPrevio": 9,
+     "burbujasPrevias": 3,
+     "record": "supera",
+     "frecuencia": 0.148,
+     "n": 27,
+     "destacada": true,
+     "texto": "Equipo 10 lleva 10 partidos en total sin perder por 2 o más (su máximo previo era 9): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 27 partidos en total va sin perder por 2 o más el 85 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 7,
+     "record": "no",
+     "frecuencia": 0.667,
+     "n": 27,
+     "destacada": false,
+     "texto": "Equipo 10 lleva 1 partido en total anotando (su máximo previo era 4). En 27 partidos en total va anotando el 67 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 6,
+     "record": "no",
+     "frecuencia": 0.593,
+     "n": 27,
+     "destacada": false,
+     "texto": "Equipo 10 lleva 1 partido en total recibiendo gol (su máximo previo era 3). En 27 partidos en total va recibiendo gol el 59 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 2,
+     "burbujasPrevias": 7,
+     "record": "no",
+     "frecuencia": 0.407,
+     "n": 27,
+     "destacada": false,
+     "texto": "Equipo 10 lleva 1 partido en total con goles de los dos (su máximo previo era 2). En 27 partidos en total va con goles de los dos el 41 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 7,
+     "record": "no",
+     "frecuencia": 0.519,
+     "n": 27,
+     "destacada": false,
+     "texto": "Equipo 10 lleva 1 partido en total con más de 2,5 goles (su máximo previo era 4). En 27 partidos en total va con más de 2,5 goles el 52 %."
+    }
+   ],
+   "lineas": [
+    "Perfil de doble oportunidad de visita: no pierde 11 de 15 (73 %) y no gana 7 de 15 (47 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de visita empata mucho o se planta a no perder no está del todo en el nivel",
+    "Equipo 10 lleva 5 partidos de visita sin perder (su máximo previo era 5). En 15 partidos de visita va sin perder el 73 %.",
+    "Equipo 10 lleva 1 partido de visita ganando por 2 o más (su máximo previo era 1): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 15 partidos de visita va ganando por 2 o más el 40 %.",
+    "Equipo 10 lleva 7 partidos de visita sin perder por 2 o más (su máximo previo era 6). En 15 partidos de visita va sin perder por 2 o más el 87 %.",
+    "Equipo 10 lleva 8 partidos en total sin perder (su máximo previo era 6): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 27 partidos en total va sin perder el 74 %.",
+    "Equipo 10 lleva 10 partidos en total sin perder por 2 o más (su máximo previo era 9): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 27 partidos en total va sin perder por 2 o más el 85 %."
+   ],
+   "perfilDc": {
+    "condicion": "Visita",
+    "partidos": 15,
+    "noPierde": 0.7059,
+    "noGana": 0.4706,
+    "burbuja": 5,
+    "maximoPrevio": 5,
+    "record": 0,
+    "texto": "Perfil de doble oportunidad de visita: no pierde 11 de 15 (73 %) y no gana 7 de 15 (47 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de visita empata mucho o se planta a no perder no está del todo en el nivel"
+   }
+  }
+ },
+ {
+  "nombre": "Equipo 11",
+  "condicion": null,
+  "filas": [
+   {
+    "fecha": "2025-01-01T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-02T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-03T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-04T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-05T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-06T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-07T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-08T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-09T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-10T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-11T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-12T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 0,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-13T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-14T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-15T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-16T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-17T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-18T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-19T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-20T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-21T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-22T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-23T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-24T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 2,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-25T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 3
+   },
+   {
+    "fecha": "2025-01-26T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 0
+   }
+  ],
+  "esperado": {
+   "nota": "descripción, no riesgo: el largo y el récord de estas burbujas no predicen el partido siguiente mejor que la frecuencia del equipo, y en su récord se sostienen algo más, no revientan (REVENTON §15). El PERFIL de doble oportunidad por condición sí agrega al 1X2 del motor (§15.1)",
+   "condicion": null,
+   "familias": [
+    {
+     "familia": "noPierde",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 5,
+     "burbujasPrevias": 6,
+     "record": "no",
+     "frecuencia": 0.731,
+     "n": 26,
+     "destacada": false,
+     "texto": "Equipo 11 lleva 1 partido en total sin perder (su máximo previo era 5). En 26 partidos en total va sin perder el 73 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 6,
+     "record": "no",
+     "frecuencia": 0.5,
+     "n": 26,
+     "destacada": false,
+     "texto": "Equipo 11 lleva 1 partido en total ganando (su máximo previo era 3). En 26 partidos en total va ganando el 50 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 5,
+     "record": "iguala",
+     "frecuencia": 0.231,
+     "n": 26,
+     "destacada": true,
+     "texto": "Equipo 11 lleva 1 partido en total ganando por 2 o más (su máximo previo era 1): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 26 partidos en total va ganando por 2 o más el 23 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 1,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.115,
+     "n": 26,
+     "destacada": false,
+     "texto": "Equipo 11 lleva 1 partido en total ganando por 3 o más (su máximo previo era 1). En 26 partidos en total va ganando por 3 o más el 12 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 9,
+     "burbujasPrevias": 4,
+     "record": "no",
+     "frecuencia": 0.154,
+     "n": 26,
+     "destacada": false,
+     "texto": "Equipo 11 lleva 1 partido en total sin perder por 2 o más (su máximo previo era 9). En 26 partidos en total va sin perder por 2 o más el 85 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 4,
+     "maximoPrevio": 6,
+     "burbujasPrevias": 4,
+     "record": "no",
+     "frecuencia": 0.846,
+     "n": 26,
+     "destacada": true,
+     "texto": "Equipo 11 lleva 4 partidos en total anotando (su máximo previo era 6). En 26 partidos en total va anotando el 85 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 2,
+     "burbujasPrevias": 5,
+     "record": "no",
+     "frecuencia": 0.692,
+     "n": 26,
+     "destacada": false,
+     "texto": "Equipo 11 lleva 1 partido en total con la valla invicta (su máximo previo era 2). En 26 partidos en total va con la valla invicta el 31 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 5,
+     "record": "no",
+     "frecuencia": 0.577,
+     "n": 26,
+     "destacada": false,
+     "texto": "Equipo 11 lleva 1 partido en total sin que marquen los dos (su máximo previo era 4). En 26 partidos en total va sin que marquen los dos el 42 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 5,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 6,
+     "record": "supera",
+     "frecuencia": 0.731,
+     "n": 26,
+     "destacada": true,
+     "texto": "Equipo 11 lleva 5 partidos en total con más de 2,5 goles (su máximo previo era 4): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 26 partidos en total va con más de 2,5 goles el 73 %."
+    }
+   ],
+   "lineas": [
+    "Equipo 11 lleva 1 partido en total ganando por 2 o más (su máximo previo era 1): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 26 partidos en total va ganando por 2 o más el 23 %.",
+    "Equipo 11 lleva 4 partidos en total anotando (su máximo previo era 6). En 26 partidos en total va anotando el 85 %.",
+    "Equipo 11 lleva 5 partidos en total con más de 2,5 goles (su máximo previo era 4): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 26 partidos en total va con más de 2,5 goles el 73 %."
+   ]
+  }
+ },
+ {
+  "nombre": "Everton",
+  "condicion": "L",
+  "filas": [
+   {
+    "fecha": "2025-01-01T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-02T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-03T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-04T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-05T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-06T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-07T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-08T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-09T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 0,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-10T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-11T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-12T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 2,
+    "golesContra": 2
+   },
+   {
+    "fecha": "2025-01-13T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   }
+  ],
+  "esperado": {
+   "nota": "descripción, no riesgo: el largo y el récord de estas burbujas no predicen el partido siguiente mejor que la frecuencia del equipo, y en su récord se sostienen algo más, no revientan (REVENTON §15). El PERFIL de doble oportunidad por condición sí agrega al 1X2 del motor (§15.1)",
+   "condicion": "local",
+   "familias": [
+    {
+     "familia": "noPierde",
+     "ambito": "local",
+     "valor": true,
+     "partidos": 4,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 3,
+     "record": "supera",
+     "frecuencia": 0.769,
+     "n": 13,
+     "destacada": true,
+     "texto": "Everton lleva 4 partidos de local sin perder (su máximo previo era 3): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 13 partidos de local va sin perder el 77 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 5,
+     "record": "iguala",
+     "frecuencia": 0.538,
+     "n": 13,
+     "destacada": true,
+     "texto": "Everton lleva 1 partido de local ganando (su máximo previo era 1): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 13 partidos de local va ganando el 46 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 10,
+     "maximoPrevio": 2,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.077,
+     "n": 13,
+     "destacada": true,
+     "texto": "Everton lleva 10 partidos de local sin ganar por 2 o más (su máximo previo era 2). En 13 partidos de local va sin ganar por 2 o más el 92 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 13,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 0.0,
+     "n": 13,
+     "destacada": true,
+     "texto": "Everton lleva 13 partidos de local sin ganar por 3 o más. En 13 partidos de local va sin ganar por 3 o más el 100 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 4,
+     "maximoPrevio": 8,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.077,
+     "n": 13,
+     "destacada": true,
+     "texto": "Everton lleva 4 partidos de local sin perder por 2 o más (su máximo previo era 8). En 13 partidos de local va sin perder por 2 o más el 92 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "local",
+     "valor": true,
+     "partidos": 4,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 3,
+     "record": "supera",
+     "frecuencia": 0.769,
+     "n": 13,
+     "destacada": true,
+     "texto": "Everton lleva 4 partidos de local anotando (su máximo previo era 3): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 13 partidos de local va anotando el 77 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 4,
+     "record": "iguala",
+     "frecuencia": 0.615,
+     "n": 13,
+     "destacada": true,
+     "texto": "Everton lleva 1 partido de local con la valla invicta (su máximo previo era 1): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 13 partidos de local va con la valla invicta el 39 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 3,
+     "record": "no",
+     "frecuencia": 0.385,
+     "n": 13,
+     "destacada": false,
+     "texto": "Everton lleva 1 partido de local sin que marquen los dos (su máximo previo era 4). En 13 partidos de local va sin que marquen los dos el 62 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 6,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.154,
+     "n": 13,
+     "destacada": false,
+     "texto": "Everton lleva 1 partido de local con 2 goles o menos (su máximo previo era 6). En 13 partidos de local va con 2 goles o menos el 85 %."
+    },
+    {
+     "familia": "noPierde",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 4,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 3,
+     "record": "supera",
+     "frecuencia": 0.769,
+     "n": 13,
+     "destacada": true,
+     "texto": "Everton lleva 4 partidos en total sin perder (su máximo previo era 3): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 13 partidos en total va sin perder el 77 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 5,
+     "record": "iguala",
+     "frecuencia": 0.538,
+     "n": 13,
+     "destacada": true,
+     "texto": "Everton lleva 1 partido en total ganando (su máximo previo era 1): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 13 partidos en total va ganando el 46 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 10,
+     "maximoPrevio": 2,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.077,
+     "n": 13,
+     "destacada": true,
+     "texto": "Everton lleva 10 partidos en total sin ganar por 2 o más (su máximo previo era 2). En 13 partidos en total va sin ganar por 2 o más el 92 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 13,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 0.0,
+     "n": 13,
+     "destacada": true,
+     "texto": "Everton lleva 13 partidos en total sin ganar por 3 o más. En 13 partidos en total va sin ganar por 3 o más el 100 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 4,
+     "maximoPrevio": 8,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.077,
+     "n": 13,
+     "destacada": true,
+     "texto": "Everton lleva 4 partidos en total sin perder por 2 o más (su máximo previo era 8). En 13 partidos en total va sin perder por 2 o más el 92 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 4,
+     "maximoPrevio": 3,
+     "burbujasPrevias": 3,
+     "record": "supera",
+     "frecuencia": 0.769,
+     "n": 13,
+     "destacada": true,
+     "texto": "Everton lleva 4 partidos en total anotando (su máximo previo era 3): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 13 partidos en total va anotando el 77 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 1,
+     "burbujasPrevias": 4,
+     "record": "iguala",
+     "frecuencia": 0.615,
+     "n": 13,
+     "destacada": true,
+     "texto": "Everton lleva 1 partido en total con la valla invicta (su máximo previo era 1): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 13 partidos en total va con la valla invicta el 39 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 4,
+     "burbujasPrevias": 3,
+     "record": "no",
+     "frecuencia": 0.385,
+     "n": 13,
+     "destacada": false,
+     "texto": "Everton lleva 1 partido en total sin que marquen los dos (su máximo previo era 4). En 13 partidos en total va sin que marquen los dos el 62 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 1,
+     "maximoPrevio": 6,
+     "burbujasPrevias": 2,
+     "record": null,
+     "frecuencia": 0.154,
+     "n": 13,
+     "destacada": false,
+     "texto": "Everton lleva 1 partido en total con 2 goles o menos (su máximo previo era 6). En 13 partidos en total va con 2 goles o menos el 85 %."
+    }
+   ],
+   "lineas": [
+    "Perfil de doble oportunidad de local: no pierde 10 de 13 (77 %) y no gana 7 de 13 (54 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de local empata mucho o se planta a no perder no está del todo en el nivel",
+    "Everton lleva 4 partidos de local sin perder (su máximo previo era 3): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 13 partidos de local va sin perder el 77 %.",
+    "Everton lleva 1 partido de local ganando (su máximo previo era 1): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 13 partidos de local va ganando el 46 %.",
+    "Everton lleva 10 partidos de local sin ganar por 2 o más (su máximo previo era 2). En 13 partidos de local va sin ganar por 2 o más el 92 %.",
+    "Everton lleva 13 partidos de local sin ganar por 3 o más. En 13 partidos de local va sin ganar por 3 o más el 100 %.",
+    "Everton lleva 4 partidos de local sin perder por 2 o más (su máximo previo era 8). En 13 partidos de local va sin perder por 2 o más el 92 %.",
+    "Everton lleva 4 partidos de local anotando (su máximo previo era 3): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 13 partidos de local va anotando el 77 %.",
+    "Everton lleva 1 partido de local con la valla invicta (su máximo previo era 1): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 13 partidos de local va con la valla invicta el 39 %.",
+    "Everton lleva 4 partidos en total sin perder (su máximo previo era 3): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 13 partidos en total va sin perder el 77 %.",
+    "Everton lleva 1 partido en total ganando (su máximo previo era 1): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 13 partidos en total va ganando el 46 %.",
+    "Everton lleva 10 partidos en total sin ganar por 2 o más (su máximo previo era 2). En 13 partidos en total va sin ganar por 2 o más el 92 %.",
+    "Everton lleva 13 partidos en total sin ganar por 3 o más. En 13 partidos en total va sin ganar por 3 o más el 100 %.",
+    "Everton lleva 4 partidos en total sin perder por 2 o más (su máximo previo era 8). En 13 partidos en total va sin perder por 2 o más el 92 %.",
+    "Everton lleva 4 partidos en total anotando (su máximo previo era 3): está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su frecuencia, no menos (REVENTON §15). En 13 partidos en total va anotando el 77 %.",
+    "Everton lleva 1 partido en total con la valla invicta (su máximo previo era 1): iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15). En 13 partidos en total va con la valla invicta el 39 %."
+   ],
+   "perfilDc": {
+    "condicion": "Local",
+    "partidos": 13,
+    "noPierde": 0.7333,
+    "noGana": 0.5333,
+    "burbuja": 4,
+    "maximoPrevio": 3,
+    "record": 2,
+    "texto": "Perfil de doble oportunidad de local: no pierde 10 de 13 (77 %) y no gana 7 de 13 (54 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de local empata mucho o se planta a no perder no está del todo en el nivel"
+   }
+  }
+ },
+ {
+  "nombre": "Vacío",
+  "condicion": "V",
+  "filas": [],
+  "esperado": {
+   "nota": "descripción, no riesgo: el largo y el récord de estas burbujas no predicen el partido siguiente mejor que la frecuencia del equipo, y en su récord se sostienen algo más, no revientan (REVENTON §15). El PERFIL de doble oportunidad por condición sí agrega al 1X2 del motor (§15.1)",
+   "condicion": "visita",
+   "familias": [],
+   "lineas": []
+  }
+ }
+]

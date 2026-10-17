@@ -2,6 +2,7 @@
 // - MockDataSource: el motor local (src/motor) sirviendo ese contrato (demo, default).
 // - HttpDataSource: el backend FastAPI real (VITE_DATA_SOURCE=http).
 // Migrar una pantalla a datos reales = consumirla vía getDataSource(); nada más.
+import { describirFamilias } from '../lib/familias'
 import type { BurbujasEquipoDTO } from '../api/types'
 import { analizarBurbujas } from '../lib/burbuja'
 import { ApiError } from '../api/client'
@@ -766,10 +767,12 @@ class MockDataSource implements SadDataSource {
           nivelRival: teamEngine(NUM_TEAM[prox.rivalId])?.level ?? 1, // §3.1: sin niveles, 1.0
         }
       : null
-    return analizarBurbujas(filas, {
+    const r = analizarBurbujas(filas, {
       equipoId, nombre: TEAMS[key].name, nivel: eng.level, bin: levelBin(eng.level).bin,
       proximo, plantilla: antesDe != null ? null : plantillaDemo(key), hoy: MOCK_NOW.slice(0, 10),
     })
+    // las otras burbujas contadas: el mismo espejo TS que el backend (scripts/casos_familias.json)
+    return { ...r, otrasFamilias: describirFamilias(filas, proximo?.condicion ?? null, TEAMS[key].name) }
   }
 
   async cadena(equipoId: number): Promise<EslabonDtpDTO[]> {
