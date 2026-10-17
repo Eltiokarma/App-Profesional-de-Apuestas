@@ -588,6 +588,51 @@ def main():
     c.post(f"{A}/analisis/cowork", json=_parte(con_ficha))
     c.post(f"{A}/analisis/cowork/xi/auto")
 
+    # MEDIO ONCE NO ES «ESTA LIGA NO DA ONCES» (Necaxa–Atlas, ABB–Real Potosí,
+    # Atlante–Pumas, 17/10/2026): la API trajo el once de un lado solo
+    import sqlite3 as _sq3m
+    from datetime import datetime as _dtm, timedelta as _tdm, timezone as _tzm
+    _sadm = os.path.join(tmp, "sad.db")
+    with _sq3m.connect(_sadm) as _con:
+        _fxm = _con.execute("SELECT home_team_id, away_team_id, date, status_short FROM fixtures WHERE id=?",
+                            (con_ficha,)).fetchone()
+        _ali_b = _con.execute("SELECT * FROM alineaciones WHERE fixture_id=? AND team_id=?",
+                              (con_ficha, _fxm[1])).fetchall()
+        _cols = [d[0] for d in _con.execute("SELECT * FROM alineaciones LIMIT 1").description]
+        _con.execute("DELETE FROM alineaciones WHERE fixture_id=? AND team_id=?", (con_ficha, _fxm[1]))
+        _con.execute("UPDATE fixtures SET status_short='FT', date=? WHERE id=?",
+                     ((_dtm.now(_tzm.utc) - _tdm(hours=8)).strftime("%Y-%m-%d %H:%M:%S"), con_ficha))
+        _con.execute("CREATE TABLE IF NOT EXISTS fichas_meta (fixture_id INTEGER PRIMARY KEY, capturado_en TEXT, "
+                     "alineaciones INTEGER, eventos INTEGER, stats INTEGER)")
+        _con.execute("DELETE FROM fichas_meta WHERE fixture_id=?", (con_ficha,))
+        _tit_a = [r[0] for r in _con.execute("SELECT jugador FROM alineaciones WHERE fixture_id=? AND team_id=? "
+                                             "AND titular=1", (con_ficha, _fxm[0]))]
+    _pm = _parte(con_ficha)
+    for _j, _nom in zip(_pm["equipos"]["a"]["plantel"], _tit_a):
+        _j["nombre"] = _nom    # el lado que SÍ llegó casa con su tabla: sin conflicto
+    c.delete(f"{A}/analisis/cowork/{con_ficha}")
+    c.post(f"{A}/analisis/cowork", json=_pm)
+    c.post(f"{A}/analisis/cowork/xi/auto")
+    medio = c.post(f"{A}/analisis/cowork/xi/auto").json()
+    check("con el once de un solo lado y la ficha post-partido sin pedir, espera (no es «la liga no da onces»)",
+          any(x["fixtureId"] == con_ficha and x.get("lados") == ["b"] for x in medio["sinFichaTodavia"])
+          and all(x["fixtureId"] != con_ficha for x in medio["nuncaVaALlegar"]),
+          (medio.get("sinFichaTodavia"), medio.get("nuncaVaALlegar")))
+    with _sq3m.connect(_sadm) as _con:
+        _con.execute("INSERT INTO fichas_meta VALUES (?, '2026-10-17 00:00:00', 11, 10, 0)", (con_ficha,))
+    sellado = c.post(f"{A}/analisis/cowork/xi/auto").json()
+    _n = [x for x in sellado["nuncaVaALlegar"] if x["fixtureId"] == con_ficha]
+    check("con la ficha post-partido ya pedida, va a `nuncaVaALlegar` pidiendo SOLO el lado que falta",
+          _n and _n[0]["lados"] == ["b"] and "SÍ da onces" in _n[0]["porque"], _n)
+    with _sq3m.connect(_sadm) as _con:
+        _con.execute("DELETE FROM fichas_meta WHERE fixture_id=?", (con_ficha,))
+        _con.execute("UPDATE fixtures SET status_short=?, date=? WHERE id=?", (_fxm[3], _fxm[2], con_ficha))
+        _con.executemany(f"INSERT INTO alineaciones ({','.join(_cols)}) VALUES ({','.join('?' * len(_cols))})",
+                         _ali_b)
+    c.delete(f"{A}/analisis/cowork/{con_ficha}")
+    c.post(f"{A}/analisis/cowork", json=_parte(con_ficha))
+    c.post(f"{A}/analisis/cowork/xi/auto")
+
     # ── EL MISMO HUECO, LEÍDO AL REVÉS POR DOS ESCALAS ─────────────────────
     # Un equipo salió «1.9% SIN FORMACIÓN» y «IE 8.14 · casi seguro» a la vez:
     # el EFE cuenta el bloque ausente como 0 y hunde el porcentaje; el TDE

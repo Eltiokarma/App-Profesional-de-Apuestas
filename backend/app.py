@@ -2327,10 +2327,10 @@ class XiBody(BaseModel):
 @app.get(API + "/analisis/cowork/agenda")
 def cowork_agenda(
     fecha: date_t | None = None,
-    # 8 y no 4: con el padrón entero (35 competencias) cuatro llaves
-    # internacionales del mismo día se comían el cupo y una jornada de LaLiga
-    # no entraba. `corte` dice siempre qué quedó fuera por este número.
-    limite: int = Query(default=8, ge=1, le=20),
+    # sin `limite`, el cupo del día (`parte.AGENDA_LIMITE`, 16 o
+    # SAD_AGENDA_LIMITE): el mismo número para la corrida y para el latido que
+    # mide su cobertura. `corte` dice siempre qué quedó fuera por este número.
+    limite: int | None = Query(default=None, ge=1, le=30),
     ligaId: int | None = None,
     liga: str | None = Query(default=None, max_length=60,
                              description="solo las ligas cuyo país o nombre contiene este texto (España, LaLiga, Perú)"),
@@ -2355,7 +2355,7 @@ def cowork_agenda(
     0 al final, con su motivo. Un filtro puesto ANTES del pitazo no contamina
     la población: el caso sigue siendo `ciega`."""
     from backend.analisis import parte as cowork
-    return cowork.agenda(fecha, limite, ligaId, desdeAhora, horas, incluirDescartados,
+    return cowork.agenda(fecha, limite or cowork.AGENDA_LIMITE, ligaId, desdeAhora, horas, incluirDescartados,
                          liga=liga, grupos=grupos, segundas=segundas)
 
 

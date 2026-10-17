@@ -117,6 +117,12 @@ _COLUMNAS_LOG = (("via", "TEXT"),)
 # re-depósito (un parte viejo re-depositado hoy sigue siendo de su época). Lo
 # anterior a la primera cohorte sellada es «rodaje». Las métricas se leen por
 # cohorte; la vigente es la única que vale para calibrar.
+# CUÁNTOS PARTIDOS SE ESTUDIAN POR CORRIDA. Era 8, fijo en la llamada de la
+# corrida y repetido en el latido; el 16/10/2026 quedaron 47 candidatos fuera
+# solo por ese número (LaLiga, Serie A, Bundesliga, Ligue 1). Un solo sitio,
+# para que la corrida y el latido que mide su cobertura no se separen.
+AGENDA_LIMITE = max(1, min(30, int(os.environ.get("SAD_AGENDA_LIMITE", "16") or 16)))
+
 COHORTE_RODAJE = "rodaje"
 COHORTE = "c3-2026-09-23"
 COHORTES = {
@@ -3146,9 +3152,50 @@ def cerrar_onces_pendientes(limite: int = 50) -> dict:
             # la excepción para ser el procedimiento. Decirlo cambia qué hace
             # el usuario; llamarlo «todavía» lo deja esperando para siempre.
             fila_fx = saddb.query_one(
-                "sad", "SELECT status_short, league_id FROM fixtures WHERE id=?", (fid,))
+                "sad", "SELECT status_short, league_id, date FROM fixtures WHERE id=?", (fid,))
             estado_fx = dict(fila_fx) if fila_fx else {}
-            if (estado_fx.get("status_short") or "") in _TERMINADO:
+            faltan = [l for l in LADOS if l not in ya_ficha]
+            try:
+                meta = saddb.query_one("sad", "SELECT alineaciones FROM fichas_meta WHERE fixture_id=?", (fid,))
+            except Exception:  # noqa: BLE001 — base sin la tabla de fichas
+                meta = None
+            terminado = (estado_fx.get("status_short") or "") in _TERMINADO
+            # la ficha post-partido pide los jugados con parte de los últimos
+            # días (ficha_partido.CON_PARTE_DIAS); pasado eso no va a llegar
+            from backend.ingesta.ficha_partido import CON_PARTE_DIAS
+            reciente = str(estado_fx.get("date") or "")[:19].replace("T", " ") >= (
+                datetime.now(timezone.utc) - timedelta(days=CON_PARTE_DIAS)).strftime("%Y-%m-%d %H:%M:%S")
+            if not reciente:
+                meta = meta or {"alineaciones": 0}
+            if terminado and ya_ficha and meta is None:
+                # MEDIO ONCE NO ES «ESTA LIGA NO DA ONCES». Necaxa–Atlas, ABB–Real
+                # Potosí y Atlante–Pumas (17/10/2026): la API trajo el once de un
+                # lado y el otro no; la segunda pasada lo mandaba a `nuncaVaALlegar`
+                # con «la liga no da onces», que es falso —el otro lado llegó— y
+                # la ficha post-partido todavía no lo había vuelto a pedir.
+                sin_ficha.append({"fixtureId": fid, "partido": partido, "lados": faltan,
+                                  "porque": f"la API trajo solo el once del lado {', '.join(ya_ficha)}; "
+                                            "el otro puede llegar con la ficha post-partido "
+                                            "(próxima corrida diaria)"})
+                continue
+            if terminado and ya_ficha:
+                nunca.append({
+                    "fixtureId": fid, "partido": partido, "ligaId": estado_fx.get("league_id"),
+                    "lados": faltan,
+                    "porque": f"la API trajo el once del lado {', '.join(ya_ficha)} y el del lado "
+                              f"{', '.join(faltan)} no llegó ni con la ficha post-partido: la liga SÍ da "
+                              "onces, este partido vino incompleto",
+                    "queHacer": f"pegá solo el lado {', '.join(faltan)} a mano (POST /analisis/cowork/{{id}}/xi); "
+                                "el lado de la ficha no se toca sin `reemplazar: true`",
+                })
+                continue
+            if terminado and meta is None:
+                sin_ficha.append({"fixtureId": fid, "partido": partido,
+                                  "porque": "el partido terminó y la ficha post-partido todavía no se pidió "
+                                            "(próxima corrida diaria): recién después se sabe si la liga "
+                                            "no da onces"})
+                continue
+            if terminado:
                 nunca.append({
                     "fixtureId": fid, "partido": partido, "ligaId": estado_fx.get("league_id"),
                     "porque": "el partido ya terminó y la ingesta nunca trajo la alineación: "
@@ -3591,7 +3638,7 @@ def latido(horas: int = 36) -> dict:
     # COBERTURA: de los partidos que la agenda habría elegido ayer, ¿cuántos
     # tienen parte? Es la señal que delata que el batch no corrió, y no se puede
     # deducir mirando solo los partes: hay que comparar contra lo que TOCABA.
-    ayer = agenda(fecha=(ahora - timedelta(days=1)).date(), limite=8)
+    ayer = agenda(fecha=(ahora - timedelta(days=1)).date(), limite=AGENDA_LIMITE)
     tocaban = [x["fixtureId"] for x in (ayer.get("analizar") or [])]
     con_parte = set()
     if tocaban:
@@ -3710,7 +3757,7 @@ def _choques(filas) -> dict[int, dict[int, str]]:
     return out
 
 
-def agenda(fecha: date_t | None = None, limite: int = 8, liga_id: int | None = None,
+def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: int | None = None,
            desde_ahora: bool = False, horas: int = 12,
            incluir_descartados: bool = False, liga: str | None = None,
            grupos: bool = False, segundas: bool = False) -> dict:

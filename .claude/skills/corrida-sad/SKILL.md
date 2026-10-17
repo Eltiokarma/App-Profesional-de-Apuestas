@@ -36,7 +36,8 @@ de esa carpeta.
 
 1. `GET $B/analisis/cowork/contrato` (manda sobre cualquier ejemplo) y
    `GET $B/analisis/cowork/latido` (qué quedó roto de ayer: decilo al final).
-2. `GET $B/analisis/cowork/agenda?limite=8` → la lista de trabajo es
+2. `GET $B/analisis/cowork/agenda` (sin `limite`: el cupo lo fija el
+   servidor, el mismo que mide el latido) → la lista de trabajo es
    `porHacer` (lo ya depositado está en `yaHechos`: no se rehace). Descartá
    los que arrancan en menos de 60 minutos: un parte no se escribe con el
    pitazo encima y JAMÁS después del pitazo.
@@ -48,7 +49,7 @@ de esa carpeta.
    las instrucciones de la sección «Encargo de un partido» de abajo, entera.
 4. Al volver todos: `POST $B/analisis/cowork/xi/auto` (cierra los onces que
    ya estén; el ciclo en vivo del backend lo vuelve a hacer solo cuando salen
-   las alineaciones). `GET …/agenda?limite=8` de nuevo: `porHacer` tiene que
+   las alineaciones). `GET …/agenda` de nuevo: `porHacer` tiene que
    haber quedado vacío salvo lo que se descartó a propósito.
 5. Respuesta final, tres líneas: partes depositados (fixtureId y partido),
    cuáles no y por qué, y qué se rompió (incluido lo que dijo el latido).
