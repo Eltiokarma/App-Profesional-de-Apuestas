@@ -1043,8 +1043,10 @@ Escribís vos (es juicio, no se puede calcular):
   `lineas[]` (las destacadas: 3+ partidos o en su récord). Son NARRATIVA:
   el largo y el récord no predicen el siguiente partido mejor que la
   frecuencia del equipo, y en su récord se SOSTIENEN algo más —no revientan—
-  (REVENTON §15): una racha récord de «sin perder» no es alarma de que la
-  pierda. Lo que SÍ pesa es `perfilDc` (no pierde / no gana en la condición
+  (REVENTON §15). Pero una GRANDE en su récord (`cuidado`, 5+ partidos; la
+  alerta FAMILIA-RECORD de la tira) es terreno sin precedente: CUIDADO con
+  cargar a que siga, como con K-EXTREMO. Nombrala en el ensayo y en el
+  falsador; no es probabilidad de corte (§15.2). Lo que SÍ pesa es `perfilDc` (no pierde / no gana en la condición
   de hoy): agrega al 1X2 del motor (§15.1) —un equipo que de visita empata
   mucho o se planta a no perder no está del todo en su nivel—; tenelo a la
   vista al fijar las probabilidades y nombralo en el párrafo de las burbujas
@@ -1596,7 +1598,7 @@ lo que sobre queda para la próxima (la agenda lo retoma con `yaHechos`).
      números (el backend los recalcula al leer).
      Leé también `otrasFamilias` de los dos: el `perfilDc` de la condición
      de hoy pesa en el 1X2 (§15.1); el resto es narrativa, y un récord de
-     esas familias se sostiene, no revienta (§15).
+     esas familias se sostiene, no revienta (§15), pero uno GRANDE (FAMILIA-RECORD) es cuidado con la carga (§15.2).
    - Alertas, matchup con h2a/h2b/h2c, lectura SAD, sensibilidad.
    - `tde.bloques[]` uno por equipo con `indicadores` 0/0.5/1, escala 0-10.
    - `timelineEventos` solo institucionales; `cadena.a/b.pronostico`;
@@ -1688,6 +1690,17 @@ escenario y lo que habías escrito para él). Vos decís si eso escrito —la
 palanca para ganar, el gatillo del que perdió— fue lo que pasó: `si`,
 `parcial` o `no`, y `que` en una frase. No es acierto ni entra en ninguna
 tasa: es la materia de la autopsia, para que la próxima matriz aprenda.
+
+SOBRE `cortes` (por lado; obligatorio para cada burbuja `porExplicar`) —
+`objetivo.otrasFamilias` trae las burbujas de doble oportunidad, márgenes y
+goles que ESTE marcador cortó; las grandes o en su récord quedan `porExplicar`
+(REVENTON §15.2: un récord no se corta más que lo normal, así que algo lo
+cortó). Por cada una: `{"familia": "noPierde", "ambito": "local",
+"mecanismo": "<de la lista del estudio de reventones>", "porque": "una
+frase con el hecho: la ficha, el once, el DT, la pelota parada"}`. Los
+mecanismos son los de `GET /analisis/cowork/reventones/…` (echada,
+bloque_bajo_del_rival, superioridad_rival, roja, balon_parado, bajas_forzadas,
+varianza…). Si de verdad no hay un hecho, `varianza`: también es dato.
 
 SOBRE `seleccion` — es el campo que decide si el caso sirve para calibrar:
   ciega            el partido salió de la agenda, se eligió sin saber nada.

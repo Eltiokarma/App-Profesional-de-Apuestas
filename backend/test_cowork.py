@@ -1410,6 +1410,25 @@ def main():
           and alc[0]["tipo"] == "dato" and "ADT" in alc[0]["detalle"] and "95 %" in alc[0]["detalle"], alc)
 
 
+    # FAMILIA-RECORD: la burbuja de otra familia grande y en su récord es CUIDADO (tipo dato)
+    from backend.analisis.parte import alertas_familias, _cortes_veredicto
+    _sf = {"a": {"otrasFamilias": {"familias": [
+        {"familia": "noPierde", "ambito": "local", "partidos": 9, "record": "supera", "cuidado": True},
+        {"familia": "anota", "ambito": "local", "partidos": 4, "record": "supera", "cuidado": False}]}},
+        "b": {"otrasFamilias": {"familias": []}}}
+    _af = alertas_familias(_sf, {"a": "Everton", "b": "Chelsea"})
+    check("DC de local en su récord de 9 → UNA alerta FAMILIA-RECORD (dato) para Everton, sin la de 4",
+          len(_af) == 1 and _af[0]["codigo"] == "FAMILIA-RECORD" and _af[0]["tipo"] == "dato"
+          and "9 de local sin perder" in _af[0]["detalle"] and "anotando" not in _af[0]["detalle"]
+          and "cuidado" in _af[0]["detalle"], _af)
+    check("sin reventón calculado, FAMILIA-RECORD no rompe", alertas_familias(None, {}) == [])
+    _rech = []
+    _ct = _cortes_veredicto([{"familia": "noPierde", "ambito": "local", "mecanismo": "bloque_bajo_del_rival", "porque": "p"},
+                             {"familia": "noPierde", "ambito": "local", "mecanismo": "mala suerte", "porque": "q"},
+                             {"familia": "inventada", "mecanismo": "roja"}], _rech, "porLado.a.cortes")
+    check("los cortes: el mecanismo fuera de la lista queda «otro» con rechazo; la familia inventada se rechaza",
+          [x["mecanismo"] for x in _ct] == ["bloque_bajo_del_rival", "otro"] and len(_rech) == 2, (_ct, _rech))
+
     # caja de sensibilidad
     sens = d["equipos"]["a"]["sensibilidad"]
     check("la caja de sensibilidad viaja por equipo", len(sens) == 1, sens)
@@ -1601,6 +1620,24 @@ def main():
           set((v.get("objetivo") or {}).get("matriz", {})) >= {"a", "b", "nota"}
           and v["objetivo"]["matriz"]["a"]["escenario"] in ("ganar", "empatar", "perder"),
           (v.get("objetivo") or {}).get("matriz"))
+    # ── LAS OTRAS BURBUJAS QUE EL PARTIDO CORTÓ (usuario, 17/10/2026) ─────────
+    _of = (v.get("objetivo") or {}).get("otrasFamilias") or {}
+    check("el objetivo trae las otras burbujas por lado, con su nota de observación",
+          set(_of) >= {"a", "b", "nota"} and "sin tasa" in _of["nota"], list(_of))
+    check("porExplicar = grande (5+) o en su récord; el resto de lo cortado se cuenta sin pedir causa",
+          all(_c["porExplicar"] == (_c["cuidado"] or _c["partidos"] >= 5)
+              for l in ("a", "b") for _c in _of[l]["cortadas"]), _of)
+    _hay = [(l, _c) for l in ("a", "b") for _c in _of[l]["cortadas"] if _c["porExplicar"]]
+    if _hay:
+        _l, _c = _hay[0]
+        _rv = c.post(f"{A}/analisis/cowork/{pasado['id']}/veredicto", json={
+            **v, "porLado": {**v["porLado"], _l: {**(v["porLado"].get(_l) or {"veredicto": "parcial", "queP": "x",
+                                                                              "leccion": "x", "skill": "sad-analysis"}),
+                                                    "cortes": [{"familia": _c["familia"], "ambito": _c["ambito"],
+                                                                "mecanismo": "bloque_bajo_del_rival",
+                                                                "porque": "el rival se cerró desde el arranque"}]}}}).json()
+        check("la causa del corte se guarda con su mecanismo de la lista",
+              (_rv["porLado"][_l].get("cortes") or [{}])[0].get("mecanismo") == "bloque_bajo_del_rival", _rv["porLado"][_l])
     # ── EL MODO DE FALLO (Jev): sellado al cerrar, para el dossier ────────────
     check("el veredicto trae la etiqueta de Jev sellada (sin clave: simulada, sin modo)",
           v["modoFallo"] and v["modoFallo"]["simulado"] is True

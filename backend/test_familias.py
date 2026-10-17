@@ -42,6 +42,9 @@ def casos():
     # Everton antes del 0-2 con Chelsea: 4 de local sin perder, récord previo 3
     loc = [(1, 0), (1, 1), (2, 0), (0, 1), (1, 0), (0, 1), (2, 1), (1, 1), (0, 2), (1, 0), (1, 1), (2, 2), (1, 0)]
     out.append({"nombre": "Everton", "condicion": "L", "filas": _filas(loc, ["Local"] * len(loc))})
+    # una racha de 7 de local sin perder sobre un récord de 5: CUIDADO (texto del TS incluido)
+    larga = [(1, 0), (0, 1)] * 2 + [(1, 1)] * 5 + [(0, 2)] + [(2, 0), (0, 1), (1, 1)] + [(0, 1)] + [(1, 0)] * 7
+    out.append({"nombre": "Racha larga", "condicion": "L", "filas": _filas(larga, ["Local"] * len(larga))})
     out.append({"nombre": "Vacío", "condicion": "V", "filas": []})
     return [{**c, "esperado": describir(c["filas"], c["condicion"], c["nombre"])} for c in out]
 
@@ -59,14 +62,26 @@ def main():
     np_local = next(f for f in ev["familias"] if f["familia"] == "noPierde" and f["ambito"] == "local")
     check("Everton: 4 de local sin perder, supera su récord de 3, y va destacada",
           np_local["partidos"] == 4 and np_local["record"] == "supera" and np_local["destacada"], np_local)
-    check("el récord se cuenta con la dirección del backtest: se sostiene MÁS, no revienta",
-          "se sostienen algo MÁS" in np_local["texto"] and "revient" not in np_local["texto"], np_local["texto"])
+    check("un récord corto (4) va destacado pero SIN cuidado: no grita",
+          not np_local["cuidado"] and "CUIDADO" not in np_local["texto"], np_local)
+    from backend.analisis.familias import _texto, es_cuidado
+    grande = {"valor": True, "partidos": 9, "maximoPrevio": 8, "burbujasPrevias": 4, "record": "supera",
+              "frecuencia": 0.8, "n": 20}
+    t = _texto("Everton", "local", grande, "sin perder", "perdiendo")
+    check("un récord grande (9, 5+) es CUIDADO con la carga, sin decir que revienta",
+          es_cuidado(grande) and "CUIDADO con cargar" in t and "causa que buscar" in t and "revient" not in t, t)
+    check("una burbuja grande que NO es récord no es cuidado",
+          not es_cuidado({**grande, "record": "no"}))
     check("el perfil de doble oportunidad va primero y dice que SÍ agrega al 1X2",
           ev["lineas"][0].startswith("Perfil de doble oportunidad de local") and "SÍ agrega" in ev["lineas"][0],
           ev["lineas"][:1])
     check("sin próximo solo se cuenta el total y no hay perfil",
           all(f["ambito"] == "total" for c in guardados if c["condicion"] is None for f in c["esperado"]["familias"])
           and all("perfilDc" not in c["esperado"] for c in guardados if c["condicion"] is None))
+    rl = next(c for c in guardados if c["nombre"] == "Racha larga")["esperado"]
+    check("los vectores dorados traen un caso con CUIDADO (lo prueba también el TS)",
+          any(f["cuidado"] and "CUIDADO" in f["texto"] for f in rl["familias"]),
+          [(f["familia"], f["partidos"], f["record"]) for f in rl["familias"] if f["destacada"]])
     vacio = next(c for c in guardados if c["nombre"] == "Vacío")["esperado"]
     check("sin historia no se inventa nada", not vacio["familias"] and not vacio["lineas"], vacio)
     check("la nota dice que es descripción, no riesgo", "descripción, no riesgo" in ev["nota"])

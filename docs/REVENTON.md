@@ -918,5 +918,25 @@ mercado 1.0276 · motor 1.0412 · motor + perfil 1.0345 (perfil − motor −0.0
 [−0.0132, +0.0010]). Sobre el mercado, ajustando en la mitad vieja y probando
 en la nueva (470/470): mercado + perfil − mercado +0.0031 [−0.0108, +0.0163],
 mercado + motor − mercado −0.0073 [−0.0164, +0.0029]. Sin evidencia de que el
-perfil agregue SOBRE la cuota; la respuesta firme sale de `--padron` en el
-servidor, con todas las cuotas guardadas.
+perfil agregue SOBRE la cuota; la respuesta firme saldría de `--padron` en el
+servidor, con todas las cuotas guardadas. **Decisión del usuario (17/10/2026):
+no hace falta correrlo; lo que importa es que esté como narrativa.** El perfil
+se queda como DATO del análisis, y la fórmula del motor no se toca.
+
+### 15.2 Narrativa: cuidado antes, causa después (17/10/2026)
+
+Everton 0-2 Chelsea: el Everton llegaba con su doble oportunidad de local
+enorme y anotando de local, y perdió sin marcar. El backtest dice que un récord
+así no se corta más que lo normal, y por eso mismo un corte así tiene una causa
+que rastrear. Dos piezas, sin puntos ni riesgo:
+
+- **Antes**: una burbuja de otra familia en su récord y de 5+ partidos
+  (`cuidado`, `familias.es_cuidado`) se lee como CUIDADO con la carga. Va en
+  ámbar en la tarjeta y como alerta `FAMILIA-RECORD` (tipo `dato`) en la tira
+  del parte. Es prudencia, como `K-EXTREMO`, no una probabilidad de corte.
+- **Después**: `objetivo.otrasFamilias` del veredicto reconstruye las burbujas
+  destacadas «al día del partido» y lista las que el marcador cortó. Las
+  grandes o en su récord quedan `porExplicar`, y quien cierra el caso escribe
+  la causa en `porLado.*.cortes` con un mecanismo de la lista cerrada del
+  estudio de reventones (`reventones.MECANISMOS`). Juntas, esas causas son la
+  materia para que lo «entendible y rastreable» se pueda contar.

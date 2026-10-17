@@ -9,6 +9,7 @@ import type { BurbujaFamiliaDTO, FilaFamilia, OtrasFamiliasDTO, PerfilDcDTO } fr
 
 const MIN_RACHAS_RECORD = 3
 const DESTACADA_DESDE = 3
+const CUIDADO_DESDE = 5
 const AMBITO: Record<string, string> = { local: 'de local', visita: 'de visita', total: 'en total' }
 
 const FAMILIAS: Record<string, (gf: number, gc: number) => boolean> = {
@@ -102,14 +103,19 @@ function burbuja(filas: FilaFamilia[], clave: string) {
   }
 }
 
+function esCuidado(b: { record: BurbujaFamiliaDTO['record']; partidos: number }): boolean {
+  return (b.record === 'supera' || b.record === 'iguala') && b.partidos >= CUIDADO_DESDE
+}
+
 function texto(nombre: string, ambito: string, b: NonNullable<ReturnType<typeof burbuja>>, si: string, no: string): string {
   let t = `${nombre} lleva ${b.partidos} ${b.partidos === 1 ? 'partido' : 'partidos'} ${AMBITO[ambito]} ${b.valor ? si : no}`
   if (b.maximoPrevio !== null) t += ` (su máximo previo era ${b.maximoPrevio})`
-  if (b.record === 'supera')
-    t += ': está en terreno nuevo, y en su récord estas burbujas se sostienen algo MÁS de lo que dice su ' +
-      'frecuencia, no menos (REVENTON §15)'
-  else if (b.record === 'iguala')
-    t += ': iguala su récord; en ese estado suelen sostenerse algo más de lo esperado, no cortarse (§15)'
+  if (b.record === 'supera' || b.record === 'iguala') {
+    t += b.record === 'supera' ? ': está en terreno nuevo, por encima de su récord' : ': iguala su récord'
+    if (esCuidado(b))
+      t += ' — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más ' +
+        '(§15), así que si se corta hay una causa que buscar'
+  }
   // la frecuencia del ESTADO en que está hoy, para que la línea no se contradiga
   const frec = b.valor ? b.frecuencia : 1 - b.frecuencia
   t += `. En ${b.n} partidos ${AMBITO[ambito]} va ${b.valor ? si : no} el ${redondear(frec * 100)} %.`
@@ -149,7 +155,7 @@ export function describirFamilias(filasIn: FilaFamilia[], condicion: 'L' | 'V' |
       if (!b) continue
       const t = texto(nombre, ambito, b, si, no)
       const destacada = b.partidos >= DESTACADA_DESDE || b.record === 'supera' || b.record === 'iguala'
-      out.familias.push({ familia: clave, ambito, ...b, destacada, texto: t })
+      out.familias.push({ familia: clave, ambito, ...b, destacada, cuidado: esCuidado(b), texto: t })
       if (destacada) out.lineas.push(t)
     }
   }

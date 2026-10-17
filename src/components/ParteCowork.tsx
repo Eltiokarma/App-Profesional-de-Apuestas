@@ -643,6 +643,10 @@ function PanelTde({ tde, nombreDe }: { tde: TdeParte; nombreDe: (l: 'a' | 'b') =
  *  ingesta; lo que está en prosa lo escribió Cowork. La distinción importa
  *  porque es lo que hace auditable el pronóstico: nadie puede ajustar el
  *  marcador a la explicación después. */
+const FAMILIA_CORTE: Record<string, string> = {
+  noPierde: 'sin perder', noGana: 'sin ganar', 'gana2+': 'ganando por 2+', 'gana3+': 'ganando por 3+',
+  'pierde2+': 'perdiendo por 2+', anota: 'anotando', recibe: 'recibiendo', ambosMarcan: 'ambos marcan', 'mas2.5': 'más de 2,5',
+}
 const ESCENARIO_TXT = { ganar: 'Para ganar', empatar: 'Para empatar', perder: 'Si pierde' } as const
 const FILA_TXT: Record<string, string> = {
   tactica: 'Táctica central', pelotaParada: 'Pelota parada', reloj: 'Gestión del reloj', base: 'Base',
@@ -783,6 +787,20 @@ function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' 
             </span>
           )
         })}
+        {/* las otras burbujas que el partido cortó: las grandes o en su récord piden su causa */}
+        {(['a', 'b'] as const).flatMap((lado) =>
+          (o.otrasFamilias?.[lado]?.cortadas ?? []).filter((c) => c.porExplicar).map((c) => {
+            const exp = v.porLado[lado]?.cortes?.find((x) => x.familia === c.familia && x.ambito === c.ambito)
+            return (
+              <span key={`fc-${lado}-${c.ambito}-${c.familia}`}
+                style={{ font: '600 11.5px var(--mono)', color: exp ? 'var(--t2)' : 'var(--mark)' }}
+                title={`${c.antes}${exp ? `\n\nPor qué: ${exp.porque}` : '\n\nsin explicar: va en porLado.*.cortes'}`}>
+                ✂ {FAMILIA_CORTE[c.familia] ?? c.familia} {c.ambito === 'total' ? '' : `de ${c.ambito} `}({c.partidos}{c.record === 'supera' || c.record === 'iguala' ? ', récord' : ''})
+                {exp ? ` · ${exp.mecanismo.replace(/_/g, ' ')}` : ' · sin causa'} · {nombreDe(lado)}
+              </span>
+            )
+          }),
+        )}
         <span style={{ flex: 1 }}></span>
         {/* la población del caso: lo que decide si esto cuenta o solo ilustra */}
         <span
