@@ -5,7 +5,7 @@
 import random
 import sys
 
-from backend.backtest_familias import MIN_PREFIJO, comparar, observar_equipo
+from backend.backtest_familias import MIN_PREFIJO, comparar, observar_equipo, perfil_dc
 
 fallos = 0
 
@@ -72,6 +72,22 @@ def main():
     obs_l = _solo(observar_equipo(9, _filas(alterna, local=False)), "gana1+", "local")
     check("el ámbito local solo mira partidos de local (ahí siempre gana: la racha siempre sigue)",
           obs_l and all(o[6] for o in obs_l if o[2]), obs_l[:2])
+
+    # ── el perfil de doble oportunidad en la condición de HOY ─────────────
+    # de local: G E G P G G G G (racha de 4 sin perder, récord previo 3 con 3 cortadas)
+    loc = [(1, 0), (1, 1), (2, 0), (0, 1), (1, 0), (0, 1), (2, 1), (1, 1), (0, 2),
+           (1, 0), (1, 1), (2, 2), (1, 0)]
+    filas = [{"fecha": f"2025-02-{i + 1:02d}T20:00:00Z", "condicion": "Local", "golesFavor": a, "golesContra": b}
+             for i, (a, b) in enumerate(loc)]
+    filas += [{"fecha": f"2025-03-{i + 1:02d}T20:00:00Z", "condicion": "Visita", "golesFavor": 0, "golesContra": 3}
+              for i in range(5)]
+    pl = perfil_dc(filas, True)
+    check("el perfil de local cuenta solo los de local (13) y no pierde 10 de 13",
+          pl["partidos"] == 13 and abs(pl["noPierde"] - (10 + 1) / (13 + 2)) < 1e-4, pl)
+    check("la burbuja de «no pierde» abierta es de 4 y supera su récord de 3", pl["burbuja"] == 4 and pl["record"] == 2, pl)
+    pv = perfil_dc(filas, False)
+    check("de visita perdió las 5: no pierde casi nunca y su burbuja es negativa (−5)",
+          pv["noPierde"] < 0.2 and pv["burbuja"] == -5, pv)
 
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)

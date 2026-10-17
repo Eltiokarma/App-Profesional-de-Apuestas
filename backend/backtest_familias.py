@@ -124,6 +124,48 @@ def observar_equipo(team: int, filas: list[dict]) -> list[tuple]:
     return obs
 
 
+def _logit(p: float) -> float:
+    p = min(max(p, 1e-4), 1 - 1e-4)
+    return math.log(p / (1 - p))
+
+
+def perfil_dc(prefijo: list[dict], local_hoy: bool) -> dict:
+    """El perfil de DOBLE OPORTUNIDAD del equipo en la condición en que juega
+    HOY, solo con los partidos anteriores (el backtest del 1X2 lo usa sin fuga
+    y la narrativa del análisis lo cuenta): con qué frecuencia no pierde y no
+    gana de local (o de visita), la burbuja abierta de «no pierde» con signo
+    (+ racha sin perder · − racha perdiendo) y si está en su récord.
+
+    El usuario (17/10/2026): «hay equipos que, como no tienen tan buen
+    rendimiento, pueden empatar como locales o jugarse un empate como
+    visitas». El perfil es eso; la racha es lo que el §15 ya midió."""
+    cond = "Local" if local_hoy else "Visita"
+    sub = [f for f in _filas_validas(prefijo) if f.get("condicion") == cond]
+    n = len(sub)
+    np_ = sum(1 for f in sub if int(f["golesFavor"]) >= int(f["golesContra"]))
+    ng = sum(1 for f in sub if int(f["golesFavor"]) <= int(f["golesContra"]))
+    serie = [int(f["golesFavor"]) >= int(f["golesContra"]) for f in sub]
+    largo, maximos, cortadas = 0, {True: 0, False: 0}, {True: 0, False: 0}
+    for t, x in enumerate(serie):
+        if t > 0 and x != serie[t - 1]:
+            maximos[serie[t - 1]] = max(maximos[serie[t - 1]], largo)
+            cortadas[serie[t - 1]] += 1
+            largo = 1
+        else:
+            largo += 1
+    v = serie[-1] if serie else None
+    rec = 0
+    if v is not None and cortadas[v] >= MIN_RACHAS_RECORD:
+        rec = 2 if largo > maximos[v] else 1 if largo == maximos[v] else 0
+    return {
+        "condicion": cond, "partidos": n,
+        "noPierde": round((np_ + 1) / (n + 2), 4), "noGana": round((ng + 1) / (n + 2), 4),
+        "burbuja": (largo if v else -largo) if v is not None else 0,
+        "maximoPrevio": maximos[v] if v is not None else 0,
+        "record": rec,                       # 2 supera · 1 iguala · 0 no (o sin base)
+    }
+
+
 def _decil(p: float) -> int:
     return min(9, int(p * 10))
 

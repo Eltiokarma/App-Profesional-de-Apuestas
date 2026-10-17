@@ -869,3 +869,44 @@ frecuencia, no menos»). Everton–Chelsea no lo habría corregido: la guía
 histórica decía que esa racha tendía a seguir. Re-correr con
 `python -m backend.backtest_familias --padron` (servidor) o `--desde-json`
 (historias bajadas) cuando haya más temporada.
+
+### 15.1 El PERFIL de doble oportunidad sí agrega al 1X2 (17/10/2026)
+
+El §15 midió la burbuja (largo y récord) contra la frecuencia del equipo, no
+la frecuencia misma contra el motor. El usuario: «hay equipos que, como no
+tienen tan buen rendimiento, pueden empatar como locales o jugarse un empate
+como visitas». `backtest_burbuja_1x2` suma dos modelos sobre el motor (M0):
+
+- **M7 + perfil DC**: la frecuencia (Laplace, solo partidos ANTERIORES) con que
+  el local no pierde y no gana DE LOCAL, y el visitante DE VISITA
+  (`backtest_familias.perfil_dc`).
+- **M8 + perfil y burbuja DC**: más la burbuja abierta de «no pierde» en la
+  condición y su récord.
+
+Corrido sobre las historias y niveles reales bajados de `/constantes` y
+`/niveles` (518 equipos del padrón, corte temporal 80/20, sin cuotas):
+
+| modelo | log-loss | Brier | acierto |
+|---|---|---|---|
+| M0 motor | 1.0430 | 0.6275 | 47.3 % |
+| M7 + perfil DC | **1.0316** | **0.6193** | **47.9 %** |
+| M8 + perfil y burbuja DC | 1.0313 | 0.6192 | 47.8 % |
+
+M7 − M0: **−0.0114 [−0.0142, −0.0084]**: el perfil MEJORA al motor. M8 − M7:
+−0.0003 [−0.0006, +0.0001]: la burbuja no agrega sobre el perfil (lo mismo
+que el §15). M1-M6 dan lo del §13 (la racha, el riesgo y las K no agregan),
+así que la corrida reproduce lo conocido. Para dimensionarlo: el mercado le
+saca 0,050 al motor (§13.5); el perfil recupera ~0,011, casi un cuarto.
+
+Coeficientes (por desvío, contra el empate): que el local NO GANE de local
+baja su victoria (−0.14) y que el visitante NO GANE de visita baja la suya
+(−0.13); que el visitante NO PIERDA de visita sube su victoria (+0.07). Lectura
+probable: el motor usa una localía igual para todos y el perfil trae la de
+CADA equipo (el que en casa empata mucho, el que afuera se planta).
+
+**Qué queda por medir antes de tocar la fórmula** (la matemática del motor
+es sagrada, `MOTOR_SAD_EXTRACCION.md`): (1) contra el MERCADO sobre los mismos
+partidos —en el servidor, con `--padron`, que trae las cuotas—: si la cuota ya
+lo tiene, el valor es de lectura, no de apuesta; (2) qué ventana del perfil
+sirve más (toda la historia, la temporada, los últimos 20 de la condición).
+Mientras tanto entra al análisis como DATO con su frecuencia por condición.

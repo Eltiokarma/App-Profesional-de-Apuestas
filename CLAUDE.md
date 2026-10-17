@@ -346,7 +346,10 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   largo ni el récord predicen el partido siguiente mejor que la frecuencia
   propia (1 de 48 combinaciones, lo esperable por azar), y el récord se
   SOSTIENE algo más, no revienta: entran al análisis como descripción, sin
-  puntos. **Por período** (§10-bis):
+  puntos. Lo que SÍ agrega al 1X2 es el PERFIL de doble oportunidad
+  por condición (§15.1: con qué frecuencia el local no pierde / no gana de
+  local y el visitante de visita; M7 − motor −0.011 de log-loss con el
+  intervalo bajo cero): falta medirlo contra el mercado antes de la fórmula. **Por período** (§10-bis):
   `historialPorPeriodo` repite las medidas acotadas a temporada · año · DT
   vigente · últimos 20, filtrando por la fecha del reventón sobre los mismos
   episodios; la global sigue mandando en el riesgo (es la calibrada) y un
