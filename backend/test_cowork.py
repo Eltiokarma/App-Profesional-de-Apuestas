@@ -3461,6 +3461,41 @@ def main():
           _appmod._cowork_puede("POST", f"{A}/analisis/cowork/reventones/1/2/estudio")
           and not _appmod._cowork_puede("POST", f"{A}/analisis/cowork/reventones/1/2"))
 
+    # ── INCIDENCIAS: lo roto que ven las corridas, para el mantenimiento (18/10/2026) ──
+    check("el token de Cowork deposita incidencias y marca su estado, sin borrar",
+          _appmod._cowork_puede("POST", f"{A}/analisis/cowork/incidencias")
+          and _appmod._cowork_puede("POST", f"{A}/analisis/cowork/incidencias/3/estado")
+          and not _appmod._cowork_puede("DELETE", f"{A}/analisis/cowork/incidencias/3"))
+    _ri = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "veredictos", "corrida": "18/10 20:12", "items": [
+        {"titulo": "DT de Bournemouth: la base dice Tindall", "area": "dt", "fixtureId": 1557427,
+         "detalle": "tres onces de Rose"},
+        {"titulo": "Ventana relativa cobrada en minutos", "area": "ventanas", "severidad": "grave"},
+        {"area": "tde"}]})
+    _ji = _ri.json()
+    check("depositar: dos nuevas, un área y una severidad fuera de lista se rechazan con motivo y se corrigen, "
+          "sin título no entra",
+          _ri.status_code == 200 and len(_ji["nuevas"]) == 2 and len(_ji["rechazos"]) == 3, _ji)
+    _ri2 = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "partes", "items": [
+        {"titulo": "dt de bournemouth: la base dice TINDALL", "area": "dt", "fixtureId": 1557427}]}).json()
+    check("la misma incidencia abierta no se duplica: suma `veces`",
+          _ri2["nuevas"] == [] and _ri2["repetidas"] == [_ji["nuevas"][0]], _ri2)
+    _li = c.get(f"{A}/analisis/cowork/incidencias").json()
+    _bour = next(x for x in _li["incidencias"] if x["id"] == _ji["nuevas"][0])
+    check("el listado trae las abiertas con sus veces", _bour["veces"] == 2 and _bour["area"] == "dt"
+          and _li["porEstado"].get("abierta", 0) >= 2, _bour)
+    check("cerrar sin `resolucion` se rechaza (cerrar callado es esconderla)",
+          c.post(f"{A}/analisis/cowork/incidencias/{_bour['id']}/estado", json={"estado": "resuelta"}).status_code == 422)
+    _ce = c.post(f"{A}/analisis/cowork/incidencias/{_bour['id']}/estado",
+                 json={"estado": "resuelta", "resolucion": "once de 4 días gana a /coachs", "pr": "#149"}).json()
+    check("con resolución se cierra, con PR y fecha de cierre", _ce["estado"] == "resuelta" and _ce["pr"] == "#149"
+          and _ce["cerradoEn"], _ce)
+    _ri3 = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "partes", "items": [
+        {"titulo": "DT de Bournemouth: la base dice Tindall", "area": "dt", "fixtureId": 1557427}]}).json()
+    check("si vuelve a aparecer después de resuelta, entra NUEVA (el parche no alcanzó)", len(_ri3["nuevas"]) == 1, _ri3)
+    check("un origen desconocido es 422", c.post(f"{A}/analisis/cowork/incidencias",
+                                                  json={"origen": "x", "items": [{"titulo": "t"}]}).status_code == 422)
+    check("y el latido cuenta las incidencias", "incidencias" in c.get(f"{A}/analisis/cowork/latido").json())
+
     print()
     print(f"{'TODO OK' if not fallos else f'{fallos} FALLAS'}")
     return 1 if fallos else 0

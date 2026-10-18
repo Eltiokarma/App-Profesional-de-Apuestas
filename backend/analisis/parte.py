@@ -3829,6 +3829,15 @@ def latido(horas: int = 36) -> dict:
         motivos.append(cuotas["alarma"])
     if presupuesto["alarma"]:
         motivos.append(presupuesto["alarma"])
+    # LO QUE LAS CORRIDAS VIERON ROTO Y NADIE ARREGLÓ (incidencias, 18/10/2026)
+    try:
+        from backend.analisis import incidencias as _inc
+        inc = _inc.resumen_latido()
+    except Exception:  # noqa: BLE001 — la vigilancia no tumba el latido
+        inc = None
+    if inc and inc["bloquean"]:
+        motivos.append(f"{inc['bloquean']} incidencia(s) que bloquean sin resolver "
+                       "(GET /analisis/cowork/incidencias)")
     estado = "rojo" if depositados == 0 else ("ambar" if motivos else "verde")
     return {
         "estado": estado,
@@ -3851,6 +3860,7 @@ def latido(horas: int = 36) -> dict:
         "sinOnceCerrado": sin_xi,
         "cuotasPrepartido": cuotas,
         "presupuestoApi": presupuesto,
+        "incidencias": inc,
         "nota": "esto solo mira; no dispara nada. El silencio cuenta como fallo: "
                 "cero partes en la ventana es ROJO, no «sin novedad».",
     }

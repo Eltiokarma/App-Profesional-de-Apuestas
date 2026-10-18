@@ -200,6 +200,17 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   fallo** (cero partes en la ventana = rojo) y la cobertura se mide **contra lo
   que la agenda habría elegido**, no contra lo depositado. La banda no se pinta
   cuando todo está verde: un aviso permanente se deja de leer.
+  **Lo roto se deposita y se arregla solo** (18/10/2026, pedido del usuario:
+  la API siempre puede fallar y aparecen errores nuevos): cada corrida manda
+  su «Roto o a mirar» a `POST /analisis/cowork/incidencias`
+  (`backend/analisis/incidencias.py`; la misma abierta suma `veces`, una
+  resuelta que reaparece entra nueva) y la rutina de **mantenimiento**
+  (`corrida-sad`, modo `mantenimiento`) las verifica contra los datos, las
+  clasifica (`dato_api` · `por_diseno` · `usuario` · `descartada`) o las
+  arregla con un test, valida TODO y mergea solo en verde y fuera de las zonas
+  sagradas (motor, números calibrados, skills, tokens, datos, cuarentenas,
+  Railway): eso va a `usuario` con la propuesta. El latido cuenta las
+  abiertas (`incidencias`) y pasa a ámbar con alguna que bloquea.
 - **El tamaño de `sad.db` es la factura de Railway.** Cobra la RAM por hora
   y cuenta la caché de archivos: cada página de la base que algo lee queda en
   memoria facturada. En 09/2026 la base llegó a 30 GB y costó 61 dólares con

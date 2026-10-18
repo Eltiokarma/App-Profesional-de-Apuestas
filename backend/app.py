@@ -95,6 +95,11 @@ _COWORK_PERMITIDO = tuple(
         ("POST", r"/analisis/cowork/\d+/dt"),
         # el estudio de un reventón hacia atrás: escribe SOLO su tabla, 0 cuota
         ("POST", r"/analisis/cowork/reventones/\d+/\d+/estudio"),
+        # APERTURA DELIBERADA (18/10/2026): las corridas depositan lo que vieron
+        # roto y la rutina de mantenimiento marca qué hizo con cada cosa. Solo
+        # escribe la tabla `incidencia`: 0 tokens, 0 cuota, nada del parte.
+        ("POST", r"/analisis/cowork/incidencias"),
+        ("POST", r"/analisis/cowork/incidencias/\d+/estado"),
         # lo que el pipeline necesita LEER para escribir el parte
         ("GET", r"/(?:health|fixtures|equipos|ligas|cuotas|constantes|constantes-cuota"
                 r"|niveles|predicciones|analisis-prepartido)(?:/.*)?"),
@@ -2697,6 +2702,38 @@ def cowork_reventon_estudio(fixture_id: int, equipo_id: int, body: dict = Body(.
         return reventones.guardar_estudio(fixture_id, equipo_id, body)
     except reventones.EstudioInvalido as e:
         raise HTTPException(422, str(e))
+
+
+# ── incidencias de las corridas: lo roto, para la rutina de mantenimiento ──
+@app.post(API + "/analisis/cowork/incidencias")
+def cowork_incidencias_depositar(body: dict = Body(...)):
+    """La corrida deposita su «Roto o a mirar»: `{origen, corrida?, items:
+    [{titulo, area, severidad?, detalle?, fixtureId?}]}`. Una abierta con el
+    mismo título (y partido) no se duplica: suma `veces`."""
+    from backend.analisis import incidencias
+    try:
+        return incidencias.depositar(body)
+    except incidencias.IncidenciaInvalida as e:
+        raise HTTPException(422, str(e))
+
+
+@app.get(API + "/analisis/cowork/incidencias")
+def cowork_incidencias(estado: str = "abierta", limite: int = Query(default=200, ge=1, le=1000)):
+    """Las incidencias por estado (por defecto las abiertas), graves y repetidas primero."""
+    from backend.analisis import incidencias
+    return incidencias.listar(estado, limite)
+
+
+@app.post(API + "/analisis/cowork/incidencias/{inc_id}/estado")
+def cowork_incidencia_estado(inc_id: int, body: dict = Body(...)):
+    """`{estado, resolucion, pr?}`: qué se hizo con ella. Cerrar exige `resolucion`."""
+    from backend.analisis import incidencias
+    try:
+        return incidencias.cambiar_estado(inc_id, body)
+    except incidencias.IncidenciaInvalida as e:
+        raise HTTPException(422, str(e))
+    except KeyError:
+        raise HTTPException(404, f"no hay incidencia {inc_id}")
 
 
 @app.get(API + "/analisis/cowork/{fixture_id}")

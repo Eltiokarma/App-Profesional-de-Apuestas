@@ -1,6 +1,6 @@
 ---
 name: corrida-sad
-description: Corrida del pipeline SAD con Claude Code (reemplaza a Cowork desde el 13/10/2026). Modo `partes` analiza los partidos de la agenda con los skills (EFE, Teorema del Echado, DTP, sad-analysis) y deposita un parte por partido; modo `veredictos` cierra con autopsia por skill los partidos jugados; modo `reventones` estudia hacia atrás burbujas que reventaron (TDE de los dos equipos, DTP, EFE de ese día). Usar cuando una rutina programada o el usuario pida «la corrida», «los partes de hoy», «validar lo de ayer» o «los veredictos».
+description: Corrida del pipeline SAD con Claude Code (reemplaza a Cowork desde el 13/10/2026). Modo `partes` analiza los partidos de la agenda con los skills (EFE, Teorema del Echado, DTP, sad-analysis) y deposita un parte por partido; modo `veredictos` cierra con autopsia por skill los partidos jugados; modo `reventones` estudia hacia atrás burbujas que reventaron (TDE de los dos equipos, DTP, EFE de ese día); modo `mantenimiento` lee las incidencias que dejaron las corridas, las verifica y arregla con tests lo que es código. Usar cuando una rutina programada o el usuario pida «la corrida», «los partes de hoy», «validar lo de ayer», «los veredictos» o «el mantenimiento».
 ---
 
 # Corrida SAD con Claude Code
@@ -65,7 +65,8 @@ cae en la raíz del repo (17/10/2026).
    ya estén; el ciclo en vivo del backend lo vuelve a hacer solo cuando salen
    las alineaciones). `GET …/agenda` de nuevo: `porHacer` tiene que
    haber quedado vacío salvo lo que se descartó a propósito.
-5. Respuesta final, tres líneas: partes depositados (fixtureId y partido),
+5. Depositá lo roto como incidencias (sección de abajo). Respuesta final,
+   tres líneas: partes depositados (fixtureId y partido),
    cuáles no y por qué, y qué se rompió (incluido lo que dijo el latido).
 
 ### Encargo de un partido (copiar entero al subagente)
@@ -205,7 +206,8 @@ cae en la raíz del repo (17/10/2026).
 > `POST $B/analisis/cowork/{id}/veredicto` y leé `rechazos`. Respuesta final:
 > marcador, veredicto por lado y la lista de lecciones (skill · regla).
 
-3. Respuesta final, tres líneas: veredictos cerrados, lecciones por skill, y
+3. Depositá lo roto como incidencias (sección de abajo). Respuesta final,
+   tres líneas: veredictos cerrados, lecciones por skill, y
    qué no se pudo cerrar y por qué.
 
 ## Modo `reventones` (estudio hacia atrás)
@@ -292,6 +294,94 @@ nuestras probabilidades, no de la casa.
    mecanismos que más se repitieron (`GET …/reventones/resumen?liga=<id>`), y
    qué no se pudo estudiar y por qué.
 
+## Al terminar partes, veredictos o reventones: depositá lo roto
+
+Tu «Roto o a mirar» NO se queda en el chat: nadie lo lee ahí. Antes de avisar
+al celular, mandalo como incidencias (una por hallazgo, aunque sea chico):
+
+```
+POST $B/analisis/cowork/incidencias
+{"origen": "partes" | "veredictos" | "reventones",
+ "corrida": "18/10 tramo 1",
+ "items": [{"titulo": "DT de Bournemouth: la base dice Tindall y dirige Rose",
+            "area": "dt", "severidad": "error", "fixtureId": 1557427,
+            "detalle": "qué viste, dónde, con qué dato; qué hiciste en el parte"}]}
+```
+
+- `area`: dt · once · ficha · tde · dtp · f1 · timeline · reventon · burbujas
+  · agenda · latido · cuotas · api · contrato · skill · aprendizaje · otro.
+- `severidad`: `bloquea` (no se pudo depositar o cerrar, o el número que
+  manda está mal) · `error` (la app dijo algo falso, y lo corregiste a mano o
+  quedó así) · `aviso` (raro, a mirar).
+- El mismo título abierto no se duplica, suma `veces`: escribilo igual cada vez
+  que lo veas; que se repita es la señal de que el parche no alcanzó.
+- Lo que es tuyo de corregir en el parte (un DT mal escrito) no es incidencia;
+  lo que la APP hizo mal, sí, aunque lo hayas sorteado.
+
+## Modo `mantenimiento` (los parches, automáticos)
+
+La rutina diaria que arregla lo que las corridas vieron roto (pedido del
+usuario, 18/10/2026: la API siempre puede fallar y van a aparecer errores
+nuevos). Acá SÍ se toca el código, con las reglas del repo (`CLAUDE.md` manda)
+y con freno.
+
+1. `git fetch origin main`; trabajá en la rama designada de la sesión
+   recreada desde `origin/main` (`git checkout -B <rama> origin/main`: su PR
+   anterior ya se mergeó o no existe). `GET $B/analisis/cowork/incidencias`
+   (abiertas, graves y repetidas primero) y `GET $B/analisis/cowork/latido`.
+   Sin incidencias abiertas: avisá «nada que arreglar» y terminá.
+2. **Verificá cada una contra los datos antes de tocar nada** (los GET de la
+   API, el código, los tests): una incidencia es un reporte, no una orden.
+   Clasificala:
+   - `por_diseno`: la app hace lo que se decidió (está en `CLAUDE.md` o en el
+     doc del área). Resolución: la regla y dónde está escrita.
+   - `dato_api`: la API trajo algo malo y no hay regla razonable que lo
+     evite. Resolución: qué dato, de dónde, y qué alerta ya lo cubre.
+   - `usuario`: le toca a una persona (una variable de Railway, una
+     cuarentena o un desmentido con la llave maestra, una decisión).
+     Resolución: qué hacer, exacto.
+   - `descartada`: no se reproduce. Resolución: qué miraste.
+   - código: marcala `en_curso` y arreglala (paso 3).
+3. **El parche**: el cambio mínimo que lo arregla, con un test que falla sin
+   él (en el `test_*.py` del área o en `backend/test_cowork.py`) y un
+   comentario con el caso real que lo motivó, como el resto del repo. Cambios
+   de contrato: primero `docs/openapi.yaml`, después backend, `src/api/
+   types.ts`, los dos datasources y tests. Como mucho 8 incidencias por
+   corrida; las que no entren quedan abiertas para la siguiente.
+4. **Lo que NO se toca solo** (va a `usuario` con la propuesta escrita en
+   `resolucion`, sin commit):
+   - la matemática del motor (`src/motor/`, `backend/analisis/motor.py`,
+     `docs/MOTOR_SAD_EXTRACCION.md`) y cualquier número calibrado
+     (`PUNTOS_*`, `TASA_BACKTEST`, `MOVIMIENTO*` en `burbuja.py`/`burbuja.ts`,
+     los pesos de un skill, umbrales del TDE/EFE);
+   - los skills (`docs/skills/`) y lo que puntúan;
+   - la autenticación y los tokens (`_COWORK_PERMITIDO`, `SAD_TOKEN_*`):
+     abrir un endpoint es una decisión;
+   - borrar datos, levantar o poner cuarentenas, el presupuesto de la API
+     (`SAD_*` de cuota) y las variables de Railway;
+   - un cambio de más de 10 archivos o ~400 líneas: es un rediseño, no un
+     parche.
+5. **Validá todo**: `npm run build`, `npm run test:motor`, `test:kview`,
+   `test:burbuja`, `test:familias` y TODOS los `python -m backend.test_*` de
+   `CLAUDE.md` (test_api, test_cowork, test_jugadores, test_ficha,
+   test_en_vivo, test_dtp, test_calendario, test_cronologia, test_preflight,
+   test_burbuja, test_familias, test_coherencia, test_modo_fallo, test_jev,
+   test_backtest_burbuja, test_backtest_1x2, test_backtest_familias,
+   test_cuotas_lote, test_despensa); si tocaste pantalla,
+   `scripts/audit-movil.mjs` a 360 y 390. Un test que falla y no es tuyo
+   (rojo en main también) se anota como incidencia nueva, no se tapa.
+6. Commit (en español, qué y por qué, con las líneas de atribución que dé el
+   entorno), push a la rama, PR a `main` con la lista de incidencias (id,
+   qué era, qué se hizo). **Merge solo si** todo el paso 5 dio verde Y el
+   diff respeta el paso 4; si no, el PR queda abierto y las incidencias en
+   `usuario` con el enlace.
+7. Cerrá cada incidencia: `POST $B/analisis/cowork/incidencias/{id}/estado`
+   con `{"estado": …, "resolucion": "…", "pr": "#N"}` (cerrar exige
+   resolución).
+8. Respuesta final, tres líneas: incidencias resueltas (con PR), derivadas
+   (dato_api · por_diseno · usuario, con qué tiene que hacer el usuario) y
+   abiertas que quedan.
+
 ## Al terminar cualquier modo: avisá al celular
 
 Las rutinas corren solas y el usuario no mira la sesión. Mandá las tres
@@ -303,5 +393,6 @@ nada que hacer. Sin el token, sin datos sensibles.
 
 - No levanta cuarentenas, no desmiente bancos, no abre revisiones ni marca
   lecciones `aplicada`: es del usuario, con la llave maestra.
-- No commitea ni toca el código. Si encuentra un bug de la app, lo describe
-  en la respuesta final (qué, dónde, con qué fixture) y nada más.
+- En partes, veredictos y reventones no commitea ni toca el código: un bug de
+  la app va como incidencia (qué, dónde, con qué fixture). El código lo toca
+  SOLO el modo `mantenimiento`, con sus reglas.
