@@ -1739,6 +1739,8 @@ export interface LatidoCoworkDTO {
   cuotasPrepartido?: { ventanaHoras: number; proximos: number; conCuota: number; ultimaCaptura: string | null; alarma: string }
   /** El plan diario de API-Football: lo usado, en qué, por hora y cuándo se agotó (hoy y ayer). */
   presupuestoApi?: { hoy: PresupuestoDiaDTO | null; ayer: PresupuestoDiaDTO | null; alarma: string }
+  /** lo que las corridas vieron roto y sigue sin resolver (incidencias) */
+  incidencias?: { abiertas: number; bloquean: number; masVieja: string | null; esperanAlUsuario: number } | null
   nota: string
 }
 

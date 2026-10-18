@@ -839,6 +839,95 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/RevisorDiario' }
+  /analisis/cowork/incidencias:
+    get:
+      summary: Lo que las corridas vieron roto, por estado
+      description: >
+        Cada corrida (partes, veredictos, reventones) deposita su «Roto o a mirar» acá y la
+        rutina de mantenimiento (`corrida-sad`, modo `mantenimiento`) lo lee, lo verifica, lo
+        arregla con tests o lo deriva. Por defecto las abiertas, las que bloquean y las más
+        repetidas primero; `estado=todas` trae todo.
+      parameters:
+        - { name: estado, in: query, schema: { type: string, default: abierta, enum: [abierta, en_curso, resuelta, dato_api, por_diseno, usuario, descartada, todas] } }
+        - { name: limite, in: query, schema: { type: integer, default: 200, minimum: 1, maximum: 1000 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  incidencias: { type: array, items: { $ref: '#/components/schemas/Incidencia' } }
+                  porEstado: { type: object, additionalProperties: { type: integer } }
+                  nota: { type: string }
+    post:
+      summary: La corrida deposita sus incidencias
+      description: >
+        `{origen, corrida?, items: [{titulo, area, severidad?, detalle?, fixtureId?}]}`. Una
+        abierta con el mismo título normalizado (y el mismo partido) no se duplica: suma
+        `veces`. Si una ya resuelta vuelve a aparecer, entra NUEVA: el parche no alcanzó. Abierto
+        al token acotado (solo escribe la tabla `incidencia`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [origen, items]
+              properties:
+                origen: { type: string, enum: [partes, veredictos, reventones, mantenimiento, usuario] }
+                corrida: { type: string }
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [titulo]
+                    properties:
+                      titulo: { type: string }
+                      area: { type: string, enum: [dt, once, ficha, tde, dtp, f1, timeline, reventon, burbujas, agenda, latido, cuotas, api, contrato, skill, aprendizaje, otro] }
+                      severidad: { type: string, enum: [bloquea, error, aviso], default: error }
+                      detalle: { type: string }
+                      fixtureId: { type: integer, nullable: true }
+      responses:
+        '200':
+          description: qué entró nuevo, qué se sumó y qué se rechazó
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nuevas: { type: array, items: { type: integer } }
+                  repetidas: { type: array, items: { type: integer } }
+                  rechazos: { type: array, items: { type: object, additionalProperties: true } }
+        '422': { description: origen desconocido o sin items }
+  /analisis/cowork/incidencias/{incId}/estado:
+    post:
+      summary: Qué se hizo con una incidencia
+      description: >
+        `{estado, resolucion, pr?}`. Cerrar o derivar (resuelta, dato_api, por_diseno, usuario,
+        descartada) EXIGE `resolucion`: cerrar callado es esconderla.
+      parameters:
+        - { name: incId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [estado]
+              properties:
+                estado: { type: string, enum: [abierta, en_curso, resuelta, dato_api, por_diseno, usuario, descartada] }
+                resolucion: { type: string }
+                pr: { type: string }
+      responses:
+        '200':
+          description: la incidencia actualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Incidencia' }
+        '404': { description: no existe }
+        '422': { description: estado desconocido o cierre sin resolución }
   /analisis/cowork/latido:
     get:
       summary: ¿Está corriendo el pipeline, o lleva días muerto en silencio?
@@ -3019,6 +3108,24 @@ components:
                       sistemaDeclarado: { type: string }
                       sistemaOficial: { type: string }
                       ausentesDeLaReferencia: { type: array, items: { type: string } }
+    Incidencia:
+      type: object
+      properties:
+        id: { type: integer }
+        origen: { type: string }
+        corrida: { type: string }
+        fixtureId: { type: integer, nullable: true }
+        area: { type: string }
+        severidad: { type: string, enum: [bloquea, error, aviso] }
+        titulo: { type: string }
+        detalle: { type: string }
+        estado: { type: string }
+        resolucion: { type: string }
+        pr: { type: string }
+        veces: { type: integer }
+        creadoEn: { type: string }
+        ultimaVez: { type: string }
+        cerradoEn: { type: string, nullable: true }
     RamaReasignacion:
       type: object
       properties:
@@ -3668,6 +3775,15 @@ components:
             conCuota: { type: integer }
             ultimaCaptura: { type: string, nullable: true }
             alarma: { type: string }
+        incidencias:
+          type: object
+          nullable: true
+          description: 'lo que las corridas vieron roto y sigue sin resolver (GET /analisis/cowork/incidencias); con alguna que bloquea, el latido pasa a ámbar'
+          properties:
+            abiertas: { type: integer }
+            bloquean: { type: integer }
+            masVieja: { type: string, nullable: true }
+            esperanAlUsuario: { type: integer }
         presupuestoApi:
           type: object
           description: >
