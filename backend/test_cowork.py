@@ -1433,6 +1433,23 @@ def main():
           and "9 de local sin perder" in _af[0]["detalle"] and "anotando" not in _af[0]["detalle"]
           and "cuidado" in _af[0]["detalle"], _af)
     check("sin reventón calculado, FAMILIA-RECORD no rompe", alertas_familias(None, {}) == [])
+    # ESPINA CONTRA EL RIESGO (Albion–Torque, 18/10/2026): riesgo ALTO de la
+    # racha − y espina «neutra» sin nombrar el riesgo
+    from backend.analisis.parte import alertas_espina, espina_vs_riesgo
+    _rv = {"a": {"actual": {"signo": "-"}, "riesgo": {"nivel": "alto"}},
+           "b": {"actual": {"signo": "-"}, "riesgo": {"nivel": "muy alto"}}}
+    _es = {"a": {"lectura": "neutra", "guia": "total", "porque": "dupla de 18 días, plantel en obra"},
+           "b": {"lectura": "positiva", "guia": "total", "porque": "rival más flojo"}}
+    _ae = alertas_espina(_rv, _es, {"a": "Albion", "b": "Torque"})
+    check("riesgo ALTO de una racha − con espina neutra → ESPINA-VS-RIESGO para Albion; Torque (corta) no",
+          len(_ae) == 1 and _ae[0]["equipo"] == "a" and "ALTO" in _ae[0]["detalle"]
+          and "no nombra el riesgo" in _ae[0]["detalle"], _ae)
+    _es2 = {"a": {"lectura": "neutra", "porque": "contra el riesgo alto porque la historia es de otro plantel"}}
+    check("si el porque nombra el riesgo, queda dicho (la alerta lo reconoce y el recibo no lo cobra)",
+          espina_vs_riesgo(_rv, _es2)[0]["dicho"] is True)
+    check("con riesgo BAJO, una espina que corta la racha también va contra",
+          espina_vs_riesgo({"a": {"actual": {"signo": "+"}, "riesgo": {"nivel": "bajo"}}},
+                           {"a": {"lectura": "cero"}})[0]["como"] == "la lee cortarse")
     _rech = []
     _ct = _cortes_veredicto([{"familia": "noPierde", "ambito": "local", "mecanismo": "bloque_bajo_del_rival", "porque": "p"},
                              {"familia": "noPierde", "ambito": "local", "mecanismo": "mala suerte", "porque": "q"},

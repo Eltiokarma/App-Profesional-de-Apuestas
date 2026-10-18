@@ -237,6 +237,11 @@ def main():
     check("rival 1.2: el equipo es MUY favorito (1.2 a favor, −3) → −2, BAJO",
           muy["familias"]["total"]["rival"]["favorito"] == "muy favorito" and muy["familias"]["total"]["riesgo"]["puntos"] == -2
           and muy["familias"]["total"]["riesgo"]["nivel"] == "bajo", muy["familias"]["total"]["riesgo"])
+    check("el motivo del favorito se dice desde la racha, sin «(favorito)» suelto (Albion, 18/10/2026)",
+          any(m == "el equipo es favorito: 0.9 de nivel sobre el rival, a favor de que la racha siga (-1)"
+              for m in lejos["familias"]["total"]["riesgo"]["motivos"])
+          and any(m.startswith("el equipo es muy favorito: 1.2 de nivel") for m in muy["familias"]["total"]["riesgo"]["motivos"]),
+          lejos["familias"]["total"]["riesgo"]["motivos"])
     # CONTRAMANO: la racha hecha toda de local y el próximo de visita (+1)
     cm = analizar([{**f, "condicion": "Local"} if i >= len(filas) - 6 else f for i, f in enumerate(filas)], ctx)
     check("racha de 6 toda de local y el próximo de visita → contramano (+1): 4, MUY ALTO",

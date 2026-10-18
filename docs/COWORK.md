@@ -1059,6 +1059,14 @@ Escribís vos (es juicio, no se puede calcular):
   vista al fijar las probabilidades y nombralo en el párrafo de las burbujas
   del ensayo y en el `porque` de la espina si mueve tu lectura. Los números no
   se copian: el backend los recalcula en `reventonCalculado.*.otrasFamilias`.
+  LA ESPINA CONTRA EL RIESGO SE DICE (18/10/2026, Albion–Torque: la tarjeta
+  decía riesgo ALTO de cortar su mala racha, la espina era «neutra» sin
+  nombrarlo, y Albion ganó). Podés leer contra el riesgo calculado, pero
+  entonces el `porque` dice «contra el riesgo alto porque…» y el ensayo lo
+  cuenta con esas palabras; si no, la tira grita ESPINA-VS-RIESGO y el
+  recibo lo cobra en `faltan`. El riesgo es de la BURBUJA, no del equipo:
+  con racha negativa, reventar es que el equipo deje de perder (la K vuelve
+  a cero o pasa a positiva), y ALTO es justamente eso.
   Escribí UNA línea por equipo en `lecturaSad.reventon`, por ejemplo:
   «A: muy alto (8), rival mucho más fuerte que su zona de reventón → no
   seguir la racha de A; B: bajo, sin señal». NO copies los números al
