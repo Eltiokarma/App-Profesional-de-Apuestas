@@ -5,6 +5,7 @@
 import type { BaseNivelDTO, BurbujasEquipoDTO, OtrasFamiliasDTO, DistribucionDTO, EscalaRivalDTO, FamiliaBurbuja, FamiliaBurbujaDTO, HistorialPeriodoDTO, HistorialSignoDTO, ReventonDTO } from '../api/types'
 import type { KCondKey } from '../data/types'
 import { fmtK, signFmt } from '../lib/kview'
+import { lecturaRiesgo } from '../lib/burbuja'
 
 interface Props {
   data: BurbujasEquipoDTO | null
@@ -16,9 +17,6 @@ interface Props {
   compact?: boolean
 }
 
-const RIESGO_COLOR: Record<string, string> = {
-  bajo: 'var(--up)', medio: 'var(--mark)', alto: 'var(--down)', 'muy alto': 'var(--down)', 'sin base': 'var(--t3)',
-}
 const GRADO_COLOR: Record<string, string> = {
   estable: 'var(--up)', 'en transición': 'var(--mark)', inestable: 'var(--down)', 'sin dato': 'var(--t3)',
 }
@@ -187,12 +185,12 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
             const rf = data.familias[f].riesgo
             const sel = f === familia
             const mandaF = data.mandan.familias.includes(f)
-            const color = rf ? RIESGO_COLOR[rf.nivel] : 'var(--t3)'
+            const color = rf ? lecturaRiesgo(data.familias[f].actual?.signo ?? '+', rf.nivel).color : 'var(--t3)'
             return (
               <button
                 key={f}
                 onClick={onFamilia ? () => onFamilia(f) : undefined}
-                title={`${FAMILIA_LABEL[f]}: ${rf ? 'riesgo ' + rf.nivel : 'sin burbuja abierta'}${mandaF ? ' · esta constante manda por el nivel del equipo' : ''}`}
+                title={`${FAMILIA_LABEL[f]}: ${rf ? lecturaRiesgo(data.familias[f].actual?.signo ?? '+', rf.nivel).titulo : 'sin burbuja abierta'}${mandaF ? ' · esta constante manda por el nivel del equipo' : ''}`}
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '5px 9px', borderRadius: 8, cursor: onFamilia ? 'pointer' : 'default', background: sel ? 'var(--bg3)' : 'transparent', border: `1px solid ${mandaF ? color : 'var(--line)'}`, color: sel ? 'var(--t1)' : 'var(--t2)' }}
               >
                 <span style={{ font: '600 9.5px var(--sans)' }}>{mandaF ? '★ ' : ''}{FAMILIA_LABEL[f]}</span>
@@ -318,9 +316,9 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
           {data.escala && !data.escala.comparable && <EscalaRival escala={data.escala} rival={data.proximo?.rival ?? 'el rival'} />}
 
           {/* el veredicto con sus motivos, uno por punto */}
-          <div style={{ padding: '9px 11px', borderRadius: 9, background: `color-mix(in oklch, ${RIESGO_COLOR[riesgo.nivel]}, transparent 90%)`, border: `1px solid color-mix(in oklch, ${RIESGO_COLOR[riesgo.nivel]}, transparent 60%)` }}>
+          <div style={{ padding: '9px 11px', borderRadius: 9, background: `color-mix(in oklch, ${lecturaRiesgo(signo, riesgo.nivel).color}, transparent 90%)`, border: `1px solid color-mix(in oklch, ${lecturaRiesgo(signo, riesgo.nivel).color}, transparent 60%)` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 5 }}>
-              <span style={{ font: '800 12px var(--sans)', color: RIESGO_COLOR[riesgo.nivel], textTransform: 'uppercase', letterSpacing: '.3px' }}>Riesgo de reventón {riesgo.nivel}</span>
+              <span style={{ font: '800 12px var(--sans)', color: lecturaRiesgo(signo, riesgo.nivel).color, textTransform: 'uppercase', letterSpacing: '.3px' }}>{lecturaRiesgo(signo, riesgo.nivel).titulo}</span>
               <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)' }}>{riesgo.puntos} pts</span>
               <Chip texto={`confianza ${riesgo.confianza}`} color={riesgo.confianza === 'alta' ? 'var(--up)' : riesgo.confianza === 'media' ? 'var(--mark)' : 'var(--t3)'} title={riesgo.confianzaMotivos.join(' · ')} />
             </div>

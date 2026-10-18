@@ -594,9 +594,13 @@ def _analizar_familia(filas: list[dict], familia: str, proximo: dict | None, est
             pf = PUNTOS_FAVOR[fav]
             puntos += pf
             if fav != "no":
-                quien_f = "el equipo es favorito" if signo == "+" else "el rival es mucho más fuerte"
-                motivos.append(f"{quien_f}: {abs(g)} de nivel a favor de que la racha siga ({fav})"
-                               + (f" ({pf:+d})" if pf else ""))
+                # dicho desde el lado de la racha: con racha − el favorito es el RIVAL
+                # («el rival es mucho más fuerte … (favorito)» confundía, Albion 18/10)
+                mucho = fav == "muy favorito"
+                quien_f = (f"el equipo es {'muy ' if mucho else ''}favorito: {abs(g)} de nivel sobre el rival"
+                           if signo == "+" else
+                           f"el rival es {'mucho ' if mucho else ''}más fuerte: {abs(g)} de nivel sobre el equipo")
+                motivos.append(f"{quien_f}, a favor de que la racha siga" + (f" ({pf:+d})" if pf else ""))
         # la racha hecha en la condición CONTRARIA a la del próximo partido
         racha = [f for f in filas if familia == "total" or f["condicion"] == ("Local" if familia == "local" else "Visita")]
         racha = racha[-ep["partidos"]:]

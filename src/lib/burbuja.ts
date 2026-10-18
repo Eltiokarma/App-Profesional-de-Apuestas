@@ -428,8 +428,12 @@ function analizarFamilia(filas: FilaK[], familia: FamiliaBurbuja, proximo: Proxi
       const pf = PUNTOS_FAVOR[fav]
       puntos += pf
       if (fav !== 'no') {
-        const quienF = signo === '+' ? 'el equipo es favorito' : 'el rival es mucho más fuerte'
-        motivos.push(`${quienF}: ${Math.abs(g)} de nivel a favor de que la racha siga (${fav})` + (pf ? ` (${pf > 0 ? '+' : ''}${pf})` : ''))
+        // dicho desde el lado de la racha: con racha − el favorito es el RIVAL
+        const mucho = fav === 'muy favorito'
+        const quienF = signo === '+'
+          ? `el equipo es ${mucho ? 'muy ' : ''}favorito: ${Math.abs(g)} de nivel sobre el rival`
+          : `el rival es ${mucho ? 'mucho ' : ''}más fuerte: ${Math.abs(g)} de nivel sobre el equipo`
+        motivos.push(`${quienF}, a favor de que la racha siga` + (pf ? ` (${pf > 0 ? '+' : ''}${pf})` : ''))
       }
     }
     // la racha hecha en la condición CONTRARIA a la del próximo partido
@@ -585,4 +589,17 @@ export function analizarBurbujas(filas: FilaK[], ctx: ContextoBurbuja): Burbujas
     periodos,
     aviso: AVISO_REVENTON,
   }
+}
+
+
+/** Cómo se dice el riesgo de reventón según el signo de la racha. Con racha +
+ *  reventar es dejar de ganar (riesgo, en rojo cuando es alto); con racha − es
+ *  dejar de perder: un «riesgo ALTO» en rojo se leía al revés (Albion–Torque,
+ *  18/10/2026), así que se dice «corte de la mala racha» y el color se invierte. */
+export function lecturaRiesgo(signo: '+' | '-' | string, nivel: string): { titulo: string; color: string } {
+  const pos = signo !== '-'
+  const alto = nivel === 'alto' || nivel === 'muy alto'
+  const color = nivel === 'sin base' ? 'var(--t3)' : nivel === 'medio' ? 'var(--mark)'
+    : (alto === pos ? 'var(--down)' : 'var(--up)')
+  return { titulo: pos ? `riesgo de que se corte la racha buena: ${nivel}` : `chance de que se corte la mala racha: ${nivel}`, color }
 }

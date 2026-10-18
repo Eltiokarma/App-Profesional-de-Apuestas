@@ -16,6 +16,7 @@ import type { MatrizParte,
   VeredictoParte, ZonaF,
 } from '../api/types'
 import { parsearMd, type MdBloque, type MdInline } from '../lib/md'
+import { lecturaRiesgo } from '../lib/burbuja'
 import { parsearOnce } from '../lib/once'
 import { loadCalendarioSad, resolverXiParte, type PartidoCalendarioUI } from '../services/appdata'
 import { CalendarioSad } from './CalendarioSad'
@@ -1221,14 +1222,15 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
                 {(['a', 'b'] as const).map((l) => {
                   const r = ls.reventonCalculado?.[l]
                   const nombre = l === 'a' ? parte.partido.equipoA : parte.partido.equipoB
-                  const color = !r?.riesgo ? 'var(--t3)' : { bajo: 'var(--up)', medio: 'var(--mark)', alto: 'var(--down)', 'muy alto': 'var(--down)', 'sin base': 'var(--t3)' }[r.riesgo.nivel]
+                  const lect = r?.riesgo ? lecturaRiesgo(r.actual?.signo ?? '+', r.riesgo.nivel) : null
+                  const color = lect ? lect.color : 'var(--t3)'
                   return (
                     <div key={l} style={{ padding: '10px 12px', borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--line)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                         <span style={{ font: '700 12px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0 }}>{nombre}</span>
                         {r?.riesgo ? (
                           <>
-                            <span style={{ padding: '3px 8px', borderRadius: 6, background: `color-mix(in oklch, ${color}, transparent 84%)`, color, font: '700 9.5px var(--mono)', textTransform: 'uppercase' }}>riesgo {r.riesgo.nivel} · {r.riesgo.puntos} pts</span>
+                            <span style={{ padding: '3px 8px', borderRadius: 6, background: `color-mix(in oklch, ${color}, transparent 84%)`, color, font: '700 9.5px var(--mono)', textTransform: 'uppercase' }}>{lect?.titulo} · {r.riesgo.puntos} pts</span>
                             <span style={{ font: '600 9.5px var(--mono)', color: 'var(--t3)' }}>confianza {r.riesgo.confianza}</span>
                           </>
                         ) : (

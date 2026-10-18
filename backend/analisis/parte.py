@@ -807,6 +807,51 @@ def alertas_familias(reventon: dict | None, nombres: dict) -> list[dict]:
     return out
 
 
+def espina_vs_riesgo(reventon: dict | None, espina: dict | None) -> list[dict]:
+    """La espina declarada contra el riesgo calculado, por lado.
+
+    Albion–Torque (18/10/2026): la tarjeta decía «riesgo de reventón ALTO»
+    para la racha negativa de Albion y el ensayo la leía «neutra» sin nombrar
+    el riesgo; Albion ganó 2-1. Leer contra el riesgo está permitido —la
+    espina mide la lectura del analista, no la del modelo—, pero tiene que
+    decirse: si no, quien lee ve dos cosas que se contradicen y no sabe a cuál
+    creerle. Con riesgo alto/muy alto, una espina que sigue la racha o neutra
+    va contra él; con riesgo bajo, una que la corta."""
+    out = []
+    for lado in LADOS:
+        e = (espina or {}).get(lado) or {}
+        lect = e.get("lectura")
+        r = (reventon or {}).get(lado) or {}
+        if e.get("guia") == "condicion" and r.get("condicion"):
+            r = r["condicion"]
+        nivel = (r.get("riesgo") or {}).get("nivel")
+        signo = (r.get("actual") or {}).get("signo")
+        if not lect or not nivel or signo not in ("+", "-"):
+            continue
+        sigue = "positiva" if signo == "+" else "negativa"
+        corta = {"cero", "negativa" if signo == "+" else "positiva"}
+        if nivel in ("alto", "muy alto") and lect in (sigue, "neutra"):
+            como = "la lee seguir" if lect == sigue else "la lee neutra"
+        elif nivel == "bajo" and lect in corta:
+            como = "la lee cortarse"
+        else:
+            continue
+        out.append({"lado": lado, "nivel": nivel, "signo": signo, "lectura": lect, "como": como,
+                    "guia": e.get("guia") or "total",
+                    "dicho": "riesgo" in (e.get("porque") or "").lower()})
+    return out
+
+
+def alertas_espina(reventon: dict | None, espina: dict | None, nombres: dict) -> list[dict]:
+    return [{
+        "codigo": "ESPINA-VS-RIESGO", "equipo": x["lado"], "tipo": "dato",
+        "detalle": (f"{nombres.get(x['lado'], x['lado'])}: el riesgo calculado de su racha {x['signo']} es "
+                    f"{x['nivel'].upper()} y la espina {x['como']} ({x['lectura']}). Leer contra el riesgo vale, "
+                    "pero se dice: " + ("el `porque` lo explica" if x["dicho"] else
+                                        "el `porque` no nombra el riesgo —quien lee ve dos cosas que se contradicen—")),
+    } for x in espina_vs_riesgo(reventon, espina)]
+
+
 _AMBITO_TXT = {"local": "de local", "visita": "de visita", "total": "en total"}
 _FAMILIA_TXT = {"noPierde": "sin perder", "noGana": "sin ganar", "gana2+": "ganando por 2+",
                 "gana3+": "ganando por 3+", "pierde2+": "perdiendo por 2+", "anota": "anotando",
@@ -1498,7 +1543,7 @@ _CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto", "ligas", "dtBa
 # F3 y las de DT las pone la lectura a partir de la base y del propio parte;
 # si el eco del GET vuelve con ellas, se descartan sin rechazo (se van a
 # recalcular igual) en vez de guardarse por duplicado.
-_ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "FAMILIA-RECORD", "HERENCIA-DTP", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT",
+_ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "FAMILIA-RECORD", "ESPINA-VS-RIESGO", "HERENCIA-DTP", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT",
                         "F1-DECISIVO-FUERA", "DTP-REHACER"}
 # LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
 # selladas (coherencia_json), porque no son deterministas y rehacerlas al leer
@@ -2075,6 +2120,20 @@ def guardar(payload: dict) -> dict:
             "comoSeArregla": "un párrafo en el ensayo: la espina de cada equipo (crece, se reinicia, "
                              "negativa o neutra), con qué K se leyó (total, de local, de visita) y por qué",
         })
+    # LA ESPINA CONTRA EL RIESGO, SIN DECIRLO (Albion–Torque, 18/10/2026)
+    try:
+        contra = [x for x in espina_vs_riesgo(_reventon_calculado(fx),
+                                              (parte.get("lecturaSad") or {}).get("espina")) if not x["dicho"]]
+    except Exception:  # noqa: BLE001 — el aviso no tumba el depósito
+        contra = []
+    for x in contra:
+        faltan.append({
+            "bloque": f"lecturaSad.espina.{x['lado']}",
+            "costara": f"el riesgo calculado es {x['nivel'].upper()} (racha {x['signo']}) y la espina {x['como']}: "
+                       "la pantalla muestra las dos cosas y quien lee no sabe a cuál creerle",
+            "comoSeArregla": "o la espina sigue al riesgo, o el `porque` dice «contra el riesgo "
+                             f"{x['nivel']} porque…» y el ensayo lo cuenta con esas palabras",
+        })
     resumen = {
         "fixtureId": parte["fixtureId"],
         "partido": f"{fx['home_name']} vs {fx['away_name']}",
@@ -2503,6 +2562,8 @@ def dto(fixture_id: int) -> dict | None:
     # lectura: lo que decide cuánto se carga tiene que verse antes que nada
     alertas.extend(alertas_extremo(reventon, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     alertas.extend(alertas_familias(reventon, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
+    alertas.extend(alertas_espina(reventon, (parte.get("lecturaSad") or {}).get("espina"),
+                                  {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # dos equipos de ligas distintas: el nivel no compara entre bases, y el
     # parte lo dice antes de que alguien lea los dos números uno contra otro
     alertas.extend(alerta_escala(fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
