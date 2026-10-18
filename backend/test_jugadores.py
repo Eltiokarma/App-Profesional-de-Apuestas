@@ -312,6 +312,9 @@ def main():
     # tres partidos más sin alineación capturada; el registro dice «P.
     # Guardiola · alineacion» y es de hoy, pero ese banco es de hace meses.
     # Sin la regla, `viejo` y `contradice` son False y nadie lo rehace.
+    # (el once queda de hace 8 días: uno de hace 4 o menos es fresco por fecha,
+    # porque nadie juega tres partidos en cuatro días —Bournemouth, 18/10—)
+    con.execute("UPDATE fixtures SET date=? WHERE id=21", (hace(24 * 8),))
     con.executemany("INSERT INTO fixtures (id, date, status_short, league_id, league_season, home_team_id, away_team_id) "
                     "VALUES (?,?,'FT',281,2026,700,701)",
                     [(23, hace(24 * 3)), (24, hace(24 * 2)), (25, hace(24 * 1))])
@@ -328,6 +331,10 @@ def main():
     from backend.ingesta.jugadores import dt_de_alineaciones as _dta
     check("con tres terminados sin alineación después, la alineación vieja ya no cuenta",
           _dta(con, 700) == (None, None), _dta(con, 700))
+    con.execute("UPDATE fixtures SET date=? WHERE id=21", (hace(24 * 2),))
+    check("pero un once de hace 2 días es fresco aunque la base cuente 3 terminados después (Bournemouth)",
+          _dta(con, 700)[0] == "P. Guardiola", _dta(con, 700))
+    con.execute("UPDATE fixtures SET date=? WHERE id=21", (hace(24 * 8),))
     r3 = dt_agenda(falso, con, dias=2, edad_dias=7)
     fila = con.execute("SELECT nombre, fuente FROM entrenadores WHERE team_id=700").fetchone()
     check("un registro `alineacion` sin alineación fresca que lo sostenga se rehace con /coachs aunque sea de hoy",

@@ -875,7 +875,17 @@ def dt_de_base(team_id: int) -> dict | None:
             "nota": ("visto en el banco en el último partido" if e.get("fuente") == "alineacion" else
                      f"carrera de la API, registro de hace {edad} días" if edad is not None else
                      "carrera de la API, sin fecha de registro")
-                    + ("" if fiable else " · CONFIRMAR EN PRENSA: si la red dice otro, manda la red")}
+                    + ("" if fiable else " · CONFIRMAR EN PRENSA: si la red dice otro, manda la red"),
+            # EL NOMBRE PUEDE SER FIABLE Y LA FECHA NO. /coachs trae la llegada
+            # como «el mes de la temporada» (Carrick «desde 2025-08» cuando llegó
+            # en enero) y 12 equipos del 18/10/2026 salieron con la fecha mal; el
+            # parte anterior del Alavés puntuó el bloque A en 0 por eso. La
+            # antigüedad se confirma en prensa y se declara en `dt.desde`.
+            "desdeConfirmar": e.get("fuente") != "alineacion" or not e.get("desde"),
+            "desdeNota": ("la fecha de llegada es el primer partido visto en el banco" if
+                          e.get("fuente") == "alineacion" and e.get("desde") else
+                          "la fecha de llegada de la base es aproximada (mes de la carrera de la API, o no se "
+                          "vio la llegada): confirmala en prensa antes de puntuar el bloque A")}
 
 
 def sin_dt(parte: dict) -> list[str]:
@@ -1204,7 +1214,7 @@ def _via_tde(v, rechazos: list, donde: str) -> dict | None:
 
 
 RAMAS_REASIGNACION = ("siMarcaPrimero", "siRecibePrimero")
-_CLAVES_RAMA = {"sob1", "tipologia", "nota"}
+_CLAVES_RAMA = {"sob1", "tipologia", "nota", "ventana"}
 
 
 def _reasignacion(x, rechazos: list, donde: str) -> dict:
@@ -1249,7 +1259,12 @@ def _reasignacion(x, rechazos: list, donde: str) -> dict:
                                  "esperado": "0 · 0.5 · 1 (el valor que tomaría SOB1 en esa rama)"})
                 sob1 = None
         rama_ok = {"sob1": sob1, "tipologia": _txt(r.get("tipologia")), "nota": _txt(r.get("nota"))}
-        if rama_ok["sob1"] is None and not rama_ok["tipologia"] and not rama_ok["nota"]:
+        # la ventana de ESTA rama, si cambia: el veredicto mide la que jugó el
+        # partido (Junior–Pereira y Roma–Madrid se medían contra la original)
+        if _txt(r.get("ventana")):
+            rama_ok["ventana"] = _txt(r.get("ventana"))
+        if rama_ok["sob1"] is None and not rama_ok["tipologia"] and not rama_ok["nota"] \
+                and not rama_ok.get("ventana"):
             continue
         fuera[rama] = rama_ok
     return fuera
@@ -2216,7 +2231,13 @@ def timeline_del_parte(fx, eventos: list[dict], narrativa: str, fuentes: list[st
     esta función arma el TimelineData que pinta la pantalla de siempre.
     """
     from backend import cronologia as crono
-    desde, hasta = crono.ventana()
+    # LA VISTA ES «AL DÍA DEL PARTIDO». Se recalcula al leer, y sin el corte un
+    # parte de un partido ya jugado mostraba ese mismo resultado en el timeline
+    # y en la tabla (City–PSG y LASK–Liverpool, 17/10/2026): hindsight en la
+    # pantalla prepartido. Se corta el día anterior y la tabla, antes del pitazo.
+    pitazo = str(fx["date"])
+    dia_antes = (datetime.strptime(pitazo[:10], "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
+    desde, hasta = crono.ventana(hasta=min(dia_antes, datetime.now(timezone.utc).strftime("%Y-%m-%d")))
     calculados = crono.eventos_del_partido(
         fx["home_team_id"], fx["home_name"], fx["away_team_id"], fx["away_name"], desde, hasta)
     if not calculados and not eventos:
@@ -2228,11 +2249,11 @@ def timeline_del_parte(fx, eventos: list[dict], narrativa: str, fuentes: list[st
             {"nombre": fx["home_name"], "lado": "izquierda",
              "color": "#5B8DEF", "color_secundario": "#C7D0EC",
              "stats": crono.stats_de(fx["home_team_id"], fx["league_id"],
-                                     fx["league_season"], desde, hasta)},
+                                     fx["league_season"], desde, hasta, antes=pitazo)},
             {"nombre": fx["away_name"], "lado": "derecha",
              "color": "#E5484D", "color_secundario": "#F2C1C3",
              "stats": crono.stats_de(fx["away_team_id"], fx["league_id"],
-                                     fx["league_season"], desde, hasta)},
+                                     fx["league_season"], desde, hasta, antes=pitazo)},
         ],
         "eventos": crono.ordenar(list(eventos) + calculados),
         "agrupacion": "mes",

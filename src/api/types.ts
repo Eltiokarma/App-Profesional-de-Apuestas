@@ -1338,6 +1338,8 @@ export interface RamaReasignacion {
   sob1: 0 | 0.5 | 1 | null
   tipologia: string
   nota: string
+  /** la ventana de 15' de esta rama, si cambia (minutos de reloj) */
+  ventana?: string
 }
 
 export interface BloqueTde {
@@ -1471,8 +1473,12 @@ export interface VeredictoObjetivo {
       /** null = no se pudo comprobar (sin ficha de eventos o sin ventana legible). */
       golEnVentana: boolean | null
       goles?: { minuto: number; lado: 'a' | 'b'; jugador: string }[]
-      /** false = hubo una roja antes del gol de la ventana: no se cobra. */
+      /** false = una roja antes, o el partido roto/resuelto antes de la ventana: no se cobra. */
       cobrable?: boolean | null
+      /** roto (recibió 3 antes, disciplina 3) · rama_abandonada (3 arriba antes, 24) */
+      clase?: 'roto' | 'rama_abandonada' | null
+      /** se midió la ventana de la rama que jugó el partido */
+      ventanaDeRama?: boolean
       /** Qué rama de la reasignación jugó el partido (quién marcó primero) y si
        *  estaba declarada. Observación, no acierto. */
       reasignacion?: {
@@ -1838,7 +1844,7 @@ export interface ParteAgendaItemDTO {
   equipoB: string
   /** El DT que tiene la base por lado, con edad y procedencia: es una ALARMA, no la
    *  verdad. Si la prensa de la semana dice otro, manda la prensa. */
-  dt?: Record<'a' | 'b', { nombre: string | null; desde: string | null; actualizadoEn?: string | null; fuente?: string; edadDias: number | null; fiable: boolean; nota: string } | null>
+  dt?: Record<'a' | 'b', { nombre: string | null; desde: string | null; actualizadoEn?: string | null; fuente?: string; edadDias: number | null; fiable: boolean; desdeConfirmar?: boolean; desdeNota?: string; nota: string } | null>
   liga: string
   pais: string | null
   /** 1-5 del protocolo; 0 = descartado (y `motivo` dice por qué). */

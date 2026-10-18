@@ -92,6 +92,15 @@ cae en la raíz del repo (17/10/2026).
 >   faltar) → `equipos/{id}/burbujas?proximo={id}` de los dos → `cuotas/{id}`
 >   → prensa (DT de ESTA semana, bajas, once probable) → el JSON del parte
 >   EXACTO al punto 7 (a = local).
+>   El gap y la μ del motor están en `GET predicciones/{id}` (no existe
+>   `/estadisticas/gap`); P1a del TDE ya viene calculado en `tde/{id}`. El
+>   `desde` del DT con `desdeConfirmar: true` NO es dato: la llegada sale de
+>   prensa o va vacía. Una ventana del TDE que cambia según quién marque va
+>   en la rama: `reasignacion.siMarcaPrimero.ventana` (minutos de reloj; una
+>   ventana «desde la ventaja» no se puede cobrar). La apertura del DTP entra
+>   a la cadena UNA vez: re-depositar no la pisa (anti-hindsight). Las bajas
+>   de la base (`jugador_bajas`) pueden ser viejas: manda el parte médico de
+>   esta semana.
 > - Lo que dejaron las autopsias del 11/10 y ya es campo: `reasignacion` en
 >   CADA bloque del TDE con las dos ramas (`siMarcaPrimero`,
 >   `siRecibePrimero`); la ventana de una echada condicionada a ir ganando se
@@ -182,6 +191,14 @@ cae en la raíz del repo (17/10/2026).
 > mecanismo de la lista del estudio de reventones y el HECHO que lo prueba
 > (ficha, once, DT, pelota parada). Un 0-2 de local del que siempre marca en
 > casa tiene que quedar explicado (REVENTON §15.2); sin hecho, `varianza`.
+>
+> Lo que la app ya NO cobra, y no hace falta pelearlo: la ventana del TDE de
+> un equipo que ya recibió 3 antes de ella (`clase: roto`, disciplina 3) o
+> con el marcador 3 arriba (`rama_abandonada`, 24), una ventana relativa al
+> gol y la de una rama declarada con su propia `ventana` (se mide esa). Y si
+> la prosa del reventón de un parte de antes del 14/10 (tarde) no coincide
+> con `reventonCalculado`, es la recalibración de los puntos (REVENTON
+> §13.2): la prosa dice lo que la tarjeta mostraba ese día.
 >
 > `seleccion`: `ciega` si el partido salió de la agenda; `modoEvaluacion`:
 > `PRE` si terminó. Con duda entre ciega y post_resultado, es post_resultado.

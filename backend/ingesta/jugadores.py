@@ -394,6 +394,7 @@ def elegir_entrenador(filas: list, team_id: int, dt_alineacion: str | None = Non
 DT_ALINEACION_PARTIDOS = 3
 
 
+DT_ALINEACION_DIAS = 4   # nadie juega 3 partidos en 4 días: una alineación así de reciente es fresca aunque la base cuente otra cosa
 DT_HUECO_PARTIDOS = 2   # partidos sin once entre el DT anterior y el actual: la llegada no se vio
 
 
@@ -415,10 +416,20 @@ def dt_de_alineaciones(con: sqlite3.Connection, team_id: int,
                FROM alineaciones a JOIN fixtures f ON f.id = a.fixture_id
                WHERE a.team_id=? AND a.entrenador IS NOT NULL AND a.entrenador <> ''
                ORDER BY f.date DESC LIMIT 40""", (team_id,)).fetchall()
-    except sqlite3.Error:
+    except sqlite3.Error as e:
+        # un error de lectura NO es «sin alineación»: callado, dejaba que
+        # /coachs pisara al DT del banco (Bournemouth con Tindall, 18/10/2026)
+        print(f"  DT del banco de {team_id}: no se pudo leer la alineación ({e})")
         return None, None
     if not filas:
         return None, None
+    # UNA ALINEACIÓN DE LOS ÚLTIMOS DÍAS ES FRESCA, CUENTE LO QUE CUENTE LA BASE.
+    # Bournemouth (18/10/2026): tres onces seguidos con Marco Rose, el último
+    # del 15/10, y la base guardó a Tindall —ayudante con su etapa de 2020
+    # abierta en /coachs— con fuente `coachs`. La regla de los N terminados
+    # se puede engañar con fixtures mal marcados o duplicados; la fecha no.
+    hace_poco = (datetime.now(timezone.utc) - timedelta(days=DT_ALINEACION_DIAS)).strftime("%Y-%m-%d")
+    fresca = str(filas[0][1]) >= hace_poco
     try:
         marcas = ",".join("?" * len(_TERMINADOS))
         ultimos = con.execute(
@@ -428,7 +439,7 @@ def dt_de_alineaciones(con: sqlite3.Connection, team_id: int,
     except sqlite3.Error:
         ultimos = []
     # con menos de N terminados conocidos no hay base para llamarla rancia
-    if len(ultimos) >= partidos_atras and str(filas[0][1]) < str(ultimos[-1][0]):
+    if not fresca and len(ultimos) >= partidos_atras and str(filas[0][1]) < str(ultimos[-1][0]):
         return None, None
     actual = filas[0][0]
     desde = filas[0][1]

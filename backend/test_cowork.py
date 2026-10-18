@@ -1983,6 +1983,36 @@ def main():
           and any(x["donde"].endswith("siRecibePrimero.sob1") for x in rec_r["rechazos"]), rec_r["rechazos"])
     check("y una reasignación a medias se avisa en `faltan` (se cobra al cerrar)",
           any(x["bloque"] == "tde.reasignacion" for x in rec_r["faltan"]), rec_r["faltan"])
+    # LA VENTANA RELATIVA AL GOL Y LA VENTANA DE LA RAMA (veredictos del 17/10/2026)
+    from backend.analisis.veredicto import _ventana as _vv, ventana_relativa as _vr
+    check("«15-30' desde la ventaja» es relativa: no se lee como minutos 15-30",
+          _vr("15-30' desde la ventaja") and _vv("15-30' desde la ventaja") is None and _vv("75-90'") == (75, 90))
+    from backend.analisis.veredicto import clase_ventana as _cv
+    _g = lambda m, l: {"minuto": m, "lado": l}
+    check("recibió 3 antes de la ventana → roto (disciplina 3); 3 arriba → rama abandonada (24); si no, se juega",
+          _cv([_g(10, "b"), _g(20, "b"), _g(30, "b")], 75, "b")[0] == "roto"
+          and _cv([_g(10, "a"), _g(20, "a"), _g(30, "a")], 75, "b")[0] == "rama_abandonada"
+          and _cv([_g(10, "a"), _g(20, "b")], 75, "a")[0] == ""
+          and _cv([_g(80, "b"), _g(81, "b"), _g(82, "b")], 75, "b")[0] == "")
+    p_rr = json.loads(json.dumps(p_tde))
+    p_rr["tde"]["bloques"][0]["ventana"] = "15-30' desde la ventaja"
+    p_rr["tde"]["bloques"][1]["reasignacion"]["siRecibePrimero"]["ventana"] = "30-40'"
+    c.post(f"{A}/analisis/cowork", json=p_rr)
+    od_rr = {b["equipo"]: b for b in c.get(f"{A}/analisis/cowork/{con_ficha}/objetivo").json()["objetivo"]["tde"]["bloques"]}
+    check("una ventana relativa no se cobra y lo dice", od_rr["a"]["comprobable"] is False
+          and "relativa" in od_rr["a"]["nota"], od_rr["a"])
+    check("con la rama jugada declarando su ventana, se mide ESA (34' en 30-40')",
+          od_rr["b"]["ventanaDeRama"] is True and od_rr["b"]["desde"] == 30 and od_rr["b"]["golEnVentana"] is True,
+          od_rr["b"])
+    c.post(f"{A}/analisis/cowork", json=p_tde)
+    # EL TIMELINE ES «AL DÍA DEL PARTIDO» (City–PSG, 17/10/2026): ni el
+    # resultado de ese partido ni la tabla con él
+    from backend.analisis.parte import _fixture as _fxp, timeline_del_parte as _tlp
+    _fxr = _fxp(con_ficha)
+    _tlv = _tlp(_fxr, [{"fecha": "2020-01-01", "tipo": "hito", "titulo": "x"}], "", [])
+    check("el timeline de un partido jugado corta ANTES de ese partido (sin su propio resultado)",
+          _tlv and _tlv["periodo"]["hasta"] < str(_fxr["date"])[:10]
+          and all(e["fecha"] < str(_fxr["date"])[:10] for e in _tlv["eventos"]), (_tlv or {}).get("periodo"))
     # UN IE QUE NO SE PUEDE CALCULAR SE AVISA (Athletico-PR, 17/10/2026: sin un S)
     p_ie = json.loads(json.dumps(p_tde))
     p_ie["tde"]["bloques"][0]["indicadores"] = {"F1": 1, "F2": 0.5, "C1": 0.5, "P1a": 1}
@@ -2684,7 +2714,22 @@ def main():
                        {"a": {"formacion": "4-4-2", "titulares": []}})
     check("«4-2-2-2» y «4-4-2» son el mismo sistema (misma línea de atrás y de arriba); «4-3-3» y «4-4-2» no",
           _fam["rehacer"] is False and _fam_no["rehacer"] is True, (_fam, _fam_no))
+    # Atlético-MG (17/10/2026): «3-4-3 / 5-4-1» y salió 3-4-2-1; «4-3-3» y salió 4-2-3-1
+    check("«3-4-3» y «3-4-2-1», «4-3-3» y «4-2-3-1» son la misma forma (línea de atrás y puntas)",
+          _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "3-4-3 / 5-4-1"}}},
+                   {"a": {"formacion": "3-4-2-1", "titulares": []}})["rehacer"] is False
+          and _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3"}}},
+                       {"a": {"formacion": "4-2-3-1", "titulares": []}})["rehacer"] is False)
     _ref = "Muslera; Mancuso, Núñez, Rojo, Benedetti; Piovi, Castro, B. Gallego; Palacios, Carrillo, Burgos"
+    # Villa (17/10/2026): lo que `senalXi` ya anunciaba no es sorpresa
+    _an = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3", "xiReferencia": _ref,
+                                                       "senalXi": "entran Onana, Bogarde y Maatsen por rotación"}}},
+                   {"a": {"formacion": "4-3-3", "titulares": ["A. Onana", "L. Bogarde", "I. Maatsen", "F. Muslera"]}})
+    check("los cambios que la apertura anunció en senalXi no cuentan como ausentes de la referencia",
+          _an["ausentesDeLaReferencia"] == [] and _an["rehacer"] is False, _an)
+    _al = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3", "xiReferencia": _ref + ", Abde"}}},
+                   {"a": {"formacion": "4-3-3", "titulares": ["A. Ezzalzouli"], "alias": {"A. Ezzalzouli": ["Abde Ezzalzouli"]}}})
+    check("el nombre de la plantilla (con el apodo) también casa con la referencia", _al["ausentesDeLaReferencia"] == [], _al)
     _dos = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3", "xiReferencia": _ref}}},
                     {"a": {"formacion": "4-3-3", "titulares": ["Baltasar Gallego Rodríguez", "Fernando Muslera"]}})
     check("un titular con dos apellidos casa con la referencia por cualquiera de ellos",
@@ -2787,6 +2832,11 @@ def main():
     check("y un titular reciente sin stats de temporada entra a la tabla",
           _por.get(990001, {}).get("sinStatsDeTemporada") is True and _por[990001]["zona"] == "DEF",
           _por.get(990001))
+    # el titular fijo de los onces que la temporada no trae también es decisivo (Robert Sánchez, Como)
+    from backend.analisis.f1_base import faltantes as _falt
+    _fl = _falt(_tid, [{"nombre": "Otro", "jugadorId": 1}], _fecha)
+    check("un titular fijo de los últimos onces sin stats de temporada, fuera de la tabla, es decisivo que falta",
+          any(f["jugadorId"] == 990001 and "6 de los últimos 6" in f["porQue"] for f in _fl), _fl)
     with _sq3.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute(f"DELETE FROM alineaciones WHERE fixture_id IN ({','.join('?' * len(_prev))})", _prev)
 
@@ -3242,6 +3292,9 @@ def main():
                                   "Barcos", "Guerrero"], [])
     check("un apellido compartido va a dudas, no se resuelve a ojo",
           any("Campos" in x for x in d["dudas"]), d["dudas"])
+    _camp = [j for j in d["jugadores"] if "Campos" in j["nombre"]]
+    check("y ninguno de los dos homónimos queda de baja: uno jugó seguro (Pedrinho del Shakhtar, 17/10)",
+          len(_camp) == 2 and all(j["estado"] == "disponible" for j in _camp) and d["homonimos"] == 2, _camp)
 
     # una duda pública pesa la mitad MIENTRAS no hay hoja (ramas)…
     r_duda = bf.ramas(tabla, [{"nombre": "Paolo Guerrero", "estado": "duda", "motivo": "molestia"}])

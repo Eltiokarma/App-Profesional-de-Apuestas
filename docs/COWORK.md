@@ -877,6 +877,13 @@ Escribís vos (es juicio, no se puede calcular):
        bloque A a medias por la duda.
     2. Si la prensa no dice nada y `fiable` es true, tomá el de la base y
        decilo en `notas.A` («según la base, visto en el banco el 14/09»).
+       OJO CON LA FECHA: el nombre puede ser fiable y el `desde` no. Con
+       `desdeConfirmar: true` la llegada de la base es el mes de la carrera
+       de la API o una llegada que no se vio (Carrick «desde 2025-08»
+       cuando llegó en enero): NO puntúes la antigüedad con esa fecha;
+       buscá la llegada en prensa y declarala en `dt.desde`. Sin fuente, el
+       `desde` va vacío, nunca la fecha de la base (el Alavés del 1570393
+       puntuó el bloque A en 0 por eso).
     3. Si no podés establecerlo de ninguna de las dos formas, `dt` va como
        `"sin establecer"`, el bloque A queda fuera y lo decís en
        `pendientes`. Ese parte NO entra al aprendizaje (cuarentena

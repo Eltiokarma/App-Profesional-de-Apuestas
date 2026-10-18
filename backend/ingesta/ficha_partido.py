@@ -314,6 +314,9 @@ def fixtures_pendientes(con: sqlite3.Connection, dias: int, ultimos: int) -> lis
 CON_PARTE_DIAS = 4   # partidos con parte jugados en los últimos N días
 
 
+REPEDIR_STATS_HORAS = 3   # sello sin stats a menos de esto del pitazo: se pidió temprano
+
+
 def fixtures_con_parte(con: sqlite3.Connection, db: str, dias: int = CON_PARTE_DIAS) -> list[int]:
     """Los partidos TERMINADOS con un parte depositado (efe.db, junto a sad.db)
     que todavía no tienen ficha sellada. El veredicto se escribe a las 12 h y
@@ -334,7 +337,27 @@ def fixtures_con_parte(con: sqlite3.Connection, db: str, dias: int = CON_PARTE_D
         return []      # sin la tabla de partes: no hay nada que priorizar
     if not ids:
         return []
-    sellados = {r[0] for r in con.execute("SELECT fixture_id FROM fichas_meta")}
+    # UNA FICHA SELLADA DEMASIADO PRONTO SE PIDE OTRA VEZ, UNA SOLA. La API
+    # publica las stats un rato después del pitazo final: pedidas en las
+    # primeras horas venían vacías y la ficha quedaba sellada así (Junior,
+    # Sarmiento y Feyenoord, 17/10/2026). Si su liga SÍ suele dar stats y el
+    # sello es de menos de REPEDIR_STATS_HORAS después del partido, vuelve; al
+    # re-sellarla la hora del sello ya es tardía y no se repite.
+    cob = cobertura_por_liga(con)
+    sellados = set()
+    for fid, stats, sello, fecha, liga in con.execute(
+            "SELECT m.fixture_id, m.stats, m.capturado_en, f.date, f.league_id "
+            "FROM fichas_meta m LEFT JOIN fixtures f ON f.id=m.fixture_id"):
+        if not stats and fecha and sello and (cob.get(liga) or {}).get("stats"):
+            try:
+                pitazo = datetime.fromisoformat(str(fecha).replace("Z", "+00:00")).replace(tzinfo=None)
+                temprano = datetime.strptime(str(sello)[:19], "%Y-%m-%d %H:%M:%S") \
+                    < pitazo + timedelta(hours=REPEDIR_STATS_HORAS)
+            except ValueError:
+                temprano = False
+            if temprano:
+                continue          # no cuenta como sellada: se vuelve a pedir
+        sellados.add(fid)
     desde = (datetime.now(timezone.utc) - timedelta(days=dias)).strftime("%Y-%m-%d %H:%M:%S")
     fuera = []
     for i in range(0, len(ids), 500):
