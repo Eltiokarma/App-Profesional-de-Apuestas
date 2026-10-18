@@ -591,15 +591,3 @@ export function analizarBurbujas(filas: FilaK[], ctx: ContextoBurbuja): Burbujas
   }
 }
 
-
-/** Cómo se dice el riesgo de reventón según el signo de la racha. Con racha +
- *  reventar es dejar de ganar (riesgo, en rojo cuando es alto); con racha − es
- *  dejar de perder: un «riesgo ALTO» en rojo se leía al revés (Albion–Torque,
- *  18/10/2026), así que se dice «corte de la mala racha» y el color se invierte. */
-export function lecturaRiesgo(signo: '+' | '-' | string, nivel: string): { titulo: string; color: string } {
-  const pos = signo !== '-'
-  const alto = nivel === 'alto' || nivel === 'muy alto'
-  const color = nivel === 'sin base' ? 'var(--t3)' : nivel === 'medio' ? 'var(--mark)'
-    : (alto === pos ? 'var(--down)' : 'var(--up)')
-  return { titulo: pos ? `riesgo de que se corte la racha buena: ${nivel}` : `chance de que se corte la mala racha: ${nivel}`, color }
-}

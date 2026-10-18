@@ -1064,9 +1064,9 @@ Escribís vos (es juicio, no se puede calcular):
   nombrarlo, y Albion ganó). Podés leer contra el riesgo calculado, pero
   entonces el `porque` dice «contra el riesgo alto porque…» y el ensayo lo
   cuenta con esas palabras; si no, la tira grita ESPINA-VS-RIESGO y el
-  recibo lo cobra en `faltan`. OJO con el signo: con racha NEGATIVA el
-  «riesgo de reventón» es la chance de que el equipo DEJE DE PERDER (la
-  pantalla lo dice así, «corte de la mala racha»).
+  recibo lo cobra en `faltan`. El riesgo es de la BURBUJA, no del equipo:
+  con racha negativa, reventar es que el equipo deje de perder (la K vuelve
+  a cero o pasa a positiva), y ALTO es justamente eso.
   Escribí UNA línea por equipo en `lecturaSad.reventon`, por ejemplo:
   «A: muy alto (8), rival mucho más fuerte que su zona de reventón → no
   seguir la racha de A; B: bajo, sin señal». NO copies los números al

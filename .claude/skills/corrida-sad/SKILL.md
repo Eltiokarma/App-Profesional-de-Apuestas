@@ -120,7 +120,8 @@ cae en la raíz del repo (17/10/2026).
 > - **La espina contra el riesgo se dice**: si leés la espina contra el riesgo
 >   calculado (alto y la dejás neutra o siguiendo la racha; bajo y la cortás),
 >   el `porque` empieza «contra el riesgo X porque…» y el ensayo lo nombra.
->   Con racha NEGATIVA, riesgo alto = chance alta de que DEJE de perder.
+>   El riesgo es de la burbuja: con racha negativa, ALTO = que reviente,
+>   o sea que el equipo deje de perder.
 > - **Las otras burbujas** (`otrasFamilias` en `/burbujas`, desde el 17/10):
 >   doble oportunidad, márgenes y goles ya contados en `lineas[]`. Narrativa:
 >   su largo y su récord NO predicen el partido siguiente y en el récord se
