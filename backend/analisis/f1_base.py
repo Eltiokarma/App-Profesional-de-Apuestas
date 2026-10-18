@@ -235,10 +235,24 @@ def faltantes(team_id: int, plantel: list[dict], antes: str = "9999") -> list[di
     rec = onces_recientes(team_id, antes)
     # con pocos onces capturados el silencio no dice nada: solo cuenta la salida
     presentes = set(rec["jugadores"]) if rec["onces"] >= ONCES_PARA_AUSENTE else None
-    return [{"jugadorId": d["id"], "nombre": d["nombre"], "porQue": d["porQue"]}
-            for d in decisivos(jug.plantilla_de(team_id))
-            if d["id"] not in fuera and (presentes is None or d["id"] in presentes)
-            and not _en_tabla(d, plantel)]
+    out = [{"jugadorId": d["id"], "nombre": d["nombre"], "porQue": d["porQue"]}
+           for d in decisivos(jug.plantilla_de(team_id))
+           if d["id"] not in fuera and (presentes is None or d["id"] in presentes)
+           and not _en_tabla(d, plantel)]
+    # EL TITULAR FIJO DE LOS ÚLTIMOS ONCES CUENTA AUNQUE LA TEMPORADA NO LO
+    # TENGA. Robert Sánchez atajó para el Como (17/10/2026) y no estaba en la
+    # tabla F1 ni saltó la alerta: un cedido sin stats de la temporada no era
+    # «decisivo» para la plantilla, y en los onces era fijo.
+    if presentes is not None:
+        ya = {f["jugadorId"] for f in out}
+        for pid, r in rec["jugadores"].items():
+            if pid in ya or pid in fuera or pid <= 0 or r["titular"] < rec["onces"] * 0.8:
+                continue
+            j = {"id": pid, "nombre": r["nombre"]}
+            if not _en_tabla(j, plantel):
+                out.append({"jugadorId": pid, "nombre": r["nombre"],
+                            "porQue": f"titular en {r['titular']} de los últimos {rec['onces']} onces"})
+    return out
 
 
 def alertas(parte: dict, fx, nombres: dict) -> list[dict]:

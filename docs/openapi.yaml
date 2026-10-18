@@ -3025,6 +3025,7 @@ components:
         sob1: { type: number, nullable: true, enum: [0, 0.5, 1, null], description: 'el valor que tomaría SOB1 en esa rama' }
         tipologia: { type: string, description: 'el tipo modal en esa rama, si cambia' }
         nota: { type: string }
+        ventana: { type: string, description: "la ventana de 15' de esta rama, si cambia (minutos de reloj): el veredicto mide la de la rama que jugó el partido" }
     TdeParte:
       type: object
       description: >
@@ -3527,6 +3528,8 @@ components:
               fuente: { type: string, enum: [coachs, alineacion] }
               edadDias: { type: integer, nullable: true }
               fiable: { type: boolean }
+              desdeConfirmar: { type: boolean, description: "la fecha de llegada de la base no es dato (mes de la carrera de /coachs o llegada no vista): confirmar en prensa antes de puntuar el bloque A" }
+              desdeNota: { type: string }
               nota: { type: string }
         liga: { type: string }
         pais: { type: string, nullable: true }
@@ -3930,7 +3933,9 @@ components:
                   goles: { type: array, items: { type: object, additionalProperties: true } }
                   golesEnAnadido: { type: array, items: { type: object, additionalProperties: true } }
                   rojasAntes: { type: array, items: { type: object, additionalProperties: true } }
-                  cobrable: { type: boolean, nullable: true, description: 'false = hubo una roja antes del gol de la ventana: no se cobra' }
+                  cobrable: { type: boolean, nullable: true, description: 'false = una roja antes del gol o del fin de la ventana, o el partido roto/resuelto antes de ella: no se cobra' }
+                  clase: { type: string, nullable: true, enum: [roto, rama_abandonada, null], description: 'roto = el equipo recibió 3 antes de la ventana (disciplina 3); rama_abandonada = marcador 3 arriba antes de la ventana (24)' }
+                  ventanaDeRama: { type: boolean, description: 'se midió la ventana declarada en la rama que jugó el partido' }
                   reasignacion:
                     type: object
                     description: >

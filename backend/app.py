@@ -1639,6 +1639,14 @@ def standings(liga_id: int, temporada: int | None = None, fase: str | None = Non
     """Tabla de posiciones calculada de los fixtures terminados de la liga.
     Con `fase` (Apertura/Clausura/… según la región) solo cuentan los partidos
     de esa fase —cada torneo corto arranca de cero—; sin ella, la tabla del año."""
+    return tabla_posiciones(liga_id, temporada, fase)
+
+
+def tabla_posiciones(liga_id: int, temporada: int | None = None, fase: str | None = None,
+                     antes: str | None = None):
+    """La tabla; con `antes` (ISO), solo con los partidos ESTRICTAMENTE
+    anteriores: la vista «al día del partido» del timeline de un parte (el
+    del City–PSG mostraba la tabla con la victoria de ese mismo partido)."""
     if temporada is None:
         row = db.query_one("sad", "SELECT MAX(league_season) AS s FROM fixtures WHERE league_id=?", (liga_id,))
         temporada = row["s"] if row and row["s"] is not None else 0
@@ -1650,8 +1658,9 @@ def standings(liga_id: int, temporada: int | None = None, fase: str | None = Non
            JOIN teams ht ON ht.id=f.home_team_id JOIN teams at ON at.id=f.away_team_id
            WHERE f.league_id=? AND f.league_season=? AND {_FIN90_SQL}
              AND {_G90_H} IS NOT NULL AND {_G90_A} IS NOT NULL
+             AND (? IS NULL OR f.date < ?)
            LIMIT 5000""",
-        (liga_id, temporada),
+        (liga_id, temporada, antes, antes),
     )
     acc: dict[int, dict] = {}
 

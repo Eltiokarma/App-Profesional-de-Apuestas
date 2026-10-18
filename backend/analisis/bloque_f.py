@@ -222,6 +222,7 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
     no_reconocidos: list[str] = []
 
     por_id = {j["jugadorId"]: i for i, j in enumerate(plantel) if j.get("jugadorId") is not None}
+    homonimos_once = 0
     ids = ids or {}
     for lista, destino in ((once, "titular"), (banca, "banca")):
         for nombre in lista:
@@ -236,7 +237,16 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
                 estados[idx[0]] = ("disponible", destino)
             elif len(idx) > 1:
                 dudas.append(f"«{nombre}» casa con {len(idx)} jugadores de la tabla: "
-                             f"{', '.join(plantel[i].get('nombre', '?') for i in idx)}")
+                             f"{', '.join(plantel[i].get('nombre', '?') for i in idx)} "
+                             "(la tabla con `jugadorId` lo resuelve)")
+                # UN HOMÓNIMO NO ES UNA BAJA. Shakhtar (17/10/2026): dos
+                # «Pedrinho» en la tabla sin id, el que jugó y metió el penal
+                # salía de baja y el IP quedaba inflado. Uno de los dos está en
+                # la hoja seguro: quedan disponibles, marcados como homónimos.
+                for i in idx:
+                    estados.setdefault(i, ("disponible", f"{destino} (homónimo)"))
+                if destino == "titular":
+                    homonimos_once += 1
             else:
                 no_reconocidos.append(nombre)
 
@@ -277,7 +287,8 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
     # Es el termómetro de si el cruce vale: un once que casa con 3 de 11 no es
     # un equipo diezmado, es una hoja que no corresponde a esta tabla.
     diag["casados"] = sum(1 for i, _ in enumerate(plantel)
-                          if estados.get(i, ("", ""))[1] == "titular")
+                          if estados.get(i, ("", ""))[1] == "titular") + homonimos_once
+    diag["homonimos"] = sum(1 for v in estados.values() if v[1].endswith("(homónimo)"))
     diag["once"] = len(once)
     return diag
 

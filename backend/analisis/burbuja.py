@@ -26,10 +26,12 @@ Reglas (las mismas en los dos lados):
 - Qué constante manda: la total, siempre; la hipótesis del nivel (alto o bajo
   → globales; medio → la condición del próximo) viaja en reglaNivel porque
   el backtest real no la confirmó.
-- Riesgo de reventón por puntos CALIBRADOS con el backtest real (§8 del doc):
-  la K no puntúa (no adelanta el reventón), la racha ≥ mediana suma 1 y el
-  rival frente a la mediana con la que suele reventar suma 3 · 5 · 7 según
-  esté en zona, más fuerte o mucho más fuerte. Cada punto con su motivo.
+- Riesgo de reventón por puntos CALIBRADOS con el backtest real y limpio de
+  fuga (§13.2 del doc, 14/10/2026): la K no puntúa (no adelanta el
+  reventón), la racha ≥ mediana suma 1, el rival frente a la mediana con la
+  que suele reventar suma 0 · 1 · 2 según esté en zona, más fuerte o mucho
+  más fuerte (`PUNTOS_RIVAL`), la contramano suma 1 y el favorito resta
+  1 · 3. Cada punto con su motivo.
   Confianza aparte: la muestra de reventones y la estabilidad (DT, ventana,
   bajas) la suben o la bajan, nunca el riesgo.
 """

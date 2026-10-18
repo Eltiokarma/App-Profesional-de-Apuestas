@@ -244,7 +244,7 @@ def main():
         sad_path = os.path.join(tmp, "sad.db")
         e = sqlite3.connect(os.path.join(tmp, "efe.db"))
         e.execute("CREATE TABLE parte_cowork (fixture_id INTEGER PRIMARY KEY)")
-        e.executemany("INSERT INTO parte_cowork VALUES (?)", [(30,), (31,), (32,), (2,)])
+        e.executemany("INSERT INTO parte_cowork VALUES (?)", [(30,), (31,), (32,), (2,), (33,), (34,)])
         e.commit()
         e.close()
         con.executemany("INSERT INTO fixtures (id, date, status_short, league_id, home_team_id, away_team_id) "
@@ -254,7 +254,20 @@ def main():
             (32, dia(+1), "NS", liga, 954, 955),     # con parte, no jugado: no
         ])
         con.commit()
+        # sellada SIN stats a la hora del pitazo, en una liga que sí da stats → se repide;
+        # sellada sin stats 10 h después → no (Junior, Sarmiento, Feyenoord, 17/10/2026)
+        _p33 = datetime.strptime(dia(-1), "%Y-%m-%d %H:%M:%S")
+        con.executemany("INSERT INTO fixtures (id, date, status_short, league_id, home_team_id, away_team_id) "
+                        "VALUES (?,?,?,?,?,?)", [(33, dia(-1), "FT", liga, 956, 957), (34, dia(-1), "FT", liga, 958, 959),
+                                                 (35, dia(-5), "FT", liga, 960, 961)])
+        con.executemany("INSERT OR REPLACE INTO fichas_meta (fixture_id, capturado_en, alineaciones, eventos, stats) "
+                        "VALUES (?,?,?,?,?)", [
+            (33, (_p33 + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S"), 22, 5, 0),
+            (34, (_p33 + timedelta(hours=10)).strftime("%Y-%m-%d %H:%M:%S"), 22, 5, 0),
+            (35, (_p33 - timedelta(days=4)).strftime("%Y-%m-%d %H:%M:%S"), 22, 5, 30)])
         cp = fixtures_con_parte(con, sad_path)
+        check("una ficha sellada sin stats a menos de 3 h del pitazo, en liga que da stats, se repide; tarde, no",
+              33 in cp and 34 not in cp, cp)
         check("un partido jugado con parte entra a la cola aunque ninguno juegue pronto",
               30 in cp and 31 not in cp and 32 not in cp, cp)
         check("y uno ya sellado no se repide", 2 not in cp, cp)

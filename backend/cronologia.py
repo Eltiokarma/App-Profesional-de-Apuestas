@@ -146,14 +146,15 @@ def ordenar(eventos: list[dict]) -> list[dict]:
 
 
 def stats_de(team_id: int, liga_id: int | None, temporada: int | None,
-             desde: str | None = None, hasta: str | None = None) -> dict:
+             desde: str | None = None, hasta: str | None = None, antes: str | None = None) -> dict:
     """`equipos[].stats` del esquema TIMELINE: posición y puntos de la tabla
-    del año, y la última victoria del período. Todo de sad.db."""
+    del año, y la última victoria del período. Todo de sad.db. Con `antes`
+    (ISO del partido), la tabla y los partidos se cortan ANTES de él."""
     stats = {"posicion": 0, "puntos": 0, "ultima_victoria": "", "otros": []}
     if liga_id and temporada:
         try:
-            from backend.app import standings
-            for fila in standings(liga_id, temporada):
+            from backend.app import tabla_posiciones
+            for fila in tabla_posiciones(liga_id, temporada, antes=antes):
                 if fila.get("equipoId") == team_id:
                     stats["posicion"] = int(fila.get("posicion") or 0)
                     stats["puntos"] = int(fila.get("puntos") or 0)
@@ -162,6 +163,8 @@ def stats_de(team_id: int, liga_id: int | None, temporada: int | None,
             pass
     d, h = (desde, hasta) if desde and hasta else ventana()
     for r in reversed(_partidos(team_id, d, h)):
+        if antes and str(r["date"] or "") >= antes:
+            continue
         es_local = r["home_team_id"] == team_id
         gf, gc = (r["gh"], r["ga"]) if es_local else (r["ga"], r["gh"])
         if gf > gc:

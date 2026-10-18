@@ -518,13 +518,13 @@ def _sistemas(texto: str) -> set[str]:
     return {re.sub(r"\D", "", m) for m in re.findall(r"\d(?:\s*[-–]\s*\d){2,4}", texto or "")}
 
 
-def _familia(cifras: str) -> str:
-    """Defensores y delanteros: la línea de atrás y la de arriba. «4-2-2-2» y
-    «4-4-2» son el mismo equipo contado con más o menos líneas en el medio
-    (Huracán–Gimnasia, 16/10/2026: la API dijo 4-4-2 y el aviso salió falso);
-    lo mismo «4-2-3-1» con «4-4-1-1» o «4-5-1». «4-3-3» contra «4-4-2» sí es
-    otro sistema: cambia la línea de arriba."""
-    return cifras[0] + cifras[-1] if len(cifras) >= 3 else cifras
+def _forma(cifras: str) -> str:
+    """Línea de atrás (4 · 3/5) y puntas (2 · 1/3): «4-3-3», «4-2-3-1» y
+    «4-1-4-1» son una forma; «4-4-2» y «4-2-2-2» otra; «3-4-3», «3-4-2-1» y
+    «5-4-1» otra."""
+    if len(cifras) < 3:
+        return cifras
+    return _linea(cifras[0]) + ("·2" if cifras[-1] == "2" else "·1/3")
 
 
 def _linea(d: str) -> str:
@@ -589,8 +589,21 @@ def oficial_de(fixture_id: int) -> dict:
                                        "AND formacion IS NOT NULL LIMIT 1", (fixture_id, tid))
         except Exception:  # noqa: BLE001
             f = None
+        alias: dict[str, list[str]] = {}
+        try:
+            ids = [j["player_id"] for j in xi if j["player_id"] and j["player_id"] > 0]
+            if ids:
+                nombres = {r["id"]: r["nombre"] for r in saddb.query(
+                    "sad", f"SELECT id, nombre FROM jugadores WHERE id IN ({','.join('?' * len(ids))})", tuple(ids))}
+                for j in xi:
+                    otro = nombres.get(j["player_id"])
+                    if otro and otro != j["jugador"]:
+                        alias[j["jugador"] or ""] = [otro]
+        except Exception:  # noqa: BLE001 — base sin la capa de jugadores
+            pass
         fuera[lado] = {"formacion": (f["formacion"] if f else "") or "",
                        "titulares": [j["jugador"] or "" for j in xi],
+                       "alias": alias,
                        # sin formación en la ficha, la línea de atrás se cuenta
                        # por la posición de los titulares (D)
                        "defensores": sum(1 for j in xi if (j["posicion"] or "") == "D")}
@@ -606,7 +619,11 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
     m1 = (bloque.get("apertura") or {}).get("m1") or {}
     motivos = []
     decl, real = _sistemas(m1.get("sistema") or ""), _cifras_sistema(of.get("formacion") or "")
-    if decl and real and _familia(real) not in {_familia(d) for d in decl}:
+    # LO QUE CAMBIA EL MAPA DE DUELOS: la línea de atrás y si juega con dos
+    # puntas. Comparar primera y última cifra daba «3-4-3» ≠ «3-4-2-1» y
+    # «4-3-3» ≠ «4-2-3-1», que son el mismo equipo contado distinto
+    # (Atlético-MG con «3-4-3 / 5-4-1», 17/10/2026).
+    if decl and real and _forma(real) not in {_forma(d) for d in decl if d}:
         motivos.append(f"sistema: la apertura dice {m1.get('sistema')!r} y salió {of['formacion']}")
     elif decl and not real and 3 <= (of.get("defensores") or 0) <= 5 \
             and _linea(str(of["defensores"])) not in {_linea(d[0]) for d in decl if d}:
@@ -619,7 +636,18 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
     ref = _plano(m1.get("xiReferencia") or "")
     ausentes = []
     if len(ref.split()) >= 8:   # un XI de referencia escrito, no una frase
-        ausentes = [n for n in of["titulares"] if _apellidos(n) and not _en_referencia(n, ref)]
+        # LO QUE LA APERTURA YA ANUNCIÓ NO ES SORPRESA: un cambio nombrado en
+        # `senalXi` o en `rolesReasignados` (Villa, 17/10/2026) no cuenta; y el
+        # nombre de la plantilla, que a veces trae el apodo («Abde»), también sirve
+        anunciado = _plano(" ".join([m1.get("senalXi") or ""] + list(m1.get("rolesReasignados") or [])))
+        alt = of.get("alias") or {}
+        def _palabra_en(x: str, texto: str) -> bool:   # el apodo puede ser la primera palabra
+            return any(len(t) > 2 and f" {t} " in f" {texto} " for t in _plano(x).split())
+
+        ausentes = [n for n in of["titulares"] if _apellidos(n)
+                    and not any(_en_referencia(x, ref) or (anunciado and _en_referencia(x, anunciado))
+                                for x in [n, *alt.get(n, [])])
+                    and not any(_palabra_en(x, ref) for x in alt.get(n, []))]
         if len(ausentes) >= REHACER_AUSENTES:
             motivos.append(f"once: {len(ausentes)} titulares que no estaban en el XI de referencia "
                            f"({', '.join(ausentes)})")
