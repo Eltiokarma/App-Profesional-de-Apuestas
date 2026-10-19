@@ -68,7 +68,7 @@ se perdería.
 | `teorema-del-echado` | P1a, F2 y F1 **los calcula el backend** (`GET /analisis/cowork/tde/{id}`); el resto lo escribís vos | pestaña **Teorema del Echado** |
 | `teorema-del-echado` | `tde.bloques[]`: IE, ISE, tipología, ventana, vías — **uno por equipo** | pestaña **Teorema del Echado** |
 | *(cualquiera)* | `veredicto.porLado[l].leccion` + `skill` + `reglaTocada` | sección **Aprendizaje** |
-| espina de la burbuja | `lecturaSad.espina`: por equipo `{lectura: positiva\|cero\|negativa\|neutra, guia: total\|condicion, porque}` — adónde va su K total después de ESTE partido según la historia de sus burbujas (tope, forma, cómo se cortan) | caja «Reventón de la burbuja» del parte; el veredicto la compara con lo que hizo la K y **Aprendizaje** mide cada lectura contra la frecuencia de ese movimiento |
+| espina de la burbuja | `lecturaSad.espina`: por equipo `{lectura: positiva\|cero\|negativa\|neutra, guia: total\|condicion, porque}` — adónde va su K total después de ESTE partido según la historia de sus burbujas (tope, forma, cómo se cortan); parte de `espinaTarjeta` y dice «contra la tarjeta porque…» si se aparta de una fuerte | caja «Reventón de la burbuja» del parte; el veredicto la compara con lo que hizo la K y **Aprendizaje** mide cada lectura contra la frecuencia de ese movimiento |
 | reventón, después del partido | **nada**: `objetivo.reventon` reconstruye la burbuja declarada antes del partido y dice si ese partido la reventó (`docs/REVENTON.md` §11); observación, no veredicto | banda del veredicto (`↯ reventó` / `→ siguió`) y sección **Aprendizaje** (tasa por nivel de riesgo contra el backtest) |
 | `futbol-timeline` | `timelineEventos` (solo institucional) + narrativa | pestaña **Timeline** (fundida con los partidos calculados) |
 | `diagnostico-tactico` | los insumos **los calcula el backend** (`GET /analisis/cowork/dtp/{id}`: partido anterior con goles y posesión atada al marcador, XI de referencia con carriles, cambios, parejas nuevas, descanso y la **apertura previa** contra la que se cierra); vos escribís `dtp.bloques[]` —uno por equipo foco— con M1, M2 (incluidas las 6 respuestas del checklist del bloque rival: la CLASE la calcula el backend), M3, M6 y el cierre (M4, M5, mecanismo abierto); más `cadena.{a,b}.pronostico` y el documento `dtp` en prosa si querés | recibo (`dtp.claseBloqueRival`), la cadena de la página de **Equipo** y la pestaña **Documentos** |
@@ -1067,6 +1067,25 @@ Escribís vos (es juicio, no se puede calcular):
   recibo lo cobra en `faltan`. El riesgo es de la BURBUJA, no del equipo:
   con racha negativa, reventar es que el equipo deje de perder (la K vuelve
   a cero o pasa a positiva), y ALTO es justamente eso.
+  LA ESPINA EMPIEZA EN LA TARJETA (19/10/2026, REVENTON §14.2). Cada familia
+  de `/burbujas` trae `espinaTarjeta`: la espina que da la tarjeta sola (el
+  movimiento más probable de la guía de arriba, dicho como positiva · cero ·
+  negativa), `fuerte` si llega al 50 %. Antes de la primera espina de la
+  corrida leé `GET /analisis/cowork/espina/calibracion`: cuánto acierta la
+  tarjeta por fuerza y nivel en nuestros veredictos ciegos, y quién gana cuando
+  el analista la contradice. Después, por equipo:
+    · tarjeta FUERTE: tu espina la sigue, salvo que un skill (EFE, TDE, DTP,
+      matriz) traiga un hecho de ESTE partido que la contradiga —el DT nuevo,
+      un once roto, un rival que el TDE ve cerrando el partido—; entonces el
+      `porque` dice «contra la tarjeta porque <el hecho>». Sin esas palabras
+      el recibo lo cobra en `faltan`.
+    · tarjeta DÉBIL (riesgo alto: la burbuja revienta, no se sabe cómo):
+      deciden los skills; decí cuál.
+  El ensayo junta las dos en UN análisis: qué dice la historia de las
+  burbujas, qué le agregan los skills de este partido y por qué la espina
+  final es la que es. El veredicto guarda las dos (`objetivo.espina.*.tarjeta`
+  y `vsTarjeta`) y Aprendizaje mide si leer los skills encima de la tarjeta
+  suma o resta.
   Escribí UNA línea por equipo en `lecturaSad.reventon`, por ejemplo:
   «A: muy alto (8), rival mucho más fuerte que su zona de reventón → no
   seguir la racha de A; B: bajo, sin señal». NO copies los números al

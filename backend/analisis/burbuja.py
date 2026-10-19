@@ -135,6 +135,30 @@ def _movimiento_esperado(familia: str, signo: str, nivel: str) -> dict | None:
     m = tabla.get(signo, {}).get(nivel)
     return None if not m else {"sigue": m[0], "cero": m[1], "cambio": m[2]}
 
+# LA ESPINA DE LA TARJETA (19/10/2026, pedido del usuario: «la espina viene de
+# las tarjetas, que tienen una base estadística»). Es el movimiento MÁS PROBABLE
+# de la guía calibrada (`riesgo.movimiento`), dicho como resultado del equipo:
+# sigue → la racha continúa (gana con +, pierde con −) · cero → empata ·
+# cambio → se da vuelta. `fuerte` cuando ese movimiento llega al 50 %: con
+# riesgo bajo «sigue» pesa 52-54 % y acertó 17 de 20 lados el 17-18/10; con
+# riesgo alto los tres quedan casi parejos (35-46 %) y la tarjeta dice bien que
+# la burbuja revienta, no cómo. Es el punto de partida del analista, no su
+# respuesta: los skills la confirman o la contradicen, y Aprendizaje mide quién
+# tenía razón (`acreditables.espina.tarjeta`).
+ESPINA_FUERTE = 0.50
+
+
+def espina_tarjeta(signo: str | None, movimiento: dict | None) -> dict | None:
+    if signo not in ("+", "-") or not movimiento:
+        return None
+    mov, prob = max(((k, float(movimiento.get(k) or 0)) for k in ("sigue", "cero", "cambio")),
+                    key=lambda kv: kv[1])
+    lectura = {"sigue": "positiva" if signo == "+" else "negativa", "cero": "cero",
+               "cambio": "negativa" if signo == "+" else "positiva"}[mov]
+    return {"lectura": lectura, "movimiento": mov, "prob": round(prob, 3),
+            "fuerza": "fuerte" if prob >= ESPINA_FUERTE else "debil"}
+
+
 AVISO = ("Guía, no probabilidad: compara la burbuja abierta con lo que este equipo aguantó "
          "antes de reventar (K, partidos y nivel del rival). Sirve para saber cuándo NO apostar.")
 

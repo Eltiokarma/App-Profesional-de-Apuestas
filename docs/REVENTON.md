@@ -824,6 +824,34 @@ motor ya trae la localía en el nivel (§13.4); esto es la guía para LEER a un
 equipo por condición, y Aprendizaje (`acreditables.espina.porGuia`) dirá si la
 lectura con la K de la condición acierta más que con la total.
 
+### 14.2 La espina de la tarjeta y el analista (19/10/2026)
+
+Pedido del usuario: «la espina viene de las tarjetas; tiene una base más sólida
+y estadística… hay que juntarlo con el análisis de los skills». La tarjeta ya
+dice adónde suele ir la K (§14, §14.1); ahora lo dice también como espina:
+`espinaTarjeta` = el movimiento más probable de `riesgo.movimiento`, traducido
+a resultado del equipo (sigue → `positiva` con racha + y `negativa` con racha
+−; cero → `cero`; cambio → el signo contrario), `fuerte` si llega al 50 %
+(`burbuja.ESPINA_FUERTE`, espejo `src/lib/burbuja.ts`, vectores
+`scripts/casos_espina_tarjeta.json`). Viaja en cada familia de `/burbujas` y en
+`reventonCalculado` del parte (total y condición), y la tarjeta la pinta.
+
+Es el PUNTO DE PARTIDA del parte, no su reemplazo: el analista lee los skills
+(EFE, TDE, DTP, matriz) encima y, si va contra una tarjeta fuerte, lo dice en
+`porque` («contra la tarjeta porque…»; si no, el recibo lo cobra en `faltan`).
+Con la tarjeta débil (riesgo alto: va a reventar, no se sabe cómo) deciden los
+skills. El veredicto guarda las dos espinas (`objetivo.espina.*.tarjeta` y
+`vsTarjeta`) y `GET /analisis/cowork/espina/calibracion` (en Aprendizaje,
+`acreditables.espina.tarjeta`) dice, en población ciega, cuánto acierta la
+tarjeta por fuerza y nivel, cuánto el analista cuando la sigue y **quién gana
+cuando la contradice**: si con casos el analista no le gana a la tarjeta al
+contradecirla, la regla del prompt se endurece; si le gana, los skills están
+sumando.
+
+Medición de arranque (veredictos del 17-18/10, a mano): la espina de la tarjeta
+sola acertó 56 de 102 lados, la del analista 52 de 97 y el 1X2 59 de 102; con
+riesgo bajo, la tarjeta 17 de 20. Es n chico: lo que decide es la tabla.
+
 ## 15. Las otras familias: doble oportunidad, márgenes y goles (17/10/2026)
 
 Pedido del usuario: la burbuja de doble oportunidad de local de Everton estaba

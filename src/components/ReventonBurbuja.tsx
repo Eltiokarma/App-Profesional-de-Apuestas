@@ -339,6 +339,20 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
                 <span style={{ color: signo === '+' ? 'var(--down)' : 'var(--up)' }}>{signo === '+' ? 'a negativa' : 'a positiva'} {Math.round(riesgo.movimiento.cambio * 100)}%</span>
               </div>
             )}
+            {/* LA ESPINA DE LA TARJETA: el movimiento más probable dicho como
+                resultado del equipo; es el punto de partida del parte */}
+            {fam.espinaTarjeta && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 5, font: '600 10.5px var(--mono)' }}
+                title={fam.espinaTarjeta.fuerza === 'fuerte'
+                  ? 'el movimiento más probable pasa del 50 %: el parte parte de acá y solo la contradice con un hecho de los skills'
+                  : 'ningún movimiento llega al 50 %: la burbuja puede cortarse de más de una forma y deciden los skills'}>
+                <span style={{ color: 'var(--t3)' }}>espina de la tarjeta:</span>
+                <span style={{ color: { positiva: 'var(--up)', cero: 'var(--mark)', negativa: 'var(--down)' }[fam.espinaTarjeta.lectura] }}>
+                  {{ positiva: 'gana', cero: 'empata', negativa: 'pierde' }[fam.espinaTarjeta.lectura]} ({Math.round(fam.espinaTarjeta.prob * 100)}%)
+                </span>
+                <Chip texto={fam.espinaTarjeta.fuerza === 'fuerte' ? 'fuerte' : 'débil: deciden los skills'} color={fam.espinaTarjeta.fuerza === 'fuerte' ? 'var(--t1)' : 'var(--t3)'} />
+              </div>
+            )}
           </div>
 
           {base && !compact && (

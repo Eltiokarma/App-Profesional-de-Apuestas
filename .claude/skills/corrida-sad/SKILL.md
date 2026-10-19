@@ -117,6 +117,16 @@ cae en la raíz del repo (17/10/2026).
 >   burbujas (si no, el recibo avisa `ensayo.espina`). Si el equipo es otro en casa que afuera, leé la K
 >   de la condición de hoy (`familias.local` / `familias.visita`) y declaralo
 >   con `"guia": "condicion"`.
+> - **La espina empieza en la tarjeta** (desde el 19/10): cada familia de
+>   `/burbujas` trae `espinaTarjeta` (la espina que da la tarjeta sola, `fuerte`
+>   o `debil`) y `GET /analisis/cowork/espina/calibracion` dice cuánto acierta y
+>   quién gana cuando el analista la contradice. Leé la calibración UNA vez al
+>   empezar la corrida. Con tarjeta FUERTE, la espina la sigue salvo que un
+>   skill (EFE, TDE, DTP, matriz) traiga un hecho de ESTE partido que la
+>   contradiga, y entonces el `porque` dice «contra la tarjeta porque…» (si no,
+>   el recibo lo cobra). Con tarjeta DÉBIL deciden los skills. El ensayo junta
+>   las dos lecturas en una: qué dice la historia de las burbujas y qué le
+>   agregan los skills de este partido.
 > - **La espina contra el riesgo se dice**: si leés la espina contra el riesgo
 >   calculado (alto y la dejás neutra o siguiendo la racha; bajo y la cortás),
 >   el `porque` empieza «contra el riesgo X porque…» y el ensayo lo nombra.

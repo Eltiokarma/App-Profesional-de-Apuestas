@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { analizarBurbujas, extremoDe, type ContextoBurbuja, type FilaK } from '../src/lib/burbuja'
+import { analizarBurbujas, espinaTarjeta, extremoDe, type ContextoBurbuja, type FilaK } from '../src/lib/burbuja'
 import type { HistorialSignoDTO, ReventonDTO } from '../src/api/types'
 
 let failed = 0
@@ -175,6 +175,14 @@ const tn = neg.familias.total
 check('burbuja NEGATIVA: signo −, K −6, 2 partidos', eq([tn.actual!.signo, tn.actual!.k, tn.actual!.partidos], ['-', -6, 2]))
 check('racha de derrotas: rival 1.2 ≤ mediana 1.5 → en zona, «cortarse»', tn.rival!.enZona === true && tn.riesgo!.motivos.some((m) => m.includes('cortarse')), tn)
 check('burbuja −: rival 0.3 más flojo → tramo fuerte (+1) + racha (+1) = 2, ALTO', tn.rival!.tramo === 'fuerte' && tn.riesgo!.puntos === 2 && tn.riesgo!.nivel === 'alto', tn.riesgo)
+
+console.log('\n— espina de la tarjeta (vectores en scripts/casos_espina_tarjeta.json) —')
+const casosEspina = JSON.parse(readFileSync(join(aqui, 'casos_espina_tarjeta.json'), 'utf8')) as { signo: string; movimiento: { sigue: number; cero: number; cambio: number }; esperado: unknown }[]
+for (const c of casosEspina) {
+  const r = espinaTarjeta(c.signo, c.movimiento)
+  check(`espina ${c.signo} ${JSON.stringify(c.movimiento)}`, JSON.stringify(r) === JSON.stringify(c.esperado), r)
+}
+check('sin burbuja o sin guía no hay espina de tarjeta', espinaTarjeta(null, { sigue: 1, cero: 0, cambio: 0 }) === null && espinaTarjeta('+', null) === null)
 
 console.log(failed ? `\n${failed} FALLAS` : '\nTODO OK')
 process.exit(failed ? 1 : 0)

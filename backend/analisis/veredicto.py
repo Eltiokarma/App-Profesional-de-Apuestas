@@ -327,7 +327,8 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     # ── las OTRAS burbujas que este partido cortó: lo que hay que rastrear ──
     out["otrasFamilias"] = familias_objetivo(fx)
     # ── la buena espina de la burbuja: la lectura del analista, contra el resultado
-    out["espina"] = espina_objetivo((parte.get("lecturaSad") or {}).get("espina") or {}, real)
+    out["espina"] = espina_objetivo((parte.get("lecturaSad") or {}).get("espina") or {}, real,
+                                    out.get("reventon"))
     # ── la matriz: qué escenario se jugó y qué se había escrito para él ────
     out["matriz"] = matriz_objetivo(parte.get("matriz") or {}, real)
     return out
@@ -360,7 +361,20 @@ def matriz_objetivo(matriz: dict, real: str) -> dict:
 _MOVIMIENTO_DE = {"gana": "positiva", "empata": "cero", "pierde": "negativa"}
 
 
-def espina_objetivo(espina: dict, real: str) -> dict:
+def _tarjeta_lado(reventon: dict | None, lado: str, movimiento_real: str) -> dict | None:
+    """La espina de la tarjeta de ESE día (la burbuja total declarada antes del
+    partido) y si se cumplió. Sin burbuja abierta no hay tarjeta."""
+    from backend.analisis import burbuja
+    dec = ((reventon or {}).get(lado) or {}).get("declarado") or {}
+    nivel = (dec.get("riesgo") or {}).get("nivel")
+    t = burbuja.espina_tarjeta(dec.get("signo"), burbuja._movimiento_esperado("total", dec.get("signo"), nivel)
+                               if nivel else None)
+    if not t:
+        return None
+    return {**t, "nivel": nivel, "signo": dec.get("signo"), "cumplida": t["lectura"] == movimiento_real}
+
+
+def espina_objetivo(espina: dict, real: str, reventon: dict | None = None) -> dict:
     """Por lado: adónde dijo el analista que iba la K total (positiva · cero ·
     negativa) y adónde fue. Después de un partido la K total es positiva si el
     equipo ganó, 0 si empató y negativa si perdió (MOTOR_SAD_EXTRACCION §3.3:
@@ -374,16 +388,24 @@ def espina_objetivo(espina: dict, real: str) -> dict:
     for lado in ("a", "b"):
         e = espina.get(lado) or {}
         lectura = e.get("lectura") or ""
-        if not lectura:
-            out[lado] = {"lectura": None, "resultado": None, "movimiento": None, "cumplida": None}
-            continue
         gana = (real == "local") if lado == "a" else (real == "visita")
         resultado = "gana" if gana else ("empata" if real == "empate" else "pierde")
         movimiento = _MOVIMIENTO_DE[resultado]
+        # LA TARJETA AL LADO DEL ANALISTA (19/10/2026): la espina que da la guía
+        # calibrada sola y si el analista la siguió o fue contra ella. Es lo que
+        # dice, con casos, si leer los skills encima de la tarjeta suma o resta.
+        tarjeta = _tarjeta_lado(reventon, lado, movimiento)
+        vs = (None if not tarjeta or not lectura or lectura == "neutra" else
+              "sigue" if lectura == tarjeta["lectura"] else "contra")
+        if not lectura:
+            out[lado] = {"lectura": None, "resultado": resultado, "movimiento": movimiento, "cumplida": None,
+                         "tarjeta": tarjeta, "vsTarjeta": None}
+            continue
         out[lado] = {"lectura": lectura, "guia": e.get("guia") or "total",
                      "porque": e.get("porque") or "", "resultado": resultado,
                      "movimiento": movimiento,
-                     "cumplida": None if lectura == "neutra" else lectura == movimiento}
+                     "cumplida": None if lectura == "neutra" else lectura == movimiento,
+                     "tarjeta": tarjeta, "vsTarjeta": vs}
     return out
 
 

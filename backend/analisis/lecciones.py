@@ -218,6 +218,10 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
     # se ve aparte, cada una contra la frecuencia de SUS lados
     por_guia = {g: ({e: {"lados": 0, "aciertos": 0} for e in espina}, {m: 0 for m in movimientos})
                 for g in ("total", "condicion")}
+    # la espina de la TARJETA y el analista contra ella (19/10/2026)
+    tar = {"porFuerza": {f: {"lados": 0, "aciertos": 0} for f in ("fuerte", "debil")},
+           "porNivel": {}, "sigue": {"lados": 0, "aciertos": 0},
+           "contra": {"lados": 0, "aciertaAnalista": 0, "aciertaTarjeta": 0}}
 
     for caso in casos:
         v = caso["veredicto"]
@@ -264,6 +268,19 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
         _acumular_reventon(rev, obj.get("reventon") or {}, ux, br)
         for lado in ("a", "b"):
             e = (obj.get("espina") or {}).get(lado) or {}
+            t = e.get("tarjeta")
+            if t:
+                for acc in (tar["porFuerza"][t["fuerza"]],
+                            tar["porNivel"].setdefault(t.get("nivel") or "?", {"lados": 0, "aciertos": 0})):
+                    acc["lados"] += 1
+                    acc["aciertos"] += 1 if t.get("cumplida") else 0
+                if e.get("vsTarjeta") == "sigue":
+                    tar["sigue"]["lados"] += 1
+                    tar["sigue"]["aciertos"] += 1 if e.get("cumplida") else 0
+                elif e.get("vsTarjeta") == "contra":
+                    tar["contra"]["lados"] += 1
+                    tar["contra"]["aciertaAnalista"] += 1 if e.get("cumplida") else 0
+                    tar["contra"]["aciertaTarjeta"] += 1 if t.get("cumplida") else 0
             if e.get("lectura") in espina:
                 g_acc, g_mov = por_guia.get(e.get("guia") or "total", por_guia["total"])
                 for acc, mov in ((espina, movimientos), (g_acc, g_mov)):
@@ -294,9 +311,39 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
         },
         "reventon": _cerrar_reventon(rev),
         "espina": {**_cerrar_espina(espina, movimientos),
-                   "porGuia": {g: _cerrar_espina(*por_guia[g]) for g in por_guia}},
+                   "porGuia": {g: _cerrar_espina(*por_guia[g]) for g in por_guia},
+                   "tarjeta": _cerrar_tarjeta(tar)},
     }
     return poblacion, metricas
+
+
+def _tasa(c: dict, clave: str = "aciertos") -> dict:
+    n = c["lados"]
+    ic = intervalo_wilson(c[clave], n)
+    return {"lados": n, "aciertos": c[clave], "tasa": round(c[clave] / n, 3) if n else None,
+            "intervalo": list(ic) if ic else None}
+
+
+def _cerrar_tarjeta(tar: dict) -> dict:
+    """La espina de la tarjeta sola, por fuerza y por nivel de riesgo, y el
+    analista contra ella: cuando la contradice, ¿quién acierta? Es la
+    calibración que el analista lee antes de escribir su espina."""
+    c = tar["contra"]
+    return {
+        "porFuerza": {f: _tasa(v) for f, v in tar["porFuerza"].items()},
+        "porNivel": {n: _tasa(v) for n, v in tar["porNivel"].items()},
+        "analistaLaSigue": _tasa(tar["sigue"]),
+        "analistaVaContra": {"lados": c["lados"], "aciertaAnalista": c["aciertaAnalista"],
+                             "aciertaTarjeta": c["aciertaTarjeta"],
+                             "lectura": ("sin n" if c["lados"] < REVENTON_N_MINIMO else
+                                         "el analista le gana a la tarjeta cuando la contradice"
+                                         if c["aciertaAnalista"] > c["aciertaTarjeta"] else
+                                         "la tarjeta le gana al analista cuando él la contradice"
+                                         if c["aciertaTarjeta"] > c["aciertaAnalista"] else "empate")},
+        "nota": ("espina de la TARJETA = el movimiento más probable de la guía calibrada (fuerte con ≥ 50 %); "
+                 "el analista la sigue o va contra ella leyendo los skills. Esto dice cuál de las dos acierta "
+                 "más, en población ciega"),
+    }
 
 
 def _cerrar_espina(acc: dict, movimientos: dict) -> dict:
@@ -647,6 +694,25 @@ def inventario(skill: str = "", estado: str = "", limite: int = 400, cohorte: st
 
 _RAIZ = __import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.dirname(
     __import__("os").path.abspath(__file__))))
+
+
+def calibracion_espina(limite: int = 400) -> dict:
+    """Lo que el analista lee ANTES de escribir su espina: cuánto acierta la
+    espina de la tarjeta por nivel de riesgo y fuerza, cuánto acierta él
+    cuando la sigue y quién gana cuando la contradice. Sale de nuestros propios
+    veredictos ciegos, así que se recalibra solo con cada caso cerrado."""
+    _pob, metricas = _metricas(_casos(limite))
+    esp = metricas.get("espina") or {}
+    return {
+        "generadoEn": efedb.ahora(),
+        "tarjeta": esp.get("tarjeta"),
+        "analistaPorLectura": {k: esp.get(k) for k in ("positiva", "cero", "negativa", "neutra")},
+        "comoLeerlo": ("empieza por la espina de la tarjeta (`familias.*.espinaTarjeta` en /burbujas). Si es "
+                       "FUERTE y su nivel acierta en esta tabla, síguela salvo que un skill diga otra cosa con "
+                       "un hecho concreto; si es DÉBIL (riesgo alto: revienta, pero no se sabe cómo), los skills "
+                       "deciden cómo se corta. Ir contra la tarjeta se dice en `porque`, y esta tabla mide si "
+                       "valió la pena"),
+    }
 
 
 def version_skill(skill: str) -> str:

@@ -594,6 +594,9 @@ export interface FamiliaBurbujaDTO {
    *  actual · últimos 20): la global manda en el riesgo, estas son para leer.
    *  Filtra por la fecha en la que reventó; los episodios no se recortan. */
   historialPorPeriodo: HistorialPeriodoDTO[]
+  /** La espina que da la tarjeta sola (el movimiento más probable de la guía
+   *  calibrada); null sin burbuja abierta o sin guía. */
+  espinaTarjeta?: EspinaTarjetaDTO | null
   /** Dónde está la burbuja abierta frente a los reventones de su signo. */
   posicion: { percentilK: number; percentilRacha: number; kSobreMediana: number | null } | null
   /** El próximo rival frente al nivel con el que suele reventar (solo si la
@@ -1321,7 +1324,9 @@ export interface ReventonLadoDTO {
     riesgo: RiesgoReventonDTO | null
     rival: FamiliaBurbujaDTO['rival']
     extremo: ExtremoBurbujaDTO | null
+    espinaTarjeta?: EspinaTarjetaDTO | null
   }
+  espinaTarjeta?: EspinaTarjetaDTO | null
   estabilidad: EstabilidadEquipoDTO['grado']
   partidos: number
   aviso: string
@@ -1558,6 +1563,20 @@ export interface EspinaObservada {
   /** adónde fue la K total: positiva (ganó) · cero (empató) · negativa (perdió) */
   movimiento: 'positiva' | 'cero' | 'negativa' | null
   cumplida: boolean | null
+  /** La espina de la tarjeta de ese lado y si se cumplió. */
+  tarjeta?: (EspinaTarjetaDTO & { nivel: string | null; signo: string | null; cumplida: boolean | null }) | null
+  /** si el analista siguió a la tarjeta o fue contra ella */
+  vsTarjeta?: 'sigue' | 'contra' | null
+}
+
+/** La espina que da la TARJETA (19/10/2026): el movimiento más probable de
+ *  `riesgo.movimiento` como lectura. Fuerte con prob ≥ 0.50. Es el punto de
+ *  partida del parte; ir contra ella se dice en `porque`. */
+export interface EspinaTarjetaDTO {
+  lectura: 'positiva' | 'cero' | 'negativa'
+  movimiento: 'sigue' | 'cero' | 'cambio'
+  prob: number
+  fuerza: 'fuerte' | 'debil'
 }
 
 export interface EspinaCelda {

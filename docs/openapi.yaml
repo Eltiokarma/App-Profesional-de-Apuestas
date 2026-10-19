@@ -1141,6 +1141,42 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/SobrePendientes' }
+  /analisis/cowork/espina/calibracion:
+    get:
+      summary: La espina de la tarjeta medida contra los veredictos ciegos
+      description: >
+        Lo que el parte lee ANTES de escribir su espina: cuánto acierta la espina de la tarjeta
+        por fuerza y por nivel de riesgo, cuánto acierta el analista cuando la sigue, y quién
+        gana cuando la contradice (`analistaVaContra`). Población ciega; se recalibra sola con
+        cada veredicto. Abierto al token de Cowork.
+      parameters:
+        - { name: limite, in: query, schema: { type: integer, default: 400 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  generadoEn: { type: string }
+                  tarjeta:
+                    type: object
+                    nullable: true
+                    properties:
+                      porFuerza: { type: object, additionalProperties: { $ref: '#/components/schemas/TasaWilson' } }
+                      porNivel: { type: object, additionalProperties: { $ref: '#/components/schemas/TasaWilson' } }
+                      analistaLaSigue: { $ref: '#/components/schemas/TasaWilson' }
+                      analistaVaContra:
+                        type: object
+                        properties:
+                          lados: { type: integer }
+                          aciertaAnalista: { type: integer }
+                          aciertaTarjeta: { type: integer }
+                          lectura: { type: string }
+                      nota: { type: string }
+                  analistaPorLectura: { type: object, additionalProperties: true }
+                  comoLeerlo: { type: string }
   /analisis/cowork/lecciones:
     get:
       summary: Las lecciones acumuladas por skill (fase C)
@@ -1624,7 +1660,9 @@ components:
             de los puntos de docs/REVENTON.md §5, no los mueve. `espina`: por lectura (positiva ·
             cero · negativa · neutra) cuántas acertaron adónde fue la K, con intervalo, la
             `frecuenciaDelMovimiento` y si la supera; `lectura` resume; `porGuia` repite la
-            cuenta para la K total y la K de la condición, cada una contra sus lados.
+            cuenta para la K total y la K de la condición, cada una contra sus lados;
+            `tarjeta` mide la espina de la tarjeta sola y al analista contra ella (lo mismo
+            que /analisis/cowork/espina/calibracion).
           additionalProperties: true
         porSkill:
           type: array
@@ -2250,6 +2288,7 @@ components:
         familia: { type: string, enum: [total, local, visita] }
         partidosEnCondicion: { type: integer }
         historialPorPeriodo: { type: array, items: { $ref: '#/components/schemas/HistorialPeriodo' } }
+        espinaTarjeta: { $ref: '#/components/schemas/EspinaTarjeta', nullable: true }
         actual:
           type: object
           nullable: true
@@ -2978,6 +3017,8 @@ components:
             riesgo: { type: object, nullable: true }
             rival: { type: object, nullable: true }
             extremo: { $ref: '#/components/schemas/ExtremoBurbuja', nullable: true }
+            espinaTarjeta: { $ref: '#/components/schemas/EspinaTarjeta', nullable: true }
+        espinaTarjeta: { $ref: '#/components/schemas/EspinaTarjeta', nullable: true }
         estabilidad: { type: string, enum: [estable, en transición, inestable, sin dato] }
         partidos: { type: integer }
         aviso: { type: string }
@@ -4181,6 +4222,40 @@ components:
         resultado: { type: string, nullable: true, enum: [gana, empata, pierde, null] }
         movimiento: { type: string, nullable: true, enum: [positiva, cero, negativa, null], description: 'adónde fue la K total del equipo' }
         cumplida: { type: boolean, nullable: true, description: 'lectura == movimiento; neutra o sin lectura = null' }
+        tarjeta:
+          type: object
+          nullable: true
+          description: 'la espina de la tarjeta de ese lado (familia total, la del reventón declarado antes del partido), con `cumplida` contra el movimiento real; null sin burbuja abierta'
+          properties:
+            lectura: { type: string, enum: [positiva, cero, negativa] }
+            movimiento: { type: string, enum: [sigue, cero, cambio] }
+            prob: { type: number }
+            fuerza: { type: string, enum: [fuerte, debil] }
+            nivel: { type: string, nullable: true }
+            signo: { type: string, nullable: true }
+            cumplida: { type: boolean, nullable: true }
+        vsTarjeta: { type: string, nullable: true, enum: [sigue, contra, null], description: 'si la lectura del analista coincidió con la de la tarjeta o fue contra ella; neutra o sin tarjeta = null' }
+    TasaWilson:
+      type: object
+      properties:
+        lados: { type: integer }
+        aciertos: { type: integer }
+        tasa: { type: number, nullable: true }
+        intervalo: { type: array, nullable: true, items: { type: number } }
+    EspinaTarjeta:
+      type: object
+      description: >
+        La espina que da la TARJETA sola (19/10/2026): el movimiento más probable de
+        `riesgo.movimiento` (guía calibrada del backtest, docs/REVENTON.md §14) traducido a
+        lectura —sigue → positiva con racha + / negativa con racha −; cero → cero; cambio → el
+        signo opuesto—. `fuerte` con prob ≥ 0.50; débil cuando el reventón es probable pero no
+        se sabe cómo (riesgo alto). Es el punto de partida del parte: ir contra ella se dice en
+        `espina.*.porque` y se mide en /analisis/cowork/espina/calibracion.
+      properties:
+        lectura: { type: string, enum: [positiva, cero, negativa] }
+        movimiento: { type: string, enum: [sigue, cero, cambio] }
+        prob: { type: number }
+        fuerza: { type: string, enum: [fuerte, debil] }
     ReventonObservado:
       type: object
       properties:

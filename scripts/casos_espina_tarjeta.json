@@ -1,0 +1,100 @@
+[
+ {
+  "signo": "+",
+  "movimiento": {
+   "sigue": 0.62,
+   "cero": 0.22,
+   "cambio": 0.16
+  },
+  "esperado": {
+   "lectura": "positiva",
+   "movimiento": "sigue",
+   "prob": 0.62,
+   "fuerza": "fuerte"
+  }
+ },
+ {
+  "signo": "-",
+  "movimiento": {
+   "sigue": 0.58,
+   "cero": 0.25,
+   "cambio": 0.17
+  },
+  "esperado": {
+   "lectura": "negativa",
+   "movimiento": "sigue",
+   "prob": 0.58,
+   "fuerza": "fuerte"
+  }
+ },
+ {
+  "signo": "+",
+  "movimiento": {
+   "sigue": 0.3,
+   "cero": 0.32,
+   "cambio": 0.38
+  },
+  "esperado": {
+   "lectura": "negativa",
+   "movimiento": "cambio",
+   "prob": 0.38,
+   "fuerza": "debil"
+  }
+ },
+ {
+  "signo": "-",
+  "movimiento": {
+   "sigue": 0.3,
+   "cero": 0.32,
+   "cambio": 0.38
+  },
+  "esperado": {
+   "lectura": "positiva",
+   "movimiento": "cambio",
+   "prob": 0.38,
+   "fuerza": "debil"
+  }
+ },
+ {
+  "signo": "+",
+  "movimiento": {
+   "sigue": 0.3,
+   "cero": 0.4,
+   "cambio": 0.3
+  },
+  "esperado": {
+   "lectura": "cero",
+   "movimiento": "cero",
+   "prob": 0.4,
+   "fuerza": "debil"
+  }
+ },
+ {
+  "signo": "+",
+  "movimiento": {
+   "sigue": 0.4,
+   "cero": 0.4,
+   "cambio": 0.2
+  },
+  "esperado": {
+   "lectura": "positiva",
+   "movimiento": "sigue",
+   "prob": 0.4,
+   "fuerza": "debil"
+  }
+ },
+ {
+  "signo": "-",
+  "movimiento": {
+   "sigue": 0.5,
+   "cero": 0.3,
+   "cambio": 0.2
+  },
+  "esperado": {
+   "lectura": "negativa",
+   "movimiento": "sigue",
+   "prob": 0.5,
+   "fuerza": "fuerte"
+  }
+ }
+]
