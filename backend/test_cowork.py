@@ -633,6 +633,33 @@ def main():
     c.post(f"{A}/analisis/cowork", json=_parte(con_ficha))
     c.post(f"{A}/analisis/cowork/xi/auto")
 
+    # LA FICHA QUE SE COMPLETA DESPUÉS DEL CIERRE (Nacional Potosí, 18/10/2026:
+    # 8 titulares y sin banco 25' antes; la ficha final traía 11 + 12)
+    with _sq3m.connect(_sadm) as _con:
+        _todas_a = _con.execute("SELECT * FROM alineaciones WHERE fixture_id=? AND team_id=?",
+                                (con_ficha, _fxm[0])).fetchall()
+        _tit_rows = [r for r in _todas_a if r[_cols.index("titular")]]
+        _con.execute("DELETE FROM alineaciones WHERE fixture_id=? AND team_id=?", (con_ficha, _fxm[0]))
+        _con.executemany(f"INSERT INTO alineaciones ({','.join(_cols)}) VALUES ({','.join('?' * len(_cols))})",
+                         _tit_rows[:8])
+    c.delete(f"{A}/analisis/cowork/{con_ficha}")
+    c.post(f"{A}/analisis/cowork", json=_parte(con_ficha))
+    c.post(f"{A}/analisis/cowork/xi/auto")
+    _x8 = c.get(f"{A}/analisis/cowork/{con_ficha}").json()["xi"]["a"]
+    with _sq3m.connect(_sadm) as _con:
+        _con.execute("DELETE FROM alineaciones WHERE fixture_id=? AND team_id=?", (con_ficha, _fxm[0]))
+        _con.executemany(f"INSERT INTO alineaciones ({','.join(_cols)}) VALUES ({','.join('?' * len(_cols))})",
+                         _todas_a)
+    _re = c.post(f"{A}/analisis/cowork/xi/auto").json()
+    _x11 = c.get(f"{A}/analisis/cowork/{con_ficha}").json()["xi"]["a"]
+    check("un lado cerrado con la ficha incompleta se vuelve a cruzar cuando la ficha se completa",
+          len(_x8["once"]) == 8 and len(_x11["once"]) == len(_tit_rows)
+          and any(x["fixtureId"] == con_ficha and x["lado"] == "a" and "se completó" in x.get("porque", "")
+                  for x in _re["reemplazados"]), (len(_x8["once"]), len(_x11["once"]), _re["reemplazados"]))
+    _re2 = c.post(f"{A}/analisis/cowork/xi/auto").json()
+    check("y una vez completo no se vuelve a tocar (idempotente)",
+          all(x["fixtureId"] != con_ficha for x in _re2["reemplazados"] + _re2["cerrados"]), _re2["reemplazados"])
+
     # ── EL MISMO HUECO, LEÍDO AL REVÉS POR DOS ESCALAS ─────────────────────
     # Un equipo salió «1.9% SIN FORMACIÓN» y «IE 8.14 · casi seguro» a la vez:
     # el EFE cuenta el bloque ausente como 0 y hunde el porcentaje; el TDE
@@ -1432,6 +1459,14 @@ def main():
           len(_af) == 1 and _af[0]["codigo"] == "FAMILIA-RECORD" and _af[0]["tipo"] == "dato"
           and "9 de local sin perder" in _af[0]["detalle"] and "anotando" not in _af[0]["detalle"]
           and "cuidado" in _af[0]["detalle"], _af)
+    # una burbuja del «no» se dice con el texto del «no» (Nice, 18/10/2026: «anotando» por «sin anotar»)
+    _sqf = {"b": {"otrasFamilias": {"familias": [
+        {"familia": "anota", "ambito": "visita", "partidos": 5, "record": "supera", "cuidado": True, "valor": False},
+        {"familia": "gana3+", "ambito": "local", "partidos": 8, "record": "iguala", "cuidado": True, "valor": False}]}}}
+    _aq = alertas_familias(_sqf, {"b": "Nice"})
+    check("FAMILIA-RECORD de una sequía dice el estado real: «sin anotar», «sin ganar por 3 o más»",
+          _aq and "5 de visita sin anotar" in _aq[0]["detalle"] and "8 de local sin ganar por 3 o más" in _aq[0]["detalle"]
+          and " anotando" not in _aq[0]["detalle"], _aq)
     check("sin reventón calculado, FAMILIA-RECORD no rompe", alertas_familias(None, {}) == [])
     # ESPINA CONTRA EL RIESGO (Albion–Torque, 18/10/2026): riesgo ALTO de la
     # racha − y espina «neutra» sin nombrar el riesgo
@@ -1514,9 +1549,19 @@ def main():
     d_dt = c.post(f"{A}/analisis/cowork", json=p_dt).json()
     d_dt = {**c.get(f"{A}/analisis/cowork/{sin_ficha}").json(), "rechazos": d_dt["rechazos"]}
     da = d_dt["equipos"]["a"]["dt"]
-    check("el nombre que coincide con el DT de la base toma la fecha de asunción de la base",
+    # la fecha de /coachs (fuente por defecto) es el mes de la carrera: NO se toma (Rayo Zuliano, 18/10)
+    check("con la base de /coachs, el parte sin `desde` queda sin antigüedad (no se rellena con la carrera)",
+          da["meses"] is None and da["origenMeses"] != "base" and not da["desde"], (da, dict(dt_base)))
+    import sqlite3 as _sq3dt
+    with _sq3dt.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("UPDATE entrenadores SET fuente='alineacion' WHERE nombre=?", (dt_base["nombre"],))
+    d_dt = c.post(f"{A}/analisis/cowork", json=p_dt).json()
+    da = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["equipos"]["a"]["dt"]
+    check("con la llegada VISTA en el banco (fuente alineacion), toma la fecha de asunción de la base",
           da["meses"] is not None and da["origenMeses"] == "base" and da["desde"] == dt_base["desde"],
           (da, dict(dt_base)))
+    with _sq3dt.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("UPDATE entrenadores SET fuente='coachs' WHERE nombre=?", (dt_base["nombre"],))
     p_dt["equipos"]["a"]["dt"] = {"nombre": "Según prensa de esta semana dirige el interino tras la salida "
                                             "del técnico anterior el pasado martes por malos resultados"}
     p_dt["equipos"]["b"]["dt"] = "desconocido"
@@ -2738,6 +2783,14 @@ def main():
           and _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3"}}},
                        {"a": {"formacion": "4-2-3-1", "titulares": []}})["rehacer"] is False)
     _ref = "Muslera; Mancuso, Núñez, Rojo, Benedetti; Piovi, Castro, B. Gallego; Palacios, Carrillo, Burgos"
+    # SIN XI DE REFERENCIA (Rayo Zuliano, Puerto Cabello, 18/10/2026): no hay ausentes que contar
+    _onze = ["A. Uno", "B. Dos", "C. Tres", "D. Cuatro", "E. Cinco", "F. Seis", "G. Siete", "H. Ocho",
+             "I. Nueve", "J. Diez", "K. Once"]
+    _sr = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-4-2",
+                    "xiReferencia": "sin dato: no hay XI capturado en la base para esta liga, se espera la ficha"}}},
+                   {"a": {"formacion": "4-4-2", "titulares": _onze}})
+    check("con «sin XI de referencia» no se cuentan ausentes ni se pide rehacer por el once",
+          _sr["ausentesDeLaReferencia"] == [] and _sr["rehacer"] is False and _sr["sinReferencia"] is True, _sr)
     # Villa (17/10/2026): lo que `senalXi` ya anunciaba no es sorpresa
     _an = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3", "xiReferencia": _ref,
                                                        "senalXi": "entran Onana, Bogarde y Maatsen por rotación"}}},

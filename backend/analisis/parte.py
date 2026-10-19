@@ -414,7 +414,13 @@ def _dt_equipo(crudo, rechazos: list, lado: str, fecha_partido: str,
     if meses is None and desde and partido:
         meses = round(max(0, (partido - _fecha(desde)).days) / _DIAS_MES, 1)
         origen = "desde"
-    if meses is None and nombre and entrenador_base and entrenador_base.get("nombre"):
+    # LA FECHA DE /coachs NO ES DATO: es el mes de la carrera de la API (Carrick
+    # «desde 2025-08» cuando llegó en enero) y la agenda ya la marca
+    # `desdeConfirmar`. Rayo Zuliano y Metropolitanos (18/10/2026) dejaron `desde`
+    # vacío y el parte salió con «2026-01-01 · 9.5 meses» de la base. Solo sirve
+    # la llegada VISTA en el banco (fuente `alineacion`).
+    if (meses is None and nombre and entrenador_base and entrenador_base.get("nombre")
+            and (entrenador_base.get("fuente") or "coachs") == "alineacion"):
         # el mismo apellido que el DT de la base → su fecha de asunción sirve
         from backend.ingesta.jugadores import mismo_nombre_dt
         if mismo_nombre_dt(nombre, entrenador_base["nombre"]) and _fecha(entrenador_base.get("desde")) and partido:
@@ -798,7 +804,7 @@ def alertas_familias(reventon: dict | None, nombres: dict) -> list[dict]:
             "codigo": "FAMILIA-RECORD", "equipo": lado, "tipo": "dato",
             "detalle": f"{nombres.get(lado, lado)}: " + " · ".join(
                 f"{f['partidos']} {_AMBITO_TXT.get(f['ambito'], f['ambito'])} "
-                f"{_FAMILIA_TXT.get(f['familia'], f['familia'])} (récord{'' if f['record'] == 'supera' else ' igualado'})"
+                f"{_estado_familia(f)} (récord{'' if f['record'] == 'supera' else ' igualado'})"
                 for f in grandes)
                 + ". Terreno sin precedente: cuidado con cargar a que siga. No es probabilidad de corte "
                   "(en su récord estas burbujas se sostienen, REVENTON §15); si se corta, hay una causa que "
@@ -853,9 +859,15 @@ def alertas_espina(reventon: dict | None, espina: dict | None, nombres: dict) ->
 
 
 _AMBITO_TXT = {"local": "de local", "visita": "de visita", "total": "en total"}
-_FAMILIA_TXT = {"noPierde": "sin perder", "noGana": "sin ganar", "gana2+": "ganando por 2+",
-                "gana3+": "ganando por 3+", "pierde2+": "perdiendo por 2+", "anota": "anotando",
-                "recibe": "recibiendo gol", "ambosMarcan": "con goles de los dos", "mas2.5": "con más de 2,5"}
+def _estado_familia(f: dict) -> str:
+    """El estado en que está la burbuja, con el par (sí, no) de la narrativa.
+    Una burbuja en curso puede ser del «no»: Nice llevaba 5 de visita SIN
+    anotar y la alerta decía «5 de visita anotando» (18/10/2026, inc. 158/30)."""
+    from backend.analisis.familias import NARRADAS
+    par = next(((si, no) for c, si, no in NARRADAS if c == f.get("familia")), None)
+    if not par:
+        return f.get("familia", "")
+    return par[0] if f.get("valor", True) else par[1]
 
 
 # ── la escala del nivel entre ligas ──────────────────────────────────────────
@@ -3300,7 +3312,14 @@ def pendientes_veredicto(horas: int = 12, limite: int = 50) -> dict:
     return sobre
 
 
-def cerrar_onces_pendientes(limite: int = 50) -> dict:
+def ficha_crecio(previo: dict, nuevo: dict) -> bool:
+    """¿La ficha trae ahora más (u otro) once o más banca que lo que se cerró?"""
+    po, pb = previo.get("once") or [], previo.get("banca") or []
+    return (len(nuevo["once"]) > len(po) or len(nuevo["banca"]) > len(pb)
+            or (len(nuevo["once"]) == len(po) and set(nuevo["once"]) != set(po)))
+
+
+def cerrar_onces_pendientes(limite: int = 120) -> dict:
     """Cierra el bloque F de todos los partes cuya alineación YA está ingestada.
 
     EL ONCE NO NECESITA AL MODELO. Cerrar el bloque F es cruzar dos listas de
@@ -3314,10 +3333,13 @@ def cerrar_onces_pendientes(limite: int = 50) -> dict:
     la alineación» —el caso que obliga al pantallazo manual—.
     """
     with _conectar() as con:
+        # LOS CONFIRMADOS TAMBIÉN: un once de la ficha capturado antes del
+        # pitazo puede venir incompleto (Nacional Potosí con 8 titulares y sin
+        # banco 25' antes; Sportivo Ameliano con 10 suplentes) y el bloque F
+        # quedaba cerrado con bajas que no existieron (18/10/2026).
         filas = [dict(r) for r in con.execute(
-            "SELECT fixture_id, equipo_a, equipo_b, xi_json FROM parte_cowork "
-            "WHERE veredicto_json IS NULL AND estado != 'confirmado' "
-            "ORDER BY fecha LIMIT ?", (limite,))]
+            "SELECT fixture_id, equipo_a, equipo_b, xi_json, estado FROM parte_cowork "
+            "WHERE veredicto_json IS NULL ORDER BY fecha LIMIT ?", (limite,))]
     cerrados, sin_ficha, nunca, conflictos, reemplazados = [], [], [], [], []
     for f in filas:
         fid = f["fixture_id"]
@@ -3327,8 +3349,17 @@ def cerrar_onces_pendientes(limite: int = 50) -> dict:
         ya = json.loads(f["xi_json"]) if f["xi_json"] else {}
         onces = {}
         for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])):
-            if (ya.get(lado) or {}).get("fuente") == FUENTE_FICHA:
-                continue  # ese lado ya viene de la ficha: no hay nada mejor
+            previo = ya.get(lado) or {}
+            if previo.get("fuente") == FUENTE_FICHA:
+                # ya viene de la ficha: solo se rehace si la ficha CRECIÓ
+                de_ficha = xi_de_ficha(fid, tid)
+                if de_ficha and ficha_crecio(previo, de_ficha):
+                    reemplazados.append({"fixtureId": fid, "lado": lado, "fuenteAnterior": FUENTE_FICHA,
+                                         "porque": "la ficha se completó después del cierre: "
+                                                   f"{len(previo.get('once') or [])}+{len(previo.get('banca') or [])} → "
+                                                   f"{len(de_ficha['once'])}+{len(de_ficha['banca'])}"})
+                    onces[lado] = de_ficha
+                continue
             de_ficha = xi_de_ficha(fid, tid)
             if de_ficha:
                 # LA FICHA MANDA SOBRE LA CARGA MANUAL. El pantallazo existe
@@ -3340,6 +3371,8 @@ def cerrar_onces_pendientes(limite: int = 50) -> dict:
                                          "fuenteAnterior": ya[lado].get("fuente", "")})
                 onces[lado] = de_ficha
         partido = f"{f['equipo_a']} vs {f['equipo_b']}"
+        if not onces and f.get("estado") == "confirmado":
+            continue   # cerrado y la ficha no cambió: nada que hacer (sin recalcular el parte)
         ya_ficha = [l for l in LADOS if (ya.get(l) or {}).get("fuente") == FUENTE_FICHA]
         if not onces and ya_ficha:
             # LA FICHA YA LLEGÓ: lo que quede abierto no es «esta liga no da

@@ -574,6 +574,14 @@ def _en_referencia(nombre: str, ref: str) -> bool:
     return any(_casi(a, p) for a in _apellidos(nombre) for p in palabras)
 
 
+_SIN_REF = re.compile(r"^\s*(sin|no hay|ninguno|n/?a\b)|sin (dato|xi|once|referencia)|no (hay|existe|tenemos) (xi|once)", re.I)
+
+
+def sin_referencia(texto: str) -> bool:
+    """La apertura dice que no hay XI de referencia (o no dice nada)."""
+    return not (texto or "").strip() or bool(_SIN_REF.search(texto))
+
+
 def oficial_de(fixture_id: int) -> dict:
     """El once que salió, por lado: formación y titulares. Vacío sin ficha."""
     fx = _fixture(fixture_id)
@@ -635,7 +643,12 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
                        f"{of['defensores']} defensores (la ficha no trae la formación)")
     ref = _plano(m1.get("xiReferencia") or "")
     ausentes = []
-    if len(ref.split()) >= 8:   # un XI de referencia escrito, no una frase
+    # «SIN XI DE REFERENCIA» NO ES UN XI. La frase tenía 8+ palabras y pasaba por
+    # lista de nombres: los 11 titulares oficiales salían «ausentes» y saltaba
+    # DTP-REHACER en ligas sin onces (Rayo Zuliano, Puerto Cabello,
+    # Estudiantes de Mérida, 18/10/2026). Sin referencia no hay contra qué comparar.
+    sin_ref = sin_referencia(m1.get("xiReferencia") or "")
+    if not sin_ref and len(ref.split()) >= 8:   # un XI de referencia escrito, no una frase
         # LO QUE LA APERTURA YA ANUNCIÓ NO ES SORPRESA: un cambio nombrado en
         # `senalXi` o en `rolesReasignados` (Villa, 17/10/2026) no cuenta; y el
         # nombre de la plantilla, que a veces trae el apodo («Abde»), también sirve
@@ -651,7 +664,7 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
         if len(ausentes) >= REHACER_AUSENTES:
             motivos.append(f"once: {len(ausentes)} titulares que no estaban en el XI de referencia "
                            f"({', '.join(ausentes)})")
-    return {"rehacer": bool(motivos), "motivos": motivos,
+    return {"rehacer": bool(motivos), "motivos": motivos, "sinReferencia": sin_ref,
             "sistemaDeclarado": m1.get("sistema") or "", "sistemaOficial": of.get("formacion") or "",
             "defensoresOficiales": of.get("defensores"),
             # el nombre se presta a leerlo al revés: son los TITULARES OFICIALES
