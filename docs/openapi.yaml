@@ -1166,6 +1166,10 @@ paths:
                     properties:
                       porFuerza: { type: object, additionalProperties: { $ref: '#/components/schemas/TasaWilson' } }
                       porNivel: { type: object, additionalProperties: { $ref: '#/components/schemas/TasaWilson' } }
+                      porTipo:
+                        type: object
+                        description: 'la tarjeta GENERAL (K total) o la de la condición que leyó el parte (local para el lado a, visita para el b), cada una con `todas`, `fuerte` y `debil`'
+                        additionalProperties: { type: object, additionalProperties: { $ref: '#/components/schemas/TasaWilson' } }
                       analistaLaSigue: { $ref: '#/components/schemas/TasaWilson' }
                       partido:
                         type: object

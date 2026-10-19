@@ -199,6 +199,26 @@ def _item(caso, lado, clave, lv, mf, orden, propio, rival, estados, seleccion, m
     }
 
 
+def _sumar_tarjeta(tar: dict, lado: str, e: dict) -> None:
+    """Un lado del veredicto a la calibración de la tarjeta: por fuerza, por
+    tipo (general · local · visita), por nivel, y el analista contra ella."""
+    t = e.get("tarjeta")
+    if not t:
+        return
+    tipo = "general" if t.get("guia") != "condicion" else ("local" if lado == "a" else "visita")
+    for acc in (tar["porFuerza"][t["fuerza"]], tar["porTipo"][tipo][t["fuerza"]],
+                tar["porNivel"].setdefault(t.get("nivel") or "?", {"lados": 0, "aciertos": 0})):
+        acc["lados"] += 1
+        acc["aciertos"] += 1 if t.get("cumplida") else 0
+    if e.get("vsTarjeta") == "sigue":
+        tar["sigue"]["lados"] += 1
+        tar["sigue"]["aciertos"] += 1 if e.get("cumplida") else 0
+    elif e.get("vsTarjeta") == "contra":
+        tar["contra"]["lados"] += 1
+        tar["contra"]["aciertaAnalista"] += 1 if e.get("cumplida") else 0
+        tar["contra"]["aciertaTarjeta"] += 1 if t.get("cumplida") else 0
+
+
 def _metricas(casos: list[dict]) -> tuple[dict, dict]:
     """Población por separado, y las métricas SOLO de lo acreditable.
 
@@ -220,6 +240,10 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
                 for g in ("total", "condicion")}
     # la espina de la TARJETA y el analista contra ella (19/10/2026)
     tar = {"porFuerza": {f: {"lados": 0, "aciertos": 0} for f in ("fuerte", "debil")},
+           # la tarjeta GENERAL (K total) o la de la condición que leyó el parte:
+           # local para el lado a, visita para el b (19/10/2026, pedido del usuario)
+           "porTipo": {t: {f: {"lados": 0, "aciertos": 0} for f in ("fuerte", "debil")}
+                       for t in ("general", "local", "visita")},
            "porNivel": {}, "sigue": {"lados": 0, "aciertos": 0},
            "contra": {"lados": 0, "aciertaAnalista": 0, "aciertaTarjeta": 0},
            # las dos tarjetas del partido, como un 1X2 (Monza 4-0 Cagliari)
@@ -286,19 +310,7 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
             tar["partido"]["unaSola"]["aciertos"] += 1 if tp.get("cumplida") else 0
         for lado in ("a", "b"):
             e = (obj.get("espina") or {}).get(lado) or {}
-            t = e.get("tarjeta")
-            if t:
-                for acc in (tar["porFuerza"][t["fuerza"]],
-                            tar["porNivel"].setdefault(t.get("nivel") or "?", {"lados": 0, "aciertos": 0})):
-                    acc["lados"] += 1
-                    acc["aciertos"] += 1 if t.get("cumplida") else 0
-                if e.get("vsTarjeta") == "sigue":
-                    tar["sigue"]["lados"] += 1
-                    tar["sigue"]["aciertos"] += 1 if e.get("cumplida") else 0
-                elif e.get("vsTarjeta") == "contra":
-                    tar["contra"]["lados"] += 1
-                    tar["contra"]["aciertaAnalista"] += 1 if e.get("cumplida") else 0
-                    tar["contra"]["aciertaTarjeta"] += 1 if t.get("cumplida") else 0
+            _sumar_tarjeta(tar, lado, e)
             if e.get("lectura") in espina:
                 g_acc, g_mov = por_guia.get(e.get("guia") or "total", por_guia["total"])
                 for acc, mov in ((espina, movimientos), (g_acc, g_mov)):
@@ -353,6 +365,12 @@ def _cerrar_tarjeta(tar: dict) -> dict:
     return {
         "porFuerza": {f: _tasa(v) for f, v in tar["porFuerza"].items()},
         "porNivel": {n: _tasa(v) for n, v in tar["porNivel"].items()},
+        # general (K total) · local · visita (la K de la condición que leyó el
+        # parte), cada una entera y por fuerza: ¿la específica acierta más?
+        "porTipo": {tipo: {"todas": _tasa({"lados": sum(c["lados"] for c in fz.values()),
+                                           "aciertos": sum(c["aciertos"] for c in fz.values())}),
+                           **{f: _tasa(c) for f, c in fz.items()}}
+                    for tipo, fz in (tar.get("porTipo") or {}).items()},
         "analistaLaSigue": _tasa(tar["sigue"]),
         # por PARTIDO (los «lados» son partidos): las dos tarjetas como un 1X2.
         # Lo que se compara es «concuerdan» contra cada tarjeta sola (porFuerza)

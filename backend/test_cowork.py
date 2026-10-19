@@ -3075,6 +3075,17 @@ def main():
     check("la calibración dice quién gana cuando el analista contradice a la tarjeta, con su n",
           _ct["porFuerza"]["fuerte"]["tasa"] == 0.75 and _ct["porFuerza"]["debil"]["tasa"] is None
           and _ct["analistaVaContra"]["lectura"].startswith("la tarjeta le gana"), _ct)
+    from backend.analisis.lecciones import _sumar_tarjeta, _cerrar_tarjeta as _ct2
+    _tz = {"porFuerza": {f: {"lados": 0, "aciertos": 0} for f in ("fuerte", "debil")}, "porNivel": {},
+           "porTipo": {t: {f: {"lados": 0, "aciertos": 0} for f in ("fuerte", "debil")} for t in ("general", "local", "visita")},
+           "sigue": {"lados": 0, "aciertos": 0}, "contra": {"lados": 0, "aciertaAnalista": 0, "aciertaTarjeta": 0}}
+    _sumar_tarjeta(_tz, "b", {"tarjeta": {"lectura": "negativa", "fuerza": "debil", "cumplida": True, "guia": "condicion"}})
+    _sumar_tarjeta(_tz, "a", {"tarjeta": {"lectura": "positiva", "fuerza": "fuerte", "cumplida": False}})
+    _pt = _ct2(_tz)["porTipo"]
+    check("la calibración separa la tarjeta general de la de local y la de visita",
+          _pt is not None and set(_pt) == {"general", "local", "visita"}
+          and _pt["visita"]["todas"]["lados"] == 1 and _pt["visita"]["todas"]["aciertos"] == 1
+          and _pt["general"]["fuerte"]["lados"] == 1 and _pt["local"]["todas"]["lados"] == 0, _pt)
     _cal = calibracion_espina()
     check("GET de calibración: la tabla de la tarjeta, la del analista por lectura y cómo leerla",
           set(_cal) >= {"tarjeta", "analistaPorLectura", "comoLeerlo"}
