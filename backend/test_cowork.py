@@ -3039,6 +3039,17 @@ def main():
     check("con guía de la condición, la tarjeta del veredicto es la de la condición (Cagliari: «pierde», cumplida) y el parte fue contra ella",
           (_ec["b"]["tarjeta"] or {}).get("lectura") == "negativa" and _ec["b"]["tarjeta"]["cumplida"] is True
           and _ec["b"]["tarjeta"].get("guia") == "condicion" and _ec["b"]["vsTarjeta"] == "contra", _ec)
+    from backend.analisis.veredicto import tarjetas_partido
+    _tm = {"a": {"tarjeta": {"lectura": "positiva", "fuerza": "debil"}}, "b": {"tarjeta": {"lectura": "negativa", "fuerza": "debil"}}}
+    _tp = tarjetas_partido(_tm, "local")
+    check("las dos tarjetas como 1X2: «el local gana» y «el visitante pierde» concuerdan en local, débiles las dos, y aciertan con el 4-0",
+          _tp["estado"] == "concuerdan" and _tp["dicen"] == "local" and _tp["ambasDebiles"] and _tp["cumplida"] is True, _tp)
+    _td = tarjetas_partido({"a": {"tarjeta": {"lectura": "positiva", "fuerza": "fuerte"}},
+                            "b": {"tarjeta": {"lectura": "positiva", "fuerza": "debil"}}}, "visita")
+    check("si discrepan no hay resultado de las tarjetas, y se dice cuál acertó; con una sola, manda esa",
+          _td["estado"] == "discrepan" and _td["dicen"] is None and _td["aciertaA"] is False and _td["aciertaB"] is True
+          and tarjetas_partido({"a": {}, "b": {"tarjeta": {"lectura": "cero", "fuerza": "debil"}}}, "empate")["cumplida"] is True
+          and tarjetas_partido({}, "empate")["estado"] == "sin tarjetas", _td)
     _es = espina_objetivo({}, "empate", _rv)
     check("sin lectura del analista la tarjeta se mide igual (es su propia calibración) y no hay «vs»",
           _es["a"]["lectura"] is None and _es["a"]["tarjeta"] is not None and _es["a"]["vsTarjeta"] is None
@@ -3067,7 +3078,7 @@ def main():
     _cal = calibracion_espina()
     check("GET de calibración: la tabla de la tarjeta, la del analista por lectura y cómo leerla",
           set(_cal) >= {"tarjeta", "analistaPorLectura", "comoLeerlo"}
-          and set((_cal["tarjeta"] or {})) >= {"porFuerza", "porNivel", "analistaLaSigue", "analistaVaContra"}, _cal)
+          and set((_cal["tarjeta"] or {})) >= {"porFuerza", "porNivel", "analistaLaSigue", "analistaVaContra", "partido"}, _cal)
     esm = inv["acreditables"]["espina"]
     check("las lecciones miden la espina contra la frecuencia de cada movimiento y con pocos lados lo dicen",
           set(esm) >= {"positiva", "cero", "negativa", "neutra", "lectura"} and esm["lectura"] == "sin n"

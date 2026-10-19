@@ -221,7 +221,12 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
     # la espina de la TARJETA y el analista contra ella (19/10/2026)
     tar = {"porFuerza": {f: {"lados": 0, "aciertos": 0} for f in ("fuerte", "debil")},
            "porNivel": {}, "sigue": {"lados": 0, "aciertos": 0},
-           "contra": {"lados": 0, "aciertaAnalista": 0, "aciertaTarjeta": 0}}
+           "contra": {"lados": 0, "aciertaAnalista": 0, "aciertaTarjeta": 0},
+           # las dos tarjetas del partido, como un 1X2 (Monza 4-0 Cagliari)
+           "partido": {"concuerdan": {"lados": 0, "aciertos": 0},
+                       "concuerdanDebiles": {"lados": 0, "aciertos": 0},
+                       "discrepan": {"lados": 0, "aciertaA": 0, "aciertaB": 0},
+                       "unaSola": {"lados": 0, "aciertos": 0}}}
 
     for caso in casos:
         v = caso["veredicto"]
@@ -266,6 +271,19 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
             tde_obs += 1
             tde_positivos += 1 if b["golEnVentana"] else 0
         _acumular_reventon(rev, obj.get("reventon") or {}, ux, br)
+        tp = obj.get("tarjetas") or {}
+        if tp.get("estado") == "concuerdan":
+            for k in ("concuerdan",) + (("concuerdanDebiles",) if tp.get("ambasDebiles") else ()):
+                tar["partido"][k]["lados"] += 1
+                tar["partido"][k]["aciertos"] += 1 if tp.get("cumplida") else 0
+        elif tp.get("estado") == "discrepan":
+            d = tar["partido"]["discrepan"]
+            d["lados"] += 1
+            d["aciertaA"] += 1 if tp.get("aciertaA") else 0
+            d["aciertaB"] += 1 if tp.get("aciertaB") else 0
+        elif tp.get("estado") == "una sola":
+            tar["partido"]["unaSola"]["lados"] += 1
+            tar["partido"]["unaSola"]["aciertos"] += 1 if tp.get("cumplida") else 0
         for lado in ("a", "b"):
             e = (obj.get("espina") or {}).get(lado) or {}
             t = e.get("tarjeta")
@@ -329,10 +347,22 @@ def _cerrar_tarjeta(tar: dict) -> dict:
     analista contra ella: cuando la contradice, ¿quién acierta? Es la
     calibración que el analista lee antes de escribir su espina."""
     c = tar["contra"]
+    cero = {"lados": 0, "aciertos": 0}
+    pt = tar.get("partido") or {"concuerdan": cero, "concuerdanDebiles": cero, "unaSola": cero,
+                                "discrepan": {"lados": 0, "aciertaA": 0, "aciertaB": 0}}
     return {
         "porFuerza": {f: _tasa(v) for f, v in tar["porFuerza"].items()},
         "porNivel": {n: _tasa(v) for n, v in tar["porNivel"].items()},
         "analistaLaSigue": _tasa(tar["sigue"]),
+        # por PARTIDO (los «lados» son partidos): las dos tarjetas como un 1X2.
+        # Lo que se compara es «concuerdan» contra cada tarjeta sola (porFuerza)
+        "partido": {"concuerdan": _tasa(pt["concuerdan"]),
+                    "concuerdanDebiles": _tasa(pt["concuerdanDebiles"]),
+                    "unaSola": _tasa(pt["unaSola"]),
+                    "discrepan": pt["discrepan"],
+                    "nota": ("partidos: el resultado que da cada tarjeta (a: positiva→local, cero→empate, "
+                             "negativa→visita; b al revés). «concuerdan» = las dos dicen lo mismo; si acierta "
+                             "más que una tarjeta sola, la segunda confirma a la primera (Monza 4-0 Cagliari)")},
         "analistaVaContra": {"lados": c["lados"], "aciertaAnalista": c["aciertaAnalista"],
                              "aciertaTarjeta": c["aciertaTarjeta"],
                              "lectura": ("sin n" if c["lados"] < REVENTON_N_MINIMO else
