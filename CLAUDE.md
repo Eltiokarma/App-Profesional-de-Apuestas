@@ -805,6 +805,27 @@ conversación se pierde en la siguiente.
      abrir la revisión del TDE, decidir Jev y rotar el token acotado al salir
      de prueba (deuda 11).
 
+16. **La Ley 5 del skill `sad-analysis` (Tensión del Favorito / culebra) sale
+   del skill** (pendiente del USUARIO, 19/10/2026: el skill vive fuera del
+   repo; la copia está en `docs/skills/`). Hoy es «filtro obligatorio» y parte
+   de la «convergencia crítica» (K techo + DC trampa + tensión → el favorito
+   no gana). Lo medido: el estudio de ML de feb/2026 dejó `ml_break_score`
+   roto (42,9 % en cero, sin relación con resultados) y el ICF con r = 0,10;
+   y el backtest del 19/10 (63.475 partidos del padrón 2019-2026, 43.118
+   favoritos por nivel previo + 2.088 por cuota prepartido real) no encontró
+   culebra: con la jornada «intacta» el siguiente favorito gana igual o algo
+   MÁS de lo esperado (+0 a +4 pts, IC cruzando cero), en el día entero y en
+   la jornada de una liga. La combinada de los k favoritos del día sale lo que
+   da el producto de sus probabilidades (4 favoritos: 14,3 % contra 13,0 %):
+   que «alguno no gana» es multiplicación, y lo que la hace perder es el
+   margen de la casa cobrado una vez por partido (favorito suelto −4 %). Lo
+   que queda en pie para reescribirla: «la combinada de favoritos tiene poca
+   probabilidad y paga el margen k veces», sin «el siguiente favorito va a
+   caer». Las K (Ley 1) son la teoría central y NO se tocan. Pista sin prueba
+   (71 días con cuotas): la combinada de los favoritos MÁS fuertes del día
+   salió más de lo que pagaba el mercado (+48 %, IC −9 % a +116 %); seguir
+   midiéndolo con más días antes de creerlo.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
