@@ -748,6 +748,16 @@ conversación se pierde en la siguiente.
    viaja en `riesgo.movimiento` de `familias.local`/`visita` solo si esa
    familia se mueve en el próximo partido. La + de local aguanta más que la
    total y la + de visita menos; la − de visita es la que más se sostiene.
+   **La espina empieza en la tarjeta** (19/10/2026, pedido del usuario: «tiene
+   una base más sólida y estadística; hay que juntarlo con los skills»):
+   `espinaTarjeta` (el movimiento más probable de `riesgo.movimiento` como
+   positiva · cero · negativa, `fuerte` ≥ 50 %, `burbuja.espina_tarjeta` y
+   espejo TS, vectores `scripts/casos_espina_tarjeta.json`) viaja en cada
+   familia de `/burbujas` y en `reventonCalculado`; el parte la sigue o dice
+   «contra la tarjeta porque…» (si no, `faltan`; la débil no se cobra), el
+   veredicto guarda las dos (`objetivo.espina.*.tarjeta`/`vsTarjeta`) y
+   `GET /analisis/cowork/espina/calibracion` dice quién gana cuando el
+   analista la contradice (REVENTON §14.2).
 
 14. **Integridad del partido: solo ANOTACIÓN** (15/10/2026, decisión del
    usuario tras el Roma 3-4 Real Madrid de la Champions: un gol de pelota

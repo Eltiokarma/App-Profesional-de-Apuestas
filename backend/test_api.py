@@ -1086,6 +1086,8 @@ def main():
           c.get(A + "/analisis/cowork/latido", headers=cw).status_code == 200)
     check("cowork: puede LEER sus lecciones",
           c.get(A + "/analisis/cowork/lecciones", headers=cw).status_code == 200)
+    check("Cowork lee la calibración de la espina de la tarjeta",
+          c.get(A + "/analisis/cowork/espina/calibracion", headers=cw).status_code == 200)
     # QUIEN ESCRIBE LA LECCIÓN NO DECLARA APLICADA LA SUYA. El agente propone;
     # mover el estado —y con él el disparador de la revisión— es del usuario.
     check("cowork: NO puede mover una lección de estado",

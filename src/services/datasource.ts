@@ -4,7 +4,7 @@
 // Migrar una pantalla a datos reales = consumirla vía getDataSource(); nada más.
 import { describirFamilias } from '../lib/familias'
 import type { BurbujasEquipoDTO } from '../api/types'
-import { analizarBurbujas } from '../lib/burbuja'
+import { analizarBurbujas, espinaTarjeta } from '../lib/burbuja'
 import { ApiError } from '../api/client'
 import { SadApi } from '../api/sad'
 import type {
@@ -772,6 +772,8 @@ class MockDataSource implements SadDataSource {
       proximo, plantilla: antesDe != null ? null : plantillaDemo(key), hoy: MOCK_NOW.slice(0, 10),
     })
     // las otras burbujas contadas: el mismo espejo TS que el backend (scripts/casos_familias.json)
+    // la espina de la tarjeta por familia, como la agrega el backend en /burbujas
+    for (const f of Object.values(r.familias)) f.espinaTarjeta = espinaTarjeta(f.actual?.signo, f.riesgo?.movimiento)
     return { ...r, otrasFamilias: describirFamilias(filas, proximo?.condicion ?? null, TEAMS[key].name) }
   }
 

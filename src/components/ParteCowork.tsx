@@ -771,7 +771,7 @@ function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' 
           return (
             <span key={`esp-${lado}`} style={{ font: '600 11.5px var(--mono)', color: e.cumplida ? 'var(--up)' : 'var(--down)' }}
               title={o.espina?.nota}>
-              {e.cumplida ? '✓' : '✗'} K{e.guia === 'condicion' ? (lado === 'a' ? ' local' : ' visita') : ''} {e.lectura} → fue {e.movimiento} · {nombreDe(lado)}
+              {e.cumplida ? '✓' : '✗'} K{e.guia === 'condicion' ? (lado === 'a' ? ' local' : ' visita') : ''} {e.lectura} → fue {e.movimiento}{e.vsTarjeta === 'contra' && e.tarjeta ? ` · contra la tarjeta (${e.tarjeta.lectura} ${e.tarjeta.cumplida ? '✓' : '✗'})` : ''} · {nombreDe(lado)}
             </span>
           )
         })}
@@ -1301,6 +1301,20 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
                           {e.guia === 'condicion' ? `leída con la K de ${l === 'a' ? 'local' : 'visita'}` : 'leída con la K total'}
                         </div>
                         {e.porque && <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t2)', lineHeight: 1.45, marginTop: 4 }}>{e.porque}</div>}
+                        {/* la espina de la TARJETA de esa guía: el analista la sigue o
+                            va contra ella, y el veredicto mide quién acertó */}
+                        {(() => {
+                          const rc = ls.reventonCalculado?.[l]
+                          const t = e.guia === 'condicion' ? rc?.condicion?.espinaTarjeta : rc?.espinaTarjeta
+                          if (!t) return null
+                          const contra = e.lectura !== 'neutra' && e.lectura !== t.lectura
+                          return (
+                            <div style={{ font: '600 9.5px var(--mono)', color: contra ? 'var(--mark)' : 'var(--t3)', marginTop: 4 }}
+                              title="la espina que da la tarjeta sola: el movimiento más probable de la guía calibrada">
+                              tarjeta: {ESPINA_TXT[t.lectura].toLowerCase()} {Math.round(t.prob * 100)}% ({t.fuerza === 'fuerte' ? 'fuerte' : 'débil'}){contra ? ' · el parte va CONTRA la tarjeta' : e.lectura === 'neutra' ? '' : ' · el parte la sigue'}
+                            </div>
+                          )
+                        })()}
                       </div>
                     )
                   })}

@@ -3004,6 +3004,49 @@ def main():
     _en = espina_objetivo({"a": {"lectura": "neutra"}}, "visita")
     check("neutra no se juzga, y un lado sin espina tampoco",
           _en["a"]["cumplida"] is None and _en["a"]["resultado"] == "pierde" and _en["b"]["lectura"] is None, _en)
+    # ── la espina de la TARJETA al lado del analista (19/10/2026) ──────────
+    from backend.analisis import burbuja as _bb
+    _rv = {"a": {"declarado": {"signo": "+", "riesgo": {"nivel": "bajo"}}},
+           "b": {"declarado": {"signo": "-", "riesgo": {"nivel": "muy alto"}}}}
+    _ta = _bb.espina_tarjeta("+", _bb._movimiento_esperado("total", "+", "bajo"))
+    _tb = _bb.espina_tarjeta("-", _bb._movimiento_esperado("total", "-", "muy alto"))
+    _et = espina_objetivo({"a": {"lectura": _ta["lectura"]},
+                           "b": {"lectura": "cero" if _tb["lectura"] != "cero" else "positiva"}}, "local", _rv)
+    check("el veredicto pone la espina de la tarjeta al lado del analista: la sigue o va contra ella, "
+          "y cada una se cumple contra el mismo marcador",
+          _et["a"]["tarjeta"]["lectura"] == _ta["lectura"] and _et["a"]["vsTarjeta"] == "sigue"
+          and _et["b"]["vsTarjeta"] == "contra" and _et["a"]["tarjeta"]["nivel"] == "bajo"
+          and _et["a"]["tarjeta"]["cumplida"] == (_ta["lectura"] == "positiva")
+          and _et["b"]["tarjeta"]["cumplida"] == (_tb["lectura"] == "negativa"), _et)
+    _es = espina_objetivo({}, "empate", _rv)
+    check("sin lectura del analista la tarjeta se mide igual (es su propia calibración) y no hay «vs»",
+          _es["a"]["lectura"] is None and _es["a"]["tarjeta"] is not None and _es["a"]["vsTarjeta"] is None
+          and espina_objetivo({"a": {"lectura": "neutra"}}, "local", _rv)["a"]["vsTarjeta"] is None, _es)
+    check("sin burbuja declarada no hay tarjeta",
+          espina_objetivo({"a": {"lectura": "positiva"}}, "local", {"a": {"declarado": None}})["a"]["tarjeta"] is None)
+    from backend.analisis.parte import espina_vs_tarjeta
+    _rt = {"a": {"espinaTarjeta": {"lectura": "positiva", "movimiento": "sigue", "prob": 0.6, "fuerza": "fuerte"},
+                 "condicion": {"espinaTarjeta": {"lectura": "cero", "movimiento": "cero", "prob": 0.3, "fuerza": "debil"}}},
+           "b": {"espinaTarjeta": {"lectura": "negativa", "movimiento": "cambio", "prob": 0.4, "fuerza": "debil"}}}
+    _vt = espina_vs_tarjeta(_rt, {"a": {"lectura": "cero", "porque": "el TDE ve un partido cerrado"},
+                                  "b": {"lectura": "positiva"}})
+    check("ir contra la tarjeta FUERTE sin decirlo se cobra; contra la débil no (ahí deciden los skills)",
+          [x["lado"] for x in _vt] == ["a"] and _vt[0]["dicho"] is False, _vt)
+    check("dicho «contra la tarjeta porque…» ya no se cobra, y con guía condición manda la tarjeta de la condición",
+          espina_vs_tarjeta(_rt, {"a": {"lectura": "cero", "porque": "contra la tarjeta porque el DTP…"}})[0]["dicho"]
+          and espina_vs_tarjeta(_rt, {"a": {"lectura": "positiva", "guia": "condicion"}}) == [], _vt)
+    from backend.analisis.lecciones import _cerrar_tarjeta, calibracion_espina
+    _ct = _cerrar_tarjeta({"porFuerza": {"fuerte": {"lados": 4, "aciertos": 3}, "debil": {"lados": 0, "aciertos": 0}},
+                           "porNivel": {"bajo": {"lados": 4, "aciertos": 3}},
+                           "sigue": {"lados": 3, "aciertos": 2},
+                           "contra": {"lados": 12, "aciertaAnalista": 4, "aciertaTarjeta": 7}})
+    check("la calibración dice quién gana cuando el analista contradice a la tarjeta, con su n",
+          _ct["porFuerza"]["fuerte"]["tasa"] == 0.75 and _ct["porFuerza"]["debil"]["tasa"] is None
+          and _ct["analistaVaContra"]["lectura"].startswith("la tarjeta le gana"), _ct)
+    _cal = calibracion_espina()
+    check("GET de calibración: la tabla de la tarjeta, la del analista por lectura y cómo leerla",
+          set(_cal) >= {"tarjeta", "analistaPorLectura", "comoLeerlo"}
+          and set((_cal["tarjeta"] or {})) >= {"porFuerza", "porNivel", "analistaLaSigue", "analistaVaContra"}, _cal)
     esm = inv["acreditables"]["espina"]
     check("las lecciones miden la espina contra la frecuencia de cada movimiento y con pocos lados lo dicen",
           set(esm) >= {"positiva", "cero", "negativa", "neutra", "lectura"} and esm["lectura"] == "sin n"

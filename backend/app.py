@@ -1517,6 +1517,13 @@ def equipo_burbujas(equipo_id: int, antesDe: int | None = None, proximo: int | N
     # oportunidad por condición, que sí agrega al 1X2 (§15.1)
     from backend.analisis import familias as _familias
     r["otrasFamilias"] = _familias.describir(filas, prox["condicion"] if prox else None, team["name"])
+    # LA ESPINA DE LA TARJETA por familia: el movimiento más probable de la guía
+    # calibrada, dicho como resultado del equipo (positiva · cero · negativa)
+    from backend.analisis import burbuja as _burbuja
+    for _fam in (r.get("familias") or {}).values():
+        _rg = _fam.get("riesgo") or {}
+        _fam["espinaTarjeta"] = _burbuja.espina_tarjeta(((_fam.get("actual") or {}).get("signo")),
+                                                        _rg.get("movimiento"))
     # LA ESCALA DEL RIVAL (copas, ascendidos): el riesgo compara su nivel con
     # los rivales que reventaron las burbujas en la liga del equipo; si el
     # rival viene de otra base, se dice y se trae lo que sí compara.
@@ -2480,6 +2487,15 @@ def cowork_lecciones(skill: str = Query(default=""), estado: str = Query(default
     `n` a la vista; las otras poblaciones se cuentan aparte y no se suman."""
     from backend.analisis import lecciones
     return lecciones.inventario(skill, estado, limite, cohorte)
+
+
+@app.get(API + "/analisis/cowork/espina/calibracion")
+def cowork_espina_calibracion(limite: int = Query(default=400, ge=1, le=2000)):
+    """La espina de la tarjeta medida contra nuestros veredictos ciegos: por
+    fuerza y nivel de riesgo, y cuánto acierta el analista cuando la sigue y
+    cuando va contra ella. Es lo que el parte lee antes de escribir su espina."""
+    from backend.analisis import lecciones
+    return lecciones.calibracion_espina(limite)
 
 
 @app.get(API + "/analisis/cowork/antecedentes/{fixture_id}")

@@ -280,6 +280,17 @@ def main():
     check("burbuja −: rival 1.2 con mediana 1.5 es 0.3 más flojo → tramo fuerte (+1) + racha (+1) = 2, ALTO",
           tn["rival"]["tramo"] == "fuerte" and tn["riesgo"]["puntos"] == 2 and tn["riesgo"]["nivel"] == "alto", tn["riesgo"])
 
+    print("\n— espina de la tarjeta (vectores en scripts/casos_espina_tarjeta.json) —")
+    from backend.analisis.burbuja import espina_tarjeta
+    import json as _json
+    from pathlib import Path as _Path
+    for c in _json.loads((_Path(__file__).resolve().parent.parent / "scripts" / "casos_espina_tarjeta.json").read_text()):
+        r = espina_tarjeta(c["signo"], c["movimiento"])
+        check(f"espina {c['signo']} {c['movimiento']} → {c['esperado']['lectura']} {c['esperado']['fuerza']}",
+              r == c["esperado"], r)
+    check("sin burbuja o sin guía no hay espina de tarjeta",
+          espina_tarjeta(None, {"sigue": 1}) is None and espina_tarjeta("+", None) is None)
+
     print(f"\n{fallos} FALLAS" if fallos else "\nTODO OK")
     return 1 if fallos else 0
 

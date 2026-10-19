@@ -7,6 +7,7 @@ import type {
   BurbujasEquipoDTO,
   ConstantesDTO,
   DistribucionDTO,
+  EspinaTarjetaDTO,
   EstabilidadEquipoDTO,
   FamiliaBurbuja,
   FamiliaBurbujaDTO,
@@ -457,6 +458,23 @@ function analizarFamilia(filas: FilaK[], familia: FamiliaBurbuja, proximo: Proxi
   const nivel = nivelRiesgo(puntos)
   out.riesgo = { nivel, puntos, motivos, confianza, confianzaMotivos, movimiento: aplica === false ? null : movimientoEsperado(familia, signo, nivel) }
   return out
+}
+
+/** Umbral de la espina FUERTE (espejo de `burbuja.ESPINA_FUERTE`). */
+export const ESPINA_FUERTE = 0.5
+
+/** La espina de la tarjeta: el movimiento más probable de la guía calibrada
+ *  dicho como resultado del equipo (espejo de `burbuja.espina_tarjeta`). */
+export function espinaTarjeta(signo: string | null | undefined, movimiento: { sigue: number; cero: number; cambio: number } | null | undefined): EspinaTarjetaDTO | null {
+  if ((signo !== '+' && signo !== '-') || !movimiento) return null
+  let mov: 'sigue' | 'cero' | 'cambio' = 'sigue'
+  let prob = Number(movimiento.sigue) || 0
+  for (const k of ['cero', 'cambio'] as const) {
+    const p = Number(movimiento[k]) || 0
+    if (p > prob) { mov = k; prob = p }
+  }
+  const lectura = mov === 'cero' ? 'cero' : (mov === 'sigue') === (signo === '+') ? 'positiva' : 'negativa'
+  return { lectura, movimiento: mov, prob: Math.round(prob * 1000) / 1000, fuerza: prob >= ESPINA_FUERTE ? 'fuerte' : 'debil' }
 }
 
 // ── estabilidad ─────────────────────────────────────────────────────────────

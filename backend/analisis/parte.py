@@ -734,9 +734,14 @@ def _reventon_calculado(fx) -> dict | None:
             fc = r["familias"]["local" if cond == "L" else "visita"]
             out[lado] = {"actual": fam["actual"], "riesgo": fam["riesgo"], "rival": fam["rival"],
                          "extremo": fam.get("extremo"),
+                         "espinaTarjeta": burbuja.espina_tarjeta(
+                             (fam.get("actual") or {}).get("signo"), (fam.get("riesgo") or {}).get("movimiento")),
                          "condicion": {"familia": "local" if cond == "L" else "visita",
                                        "actual": fc["actual"], "riesgo": fc["riesgo"], "rival": fc["rival"],
-                                       "extremo": fc.get("extremo")},
+                                       "extremo": fc.get("extremo"),
+                                       "espinaTarjeta": burbuja.espina_tarjeta(
+                                           (fc.get("actual") or {}).get("signo"),
+                                           (fc.get("riesgo") or {}).get("movimiento"))},
                          "estabilidad": r["estabilidad"]["grado"], "partidos": r["partidos"], "aviso": r["aviso"],
                          # las OTRAS burbujas contadas (REVENTON §15-15.1): para
                          # la narrativa del parte, con la misma historia cortada
@@ -845,6 +850,28 @@ def espina_vs_riesgo(reventon: dict | None, espina: dict | None) -> list[dict]:
         out.append({"lado": lado, "nivel": nivel, "signo": signo, "lectura": lect, "como": como,
                     "guia": e.get("guia") or "total",
                     "dicho": "riesgo" in (e.get("porque") or "").lower()})
+    return out
+
+
+def espina_vs_tarjeta(reventon: dict | None, espina: dict | None) -> list[dict]:
+    """La espina declarada contra la espina FUERTE de la tarjeta, por lado
+    (19/10/2026, pedido del usuario: la tarjeta tiene base estadística y los
+    skills la leen encima). Ir contra ella vale —eso es lo que se mide—, pero
+    el `porque` dice «contra la tarjeta porque <lo que dicen los skills>». La
+    tarjeta débil no se cobra: ahí deciden los skills. Usa la tarjeta de la
+    guía que declaró el parte."""
+    out = []
+    for lado in LADOS:
+        e = (espina or {}).get(lado) or {}
+        lect = e.get("lectura")
+        r = (reventon or {}).get(lado) or {}
+        if e.get("guia") == "condicion" and r.get("condicion"):
+            r = r["condicion"]
+        t = r.get("espinaTarjeta")
+        if not lect or lect == "neutra" or not t or t.get("fuerza") != "fuerte" or lect == t.get("lectura"):
+            continue
+        out.append({"lado": lado, "lectura": lect, "tarjeta": t, "guia": e.get("guia") or "total",
+                    "dicho": "tarjeta" in (e.get("porque") or "").lower()})
     return out
 
 
@@ -2134,10 +2161,24 @@ def guardar(payload: dict) -> dict:
         })
     # LA ESPINA CONTRA EL RIESGO, SIN DECIRLO (Albion–Torque, 18/10/2026)
     try:
-        contra = [x for x in espina_vs_riesgo(_reventon_calculado(fx),
-                                              (parte.get("lecturaSad") or {}).get("espina")) if not x["dicho"]]
+        _rc = _reventon_calculado(fx)
+        _esp = (parte.get("lecturaSad") or {}).get("espina")
+        contra = [x for x in espina_vs_riesgo(_rc, _esp) if not x["dicho"]]
+        contra_tarjeta = [x for x in espina_vs_tarjeta(_rc, _esp)
+                          if not x["dicho"] and x["lado"] not in {c["lado"] for c in contra}]
     except Exception:  # noqa: BLE001 — el aviso no tumba el depósito
-        contra = []
+        contra, contra_tarjeta = [], []
+    for x in contra_tarjeta:
+        t = x["tarjeta"]
+        faltan.append({
+            "bloque": f"lecturaSad.espina.{x['lado']}",
+            "costara": f"la tarjeta da espina {t['lectura']} FUERTE ({round(t['prob'] * 100)} %) y el parte "
+                       f"dice {x['lectura']} sin decir por qué: no se puede medir si leer los skills encima "
+                       "de la tarjeta suma o resta",
+            "comoSeArregla": "o la espina sigue a la tarjeta, o el `porque` dice «contra la tarjeta porque "
+                             "<lo que encontró el EFE/TDE/DTP>» (GET /analisis/cowork/espina/calibracion dice "
+                             "quién viene ganando cuando se la contradice)",
+        })
     for x in contra:
         faltan.append({
             "bloque": f"lecturaSad.espina.{x['lado']}",
