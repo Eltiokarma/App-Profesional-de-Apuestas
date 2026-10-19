@@ -110,6 +110,46 @@ def _fila(j: dict) -> dict:
     }
 
 
+def _tok_jugador(nombre: str) -> list[str]:
+    return [t.replace("ñ", "n") for t in bloque_f._tokens(nombre or "")]
+
+
+def mismo_jugador(uno: str, otro: str) -> bool:
+    """¿Dos nombres de la API son la misma persona? El mismo apellido (o con
+    una letra cambiada) y la misma pila o su inicial: «S. Peña»/«S. Pena»,
+    «E. Griffa»/«Emiliano Griffa», «Y. Guzmán»/«Y. Guzman»."""
+    a, b = _tok_jugador(uno), _tok_jugador(otro)
+    if len(a) < 2 or len(b) < 2 or not bloque_f._misma_pila(a[0], b[0]):
+        return False
+    return a[-1] == b[-1] or _casi_igual(a[-1], b[-1])
+
+
+def _sin_minutos(j: dict) -> bool:
+    return not j.get("minutos") and not j.get("partidos")
+
+
+def deduplicar(js: list[dict], tit: dict[int, int]) -> tuple[list[dict], dict[int, int]]:
+    """UN JUGADOR CON DOS IDS ES UNO. La API da a veces dos ids para la misma
+    persona: el de la temporada, con sus minutos, y una copia vacía creada por
+    una hoja del partido (Leones del Norte con «E. Griffa» 566349 y «Emiliano
+    Griffa» 362224, Nacional Potosí con «S. Peña»/«S. Pena», 12 incidencias del
+    17-19/10/2026). La copia salía en la tabla F1, Cowork la copiaba, y como no
+    figuraba en la hoja del partido el bloque F la contaba como BAJA e inflaba
+    el IP con un fantasma. Solo se funde una copia SIN MINUTOS en la temporada
+    con su gemela: dos jugadores con minutos y el mismo nombre pueden ser dos
+    personas, y esos quedan. Las titularidades de los últimos onces se suman
+    en el id que queda."""
+    tit = dict(tit)
+    quedan: list[dict] = []
+    for j in sorted(js, key=lambda j: (_sin_minutos(j), -(j.get("minutos") or 0), -tit.get(j["id"], 0))):
+        gemela = next((q for q in quedan if _sin_minutos(j) and mismo_jugador(j["nombre"], q["nombre"])), None)
+        if gemela is None:
+            quedan.append(j)
+            continue
+        tit[gemela["id"]] = tit.get(gemela["id"], 0) + tit.pop(j["id"], 0)
+    return quedan, tit
+
+
 def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     p = jug.plantilla_de(team_id)
     js = p.get("jugadores") or []
@@ -117,6 +157,7 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     rec = onces_recientes(team_id, antes)
     con_onces = rec["onces"] >= ONCES_MINIMOS
     tit = {pid: j["titular"] for pid, j in rec["jugadores"].items()}
+    js, tit = deduplicar(js, tit)
     # con onces recientes, el orden y el rol salen de ahí; la temporada desempata
     if con_onces:
         js = sorted(js, key=lambda j: (-tit.get(j["id"], 0), -j["minutos"]))
@@ -136,6 +177,16 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     if con_onces:
         for pid, r in sorted(rec["jugadores"].items(), key=lambda kv: -kv[1]["titular"]):
             if pid in ids or pid <= 0 or r["titular"] < 2:
+                continue
+            # el mismo jugador con otro id en la hoja: sus titularidades ya
+            # cuentan en la fila de la plantilla, no es un fichaje
+            gemela = next((f for f in filas if mismo_jugador(r["nombre"], f["nombre"])), None)
+            if gemela is not None:
+                if "titularEnUltimos" in gemela:
+                    t = tit.get(gemela["jugadorId"], 0) + r["titular"]
+                    tit[gemela["jugadorId"]] = t
+                    gemela["titularEnUltimos"] = f"{t}/{rec['onces']}"
+                    gemela["rolSugerido"] = rol_por_onces(t, rec["onces"])
                 continue
             filas.append({"jugadorId": pid, "nombre": r["nombre"], "zona": _ZONA_API.get(r["posicion"], ""),
                           "posicion": r["posicion"], "rolSugerido": rol_por_onces(r["titular"], rec["onces"]),

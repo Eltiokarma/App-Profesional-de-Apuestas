@@ -493,7 +493,13 @@ def dt_de_alineaciones(con: sqlite3.Connection, team_id: int,
     return actual, desde
 
 
-def _norm_dt(nombre: str) -> str:
+def _nombre_entero(nombre: str) -> str:
+    """El nombre COMPLETO normalizado, para compararlo con un país o un equipo.
+    Se llamaba `_norm_dt` y la definición de abajo (la que compara solo el
+    APELLIDO) la pisaba: el filtro tiraba a todo DT cuyo apellido fuera la
+    última palabra de un equipo o país —«Benat San Jose» por San Jose,
+    «Juan Carlos León» por Club León— y la base volvía a /coachs, que trae al
+    saliente (Rayo con Íñigo Pérez, Delfín con Zubeldía: 18-19/10/2026)."""
     import unicodedata
     t = unicodedata.normalize("NFKD", nombre or "").encode("ascii", "ignore").decode().lower()
     return " ".join(t.replace(".", " ").split())
@@ -508,7 +514,7 @@ def nombres_que_no_son_dt(con: sqlite3.Connection) -> set[str]:
     for sql in ("SELECT DISTINCT country FROM leagues", "SELECT DISTINCT country FROM teams",
                 "SELECT DISTINCT name FROM teams"):
         try:
-            out |= {_norm_dt(r[0]) for r in con.execute(sql) if r[0]}
+            out |= {_nombre_entero(r[0]) for r in con.execute(sql) if r[0]}
         except sqlite3.Error:
             pass
     out.discard("")
@@ -521,9 +527,9 @@ def guardar_entrenador(con: sqlite3.Connection, team_id: int, filas: list) -> in
     alineación manda; si no, la etapa abierta más reciente)."""
     dt_alin, desde_alin = dt_de_alineaciones(con, team_id)
     no_son = nombres_que_no_son_dt(con)
-    if dt_alin and _norm_dt(dt_alin) in no_son:
+    if dt_alin and _nombre_entero(dt_alin) in no_son:
         dt_alin, desde_alin = None, None
-    filas = [f for f in filas or [] if _norm_dt(nombre_coach(f)) not in no_son]
+    filas = [f for f in filas or [] if _nombre_entero(nombre_coach(f)) not in no_son]
     dt = elegir_entrenador(filas, team_id, dt_alin, desde_alin)
     if not dt:
         return 0
@@ -779,7 +785,7 @@ def dt_agenda(cliente, con: sqlite3.Connection, dias: int = DT_AGENDA_DIAS,
         desfasado = bool(fila and (fila[2] or "") == "alineacion" and dt_alin
                          and (fila[3] or None) != (_desde or None))
         # UN PAÍS O UN EQUIPO COMO DT (Bulo Bulo con «Bolivia»): se rehace ya
-        basura = bool(fila and fila[0] and _norm_dt(fila[0]) in nombres_que_no_son_dt(con))
+        basura = bool(fila and fila[0] and _nombre_entero(fila[0]) in nombres_que_no_son_dt(con))
         if not (viejo or contradice or rancio or desfasado or basura):
             continue
         if not cliente.quedan(1) or cliente.limite - cliente.usadas <= reserva:

@@ -245,6 +245,21 @@ def main():
     check("un «DT» que se llama como un país no se guarda: mejor ninguno que uno falso",
           guardar_entrenador(con, 701, _pais) == 0
           and con.execute("SELECT COUNT(*) FROM entrenadores WHERE team_id=701").fetchone()[0] == 0)
+    # UN APELLIDO QUE TERMINA COMO UN EQUIPO NO ES UN EQUIPO (Rayo con «Benat
+    # San Jose» y Delfín con «Juan Carlos León», 18-19/10/2026): el filtro
+    # comparaba solo la última palabra y los tiraba; la base volvía al saliente.
+    con.execute("CREATE TABLE IF NOT EXISTS teams (id INTEGER PRIMARY KEY, name TEXT)")
+    con.executemany("INSERT OR REPLACE INTO teams (id, name) VALUES (?, ?)",
+                    [(1601, "San Jose Earthquakes"), (2287, "Club Leon")])
+    con.commit()
+    _sj = [{"id": 77, "firstname": "Beñat", "lastname": "San José",
+            "career": [{"team": {"id": 702}, "start": "2026-06-01", "end": None}]},
+           {"id": 78, "firstname": "Juan Carlos", "lastname": "León",
+            "career": [{"team": {"id": 703}, "start": "2026-07-01", "end": None}]}]
+    check("un DT cuyo apellido termina como un equipo («San José», «León») se guarda: el filtro mira el nombre entero",
+          guardar_entrenador(con, 702, _sj) == 1 and guardar_entrenador(con, 703, _sj) == 1
+          and con.execute("SELECT nombre FROM entrenadores WHERE team_id=702").fetchone()[0] == "Beñat San José"
+          and "jose" not in _nqs(con) and "san jose earthquakes" in _nqs(con))
     from backend.ingesta.jugadores import mismo_nombre_dt as _mnd
     check("las mismas letras en otro orden son el mismo DT («J. Balazar» / «Juan Carlos Bazalar»)",
           _mnd("J. Balazar", "Juan Carlos Bazalar") and not _mnd("Martínez", "Martino"))
