@@ -336,6 +336,7 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
         except Exception:  # noqa: BLE001 — sin la tarjeta de la condición, el veredicto sigue
             _calc = None
     out["espina"] = espina_objetivo(_esp, real, out.get("reventon"), _calc)
+    out["tarjetas"] = tarjetas_partido(out["espina"], real)
     # ── la matriz: qué escenario se jugó y qué se había escrito para él ────
     out["matriz"] = matriz_objetivo(parte.get("matriz") or {}, real)
     return out
@@ -431,6 +432,39 @@ def espina_objetivo(espina: dict, real: str, reventon: dict | None = None,
                      "cumplida": None if lectura == "neutra" else lectura == movimiento,
                      "tarjeta": tarjeta, "vsTarjeta": vs}
     return out
+
+
+_DE_TARJETA = {"a": {"positiva": "local", "cero": "empate", "negativa": "visita"},
+               "b": {"positiva": "visita", "cero": "empate", "negativa": "local"}}
+
+
+def tarjetas_partido(espina_obj: dict, real: str) -> dict:
+    """Las dos tarjetas del partido leídas como un 1X2 y si CONCUERDAN.
+
+    Monza 4-0 Cagliari (19/10/2026): las dos tarjetas eran débiles (38 %), pero
+    una decía «el local gana» y la otra «el visitante pierde» —el mismo
+    resultado visto desde los dos lados— y acertaron. ¿Dos tarjetas débiles
+    que coinciden valen más que cada una sola? Esto lo deja medible: por
+    partido, el resultado que da cada tarjeta, si concuerdan, discrepan o hay
+    una sola, y si acertaron. La tarjeta de cada lado es la que mide la espina
+    (la de la condición si el parte leyó con esa guía; si no, la total)."""
+    res = {lado: _DE_TARJETA[lado].get(((espina_obj.get(lado) or {}).get("tarjeta") or {}).get("lectura"))
+           for lado in ("a", "b")}
+    fuerzas = [((espina_obj.get(l) or {}).get("tarjeta") or {}).get("fuerza") for l in ("a", "b")]
+    hay = [r for r in res.values() if r]
+    if not hay:
+        return {"estado": "sin tarjetas", "a": None, "b": None, "real": real}
+    if len(hay) == 1:
+        estado, dicen = "una sola", hay[0]
+    elif res["a"] == res["b"]:
+        estado, dicen = "concuerdan", res["a"]
+    else:
+        estado, dicen = "discrepan", None
+    return {"estado": estado, "a": res["a"], "b": res["b"], "dicen": dicen, "real": real,
+            "ambasDebiles": len(hay) == 2 and all(f == "debil" for f in fuerzas),
+            "cumplida": (dicen == real) if dicen else None,
+            "aciertaA": (res["a"] == real) if res["a"] else None,
+            "aciertaB": (res["b"] == real) if res["b"] else None}
 
 
 def rama_jugada(tde: dict, goles: list[dict], total_goles: int, con_ficha: bool) -> dict:

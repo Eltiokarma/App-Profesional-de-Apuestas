@@ -1167,6 +1167,10 @@ paths:
                       porFuerza: { type: object, additionalProperties: { $ref: '#/components/schemas/TasaWilson' } }
                       porNivel: { type: object, additionalProperties: { $ref: '#/components/schemas/TasaWilson' } }
                       analistaLaSigue: { $ref: '#/components/schemas/TasaWilson' }
+                      partido:
+                        type: object
+                        description: 'por partido: las dos tarjetas como 1X2 (concuerdan · concuerdanDebiles · unaSola con su tasa; discrepan con cuántas veces acertó cada una)'
+                        additionalProperties: true
                       analistaVaContra:
                         type: object
                         properties:
@@ -1662,7 +1666,8 @@ components:
             `frecuenciaDelMovimiento` y si la supera; `lectura` resume; `porGuia` repite la
             cuenta para la K total y la K de la condición, cada una contra sus lados;
             `tarjeta` mide la espina de la tarjeta sola y al analista contra ella (lo mismo
-            que /analisis/cowork/espina/calibracion).
+            que /analisis/cowork/espina/calibracion), y en `tarjeta.partido` las dos tarjetas
+            del partido como un 1X2: si concuerdan, ¿aciertan más que una sola?
           additionalProperties: true
         porSkill:
           type: array
@@ -4140,6 +4145,24 @@ components:
             nota: { type: string }
             a: { $ref: '#/components/schemas/EspinaObservada' }
             b: { $ref: '#/components/schemas/EspinaObservada' }
+        tarjetas:
+          type: object
+          description: >
+            Las dos tarjetas del partido leídas como un 1X2 (19/10/2026, Monza 4-0 Cagliari: dos
+            tarjetas débiles que coincidían y acertaron). Por lado, el resultado que da su tarjeta
+            (a: positiva→local, cero→empate, negativa→visita; b al revés), `estado` concuerdan ·
+            discrepan · una sola · sin tarjetas, y si acertaron. Aprendizaje lo acumula en
+            `acreditables.espina.tarjeta.partido`.
+          properties:
+            estado: { type: string, enum: [concuerdan, discrepan, una sola, sin tarjetas] }
+            a: { type: string, nullable: true, enum: [local, empate, visita, null] }
+            b: { type: string, nullable: true, enum: [local, empate, visita, null] }
+            dicen: { type: string, nullable: true, description: 'el resultado de las tarjetas si concuerdan o hay una sola' }
+            real: { type: string }
+            ambasDebiles: { type: boolean }
+            cumplida: { type: boolean, nullable: true }
+            aciertaA: { type: boolean, nullable: true }
+            aciertaB: { type: boolean, nullable: true }
         matriz:
           type: object
           description: 'por lado, el escenario que dio el marcador (ganar · empatar · perder) y lo que la matriz había escrito para él. Sin acierto: la matriz es narrativa; si lo escrito apareció lo dice `porLado.*.escenario`'

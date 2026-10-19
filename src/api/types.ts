@@ -1508,6 +1508,18 @@ export interface VeredictoObjetivo {
   reventon?: { nota: string } & Partial<Record<'a' | 'b', ReventonObservado>>
   /** La espina declarada contra lo que hizo la K total del equipo. */
   espina?: { nota: string } & Partial<Record<'a' | 'b', EspinaObservada>>
+  /** Las dos tarjetas del partido como un 1X2: si concuerdan y si acertaron (Monza 4-0 Cagliari). */
+  tarjetas?: {
+    estado: 'concuerdan' | 'discrepan' | 'una sola' | 'sin tarjetas'
+    a: 'local' | 'empate' | 'visita' | null
+    b: 'local' | 'empate' | 'visita' | null
+    dicen?: 'local' | 'empate' | 'visita' | null
+    real: string
+    ambasDebiles?: boolean
+    cumplida?: boolean | null
+    aciertaA?: boolean | null
+    aciertaB?: boolean | null
+  }
   /** El escenario que dio el marcador para cada lado y lo que la matriz había escrito para él. */
   matriz?: { nota: string } & Partial<Record<'a' | 'b', { escenario: EscenarioMatriz; escrito: Record<string, string>; declarado: boolean }>>
   /** Las otras burbujas (DC, márgenes, goles) destacadas antes del partido que

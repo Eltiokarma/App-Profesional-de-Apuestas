@@ -757,7 +757,12 @@ conversación se pierde en la siguiente.
    «contra la tarjeta porque…» (si no, `faltan`; la débil no se cobra), el
    veredicto guarda las dos (`objetivo.espina.*.tarjeta`/`vsTarjeta`) y
    `GET /analisis/cowork/espina/calibracion` dice quién gana cuando el
-   analista la contradice (REVENTON §14.2).
+   analista la contradice (REVENTON §14.2). Con guía de la condición, el
+   veredicto mide la tarjeta de la condición (Monza 4-0 Cagliari: la total del
+   Cagliari estaba en 0); y `objetivo.tarjetas` lee las DOS tarjetas del
+   partido como un 1X2 —concuerdan · discrepan · una sola— para medir si dos
+   tarjetas débiles que coinciden aciertan más que una sola
+   (`acreditables.espina.tarjeta.partido`): medición, no regla todavía.
 
 14. **Integridad del partido: solo ANOTACIÓN** (15/10/2026, decisión del
    usuario tras el Roma 3-4 Real Madrid de la Champions: un gol de pelota

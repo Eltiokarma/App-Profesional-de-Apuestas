@@ -848,6 +848,16 @@ cuando la contradice**: si con casos el analista no le gana a la tarjeta al
 contradecirla, la regla del prompt se endurece; si le gana, los skills están
 sumando.
 
+**Las dos tarjetas del partido** (19/10/2026, Monza 4-0 Cagliari): las dos eran
+débiles (38 %), pero una decía «el local gana» y la otra «el visitante pierde» —el
+mismo resultado desde los dos lados— y acertaron. El veredicto las lee como un
+1X2 (`objetivo.tarjetas`: a positiva→local, cero→empate, negativa→visita; b al
+revés) y dice si concuerdan, discrepan o hay una sola; Aprendizaje acumula en
+`acreditables.espina.tarjeta.partido` cuánto aciertan cuando concuerdan (y
+cuando concuerdan siendo las dos débiles) contra una tarjeta sola. Si
+«concuerdan» acierta claramente más, la segunda tarjeta confirma a la primera y
+eso puede entrar al prompt como regla; hasta entonces es medición.
+
 Medición de arranque (veredictos del 17-18/10, a mano): la espina de la tarjeta
 sola acertó 56 de 102 lados, la del analista 52 de 97 y el 1X2 59 de 102; con
 riesgo bajo, la tarjeta 17 de 20. Es n chico: lo que decide es la tabla.
