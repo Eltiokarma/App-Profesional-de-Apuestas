@@ -327,8 +327,15 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     # ── las OTRAS burbujas que este partido cortó: lo que hay que rastrear ──
     out["otrasFamilias"] = familias_objetivo(fx)
     # ── la buena espina de la burbuja: la lectura del analista, contra el resultado
-    out["espina"] = espina_objetivo((parte.get("lecturaSad") or {}).get("espina") or {}, real,
-                                    out.get("reventon"))
+    _esp = (parte.get("lecturaSad") or {}).get("espina") or {}
+    _calc = None
+    if any((x or {}).get("guia") == "condicion" for x in _esp.values() if isinstance(x, dict)):
+        try:
+            from backend.analisis.parte import _reventon_calculado
+            _calc = _reventon_calculado(fx)
+        except Exception:  # noqa: BLE001 — sin la tarjeta de la condición, el veredicto sigue
+            _calc = None
+    out["espina"] = espina_objetivo(_esp, real, out.get("reventon"), _calc)
     # ── la matriz: qué escenario se jugó y qué se había escrito para él ────
     out["matriz"] = matriz_objetivo(parte.get("matriz") or {}, real)
     return out
@@ -361,10 +368,24 @@ def matriz_objetivo(matriz: dict, real: str) -> dict:
 _MOVIMIENTO_DE = {"gana": "positiva", "empata": "cero", "pierde": "negativa"}
 
 
-def _tarjeta_lado(reventon: dict | None, lado: str, movimiento_real: str) -> dict | None:
-    """La espina de la tarjeta de ESE día (la burbuja total declarada antes del
-    partido) y si se cumplió. Sin burbuja abierta no hay tarjeta."""
+def _tarjeta_lado(reventon: dict | None, lado: str, movimiento_real: str,
+                  condicion: dict | None = None) -> dict | None:
+    """La espina de la tarjeta de ESE día y si se cumplió. Sin burbuja abierta
+    no hay tarjeta.
+
+    CON LA GUÍA DE LA CONDICIÓN, LA TARJETA ES LA DE LA CONDICIÓN. Monza 4-0
+    Cagliari (19/10/2026): la K total del Cagliari estaba en 0 tras un 1-1, el
+    parte leyó con razón su K de VISITA (+8.97, tres victorias, récord) y esa
+    tarjeta decía «pierde» (cambio 38 %). Cagliari perdió 4-0, pero el
+    veredicto buscaba la tarjeta en la total, no la encontraba y el acierto de
+    la tarjeta no se contaba. `condicion` es el bloque `condicion` del reventón
+    calculado al día del partido."""
     from backend.analisis import burbuja
+    if condicion and condicion.get("espinaTarjeta"):
+        t = condicion["espinaTarjeta"]
+        return {**t, "nivel": (condicion.get("riesgo") or {}).get("nivel"),
+                "signo": (condicion.get("actual") or {}).get("signo"), "guia": "condicion",
+                "cumplida": t["lectura"] == movimiento_real}
     dec = ((reventon or {}).get(lado) or {}).get("declarado") or {}
     nivel = (dec.get("riesgo") or {}).get("nivel")
     t = burbuja.espina_tarjeta(dec.get("signo"), burbuja._movimiento_esperado("total", dec.get("signo"), nivel)
@@ -374,7 +395,8 @@ def _tarjeta_lado(reventon: dict | None, lado: str, movimiento_real: str) -> dic
     return {**t, "nivel": nivel, "signo": dec.get("signo"), "cumplida": t["lectura"] == movimiento_real}
 
 
-def espina_objetivo(espina: dict, real: str, reventon: dict | None = None) -> dict:
+def espina_objetivo(espina: dict, real: str, reventon: dict | None = None,
+                    calculado: dict | None = None) -> dict:
     """Por lado: adónde dijo el analista que iba la K total (positiva · cero ·
     negativa) y adónde fue. Después de un partido la K total es positiva si el
     equipo ganó, 0 si empató y negativa si perdió (MOTOR_SAD_EXTRACCION §3.3:
@@ -394,7 +416,9 @@ def espina_objetivo(espina: dict, real: str, reventon: dict | None = None) -> di
         # LA TARJETA AL LADO DEL ANALISTA (19/10/2026): la espina que da la guía
         # calibrada sola y si el analista la siguió o fue contra ella. Es lo que
         # dice, con casos, si leer los skills encima de la tarjeta suma o resta.
-        tarjeta = _tarjeta_lado(reventon, lado, movimiento)
+        cond = (((calculado or {}).get(lado) or {}).get("condicion")
+                if (e.get("guia") or "total") == "condicion" else None)
+        tarjeta = _tarjeta_lado(reventon, lado, movimiento, cond)
         vs = (None if not tarjeta or not lectura or lectura == "neutra" else
               "sigue" if lectura == tarjeta["lectura"] else "contra")
         if not lectura:

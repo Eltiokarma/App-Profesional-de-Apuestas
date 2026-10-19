@@ -3032,6 +3032,13 @@ def main():
           and _et["b"]["vsTarjeta"] == "contra" and _et["a"]["tarjeta"]["nivel"] == "bajo"
           and _et["a"]["tarjeta"]["cumplida"] == (_ta["lectura"] == "positiva")
           and _et["b"]["tarjeta"]["cumplida"] == (_tb["lectura"] == "negativa"), _et)
+    # Monza 4-0 Cagliari (19/10/2026): K total del Cagliari en 0, el parte leyó su K de VISITA
+    _cg = {"b": {"condicion": {"actual": {"signo": "+"}, "riesgo": {"nivel": "medio"},
+                               "espinaTarjeta": {"lectura": "negativa", "movimiento": "cambio", "prob": 0.379, "fuerza": "debil"}}}}
+    _ec = espina_objetivo({"b": {"lectura": "cero", "guia": "condicion"}}, "local", {"b": {"declarado": None}}, _cg)
+    check("con guía de la condición, la tarjeta del veredicto es la de la condición (Cagliari: «pierde», cumplida) y el parte fue contra ella",
+          (_ec["b"]["tarjeta"] or {}).get("lectura") == "negativa" and _ec["b"]["tarjeta"]["cumplida"] is True
+          and _ec["b"]["tarjeta"].get("guia") == "condicion" and _ec["b"]["vsTarjeta"] == "contra", _ec)
     _es = espina_objetivo({}, "empate", _rv)
     check("sin lectura del analista la tarjeta se mide igual (es su propia calibración) y no hay «vs»",
           _es["a"]["lectura"] is None and _es["a"]["tarjeta"] is not None and _es["a"]["vsTarjeta"] is None

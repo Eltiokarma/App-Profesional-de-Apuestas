@@ -1564,7 +1564,7 @@ export interface EspinaObservada {
   movimiento: 'positiva' | 'cero' | 'negativa' | null
   cumplida: boolean | null
   /** La espina de la tarjeta de ese lado y si se cumplió. */
-  tarjeta?: (EspinaTarjetaDTO & { nivel: string | null; signo: string | null; cumplida: boolean | null }) | null
+  tarjeta?: (EspinaTarjetaDTO & { nivel: string | null; signo: string | null; cumplida: boolean | null; guia?: 'condicion' }) | null
   /** si el analista siguió a la tarjeta o fue contra ella */
   vsTarjeta?: 'sigue' | 'contra' | null
 }

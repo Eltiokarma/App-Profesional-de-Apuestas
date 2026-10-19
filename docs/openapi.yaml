@@ -4225,7 +4225,7 @@ components:
         tarjeta:
           type: object
           nullable: true
-          description: 'la espina de la tarjeta de ese lado (familia total, la del reventón declarado antes del partido), con `cumplida` contra el movimiento real; null sin burbuja abierta'
+          description: 'la espina de la tarjeta de ese lado, con `cumplida` contra el movimiento real: la de la familia total (la del reventón declarado antes del partido) o, si la espina se leyó con `guia: condicion`, la de la K de la condición al día del partido (`guia`). null sin burbuja abierta'
           properties:
             lectura: { type: string, enum: [positiva, cero, negativa] }
             movimiento: { type: string, enum: [sigue, cero, cambio] }
@@ -4234,6 +4234,7 @@ components:
             nivel: { type: string, nullable: true }
             signo: { type: string, nullable: true }
             cumplida: { type: boolean, nullable: true }
+            guia: { type: string, enum: [condicion], description: 'solo si la tarjeta es la de la condición' }
         vsTarjeta: { type: string, nullable: true, enum: [sigue, contra, null], description: 'si la lectura del analista coincidió con la de la tarjeta o fue contra ella; neutra o sin tarjeta = null' }
     TasaWilson:
       type: object
