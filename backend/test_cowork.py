@@ -2866,6 +2866,20 @@ def main():
                                          "rol": x["rolSugerido"], "apps": x["apps"]} for x in dec]
     c.post(f"{A}/analisis/cowork", json=p_f1)
     g_f1b = c.get(f"{A}/analisis/cowork/{con_ficha}").json()
+    # UN JUGADOR CON DOS IDS ES UNO (Leones del Norte, Nacional Potosí: 17-19/10/2026)
+    from backend.analisis.f1_base import deduplicar as _dedup, mismo_jugador as _mj
+    _js = [{"id": 362224, "nombre": "Emiliano Griffa", "minutos": 900, "partidos": 10},
+           {"id": 566349, "nombre": "E. Griffa", "minutos": 0, "partidos": 0},
+           {"id": 476417, "nombre": "S. Peña", "minutos": 300, "partidos": 5},
+           {"id": 549618, "nombre": "S. Pena", "minutos": 0, "partidos": 0},
+           {"id": 1, "nombre": "T. Palacios", "minutos": 500, "partidos": 6},
+           {"id": 2, "nombre": "T. Palacios", "minutos": 200, "partidos": 3},
+           {"id": 3, "nombre": "M. Quiñonez", "minutos": 0, "partidos": 0}]
+    _q, _t = _dedup(_js, {566349: 2, 362224: 3, 3: 1})
+    check("la copia sin minutos de un jugador se funde con su gemela y le suma las titularidades; "
+          "dos con minutos y el mismo nombre quedan (pueden ser dos personas), y otra inicial no es la misma",
+          {j["id"] for j in _q} == {362224, 476417, 1, 2, 3} and _t.get(362224) == 5 and 566349 not in _t
+          and _mj("Y. Guzmán", "Y. Guzman") and not _mj("S. Quinonez", "M. Quiñonez"), (_q, _t))
     from backend.analisis.f1_base import _en_tabla as _f1_en_tabla
     check("el mismo jugador con dos ids y el apellido mal escrito («Juan Bizans» / «Juan Bisanz») está en la tabla",
           _f1_en_tabla({"id": 406291, "nombre": "Juan Bizans"}, [{"nombre": "Juan Bisanz", "jugadorId": 304371}]))
