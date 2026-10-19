@@ -858,6 +858,12 @@ cuando concuerdan siendo las dos débiles) contra una tarjeta sola. Si
 «concuerdan» acierta claramente más, la segunda tarjeta confirma a la primera y
 eso puede entrar al prompt como regla; hasta entonces es medición.
 
+**General, local o visita** (19/10/2026, pedido del usuario: a veces el parte
+se guía de las constantes específicas): la calibración separa la tarjeta GENERAL
+(K total) de la de LOCAL y la de VISITA —la de la condición que leyó el parte—
+en `tarjeta.porTipo`, cada una entera y por fuerza. Hasta el 19/10 el veredicto
+medía siempre la general, así que local y visita arrancan en cero.
+
 Medición de arranque (veredictos del 17-18/10, a mano): la espina de la tarjeta
 sola acertó 56 de 102 lados, la del analista 52 de 97 y el 1X2 59 de 102; con
 riesgo bajo, la tarjeta 17 de 20. Es n chico: lo que decide es la tabla.
