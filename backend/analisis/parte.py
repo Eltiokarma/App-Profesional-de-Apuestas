@@ -3899,6 +3899,12 @@ def _resumen_cuota(d: dict) -> dict:
     por = d.get("usadas_por") if isinstance(d.get("usadas_por"), dict) else {}
     por_hora = d.get("usadas_por_hora") if isinstance(d.get("usadas_por_hora"), dict) else {}
     agotado = d.get("agotado_en") or None
+    # un día que terminó lejos del tope no se agotó: la marca es la cola de la
+    # ventana anterior, que la API todavía cuenta llena en el primer minuto del
+    # día UTC (19/10/2026: «agotado a las 19:00» con 4.679 de 7.500)
+    limite = d.get("limite_api")
+    if agotado and isinstance(limite, int) and limite > 0 and int(d.get("usadas") or 0) < 0.9 * limite:
+        agotado = None
     lima = None
     if agotado:
         try:

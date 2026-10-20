@@ -948,6 +948,15 @@ def main():
                    "agotado_en": f"{_hoy}T23:30:00Z"}, _f)
     check("agotarse a las 23:30 UTC (media hora del reset) no es alarma",
           _parte_mod.presupuesto_api()["alarma"] == "", _parte_mod.presupuesto_api())
+    # la marca del primer minuto del día con el día lejos del tope es la cola de la
+    # ventana anterior, no un agotamiento (19/10/2026: «19:00» con 4.679 de 7.500)
+    with open(os.path.join(tmp, ".extractor_cuota.json"), "w", encoding="utf-8") as _f:
+        json.dump({"dia": _hoy, "usadas": 1000, "limite_api": 7500, "usadas_por": {},
+                   "anterior": {"dia": "2026-10-19", "usadas": 4679, "limite_api": 7500, "usadas_por": {},
+                                "agotado_en": "2026-10-19T00:00:55Z"}}, _f)
+    _pq = _parte_mod.presupuesto_api()
+    check("un día que terminó en 4.679 de 7.500 no se agotó aunque traiga la marca de las 00:00 UTC: no hay alarma",
+          _pq["alarma"] == "" and _pq["ayer"]["agotadoEn"] is None, _pq)
     os.remove(os.path.join(tmp, ".extractor_cuota.json"))
     # ── EL REVISOR DE COHERENCIA: QUÉ ENCONTRÓ Y QUÉ HIZO COWORK ─────────────
     rev_r = c.get(f"{A}/analisis/cowork/revisor")
