@@ -237,7 +237,8 @@ export interface PrediccionDTO {
   /** gapAjustado_local − gapAjustado_visitante (ajuste por calendario). */
   gapDiffAjustado: number | null
   /** Confianza en μ v2 para la liga del fixture (calibración por liga 2026-07). */
-  fiabilidadMu: { nivel: 'alta' | 'media' | 'baja'; nota: string } | null
+  /** `escala` (y `notaLiga`) cuando los dos equipos vienen de bases distintas: entonces baja. */
+  fiabilidadMu: { nivel: 'alta' | 'media' | 'baja'; nota: string; escala?: string; notaLiga?: string } | null
   generadoEn: string
 }
 

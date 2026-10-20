@@ -184,6 +184,22 @@ def main():
     check("fiabilidadMu: amistosos → baja · liga CONMEBOL → media",
           fiabilidad_mu(667)["nivel"] == "baja" and fiabilidad_mu(281)["nivel"] == "media",
           (fiabilidad_mu(667), fiabilidad_mu(281)))
+    # dos bases distintas (Atlante con el nivel de la Expansión, 20/10/2026): μ cruza niveles que no comparan
+    from backend.app import fiabilidad_mu_partido
+    from backend.analisis import escala as _esc
+    _bd = _esc.base_de
+    _fxm = {"league_id": 140, "date": "2026-10-20", "home_team_id": 1, "away_team_id": 2}
+    try:
+        _esc.base_de = lambda t, f: {"id": 262 if t == 1 else 263, "pais": "Mexico",
+                                     "categoria": "primera" if t == 1 else "segunda", "nombre": "x"}
+        _fb = fiabilidad_mu_partido(_fxm)
+        _esc.base_de = lambda t, f: {"id": 140, "pais": "Spain", "categoria": "primera", "nombre": "x"}
+        _fm = fiabilidad_mu_partido(_fxm)
+    finally:
+        _esc.base_de = _bd
+    check("fiabilidadMu del partido: bases distintas → baja con la relación; misma base → la de la liga",
+          _fb["nivel"] == "baja" and _fb["escala"] == "rival de categoría inferior" and _fb["notaLiga"]
+          and _fm["nivel"] == "alta" and "escala" not in _fm, (_fb, _fm))
 
     # regla de los 90': el diagnóstico corre limpio sobre la demo (sin AET/PEN)
     from backend.ingesta.pipeline import diagnostico_90
