@@ -448,8 +448,9 @@ def herencia_tde(dtp: dict) -> dict:
         rival = "b" if foco == "a" else "a"
         clase = clasificar_bloque(b["apertura"]["m2"]["checklistBloqueRival"])
         if clase["c1Tde"] is not None:
-            out[rival]["C1"] = {"valor": clase["c1Tde"], "de": f"checklist del DTP del lado {foco}: "
-                                                               f"bloque {clase['clase']}"}
+            out[rival]["C1"] = {"valor": clase["c1Tde"],
+                                "de": f"checklist del DTP con foco en el lado {foco}, que evalúa el bloque del "
+                                      f"lado {rival}: bloque {clase['clase']}"}
     for lado in LADOS:
         rd_propio = ((bloques.get(lado) or {}).get("apertura") or {}).get("m2", {}).get("restDefense") or {}
         otro = bloques.get("b" if lado == "a" else "a") or {}
@@ -461,6 +462,29 @@ def herencia_tde(dtp: dict) -> dict:
             out[lado]["SOB2"] = {"valor": SOB2_DE_NIVEL[rd_rival["nivelRival"]],
                                  "de": f"rest defense leído desde el DTP del rival ({rd_rival['nivelRival']})"}
     return out
+
+
+_SIN_DATO = {"", "sin dato", "sin_dato", "sd", "?", "n/a", "na", "-"}
+
+
+def _checklist_raros(y: dict, i, rechazos: list) -> None:
+    """Un valor del checklist fuera de la lista se guardaba como «sin dato» en
+    silencio y bajaba el recuento sin que nadie lo viera (incidencia 321,
+    20/10/2026). Se sigue guardando así —no se adivina—, pero se DICE."""
+    chk = _dict(_dict(_dict(y.get("apertura")).get("m2")).get("checklistBloqueRival"))
+    for p in PREGUNTAS:
+        v = chk.get(p)
+        if v is None or isinstance(v, bool):
+            continue
+        t = _txt(v).lower() if isinstance(v, str) else repr(v)
+        if t in _IZQ or t in _DER or t in _SIN_DATO:
+            continue
+        rechazos.append({
+            "donde": f"dtp.bloques[{i}].apertura.m2.checklistBloqueRival.{p}",
+            "porque": f"valor fuera de la lista: {v!r} — se guardó «sin dato» y no cuenta para la clase",
+            "esperado": ('"si" | "no" | "sin dato" (la p6 es la llave: ¿sostuvo un resultado contra un rival '
+                         'obligado?)' if p == "p6" else
+                         '"improvisado" | "estructural" | "sin dato" (se guardan como "izq" / "der")')})
 
 
 def normalizar_dtp(x, rechazos: list) -> dict:
@@ -491,6 +515,7 @@ def normalizar_dtp(x, rechazos: list) -> dict:
                              "manda el primero", "esperado": "un bloque por equipo foco"})
             continue
         vistos.add(lado)
+        _checklist_raros(y, i, rechazos)
         bloques.append(_bloque(y, lado))
     return {"bloques": bloques} if bloques else {}
 

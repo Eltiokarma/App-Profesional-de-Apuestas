@@ -3107,7 +3107,7 @@ components:
           items: { type: string }
         heredadoDtp:
           type: array
-          description: 'C1 (clase del bloque que calculó el DTP del rival) y SOB2 (rest defense) HEREDADOS del DTP: mandan sobre lo declarado —el skill prohíbe re-estimarlos— y el índice se calcula con ellos; si difieren, alerta HERENCIA-DTP'
+          description: 'C1 (clase del bloque de ESTE equipo, que calculó el checklist del bloque DTP con foco en el rival: el DTP de A da el C1 de B y viceversa; ambiguo no hereda) y SOB2 (rest defense) HEREDADOS del DTP: mandan sobre lo declarado —el skill prohíbe re-estimarlos— y el índice se calcula con ellos; si difieren, alerta HERENCIA-DTP'
           items:
             type: object
             properties:
@@ -3139,7 +3139,7 @@ components:
                 type: object
                 properties:
                   m1: { type: object, additionalProperties: true, description: 'sistema, xiReferencia, senalXi, rolesReasignados[], vulnerabilidad, formaSinBalon, minutosCompartidos' }
-                  m2: { type: object, additionalProperties: true, description: 'choqueSistemas, duelosCarril[{carril, duelo, mismatch}], checklistBloqueRival{p1..p6, casoP6, notas}, viasGol{foco[], rival[]}, restDefense{foco, rival, nivelFoco, nivelRival: fijo|depende|sin → SOB2 0|0.5|1 del TDE}, posesion{valor, contraQuien, marcador, sede}, veredicto (FAVORABLE|NEUTRO|DESFAVORABLE), razon' }
+                  m2: { type: object, additionalProperties: true, description: 'choqueSistemas, duelosCarril[{carril, duelo, mismatch}], checklistBloqueRival{p1..p5: improvisado|estructural|sin dato, p6: si|no|sin dato, casoP6, notas — se guardan y vuelven como izq/der/sin dato, que también se aceptan; otro valor se guarda «sin dato» con rechazo. Este checklist mira el bloque del RIVAL del foco: fija el C1 del TDE del rival, no el del foco}, viasGol{foco[], rival[]}, restDefense{foco, rival, nivelFoco, nivelRival: fijo|depende|sin → SOB2 0|0.5|1 del TDE}, posesion{valor, contraQuien, marcador, sede}, veredicto (FAVORABLE|NEUTRO|DESFAVORABLE), razon' }
                   m3Fases: { type: array, items: { type: object, additionalProperties: true }, description: 'tramo 0-25 | 25-65 | 65-80+, plan, palancas[]' }
                   m6: { type: object, additionalProperties: true, description: 'competitivo, rotacion, fatiga, ausencias, otros' }
               cierre:

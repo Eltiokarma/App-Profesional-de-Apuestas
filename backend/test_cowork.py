@@ -2769,6 +2769,12 @@ def main():
           and r_dtp["dtp"]["aperturaEnCadena"], r_dtp.get("dtp"))
     check("un bloque con equipo inválido se rechaza con motivo",
           any(x["donde"].startswith("dtp.bloques[1]") for x in r_dtp["rechazos"]), r_dtp["rechazos"])
+    from backend.analisis.dtp_cowork import normalizar_dtp as _ndtp
+    _rch: list = []
+    _ndtp({"bloques": [{"equipo": "a", "apertura": {"m2": {"checklistBloqueRival": {
+        "p1": "der", "p2": "improvisado", "p3": "bloque bajo", "p4": "sin dato", "p6": "tal vez"}}}}]}, _rch)
+    check("checklist: izq/der e improvisado/estructural entran; un valor fuera de la lista se rechaza con motivo (321)",
+          sorted(x["donde"].rsplit(".", 1)[1] for x in _rch) == ["p3", "p6"], _rch)
     g_dtp = c.get(f"{A}/analisis/cowork/{ns_dtp}").json()["dtp"]["bloques"][0]
     check("GET: el bloque vuelve normalizado (tramo inválido fuera, vía canónica, veredicto sin «MATCHUP»)",
           [f["tramo"] for f in g_dtp["apertura"]["m3Fases"]] == ["0-25"]

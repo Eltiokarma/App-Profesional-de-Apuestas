@@ -1224,8 +1224,17 @@ negritas, citas y tablas se pintan bien en la app.
       (improvisado 55-65' · estructural 80-90' · `estructural no probado` si
       la 6 es no o no nombrás el partido en `casoP6` · ambiguo si no hay 3 de
       un lado). Vuelven en el recibo (`dtp.claseBloqueRival`) y en el GET.
+      VALORES: p1-p5 «improvisado» | «estructural» | «sin dato»; p6 «si» |
+      «no» | «sin dato». Se GUARDAN como «izq» (improvisado / no) y «der»
+      (estructural / sí): por eso el GET y `aperturaPrevia` los traen así, y
+      también se aceptan de vuelta. Cualquier otra cosa se guarda como «sin
+      dato» y vuelve en `rechazos`: no cuenta para la clase.
     · HERENCIA AL TDE: la clase del bloque rival da el C1 del TDE de ESE
-      equipo (estructural probado 0 · no probado 0.5 · improvisado 1) y el
+      equipo —EL RIVAL DEL FOCO, NO EL FOCO: el checklist del bloque DTP con
+      `equipo: "a"` mira el bloque de B, así que fija el C1 del TDE de B, y el
+      del bloque `"b"` fija el C1 de A (Juárez–Atlante, 20/10/2026: cruzarlo
+      dio HERENCIA-DTP en los dos lados)— (estructural probado 0 · no
+      probado 0.5 · improvisado 1; ambiguo no hereda) y el
       nivel del rest defense da el SOB2 (pivote fijo 0 · depende del
       marcador 0.5 · sin contención con los laterales arriba 1). NO los
       re-estimes en `tde.bloques[].indicadores`: el backend los pisa con lo
