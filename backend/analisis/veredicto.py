@@ -354,13 +354,7 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     out["otrasFamilias"] = familias_objetivo(fx)
     # ── la buena espina de la burbuja: la lectura del analista, contra el resultado
     _esp = (parte.get("lecturaSad") or {}).get("espina") or {}
-    _calc = None
-    if any((x or {}).get("guia") == "condicion" for x in _esp.values() if isinstance(x, dict)):
-        try:
-            from backend.analisis.parte import _reventon_calculado
-            _calc = _reventon_calculado(fx)
-        except Exception:  # noqa: BLE001 — sin la tarjeta de la condición, el veredicto sigue
-            _calc = None
+    _calc = {l: {"condicion": ((out.get("reventon") or {}).get(l) or {}).get("condicion")} for l in ("a", "b")}
     out["espina"] = espina_objetivo(_esp, real, out.get("reventon"), _calc)
     out["tarjetas"] = tarjetas_partido(out["espina"], real)
     # ── la matriz: qué escenario se jugó y qué se había escrito para él ────
@@ -651,12 +645,21 @@ def _reventon_lado(fixture_id: int, fecha: str, tid: int, rid: int, rival: str, 
     nv, nr = niveles_de(tid, 1, antes=fecha), niveles_de(rid, 1, antes=fecha)
     prox = {"fixtureId": fixture_id, "fecha": fecha[:10], "rivalId": rid, "rival": rival,
             "condicion": cond, "nivelRival": nr[0]["nivel"] if nr else 1.0}
-    pre = burbuja.analizar(previas, equipo_id=tid, nivel=nv[0]["nivel"] if nv else 0.5,
-                           bin_=nv[0]["bin"] if nv else 0, proximo=prox, plantilla=None,
-                           hoy=fecha[:10])["familias"]["total"]
+    fams = burbuja.analizar(previas, equipo_id=tid, nivel=nv[0]["nivel"] if nv else 0.5,
+                            bin_=nv[0]["bin"] if nv else 0, proximo=prox, plantilla=None,
+                            hoy=fecha[:10])["familias"]
+    pre = fams["total"]
+    # LA K DE LA CONDICIÓN DE ESE DÍA, del MISMO cálculo: la espina leída con
+    # guía de la condición se mide con esta tarjeta (Monza 4-0 Cagliari). Antes
+    # se rehacía el reventón entero por caso y Aprendizaje tardaba 25 s (20/10)
+    fc = fams.get("local" if cond == "L" else "visita") or {}
+    condicion = {"actual": fc.get("actual"), "riesgo": {"nivel": (fc.get("riesgo") or {}).get("nivel")},
+                 "espinaTarjeta": burbuja.espina_tarjeta((fc.get("actual") or {}).get("signo"),
+                                                         (fc.get("riesgo") or {}).get("movimiento"))}
     actual = pre.get("actual")
     if not actual:
         return {"comprobable": False, "sinBurbuja": True, "declarado": None, "observado": None,
+                "condicion": condicion,
                 "nota": "sin burbuja abierta antes del partido: no había nada que reventar"}
     riesgo = pre.get("riesgo") or {}
     declarado = {
@@ -670,6 +673,7 @@ def _reventon_lado(fixture_id: int, fecha: str, tid: int, rid: int, rival: str, 
     fila = next((f for f in hasta_hoy if f["fixtureId"] == fixture_id), None)
     if not fila:
         return {"comprobable": False, "sinBurbuja": False, "declarado": declarado, "observado": None,
+                "condicion": condicion,
                 "nota": "el pipeline todavía no calculó la constante de este partido: "
                         "corre `python -m backend.ingesta.pipeline` y vuelve a leer"}
     cerrados, abierta, _n = burbuja.episodios(hasta_hoy, "total")
@@ -678,7 +682,7 @@ def _reventon_lado(fixture_id: int, fecha: str, tid: int, rid: int, rival: str, 
     revento = cerro is not None
     return {
         "comprobable": True, "sinBurbuja": False,
-        "declarado": declarado,
+        "declarado": declarado, "condicion": condicion,
         "observado": {
             "revento": revento,
             "kDespues": burbuja._r2(k_despues),

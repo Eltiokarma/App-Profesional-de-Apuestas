@@ -4290,6 +4290,11 @@ components:
       properties:
         comprobable: { type: boolean, description: 'false sin burbuja previa o si el pipeline aún no calculó la constante del partido' }
         sinBurbuja: { type: boolean, description: 'no había burbuja abierta antes: nada que reventar' }
+        condicion:
+          type: object
+          nullable: true
+          description: 'la K de la condición de ese día (local para a, visita para b), del mismo cálculo «al día del partido»: actual, riesgo.nivel y espinaTarjeta. Es la tarjeta que mide la espina leída con guia condicion'
+          additionalProperties: true
         declarado:
           type: object
           nullable: true
