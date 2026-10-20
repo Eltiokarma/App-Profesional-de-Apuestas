@@ -272,7 +272,7 @@ def ficha(fixture_id: int) -> dict | None:
         "p1a": p1a,
         "f1": f1,
         "f2": f2,
-        "fiabilidadMu": sad.fiabilidad_mu(fx["league_id"]),
+        "fiabilidadMu": sad.fiabilidad_mu_partido(fx),
         "nivelDeDato": nivel_dato,
         "notaNivelDeDato": ("nivel A (tracking: altura de línea, PPDA, distancia entre líneas) "
                             "es imposible con nuestras fuentes; esto es lo que hay"

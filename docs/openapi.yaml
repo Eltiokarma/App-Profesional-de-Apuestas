@@ -1981,10 +1981,12 @@ components:
         fiabilidadMu:
           type: object
           nullable: true
-          description: 'confianza en μ v2 para la liga del fixture (evidencia: calibración por liga 2026-07, doc §5)'
+          description: 'confianza en μ v2 para la liga del fixture (evidencia: calibración por liga 2026-07, doc §5); BAJA si los dos equipos vienen de bases distintas (la condición de ESCALA-LIGAS: μ cruza niveles que no comparan)'
           properties:
             nivel: { type: string, enum: [alta, media, baja] }
             nota: { type: string, description: 'por qué, en lenguaje de apostador' }
+            escala: { type: string, description: 'solo con bases distintas: la relación (rival de categoría inferior · superior · fuera del padrón · otra liga)' }
+            notaLiga: { type: string, description: 'solo con bases distintas: lo que diría la liga sola' }
         generadoEn: { type: string, format: date-time }
     AnalisisPrepartido:
       type: object

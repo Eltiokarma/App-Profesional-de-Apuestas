@@ -737,6 +737,27 @@ def fiabilidad_mu(league_id) -> dict:
             "nota": "Sin desviaciones detectadas para esta liga en la calibración por liga (2026-07)."}
 
 
+def fiabilidad_mu_partido(f) -> dict:
+    """La de la liga del fixture, BAJADA cuando los dos equipos vienen de bases
+    distintas (la misma condición que la alerta ESCALA-LIGAS del parte). μ cruza
+    los dos niveles y el nivel no compara entre bases: Atlante con el nivel de la
+    Liga de Expansión salía favorito ante el colista de la Liga MX con confianza
+    «alta» (1551003, 20/10/2026). μ no se toca; se dice cuánto creerle."""
+    out = fiabilidad_mu(f["league_id"])
+    try:
+        from backend.analisis import escala
+        fecha = str(f["date"])[:10]
+        rel = escala.relacion(escala.base_de(f["home_team_id"], fecha), escala.base_de(f["away_team_id"], fecha))
+    except Exception:  # noqa: BLE001 — sin base no se baja nada: se dice lo de la liga
+        return out
+    if rel in ("misma", "sin dato"):
+        return out
+    return {"nivel": "baja", "escala": rel, "notaLiga": out["nota"],
+            "nota": (f"Los dos equipos vienen de bases distintas ({rel}, mirado desde el local): el nivel se "
+                     "calcula contra los rivales de cada uno y NO compara entre bases, y μ los cruza — el "
+                     "favorito que sale de acá puede ser un artefacto de la escala (alerta ESCALA-LIGAS).")}
+
+
 def gap_equipo(team_id: int, fecha: str | None) -> dict:
     nivel = nivel_a_fecha(team_id, fecha)
     forma = forma_reciente(team_id, fecha)
@@ -1274,7 +1295,7 @@ def prediccion(fixture_id: int):
         "visitante": visitante,
         "gapDiff": gap_diff,
         "gapDiffAjustado": gap_diff_adj,
-        "fiabilidadMu": fiabilidad_mu(f["league_id"]),
+        "fiabilidadMu": fiabilidad_mu_partido(f),
         "generadoEn": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     }
 
