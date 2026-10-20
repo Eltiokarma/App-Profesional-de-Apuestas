@@ -289,7 +289,14 @@ def main():
     check("el amistoso no se pide y no ocupa el cupo (entra el 22)", 21 not in pend and 22 in pend, pend)
 
     # ── cobertura aprendida por liga ───────────────────────────────────────
+    # el ahorro aprendido es para las ligas de FUERA del padrón (segundas sin onces)
+    from backend.ingesta.extractor import ligas_vivo as _lv
+    padron, liga = liga, sorted(set(LIGAS) - _lv())[0]
     cob = {liga: {"n": COBERTURA_MIN, "alineaciones": 0, "eventos": 7, "stats": 0}}
+    check("una liga del padrón se pide SIEMPRE entera aunque su cobertura aprendida diga que no da onces "
+          "(Bolivia, Liga de Expansión, Venezuela: 20/10/2026)",
+          endpoints_a_pedir(COBERTURA_SONDA * 50 + 1, sorted(_lv())[0],
+                            {sorted(_lv())[0]: {"n": 99, "alineaciones": 0, "eventos": 9, "stats": 0}}) == ("alineaciones", "eventos", "stats"))
     fid_no_sonda = COBERTURA_SONDA * 50 + 1
     check("liga que nunca dio onces ni stats: solo eventos",
           endpoints_a_pedir(fid_no_sonda, liga, cob) == ("eventos",), endpoints_a_pedir(fid_no_sonda, liga, cob))
@@ -307,7 +314,9 @@ def main():
           ok and cliente.usadas == 1 and con.execute(
               "SELECT COUNT(*) FROM fichas_meta WHERE fixture_id=?", (fid_no_sonda,)).fetchone()[0] == 1,
           cliente.usadas)
-    check("cobertura_por_liga cuenta lo sellado", cobertura_por_liga(con).get(liga, {}).get("n", 0) >= 2,
+    # las dos ligas tienen fichas selladas: la del padrón de antes y la de fuera recién sellada
+    check("cobertura_por_liga cuenta lo sellado",
+          cobertura_por_liga(con).get(padron, {}).get("n", 0) >= 1 and cobertura_por_liga(con).get(liga, {}).get("n", 0) >= 1,
           cobertura_por_liga(con))
 
     # NOMBRES ROTOS DE LA API (veredictos del 19/10/2026): entidad HTML y UTF-8 leído como Latin-1
