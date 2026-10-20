@@ -77,7 +77,7 @@ def _titulares(fixture_id: int, team_id: int) -> list[dict]:
     try:
         from backend.nombres import limpiar_nombre
         return [{**dict(f), "jugador": limpiar_nombre(f["jugador"])} for f in saddb.query(
-            "sad", "SELECT player_id, jugador, posicion FROM alineaciones "
+            "sad", "SELECT player_id, jugador, posicion, grid FROM alineaciones "
                    "WHERE fixture_id=? AND team_id=? AND titular=1", (fixture_id, team_id))]
     except Exception:  # noqa: BLE001 — DB anterior a la fase A del DTP
         return []
@@ -568,6 +568,16 @@ def _casi(uno: str, otro: str) -> bool:
             and sum(a != b for a, b in zip(uno, otro)) <= 1)
 
 
+def _pila_en(nombre: str, ref: str) -> bool:
+    """LA PRIMERA PALABRA TAMBIÉN NOMBRA. La API escribe a veces el apellido
+    primero («Nunes Cesar» por C. Nunes) y la referencia nombra por el nombre
+    de pila o el apodo de una palabra («Gabriel» por Gabriel Magalhães,
+    «Otávio» por Otávio Eleodoro…): cuatro contraElOnce falsos del 18-19/10.
+    Solo palabras de 5 letras o más, para no casar un «Juan» con otro."""
+    partes = [p for p in _plano(nombre).split() if len(p) > 1 and p not in _PARTICULAS]
+    return bool(partes) and len(partes[0]) >= 5 and f" {partes[0]} " in f" {ref} "
+
+
 def _en_referencia(nombre: str, ref: str) -> bool:
     if any(f" {a} " in f" {ref} " for a in _apellidos(nombre)):
         return True
@@ -615,7 +625,10 @@ def oficial_de(fixture_id: int) -> dict:
                        "alias": alias,
                        # sin formación en la ficha, la línea de atrás se cuenta
                        # por la posición de los titulares (D)
-                       "defensores": sum(1 for j in xi if (j["posicion"] or "") == "D")}
+                       # …y un titular SIN posición en la fila 2 del grid también es
+                       # defensor (I. Rodríguez, Central Español, 18/10/2026)
+                       "defensores": sum(1 for j in xi if (j["posicion"] or "") == "D"
+                                         or (not j["posicion"] and str(j["grid"] or "").startswith("2:")))}
     return fuera
 
 
@@ -659,7 +672,8 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
             return any(len(t) > 2 and f" {t} " in f" {texto} " for t in _plano(x).split())
 
         ausentes = [n for n in of["titulares"] if _apellidos(n)
-                    and not any(_en_referencia(x, ref) or (anunciado and _en_referencia(x, anunciado))
+                    and not any(_en_referencia(x, ref) or _pila_en(x, ref)
+                                or (anunciado and _en_referencia(x, anunciado))
                                 for x in [n, *alt.get(n, [])])
                     and not any(_palabra_en(x, ref) for x in alt.get(n, []))]
         if len(ausentes) >= REHACER_AUSENTES:

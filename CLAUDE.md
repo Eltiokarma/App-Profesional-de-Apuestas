@@ -348,6 +348,8 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   probabilidad, y Cowork no se la puede saltar. Un escalón más abajo,
   `extremo.cerca` (§10.1): sin récord pero por encima del 90 % de sus
   reventones del signo → caja ámbar y alerta `K-CERCA-EXTREMO` (tipo `dato`);
+  la K de la CONDICIÓN de hoy en su extremo, con la total sin él, da
+  `K-EXTREMO-CONDICION` (tipo `dato`, 20/10/2026);
   `activo` sigue siendo solo el récord. **Los amistosos CUENTAN** (decisión
   del usuario, 14/10/2026: el espectáculo se arma para el hincha, y una burbuja
   se arma y se rompe ahí con causas que interesan); un extremo hecho con la
