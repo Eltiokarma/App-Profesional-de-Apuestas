@@ -15,12 +15,17 @@ algo malo y no hay código que lo evite), `por_diseno` (funciona como se
 decidió) o `usuario` (le toca a una persona: una variable de Railway, una
 cuarentena con la llave maestra).
 
-Una incidencia que se repite NO se duplica: mismo título normalizado (y mismo
-partido, si lo trae) suma `veces` y actualiza `ultimaVez` mientras siga
-abierta. Que algo se repita es la señal de que el parche no alcanzó.
+Una incidencia que se repite NO se duplica: la MISMA CAUSA —misma área y mismo
+título normalizado, sin lo que va entre paréntesis ni lo que sigue a «:»—
+suma `veces`, actualiza `ultimaVez` y agrega el partido a `fixtures` mientras
+siga abierta. Hasta el 20/10/2026 la clave llevaba el partido: «titular de la
+ficha sin jugadorId» en diez partidos eran diez incidencias, la cola llegó a
+254 y no se veía cuántas causas había detrás. Que algo se repita es la señal
+de que el parche no alcanzó.
 """
 from __future__ import annotations
 
+import json
 import re
 import unicodedata
 
@@ -50,7 +55,8 @@ CREATE TABLE IF NOT EXISTS incidencia (
     veces INTEGER NOT NULL DEFAULT 1,
     creado_en TEXT NOT NULL,
     ultima_vez TEXT NOT NULL,
-    cerrado_en TEXT
+    cerrado_en TEXT,
+    fixtures TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_incidencia_estado ON incidencia(estado);
 CREATE INDEX IF NOT EXISTS idx_incidencia_clave ON incidencia(clave);
@@ -64,18 +70,62 @@ class IncidenciaInvalida(ValueError):
 def _con():
     con = efedb.conectar()
     con.executescript(DDL)
+    cols = {r[1] for r in con.execute("PRAGMA table_info(incidencia)")}
+    if "fixtures" not in cols:   # tabla de antes del 20/10/2026: se agrupa una vez por causa
+        con.execute("ALTER TABLE incidencia ADD COLUMN fixtures TEXT")
+        reagrupar(con)
     return con
+
+
+def reagrupar(con) -> int:
+    """Funde las abiertas que son la misma causa (clave nueva): la más vieja
+    queda con la suma de `veces` y los partidos de todas; las otras pasan a
+    `descartada` con «agrupada en #N» —no se borra nada—. Devuelve cuántas
+    se fundieron."""
+    marcas = ",".join("?" * len(CERRADOS))
+    filas = con.execute(f"SELECT * FROM incidencia WHERE estado NOT IN ({marcas}) ORDER BY id",
+                        CERRADOS).fetchall()
+    grupos: dict[str, list] = {}
+    for r in filas:
+        grupos.setdefault(clave_de(r["titulo"], r["area"]), []).append(r)
+    fundidas, ahora = 0, efedb.ahora()
+    for clave, rs in grupos.items():
+        base, resto = rs[0], rs[1:]
+        fx = _fixtures(base)
+        for r in resto:
+            fx += [f for f in _fixtures(r) if f not in fx]
+        con.execute("UPDATE incidencia SET clave=?, veces=?, ultima_vez=?, fixtures=? WHERE id=?",
+                    (clave, sum(r["veces"] for r in rs), max(r["ultima_vez"] for r in rs),
+                     json.dumps(fx[-50:]), base["id"]))
+        for r in resto:
+            con.execute("UPDATE incidencia SET estado='descartada', resolucion=?, cerrado_en=? WHERE id=?",
+                        (f"agrupada en #{base['id']} (misma causa)", ahora, r["id"]))
+            fundidas += 1
+    con.commit()
+    return fundidas
+
+
+def _fixtures(r) -> list[int]:
+    try:
+        lst = json.loads(r["fixtures"]) if r["fixtures"] else []
+    except (ValueError, TypeError):
+        lst = []
+    if r["fixture_id"] and r["fixture_id"] not in lst:
+        lst.insert(0, r["fixture_id"])
+    return lst
 
 
 def _txt(x, tope: int = 4000) -> str:
     return str(x or "").strip()[:tope]
 
 
-def clave_de(titulo: str, fixture_id: int | None) -> str:
-    """El mismo hallazgo escrito dos veces con otras mayúsculas o tildes es uno."""
-    t = unicodedata.normalize("NFKD", titulo or "").encode("ascii", "ignore").decode().lower()
+def clave_de(titulo: str, area: str = "") -> str:
+    """La causa, no el caso: el mismo hallazgo con otras mayúsculas, tildes, otro
+    partido entre paréntesis o otro detalle después de «:» es uno."""
+    t = re.sub(r"\([^)]*\)", " ", titulo or "").split(":")[0]
+    t = unicodedata.normalize("NFKD", t).encode("ascii", "ignore").decode().lower()
     t = re.sub(r"[^a-z0-9 ]+", " ", t)
-    return f"{fixture_id or 0}:{' '.join(t.split())[:160]}"
+    return f"{area or 'otro'}:{' '.join(t.split())[:160]}"
 
 
 def depositar(payload: dict) -> dict:
@@ -113,13 +163,17 @@ def depositar(payload: dict) -> dict:
                 fid = int(it["fixtureId"]) if it.get("fixtureId") not in (None, "") else None
             except (TypeError, ValueError):
                 fid = None
-            clave = clave_de(titulo, fid)
+            clave = clave_de(titulo, area)
             fila = con.execute(
-                f"SELECT id FROM incidencia WHERE clave=? AND estado NOT IN ({','.join('?' * len(CERRADOS))})",
+                f"SELECT * FROM incidencia WHERE clave=? AND estado NOT IN ({','.join('?' * len(CERRADOS))})",
                 (clave, *CERRADOS)).fetchone()
             if fila:
-                con.execute("UPDATE incidencia SET veces=veces+1, ultima_vez=?, detalle=COALESCE(NULLIF(?, ''), detalle) "
-                            "WHERE id=?", (ahora, _txt(it.get("detalle")), fila["id"]))
+                fx = _fixtures(fila)
+                if fid and fid not in fx:
+                    fx.append(fid)
+                con.execute("UPDATE incidencia SET veces=veces+1, ultima_vez=?, detalle=COALESCE(NULLIF(?, ''), detalle), "
+                            "fixtures=? WHERE id=?",
+                            (ahora, _txt(it.get("detalle")), json.dumps(fx[-50:]), fila["id"]))
                 repetidas.append(fila["id"])
                 continue
             cur = con.execute(
@@ -135,7 +189,7 @@ def _dto(r) -> dict:
             "area": r["area"], "severidad": r["severidad"], "titulo": r["titulo"], "detalle": r["detalle"] or "",
             "estado": r["estado"], "resolucion": r["resolucion"] or "", "pr": r["pr"] or "",
             "veces": r["veces"], "creadoEn": r["creado_en"], "ultimaVez": r["ultima_vez"],
-            "cerradoEn": r["cerrado_en"]}
+            "cerradoEn": r["cerrado_en"], "fixtures": _fixtures(r)}
 
 
 def listar(estado: str | None = "abierta", limite: int = 200) -> dict:

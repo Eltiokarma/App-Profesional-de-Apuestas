@@ -3173,7 +3173,8 @@ components:
         estado: { type: string }
         resolucion: { type: string }
         pr: { type: string }
-        veces: { type: integer }
+        veces: { type: integer, description: 'cuántas veces se reportó la MISMA CAUSA (área + título sin paréntesis ni lo que sigue a «:»)' }
+        fixtures: { type: array, items: { type: integer }, description: 'los partidos donde se vio esa causa (hasta 50)' }
         creadoEn: { type: string }
         ultimaVez: { type: string }
         cerradoEn: { type: string, nullable: true }
