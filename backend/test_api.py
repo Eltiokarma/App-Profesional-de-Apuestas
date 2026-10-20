@@ -2,6 +2,7 @@
 
     python3 -m backend.test_api
 """
+import os as _os_cache; _os_cache.environ.setdefault("SAD_CACHE_OBJETIVO_S", "0")  # los tests cambian fichas y veredictos y releen
 import os
 import sys
 import tempfile

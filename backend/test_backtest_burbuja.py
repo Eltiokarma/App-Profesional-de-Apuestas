@@ -6,6 +6,7 @@ anteriores al partido— y que sus conteos cierren.
 
     python -m backend.test_backtest_burbuja
 """
+import os as _os_cache; _os_cache.environ.setdefault("SAD_CACHE_OBJETIVO_S", "0")  # los tests cambian fichas y veredictos y releen
 import os
 import sys
 import tempfile

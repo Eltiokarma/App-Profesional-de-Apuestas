@@ -9,6 +9,7 @@ backend. Si un día alguien le pide a Cowork que mande un total, estos tests
 siguen pasando pero el parte se vuelve más lento y más fácil de equivocar: por
 eso el contrato ignora los campos calculados en vez de creerles.
 """
+import os as _os_cache; _os_cache.environ.setdefault("SAD_CACHE_OBJETIVO_S", "0")  # los tests cambian fichas y veredictos y releen
 import json
 import os
 import sys
@@ -3105,6 +3106,22 @@ def main():
           _pt is not None and set(_pt) == {"general", "local", "visita"}
           and _pt["visita"]["todas"]["lados"] == 1 and _pt["visita"]["todas"]["aciertos"] == 1
           and _pt["general"]["fuerte"]["lados"] == 1 and _pt["local"]["todas"]["lados"] == 0, _pt)
+    # el objetivo de cada veredicto se guarda unos minutos (Aprendizaje tardaba 21 s, 20/10/2026)
+    from backend.analisis import lecciones as _lmod
+    _ttl, _orig = _lmod.OBJETIVO_TTL_S, _lmod.vered.objetivo
+    _n = {"c": 0}
+    def _cuenta(fid, parte):
+        _n["c"] += 1
+        return {"jugado": False}
+    try:
+        _lmod.OBJETIVO_TTL_S, _lmod.vered.objetivo = 600, _cuenta
+        _lmod._OBJ_CACHE.clear()
+        _lmod._objetivo(1, {"x": 1}); _lmod._objetivo(1, {"x": 1}); _lmod._objetivo(1, {"x": 2})
+    finally:
+        _lmod.OBJETIVO_TTL_S, _lmod.vered.objetivo = _ttl, _orig
+        _lmod._OBJ_CACHE.clear()
+    check("el objetivo se recalcula una vez por versión del parte: la segunda lectura sale guardada, "
+          "un parte corregido se rehace", _n["c"] == 2, _n)
     _cal = calibracion_espina()
     check("GET de calibración: la tabla de la tarjeta, la del analista por lectura y cómo leerla",
           set(_cal) >= {"tarjeta", "analistaPorLectura", "comoLeerlo"}
