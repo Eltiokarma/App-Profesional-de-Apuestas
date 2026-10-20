@@ -788,6 +788,29 @@ def alertas_extremo(reventon: dict | None, nombres: dict) -> list[dict]:
                           "récord se armó fuera de la competición—" if ext.get("inflada") else ""),
             "inflada": ext.get("inflada"),
         })
+    # LA K DE LA CONDICIÓN EN SU EXTREMO TAMBIÉN SE DICE (Cagliari de visita
+    # —récord de 3 victorias en 132 partidos afuera— con la total en 0, PSV de
+    # visita, Sabah de local: veredictos del 18-19/10/2026, cuatro incidencias).
+    # Tipo `dato`: manda la total en el riesgo y en la regla dura del prompt,
+    # pero esta burbuja es la que se juega hoy y la tira no la mostraba.
+    for lado in LADOS:
+        r = (reventon or {}).get(lado) or {}
+        if (r.get("extremo") or {}).get("activo"):
+            continue  # ya grita la total
+        c = r.get("condicion") or {}
+        ext, act = c.get("extremo") or {}, c.get("actual") or {}
+        k = act.get("k")
+        if k is None or not (ext.get("activo") or ext.get("cerca")):
+            continue
+        donde = "de local" if c.get("familia") == "local" else "de visita"
+        out.append({
+            "codigo": "K-EXTREMO-CONDICION", "equipo": lado, "tipo": "dato",
+            "detalle": f"{nombres.get(lado, lado)}: burbuja {donde} K {k:+.2f} "
+                       + ("en su máximo histórico" if ext.get("activo") else "en la franja más alta de su historia")
+                       + f" ({' · '.join(ext.get('motivos') or [])}). La total no está en extremo y es la que "
+                         f"manda en el riesgo, pero hoy juega {donde}: no cargar fuerte a que esa racha siga",
+            "inflada": ext.get("inflada"),
+        })
     return out
 
 
@@ -1582,7 +1605,7 @@ _CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto", "ligas", "dtBa
 # F3 y las de DT las pone la lectura a partir de la base y del propio parte;
 # si el eco del GET vuelve con ellas, se descartan sin rechazo (se van a
 # recalcular igual) en vez de guardarse por duplicado.
-_ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "FAMILIA-RECORD", "ESPINA-VS-RIESGO", "HERENCIA-DTP", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT",
+_ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "K-EXTREMO-CONDICION", "FAMILIA-RECORD", "ESPINA-VS-RIESGO", "HERENCIA-DTP", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT",
                         "F1-DECISIVO-FUERA", "DTP-REHACER"}
 # LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
 # selladas (coherencia_json), porque no son deterministas y rehacerlas al leer
@@ -2547,6 +2570,36 @@ def _bloque_calculado(tde: dict) -> dict:
     return fuera
 
 
+def _formacion_al_dia(fixture_id: int, xi: dict) -> dict:
+    """LA FORMACIÓN DEL ONCE ES LA DE LA FICHA DE HOY. El once se cierra con la
+    alineación anunciada antes del pitazo y la API corrige el string de la
+    formación después (Rayo 4-3-3 → 4-2-3-1, Tolima 5-3-2 → 4-4-2, Parma
+    3-5-2 → 3-4-2-1: once incidencias del 18-19/10/2026): el parte mostraba una
+    formación que ya no era la de la ficha que dice citar, mientras el DTP leía
+    la nueva. Si el lado viene de la ficha y la formación cambió, manda la de
+    la ficha y la que se guardó al cerrar viaja en `formacionAlCerrar`. Los
+    nombres no se tocan: el bloque F se cerró con ellos."""
+    if not any((xi.get(l) or {}).get("fuente") == FUENTE_FICHA for l in LADOS):
+        return xi
+    fx = _fixture(fixture_id)
+    if not fx:
+        return xi
+    out = dict(xi)
+    for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])):
+        x = xi.get(lado) or {}
+        if x.get("fuente") != FUENTE_FICHA:
+            continue
+        try:
+            f = saddb.query_one("sad", "SELECT formacion FROM alineaciones WHERE fixture_id=? AND team_id=? "
+                                       "AND formacion IS NOT NULL AND formacion <> '' LIMIT 1", (fixture_id, tid))
+        except Exception:  # noqa: BLE001 — base sin alineaciones: queda la guardada
+            f = None
+        hoy = f["formacion"] if f else None
+        if hoy and hoy != (x.get("formacion") or ""):
+            out[lado] = {**x, "formacion": hoy, "formacionAlCerrar": x.get("formacion") or ""}
+    return out
+
+
 def dto(fixture_id: int) -> dict | None:
     """Todo lo que la pantalla necesita, con lo calculable ya calculado."""
     with _conectar() as con:
@@ -2560,6 +2613,7 @@ def dto(fixture_id: int) -> dict | None:
         return None
     parte = json.loads(fila["parte_json"])
     xi = json.loads(fila["xi_json"]) if fila["xi_json"] else {}
+    xi = _formacion_al_dia(fixture_id, xi)
     alertas = list(parte["alertas"])
     equipos = {}
     for lado in LADOS:

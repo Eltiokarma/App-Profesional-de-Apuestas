@@ -567,6 +567,29 @@ def main():
     check("es idempotente: el ya cerrado no se vuelve a tocar",
           all(x["fixtureId"] != con_ficha for x in otra["cerrados"]),
           [x["fixtureId"] for x in otra["cerrados"]])
+    # LA FORMACIÓN ES LA DE LA FICHA DE HOY: la API corrige el string después del
+    # cierre del once (Rayo 4-3-3 → 4-2-3-1, 18-19/10/2026)
+    import sqlite3 as _sq3fo
+    _g0 = c.get(f"{A}/analisis/cowork/{con_ficha}").json()["xi"]["a"]
+    with _sq3fo.connect(os.path.join(tmp, "sad.db")) as _cfo:
+        _hfo = _cfo.execute("SELECT home_team_id FROM fixtures WHERE id=?", (con_ficha,)).fetchone()[0]
+        _cfo.execute("UPDATE alineaciones SET formacion='3-4-2-1' WHERE fixture_id=? AND team_id=?", (con_ficha, _hfo))
+    _g1 = c.get(f"{A}/analisis/cowork/{con_ficha}").json()["xi"]["a"]
+    check("el once de la ficha muestra la formación de la ficha de hoy y la que tenía al cerrar viaja aparte",
+          _g1.get("formacion") == "3-4-2-1" and _g1.get("formacionAlCerrar") == (_g0.get("formacion") or "")
+          and _g1.get("once") == _g0.get("once"), (_g0.get("formacion"), _g1.get("formacion"), _g1.get("formacionAlCerrar")))
+    # un titular SIN posición en la fila 2 del grid es defensor (Central Español, 18/10/2026)
+    from backend.analisis.dtp_cowork import oficial_de as _ofd
+    _d0 = (_ofd(con_ficha).get("a") or {}).get("defensores")
+    with _sq3fo.connect(os.path.join(tmp, "sad.db")) as _cfo:
+        _pid = _cfo.execute("SELECT player_id FROM alineaciones WHERE fixture_id=? AND team_id=? AND titular=1 "
+                            "AND posicion='D' LIMIT 1", (con_ficha, _hfo)).fetchone()
+        if _pid:
+            _cfo.execute("UPDATE alineaciones SET posicion=NULL, grid='2:1' WHERE fixture_id=? AND team_id=? AND player_id=?",
+                         (con_ficha, _hfo, _pid[0]))
+    _d1 = (_ofd(con_ficha).get("a") or {}).get("defensores")
+    check("un defensor que la ficha trae sin posición pero en la fila 2 del grid se sigue contando",
+          _pid is None or _d1 == _d0, (_d0, _d1, _pid))
     # UN ONCE DE LA FICHA QUE NO CASA NO ES «ESTA LIGA NO DA ONCES» (11/10/2026:
     # ADT–Cienciano y América–Águilas salieron en conflicto y, en la pasada
     # siguiente, en `nuncaVaALlegar`, porque sus lados ya venían de la ficha)
@@ -1440,6 +1463,15 @@ def main():
           len(al) == 1 and al[0]["equipo"] == "b" and al[0]["codigo"] == "K-EXTREMO"
           and "Valencia" in al[0]["detalle"] and "-32.00" in al[0]["detalle"] and "118 partidos" in al[0]["detalle"], al)
     check("sin reventón calculado no hay alerta ni excepción", alertas_extremo(None, {}) == [])
+    # Cagliari 19/10/2026: total en 0, K de VISITA en su récord → la tira lo dice (tipo dato)
+    _cg = {"b": {"actual": None, "extremo": None,
+                 "condicion": {"familia": "visita", "actual": {"k": 8.97}, "extremo": {"activo": True, "motivos": ["racha récord: 3 en 132"]}}},
+           "a": {"actual": {"k": 5.0}, "extremo": {"activo": True, "motivos": ["K récord"]},
+                 "condicion": {"familia": "local", "actual": {"k": 9.0}, "extremo": {"activo": True}}}}
+    _alc = alertas_extremo(_cg, {"a": "Monza", "b": "Cagliari"})
+    check("la K de la condición en su extremo sale en la tira (K-EXTREMO-CONDICION, dato); si ya grita la total, no se duplica",
+          [(x["codigo"], x["equipo"]) for x in _alc] == [("K-EXTREMO", "a"), ("K-EXTREMO-CONDICION", "b")]
+          and _alc[1]["tipo"] == "dato" and "de visita" in _alc[1]["detalle"], _alc)
     sint_c = {"a": {"actual": {"k": -17.93}, "riesgo": {"nivel": "bajo"},
                     "extremo": {"activo": False, "cerca": True, "motivos": ["K -17.93: más baja que el 95 % de las 39 burbujas - que reventaron (récord previo -19.54, a 1.61)"]}},
               "b": {"actual": {"k": 3.0}, "extremo": {"activo": False, "cerca": False, "motivos": []}}}
@@ -2813,6 +2845,13 @@ def main():
                     {"a": {"formacion": "4-3-3", "titulares": ["Baltasar Gallego Rodríguez", "Fernando Muslera"]}})
     check("un titular con dos apellidos casa con la referencia por cualquiera de ellos",
           _dos["ausentesDeLaReferencia"] == [], _dos)
+    # la primera palabra también nombra (contraElOnce, 18-19/10/2026)
+    _pi = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3",
+                    "xiReferencia": _ref + ", C. Nunes, Gabriel, Otávio"}}},
+                   {"a": {"formacion": "4-3-3", "titulares": ["Nunes Cesar", "Gabriel Magalhães",
+                                                              "Otávio Eleodoro Rezende Costa", "Juan Desconocido"]}})
+    check("«Nunes Cesar», «Gabriel Magalhães» y «Otávio Eleodoro…» casan por la primera palabra; un «Juan» no",
+          _pi["ausentesDeLaReferencia"] == ["Juan Desconocido"], _pi)
     # (17/10/2026) Quirós/Quiroz y la ficha sin formación (Atlas con línea de 4)
     _sz = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-4-2", "xiReferencia": _ref.replace("Rojo", "Quiroz")}}},
                    {"a": {"formacion": "4-4-2", "titulares": ["C. Quirós"]}})

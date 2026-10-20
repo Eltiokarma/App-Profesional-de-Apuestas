@@ -358,7 +358,11 @@ tarjeta decía «riesgo bajo · 1 pt» a secas, que se lee como luz verde.
   `activo` y no cambian de significado).
 - **Dónde se ve**: caja ámbar «CERCA DEL EXTREMO» antes del riesgo en la
   tarjeta, una línea ámbar en la caja del reventón del parte, y la alerta
-  **K-CERCA-EXTREMO** (tipo `dato`, calculada, no se deposita) en la tira.
+  **K-CERCA-EXTREMO** (tipo `dato`, calculada, no se deposita) en la tira. Y si
+  la que está en su extremo (récord o cerca) es la K de la CONDICIÓN de hoy y no
+  la total, la tira trae **K-EXTREMO-CONDICION** (tipo `dato`, 20/10/2026: el
+  Cagliari de visita con la total en 0): manda la total en el riesgo, pero esa
+  es la burbuja que se juega.
 - **Qué le pide a Cowork**: nombrarla en `lecturaSad.reventon` y no
   recomendar carga fuerte a que la racha siga. No es regla dura como el
   récord: es prudencia en la carga.

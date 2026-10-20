@@ -2877,7 +2877,8 @@ components:
       properties:
         once: { type: array, items: { type: string }, description: 'los 11 titulares' }
         banca: { type: array, items: { type: string } }
-        formacion: { type: string }
+        formacion: { type: string, description: 'en el GET, si el lado viene de la ficha, la formación de la ficha de HOY (la API la corrige después del cierre)' }
+        formacionAlCerrar: { type: string, readOnly: true, description: 'solo en el GET: la formación con la que se cerró el once, cuando la ficha la cambió después' }
         fuente: { type: string, description: 'pantallazo BeSoccer, rueda de prensa, cuenta oficial…' }
         reemplazar:
           type: boolean

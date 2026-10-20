@@ -985,7 +985,8 @@ Escribís vos (es juicio, no se puede calcular):
       Nombrala en `lecturaSad.reventon` («A: cerca del extremo, K −17.9 a
       1.6 del récord; riesgo bajo») y no recomiendes carga fuerte a que esa
       racha siga. No es regla dura: es prudencia en la carga. El backend
-      agrega la alerta K-CERCA-EXTREMO (tipo dato) al parte. NO la declares
+      agrega la alerta K-CERCA-EXTREMO (tipo dato) al parte (y K-EXTREMO-CONDICION si
+      la del extremo es la K de local o de visita de hoy y no la total). NO la declares
       vos en `alertas` (ni «CERCA_DEL_EXTREMO» ni con otro nombre): sale
       duplicada. Va en `lecturaSad.reventon` y en el falsador.
     · CORREGIR SOLO EL DT de un parte ya depositado: `POST
