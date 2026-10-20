@@ -490,6 +490,11 @@ class Cliente:
                 if usadas_api < self.usadas - 50:  # el reset de ventana, no ruido de concurrencia
                     print(f"  cuota sincronizada con la API: {self.usadas} → {usadas_api} "
                           f"(la ventana del plan resetea a la hora de la suscripción)")
+                    # LA VENTANA SE RENOVÓ: ya no está agotada. En el primer minuto
+                    # del día UTC la API todavía cuenta la ventana anterior llena y
+                    # el día nuevo quedaba «agotado a las 19:00 de Lima» con 4.679
+                    # de 7.500 usadas: el latido gritaba en falso (19/10/2026)
+                    self.agotado_en = None
                 self.usadas = usadas_api
                 if self.agotado_en is None and self.usadas >= self.limite:
                     self.agotado_en = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
