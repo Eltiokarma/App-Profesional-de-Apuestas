@@ -2854,6 +2854,8 @@ def xi_de_ficha(fixture_id: int, team_id: int) -> dict | None:
         "ORDER BY titular DESC",
         (fixture_id, team_id),
     )
+    from backend.nombres import limpiar_nombre
+    filas = [{**dict(f), "jugador": limpiar_nombre(f["jugador"])} for f in filas]
     titulares = [f["jugador"] for f in filas if f["titular"] and f["jugador"]]
     if len(titulares) < 7:  # media alineación no es una alineación
         return None

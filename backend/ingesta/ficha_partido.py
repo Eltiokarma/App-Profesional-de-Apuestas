@@ -35,6 +35,7 @@ import zlib
 from datetime import datetime, timedelta, timezone
 
 from backend.ingesta.extractor import LIGAS, LIGAS_RUIDO, Cliente, leer_clave, reserva_del_dia
+from backend.nombres import limpiar_nombre
 
 DIAS_NS_DEFAULT = 3
 ULTIMOS_DEFAULT = int(os.environ.get("SAD_FICHA_PARTIDOS", "3"))
@@ -204,8 +205,8 @@ def guardar_eventos(con: sqlite3.Connection, item: dict) -> int:
             "equipo_id, jugador, jugador_id, asistente, asistente_id) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (fid, minuto, extra, tipo, ev.get("detail"),
-             (ev.get("team") or {}).get("id"), jug.get("name"), _i(jug.get("id")),
-             asi.get("name"), _i(asi.get("id"))),
+             (ev.get("team") or {}).get("id"), limpiar_nombre(jug.get("name")), _i(jug.get("id")),
+             limpiar_nombre(asi.get("name")), _i(asi.get("id"))),
         )
         n += 1
     return n
@@ -222,7 +223,7 @@ def guardar_alineaciones(con: sqlite3.Connection, fixture_id: int, respuesta: li
         if not tid:
             continue
         formacion = lado.get("formation")
-        dt = (lado.get("coach") or {}).get("name")
+        dt = limpiar_nombre((lado.get("coach") or {}).get("name"))
         for titular, lista in ((1, lado.get("startXI") or []), (0, lado.get("substitutes") or [])):
             for it in lista:
                 p = it.get("player") or {}
@@ -233,7 +234,7 @@ def guardar_alineaciones(con: sqlite3.Connection, fixture_id: int, respuesta: li
                     # titular): el bloque F lo daba de baja. Con nombre, se guarda
                     # con un id SINTÉTICO negativo (estable por nombre): nunca
                     # choca con uno real y ningún cruce por id lo toma por otro.
-                    nombre = (p.get("name") or "").strip()
+                    nombre = limpiar_nombre(p.get("name") or "")
                     if not nombre:
                         continue
                     pid = -(zlib.crc32(nombre.encode("utf-8")) % 2_000_000_000 + 1)
@@ -241,7 +242,7 @@ def guardar_alineaciones(con: sqlite3.Connection, fixture_id: int, respuesta: li
                     "INSERT OR REPLACE INTO alineaciones (fixture_id, team_id, formacion, "
                     "entrenador, player_id, jugador, numero, posicion, grid, titular) "
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    (fixture_id, tid, formacion, dt, pid, p.get("name"),
+                    (fixture_id, tid, formacion, dt, pid, limpiar_nombre(p.get("name")),
                      _i(p.get("number")), p.get("pos"), p.get("grid"), titular),
                 )
                 n += 1

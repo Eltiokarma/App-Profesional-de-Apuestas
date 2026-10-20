@@ -2063,9 +2063,11 @@ def main():
     od_rr = {b["equipo"]: b for b in c.get(f"{A}/analisis/cowork/{con_ficha}/objetivo").json()["objetivo"]["tde"]["bloques"]}
     check("una ventana relativa no se cobra y lo dice", od_rr["a"]["comprobable"] is False
           and "relativa" in od_rr["a"]["nota"], od_rr["a"])
-    check("con la rama jugada declarando su ventana, se mide ESA (34' en 30-40')",
-          od_rr["b"]["ventanaDeRama"] is True and od_rr["b"]["desde"] == 30 and od_rr["b"]["golEnVentana"] is True,
-          od_rr["b"])
+    # el 34' es el gol que ABRE la rama «si recibe primero»: no se cobra en ella
+    # (1493189, 19/10/2026) y la etiqueta es la de la rama, no la base
+    check("con la rama jugada declarando su ventana, se mide ESA (30-40') sin cobrar el gol que la abre (34')",
+          od_rr["b"]["ventanaDeRama"] is True and od_rr["b"]["desde"] == 30 and od_rr["b"]["golEnVentana"] is False
+          and od_rr["b"]["ventana"] == "30-40'", od_rr["b"])
     c.post(f"{A}/analisis/cowork", json=p_tde)
     # EL TIMELINE ES «AL DÍA DEL PARTIDO» (City–PSG, 17/10/2026): ni el
     # resultado de ese partido ni la tabla con él
@@ -3039,6 +3041,17 @@ def main():
     check("con guía de la condición, la tarjeta del veredicto es la de la condición (Cagliari: «pierde», cumplida) y el parte fue contra ella",
           (_ec["b"]["tarjeta"] or {}).get("lectura") == "negativa" and _ec["b"]["tarjeta"]["cumplida"] is True
           and _ec["b"]["tarjeta"].get("guia") == "condicion" and _ec["b"]["vsTarjeta"] == "contra", _ec)
+    # LA VENTANA QUE SE COBRA CON RAMA (veredictos del 19/10/2026)
+    from backend.analisis.veredicto import ventana_a_cobrar, clase_ventana as _cv
+    _r = {"rama": "siRecibePrimero", "minuto": 89, "loDeclarado": {"ventana": "60-75'"}}
+    _t, _dr, _venc = ventana_a_cobrar({"ventana": "75-90'"}, _r)
+    check("una rama que se abre al 89' con ventana 60-75' no tuvo tramo: se dice y no se cobra",
+          _t == "60-75'" and _dr and "no se cobra" in _venc)
+    _t2, _dr2, _v2 = ventana_a_cobrar({"ventana": "75-90'"}, {**_r, "minuto": 50})
+    check("con la rama viva, la etiqueta es la de la rama", _t2 == "60-75'" and _dr2 and _v2 == "")
+    _gs = [{"minuto": 20, "lado": "a"}, {"minuto": 60, "lado": "a"}, {"minuto": 81, "lado": "a"}, {"minuto": 86, "lado": "b"}]
+    check("un 3 arriba alcanzado DENTRO de la ventana, antes del gol que se cobra, abandona la rama (Nacional 3-0 al 81', 3-1 al 86')",
+          _cv(_gs, 86, "b")[0] == "rama_abandonada" and _cv(_gs, 75, "b")[0] == "")
     from backend.analisis.veredicto import tarjetas_partido
     _tm = {"a": {"tarjeta": {"lectura": "positiva", "fuerza": "debil"}}, "b": {"tarjeta": {"lectura": "negativa", "fuerza": "debil"}}}
     _tp = tarjetas_partido(_tm, "local")
