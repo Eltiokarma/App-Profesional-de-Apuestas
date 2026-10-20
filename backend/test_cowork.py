@@ -3723,6 +3723,24 @@ def main():
     _ri3 = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "partes", "items": [
         {"titulo": "DT de Bournemouth: la base dice Tindall", "area": "dt", "fixtureId": 1557427}]}).json()
     check("si vuelve a aparecer después de resuelta, entra NUEVA (el parche no alcanzó)", len(_ri3["nuevas"]) == 1, _ri3)
+    # LA MISMA CAUSA EN OTRO PARTIDO NO ES OTRA INCIDENCIA (20/10/2026: 254 abiertas)
+    _g1 = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "veredictos", "items": [
+        {"titulo": "Titular de la ficha sin jugadorId (Rayo)", "area": "once", "fixtureId": 111},
+        {"titulo": "titular de la ficha sin jugadorId", "area": "once", "fixtureId": 222},
+        {"titulo": "Titular de la ficha sin jugadorId: Águilas", "area": "once", "fixtureId": 111}]}).json()
+    _gl = next(x for x in c.get(f"{A}/analisis/cowork/incidencias").json()["incidencias"] if x["id"] == _g1["nuevas"][0])
+    check("la misma causa en otros partidos suma veces y junta los partidos, no abre otra",
+          len(_g1["nuevas"]) == 1 and len(_g1["repetidas"]) == 2 and _gl["veces"] == 3 and _gl["fixtures"] == [111, 222], (_g1, _gl))
+    from backend.analisis import incidencias as _incm
+    with _incm._con() as _ci:
+        for f in (333, 444):
+            _ci.execute("INSERT INTO incidencia (clave, origen, area, severidad, titulo, creado_en, ultima_vez, fixture_id) "
+                        "VALUES (?,?,?,?,?,?,?,?)", (f"{f}:vieja", "partes", "ficha", "aviso", "Ficha sin stats (x)", "2026-10-18", "2026-10-18", f))
+        _nf = _incm.reagrupar(_ci)
+        _rows = _ci.execute("SELECT estado, fixtures, veces FROM incidencia WHERE titulo='Ficha sin stats (x)' ORDER BY id").fetchall()
+    check("reagrupar funde las viejas de la misma causa: una queda con los dos partidos, la otra «descartada» (no se borra)",
+          _nf >= 1 and [r["estado"] for r in _rows] == ["abierta", "descartada"] and json.loads(_rows[0]["fixtures"]) == [333, 444]
+          and _rows[0]["veces"] == 2, [dict(r) for r in _rows])
     check("un origen desconocido es 422", c.post(f"{A}/analisis/cowork/incidencias",
                                                   json={"origen": "x", "items": [{"titulo": "t"}]}).status_code == 422)
     check("y el latido cuenta las incidencias", "incidencias" in c.get(f"{A}/analisis/cowork/latido").json())
