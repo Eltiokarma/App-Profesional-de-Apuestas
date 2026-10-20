@@ -51,19 +51,21 @@ def onces_recientes(team_id: int, antes: str) -> dict:
                          AND EXISTS (SELECT 1 FROM alineaciones a WHERE a.fixture_id=f.id AND a.team_id=?)
                        ORDER BY f.date DESC LIMIT ?""", (team_id, team_id, antes, team_id, ONCES_RECIENTES))]
         if not fx:
-            return {"onces": 0, "jugadores": {}}
+            return {"onces": 0, "jugadores": {}, "ultimo": None}
         filas = saddb.query(
-            "sad", f"SELECT player_id, jugador, posicion, titular FROM alineaciones "
+            "sad", f"SELECT fixture_id, player_id, jugador, posicion, titular FROM alineaciones "
                    f"WHERE team_id=? AND fixture_id IN ({','.join('?' * len(fx))})", (team_id, *fx))
     except Exception:  # noqa: BLE001 — base sin la tabla de alineaciones
-        return {"onces": 0, "jugadores": {}}
+        return {"onces": 0, "jugadores": {}, "ultimo": None}
     js: dict[int, dict] = {}
     for f in filas:
         j = js.setdefault(f["player_id"], {"nombre": f["jugador"] or "", "posicion": f["posicion"] or "",
-                                           "titular": 0, "convocado": 0})
+                                           "titular": 0, "convocado": 0, "enUltimo": False})
         j["convocado"] += 1
         j["titular"] += 1 if f["titular"] else 0
-    return {"onces": len(fx), "jugadores": js}
+        if f["titular"] and f["fixture_id"] == fx[0]:
+            j["enUltimo"] = True
+    return {"onces": len(fx), "jugadores": js, "ultimo": fx[0]}
 
 
 def rol_por_onces(titular: int, onces: int) -> str:
@@ -107,6 +109,7 @@ def _fila(j: dict) -> dict:
         "apps": j["partidos"], "titularidades": j["titularidades"], "minutos": j["minutos"],
         "pctMinutos": j["pctMinutos"], "goles": j["goles"], "asistencias": j["asistencias"],
         "baja": j.get("baja"), "recienLlegado": j.get("recienLlegado"),
+        **({"minutosIncoherentes": True} if j.get("minutosIncoherentes") else {}),
     }
 
 
@@ -163,20 +166,33 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
         js = sorted(js, key=lambda j: (-tit.get(j["id"], 0), -j["minutos"]))
     elegidos = js[:CANDIDATOS]
     ids = {j["id"] for j in elegidos}
-    elegidos += [j for j in js if j["id"] in dec and j["id"] not in ids]
+    # EL ÚLTIMO ONCE ENTRA ENTERO (20/10/2026: Battaglia y Ayrton Costa en Boca,
+    # Dayan Pérez en Cúcuta, titulares —y goleadores— del último partido, se
+    # quedaban fuera del corte de 16 porque las stats de la temporada van atrasadas)
+    ultimo = {pid for pid, r in rec["jugadores"].items() if r.get("enUltimo")}
+    # un titular del último once con otro id (la copia vacía que fundió deduplicar)
+    # marca a su gemela de la temporada
+    vivos = {j["id"] for j in js}
+    for pid in [p for p in ultimo if p not in vivos]:
+        gem = next((j for j in js if mismo_jugador(rec["jugadores"][pid]["nombre"], j["nombre"])), None)
+        if gem is not None:
+            ultimo.add(gem["id"])
+    elegidos += [j for j in js if j["id"] not in ids and (j["id"] in dec or j["id"] in ultimo)]
     filas = []
     for j in elegidos:
         f = {**_fila(j), "decisivo": dec.get(j["id"], "")}
         if con_onces:
             f["titularEnUltimos"] = f"{tit.get(j['id'], 0)}/{rec['onces']}"
             f["rolSugerido"] = rol_por_onces(tit.get(j["id"], 0), rec["onces"])
+        if j["id"] in ultimo:
+            f["titularEnElUltimo"] = True
         filas.append(f)
     # titulares recientes que la plantilla de la temporada no tiene (fichajes,
     # juveniles subidos): sin ellos la tabla se queda con el equipo de antes
     ids = {j["id"] for j in elegidos}
     if con_onces:
         for pid, r in sorted(rec["jugadores"].items(), key=lambda kv: -kv[1]["titular"]):
-            if pid in ids or pid <= 0 or r["titular"] < 2:
+            if pid in ids or pid <= 0 or (r["titular"] < 2 and not r.get("enUltimo")):
                 continue
             # el mismo jugador con otro id en la hoja: sus titularidades ya
             # cuentan en la fila de la plantilla, no es un fichaje
@@ -191,7 +207,8 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
             filas.append({"jugadorId": pid, "nombre": r["nombre"], "zona": _ZONA_API.get(r["posicion"], ""),
                           "posicion": r["posicion"], "rolSugerido": rol_por_onces(r["titular"], rec["onces"]),
                           "titularEnUltimos": f"{r['titular']}/{rec['onces']}", "apps": None, "minutos": None,
-                          "decisivo": "", "sinStatsDeTemporada": True})
+                          "decisivo": "", "sinStatsDeTemporada": True,
+                          **({"titularEnElUltimo": True} if r.get("enUltimo") else {})})
     return {
         "equipo": nombre, "teamId": team_id, "temporada": p.get("temporada"),
         "origenTemporada": p.get("origenTemporada"),

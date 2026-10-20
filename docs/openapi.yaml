@@ -1077,8 +1077,12 @@ paths:
         `sinStatsDeTemporada`); si no, por fracción de minutos de la temporada (TF ≥ 75 %,
         TH ≥ 50 %, ROT ≥ 25 %, SUP) y `decisivo` con su porqué (titular habitual o top 3
         en goles+asistencias). El rol es SUGERIDO: lo confirma la prensa. Un decisivo que
-        no figura en la tabla depositada dispara `F1-DECISIVO-FUERA` en el parte. 0 tokens,
-        0 requests. Abierto a Cowork.
+        no figura en la tabla depositada dispara `F1-DECISIVO-FUERA` en el parte. Los
+        titulares del ÚLTIMO once entran todos aunque queden fuera del corte de 16
+        (`titularEnElUltimo`): las stats de la temporada llegan atrasadas. Un jugador cuyos
+        minutos no caben en sus partidos (más de 125 por partido) viaja con
+        `minutosIncoherentes` y su % se cuenta con lo que cabe. 0 tokens, 0 requests.
+        Abierto a Cowork.
       parameters:
         - { name: fixtureId, in: path, required: true, schema: { type: integer } }
       responses:
@@ -2054,7 +2058,8 @@ components:
         partidos: { type: integer }
         titularidades: { type: integer }
         minutos: { type: integer }
-        pctMinutos: { type: number, description: minutos / máx. de la plantilla (proxy de titularidad) }
+        pctMinutos: { type: number, description: 'minutos / máx. de la plantilla (proxy de titularidad); con `minutosIncoherentes`, cuenta solo lo que cabe en sus partidos (125 por partido)' }
+        minutosIncoherentes: { type: boolean, description: 'la API trae más minutos de los que caben en sus partidos (J. García, Tigres: 1 partido y 1.708 min); `minutos` es el dato crudo' }
         rating: { type: number, nullable: true, description: media ponderada por minutos entre competiciones }
         confianza: { type: string, enum: [A, B, C], description: 'A ≥1800 min · B ≥600 · C <600; recién llegado baja un grado' }
         goles: { type: integer }

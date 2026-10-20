@@ -2947,6 +2947,50 @@ def main():
                                          "rol": x["rolSugerido"], "apps": x["apps"]} for x in dec]
     c.post(f"{A}/analisis/cowork", json=p_f1)
     g_f1b = c.get(f"{A}/analisis/cowork/{con_ficha}").json()
+    # MINUTOS QUE NO CABEN EN LOS PARTIDOS (J. García, Tigres, 20/10/2026: 1 partido y 1.708 min)
+    from backend import jugadores as _jugm
+    _hid = _tid_f1["home_team_id"]
+    _pl = _jugm.plantilla_de(_hid)
+    _vic = _pl["jugadores"][-1]
+    with _sq3f.connect(os.path.join(tmp, "sad.db")) as _con:
+        _bk = _con.execute("SELECT rowid, partidos, titularidades, minutos FROM jugador_stats WHERE player_id=? AND team_id=?",
+                           (_vic["id"], _hid)).fetchall()
+        _con.execute("UPDATE jugador_stats SET partidos=0, titularidades=0, minutos=0 WHERE player_id=? AND team_id=?",
+                     (_vic["id"], _hid))
+        _con.execute("UPDATE jugador_stats SET partidos=1, titularidades=1, minutos=99999 WHERE rowid=?", (_bk[0][0],))
+    _pl2 = {j["id"]: j for j in _jugm.plantilla_de(_hid)["jugadores"]}
+    _f1g = [x for x in c.get(f"{A}/analisis/cowork/f1/{con_ficha}").json()["a"]["candidatos"] if x["jugadorId"] == _vic["id"]]
+    check("1 partido con 99.999 minutos: el dato crudo viaja marcado y el % se cuenta con lo que cabe (no es decisivo)",
+          _pl2[_vic["id"]].get("minutosIncoherentes") and _pl2[_vic["id"]]["pctMinutos"] < 0.2
+          and max(j["pctMinutos"] for j in _pl2.values()) == 1.0
+          and not any(x["decisivo"].startswith("titular habitual") for x in _f1g), (_pl2[_vic["id"]], _f1g))
+    with _sq3f.connect(os.path.join(tmp, "sad.db")) as _con:
+        for _r in _bk:
+            _con.execute("UPDATE jugador_stats SET partidos=?, titularidades=?, minutos=? WHERE rowid=?", (_r[1], _r[2], _r[3], _r[0]))
+    # EL ÚLTIMO ONCE ENTRA ENTERO a la tabla F1 (Boca, Cúcuta, Fortaleza: 20/10/2026)
+    from backend.analisis.f1_base import onces_recientes as _orec, tabla_equipo as _tabla_eq
+    # un once nuevo con los de MENOS minutos de la temporada (los que el corte de 16 dejaba fuera)
+    _cola = _jugm.plantilla_de(_hid)["jugadores"][-11:]
+    with _sq3f.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT INTO fixtures (id, date, home_team_id, away_team_id, status_short, status_long) "
+                     "VALUES (990777, '2099-12-31T20:00:00+00:00', ?, ?, 'FT', 'Match Finished')", (_hid, _hid + 1))
+        for _j in _cola:
+            _con.execute("INSERT INTO alineaciones (fixture_id, team_id, player_id, jugador, titular) VALUES (990777, ?, ?, ?, 1)",
+                         (_hid, _j["id"], _j["nombre"]))
+    _rec = _orec(_hid, "2100-01-01")
+    _ult = {pid for pid, r in _rec["jugadores"].items() if r["enUltimo"] and pid > 0}
+    import backend.analisis.f1_base as _f1m
+    _cand_antes, _f1m.CANDIDATOS = _f1m.CANDIDATOS, 3   # que el corte deje fuera a los del once
+    try:
+        _ids_f1 = {x["jugadorId"] for x in _tabla_eq(_hid, "local", "2100-01-01")["candidatos"]
+                   if x.get("titularEnElUltimo")}
+    finally:
+        _f1m.CANDIDATOS = _cand_antes
+    check("los titulares del último once están todos en la tabla F1, marcados",
+          _rec["onces"] > 0 and _ult and _ult <= _ids_f1, (_rec["onces"], _ult, _ids_f1))
+    with _sq3f.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM alineaciones WHERE fixture_id=990777")
+        _con.execute("DELETE FROM fixtures WHERE id=990777")
     # UN JUGADOR CON DOS IDS ES UNO (Leones del Norte, Nacional Potosí: 17-19/10/2026)
     from backend.analisis.f1_base import deduplicar as _dedup, mismo_jugador as _mj
     _js = [{"id": 362224, "nombre": "Emiliano Griffa", "minutos": 900, "partidos": 10},

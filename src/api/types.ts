@@ -298,6 +298,8 @@ export interface JugadorDTO {
   minutos: number
   /** minutos / máx. de la plantilla — proxy de titularidad. */
   pctMinutos: number
+  /** La API trae más minutos de los que caben en sus partidos: `pctMinutos` cuenta solo lo que cabe. */
+  minutosIncoherentes?: boolean
   /** Media ponderada por minutos entre competiciones (null sin rating). */
   rating: number | null
   /** A ≥1800 min · B ≥600 · C <600; recién llegado baja un grado (reseteo). */
