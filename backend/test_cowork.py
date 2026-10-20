@@ -1762,6 +1762,12 @@ def main():
     check("el objetivo trae el reventón por lado, con su nota de que es observación y no veredicto",
           set(rv) >= {"a", "b", "nota"} and "no veredicto" in rv["nota"], list(rv))
     fx_p = dbmod.query_one("sad", "SELECT home_team_id, away_team_id FROM fixtures WHERE id=?", (pasado["id"],))
+    # la tarjeta de la condición sale del MISMO cálculo del reventón (no se rehace: 20/10/2026)
+    for lado, tid, fam in (("a", fx_p["home_team_id"], "local"), ("b", fx_p["away_team_id"], "visita")):
+        _bc = c.get(f"{A}/equipos/{tid}/burbujas", params={"antesDe": pasado["id"]}).json()["familias"][fam]
+        check(f"lado {lado}: el reventón del veredicto trae la K de la condición de ese día y su tarjeta",
+              "condicion" in rv[lado] and (rv[lado]["condicion"] or {}).get("espinaTarjeta") == _bc.get("espinaTarjeta"),
+              (rv[lado].get("condicion"), _bc.get("espinaTarjeta")))
     for lado, tid in (("a", fx_p["home_team_id"]), ("b", fx_p["away_team_id"])):
         r_l = rv[lado]
         ant = c.get(f"{A}/equipos/{tid}/burbujas", params={"antesDe": pasado["id"]}).json()["familias"]["total"]

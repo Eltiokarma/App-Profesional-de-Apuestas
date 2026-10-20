@@ -165,7 +165,9 @@ export const SadApi = {
 
   /** Lo que el bucle aprendió, por skill (fase C de docs/APRENDIZAJE.md). */
   lecciones: (params?: { skill?: string; estado?: string; cohorte?: string }) =>
-    apiGet<InventarioLecciones>('/analisis/cowork/lecciones' + qs(params ?? {})),
+    // recalcula el objetivo de cada veredicto al leer: con cientos de casos pasa
+    // de los 10 s por defecto (20/10/2026, «signal is aborted without reason»)
+    apiGet<InventarioLecciones>('/analisis/cowork/lecciones' + qs(params ?? {}), { timeoutMs: 60_000 }),
 
   /** Aparta un caso del aprendizaje POR CRITERIO (qué le faltaba al parte), nunca por resultado. Token maestro. */
   cuarentena: (fixtureId: number, motivo: string) =>
@@ -184,7 +186,7 @@ export const SadApi = {
 
   /** El dossier de revisión de un skill (fase D): abre la revisión, no autoriza nada. */
   revisionSkill: (skill: string, cohorte = 'vigente') =>
-    apiGet<RevisionSkillDTO>(`/analisis/cowork/revision/${encodeURIComponent(skill)}` + qs({ cohorte })),
+    apiGet<RevisionSkillDTO>(`/analisis/cowork/revision/${encodeURIComponent(skill)}` + qs({ cohorte }), { timeoutMs: 60_000 }),
   /** Pasa a `en_revision` las lecciones pendientes del dossier. Token maestro (modo administrador). */
   abrirRevision: (skill: string, cohorte = 'vigente') =>
     apiPost<{ skill: string; movidas: string[]; versionVigente: string }>(
