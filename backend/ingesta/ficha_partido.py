@@ -34,7 +34,7 @@ import sys
 import zlib
 from datetime import datetime, timedelta, timezone
 
-from backend.ingesta.extractor import LIGAS, LIGAS_RUIDO, Cliente, leer_clave, reserva_del_dia
+from backend.ingesta.extractor import LIGAS, LIGAS_RUIDO, Cliente, leer_clave, ligas_vivo, reserva_del_dia
 from backend.nombres import limpiar_nombre
 
 DIAS_NS_DEFAULT = 3
@@ -382,7 +382,19 @@ def cobertura_por_liga(con: sqlite3.Connection) -> dict[int, dict]:
 
 def endpoints_a_pedir(fixture_id: int, liga: int | None, cobertura: dict[int, dict]) -> tuple[str, ...]:
     """Los endpoints que vale la pena pedir para este partido: los que su liga
-    alguna vez dio, o todos si todavía no hay muestra o si es la sonda."""
+    alguna vez dio, o todos si todavía no hay muestra o si es la sonda.
+
+    LAS LIGAS DEL PADRÓN SE PIDEN SIEMPRE ENTERAS. El ahorro aprendido se hizo
+    para las ligas que nunca dieron un once (segundas de Paraguay, Bolivia,
+    Venezuela…), pero puede cerrar una liga que analizamos por una racha de
+    fichas selladas antes de que la API publicara: en la Copa de la División
+    Profesional de Bolivia 4 de 24 partidos tenían once y ninguno estadísticas,
+    en la Liga de Expansión MX y en Venezuela 0 estadísticas (20/10/2026). Sin
+    el once el DT queda viejo, la tabla F1 incompleta y el DTP no abre. Con el
+    plan al 60 % (4.679 de 7.500 el 19/10), pedir entero lo que se analiza cuesta
+    ~60 partidos al día y no se ahorra ahí."""
+    if liga is not None and liga in ligas_vivo():
+        return ENDPOINTS
     c = cobertura.get(liga) if liga is not None else None
     if not c or c["n"] < COBERTURA_MIN or (COBERTURA_SONDA and fixture_id % COBERTURA_SONDA == 0):
         return ENDPOINTS
