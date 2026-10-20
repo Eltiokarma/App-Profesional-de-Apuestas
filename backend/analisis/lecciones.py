@@ -21,8 +21,12 @@ DOS DECISIONES QUE EXPLICAN TODO EL MÓDULO:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
+import os
+import threading
+import time
 
 from backend.analisis import db as efedb, veredicto as vered
 
@@ -219,6 +223,33 @@ def _sumar_tarjeta(tar: dict, lado: str, e: dict) -> None:
         tar["contra"]["aciertaTarjeta"] += 1 if t.get("cumplida") else 0
 
 
+# EL OBJETIVO DE CADA VEREDICTO, POR UNOS MINUTOS. Se recalcula al leer (no hay
+# copia que se quede vieja), pero Aprendizaje lo pide para ~250 casos a la vez
+# y la pantalla lanza dos pedidos juntos: 21 s cada uno y la web cortaba
+# («signal is aborted without reason», 20/10/2026). La clave lleva el parte
+# entero (con su veredicto): corregir un caso cambia la clave y se rehace; lo
+# que cambia por fuera (la constante del partido, la ficha) entra en ≤ TTL.
+# El candado hace que el segundo pedido espere al primero y lea lo guardado.
+OBJETIVO_TTL_S = float(os.environ.get("SAD_CACHE_OBJETIVO_S", "600") or "0")
+_OBJ_CACHE: dict[tuple, tuple[float, dict]] = {}
+_OBJ_LOCK = threading.Lock()
+
+
+def _objetivo(fixture_id: int, parte: dict) -> dict:
+    if OBJETIVO_TTL_S <= 0:
+        return vered.objetivo(fixture_id, parte)
+    clave = (fixture_id, hashlib.sha1(json.dumps(parte, sort_keys=True, default=str).encode()).hexdigest())
+    with _OBJ_LOCK:
+        hit = _OBJ_CACHE.get(clave)
+        if hit and time.monotonic() - hit[0] < OBJETIVO_TTL_S:
+            return hit[1]
+        obj = vered.objetivo(fixture_id, parte)
+        if len(_OBJ_CACHE) > 3000:
+            _OBJ_CACHE.clear()
+        _OBJ_CACHE[clave] = (time.monotonic(), obj)
+        return obj
+
+
 def _metricas(casos: list[dict]) -> tuple[dict, dict]:
     """Población por separado, y las métricas SOLO de lo acreditable.
 
@@ -270,7 +301,7 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
             ver = ((v.get("porLado") or {})[l]).get("veredicto", "")
             if ver in acred:
                 acred[ver] += 1
-        obj = vered.objetivo(caso["fixtureId"], caso["parte"])
+        obj = _objetivo(caso["fixtureId"], caso["parte"])
         if not obj.get("jugado"):
             continue
         ux = obj.get("unXDos") or {}
