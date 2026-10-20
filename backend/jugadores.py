@@ -48,6 +48,8 @@ POSICIONES = {
 _FIN90 = "(status_short IN ('FT','AET','PEN') OR status_long='Match Finished')"
 
 
+MINUTOS_POR_PARTIDO_MAX = 125   # 90 + alargue + descuentos: más que esto por partido no es un dato
+
 def _query(sql: str, params: tuple = ()) -> list:
     """query sobre sad.db tolerante a DBs sin las tablas de jugadores."""
     try:
@@ -210,7 +212,17 @@ def plantilla_de(team_id: int) -> dict:
     }
     missing = lectura_missing_fixture(bajas, {r["player_id"] for r in filas})
 
-    max_minutos = max(r["minutos"] or 0 for r in filas) or 1
+    # MINUTOS QUE NO CABEN EN LOS PARTIDOS. La API dio a J. García (Tigres,
+    # 20/10/2026) 1 partido y 1.708 minutos: salía «titular habitual (81 %)» y
+    # el parte gritaba F1-DECISIVO-FUERA por un suplente. El dato crudo se
+    # sirve igual (con `minutosIncoherentes`), pero el % de minutos —de donde
+    # salen el rol y el decisivo— se cuenta con lo que cabe en sus partidos.
+    def _min_creibles(r) -> int:
+        m = r["minutos"] or 0
+        tope = max(r["partidos"] or 0, r["titularidades"] or 0) * MINUTOS_POR_PARTIDO_MAX
+        return min(m, tope)
+
+    max_minutos = max(_min_creibles(r) for r in filas) or 1
     goles_equipo = sum(r["goles"] or 0 for r in filas)
     ga_equipo = sum((r["goles"] or 0) + (r["asistencias"] or 0) for r in filas)
 
@@ -239,7 +251,8 @@ def plantilla_de(team_id: int) -> dict:
             "partidos": r["partidos"] or 0,
             "titularidades": r["titularidades"] or 0,
             "minutos": minutos,
-            "pctMinutos": round(minutos / max_minutos, 3),
+            "pctMinutos": round(_min_creibles(r) / max_minutos, 3),
+            **({"minutosIncoherentes": True} if _min_creibles(r) < minutos else {}),
             "rating": rating,
             "confianza": _confianza(minutos, llegada is not None),
             "goles": goles,
