@@ -154,7 +154,9 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   `{nombre, desde|meses}`: la antigüedad la calcula `parte._dt_equipo`
   (declarado → `desde` → DT de la base con el mismo apellido → `null`, NUNCA
   0), «sin establecer» es el canónico de DT desconocido y una oración como
-  nombre se rechaza. La procedencia del once es dato: `POST …/xi` no pisa un
+  nombre se rechaza. Un DT suspendido o ausente, o un banco de la API que la
+  prensa desmiente, va en `dt.banco` `{motivo, nombre, fuente}` (20/10/2026):
+  ese lado no cae en cuarentena automática por DT equivocado. La procedencia del once es dato: `POST …/xi` no pisa un
   lado de la ficha sin `reemplazar: true` (vuelve en `xiConservados`) y
   `xi/auto` reemplaza lo manual cuando la ficha llega (`reemplazados`).
 - **Los equipos de interés se siguen enteros**: quien juega la edición

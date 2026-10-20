@@ -434,7 +434,48 @@ def _dt_equipo(crudo, rechazos: list, lado: str, fecha_partido: str,
                       + (f" ({entrenador_base['nombre']})" if entrenador_base and entrenador_base.get("nombre") else "")
                       + ": la antigüedad queda en null, no en cero",
             "esperado": '`desde`: "YYYY-MM-DD" (la fecha de asunción, del mes si no se sabe el día)'})
-    return {"nombre": nombre or DT_SIN_ESTABLECER, "meses": meses, "desde": desde, "origenMeses": origen}
+    out = {"nombre": nombre or DT_SIN_ESTABLECER, "meses": meses, "desde": desde, "origenMeses": origen}
+    banco = _dt_banco(crudo.get("banco"), rechazos, lado)
+    if banco:
+        out["banco"] = banco
+    return out
+
+
+# EL DT NO SIEMPRE SE SIENTA EN EL BANCO, Y EL BANCO DE LA API NO SIEMPRE ES EL
+# DT. Atlante (Herrera suspendido, dirigió Galindo) y Juárez (la API puso a «T.
+# Campos» con Lema en el banco según la prensa), 20/10/2026: el parte tenía el DT
+# correcto y la cuarentena automática lo apartaba igual. `dt.banco` declara,
+# CON FUENTE, que el banco de ese partido no va a ser (o no fue) el DT: un
+# suspendido o ausente con quien lo reemplaza, o una alineación de la API que la
+# prensa desmiente. El lado deja de apartar el caso y viaja `disputado` con la
+# explicación a la vista; quien la lea puede seguir poniéndolo en cuarentena a mano.
+MOTIVOS_BANCO = {"suspendido", "ausente", "api_errada"}
+
+
+def _dt_banco(crudo, rechazos: list, lado: str) -> dict | None:
+    if crudo in (None, "", {}):
+        return None
+    esperado = ('{"motivo": "suspendido" | "ausente" | "api_errada", "nombre": "quién se sienta", '
+                '"fuente": "link o nota de prensa"}')
+    if not isinstance(crudo, dict):
+        rechazos.append({"donde": f"equipos.{lado}.dt.banco", "porque": f"tiene que ser un objeto, llegó {crudo!r}",
+                         "esperado": esperado})
+        return None
+    motivo = _txt(crudo.get("motivo")).lower()
+    fuente = _txt(crudo.get("fuente"))
+    nombre = _txt(crudo.get("nombre"))
+    if motivo not in MOTIVOS_BANCO:
+        rechazos.append({"donde": f"equipos.{lado}.dt.banco.motivo",
+                         "porque": f"motivo fuera de la lista: {crudo.get('motivo')!r}", "esperado": esperado})
+        return None
+    if len(fuente) < DESMENTIDO_FUENTE_MIN:
+        rechazos.append({"donde": f"equipos.{lado}.dt.banco.fuente",
+                         "porque": "declarar quién se sienta en el banco lleva FUENTE (la nota de la sanción, "
+                                   "la ausencia o la prensa del partido)", "esperado": esperado})
+        return None
+    if len(nombre) > DT_NOMBRE_MAX:
+        nombre = ""
+    return {"motivo": motivo, "nombre": nombre, "fuente": fuente}
 
 
 def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
@@ -1084,6 +1125,15 @@ def dt_equivocado(parte: dict, fixture_id: int, desmentidos: "dict | None" = Non
             # Va como `disputado`: se ve, pero no aparta el caso.
             base = (base_al_depositar.get(lado) or "") if base_al_depositar else ""
             disputado = bool(_tokens_dt(base)) and not mismo_dt(nombre, base)
+            # el parte declaró con fuente que el banco no iba a ser (o no fue)
+            # el DT —suspendido, ausente, o la API equivocada— (_dt_banco)
+            declarado = dt.get("banco") if isinstance(dt.get("banco"), dict) else None
+            if declarado and declarado.get("motivo") in MOTIVOS_BANCO and declarado.get("fuente"):
+                if declarado.get("nombre") and mismo_dt(declarado["nombre"], banco):
+                    continue   # se sentó quien el parte dijo: no hay nada que comparar
+                out.append({"lado": lado, "parte": nombre, "banco": banco, "disputado": True,
+                            "bancoDeclarado": declarado})
+                continue
             out.append({"lado": lado, "parte": nombre, "banco": banco,
                         **({"disputado": True, "baseAlDepositar": base} if disputado else {})})
     return out
