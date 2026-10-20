@@ -165,6 +165,23 @@ def clase_ventana(goles: list[dict], desde: int, contra: str) -> tuple[str, int,
     return ("roto" if recibidos >= 3 else "rama_abandonada" if dif >= 3 else ""), recibidos, dif
 
 
+def ventana_a_cobrar(tde: dict, reasig: dict | None) -> tuple[str, bool, str]:
+    """(texto de la ventana que se cobra, si es la de la rama, motivo para no
+    cobrarla). La rama que jugó el partido reemplaza a la ventana base DESDE
+    el gol que la abre; si su ventana termina ANTES de ese gol, la rama nunca
+    estuvo viva en su tramo y no hay nada que evaluar (1549513, 19/10/2026: el
+    primer gol al 89' abría una rama 60-75' y se evaluaba un tramo ya pasado)."""
+    base = tde.get("ventana") or ""
+    de_rama = ((reasig or {}).get("loDeclarado") or {}).get("ventana") or ""
+    if not de_rama:
+        return base, False, ""
+    rango, minuto = _ventana(de_rama), (reasig or {}).get("minuto")
+    if rango and minuto is not None and rango[1] < minuto:
+        return de_rama, True, (f"la rama se abrió al {minuto}' y su ventana ({de_rama}) ya había terminado: "
+                               "la rama no tuvo tramo que evaluar; no se cobra")
+    return de_rama, True, ""
+
+
 def ventana_relativa(texto: str) -> bool:
     return bool(_RELATIVA.search(texto or ""))
 
@@ -246,10 +263,7 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     for tde in bloques_tde(parte.get("tde") or {}):
         reasig = rama_jugada(tde, goles, gl + gv, out["evidencia"]["conFicha"])
         # LA VENTANA DE LA RAMA QUE SE JUGÓ, si la declaró (disciplina 44)
-        texto_v = tde.get("ventana") or ""
-        de_rama = ((reasig or {}).get("loDeclarado") or {}).get("ventana") or ""
-        if de_rama:
-            texto_v = de_rama
+        texto_v, de_rama, vencida = ventana_a_cobrar(tde, reasig)
         rango = _ventana(texto_v)
         if not rango:
             rel = ventana_relativa(texto_v)
@@ -266,6 +280,11 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
         contra = "b" if foco == "a" else ("a" if foco == "b" else "")
         en_ventana = [g for g in goles if desde <= g["minuto"] <= hasta and not g.get("enAnadido")
                       and (not contra or g["lado"] == contra)]
+        # EL GOL QUE ABRE LA RAMA NO SE COBRA EN ELLA (1493189, 19/10/2026): la
+        # rama «si recibe primero» empieza DESPUÉS de ese gol; contarlo como
+        # gol en su ventana es cobrar el disparador como si fuera el mecanismo.
+        if de_rama and goles:
+            en_ventana = [g for g in en_ventana if g is not goles[0]]
         # el añadido se anota aparte, y solo en la ventana que cierra ESE tiempo
         # (la que termina en el 45 o en el 90): un 45+4 aparecía también en la
         # 60-75 (Chankas–ADT, 17/10/2026)
@@ -287,10 +306,17 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
         # que ya recibió 3 no está echado, está roto; un marcador 3 arriba
         # antes de la ventana abandona la rama. City–PSG, LASK–Liverpool y
         # Villa–Fenerbahçe se cobraban igual (17/10/2026).
-        clase, recibidos, dif = clase_ventana(goles, desde, contra)
-        cobrable = None if not out["evidencia"]["conFicha"] else (not rojas_antes and not clase)
+        # ...Y DENTRO DE LA VENTANA ANTES DEL GOL QUE SE COBRA (1644705, 19/10/2026:
+        # Nacional 3-0 al 81' y el 3-1 del 86' se cobraba en la 75-90; con 3 arriba
+        # la rama ya estaba abandonada cuando llegó ese gol)
+        clase, recibidos, dif = clase_ventana(goles, primera if primera is not None else desde, contra)
+        cobrable = (None if not out["evidencia"]["conFicha"] else
+                    False if vencida else (not rojas_antes and not clase))
         bloques.append({
-            "ventana": tde.get("ventana"), "desde": desde, "hasta": hasta,
+            # la etiqueta es la de la ventana QUE SE COBRA (la de la rama si
+            # la hubo); la base viaja aparte (Rayo, Monza… 19/10/2026: decía
+            # «75-90'» con desde 60 / hasta 75)
+            "ventana": texto_v, "ventanaBase": tde.get("ventana") or "", "desde": desde, "hasta": hasta,
             "equipo": foco,
             "comprobable": out["evidencia"]["conFicha"],
             "golEnVentana": bool(en_ventana) if out["evidencia"]["conFicha"] else None,
@@ -302,7 +328,7 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
             "ventanaDeRama": bool(de_rama),
             "reasignacion": reasig,
             "nota": ("sin ficha de eventos no se puede comprobar la ventana: queda sin veredicto"
-                     if not out["evidencia"]["conFicha"] else
+                     if not out["evidencia"]["conFicha"] else vencida if vencida else
                      f"el equipo recibió {recibidos} goles antes de la ventana: no se echó, se rompió "
                      "(disciplina 3); no se cobra en ninguna métrica"
                      if clase == "roto" else

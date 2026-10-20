@@ -75,9 +75,10 @@ def _dias(a: str, b: str) -> int | None:
 
 def _titulares(fixture_id: int, team_id: int) -> list[dict]:
     try:
-        return saddb.query(
+        from backend.nombres import limpiar_nombre
+        return [{**dict(f), "jugador": limpiar_nombre(f["jugador"])} for f in saddb.query(
             "sad", "SELECT player_id, jugador, posicion FROM alineaciones "
-                   "WHERE fixture_id=? AND team_id=? AND titular=1", (fixture_id, team_id))
+                   "WHERE fixture_id=? AND team_id=? AND titular=1", (fixture_id, team_id))]
     except Exception:  # noqa: BLE001 — DB anterior a la fase A del DTP
         return []
 

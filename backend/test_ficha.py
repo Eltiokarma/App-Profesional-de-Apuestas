@@ -310,6 +310,12 @@ def main():
     check("cobertura_por_liga cuenta lo sellado", cobertura_por_liga(con).get(liga, {}).get("n", 0) >= 2,
           cobertura_por_liga(con))
 
+    # NOMBRES ROTOS DE LA API (veredictos del 19/10/2026): entidad HTML y UTF-8 leído como Latin-1
+    from backend.nombres import limpiar_nombre
+    check("el nombre llega limpio: «N&apos;Diaye», «ObriÄ\\x87», «OulaÃ¯», «DadÃ­n» → como se escribe, y lo bueno no se toca",
+          [limpiar_nombre(x) for x in ("A. N&apos;Diaye", "R. Obri\u00c4\u0087", "C. Inao Oula\u00c3\u00af", "B. Dad\u00c3\u00adn",
+                                       "Saúl Ñíguez", "Müller")]
+          == ["A. N'Diaye", "R. Obrić", "C. Inao Oulaï", "B. Dadín", "Saúl Ñíguez", "Müller"])
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
 

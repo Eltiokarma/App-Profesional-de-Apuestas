@@ -2570,7 +2570,7 @@ components:
           items:
             type: object
             properties:
-              minuto: { type: integer }
+              minuto: { type: integer, description: 'RELOJ CORRIDO: un 45+5 viaja como 50 y un 90+4 como 94 (con `extra` 5 / 4). El minuto del tiempo reglamentario es `minuto − extra`; el veredicto lo usa así (baseAnadido). No es un duplicado' }
               extra: { type: integer, description: 'minutos añadidos ya sumados en `minuto`' }
               tipo: { type: string, description: 'Goal | Card | subst | Var' }
               detalle: { type: string }
@@ -4102,6 +4102,7 @@ components:
                   cobrable: { type: boolean, nullable: true, description: 'false = una roja antes del gol o del fin de la ventana, o el partido roto/resuelto antes de ella: no se cobra' }
                   clase: { type: string, nullable: true, enum: [roto, rama_abandonada, null], description: 'roto = el equipo recibió 3 antes de la ventana (disciplina 3); rama_abandonada = marcador 3 arriba antes de la ventana (24)' }
                   ventanaDeRama: { type: boolean, description: 'se midió la ventana declarada en la rama que jugó el partido' }
+                  ventanaBase: { type: string, description: 'la ventana del bloque sin rama; `ventana` es la que se cobra (la de la rama si la hubo)' }
                   reasignacion:
                     type: object
                     description: >

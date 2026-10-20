@@ -8,6 +8,7 @@ Regla "real o nada": lo que no se haya capturado va vacío. Un partido sin
 alineación devuelve `alineaciones` vacías, no un XI reconstruido a ojo — el
 DTP tiene que poder negarse a abrir, y para eso necesita ver el hueco.
 """
+from backend.nombres import limpiar_nombre
 from backend import db
 
 # los carriles de M2 salen del grid "fila:columna" de API-Football: la fila es
@@ -53,7 +54,7 @@ def _lado(fixture_id: int, team_id: int) -> dict:
                 pass
     titulares, suplentes = [], []
     for f in filas:
-        j = {"jugadorId": f["player_id"], "nombre": f["jugador"], "numero": f["numero"],
+        j = {"jugadorId": f["player_id"], "nombre": limpiar_nombre(f["jugador"]), "numero": f["numero"],
              "posicion": f["posicion"], "grid": f["grid"],
              "carril": _carril(f["grid"], por_fila) if f["titular"] else None}
         (titulares if f["titular"] else suplentes).append(j)
@@ -80,8 +81,8 @@ def _eventos(fixture_id: int) -> list[dict]:
         return []  # DB anterior a la migración
     return [
         {"minuto": f["minuto"], "extra": f["extra"] or 0, "tipo": f["tipo"], "detalle": f["detalle"],
-         "equipoId": f["equipo_id"], "jugador": f["jugador"], "jugadorId": f["jugador_id"],
-         "asistente": f["asistente"], "asistenteId": f["asistente_id"]}
+         "equipoId": f["equipo_id"], "jugador": limpiar_nombre(f["jugador"]), "jugadorId": f["jugador_id"],
+         "asistente": limpiar_nombre(f["asistente"]), "asistenteId": f["asistente_id"]}
         for f in filas
     ]
 

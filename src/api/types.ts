@@ -1484,6 +1484,8 @@ export interface VeredictoObjetivo {
       clase?: 'roto' | 'rama_abandonada' | null
       /** se midió la ventana de la rama que jugó el partido */
       ventanaDeRama?: boolean
+      /** la ventana sin rama; `ventana` es la que se cobra */
+      ventanaBase?: string
       /** Qué rama de la reasignación jugó el partido (quién marcó primero) y si
        *  estaba declarada. Observación, no acierto. */
       reasignacion?: {
