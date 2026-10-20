@@ -2936,6 +2936,18 @@ components:
             desde: { type: string, description: 'YYYY-MM-DD, fecha de asunción' }
             meses: { type: number, nullable: true, description: 'antigüedad al día del partido; null = no se pudo establecer' }
             origenMeses: { type: string, enum: [declarado, desde, base, ''], description: 'de dónde salió `meses` (solo en la lectura)' }
+            banco:
+              type: object
+              description: >
+                Opcional, CON FUENTE: el banco de ese partido no es (o no fue) el DT —suspendido,
+                ausente, o una alineación de la API que la prensa desmiente—. Con esto el lado no
+                va a cuarentena automática por DT equivocado: si en el banco se sentó `nombre`, no
+                hay discrepancia; si no, el caso viaja `disputado` con `bancoDeclarado`. Sin
+                fuente (≥ 8 caracteres) o con otro motivo, se rechaza.
+              properties:
+                motivo: { type: string, enum: [suspendido, ausente, api_errada] }
+                nombre: { type: string, description: 'quién se sienta en el banco (puede ir vacío)' }
+                fuente: { type: string }
         perfil:
           type: object
           properties:

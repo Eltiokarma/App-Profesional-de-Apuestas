@@ -2500,6 +2500,30 @@ def main():
           item_eq and all(i["cuarentenaAutomatica"] for i in item_eq)
           and "Repetto" in item_eq[0]["cuarentena"] and "Dudamel" in item_eq[0]["cuarentena"],
           [i.get("cuarentena") for i in item_eq] or inv_eq["enCuarentena"])
+    # (20/10/2026, Atlante y Juárez) el parte declara CON FUENTE quién se sienta
+    # en el banco: un DT suspendido no es un DT equivocado
+    def _con_banco(banco):
+        p_b = _copy.deepcopy(p_eq)
+        p_b["equipos"]["a"]["dt"]["banco"] = banco
+        r_b = c.post(f"{A}/analisis/cowork", json=p_b).json()
+        _base_fue("Pablo Repetto")
+        inv_b = c.get(f"{A}/analisis/cowork/lecciones").json()
+        return (r_b, [i for i in inv_b["enCuarentena"]["items"] if i["clave"].startswith(f"{pasado['id']}:")],
+                [d for s in inv_b["porSkill"] for i in s["items"] if i["fixtureId"] == pasado["id"]
+                 for d in (i.get("dtDisputado") or [])])
+    _r, _cu, _di = _con_banco({"motivo": "suspendido", "nombre": "Rafael Dudamel", "fuente": "prensa: sanción de 2 fechas"})
+    check("DT suspendido declarado con fuente y en el banco el reemplazo que el parte nombró → ni cuarentena ni disputa",
+          not _cu and not _di and c.get(f"{A}/analisis/cowork/{pasado['id']}").json()["equipos"]["a"]["dt"]["banco"]["motivo"] == "suspendido",
+          (_cu, _di))
+    _r, _cu, _di = _con_banco({"motivo": "api_errada", "fuente": "ClaroSports 18/10: Lema en el banco"})
+    check("la alineación de la API desmentida por la prensa → el caso no se aparta y viaja disputado con lo declarado",
+          not _cu and any(d.get("bancoDeclarado", {}).get("motivo") == "api_errada" for d in _di), (_cu, _di))
+    _r, _cu, _di = _con_banco({"motivo": "suspendido", "fuente": "x"})
+    check("sin fuente, `dt.banco` se rechaza con motivo y la cuarentena sigue",
+          any(x["donde"].endswith("dt.banco.fuente") for x in _r["rechazos"]) and _cu, (_r["rechazos"], _cu))
+    _r, _cu, _di = _con_banco({"motivo": "lesion", "fuente": "prensa del partido"})
+    check("un motivo fuera de la lista se rechaza", any(x["donde"].endswith("dt.banco.motivo") for x in _r["rechazos"]) and _cu,
+          _r["rechazos"])
     # ── EL REVENTÓN DE UN PARTIDO YA JUGADO SE LEE «AL DÍA DEL PARTIDO» ──
     # (Sport Boys–Alianza Atlético 11/10: el GET del parte terminado metía ese
     # mismo partido en su burbuja y gritaba un K-EXTREMO que Cowork no vio)

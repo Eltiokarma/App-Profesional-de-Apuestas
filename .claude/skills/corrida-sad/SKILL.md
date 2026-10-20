@@ -154,7 +154,9 @@ cae en la raíz del repo (17/10/2026).
 >   `notas` del bloque o en la lectura, NO como alerta con un código inventado:
 >   un código nuevo no lo cuenta nadie y ensucia la tira. En la corrida del
 >   13/10 aparecieron cuatro (DT-SUSPENDIDO, PLANTEL-DESMANTELADO, DC-TRAMPA,
->   BAJA-ORGANIZADOR).
+>   BAJA-ORGANIZADOR). Un DT suspendido o ausente, además, va en
+>   `dt.banco` con su fuente (ver `docs/COWORK.md`): sin eso el caso cae en
+>   cuarentena automática cuando la ficha trae al reemplazo en el banco.
 > - `POST $B/analisis/cowork` y LEÉ EL RECIBO ENTERO: `rechazos`, `faltan`,
 >   `perdido`, `ladosTde`, `discrepancias`. Con algo ahí: `GET` → corregir →
 >   `POST` del cuerpo entero (el POST reemplaza). La `cadena` se conserva del
@@ -207,6 +209,16 @@ cae en la raíz del repo (17/10/2026).
 > mecanismo de la lista del estudio de reventones y el HECHO que lo prueba
 > (ficha, once, DT, pelota parada). Un 0-2 de local del que siempre marca en
 > casa tiene que quedar explicado (REVENTON §15.2); sin hecho, `varianza`.
+>
+> El banco: si la ficha trae en el banco a alguien que NO es el DT del parte
+> y la prensa del partido explica por qué (DT suspendido o ausente, o la
+> alineación de la API está mal: Juárez 18/10 con «T. Campos» y Lema en el
+> banco), declaralo con `POST $B/analisis/cowork/{id}/dt` mandando el DT del
+> parte con `banco: {motivo: suspendido|ausente|api_errada, nombre, fuente}`
+> —el `dt` se reemplaza entero, así que va también `nombre` y `desde`—.
+> Sin eso el caso cae en cuarentena automática por DT equivocado. Si el DT
+> del parte ERA el equivocado, no lo tapes: corregí `nombre` y que entre en
+> cuarentena, que para eso está.
 >
 > Lo que la app ya NO cobra, y no hace falta pelearlo: la ventana del TDE de
 > un equipo que ya recibió 3 antes de ella (`clase: roto`, disciplina 3) o

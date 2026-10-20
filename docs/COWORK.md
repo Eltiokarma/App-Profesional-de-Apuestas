@@ -898,6 +898,15 @@ Escribís vos (es juicio, no se puede calcular):
   `nombre` va a secas: una oración de cien caracteres (pasó en el 1549491) se
   rechaza y la fuente va en `notas.A`. Si no sabés quién dirige, el valor
   canónico es `"sin establecer"` —no «desconocido», no vacío, no un guion—.
+- SI EL DT NO SE VA A SENTAR EN EL BANCO (suspendido, ausente), o la prensa
+  del partido desmiente la alineación de la API, va en `dt.banco`:
+  `{"motivo": "suspendido" | "ausente" | "api_errada", "nombre": "quién se
+  sienta", "fuente": "la nota que lo dice"}`. `nombre` sigue siendo el DT. Sin
+  esto, cuando la ficha trae al reemplazo en el banco, el caso cae en
+  cuarentena automática por DT equivocado (Atlante con Herrera suspendido,
+  20/10/2026). Si después del partido aparece (la API puso a otro), se
+  declara con `POST /analisis/cowork/{id}/dt`. Sin fuente o con otro motivo,
+  se rechaza.
 - Un bloque que la RÚBRICA manda excluir (p. ej. C sin constantes K por
   R-KT.2 en un recién ascendido) va en `excluidos`: `{"C": "motivo"}`. Así el
   máximo baja a 23 y el porcentaje se calcula sobre lo evaluable. Es DISTINTO
