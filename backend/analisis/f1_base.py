@@ -23,6 +23,7 @@ from __future__ import annotations
 from backend import db as saddb
 from backend import jugadores as jug
 from backend.analisis import bloque_f
+from backend.nombres import _MARCAS_MOJIBAKE, limpiar_nombre
 from backend.nombres import normalizar as normalizar_simple
 
 CANDIDATOS = 16          # lo que pide el protocolo: 14-16 jugadores
@@ -60,7 +61,7 @@ def onces_recientes(team_id: int, antes: str) -> dict:
         return {"onces": 0, "jugadores": {}, "ultimo": None}
     js: dict[int, dict] = {}
     for f in filas:
-        j = js.setdefault(f["player_id"], {"nombre": f["jugador"] or "", "posicion": f["posicion"] or "",
+        j = js.setdefault(f["player_id"], {"nombre": limpiar_nombre(f["jugador"] or ""), "posicion": f["posicion"] or "",
                                            "titular": 0, "convocado": 0, "enUltimo": False})
         j["convocado"] += 1
         j["titular"] += 1 if f["titular"] else 0
@@ -101,6 +102,17 @@ def decisivos(plantilla: dict) -> list[dict]:
         else:
             fuera[j["id"]] = {**j, "porQue": motivo}
     return list(fuera.values())
+
+
+def nombre_sano(nombre: str, en_hoja: str = "") -> str:
+    """El nombre de la plantilla limpio; si sigue roto (un mojibake a medias
+    que perdió su segundo byte no se puede reparar) y la hoja del once lo trae
+    bien, manda la hoja (incidencia 352: «A. MaksimoviÄ» del Leipzig en la F1,
+    21/10/2026: el cruce por nombre del parte no casaba)."""
+    n = limpiar_nombre(nombre or "") or ""
+    if any(m in n for m in _MARCAS_MOJIBAKE) and en_hoja and not any(m in en_hoja for m in _MARCAS_MOJIBAKE):
+        return en_hoja
+    return n
 
 
 def _fila(j: dict) -> dict:
@@ -209,6 +221,7 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
         # y la alineación como «Dayan Pérez» (Cúcuta, 20/10/2026, 335): sin esto, el
         # parte lo sumaba dos veces y la fila de prensa salía de baja
         en_hoja = (rec["jugadores"].get(j["id"]) or {}).get("nombre") or ""
+        f["nombre"] = nombre_sano(f["nombre"], en_hoja)
         if en_hoja and not mismo_jugador(en_hoja, j["nombre"]) and normalizar_simple(en_hoja) != normalizar_simple(j["nombre"]):
             f["nombreEnLaHoja"] = en_hoja
         filas.append(f)
