@@ -925,8 +925,9 @@ function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' 
 }
 
 function Reasignacion({ r }: { r?: BloqueTde['reasignacion'] }) {
-  const ramas = [['siMarcaPrimero', 'SI MARCA PRIMERO'], ['siRecibePrimero', 'SI RECIBE PRIMERO']] as const
-  const falta = ramas.filter(([k]) => !r?.[k]).length
+  const ramas = [['siMarcaPrimero', 'SI MARCA PRIMERO'], ['siRecibePrimero', 'SI RECIBE PRIMERO'],
+    ['siLeEmpatan', 'SI LE EMPATAN'], ['siExpulsion', 'SI HAY ROJA']] as const
+  const falta = ramas.slice(0, 2).filter(([k]) => !r?.[k]).length
   return (
     <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
       {ramas.map(([k, etiqueta]) => {

@@ -1,6 +1,9 @@
 # Propuesta de revisión · `teorema-del-echado` v0.1.20 → v0.1.21
 
-**Estado:** PROPUESTA. No está aplicada en ningún lado. El skill vive en la
+**Estado:** APROBADA por el usuario (21/10/2026, los cinco puntos). Redactada en
+`docs/skills/teorema-del-echado/SKILL.md` (v0.1.21) y con sitio en el parte
+(`siLeEmpatan`, `siExpulsion`, ventana por rama) y en el veredicto
+(`segundoGiro`, `salida`). Falta que el usuario la suba a su cuenta. El skill vive en la
 cuenta del usuario; esto es el texto para decidir y, si se aprueba, para
 subir. Redactada el 21/10/2026 desde el dossier de la app
 (`GET /analisis/cowork/revision/teorema-del-echado`, cohorte `c3-2026-09-23`).
