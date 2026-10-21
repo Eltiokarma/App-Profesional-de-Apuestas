@@ -1076,7 +1076,9 @@ paths:
         TH ≥ 50 %, ROT ≥ 20 %; los titulares recientes sin stats de temporada entran con
         `sinStatsDeTemporada`); si no, por fracción de minutos de la temporada (TF ≥ 75 %,
         TH ≥ 50 %, ROT ≥ 25 %, SUP) y `decisivo` con su porqué (titular habitual o top 3
-        en goles+asistencias). El rol es SUGERIDO: lo confirma la prensa. Un decisivo que
+        en goles+asistencias). Con ≥ 5 onces recientes, un decisivo de la temporada que no fue
+        titular en ninguno pierde `decisivo` y viaja en `decisivoTemporada` (dato, no alerta).
+        El rol es SUGERIDO: lo confirma la prensa. Un decisivo que
         no figura en la tabla depositada dispara `F1-DECISIVO-FUERA` en el parte. Los
         titulares del ÚLTIMO once entran todos aunque queden fuera del corte de 16
         (`titularEnElUltimo`): las stats de la temporada llegan atrasadas. Un jugador cuyos
@@ -2983,6 +2985,7 @@ components:
               motivo: { type: string }
               zona: { type: string, description: 'necesario si no está en `plantel`' }
               rol: { type: string, description: 'necesario si no está en `plantel`' }
+              jugadorId: { type: integer, description: 'opcional, el mismo de `plantel`: una baja con el id de una fila de la tabla no se incorpora dos veces' }
         factorX:
           type: array
           items:
@@ -3114,10 +3117,11 @@ components:
             type: object
             properties:
               indicador: { type: string }
-              valor: { type: number }
+              valor: { type: number, nullable: true }
               declarado: { type: number, nullable: true }
               de: { type: string }
               discrepa: { type: boolean }
+              noHeredado: { type: boolean, description: 'el DTP clasificó el bloque como ambiguo: C1 NO se hereda y queda lo declarado (valor = declarado)' }
     DtpParte:
       type: object
       description: >

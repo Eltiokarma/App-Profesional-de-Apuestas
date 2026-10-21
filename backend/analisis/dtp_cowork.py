@@ -451,6 +451,12 @@ def herencia_tde(dtp: dict) -> dict:
             out[rival]["C1"] = {"valor": clase["c1Tde"],
                                 "de": f"checklist del DTP con foco en el lado {foco}, que evalúa el bloque del "
                                       f"lado {rival}: bloque {clase['clase']}"}
+        elif clase["clase"] == "ambiguo":
+            # AMBIGUO NO HEREDA, Y SE DICE. Slovan (20/10/2026, incidencia 302):
+            # heredadoDtp listaba solo SOB2 y nadie veía por qué C1 era el declarado
+            out[rival]["C1"] = {"valor": None,
+                                "de": f"checklist del DTP con foco en el lado {foco}: bloque del lado {rival} "
+                                      f"ambiguo ({clase['motivo']}) — C1 NO se hereda, queda el declarado"}
     for lado in LADOS:
         rd_propio = ((bloques.get(lado) or {}).get("apertura") or {}).get("m2", {}).get("restDefense") or {}
         otro = bloques.get("b" if lado == "a" else "a") or {}
