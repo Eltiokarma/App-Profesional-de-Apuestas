@@ -235,10 +235,18 @@ export function DtpPizarra({ eslabon, isMobile }: { eslabon: EslabonDtpDTO; isMo
                     <div style={{ ...etiqueta, color: 'var(--accent)' }}>{c}</div>
                     {d ? (
                       <>
-                        <div style={{ ...texto, marginTop: 5, fontWeight: 600 }}>{d.duelo}</div>
+                        <div style={{ ...texto, marginTop: 5, fontWeight: 600 }}>
+                          {d.duelo}
+                          {d.condicional && <span style={{ marginLeft: 6, font: '600 9px var(--mono)', color: 'var(--t3)' }}>CONDICIONAL AL ONCE</span>}
+                        </div>
                         {d.mismatch && (
                           <div style={{ marginTop: 7, font: '500 11px var(--sans)', color: 'var(--mark)', lineHeight: 1.4 }}>
                             ▸ {d.mismatch}
+                          </div>
+                        )}
+                        {d.vuelta && (
+                          <div style={{ marginTop: 4, font: '500 11px var(--sans)', color: 'var(--down)', lineHeight: 1.4 }}>
+                            ◂ vuelta: {d.vuelta}
                           </div>
                         )}
                       </>
@@ -481,6 +489,12 @@ function ChecklistBloque({ b, rival, isMobile }: { b: DtpBloque; rival: string; 
         })}
       </div>
       {chk.casoP6 && <Campo label="Caso de la pregunta 6">{chk.casoP6}</Campo>}
+      {b.cierre.casoBloque?.caso && (
+        <Campo label="Caso del bloque propio en el partido cerrado (pregunta 6 del próximo rival)">
+          {b.cierre.casoBloque.sostuvo === true ? 'sostuvo · ' : b.cierre.casoBloque.sostuvo === false ? 'no sostuvo · ' : ''}
+          {b.cierre.casoBloque.caso}{b.cierre.casoBloque.conUnoMenos ? ' · con uno menos' : ''}
+        </Campo>
+      )}
       <Campo label="Notas">{chk.notas}</Campo>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0,1fr)' : '1fr 1fr', gap: 12, marginTop: 6 }}>
         {(rd.foco || rd.rival) && (
@@ -499,7 +513,7 @@ function ChecklistBloque({ b, rival, isMobile }: { b: DtpBloque; rival: string; 
       </div>
       {mec.activo && (
         <div role="alert" style={{ marginTop: 10, padding: '7px 10px', borderRadius: 8, background: 'var(--down-soft)', border: '1px solid var(--down)', font: '600 11.5px var(--sans)', color: 'var(--down)' }}>
-          MECANISMO-ABIERTO · {mec.mecanismo || 'sin nombrar'}
+          MECANISMO-ABIERTO{mec.sinMecanica ? ' · SIN MECÁNICA (vía a verificar)' : ''} · {mec.mecanismo || 'sin nombrar'}
           {mec.lineaRepite != null && ` · la línea ${mec.lineaRepite ? 'repite' : 'no repite'} intérpretes`}
           {mec.correccionEnVivo != null && ` · ${mec.correccionEnVivo ? 'hubo' : 'sin'} corrección en vivo`}
         </div>

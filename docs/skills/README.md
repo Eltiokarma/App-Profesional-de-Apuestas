@@ -4,7 +4,8 @@
 > la v0.1.20 vigente de la cuenta más la revisión aprobada por el usuario
 > desde el dossier (`docs/revisiones/TDE_v0.1.21_propuesta.md`). Hasta que el
 > usuario la suba a la cuenta, la cuenta sigue en v0.1.20. `diagnostico-tactico`
-> se trajo de la cuenta el mismo día. El resto sigue siendo la foto del 13/09.
+> se trajo de la cuenta el mismo día y está en **v1.4** (revisión aprobada,
+`docs/revisiones/DTP_v1.4_propuesta.md`). El resto sigue siendo la foto del 13/09.
 
 Copia de los cinco skills del pipeline SAD tal como estaban el **13.09.2026**,
 subidos por el usuario para diseñar el bucle de aprendizaje

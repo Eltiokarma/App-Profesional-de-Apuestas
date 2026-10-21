@@ -428,7 +428,7 @@ export interface AperturaDtp {
   }
   m2: {
     choque_sistemas: string
-    duelos_carril: { carril: string; duelo: string; mismatch: string }[]
+    duelos_carril: { carril: string; duelo: string; mismatch: string; vuelta?: string; condicional?: boolean }[]
     vida_util_rival: { tipo: 'improvisado' | 'estructural'; minutos: string }
     vias_gol: { foco: string[]; rival: string[] }
     veredicto: string
@@ -2078,7 +2078,8 @@ export interface DtpBloque {
     m1: { sistema: string; xiReferencia: string; senalXi: string; rolesReasignados: string[]; vulnerabilidad: string; formaSinBalon: string; minutosCompartidos: string }
     m2: {
       choqueSistemas: string
-      duelosCarril: { carril: string; duelo: string; mismatch: string }[]
+      /** v1.4: `vuelta` = lo que expone el carril si pierde la pelota; `condicional` = duelo con nombre propio que depende del once. */
+      duelosCarril: { carril: string; duelo: string; mismatch: string; vuelta?: string; condicional?: boolean }[]
       checklistBloqueRival: Record<'p1' | 'p2' | 'p3' | 'p4' | 'p5' | 'p6', string> & { casoP6: string; notas: string }
       viasGol: { foco: string[]; rival: string[] }
       /** nivelFoco/nivelRival: fijo · depende · sin → SOB2 0 · 0.5 · 1 del TDE. */
@@ -2100,7 +2101,10 @@ export interface DtpBloque {
       absolucion: string
     }[]
     m5: { planFuncionoHastaMin: number | null; peligroReal: string; cronologiaGiro: string; contraste: { aciertos: string[]; fallos: string[] }; preguntaChecklistFallida: string }
-    mecanismoAbierto: { activo: boolean; mecanismo: string; lineaRepite: boolean | null; correccionEnVivo: boolean | null }
+    /** v1.4: `sinMecanica` = la frecuencia se cumplió sin fuente de la jugada (vía a verificar). */
+    mecanismoAbierto: { activo: boolean; mecanismo: string; lineaRepite: boolean | null; correccionEnVivo: boolean | null; sinMecanica?: boolean }
+    /** v1.4: el caso de la pregunta 6 del bloque propio del foco en el partido que se cierra. */
+    casoBloque?: { sostuvo: boolean | null; caso: string; conUnoMenos: boolean } | null
   }
   calculado?: {
     bloqueRival: ClaseBloqueDTO
@@ -2166,4 +2170,41 @@ export interface BancoDesmentidoLado {
   fuente: string
   nota: string
   puestoEn: string
+}
+
+/** Las derrotas del favorito declarado con lo que el TDE y el DTP habían
+ *  escrito ANTES del pitazo (GET /analisis/cowork/derrotas-favorito). Solo
+ *  cuenta lo declarado: `rama_escrita` dice que el escenario estaba descrito,
+ *  no que se haya acertado (disciplina 9 del TDE). */
+export type ExplicacionDerrota = 'rama_escrita' | 'rama_sin_escribir' | 'sin_ficha' | 'sin_goles'
+export interface DerrotaFavorito {
+  fixtureId: number
+  fecha: string
+  partido: string
+  favorito: { lado: 'a' | 'b'; equipo: string; probabilidad: number | null }
+  marcador: string
+  goles: { minuto: number; lado: 'a' | 'b'; jugador?: string; autogol?: boolean }[]
+  seleccion: string
+  cuarentena: boolean
+  explicacion: ExplicacionDerrota
+  tde: {
+    ramaJugada: string | null
+    minuto?: number | null
+    loDeclarado?: RamaReasignacion | null
+    segundoGiro?: { rama: 'siLeEmpatan'; minuto: number; declarada: boolean; loDeclarado?: RamaReasignacion | null; nota: string } | null
+    salida?: 'concedio' | 'marco' | 'sinMasGoles' | null
+    tipologia: string
+    ventana: string
+    golEnVentana?: boolean | null
+  }
+  tdeRival: { ramaJugada: string | null; loDeclarado?: RamaReasignacion | null }
+  dtpViasRival: string[]
+  leccion: string
+}
+export interface DerrotasFavoritoDTO {
+  generadoEn: string
+  cohorte: string
+  resumen: Record<ExplicacionDerrota, number>
+  nota: string
+  derrotas: DerrotaFavorito[]
 }

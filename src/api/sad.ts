@@ -19,6 +19,7 @@ import type {
   FixtureDTO,
   InventarioLecciones,
   RevisionSkillDTO,
+  DerrotasFavoritoDTO,
   LeccionItem,
   FixtureLiveDTO,
   RefrescoLigaDTO,
@@ -183,6 +184,10 @@ export const SadApi = {
   descartarCohorte: (cohorte: string, nota = '') =>
     apiPost<{ cohorte: string; descartadas: number; claves: string[]; nota: string }>(
       `/analisis/cowork/cohortes/${encodeURIComponent(cohorte)}/descartar`, { nota }),
+
+  /** Las derrotas del favorito declarado con lo que el TDE y el DTP habían escrito antes. */
+  derrotasFavorito: (cohorte = 'vigente') =>
+    apiGet<DerrotasFavoritoDTO>('/analisis/cowork/derrotas-favorito' + qs({ cohorte }), { timeoutMs: 60_000 }),
 
   /** El dossier de revisión de un skill (fase D): abre la revisión, no autoriza nada. */
   revisionSkill: (skill: string, cohorte = 'vigente') =>

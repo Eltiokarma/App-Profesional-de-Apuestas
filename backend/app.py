@@ -2519,6 +2519,15 @@ def cowork_espina_calibracion(limite: int = Query(default=400, ge=1, le=2000)):
     return lecciones.calibracion_espina(limite)
 
 
+@app.get(API + "/analisis/cowork/derrotas-favorito")
+def cowork_derrotas_favorito(cohorte: str = Query(default="vigente"),
+                             limite: int = Query(default=400, ge=1, le=2000)):
+    """Las derrotas del favorito declarado con lo que el TDE y el DTP habían
+    escrito antes del pitazo (21/10/2026). Solo lectura: lo abren la web y Cowork."""
+    from backend.analisis import lecciones
+    return lecciones.derrotas_favorito(cohorte, limite)
+
+
 @app.get(API + "/analisis/cowork/antecedentes/{fixture_id}")
 def cowork_antecedentes(fixture_id: int, n: int = Query(default=5, ge=1, le=20)):
     """Fase A del aprendizaje: por equipo, lo que el sistema ya dijo en partidos

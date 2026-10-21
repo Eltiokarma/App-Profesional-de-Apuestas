@@ -22,9 +22,10 @@ calcula; lo que es juicio lo escribe quien analiza, estructurado.**
 """
 from __future__ import annotations
 
+import json
 import re
 import unicodedata
-from datetime import datetime
+from datetime import datetime, timedelta
 from itertools import combinations
 
 from backend import db as saddb
@@ -243,6 +244,9 @@ def insumos_equipo(team_id: int, nombre: str, fx) -> dict:
         "cambiosXi": cambios,
         "parejasNuevas": _parejas_nuevas(team_id, fecha, xi) if xi else [],
         "aperturaPrevia": _apertura_previa(nombre, a["id"]),
+        # DTP v1.4: para responder la pregunta 6 sobre ESTE bloque (la apertura
+        # del rival la lee de acá)
+        "casosBloque": casos_bloque(team_id, fecha),
         "nivelDeDato": "C" if anterior["amistoso"] or not xi else "B",
         "faltan": faltan,
     }
@@ -363,6 +367,48 @@ def _gol(g: dict) -> dict:
             "responsablesError": resp, "absolucion": _txt(g.get("absolucion"))}
 
 
+def _caso_bloque(x) -> dict | None:
+    x = _dict(x)
+    caso = _txt(x.get("caso"))
+    if not caso:
+        return None
+    sostuvo = x.get("sostuvo") if isinstance(x.get("sostuvo"), bool) else None
+    return {"sostuvo": sostuvo, "caso": caso,
+            "conUnoMenos": x.get("conUnoMenos") is True}
+
+
+def casos_bloque(team_id: int, antes: str, dias: int = 180) -> list[dict]:
+    """Los casos de la pregunta 6 que dejaron los cierres sobre el bloque de
+    ESTE equipo (DTP v1.4): en la cohorte c3 el propio partido fue «el caso que
+    le faltaba a la 6» unas quince veces, y la apertura siguiente lo volvía a
+    buscar a mano. Solo partes anteriores a `antes`, del bloque propio del foco."""
+    from backend.analisis.parte import _conectar
+    try:
+        desde = (datetime.strptime(antes[:10], "%Y-%m-%d") - timedelta(days=dias)).strftime("%Y-%m-%d")
+    except ValueError:
+        return []
+    with _conectar() as con:
+        filas = con.execute("SELECT fixture_id, fecha, parte_json FROM parte_cowork WHERE fecha >= ? AND fecha < ? "
+                            "ORDER BY fecha DESC", (desde, antes[:10])).fetchall()
+    out = []
+    for f in filas:
+        try:
+            bloques = (json.loads(f["parte_json"]).get("dtp") or {}).get("bloques") or []
+        except ValueError:
+            continue
+        con_caso = [b for b in bloques if ((b.get("cierre") or {}).get("casoBloque") or {}).get("caso")]
+        if not con_caso:
+            continue
+        fx = saddb.query_one("sad", "SELECT home_team_id, away_team_id FROM fixtures WHERE id=?", (f["fixture_id"],))
+        if not fx:
+            continue
+        for b in con_caso:
+            tid = fx["home_team_id"] if b.get("equipo") == "a" else fx["away_team_id"]
+            if tid == team_id:
+                out.append({**b["cierre"]["casoBloque"], "deParte": f["fixture_id"], "fecha": (f["fecha"] or "")[:10]})
+    return out[:6]
+
+
 def _bloque(x: dict, lado: str) -> dict:
     ap, ci = _dict(x.get("apertura")), _dict(x.get("cierre"))
     m1, m2, m6 = _dict(ap.get("m1")), _dict(ap.get("m2")), _dict(ap.get("m6"))
@@ -384,8 +430,12 @@ def _bloque(x: dict, lado: str) -> dict:
                    "vulnerabilidad": _txt(m1.get("vulnerabilidad")), "formaSinBalon": _txt(m1.get("formaSinBalon")),
                    "minutosCompartidos": _txt(m1.get("minutosCompartidos"))},
             "m2": {"choqueSistemas": _txt(m2.get("choqueSistemas")),
+                   # DTP v1.4: el carril en las dos direcciones (`vuelta`) y el duelo
+                   # con nombre propio marcado condicional al once (`condicional`)
                    "duelosCarril": [{"carril": _txt(_dict(d).get("carril")), "duelo": _txt(_dict(d).get("duelo")),
-                                     "mismatch": _txt(_dict(d).get("mismatch"))}
+                                     "mismatch": _txt(_dict(d).get("mismatch")),
+                                     "vuelta": _txt(_dict(d).get("vuelta")),
+                                     "condicional": _dict(d).get("condicional") is True}
                                     for d in (m2.get("duelosCarril") or []) if _txt(_dict(d).get("duelo"))],
                    "checklistBloqueRival": {**{p: _col(chk.get(p)) for p in PREGUNTAS},
                                             "casoP6": _txt(chk.get("casoP6")), "notas": _txt(chk.get("notas"))},
@@ -414,7 +464,14 @@ def _bloque(x: dict, lado: str) -> dict:
             "mecanismoAbierto": {"activo": bool(mec.get("activo")), "mecanismo": _txt(mec.get("mecanismo")),
                                  "lineaRepite": mec.get("lineaRepite") if isinstance(mec.get("lineaRepite"), bool) else None,
                                  "correccionEnVivo": mec.get("correccionEnVivo")
-                                 if isinstance(mec.get("correccionEnVivo"), bool) else None},
+                                 if isinstance(mec.get("correccionEnVivo"), bool) else None,
+                                 # DTP v1.4: la frecuencia se cumplió y ninguna fuente nombra
+                                 # la jugada → vía a verificar, nivel C, no degrada K
+                                 "sinMecanica": mec.get("sinMecanica") is True},
+            # DTP v1.4: el caso de la pregunta 6 del bloque PROPIO del foco en el
+            # partido que se cierra (¿sostuvo contra un obligado?). La apertura del
+            # rival siguiente lo lee de `casosBloque` en los insumos.
+            "casoBloque": _caso_bloque(ci.get("casoBloque")),
         },
     }
 

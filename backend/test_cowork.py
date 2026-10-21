@@ -2208,6 +2208,46 @@ def main():
           inv_l["porModoFallo"]["fallos"] == sum(1 for i in inv_l["items"]
                                                  if i["veredicto"] in ("fallo", "parcial") and i["orden"] == 1),
           inv_l["porModoFallo"])
+    # LAS DERROTAS DEL FAVORITO, con lo que el TDE y el DTP escribieron antes (21/10/2026)
+    _u = c.get(f"{A}/analisis/cowork/{con_ficha}/veredicto").json()["objetivo"]["unXDos"]
+    _df = c.get(f"{A}/analisis/cowork/derrotas-favorito", params={"cohorte": ""})
+    _dj = _df.json() if _df.status_code == 200 else {}
+    _fav = {"local": "a", "visita": "b"}.get(_u.get("declarado") or "")
+    _perdio = bool(_fav) and _u.get("real") not in ("empate", _u.get("declarado"), None, "")
+    _mio = [d for d in _dj.get("derrotas", []) if d["fixtureId"] == con_ficha]
+    check("derrotas-favorito: el caso entra SOLO si el favorito declarado perdió, con su rama y su explicación",
+          _df.status_code == 200 and set(_dj["resumen"]) == {"rama_escrita", "rama_sin_escribir", "sin_ficha", "sin_goles"}
+          and (len(_mio) == 1 and _mio[0]["favorito"]["lado"] == _fav
+               and _mio[0]["explicacion"] in _dj["resumen"] if _perdio else not _mio),
+          (_u, _mio, _dj.get("resumen")))
+    from backend.analisis import lecciones as _lec_df
+    _orig_c, _orig_o = _lec_df._casos, _lec_df._objetivo
+    def _caso(fid, decl, real, rama, declarada):
+        return {"fixtureId": fid, "fecha": "2026-10-20", "equipoA": "Fav", "equipoB": "Riv", "cohorte": "x",
+                "parte": {"dtp": {"bloques": [{"equipo": "a", "apertura": {"m2": {"viasGol": {"rival": ["contra por izquierda"]}}}}]},
+                          "tde": {"bloques": [{"equipo": "a", "tipologia": "SOB"}]}},
+                "veredicto": {"seleccion": "ciega", "porLado": {"a": {"leccion": "le empataron y se partió"}}},
+                "_obj": {"unXDos": {"declarado": decl, "real": real, "probabilidadDeclarada": 55},
+                         "marcador": {"texto": "1-2"}, "evidencia": {"goles": []},
+                         "tde": {"bloques": [{"equipo": "a", "ventana": "75-90'", "golEnVentana": True,
+                                              "reasignacion": {"rama": rama, "declarada": declarada}}]}}}
+    _fab = [_caso(1, "local", "visita", "siMarcaPrimero", True), _caso(2, "local", "visita", "siRecibePrimero", False),
+            _caso(3, "local", "visita", None, False), _caso(4, "local", "local", "siMarcaPrimero", True),
+            _caso(5, "local", "empate", "siMarcaPrimero", True), _caso(6, "empate", "visita", "siMarcaPrimero", True)]
+    _lec_df._casos = lambda limite=400, ids=None: _fab
+    _lec_df._objetivo = lambda fid, parte: next(x["_obj"] for x in _fab if x["fixtureId"] == fid)
+    try:
+        _dfab = _lec_df.derrotas_favorito("", 400)
+    finally:
+        _lec_df._casos, _lec_df._objetivo = _orig_c, _orig_o
+    check("derrotas del favorito: entran solo las derrotas del declarado (ni victoria, ni empate, ni favorito «empate»); "
+          "rama escrita · sin escribir · sin ficha",
+          [d["fixtureId"] for d in _dfab["derrotas"]] == [1, 2, 3]
+          and [d["explicacion"] for d in _dfab["derrotas"]] == ["rama_escrita", "rama_sin_escribir", "sin_ficha"]
+          and _dfab["derrotas"][0]["dtpViasRival"] == ["contra por izquierda"] and _dfab["derrotas"][0]["leccion"],
+          _dfab)
+    from backend import app as _app_df
+    check("…y la web (token de lectura) la puede leer", _app_df._web_puede("GET", f"{A}/analisis/cowork/derrotas-favorito"))
     c.post(f"{A}/analisis/cowork/{con_ficha}/veredicto", json={
         "seleccion": "ciega", "modoEvaluacion": "COND", "porLado": {"a": {"veredicto": "fallo"}}})
 
@@ -2818,6 +2858,31 @@ def main():
           g_dtp["calculado"]["bloqueRival"]["clase"] == "estructural no probado"
           and g_dtp["calculado"]["bloqueRival"]["equipoDelBloque"] == "b"
           and g_dtp["calculado"]["bloqueRival"]["c1Tde"] == 0.5, g_dtp["calculado"])
+    # DTP v1.4: el carril en las dos direcciones, el duelo condicional al once,
+    # el mecanismo sin mecánica y el caso de la pregunta 6 del bloque propio
+    from backend.analisis.dtp_cowork import normalizar_dtp as _ndtp4, casos_bloque as _casos_b
+    _b4 = _ndtp4({"bloques": [{"equipo": "a", "apertura": {"m2": {"duelosCarril": [
+        {"carril": "izquierda", "duelo": "Pilios vs Alisson", "mismatch": "Pilios sube",
+         "vuelta": "su espalda queda para Alisson", "condicional": True}]}},
+        "cierre": {"mecanismoAbierto": {"activo": True, "sinMecanica": True},
+                   "casoBloque": {"sostuvo": True, "caso": "1-0 sostenido 50' ante un obligado", "conUnoMenos": True}}}]},
+        [])["bloques"][0]
+    _d4 = _b4["apertura"]["m2"]["duelosCarril"][0]
+    check("DTP v1.4: el duelo guarda su vuelta y si es condicional; el mecanismo, sinMecanica; el cierre, su caso del bloque",
+          _d4["vuelta"] and _d4["condicional"] is True and _b4["cierre"]["mecanismoAbierto"]["sinMecanica"] is True
+          and _b4["cierre"]["casoBloque"]["sostuvo"] is True and _b4["cierre"]["casoBloque"]["conUnoMenos"] is True, _b4)
+    p_cb = _copy.deepcopy(p_dtp)
+    p_cb["dtp"]["bloques"][0]["cierre"]["casoBloque"] = {"sostuvo": False, "caso": "perdió el 1-0 en 4' ante un obligado"}
+    c.post(f"{A}/analisis/cowork", json=p_cb)
+    _fx_cb = dbmod.query_one("sad", "SELECT home_team_id, away_team_id, date FROM fixtures WHERE id=?", (ns_dtp,))
+    _cb_a = _casos_b(_fx_cb["home_team_id"], "2100-01-01", dias=100000)
+    _cb_b = _casos_b(_fx_cb["away_team_id"], "2100-01-01", dias=100000)
+    check("casosBloque devuelve el caso al MISMO equipo foco (no al rival) y nunca uno posterior al partido",
+          any(x["deParte"] == ns_dtp and x["sostuvo"] is False for x in _cb_a)
+          and not any(x["deParte"] == ns_dtp for x in _cb_b)
+          and not any(x["deParte"] == ns_dtp for x in _casos_b(_fx_cb["home_team_id"], "2000-01-01")),
+          (_cb_a, _cb_b))
+    c.post(f"{A}/analisis/cowork", json=p_dtp)
     from backend.analisis import db as _efedb_dtp
     fxn = dbmod.query_one("sad", "SELECT ht.name AS a FROM fixtures f JOIN teams ht ON ht.id=f.home_team_id "
                                  "WHERE f.id=?", (ns_dtp,))
