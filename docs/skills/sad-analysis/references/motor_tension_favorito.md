@@ -1,5 +1,7 @@
 # Motor de Tensión del Favorito v5 — Predicción de Rupturas
 
+> ⛔ **SUSPENDIDA en el skill v4.0 (21.10.2026).** Este documento queda como historia del sistema anterior: la Ley 5 no tiene motor en la app SAD; el estudio de febrero de 2026 dejó `ml_break_score` roto y el ICF con r = 0,10, y el backtest del 19.10.2026 (63.475 partidos del padrón) no encontró culebra. Queda la regla de mercado del Paso 3 del SKILL: la combinada de favoritos paga el margen k veces.
+
 > **Antes:** *Motor Anticulebras*. Renombrado en v3.2 del skill SAD.
 
 Consultar este archivo cuando haya dudas sobre: fórmula del Índice de Favoritismo (ICF), features del modelo ML, sistema de tensión acumulada, calibración del modelo, o fallback heurístico cuando no hay modelo entrenado.

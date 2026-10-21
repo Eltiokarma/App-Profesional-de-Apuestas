@@ -8,6 +8,8 @@ Precedentes reales donde el protocolo SAD falló y se corrigió. Cada caso está
 
 **Regla vinculada:** convergencia de K techo + doble oportunidad trampa + Tensión del Favorito → el favorito no gana.
 
+> ⛔ *(v4.0)* La Tensión del Favorito quedó suspendida (Paso 3 del SKILL): este caso queda como historia, no como regla vigente.
+
 **Señales que existían pre-partido:**
 
 - `k_local = 41.7` (mismo techo que el estallido anterior en 41.2).

@@ -8,8 +8,8 @@
 `docs/revisiones/DTP_v1.4_propuesta.md`), y `efe-clasificador`, también traído
 > de la cuenta, está en **v1.6** (`docs/revisiones/EFE_v1.6_propuesta.md`; la
 > rúbrica pasa a `references/rubrica-efe-v1.6.md`). `efe-dashboard` se trajo de la
-> cuenta el 21/10 (v1.8). `sad-analysis` (v3.2, idéntico a la cuenta) tiene
-> propuesta de v4.0 (`docs/revisiones/SAD_v4.0_propuesta.md`). El resto sigue siendo la foto del 13/09.
+> cuenta el 21/10 (v1.8). `sad-analysis` está en **v4.0** y `efe-dashboard` en
+> **v1.9** (revisión aprobada, `docs/revisiones/SAD_v4.0_propuesta.md`). El resto sigue siendo la foto del 13/09.
 
 Copia de los cinco skills del pipeline SAD tal como estaban el **13.09.2026**,
 subidos por el usuario para diseñar el bucle de aprendizaje

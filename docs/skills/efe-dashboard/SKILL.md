@@ -1,9 +1,21 @@
 ---
 name: efe-dashboard
-description: "Genera dashboards visuales EFE v1.6 (Estabilidad de Formacion del Equipo) pre-partido de futbol. Produce React JSX interactivo con gauges, barras de bloques A-E, caja de sensibilidad, alertas estructurales y por fecha, impacto ponderado de disponibilidad, minutos compartidos y matchup tactico. Activar cuando el usuario pida un EFE de cualquier equipo o partido, dashboard visual de formacion o estabilidad, comparativa pre-partido, o variantes como haceme el EFE de X vs Y, dashboard EFE, EFE visual o plantilla EFE. Activar tambien si menciona bloques A-E, la clasificacion SIN FORMACION / EN FORMACION / FORMADO, o pide evaluar estabilidad institucional, tactica o de plantel. Activar tambien para analisis tactico, escenarios de resultado, recomendaciones pre-partido, que deben hacer para ganar o empatar o perder, y matriz de escenarios."
+description: "Genera dashboards visuales EFE v1.6 (skill v1.9) (Estabilidad de Formacion del Equipo) pre-partido de futbol. Produce React JSX interactivo con gauges, barras de bloques A-E, caja de sensibilidad, alertas estructurales y por fecha, impacto ponderado de disponibilidad, minutos compartidos y matchup tactico. Activar cuando el usuario pida un EFE de cualquier equipo o partido, dashboard visual de formacion o estabilidad, comparativa pre-partido, o variantes como haceme el EFE de X vs Y, dashboard EFE, EFE visual o plantilla EFE. Activar tambien si menciona bloques A-E, la clasificacion SIN FORMACION / EN FORMACION / FORMADO, o pide evaluar estabilidad institucional, tactica o de plantel. Activar tambien para analisis tactico, escenarios de resultado, recomendaciones pre-partido, que deben hacer para ganar o empatar o perder, y matriz de escenarios."
 ---
 
-# EFE Dashboard — Skill de Visualización v1.8
+# EFE Dashboard — Skill de Visualización v1.9
+
+> **v1.9 · 21.10.2026 — Limpieza de lo que no existe y reparto con `sad-analysis` v4.0.** Ningún peso, indicador ni alerta del clasificador tocado.
+>
+> **1. La lectura integrada (paso 5) pasa a `sad-analysis` v4.0**, que es el skill de la síntesis (pronóstico y lectura de las K). Este skill la muestra en el dashboard; la define y la escribe aquel.
+>
+> **2. Sale el «Contexto emocional: Anticulebra, Fe Perdida».** Los dos eran motores del sistema anterior que no existen en la app SAD: la Ley 5 (Tensión del Favorito) quedó suspendida por el backtest del 19.10.2026 (63.475 partidos, sin culebra) y la Fe Perdida no tiene péndulo que la calcule. En la cohorte c3 dos partes los invocaron sin dato (Boca–São Paulo, derbi de Montevideo). Queda un **contexto con fuente**: presión de tabla, hinchada, clima del club, citados.
+>
+> **3. `ANTICULEBRA-INVERTIDA` se renombra `FAVORITO-RELAJADO`.** El contexto del candidato se queda; el nombre de un motor suspendido, no.
+>
+> **4. Se quitan el «checklist de 9 puntos» y la «Ficha de Mecanismo»** del paso 6: no existen en disco y nadie podía recorrerlos. Quedan los principios que sí están escritos.
+>
+> **5. La matriz se compara con el 1X2 del motor calculado** (`unXDos` de `/predicciones`, logística calibrada sobre 51.254 partidos), nunca con un Poisson armado con μ: μ son puntos esperados, no goles.
 
 > **v1.8 · 13.09.2026 — Post-caso Alianza Lima 1-2 Universitario (F9 Clausura Perú).** Tres altas y ninguna toca pesos ni indicadores del clasificador.
 >
@@ -181,11 +193,13 @@ Con `E-CUARENTENA` activo, la caja se aplica también a la elección de denomina
 | **💔 COLAPSO POR VENTAJA PERDIDA** *(v1.7)* | Por fecha | No sostuvo ventajas de un gol esta temporada + rival con banco de impacto documentado |
 | **🧱 BLOQUE NO PROBADO** *(v1.7)* | Por fecha | Bloque estructural cuyas vallas invictas salieron todas de partidos sin presión real |
 
-### PASO 5 — Lectura integrada
-1. **Módulo Operativo:** ¿qué módulo SAD es usable y con qué confianza?
-2. **1X2:** confianza y rango. Si FACTOR-X, EJE-DEBUTANTE o GOLEADOR-AL-BANCO están activos → **ampliar el rango, no mover el centro**
-3. **Contexto Emocional:** presión, hinchada, Anticulebra, Fe Perdida
-4. **Dato Estructural:** el dato más duro y confiable
+### PASO 5 — Lectura integrada *(la define `sad-analysis` v4.0)*
+
+Desde v1.9 la lectura integrada es del skill **`sad-analysis` v4.0** (paso 6, síntesis): módulo operativo, 1X2 con sus tres fuentes, contexto, dato estructural y paradoja. El dashboard la **muestra** con lo que aporta el EFE:
+
+1. **1X2:** si FACTOR-X, EJE-DEBUTANTE o GOLEADOR-AL-BANCO están activos → **ampliar el rango, no mover el centro** (regla del EFE, sigue aquí).
+2. **Contexto:** presión de tabla, hinchada, clima del club — **con fuente citada**. No hay «módulos emocionales»: la Fe Perdida y la Tensión del Favorito no existen en la app *(v1.9)*.
+3. **Dato Estructural:** el dato más duro y confiable del EFE.
 
 Más la **Paradoja del Partido** si hay contradicción entre tabla y contexto.
 
@@ -203,11 +217,12 @@ Después del dashboard, **solo si el usuario lo pide**, generar con `visualize:s
 
 **Principios v2.0 (anti-sesgo):**
 1. Cruzar EFE (D3, B5, B6, F2, **F6**, Bloque H) con tácticas concretas
-2. Consultar **Ficha de Mecanismo** completa (definición + cuándo funciona + **cuándo FALLA**) antes de aplicarlo
+2. Antes de aplicar un mecanismo, escribir cuándo funciona y **cuándo FALLA** *(v1.9: la «Ficha de Mecanismo» que se citaba aquí no existe; la regla queda escrita en su lugar)*
 3. Citar evidencia real (Mohr 2003, Bradley 2009, Baumeister 1998, Lago-Peñas 2014, Seligman, Filho 2021)
-4. Recorrer el **checklist de 9 puntos** pre-generación
-5. En la síntesis, citar un caso que CONFIRMA y uno que CONTRADICE
-6. Usar CSS variables del Visualizer, sin colores hardcoded
+4. En la síntesis, citar un caso que CONFIRMA y uno que CONTRADICE
+5. Usar CSS variables del Visualizer, sin colores hardcoded
+
+*(v1.9: se quitó el «checklist de 9 puntos», que no existe en disco.)*
 
 **Sesgos conocidos que la v2.0 corrige:**
 
@@ -219,7 +234,7 @@ Después del dashboard, **solo si el usuario lo pide**, generar con `visualize:s
 | Pro-DT estable | Cambio de DT = negativo siempre | T.54 puede invertirse si el DT anterior subrendía |
 | D3 estático | Etiqueta fija | Distribución probabilística que oscila |
 
-**Disciplina 33 en la matriz** *(v1.6)*: publicar **simultáneamente** el mercado, la salida del motor de Regresión al Nivel y la matriz manual. Si el motor no está disponible, declararlo `sin dato` — **nunca estimarlo**. Las contradicciones se documentan, no se resuelven en silencio eligiendo un lado.
+**Disciplina 33 en la matriz** *(v1.6)*: publicar **simultáneamente** el mercado, la salida del motor de Regresión al Nivel y la matriz manual. La salida del motor en 1X2 es `unXDos` de `/predicciones/{id}` *(v1.9)*, copiada tal cual; **nunca un Poisson con μ como λ** (μ son puntos, no goles). Si el motor no está disponible, declararlo `sin dato` — **nunca estimarlo**. Las contradicciones se documentan, no se resuelven en silencio eligiendo un lado.
 
 ### PASO 7 — Output
 1. `create_file` → `/mnt/user-data/outputs/efe_dashboard.jsx`
@@ -285,7 +300,7 @@ Nombres exactos, colores primarios ya asignados, hitos detectados (cambios de DT
 
 - **`H2a DOMINANTE`:** que H2a 🟢 dispare MATCHUP FAVORABLE por sí solo cuando el mecanismo identificado es de balón parado. **No entra:** salió de un caso contaminado y está ajustado al resultado.
 - **`D3-DEGRADADO`:** tratar como ❌ un D3 🔶 sostenido sobre menos de 8 partidos y medido en otro contexto. Viene del módulo del tramo final. Revisión con casos ciegos.
-- **`ANTICULEBRA-INVERTIDA`:** el favorito que se relaja en un TRAMO TRAMPA. Hoy vive como contexto declarado en la etiqueta 🪤, sin coeficiente.
+- **`FAVORITO-RELAJADO`** *(antes `ANTICULEBRA-INVERTIDA`, renombrado en v1.9)*: el favorito que se relaja en un TRAMO TRAMPA. Hoy vive como contexto declarado en la etiqueta 🪤, sin coeficiente.
 - **Asimetría de relevancia del partido:** un módulo propio que mida cuánto vale el partido para cada equipo por separado. Hoy está repartido entre P3, P1b y la etiqueta de calendario.
 
 ## Movido a otro skill en v1.6
