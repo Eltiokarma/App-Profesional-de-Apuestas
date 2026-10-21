@@ -3842,7 +3842,20 @@ def main():
     _gl = next(x for x in c.get(f"{A}/analisis/cowork/incidencias").json()["incidencias"] if x["id"] == _g1["nuevas"][0])
     check("la misma causa en otros partidos suma veces y junta los partidos, no abre otra",
           len(_g1["nuevas"]) == 1 and len(_g1["repetidas"]) == 2 and _gl["veces"] == 3 and _gl["fixtures"] == [111, 222], (_g1, _gl))
+    # EL ÁREA NO SEPARA UNA CAUSA (AEK, 298 «ficha» y 333 «agenda», 21/10/2026)
+    _ga = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "veredictos", "items": [
+        {"titulo": "Faltan partidos domésticos recientes (AEK)", "area": "ficha", "fixtureId": 555},
+        {"titulo": "Faltan partidos domésticos recientes", "area": "agenda", "fixtureId": 556}]}).json()
+    check("el mismo título con otra área es la misma incidencia", len(_ga["nuevas"]) == 1 and len(_ga["repetidas"]) == 1, _ga)
     from backend.analisis import incidencias as _incm
+    with _incm._con() as _ci:
+        for f, ar in ((777, "ficha"), (778, "agenda")):
+            _ci.execute("INSERT INTO incidencia (clave, origen, area, severidad, titulo, creado_en, ultima_vez, fixture_id) "
+                        "VALUES (?,?,?,?,?,?,?,?)", (f"{ar}:sede erronea", "partes", ar, "aviso", "Sede errónea", "2026-10-20", "2026-10-20", f))
+    with _incm._con() as _ci:   # al abrir, las claves viejas «area:titulo» se reagrupan solas
+        _rows = _ci.execute("SELECT estado, clave FROM incidencia WHERE titulo='Sede errónea' ORDER BY id").fetchall()
+    check("las abiertas con la clave vieja (con área) se reagrupan solas al abrir la tabla",
+          [r["estado"] for r in _rows] == ["abierta", "descartada"] and _rows[0]["clave"] == "sede erronea", [dict(r) for r in _rows])
     with _incm._con() as _ci:
         for f in (333, 444):
             _ci.execute("INSERT INTO incidencia (clave, origen, area, severidad, titulo, creado_en, ultima_vez, fixture_id) "
