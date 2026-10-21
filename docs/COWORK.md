@@ -935,7 +935,12 @@ Escribís vos (es juicio, no se puede calcular):
   a esos mismos jugadores, TAMBIÉN en `plantel` con su zona y su rol: una baja
   que no está en la tabla F1 no pesa en el Impacto Ponderado.
 - Las alertas del protocolo que se disparen (T.54, R-KT.2, GK-DOWNGRADE,
-  FACTOR-X, COLAPSO EN CASCADA…).
+  GK-FALLA-ACTIVA, FACTOR-X, COLAPSO EN CASCADA…). Desde el EFE v1.6
+  COLAPSO EN CASCADA describe el riesgo de perder una ventaja y NO predice
+  goleada ni orienta hándicap o más/menos goles; G-SORPRESA amplía el rango
+  y no mueve el 1X2; GK-FALLA-ACTIVA (arquero titular con ≥ 2 errores que
+  terminaron en gol en sus últimos 5) es declarativa, sin peso, y baja al DTP
+  como vía del rival.
 - El matchup H: diagnóstico, razón, el perfil táctico de cada equipo Y los tres
   indicadores `h2a` / `h2b` / `h2c` (verde/ambar/rojo/na) que lo sostienen. Un
   "MATCHUP FAVORABLE" sin los tres es una etiqueta que nadie puede discutir.
