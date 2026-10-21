@@ -1,7 +1,10 @@
 # Propuesta de revisión · `diagnostico-tactico` v1.3 → v1.4
 
-**Estado:** PROPUESTA, no aplicada. El skill vive en la cuenta del usuario;
-esto es el texto para decidir. Redactada el 21/10/2026 desde el dossier
+**Estado:** APROBADA por el usuario (21/10/2026, los seis puntos). Redactada en
+`docs/skills/diagnostico-tactico/SKILL.md` (v1.4) y con sitio en el parte
+(`duelosCarril[].vuelta` y `.condicional`, `mecanismoAbierto.sinMecanica`,
+`cierre.casoBloque`, y `casosBloque` en los insumos del DTP). Falta que el
+usuario la suba a su cuenta. Redactada el 21/10/2026 desde el dossier
 (`GET /analisis/cowork/revision/diagnostico-tactico`, cohorte `c3-2026-09-23`).
 Partimos de la v1.3 vigente (13/09), traída de la cuenta a
 `docs/skills/diagnostico-tactico/SKILL.md`.

@@ -982,7 +982,10 @@ paths:
         minutos ganando/empatando/perdiendo, posesión atada al rival y al marcador —regla de
         posesión condicional—, stats, XI de referencia con carriles), los cambios de XI contra el
         anterior, las parejas de la misma línea que nunca arrancaron juntas en lo capturado, los
-        días de descanso, si es primera fecha, el candidato a MECANISMO-ABIERTO (≥2 recibidos) y
+        días de descanso, si es primera fecha, el candidato a MECANISMO-ABIERTO (≥2 recibidos),
+        `casosBloque` (DTP v1.4: los casos de la pregunta 6 que dejaron los cierres sobre el bloque
+        de ESE equipo —`sostuvo`, `caso`, `conUnoMenos`, `deParte`, `fecha`—, solo de partes
+        anteriores; la apertura del rival los lee para responder la 6) y
         `aperturaPrevia`: lo que se declaró ANTES del partido anterior, contra lo que se valida el
         cierre. Lo que es juicio va en `noCalculables`. 0 tokens, 0 requests.
       parameters:
@@ -1250,6 +1253,26 @@ paths:
             application/json:
               schema: { type: object, additionalProperties: true }
         '404': { description: el fixture no está en nuestra base }
+  /analisis/cowork/derrotas-favorito:
+    get:
+      summary: Las derrotas del favorito declarado, con lo que el TDE y el DTP habían escrito antes (lectura)
+      description: >
+        Por cada veredicto en el que el 1X2 declarado eligió a un equipo y ese equipo PERDIÓ: el
+        marcador y los goles, la rama de la reasignación del TDE que jugó el favorito (la del primer
+        gol, el `segundoGiro` si le empataron, la `salida` si persiguió) con lo que estaba
+        declarado, la del rival, las vías de gol del rival que había escrito el DTP del favorito y
+        la lección de la autopsia. `explicacion`: `rama_escrita` · `rama_sin_escribir` ·
+        `sin_ficha` · `sin_goles`. Solo cuenta lo declarado ANTES (disciplina 9 del TDE):
+        `rama_escrita` dice que el escenario estaba descrito, no que se haya acertado. 0 tokens.
+      parameters:
+        - { name: cohorte, in: query, schema: { type: string, default: vigente }, description: "'' = todas · 'vigente' · o una clave" }
+        - { name: limite, in: query, schema: { type: integer, default: 400 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DerrotasFavoritoDTO' }
   /analisis/cowork/revision/{skill}:
     get:
       summary: El dossier de revisión de un skill (fase D del aprendizaje; abierto a Cowork en lectura)
@@ -3147,7 +3170,7 @@ components:
                 type: object
                 properties:
                   m1: { type: object, additionalProperties: true, description: 'sistema, xiReferencia, senalXi, rolesReasignados[], vulnerabilidad, formaSinBalon, minutosCompartidos' }
-                  m2: { type: object, additionalProperties: true, description: 'choqueSistemas, duelosCarril[{carril, duelo, mismatch}], checklistBloqueRival{p1..p5: improvisado|estructural|sin dato, p6: si|no|sin dato, casoP6, notas — se guardan y vuelven como izq/der/sin dato, que también se aceptan; otro valor se guarda «sin dato» con rechazo. Este checklist mira el bloque del RIVAL del foco: fija el C1 del TDE del rival, no el del foco}, viasGol{foco[], rival[]}, restDefense{foco, rival, nivelFoco, nivelRival: fijo|depende|sin → SOB2 0|0.5|1 del TDE}, posesion{valor, contraQuien, marcador, sede}, veredicto (FAVORABLE|NEUTRO|DESFAVORABLE), razon' }
+                  m2: { type: object, additionalProperties: true, description: 'choqueSistemas, duelosCarril[{carril, duelo, mismatch, vuelta (DTP v1.4: lo que expone ese carril si pierde la pelota), condicional (bool: duelo con nombre propio que depende del once)}], checklistBloqueRival{p1..p5: improvisado|estructural|sin dato, p6: si|no|sin dato, casoP6, notas — se guardan y vuelven como izq/der/sin dato, que también se aceptan; otro valor se guarda «sin dato» con rechazo. Este checklist mira el bloque del RIVAL del foco: fija el C1 del TDE del rival, no el del foco}, viasGol{foco[], rival[]}, restDefense{foco, rival, nivelFoco, nivelRival: fijo|depende|sin → SOB2 0|0.5|1 del TDE}, posesion{valor, contraQuien, marcador, sede}, veredicto (FAVORABLE|NEUTRO|DESFAVORABLE), razon' }
                   m3Fases: { type: array, items: { type: object, additionalProperties: true }, description: 'tramo 0-25 | 25-65 | 65-80+, plan, palancas[]' }
                   m6: { type: object, additionalProperties: true, description: 'competitivo, rotacion, fatiga, ausencias, otros' }
               cierre:
@@ -3156,7 +3179,8 @@ components:
                   sinAnterior: { type: boolean }
                   m4Goles: { type: array, items: { type: object, additionalProperties: true }, description: 'gol, minuto, via (pelota_parada|transicion|juego_abierto), disparador, secuencia, definicion, responsablesMerito[], responsablesError[{jugador, nivel principal|secundario|estructural, detalle}], absolucion' }
                   m5: { type: object, additionalProperties: true, description: 'planFuncionoHastaMin, peligroReal, cronologiaGiro, contraste{aciertos[], fallos[]}, preguntaChecklistFallida' }
-                  mecanismoAbierto: { type: object, additionalProperties: true, description: 'activo, mecanismo, lineaRepite, correccionEnVivo' }
+                  mecanismoAbierto: { type: object, additionalProperties: true, description: 'activo, mecanismo, lineaRepite, correccionEnVivo, sinMecanica (DTP v1.4: la frecuencia se cumplió y ninguna fuente nombra la jugada → vía a verificar, nivel C, no degrada K)' }
+                  casoBloque: { type: object, nullable: true, additionalProperties: true, description: 'DTP v1.4: el caso de la pregunta 6 del bloque PROPIO del foco en el partido que se cierra —sostuvo (bool|null), caso, conUnoMenos—. Vuelve en `casosBloque` de los insumos del DTP del rival siguiente' }
               calculado:
                 type: object
                 description: 'SOLO en la lectura; se ignora si llega'
@@ -3205,6 +3229,31 @@ components:
         creadoEn: { type: string }
         ultimaVez: { type: string }
         cerradoEn: { type: string, nullable: true }
+    DerrotasFavoritoDTO:
+      type: object
+      properties:
+        generadoEn: { type: string }
+        cohorte: { type: string }
+        resumen: { type: object, properties: { rama_escrita: { type: integer }, rama_sin_escribir: { type: integer }, sin_ficha: { type: integer }, sin_goles: { type: integer } } }
+        nota: { type: string }
+        derrotas:
+          type: array
+          items:
+            type: object
+            properties:
+              fixtureId: { type: integer }
+              fecha: { type: string }
+              partido: { type: string }
+              favorito: { type: object, properties: { lado: { type: string, enum: [a, b] }, equipo: { type: string }, probabilidad: { type: number, nullable: true } } }
+              marcador: { type: string }
+              goles: { type: array, items: { type: object, additionalProperties: true } }
+              seleccion: { type: string }
+              cuarentena: { type: boolean }
+              explicacion: { type: string, enum: [rama_escrita, rama_sin_escribir, sin_ficha, sin_goles] }
+              tde: { type: object, additionalProperties: true, description: 'ramaJugada, minuto, loDeclarado, segundoGiro, salida, tipologia, ventana, golEnVentana' }
+              tdeRival: { type: object, additionalProperties: true, description: 'ramaJugada, loDeclarado' }
+              dtpViasRival: { type: array, items: { type: string }, description: 'las vías de gol del rival que había escrito el DTP del favorito' }
+              leccion: { type: string }
     RamaReasignacion:
       type: object
       properties:

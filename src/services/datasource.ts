@@ -43,6 +43,7 @@ import type {
   MarcasCoworkDTO,
   InventarioLecciones,
   RevisionSkillDTO,
+  DerrotasFavoritoDTO,
   LeccionItem,
   PartidoCalendarioDTO,
   PlantillaDTO,
@@ -174,6 +175,8 @@ export interface SadDataSource {
   descartarCohorte(cohorte: string, nota?: string): Promise<{ cohorte: string; descartadas: number; claves: string[]; nota: string }>
   /** Dossier de revisión de un skill (fase D) y su apertura (token maestro). */
   revisionSkill(skill: string, cohorte?: string): Promise<RevisionSkillDTO>
+  /** Derrotas del favorito declarado con lo que el TDE y el DTP habían escrito antes. */
+  derrotasFavorito(cohorte?: string): Promise<DerrotasFavoritoDTO>
   abrirRevision(skill: string, cohorte?: string): Promise<{ skill: string; movidas: string[]; versionVigente: string }>
 }
 
@@ -877,6 +880,16 @@ class MockDataSource implements SadDataSource {
     return { fixtureId, cuarentena: null }
   }
 
+  async derrotasFavorito(cohorte = 'vigente'): Promise<DerrotasFavoritoDTO> {
+    // la demo no tiene veredictos con marcador real: se dice, no se inventa una derrota
+    return {
+      generadoEn: new Date().toISOString(), cohorte,
+      resumen: { rama_escrita: 0, rama_sin_escribir: 0, sin_ficha: 0, sin_goles: 0 },
+      nota: 'modo demo: sin veredictos con marcador real, no hay derrotas del favorito que mostrar',
+      derrotas: [],
+    }
+  }
+
   async revisionSkill(skill: string, cohorte = 'vigente'): Promise<RevisionSkillDTO> {
     // la demo arma el dossier con la MISMA regla que el backend (lecciones.revision)
     const inv = leccionesDemo(skill, '', cohorte)
@@ -1233,6 +1246,7 @@ class HttpDataSource implements SadDataSource {
     SadApi.desmentirBanco(fixtureId, body)
   descartarCohorte = (cohorte: string, nota?: string) => SadApi.descartarCohorte(cohorte, nota)
   revisionSkill = (skill: string, cohorte?: string) => SadApi.revisionSkill(skill, cohorte)
+  derrotasFavorito = (cohorte?: string) => SadApi.derrotasFavorito(cohorte)
   abrirRevision = (skill: string, cohorte?: string) => SadApi.abrirRevision(skill, cohorte)
 }
 

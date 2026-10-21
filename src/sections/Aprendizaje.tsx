@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { InventarioLecciones, LeccionItem, ModoFalloEtiqueta, RevisionSkillDTO, SkillAprendizaje } from '../api/types'
+import type { DerrotaFavorito, DerrotasFavoritoDTO, ExplicacionDerrota, InventarioLecciones, LeccionItem, ModoFalloEtiqueta, RevisionSkillDTO, SkillAprendizaje } from '../api/types'
 import { getDataSource } from '../services/datasource'
 import { useAsync } from '../services/useAsync'
 
@@ -240,6 +240,8 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
         )}
         <div style={{ font: '500 10px var(--sans)', color: 'var(--t3)', marginTop: 8 }}>{a.brier.escala}</div>
       </Seccion>
+
+      <DerrotasDelFavorito cohorte={cohorte} />
 
       {vacio && (
         <Seccion titulo="TODAVÍA NO HAY NADA">
@@ -692,6 +694,108 @@ function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
             auditar después.
           </div>
           {error && <div style={{ font: '600 11px var(--sans)', color: 'var(--down)', marginTop: 5 }}>{error}</div>}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** LAS DERROTAS DEL FAVORITO (21/10/2026, pedido del usuario: «las derrotas no
+ *  esperadas las podremos justificar con eso»). Por cada una, lo que el TDE y
+ *  el DTP habían escrito ANTES del pitazo. La disciplina 9 del TDE manda la
+ *  lectura: una rama escrita que describe cómo se perdió es evidencia; una
+ *  explicación armada después de ver el gol, no. Se carga a pedido: recalcula
+ *  el objetivo de cada veredicto y no hace falta en cada visita. */
+const EXPLICACION: Record<ExplicacionDerrota, [string, string, string]> = {
+  rama_escrita: ['RAMA ESCRITA', 'var(--up)', 'el escenario que se jugó estaba descrito antes'],
+  rama_sin_escribir: ['SIN ESCRIBIR', 'var(--down)', 'la rama que se jugó no estaba declarada'],
+  sin_ficha: ['SIN FICHA', 'var(--t3)', 'sin eventos no se sabe quién marcó primero'],
+  sin_goles: ['SIN GOLES', 'var(--t3)', 'sin goles no hay rama'],
+}
+const RAMA_NOMBRE: Record<string, string> = {
+  siMarcaPrimero: 'marcó primero', siRecibePrimero: 'recibió primero', siLeEmpatan: 'le empataron', sinGoles: 'sin goles',
+}
+const SALIDA: Record<string, string> = { concedio: 'volvió a conceder', marco: 'marcó él', sinMasGoles: 'sin más goles' }
+
+function DerrotasDelFavorito({ cohorte }: { cohorte: string }) {
+  const [ver, setVer] = useState(false)
+  const [d, setD] = useState<DerrotasFavoritoDTO | null>(null)
+  const [error, setError] = useState('')
+  const [cargando, setCargando] = useState(false)
+  const [de, setDe] = useState('')
+  async function cargar() {
+    setError('')
+    setCargando(true)
+    try {
+      setD(await getDataSource().derrotasFavorito(cohorte))
+      setDe(cohorte)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'no se pudieron leer las derrotas')
+    } finally {
+      setCargando(false)
+    }
+  }
+  const vieja = d !== null && de !== cohorte
+  return (
+    <Seccion titulo="DERROTAS DEL FAVORITO" nota="el equipo que el 1X2 declarado daba ganador y perdió, con lo que el TDE y el DTP habían escrito ANTES del pitazo: solo cuenta lo declarado">
+      <button onClick={() => { const v = !ver; setVer(v); if (v && (!d || vieja)) cargar() }}
+        style={{ padding: '6px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--t1)', font: '600 11px var(--sans)', cursor: 'pointer' }}>
+        {ver ? 'Ocultar' : 'Ver las derrotas del favorito'}
+      </button>
+      {cargando && <span style={{ marginLeft: 8, font: '500 11px var(--sans)', color: 'var(--t3)' }}>Cargando…</span>}
+      {error && <div style={{ font: '500 11px var(--sans)', color: 'var(--down)', marginTop: 6 }}>{error}</div>}
+      {ver && d && !vieja && (
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {(Object.keys(EXPLICACION) as ExplicacionDerrota[]).map((k) => (
+              <span key={k} title={EXPLICACION[k][2]}
+                style={{ padding: '4px 9px', borderRadius: 7, background: 'var(--bg3)', font: '700 10px var(--mono)', color: EXPLICACION[k][1] }}>
+                {EXPLICACION[k][0]} · {d.resumen[k] ?? 0}
+              </span>
+            ))}
+          </div>
+          <div style={{ font: '500 10.5px var(--sans)', color: 'var(--t3)' }}>{d.nota}</div>
+          {d.derrotas.length === 0 && (
+            <div style={{ font: '500 12px var(--sans)', color: 'var(--t2)' }}>Ninguna derrota del favorito declarado en esta cohorte.</div>
+          )}
+          {d.derrotas.map((x) => <TarjetaDerrota key={x.fixtureId} x={x} />)}
+        </div>
+      )}
+    </Seccion>
+  )
+}
+
+function TarjetaDerrota({ x }: { x: DerrotaFavorito }) {
+  const [etq, color] = EXPLICACION[x.explicacion]
+  const lo = x.tde.loDeclarado
+  const linea = (r?: { sob1?: number | null; tipologia?: string; nota?: string; ventana?: string } | null) =>
+    r ? [r.sob1 != null ? `SOB1 ${r.sob1}` : '', r.tipologia, r.nota, r.ventana ? `ventana ${r.ventana}` : ''].filter(Boolean).join(' · ') : ''
+  const goles = x.goles.map((g) => `${g.minuto}' ${g.lado === x.favorito.lado ? x.favorito.equipo : 'rival'}`).join(' · ')
+  return (
+    <div style={{ padding: '10px 12px', borderRadius: 11, background: 'var(--bg)', border: '1px solid var(--line)' }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'baseline' }}>
+        <span style={{ font: '700 12px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0 }}>{x.partido}</span>
+        <span style={{ font: '700 12px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>{x.marcador}</span>
+        <span style={{ font: '700 9.5px var(--mono)', color }}>{etq}</span>
+      </div>
+      <div style={{ font: '500 10.5px var(--sans)', color: 'var(--t3)', marginTop: 2 }}>
+        {x.fecha} · favorito {x.favorito.equipo}{x.favorito.probabilidad != null ? ` (${x.favorito.probabilidad}%)` : ''} · {x.seleccion || 'sin población'}{x.cuarentena ? ' · en cuarentena' : ''}
+        {goles ? ` · goles: ${goles}` : ''}
+      </div>
+      <div style={{ marginTop: 6, font: '500 11.5px var(--sans)', color: 'var(--t1)', lineHeight: 1.45 }}>
+        <b>TDE del favorito:</b> {x.tde.ramaJugada ? `${RAMA_NOMBRE[x.tde.ramaJugada] ?? x.tde.ramaJugada}${x.tde.minuto != null ? ` (${x.tde.minuto}')` : ''}` : 'rama desconocida'}
+        {lo ? ` → escrito: ${linea(lo)}` : x.tde.ramaJugada && x.tde.ramaJugada !== 'sinGoles' ? ' → nada escrito para esa rama' : ''}
+        {x.tde.segundoGiro && ` · le empataron al ${x.tde.segundoGiro.minuto}'${x.tde.segundoGiro.loDeclarado ? ` → escrito: ${linea(x.tde.segundoGiro.loDeclarado)}` : ' (línea del empate sin escribir)'}`}
+        {x.tde.salida && ` · después: ${SALIDA[x.tde.salida] ?? x.tde.salida}`}
+      </div>
+      {x.dtpViasRival.length > 0 && (
+        <div style={{ marginTop: 4, font: '500 11.5px var(--sans)', color: 'var(--t2)' }}>
+          <b>DTP · vías de gol del rival escritas:</b> {x.dtpViasRival.join(' · ')}
+        </div>
+      )}
+      {x.leccion && (
+        <div style={{ marginTop: 4, font: '500 11.5px var(--sans)', color: 'var(--t2)' }}>
+          <b>Autopsia:</b> {x.leccion}
         </div>
       )}
     </div>

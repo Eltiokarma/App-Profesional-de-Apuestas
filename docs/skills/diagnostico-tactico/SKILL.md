@@ -5,6 +5,22 @@ description: "Analisis tactico-tecnico del juego de un partido de futbol, no est
 
 # Diagnóstico Táctico de Partido (DTP) — Capa de Juego del SAD
 
+> **v1.4 · 21.10.2026 — Revision desde el dossier de la app SAD: 57 casos PRE ciegos de la cohorte `c3-2026-09-23`, 503 lecciones acreditables, ninguna pide mover un numero. La capa acierta mas de lo que dicen sus fallos —en muchos «fallos» del lado la via escrita fue literalmente la del gol y lo que fallo fue el 1X2—, y sus huecos son de rubrica, no de calibracion. Seis altas; ningun umbral tocado.**
+>
+> **1. `MECANISMO-ABIERTO · sin mecanica`.** En unos diez cierres hubo dos o mas goles del mismo equipo en pocos minutos o sin correccion en vivo y ninguna fuente nombraba la jugada (Puerto Cabello, La Guaira, Alianza Atletico, Atletico Tucuman, Torque, Delfin, Betis–Barcelona, Monza–Cagliari): cada analista lo resolvio distinto. Ahora es una clase con nombre: entra al M2 del proximo rival como **via a verificar**, nivel de dato C, sin degradar K.
+>
+> **2. El mecanismo se nombra por la zona o el rol, no por el interprete.** Porto concedio por el carril de su lateral izquierdo con OTRO lateral; Wanderers volvio a perder la marca del segundo palo en juego abierto y no de corner; Leon hizo sus tres goles de corner con tres rematadores distintos. El umbral de ≥80% de interpretes queda para los mecanismos de PAREJA (dos centrales, doble pivote); el de carril o zona sigue abierto mientras el rol se repita. Contraste: con DT nuevo o media linea cambiada no viaja (Corinthians, Newcastle).
+>
+> **3. El duelo por carril se escribe en las dos direcciones.** Guarani, Lille–Brest, Fluminense–Palmeiras, Gladbach–Hoffenheim y Shakhtar–AEK: el carril que se cargaba para atacar fue por donde concedieron. Un mismatch «a favor» sin su cara de vuelta esta incompleto.
+>
+> **4. Cuatro lineas obligatorias de vias de gol.** Via aerea por centro Y por pelota parada (Torque, Guabira); el duelo aereo con todos los que atacan el area, centrales incluidos (Juventus–Lazio, Estudiantes–San Lorenzo); el banco del que persigue (Alaves, Villarreal, Central Cordoba); el ejecutor de penales del rival (Monagas, Barracas, Mushuc). El umbral de ≥2 errores para la via del arquero se mantiene (Atletico: un suplente no es via por serlo).
+>
+> **5. Checklist: la pregunta 6 y la 4, mas precisas.** El caso de la 6 es una ventaja o un empate sostenido contra un obligado en sede y competicion comparables (Villarreal: el caso de local no probo el bloque fuera; Manta: un 0-0 no prueba cerrar una ventaja), sostener con uno menos cuenta (Atletico, Getafe, America), y **el cierre escribe el caso de la 6** para la apertura siguiente, que hoy se descubria a mano en cada cierre (~15). La 4 se mide por lo que el DT cambio de verdad, no por el conteo de lesionados (Alianza Valledupar, Pereira). La vida util 55-65 del improvisado es techo, no piso (Parma, Angers, Fiorentina).
+>
+> **6. Con el once en nivel C, M2 en dos capas.** En ~15 cierres sono DTP-REHACER y el mapa describia otro equipo; lo que sobrevivio al once rotado fueron los carriles y los mecanismos (Rayo: «el mapa acerto el carril aun con el XI rotado en tres nombres»). Capa estructural (carril, zona, mecanismo) que vale con nivel C; capa de duelo con nombre propio, condicional al once, que sin rehacer se lee como apertura caida.
+>
+> **Hueco declarado, no aplicado:** la clase del bloque no cubre el error en la salida bajo presion (Cagliari concedio cuatro siendo estructural y probado): es via de gol de M2, no clase de bloque. **Candidatos no aplicados (un caso cada uno):** arquero sin dueño (≥3 arqueros en la temporada, Estudiantes de Rio Cuarto) y el costo de rearmar la linea en un doble cambio (Sarmiento).
+
 > **v1.3 · 13.09.2026 — Post-caso Alianza Lima 1-2 Universitario (F9 Clausura Perú). La predicción más valiosa de toda la sesión salió de esta capa y no del clasificador ni del módulo del tramo final.** Dos altas.
 >
 > **1. La vía de gol por error del arquero se declara como vía, con su umbral, y no como color.** En la sesión del caso se escribió, dos veces y antes del pitazo: *error de salida del arquero local — mecanismo con dos antecedentes documentados este torneo, declararlo como vía y no como accidente*. El partido lo decidió una mala salida al 90+7. **Regla: cuando un arquero acumula ≥2 intervenciones fallidas con gol en el torneo en curso, entra en el listado de vías de gol del rival en M2, con el mismo estatus que un centro al segundo palo o una pelota parada.** No es una predicción de que va a fallar: es la constatación de que el mecanismo tiene frecuencia observada y merece casillero. Nace de un hueco entre `B6` del clasificador —que mide continuidad, no forma— y la bandera `ARQUERO-NUEVO` del tramo final —que se activa porque el arquero es otro, no porque esté fallando—. Candidato cruzado `GK-FALLA-ACTIVA` declarado en las dos capas vecinas.
@@ -90,9 +106,10 @@ Lee el XI como una declaración de intenciones. No describas: interpreta.
 Cruza los dos perfiles. El fútbol es interacción, no equipos aislados.
 
 - **Sistema vs sistema:** qué produce el choque de esquemas.
-- **Duelos por carril** e identificación de **mismatches** concretos.
+- **Duelos por carril** e identificación de **mismatches** concretos. **Cada mismatch se escribe en las dos direcciones** *(v1.4)*: lo que gana el que ataca por ese carril y lo que expone si pierde la pelota —la espalda del lateral que sube—, resuelto por el rest defense de ese lado. Un mismatch «a favor» sin su cara de vuelta está incompleto: en Guaraní, Lille, Fluminense, Gladbach y Shakhtar el carril que se cargaba para atacar fue por donde concedieron.
 - **Vida útil del planteo rival** → ver el checklist obligatorio abajo.
-- **Vías de gol probables de CADA lado** (no solo del equipo foco): pelota parada, transición, desborde, llegada de segunda línea, cutback.
+- **Vías de gol probables de CADA lado** (no solo del equipo foco): pelota parada, transición, desborde, llegada de segunda línea, cutback. **Cuatro líneas obligatorias** *(v1.4)*: (1) la vía aérea se declara **por centro en juego abierto Y por pelota parada**, no solo la segunda; (2) el duelo aéreo cuenta a **todos los que atacan el área, centrales incluidos**, no solo a la referencia; (3) **el banco del que persigue es vía**: centradores y velocistas frescos que entran a buscar el gol; (4) **el ejecutor de penales del rival se nombra**. El umbral de ≥2 errores para la vía del arquero (v1.3) se mantiene.
+- **Dos capas cuando el once es nivel C** *(v1.4)*: M2 separa **lo estructural** —carril, zona, mecanismo, que sobrevive a un once rotado y vale con nivel C— de **los duelos con nombre propio**, que se marcan **condicionales al once**. Si DTP-REHACER suena y no se rehace antes del pitazo, el cierre lee la capa de nombres como **apertura caída**, no como fallo del mecanismo; la capa estructural se juzga igual. El XI de referencia va como **lista de nombres**: escrito como frase no se puede comprobar.
 - **Rest defense / seguro tras la pérdida** de cada equipo. Este dato **viaja directo** al indicador de sobreexposición del módulo del tramo final; no se re-estima allá.
 - **Veredicto:** MATCHUP FAVORABLE / NEUTRO / DESFAVORABLE, con la razón táctica.
 
@@ -107,13 +124,16 @@ Cruza los dos perfiles. El fútbol es interacción, no equipos aislados.
 | 3 | ¿Los centrales son de oficio o improvisados? | Improvisados / laterales reconvertidos | De oficio |
 | 4 | ¿Hay capacidad de refresco? (banco con carrileros y centrales de recambio) | No | Sí |
 | 5 | ¿El repliegue está documentado como plan o es una reacción al marcador? | Reacción | Plan |
-| **6** *(v1.2)* | **¿Este bloque sostuvo el resultado alguna vez estando empatado o en desventaja, contra un rival obligado a atacar?** | **No: todas las vallas invictas salieron de partidos sin presión real** | **Sí, con caso concreto nombrado** |
+| **6** *(v1.2, precisada en v1.4)* | **¿Este bloque sostuvo alguna vez una ventaja o un empate contra un rival obligado a atacar, en sede y competición comparables?** | **No: todas las vallas invictas salieron de partidos sin presión real, o el único caso es de otra sede o competición, o es un 0-0 sin ventaja que cuidar** | **Sí, con caso concreto nombrado (sostener con uno menos cuenta)** |
 
 **Lectura:**
 - **3 o más respuestas en la columna izquierda (preguntas 1-5) → bloque improvisado. Vida útil 55-65 minutos.**
 - **3 o más en la derecha (preguntas 1-5) → bloque estructural. Vida útil 80-90 minutos.**
 - **La pregunta 6 no cuenta para el recuento: es una llave aparte.** Un bloque estructural con la 6 en la columna izquierda se clasifica **`estructural no probado`**: conserva la vida útil de 80-90 minutos —los insumos son reales— pero **la alerta de degradación SÍ se emite**, y en el módulo del tramo final `C1` puntúa **0.5** en lugar de 0.
 - **Empate en las cinco primeras → declarar la ambigüedad y publicar las dos lecturas.** No elegir la que conviene a la narrativa.
+- **La pregunta 4 se responde con lo que el DT cambió de verdad** *(v1.4)*: los cambios de los últimos partidos y en qué líneas, no el conteo de lesionados. Alianza Valledupar se clasificó improvisado por las bajas y su DT hizo cinco cambios con recambio en todas las líneas.
+- **La vida útil 55-65 del improvisado es techo, no piso** *(v1.4)*: si el rival ataca la debilidad desde el arranque, se rompe antes (Parma al 4', Angers al 37', Fiorentina al 32').
+- **El cierre escribe el caso de la pregunta 6** *(v1.4)*: cuando el partido puso al bloque rival a sostener contra un obligado, el cierre lo anota con su resultado —sostuvo o no, con qué marcador y por cuántos minutos— y la apertura siguiente de ese bloque lo lee de la cadena. En la cohorte c3 el propio partido fue «el caso que le faltaba a la 6» en unos quince cierres.
 
 > **De dónde sale la pregunta 6 — falso positivo con cinco de cinco.** CD Moquegua, F7 del Clausura peruano 2026: tres temporadas con el mismo cuerpo técnico, misma línea de fondo desde febrero, centrales de oficio, recambios en el banco, repliegue como plan declarado. Cinco de cinco del lado estructural, alerta de degradación suprimida, y el equipo concedió tres goles. **Sus porterías a cero venían de tres empates y un 0-0: partidos donde el rival nunca tuvo que ir a buscar de verdad.** Las cinco preguntas originales miden lo que el equipo *tiene*; ninguna mide si eso fue puesto a prueba. Un bloque que solo aguantó contra rivales sin urgencia no demostró que aguanta, demostró que no lo atacaron.
 >
@@ -175,6 +195,10 @@ Gol — Jugador X (min'), marcador. Vía: pelota parada / transición / juego ab
 3. Verificar si **hubo corrección en vivo** entre el primer gol y el segundo. Dos concesiones del mismo tipo separadas por más de 15 minutos sin ajuste es un fallo de lectura del banco, no de calidad de los jugadores.
 
 **Efecto:** degradar las K defensivas del equipo **para el partido siguiente** y anotar el mecanismo como vía de gol probable del próximo rival en M2. **No es coeficiente**: es una vía declarada.
+
+**El mecanismo se nombra por la zona o el rol, no por el intérprete** *(v1.4)*. El paso 2 (la línea repite ≥80% de sus intérpretes) vale para los mecanismos de **pareja** —los dos centrales, el doble pivote—. Un mecanismo de **carril o zona** —la espalda del lateral izquierdo, el segundo palo, la salida bajo presión— sigue abierto aunque cambie el intérprete, mientras el rol se repita: Porto concedió por el mismo carril con otro lateral. Con DT nuevo o la mitad de la línea cambiada, no viaja.
+
+**`MECANISMO-ABIERTO · sin mecánica`** *(v1.4)*. Cuando se cumple la frecuencia —≥2 goles del mismo equipo en ≤15 minutos, o sin corrección en vivo entre ellos— y **ninguna fuente nombra la jugada**, no se fabrica la mecánica (la disciplina de no inventar manda) y tampoco se descarta: se declara con esta clase, entra al M2 del próximo rival como **vía a verificar** con nivel de dato C y **no degrada K**. Si la crónica aparece después, se reclasifica.
 
 > **Caso de referencia.** Manchester United en el MKM Stadium, F1 2026-27: gol al 17' por rechace de córner no atacado, gol al 38' por marca perdida al segundo palo en tiro libre. Veintiún minutos entre los dos, sin ajuste visible del marcaje. La misma línea de fondo repetía intérpretes para la fecha siguiente.
 

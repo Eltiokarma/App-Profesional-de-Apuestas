@@ -1205,7 +1205,7 @@ negritas, citas y tablas se pintan bien en la app.
      "apertura": {
        "m1": {"sistema", "xiReferencia", "senalXi", "rolesReasignados": [],
               "vulnerabilidad", "formaSinBalon", "minutosCompartidos"},
-       "m2": {"choqueSistemas", "duelosCarril": [{"carril", "duelo", "mismatch"}],
+       "m2": {"choqueSistemas", "duelosCarril": [{"carril", "duelo", "mismatch", "vuelta", "condicional": false}],
               "checklistBloqueRival": {"p1".."p5": "improvisado"|"estructural"|"sin dato",
                                        "p6": "si"|"no"|"sin dato", "casoP6": "partido concreto",
                                        "notas"},
@@ -1223,7 +1223,8 @@ negritas, citas y tablas se pintan bien en la app.
                     "absolucion"}],
        "m5": {"planFuncionoHastaMin", "peligroReal", "cronologiaGiro",
               "contraste": {"aciertos": [], "fallos": []}, "preguntaChecklistFallida"},
-       "mecanismoAbierto": {"activo", "mecanismo", "lineaRepite", "correccionEnVivo"}}}
+       "mecanismoAbierto": {"activo", "mecanismo", "lineaRepite", "correccionEnVivo", "sinMecanica": false},
+       "casoBloque": {"sostuvo": true|false, "caso": "1-0 sostenido 50' ante un obligado", "conUnoMenos": false}}}
     · El CHECKLIST es el del skill v1.2: respondé las SEIS preguntas del
       bloque RIVAL (meses con el modelo · minutos de la línea · centrales de
       oficio · banco de recambio · repliegue como plan · ¿sostuvo un
@@ -1257,6 +1258,31 @@ negritas, citas y tablas se pintan bien en la app.
       asistente, disparador y secuencia van vacíos.
     · La apertura entra a la cadena del equipo SOLO si depositás antes del
       pitazo y no había una: el recibo lo dice en `dtp.aperturaNoGuardada`.
+    · DTP v1.4 (21/10/2026), lo que cambia al escribir:
+      - CADA DUELO DE CARRIL EN LAS DOS DIRECCIONES: `mismatch` es lo que gana
+        el que ataca por ahí, `vuelta` lo que expone si pierde la pelota (la
+        espalda del lateral que sube). Guaraní, Lille, Fluminense: el carril
+        que se cargaba fue por donde concedieron.
+      - SIN EL ONCE OFICIAL, DOS CAPAS: carril, zona y mecanismo valen con
+        nivel C; el duelo con nombre propio va con `condicional: true`. Si
+        suena DTP-REHACER, esa capa se lee como apertura caída en el cierre.
+        El XI de referencia va como LISTA de nombres, nunca como frase.
+      - VÍAS DE GOL, cuatro líneas obligatorias en `viasGol`: lo aéreo por
+        centro Y por pelota parada; el duelo aéreo con todos los que atacan
+        el área (centrales incluidos); el banco del que persigue; el
+        ejecutor de penales del rival.
+      - PREGUNTA 6: el caso es una ventaja o un empate sostenido contra un
+        obligado en sede y competición comparables (un 0-0 sin ventaja prueba
+        menos); sostener con uno menos cuenta. ANTES de responderla, leé
+        `casosBloque` del RIVAL en `GET /analisis/cowork/dtp/{id}`: son los
+        casos que dejaron los cierres sobre ese bloque. La pregunta 4 se
+        responde con los cambios reales del DT, no con el conteo de bajas.
+      - EN EL CIERRE: si el partido puso al bloque del foco a sostener contra
+        un obligado, escribí `casoBloque` (sostuvo o no, con qué marcador y
+        cuántos minutos). Con ≥ 2 goles iguales y sin fuente de la jugada,
+        `mecanismoAbierto` va con `sinMecanica: true` (vía a verificar, no
+        degrada K). El mecanismo se nombra por la ZONA o el ROL, no por el
+        jugador; el ≥ 80 % de intérpretes es solo para los de pareja.
   matriz    Matriz de Escenarios Tácticos v2.0. En sesión interactiva el skill
             pide confirmación; acá la autorización ya está dada por este prompt.
             Desde el 15/10/2026 va ESTRUCTURADA en la clave `matriz` del parte,

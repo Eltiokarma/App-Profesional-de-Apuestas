@@ -794,6 +794,78 @@ def calibracion_espina(limite: int = 400) -> dict:
     }
 
 
+LADO_DE = {"local": "a", "visita": "b"}
+
+
+def derrotas_favorito(cohorte: str = COHORTE_VIGENTE, limite: int = 400) -> dict:
+    """Las derrotas del equipo que el 1X2 declarado daba como ganador, cada una
+    con lo que el TDE y el DTP habían ESCRITO ANTES del pitazo (pedido del
+    usuario, 21/10/2026: «las derrotas no esperadas las podremos justificar con
+    eso»). La disciplina 9 del TDE manda la lectura: solo cuenta lo declarado
+    antes —una rama escrita que describe cómo se perdió es evidencia; explicar
+    la derrota después de verla, no—. Por eso cada caso dice si la rama que
+    jugó el favorito estaba escrita y qué decía, sin juzgar si «la explicó».
+
+    `explicacion`: `rama_escrita` (la rama que jugó el partido estaba
+    declarada) · `rama_sin_escribir` · `sin_goles` (perdió… sin goles no hay
+    rama: no pasa) · `sin_ficha` (no se sabe quién marcó primero)."""
+    from backend.analisis.parte import COHORTE
+    clave = COHORTE if cohorte == COHORTE_VIGENTE else cohorte
+    casos = [c for c in _casos(limite) if not clave or c["cohorte"] == clave]
+    out, resumen = [], {"rama_escrita": 0, "rama_sin_escribir": 0, "sin_ficha": 0, "sin_goles": 0}
+    for c in casos:
+        obj = _objetivo(c["fixtureId"], c["parte"])
+        u = obj.get("unXDos") or {}
+        fav = LADO_DE.get(u.get("declarado") or "")
+        real = u.get("real") or ""
+        if not fav or not real or real == "empate" or LADO_DE.get(real) == fav:
+            continue
+        riv = "b" if fav == "a" else "a"
+        bloques = {b.get("equipo"): b for b in (obj.get("tde") or {}).get("bloques") or []}
+        tde_fav = bloques.get(fav) or {}
+        reas = tde_fav.get("reasignacion") or {}
+        if reas.get("rama") == "sinGoles":
+            expl = "sin_goles"
+        elif not reas.get("rama"):
+            expl = "sin_ficha"
+        else:
+            expl = "rama_escrita" if reas.get("declarada") else "rama_sin_escribir"
+        resumen[expl] += 1
+        parte = c["parte"]
+        dtp_fav = next((b for b in (parte.get("dtp") or {}).get("bloques") or [] if b.get("equipo") == fav), {})
+        decl_tde = next((b for b in (parte.get("tde") or {}).get("bloques") or [] if b.get("equipo") == fav), {})
+        lado_v = ((c["veredicto"].get("porLado") or {}).get(fav) or {})
+        out.append({
+            "fixtureId": c["fixtureId"], "fecha": c["fecha"],
+            "partido": f"{c['equipoA']} vs {c['equipoB']}",
+            "favorito": {"lado": fav, "equipo": c["equipoA"] if fav == "a" else c["equipoB"],
+                         "probabilidad": u.get("probabilidadDeclarada")},
+            "marcador": (obj.get("marcador") or {}).get("texto", ""),
+            "goles": (obj.get("evidencia") or {}).get("goles") or [],
+            "seleccion": c["veredicto"].get("seleccion", ""),
+            "cuarentena": bool(c.get("cuarentena")),
+            "explicacion": expl,
+            "tde": {"ramaJugada": reas.get("rama"), "minuto": reas.get("minuto"),
+                    "loDeclarado": reas.get("loDeclarado"), "segundoGiro": reas.get("segundoGiro"),
+                    "salida": reas.get("salida"),
+                    "tipologia": decl_tde.get("tipologia", ""), "ventana": tde_fav.get("ventana", ""),
+                    "golEnVentana": tde_fav.get("golEnVentana")},
+            "tdeRival": {"ramaJugada": ((bloques.get(riv) or {}).get("reasignacion") or {}).get("rama"),
+                         "loDeclarado": ((bloques.get(riv) or {}).get("reasignacion") or {}).get("loDeclarado")},
+            # lo que el DTP del favorito había escrito sobre cómo le marca el rival
+            "dtpViasRival": ((dtp_fav.get("apertura") or {}).get("m2") or {}).get("viasGol", {}).get("rival") or [],
+            "leccion": lado_v.get("leccion", ""),
+        })
+    out.sort(key=lambda x: x["fecha"], reverse=True)
+    return {
+        "generadoEn": efedb.ahora(), "cohorte": clave, "derrotas": out, "resumen": resumen,
+        "nota": ("derrotas del equipo que el 1X2 declarado daba como ganador, con lo que el TDE y el DTP habían "
+                 "escrito ANTES del pitazo. Solo cuenta lo declarado (disciplina 9 del TDE): `rama_escrita` dice "
+                 "que el escenario que se jugó estaba descrito, no que se haya acertado; el juicio es de la "
+                 "autopsia (`leccion`)."),
+    }
+
+
 def version_skill(skill: str) -> str:
     """La versión vigente del snapshot del skill (docs/skills/<skill>/SKILL.md):
     la que va en `aplicadaEn` cuando una lección entra. '' si no hay snapshot."""
