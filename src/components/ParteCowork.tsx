@@ -261,7 +261,9 @@ function TablaPlantel({ jugadores }: { jugadores: JugadorParte[] }) {
                     <td style={{ padding: '5px 8px', borderBottom: '1px solid var(--line)', color: 'var(--t2)', whiteSpace: 'nowrap' }}>{ROL_LABEL[j.rol] ?? j.rol}</td>
                     <td style={{ padding: '5px 8px', borderBottom: '1px solid var(--line)', font: '500 10px var(--mono)', color: 'var(--t3)', fontVariantNumeric: 'tabular-nums' }}>{j.apps || '—'}</td>
                     <td style={{ padding: '5px 8px', borderBottom: '1px solid var(--line)', whiteSpace: 'nowrap' }}>
-                      {sem
+                      {j.estado === 'duplicado'
+                        ? <span style={{ padding: '1px 7px', borderRadius: 5, border: '1px solid var(--line)', color: 'var(--t3)', font: '700 9.5px var(--mono)' }}>duplicado</span>
+                        : sem
                         ? <span style={{ padding: '1px 7px', borderRadius: 5, background: SUAVE[sem], color: COLOR[sem], font: '700 9.5px var(--mono)' }}>{j.hoja === 'banca' ? 'banca' : j.estado}</span>
                         : <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>— pendiente del once</span>}
                       {j.motivo ? <span style={{ font: '500 10px var(--sans)', color: 'var(--t3)', marginLeft: 6 }}>{j.motivo}</span> : null}

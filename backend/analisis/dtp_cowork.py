@@ -613,6 +613,18 @@ def _en_referencia(nombre: str, ref: str) -> bool:
 _SIN_REF = re.compile(r"^\s*(sin|no hay|ninguno|n/?a\b)|sin (dato|xi|once|referencia)|no (hay|existe|tenemos) (xi|once)", re.I)
 
 
+def sin_alternativas(texto: str) -> str:
+    """El texto sin lo que va entre paréntesis o corchetes. «Kerkez (o
+    Tsimikas)», «Barcola (o Gakpo/Ngumoha)»: una alternativa NO es el once
+    anunciado. Liverpool (20/10/2026) salió con seis titulares fuera del XI de
+    referencia y contraElOnce contó dos, porque daba por anunciado a cualquiera
+    nombrado entre paréntesis en `senalXi` (incidencia 334)."""
+    t = texto or ""
+    for _ in range(3):   # paréntesis anidados
+        t = re.sub(r"\([^()]*\)|\[[^\[\]]*\]", " ", t)
+    return t
+
+
 def sin_referencia(texto: str) -> bool:
     """La apertura dice que no hay XI de referencia (o no dice nada)."""
     return not (texto or "").strip() or bool(_SIN_REF.search(texto))
@@ -680,7 +692,7 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
         # de atrás, que es lo que cambia el mapa de duelos por carril.
         motivos.append(f"sistema: la apertura dice {m1.get('sistema')!r} y el once oficial salió con "
                        f"{of['defensores']} defensores (la ficha no trae la formación)")
-    ref = _plano(m1.get("xiReferencia") or "")
+    ref = _plano(sin_alternativas(m1.get("xiReferencia") or ""))
     ausentes = []
     # «SIN XI DE REFERENCIA» NO ES UN XI. La frase tenía 8+ palabras y pasaba por
     # lista de nombres: los 11 titulares oficiales salían «ausentes» y saltaba
@@ -691,7 +703,8 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
         # LO QUE LA APERTURA YA ANUNCIÓ NO ES SORPRESA: un cambio nombrado en
         # `senalXi` o en `rolesReasignados` (Villa, 17/10/2026) no cuenta; y el
         # nombre de la plantilla, que a veces trae el apodo («Abde»), también sirve
-        anunciado = _plano(" ".join([m1.get("senalXi") or ""] + list(m1.get("rolesReasignados") or [])))
+        anunciado = _plano(sin_alternativas(" ".join([m1.get("senalXi") or ""]
+                                                     + list(m1.get("rolesReasignados") or []))))
         alt = of.get("alias") or {}
         def _palabra_en(x: str, texto: str) -> bool:   # el apodo puede ser la primera palabra
             return any(len(t) > 2 and f" {t} " in f" {texto} " for t in _plano(x).split())

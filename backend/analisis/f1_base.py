@@ -23,6 +23,7 @@ from __future__ import annotations
 from backend import db as saddb
 from backend import jugadores as jug
 from backend.analisis import bloque_f
+from backend.nombres import normalizar as normalizar_simple
 
 CANDIDATOS = 16          # lo que pide el protocolo: 14-16 jugadores
 TF_PCT, TH_PCT, ROT_PCT = 0.75, 0.5, 0.25
@@ -186,6 +187,12 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
             f["rolSugerido"] = rol_por_onces(tit.get(j["id"], 0), rec["onces"])
         if j["id"] in ultimo:
             f["titularEnElUltimo"] = True
+        # EL NOMBRE DE LA HOJA, SI ES OTRO. La base tiene al 555163 como «D. Gelvez»
+        # y la alineación como «Dayan Pérez» (Cúcuta, 20/10/2026, 335): sin esto, el
+        # parte lo sumaba dos veces y la fila de prensa salía de baja
+        en_hoja = (rec["jugadores"].get(j["id"]) or {}).get("nombre") or ""
+        if en_hoja and not mismo_jugador(en_hoja, j["nombre"]) and normalizar_simple(en_hoja) != normalizar_simple(j["nombre"]):
+            f["nombreEnLaHoja"] = en_hoja
         filas.append(f)
     # titulares recientes que la plantilla de la temporada no tiene (fichajes,
     # juveniles subidos): sin ellos la tabla se queda con el equipo de antes

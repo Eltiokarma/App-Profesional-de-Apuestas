@@ -1148,7 +1148,8 @@ export interface TimelineData {
 
 export type ZonaF = 'GK' | 'DEF' | 'MID' | 'ATK'
 export type RolF = 'TF' | 'TH' | 'ROT' | 'SUP'
-export type EstadoJugadorF = '' | 'disponible' | 'baja' | 'duda'
+/** `duplicado`: la misma persona que otra fila con jugadorId (la hoja la nombra distinto); no pesa en el IP. */
+export type EstadoJugadorF = '' | 'disponible' | 'baja' | 'duda' | 'duplicado'
 
 export interface JugadorParte {
   nombre: string
@@ -1163,7 +1164,7 @@ export interface JugadorParte {
   /** true = entró a la tabla F1 desde `fuera`, para que su baja pese en el IP. */
   soloBaja?: boolean
   /** dónde apareció en la hoja del partido, una vez resuelto el once. */
-  hoja?: 'titular' | 'banca' | 'fuera'
+  hoja?: 'titular' | 'banca' | 'fuera' | 'duplicado'
 }
 
 export interface BloqueParte {

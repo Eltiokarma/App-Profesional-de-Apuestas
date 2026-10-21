@@ -2877,6 +2877,14 @@ def main():
                    {"a": {"formacion": "4-3-3", "titulares": ["A. Onana", "L. Bogarde", "I. Maatsen", "F. Muslera"]}})
     check("los cambios que la apertura anunció en senalXi no cuentan como ausentes de la referencia",
           _an["ausentesDeLaReferencia"] == [] and _an["rehacer"] is False, _an)
+    # Liverpool (20/10/2026, 334): una alternativa entre paréntesis no es el once anunciado
+    _par = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3", "xiReferencia": _ref,
+                     "senalXi": "Rojo (o Tsimikas), Burgos (o Gakpo/Ngumoha); entra Onana"}}},
+                    {"a": {"formacion": "4-3-3", "titulares": ["K. Tsimikas", "C. Gakpo", "R. Ngumoha", "A. Onana",
+                                                               "F. Muslera"]}})
+    check("las alternativas entre paréntesis de senalXi no cuentan como anunciadas (sí lo que se anuncia fuera)",
+          sorted(_par["ausentesDeLaReferencia"]) == ["C. Gakpo", "K. Tsimikas", "R. Ngumoha"]
+          and _par["rehacer"] is True, _par)
     _al = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3", "xiReferencia": _ref + ", Abde"}}},
                    {"a": {"formacion": "4-3-3", "titulares": ["A. Ezzalzouli"], "alias": {"A. Ezzalzouli": ["Abde Ezzalzouli"]}}})
     check("el nombre de la plantilla (con el apodo) también casa con la referencia", _al["ausentesDeLaReferencia"] == [], _al)
@@ -2992,6 +3000,14 @@ def main():
                    if x.get("titularEnElUltimo")}
     finally:
         _f1m.CANDIDATOS = _cand_antes
+    _f1n = {x["jugadorId"]: x for x in _tabla_eq(_hid, "local", "2100-01-01")["candidatos"]}
+    check("con el nombre de la base en la alineación, la tabla F1 no trae nombreEnLaHoja",
+          not any(x.get("nombreEnLaHoja") for x in _f1n.values()), [x for x in _f1n.values() if x.get("nombreEnLaHoja")])
+    with _sq3f.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("UPDATE alineaciones SET jugador='Dayan Pérez' WHERE fixture_id=990777 AND player_id=?", (_cola[0]["id"],))
+    _f1n = {x["jugadorId"]: x for x in _tabla_eq(_hid, "local", "2100-01-01")["candidatos"]}
+    check("si la alineación lo llama distinto que la base, la fila trae nombreEnLaHoja (335)",
+          _f1n[_cola[0]["id"]].get("nombreEnLaHoja") == "Dayan Pérez", _f1n.get(_cola[0]["id"]))
     check("los titulares del último once están todos en la tabla F1, marcados",
           _rec["onces"] > 0 and _ult and _ult <= _ids_f1, (_rec["onces"], _ult, _ids_f1))
     with _sq3f.connect(os.path.join(tmp, "sad.db")) as _con:
@@ -3545,6 +3561,18 @@ def main():
           d_sin["casados"] == 1 and set(d_sin["noReconocidos"]) == {"J. Cerro", "Cris Silva"}, d_sin["noReconocidos"])
     check("con el jugadorId de la tabla y los ids de la ficha casan los tres (el sin id, por nombre)",
           d_con["casados"] == 3 and not d_con["noReconocidos"], (d_con["casados"], d_con["noReconocidos"]))
+    # EL MISMO JUGADOR DOS VECES (Cúcuta 20/10/2026, 335): «D. Gelvez» con id y «Dayan Pérez» de prensa
+    t_dup = [{"nombre": "D. Gelvez", "zona": "ATK", "rol": "ROT", "jugadorId": 555163},
+             {"nombre": "Dayan Pérez", "zona": "ATK", "rol": "TH"},
+             {"nombre": "Otro Delantero", "zona": "ATK", "rol": "TF"}]
+    d_dup = bf.resolver(t_dup, [], ["Dayan Pérez", "Otro Delantero"], ids={"Dayan Pérez": 555163})
+    _dp = next(j for j in d_dup["jugadores"] if j["nombre"] == "Dayan Pérez")
+    check("la fila sin id que es el mismo jugador que una con id sale «duplicado» y no pesa (ATK sin reducción)",
+          _dp["estado"] == "duplicado" and "D. Gelvez" in _dp["motivo"] and d_dup["reduccion"]["ATK"] == 0.0
+          and d_dup["duplicados"] == ["Dayan Pérez"] and d_dup["ip"] == 0, (_dp, d_dup["reduccion"], d_dup["ip"]))
+    d_nodup = bf.resolver(t_dup, [], ["Otro Delantero"], ids={})
+    check("sin el jugador en la hoja, las dos filas siguen siendo bajas (no se inventa un duplicado)",
+          [j["estado"] for j in d_nodup["jugadores"]][:2] == ["baja", "baja"] and not d_nodup["duplicados"], d_nodup["jugadores"])
     d_duda = bf.resolver(t_id, [{"nombre": "Luis Iberico", "estado": "duda", "motivo": "molestia"}],
                          ["J. Cerro", "Cris Silva"], ids={"J. Cerro": 354001, "Cris Silva": 105501})
     _ib = next(j for j in d_duda["jugadores"] if j["nombre"] == "Luis Iberico")
