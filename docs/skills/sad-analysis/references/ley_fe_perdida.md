@@ -1,5 +1,7 @@
 # Ley de la Fe Perdida — El péndulo de la hinchada
 
+> ⛔ **SUSPENDIDA en el skill v4.0 (21.10.2026).** Este documento queda como historia del sistema anterior: el péndulo de la Fe Perdida no tiene motor en la app SAD; dos partes de octubre de 2026 la invocaron sin dato. La presión de la hinchada va como contexto con fuente (Paso 6-D del SKILL).
+
 Consultar este archivo cuando haya dudas sobre: flags, péndulos, zonas emocionales, tabla empírica de probabilidades, o goal flags.
 
 ## Concepto

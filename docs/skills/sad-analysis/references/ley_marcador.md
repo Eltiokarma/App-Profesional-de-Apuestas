@@ -1,5 +1,7 @@
 # Ley del Marcador — Predictor de Goles v6 (modelo Poisson)
 
+> ⛔ **SUSPENDIDA en el skill v4.0 (21.10.2026).** Este documento queda como historia del sistema anterior: el predictor de goles Poisson v6 no existe en la app SAD. Se improvisó con μ_partido (puntos esperados) como λ de goles en 78 de 209 partes de octubre de 2026, un error de unidad. El 1X2 del motor es `unXDos` de `/predicciones/{id}` (logística calibrada sobre 51.254 partidos) y el marcador es lectura (Paso 3.5 del SKILL).
+
 Consultar este archivo cuando haya dudas sobre: fórmulas Poisson, features del modelo de goles, umbrales de sugerencia, o discretización de niveles.
 
 ## Fundamento: distribución de Poisson

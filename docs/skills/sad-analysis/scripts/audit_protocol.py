@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+SUSPENDIDO en el skill v4.0 (21.10.2026): revisa el formato del sistema anterior
+(CSV, Paso 3 de Tensión del Favorito). La auditoría vigente es el recibo del
+parte de la app SAD (`faltan`, `rechazos`, alertas calculadas).
+
 SAD Protocol Audit Script v3.2
 Verifica que un análisis pre-partido ejecutó TODOS los pasos del protocolo
 con el formato y profundidad requeridos.

@@ -816,8 +816,12 @@ conversación se pierde en la siguiente.
      de prueba (deuda 11).
 
 16. **La Ley 5 del skill `sad-analysis` (Tensión del Favorito / culebra) sale
-   del skill** (pendiente del USUARIO, 19/10/2026: el skill vive fuera del
-   repo; la copia está en `docs/skills/`). Hoy es «filtro obligatorio» y parte
+   del skill** (19/10/2026). REDACTADO el 21/10 en `sad-analysis` v4.0
+   (`docs/revisiones/SAD_v4.0_propuesta.md`): la Ley 5, la Fe Perdida, el
+   Poisson v6 y la Ley 8 quedan suspendidos —el skill era del sistema viejo y
+   78 de 209 partes armaron el 1X2 con un Poisson sobre μ—, el skill pasa a ser
+   el de la síntesis y las K pesan el 60 % de la LECTURA (decisión del usuario).
+   Pendiente del usuario: subir el zip a su cuenta. Hoy es «filtro obligatorio» y parte
    de la «convergencia crítica» (K techo + DC trampa + tensión → el favorito
    no gana). Lo medido: el estudio de ML de feb/2026 dejó `ml_break_score`
    roto (42,9 % en cero, sin relación con resultados) y el ICF con r = 0,10;

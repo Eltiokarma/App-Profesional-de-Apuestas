@@ -1,7 +1,10 @@
 # Propuesta de revisión · `sad-analysis` v3.2 → v4.0 (y `efe-dashboard` v1.8 → v1.9)
 
-**Estado:** PROPUESTA. No está aplicada. El skill vive en la cuenta del usuario y
-esto es el texto para decidir. Arrancó el 21/10/2026 como una v3.3 (los seis
+**Estado:** APROBADA por el usuario (21/10/2026, partes A, B y C), con un
+cambio: **las K pesan el 60 % de la lectura** (no el 70 %), para darle más
+lugar a lo demás. Redactadas `docs/skills/sad-analysis/` (v4.0) y
+`docs/skills/efe-dashboard/` (v1.9). La parte D (el 1X2 del motor) ya estaba
+en main (PR #176). Falta que el usuario las suba a su cuenta. Arrancó el 21/10/2026 como una v3.3 (los seis
 puntos de la parte B) y pasó a v4.0 el mismo día, cuando se midió qué del skill
 llegaba a los partes (parte A). Fuentes: el dossier
 (`GET /analisis/cowork/revision/sad-analysis`, cohorte `c3-2026-09-23`), la
