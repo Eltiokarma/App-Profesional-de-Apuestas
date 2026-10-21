@@ -1375,7 +1375,8 @@ export interface BloqueTde {
   discrepancia?: string[]
   /** C1 y SOB2 heredados del DTP (el skill prohíbe re-estimarlos): valor que
    *  manda, lo que Cowork había declarado y de dónde sale. */
-  heredadoDtp?: { indicador: string; valor: number; declarado: number | null; de: string; discrepa: boolean }[]
+  /** `noHeredado`: el DTP no da valor (bloque ambiguo) y queda lo declarado. */
+  heredadoDtp?: { indicador: string; valor: number | null; declarado: number | null; de: string; discrepa: boolean; noHeredado?: boolean }[]
 }
 
 /** El TDE del PARTIDO: hasta un bloque por equipo. El índice es por equipo, y

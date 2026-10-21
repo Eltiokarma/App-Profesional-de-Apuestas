@@ -281,7 +281,9 @@ def _bloque_crudo(v):
     return v, "", ""
 
 
-_CLAVES_FUERA = {"nombre", "estado", "motivo", "zona", "rol", "posicion", "apps"}
+# `jugadorId` también: el prompt lo pide en la tabla y lo natural es repetirlo en
+# la baja (Stuttgart–Atlético, 20/10/2026: 4 rechazos por eso, incidencia 310)
+_CLAVES_FUERA = {"nombre", "estado", "motivo", "zona", "rol", "posicion", "apps", "jugadorId"}
 
 
 def _fuera(f: dict, rechazos: list, donde: str) -> dict | None:
@@ -305,11 +307,18 @@ def _fuera(f: dict, rechazos: list, donde: str) -> dict | None:
         rechazos.append({"donde": donde, "porque": "baja sin nombre"})
         return None
     estado = _txt(f.get("estado")).lower()
-    return {"nombre": nombre,
-            "estado": estado if estado in ("baja", "duda") else "baja",
-            "motivo": _txt(f.get("motivo")),
-            "zona": _alias(f.get("zona"), _ZONA_ALIAS) or _alias(f.get("posicion"), _ZONA_ALIAS),
-            "rol": _alias(f.get("rol"), _ROL_ALIAS)}
+    out = {"nombre": nombre,
+           "estado": estado if estado in ("baja", "duda") else "baja",
+           "motivo": _txt(f.get("motivo")),
+           "zona": _alias(f.get("zona"), _ZONA_ALIAS) or _alias(f.get("posicion"), _ZONA_ALIAS),
+           "rol": _alias(f.get("rol"), _ROL_ALIAS)}
+    try:
+        if f.get("jugadorId") not in (None, ""):
+            out["jugadorId"] = int(f["jugadorId"])
+    except (TypeError, ValueError):
+        rechazos.append({"donde": f"{donde}.jugadorId", "porque": f"no es un id: {f.get('jugadorId')!r}",
+                         "esperado": "el `id` del jugador en GET /equipos/{id}/plantilla"})
+    return out
 
 
 _CLAVES_EQUIPO = {"nombre", "bloques", "excluidos", "notas", "dt", "perfil",
@@ -533,12 +542,14 @@ def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
     # una baja quedó fuera, o se incorpora con su rol o el IP la ignora — y
     # ese IP mudo es el que después parece "el ponderador está roto".
     en_tabla = {normalizar(j["nombre"]) for j in plantel}
+    ids_tabla = {j.get("jugadorId") for j in plantel if j.get("jugadorId") is not None}
     for f in fuera:
-        if normalizar(f["nombre"]) in en_tabla:
+        if normalizar(f["nombre"]) in en_tabla or (f.get("jugadorId") is not None and f["jugadorId"] in ids_tabla):
             continue
         if f["zona"] and f["rol"]:
             plantel.append({"nombre": f["nombre"], "posicion": "", "zona": f["zona"],
-                            "rol": f["rol"], "apps": "", "soloBaja": True})
+                            "rol": f["rol"], "apps": "", "soloBaja": True,
+                            **({"jugadorId": f["jugadorId"]} if f.get("jugadorId") is not None else {})})
             en_tabla.add(normalizar(f["nombre"]))
         else:
             rechazos.append({
@@ -940,13 +951,16 @@ def espina_vs_tarjeta(reventon: dict | None, espina: dict | None) -> list[dict]:
 
 
 def alertas_espina(reventon: dict | None, espina: dict | None, nombres: dict) -> list[dict]:
+    """Solo la lectura contra el riesgo que el `porque` NO explica: la que ya lo
+    nombra no se contradice con nada y a la tira solo la ensuciaba (Fenerbahçe y
+    Slavia, 20/10/2026, incidencia 291). El detalle queda en el parte."""
     return [{
         "codigo": "ESPINA-VS-RIESGO", "equipo": x["lado"], "tipo": "dato",
         "detalle": (f"{nombres.get(x['lado'], x['lado'])}: el riesgo calculado de su racha {x['signo']} es "
                     f"{x['nivel'].upper()} y la espina {x['como']} ({x['lectura']}). Leer contra el riesgo vale, "
                     "pero se dice: " + ("el `porque` lo explica" if x["dicho"] else
                                         "el `porque` no nombra el riesgo —quien lee ve dos cosas que se contradicen—")),
-    } for x in espina_vs_riesgo(reventon, espina)]
+    } for x in espina_vs_riesgo(reventon, espina) if not x["dicho"]]
 
 
 _AMBITO_TXT = {"local": "de local", "visita": "de visita", "total": "en total"}
@@ -2563,6 +2577,10 @@ def _heredar(bloque: dict, her: dict | None) -> dict:
     nuevo, heredados = dict(ind), []
     for clave, h in her.items():
         declarado = ind.get(clave)
+        if h["valor"] is None:   # el DTP no da valor (bloque ambiguo): queda lo declarado, y se dice
+            heredados.append({"indicador": clave, "valor": declarado, "declarado": declarado, "de": h["de"],
+                              "discrepa": False, "noHeredado": True})
+            continue
         nuevo[clave] = h["valor"]
         heredados.append({"indicador": clave, "valor": h["valor"], "declarado": declarado, "de": h["de"],
                           "discrepa": declarado is not None and abs(float(declarado) - h["valor"]) > 1e-9})

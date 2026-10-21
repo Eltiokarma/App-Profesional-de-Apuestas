@@ -132,6 +132,13 @@ def _sin_minutos(j: dict) -> bool:
     return not j.get("minutos") and not j.get("partidos")
 
 
+def _mismas_stats(a: dict, b: dict) -> bool:
+    """Los mismos partidos y minutos (> 0) en la temporada: la API duplicó el
+    registro entero. Pasto (20/10/2026, 194): dos «S. Córdoba» (538162 y 64215)
+    con las mismas stats, los dos decisivos."""
+    return bool(a.get("minutos")) and (a.get("partidos"), a.get("minutos")) == (b.get("partidos"), b.get("minutos"))
+
+
 def deduplicar(js: list[dict], tit: dict[int, int]) -> tuple[list[dict], dict[int, int]]:
     """UN JUGADOR CON DOS IDS ES UNO. La API da a veces dos ids para la misma
     persona: el de la temporada, con sus minutos, y una copia vacía creada por
@@ -146,7 +153,8 @@ def deduplicar(js: list[dict], tit: dict[int, int]) -> tuple[list[dict], dict[in
     tit = dict(tit)
     quedan: list[dict] = []
     for j in sorted(js, key=lambda j: (_sin_minutos(j), -(j.get("minutos") or 0), -tit.get(j["id"], 0))):
-        gemela = next((q for q in quedan if _sin_minutos(j) and mismo_jugador(j["nombre"], q["nombre"])), None)
+        gemela = next((q for q in quedan if (_sin_minutos(j) or _mismas_stats(j, q))
+                       and mismo_jugador(j["nombre"], q["nombre"])), None)
         if gemela is None:
             quedan.append(j)
             continue
@@ -162,6 +170,14 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     con_onces = rec["onces"] >= ONCES_MINIMOS
     tit = {pid: j["titular"] for pid, j in rec["jugadores"].items()}
     js, tit = deduplicar(js, tit)
+    # DECISIVO DE LA TEMPORADA, NO DE HOY. Elvio Vera (Ameliano) y Martín Arias
+    # (Cerro) salían «titular habitual 100 %» por el Apertura con 0 de 10 en los
+    # últimos onces (incidencia 45): con onces recientes, quien no fue titular
+    # en ninguno no es un decisivo que no pueda faltar. Viaja aparte, como dato.
+    de_temporada = {}
+    if con_onces:
+        for pid in [p for p in dec if tit.get(p, 0) == 0]:
+            de_temporada[pid] = dec.pop(pid)
     # con onces recientes, el orden y el rol salen de ahí; la temporada desempata
     if con_onces:
         js = sorted(js, key=lambda j: (-tit.get(j["id"], 0), -j["minutos"]))
@@ -182,6 +198,8 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     filas = []
     for j in elegidos:
         f = {**_fila(j), "decisivo": dec.get(j["id"], "")}
+        if j["id"] in de_temporada:
+            f["decisivoTemporada"] = f"{de_temporada[j['id']]} · 0 de {rec['onces']} en los últimos onces"
         if con_onces:
             f["titularEnUltimos"] = f"{tit.get(j['id'], 0)}/{rec['onces']}"
             f["rolSugerido"] = rol_por_onces(tit.get(j["id"], 0), rec["onces"])
@@ -309,7 +327,10 @@ def faltantes(team_id: int, plantel: list[dict], antes: str = "9999") -> list[di
     fuera = salidos(team_id, antes)
     rec = onces_recientes(team_id, antes)
     # con pocos onces capturados el silencio no dice nada: solo cuenta la salida
-    presentes = set(rec["jugadores"]) if rec["onces"] >= ONCES_PARA_AUSENTE else None
+    # presente = titular en alguno de los últimos onces: convocado al banco no
+    # basta para que un decisivo de la temporada sea decisivo hoy (incidencia 45)
+    presentes = ({pid for pid, r in rec["jugadores"].items() if r["titular"] > 0}
+                 if rec["onces"] >= ONCES_PARA_AUSENTE else None)
     out = [{"jugadorId": d["id"], "nombre": d["nombre"], "porQue": d["porQue"]}
            for d in decisivos(jug.plantilla_de(team_id))
            if d["id"] not in fuera and (presentes is None or d["id"] in presentes)

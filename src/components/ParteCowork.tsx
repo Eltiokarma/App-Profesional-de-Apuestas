@@ -489,7 +489,7 @@ function BloqueTdeVista({ tde, nombreDe }: { tde: BloqueTde; nombreDe: (l: 'a' |
           </div>
           {tde.heredadoDtp!.map((h, i) => (
             <div key={i} style={{ font: '500 11.5px var(--sans)', color: h.discrepa ? 'var(--down)' : 'var(--t1)' }}>
-              {h.indicador} = {h.valor} · {h.de}{h.discrepa ? ` · se había declarado ${h.declarado}` : ''}
+              {h.indicador} = {h.valor ?? 'sin dato'} · {h.de}{h.discrepa ? ` · se había declarado ${h.declarado}` : ''}
             </div>
           ))}
         </section>

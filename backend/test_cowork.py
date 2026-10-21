@@ -759,6 +759,14 @@ def main():
     r_f = c.post(f"{A}/analisis/cowork", json={
         "fixtureId": sin_ficha, "alertas": ["T.54"],
         "equipos": {"a": {"bloques": {"A": 3}, "fuera": ["Zambrano"]}}}).json()
+    r_id = c.post(f"{A}/analisis/cowork", json={
+        "fixtureId": sin_ficha, "equipos": {"a": {"bloques": {"A": 3},
+            "plantel": [{"nombre": "Ito Hiroki", "zona": "DEF", "rol": "TF", "jugadorId": 9001}],
+            "fuera": [{"nombre": "H. Ito", "jugadorId": 9001, "zona": "DEF", "rol": "TF", "motivo": "lesión"}]}}}).json()
+    _pl_id = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["equipos"]["a"]["plantel"]
+    check("una baja con jugadorId entra sin rechazo y no duplica la fila de la tabla con ese id (310)",
+          not any("jugadorId" in x["donde"] for x in r_id["rechazos"] if x["donde"].startswith("equipos.a.fuera"))
+          and len(_pl_id) == 1, (r_id["rechazos"], _pl_id))
     check("una baja como string entra con su nombre",
           any(x.get("jugador") == "Zambrano" for x in r_f["rechazos"]), r_f["rechazos"])
     check("una alerta como string entra como código y se delata sin texto",
@@ -1524,6 +1532,8 @@ def main():
     _es2 = {"a": {"lectura": "neutra", "porque": "contra el riesgo alto porque la historia es de otro plantel"}}
     check("si el porque nombra el riesgo, queda dicho (la alerta lo reconoce y el recibo no lo cobra)",
           espina_vs_riesgo(_rv, _es2)[0]["dicho"] is True)
+    check("…y la que ya lo dice no sale a la tira (Fenerbahçe y Slavia, 291)",
+          alertas_espina(_rv, _es2, {"a": "Albion"}) == [], alertas_espina(_rv, _es2, {"a": "Albion"}))
     check("con riesgo BAJO, una espina que corta la racha también va contra",
           espina_vs_riesgo({"a": {"actual": {"signo": "+"}, "riesgo": {"nivel": "bajo"}}},
                            {"a": {"lectura": "cero"}})[0]["como"] == "la lee cortarse")
@@ -2821,6 +2831,15 @@ def main():
     check("el índice del TDE de b se calcula YA con lo heredado (el ISE sube con SOB2 = 1)",
           tb["b"]["ise"] is not None and tb["a"]["ise"] is not None and tb["b"]["ise"] > tb["a"]["ise"],
           (tb["a"].get("ise"), tb["b"].get("ise")))
+    # bloque AMBIGUO: C1 no se hereda, y heredadoDtp lo dice (Slovan, 302)
+    from backend.analisis.dtp_cowork import herencia_tde as _her_tde
+    from backend.analisis.parte import _heredar as _heredar_p
+    _amb = _her_tde({"bloques": [{"equipo": "a", "apertura": {"m2": {"checklistBloqueRival": {
+        "p1": "izq", "p2": "izq", "p3": "der", "p4": "der", "p5": "sin dato"}, "restDefense": {}}}}]})
+    _hb = _heredar_p({"equipo": "b", "indicadores": {"C1": 0.5, "C2": 0}}, _amb["b"])
+    check("con el bloque ambiguo C1 queda el declarado y heredadoDtp lo dice (noHeredado, sin discrepancia)",
+          _hb["indicadores"]["C1"] == 0.5 and _hb["heredadoDtp"][0]["noHeredado"]
+          and not _hb["heredadoDtp"][0]["discrepa"] and "ambiguo" in _hb["heredadoDtp"][0]["de"], _hb)
     r_eco_h = c.post(f"{A}/analisis/cowork", json={**lect_h, "fixtureId": ns_dtp}).json()
     check("el eco del GET no arrastra HERENCIA-DTP como alerta declarada",
           not any("alertas[" in x["donde"] for x in r_eco_h["rechazos"]), r_eco_h["rechazos"])
@@ -3013,6 +3032,23 @@ def main():
     with _sq3f.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM alineaciones WHERE fixture_id=990777")
         _con.execute("DELETE FROM fixtures WHERE id=990777")
+    # DECISIVO DE LA TEMPORADA CON 0 DE 10 EN LOS ÚLTIMOS ONCES (Ameliano/Cerro, incidencia 45)
+    _dec_all = _f1m.decisivos(_jugm.plantilla_de(_hid))
+    _orig_rec = _f1m.onces_recientes
+    _vic_d = _dec_all[0]["id"]
+    _otros = [j["id"] for j in _jugm.plantilla_de(_hid)["jugadores"] if j["id"] != _vic_d][:11]
+    _f1m.onces_recientes = lambda t, a: {"onces": 10, "ultimo": 1, "jugadores": {
+        **{p: {"nombre": "x", "posicion": "M", "titular": 10, "convocado": 10, "enUltimo": True} for p in _otros},
+        _vic_d: {"nombre": "x", "posicion": "M", "titular": 0, "convocado": 10, "enUltimo": False}}}
+    try:
+        _t45 = {x["jugadorId"]: x for x in _tabla_eq(_hid, "local", "2100-01-01")["candidatos"]}
+        _fal45 = _f1m.faltantes(_hid, [{"nombre": "Nadie", "jugadorId": 1}], "2100-01-01")
+    finally:
+        _f1m.onces_recientes = _orig_rec
+    check("con 10 onces y 0 titularidades, el decisivo de la temporada pierde «decisivo», viaja en decisivoTemporada "
+          "y no dispara F1-DECISIVO-FUERA",
+          (_vic_d not in _t45 or (not _t45[_vic_d]["decisivo"] and "0 de 10" in _t45[_vic_d].get("decisivoTemporada", "")))
+          and not any(f["jugadorId"] == _vic_d for f in _fal45), (_t45.get(_vic_d), _fal45))
     # UN JUGADOR CON DOS IDS ES UNO (Leones del Norte, Nacional Potosí: 17-19/10/2026)
     from backend.analisis.f1_base import deduplicar as _dedup, mismo_jugador as _mj
     _js = [{"id": 362224, "nombre": "Emiliano Griffa", "minutos": 900, "partidos": 10},
@@ -3022,6 +3058,9 @@ def main():
            {"id": 1, "nombre": "T. Palacios", "minutos": 500, "partidos": 6},
            {"id": 2, "nombre": "T. Palacios", "minutos": 200, "partidos": 3},
            {"id": 3, "nombre": "M. Quiñonez", "minutos": 0, "partidos": 0}]
+    _q2, _ = _dedup([{"id": 538162, "nombre": "S. Córdoba", "minutos": 1200, "partidos": 15},
+                     {"id": 64215, "nombre": "S. Cordoba", "minutos": 1200, "partidos": 15}], {})
+    check("dos registros con el mismo nombre y las MISMAS stats son uno (Pasto, 194)", len(_q2) == 1, _q2)
     _q, _t = _dedup(_js, {566349: 2, 362224: 3, 3: 1})
     check("la copia sin minutos de un jugador se funde con su gemela y le suma las titularidades; "
           "dos con minutos y el mismo nombre quedan (pueden ser dos personas), y otra inicial no es la misma",
