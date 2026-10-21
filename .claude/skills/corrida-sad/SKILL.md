@@ -94,7 +94,10 @@ cae en la raíz del repo (17/10/2026).
 >   → prensa (DT de ESTA semana, bajas, once probable) → el JSON del parte
 >   EXACTO al punto 7 (a = local).
 >   El gap, la μ y el 1X2 del motor (`unXDos`) están en `GET predicciones/{id}`
->   (no existe `/estadisticas/gap`; μ son puntos: nunca un Poisson sobre μ); P1a del TDE ya viene calculado en `tde/{id}`. El
+>   (no existe `/estadisticas/gap`; μ son puntos: nunca un Poisson sobre μ;
+>   si el servidor todavía no trae `unXDos`, se calcula con
+>   `backend/analisis/unxdos_motor.probabilidades(μ_local, μ_visita)` —la misma
+>   función— y se dice en `pronostico.motor`); P1a del TDE ya viene calculado en `tde/{id}`. El
 >   `desde` del DT con `desdeConfirmar: true` NO es dato: la llegada sale de
 >   prensa o va vacía. Una ventana del TDE que cambia según quién marque va
 >   en la rama: `reasignacion.siMarcaPrimero.ventana`, RELATIVA al gol que la
@@ -150,8 +153,9 @@ cae en la raíz del repo (17/10/2026).
 >   Es cómo puede darse el partido: no olvides la pelota parada ni el gatillo
 >   del que pierde. Ya no va como documento.
 > - **Alertas: solo códigos que existen en los skills** (T.54, T.54-B,
->   R-KT.2, GK-DOWNGRADE, FACTOR-X, G-BLOQUE, G-SORPRESA, COLAPSO EN
->   CASCADA… los que nombra la rúbrica). Una observación que no tiene código
+>   R-KT.2, GK-DOWNGRADE, GK-FALLA-ACTIVA, FACTOR-X, G-BLOQUE, G-SORPRESA,
+>   COLAPSO EN CASCADA del EFE; DIV-MOTOR-MERCADO de `sad-analysis`, con tipo
+>   `fecha` y las dos cifras… los que nombra la rúbrica). Una observación que no tiene código
 >   (un DT suspendido, un plantel desarmado, una trampa del mercado) va en
 >   `notas` del bloque o en la lectura, NO como alerta con un código inventado:
 >   un código nuevo no lo cuenta nadie y ensucia la tira. En la corrida del
