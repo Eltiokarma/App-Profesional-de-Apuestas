@@ -530,6 +530,14 @@ function BloqueTdeVista({ tde, nombreDe }: { tde: BloqueTde; nombreDe: (l: 'a' |
           {c.bloques && (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
               {Object.entries(c.bloques).map(([l, v]) => {
+                if (v === null || v === undefined) {
+                  return (
+                    <div key={l} style={{ padding: '8px 11px', borderRadius: 10, background: 'var(--bg3)', minWidth: 76 }}>
+                      <div style={{ font: '700 9.5px var(--mono)', color: 'var(--t3)' }}>BLOQUE {l}</div>
+                      <div style={{ font: '600 12px var(--mono)', color: 'var(--t3)' }}>sin dato</div>
+                    </div>
+                  )
+                }
                 const crudo = c.bloquesCrudos?.[l]
                 const movido = crudo !== null && crudo !== undefined && Math.abs(crudo - v) > 0.001
                 return (
@@ -542,6 +550,11 @@ function BloqueTdeVista({ tde, nombreDe }: { tde: BloqueTde; nombreDe: (l: 'a' |
                   </div>
                 )
               })}
+            </div>
+          )}
+          {c.sinS && (
+            <div style={{ marginBottom: 10, padding: '7px 11px', borderRadius: 10, background: 'var(--mark-soft)', font: '500 11px var(--sans)', color: 'var(--t1)' }}>
+              <b style={{ font: '700 9.5px var(--mono)', color: 'var(--mark)' }}>IE SIN S · </b>{c.notaSinS}
             </div>
           )}
           {/* el skill obliga a declarar las compuertas AUNQUE no muevan el número */}

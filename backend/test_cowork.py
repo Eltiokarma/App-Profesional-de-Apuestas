@@ -514,9 +514,11 @@ def main():
         {"equipo": "a", "ventana": "60-75'", "indicadores": sin_s, "ieNivel": "ambar"},
         {"equipo": "b", "ventana": "75-90'", "indicadores": ind}]}})
     bl = {b["equipo"]: b for b in c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["tde"]["bloques"]}
-    check("sin bloque S el índice no se calcula y sale null, no 0.0",
-          bl["a"]["calculado"].get("sinDato") and bl["a"].get("ie") is None and bl["a"].get("ise") is None,
-          (bl["a"].get("ie"), bl["a"].get("ise"), bl["a"].get("calculado", {}).get("porque")))
+    # (21/10/2026, decisión del usuario) sin S el IE sale PARCIAL sobre F, C y P, marcado
+    check("sin bloque S el IE sale parcial (sinS, divisor 7.0), nunca 0.0 por defecto",
+          bl["a"]["calculado"].get("sinS") and isinstance(bl["a"].get("ie"), float)
+          and "7.0" in bl["a"]["calculado"]["formula"],
+          (bl["a"].get("ie"), bl["a"].get("calculado", {}).get("formula")))
     check("…y el nivel declarado se conserva, y el otro equipo sí trae su número",
           bl["a"].get("ieNivel") == "ambar" and isinstance(bl["b"].get("ie"), float), (bl["a"], bl["b"].get("ie")))
     c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
@@ -2139,8 +2141,8 @@ def main():
     p_ie = json.loads(json.dumps(p_tde))
     p_ie["tde"]["bloques"][0]["indicadores"] = {"F1": 1, "F2": 0.5, "C1": 0.5, "P1a": 1}
     rec_ie = c.post(f"{A}/analisis/cowork", json=p_ie).json()
-    check("un bloque del TDE sin indicadores S → el recibo avisa que el IE queda en null, con el bloque",
-          any(x["bloque"] == "tde.ie (lado a)" and "bloque S" in x["costara"] for x in rec_ie["faltan"]),
+    check("un bloque del TDE sin indicadores S → el recibo avisa que el IE sale PARCIAL",
+          any(x["bloque"] == "tde.ie (lado a)" and "PARCIAL" in x["costara"] for x in rec_ie["faltan"]),
           [x for x in rec_ie["faltan"] if x["bloque"].startswith("tde")])
     c.post(f"{A}/analisis/cowork", json=p_tde)
     od_ra = {b["equipo"]: b for b in c.get(f"{A}/analisis/cowork/{con_ficha}/veredicto").json()["objetivo"]["tde"]["bloques"]}
@@ -3576,8 +3578,11 @@ def main():
     from backend.analisis import tde as _tdem
     _sin_s = _tdem.indice({"F1": 1, "F2": 0.5, "C1": 1, "P1a": 1, "P2": 0.5,
                            "SOB1": 1, "SOB2": 0.5, "SOB3": 1})
-    check("sin bloque S no hay IE, pero el ISE sale igual (Rennes–Auxerre)",
-          _sin_s.get("sinDato") and _sin_s.get("ise") == 8.33, _sin_s)
+    check("sin bloque S el IE sale parcial y el ISE igual (Rennes–Auxerre)",
+          _sin_s.get("sinS") and _sin_s.get("ie") is not None and _sin_s.get("ise") == 8.33, _sin_s)
+    _sin_c = _tdem.indice({"F1": 1, "F2": 0.5, "P1a": 1, "S1": 1, "SOB1": 1})
+    check("sin bloque C (u otro que no sea S) el IE sigue sin calcularse; el ISE sale",
+          _sin_c.get("sinDato") and _sin_c.get("ise") == 10.0, _sin_c)
     _bc = _parte_mod._bloque_calculado({"ie": 0.0, "ise": 0.0, "equipo": "a",
                                         "indicadores": {"F1": 1, "F2": 0.5, "C1": 1, "P1a": 1, "S1": 1, "SOB1": 1},
                                         "vias": [{"nombre": "ECHADA", "indice": 0.0},

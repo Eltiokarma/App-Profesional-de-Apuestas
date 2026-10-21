@@ -2201,8 +2201,16 @@ def guardar(payload: dict) -> dict:
                 "bloque": f"tde.ie (lado {b.get('equipo') or '?'})",
                 "costara": f"el IE no se calcula —{calc.get('porque', 'faltan indicadores')}— y queda en null: "
                            "la ventana se comprueba igual, pero el índice no entra a ninguna métrica",
-                "comoSeArregla": "puntuá al menos un indicador de cada bloque (F, C, P y S; 0 · 0.5 · 1) "
+                "comoSeArregla": "puntuá al menos un indicador de cada bloque (F, C y P; 0 · 0.5 · 1) "
                                  "y re-depositá; sin dato de verdad, decilo en `notas`",
+            })
+        elif calc.get("sinS"):
+            faltan.append({
+                "bloque": f"tde.ie (lado {b.get('equipo') or '?'})",
+                "costara": "sin ningún indicador S el IE sale PARCIAL (sobre F, C y P, marcado `sinS`): "
+                           "se compara con reserva con uno completo",
+                "comoSeArregla": "si hay dato, puntuá S1 (faltas y jugadores al límite) o S2 (cambios "
+                                 "defensivos del DT); S3 pide PPDA y puede quedar fuera",
             })
     pron = parte.get("pronostico") or {}
     # el normalizador siempre deja las tres claves, así que "vacío" es que

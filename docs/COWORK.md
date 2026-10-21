@@ -1130,6 +1130,8 @@ Escribís vos (es juicio, no se puede calcular):
   no comparan con nada. Leé `noCalculables[*].porque` ANTES de puntuar, y si
   un indicador te resulta imposible con lo que tenés (F4 pide PPDA), lo
   excluís con motivo en vez de rellenarlo con otra cosa.
+  Sin dato para S (S3 pide PPDA, que no tenemos), el IE sale PARCIAL sobre F, C
+  y P y viaja marcado `sinS`; si podés, puntuá S1 o S2 con dato.
   Cada bloque lleva `indicadores` en 0 / 0.5 / 1 con TODOS los que puntuaste
   (F1-F4, C1-C3, P1a-P4, S1-S3 y SOB1-SOB3): el IE y el ISE los calcula el
   backend con sus compuertas, y un `ie` suelto se guarda solo como lo que

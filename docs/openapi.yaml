@@ -3100,7 +3100,7 @@ components:
             siRecibePrimero: { $ref: '#/components/schemas/RamaReasignacion' }
         calculado:
           type: object
-          description: 'el índice CALCULADO con sus compuertas (solo en la respuesta)'
+          description: 'el índice CALCULADO con sus compuertas (solo en la respuesta). Sin ningún indicador S el IE sale PARCIAL sobre F, C y P (divisor 7.0) con `sinS: true` y `notaSinS` (decisión del 21/10/2026); sin F, C o P sigue sin calcularse (`sinDato`)'
           additionalProperties: true
         declarado:
           type: object

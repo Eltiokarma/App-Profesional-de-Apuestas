@@ -1390,8 +1390,11 @@ export interface IndiceTde {
   porque?: string
   ie?: number | null
   ise?: number | null
-  /** Promedio de cada bloque DESPUÉS de compuertas y reglas de piso. */
-  bloques?: Record<string, number>
+  /** Promedio de cada bloque DESPUÉS de compuertas y reglas de piso (S null con `sinS`). */
+  bloques?: Record<string, number | null>
+  /** Sin ningún indicador S: IE parcial sobre F, C y P (divisor 7.0). */
+  sinS?: boolean
+  notaSinS?: string
   /** El mismo promedio ANTES: con los dos se ve qué hizo cada compuerta. */
   bloquesCrudos?: Record<string, number | null>
   /** Tramo ordinal. NO es probabilidad: esa tabla está suspendida. */
