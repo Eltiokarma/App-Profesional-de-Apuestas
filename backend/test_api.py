@@ -4,6 +4,7 @@
 """
 import os as _os_cache; _os_cache.environ.setdefault("SAD_CACHE_OBJETIVO_S", "0")  # los tests cambian fichas y veredictos y releen
 import os
+import json
 import sys
 import tempfile
 
@@ -165,6 +166,17 @@ def main():
           abs(pl["recuperabilidad"] - sum(x["muEsperado"] for x in pl["proximos"]) / 2) < 1e-3, pl)
     check("camino: señal de calendario válida",
           pl["senalCalendario"] in ("blando", "neutro", "duro") and pv["senalCalendario"] in ("blando", "neutro", "duro"))
+    # §5.6 el 1X2 del motor desde μ (logística calibrada; μ son puntos, no goles)
+    ux = p.get("unXDos")
+    check("unXDos: suma 100 y sale de los dos μ del partido",
+          ux is not None and abs(ux["local"] + ux["empate"] + ux["visita"] - 100) < 0.11
+          and abs(ux["d"] - (pl["muPartido"] - pv["muPartido"])) < 1e-3 and ux["modelo"] == "logistica-mu-v1", ux)
+    from backend.analisis import unxdos_motor as _ux
+    _vec = json.load(open(os.path.join(os.path.dirname(__file__), "..", "scripts", "casos_unxdos.json")))
+    check("unXDos: vectores dorados (espejo de src/lib/unxdos.ts)",
+          all(_ux.probabilidades(v["muLocal"], v["muVisita"]) == v["esperado"] for v in _vec["casos"]))
+    check("unXDos: el que tiene más μ es más probable, y sin μ no hay número",
+          _ux.probabilidades(2.0, 0.8)["local"] > _ux.probabilidades(0.8, 2.0)["local"] and _ux.probabilidades(None, 1) is None)
     check("camino: μ del partido en [0,3] y trampa booleana",
           0 <= pl["muPartido"] <= 3 and isinstance(pl["partidoTrampa"], bool) and isinstance(pv["partidoTrampa"], bool))
     # el programado (Madrid-Barça) va DESPUÉS del vivo: Barça tiene próximo (Betis

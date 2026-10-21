@@ -93,8 +93,8 @@ cae en la raíz del repo (17/10/2026).
 >   faltar) → `equipos/{id}/burbujas?proximo={id}` de los dos → `cuotas/{id}`
 >   → prensa (DT de ESTA semana, bajas, once probable) → el JSON del parte
 >   EXACTO al punto 7 (a = local).
->   El gap y la μ del motor están en `GET predicciones/{id}` (no existe
->   `/estadisticas/gap`); P1a del TDE ya viene calculado en `tde/{id}`. El
+>   El gap, la μ y el 1X2 del motor (`unXDos`) están en `GET predicciones/{id}`
+>   (no existe `/estadisticas/gap`; μ son puntos: nunca un Poisson sobre μ); P1a del TDE ya viene calculado en `tde/{id}`. El
 >   `desde` del DT con `desdeConfirmar: true` NO es dato: la llegada sale de
 >   prensa o va vacía. Una ventana del TDE que cambia según quién marque va
 >   en la rama: `reasignacion.siMarcaPrimero.ventana` (minutos de reloj; una

@@ -1,0 +1,77 @@
+{
+ "nota": "vectores dorados del 1X2 del motor (backend/analisis/unxdos_motor.py ↔ src/lib/unxdos.ts)",
+ "casos": [
+  {
+   "muLocal": 1.5,
+   "muVisita": 1.2,
+   "esperado": {
+    "local": 43.0,
+    "empate": 27.8,
+    "visita": 29.2
+   }
+  },
+  {
+   "muLocal": 1.2,
+   "muVisita": 1.5,
+   "esperado": {
+    "local": 33.1,
+    "empate": 27.9,
+    "visita": 39.0
+   }
+  },
+  {
+   "muLocal": 1.4,
+   "muVisita": 1.4,
+   "esperado": {
+    "local": 38.0,
+    "empate": 28.2,
+    "visita": 33.8
+   }
+  },
+  {
+   "muLocal": 2.2,
+   "muVisita": 0.6,
+   "esperado": {
+    "local": 64.8,
+    "empate": 21.6,
+    "visita": 13.6
+   }
+  },
+  {
+   "muLocal": 0.6,
+   "muVisita": 2.1,
+   "esperado": {
+    "local": 16.6,
+    "empate": 22.2,
+    "visita": 61.2
+   }
+  },
+  {
+   "muLocal": 1.77,
+   "muVisita": 0.94,
+   "esperado": {
+    "local": 52.1,
+    "empate": 26.1,
+    "visita": 21.8
+   }
+  },
+  {
+   "muLocal": 3.0,
+   "muVisita": 0.0,
+   "esperado": {
+    "local": 83.0,
+    "empate": 11.8,
+    "visita": 5.2
+   }
+  },
+  {
+   "muLocal": 0.0,
+   "muVisita": 3.0,
+   "esperado": {
+    "local": 5.2,
+    "empate": 10.6,
+    "visita": 84.2
+   }
+  }
+ ]
+}
