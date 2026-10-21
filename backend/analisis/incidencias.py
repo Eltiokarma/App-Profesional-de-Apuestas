@@ -74,6 +74,11 @@ def _con():
     if "fixtures" not in cols:   # tabla de antes del 20/10/2026: se agrupa una vez por causa
         con.execute("ALTER TABLE incidencia ADD COLUMN fixtures TEXT")
         reagrupar(con)
+    # claves de antes del 21/10/2026 («area:titulo»): las abiertas se reagrupan
+    # una vez con la clave sin área (la nueva nunca lleva «:»)
+    elif con.execute(f"SELECT 1 FROM incidencia WHERE clave LIKE '%:%' AND estado NOT IN "
+                     f"({','.join('?' * len(CERRADOS))}) LIMIT 1", CERRADOS).fetchone():
+        reagrupar(con)
     return con
 
 
@@ -87,7 +92,7 @@ def reagrupar(con) -> int:
                         CERRADOS).fetchall()
     grupos: dict[str, list] = {}
     for r in filas:
-        grupos.setdefault(clave_de(r["titulo"], r["area"]), []).append(r)
+        grupos.setdefault(clave_de(r["titulo"]), []).append(r)
     fundidas, ahora = 0, efedb.ahora()
     for clave, rs in grupos.items():
         base, resto = rs[0], rs[1:]
@@ -121,11 +126,17 @@ def _txt(x, tope: int = 4000) -> str:
 
 def clave_de(titulo: str, area: str = "") -> str:
     """La causa, no el caso: el mismo hallazgo con otras mayúsculas, tildes, otro
-    partido entre paréntesis o otro detalle después de «:» es uno."""
+    partido entre paréntesis o otro detalle después de «:» es uno.
+
+    EL ÁREA NO ENTRA EN LA CLAVE (21/10/2026). La elige quien deposita y dos
+    subagentes ponen otra al mismo hallazgo: «Faltan partidos domésticos…» del
+    AEK entró como `ficha` (298) y como `agenda` (333), dos abiertas para una
+    causa. El área queda como dato de la incidencia; `area` se acepta y se
+    ignora para no romper a quien llama."""
     t = re.sub(r"\([^)]*\)", " ", titulo or "").split(":")[0]
     t = unicodedata.normalize("NFKD", t).encode("ascii", "ignore").decode().lower()
     t = re.sub(r"[^a-z0-9 ]+", " ", t)
-    return f"{area or 'otro'}:{' '.join(t.split())[:160]}"
+    return " ".join(t.split())[:160]
 
 
 def depositar(payload: dict) -> dict:
