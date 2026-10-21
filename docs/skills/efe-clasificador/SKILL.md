@@ -1,15 +1,15 @@
 ---
 name: efe-clasificador
-description: Rubrica completa del clasificador EFE v1.5 del sistema SAD, Estado de Formacion de Equipo, con los ocho bloques A-H, los pesos ponderados, la tabla de puntuacion, las alertas automaticas estructurales y por fecha, y el registro de casos de validacion. Activar siempre que el usuario pida un EFE de un equipo o un partido, hablar de estado de formacion, bloques A-E, sub-scores, impacto ponderado de ausencias, reduccion por zona, clasificacion FORMADO o EN FORMACION o SIN FORMACION, o cualquier alerta del sistema como T.54, T.54-B, R-KT.2, GK-DOWNGRADE, FACTOR-X, F3, G-BLOQUE o COLAPSO EN CASCADA. Activar tambien antes de correr el skill efe-dashboard, porque este skill aporta la rubrica y el otro aporta la visualizacion. Activar tambien en corridas batch del pipeline SAD donde haya que puntuar equipos pre-partido.
+description: Rubrica completa del clasificador EFE v1.6 del sistema SAD, Estado de Formacion de Equipo, con los ocho bloques A-H, los pesos ponderados, la tabla de puntuacion, las alertas automaticas estructurales y por fecha, y el registro de casos de validacion. Activar siempre que el usuario pida un EFE de un equipo o un partido, hablar de estado de formacion, bloques A-E, sub-scores, impacto ponderado de ausencias, reduccion por zona, clasificacion FORMADO o EN FORMACION o SIN FORMACION, o cualquier alerta del sistema como T.54, T.54-B, R-KT.2, GK-DOWNGRADE, GK-FALLA-ACTIVA, FACTOR-X, F3, G-BLOQUE o COLAPSO EN CASCADA. Activar tambien antes de correr el skill efe-dashboard, porque este skill aporta la rubrica y el otro aporta la visualizacion. Activar tambien en corridas batch del pipeline SAD donde haya que puntuar equipos pre-partido.
 ---
 
-# Clasificador EFE v1.5
+# Clasificador EFE v1.6
 
 Este skill guarda la rúbrica operativa del EFE (Estado de Formación de Equipo), el módulo estructural del sistema SAD.
 
 ## Cómo usarlo
 
-1. **Leé `references/rubrica-efe-v1.5.md` completo antes de puntuar nada.** Contiene los ocho bloques con sus tablas de indicadores, los fundamentos de cada regla y los casos de validación. No puntúes de memoria.
+1. **Leé `references/rubrica-efe-v1.6.md` completo antes de puntuar nada.** Contiene los ocho bloques con sus tablas de indicadores, los fundamentos de cada regla y los casos de validación. No puntúes de memoria.
 2. Investigá en la web lo que pide la sección "Instrucciones de ejecución" de la rúbrica: cuerpo técnico, historial de cambios de DT, plantel, mercado, tabla, resultados, ausencias de la fecha, fixture y sistema táctico del rival.
 3. Completá los bloques en orden, justificando cada indicador con el dato encontrado y citando la fuente.
 4. Aplicá los pesos, calculá el porcentaje y emití el diagnóstico con las implicaciones para el SAD.
@@ -43,4 +43,4 @@ Pasa casi siempre en Liga 1 Perú, donde ningún medio publica el once la noche 
 
 | Archivo | Qué contiene | Cuándo leerlo |
 |---|---|---|
-| `references/rubrica-efe-v1.5.md` | Rúbrica completa — bloques A a H, tablas de indicadores, reglas especiales, tabla de puntuación, alertas automáticas, casos de validación | Siempre, antes de puntuar |
+| `references/rubrica-efe-v1.6.md` | Rúbrica completa — bloques A a H, tablas de indicadores, reglas especiales, tabla de puntuación, alertas automáticas, casos de validación | Siempre, antes de puntuar |

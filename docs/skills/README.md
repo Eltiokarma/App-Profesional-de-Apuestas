@@ -5,7 +5,9 @@
 > desde el dossier (`docs/revisiones/TDE_v0.1.21_propuesta.md`). Hasta que el
 > usuario la suba a la cuenta, la cuenta sigue en v0.1.20. `diagnostico-tactico`
 > se trajo de la cuenta el mismo día y está en **v1.4** (revisión aprobada,
-`docs/revisiones/DTP_v1.4_propuesta.md`). El resto sigue siendo la foto del 13/09.
+`docs/revisiones/DTP_v1.4_propuesta.md`), y `efe-clasificador`, también traído
+> de la cuenta, está en **v1.6** (`docs/revisiones/EFE_v1.6_propuesta.md`; la
+> rúbrica pasa a `references/rubrica-efe-v1.6.md`). El resto sigue siendo la foto del 13/09.
 
 Copia de los cinco skills del pipeline SAD tal como estaban el **13.09.2026**,
 subidos por el usuario para diseñar el bucle de aprendizaje

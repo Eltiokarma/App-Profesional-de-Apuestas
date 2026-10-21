@@ -1,7 +1,10 @@
 # Propuesta de revisión · `efe-clasificador` v1.5 → v1.6
 
-**Estado:** PROPUESTA. No está aplicada. El skill vive en la cuenta del usuario y
-esto es el texto para decidir. Se redactó el 21/10/2026 desde el dossier
+**Estado:** APROBADA por el usuario (21/10/2026, los seis puntos). Redactada en
+`docs/skills/efe-clasificador/` (v1.6; la rúbrica pasa a
+`references/rubrica-efe-v1.6.md`). Ningún campo nuevo en el parte: las
+alertas viajan en `alertas` como hasta ahora. Falta que el usuario la suba a
+su cuenta. Se redactó el 21/10/2026 desde el dossier
 (`GET /analisis/cowork/revision/efe-clasificador`, cohorte `c3-2026-09-23`). La
 base es la v1.5 vigente (25/03), traída de la cuenta a
 `docs/skills/efe-clasificador/` (SKILL.md y `references/rubrica-efe-v1.5.md`).
