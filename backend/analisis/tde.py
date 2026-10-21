@@ -568,7 +568,13 @@ def _indice(ind: dict) -> dict:
             operadas.append("compuerta 1 (P1a=0) ACTIVA: el tope 0.5 no mueve el número, "
                             f"el promedio de P ya era {bloques['P']:.2f}")
 
-    faltan = [l for l in ("F", "C", "P", "S") if bloques[l] is None]
+    # SIN BLOQUE S, EL IE SE CALCULA SOBRE F, C Y P Y SE MARCA (decisión del
+    # usuario, 21/10/2026, incidencia 22). S pesa 1.5 de 8.5 y S3 pide PPDA, que
+    # no tenemos: exigirlo era rellenarlo a ojo, y dejar el IE en null tiraba F,
+    # C y P puntuados (Nacional, Maldonado, Pasto). Se reparte el peso entre los
+    # tres que hay —divisor 7.0— y viaja `sinS`; con otro bloque vacío sigue null.
+    sin_s = bloques["S"] is None and all(bloques[l] is not None for l in ("F", "C", "P"))
+    faltan = [l for l in ("F", "C", "P", "S") if bloques[l] is None and not (l == "S" and sin_s)]
     if faltan:
         # SIN IE NO QUIERE DECIR SIN ISE. El ISE sale de SOB1-3 y no depende de
         # ningún bloque del IE; el skill manda emitirlo SIEMPRE (disciplina 8).
@@ -579,11 +585,15 @@ def _indice(ind: dict) -> dict:
                 "compuertasOperadas": operadas, "cobertura": _cobertura(ind),
                 "calibracion": CALIBRACION}
 
-    ie = sum(bloques[l] * PESOS_BLOQUE[l] for l in PESOS_BLOQUE) / DIVISOR_IE * 10
+    if sin_s:
+        ie = sum(bloques[l] * PESOS_BLOQUE[l] for l in ("F", "C", "P")) / (DIVISOR_IE - PESOS_BLOQUE["S"]) * 10
+        operadas.append("bloque S sin dato: IE sobre F, C y P (divisor 7.0), marcado `sinS`")
+    else:
+        ie = sum(bloques[l] * PESOS_BLOQUE[l] for l in PESOS_BLOQUE) / DIVISOR_IE * 10
     ise, usados_ise = _promedio(ind, INDICADORES_ISE)
     out = {
         "ie": round(ie, 2),
-        "bloques": {l: round(v, 4) for l, v in bloques.items()},
+        "bloques": {l: (None if v is None else round(v, 4)) for l, v in bloques.items()},
         # el promedio ANTES de las reglas de piso y las compuertas: con los dos
         # a la vista, lo que hizo cada transformación se ve en vez de creerse
         "bloquesCrudos": {l: (None if v is None else round(v, 4)) for l, v in crudos.items()},
@@ -592,7 +602,11 @@ def _indice(ind: dict) -> dict:
         "bandaOrdinal": _ordinal(ie),
         "tablasSuspendidas": TABLAS_SUSPENDIDAS,
         "compuertasOperadas": operadas,
-        "formula": "IE = (F·3 + C·2 + P·2 + S·1.5) / 8.5 × 10",
+        "formula": ("IE = (F·3 + C·2 + P·2) / 7.0 × 10 — SIN BLOQUE S" if sin_s else
+                    "IE = (F·3 + C·2 + P·2 + S·1.5) / 8.5 × 10"),
+        **({"sinS": True, "notaSinS": "sin ningún indicador S (S1-S3): el IE reparte su peso entre F, C "
+                                      "y P. Es un IE parcial: compáralo con reserva con uno completo"}
+           if sin_s else {}),
         "esquemaP": "6 indicadores (P1a, P1b, P1c, P2, P3, P4)",
         "calibracion": CALIBRACION,
         # el skill pide el máximo de las dos vías, nunca la suma
