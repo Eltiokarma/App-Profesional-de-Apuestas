@@ -2152,6 +2152,28 @@ def main():
     check("el otro juega siRecibePrimero y, sin declararla, lo dice",
           od_ra["b"]["reasignacion"]["rama"] == "siRecibePrimero" and od_ra["b"]["reasignacion"]["declarada"] is False
           and "disciplina 44" in od_ra["b"]["reasignacion"]["nota"], od_ra["b"]["reasignacion"])
+    # TDE v0.1.21: el empate posterior y la expulsión tienen rama, y el veredicto
+    # dice el segundo giro y cómo terminó la rama del que persigue (disciplina 61)
+    from backend.analisis.veredicto import rama_jugada as _rj
+    _g = lambda *xs: [{"minuto": m, "lado": l} for m, l in xs]  # noqa: E731
+    _tdea = {"equipo": "a", "reasignacion": {"siMarcaPrimero": {"sob1": 0}, "siRecibePrimero": {"sob1": 1},
+                                              "siLeEmpatan": {"sob1": 0.5, "nota": "reabre la SOB"}}}
+    _r1 = _rj(_tdea, _g((28, "a"), (34, "b"), (80, "b")), 3, True)
+    check("el que marcó primero y recibió el empate: segundoGiro siLeEmpatan, con su línea declarada (AEK, 44a)",
+          _r1["rama"] == "siMarcaPrimero" and _r1["segundoGiro"]["minuto"] == 34
+          and _r1["segundoGiro"]["declarada"] is True, _r1)
+    _r2 = _rj({"equipo": "b", "reasignacion": {}}, _g((57, "a"), (62, "b"), (64, "b")), 3, True)
+    check("el que recibió primero y marcó él: salida «marco», no cuenta contra la rama (Emelec, disciplina 61)",
+          _r2["rama"] == "siRecibePrimero" and _r2["salida"] == "marco", _r2)
+    _r3 = _rj({"equipo": "b", "reasignacion": {}}, _g((35, "a"), (65, "a")), 2, True)
+    _r4 = _rj({"equipo": "b", "reasignacion": {}}, _g((59, "a"),), 1, True)
+    check("…concedió de nuevo → «concedio»; sin más goles → «sinMasGoles»",
+          _r3["salida"] == "concedio" and _r4["salida"] == "sinMasGoles" and "segundoGiro" not in _r4, (_r3, _r4))
+    p_tde["tde"]["bloques"][0]["reasignacion"] = {"siMarcaPrimero": {"sob1": 0}, "siRecibePrimero": {"sob1": 1},
+                                                  "siLeEmpatan": {"sob1": 1}, "siExpulsion": "roja ganando → ECHADA-NUM"}
+    rec_n = c.post(f"{A}/analisis/cowork", json=p_tde).json()
+    check("el parte acepta siLeEmpatan y siExpulsion sin rechazo",
+          not any(x["donde"].startswith("tde.bloques[0].reasignacion") for x in rec_n["rechazos"]), rec_n["rechazos"])
     p_tde["tde"] = {"bloques": [{"ie": 60, "equipo": "a", "ventana": "45-60'", "tipologia": "prueba"},
                                 {"ie": 40, "equipo": "b", "ventana": "20-40'", "tipologia": "prueba"}]}
     c.post(f"{A}/analisis/cowork", json=p_tde)

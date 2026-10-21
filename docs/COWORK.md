@@ -1318,6 +1318,16 @@ el pantallazo es el procedimiento.
   primero y si recibe primero. En prosa faltó en ~11 lados de 48 el 11/10 y
   donde estaba escrita funcionó; ahora es campo, el recibo avisa en `faltan`
   si está a medias y el veredicto dice qué rama jugó el partido.
+  **Desde el TDE v0.1.21 (21/10/2026)**: cada rama lleva su `ventana`
+  RELATIVA al gol que la abre («desde el gol +15»); se agrega `siLeEmpatan`
+  (si al que marcó primero le empatan antes del 75: qué vía reabre) y
+  `siExpulsion` (roja ganando o empatando → ECHADA-NUM e ISE anulado;
+  perdiendo → ISE agravado). Y «administra» NO es el defecto de
+  `siMarcaPrimero`: para el favorito por μ con margen ≥ 0.30, el obligado de
+  tabla o el que juega con uno más, la rama por defecto es «sigue atacando»;
+  si escribís que administra, decí por qué. En el veredicto, la rama del que
+  persigue se cierra por el régimen (`salida`: concedió · marcó él ·
+  sin más goles), no por el desenlace (disciplina 61).
 - **Cuando salga el once oficial, mirá `DTP-REHACER`**: si el sistema o el XI
   de referencia de tu apertura no son los que salieron (9 de 24 el 11/10), el
   mapa de duelos se escribió sobre otro equipo. Antes del pitazo: rehacé M1/M2
@@ -1396,7 +1406,9 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
          "siMarcaPrimero": {"sob1": 0, "tipologia": "ECHADA-VOL",
                             "nota": "administra: la ventana cuenta desde el minuto del gol"},
          "siRecibePrimero": {"sob1": 1, "tipologia": "SOBREEXPOSICION",
-                             "nota": "persigue con los laterales arriba"}}},
+                             "nota": "persigue con los laterales arriba", "ventana": "desde el gol +15"},
+         "siLeEmpatan": {"sob1": 0.5, "nota": "si le empatan antes del 75 reabre la SOB desde ese minuto"},
+         "siExpulsion": {"nota": "roja ganando → ECHADA-NUM, ISE anulado; perdiendo → ISE agravado"}}},
       {"equipo": "a",
        "indicadores": {"…los mismos 19 indicadores, puntuados para ESTE equipo…": 0},
        "ieNivel": "verde", "iseNivel": "ambar",

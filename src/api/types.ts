@@ -1364,7 +1364,14 @@ export interface BloqueTde {
   falsador?: string
   /** Disciplina 44 como campo: qué le pasa a las vías de este equipo si marca
    *  primero y si recibe primero. Obligatoria en PRE. */
-  reasignacion?: { siMarcaPrimero?: RamaReasignacion; siRecibePrimero?: RamaReasignacion }
+  reasignacion?: {
+    siMarcaPrimero?: RamaReasignacion
+    siRecibePrimero?: RamaReasignacion
+    /** TDE v0.1.21 (44a): si al que marcó primero le empatan. */
+    siLeEmpatan?: RamaReasignacion
+    /** TDE v0.1.21 (44d): la línea de la expulsión. */
+    siExpulsion?: RamaReasignacion
+  }
   /** Los 0/0.5/1 que mandó quien analiza. Si llegan, el índice lo calcula el backend. */
   indicadores?: Record<string, number>
   /** El índice CALCULADO, con sus compuertas declaradas. Ver backend/analisis/tde.py. */
@@ -1502,6 +1509,11 @@ export interface VeredictoObjetivo {
         declarada: boolean
         loDeclarado?: RamaReasignacion | null
         nota: string
+        /** TDE v0.1.21 (44a): le empataron al que marcó primero. */
+        segundoGiro?: { rama: 'siLeEmpatan'; minuto: number; declarada: boolean; loDeclarado?: RamaReasignacion | null; nota: string }
+        /** TDE v0.1.21 (disciplina 61): cómo terminó la rama del que persigue. */
+        salida?: 'concedio' | 'marco' | 'sinMasGoles'
+        notaSalida?: string
       }
       nota: string
     }[]

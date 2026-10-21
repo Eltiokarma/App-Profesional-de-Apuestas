@@ -3098,6 +3098,8 @@ components:
           properties:
             siMarcaPrimero: { $ref: '#/components/schemas/RamaReasignacion' }
             siRecibePrimero: { $ref: '#/components/schemas/RamaReasignacion' }
+            siLeEmpatan: { $ref: '#/components/schemas/RamaReasignacion', description: 'TDE v0.1.21 (44a), opcional: si el que marcó primero recibe el empate antes del 75 —la rama de ventaja caduca—, qué vía reabre y desde qué minuto' }
+            siExpulsion: { $ref: '#/components/schemas/RamaReasignacion', description: 'TDE v0.1.21 (44d, disciplina 16 desdoblada), opcional: roja yendo empatado o ganando → ECHADA-NUM e ISE anulado; yendo perdiendo → ISE agravado' }
         calculado:
           type: object
           description: 'el índice CALCULADO con sus compuertas (solo en la respuesta). Sin ningún indicador S el IE sale PARCIAL sobre F, C y P (divisor 7.0) con `sinS: true` y `notaSinS` (decisión del 21/10/2026); sin F, C o P sigue sin calcularse (`sinDato`)'
@@ -4142,6 +4144,17 @@ components:
                       declarada: { type: boolean }
                       loDeclarado: { $ref: '#/components/schemas/RamaReasignacion' }
                       nota: { type: string }
+                      segundoGiro:
+                        type: object
+                        description: 'TDE v0.1.21 (44a): el que marcó primero recibió el empate; la rama de ventaja caducó en ese minuto. Con la línea siLeEmpatan declarada o no'
+                        properties:
+                          rama: { type: string, enum: [siLeEmpatan] }
+                          minuto: { type: integer }
+                          declarada: { type: boolean }
+                          loDeclarado: { $ref: '#/components/schemas/RamaReasignacion' }
+                          nota: { type: string }
+                      salida: { type: string, enum: [concedio, marco, sinMasGoles], description: 'TDE v0.1.21 (disciplina 61), solo en siRecibePrimero: qué pasó después del gol en contra. «marco» no cuenta contra la rama; «sinMasGoles» puede ser la disciplina 14 (lo dice la autopsia)' }
+                      notaSalida: { type: string }
                   nota: { type: string }
         evidencia:
           type: object

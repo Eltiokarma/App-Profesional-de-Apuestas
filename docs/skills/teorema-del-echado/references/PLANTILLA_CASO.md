@@ -42,22 +42,27 @@ fuente_de_P1a   mu_partido (modo PRE) | ventaja obtenida (modo COND) | cualitati
 
 dias_descanso y dureza del proximo rival  → del motor si existe, nunca a ojo (regla de procedencia de F2)
 
-IE             __ / 10
-P(echada)              __ %
-P(fractura|echada)     __ %
-P(gol|fractura)        __ %
-riesgo_compuesto       __ %
+IE             __ / 10      banda ordinal  __   (0-3 | 3-5 | 5-7 | 7-8.5)
+  P(echada) / P(fractura|echada) / P(gol|fractura) / riesgo_compuesto:
+  SUSPENDIDOS en v0.1.20 - NO se completan y NO se emiten.
+  En su lugar, en prosa y sin numero:
+  mecanismo_de_fractura  ____________  (que indicador de C1-C3 lo sostiene)
+  via_de_gol_del_rival   ____________  (del DTP)
 banda_5_7_activa       si | no    (si es si, declarar la advertencia en el output)
+advertencia_de_escala  SIEMPRE activa, en cualquier valor de IE (disciplina 20)
 
 VIA 2 — sobreexposicion            SOB1 __ SOB2 __ SOB3 __
-ISE                    __ / 10
-P(sobreexposicion)             __ %
-P(gol|sobreexposicion)         __ %
+ISE                    __ / 10      banda ordinal  __   (I | II | III | IV)
+  P(sobreexposicion) / P(gol|sobreexposicion) / riesgo_via_2:
+  SUSPENDIDOS en v0.1.20 - NO se completan y NO se emiten.
   interaccion entre vias declarada:  el rival va ganando y administra?  si | no
   (si es si, la sobreexposicion propia queda sin castigo - declarar y NO aplicar coeficiente)
-riesgo_via_2                   __ %
 
-riesgo_tramo_final     __ %   (el MAXIMO de las dos vias, no la suma)
+riesgo_tramo_final:  SUSPENDIDO. Se declara cual de las dos vias domina
+                     y por que, sin porcentaje.
+
+reduccion de denominador declarada (disciplina 59):
+  bloque __ promediado sobre __ indicadores - falto: ____  (F, C, P o S; escribir ninguna si no hubo)
 
 tipo_modal     ECHADA-VOL | ECHADA-FIS | ECHADA-SUP | ECHADA-PSI | ECHADA-NUM | SOB
 ventana_modal  0-15 | 15-30 | 30-45 | 45-60 | 60-75 | 75-90
@@ -105,3 +110,26 @@ leccion    (qué entra al ajuste: rúbrica de un indicador, peso de un bloque, o
 ```
 
 **Regla de la lección**: la mayoría de los cierres deben terminar en "nada". Si cada caso genera un cambio de pesos, el módulo está sobreajustando al último partido — exactamente el sesgo que la v2.0 de la Matriz de Escenarios corrigió para la goleada.
+
+---
+
+## C — COLUMNAS DE CLASIFICACION (registro de 51 columnas)
+
+Vocabularios canonicos. **Ningun otro valor es valido.**
+
+```
+seleccion        ciega | por_resultado | post_resultado
+modo             PRE | DECLARADO | CERRADO | RETRO      (cuando se escribio el analisis)
+modo_evaluacion  PRE | COND | RETRO                     (con que escala se puntuo P1a)
+clase_caso       normal | rama_abandonada
+se_echo          si | no | parcial | (vacio = abierto)
+esquema_P        sin_esquema | 4ind | 6ind
+estado_recomputo_esq6
+                 hecho | hecho_sin_procedencia | no_requiere | bloqueado | pre_rubrica
+```
+
+> **`modo` y `modo_evaluacion` son columnas distintas y las dos entran al filtro de frecuencia.** Una fila `modo = RETRO` no es una prediccion aunque su `seleccion` sea `ciega`: se puntuo con el partido jugado. Ver las cuatro exclusiones en `SKILL.md` § EL REGISTRO.
+
+> **`esquema_P = 4ind_o_5ind` fue retirado en v0.1.20.** No escribirlo. Si una fila nueva quedara sin esquema determinable, se declara el hecho en la leccion en vez de inventar un valor.
+
+> **Las columnas `F`, `C`, `P` y `S` guardan el promedio CRUDO**, antes de compuertas (disciplina 60). Los topes se aplican en el calculo del IE, no en la celda.

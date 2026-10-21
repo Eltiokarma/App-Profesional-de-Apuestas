@@ -505,10 +505,45 @@ def rama_jugada(tde: dict, goles: list[dict], total_goles: int, con_ficha: bool)
     primero = goles[0]
     rama = "siMarcaPrimero" if primero["lado"] == foco else "siRecibePrimero"
     lo = declarada.get(rama)
-    return {"rama": rama, "minuto": primero["minuto"], "declarada": lo is not None, "loDeclarado": lo,
-            "nota": "" if lo is not None else
-                    "la rama que jugó el partido no estaba declarada (disciplina 44): "
-                    "el bloque P quedó viejo desde ese minuto sin nada escrito"}
+    out = {"rama": rama, "minuto": primero["minuto"], "declarada": lo is not None, "loDeclarado": lo,
+           "nota": "" if lo is not None else
+                   "la rama que jugó el partido no estaba declarada (disciplina 44): "
+                   "el bloque P quedó viejo desde ese minuto sin nada escrito"}
+    # EL SEGUNDO GIRO (TDE v0.1.21, disciplina 44a): el que marcó primero recibe
+    # el empate y su rama de ventaja caduca. AEK, Angers, Estudiantes, Aucas.
+    if rama == "siMarcaPrimero":
+        a_favor = contra = 0
+        for g in goles:
+            if g["lado"] == foco:
+                a_favor += 1
+            else:
+                contra += 1
+            if contra and contra == a_favor:
+                le = declarada.get("siLeEmpatan")
+                out["segundoGiro"] = {"rama": "siLeEmpatan", "minuto": g["minuto"], "declarada": le is not None,
+                                      "loDeclarado": le,
+                                      "nota": "la ventaja se perdió: la rama de ventaja caducó en este minuto"
+                                              + ("" if le is not None else " y la línea del empate no estaba "
+                                                 "declarada (disciplina 44a)")}
+                break
+    # LA RAMA DEL QUE PERSIGUE SE CIERRA POR EL RÉGIMEN, NO POR EL DESENLACE
+    # (TDE v0.1.21, disciplina 61): qué pasó después del gol en contra.
+    # «El rival administró» (disciplina 14) es juicio de la autopsia: acá
+    # `sinMasGoles` lo deja abierto.
+    else:
+        despues = goles[1:]
+        if any(g["lado"] != foco for g in despues):
+            salida = "concedio"
+        elif any(g["lado"] == foco for g in despues):
+            salida = "marco"
+        else:
+            salida = "sinMasGoles"
+        out["salida"] = salida
+        out["notaSalida"] = {"concedio": "la vía se pagó: concedió de nuevo persiguiendo",
+                             "marco": "la exposición rindió a favor (disciplina 61: no cuenta contra la rama)",
+                             "sinMasGoles": "no hubo más goles: si el rival administró es la disciplina 14 "
+                                            "(lo dice la autopsia), no un fallo de la rama"}[salida]
+    return out
 
 
 def declarado_ok(reasig: dict) -> bool:

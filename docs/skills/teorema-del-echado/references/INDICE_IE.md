@@ -1,5 +1,7 @@
 # Índice de Echada (IE) — indicadores y rúbrica
 
+> **v0.1.19 (13.09.2026).** Alta de la regla **el inicio del regimen se deriva del indicador y no del reloj**: con `SOB1 = 1` el regimen arranca en el minuto 0 y el gol en contra lo **adelanta**, nunca lo retrasa. El once probable baja a **nivel de dato C** por muchas fuentes que converjan, y `F1` y `C2` solo alcanzan nivel A con el once oficial: la convergencia de previas es copia entre redacciones, no observacion independiente. Alta del candidato **`GK-FALLA-ACTIVA`**, declarado y NO aplicado, para el arquero que es el titular habitual pero acumula errores con gol en el torneo en curso — el hueco entre `B6` del clasificador y la bandera `ARQUERO-NUEVO`. La ventana `90+` llega a **2 de los 3 casos** que necesita, con un generador nuevo que invierte la sub-hipotesis: la **revision de video de un gol tardio**, producida por el equipo que perseguia. Dos casos **EN CONTRA** de refinamientos propios: la saturacion del ISE y la lectura de la casa de margen minimo en un extremo del rango. **Ningun peso tocado, ningun indicador anadido.**
+
 > **v0.1.18 (30.08.2026).** Alta del **tope del bloque C**: con `C3 = 1` el bloque no promedia por debajo de **0.60**. Alta de la clase **`no probado`** en `C1`, para el bloque que da estructural en el checklist pero nunca fue puesto a prueba. Alta del **`CHEQUEO DE RELEVANCIA DEL MODULO`** antes de derivar la ventana. `mu_partido` **no se corrige por localia a mano** en ningun caso. El perfil de posesion se declara **condicional al marcador**. Candidato declarado y NO aplicado: **dispersion entre casas**, cuatro campos registrados sin umbral, revision con 20 filas. **Ningun peso tocado, ningun indicador anadido.**
 
 > **v0.1.16 (22.08.2026).** Alta del **`PROTOCOLO FECHA-1`**: `F1`, `F3` y `C3` se declaran automaticamente `sin dato` en el partido inaugural de un torneo, y la caja de sensibilidad pasa a obligatoria. Alta de la **`FICHA MINIMA DEL MOTOR`**: lista de campos verificable en el paso cero, porque `mu esperado` no es `mu_partido` y confundirlos es puntuar `P1a` con la cantidad equivocada. **`P(gol | sobreexposicion)` pasa a publicarse en sus dos versiones** cuando la regla de interaccion entre vias esta activa. Candidato declarado y NO aplicado: **`SOB2` heredado de un M2 contaminado** se declara con nivel de dato C. Segundo caso del registro donde la caja **cruza la banda**, por causa distinta al primero (TDE-042: calendario; TDE-032: cambio de entrenador). **Ningun peso tocado, ningun indicador anadido.**
@@ -172,6 +174,14 @@ Este bloque no mide si el equipo va a retroceder, mide si va a hacerlo ordenado.
 >
 > **Nota de alcance.** La bandera se activa por el hecho observable de que el arquero es otro, no por el motivo. El apartamiento disciplinario es el caso más agudo porque llega acompañado de la ruptura de vestuario que lo produjo, pero eso entra por `P4`, no por acá. No contar el mismo evento dos veces en el mismo bloque.
 
+> **Candidato declarado y NO aplicado — `GK-FALLA-ACTIVA`** *(NUEVO v0.1.19)*. Entre `B6` del clasificador y `ARQUERO-NUEVO` de este módulo hay un hueco por el que se fue un partido entero. `B6` mide **continuidad y recorrido en la categoría**; `ARQUERO-NUEVO` se activa por el hecho observable de que **el arquero es otro**. Ninguno de los dos mira si el arquero que va a jugar **está fallando ahora**. En TDE-047 el arquero local era el titular indiscutido con ocho temporadas en la liga —`B6 = ✅` correcto, `ARQUERO-NUEVO` descartada correctamente— y acumulaba dos errores con gol documentados en el torneo en curso. El mecanismo se declaró dos veces antes del partido, hubo que subir la estimación en prosa porque no había casillero, y el gol del 90+7 fue exactamente eso.
+>
+> **Propuesta, sin aplicar:** bandera que se activa cuando el arquero titular habitual acumula **≥2 errores con gol documentados en el torneo en curso**, y que entra como **agravante declarado y sin coeficiente** de `P(gol | fractura)` y de `P(gol | sobreexposición)`, igual que `VENTAJA-INESPERADA` y `ARQUERO-NUEVO`. **No toca `B6`**, que mide otra cosa y la mide bien: entra como alerta paralela del clasificador.
+>
+> **Por qué no entra hoy.** N = 1. Y hay un riesgo de calibración específico: un error con gol es una categoría que el periodismo asigna con generosidad y sin criterio estable, así que el indicador puede terminar midiendo cobertura mediática en lugar de rendimiento. **Condición de revisión: ≥3 casos con la bandera declarada en PRE**, y la definición de "error con gol" fijada antes de contarlos —intervención del arquero que un observador neutral atribuiría como causa proximal del gol— y no reconstruida caso a caso.
+>
+> **Agravante metodológico a favor, que conviene registrar:** este candidato nació de un mecanismo **declarado por escrito antes del resultado**, no de una explicación posterior. Es la diferencia entre un hueco encontrado y hindsight con nombre nuevo.
+
 ---
 
 ## BLOQUE P — Psicológico · peso ×2
@@ -187,7 +197,7 @@ Miedo a perder lo que ya se tiene. El caso de máximo riesgo es el favorito que 
 | P3 | Relevancia asimétrica | El partido es uno más del calendario | Importa | Obligado a ganar, o con un tramo posterior brutal que invita a administrar |
 | P4 | Contexto emocional y extra-cancha *(desdoblado, ver compuerta 3)* | Ambiente sano | Crisis institucional que no llega al vestuario: público hostil, presión mediática, sanción de tribuna, quita administrativa | Crisis que toca al plantel: impagos, amenazas, conflicto interno, salida conflictiva del DT en la semana |
 
-> **Por qué P1 se dividió** *(v0.1.1)*. La redacción anterior metía en el mismo casillero de riesgo alto dos situaciones que empíricamente van en direcciones contrarias: *"favorito con ventaja esperada, **o** equipo que espera recibir el primer gol"*. En TDE-006, FC Cajamarca fue puntuado 1 por la segunda cláusula, recibió el primer gol al minuto 10 de visitante y respondió metiendo cuatro. **Recibir un gol temprano siendo el que no tiene nada que perder libera, no repliega.** El mecanismo de la echada psicológica es miedo a perder lo que ya se tiene; un equipo que va perdiendo no tiene nada que proteger. Con P1a = 0 y P1b = 0, el bloque P de ese caso baja de 0.75 a 0.38 y el IE de 7.6 a 6.7.
+> **Por qué P1 se dividió** *(v0.1.1)*. La redacción anterior metía en el mismo casillero de riesgo alto dos situaciones que empíricamente van en direcciones contrarias: *"favorito con ventaja esperada, **o** equipo que espera recibir el primer gol"*. En TDE-006, FC Cajamarca fue puntuado 1 por la segunda cláusula, recibió el primer gol al minuto 10 de visitante y respondió metiendo cuatro. **Recibir un gol temprano siendo el que no tiene nada que perder libera, no repliega.** El mecanismo de la echada psicológica es miedo a perder lo que ya se tiene; un equipo que va perdiendo no tiene nada que proteger. Con P1a = 0 y P1b = 0, el bloque P de ese caso baja de 0.75 a 0.38 y el IE de 7.6 a 6.7 — **y ese 6.7 es la reexpresión al esquema de CINCO indicadores, no al de seis: esta nota es de v0.1.1 y `P1c` entró en v0.1.3. NO volcarlo en `IE_recomputado_esquema6`.** Nota de v0.1.20: esta misma cita es la evidencia documental de que el bloque P de TDE-006 se puntuó con la rúbrica anterior a la división, lo que fija su `esquema_P = 4ind`; pero la fila completa es `pre_rubrica` por su `C = 0.85`, así que es una fila **mixta** y su IE no es reexpresable de todos modos.
 
 > **Nunca puntuar P1a = 1 sobre un equipo que va perdiendo o que no es favorito.** Si el equipo evaluado es el que probablemente reciba el primer gol y además no carga expectativa de ganar, ambos indicadores van a 0 y el riesgo psicológico entra, si entra, por P4.
 
@@ -415,14 +425,20 @@ ISE = ( SOB1 + SOB2 + SOB3 ) / 3 × 10
 
 Sin pesos diferenciados: con N = 0 casos declarados sobre esta vía, ponderar sería inventar precisión. **Deliberado.**
 
-| ISE | P(sobreexposición) | Lectura |
-|-----|--------------------|---------|
-| 0–3 | 10–25% | El equipo no va a quedar partido buscando el gol |
-| 3.1–5 | 25–45% | Riesgo real en el tramo 75-90 si sigue sin marcar |
-| 5.1–7 | 45–70% | Va a comprar el riesgo. La contramedida es un pivote fijo, no más ataque |
-| 7.1–10 | 70–90% | El gol en contra es el escenario modal del tramo final |
+> **🚫 La columna `P(sobreexposición)` quedó SUSPENDIDA en v0.1.20.** Se conserva la **banda ordinal y su lectura**, que es descripción del mecanismo y nunca estuvo rota. Lo que no se emite es el número.
 
-`P(gol | sobreexposición)` se estima desde SOB3 y las vías de gol del rival en el DTP, con la misma tabla que `P(gol | fractura)`.
+| ISE | Banda | Lectura |
+|-----|-------|---------|
+| 0–3 | I | El equipo no va a quedar partido buscando el gol |
+| 3.1–5 | II | Riesgo real en el tramo 75-90 si sigue sin marcar |
+| 5.1–7 | III | Va a comprar el riesgo. La contramedida es un pivote fijo, no más ataque |
+| 7.1–10 | IV | El gol en contra es el escenario modal del tramo final |
+
+> **Medido:** sobre los casos pre-partido, ciegos, cerrados y computables de la vía 2 (n = 6), el módulo declara 50% y se observa 83.3% — **subestima**, en dirección contraria a la vía 1, que sobreestima unas cuatro veces. No hay factor de corrección global posible.
+>
+> **Advertencia de contaminación, obligatoria en toda cita de la calibración de esta vía:** con `modo = RETRO` incluido, el ISE da skill score **+0.36**; sin RETRO, **−0.60**. La vía 2 parecía separar bien **solo en las filas puntuadas después del partido**.
+
+~~`P(gol | sobreexposición)` se estima desde SOB3 y las vías de gol del rival en el DTP.~~ **SUSPENDIDO en v0.1.20** junto con `P(gol | fractura)`. Lo que se emite es la **vía de gol más probable del rival** según SOB3 y el DTP, descrita cualitativamente y sin número.
 
 **Regla de interacción entre vías, obligatoria** *(v0.1.5)*. Antes de cerrar `P(gol | sobreexposición)` hay que mirar el estado del rival: si el rival tiene ventaja, `P1a = 1` y perfil administrador (`S2` alto, cambios defensivos previsibles), **la echada voluntaria del rival cancela parte de la sobreexposición propia** — no hay contragolpe si el que podría contragolpear eligió replegarse. Se **declara** la interacción y **no se le aplica coeficiente** hasta N ≥ 8 declarados en la vía 2.
 
@@ -470,6 +486,6 @@ Cada vez que un indicador se declara `sin dato`, el output publica el IE calcula
 
 ## Salida mínima obligatoria
 
-Para cada equipo evaluado: `IE`, **la caja de sensibilidad si algún indicador quedó `sin dato`**, `P(echada)`, `P(fractura|echada)`, `P(gol|fractura)`, riesgo compuesto de la vía 1, **`ISE`, `P(sobreexposición)` y `P(gol|sobreexposición)`**, tipo modal entre los seis códigos, ventana modal, los **dos indicadores que más empujan el score** nombrados explícitamente, **las compuertas que operaron** (aunque no hayan cambiado el número) y **la advertencia de banda si el IE cae entre 5 y 7**.
+Para cada equipo evaluado: `IE` **y su banda ordinal**, **la caja de sensibilidad si algún indicador quedó `sin dato`**, **`ISE` y su banda ordinal**, la **descripción cualitativa del mecanismo de fractura** y de la **vía de gol más probable del rival**, tipo modal entre los seis códigos, ventana modal, los **dos indicadores que más empujan el score** nombrados explícitamente, **las compuertas que operaron** (aunque no hayan cambiado el número) y **la advertencia de banda si el IE cae entre 5 y 7**.
 
 Y, desde v0.1.1, el **falsador**: la observación concreta que dejaría el pronóstico en evidencia. Debe escribirse como condición observable pura, sin cláusulas de estado del marcador que puedan invertirse. El falsador de TDE-005 decía *"si retrocede antes del 60 sin ir ganando"*; Melgar retrocedió antes del 60 **yendo ganando**, así que el falsador no se gatilló pese a que el pronóstico había fallado por completo. Un falsador mal redactado es peor que ninguno, porque da falsa tranquilidad.

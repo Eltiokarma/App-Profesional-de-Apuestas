@@ -1384,7 +1384,11 @@ def _via_tde(v, rechazos: list, donde: str) -> dict | None:
             "ventana": _txt(v.get("ventana")), "detalle": _txt(v.get("detalle"))}
 
 
-RAMAS_REASIGNACION = ("siMarcaPrimero", "siRecibePrimero")
+# TDE v0.1.21 (21/10/2026): además de las dos del primer gol, la línea del
+# EMPATE POSTERIOR (la rama de ventaja caduca si la ventaja se pierde) y la de
+# la EXPULSIÓN (disciplina 16 desdoblada). Opcionales: la 44 exige las dos primeras.
+RAMAS_REASIGNACION = ("siMarcaPrimero", "siRecibePrimero", "siLeEmpatan", "siExpulsion")
+RAMAS_OBLIGATORIAS = RAMAS_REASIGNACION[:2]
 _CLAVES_RAMA = {"sob1", "tipologia", "nota", "ventana"}
 
 
@@ -1404,7 +1408,7 @@ def _reasignacion(x, rechazos: list, donde: str) -> dict:
                          "esperado": '{"siMarcaPrimero": {"sob1": 0, "tipologia": "…", "nota": "…"}, '
                                      '"siRecibePrimero": {"sob1": 1, …}}'})
         return {}
-    fuera = {}
+    fuera: dict = {}
     for clave in x:
         if clave not in RAMAS_REASIGNACION:
             rechazos.append({"donde": f"{donde}.{clave}", "porque": f"rama desconocida {clave!r}: no se guardó",
@@ -2178,7 +2182,7 @@ def guardar(payload: dict) -> dict:
     # LA REASIGNACIÓN POR PRIMER GOL (disciplina 44) es obligatoria en PRE y
     # se cobra al cerrar: el veredicto dice qué rama jugó el partido
     sin_reasig = [b.get("equipo") or "?" for b in tde_bloques
-                  if len(b.get("reasignacion") or {}) < len(RAMAS_REASIGNACION)]
+                  if not all(r in (b.get("reasignacion") or {}) for r in RAMAS_OBLIGATORIAS)]
     if tde_bloques and sin_reasig:
         faltan.append({
             "bloque": "tde.reasignacion",

@@ -16,6 +16,57 @@
 >
 > **La banda 5-7 dejó de ser el problema: el problema es la escala entera.** Ver el chequeo completo abajo.
 
+## Chequeo de calibración · 14.09.2026 (v0.1.20) — el módulo deja de emitir probabilidad
+
+> **Este chequeo reemplaza al de v0.1.7 como estado vigente.** El de abajo se conserva como historia; sus números se calcularon **sin** la exclusión de `modo = RETRO` y por lo tanto están contaminados.
+
+### El filtro tenía tres exclusiones y necesitaba cuatro
+
+El registro tiene **dos** columnas de modo. `modo_evaluacion` (`PRE`/`COND`/`RETRO`) dice con qué escala se puntuó `P1a`. `modo` (`RETRO`/`DECLARADO`/`PRE`/`CERRADO`) dice **cuándo se escribió el análisis**. Se filtraba solo por la primera, y **nueve de las diecisiete filas que se creían computables tenían `modo = RETRO`**: TDE-007, 011, 012, 013, 014, 021, 022, 023 y 024. Un RETRO no es una predicción — se puntuó con el partido jugado.
+
+`seleccion = ciega` garantiza que el caso no se eligió porque pasara algo; **no** garantiza que se puntuara a ciegas. Es la misma distinción de la disciplina 31: allí falla el partido, acá falla el analista.
+
+**Filtro vigente, las cuatro exclusiones:** `seleccion = ciega` · `clase_caso != rama_abandonada` · `seleccion != post_resultado` · `modo != RETRO`.
+
+### Los números, con el filtro completo
+
+| Vía | n | positivos | p media declarada | observado | Brier | ref (tasa base) | skill score |
+|---|---|---|---|---|---|---|---|
+| 1 — echada | 8 | 1 (12.5%) | 48.9% | 12.5% | 0.3051 | 0.1094 | **−1.79** |
+| 2 — sobreexposición | 6 | 5 (83.3%) | 50.0% | 83.3% | 0.2225 | 0.1389 | **−0.60** |
+
+Para referencia, la vía 1 **con** el filtro viejo daba n = 17, 43.3% declarado contra 5.9% observado, Brier 0.2292 y skill score −3.14. La brecha real es de **unas cuatro veces, no siete**: la diferencia venía de las nueve filas retrospectivas, que empujaban el denominador de no-echadas.
+
+### La firma de contaminación de la vía 2
+
+| vía 2 | n | declarado | observado | Brier | skill score |
+|---|---|---|---|---|---|
+| **con** `modo = RETRO` | 14 | 47.4% | 64.3% | 0.148 | **+0.36** |
+| **sin** `modo = RETRO` | 6 | 50.0% | 83.3% | 0.2225 | **−0.60** |
+
+El ISE parece tener capacidad predictiva **solo en las filas puntuadas después del partido**. Eso no es señal, es la firma de la contaminación. **Esta advertencia viaja pegada a cualquier cita de la calibración de la vía 2**, para que nadie vuelva a leer el +0.36 como capacidad predictiva.
+
+### Consecuencias aplicadas en v0.1.20
+
+- **`IE → P(echada)`, `ISE → P(sobreexposición)` y `riesgo_compuesto` quedan SUSPENDIDOS.** Las dos vías fallan en direcciones opuestas —una sobreestima cuatro veces, la otra subestima— así que no existe corrección global. El compuesto cae con ellas porque es su producto literal.
+- **No se recalibra nada.** Con n = 8 y un positivo, ajustar las tablas a esta muestra sería congelar ruido. La disciplina 20 declaraba la escala sobreestimada desde antes; ahora está **medido el tamaño del error, no resuelto**.
+- **No se suprime el índice.** Lo roto es el mapeo índice → probabilidad. Que el IE ordene o no el riesgo sigue **sin testear**: testear un ordenamiento exige positivos en las bandas altas y hay cero.
+- **Semáforo sin alta.** Ver las tres condiciones en `SKILL.md`, PASO 2.
+
+### Positivos computables: cero
+
+| | antes de v0.1.20 | ahora |
+|---|---|---|
+| Positivos ciegos cerrados | 1 (TDE-005) | **0** |
+
+TDE-005 es `pre_rubrica`: sus cuatro bloques son imposibles como promedio de indicadores. No es reexpresable y **sale del conteo de (a)**. Suena peor que el 1 anterior y es más honesto — ese 1 nunca iba a poder satisfacer ninguna condición de alta.
+
+### Umbral binding, sin cambios
+
+N ≥ **5** echadas observadas con selección ciega **y en el esquema vigente de 6 indicadores**. Hoy: **0**. Y ninguna de las once filas perdidas o sin rastro (TDE-019, 020, 027, 028, 035 a 042) puede moverlo: quedan fuera por modo (`COND`/`RETRO`) y, donde consta, por contenido.
+
+---
+
 ## Chequeo de calibración · 10.08.2026 (v0.1.7)
 
 Calculado sobre los **9 casos ciegos y cerrados** del registro: TDE-005, 006, 007, 011, 012, 013, 014, 015, 016.

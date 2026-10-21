@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from "react";
 
 /* ============================================================
+   ⚠️  AVISO v0.1.20 — ESTE PROTOTIPO ES ANTERIOR A LA SUSPENSION
+   Sirve como referencia de ESTRUCTURA (gauges, bloques expandibles,
+   barras por ventana, tipologia, deteccion), NO de contenido.
+   Los dashboards nuevos NO muestran P(echada), P(fractura|echada),
+   P(gol|fractura), P(sobreexposicion) ni riesgo compuesto: esas
+   tablas quedaron suspendidas por brecha medida (ver CALIBRACION.md).
+   Se muestran el IE, el ISE y sus BANDAS ORDINALES.
+   El corte de color de este archivo opera sobre b.riesgo * 100,
+   o sea el SCORE DE BLOQUE, y NO es calibracion del indice.
+   El IE no lleva semaforo hasta que se cumplan las tres condiciones
+   del alta (SKILL.md, PASO 2). Hoy hay 0 positivos que cuenten.
+   ============================================================ */
+
+/* ============================================================
    SAD · EL TEOREMA DEL ECHADO (TDE v0.1 — PROTOTIPO)
    Módulo de la capa DTP. Mide la probabilidad de que un equipo
    se eche: repliegue NO controlado hacia su propia área.
