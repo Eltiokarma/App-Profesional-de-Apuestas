@@ -222,12 +222,23 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
     no_reconocidos: list[str] = []
 
     por_id = {j["jugadorId"]: i for i, j in enumerate(plantel) if j.get("jugadorId") is not None}
+    # EL MISMO JUGADOR DOS VECES EN LA TABLA. Cúcuta (20/10/2026, 335): la base lo
+    # llama «D. Gelvez» (con id) y la hoja y la prensa «Dayan Pérez»; el parte lo
+    # puso dos veces, la fila con id casó por id y la de prensa, sin id, salió
+    # «baja» —un 82 % menos de ataque por el autor del gol—. Una fila SIN id que
+    # casa por nombre con un jugador de la hoja que ya casó por id con OTRA fila
+    # es esa misma persona: se marca duplicada y no pesa.
+    duplicados: dict[int, int] = {}
     homonimos_once = 0
     ids = ids or {}
     for lista, destino in ((once, "titular"), (banca, "banca")):
         for nombre in lista:
             jid = ids.get(nombre)
             idx = [por_id[jid]] if jid in por_id else _buscar(plantel, nombre)
+            if jid in por_id:
+                for k in _buscar(plantel, nombre):
+                    if k != por_id[jid] and plantel[k].get("jugadorId") is None:
+                        duplicados[k] = por_id[jid]
             if destino == "banca":
                 # un suplente que también casa con un titular ya resuelto no lo
                 # pisa: «André Ramalho» (banca) casaba con «André» (titular)
@@ -253,7 +264,12 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
     resuelto: list[dict] = []
     for i, j in enumerate(plantel):
         clave = normalizar(j.get("nombre", ""))
-        if i in estados:
+        if i in duplicados and i not in estados:
+            otro = plantel[duplicados[i]]
+            resuelto.append({**j, "estado": "duplicado", "hoja": "duplicado",
+                             "motivo": f"es «{otro.get('nombre', '?')}» (jugadorId {otro.get('jugadorId')}): la hoja "
+                                       "lo nombra así y ya está contado en esa fila"})
+        elif i in estados:
             resuelto.append({**j, "estado": "disponible", "motivo": "",
                              "hoja": estados[i][1]})
         elif clave in conocidas:
@@ -269,7 +285,7 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
             resuelto.append({**j, "estado": "baja",
                              "motivo": "no figura en la hoja del partido", "hoja": "fuera"})
 
-    diag = evaluar(resuelto)
+    diag = evaluar([j for j in resuelto if j["estado"] != "duplicado"])
     # F4 · rotación voluntaria: titulares del XI tipo que hoy arrancan en banca
     rotados = [j["nombre"] for j in resuelto
                if j.get("hoja") == "banca" and (j.get("rol") or "").upper() in ("TF", "TH")]
@@ -289,6 +305,7 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
     diag["casados"] = sum(1 for i, _ in enumerate(plantel)
                           if estados.get(i, ("", ""))[1] == "titular") + homonimos_once
     diag["homonimos"] = sum(1 for v in estados.values() if v[1].endswith("(homónimo)"))
+    diag["duplicados"] = [plantel[i].get("nombre", "") for i in duplicados if i not in estados]
     diag["once"] = len(once)
     return diag
 

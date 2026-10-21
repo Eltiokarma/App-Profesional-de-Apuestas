@@ -1081,7 +1081,9 @@ paths:
         titulares del ÚLTIMO once entran todos aunque queden fuera del corte de 16
         (`titularEnElUltimo`): las stats de la temporada llegan atrasadas. Un jugador cuyos
         minutos no caben en sus partidos (más de 125 por partido) viaja con
-        `minutosIncoherentes` y su % se cuenta con lo que cabe. 0 tokens, 0 requests.
+        `minutosIncoherentes` y su % se cuenta con lo que cabe. Si la alineación de la API lo
+        llama distinto que la base, viaja `nombreEnLaHoja` («D. Gelvez» / «Dayan Pérez»): es
+        UNA fila, con el `jugadorId`. 0 tokens, 0 requests.
         Abierto a Cowork.
       parameters:
         - { name: fixtureId, in: path, required: true, schema: { type: integer } }
@@ -2904,7 +2906,7 @@ components:
         rol: { type: string, enum: [TF, TH, ROT, SUP], description: 'TF 🔴×3 · TH 🟠×2 · ROT 🟡×1 · SUP ⚪×0.5' }
         apps: { type: string, description: 'titularidades, ej. "12/15"' }
         jugadorId: { type: integer, description: 'el `id` del jugador en GET /equipos/{id}/plantilla. Con él, el once de la ficha casa por id y no por nombre (la API llama «J. Cerro» a Joshua Cantt): sin él, se cruza por nombre como antes' }
-        estado: { type: string, enum: ['', disponible, baja, duda], description: 'lo pone el backend al resolver el once' }
+        estado: { type: string, enum: ['', disponible, baja, duda, duplicado], description: 'lo pone el backend al resolver el once. `duplicado`: una fila SIN jugadorId que casa por nombre con un titular o suplente que ya casó por id con OTRA fila (la base y la prensa lo escriben distinto, «D. Gelvez» / «Dayan Pérez»): es la misma persona y no pesa en el IP' }
         motivo: { type: string }
     EquipoParteEntrada:
       type: object

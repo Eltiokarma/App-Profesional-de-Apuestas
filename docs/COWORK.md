@@ -925,6 +925,12 @@ Escribís vos (es juicio, no se puede calcular):
   se hace es dejar fuera a un decisivo: el 11/10 faltaron al menos 14, y un
   jugador fuera de la tabla no pesa en el IP. Si falta, el parte lo grita como
   `F1-DECISIVO-FUERA`.
+  UN JUGADOR, UNA FILA. Si la prensa lo llama distinto que la base, es la fila
+  de la base con su `jugadorId` (la tabla trae `nombreEnLaHoja` cuando la
+  alineación de la API lo nombra de otra forma): no lo agregues de nuevo sin
+  id. Cúcuta, 20/10/2026: «D. Gelvez» (555163) y «Dayan Pérez» eran el mismo y
+  la fila de prensa salía de baja; ahora el backend la marca `duplicado` y no
+  pesa, pero la tabla queda mal escrita.
 - Las bajas y sanciones ya públicas, en `fuera`, con su motivo y su fuente. Y
   a esos mismos jugadores, TAMBIÉN en `plantel` con su zona y su rol: una baja
   que no está en la tabla F1 no pesa en el Impacto Ponderado.
