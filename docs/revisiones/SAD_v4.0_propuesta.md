@@ -1,18 +1,37 @@
-# Propuesta de revisión · `sad-analysis` v3.2 → v3.3
+# Propuesta de revisión · `sad-analysis` v3.2 → v4.0 (y `efe-dashboard` v1.8 → v1.9)
 
 **Estado:** PROPUESTA. No está aplicada. El skill vive en la cuenta del usuario y
-esto es el texto para decidir. Se redactó el 21/10/2026 desde el dossier
-(`GET /analisis/cowork/revision/sad-analysis`, cohorte `c3-2026-09-23`) y desde
-la calibración de la espina (`GET /analisis/cowork/espina/calibracion`). La
-base es la v3.2 vigente de la cuenta, idéntica a la copia de
-`docs/skills/sad-analysis/` (13/10).
+esto es el texto para decidir. Arrancó el 21/10/2026 como una v3.3 (los seis
+puntos de la parte B) y pasó a v4.0 el mismo día, cuando se midió qué del skill
+llegaba a los partes (parte A). Fuentes: el dossier
+(`GET /analisis/cowork/revision/sad-analysis`, cohorte `c3-2026-09-23`), la
+calibración de la espina (`GET /analisis/cowork/espina/calibracion`) y los 209
+partes con veredicto. La base es la v3.2 vigente de la cuenta, idéntica a la
+copia de `docs/skills/sad-analysis/` (13/10); la de `efe-dashboard` es la v1.8
+de la cuenta (traída al repo el mismo día).
 
 ## De dónde sale
 
-- 379 lecciones. De ellas, 253 acreditan (ciegas y PRE) y 126 vienen de los
-  estudios de reventones (`post_resultado`: fijan rúbrica, no acreditan).
-  **Ninguna pide mover un número.**
-- Las 253 acreditables, por tema:
+- **El skill es del sistema viejo.** El predictor de goles Poisson v6, la Fe
+  Perdida (el péndulo de la hinchada) y el ICF con Random Forest de la Tensión
+  del Favorito eran motores del repo anterior (Professional-Player): **ninguno
+  existe en esta app**. El skill además pide dos CSV y un screenshot del
+  mercado que la corrida no tiene. Lo único al día es la referencia de la
+  Regresión al Nivel, alineada al motor en agosto.
+- **Lo que llegó a los partes** (209 con veredicto):
+
+| Huella | Partes | Qué pasó |
+|---|---|---|
+| Poisson con `μ` como λ de goles | 78 | Error de unidad: μ son puntos. Medido en 51 mil partidos, el 1X2 que da es algo peor que una conversión calibrada (parte D) y su marcador exacto no tiene base |
+| Fe Perdida | 5 | 2 inventadas sin dato (Boca–São Paulo 1629831, derbi de Montevideo 1638254); 3 sin efecto |
+| Tensión del Favorito | 4 | Las mismas 2 inventadas; 2 «no aplica» |
+| Veredicto K con gatillos | 2 | A mano con la API; otros 11 declararon «sin CSV, no corrió» |
+| Doble oportunidad trampa | 12 | Legítimo: cuotas reales |
+| ICF, Ley 8 | 0 | — |
+
+- **379 lecciones**: 253 acreditan (ciegas y PRE) y 126 son de los estudios de
+  reventones (`post_resultado`). **Ninguna pide mover un número.** Las 253, por
+  tema:
 
 | Tema | Acierto | Parcial | Fallo |
 |---|---|---|---|
@@ -25,13 +44,60 @@ base es la v3.2 vigente de la cuenta, idéntica a la copia de
 - **Sesgo de atribución:** muchos «fallos» del lado son el 1X2, con la alerta
   del reventón cumplida en la misma lección (City, Atlético, Liverpool,
   Brentford, Boca).
-- **El hallazgo de fondo.** Casi todo lo que estas lecciones corrigen **no
-  está escrito en el skill**. La espina, la tarjeta, el riesgo del reventón,
-  K-EXTREMO, FAMILIA-RECORD, ESCALA-LIGAS, las tres fuentes del pronóstico, el
-  umbral 0,30 de `μ_partido` y el falsador viven en el prompt de la corrida
-  (`docs/COWORK.md`) y en `docs/REVENTON.md`. La v3.2 es anterior a la app: no
-  los nombra. Por eso las lecciones tienen dónde quedar en el prompt, pero no
-  en el skill que el analista carga. **La v3.3 los trae al skill.**
+- **Casi todo lo que las lecciones corrigen no está en el skill.** La espina,
+  la tarjeta, el riesgo del reventón, K-EXTREMO, FAMILIA-RECORD, ESCALA-LIGAS,
+  las tres fuentes, el umbral 0,30 y el falsador viven en el prompt
+  (`docs/COWORK.md`) y en `docs/REVENTON.md`: las lecciones de la espina no se
+  pueden cerrar contra ninguna versión del skill.
+- **Quién da el veredicto hoy.** EFE, TDE y DTP describen y no dan ganador. El
+  1X2 y el marcador están en `pronostico` y los arma el analista con tres
+  fuentes; la «lectura integrada» (módulo operativo, 1X2, contexto, dato
+  estructural, paradoja) la define `efe-dashboard` en su paso 5, que además
+  pide un contexto emocional con «Anticulebra, Fe Perdida». El skill que dice
+  dar el resultado (`sad-analysis`, con el veredicto K) ya no lo da desde que
+  las K salieron del número (14/10).
+
+## Parte A — La forma nueva (v4.0)
+
+### A1. `sad-analysis` es el skill de la SÍNTESIS
+
+Es dueño de dos cosas, y de nada que no tenga dato en la app:
+
+1. **El pronóstico**: las tres fuentes a la vista (motor, matriz, mercado), las
+   probabilidades 1X2, el marcador declarado y el falsador. Pasa a este skill
+   la **lectura integrada** que hoy define el paso 5 de `efe-dashboard`
+   (módulo operativo · 1X2 · contexto · dato estructural · paradoja): son los
+   campos de `lecturaSad` del parte.
+2. **La lectura de las K**: la espina y el reventón (parte B, puntos 2 y 3).
+
+### A2. Las K: teoría central, en la lectura
+
+La Ley 1 sigue siendo la primaria **de la lectura** (qué pasa con la burbuja de
+cada equipo) y conserva sus gatillos, la fusión y la anti-tautología. Lo que
+cambia es una frase: el «70 % del peso» es el peso de las K en la lectura, **no
+en el número del 1X2**, porque el backtest (REVENTON §13.3-13.4) mostró que no
+lo mejoran y desde el 14/10 no entran a la fórmula. **Es el único cambio de
+texto en la Ley 1 y pide tu aprobación explícita.**
+
+### A3. Lo que se SUSPENDE por no tener motor en la app
+
+Cada uno queda en el skill como «suspendido (v4.0)» con su motivo; nada se
+borra ni se renumera, igual que el TDE en la v0.1.20.
+
+| Qué | Por qué | Qué lo reemplaza |
+|---|---|---|
+| Ley 5 · Tensión del Favorito (ICF, Random Forest, convergencia crítica) | sin motor, y el backtest del 19/10 no encontró culebra (B1) | regla de mercado: la combinada paga el margen k veces |
+| Fe Perdida (péndulo, flags) | sin motor; dos partes la inventaron | nada: la presión o la hinchada se cuentan como contexto con fuente, sin «módulo» |
+| Modelo de goles Poisson v6 (Ley del Marcador) | sin motor; se improvisó con μ en 78 partes | el 1X2 del motor calibrado (parte D); el marcador, ver B6 |
+| Ley 8 · Canales opuestos | sin dato de audiencia; 0 usos | nada |
+| Entradas por CSV y screenshot, `audit_protocol.py` | la corrida lee la API | las rutas de la API (`/constantes`, `/burbujas`, `/predicciones`, `/cuotas`); la auditoría pasa a ser la del recibo del parte (`faltan`, `rechazos`) |
+
+Se quedan, porque tienen dato: Ley 1 (K), Ley 2 (Regresión al Nivel, μ),
+Ley 3 (rivales futuros, calendario de la base), Ley 4 (once, F1 de la base),
+Ley 6 (doble oportunidad trampa, cuotas reales), Ley 7 (goles × fecha ×
+condición, K de goles y stats) y Ley 9.
+
+## Parte B — Las lecciones (los seis puntos de la v3.3)
 
 ## Lo que esta capa acierta y no hay que tocar
 
@@ -48,8 +114,6 @@ base es la v3.2 vigente de la cuenta, idéntica a la copia de
   Las dos cosas son lo que la regla dice.
 - **La Ley 9 (nivel sobre nombre) y la regla anti-tautología.** Nadie las
   discute.
-
-## Los seis cambios propuestos
 
 ### 1. La Ley 5 (Tensión del Favorito) sale del skill
 
@@ -73,7 +137,7 @@ Es la deuda 16 de `CLAUDE.md`, pendiente desde el 19/10.
   **convergencia crítica** («K techo + doble oportunidad trampa + tensión →
   el favorito no gana») y el paso 3 del script de auditoría
   (`audit_protocol.py`).
-- La ley **no se renumera**: queda «5 — suspendida (v3.3)», con el motivo. Es
+- La ley **no se renumera**: queda «5 — suspendida (v4.0)», con el motivo. Es
   la misma salida que el TDE en su v0.1.20: se suspende lo que no se
   sostiene y no se borra la historia.
 - Queda en pie, como regla de mercado y no como ley: **«la combinada de
@@ -217,7 +281,7 @@ escrita sobre el **mecanismo**: quién genera, por dónde y con qué. No se
 escribe sobre el estado del marcador ni sobre un minuto, y **cubre los dos
 lados** de la lectura. Entra a la Auditoría 2 como quinta pregunta.
 
-### 6. El marcador sale del número, no del rótulo
+### 6. El marcador sale de la lectura de goles, no de un Poisson sobre μ
 
 **Casos:**
 
@@ -230,42 +294,86 @@ lados** de la lectura. Entra a la Auditoría 2 como quinta pregunta.
 
 **Propuesta:**
 
-- En la Ley 7 y en el Poisson, el marcador sale de las `λ`. Un rótulo («los
-  que menos marcan», «partido cerrado») no achica la banda de tres o más
-  goles que el número da.
+- La app **no tiene modelo de goles**: el marcador exacto es lectura, no
+  número. Sale de la Ley 7 (K de goles por condición, ciclos), de las stats
+  (`/equipos/{id}/stats`: goles, xG) y del 1X2 del motor, y se declara como
+  celda probable **sin porcentaje inventado**. Nunca de un Poisson con μ.
+- Un rótulo («los que menos marcan», «partido cerrado») no achica la banda de
+  goles que dicen los promedios.
 - Una racha de goles en contra no convierte el gol del rival en certeza.
 - Entre dos celdas casi empatadas, se nombran las dos.
+- Un modelo de goles calibrado (λ de goles por equipo) queda como posible
+  trabajo del backend, **no propuesto ahora**.
+
+## Parte C — `efe-dashboard` v1.8 → v1.9
+
+- **Paso 5 (lectura integrada) pasa a `sad-analysis`.** El dashboard la
+  muestra pero no la define; el texto dice «ver `sad-analysis` v4.0».
+- **Sale el «Contexto emocional: presión, hinchada, Anticulebra, Fe
+  Perdida».** Queda «contexto con fuente» (presión de tabla, hinchada, clima
+  del club, citado), sin módulos que no existen.
+- **`ANTICULEBRA-INVERTIDA`** (candidato, «el favorito que se relaja en un
+  TRAMO TRAMPA») se renombra **`FAVORITO-RELAJADO`**: el contexto se queda,
+  sin el nombre de un motor suspendido.
+- **El «checklist de 9 puntos» y la «Ficha de Mecanismo»** que cita el paso 6
+  no existen en disco (deuda 15): se quitan las dos menciones y queda lo que
+  sí está escrito (filas obligatorias por escenario, casos a favor y en
+  contra, disciplina 33).
+- **La matriz se queda en el dashboard** y es una de las tres fuentes del
+  pronóstico. Su probabilidad por escenario se compara con el 1X2 del motor
+  (`unXDos`), ya no con un Poisson.
+
+## Parte D — El 1X2 del motor, calculado (HECHO en esta rama)
+
+La opción (b) aprobada el 21/10: lo que está en la base se calcula.
+
+- `GET /predicciones/{id}` trae **`unXDos`** (local · empate · visita): una
+  logística multinomial sobre d = μ_local − μ_visita y d²
+  (`backend/analisis/unxdos_motor.py`, espejo `src/lib/unxdos.ts`, vectores
+  `scripts/casos_unxdos.json`, `docs/MOTOR_SAD_EXTRACCION.md` §5.6). Se ve en
+  Estadísticas, debajo del gap.
+- **Calibración** (`python -m backend.backtest_unxdos_motor`): 51.254 partidos
+  del padrón 2019-2026, nivel de cada lado el último anterior al partido,
+  prueba temporal con el 20 % más reciente (10.251 partidos):
+
+| prueba | log-loss | Brier | acierto |
+|---|---|---|---|
+| logística sobre μ | **1.0512** | 0.6333 | 46,5 % |
+| Poisson sobre μ (lo improvisado) | 1.0590 | 0.6382 | 46,3 % |
+| frecuencia | 1.0707 | 0.6473 | 44,6 % |
+
+  Logística − Poisson: −0.0078 [−0.0099, −0.0057]. El Poisson no estaba lejos
+  (por eso los 78 partes no salieron peor), pero era un error de unidad y su
+  marcador exacto no tenía base. Por tramo de d, modelo y realidad quedan a ≤ 4
+  puntos.
+- El prompt (`docs/COWORK.md`) y `corrida-sad` ya dicen: la fuente «motor» del
+  pronóstico es `unXDos`, copiada tal cual, y **nunca un Poisson sobre μ**.
+  Contra el mercado sigue valiendo REVENTON §13.5: el motor capta un tercio de
+  lo que sabe la cuota.
 
 ## Lo que NO se propone
 
-- **El peso del 70 % de las K (Ley 1) no se toca**, y tampoco ninguno de sus
-  gatillos. `CLAUDE.md` lo dice: las K son la teoría central. Queda declarado
-  el desfase, para que lo decidas tú: el backtest (REVENTON §13.3-13.4) mostró
-  que las K no mejoran el 1X2 del motor, y desde el 14/10 se usan en la
-  **lectura** (la espina), no en la fórmula. La v3.3 puede decir «el 70 % es
-  el peso de las K en la lectura, no en el número del 1X2», o dejarlo como
-  está. **Decisión tuya.**
+- **Ningún gatillo ni regla de la Ley 1** fuera de la frase del 70 % (A2).
 - Ningún mínimo del underdog (5 / 10 / 15 %), ninguna severidad de la
   Auditoría 1 y ningún umbral de la doble oportunidad trampa (1,05).
-- **Las entradas del skill** (dos CSV y un screenshot del mercado) no se
-  rehacen. La corrida las toma de la API (`/constantes`, `/burbujas`, las
-  cuotas), y adaptar el formato de entrada es una reescritura aparte, no una
-  lección.
 - **La serie DIV-MOTOR-MERCADO** sigue contándose. En la cohorte acertó a
   veces el motor (Boston River, Newcastle, Corinthians) y a veces el mercado
   (Everton, Angers, Athletic, Santos Laguna). No hay regla todavía.
-- La pista de la combinada de los favoritos más fuertes del día (punto 1).
+- La pista de la combinada de los favoritos más fuertes del día (B1).
+- Re-depositar o tocar los 78 partes con Poisson: lo dicho queda como se dijo
+  (el 1X2 se mide igual con su Brier) y los 2 con Fe Perdida inventada no
+  cambian su población.
 
 ## Cómo se aplica si se aprueba
 
-Igual que con el TDE, el DTP y el EFE:
-
-1. Apruebas o corriges cada punto, y decides lo del 70 %.
-2. Redacto la v3.3 en `docs/skills/sad-analysis/` (SKILL.md, el script de
-   auditoría sin el paso 3 y las referencias con el encabezado de
-   suspensión).
-3. Ningún campo nuevo en el parte: la espina, el falsador y las tres fuentes
-   ya tienen sitio. El prompt (`docs/COWORK.md`) se alinea donde repita una
-   regla.
-4. Te entrego el `.zip`.
-5. Marcas con 🔑 las lecciones como aplicadas.
+1. Apruebas o corriges las partes A, B y C, y la frase del 70 % (A2). La parte
+   D ya está hecha (código, tests y prompt).
+2. Redacto `sad-analysis` v4.0 en `docs/skills/sad-analysis/`: el SKILL.md
+   reescrito sobre las leyes con dato, las secciones suspendidas con su
+   motivo, las referencias de goles, Fe Perdida y Tensión con encabezado de
+   suspensión, y `audit_protocol.py` fuera (o marcado suspendido).
+3. Redacto `efe-dashboard` v1.9 (parte C).
+4. Ningún campo nuevo en el parte: la espina, el falsador, las tres fuentes y
+   la lectura SAD ya tienen sitio. El prompt se alinea donde repita una regla
+   y apunta al skill.
+5. Te entrego los dos `.zip` y marcas con 🔑 las lecciones aplicadas.
