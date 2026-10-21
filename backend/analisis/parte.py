@@ -1704,6 +1704,14 @@ def _alerta(a, rechazos: list, donde: str) -> dict | None:
         rechazos.append({"donde": f"{donde}.equipo", "porque": f"equipo no reconocido: {equipo!r}",
                          "esperado": "a / b / ambos / global"})
     tipo = _txt(a.get("tipo")).lower()
+    # `dato` es de las alertas que pone el backend; una declarada por el skill
+    # es estructural o de fecha. Se guarda como `fecha`, pero se DICE: el
+    # cambio callado se reportó como bug (incidencia 343, DIV-MOTOR-MERCADO
+    # enviada «dato» y devuelta «fecha», 21/10/2026)
+    if tipo and tipo not in ("estructural", "fecha"):
+        rechazos.append({"donde": f"{donde}.tipo", "jugador": _txt(a.get("codigo")),
+                         "porque": f"tipo {tipo!r} no es de una alerta declarada: se guardó como «fecha»",
+                         "esperado": "estructural / fecha (`dato` lo pone solo el backend)"})
     # `texto` es el nombre que sale natural; se acepta como alias de `detalle`
     detalle = _txt(a.get("detalle")) or _txt(a.get("texto"))
     if not detalle:

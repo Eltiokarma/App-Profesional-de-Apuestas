@@ -97,8 +97,10 @@ cae en la raíz del repo (17/10/2026).
 >   (no existe `/estadisticas/gap`; μ son puntos: nunca un Poisson sobre μ); P1a del TDE ya viene calculado en `tde/{id}`. El
 >   `desde` del DT con `desdeConfirmar: true` NO es dato: la llegada sale de
 >   prensa o va vacía. Una ventana del TDE que cambia según quién marque va
->   en la rama: `reasignacion.siMarcaPrimero.ventana` (minutos de reloj; una
->   ventana «desde la ventaja» no se puede cobrar). La apertura del DTP entra
+>   en la rama: `reasignacion.siMarcaPrimero.ventana`, RELATIVA al gol que la
+>   abre como pide el TDE v0.1.21 («desde el gol +15»: el veredicto la cobra
+>   desde el minuto de ese gol) o en minutos de reloj («60-75'»); una ventana
+>   relativa sin «+N» no se puede cobrar. La apertura del DTP entra
 >   a la cadena UNA vez: re-depositar no la pisa (anti-hindsight). Las bajas
 >   de la base (`jugador_bajas`) pueden ser viejas: manda el parte médico de
 >   esta semana.

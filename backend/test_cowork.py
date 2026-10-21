@@ -3322,6 +3322,25 @@ def main():
           _t == "60-75'" and _dr and "no se cobra" in _venc)
     _t2, _dr2, _v2 = ventana_a_cobrar({"ventana": "75-90'"}, {**_r, "minuto": 50})
     check("con la rama viva, la etiqueta es la de la rama", _t2 == "60-75'" and _dr2 and _v2 == "")
+    # UN NOMBRE ROTO EN LA F1 SE LIMPIA, Y SI NO TIENE ARREGLO MANDA LA HOJA (incidencia 352)
+    from backend.analisis.f1_base import nombre_sano
+    check("F1: «A. MaksimoviÄ» (mojibake a medias) toma el nombre de la hoja; uno completo se repara; uno sano no cambia",
+          nombre_sano("A. MaksimoviÄ", "A. Maksimović") == "A. Maksimović"
+          and nombre_sano("R. ObriÄ\x87") == "R. Obrić" and nombre_sano("Alemão", "J. Tornich") == "Alemão")
+    # UNA ALERTA DECLARADA CON TIPO «dato» SE GUARDA COMO «fecha», PERO SE DICE (incidencia 343)
+    from backend.analisis.parte import _alerta
+    _rz = []
+    _al = _alerta({"codigo": "DIV-MOTOR-MERCADO", "equipo": "global", "tipo": "dato", "detalle": "72 contra 49"}, _rz, "alertas[0]")
+    check("alerta declarada con tipo «dato»: queda «fecha» y el recibo lo dice",
+          _al["tipo"] == "fecha" and any(r["donde"] == "alertas[0].tipo" for r in _rz), _rz)
+    _rz2 = []
+    _alerta({"codigo": "T.54", "equipo": "a", "tipo": "estructural", "detalle": "DT nuevo"}, _rz2, "alertas[1]")
+    check("con un tipo válido no hay aviso", not _rz2, _rz2)
+    # LA VENTANA DE LA RAMA RELATIVA AL GOL SE COBRA (incidencia 345, TDE v0.1.21)
+    from backend.analisis.veredicto import rango_relativo
+    check("«desde el gol +15» con el gol al 50' es el tramo 50-65; sin minuto o sin «+N» no hay tramo",
+          rango_relativo("desde el gol +15", 50) == (50, 65) and rango_relativo("desde el gol +15", None) is None
+          and rango_relativo("tras la ventaja", 50) is None and rango_relativo("75-90'", 50) is None)
     _gs = [{"minuto": 20, "lado": "a"}, {"minuto": 60, "lado": "a"}, {"minuto": 81, "lado": "a"}, {"minuto": 86, "lado": "b"}]
     check("un 3 arriba alcanzado DENTRO de la ventana, antes del gol que se cobra, abandona la rama (Nacional 3-0 al 81', 3-1 al 86')",
           _cv(_gs, 86, "b")[0] == "rama_abandonada" and _cv(_gs, 75, "b")[0] == "")

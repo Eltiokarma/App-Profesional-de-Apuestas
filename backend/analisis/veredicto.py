@@ -186,6 +186,22 @@ def ventana_relativa(texto: str) -> bool:
     return bool(_RELATIVA.search(texto or ""))
 
 
+_MAS_N = re.compile(r"\+\s*(\d{1,2})")
+
+
+def rango_relativo(texto: str, minuto) -> tuple[int, int] | None:
+    """«desde el gol +15» con el gol al 50' → (50, 65). El TDE v0.1.21 pide la
+    ventana de cada rama RELATIVA al gol que la abre, y el veredicto la mandaba
+    entera a la autopsia (incidencia 345, Levante–Athletic 21/10/2026). Sin el
+    minuto del gol o sin un «+N», no hay tramo de reloj y sigue sin cobrarse."""
+    if minuto is None or not ventana_relativa(texto):
+        return None
+    m = _MAS_N.search(texto or "")
+    if not m:
+        return None
+    return int(minuto), int(minuto) + int(m.group(1))
+
+
 def _ventana(texto: str) -> tuple[int, int] | None:
     """"75-90'" → (75, 90). Sin dos números, o relativa a un gol, no hay
     ventana de reloj que comprobar."""
@@ -264,7 +280,7 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
         reasig = rama_jugada(tde, goles, gl + gv, out["evidencia"]["conFicha"])
         # LA VENTANA DE LA RAMA QUE SE JUGÓ, si la declaró (disciplina 44)
         texto_v, de_rama, vencida = ventana_a_cobrar(tde, reasig)
-        rango = _ventana(texto_v)
+        rango = _ventana(texto_v) or (rango_relativo(texto_v, (reasig or {}).get("minuto")) if de_rama else None)
         if not rango:
             rel = ventana_relativa(texto_v)
             bloques.append({"ventana": texto_v, "equipo": tde.get("equipo") or "",
