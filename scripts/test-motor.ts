@@ -6,6 +6,10 @@ import { teamEngine } from '../src/motor/engine'
 import { computeTeamLevels, levelBreakdown } from '../src/motor/levels'
 import { CAL_UMBRAL, gapFor, mu, ptsEsperadosAjustados, ptsRecent, recuperabilidad, senalCalendario, senalDe } from '../src/motor/regression'
 import type { TeamMatch } from '../src/motor/types'
+import { probabilidadesUnXDos } from '../src/lib/unxdos'
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 let failed = 0
 function check(name: string, got: unknown, want: unknown) {
@@ -214,6 +218,16 @@ for (const id of ['bet', 'sev', 'rma', 'liv', 'int']) {
 const a = teamEngine('bet')!.snaps[30].fused.k
 const b = teamEngine('bet')!.snaps[30].fused.k
 check('determinista (memo)', a, b)
+
+// ---- §5.6 el 1X2 del motor desde μ: espejo del backend sobre los vectores dorados ----
+console.log('\n— 1X2 del motor (unxdos) —')
+{
+  const casosUx = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'casos_unxdos.json'), 'utf8')) as {
+    casos: { muLocal: number; muVisita: number; esperado: unknown }[]
+  }
+  for (const c of casosUx.casos) check(`μ ${c.muLocal} vs ${c.muVisita}`, probabilidadesUnXDos(c.muLocal, c.muVisita), c.esperado)
+  check('sin μ no hay 1X2', probabilidadesUnXDos(null, 1.2), null)
+}
 
 console.log(failed ? `\n${failed} FALLAS` : '\nTODO OK')
 process.exit(failed ? 1 : 0)

@@ -1277,6 +1277,7 @@ def constantes_cuota(equipo_id: int):
 
 @app.get(API + "/predicciones/{fixture_id}")
 def prediccion(fixture_id: int):
+    from backend.analisis import unxdos_motor
     f = get_fixture(fixture_id)
     fecha = iso(f["date"])
     local = gap_equipo(f["home_team_id"], fecha)
@@ -1296,6 +1297,9 @@ def prediccion(fixture_id: int):
         "gapDiff": gap_diff,
         "gapDiffAjustado": gap_diff_adj,
         "fiabilidadMu": fiabilidad_mu_partido(f),
+        # la fuente «motor» del pronóstico en la escala del 1X2 (μ son puntos:
+        # no se meten en un Poisson). docs/MOTOR_SAD_EXTRACCION.md §5.6
+        "unXDos": unxdos_motor.del_partido(local.get("muPartido"), visitante.get("muPartido")),
         "generadoEn": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     }
 

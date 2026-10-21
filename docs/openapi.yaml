@@ -2014,7 +2014,38 @@ components:
             nota: { type: string, description: 'por qué, en lenguaje de apostador' }
             escala: { type: string, description: 'solo con bases distintas: la relación (rival de categoría inferior · superior · fuera del padrón · otra liga)' }
             notaLiga: { type: string, description: 'solo con bases distintas: lo que diría la liga sola' }
+        unXDos:
+          nullable: true
+          description: >
+            El 1X2 del MOTOR desde los dos μ_partido (logística multinomial sobre d = μ_local − μ_visita y d²,
+            calibrada con backend/backtest_unxdos_motor.py; MOTOR_SAD_EXTRACCION.md §5.6). Es la fuente «motor» del
+            pronóstico (disciplina 33), no el pronóstico. μ son PUNTOS esperados: no se meten en un Poisson como goles.
+            null si falta un μ.
+          allOf: [{ $ref: '#/components/schemas/UnXDosMotor' }]
         generadoEn: { type: string, format: date-time }
+    UnXDosMotor:
+      type: object
+      required: [local, empate, visita, d, modelo, calibracion, nota]
+      properties:
+        local: { type: number, description: 'porcentaje; los tres suman 100' }
+        empate: { type: number }
+        visita: { type: number }
+        d: { type: number, description: 'μ_local − μ_visita' }
+        modelo: { type: string, example: logistica-mu-v1 }
+        calibracion:
+          type: object
+          description: 'de dónde salen los coeficientes y cómo dio la prueba temporal (20 % más reciente)'
+          properties:
+            fecha: { type: string }
+            partidos: { type: integer }
+            equipos: { type: integer }
+            desde: { type: string }
+            hasta: { type: string }
+            logLoss: { type: number }
+            logLossFrecuencia: { type: number, description: 'quien no mira el partido' }
+            logLossPoissonSobreMu: { type: number, description: 'lo que se improvisaba con μ como λ de goles' }
+            acierto: { type: number }
+        nota: { type: string }
     AnalisisPrepartido:
       type: object
       required: [fixtureId, niveles, constantes, prediccion, resumen]

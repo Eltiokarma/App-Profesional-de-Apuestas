@@ -1154,6 +1154,12 @@ Escribís vos (es juicio, no se puede calcular):
 - El pronóstico con sus TRES fuentes declaradas en simultáneo (Disciplina 33):
   motor de Regresión al Nivel (sad-analysis), matriz manual y mercado. Si el
   motor no pudo correr, se dice — no se reemplaza con estimación (Disciplina 21).
+  La fuente «motor» en 1X2 es `unXDos` de `GET predicciones/{id}` (local ·
+  empate · visita, calibrado sobre 51 mil partidos): copiala tal cual en
+  `pronostico.motor`. **μ son PUNTOS esperados, no goles: NO armes un Poisson
+  con μ como λ** (se hizo en 78 partes de octubre; el modelo de goles del
+  skill viejo no existe en esta app). Si `unXDos` viene null, el motor no
+  corrió y se dice.
 - Los documentos en prosa (ver punto 5).
 
 NO escribas, porque lo calcula la app y se ignora si llega:

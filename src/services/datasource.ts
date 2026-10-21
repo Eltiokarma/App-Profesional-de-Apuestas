@@ -2,6 +2,7 @@
 // - MockDataSource: el motor local (src/motor) sirviendo ese contrato (demo, default).
 // - HttpDataSource: el backend FastAPI real (VITE_DATA_SOURCE=http).
 // Migrar una pantalla a datos reales = consumirla vía getDataSource(); nada más.
+import { unXDosDelPartido } from '../lib/unxdos'
 import { describirFamilias } from '../lib/familias'
 import type { BurbujasEquipoDTO } from '../api/types'
 import { analizarBurbujas, espinaTarjeta } from '../lib/burbuja'
@@ -524,13 +525,16 @@ class MockDataSource implements SadDataSource {
   async prediccion(fixtureId: number): Promise<PrediccionDTO> {
     const m = MATCHES.find((x) => FIXTURE_NUM(x.id) === fixtureId)
     if (!m) throw new Error(`fixture ${fixtureId} no existe`)
+    const local = gapEquipoDTO(m.home, m)
+    const visitante = gapEquipoDTO(m.away, m)
     return {
       fixtureId,
-      local: gapEquipoDTO(m.home, m),
-      visitante: gapEquipoDTO(m.away, m),
+      local,
+      visitante,
       gapDiff: gapDiff(m.home, m.away),
       gapDiffAjustado: gapDiffAjustado(m.home, m.away),
       fiabilidadMu: fiabilidadMuDe(m),
+      unXDos: unXDosDelPartido(local.muPartido ?? null, visitante.muPartido ?? null),
       generadoEn: MOCK_NOW,
     }
   }

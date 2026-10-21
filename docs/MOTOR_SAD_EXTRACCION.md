@@ -611,6 +611,45 @@ señal_calendario = blando si recuperabilidad > μ_genérica + 0.15
 - Nivel del rival futuro: `date <= fecha` con fallback 1.0, igual que el gap
   ajustado. Fixtures pospuestos/cancelados quedan fuera del camino.
 
+### §5.6 · El 1X2 del motor desde μ (21/10/2026)
+
+`μ_partido` son **puntos esperados** (0 a 3), no goles. En 78 de 209 partes de
+octubre el analista armó el 1X2 con un Poisson que tomaba μ como λ de goles: un
+error de unidad improvisado porque el skill `sad-analysis` describe un «modelo
+de goles Poisson» heredado del repo viejo que en esta app no existe. Lo que
+está en la base se calcula: `/predicciones/{id}` trae `unXDos`, la conversión
+calibrada (`backend/analisis/unxdos_motor.py`, espejo `src/lib/unxdos.ts`,
+vectores `scripts/casos_unxdos.json`).
+
+- **Modelo:** logística multinomial sobre d = μ_local − μ_visita y d², con el
+  empate de referencia (el M0 de `backtest_burbuja_1x2`). μ no se toca: solo
+  se traduce a la escala del 1X2.
+- **Calibración** (`python -m backend.backtest_unxdos_motor`, historias de
+  `/constantes` y `/niveles` de los 707 equipos del padrón, nivel de cada lado
+  el último ANTERIOR al partido): 51.254 partidos de 2019-02 a 2026-10, corte
+  temporal 80/20 (prueba: 10.251 partidos desde el 01/12/2025).
+
+  | prueba | log-loss | Brier | acierto |
+  |---|---|---|---|
+  | logística sobre μ | **1.0512** | 0.6333 | 46.5 % |
+  | Poisson sobre μ (lo improvisado) | 1.0590 | 0.6382 | 46.3 % |
+  | frecuencia (no mira el partido) | 1.0707 | 0.6473 | 44.6 % |
+
+  Logística − Poisson: −0.0078 [−0.0099, −0.0057]; logística − frecuencia:
+  −0.0195 [−0.0235, −0.0149]. El Poisson sobre μ no estaba lejos (μ y los
+  goles van juntos) pero es peor y su marcador exacto no tiene base.
+- **Calibración por tramo de d** (prueba): el modelo y lo real quedan a ≤ 4
+  puntos en todos los tramos; en los extremos (|d| > 0.6) el modelo exagera
+  levemente al favorito (d > 0.9: local 59 % contra 57 % real).
+- **Coeficientes** (con todo, sin estandarizar), [intercepto, d, d²]: local
+  0.29851 · 0.44446 · 0.03539; visita 0.18515 · −0.48092 · 0.04911.
+- **Qué es:** la fuente «motor» de las tres del pronóstico (disciplina 33). No
+  ve once, forma, K ni mercado; contra el mercado sigue el §13.5 de
+  `docs/REVENTON.md` (el motor capta un tercio de lo que sabe la cuota). Con
+  `fiabilidadMu` baja (ESCALA-LIGAS) el número sale igual y se lee con esa
+  reserva. Recalibrar = correr el backtest y copiar los coeficientes en los dos
+  lados y en los vectores.
+
 ### ⚠️ Discrepancias documentación vs código (resueltas a favor del código)
 
 1. **Nivel usado en las constantes**: el doc dice "nivel discretizado del rival

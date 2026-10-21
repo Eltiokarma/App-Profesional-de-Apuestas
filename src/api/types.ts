@@ -239,7 +239,32 @@ export interface PrediccionDTO {
   /** Confianza en μ v2 para la liga del fixture (calibración por liga 2026-07). */
   /** `escala` (y `notaLiga`) cuando los dos equipos vienen de bases distintas: entonces baja. */
   fiabilidadMu: { nivel: 'alta' | 'media' | 'baja'; nota: string; escala?: string; notaLiga?: string } | null
+  /** El 1X2 del MOTOR desde los dos μ_partido (logística calibrada, §5.6): la fuente
+   *  «motor» del pronóstico. null si falta un μ. μ son puntos, no goles: no va en un Poisson. */
+  unXDos?: UnXDosMotorDTO | null
   generadoEn: string
+}
+
+/** Probabilidades 1X2 del motor (porcentajes que suman 100). */
+export interface UnXDosMotorDTO {
+  local: number
+  empate: number
+  visita: number
+  /** μ_local − μ_visita */
+  d: number
+  modelo: string
+  calibracion: {
+    fecha: string
+    partidos: number
+    equipos: number
+    desde: string
+    hasta: string
+    logLoss: number
+    logLossFrecuencia: number
+    logLossPoissonSobreMu: number
+    acierto: number
+  }
+  nota: string
 }
 
 /** Reporte integral pre-partido (endpoint /analisis-prepartido). */

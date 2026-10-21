@@ -260,6 +260,23 @@ export function Estadisticas({ store, m, isMobile }: Props) {
               </div>
               <GapCard g={pred.data.visitante} name={A.name} align="right" />
             </div>
+            {pred.data.unXDos && (
+              <div title={pred.data.unXDos.nota} style={{ marginTop: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+                  <span style={{ font: '600 9px var(--mono)', color: 'var(--t3)', letterSpacing: '1px' }}>1X2 DEL MOTOR · SOLO μ</span>
+                  <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>
+                    calibrado en {pred.data.unXDos.calibracion.partidos.toLocaleString('es')} partidos
+                  </span>
+                </div>
+                <div style={{ display: 'flex', height: 22, borderRadius: 6, overflow: 'hidden', font: '600 11px var(--mono)', fontVariantNumeric: 'tabular-nums', color: '#fff' }}>
+                  {([['local', 'var(--accent)'], ['empate', 'var(--t3)'], ['visita', 'var(--down)']] as const).map(([k, bg]) => (
+                    <div key={k} style={{ flex: pred.data!.unXDos![k], background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 0 }}>
+                      {pred.data!.unXDos![k].toFixed(0)}%
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {(pred.data.local.senal === 'fuerte' || pred.data.visitante.senal === 'fuerte') && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', marginTop: 12, borderRadius: 10, background: 'var(--mark-soft)', border: '1px solid color-mix(in oklch,var(--mark),transparent 60%)' }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--mark)', flexShrink: 0 }}></span>
