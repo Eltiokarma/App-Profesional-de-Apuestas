@@ -655,6 +655,13 @@ tokens a mitad de camino, la siguiente arranca por `porHacer` y no rehace nada.
 `yaHechos` salvo que se quiera rehacerlos a propósito. Eso es lo que convierte
 la agenda en la lista de trabajo: nadie tiene que llevar la cuenta aparte.
 
+**Un parte de otra fecha no cuenta como hecho** (22/10/2026, incidencia 371:
+Millonarios–Once Caldas, depositado para el 14/10 y jugado el 20/10). Si el
+partido se movió más de un día desde el depósito, el candidato sale con
+`rehacer` (y en `aRehacer`) y vuelve a `porHacer`: se rehace entero con la
+semana nueva. Si se cierra sin rehacer, el caso va a cuarentena automática
+(criterio de insumo, como el DT equivocado).
+
 ### Cómo saber que esto sigue corriendo
 
 `GET /analisis/cowork/latido` contesta de una sola llamada si el pipeline está

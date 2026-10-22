@@ -52,7 +52,10 @@ cae en la raíz del repo (17/10/2026).
 
    Si el mensaje del disparo trae otros parámetros de agenda, mandan esos.
    Usá la misma consulta en el paso 4 → la lista de trabajo es
-   `porHacer` (lo ya depositado está en `yaHechos`: no se rehace). Descartá
+   `porHacer` (lo ya depositado está en `yaHechos`: no se rehace). Un partido
+   en `aRehacer` tiene un parte de OTRA fecha (aplazado o movido): va en
+   `porHacer` y se rehace ENTERO, con la semana nueva —sin rehacerlo, el caso
+   cae en cuarentena automática al cerrar el veredicto—. Descartá
    los que arrancan en menos de 60 minutos: un parte no se escribe con el
    pitazo encima y JAMÁS después del pitazo.
 3. **Un subagente por partido, en paralelo** (herramienta Agent, tipo

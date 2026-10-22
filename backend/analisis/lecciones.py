@@ -67,7 +67,7 @@ def _casos(limite: int = 400, ids=None) -> list[dict]:
     agentes a la vez el GET tardaba de 30 s a más de 2 min (11/10/2026)."""
     from backend.analisis.parte import _conectar as conectar_parte
 
-    from backend.analisis.parte import cohorte_de, dt_equivocado, sin_dt
+    from backend.analisis.parte import cohorte_de, dias_movido, dt_equivocado, sin_dt
 
     if ids is not None and not ids:
         return []
@@ -82,10 +82,29 @@ def _casos(limite: int = 400, ids=None) -> list[dict]:
             "cohorte, cuarentena_json, modo_fallo_json, banco_desmentido_json FROM parte_cowork "
             "WHERE veredicto_json IS NOT NULL"
             + filtro + " ORDER BY fecha DESC LIMIT ?", (*params, limite)).fetchall()
+    # la fecha REAL de cada partido, para el parte escrito para otra fecha
+    fecha_real: dict[int, str] = {}
+    if filas:
+        try:
+            from backend import db as saddb
+            ids_f = [f["fixture_id"] for f in filas]
+            for r in saddb.query("sad", f"SELECT id, date FROM fixtures WHERE id IN ({','.join('?' * len(ids_f))})",
+                                 tuple(ids_f)):
+                fecha_real[r["id"]] = str(r["date"] or "")
+        except Exception:  # noqa: BLE001 — sin la base de partidos no se juzga
+            fecha_real = {}
     fuera = []
     for f in filas:
         parte = json.loads(f["parte_json"])
         cuarentena = json.loads(f["cuarentena_json"]) if f["cuarentena_json"] else None
+        # UN PARTE PARA OTRA FECHA TAMPOCO (incidencia 371, Millonarios–Once
+        # Caldas: depositado para el 14/10, jugado el 20/10 sin rehacerse). Se
+        # escribió con otra semana de datos: no calibra nada.
+        movido = dias_movido(f["fecha"], fecha_real.get(f["fixture_id"]))
+        if movido is not None and not cuarentena:
+            cuarentena = {"motivo": f"automática: el parte es del partido del {f['fecha']} y se jugó el "
+                                    f"{fecha_real[f['fixture_id']][:10]} ({movido:+d} días) sin rehacerse",
+                          "automatica": True, "puestaEn": "", "veredictoAlPoner": None, "parteDeOtraFecha": movido}
         # SIN DT NO HAY CASO. El bloque A, F3 y S1 se apoyan en la continuidad
         # del entrenador; un parte con «sin establecer» en un lado se hizo sin
         # ese insumo y no calibra nada. Cuarentena automática, por criterio.

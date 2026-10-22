@@ -3773,6 +3773,8 @@ components:
       properties:
         fixtureId: { type: integer }
         hora: { type: string }
+        fecha: { type: string, description: 'día del partido (UTC)' }
+        rehacer: { type: string, description: 'no vacío si el parte guardado es de OTRA fecha del partido (aplazado o movido más de un día): vuelve a porHacer y se rehace entero (incidencia 371)' }
         partido: { type: string }
         equipoA: { type: string }
         equipoB: { type: string }
@@ -3838,6 +3840,9 @@ components:
         analizar: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
         enEspera: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
         descartados: { type: array, items: { $ref: '#/components/schemas/AgendaItem' } }
+        porHacer: { type: array, items: { type: integer }, description: 'los que faltan: sin parte, o con un parte de otra fecha (aRehacer)' }
+        yaHechos: { type: array, items: { type: integer } }
+        aRehacer: { type: object, additionalProperties: { type: string }, description: 'fixtureId → por qué el parte guardado no vale (el partido se movió más de un día desde que se depositó)' }
         nota: { type: string }
     RevisorDiario:
       type: object
