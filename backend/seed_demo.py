@@ -269,12 +269,21 @@ def seed(base_dir: str):
     for f in con_cuotas:
         for bid, bname in BOOKMAKERS:
             rng = random.Random(f"{f['id']}|{bid}")
+            x12: dict[str, float] = {}
             for bet_id, (bet_name, sels) in enumerate(ODDS_MARKETS, start=1):
                 for value, base in sels:
+                    odd = round(base * (0.94 + rng.random() * 0.12), 2)
+                    if bet_name == "Match Winner":
+                        x12[value] = odd
+                    elif bet_name == "Double Chance":
+                        # la doble oportunidad de la casa sale de SU 1X2 (como en el
+                        # mercado real): la app descarta la que no cuadra (incidencia 68)
+                        a, b = {"Home/Draw": ("Home", "Draw"), "Home/Away": ("Home", "Away"),
+                                "Draw/Away": ("Draw", "Away")}[value]
+                        odd = round(1 / (1 / x12[a] + 1 / x12[b]) * (0.98 + rng.random() * 0.03), 2)
                     sad.execute(
                         "INSERT INTO odds (fixture_id, league_id, bookmaker_id, bookmaker_name, bet_id, bet_name, value, odd) VALUES (?,?,?,?,?,?,?,?)",
-                        (f["id"], LEAGUE_ID, bid, bname, bet_id, bet_name, value,
-                         round(base * (0.94 + rng.random() * 0.12), 2)),
+                        (f["id"], LEAGUE_ID, bid, bname, bet_id, bet_name, value, odd),
                     )
             # trampa: la API sirve los MISMOS mercados en versión 1er tiempo;
             # si cuota_key los deja pasar, /cuotas y /casas mezclan valores
