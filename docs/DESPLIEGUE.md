@@ -207,10 +207,20 @@ python -m backend.ingesta.extractor --desde 2026-05-31 --hasta 2026-05-31 --solo
 - [ ] Partidos del día visibles; página de liga con temporadas.
 - [ ] Al día siguiente de activar `SAD_INGESTA_HORA`: `lastPipelineRun` avanzó
       y los logs de Railway muestran `[ingesta] corrida diaria …`.
+- [ ] Después de un merge a `main`, el despliegue activo en Railway trae ESE
+      commit (Details → «Deployed via GitHub»). Un push que llega mientras
+      Railway tiene los builds cerrados se PIERDE: no queda en cola ni se
+      reintenta. Pasó el 21-22/10/2026 (caída de la plataforma): producción
+      se quedó en el PR #171 con #173-#184 ya en `main`. Se arregla con
+      «Deploy latest commit» del servicio, o con el próximo merge a `main`;
+      el «Redeploy» de un despliegue viejo vuelve a subir ESE commit, no el
+      último. Para ver qué corre sin entrar a Railway: un endpoint o campo
+      nuevo del último PR (p. ej. `unXDos` en `/predicciones/{id}`).
 
 ## 4. Costos y límites
 
-- Railway: ~$5/mes del plan Hobby cubre este servicio + volumen a este tamaño.
+- Railway: el servicio corre en el plan Pro (en una caída de la plataforma,
+  Pro recupera los builds antes que Hobby).
 - Vercel: plan free (build estático).
 - La cuota free de API-Football (95 req/día efectivos) la administra el
   extractor con `.extractor_cuota.json`, que persiste en el volumen.
