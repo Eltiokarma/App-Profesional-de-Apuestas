@@ -3034,6 +3034,52 @@ def main():
     _sz = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-4-2", "xiReferencia": _ref.replace("Rojo", "Quiroz")}}},
                    {"a": {"formacion": "4-4-2", "titulares": ["C. Quirós"]}})
     check("«Quirós» en la ficha casa con «Quiroz» en la referencia", _sz["ausentesDeLaReferencia"] == [], _sz)
+    # GRUPO 2 DE INCIDENCIAS (22/10/2026)
+    # 260: «entraron Bambú y Meraz por Mora y Galindo» no anuncia a Mora; «B. Duarte o Villanueva» no anuncia a Villanueva
+    _sal = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3", "xiReferencia": _ref,
+                     "senalXi": "entraron Bambú y Meraz por Mora y Galindo; B. Duarte o Villanueva"}}},
+                    {"a": {"formacion": "4-3-3", "titulares": ["F. Mora", "Bambú", "J. Villanueva", "F. Muslera"]}})
+    check("260: el que sale («por Mora») y la alternativa sin paréntesis («o Villanueva») no cuentan como anunciados",
+          sorted(_sal["ausentesDeLaReferencia"]) == ["F. Mora", "J. Villanueva"], _sal)
+    # 152: el seguro de atrás en el banco
+    _seg = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "3-4-2-1", "xiReferencia": _ref},
+                                                 "m2": {"restDefense": {"foco": "fijo en Lobotka por delante de la línea de tres"}}}},
+                    {"a": {"formacion": "3-4-2-1", "titulares": ["F. Muslera"], "banca": ["S. Lobotka", "Otro Suplente"]}})
+    check("152: si el rest defense se apoyaba en un jugador que arrancó en el banco, el bloque se rehace",
+          _seg["rehacer"] is True and any("Lobotka" in m for m in _seg["motivos"]), _seg)
+    _seg_ok = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "3-4-2-1", "xiReferencia": _ref},
+                                                    "m2": {"restDefense": {"foco": "fijo en Lobotka"}}}},
+                       {"a": {"formacion": "3-4-2-1", "titulares": ["S. Lobotka", "F. Muslera"], "banca": ["Otro Suplente"]}})
+    check("y si el del seguro es titular, no", _seg_ok["rehacer"] is False, _seg_ok)
+    # 163: la referencia con varias proyecciones se avisa
+    _mez = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3",
+                     "xiReferencia": _ref + "; SI proyecta a E. Gómez; Milenio, a Herrera y Simeone"}}},
+                    {"a": {"formacion": "4-3-3", "titulares": ["F. Muslera"]}})
+    check("163: una referencia que cita proyecciones de varias fuentes se marca mezclada",
+          _mez["referenciaMezclada"] is True and _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3",
+          "xiReferencia": _ref}}}, {"a": {"formacion": "4-3-3", "titulares": []}})["referenciaMezclada"] is False, _mez)
+    # 137: con el grid completo, la línea de atrás es la fila 2 aunque la API etiquete «M» a dos de ella
+    import backend.analisis.dtp_cowork as _dcm
+    _orig = (_dcm._fixture, _dcm._titulares, _dcm._banca)
+    _xi137 = ([{"player_id": 1, "jugador": "Arquero", "posicion": "G", "grid": "1:1"}]
+              + [{"player_id": 10 + k, "jugador": f"Def {k}", "posicion": "D" if k < 2 else "M", "grid": f"2:{k + 1}"} for k in range(4)]
+              + [{"player_id": 20 + k, "jugador": f"Med {k}", "posicion": "M", "grid": f"3:{k + 1}"} for k in range(4)]
+              + [{"player_id": 30 + k, "jugador": f"Del {k}", "posicion": "F", "grid": f"4:{k + 1}"} for k in range(2)])
+    try:
+        _dcm._fixture = lambda fx: {"home_team_id": 1, "away_team_id": 2}
+        _dcm._titulares = lambda fx, tid: _xi137 if tid == 1 else []
+        _dcm._banca = lambda fx, tid: []
+        _of137 = _dcm.oficial_de(1638786)
+    finally:
+        _dcm._fixture, _dcm._titulares, _dcm._banca = _orig
+    check("137: con grid, los defensores son la fila 2 (4), no los etiquetados «D» (2)",
+          _of137["a"]["defensores"] == 4, _of137.get("a"))
+    from backend.analisis.dtp_cowork import alertas_rehacer as _alr
+    _als = _alr({"bloques": [{"equipo": "a", "calculado": {"contraElOnce": {"rehacer": False, "sinReferencia": True}}},
+                             {"equipo": "b", "calculado": {"contraElOnce": {"rehacer": False, "sinReferencia": False}}}]},
+                {"a": "Aston Villa", "b": "Viking"})
+    check("365: sin XI de referencia y con once oficial, DTP-SIN-REFERENCIA (tipo dato) para ese lado y solo ese",
+          [(a["codigo"], a["equipo"], a["tipo"]) for a in _als] == [("DTP-SIN-REFERENCIA", "a", "dato")], _als)
     _sin = lambda sis, d: _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": sis}}},
                                    {"a": {"formacion": "", "titulares": [], "defensores": d}})["rehacer"]
     check("sin formación en la ficha, una línea de 4 contra una apertura de 5 pide rehacer; 3 contra 5 no",

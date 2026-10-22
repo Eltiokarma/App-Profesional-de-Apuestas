@@ -2156,8 +2156,12 @@ export interface DtpBloque {
     contraElOnce?: {
       rehacer: boolean
       motivos: string[]
+      sinReferencia?: boolean
+      /** el xiReferencia cita varias proyecciones: no es un XI (DTP-SIN-REFERENCIA) */
+      referenciaMezclada?: boolean
       sistemaDeclarado: string
       sistemaOficial: string
+      defensoresOficiales?: number | null
       ausentesDeLaReferencia: string[]
     }
   }

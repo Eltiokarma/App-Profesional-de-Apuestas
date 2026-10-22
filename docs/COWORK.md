@@ -1386,6 +1386,12 @@ el pantallazo es el procedimiento.
   mapa de duelos se escribió sobre otro equipo. Antes del pitazo: rehacé M1/M2
   y re-depositá. Después: en la autopsia, es una apertura caída, no un fallo
   del mecanismo.
+- **`xiReferencia` es UN solo XI de 11 nombres.** Las proyecciones de otras
+  fuentes, las alternativas y los cambios anunciados van en `senalXi` (lo que
+  sale va detrás de «por»: «entra X por Y» no anuncia a Y). Sin XI escrito, o
+  con varias proyecciones mezcladas, la app avisa `DTP-SIN-REFERENCIA`: el
+  once oficial no se pudo comparar. Y si el seguro de atrás (`restDefense.foco`)
+  nombra a un jugador que arranca en el banco, salta `DTP-REHACER`.
 - Las dos ramas del impacto (piso y techo) las calcula la app con los pesos
   del protocolo. NO las escribas.
 - La marca "XI NO CONFIRMADO" la pinta la app sola mientras el parte esté en
