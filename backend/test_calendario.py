@@ -165,6 +165,18 @@ def main():
     et_bloque = calendario.etiquetas_de_rival(BLOQUE, True, 281, 2026, "2026-08-20", None)
     codigos = {x["codigo"] for x in et_bloque}
     check("BLOQUE BAJO desde la formación dominante (5-3-2)", "BLOQUE_BAJO" in codigos, codigos)
+    # incidencia 173: un solo partido con 5-3-2 no es formación dominante
+    _q_orig = calendario._q
+    try:
+        calendario._q = lambda sql, args: [{"formacion": "5-3-2", "n": 11}]
+        _una = calendario._formacion_dominante(BLOQUE)
+        calendario._q = lambda sql, args: [{"formacion": "5-3-2", "n": 11}, {"formacion": "5-3-2", "n": 11},
+                                           {"formacion": "4-2-3-1", "n": 11}]
+        _dos = calendario._formacion_dominante(BLOQUE)
+    finally:
+        calendario._q = _q_orig
+    check("un solo partido con 5-3-2 no hace formación dominante; dos de tres sí", _una is None and _dos == "5-3-2",
+          (_una, _dos))
 
     # CLÁSICO: mismo municipio, y se declara parcial
     et_vecino = calendario.etiquetas_de_rival(LOCALON, True, 281, 2026, "2026-08-20", "Ciudad F")

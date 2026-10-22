@@ -426,6 +426,12 @@ def main():
           all(f["riesgo"]["confianza"] == "baja" and any("escala distinta" in m for m in f["riesgo"]["confianzaMotivos"])
               for f in j_esc["familias"].values() if f.get("riesgo") and f["riesgo"]["nivel"] != "sin base"),
           [f.get("riesgo") for f in j_esc["familias"].values()])
+    # incidencia 295: el reventón del parte aplica la MISMA regla que la tarjeta
+    _rc = (c.get(f"{A}/analisis/cowork/990150").json().get("lecturaSad") or {}).get("reventonCalculado") or {}
+    _rga = ((_rc.get("a") or {}).get("riesgo")) or {}
+    check("295: el reventonCalculado del parte trae «escala distinta» en la confianza, como /burbujas",
+          _rga.get("nivel") == "sin base" or (_rga.get("confianza") == "baja"
+          and any("escala distinta" in m for m in _rga.get("confianzaMotivos") or [])), _rga)
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM fixtures WHERE id BETWEEN 990100 AND 990199")
     from backend.analisis.parte import borrar as _borrar_parte
@@ -859,6 +865,9 @@ def main():
                params={"fecha": fecha, "limite": 4, "incluirDescartados": True}).json()
     check("la agenda dice qué falta por hacer y qué ya está",
           "porHacer" in ag and "yaHechos" in ag, sorted(ag)[:6])
+    _ag41 = (ag.get("analizar") or []) + (ag.get("enEspera") or [])
+    check("41: cada partido de la agenda dice de qué lado son sus etiquetas (el visitante)",
+          bool(_ag41) and all(x.get("etiquetasDe") == "b" for x in _ag41), [x.get("etiquetasDe") for x in _ag41][:5])
     check("y cada candidato viene marcado con lo que ya hay en la base",
           all("tieneParte" in x and "onceCerrado" in x
               for x in (ag["analizar"] + ag["descartados"])),

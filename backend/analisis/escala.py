@@ -239,3 +239,20 @@ def historial(team_id: int, filas: list[dict], cerrados: set[int] | None = None)
     return {"porRelacion": por, "partidos": partidos[-10:],
             "nota": "partidos de copa contra rivales de otra base; un E o P contra un rival de categoría "
                     "inferior es el reventón que el nivel no ve venir"}
+
+
+def bajar_confianza(familias: dict, esc: dict) -> None:
+    """LA ESCALA MUEVE LA CONFIANZA, NUNCA EL RIESGO: con el rival o la historia
+    en otra categoría, los puntos comparan cosas distintas. Una sola regla para
+    la tarjeta (/burbujas) y el reventón del parte (incidencia 295: Sabah traía
+    «escala distinta» en /burbujas y no en reventonCalculado)."""
+    if esc.get("comparable", True):
+        return
+    for fam in (familias or {}).values():
+        rg = (fam or {}).get("riesgo")
+        if rg and rg.get("nivel") != "sin base":
+            rg["confianza"] = "baja"
+            motivo = (f"escala distinta ({esc.get('relacion')}): el nivel del rival o las medianas "
+                      "no están en la misma escala")
+            if motivo not in rg.setdefault("confianzaMotivos", []):
+                rg["confianzaMotivos"].append(motivo)
