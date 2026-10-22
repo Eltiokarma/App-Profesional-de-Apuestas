@@ -3401,6 +3401,30 @@ def main():
     check("«desde el gol +15» con el gol al 50' es el tramo 50-65; sin minuto o sin «+N» no hay tramo",
           rango_relativo("desde el gol +15", 50) == (50, 65) and rango_relativo("desde el gol +15", None) is None
           and rango_relativo("tras la ventaja", 50) is None and rango_relativo("75-90'", 50) is None)
+    # GRUPO 1 DE INCIDENCIAS (22/10/2026): la ventana en palabras, la del reloj aparte y el tramo por tramo
+    from backend.analisis.veredicto import rango_sin_gol, ancla_casa, ventana_reloj, tramos_por_marcador
+    _v114 = "'los 15' posteriores al gol propio; sin gol, 75-90''"
+    check("114: «los 15 posteriores al gol propio» con el gol propio al 68' es 68-83; sin goles vale el 75-90 del «sin gol»",
+          rango_relativo(_v114, 68) == (68, 83) and rango_sin_gol(_v114) == (75, 90)
+          and ancla_casa(_v114, "siMarcaPrimero") and not ancla_casa(_v114, "siRecibePrimero"))
+    _g367 = [{"minuto": 77, "lado": "a"}]
+    _r367 = ventana_reloj("75-90'", _g367, [], "a", True)
+    check("367: la ventana del reloj se puntúa aparte con el gol que abrió la rama (77' en la 75-90)",
+          _r367["golEnVentana"] is True and _r367["cobrable"] is True)
+    # Real Sociedad–Málaga (incidencia 147): Real 1-0 al 59', 2-2... el partido en tramos con su rama
+    _tde = {"ventana": "75-90'", "reasignacion": {"siMarcaPrimero": {"ventana": "60-75'"},
+                                                 "siLeEmpatan": {"ventana": "desde el gol +15"}}}
+    _gt = [{"minuto": 10, "lado": "a"}, {"minuto": 59, "lado": "b"}, {"minuto": 66, "lado": "a"}, {"minuto": 80, "lado": "a"}]
+    _tr = tramos_por_marcador(_tde, _gt, "b")
+    check("tramo por tramo: perdiendo → siRecibePrimero, empatado tras ir perdiendo → siIguala, perdiendo de nuevo, y empatado tras ganar → siLeEmpatan",
+          [t["rama"] for t in _tr] == ["base", "siRecibePrimero", "siIguala", "siRecibePrimero", "siRecibePrimero"]
+          and [t["marcador"] for t in _tr] == ["0-0", "0-1", "1-1", "1-2", "1-3"], [(t["rama"], t["marcador"]) for t in _tr])
+    _gt2 = [{"minuto": 59, "lado": "b"}, {"minuto": 66, "lado": "a"}, {"minuto": 70, "lado": "a"}]
+    _tr2 = tramos_por_marcador(_tde, _gt2, "b")
+    check("ganando con su ventana 60-75 concede al 66 (golEnVentana) y el empate abre siLeEmpatan desde el 66 (+15)",
+          [t["rama"] for t in _tr2] == ["base", "siMarcaPrimero", "siLeEmpatan", "siRecibePrimero"]
+          and _tr2[1]["golEnVentana"] is True and _tr2[2]["rango"] == [66, 81] and _tr2[2]["golEnVentana"] is True,
+          _tr2)
     _gs = [{"minuto": 20, "lado": "a"}, {"minuto": 60, "lado": "a"}, {"minuto": 81, "lado": "a"}, {"minuto": 86, "lado": "b"}]
     check("un 3 arriba alcanzado DENTRO de la ventana, antes del gol que se cobra, abandona la rama (Nacional 3-0 al 81', 3-1 al 86')",
           _cv(_gs, 86, "b")[0] == "rama_abandonada" and _cv(_gs, 75, "b")[0] == "")
@@ -3597,6 +3621,9 @@ def main():
           acr["tasaAcierto"] is not None or acr["tasaNota"], acr)
     check("la ventana del TDE observada no cuenta lo no comprobable",
           "no cuenta como no ocurrido" in acr["ventanaTde"]["nota"], acr["ventanaTde"])
+    check("la serie del reloj (sesgo tardío) viaja aparte y nunca cuenta más que lo observado",
+          "reloj" in acr["ventanaTde"] and acr["ventanaTde"]["reloj"]["conGol"] <= acr["ventanaTde"]["reloj"]["observadas"],
+          acr["ventanaTde"])
 
     # una lección sin skill se delata en vez de repartirse a ojo
     c.post(f"{A}/analisis/cowork/{virgen}/veredicto", json={

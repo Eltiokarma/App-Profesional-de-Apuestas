@@ -1532,6 +1532,17 @@ export interface VeredictoObjetivo {
       ventanaDeRama?: boolean
       /** la ventana sin rama; `ventana` es la que se cobra */
       ventanaBase?: string
+      /** con la ventana de la rama cobrada, la base del reloj medida aparte (sesgo tardío, 44c/45) */
+      reloj?: { ventana: string; desde: number; hasta: number; golEnVentana: boolean | null;
+                goles: { minuto: number; lado: 'a' | 'b' }[]; cobrable: boolean | null; clase: string | null } | null
+      /** TDE v0.1.22 (64): tramos entre goles con la rama del marcador de cada uno. Observación. */
+      tramos?: {
+        desde: number; hasta: number; marcador: string
+        estado: 'inicio' | 'ganando' | 'perdiendo' | 'empatado'
+        rama: 'base' | 'siMarcaPrimero' | 'siRecibePrimero' | 'siLeEmpatan' | 'siIguala'
+        declarada: boolean; ventana: string; rango: number[] | null
+        concedio: number[]; golEnVentana: boolean | null
+      }[]
       /** Qué rama de la reasignación jugó el partido (quién marcó primero) y si
        *  estaba declarada. Observación, no acierto. */
       reasignacion?: {
@@ -2076,7 +2087,9 @@ export interface InventarioLecciones {
       nota: string
       escala: string
     }
-    ventanaTde: { observadas: number; conGol: number; sinFicha: number; nota: string }
+    ventanaTde: { observadas: number; conGol: number; sinFicha: number; nota: string
+      /** la base del reloj sola (sesgo tardío, TDE 44c/45), también con la rama cobrada */
+      reloj?: { observadas: number; conGol: number; nota: string } }
     /** El reventón en producción contra el backtest (docs/REVENTON.md §11). */
     reventon?: ReventonMetricas
     /** ¿La espina de la burbuja acierta más que la frecuencia de cada movimiento? */

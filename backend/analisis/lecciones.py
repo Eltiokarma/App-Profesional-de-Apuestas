@@ -281,6 +281,7 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
     casos_acred, briers, reales, con_reparto = 0, [], [], 0
     unxdos_ok, unxdos_de = 0, 0
     tde_obs, tde_positivos, tde_sin_ficha, tde_contaminadas = 0, 0, 0, 0
+    reloj_obs, reloj_positivos = 0, 0
     rev = _reventon_vacio()
     espina = {e: {"lados": 0, "aciertos": 0} for e in ("positiva", "cero", "negativa", "neutra")}
     movimientos = {m: 0 for m in ("positiva", "cero", "negativa")}
@@ -334,6 +335,12 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
             con_reparto += 1
         # la ventana del TDE: lo único del skill que se comprueba solo
         for b in (obj.get("tde") or {}).get("bloques") or []:
+            # la serie del RELOJ (sesgo tardío, TDE 44c/45): la base sola, también
+            # cuando se cobró la de la rama (incidencia 367)
+            r = b.get("reloj") if b.get("ventanaDeRama") else b
+            if r and r.get("golEnVentana") is not None and r.get("cobrable") is not False:
+                reloj_obs += 1
+                reloj_positivos += 1 if r["golEnVentana"] else 0
             if b.get("golEnVentana") is None:
                 tde_sin_ficha += 1
                 continue
@@ -386,6 +393,9 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
         "ventanaTde": {
             "observadas": tde_obs, "conGol": tde_positivos,
             "sinFicha": tde_sin_ficha, "conRojaAntes": tde_contaminadas,
+            "reloj": {"observadas": reloj_obs, "conGol": reloj_positivos,
+                      "nota": "la ventana BASE del reloj, también cuando se cobró la de la rama: "
+                              "la serie del sesgo tardío (TDE 44c y 45)"},
             "nota": "ventanas del TDE comprobadas contra los goles recibidos, en población "
                     "ciega. `sinFicha` no cuenta como no ocurrido: no se pudo comprobar",
         },

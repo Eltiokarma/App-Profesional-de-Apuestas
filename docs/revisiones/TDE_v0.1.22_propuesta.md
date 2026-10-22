@@ -3,7 +3,10 @@
 **Estado:** APROBADA por el usuario (22/10/2026, los tres puntos). Redactada
 en `docs/skills/teorema-del-echado/SKILL.md` (disciplinas 62, 63 y 64) y con
 sitio en el parte (`sob2`/`sob3` e `iseRama` por rama, `faltan` del `sob2`).
-El juicio tramo por tramo del punto 3 en el veredicto queda para después.
+El juicio tramo por tramo del punto 3 entró al veredicto el 22/10
+(`objetivo.tde.bloques[].tramos`, `veredicto.tramos_por_marcador`), junto con
+la ventana del reloj puntuada aparte (`reloj`, serie del sesgo tardío en
+`ventanaTde.reloj` de las lecciones).
 Falta que el usuario la suba a su cuenta. Se redactó el 22/10/2026, a partir del
 caso Sporting 2-3 LASK (Champions, 21/10) y de las lecciones del dossier
 (`GET /analisis/cowork/revision/teorema-del-echado`, cohorte `c3-2026-09-23`)
