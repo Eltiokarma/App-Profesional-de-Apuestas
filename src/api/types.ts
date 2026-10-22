@@ -304,11 +304,12 @@ export interface EquipoStatsDTO {
 
 // ── capa de jugadores (docs/JUGADORES.md, capa 1) ───────────────────────────
 
-export type LecturaBaja = 'senal' | 'ruido'
+export type LecturaBaja = 'senal' | 'ruido' | 'desmentida'
 
 /** Una baja que CUENTA: la de señal (o sin lectura, de un DTO viejo). Un flag
  *  de ruido no es una baja — misma regla en backend/jugadores.py. */
-export const esBajaReal = (j: Pick<JugadorDTO, 'baja'>): boolean => !!j.baja && j.baja.lectura !== 'ruido'
+export const esBajaReal = (j: Pick<JugadorDTO, 'baja'>): boolean =>
+  !!j.baja && j.baja.lectura !== 'ruido' && j.baja.lectura !== 'desmentida'
 
 /** Indicadores de un jugador: por-90 con encogimiento bayesiano, confianza
  *  por minutos y flags (baja, recién llegado, en capilla). */
@@ -347,7 +348,9 @@ export interface JugadorDTO {
   golesEncajadosP90: number | null
   /** Baja reportada por la API. `lectura`: 'senal' (pocos marcados: baja real) o
    *  'ruido' (el flag Missing Fixture marcó más del umbral de la plantilla: no cuenta). */
-  baja: { tipo: string | null; detalle: string | null; lectura?: LecturaBaja } | null
+  baja: { tipo: string | null; detalle: string | null; lectura?: LecturaBaja
+          /** con lectura `desmentida`: lo que decía la API y cuándo jugó después de la baja */
+          lecturaApi?: LecturaBaja; desmentidaPorOnce?: { fechaBaja: string; jugoEl: string } } | null
   /** Traspaso hacia el equipo en ≤90 días: sus stats vienen de otro contexto. */
   recienLlegado: { desde: string | null; fecha: string | null } | null
 }

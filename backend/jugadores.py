@@ -207,10 +207,11 @@ def plantilla_de(team_id: int) -> dict:
     }
     bajas = {
         r["player_id"]: r for r in _query(
-            "SELECT player_id, tipo, detalle FROM jugador_bajas WHERE team_id=?", (team_id,)
+            "SELECT player_id, tipo, detalle, fecha FROM jugador_bajas WHERE team_id=?", (team_id,)
         )
     }
     missing = lectura_missing_fixture(bajas, {r["player_id"] for r in filas})
+    jugo = ultimo_partido_jugado(team_id)
 
     # MINUTOS QUE NO CABEN EN LOS PARTIDOS. La API dio a J. García (Tigres,
     # 20/10/2026) 1 partido y 1.708 minutos: salía «titular habitual (81 %)» y
@@ -266,9 +267,7 @@ def plantilla_de(team_id: int) -> dict:
             "enCapilla": (r["amarillas"] or 0) >= EN_CAPILLA_AMARILLAS and not (r["rojas"] or 0),
             "paradasP90": _p90(r["paradas"] or 0, minutos) if es_gk else None,
             "golesEncajadosP90": _p90(r["goles_encajados"] or 0, minutos) if es_gk else None,
-            "baja": ({"tipo": baja["tipo"], "detalle": baja["detalle"],
-                      "lectura": missing["lectura"] if _es_missing(baja["tipo"]) else "senal"}
-                     if baja else None),
+            "baja": (_baja_dto(baja, missing, jugo.get(r["player_id"])) if baja else None),
             "recienLlegado": (
                 {"desde": llegada["team_out_nombre"], "fecha": llegada["fecha"]} if llegada else None
             ),
@@ -317,6 +316,45 @@ def plantilla_de(team_id: int) -> dict:
     return base
 
 
+def ultimo_partido_jugado(team_id: int) -> dict[int, str]:
+    """{jugador: fecha del último partido TERMINADO del equipo en que fue
+    titular o figura en un evento (gol, tarjeta, cambio)}. Es lo que desmiente
+    una baja: Prass titular y goleador del Hoffenheim, Lerma entrando al 53'
+    del Palace, Brugui titular con dos goles, todos «de baja» en la base."""
+    out: dict[int, str] = {}
+    for sql in (f"""SELECT a.player_id AS pid, MAX(f.date) AS d FROM alineaciones a
+                    JOIN fixtures f ON f.id = a.fixture_id
+                    WHERE a.team_id=? AND a.titular=1 AND {_FIN90.replace('status', 'f.status')} GROUP BY a.player_id""",
+                f"""SELECT e.jugador_id AS pid, MAX(f.date) AS d FROM fixture_eventos e
+                    JOIN fixtures f ON f.id = e.fixture_id
+                    WHERE e.equipo_id=? AND e.jugador_id > 0 AND {_FIN90.replace('status', 'f.status')} GROUP BY e.jugador_id""",
+                f"""SELECT e.asistente_id AS pid, MAX(f.date) AS d FROM fixture_eventos e
+                    JOIN fixtures f ON f.id = e.fixture_id
+                    WHERE e.equipo_id=? AND e.asistente_id > 0 AND {_FIN90.replace('status', 'f.status')} GROUP BY e.asistente_id"""):
+        try:
+            for r in _query(sql, (team_id,)):
+                if r["pid"] and r["d"] and str(r["d"]) > out.get(r["pid"], ""):
+                    out[r["pid"]] = str(r["d"])
+        except Exception:  # noqa: BLE001 — base sin la ficha de partido
+            continue
+    return out
+
+
+def _baja_dto(baja, missing: dict, jugo_el: str | None) -> dict:
+    """La baja con su lectura. `desmentida`: el jugador jugó (titular o con un
+    evento) un partido POSTERIOR a la fecha de la baja —la API la dejó vieja—,
+    y entonces no cuenta como baja en ningún lado (incidencias 2, 132, 142,
+    143, 149, 167, 312; pedido del usuario 22/10/2026). Sin fecha de la baja no
+    hay contra qué comparar y queda como venía."""
+    lectura = missing["lectura"] if _es_missing(baja["tipo"]) else "senal"
+    fecha = str(baja["fecha"] or "")[:10] if "fecha" in baja.keys() else ""
+    out = {"tipo": baja["tipo"], "detalle": baja["detalle"], "lectura": lectura}
+    if fecha and jugo_el and jugo_el[:10] > fecha:
+        out.update({"lectura": "desmentida", "lecturaApi": lectura,
+                    "desmentidaPorOnce": {"fechaBaja": fecha, "jugoEl": jugo_el[:10]}})
+    return out
+
+
 def _es_missing(tipo) -> bool:
     return (tipo or "").strip().lower() == "missing fixture"
 
@@ -342,7 +380,7 @@ def es_baja_real(j: dict) -> bool:
     """Baja que cuenta: la que trae lectura de señal (o sin lectura, por si
     llega de un DTO viejo). Un flag de ruido no es una baja."""
     b = j.get("baja")
-    return bool(b) and b.get("lectura") != "ruido"
+    return bool(b) and b.get("lectura") not in ("ruido", "desmentida")
 
 
 def _congestion(team_id: int, fecha_fixture: str) -> dict:

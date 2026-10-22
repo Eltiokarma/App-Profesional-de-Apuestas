@@ -513,6 +513,34 @@ def main():
     check("estabilidad de la burbuja: las bajas de ruido no cuentan (0, no 9)", est_r["bajas"] == 0, est_r)
     est_s = estabilidad_de(pl, "2026-09-16")
     check("y la de señal sí (Betis: 1)", est_s["bajas"] == 1, est_s)
+    # LA BAJA QUE EL ONCE DESMIENTE (22/10/2026, incidencias 2, 132, 142, 143, 149, 167, 312): el de baja
+    # fue titular en un partido posterior a la fecha de la baja → `desmentida`, no cuenta en ningún lado
+    _jb = baja[0]["id"]
+    _c_d = _sq.connect(os.path.join(tmp, "sad.db"))
+    _c_d.execute("UPDATE jugador_bajas SET fecha='2026-09-01' WHERE player_id=? AND team_id=?", (_jb, betis))
+    _c_d.execute("INSERT INTO fixtures (id, date, home_team_id, away_team_id, status_short, status_long, "
+                 "goals_home, goals_away) VALUES (990991, '2026-09-20 20:00:00', ?, 599, 'FT', 'Match Finished', 1, 0)",
+                 (betis,))
+    _c_d.execute("INSERT INTO alineaciones (fixture_id, team_id, player_id, jugador, titular) VALUES (990991, ?, ?, 'x', 1)",
+                 (betis, _jb))
+    _c_d.commit()
+    _pl_d = c.get(A + f"/equipos/{betis}/plantilla").json()
+    _bd = next(j for j in _pl_d["jugadores"] if j["id"] == _jb)["baja"]
+    check("baja desmentida: titular el 20/09 con la baja del 01/09 → lectura «desmentida», con las dos fechas",
+          _bd["lectura"] == "desmentida" and _bd["desmentidaPorOnce"] == {"fechaBaja": "2026-09-01", "jugoEl": "2026-09-20"}
+          and _bd["lecturaApi"] == "senal", _bd)
+    check("y ya no cuenta: ni en la estabilidad ni en el resumen del skill",
+          estabilidad_de(_pl_d, "2026-09-25")["bajas"] == 0
+          and "% de minutos" not in jugcapa.resumen_para_skills(betis).get("bajas", ""),
+          (estabilidad_de(_pl_d, "2026-09-25"), jugcapa.resumen_para_skills(betis).get("bajas")))
+    _c_d.execute("UPDATE jugador_bajas SET fecha='2026-09-25' WHERE player_id=? AND team_id=?", (_jb, betis))
+    _c_d.commit()
+    _bd2 = next(j for j in c.get(A + f"/equipos/{betis}/plantilla").json()["jugadores"] if j["id"] == _jb)["baja"]
+    check("una baja posterior al último partido que jugó sigue siendo baja", _bd2["lectura"] == "senal", _bd2)
+    _c_d.execute("DELETE FROM alineaciones WHERE fixture_id=990991")
+    _c_d.execute("DELETE FROM fixtures WHERE id=990991")
+    _c_d.commit()
+    _c_d.close()
     check("un equipo sin bajas marcadas viaja con missingFixture null",
           c.get(A + "/equipos/599/plantilla").json().get("missingFixture") is None)
 
@@ -948,6 +976,12 @@ def main():
           len(_fx90) == 2 and (_fx90[0][4], _fx90[0][5]) == (2, 2)
           and (_fx90[1][4], _fx90[1][5]) == (1, 0),
           [(f[4], f[5]) for f in _fx90])
+    # incidencias 19 y 74: el mismo partido con dos ids (Trujillanos 2-4 Rayo Zuliano, 16/09) se cuenta una vez
+    _fxd = [(1638767, "2026-09-16 20:00:00", 2815, 16847, 2, 4), (1638871, "2026-09-16 23:00:00", 2815, 16847, 2, 4),
+            (1638900, "2026-09-16 20:00:00", 2815, 16847, 1, 0), (1639000, "2026-09-23 20:00:00", 2815, 16847, 2, 4)]
+    _vivos, _dups = _pipe.sin_duplicados(_fxd)
+    check("pipeline: el mismo partido (local, visitante, día y marcador) con dos ids entra UNA vez; otro marcador u otro día no",
+          [f[0] for f in _vivos] == [1638767, 1638900, 1639000] and _dups == [(1638871, 1638767)], (_vivos, _dups))
     # datos locales: tabla/resultados/próximos salen de sad.db (costo cero,
     # sin búsqueda web) y entran al análisis como datos_cacheados
     from backend.analisis import motor as efemotor
