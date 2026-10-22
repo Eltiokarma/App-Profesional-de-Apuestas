@@ -421,6 +421,12 @@ y con freno.
    anterior ya se mergeó o no existe). `GET $B/analisis/cowork/incidencias`
    (abiertas, graves y repetidas primero) y `GET $B/analisis/cowork/latido`.
    Sin incidencias abiertas: avisá «nada que arreglar» y terminá.
+   **Agrupá por CAUSA antes de tocar nada** (pedido del usuario, 22/10/2026:
+   la cola llegó a 88 arreglando de a una). Varias incidencias suelen ser la
+   misma raíz —el cruce de nombres de `contraElOnce`, la identidad del jugador
+   en la ficha, la tabla F1, las ventanas del TDE, la escala entre ligas, las
+   bajas de la API—: se arregla la raíz y se cierran todas las que cubre. Armá
+   la lista de grupos (área + causa + ids) y ordenala por gravedad y `veces`.
 2. **Verificá cada una contra los datos antes de tocar nada** (los GET de la
    API, el código, los tests): una incidencia es un reporte, no una orden.
    Clasificala:
@@ -437,8 +443,13 @@ y con freno.
    él (en el `test_*.py` del área o en `backend/test_cowork.py`) y un
    comentario con el caso real que lo motivó, como el resto del repo. Cambios
    de contrato: primero `docs/openapi.yaml`, después backend, `src/api/
-   types.ts`, los dos datasources y tests. Como mucho 8 incidencias por
-   corrida; las que no entren quedan abiertas para la siguiente.
+   types.ts`, los dos datasources y tests. **Hasta 3 GRUPOS de código por
+   corrida, un PR por grupo** (cada uno con su batería del paso 5 en verde y
+   su merge antes del siguiente): un grupo cierra todas sus incidencias de
+   una vez. Las que NO son código (`dato_api` · `por_diseno` · `descartada` ·
+   `usuario`) no cuentan para ese tope: verificadas, se clasifican TODAS en la
+   misma corrida. Los grupos de código que no entren quedan abiertos para la
+   siguiente, y la respuesta final dice cuáles.
 4. **Lo que NO se toca solo** (va a `usuario` con la propuesta escrita en
    `resolucion`, sin commit):
    - la matemática del motor (`src/motor/`, `backend/analisis/motor.py`,
@@ -450,8 +461,8 @@ y con freno.
      abrir un endpoint es una decisión;
    - borrar datos, levantar o poner cuarentenas, el presupuesto de la API
      (`SAD_*` de cuota) y las variables de Railway;
-   - un cambio de más de 10 archivos o ~400 líneas: es un rediseño, no un
-     parche.
+   - un grupo cuyo arreglo pase de 10 archivos o ~400 líneas: es un
+     rediseño, no un parche.
 5. **Validá todo**: `npm run build`, `npm run test:motor`, `test:kview`,
    `test:burbuja`, `test:familias` y TODOS los `python -m backend.test_*` de
    `CLAUDE.md` (test_api, test_cowork, test_jugadores, test_ficha,
@@ -469,9 +480,9 @@ y con freno.
 7. Cerrá cada incidencia: `POST $B/analisis/cowork/incidencias/{id}/estado`
    con `{"estado": …, "resolucion": "…", "pr": "#N"}` (cerrar exige
    resolución).
-8. Respuesta final, tres líneas: incidencias resueltas (con PR), derivadas
-   (dato_api · por_diseno · usuario, con qué tiene que hacer el usuario) y
-   abiertas que quedan.
+8. Respuesta final, tres líneas: grupos e incidencias resueltas (con PR),
+   derivadas (dato_api · por_diseno · usuario, con qué tiene que hacer el
+   usuario) y los grupos que quedan abiertos para la próxima.
 
 ## Al terminar cualquier modo: avisá al celular
 

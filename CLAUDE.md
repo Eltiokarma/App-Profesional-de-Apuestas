@@ -210,7 +210,10 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   resuelta que reaparece entra nueva) y la rutina de **mantenimiento**
   (`corrida-sad`, modo `mantenimiento`) las verifica contra los datos, las
   clasifica (`dato_api` · `por_diseno` · `usuario` · `descartada`) o las
-  arregla con un test, valida TODO y mergea solo en verde y fuera de las zonas
+  arregla con un test —AGRUPADAS POR CAUSA, hasta 3 grupos de código por
+  corrida y un PR por grupo; lo que no es código se clasifica entero en la
+  misma corrida (22/10/2026: la cola llegó a 88 arreglando de a 8 sueltas)—,
+  valida TODO y mergea solo en verde y fuera de las zonas
   sagradas (motor, números calibrados, skills, tokens, datos, cuarentenas,
   Railway): eso va a `usuario` con la propuesta. El latido cuenta las
   abiertas (`incidencias`) y pasa a ámbar con alguna que bloquea.
