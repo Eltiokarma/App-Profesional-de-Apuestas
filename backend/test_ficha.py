@@ -325,6 +325,10 @@ def main():
           [limpiar_nombre(x) for x in ("A. N&apos;Diaye", "R. Obri\u00c4\u0087", "C. Inao Oula\u00c3\u00af", "B. Dad\u00c3\u00adn",
                                        "Saúl Ñíguez", "Müller")]
           == ["A. N'Diaye", "R. Obrić", "C. Inao Oulaï", "B. Dadín", "Saúl Ñíguez", "Müller"])
+    # el punto medio de separador (Torque, 21/10/2026: «Kevin Isaias·Silva»); la «l·l» catalana se queda
+    check("el «·» de separador se vuelve espacio y la «l·l» catalana no se toca",
+          [limpiar_nombre(x) for x in ("Kevin Isaias·Silva", "Marcel·lí Pérez", "A ·B")]
+          == ["Kevin Isaias Silva", "Marcel·lí Pérez", "A B"])
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
 

@@ -2730,7 +2730,10 @@ components:
         mercado: { type: string, enum: [1x2, dc, ou, ah, btts] }
         seleccion: { type: string }
         cuota: { type: number }
-        actualizadoEn: { type: string, format: date-time }
+        actualizadoEn:
+          type: string
+          format: date-time
+          description: hora de la última captura de cuotas del partido (odds_history); sin historial, la del pedido
     EventoLive:
       type: object
       description: Evento del partido para anclar el movimiento de la gráfica (gol, tarjeta)

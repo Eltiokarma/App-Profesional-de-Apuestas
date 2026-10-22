@@ -1752,7 +1752,13 @@ def cuotas(fixture_id: int):
     acc: dict[tuple[str, str], list[float]] = {}
     for f in sin_dc_incoherente(filas):
         acc.setdefault((f["mercado"], f["seleccion"]), []).append(f["cuota"])
-    now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    # la hora de la última CAPTURA, no la del pedido (incidencia 363, Santos–Pumas:
+    # el parte citaba como «cuota de las 19:58» una leída horas antes); sin
+    # historial queda la del pedido, que es lo que había
+    ultima = db.query("sad", "SELECT MAX(captured_at) AS t FROM odds_history WHERE fixture_id=?",
+                      (fixture_id,)) if acc else []
+    now = (iso(ultima[0]["t"]) if ultima and ultima[0]["t"]
+           else datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
     return [
         {
             "fixtureId": fixture_id,

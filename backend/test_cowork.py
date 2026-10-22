@@ -3764,6 +3764,11 @@ def main():
     t_id = [{"nombre": "Joshua Cantt", "zona": "MID", "rol": "ROT", "jugadorId": 354001},
             {"nombre": "Cristiano", "zona": "DEF", "rol": "TF", "jugadorId": 105501},
             {"nombre": "Luis Iberico", "zona": "ATK", "rol": "TF"}]
+    # incidencia 223 (Torque, 21/10/2026): «S. Zampiero» en la hoja es «Santiago Zampieri» de la tabla
+    _pz = [{"nombre": "Santiago Zampieri", "zona": "MID"}, {"nombre": "Juan Pérez", "zona": "DEF"}]
+    check("bloque F: una letra cambiada en el apellido casa («S. Zampiero» = Santiago Zampieri) y otro apellido no",
+          bf._buscar(_pz, "S. Zampiero") == [0] and bf._buscar(_pz, "S. Zampa") == []
+          and bf._buscar(_pz, "J. Gomez") == [] and bf._buscar(_pz, "J. Peres") == [1], (bf._buscar(_pz, "S. Zampiero"), bf._buscar(_pz, "S. Zampa")))
     d_sin = bf.resolver(t_id, [], ["J. Cerro", "Cris Silva", "L. Iberico"])
     d_con = bf.resolver(t_id, [], ["J. Cerro", "Cris Silva", "L. Iberico"],
                         ids={"J. Cerro": 354001, "Cris Silva": 105501, "L. Iberico": 39646})

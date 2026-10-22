@@ -193,9 +193,31 @@ def _casa(tokens_plantel: list[str], tokens_hoja: list[str]) -> bool:
                for t in pila_hoja)
 
 
+def _una_letra(t: str, apellidos: set) -> str | None:
+    """El apellido de la tabla que difiere de `t` en UNA letra (5+ letras,
+    mismo largo): «Zampiero» por «Zampieri» (Torque, 21/10/2026, incidencia
+    223). Es la misma tolerancia de `dtp_cowork._casi`."""
+    for a in apellidos:
+        if len(a) >= 5 and len(a) == len(t) and sum(x != y for x, y in zip(a, t)) == 1:
+            return a
+    return None
+
+
 def _buscar(plantel: list[dict], nombre_hoja: str) -> list[int]:
     th = _tokens(nombre_hoja)
-    return [i for i, j in enumerate(plantel) if _casa(_tokens(j.get("nombre", "")), th)]
+    exactos = [i for i, j in enumerate(plantel) if _casa(_tokens(j.get("nombre", "")), th)]
+    if exactos:
+        return exactos
+    # sin ninguno exacto, una letra cambiada en el apellido (la API y la base
+    # escriben distinto al mismo jugador); con dos candidatos va a dudas
+    out = []
+    for i, j in enumerate(plantel):
+        tp = _tokens(j.get("nombre", ""))
+        apellidos = set(tp[1:]) or set(tp)
+        th2 = [_una_letra(t, apellidos) or t for t in th]
+        if th2 != th and _casa(tp, th2):
+            out.append(i)
+    return out
 
 
 def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
