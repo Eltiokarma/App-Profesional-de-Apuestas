@@ -1685,6 +1685,27 @@ _ALERTAS_CAPTURADAS = {"COHERENCIA-BLOQUE", "COHERENCIA-1X2", "COHERENCIA-MATCHU
 _EQUIPOS_ALERTA = ("a", "b", "ambos", "global")
 
 
+# UN PARTE PARA OTRA FECHA NO ES EL PARTE DE ESTE PARTIDO (incidencia 371:
+# Millonarios–Once Caldas, depositado el 13/10 para el 14/10, aplazado por el
+# estado de la cancha y jugado el 20/10 —tres titulares nuevos, una burbuja
+# distinta— y se juzgó como ciego). `fecha` del parte es la del partido en el
+# ÚLTIMO depósito completo (solo el POST la escribe): si el partido se movió
+# más de DIAS_PARTE_RANCIO desde entonces, el parte se escribió con otra
+# semana de datos. La agenda lo vuelve a poner en `porHacer` y, si nadie lo
+# rehízo, el caso va a cuarentena automática por criterio de insumo.
+DIAS_PARTE_RANCIO = 1
+
+
+def dias_movido(fecha_parte: str | None, fecha_fixture: str | None) -> int | None:
+    """Días entre la fecha del partido con que se depositó el parte y la fecha
+    real; None si no se movió más de DIAS_PARTE_RANCIO (o falta un dato)."""
+    try:
+        d = (date_t.fromisoformat(str(fecha_fixture)[:10]) - date_t.fromisoformat(str(fecha_parte)[:10])).days
+    except (TypeError, ValueError):
+        return None
+    return d if abs(d) > DIAS_PARTE_RANCIO else None
+
+
 def _alerta(a, rechazos: list, donde: str) -> dict | None:
     if isinstance(a, str):
         a = {"codigo": a}   # «T.54» a secas: entra, y se delata que va sin texto
@@ -4337,6 +4358,7 @@ def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: in
         item = {
             "fixtureId": f["id"],
             "hora": (f["date"] or "")[11:16],
+            "fecha": (f["date"] or "")[:10],
             "partido": f"{f['home_name']} vs {f['away_name']}",
             "equipoA": f["home_name"], "equipoB": f["away_name"],
             # EL DT DE LA BASE VIAJA CON SU EDAD Y SU PROCEDENCIA. Es una
@@ -4372,10 +4394,15 @@ def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: in
     if todos_ids:
         with _conectar() as con:
             for r in con.execute(
-                f"SELECT fixture_id, estado, xi_json, veredicto_json FROM parte_cowork "
+                f"SELECT fixture_id, fecha, estado, xi_json, veredicto_json FROM parte_cowork "
                 f"WHERE fixture_id IN ({','.join('?' * len(todos_ids))})", tuple(todos_ids)):
+                fecha_fx = next((x["fecha"] for x in candidatos + descartados if x["fixtureId"] == r["fixture_id"]), "")
+                movido = None if r["veredicto_json"] else dias_movido(r["fecha"], fecha_fx)
                 estados[r["fixture_id"]] = {
-                    "tieneParte": True,
+                    # un parte escrito para otra fecha vuelve a la lista de trabajo
+                    "tieneParte": movido is None,
+                    "rehacer": (f"el parte es del partido del {r['fecha']} y se juega el {fecha_fx} "
+                                f"({movido:+d} días): rehacerlo entero") if movido is not None else "",
                     "onceCerrado": bool(r["xi_json"]) and r["estado"] == "confirmado",
                     "conVeredicto": bool(r["veredicto_json"]),
                 }
@@ -4396,6 +4423,7 @@ def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: in
     limite_pedido, limite = limite, len(candidatos) - len(cola)
     return {
         "porHacer": [x["fixtureId"] for x in faltan],
+        "aRehacer": {x["fixtureId"]: x["rehacer"] for x in candidatos if x.get("rehacer")},
         "yaHechos": [x["fixtureId"] for x in candidatos[:limite] if x["tieneParte"]],
         "notaReanudacion": (
             f"{len(faltan)} de {len(candidatos[:limite])} sin parte. `porHacer` es la lista "

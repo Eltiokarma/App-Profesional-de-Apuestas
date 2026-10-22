@@ -2708,6 +2708,21 @@ def main():
     _cuar_ref = {c_["fixtureId"]: (c_.get("cuarentena") or {}).get("motivo", "")
                  for c_ in _lec_a._casos() if c_.get("cuarentena")}
     _inv_ref = _lec_a.inventario()
+    # UN PARTE DEPOSITADO PARA OTRA FECHA VA A CUARENTENA AUTOMÁTICA (incidencia 371)
+    from backend.analisis.parte import _conectar as _con_p
+    _c0 = next((c_ for c_ in _lec_a._casos() if not c_.get("cuarentena")), None)
+    if _c0:
+        with _con_p() as _cp:
+            _f0 = _cp.execute("SELECT fecha FROM parte_cowork WHERE fixture_id=?", (_c0["fixtureId"],)).fetchone()["fecha"]
+            _cp.execute("UPDATE parte_cowork SET fecha=date(?, '-7 day') WHERE fixture_id=?", (_f0, _c0["fixtureId"]))
+        try:
+            _c1 = next(c_ for c_ in _lec_a._casos() if c_["fixtureId"] == _c0["fixtureId"])
+            check("parte de un partido que se movió 7 días: cuarentena automática con el motivo y los días",
+                  (_c1.get("cuarentena") or {}).get("automatica") and (_c1["cuarentena"].get("parteDeOtraFecha") or 0) >= 6
+                  and "sin rehacerse" in _c1["cuarentena"]["motivo"], _c1.get("cuarentena"))
+        finally:
+            with _con_p() as _cp:
+                _cp.execute("UPDATE parte_cowork SET fecha=? WHERE fixture_id=?", (_f0, _c0["fixtureId"]))
     _iguales = True
     for _fid in {pasado["id"], *( [posterior["id"]] if posterior else [] )}:
         _an = _ant.antecedentes(_fid)
@@ -3336,6 +3351,21 @@ def main():
     _rz2 = []
     _alerta({"codigo": "T.54", "equipo": "a", "tipo": "estructural", "detalle": "DT nuevo"}, _rz2, "alertas[1]")
     check("con un tipo válido no hay aviso", not _rz2, _rz2)
+    # EL REVENTÓN SE OBSERVA CON EL MARCADOR SI EL PIPELINE NO CORRIÓ (incidencias 100 y 373)
+    from backend.analisis.veredicto import observado_por_marcador as _opm
+    _dec = {"signo": "+", "k": 12.5, "partidos": 3}
+    check("reventón por marcador: burbuja + que empata revienta (a cero), que gana sigue, que pierde revienta al otro signo",
+          _opm(_dec, 2, 2)["revento"] and _opm(_dec, 2, 2)["signoDespues"] == "0"
+          and not _opm(_dec, 1, 0)["revento"] and _opm(_dec, 1, 0)["partidos"] == 4
+          and _opm(_dec, 0, 1)["revento"] and _opm(_dec, 0, 1)["kPico"] == 12.5)
+    check("reventón por marcador: burbuja − sigue solo si pierde; sin marcador no se observa",
+          not _opm({"signo": "-", "k": -4, "partidos": 2}, 0, 2)["revento"]
+          and _opm({"signo": "-", "k": -4, "partidos": 2}, 1, 1)["revento"] and _opm(_dec, None, 1) is None)
+    # UN PARTE DE OTRA FECHA DEL PARTIDO (incidencia 371)
+    from backend.analisis.parte import dias_movido
+    check("parte para el 14/10 de un partido jugado el 20/10: movido +6; el mismo día o al siguiente no cuenta",
+          dias_movido("2026-10-14", "2026-10-20T01:30:00") == 6 and dias_movido("2026-10-14", "2026-10-15") is None
+          and dias_movido("2026-10-14", "2026-10-14 20:00") is None and dias_movido(None, "2026-10-20") is None)
     # LA VENTANA DE LA RAMA RELATIVA AL GOL SE COBRA (incidencia 345, TDE v0.1.21)
     from backend.analisis.veredicto import rango_relativo
     check("«desde el gol +15» con el gol al 50' es el tramo 50-65; sin minuto o sin «+N» no hay tramo",

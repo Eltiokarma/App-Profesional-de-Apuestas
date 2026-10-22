@@ -600,11 +600,12 @@ def reventon_objetivo(fixture_id: int, fx, declarado_1x2: str = "") -> dict:
                     "pronosticoVsRacha = si el 1X2 declarado apostó a que la racha SIGUE (aFavor) "
                     "o se corta (enContra); respetoRiesgo solo se juzga con riesgo alto o muy alto")}
     fecha = str(fx["date"])
-    lados = (("a", fx["home_team_id"], fx["away_team_id"], fx["away_name"], "L"),
-             ("b", fx["away_team_id"], fx["home_team_id"], fx["home_name"], "V"))
-    for lado, tid, rid, rival, cond in lados:
+    gl, gv = fx["g_local"], fx["g_visita"]
+    lados = (("a", fx["home_team_id"], fx["away_team_id"], fx["away_name"], "L", gl, gv),
+             ("b", fx["away_team_id"], fx["home_team_id"], fx["home_name"], "V", gv, gl))
+    for lado, tid, rid, rival, cond, gf, gc in lados:
         try:
-            out[lado] = _reventon_lado(fixture_id, fecha, tid, rid, rival, cond)
+            out[lado] = _reventon_lado(fixture_id, fecha, tid, rid, rival, cond, gf, gc)
         except Exception as e:  # noqa: BLE001 — se declara, no tumba el veredicto
             out[lado] = {"comprobable": False, "sinBurbuja": False, "declarado": None,
                          "observado": None, "nota": f"no se pudo calcular: {e}"}
@@ -688,7 +689,28 @@ def pronostico_vs_racha(lado: str, declarado: dict | None, unxdos: str) -> dict:
     return {"pronosticoVsRacha": vs, "respetoRiesgo": respeto}
 
 
-def _reventon_lado(fixture_id: int, fecha: str, tid: int, rid: int, rival: str, cond: str) -> dict:
+def observado_por_marcador(declarado: dict, gf, gc) -> dict | None:
+    """Si la burbuja total reventó, leído del marcador. Después de un partido la
+    K total es positiva si el equipo ganó, 0 si empató y negativa si perdió
+    (MOTOR_SAD_EXTRACCION §3.3, la misma regla con la que se juzga la espina):
+    una burbuja + sigue solo si gana y una − solo si pierde. La K exacta la da
+    el pipeline cuando corre; esto evita cerrar el veredicto sin la observación
+    (incidencias 100 y 373: en Champions la constante tardaba más de 6 h)."""
+    if gf is None or gc is None or declarado.get("signo") not in ("+", "-"):
+        return None
+    gana, pierde = int(gf) > int(gc), int(gf) < int(gc)
+    sigue = gana if declarado["signo"] == "+" else pierde
+    return {
+        "revento": not sigue, "kDespues": None,
+        "signoDespues": "+" if gana else "-" if pierde else "0",
+        "kPico": declarado.get("k") if not sigue else None,
+        "partidos": declarado.get("partidos") if not sigue else (declarado.get("partidos") or 0) + 1,
+        "fuente": "marcador",
+    }
+
+
+def _reventon_lado(fixture_id: int, fecha: str, tid: int, rid: int, rival: str, cond: str,
+                   gf=None, gc=None) -> dict:
     from backend.analisis import burbuja
     from backend.app import constantes_de, niveles_de
     # antes del partido: estrictamente anterior (la constante del partido lleva su misma fecha)
@@ -723,6 +745,13 @@ def _reventon_lado(fixture_id: int, fecha: str, tid: int, rid: int, rival: str, 
     hasta_hoy = list(reversed(constantes_de(tid, 500, hasta=fecha)))
     fila = next((f for f in hasta_hoy if f["fixtureId"] == fixture_id), None)
     if not fila:
+        obs = observado_por_marcador(declarado, gf, gc)
+        if obs:
+            return {"comprobable": True, "sinBurbuja": False, "declarado": declarado, "observado": obs,
+                    "condicion": condicion,
+                    "nota": ("reventó" if obs["revento"] else "siguió")
+                            + " (leído del marcador: la K del partido todavía no la calculó el pipeline; "
+                              "la K exacta llega cuando corra, y el resultado no cambia)"}
         return {"comprobable": False, "sinBurbuja": False, "declarado": declarado, "observado": None,
                 "condicion": condicion,
                 "nota": "el pipeline todavía no calculó la constante de este partido: "
