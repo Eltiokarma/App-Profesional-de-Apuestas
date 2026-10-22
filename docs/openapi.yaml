@@ -1088,7 +1088,10 @@ paths:
         minutos no caben en sus partidos (más de 125 por partido) viaja con
         `minutosIncoherentes` y su % se cuenta con lo que cabe. Si la alineación de la API lo
         llama distinto que la base, viaja `nombreEnLaHoja` («D. Gelvez» / «Dayan Pérez»): es
-        UNA fila, con el `jugadorId`. 0 tokens, 0 requests.
+        UNA fila, con el `jugadorId`. La `zona` es la del último once en que fue titular
+        (la de la plantilla de la temporada viaja en `zonaTemporada` si difiere), y un titular
+        reciente que quedó fuera del corte pero está en la plantilla entra con sus stats.
+        0 tokens, 0 requests.
         Abierto a Cowork.
       parameters:
         - { name: fixtureId, in: path, required: true, schema: { type: integer } }

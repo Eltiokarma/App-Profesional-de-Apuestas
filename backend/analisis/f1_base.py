@@ -31,7 +31,9 @@ TF_PCT, TH_PCT, ROT_PCT = 0.75, 0.5, 0.25
 DECISIVO_PCT = 0.75      # titular habitual: ≥ 75 % de los minutos del que más jugó
 DECISIVO_MIN_MINUTOS = 450   # con menos, la temporada recién arranca y el % no dice nada
 DECISIVO_GA = 3          # top 3 en goles+asistencias, con al menos esto
-_ZONA = {"Portero": "GK", "Defensa": "DEF", "Centrocampista": "MID", "Delantero": "ATK"}
+_ZONA = {"Portero": "GK", "Defensa": "DEF", "Centrocampista": "MID", "Delantero": "ATK",
+         # la API también la manda en inglés (Paulinho «Forward», Toluca, incidencia 359)
+         "Goalkeeper": "GK", "Defender": "DEF", "Midfielder": "MID", "Attacker": "ATK", "Forward": "ATK"}
 _ZONA_API = {"G": "GK", "D": "DEF", "M": "MID", "F": "ATK"}
 ONCES_RECIENTES = 10     # onces que se miran para el rol
 ONCES_MINIMOS = 5        # con menos, el rol sale de los minutos de la temporada
@@ -60,6 +62,7 @@ def onces_recientes(team_id: int, antes: str) -> dict:
     except Exception:  # noqa: BLE001 — base sin la tabla de alineaciones
         return {"onces": 0, "jugadores": {}, "ultimo": None}
     js: dict[int, dict] = {}
+    orden = {fid: i for i, fid in enumerate(fx)}
     for f in filas:
         j = js.setdefault(f["player_id"], {"nombre": limpiar_nombre(f["jugador"] or ""), "posicion": f["posicion"] or "",
                                            "titular": 0, "convocado": 0, "enUltimo": False})
@@ -67,6 +70,11 @@ def onces_recientes(team_id: int, antes: str) -> dict:
         j["titular"] += 1 if f["titular"] else 0
         if f["titular"] and f["fixture_id"] == fx[0]:
             j["enUltimo"] = True
+        # LA POSICIÓN CON LA QUE ARRANCÓ SU ÚLTIMO ONCE (incidencias 171, 323 y
+        # 66: A. García «MID» de central en la línea de 5, Tamara MID con «D» en
+        # la ficha, un arquero «Defensa» que atajó el 09/10)
+        if f["titular"] and f["posicion"] and orden[f["fixture_id"]] < j.get("_ordenPos", 99):
+            j["_ordenPos"], j["posicionReciente"] = orden[f["fixture_id"]], f["posicion"]
     return {"onces": len(fx), "jugadores": js, "ultimo": fx[0]}
 
 
@@ -124,6 +132,16 @@ def _fila(j: dict) -> dict:
         "baja": j.get("baja"), "recienLlegado": j.get("recienLlegado"),
         **({"minutosIncoherentes": True} if j.get("minutosIncoherentes") else {}),
     }
+
+
+def _zona_reciente(f: dict, r: dict | None) -> None:
+    """La zona de la tabla es la del ÚLTIMO once en que fue titular, si lo hay;
+    la de la plantilla de la temporada queda en `zonaTemporada` cuando difiere."""
+    z = _ZONA_API.get((r or {}).get("posicionReciente") or "", "")
+    if z and z != f.get("zona"):
+        if f.get("zona"):
+            f["zonaTemporada"] = f["zona"]
+        f["zona"] = z
 
 
 def _tok_jugador(nombre: str) -> list[str]:
@@ -217,6 +235,7 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
             f["rolSugerido"] = rol_por_onces(tit.get(j["id"], 0), rec["onces"])
         if j["id"] in ultimo:
             f["titularEnElUltimo"] = True
+        _zona_reciente(f, rec["jugadores"].get(j["id"]))
         # EL NOMBRE DE LA HOJA, SI ES OTRO. La base tiene al 555163 como «D. Gelvez»
         # y la alineación como «Dayan Pérez» (Cúcuta, 20/10/2026, 335): sin esto, el
         # parte lo sumaba dos veces y la fila de prensa salía de baja
@@ -228,9 +247,23 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     # titulares recientes que la plantilla de la temporada no tiene (fichajes,
     # juveniles subidos): sin ellos la tabla se queda con el equipo de antes
     ids = {j["id"] for j in elegidos}
+    por_id = {j["id"]: j for j in js}
     if con_onces:
         for pid, r in sorted(rec["jugadores"].items(), key=lambda kv: -kv[1]["titular"]):
             if pid in ids or pid <= 0 or (r["titular"] < 2 and not r.get("enUltimo")):
+                continue
+            # QUEDÓ FUERA DEL CORTE PERO ESTÁ EN LA PLANTILLA: entra con sus stats
+            # (Ambríz, 16 PJ y 6 titularidades, salía «sin stats de temporada»,
+            # incidencia 360)
+            if pid in por_id:
+                f = {**_fila(por_id[pid]), "decisivo": dec.get(pid, ""),
+                     "titularEnUltimos": f"{tit.get(pid, 0)}/{rec['onces']}",
+                     "rolSugerido": rol_por_onces(tit.get(pid, 0), rec["onces"]),
+                     **({"titularEnElUltimo": True} if r.get("enUltimo") else {})}
+                f["nombre"] = nombre_sano(f["nombre"], r["nombre"])
+                _zona_reciente(f, r)
+                filas.append(f)
+                ids.add(pid)
                 continue
             # el mismo jugador con otro id en la hoja: sus titularidades ya
             # cuentan en la fila de la plantilla, no es un fichaje
@@ -242,7 +275,8 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
                     gemela["titularEnUltimos"] = f"{t}/{rec['onces']}"
                     gemela["rolSugerido"] = rol_por_onces(t, rec["onces"])
                 continue
-            filas.append({"jugadorId": pid, "nombre": r["nombre"], "zona": _ZONA_API.get(r["posicion"], ""),
+            filas.append({"jugadorId": pid, "nombre": r["nombre"],
+                          "zona": _ZONA_API.get(r.get("posicionReciente") or r["posicion"], ""),
                           "posicion": r["posicion"], "rolSugerido": rol_por_onces(r["titular"], rec["onces"]),
                           "titularEnUltimos": f"{r['titular']}/{rec['onces']}", "apps": None, "minutos": None,
                           "decisivo": "", "sinStatsDeTemporada": True,
