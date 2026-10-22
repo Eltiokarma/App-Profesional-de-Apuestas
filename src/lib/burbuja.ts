@@ -533,8 +533,9 @@ export function estabilidadDe(plantilla: PlantillaBurbuja | null | undefined, ho
   }
 
   // un flag «Missing Fixture» leído como ruido (media plantilla marcada) no
-  // es una baja: no puede mover la estabilidad (docs/JUGADORES.md)
-  const bajas = plantilla.jugadores.filter((j) => !!j.baja && j.baja.lectura !== 'ruido').length
+  // es una baja, ni una que el once desmintió: no mueven la estabilidad
+  // (docs/JUGADORES.md)
+  const bajas = plantilla.jugadores.filter((j) => !!j.baja && j.baja.lectura !== 'ruido' && j.baja.lectura !== 'desmentida').length
   if (bajas >= BAJAS_TRANSICION) {
     subir('en transición')
     motivos.push(`${bajas} bajas en la plantilla`)

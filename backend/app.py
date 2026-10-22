@@ -1065,7 +1065,7 @@ def _historia_nivel(team_id: int) -> list[tuple]:
     try:
         filas = db.query(
             "sad",
-            """SELECT id, date, home_team_id,
+            """SELECT id, date, home_team_id, away_team_id,
                       COALESCE(fulltime_home, goals_home) AS gh, COALESCE(fulltime_away, goals_away) AS ga
                FROM fixtures
                WHERE (home_team_id=? OR away_team_id=?)
@@ -1077,8 +1077,12 @@ def _historia_nivel(team_id: int) -> list[tuple]:
         )
     except Exception:
         return []
+    # sin los duplicados, igual que el pipeline (incidencias 19 y 74)
+    from backend.ingesta.pipeline import sin_duplicados
+    vivos = {fx[0] for fx in sin_duplicados([(r["id"], r["date"], r["home_team_id"], r["away_team_id"],
+                                              r["gh"], r["ga"]) for r in filas])[0]}
     return [(r["id"], r["date"], r["gh"], r["ga"]) if r["home_team_id"] == team_id
-            else (r["id"], r["date"], r["ga"], r["gh"]) for r in filas]
+            else (r["id"], r["date"], r["ga"], r["gh"]) for r in filas if r["id"] in vivos]
 
 
 def niveles_de(team_id: int, limit: int, hasta: str | None = None, antes: str | None = None) -> list[dict]:

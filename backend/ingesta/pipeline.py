@@ -107,6 +107,28 @@ def leer_fixtures(sad_path: str) -> list[tuple]:
         ).fetchall()
 
 
+def sin_duplicados(fixtures) -> tuple[list[tuple], list[tuple[int, int]]]:
+    """EL MISMO PARTIDO CON DOS IDS SE CUENTA UNA VEZ. La API publica a veces el
+    mismo partido dos veces (Trujillanos 2-4 Rayo Zuliano del 16/09/2026 como
+    1638871 y 1638767; Portuguesa–Estudiantes de Mérida el mismo día): las dos
+    filas entraban a la historia y la K sumaba el partido dos veces (7.77 y
+    3.88; +2.44 acumulado a 4.88, incidencias 19 y 74). Mismo local, mismo
+    visitante, mismo DÍA y mismo marcador de los 90' es el mismo partido: se
+    queda el primero en el orden del motor (date, id) y el otro sale, con el
+    par (descartado, conservado) para el diagnóstico."""
+    vistos: dict[tuple, int] = {}
+    fuera, dups = [], []
+    for fx in fixtures:
+        fid, date, home, away, gh, ga = fx[:6]
+        clave = (home, away, str(date)[:10], gh, ga)
+        if clave in vistos:
+            dups.append((fid, vistos[clave]))
+            continue
+        vistos[clave] = fid
+        fuera.append(fx)
+    return fuera, dups
+
+
 def leer_nombres(sad_path: str) -> dict[int, str]:
     with sqlite3.connect(f"file:{sad_path}?mode=ro", uri=True) as con:
         return dict(con.execute("SELECT id, name FROM teams"))
@@ -261,6 +283,8 @@ def main() -> int:
     ap.add_argument("--out", help="directorio de salida para las DBs derivadas (obligatorio salvo --diagnostico-90)")
     ap.add_argument("--diagnostico-90", action="store_true", dest="diag90",
                     help="auditar la regla de los 90' (AET/PEN sin fulltime_*) y salir sin escribir nada")
+    ap.add_argument("--duplicados", action="store_true",
+                    help="listar los partidos duplicados (mismo local, visitante, día y marcador) y salir sin escribir")
     args = ap.parse_args()
 
     if not os.path.exists(args.sad):
@@ -268,12 +292,18 @@ def main() -> int:
         return 1
     if args.diag90:
         return diagnostico_90(args.sad)
-    if not args.out:
-        ap.error("--out es obligatorio (salvo con --diagnostico-90)")
-    os.makedirs(args.out, exist_ok=True)
+    if not args.out and not args.duplicados:
+        ap.error("--out es obligatorio (salvo con --diagnostico-90 o --duplicados)")
+    if args.out:
+        os.makedirs(args.out, exist_ok=True)
 
     t0 = time.perf_counter()
-    fixtures = leer_fixtures(args.sad)
+    fixtures, dups = sin_duplicados(leer_fixtures(args.sad))
+    if dups:
+        print(f"duplicados fuera: {len(dups)} (mismo partido con dos ids; descartado → conservado): "
+              + ", ".join(f"{a}→{b}" for a, b in dups[:20]) + (" …" if len(dups) > 20 else ""))
+    if args.duplicados:
+        return 0
     nombres = leer_nombres(args.sad)
     hist = construir_historias(fixtures)
     print(f"sad.db: {len(fixtures)} partidos terminados · {len(hist)} equipos")

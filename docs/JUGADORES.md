@@ -162,6 +162,17 @@ Ahora se lee por densidad en `backend/jugadores.py` (`lectura_missing_fixture`):
   `src/api/types.ts`).
 - El umbral es el primer corte (n = 23). Se recalibra con más casos, con el
   registro a la vista, no a ojo.
+- **La baja que el once desmiente no cuenta** (22/10/2026, pedido del usuario;
+  incidencias 2, 132, 142, 143, 149, 167 y 312: Prass titular y goleador,
+  Lerma entrando al 53', Brugui titular con dos goles, todos «de baja»). Si el
+  jugador fue titular o figura en un evento (gol, tarjeta, cambio) de un
+  partido TERMINADO del equipo posterior a la fecha de la baja, la lectura
+  pasa a `desmentida` (con `lecturaApi` y `desmentidaPorOnce {fechaBaja,
+  jugoEl}`): fuera del resumen del skill, de la estabilidad (los dos lados) y
+  de las pantallas como BAJA (Equipo la muestra como «BAJA DESMENTIDA»). Sin
+  fecha de la baja, queda como venía. Lo que esto NO arregla: la API que no
+  marca una lesión publicada (28) o una de ruido que era real (71, 312): ahí
+  manda la prensa, y esos casos son los que recalibran el umbral.
 
 ## Contrato (docs/openapi.yaml)
 

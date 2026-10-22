@@ -2143,7 +2143,13 @@ components:
           properties:
             tipo: { type: string, nullable: true }
             detalle: { type: string, nullable: true }
-            lectura: { type: string, enum: [senal, ruido] }
+            lectura: { type: string, enum: [senal, ruido, desmentida], description: 'desmentida = jugó (titular o con un evento) un partido posterior a la fecha de la baja: no cuenta' }
+            lecturaApi: { type: string, enum: [senal, ruido], description: 'con desmentida, la lectura que tenía' }
+            desmentidaPorOnce:
+              type: object
+              properties:
+                fechaBaja: { type: string, format: date }
+                jugoEl: { type: string, format: date }
         recienLlegado:
           type: object
           nullable: true
