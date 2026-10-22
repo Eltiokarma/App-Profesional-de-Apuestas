@@ -1389,7 +1389,9 @@ def _via_tde(v, rechazos: list, donde: str) -> dict | None:
 # la EXPULSIÓN (disciplina 16 desdoblada). Opcionales: la 44 exige las dos primeras.
 RAMAS_REASIGNACION = ("siMarcaPrimero", "siRecibePrimero", "siLeEmpatan", "siExpulsion")
 RAMAS_OBLIGATORIAS = RAMAS_REASIGNACION[:2]
-_CLAVES_RAMA = {"sob1", "tipologia", "nota", "ventana"}
+_CLAVES_RAMA = {"sob1", "sob2", "sob3", "tipologia", "nota", "ventana"}
+# las SOB que una rama puede declarar (TDE v0.1.22: cada rama con su número)
+_SOB_RAMA = ("sob1", "sob2", "sob3")
 
 
 def _reasignacion(x, rechazos: list, donde: str) -> dict:
@@ -1423,17 +1425,22 @@ def _reasignacion(x, rechazos: list, donde: str) -> dict:
             rechazos.append({"donde": f"{donde}.{rama}", "porque": f"tiene que ser un objeto, llegó {type(r).__name__}",
                              "esperado": '{"sob1": 0 | 0.5 | 1, "tipologia": "…", "nota": "…"}'})
             continue
-        sob1 = r.get("sob1")
-        if sob1 is not None:
+        sobs = {}
+        for k in _SOB_RAMA:
+            v = r.get(k)
+            if v is None:
+                continue
             try:
-                sob1 = float(sob1)
+                v = float(v)
             except (TypeError, ValueError):
-                sob1 = None
-            if sob1 not in (0.0, 0.5, 1.0):
-                rechazos.append({"donde": f"{donde}.{rama}.sob1", "porque": f"llegó {r.get('sob1')!r}: no se guardó",
-                                 "esperado": "0 · 0.5 · 1 (el valor que tomaría SOB1 en esa rama)"})
-                sob1 = None
-        rama_ok = {"sob1": sob1, "tipologia": _txt(r.get("tipologia")), "nota": _txt(r.get("nota"))}
+                v = None
+            if v not in (0.0, 0.5, 1.0):
+                rechazos.append({"donde": f"{donde}.{rama}.{k}", "porque": f"llegó {r.get(k)!r}: no se guardó",
+                                 "esperado": f"0 · 0.5 · 1 (el valor que tomaría {k.upper()} en esa rama)"})
+                continue
+            sobs[k] = v
+        rama_ok = {"sob1": sobs.get("sob1"), "tipologia": _txt(r.get("tipologia")), "nota": _txt(r.get("nota"))}
+        rama_ok.update({k: v for k, v in sobs.items() if k != "sob1"})
         # la ventana de ESTA rama, si cambia: el veredicto mide la que jugó el
         # partido (Junior–Pereira y Roma–Madrid se medían contra la original)
         if _txt(r.get("ventana")):
@@ -1547,8 +1554,36 @@ def _bloque_tde(x, rechazos: list, donde: str, lado: str = "") -> dict:
         "disciplina43": disciplina,
         "vias": vias,
         "falsador": _txt(x.get("falsador")),
-        "reasignacion": _reasignacion(x.get("reasignacion"), rechazos, f"{donde}.reasignacion"),
+        "reasignacion": ise_de_ramas(_reasignacion(x.get("reasignacion"), rechazos, f"{donde}.reasignacion"), ind),
     }
+
+
+def ise_de_ramas(reasig: dict, indicadores: dict) -> dict:
+    """TDE v0.1.22 · CADA RAMA CON SU NÚMERO. Sporting 2-3 LASK (21/10/2026):
+    la rama «si le empatan» decía «vuelve a empujar y reabre la SOB» y el ISE
+    del bloque quedó en 1.67 —el del arranque—: la prosa vio el mecanismo y el
+    número no. Con sob1 y sob2 declarados en la rama, la app calcula su ISE con
+    la misma fórmula del skill ((SOB1+SOB2+SOB3)/3×10); SOB3 sale de la rama o,
+    si no vino, del bloque (y se dice en `iseRamaHeredados`). SOB2 NO se
+    hereda: el seguro de atrás del arranque no vale para el que persigue."""
+    for rama in reasig.values():
+        s1, s2 = rama.get("sob1"), rama.get("sob2")
+        if s1 is None or s2 is None:
+            continue
+        s3, heredados = rama.get("sob3"), []
+        if s3 is None:
+            base = (indicadores or {}).get("SOB3")
+            try:
+                s3 = None if base is None else float(base)
+            except (TypeError, ValueError):
+                s3 = None
+            heredados = ["SOB3"] if s3 is not None else []
+        if s3 is None:
+            continue
+        rama["iseRama"] = round((s1 + s2 + s3) / 3 * 10, 2)
+        if heredados:
+            rama["iseRamaHeredados"] = heredados
+    return reasig
 
 
 def _tde(x, rechazos: list) -> dict:
@@ -1907,6 +1942,45 @@ _ESCENARIO_A_1X2 = {("a", "ganar"): "local", ("a", "empatar"): "empate", ("a", "
 MATRIZ_TOLERANCIA = 5.0
 
 
+# EL 1X2 SUBIDO SOBRE EL MOTOR CUANDO EL MOTOR AVISA QUE COMPARA MAL.
+# Sporting 2-3 LASK (21/10/2026): con ESCALA-LIGAS activa (μ entre Portugal y
+# Austria, fiabilidad baja) el pronóstico puso 66 % al local, nueve puntos SOBRE
+# el 1X2 del motor (57 %), y perdió. La lección: con la escala, el rango se abre
+# hacia el motor, no se sube sobre él (sad-analysis v4.0, paso 5). Esto lo dice
+# al depositar: aviso, no rechazo —quien escribe corrige o justifica en notas—.
+PRONOSTICO_SOBRE_MOTOR_PTS = 8
+
+
+def pronostico_vs_motor(pron: dict, pred: dict | None) -> dict | None:
+    """El 1X2 declarado contra `unXDos` de /predicciones. Con `fiabilidadMu`
+    baja y el resultado favorito del pronóstico más de PRONOSTICO_SOBRE_MOTOR_PTS
+    por encima del motor, `aviso` explica qué hacer; si no, solo informa."""
+    probs = (pron or {}).get("probabilidades") or {}
+    ux = (pred or {}).get("unXDos") or {}
+    claves = ("local", "empate", "visita")
+    if not ux or not all(isinstance(probs.get(k), (int, float)) for k in claves):
+        return None
+    top = max(claves, key=lambda k: probs[k])
+    delta = round(float(probs[top]) - float(ux[top]), 1)
+    fia = ((pred or {}).get("fiabilidadMu") or {}).get("nivel") or ""
+    out = {"declarado": {k: probs[k] for k in claves}, "motor": {k: ux[k] for k in claves},
+           "favorito": top, "sobreElMotor": delta, "fiabilidadMu": fia, "aviso": ""}
+    if fia == "baja" and delta > PRONOSTICO_SOBRE_MOTOR_PTS:
+        out["aviso"] = (f"el pronóstico pone «{top}» {delta:+.1f} puntos SOBRE el motor ({ux[top]} %) con la μ en "
+                        "fiabilidad baja (ESCALA-LIGAS): con la escala el rango se abre hacia el motor, no se sube "
+                        "sobre él (Sporting–LASK). Acercá el 1X2 al motor o decí en `notas` qué dato que el motor "
+                        "no ve lo sostiene")
+    return out
+
+
+def _prediccion_o_nada(fixture_id: int) -> dict | None:
+    try:
+        from backend.app import prediccion
+        return prediccion(fixture_id)
+    except Exception:  # noqa: BLE001 — sin motor no hay aviso, el depósito sigue
+        return None
+
+
 def matriz_vs_pronostico(m: dict, pron: dict) -> list[dict]:
     """Las probabilidades de la matriz que no cuadran con el 1X2 del pronóstico
     (más de 5 puntos). Es un aviso: las dos son analítica del mismo parte y una
@@ -2220,6 +2294,19 @@ def guardar(payload: dict) -> dict:
             "comoSeArregla": 'en cada bloque: "reasignacion": {"siMarcaPrimero": {"sob1": …, "tipologia": "…"}, '
                              '"siRecibePrimero": {…}} (disciplina 44)',
         })
+    # UNA RAMA QUE CAMBIA AL RÉGIMEN SOB SIN SU SEGURO DE ATRÁS (TDE v0.1.22):
+    # el SOB2 del arranque no se hereda al que persigue (Sporting–LASK)
+    sin_sob2 = [f"{b.get('equipo') or '?'}.{rama}" for b in tde_bloques
+                for rama, r in (b.get("reasignacion") or {}).items()
+                if rama in ("siRecibePrimero", "siLeEmpatan") and (r.get("sob1") or 0) >= 0.5 and r.get("sob2") is None]
+    if sin_sob2:
+        faltan.append({
+            "bloque": "tde.reasignacion.sob2",
+            "costara": f"rama(s) {', '.join(sin_sob2)} pasan a sobreexposición sin su SOB2: el ISE de la rama no "
+                       "se calcula y queda el del arranque, como en Sporting–LASK (ISE 1.67 con la rama que decía «se expone»)",
+            "comoSeArregla": 'en la rama: "sob2": 0 | 0.5 | 1 —el seguro de atrás CUANDO persigue, no el del arranque; '
+                             'sin evidencia, 0.5— y, si cambia, "sob3" (TDE v0.1.22)',
+        })
     # UN IE QUE NO SE PUEDE CALCULAR SE DICE AL DEPOSITAR. Athletico-PR y
     # Gimnasia de Mendoza (17/10/2026) llegaron sin un solo indicador S: el IE
     # quedaba en null y el recibo callaba; los analistas lo vieron al releer.
@@ -2324,6 +2411,7 @@ def guardar(payload: dict) -> dict:
         "documentos": [d["id"] for d in parte["documentos"]],
         "filasMatriz": filas_matriz(parte.get("matriz") or {}),
         "matrizVsPronostico": matriz_vs_pronostico(parte.get("matriz") or {}, parte.get("pronostico") or {}),
+        "pronosticoVsMotor": pronostico_vs_motor(parte.get("pronostico") or {}, _prediccion_o_nada(parte["fixtureId"])),
         "alertas": len(parte["alertas"]),
         "discrepancias": discrepancias,
         "xiResuelto": bool(previo and previo["xi_json"]),

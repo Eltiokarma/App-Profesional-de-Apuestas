@@ -1,6 +1,7 @@
 # Snapshot de los skills — material de referencia, no fuente de verdad
 
-> **Actualizado el 21/10/2026.** `teorema-del-echado` está en **v0.1.21**:
+> **Actualizado el 22/10/2026.** `teorema-del-echado` está en **v0.1.22** (cada rama con su número,
+> `docs/revisiones/TDE_v0.1.22_propuesta.md`); antes, en **v0.1.21**:
 > la v0.1.20 vigente de la cuenta más la revisión aprobada por el usuario
 > desde el dossier (`docs/revisiones/TDE_v0.1.21_propuesta.md`). Hasta que el
 > usuario la suba a la cuenta, la cuenta sigue en v0.1.20. `diagnostico-tactico`

@@ -1370,6 +1370,12 @@ export interface ReventonLadoDTO {
 export interface RamaReasignacion {
   /** el valor que tomaría SOB1 en esa rama */
   sob1: 0 | 0.5 | 1 | null
+  /** TDE v0.1.22: el seguro de atrás cuando se juega esta rama (no se hereda el del arranque) */
+  sob2?: 0 | 0.5 | 1
+  sob3?: 0 | 0.5 | 1
+  /** CALCULADO: el ISE de la rama, (SOB1+SOB2+SOB3)/3×10 */
+  iseRama?: number
+  iseRamaHeredados?: string[]
   tipologia: string
   nota: string
   /** la ventana de 15' de esta rama, si cambia (minutos de reloj) */

@@ -1,6 +1,10 @@
 # Propuesta de revisión · `teorema-del-echado` v0.1.21 → v0.1.22
 
-**Estado:** PROPUESTA. No está aplicada. Se redactó el 22/10/2026, a partir del
+**Estado:** APROBADA por el usuario (22/10/2026, los tres puntos). Redactada
+en `docs/skills/teorema-del-echado/SKILL.md` (disciplinas 62, 63 y 64) y con
+sitio en el parte (`sob2`/`sob3` e `iseRama` por rama, `faltan` del `sob2`).
+El juicio tramo por tramo del punto 3 en el veredicto queda para después.
+Falta que el usuario la suba a su cuenta. Se redactó el 22/10/2026, a partir del
 caso Sporting 2-3 LASK (Champions, 21/10) y de las lecciones del dossier
 (`GET /analisis/cowork/revision/teorema-del-echado`, cohorte `c3-2026-09-23`)
 que tocan las ramas de la reasignación. La base es la v0.1.21 que el usuario

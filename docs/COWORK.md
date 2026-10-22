@@ -1161,6 +1161,9 @@ Escribís vos (es juicio, no se puede calcular):
 - El pronóstico con sus TRES fuentes declaradas en simultáneo (Disciplina 33):
   motor de Regresión al Nivel (sad-analysis), matriz manual y mercado. Si el
   motor no pudo correr, se dice — no se reemplaza con estimación (Disciplina 21).
+  Con la μ en fiabilidad baja (ESCALA-LIGAS), el recibo trae
+  `pronosticoVsMotor.aviso` si tu favorito queda más de 8 puntos SOBRE el
+  motor: acercalo o decí en `notas` qué dato que el motor no ve lo sostiene.
   La fuente «motor» en 1X2 es `unXDos` de `GET predicciones/{id}` (local ·
   empate · visita, calibrado sobre 51 mil partidos): copiala tal cual en
   `pronostico.motor`. **μ son PUNTOS esperados, no goles: NO armes un Poisson
@@ -1366,7 +1369,13 @@ el pantallazo es el procedimiento.
   RELATIVA al gol que la abre («desde el gol +15»); se agrega `siLeEmpatan`
   (si al que marcó primero le empatan antes del 75: qué vía reabre) y
   `siExpulsion` (roja ganando o empatando → ECHADA-NUM e ISE anulado;
-  perdiendo → ISE agravado). Y «administra» NO es el defecto de
+  perdiendo → ISE agravado). **Desde el TDE v0.1.22 (22/10/2026)**, cada rama
+  que pasa a sobreexposición (`siRecibePrimero`, `siLeEmpatan` empujando,
+  `siMarcaPrimero` siguiendo al ataque) lleva sus SOB: `sob1`, `sob2` —el
+  seguro de atrás CUANDO persigue, no el del arranque; sin evidencia 0.5— y,
+  si cambia, `sob3`. La app calcula el ISE de la rama (`iseRama`, la misma
+  fórmula) y el recibo pide en `faltan` el `sob2` que falte. Sporting–LASK
+  escribió «se expone» y dejó el ISE en 1.67: con su SOB, la rama daba 8.3. Y «administra» NO es el defecto de
   `siMarcaPrimero`: para el favorito por μ con margen ≥ 0.30, el obligado de
   tabla o el que juega con uno más, la rama por defecto es «sigue atacando»;
   si escribís que administra, decí por qué. En el veredicto, la rama del que
