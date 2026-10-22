@@ -692,7 +692,8 @@ conversación se pierde en la siguiente.
    Lima, porque el texto de una rutina solo se cambia desde su propia
    conversación— en la sesión «SAD · corrida de partes
    (rutina)»; veredictos 20:12 (`limite=30`) en «SAD · corrida de veredictos
-   (rutina)»; **rehacer** cada 30 min (05:07 a 23:37 Lima, dos disparos :07 y
+   (rutina)»; **mantenimiento** 12:23 y 21:47 en «SAD · mantenimiento
+   (rutina)» (desde el 22/10, deuda 17); **rehacer** cada 30 min (05:07 a 23:37 Lima, dos disparos :07 y
    :37) en «SAD · rehacer DTP con el once (rutina)», desde el 22/10/2026:
    modo `rehacer` de `corrida-sad`, los partes con DTP-REHACER a 30-80 min del
    pitazo, avisa solo si hizo algo. Un fin de semana trae 50-65 candidatos del padrón (15-23 por
@@ -845,6 +846,50 @@ conversación se pierde en la siguiente.
    (71 días con cuotas): la combinada de los favoritos MÁS fuertes del día
    salió más de lo que pagaba el mercado (+48 %, IC −9 % a +116 %); seguir
    midiéndolo con más días antes de creerlo.
+
+17. **Cierre de la sesión del 21-22/10/2026** (PR #173 a #193). Hecho:
+   1X2 del motor desde μ (`unXDos`, logística calibrada), `sad-analysis` v4.0 y
+   `efe-dashboard` v1.9 (en la cuenta), EFE v1.6, DTP v1.4, TDE v0.1.22 (ramas
+   con su número, redactada), doble oportunidad incoherente fuera, aviso del
+   1X2 sobre el motor (`pronosticoVsMotor`), rutina de rehacer DTP cada 30 min,
+   veredicto del TDE tramo por tramo con la ventana del reloj aparte, y la cola
+   de incidencias vaciada (88 → 0; casi todas eran pocas causas repetidas:
+   `contraElOnce`, identidad del jugador, tabla F1, bajas, duplicados). Railway
+   estuvo caído el 21-22/10 y producción quedó en el PR #171: un push durante
+   la caída se pierde (`docs/DESPLIEGUE.md`); desplegado el 22/10 con el #185.
+   **El mantenimiento corre en su propia sesión fija** desde el 22/10: «SAD ·
+   mantenimiento (rutina)» (`session_018rYwkkxMKQpJpfTdkxScvd`), 12:23 y 21:47
+   de Lima, POR GRUPOS de causa (hasta 3 grupos de código por pasada, un PR
+   por grupo). Las dos rutinas viejas, que disparaban en la sesión de trabajo,
+   quedaron DESACTIVADAS (no borradas). **Pendiente, en orden:**
+   - **Del usuario**: subir `teorema-del-echado` v0.1.22 a la cuenta (zip de
+     `docs/skills/teorema-del-echado/`) y verificar que cargue; marcar con 🔑
+     las lecciones de Sporting–LASK y de las ramas como `aplicada` en v0.1.22;
+     desmentir el banco de Juárez si quedó en cuarentena (incidencia 356);
+     levantar las cuarentenas falsas; rotar el token acotado (deuda 11).
+   - **Verificar**: el primer disparo de la sesión nueva de mantenimiento
+     (23/10, 12:23 Lima) — que tenga el repo, las credenciales y agrupe; la
+     próxima corrida del pipeline saca los duplicados (Rayo Zuliano 16/09 y
+     11/06/2025, Portuguesa 16/09: su K deja de sumar el partido dos veces;
+     `pipeline --duplicados` los lista); las bajas `desmentida` en Equipo.
+   - **Rutina de rehacer** (`session_01V3tPBuV4pgvD7rMF39twu9`): sumar el
+     costo y los partidos rehechos del 22-23/10 y decidir con el usuario si
+     sigue cada 30 min, pasa a cada hora o solo en horas de partido.
+   - **Decisiones del usuario** (incidencias en `usuario`, con su propuesta
+     escrita): escala entre ligas en el reventón, la espina y el P1a (300,
+     309, 294, 79: el rival no suma con `ESCALA-LIGAS` y la espina no sale
+     «fuerte» — números calibrados, con el backtest a la vista); derbi a ≤ 5
+     días en el F2 del TDE (339, regla del skill); COLAPSO EN CASCADA
+     calculada desde los D3 del EFE (162); dos falsos positivos de Jev (160,
+     338); estabilidad inflada por cesiones (43); marca INFLADA en la K de la
+     condición (311); racha récord con mínimo 3 partidos (67). Y recalibrar
+     el umbral del 25 % de `Missing Fixture` con 28, 71 y 312 (ruido que era
+     baja real; la API que no marca una lesión publicada).
+   - **Ideas, no pedidas**: pintar los `tramos` del veredicto en Aprendizaje y
+     en la vista de derrotas del favorito (12 de 44 tuvieron segundo giro);
+     el 1X2 de la cohorte sale SUBCONFIADO (60 %+ acertó 18 de 18, 40-49 %
+     → 54 %): medir con más n antes de tocar nada; archivar la sesión
+     temporal `session_01NuzvTgFR41DgJsU122s6EE`.
 
 ## Siguientes pasos (en orden)
 
