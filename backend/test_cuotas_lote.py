@@ -185,6 +185,36 @@ def main():
     finally:
         ex.guardar_odds = original
 
+    # LA DOBLE OPORTUNIDAD QUE NO CUADRA CON EL 1X2 DE SU CASA NO SE GUARDA
+    # (incidencia 68: 1xBet en Villa–Viking 21/10/2026, 1X 2.60 · X2 1.32 · 12
+    # 1.01 con el 1 a 1.29; la media del 1X subía de ~1.05 a 1.46)
+    from backend.cuota_mercados import dc_incoherente, sin_dc_incoherente
+    _x = {"1": 1.29, "X": 6.91, "2": 10.7}
+    check("DC de 1xBet incoherente con su 1X2 (1X 2.60, X2 1.32, 12 1.01); la de Betano (1X 1.08, X2 3.85, 12 1.12) cuadra",
+          all(dc_incoherente(s, o, _x) for s, o in (("1X", 2.6), ("X2", 1.32), ("12", 1.01)))
+          and not any(dc_incoherente(s, o, {"1": 1.29, "X": 6.5, "2": 10.5}) for s, o in (("1X", 1.08), ("X2", 3.85), ("12", 1.12))))
+    check("sin el 1X2 de la casa no se juzga", not dc_incoherente("1X", 2.6, {}))
+    _f = [{"casa": "a", "mercado": "1x2", "seleccion": "1", "cuota": 1.29}, {"casa": "a", "mercado": "1x2", "seleccion": "X", "cuota": 6.91},
+          {"casa": "a", "mercado": "1x2", "seleccion": "2", "cuota": 10.7}, {"casa": "a", "mercado": "dc", "seleccion": "1X", "cuota": 2.6},
+          {"casa": "b", "mercado": "dc", "seleccion": "1X", "cuota": 1.06}]
+    check("sin_dc_incoherente saca solo la fila rota", [f["casa"] for f in sin_dc_incoherente(_f) if f["mercado"] == "dc"] == ["b"])
+    con3 = db([(900010, "2026-10-21 19:00:00", "NS")])
+    it = item_odds(900010)
+    it["bookmakers"].append({"id": 11, "name": "1xBet", "bets": [
+        {"id": 1, "name": "Match Winner", "values": [{"value": "Home", "odd": "1.29"}, {"value": "Draw", "odd": "6.91"},
+                                                     {"value": "Away", "odd": "10.7"}]},
+        {"id": 12, "name": "Double Chance", "values": [{"value": "Home/Draw", "odd": "2.60"}, {"value": "Home/Away", "odd": "1.01"},
+                                                       {"value": "Draw/Away", "odd": "1.32"}]}]})
+    it["bookmakers"][0]["bets"].append({"id": 12, "name": "Double Chance", "values": [
+        {"value": "Home/Draw", "odd": "1.20"}, {"value": "Home/Away", "odd": "1.27"}, {"value": "Draw/Away", "odd": "1.85"}]})
+    ex.guardar_odds(con3, 900010, [it])
+    dc = dict(((c, v), o) for c, v, o in con3.execute(
+        "SELECT bookmaker_name, value, odd FROM odds WHERE fixture_id=900010 AND bet_name='Double Chance'"))
+    hist = [r[0] for r in con3.execute("SELECT casas FROM odds_history WHERE fixture_id=900010 AND bet_name='Double Chance' "
+                                       "AND value='Home/Draw' AND casa IS NULL")]
+    check("al guardar: la DC rota de 1xBet queda NULL, la de Bet365 se guarda, y la media del historial cuenta 1 casa",
+          dc[("1xBet", "Home/Draw")] is None and dc[("Bet365", "Home/Draw")] == 1.2 and hist == [1], (dc, hist))
+
     print(f"\n{'TODO OK' if not fallos else f'{fallos} FALLAS'}")
     return 1 if fallos else 0
 

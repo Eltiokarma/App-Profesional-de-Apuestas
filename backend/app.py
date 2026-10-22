@@ -1127,7 +1127,7 @@ def niveles_de(team_id: int, limit: int, hasta: str | None = None, antes: str | 
 # Mapeo bet_name/value de API-Football → mercados del contrato: vive en
 # backend/cuota_mercados.py porque la INGESTA lo usa para no guardar lo que
 # ninguna pantalla lee (y esa fue la razón de una sad.db de 30 GB).
-from backend.cuota_mercados import _BETS_FUERA, cuota_key  # noqa: E402,F401
+from backend.cuota_mercados import _BETS_FUERA, cuota_key, sin_dc_incoherente  # noqa: E402,F401
 
 
 # ---------------------------------------------------------------------------
@@ -1738,14 +1738,20 @@ def tabla_posiciones(liga_id: int, temporada: int | None = None, fase: str | Non
 def cuotas(fixture_id: int):
     rows = db.query(
         "sad",
-        "SELECT bet_name, value, odd FROM odds WHERE fixture_id=? AND odd IS NOT NULL",
+        "SELECT bookmaker_name, bet_name, value, odd FROM odds WHERE fixture_id=? AND odd IS NOT NULL",
         (fixture_id,),
     )
-    acc: dict[tuple[str, str], list[float]] = {}
+    filas = []
     for r in rows:
         key = cuota_key(r["bet_name"], r["value"])
         if key:
-            acc.setdefault(key, []).append(float(r["odd"]))
+            filas.append({"casa": (r["bookmaker_name"] or "").strip().lower(), "mercado": key[0],
+                          "seleccion": key[1], "cuota": float(r["odd"])})
+    # una casa con la doble oportunidad que no cuadra con su propio 1X2 no entra
+    # a la media (incidencia 68: 1xBet arrastraba el 1X de 1.05 a 1.46)
+    acc: dict[tuple[str, str], list[float]] = {}
+    for f in sin_dc_incoherente(filas):
+        acc.setdefault((f["mercado"], f["seleccion"]), []).append(f["cuota"])
     now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     return [
         {
@@ -2042,8 +2048,10 @@ def cuotas_casas(fixture_id: int):
                 "casa": casa,
                 "cuota": round(float(r["odd"]), 2),
             }
+    vivas = sin_dc_incoherente(list(ultima.values()))  # incidencia 68
     por_sel: dict[tuple[str, str], list[dict]] = {}
-    for (key, _casa), fila in ultima.items():
+    for fila in vivas:
+        key = (fila["mercado"], fila["seleccion"])
         por_sel.setdefault(key, []).append({k: v for k, v in fila.items() if k != "_id"})
     out = []
     for key in sorted(por_sel):

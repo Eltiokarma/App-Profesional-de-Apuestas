@@ -38,7 +38,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
-from backend.cuota_mercados import es_del_contrato
+from backend.cuota_mercados import cuota_key, dc_incoherente, es_del_contrato
 
 # API-Football directo (clave de dashboard.api-football.com): mismo API v3
 # que servía RapidAPI, cambian solo el host y la cabecera de autenticación.
@@ -803,6 +803,14 @@ def guardar_odds(con: sqlite3.Connection, fixture_id: int, respuesta: list) -> i
             casa_nombre = (bk.get("name") or "").strip()
             casa_l = casa_nombre.lower()
             es_referencia = casa_l in CASAS_REFERENCIA
+            # el 1X2 de ESTA casa, para no guardar una doble oportunidad que no
+            # cuadra con él (incidencia 68: 1xBet con 1X 2.60 y el 1 a 1.29)
+            x12_casa = {}
+            for bet in bk.get("bets", []):
+                for valor in bet.get("values", []):
+                    k = cuota_key(bet.get("name"), _VALOR_CANON.get(str(valor.get("value")), valor.get("value")))
+                    if k and k[0] == "1x2":
+                        x12_casa[k[1]] = valor.get("odd")
             for bet in bk.get("bets", []):
                 bet_nombre = bet.get("name") or ""
                 for valor in bet.get("values", []):
@@ -817,6 +825,11 @@ def guardar_odds(con: sqlite3.Connection, fixture_id: int, respuesta: list) -> i
                     try:
                         odd = float(valor.get("odd"))
                     except (TypeError, ValueError):
+                        odd = None
+                    k = cuota_key(bet_nombre, v)
+                    if odd is not None and k and k[0] == "dc" and dc_incoherente(k[1], odd, x12_casa):
+                        # se guarda NULL (pisa la anterior de la casa): ninguna media
+                        # ni la K de cuota la leen, y se ve que faltó
                         odd = None
                     # upsert por NOMBRES y valor canónico: los ids del feed a
                     # veces llegan nulos y NULL=NULL nunca casa en SQL — la

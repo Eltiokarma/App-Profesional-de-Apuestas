@@ -48,6 +48,42 @@ def cuota_key(bet_name, value):
     return None
 
 
+# LA DOBLE OPORTUNIDAD TIENE QUE CUADRAR CON EL 1X2 DE LA MISMA CASA. El
+# 21/10/2026 1xBet mandó en Villa–Viking 1X 2.60 · X2 1.32 · 12 1.01 con el
+# local a 1.29 (el 16/10 la misma casa daba 1X 1.04): la media de /cuotas
+# subió el 1X a 1.46 y tres partes leyeron «la doble oportunidad más cara que
+# el resultado simple» (incidencia 68). La probabilidad de «1 o X» no puede
+# ser menor que la de «1» ni mayor que la de «1» más la de «X»: se tolera el
+# margen de la casa (TOLERANCIA_DC en probabilidad implícita).
+_DC_PARTES = {"1X": ("1", "X"), "12": ("1", "2"), "X2": ("X", "2")}
+TOLERANCIA_DC = 0.05
+
+
+def dc_incoherente(seleccion: str, odd, x12: dict) -> bool:
+    """True si la cuota de doble oportunidad `seleccion` (1X · 12 · X2) no
+    cuadra con el 1X2 `x12` {"1", "X", "2": cuota} de la MISMA casa. Sin el
+    1X2 completo de esa casa no se puede juzgar: False."""
+    partes = _DC_PARTES.get(seleccion)
+    if not partes or not odd:
+        return False
+    try:
+        pa, pb, p = 1 / float(x12[partes[0]]), 1 / float(x12[partes[1]]), 1 / float(odd)
+    except (KeyError, TypeError, ValueError, ZeroDivisionError):
+        return False
+    return p < max(pa, pb) - TOLERANCIA_DC or p > pa + pb + TOLERANCIA_DC
+
+
+def sin_dc_incoherente(filas: list[dict]) -> list[dict]:
+    """Saca de `filas` ({casa, mercado, seleccion, cuota}) la doble oportunidad
+    que no cuadra con el 1X2 de su casa."""
+    x12: dict[str, dict] = {}
+    for f in filas:
+        if f["mercado"] == "1x2":
+            x12.setdefault(f["casa"], {})[f["seleccion"]] = f["cuota"]
+    return [f for f in filas if not (f["mercado"] == "dc"
+                                     and dc_incoherente(f["seleccion"], f["cuota"], x12.get(f["casa"], {})))]
+
+
 def es_del_contrato(bet_name, value) -> bool:
     """¿Esta fila de cuotas la lee alguna pantalla? Si no, no se guarda."""
     return cuota_key(bet_name, value) is not None
