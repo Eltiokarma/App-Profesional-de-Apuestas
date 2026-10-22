@@ -1,6 +1,6 @@
 ---
 name: corrida-sad
-description: Corrida del pipeline SAD con Claude Code (reemplaza a Cowork desde el 13/10/2026). Modo `partes` analiza los partidos de la agenda con los skills (EFE, Teorema del Echado, DTP, sad-analysis) y deposita un parte por partido; modo `veredictos` cierra con autopsia por skill los partidos jugados; modo `reventones` estudia hacia atrás burbujas que reventaron (TDE de los dos equipos, DTP, EFE de ese día); modo `mantenimiento` lee las incidencias que dejaron las corridas, las verifica y arregla con tests lo que es código. Usar cuando una rutina programada o el usuario pida «la corrida», «los partes de hoy», «validar lo de ayer», «los veredictos» o «el mantenimiento».
+description: Corrida del pipeline SAD con Claude Code (reemplaza a Cowork desde el 13/10/2026). Modo `partes` analiza los partidos de la agenda con los skills (EFE, Teorema del Echado, DTP, sad-analysis) y deposita un parte por partido; modo `veredictos` cierra con autopsia por skill los partidos jugados; modo `reventones` estudia hacia atrás burbujas que reventaron (TDE de los dos equipos, DTP, EFE de ese día); modo `rehacer` rehace el DTP (y lo que el once cambie) de los partes con DTP-REHACER cuando sale el once oficial, antes del pitazo; modo `mantenimiento` lee las incidencias que dejaron las corridas, las verifica y arregla con tests lo que es código. Usar cuando una rutina programada o el usuario pida «la corrida», «los partes de hoy», «validar lo de ayer», «los veredictos» o «el mantenimiento».
 ---
 
 # Corrida SAD con Claude Code
@@ -177,6 +177,55 @@ cae en la raíz del repo (17/10/2026).
 >   (rechazos, faltan, aviso/perdido); EFE % de cada lado según el GET; 1X2 y
 >   marcador; alertas (tuyas y del backend); DT de cada lado y si hubo
 >   DT-DISCREPANCIA; qué quedó pendiente o roto.
+
+## Modo `rehacer` (cuando sale el once, antes del pitazo)
+
+Pedido del usuario (22/10/2026), tras Sporting 2-3 LASK: DTP-REHACER sonó
+(3-4-3 en vez del 3-5-2 de la apertura) y nadie lo rehízo, como en 9 de 24
+partidos del 11/10. La app cierra el bloque F sola con la alineación, pero el
+mapa de duelos y el 1X2 quedan escritos sobre otro equipo. Esta corrida corre
+cada 30 minutos y es CORTA: casi siempre no hay nada que hacer.
+
+1. `TZ=America/Lima date`. `GET $B/analisis/cowork/agenda?desdeAhora=true&horas=2`
+   → los de `yaHechos` (con su `fecha` y `hora`, UTC).
+2. Para cada uno que arranca entre **30 y 80 minutos** desde ahora:
+   `GET $B/analisis/cowork/{id}`. Entra a la lista si su `alertas` trae
+   **DTP-REHACER** (el once oficial contradice la apertura del DTP). Sin
+   ninguno: terminá en una línea, **sin avisar al celular** (corre cada media
+   hora: un aviso vacío cada vez se deja de leer).
+3. Como mucho **6** partidos. Un subagente por partido, en paralelo, con este
+   encargo:
+
+> Tus archivos van SOLO en `<scratchpad>/rehacer-{id}/`. El partido {id}
+> arranca a las {hora Lima}; hora tope de depósito: el pitazo − 10 minutos.
+> Credenciales en `$SAD_API_BASE`/`$SAD_TOKEN_COWORK` (nunca las imprimas).
+> Cargá `anthropic-skills:diagnostico-tactico` y `anthropic-skills:sad-analysis`.
+>
+> 1. `GET $B/analisis/cowork/{id}` (el parte entero: lo vas a devolver
+>    ENTERO), `GET $B/fixtures/{id}/ficha` (el once oficial, con grid) y
+>    `GET $B/analisis/cowork/dtp/{id}`. El motivo está en el detalle de la
+>    alerta DTP-REHACER y en `dtp.bloques[].calculado.contraElOnce`.
+> 2. En el bloque del DTP marcado: rehacé **M1** con el once oficial
+>    (`sistema` y `xiReferencia` = los once titulares de la ficha) y **M2** en
+>    sus dos capas (DTP v1.4): lo estructural (carriles, zonas, mecanismos)
+>    se revisa; los duelos con nombre propio se reescriben con ESTE once, en
+>    las dos direcciones del carril. Una vía de gol que dependía de un
+>    jugador que no está, se saca; la del que entró, se escribe.
+> 3. Revisá si el once cambia lo demás, y tocá SOLO lo que cambia: una baja
+>    decisiva de la tabla F1 que no juega, un arquero distinto (EFE v1.6,
+>    B6), la rama del TDE que dependía de un intérprete. Si el 1X2 se mueve,
+>    movelo con su porqué en la lectura del 1X2 (disciplina 33); si no, no.
+> 4. `POST $B/analisis/cowork` con el cuerpo ENTERO (el POST reemplaza; la
+>    cadena conserva la primera apertura, eso no se toca). Leé el recibo:
+>    DTP-REHACER tiene que haber desaparecido de `alertas` en el GET
+>    siguiente; si sigue, decí por qué (`contraElOnce.motivos`).
+> 5. Después del pitazo NO deposites: decilo. Respuesta final: qué cambió
+>    en M1/M2, si se movió el 1X2 (de cuánto a cuánto) y si la alerta se fue.
+
+4. Depositá lo roto como incidencias (`origen: "partes"`, `corrida: "rehacer
+   <fecha hora>"`). Respuesta final, tres líneas: partidos rehechos, los que
+   no (y por qué) y qué se rompió. Al celular SOLO si se rehízo algo o algo
+   falló.
 
 ## Modo `veredictos` (después del partido)
 
@@ -430,6 +479,9 @@ Las rutinas corren solas y el usuario no mira la sesión. Mandá las tres
 líneas finales al celular con la herramienta **PushNotification** (cargala con
 ToolSearch `select:PushNotification`), también si la corrida falló o no tenía
 nada que hacer. Sin el token, sin datos sensibles.
+
+Excepción: el modo `rehacer` corre cada 30 minutos y avisa SOLO si rehízo
+algo o algo falló.
 
 ## Lo que NO hace esta corrida
 

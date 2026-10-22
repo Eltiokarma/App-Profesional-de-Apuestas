@@ -937,6 +937,12 @@ function Reasignacion({ r }: { r?: BloqueTde['reasignacion'] }) {
           <div key={k} style={{ display: 'flex', gap: 10, padding: '5px 0', borderBottom: '1px solid var(--line)', flexWrap: 'wrap' }}>
             <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)', width: 130, flexShrink: 0, letterSpacing: '.3px' }}>{etiqueta}</span>
             {x.sob1 != null && <span style={{ font: '700 10.5px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>SOB1 {x.sob1}</span>}
+            {x.iseRama != null && (
+              <span title={x.iseRamaHeredados?.length ? `del bloque: ${x.iseRamaHeredados.join(', ')}` : 'las tres SOB de la rama'}
+                style={{ font: '700 10.5px var(--mono)', color: 'var(--down)', fontVariantNumeric: 'tabular-nums' }}>
+                ISE rama {x.iseRama.toFixed(1)}
+              </span>
+            )}
             <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0 }}>
               {[x.tipologia, x.nota].filter(Boolean).join(' · ')}
             </span>

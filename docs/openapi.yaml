@@ -3289,6 +3289,10 @@ components:
       type: object
       properties:
         sob1: { type: number, nullable: true, enum: [0, 0.5, 1, null], description: 'el valor que tomaría SOB1 en esa rama' }
+        sob2: { type: number, enum: [0, 0.5, 1], description: 'TDE v0.1.22: el seguro de atrás CUANDO se juega esta rama (no se hereda el del arranque); obligatorio en siRecibePrimero/siLeEmpatan con sob1 ≥ 0.5 (si falta, `faltan`)' }
+        sob3: { type: number, enum: [0, 0.5, 1], description: 'TDE v0.1.22: SOB3 en esta rama, si cambia; si no viene se usa el del bloque' }
+        iseRama: { type: number, description: 'CALCULADO: (SOB1+SOB2+SOB3)/3×10 de la rama (la misma fórmula del ISE). Solo con sob1 y sob2' }
+        iseRamaHeredados: { type: array, items: { type: string }, description: 'qué SOB de la cuenta salió del bloque y no de la rama (hoy, solo SOB3)' }
         tipologia: { type: string, description: 'el tipo modal en esa rama, si cambia' }
         nota: { type: string }
         ventana: { type: string, description: "la ventana de 15' de esta rama, si cambia (minutos de reloj): el veredicto mide la de la rama que jugó el partido" }
@@ -3682,6 +3686,20 @@ components:
       type: object
       required: [fixtureId, partido, estado]
       properties:
+        pronosticoVsMotor:
+          type: object
+          nullable: true
+          description: >
+            El 1X2 declarado contra `unXDos` de /predicciones (null sin pronóstico o sin motor).
+            Con `fiabilidadMu` baja (ESCALA-LIGAS) y el favorito del pronóstico más de 8 puntos
+            SOBRE el motor, `aviso` dice qué hacer (Sporting 2-3 LASK, 21/10/2026). Aviso, no rechazo.
+          properties:
+            declarado: { type: object, additionalProperties: { type: number } }
+            motor: { type: object, additionalProperties: { type: number } }
+            favorito: { type: string, enum: [local, empate, visita] }
+            sobreElMotor: { type: number, description: 'puntos del favorito del pronóstico sobre el motor (negativo = por debajo)' }
+            fiabilidadMu: { type: string }
+            aviso: { type: string, description: 'vacío si no hay nada que corregir' }
         fixtureId: { type: integer }
         partido: { type: string, description: 'los nombres de NUESTRA base, no los del depósito' }
         fecha: { type: string }

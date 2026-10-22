@@ -93,7 +93,7 @@ def _parte(fixture_id: int, nombre_a: str = "", nombre_b: str = "") -> dict:
              "vias": [{"nombre": "echada", "indice": 58, "ventana": "75-90'", "detalle": "baja el bloque"}],
              "falsador": "si sostiene la línea tras el 75'",
              "reasignacion": {"siMarcaPrimero": {"sob1": 0, "tipologia": "ECHADA-VOL", "nota": "administra"},
-                              "siRecibePrimero": {"sob1": 1, "nota": "persigue y se expone"}}},
+                              "siRecibePrimero": {"sob1": 1, "sob2": 0.5, "nota": "persigue y se expone"}}},
             {"ie": 24, "ieNivel": "verde", "ise": 47, "iseNivel": "ambar", "equipo": "a",
              "tipologia": "sobreexposición por urgencia", "ventana": "60-75'",
              "vias": [{"nombre": "sobreexposicion", "indice": 47, "ventana": "60-75'",
@@ -2105,6 +2105,14 @@ def main():
           and any(x["donde"].endswith("siRecibePrimero.sob1") for x in rec_r["rechazos"]), rec_r["rechazos"])
     check("y una reasignación a medias se avisa en `faltan` (se cobra al cerrar)",
           any(x["bloque"] == "tde.reasignacion" for x in rec_r["faltan"]), rec_r["faltan"])
+    # TDE v0.1.22: la rama que pasa a sobreexposición sin su SOB2 se avisa al depositar
+    p_s2 = json.loads(json.dumps(p_tde))
+    p_s2["tde"]["bloques"][1]["reasignacion"] = {"siMarcaPrimero": {"sob1": 0}, "siRecibePrimero": {"sob1": 1}}
+    rec_s2 = c.post(f"{A}/analisis/cowork", json=p_s2).json()
+    check("rama siRecibePrimero en SOB sin sob2: `faltan` lo pide (el seguro del arranque no se hereda)",
+          any(x["bloque"] == "tde.reasignacion.sob2" for x in rec_s2["faltan"]), rec_s2["faltan"])
+    check("el recibo trae pronosticoVsMotor (o null sin pronóstico): la clave existe",
+          "pronosticoVsMotor" in rec_s2, list(rec_s2)[:30])
     # LA VENTANA RELATIVA AL GOL Y LA VENTANA DE LA RAMA (veredictos del 17/10/2026)
     from backend.analisis.veredicto import _ventana as _vv, ventana_relativa as _vr
     check("«15-30' desde la ventaja» es relativa: no se lee como minutos 15-30",
@@ -3351,6 +3359,28 @@ def main():
     _rz2 = []
     _alerta({"codigo": "T.54", "equipo": "a", "tipo": "estructural", "detalle": "DT nuevo"}, _rz2, "alertas[1]")
     check("con un tipo válido no hay aviso", not _rz2, _rz2)
+    # TDE v0.1.22 · CADA RAMA CON SU NÚMERO (Sporting 2-3 LASK: la rama decía «se expone» y el ISE quedó en 1.67)
+    from backend.analisis.parte import _reasignacion as _rsg, ise_de_ramas as _idr, pronostico_vs_motor as _pvm
+    _rz = []
+    _ra = _idr(_rsg({"siLeEmpatan": {"sob1": 1, "sob2": 1, "nota": "vuelve a empujar"},
+                     "siRecibePrimero": {"sob1": 1, "sob2": 0.5, "sob3": 1}, "siMarcaPrimero": {"sob1": 0}}, _rz, "t"),
+               {"SOB1": 0, "SOB2": 0, "SOB3": 0.5})
+    check("la rama con sob1 y sob2 trae su ISE (SOB3 del bloque, dicho); con las tres, sin heredados; sin sob2, sin ISE",
+          _ra["siLeEmpatan"]["iseRama"] == 8.33 and _ra["siLeEmpatan"]["iseRamaHeredados"] == ["SOB3"]
+          and _ra["siRecibePrimero"]["iseRama"] == 8.33 and "iseRamaHeredados" not in _ra["siRecibePrimero"]
+          and "iseRama" not in _ra["siMarcaPrimero"] and not _rz, (_ra, _rz))
+    _rz2 = []
+    _rsg({"siLeEmpatan": {"sob1": 1, "sob2": 2}}, _rz2, "t")
+    check("un sob2 fuera de 0/0.5/1 se rechaza con motivo", any(r["donde"] == "t.siLeEmpatan.sob2" for r in _rz2), _rz2)
+    # EL AVISO DEL 1X2 SOBRE EL MOTOR CON LA ESCALA ENTRE LIGAS (Sporting–LASK: 66 contra 57)
+    _pr = {"probabilidades": {"local": 66, "empate": 20, "visita": 14}}
+    _ux = {"unXDos": {"local": 57.0, "empate": 24.0, "visita": 19.0}}
+    _av = _pvm(_pr, {**_ux, "fiabilidadMu": {"nivel": "baja"}})
+    check("con fiabilidad baja y el favorito 9 puntos SOBRE el motor, el recibo avisa; con fiabilidad alta solo informa",
+          _av["sobreElMotor"] == 9.0 and "Sporting" in _av["aviso"]
+          and _pvm(_pr, {**_ux, "fiabilidadMu": {"nivel": "alta"}})["aviso"] == ""
+          and _pvm({"probabilidades": {"local": 60, "empate": 22, "visita": 18}}, {**_ux, "fiabilidadMu": {"nivel": "baja"}})["aviso"] == ""
+          and _pvm(_pr, None) is None, _av)
     # EL REVENTÓN SE OBSERVA CON EL MARCADOR SI EL PIPELINE NO CORRIÓ (incidencias 100 y 373)
     from backend.analisis.veredicto import observado_por_marcador as _opm
     _dec = {"signo": "+", "k": 12.5, "partidos": 3}
