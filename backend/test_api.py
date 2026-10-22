@@ -676,6 +676,10 @@ def main():
     check("cuotas plausibles (1.0–20)", all(1.0 < r["cuota"] < 20 for r in q))
     sin = c.get(A + "/cuotas/900001").json()
     check("fixture sin odds → lista vacía", sin == [], sin)
+    # incidencia 363: actualizadoEn es la última captura del historial, no la hora del pedido
+    _cap = dbmod.query("sad", "SELECT MAX(captured_at) AS t FROM odds_history WHERE fixture_id=?", (vivo["id"],))[0]["t"]
+    check("cuotas: actualizadoEn = última captura (no la hora del pedido)",
+          bool(_cap) and {r["actualizadoEn"] for r in q} == {appmod.iso(_cap)}, ({r["actualizadoEn"] for r in q}, _cap))
 
     # /fixtures/{id}/live — en vivo real (fase 3): marcador, minuto y odds_live
     lv = c.get(A + f"/fixtures/{vivo['id']}/live").json()

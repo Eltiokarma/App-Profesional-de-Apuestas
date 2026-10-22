@@ -10,6 +10,7 @@ La usan el endpoint de carga manual (backend/app.py) y el cargador en bloque
 (backend/analisis/despensa_bulk.py): la misma regla en los dos caminos.
 """
 import html
+import re
 import unicodedata
 
 
@@ -67,5 +68,9 @@ def limpiar_nombre(nombre):
                 break
             except (UnicodeEncodeError, UnicodeDecodeError):
                 continue
+    # el punto medio como separador de nombre y apellido («Kevin Isaias·Silva»,
+    # gol del 89' de Torque, 21/10/2026) no está en la prensa ni en la plantilla
+    # y rompe el cruce; la «l·l» catalana (Marcel·lí) sí es ortografía y se queda
+    t = re.sub(r" {2,}", " ", re.sub(r"(?<!l)·|·(?!l)", " ", t))
     # los caracteres de control que deja un mojibake a medias no son letras
     return "".join(c for c in t if unicodedata.category(c) != "Cc").strip()
