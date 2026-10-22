@@ -35,6 +35,35 @@ def _carril(grid: str | None, por_fila: dict[int, int]) -> str | None:
     return CARRILES[0] if idx < 0.34 else (CARRILES[2] if idx > 0.66 else CARRILES[1])
 
 
+def _plantilla(team_id: int) -> list[tuple[int, str]]:
+    """(id, nombre) de la plantilla del equipo en la base: stats de cualquier
+    temporada y el plantel actual. Vacía si la capa de jugadores no está."""
+    out: dict[int, str] = {}
+    for sql in ("SELECT j.id AS id, j.nombre AS nombre FROM jugador_stats s JOIN jugadores j ON j.id = s.player_id "
+                "WHERE s.team_id=?",
+                "SELECT player_id AS id, nombre FROM plantel_actual WHERE team_id=?"):
+        try:
+            for f in db.query("sad", sql, (team_id,)):
+                if f["id"] and f["id"] > 0 and f["nombre"]:
+                    out.setdefault(int(f["id"]), limpiar_nombre(f["nombre"]))
+        except Exception:  # noqa: BLE001 — base sin la capa de jugadores
+            continue
+    return list(out.items())
+
+
+def _id_por_nombre(nombre: str | None, plantilla: list[tuple[int, str]]) -> int | None:
+    """EL ID QUE LA API NO MANDÓ. Javier Orantes titular con id negativo
+    (incidencia 125) y Kamissoko con el gol y el cambio en null (166) están en
+    la plantilla con su id: si el nombre casa con UN solo jugador de la
+    plantilla, ese es el id. Con dos o ninguno, se deja como vino."""
+    if not nombre or not plantilla:
+        return None
+    from backend.analisis.bloque_f import _casa, _tokens
+    th = _tokens(nombre)
+    hits = [pid for pid, n in plantilla if _casa(_tokens(n), th) or _casa(th, _tokens(n))]
+    return hits[0] if len(set(hits)) == 1 else None
+
+
 def _lado(fixture_id: int, team_id: int) -> dict:
     filas = db.query(
         "sad",
@@ -53,10 +82,17 @@ def _lado(fixture_id: int, team_id: int) -> dict:
             except ValueError:
                 pass
     titulares, suplentes = [], []
+    plantilla = None
     for f in filas:
-        j = {"jugadorId": f["player_id"], "nombre": limpiar_nombre(f["jugador"]), "numero": f["numero"],
+        pid = f["player_id"]
+        j = {"jugadorId": pid, "nombre": limpiar_nombre(f["jugador"]), "numero": f["numero"],
              "posicion": f["posicion"], "grid": f["grid"],
              "carril": _carril(f["grid"], por_fila) if f["titular"] else None}
+        if not pid or pid < 0:
+            plantilla = _plantilla(team_id) if plantilla is None else plantilla
+            resuelto = _id_por_nombre(j["nombre"], plantilla)
+            if resuelto:
+                j.update({"jugadorId": resuelto, "jugadorIdResuelto": True})
         (titulares if f["titular"] else suplentes).append(j)
     return {
         "equipoId": team_id,
@@ -79,12 +115,62 @@ def _eventos(fixture_id: int) -> list[dict]:
         )
     except Exception:
         return []  # DB anterior a la migración
-    return [
+    out = [
         {"minuto": f["minuto"], "extra": f["extra"] or 0, "tipo": f["tipo"], "detalle": f["detalle"],
          "equipoId": f["equipo_id"], "jugador": limpiar_nombre(f["jugador"]), "jugadorId": f["jugador_id"],
          "asistente": limpiar_nombre(f["asistente"]), "asistenteId": f["asistente_id"]}
         for f in filas
     ]
+    _cuerpo_tecnico_e_ids(fixture_id, out)
+    return out
+
+
+def _dts(fixture_id: int, team_id: int) -> list[str]:
+    nombres = []
+    for sql, args in (("SELECT DISTINCT entrenador AS n FROM alineaciones WHERE fixture_id=? AND team_id=?",
+                       (fixture_id, team_id)),
+                      ("SELECT nombre AS n FROM entrenadores WHERE team_id=? ORDER BY actualizado_en DESC LIMIT 2",
+                       (team_id,))):
+        try:
+            nombres += [limpiar_nombre(f["n"]) for f in db.query("sad", sql, args) if f["n"]]
+        except Exception:  # noqa: BLE001
+            continue
+    return nombres
+
+
+def _cuerpo_tecnico_e_ids(fixture_id: int, eventos: list[dict]) -> None:
+    """LA TARJETA AL DT NO ES DE UN JUGADOR. «G. Umana» (Umaña, el DT) iba como
+    amonestado sin id (incidencia 364) y la amarilla a Diego Simeone, con el id
+    de Giuliano, su hijo titular (155): las dos se contaban en el once. Una
+    tarjeta cuyo nombre casa con el DT del equipo, y no con el jugador del id
+    que trae, se marca `cuerpoTecnico` y pierde el id. Y un evento de jugador
+    sin id toma el de la plantilla si el nombre casa con uno solo (166)."""
+    from backend.analisis.bloque_f import _casa, _tokens
+    dts: dict[int, list[str]] = {}
+    plantillas: dict[int, list[tuple[int, str]]] = {}
+    for e in eventos:
+        tid = e.get("equipoId")
+        if not tid or not e.get("jugador"):
+            continue
+        te = _tokens(e["jugador"])
+        if (e.get("tipo") or "").lower() == "card":
+            if tid not in dts:
+                dts[tid] = _dts(fixture_id, tid)
+            if any(_casa(_tokens(d), te) for d in dts[tid]):
+                del_id = None
+                if e.get("jugadorId"):
+                    if tid not in plantillas:
+                        plantillas[tid] = _plantilla(tid)
+                    del_id = dict(plantillas[tid]).get(e["jugadorId"])
+                if not del_id or not _casa(_tokens(del_id), te):
+                    e.update({"cuerpoTecnico": True, "jugadorIdApi": e.get("jugadorId"), "jugadorId": None})
+                    continue
+        if not e.get("jugadorId") or e["jugadorId"] < 0:
+            if tid not in plantillas:
+                plantillas[tid] = _plantilla(tid)
+            r = _id_por_nombre(e["jugador"], plantillas[tid])
+            if r:
+                e.update({"jugadorId": r, "jugadorIdResuelto": True})
 
 
 def _stats(fixture_id: int, team_id: int) -> dict:

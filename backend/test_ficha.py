@@ -329,6 +329,32 @@ def main():
     check("el «·» de separador se vuelve espacio y la «l·l» catalana no se toca",
           [limpiar_nombre(x) for x in ("Kevin Isaias·Silva", "Marcel·lí Pérez", "A ·B")]
           == ["Kevin Isaias Silva", "Marcel·lí Pérez", "A B"])
+    # GRUPO 3 DE INCIDENCIAS (22/10/2026): la tarjeta al DT y el id que la API no mandó
+    import backend.ficha_tactica as _ft
+    _o = (_ft._dts, _ft._plantilla)
+    try:
+        _ft._dts = lambda fx, tid: {3708: ["Giancarlo Umaña"], 530: ["Diego Simeone"]}.get(tid, [])
+        _ft._plantilla = lambda tid: {3708: [(65751, "F. Supayabe")],
+                                      530: [(323935, "G. Simeone"), (1, "J. Oblak")],
+                                      81: [(656976, "Nouhoum Kamissoko"), (2, "Otro Jugador")]}.get(tid, [])
+        _ev = [{"tipo": "Card", "equipoId": 3708, "jugador": "G. Umana", "jugadorId": None},
+               {"tipo": "Card", "equipoId": 530, "jugador": "Diego Pablo Simeone", "jugadorId": 323935},
+               {"tipo": "Card", "equipoId": 530, "jugador": "G. Simeone", "jugadorId": 323935},
+               {"tipo": "Goal", "equipoId": 81, "jugador": "Nouhoum Kamissoko", "jugadorId": None},
+               {"tipo": "Card", "equipoId": 3708, "jugador": "F. Supayabe", "jugadorId": 65751}]
+        _ft._cuerpo_tecnico_e_ids(1, _ev)
+    finally:
+        _ft._dts, _ft._plantilla = _o
+    check("364/155: la tarjeta al DT (Umaña sin id; Diego Simeone con el id de Giuliano) es del cuerpo técnico y pierde el id",
+          _ev[0].get("cuerpoTecnico") is True and _ev[1].get("cuerpoTecnico") is True and _ev[1]["jugadorId"] is None
+          and _ev[1]["jugadorIdApi"] == 323935, _ev[:2])
+    check("y la de Giuliano (G. Simeone, su id) y la de un jugador cualquiera siguen siendo de jugador",
+          not _ev[2].get("cuerpoTecnico") and _ev[2]["jugadorId"] == 323935 and not _ev[4].get("cuerpoTecnico"), _ev)
+    check("166: el gol sin id toma el de la plantilla si el nombre casa con uno solo",
+          _ev[3]["jugadorId"] == 656976 and _ev[3].get("jugadorIdResuelto") is True, _ev[3])
+    check("125: el id por nombre no se adivina con dos candidatos",
+          _ft._id_por_nombre("J. Rojas", [(1, "Juan Rojas"), (2, "José Rojas")]) is None
+          and _ft._id_por_nombre("J. Orantes", [(424701, "Javier Orantes"), (3, "Otro")]) == 424701)
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
 

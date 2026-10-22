@@ -119,12 +119,22 @@ def _rojas(fixture_id: int, home_id: int) -> list[dict]:
         )
     except Exception:
         return []
+    # ...y la del DT que la API carga con el id de un homónimo del once (Diego
+    # Simeone con el de Giuliano, incidencia 155) tampoco: se marca igual que
+    # en la ficha (`ficha_tactica._cuerpo_tecnico_e_ids`)
+    from backend.ficha_tactica import _cuerpo_tecnico_e_ids
+    evs = [{"tipo": "Card", "equipoId": f["equipo_id"], "jugador": f["jugador"], "jugadorId": f["jugador_id"],
+            "minuto": f["minuto"], "detalle": f["detalle"]} for f in filas]
+    try:
+        _cuerpo_tecnico_e_ids(fixture_id, evs)
+    except Exception:  # noqa: BLE001 — sin la capa de jugadores queda como venía
+        pass
     out = []
-    for f in filas:
+    for f, e in zip(filas, evs):
         detalle = (f["detalle"] or "").lower()
         if "red" not in detalle and "second yellow" not in detalle:
             continue
-        if not f["jugador_id"]:
+        if not f["jugador_id"] or e.get("cuerpoTecnico"):
             continue
         out.append({"minuto": f["minuto"] or 0, "lado": "a" if f["equipo_id"] == home_id else "b",
                     "jugador": f["jugador"] or ""})

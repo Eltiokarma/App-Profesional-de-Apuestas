@@ -2644,6 +2644,9 @@ components:
               jugadorId: { type: integer, nullable: true }
               asistente: { type: string, nullable: true }
               asistenteId: { type: integer, nullable: true }
+              jugadorIdResuelto: { type: boolean, description: 'la API no mandó el id y salió de la plantilla por un nombre que casa con UN solo jugador' }
+              cuerpoTecnico: { type: boolean, description: 'tarjeta al DT (el nombre casa con el entrenador y no con el jugador del id): no es de un jugador y jugadorId va null' }
+              jugadorIdApi: { type: integer, nullable: true, description: 'con cuerpoTecnico, el id que mandó la API' }
         estadisticas:
           type: object
           nullable: true
@@ -2675,6 +2678,7 @@ components:
         posicion: { type: string, nullable: true, description: 'G|D|M|F' }
         grid: { type: string, nullable: true, description: '"fila:columna" de API-Football' }
         carril: { type: string, nullable: true, enum: [izquierda, centro, derecha, null], description: 'derivado del grid; null si no hay' }
+        jugadorIdResuelto: { type: boolean, description: 'la API lo mandó sin id (o negativo) y salió de la plantilla por nombre único' }
     CargaDespensa:
       type: object
       required: [equipos]

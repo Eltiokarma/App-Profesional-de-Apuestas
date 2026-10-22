@@ -400,6 +400,8 @@ export interface JugadorAlineadoDTO {
   grid: string | null
   /** Carril derivado del grid; null si la API no lo sirvió. */
   carril: 'izquierda' | 'centro' | 'derecha' | null
+  /** sin id de la API: salió de la plantilla por nombre único */
+  jugadorIdResuelto?: boolean
 }
 
 export interface AlineacionDTO {
@@ -423,6 +425,11 @@ export interface EventoPartidoDTO {
   jugadorId: number | null
   asistente: string | null
   asistenteId: number | null
+  /** sin id de la API: salió de la plantilla por nombre único */
+  jugadorIdResuelto?: boolean
+  /** tarjeta al DT: no es de un jugador (jugadorId null; el de la API en jugadorIdApi) */
+  cuerpoTecnico?: boolean
+  jugadorIdApi?: number | null
 }
 
 /** Materia prima del DTP (docs/efe-dtp/DTP_DISENO.md). Vacía si no se capturó. */
