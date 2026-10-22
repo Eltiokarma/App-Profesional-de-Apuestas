@@ -502,6 +502,11 @@ export function estabilidadDe(plantilla: PlantillaBurbuja | null | undefined, ho
     if (dias == null) {
       sinDato.push('fecha de asunción del DT')
       motivos.push(`DT ${ent.nombre} sin fecha de asunción`)
+    } else if (dias < DT_ASENTADO_DIAS && ent.fuente === 'coachs') {
+      // la llegada de /coachs es aproximada: no mueve la estabilidad (incidencia 186)
+      sinDato.push('fecha de asunción del DT confirmada')
+      motivos.push(`DT ${ent.nombre}: la base dice ${dias} días, pero la llegada es la aproximada de la ` +
+        'carrera de la API; no mueve la estabilidad hasta confirmarla en prensa')
     } else if (dias < DT_ASENTADO_DIAS) {
       subir('inestable')
       motivos.push(`DT ${ent.nombre} lleva ${dias} días: la historia de K es de otro cuerpo técnico`)

@@ -3753,6 +3753,19 @@ def main():
     d_nodup = bf.resolver(t_dup, [], ["Otro Delantero"], ids={})
     check("sin el jugador en la hoja, las dos filas siguen siendo bajas (no se inventa un duplicado)",
           [j["estado"] for j in d_nodup["jugadores"]][:2] == ["baja", "baja"] and not d_nodup["duplicados"], d_nodup["jugadores"])
+    # DOS HOMÓNIMOS TITULARES (incidencia 372, Shakhtar: Pedrinho 10244 MID y 299925 DEF)
+    from backend.analisis.parte import _ids_por_nombre
+    _hoja = [{"jugador": "Pedrinho", "player_id": 10244}, {"jugador": "Pedrinho", "player_id": 299925},
+             {"jugador": "Otro", "player_id": 5}]
+    _idp = _ids_por_nombre(_hoja)
+    check("la hoja con dos «Pedrinho» guarda los dos ids en orden", _idp == {"Pedrinho": [10244, 299925], "Otro": 5}, _idp)
+    t_ped = [{"nombre": "Pedrinho", "zona": "MID", "rol": "TF", "jugadorId": 10244},
+             {"nombre": "Pedrinho", "zona": "DEF", "rol": "TF", "jugadorId": 299925},
+             {"nombre": "Otro", "zona": "ATK", "rol": "TF", "jugadorId": 5}]
+    d_ped = bf.resolver(t_ped, [], ["Pedrinho", "Pedrinho", "Otro"], ids=_idp)
+    check("los dos Pedrinho titulares quedan disponibles: sin baja fantasma ni IP",
+          all(j["estado"] == "disponible" for j in d_ped["jugadores"]) and d_ped["ip"] == 0,
+          ([(j["nombre"], j["estado"]) for j in d_ped["jugadores"]], d_ped["ip"]))
     d_duda = bf.resolver(t_id, [{"nombre": "Luis Iberico", "estado": "duda", "motivo": "molestia"}],
                          ["J. Cerro", "Cris Silva"], ids={"J. Cerro": 354001, "Cris Silva": 105501})
     _ib = next(j for j in d_duda["jugadores"] if j["nombre"] == "Luis Iberico")

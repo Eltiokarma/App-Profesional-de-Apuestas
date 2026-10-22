@@ -24,6 +24,7 @@ vecindad geográfica (Boca–River es de ciudad, pero Alianza–Cienciano no) no
 está en los datos. Se marca `parcial: true` para que quien lo lea sepa que ahí
 la ausencia de etiqueta no prueba nada.
 """
+import re
 import unicodedata
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
@@ -282,12 +283,25 @@ def _ciudad(team_id: int) -> str | None:
     return filas[0]["venue_city"] if filas else None
 
 
-@lru_cache(maxsize=32)
-def _posiciones(liga_id: int, temporada: int, bucket: int) -> dict[int, int]:
-    """{equipoId: posición} de la tabla del año (caché por hora)."""
+# LA FASE CON TABLA PROPIA DE UN TORNEO INTERNACIONAL. La tabla del año de la
+# Champions mezclaba la fase previa con la fase liga: «Arsenal 25º con 6 de 6»
+# sobre 81 equipos (incidencia 293, 21/10/2026). En la fase liga o de grupos,
+# la posición es la de ESA fase; Apertura/Clausura siguen con la tabla del año.
+_FASE_CON_TABLA = re.compile(r"^(league stage|league phase|group\b)", re.I)
+
+
+def fase_con_tabla(ronda: str | None) -> str | None:
+    from backend.app import _fase_de_round
+    fase = _fase_de_round(ronda)
+    return fase if fase and _FASE_CON_TABLA.match(fase) else None
+
+
+@lru_cache(maxsize=64)
+def _posiciones(liga_id: int, temporada: int, bucket: int, fase: str | None = None) -> dict[int, int]:
+    """{equipoId: posición} de la tabla del año, o de la fase si se pide (caché por hora)."""
     from backend.app import standings  # import perezoso: app importa este módulo
     try:
-        return {r["equipoId"]: r["posicion"] for r in standings(liga_id, temporada)}
+        return {r["equipoId"]: r["posicion"] for r in standings(liga_id, temporada, fase)}
     except Exception:
         return {}
 
@@ -391,7 +405,8 @@ def calendario_de(team_id: int, n: int = PROXIMOS_DEFAULT) -> list[dict]:
         rival_id = f["away_team_id"] if es_local else f["home_team_id"]
         rival_nombre = f["visitante"] if es_local else f["local"]
         fecha = (f["date"] or "")[:10]
-        posiciones = _posiciones(f["league_id"], f["league_season"], bucket) if f["league_id"] else {}
+        posiciones = (_posiciones(f["league_id"], f["league_season"], bucket, fase_con_tabla(f["league_round"]))
+                      if f["league_id"] else {})
         pos = posiciones.get(rival_id)
         total = len(posiciones)
         # descanso: contra el partido anterior para el primero, y entre fechas

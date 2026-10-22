@@ -688,6 +688,14 @@ def estabilidad_de(plantilla: dict | None, hoy: str) -> dict:
         if dias is None:
             sin_dato.append("fecha de asunción del DT")
             motivos.append(f"DT {ent['nombre']} sin fecha de asunción")
+        elif dias < DT_ASENTADO_DIAS and ent.get("fuente") == "coachs":
+            # LA LLEGADA DE /coachs ES APROXIMADA (el mes de la carrera, a veces
+            # meses corrida): Atlético-MG salía «inestable» con un DT de ~8 meses
+            # que la base daba de 50 días (incidencia 186). Solo la llegada vista
+            # en el banco (fuente alineacion) mueve la estabilidad; esta se declara.
+            sin_dato.append("fecha de asunción del DT confirmada")
+            motivos.append(f"DT {ent['nombre']}: la base dice {dias} días, pero la llegada es la aproximada de la "
+                           "carrera de la API; no mueve la estabilidad hasta confirmarla en prensa")
         elif dias < DT_ASENTADO_DIAS:
             subir("inestable")
             motivos.append(f"DT {ent['nombre']} lleva {dias} días: la historia de K es de otro cuerpo técnico")
