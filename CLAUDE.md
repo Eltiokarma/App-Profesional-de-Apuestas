@@ -689,7 +689,10 @@ conversación se pierde en la siguiente.
    Lima, porque el texto de una rutina solo se cambia desde su propia
    conversación— en la sesión «SAD · corrida de partes
    (rutina)»; veredictos 20:12 (`limite=30`) en «SAD · corrida de veredictos
-   (rutina)». Un fin de semana trae 50-65 candidatos del padrón (15-23 por
+   (rutina)»; **rehacer** cada 30 min (05:07 a 23:37 Lima, dos disparos :07 y
+   :37) en «SAD · rehacer DTP con el once (rutina)», desde el 22/10/2026:
+   modo `rehacer` de `corrida-sad`, los partes con DTP-REHACER a 30-80 min del
+   pitazo, avisa solo si hizo algo. Un fin de semana trae 50-65 candidatos del padrón (15-23 por
    tramo) y la meta es el 80 % (`COBERTURA_META`, latido); medido el 17/10:
    ~5 dólares por parte y ~2,7 por veredicto a precio de lista, y una ventana
    de 5 h da ~150-200. Corren en sesiones FIJAS con el repo
