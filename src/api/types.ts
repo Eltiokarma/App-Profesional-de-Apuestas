@@ -1955,6 +1955,8 @@ export interface ParteAgendaItemDTO {
   prioridad: number
   motivo: string
   etiquetas: string[]
+  /** las etiquetas son del visitante (calculadas como rival del local) */
+  etiquetasDe?: 'b'
   parte: string
 }
 

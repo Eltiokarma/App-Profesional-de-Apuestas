@@ -777,6 +777,12 @@ def _reventon_calculado(fx) -> dict | None:
             r = burbuja.analizar(filas, equipo_id=tid, nivel=nv[0]["nivel"] if nv else 0.5,
                                  bin_=nv[0]["bin"] if nv else 0, proximo=prox,
                                  plantilla=None if jugado else jug.plantilla_de(tid), hoy=hoy)
+            # la misma regla de escala que la tarjeta (incidencia 295)
+            try:
+                from backend.analisis import escala as _escala
+                _escala.bajar_confianza(r["familias"], _escala.entre(tid, rid, prox["fecha"], fx["league_id"]))
+            except Exception:  # noqa: BLE001 — sin escala, como en /burbujas
+                pass
             fam = r["familias"]["total"]
             # LA K DE LA CONDICIÓN DE HOY, al lado de la total (15/10/2026,
             # Boca–Vasco: la total estaba en 0 tras un 2-2 y el parte leyó, con
@@ -4469,6 +4475,9 @@ def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: in
             "ronda": f["league_round"] or "",
             "prioridad": prio, "motivo": motivo,
             "etiquetas": sorted(etiquetas),
+            # las etiquetas se calculan sobre el VISITANTE como rival del local:
+            # EQUIPO_SORPRESA, EN_CRISIS… son de ese lado (incidencia 41)
+            "etiquetasDe": "b",
             "parte": ya.get(f["id"], ""),
             # un equipo que también figura en otro partido a pocas horas: uno de
             # los dos fixtures está mal, y el analista tiene que saberlo ANTES

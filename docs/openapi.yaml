@@ -3839,6 +3839,7 @@ components:
         prioridad: { type: integer, description: '1-5 del protocolo; 0 = descartado' }
         motivo: { type: string }
         etiquetas: { type: array, items: { type: string } }
+        etiquetasDe: { type: string, enum: [b], description: 'las etiquetas se calculan sobre el visitante como rival del local: son de ese lado' }
         parte: { type: string, description: 'estado del parte ya depositado, "" si no hay' }
     AgendaCowork:
       type: object

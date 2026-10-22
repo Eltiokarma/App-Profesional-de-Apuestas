@@ -142,7 +142,10 @@ def _formacion_dominante(team_id: int) -> str | None:
     conteo: dict[str, int] = {}
     for r in filas:
         conteo[r["formacion"]] = conteo.get(r["formacion"], 0) + 1
-    return max(conteo, key=lambda k: conteo[k])
+    mejor = max(conteo, key=lambda k: conteo[k])
+    # UN PARTIDO NO ES UNA FORMACIÓN DOMINANTE: Cruz Azul salía BLOQUE BAJO por
+    # el 5-3-2 de un 5-0 a Juárez, con 4-2-3-1 la fecha anterior (incidencia 173)
+    return mejor if conteo[mejor] >= 2 else None
 
 
 # Competencias donde NO existe el ascenso: copas internacionales y copas

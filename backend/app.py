@@ -1566,14 +1566,7 @@ def equipo_burbujas(equipo_id: int, antesDe: int | None = None, proximo: int | N
         # estabilidad): con el rival o la historia en otra categoría los puntos
         # comparan cosas distintas. Elversberg ascendido salió MUY ALTO tres
         # semanas seguidas con confianza «media» y fue 1 de 3 (14/10/2026).
-        if not r["escala"].get("comparable", True):
-            for fam in (r.get("familias") or {}).values():
-                rg = (fam or {}).get("riesgo")
-                if rg and rg.get("nivel") != "sin base":
-                    rg["confianza"] = "baja"
-                    rg.setdefault("confianzaMotivos", []).append(
-                        f"escala distinta ({r['escala']['relacion']}): el nivel del rival o las medianas "
-                        f"no están en la misma escala")
+        escala.bajar_confianza(r.get("familias") or {}, r["escala"])
     if antesDe is not None:
         r["estabilidad"]["motivos"] = [
             "vista al día del partido: la plantilla de hoy no es la de entonces y no se usa; "
