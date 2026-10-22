@@ -1288,6 +1288,8 @@ export interface EquipoParte {
   /** Las bajas públicas. Con `zona` y `rol` pesan en el IP aunque no estén en la F1. */
   fuera: { nombre: string; estado: string; motivo: string; zona?: string; rol?: string }[]
   factorX: { nombre: string; contexto: string }[]
+  /** D3 del EFE declarado (22/10/2026): con él se calcula COLAPSO-EN-CASCADA. */
+  d3?: 'si' | 'parcial' | 'no' | 'sin dato'
   /** Caja de sensibilidad: qué cambiaría si el dato que falta fuera otro. */
   sensibilidad: { supuesto: string; efecto: string }[]
   disponibilidad: DisponibilidadParte

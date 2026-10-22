@@ -878,6 +878,13 @@ conversación se pierde en la siguiente.
      barata `GET /analisis/cowork/rehacer` (los partes con DTP-REHACER a 30-80
      min); el skill la llama primero. Falta que el mensaje de las dos rutinas
      (:07 y :37) la llame ANTES del `git pull`: solo se cambia desde esa sesión.
+   - **Hechos el 22/10** (usuario): COLAPSO EN CASCADA calculada (162:
+     `equipos.{lado}.d3` ✅/🔶/❌, o leído de la nota del bloque D;
+     alerta `COLAPSO-EN-CASCADA`, escenario de perder la ventaja, sin goleada);
+     Jev pregunta el reventón de la total y el de la condición por separado
+     (160); F2 del TDE a 1 con un clásico o una eliminatoria internacional de
+     octavos en adelante a ≤ 5 días (339, `f2.exigenciaProxima`: la rúbrica ya
+     lo decía, faltaba el cálculo; Estambul entra a los clásicos documentados).
    - **Escala entre ligas** (300, 309, 294, 79): decidido «solo marcar» (22/10):
      rival (`escalaComparable`), tarjeta de la espina, perfil DC y P1a llevan la
      marca y su nota; ningún número calibrado se mueve.

@@ -116,6 +116,39 @@ def f1_rotacion(team_id: int, fecha: str) -> dict:
 
 # ── F2 · descanso y calendario, «dato del motor o no es dato» ────────────────
 
+EXIGENCIA_DIAS = 5
+
+
+def exigencia_proxima(team_id: int, contexto: dict) -> dict | None:
+    """El próximo partido, si es de altísima exigencia y está a ≤ 5 días:
+    clásico (el mismo etiquetador del calendario) o eliminatoria internacional
+    de octavos en adelante. None si no, o si no hay próximo en la base."""
+    prox = (contexto.get("proximos") or [None])[0]
+    if not prox or prox.get("diasDescanso") is None or prox["diasDescanso"] > EXIGENCIA_DIAS:
+        return None
+    f = saddb.query_one("sad", "SELECT league_id, league_season, league_round FROM fixtures WHERE id=?",
+                        (prox["fixtureId"],))
+    if not f:
+        return None
+    rival = prox.get("rival") or {}
+    rival_id = rival.get("id") if isinstance(rival, dict) else None
+    base = {"fixtureId": prox["fixtureId"], "fecha": prox.get("fecha"), "dias": prox["diasDescanso"],
+            "rival": rival.get("nombre") if isinstance(rival, dict) else rival}
+    ronda = (f["league_round"] or "").lower()
+    if prox.get("esInternacional"):
+        from backend.analisis.parte import _FASE_DECISIVA
+        if any(x in ronda for x in _FASE_DECISIVA):
+            return {**base, "motivo": f"eliminatoria internacional ({f['league_round']}) ante {base['rival']}"}
+    if rival_id:
+        from backend import calendario as cal
+        et = cal.etiquetas_de_rival(rival_id, not prox.get("esLocal"), f["league_id"], f["league_season"],
+                                    str(prox.get("fecha") or "")[:10], cal._ciudad(team_id), equipo_id=team_id)
+        cl = next((e for e in et if e["codigo"] == "CLASICO"), None)
+        if cl:
+            return {**base, "motivo": f"clásico ante {base['rival']} ({cl['dato']})"}
+    return None
+
+
 def f2_calendario(team_id: int, fecha: str, contexto: dict) -> dict:
     """Descanso antes, exigencia después. Lo que el motor ya sabe.
 
@@ -137,6 +170,16 @@ def f2_calendario(team_id: int, fecha: str, contexto: dict) -> dict:
         piso, porque = 0.5, f"{dias} días de descanso, pero el próximo viene marcado duro"
     else:
         piso, porque = 0.0, f"{dias} días de descanso y el próximo no aprieta"
+    # «PRÓXIMO PARTIDO DE ALTÍSIMA EXIGENCIA» (la rúbrica F2 = 1, INDICE_IE.md;
+    # incidencia 339, decisión del usuario 22/10/2026): Galatasaray con el
+    # derbi ante Fenerbahçe a 5 días quedó en 0.5 porque el backend solo miraba
+    # el descanso. Lo que la base sabe decir de «altísima exigencia»: un
+    # clásico o una eliminatoria internacional de octavos en adelante, a 5
+    # días o menos. Lo demás (una final de liga, un rival directo) sigue a mano.
+    exig = exigencia_proxima(team_id, contexto)
+    if exig and (piso is None or piso < 1.0):
+        piso, porque = 1.0, (f"{porque}; y el próximo es de altísima exigencia: {exig['motivo']} "
+                             f"a {exig['dias']} días (la rúbrica lo pone en 1)")
     return {
         "diasDescanso": dias,
         "partidos21d": cong.get("partidos21d"),
@@ -145,8 +188,10 @@ def f2_calendario(team_id: int, fecha: str, contexto: dict) -> dict:
         "proximos": contexto.get("proximos") or [],
         "scorePiso": piso,
         "porque": porque,
-        "puedeSubir": "viaje largo, cambio de altitud o calor extremo — NO están en nuestra "
-                      "base y son parte de la rúbrica F2: si los hay, súbelo a mano",
+        "exigenciaProxima": exig,
+        "puedeSubir": "viaje largo, cambio de altitud, calor extremo o un próximo partido de "
+                      "altísima exigencia que la base no reconoce (rival directo, final de liga) — NO "
+                      "están en nuestra base y son parte de la rúbrica F2: si los hay, súbelo a mano",
     }
 
 

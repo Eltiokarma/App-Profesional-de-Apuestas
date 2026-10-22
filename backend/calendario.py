@@ -248,6 +248,7 @@ CLASICOS_DOCUMENTADOS = (
     ("flamengo", "fluminense"), ("flamengo", "vasco"), ("flamengo", "botafogo"),
     ("fluminense", "vasco"), ("fluminense", "botafogo"), ("vasco", "botafogo"),  # Río · clássicos cariocas
     ("arsenal", "tottenham"), ("chelsea", "tottenham"), ("arsenal", "chelsea"),   # Londres
+    ("galatasaray", "fenerbahce"), ("galatasaray", "besiktas"), ("fenerbahce", "besiktas"),  # Estambul · el Kıtalararası Derbi y los otros dos (incidencia 339)
 )
 
 

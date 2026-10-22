@@ -3104,6 +3104,9 @@ components:
             properties:
               nombre: { type: string }
               contexto: { type: string }
+        d3:
+          type: string
+          description: 'D3 del EFE (respuesta a rachas negativas): ✅ · 🔶 · ❌ · «sin dato» (también si · parcial · no, 1 · 0.5 · 0). Con él la app CALCULA la alerta COLAPSO-EN-CASCADA (D3 ❌ contra ✅/🔶, incidencia 162); sin él, lo lee de la nota del bloque D'
         sensibilidad:
           type: array
           description: 'caja de sensibilidad: qué cambiaría si el dato que falta fuera otro'
@@ -3638,6 +3641,7 @@ components:
         fuera: { type: array, items: { type: object, additionalProperties: true } }
         factorX: { type: array, items: { type: object, additionalProperties: true } }
         sensibilidad: { type: array, items: { type: object, additionalProperties: true } }
+        d3: { type: string, enum: [si, parcial, no, sin dato], description: 'solo si el parte lo declaró' }
         disponibilidad: { $ref: '#/components/schemas/DisponibilidadParte' }
     ParteCowork:
       type: object

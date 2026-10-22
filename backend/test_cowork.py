@@ -469,6 +469,37 @@ def main():
     _borrar_parte(990120)
     _borrar_parte(990150)
 
+    # ── COLAPSO EN CASCADA calculada (incidencia 162, 22/10/2026) ──────────
+    from backend.analisis import parte as _pc
+    _ne = {"a": "United", "b": "Leeds"}
+    _eqs = lambda da, db_: {"a": da, "b": db_}  # noqa: E731
+    _col = _pc.alertas_colapso({"equipos": _eqs({"bloques": {"D": {"nota": "D1 ✅; D3 ❌ (0): sin respuesta"}}},
+                                                {"d3": "parcial"})}, _ne)
+    check("162: D3 ❌ en la nota contra D3 🔶 declarado → COLAPSO-EN-CASCADA del lado a, sin goleada",
+          len(_col) == 1 and _col[0]["equipo"] == "a" and _col[0]["codigo"] == "COLAPSO-EN-CASCADA"
+          and "NO predice goleada" in _col[0]["detalle"], _col)
+    check("162: los dos con D3 ❌ → no sale (la rúbrica pide rival ✅/🔶)",
+          _pc.alertas_colapso({"equipos": _eqs({"d3": "no"}, {"d3": "❌"})}, _ne) == [])
+    check("162: sin D3 en ningún lado → no se inventa",
+          _pc.alertas_colapso({"equipos": _eqs({"bloques": {"D": {"nota": "D3 sin evaluar"}}}, {})}, _ne) == [])
+    check("162: si el parte ya la escribió, no se duplica",
+          _pc.alertas_colapso({"alertas": [{"codigo": "COLAPSO EN CASCADA"}],
+                               "equipos": _eqs({"d3": "no"}, {"d3": "si"})}, _ne) == [])
+    check("162: «D3 10 partidos» no se lee como ✅", _pc.d3_de({"bloques": {"D": {"nota": "D3 10 partidos"}}})[0] is None)
+    check("162: alias del D3 (0.5, ❌ con selector, «sin dato»)",
+          [_pc.d3_valor(x) for x in (0.5, "❌\ufe0f", "Sin dato", 1, "x")] == ["parcial", "no", "sin dato", "si", None])
+    _r162 = c.post(f"{A}/analisis/cowork", json={"fixtureId": sin_ficha, "equipos": {
+        "a": {"bloques": {"A": 3, "D": {"score": 2, "nota": "D3 ❌"}}}, "b": {"bloques": {"A": 3}, "d3": "✅"}}})
+    _g162 = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()
+    check("162: depositado, el GET trae la alerta calculada y el d3 declarado",
+          _r162.status_code == 200 and any(a["codigo"] == "COLAPSO-EN-CASCADA" and a["equipo"] == "a"
+                                           for a in _g162["alertas"]) and _g162["equipos"]["b"].get("d3") == "si",
+          (_g162.get("alertas"), _g162["equipos"]["b"].get("d3")))
+    _r162b = c.post(f"{A}/analisis/cowork", json={"fixtureId": sin_ficha, "equipos": {
+        "a": {"bloques": {"A": 3}, "d3": "tal vez"}, "b": {"bloques": {"A": 3}}}})
+    check("162: un D3 irreconocible vuelve en rechazos",
+          any(x["donde"] == "equipos.a.d3" for x in _r162b.json().get("rechazos", [])), _r162b.json().get("rechazos"))
+
     # ── LO QUE SE TIRA SE DICE, TAMBIÉN EN EL TDE (3ª corrida real) ─────────
     # Cowork probó tres formas de `tde` y las tres se guardaron como {} sin un
     # solo rechazo; `vias` con strings adentro reventaba por 500. Un 500 en un
@@ -1092,6 +1123,36 @@ def main():
     check("y da un PISO, no un score cerrado: el viaje y la altitud no están en la base",
           "scorePiso" in tde["f2"]["a"] and "altitud" in tde["f2"]["a"]["puedeSubir"],
           tde["f2"]["a"])
+    # 339 (22/10/2026): el próximo de altísima exigencia a ≤ 5 días pone F2 en 1
+    from backend.analisis import tde as _tde339
+    from backend import calendario as _cal339, jugadores as _jug339
+    _qo, _et, _cg = _tde339.saddb.query_one, _cal339.etiquetas_de_rival, _jug339._congestion
+    try:
+        _tde339.saddb.query_one = lambda *a, **k: {"league_id": 203, "league_season": 2026,
+                                                   "league_round": "Regular Season - 10"}
+        _cal339.etiquetas_de_rival = lambda *a, **k: [{"codigo": "CLASICO", "dato": "clásico documentado de Istanbul"}]
+        _jug339._congestion = lambda t, f: {"diasDescanso": 7, "partidos21d": 4}
+        _ctx = {"proximos": [{"fixtureId": 1, "fecha": "2026-10-26", "rival": {"id": 611, "nombre": "Fenerbahçe"},
+                              "esLocal": False, "esInternacional": False, "diasDescanso": 5}],
+                "senalCalendario": "neutro"}
+        _f2c = _tde339.f2_calendario(645, "2026-10-21", _ctx)
+        check("339: clásico a 5 días → piso de F2 en 1 con el motivo, aunque el descanso fuera 7",
+              _f2c["scorePiso"] == 1.0 and "clásico ante Fenerbahçe" in _f2c["porque"]
+              and _f2c["exigenciaProxima"]["dias"] == 5, _f2c)
+        _ctx6 = {**_ctx, "proximos": [{**_ctx["proximos"][0], "diasDescanso": 6}]}
+        check("339: el mismo clásico a 6 días no sube nada",
+              _tde339.f2_calendario(645, "2026-10-21", _ctx6)["scorePiso"] == 0.0)
+        _cal339.etiquetas_de_rival = lambda *a, **k: []
+        check("339: sin clásico ni eliminatoria, nada", _tde339.exigencia_proxima(645, _ctx) is None)
+        _tde339.saddb.query_one = lambda *a, **k: {"league_id": 2, "league_season": 2026,
+                                                   "league_round": "Round of 16"}
+        _ctxi = {**_ctx, "proximos": [{**_ctx["proximos"][0], "esInternacional": True}]}
+        check("339: eliminatoria internacional (octavos) a 5 días también cuenta",
+              "eliminatoria internacional" in (_tde339.exigencia_proxima(645, _ctxi) or {}).get("motivo", ""))
+    finally:
+        _tde339.saddb.query_one, _cal339.etiquetas_de_rival, _jug339._congestion = _qo, _et, _cg
+    check("339: Galatasaray–Fenerbahçe es clásico documentado de Estambul",
+          _cal339.clasico_documentado("Galatasaray", "Fenerbahçe"))
     check("sin onces capturados, F1 dice sinDato en vez de inventar rotación",
           tde["f1"]["a"].get("sinDato") is True or tde["f1"]["a"].get("score") is not None,
           tde["f1"]["a"])
