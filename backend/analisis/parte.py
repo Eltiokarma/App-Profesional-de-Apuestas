@@ -778,9 +778,12 @@ def _reventon_calculado(fx) -> dict | None:
                                  bin_=nv[0]["bin"] if nv else 0, proximo=prox,
                                  plantilla=None if jugado else jug.plantilla_de(tid), hoy=hoy)
             # la misma regla de escala que la tarjeta (incidencia 295)
+            esc = {"comparable": True}
             try:
                 from backend.analisis import escala as _escala
-                _escala.bajar_confianza(r["familias"], _escala.entre(tid, rid, prox["fecha"], fx["league_id"]))
+                esc = _escala.entre(tid, rid, prox["fecha"], fx["league_id"])
+                _escala.bajar_confianza(r["familias"], esc)
+                _escala.marcar(r["familias"], esc)
             except Exception:  # noqa: BLE001 — sin escala, como en /burbujas
                 pass
             fam = r["familias"]["total"]
@@ -805,6 +808,13 @@ def _reventon_calculado(fx) -> dict | None:
                          # la narrativa del parte, con la misma historia cortada
                          "otrasFamilias": _familias.describir(
                              filas, cond, fx["home_name"] if lado == "a" else fx["away_name"])}
+            # la tarjeta y el perfil DC con la MARCA de escala, como en /burbujas
+            # (22/10/2026: se marca, no se mueve ningún número)
+            if not esc.get("comparable", True):
+                from backend.analisis import escala as _escala
+                _escala.marcar_tarjeta(out[lado]["espinaTarjeta"], esc)
+                _escala.marcar_tarjeta(out[lado]["condicion"]["espinaTarjeta"], esc)
+                _escala.marcar_perfil(out[lado]["otrasFamilias"], esc)
         except Exception as e:  # noqa: BLE001 — se declara, no se inventa ni se rompe la lectura
             out[lado] = {"actual": None, "riesgo": None, "rival": None, "extremo": None, "estabilidad": "sin dato",
                          "partidos": 0, "aviso": "", "error": f"no se pudo calcular: {e}"}
@@ -4578,3 +4588,46 @@ def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: in
             "Selección estándar por el padrón de prioridades: casos `ciega`."
         ),
     }
+
+
+# ── la comprobación barata de la rutina de rehacer ───────────────────────────
+# Pedido del usuario (22/10/2026): la rutina de rehacer dispara cada 30 minutos
+# y casi siempre no hay nada; cada disparo vacío costaba ~0,25 USD porque el
+# agente leía la agenda y después cada parte. Esto contesta en UNA llamada qué
+# partes tienen DTP-REHACER y arrancan dentro de la ventana; vacío = terminar.
+REHACER_DESDE_MIN, REHACER_HASTA_MIN = 30, 80
+
+
+def rehacer_pendientes(desde_min: int = REHACER_DESDE_MIN, hasta_min: int = REHACER_HASTA_MIN,
+                       ahora: datetime | None = None) -> dict:
+    from backend.app import iso
+    ahora = ahora or datetime.now(timezone.utc)
+    lo, hi = ahora + timedelta(minutes=desde_min), ahora + timedelta(minutes=hasta_min)
+    dias = sorted({lo.strftime("%Y-%m-%d"), hi.strftime("%Y-%m-%d"),
+                   (lo - timedelta(days=1)).strftime("%Y-%m-%d")})
+    with _conectar() as con:
+        filas = [dict(r) for r in con.execute(
+            f"SELECT fixture_id, equipo_a, equipo_b FROM parte_cowork WHERE veredicto_json IS NULL "
+            f"AND fecha IN ({','.join('?' * len(dias))})", dias)]
+    en_ventana, pendientes = [], []
+    for f in filas:
+        fx = saddb.query_one("sad", "SELECT date, status_short FROM fixtures WHERE id=?", (f["fixture_id"],))
+        if not fx or (fx["status_short"] or "NS") not in ("NS", "TBD"):
+            continue
+        try:
+            pitazo = datetime.fromisoformat(iso(fx["date"]).replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if not (lo <= pitazo <= hi):
+            continue
+        item = {"fixtureId": f["fixture_id"], "partido": f"{f['equipo_a']} vs {f['equipo_b']}",
+                "pitazo": pitazo.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "minutosAlPitazo": int((pitazo - ahora).total_seconds() // 60)}
+        en_ventana.append(item)
+        d = dto(f["fixture_id"]) or {}
+        rehacer = [a for a in d.get("alertas") or [] if a.get("codigo") == "DTP-REHACER"]
+        if rehacer:
+            pendientes.append({**item, "alertas": rehacer})
+    return {"ahora": ahora.strftime("%Y-%m-%dT%H:%M:%SZ"), "ventanaMin": [desde_min, hasta_min],
+            "partesEnVentana": len(en_ventana), "enVentana": en_ventana, "pendientes": pendientes,
+            "nota": "pendientes vacío = no hay nada que rehacer: la corrida termina en una línea y sin aviso"}

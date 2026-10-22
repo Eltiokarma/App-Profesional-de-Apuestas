@@ -645,6 +645,9 @@ export interface FamiliaBurbujaDTO {
     /** Diferencia de nivel A FAVOR de que la racha siga (favorito con racha +, débil con racha −). REVENTON §12. */
     aFavor?: number
     favorito?: 'no' | 'favorito' | 'muy favorito'
+    /** false con escala distinta (22/10/2026): el tramo compara bases distintas; los puntos no cambian. */
+    escalaComparable?: boolean
+    notaEscala?: string
   } | null
   riesgo: RiesgoReventonDTO | null
   /** ALERTA DE EXTREMO (prudencia, no probabilidad): la burbuja abierta en su
@@ -750,6 +753,9 @@ export interface PerfilDcDTO {
   maximoPrevio: number
   record: number
   texto: string
+  /** Solo con escala distinta (22/10/2026). */
+  escala?: string
+  notaEscala?: string
 }
 
 export interface OtrasFamiliasDTO {
@@ -1663,6 +1669,9 @@ export interface EspinaTarjetaDTO {
   movimiento: 'sigue' | 'cero' | 'cambio'
   prob: number
   fuerza: 'fuerte' | 'debil'
+  /** Solo con escala distinta (22/10/2026): la tarjeta no cambia, se marca. */
+  escala?: string
+  notaEscala?: string
 }
 
 export interface EspinaCelda {

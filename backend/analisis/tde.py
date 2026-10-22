@@ -261,6 +261,16 @@ def ficha(fixture_id: int) -> dict | None:
     f2 = {l: f2_calendario(t, fecha, ctx[l]) for l, t in
           (("a", fx["home_team_id"]), ("b", fx["away_team_id"]))}
 
+    # P1a CON LA MARCA DE ESCALA (incidencia 294, Aston Villa–Viking): μ cruza
+    # niveles de bases distintas y el protector puede ser un artefacto de la
+    # escala. El P1a no se toca —es input inviolable—: se dice.
+    fiab = sad.fiabilidad_mu_partido(fx)
+    if fiab.get("escala") and not p1a.get("sinDato"):
+        p1a["escala"] = fiab["escala"]
+        p1a["avisos"].append(f"escala distinta ({fiab['escala']}): μ cruza niveles de bases distintas "
+                             "(alerta ESCALA-LIGAS) y el protector puede salir de la escala, no del partido; "
+                             "el P1a se deja como está y se lee con esa reserva")
+
     # NIVEL DE DATO, declarado. El skill pide A/B/C y el A es imposible para
     # nosotros: no hay tracking. Decirlo es más honesto que dejar el campo.
     con_once = all(not f1[l].get("sinDato") for l in LADOS)
@@ -272,7 +282,7 @@ def ficha(fixture_id: int) -> dict | None:
         "p1a": p1a,
         "f1": f1,
         "f2": f2,
-        "fiabilidadMu": sad.fiabilidad_mu_partido(fx),
+        "fiabilidadMu": fiab,
         "nivelDeDato": nivel_dato,
         "notaNivelDeDato": ("nivel A (tracking: altura de línea, PPDA, distancia entre líneas) "
                             "es imposible con nuestras fuentes; esto es lo que hay"

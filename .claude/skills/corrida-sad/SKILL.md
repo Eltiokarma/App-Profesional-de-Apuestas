@@ -186,13 +186,16 @@ partidos del 11/10. La app cierra el bloque F sola con la alineación, pero el
 mapa de duelos y el 1X2 quedan escritos sobre otro equipo. Esta corrida corre
 cada 30 minutos y es CORTA: casi siempre no hay nada que hacer.
 
-1. `TZ=America/Lima date`. `GET $B/analisis/cowork/agenda?desdeAhora=true&horas=2`
-   → los de `yaHechos` (con su `fecha` y `hora`, UTC).
-2. Para cada uno que arranca entre **30 y 80 minutos** desde ahora:
-   `GET $B/analisis/cowork/{id}`. Entra a la lista si su `alertas` trae
-   **DTP-REHACER** (el once oficial contradice la apertura del DTP). Sin
-   ninguno: terminá en una línea, **sin avisar al celular** (corre cada media
-   hora: un aviso vacío cada vez se deja de leer).
+1. **UNA sola llamada, antes de nada** (22/10/2026: cada disparo vacío
+   costaba ~0,25 USD por leer la agenda y cada parte):
+   `curl -sS -H "Authorization: Bearer $SAD_TOKEN_COWORK" "$SAD_API_BASE/analisis/cowork/rehacer"`.
+   Trae los partes que arrancan entre **30 y 80 minutos** (`enVentana`) y, de
+   esos, los que tienen **DTP-REHACER** (`pendientes`: el once oficial
+   contradice la apertura del DTP). Con `pendientes` vacío: terminá YA en una
+   línea («Nada que rehacer a las HH:MM de Lima»), sin `git pull`, sin leer
+   el resto de este skill, sin otra llamada y **sin avisar al celular** (corre
+   cada media hora: un aviso vacío cada vez se deja de leer).
+2. Con algún pendiente, recién ahí: `TZ=America/Lima date` y seguí.
 3. Como mucho **6** partidos. Un subagente por partido, en paralelo, con este
    encargo:
 

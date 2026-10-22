@@ -426,12 +426,43 @@ def main():
           all(f["riesgo"]["confianza"] == "baja" and any("escala distinta" in m for m in f["riesgo"]["confianzaMotivos"])
               for f in j_esc["familias"].values() if f.get("riesgo") and f["riesgo"]["nivel"] != "sin base"),
           [f.get("riesgo") for f in j_esc["familias"].values()])
+    # 300/309/79 (decisión del usuario, 22/10/2026): con escala distinta se MARCA
+    # el rival, la tarjeta de la espina y el perfil DC; ningún número cambia
+    check("300: con escala distinta el rival lleva escalaComparable false y su nota",
+          all(f["rival"].get("escalaComparable") is False and "escala distinta" in f["rival"]["notaEscala"]
+              for f in j_esc["familias"].values() if f.get("rival")), [f.get("rival") for f in j_esc["familias"].values()])
+    check("309: la tarjeta de la espina lleva la marca de escala sin cambiar su fuerza",
+          all(f["espinaTarjeta"].get("escala") and f["espinaTarjeta"]["fuerza"] in ("fuerte", "debil")
+              for f in j_esc["familias"].values() if f.get("espinaTarjeta")), [f.get("espinaTarjeta") for f in j_esc["familias"].values()])
+    _pdc = (j_esc.get("otrasFamilias") or {}).get("perfilDc")
+    check("79: el perfil DC lleva la nota de escala", _pdc is None or "escala distinta" in _pdc.get("notaEscala", ""), _pdc)
+    from backend.analisis import escala as _escm
+    _fam = {"total": {"rival": {"tramo": "muy fuerte"}, "espinaTarjeta": {"lectura": "positiva", "movimiento": "sigue",
+                                                                         "prob": 0.54, "fuerza": "fuerte"},
+                      "riesgo": {"nivel": "muy alto", "puntos": 3}}}
+    _escm.marcar(_fam, {"comparable": True, "relacion": "misma"})
+    check("misma base: nada se marca", "escalaComparable" not in _fam["total"]["rival"]
+          and "escala" not in _fam["total"]["espinaTarjeta"], _fam)
+    _escm.marcar(_fam, {"comparable": False, "relacion": "otra liga"})
+    check("otra liga: se marcan rival y tarjeta; tramo, fuerza y puntos quedan igual",
+          _fam["total"]["rival"]["escalaComparable"] is False and _fam["total"]["rival"]["tramo"] == "muy fuerte"
+          and _fam["total"]["espinaTarjeta"]["escala"] == "otra liga" and _fam["total"]["espinaTarjeta"]["fuerza"] == "fuerte"
+          and _fam["total"]["riesgo"]["puntos"] == 3, _fam)
     # incidencia 295: el reventón del parte aplica la MISMA regla que la tarjeta
     _rc = (c.get(f"{A}/analisis/cowork/990150").json().get("lecturaSad") or {}).get("reventonCalculado") or {}
     _rga = ((_rc.get("a") or {}).get("riesgo")) or {}
     check("295: el reventonCalculado del parte trae «escala distinta» en la confianza, como /burbujas",
           _rga.get("nivel") == "sin base" or (_rga.get("confianza") == "baja"
           and any("escala distinta" in m for m in _rga.get("confianzaMotivos") or [])), _rga)
+    _ta = (_rc.get("a") or {}).get("espinaTarjeta")
+    check("309: la tarjeta del reventonCalculado lleva la marca de escala, como /burbujas",
+          _ta is None or _ta.get("escala"), _ta)
+    _tde = c.get(f"{A}/analisis/cowork/tde/990150").json()
+    _p1 = _tde.get("p1a") or {}
+    check("294: con μ entre bases distintas el P1a lleva la marca y el aviso; el score no cambia",
+          not (_tde.get("fiabilidadMu") or {}).get("escala") or _p1.get("sinDato")
+          or (_p1.get("escala") and any("escala distinta" in a for a in _p1.get("avisos") or [])),
+          {"fiab": _tde.get("fiabilidadMu"), "p1a": _p1})
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM fixtures WHERE id BETWEEN 990100 AND 990199")
     from backend.analisis.parte import borrar as _borrar_parte
@@ -4197,6 +4228,32 @@ def main():
     check("un origen desconocido es 422", c.post(f"{A}/analisis/cowork/incidencias",
                                                   json={"origen": "x", "items": [{"titulo": "t"}]}).status_code == 422)
     check("y el latido cuenta las incidencias", "incidencias" in c.get(f"{A}/analisis/cowork/latido").json())
+
+    # ── la comprobación barata de la rutina de rehacer (22/10/2026) ─────────
+    _rh = c.get(f"{A}/analisis/cowork/rehacer")
+    check("rehacer: responde la ventana y la lista (vacía = nada que hacer)",
+          _rh.status_code == 200 and _rh.json()["ventanaMin"] == [30, 80]
+          and isinstance(_rh.json()["pendientes"], list), _rh.text[:300])
+    from backend.analisis import parte as _pt
+    from datetime import datetime as _dtm, timedelta as _td, timezone as _tz
+    with _pt._conectar() as _cn:
+        _ids = [r["fixture_id"] for r in _cn.execute("SELECT fixture_id FROM parte_cowork WHERE veredicto_json IS NULL")]
+    _ns = None
+    for _i in _ids:
+        from backend import db as _sdb
+        _f = _sdb.query_one("sad", "SELECT date, status_short FROM fixtures WHERE id=?", (_i,))
+        if _f and (_f["status_short"] or "NS") in ("NS", "TBD"):
+            _ns = (_i, _f["date"])
+            break
+    if _ns:
+        from backend.app import iso as _iso
+        _pit = _dtm.fromisoformat(_iso(_ns[1]).replace("Z", "+00:00"))
+        _en = _pt.rehacer_pendientes(ahora=_pit - _td(minutes=45))
+        _fuera = _pt.rehacer_pendientes(ahora=_pit - _td(minutes=120))
+        check("rehacer: un parte a 45 min del pitazo entra en la ventana; a 120 min, no",
+              any(x["fixtureId"] == _ns[0] for x in _en["enVentana"])
+              and all(x["fixtureId"] != _ns[0] for x in _fuera["enVentana"]), (_en, _fuera))
+    check("rehacer: hay un parte NS en la demo para probar la ventana", _ns is not None)
 
     print()
     print(f"{'TODO OK' if not fallos else f'{fallos} FALLAS'}")
