@@ -4238,6 +4238,43 @@ components:
                   clase: { type: string, nullable: true, enum: [roto, rama_abandonada, null], description: 'roto = el equipo recibió 3 antes de la ventana (disciplina 3); rama_abandonada = marcador 3 arriba antes de la ventana (24)' }
                   ventanaDeRama: { type: boolean, description: 'se midió la ventana declarada en la rama que jugó el partido' }
                   ventanaBase: { type: string, description: 'la ventana del bloque sin rama; `ventana` es la que se cobra (la de la rama si la hubo)' }
+                  reloj:
+                    type: object
+                    nullable: true
+                    description: >
+                      Cuando se cobra la ventana de la rama, la ventana BASE del reloj medida
+                      aparte (con el gol que abrió la rama incluido): la serie del sesgo
+                      tardío no se rompe (TDE disciplinas 44c y 45). null si se cobró la base.
+                    properties:
+                      ventana: { type: string }
+                      desde: { type: integer }
+                      hasta: { type: integer }
+                      golEnVentana: { type: boolean, nullable: true }
+                      goles: { type: array, items: { type: object, additionalProperties: true } }
+                      cobrable: { type: boolean, nullable: true }
+                      clase: { type: string, nullable: true }
+                  tramos:
+                    type: array
+                    description: >
+                      TDE v0.1.22 (disciplina 64): el partido en tramos entre goles, con la rama
+                      que MANDA por el marcador de ese momento —base (0-0), siMarcaPrimero
+                      (ganando), siRecibePrimero (perdiendo), siLeEmpatan (empatado tras ir
+                      ganando), siIguala (empatado tras ir perdiendo, candidato)—, su ventana
+                      relativa al gol que abre el tramo y si el foco concedió en ella.
+                      Observación, no métrica.
+                    items:
+                      type: object
+                      properties:
+                        desde: { type: integer }
+                        hasta: { type: integer }
+                        marcador: { type: string, description: 'goles del foco - goles del rival al empezar el tramo' }
+                        estado: { type: string, enum: [inicio, ganando, perdiendo, empatado] }
+                        rama: { type: string, enum: [base, siMarcaPrimero, siRecibePrimero, siLeEmpatan, siIguala] }
+                        declarada: { type: boolean }
+                        ventana: { type: string }
+                        rango: { type: array, nullable: true, items: { type: integer } }
+                        concedio: { type: array, items: { type: integer }, description: 'minutos de los goles que recibió el foco en el tramo' }
+                        golEnVentana: { type: boolean, nullable: true, description: 'null = la rama sin ventana legible o su ventana fuera del tramo' }
                   reasignacion:
                     type: object
                     description: >
