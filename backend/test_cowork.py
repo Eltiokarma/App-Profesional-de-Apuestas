@@ -3207,6 +3207,25 @@ def main():
           "y no dispara F1-DECISIVO-FUERA",
           (_vic_d not in _t45 or (not _t45[_vic_d]["decisivo"] and "0 de 10" in _t45[_vic_d].get("decisivoTemporada", "")))
           and not any(f["jugadorId"] == _vic_d for f in _fal45), (_t45.get(_vic_d), _fal45))
+    # GRUPO 4 DE INCIDENCIAS (22/10/2026): fuera del corte con stats (360) y la zona del último once (171, 323, 66, 359)
+    _pl4 = _jugm.plantilla_de(_hid)["jugadores"]
+    _fuera = next(j for j in reversed(_pl4) if j["posicion"] != "Defensa")
+    _top = [j for j in _pl4 if j["id"] != _fuera["id"]][:3]
+    _f1m.onces_recientes = lambda t, a: {"onces": 10, "ultimo": 1, "jugadores": {
+        **{j["id"]: {"nombre": j["nombre"], "posicion": "M", "titular": 10, "convocado": 10, "enUltimo": False} for j in _top},
+        _fuera["id"]: {"nombre": _fuera["nombre"], "posicion": "D", "posicionReciente": "D", "titular": 3,
+                       "convocado": 10, "enUltimo": False}}}
+    _c4, _f1m.CANDIDATOS = _f1m.CANDIDATOS, 3
+    try:
+        _t4 = {x["jugadorId"]: x for x in _tabla_eq(_hid, "local", "2100-01-01")["candidatos"]}
+    finally:
+        _f1m.onces_recientes, _f1m.CANDIDATOS = _orig_rec, _c4
+    check("360: el que quedó fuera del corte pero está en la plantilla entra CON sus stats, no «sin stats de temporada»",
+          _fuera["id"] in _t4 and not _t4[_fuera["id"]].get("sinStatsDeTemporada")
+          and _t4[_fuera["id"]]["apps"] == _fuera["partidos"], _t4.get(_fuera["id"]))
+    check("171/323: la zona es la del último once en que fue titular (D → DEF) y la de la temporada queda aparte",
+          _t4[_fuera["id"]]["zona"] == "DEF" and _t4[_fuera["id"]].get("zonaTemporada"), _t4.get(_fuera["id"]))
+    check("359: la posición en inglés tiene zona", _f1m._ZONA.get("Forward") == "ATK" and _f1m._ZONA.get("Goalkeeper") == "GK")
     # UN JUGADOR CON DOS IDS ES UNO (Leones del Norte, Nacional Potosí: 17-19/10/2026)
     from backend.analisis.f1_base import deduplicar as _dedup, mismo_jugador as _mj
     _js = [{"id": 362224, "nombre": "Emiliano Griffa", "minutos": 900, "partidos": 10},
