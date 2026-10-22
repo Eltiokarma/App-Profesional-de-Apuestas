@@ -209,6 +209,11 @@ def main():
           "NO lo investigues" in txt and "EN CRISIS" in txt and "3 derrotas" in txt, txt[:200])
     check("un equipo sin fixtures da texto vacío (no se inventa)",
           calendario.texto_para_skills(99999) == "", calendario.texto_para_skills(99999))
+    # incidencia 293: en la fase liga / de grupos la posición es la de ESA fase
+    check("fase con tabla propia: League Stage y Group A sí; previa, Clausura y Regular Season no",
+          calendario.fase_con_tabla("League Stage - 3") == "League Stage" and calendario.fase_con_tabla("Group A - 2") == "Group A"
+          and calendario.fase_con_tabla("3rd Qualifying Round") is None and calendario.fase_con_tabla("Clausura - 12") is None
+          and calendario.fase_con_tabla("Regular Season - 10") is None)
 
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)

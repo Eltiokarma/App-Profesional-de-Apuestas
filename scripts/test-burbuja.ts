@@ -134,6 +134,9 @@ check('dueños/organización declarado SIN DATO', e.sinDato.some((s) => s.includ
 const pl = ctx.plantilla!
 const est = analizar(filas, { plantilla: { ...pl, entrenador: { nombre: 'Viejo', desde: '2024-01-01' }, revolucion: { llegadas: 1, salidas: 0, ventanaDias: 120 } } })
 check('DT asentado + 1 movimiento → ESTABLE, confianza MEDIA (n=3)', est.estabilidad.grado === 'estable' && est.familias.total.riesgo!.confianza === 'media', est.estabilidad)
+// incidencia 186: la llegada aproximada de /coachs no vuelve inestable al equipo
+const apx = analizar(filas, { plantilla: { ...pl, entrenador: { nombre: 'Pérez', desde: '2026-08-07', fuente: 'coachs' }, revolucion: { llegadas: 1, salidas: 0, ventanaDias: 120 } } })
+check('DT con llegada de /coachs y 40 días: no sube a inestable, se declara sin dato', apx.estabilidad.grado === 'estable' && apx.estabilidad.sinDato.some((s) => s.includes('confirmada')), apx.estabilidad)
 const trans = analizar(filas, { plantilla: { ...pl, entrenador: { nombre: 'Viejo', desde: '2024-01-01' }, revolucion: { llegadas: 2, salidas: 1, ventanaDias: 120 } } })
 check('3 movimientos → EN TRANSICIÓN', trans.estabilidad.grado === 'en transición')
 const vieja = analizar(filas, { plantilla: { ...pl, actualizadoEn: '2026-07-01T00:00:00Z' } })

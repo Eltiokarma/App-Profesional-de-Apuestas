@@ -3026,12 +3026,24 @@ def xi_de_ficha(fixture_id: int, team_id: int) -> dict | None:
         "once": titulares,
         "banca": [f["jugador"] for f in filas if not f["titular"] and f["jugador"]],
         # nombre de la hoja → id de la API: el cruce exacto con la tabla F1
-        "ids": {f["jugador"]: int(f["player_id"]) for f in filas
-                if f["jugador"] and f["player_id"] and int(f["player_id"]) > 0},
+        "ids": _ids_por_nombre(filas),
         "formacion": filas[0]["formacion"] or "",
         "fuente": FUENTE_FICHA,
         "capturadoEn": efedb.ahora(),
     }
+
+
+def _ids_por_nombre(filas) -> dict:
+    """Nombre de la hoja → id; un nombre REPETIDO lleva la lista de sus ids en
+    el orden de la hoja (incidencia 372: Shakhtar alineó a dos «Pedrinho»
+    titulares, el dict guardaba uno y el otro salía de baja con IP 2.0)."""
+    out: dict = {}
+    for f in filas:
+        if not (f["jugador"] and f["player_id"] and int(f["player_id"]) > 0):
+            continue
+        pid, previo = int(f["player_id"]), out.get(f["jugador"])
+        out[f["jugador"]] = pid if previo is None else (previo if isinstance(previo, list) else [previo]) + [pid]
+    return out
 
 
 def resolver_xi(fixture_id: int, onces: dict) -> dict:
@@ -3074,7 +3086,7 @@ def resolver_xi(fixture_id: int, onces: dict) -> dict:
             ids = {}
             for k, v in (nuevo.get("ids") or {}).items() if isinstance(nuevo.get("ids"), dict) else []:
                 try:
-                    ids[_txt(k)] = int(v)
+                    ids[_txt(k)] = [int(x) for x in v] if isinstance(v, list) else int(v)
                 except (TypeError, ValueError):
                     pass
             guardado[lado] = {

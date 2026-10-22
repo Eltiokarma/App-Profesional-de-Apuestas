@@ -231,9 +231,13 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
     duplicados: dict[int, int] = {}
     homonimos_once = 0
     ids = ids or {}
+    # un nombre repetido trae la lista de sus ids: se toman en el orden de la
+    # hoja (incidencia 372, los dos «Pedrinho» titulares del Shakhtar)
+    pendientes = {k: (list(v) if isinstance(v, list) else [v]) for k, v in ids.items()}
     for lista, destino in ((once, "titular"), (banca, "banca")):
         for nombre in lista:
-            jid = ids.get(nombre)
+            cola = pendientes.get(nombre) or []
+            jid = cola.pop(0) if cola else None
             idx = [por_id[jid]] if jid in por_id else _buscar(plantel, nombre)
             if jid in por_id:
                 for k in _buscar(plantel, nombre):
