@@ -84,6 +84,16 @@ def _titulares(fixture_id: int, team_id: int) -> list[dict]:
         return []
 
 
+def _banca(fixture_id: int, team_id: int) -> list[str]:
+    try:
+        from backend.nombres import limpiar_nombre
+        return [limpiar_nombre(f["jugador"]) or "" for f in saddb.query(
+            "sad", "SELECT jugador FROM alineaciones WHERE fixture_id=? AND team_id=? AND titular=0",
+            (fixture_id, team_id))]
+    except Exception:  # noqa: BLE001
+        return []
+
+
 def _goles(tac: dict, team_id: int) -> list[dict]:
     """Los goles del partido con el lado que los recibió. Solo `Goal` (la tanda
     de penales va como `Shootout`) y sin los penales errados."""
@@ -685,7 +695,22 @@ def sin_alternativas(texto: str) -> str:
     t = texto or ""
     for _ in range(3):   # paréntesis anidados
         t = re.sub(r"\([^()]*\)|\[[^\[\]]*\]", " ", t)
+    # …y la alternativa SIN paréntesis: «B. Duarte o Villanueva» (Querétaro,
+    # incidencia 260) anunciaba a los dos. Solo con mayúscula después de la «o»
+    t = re.sub(r"\s[oóu]\s+(?:[A-ZÁÉÍÓÚÑÜ]\.\s*)?[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]*(?:\s+[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]*)?", " ", t)
     return t
+
+
+_SALIENTES = re.compile(r"\b(?:por|en lugar de|en vez de|reemplaz\w*(?:\s+a)?|sale[n]?|salieron|fuera)\s+"
+                        r"[^.;:()]+", re.I)
+
+
+def sin_salientes(texto: str) -> str:
+    """Lo que sale no es lo que se anuncia: «entraron Bambú y Meraz por Mora y
+    Galindo» daba por anunciado a Mora, que salió titular (San Luis,
+    incidencia 260). Se quita lo que viene detrás de «por», «en lugar de»,
+    «sale(n)», «fuera»… hasta el signo que corta la frase."""
+    return _SALIENTES.sub(" ", texto or "")
 
 
 def sin_referencia(texto: str) -> bool:
@@ -720,15 +745,21 @@ def oficial_de(fixture_id: int) -> dict:
                         alias[j["jugador"] or ""] = [otro]
         except Exception:  # noqa: BLE001 — base sin la capa de jugadores
             pass
+        # CON EL GRID COMPLETO, LA LÍNEA DE ATRÁS ES LA FILA 2: la API etiqueta
+        # «M» a carrileros y laterales que el grid pone en la línea (UCV, fila 2
+        # con cuatro y defensoresOficiales=2, incidencia 137)
+        con_grid = len(xi) >= 10 and all(str(j["grid"] or "").count(":") == 1 for j in xi)
         fuera[lado] = {"formacion": (f["formacion"] if f else "") or "",
                        "titulares": [j["jugador"] or "" for j in xi],
+                       "banca": _banca(fixture_id, tid),
                        "alias": alias,
                        # sin formación en la ficha, la línea de atrás se cuenta
                        # por la posición de los titulares (D)
                        # …y un titular SIN posición en la fila 2 del grid también es
                        # defensor (I. Rodríguez, Central Español, 18/10/2026)
-                       "defensores": sum(1 for j in xi if (j["posicion"] or "") == "D"
-                                         or (not j["posicion"] and str(j["grid"] or "").startswith("2:")))}
+                       "defensores": (sum(1 for j in xi if str(j["grid"]).startswith("2:")) if con_grid else
+                                      sum(1 for j in xi if (j["posicion"] or "") == "D"
+                                          or (not j["posicion"] and str(j["grid"] or "").startswith("2:"))))}
     return fuera
 
 
@@ -766,8 +797,8 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
         # LO QUE LA APERTURA YA ANUNCIÓ NO ES SORPRESA: un cambio nombrado en
         # `senalXi` o en `rolesReasignados` (Villa, 17/10/2026) no cuenta; y el
         # nombre de la plantilla, que a veces trae el apodo («Abde»), también sirve
-        anunciado = _plano(sin_alternativas(" ".join([m1.get("senalXi") or ""]
-                                                     + list(m1.get("rolesReasignados") or []))))
+        anunciado = _plano(sin_salientes(sin_alternativas(" ".join([m1.get("senalXi") or ""]
+                                                                  + list(m1.get("rolesReasignados") or [])))))
         alt = of.get("alias") or {}
         def _palabra_en(x: str, texto: str) -> bool:   # el apodo puede ser la primera palabra
             return any(len(t) > 2 and f" {t} " in f" {texto} " for t in _plano(x).split())
@@ -780,7 +811,26 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
         if len(ausentes) >= REHACER_AUSENTES:
             motivos.append(f"once: {len(ausentes)} titulares que no estaban en el XI de referencia "
                            f"({', '.join(ausentes)})")
+    # EL SEGURO DE ATRÁS EN EL BANCO. Napoli (incidencia 152): la apertura
+    # sostenía el rest defense «fijo en Lobotka» y Lobotka arrancó suplente;
+    # con dos ausentes no saltaba nada. Si el texto del seguro nombra a un
+    # jugador que está en la BANCA del once oficial (y a ningún titular con ese
+    # apellido), el M2 se escribió sobre otra pieza.
+    rd = ((bloque.get("apertura") or {}).get("m2") or {}).get("restDefense") or {}
+    texto_rd = _plano(sin_alternativas(rd.get("foco") or ""))
+    if texto_rd.strip():
+        en_banca = [n for n in of.get("banca") or [] if _apellidos(n) and _en_referencia(n, texto_rd)
+                    and not any(_en_referencia(t, texto_rd) and set(_apellidos(t)) & set(_apellidos(n))
+                                for t in of["titulares"])]
+        if en_banca:
+            motivos.append(f"seguro: el rest defense de la apertura se apoyaba en {', '.join(en_banca)}, "
+                           "que arrancó en el banco")
+    # UNA REFERENCIA CON VARIAS PROYECCIONES NO ES UN XI (Tigres, incidencia
+    # 163: «SI proyecta a E. Gómez…; Milenio, a Herrera, Simeone…» y todos
+    # pasaban por la referencia: cinco titulares nuevos y ni un ausente)
+    mezclada = bool(re.search(r"proyect|seg[uú]n |otra fuente|o bien\b", m1.get("xiReferencia") or "", re.I))
     return {"rehacer": bool(motivos), "motivos": motivos, "sinReferencia": sin_ref,
+            "referenciaMezclada": mezclada,
             "sistemaDeclarado": m1.get("sistema") or "", "sistemaOficial": of.get("formacion") or "",
             "defensoresOficiales": of.get("defensores"),
             # el nombre se presta a leerlo al revés: son los TITULARES OFICIALES
@@ -811,6 +861,19 @@ def alertas_rehacer(dtp_leido: dict, nombres: dict) -> list[dict]:
     fuera = []
     for b in dtp_leido.get("bloques") or []:
         r = (b.get("calculado") or {}).get("contraElOnce") or {}
+        # SIN XI DE REFERENCIA, LA COMPARACIÓN NO SE HIZO: se dice (Aston Villa–
+        # Viking, incidencia 365: cuatro piezas cambiadas y ni una línea)
+        if (r.get("sinReferencia") or r.get("referenciaMezclada")) and not r.get("rehacer"):
+            quien = nombres.get(b["equipo"], b["equipo"])
+            fuera.append({"codigo": "DTP-SIN-REFERENCIA", "equipo": b["equipo"], "tipo": "dato",
+                          "detalle": (f"La apertura del DTP de {quien} no trae XI de referencia (`xiReferencia` "
+                                      "vacío o «sin XI»): el once oficial no se pudo comparar con la apertura. "
+                                      "Si el once probable iba en `senalXi`, pasarlo a `xiReferencia`; si cambió "
+                                      "piezas del M2, rehacer el bloque."
+                                      if r.get("sinReferencia") else
+                                      f"El `xiReferencia` de {quien} mezcla varias proyecciones (cita fuentes): "
+                                      "todos los nombrados cuentan como referencia y un titular nuevo no se ve. "
+                                      "Un solo XI de 11 en `xiReferencia`; las otras proyecciones, en `senalXi`.")})
         if r.get("rehacer"):
             fuera.append({"codigo": "DTP-REHACER", "equipo": b["equipo"], "tipo": "dato",
                           "detalle": f"El once oficial de {nombres.get(b['equipo'], b['equipo'])} contradice "

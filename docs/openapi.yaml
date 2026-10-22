@@ -3237,12 +3237,19 @@ components:
                       clave no viaja: no es «cuadra»). `rehacer` si el sistema declarado en M1
                       tiene otras cifras que la formación oficial, o si ≥ 3 titulares oficiales
                       no figuran en `xiReferencia` (por apellido). Va también a la tira como
-                      `DTP-REHACER` (tipo dato). No reescribe la apertura.
+                      `DTP-REHACER` (tipo dato). También rehace si el seguro de atrás
+                      (`m2.restDefense.foco`) nombra a un jugador que arrancó en el banco. Con
+                      el grid completo, los defensores son la fila 2. Sin XI de referencia, o
+                      con uno que mezcla proyecciones, va `DTP-SIN-REFERENCIA` (tipo dato).
+                      No reescribe la apertura.
                     properties:
                       rehacer: { type: boolean }
                       motivos: { type: array, items: { type: string } }
+                      sinReferencia: { type: boolean }
+                      referenciaMezclada: { type: boolean, description: 'el xiReferencia cita varias fuentes o proyecciones: no es un XI' }
                       sistemaDeclarado: { type: string }
                       sistemaOficial: { type: string }
+                      defensoresOficiales: { type: integer, nullable: true }
                       ausentesDeLaReferencia: { type: array, items: { type: string } }
     Incidencia:
       type: object
