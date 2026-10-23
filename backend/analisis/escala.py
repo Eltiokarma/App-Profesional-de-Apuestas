@@ -39,6 +39,7 @@ COPAS = {
     81, 529,              # Alemania: DFB Pokal, Supercup
     66, 526,              # Francia: Coupe de France, Trophée des Champions
     96, 550,              # Portugal: Taça de Portugal, Supertaça
+    147, 519,             # Bélgica: Copa, Supercopa (ids confirmados con --buscar, 23/10/2026)
     130, 73, 241, 267, 1220, 502, 1232, 930, 917, 501, 1113,  # Sudamérica (LIGAS_MENORES)
 }
 _COPA_RE = re.compile(r"\b(cup|copa|coppa|pokal|coupe|ta[cç]a|trophy|troph[ée]e|shield|super ?cup|supercopa|"
