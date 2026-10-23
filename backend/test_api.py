@@ -328,8 +328,22 @@ def main():
     _rv = c.get(A + f"/equipos/{betis}/plantilla").json()["revolucion"]
     check("43: la vuelta de cesión sin minutos NO cuenta (llegadas sigue en 1); en papeles son 2",
           _rv["llegadas"] == 1 and _rv["enPapeles"]["llegadas"] == 2 and "minutos" in _rv["criterio"], _rv)
+    # …y la vuelta de cesión que jugó para el club hace TRES temporadas tampoco
+    # (la Juventus salía con 13 llegadas «con minutos», 23/10/2026)
+    with _sq43.connect(os.path.join(tmp, "sad.db")) as _c43:
+        _temp43 = _c43.execute("SELECT MAX(season) FROM jugador_stats WHERE team_id=?", (betis,)).fetchone()[0]
+        _c43.execute("INSERT INTO jugador_stats (player_id, team_id, league_id, season, minutos, partidos) "
+                     "VALUES (987654, ?, 140, ?, 900, 10)", (betis, _temp43 - 3))
+    _rv2 = c.get(A + f"/equipos/{betis}/plantilla").json()["revolucion"]
+    check("43: minutos de hace 3 temporadas no hacen «con minutos» una llegada de hoy",
+          _rv2["llegadas"] == 1, _rv2)
+    with _sq43.connect(os.path.join(tmp, "sad.db")) as _c43:
+        _c43.execute("UPDATE jugador_stats SET season=? WHERE player_id=987654", (_temp43,))
+    _rv3 = c.get(A + f"/equipos/{betis}/plantilla").json()["revolucion"]
+    check("43: con minutos en la temporada vigente, la misma llegada cuenta", _rv3["llegadas"] == 2, _rv3)
     with _sq43.connect(os.path.join(tmp, "sad.db")) as _c43:
         _c43.execute("DELETE FROM traspasos WHERE player_id=987654")
+        _c43.execute("DELETE FROM jugador_stats WHERE player_id=987654")
     check("plantilla con datos: ingestaLanzada=false", pl["ingestaLanzada"] is False, pl.get("ingestaLanzada"))
     # equipo sin plantilla: degradación honesta; on-demand apagada en tests
     # (SAD_PLANTILLA_ONDEMAND=0) para no gastar requests si hubiera clave local
