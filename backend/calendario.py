@@ -175,6 +175,14 @@ def _es_ascendido(team_id: int, liga_id: int | None, temporada: int | None) -> b
     """
     if liga_id is None or temporada is None or liga_id in SIN_ASCENSO:
         return False
+    # ...y una copa que no está en la lista se reconoce por el nombre: Vecino
+    # «RECIÉN ASCENDIDO» en la Taça de Portugal (incidencia 404)
+    try:
+        from backend.analisis.escala import es_copa
+        if es_copa(liga_id):
+            return False
+    except Exception:  # noqa: BLE001 — sin metadatos de la liga, manda la lista
+        pass
     previos = _q(
         "SELECT COUNT(*) AS n FROM fixtures WHERE (home_team_id=? OR away_team_id=?) "
         "AND league_id=? AND league_season=?",
@@ -409,8 +417,13 @@ def calendario_de(team_id: int, n: int = PROXIMOS_DEFAULT) -> list[dict]:
         rival_id = f["away_team_id"] if es_local else f["home_team_id"]
         rival_nombre = f["visitante"] if es_local else f["local"]
         fecha = (f["date"] or "")[:10]
+        # UNA COPA NO TIENE TABLA COMPARABLE. Delfín «2.º de 48» en la semi de
+        # la Copa Ecuador, Sporting «8/8 y zona descenso» en la Taça da Liga
+        # (incidencia 404): la posición del rival sale vacía, no de esa tabla.
+        from backend.analisis.escala import es_copa
+        copa = bool(f["league_id"]) and es_copa(f["league_id"], f["liga"])
         posiciones = (_posiciones(f["league_id"], f["league_season"], bucket, fase_con_tabla(f["league_round"]))
-                      if f["league_id"] else {})
+                      if f["league_id"] and not copa else {})
         pos = posiciones.get(rival_id)
         total = len(posiciones)
         # descanso: contra el partido anterior para el primero, y entre fechas
