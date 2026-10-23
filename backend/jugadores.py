@@ -156,31 +156,54 @@ def _plantel_sin_stats(team_id: int, con_stats: set) -> list[dict]:
 # las dos cosas. Límite declarado: la base solo trae las stats de la temporada
 # vigente y los onces que se capturaron, así que una salida de un titular de
 # hace dos temporadas puede no verse.
+# CON MINUTOS EN SU MOMENTO (23/10/2026, primera medición en producción): la
+# Juventus salía con 13 llegadas «con minutos» porque una vuelta de cesión
+# contaba con minutos de temporadas viejas. La LLEGADA cuenta si jugó DESPUÉS
+# de llegar (minutos en la temporada vigente o titular en un once posterior);
+# la SALIDA, si jugó en la vigente o la anterior, o fue titular en el año
+# previo a irse.
 REVOLUCION_JUGO_DIAS = 400
 
 
 def revolucion_de(team_id: int, hoy: datetime | None = None) -> dict:
     hoy = hoy or datetime.now(timezone.utc)
     corte = (hoy - timedelta(days=REVOLUCION_DIAS)).strftime("%Y-%m-%d")
-    movs = _query("SELECT player_id, team_in, team_out FROM traspasos "
+    movs = _query("SELECT player_id, fecha, team_in, team_out FROM traspasos "
                   "WHERE (team_in=? OR team_out=?) AND fecha >= ?", (team_id, team_id, corte))
-    llegan = {m["player_id"] for m in movs if m["team_in"] == team_id}
-    salen = {m["player_id"] for m in movs if m["team_out"] == team_id}
-    jugaron: set[int] = set()
+    # la fecha que importa por jugador: la última llegada y la última salida
+    llegan: dict[int, str] = {}
+    salen: dict[int, str] = {}
+    for m in movs:
+        d = llegan if m["team_in"] == team_id else salen
+        d[m["player_id"]] = max(d.get(m["player_id"], ""), str(m["fecha"])[:10])
+    n_lleg = n_sal = 0
     if llegan or salen:
-        jugaron = {r["player_id"] for r in _query(
-            "SELECT DISTINCT player_id FROM jugador_stats WHERE team_id=? AND COALESCE(minutos, 0) > 0",
-            (team_id,))}
+        temp = _temporada_de(team_id) or hoy.year
+        stats = {r["player_id"]: r["seasons"] for r in _query(
+            "SELECT player_id, GROUP_CONCAT(DISTINCT season) AS seasons FROM jugador_stats "
+            "WHERE team_id=? AND COALESCE(minutos, 0) > 0 GROUP BY player_id", (team_id,))}
+        temporadas = {pid: {int(s) for s in str(v or "").split(",") if s.strip().lstrip("-").isdigit()}
+                      for pid, v in stats.items()}
         try:
-            jugaron |= {r["player_id"] for r in _query(
-                "SELECT DISTINCT a.player_id FROM alineaciones a JOIN fixtures f ON f.id = a.fixture_id "
+            onces = _query(
+                "SELECT a.player_id, f.date FROM alineaciones a JOIN fixtures f ON f.id = a.fixture_id "
                 "WHERE a.team_id=? AND a.titular=1 AND f.date >= ?",
-                (team_id, (hoy - timedelta(days=REVOLUCION_JUGO_DIAS)).strftime("%Y-%m-%d")))}
+                (team_id, (hoy - timedelta(days=REVOLUCION_DIAS + REVOLUCION_JUGO_DIAS)).strftime("%Y-%m-%d")))
         except Exception:  # noqa: BLE001 — base sin fichas: cuentan solo las stats
-            pass
+            onces = []
+        fechas_once: dict[int, list[str]] = {}
+        for o in onces:
+            fechas_once.setdefault(o["player_id"], []).append(str(o["date"])[:10])
+        for pid, f in llegan.items():
+            if temp in temporadas.get(pid, set()) or any(d >= f for d in fechas_once.get(pid, [])):
+                n_lleg += 1
+        for pid, f in salen.items():
+            antes = (datetime.strptime(f, "%Y-%m-%d") - timedelta(days=REVOLUCION_JUGO_DIAS)).strftime("%Y-%m-%d")
+            if temporadas.get(pid, set()) & {temp, temp - 1} or any(antes <= d <= f for d in fechas_once.get(pid, [])):
+                n_sal += 1
     return {
-        "llegadas": len(llegan & jugaron),
-        "salidas": len(salen & jugaron),
+        "llegadas": n_lleg,
+        "salidas": n_sal,
         "ventanaDias": REVOLUCION_DIAS,
         "criterio": "con minutos en el primer equipo",
         "enPapeles": {"llegadas": len(llegan), "salidas": len(salen)},
