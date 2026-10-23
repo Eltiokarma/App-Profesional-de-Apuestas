@@ -157,6 +157,29 @@ def main():
     check("VISITA DÉBIL cuando el rival viene de visita", "VISITA_DEBIL" in e, list(e))
     check("y NO se le cuelga LOCAL FUERTE", "LOCAL_FUERTE" not in e, list(e))
 
+    # incidencia 404: en una copa la posición del rival no sale de la tabla de la copa
+    con = sqlite3.connect(os.path.join(_TMP, "sad.db"))
+    con.execute("INSERT INTO leagues (id, name) VALUES (96, 'Taça de Portugal')")
+    con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, venue_city, "
+                "home_team_id, away_team_id) VALUES (5001, ?, 'NS', 'Not Started', 96, ?, 'Ciudad A', ?, ?)",
+                (dia(25), TEMP, FOCO, VECINO))
+    con.commit()
+    con.close()
+    _pos_orig = calendario._posiciones
+    try:
+        calendario._posiciones = lambda liga, temp, bucket, fase=None: {VECINO: 8, ASCENDIDO: 2, CRISIS: 5,
+                                                                        LOCALON: 3, VISITANTE_MALO: 7}
+        cal_copa = calendario.calendario_de(FOCO, n=6)
+    finally:
+        calendario._posiciones = _pos_orig
+    en_copa = next((c for c in cal_copa if c["fixtureId"] == 5001), {})
+    en_liga = next((c for c in cal_copa if c["rival"] == "Recién Subido"), {})
+    check("en la copa la posición del rival va vacía; en la liga sale de la tabla",
+          en_copa.get("posicionRival") is None and en_copa.get("zonaRival") is None
+          and en_liga.get("posicionRival") == 2, (en_copa, en_liga))
+    check("y en la copa nadie es «recién ascendido» (la copa no tiene ascenso)",
+          all(e["codigo"] != "RECIEN_ASCENDIDO" for e in en_copa.get("etiquetas", [])), en_copa.get("etiquetas"))
+
     # el criterio manda: sin muestra suficiente no se etiqueta
     cal_pocos = calendario.calendario_de(FOCO, n=1)
     check("con un solo partido pedido, devuelve uno", len(cal_pocos) == 1, len(cal_pocos))
