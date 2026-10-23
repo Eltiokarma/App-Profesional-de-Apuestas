@@ -231,6 +231,12 @@ def main():
                                           "revolucion": {"llegadas": 1, "salidas": 0, "ventanaDias": 120}})
     check("DT con llegada de /coachs (aproximada) y 40 días: no sube a inestable, se declara sin dato",
           apx["estabilidad"]["grado"] == "estable" and any("confirmada" in s for s in apx["estabilidad"]["sinDato"]), apx["estabilidad"])
+    # incidencia 385: asentado con /coachs sigue estable, pero los días se dicen aproximados
+    apx2 = analizar(filas, ctx, plantilla={**ctx["plantilla"], "entrenador": {"nombre": "Flores", "desde": "2024-01-01", "fuente": "coachs"},
+                                           "revolucion": {"llegadas": 1, "salidas": 0, "ventanaDias": 120}})
+    check("DT asentado según /coachs: ESTABLE, días «aproximado» y la fecha confirmada en sinDato",
+          apx2["estabilidad"]["grado"] == "estable" and any("aproximado" in m for m in apx2["estabilidad"]["motivos"])
+          and any("confirmada" in s for s in apx2["estabilidad"]["sinDato"]), apx2["estabilidad"])
     trans = analizar(filas, ctx, plantilla={**ctx["plantilla"], "entrenador": {"nombre": "Viejo", "desde": "2024-01-01"},
                                             "revolucion": {"llegadas": 2, "salidas": 1, "ventanaDias": 120}})
     check("3 movimientos → EN TRANSICIÓN", trans["estabilidad"]["grado"] == "en transición")

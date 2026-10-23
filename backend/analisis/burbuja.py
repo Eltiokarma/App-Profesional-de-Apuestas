@@ -718,6 +718,12 @@ def estabilidad_de(plantilla: dict | None, hoy: str) -> dict:
         elif dias < DT_ASENTADO_DIAS:
             subir("inestable")
             motivos.append(f"DT {ent['nombre']} lleva {dias} días: la historia de K es de otro cuerpo técnico")
+        elif ent.get("fuente") == "coachs":
+            # asentado igual, pero los días de /coachs no son dato: Alavés salía
+            # «asentado (387 días)» con 7,7 meses en el cargo (incidencia 385)
+            sin_dato.append("fecha de asunción del DT confirmada")
+            motivos.append(f"DT {ent['nombre']} asentado (unos {dias} días según la carrera de la API, "
+                           "aproximado: confirmar en prensa)")
         else:
             motivos.append(f"DT {ent['nombre']} asentado ({dias} días)")
     else:
