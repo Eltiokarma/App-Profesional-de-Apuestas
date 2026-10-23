@@ -55,8 +55,9 @@ export type TramoRival = 'lejos' | 'zona' | 'fuerte' | 'muy fuerte'
 export const MUESTRA_BAJA = 3
 export const MUESTRA_ALTA = 6
 export const DT_ASENTADO_DIAS = 90
-export const MOVIMIENTOS_TRANSICION = 3
-export const MOVIMIENTOS_INESTABLE = 6
+/** Movimientos CON MINUTOS de la ventana (incidencia 43, usuario 23/10/2026: 10 y 20, primer corte). */
+export const MOVIMIENTOS_TRANSICION = 10
+export const MOVIMIENTOS_INESTABLE = 20
 export const BAJAS_TRANSICION = 5
 export const PLANTILLA_VIEJA_DIAS = 30
 const MAX_REVENTONES_SALIDA = 40

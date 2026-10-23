@@ -152,8 +152,9 @@ check('DT asentado + 1 movimiento → ESTABLE, confianza MEDIA (n=3)', est.estab
 // incidencia 186: la llegada aproximada de /coachs no vuelve inestable al equipo
 const apx = analizar(filas, { plantilla: { ...pl, entrenador: { nombre: 'Pérez', desde: '2026-08-07', fuente: 'coachs' }, revolucion: { llegadas: 1, salidas: 0, ventanaDias: 120 } } })
 check('DT con llegada de /coachs y 40 días: no sube a inestable, se declara sin dato', apx.estabilidad.grado === 'estable' && apx.estabilidad.sinDato.some((s) => s.includes('confirmada')), apx.estabilidad)
-const trans = analizar(filas, { plantilla: { ...pl, entrenador: { nombre: 'Viejo', desde: '2024-01-01' }, revolucion: { llegadas: 2, salidas: 1, ventanaDias: 120 } } })
-check('3 movimientos → EN TRANSICIÓN', trans.estabilidad.grado === 'en transición')
+// umbrales 10 y 20 sobre los movimientos CON MINUTOS (usuario, 23/10/2026)
+const grado = (llegadas: number, salidas: number) => analizar(filas, { plantilla: { ...pl, entrenador: { nombre: 'Viejo', desde: '2024-01-01' }, revolucion: { llegadas, salidas, ventanaDias: 120 } } }).estabilidad.grado
+check('9 movimientos con minutos → ESTABLE (Arsenal); 10 → EN TRANSICIÓN; 20 → INESTABLE', eq([grado(5, 4), grado(6, 4), grado(12, 8)], ['estable', 'en transición', 'inestable']), [grado(5, 4), grado(6, 4), grado(12, 8)])
 // incidencia 43: cuentan los que jugaron; los de papel se dicen al lado
 const juve = analizar(filas, { plantilla: { ...pl, entrenador: { nombre: 'Viejo', desde: '2024-01-01' }, revolucion: { llegadas: 2, salidas: 0, ventanaDias: 120, enPapeles: { llegadas: 41, salidas: 44 } } } })
 check('43: 2 con minutos de 85 en papeles → ESTABLE y el motivo dice las dos cifras', juve.estabilidad.grado === 'estable' && juve.estabilidad.motivos.some((m) => m.includes('2 movimientos con minutos (de 85 en papeles)')), juve.estabilidad.motivos)

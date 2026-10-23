@@ -893,7 +893,9 @@ conversación se pierde en la siguiente.
      estabilidad cuenta llegadas y salidas CON MINUTOS en el primer equipo
      (43, `jugadores.revolucion_de`, `revolucion.enPapeles` con el total: 58 de
      60 equipos de la agenda salían «inestables», la Juventus por 85 traspasos
-     de los que 7 jugaron). Lo de otra categoría (el ascendido juega distinto)
+     de los que 7 jugaron); la llegada cuenta si jugó DESPUÉS de llegar (#201)
+     y los cortes pasan de 3/6 a **10/20** (usuario: con minutos, 82 de 82
+     seguían sin salir estables; primer corte sin backtest, revisar con casos). Lo de otra categoría (el ascendido juega distinto)
      lo considera el analista con `escala`; el cálculo no se corta.
    - **Mantenimiento del 23/10, revisado** (#196-198 bien hechos): la 44a NO se
      cobra a los partes creados en la caída de Railway (21/10 09:28 → 22/10

@@ -237,9 +237,13 @@ def main():
     check("DT asentado según /coachs: ESTABLE, días «aproximado» y la fecha confirmada en sinDato",
           apx2["estabilidad"]["grado"] == "estable" and any("aproximado" in m for m in apx2["estabilidad"]["motivos"])
           and any("confirmada" in s for s in apx2["estabilidad"]["sinDato"]), apx2["estabilidad"])
-    trans = analizar(filas, ctx, plantilla={**ctx["plantilla"], "entrenador": {"nombre": "Viejo", "desde": "2024-01-01"},
-                                            "revolucion": {"llegadas": 2, "salidas": 1, "ventanaDias": 120}})
-    check("3 movimientos → EN TRANSICIÓN", trans["estabilidad"]["grado"] == "en transición")
+    # umbrales 10 y 20 sobre los movimientos CON MINUTOS (usuario, 23/10/2026)
+    def _grado(ll, sa):
+        return analizar(filas, ctx, plantilla={**ctx["plantilla"], "entrenador": {"nombre": "Viejo", "desde": "2024-01-01"},
+                                               "revolucion": {"llegadas": ll, "salidas": sa, "ventanaDias": 120}})["estabilidad"]["grado"]
+    check("9 movimientos con minutos → ESTABLE (Arsenal); 10 → EN TRANSICIÓN; 20 → INESTABLE",
+          (_grado(5, 4), _grado(6, 4), _grado(12, 8)) == ("estable", "en transición", "inestable"),
+          (_grado(5, 4), _grado(6, 4), _grado(12, 8)))
     # incidencia 43: cuentan los que jugaron; los de papel se dicen al lado
     juve = analizar(filas, ctx, plantilla={**ctx["plantilla"], "entrenador": {"nombre": "Viejo", "desde": "2024-01-01"},
                                            "revolucion": {"llegadas": 2, "salidas": 0, "ventanaDias": 120,

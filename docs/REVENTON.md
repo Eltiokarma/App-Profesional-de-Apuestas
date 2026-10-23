@@ -114,7 +114,12 @@ nuevo o el plantel cambió, la historia de K es de *otro* equipo.
   **alta**.
 - Estabilidad (de la plantilla del contrato, `docs/JUGADORES.md`):
   - DT con menos de **90 días** → `inestable`.
-  - `llegadas + salidas` de la ventana: ≥ 6 → `inestable`; ≥ 3 → `en transición`.
+  - `llegadas + salidas` CON MINUTOS de la ventana (120 días): ≥ 20 →
+    `inestable`; ≥ 10 → `en transición` (23/10/2026, incidencias 43: se
+    cuentan solo los que jugaron en el primer equipo —la llegada, después de
+    llegar— y el total en papeles viaja en `enPapeles`; los cortes eran 6 y 3
+    sobre el conteo en papeles y dejaban 0 estables de 82 equipos de la
+    agenda. Primer corte, sin backtest).
   - ≥ 5 bajas → `en transición`. Cuentan solo las de **señal**: una baja del
     flag «Missing Fixture» leída como ruido (media plantilla marcada,
     `docs/JUGADORES.md`) no es una baja, en los dos lados (Python y TS).
