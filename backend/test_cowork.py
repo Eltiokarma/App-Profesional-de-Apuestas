@@ -1905,6 +1905,9 @@ def main():
     check("acierta el 1X2 declarado", o["unXDos"]["acerto"] is True and o["unXDos"]["real"] == real,
           o["unXDos"])
     check("acierta el marcador exacto", o["marcadorExacto"]["acerto"] is True, o["marcadorExacto"])
+    from backend.analisis.veredicto import marcador_declarado as _md
+    check("el marcador exacto es el primer N-N del texto (incidencia 392: «1-2 (2-2 al lado)»)",
+          _md("1-2 (2-2 al lado)") == "1-2" and _md(" 2 - 1 ") == "2-1" and _md("") == "", _md("1-2 (2-2 al lado)"))
     # Brier de tres resultados con 60/25/15 sobre el acertado:
     # (0.6-1)² + (0.25-0)² + (0.15-0)² = 0.16 + 0.0625 + 0.0225 = 0.245
     check("el Brier se calcula y declara su escala", o["brier"]["valor"] == 0.245

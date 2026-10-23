@@ -278,7 +278,7 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
 
     goles = _goles(fixture_id, fx["home_team_id"])
     marcador_texto = f"{gl}-{gv}"
-    exacto = (pron.get("marcador") or "").strip().replace(" ", "")
+    exacto = marcador_declarado(pron.get("marcador"))
 
     out = {
         "jugado": True,
@@ -560,6 +560,15 @@ def tarjetas_partido(espina_obj: dict, real: str) -> dict:
             "cumplida": (dicen == real) if dicen else None,
             "aciertaA": (res["a"] == real) if res["a"] else None,
             "aciertaB": (res["b"] == real) if res["b"] else None}
+
+
+def marcador_declarado(texto) -> str:
+    """El marcador exacto del pronóstico, como «N-N»: el PRIMERO del texto.
+    Una aclaración al lado no lo hace fallar (incidencia 392: «1-2 (2-2 al
+    lado)» con un 1-2 real salía fallado). Sin un N-N, el texto tal cual."""
+    t = str(texto or "").strip()
+    m = re.search(r"(\d+)\s*[-–:]\s*(\d+)", t)
+    return f"{m.group(1)}-{m.group(2)}" if m else t.replace(" ", "")
 
 
 def rama_jugada(tde: dict, goles: list[dict], total_goles: int, con_ficha: bool,
