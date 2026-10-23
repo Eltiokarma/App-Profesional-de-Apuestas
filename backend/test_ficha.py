@@ -221,6 +221,21 @@ def main():
           pend[0] == 2, pend)
     check("respeta el tope de últimos por equipo (4 queda fuera)", 4 not in pend, pend)
     check("no se mete en ligas que no seguimos", 6 not in pend, pend)
+    # incidencia 406: la copa europea entra a la base pero NO elige equipos
+    # (el de quinta división de la FA Cup no alimenta ningún parte); el partido
+    # de copa de un equipo nuestro sí está entre sus últimos
+    con.executemany("INSERT INTO fixtures (id, date, status_short, league_id, home_team_id, away_team_id) "
+                    "VALUES (?,?,?,?,?,?)", [
+        (60, dia(+2), "NS", 45, 910, 911),       # FA Cup: dos equipos que no seguimos
+        (61, dia(-6), "FT", 140, 910, 912),      # el anterior de uno de ellos
+        (62, dia(-3), "FT", 45, 100, 913),       # copa del 100, que SÍ seguimos
+    ])
+    con.commit()
+    pend406 = fixtures_pendientes(con, dias=3, ultimos=2)
+    check("406: un NS de FA Cup no pide fichas de sus equipos", 61 not in pend406, pend406)
+    check("406: el partido de copa de un equipo nuestro entra entre sus últimos", 62 in pend406, pend406)
+    con.execute("DELETE FROM fixtures WHERE id IN (60, 61, 62)")
+    con.commit()
 
     # ── sellado: aunque venga vacío, no se repregunta para siempre ─────────
     cliente = ClienteFalso()

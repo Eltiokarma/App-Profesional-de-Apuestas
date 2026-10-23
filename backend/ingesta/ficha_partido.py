@@ -34,7 +34,8 @@ import sys
 import zlib
 from datetime import datetime, timedelta, timezone
 
-from backend.ingesta.extractor import LIGAS, LIGAS_RUIDO, Cliente, leer_clave, ligas_vivo, reserva_del_dia
+from backend.ingesta.extractor import (COPAS_EUROPA, LIGAS, LIGAS_RUIDO, Cliente, leer_clave, ligas_vivo,
+                                      reserva_del_dia)
 from backend.nombres import limpiar_nombre
 
 DIAS_NS_DEFAULT = 3
@@ -282,14 +283,18 @@ def fixtures_pendientes(con: sqlite3.Connection, dias: int, ultimos: int) -> lis
     más viejo: si el presupuesto se corta, lo primero que entra es lo que la
     cadena del DTP necesita sí o sí (el partido anterior)."""
     ahora = datetime.now(timezone.utc)
-    marcas = ",".join("?" * len(LIGAS))
+    # un partido de copa europea no elige equipos (el de quinta división de la
+    # FA Cup no alimenta ningún parte); los nuestros entran por su liga, y su
+    # partido de copa sí entra entre sus «últimos N» (incidencia 406)
+    eligen = sorted(set(LIGAS) - COPAS_EUROPA)
+    marcas = ",".join("?" * len(eligen))
     equipos: list[int] = []
     for home, away in con.execute(
             f"""SELECT home_team_id, away_team_id FROM fixtures
                 WHERE status_short='NS' AND date >= ? AND date <= ?
                   AND league_id IN ({marcas}) ORDER BY date""",
             (ahora.strftime("%Y-%m-%d %H:%M:%S"),
-             (ahora + timedelta(days=dias)).strftime("%Y-%m-%d %H:%M:%S"), *LIGAS)):
+             (ahora + timedelta(days=dias)).strftime("%Y-%m-%d %H:%M:%S"), *eligen)):
         for tid in (home, away):
             if tid and tid not in equipos:
                 equipos.append(tid)
