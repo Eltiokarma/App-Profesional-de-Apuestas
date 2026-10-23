@@ -399,6 +399,11 @@ def main():
           and _esc.cambio_de_categoria({"id": 39, "categoria": "primera"}, 40) == "descendido"
           and _esc.cambio_de_categoria({"id": 39, "categoria": "primera"}, 45) == ""
           and _esc.cambio_de_categoria({"id": 39, "categoria": "primera"}, 39) == "")
+    # incidencia 407: una segunda fuera de las listas se reconoce por el nombre
+    from backend.analisis.parte import _segunda as _sg
+    check("la Segunda Liga de Portugal (95) es segunda por el nombre; la Primeira Liga no",
+          _esc.categoria(95, "Segunda Liga") == "segunda" and _esc.categoria(94, "Primeira Liga") == "primera"
+          and _sg(129, "Primera Nacional") and not _sg(128, "Liga Profesional Argentina"))
     # pretemporada: Millwall (base Championship) con su próximo partido de liga en la Premier
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("INSERT OR REPLACE INTO leagues (id, name, country, season) VALUES (39, 'Premier League', 'England', 2026)")
