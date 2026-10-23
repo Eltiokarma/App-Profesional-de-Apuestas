@@ -698,7 +698,11 @@ Tres cuidados que la respuesta trae escritos:
 
 - **`f2` da un PISO, no un score cerrado.** El viaje largo, el cambio de
   altitud y el calor extremo son parte de la rúbrica y NO están en nuestra
-  base: si los hay, el score sube a mano.
+  base: si los hay, el score sube a mano. El «próximo partido de altísima
+  exigencia» SÍ lo mira la app cuando lo reconoce (clásico o eliminatoria
+  internacional de octavos en adelante, a ≤ 5 días: `f2.exigenciaProxima`, y
+  el piso va a 1); otro que no reconozca (rival directo, final de liga)
+  también sube a mano, con el porqué.
 - **`p1a` puede bajar.** «Necesita ganar» lleva P1a a 0 y eso no sale de la
   base. Y si P1a queda en 0, la compuerta 1 topa el bloque P entero en 0.5.
 - **`f1` dice `sinDato` en vez de inventar.** Sin dos onces capturados no hay
@@ -1131,7 +1135,8 @@ Escribís vos (es juicio, no se puede calcular):
   trae calculados P1a (input inviolable: sale de μ_partido, prohibido
   derivarlo del gap), F2 (descanso y calendario: «dato del motor o no es
   dato») y F1 (rotación desde las alineaciones ingestadas). Tomalos tal cual;
-  F2 solo sube a mano por viaje largo, altitud o calor, y P1a solo baja a 0
+  F2 solo sube a mano por viaje largo, altitud, calor o un próximo de
+  altísima exigencia que la app no reconoció, y P1a solo baja a 0
   por «necesita ganar». Lo tuyo son los 16 de `noCalculables` — Y SU
   DEFINICIÓN ES LA QUE VIAJA AHÍ, en `porque`, no la que recuerdes: C1 es
   «bloque bajo ensayado y probado bajo presión», C2 «coordinación
@@ -1175,7 +1180,9 @@ Escribís vos (es juicio, no se puede calcular):
 NO escribas, porque lo calcula la app y se ignora si llega:
   total · máximo alcanzable · porcentaje · clasificación FORMADO/EN FORMACIÓN/
   SIN FORMACIÓN · Impacto Ponderado · reducción por zona · multiplicador ×1.5
-  del arquero · las ramas A y B · la alerta F3 DEL EFE · la F4 DEL EFE (los
+  del arquero · las ramas A y B · la alerta F3 DEL EFE · la F4 DEL EFE ·
+  COLAPSO EN CASCADA (sale de `d3`: mandá `"d3": "✅" | "🔶" | "❌" | "sin dato"`
+  por equipo y la app la pone cuando un lado tiene ❌ y el otro ✅/🔶) (los
   indicadores F3 y F4 del TDE SÍ van, en tde.bloques[].indicadores) · el nombre de los equipos ·
   la fecha · el calendario de próximos rivales · los resultados del timeline.
 
@@ -1411,6 +1418,7 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
   "equipos": {
     "a": {
       "bloques": {"A": 3, "B": 4.5, "C": 2, "D": 3, "E": 2},
+      "d3": "🔶",
       "notas": {"A": "mismo DT hace 14 meses, contrato hasta fin de año",
                 "E": "1.62 ppp, 1 derrota en los últimos 6"},
       "dt": {"nombre": "Nombre del DT", "desde": "2025-06-15"},

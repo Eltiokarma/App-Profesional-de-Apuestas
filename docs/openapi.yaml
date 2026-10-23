@@ -928,6 +928,43 @@ paths:
               schema: { $ref: '#/components/schemas/Incidencia' }
         '404': { description: no existe }
         '422': { description: estado desconocido o cierre sin resolución }
+  /analisis/cowork/rehacer:
+    get:
+      summary: ¿Hay algún parte con DTP-REHACER a punto de arrancar? (la comprobación barata de la rutina)
+      description: >
+        22/10/2026: la rutina de rehacer dispara cada 30 minutos y casi siempre no hay nada. En UNA
+        llamada: los partes sin veredicto cuyo partido (NS) arranca entre `desdeMin` y `hastaMin`
+        minutos (`enVentana`) y, de esos, los que traen DTP-REHACER en sus alertas (`pendientes`).
+        `pendientes` vacío = la corrida termina en una línea. Abierto al token acotado (GET de
+        /analisis/cowork).
+      parameters:
+        - { name: desdeMin, in: query, schema: { type: integer, default: 30, minimum: 0, maximum: 240 } }
+        - { name: hastaMin, in: query, schema: { type: integer, default: 80, minimum: 1, maximum: 240 } }
+      responses:
+        '200':
+          description: La ventana y lo que hay que rehacer
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ahora: { type: string }
+                  ventanaMin: { type: array, items: { type: integer } }
+                  partesEnVentana: { type: integer }
+                  enVentana:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        fixtureId: { type: integer }
+                        partido: { type: string }
+                        pitazo: { type: string }
+                        minutosAlPitazo: { type: integer }
+                  pendientes:
+                    type: array
+                    description: 'los de enVentana con DTP-REHACER, con esas alertas en `alertas`'
+                    items: { type: object }
+                  nota: { type: string }
   /analisis/cowork/latido:
     get:
       summary: ¿Está corriendo el pipeline, o lleva días muerto en silencio?
@@ -2411,6 +2448,8 @@ components:
             distancia: { type: number, description: 'nivelProximo − mediana (con signo, sin girar)' }
             enZona: { type: boolean, description: 'tramo ≠ lejos' }
             tramo: { type: string, enum: [lejos, zona, fuerte, muy fuerte], description: 'en la dirección del riesgo (más fuerte para la burbuja +, más flojo para la −): lejos < −0.15 · zona ±0.15 · fuerte ≥ 0.15 · muy fuerte ≥ 0.45' }
+            escalaComparable: { type: boolean, description: 'false con escala distinta (22/10/2026): el tramo compara niveles de bases distintas; los puntos NO cambian, se marca' }
+            notaEscala: { type: string }
         riesgo:
           type: object
           nullable: true
@@ -2515,6 +2554,8 @@ components:
             maximoPrevio: { type: integer }
             record: { type: integer, description: '2 supera · 1 iguala · 0 no o sin base' }
             texto: { type: string }
+            escala: { type: string, description: 'solo con escala distinta (22/10/2026): la relación entre las bases' }
+            notaEscala: { type: string }
         familias:
           type: array
           items:
@@ -3063,6 +3104,9 @@ components:
             properties:
               nombre: { type: string }
               contexto: { type: string }
+        d3:
+          type: string
+          description: 'D3 del EFE (respuesta a rachas negativas): ✅ · 🔶 · ❌ · «sin dato» (también si · parcial · no, 1 · 0.5 · 0). Con él la app CALCULA la alerta COLAPSO-EN-CASCADA (D3 ❌ contra ✅/🔶, incidencia 162); sin él, lo lee de la nota del bloque D'
         sensibilidad:
           type: array
           description: 'caja de sensibilidad: qué cambiaría si el dato que falta fuera otro'
@@ -3597,6 +3641,7 @@ components:
         fuera: { type: array, items: { type: object, additionalProperties: true } }
         factorX: { type: array, items: { type: object, additionalProperties: true } }
         sensibilidad: { type: array, items: { type: object, additionalProperties: true } }
+        d3: { type: string, enum: [si, parcial, no, sin dato], description: 'solo si el parte lo declaró' }
         disponibilidad: { $ref: '#/components/schemas/DisponibilidadParte' }
     ParteCowork:
       type: object
@@ -4489,6 +4534,8 @@ components:
         movimiento: { type: string, enum: [sigue, cero, cambio] }
         prob: { type: number }
         fuerza: { type: string, enum: [fuerte, debil] }
+        escala: { type: string, description: 'solo con escala distinta (ESCALA-LIGAS, 22/10/2026): la relación entre las bases. La tarjeta NO cambia: se marca' }
+        notaEscala: { type: string, description: 'por qué no se la sigue por ser fuerte: la guía se midió con rivales de su propia liga' }
     ReventonObservado:
       type: object
       properties:

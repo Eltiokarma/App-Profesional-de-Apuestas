@@ -162,16 +162,32 @@ def preguntas_de(parte: dict, nombres: dict, reventon: dict | None) -> tuple[dic
         comparar["matchup"] = {"tipo": "matchup", "declarado": nombres[fav], "lado": fav}
     texto_rev = ((parte.get("lecturaSad") or {}).get("reventon") or "").strip()
     if texto_rev and reventon:
+        # TOTAL Y CONDICIÓN, CADA UNA CON SU PREGUNTA (incidencia 160, decisión
+        # del usuario 22/10/2026). Una sola pregunta «qué riesgo le da a X»
+        # leía «B: total MUY ALTO … su burbuja de visita, riesgo medio» como
+        # «medio» y lo comparaba con la total: falso positivo en Rennes.
         for lado in ("a", "b"):
-            nivel = ((reventon.get(lado) or {}).get("riesgo") or {}).get("nivel")
-            etiqueta = _RIESGO_A_ETIQUETA.get(nivel or "")
-            if not etiqueta:
-                continue  # «sin base» o error: no hay número con qué comparar
-            clave = f"reventon_{lado}"
-            preguntas[clave] = jev.eleccion(
-                f"Leé SOLO lecturaSad.reventon. ¿Qué riesgo de reventón de la racha le "
-                f"asigna ese texto a {nombres[lado]}?", RIESGOS)
-            comparar[clave] = {"tipo": "reventon", "equipo": lado, "calculado": nivel, "etiqueta": etiqueta}
+            rv = reventon.get(lado) or {}
+            cond = rv.get("condicion") or {}
+            donde = {"local": "de local", "visita": "de visita"}.get(cond.get("familia") or "", "")
+            for clave, nivel, que, ambito in (
+                (f"reventon_{lado}", (rv.get("riesgo") or {}).get("nivel"),
+                 f"a la burbuja TOTAL de {nombres[lado]} (la de todos sus partidos). Si el texto solo "
+                 f"da un riesgo para su burbuja de local o de visita, eso NO es la total: respondé "
+                 "«no lo dice»", "total"),
+                (f"reventon_cond_{lado}", (cond.get("riesgo") or {}).get("nivel"),
+                 f"a la burbuja {donde.upper()} de {nombres[lado]} (solo sus partidos {donde}). "
+                 "Si el texto solo da el riesgo de la burbuja total, eso NO es esta: respondé "
+                 "«no lo dice»", donde),
+            ):
+                etiqueta = _RIESGO_A_ETIQUETA.get(nivel or "")
+                if not etiqueta or not ambito:
+                    continue  # «sin base», error o sin condición: no hay número con qué comparar
+                preguntas[clave] = jev.eleccion(
+                    f"Leé SOLO lecturaSad.reventon. ¿Qué riesgo de reventón le asigna ese texto {que}?",
+                    RIESGOS)
+                comparar[clave] = {"tipo": "reventon", "equipo": lado, "calculado": nivel,
+                                   "etiqueta": etiqueta, "ambito": ambito}
     return preguntas, comparar
 
 
@@ -207,7 +223,8 @@ def _hallazgo(clave: str, r: jev.Respuesta, c: dict, nombres: dict) -> dict | No
         if r.valor in ("no lo dice", c["etiqueta"]):
             return None
         return {"codigo": "COHERENCIA-REVENTON", "equipo": c["equipo"], "tipo": "dato",
-                "detalle": f"el texto de reventón le da a {nombres[c['equipo']]} riesgo «{r.valor}» y el "
+                "detalle": f"el texto de reventón le da a la burbuja {c.get('ambito') or 'total'} de "
+                           f"{nombres[c['equipo']]} riesgo «{r.valor}» y el "
                            f"cálculo dice «{c['calculado']}». La lectura debe mirar el número, no "
                            "copiarlo ni contradecirlo sin decir por qué",
                 "jev": jv}

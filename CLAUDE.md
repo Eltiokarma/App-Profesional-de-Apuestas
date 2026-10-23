@@ -872,9 +872,22 @@ conversación se pierde en la siguiente.
      próxima corrida del pipeline saca los duplicados (Rayo Zuliano 16/09 y
      11/06/2025, Portuguesa 16/09: su K deja de sumar el partido dos veces;
      `pipeline --duplicados` los lista); las bajas `desmentida` en Equipo.
-   - **Rutina de rehacer** (`session_01V3tPBuV4pgvD7rMF39twu9`): sumar el
-     costo y los partidos rehechos del 22-23/10 y decidir con el usuario si
-     sigue cada 30 min, pasa a cada hora o solo en horas de partido.
+   - **Rutina de rehacer** (`session_01V3tPBuV4pgvD7rMF39twu9`): medido el
+     22/10, ~0,25 USD por disparo vacío (crece con el contexto de la sesión) y
+     ninguno rehízo nada por la tarde. Decidido (usuario, 22/10): comprobación
+     barata `GET /analisis/cowork/rehacer` (los partes con DTP-REHACER a 30-80
+     min); el skill la llama primero. Falta que el mensaje de las dos rutinas
+     (:07 y :37) la llame ANTES del `git pull`: solo se cambia desde esa sesión.
+   - **Hechos el 22/10** (usuario): COLAPSO EN CASCADA calculada (162:
+     `equipos.{lado}.d3` ✅/🔶/❌, o leído de la nota del bloque D;
+     alerta `COLAPSO-EN-CASCADA`, escenario de perder la ventaja, sin goleada);
+     Jev pregunta el reventón de la total y el de la condición por separado
+     (160); F2 del TDE a 1 con un clásico o una eliminatoria internacional de
+     octavos en adelante a ≤ 5 días (339, `f2.exigenciaProxima`: la rúbrica ya
+     lo decía, faltaba el cálculo; Estambul entra a los clásicos documentados).
+   - **Escala entre ligas** (300, 309, 294, 79): decidido «solo marcar» (22/10):
+     rival (`escalaComparable`), tarjeta de la espina, perfil DC y P1a llevan la
+     marca y su nota; ningún número calibrado se mueve.
    - **Decisiones del usuario** (incidencias en `usuario`, con su propuesta
      escrita): escala entre ligas en el reventón, la espina y el P1a (300,
      309, 294, 79: el rival no suma con `ESCALA-LIGAS` y la espina no sale

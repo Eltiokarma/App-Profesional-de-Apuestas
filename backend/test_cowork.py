@@ -426,17 +426,79 @@ def main():
           all(f["riesgo"]["confianza"] == "baja" and any("escala distinta" in m for m in f["riesgo"]["confianzaMotivos"])
               for f in j_esc["familias"].values() if f.get("riesgo") and f["riesgo"]["nivel"] != "sin base"),
           [f.get("riesgo") for f in j_esc["familias"].values()])
+    # 300/309/79 (decisión del usuario, 22/10/2026): con escala distinta se MARCA
+    # el rival, la tarjeta de la espina y el perfil DC; ningún número cambia
+    check("300: con escala distinta el rival lleva escalaComparable false y su nota",
+          all(f["rival"].get("escalaComparable") is False and "escala distinta" in f["rival"]["notaEscala"]
+              for f in j_esc["familias"].values() if f.get("rival")), [f.get("rival") for f in j_esc["familias"].values()])
+    check("309: la tarjeta de la espina lleva la marca de escala sin cambiar su fuerza",
+          all(f["espinaTarjeta"].get("escala") and f["espinaTarjeta"]["fuerza"] in ("fuerte", "debil")
+              for f in j_esc["familias"].values() if f.get("espinaTarjeta")), [f.get("espinaTarjeta") for f in j_esc["familias"].values()])
+    _pdc = (j_esc.get("otrasFamilias") or {}).get("perfilDc")
+    check("79: el perfil DC lleva la nota de escala", _pdc is None or "escala distinta" in _pdc.get("notaEscala", ""), _pdc)
+    from backend.analisis import escala as _escm
+    _fam = {"total": {"rival": {"tramo": "muy fuerte"}, "espinaTarjeta": {"lectura": "positiva", "movimiento": "sigue",
+                                                                         "prob": 0.54, "fuerza": "fuerte"},
+                      "riesgo": {"nivel": "muy alto", "puntos": 3}}}
+    _escm.marcar(_fam, {"comparable": True, "relacion": "misma"})
+    check("misma base: nada se marca", "escalaComparable" not in _fam["total"]["rival"]
+          and "escala" not in _fam["total"]["espinaTarjeta"], _fam)
+    _escm.marcar(_fam, {"comparable": False, "relacion": "otra liga"})
+    check("otra liga: se marcan rival y tarjeta; tramo, fuerza y puntos quedan igual",
+          _fam["total"]["rival"]["escalaComparable"] is False and _fam["total"]["rival"]["tramo"] == "muy fuerte"
+          and _fam["total"]["espinaTarjeta"]["escala"] == "otra liga" and _fam["total"]["espinaTarjeta"]["fuerza"] == "fuerte"
+          and _fam["total"]["riesgo"]["puntos"] == 3, _fam)
     # incidencia 295: el reventón del parte aplica la MISMA regla que la tarjeta
     _rc = (c.get(f"{A}/analisis/cowork/990150").json().get("lecturaSad") or {}).get("reventonCalculado") or {}
     _rga = ((_rc.get("a") or {}).get("riesgo")) or {}
     check("295: el reventonCalculado del parte trae «escala distinta» en la confianza, como /burbujas",
           _rga.get("nivel") == "sin base" or (_rga.get("confianza") == "baja"
           and any("escala distinta" in m for m in _rga.get("confianzaMotivos") or [])), _rga)
+    _ta = (_rc.get("a") or {}).get("espinaTarjeta")
+    check("309: la tarjeta del reventonCalculado lleva la marca de escala, como /burbujas",
+          _ta is None or _ta.get("escala"), _ta)
+    _tde = c.get(f"{A}/analisis/cowork/tde/990150").json()
+    _p1 = _tde.get("p1a") or {}
+    check("294: con μ entre bases distintas el P1a lleva la marca y el aviso; el score no cambia",
+          not (_tde.get("fiabilidadMu") or {}).get("escala") or _p1.get("sinDato")
+          or (_p1.get("escala") and any("escala distinta" in a for a in _p1.get("avisos") or [])),
+          {"fiab": _tde.get("fiabilidadMu"), "p1a": _p1})
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM fixtures WHERE id BETWEEN 990100 AND 990199")
     from backend.analisis.parte import borrar as _borrar_parte
     _borrar_parte(990120)
     _borrar_parte(990150)
+
+    # ── COLAPSO EN CASCADA calculada (incidencia 162, 22/10/2026) ──────────
+    from backend.analisis import parte as _pc
+    _ne = {"a": "United", "b": "Leeds"}
+    _eqs = lambda da, db_: {"a": da, "b": db_}  # noqa: E731
+    _col = _pc.alertas_colapso({"equipos": _eqs({"bloques": {"D": {"nota": "D1 ✅; D3 ❌ (0): sin respuesta"}}},
+                                                {"d3": "parcial"})}, _ne)
+    check("162: D3 ❌ en la nota contra D3 🔶 declarado → COLAPSO-EN-CASCADA del lado a, sin goleada",
+          len(_col) == 1 and _col[0]["equipo"] == "a" and _col[0]["codigo"] == "COLAPSO-EN-CASCADA"
+          and "NO predice goleada" in _col[0]["detalle"], _col)
+    check("162: los dos con D3 ❌ → no sale (la rúbrica pide rival ✅/🔶)",
+          _pc.alertas_colapso({"equipos": _eqs({"d3": "no"}, {"d3": "❌"})}, _ne) == [])
+    check("162: sin D3 en ningún lado → no se inventa",
+          _pc.alertas_colapso({"equipos": _eqs({"bloques": {"D": {"nota": "D3 sin evaluar"}}}, {})}, _ne) == [])
+    check("162: si el parte ya la escribió, no se duplica",
+          _pc.alertas_colapso({"alertas": [{"codigo": "COLAPSO EN CASCADA"}],
+                               "equipos": _eqs({"d3": "no"}, {"d3": "si"})}, _ne) == [])
+    check("162: «D3 10 partidos» no se lee como ✅", _pc.d3_de({"bloques": {"D": {"nota": "D3 10 partidos"}}})[0] is None)
+    check("162: alias del D3 (0.5, ❌ con selector, «sin dato»)",
+          [_pc.d3_valor(x) for x in (0.5, "❌\ufe0f", "Sin dato", 1, "x")] == ["parcial", "no", "sin dato", "si", None])
+    _r162 = c.post(f"{A}/analisis/cowork", json={"fixtureId": sin_ficha, "equipos": {
+        "a": {"bloques": {"A": 3, "D": {"score": 2, "nota": "D3 ❌"}}}, "b": {"bloques": {"A": 3}, "d3": "✅"}}})
+    _g162 = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()
+    check("162: depositado, el GET trae la alerta calculada y el d3 declarado",
+          _r162.status_code == 200 and any(a["codigo"] == "COLAPSO-EN-CASCADA" and a["equipo"] == "a"
+                                           for a in _g162["alertas"]) and _g162["equipos"]["b"].get("d3") == "si",
+          (_g162.get("alertas"), _g162["equipos"]["b"].get("d3")))
+    _r162b = c.post(f"{A}/analisis/cowork", json={"fixtureId": sin_ficha, "equipos": {
+        "a": {"bloques": {"A": 3}, "d3": "tal vez"}, "b": {"bloques": {"A": 3}}}})
+    check("162: un D3 irreconocible vuelve en rechazos",
+          any(x["donde"] == "equipos.a.d3" for x in _r162b.json().get("rechazos", [])), _r162b.json().get("rechazos"))
 
     # ── LO QUE SE TIRA SE DICE, TAMBIÉN EN EL TDE (3ª corrida real) ─────────
     # Cowork probó tres formas de `tde` y las tres se guardaron como {} sin un
@@ -1061,6 +1123,36 @@ def main():
     check("y da un PISO, no un score cerrado: el viaje y la altitud no están en la base",
           "scorePiso" in tde["f2"]["a"] and "altitud" in tde["f2"]["a"]["puedeSubir"],
           tde["f2"]["a"])
+    # 339 (22/10/2026): el próximo de altísima exigencia a ≤ 5 días pone F2 en 1
+    from backend.analisis import tde as _tde339
+    from backend import calendario as _cal339, jugadores as _jug339
+    _qo, _et, _cg = _tde339.saddb.query_one, _cal339.etiquetas_de_rival, _jug339._congestion
+    try:
+        _tde339.saddb.query_one = lambda *a, **k: {"league_id": 203, "league_season": 2026,
+                                                   "league_round": "Regular Season - 10"}
+        _cal339.etiquetas_de_rival = lambda *a, **k: [{"codigo": "CLASICO", "dato": "clásico documentado de Istanbul"}]
+        _jug339._congestion = lambda t, f: {"diasDescanso": 7, "partidos21d": 4}
+        _ctx = {"proximos": [{"fixtureId": 1, "fecha": "2026-10-26", "rival": {"id": 611, "nombre": "Fenerbahçe"},
+                              "esLocal": False, "esInternacional": False, "diasDescanso": 5}],
+                "senalCalendario": "neutro"}
+        _f2c = _tde339.f2_calendario(645, "2026-10-21", _ctx)
+        check("339: clásico a 5 días → piso de F2 en 1 con el motivo, aunque el descanso fuera 7",
+              _f2c["scorePiso"] == 1.0 and "clásico ante Fenerbahçe" in _f2c["porque"]
+              and _f2c["exigenciaProxima"]["dias"] == 5, _f2c)
+        _ctx6 = {**_ctx, "proximos": [{**_ctx["proximos"][0], "diasDescanso": 6}]}
+        check("339: el mismo clásico a 6 días no sube nada",
+              _tde339.f2_calendario(645, "2026-10-21", _ctx6)["scorePiso"] == 0.0)
+        _cal339.etiquetas_de_rival = lambda *a, **k: []
+        check("339: sin clásico ni eliminatoria, nada", _tde339.exigencia_proxima(645, _ctx) is None)
+        _tde339.saddb.query_one = lambda *a, **k: {"league_id": 2, "league_season": 2026,
+                                                   "league_round": "Round of 16"}
+        _ctxi = {**_ctx, "proximos": [{**_ctx["proximos"][0], "esInternacional": True}]}
+        check("339: eliminatoria internacional (octavos) a 5 días también cuenta",
+              "eliminatoria internacional" in (_tde339.exigencia_proxima(645, _ctxi) or {}).get("motivo", ""))
+    finally:
+        _tde339.saddb.query_one, _cal339.etiquetas_de_rival, _jug339._congestion = _qo, _et, _cg
+    check("339: Galatasaray–Fenerbahçe es clásico documentado de Estambul",
+          _cal339.clasico_documentado("Galatasaray", "Fenerbahçe"))
     check("sin onces capturados, F1 dice sinDato en vez de inventar rotación",
           tde["f1"]["a"].get("sinDato") is True or tde["f1"]["a"].get("score") is not None,
           tde["f1"]["a"])
@@ -4197,6 +4289,32 @@ def main():
     check("un origen desconocido es 422", c.post(f"{A}/analisis/cowork/incidencias",
                                                   json={"origen": "x", "items": [{"titulo": "t"}]}).status_code == 422)
     check("y el latido cuenta las incidencias", "incidencias" in c.get(f"{A}/analisis/cowork/latido").json())
+
+    # ── la comprobación barata de la rutina de rehacer (22/10/2026) ─────────
+    _rh = c.get(f"{A}/analisis/cowork/rehacer")
+    check("rehacer: responde la ventana y la lista (vacía = nada que hacer)",
+          _rh.status_code == 200 and _rh.json()["ventanaMin"] == [30, 80]
+          and isinstance(_rh.json()["pendientes"], list), _rh.text[:300])
+    from backend.analisis import parte as _pt
+    from datetime import datetime as _dtm, timedelta as _td, timezone as _tz
+    with _pt._conectar() as _cn:
+        _ids = [r["fixture_id"] for r in _cn.execute("SELECT fixture_id FROM parte_cowork WHERE veredicto_json IS NULL")]
+    _ns = None
+    for _i in _ids:
+        from backend import db as _sdb
+        _f = _sdb.query_one("sad", "SELECT date, status_short FROM fixtures WHERE id=?", (_i,))
+        if _f and (_f["status_short"] or "NS") in ("NS", "TBD"):
+            _ns = (_i, _f["date"])
+            break
+    if _ns:
+        from backend.app import iso as _iso
+        _pit = _dtm.fromisoformat(_iso(_ns[1]).replace("Z", "+00:00"))
+        _en = _pt.rehacer_pendientes(ahora=_pit - _td(minutes=45))
+        _fuera = _pt.rehacer_pendientes(ahora=_pit - _td(minutes=120))
+        check("rehacer: un parte a 45 min del pitazo entra en la ventana; a 120 min, no",
+              any(x["fixtureId"] == _ns[0] for x in _en["enVentana"])
+              and all(x["fixtureId"] != _ns[0] for x in _fuera["enVentana"]), (_en, _fuera))
+    check("rehacer: hay un parte NS en la demo para probar la ventana", _ns is not None)
 
     print()
     print(f"{'TODO OK' if not fallos else f'{fallos} FALLAS'}")

@@ -72,6 +72,29 @@ check("la comparación guarda el tercio del sub-score (A=4/4 → alto, B=1/6 →
 check("las preguntas son solo puntaje o elección (nada de noul: se compara con confianza)",
       all(q["type"] in ("score", "choice") for q in preg.values()))
 
+print("\n== incidencia 160: total y condición, cada una con su pregunta (Rennes) ==")
+from backend.analisis import jev as _jev
+REV_160 = {"a": {"riesgo": {"nivel": "alto"}},
+           "b": {"riesgo": {"nivel": "muy alto"},
+                 "condicion": {"familia": "visita", "riesgo": {"nivel": "medio"}}}}
+P160 = {**PARTE, "lecturaSad": {**PARTE["lecturaSad"], "reventon":
+        "B: total MUY ALTO por la racha larga; su burbuja de visita es negativa y profunda, riesgo medio."}}
+preg3, comp3 = coherencia.preguntas_de(P160, NOMBRES, REV_160)
+check("la total y la condición de b se preguntan por separado",
+      "reventon_b" in preg3 and "reventon_cond_b" in preg3
+      and comp3["reventon_b"]["ambito"] == "total" and comp3["reventon_cond_b"]["ambito"] == "de visita")
+check("la pregunta de la total pide ignorar la frase de la condición",
+      "TOTAL" in preg3["reventon_b"]["instructions"] and "de local o de visita" in preg3["reventon_b"]["instructions"])
+check("sin condición calculada no se pregunta por ella", "reventon_cond_a" not in preg3)
+_r = lambda v: _jev.Respuesta(tipo="choice", valor=v, confianza=0.9)  # noqa: E731
+check("«medio» en la de visita concuerda con su cálculo (medio): sin hallazgo",
+      coherencia._hallazgo("reventon_cond_b", _r("medio"), comp3["reventon_cond_b"], NOMBRES) is None)
+check("«alto» en la total concuerda con «muy alto»: sin hallazgo",
+      coherencia._hallazgo("reventon_b", _r("alto"), comp3["reventon_b"], NOMBRES) is None)
+_h = coherencia._hallazgo("reventon_cond_b", _r("bajo"), comp3["reventon_cond_b"], NOMBRES)
+check("una contradicción en la condición se dice con su ámbito",
+      _h and "burbuja de visita" in _h["detalle"], _h)
+
 print("\n== el texto de Cowork va en el estado, nunca en las instrucciones ==")
 estado = coherencia._estado(PARTE, NOMBRES)
 prosa = PARTE["equipos"]["a"]["bloques"]["B"]["nota"]

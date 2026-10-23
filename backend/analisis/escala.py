@@ -256,3 +256,51 @@ def bajar_confianza(familias: dict, esc: dict) -> None:
                       "no están en la misma escala")
             if motivo not in rg.setdefault("confianzaMotivos", []):
                 rg["confianzaMotivos"].append(motivo)
+
+
+# ── la MARCA de escala: se dice dónde, no se mueve ningún número ─────────────
+# Decisión del usuario (22/10/2026, incidencias 300, 309, 294 y 79): con la
+# escala distinta, los puntos del rival, la tarjeta de la espina, el perfil de
+# doble oportunidad y el P1a del TDE SIGUEN como están —son números calibrados
+# o insumos del skill— y llevan la marca en el sitio donde se leen. Vasco–Boca
+# sumó «rival muy fuerte» comparando el Brasileirão con la liga argentina;
+# Sporting–LASK siguió una tarjeta «fuerte» medida con un rival austríaco. La
+# confianza baja ya estaba; faltaba que lo dijera la línea que se usa.
+
+def nota_escala(esc: dict) -> str:
+    return (f"escala distinta ({esc.get('relacion')}): este número compara niveles de bases distintas; "
+            "se muestra igual, pero no se lo sigue por sí solo")
+
+
+def marcar(familias: dict, esc: dict) -> None:
+    """Marca el rival y la tarjeta de la espina de cada familia (no los cambia)."""
+    if esc.get("comparable", True):
+        return
+    for fam in (familias or {}).values():
+        if not fam:
+            continue
+        if fam.get("rival"):
+            fam["rival"]["escalaComparable"] = False
+            fam["rival"]["notaEscala"] = nota_escala(esc)
+        marcar_tarjeta(fam.get("espinaTarjeta"), esc)
+
+
+def marcar_tarjeta(tarjeta: dict | None, esc: dict) -> dict | None:
+    """La tarjeta «fuerte» con escala distinta sigue fuerte —es la guía
+    calibrada— pero dice que no se la sigue POR ser fuerte (Sporting–LASK)."""
+    if tarjeta and not esc.get("comparable", True):
+        tarjeta["escala"] = esc.get("relacion")
+        tarjeta["notaEscala"] = nota_escala(esc) + (
+            ": la fuerza sale de una guía medida con rivales de su propia liga" if tarjeta.get("fuerza") == "fuerte" else "")
+    return tarjeta
+
+
+def marcar_perfil(otras: dict | None, esc: dict) -> None:
+    """El perfil de doble oportunidad cuenta la historia del equipo en su
+    condición; si viene de otra división o el rival es de otra base, lo dice
+    (Estudiantes RC: «no pierde 79 %» mezclaba Primera Nacional y Primera)."""
+    p = (otras or {}).get("perfilDc")
+    if p and not esc.get("comparable", True):
+        p["escala"] = esc.get("relacion")
+        p["notaEscala"] = (f"escala distinta ({esc.get('relacion')}): la frecuencia sale de partidos contra "
+                           "rivales de su propia base; contra este rival puede no valer")

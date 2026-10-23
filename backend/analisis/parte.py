@@ -322,7 +322,7 @@ def _fuera(f: dict, rechazos: list, donde: str) -> dict | None:
 
 
 _CLAVES_EQUIPO = {"nombre", "bloques", "excluidos", "notas", "dt", "perfil",
-                  "plantel", "fuera", "factorX", "sensibilidad"}
+                  "plantel", "fuera", "factorX", "sensibilidad", "d3"}
 _CLAVES_JUGADOR = {"nombre", "jugador", "jugadorId", "posicion", "zona", "rol", "apps", "estado", "motivo"}
 _CLAVES_PARTE = {"fixtureId", "version", "generadoEn", "equipos", "alertas", "matchup",
                  "lecturaSad", "lectura_sad", "tde", "timelineEventos", "timelineNarrativa",
@@ -562,9 +562,16 @@ def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
     perfil = _dict(bruto.get("perfil"), rechazos, f"equipos.{lado}.perfil",
                    '{"sistema": "4-3-3", "estilo": "…", "fortaleza": "…", "vulnerabilidad": "…"}')
     nombre = _txt(bruto.get("nombre"))
+    d3 = None
+    if bruto.get("d3") is not None:
+        d3 = d3_valor(bruto.get("d3"))
+        if d3 is None:
+            rechazos.append({"donde": f"equipos.{lado}.d3", "porque": f"D3 no reconocido: {bruto.get('d3')!r}",
+                             "esperado": "✅ · 🔶 · ❌ · «sin dato» (o 1 · 0.5 · 0)"})
     return {
         "nombre": canonizar(nombre, equipos_db) if nombre else "",
         "bloques": bloques,
+        **({"d3": d3} if d3 else {}),
         "dt": dt,
         "perfil": {k: _txt(perfil.get(k)) for k in ("sistema", "estilo", "fortaleza", "vulnerabilidad")},
         "plantel": plantel,
@@ -778,9 +785,12 @@ def _reventon_calculado(fx) -> dict | None:
                                  bin_=nv[0]["bin"] if nv else 0, proximo=prox,
                                  plantilla=None if jugado else jug.plantilla_de(tid), hoy=hoy)
             # la misma regla de escala que la tarjeta (incidencia 295)
+            esc = {"comparable": True}
             try:
                 from backend.analisis import escala as _escala
-                _escala.bajar_confianza(r["familias"], _escala.entre(tid, rid, prox["fecha"], fx["league_id"]))
+                esc = _escala.entre(tid, rid, prox["fecha"], fx["league_id"])
+                _escala.bajar_confianza(r["familias"], esc)
+                _escala.marcar(r["familias"], esc)
             except Exception:  # noqa: BLE001 — sin escala, como en /burbujas
                 pass
             fam = r["familias"]["total"]
@@ -805,6 +815,13 @@ def _reventon_calculado(fx) -> dict | None:
                          # la narrativa del parte, con la misma historia cortada
                          "otrasFamilias": _familias.describir(
                              filas, cond, fx["home_name"] if lado == "a" else fx["away_name"])}
+            # la tarjeta y el perfil DC con la MARCA de escala, como en /burbujas
+            # (22/10/2026: se marca, no se mueve ningún número)
+            if not esc.get("comparable", True):
+                from backend.analisis import escala as _escala
+                _escala.marcar_tarjeta(out[lado]["espinaTarjeta"], esc)
+                _escala.marcar_tarjeta(out[lado]["condicion"]["espinaTarjeta"], esc)
+                _escala.marcar_perfil(out[lado]["otrasFamilias"], esc)
         except Exception as e:  # noqa: BLE001 — se declara, no se inventa ni se rompe la lectura
             out[lado] = {"actual": None, "riesgo": None, "rival": None, "extremo": None, "estabilidad": "sin dato",
                          "partidos": 0, "aviso": "", "error": f"no se pudo calcular: {e}"}
@@ -1297,6 +1314,55 @@ def quitar_desmentido(fixture_id: int, lado: str) -> dict:
     return {"fixtureId": fixture_id, "bancoDesmentido": previos, "quitado": quitado}
 
 
+# ── COLAPSO EN CASCADA, calculada (incidencia 162, decisión del usuario 22/10) ──
+# EFE v1.6: D3 ❌ de un lado contra D3 ✅/🔶 del otro. Era la única alerta del
+# EFE que dependía de que el agente se acordara de escribirla (United–Leeds:
+# D3 ❌ contra 0.5 en las notas y la alerta no salió). D3 viaja en
+# `equipos.{lado}.d3`; un parte que no lo trae se lee de la nota del bloque D,
+# que es donde lo escribían. La alerta describe el ESCENARIO (perder la
+# ventaja), no predice goleada: así la reescribió la v1.6.
+_D3_ALIAS = {"✅": "si", "si": "si", "sí": "si", "documentada": "si", "1": "si", "1.0": "si",
+             "🔶": "parcial", "parcial": "parcial", "0.5": "parcial", "0,5": "parcial",
+             "❌": "no", "no": "no", "impredecible": "no", "0": "no", "0.0": "no",
+             "sin dato": "sin dato", "sin_dato": "sin dato", "s/d": "sin dato"}
+_D3_EN_NOTA = re.compile(r"D3\s*(?:[:=]|es|en|→)?\s*\(?\s*(✅|🔶|❌|0[.,]5\b|1(?:[.,]0)?\b|0(?:[.,]0)?\b|sin dato)",
+                         re.IGNORECASE)
+
+
+def d3_valor(v) -> str | None:
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        v = {1: "1", 0.5: "0.5", 0: "0"}.get(float(v), "")
+    return _D3_ALIAS.get(_txt(v).lower().replace("\ufe0f", ""))
+
+
+def d3_de(equipo: dict) -> tuple[str | None, str]:
+    """(valor, fuente): declarado en `d3` o leído de la nota del bloque D."""
+    if (equipo or {}).get("d3"):
+        return equipo["d3"], "declarado"
+    nota = (((equipo or {}).get("bloques") or {}).get("D") or {}).get("nota") or ""
+    m = _D3_EN_NOTA.search(nota.replace("\ufe0f", ""))
+    return (d3_valor(m.group(1)), "nota del bloque D") if m else (None, "")
+
+
+def alertas_colapso(parte: dict, nombres: dict) -> list[dict]:
+    if any("CASCADA" in _txt(a.get("codigo")).upper() for a in parte.get("alertas") or []):
+        return []           # ya la escribió el parte: no se duplica
+    eq = parte.get("equipos") or {}
+    d3 = {l: d3_de(eq.get(l) or {}) for l in LADOS}
+    out = []
+    for lado, rival in (("a", "b"), ("b", "a")):
+        if d3[lado][0] == "no" and d3[rival][0] in ("si", "parcial"):
+            sim = {"si": "✅", "parcial": "🔶"}[d3[rival][0]]
+            out.append({
+                "codigo": "COLAPSO-EN-CASCADA", "equipo": lado, "tipo": "dato",
+                "detalle": (f"{nombres.get(lado, lado)} tiene D3 ❌ ({d3[lado][1]}) y {nombres.get(rival, rival)} "
+                            f"D3 {sim} ({d3[rival][1]}): si el rival abre el marcador, tiene que abrir líneas y "
+                            "el riesgo es perder una ventaja o no poder recuperarla, no romperse. Describe el "
+                            "escenario; NO predice goleada ni orienta hándicap o más/menos goles (EFE v1.6)."),
+            })
+    return out
+
+
 def alertas_dt(parte: dict, fx, nombres: dict) -> list[dict]:
     """DT-DISCREPANCIA cuando el parte (la prensa) y la base no dicen el mismo
     DT: manda el parte, y la base queda marcada para refrescarse. DT-SIN-DT
@@ -1715,7 +1781,7 @@ _CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto", "ligas", "dtBa
 # si el eco del GET vuelve con ellas, se descartan sin rechazo (se van a
 # recalcular igual) en vez de guardarse por duplicado.
 _ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "K-EXTREMO-CONDICION", "FAMILIA-RECORD", "ESPINA-VS-RIESGO", "HERENCIA-DTP", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT",
-                        "F1-DECISIVO-FUERA", "DTP-REHACER", "DTP-SIN-REFERENCIA"}
+                        "COLAPSO-EN-CASCADA", "F1-DECISIVO-FUERA", "DTP-REHACER", "DTP-SIN-REFERENCIA"}
 # LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
 # selladas (coherencia_json), porque no son deterministas y rehacerlas al leer
 # las haría parpadear. Del depósito se descartan igual que las calculadas
@@ -2878,6 +2944,7 @@ def dto(fixture_id: int) -> dict | None:
     # parte lo dice antes de que alguien lea los dos números uno contra otro
     alertas.extend(alerta_escala(fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     alertas.extend(alertas_dt(parte, fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
+    alertas.extend(alertas_colapso(parte, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # un decisivo de la base que no está en la tabla F1 no pesa en el IP
     alertas.extend(_f1_base.alertas(parte, fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # el once oficial contra la apertura del DTP: si no cuadra, el M2 se
@@ -4044,6 +4111,7 @@ def contrato() -> dict:
             "ip, reducción por zona, ramas A/B, la alerta F3 y la F4 DEL EFE — salen de bloque_f.py "
             "(los indicadores F3 y F4 del TDE son OTROS y SÍ van en tde.bloques[].indicadores)",
             "los nombres del partido — salen de nuestra base",
+            "COLAPSO EN CASCADA — la calcula la app desde `equipos.{lado}.d3` (✅ · 🔶 · ❌ · «sin dato»)",
             "ie / ise si mandás `indicadores` — se calculan y se delata la discrepancia",
         ],
         "laAgenda": {
@@ -4578,3 +4646,46 @@ def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: in
             "Selección estándar por el padrón de prioridades: casos `ciega`."
         ),
     }
+
+
+# ── la comprobación barata de la rutina de rehacer ───────────────────────────
+# Pedido del usuario (22/10/2026): la rutina de rehacer dispara cada 30 minutos
+# y casi siempre no hay nada; cada disparo vacío costaba ~0,25 USD porque el
+# agente leía la agenda y después cada parte. Esto contesta en UNA llamada qué
+# partes tienen DTP-REHACER y arrancan dentro de la ventana; vacío = terminar.
+REHACER_DESDE_MIN, REHACER_HASTA_MIN = 30, 80
+
+
+def rehacer_pendientes(desde_min: int = REHACER_DESDE_MIN, hasta_min: int = REHACER_HASTA_MIN,
+                       ahora: datetime | None = None) -> dict:
+    from backend.app import iso
+    ahora = ahora or datetime.now(timezone.utc)
+    lo, hi = ahora + timedelta(minutes=desde_min), ahora + timedelta(minutes=hasta_min)
+    dias = sorted({lo.strftime("%Y-%m-%d"), hi.strftime("%Y-%m-%d"),
+                   (lo - timedelta(days=1)).strftime("%Y-%m-%d")})
+    with _conectar() as con:
+        filas = [dict(r) for r in con.execute(
+            f"SELECT fixture_id, equipo_a, equipo_b FROM parte_cowork WHERE veredicto_json IS NULL "
+            f"AND fecha IN ({','.join('?' * len(dias))})", dias)]
+    en_ventana, pendientes = [], []
+    for f in filas:
+        fx = saddb.query_one("sad", "SELECT date, status_short FROM fixtures WHERE id=?", (f["fixture_id"],))
+        if not fx or (fx["status_short"] or "NS") not in ("NS", "TBD"):
+            continue
+        try:
+            pitazo = datetime.fromisoformat(iso(fx["date"]).replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if not (lo <= pitazo <= hi):
+            continue
+        item = {"fixtureId": f["fixture_id"], "partido": f"{f['equipo_a']} vs {f['equipo_b']}",
+                "pitazo": pitazo.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "minutosAlPitazo": int((pitazo - ahora).total_seconds() // 60)}
+        en_ventana.append(item)
+        d = dto(f["fixture_id"]) or {}
+        rehacer = [a for a in d.get("alertas") or [] if a.get("codigo") == "DTP-REHACER"]
+        if rehacer:
+            pendientes.append({**item, "alertas": rehacer})
+    return {"ahora": ahora.strftime("%Y-%m-%dT%H:%M:%SZ"), "ventanaMin": [desde_min, hasta_min],
+            "partesEnVentana": len(en_ventana), "enVentana": en_ventana, "pendientes": pendientes,
+            "nota": "pendientes vacío = no hay nada que rehacer: la corrida termina en una línea y sin aviso"}

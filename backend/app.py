@@ -1571,6 +1571,10 @@ def equipo_burbujas(equipo_id: int, antesDe: int | None = None, proximo: int | N
         # comparan cosas distintas. Elversberg ascendido salió MUY ALTO tres
         # semanas seguidas con confianza «media» y fue 1 de 3 (14/10/2026).
         escala.bajar_confianza(r.get("familias") or {}, r["escala"])
+        # y la MARCA donde se lee: rival, tarjeta de la espina y perfil DC
+        # (decisión del usuario, 22/10/2026: se marca, no se mueve ningún número)
+        escala.marcar(r.get("familias") or {}, r["escala"])
+        escala.marcar_perfil(r.get("otrasFamilias"), r["escala"])
     if antesDe is not None:
         r["estabilidad"]["motivos"] = [
             "vista al día del partido: la plantilla de hoy no es la de entonces y no se usa; "
@@ -2472,6 +2476,15 @@ def cowork_revisor(horas: int = Query(default=24, ge=1, le=336),
     `horas` hacia atrás. Es lectura del pipeline: el token de Cowork lo ve."""
     from backend.analisis import parte as cowork
     return cowork.revisor(horas, dia)
+
+
+@app.get(API + "/analisis/cowork/rehacer")
+def cowork_rehacer(desdeMin: int = Query(default=30, ge=0, le=240), hastaMin: int = Query(default=80, ge=1, le=240)):
+    """La comprobación barata de la rutina de rehacer (22/10/2026): los partes
+    con DTP-REHACER que arrancan entre `desdeMin` y `hastaMin` minutos. Vacío =
+    no hay nada que rehacer, sin leer la agenda ni cada parte."""
+    from backend.analisis import parte as cowork
+    return cowork.rehacer_pendientes(desdeMin, hastaMin)
 
 
 @app.get(API + "/analisis/cowork/latido")

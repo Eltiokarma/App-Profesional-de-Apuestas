@@ -305,6 +305,9 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
                   <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>
                     {data.proximo?.rival} · nivel {num(fam.rival.nivelProximo, 2)} vs mediana {num(fam.rival.medianaReventon, 2)} ({fam.rival.distancia > 0 ? '+' : ''}{num(fam.rival.distancia, 2)})
                   </div>
+                  {fam.rival.escalaComparable === false && (
+                    <div style={{ marginTop: 3 }}><Chip texto="OTRA ESCALA" color="var(--mark)" title={fam.rival.notaEscala} /></div>
+                  )}
                 </>
               ) : (
                 <div style={{ font: '600 11px var(--sans)', color: 'var(--t3)' }}>
@@ -351,6 +354,7 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
                   {{ positiva: 'gana', cero: 'empata', negativa: 'pierde' }[fam.espinaTarjeta.lectura]} ({Math.round(fam.espinaTarjeta.prob * 100)}%)
                 </span>
                 <Chip texto={fam.espinaTarjeta.fuerza === 'fuerte' ? 'fuerte' : 'débil: deciden los skills'} color={fam.espinaTarjeta.fuerza === 'fuerte' ? 'var(--t1)' : 'var(--t3)'} />
+                {fam.espinaTarjeta.escala && <Chip texto="otra escala: no seguirla por fuerte" color="var(--mark)" title={fam.espinaTarjeta.notaEscala} />}
               </div>
             )}
           </div>
@@ -412,7 +416,10 @@ function OtrasFamilias({ of, compact }: { of: OtrasFamiliasDTO; compact?: boolea
     <div style={{ padding: '8px 10px', borderRadius: 9, background: 'var(--bg)', border: '1px solid var(--line)' }}>
       <div style={{ ...rotulo, marginBottom: 5 }}>OTRAS BURBUJAS · DOBLE OPORTUNIDAD, MÁRGENES Y GOLES</div>
       {of.perfilDc && (
-        <div style={{ font: '600 11px var(--sans)', color: 'var(--t1)', lineHeight: 1.45, marginBottom: 6, paddingLeft: 8, borderLeft: '2px solid var(--accent)' }}>{of.perfilDc.texto}</div>
+        <div style={{ font: '600 11px var(--sans)', color: 'var(--t1)', lineHeight: 1.45, marginBottom: 6, paddingLeft: 8, borderLeft: '2px solid var(--accent)' }}>
+          {of.perfilDc.texto}
+          {of.perfilDc.notaEscala && <div style={{ font: '500 10px var(--sans)', color: 'var(--mark)', marginTop: 2 }}>{of.perfilDc.notaEscala}</div>}
+        </div>
       )}
       <ul style={{ margin: 0, paddingLeft: 16, font: '500 10.5px var(--sans)', color: 'var(--t2)', lineHeight: 1.45 }}>
         {visibles.map((f) => (
