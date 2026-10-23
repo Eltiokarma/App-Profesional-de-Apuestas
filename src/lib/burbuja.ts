@@ -515,6 +515,11 @@ export function estabilidadDe(plantilla: PlantillaBurbuja | null | undefined, ho
     } else if (dias < DT_ASENTADO_DIAS) {
       subir('inestable')
       motivos.push(`DT ${ent.nombre} lleva ${dias} días: la historia de K es de otro cuerpo técnico`)
+    } else if (ent.fuente === 'coachs') {
+      // asentado igual, pero los días de /coachs no son dato (incidencia 385)
+      sinDato.push('fecha de asunción del DT confirmada')
+      motivos.push(`DT ${ent.nombre} asentado (unos ${dias} días según la carrera de la API, ` +
+        'aproximado: confirmar en prensa)')
     } else {
       motivos.push(`DT ${ent.nombre} asentado (${dias} días)`)
     }
