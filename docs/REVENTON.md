@@ -411,6 +411,34 @@ tests sobre el mismo vector (los 3 últimos partidos como amistosos → inflada;
 los 2 últimos → no). La tarjeta pinta el chip «INFLADA · n/N amistosos» y
 las alertas K-EXTREMO / K-CERCA-EXTREMO del parte lo dicen.
 
+### 10.3 Récord de racha: superar y con 3 o más (23/10/2026, incidencia 67)
+
+Decisión del usuario sobre el «hallazgo aparte» de §10.1 (el EXTREMO salía en
+el 18,5 % de las burbujas). En la agenda del 23/10, 3 de las 15 alertas rojas
+eran rachas de **2** que solo **igualaban** un máximo de 2 (Cusco y Medellín
+de local, Juan Pablo II), y Leones del Norte gritaba «la racha más larga en 55
+partidos» con 2 derrotas de local sobre un máximo de 1, una historia hecha
+casi toda en la Serie B (subió en 2026: en primera llevaba 16 de local). El
+Leipzig con 11 de local sobre 9 es el récord que la alerta quiere decir.
+
+- `rachaRecord` = la racha **supera** el máximo previo **y** tiene
+  `RACHA_RECORD_MIN` = **3** partidos o más. Igualar el máximo ya no es rojo:
+  con 3+ puede quedar en ámbar (`cerca`, si pasa el 90 % de sus reventones).
+  Una racha de 1-2 no es récord ni «cerca» por largo. La K récord no cambia.
+- La INFLADA por «solo es récord contando los amistosos» sigue la misma
+  regla: sin ellos, igualar el máximo o quedar debajo de 3 ya no sería récord.
+- **INFLADA en cualquier racha abierta** (incidencia 311): Stuttgart perdió
+  0-1 en casa con el Dortmund y dos amistosos de septiembre (3-0 Heidenheim,
+  5-0 Fürth) le dieron «+18 de local, 2 seguidas»; el 1-1 con el Atlético la
+  reventó. `extremo.inflada` sale con la mitad o más de amistosos aunque no
+  haya récord ni cerca (sin sumar motivos a la alerta), y la tarjeta pinta el
+  chip junto a la burbuja abierta.
+- **La historia de otra categoría** (pedido del usuario: el ascendido juega
+  distinto, y en las copas contra los de arriba también «despierta»): lo dice
+  `escala` (cambio de categoría, `rival de categoría inferior/superior`) y el
+  analista lo considera; el cálculo no se corta por categoría.
+- Espejo en `src/lib/burbuja.ts`, mismos casos en los dos tests.
+
 ## 10-bis. La misma referencia, por período
 
 El Universitario de hoy no es el de Fossati ni el de la gestión de Ferrari, y

@@ -370,7 +370,8 @@ export interface PlantillaDTO {
   /** HHI de shares de G+A: ~1/n coral · →1 él-dependiente. */
   dependencia: { hhi: number | null; top: { jugadorId: number; nombre: string; participacion: number }[] }
   /** Traspasos de la ventana reciente (estabilidad de plantel). */
-  revolucion: { llegadas: number; salidas: number; ventanaDias: number }
+  /** Llegadas y salidas CON MINUTOS en el primer equipo (23/10/2026, incidencia 43); `enPapeles`, todos los traspasos. */
+  revolucion: { llegadas: number; salidas: number; ventanaDias: number; criterio?: string; enPapeles?: { llegadas: number; salidas: number } }
   /** Σ goles de la plantilla (denominador de participación). */
   golesPlantilla: number
   /** El flag «Missing Fixture» leído por densidad (docs/JUGADORES.md): null si no

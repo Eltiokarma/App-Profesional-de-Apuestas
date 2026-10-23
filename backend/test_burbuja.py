@@ -163,8 +163,27 @@ def main():
     _ex = b._extremo(20.0, 6, _base, 100, "+", [], 2)
     check("racha récord de 6 sobre un máximo de 5 con 2 amistosos: sin ellos no sería récord → INFLADA",
           _ex["rachaRecord"] and not _ex["kRecord"] and _ex["inflada"] and "no sería récord" in _ex["inflada"]["texto"], _ex)
-    check("con 1 amistoso (6 − 1 = 5, igual al máximo) sigue siendo récord sin él → no inflada",
-          b._extremo(20.0, 6, _base, 100, "+", [], 1)["inflada"] is None)
+    check("con 1 amistoso (6 − 1 = 5) sin él solo IGUALARÍA el máximo de 5: ya no es récord → INFLADA (67)",
+          b._extremo(20.0, 6, _base, 100, "+", [], 1)["inflada"] is not None)
+    check("con 0 amistosos y 7 sobre 5 → récord limpio, sin marca",
+          b._extremo(20.0, 7, _base, 100, "+", [], 0)["inflada"] is None)
+    # RÉCORD DE RACHA: superar y con 3+ (incidencia 67, 23/10/2026)
+    _b1 = {"kPico": {"max": 30.0}, "partidos": {"max": 1}}
+    _b2 = {"kPico": {"max": 30.0}, "partidos": {"max": 2}}
+    check("67: 2 seguidos sobre un máximo de 1 (Leones del Norte) → NO es récord: menos de 3",
+          not b._extremo(5.0, 2, _b1, 55, "-", [], 0)["activo"])
+    check("67: 2 que IGUALAN un máximo de 2 (Cusco, Medellín) → no es récord ni «cerca»",
+          not b._extremo(5.0, 2, _b2, 113, "-", [{"kPico": 10.0, "partidos": 1}] * 10, 0)["activo"]
+          and not b._extremo(5.0, 2, _b2, 113, "-", [{"kPico": 10.0, "partidos": 1}] * 10, 0)["cerca"])
+    check("67: 3 sobre un máximo de 2 → récord", b._extremo(5.0, 3, _b2, 113, "-", [], 0)["rachaRecord"])
+    _ig = b._extremo(5.0, 5, _base, 172, "+", [{"kPico": 10.0, "partidos": 1}] * 10, 0)
+    check("67: 5 que IGUALAN un máximo de 5 (Aston Villa) → no es rojo; queda en ámbar (cerca)",
+          not _ig["activo"] and _ig["cerca"], _ig)
+    # INFLADA EN CUALQUIER RACHA ABIERTA (incidencia 311, 23/10/2026)
+    _st = b._extremo(5.0, 2, {"kPico": {"max": 30.0}, "partidos": {"max": 4}}, 40, "+", [], 2)
+    check("311: 2 de 2 amistosos sin récord ni cerca (Stuttgart) → INFLADA igual, sin motivos de alerta",
+          not _st["activo"] and not _st["cerca"] and _st["inflada"] and _st["motivos"] == []
+          and "último partido oficial" in _st["inflada"]["texto"], _st)
 
     # CERCA DEL EXTREMO (§10): el caso ADT, sintético y el mismo que en el TS.
     # Diez reventones negativos, récord K 19.54 y racha 4; la abierta en −17.93
@@ -215,6 +234,14 @@ def main():
     trans = analizar(filas, ctx, plantilla={**ctx["plantilla"], "entrenador": {"nombre": "Viejo", "desde": "2024-01-01"},
                                             "revolucion": {"llegadas": 2, "salidas": 1, "ventanaDias": 120}})
     check("3 movimientos → EN TRANSICIÓN", trans["estabilidad"]["grado"] == "en transición")
+    # incidencia 43: cuentan los que jugaron; los de papel se dicen al lado
+    juve = analizar(filas, ctx, plantilla={**ctx["plantilla"], "entrenador": {"nombre": "Viejo", "desde": "2024-01-01"},
+                                           "revolucion": {"llegadas": 2, "salidas": 0, "ventanaDias": 120,
+                                                          "enPapeles": {"llegadas": 41, "salidas": 44}}})
+    check("43: 2 con minutos de 85 en papeles → ESTABLE y el motivo dice las dos cifras",
+          juve["estabilidad"]["grado"] == "estable"
+          and any("2 movimientos con minutos (de 85 en papeles)" in m for m in juve["estabilidad"]["motivos"]),
+          juve["estabilidad"]["motivos"])
     vieja = analizar(filas, ctx, plantilla={**ctx["plantilla"], "actualizadoEn": "2026-07-01T00:00:00Z"})
     check("plantilla de hace 77 días: se avisa que el DT y las bajas pueden estar viejos",
           any("77 días" in m for m in vieja["estabilidad"]["motivos"]), vieja["estabilidad"]["motivos"])

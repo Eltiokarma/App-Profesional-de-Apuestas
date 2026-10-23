@@ -66,6 +66,8 @@ CREATE TABLE IF NOT EXISTS alineaciones (
     PRIMARY KEY (fixture_id, team_id, player_id)
 );
 CREATE INDEX IF NOT EXISTS idx_alineaciones_fixture ON alineaciones(fixture_id);
+-- la revolución con minutos (backend/jugadores.revolucion_de) busca los onces por equipo
+CREATE INDEX IF NOT EXISTS idx_alineaciones_team ON alineaciones(team_id, titular);
 
 CREATE TABLE IF NOT EXISTS fixture_stats (
     fixture_id INTEGER NOT NULL,
