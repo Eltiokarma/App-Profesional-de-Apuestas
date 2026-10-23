@@ -3098,6 +3098,19 @@ def main():
                    {"a": {"formacion": "3-5-2", "titulares": []}})
     check("una apertura con dos sistemas («4-2-3-1 / 4-3-3») no pide rehacer si salió con cualquiera; "
           "con otro, sí", _alt["rehacer"] is False and _no["rehacer"] is True, (_alt, _no))
+    # incidencia 390 (América): el oficial «K. Álvarez» no es el «Carlos Álvarez»
+    # de la referencia; «B. Gallego» sí es «Baltasar Gallego Rodríguez»
+    _ini = _rehacer({"equipo": "b", "apertura": {"m1": {"sistema": "4-3-3",
+                     "senalXi": "sin Veiga, Álvarez de enganche",
+                     "rolesReasignados": ["Carlos Álvarez, de banda, como enganche"], "xiReferencia":
+                     "Malagón; Fuentes, Lichnovsky, Cáceres, Baltasar Gallego Rodríguez; Fidalgo, Carlos Álvarez, "
+                     "Dos Santos; Zendejas, Borja, Valdés"}}},
+                    {"b": {"formacion": "4-3-3", "titulares": [
+                        "L. Malagón", "K. Álvarez", "I. Lichnovsky", "S. Cáceres", "B. Gallego", "Á. Fidalgo",
+                        "Carlos Álvarez", "A. Zendejas", "M. Borja", "D. Valdés", "F. Rossano"]}})
+    check("contraElOnce: misma inicial casa, otra inicial pegada al apellido no, y con dos Álvarez en el once un "
+          "«Álvarez» suelto no dice cuál (K. vs Carlos Álvarez, incidencia 390)",
+          sorted(_ini["ausentesDeLaReferencia"]) == ["F. Rossano", "K. Álvarez"], _ini)
     # Huracán–Gimnasia y Estudiantes–Flamengo (16/10/2026): dos avisos falsos
     _fam = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-2-2-2"}}},
                     {"a": {"formacion": "4-4-2", "titulares": []}})
