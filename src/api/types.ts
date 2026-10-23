@@ -1201,6 +1201,8 @@ export interface JugadorParte {
   apps?: string
   /** id del jugador en la plantilla de la base: el once de la ficha casa por id, no por nombre. */
   jugadorId?: number
+  /** el otro id de la API para la misma persona (tabla F1, incidencia 381). */
+  idsAlternos?: number[]
   estado?: EstadoJugadorF
   motivo?: string
   /** true = entró a la tabla F1 desde `fuera`, para que su baja pese en el IP. */
@@ -1571,7 +1573,7 @@ export interface VeredictoObjetivo {
         loDeclarado?: RamaReasignacion | null
         nota: string
         /** TDE v0.1.21 (44a): le empataron al que marcó primero. */
-        segundoGiro?: { rama: 'siLeEmpatan'; minuto: number; declarada: boolean; loDeclarado?: RamaReasignacion | null; nota: string }
+        segundoGiro?: { rama: 'siLeEmpatan'; minuto: number; declarada: boolean | null; loDeclarado?: RamaReasignacion | null; nota: string; noEvaluable?: string }
         /** TDE v0.1.21 (disciplina 61): cómo terminó la rama del que persigue. */
         salida?: 'concedio' | 'marco' | 'sinMasGoles'
         notaSalida?: string
@@ -2265,7 +2267,7 @@ export interface DerrotaFavorito {
     ramaJugada: string | null
     minuto?: number | null
     loDeclarado?: RamaReasignacion | null
-    segundoGiro?: { rama: 'siLeEmpatan'; minuto: number; declarada: boolean; loDeclarado?: RamaReasignacion | null; nota: string } | null
+    segundoGiro?: { rama: 'siLeEmpatan'; minuto: number; declarada: boolean | null; loDeclarado?: RamaReasignacion | null; nota: string; noEvaluable?: string } | null
     salida?: 'concedio' | 'marco' | 'sinMasGoles' | null
     tipologia: string
     ventana: string

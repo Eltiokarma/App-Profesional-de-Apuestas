@@ -317,9 +317,10 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     # otro no existía para ninguna métrica.
     from backend.analisis.parte import bloques_tde
     rojas = _rojas(fixture_id, fx["home_team_id"])
+    sin_ramas = servidor_sin_ramas(_creado_en(fixture_id))
     bloques = []
     for tde in bloques_tde(parte.get("tde") or {}):
-        reasig = rama_jugada(tde, goles, gl + gv, out["evidencia"]["conFicha"], rojas)
+        reasig = rama_jugada(tde, goles, gl + gv, out["evidencia"]["conFicha"], rojas, sin_ramas)
         # LA VENTANA DE LA RAMA QUE SE JUGÓ, si la declaró (disciplina 44)
         texto_v, de_rama, vencida = ventana_a_cobrar(tde, reasig)
         minuto_r, rama_r = (reasig or {}).get("minuto"), (reasig or {}).get("rama")
@@ -571,8 +572,33 @@ def marcador_declarado(texto) -> str:
     return f"{m.group(1)}-{m.group(2)}" if m else t.replace(" ", "")
 
 
+# EL SERVIDOR NO ACEPTABA LA LÍNEA DEL EMPATE (incidencia 393, decisión del
+# usuario 23/10/2026). Railway estuvo caído del 21/10 09:28 UTC hasta el
+# despliegue del #185 (22/10 ~14:00 UTC) y producción siguió en el #171: el
+# POST rechazaba `reasignacion.siLeEmpatan`/`siExpulsion` aunque main ya las
+# aceptaba (69483b3). Un parte creado en esa ventana que no la trae no se
+# saltó la disciplina 44a —el servidor no lo dejaba—: sale «no evaluable», no
+# «sin declarar». Si la trae, se evalúa como siempre.
+SIN_RAMAS_SERVIDOR = ("2026-10-21 09:28:00", "2026-10-22 14:00:00")
+
+
+def servidor_sin_ramas(creado_en: str | None) -> bool:
+    t = str(creado_en or "").replace("T", " ")[:19]
+    return bool(t) and SIN_RAMAS_SERVIDOR[0] <= t < SIN_RAMAS_SERVIDOR[1]
+
+
+def _creado_en(fixture_id: int) -> str | None:
+    try:
+        from backend.analisis.parte import _conectar
+        with _conectar() as con:
+            f = con.execute("SELECT creado_en FROM parte_cowork WHERE fixture_id=?", (fixture_id,)).fetchone()
+        return f["creado_en"] if f else None
+    except Exception:  # noqa: BLE001 — sin la fila se evalúa como siempre
+        return None
+
+
 def rama_jugada(tde: dict, goles: list[dict], total_goles: int, con_ficha: bool,
-                rojas: list[dict] | None = None) -> dict:
+                rojas: list[dict] | None = None, sin_ramas: bool = False) -> dict:
     """Qué rama de la reasignación (disciplina 44) jugó el partido para el
     equipo del bloque, y si estaba declarada. Es observación: no hay acierto
     —la rama no es un pronóstico—, pero un lado sin la rama que se dio es la
@@ -605,11 +631,18 @@ def rama_jugada(tde: dict, goles: list[dict], total_goles: int, con_ficha: bool,
                 contra += 1
             if contra and contra == a_favor:
                 le = declarada.get("siLeEmpatan")
-                out["segundoGiro"] = {"rama": "siLeEmpatan", "minuto": g["minuto"], "declarada": le is not None,
+                exento = le is None and sin_ramas
+                out["segundoGiro"] = {"rama": "siLeEmpatan", "minuto": g["minuto"],
+                                      "declarada": None if exento else le is not None,
                                       "loDeclarado": le,
                                       "nota": "la ventaja se perdió: la rama de ventaja caducó en este minuto"
-                                              + ("" if le is not None else " y la línea del empate no estaba "
-                                                 "declarada (disciplina 44a)")}
+                                              + ("" if le is not None else
+                                                 " y la línea del empate no se evalúa: el servidor desplegado "
+                                                 "la rechazaba cuando se depositó el parte (caída de Railway "
+                                                 "del 21-22/10); no se cobra la disciplina 44a" if exento else
+                                                 " y la línea del empate no estaba declarada (disciplina 44a)")}
+                if exento:
+                    out["segundoGiro"]["noEvaluable"] = "servidor sin la rama (21-22/10)"
                 break
     # LA RAMA DEL QUE PERSIGUE SE CIERRA POR EL RÉGIMEN, NO POR EL DESENLACE
     # (TDE v0.1.21, disciplina 61): qué pasó después del gol en contra.

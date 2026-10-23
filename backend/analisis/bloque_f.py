@@ -244,6 +244,10 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
     no_reconocidos: list[str] = []
 
     por_id = {j["jugadorId"]: i for i, j in enumerate(plantel) if j.get("jugadorId") is not None}
+    # el otro id de la misma persona (la tabla F1 funde los dos, incidencia 381)
+    for i, j in enumerate(plantel):
+        for alt in j.get("idsAlternos") or []:
+            por_id.setdefault(alt, i)
     # EL MISMO JUGADOR DOS VECES EN LA TABLA. Cúcuta (20/10/2026, 335): la base lo
     # llama «D. Gelvez» (con id) y la hoja y la prensa «Dayan Pérez»; el parte lo
     # puso dos veces, la fila con id casó por id y la de prensa, sin id, salió

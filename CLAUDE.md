@@ -895,6 +895,15 @@ conversación se pierde en la siguiente.
      60 equipos de la agenda salían «inestables», la Juventus por 85 traspasos
      de los que 7 jugaron). Lo de otra categoría (el ascendido juega distinto)
      lo considera el analista con `escala`; el cálculo no se corta.
+   - **Mantenimiento del 23/10, revisado** (#196-198 bien hechos): la 44a NO se
+     cobra a los partes creados en la caída de Railway (21/10 09:28 → 22/10
+     14:00 UTC, `veredicto.SIN_RAMAS_SERVIDOR`: el servidor rechazaba
+     `siLeEmpatan`; sale «no evaluable», 393); y dos «dato de la API» pasan a
+     código (usuario): el mismo jugador con dos ids y minutos en los dos se
+     funde en la tabla F1 si el nombre completo coincide y nunca estuvieron en
+     la misma hoja (381, `idsAlternos`, el bloque F casa con cualquiera), y el
+     titular habitual solo por minutos es decisivo hoy si fue titular en la
+     mitad de los últimos onces (387, `f1_base.decisivo_hoy`).
    - **Escala entre ligas** (300, 309, 294, 79): decidido «solo marcar» (22/10):
      rival (`escalaComparable`), tarjeta de la espina, perfil DC y P1a llevan la
      marca y su nota; ningún número calibrado se mueve.

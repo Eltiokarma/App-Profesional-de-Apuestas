@@ -2274,6 +2274,22 @@ def main():
     check("el que marcó primero y recibió el empate: segundoGiro siLeEmpatan, con su línea declarada (AEK, 44a)",
           _r1["rama"] == "siMarcaPrimero" and _r1["segundoGiro"]["minuto"] == 34
           and _r1["segundoGiro"]["declarada"] is True, _r1)
+    # incidencia 393: creado durante la caída de Railway (el servidor rechazaba
+    # siLeEmpatan) y sin la línea → no evaluable, no se cobra la 44a
+    from backend.analisis.veredicto import servidor_sin_ramas as _ssr
+    _tsin = {"equipo": "a", "reasignacion": {"siMarcaPrimero": {"sob1": 0}}}
+    _r393 = _rj(_tsin, _g((28, "a"), (34, "b")), 2, True, None, True)
+    check("393: sin la línea del empate en la ventana de la caída → declarada None, no evaluable, sin cobrar la 44a",
+          _r393["segundoGiro"]["declarada"] is None and _r393["segundoGiro"]["noEvaluable"]
+          and "no se cobra la disciplina 44a" in _r393["segundoGiro"]["nota"], _r393)
+    _r393b = _rj(_tsin, _g((28, "a"), (34, "b")), 2, True, None, False)
+    check("393: fuera de la ventana, sin la línea → se cobra como siempre (declarada False)",
+          _r393b["segundoGiro"]["declarada"] is False and "noEvaluable" not in _r393b["segundoGiro"], _r393b)
+    _r393c = _rj(_tdea, _g((28, "a"), (34, "b")), 2, True, None, True)
+    check("393: en la ventana pero CON la línea → se evalúa (declarada True)", _r393c["segundoGiro"]["declarada"] is True)
+    check("393: la ventana es la de la caída (1551009, creado 21/10 20:06 UTC, entra; 22/10 15:00 no)",
+          _ssr("2026-10-21 20:06:24") and not _ssr("2026-10-22 15:00:00") and not _ssr("2026-10-21 09:00:00")
+          and not _ssr(None))
     _r2 = _rj({"equipo": "b", "reasignacion": {}}, _g((57, "a"), (62, "b"), (64, "b")), 3, True)
     check("el que recibió primero y marcó él: salida «marco», no cuenta contra la rama (Emelec, disciplina 61)",
           _r2["rama"] == "siRecibePrimero" and _r2["salida"] == "marco", _r2)
@@ -3338,6 +3354,27 @@ def main():
           "y no dispara F1-DECISIVO-FUERA",
           (_vic_d not in _t45 or (not _t45[_vic_d]["decisivo"] and "0 de 10" in _t45[_vic_d].get("decisivoTemporada", "")))
           and not any(f["jugadorId"] == _vic_d for f in _fal45), (_t45.get(_vic_d), _fal45))
+    # 387 (23/10/2026): el titular habitual de la temporada que hoy rota (Meza, 3 de 10) no es decisivo hoy
+    check("387: decisivo solo por minutos con 3 de 10 → no es decisivo hoy; con 5 de 10 sí",
+          not _f1m.decisivo_hoy({"porTitular": True}, 3, 10) and _f1m.decisivo_hoy({"porTitular": True}, 5, 10))
+    check("387: el goleador sigue con la regla de antes (titular en alguno basta)",
+          _f1m.decisivo_hoy({"porTitular": True, "porGoles": True}, 1, 10)
+          and not _f1m.decisivo_hoy({"porGoles": True}, 0, 10))
+    _sol = next((d for d in _dec_all if d.get("porTitular") and not d.get("porGoles")), None)
+    if _sol:
+        _f1m.onces_recientes = lambda t, a: {"onces": 10, "ultimo": 1, "jugadores": {
+            **{p: {"nombre": "x", "posicion": "M", "titular": 10, "convocado": 10, "enUltimo": True} for p in _otros},
+            _sol["id"]: {"nombre": "x", "posicion": "M", "titular": 3, "convocado": 10, "enUltimo": False}}}
+        try:
+            _t387 = {x["jugadorId"]: x for x in _tabla_eq(_hid, "local", "2100-01-01")["candidatos"]}
+            _fal387 = _f1m.faltantes(_hid, [{"nombre": "Nadie", "jugadorId": 1}], "2100-01-01")
+        finally:
+            _f1m.onces_recientes = _orig_rec
+        check("387: con 3 de 10 no dispara F1-DECISIVO-FUERA y viaja en decisivoTemporada con su conteo",
+              not any(f["jugadorId"] == _sol["id"] for f in _fal387)
+              and (_sol["id"] not in _t387 or "3 de 10" in _t387[_sol["id"]].get("decisivoTemporada", "")),
+              (_t387.get(_sol["id"]), _fal387))
+    check("387: la demo tiene un decisivo solo por minutos para probarlo", _sol is not None, _dec_all)
     # GRUPO 4 DE INCIDENCIAS (22/10/2026): fuera del corte con stats (360) y la zona del último once (171, 323, 66, 359)
     _pl4 = _jugm.plantilla_de(_hid)["jugadores"]
     _fuera = next(j for j in reversed(_pl4) if j["posicion"] != "Defensa")
@@ -3374,6 +3411,26 @@ def main():
           "dos con minutos y el mismo nombre quedan (pueden ser dos personas), y otra inicial no es la misma",
           {j["id"] for j in _q} == {362224, 476417, 1, 2, 3} and _t.get(362224) == 5 and 566349 not in _t
           and _mj("Y. Guzmán", "Y. Guzman") and not _mj("S. Quinonez", "M. Quiñonez"), (_q, _t))
+    # 381 (23/10/2026): dos con minutos y el MISMO nombre completo son uno; los minutos se suman
+    _w, _tw = _dedup([{"id": 515671, "nombre": "Wesley Natã", "minutos": 71, "partidos": 3, "titularidades": 1,
+                       "goles": 0, "asistencias": 0, "pctMinutos": 0.05},
+                      {"id": 568706, "nombre": "Wesley Nata", "minutos": 39, "partidos": 3, "titularidades": 0,
+                       "goles": 0, "asistencias": 1, "pctMinutos": 0.03}], {568706: 1})
+    check("381: Wesley Natã / Wesley Nata con minutos en los dos → una fila, minutos y partidos sumados, el otro id alterno",
+          len(_w) == 1 and _w[0]["minutos"] == 110 and _w[0]["partidos"] == 6 and _w[0]["asistencias"] == 1
+          and _w[0]["idsAlternos"] == [568706] and _tw.get(515671) == 1, (_w, _tw))
+    _wj, _ = _dedup([{"id": 1, "nombre": "Wesley Natã", "minutos": 71, "partidos": 3},
+                     {"id": 2, "nombre": "Wesley Nata", "minutos": 39, "partidos": 3}], {}, lambda a, b: True)
+    check("381: si estuvieron en la misma hoja de partido son dos personas: no se funden", len(_wj) == 2, _wj)
+    from backend.analisis import bloque_f as _bf381
+    _res381 = _bf381.resolver([{"nombre": "Wesley Natã", "jugadorId": 515671, "idsAlternos": [568706],
+                                "zona": "MID", "rol": "TF"}], [], ["W. Nobre"], [], {"W. Nobre": 568706})
+    _f381 = next((x for x in _res381.get("jugadores", []) if x.get("jugadorId") == 515671), {})
+    check("381: la hoja trae el otro id (568706) y casa por idsAlternos aunque el nombre no se parezca",
+          _f381.get("estado") == "disponible", _res381)
+    _tp, _ = _dedup([{"id": 1, "nombre": "T. Palacios", "minutos": 500, "partidos": 6},
+                     {"id": 2, "nombre": "T. Palacios", "minutos": 200, "partidos": 3}], {})
+    check("381: con la inicial sola («T. Palacios») no alcanza: quedan dos (386)", len(_tp) == 2, _tp)
     from backend.analisis.f1_base import _en_tabla as _f1_en_tabla
     check("el mismo jugador con dos ids y el apellido mal escrito («Juan Bizans» / «Juan Bisanz») está en la tabla",
           _f1_en_tabla({"id": 406291, "nombre": "Juan Bizans"}, [{"nombre": "Juan Bisanz", "jugadorId": 304371}]))

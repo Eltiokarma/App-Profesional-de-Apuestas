@@ -100,16 +100,34 @@ def decisivos(plantilla: dict) -> list[dict]:
     fuera: dict[int, dict] = {}
     for j in js:
         if j["minutos"] >= DECISIVO_MIN_MINUTOS and j["pctMinutos"] >= DECISIVO_PCT:
-            fuera[j["id"]] = {**j, "porQue": f"titular habitual ({round(j['pctMinutos'] * 100)} % de los minutos)"}
+            fuera[j["id"]] = {**j, "porQue": f"titular habitual ({round(j['pctMinutos'] * 100)} % de los minutos)",
+                              "porTitular": True}
     ofensivos = sorted((j for j in js if j["goles"] + j["asistencias"] >= DECISIVO_GA),
                        key=lambda j: -(j["goles"] + j["asistencias"]))[:3]
     for j in ofensivos:
         motivo = f"{j['goles']} goles y {j['asistencias']} asistencias"
         if j["id"] in fuera:
             fuera[j["id"]]["porQue"] += f" · {motivo}"
+            fuera[j["id"]]["porGoles"] = True
         else:
-            fuera[j["id"]] = {**j, "porQue": motivo}
+            fuera[j["id"]] = {**j, "porQue": motivo, "porGoles": True}
     return list(fuera.values())
+
+
+# EL TITULAR HABITUAL DE LA TEMPORADA TIENE QUE SERLO HOY (incidencia 387,
+# decisión del usuario 23/10/2026). E. Meza (Estudiantes) salía decisivo por el
+# 81 % de los minutos de la temporada con 3 titularidades en los últimos 10
+# onces, y el parte gritaba F1-DECISIVO-FUERA por un jugador que hoy rota. Con
+# onces recientes, el decisivo SOLO por minutos pide ser titular en al menos la
+# mitad; el que lo es por goles y asistencias sigue con la regla de antes
+# (titular en alguno: un goleador que entra de cambio también decide).
+DECISIVO_HOY_PCT = 0.5
+
+
+def decisivo_hoy(d: dict, titular: int, onces: int) -> bool:
+    if d.get("porGoles"):
+        return titular > 0
+    return titular >= onces * DECISIVO_HOY_PCT
 
 
 def nombre_sano(nombre: str, en_hoja: str = "") -> str:
@@ -169,7 +187,28 @@ def _mismas_stats(a: dict, b: dict) -> bool:
     return bool(a.get("minutos")) and (a.get("partidos"), a.get("minutos")) == (b.get("partidos"), b.get("minutos"))
 
 
-def deduplicar(js: list[dict], tit: dict[int, int]) -> tuple[list[dict], dict[int, int]]:
+def _mismo_nombre_completo(uno: str, otro: str) -> bool:
+    """El MISMO nombre completo, con la pila entera (no una inicial): «Wesley
+    Natã» / «Wesley Nata». «T. Palacios» con «T. Palacios» no alcanza: con la
+    inicial sola pueden ser dos personas (incidencia 386)."""
+    a, b = _tok_jugador(uno), _tok_jugador(otro)
+    return len(a) >= 2 and a == b and len(a[0]) > 1
+
+
+def _sumar(q: dict, j: dict) -> dict:
+    """Las dos filas de la misma persona en una: minutos, partidos y goles se
+    suman (la API los partió entre los dos ids)."""
+    out = dict(q)
+    for k in ("minutos", "partidos", "titularidades", "goles", "asistencias"):
+        out[k] = (q.get(k) or 0) + (j.get(k) or 0)
+    out["pctMinutos"] = round(min(1.0, (q.get("pctMinutos") or 0) + (j.get("pctMinutos") or 0)), 3)
+    if j.get("minutosIncoherentes"):
+        out["minutosIncoherentes"] = True
+    out["idsAlternos"] = [*(q.get("idsAlternos") or []), j["id"]]
+    return out
+
+
+def deduplicar(js: list[dict], tit: dict[int, int], juntos=None) -> tuple[list[dict], dict[int, int]]:
     """UN JUGADOR CON DOS IDS ES UNO. La API da a veces dos ids para la misma
     persona: el de la temporada, con sus minutos, y una copia vacía creada por
     una hoja del partido (Leones del Norte con «E. Griffa» 566349 y «Emiliano
@@ -179,17 +218,44 @@ def deduplicar(js: list[dict], tit: dict[int, int]) -> tuple[list[dict], dict[in
     el IP con un fantasma. Solo se funde una copia SIN MINUTOS en la temporada
     con su gemela: dos jugadores con minutos y el mismo nombre pueden ser dos
     personas, y esos quedan. Las titularidades de los últimos onces se suman
-    en el id que queda."""
+    en el id que queda.
+
+    DOS CON MINUTOS Y EL MISMO NOMBRE COMPLETO SON UNO (incidencia 381,
+    decisión del usuario 23/10/2026): «Wesley Natã» 515671 (71') y «Wesley
+    Nata» 568706 (39') del Fluminense, el FACTOR-X del parte con los minutos
+    partidos en dos filas. Se funden si la pila es entera (no una inicial) y
+    nunca estuvieron en la misma hoja de partido (`juntos(a, b)`: dos ids en
+    el mismo once o banco son dos personas). Los minutos se suman y el otro id
+    queda en `idsAlternos`."""
     tit = dict(tit)
     quedan: list[dict] = []
     for j in sorted(js, key=lambda j: (_sin_minutos(j), -(j.get("minutos") or 0), -tit.get(j["id"], 0))):
-        gemela = next((q for q in quedan if (_sin_minutos(j) or _mismas_stats(j, q))
-                       and mismo_jugador(j["nombre"], q["nombre"])), None)
+        gemela, sumar = None, False
+        for i, q in enumerate(quedan):
+            if not mismo_jugador(j["nombre"], q["nombre"]):
+                continue
+            if _sin_minutos(j) or _mismas_stats(j, q):
+                gemela = q
+                break
+            if _mismo_nombre_completo(j["nombre"], q["nombre"]) and not (juntos and juntos(j["id"], q["id"])):
+                gemela, sumar = q, True
+                quedan[i] = _sumar(q, j)
+                break
         if gemela is None:
             quedan.append(j)
             continue
         tit[gemela["id"]] = tit.get(gemela["id"], 0) + tit.pop(j["id"], 0)
     return quedan, tit
+
+
+def _juntos(a: int, b: int) -> bool:
+    """¿Estuvieron los dos ids en la misma hoja de partido (once o banco)?"""
+    try:
+        return bool(saddb.query(
+            "sad", "SELECT 1 FROM alineaciones x JOIN alineaciones y ON x.fixture_id = y.fixture_id "
+                   "AND x.team_id = y.team_id WHERE x.player_id=? AND y.player_id=? LIMIT 1", (a, b)))
+    except Exception:  # noqa: BLE001 — sin fichas: el nombre completo decide
+        return False
 
 
 def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
@@ -199,14 +265,15 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     rec = onces_recientes(team_id, antes)
     con_onces = rec["onces"] >= ONCES_MINIMOS
     tit = {pid: j["titular"] for pid, j in rec["jugadores"].items()}
-    js, tit = deduplicar(js, tit)
+    js, tit = deduplicar(js, tit, _juntos)
     # DECISIVO DE LA TEMPORADA, NO DE HOY. Elvio Vera (Ameliano) y Martín Arias
     # (Cerro) salían «titular habitual 100 %» por el Apertura con 0 de 10 en los
     # últimos onces (incidencia 45): con onces recientes, quien no fue titular
     # en ninguno no es un decisivo que no pueda faltar. Viaja aparte, como dato.
     de_temporada = {}
     if con_onces:
-        for pid in [p for p in dec if tit.get(p, 0) == 0]:
+        por_dec = {d["id"]: d for d in decisivos(p)}
+        for pid in [p for p in dec if not decisivo_hoy(por_dec.get(p, {}), tit.get(p, 0), rec["onces"])]:
             de_temporada[pid] = dec.pop(pid)
     # con onces recientes, el orden y el rol salen de ahí; la temporada desempata
     if con_onces:
@@ -229,7 +296,8 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     for j in elegidos:
         f = {**_fila(j), "decisivo": dec.get(j["id"], "")}
         if j["id"] in de_temporada:
-            f["decisivoTemporada"] = f"{de_temporada[j['id']]} · 0 de {rec['onces']} en los últimos onces"
+            f["decisivoTemporada"] = (f"{de_temporada[j['id']]} · titular en {tit.get(j['id'], 0)} de "
+                                      f"{rec['onces']} de los últimos onces")
         if con_onces:
             f["titularEnUltimos"] = f"{tit.get(j['id'], 0)}/{rec['onces']}"
             f["rolSugerido"] = rol_por_onces(tit.get(j["id"], 0), rec["onces"])
@@ -376,11 +444,13 @@ def faltantes(team_id: int, plantel: list[dict], antes: str = "9999") -> list[di
     # con pocos onces capturados el silencio no dice nada: solo cuenta la salida
     # presente = titular en alguno de los últimos onces: convocado al banco no
     # basta para que un decisivo de la temporada sea decisivo hoy (incidencia 45)
-    presentes = ({pid for pid, r in rec["jugadores"].items() if r["titular"] > 0}
-                 if rec["onces"] >= ONCES_PARA_AUSENTE else None)
+    con_onces = rec["onces"] >= ONCES_PARA_AUSENTE
+    presentes = ({pid for pid, r in rec["jugadores"].items() if r["titular"] > 0} if con_onces else None)
     out = [{"jugadorId": d["id"], "nombre": d["nombre"], "porQue": d["porQue"]}
            for d in decisivos(jug.plantilla_de(team_id))
            if d["id"] not in fuera and (presentes is None or d["id"] in presentes)
+           and (not con_onces or decisivo_hoy(d, (rec["jugadores"].get(d["id"]) or {}).get("titular", 0),
+                                              rec["onces"]))
            and not _en_tabla(d, plantel)]
     # EL TITULAR FIJO DE LOS ÚLTIMOS ONCES CUENTA AUNQUE LA TEMPORADA NO LO
     # TENGA. Robert Sánchez atajó para el Como (17/10/2026) y no estaba en la
