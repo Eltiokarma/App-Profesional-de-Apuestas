@@ -906,6 +906,15 @@ conversación se pierde en la siguiente.
      la misma hoja (381, `idsAlternos`, el bloque F casa con cualquiera), y el
      titular habitual solo por minutos es decisivo hoy si fue titular en la
      mitad de los últimos onces (387, `f1_base.decisivo_hoy`).
+   - **Copas nacionales de Europa a la base** (406, usuario 23/10): FA Cup,
+     EFL Cup, Copa del Rey, Coppa Italia, DFB-Pokal, Coupe de France y Taça
+     de Portugal entran a `LIGAS` como MENORES —la misma regla que las copas de
+     Sudamérica, que ya entraban al motor—: salen gratis del feed por fecha, el
+     backfill baja sus temporadas, no van a la agenda ni al en vivo, y
+     `extractor.COPAS_EUROPA` no elige equipos para fichas ni cuenta como liga
+     doméstica (el de quinta división de la FA Cup no gasta requests). Las K
+     de los equipos europeos pasan a contar sus partidos de copa. La copa de
+     Bélgica falta: confirmar su id con `extractor --buscar` y sumarla.
    - **Escala entre ligas** (300, 309, 294, 79): decidido «solo marcar» (22/10):
      rival (`escalaComparable`), tarjeta de la espina, perfil DC y P1a llevan la
      marca y su nota; ningún número calibrado se mueve.

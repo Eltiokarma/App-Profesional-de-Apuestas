@@ -234,6 +234,21 @@ LIGAS = {
     # Europa otros
     94: "Portugal - Primeira Liga",
     144: "Bélgica - Pro League",
+    # Copas nacionales de Europa (incidencia 406, decisión del usuario
+    # 23/10/2026): la misma regla que Sudamérica —«para analizar un país no
+    # puede faltar la copa donde juega el equipo»—. Faltaba la Taça del 17-18/10
+    # y el F2 del TDE no veía ese partido; la K del Sporting no contaba la Taça
+    # mientras la de Universitario sí contaba la Bicentenario. Son MENORES
+    # (sin cuotas en vivo, fuera de la agenda); el backfill histórico baja sus
+    # temporadas solo. Ids: los de escala.COPAS. La copa de Bélgica entra cuando
+    # se confirme su id con `extractor --buscar`.
+    45: "Inglaterra - FA Cup",
+    48: "Inglaterra - EFL Cup",
+    143: "España - Copa del Rey",
+    137: "Italia - Coppa Italia",
+    81: "Alemania - DFB Pokal",
+    66: "Francia - Coupe de France",
+    96: "Portugal - Taça de Portugal",
 }
 
 
@@ -313,7 +328,20 @@ _MENORES_DEFAULT = {
     # Venezuela
     300,  # Segunda División
     1113, # Copa Venezuela
+    # Copas nacionales de Europa (incidencia 406)
+    45, 48,   # FA Cup, EFL Cup
+    143,      # Copa del Rey
+    137,      # Coppa Italia
+    81,       # DFB Pokal
+    66,       # Coupe de France
+    96,       # Taça de Portugal
 }
+# Las copas nacionales de Europa (incidencia 406): sus partidos entran a la base
+# y al motor, pero un equipo de quinta división que juega la FA Cup no nos
+# interesa por sí mismo. Un partido de copa NO elige equipos para la ingesta de
+# fichas (3 requests por partido) ni cuenta como «liga doméstica» de nadie.
+COPAS_EUROPA = {45, 48, 143, 137, 81, 66, 96}
+
 _menores_env = os.environ.get("SAD_LIGAS_MENORES")
 if _menores_env is None:
     LIGAS_MENORES = set(_MENORES_DEFAULT)
@@ -1266,7 +1294,7 @@ def equipos_sin_liga_en_la_base(con: sqlite3.Connection, interes: set[int] | Non
     if not interes:
         return []
     fuera = set(LIGAS_INTERNACIONALES) | LIGAS_RUIDO | {667}  # amistosos: nunca son «su liga»
-    domesticas = set(LIGAS) - fuera
+    domesticas = set(LIGAS) - fuera - COPAS_EUROPA  # una copa no es la liga de nadie
     out = []
     for tid in sorted(interes):
         temp = con.execute(
