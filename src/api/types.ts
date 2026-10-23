@@ -1574,6 +1574,8 @@ export interface VeredictoObjetivo {
         /** TDE v0.1.21 (disciplina 61): cómo terminó la rama del que persigue. */
         salida?: 'concedio' | 'marco' | 'sinMasGoles'
         notaSalida?: string
+        /** Minuto de la roja propia previa al gol concedido: no cuenta como concesión persiguiendo. */
+        rojaPrevia?: number
       }
       nota: string
     }[]

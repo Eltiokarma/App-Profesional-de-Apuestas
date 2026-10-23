@@ -4362,8 +4362,9 @@ components:
                           declarada: { type: boolean }
                           loDeclarado: { $ref: '#/components/schemas/RamaReasignacion' }
                           nota: { type: string }
-                      salida: { type: string, enum: [concedio, marco, sinMasGoles], description: 'TDE v0.1.21 (disciplina 61), solo en siRecibePrimero: qué pasó después del gol en contra. «marco» no cuenta contra la rama; «sinMasGoles» puede ser la disciplina 14 (lo dice la autopsia)' }
+                      salida: { type: string, enum: [concedio, marco, sinMasGoles], description: 'TDE v0.1.21 (disciplina 61), solo en siRecibePrimero: lo decide el PRIMER gol posterior al gol en contra (un gol del rival después del empate propio es otro tramo). «marco» no cuenta contra la rama; «sinMasGoles» puede ser la disciplina 14 (lo dice la autopsia)' }
                       notaSalida: { type: string }
+                      rojaPrevia: { type: integer, description: 'minuto de la roja propia antes del gol concedido: el mecanismo cambió (disciplina 16) y no cuenta como concesión persiguiendo' }
                   nota: { type: string }
         evidencia:
           type: object

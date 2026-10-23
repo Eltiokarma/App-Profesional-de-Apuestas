@@ -2278,6 +2278,20 @@ def main():
     _r4 = _rj({"equipo": "b", "reasignacion": {}}, _g((59, "a"),), 1, True)
     check("…concedió de nuevo → «concedio»; sin más goles → «sinMasGoles»",
           _r3["salida"] == "concedio" and _r4["salida"] == "sinMasGoles" and "segundoGiro" not in _r4, (_r3, _r4))
+    # incidencias 389 y 391: manda el PRIMER gol posterior; lo del rival
+    # después del empate o la remontada propia es otro tramo
+    _r5 = _rj({"equipo": "a", "reasignacion": {}}, _g((38, "b"), (61, "a"), (65, "a"), (75, "b")), 4, True)
+    _r6 = _rj({"equipo": "a", "reasignacion": {}}, _g((13, "b"), (20, "a"), (79, "b")), 3, True)
+    check("recibió, empató o dio vuelta y después le marcaron: salida «marco» (Toluca, disciplina 61)",
+          _r5["salida"] == "marco" and _r6["salida"] == "marco", (_r5, _r6))
+    # incidencia 388: con una roja propia antes, el gol concedido no es «persiguiendo»
+    _r7 = _rj({"equipo": "b", "reasignacion": {}}, _g((30, "a"), (80, "a")), 2, True,
+              [{"minuto": 2, "lado": "b", "jugador": "x"}])
+    _r8 = _rj({"equipo": "b", "reasignacion": {}}, _g((30, "a"), (80, "a")), 2, True,
+              [{"minuto": 2, "lado": "a", "jugador": "x"}])
+    check("concedió con una roja propia previa: rojaPrevia y la nota lo dice (Pumas, disciplina 16); la del rival no",
+          _r7["salida"] == "concedio" and _r7.get("rojaPrevia") == 2 and "roja" in _r7["notaSalida"]
+          and "rojaPrevia" not in _r8, (_r7, _r8))
     p_tde["tde"]["bloques"][0]["reasignacion"] = {"siMarcaPrimero": {"sob1": 0}, "siRecibePrimero": {"sob1": 1},
                                                   "siLeEmpatan": {"sob1": 1}, "siExpulsion": "roja ganando → ECHADA-NUM"}
     rec_n = c.post(f"{A}/analisis/cowork", json=p_tde).json()
