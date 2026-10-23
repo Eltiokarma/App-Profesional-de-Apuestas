@@ -914,7 +914,7 @@ conversación se pierde en la siguiente.
      `extractor.COPAS_EUROPA` no elige equipos para fichas ni cuenta como liga
      doméstica (el de quinta división de la FA Cup no gasta requests). Las K
      de los equipos europeos pasan a contar sus partidos de copa. La copa de
-     Bélgica falta: confirmar su id con `extractor --buscar` y sumarla.
+     Bélgica (147) entró el mismo día, con el id confirmado en Railway.
    - **Escala entre ligas** (300, 309, 294, 79): decidido «solo marcar» (22/10):
      rival (`escalaComparable`), tarjeta de la espina, perfil DC y P1a llevan la
      marca y su nota; ningún número calibrado se mueve.

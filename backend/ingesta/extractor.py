@@ -240,8 +240,8 @@ LIGAS = {
     # y el F2 del TDE no veía ese partido; la K del Sporting no contaba la Taça
     # mientras la de Universitario sí contaba la Bicentenario. Son MENORES
     # (sin cuotas en vivo, fuera de la agenda); el backfill histórico baja sus
-    # temporadas solo. Ids: los de escala.COPAS. La copa de Bélgica entra cuando
-    # se confirme su id con `extractor --buscar`.
+    # temporadas solo. Ids: los de escala.COPAS; la de Bélgica (147) confirmada
+    # con `extractor --buscar "Belgium"` en Railway el 23/10/2026.
     45: "Inglaterra - FA Cup",
     48: "Inglaterra - EFL Cup",
     143: "España - Copa del Rey",
@@ -249,6 +249,7 @@ LIGAS = {
     81: "Alemania - DFB Pokal",
     66: "Francia - Coupe de France",
     96: "Portugal - Taça de Portugal",
+    147: "Bélgica - Copa de Bélgica",
 }
 
 
@@ -335,12 +336,13 @@ _MENORES_DEFAULT = {
     81,       # DFB Pokal
     66,       # Coupe de France
     96,       # Taça de Portugal
+    147,      # Copa de Bélgica
 }
 # Las copas nacionales de Europa (incidencia 406): sus partidos entran a la base
 # y al motor, pero un equipo de quinta división que juega la FA Cup no nos
 # interesa por sí mismo. Un partido de copa NO elige equipos para la ingesta de
 # fichas (3 requests por partido) ni cuenta como «liga doméstica» de nadie.
-COPAS_EUROPA = {45, 48, 143, 137, 81, 66, 96}
+COPAS_EUROPA = {45, 48, 143, 137, 81, 66, 96, 147}
 
 _menores_env = os.environ.get("SAD_LIGAS_MENORES")
 if _menores_env is None:
