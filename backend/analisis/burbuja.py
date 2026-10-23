@@ -77,8 +77,14 @@ MUESTRA_ALTA = 6
 
 # estabilidad
 DT_ASENTADO_DIAS = 90          # menos que esto: el patrón histórico es de otro DT
-MOVIMIENTOS_TRANSICION = 3     # llegadas + salidas de la ventana
-MOVIMIENTOS_INESTABLE = 6
+# llegadas + salidas CON MINUTOS de la ventana (incidencia 43). Eran 3 y 6
+# sobre el conteo en papeles; con los que juegan, la agenda del 23/10 (82
+# equipos) dio 0 estables: el mercado de verano cambia 10+ jugadores con
+# minutos en casi cualquier club y Arsenal (9, Arteta hace 7 años) salía tan
+# «en obra» como Torino (28). Decisión del usuario (23/10/2026): 10 y 20.
+# Primer corte, sin backtest: revisar con casos.
+MOVIMIENTOS_TRANSICION = 10
+MOVIMIENTOS_INESTABLE = 20
 BAJAS_TRANSICION = 5
 PLANTILLA_VIEJA_DIAS = 30      # la ingesta de jugadores tiene esta edad o más
 MAX_REVENTONES_SALIDA = 40     # los más recientes; la estadística usa TODOS
