@@ -676,7 +676,61 @@ def _pila_en(nombre: str, ref: str) -> bool:
     return bool(partes) and len(partes[0]) >= 5 and f" {partes[0]} " in f" {ref} "
 
 
-def _en_referencia(nombre: str, ref: str) -> bool:
+def _previas(nombre: str, crudo: str) -> list[str]:
+    """Por cada mención de un apellido del jugador en el texto crudo, la
+    palabra con mayúscula pegada antes (sin coma), saltando las del propio
+    nombre: en «Alexis Mac Allister» la previa de Allister es «alexis», no
+    «mac». '' si la mención va suelta («Rossano, Álvarez»)."""
+    propias = set(_plano(nombre).split()[1:])   # el nombre de pila no se salta: es la previa que vale
+    out = []
+    for a in _apellidos(nombre):
+        for m in re.finditer(r"(?:^|[\s,;:/(])([^\s,;:/()]+)", crudo or ""):
+            if _plano(m.group(1)).strip() != a:
+                continue
+            fin, previa = m.start(1), ""
+            while True:
+                antes = re.search(r"([A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]*\.?)\s+$", crudo[:fin])
+                previa = _plano(antes.group(1)).strip() if antes else ""
+                if previa and previa in propias and len(previa) > 1:
+                    fin = antes.start(1)
+                    continue
+                break
+            out.append("" if previa in _PARTICULAS else previa)
+    return out
+
+
+def _anclado(nombre: str, crudo: str) -> bool:
+    """El texto nombra a ESTE jugador con su nombre o su inicial pegados al
+    apellido («Carlos Álvarez», «C. Álvarez»)."""
+    pila = (_plano(nombre).split() or [""])[0]
+    return bool(pila) and any(p and (p == pila or (len(p) == 1 and p == pila[0])) for p in _previas(nombre, crudo))
+
+
+def _inicial_choca(nombre: str, crudo: str, estricto: bool = False) -> bool:
+    """LA INICIAL TAMBIÉN NOMBRA. El oficial «K. Álvarez» (lateral) no es el
+    «Carlos Álvarez» (enganche) de la referencia (América, incidencia 390):
+    casar solo por apellido lo daba por anunciado. Choca si el oficial trae
+    inicial y TODA mención de su apellido en el texto va pegada (sin coma) a
+    un nombre o inicial con otra letra. Sobre el texto crudo, porque en el
+    plano «Rossano, Álvarez» y «Rossano Álvarez» se ven igual. `estricto`:
+    otro titular con el mismo apellido está nombrado con su inicial en el
+    texto, así que los «Álvarez» sueltos son suyos («Álvarez de enganche» era
+    Carlos). Sin eso (dos Parra y un «Parra» suelto) no se sabe y casa."""
+    partes = _plano(nombre).split()
+    if len(partes) < 2 or len(partes[0]) != 1 or not crudo:
+        return False
+    previas = _previas(nombre, crudo)
+    for p in previas:
+        if p and p[0] == partes[0]:
+            return False
+        if not p and not estricto:
+            return False
+    return bool(previas)
+
+
+def _en_referencia(nombre: str, ref: str, crudo: str = "", estricto: bool = False) -> bool:
+    if _inicial_choca(nombre, crudo, estricto):
+        return False
     if any(f" {a} " in f" {ref} " for a in _apellidos(nombre)):
         return True
     palabras = ref.split()
@@ -786,7 +840,8 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
         # de atrás, que es lo que cambia el mapa de duelos por carril.
         motivos.append(f"sistema: la apertura dice {m1.get('sistema')!r} y el once oficial salió con "
                        f"{of['defensores']} defensores (la ficha no trae la formación)")
-    ref = _plano(sin_alternativas(m1.get("xiReferencia") or ""))
+    crudo = sin_alternativas(m1.get("xiReferencia") or "")
+    ref = _plano(crudo)
     ausentes = []
     # «SIN XI DE REFERENCIA» NO ES UN XI. La frase tenía 8+ palabras y pasaba por
     # lista de nombres: los 11 titulares oficiales salían «ausentes» y saltaba
@@ -797,15 +852,22 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
         # LO QUE LA APERTURA YA ANUNCIÓ NO ES SORPRESA: un cambio nombrado en
         # `senalXi` o en `rolesReasignados` (Villa, 17/10/2026) no cuenta; y el
         # nombre de la plantilla, que a veces trae el apodo («Abde»), también sirve
-        anunciado = _plano(sin_salientes(sin_alternativas(" ".join([m1.get("senalXi") or ""]
-                                                                  + list(m1.get("rolesReasignados") or [])))))
+        anunciado_crudo = sin_salientes(sin_alternativas(" ".join([m1.get("senalXi") or ""]
+                                                                  + list(m1.get("rolesReasignados") or []))))
+        anunciado = _plano(anunciado_crudo)
         alt = of.get("alias") or {}
         def _palabra_en(x: str, texto: str) -> bool:   # el apodo puede ser la primera palabra
             return any(len(t) > 2 and f" {t} " in f" {texto} " for t in _plano(x).split())
 
+        def _homonimo(n: str, texto: str) -> bool:   # otro titular con su apellido, nombrado con inicial
+            return any(t != n and set(_apellidos(t)) & set(_apellidos(n)) and _anclado(t, texto)
+                       for t in of["titulares"])
+
         ausentes = [n for n in of["titulares"] if _apellidos(n)
-                    and not any(_en_referencia(x, ref) or _pila_en(x, ref)
-                                or (anunciado and _en_referencia(x, anunciado))
+                    and not any(_en_referencia(x, ref, crudo, _homonimo(n, crudo))
+                                or (_pila_en(x, ref) and not _inicial_choca(x, crudo, _homonimo(n, crudo)))
+                                or (anunciado and _en_referencia(x, anunciado, anunciado_crudo,
+                                                                 _homonimo(n, anunciado_crudo)))
                                 for x in [n, *alt.get(n, [])])
                     and not any(_palabra_en(x, ref) for x in alt.get(n, []))]
         if len(ausentes) >= REHACER_AUSENTES:
