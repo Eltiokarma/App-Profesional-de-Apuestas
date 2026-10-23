@@ -101,7 +101,22 @@ check('2 de 6 → no está inflado', dosAm.familias.total.extremo!.inflada === n
 const baseRec = { kPico: { max: 30 }, partidos: { max: 5 } } as unknown as Parameters<typeof extremoDe>[2]
 const exRec = extremoDe(20, 6, baseRec, 100, '+', [], 2)
 check('racha récord de 6 sobre un máximo de 5 con 2 amistosos: sin ellos no sería récord → INFLADA', exRec.rachaRecord && !exRec.kRecord && !!exRec.inflada && exRec.inflada.texto.includes('no sería récord'), exRec)
-check('con 1 amistoso (6 − 1 = 5, igual al máximo) sigue siendo récord sin él → no inflada', extremoDe(20, 6, baseRec, 100, '+', [], 1).inflada === null)
+check('con 1 amistoso (6 − 1 = 5) sin él solo IGUALARÍA el máximo de 5: ya no es récord → INFLADA (67)', extremoDe(20, 6, baseRec, 100, '+', [], 1).inflada !== null)
+check('con 0 amistosos y 7 sobre 5 → récord limpio, sin marca', extremoDe(20, 7, baseRec, 100, '+', [], 0).inflada === null)
+// RÉCORD DE RACHA: superar y con 3+ (incidencia 67)
+{
+  const b1 = { kPico: { max: 30 }, partidos: { max: 1 } } as unknown as Parameters<typeof extremoDe>[2]
+  const b2 = { kPico: { max: 30 }, partidos: { max: 2 } } as unknown as Parameters<typeof extremoDe>[2]
+  check('67: 2 seguidos sobre un máximo de 1 (Leones del Norte) → NO es récord: menos de 3', !extremoDe(5, 2, b1, 55, '-', [], 0).activo)
+  const deK10 = Array.from({ length: 10 }, () => ({ kPico: 10, partidos: 1 })) as unknown as Parameters<typeof extremoDe>[5]
+  const cu = extremoDe(5, 2, b2, 113, '-', deK10, 0)
+  check('67: 2 que IGUALAN un máximo de 2 (Cusco, Medellín) → no es récord ni «cerca»', !cu.activo && !cu.cerca, cu)
+  check('67: 3 sobre un máximo de 2 → récord', extremoDe(5, 3, b2, 113, '-', [], 0).rachaRecord)
+  const ig = extremoDe(5, 5, baseRec, 172, '+', deK10, 0)
+  check('67: 5 que IGUALAN un máximo de 5 (Aston Villa) → no es rojo; queda en ámbar (cerca)', !ig.activo && ig.cerca, ig)
+  const st = extremoDe(5, 2, { kPico: { max: 30 }, partidos: { max: 4 } } as unknown as Parameters<typeof extremoDe>[2], 40, '+', [], 2)
+  check('311: 2 de 2 amistosos sin récord ni cerca (Stuttgart) → INFLADA igual, sin motivos de alerta', !st.activo && !st.cerca && !!st.inflada && st.motivos.length === 0 && st.inflada.texto.includes('último partido oficial'), st)
+}
 
 // CERCA DEL EXTREMO (§10): el caso ADT sintético, el mismo que en Python
 {
@@ -139,6 +154,9 @@ const apx = analizar(filas, { plantilla: { ...pl, entrenador: { nombre: 'Pérez'
 check('DT con llegada de /coachs y 40 días: no sube a inestable, se declara sin dato', apx.estabilidad.grado === 'estable' && apx.estabilidad.sinDato.some((s) => s.includes('confirmada')), apx.estabilidad)
 const trans = analizar(filas, { plantilla: { ...pl, entrenador: { nombre: 'Viejo', desde: '2024-01-01' }, revolucion: { llegadas: 2, salidas: 1, ventanaDias: 120 } } })
 check('3 movimientos → EN TRANSICIÓN', trans.estabilidad.grado === 'en transición')
+// incidencia 43: cuentan los que jugaron; los de papel se dicen al lado
+const juve = analizar(filas, { plantilla: { ...pl, entrenador: { nombre: 'Viejo', desde: '2024-01-01' }, revolucion: { llegadas: 2, salidas: 0, ventanaDias: 120, enPapeles: { llegadas: 41, salidas: 44 } } } })
+check('43: 2 con minutos de 85 en papeles → ESTABLE y el motivo dice las dos cifras', juve.estabilidad.grado === 'estable' && juve.estabilidad.motivos.some((m) => m.includes('2 movimientos con minutos (de 85 en papeles)')), juve.estabilidad.motivos)
 const vieja = analizar(filas, { plantilla: { ...pl, actualizadoEn: '2026-07-01T00:00:00Z' } })
 check('plantilla de hace 77 días: aviso', vieja.estabilidad.motivos.some((m) => m.includes('77 días')), vieja.estabilidad.motivos)
 const sd = analizar(filas, { plantilla: null })

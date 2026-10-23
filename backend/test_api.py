@@ -317,6 +317,19 @@ def main():
     check("plantilla: DT y revolución de ventana",
           pl["entrenador"]["nombre"] and pl["revolucion"]["llegadas"] == 1, {k: pl.get(k) for k in ("entrenador", "revolucion")})
     check("/equipos/999999/plantilla → 404", c.get(A + "/equipos/999999/plantilla").status_code == 404)
+    # REVOLUCIÓN CON MINUTOS (incidencia 43, 23/10/2026): una vuelta de cesión
+    # sin minutos en el club no cuenta; el total en papeles viaja aparte
+    import sqlite3 as _sq43
+    from datetime import datetime as _dt43, timezone as _tz43
+    with _sq43.connect(os.path.join(tmp, "sad.db")) as _c43:
+        _c43.execute("INSERT INTO traspasos (player_id, fecha, tipo, team_in, team_in_nombre, team_out, team_out_nombre) "
+                     "VALUES (?,?,?,?,?,?,?)", (987654, _dt43.now(_tz43.utc).strftime("%Y-%m-%d"), "Loan",
+                                                betis, "x", 998, "Cesión Demo"))
+    _rv = c.get(A + f"/equipos/{betis}/plantilla").json()["revolucion"]
+    check("43: la vuelta de cesión sin minutos NO cuenta (llegadas sigue en 1); en papeles son 2",
+          _rv["llegadas"] == 1 and _rv["enPapeles"]["llegadas"] == 2 and "minutos" in _rv["criterio"], _rv)
+    with _sq43.connect(os.path.join(tmp, "sad.db")) as _c43:
+        _c43.execute("DELETE FROM traspasos WHERE player_id=987654")
     check("plantilla con datos: ingestaLanzada=false", pl["ingestaLanzada"] is False, pl.get("ingestaLanzada"))
     # equipo sin plantilla: degradación honesta; on-demand apagada en tests
     # (SAD_PLANTILLA_ONDEMAND=0) para no gastar requests si hubiera clave local

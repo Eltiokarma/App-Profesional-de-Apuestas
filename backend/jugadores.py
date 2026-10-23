@@ -144,6 +144,49 @@ def _plantel_sin_stats(team_id: int, con_stats: set) -> list[dict]:
             for f in filas if f["player_id"] not in con_stats]
 
 
+# LA REVOLUCIÓN SE CUENTA CON MINUTOS (incidencia 43, decisión del usuario
+# 23/10/2026). Se contaban todos los traspasos de 120 días: la Juventus salía
+# con 85 (41 llegadas, 44 salidas) cuando de las 41 llegadas solo 8 estaban en
+# el plantel y 7 habían jugado —el resto, vueltas de cesión que se volvieron a
+# ir, juveniles y papeleo—, y 58 de los 60 equipos de la agenda del 23/10
+# salían «inestables»: la etiqueta ya no separaba a nadie. Ahora cuenta el
+# jugador (una vez por dirección) que jugó en el primer equipo: minutos en
+# `jugador_stats` con este club, o titular en un once capturado del último
+# año. El total en papeles viaja aparte (`enPapeles`) para que el analista vea
+# las dos cosas. Límite declarado: la base solo trae las stats de la temporada
+# vigente y los onces que se capturaron, así que una salida de un titular de
+# hace dos temporadas puede no verse.
+REVOLUCION_JUGO_DIAS = 400
+
+
+def revolucion_de(team_id: int, hoy: datetime | None = None) -> dict:
+    hoy = hoy or datetime.now(timezone.utc)
+    corte = (hoy - timedelta(days=REVOLUCION_DIAS)).strftime("%Y-%m-%d")
+    movs = _query("SELECT player_id, team_in, team_out FROM traspasos "
+                  "WHERE (team_in=? OR team_out=?) AND fecha >= ?", (team_id, team_id, corte))
+    llegan = {m["player_id"] for m in movs if m["team_in"] == team_id}
+    salen = {m["player_id"] for m in movs if m["team_out"] == team_id}
+    jugaron: set[int] = set()
+    if llegan or salen:
+        jugaron = {r["player_id"] for r in _query(
+            "SELECT DISTINCT player_id FROM jugador_stats WHERE team_id=? AND COALESCE(minutos, 0) > 0",
+            (team_id,))}
+        try:
+            jugaron |= {r["player_id"] for r in _query(
+                "SELECT DISTINCT a.player_id FROM alineaciones a JOIN fixtures f ON f.id = a.fixture_id "
+                "WHERE a.team_id=? AND a.titular=1 AND f.date >= ?",
+                (team_id, (hoy - timedelta(days=REVOLUCION_JUGO_DIAS)).strftime("%Y-%m-%d")))}
+        except Exception:  # noqa: BLE001 — base sin fichas: cuentan solo las stats
+            pass
+    return {
+        "llegadas": len(llegan & jugaron),
+        "salidas": len(salen & jugaron),
+        "ventanaDias": REVOLUCION_DIAS,
+        "criterio": "con minutos en el primer equipo",
+        "enPapeles": {"llegadas": len(llegan), "salidas": len(salen)},
+    }
+
+
 def plantilla_de(team_id: int) -> dict:
     """PlantillaDTO del contrato: jugadores con indicadores + agregados del
     equipo (dependencia HHI, DT, revolución). Vacía si no hay ingesta."""
@@ -285,14 +328,7 @@ def plantilla_de(team_id: int) -> dict:
     )[:3]
 
     dt_filas = _entrenador_filas(team_id)
-    salidas = _query(
-        "SELECT COUNT(*) AS n FROM traspasos WHERE team_out=? AND fecha >= ?",
-        (team_id, (hoy - timedelta(days=REVOLUCION_DIAS)).strftime("%Y-%m-%d")),
-    )
-    llegadas_n = _query(
-        "SELECT COUNT(*) AS n FROM traspasos WHERE team_in=? AND fecha >= ?",
-        (team_id, (hoy - timedelta(days=REVOLUCION_DIAS)).strftime("%Y-%m-%d")),
-    )
+    rev = revolucion_de(team_id, hoy)
     base.update({
         "entrenador": _entrenador_dto(dt_filas[0]) if dt_filas else None,
         "dependencia": {
@@ -302,11 +338,7 @@ def plantilla_de(team_id: int) -> dict:
                 for j in top
             ],
         },
-        "revolucion": {
-            "llegadas": llegadas_n[0]["n"] if llegadas_n else 0,
-            "salidas": salidas[0]["n"] if salidas else 0,
-            "ventanaDias": REVOLUCION_DIAS,
-        },
+        "revolucion": rev,
         "jugadores": jugadores,
         # goles del equipo según la plantilla (denominador de participación)
         "golesPlantilla": goles_equipo,
@@ -478,8 +510,12 @@ def resumen_para_skills(team_id: int) -> dict[str, str]:
         )
         extra = f" Dependencia ofensiva HHI {dep['hhi']} (top: {tops})."
     rev = p["revolucion"]
-    if rev["llegadas"] or rev["salidas"]:
-        extra += f" Ventana reciente ({rev['ventanaDias']}d): {rev['llegadas']} llegadas, {rev['salidas']} salidas."
+    pap = rev.get("enPapeles") or {}
+    if rev["llegadas"] or rev["salidas"] or pap.get("llegadas") or pap.get("salidas"):
+        extra += (f" Ventana reciente ({rev['ventanaDias']}d): {rev['llegadas']} llegadas y {rev['salidas']} salidas "
+                  "con minutos en el primer equipo"
+                  + (f" (en papeles: {pap.get('llegadas', 0)} y {pap.get('salidas', 0)}, con cesiones y juveniles)"
+                     if pap else "") + ".")
     if p.get("origenTemporada") == "anterior":
         extra += (f" OJO: la API aún no publica la temporada en curso; estas stats son de la ANTERIOR "
                   f"({p['temporada']}), solo de los que siguen en el plantel.")

@@ -885,6 +885,16 @@ conversación se pierde en la siguiente.
      (160); F2 del TDE a 1 con un clásico o una eliminatoria internacional de
      octavos en adelante a ≤ 5 días (339, `f2.exigenciaProxima`: la rúbrica ya
      lo decía, faltaba el cálculo; Estambul entra a los clásicos documentados).
+   - **Hechos el 23/10** (usuario, tras ver los casos): récord de racha solo si
+     SUPERA el máximo y con 3+ partidos (67; igualar con 3+ queda en ámbar;
+     REVENTON §10.3: Cusco, Medellín, Juan Pablo II y Leones del Norte dejan de
+     gritar, el Leipzig con 11 sobre 9 sigue); INFLADA en cualquier racha
+     abierta con la mitad o más de amistosos (311, Stuttgart); y la
+     estabilidad cuenta llegadas y salidas CON MINUTOS en el primer equipo
+     (43, `jugadores.revolucion_de`, `revolucion.enPapeles` con el total: 58 de
+     60 equipos de la agenda salían «inestables», la Juventus por 85 traspasos
+     de los que 7 jugaron). Lo de otra categoría (el ascendido juega distinto)
+     lo considera el analista con `escala`; el cálculo no se corta.
    - **Escala entre ligas** (300, 309, 294, 79): decidido «solo marcar» (22/10):
      rival (`escalaComparable`), tarjeta de la espina, perfil DC y P1a llevan la
      marca y su nota; ningún número calibrado se mueve.

@@ -269,6 +269,11 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
             <div style={caja}>
               <div style={rotulo}>BURBUJA ABIERTA</div>
               <div style={mono(signo === '+' ? 'var(--up)' : 'var(--down)')}>{signFmt(actual.k)}</div>
+              {/* INFLADA sin récord (incidencia 311, Stuttgart): la racha abierta hecha
+                  con amistosos se dice aunque no sea extremo; con extremo va en su caja */}
+              {!extremo && !cerca && fam.extremo?.inflada && (
+                <div style={{ margin: '3px 0' }} title={fam.extremo.inflada.texto}><ChipInflada inf={fam.extremo.inflada} /></div>
+              )}
               <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>
                 {actual.partidos} partido{actual.partidos === 1 ? '' : 's'}{familia === 'total' ? '' : ` de ${familia}`} desde {fmtFecha(actual.desde)}
                 {fam.posicion && <> · percentil K {fam.posicion.percentilK} · racha {fam.posicion.percentilRacha}</>}

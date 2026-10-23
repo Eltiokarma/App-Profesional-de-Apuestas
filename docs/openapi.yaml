@@ -2232,11 +2232,22 @@ components:
                   participacion: { type: number }
         revolucion:
           type: object
-          description: traspasos de la ventana reciente (estabilidad de plantel)
+          description: >
+            traspasos de la ventana reciente (estabilidad de plantel). Desde el 23/10/2026
+            (incidencia 43) `llegadas`/`salidas` cuentan solo jugadores CON MINUTOS en el primer
+            equipo (minutos con el club en jugador_stats, o titular en un once del último año),
+            una vez por dirección; `enPapeles` trae todos los traspasos (cesiones, vueltas de
+            cesión y juveniles incluidos). La Juventus pasaba de 85 en papeles a los que jugaron.
           properties:
             llegadas: { type: integer }
             salidas: { type: integer }
             ventanaDias: { type: integer }
+            criterio: { type: string }
+            enPapeles:
+              type: object
+              properties:
+                llegadas: { type: integer }
+                salidas: { type: integer }
         golesPlantilla: { type: integer, description: Σ goles de la plantilla (denominador de participación) }
         missingFixture:
           type: object
@@ -2476,7 +2487,9 @@ components:
       type: object
       description: >
         La burbuja abierta está en su máximo histórico para este equipo: |K| ≥ la K pico más
-        alta con la que reventó ese signo (`kRecord`) o racha ≥ la más larga (`rachaRecord`).
+        alta con la que reventó ese signo (`kRecord`) o racha que SUPERA a la más larga y tiene
+        3 partidos o más (`rachaRecord`; igualarla, o una racha de 1-2, no es récord: incidencia
+        67, 23/10/2026).
         NO mueve el riesgo —el backtest dice que la K no puntúa—, pero es terreno sin
         precedente y la pantalla y el parte lo gritan aparte: no cargar la apuesta a que la
         racha siga. Cowork no se la puede saltar (docs/COWORK.md). `cerca` es el escalón
@@ -2501,7 +2514,7 @@ components:
         inflada:
           type: object
           nullable: true
-          description: 'la alerta está encendida y la mitad o más de la racha son amistosos (liga 667): cuentan, pero el récord se armó fuera de la competición (REVENTON §10.2). No apaga la alerta ni mueve el riesgo'
+          description: 'la mitad o más de la racha ABIERTA son amistosos (liga 667), o el récord solo lo es contándolos: cuentan, pero la racha se armó fuera de la competición (REVENTON §10.2). Desde el 23/10/2026 (incidencia 311) se marca en cualquier racha abierta, no solo con la alerta encendida. No apaga la alerta ni mueve el riesgo'
           properties:
             amistosos: { type: integer }
             partidos: { type: integer }

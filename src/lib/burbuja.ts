@@ -235,6 +235,8 @@ type RiesgoConfianza = 'baja' | 'media' | 'alta'
  *  a este % de los reventones del signo. Mismo principio que el extremo, un
  *  escalón más suave: no puntúa, dice cuánto se carga (docs/REVENTON.md §10). */
 export const CERCA_PCT = 90
+/** Récord de racha: SUPERAR el máximo y con 3+ partidos (espejo de RACHA_RECORD_MIN, incidencia 67). */
+export const RACHA_RECORD_MIN = 3
 
 /** Amistosos de clubes (espejo de AMISTOSOS): cuentan en la burbuja, pero un
  *  extremo hecho con la mitad o más de amistosos se marca INFLADO (Lazio,
@@ -249,12 +251,12 @@ const conSigno = (v: number, signo: SignoBurbuja) => `${signo === '+' ? '+' : '-
  *  `cerca` es el escalón de abajo; `activo` sigue siendo solo el récord. */
 export function extremoDe(kAbs: number, partidos: number, base: HistorialSignoDTO, nCond: number, signo: SignoBurbuja, de: ReventonDTO[] = [], amistosos = 0): ExtremoBurbujaDTO {
   const kRecord = kAbs >= base.kPico.max
-  const rachaRecord = partidos >= base.partidos.max
+  const rachaRecord = partidos > base.partidos.max && partidos >= RACHA_RECORD_MIN
   const n = de.length
   const pctK = n ? Math.floor((100 * de.filter((r) => r.kPico < kAbs).length) / n + 0.5) : 0
   const pctR = n ? Math.floor((100 * de.filter((r) => r.partidos < partidos).length) / n + 0.5) : 0
   const kCerca = !kRecord && pctK >= CERCA_PCT
-  const rCerca = !rachaRecord && pctR >= CERCA_PCT
+  const rCerca = !rachaRecord && partidos >= RACHA_RECORD_MIN && pctR >= CERCA_PCT
   const cerca = !(kRecord || rachaRecord) && (kCerca || rCerca)
   const motivos: string[] = []
   const lado = signo === '+' ? 'alta' : 'baja'
@@ -271,14 +273,17 @@ export function extremoDe(kAbs: number, partidos: number, base: HistorialSignoDT
       : ''
   let inflada: ExtremoBurbujaDTO['inflada'] = null
   // o la racha récord solo es récord contando los amistosos (Saint-Étienne 2 de 7, Elversberg 1 de 3)
-  const soloPorAmistosos = rachaRecord && !kRecord && amistosos > 0 && partidos - amistosos < base.partidos.max
-  if ((kRecord || rachaRecord || cerca) && amistosos > 0 && (amistosos * 2 >= partidos || soloPorAmistosos)) {
+  const sinAm = partidos - amistosos
+  const soloPorAmistosos = rachaRecord && !kRecord && amistosos > 0 && (sinAm <= base.partidos.max || sinAm < RACHA_RECORD_MIN)
+  // la marca va en CUALQUIER racha abierta, no solo en el récord (incidencia 311, Stuttgart)
+  if (amistosos > 0 && (amistosos * 2 >= partidos || soloPorAmistosos)) {
+    const alerta = kRecord || rachaRecord || cerca
     inflada = {
       amistosos,
       partidos,
-      texto: `INFLADA: ${amistosos} de los ${partidos} partidos de la racha son amistosos${soloPorAmistosos ? ` y sin ellos la racha (${partidos - amistosos}) no sería récord (máximo previo ${base.partidos.max})` : ''}. Cuentan (la racha es del equipo), pero el récord se armó en buena parte fuera de la competición: leer la alerta con eso a la vista`,
+      texto: `INFLADA: ${amistosos} de los ${partidos} partidos de la racha son amistosos${soloPorAmistosos ? ` y sin ellos la racha (${sinAm}) no sería récord (máximo previo ${base.partidos.max})` : ''}${alerta ? '. Cuentan (la racha es del equipo), pero el récord se armó en buena parte fuera de la competición: leer la alerta con eso a la vista' : '. Cuentan (la racha es del equipo), pero se armó en buena parte fuera de la competición: el último partido oficial puede contar otra historia'}`,
     }
-    motivos.push(`inflada: ${amistosos} de ${partidos} partidos de la racha son amistosos`)
+    if (alerta) motivos.push(`inflada: ${amistosos} de ${partidos} partidos de la racha son amistosos`)
   }
   return {
     activo: kRecord || rachaRecord,
@@ -521,7 +526,9 @@ export function estabilidadDe(plantilla: PlantillaBurbuja | null | undefined, ho
   const rev = plantilla.revolucion ?? { llegadas: 0, salidas: 0, ventanaDias: 0 }
   const movimientos = { llegadas: rev.llegadas, salidas: rev.salidas, ventanaDias: rev.ventanaDias }
   const mov = rev.llegadas + rev.salidas
-  const pal = mov === 1 ? 'movimiento' : 'movimientos'
+  const pap = rev.enPapeles
+  // con minutos en el primer equipo (incidencia 43): el total en papeles, al lado
+  const pal = (mov === 1 ? 'movimiento' : 'movimientos') + (pap ? ` con minutos (de ${pap.llegadas + pap.salidas} en papeles)` : '')
   if (mov >= MOVIMIENTOS_INESTABLE) {
     subir('inestable')
     motivos.push(`${mov} ${pal} en ${rev.ventanaDias} días: plantel en obra`)

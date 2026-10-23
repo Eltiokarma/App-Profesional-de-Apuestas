@@ -327,6 +327,14 @@ def _confianza(n: int, estabilidad: dict) -> tuple[str, list[str]]:
 # secas. Es el mismo principio del extremo en un escalón más suave: no puntúa,
 # no mueve el riesgo, dice cuánto se carga.
 CERCA_PCT = 90
+# RÉCORD DE RACHA: SUPERAR, y con 3 partidos o más (incidencia 67, decisión del
+# usuario 23/10/2026). «2 seguidos por primera vez» gritaba EXTREMO en rojo
+# igual que el Leipzig con 11 de local sobre un récord de 9; en la agenda del
+# 23/10, 3 de 15 extremos eran rachas de 2 que solo IGUALABAN un máximo de 2
+# (Cusco, Medellín, Juan Pablo II). Igualar el máximo con 3+ queda en ámbar
+# (`cerca`, si pasa el 90 % de sus reventones); una racha de 1-2 no es récord
+# ni «cerca». La K récord no cambia.
+RACHA_RECORD_MIN = 3
 
 # Amistosos de clubes (la liga de la API). CUENTAN en la burbuja —el
 # espectáculo se arma para el hincha también en pretemporada, y una racha se
@@ -363,13 +371,13 @@ def _extremo(k_abs: float, partidos: int, base: dict, n_cond: int, signo: str,
     k_rec = k_abs >= base["kPico"]["max"]
     max_p = base["partidos"]["max"]
     max_p = int(max_p) if float(max_p).is_integer() else max_p  # «3 partidos», no «3.0»
-    r_rec = partidos >= max_p
+    r_rec = partidos > max_p and partidos >= RACHA_RECORD_MIN
     de = de or []
     n = len(de)
     pct_k = math.floor(100 * sum(1 for r in de if r["kPico"] < k_abs) / n + 0.5) if n else 0
     pct_r = math.floor(100 * sum(1 for r in de if r["partidos"] < partidos) / n + 0.5) if n else 0
     k_cerca = not k_rec and pct_k >= CERCA_PCT
-    r_cerca = not r_rec and pct_r >= CERCA_PCT
+    r_cerca = not r_rec and partidos >= RACHA_RECORD_MIN and pct_r >= CERCA_PCT
     cerca = not (k_rec or r_rec) and (k_cerca or r_cerca)
     motivos = []
     lado = "alta" if signo == "+" else "baja"
@@ -398,15 +406,26 @@ def _extremo(k_abs: float, partidos: int, base: dict, n_cond: int, signo: str,
     inflada = None
     # o la racha récord solo es récord contando los amistosos (Saint-Étienne,
     # 2 de 7; Elversberg, 1 de 3 igualando un máximo de 3 — 14/10/2026)
-    solo_por_amistosos = r_rec and not k_rec and amistosos > 0 and partidos - amistosos < max_p
-    if (k_rec or r_rec or cerca) and amistosos > 0 and (amistosos * 2 >= partidos or solo_por_amistosos):
+    sin_am = partidos - amistosos
+    solo_por_amistosos = (r_rec and not k_rec and amistosos > 0
+                          and (sin_am <= max_p or sin_am < RACHA_RECORD_MIN))
+    # LA MARCA VA EN CUALQUIER RACHA ABIERTA, no solo en el récord (incidencia
+    # 311, decisión del usuario 23/10/2026): Stuttgart perdió 0-1 con el
+    # Dortmund en casa y dos amistosos de septiembre (3-0 Heidenheim, 5-0
+    # Fürth) le dieron «+18 de local, 2 seguidas»; nada lo decía. Los
+    # amistosos siguen contando: la marca dice de qué está hecha la racha.
+    if amistosos > 0 and (amistosos * 2 >= partidos or solo_por_amistosos):
+        alerta = k_rec or r_rec or cerca
         inflada = {"amistosos": amistosos, "partidos": partidos,
                    "texto": f"INFLADA: {amistosos} de los {partidos} partidos de la racha son amistosos"
-                            + (f" y sin ellos la racha ({partidos - amistosos}) no sería récord (máximo previo "
+                            + (f" y sin ellos la racha ({sin_am}) no sería récord (máximo previo "
                                f"{max_p})" if solo_por_amistosos else "")
-                            + ". Cuentan (la racha es del equipo), pero el récord se armó en buena parte fuera "
-                              "de la competición: leer la alerta con eso a la vista"}
-        motivos.append(f"inflada: {amistosos} de {partidos} partidos de la racha son amistosos")
+                            + (". Cuentan (la racha es del equipo), pero el récord se armó en buena parte fuera "
+                               "de la competición: leer la alerta con eso a la vista" if alerta else
+                               ". Cuentan (la racha es del equipo), pero se armó en buena parte fuera de la "
+                               "competición: el último partido oficial puede contar otra historia")}
+        if alerta:
+            motivos.append(f"inflada: {amistosos} de {partidos} partidos de la racha son amistosos")
     return {
         "activo": k_rec or r_rec,
         "kRecord": k_rec,
@@ -710,6 +729,11 @@ def estabilidad_de(plantilla: dict | None, hoy: str) -> dict:
     movimientos = {"llegadas": int(rev.get("llegadas", 0)), "salidas": int(rev.get("salidas", 0)),
                    "ventanaDias": int(rev.get("ventanaDias", 0))}
     pal = "movimiento" if mov == 1 else "movimientos"
+    # con minutos en el primer equipo (incidencia 43): si la plantilla trae el
+    # total en papeles, se dice al lado para que se vea la diferencia
+    pap = rev.get("enPapeles")
+    if pap:
+        pal += f" con minutos (de {int(pap.get('llegadas', 0)) + int(pap.get('salidas', 0))} en papeles)"
     if mov >= MOVIMIENTOS_INESTABLE:
         subir("inestable")
         motivos.append(f"{mov} {pal} en {movimientos['ventanaDias']} días: plantel en obra")
