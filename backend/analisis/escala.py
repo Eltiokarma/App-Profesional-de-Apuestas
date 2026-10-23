@@ -61,9 +61,9 @@ def _fuera_de_liga() -> set[int]:
     return _internacionales_de_clubes() | {1} | AMISTOSOS
 
 
-def categoria(liga_id: int) -> str:
+def categoria(liga_id: int, nombre: str | None = None) -> str:
     from backend.analisis.parte import _segunda
-    return "segunda" if _segunda(liga_id) else "primera"
+    return "segunda" if _segunda(liga_id, nombre) else "primera"
 
 
 def base_de(team_id: int, fecha: str | None) -> dict | None:
@@ -94,7 +94,7 @@ def base_de(team_id: int, fecha: str | None) -> dict | None:
             copas.append(meta.get("nombre"))
             continue
         return {"id": f["league_id"], "nombre": meta.get("nombre"), "pais": meta.get("pais"),
-                "partidos": f["n"], "categoria": categoria(f["league_id"])}
+                "partidos": f["n"], "categoria": categoria(f["league_id"], meta.get("nombre"))}
     # solo copas: su liga no está en la base
     return {"id": None, "nombre": None, "pais": None, "partidos": 0, "categoria": "fuera del padrón",
             "soloCopa": copas[:3]}

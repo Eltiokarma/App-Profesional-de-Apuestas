@@ -1016,15 +1016,33 @@ def _liga_domestica(team_id: int, fecha: str | None) -> dict | None:
     return escala.base_de(team_id, fecha)
 
 
-def _segunda(liga_id: int) -> bool:
-    """Segunda división o torneo menor, con la lista de la ingesta si está a mano."""
+# UNA SEGUNDA QUE NO ESTÁ EN LAS LISTAS SE RECONOCE POR EL NOMBRE. Marítimo
+# (Segunda Liga de Portugal, 95) salía «primera» y «misma base» frente a la
+# Primeira Liga del Vitória (incidencia 407): las listas son del padrón y de la
+# ingesta, y una liga que entra por un equipo de interés no está en ninguna.
+_SEGUNDA_RE = re.compile(r"\b(segunda|serie b|ligue 2|2\. ?bundesliga|championship|league (?:one|two)|primera b|"
+                         r"b nacional|primera nacional|nacional b|liga de expansi[oó]n|liga portugal 2|liga 2|"
+                         r"divisi[oó]n intermedia|ascenso|eerste divisie|1\. lig|challenge league)\b", re.I)
+
+
+def _segunda(liga_id: int, nombre: str | None = None) -> bool:
+    """Segunda división o torneo menor, con la lista de la ingesta si está a
+    mano y, si no, por el nombre de la liga."""
     if liga_id in SEGUNDAS:
         return True
     try:
         from backend.ingesta.extractor import LIGAS_MENORES
-        return liga_id in LIGAS_MENORES
+        if liga_id in LIGAS_MENORES:
+            return True
     except Exception:
-        return False
+        pass
+    if nombre is None and liga_id is not None:
+        try:
+            from backend.app import liga_meta
+            nombre = liga_meta(liga_id).get("nombre")
+        except Exception:
+            nombre = None
+    return bool(nombre) and bool(_SEGUNDA_RE.search(nombre))
 
 
 def misma_base(la: dict | None, lb: dict | None) -> bool:
