@@ -254,6 +254,11 @@ def _jugador(j, rechazos: list, donde: str) -> dict | None:
             rechazos.append({"donde": donde, "jugador": nombre,
                              "porque": f"jugadorId no es un número: {jid!r}",
                              "esperado": "el `id` del jugador en GET /equipos/{id}/plantilla"})
+    # el mismo jugador con otro id en la API (la tabla F1 los funde, 381): la
+    # hoja del partido puede traer cualquiera de los dos
+    alt = [int(x) for x in (j.get("idsAlternos") or []) if isinstance(x, (int, str)) and str(x).lstrip("-").isdigit()]
+    if alt:
+        fuera["idsAlternos"] = alt
     return fuera
 
 
@@ -323,7 +328,7 @@ def _fuera(f: dict, rechazos: list, donde: str) -> dict | None:
 
 _CLAVES_EQUIPO = {"nombre", "bloques", "excluidos", "notas", "dt", "perfil",
                   "plantel", "fuera", "factorX", "sensibilidad", "d3"}
-_CLAVES_JUGADOR = {"nombre", "jugador", "jugadorId", "posicion", "zona", "rol", "apps", "estado", "motivo"}
+_CLAVES_JUGADOR = {"nombre", "jugador", "jugadorId", "idsAlternos", "posicion", "zona", "rol", "apps", "estado", "motivo"}
 _CLAVES_PARTE = {"fixtureId", "version", "generadoEn", "equipos", "alertas", "matchup",
                  "lecturaSad", "lectura_sad", "tde", "timelineEventos", "timelineNarrativa",
                  "cadena", "documentos", "pendientes", "fuentes", "descartados", "notas",

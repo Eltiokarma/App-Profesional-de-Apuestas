@@ -1116,8 +1116,13 @@ paths:
         TH ≥ 50 %, ROT ≥ 20 %; los titulares recientes sin stats de temporada entran con
         `sinStatsDeTemporada`); si no, por fracción de minutos de la temporada (TF ≥ 75 %,
         TH ≥ 50 %, ROT ≥ 25 %, SUP) y `decisivo` con su porqué (titular habitual o top 3
-        en goles+asistencias). Con ≥ 5 onces recientes, un decisivo de la temporada que no fue
-        titular en ninguno pierde `decisivo` y viaja en `decisivoTemporada` (dato, no alerta).
+        en goles+asistencias). Con ≥ 5 onces recientes, un decisivo de la temporada que hoy no
+        lo es pierde `decisivo` y viaja en `decisivoTemporada` (dato, no alerta): el titular
+        habitual SOLO por minutos tiene que haber sido titular en la mitad o más de los últimos
+        onces (incidencia 387, Meza 3 de 10); el de goles y asistencias, en alguno. El mismo
+        jugador con dos ids y minutos en los dos (mismo nombre completo con la pila entera, nunca
+        juntos en una hoja) sale en UNA fila con los minutos sumados y el otro id en
+        `idsAlternos` (incidencia 381, Wesley Natã / Wesley Nata).
         El rol es SUGERIDO: lo confirma la prensa. Un decisivo que
         no figura en la tabla depositada dispara `F1-DECISIVO-FUERA` en el parte. Los
         titulares del ÚLTIMO once entran todos aunque queden fuera del corte de 16
@@ -3032,6 +3037,7 @@ components:
         rol: { type: string, enum: [TF, TH, ROT, SUP], description: 'TF 🔴×3 · TH 🟠×2 · ROT 🟡×1 · SUP ⚪×0.5' }
         apps: { type: string, description: 'titularidades, ej. "12/15"' }
         jugadorId: { type: integer, description: 'el `id` del jugador en GET /equipos/{id}/plantilla. Con él, el once de la ficha casa por id y no por nombre (la API llama «J. Cerro» a Joshua Cantt): sin él, se cruza por nombre como antes' }
+        idsAlternos: { type: array, items: { type: integer }, description: 'el otro id de la API para la misma persona (lo trae la tabla F1, incidencia 381): la hoja del partido casa con cualquiera' }
         estado: { type: string, enum: ['', disponible, baja, duda, duplicado], description: 'lo pone el backend al resolver el once. `duplicado`: una fila SIN jugadorId que casa por nombre con un titular o suplente que ya casó por id con OTRA fila (la base y la prensa lo escriben distinto, «D. Gelvez» / «Dayan Pérez»): es la misma persona y no pesa en el IP' }
         motivo: { type: string }
     EquipoParteEntrada:
@@ -4372,9 +4378,10 @@ components:
                         properties:
                           rama: { type: string, enum: [siLeEmpatan] }
                           minuto: { type: integer }
-                          declarada: { type: boolean }
+                          declarada: { type: boolean, nullable: true, description: 'null = no evaluable: el parte se creó durante la caída de Railway del 21-22/10, cuando el servidor rechazaba siLeEmpatan (incidencia 393); no se cobra la 44a' }
                           loDeclarado: { $ref: '#/components/schemas/RamaReasignacion' }
                           nota: { type: string }
+                          noEvaluable: { type: string, description: 'el motivo, solo cuando declarada es null' }
                       salida: { type: string, enum: [concedio, marco, sinMasGoles], description: 'TDE v0.1.21 (disciplina 61), solo en siRecibePrimero: lo decide el PRIMER gol posterior al gol en contra (un gol del rival después del empate propio es otro tramo). «marco» no cuenta contra la rama; «sinMasGoles» puede ser la disciplina 14 (lo dice la autopsia)' }
                       notaSalida: { type: string }
                       rojaPrevia: { type: integer, description: 'minuto de la roja propia antes del gol concedido: el mecanismo cambió (disciplina 16) y no cuenta como concesión persiguiendo' }

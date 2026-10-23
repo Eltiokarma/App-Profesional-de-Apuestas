@@ -785,7 +785,7 @@ function TarjetaDerrota({ x }: { x: DerrotaFavorito }) {
       <div style={{ marginTop: 6, font: '500 11.5px var(--sans)', color: 'var(--t1)', lineHeight: 1.45 }}>
         <b>TDE del favorito:</b> {x.tde.ramaJugada ? `${RAMA_NOMBRE[x.tde.ramaJugada] ?? x.tde.ramaJugada}${x.tde.minuto != null ? ` (${x.tde.minuto}')` : ''}` : 'rama desconocida'}
         {lo ? ` → escrito: ${linea(lo)}` : x.tde.ramaJugada && x.tde.ramaJugada !== 'sinGoles' ? ' → nada escrito para esa rama' : ''}
-        {x.tde.segundoGiro && ` · le empataron al ${x.tde.segundoGiro.minuto}'${x.tde.segundoGiro.loDeclarado ? ` → escrito: ${linea(x.tde.segundoGiro.loDeclarado)}` : ' (línea del empate sin escribir)'}`}
+        {x.tde.segundoGiro && ` · le empataron al ${x.tde.segundoGiro.minuto}'${x.tde.segundoGiro.loDeclarado ? ` → escrito: ${linea(x.tde.segundoGiro.loDeclarado)}` : x.tde.segundoGiro.noEvaluable ? ' (línea del empate no evaluable: el servidor la rechazaba)' : ' (línea del empate sin escribir)'}`}
         {x.tde.salida && ` · después: ${SALIDA[x.tde.salida] ?? x.tde.salida}`}
       </div>
       {x.dtpViasRival.length > 0 && (
