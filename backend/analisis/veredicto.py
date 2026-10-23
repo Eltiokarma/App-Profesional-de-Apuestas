@@ -319,7 +319,7 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     rojas = _rojas(fixture_id, fx["home_team_id"])
     bloques = []
     for tde in bloques_tde(parte.get("tde") or {}):
-        reasig = rama_jugada(tde, goles, gl + gv, out["evidencia"]["conFicha"])
+        reasig = rama_jugada(tde, goles, gl + gv, out["evidencia"]["conFicha"], rojas)
         # LA VENTANA DE LA RAMA QUE SE JUGÓ, si la declaró (disciplina 44)
         texto_v, de_rama, vencida = ventana_a_cobrar(tde, reasig)
         minuto_r, rama_r = (reasig or {}).get("minuto"), (reasig or {}).get("rama")
@@ -562,7 +562,8 @@ def tarjetas_partido(espina_obj: dict, real: str) -> dict:
             "aciertaB": (res["b"] == real) if res["b"] else None}
 
 
-def rama_jugada(tde: dict, goles: list[dict], total_goles: int, con_ficha: bool) -> dict:
+def rama_jugada(tde: dict, goles: list[dict], total_goles: int, con_ficha: bool,
+                rojas: list[dict] | None = None) -> dict:
     """Qué rama de la reasignación (disciplina 44) jugó el partido para el
     equipo del bloque, y si estaba declarada. Es observación: no hay acierto
     —la rama no es un pronóstico—, pero un lado sin la rama que se dio es la
@@ -605,19 +606,32 @@ def rama_jugada(tde: dict, goles: list[dict], total_goles: int, con_ficha: bool)
     # (TDE v0.1.21, disciplina 61): qué pasó después del gol en contra.
     # «El rival administró» (disciplina 14) es juicio de la autopsia: acá
     # `sinMasGoles` lo deja abierto.
+    # Manda el PRIMER gol posterior, no «alguno»: con el empate o la remontada
+    # propia el régimen de persecución terminó y lo que venga es otro tramo
+    # (incidencias 389 y 391: Toluca recibió al 38', dio vuelta al 61' y 65',
+    # y el 2-2 del 75' lo marcaba «concedió persiguiendo»).
     else:
-        despues = goles[1:]
-        if any(g["lado"] != foco for g in despues):
-            salida = "concedio"
-        elif any(g["lado"] == foco for g in despues):
-            salida = "marco"
-        else:
+        siguiente = goles[1] if len(goles) > 1 else None
+        if siguiente is None:
             salida = "sinMasGoles"
+        elif siguiente["lado"] != foco:
+            salida = "concedio"
+        else:
+            salida = "marco"
         out["salida"] = salida
         out["notaSalida"] = {"concedio": "la vía se pagó: concedió de nuevo persiguiendo",
                              "marco": "la exposición rindió a favor (disciplina 61: no cuenta contra la rama)",
                              "sinMasGoles": "no hubo más goles: si el rival administró es la disciplina 14 "
                                             "(lo dice la autopsia), no un fallo de la rama"}[salida]
+        # Una roja PROPIA antes de ese gol cambió el mecanismo (disciplina 16):
+        # con diez no hubo régimen de exposición que pagar (incidencia 388:
+        # Pumas, roja al 2', el 2-0 del 80' fue penal en un córner).
+        roja = next((r for r in rojas or [] if r["lado"] == foco and r["minuto"] < siguiente["minuto"]),
+                    None) if salida == "concedio" else None
+        if roja:
+            out["rojaPrevia"] = roja["minuto"]
+            out["notaSalida"] = (f"concedió con una roja propia del {roja['minuto']}': el mecanismo cambió "
+                                 "(disciplina 16), no cuenta como concesión persiguiendo")
     return out
 
 
