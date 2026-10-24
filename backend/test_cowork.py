@@ -3005,6 +3005,16 @@ def main():
           and r_dtp["dtp"]["aperturaEnCadena"], r_dtp.get("dtp"))
     check("un bloque con equipo inválido se rechaza con motivo",
           any(x["donde"].startswith("dtp.bloques[1]") for x in r_dtp["rechazos"]), r_dtp["rechazos"])
+    # incidencia 434: el C1 heredado del DTP cuenta para el bloque C también en el recibo
+    p_c1 = json.loads(json.dumps(p_dtp))
+    _b434 = {"equipo": "b", "ventana": "75-90'", "indicadores": {"F1": 1, "F2": 0.5, "P1a": 1, "S1": 0.5},
+             "reasignacion": {"siMarcaPrimero": {"sob1": 0}, "siRecibePrimero": {"sob1": 1, "sob2": 0.5}}}
+    p_c1["tde"] = {"bloques": [_b434]}
+    r_c1 = c.post(f"{A}/analisis/cowork", json=p_c1).json()
+    check("434: sin C declarado pero con C1 heredado del DTP (0.5), el recibo NO dice que el IE no se calcula",
+          not any(x["bloque"] == "tde.ie (lado b)" and "no se calcula" in x["costara"] for x in r_c1.get("faltan", [])),
+          [x for x in r_c1.get("faltan", []) if x["bloque"].startswith("tde")])
+    c.post(f"{A}/analisis/cowork", json=p_dtp)
     from backend.analisis.dtp_cowork import normalizar_dtp as _ndtp
     _rch: list = []
     _ndtp({"bloques": [{"equipo": "a", "apertura": {"m2": {"checklistBloqueRival": {
