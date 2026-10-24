@@ -937,7 +937,10 @@ conversación se pierde en la siguiente.
      Al depositar, un documento sin `id` se rechaza con motivo (los 17 partes
      del 16/09 tenían 4-5 «nota» sin nombre: se titulan con su primer
      encabezado) y dos con el mismo id dejan el último. El veredicto muestra
-     la confianza del 1X2 («Dijimos LOCAL 54 % (54/26/20) · tramo 50-59 …»).
+     la confianza del 1X2 («Dijimos LOCAL 54 % (54/26/20) · tramo 50-59 …»),
+     también arriba del ensayo. Arriba quedan el veredicto y los anillos del
+     EFE; la carga del once y «Alertas y revisor» van PLEGADAS debajo de las
+     pestañas (con su resumen: cuántas alertas, cuántas estructurales).
    - **Escala entre ligas** (300, 309, 294, 79): decidido «solo marcar» (22/10):
      rival (`escalaComparable`), tarjeta de la espina, perfil DC y P1a llevan la
      marca y su nota; ningún número calibrado se mueve.
