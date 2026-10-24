@@ -10,6 +10,8 @@ import type { BurbujaFamiliaDTO, FilaFamilia, OtrasFamiliasDTO, PerfilDcDTO } fr
 const MIN_RACHAS_RECORD = 3
 const DESTACADA_DESDE = 3
 const CUIDADO_DESDE = 5
+// ...y rara para ese equipo (usuario, 24/10/2026): probRacha < 5 % (ver familias.py)
+const IMPROBABLE_BAJO = 0.05
 const AMBITO: Record<string, string> = { local: 'de local', visita: 'de visita', total: 'en total' }
 
 const FAMILIAS: Record<string, (gf: number, gc: number) => boolean> = {
@@ -97,14 +99,21 @@ function burbuja(filas: FilaFamilia[], clave: string) {
   const k = String(v)
   let record: BurbujaFamiliaDTO['record'] = null
   if (cortadas[k] >= MIN_RACHAS_RECORD) record = largo > maximos[k] ? 'supera' : largo === maximos[k] ? 'iguala' : 'no'
+  const frecuencia = redondear(serie.filter(Boolean).length / serie.length, 3)
+  const probRacha = redondear((v ? frecuencia : 1 - frecuencia) ** largo, 4)
   return {
     valor: v, partidos: largo, maximoPrevio: cortadas[k] ? maximos[k] : null, burbujasPrevias: cortadas[k], record,
-    frecuencia: redondear(serie.filter(Boolean).length / serie.length, 3), n: serie.length,
+    frecuencia, n: serie.length, probRacha, improbable: probRacha < IMPROBABLE_BAJO,
   }
 }
 
-function esCuidado(b: { record: BurbujaFamiliaDTO['record']; partidos: number }): boolean {
-  return (b.record === 'supera' || b.record === 'iguala') && b.partidos >= CUIDADO_DESDE
+function esCuidado(b: { record: BurbujaFamiliaDTO['record']; partidos: number; improbable: boolean }): boolean {
+  return (b.record === 'supera' || b.record === 'iguala') && b.partidos >= CUIDADO_DESDE && b.improbable
+}
+
+function pct(p: number): string {
+  const x = redondear(p * 100)
+  return x >= 1 ? `${x} %` : 'menos del 1 %'
 }
 
 function texto(nombre: string, ambito: string, b: NonNullable<ReturnType<typeof burbuja>>, si: string, no: string): string {
@@ -115,6 +124,9 @@ function texto(nombre: string, ambito: string, b: NonNullable<ReturnType<typeof 
     if (esCuidado(b))
       t += ' — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más ' +
         '(§15), así que si se corta hay una causa que buscar'
+    else if (b.partidos >= CUIDADO_DESDE)
+      t += ` — pero con su frecuencia una racha así es esperable (sale el ${pct(b.probRacha)} de las ` +
+        'veces): no es terreno raro'
   }
   // la frecuencia del ESTADO en que está hoy, para que la línea no se contradiga
   const frec = b.valor ? b.frecuencia : 1 - b.frecuencia

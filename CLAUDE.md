@@ -695,7 +695,7 @@ conversación se pierde en la siguiente.
    (rutina)»; **mantenimiento** 12:23 y 21:47 en «SAD · mantenimiento
    (rutina)» (desde el 22/10, deuda 17); **rehacer** cada 30 min (05:07 a 23:37 Lima, dos disparos :07 y
    :37) en «SAD · rehacer DTP con el once (rutina)», desde el 22/10/2026:
-   modo `rehacer` de `corrida-sad`, los partes con DTP-REHACER a 30-80 min del
+   modo `rehacer` de `corrida-sad`, los partes con DTP-REHACER a 15-80 min del
    pitazo, avisa solo si hizo algo. Un fin de semana trae 50-65 candidatos del padrón (15-23 por
    tramo) y la meta es el 80 % (`COBERTURA_META`, latido); medido el 17/10:
    ~5 dólares por parte y ~2,7 por veredicto a precio de lista, y una ventana
@@ -880,7 +880,7 @@ conversación se pierde en la siguiente.
      día). Una sesión fija de rutina se rehace cuando su historial engorda. Medido el
      22/10, ~0,25 USD por disparo vacío (crece con el contexto de la sesión) y
      ninguno rehízo nada por la tarde. Decidido (usuario, 22/10): comprobación
-     barata `GET /analisis/cowork/rehacer` (los partes con DTP-REHACER a 30-80
+     barata `GET /analisis/cowork/rehacer` (los partes con DTP-REHACER a 15-80
      min); el skill la llama primero y el mensaje de las rutinas v2 también.
    - **Hechos el 22/10** (usuario): COLAPSO EN CASCADA calculada (162:
      `equipos.{lado}.d3` ✅/🔶/❌, o leído de la nota del bloque D;
@@ -925,6 +925,12 @@ conversación se pierde en la siguiente.
      amarillas, suspensión) es señal aunque el equipo esté en ruido
      (`jugadores.es_sancion`). El umbral del 25 % no se movió. La 408 (punto
      por racha ≥ mediana con mediana 1) quedó por diseño: separa equipos.
+   - **Decisiones del 24/10** (usuario, tras el mantenimiento): FAMILIA-RECORD y
+     `porExplicar` solo con la racha RARA para el equipo (420, 450:
+     `probRacha` = frecuencia propia ^ largo < 5 %, REVENTON §15.2); la rutina
+     de rehacer mira desde 15 min (444, 451, 454: el once llega ~27 min antes;
+     depósito hasta el pitazo − 10); semifinal y final de copa nacional suben
+     el F2 del TDE a 1 a ≤ 5 días (435; cuartos y antes no).
    - **Escala entre ligas** (300, 309, 294, 79): decidido «solo marcar» (22/10):
      rival (`escalaComparable`), tarjeta de la espina, perfil DC y P1a llevan la
      marca y su nota; ningún número calibrado se mueve.

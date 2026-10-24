@@ -4680,7 +4680,10 @@ def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: in
 # y casi siempre no hay nada; cada disparo vacío costaba ~0,25 USD porque el
 # agente leía la agenda y después cada parte. Esto contesta en UNA llamada qué
 # partes tienen DTP-REHACER y arrancan dentro de la ventana; vacío = terminar.
-REHACER_DESDE_MIN, REHACER_HASTA_MIN = 30, 80
+# Piso en 15 (24/10/2026, incidencias 444, 451 y 454): la API publica el once
+# ~27 min antes y con piso en 30 esos partidos nunca entraban; el depósito
+# sigue topado en el pitazo − 10 (skill corrida-sad).
+REHACER_DESDE_MIN, REHACER_HASTA_MIN = 15, 80
 
 
 def rehacer_pendientes(desde_min: int = REHACER_DESDE_MIN, hasta_min: int = REHACER_HASTA_MIN,

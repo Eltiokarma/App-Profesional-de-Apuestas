@@ -742,8 +742,12 @@ export interface BurbujaFamiliaDTO {
   record: 'supera' | 'iguala' | 'no' | null
   frecuencia: number
   n: number
+  /** chance de encadenar esta racha con la frecuencia propia del estado de hoy (frecuencia ^ partidos) */
+  probRacha: number
+  /** probRacha < 5 %: la racha es rara para ESTE equipo */
+  improbable: boolean
   destacada: boolean
-  /** en su récord y de 5+ partidos: terreno sin precedente, cuidado con la carga (alerta FAMILIA-RECORD) */
+  /** en su récord, de 5+ partidos e improbable: terreno sin precedente, cuidado con la carga (alerta FAMILIA-RECORD) */
   cuidado: boolean
   texto: string
 }
@@ -1615,7 +1619,8 @@ export interface VeredictoObjetivo {
   /** El escenario que dio el marcador para cada lado y lo que la matriz había escrito para él. */
   matriz?: { nota: string } & Partial<Record<'a' | 'b', { escenario: EscenarioMatriz; escrito: Record<string, string>; declarado: boolean }>>
   /** Las otras burbujas (DC, márgenes, goles) destacadas antes del partido que
-   *  este marcador cortó; `porExplicar` (grande o en su récord) pide la causa en
+   *  este marcador cortó; `porExplicar` (grande o en su récord, y rara para su
+   *  frecuencia) pide la causa en
    *  `porLado.*.cortes`. Observación, sin tasa. */
   otrasFamilias?: { nota: string } & Partial<Record<'a' | 'b', FamiliasCortadas>>
 }
@@ -1626,6 +1631,8 @@ export interface FamiliaCortada {
   partidos: number
   record: 'supera' | 'iguala' | 'no' | null
   cuidado: boolean
+  /** la racha era rara para la frecuencia propia del equipo (probRacha < 5 %) */
+  improbable?: boolean
   /** la línea de la narrativa tal como se leía antes del partido */
   antes: string
   porExplicar: boolean

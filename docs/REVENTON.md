@@ -1021,3 +1021,14 @@ que rastrear. Dos piezas, sin puntos ni riesgo:
   la causa en `porLado.*.cortes` con un mecanismo de la lista cerrada del
   estudio de reventones (`reventones.MECANISMOS`). Juntas, esas causas son la
   materia para que lo «entendible y rastreable» se pueda contar.
+
+**Rara para el equipo (24/10/2026, incidencias 420 y 450).** «58 de local sin
+ganar por 3+» es récord, pero a quien gana por 3+ una vez cada 40 una racha
+así le sale sola: gritaba CUIDADO y pedía causa al cortarse sin que hubiera
+nada raro. Ahora cada burbuja lleva `probRacha` = la frecuencia propia del
+estado de hoy elevada al largo (la chance de encadenar tantos seguidos) e
+`improbable` (< 5 %, `familias.IMPROBABLE_BAJO`). `cuidado` exige récord, 5+
+e improbable; `porExplicar`, además de grande o en su récord, improbable. Un
+récord grande pero habitual lo dice en su línea («una racha así es
+esperable»). Es regla de narrativa, no un número calibrado: no mueve ningún
+riesgo. Espejo TS y vectores dorados («Sequía habitual»).
