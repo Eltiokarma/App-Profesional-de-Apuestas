@@ -244,6 +244,13 @@ def deduplicar(js: list[dict], tit: dict[int, int], juntos=None) -> tuple[list[d
         if gemela is None:
             quedan.append(j)
             continue
+        # la copia que se descarta deja su id en la que queda: la hoja del
+        # partido puede nombrarla con ESE id (Pasto, «S. Cordoba» 538162 contra
+        # «S. Córdoba» 64215 con las mismas stats, incidencia 423)
+        if not sumar:
+            k = next(i for i, q in enumerate(quedan) if q is gemela)
+            quedan[k] = {**gemela, "idsAlternos": [*(gemela.get("idsAlternos") or []), j["id"]]}
+            gemela = quedan[k]
         tit[gemela["id"]] = tit.get(gemela["id"], 0) + tit.pop(j["id"], 0)
     return quedan, tit
 

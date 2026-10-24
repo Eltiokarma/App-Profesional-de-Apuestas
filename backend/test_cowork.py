@@ -3421,6 +3421,19 @@ def main():
     _q2, _ = _dedup([{"id": 538162, "nombre": "S. Córdoba", "minutos": 1200, "partidos": 15},
                      {"id": 64215, "nombre": "S. Cordoba", "minutos": 1200, "partidos": 15}], {})
     check("dos registros con el mismo nombre y las MISMAS stats son uno (Pasto, 194)", len(_q2) == 1, _q2)
+    check("423: la copia con las mismas stats deja su id en idsAlternos de la que queda",
+          _q2 and set([_q2[0]["id"], *(_q2[0].get("idsAlternos") or [])]) == {538162, 64215}, _q2)
+    from backend.analisis import bloque_f as _bf423
+    _r423 = _bf423.resolver([{"nombre": "S. Córdoba", "jugadorId": 64215, "idsAlternos": [538162], "zona": "ATK", "rol": "TF"},
+                             {"nombre": "S. Cordoba", "jugadorId": 538162, "zona": "ATK", "rol": "TF"},
+                             {"nombre": "Emmanuel Benítez", "zona": "ATK", "rol": "ROT"}],
+                            [], [], ["S. Córdoba", "Emanuel Benitez"], {"S. Córdoba": 64215})
+    _e423 = {x["nombre"]: x["estado"] for x in _r423["jugadores"]}
+    check("423: la fila cuyo id es el alterno de otra sale duplicada, no baja; 449: «Emanuel» casa con «Emmanuel»",
+          _e423 == {"S. Córdoba": "disponible", "S. Cordoba": "duplicado", "Emmanuel Benítez": "disponible"}
+          and not _r423["noReconocidos"], _r423)
+    check("la letra doble no une nombres distintos: «Ana» no es «Anabel», y el apellido sigue mandando",
+          not _bf423._misma_pila("ana", "anabel") and _bf423._misma_pila("emmanuel", "emanuel"))
     _q, _t = _dedup(_js, {566349: 2, 362224: 3, 3: 1})
     check("la copia sin minutos de un jugador se funde con su gemela y le suma las titularidades; "
           "dos con minutos y el mismo nombre quedan (pueden ser dos personas), y otra inicial no es la misma",
