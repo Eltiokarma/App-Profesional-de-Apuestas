@@ -1020,9 +1020,14 @@ def _liga_domestica(team_id: int, fecha: str | None) -> dict | None:
 # (Segunda Liga de Portugal, 95) salía «primera» y «misma base» frente a la
 # Primeira Liga del Vitória (incidencia 407): las listas son del padrón y de la
 # ingesta, y una liga que entra por un equipo de interés no está en ninguna.
+# La «Challenger Pro League» de Bélgica (145) no casaba con «challenge league»
+# y Lommel y Beveren salían «primera, misma base» frente a la Jupiler
+# (incidencias 489 y 514).
 _SEGUNDA_RE = re.compile(r"\b(segunda|serie b|ligue 2|2\. ?bundesliga|championship|league (?:one|two)|primera b|"
                          r"b nacional|primera nacional|nacional b|liga de expansi[oó]n|liga portugal 2|liga 2|"
-                         r"divisi[oó]n intermedia|ascenso|eerste divisie|1\. lig|challenge league)\b", re.I)
+                         r"divisi[oó]n intermedia|ascenso|eerste divisie|keuken kampioen divisie|1\. lig|"
+                         r"challenger? (?:pro )?league|superettan|obos-ligaen|1\. division|prva liga 2|"
+                         r"segunda liga|2\. liga)\b", re.I)
 
 
 def _segunda(liga_id: int, nombre: str | None = None) -> bool:
