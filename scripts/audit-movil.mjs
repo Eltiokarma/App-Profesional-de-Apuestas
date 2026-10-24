@@ -54,8 +54,8 @@ await p.locator('button', { hasText: 'Liverpool' }).first().click()
 await medir('02-partidos-seleccionado', false)
 await nav('Cuotas'); await medir('03-cuotas')
 await nav('Burbujas'); await medir('04-burbujas')
-await nav('Análisis'); await medir('05-analisis-bloques')
-for (const t of ['Bloque F', 'Matchup', 'Lectura SAD', 'Teorema del Echado', 'Calendario', 'Timeline', 'Documentos']) {
+await nav('Análisis'); await medir('05-analisis-ensayo')
+for (const t of ['Bloques EFE', 'Bloque F', 'Matchup', 'Lectura SAD', 'Teorema del Echado', 'Calendario', 'Timeline', 'Documentos']) {
   const btn = p.locator('button:not([disabled])', { hasText: t }).first()
   if (await btn.count()) { await btn.click({ timeout: 5000 }).catch(() => {}); await medir('05-analisis-' + t.toLowerCase().replace(/[^a-z]/g, '')) }
 }

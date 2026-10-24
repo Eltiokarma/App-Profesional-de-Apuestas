@@ -717,6 +717,49 @@ function MatrizEscenarios({ m, nombreDe, dosCol }: { m: MatrizParte; nombreDe: (
   )
 }
 
+const SEL_1X2: Record<string, string> = { local: 'LOCAL', empate: 'EMPATE', visita: 'VISITA' }
+
+/** El tramo de confianza del 1X2 declarado, el mismo corte que lee Aprendizaje. */
+function tramoConfianza(pct: number): string {
+  return pct >= 60 ? '60+' : pct >= 50 ? '50-59' : pct >= 40 ? '40-49' : '<40'
+}
+
+/** «Dijimos LOCAL 62 % (62/23/15) · salió LOCAL ✓ · Brier 0,220 · exacto 1-0 ✓»:
+ *  cuánto dijimos, no solo si acertamos. Las probabilidades llegan en % (o en
+ *  0-1 en partes viejos: se escalan). */
+function ConfianzaUnXDos({ o }: { o: VeredictoParte['objetivo'] }) {
+  const u = o.unXDos
+  if (!u) return null
+  const rep = u.reparto ?? {}
+  const vals = ['local', 'empate', 'visita'].map((k) => Number(rep[k] ?? 0))
+  const escala = vals.every((x) => x <= 1) && vals.some((x) => x > 0) ? 100 : 1
+  const pct = (x: number) => Math.round(x * escala)
+  const p = pct(Number(u.probabilidadDeclarada ?? 0))
+  const color = (x: boolean | null | undefined) => (x === null || x === undefined ? 'var(--t3)' : x ? 'var(--up)' : 'var(--down)')
+  const sep = <span style={{ color: 'var(--t3)' }}> · </span>
+  const ex = o.marcadorExacto
+  return (
+    <span style={{ font: '600 11.5px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums', flexBasis: '100%', minWidth: 0, lineHeight: 1.6 }}
+      title={u.nota || 'tramo de confianza: <40 · 40-49 · 50-59 · 60+'}>
+      {u.declarado ? (
+        <>
+          Dijimos <b style={{ color: 'var(--t1)' }}>{SEL_1X2[u.declarado] ?? u.declarado} {p} %</b>{' '}
+          <span style={{ color: 'var(--t3)' }}>({vals.map(pct).join('/')})</span>
+          {' '}<span style={{ padding: '1px 6px', borderRadius: 5, background: 'var(--bg3, var(--bg))', border: '1px solid var(--line)', font: '700 9.5px var(--mono)', color: 'var(--t2)' }}>tramo {tramoConfianza(p)}</span>
+        </>
+      ) : <span style={{ color: 'var(--t3)' }}>sin 1X2 declarado</span>}
+      {sep}salió <b style={{ color: 'var(--t1)' }}>{SEL_1X2[u.real] ?? u.real}</b>
+      {u.declarado && <b style={{ color: color(u.acerto) }}> {u.acerto ? '✓' : '✗'}</b>}
+      {o.brier?.valor !== null && o.brier?.valor !== undefined && (
+        <>{sep}<span title={o.brier.escala}>Brier {o.brier.valor.toFixed(3).replace('.', ',')}</span></>
+      )}
+      {ex && ex.declarado && (
+        <>{sep}exacto {ex.declarado} <b style={{ color: color(ex.acerto) }}>{ex.acerto ? '✓' : '✗'}</b></>
+      )}
+    </span>
+  )
+}
+
 function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' | 'b') => string }) {
   const [abierto, setAbierto] = useState(false)
   const o = v.objetivo
@@ -747,12 +790,7 @@ function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' 
         {m && !m.terminado && (
           <span style={{ padding: '2px 8px', borderRadius: 6, background: 'var(--mark-soft)', color: 'var(--mark)', font: '700 9px var(--mono)' }}>EN CURSO</span>
         )}
-        <span style={{ font: '600 11.5px var(--mono)', color: ok(o.unXDos?.acerto) }}>
-          {marca(o.unXDos?.acerto)} 1X2
-        </span>
-        <span style={{ font: '600 11.5px var(--mono)', color: ok(o.marcadorExacto?.acerto) }}>
-          {marca(o.marcadorExacto?.acerto)} marcador
-        </span>
+        <ConfianzaUnXDos o={o} />
         {(o.tde?.bloques ?? []).map((t, i) => (
           <span key={t.equipo || i} style={{ font: '600 11.5px var(--mono)', color: ok(t.golEnVentana) }}
             title={t.nota || `ventana ${t.ventana}`}>
@@ -760,11 +798,6 @@ function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' 
             {(o.tde!.bloques.length > 1 && t.equipo) ? ` · ${nombreDe(t.equipo as 'a' | 'b')}` : ''}
           </span>
         ))}
-        {o.brier?.valor !== null && o.brier?.valor !== undefined && (
-          <span style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)' }} title={o.brier.escala}>
-            Brier {o.brier.valor.toFixed(3)}
-          </span>
-        )}
         {/* el reventón: observación, no veredicto — la burbuja que había antes y qué pasó con ella */}
         {(['a', 'b'] as const).map((lado) => {
           const r = o.reventon?.[lado]
@@ -971,7 +1004,7 @@ interface Props {
   isMobile: boolean
 }
 
-type Tab = 'bloques' | 'f' | 'matchup' | 'lectura' | 'tde' | 'dtp' | 'calendario' | 'timeline' | 'documentos'
+type Tab = 'ensayo' | 'bloques' | 'f' | 'matchup' | 'lectura' | 'tde' | 'dtp' | 'calendario' | 'timeline' | 'documentos'
 
 /** El revisor de coherencia (Jev, docs/JEV.md): qué se le preguntó al parte y
  *  qué no cuadró. En SOMBRA es la única ventana para verlo —la tira no lo
@@ -1016,7 +1049,11 @@ function RevisorCoherencia({ parte }: { parte: ParteCoworkDTO }) {
 }
 
 export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, isMobile }: Props) {
-  const [tab, setTab] = useState<Tab>('bloques')
+  // el ENSAYO va primero y el parte abre en él (pedido del usuario, 24/10/2026);
+  // si llegaran varios con id `ensayo`, se muestra el último depositado
+  const ensayo = [...parte.documentos].reverse().find((d) => d.id === 'ensayo')
+  const otrosDocs = parte.documentos.filter((d) => d !== ensayo)
+  const [tab, setTab] = useState<Tab>(ensayo ? 'ensayo' : 'bloques')
 
   // el calendario (bloque G) se pide SOLO al abrir su pestaña: ya está
   // calculado y es gratis, pero son dos requests que nadie pidió si el
@@ -1052,6 +1089,7 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
   const [dtpFoco, setDtpFoco] = useState<'a' | 'b'>('a')
   const dtpSel = dtpBloques.find((b) => b.equipo === dtpFoco) ?? dtpBloques[0]
   const tabs: { k: Tab; label: string }[] = [
+    ...(ensayo ? [{ k: 'ensayo' as Tab, label: 'Ensayo' }] : []),
     { k: 'bloques', label: 'Bloques EFE' },
     { k: 'f', label: pendienteXi ? 'Bloque F · congelado' : 'Bloque F' },
     { k: 'matchup', label: 'Matchup' },
@@ -1060,7 +1098,7 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
     ...(dtpBloques.length ? [{ k: 'dtp' as Tab, label: 'DTP' }] : []),
     { k: 'calendario', label: 'Calendario' },
     ...(parte.timeline ? [{ k: 'timeline' as Tab, label: 'Timeline' }] : []),
-    { k: 'documentos', label: `Documentos (${parte.documentos.length})` },
+    { k: 'documentos', label: `Documentos (${otrosDocs.length})` },
   ]
 
   return (
@@ -1454,11 +1492,12 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
         </>
       )}
 
+      {tab === 'ensayo' && ensayo && <Documento d={ensayo} />}
       {tab === 'documentos' && (
         <div>
-          {parte.documentos.length === 0
-            ? <div style={{ padding: '22px 18px', borderRadius: 14, background: 'var(--bg2)', border: '1px dashed var(--line)', textAlign: 'center', font: '500 12px var(--sans)', color: 'var(--t3)' }}>El parte llegó sin documentos en prosa.</div>
-            : parte.documentos.map((d) => <Documento key={d.id} d={d} />)}
+          {otrosDocs.length === 0
+            ? <div style={{ padding: '22px 18px', borderRadius: 14, background: 'var(--bg2)', border: '1px dashed var(--line)', textAlign: 'center', font: '500 12px var(--sans)', color: 'var(--t3)' }}>{ensayo ? 'Fuera del ensayo, el parte no trae otros documentos en prosa.' : 'El parte llegó sin documentos en prosa.'}</div>
+            : otrosDocs.map((d, i) => <Documento key={`${d.id}-${i}`} d={d} />)}
         </div>
       )}
     </div>
