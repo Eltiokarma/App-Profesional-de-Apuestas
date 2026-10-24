@@ -2405,9 +2405,13 @@ def guardar(payload: dict) -> dict:
     # UN IE QUE NO SE PUEDE CALCULAR SE DICE AL DEPOSITAR. Athletico-PR y
     # Gimnasia de Mendoza (17/10/2026) llegaron sin un solo indicador S: el IE
     # quedaba en null y el recibo callaba; los analistas lo vieron al releer.
+    # ...con lo que HEREDA del DTP, como al leer: el C1 de la clase del bloque
+    # cuenta para el bloque C (Tucumán, incidencia 434: c1Tde 0.5 y el recibo
+    # decía «sin ningún indicador en el bloque C»; hubo que escribirlo a mano)
     from backend.analisis import tde as _tdemod
+    _her = _dtp.herencia_tde(parte.get("dtp") or {})
     for b in tde_bloques:
-        ind = b.get("indicadores") or {}
+        ind = (_heredar(b, _her.get(b.get("equipo") or "")).get("indicadores") or {}) if b.get("indicadores") else {}
         if not ind:
             continue
         calc = _tdemod.indice(dict(ind))
