@@ -915,6 +915,12 @@ conversación se pierde en la siguiente.
      doméstica (el de quinta división de la FA Cup no gasta requests). Las K
      de los equipos europeos pasan a contar sus partidos de copa. La copa de
      Bélgica (147) entró el mismo día, con el id confirmado en Railway.
+   - **Missing Fixture, 24/10** (usuario, 415 con 71 y 312): la densidad cuenta
+     solo las marcas VIGENTES —las que el once ya desmintió inflaban el 25 %:
+     Real Madrid 10 de 30 (ruido) eran 3 vigentes (señal)— y una SANCIÓN (roja,
+     amarillas, suspensión) es señal aunque el equipo esté en ruido
+     (`jugadores.es_sancion`). El umbral del 25 % no se movió. La 408 (punto
+     por racha ≥ mediana con mediana 1) quedó por diseño: separa equipos.
    - **Escala entre ligas** (300, 309, 294, 79): decidido «solo marcar» (22/10):
      rival (`escalaComparable`), tarjeta de la espina, perfil DC y P1a llevan la
      marca y su nota; ningún número calibrado se mueve.

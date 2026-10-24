@@ -173,6 +173,14 @@ Ahora se lee por densidad en `backend/jugadores.py` (`lectura_missing_fixture`):
   fecha de la baja, queda como venía. Lo que esto NO arregla: la API que no
   marca una lesión publicada (28) o una de ruido que era real (71, 312): ahí
   manda la prensa, y esos casos son los que recalibran el umbral.
+- **La densidad cuenta solo las marcas vigentes y una sanción es señal
+  siempre** (24/10/2026, incidencia 415). Una marca que el once ya desmintió
+  no infla la densidad: el equipo con 9 marcas de las que 7 jugaron tiene 2
+  vigentes, no 9, y puede volver a `senal` (`missingFixture.desmentidas` dice
+  cuántas se apartaron). Y una baja por tarjeta roja, acumulación o
+  suspensión (`es_sancion`: «red card», «yellow card», «suspen», «sanci»,
+  «ban») es dato reglamentario, no ruido de convocatoria: sale `senal`
+  aunque el equipo esté en `ruido` y viaja con `sancion: true`.
 
 ## Contrato (docs/openapi.yaml)
 

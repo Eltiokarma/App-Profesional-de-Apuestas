@@ -276,8 +276,8 @@ def plantilla_de(team_id: int) -> dict:
             "SELECT player_id, tipo, detalle, fecha FROM jugador_bajas WHERE team_id=?", (team_id,)
         )
     }
-    missing = lectura_missing_fixture(bajas, {r["player_id"] for r in filas})
     jugo = ultimo_partido_jugado(team_id)
+    missing = lectura_missing_fixture(bajas, {r["player_id"] for r in filas}, jugo)
 
     # MINUTOS QUE NO CABEN EN LOS PARTIDOS. La API dio a J. García (Tigres,
     # 20/10/2026) 1 partido y 1.708 minutos: salía «titular habitual (81 %)» y
@@ -366,7 +366,7 @@ def plantilla_de(team_id: int) -> dict:
         # goles del equipo según la plantilla (denominador de participación)
         "golesPlantilla": goles_equipo,
         # el flag Missing Fixture leído por densidad (ver UMBRAL_MISSING_FIXTURE)
-        "missingFixture": missing if missing["marcados"] else None,
+        "missingFixture": missing if (missing["marcados"] or missing["desmentidas"]) else None,
     })
     return base
 
@@ -402,8 +402,16 @@ def _baja_dto(baja, missing: dict, jugo_el: str | None) -> dict:
     143, 149, 167, 312; pedido del usuario 22/10/2026). Sin fecha de la baja no
     hay contra qué comparar y queda como venía."""
     lectura = missing["lectura"] if _es_missing(baja["tipo"]) else "senal"
+    # UNA SANCIÓN ES SEÑAL SIEMPRE (incidencias 71 y 415, usuario 24/10/2026):
+    # roja, acumulación de amarillas o suspensión son registros disciplinarios
+    # de la liga, no la marca genérica de «no jugó». Vinícius (4 fechas por
+    # roja) y Taliari (amarillas) salían «ruido» por la densidad del equipo.
+    sancion = es_sancion(baja["detalle"])
+    if sancion and lectura == "ruido":
+        lectura = "senal"
     fecha = str(baja["fecha"] or "")[:10] if "fecha" in baja.keys() else ""
-    out = {"tipo": baja["tipo"], "detalle": baja["detalle"], "lectura": lectura}
+    out = {"tipo": baja["tipo"], "detalle": baja["detalle"], "lectura": lectura,
+           **({"sancion": True} if sancion else {})}
     if fecha and jugo_el and jugo_el[:10] > fecha:
         out.update({"lectura": "desmentida", "lecturaApi": lectura,
                     "desmentidaPorOnce": {"fechaBaja": fecha, "jugoEl": jugo_el[:10]}})
@@ -414,16 +422,40 @@ def _es_missing(tipo) -> bool:
     return (tipo or "").strip().lower() == "missing fixture"
 
 
-def lectura_missing_fixture(bajas: dict, plantilla_ids: set) -> dict:
+_SANCION = ("red card", "yellow card", "suspen", "sanci", "ban")
+
+
+def es_sancion(detalle) -> bool:
+    """«Red Card», «Yellow Cards», «Suspended»…: el motivo es disciplinario."""
+    d = (detalle or "").strip().lower()
+    return any(d.startswith(s) or f" {s}" in d for s in _SANCION)
+
+
+def _desmentida(b, jugo_el: str | None) -> bool:
+    fecha = str(b["fecha"] or "")[:10] if "fecha" in b.keys() else ""
+    return bool(fecha and jugo_el and jugo_el[:10] > fecha)
+
+
+def lectura_missing_fixture(bajas: dict, plantilla_ids: set, jugo: dict | None = None) -> dict:
     """Cuántos de la plantilla trae marcados como «Missing Fixture» y qué
     lectura merece: `senal` (pocos: bajas reales) o `ruido` (media plantilla:
     la API marcó a todo el que no jugó un partido). La densidad se mide
-    contra la plantilla capturada, no contra la lista de bajas."""
+    contra la plantilla capturada, no contra la lista de bajas.
+
+    SOLO CUENTAN LAS MARCAS VIGENTES (incidencias 71, 312 y 415, usuario
+    24/10/2026): la API deja la marca puesta después de que el jugador volvió
+    a jugar, y esas viejas —ya `desmentida`— inflaban la densidad. El Real
+    Madrid tenía 10 de 30 marcados (33 %, todo «ruido», Vinícius incluido),
+    pero 7 ya habían jugado después: vigentes, 3 de 30 (10 %, señal)."""
+    jugo = jugo or {}
     total = len(plantilla_ids)
-    marcados = sum(1 for pid, b in bajas.items() if pid in plantilla_ids and _es_missing(b["tipo"]))
+    marcas = [(pid, b) for pid, b in bajas.items() if pid in plantilla_ids and _es_missing(b["tipo"])]
+    vigentes = [pid for pid, b in marcas if not _desmentida(b, jugo.get(pid))]
+    marcados = len(vigentes)
     densidad = round(marcados / total, 3) if total else 0.0
     return {
         "marcados": marcados,
+        "desmentidas": len(marcas) - marcados,
         "plantilla": total,
         "densidad": densidad,
         "umbral": UMBRAL_MISSING_FIXTURE,
