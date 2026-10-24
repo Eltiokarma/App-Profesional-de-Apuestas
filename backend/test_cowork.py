@@ -406,6 +406,27 @@ def main():
           and _sg(129, "Primera Nacional") and not _sg(128, "Liga Profesional Argentina"))
     check("489/514: la Challenger Pro League de Bélgica (145) es segunda; la Jupiler Pro League no",
           _esc.categoria(145, "Challenger Pro League") == "segunda" and _esc.categoria(144, "Jupiler Pro League") == "primera")
+    # incidencias 466 y 471: un amistoso no es rotación (F1 del TDE) ni partido de los 21 días (F2)
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        for _k, (_dias, _liga, _ids) in enumerate([(3, 667, range(500, 511)), (8, 39, range(100, 111)),
+                                                   (15, 39, range(100, 111))]):
+            _fid = 990470 + _k
+            _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                         "home_team_id, away_team_id, goals_home, goals_away) VALUES (?,?,?,?,?,?,?,?,1,0)",
+                         (_fid, (t0 - _dt.timedelta(days=_dias)).strftime("%Y-%m-%d %H:%M:%S"), "FT",
+                          "Match Finished", _liga, 2026, 990471, 990472))
+            _con.executemany("INSERT INTO alineaciones (fixture_id, team_id, player_id, jugador, titular) "
+                             "VALUES (?,?,?,?,1)", [(_fid, 990471, _p, f"J{_p}") for _p in _ids])
+    from backend.analisis import tde as _tde466
+    from backend import jugadores as _jug471
+    _f466 = _tde466.f1_rotacion(990471, t0.strftime("%Y-%m-%d %H:%M:%S"))
+    _c471 = _jug471._congestion(990471, t0.strftime("%Y-%m-%d %H:%M:%S"))
+    check("466/471: el once del amistoso no entra a la rotación (mismo once en liga) ni a los 21 días",
+          _f466.get("rotadosPromedio") == 0 and _f466.get("partidosMirados") == 2
+          and _c471 == {"diasDescanso": 8, "partidos21d": 2}, (_f466, _c471))
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:   # que no los tome otro test como «el último jugado»
+        _con.execute("DELETE FROM alineaciones WHERE fixture_id BETWEEN 990470 AND 990472")
+        _con.execute("DELETE FROM fixtures WHERE id BETWEEN 990470 AND 990472")
     # pretemporada: Millwall (base Championship) con su próximo partido de liga en la Premier
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("INSERT OR REPLACE INTO leagues (id, name, country, season) VALUES (39, 'Premier League', 'England', 2026)")

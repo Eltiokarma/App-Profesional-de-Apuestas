@@ -472,13 +472,17 @@ def es_baja_real(j: dict) -> bool:
 
 def _congestion(team_id: int, fecha_fixture: str) -> dict:
     """Días de descanso y partidos en los últimos 21 días ANTES del fixture —
-    sale de fixtures ya capturados (spec §11, 0 requests)."""
+    sale de fixtures ya capturados (spec §11, 0 requests). Sin amistosos: el
+    de Mainz con el Waldhof Mannheim contaba como partido de los 21 días en el
+    F2 del TDE (incidencia 471)."""
+    from backend.analisis.escala import AMISTOSOS
     fecha = fecha_fixture.replace("T", " ").rstrip("Z")
     previos = _query(
         f"""SELECT date FROM fixtures
             WHERE (home_team_id=? OR away_team_id=?) AND date < ? AND {_FIN90}
+              AND COALESCE(league_id, 0) NOT IN ({",".join("?" * len(AMISTOSOS))})
             ORDER BY date DESC LIMIT 12""",
-        (team_id, team_id, fecha),
+        (team_id, team_id, fecha, *sorted(AMISTOSOS)),
     )
     if not previos:
         return {"diasDescanso": None, "partidos21d": 0}
