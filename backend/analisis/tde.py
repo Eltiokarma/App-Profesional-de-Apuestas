@@ -47,13 +47,19 @@ def _fixture(fixture_id: int):
 # ── F1 · rotación en los últimos 3 ──────────────────────────────────────────
 
 def _onces_previos(team_id: int, fecha: str, cuantos: int = VENTANA_F1) -> list[dict]:
-    """Los últimos onces titulares ANTES de esta fecha, del más nuevo al más viejo."""
+    """Los últimos onces titulares ANTES de esta fecha, del más nuevo al más viejo.
+
+    UN AMISTOSO NO ES ROTACIÓN (incidencia 466): Köln y Schalke salían con
+    «rotación amplia» y F1 = 0 por los onces de los amistosos del parón (03/10).
+    Una copa sí cuenta: el once rotado de copa descansa piernas de verdad."""
+    from backend.analisis.escala import AMISTOSOS
     filas = saddb.query(
         "sad",
         f"""SELECT f.id, f.date FROM fixtures f
             WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.date < ? AND {_FIN}
+              AND COALESCE(f.league_id, 0) NOT IN ({",".join("?" * len(AMISTOSOS))})
             ORDER BY f.date DESC LIMIT ?""",
-        (team_id, team_id, fecha, cuantos),
+        (team_id, team_id, fecha, *sorted(AMISTOSOS), cuantos),
     )
     onces = []
     for f in filas:
