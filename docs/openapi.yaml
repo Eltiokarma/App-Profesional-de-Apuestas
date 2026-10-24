@@ -3474,6 +3474,7 @@ components:
         pronostico: { $ref: '#/components/schemas/PronosticoParte' }
         documentos:
           type: array
+          description: 'UN documento por id (24/10/2026): sin `id` se rechaza con motivo (antes se guardaba como «nota»); dos con el mismo id dejan el ÚLTIMO y el recibo lo avisa'
           items: { $ref: '#/components/schemas/DocumentoParte' }
         pendientes: { type: array, items: { type: string } }
         fuentes: { type: array, items: { type: string } }
@@ -3548,7 +3549,7 @@ components:
       type: object
       required: [id, cuerpo]
       properties:
-        id: { type: string, description: 'dtp, matriz, tde, ensayo, timeline, pendientes o el que sea' }
+        id: { type: string, description: 'dtp, matriz, tde, ensayo, timeline, pendientes o el que sea (obligatorio). En la pantalla: ensayo = primera pestaña; tde, dtp y matriz van en la pestaña de su skill; el resto en «Documentos»' }
         titulo: { type: string }
         formato: { type: string, enum: [md, html, texto], default: md }
         cuerpo: { type: string }

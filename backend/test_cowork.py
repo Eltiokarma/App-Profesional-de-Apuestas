@@ -301,6 +301,16 @@ def main():
           rec.get("partido"))
     check("el recibo cuenta los jugadores", rec["jugadores"] == {"a": 16, "b": 16}, rec.get("jugadores"))
     check("el documento vacío se descarta", rec["documentos"] == ["ensayo", "tde"], rec.get("documentos"))
+    # 24/10/2026: sin id se rechaza con motivo (antes: «nota» sin nombre); repetido, queda el último
+    from backend.analisis.parte import _documentos as _docs_
+    _rz = []
+    _dd = _docs_([{"cuerpo": "# Un ensayo sin id"}, {"id": "ensayo", "cuerpo": "v1"},
+                  {"id": "tde", "cuerpo": "IE"}, {"id": "ensayo", "cuerpo": "v2"}], _rz)
+    check("documento sin id: se rechaza con motivo y no se guarda como «nota»",
+          all(d["id"] != "nota" for d in _dd) and any("sin `id`" in r["porque"] for r in _rz), (_dd, _rz))
+    check("dos ensayos: queda el último, uno solo, y el recibo lo dice",
+          [d["id"] for d in _dd] == ["tde", "ensayo"] and _dd[1]["cuerpo"] == "v2"
+          and any("repetido" in r["porque"] for r in _rz), (_dd, _rz))
     check("sin discrepancias cuando no se mandan nombres", rec["discrepancias"] == [])
 
     r = c.post(f"{A}/analisis/cowork",

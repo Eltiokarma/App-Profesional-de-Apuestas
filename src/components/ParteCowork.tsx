@@ -87,19 +87,27 @@ function Markdown({ texto }: { texto: string }) {
 
 /** Un documento del parte. El HTML va en iframe aislado: el timeline que manda
  *  Cowork es una página entera y no tiene por qué compartir DOM con la app. */
+/** El título que se lee: un documento viejo sin título (los «nota» del
+ *  16/09) toma el primer encabezado de su texto. */
+function tituloDoc(d: DocumentoParte): string {
+  if (d.titulo && d.titulo !== d.id) return d.titulo
+  const h = d.cuerpo.match(/^#{1,4}\s+(.+)$/m)
+  return h ? h[1].trim() : d.titulo || d.id
+}
+
 function Documento({ d }: { d: DocumentoParte }) {
   const [abierto, setAbierto] = useState(d.id === 'ensayo')
   return (
     <section style={{ borderRadius: 12, background: 'var(--bg2)', border: '1px solid var(--line)', marginBottom: 10 }}>
       <button onClick={() => setAbierto(!abierto)} style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '10px 14px', background: 'transparent', border: 0, cursor: 'pointer', textAlign: 'left' }}>
         <span style={{ font: '700 9.5px var(--mono)', color: 'var(--accent)', letterSpacing: '.5px', textTransform: 'uppercase' }}>{d.id}</span>
-        <span style={{ font: '600 12.5px var(--sans)', color: 'var(--t1)', flex: 1 }}>{d.titulo}</span>
+        <span style={{ font: '600 12.5px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0 }}>{tituloDoc(d)}</span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2.4" strokeLinecap="round" style={{ transform: abierto ? 'rotate(90deg)' : 'none', transition: 'transform .12s' }}><path d="M9 6l6 6-6 6" /></svg>
       </button>
       {abierto && (
         <div style={{ padding: '0 14px 14px' }}>
           {d.formato === 'html'
-            ? <iframe title={d.titulo} srcDoc={d.cuerpo} sandbox="" style={{ width: '100%', height: 520, border: '1px solid var(--line)', borderRadius: 10, background: '#fff' }} />
+            ? <iframe title={tituloDoc(d)} srcDoc={d.cuerpo} sandbox="" style={{ width: '100%', height: 520, border: '1px solid var(--line)', borderRadius: 10, background: '#fff' }} />
             : d.formato === 'texto'
               ? <pre className="sad-scroll" style={{ margin: 0, whiteSpace: 'pre-wrap', font: '500 12px var(--mono)', color: 'var(--t1)' }}>{d.cuerpo}</pre>
               : <Markdown texto={d.cuerpo} />}
@@ -1051,8 +1059,8 @@ function RevisorCoherencia({ parte }: { parte: ParteCoworkDTO }) {
 export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, isMobile }: Props) {
   // el ENSAYO va primero y el parte abre en él (pedido del usuario, 24/10/2026);
   // si llegaran varios con id `ensayo`, se muestra el último depositado
-  const ensayo = [...parte.documentos].reverse().find((d) => d.id === 'ensayo')
-  const otrosDocs = parte.documentos.filter((d) => d !== ensayo)
+  const ultimoDoc = (id: string) => [...parte.documentos].reverse().find((d) => d.id === id)
+  const ensayo = ultimoDoc('ensayo')
   const [tab, setTab] = useState<Tab>(ensayo ? 'ensayo' : 'bloques')
 
   // el calendario (bloque G) se pide SOLO al abrir su pestaña: ya está
@@ -1088,6 +1096,15 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
   const dtpBloques = parte.dtp?.bloques ?? []
   const [dtpFoco, setDtpFoco] = useState<'a' | 'b'>('a')
   const dtpSel = dtpBloques.find((b) => b.equipo === dtpFoco) ?? dtpBloques[0]
+  // cada documento vive en la pestaña de su skill (24/10/2026): el texto del
+  // TDE bajo el Teorema del Echado, el del DTP bajo el DTP y la matriz en la
+  // Lectura. «Documentos» queda para lo que no tiene dueño (o su pestaña no
+  // está) y desaparece si no queda nada.
+  const docTde = conTde ? ultimoDoc('tde') : undefined
+  const docDtp = dtpBloques.length ? ultimoDoc('dtp') : undefined
+  const docMatriz = ultimoDoc('matriz')
+  const ubicados = new Set([ensayo, docTde, docDtp, docMatriz].filter(Boolean))
+  const otrosDocs = parte.documentos.filter((d) => !ubicados.has(d))
   const tabs: { k: Tab; label: string }[] = [
     ...(ensayo ? [{ k: 'ensayo' as Tab, label: 'Ensayo' }] : []),
     { k: 'bloques', label: 'Bloques EFE' },
@@ -1098,7 +1115,7 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
     ...(dtpBloques.length ? [{ k: 'dtp' as Tab, label: 'DTP' }] : []),
     { k: 'calendario', label: 'Calendario' },
     ...(parte.timeline ? [{ k: 'timeline' as Tab, label: 'Timeline' }] : []),
-    { k: 'documentos', label: `Documentos (${otrosDocs.length})` },
+    ...(otrosDocs.length ? [{ k: 'documentos' as Tab, label: `Documentos (${otrosDocs.length})` }] : []),
   ]
 
   return (
@@ -1445,13 +1462,20 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
             </section>
           )}
 
+          {docMatriz && <Documento d={docMatriz} />}
+
           {parte.fuentes.length > 0 && (
             <div style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)', wordBreak: 'break-word' }}>Fuentes: {parte.fuentes.join(' · ')}</div>
           )}
         </div>
       )}
 
-      {tab === 'tde' && <PanelTde tde={parte.tde} nombreDe={nombreDe} />}
+      {tab === 'tde' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <PanelTde tde={parte.tde} nombreDe={nombreDe} />
+          {docTde && <Documento d={docTde} />}
+        </div>
+      )}
 
       {/* DTP de Cowork: checklist del bloque rival (clase calculada) + pizarra */}
       {tab === 'dtp' && dtpSel && (
@@ -1470,6 +1494,7 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
           )}
           <PanelDtpCowork b={dtpSel} foco={nombreDe(dtpSel.equipo)} rival={nombreDe(dtpSel.equipo === 'a' ? 'b' : 'a')}
                           fixtureId={parte.fixtureId} isMobile={isMobile} />
+          {docDtp && <Documento d={docDtp} />}
         </div>
       )}
 
@@ -1493,11 +1518,9 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
       )}
 
       {tab === 'ensayo' && ensayo && <Documento d={ensayo} />}
-      {tab === 'documentos' && (
+      {tab === 'documentos' && otrosDocs.length > 0 && (
         <div>
-          {otrosDocs.length === 0
-            ? <div style={{ padding: '22px 18px', borderRadius: 14, background: 'var(--bg2)', border: '1px dashed var(--line)', textAlign: 'center', font: '500 12px var(--sans)', color: 'var(--t3)' }}>{ensayo ? 'Fuera del ensayo, el parte no trae otros documentos en prosa.' : 'El parte llegó sin documentos en prosa.'}</div>
-            : otrosDocs.map((d, i) => <Documento key={`${d.id}-${i}`} d={d} />)}
+          {otrosDocs.map((d, i) => <Documento key={`${d.id}-${i}`} d={d} />)}
         </div>
       )}
     </div>
