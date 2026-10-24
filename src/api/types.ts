@@ -1563,9 +1563,11 @@ export interface VeredictoObjetivo {
       tramos?: {
         desde: number; hasta: number; marcador: string
         estado: 'inicio' | 'ganando' | 'perdiendo' | 'empatado'
-        rama: 'base' | 'siMarcaPrimero' | 'siRecibePrimero' | 'siLeEmpatan' | 'siIguala'
+        rama: 'base' | 'siMarcaPrimero' | 'siRecibePrimero' | 'siLeEmpatan' | 'siIguala' | 'siExpulsion'
         declarada: boolean; ventana: string; rango: number[] | null
         concedio: number[]; golEnVentana: boolean | null
+        /** Solo tras la roja propia (44d): su minuto y la rama que daba el marcador. */
+        rojaPropia?: number; ramaMarcador?: string
       }[]
       /** Qué rama de la reasignación jugó el partido (quién marcó primero) y si
        *  estaba declarada. Observación, no acierto. */

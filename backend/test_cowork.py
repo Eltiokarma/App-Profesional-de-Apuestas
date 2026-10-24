@@ -3683,6 +3683,25 @@ def main():
           [t["rama"] for t in _tr2] == ["base", "siMarcaPrimero", "siLeEmpatan", "siRecibePrimero"]
           and _tr2[1]["golEnVentana"] is True and _tr2[2]["rango"] == [66, 81] and _tr2[2]["golEnVentana"] is True,
           _tr2)
+    # incidencia 453: el gol del añadido (45+5 guardado como 50) corta el tramo en el 45
+    _ta = tramos_por_marcador({"reasignacion": {"siMarcaPrimero": {"ventana": "desde el gol +15"}}},
+                              [{"minuto": 50, "lado": "a", "enAnadido": True, "baseAnadido": 45}], "a")
+    check("453: un 45+5 abre el tramo de ventaja en el 45, con su ventana +15 desde ahí",
+          [(t["desde"], t["hasta"], t["rama"]) for t in _ta] == [(0, 45, "base"), (45, 90, "siMarcaPrimero")]
+          and _ta[1]["rango"] == [45, 60], _ta)
+    # incidencias 446 y 448: la roja propia abre tramo con siExpulsion (declarada o no)
+    _tx = tramos_por_marcador({"reasignacion": {"siMarcaPrimero": {"sob1": 0}, "siExpulsion": "roja ganando → ECHADA-NUM"}},
+                              [{"minuto": 26, "lado": "a"}, {"minuto": 61, "lado": "b"}], "a",
+                              [{"minuto": 27, "lado": "a", "jugador": "x"}, {"minuto": 70, "lado": "b", "jugador": "y"}])
+    check("446: Grau 1-0 al 26 y roja propia al 27 → siExpulsion desde el 27, con la rama del marcador al lado",
+          [(t["desde"], t["hasta"], t["rama"]) for t in _tx] == [(0, 26, "base"), (26, 27, "siMarcaPrimero"),
+                                                              (27, 61, "siExpulsion"), (61, 90, "siExpulsion")]
+          and _tx[2]["declarada"] is True and _tx[2]["ramaMarcador"] == "siMarcaPrimero"
+          and _tx[3]["ramaMarcador"] == "siLeEmpatan" and _tx[3]["rojaPropia"] == 27 and _tx[2]["concedio"] == [61], _tx)
+    _t448 = tramos_por_marcador({"reasignacion": {}}, [], "b", [{"minuto": 50, "lado": "b", "jugador": "x"}])
+    check("448: sin goles y roja propia al 50, el partido tiene su tramo siExpulsion (no declarada)",
+          [(t["desde"], t["hasta"], t["rama"], t["declarada"]) for t in _t448]
+          == [(0, 50, "base", False), (50, 90, "siExpulsion", False)], _t448)
     _gs = [{"minuto": 20, "lado": "a"}, {"minuto": 60, "lado": "a"}, {"minuto": 81, "lado": "a"}, {"minuto": 86, "lado": "b"}]
     check("un 3 arriba alcanzado DENTRO de la ventana, antes del gol que se cobra, abandona la rama (Nacional 3-0 al 81', 3-1 al 86')",
           _cv(_gs, 86, "b")[0] == "rama_abandonada" and _cv(_gs, 75, "b")[0] == "")
