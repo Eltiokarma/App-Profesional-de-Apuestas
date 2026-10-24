@@ -834,7 +834,7 @@ POR_EXPLICAR_DESDE = 5
 def familias_objetivo(fx) -> dict:
     out = {"nota": ("las burbujas de doble oportunidad, márgenes y goles destacadas ANTES del partido "
                     "(vista «al día del partido») y cuáles cortó este marcador; `porExplicar` = grande o en "
-                    "su récord: el corte tiene una causa que va en porLado.*.cortes (mecanismo de la lista "
+                    "su récord, y rara para su frecuencia (una sequía habitual no pide causa): el corte tiene una causa que va en porLado.*.cortes (mecanismo de la lista "
                     "del estudio de reventones). Observación, sin tasa")}
     fecha = str(fx["date"])
     lados = (("a", fx["home_team_id"], fx["home_name"], "L", fx["g_local"], fx["g_visita"]),
@@ -862,8 +862,10 @@ def _familias_lado(tid: int, nombre: str, cond: str, fecha: str, gf: int, gc: in
             continue
         cortadas.append({
             "familia": f["familia"], "ambito": f["ambito"], "partidos": f["partidos"],
-            "record": f["record"], "cuidado": f["cuidado"], "antes": f["texto"],
-            "porExplicar": f["cuidado"] or f["partidos"] >= POR_EXPLICAR_DESDE,
+            "record": f["record"], "cuidado": f["cuidado"], "improbable": f["improbable"], "antes": f["texto"],
+            # grande Y rara para el equipo (24/10/2026, incidencia 450): cortar una sequía
+            # que su frecuencia hace habitual no pide causa
+            "porExplicar": f["cuidado"] or (f["partidos"] >= POR_EXPLICAR_DESDE and f["improbable"]),
         })
     return {"cortadas": cortadas, "siguieron": siguieron,
             "porExplicar": sum(1 for c in cortadas if c["porExplicar"])}

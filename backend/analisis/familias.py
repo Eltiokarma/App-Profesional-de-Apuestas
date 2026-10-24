@@ -41,6 +41,11 @@ NARRADAS = (
 )
 DESTACADA_DESDE = 3      # una burbuja de 3+ partidos (o en su récord) va a las líneas
 CUIDADO_DESDE = 5        # en su récord y de 5+ partidos: cuidado con la carga
+# ...y RARA para ese equipo (usuario, 24/10/2026, incidencias 420 y 450): «58 de
+# local sin ganar por 3+» es récord, pero a quien gana por 3+ una vez cada 40 una
+# racha así le sale sola. `probRacha` = frecuencia propia del estado de hoy
+# elevada al largo (la chance de encadenar tantos seguidos); cuidado solo < 5 %.
+IMPROBABLE_BAJO = 0.05
 _AMBITO = {"local": "de local", "visita": "de visita", "total": "en total"}
 
 
@@ -61,13 +66,20 @@ def _burbuja(filas: list[dict], clave: str) -> dict | None:
     rec = None
     if cortadas[v] >= MIN_RACHAS_RECORD:
         rec = "supera" if largo > maximos[v] else "iguala" if largo == maximos[v] else "no"
+    frec = redondear(sum(serie) / len(serie), 3)
+    prob = redondear((frec if v else 1 - frec) ** largo, 4)
     return {"valor": v, "partidos": largo, "maximoPrevio": maximos[v] if cortadas[v] else None,
             "burbujasPrevias": cortadas[v], "record": rec,
-            "frecuencia": redondear(sum(serie) / len(serie), 3), "n": len(serie)}
+            "frecuencia": frec, "n": len(serie), "probRacha": prob, "improbable": prob < IMPROBABLE_BAJO}
 
 
 def es_cuidado(b: dict) -> bool:
-    return b["record"] in ("supera", "iguala") and b["partidos"] >= CUIDADO_DESDE
+    return b["record"] in ("supera", "iguala") and b["partidos"] >= CUIDADO_DESDE and b["improbable"]
+
+
+def _pct(p: float) -> str:
+    x = redondear(p * 100)
+    return f"{int(x)} %" if x >= 1 else "menos del 1 %"
 
 
 def _texto(nombre: str, ambito: str, b: dict, si: str, no: str) -> str:
@@ -81,6 +93,9 @@ def _texto(nombre: str, ambito: str, b: dict, si: str, no: str) -> str:
         if es_cuidado(b):
             t += " — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más " \
                  "(§15), así que si se corta hay una causa que buscar"
+        elif b["partidos"] >= CUIDADO_DESDE:
+            t += f" — pero con su frecuencia una racha así es esperable (sale el {_pct(b['probRacha'])} de las " \
+                 "veces): no es terreno raro"
     # la frecuencia del ESTADO en que está hoy, para que la línea no se contradiga
     frec = b["frecuencia"] if b["valor"] else 1 - b["frecuencia"]
     t += f". En {b['n']} partidos {_AMBITO[ambito]} va {estado} el {int(redondear(frec * 100))} %."

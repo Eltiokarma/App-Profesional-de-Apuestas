@@ -108,6 +108,8 @@
      "record": null,
      "frecuencia": 1.0,
      "n": 8,
+     "probRacha": 1.0,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 0 lleva 8 partidos de local sin perder. En 8 partidos de local va sin perder el 100 %."
@@ -122,6 +124,8 @@
      "record": null,
      "frecuencia": 0.125,
      "n": 8,
+     "probRacha": 0.4488,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 0 lleva 6 partidos de local ganando (su máximo previo era 1). En 8 partidos de local va ganando el 88 %."
@@ -136,6 +140,8 @@
      "record": null,
      "frecuencia": 0.875,
      "n": 8,
+     "probRacha": 0.4488,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 0 lleva 6 partidos de local ganando por 2 o más (su máximo previo era 1). En 8 partidos de local va ganando por 2 o más el 88 %."
@@ -150,6 +156,8 @@
      "record": null,
      "frecuencia": 0.125,
      "n": 8,
+     "probRacha": 0.3927,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 0 lleva 7 partidos de local sin ganar por 3 o más. En 8 partidos de local va sin ganar por 3 o más el 88 %."
@@ -164,6 +172,8 @@
      "record": null,
      "frecuencia": 0.0,
      "n": 8,
+     "probRacha": 1.0,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 0 lleva 8 partidos de local sin perder por 2 o más. En 8 partidos de local va sin perder por 2 o más el 100 %."
@@ -178,6 +188,8 @@
      "record": null,
      "frecuencia": 1.0,
      "n": 8,
+     "probRacha": 1.0,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 0 lleva 8 partidos de local anotando. En 8 partidos de local va anotando el 100 %."
@@ -192,6 +204,8 @@
      "record": null,
      "frecuencia": 0.25,
      "n": 8,
+     "probRacha": 0.178,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 0 lleva 6 partidos de local con la valla invicta. En 8 partidos de local va con la valla invicta el 75 %."
@@ -206,6 +220,8 @@
      "record": null,
      "frecuencia": 0.25,
      "n": 8,
+     "probRacha": 0.178,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 0 lleva 6 partidos de local sin que marquen los dos. En 8 partidos de local va sin que marquen los dos el 75 %."
@@ -220,6 +236,8 @@
      "record": null,
      "frecuencia": 0.25,
      "n": 8,
+     "probRacha": 0.178,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 0 lleva 6 partidos de local con 2 goles o menos. En 8 partidos de local va con 2 goles o menos el 75 %."
@@ -234,6 +252,8 @@
      "record": null,
      "frecuencia": 0.933,
      "n": 15,
+     "probRacha": 0.6154,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 0 lleva 7 partidos en total sin perder (su máximo previo era 7). En 15 partidos en total va sin perder el 93 %."
@@ -248,9 +268,11 @@
      "record": "supera",
      "frecuencia": 0.267,
      "n": 15,
+     "probRacha": 0.1551,
+     "improbable": false,
      "destacada": true,
-     "cuidado": true,
-     "texto": "Equipo 0 lleva 6 partidos en total ganando (su máximo previo era 2): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 15 partidos en total va ganando el 73 %."
+     "cuidado": false,
+     "texto": "Equipo 0 lleva 6 partidos en total ganando (su máximo previo era 2): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 16 % de las veces): no es terreno raro. En 15 partidos en total va ganando el 73 %."
     },
     {
      "familia": "gana2+",
@@ -262,6 +284,8 @@
      "record": "supera",
      "frecuencia": 0.6,
      "n": 15,
+     "probRacha": 0.0467,
+     "improbable": true,
      "destacada": true,
      "cuidado": true,
      "texto": "Equipo 0 lleva 6 partidos en total ganando por 2 o más (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 15 partidos en total va ganando por 2 o más el 60 %."
@@ -276,6 +300,8 @@
      "record": null,
      "frecuencia": 0.133,
      "n": 15,
+     "probRacha": 0.3193,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 0 lleva 8 partidos en total sin ganar por 3 o más (su máximo previo era 3). En 15 partidos en total va sin ganar por 3 o más el 87 %."
@@ -290,6 +316,8 @@
      "record": null,
      "frecuencia": 0.0,
      "n": 15,
+     "probRacha": 1.0,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 0 lleva 15 partidos en total sin perder por 2 o más. En 15 partidos en total va sin perder por 2 o más el 100 %."
@@ -304,6 +332,8 @@
      "record": null,
      "frecuencia": 0.8,
      "n": 15,
+     "probRacha": 0.2621,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 0 lleva 6 partidos en total anotando (su máximo previo era 4). En 15 partidos en total va anotando el 80 %."
@@ -318,6 +348,8 @@
      "record": null,
      "frecuencia": 0.4,
      "n": 15,
+     "probRacha": 0.028,
+     "improbable": true,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 0 lleva 7 partidos en total con la valla invicta (su máximo previo era 1). En 15 partidos en total va con la valla invicta el 60 %."
@@ -332,6 +364,8 @@
      "record": null,
      "frecuencia": 0.333,
      "n": 15,
+     "probRacha": 0.0261,
+     "improbable": true,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 0 lleva 9 partidos en total sin que marquen los dos (su máximo previo era 1). En 15 partidos en total va sin que marquen los dos el 67 %."
@@ -346,6 +380,8 @@
      "record": null,
      "frecuencia": 0.4,
      "n": 15,
+     "probRacha": 0.0168,
+     "improbable": true,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 0 lleva 8 partidos en total con 2 goles o menos (su máximo previo era 1). En 15 partidos en total va con 2 goles o menos el 60 %."
@@ -363,7 +399,7 @@
     "Equipo 0 lleva 6 partidos de local sin que marquen los dos. En 8 partidos de local va sin que marquen los dos el 75 %.",
     "Equipo 0 lleva 6 partidos de local con 2 goles o menos. En 8 partidos de local va con 2 goles o menos el 75 %.",
     "Equipo 0 lleva 7 partidos en total sin perder (su máximo previo era 7). En 15 partidos en total va sin perder el 93 %.",
-    "Equipo 0 lleva 6 partidos en total ganando (su máximo previo era 2): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 15 partidos en total va ganando el 73 %.",
+    "Equipo 0 lleva 6 partidos en total ganando (su máximo previo era 2): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 16 % de las veces): no es terreno raro. En 15 partidos en total va ganando el 73 %.",
     "Equipo 0 lleva 6 partidos en total ganando por 2 o más (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 15 partidos en total va ganando por 2 o más el 60 %.",
     "Equipo 0 lleva 8 partidos en total sin ganar por 3 o más (su máximo previo era 3). En 15 partidos en total va sin ganar por 3 o más el 87 %.",
     "Equipo 0 lleva 15 partidos en total sin perder por 2 o más. En 15 partidos en total va sin perder por 2 o más el 100 %.",
@@ -613,6 +649,8 @@
      "record": null,
      "frecuencia": 0.722,
      "n": 18,
+     "probRacha": 0.1023,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 1 lleva 7 partidos de visita sin perder (su máximo previo era 6). En 18 partidos de visita va sin perder el 72 %."
@@ -627,6 +665,8 @@
      "record": "no",
      "frecuencia": 0.389,
      "n": 18,
+     "probRacha": 0.3733,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 1 lleva 2 partidos de visita ganando (su máximo previo era 6). En 18 partidos de visita va ganando el 61 %."
@@ -641,6 +681,8 @@
      "record": "no",
      "frecuencia": 0.389,
      "n": 18,
+     "probRacha": 0.1513,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 1 lleva 2 partidos de visita ganando por 2 o más (su máximo previo era 3). En 18 partidos de visita va ganando por 2 o más el 39 %."
@@ -655,6 +697,8 @@
      "record": "no",
      "frecuencia": 0.222,
      "n": 18,
+     "probRacha": 0.778,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 1 lleva 1 partido de visita sin ganar por 3 o más (su máximo previo era 9). En 18 partidos de visita va sin ganar por 3 o más el 78 %."
@@ -669,6 +713,8 @@
      "record": null,
      "frecuencia": 0.167,
      "n": 18,
+     "probRacha": 0.2783,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 1 lleva 7 partidos de visita sin perder por 2 o más (su máximo previo era 8). En 18 partidos de visita va sin perder por 2 o más el 83 %."
@@ -683,6 +729,8 @@
      "record": null,
      "frecuencia": 0.778,
      "n": 18,
+     "probRacha": 0.1725,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 1 lleva 7 partidos de visita anotando (su máximo previo era 6). En 18 partidos de visita va anotando el 78 %."
@@ -697,6 +745,8 @@
      "record": null,
      "frecuencia": 0.833,
      "n": 18,
+     "probRacha": 0.167,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 1 lleva 1 partido de visita con la valla invicta (su máximo previo era 1). En 18 partidos de visita va con la valla invicta el 17 %."
@@ -711,6 +761,8 @@
      "record": "no",
      "frecuencia": 0.611,
      "n": 18,
+     "probRacha": 0.389,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 1 lleva 1 partido de visita sin que marquen los dos (su máximo previo era 2). En 18 partidos de visita va sin que marquen los dos el 39 %."
@@ -725,6 +777,8 @@
      "record": "no",
      "frecuencia": 0.667,
      "n": 18,
+     "probRacha": 0.333,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 1 lleva 1 partido de visita con 2 goles o menos (su máximo previo era 2). En 18 partidos de visita va con 2 goles o menos el 33 %."
@@ -739,6 +793,8 @@
      "record": "no",
      "frecuencia": 0.714,
      "n": 35,
+     "probRacha": 0.714,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 1 lleva 1 partido en total sin perder (su máximo previo era 14). En 35 partidos en total va sin perder el 71 %."
@@ -753,6 +809,8 @@
      "record": "no",
      "frecuencia": 0.429,
      "n": 35,
+     "probRacha": 0.571,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 1 lleva 1 partido en total ganando (su máximo previo era 6). En 35 partidos en total va ganando el 57 %."
@@ -767,6 +825,8 @@
      "record": "no",
      "frecuencia": 0.314,
      "n": 35,
+     "probRacha": 0.314,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 1 lleva 1 partido en total ganando por 2 o más (su máximo previo era 2). En 35 partidos en total va ganando por 2 o más el 31 %."
@@ -781,6 +841,8 @@
      "record": "no",
      "frecuencia": 0.143,
      "n": 35,
+     "probRacha": 0.6294,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 1 lleva 3 partidos en total sin ganar por 3 o más (su máximo previo era 15). En 35 partidos en total va sin ganar por 3 o más el 86 %."
@@ -795,6 +857,8 @@
      "record": "supera",
      "frecuencia": 0.171,
      "n": 35,
+     "probRacha": 0.0498,
+     "improbable": true,
      "destacada": true,
      "cuidado": true,
      "texto": "Equipo 1 lleva 16 partidos en total sin perder por 2 o más (su máximo previo era 10): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 35 partidos en total va sin perder por 2 o más el 83 %."
@@ -809,6 +873,8 @@
      "record": "no",
      "frecuencia": 0.8,
      "n": 35,
+     "probRacha": 0.3277,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 1 lleva 5 partidos en total anotando (su máximo previo era 10). En 35 partidos en total va anotando el 80 %."
@@ -823,6 +889,8 @@
      "record": "no",
      "frecuencia": 0.829,
      "n": 35,
+     "probRacha": 0.6872,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 1 lleva 2 partidos en total recibiendo gol (su máximo previo era 15). En 35 partidos en total va recibiendo gol el 83 %."
@@ -837,6 +905,8 @@
      "record": "no",
      "frecuencia": 0.657,
      "n": 35,
+     "probRacha": 0.4316,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 1 lleva 2 partidos en total con goles de los dos (su máximo previo era 5). En 35 partidos en total va con goles de los dos el 66 %."
@@ -851,6 +921,8 @@
      "record": "no",
      "frecuencia": 0.657,
      "n": 35,
+     "probRacha": 0.4316,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 1 lleva 2 partidos en total con más de 2,5 goles (su máximo previo era 6). En 35 partidos en total va con más de 2,5 goles el 66 %."
@@ -1064,6 +1136,8 @@
      "record": "supera",
      "frecuencia": 0.821,
      "n": 28,
+     "probRacha": 0.032,
+     "improbable": true,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 2 lleva 2 partidos en total perdiendo (su máximo previo era 1): está en terreno nuevo, por encima de su récord. En 28 partidos en total va perdiendo el 18 %."
@@ -1078,6 +1152,8 @@
      "record": "no",
      "frecuencia": 0.571,
      "n": 28,
+     "probRacha": 0.326,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 2 lleva 2 partidos en total sin ganar (su máximo previo era 4). En 28 partidos en total va sin ganar el 57 %."
@@ -1092,6 +1168,8 @@
      "record": "no",
      "frecuencia": 0.214,
      "n": 28,
+     "probRacha": 0.3817,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 2 lleva 4 partidos en total sin ganar por 2 o más (su máximo previo era 7). En 28 partidos en total va sin ganar por 2 o más el 79 %."
@@ -1106,6 +1184,8 @@
      "record": "no",
      "frecuencia": 0.107,
      "n": 28,
+     "probRacha": 0.6359,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 2 lleva 4 partidos en total sin ganar por 3 o más (su máximo previo era 12). En 28 partidos en total va sin ganar por 3 o más el 89 %."
@@ -1120,6 +1200,8 @@
      "record": null,
      "frecuencia": 0.036,
      "n": 28,
+     "probRacha": 0.5985,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 2 lleva 14 partidos en total sin perder por 2 o más (su máximo previo era 13). En 28 partidos en total va sin perder por 2 o más el 96 %."
@@ -1134,6 +1216,8 @@
      "record": "iguala",
      "frecuencia": 0.821,
      "n": 28,
+     "probRacha": 0.179,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 2 lleva 1 partido en total sin anotar (su máximo previo era 1): iguala su récord. En 28 partidos en total va sin anotar el 18 %."
@@ -1148,6 +1232,8 @@
      "record": "iguala",
      "frecuencia": 0.714,
      "n": 28,
+     "probRacha": 0.2599,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 2 lleva 4 partidos en total recibiendo gol (su máximo previo era 4): iguala su récord. En 28 partidos en total va recibiendo gol el 71 %."
@@ -1162,6 +1248,8 @@
      "record": "no",
      "frecuencia": 0.607,
      "n": 28,
+     "probRacha": 0.393,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 2 lleva 1 partido en total sin que marquen los dos (su máximo previo era 3). En 28 partidos en total va sin que marquen los dos el 39 %."
@@ -1176,6 +1264,8 @@
      "record": "no",
      "frecuencia": 0.464,
      "n": 28,
+     "probRacha": 0.536,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 2 lleva 1 partido en total con 2 goles o menos (su máximo previo era 4). En 28 partidos en total va con 2 goles o menos el 54 %."
@@ -1552,6 +1642,8 @@
      "record": "no",
      "frecuencia": 0.677,
      "n": 31,
+     "probRacha": 0.4583,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 3 lleva 2 partidos de local sin perder (su máximo previo era 5). En 31 partidos de local va sin perder el 68 %."
@@ -1566,6 +1658,8 @@
      "record": "no",
      "frecuencia": 0.484,
      "n": 31,
+     "probRacha": 0.2663,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 3 lleva 2 partidos de local ganando (su máximo previo era 4). En 31 partidos de local va ganando el 52 %."
@@ -1580,6 +1674,8 @@
      "record": "no",
      "frecuencia": 0.323,
      "n": 31,
+     "probRacha": 0.1043,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 3 lleva 2 partidos de local ganando por 2 o más (su máximo previo era 3). En 31 partidos de local va ganando por 2 o más el 32 %."
@@ -1594,6 +1690,8 @@
      "record": null,
      "frecuencia": 0.032,
      "n": 31,
+     "probRacha": 0.7462,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 3 lleva 9 partidos de local sin ganar por 3 o más (su máximo previo era 21). En 31 partidos de local va sin ganar por 3 o más el 97 %."
@@ -1608,6 +1706,8 @@
      "record": "no",
      "frecuencia": 0.129,
      "n": 31,
+     "probRacha": 0.7586,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 3 lleva 2 partidos de local sin perder por 2 o más (su máximo previo era 11). En 31 partidos de local va sin perder por 2 o más el 87 %."
@@ -1622,6 +1722,8 @@
      "record": "no",
      "frecuencia": 0.774,
      "n": 31,
+     "probRacha": 0.2778,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 3 lleva 5 partidos de local anotando (su máximo previo era 10). En 31 partidos de local va anotando el 77 %."
@@ -1636,6 +1738,8 @@
      "record": "no",
      "frecuencia": 0.677,
      "n": 31,
+     "probRacha": 0.1043,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 3 lleva 2 partidos de local con la valla invicta (su máximo previo era 3). En 31 partidos de local va con la valla invicta el 32 %."
@@ -1650,6 +1754,8 @@
      "record": "no",
      "frecuencia": 0.516,
      "n": 31,
+     "probRacha": 0.2343,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 3 lleva 2 partidos de local sin que marquen los dos (su máximo previo era 4). En 31 partidos de local va sin que marquen los dos el 48 %."
@@ -1664,6 +1770,8 @@
      "record": "no",
      "frecuencia": 0.516,
      "n": 31,
+     "probRacha": 0.2343,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 3 lleva 2 partidos de local con 2 goles o menos (su máximo previo era 4). En 31 partidos de local va con 2 goles o menos el 48 %."
@@ -1678,6 +1786,8 @@
      "record": "no",
      "frecuencia": 0.719,
      "n": 57,
+     "probRacha": 0.517,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 3 lleva 2 partidos en total sin perder (su máximo previo era 8). En 57 partidos en total va sin perder el 72 %."
@@ -1692,6 +1802,8 @@
      "record": "no",
      "frecuencia": 0.526,
      "n": 57,
+     "probRacha": 0.2247,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 3 lleva 2 partidos en total ganando (su máximo previo era 4). En 57 partidos en total va ganando el 47 %."
@@ -1706,6 +1818,8 @@
      "record": "no",
      "frecuencia": 0.281,
      "n": 57,
+     "probRacha": 0.079,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 3 lleva 2 partidos en total ganando por 2 o más (su máximo previo era 3). En 57 partidos en total va ganando por 2 o más el 28 %."
@@ -1720,6 +1834,8 @@
      "record": "no",
      "frecuencia": 0.07,
      "n": 57,
+     "probRacha": 0.3893,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 3 lleva 13 partidos en total sin ganar por 3 o más (su máximo previo era 19). En 57 partidos en total va sin ganar por 3 o más el 93 %."
@@ -1734,6 +1850,8 @@
      "record": "no",
      "frecuencia": 0.123,
      "n": 57,
+     "probRacha": 0.7691,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 3 lleva 2 partidos en total sin perder por 2 o más (su máximo previo era 21). En 57 partidos en total va sin perder por 2 o más el 88 %."
@@ -1748,6 +1866,8 @@
      "record": "no",
      "frecuencia": 0.719,
      "n": 57,
+     "probRacha": 0.1382,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 3 lleva 6 partidos en total anotando (su máximo previo era 8). En 57 partidos en total va anotando el 72 %."
@@ -1762,6 +1882,8 @@
      "record": "no",
      "frecuencia": 0.614,
      "n": 57,
+     "probRacha": 0.149,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 3 lleva 2 partidos en total con la valla invicta (su máximo previo era 5). En 57 partidos en total va con la valla invicta el 39 %."
@@ -1776,6 +1898,8 @@
      "record": "no",
      "frecuencia": 0.456,
      "n": 57,
+     "probRacha": 0.2959,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 3 lleva 2 partidos en total sin que marquen los dos (su máximo previo era 6). En 57 partidos en total va sin que marquen los dos el 54 %."
@@ -1790,6 +1914,8 @@
      "record": "no",
      "frecuencia": 0.456,
      "n": 57,
+     "probRacha": 0.2959,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 3 lleva 2 partidos en total con 2 goles o menos (su máximo previo era 6). En 57 partidos en total va con 2 goles o menos el 54 %."
@@ -2235,6 +2361,8 @@
      "record": "no",
      "frecuencia": 0.756,
      "n": 41,
+     "probRacha": 0.756,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 4 lleva 1 partido de visita sin perder (su máximo previo era 5). En 41 partidos de visita va sin perder el 76 %."
@@ -2249,6 +2377,8 @@
      "record": "no",
      "frecuencia": 0.39,
      "n": 41,
+     "probRacha": 0.61,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 4 lleva 1 partido de visita ganando (su máximo previo era 4). En 41 partidos de visita va ganando el 61 %."
@@ -2263,6 +2393,8 @@
      "record": "no",
      "frecuencia": 0.366,
      "n": 41,
+     "probRacha": 0.366,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 4 lleva 1 partido de visita ganando por 2 o más (su máximo previo era 3). En 41 partidos de visita va ganando por 2 o más el 37 %."
@@ -2277,6 +2409,8 @@
      "record": "no",
      "frecuencia": 0.195,
      "n": 41,
+     "probRacha": 0.195,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 4 lleva 1 partido de visita ganando por 3 o más (su máximo previo era 3). En 41 partidos de visita va ganando por 3 o más el 20 %."
@@ -2291,6 +2425,8 @@
      "record": null,
      "frecuencia": 0.049,
      "n": 41,
+     "probRacha": 0.4476,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 4 lleva 16 partidos de visita sin perder por 2 o más (su máximo previo era 13). En 41 partidos de visita va sin perder por 2 o más el 95 %."
@@ -2305,6 +2441,8 @@
      "record": "no",
      "frecuencia": 0.829,
      "n": 41,
+     "probRacha": 0.829,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 4 lleva 1 partido de visita anotando (su máximo previo era 10). En 41 partidos de visita va anotando el 83 %."
@@ -2319,6 +2457,8 @@
      "record": "no",
      "frecuencia": 0.512,
      "n": 41,
+     "probRacha": 0.488,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 4 lleva 1 partido de visita con la valla invicta (su máximo previo era 4). En 41 partidos de visita va con la valla invicta el 49 %."
@@ -2333,6 +2473,8 @@
      "record": "no",
      "frecuencia": 0.39,
      "n": 41,
+     "probRacha": 0.227,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 4 lleva 3 partidos de visita sin que marquen los dos (su máximo previo era 6). En 41 partidos de visita va sin que marquen los dos el 61 %."
@@ -2347,6 +2489,8 @@
      "record": "no",
      "frecuencia": 0.561,
      "n": 41,
+     "probRacha": 0.561,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 4 lleva 1 partido de visita con más de 2,5 goles (su máximo previo era 7). En 41 partidos de visita va con más de 2,5 goles el 56 %."
@@ -2361,6 +2505,8 @@
      "record": "no",
      "frecuencia": 0.791,
      "n": 67,
+     "probRacha": 0.1937,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 4 lleva 7 partidos en total sin perder (su máximo previo era 8). En 67 partidos en total va sin perder el 79 %."
@@ -2375,6 +2521,8 @@
      "record": "no",
      "frecuencia": 0.388,
      "n": 67,
+     "probRacha": 0.0322,
+     "improbable": true,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 4 lleva 7 partidos en total ganando (su máximo previo era 8). En 67 partidos en total va ganando el 61 %."
@@ -2389,6 +2537,8 @@
      "record": "supera",
      "frecuencia": 0.388,
      "n": 67,
+     "probRacha": 0.0013,
+     "improbable": true,
      "destacada": true,
      "cuidado": true,
      "texto": "Equipo 4 lleva 7 partidos en total ganando por 2 o más (su máximo previo era 3): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 67 partidos en total va ganando por 2 o más el 39 %."
@@ -2403,6 +2553,8 @@
      "record": "no",
      "frecuencia": 0.134,
      "n": 67,
+     "probRacha": 0.4218,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 4 lleva 6 partidos en total sin ganar por 3 o más (su máximo previo era 11). En 67 partidos en total va sin ganar por 3 o más el 87 %."
@@ -2417,6 +2569,8 @@
      "record": "no",
      "frecuencia": 0.045,
      "n": 67,
+     "probRacha": 0.3982,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 4 lleva 20 partidos en total sin perder por 2 o más (su máximo previo era 21). En 67 partidos en total va sin perder por 2 o más el 96 %."
@@ -2431,6 +2585,8 @@
      "record": "no",
      "frecuencia": 0.836,
      "n": 67,
+     "probRacha": 0.2854,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 4 lleva 7 partidos en total anotando (su máximo previo era 15). En 67 partidos en total va anotando el 84 %."
@@ -2445,6 +2601,8 @@
      "record": "no",
      "frecuencia": 0.448,
      "n": 67,
+     "probRacha": 0.0156,
+     "improbable": true,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 4 lleva 7 partidos en total con la valla invicta (su máximo previo era 8). En 67 partidos en total va con la valla invicta el 55 %."
@@ -2459,6 +2617,8 @@
      "record": "no",
      "frecuencia": 0.343,
      "n": 67,
+     "probRacha": 0.0347,
+     "improbable": true,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 4 lleva 8 partidos en total sin que marquen los dos (su máximo previo era 9). En 67 partidos en total va sin que marquen los dos el 66 %."
@@ -2473,6 +2633,8 @@
      "record": "iguala",
      "frecuencia": 0.418,
      "n": 67,
+     "probRacha": 0.0389,
+     "improbable": true,
      "destacada": true,
      "cuidado": true,
      "texto": "Equipo 4 lleva 6 partidos en total con 2 goles o menos (su máximo previo era 6): iguala su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 67 partidos en total va con 2 goles o menos el 58 %."
@@ -2811,6 +2973,8 @@
      "record": "no",
      "frecuencia": 0.813,
      "n": 48,
+     "probRacha": 0.4369,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 5 lleva 4 partidos en total sin perder (su máximo previo era 16). En 48 partidos en total va sin perder el 81 %."
@@ -2825,6 +2989,8 @@
      "record": "no",
      "frecuencia": 0.438,
      "n": 48,
+     "probRacha": 0.562,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 5 lleva 1 partido en total ganando (su máximo previo era 9). En 48 partidos en total va ganando el 56 %."
@@ -2839,6 +3005,8 @@
      "record": "no",
      "frecuencia": 0.396,
      "n": 48,
+     "probRacha": 0.396,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 5 lleva 1 partido en total ganando por 2 o más (su máximo previo era 4). En 48 partidos en total va ganando por 2 o más el 40 %."
@@ -2853,6 +3021,8 @@
      "record": "no",
      "frecuencia": 0.146,
      "n": 48,
+     "probRacha": 0.6228,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 5 lleva 3 partidos en total sin ganar por 3 o más (su máximo previo era 17). En 48 partidos en total va sin ganar por 3 o más el 85 %."
@@ -2867,6 +3037,8 @@
      "record": "no",
      "frecuencia": 0.125,
      "n": 48,
+     "probRacha": 0.5862,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 5 lleva 4 partidos en total sin perder por 2 o más (su máximo previo era 33). En 48 partidos en total va sin perder por 2 o más el 88 %."
@@ -2881,6 +3053,8 @@
      "record": "no",
      "frecuencia": 0.813,
      "n": 48,
+     "probRacha": 0.4369,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 5 lleva 4 partidos en total anotando (su máximo previo era 9). En 48 partidos en total va anotando el 81 %."
@@ -2895,6 +3069,8 @@
      "record": "no",
      "frecuencia": 0.583,
      "n": 48,
+     "probRacha": 0.417,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 5 lleva 1 partido en total con la valla invicta (su máximo previo era 6). En 48 partidos en total va con la valla invicta el 42 %."
@@ -2909,6 +3085,8 @@
      "record": "no",
      "frecuencia": 0.458,
      "n": 48,
+     "probRacha": 0.542,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 5 lleva 1 partido en total sin que marquen los dos (su máximo previo era 10). En 48 partidos en total va sin que marquen los dos el 54 %."
@@ -2923,6 +3101,8 @@
      "record": "no",
      "frecuencia": 0.5,
      "n": 48,
+     "probRacha": 0.5,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 5 lleva 1 partido en total con 2 goles o menos (su máximo previo era 5). En 48 partidos en total va con 2 goles o menos el 50 %."
@@ -3261,6 +3441,8 @@
      "record": "no",
      "frecuencia": 0.846,
      "n": 26,
+     "probRacha": 0.6055,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 6 lleva 3 partidos de local sin perder (su máximo previo era 11). En 26 partidos de local va sin perder el 85 %."
@@ -3275,6 +3457,8 @@
      "record": "iguala",
      "frecuencia": 0.308,
      "n": 26,
+     "probRacha": 0.308,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 6 lleva 1 partido de local sin ganar (su máximo previo era 1): iguala su récord. En 26 partidos de local va sin ganar el 31 %."
@@ -3289,6 +3473,8 @@
      "record": "no",
      "frecuencia": 0.346,
      "n": 26,
+     "probRacha": 0.654,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 6 lleva 1 partido de local sin ganar por 2 o más (su máximo previo era 4). En 26 partidos de local va sin ganar por 2 o más el 65 %."
@@ -3303,6 +3489,8 @@
      "record": "no",
      "frecuencia": 0.192,
      "n": 26,
+     "probRacha": 0.808,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 6 lleva 1 partido de local sin ganar por 3 o más (su máximo previo era 9). En 26 partidos de local va sin ganar por 3 o más el 81 %."
@@ -3317,6 +3505,8 @@
      "record": null,
      "frecuencia": 0.038,
      "n": 26,
+     "probRacha": 0.7625,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 6 lleva 7 partidos de local sin perder por 2 o más (su máximo previo era 18). En 26 partidos de local va sin perder por 2 o más el 96 %."
@@ -3331,6 +3521,8 @@
      "record": null,
      "frecuencia": 0.885,
      "n": 26,
+     "probRacha": 0.115,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 6 lleva 1 partido de local sin anotar (su máximo previo era 1). En 26 partidos de local va sin anotar el 12 %."
@@ -3345,6 +3537,8 @@
      "record": "no",
      "frecuencia": 0.538,
      "n": 26,
+     "probRacha": 0.2134,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 6 lleva 2 partidos de local con la valla invicta (su máximo previo era 3). En 26 partidos de local va con la valla invicta el 46 %."
@@ -3359,6 +3553,8 @@
      "record": "no",
      "frecuencia": 0.462,
      "n": 26,
+     "probRacha": 0.2894,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 6 lleva 2 partidos de local sin que marquen los dos (su máximo previo era 4). En 26 partidos de local va sin que marquen los dos el 54 %."
@@ -3373,6 +3569,8 @@
      "record": "no",
      "frecuencia": 0.577,
      "n": 26,
+     "probRacha": 0.423,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 6 lleva 1 partido de local con 2 goles o menos (su máximo previo era 3). En 26 partidos de local va con 2 goles o menos el 42 %."
@@ -3387,6 +3585,8 @@
      "record": "no",
      "frecuencia": 0.843,
      "n": 51,
+     "probRacha": 0.3025,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 6 lleva 7 partidos en total sin perder (su máximo previo era 9). En 51 partidos en total va sin perder el 84 %."
@@ -3401,6 +3601,8 @@
      "record": "iguala",
      "frecuencia": 0.314,
      "n": 51,
+     "probRacha": 0.0986,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 6 lleva 2 partidos en total sin ganar (su máximo previo era 2): iguala su récord. En 51 partidos en total va sin ganar el 31 %."
@@ -3415,6 +3617,8 @@
      "record": "no",
      "frecuencia": 0.353,
      "n": 51,
+     "probRacha": 0.2708,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 6 lleva 3 partidos en total sin ganar por 2 o más (su máximo previo era 5). En 51 partidos en total va sin ganar por 2 o más el 65 %."
@@ -3429,6 +3633,8 @@
      "record": "no",
      "frecuencia": 0.196,
      "n": 51,
+     "probRacha": 0.5197,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 6 lleva 3 partidos en total sin ganar por 3 o más (su máximo previo era 7). En 51 partidos en total va sin ganar por 3 o más el 80 %."
@@ -3443,6 +3649,8 @@
      "record": null,
      "frecuencia": 0.039,
      "n": 51,
+     "probRacha": 0.6718,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 6 lleva 10 partidos en total sin perder por 2 o más (su máximo previo era 34). En 51 partidos en total va sin perder por 2 o más el 96 %."
@@ -3457,6 +3665,8 @@
      "record": "supera",
      "frecuencia": 0.824,
      "n": 51,
+     "probRacha": 0.031,
+     "improbable": true,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 6 lleva 2 partidos en total sin anotar (su máximo previo era 1): está en terreno nuevo, por encima de su récord. En 51 partidos en total va sin anotar el 18 %."
@@ -3471,6 +3681,8 @@
      "record": "no",
      "frecuencia": 0.412,
      "n": 51,
+     "probRacha": 0.1195,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 6 lleva 4 partidos en total con la valla invicta (su máximo previo era 8). En 51 partidos en total va con la valla invicta el 59 %."
@@ -3485,6 +3697,8 @@
      "record": "no",
      "frecuencia": 0.333,
      "n": 51,
+     "probRacha": 0.1979,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 6 lleva 4 partidos en total sin que marquen los dos (su máximo previo era 8). En 51 partidos en total va sin que marquen los dos el 67 %."
@@ -3499,6 +3713,8 @@
      "record": "no",
      "frecuencia": 0.49,
      "n": 51,
+     "probRacha": 0.1327,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 6 lleva 3 partidos en total con 2 goles o menos (su máximo previo era 6). En 51 partidos en total va con 2 goles o menos el 51 %."
@@ -3700,6 +3916,8 @@
      "record": null,
      "frecuencia": 0.7,
      "n": 10,
+     "probRacha": 0.2401,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 7 lleva 4 partidos de visita sin perder (su máximo previo era 2). En 10 partidos de visita va sin perder el 70 %."
@@ -3714,6 +3932,8 @@
      "record": null,
      "frecuencia": 0.5,
      "n": 10,
+     "probRacha": 0.25,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 7 lleva 2 partidos de visita sin ganar (su máximo previo era 2). En 10 partidos de visita va sin ganar el 50 %."
@@ -3728,6 +3948,8 @@
      "record": null,
      "frecuencia": 0.2,
      "n": 10,
+     "probRacha": 0.64,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 7 lleva 2 partidos de visita sin ganar por 2 o más (su máximo previo era 6). En 10 partidos de visita va sin ganar por 2 o más el 80 %."
@@ -3742,6 +3964,8 @@
      "record": null,
      "frecuencia": 0.2,
      "n": 10,
+     "probRacha": 0.64,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 7 lleva 2 partidos de visita sin ganar por 3 o más (su máximo previo era 6). En 10 partidos de visita va sin ganar por 3 o más el 80 %."
@@ -3756,6 +3980,8 @@
      "record": null,
      "frecuencia": 0.1,
      "n": 10,
+     "probRacha": 0.6561,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 7 lleva 4 partidos de visita sin perder por 2 o más (su máximo previo era 5). En 10 partidos de visita va sin perder por 2 o más el 90 %."
@@ -3770,6 +3996,8 @@
      "record": null,
      "frecuencia": 0.9,
      "n": 10,
+     "probRacha": 0.9,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 7 lleva 1 partido de visita anotando (su máximo previo era 8). En 10 partidos de visita va anotando el 90 %."
@@ -3784,6 +4012,8 @@
      "record": null,
      "frecuencia": 0.5,
      "n": 10,
+     "probRacha": 0.5,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 7 lleva 1 partido de visita recibiendo gol (su máximo previo era 3). En 10 partidos de visita va recibiendo gol el 50 %."
@@ -3798,6 +4028,8 @@
      "record": null,
      "frecuencia": 0.5,
      "n": 10,
+     "probRacha": 0.5,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 7 lleva 1 partido de visita con goles de los dos (su máximo previo era 3). En 10 partidos de visita va con goles de los dos el 50 %."
@@ -3812,6 +4044,8 @@
      "record": "no",
      "frecuencia": 0.7,
      "n": 10,
+     "probRacha": 0.7,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 7 lleva 1 partido de visita con más de 2,5 goles (su máximo previo era 4). En 10 partidos de visita va con más de 2,5 goles el 70 %."
@@ -3826,9 +4060,11 @@
      "record": "supera",
      "frecuencia": 0.68,
      "n": 25,
+     "probRacha": 0.1454,
+     "improbable": false,
      "destacada": true,
-     "cuidado": true,
-     "texto": "Equipo 7 lleva 5 partidos en total sin perder (su máximo previo era 4): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 25 partidos en total va sin perder el 68 %."
+     "cuidado": false,
+     "texto": "Equipo 7 lleva 5 partidos en total sin perder (su máximo previo era 4): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 15 % de las veces): no es terreno raro. En 25 partidos en total va sin perder el 68 %."
     },
     {
      "familia": "noGana",
@@ -3840,6 +4076,8 @@
      "record": "no",
      "frecuencia": 0.64,
      "n": 25,
+     "probRacha": 0.36,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 7 lleva 1 partido en total ganando (su máximo previo era 2). En 25 partidos en total va ganando el 36 %."
@@ -3854,6 +4092,8 @@
      "record": null,
      "frecuencia": 0.2,
      "n": 25,
+     "probRacha": 0.2,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 7 lleva 1 partido en total ganando por 2 o más (su máximo previo era 2). En 25 partidos en total va ganando por 2 o más el 20 %."
@@ -3868,6 +4108,8 @@
      "record": null,
      "frecuencia": 0.12,
      "n": 25,
+     "probRacha": 0.5997,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 7 lleva 4 partidos en total sin ganar por 3 o más (su máximo previo era 16). En 25 partidos en total va sin ganar por 3 o más el 88 %."
@@ -3882,6 +4124,8 @@
      "record": null,
      "frecuencia": 0.12,
      "n": 25,
+     "probRacha": 0.2785,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 7 lleva 10 partidos en total sin perder por 2 o más (su máximo previo era 9). En 25 partidos en total va sin perder por 2 o más el 88 %."
@@ -3896,6 +4140,8 @@
      "record": "no",
      "frecuencia": 0.72,
      "n": 25,
+     "probRacha": 0.5184,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 7 lleva 2 partidos en total anotando (su máximo previo era 4). En 25 partidos en total va anotando el 72 %."
@@ -3910,6 +4156,8 @@
      "record": "no",
      "frecuencia": 0.6,
      "n": 25,
+     "probRacha": 0.36,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 7 lleva 2 partidos en total recibiendo gol (su máximo previo era 8). En 25 partidos en total va recibiendo gol el 60 %."
@@ -3924,6 +4172,8 @@
      "record": "iguala",
      "frecuencia": 0.48,
      "n": 25,
+     "probRacha": 0.2304,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 7 lleva 2 partidos en total con goles de los dos (su máximo previo era 2): iguala su récord. En 25 partidos en total va con goles de los dos el 48 %."
@@ -3938,6 +4188,8 @@
      "record": "no",
      "frecuencia": 0.56,
      "n": 25,
+     "probRacha": 0.3136,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 7 lleva 2 partidos en total con más de 2,5 goles (su máximo previo era 4). En 25 partidos en total va con más de 2,5 goles el 56 %."
@@ -3947,7 +4199,7 @@
     "Perfil de doble oportunidad de visita: no pierde 7 de 10 (70 %) y no gana 5 de 10 (50 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de visita empata mucho o se planta a no perder no está del todo en el nivel",
     "Equipo 7 lleva 4 partidos de visita sin perder (su máximo previo era 2). En 10 partidos de visita va sin perder el 70 %.",
     "Equipo 7 lleva 4 partidos de visita sin perder por 2 o más (su máximo previo era 5). En 10 partidos de visita va sin perder por 2 o más el 90 %.",
-    "Equipo 7 lleva 5 partidos en total sin perder (su máximo previo era 4): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 25 partidos en total va sin perder el 68 %.",
+    "Equipo 7 lleva 5 partidos en total sin perder (su máximo previo era 4): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 15 % de las veces): no es terreno raro. En 25 partidos en total va sin perder el 68 %.",
     "Equipo 7 lleva 4 partidos en total sin ganar por 3 o más (su máximo previo era 16). En 25 partidos en total va sin ganar por 3 o más el 88 %.",
     "Equipo 7 lleva 10 partidos en total sin perder por 2 o más (su máximo previo era 9). En 25 partidos en total va sin perder por 2 o más el 88 %.",
     "Equipo 7 lleva 2 partidos en total con goles de los dos (su máximo previo era 2): iguala su récord. En 25 partidos en total va con goles de los dos el 48 %."
@@ -4121,6 +4373,8 @@
      "record": null,
      "frecuencia": 0.913,
      "n": 23,
+     "probRacha": 0.5288,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 8 lleva 7 partidos en total sin perder (su máximo previo era 9). En 23 partidos en total va sin perder el 91 %."
@@ -4135,6 +4389,8 @@
      "record": "no",
      "frecuencia": 0.304,
      "n": 23,
+     "probRacha": 0.1137,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 8 lleva 6 partidos en total ganando (su máximo previo era 8). En 23 partidos en total va ganando el 70 %."
@@ -4149,6 +4405,8 @@
      "record": "supera",
      "frecuencia": 0.391,
      "n": 23,
+     "probRacha": 0.0036,
+     "improbable": true,
      "destacada": true,
      "cuidado": true,
      "texto": "Equipo 8 lleva 6 partidos en total ganando por 2 o más (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 23 partidos en total va ganando por 2 o más el 39 %."
@@ -4163,6 +4421,8 @@
      "record": null,
      "frecuencia": 0.087,
      "n": 23,
+     "probRacha": 0.2331,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 8 lleva 16 partidos en total sin ganar por 3 o más (su máximo previo era 3). En 23 partidos en total va sin ganar por 3 o más el 91 %."
@@ -4177,6 +4437,8 @@
      "record": null,
      "frecuencia": 0.043,
      "n": 23,
+     "probRacha": 0.7352,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 8 lleva 7 partidos en total sin perder por 2 o más (su máximo previo era 15). En 23 partidos en total va sin perder por 2 o más el 96 %."
@@ -4191,6 +4453,8 @@
      "record": null,
      "frecuencia": 0.913,
      "n": 23,
+     "probRacha": 0.3674,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 8 lleva 11 partidos en total anotando (su máximo previo era 10). En 23 partidos en total va anotando el 91 %."
@@ -4205,6 +4469,8 @@
      "record": "supera",
      "frecuencia": 0.435,
      "n": 23,
+     "probRacha": 0.0325,
+     "improbable": true,
      "destacada": true,
      "cuidado": true,
      "texto": "Equipo 8 lleva 6 partidos en total con la valla invicta (su máximo previo era 3): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 23 partidos en total va con la valla invicta el 56 %."
@@ -4219,6 +4485,8 @@
      "record": "supera",
      "frecuencia": 0.435,
      "n": 23,
+     "probRacha": 0.0325,
+     "improbable": true,
      "destacada": true,
      "cuidado": true,
      "texto": "Equipo 8 lleva 6 partidos en total sin que marquen los dos (su máximo previo era 3): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 23 partidos en total va sin que marquen los dos el 56 %."
@@ -4233,6 +4501,8 @@
      "record": "supera",
      "frecuencia": 0.435,
      "n": 23,
+     "probRacha": 0.0325,
+     "improbable": true,
      "destacada": true,
      "cuidado": true,
      "texto": "Equipo 8 lleva 6 partidos en total con 2 goles o menos (su máximo previo era 4): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 23 partidos en total va con 2 goles o menos el 56 %."
@@ -4546,6 +4816,8 @@
      "record": "no",
      "frecuencia": 0.762,
      "n": 21,
+     "probRacha": 0.762,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 9 lleva 1 partido de local sin perder (su máximo previo era 11). En 21 partidos de local va sin perder el 76 %."
@@ -4560,6 +4832,8 @@
      "record": "iguala",
      "frecuencia": 0.524,
      "n": 21,
+     "probRacha": 0.1439,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 9 lleva 3 partidos de local sin ganar (su máximo previo era 3): iguala su récord. En 21 partidos de local va sin ganar el 52 %."
@@ -4574,6 +4848,8 @@
      "record": "no",
      "frecuencia": 0.238,
      "n": 21,
+     "probRacha": 0.2569,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 9 lleva 5 partidos de local sin ganar por 2 o más (su máximo previo era 6). En 21 partidos de local va sin ganar por 2 o más el 76 %."
@@ -4588,6 +4864,8 @@
      "record": null,
      "frecuencia": 0.19,
      "n": 21,
+     "probRacha": 0.3487,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 9 lleva 5 partidos de local sin ganar por 3 o más (su máximo previo era 8). En 21 partidos de local va sin ganar por 3 o más el 81 %."
@@ -4602,6 +4880,8 @@
      "record": "no",
      "frecuencia": 0.143,
      "n": 21,
+     "probRacha": 0.857,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 9 lleva 1 partido de local sin perder por 2 o más (su máximo previo era 12). En 21 partidos de local va sin perder por 2 o más el 86 %."
@@ -4616,6 +4896,8 @@
      "record": null,
      "frecuencia": 0.905,
      "n": 21,
+     "probRacha": 0.4072,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 9 lleva 9 partidos de local anotando (su máximo previo era 9). En 21 partidos de local va anotando el 91 %."
@@ -4630,6 +4912,8 @@
      "record": "no",
      "frecuencia": 0.619,
      "n": 21,
+     "probRacha": 0.2372,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 9 lleva 3 partidos de local recibiendo gol (su máximo previo era 4). En 21 partidos de local va recibiendo gol el 62 %."
@@ -4644,6 +4928,8 @@
      "record": "iguala",
      "frecuencia": 0.571,
      "n": 21,
+     "probRacha": 0.1862,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 9 lleva 3 partidos de local con goles de los dos (su máximo previo era 3): iguala su récord. En 21 partidos de local va con goles de los dos el 57 %."
@@ -4658,6 +4944,8 @@
      "record": "no",
      "frecuencia": 0.571,
      "n": 21,
+     "probRacha": 0.429,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 9 lleva 1 partido de local con 2 goles o menos (su máximo previo era 2). En 21 partidos de local va con 2 goles o menos el 43 %."
@@ -4672,6 +4960,8 @@
      "record": "no",
      "frecuencia": 0.826,
      "n": 46,
+     "probRacha": 0.5636,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 9 lleva 3 partidos en total sin perder (su máximo previo era 15). En 46 partidos en total va sin perder el 83 %."
@@ -4686,6 +4976,8 @@
      "record": "iguala",
      "frecuencia": 0.457,
      "n": 46,
+     "probRacha": 0.0436,
+     "improbable": true,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 9 lleva 4 partidos en total sin ganar (su máximo previo era 4): iguala su récord. En 46 partidos en total va sin ganar el 46 %."
@@ -4700,6 +4992,8 @@
      "record": "no",
      "frecuencia": 0.283,
      "n": 46,
+     "probRacha": 0.0974,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 9 lleva 7 partidos en total sin ganar por 2 o más (su máximo previo era 8). En 46 partidos en total va sin ganar por 2 o más el 72 %."
@@ -4714,6 +5008,8 @@
      "record": "no",
      "frecuencia": 0.152,
      "n": 46,
+     "probRacha": 0.3153,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 9 lleva 7 partidos en total sin ganar por 3 o más (su máximo previo era 19). En 46 partidos en total va sin ganar por 3 o más el 85 %."
@@ -4728,6 +5024,8 @@
      "record": "no",
      "frecuencia": 0.087,
      "n": 46,
+     "probRacha": 0.761,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 9 lleva 3 partidos en total sin perder por 2 o más (su máximo previo era 20). En 46 partidos en total va sin perder por 2 o más el 91 %."
@@ -4742,9 +5040,11 @@
      "record": "supera",
      "frecuencia": 0.87,
      "n": 46,
+     "probRacha": 0.1077,
+     "improbable": false,
      "destacada": true,
-     "cuidado": true,
-     "texto": "Equipo 9 lleva 16 partidos en total anotando (su máximo previo era 14): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 46 partidos en total va anotando el 87 %."
+     "cuidado": false,
+     "texto": "Equipo 9 lleva 16 partidos en total anotando (su máximo previo era 14): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 11 % de las veces): no es terreno raro. En 46 partidos en total va anotando el 87 %."
     },
     {
      "familia": "recibe",
@@ -4756,6 +5056,8 @@
      "record": "iguala",
      "frecuencia": 0.565,
      "n": 46,
+     "probRacha": 0.1019,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 9 lleva 4 partidos en total recibiendo gol (su máximo previo era 4): iguala su récord. En 46 partidos en total va recibiendo gol el 56 %."
@@ -4770,6 +5072,8 @@
      "record": "iguala",
      "frecuencia": 0.5,
      "n": 46,
+     "probRacha": 0.0625,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 9 lleva 4 partidos en total con goles de los dos (su máximo previo era 4): iguala su récord. En 46 partidos en total va con goles de los dos el 50 %."
@@ -4784,6 +5088,8 @@
      "record": "no",
      "frecuencia": 0.543,
      "n": 46,
+     "probRacha": 0.543,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 9 lleva 1 partido en total con más de 2,5 goles (su máximo previo era 4). En 46 partidos en total va con más de 2,5 goles el 54 %."
@@ -4802,7 +5108,7 @@
     "Equipo 9 lleva 7 partidos en total sin ganar por 2 o más (su máximo previo era 8). En 46 partidos en total va sin ganar por 2 o más el 72 %.",
     "Equipo 9 lleva 7 partidos en total sin ganar por 3 o más (su máximo previo era 19). En 46 partidos en total va sin ganar por 3 o más el 85 %.",
     "Equipo 9 lleva 3 partidos en total sin perder por 2 o más (su máximo previo era 20). En 46 partidos en total va sin perder por 2 o más el 91 %.",
-    "Equipo 9 lleva 16 partidos en total anotando (su máximo previo era 14): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 46 partidos en total va anotando el 87 %.",
+    "Equipo 9 lleva 16 partidos en total anotando (su máximo previo era 14): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 11 % de las veces): no es terreno raro. En 46 partidos en total va anotando el 87 %.",
     "Equipo 9 lleva 4 partidos en total recibiendo gol (su máximo previo era 4): iguala su récord. En 46 partidos en total va recibiendo gol el 56 %.",
     "Equipo 9 lleva 4 partidos en total con goles de los dos (su máximo previo era 4): iguala su récord. En 46 partidos en total va con goles de los dos el 50 %."
    ],
@@ -4999,6 +5305,8 @@
      "record": null,
      "frecuencia": 0.733,
      "n": 15,
+     "probRacha": 0.2116,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 10 lleva 5 partidos de visita sin perder (su máximo previo era 5). En 15 partidos de visita va sin perder el 73 %."
@@ -5013,6 +5321,8 @@
      "record": "no",
      "frecuencia": 0.467,
      "n": 15,
+     "probRacha": 0.533,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 10 lleva 1 partido de visita ganando (su máximo previo era 4). En 15 partidos de visita va ganando el 53 %."
@@ -5027,6 +5337,8 @@
      "record": "iguala",
      "frecuencia": 0.4,
      "n": 15,
+     "probRacha": 0.4,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 10 lleva 1 partido de visita ganando por 2 o más (su máximo previo era 1): iguala su récord. En 15 partidos de visita va ganando por 2 o más el 40 %."
@@ -5041,6 +5353,8 @@
      "record": null,
      "frecuencia": 0.2,
      "n": 15,
+     "probRacha": 0.2,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 10 lleva 1 partido de visita ganando por 3 o más (su máximo previo era 1). En 15 partidos de visita va ganando por 3 o más el 20 %."
@@ -5055,6 +5369,8 @@
      "record": null,
      "frecuencia": 0.133,
      "n": 15,
+     "probRacha": 0.3682,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 10 lleva 7 partidos de visita sin perder por 2 o más (su máximo previo era 6). En 15 partidos de visita va sin perder por 2 o más el 87 %."
@@ -5069,6 +5385,8 @@
      "record": "no",
      "frecuencia": 0.667,
      "n": 15,
+     "probRacha": 0.667,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 10 lleva 1 partido de visita anotando (su máximo previo era 6). En 15 partidos de visita va anotando el 67 %."
@@ -5083,6 +5401,8 @@
      "record": null,
      "frecuencia": 0.6,
      "n": 15,
+     "probRacha": 0.6,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 10 lleva 1 partido de visita recibiendo gol (su máximo previo era 5). En 15 partidos de visita va recibiendo gol el 60 %."
@@ -5097,6 +5417,8 @@
      "record": "no",
      "frecuencia": 0.4,
      "n": 15,
+     "probRacha": 0.4,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 10 lleva 1 partido de visita con goles de los dos (su máximo previo era 2). En 15 partidos de visita va con goles de los dos el 40 %."
@@ -5111,6 +5433,8 @@
      "record": "no",
      "frecuencia": 0.533,
      "n": 15,
+     "probRacha": 0.533,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 10 lleva 1 partido de visita con más de 2,5 goles (su máximo previo era 2). En 15 partidos de visita va con más de 2,5 goles el 53 %."
@@ -5125,9 +5449,11 @@
      "record": "supera",
      "frecuencia": 0.741,
      "n": 27,
+     "probRacha": 0.0909,
+     "improbable": false,
      "destacada": true,
-     "cuidado": true,
-     "texto": "Equipo 10 lleva 8 partidos en total sin perder (su máximo previo era 6): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 27 partidos en total va sin perder el 74 %."
+     "cuidado": false,
+     "texto": "Equipo 10 lleva 8 partidos en total sin perder (su máximo previo era 6): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 9 % de las veces): no es terreno raro. En 27 partidos en total va sin perder el 74 %."
     },
     {
      "familia": "noGana",
@@ -5139,6 +5465,8 @@
      "record": "no",
      "frecuencia": 0.556,
      "n": 27,
+     "probRacha": 0.444,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 10 lleva 1 partido en total ganando (su máximo previo era 3). En 27 partidos en total va ganando el 44 %."
@@ -5153,6 +5481,8 @@
      "record": "no",
      "frecuencia": 0.296,
      "n": 27,
+     "probRacha": 0.296,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 10 lleva 1 partido en total ganando por 2 o más (su máximo previo era 2). En 27 partidos en total va ganando por 2 o más el 30 %."
@@ -5167,6 +5497,8 @@
      "record": null,
      "frecuencia": 0.111,
      "n": 27,
+     "probRacha": 0.111,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 10 lleva 1 partido en total ganando por 3 o más (su máximo previo era 1). En 27 partidos en total va ganando por 3 o más el 11 %."
@@ -5181,9 +5513,11 @@
      "record": "supera",
      "frecuencia": 0.148,
      "n": 27,
+     "probRacha": 0.2016,
+     "improbable": false,
      "destacada": true,
-     "cuidado": true,
-     "texto": "Equipo 10 lleva 10 partidos en total sin perder por 2 o más (su máximo previo era 9): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 27 partidos en total va sin perder por 2 o más el 85 %."
+     "cuidado": false,
+     "texto": "Equipo 10 lleva 10 partidos en total sin perder por 2 o más (su máximo previo era 9): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 20 % de las veces): no es terreno raro. En 27 partidos en total va sin perder por 2 o más el 85 %."
     },
     {
      "familia": "anota",
@@ -5195,6 +5529,8 @@
      "record": "no",
      "frecuencia": 0.667,
      "n": 27,
+     "probRacha": 0.667,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 10 lleva 1 partido en total anotando (su máximo previo era 4). En 27 partidos en total va anotando el 67 %."
@@ -5209,6 +5545,8 @@
      "record": "no",
      "frecuencia": 0.593,
      "n": 27,
+     "probRacha": 0.593,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 10 lleva 1 partido en total recibiendo gol (su máximo previo era 3). En 27 partidos en total va recibiendo gol el 59 %."
@@ -5223,6 +5561,8 @@
      "record": "no",
      "frecuencia": 0.407,
      "n": 27,
+     "probRacha": 0.407,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 10 lleva 1 partido en total con goles de los dos (su máximo previo era 2). En 27 partidos en total va con goles de los dos el 41 %."
@@ -5237,6 +5577,8 @@
      "record": "no",
      "frecuencia": 0.519,
      "n": 27,
+     "probRacha": 0.519,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 10 lleva 1 partido en total con más de 2,5 goles (su máximo previo era 4). En 27 partidos en total va con más de 2,5 goles el 52 %."
@@ -5247,8 +5589,8 @@
     "Equipo 10 lleva 5 partidos de visita sin perder (su máximo previo era 5). En 15 partidos de visita va sin perder el 73 %.",
     "Equipo 10 lleva 1 partido de visita ganando por 2 o más (su máximo previo era 1): iguala su récord. En 15 partidos de visita va ganando por 2 o más el 40 %.",
     "Equipo 10 lleva 7 partidos de visita sin perder por 2 o más (su máximo previo era 6). En 15 partidos de visita va sin perder por 2 o más el 87 %.",
-    "Equipo 10 lleva 8 partidos en total sin perder (su máximo previo era 6): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 27 partidos en total va sin perder el 74 %.",
-    "Equipo 10 lleva 10 partidos en total sin perder por 2 o más (su máximo previo era 9): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 27 partidos en total va sin perder por 2 o más el 85 %."
+    "Equipo 10 lleva 8 partidos en total sin perder (su máximo previo era 6): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 9 % de las veces): no es terreno raro. En 27 partidos en total va sin perder el 74 %.",
+    "Equipo 10 lleva 10 partidos en total sin perder por 2 o más (su máximo previo era 9): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 20 % de las veces): no es terreno raro. En 27 partidos en total va sin perder por 2 o más el 85 %."
    ],
    "perfilDc": {
     "condicion": "Visita",
@@ -5437,6 +5779,8 @@
      "record": "no",
      "frecuencia": 0.731,
      "n": 26,
+     "probRacha": 0.731,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 11 lleva 1 partido en total sin perder (su máximo previo era 5). En 26 partidos en total va sin perder el 73 %."
@@ -5451,6 +5795,8 @@
      "record": "no",
      "frecuencia": 0.5,
      "n": 26,
+     "probRacha": 0.5,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 11 lleva 1 partido en total ganando (su máximo previo era 3). En 26 partidos en total va ganando el 50 %."
@@ -5465,6 +5811,8 @@
      "record": "iguala",
      "frecuencia": 0.231,
      "n": 26,
+     "probRacha": 0.231,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 11 lleva 1 partido en total ganando por 2 o más (su máximo previo era 1): iguala su récord. En 26 partidos en total va ganando por 2 o más el 23 %."
@@ -5479,6 +5827,8 @@
      "record": null,
      "frecuencia": 0.115,
      "n": 26,
+     "probRacha": 0.115,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 11 lleva 1 partido en total ganando por 3 o más (su máximo previo era 1). En 26 partidos en total va ganando por 3 o más el 12 %."
@@ -5493,6 +5843,8 @@
      "record": "no",
      "frecuencia": 0.154,
      "n": 26,
+     "probRacha": 0.846,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 11 lleva 1 partido en total sin perder por 2 o más (su máximo previo era 9). En 26 partidos en total va sin perder por 2 o más el 85 %."
@@ -5507,6 +5859,8 @@
      "record": "no",
      "frecuencia": 0.846,
      "n": 26,
+     "probRacha": 0.5122,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Equipo 11 lleva 4 partidos en total anotando (su máximo previo era 6). En 26 partidos en total va anotando el 85 %."
@@ -5521,6 +5875,8 @@
      "record": "no",
      "frecuencia": 0.692,
      "n": 26,
+     "probRacha": 0.308,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 11 lleva 1 partido en total con la valla invicta (su máximo previo era 2). En 26 partidos en total va con la valla invicta el 31 %."
@@ -5535,6 +5891,8 @@
      "record": "no",
      "frecuencia": 0.577,
      "n": 26,
+     "probRacha": 0.423,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Equipo 11 lleva 1 partido en total sin que marquen los dos (su máximo previo era 4). En 26 partidos en total va sin que marquen los dos el 42 %."
@@ -5549,15 +5907,17 @@
      "record": "supera",
      "frecuencia": 0.731,
      "n": 26,
+     "probRacha": 0.2087,
+     "improbable": false,
      "destacada": true,
-     "cuidado": true,
-     "texto": "Equipo 11 lleva 5 partidos en total con más de 2,5 goles (su máximo previo era 4): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 26 partidos en total va con más de 2,5 goles el 73 %."
+     "cuidado": false,
+     "texto": "Equipo 11 lleva 5 partidos en total con más de 2,5 goles (su máximo previo era 4): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 21 % de las veces): no es terreno raro. En 26 partidos en total va con más de 2,5 goles el 73 %."
     }
    ],
    "lineas": [
     "Equipo 11 lleva 1 partido en total ganando por 2 o más (su máximo previo era 1): iguala su récord. En 26 partidos en total va ganando por 2 o más el 23 %.",
     "Equipo 11 lleva 4 partidos en total anotando (su máximo previo era 6). En 26 partidos en total va anotando el 85 %.",
-    "Equipo 11 lleva 5 partidos en total con más de 2,5 goles (su máximo previo era 4): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 26 partidos en total va con más de 2,5 goles el 73 %."
+    "Equipo 11 lleva 5 partidos en total con más de 2,5 goles (su máximo previo era 4): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 21 % de las veces): no es terreno raro. En 26 partidos en total va con más de 2,5 goles el 73 %."
    ]
   }
  },
@@ -5658,6 +6018,8 @@
      "record": "supera",
      "frecuencia": 0.769,
      "n": 13,
+     "probRacha": 0.3497,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Everton lleva 4 partidos de local sin perder (su máximo previo era 3): está en terreno nuevo, por encima de su récord. En 13 partidos de local va sin perder el 77 %."
@@ -5672,6 +6034,8 @@
      "record": "iguala",
      "frecuencia": 0.538,
      "n": 13,
+     "probRacha": 0.462,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Everton lleva 1 partido de local ganando (su máximo previo era 1): iguala su récord. En 13 partidos de local va ganando el 46 %."
@@ -5686,6 +6050,8 @@
      "record": null,
      "frecuencia": 0.077,
      "n": 13,
+     "probRacha": 0.4488,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Everton lleva 10 partidos de local sin ganar por 2 o más (su máximo previo era 2). En 13 partidos de local va sin ganar por 2 o más el 92 %."
@@ -5700,6 +6066,8 @@
      "record": null,
      "frecuencia": 0.0,
      "n": 13,
+     "probRacha": 1.0,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Everton lleva 13 partidos de local sin ganar por 3 o más. En 13 partidos de local va sin ganar por 3 o más el 100 %."
@@ -5714,6 +6082,8 @@
      "record": null,
      "frecuencia": 0.077,
      "n": 13,
+     "probRacha": 0.7258,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Everton lleva 4 partidos de local sin perder por 2 o más (su máximo previo era 8). En 13 partidos de local va sin perder por 2 o más el 92 %."
@@ -5728,6 +6098,8 @@
      "record": "supera",
      "frecuencia": 0.769,
      "n": 13,
+     "probRacha": 0.3497,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Everton lleva 4 partidos de local anotando (su máximo previo era 3): está en terreno nuevo, por encima de su récord. En 13 partidos de local va anotando el 77 %."
@@ -5742,6 +6114,8 @@
      "record": "iguala",
      "frecuencia": 0.615,
      "n": 13,
+     "probRacha": 0.385,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Everton lleva 1 partido de local con la valla invicta (su máximo previo era 1): iguala su récord. En 13 partidos de local va con la valla invicta el 39 %."
@@ -5756,6 +6130,8 @@
      "record": "no",
      "frecuencia": 0.385,
      "n": 13,
+     "probRacha": 0.615,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Everton lleva 1 partido de local sin que marquen los dos (su máximo previo era 4). En 13 partidos de local va sin que marquen los dos el 62 %."
@@ -5770,6 +6146,8 @@
      "record": null,
      "frecuencia": 0.154,
      "n": 13,
+     "probRacha": 0.846,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Everton lleva 1 partido de local con 2 goles o menos (su máximo previo era 6). En 13 partidos de local va con 2 goles o menos el 85 %."
@@ -5784,6 +6162,8 @@
      "record": "supera",
      "frecuencia": 0.769,
      "n": 13,
+     "probRacha": 0.3497,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Everton lleva 4 partidos en total sin perder (su máximo previo era 3): está en terreno nuevo, por encima de su récord. En 13 partidos en total va sin perder el 77 %."
@@ -5798,6 +6178,8 @@
      "record": "iguala",
      "frecuencia": 0.538,
      "n": 13,
+     "probRacha": 0.462,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Everton lleva 1 partido en total ganando (su máximo previo era 1): iguala su récord. En 13 partidos en total va ganando el 46 %."
@@ -5812,6 +6194,8 @@
      "record": null,
      "frecuencia": 0.077,
      "n": 13,
+     "probRacha": 0.4488,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Everton lleva 10 partidos en total sin ganar por 2 o más (su máximo previo era 2). En 13 partidos en total va sin ganar por 2 o más el 92 %."
@@ -5826,6 +6210,8 @@
      "record": null,
      "frecuencia": 0.0,
      "n": 13,
+     "probRacha": 1.0,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Everton lleva 13 partidos en total sin ganar por 3 o más. En 13 partidos en total va sin ganar por 3 o más el 100 %."
@@ -5840,6 +6226,8 @@
      "record": null,
      "frecuencia": 0.077,
      "n": 13,
+     "probRacha": 0.7258,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Everton lleva 4 partidos en total sin perder por 2 o más (su máximo previo era 8). En 13 partidos en total va sin perder por 2 o más el 92 %."
@@ -5854,6 +6242,8 @@
      "record": "supera",
      "frecuencia": 0.769,
      "n": 13,
+     "probRacha": 0.3497,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Everton lleva 4 partidos en total anotando (su máximo previo era 3): está en terreno nuevo, por encima de su récord. En 13 partidos en total va anotando el 77 %."
@@ -5868,6 +6258,8 @@
      "record": "iguala",
      "frecuencia": 0.615,
      "n": 13,
+     "probRacha": 0.385,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Everton lleva 1 partido en total con la valla invicta (su máximo previo era 1): iguala su récord. En 13 partidos en total va con la valla invicta el 39 %."
@@ -5882,6 +6274,8 @@
      "record": "no",
      "frecuencia": 0.385,
      "n": 13,
+     "probRacha": 0.615,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Everton lleva 1 partido en total sin que marquen los dos (su máximo previo era 4). En 13 partidos en total va sin que marquen los dos el 62 %."
@@ -5896,6 +6290,8 @@
      "record": null,
      "frecuencia": 0.154,
      "n": 13,
+     "probRacha": 0.846,
+     "improbable": false,
      "destacada": false,
      "cuidado": false,
      "texto": "Everton lleva 1 partido en total con 2 goles o menos (su máximo previo era 6). En 13 partidos en total va con 2 goles o menos el 85 %."
@@ -6075,9 +6471,11 @@
      "record": "supera",
      "frecuencia": 0.762,
      "n": 21,
+     "probRacha": 0.1492,
+     "improbable": false,
      "destacada": true,
-     "cuidado": true,
-     "texto": "Racha larga lleva 7 partidos de local sin perder (su máximo previo era 5): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos de local va sin perder el 76 %."
+     "cuidado": false,
+     "texto": "Racha larga lleva 7 partidos de local sin perder (su máximo previo era 5): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 15 % de las veces): no es terreno raro. En 21 partidos de local va sin perder el 76 %."
     },
     {
      "familia": "noGana",
@@ -6089,6 +6487,8 @@
      "record": "supera",
      "frecuencia": 0.524,
      "n": 21,
+     "probRacha": 0.0055,
+     "improbable": true,
      "destacada": true,
      "cuidado": true,
      "texto": "Racha larga lleva 7 partidos de local ganando (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos de local va ganando el 48 %."
@@ -6103,6 +6503,8 @@
      "record": null,
      "frecuencia": 0.048,
      "n": 21,
+     "probRacha": 0.6115,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Racha larga lleva 10 partidos de local sin ganar por 2 o más (su máximo previo era 10). En 21 partidos de local va sin ganar por 2 o más el 95 %."
@@ -6117,6 +6519,8 @@
      "record": null,
      "frecuencia": 0.0,
      "n": 21,
+     "probRacha": 1.0,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Racha larga lleva 21 partidos de local sin ganar por 3 o más. En 21 partidos de local va sin ganar por 3 o más el 100 %."
@@ -6131,6 +6535,8 @@
      "record": null,
      "frecuencia": 0.048,
      "n": 21,
+     "probRacha": 0.5821,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Racha larga lleva 11 partidos de local sin perder por 2 o más (su máximo previo era 9). En 21 partidos de local va sin perder por 2 o más el 95 %."
@@ -6145,9 +6551,11 @@
      "record": "supera",
      "frecuencia": 0.762,
      "n": 21,
+     "probRacha": 0.1492,
+     "improbable": false,
      "destacada": true,
-     "cuidado": true,
-     "texto": "Racha larga lleva 7 partidos de local anotando (su máximo previo era 5): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos de local va anotando el 76 %."
+     "cuidado": false,
+     "texto": "Racha larga lleva 7 partidos de local anotando (su máximo previo era 5): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 15 % de las veces): no es terreno raro. En 21 partidos de local va anotando el 76 %."
     },
     {
      "familia": "recibe",
@@ -6159,6 +6567,8 @@
      "record": "supera",
      "frecuencia": 0.524,
      "n": 21,
+     "probRacha": 0.0055,
+     "improbable": true,
      "destacada": true,
      "cuidado": true,
      "texto": "Racha larga lleva 7 partidos de local con la valla invicta (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos de local va con la valla invicta el 48 %."
@@ -6173,6 +6583,8 @@
      "record": null,
      "frecuencia": 0.286,
      "n": 21,
+     "probRacha": 0.0675,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Racha larga lleva 8 partidos de local sin que marquen los dos (su máximo previo era 4). En 21 partidos de local va sin que marquen los dos el 71 %."
@@ -6187,6 +6599,8 @@
      "record": null,
      "frecuencia": 0.0,
      "n": 21,
+     "probRacha": 1.0,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Racha larga lleva 21 partidos de local con 2 goles o menos. En 21 partidos de local va con 2 goles o menos el 100 %."
@@ -6201,9 +6615,11 @@
      "record": "supera",
      "frecuencia": 0.762,
      "n": 21,
+     "probRacha": 0.1492,
+     "improbable": false,
      "destacada": true,
-     "cuidado": true,
-     "texto": "Racha larga lleva 7 partidos en total sin perder (su máximo previo era 5): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos en total va sin perder el 76 %."
+     "cuidado": false,
+     "texto": "Racha larga lleva 7 partidos en total sin perder (su máximo previo era 5): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 15 % de las veces): no es terreno raro. En 21 partidos en total va sin perder el 76 %."
     },
     {
      "familia": "noGana",
@@ -6215,6 +6631,8 @@
      "record": "supera",
      "frecuencia": 0.524,
      "n": 21,
+     "probRacha": 0.0055,
+     "improbable": true,
      "destacada": true,
      "cuidado": true,
      "texto": "Racha larga lleva 7 partidos en total ganando (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos en total va ganando el 48 %."
@@ -6229,6 +6647,8 @@
      "record": null,
      "frecuencia": 0.048,
      "n": 21,
+     "probRacha": 0.6115,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Racha larga lleva 10 partidos en total sin ganar por 2 o más (su máximo previo era 10). En 21 partidos en total va sin ganar por 2 o más el 95 %."
@@ -6243,6 +6663,8 @@
      "record": null,
      "frecuencia": 0.0,
      "n": 21,
+     "probRacha": 1.0,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Racha larga lleva 21 partidos en total sin ganar por 3 o más. En 21 partidos en total va sin ganar por 3 o más el 100 %."
@@ -6257,6 +6679,8 @@
      "record": null,
      "frecuencia": 0.048,
      "n": 21,
+     "probRacha": 0.5821,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Racha larga lleva 11 partidos en total sin perder por 2 o más (su máximo previo era 9). En 21 partidos en total va sin perder por 2 o más el 95 %."
@@ -6271,9 +6695,11 @@
      "record": "supera",
      "frecuencia": 0.762,
      "n": 21,
+     "probRacha": 0.1492,
+     "improbable": false,
      "destacada": true,
-     "cuidado": true,
-     "texto": "Racha larga lleva 7 partidos en total anotando (su máximo previo era 5): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos en total va anotando el 76 %."
+     "cuidado": false,
+     "texto": "Racha larga lleva 7 partidos en total anotando (su máximo previo era 5): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 15 % de las veces): no es terreno raro. En 21 partidos en total va anotando el 76 %."
     },
     {
      "familia": "recibe",
@@ -6285,6 +6711,8 @@
      "record": "supera",
      "frecuencia": 0.524,
      "n": 21,
+     "probRacha": 0.0055,
+     "improbable": true,
      "destacada": true,
      "cuidado": true,
      "texto": "Racha larga lleva 7 partidos en total con la valla invicta (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos en total va con la valla invicta el 48 %."
@@ -6299,6 +6727,8 @@
      "record": null,
      "frecuencia": 0.286,
      "n": 21,
+     "probRacha": 0.0675,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Racha larga lleva 8 partidos en total sin que marquen los dos (su máximo previo era 4). En 21 partidos en total va sin que marquen los dos el 71 %."
@@ -6313,6 +6743,8 @@
      "record": null,
      "frecuencia": 0.0,
      "n": 21,
+     "probRacha": 1.0,
+     "improbable": false,
      "destacada": true,
      "cuidado": false,
      "texto": "Racha larga lleva 21 partidos en total con 2 goles o menos. En 21 partidos en total va con 2 goles o menos el 100 %."
@@ -6320,21 +6752,21 @@
    ],
    "lineas": [
     "Perfil de doble oportunidad de local: no pierde 16 de 21 (76 %) y no gana 11 de 21 (52 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de local empata mucho o se planta a no perder no está del todo en el nivel",
-    "Racha larga lleva 7 partidos de local sin perder (su máximo previo era 5): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos de local va sin perder el 76 %.",
+    "Racha larga lleva 7 partidos de local sin perder (su máximo previo era 5): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 15 % de las veces): no es terreno raro. En 21 partidos de local va sin perder el 76 %.",
     "Racha larga lleva 7 partidos de local ganando (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos de local va ganando el 48 %.",
     "Racha larga lleva 10 partidos de local sin ganar por 2 o más (su máximo previo era 10). En 21 partidos de local va sin ganar por 2 o más el 95 %.",
     "Racha larga lleva 21 partidos de local sin ganar por 3 o más. En 21 partidos de local va sin ganar por 3 o más el 100 %.",
     "Racha larga lleva 11 partidos de local sin perder por 2 o más (su máximo previo era 9). En 21 partidos de local va sin perder por 2 o más el 95 %.",
-    "Racha larga lleva 7 partidos de local anotando (su máximo previo era 5): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos de local va anotando el 76 %.",
+    "Racha larga lleva 7 partidos de local anotando (su máximo previo era 5): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 15 % de las veces): no es terreno raro. En 21 partidos de local va anotando el 76 %.",
     "Racha larga lleva 7 partidos de local con la valla invicta (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos de local va con la valla invicta el 48 %.",
     "Racha larga lleva 8 partidos de local sin que marquen los dos (su máximo previo era 4). En 21 partidos de local va sin que marquen los dos el 71 %.",
     "Racha larga lleva 21 partidos de local con 2 goles o menos. En 21 partidos de local va con 2 goles o menos el 100 %.",
-    "Racha larga lleva 7 partidos en total sin perder (su máximo previo era 5): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos en total va sin perder el 76 %.",
+    "Racha larga lleva 7 partidos en total sin perder (su máximo previo era 5): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 15 % de las veces): no es terreno raro. En 21 partidos en total va sin perder el 76 %.",
     "Racha larga lleva 7 partidos en total ganando (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos en total va ganando el 48 %.",
     "Racha larga lleva 10 partidos en total sin ganar por 2 o más (su máximo previo era 10). En 21 partidos en total va sin ganar por 2 o más el 95 %.",
     "Racha larga lleva 21 partidos en total sin ganar por 3 o más. En 21 partidos en total va sin ganar por 3 o más el 100 %.",
     "Racha larga lleva 11 partidos en total sin perder por 2 o más (su máximo previo era 9). En 21 partidos en total va sin perder por 2 o más el 95 %.",
-    "Racha larga lleva 7 partidos en total anotando (su máximo previo era 5): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos en total va anotando el 76 %.",
+    "Racha larga lleva 7 partidos en total anotando (su máximo previo era 5): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 15 % de las veces): no es terreno raro. En 21 partidos en total va anotando el 76 %.",
     "Racha larga lleva 7 partidos en total con la valla invicta (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos en total va con la valla invicta el 48 %.",
     "Racha larga lleva 8 partidos en total sin que marquen los dos (su máximo previo era 4). En 21 partidos en total va sin que marquen los dos el 71 %.",
     "Racha larga lleva 21 partidos en total con 2 goles o menos. En 21 partidos en total va con 2 goles o menos el 100 %."
@@ -6348,6 +6780,619 @@
     "maximoPrevio": 5,
     "record": 2,
     "texto": "Perfil de doble oportunidad de local: no pierde 16 de 21 (76 %) y no gana 11 de 21 (52 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de local empata mucho o se planta a no perder no está del todo en el nivel"
+   }
+  }
+ },
+ {
+  "nombre": "Sequía habitual",
+  "condicion": "L",
+  "filas": [
+   {
+    "fecha": "2025-01-01T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-02T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-03T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-04T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-05T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-06T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-07T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-08T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-09T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-10T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-11T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-12T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-13T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-14T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-15T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-16T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-17T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-18T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-19T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-20T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-21T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-22T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-23T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-24T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-25T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-26T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-27T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-01-28T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-01T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-02T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-03T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-04T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 1
+   },
+   {
+    "fecha": "2025-02-05T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 4,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-06T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-07T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-08T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-09T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-10T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-11T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-12T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-13T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-14T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-15T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-16T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-17T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-18T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-19T20:00:00Z",
+    "condicion": "Local",
+    "golesFavor": 1,
+    "golesContra": 0
+   }
+  ],
+  "esperado": {
+   "nota": "descripción, no riesgo: el largo y el récord de estas burbujas no predicen el partido siguiente mejor que la frecuencia del equipo, y en su récord se sostienen algo más, no revientan (REVENTON §15). El PERFIL de doble oportunidad por condición sí agrega al 1X2 del motor (§15.1)",
+   "condicion": "local",
+   "familias": [
+    {
+     "familia": "noPierde",
+     "ambito": "local",
+     "valor": true,
+     "partidos": 47,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 1.0,
+     "n": 47,
+     "probRacha": 1.0,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Sequía habitual lleva 47 partidos de local sin perder. En 47 partidos de local va sin perder el 100 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 15,
+     "maximoPrevio": 24,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.17,
+     "n": 47,
+     "probRacha": 0.0611,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Sequía habitual lleva 15 partidos de local ganando (su máximo previo era 24). En 47 partidos de local va ganando el 83 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 14,
+     "maximoPrevio": 12,
+     "burbujasPrevias": 3,
+     "record": "supera",
+     "frecuencia": 0.064,
+     "n": 47,
+     "probRacha": 0.3962,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Sequía habitual lleva 14 partidos de local sin ganar por 2 o más (su máximo previo era 12): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 40 % de las veces): no es terreno raro. En 47 partidos de local va sin ganar por 2 o más el 94 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 14,
+     "maximoPrevio": 12,
+     "burbujasPrevias": 3,
+     "record": "supera",
+     "frecuencia": 0.064,
+     "n": 47,
+     "probRacha": 0.3962,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Sequía habitual lleva 14 partidos de local sin ganar por 3 o más (su máximo previo era 12): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 40 % de las veces): no es terreno raro. En 47 partidos de local va sin ganar por 3 o más el 94 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 47,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 0.0,
+     "n": 47,
+     "probRacha": 1.0,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Sequía habitual lleva 47 partidos de local sin perder por 2 o más. En 47 partidos de local va sin perder por 2 o más el 100 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "local",
+     "valor": true,
+     "partidos": 47,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 1.0,
+     "n": 47,
+     "probRacha": 1.0,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Sequía habitual lleva 47 partidos de local anotando. En 47 partidos de local va anotando el 100 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 15,
+     "maximoPrevio": 24,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.17,
+     "n": 47,
+     "probRacha": 0.0611,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Sequía habitual lleva 15 partidos de local con la valla invicta (su máximo previo era 24). En 47 partidos de local va con la valla invicta el 83 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 15,
+     "maximoPrevio": 24,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.17,
+     "n": 47,
+     "probRacha": 0.0611,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Sequía habitual lleva 15 partidos de local sin que marquen los dos (su máximo previo era 24). En 47 partidos de local va sin que marquen los dos el 83 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "local",
+     "valor": false,
+     "partidos": 14,
+     "maximoPrevio": 12,
+     "burbujasPrevias": 3,
+     "record": "supera",
+     "frecuencia": 0.064,
+     "n": 47,
+     "probRacha": 0.3962,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Sequía habitual lleva 14 partidos de local con 2 goles o menos (su máximo previo era 12): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 40 % de las veces): no es terreno raro. En 47 partidos de local va con 2 goles o menos el 94 %."
+    },
+    {
+     "familia": "noPierde",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 47,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 1.0,
+     "n": 47,
+     "probRacha": 1.0,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Sequía habitual lleva 47 partidos en total sin perder. En 47 partidos en total va sin perder el 100 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 15,
+     "maximoPrevio": 24,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.17,
+     "n": 47,
+     "probRacha": 0.0611,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Sequía habitual lleva 15 partidos en total ganando (su máximo previo era 24). En 47 partidos en total va ganando el 83 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 14,
+     "maximoPrevio": 12,
+     "burbujasPrevias": 3,
+     "record": "supera",
+     "frecuencia": 0.064,
+     "n": 47,
+     "probRacha": 0.3962,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Sequía habitual lleva 14 partidos en total sin ganar por 2 o más (su máximo previo era 12): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 40 % de las veces): no es terreno raro. En 47 partidos en total va sin ganar por 2 o más el 94 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 14,
+     "maximoPrevio": 12,
+     "burbujasPrevias": 3,
+     "record": "supera",
+     "frecuencia": 0.064,
+     "n": 47,
+     "probRacha": 0.3962,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Sequía habitual lleva 14 partidos en total sin ganar por 3 o más (su máximo previo era 12): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 40 % de las veces): no es terreno raro. En 47 partidos en total va sin ganar por 3 o más el 94 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 47,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 0.0,
+     "n": 47,
+     "probRacha": 1.0,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Sequía habitual lleva 47 partidos en total sin perder por 2 o más. En 47 partidos en total va sin perder por 2 o más el 100 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 47,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 1.0,
+     "n": 47,
+     "probRacha": 1.0,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Sequía habitual lleva 47 partidos en total anotando. En 47 partidos en total va anotando el 100 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 15,
+     "maximoPrevio": 24,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.17,
+     "n": 47,
+     "probRacha": 0.0611,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Sequía habitual lleva 15 partidos en total con la valla invicta (su máximo previo era 24). En 47 partidos en total va con la valla invicta el 83 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 15,
+     "maximoPrevio": 24,
+     "burbujasPrevias": 1,
+     "record": null,
+     "frecuencia": 0.17,
+     "n": 47,
+     "probRacha": 0.0611,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Sequía habitual lleva 15 partidos en total sin que marquen los dos (su máximo previo era 24). En 47 partidos en total va sin que marquen los dos el 83 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 14,
+     "maximoPrevio": 12,
+     "burbujasPrevias": 3,
+     "record": "supera",
+     "frecuencia": 0.064,
+     "n": 47,
+     "probRacha": 0.3962,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Sequía habitual lleva 14 partidos en total con 2 goles o menos (su máximo previo era 12): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 40 % de las veces): no es terreno raro. En 47 partidos en total va con 2 goles o menos el 94 %."
+    }
+   ],
+   "lineas": [
+    "Perfil de doble oportunidad de local: no pierde 47 de 47 (100 %) y no gana 8 de 47 (17 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de local empata mucho o se planta a no perder no está del todo en el nivel",
+    "Sequía habitual lleva 47 partidos de local sin perder. En 47 partidos de local va sin perder el 100 %.",
+    "Sequía habitual lleva 15 partidos de local ganando (su máximo previo era 24). En 47 partidos de local va ganando el 83 %.",
+    "Sequía habitual lleva 14 partidos de local sin ganar por 2 o más (su máximo previo era 12): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 40 % de las veces): no es terreno raro. En 47 partidos de local va sin ganar por 2 o más el 94 %.",
+    "Sequía habitual lleva 14 partidos de local sin ganar por 3 o más (su máximo previo era 12): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 40 % de las veces): no es terreno raro. En 47 partidos de local va sin ganar por 3 o más el 94 %.",
+    "Sequía habitual lleva 47 partidos de local sin perder por 2 o más. En 47 partidos de local va sin perder por 2 o más el 100 %.",
+    "Sequía habitual lleva 47 partidos de local anotando. En 47 partidos de local va anotando el 100 %.",
+    "Sequía habitual lleva 15 partidos de local con la valla invicta (su máximo previo era 24). En 47 partidos de local va con la valla invicta el 83 %.",
+    "Sequía habitual lleva 15 partidos de local sin que marquen los dos (su máximo previo era 24). En 47 partidos de local va sin que marquen los dos el 83 %.",
+    "Sequía habitual lleva 14 partidos de local con 2 goles o menos (su máximo previo era 12): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 40 % de las veces): no es terreno raro. En 47 partidos de local va con 2 goles o menos el 94 %.",
+    "Sequía habitual lleva 47 partidos en total sin perder. En 47 partidos en total va sin perder el 100 %.",
+    "Sequía habitual lleva 15 partidos en total ganando (su máximo previo era 24). En 47 partidos en total va ganando el 83 %.",
+    "Sequía habitual lleva 14 partidos en total sin ganar por 2 o más (su máximo previo era 12): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 40 % de las veces): no es terreno raro. En 47 partidos en total va sin ganar por 2 o más el 94 %.",
+    "Sequía habitual lleva 14 partidos en total sin ganar por 3 o más (su máximo previo era 12): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 40 % de las veces): no es terreno raro. En 47 partidos en total va sin ganar por 3 o más el 94 %.",
+    "Sequía habitual lleva 47 partidos en total sin perder por 2 o más. En 47 partidos en total va sin perder por 2 o más el 100 %.",
+    "Sequía habitual lleva 47 partidos en total anotando. En 47 partidos en total va anotando el 100 %.",
+    "Sequía habitual lleva 15 partidos en total con la valla invicta (su máximo previo era 24). En 47 partidos en total va con la valla invicta el 83 %.",
+    "Sequía habitual lleva 15 partidos en total sin que marquen los dos (su máximo previo era 24). En 47 partidos en total va sin que marquen los dos el 83 %.",
+    "Sequía habitual lleva 14 partidos en total con 2 goles o menos (su máximo previo era 12): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 40 % de las veces): no es terreno raro. En 47 partidos en total va con 2 goles o menos el 94 %."
+   ],
+   "perfilDc": {
+    "condicion": "Local",
+    "partidos": 47,
+    "noPierde": 0.9796,
+    "noGana": 0.1837,
+    "burbuja": 47,
+    "maximoPrevio": 0,
+    "record": 0,
+    "texto": "Perfil de doble oportunidad de local: no pierde 47 de 47 (100 %) y no gana 8 de 47 (17 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de local empata mucho o se planta a no perder no está del todo en el nivel"
    }
   }
  },

@@ -189,7 +189,8 @@ cada 30 minutos y es CORTA: casi siempre no hay nada que hacer.
 1. **UNA sola llamada, antes de nada** (22/10/2026: cada disparo vacío
    costaba ~0,25 USD por leer la agenda y cada parte):
    `curl -sS -H "Authorization: Bearer $SAD_TOKEN_COWORK" "$SAD_API_BASE/analisis/cowork/rehacer"`.
-   Trae los partes que arrancan entre **30 y 80 minutos** (`enVentana`) y, de
+   Trae los partes que arrancan entre **15 y 80 minutos** (`enVentana`; el piso
+   bajó de 30 a 15 el 24/10/2026: la API publica el once ~27 min antes) y, de
    esos, los que tienen **DTP-REHACER** (`pendientes`: el once oficial
    contradice la apertura del DTP). Con `pendientes` vacío: terminá YA en una
    línea («Nada que rehacer a las HH:MM de Lima»), sin `git pull`, sin leer

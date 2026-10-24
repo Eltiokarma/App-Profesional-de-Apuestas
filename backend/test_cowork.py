@@ -1154,6 +1154,18 @@ def main():
         _ctxi = {**_ctx, "proximos": [{**_ctx["proximos"][0], "esInternacional": True}]}
         check("339: eliminatoria internacional (octavos) a 5 días también cuenta",
               "eliminatoria internacional" in (_tde339.exigencia_proxima(645, _ctxi) or {}).get("motivo", ""))
+        # 435 (24/10/2026): semifinal o final de copa nacional, sí; cuartos u octavos, no
+        for _ronda, _cuenta in (("Semi-finals", True), ("Final", True), ("Semifinal - 2nd Leg", True),
+                                ("Quarter-finals", False), ("1/8-finals", False), ("Round of 32", False)):
+            _tde339.saddb.query_one = lambda *a, _r=_ronda, **k: {"league_id": 143, "league_season": 2026,
+                                                                 "league_round": _r}
+            _ex = _tde339.exigencia_proxima(645, _ctx)
+            check(f"435: copa nacional «{_ronda}» a 5 días {'cuenta' if _cuenta else 'NO cuenta'}",
+                  bool(_ex and "copa nacional" in _ex["motivo"]) == _cuenta, _ex)
+        _tde339.saddb.query_one = lambda *a, **k: {"league_id": 140, "league_season": 2026,
+                                                   "league_round": "Final"}
+        check("435: «Final» de una liga (no copa) no la toma la regla de copa",
+              "copa nacional" not in ((_tde339.exigencia_proxima(645, _ctx) or {}).get("motivo") or ""))
     finally:
         _tde339.saddb.query_one, _cal339.etiquetas_de_rival, _jug339._congestion = _qo, _et, _cg
     check("339: Galatasaray–Fenerbahçe es clásico documentado de Estambul",
@@ -1857,8 +1869,8 @@ def main():
     _of = (v.get("objetivo") or {}).get("otrasFamilias") or {}
     check("el objetivo trae las otras burbujas por lado, con su nota de observación",
           set(_of) >= {"a", "b", "nota"} and "sin tasa" in _of["nota"], list(_of))
-    check("porExplicar = grande (5+) o en su récord; el resto de lo cortado se cuenta sin pedir causa",
-          all(_c["porExplicar"] == (_c["cuidado"] or _c["partidos"] >= 5)
+    check("porExplicar = grande (5+) o en su récord, y rara para su frecuencia (450); el resto se cuenta sin pedir causa",
+          all(_c["porExplicar"] == (_c["cuidado"] or (_c["partidos"] >= 5 and _c["improbable"]))
               for l in ("a", "b") for _c in _of[l]["cortadas"]), _of)
     _hay = [(l, _c) for l in ("a", "b") for _c in _of[l]["cortadas"] if _c["porExplicar"]]
     if _hay:
@@ -4427,7 +4439,7 @@ def main():
     # ── la comprobación barata de la rutina de rehacer (22/10/2026) ─────────
     _rh = c.get(f"{A}/analisis/cowork/rehacer")
     check("rehacer: responde la ventana y la lista (vacía = nada que hacer)",
-          _rh.status_code == 200 and _rh.json()["ventanaMin"] == [30, 80]
+          _rh.status_code == 200 and _rh.json()["ventanaMin"] == [15, 80]
           and isinstance(_rh.json()["pendientes"], list), _rh.text[:300])
     from backend.analisis import parte as _pt
     from datetime import datetime as _dtm, timedelta as _td, timezone as _tz
@@ -4445,9 +4457,14 @@ def main():
         _pit = _dtm.fromisoformat(_iso(_ns[1]).replace("Z", "+00:00"))
         _en = _pt.rehacer_pendientes(ahora=_pit - _td(minutes=45))
         _fuera = _pt.rehacer_pendientes(ahora=_pit - _td(minutes=120))
+        _tarde = _pt.rehacer_pendientes(ahora=_pit - _td(minutes=20))
+        _encima = _pt.rehacer_pendientes(ahora=_pit - _td(minutes=10))
         check("rehacer: un parte a 45 min del pitazo entra en la ventana; a 120 min, no",
               any(x["fixtureId"] == _ns[0] for x in _en["enVentana"])
               and all(x["fixtureId"] != _ns[0] for x in _fuera["enVentana"]), (_en, _fuera))
+        check("rehacer: el once que llega a ~27 min (444, 451, 454) entra a 20 min; a 10 min ya no",
+              any(x["fixtureId"] == _ns[0] for x in _tarde["enVentana"])
+              and all(x["fixtureId"] != _ns[0] for x in _encima["enVentana"]), (_tarde, _encima))
     check("rehacer: hay un parte NS en la demo para probar la ventana", _ns is not None)
 
     print()

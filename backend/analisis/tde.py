@@ -18,6 +18,7 @@ Todo lo demás del TDE es lectura táctica o investigación y se queda donde est
 lo escribe quien analiza. Por eso la respuesta trae `noCalculables`, con el
 motivo de cada uno: un insumo que falta tiene que verse, no adivinarse.
 """
+import re
 from datetime import datetime
 
 from backend import db as saddb
@@ -119,10 +120,18 @@ def f1_rotacion(team_id: int, fecha: str) -> dict:
 EXIGENCIA_DIAS = 5
 
 
+def _semi_o_final(ronda: str) -> bool:
+    """«Semi-finals», «Semifinal», «Final» (ida o vuelta); NO «Quarter-finals»
+    ni «1/8-finals», que también traen la palabra."""
+    r = (ronda or "").lower().strip()
+    return "semi" in r or re.match(r"^(the )?finals?\b", r) is not None
+
+
 def exigencia_proxima(team_id: int, contexto: dict) -> dict | None:
     """El próximo partido, si es de altísima exigencia y está a ≤ 5 días:
-    clásico (el mismo etiquetador del calendario) o eliminatoria internacional
-    de octavos en adelante. None si no, o si no hay próximo en la base."""
+    clásico (el mismo etiquetador del calendario), eliminatoria internacional
+    de octavos en adelante, o semifinal/final de copa nacional. None si no, o
+    si no hay próximo en la base."""
     prox = (contexto.get("proximos") or [None])[0]
     if not prox or prox.get("diasDescanso") is None or prox["diasDescanso"] > EXIGENCIA_DIAS:
         return None
@@ -139,6 +148,13 @@ def exigencia_proxima(team_id: int, contexto: dict) -> dict | None:
         from backend.analisis.parte import _FASE_DECISIVA
         if any(x in ronda for x in _FASE_DECISIVA):
             return {**base, "motivo": f"eliminatoria internacional ({f['league_round']}) ante {base['rival']}"}
+    # semifinal o final de copa nacional (24/10/2026, incidencia 435, decisión del
+    # usuario): quien tiene semis de Copa del Rey el miércoles rota como quien
+    # tiene octavos de Champions. Las rondas anteriores no: ahí los grandes rotan.
+    if _semi_o_final(ronda):
+        from backend.analisis import escala
+        if escala.es_copa(f["league_id"]):
+            return {**base, "motivo": f"{f['league_round']} de copa nacional ante {base['rival']}"}
     if rival_id:
         from backend import calendario as cal
         et = cal.etiquetas_de_rival(rival_id, not prox.get("esLocal"), f["league_id"], f["league_season"],
@@ -174,8 +190,8 @@ def f2_calendario(team_id: int, fecha: str, contexto: dict) -> dict:
     # incidencia 339, decisión del usuario 22/10/2026): Galatasaray con el
     # derbi ante Fenerbahçe a 5 días quedó en 0.5 porque el backend solo miraba
     # el descanso. Lo que la base sabe decir de «altísima exigencia»: un
-    # clásico o una eliminatoria internacional de octavos en adelante, a 5
-    # días o menos. Lo demás (una final de liga, un rival directo) sigue a mano.
+    # clásico, una eliminatoria internacional de octavos en adelante o una
+    # semifinal/final de copa nacional (435), a 5 días o menos. Lo demás (una final de liga, un rival directo) sigue a mano.
     exig = exigencia_proxima(team_id, contexto)
     if exig and (piso is None or piso < 1.0):
         piso, porque = 1.0, (f"{porque}; y el próximo es de altísima exigencia: {exig['motivo']} "

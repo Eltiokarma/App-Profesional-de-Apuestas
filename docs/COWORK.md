@@ -699,8 +699,9 @@ Tres cuidados que la respuesta trae escritos:
 - **`f2` da un PISO, no un score cerrado.** El viaje largo, el cambio de
   altitud y el calor extremo son parte de la rúbrica y NO están en nuestra
   base: si los hay, el score sube a mano. El «próximo partido de altísima
-  exigencia» SÍ lo mira la app cuando lo reconoce (clásico o eliminatoria
-  internacional de octavos en adelante, a ≤ 5 días: `f2.exigenciaProxima`, y
+  exigencia» SÍ lo mira la app cuando lo reconoce (clásico, eliminatoria
+  internacional de octavos en adelante o semifinal/final de copa nacional
+  —desde el 24/10/2026—, a ≤ 5 días: `f2.exigenciaProxima`, y
   el piso va a 1); otro que no reconozca (rival directo, final de liga)
   también sube a mano, con el porqué.
 - **`p1a` puede bajar.** «Necesita ganar» lleva P1a a 0 y eso no sale de la

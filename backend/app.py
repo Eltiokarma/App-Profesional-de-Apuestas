@@ -2479,7 +2479,7 @@ def cowork_revisor(horas: int = Query(default=24, ge=1, le=336),
 
 
 @app.get(API + "/analisis/cowork/rehacer")
-def cowork_rehacer(desdeMin: int = Query(default=30, ge=0, le=240), hastaMin: int = Query(default=80, ge=1, le=240)):
+def cowork_rehacer(desdeMin: int = Query(default=15, ge=0, le=240), hastaMin: int = Query(default=80, ge=1, le=240)):
     """La comprobación barata de la rutina de rehacer (22/10/2026): los partes
     con DTP-REHACER que arrancan entre `desdeMin` y `hastaMin` minutos. Vacío =
     no hay nada que rehacer, sin leer la agenda ni cada parte."""

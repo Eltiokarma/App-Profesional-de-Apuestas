@@ -938,7 +938,7 @@ paths:
         `pendientes` vacío = la corrida termina en una línea. Abierto al token acotado (GET de
         /analisis/cowork).
       parameters:
-        - { name: desdeMin, in: query, schema: { type: integer, default: 30, minimum: 0, maximum: 240 } }
+        - { name: desdeMin, in: query, schema: { type: integer, default: 15, minimum: 0, maximum: 240 }, description: 'piso en 15 desde el 24/10/2026: el once llega ~27 min antes' }
         - { name: hastaMin, in: query, schema: { type: integer, default: 80, minimum: 1, maximum: 240 } }
       responses:
         '200':
@@ -2590,8 +2590,10 @@ components:
               record: { type: string, nullable: true, enum: [supera, iguala, 'no', null] }
               frecuencia: { type: number }
               n: { type: integer }
+              probRacha: { type: number, description: 'frecuencia propia del estado de hoy elevada al largo: la chance de encadenar esta racha (24/10/2026)' }
+              improbable: { type: boolean, description: 'probRacha < 0.05: rara para ESTE equipo' }
               destacada: { type: boolean }
-              cuidado: { type: boolean, description: "en su récord y de 5+ partidos: cuidado con la carga (alerta FAMILIA-RECORD del parte); prudencia, no probabilidad" }
+              cuidado: { type: boolean, description: "en su récord, de 5+ partidos e improbable para el equipo: cuidado con la carga (alerta FAMILIA-RECORD del parte); prudencia, no probabilidad. Una sequía que su frecuencia hace habitual no grita (incidencias 420 y 450)" }
               texto: { type: string }
         lineas: { type: array, items: { type: string } }
     BurbujasEquipo:
@@ -4469,8 +4471,9 @@ components:
               partidos: { type: integer }
               record: { type: string, nullable: true }
               cuidado: { type: boolean }
+              improbable: { type: boolean, description: 'rara para la frecuencia propia del equipo (24/10/2026)' }
               antes: { type: string, description: 'la línea de la narrativa como se leía antes del partido' }
-              porExplicar: { type: boolean }
+              porExplicar: { type: boolean, description: 'grande (5+) o en su récord, Y rara para su frecuencia: una sequía habitual no pide causa (incidencia 450)' }
         siguieron: { type: integer }
         porExplicar: { type: integer }
         nota: { type: string }
