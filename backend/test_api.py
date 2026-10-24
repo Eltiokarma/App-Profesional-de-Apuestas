@@ -530,6 +530,35 @@ def main():
     check("Missing Fixture: 9 de 16 marcados (56%) → ruido, y cada baja lo dice",
           pl_r["missingFixture"]["lectura"] == "ruido" and pl_r["missingFixture"]["marcados"] == 9
           and len(marc) == 9 and all(j["baja"]["lectura"] == "ruido" for j in marc), pl_r.get("missingFixture"))
+    # 415/71 (24/10/2026): una SANCIÓN es señal aunque el equipo pase el umbral
+    _c415 = _sq.connect(os.path.join(tmp, "sad.db"))
+    _c415.execute("UPDATE jugador_bajas SET detalle='Red Card' WHERE player_id=? AND team_id=?",
+                  (sevilla * 1000 + 0, sevilla))
+    _c415.commit()
+    _pl415 = c.get(A + f"/equipos/{sevilla}/plantilla").json()
+    _roja = next(j for j in _pl415["jugadores"] if j["id"] == sevilla * 1000 + 0)["baja"]
+    check("415: con el equipo en ruido (56 %), la roja (Vinícius) sale SEÑAL y marcada sanción",
+          _pl415["missingFixture"]["lectura"] == "ruido" and _roja["lectura"] == "senal" and _roja.get("sancion"), _roja)
+    # …y las marcas que el once ya desmintió NO cuentan para la densidad
+    _c415.execute("INSERT INTO fixtures (id, date, home_team_id, away_team_id, status_short, status_long, "
+                  "goals_home, goals_away) VALUES (990415, '2026-09-20 20:00:00', ?, 599, 'FT', 'Match Finished', 1, 0)",
+                  (sevilla,))
+    _c415.executemany("INSERT INTO alineaciones (fixture_id, team_id, player_id, jugador, titular) VALUES (990415, ?, ?, 'x', 1)",
+                      [(sevilla, sevilla * 1000 + i) for i in range(1, 8)])
+    _c415.commit()
+    _pl415b = c.get(A + f"/equipos/{sevilla}/plantilla").json()
+    _mf = _pl415b["missingFixture"]
+    check("415: 7 de las 9 marcas ya desmentidas por el once → vigentes 2 de 16 (12,5 %) → SEÑAL",
+          _mf["marcados"] == 2 and _mf["desmentidas"] == 7 and _mf["lectura"] == "senal", _mf)
+    _c415.execute("DELETE FROM alineaciones WHERE fixture_id=990415")
+    _c415.execute("DELETE FROM fixtures WHERE id=990415")
+    _c415.execute("UPDATE jugador_bajas SET detalle='Coach''s decision' WHERE player_id=? AND team_id=?",
+                  (sevilla * 1000 + 0, sevilla))
+    _c415.commit()
+    _c415.close()
+    from backend.jugadores import es_sancion as _es_s
+    check("415: qué es sanción", all(_es_s(x) for x in ("Red Card", "Yellow Cards", "Suspended", "Suspension"))
+          and not any(_es_s(x) for x in ("Knee Injury", "Coach's decision", "Inactive", "Off the roster", None)))
     rs_r = jugcapa.resumen_para_skills(sevilla)
     check("resumen skills con ruido: no lista bajas y avisa la densidad para confirmar en prensa",
           "densidad de ruido" in rs_r.get("bajas", "") and "% de minutos" not in rs_r.get("bajas", ""), rs_r.get("bajas"))

@@ -2185,7 +2185,8 @@ components:
           properties:
             tipo: { type: string, nullable: true }
             detalle: { type: string, nullable: true }
-            lectura: { type: string, enum: [senal, ruido, desmentida], description: 'desmentida = jugó (titular o con un evento) un partido posterior a la fecha de la baja: no cuenta' }
+            lectura: { type: string, enum: [senal, ruido, desmentida], description: 'desmentida = jugó (titular o con un evento) un partido posterior a la fecha de la baja: no cuenta. Una sanción (roja, amarillas, suspensión) es senal aunque el equipo esté en ruido' }
+            sancion: { type: boolean, description: 'el motivo es disciplinario (Red Card, Yellow Cards, Suspended): cuenta como baja siempre (incidencias 71 y 415, 24/10/2026)' }
             lecturaApi: { type: string, enum: [senal, ruido], description: 'con desmentida, la lectura que tenía' }
             desmentidaPorOnce:
               type: object
@@ -2257,9 +2258,10 @@ components:
         missingFixture:
           type: object
           nullable: true
-          description: 'el flag «Missing Fixture» de la API leído por DENSIDAD (docs/JUGADORES.md): null si no marcó a nadie. Por encima de `umbral` (fracción de la plantilla) es ruido —marcó a media plantilla— y ninguna de esas bajas cuenta'
+          description: 'el flag «Missing Fixture» de la API leído por DENSIDAD (docs/JUGADORES.md): null si no marcó a nadie. Por encima de `umbral` (fracción de la plantilla) es ruido —marcó a media plantilla— y ninguna de esas bajas cuenta, salvo las sanciones. Desde el 24/10/2026 la densidad cuenta solo las marcas VIGENTES: las que el once ya desmintió van aparte en `desmentidas`'
           properties:
-            marcados: { type: integer }
+            marcados: { type: integer, description: 'marcas vigentes (sin las desmentidas)' }
+            desmentidas: { type: integer, description: 'marcas viejas de jugadores que ya volvieron a jugar: no cuentan para la densidad' }
             plantilla: { type: integer }
             densidad: { type: number, description: marcados / plantilla }
             umbral: { type: number }

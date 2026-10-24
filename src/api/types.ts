@@ -350,7 +350,9 @@ export interface JugadorDTO {
    *  'ruido' (el flag Missing Fixture marcó más del umbral de la plantilla: no cuenta). */
   baja: { tipo: string | null; detalle: string | null; lectura?: LecturaBaja
           /** con lectura `desmentida`: lo que decía la API y cuándo jugó después de la baja */
-          lecturaApi?: LecturaBaja; desmentidaPorOnce?: { fechaBaja: string; jugoEl: string } } | null
+          lecturaApi?: LecturaBaja; desmentidaPorOnce?: { fechaBaja: string; jugoEl: string }
+          /** motivo disciplinario (roja, amarillas, suspensión): señal siempre (415). */
+          sancion?: boolean } | null
   /** Traspaso hacia el equipo en ≤90 días: sus stats vienen de otro contexto. */
   recienLlegado: { desde: string | null; fecha: string | null } | null
 }
@@ -376,7 +378,8 @@ export interface PlantillaDTO {
   golesPlantilla: number
   /** El flag «Missing Fixture» leído por densidad (docs/JUGADORES.md): null si no
    *  marcó a nadie; por encima de `umbral` es ruido y ninguna de esas bajas cuenta. */
-  missingFixture?: { marcados: number; plantilla: number; densidad: number; umbral: number; lectura: LecturaBaja } | null
+  /** `marcados` = vigentes; `desmentidas` = las que el once ya desmintió (no cuentan, 24/10/2026). */
+  missingFixture?: { marcados: number; desmentidas?: number; plantilla: number; densidad: number; umbral: number; lectura: LecturaBaja } | null
   jugadores: JugadorDTO[]
   /** Con jugadores=[]: true si el backend lanzó la ingesta on-demand del
    *  equipo — la UI sondea hasta que la plantilla llegue. */
