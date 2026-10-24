@@ -165,6 +165,17 @@ def _primera_fecha(fx) -> bool:
     return ronda.rstrip().endswith("- 1") or ronda.strip() in ("1", "Round 1", "Matchday 1")
 
 
+def goles_cuadran(goles: list[dict], gf, gc) -> bool:
+    """¿Los eventos de gol dan el marcador de los 90'? El marcador es el de
+    `fulltime`, así que los goles de la prórroga (minuto pasado el 90 sin ser
+    añadido: 102' de Keita en Mons) no cuentan: Charleroi 0-0 a los 90 salía
+    «no cuadran» (incidencia 458; también Alverca y Arouca, 488)."""
+    if gf is None or gc is None:
+        return False
+    en_90 = [g for g in goles if (g.get("minuto") or 0) - (g.get("extra") or 0) <= 90]
+    return sum(1 for g in en_90 if g["aFavor"]) == gf and sum(1 for g in en_90 if not g["aFavor"]) == gc
+
+
 def insumos_equipo(team_id: int, nombre: str, fx) -> dict:
     from backend.ficha_tactica import tactica_de
 
@@ -187,8 +198,7 @@ def insumos_equipo(team_id: int, nombre: str, fx) -> dict:
     st = ((tac.get("estadisticas") or {}).get("local" if local else "visitante")) or {}
     st_r = ((tac.get("estadisticas") or {}).get("visitante" if local else "local")) or {}
     recibidos = [g for g in goles if not g["aFavor"]]
-    cuadran = gf is not None and gc is not None and \
-        sum(g["aFavor"] for g in goles) == gf and len(recibidos) == gc
+    cuadran = goles_cuadran(goles, gf, gc)
     if not xi:
         faltan.append("sin alineación capturada del partido anterior: M1 sin XI de referencia "
                       "(`ficha_partido` no la trajo o la liga no da onces)")
