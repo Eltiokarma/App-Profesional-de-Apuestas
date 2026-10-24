@@ -402,7 +402,7 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
                                     out["evidencia"]["conFicha"]) if de_rama else None),
             # TRAMO POR TRAMO (TDE v0.1.22, disciplina 64): en cada tramo manda
             # la rama del marcador de ese momento, no la del primer gol
-            "tramos": tramos_por_marcador(tde, goles, foco) if out["evidencia"]["conFicha"] else [],
+            "tramos": tramos_por_marcador(tde, goles, foco, rojas) if out["evidencia"]["conFicha"] else [],
             "nota": ("sin ficha de eventos no se puede comprobar la ventana: queda sin veredicto"
                      if not out["evidencia"]["conFicha"] else vencida if vencida else
                      f"el equipo recibió {recibidos} goles antes de la ventana: no se echó, se rompió "
@@ -695,7 +695,7 @@ def ventana_reloj(texto: str, goles: list[dict], rojas: list[dict], contra: str,
             "cobrable": None if not con_ficha else (not rojas_antes and not clase), "clase": clase or None}
 
 
-def tramos_por_marcador(tde: dict, goles: list[dict], foco: str) -> list[dict]:
+def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dict] | None = None) -> list[dict]:
     """El partido partido en tramos por cada gol, con la rama que MANDA en
     cada uno según el marcador de ese momento (TDE v0.1.22, disciplina 64):
     ganando → siMarcaPrimero; perdiendo → siRecibePrimero (aunque haya ido
@@ -703,15 +703,30 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str) -> list[dict]:
     perdiendo → siIguala (candidato, casi nunca escrito); 0-0 → la base.
     Por tramo: si la rama estaba escrita, su ventana (relativa al gol que abre
     el tramo) y si el foco concedió dentro de ella. Observación, no métrica:
-    12 de 44 derrotas del favorito tuvieron un segundo giro (22/10/2026)."""
+    12 de 44 derrotas del favorito tuvieron un segundo giro (22/10/2026).
+
+    EL GOL DEL AÑADIDO TAMBIÉN CORTA (incidencia 453: el único gol, un 45+5,
+    no abría tramo y el partido salía «0-0 · base» de punta a punta): corta en
+    el 45 o el 90 al que se sumó, que es donde el reloj de las ventanas lo
+    pone. Y LA ROJA PROPIA TAMBIÉN (446, 448: TDE v0.1.21, 44d): desde la
+    expulsión manda `siExpulsion`, declarada o no, con la rama del marcador al
+    lado (`ramaMarcador`)."""
     if not foco:
         return []
     decl = tde.get("reasignacion") or {}
     contra = "b" if foco == "a" else "a"
-    cortes = [g for g in goles if not g.get("enAnadido")]
-    out, gf, gc, inicio, previo, abre = [], 0, 0, 0, "", None
-    for i in range(len(cortes) + 1):
-        fin = cortes[i]["minuto"] if i < len(cortes) else 90
+
+    def reloj(g: dict) -> int:
+        return g["baseAnadido"] if g.get("enAnadido") and g.get("baseAnadido") is not None else g["minuto"]
+
+    eventos = [(reloj(g), g["minuto"], 0, k, "gol", g) for k, g in enumerate(goles)]
+    roja = next((r for r in rojas or [] if r.get("lado") == foco), None)
+    if roja:
+        eventos.append((roja["minuto"], roja["minuto"], 1, 0, "roja", roja))
+    eventos.sort(key=lambda e: e[:4])
+    out, gf, gc, inicio, previo, abre, roja_desde = [], 0, 0, 0, "", None, None
+    for i in range(len(eventos) + 1):
+        fin = eventos[i][0] if i < len(eventos) else 90
         if gf == gc == 0:
             estado, rama = "inicio", "base"
         elif gf > gc:
@@ -721,25 +736,36 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str) -> list[dict]:
         else:
             estado = "empatado"
             rama = "siLeEmpatan" if previo == "ganando" else "siIguala"
+        rama_marcador = rama
+        if roja_desde is not None:
+            rama = "siExpulsion"
         lo = tde if rama == "base" else decl.get(rama)
         texto = (lo or {}).get("ventana") or "" if isinstance(lo, dict) else ""
-        rango = _ventana(texto) or (rango_relativo(texto, inicio) if rama != "base" else None)
-        concedio = [g for g in cortes if g["lado"] == contra and inicio < g["minuto"] <= fin
-                    and g is not abre]
+        ancla = roja_desde if rama == "siExpulsion" else inicio
+        rango = _ventana(texto) or (rango_relativo(texto, ancla) if rama != "base" else None)
+        concedio = [e[5] for e in eventos if e[4] == "gol" and e[5]["lado"] == contra and inicio < e[0] <= fin
+                    and e[5] is not abre]
         en_ventana = None
         if rango:
             a, b = max(rango[0], inicio), min(rango[1], fin)
-            en_ventana = (any(a <= g["minuto"] <= b for g in concedio) if a <= b else None)
-        out.append({"desde": inicio, "hasta": fin, "marcador": f"{gf}-{gc}", "estado": estado, "rama": rama,
-                    "declarada": lo is not None if rama != "base" else bool(texto),
-                    "ventana": texto, "rango": list(rango) if rango else None,
-                    "concedio": [g["minuto"] for g in concedio], "golEnVentana": en_ventana})
-        if i < len(cortes):
+            en_ventana = (any(a <= reloj(g) <= b for g in concedio) if a <= b else None)
+        tramo = {"desde": inicio, "hasta": fin, "marcador": f"{gf}-{gc}", "estado": estado, "rama": rama,
+                 "declarada": lo is not None if rama != "base" else bool(texto),
+                 "ventana": texto, "rango": list(rango) if rango else None,
+                 "concedio": [g["minuto"] for g in concedio], "golEnVentana": en_ventana}
+        if roja_desde is not None:
+            tramo.update(rojaPropia=roja_desde, ramaMarcador=rama_marcador)
+        out.append(tramo)
+        if i < len(eventos):
+            e = eventos[i]
+            if e[4] == "roja":
+                roja_desde, inicio, abre = e[0], e[0], None
+                continue
             if estado in ("ganando", "perdiendo"):
                 previo = estado
-            g = cortes[i]
+            g = e[5]
             gf, gc = gf + (g["lado"] == foco), gc + (g["lado"] != foco)
-            inicio, abre = g["minuto"], g
+            inicio, abre = e[0], g
     return out
 
 
