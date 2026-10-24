@@ -768,6 +768,37 @@ function ConfianzaUnXDos({ o }: { o: VeredictoParte['objetivo'] }) {
   )
 }
 
+/** Arriba del ensayo, a la vista (pedido del usuario, 24/10/2026): cuánto
+ *  dijimos ANTES del partido y, si ya hay veredicto, cómo salió. */
+function PronosticoDelEnsayo({ parte, nombreDe }: { parte: ParteCoworkDTO; nombreDe: (l: 'a' | 'b') => string }) {
+  const pr = parte.pronostico?.probabilidades
+  const o = parte.veredicto?.objetivo
+  const jugado = !!(o?.jugado && o.unXDos)
+  const vals = pr ? [pr.local, pr.empate, pr.visita].map((x) => Number(x ?? 0)) : []
+  if (!jugado && !vals.some((x) => x > 0)) return null
+  const escala = vals.length && vals.every((x) => x <= 1) ? 100 : 1
+  const pct = vals.map((x) => Math.round(x * escala))
+  const max = Math.max(...pct)
+  const sel = pct.filter((x) => x === max).length === 1 ? ['local', 'empate', 'visita'][pct.indexOf(max)] : ''
+  const quien = sel === 'local' ? nombreDe('a') : sel === 'visita' ? nombreDe('b') : 'el empate'
+  return (
+    <section style={{ padding: '12px 15px', marginBottom: 10, borderRadius: 12, background: 'var(--bg2)', border: '1px solid var(--line)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+      <span style={{ font: '700 9.5px var(--mono)', color: 'var(--accent)', letterSpacing: '.6px' }}>
+        {jugado ? `VEREDICTO ${o!.marcador?.texto ?? ''}` : 'PRONÓSTICO'}
+      </span>
+      {jugado ? <ConfianzaUnXDos o={o!} /> : (
+        <span style={{ font: '600 11.5px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums', flexBasis: '100%', minWidth: 0, lineHeight: 1.6 }}>
+          {sel ? <>Decimos <b style={{ color: 'var(--t1)' }}>{SEL_1X2[sel]} {max} %</b> <span style={{ color: 'var(--t3)' }}>({quien})</span></>
+            : <span style={{ color: 'var(--t3)' }}>sin favorito claro</span>}
+          {' '}<span style={{ color: 'var(--t3)' }}>({pct.join('/')})</span>
+          {sel && <>{' '}<span style={{ padding: '1px 6px', borderRadius: 5, background: 'var(--bg3, var(--bg))', border: '1px solid var(--line)', font: '700 9.5px var(--mono)', color: 'var(--t2)' }}>tramo {tramoConfianza(max)}</span></>}
+          {parte.pronostico?.marcador && <><span style={{ color: 'var(--t3)' }}> · </span>marcador {parte.pronostico.marcador}</>}
+        </span>
+      )}
+    </section>
+  )
+}
+
 function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' | 'b') => string }) {
   const [abierto, setAbierto] = useState(false)
   const o = v.objetivo
@@ -1517,7 +1548,12 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
         </>
       )}
 
-      {tab === 'ensayo' && ensayo && <Documento d={ensayo} />}
+      {tab === 'ensayo' && ensayo && (
+        <div>
+          <PronosticoDelEnsayo parte={parte} nombreDe={nombreDe} />
+          <Documento d={ensayo} />
+        </div>
+      )}
       {tab === 'documentos' && otrosDocs.length > 0 && (
         <div>
           {otrosDocs.map((d, i) => <Documento key={`${d.id}-${i}`} d={d} />)}
