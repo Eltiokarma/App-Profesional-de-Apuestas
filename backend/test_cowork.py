@@ -3006,6 +3006,10 @@ def main():
     check("el DTP del partido abierto a Cowork (GET) y 404 si el fixture no existe",
           appmod._cowork_puede("GET", A + f"/analisis/cowork/dtp/{fx_dtp}")
           and c.get(f"{A}/analisis/cowork/dtp/999999999").status_code == 404)
+    check("458: el gol de la prórroga (102') no descuadra un 0-0 a los 90; el añadido (90+4) sí cuenta",
+          dtpc.goles_cuadran([{"minuto": 102, "extra": None, "aFavor": True}], 0, 0)
+          and dtpc.goles_cuadran([{"minuto": 94, "extra": 4, "aFavor": True}], 1, 0)
+          and not dtpc.goles_cuadran([{"minuto": 94, "extra": 4, "aFavor": True}], 0, 0))
     check("estado por tiempo desde los minutos de gol (0-1 al 30, 1-1 al 60)",
           dtpc._estado_por_tiempo([{"minuto": 30, "extra": 0, "aFavor": False},
                                    {"minuto": 60, "extra": 0, "aFavor": True}])
