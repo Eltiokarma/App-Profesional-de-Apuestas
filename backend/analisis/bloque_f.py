@@ -158,6 +158,10 @@ def _misma_pila(uno: str, otro: str) -> bool:
     confundiría."""
     if uno == otro:
         return True
+    # una letra doble de más o de menos es el mismo nombre: «Emmanuel» y
+    # «Emanuel» Benítez (Nacional, incidencia 449: salía baja habiendo entrado)
+    if len(uno) > 3 and len(otro) > 3 and re.sub(r"(.)\1", r"\1", uno) == re.sub(r"(.)\1", r"\1", otro):
+        return True
     if len(uno) == 1:
         return otro.startswith(uno)
     if len(otro) == 1:
@@ -290,6 +294,15 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
                     homonimos_once += 1
             else:
                 no_reconocidos.append(nombre)
+
+    # LA FILA CUYO ID ES EL ALTERNO DE OTRA es esa otra persona: la tabla la
+    # trajo dos veces (Pasto, «S. Cordoba» 538162 baja con «S. Córdoba» 64215
+    # en la banca, incidencia 423)
+    alternos = {alt: i for i, j in enumerate(plantel) for alt in j.get("idsAlternos") or []}
+    for k, j in enumerate(plantel):
+        dueno = alternos.get(j.get("jugadorId"))
+        if dueno is not None and dueno != k and k not in estados:
+            duplicados[k] = dueno
 
     resuelto: list[dict] = []
     for i, j in enumerate(plantel):
