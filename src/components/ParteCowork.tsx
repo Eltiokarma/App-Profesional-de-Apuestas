@@ -1049,6 +1049,21 @@ type Tab = 'ensayo' | 'bloques' | 'f' | 'matchup' | 'lectura' | 'tde' | 'dtp' | 
  *  qué no cuadró. En SOMBRA es la única ventana para verlo —la tira no lo
  *  muestra— y sirve para medirlo contra el criterio humano antes de encender
  *  las alertas. Sin clave de Jev dice que no evaluó, no finge un «todo bien». */
+/** Una sección plegada con su resumen a la vista: se abre si hace falta. */
+function Plegable({ titulo, resumen, alarma, children }: { titulo: string; resumen: string; alarma?: boolean; children: React.ReactNode }) {
+  const [abierto, setAbierto] = useState(false)
+  return (
+    <section style={{ borderRadius: 12, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
+      <button onClick={() => setAbierto(!abierto)} style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '11px 14px', background: 'transparent', border: 0, cursor: 'pointer', textAlign: 'left', flexWrap: 'wrap' }}>
+        <span style={{ font: '600 12.5px var(--sans)', color: 'var(--t1)' }}>{titulo}</span>
+        <span style={{ font: '600 10px var(--mono)', color: alarma ? 'var(--mark)' : 'var(--t3)', flex: 1, minWidth: 0 }}>{resumen}</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2.4" strokeLinecap="round" style={{ transform: abierto ? 'rotate(90deg)' : 'none', transition: 'transform .12s' }}><path d="M9 6l6 6-6 6" /></svg>
+      </button>
+      {abierto && <div style={{ padding: '0 12px 12px' }}>{children}</div>}
+    </section>
+  )
+}
+
 function RevisorCoherencia({ parte }: { parte: ParteCoworkDTO }) {
   const c = parte.coherencia
   if (!c || c.modo === 'off') return null
@@ -1121,6 +1136,7 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
   // que mirar y la pestaña desaparecería con el TDE adentro.
   // ¿el parte trae rúbrica, o solo el envoltorio? cambia lo que se puede afirmar
   const sinRubrica = (['a', 'b'] as const).every((l) => parte.equipos[l].sinBloques)
+  const nEstructurales = parte.alertas.filter((x) => x.tipo === 'estructural').length
   const conTde = (parte.tde?.bloques ?? []).some((b) => b.tipologia || b.ie || b.ise
     || b.vias?.length || b.calculado || Object.keys(b.indicadores ?? {}).length)
   // el DTP estructurado (un bloque por equipo foco) con el toggle de foco
@@ -1179,8 +1195,6 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
         </span>
       </div>
 
-      <CajaOnce parte={parte} matchId={matchId} onParte={onParte} />
-
       <section style={{ display: 'flex', gap: 12, padding: '20px 16px', marginBottom: 14, borderRadius: 16, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
         <Anillo eq={parte.equipos.a} />
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, flexShrink: 0 }}>
@@ -1189,30 +1203,6 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
         </div>
         <Anillo eq={parte.equipos.b} />
       </section>
-
-      <RevisorCoherencia parte={parte} />
-
-      {parte.alertas.length > 0 && (
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 14 }}>
-          {/* flexWrap + el texto con un mínimo: los códigos de Cowork son frases
-              («EL-EFE-VUELVE-A-QUEDAR-CORTO-CONTRA-EL-MOTOR») y en teléfono la
-              etiqueta en una línea le dejaba al detalle una columna de tres palabras */}
-          {parte.alertas.map((a, i) => (
-            <div key={i} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: '6px 10px', padding: '9px 13px', borderRadius: 11, background: a.tipo === 'estructural' ? 'var(--down-soft)' : 'var(--mark-soft)', border: `1px solid color-mix(in oklch,${a.tipo === 'estructural' ? 'var(--down)' : 'var(--mark)'},transparent 60%)` }}>
-              <span style={{ padding: '2px 8px', borderRadius: 6, background: 'var(--bg)', font: '700 9.5px var(--mono)', color: a.tipo === 'estructural' ? 'var(--down)' : 'var(--mark)', flexShrink: 0, maxWidth: '100%', overflowWrap: 'anywhere' }}>{a.codigo}</span>
-              <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', flex: '1 1 220px', minWidth: 0 }}>
-                {a.equipo !== 'global' && (
-                  <b style={{ color: 'var(--t2)' }}>
-                    [{a.equipo === 'a' ? parte.partido.equipoA
-                      : a.equipo === 'b' ? parte.partido.equipoB : 'Ambos'}]{' '}
-                  </b>
-                )}
-                {a.detalle}
-              </span>
-            </div>
-          ))}
-        </section>
-      )}
 
       <div className="sad-scroll" style={{ display: 'flex', gap: 6, marginBottom: 14, overflowX: 'auto', paddingBottom: 2 }}>
         {tabs.map((t) => (
@@ -1559,6 +1549,41 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
           {otrosDocs.map((d, i) => <Documento key={`${d.id}-${i}`} d={d} />)}
         </div>
       )}
+
+      {/* abajo del ensayo y plegadas (pedido del usuario, 24/10/2026): la
+          carga del once y el revisor con la tira de alertas ocupaban la
+          pantalla del teléfono antes de llegar a lo que se lee */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14, marginBottom: 12 }}>
+        <Plegable titulo="Alertas y revisor"
+          resumen={`${parte.alertas.length} ${parte.alertas.length === 1 ? 'alerta' : 'alertas'}${nEstructurales ? ` · ${nEstructurales} estructural${nEstructurales === 1 ? '' : 'es'}` : ''}`}
+          alarma={nEstructurales > 0}>
+          <RevisorCoherencia parte={parte} />
+          {parte.alertas.length > 0 && (
+            <section style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 14 }}>
+              {/* flexWrap + el texto con un mínimo: los códigos de Cowork son frases
+                  («EL-EFE-VUELVE-A-QUEDAR-CORTO-CONTRA-EL-MOTOR») y en teléfono la
+                  etiqueta en una línea le dejaba al detalle una columna de tres palabras */}
+              {parte.alertas.map((a, i) => (
+                <div key={i} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: '6px 10px', padding: '9px 13px', borderRadius: 11, background: a.tipo === 'estructural' ? 'var(--down-soft)' : 'var(--mark-soft)', border: `1px solid color-mix(in oklch,${a.tipo === 'estructural' ? 'var(--down)' : 'var(--mark)'},transparent 60%)` }}>
+                  <span style={{ padding: '2px 8px', borderRadius: 6, background: 'var(--bg)', font: '700 9.5px var(--mono)', color: a.tipo === 'estructural' ? 'var(--down)' : 'var(--mark)', flexShrink: 0, maxWidth: '100%', overflowWrap: 'anywhere' }}>{a.codigo}</span>
+                  <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', flex: '1 1 220px', minWidth: 0 }}>
+                    {a.equipo !== 'global' && (
+                      <b style={{ color: 'var(--t2)' }}>
+                        [{a.equipo === 'a' ? parte.partido.equipoA
+                          : a.equipo === 'b' ? parte.partido.equipoB : 'Ambos'}]{' '}
+                      </b>
+                    )}
+                    {a.detalle}
+                  </span>
+                </div>
+              ))}
+            </section>
+          )}
+        </Plegable>
+        <Plegable titulo="Cargar el once" resumen={pendienteXi ? 'pendiente de once' : 'XI confirmado'} alarma={pendienteXi}>
+          <CajaOnce parte={parte} matchId={matchId} onParte={onParte} />
+        </Plegable>
+      </div>
     </div>
   )
 }
