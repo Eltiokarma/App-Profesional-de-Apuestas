@@ -404,6 +404,8 @@ def main():
     check("la Segunda Liga de Portugal (95) es segunda por el nombre; la Primeira Liga no",
           _esc.categoria(95, "Segunda Liga") == "segunda" and _esc.categoria(94, "Primeira Liga") == "primera"
           and _sg(129, "Primera Nacional") and not _sg(128, "Liga Profesional Argentina"))
+    check("489/514: la Challenger Pro League de Bélgica (145) es segunda; la Jupiler Pro League no",
+          _esc.categoria(145, "Challenger Pro League") == "segunda" and _esc.categoria(144, "Jupiler Pro League") == "primera")
     # pretemporada: Millwall (base Championship) con su próximo partido de liga en la Premier
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("INSERT OR REPLACE INTO leagues (id, name, country, season) VALUES (39, 'Premier League', 'England', 2026)")
