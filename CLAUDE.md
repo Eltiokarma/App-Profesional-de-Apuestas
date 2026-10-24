@@ -872,12 +872,16 @@ conversación se pierde en la siguiente.
      próxima corrida del pipeline saca los duplicados (Rayo Zuliano 16/09 y
      11/06/2025, Portuguesa 16/09: su K deja de sumar el partido dos veces;
      `pipeline --duplicados` los lista); las bajas `desmentida` en Equipo.
-   - **Rutina de rehacer** (`session_01V3tPBuV4pgvD7rMF39twu9`): medido el
+   - **Rutina de rehacer**: desde el 24/10 en su sesión NUEVA
+     `session_01X5KodpKV93A7bBePdiczAZ` (rutinas `:07, v2` y `:37, v2`, el
+     texto llama a `GET /analisis/cowork/rehacer` ANTES de cualquier git); la
+     vieja (`session_01V3tPBuV4pgvD7rMF39twu9`, rutinas desactivadas) releía
+     ~490.000 tokens de historial en cada disparo vacío (~0,33 USD, ~12 al
+     día). Una sesión fija de rutina se rehace cuando su historial engorda. Medido el
      22/10, ~0,25 USD por disparo vacío (crece con el contexto de la sesión) y
      ninguno rehízo nada por la tarde. Decidido (usuario, 22/10): comprobación
      barata `GET /analisis/cowork/rehacer` (los partes con DTP-REHACER a 30-80
-     min); el skill la llama primero. Falta que el mensaje de las dos rutinas
-     (:07 y :37) la llame ANTES del `git pull`: solo se cambia desde esa sesión.
+     min); el skill la llama primero y el mensaje de las rutinas v2 también.
    - **Hechos el 22/10** (usuario): COLAPSO EN CASCADA calculada (162:
      `equipos.{lado}.d3` ✅/🔶/❌, o leído de la nota del bloque D;
      alerta `COLAPSO-EN-CASCADA`, escenario de perder la ventaja, sin goleada);
