@@ -1890,12 +1890,36 @@ def _documento(d, rechazos: list | None = None, donde: str = "documentos") -> di
     cuerpo = _txt(d.get("cuerpo"))
     if not cuerpo:
         return None
-    ident = _txt(d.get("id")) or "nota"
+    ident = _txt(d.get("id"))
+    if not ident:
+        # 24/10/2026: los partes del 16/09 llegaron con 4-5 documentos sin id ni
+        # título y se guardaron todos como «nota»: en la pantalla eran cinco
+        # ensayos sin nombre. Sin id la pantalla no sabe dónde ponerlo; se dice.
+        if rechazos is not None:
+            rechazos.append({"donde": donde,
+                             "porque": "documento sin `id`: la pantalla no sabe en qué pestaña va",
+                             "esperado": "id = " + " · ".join(DOCUMENTOS) + " (u otro id propio, con su titulo)"})
+        return None
     formato = _txt(d.get("formato")).lower()
     return {"id": ident,
             "titulo": _txt(d.get("titulo")) or DOCUMENTOS.get(ident, ident),
             "formato": formato if formato in ("md", "html", "texto") else "md",
             "cuerpo": cuerpo}
+
+
+def _documentos(lista, rechazos: list) -> list[dict]:
+    """Un documento por id: si llegan dos con el mismo, se queda el ÚLTIMO y
+    el recibo lo dice (un ensayo rehecho que se agrega en vez de reemplazar
+    no puede dejar dos versiones en la pantalla)."""
+    docs = [d for d in (_documento(x, rechazos, f"documentos[{i}]")
+                        for i, x in enumerate(_lista(lista, rechazos, "documentos"))) if d]
+    ultimo = {d["id"]: i for i, d in enumerate(docs)}
+    for i, d in enumerate(docs):
+        if ultimo[d["id"]] != i:
+            rechazos.append({"donde": f"documentos[{i}]",
+                             "porque": f"documento `{d['id']}` repetido: se quedó el último que llegó",
+                             "esperado": "un documento por id; para actualizar uno, reemplazalo entero"})
+    return [d for i, d in enumerate(docs) if ultimo[d["id"]] == i]
 
 
 # ── la matriz de escenarios: NARRATIVA, no estadística ─────────────────────
@@ -2167,9 +2191,7 @@ def normalizar_parte(payload: dict) -> dict:
                                                                      rechazos, "timelineEventos"))) if e],
         "timelineNarrativa": _txt(payload.get("timelineNarrativa")),
         "cadena": {l: _pron_cadena(cadena_in.get(l)) for l in LADOS},
-        "documentos": [d for d in (_documento(x, rechazos, f"documentos[{i}]")
-                                   for i, x in enumerate(_lista(payload.get("documentos"), rechazos,
-                                                                "documentos"))) if d],
+        "documentos": _documentos(payload.get("documentos"), rechazos),
         "pendientes": _lista_txt(payload.get("pendientes")),
         "fuentes": _lista_txt(payload.get("fuentes")),
         "descartados": _lista_txt(payload.get("descartados")),

@@ -931,6 +931,13 @@ conversación se pierde en la siguiente.
      de rehacer mira desde 15 min (444, 451, 454: el once llega ~27 min antes;
      depósito hasta el pitazo − 10); semifinal y final de copa nacional suben
      el F2 del TDE a 1 a ≤ 5 días (435; cuartos y antes no).
+   - **Documentos del parte** (usuario, 24/10): el ensayo es la PRIMERA pestaña
+     y el parte abre en ella; la prosa del TDE, del DTP y la matriz va debajo
+     de su pestaña y «Documentos» queda para otros ids (desaparece si no hay).
+     Al depositar, un documento sin `id` se rechaza con motivo (los 17 partes
+     del 16/09 tenían 4-5 «nota» sin nombre: se titulan con su primer
+     encabezado) y dos con el mismo id dejan el último. El veredicto muestra
+     la confianza del 1X2 («Dijimos LOCAL 54 % (54/26/20) · tramo 50-59 …»).
    - **Escala entre ligas** (300, 309, 294, 79): decidido «solo marcar» (22/10):
      rival (`escalaComparable`), tarjeta de la espina, perfil DC y P1a llevan la
      marca y su nota; ningún número calibrado se mueve.
