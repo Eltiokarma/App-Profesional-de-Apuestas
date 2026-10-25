@@ -261,6 +261,36 @@ def _ventana(texto: str) -> tuple[int, int] | None:
     return (desde, hasta) if desde <= hasta else (hasta, desde)
 
 
+def declarado_1x2(reparto: dict | None) -> tuple[str, float]:
+    """El 1X2 declarado es la selección con más probabilidad; un empate técnico
+    entre dos no se desempata a ojo: se declara y no cuenta como acierto.
+    Devuelve (selección o "", su probabilidad)."""
+    reparto = reparto or {}
+    try:
+        ordenadas = sorted(("local", "empate", "visita"),
+                           key=lambda k: float(reparto.get(k) or 0), reverse=True)
+        top = float(reparto.get(ordenadas[0]) or 0)
+        empatadas = [k for k in ordenadas if float(reparto.get(k) or 0) == top]
+    except (TypeError, ValueError):
+        return "", 0.0
+    return (ordenadas[0], top) if (top > 0 and len(empatadas) == 1) else ("", 0.0)
+
+
+def resultados(fixture_ids: list[int]) -> dict[int, str]:
+    """local · empate · visita de los partidos TERMINADOS, en una consulta (la
+    marca de la lista de partidos no puede rehacer el objetivo de cada uno)."""
+    ids = sorted({int(i) for i in fixture_ids})
+    if not ids:
+        return {}
+    try:
+        filas = saddb.query("sad", f"SELECT f.id, f.status_short, {_G90_LOCAL} AS gl, {_G90_VISITA} AS gv "
+                                   f"FROM fixtures f WHERE f.id IN ({','.join('?' * len(ids))})", tuple(ids))
+    except Exception:  # noqa: BLE001 — sin la base de partidos no hay resultado
+        return {}
+    return {r["id"]: ("local" if r["gl"] > r["gv"] else "visita" if r["gv"] > r["gl"] else "empate")
+            for r in filas if (r["status_short"] or "") in FIN_SHORT and r["gl"] is not None and r["gv"] is not None}
+
+
 def objetivo(fixture_id: int, parte: dict) -> dict:
     """Todo lo que la base puede responder sola sobre cómo salió el pronóstico."""
     fx = _fixture(fixture_id)
@@ -273,13 +303,7 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     real = "local" if gl > gv else ("visita" if gv > gl else "empate")
     pron = parte.get("pronostico") or {}
     reparto = pron.get("probabilidades") or {}
-    # el 1X2 declarado es la selección con más probabilidad; un empate técnico
-    # entre dos no se desempata a ojo: se declara y no cuenta como acierto
-    ordenadas = sorted(("local", "empate", "visita"),
-                       key=lambda k: float(reparto.get(k) or 0), reverse=True)
-    top = float(reparto.get(ordenadas[0]) or 0)
-    empatadas = [k for k in ordenadas if float(reparto.get(k) or 0) == top]
-    declarado = ordenadas[0] if (top > 0 and len(empatadas) == 1) else ""
+    declarado, top = declarado_1x2(reparto if isinstance(reparto, dict) else None)
 
     goles = _goles(fixture_id, fx["home_team_id"])
     marcador_texto = f"{gl}-{gv}"

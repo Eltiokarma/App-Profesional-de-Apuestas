@@ -528,6 +528,24 @@ export function leccionesDemo(skill: string, estado: string, cohorte = ''): Inve
       veredictos: { acierto: 1, parcial: 0, fallo: 2 },
       tasaAcierto: 0.333, tasaNota: '',
       unXDos: { aciertos: 1, de: 2, tasa: 0.5 },
+      confianza: {
+        nota: 'modo demo: números de muestra (forma de la tabla real)',
+        porVersion: [
+          { version: 'v4.0', desde: '2026-10-21', hasta: '2026-10-24', n: 49, aciertos: 19, tramos: [
+            { tramo: '<40', n: 8, aciertos: 3, tasa: 0.375, intervalo: [0.137, 0.694], dijimos: 37, mercado: 35, nMercado: 8 },
+            { tramo: '40-49', n: 23, aciertos: 4, tasa: 0.174, intervalo: [0.07, 0.371], dijimos: 44, mercado: 47, nMercado: 23 },
+            { tramo: '50-59', n: 14, aciertos: 9, tasa: 0.643, intervalo: [0.388, 0.837], dijimos: 54, mercado: 60, nMercado: 14 },
+            { tramo: '60+', n: 4, aciertos: 3, tasa: 0.75, intervalo: [0.301, 0.954], dijimos: 64, mercado: 73, nMercado: 4 },
+          ] },
+          { version: 'anterior a v4.0', desde: '2026-09-16', hasta: '2026-10-20', n: 244, aciertos: 133, tramos: [
+            { tramo: '<40', n: 55, aciertos: 21, tasa: 0.382, intervalo: [0.264, 0.515], dijimos: 30, mercado: 40, nMercado: 50 },
+            { tramo: '40-49', n: 112, aciertos: 57, tasa: 0.509, intervalo: [0.418, 0.599], dijimos: 44, mercado: 44, nMercado: 104 },
+            { tramo: '50-59', n: 49, aciertos: 29, tasa: 0.592, intervalo: [0.452, 0.718], dijimos: 54, mercado: 57, nMercado: 46 },
+            { tramo: '60+', n: 28, aciertos: 26, tasa: 0.929, intervalo: [0.774, 0.98], dijimos: 67, mercado: 69, nMercado: 28 },
+          ] },
+        ],
+        todas: [],
+      },
       brier: {
         media: 0.4712, n: 2, lineaBase: 0.4444, mejorQueLaBase: false,
         nota: 'la línea de base es el reparto constante con la frecuencia observada de esta misma muestra: lo que sacaría quien no mira el partido',

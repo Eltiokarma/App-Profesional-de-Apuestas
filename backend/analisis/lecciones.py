@@ -79,7 +79,7 @@ def _casos(limite: int = 400, ids=None) -> list[dict]:
     with conectar_parte() as con:
         filas = con.execute(
             "SELECT fixture_id, fecha, equipo_a, equipo_b, parte_json, veredicto_json, "
-            "cohorte, cuarentena_json, modo_fallo_json, banco_desmentido_json FROM parte_cowork "
+            "cohorte, cuarentena_json, modo_fallo_json, banco_desmentido_json, creado_en FROM parte_cowork "
             "WHERE veredicto_json IS NOT NULL"
             + filtro + " ORDER BY fecha DESC LIMIT ?", (*params, limite)).fetchall()
     # la fecha REAL de cada partido, para el parte escrito para otra fecha
@@ -134,6 +134,7 @@ def _casos(limite: int = 400, ids=None) -> list[dict]:
                               "dtEquivocado": malos}
         fuera.append({
             "fixtureId": f["fixture_id"], "fecha": (f["fecha"] or "")[:10],
+            "creadoEn": (f["creado_en"] or "")[:10],
             "equipoA": f["equipo_a"], "equipoB": f["equipo_b"],
             "parte": parte,
             "veredicto": json.loads(f["veredicto_json"]),
@@ -280,6 +281,7 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
     acred = {"acierto": 0, "parcial": 0, "fallo": 0}
     casos_acred, briers, reales, con_reparto = 0, [], [], 0
     unxdos_ok, unxdos_de = 0, 0
+    confianza: list[dict] = []
     tde_obs, tde_positivos, tde_sin_ficha, tde_contaminadas = 0, 0, 0, 0
     reloj_obs, reloj_positivos = 0, 0
     rev = _reventon_vacio()
@@ -328,6 +330,9 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
         if ux.get("declarado"):
             unxdos_de += 1
             unxdos_ok += 1 if ux.get("acerto") else 0
+            confianza.append({"fixtureId": caso["fixtureId"], "creadoEn": caso.get("creadoEn") or caso["fecha"],
+                              "declarado": ux["declarado"], "probabilidad": float(ux.get("probabilidadDeclarada") or 0),
+                              "acerto": bool(ux.get("acerto"))})
         br = (obj.get("brier") or {}).get("valor")
         if br is not None and ux.get("real"):
             briers.append(br)
@@ -390,6 +395,7 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
         "unXDos": {"aciertos": unxdos_ok, "de": unxdos_de,
                    "tasa": round(unxdos_ok / unxdos_de, 3) if unxdos_de else None},
         "brier": _brier_con_linea_base(briers, reales),
+        "confianza": _tabla_confianza(confianza),
         "ventanaTde": {
             "observadas": tde_obs, "conGol": tde_positivos,
             "sinFicha": tde_sin_ficha, "conRojaAntes": tde_contaminadas,
@@ -405,6 +411,115 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
                    "tarjeta": _cerrar_tarjeta(tar)},
     }
     return poblacion, metricas
+
+
+# LA CONFIANZA DEL 1X2 POR TRAMO (25/10/2026, pedido del usuario): lo que
+# dijimos del elegido contra lo que salió y contra lo que le daba el mercado,
+# por versión de sad-analysis (la que estaba en la cuenta al depositar). Es
+# calibración: un tramo que acierta MENOS de lo que dice está sobreconfiado.
+TRAMOS_CONFIANZA = (("<40", 0, 40), ("40-49", 40, 50), ("50-59", 50, 60), ("60+", 60, 101))
+
+
+def tramo_confianza(p: float | None) -> str:
+    if p is None:
+        return ""
+    return next(t for t, lo, hi in TRAMOS_CONFIANZA if lo <= p < hi) if p < 101 else "60+"
+
+
+def version_en(skill: str, fecha: str) -> str:
+    """La versión del skill vigente en esa fecha (la última con corte ≤ fecha);
+    antes del primer corte registrado, «anterior a vX»."""
+    historial = sorted(CORTE_VERSION.get(skill, []), key=lambda vc: vc[1])
+    f = (fecha or "")[:10]
+    previas = [v for v, c in historial if c <= f]
+    if previas:
+        return previas[-1]
+    return f"anterior a {historial[0][0]}" if historial else ""
+
+
+def _prob_mercado(ids: list[int]) -> dict[int, dict]:
+    """El 1X2 del mercado de cada partido: media de las casas (la misma regla
+    que GET /cuotas, sin las casas con la doble oportunidad incoherente),
+    sin margen. Lo que no tiene las tres cuotas no viene."""
+    if not ids:
+        return {}
+    from backend import db as saddb
+    from backend.cuota_mercados import cuota_key, sin_dc_incoherente
+    fuera: dict[int, dict] = {}
+    try:
+        filas = saddb.query("sad", "SELECT fixture_id, bookmaker_name, bet_name, value, odd FROM odds "
+                                   f"WHERE fixture_id IN ({','.join('?' * len(ids))}) AND odd IS NOT NULL",
+                            tuple(ids))
+    except Exception:  # noqa: BLE001 — sin la base de cuotas la columna sale vacía
+        return {}
+    por_fx: dict[int, list[dict]] = {}
+    for r in filas:
+        k = cuota_key(r["bet_name"], r["value"])
+        if k and k[0] in ("1x2", "dc"):
+            por_fx.setdefault(r["fixture_id"], []).append(
+                {"casa": (r["bookmaker_name"] or "").strip().lower(), "mercado": k[0],
+                 "seleccion": k[1], "cuota": float(r["odd"])})
+    nombre = {"1": "local", "X": "empate", "2": "visita"}
+    for fid, fs in por_fx.items():
+        acc: dict[str, list[float]] = {}
+        for f in sin_dc_incoherente(fs):
+            if f["mercado"] == "1x2" and f["seleccion"] in nombre and f["cuota"] > 1:
+                acc.setdefault(nombre[f["seleccion"]], []).append(f["cuota"])
+        if len(acc) == 3:
+            inv = {k: 1 / (sum(v) / len(v)) for k, v in acc.items()}
+            tot = sum(inv.values())
+            fuera[fid] = {k: 100 * x / tot for k, x in inv.items()}
+    return fuera
+
+
+def _tabla_confianza(filas: list[dict]) -> dict:
+    mercado = _prob_mercado([f["fixtureId"] for f in filas])
+    versiones: dict[str, dict] = {}
+    for f in filas:
+        v = version_en("sad-analysis", f["creadoEn"])
+        t = tramo_confianza(f["probabilidad"])
+        vv = versiones.setdefault(v, {"version": v, "desde": f["creadoEn"], "hasta": f["creadoEn"], "tramos": {}})
+        vv["desde"], vv["hasta"] = min(vv["desde"], f["creadoEn"]), max(vv["hasta"], f["creadoEn"])
+        c = vv["tramos"].setdefault(t, {"tramo": t, "n": 0, "aciertos": 0, "_dijimos": 0.0,
+                                        "_mercado": 0.0, "_nMercado": 0})
+        c["n"] += 1
+        c["aciertos"] += 1 if f["acerto"] else 0
+        c["_dijimos"] += f["probabilidad"]
+        pm = (mercado.get(f["fixtureId"]) or {}).get(f["declarado"])
+        if pm is not None:
+            c["_mercado"] += pm
+            c["_nMercado"] += 1
+
+    def cerrar(c: dict) -> dict:
+        n = c["n"]
+        return {"tramo": c["tramo"], "n": n, "aciertos": c["aciertos"],
+                "tasa": round(c["aciertos"] / n, 3) if n else None,
+                "intervalo": intervalo_wilson(c["aciertos"], n),
+                "dijimos": round(c["_dijimos"] / n, 1) if n else None,
+                "mercado": round(c["_mercado"] / c["_nMercado"], 1) if c["_nMercado"] else None,
+                "nMercado": c["_nMercado"]}
+
+    orden = [t for t, _, _ in TRAMOS_CONFIANZA]
+    lista = []
+    for v in sorted(versiones.values(), key=lambda x: x["desde"], reverse=True):
+        tramos = [cerrar(v["tramos"][t]) for t in orden if t in v["tramos"]]
+        lista.append({"version": v["version"], "desde": v["desde"], "hasta": v["hasta"],
+                      "n": sum(t["n"] for t in tramos), "aciertos": sum(t["aciertos"] for t in tramos),
+                      "tramos": tramos})
+    todas = {}
+    for v in versiones.values():
+        for t, c in v["tramos"].items():
+            a = todas.setdefault(t, {"tramo": t, "n": 0, "aciertos": 0, "_dijimos": 0.0, "_mercado": 0.0, "_nMercado": 0})
+            for k in ("n", "aciertos", "_dijimos", "_mercado", "_nMercado"):
+                a[k] += c[k]
+    return {
+        "porVersion": lista,
+        "todas": [cerrar(todas[t]) for t in orden if t in todas],
+        "nota": "la probabilidad que el parte le dio a su elegido, por tramo, contra lo que salió y "
+                "contra lo que le daba el mercado al mismo elegido; versión = la de sad-analysis al "
+                "depositar. Un tramo que acierta MENOS de lo que dice está sobreconfiado; con n chico "
+                "manda el intervalo, no el punto",
+    }
 
 
 def _tasa(c: dict, clave: str = "aciertos") -> dict:

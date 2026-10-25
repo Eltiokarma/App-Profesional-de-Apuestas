@@ -1907,11 +1907,33 @@ export interface VeredictoPendienteDTO {
 
 /** La marca al costado de cada partido: ¿ya pasó el análisis de Cowork?
  *  Solo vienen los fixtures que tienen parte (GET /analisis/cowork/marcas). */
+export type TramoConfianza = '<40' | '40-49' | '50-59' | '60+'
 export interface MarcaCoworkDTO {
   estado: 'pendiente_xi' | 'confirmado'
   onceCerrado: boolean
   conVeredicto: boolean
   actualizadoEn: string
+  /** el 1X2 declarado del parte y su probabilidad; `acerto` null hasta que termina */
+  confianza?: { declarado: 'local' | 'empate' | 'visita'; probabilidad: number; tramo: TramoConfianza; acerto: boolean | null } | null
+}
+
+/** Calibración del 1X2 por tramo de confianza (Aprendizaje, 25/10/2026). */
+export interface TramoConfianzaDTO {
+  tramo: TramoConfianza
+  n: number
+  aciertos: number
+  tasa: number | null
+  intervalo: [number, number] | null
+  /** probabilidad media que el parte le dio al elegido */
+  dijimos: number | null
+  /** la que le daba el mercado al mismo elegido (sin margen) */
+  mercado: number | null
+  nMercado: number
+}
+export interface TablaConfianzaDTO {
+  porVersion: { version: string; desde: string; hasta: string; n: number; aciertos: number; tramos: TramoConfianzaDTO[] }[]
+  todas: TramoConfianzaDTO[]
+  nota: string
 }
 export interface MarcasCoworkDTO {
   total: number
@@ -2146,6 +2168,7 @@ export interface InventarioLecciones {
     tasaAcierto: number | null
     tasaNota: string
     unXDos: { aciertos: number; de: number; tasa: number | null }
+    confianza?: TablaConfianzaDTO
     brier: {
       media: number | null
       n: number

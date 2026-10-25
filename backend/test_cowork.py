@@ -1003,6 +1003,10 @@ def main():
           str(sin_ficha) in mk["partes"] and "999999" not in mk["partes"]
           and mk["partes"][str(sin_ficha)]["estado"] in ("pendiente_xi", "confirmado")
           and mk["partes"][str(sin_ficha)]["conVeredicto"] is False, mk)
+    _cf = mk["partes"][str(sin_ficha)].get("confianza")
+    check("la marca trae la confianza del 1X2 con su tramo (sin resultado todavía, acerto null)",
+          _cf is not None and _cf["declarado"] in ("local", "empate", "visita") and _cf["probabilidad"] > 0
+          and _cf["tramo"] in ("<40", "40-49", "50-59", "60+") and _cf["acerto"] is None, _cf)
     check("sin ids no hay marcas ni error", c.get(f"{A}/analisis/cowork/marcas").json() == {"partes": {}, "total": 0})
     check("ids que no son enteros → 422", c.get(f"{A}/analisis/cowork/marcas", params={"ids": "a,b"}).status_code == 422)
 
@@ -4002,6 +4006,24 @@ def main():
     check("el resumen no manda lecciones y trae el total; la página manda `cuantas`",
           _r1["items"] == [] and all(s["items"] == [] for s in _r1["porSkill"]) and _r1["total"] == len(_todas["items"])
           and len(_p1["items"]) == min(1, len(_todas["items"])) and _p1["total"] == _r1["total"], (_r1.get("total"), len(_p1["items"])))
+    from backend.analisis import veredicto as _ver_c
+    check("el tramo de confianza: <40 · 40-49 · 50-59 · 60+",
+          [_lmod.tramo_confianza(p) for p in (35, 40, 49.9, 50, 59.5, 60, 100)] == ["<40", "40-49", "40-49", "50-59", "50-59", "60+", "60+"])
+    check("la versión de sad-analysis al depositar: antes del primer corte es «anterior a»",
+          _lmod.version_en("sad-analysis", "2026-10-01") == "anterior a v4.0"
+          and _lmod.version_en("sad-analysis", "2026-10-23") == "v4.0" and _lmod.version_en("sad-analysis", "2026-10-25") == "v4.1")
+    check("el 1X2 declarado: el máximo; un empate técnico no declara nada",
+          _ver_c.declarado_1x2({"local": 50, "empate": 30, "visita": 20}) == ("local", 50.0)
+          and _ver_c.declarado_1x2({"local": 40, "empate": 20, "visita": 40}) == ("", 0.0) and _ver_c.declarado_1x2(None) == ("", 0.0))
+    _tc = _lmod._tabla_confianza([
+        {"fixtureId": 1, "creadoEn": "2026-10-23", "declarado": "local", "probabilidad": 55, "acerto": True},
+        {"fixtureId": 2, "creadoEn": "2026-10-23", "declarado": "local", "probabilidad": 52, "acerto": False},
+        {"fixtureId": 3, "creadoEn": "2026-10-10", "declarado": "visita", "probabilidad": 44, "acerto": True}])
+    check("la tabla de confianza agrupa por versión y tramo: lo dicho, lo acertado y el intervalo",
+          [v["version"] for v in _tc["porVersion"]] == ["v4.0", "anterior a v4.0"]
+          and _tc["porVersion"][0]["tramos"][0]["tramo"] == "50-59" and _tc["porVersion"][0]["tramos"][0]["aciertos"] == 1
+          and _tc["porVersion"][0]["tramos"][0]["dijimos"] == 53.5 and _tc["porVersion"][0]["tramos"][0]["intervalo"] is not None
+          and [t["tramo"] for t in _tc["todas"]] == ["40-49", "50-59"], _tc)
     check("cada skill trae su versión vigente y cuántas cerraría «Cerrar las anteriores» (sin abrir el dossier)",
           all("versionVigente" in s and "anterioresAlCorte" in s for s in _r1["porSkill"]), [s["skill"] for s in _r1["porSkill"]])
     _cal = calibracion_espina()

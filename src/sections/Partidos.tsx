@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { CONFIG } from '../config'
 import { TEAMS } from '../data'
 import { fixtureNum, loadMarcasCowork, refrescarLiga } from '../services/appdata'
+import { COLOR_TRAMO, SEL_CORTA, SEL_LARGA } from '../lib/confianza'
 import type { MarcaCoworkDTO } from '../api/types'
 import type { Match, MatchStatus } from '../data/types'
 import { LatidoCowork } from '../components/LatidoCowork'
@@ -77,6 +78,23 @@ function MarcaCowork({ marca, isMobile }: { marca?: MarcaCoworkDTO; isMobile: bo
     <span title={title} style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, padding: '2px 7px', borderRadius: 6, background: `color-mix(in oklch, ${color}, transparent 86%)`, font: '700 8.5px var(--mono)', color, letterSpacing: '.3px', whiteSpace: 'nowrap' }}>
       <span style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }}></span>
       {txt}
+    </span>
+  )
+}
+
+/** LA CONFIANZA DEL 1X2 DEL PARTE (25/10/2026, pedido del usuario: ver de un
+ *  vistazo los mejores). Color por tramo —verde 60+ · azul 50-59 · ámbar
+ *  40-49 · gris <40—, el mismo de la tabla de Aprendizaje, donde se ve cuánto
+ *  acierta cada tramo; con el partido terminado lleva ✓/✗. */
+function ConfianzaChip({ marca, corta }: { marca?: MarcaCoworkDTO; corta: boolean }) {
+  const c = marca?.confianza
+  if (!c) return null
+  const color = COLOR_TRAMO[c.tramo] ?? 'var(--t3)'
+  const res = c.acerto === null ? '' : c.acerto ? ' ✓' : ' ✗'
+  return (
+    <span title={`El parte dijo ${SEL_LARGA[c.declarado] ?? c.declarado} con ${Math.round(c.probabilidad)} % · tramo ${c.tramo}${c.acerto === null ? '' : c.acerto ? ' · acertó' : ' · falló'}`}
+      style={{ display: 'inline-flex', alignItems: 'center', padding: corta ? '1px 5px' : '2px 7px', borderRadius: 6, background: `color-mix(in oklch, ${color}, transparent 84%)`, border: `1px solid color-mix(in oklch, ${color}, transparent 55%)`, font: `700 ${corta ? 8.5 : 9.5}px var(--mono)`, color, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+      {corta ? SEL_CORTA[c.declarado] : SEL_LARGA[c.declarado]} {Math.round(c.probabilidad)}%{res}
     </span>
   )
 }
@@ -336,7 +354,11 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
                   >
                     {/* espejo del hueco de la marca (a la derecha): así el marcador
                         queda en el centro exacto de la tarjeta, como antes */}
-                    {!isMobile && <span style={{ width: 158, flexShrink: 0 }}></span>}
+                    {!isMobile && (
+                      <span style={{ width: 158, flexShrink: 0, display: 'flex' }}>
+                        <ConfianzaChip marca={marcas[fixtureNum(m.id)]} corta={false} />
+                      </span>
+                    )}
                     <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: isMobile ? 6 : 10 }}>
                       <span style={{ ...nombreEq, textAlign: 'right' }}>{H?.name ?? m.home}</span>
                       <TeamBadge logo={H?.logo} short={H?.short ?? '?'} color={H?.color ?? 'var(--bg3)'} fg={H?.fg ?? 'var(--t2)'} size={isMobile ? 24 : 28} />
@@ -349,6 +371,7 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
                         {live && <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--down)', animation: 'sadpulse 1.1s infinite' }}></span>}
                         {live ? m.min : fin ? 'FIN' : 'PROX'}
                       </span>
+                      {isMobile && <ConfianzaChip marca={marcas[fixtureNum(m.id)]} corta />}
                     </span>
                     <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10 }}>
                       <TeamBadge logo={A?.logo} short={A?.short ?? '?'} color={A?.color ?? 'var(--bg3)'} fg={A?.fg ?? 'var(--t2)'} size={isMobile ? 24 : 28} />
