@@ -910,6 +910,7 @@ def constantes_de(team_id: int, limit: int, hasta: str | None = None, antes: str
     # vacía) sin romper el contrato — se poblará al re-correr la extracción.
     cols = set(consts[0].keys())
     col = lambda c, n: c[n] if n in cols else None  # noqa: E731
+    nombres_rival: dict[int, str] = {}
     for c in consts:
         p = pm.get(c["fixture_id"])
         if p:
@@ -938,6 +939,13 @@ def constantes_de(team_id: int, limit: int, hasta: str | None = None, antes: str
         # bins (5). Se recupera exacto de las q de la propia fila
         # (q_goles_anotado = gf·nivel, q_goles_recibido = −ga·nivel) y solo en
         # un 0-0 se lee levels.db a la fecha — el mismo criterio que backfill_kdc.
+        # el discretizador deja rival_nombre vacío en algunas ligas (O'Higgins y
+        # Cobresal, incidencia 546): el nombre sale de `teams`, una vez por rival
+        if not rival_nombre and rival_id:
+            if rival_id not in nombres_rival:
+                t = db.query_one("sad", "SELECT name FROM teams WHERE id=?", (rival_id,))
+                nombres_rival[rival_id] = t["name"] if t else ""
+            rival_nombre = nombres_rival[rival_id]
         nivel_rival = _nivel_rival_exacto(c, gf or 0, ga or 0, rival_id)
         # Márgenes (§3.7): 18 columnas opcionales, leídas con degradación elegante.
         # kVicN/kDerN pasan tal cual (no llevan fusión ±) → mismo valor en k y fusion.
@@ -1391,7 +1399,52 @@ def equipo_stats(equipo_id: int):
         "tirosPuertaProm": av["tirosPuerta"],
         "cornersProm": av["corners"],
         "avanzadas": {"partidos": av["partidos"], "ventana": VENTANA_AVANZADAS, "n": av["n"]},
+        # LO DE ARRIBA ES TODA LA HISTORIA DE LA BASE (Orense 230 partidos, Delfín
+        # 292: incidencias 520 y 539). Lo de la TEMPORADA en su liga doméstica va
+        # aparte: puntos por partido (el E2 del EFE) y posición en la tabla del año
+        "temporada": _stats_temporada(equipo_id),
     }
+
+
+def _stats_temporada(equipo_id: int) -> dict | None:
+    """La temporada en curso en su liga doméstica (`escala.base_de`): partidos,
+    puntos, puntos por partido, goles y la posición en la tabla del año.
+    None si no tiene liga doméstica en la base (solo copas o equipo nuevo)."""
+    from backend.analisis import escala
+    try:
+        b = escala.base_de(equipo_id, None)
+    except Exception:  # noqa: BLE001 — sin la base no hay temporada que dar
+        return None
+    if not b or not b.get("id"):
+        return None
+    ult = db.query_one("sad", "SELECT MAX(league_season) AS s FROM fixtures WHERE league_id=? "
+                              "AND (home_team_id=? OR away_team_id=?)", (b["id"], equipo_id, equipo_id))
+    season = ult["s"] if ult else None
+    if season is None:
+        return None
+    rows = db.query(
+        "sad",
+        f"""SELECT f.home_team_id, {_G90_H} AS goals_home, {_G90_A} AS goals_away FROM fixtures f
+            WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.league_id=? AND f.league_season=?
+              AND {_FIN90_SQL} AND {_G90_H} IS NOT NULL AND {_G90_A} IS NOT NULL""",
+        (equipo_id, equipo_id, b["id"], season),
+    )
+    pts = gf_t = gc_t = 0
+    for r in rows:
+        gf, ga = (r["goals_home"], r["goals_away"]) if r["home_team_id"] == equipo_id else (r["goals_away"], r["goals_home"])
+        pts += 3 if gf > ga else 1 if gf == ga else 0
+        gf_t += gf
+        gc_t += ga
+    pj = len(rows)
+    posicion = None
+    try:
+        posicion = next((x["posicion"] for x in standings(b["id"], season, None) if x["equipoId"] == equipo_id), None)
+    except Exception:  # noqa: BLE001 — sin tabla, sin posición
+        posicion = None
+    return {"ligaId": b["id"], "liga": b.get("nombre"), "temporada": season, "partidosJugados": pj,
+            "puntos": pts, "puntosPorPartido": round(pts / pj, 2) if pj else None,
+            "golesFavor": gf_t, "golesContra": gc_t, "posicion": posicion,
+            "nota": "tabla del año de la liga doméstica; en torneos cortos (Apertura/Clausura) la fase va en /ligas/{id}/tabla"}
 
 
 # Ingesta de plantilla BAJO DEMANDA: al entrar a un equipo sin datos de

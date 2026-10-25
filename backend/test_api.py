@@ -106,6 +106,16 @@ def main():
     )
     check("invariantes: k⁺/k⁻ excluyentes y k_gR ≥ 0", inv)
     check("constantes traen rival y goles", c0["rivalNombre"] and c0["golesFavor"] is not None, c0)
+    import sqlite3 as _sq546
+    with _sq546.connect(os.path.join(tmp, "discreto.db")) as _cx:
+        _bk546 = _cx.execute("SELECT fixture_id, rival_nombre FROM processed_matches WHERE equipo_id=?", (betis,)).fetchall()
+        _cx.execute("UPDATE processed_matches SET rival_nombre='' WHERE equipo_id=?", (betis,))
+    _ct546 = c.get(A + f"/constantes/{betis}?limit=50").json()
+    with _sq546.connect(os.path.join(tmp, "discreto.db")) as _cx:
+        _cx.executemany("UPDATE processed_matches SET rival_nombre=? WHERE equipo_id=? AND fixture_id=?",
+                        [(n, betis, f) for f, n in _bk546])
+    check("546: con rival_nombre vacío en el discretizador, /constantes lo toma de teams",
+          all(r["rivalNombre"] for r in _ct546) and _ct546[0]["rivalNombre"] == c0["rivalNombre"], _ct546[:1])
     conds = {r["condicion"] for r in ct}
     check("condicion Local/Visita", conds == {"Local", "Visita"}, conds)
 
@@ -285,6 +295,10 @@ def main():
     check("stats: sin ficha → avanzadas en 0 y todo null (nunca un cero)",
           sv["avanzadas"]["partidos"] == 0 and all(sv[k] is None for k in
           ("xgProm", "xgContraProm", "posesionProm", "tirosPuertaProm", "cornersProm")), sv)
+    _tp = st.get("temporada") or {}
+    check("520/539: stats trae la temporada de la liga doméstica (PJ ≤ la historia, ppp y posición)",
+          _tp.get("ligaId") and 0 < _tp["partidosJugados"] <= st["partidosJugados"]
+          and _tp["puntosPorPartido"] == round(_tp["puntos"] / _tp["partidosJugados"], 2), _tp)
     check("/equipos/999999/stats → 404", c.get(A + "/equipos/999999/stats").status_code == 404)
 
     # /equipos/{id}/plantilla — capa de jugadores (docs/JUGADORES.md)
@@ -317,6 +331,8 @@ def main():
           len(nuevo) == 1 and nuevo[0]["recienLlegado"]["desde"] == "Deportivo Demo" and nuevo[0]["confianza"] in ("B", "C"), nuevo)
     check("plantilla: DT y revolución de ventana",
           pl["entrenador"]["nombre"] and pl["revolucion"]["llegadas"] == 1, {k: pl.get(k) for k in ("entrenador", "revolucion")})
+    check("473: cada jugador de la plantilla trae también jugadorId (= id), como la tabla F1",
+          all(j.get("jugadorId") == j["id"] for j in pl["jugadores"]), pl["jugadores"][:1])
     check("/equipos/999999/plantilla → 404", c.get(A + "/equipos/999999/plantilla").status_code == 404)
     # REVOLUCIÓN CON MINUTOS (incidencia 43, 23/10/2026): una vuelta de cesión
     # sin minutos en el club no cuenta; el total en papeles viaja aparte

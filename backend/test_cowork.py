@@ -972,6 +972,8 @@ def main():
     _ag41 = (ag.get("analizar") or []) + (ag.get("enEspera") or [])
     check("41: cada partido de la agenda dice de qué lado son sus etiquetas (el visitante)",
           bool(_ag41) and all(x.get("etiquetasDe") == "b" for x in _ag41), [x.get("etiquetasDe") for x in _ag41][:5])
+    check("427: y con el nombre del equipo (el visitante), no solo «b»",
+          all(x.get("etiquetasEquipo") == x.get("equipoB") for x in _ag41), [x.get("etiquetasEquipo") for x in _ag41][:3])
     check("y cada candidato viene marcado con lo que ya hay en la base",
           all("tieneParte" in x and "onceCerrado" in x
               for x in (ag["analizar"] + ag["descartados"])),
@@ -3857,10 +3859,16 @@ def main():
     _ra = _idr(_rsg({"siLeEmpatan": {"sob1": 1, "sob2": 1, "nota": "vuelve a empujar"},
                      "siRecibePrimero": {"sob1": 1, "sob2": 0.5, "sob3": 1}, "siMarcaPrimero": {"sob1": 0}}, _rz, "t"),
                {"SOB1": 0, "SOB2": 0, "SOB3": 0.5})
-    check("la rama con sob1 y sob2 trae su ISE (SOB3 del bloque, dicho); con las tres, sin heredados; sin sob2, sin ISE",
+    check("la rama con sob1 y sob2 trae su ISE (SOB3 del bloque, dicho); con las tres, sin heredados",
           _ra["siLeEmpatan"]["iseRama"] == 8.33 and _ra["siLeEmpatan"]["iseRamaHeredados"] == ["SOB3"]
           and _ra["siRecibePrimero"]["iseRama"] == 8.33 and "iseRamaHeredados" not in _ra["siRecibePrimero"]
-          and "iseRama" not in _ra["siMarcaPrimero"] and not _rz, (_ra, _rz))
+          and not _rz, (_ra, _rz))
+    check("483: siMarcaPrimero sin sob2 hereda el SOB2 del bloque (va adelante, no persigue) y lo dice",
+          _ra["siMarcaPrimero"]["iseRama"] == 1.67 and _ra["siMarcaPrimero"]["iseRamaHeredados"] == ["SOB2", "SOB3"],
+          _ra["siMarcaPrimero"])
+    _ra2 = _idr(_rsg({"siRecibePrimero": {"sob1": 1}}, [], "t"), {"SOB2": 0, "SOB3": 0.5})
+    check("483: la rama del que persigue sin sob2 sigue sin ISE (el seguro del arranque no le vale)",
+          "iseRama" not in _ra2["siRecibePrimero"], _ra2)
     _rz2 = []
     _rsg({"siLeEmpatan": {"sob1": 1, "sob2": 2}}, _rz2, "t")
     check("un sob2 fuera de 0/0.5/1 se rechaza con motivo", any(r["donde"] == "t.siLeEmpatan.sob2" for r in _rz2), _rz2)
@@ -4541,6 +4549,25 @@ def main():
           and bf.titulares_fijos_fuera([{"nombre": "A", "rol": "TF", "estado": "baja"},
                                         {"nombre": "B", "rol": "TH", "estado": "baja"},
                                         {"nombre": "C", "rol": "TF", "estado": "disponible"}]) == ["A"])
+    check("EFE v1.7: una zona en rojo dispara F3 aunque el IP no sea rojo, y la nombra",
+          "zona MID" in ((bf.alerta_f3("FORMADO", "ambar", [], ["MID"]) or {}).get("detalle") or "")
+          and bf.alerta_f3("FORMADO", "ambar", [], []) is None)
+    from backend.analisis.parte import _equipo as _eq467
+    _r467: list = []
+    _e467 = _eq467({"bloques": {"B": {"score": 4.5, "sinDato": ["B5"]}, "C": {"score": 2, "sinDato": ["B2"]}}}, [], _r467, "a")
+    check("467: un indicador sin dato sale del denominador del bloque (B sobre 5) y uno de otro bloque se rechaza",
+          _e467["bloques"]["B"]["max"] == 5.0 and _e467["bloques"]["B"]["sinDato"] == ["B5"]
+          and _e467["bloques"]["C"]["max"] == 4.0 and any("no es un indicador del bloque C" in x["porque"] for x in _r467),
+          (_e467["bloques"]["B"], _r467))
+    from backend.analisis.parte import _dt_equipo as _dte
+    _rz577: list = []
+    _dte({"nombre": "Didier Digard"}, _rz577, "a", "2026-10-25",
+         {"nombre": "Didier Frédéric Thierry Digard", "fuente": "coachs", "desde": "2025-07-01"})
+    check("577: el mismo DT de la base sin `desde` se rechaza diciendo que la fecha de /coachs no sirve, no «no casa»",
+          _rz577 and "es el mismo de la base" in _rz577[0]["porque"] and "no casa" not in _rz577[0]["porque"], _rz577)
+    check("383: antes del once la F3 sale provisional (rama A) y lo dice",
+          (bf.alerta_f3("FORMADO", "rojo", provisional=True) or {}).get("provisional") is True
+          and "PROVISIONAL" in bf.alerta_f3("FORMADO", "rojo", provisional=True)["detalle"])
 
     # ── EL ESTUDIO DE LOS REVENTONES HACIA ATRÁS (13/10/2026) ────────────────
     from backend.analisis import reventones as rv
@@ -4783,6 +4810,22 @@ def main():
               any(x["fixtureId"] == _ns[0] for x in _tarde["enVentana"])
               and all(x["fixtureId"] != _ns[0] for x in _encima["enVentana"]), (_tarde, _encima))
     check("rehacer: hay un parte NS en la demo para probar la ventana", _ns is not None)
+    if _ns:
+        # 395: el parte escrito para una fecha vieja (reprogramado) entra igual y pide rehacer entero
+        with _pt._conectar() as _cn:
+            _fecha_vieja = _cn.execute("SELECT fecha FROM parte_cowork WHERE fixture_id=?", (_ns[0],)).fetchone()[0]
+            _cn.execute("UPDATE parte_cowork SET fecha=? WHERE fixture_id=?",
+                        ((_pit - _td(days=8)).strftime("%Y-%m-%d"), _ns[0]))
+            _cn.commit()
+        try:
+            _mv = _pt.rehacer_pendientes(ahora=_pit - _td(minutes=45))
+        finally:
+            with _pt._conectar() as _cn:
+                _cn.execute("UPDATE parte_cowork SET fecha=? WHERE fixture_id=?", (_fecha_vieja, _ns[0]))
+                _cn.commit()
+        _p395 = next((x for x in _mv["pendientes"] if x["fixtureId"] == _ns[0]), None)
+        check("395: un parte escrito 8 días antes de un partido reprogramado entra a la ventana y pide rehacerse entero",
+              _p395 is not None and any(a["codigo"] == "PARTE-OTRA-FECHA" for a in _p395["alertas"]), _mv)
 
     print()
     print(f"{'TODO OK' if not fallos else f'{fallos} FALLAS'}")

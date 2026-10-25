@@ -269,6 +269,29 @@ def _pron_cadena(v) -> str:
     return _txt(v)
 
 
+def _sin_dato_bloque(v, letra: str, rechazos: list, donde: str) -> list[str]:
+    """Los indicadores del bloque declarados sin dato (`{"score": 4, "sinDato":
+    ["B5"]}`): del bloque, sin repetir y dejando al menos uno con dato."""
+    if not isinstance(v, dict) or v.get("sinDato") in (None, [], ""):
+        return []
+    crudos = v["sinDato"] if isinstance(v["sinDato"], list) else [v["sinDato"]]
+    out = []
+    for x in crudos:
+        cod = _txt(x).upper().replace(" ", "")
+        if not re.fullmatch(rf"{letra}\d", cod):
+            rechazos.append({"donde": f"{donde}.sinDato", "porque": f"{x!r} no es un indicador del bloque {letra}",
+                             "esperado": f'["{letra}5"]: el código del indicador sin dato'})
+            continue
+        if cod not in out:
+            out.append(cod)
+    if len(out) >= MAX_BLOQUE[letra]:
+        rechazos.append({"donde": f"{donde}.sinDato", "porque": "todos los indicadores sin dato: el bloque va en "
+                                                               "`excluidos` con su motivo, no con sinDato",
+                         "esperado": f'`excluidos.{letra}`: "motivo"'})
+        return []
+    return out
+
+
 def _bloque_crudo(v):
     """El sub-score puede venir plano (`"A": 3`) o como objeto
     (`"A": {"score": 3, "nota": "…"}`). Las dos formas son razonables si vienes
@@ -442,11 +465,21 @@ def _dt_equipo(crudo, rechazos: list, lado: str, fecha_partido: str,
             meses = round(max(0, (partido - _fecha(entrenador_base["desde"])).days) / _DIAS_MES, 1)
             origen = "base"
     if nombre and meses is None:
+        # EL MOTIVO, EL DE VERDAD (incidencia 577: Le Havre, Toulouse y Troyes
+        # mandaron el mismo nombre que la base y el rechazo decía «no casa»): con
+        # el mismo DT, lo que falta es una fecha que sirva
+        from backend.ingesta.jugadores import mismo_nombre_dt as _mnd
+        base_nom = (entrenador_base or {}).get("nombre") or ""
+        if base_nom and _mnd(nombre, base_nom):
+            porque = (f"el DT «{nombre}» es el mismo de la base, pero llegó sin `desde` ni `meses` y la fecha "
+                      "de la base viene de la carrera de /coachs (el mes de la temporada, no la llegada): "
+                      "no sirve")
+        else:
+            porque = (f"el DT «{nombre}» llegó sin `desde` ni `meses` y no casa con el de la base"
+                      + (f" ({base_nom})" if base_nom else ""))
         rechazos.append({
             "donde": f"equipos.{lado}.dt",
-            "porque": f"el DT «{nombre}» llegó sin `desde` ni `meses` y no casa con el de la base"
-                      + (f" ({entrenador_base['nombre']})" if entrenador_base and entrenador_base.get("nombre") else "")
-                      + ": la antigüedad queda en null, no en cero",
+            "porque": porque + ": la antigüedad queda en null, no en cero",
             "esperado": '`desde`: "YYYY-MM-DD" (la fecha de asunción, del mes si no se sabe el día)'})
     out = {"nombre": nombre or DT_SIN_ESTABLECER, "meses": meses, "desde": desde, "origenMeses": origen}
     banco = _dt_banco(crudo.get("banco"), rechazos, lado)
@@ -506,7 +539,12 @@ def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
     for letra in LETRAS:
         crudo, nota_obj, motivo_obj = _bloque_crudo(bloques_in.get(letra))
         motivo = _txt(excluidos_in.get(letra)) or motivo_obj
-        score = 0.0 if motivo else _num(crudo, MAX_BLOQUE[letra])
+        # INDICADORES SIN DATO DENTRO DE UN BLOQUE (incidencia 467, Köln: B5 sin
+        # dato y el B se escalaba a mano sobre 5): la rúbrica los saca del
+        # denominador; `sinDato: ["B5"]` baja el máximo del bloque uno por cada uno
+        sin_dato = _sin_dato_bloque(bloques_in.get(letra), letra, rechazos, f"equipos.{lado}.bloques.{letra}")
+        maximo = MAX_BLOQUE[letra] - len(sin_dato)
+        score = 0.0 if motivo else _num(crudo, maximo)
         # cualquier desvío entre lo que llegó y lo que se guarda se declara:
         # un 99 donde el máximo es 6 se recortaba en silencio, y un sub-score
         # recortado cambia la clasificación del equipo sin que nadie lo vea
@@ -522,10 +560,11 @@ def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
                     rechazos.append({"donde": f"equipos.{lado}.bloques.{letra}",
                                      "porque": f"sub-score fuera de rango: {pedido:g} "
                                                f"(se guardó {score:g})",
-                                     "esperado": f"0 a {MAX_BLOQUE[letra]:g}"})
+                                     "esperado": f"0 a {maximo:g}"})
         bloques[letra] = {
             "score": score,
-            "max": MAX_BLOQUE[letra],
+            "max": maximo,
+            **({"sinDato": sin_dato} if sin_dato else {}),
             "peso": PESO_BLOQUE[letra],
             "excluido": bool(motivo),
             "motivoExclusion": motivo,
@@ -1714,6 +1753,9 @@ def _bloque_tde(x, rechazos: list, donde: str, lado: str = "") -> dict:
     }
 
 
+HEREDA_SOB2 = ("siMarcaPrimero",)   # la rama donde el equipo va adelante, no persigue
+
+
 def ise_de_ramas(reasig: dict, indicadores: dict) -> dict:
     """TDE v0.1.22 · CADA RAMA CON SU NÚMERO. Sporting 2-3 LASK (21/10/2026):
     la rama «si le empatan» decía «vuelve a empujar y reabre la SOB» y el ISE
@@ -1721,19 +1763,31 @@ def ise_de_ramas(reasig: dict, indicadores: dict) -> dict:
     número no. Con sob1 y sob2 declarados en la rama, la app calcula su ISE con
     la misma fórmula del skill ((SOB1+SOB2+SOB3)/3×10); SOB3 sale de la rama o,
     si no vino, del bloque (y se dice en `iseRamaHeredados`). SOB2 NO se
-    hereda: el seguro de atrás del arranque no vale para el que persigue."""
-    for rama in reasig.values():
+    hereda: el seguro de atrás del arranque no vale para el que persigue.
+    …salvo en `siMarcaPrimero` (incidencia 483, Gil Vicente–Porto): el que va
+    adelante no persigue y sigue con el seguro de su arranque; la rama traía
+    sob1 sin sob2 y quedaba sin ISE para comparar en el veredicto."""
+    for nombre, rama in reasig.items():
         s1, s2 = rama.get("sob1"), rama.get("sob2")
+        heredados = []
+        if s2 is None and nombre in HEREDA_SOB2 and s1 is not None:
+            try:
+                s2 = None if (indicadores or {}).get("SOB2") is None else float(indicadores["SOB2"])
+            except (TypeError, ValueError):
+                s2 = None
+            if s2 is not None:
+                heredados.append("SOB2")
         if s1 is None or s2 is None:
             continue
-        s3, heredados = rama.get("sob3"), []
+        s3 = rama.get("sob3")
         if s3 is None:
             base = (indicadores or {}).get("SOB3")
             try:
                 s3 = None if base is None else float(base)
             except (TypeError, ValueError):
                 s3 = None
-            heredados = ["SOB3"] if s3 is not None else []
+            if s3 is not None:
+                heredados.append("SOB3")
         if s3 is None:
             continue
         rama["iseRama"] = round((s1 + s2 + s3) / 3 * 10, 2)
@@ -3028,9 +3082,19 @@ def dto(fixture_id: int) -> dict | None:
         eq = parte["equipos"][lado]
         tot = _totales(eq)
         disp = _disponibilidad(eq, xi.get(lado))
-        f3 = (bloque_f.alerta_f3(tot["clasificacion"], disp.get("ipNivel", "verde"),
-                                 bloque_f.titulares_fijos_fuera(disp.get("jugadores") or []))
-              if disp.get("resuelto") else None)
+        if disp.get("resuelto"):
+            f3 = bloque_f.alerta_f3(tot["clasificacion"], disp.get("ipNivel", "verde"),
+                                    bloque_f.titulares_fijos_fuera(disp.get("jugadores") or []),
+                                    disp.get("zonasCriticas"))
+        else:
+            # ANTES DEL ONCE, con lo ya conocido (incidencia 383, Nacional: IP 15
+            # rojo y FORMADO sin F3 hasta cerrar el once). Provisional y dicho.
+            ra = (disp.get("ramas") or {}).get("a") or {}
+            f3 = (bloque_f.alerta_f3(tot["clasificacion"], ra.get("ipNivel", "verde"),
+                                     [x.get("nombre", "") for x in ra.get("fuera") or []
+                                      if (x.get("rol") or "").upper() == "TF" and x.get("estado") == "baja"],
+                                     ra.get("zonasCriticas"), provisional=True)
+                  if ra else None)
         if f3:
             alertas.append({**f3, "equipo": lado})
         equipos[lado] = {**eq, **tot, "disponibilidad": disp}
@@ -3095,7 +3159,14 @@ def dto(fixture_id: int) -> dict | None:
     alertas.extend(_f1_base.alertas(parte, fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # el once oficial contra la apertura del DTP: si no cuadra, el M2 se
     # escribió sobre otro equipo
-    dtp_leido = _dtp.leer_dtp(parte.get("dtp") or {}, _dtp.oficial_de(fila["fixture_id"]))
+    oficial = _dtp.oficial_de(fila["fixture_id"])
+    # LA FORMACIÓN QUE LA API CORRIGIÓ DESPUÉS DEL CIERRE (incidencia 559, Orense–
+    # Delfín): el parte se rehízo con la que había y la API la cambió después;
+    # sin esto, DTP-REHACER pedía rehacer lo ya rehecho con el dato del momento
+    for lado in LADOS:
+        if (xi.get(lado) or {}).get("formacionAlCerrar") and lado in oficial:
+            oficial[lado] = {**oficial[lado], "formacionAlCerrar": xi[lado]["formacionAlCerrar"]}
+    dtp_leido = _dtp.leer_dtp(parte.get("dtp") or {}, oficial)
     alertas.extend(_dtp.alertas_rehacer(dtp_leido, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # las de coherencia se LEEN, no se rehacen (ver _ALERTAS_CAPTURADAS)
     coherencia = json.loads(fila["coherencia_json"]) if fila["coherencia_json"] else None
@@ -4657,7 +4728,9 @@ def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: in
     for f in filas:
         liga = sadapp.liga_meta(f["league_id"])
         try:
-            posiciones = cal._posiciones(f["league_id"], f["league_season"], cal._hora()) if f["league_season"] else {}
+            # la tabla del torneo corto en curso si ya anda (incidencia 441), si no la del año
+            posiciones = (cal.posiciones_y_tabla(f["league_id"], f["league_season"], cal._hora(), f["league_round"])[0]
+                          if f["league_season"] else {})
         except Exception:
             posiciones = {}
         etiquetas = set()
@@ -4707,6 +4780,9 @@ def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: in
             # las etiquetas se calculan sobre el VISITANTE como rival del local:
             # EQUIPO_SORPRESA, EN_CRISIS… son de ese lado (incidencia 41)
             "etiquetasDe": "b",
+            # …con el NOMBRE: «b» solo se leía al revés (incidencia 427, Atlante–
+            # San Luis: el EQUIPO_SORPRESA es San Luis, no Atlante)
+            "etiquetasEquipo": f["away_name"],
             "parte": ya.get(f["id"], ""),
             # un equipo que también figura en otro partido a pocas horas: uno de
             # los dos fixtures está mal, y el analista tiene que saberlo ANTES
@@ -4820,17 +4896,23 @@ def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: in
 REHACER_DESDE_MIN, REHACER_HASTA_MIN = 15, 80
 
 
+REHACER_DIAS_ATRAS = 30   # un parte reprogramado puede tener semanas
+
+
 def rehacer_pendientes(desde_min: int = REHACER_DESDE_MIN, hasta_min: int = REHACER_HASTA_MIN,
                        ahora: datetime | None = None) -> dict:
     from backend.app import iso
     ahora = ahora or datetime.now(timezone.utc)
     lo, hi = ahora + timedelta(minutes=desde_min), ahora + timedelta(minutes=hasta_min)
-    dias = sorted({lo.strftime("%Y-%m-%d"), hi.strftime("%Y-%m-%d"),
-                   (lo - timedelta(days=1)).strftime("%Y-%m-%d")})
+    # POR LA FECHA DEL PARTIDO, NO LA DEL PARTE (incidencia 395, Santa Fe–
+    # Jaguares: escrito el 14/10, jugado el 22/10 tras dos reprogramaciones, y
+    # nunca entraba en la ventana porque se buscaba por la fecha del parte).
+    # Se miran los partes sin veredicto de los últimos días; el pitazo decide.
+    desde = (lo - timedelta(days=REHACER_DIAS_ATRAS)).strftime("%Y-%m-%d")
     with _conectar() as con:
         filas = [dict(r) for r in con.execute(
-            f"SELECT fixture_id, equipo_a, equipo_b FROM parte_cowork WHERE veredicto_json IS NULL "
-            f"AND fecha IN ({','.join('?' * len(dias))})", dias)]
+            "SELECT fixture_id, equipo_a, equipo_b, fecha FROM parte_cowork WHERE veredicto_json IS NULL "
+            "AND fecha >= ? AND fecha <= ?", (desde, hi.strftime("%Y-%m-%d")))]
     en_ventana, pendientes = [], []
     for f in filas:
         fx = saddb.query_one("sad", "SELECT date, status_short FROM fixtures WHERE id=?", (f["fixture_id"],))
@@ -4848,6 +4930,13 @@ def rehacer_pendientes(desde_min: int = REHACER_DESDE_MIN, hasta_min: int = REHA
         en_ventana.append(item)
         d = dto(f["fixture_id"]) or {}
         rehacer = [a for a in d.get("alertas") or [] if a.get("codigo") == "DTP-REHACER"]
+        movido = dias_movido(f["fecha"], fx["date"])
+        if movido:
+            # se escribió con otra semana de datos: se rehace ENTERO, no solo el DTP
+            rehacer.append({"codigo": "PARTE-OTRA-FECHA", "tipo": "dato",
+                            "detalle": f"el parte es del partido del {str(f['fecha'])[:10]} y se juega el "
+                                       f"{pitazo.strftime('%Y-%m-%d')} ({movido:+d} días): rehacer el parte entero "
+                                       "con la semana nueva (si no, cae en cuarentena al cerrar el veredicto)"})
         if rehacer:
             pendientes.append({**item, "alertas": rehacer})
     return {"ahora": ahora.strftime("%Y-%m-%dT%H:%M:%SZ"), "ventanaMin": [desde_min, hasta_min],

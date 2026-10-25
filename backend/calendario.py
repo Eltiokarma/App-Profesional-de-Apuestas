@@ -356,6 +356,38 @@ def _posiciones(liga_id: int, temporada: int, bucket: int, fase: str | None = No
         return {}
 
 
+# EL TORNEO CORTO EN CURSO, NO EL AÑO (incidencia 441): en las ligas que parten
+# el año (Apertura/Clausura) la posición del rival salía de la tabla del año.
+# Con la fase ya andando (FASE_MIN_PJ fechas), manda la tabla de esa fase; al
+# arrancar, con dos fechas, la del año dice más.
+_FASE_NACIONAL = re.compile(r"^(apertura|clausura|torneo|first stage|second stage|1st|2nd)", re.I)
+FASE_MIN_PJ = 5
+
+
+@lru_cache(maxsize=64)
+def _max_pj_fase(liga_id: int, temporada: int, bucket: int, fase: str) -> int:
+    from backend.app import standings
+    try:
+        return max((r.get("partidosJugados") or 0 for r in standings(liga_id, temporada, fase)), default=0)
+    except Exception:
+        return 0
+
+
+def posiciones_y_tabla(liga_id: int, temporada: int, bucket: int, ronda: str | None) -> tuple[dict[int, int], str]:
+    """(posiciones, de qué tabla salen): la fase con tabla propia de un torneo
+    internacional, el torneo corto nacional en curso si ya anda, o el año."""
+    fase = fase_con_tabla(ronda)
+    if fase:
+        return _posiciones(liga_id, temporada, bucket, fase), fase
+    from backend.app import _fase_de_round
+    nacional = _fase_de_round(ronda)
+    if nacional and _FASE_NACIONAL.match(nacional) and _max_pj_fase(liga_id, temporada, bucket, nacional) >= FASE_MIN_PJ:
+        pos = _posiciones(liga_id, temporada, bucket, nacional)
+        if pos:
+            return pos, nacional
+    return _posiciones(liga_id, temporada, bucket), "año"
+
+
 def _gap(team_id: int, fecha: str | None) -> dict | None:
     from backend.app import gap_equipo
     try:
@@ -468,8 +500,8 @@ def calendario_de(team_id: int, n: int = PROXIMOS_DEFAULT) -> list[dict]:
         # (incidencia 404): la posición del rival sale vacía, no de esa tabla.
         from backend.analisis.escala import es_copa
         copa = bool(f["league_id"]) and es_copa(f["league_id"], f["liga"])
-        posiciones = (_posiciones(f["league_id"], f["league_season"], bucket, fase_con_tabla(f["league_round"]))
-                      if f["league_id"] and not copa else {})
+        posiciones, tabla_de = (posiciones_y_tabla(f["league_id"], f["league_season"], bucket, f["league_round"])
+                                if f["league_id"] and not copa else ({}, ""))
         pos = posiciones.get(rival_id)
         total = len(posiciones)
         # descanso: contra el partido anterior para el primero, y entre fechas
@@ -491,6 +523,7 @@ def calendario_de(team_id: int, n: int = PROXIMOS_DEFAULT) -> list[dict]:
             "torneo": f["liga"],
             "ronda": f["league_round"],
             "posicionRival": pos,
+            "tablaDe": tabla_de if pos else "",
             "equiposEnLaTabla": total or None,
             # zona: lo que importa del rival en la tabla, sin adjetivos
             "zonaRival": None if not pos or not total else (

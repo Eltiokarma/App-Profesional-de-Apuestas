@@ -254,6 +254,20 @@ def main():
           and calendario.fase_con_tabla("3rd Qualifying Round") is None and calendario.fase_con_tabla("Clausura - 12") is None
           and calendario.fase_con_tabla("Regular Season - 10") is None)
 
+    # 441: el torneo corto en curso con 5+ fechas manda; al arrancar, el año
+    _orig_pj, _orig_pos = calendario._max_pj_fase, calendario._posiciones
+    try:
+        calendario._posiciones = lambda l, t, b, f=None: ({7: 3} if f == "Clausura" else {7: 9})
+        calendario._max_pj_fase = lambda l, t, b, f: 6
+        _p6 = calendario.posiciones_y_tabla(1, 2026, 0, "Clausura - 7")
+        calendario._max_pj_fase = lambda l, t, b, f: 2
+        _p2 = calendario.posiciones_y_tabla(1, 2026, 0, "Clausura - 3")
+        _pr = calendario.posiciones_y_tabla(1, 2026, 0, "Regular Season - 10")
+    finally:
+        calendario._max_pj_fase, calendario._posiciones = _orig_pj, _orig_pos
+    check("441: con el Clausura andando (6 fechas) la posición sale de su tabla; con 2, del año; sin fases, del año",
+          _p6 == ({7: 3}, "Clausura") and _p2 == ({7: 9}, "año") and _pr == ({7: 9}, "año"), (_p6, _p2, _pr))
+
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
 

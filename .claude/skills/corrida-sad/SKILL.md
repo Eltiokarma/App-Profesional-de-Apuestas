@@ -197,7 +197,10 @@ cada 30 minutos y es CORTA: casi siempre no hay nada que hacer.
    Trae los partes que arrancan entre **15 y 80 minutos** (`enVentana`; el piso
    bajó de 30 a 15 el 24/10/2026: la API publica el once ~27 min antes) y, de
    esos, los que tienen **DTP-REHACER** (`pendientes`: el once oficial
-   contradice la apertura del DTP). Con `pendientes` vacío: terminá YA en una
+   contradice la apertura del DTP) o **PARTE-OTRA-FECHA** (el parte se
+   escribió para la fecha vieja de un partido reprogramado: ese se rehace
+   ENTERO, con el modo `partes`, no solo el DTP; desde el 25/10/2026,
+   incidencia 395). Con `pendientes` vacío: terminá YA en una
    línea («Nada que rehacer a las HH:MM de Lima»), sin `git pull`, sin leer
    el resto de este skill, sin otra llamada y **sin avisar al celular** (corre
    cada media hora: un aviso vacío cada vez se deja de leer).

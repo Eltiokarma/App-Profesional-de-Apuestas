@@ -898,8 +898,12 @@ def sin_ausentes(texto: str) -> str:
 
 
 def sin_referencia(texto: str) -> bool:
-    """La apertura dice que no hay XI de referencia (o no dice nada)."""
-    return not (texto or "").strip() or bool(_SIN_REF.search(texto))
+    """La apertura dice que no hay XI de referencia (o no dice nada). Lo que va
+    entre paréntesis es una nota, no el XI: «… (el undécimo titular no viene en
+    la ficha: sin dato)» marcaba como sin referencia una lista de 10 nombres
+    (Defensor–Racing, incidencia 527)."""
+    limpio = re.sub(r"\([^()]*\)|\[[^\[\]]*\]", " ", texto or "")
+    return not limpio.strip() or bool(_SIN_REF.search(limpio))
 
 
 def oficial_de(fixture_id: int) -> dict:
@@ -960,8 +964,15 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
     # puntas. Comparar primera y última cifra daba «3-4-3» ≠ «3-4-2-1» y
     # «4-3-3» ≠ «4-2-3-1», que son el mismo equipo contado distinto
     # (Atlético-MG con «3-4-3 / 5-4-1», 17/10/2026).
+    al_cerrar = _cifras_sistema(of.get("formacionAlCerrar") or "")
+    nota_api = ""
     if decl and real and _forma(real) not in {_forma(d) for d in decl if d}:
-        motivos.append(f"sistema: la apertura dice {m1.get('sistema')!r} y salió {of['formacion']}")
+        if al_cerrar and _forma(al_cerrar) in {_forma(d) for d in decl if d}:
+            # cuadraba con la que la API daba al cerrar el once: la corrigió después
+            nota_api = (f"la API corrigió la formación después del cierre ({of['formacionAlCerrar']} → "
+                        f"{of['formacion']}): la apertura cuadraba con el dato del momento")
+        else:
+            motivos.append(f"sistema: la apertura dice {m1.get('sistema')!r} y salió {of['formacion']}")
     elif decl and not real and 3 <= (of.get("defensores") or 0) <= 5 \
             and _linea(str(of["defensores"])) not in {_linea(d[0]) for d in decl if d}:
         # LA FICHA SIN FORMACIÓN NO TAPA UN CAMBIO DE LÍNEA. Atlas jugó con
@@ -1035,6 +1046,7 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
     return {"rehacer": bool(motivos), "motivos": motivos, "sinReferencia": sin_ref,
             "referenciaMezclada": mezclada,
             "sistemaDeclarado": m1.get("sistema") or "", "sistemaOficial": of.get("formacion") or "",
+            **({"formacionCorregidaPorLaApi": nota_api} if nota_api else {}),
             "defensoresOficiales": of.get("defensores"),
             # el nombre se presta a leerlo al revés: son los TITULARES OFICIALES
             # que no estaban en el XI de referencia, no los de la referencia que

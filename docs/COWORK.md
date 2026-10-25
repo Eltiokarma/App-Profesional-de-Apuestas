@@ -1214,6 +1214,11 @@ Escribís vos (es juicio, no se puede calcular):
   no queda por debajo del mercado sin un dato que el mercado no tenga, escrito
   con su cifra («−N puntos al favorito por <el dato>»).
 - Los documentos en prosa (ver punto 5).
+  Un INDICADOR sin dato dentro de un bloque que sí puntuaste (B5 sin evidencia
+  de banco, por ejemplo) no se escala a mano: va como
+  `"B": {"score": 4, "sinDato": ["B5"]}` y el backend saca ese indicador del
+  denominador (el máximo de B pasa de 6 a 5). Es el «se excluye del
+  denominador» de la rúbrica.
 
 NO escribas, porque lo calcula la app y se ignora si llega:
   total · máximo alcanzable · porcentaje · clasificación FORMADO/EN FORMACIÓN/
