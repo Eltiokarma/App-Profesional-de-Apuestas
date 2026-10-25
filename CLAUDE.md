@@ -941,6 +941,13 @@ conversación se pierde en la siguiente.
      también arriba del ensayo. Arriba quedan el veredicto y los anillos del
      EFE; la carga del once y «Alertas y revisor» van PLEGADAS debajo de las
      pestañas (con su resumen: cuántas alertas, cuántas estructurales).
+   - **25/10** (usuario): la cola de onces del ciclo en vivo pide PRIMERO los
+     partidos con parte, después los que no empezaron y al final los en juego
+     (`en_vivo.fixtures_para_xi`: Leipzig, Coventry y Antwerp llegaron al
+     pitazo sin once capturado; 444/451/454/562/564/567/570 son esa causa). Y
+     el botón 🔑 «Cerrar las anteriores a vX» del dossier pasa a `aplicada` las
+     lecciones de partidos anteriores al corte de la versión vigente
+     (`lecciones.CORTE_VERSION`: actualizarlo con cada versión nueva).
    - **Escala entre ligas** (300, 309, 294, 79): decidido «solo marcar» (22/10):
      rival (`escalaComparable`), tarjeta de la espina, perfil DC y P1a llevan la
      marca y su nota; ningún número calibrado se mueve.

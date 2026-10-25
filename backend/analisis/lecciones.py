@@ -1029,6 +1029,45 @@ class LeccionInvalida(ValueError):
     """El cambio de estado no se puede aplicar tal cual llegó."""
 
 
+# Hasta qué fecha de partido miró cada versión vigente su dossier (la fecha
+# en que se redactó la propuesta en docs/revisiones/). Una lección de un caso
+# ANTERIOR ya entró en esa revisión: queda `aplicada` en esa versión. Se
+# actualiza con cada versión nueva (25/10/2026: 2.632 lecciones, ninguna
+# cerrada, aunque cuatro versiones ya habían salido de esos dossiers).
+CORTE_VERSION = {
+    "diagnostico-tactico": ("v1.4", "2026-10-21"),
+    "efe-clasificador": ("v1.6", "2026-10-21"),
+    "sad-analysis": ("v4.0", "2026-10-21"),
+    "teorema-del-echado": ("v0.1.22", "2026-10-22"),
+}
+
+
+def cerrar_anteriores(skill: str) -> dict:
+    """Pasa a `aplicada` (con la versión) las lecciones PENDIENTES del skill
+    cuyos partidos son anteriores al corte de su versión vigente: esa revisión
+    ya las leyó. Las posteriores quedan pendientes: son el dossier que viene.
+    Lo hace el usuario, no el agente."""
+    if skill not in CORTE_VERSION:
+        raise LeccionInvalida(f"{skill} no tiene versión con corte en CORTE_VERSION")
+    version, corte = CORTE_VERSION[skill]
+    nota = f"cerrada en bloque: el dossier de {version} (redactado el {corte}) ya leyó este caso"
+    inv = inventario(skill=skill, limite=100000)
+    claves = [i["clave"] for i in inv["items"]
+              if i["estado"] == "pendiente" and (i.get("fecha") or "")[:10] < corte]
+    ahora = efedb.ahora()
+    with _conectar() as con:
+        con.executemany(
+            "INSERT INTO leccion_estado (clave, estado, aplicada_en, nota, actualizado_en) "
+            "VALUES (?,'aplicada',?,?,?) ON CONFLICT(clave) DO UPDATE SET "
+            "estado=excluded.estado, aplicada_en=excluded.aplicada_en, nota=excluded.nota, "
+            "actualizado_en=excluded.actualizado_en",
+            [(k, version, nota, ahora) for k in claves])
+    quedan = sum(1 for i in inv["items"] if i["estado"] == "pendiente") - len(claves)
+    print(f"[cowork] {skill}: {len(claves)} lecciones anteriores al {corte} → aplicada en {version}", flush=True)
+    return {"skill": skill, "version": version, "corte": corte, "cerradas": len(claves),
+            "quedanPendientes": quedan, "nota": nota}
+
+
 def descartar_cohorte(cohorte: str, nota: str = "") -> dict:
     """Pasa a `descartada` TODAS las lecciones pendientes de una cohorte que no
     es la vigente. Las de rodaje y c2 no calibran nada (su insumo era el viejo:

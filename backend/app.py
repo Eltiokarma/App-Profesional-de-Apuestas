@@ -2583,6 +2583,18 @@ def cowork_revision(skill: str, cohorte: str = Query(default="vigente", descript
     return lecciones.revision(skill, cohorte)
 
 
+@app.post(API + "/analisis/cowork/revision/{skill}/cerrar-anteriores")
+def cowork_revision_cerrar_anteriores(skill: str):
+    """Pasa a `aplicada` (en la versión vigente) las lecciones pendientes de
+    partidos anteriores al corte de esa versión: su dossier ya las leyó. NO
+    está abierto a Cowork ni a la web en lectura: es del usuario."""
+    from backend.analisis import lecciones
+    try:
+        return lecciones.cerrar_anteriores(skill)
+    except lecciones.LeccionInvalida as e:
+        raise HTTPException(422, str(e))
+
+
 @app.post(API + "/analisis/cowork/revision/{skill}/abrir")
 def cowork_revision_abrir(skill: str, cohorte: str = Query(default="vigente")):
     """Pasa a `en_revision` las lecciones pendientes del dossier. NO está

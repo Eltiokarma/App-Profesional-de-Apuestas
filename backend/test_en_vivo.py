@@ -977,6 +977,11 @@ def main():
     check("XI: con alineación ya capturada NO se repite", 16 not in xi, xi)
     check("XI: intento reciente espera su reintento", 17 not in xi, xi)
     check("XI: intento viejo se reintenta", 18 in xi, xi)
+    # 25/10/2026: con parte primero, después los que no empezaron, al final los en juego
+    _orden = fixtures_para_xi(con, {PERU}, {18})
+    check("XI: el partido CON PARTE va primero en la cola", _orden[:1] == [18], _orden)
+    check("XI: sin parte, el que no empezó va antes que el ya en juego",
+          _orden.index(11) < _orden.index(13), _orden)
 
     lineups = {11: [
         {"team": {"id": 1}, "formation": "4-4-2", "coach": {"name": "DT Local"},
