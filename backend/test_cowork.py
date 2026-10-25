@@ -3178,6 +3178,14 @@ def main():
                    {"a": {"formacion": "3-5-2", "titulares": []}})
     check("una apertura con dos sistemas («4-2-3-1 / 4-3-3») no pide rehacer si salió con cualquiera; "
           "con otro, sí", _alt["rehacer"] is False and _no["rehacer"] is True, (_alt, _no))
+    # incidencia 526 (Werder): «sin Lynen» en el rest defense no es apoyarse en Lynen
+    _rd526 = lambda foco: _rehacer({"equipo": "b", "apertura": {"m1": {"sistema": "4-3-3"},  # noqa: E731
+                                                              "m2": {"restDefense": {"foco": foco}}}},
+                                   {"b": {"formacion": "4-3-3", "titulares": ["M. Friedl", "Chuky", "Reis"],
+                                          "banca": ["S. Lynen"]}})
+    check("526: «sin Lynen» no marca el seguro en el banco; «fijo en Lynen» sí",
+          not any(m.startswith("seguro") for m in _rd526("Chuky San José y Reis; sin Lynen, depende de que un lateral se quede")["motivos"])
+          and any(m.startswith("seguro") for m in _rd526("pivote fijo en Lynen")["motivos"]))
     # incidencia 390 (América): el oficial «K. Álvarez» no es el «Carlos Álvarez»
     # de la referencia; «B. Gallego» sí es «Baltasar Gallego Rodríguez»
     _ini = _rehacer({"equipo": "b", "apertura": {"m1": {"sistema": "4-3-3",

@@ -777,6 +777,20 @@ def sin_salientes(texto: str) -> str:
     return _SALIENTES.sub(" ", texto or "")
 
 
+# «sin Lynen», «ausente Berge»: el jugador nombrado detrás NO sostiene el
+# seguro. Solo con mayúscula después (un nombre), para no comerse «sin balón».
+_AUSENTES = re.compile(r"\b(?i:sin|ausente[s]?|sin contar con|baja de)\s+(?:[A-ZÁÉÍÓÚÑÜ]\.\s*)?[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]*"
+                       r"(?:\s+(?:y|ni)\s+(?:[A-ZÁÉÍÓÚÑÜ]\.\s*)?[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]*)*")
+
+
+def sin_ausentes(texto: str) -> str:
+    """Lo que el texto dice que NO está no es en quien se apoya: «Chuky San
+    José y Reis; sin Lynen, depende de que un lateral se quede» marcaba el
+    seguro de Werder Bremen sobre Lynen, que arrancó en el banco, y saltaba
+    DTP-REHACER falso (incidencia 526, cuatro veces)."""
+    return _AUSENTES.sub(" ", texto or "")
+
+
 def sin_referencia(texto: str) -> bool:
     """La apertura dice que no hay XI de referencia (o no dice nada)."""
     return not (texto or "").strip() or bool(_SIN_REF.search(texto))
@@ -889,7 +903,7 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
     # jugador que está en la BANCA del once oficial (y a ningún titular con ese
     # apellido), el M2 se escribió sobre otra pieza.
     rd = ((bloque.get("apertura") or {}).get("m2") or {}).get("restDefense") or {}
-    texto_rd = _plano(sin_alternativas(rd.get("foco") or ""))
+    texto_rd = _plano(sin_ausentes(sin_alternativas(rd.get("foco") or "")))
     if texto_rd.strip():
         en_banca = [n for n in of.get("banca") or [] if _apellidos(n) and _en_referencia(n, texto_rd)
                     and not any(_en_referencia(t, texto_rd) and set(_apellidos(t)) & set(_apellidos(n))
