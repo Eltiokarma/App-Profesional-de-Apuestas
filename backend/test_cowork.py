@@ -10,6 +10,7 @@ siguen pasando pero el parte se vuelve más lento y más fácil de equivocar: po
 eso el contrato ignora los campos calculados en vez de creerles.
 """
 import os as _os_cache; _os_cache.environ.setdefault("SAD_CACHE_OBJETIVO_S", "0")  # los tests cambian fichas y veredictos y releen
+_os_cache.environ.setdefault("SAD_CACHE_INVENTARIO_S", "0")  # ídem el inventario de lecciones
 import json
 import os
 import sys
@@ -3958,6 +3959,38 @@ def main():
         _lmod._OBJ_CACHE.clear()
     check("el objetivo se recalcula una vez por versión del parte: la segunda lectura sale guardada, "
           "un parte corregido se rehace", _n["c"] == 2, _n)
+    # el inventario entero, mientras nada cambie (25/10/2026: 46 s y 6,3 MB por visita)
+    _ttl_i, _casos_i = _lmod.INVENTARIO_TTL_S, _lmod._casos
+    _ni = {"c": 0}
+    def _cuenta_casos(limite=400, ids=None):
+        _ni["c"] += 1
+        return _casos_i(limite, ids)
+    try:
+        _lmod.INVENTARIO_TTL_S, _lmod._casos = 600, _cuenta_casos
+        _lmod._INV_CACHE.clear()
+        _r1 = _lmod.inventario(resumen=True)
+        _p1 = _lmod.inventario(cuantas=1)
+        _todas = _lmod.inventario()
+        _c_antes = _ni["c"]
+        if _todas["items"]:
+            _k = _todas["items"][0]
+            _lmod.mover(_k["clave"], "descartada", nota="test del caché")
+            _tras = next(i for i in _lmod.inventario()["items"] if i["clave"] == _k["clave"])
+            _lmod.mover(_k["clave"], _k["estado"], _k.get("aplicadaEn") or "", nota="")
+        else:
+            _tras = {"estado": "descartada"}
+    finally:
+        _lmod.INVENTARIO_TTL_S, _lmod._casos = _ttl_i, _casos_i
+        _lmod._INV_CACHE.clear()
+    check("el inventario se calcula una vez: resumen, página y lista entera salen del mismo núcleo",
+          _c_antes == 1, _ni)
+    check("una lección movida invalida el inventario guardado (se ve en la lectura siguiente)",
+          _tras["estado"] == "descartada", _tras)
+    check("el resumen no manda lecciones y trae el total; la página manda `cuantas`",
+          _r1["items"] == [] and all(s["items"] == [] for s in _r1["porSkill"]) and _r1["total"] == len(_todas["items"])
+          and len(_p1["items"]) == min(1, len(_todas["items"])) and _p1["total"] == _r1["total"], (_r1.get("total"), len(_p1["items"])))
+    check("cada skill trae su versión vigente y cuántas cerraría «Cerrar las anteriores» (sin abrir el dossier)",
+          all("versionVigente" in s and "anterioresAlCorte" in s for s in _r1["porSkill"]), [s["skill"] for s in _r1["porSkill"]])
     _cal = calibracion_espina()
     check("GET de calibración: la tabla de la tarjeta, la del analista por lectura y cómo leerla",
           set(_cal) >= {"tarjeta", "analistaPorLectura", "comoLeerlo"}

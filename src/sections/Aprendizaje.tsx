@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { DerrotaFavorito, DerrotasFavoritoDTO, ExplicacionDerrota, InventarioLecciones, LeccionItem, ModoFalloEtiqueta, RevisionSkillDTO, SkillAprendizaje } from '../api/types'
 import { getDataSource } from '../services/datasource'
 import { useAsync } from '../services/useAsync'
@@ -25,19 +25,31 @@ const ETIQUETA_ESTADO: Record<string, string> = {
   pendiente: 'PENDIENTE', en_revision: 'EN REVISIÓN', aplicada: 'APLICADA', descartada: 'DESCARTADA',
 }
 
+type Pestana = 'skills' | 'metricas' | 'derrotas' | 'cuarentena' | 'sinSkill'
+const POR_PAGINA = 20
+
+/** REORDENADA EL 25/10/2026 (usuario: «no encuentro nada, todo se ve
+ *  desordenado y lento»). Con 2.886 lecciones la pantalla bajaba todo de una
+ *  vez (46 s, 6,3 MB) y las apilaba en una sola columna: lo que había que hacer
+ *  —cerrar lo que la versión vigente ya leyó— quedaba enterrado. Ahora abre con
+ *  un RESUMEN (sin lecciones), una pestaña por cosa, las acciones del skill
+ *  ARRIBA de su lista y las lecciones de a 20. */
 export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
-  const [estado, setEstado] = useState('')
   // LA COHORTE VIGENTE ES LA VISTA POR DEFECTO. Los casos de la primera semana
   // se hicieron con el DT viejo y el TDE sin nivel: la etiqueta de población
   // dice «ciega» y el insumo estaba roto. Se ven, pero aparte.
   const [cohorte, setCohorte] = useState('vigente')
   const [recarga, setRecarga] = useState(0)
+  const [pestana, setPestana] = useState<Pestana>('skills')
+  const [skillSel, setSkillSel] = useState('')
   const inv = useAsync<InventarioLecciones>(
-    () => getDataSource().lecciones({ ...(estado ? { estado } : {}), ...(cohorte ? { cohorte } : {}) }),
-    `${estado}|${cohorte}|${recarga}`)
+    () => getDataSource().lecciones({ cohorte, resumen: true }),
+    cohorte)
+  // reload (no un key nuevo): el resumen se rehace sin desmontar la pantalla
+  const recargar = () => { inv.reload(); setRecarga((n) => n + 1) }
 
   if (inv.loading && !inv.data) {
-    return <Marco><span style={{ font: '500 12px var(--sans)', color: 'var(--t3)' }}>Cargando lo aprendido…</span></Marco>
+    return <Marco><span style={{ font: '500 12px var(--sans)', color: 'var(--t3)' }}>Cargando lo aprendido… (la primera lectura del día tarda: recalcula cada veredicto)</span></Marco>
   }
   if (inv.error || !inv.data) {
     return (
@@ -49,13 +61,24 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
     )
   }
   const d = inv.data
-  const a = d.acreditables
-  const vacio = d.items.length === 0 && d.porSkill.length === 0
+  const skills = d.porSkill
+  const sel = skills.find((s) => s.skill === skillSel)
+    ?? [...skills].sort((x, y) => (y.lecciones.pendiente ?? 0) - (x.lecciones.pendiente ?? 0))[0]
+  const pendientesTotal = skills.reduce((s, x) => s + (x.lecciones.pendiente ?? 0), 0)
+  const cerrablesTotal = skills.reduce((s, x) => s + (x.anterioresAlCorte ?? 0), 0)
+  const cuar = d.enCuarentena?.cuantas ?? 0
+  const pestanas: [Pestana, string][] = [
+    ['skills', `Lecciones por skill · ${pendientesTotal} pend.`],
+    ['metricas', 'Métricas'],
+    ['derrotas', 'Derrotas del favorito'],
+    ...(cuar ? [['cuarentena', `Cuarentena · ${cuar}`] as [Pestana, string]] : []),
+    ...(d.sinSkill.cuantas ? [['sinSkill', `Sin skill · ${d.sinSkill.cuantas}`] as [Pestana, string]] : []),
+  ]
 
   return (
     <div style={{ padding: isMobile ? '16px 14px 40px' : '22px 26px 48px', maxWidth: 1080 }}>
       <h1 style={{ font: '800 26px var(--sans)', color: 'var(--t1)', margin: '0 0 4px' }}>Aprendizaje</h1>
-      <div style={{ font: '500 12px var(--sans)', color: 'var(--t3)', marginBottom: 18 }}>
+      <div style={{ font: '500 12px var(--sans)', color: 'var(--t3)', marginBottom: 14 }}>
         Lo que el bucle aprendió, por skill · las lecciones salen de los veredictos y se
         recalculan al leer
       </div>
@@ -63,32 +86,185 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
       {/* LA COHORTE: de qué época del proceso son los casos que se están
           mirando. Se sella al depositar y no cambia con un re-depósito. */}
       {d.cohortes && d.cohortes.length > 0 && (
-        <Seccion titulo="LA COHORTE" nota={d.notaCohortes}>
+        <div style={{ marginBottom: 12 }} title={d.notaCohortes}>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-            {[{ clave: '', etiqueta: 'todas', casos: d.cohortes.reduce((a, c) => a + c.casos, 0), cuarentena: 0, descripcion: 'todas las épocas juntas: sirve para contar, no para calibrar' },
-              ...d.cohortes.map((c) => ({ clave: c.vigente ? 'vigente' : c.clave, etiqueta: c.vigente ? `vigente · ${c.clave}` : c.clave, casos: c.casos, cuarentena: c.enCuarentena, descripcion: c.descripcion }))]
+            <span style={{ font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px', marginRight: 2 }}>COHORTE</span>
+            {[{ clave: '', etiqueta: 'todas', casos: d.cohortes.reduce((a, c) => a + c.casos, 0), descripcion: 'todas las épocas juntas: sirve para contar, no para calibrar' },
+              ...d.cohortes.map((c) => ({ clave: c.vigente ? 'vigente' : c.clave, etiqueta: c.vigente ? `vigente · ${c.clave}` : c.clave, casos: c.casos, descripcion: c.descripcion }))]
               .map((c) => {
-                const sel = cohorte === c.clave
+                const on = cohorte === c.clave
                 return (
                   <button key={c.clave || 'todas'} onClick={() => setCohorte(c.clave)} title={c.descripcion}
-                    style={{ padding: '6px 11px', borderRadius: 8, border: `1px solid ${sel ? 'var(--accent)' : 'var(--line)'}`, background: sel ? 'var(--bg3)' : 'transparent', color: sel ? 'var(--t1)' : 'var(--t2)', cursor: 'pointer', font: '600 10.5px var(--sans)' }}>
-                    {c.etiqueta} <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)' }}>· {c.casos} {c.casos === 1 ? 'caso' : 'casos'}{c.cuarentena ? ` · ${c.cuarentena} en cuarentena` : ''}</span>
+                    style={{ padding: '5px 10px', borderRadius: 8, border: `1px solid ${on ? 'var(--accent)' : 'var(--line)'}`, background: on ? 'var(--bg3)' : 'transparent', color: on ? 'var(--t1)' : 'var(--t2)', cursor: 'pointer', font: '600 10.5px var(--sans)' }}>
+                    {c.etiqueta} <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)' }}>· {c.casos}</span>
                   </button>
                 )
               })}
+            {inv.loading && <span style={{ font: '500 10.5px var(--sans)', color: 'var(--t3)' }}>actualizando…</span>}
           </div>
-          {(() => {
-            const sel = d.cohortes.find((c) => (cohorte === 'vigente' ? c.vigente : c.clave === cohorte))
-            return sel ? <div style={{ font: '500 11px var(--sans)', color: 'var(--t2)', marginTop: 8 }}>{sel.descripcion}</div> : null
-          })()}
           {cohorte && cohorte !== 'vigente' && (
             <DescartarCohorte cohorte={cohorte}
-              pendientes={[...d.items, ...(d.enCuarentena?.items ?? [])].filter((i) => i.estado === 'pendiente').length}
-              onHecho={() => setRecarga((n) => n + 1)} />
+              pendientes={pendientesTotal + (d.sinSkill.cuantas ?? 0)}
+              onHecho={recargar} />
           )}
+        </div>
+      )}
+
+      {/* LO QUE HAY QUE HACER, ARRIBA: con versiones nuevas subidas, lo que su
+          dossier ya leyó se cierra en bloque. Un aviso, no un listado. */}
+      {cerrablesTotal > 0 && (
+        <div style={{ marginBottom: 12, padding: '10px 13px', borderRadius: 11, background: 'var(--mark-soft)', font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>
+          <b>{cerrablesTotal}</b> lecciones pendientes son de partidos anteriores a la versión vigente de su skill: esa versión ya las leyó.
+          Se cierran por skill con <b>«Cerrar las anteriores»</b> (modo administrador 🔑):{' '}
+          {skills.filter((s) => (s.anterioresAlCorte ?? 0) > 0).map((s, i, arr) => (
+            <span key={s.skill}>
+              <button onClick={() => { setPestana('skills'); setSkillSel(s.skill) }}
+                style={{ padding: 0, border: 0, background: 'none', color: 'var(--accent)', cursor: 'pointer', font: '600 11.5px var(--sans)', textDecoration: 'underline' }}>
+                {s.skill} ({s.anterioresAlCorte})
+              </button>{i < arr.length - 1 ? ' · ' : ''}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* flexWrap: cinco pestañas no entran en una fila de teléfono */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2, padding: 3, borderRadius: 10, background: 'var(--bg2)', border: '1px solid var(--line)', marginBottom: 14 }}>
+        {pestanas.map(([k, label]) => (
+          <button key={k} onClick={() => setPestana(k)}
+            style={{ padding: '7px 12px', border: 0, borderRadius: 8, cursor: 'pointer', background: pestana === k ? 'var(--bg3)' : 'transparent', color: pestana === k ? 'var(--t1)' : 'var(--t2)', font: `${pestana === k ? 700 : 600} 11.5px var(--sans)` }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {pestana === 'skills' && (
+        skills.length === 0
+          ? (
+            <Seccion titulo="TODAVÍA NO HAY NADA">
+              <div style={{ font: '500 12px var(--sans)', color: 'var(--t2)' }}>
+                Ningún veredicto dejó lección todavía. Esto se llena solo: cada caso que se cierra
+                con una lección por lado aparece acá con su partido.
+              </div>
+            </Seccion>
+          )
+          : (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0,1fr) minmax(0,1fr)' : `repeat(${Math.min(skills.length, 5)}, minmax(0,1fr))`, gap: 8, marginBottom: 12 }}>
+                {skills.map((s) => (
+                  <TarjetaSkill key={s.skill} sk={s} activa={sel?.skill === s.skill} onClick={() => setSkillSel(s.skill)} />
+                ))}
+              </div>
+              {sel && <PanelSkill key={`${sel.skill}|${cohorte}`} sk={sel} cohorte={cohorte} recarga={recarga} onCambio={recargar} />}
+            </>
+          )
+      )}
+
+      {pestana === 'metricas' && <Metricas d={d} />}
+
+      {pestana === 'derrotas' && <DerrotasDelFavorito cohorte={cohorte} />}
+
+      {/* LO APARTADO SE VE, PARA QUE NADIE LO OLVIDE NI LO DISIMULE. */}
+      {pestana === 'cuarentena' && d.enCuarentena && (
+        <Seccion titulo={`EN CUARENTENA · ${d.enCuarentena.cuantas}`} nota={d.enCuarentena.porque}>
+          <ListaLecciones cohorte={cohorte} de="cuarentena" recarga={recarga} onCambio={recargar} />
         </Seccion>
       )}
 
+      {pestana === 'sinSkill' && (
+        <Seccion titulo={`SIN SKILL DECLARADO · ${d.sinSkill.cuantas}`} nota={d.sinSkill.porque}>
+          <ListaLecciones cohorte={cohorte} de="sinSkill" recarga={recarga} onCambio={recargar} />
+        </Seccion>
+      )}
+    </div>
+  )
+}
+
+function TarjetaSkill({ sk, activa, onClick }: { sk: SkillAprendizaje; activa: boolean; onClick: () => void }) {
+  const pend = sk.lecciones.pendiente ?? 0
+  const cerr = sk.anterioresAlCorte ?? 0
+  return (
+    <button onClick={onClick}
+      style={{ textAlign: 'left', minWidth: 0, padding: '10px 12px', borderRadius: 12, cursor: 'pointer', background: activa ? 'var(--bg3)' : 'var(--bg2)', border: `1px solid ${activa ? 'var(--accent)' : 'var(--line)'}` }}>
+      <div style={{ font: '700 11.5px var(--sans)', color: 'var(--t1)', overflowWrap: 'anywhere' }}>{sk.skill}</div>
+      <div style={{ font: '600 9.5px var(--mono)', color: 'var(--t3)', marginTop: 1 }}>{sk.versionVigente || 'sin versión'}</div>
+      <div style={{ font: '800 20px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums', marginTop: 4 }}>{pend}</div>
+      <div style={{ font: '500 10px var(--sans)', color: 'var(--t3)' }}>pendiente{pend === 1 ? '' : 's'} · {sk.lecciones.aplicada ?? 0} aplicada{(sk.lecciones.aplicada ?? 0) === 1 ? '' : 's'}</div>
+      {cerr > 0 && <div style={{ font: '700 9.5px var(--mono)', color: 'var(--mark)', marginTop: 4 }}>{cerr} para cerrar</div>}
+      {sk.revisionAbierta && <div style={{ font: '700 9.5px var(--mono)', color: 'var(--mark)', marginTop: 2 }}>REVISIÓN ABIERTA</div>}
+    </button>
+  )
+}
+
+/** Las lecciones de a 20: un filtro (skill · estado · cuarentena) pide su
+ *  página al backend, «ver más» trae la siguiente. */
+function ListaLecciones({ cohorte, skill, de, estado, recarga, onCambio }: {
+  cohorte: string; skill?: string; de?: 'cuarentena' | 'sinSkill'; estado?: string; recarga: number; onCambio: () => void
+}) {
+  const [items, setItems] = useState<LeccionItem[]>([])
+  const [total, setTotal] = useState(0)
+  const [cargando, setCargando] = useState(true)
+  const [error, setError] = useState('')
+  const filtro = `${cohorte}|${skill ?? ''}|${de ?? ''}|${estado ?? ''}`
+  const pedir = (desde: number, cuantas: number) =>
+    getDataSource().lecciones({ cohorte, skill, de, estado, desde, cuantas })
+  // un cambio de filtro empieza de cero; una recarga (lección movida) rehace
+  // lo que ya estaba a la vista, sin volver a la primera página
+  const visibles = useRef(POR_PAGINA)
+  const filtroPrevio = useRef(filtro)
+  useEffect(() => {
+    let vivo = true
+    if (filtroPrevio.current !== filtro) {
+      filtroPrevio.current = filtro
+      visibles.current = POR_PAGINA
+      setItems([])
+    }
+    setCargando(true)
+    setError('')
+    pedir(0, Math.min(500, visibles.current))
+      .then((r) => { if (vivo) { setItems(r.items); setTotal(r.total ?? r.items.length) } })
+      .catch((e) => { if (vivo) setError(e instanceof Error ? e.message : 'no se pudieron leer') })
+      .finally(() => { if (vivo) setCargando(false) })
+    return () => { vivo = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtro, recarga])
+  async function verMas() {
+    setCargando(true)
+    try {
+      const r = await pedir(items.length, POR_PAGINA)
+      visibles.current = items.length + r.items.length
+      setItems((xs) => [...xs, ...r.items])
+      setTotal(r.total ?? total)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'no se pudieron leer')
+    } finally {
+      setCargando(false)
+    }
+  }
+  if (cargando && items.length === 0) return <div style={{ font: '500 11px var(--sans)', color: 'var(--t3)', padding: '6px 0' }}>Cargando lecciones…</div>
+  return (
+    <div>
+      {error && <div style={{ font: '500 11px var(--sans)', color: 'var(--down)', marginBottom: 6 }}>No se pudieron leer: {error}</div>}
+      {items.length === 0
+        ? <div style={{ font: '500 11px var(--sans)', color: 'var(--t3)', padding: '6px 0' }}>Ninguna lección con este filtro.</div>
+        : items.map((i) => <Leccion key={i.clave} it={i} onCambio={onCambio} />)}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', paddingTop: 10, borderTop: items.length ? '1px solid var(--line)' : 0 }}>
+        <span style={{ font: '600 10.5px var(--mono)', color: 'var(--t3)' }}>{items.length} de {total}</span>
+        {items.length < total && (
+          <button onClick={verMas} disabled={cargando}
+            style={{ padding: '6px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--t1)', font: '600 11px var(--sans)', cursor: 'pointer' }}>
+            {cargando ? 'Cargando…' : `Ver ${Math.min(POR_PAGINA, total - items.length)} más`}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/** Población y lo medible: lo que antes abría la pantalla, ahora en su pestaña. */
+function Metricas({ d }: { d: InventarioLecciones }) {
+  const a = d.acreditables
+  return (
+    <>
       {/* LA POBLACIÓN VA ANTES QUE CUALQUIER NÚMERO. Un porcentaje que mezcla
           casos ciegos con casos sembrados no es una métrica pesimista ni
           optimista: es otra cosa con el mismo nombre. */}
@@ -241,56 +417,18 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
         <div style={{ font: '500 10px var(--sans)', color: 'var(--t3)', marginTop: 8 }}>{a.brier.escala}</div>
       </Seccion>
 
-      <DerrotasDelFavorito cohorte={cohorte} />
-
-      {vacio && (
-        <Seccion titulo="TODAVÍA NO HAY NADA">
-          <div style={{ font: '500 12px var(--sans)', color: 'var(--t2)' }}>
-            Ningún veredicto dejó lección todavía. Esto se llena solo: cada caso que se cierra
-            con una lección por lado aparece acá con su partido.
-          </div>
-        </Seccion>
-      )}
-
-      {/* LO APARTADO SE VE, PARA QUE NADIE LO OLVIDE NI LO DISIMULE. */}
-      {d.enCuarentena && d.enCuarentena.cuantas > 0 && (
-        <Seccion titulo={`EN CUARENTENA · ${d.enCuarentena.cuantas}`} nota={d.enCuarentena.porque}>
-          {d.enCuarentena.items.map((i) => <Leccion key={i.clave} it={i} onCambio={() => setRecarga((n) => n + 1)} />)}
-        </Seccion>
-      )}
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '20px 0 10px', flexWrap: 'wrap' }}>
-        <span style={{ font: '700 10px var(--mono)', color: 'var(--t3)', letterSpacing: '.6px' }}>LECCIONES</span>
-        {/* flexWrap: cinco estados no entran en una fila de teléfono (360 px) */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', padding: 3, borderRadius: 9, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
-          {[['', 'todas'], ...d.estados.map((e) => [e, ETIQUETA_ESTADO[e]?.toLowerCase() ?? e])].map(([k, label]) => (
-            <button key={k} onClick={() => setEstado(k)}
-              style={{ padding: '5px 10px', border: 0, borderRadius: 7, cursor: 'pointer', background: estado === k ? 'var(--bg3)' : 'transparent', color: estado === k ? 'var(--t1)' : 'var(--t2)', font: '600 10.5px var(--sans)' }}>
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {d.porSkill.map((sk) => (
-        <PanelSkill key={sk.skill} sk={sk} onCambio={() => setRecarga((n) => n + 1)} />
-      ))}
-
-      {d.sinSkill.cuantas > 0 && (
-        <Seccion titulo={`SIN SKILL DECLARADO · ${d.sinSkill.cuantas}`}>
-          <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t2)', marginBottom: 9 }}>{d.sinSkill.porque}</div>
-          {d.sinSkill.items.map((i) => <Leccion key={i.clave} it={i} onCambio={() => setRecarga((n) => n + 1)} />)}
-        </Seccion>
-      )}
-    </div>
+    </>
   )
 }
 
-function PanelSkill({ sk, onCambio }: { sk: SkillAprendizaje; onCambio: () => void }) {
+function PanelSkill({ sk, cohorte, recarga, onCambio }: { sk: SkillAprendizaje; cohorte: string; recarga: number; onCambio: () => void }) {
+  const [estado, setEstado] = useState('pendiente')
+  const [verMas, setVerMas] = useState(false)
   return (
     <section style={{ marginBottom: 14, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 16px', flexWrap: 'wrap' }}>
-        <span style={{ font: '700 13px var(--sans)', color: 'var(--t1)' }}>{sk.skill}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 16px 8px', flexWrap: 'wrap' }}>
+        <span style={{ font: '700 14px var(--sans)', color: 'var(--t1)' }}>{sk.skill}</span>
+        {sk.versionVigente && <span style={{ font: '600 10.5px var(--mono)', color: 'var(--t3)' }}>vigente {sk.versionVigente}</span>}
         {(['acierto', 'parcial', 'fallo'] as const).map((v) => (
           (sk.atribuidos[v] ?? 0) > 0 && (
             <span key={v} style={{ padding: '2px 8px', borderRadius: 6, background: SUAVE_VER[v], color: COLOR_VER[v], font: '700 9.5px var(--mono)' }}>
@@ -298,55 +436,136 @@ function PanelSkill({ sk, onCambio }: { sk: SkillAprendizaje; onCambio: () => vo
             </span>
           )
         ))}
-        <span style={{ marginLeft: 'auto', font: '600 10.5px var(--mono)', color: 'var(--t3)' }}>
-          {sk.lecciones.pendiente ?? 0} pendiente{(sk.lecciones.pendiente ?? 0) === 1 ? '' : 's'} ·
-          {' '}{sk.lecciones.aplicada ?? 0} aplicada{(sk.lecciones.aplicada ?? 0) === 1 ? '' : 's'}
-        </span>
       </div>
 
-      {/* EL SESGO SE LEE ANTES QUE LOS CONTEOS, NO DESPUÉS. */}
-      <div style={{ padding: '0 16px 10px', font: '500 10.5px var(--sans)', color: 'var(--t3)' }}>
-        {sk.sesgoDeAtribucion}
-        {sk.porModoFallo && sk.porModoFallo.fallos > 0 && (
-          <span style={{ display: 'block', marginTop: 4, font: '500 10.5px var(--mono)', color: 'var(--t2)' }}>
-            fallos por causa: {Object.entries(sk.porModoFallo.porModo).map(([m, n]) => `${MODO_FALLO_NOMBRE[m as ModoFalloEtiqueta] ?? m} ${n}`).join(' · ') || '—'}
-            {sk.porModoFallo.sinEtiqueta ? ` · sin etiqueta ${sk.porModoFallo.sinEtiqueta}` : ''}
-            {sk.porModoFallo.pidenMoverSinPoder.length ? <b style={{ color: 'var(--down)' }}> · {sk.porModoFallo.pidenMoverSinPoder.length} piden mover un número sin poder sostenerlo</b> : null}
+      {/* LA ACCIÓN, ARRIBA DE LA LISTA (25/10/2026): antes vivía dentro del
+          dossier, que había que abrir, al final de cada tarjeta */}
+      <CerrarAnteriores sk={sk} onCambio={onCambio} />
+
+      <div style={{ padding: '0 16px 10px' }}>
+        <button onClick={() => setVerMas(!verMas)}
+          style={{ padding: 0, border: 0, background: 'none', color: 'var(--t2)', cursor: 'pointer', font: '600 10.5px var(--sans)' }}>
+          {verMas ? '▾' : '▸'} Revisión, listón y fallos por causa
+          <span style={{ color: sk.revisionAbierta ? 'var(--mark)' : 'var(--t3)', fontWeight: 700 }}>
+            {' '}· {sk.revisionAbierta ? 'REVISIÓN ABIERTA' : `faltan ${sk.faltanParaDisparar} fallo${sk.faltanParaDisparar === 1 ? '' : 's'} para abrirla`}
           </span>
-        )}
+        </button>
       </div>
-
-      <div style={{ display: 'flex', gap: 10, padding: '0 16px 12px', flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 210, padding: '10px 12px', borderRadius: 11, background: sk.revisionAbierta ? 'var(--mark-soft)' : 'var(--bg3)' }}>
-          <div style={{ font: '700 9.5px var(--mono)', color: sk.revisionAbierta ? 'var(--mark)' : 'var(--t3)', letterSpacing: '.4px' }}>
-            {sk.revisionAbierta ? 'REVISIÓN ABIERTA' : 'REVISIÓN NO DISPARADA'}
+      {verMas && (
+        <>
+          {/* EL SESGO SE LEE ANTES QUE LOS CONTEOS, NO DESPUÉS. */}
+          <div style={{ padding: '0 16px 10px', font: '500 10.5px var(--sans)', color: 'var(--t3)' }}>
+            {sk.sesgoDeAtribucion}
+            {sk.porModoFallo && sk.porModoFallo.fallos > 0 && (
+              <span style={{ display: 'block', marginTop: 4, font: '500 10.5px var(--mono)', color: 'var(--t2)' }}>
+                fallos por causa: {Object.entries(sk.porModoFallo.porModo).map(([m, n]) => `${MODO_FALLO_NOMBRE[m as ModoFalloEtiqueta] ?? m} ${n}`).join(' · ') || '—'}
+                {sk.porModoFallo.sinEtiqueta ? ` · sin etiqueta ${sk.porModoFallo.sinEtiqueta}` : ''}
+                {sk.porModoFallo.pidenMoverSinPoder.length ? <b style={{ color: 'var(--down)' }}> · {sk.porModoFallo.pidenMoverSinPoder.length} piden mover un número sin poder sostenerlo</b> : null}
+              </span>
+            )}
           </div>
-          <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', marginTop: 3 }}>
-            {sk.revisionAbierta
-              ? `${sk.fallosPendientes} fallos con lección pendiente`
-              : `faltan ${sk.faltanParaDisparar} fallo${sk.faltanParaDisparar === 1 ? '' : 's'} con lección pendiente`}
-          </div>
-          <div style={{ font: '500 10px var(--sans)', color: 'var(--t3)', marginTop: 3 }}>{sk.disparador}</div>
-        </div>
-        {sk.liston && (
-          <div style={{ flex: 1, minWidth: 210, padding: '10px 12px', borderRadius: 11, background: sk.liston.cumple ? 'var(--up-soft)' : 'var(--bg3)' }}>
-            <div style={{ font: '700 9.5px var(--mono)', color: sk.liston.cumple ? 'var(--up)' : 'var(--t3)', letterSpacing: '.4px' }}>
-              EL LISTÓN DEL PROPIO SKILL
+          <div style={{ display: 'flex', gap: 10, padding: '0 16px 12px', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 210, padding: '10px 12px', borderRadius: 11, background: sk.revisionAbierta ? 'var(--mark-soft)' : 'var(--bg3)' }}>
+              <div style={{ font: '700 9.5px var(--mono)', color: sk.revisionAbierta ? 'var(--mark)' : 'var(--t3)', letterSpacing: '.4px' }}>
+                {sk.revisionAbierta ? 'REVISIÓN ABIERTA' : 'REVISIÓN NO DISPARADA'}
+              </div>
+              <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', marginTop: 3 }}>
+                {sk.revisionAbierta
+                  ? `${sk.fallosPendientes} fallos con lección pendiente`
+                  : `faltan ${sk.faltanParaDisparar} fallo${sk.faltanParaDisparar === 1 ? '' : 's'} con lección pendiente`}
+              </div>
+              <div style={{ font: '500 10px var(--sans)', color: 'var(--t3)', marginTop: 3 }}>{sk.disparador}</div>
             </div>
-            <div style={{ font: '600 12px var(--mono)', color: 'var(--t1)', marginTop: 3 }}>{sk.liston.semaforo}</div>
-            <div style={{ font: '500 10px var(--sans)', color: 'var(--t3)', marginTop: 3 }}>{sk.liston.nota}</div>
+            {sk.liston && (
+              <div style={{ flex: 1, minWidth: 210, padding: '10px 12px', borderRadius: 11, background: sk.liston.cumple ? 'var(--up-soft)' : 'var(--bg3)' }}>
+                <div style={{ font: '700 9.5px var(--mono)', color: sk.liston.cumple ? 'var(--up)' : 'var(--t3)', letterSpacing: '.4px' }}>
+                  EL LISTÓN DEL PROPIO SKILL
+                </div>
+                <div style={{ font: '600 12px var(--mono)', color: 'var(--t1)', marginTop: 3 }}>{sk.liston.semaforo}</div>
+                <div style={{ font: '500 10px var(--sans)', color: 'var(--t3)', marginTop: 3 }}>{sk.liston.nota}</div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+          <Dossier skill={sk.skill} abierta={sk.revisionAbierta} onCambio={onCambio} />
+        </>
+      )}
 
-      <Dossier skill={sk.skill} abierta={sk.revisionAbierta} onCambio={onCambio} />
-
-      <div style={{ padding: '0 16px 14px' }}>
-        {sk.items.length === 0
-          ? <div style={{ font: '500 11px var(--sans)', color: 'var(--t3)' }}>Ninguna lección con este filtro.</div>
-          : sk.items.map((i) => <Leccion key={i.clave} it={i} onCambio={onCambio} />)}
+      <div style={{ padding: '4px 16px 14px', borderTop: '1px solid var(--line)' }}>
+        {/* flexWrap: cinco estados no entran en una fila de teléfono (360 px) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '10px 0 4px', flexWrap: 'wrap' }}>
+          <span style={{ font: '700 10px var(--mono)', color: 'var(--t3)', letterSpacing: '.6px' }}>LECCIONES</span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', padding: 3, borderRadius: 9, background: 'var(--bg)', border: '1px solid var(--line)' }}>
+            {([...ESTADOS_ORDEN.map((e) => [e, `${ETIQUETA_ESTADO[e]?.toLowerCase() ?? e} · ${sk.lecciones[e] ?? 0}`]), ['', 'todas']] as [string, string][]).map(([k, label]) => (
+              <button key={k || 'todas'} onClick={() => setEstado(k)}
+                style={{ padding: '5px 10px', border: 0, borderRadius: 7, cursor: 'pointer', background: estado === k ? 'var(--bg3)' : 'transparent', color: estado === k ? 'var(--t1)' : 'var(--t2)', font: '600 10.5px var(--sans)' }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <ListaLecciones cohorte={cohorte} skill={sk.skill} estado={estado} recarga={recarga} onCambio={onCambio} />
       </div>
     </section>
+  )
+}
+
+const ESTADOS_ORDEN = ['pendiente', 'en_revision', 'aplicada', 'descartada']
+
+/** Cerrar en bloque lo que la versión vigente ya leyó (25/10/2026): con
+ *  cuatro versiones salidas de los dossiers, nada estaba marcado aplicada. El
+ *  número sale del resumen; el cierre lo hace el backend con la misma regla. */
+function CerrarAnteriores({ sk, onCambio }: { sk: SkillAprendizaje; onCambio: () => void }) {
+  const [paso, setPaso] = useState<'' | 'confirmar' | 'yendo'>('')
+  const [msg, setMsg] = useState('')
+  const [error, setError] = useState('')
+  const n = sk.anterioresAlCorte
+  if (n === undefined || n === null || !sk.versionVigente) return null
+  async function cerrar() {
+    setError('')
+    setPaso('yendo')
+    try {
+      const r = await getDataSource().cerrarAnteriores(sk.skill)
+      setMsg(`${r.cerradas} lecciones cerradas (${Object.entries(r.porVersion ?? { [r.version]: r.cerradas }).map(([v, k]) => `${k} en ${v}`).join(' · ')}); quedan ${r.quedanPendientes} pendientes`)
+      onCambio()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'no se pudieron cerrar')
+    } finally {
+      setPaso('')
+    }
+  }
+  const boton: React.CSSProperties = { padding: '7px 12px', borderRadius: 8, border: 0, cursor: 'pointer', font: '700 11px var(--sans)' }
+  return (
+    <div style={{ margin: '0 16px 10px', padding: '10px 12px', borderRadius: 11, background: n > 0 ? 'var(--mark-soft)' : 'var(--bg3)', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+      {n > 0 ? (
+        <>
+          <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 200 }}>
+            <b>{n}</b> pendiente{n === 1 ? '' : 's'} de partidos anteriores a <b>{sk.versionVigente}</b>: esa versión ya las leyó.
+            {paso !== '' && ' Quedan como aplicadas en la versión que las leyó; las posteriores siguen para el próximo dossier.'}
+          </span>
+          {paso === '' && (
+            <button onClick={() => setPaso('confirmar')} style={{ ...boton, background: 'var(--accent)', color: '#fff' }}
+              title="modo administrador (🔑)">
+              Cerrar las {n} anteriores a {sk.versionVigente}
+            </button>
+          )}
+          {paso !== '' && (
+            <>
+              <button onClick={cerrar} disabled={paso === 'yendo'} style={{ ...boton, background: 'var(--accent)', color: '#fff' }}>
+                {paso === 'yendo' ? 'Cerrando…' : 'Sí, cerrar'}
+              </button>
+              <button onClick={() => setPaso('')} disabled={paso === 'yendo'}
+                style={{ ...boton, background: 'transparent', color: 'var(--t2)', border: '1px solid var(--line)' }}>Cancelar</button>
+            </>
+          )}
+        </>
+      ) : (
+        <span style={{ font: '500 11px var(--sans)', color: 'var(--t2)' }}>
+          Al día con <b>{sk.versionVigente}</b>: lo pendiente es de partidos posteriores, para el próximo dossier.
+        </span>
+      )}
+      {msg && <span style={{ flexBasis: '100%', font: '600 11px var(--sans)', color: 'var(--up)' }}>{msg}</span>}
+      {error && <span style={{ flexBasis: '100%', font: '600 11px var(--sans)', color: 'var(--down)' }}>{error}{/permiso|401|403|token/i.test(error) ? ' — activá el modo administrador (🔑) con la llave maestra' : ''}</span>}
+    </div>
   )
 }
 
@@ -381,25 +600,6 @@ function Dossier({ skill, abierta, onCambio }: { skill: string; abierta: boolean
     }
   }
 
-  // cerrar en bloque lo que la versión vigente ya leyó (25/10/2026): con
-  // cuatro versiones salidas de estos dossiers, nada estaba marcado aplicada
-  const [cierre, setCierre] = useState<'' | 'confirmar' | 'yendo'>('')
-  const [msgCierre, setMsgCierre] = useState('')
-  async function cerrarAnteriores() {
-    setError('')
-    setCierre('yendo')
-    try {
-      const r = await getDataSource().cerrarAnteriores(skill)
-      setMsgCierre(`${r.cerradas} lecciones cerradas (${Object.entries(r.porVersion ?? { [r.version]: r.cerradas }).map(([v, n]) => `${n} en ${v}`).join(' · ')}); quedan ${r.quedanPendientes} pendientes`)
-      await cargar()
-      onCambio()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'no se pudieron cerrar')
-    } finally {
-      setCierre('')
-    }
-  }
-
   const boton: React.CSSProperties = { padding: '6px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--t1)', font: '600 11px var(--sans)', cursor: 'pointer' }
   return (
     <div style={{ padding: '0 16px 12px' }}>
@@ -414,29 +614,6 @@ function Dossier({ skill, abierta, onCambio }: { skill: string; abierta: boolean
           </button>
         )}
       </div>
-      {ver && d?.versionVigente && (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 8 }}>
-          {cierre === '' && (
-            <button style={boton} onClick={() => setCierre('confirmar')}
-              title="las lecciones de partidos anteriores al corte de la versión vigente ya entraron en esa revisión (modo administrador)">
-              Cerrar las anteriores a {d.versionVigente}
-            </button>
-          )}
-          {cierre !== '' && (
-            <>
-              <span style={{ font: '500 11px var(--sans)', color: 'var(--t1)' }}>
-                ¿Marcar como aplicadas en {d.versionVigente} las pendientes de partidos anteriores a esa versión? Las posteriores quedan para el próximo dossier.
-              </span>
-              <button onClick={cerrarAnteriores} disabled={cierre === 'yendo'}
-                style={{ ...boton, background: 'var(--accent)', color: '#fff', border: 0 }}>
-                {cierre === 'yendo' ? 'Cerrando…' : 'Sí, cerrar'}
-              </button>
-              <button style={boton} disabled={cierre === 'yendo'} onClick={() => setCierre('')}>Cancelar</button>
-            </>
-          )}
-          {msgCierre && <span style={{ font: '600 11px var(--sans)', color: 'var(--up)' }}>{msgCierre}</span>}
-        </div>
-      )}
       {error && <div style={{ font: '500 11px var(--sans)', color: 'var(--down)', marginTop: 6 }}>{error}</div>}
       {ver && d && (
         <div style={{ marginTop: 10, padding: '12px 14px', borderRadius: 11, background: 'var(--bg)', border: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -601,6 +778,9 @@ function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
     }
   }
 
+  // LO DE CADA LECCIÓN, PLEGADO (25/10/2026): con cientos en la lista, ocho
+  // chips y tres botones por lección no dejaban leer ninguna
+  const [det, setDet] = useState(false)
   return (
     <div style={{ padding: '10px 0', borderTop: '1px solid var(--line)' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, flexWrap: 'wrap' }}>
@@ -620,6 +800,20 @@ function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
       {it.reglaTocada && (
         <div style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)', marginTop: 3 }}>regla tocada: {it.reglaTocada}</div>
       )}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 5 }}>
+        <button onClick={() => setDet(!det)}
+          style={{ padding: 0, border: 0, background: 'none', color: 'var(--t2)', cursor: 'pointer', font: '600 10px var(--sans)' }}>
+          {det ? '▾ ocultar' : '▸ detalles y acciones'}
+        </button>
+        <span style={{ font: '600 9.5px var(--mono)', color: it.puedeMoverNumeros ? 'var(--up)' : 'var(--t3)' }}>
+          {it.seleccion} · {it.modoEvaluacion}{it.puedeMoverNumeros ? ' · acredita' : ''}
+        </span>
+        {it.proponeMoverNumero === true && !it.puedeMoverNumeros && (
+          <span style={{ font: '700 9px var(--mono)', color: 'var(--down)' }}>PIDE MOVER UN NÚMERO SIN PODER</span>
+        )}
+        {it.cuarentena && <span style={{ font: '600 9.5px var(--mono)', color: 'var(--down)' }}>en cuarentena: {it.cuarentena}</span>}
+      </div>
+      {det && <>
       {/* LA ETIQUETA DE JEV: de qué naturaleza fue el fallo y si la lección pide
           mover un número. Agrupa para el dossier, no puntúa nada. La alarma es
           «pide mover un número» sobre un caso que no puede sostenerlo. */}
@@ -738,6 +932,7 @@ function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
           {error && <div style={{ font: '600 11px var(--sans)', color: 'var(--down)', marginTop: 5 }}>{error}</div>}
         </div>
       )}
+      </>}
     </div>
   )
 }
@@ -760,7 +955,8 @@ const RAMA_NOMBRE: Record<string, string> = {
 const SALIDA: Record<string, string> = { concedio: 'volvió a conceder', marco: 'marcó él', sinMasGoles: 'sin más goles' }
 
 function DerrotasDelFavorito({ cohorte }: { cohorte: string }) {
-  const [ver, setVer] = useState(false)
+  // tiene su pestaña: abrirla ya es pedirla
+  const [ver, setVer] = useState(true)
   const [d, setD] = useState<DerrotasFavoritoDTO | null>(null)
   const [error, setError] = useState('')
   const [cargando, setCargando] = useState(false)
@@ -777,6 +973,8 @@ function DerrotasDelFavorito({ cohorte }: { cohorte: string }) {
       setCargando(false)
     }
   }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { cargar() }, [cohorte])
   const vieja = d !== null && de !== cohorte
   return (
     <Seccion titulo="DERROTAS DEL FAVORITO" nota="el equipo que el 1X2 declarado daba ganador y perdió, con lo que el TDE y el DTP habían escrito ANTES del pitazo: solo cuenta lo declarado">

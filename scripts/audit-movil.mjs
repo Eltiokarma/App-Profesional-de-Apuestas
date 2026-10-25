@@ -65,6 +65,13 @@ if (await det.count()) { await det.click({ timeout: 5000 }).catch(() => {}); awa
 await nav('Skills'); await medir('06-skills')
 await nav('Stats'); await medir('07-stats')
 await nav('Aprende'); await medir('08-aprende')
+// la lección desplegada y las pestañas de Aprendizaje (reordenada el 25/10/2026)
+const detL = p.locator('button', { hasText: 'detalles y acciones' }).first()
+if (await detL.count()) { await detL.click({ timeout: 5000 }).catch(() => {}); await medir('08-aprende-leccion') }
+for (const t of ['Métricas', 'Derrotas del favorito', 'Cuarentena']) {
+  const b = p.locator('button', { hasText: t }).first()
+  if (await b.count()) { await b.click({ timeout: 5000 }).catch(() => {}); await medir('08-aprende-' + t.toLowerCase().replace(/[^a-z]/g, '')) }
+}
 // página de equipo vía buscador
 await nav('Partidos')
 const buscador = p.locator('input[placeholder*="Buscar equipo"]').first()
