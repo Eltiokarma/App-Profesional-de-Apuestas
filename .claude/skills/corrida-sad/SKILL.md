@@ -38,10 +38,14 @@ cae en la raíz del repo (17/10/2026).
 
 1. `GET $B/analisis/cowork/contrato` (manda sobre cualquier ejemplo) y
    `GET $B/analisis/cowork/latido` (qué quedó roto de ayer: decilo al final).
-2. `GET $B/analisis/cowork/agenda?desdeAhora=true&horas=N&limite=20` con
+2. `GET $B/analisis/cowork/agenda?desdeAhora=true&horas=N&limite=30` con
    el TRAMO de esta corrida, que termina donde empieza la siguiente (cada
    tramo cae en su propia ventana de 5 h del plan; un fin de semana trae
-   15-23 partidos por tramo y la meta es el 80 % del padrón). N lo fija la
+   15-23 partidos por tramo y la meta es el 80 % del padrón). **El tope es
+   30 por tramo desde el 25/10/2026** (el usuario subió el plan): un
+   `limite` MENOR en el mensaje del disparo es de antes de esa fecha y se
+   ignora —el texto de una rutina solo se cambia desde su propia
+   conversación, y el del tramo 3 todavía dice `limite=20`—. N lo fija la
    HORA DE LIMA a la que corrés, aunque el disparo diga «24 h»:
 
    | Corrés entre (Lima) | Tramo | `horas` |
@@ -50,7 +54,8 @@ cae en la raíz del repo (17/10/2026).
    | 09:00 y 13:59 | 2 (hasta ~16:00) | 6 |
    | 14:00 y 02:59 | 3 (hasta la madrugada) | 14 |
 
-   Si el mensaje del disparo trae otros parámetros de agenda, mandan esos.
+   Si el mensaje del disparo trae otros parámetros de agenda, mandan esos,
+   salvo un `limite` menor que 30 (ver arriba).
    Usá la misma consulta en el paso 4 → la lista de trabajo es
    `porHacer` (lo ya depositado está en `yaHechos`: no se rehace). Un partido
    en `aRehacer` tiene un parte de OTRA fecha (aplazado o movido): va en
