@@ -883,11 +883,15 @@ def alertas_extremo(reventon: dict | None, nombres: dict) -> list[dict]:
         if k is None or not (ext.get("activo") or ext.get("cerca")):
             continue
         donde = "de local" if c.get("familia") == "local" else "de visita"
+        # con la total en la franja alta (K-CERCA-EXTREMO en la misma tira) no
+        # se puede decir «no está en extremo» (Leones del Norte, incidencia 583)
+        total = ("La total no está en su récord (sí en su franja alta, K-CERCA-EXTREMO)"
+                 if (r.get("extremo") or {}).get("cerca") else "La total no está en extremo")
         out.append({
             "codigo": "K-EXTREMO-CONDICION", "equipo": lado, "tipo": "dato",
             "detalle": f"{nombres.get(lado, lado)}: burbuja {donde} K {k:+.2f} "
                        + ("en su máximo histórico" if ext.get("activo") else "en la franja más alta de su historia")
-                       + f" ({' · '.join(ext.get('motivos') or [])}). La total no está en extremo y es la que "
+                       + f" ({' · '.join(ext.get('motivos') or [])}). {total} y es la que "
                          f"manda en el riesgo, pero hoy juega {donde}: no cargar fuerte a que esa racha siga",
             "inflada": ext.get("inflada"),
         })

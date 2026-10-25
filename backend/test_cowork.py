@@ -1641,6 +1641,13 @@ def main():
           len(al) == 1 and al[0]["equipo"] == "b" and al[0]["codigo"] == "K-EXTREMO"
           and "Valencia" in al[0]["detalle"] and "-32.00" in al[0]["detalle"] and "118 partidos" in al[0]["detalle"], al)
     check("sin reventón calculado no hay alerta ni excepción", alertas_extremo(None, {}) == [])
+    _a583 = alertas_extremo({"a": {"extremo": {"cerca": True, "motivos": ["sobre el 90 %"]}, "actual": {"k": 10.0},
+                                   "condicion": {"familia": "visita", "extremo": {"activo": True, "motivos": ["récord"]},
+                                                 "actual": {"k": 20.0}}}}, {"a": "Leones"})
+    _c583 = next((x for x in _a583 if x["codigo"] == "K-EXTREMO-CONDICION"), {})
+    check("583: con la total en su franja alta, K-EXTREMO-CONDICION no dice «la total no está en extremo»",
+          any(x["codigo"] == "K-CERCA-EXTREMO" for x in _a583) and "no está en extremo" not in _c583.get("detalle", "")
+          and "K-CERCA-EXTREMO" in _c583.get("detalle", ""), _a583)
     # Cagliari 19/10/2026: total en 0, K de VISITA en su récord → la tira lo dice (tipo dato)
     _cg = {"b": {"actual": None, "extremo": None,
                  "condicion": {"familia": "visita", "actual": {"k": 8.97}, "extremo": {"activo": True, "motivos": ["racha récord: 3 en 132"]}}},
