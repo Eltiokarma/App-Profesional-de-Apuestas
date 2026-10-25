@@ -330,6 +330,18 @@ def _col(v) -> str:
     return "izq" if t in _IZQ else "der" if t in _DER else "sin dato"
 
 
+def _xi_texto(v) -> str:
+    """El XI de referencia como texto: el prompt pide «la lista de los 11» y
+    varios partes la mandaron como LISTA, que `_txt` dejaba vacía y se
+    rechazaba como «vacío o en prosa» (Freiburg–Bayern, Torque–Cerro, Real
+    Sociedad–Levante: incidencia 574). Una lista de nombres o de `{nombre}`
+    se une con comas."""
+    if isinstance(v, (list, tuple)):
+        nombres = [_txt(x.get("nombre") if isinstance(x, dict) else x) for x in v]
+        return ", ".join(n for n in nombres if n)
+    return _txt(v)
+
+
 def clasificar_bloque(check: dict) -> dict:
     """La clase del bloque con la regla del skill (v1.2).
 
@@ -490,7 +502,7 @@ def _bloque(x: dict, lado: str) -> dict:
     return {
         "equipo": lado,
         "apertura": {
-            "m1": {"sistema": _txt(m1.get("sistema")), "xiReferencia": _txt(m1.get("xiReferencia")),
+            "m1": {"sistema": _txt(m1.get("sistema")), "xiReferencia": _xi_texto(m1.get("xiReferencia")),
                    "senalXi": _txt(m1.get("senalXi")), "rolesReasignados": _lista_txt(m1.get("rolesReasignados")),
                    "vulnerabilidad": _txt(m1.get("vulnerabilidad")), "formaSinBalon": _txt(m1.get("formaSinBalon")),
                    "minutosCompartidos": _txt(m1.get("minutosCompartidos"))},
@@ -653,7 +665,7 @@ def normalizar_dtp(x, rechazos: list) -> dict:
         _checklist_raros(y, i, rechazos)
         # v1.5 (cambio 6): sin XI de referencia el once oficial no se puede
         # comparar (Chapecoense, incidencia 525) — se dice al depositar
-        xi_ref = _txt(_dict(_dict(y.get("apertura")).get("m1")).get("xiReferencia"))
+        xi_ref = _xi_texto(_dict(_dict(y.get("apertura")).get("m1")).get("xiReferencia"))
         if sin_referencia(xi_ref) or len(_plano(xi_ref).split()) < 8:
             rechazos.append({"donde": f"dtp.bloques[{i}].apertura.m1.xiReferencia",
                              "porque": "XI de referencia vacío o en prosa: el once oficial no se va a poder "
