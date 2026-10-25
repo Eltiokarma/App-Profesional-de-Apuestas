@@ -120,6 +120,8 @@ def main():
           rg["nivel"] == "muy alto" and rg["puntos"] == 3 and len(rg["motivos"]) == 3, rg)
     check("la K se describe pero se declara informativa (no puntúa)",
           any("la K no puntúa" in m and "22.1" in m for m in rg["motivos"]), rg["motivos"])
+    check("465/551: el motivo del rival dice por qué empuja al corte (el tramo no es la fuerza del rival)",
+          any("revienta una racha positiva" in m or "corta una racha negativa" in m for m in rg["motivos"]), rg["motivos"])
     check("confianza BAJA: muestra corta (3) y estabilidad inestable la tumban",
           rg["confianza"] == "baja" and any("inestable" in m for m in rg["confianzaMotivos"]), rg["confianzaMotivos"])
     ex = t["extremo"]

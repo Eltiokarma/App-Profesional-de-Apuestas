@@ -226,6 +226,10 @@ def main():
     check("y un partido de capital cualquiera no es clásico",
           not calendario.clasico_documentado("Central Espanol", "Club Nacional")
           and not calendario.clasico_documentado("Sportivo Ameliano", "Tacuary"))
+    check("480/549: clásicos nacionales sin vecindad (Derby del Sole, Clássico da Saudade); 422: Luqueño–Recoleta no es derbi",
+          calendario.clasico_nacional("Napoli", "AS Roma") and calendario.clasico_nacional("Palmeiras", "Santos")
+          and not calendario.clasico_nacional("Napoli", "Lazio")
+          and calendario.no_clasico("Sportivo Luqueno", "Deportivo Recoleta"))
 
     # el bloque G del EFE relleno por código: lo que antes copiaba el modelo
     items = calendario.items_para_efe(FOCO)

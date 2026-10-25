@@ -588,6 +588,33 @@ def main():
     check("con la vigente publicada no se pide nada más (1 /players + injuries + lentas)",
           con.execute("SELECT origen FROM plantillas_meta WHERE team_id=8003").fetchone() == ("vigente",))
 
+    from backend import jugadores as _jg
+    # 543: la llegada que vale es la más reciente, y una desde el propio club no cuenta
+    _ll = _jg.ultima_llegada([{"player_id": 1, "fecha": "2026-09-01", "team_out": 50, "team_out_nombre": "Leon"},
+                              {"player_id": 1, "fecha": "2026-01-10", "team_out": 60, "team_out_nombre": "Otro"},
+                              {"player_id": 2, "fecha": "2026-09-01", "team_out": 9, "team_out_nombre": "Mismo"}], 9)
+    check("543: el origen del recién llegado es el de su llegada más reciente; desde el propio club no cuenta",
+          _ll[1]["team_out_nombre"] == "Leon" and 2 not in _ll, _ll)
+    # 410/599: la roja (o doble amarilla) del último partido, de nuestra ficha, es baja por sanción
+    from backend import jugadores as _jg
+    _q0 = _jg._query
+    def _qs(sql, params=()):
+        if "FROM fixtures" in sql:
+            return [{"id": 77, "date": "2026-10-20T20:00:00+00:00"}]
+        return [{"jugador_id": 5, "detalle": "Red Card"}, {"jugador_id": 6, "detalle": "Second Yellow card"},
+                {"jugador_id": 7, "detalle": "Yellow Card"}]
+    try:
+        _jg._query = _qs
+        _sf = _jg.sanciones_de_ficha(1)
+    finally:
+        _jg._query = _q0
+    check("410/599: roja y doble amarilla del último partido salen como sanción; la amarilla sola no",
+          sorted(_sf) == [5, 6] and all(_jg.es_sancion(b["detalle"]) for b in _sf.values())
+          and _sf[5]["fecha"] == "2026-10-20", _sf)
+    _bd = _jg._baja_dto(_sf[5], {"lectura": "senal"}, "2026-10-24")
+    check("410/599: si jugó después de la roja, la sanción queda desmentida (ya la cumplió)",
+          _bd["lectura"] == "desmentida", _bd)
+
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     return 1 if fallos else 0
 

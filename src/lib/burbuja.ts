@@ -422,10 +422,12 @@ function analizarFamilia(filas: FilaK[], familia: FamiliaBurbuja, proximo: Proxi
     const quien = `el próximo rival (${proximo.rival}, nivel ${r2(nivelProx)})`
     const verbo = signo === '+' ? 'reventar' : 'cortarse la racha'
     const lado = signo === '+' ? 'fuerte' : 'flojo'
+    // el tramo mide cuánto empuja al corte, no la fuerza del rival (incidencias 465 y 551)
+    const porQue = signo === '+' ? ': el rival fuerte es el que revienta una racha positiva' : ': el rival flojo es el que corta una racha negativa'
     if (tramo === 'lejos') motivos.push(`${quien} queda lejos del nivel con el que suele ${verbo} (mediana ${medN})`)
     else if (tramo === 'zona') motivos.push(`${quien} está en la zona donde suele ${verbo} (mediana ${medN})` + (pts ? ` (+${pts})` : ''))
-    else if (tramo === 'fuerte') motivos.push(`${quien} es más ${lado} que los rivales con los que suele ${verbo} (mediana ${medN})` + (pts ? ` (+${pts})` : ''))
-    else motivos.push(`${quien} es mucho más ${lado} que los rivales con los que suele ${verbo} (mediana ${medN})` + (pts ? ` (+${pts})` : ''))
+    else if (tramo === 'fuerte') motivos.push(`${quien} es más ${lado} que los rivales con los que suele ${verbo} (mediana ${medN})${porQue}` + (pts ? ` (+${pts})` : ''))
+    else motivos.push(`${quien} es mucho más ${lado} que los rivales con los que suele ${verbo} (mediana ${medN})${porQue}` + (pts ? ` (+${pts})` : ''))
     // a favor de que la racha siga: el favorito con racha +, el débil con racha −
     if (nivelEquipo != null) {
       const g = r2(signo === '+' ? nivelEquipo - nivelProx : nivelProx - nivelEquipo)

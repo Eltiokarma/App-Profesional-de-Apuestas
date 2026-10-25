@@ -29,8 +29,10 @@ from backend.backtest_familias import FAMILIAS, MIN_RACHAS_RECORD, _filas_valida
 
 # qué se cuenta y cómo se dice: (clave, cuando es SÍ, cuando es NO)
 NARRADAS = (
-    ("noPierde", "sin perder", "perdiendo"),
-    ("noGana", "sin ganar", "ganando"),
+    # «perdiendo»/«ganando» se leían como ir abajo/arriba en el marcador, o al
+    # revés de la racha (incidencia 578): el NO de estas dos es el resultado
+    ("noPierde", "sin perder", "con derrota"),
+    ("noGana", "sin ganar", "con victoria"),
     ("gana2+", "ganando por 2 o más", "sin ganar por 2 o más"),
     ("gana3+", "ganando por 3 o más", "sin ganar por 3 o más"),
     ("pierde2+", "perdiendo por 2 o más", "sin perder por 2 o más"),

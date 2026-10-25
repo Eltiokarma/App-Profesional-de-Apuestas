@@ -48,17 +48,25 @@ def onces_recientes(team_id: int, antes: str) -> dict:
     temporada es el año: el rol de Millonarios del Clausura salía mezclado con
     el del Apertura (corrida del 13/10/2026). Lo que el once de hoy va a ser
     se parece más a los últimos diez onces que al año."""
+    from backend.analisis.escala import AMISTOSOS
     try:
-        fx = [r["id"] for r in saddb.query(
-            "sad", f"""SELECT f.id FROM fixtures f
+        crudo = saddb.query(
+            "sad", f"""SELECT f.id, f.date FROM fixtures f
                        WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.date < ? AND {_FIN}
+                         AND COALESCE(f.league_id, 0) NOT IN ({",".join("?" * len(AMISTOSOS))})
                          AND EXISTS (SELECT 1 FROM alineaciones a WHERE a.fixture_id=f.id AND a.team_id=?)
-                       ORDER BY f.date DESC LIMIT ?""", (team_id, team_id, antes, team_id, ONCES_RECIENTES))]
+                       ORDER BY f.date DESC LIMIT ?""",
+            (team_id, team_id, antes, *sorted(AMISTOSOS), team_id, ONCES_RECIENTES))
+        fx = [r["id"] for r in _hasta_el_paron(crudo)]
         if not fx:
             return {"onces": 0, "jugadores": {}, "ultimo": None}
         filas = saddb.query(
             "sad", f"SELECT fixture_id, player_id, jugador, posicion, titular FROM alineaciones "
                    f"WHERE team_id=? AND fixture_id IN ({','.join('?' * len(fx))})", (team_id, *fx))
+        ga = saddb.query(
+            "sad", f"SELECT jugador_id AS a, asistente_id AS b, detalle FROM fixture_eventos "
+                   f"WHERE equipo_id=? AND tipo='Goal' AND fixture_id IN ({','.join('?' * len(fx))})",
+            (team_id, *fx))
     except Exception:  # noqa: BLE001 — base sin la tabla de alineaciones
         return {"onces": 0, "jugadores": {}, "ultimo": None}
     js: dict[int, dict] = {}
@@ -75,7 +83,65 @@ def onces_recientes(team_id: int, antes: str) -> dict:
         # la ficha, un arquero «Defensa» que atajó el 09/10)
         if f["titular"] and f["posicion"] and orden[f["fixture_id"]] < j.get("_ordenPos", 99):
             j["_ordenPos"], j["posicionReciente"] = orden[f["fixture_id"]], f["posicion"]
+        if f["titular"] and f["posicion"]:
+            j.setdefault("_pos", []).append((orden[f["fixture_id"]], f["posicion"]))
+    for j in js.values():
+        # LA POSICIÓN HABITUAL, NO LA DEL ÚLTIMO ONCE (incidencias 457 y 523):
+        # Pumas salió una vez en 5-4-1 y Juninho pasó a MID y Antuna a DEF; Saka
+        # «MID» por un 4-2-3-1. La más repetida en sus titularidades; empate → la
+        # más reciente.
+        pos = j.pop("_pos", [])
+        if pos:
+            cuenta: dict[str, int] = {}
+            for _, x in pos:
+                cuenta[x] = cuenta.get(x, 0) + 1
+            j["posicionHabitual"] = max(cuenta, key=lambda x: (cuenta[x], -min(o for o, y in pos if y == x)))
+    # LOS QUE DECIDEN DESDE EL BANCO (incidencia 382, Arouca: André Vidigal, gol
+    # entrando y pateador de penales, fuera de la tabla por no ser titular)
+    for g in ga:
+        if "own" in (g["detalle"] or "").lower() or "missed" in (g["detalle"] or "").lower():
+            continue
+        for pid in (g["a"], g["b"]):
+            if pid and pid in js:
+                js[pid]["gaRecientes"] = js[pid].get("gaRecientes", 0) + 1
     return {"onces": len(fx), "jugadores": js, "ultimo": fx[0]}
+
+
+PARON_DIAS = 35   # un hueco así entre dos partidos es el fin de una temporada
+
+
+def _hasta_el_paron(filas: list) -> list:
+    """Los partidos (del más nuevo al más viejo) hasta el primer hueco de más de
+    PARON_DIAS: lo de antes es OTRA temporada, con otro plantel (incidencia 398:
+    Paderborn con Seimen, que volvió a Stuttgart, de ROT; Köln y Schalke con la
+    ventana mezclando la temporada anterior)."""
+    from datetime import datetime
+    out, previa = [], None
+    for f in filas:
+        try:
+            d = datetime.fromisoformat(str(f["date"])[:19])
+        except ValueError:
+            out.append(f)
+            continue
+        if previa is not None and (previa - d).days > PARON_DIAS:
+            break
+        out.append(f)
+        previa = d
+    return out
+
+
+CONVOCADO_MINIMO = 3   # con menos hojas, el denominador es la ventana entera
+
+
+def onces_disponible(r: dict | None, onces: int) -> int:
+    """En cuántos de los onces mirados ESTABA (titular o en el banco). Un
+    lesionado o un recién llegado no rota: no estaba (incidencias 398 y 509:
+    E. Martínez, titular en todos desde que llegó, «TH 6 de 10»; Julián Álvarez
+    ROT por las fechas que se perdió). Con pocas hojas, la ventana entera."""
+    conv = (r or {}).get("convocado") or 0
+    if conv >= CONVOCADO_MINIMO:
+        return max(conv, (r or {}).get("titular") or 0)
+    return onces
 
 
 def rol_por_onces(titular: int, onces: int) -> str:
@@ -149,13 +215,16 @@ def _fila(j: dict) -> dict:
         "pctMinutos": j["pctMinutos"], "goles": j["goles"], "asistencias": j["asistencias"],
         "baja": j.get("baja"), "recienLlegado": j.get("recienLlegado"),
         **({"minutosIncoherentes": True} if j.get("minutosIncoherentes") else {}),
+        # los ids que `deduplicar` fundió en esta fila: sin esto se perdían en la
+        # tabla y el bloque F no casaba la hoja con el otro id (incidencia 582)
+        **({"idsAlternos": j["idsAlternos"]} if j.get("idsAlternos") else {}),
     }
 
 
 def _zona_reciente(f: dict, r: dict | None) -> None:
     """La zona de la tabla es la del ÚLTIMO once en que fue titular, si lo hay;
     la de la plantilla de la temporada queda en `zonaTemporada` cuando difiere."""
-    z = _ZONA_API.get((r or {}).get("posicionReciente") or "", "")
+    z = _ZONA_API.get((r or {}).get("posicionHabitual") or (r or {}).get("posicionReciente") or "", "")
     if z and z != f.get("zona"):
         if f.get("zona"):
             f["zonaTemporada"] = f["zona"]
@@ -305,7 +374,14 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
         gem = next((j for j in js if mismo_jugador(rec["jugadores"][pid]["nombre"], j["nombre"])), None)
         if gem is not None:
             ultimo.add(gem["id"])
-    elegidos += [j for j in js if j["id"] not in ids and (j["id"] in dec or j["id"] in ultimo)]
+    # TAMBIÉN EL DECISIVO DE LA TEMPORADA QUE HOY NO ES TITULAR (incidencias 501,
+    # 515, 517: Lucas Moura que vuelve de la lesión, F. Romero con el 100 % de
+    # los minutos, Corulo top 3 en goles) —va con su `decisivoTemporada`, sin
+    # «decisivo»— y EL QUE DECIDE DESDE EL BANCO (382: gol o asistencia en los
+    # onces mirados sin ser titular fijo)
+    banco = {pid for pid, r in rec["jugadores"].items() if r.get("gaRecientes")}
+    elegidos += [j for j in js if j["id"] not in ids
+                 and (j["id"] in dec or j["id"] in ultimo or j["id"] in de_temporada or j["id"] in banco)]
     filas = []
     for j in elegidos:
         f = {**_fila(j), "decisivo": dec.get(j["id"], "")}
@@ -313,8 +389,14 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
             f["decisivoTemporada"] = (f"{de_temporada[j['id']]} · titular en {tit.get(j['id'], 0)} de "
                                       f"{rec['onces']} de los últimos onces")
         if con_onces:
+            r_j = rec["jugadores"].get(j["id"])
             f["titularEnUltimos"] = f"{tit.get(j['id'], 0)}/{rec['onces']}"
-            f["rolSugerido"] = rol_por_onces(tit.get(j["id"], 0), rec["onces"])
+            disp = onces_disponible(r_j, rec["onces"])
+            f["rolSugerido"] = rol_por_onces(tit.get(j["id"], 0), disp)
+            if disp != rec["onces"]:
+                f["enLaHoja"] = f"{disp}/{rec['onces']}"
+            if (r_j or {}).get("gaRecientes"):
+                f["gaRecientes"] = r_j["gaRecientes"]
         if j["id"] in ultimo:
             f["titularEnElUltimo"] = True
         _zona_reciente(f, rec["jugadores"].get(j["id"]))
@@ -340,7 +422,7 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
             if pid in por_id:
                 f = {**_fila(por_id[pid]), "decisivo": dec.get(pid, ""),
                      "titularEnUltimos": f"{tit.get(pid, 0)}/{rec['onces']}",
-                     "rolSugerido": rol_por_onces(tit.get(pid, 0), rec["onces"]),
+                     "rolSugerido": rol_por_onces(tit.get(pid, 0), onces_disponible(r, rec["onces"])),
                      **({"titularEnElUltimo": True} if r.get("enUltimo") else {})}
                 f["nombre"] = nombre_sano(f["nombre"], r["nombre"])
                 _zona_reciente(f, r)
@@ -349,13 +431,31 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
                 continue
             # el mismo jugador con otro id en la hoja: sus titularidades ya
             # cuentan en la fila de la plantilla, no es un fichaje
-            gemela = next((f for f in filas if mismo_jugador(r["nombre"], f["nombre"])), None)
+            # …y su id de la hoja va a `idsAlternos`, para que el bloque F lo case
+            # con ese id (incidencias 462, 497, 582: Portuguesa, Carabobo, Rio
+            # Ave, Inter de Bogotá, Valencia con R. Sato). Si su gemela de la
+            # plantilla había quedado fuera del corte, entra con sus stats.
+            gemela = next((f for f in filas if mismo_jugador(r["nombre"], f["nombre"])
+                           and not _juntos(pid, f["jugadorId"])), None)
+            if gemela is None:
+                plant = next((j for j in js if j["id"] not in ids and mismo_jugador(r["nombre"], j["nombre"])
+                              and not _juntos(pid, j["id"])), None)
+                if plant is not None:
+                    gemela = {**_fila(plant), "decisivo": dec.get(plant["id"], ""),
+                              "titularEnUltimos": f"{tit.get(plant['id'], 0)}/{rec['onces']}"}
+                    gemela["nombre"] = nombre_sano(gemela["nombre"], r["nombre"])
+                    _zona_reciente(gemela, r)
+                    filas.append(gemela)
+                    ids.add(plant["id"])
             if gemela is not None:
+                gemela["idsAlternos"] = sorted({*(gemela.get("idsAlternos") or []), pid})
                 if "titularEnUltimos" in gemela:
                     t = tit.get(gemela["jugadorId"], 0) + r["titular"]
                     tit[gemela["jugadorId"]] = t
                     gemela["titularEnUltimos"] = f"{t}/{rec['onces']}"
-                    gemela["rolSugerido"] = rol_por_onces(t, rec["onces"])
+                    gemela["rolSugerido"] = rol_por_onces(t, onces_disponible(r, rec["onces"]))
+                if r.get("enUltimo"):
+                    gemela["titularEnElUltimo"] = True
                 continue
             filas.append({"jugadorId": pid, "nombre": r["nombre"],
                           "zona": _ZONA_API.get(r.get("posicionReciente") or r["posicion"], ""),

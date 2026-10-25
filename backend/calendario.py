@@ -260,6 +260,44 @@ CLASICOS_DOCUMENTADOS = (
 )
 
 
+# RIVALIDADES SIN VECINDAD (25/10/2026, incidencias 480 y 549): un clásico
+# nacional no comparte ciudad y no sale de `venue_city`. Napoli–Roma (Derby
+# del Sole) y Santos–Palmeiras (Clássico da Saudade) salían sin etiqueta y el
+# F2 del TDE no veía el clásico a 3 días. Misma regla: lista corta, cada par
+# con su nombre; un par que falta se agrega, no se infiere.
+CLASICOS_NACIONALES = (
+    ("napoli", "roma"),                            # Derby del Sole
+    ("juventus", "torino"), ("juventus", "fiorentina"),
+    ("real madrid", "barcelona"),                  # El Clásico
+    ("athletic", "real sociedad"),                 # derbi vasco
+    ("santos", "palmeiras"),                       # Clássico da Saudade
+    ("santos", "corinthians"), ("santos", "sao paulo"),  # clássicos paulistas sin vecindad
+    ("ajax", "feyenoord"), ("ajax", "psv"), ("psv", "feyenoord"),  # De Klassieker y los otros dos
+    ("benfica", "porto"), ("porto", "sporting cp"),
+    ("borussia dortmund", "schalke"), ("bayern", "borussia dortmund"),
+    ("marseille", "paris saint germain"),          # Le Classique
+    ("liverpool", "manchester united"),            # North West Derby
+    ("alianza lima", "sporting cristal"), ("universitario", "sporting cristal"),
+)
+
+# PARES QUE COMPARTEN CIUDAD SIN SER DERBI: uno de los dos juega de local en
+# estadio prestado (incidencia 422: Deportivo Recoleta, de Asunción, figura con
+# `venue_city` Luque y salía «derbi de Luque» contra el Sportivo Luqueño).
+NO_CLASICOS = (
+    ("luqueno", "recoleta"),
+)
+
+
+def clasico_nacional(nombre_a: str, nombre_b: str) -> bool:
+    a, b = _norm_nombre(nombre_a), _norm_nombre(nombre_b)
+    return any((x in a and y in b) or (x in b and y in a) for x, y in CLASICOS_NACIONALES)
+
+
+def no_clasico(nombre_a: str, nombre_b: str) -> bool:
+    a, b = _norm_nombre(nombre_a), _norm_nombre(nombre_b)
+    return any((x in a and y in b) or (x in b and y in a) for x, y in NO_CLASICOS)
+
+
 def _norm_nombre(nombre: str) -> str:
     n = unicodedata.normalize("NFD", (nombre or "").lower())
     return "".join(c for c in n if unicodedata.category(c) != "Mn")
@@ -372,6 +410,14 @@ def etiquetas_de_rival(rival_id: int, rival_local: bool, liga_id: int | None,
         et.append({"codigo": "BLOQUE_BAJO", "label": "BLOQUE BAJO",
                    "dato": f"formación dominante {formacion}"})
 
+    nombres = (_nombre_equipo(equipo_id), _nombre_equipo(rival_id)) if equipo_id else None
+    if nombres and no_clasico(*nombres):
+        return et
+    if nombres and clasico_nacional(*nombres):
+        et.append({"codigo": "CLASICO", "label": "CLÁSICO", "dato": "clásico nacional documentado",
+                   "parcial": True,
+                   "nota": "rivalidad sin vecindad: sale de la lista de clásicos nacionales, no de la ciudad"})
+        return et
     ciudad_rival = _ciudad(rival_id)
     if ciudad_equipo and ciudad_rival and ciudad_equipo.strip().lower() == ciudad_rival.strip().lower():
         n_clubes = _clubes_en_ciudad(liga_id, temporada, ciudad_rival)

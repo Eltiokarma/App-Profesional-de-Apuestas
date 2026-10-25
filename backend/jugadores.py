@@ -264,18 +264,21 @@ def plantilla_de(team_id: int) -> dict:
 
     hoy = datetime.now(timezone.utc)
     corte_llegada = (hoy - timedelta(days=RECIEN_LLEGADO_DIAS)).strftime("%Y-%m-%d")
-    llegadas = {
-        r["player_id"]: r for r in _query(
-            "SELECT player_id, fecha, team_out_nombre FROM traspasos "
-            "WHERE team_in=? AND fecha >= ? ORDER BY fecha DESC",
-            (team_id, corte_llegada),
-        )
-    }
+    llegadas = ultima_llegada(_query(
+        "SELECT player_id, fecha, team_out, team_out_nombre FROM traspasos "
+        "WHERE team_in=? AND fecha >= ? ORDER BY fecha DESC",
+        (team_id, corte_llegada),
+    ), team_id)
     bajas = {
         r["player_id"]: r for r in _query(
             "SELECT player_id, tipo, detalle, fecha FROM jugador_bajas WHERE team_id=?", (team_id,)
         )
     }
+    # LAS ROJAS DE NUESTRAS FICHAS (incidencias 410 y 599): la API tarda en
+    # listar la suspensión y el expulsado del último partido salía disponible.
+    # La de la API, si está, manda; la de la ficha solo llena el hueco.
+    for pid, b in sanciones_de_ficha(team_id).items():
+        bajas.setdefault(pid, b)
     jugo = ultimo_partido_jugado(team_id)
     missing = lectura_missing_fixture(bajas, {r["player_id"] for r in filas}, jugo)
 
@@ -369,6 +372,47 @@ def plantilla_de(team_id: int) -> dict:
         "missingFixture": missing if (missing["marcados"] or missing["desmentidas"]) else None,
     })
     return base
+
+
+def ultima_llegada(filas, team_id: int) -> dict:
+    """{jugador: su llegada MÁS RECIENTE}. Las filas vienen de la más nueva a la
+    más vieja y el diccionario por comprensión se quedaba con la ÚLTIMA leída,
+    o sea la más vieja: «desde León» para dos jugadores que no venían de ahí
+    (incidencia 543). Una «llegada» desde el propio club (vuelta registrada
+    con el mismo equipo de los dos lados) no dice de dónde vino: se salta."""
+    out: dict = {}
+    for r in filas:
+        if r["player_id"] in out:
+            continue
+        if "team_out" in r.keys() and r["team_out"] == team_id:
+            continue
+        out[r["player_id"]] = r
+    return out
+
+
+def sanciones_de_ficha(team_id: int) -> dict[int, dict]:
+    """{jugador: baja} por roja directa o doble amarilla en el ÚLTIMO partido
+    terminado del equipo, sacada de nuestras fichas. Se lee como sanción
+    (`es_sancion`), y si después jugó otro partido queda desmentida sola (la
+    fecha de la baja es la del partido de la roja)."""
+    try:
+        ult = _query(f"SELECT id, date FROM fixtures WHERE (home_team_id=? OR away_team_id=?) AND {_FIN90} "
+                     "ORDER BY date DESC LIMIT 1", (team_id, team_id))
+        if not ult:
+            return {}
+        filas = _query("SELECT jugador_id, detalle FROM fixture_eventos WHERE fixture_id=? AND equipo_id=? "
+                       "AND tipo='Card' AND jugador_id > 0", (ult[0]["id"], team_id))
+    except Exception:  # noqa: BLE001 — base sin la ficha de partido
+        return {}
+    fecha = str(ult[0]["date"] or "")[:10]
+    out = {}
+    for f in filas:
+        det = (f["detalle"] or "").lower()
+        if "red" in det or "second yellow" in det:
+            out[f["jugador_id"]] = {"player_id": f["jugador_id"], "tipo": "Suspended",
+                                    "detalle": f"Red Card ({f['detalle']} el {fecha}, de nuestra ficha)",
+                                    "fecha": fecha}
+    return out
 
 
 def ultimo_partido_jugado(team_id: int) -> dict[int, str]:

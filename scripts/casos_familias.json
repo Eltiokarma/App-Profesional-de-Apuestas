@@ -128,7 +128,7 @@
      "improbable": false,
      "destacada": true,
      "cuidado": false,
-     "texto": "Equipo 0 lleva 6 partidos de local ganando (su máximo previo era 1). En 8 partidos de local va ganando el 88 %."
+     "texto": "Equipo 0 lleva 6 partidos de local con victoria (su máximo previo era 1). En 8 partidos de local va con victoria el 88 %."
     },
     {
      "familia": "gana2+",
@@ -272,7 +272,7 @@
      "improbable": false,
      "destacada": true,
      "cuidado": false,
-     "texto": "Equipo 0 lleva 6 partidos en total ganando (su máximo previo era 2): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 16 % de las veces): no es terreno raro. En 15 partidos en total va ganando el 73 %."
+     "texto": "Equipo 0 lleva 6 partidos en total con victoria (su máximo previo era 2): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 16 % de las veces): no es terreno raro. En 15 partidos en total va con victoria el 73 %."
     },
     {
      "familia": "gana2+",
@@ -390,7 +390,7 @@
    "lineas": [
     "Perfil de doble oportunidad de local: no pierde 8 de 8 (100 %) y no gana 1 de 8 (13 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de local empata mucho o se planta a no perder no está del todo en el nivel",
     "Equipo 0 lleva 8 partidos de local sin perder. En 8 partidos de local va sin perder el 100 %.",
-    "Equipo 0 lleva 6 partidos de local ganando (su máximo previo era 1). En 8 partidos de local va ganando el 88 %.",
+    "Equipo 0 lleva 6 partidos de local con victoria (su máximo previo era 1). En 8 partidos de local va con victoria el 88 %.",
     "Equipo 0 lleva 6 partidos de local ganando por 2 o más (su máximo previo era 1). En 8 partidos de local va ganando por 2 o más el 88 %.",
     "Equipo 0 lleva 7 partidos de local sin ganar por 3 o más. En 8 partidos de local va sin ganar por 3 o más el 88 %.",
     "Equipo 0 lleva 8 partidos de local sin perder por 2 o más. En 8 partidos de local va sin perder por 2 o más el 100 %.",
@@ -399,7 +399,7 @@
     "Equipo 0 lleva 6 partidos de local sin que marquen los dos. En 8 partidos de local va sin que marquen los dos el 75 %.",
     "Equipo 0 lleva 6 partidos de local con 2 goles o menos. En 8 partidos de local va con 2 goles o menos el 75 %.",
     "Equipo 0 lleva 7 partidos en total sin perder (su máximo previo era 7). En 15 partidos en total va sin perder el 93 %.",
-    "Equipo 0 lleva 6 partidos en total ganando (su máximo previo era 2): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 16 % de las veces): no es terreno raro. En 15 partidos en total va ganando el 73 %.",
+    "Equipo 0 lleva 6 partidos en total con victoria (su máximo previo era 2): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 16 % de las veces): no es terreno raro. En 15 partidos en total va con victoria el 73 %.",
     "Equipo 0 lleva 6 partidos en total ganando por 2 o más (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 15 partidos en total va ganando por 2 o más el 60 %.",
     "Equipo 0 lleva 8 partidos en total sin ganar por 3 o más (su máximo previo era 3). En 15 partidos en total va sin ganar por 3 o más el 87 %.",
     "Equipo 0 lleva 15 partidos en total sin perder por 2 o más. En 15 partidos en total va sin perder por 2 o más el 100 %.",
@@ -669,7 +669,7 @@
      "improbable": false,
      "destacada": false,
      "cuidado": false,
-     "texto": "Equipo 1 lleva 2 partidos de visita ganando (su máximo previo era 6). En 18 partidos de visita va ganando el 61 %."
+     "texto": "Equipo 1 lleva 2 partidos de visita con victoria (su máximo previo era 6). En 18 partidos de visita va con victoria el 61 %."
     },
     {
      "familia": "gana2+",
@@ -813,7 +813,7 @@
      "improbable": false,
      "destacada": false,
      "cuidado": false,
-     "texto": "Equipo 1 lleva 1 partido en total ganando (su máximo previo era 6). En 35 partidos en total va ganando el 57 %."
+     "texto": "Equipo 1 lleva 1 partido en total con victoria (su máximo previo era 6). En 35 partidos en total va con victoria el 57 %."
     },
     {
      "familia": "gana2+",
@@ -1140,7 +1140,7 @@
      "improbable": true,
      "destacada": true,
      "cuidado": false,
-     "texto": "Equipo 2 lleva 2 partidos en total perdiendo (su máximo previo era 1): está en terreno nuevo, por encima de su récord. En 28 partidos en total va perdiendo el 18 %."
+     "texto": "Equipo 2 lleva 2 partidos en total con derrota (su máximo previo era 1): está en terreno nuevo, por encima de su récord. En 28 partidos en total va con derrota el 18 %."
     },
     {
      "familia": "noGana",
@@ -1272,7 +1272,7 @@
     }
    ],
    "lineas": [
-    "Equipo 2 lleva 2 partidos en total perdiendo (su máximo previo era 1): está en terreno nuevo, por encima de su récord. En 28 partidos en total va perdiendo el 18 %.",
+    "Equipo 2 lleva 2 partidos en total con derrota (su máximo previo era 1): está en terreno nuevo, por encima de su récord. En 28 partidos en total va con derrota el 18 %.",
     "Equipo 2 lleva 4 partidos en total sin ganar por 2 o más (su máximo previo era 7). En 28 partidos en total va sin ganar por 2 o más el 79 %.",
     "Equipo 2 lleva 4 partidos en total sin ganar por 3 o más (su máximo previo era 12). En 28 partidos en total va sin ganar por 3 o más el 89 %.",
     "Equipo 2 lleva 14 partidos en total sin perder por 2 o más (su máximo previo era 13). En 28 partidos en total va sin perder por 2 o más el 96 %.",
@@ -1662,7 +1662,7 @@
      "improbable": false,
      "destacada": false,
      "cuidado": false,
-     "texto": "Equipo 3 lleva 2 partidos de local ganando (su máximo previo era 4). En 31 partidos de local va ganando el 52 %."
+     "texto": "Equipo 3 lleva 2 partidos de local con victoria (su máximo previo era 4). En 31 partidos de local va con victoria el 52 %."
     },
     {
      "familia": "gana2+",
@@ -1806,7 +1806,7 @@
      "improbable": false,
      "destacada": false,
      "cuidado": false,
-     "texto": "Equipo 3 lleva 2 partidos en total ganando (su máximo previo era 4). En 57 partidos en total va ganando el 47 %."
+     "texto": "Equipo 3 lleva 2 partidos en total con victoria (su máximo previo era 4). En 57 partidos en total va con victoria el 47 %."
     },
     {
      "familia": "gana2+",
@@ -2381,7 +2381,7 @@
      "improbable": false,
      "destacada": false,
      "cuidado": false,
-     "texto": "Equipo 4 lleva 1 partido de visita ganando (su máximo previo era 4). En 41 partidos de visita va ganando el 61 %."
+     "texto": "Equipo 4 lleva 1 partido de visita con victoria (su máximo previo era 4). En 41 partidos de visita va con victoria el 61 %."
     },
     {
      "familia": "gana2+",
@@ -2525,7 +2525,7 @@
      "improbable": true,
      "destacada": true,
      "cuidado": false,
-     "texto": "Equipo 4 lleva 7 partidos en total ganando (su máximo previo era 8). En 67 partidos en total va ganando el 61 %."
+     "texto": "Equipo 4 lleva 7 partidos en total con victoria (su máximo previo era 8). En 67 partidos en total va con victoria el 61 %."
     },
     {
      "familia": "gana2+",
@@ -2645,7 +2645,7 @@
     "Equipo 4 lleva 16 partidos de visita sin perder por 2 o más (su máximo previo era 13). En 41 partidos de visita va sin perder por 2 o más el 95 %.",
     "Equipo 4 lleva 3 partidos de visita sin que marquen los dos (su máximo previo era 6). En 41 partidos de visita va sin que marquen los dos el 61 %.",
     "Equipo 4 lleva 7 partidos en total sin perder (su máximo previo era 8). En 67 partidos en total va sin perder el 79 %.",
-    "Equipo 4 lleva 7 partidos en total ganando (su máximo previo era 8). En 67 partidos en total va ganando el 61 %.",
+    "Equipo 4 lleva 7 partidos en total con victoria (su máximo previo era 8). En 67 partidos en total va con victoria el 61 %.",
     "Equipo 4 lleva 7 partidos en total ganando por 2 o más (su máximo previo era 3): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 67 partidos en total va ganando por 2 o más el 39 %.",
     "Equipo 4 lleva 6 partidos en total sin ganar por 3 o más (su máximo previo era 11). En 67 partidos en total va sin ganar por 3 o más el 87 %.",
     "Equipo 4 lleva 20 partidos en total sin perder por 2 o más (su máximo previo era 21). En 67 partidos en total va sin perder por 2 o más el 96 %.",
@@ -2993,7 +2993,7 @@
      "improbable": false,
      "destacada": false,
      "cuidado": false,
-     "texto": "Equipo 5 lleva 1 partido en total ganando (su máximo previo era 9). En 48 partidos en total va ganando el 56 %."
+     "texto": "Equipo 5 lleva 1 partido en total con victoria (su máximo previo era 9). En 48 partidos en total va con victoria el 56 %."
     },
     {
      "familia": "gana2+",
@@ -4080,7 +4080,7 @@
      "improbable": false,
      "destacada": false,
      "cuidado": false,
-     "texto": "Equipo 7 lleva 1 partido en total ganando (su máximo previo era 2). En 25 partidos en total va ganando el 36 %."
+     "texto": "Equipo 7 lleva 1 partido en total con victoria (su máximo previo era 2). En 25 partidos en total va con victoria el 36 %."
     },
     {
      "familia": "gana2+",
@@ -4393,7 +4393,7 @@
      "improbable": false,
      "destacada": true,
      "cuidado": false,
-     "texto": "Equipo 8 lleva 6 partidos en total ganando (su máximo previo era 8). En 23 partidos en total va ganando el 70 %."
+     "texto": "Equipo 8 lleva 6 partidos en total con victoria (su máximo previo era 8). En 23 partidos en total va con victoria el 70 %."
     },
     {
      "familia": "gana2+",
@@ -4510,7 +4510,7 @@
    ],
    "lineas": [
     "Equipo 8 lleva 7 partidos en total sin perder (su máximo previo era 9). En 23 partidos en total va sin perder el 91 %.",
-    "Equipo 8 lleva 6 partidos en total ganando (su máximo previo era 8). En 23 partidos en total va ganando el 70 %.",
+    "Equipo 8 lleva 6 partidos en total con victoria (su máximo previo era 8). En 23 partidos en total va con victoria el 70 %.",
     "Equipo 8 lleva 6 partidos en total ganando por 2 o más (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 23 partidos en total va ganando por 2 o más el 39 %.",
     "Equipo 8 lleva 16 partidos en total sin ganar por 3 o más (su máximo previo era 3). En 23 partidos en total va sin ganar por 3 o más el 91 %.",
     "Equipo 8 lleva 7 partidos en total sin perder por 2 o más (su máximo previo era 15). En 23 partidos en total va sin perder por 2 o más el 96 %.",
@@ -5325,7 +5325,7 @@
      "improbable": false,
      "destacada": false,
      "cuidado": false,
-     "texto": "Equipo 10 lleva 1 partido de visita ganando (su máximo previo era 4). En 15 partidos de visita va ganando el 53 %."
+     "texto": "Equipo 10 lleva 1 partido de visita con victoria (su máximo previo era 4). En 15 partidos de visita va con victoria el 53 %."
     },
     {
      "familia": "gana2+",
@@ -5469,7 +5469,7 @@
      "improbable": false,
      "destacada": false,
      "cuidado": false,
-     "texto": "Equipo 10 lleva 1 partido en total ganando (su máximo previo era 3). En 27 partidos en total va ganando el 44 %."
+     "texto": "Equipo 10 lleva 1 partido en total con victoria (su máximo previo era 3). En 27 partidos en total va con victoria el 44 %."
     },
     {
      "familia": "gana2+",
@@ -5799,7 +5799,7 @@
      "improbable": false,
      "destacada": false,
      "cuidado": false,
-     "texto": "Equipo 11 lleva 1 partido en total ganando (su máximo previo era 3). En 26 partidos en total va ganando el 50 %."
+     "texto": "Equipo 11 lleva 1 partido en total con victoria (su máximo previo era 3). En 26 partidos en total va con victoria el 50 %."
     },
     {
      "familia": "gana2+",
@@ -6038,7 +6038,7 @@
      "improbable": false,
      "destacada": true,
      "cuidado": false,
-     "texto": "Everton lleva 1 partido de local ganando (su máximo previo era 1): iguala su récord. En 13 partidos de local va ganando el 46 %."
+     "texto": "Everton lleva 1 partido de local con victoria (su máximo previo era 1): iguala su récord. En 13 partidos de local va con victoria el 46 %."
     },
     {
      "familia": "gana2+",
@@ -6182,7 +6182,7 @@
      "improbable": false,
      "destacada": true,
      "cuidado": false,
-     "texto": "Everton lleva 1 partido en total ganando (su máximo previo era 1): iguala su récord. En 13 partidos en total va ganando el 46 %."
+     "texto": "Everton lleva 1 partido en total con victoria (su máximo previo era 1): iguala su récord. En 13 partidos en total va con victoria el 46 %."
     },
     {
      "familia": "gana2+",
@@ -6300,14 +6300,14 @@
    "lineas": [
     "Perfil de doble oportunidad de local: no pierde 10 de 13 (77 %) y no gana 7 de 13 (54 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de local empata mucho o se planta a no perder no está del todo en el nivel",
     "Everton lleva 4 partidos de local sin perder (su máximo previo era 3): está en terreno nuevo, por encima de su récord. En 13 partidos de local va sin perder el 77 %.",
-    "Everton lleva 1 partido de local ganando (su máximo previo era 1): iguala su récord. En 13 partidos de local va ganando el 46 %.",
+    "Everton lleva 1 partido de local con victoria (su máximo previo era 1): iguala su récord. En 13 partidos de local va con victoria el 46 %.",
     "Everton lleva 10 partidos de local sin ganar por 2 o más (su máximo previo era 2). En 13 partidos de local va sin ganar por 2 o más el 92 %.",
     "Everton lleva 13 partidos de local sin ganar por 3 o más. En 13 partidos de local va sin ganar por 3 o más el 100 %.",
     "Everton lleva 4 partidos de local sin perder por 2 o más (su máximo previo era 8). En 13 partidos de local va sin perder por 2 o más el 92 %.",
     "Everton lleva 4 partidos de local anotando (su máximo previo era 3): está en terreno nuevo, por encima de su récord. En 13 partidos de local va anotando el 77 %.",
     "Everton lleva 1 partido de local con la valla invicta (su máximo previo era 1): iguala su récord. En 13 partidos de local va con la valla invicta el 39 %.",
     "Everton lleva 4 partidos en total sin perder (su máximo previo era 3): está en terreno nuevo, por encima de su récord. En 13 partidos en total va sin perder el 77 %.",
-    "Everton lleva 1 partido en total ganando (su máximo previo era 1): iguala su récord. En 13 partidos en total va ganando el 46 %.",
+    "Everton lleva 1 partido en total con victoria (su máximo previo era 1): iguala su récord. En 13 partidos en total va con victoria el 46 %.",
     "Everton lleva 10 partidos en total sin ganar por 2 o más (su máximo previo era 2). En 13 partidos en total va sin ganar por 2 o más el 92 %.",
     "Everton lleva 13 partidos en total sin ganar por 3 o más. En 13 partidos en total va sin ganar por 3 o más el 100 %.",
     "Everton lleva 4 partidos en total sin perder por 2 o más (su máximo previo era 8). En 13 partidos en total va sin perder por 2 o más el 92 %.",
@@ -6491,7 +6491,7 @@
      "improbable": true,
      "destacada": true,
      "cuidado": true,
-     "texto": "Racha larga lleva 7 partidos de local ganando (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos de local va ganando el 48 %."
+     "texto": "Racha larga lleva 7 partidos de local con victoria (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos de local va con victoria el 48 %."
     },
     {
      "familia": "gana2+",
@@ -6635,7 +6635,7 @@
      "improbable": true,
      "destacada": true,
      "cuidado": true,
-     "texto": "Racha larga lleva 7 partidos en total ganando (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos en total va ganando el 48 %."
+     "texto": "Racha larga lleva 7 partidos en total con victoria (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos en total va con victoria el 48 %."
     },
     {
      "familia": "gana2+",
@@ -6753,7 +6753,7 @@
    "lineas": [
     "Perfil de doble oportunidad de local: no pierde 16 de 21 (76 %) y no gana 11 de 21 (52 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de local empata mucho o se planta a no perder no está del todo en el nivel",
     "Racha larga lleva 7 partidos de local sin perder (su máximo previo era 5): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 15 % de las veces): no es terreno raro. En 21 partidos de local va sin perder el 76 %.",
-    "Racha larga lleva 7 partidos de local ganando (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos de local va ganando el 48 %.",
+    "Racha larga lleva 7 partidos de local con victoria (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos de local va con victoria el 48 %.",
     "Racha larga lleva 10 partidos de local sin ganar por 2 o más (su máximo previo era 10). En 21 partidos de local va sin ganar por 2 o más el 95 %.",
     "Racha larga lleva 21 partidos de local sin ganar por 3 o más. En 21 partidos de local va sin ganar por 3 o más el 100 %.",
     "Racha larga lleva 11 partidos de local sin perder por 2 o más (su máximo previo era 9). En 21 partidos de local va sin perder por 2 o más el 95 %.",
@@ -6762,7 +6762,7 @@
     "Racha larga lleva 8 partidos de local sin que marquen los dos (su máximo previo era 4). En 21 partidos de local va sin que marquen los dos el 71 %.",
     "Racha larga lleva 21 partidos de local con 2 goles o menos. En 21 partidos de local va con 2 goles o menos el 100 %.",
     "Racha larga lleva 7 partidos en total sin perder (su máximo previo era 5): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 15 % de las veces): no es terreno raro. En 21 partidos en total va sin perder el 76 %.",
-    "Racha larga lleva 7 partidos en total ganando (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos en total va ganando el 48 %.",
+    "Racha larga lleva 7 partidos en total con victoria (su máximo previo era 1): está en terreno nuevo, por encima de su récord — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más (§15), así que si se corta hay una causa que buscar. En 21 partidos en total va con victoria el 48 %.",
     "Racha larga lleva 10 partidos en total sin ganar por 2 o más (su máximo previo era 10). En 21 partidos en total va sin ganar por 2 o más el 95 %.",
     "Racha larga lleva 21 partidos en total sin ganar por 3 o más. En 21 partidos en total va sin ganar por 3 o más el 100 %.",
     "Racha larga lleva 11 partidos en total sin perder por 2 o más (su máximo previo era 9). En 21 partidos en total va sin perder por 2 o más el 95 %.",
@@ -7104,7 +7104,7 @@
      "improbable": false,
      "destacada": true,
      "cuidado": false,
-     "texto": "Sequía habitual lleva 15 partidos de local ganando (su máximo previo era 24). En 47 partidos de local va ganando el 83 %."
+     "texto": "Sequía habitual lleva 15 partidos de local con victoria (su máximo previo era 24). En 47 partidos de local va con victoria el 83 %."
     },
     {
      "familia": "gana2+",
@@ -7248,7 +7248,7 @@
      "improbable": false,
      "destacada": true,
      "cuidado": false,
-     "texto": "Sequía habitual lleva 15 partidos en total ganando (su máximo previo era 24). En 47 partidos en total va ganando el 83 %."
+     "texto": "Sequía habitual lleva 15 partidos en total con victoria (su máximo previo era 24). En 47 partidos en total va con victoria el 83 %."
     },
     {
      "familia": "gana2+",
@@ -7366,7 +7366,7 @@
    "lineas": [
     "Perfil de doble oportunidad de local: no pierde 47 de 47 (100 %) y no gana 8 de 47 (17 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de local empata mucho o se planta a no perder no está del todo en el nivel",
     "Sequía habitual lleva 47 partidos de local sin perder. En 47 partidos de local va sin perder el 100 %.",
-    "Sequía habitual lleva 15 partidos de local ganando (su máximo previo era 24). En 47 partidos de local va ganando el 83 %.",
+    "Sequía habitual lleva 15 partidos de local con victoria (su máximo previo era 24). En 47 partidos de local va con victoria el 83 %.",
     "Sequía habitual lleva 14 partidos de local sin ganar por 2 o más (su máximo previo era 12): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 40 % de las veces): no es terreno raro. En 47 partidos de local va sin ganar por 2 o más el 94 %.",
     "Sequía habitual lleva 14 partidos de local sin ganar por 3 o más (su máximo previo era 12): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 40 % de las veces): no es terreno raro. En 47 partidos de local va sin ganar por 3 o más el 94 %.",
     "Sequía habitual lleva 47 partidos de local sin perder por 2 o más. En 47 partidos de local va sin perder por 2 o más el 100 %.",
@@ -7375,7 +7375,7 @@
     "Sequía habitual lleva 15 partidos de local sin que marquen los dos (su máximo previo era 24). En 47 partidos de local va sin que marquen los dos el 83 %.",
     "Sequía habitual lleva 14 partidos de local con 2 goles o menos (su máximo previo era 12): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 40 % de las veces): no es terreno raro. En 47 partidos de local va con 2 goles o menos el 94 %.",
     "Sequía habitual lleva 47 partidos en total sin perder. En 47 partidos en total va sin perder el 100 %.",
-    "Sequía habitual lleva 15 partidos en total ganando (su máximo previo era 24). En 47 partidos en total va ganando el 83 %.",
+    "Sequía habitual lleva 15 partidos en total con victoria (su máximo previo era 24). En 47 partidos en total va con victoria el 83 %.",
     "Sequía habitual lleva 14 partidos en total sin ganar por 2 o más (su máximo previo era 12): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 40 % de las veces): no es terreno raro. En 47 partidos en total va sin ganar por 2 o más el 94 %.",
     "Sequía habitual lleva 14 partidos en total sin ganar por 3 o más (su máximo previo era 12): está en terreno nuevo, por encima de su récord — pero con su frecuencia una racha así es esperable (sale el 40 % de las veces): no es terreno raro. En 47 partidos en total va sin ganar por 3 o más el 94 %.",
     "Sequía habitual lleva 47 partidos en total sin perder por 2 o más. En 47 partidos en total va sin perder por 2 o más el 100 %.",
