@@ -1,6 +1,10 @@
 # Propuesta de revisión · `efe-clasificador` v1.6 → v1.7
 
-**Estado:** PROPUESTA (25/10/2026), pendiente de aprobación del usuario.
+**Estado:** APROBADA por el usuario entera (25/10/2026), umbral del cambio 6
+incluido. Redactada en `docs/skills/efe-clasificador/` (v1.7; la rúbrica pasa
+a `references/rubrica-efe-v1.7.md`) y `efe-dashboard` v1.10 (F6 con el umbral
+nuevo). En la app: `CORTE_VERSION` con la v1.7 y `dtp_cowork.parejas_nuevas_de`
+con ≤ 1 vez juntos (test en `test_dtp`). Falta que el usuario suba los dos zips.
 Redactada desde las **168 lecciones pendientes** del skill en la cohorte
 `c3-2026-09-23`: todas de partidos del 21 al 24/10, posteriores al corte de la
 v1.6. La base es la v1.6 vigente (`docs/skills/efe-clasificador/`,

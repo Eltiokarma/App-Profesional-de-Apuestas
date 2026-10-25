@@ -179,6 +179,15 @@ def main():
     except motor.FixtureNoExiste:
         check("un equipo que no juega el fixture → error", True)
 
+    # EJE-DEBUTANTE del EFE v1.7: la pareja con UNA titularidad junta también es nueva
+    from backend.analisis.dtp_cowork import parejas_nuevas_de
+    _xi = [{"jugadorId": 1, "nombre": "A", "posicion": "D"}, {"jugadorId": 2, "nombre": "B", "posicion": "D"},
+           {"jugadorId": 3, "nombre": "C", "posicion": "D"}, {"jugadorId": 9, "nombre": "Z", "posicion": "F"}]
+    _pn = parejas_nuevas_de(_xi, [{1, 2, 3}, {1, 2}, {2, 3}, {5, 6}])
+    check("EJE-DEBUTANTE v1.7: ≤ 1 vez juntos es pareja nueva, 2+ no; otras líneas no cuentan",
+          sorted((tuple(x["jugadores"]), x["vecesJuntos"]) for x in _pn) == [(("A", "C"), 1)], _pn)
+    check("sin onces previos no se inventa una pareja nueva", parejas_nuevas_de(_xi, []) == [])
+
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
 

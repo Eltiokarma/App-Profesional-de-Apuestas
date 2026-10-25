@@ -1,9 +1,11 @@
 ---
 name: efe-dashboard
-description: "Genera dashboards visuales EFE v1.6 (skill v1.9) (Estabilidad de Formacion del Equipo) pre-partido de futbol. Produce React JSX interactivo con gauges, barras de bloques A-E, caja de sensibilidad, alertas estructurales y por fecha, impacto ponderado de disponibilidad, minutos compartidos y matchup tactico. Activar cuando el usuario pida un EFE de cualquier equipo o partido, dashboard visual de formacion o estabilidad, comparativa pre-partido, o variantes como haceme el EFE de X vs Y, dashboard EFE, EFE visual o plantilla EFE. Activar tambien si menciona bloques A-E, la clasificacion SIN FORMACION / EN FORMACION / FORMADO, o pide evaluar estabilidad institucional, tactica o de plantel. Activar tambien para analisis tactico, escenarios de resultado, recomendaciones pre-partido, que deben hacer para ganar o empatar o perder, y matriz de escenarios."
+description: "Genera dashboards visuales EFE v1.7 (skill v1.10) (Estabilidad de Formacion del Equipo) pre-partido de futbol. Produce React JSX interactivo con gauges, barras de bloques A-E, caja de sensibilidad, alertas estructurales y por fecha, impacto ponderado de disponibilidad, minutos compartidos y matchup tactico. Activar cuando el usuario pida un EFE de cualquier equipo o partido, dashboard visual de formacion o estabilidad, comparativa pre-partido, o variantes como haceme el EFE de X vs Y, dashboard EFE, EFE visual o plantilla EFE. Activar tambien si menciona bloques A-E, la clasificacion SIN FORMACION / EN FORMACION / FORMADO, o pide evaluar estabilidad institucional, tactica o de plantel. Activar tambien para analisis tactico, escenarios de resultado, recomendaciones pre-partido, que deben hacer para ganar o empatar o perder, y matriz de escenarios."
 ---
 
-# EFE Dashboard — Skill de Visualización v1.9
+# EFE Dashboard — Skill de Visualización v1.10
+
+> **v1.10 · 25.10.2026 — Alineado con el clasificador EFE v1.7.** `EJE-DEBUTANTE` pasa a la rúbrica del clasificador con el umbral **≤ 1 partido juntos como titulares** (antes 0 minutos) y las posiciones de la línea se leen del grid del once; el F6 de acá cita esa regla. Lo demás de la v1.7 (F3 por zona, recambio de oficio o reconvertido, jerarquía de fuentes, D3 con contexto, rama «once alternativo», brecha solo en la misma base) se puntúa en el clasificador y se dibuja como hasta ahora: la caja de sensibilidad lleva la rama alternativa y la alerta F3 nombra la zona.
 
 > **v1.9 · 21.10.2026 — Limpieza de lo que no existe y reparto con `sad-analysis` v4.0.** Ningún peso, indicador ni alerta del clasificador tocado.
 >
@@ -85,7 +87,7 @@ Dashboard React (JSX) interactivo y comparativo pre-partido aplicando **EFE v1.6
    - F2c: multiplicador GK ×1.5 si el titular fijo está ausente
    - F4: rotación voluntaria respecto del partido anterior
    - F5: jugador emergente / Factor X
-   - **F6 (v1.6): minutos compartidos** — buscar minutos oficiales acumulados de la dupla de pivotes, de la dupla central y de la línea completa. Si hay ≥2 titulares de la misma línea con 0 minutos juntos → `EJE-DEBUTANTE`
+   - **F6 (v1.6, umbral v1.10): minutos compartidos** — buscar los partidos que arrancaron juntos la dupla de pivotes, la dupla central y la línea completa (posiciones del grid del once). Si hay ≥2 titulares de la misma línea con **≤ 1 partido juntos como titulares** → `EJE-DEBUTANTE` (regla del clasificador EFE v1.7)
    - **Máximo goleador disponible y fuera del XI** → `GOLEADOR-AL-BANCO`
 7. **Bloque G** — Próximos 4 rivales con **columna FECHA obligatoria**, etiquetas (incluida 🪤 TRAMO TRAMPA), posición
 8. **Bloque H** — Matchup: sistema rival, estilo, fortaleza, vulnerabilidad, H2a/H2b/H2c. **H2c exige clasificación previa del bloque rival: improvisado (55-65') o estructural (80-90')**
@@ -182,7 +184,7 @@ Con `E-CUARENTENA` activo, la caja se aplica también a la elección de denomina
 | CRISIS-EX | Estructural | Crisis extra-cancha |
 | F3 / F3-COND | Por fecha | IP > 7 o ≥2 titulares fijos ausentes |
 | FACTOR-X | Por fecha | Jugador emergente fuera de las K |
-| **EJE-DEBUTANTE** *(v1.6)* | Por fecha | ≥2 titulares de la misma línea con 0 minutos compartidos |
+| **EJE-DEBUTANTE** *(v1.6, umbral v1.10)* | Por fecha | ≥2 titulares de la misma línea con ≤ 1 partido juntos como titulares |
 | **GOLEADOR-AL-BANCO** *(v1.6)* | Por fecha | Máximo goleador disponible y fuera del XI |
 | G-CLÁSICO | Por fecha | Clásico/derby en próximas 4 fechas |
 | G-ASCENDIDO | Por fecha | Rival recién ascendido |

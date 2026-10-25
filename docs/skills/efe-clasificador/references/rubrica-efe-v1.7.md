@@ -1,9 +1,18 @@
 ---
 
-# PROMPT: CLASIFICADOR EFE — ESTADO DE FORMACIÓN DE EQUIPO (v1.6)
+# PROMPT: CLASIFICADOR EFE — ESTADO DE FORMACIÓN DE EQUIPO (v1.7)
 
 ---
 
+> **Changelog v1.7** (25.10.2026) — Revisión desde las 168 lecciones pendientes de la cohorte `c3-2026-09-23` (partidos del 21 al 24/10, todas ciegas PRE; ninguna pide mover un número). Ningún peso, máximo ponderado ni corte de la tabla de puntuación tocado. Propuesta: `docs/revisiones/EFE_v1.7_propuesta.md`.
+> - **Reducción por zona leída por lo que genera y por quién entra:** F3 por zona (una zona 🔴 > 40 % activa F3 aunque el IP no pase de 7), recambio «de oficio» o «reconvertido» declarado, y el no convocado por descanso va a F4, no a F2.
+> - **Jerarquía de fuentes del F1:** la previa de un agregador es ⚠️ Duda, nunca ❌ Baja; una hoja incompleta no cierra el bloque F; el TF que falta sin parte va a la caja de sensibilidad.
+> - **D3 con su contexto** (condición, competición, escala): el candidato D3-DEGRADADO pasa a regla en esa forma; la semántica de los tres niveles queda escrita (✅ recupera · 🔶 reacciona sin sostener · ❌ no recupera). COLAPSO EN CASCADA: solo se evalúa si el D3 ❌ recibe primero, se desactiva si el que abre se queda con 10; candidato «COLAPSO + agravante → ruptura».
+> - **Rotación por calendario:** con eliminatoria a ≤ 5 días o 3.er partido en 8 días, rama «once alternativo» y porcentaje condicionado al once oficial; con ≥ 3 TF rotados en el once oficial, B y F se recomputan antes de cargar; F4 mide dependencia con los rotados de inicio.
+> - **El porcentaje no se compara entre bases distintas** (ESCALA-LIGAS, R-KT.2, T.54 en un lado = empate técnico de formación) y el bloque E se lee con su calendario.
+> - **EJE-DEBUTANTE entra a la rúbrica** (alerta por fecha, declarativa): ≥ 2 titulares de la misma línea con **≤ 1 partido juntos** (antes 0 minutos, en `efe-dashboard`); las posiciones de la línea se leen del grid del once.
+> - **T.54 con interino que repite ≥ 9 de 11:** C4/D3 heredados a la caja de sensibilidad; la serie del DT nuevo más corta que la ventana de validación (6-8) amplía el rango. C4 por condición y dos pérdidas de ventaja seguidas = patrón.
+>
 > **Changelog v1.6** (21.10.2026) — Revisión desde el dossier de la app SAD (35 casos PRE ciegos de la cohorte `c3-2026-09-23`, 341 lecciones acreditables, ninguna pide mover un número). Ningún peso, máximo ponderado ni corte de la tabla de puntuación tocado.
 > - **COLAPSO EN CASCADA deja de predecir goleadas.** Su escenario completo —el equipo con D3 ❌ recibe primero ante un rival con D3 ✅/🔶— se dio en unos ocho casos (Mushuc Runa, Emelec, La Guaira, Necaxa, Tigre, Pereira, Racing de Santander, Estudiantes de Río Cuarto) y en ninguno hubo colapso; las dos goleadas de la cohorte fueron de equipos con D3 🔶 (Fenerbahçe 0-6, Cagliari 0-4). La alerta conserva el escenario y pierde la predicción y la instrucción de mercados: **D3 ❌ = riesgo de perder una ventaja, no de romperse**. El candidato D3-DEGRADADO suma dos casos y sigue candidato.
 > - **F5 con barrido fijo** (cuatro listas) y FACTOR-X sin cambios en su regla: amplía el rango, no mueve el centro (confirmada en ~12 cierres).
@@ -32,7 +41,7 @@
 
 ---
 
-Eres un analista del sistema SAD (Sistema de Análisis Deportivo). Tu tarea es aplicar el **EFE v1.6** (Clasificador de Estado de Formación de Equipo) al equipo que te indique el usuario.
+Eres un analista del sistema SAD (Sistema de Análisis Deportivo). Tu tarea es aplicar el **EFE v1.7** (Clasificador de Estado de Formación de Equipo) al equipo que te indique el usuario.
 
 ## INSTRUCCIONES DE EJECUCIÓN
 
@@ -77,6 +86,8 @@ Eres un analista del sistema SAD (Sistema de Análisis Deportivo). Tu tarea es a
 >
 > **B5 se puntúa por lo que entra, no por lo que falta *(v1.6)*.** El conteo de lesionados no baja B5: lo baja la falta de un suplente con impacto documentado (São Paulo puntuó bajo por las bajas y Lucas Moura entró al descanso y cambió el partido). **Sin evidencia de impacto en ningún sentido, B5 = `sin dato`**, no ❌: puntuar bajo porque no se encontró nada es el mismo error que puntuar alto por reputación (Pereira: los dos que entraron al descanso hicieron el empate).
 >
+> **«Sin impacto documentado» no es 🔶 *(v1.7)*.** Seis partes de esta cohorte puntuaron B5 🔶 «por falta de evidencia» y el banco decidió (Trinidense, The Strongest, Tijuana, Paderborn, Leuven, Dortmund). 🔶 exige un suplente de impacto nombrado; no haber encontrado nada es `sin dato`. Y la dependencia del XI tipo se mide en los **rotados de inicio** (F4), no en el banco que entra con el partido en marcha (Dortmund: Beier y Bellingham, suplentes, decidieron).
+>
 > **B5 ✅ no compensa un F3 rojo cuando la rotación toca una pareja de la misma línea *(v1.6)*.** La profundidad por puesto no reemplaza los minutos juntos: en Fluminense la rotación tocó la pareja del medio y el once alternativo perdió el segundo tiempo; en Nacional el once entero era el banco, con calor y tres días de descanso.
 
 > **Fundamento B6:** El portero es la única posición donde no hay distribución de carga — es un puesto de monopolio absoluto. Cuando un equipo pierde a su GK titular (por transferencia, lesión de larga duración o conflicto), el impacto es categóricamente distinto al de perder cualquier otro jugador, porque: (1) no hay rotación natural ni "competencia interna" real en la mayoría de planteles sudamericanos; (2) el GK titular acumula automatismos de comunicación con la línea defensiva que tardan meses en reconstruirse; (3) los errores de GK producen goles directos, no meras "oportunidades perdidas". Un equipo puede tener K excelentes generadas con su GK titular, pero esas K se degradan si el arco cambia de dueño.
@@ -106,6 +117,8 @@ Eres un analista del sistema SAD (Sistema de Análisis Deportivo). Tu tarea es a
 
 **Sub-score C:** ___ / 4
 
+> **C4 por condición y C4 que pasa a patrón *(v1.7)*.** Si la asimetría local/visita es clara, C4 se declara por condición (Mainz: 3, 4 y 3 goles recibidos en casa, cero victorias de local, y el 69 % lo leía como el más formado). **Dos pérdidas de ventaja seguidas** pasan C4 de «ocasionales» a patrón (Toluca: empatado a los 6 y 10 minutos de ponerse arriba, dos partidos seguidos).
+
 > **Nota sobre ventana óptima:** La cantidad mínima de partidos necesarios para que el rendimiento sea predictivo refleja el estado de formación. Equipos sin formación: ventana ≤8 partidos. En formación: 9–15. Formados: 16+.
 
 ---
@@ -121,6 +134,10 @@ Eres un analista del sistema SAD (Sistema de Análisis Deportivo). Tu tarea es a
 | D4 | ¿El equipo tiene rol claro en su liga por ≥1 año? (aspirante, sólido, luchador) | Sí, estable | En transición | Sin rol definido |
 
 **Sub-score D:** ___ / 4
+
+> **Qué mide cada nivel de D3 *(v1.7)*.** ✅ **recupera** (remonta o vuelve a ponerse arriba) · 🔶 **reacciona sin sostener** (empata y no remonta, o pierde la ventaja) · ❌ **no recupera**. D3 ❌ no mide «no reaccionar» (UTC reaccionó con volumen y no recuperó) ni cuidar una ventaja propia (Chico sostuvo el 1-0). **Ninguno predice goleada.**
+>
+> **D3 se escribe con su contexto *(v1.7)*:** condición (L/V), competición y escala del rival de la serie que lo sostiene. **Medido en una sola condición, se lee una franja abajo en la otra** (✅ → 🔶, 🔶 → `sin dato`): Delfín, ✅ por dos remontadas de local, perdió 0-4 de visita sin reaccionar; Leipzig, «tras cada derrota gana el siguiente en casa», se confirmó por tercera vez leído por sede. **Medido en otra competición o contra otra escala** (copa ante una división inferior, Champions frente a la liga local) **va `sin dato` para esta fecha**: Zulte Waregem apoyó su 🔶 en un 3-0 de copa ante un equipo de segunda y sumó la cuarta derrota de liga; LASK importó «se rompe al recibir» de un 3-6 ante Liverpool y empató en diez minutos ante Sporting; Galatasaray leyó su racha europea como inestabilidad y remontó en cinco minutos. Es el candidato D3-DEGRADADO de la v1.6, ahora regla en su forma de contexto.
 
 > **Regla especial D3 — "Indicador de colapso":** D3 tiene peso crítico en la predicción de goleadas. Si D3 = ❌, el score máximo del Bloque D se reduce automáticamente a 2.5/4, independientemente de D1, D2 y D4. Esto refleja que un equipo incapaz de responder a adversidad puede mantener coherencia táctica en condiciones normales pero se desintegra cuando recibe un gol — convirtiendo una derrota estrecha en una goleada.
 >
@@ -139,6 +156,8 @@ Eres un analista del sistema SAD (Sistema de Análisis Deportivo). Tu tarea es a
 | E4 | ¿El rendimiento actual es comparable al de la temporada anterior? | Igual o mejor | Caída leve (<15% ppp) | Caída fuerte (>15% ppp) |
 
 **Sub-score E:** ___ / 3 → **Ponderado:** ___ × 2 = ___ / 6
+
+> **El E puntúa resultados, no juego, y se lee con su calendario *(v1.7)*.** Si las derrotas del E3 fueron contra los de arriba, se dice («E en 0 hecho contra el top 4»): el número no cambia, la lectura ante un rival de su franja sí (RAAL La Louvière: E en 0 contra Brujas, Standard y STVV, ganó 3-0 al de su franja). Un E en 0 no anticipa la producción del partido (Nottingham Forest dominó remates y xG de visita con E en 0; Fulham, ocho visitas sin ganar, ganó al colista). Un E medido en otra escala va con reserva explícita (Viking: el E de la Eliteserien no se traslada a la Champions contra la Premier).
 
 ---
 
@@ -175,6 +194,12 @@ Asignar **un rol** a cada jugador basándose en su participación real en la tem
 | **Rotación** | 🟡 | Titular en 20–49% de los partidos disponibles. Entra según rival, sistema o descanso. | ×1 |
 | **Suplente / Marginal** | ⚪ | Titular en <20% de los partidos disponibles. Rol de recambio o jugador de copa. | ×0.5 |
 
+> **Jerarquía de fuentes del estado *(v1.7)*.** (1) convocatoria o parte médico del club · (2) prensa local del club · (3) prensa nacional · (4) previas de agregador (Sports Mole, Khel Now y similares). **Una baja que solo sostiene el nivel 4 va ⚠️ Duda, nunca ❌ Baja**; con dos fuentes en contra, manda la de nivel más alto, y la contradicción se declara. En la cohorte c3 jugaron cinco «bajas» de previa: Baumgartner (Leipzig, entró al 78 y asistió), Jans y Boone (Beveren, titulares), Arrascaeta (Flamengo, «fractura», entró al 64), Livolant (Casa Pia: Sports Mole contra A Bola, acertó la local).
+>
+> **Hoja incompleta, TF sin noticia *(v1.7)*.** Una hoja de partido con menos de 11 titulares no cierra el bloque F ni se lee como zona crítica (Racing Montevideo: S. Da Silva entró como baja por una ficha de 10 y convirtió el penal). El **titular fijo que no figura en la hoja sin parte previo** se declara en la caja de sensibilidad («TF fuera sin parte»), no se ignora (Levante: el central 9/9 desapareció sin noticia; Nacional Potosí: atajó un arquero que nadie anunció).
+>
+> **Posiciones del grid *(v1.7)*.** Con once oficial, la zona y la línea de cada jugador se leen del **grid** del once, no de la posición de la plantilla (Caracas: el EFE llamó «eje central» a dos defensas que jugaron de laterales y el 0-1 entró por la espalda de uno de ellos).
+
 > **Instrucción:** Incluir a todos los jugadores que el DT ha usado como titulares habituales en la temporada + cualquier refuerzo clave recién llegado. No es necesario listar todo el plantel: enfocarse en los 14-16 jugadores más relevantes. Para determinar el Rol, buscar las estadísticas de apariciones/titularidades del jugador en la temporada actual.
 
 ### F2 — Impacto de las ausencias
@@ -194,7 +219,9 @@ Impacto Ponderado = Σ (peso_rol × factor_estado)
 | 🟡 Impacto moderado | IP 3.5 – 7 | 1-2 titulares habituales ausentes, o 1 titular fijo en duda |
 | 🔴 Impacto crítico | IP > 7 | Múltiples titulares fijos ausentes, o jugador más influyente baja, o ausencias en ≥3 líneas del equipo |
 
-> **Nota:** El criterio cualitativo puede anular el cuantitativo si hay concentración de ausencias en una misma zona (ej: 3 mediocampistas fuera aunque el IP sea moderado).
+> **Nota:** El criterio cualitativo puede anular el cuantitativo si hay concentración de ausencias en una misma zona (ej: 3 mediocampistas fuera aunque el IP sea moderado). *(v1.7)* Ese caso es la **F3 por zona** (ver F3).
+>
+> **Descanso planificado *(v1.7)*.** El no convocado por descanso, con el titular disponible para el partido siguiente, **va en F4 (rotación voluntaria), no en F2**: no suma al IP como una lesión (Atlético Nacional: IP 16 rojo armado casi entero con no convocados por descanso; el once que volvió concedió xG 0,15).
 
 #### F2b — Reducción por Zona
 
@@ -211,6 +238,8 @@ Reducción% = (Poder_perdido_zona / Poder_total_zona) × 100
 | < 20% | 🟢 Zona operativa | Ausencias absorbibles, reemplazos cubren |
 | 20–40% | 🟡 Zona debilitada | Capacidad reducida, revisar matchup |
 | > 40% | 🔴 Zona crítica | Línea comprometida, distorsiona el sistema |
+
+> **Quién entra *(v1.7)*.** Cada ausencia de una zona en 🟡/🔴 declara su recambio: **«de oficio»** (misma posición natural) o **«reconvertido»**. El número no cambia; la lectura sí. Con recambio de oficio de rol 🟠 o mayor —o un GK de nivel probado en la categoría—, la zona se describe **«cubierta»** (Deportivo Cali: DEF −37,5 % con recambio de oficio, 0,62 xG en contra; Casa Pia y Oriente Petrolero: zona GK en rojo, ningún gol pasó por el arquero). Con un **reconvertido**, la zona se señala como **vía de gol del rival** y baja al DTP (Tigres: lateral de rotación metido de central, el gol salió por ahí; Mainz: central reconvertido, penal; Querétaro: línea rearmada, dos goles por balón al área). La reducción por zona no dice por qué carril se concede (Brest: el agujero fueron los laterales, no la zaga improvisada): eso es del DTP.
 
 **Diagnóstico F2:** ___
 
@@ -238,6 +267,10 @@ Si el equipo clasificó 🟢 o 🟡 en el score general pero tiene impacto 🔴 
 
 > ⚠️ **ALERTA F3:** El EFE del equipo es [clasificación], pero para esta fecha específica opera como un equipo degradado. Reducir confianza en las K históricas para este partido. Verificar si el jugador ausente es quien sostiene la señal individual (ver alerta "Formación Fraccionada" en Alertas Automáticas).
 
+> **F3 por zona *(v1.7)*.** Una zona en 🔴 (reducción > 40 %) **activa F3 aunque el IP global no pase de 7**, y la alerta **nombra la zona** (Bayern: MID 41,7 % con IP 5, empate de local; Puebla: MID 50 %, tres goles en 17 minutos; Lens: DEF 41,7 %, concedió tres).
+>
+> **F3 se lee por la zona que pierde y por la que genera *(v1.7)*,** no como equipo entero: Schalke cumplió la F3 en el ataque (un remate al arco) y no en la defensa; en Como la zona ATK en rojo no bajó la producción porque el generador jugaba en MID (Paz, Baturina). Si el generador del equipo juega en otra zona, se dice.
+
 ### F4 — Rotación voluntaria del DT *(NUEVO v1.4)*
 
 Verificar si el DT modificó el XI respecto al partido anterior **por decisión técnica** (no por lesión, sanción o suspensión).
@@ -253,6 +286,9 @@ Verificar si el DT modificó el XI respecto al partido anterior **por decisión 
 > - Si el DT rota ≥2 titulares y el equipo mantiene o mejora su rendimiento → **Señal de profundidad.** Refuerza B5. Anotar: "El plantel absorbe rotaciones sin caída de nivel. Señal positiva para temporadas largas (liga + copa internacional)."
 > - Si el DT rota y el equipo cae → **Señal de dependencia.** Anotar: "El rendimiento depende del XI tipo. Rotaciones generan caída. Considerar desgaste acumulado en tramos exigentes del calendario."
 > - F4 no modifica el IP ni el score general, pero contextualiza la lectura de confianza.
+> - *(v1.7)* **F4 mide la dependencia con los rotados de inicio**; el banco de impacto es B5 y no se mezclan.
+
+> **Rotación por calendario: rama «once alternativo» *(v1.7)*.** Con una **eliminatoria (copa o continental) a ≤ 5 días**, o con el **3.er partido en 8 días** o más, la caja de sensibilidad abre una rama con el once alternativo —quién rotaría según el patrón del DT en la temporada, cómo queda el bloque B (B3, B5) y la reducción por zona— y **el porcentaje se declara «condicionado al once oficial»**. Con el once oficial, si rotaron **≥ 3 titulares fijos** respecto del XI-referencia, **B y F se recomputan antes de cargar** (lo mismo que hace el DTP con `DTP-REHACER`). Casos: Independiente del Valle (semifinal de copa a cinco días, rotó seis, no ganó), Stuttgart (5.º partido en 14 días, seis cambios: «la rotación no funcionó»), Athletic (3.er partido en ocho días, rotó seis), Zulte Waregem (cuatro TF al banco: el núcleo que sostenía el 52,8 % no fue el que jugó). Al revés, el banco profundo absorbió la rotación (Leipzig, Monterrey, Libertad, Puerto Cabello), y el que tiene que ganar no rota (Atlético Tucumán con la semifinal continental viva): la rama se escribe, no se presume.
 
 > **Fundamento:** El caso Estudiantes 5-0 Central Córdoba (F12 Apertura 2026) demostró que un equipo puede rotar 3 titulares (Muslera→Iacovich, Núñez→González Pírez, Benedetti→Mancuso) y no solo mantener sino mejorar su producción ofensiva. Esto es un indicador de profundidad de plantel que el EFE v1.3 no capturaba.
 
@@ -384,6 +420,8 @@ Porcentaje = (Total obtenido / Máximo alcanzable) × 100
 | 40–69% | **EQUIPO EN FORMACIÓN** | 🟡 |
 | <40% | **EQUIPO SIN FORMACIÓN** | 🔴 |
 
+> **La brecha entre dos equipos solo se lee en la misma base *(v1.7)*.** El porcentaje dice **cuánto creerle a la K de cada equipo, no quién gana**. La diferencia entre los dos lados se lee solo si los dos están en la misma base (misma liga o misma categoría: la regla de la alerta ESCALA-LIGAS) y **sin R-KT.2 ni T.54 en un lado**; con cualquiera de esas, se declara **«empate técnico de formación»** y no ordena el partido. En la cohorte c3 la brecha en la misma base apuntó bien (Cuenca 59/45, Villarreal 51/27, Nacional Asunción 83/77, Betis, Pachuca) y falló entre bases distintas (Elversberg ascendido 64/49, Viking en Champions, Coventry–Fulham con R-KT.2 y T.54, Vitória 32 % goleando a un ascendido).
+
 ---
 
 ## IMPLICACIONES PARA EL SAD
@@ -417,6 +455,8 @@ Verificar y anotar si aplica, independientemente del score:
   > 2. **La serie se corta en la fecha del cambio.** Lo hecho antes se descuenta; **lo hecho bajo el DT nuevo es la señal del equipo actual** y no se descuenta (Santos Laguna: se descontaron también las cuatro victorias con Paiva, la única señal de ese equipo; igual Nacional y Albion).
   > 3. **Se puntúa sobre el banco que dirige.** Un DT anunciado que no está inscrito no debuta: el bloque A y T.54 van sobre el interino o el auxiliar (Corinthians: Seedorf fuera del BID).
   > 4. **Descuenta la serie, no el partido.** T.54 no es señal de derrota (Universitario, cuarto DT del año, ganó 4-1 de visita con su núcleo intacto).
+  > 5. *(v1.7)* **Interino que repite el once.** Si el DT nuevo o el interino repite **≥ 9 de 11** del once del DT anterior, el C4 y el D3 heredados **no se borran**: siguen `sin dato` en el número, pero van a la **caja de sensibilidad** como patrón del plantel (Defensor Sporting: perdía ventajas con el DT cesado, 2-0 → 2-3, y las siguió perdiendo con el interino y 10 de 11 del once, 3-1 → 3-3).
+  > 6. *(v1.7)* **Serie corta del DT nuevo.** Con **menos partidos que la ventana de validación (6-8)**, la serie del DT nuevo **amplía el rango en las dos direcciones** y no fija la dirección (Antwerp: cinco derrotas con el DT de agosto, cortadas con un 3-0). Desde la ventana es la señal del equipo (Santos Laguna, seis victorias con Paiva; Blooming, siete sin ganar con Paulucci).
 
 - **T.54-B — Herencia de ciclo** *(NUEVO v1.4)* → Cambio de DT en <6 meses PERO el DT anterior tuvo un ciclo exitoso (≥2 títulos o ≥18 meses con resultados positivos) Y el plantel mantiene ≥60% de titulares. En este caso, **reducir el descuento T.54 de 30-50% a 10-20%**. Anotar: "DT nuevo con infraestructura heredada — la señal K es parcialmente operativa por inercia de plantel, no por mérito del nuevo cuerpo técnico. Ventana de validación: 6-8 partidos bajo nuevo DT para determinar si la inercia se sostiene o degrada."
 
@@ -445,7 +485,7 @@ Verificar y anotar si aplica, independientemente del score:
   > **Criterios de activación:**
   > 1. GK titular (🔴 titular fijo, ≥80% de partidos) salió del club O está fuera por ≥3 meses
   > 2. El reemplazo tiene <15 partidos como titular en la categoría actual
-  > 3. Hay evidencia de que las estadísticas defensivas del equipo se degradaron tras el cambio (más GC por partido, menos clean sheets)
+  > 3. Hay evidencia de que las estadísticas defensivas del equipo se degradaron tras el cambio (más GC por partido, menos clean sheets). *(v1.7)* **Un solo partido no es evidencia** (Feyenoord: GK-DOWNGRADE contra élite apoyado en un 5-1 y Ernst fue la figura con nueve atajadas).
   >
   > **Caso de referencia:** Bucaramanga 2026 — Aldair Quintana (GK titular, selección Perú, transferido a Independiente del Valle) fue reemplazado por Luis Vásquez. BUC era el equipo menos goleado de la Liga (6 GC en 11 PJ), pero en la primera derrota del equipo (0-2 vs Junior), Vásquez mostró responsabilidad en ambos goles. Las K defensivas de BUC estaban infladas por la presencia de Quintana.
 
@@ -453,7 +493,9 @@ Verificar y anotar si aplica, independientemente del score:
 
 - **GK-FALLA-ACTIVA** *(NUEVO v1.6, declarativa)* → El arquero titular de la fecha tiene **≥2 errores que terminaron en gol en sus últimos 5 partidos** (salida, rechace al centro, despeje fallido), documentados en crónica. No modifica el IP ni el porcentaje: se emite en la tira y baja al diagnóstico táctico como **vía de gol del rival**. Llena el hueco que B6 y GK-DOWNGRADE no cubren: B6 mide continuidad, GK-DOWNGRADE que *el arquero es otro*; nada medía que *el arquero está fallando*. Casos: Alianza Lima (TDE-047, mala salida al 90+7), Cusco (Pedro Díaz), Athletico Paranaense (arquero recién reinstalado, implicado en los dos goles), Grêmio–Internacional (rechace de Anthoni). Sin crónica que documente los errores, no se emite.
 
-- **F3 — Degradación por fecha** → Score 🟢/🟡 pero IP > 7 o ≥2 jugadores 🔴 Titular fijo ausentes: operar con confianza reducida. Indicar cuántos puntos de IP provienen de titulares fijos vs rotación/suplentes.
+- **EJE-DEBUTANTE** *(alta en el clasificador v1.7, declarativa)* → **≥ 2 titulares de la misma línea** (pareja central, dupla de pivotes o línea de fondo) que **no compartieron más de un partido como titulares** en la competición. No modifica el IP ni el porcentaje: **amplía el rango** y baja al diagnóstico táctico como **vía de gol del rival**. Las posiciones se leen del grid del once. Hasta la v1.6 vivía solo en `efe-dashboard` (F6) con «0 minutos juntos»; en la cohorte c3 la grieta se cumplió en Mainz (parejas que habían arrancado juntas una vez: los dos penales), Bolívar (línea de fondo con un partido junta), Hamburgo, Peñarol, Querétaro y la zaga de urgencia del Manchester United.
+
+- **F3 — Degradación por fecha** → Score 🟢/🟡 pero IP > 7, ≥2 jugadores 🔴 Titular fijo ausentes, **o una zona en 🔴 (> 40 %) aunque el IP no pase de 7 (v1.7, nombrando la zona)**: operar con confianza reducida. Indicar cuántos puntos de IP provienen de titulares fijos vs rotación/suplentes.
 
 - **G-CLÁSICO** → Próximo rival es clásico/derby: los módulos emocionales (Fe Perdida, Anticulebra) tienen peso amplificado. El H2H de clásicos es su propia serie, no mezclar con H2H general.
 
@@ -477,6 +519,10 @@ Verificar y anotar si aplica, independientemente del score:
   >
   > **Candidato D3-DEGRADADO, declarado y NO aplicado:** un D3 🔶 sostenido en pocos partidos y medido en otro contexto (liga doméstica contra copa continental) se trata como ❌ a efectos de esta alerta. Dos casos a favor en la cohorte c3 (Fenerbahçe, cuyo 🔶 venía de la Süper Lig y llevaba ocho sin ganar en Champions; Cagliari).
   >
+  > **Cuándo se evalúa *(v1.7)*.** Solo si el equipo con D3 ❌ **recibe primero**; si abre él o el rival no lo pone a prueba, la alerta queda «no testeada» (Charleroi, Chico). **Si el que abre el marcador se queda con 10, se desactiva** (ADT: uno más desde el minuto siguiente). En la cohorte c3 el escenario volvió a darse sin goleada en Necaxa, UTC Cajamarca, Juárez, Deportivo Recoleta y Central Español.
+  >
+  > **Candidato COLAPSO + AGRAVANTE, declarado y NO aplicado *(v1.7)*:** las dos rupturas de la tanda tenían un agravante sobre el D3 ❌ —Marítimo (5-0), recién ascendido de visita (R-KT.2); Manchester United (4-1), zaga de urgencia (F3 en DEF, De Ligt tras once meses)—. Con COLAPSO activo y R-KT.2 de visita o F3 rojo en DEF, la ruptura es posible. Dos casos: candidato.
+  >
   > **El tope del Bloque D por D3 ❌ (regla especial D3) no se tocó:** es un número y se revisa con el backtest, no con esta cohorte.
   >
   > **Caso de referencia:** Central Córdoba (D3 ❌) vs Estudiantes (D3 🔶), F12 Apertura 2026. Primer tiempo 0-0. Gol de tiro libre al 47'. Colapso total: 5-0 final con 3 goles en 8 minutos del suplente Gaich contra defensa fatigada y desmoralizada.
@@ -499,14 +545,15 @@ Verificar y anotar si aplica, independientemente del score:
 | R-KT.2 | Estructural | Recién ascendido |
 | Formación fraccionada | Estructural | Score 🔴 con K individual aislada |
 | GK-DOWNGRADE | Estructural | GK titular transferido/fuera, reemplazo de menor nivel |
-| F3 | Por fecha | IP > 7 o ≥2 titulares fijos ausentes |
+| F3 | Por fecha | IP > 7, ≥2 titulares fijos ausentes, o una zona > 40 % (v1.7) |
 | FACTOR-X | Por fecha | Jugador emergente no capturado por K históricas |
 | G-CLÁSICO | Por fecha | Clásico/derby en próximas 4 fechas |
 | G-ASCENDIDO | Por fecha | Rival recién ascendido |
 | G-SORPRESA | Por fecha | Rival rindiendo sobre expectativa |
 | G-BLOQUE | Por fecha | Rival con bloque bajo vs equipo superior |
-| COLAPSO EN CASCADA | Por fecha | D3 ❌ vs rival con D3 ✅/🔶 — escenario de perder la ventaja, sin predicción de goleada (v1.6) |
+| COLAPSO EN CASCADA | Por fecha | D3 ❌ vs rival con D3 ✅/🔶 — escenario de perder la ventaja, sin predicción de goleada (v1.6); solo si el D3 ❌ recibe primero, se desactiva si el que abre se queda con 10 (v1.7) |
 | GK-FALLA-ACTIVA | Por fecha | Arquero titular con ≥2 errores que terminaron en gol en sus últimos 5 partidos — declarativa, sin peso (v1.6) |
+| EJE-DEBUTANTE | Por fecha | ≥2 titulares de la misma línea con ≤1 partido juntos como titulares — declarativa, sin peso (v1.7) |
 
 ---
 
@@ -517,6 +564,7 @@ Cerrar con un párrafo que explique:
 2. Qué paradoja o caso especial presenta, si la hay.
 3. La implicación práctica más importante para analizar a este equipo en el SAD.
 4. **Cómo las ausencias de la fecha (Bloque F), la rotación del DT (F4), el contexto calendárico (Bloque G) y el matchup táctico (Bloque H) modifican la lectura del EFE para el partido inmediato.**
+5. *(v1.7)* **Si se comparan los dos porcentajes:** «el EFE dice cuánto creerle a la K de cada equipo, no quién gana», y si los dos no son de la misma base (o hay R-KT.2 / T.54 en un lado), «empate técnico de formación».
 
 ---
 

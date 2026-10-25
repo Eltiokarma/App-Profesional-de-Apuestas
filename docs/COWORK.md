@@ -954,6 +954,36 @@ Escribís vos (es juicio, no se puede calcular):
   y no mueve el 1X2; GK-FALLA-ACTIVA (arquero titular con ≥ 2 errores que
   terminaron en gol en sus últimos 5) es declarativa, sin peso, y baja al DTP
   como vía del rival.
+  Desde el EFE v1.7 (25/10/2026):
+  · EJE-DEBUTANTE entra al clasificador. Se activa con ≥ 2 titulares de la
+    misma línea con ≤ 1 partido juntos como titulares, leídos del grid del
+    once. Amplía el rango y baja al DTP como vía del rival.
+  · F3 por zona: una zona > 40 % activa F3 aunque el IP no pase de 7, y la
+    alerta nombra la zona.
+  · Cada ausencia de una zona en ámbar o rojo dice si su recambio es «de
+    oficio» o «reconvertido».
+  · El no convocado por descanso va en F4, no en el IP.
+- JERARQUÍA DE FUENTES DEL F1 (EFE v1.7). El orden es:
+  · club (convocatoria o parte médico);
+  · prensa local;
+  · prensa nacional;
+  · previa de agregador (Sports Mole, Khel Now…).
+  Una baja que solo dice un agregador va «en duda», NUNCA «fuera». Una hoja
+  con menos de 11 titulares no cierra el bloque F. El titular fijo que falta
+  de la hoja sin parte va a la caja de sensibilidad.
+- CALENDARIO EXIGENTE (EFE v1.7). Aplica con una eliminatoria a ≤ 5 días, o
+  con el 3.er partido en 8 días o más.
+  · Abrí en la caja de sensibilidad la rama «once alternativo» (quién
+    rotaría) y escribí el porcentaje del EFE como «condicionado al once
+    oficial».
+  · Con el once oficial y ≥ 3 titulares fijos rotados, B y F se recomputan
+    antes de cargar.
+- LA BRECHA DE PORCENTAJE ENTRE LOS DOS EQUIPOS solo se lee si son de la
+  misma base (sin ESCALA-LIGAS) y sin R-KT.2 ni T.54 en un lado. Si no, es
+  «empate técnico de formación». El EFE dice cuánto creerle a la K, no quién
+  gana. D3 va con su contexto (condición, competición, escala): medido solo
+  de local, en la visita baja una franja; medido en otra competición o
+  escala, «sin dato».
 - El matchup H: diagnóstico, razón, el perfil táctico de cada equipo Y los tres
   indicadores `h2a` / `h2b` / `h2c` (verde/ambar/rojo/na) que lo sostienen. Un
   "MATCHUP FAVORABLE" sin los tres es una etiqueta que nadie puede discutir.
