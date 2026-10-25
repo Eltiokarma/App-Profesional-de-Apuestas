@@ -3263,6 +3263,10 @@ def main():
                                                               "m2": {"restDefense": {"foco": foco}}}},
                                    {"b": {"formacion": "4-3-3", "titulares": ["M. Friedl", "Chuky", "Reis"],
                                           "banca": ["S. Lynen"]}})
+    from backend.analisis.dtp_cowork import _suplentes_nombrados as _sn
+    check("605: «Ginter» nombra al titular M. Ginter, no al suplente C. Günter; «Günter» sí al suplente",
+          _sn(["C. Günter"], ["M. Ginter", "P. Lienhart"], " ginter sigue a kane ") == []
+          and _sn(["C. Günter"], ["M. Ginter"], " gunter sigue a kane ") == ["C. Günter"])
     check("526: «sin Lynen» no marca el seguro en el banco; «fijo en Lynen» sí",
           not any(m.startswith("seguro") for m in _rd526("Chuky San José y Reis; sin Lynen, depende de que un lateral se quede")["motivos"])
           and any(m.startswith("seguro") for m in _rd526("pivote fijo en Lynen")["motivos"]))
