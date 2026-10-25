@@ -209,7 +209,9 @@ cada 30 minutos y es CORTA: casi siempre no hay nada que hacer.
 >    ENTERO), `GET $B/fixtures/{id}/ficha` (el once oficial, con grid) y
 >    `GET $B/analisis/cowork/dtp/{id}`. El motivo está en el detalle de la
 >    alerta DTP-REHACER y en `dtp.bloques[].calculado.contraElOnce`.
-> 2. En el bloque del DTP marcado: rehacé **M1** con el once oficial
+> 2. En el bloque del DTP marcado —y SIEMPRE también en el bloque del rival,
+>    porque su M2 nombra como rivales a los jugadores que cambiaron (incidencia
+>    525, DTP v1.5)—: rehacé **M1** con el once oficial
 >    (`sistema` y `xiReferencia` = los once titulares de la ficha) y **M2** en
 >    sus dos capas (DTP v1.4): lo estructural (carriles, zonas, mecanismos)
 >    se revisa; los duelos con nombre propio se reescriben con ESTE once, en

@@ -2379,6 +2379,8 @@ def guardar(payload: dict) -> dict:
     # ventana en la que arreglarlo es legítimo. Callarlo es descubrirlo medio
     # día tarde, que fue exactamente lo que pasó con `cadena` y con `tde`.
     faltan = []
+    # DTP v1.5: los dos carriles de banda, con su vuelta (aviso, sin rechazo)
+    faltan.extend(_dtp.avisos_carril(parte.get("dtp") or {}, {"a": fx["home_name"], "b": fx["away_name"]}))
     if not any((parte.get("cadena") or {}).get(l) for l in LADOS):
         faltan.append({
             "bloque": "cadena",

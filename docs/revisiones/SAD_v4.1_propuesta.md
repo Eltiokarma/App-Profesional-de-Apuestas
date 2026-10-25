@@ -1,7 +1,8 @@
 # Propuesta de revisión · `sad-analysis` v4.0 → v4.1
 
-**Estado:** PROPUESTA, pendiente de aprobación del usuario. Redactada el
-25/10/2026. Parte de la v4.0 vigente (`docs/skills/sad-analysis/SKILL.md`,
+**Estado:** APROBADA por el usuario (25/10/2026, cambios 1-4; el 4 sin la
+frase del motor). Redactada en `docs/skills/sad-analysis/SKILL.md` (v4.1).
+Falta que el usuario la suba a su cuenta. Propuesta escrita el 25/10/2026. Parte de la v4.0 vigente (`docs/skills/sad-analysis/SKILL.md`,
 21/10). Toca **solo el paso 6** (la síntesis: cómo salen las probabilidades
 1X2) y agrega una regla de lectura en la Ley 4. No toca la Ley 1, la espina, el
 reventón ni ningún número calibrado de la app.

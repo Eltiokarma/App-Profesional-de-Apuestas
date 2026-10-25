@@ -948,6 +948,15 @@ conversación se pierde en la siguiente.
      el botón 🔑 «Cerrar las anteriores a vX» del dossier pasa a `aplicada` las
      lecciones de partidos anteriores al corte de la versión vigente
      (`lecciones.CORTE_VERSION`: actualizarlo con cada versión nueva).
+   - **Skills, 25/10** (usuario aprobó): **DTP v1.5** (`docs/revisiones/DTP_v1.5_propuesta.md`:
+     quinta vía de gol, caso de la pregunta 6 completo, dos ramas por marcador,
+     MECANISMO-ABIERTO con régimen, dos carriles con vuelta, `m2.piezas` contra
+     el once —una pieza en el banco pide rehacer, incidencia 525— y
+     `xiReferencia` vacío rechazado) y **sad-analysis v4.1** (calibración del
+     1X2: el empate parte del mercado, el favorito ≥ 50 % no se recorta bajo el
+     mercado sin dato propio; bajas del ataque rival por zona). El SOB2 del TDE
+     sigue heredando el nivel de hoy, no la rama persiguiendo (pendiente del
+     usuario). Pendiente del usuario: subir los dos zips.
    - **Escala entre ligas** (300, 309, 294, 79): decidido «solo marcar» (22/10):
      rival (`escalaComparable`), tarjeta de la espina, perfil DC y P1a llevan la
      marca y su nota; ningún número calibrado se mueve.

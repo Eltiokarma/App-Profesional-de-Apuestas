@@ -1034,11 +1034,13 @@ class LeccionInvalida(ValueError):
 # ANTERIOR ya entró en esa revisión: queda `aplicada` en esa versión. Se
 # actualiza con cada versión nueva (25/10/2026: 2.632 lecciones, ninguna
 # cerrada, aunque cuatro versiones ya habían salido de esos dossiers).
+# Historial por skill, de la más vieja a la vigente: cada lección se cierra
+# en la PRIMERA versión cuyo corte es posterior a su partido (la que la leyó).
 CORTE_VERSION = {
-    "diagnostico-tactico": ("v1.4", "2026-10-21"),
-    "efe-clasificador": ("v1.6", "2026-10-21"),
-    "sad-analysis": ("v4.0", "2026-10-21"),
-    "teorema-del-echado": ("v0.1.22", "2026-10-22"),
+    "diagnostico-tactico": [("v1.4", "2026-10-21"), ("v1.5", "2026-10-25")],
+    "efe-clasificador": [("v1.6", "2026-10-21")],
+    "sad-analysis": [("v4.0", "2026-10-21"), ("v4.1", "2026-10-25")],
+    "teorema-del-echado": [("v0.1.22", "2026-10-22")],
 }
 
 
@@ -1049,11 +1051,20 @@ def cerrar_anteriores(skill: str) -> dict:
     Lo hace el usuario, no el agente."""
     if skill not in CORTE_VERSION:
         raise LeccionInvalida(f"{skill} no tiene versión con corte en CORTE_VERSION")
-    version, corte = CORTE_VERSION[skill]
-    nota = f"cerrada en bloque: el dossier de {version} (redactado el {corte}) ya leyó este caso"
+    historial = sorted(CORTE_VERSION[skill], key=lambda vc: vc[1])
+    version, corte = historial[-1]
     inv = inventario(skill=skill, limite=100000)
-    claves = [i["clave"] for i in inv["items"]
-              if i["estado"] == "pendiente" and (i.get("fecha") or "")[:10] < corte]
+    filas, porVersion = [], {}
+    for i in inv["items"]:
+        if i["estado"] != "pendiente":
+            continue
+        f = (i.get("fecha") or "")[:10]
+        v = next(((vv, cc) for vv, cc in historial if f < cc), None)
+        if not v:
+            continue
+        filas.append((i["clave"], v[0], f"cerrada en bloque: el dossier de {v[0]} (redactado el {v[1]}) "
+                                        "ya leyó este caso"))
+        porVersion[v[0]] = porVersion.get(v[0], 0) + 1
     ahora = efedb.ahora()
     with _conectar() as con:
         con.executemany(
@@ -1061,11 +1072,12 @@ def cerrar_anteriores(skill: str) -> dict:
             "VALUES (?,'aplicada',?,?,?) ON CONFLICT(clave) DO UPDATE SET "
             "estado=excluded.estado, aplicada_en=excluded.aplicada_en, nota=excluded.nota, "
             "actualizado_en=excluded.actualizado_en",
-            [(k, version, nota, ahora) for k in claves])
-    quedan = sum(1 for i in inv["items"] if i["estado"] == "pendiente") - len(claves)
-    print(f"[cowork] {skill}: {len(claves)} lecciones anteriores al {corte} → aplicada en {version}", flush=True)
-    return {"skill": skill, "version": version, "corte": corte, "cerradas": len(claves),
-            "quedanPendientes": quedan, "nota": nota}
+            [(k, v, n, ahora) for k, v, n in filas])
+    quedan = sum(1 for i in inv["items"] if i["estado"] == "pendiente") - len(filas)
+    print(f"[cowork] {skill}: {len(filas)} lecciones anteriores al {corte} → aplicada ({porVersion})", flush=True)
+    return {"skill": skill, "version": version, "corte": corte, "cerradas": len(filas),
+            "porVersion": porVersion, "quedanPendientes": quedan,
+            "nota": "cada lección queda aplicada en la primera versión cuyo dossier la leyó"}
 
 
 def descartar_cohorte(cohorte: str, nota: str = "") -> dict:

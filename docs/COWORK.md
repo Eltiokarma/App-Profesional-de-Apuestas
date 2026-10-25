@@ -1177,6 +1177,11 @@ Escribís vos (es juicio, no se puede calcular):
   con μ como λ** (se hizo en 78 partes de octubre; el modelo de goles del
   skill viejo no existe en esta app). Si `unXDos` viene null, el motor no
   corrió y se dice.
+  Al armar `probabilidades` (sad-analysis v4.1, paso 6-B): el EMPATE arranca en
+  el del mercado sin margen y se aparta más de 2 puntos solo con un hecho de
+  ESTE partido nombrado en la lectura; un favorito al que el mercado da 50 %+
+  no queda por debajo del mercado sin un dato que el mercado no tenga, escrito
+  con su cifra («−N puntos al favorito por <el dato>»).
 - Los documentos en prosa (ver punto 5).
 
 NO escribas, porque lo calcula la app y se ignora si llega:
@@ -1241,8 +1246,11 @@ negritas, citas y tablas se pintan bien en la app.
                                        "notas"},
               "viasGol": {"foco": [], "rival": []},
               "restDefense": {"foco", "rival",
-                              "nivelFoco": "fijo"|"depende"|"sin", "nivelRival": "fijo"|"depende"|"sin"},
-              "posesion": {"valor", "contraQuien", "marcador", "sede"},
+                              "nivelFoco": "fijo"|"depende"|"sin", "nivelRival": "fijo"|"depende"|"sin",
+                              "nivelFocoPersiguiendo", "nivelRivalPersiguiendo"},
+              "posesion": {"igualadoOArriba": {"valor", "contraQuien", "marcador", "sede"},
+                           "persiguiendo": {"valor", "contraQuien", "marcador", "sede"}},
+              "piezas": [{"nombre", "lado": "foco"|"rival", "rol"}],
               "veredicto": "FAVORABLE"|"NEUTRO"|"DESFAVORABLE", "razon"},
        "m3Fases": [{"tramo": "0-25"|"25-65"|"65-80+", "plan", "palancas": []}],
        "m6": {"competitivo": true, "rotacion", "fatiga", "ausencias", "otros"}},
@@ -1253,8 +1261,19 @@ negritas, citas y tablas se pintan bien en la app.
                     "absolucion"}],
        "m5": {"planFuncionoHastaMin", "peligroReal", "cronologiaGiro",
               "contraste": {"aciertos": [], "fallos": []}, "preguntaChecklistFallida"},
-       "mecanismoAbierto": {"activo", "mecanismo", "lineaRepite", "correccionEnVivo", "sinMecanica": false},
-       "casoBloque": {"sostuvo": true|false, "caso": "1-0 sostenido 50' ante un obligado", "conUnoMenos": false}}}
+       "mecanismoAbierto": {"activo", "mecanismo", "lineaRepite", "correccionEnVivo", "sinMecanica": false,
+                            "regimen": "cualquiera"|"persiguiendo"},
+       "casoBloque": {"sostuvo": true|false, "caso": "1-0 sostenido 50' ante un obligado", "conUnoMenos": false,
+                      "conUnoMas": false, "tipo": "ventaja"|"empate_que_sirve"|"cero_cero",
+                      "sostuvoArquero": false, "linea": "la pareja o línea que lo sostuvo"}}}
+    · DTP v1.5 (25/10/2026, skill `diagnostico-tactico`): posesión y seguro de
+      atrás en DOS ramas (igualado o arriba · persiguiendo); `piezas` = de quién
+      depende la capa de nombres del M2 (duelos con nombre, contenedor del
+      seguro, ejecutor de penales), con su lado: si una arranca en el banco, la
+      app pide rehacer; `xiReferencia` vacío o en prosa SE RECHAZA (sin previa,
+      el último once oficial, dicho en `senalXi`); los dos carriles de banda de
+      cada lado con su `vuelta` (si no, el recibo lo avisa); quinta vía de gol:
+      el error en la salida bajo presión. Detalle en el skill.
     · El CHECKLIST es el del skill v1.2: respondé las SEIS preguntas del
       bloque RIVAL (meses con el modelo · minutos de la línea · centrales de
       oficio · banco de recambio · repliegue como plan · ¿sostuvo un

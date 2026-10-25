@@ -493,6 +493,10 @@ function ChecklistBloque({ b, rival, isMobile }: { b: DtpBloque; rival: string; 
         <Campo label="Caso del bloque propio en el partido cerrado (pregunta 6 del próximo rival)">
           {b.cierre.casoBloque.sostuvo === true ? 'sostuvo · ' : b.cierre.casoBloque.sostuvo === false ? 'no sostuvo · ' : ''}
           {b.cierre.casoBloque.caso}{b.cierre.casoBloque.conUnoMenos ? ' · con uno menos' : ''}
+          {b.cierre.casoBloque.conUnoMas ? ' · con uno más (no prueba)' : ''}
+          {b.cierre.casoBloque.tipo ? ` · ${b.cierre.casoBloque.tipo.replace(/_/g, ' ')}` : ''}
+          {b.cierre.casoBloque.sostuvoArquero ? ' · lo sostuvo el arquero' : ''}
+          {b.cierre.casoBloque.linea ? ` · línea: ${b.cierre.casoBloque.linea}` : ''}
         </Campo>
       )}
       <Campo label="Notas">{chk.notas}</Campo>
@@ -500,20 +504,32 @@ function ChecklistBloque({ b, rival, isMobile }: { b: DtpBloque; rival: string; 
         {(rd.foco || rd.rival) && (
           <div>
             <Campo label="Rest defense / seguro tras la pérdida (→ SOB2 del TDE)">
-              {rd.foco && <div>propio: {rd.foco}{rd.nivelFoco ? ` · ${SEGURO[rd.nivelFoco] ?? rd.nivelFoco}` : ''}</div>}
-              {rd.rival && <div>rival: {rd.rival}{rd.nivelRival ? ` · ${SEGURO[rd.nivelRival] ?? rd.nivelRival}` : ''}</div>}
+              {rd.foco && <div>propio: {rd.foco}{rd.nivelFoco ? ` · ${SEGURO[rd.nivelFoco] ?? rd.nivelFoco}` : ''}
+                {rd.nivelFocoPersiguiendo ? ` · persiguiendo: ${SEGURO[rd.nivelFocoPersiguiendo] ?? rd.nivelFocoPersiguiendo}` : ''}</div>}
+              {rd.rival && <div>rival: {rd.rival}{rd.nivelRival ? ` · ${SEGURO[rd.nivelRival] ?? rd.nivelRival}` : ''}
+                {rd.nivelRivalPersiguiendo ? ` · persiguiendo: ${SEGURO[rd.nivelRivalPersiguiendo] ?? rd.nivelRivalPersiguiendo}` : ''}</div>}
             </Campo>
           </div>
         )}
-        {pos.valor && (
+        {(pos.valor || pos.igualadoOArriba?.valor || pos.persiguiendo?.valor) && (
           <Campo label="Posesión (condicional al marcador)">
-            {pos.valor}{pos.contraQuien ? ` contra ${pos.contraQuien}` : ''}{pos.marcador ? ` · ${pos.marcador}` : ''}{pos.sede ? ` · ${pos.sede}` : ''}
+            {/* v1.5: dos ramas; la plana queda para los partes viejos */}
+            {([['', pos], ['igualado o arriba: ', pos.igualadoOArriba], ['persiguiendo: ', pos.persiguiendo]] as const).map(([et, r]) =>
+              r?.valor ? (
+                <div key={et}>{et}{r.valor}{r.contraQuien ? ` contra ${r.contraQuien}` : ''}{r.marcador ? ` · ${r.marcador}` : ''}{r.sede ? ` · ${r.sede}` : ''}</div>
+              ) : null)}
+          </Campo>
+        )}
+        {(b.apertura.m2.piezas ?? []).length > 0 && (
+          <Campo label="Piezas del M2 (si una arranca en el banco, se rehace)">
+            {b.apertura.m2.piezas!.map((pz) => `${pz.nombre}${pz.lado === 'rival' ? ' (rival)' : ''}${pz.rol ? ` · ${pz.rol}` : ''}`).join(' · ')}
           </Campo>
         )}
       </div>
       {mec.activo && (
         <div role="alert" style={{ marginTop: 10, padding: '7px 10px', borderRadius: 8, background: 'var(--down-soft)', border: '1px solid var(--down)', font: '600 11.5px var(--sans)', color: 'var(--down)' }}>
           MECANISMO-ABIERTO{mec.sinMecanica ? ' · SIN MECÁNICA (vía a verificar)' : ''} · {mec.mecanismo || 'sin nombrar'}
+          {mec.regimen === 'persiguiendo' ? ' · vale si vuelve a perseguir' : ''}
           {mec.lineaRepite != null && ` · la línea ${mec.lineaRepite ? 'repite' : 'no repite'} intérpretes`}
           {mec.correccionEnVivo != null && ` · ${mec.correccionEnVivo ? 'hubo' : 'sin'} corrección en vivo`}
         </div>
