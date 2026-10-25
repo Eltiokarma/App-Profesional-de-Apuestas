@@ -2960,6 +2960,19 @@ def main():
           d_vacio["existe"] is False and d_vacio["abierta"] is False and len(d_vacio["flujo"]) == 5, d_vacio)
     check("el dossier trae la versión vigente del snapshot del skill (la que va en aplicadaEn)",
           c.get(f"{A}/analisis/cowork/revision/teorema-del-echado").json()["versionVigente"].startswith("v0."))
+    # en Railway no hay docs/: la versión sale de CORTE_VERSION, y tiene que ser la del snapshot
+    import re as _re_v
+    from backend.analisis import lecciones as _lec_v
+    _difieren = []
+    for _sk in _lec_v.CORTE_VERSION:
+        try:
+            _m = _re_v.search(r"\*\*v(\d+(?:\.\d+)+)", open(f"docs/skills/{_sk}/SKILL.md", encoding="utf-8").read(20000))
+        except OSError:
+            continue
+        if _m and f"v{_m.group(1)}" != _lec_v.version_skill(_sk):
+            _difieren.append((_sk, f"v{_m.group(1)}", _lec_v.version_skill(_sk)))
+    check("CORTE_VERSION y el snapshot de docs/skills dicen la misma versión vigente (sin docs/, manda el código)",
+          not _difieren, _difieren)
     def _caso_d(k, regla, modo="tde"):
         return {"fixtureId": 870000 + k, "fecha": "2026-09-20", "equipoA": f"A{k}", "equipoB": f"B{k}",
                 "parte": {}, "cohorte": _COH, "cuarentena": None,

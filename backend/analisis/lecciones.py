@@ -973,6 +973,11 @@ def version_skill(skill: str) -> str:
     import os
     import re
     ruta = os.path.join(_RAIZ, "docs", "skills", skill, "SKILL.md")
+    # EN RAILWAY NO HAY docs/ (el .dockerignore lo deja fuera): la pantalla
+    # salía «sin versión» y el botón de cerrar no aparecía (25/10/2026). Manda
+    # el registro de versiones del código, que viaja con el backend.
+    if CORTE_VERSION.get(skill):
+        return sorted(CORTE_VERSION[skill], key=lambda vc: vc[1])[-1][0]
     try:
         with open(ruta, encoding="utf-8") as f:
             m = re.search(r"\*\*v(\d+(?:\.\d+)+)", f.read(20000))
