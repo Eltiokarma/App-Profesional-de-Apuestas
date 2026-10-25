@@ -27,8 +27,9 @@ const FAMILIAS: Record<string, (gf: number, gc: number) => boolean> = {
 }
 
 const NARRADAS: [string, string, string][] = [
-  ['noPierde', 'sin perder', 'perdiendo'],
-  ['noGana', 'sin ganar', 'ganando'],
+  // el NO de estas dos es el resultado: «perdiendo» se leía al revés (incidencia 578)
+  ['noPierde', 'sin perder', 'con derrota'],
+  ['noGana', 'sin ganar', 'con victoria'],
   ['gana2+', 'ganando por 2 o más', 'sin ganar por 2 o más'],
   ['gana3+', 'ganando por 3 o más', 'sin ganar por 3 o más'],
   ['pierde2+', 'perdiendo por 2 o más', 'sin perder por 2 o más'],

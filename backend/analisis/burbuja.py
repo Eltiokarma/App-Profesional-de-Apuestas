@@ -626,14 +626,20 @@ def _analizar_familia(filas: list[dict], familia: str, proximo: dict | None, est
         quien = f"el próximo rival ({proximo['rival']}, nivel {_r2(nivel_prox)})"
         verbo = "reventar" if signo == "+" else "cortarse la racha"
         lado = "fuerte" if signo == "+" else "flojo"
+        # el tramo («fuerte», «muy fuerte») mide cuánto EMPUJA AL CORTE, no la
+        # fuerza del rival: con racha − un rival flojo empuja. Dicho en el texto
+        # para que «mucho más flojo» junto a tramo «muy fuerte» no se lea al
+        # revés (incidencias 465 y 551: Manta, Espanyol, Augsburg, Pumas)
+        por_que = (": el rival fuerte es el que revienta una racha positiva" if signo == "+"
+                   else ": el rival flojo es el que corta una racha negativa")
         if tramo == "lejos":
             motivos.append(f"{quien} queda lejos del nivel con el que suele {verbo} (mediana {med_n})")
         elif tramo == "zona":
             motivos.append(f"{quien} está en la zona donde suele {verbo} (mediana {med_n})" + (f" (+{pts})" if pts else ""))
         elif tramo == "fuerte":
-            motivos.append(f"{quien} es más {lado} que los rivales con los que suele {verbo} (mediana {med_n})" + (f" (+{pts})" if pts else ""))
+            motivos.append(f"{quien} es más {lado} que los rivales con los que suele {verbo} (mediana {med_n}){por_que}" + (f" (+{pts})" if pts else ""))
         else:
-            motivos.append(f"{quien} es mucho más {lado} que los rivales con los que suele {verbo} (mediana {med_n})" + (f" (+{pts})" if pts else ""))
+            motivos.append(f"{quien} es mucho más {lado} que los rivales con los que suele {verbo} (mediana {med_n}){por_que}" + (f" (+{pts})" if pts else ""))
         # A FAVOR DE QUE LA RACHA SIGA: el favorito con racha +, el débil con racha −
         if nivel_equipo is not None:
             g = _r2((float(nivel_equipo) - nivel_prox) if signo == "+" else (nivel_prox - float(nivel_equipo)))

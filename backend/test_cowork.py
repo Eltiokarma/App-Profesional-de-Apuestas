@@ -3578,6 +3578,44 @@ def main():
     check("171/323: la zona es la del último once en que fue titular (D → DEF) y la de la temporada queda aparte",
           _t4[_fuera["id"]]["zona"] == "DEF" and _t4[_fuera["id"]].get("zonaTemporada"), _t4.get(_fuera["id"]))
     check("359: la posición en inglés tiene zona", _f1m._ZONA.get("Forward") == "ATK" and _f1m._ZONA.get("Goalkeeper") == "GK")
+    # ── GRUPO F1 del 25/10/2026 (382, 398, 457, 462, 497, 501, 509, 515, 517, 523, 582) ──
+    _par = _f1m._hasta_el_paron([{"id": 1, "date": "2026-10-20"}, {"id": 2, "date": "2026-10-01"},
+                                 {"id": 3, "date": "2026-08-30"}, {"id": 4, "date": "2026-05-20"}])
+    check("398: la ventana de onces corta en el parón de temporada (> 35 días entre dos partidos)",
+          [f["id"] for f in _par] == [1, 2, 3], _par)
+    check("398/509: el rol se divide por los onces en que estaba en la hoja (lesionado o recién llegado no rota)",
+          _f1m.rol_por_onces(4, _f1m.onces_disponible({"titular": 4, "convocado": 4}, 10)) == "TF"
+          and _f1m.rol_por_onces(3, _f1m.onces_disponible({"titular": 3, "convocado": 10}, 10)) == "ROT"
+          and _f1m.onces_disponible({"titular": 2, "convocado": 2}, 10) == 10)
+    _zh = {"zona": "ATK"}
+    _f1m._zona_reciente(_zh, {"posicionHabitual": "F", "posicionReciente": "M"})
+    check("457/523: la zona es la habitual de sus titularidades, no la del último once",
+          _zh["zona"] == "ATK" and "zonaTemporada" not in _zh, _zh)
+    _pl5 = _jugm.plantilla_de(_hid)["jugadores"]
+    _dt5 = next((d for d in _f1m.decisivos(_jugm.plantilla_de(_hid))), None)
+    _resto5 = [j for j in _pl5 if not _dt5 or j["id"] != _dt5["id"]]
+    _top5, _supl5, _gem5 = _resto5[:3], _resto5[-1], _resto5[-2]
+    _f1m.onces_recientes = lambda t, a: {"onces": 10, "ultimo": 1, "jugadores": {
+        **{j["id"]: {"nombre": j["nombre"], "posicion": "M", "titular": 10, "convocado": 10, "enUltimo": True} for j in _top5},
+        **({_dt5["id"]: {"nombre": "x", "posicion": "M", "titular": 0, "convocado": 0, "enUltimo": False}} if _dt5 else {}),
+        _supl5["id"]: {"nombre": _supl5["nombre"], "posicion": "F", "titular": 0, "convocado": 8, "enUltimo": False,
+                       "gaRecientes": 2},
+        999001: {"nombre": _gem5["nombre"], "posicion": "D", "posicionReciente": "D", "titular": 6, "convocado": 6,
+                  "enUltimo": True}}}
+    _f1m_juntos, _f1m._juntos = _f1m._juntos, (lambda a, b: False)
+    _c5, _f1m.CANDIDATOS = _f1m.CANDIDATOS, 3
+    try:
+        _t5 = {x["jugadorId"]: x for x in _tabla_eq(_hid, "local", "2100-01-01")["candidatos"]}
+    finally:
+        _f1m.onces_recientes, _f1m.CANDIDATOS, _f1m._juntos = _orig_rec, _c5, _f1m_juntos
+    check("382: el que hizo gol o asistencia desde el banco en los onces mirados entra a la tabla",
+          _supl5["id"] in _t5 and _t5[_supl5["id"]].get("gaRecientes") == 2, _t5.get(_supl5["id"]))
+    check("501/515/517: el decisivo de la temporada que hoy no es titular entra, sin «decisivo» y con decisivoTemporada",
+          not _dt5 or (_dt5["id"] in _t5 and not _t5[_dt5["id"]]["decisivo"] and _t5[_dt5["id"]].get("decisivoTemporada")),
+          _t5.get(_dt5["id"]) if _dt5 else None)
+    check("462/497/582: el id de la hoja casa con su fila de la plantilla (fuera del corte) y va a idsAlternos",
+          _gem5["id"] in _t5 and 999001 in (_t5[_gem5["id"]].get("idsAlternos") or [])
+          and _t5[_gem5["id"]].get("titularEnElUltimo") and 999001 not in _t5, (_t5.get(_gem5["id"]), list(_t5)))
     # UN JUGADOR CON DOS IDS ES UNO (Leones del Norte, Nacional Potosí: 17-19/10/2026)
     from backend.analisis.f1_base import deduplicar as _dedup, mismo_jugador as _mj
     _js = [{"id": 362224, "nombre": "Emiliano Griffa", "minutos": 900, "partidos": 10},

@@ -370,6 +370,13 @@ def main():
     check("125: el id por nombre no se adivina con dos candidatos",
           _ft._id_por_nombre("J. Rojas", [(1, "Juan Rojas"), (2, "José Rojas")]) is None
           and _ft._id_por_nombre("J. Orantes", [(424701, "Javier Orantes"), (3, "Otro")]) == 424701)
+    # 565: goals_prevented igual en los dos lados no es de ningún arquero
+    from backend.analisis.arquero import goles_prevenidos_del_equipo as _gp
+    _gpf = lambda a, b: [{"clave": "goals_prevented", "team_id": 1, "valor": a},
+                         {"clave": "goals_prevented", "team_id": 2, "valor": b}]
+    check("565: goals_prevented repetido en los dos equipos se descarta; distinto, se usa",
+          _gp(_gpf("-1.31", "-1.31"), 1) is None and _gp(_gpf("0.5", "-0.2"), 1) == 0.5)
+
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
 
