@@ -93,13 +93,16 @@ def _parte(fixture_id: int, nombre_a: str = "", nombre_b: str = "") -> dict:
              "vias": [{"nombre": "echada", "indice": 58, "ventana": "75-90'", "detalle": "baja el bloque"}],
              "falsador": "si sostiene la línea tras el 75'",
              "reasignacion": {"siMarcaPrimero": {"sob1": 0, "tipologia": "ECHADA-VOL", "nota": "administra"},
-                              "siRecibePrimero": {"sob1": 1, "sob2": 0.5, "nota": "persigue y se expone"}}},
+                              "siRecibePrimero": {"sob1": 1, "sob2": 0.5, "nota": "persigue y se expone"},
+                              "siLeEmpatan": {"sob1": 0.5, "sob2": 0.5, "nota": "vuelve a empujar"},
+                              "siExpulsion": {"propia": {"nota": "ECHADA-NUM"}, "rival": {"nota": "empuja con uno más"}}}},
             {"ie": 24, "ieNivel": "verde", "ise": 47, "iseNivel": "ambar", "equipo": "a",
              "tipologia": "sobreexposición por urgencia", "ventana": "60-75'",
              "vias": [{"nombre": "sobreexposicion", "indice": 47, "ventana": "60-75'",
                        "detalle": "adelanta los laterales"}],
              "falsador": "si conserva los laterales por detrás del balón",
-             "reasignacion": {"siMarcaPrimero": {"sob1": 0}, "siRecibePrimero": "sigue igual"}},
+             "reasignacion": {"siMarcaPrimero": {"sob1": 0}, "siRecibePrimero": "sigue igual",
+                              "siLeEmpatan": "sigue igual", "siExpulsion": "repliega"}},
         ]},
         "timelineEventos": [
             {"fecha": "2026-03-02", "equipo": nombre_b or "B", "tipo": "tecnico",
@@ -3825,6 +3828,37 @@ def main():
           [(t["desde"], t["hasta"], t["rama"]) for t in _ta] == [(0, 45, "base"), (45, 90, "siMarcaPrimero")]
           and _ta[1]["rango"] == [45, 60], _ta)
     # incidencias 446 y 448: la roja propia abre tramo con siExpulsion (declarada o no)
+    # ── TDE v0.1.23 (25/10/2026) ────────────────────────────────────────────
+    from backend.analisis.parte import tipologia_vs_indices as _tvi
+    check("538: ECHADA-PSI con ISE > IE avisa TIPOLOGIA-VS-INDICES; SOB con ISE > IE no",
+          (_tvi({"tipologia": "ECHADA-PSI", "ie": 2.94, "ise": 3.33}) or {}).get("codigo") == "TIPOLOGIA-VS-INDICES"
+          and _tvi({"tipologia": "SOB-URG", "ie": 2.94, "ise": 3.33}) is None)
+    from backend.analisis.parte import _bloque_tde as _bt533
+    _rz533: list = []
+    _b533 = _bt533({"equipo": "a", "ie": 6.1, "ieNivel": "banda 5-7"}, _rz533, "tde.bloques[0]", "a")
+    check("533: una banda en ieNivel (el skill no publica color) no se rechaza ni se guarda como color",
+          not _rz533 and _b533["ieNivel"] == "" and _b533["ie"] == 6.1, (_b533.get("ieNivel"), _rz533))
+    from backend.analisis.parte import _reasignacion as _rsg23
+    _rz23: list = []
+    _r23 = _rsg23({"siMarcaPrimero": {"sob1": 0}, "siIguala": {"sob1": 1, "nota": "sigue empujando"},
+                   "siExpulsion": {"propia": {"nota": "ECHADA-NUM"}, "rival": {"sob1": 1, "ventana": "desde la roja +15"}}},
+                  _rz23, "tde.bloques[0].reasignacion")
+    check("v0.1.23: siIguala entra y siExpulsion se separa en propia y rival, sin rechazos",
+          "siIguala" in _r23 and _r23["siExpulsion"]["nota"] == "ECHADA-NUM"
+          and _r23["siExpulsionRival"]["ventana"] == "desde la roja +15" and not _rz23, (_r23, _rz23))
+    _g23 = [{"minuto": 30, "lado": "b", "enAnadido": False}, {"minuto": 70, "lado": "b", "enAnadido": False}]
+    _t23 = tramos_por_marcador({"reasignacion": {"siExpulsionRival": {"ventana": "desde la roja +15"}}}, _g23, "a",
+                               [{"minuto": 60, "lado": "b", "enAnadido": False}])
+    check("v0.1.23: con la roja del rival y su línea escrita, el tramo es siExpulsionRival y mide desde la roja",
+          any(t["rama"] == "siExpulsionRival" and t["rango"] == [60, 75] for t in _t23), _t23)
+    from backend.analisis.veredicto import rama_jugada as _rj23, anadido_del_cierre as _ad23
+    _rj = _rj23({"equipo": "a", "reasignacion": {}}, [{"minuto": 20, "lado": "b"},
+                                                    {"minuto": 60, "lado": "b", "penal": True}], 2, True)
+    check("v0.1.23 (disciplina 61): el segundo gol de penal sale «otra_via», no «concedio»",
+          _rj.get("salida") == "otra_via", _rj)
+    _ad = _ad23([{"minuto": 94, "lado": "b", "enAnadido": True}], [{"minuto": 92, "lado": "a", "enAnadido": True}], "a")
+    check("v0.1.23: la casilla del añadido dice el gol concedido y la roja propia del descuento",
+          _ad["concedidos"] == [94] and _ad["rojas"] == [{"minuto": 92, "propia": True}] and _ad["cambioElTramo"], _ad)
     _tx = tramos_por_marcador({"reasignacion": {"siMarcaPrimero": {"sob1": 0}, "siExpulsion": "roja ganando → ECHADA-NUM"}},
                               [{"minuto": 26, "lado": "a"}, {"minuto": 61, "lado": "b"}], "a",
                               [{"minuto": 27, "lado": "a", "jugador": "x"}, {"minuto": 70, "lado": "b", "jugador": "y"}])

@@ -956,7 +956,14 @@ conversación se pierde en la siguiente.
      1X2: el empate parte del mercado, el favorito ≥ 50 % no se recorta bajo el
      mercado sin dato propio; bajas del ataque rival por zona). El SOB2 del TDE
      sigue heredando el nivel de hoy, no la rama persiguiendo (pendiente del
-     usuario). Pendiente del usuario: subir los dos zips.
+     usuario). Y **TDE v0.1.23** (aprobada entera, incluye la v0.1.22 que nunca
+     se subió): `siIguala`, `siExpulsion {propia, rival}` (→ `siExpulsionRival`),
+     la línea del empate y de la expulsión exigidas en el recibo, la cuenta de
+     jugadores manda en la disciplina 16, `salida: otra_via` (penal o autogol)
+     y la casilla `anadido` del cierre; el IE no lleva color (una banda en
+     `ieNivel` ya no se rechaza, 533) y `TIPOLOGIA-VS-INDICES` avisa la
+     tipología que contradice IE contra ISE (538). Pendiente del usuario:
+     subir los tres zips.
    - **Escala entre ligas** (300, 309, 294, 79): decidido «solo marcar» (22/10):
      rival (`escalaComparable`), tarjeta de la espina, perfil DC y P1a llevan la
      marca y su nota; ningún número calibrado se mueve.

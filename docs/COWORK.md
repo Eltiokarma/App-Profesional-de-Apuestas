@@ -1409,6 +1409,12 @@ el pantallazo es el procedimiento.
   si escribís que administra, decí por qué. En el veredicto, la rama del que
   persigue se cierra por el régimen (`salida`: concedió · marcó él ·
   sin más goles), no por el desenlace (disciplina 61).
+  **TDE v0.1.23 (25/10/2026):** las CINCO ramas en su campo —la línea del
+  empate escrita dentro de la nota de otra rama no cuenta, y el recibo pide
+  `siLeEmpatan` y `siExpulsion`—; `siIguala` para el que iba abajo y empata;
+  `siExpulsion` con `propia` y `rival`, y la cuenta de jugadores manda antes
+  que el marcador (10 contra 10 caduca ECHADA-NUM). El IE no lleva color: el
+  nivel puede ir vacío (la banda ordinal la calcula la app).
 - **Cuando salga el once oficial, mirá `DTP-REHACER`**: si el sistema o el XI
   de referencia de tu apertura no son los que salieron (9 de 24 el 11/10), el
   mapa de duelos se escribió sobre otro equipo. Antes del pitazo: rehacé M1/M2
@@ -1495,8 +1501,10 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
                             "nota": "administra: la ventana cuenta desde el minuto del gol"},
          "siRecibePrimero": {"sob1": 1, "tipologia": "SOBREEXPOSICION",
                              "nota": "persigue con los laterales arriba", "ventana": "desde el gol +15"},
-         "siLeEmpatan": {"sob1": 0.5, "nota": "si le empatan antes del 75 reabre la SOB desde ese minuto"},
-         "siExpulsion": {"nota": "roja ganando → ECHADA-NUM, ISE anulado; perdiendo → ISE agravado"}}},
+         "siLeEmpatan": {"sob1": 0.5, "sob2": 0.5, "nota": "si le empatan reabre la SOB desde ese minuto"},
+         "siIguala": {"sob1": 1, "sob2": 0.5, "nota": "si iba abajo y empata, sigue empujando"},
+         "siExpulsion": {"propia": {"nota": "roja ganando → ECHADA-NUM, ISE anulado; perdiendo → ISE agravado"},
+                         "rival": {"nota": "con uno más empuja: ventana desde la roja +15"}}}},
       {"equipo": "a",
        "indicadores": {"…los mismos 19 indicadores, puntuados para ESTE equipo…": 0},
        "ieNivel": "verde", "iseNivel": "ambar",

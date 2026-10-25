@@ -1,7 +1,8 @@
 # Propuesta de revisión · `teorema-del-echado` v0.1.22 → v0.1.23
 
-**Estado:** PROPUESTA, pendiente de aprobación del usuario. Redactada el
-25/10/2026 desde el dossier (`GET /analisis/cowork/revision/teorema-del-echado`,
+**Estado:** APROBADA por el usuario (25/10/2026, entera). Redactada en docs/skills/teorema-del-echado/ (v0.1.23). Falta que el usuario la suba a su cuenta.
+
+Redactada el 25/10/2026 desde el dossier (`GET /analisis/cowork/revision/teorema-del-echado`,
 cohorte `c3-2026-09-23`), las lecciones del skill
 (`GET /analisis/cowork/lecciones?skill=teorema-del-echado`), los partes de esos
 partidos con su veredicto (`GET /analisis/cowork/{id}`) y las incidencias 554,

@@ -1430,6 +1430,10 @@ export interface BloqueTde {
     siLeEmpatan?: RamaReasignacion
     /** TDE v0.1.21 (44d): la línea de la expulsión. */
     siExpulsion?: RamaReasignacion
+    /** TDE v0.1.23: el que iba abajo empata (por defecto sigue empujando). */
+    siIguala?: RamaReasignacion
+    /** TDE v0.1.23: la roja del RIVAL con su línea (se deposita como siExpulsion.rival). */
+    siExpulsionRival?: RamaReasignacion
   }
   /** Los 0/0.5/1 que mandó quien analiza. Si llegan, el índice lo calcula el backend. */
   indicadores?: Record<string, number>
@@ -1563,11 +1567,13 @@ export interface VeredictoObjetivo {
       /** con la ventana de la rama cobrada, la base del reloj medida aparte (sesgo tardío, 44c/45) */
       reloj?: { ventana: string; desde: number; hasta: number; golEnVentana: boolean | null;
                 goles: { minuto: number; lado: 'a' | 'b' }[]; cobrable: boolean | null; clase: string | null } | null
+      /** TDE v0.1.23: el añadido como casilla del cierre (no es ventana). */
+      anadido?: { concedidos: number[]; marcados: number[]; rojas: { minuto: number; propia: boolean }[]; cambioElTramo: boolean } | null
       /** TDE v0.1.22 (64): tramos entre goles con la rama del marcador de cada uno. Observación. */
       tramos?: {
         desde: number; hasta: number; marcador: string
         estado: 'inicio' | 'ganando' | 'perdiendo' | 'empatado'
-        rama: 'base' | 'siMarcaPrimero' | 'siRecibePrimero' | 'siLeEmpatan' | 'siIguala' | 'siExpulsion'
+        rama: 'base' | 'siMarcaPrimero' | 'siRecibePrimero' | 'siLeEmpatan' | 'siIguala' | 'siExpulsion' | 'siExpulsionRival'
         declarada: boolean; ventana: string; rango: number[] | null
         concedio: number[]; golEnVentana: boolean | null
         /** Solo tras la roja propia (44d): su minuto y la rama que daba el marcador. */
@@ -1586,7 +1592,7 @@ export interface VeredictoObjetivo {
         /** TDE v0.1.21 (44a): le empataron al que marcó primero. */
         segundoGiro?: { rama: 'siLeEmpatan'; minuto: number; declarada: boolean | null; loDeclarado?: RamaReasignacion | null; nota: string; noEvaluable?: string }
         /** TDE v0.1.21 (disciplina 61): cómo terminó la rama del que persigue. */
-        salida?: 'concedio' | 'marco' | 'sinMasGoles'
+        salida?: 'concedio' | 'marco' | 'sinMasGoles' | 'otra_via'
         notaSalida?: string
         /** Minuto de la roja propia previa al gol concedido: no cuenta como concesión persiguiendo. */
         rojaPrevia?: number
@@ -2305,7 +2311,7 @@ export interface DerrotaFavorito {
     minuto?: number | null
     loDeclarado?: RamaReasignacion | null
     segundoGiro?: { rama: 'siLeEmpatan'; minuto: number; declarada: boolean | null; loDeclarado?: RamaReasignacion | null; nota: string; noEvaluable?: string } | null
-    salida?: 'concedio' | 'marco' | 'sinMasGoles' | null
+    salida?: 'concedio' | 'marco' | 'sinMasGoles' | 'otra_via' | null
     tipologia: string
     ventana: string
     golEnVentana?: boolean | null
