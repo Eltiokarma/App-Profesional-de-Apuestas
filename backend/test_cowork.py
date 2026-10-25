@@ -3103,6 +3103,14 @@ def main():
           [x for x in r_c1.get("faltan", []) if x["bloque"].startswith("tde")])
     c.post(f"{A}/analisis/cowork", json=p_dtp)
     from backend.analisis.dtp_cowork import normalizar_dtp as _ndtp
+    _r574: list = []
+    _n574 = _ndtp({"bloques": [{"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3", "xiReferencia": [
+        "Atubolu", "Kübler", "Ginter", "Lienhart", "Günter", "Eggestein", "Höler", {"nombre": "Grifo"},
+        "Doan", "Gregoritsch", "Adamu"]}}}]}, _r574)
+    check("574: el xiReferencia como LISTA de 11 entra unido por comas y no se rechaza «vacío o en prosa»",
+          _n574["bloques"][0]["apertura"]["m1"]["xiReferencia"].startswith("Atubolu, Kübler")
+          and "Grifo" in _n574["bloques"][0]["apertura"]["m1"]["xiReferencia"]
+          and not any("xiReferencia" in x["donde"] for x in _r574), (_n574, _r574))
     _rch: list = []
     _ndtp({"bloques": [{"equipo": "a", "apertura": {"m2": {"checklistBloqueRival": {
         "p1": "der", "p2": "improvisado", "p3": "bloque bajo", "p4": "sin dato", "p6": "tal vez"}}}}]}, _rch)
