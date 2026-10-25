@@ -2158,6 +2158,8 @@ export interface ClaseBloqueDTO {
   respuestas: Record<string, string>
 }
 
+export interface PosesionRama { valor: string; contraQuien: string; marcador: string; sede: string }
+
 export interface DtpBloque {
   equipo: 'a' | 'b'
   apertura: {
@@ -2169,8 +2171,13 @@ export interface DtpBloque {
       checklistBloqueRival: Record<'p1' | 'p2' | 'p3' | 'p4' | 'p5' | 'p6', string> & { casoP6: string; notas: string }
       viasGol: { foco: string[]; rival: string[] }
       /** nivelFoco/nivelRival: fijo · depende · sin → SOB2 0 · 0.5 · 1 del TDE. */
-      restDefense: { foco: string; rival: string; nivelFoco: '' | 'fijo' | 'depende' | 'sin'; nivelRival: '' | 'fijo' | 'depende' | 'sin' }
-      posesion: { valor: string; contraQuien: string; marcador: string; sede: string }
+      /** v1.5: `nivelFocoPersiguiendo`/`nivelRivalPersiguiendo` = el seguro cuando persigue (el SOB2 sigue heredando nivelFoco/nivelRival). */
+      restDefense: { foco: string; rival: string; nivelFoco: '' | 'fijo' | 'depende' | 'sin'; nivelRival: '' | 'fijo' | 'depende' | 'sin'
+        nivelFocoPersiguiendo?: '' | 'fijo' | 'depende' | 'sin'; nivelRivalPersiguiendo?: '' | 'fijo' | 'depende' | 'sin' }
+      /** v1.5: dos ramas por marcador; la forma plana queda para partes viejos. */
+      posesion: PosesionRama & { igualadoOArriba?: PosesionRama; persiguiendo?: PosesionRama }
+      /** v1.5: de quién depende la capa de nombres del M2 (si arranca en el banco, el bloque se rehace). */
+      piezas?: { nombre: string; lado: 'foco' | 'rival'; rol: string }[]
       veredicto: string
       razon: string
     }
@@ -2188,9 +2195,13 @@ export interface DtpBloque {
     }[]
     m5: { planFuncionoHastaMin: number | null; peligroReal: string; cronologiaGiro: string; contraste: { aciertos: string[]; fallos: string[] }; preguntaChecklistFallida: string }
     /** v1.4: `sinMecanica` = la frecuencia se cumplió sin fuente de la jugada (vía a verificar). */
-    mecanismoAbierto: { activo: boolean; mecanismo: string; lineaRepite: boolean | null; correccionEnVivo: boolean | null; sinMecanica?: boolean }
+    mecanismoAbierto: { activo: boolean; mecanismo: string; lineaRepite: boolean | null; correccionEnVivo: boolean | null; sinMecanica?: boolean
+      /** v1.5: el de transición vale si el equipo vuelve a perseguir. */
+      regimen?: '' | 'cualquiera' | 'persiguiendo' }
     /** v1.4: el caso de la pregunta 6 del bloque propio del foco en el partido que se cierra. */
-    casoBloque?: { sostuvo: boolean | null; caso: string; conUnoMenos: boolean } | null
+    casoBloque?: { sostuvo: boolean | null; caso: string; conUnoMenos: boolean
+      /** v1.5: el caso completo. */
+      conUnoMas?: boolean; tipo?: '' | 'ventaja' | 'empate_que_sirve' | 'cero_cero'; sostuvoArquero?: boolean | null; linea?: string } | null
   }
   calculado?: {
     bloqueRival: ClaseBloqueDTO
@@ -2235,6 +2246,8 @@ export interface CierreAnterioresDTO {
   version: string
   corte: string
   cerradas: number
+  /** cuántas quedaron en cada versión (la primera cuyo dossier las leyó) */
+  porVersion?: Record<string, number>
   quedanPendientes: number
   nota: string
 }

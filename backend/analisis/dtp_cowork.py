@@ -393,8 +393,53 @@ def _caso_bloque(x) -> dict | None:
     if not caso:
         return None
     sostuvo = x.get("sostuvo") if isinstance(x.get("sostuvo"), bool) else None
+    tipo = _txt(x.get("tipo")).lower().replace(" ", "_").replace("-", "_")
+    # DTP v1.5 (cambio 2): el caso completo — con uno más no prueba, un 0-0
+    # cuenta solo si el empate le servía al que defendía, quién sostuvo
+    # (bloque o arquero) y con qué línea
     return {"sostuvo": sostuvo, "caso": caso,
-            "conUnoMenos": x.get("conUnoMenos") is True}
+            "conUnoMenos": x.get("conUnoMenos") is True,
+            "conUnoMas": x.get("conUnoMas") is True,
+            "tipo": tipo if tipo in TIPOS_CASO else "",
+            "sostuvoArquero": x.get("sostuvoArquero") if isinstance(x.get("sostuvoArquero"), bool) else None,
+            "linea": _txt(x.get("linea"))}
+
+
+TIPOS_CASO = ("ventaja", "empate_que_sirve", "cero_cero")
+REGIMENES = ("cualquiera", "persiguiendo")
+
+
+def _rama_posesion(x) -> dict:
+    x = _dict(x)
+    return {"valor": _txt(x.get("valor")), "contraQuien": _txt(x.get("contraQuien")),
+            "marcador": _txt(x.get("marcador")), "sede": _txt(x.get("sede"))}
+
+
+def _posesion(pos: dict) -> dict:
+    """DTP v1.5 (cambio 3): la posesión en dos ramas, igualado o arriba y
+    persiguiendo. Un parte viejo con la forma plana sigue leyéndose: la plana
+    queda arriba y las ramas vacías."""
+    return {**_rama_posesion(pos),
+            "igualadoOArriba": _rama_posesion(pos.get("igualadoOArriba")),
+            "persiguiendo": _rama_posesion(pos.get("persiguiendo"))}
+
+
+def _piezas(v) -> list[dict]:
+    """DTP v1.5 (cambio 6): de quién depende la capa de nombres del M2 —
+    duelos con nombre, contenedor del seguro, ejecutor de penales—, con su
+    lado. Si una pieza arranca en el banco, el bloque se rehace (rehacer())."""
+    out = []
+    for x in v or []:
+        if isinstance(x, str):
+            x = {"nombre": x}
+        x = _dict(x)
+        nombre = _txt(x.get("nombre"))
+        if not nombre:
+            continue
+        lado = _txt(x.get("lado")).lower()
+        out.append({"nombre": nombre, "lado": lado if lado in ("foco", "rival") else "foco",
+                    "rol": _txt(x.get("rol"))})
+    return out
 
 
 def casos_bloque(team_id: int, antes: str, dias: int = 180) -> list[dict]:
@@ -462,9 +507,13 @@ def _bloque(x: dict, lado: str) -> dict:
                    "viasGol": {"foco": _lista_txt(vias.get("foco")), "rival": _lista_txt(vias.get("rival"))},
                    "restDefense": {"foco": _txt(rest.get("foco")), "rival": _txt(rest.get("rival")),
                                    "nivelFoco": _nivel_seguro(rest.get("nivelFoco")),
-                                   "nivelRival": _nivel_seguro(rest.get("nivelRival"))},
-                   "posesion": {"valor": _txt(pos.get("valor")), "contraQuien": _txt(pos.get("contraQuien")),
-                                "marcador": _txt(pos.get("marcador")), "sede": _txt(pos.get("sede"))},
+                                   "nivelRival": _nivel_seguro(rest.get("nivelRival")),
+                                   # v1.5: la rama persiguiendo; el SOB2 del TDE sigue
+                                   # heredando nivelFoco/nivelRival hasta que el usuario decida
+                                   "nivelFocoPersiguiendo": _nivel_seguro(rest.get("nivelFocoPersiguiendo")),
+                                   "nivelRivalPersiguiendo": _nivel_seguro(rest.get("nivelRivalPersiguiendo"))},
+                   "posesion": _posesion(pos),
+                   "piezas": _piezas(m2.get("piezas")),
                    "veredicto": _txt(m2.get("veredicto")).upper().replace("MATCHUP ", ""),
                    "razon": _txt(m2.get("razon"))},
             "m3Fases": fases,
@@ -487,7 +536,10 @@ def _bloque(x: dict, lado: str) -> dict:
                                  if isinstance(mec.get("correccionEnVivo"), bool) else None,
                                  # DTP v1.4: la frecuencia se cumplió y ninguna fuente nombra
                                  # la jugada → vía a verificar, nivel C, no degrada K
-                                 "sinMecanica": mec.get("sinMecanica") is True},
+                                 "sinMecanica": mec.get("sinMecanica") is True,
+                                 # v1.5: el de transición vale si el equipo vuelve a perseguir
+                                 "regimen": (_txt(mec.get("regimen")).lower()
+                                             if _txt(mec.get("regimen")).lower() in REGIMENES else "")},
             # DTP v1.4: el caso de la pregunta 6 del bloque PROPIO del foco en el
             # partido que se cierra (¿sostuvo contra un obligado?). La apertura del
             # rival siguiente lo lee de `casosBloque` en los insumos.
@@ -599,6 +651,15 @@ def normalizar_dtp(x, rechazos: list) -> dict:
             continue
         vistos.add(lado)
         _checklist_raros(y, i, rechazos)
+        # v1.5 (cambio 6): sin XI de referencia el once oficial no se puede
+        # comparar (Chapecoense, incidencia 525) — se dice al depositar
+        xi_ref = _txt(_dict(_dict(y.get("apertura")).get("m1")).get("xiReferencia"))
+        if sin_referencia(xi_ref) or len(_plano(xi_ref).split()) < 8:
+            rechazos.append({"donde": f"dtp.bloques[{i}].apertura.m1.xiReferencia",
+                             "porque": "XI de referencia vacío o en prosa: el once oficial no se va a poder "
+                                       "comparar y DTP-REHACER no saltará (DTP v1.5)",
+                             "esperado": "lista de los 11 titulares; sin previa, el último once oficial, "
+                                         "dicho en `senalXi`"})
         bloques.append(_bloque(y, lado))
     return {"bloques": bloques} if bloques else {}
 
@@ -911,6 +972,21 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
         if en_banca:
             motivos.append(f"seguro: el rest defense de la apertura se apoyaba en {', '.join(en_banca)}, "
                            "que arrancó en el banco")
+    # LAS PIEZAS DEL M2 EN EL BANCO (DTP v1.5, incidencia 525): el mapa de
+    # duelos se apoyaba en un jugador —propio o rival— que arrancó suplente.
+    # Con las piezas declaradas no hace falta llegar al corte de ausentes.
+    rival_lado = "b" if bloque.get("equipo") == "a" else "a"
+    for pz in ((bloque.get("apertura") or {}).get("m2") or {}).get("piezas") or []:
+        lado_of = (oficial or {}).get(bloque.get("equipo") if pz.get("lado") == "foco" else rival_lado)
+        if not lado_of:
+            continue
+        texto_pz = _plano(pz.get("nombre") or "")
+        en_banca = [n for n in lado_of.get("banca") or [] if _apellidos(n) and _en_referencia(n, texto_pz)
+                    and not any(_en_referencia(t, texto_pz) and set(_apellidos(t)) & set(_apellidos(n))
+                                for t in lado_of.get("titulares") or [])]
+        if en_banca:
+            motivos.append(f"pieza del M2 ({'rival' if pz.get('lado') == 'rival' else 'propia'}"
+                           f"{', ' + pz['rol'] if pz.get('rol') else ''}): {', '.join(en_banca)} arrancó en el banco")
     # UNA REFERENCIA CON VARIAS PROYECCIONES NO ES UN XI (Tigres, incidencia
     # 163: «SI proyecta a E. Gómez…; Milenio, a Herrera, Simeone…» y todos
     # pasaban por la referencia: cinco titulares nuevos y ni un ausente)
@@ -968,6 +1044,32 @@ def alertas_rehacer(dtp_leido: dict, nombres: dict) -> list[dict]:
                                      "con el once oficial antes del pitazo, o leerlo como apertura caída en "
                                      "la autopsia."})
     return fuera
+
+
+_BANDA = re.compile(r"izq|der|lateral|banda|carril|extremo|wing", re.I)
+
+
+def avisos_carril(dtp: dict, nombres: dict) -> list[dict]:
+    """DTP v1.5 (cambio 5): los dos carriles de cada lado, con ida y vuelta.
+    Avisos del recibo, sin rechazo: menos de dos duelos de banda en un bloque,
+    o un duelo con mismatch y la vuelta vacía."""
+    out = []
+    for b in (dtp or {}).get("bloques") or []:
+        quien = nombres.get(b["equipo"], b["equipo"])
+        duelos = ((b.get("apertura") or {}).get("m2") or {}).get("duelosCarril") or []
+        banda = [d for d in duelos if _BANDA.search(d.get("carril") or "")]
+        if duelos and len(banda) < 2:
+            out.append({"bloque": f"dtp.{b['equipo']}.m2.duelosCarril",
+                        "costara": f"el M2 de {quien} escribe {len(banda)} carril(es) de banda: los fallos del "
+                                   "21-24/10 vinieron del carril que no se escribió (Sporting–LASK, Lille–Galatasaray)",
+                        "comoSeArregla": "los dos carriles de banda de cada lado, también el «parejo» (DTP v1.5)"})
+        sin_vuelta = [d.get("carril") or "?" for d in duelos if d.get("mismatch") and not d.get("vuelta")]
+        if sin_vuelta:
+            out.append({"bloque": f"dtp.{b['equipo']}.m2.duelosCarril",
+                        "costara": f"{quien}: duelo con mismatch sin `vuelta` en {', '.join(sin_vuelta)} — "
+                                   "falta lo que expone ese carril si pierde la pelota",
+                        "comoSeArregla": "llenar `vuelta` en cada duelo con mismatch (DTP v1.4-1.5)"})
+    return out
 
 
 def apertura_para_cadena(bloque: dict) -> dict:

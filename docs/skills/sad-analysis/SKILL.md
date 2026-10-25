@@ -1,9 +1,13 @@
 ---
 name: sad-analysis
-description: "Skill de la SÍNTESIS del sistema SAD (v4.0): lee las constantes K de cada equipo (la espina y el reventón de la burbuja, 60 % de la lectura), la Regresión al Nivel (μ_partido, gap), la doble oportunidad trampa, goles por fecha y condición y rivales futuros, y arma el pronóstico con sus tres fuentes a la vista —el 1X2 del motor calculado, la matriz y el mercado—, el marcador declarado y el falsador. Activar en todo análisis pre-partido de fútbol o de apuestas, al escribir la lectura SAD o el pronóstico de un parte, al leer las K o las burbujas de un equipo, y al cerrar un veredicto. Lee los datos de la API de la app SAD, no CSV."
+description: "Skill de la SÍNTESIS del sistema SAD (v4.1): lee las constantes K de cada equipo (la espina y el reventón de la burbuja, 60 % de la lectura), la Regresión al Nivel (μ_partido, gap), la doble oportunidad trampa, goles por fecha y condición y rivales futuros, y arma el pronóstico con sus tres fuentes a la vista —el 1X2 del motor calculado, la matriz y el mercado—, el marcador declarado y el falsador. Activar en todo análisis pre-partido de fútbol o de apuestas, al escribir la lectura SAD o el pronóstico de un parte, al leer las K o las burbujas de un equipo, y al cerrar un veredicto. Lee los datos de la API de la app SAD, no CSV."
 ---
 
-# SAD — Análisis Deportivo (v4.0)
+# SAD — Análisis Deportivo (v4.1)
+
+> **v4.1 · 25.10.2026 — Cómo sale el número del 1X2.** Revisión desde la calibración del 1X2 declarado: 260 partes ciegos con veredicto (14/09-24/10/2026), 231 con el mercado capturado antes del depósito, validación por fecha (ajustar en la primera mitad, medir en la segunda). Propuesta aprobada: `docs/revisiones/SAD_v4.1_propuesta.md`. Toca solo el paso 6 y la Ley 4; no toca la Ley 1, la espina, el reventón ni ningún número de la app.
+>
+> **1. El empate parte del mercado** (6-B) y se aparta solo con un hecho de ESTE partido. **2. El favorito de 50 %+ no se recorta por debajo del mercado** sin un dato que el mercado no tenga, escrito con su cifra (6-B y pregunta 6 de la Auditoría 2). **3. La calibración de la cohorte se lee, no se aplica como fórmula** (6-B). **4. Bajas del rival, por zona** (Ley 4): la ofensiva del rival le quita goles a él, no le suma puntos al otro (Köln–Schalke).
 
 > **v4.0 · 21.10.2026 — El skill de la síntesis, sobre lo que la app tiene.** Revisión desde el dossier de la app (379 lecciones de la cohorte `c3-2026-09-23`, 253 acreditables, ninguna pide mover un número) y desde lo medido en 209 partes con veredicto. Propuesta aprobada: `docs/revisiones/SAD_v4.0_propuesta.md`.
 >
@@ -151,6 +155,8 @@ Pregunta clave: *¿el XI que generó esta K es el que va a jugar?*
 **Principio:** toda presión acumulada requiere el mismo XI que la generó. Sin ese XI, se congela.
 
 **Rotación por otra competición** *(v4.0)*: un once rotado por una semifinal o una copa es Escenario 3 para el que rota, y además baja el tramo del rival en el riesgo del reventón del otro lado (paso 1.7).
+
+**Bajas del rival, por zona** *(v4.1)*: una baja **ofensiva** del rival le quita goles al rival: sube el empate y las celdas bajas (0-0, 1-0), **no** le suma puntos de victoria al otro equipo, y menos si el rival es un bloque estructural probado (clase del DTP). Una baja **defensiva** (o del arquero, o una zona rota con IP alto) del propio equipo sí le resta, y suele pesar más de lo que se lee (Tigres–León, Pachuca–Cruz Azul). Köln–Schalke (24.10.2026): +8 al local por el ataque diezmado de Schalke, 0-0 con 14 remates de Köln contra un bloque probado. El mercado ya conoce las bajas publicadas (6-A): el ajuste propio por bajas se escribe con la zona y va al empate o al marcador, no al favorito.
 
 ```
 LEY 4: [Equipo] → Escenario [1 / 2 / 3]
@@ -364,6 +370,10 @@ Sin motor ni dato en la app. Presión de la hinchada o del entorno va como conte
 
 `pronostico.probabilidades` {local, empate, visita}: parte de las tres fuentes; la lectura de cada equipo (60 % K, 40 % lo demás) lo mueve con su porqué. FACTOR-X, EJE-DEBUTANTE o GOLEADOR-AL-BANCO **amplían el rango, no mueven el centro** (EFE). G-SORPRESA también amplía el rango (EFE v1.6).
 
+- **El empate parte del mercado** *(v4.1)*. El empate de `pronostico.probabilidades` arranca en el empate sin margen del mercado (sin mercado, en el de `unXDos`) y se aparta **más de 2 puntos** solo con un **hecho de ESTE partido** que empuje al empate o lo saque, nombrado en la lectura del 1X2: una eliminatoria donde el empate de los 90 tiene premio (penales, la ida a favor), un rival que defiende en bloque probado sin su ataque (Ley 4, bajas por zona), los dos perfiles DC apuntando al empate, dos burbujas negativas enfrentadas. Un «partido parejo» o un margen de μ bajo 0,30 **no** son un hecho: el mercado ya los tiene. Medido en 231 partes ciegos (14/09-24/10/2026): decíamos el empate 2 puntos sobre el mercado (27 contra 25) y pasó el 20 %; igualarlo al mercado bajó el Brier de 0,585 a 0,580 sin ajustar nada. Ni nosotros ni el mercado distinguimos qué partido termina empatado: no se inventa un empate alto sin un hecho.
+- **El favorito no se recorta por costumbre** *(v4.1)*. Cuando el mercado da al favorito 50 % o más y nuestro pick va al mismo lado, el número no queda por debajo del mercado salvo con un **dato que el mercado no tenga**, escrito con su cifra en la lectura del 1X2: «−N puntos al favorito por <el dato>». Valen el once oficial o la rotación confirmada después de la última captura, una baja estructural que salió después de la cuota y la Ley 3 confirmada. No valen el riesgo del reventón (1.7 a: frena la carga, no elige el lado), la espina contra el favorito, la localía cualitativa ni un μ con ESCALA-LIGAS. Medido en 231 partes ciegos: 66 de 78 picks de 50 %+ quedaron 7,4 puntos bajo el mercado; en el tramo 60+ dijimos 67 y acertó el 90 % (26 de 29, IC 74-96). La Auditoría 1 y el mínimo del underdog siguen valiendo: si los gatillos K piden no-victoria, se publican los dos números (disciplina 33), no se recorta en silencio.
+- **Calibración de la cohorte** *(v4.1)*. Las tablas de acierto por tramo del dossier son para leer de dónde sale el error, no para multiplicar el número. Estirar las probabilidades con un factor sacado de la cohorte (temperatura, «+N al favorito», «empate a la frecuencia») empeoró el Brier fuera de la muestra (validación por fecha, 25.10.2026). El 1X2 se corrige con las reglas del empate y del favorito, que no tienen ningún número ajustado.
+
 ### 6-C — El falsador *(v4.0)*
 
 Una **condición observable pura**, escrita sobre el **mecanismo** (quién genera, por dónde, con qué). **No** sobre el estado del marcador («si el favorito marca primero» en Braga: marcó y perdió sin que sonara), **no** sobre un minuto (Fluminense–Palmeiras: el gol llegó al 45), y **cubre los dos lados** de la lectura (Juventus–Lazio, Real Oruro–Aurora).
@@ -386,6 +396,7 @@ Una **condición observable pura**, escrita sobre el **mecanismo** (quién gener
 3. ¿El marcador viene de la Ley 7 y del 1X2 del motor, o del conteo de goles recientes / de un Poisson con μ?
 4. ¿Asigné 0 % a algún escenario con gatillos K que lo respalden? → asignar el mínimo.
 5. *(v4.0)* ¿El falsador es observable, sobre el mecanismo y de los dos lados?
+6. *(v4.1)* ¿El empate y el favorito están donde los pone el mercado? Si no, ¿qué dato de ESTE partido, que el mercado no tenga, los movió? Escribirlo con la cifra.
 
 **Regla de inversión:** si la Auditoría 1 dijo «las K no respaldan victoria» y concluyo «gana» → justificar con una ley primaria o invertir.
 

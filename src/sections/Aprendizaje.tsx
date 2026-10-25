@@ -390,7 +390,7 @@ function Dossier({ skill, abierta, onCambio }: { skill: string; abierta: boolean
     setCierre('yendo')
     try {
       const r = await getDataSource().cerrarAnteriores(skill)
-      setMsgCierre(`${r.cerradas} lecciones anteriores al ${r.corte} quedaron aplicadas en ${r.version}; quedan ${r.quedanPendientes} pendientes`)
+      setMsgCierre(`${r.cerradas} lecciones cerradas (${Object.entries(r.porVersion ?? { [r.version]: r.cerradas }).map(([v, n]) => `${n} en ${v}`).join(' · ')}); quedan ${r.quedanPendientes} pendientes`)
       await cargar()
       onCambio()
     } catch (e) {

@@ -2845,7 +2845,7 @@ def main():
     _sk_ca = "teorema-del-echado"
     _pend_antes = [i for i in _lec_ca.inventario(skill=_sk_ca, limite=100000)["items"] if i["estado"] == "pendiente"]
     _r_ca = c.post(f"{A}/analisis/cowork/revision/{_sk_ca}/cerrar-anteriores", json={}).json()
-    _ver, _corte = _lec_ca.CORTE_VERSION[_sk_ca]
+    _ver, _corte = sorted(_lec_ca.CORTE_VERSION[_sk_ca], key=lambda vc: vc[1])[-1]
     _items_ca = {i["clave"]: i for i in _lec_ca.inventario(skill=_sk_ca, limite=100000)["items"]}
     _viejas = [i["clave"] for i in _pend_antes if (i.get("fecha") or "")[:10] < _corte]
     _nuevas = [i["clave"] for i in _pend_antes if (i.get("fecha") or "")[:10] >= _corte]
@@ -3086,7 +3086,41 @@ def main():
     _ndtp({"bloques": [{"equipo": "a", "apertura": {"m2": {"checklistBloqueRival": {
         "p1": "der", "p2": "improvisado", "p3": "bloque bajo", "p4": "sin dato", "p6": "tal vez"}}}}]}, _rch)
     check("checklist: izq/der e improvisado/estructural entran; un valor fuera de la lista se rechaza con motivo (321)",
-          sorted(x["donde"].rsplit(".", 1)[1] for x in _rch) == ["p3", "p6"], _rch)
+          sorted(x["donde"].rsplit(".", 1)[1] for x in _rch if "checklist" in x["donde"]) == ["p3", "p6"], _rch)
+    # ── DTP v1.5 (25/10/2026) ───────────────────────────────────────────────
+    check("v1.5: XI de referencia vacío → rechazo con motivo al depositar",
+          any(x["donde"].endswith("xiReferencia") and "v1.5" in x["porque"] for x in _rch), _rch)
+    from backend.analisis import dtp_cowork as _d15
+    _r15: list = []
+    _x15 = _d15.normalizar_dtp({"bloques": [{"equipo": "a", "apertura": {
+        "m1": {"sistema": "4-3-3", "xiReferencia": "Arquero, Lat1, Cen1, Cen2, Lat2, Vol1, Vol2, Vol3, Ext1, Nueve, Ext2"},
+        "m2": {"posesion": {"igualadoOArriba": {"valor": "45 %"}, "persiguiendo": {"valor": "60 %"}},
+               "restDefense": {"nivelFoco": "fijo", "nivelFocoPersiguiendo": "sin"},
+               "piezas": [{"nombre": "Pérez Solanke", "lado": "rival", "rol": "duelo del carril derecho"}, "Nueve"],
+               "duelosCarril": [{"carril": "derecho", "duelo": "Lat1 vs Ext", "mismatch": "velocidad"}]}},
+        "cierre": {"casoBloque": {"caso": "sostuvo 1-0 ante X", "sostuvo": True, "conUnoMas": True,
+                                  "tipo": "empate que sirve", "sostuvoArquero": True, "linea": "Cen1-Cen2"},
+                   "mecanismoAbierto": {"activo": True, "regimen": "persiguiendo"}}}]}, _r15)
+    _b15 = _x15["bloques"][0]
+    check("v1.5: posesión en dos ramas, seguro persiguiendo, piezas con lado y caso del bloque completo",
+          _b15["apertura"]["m2"]["posesion"]["persiguiendo"]["valor"] == "60 %"
+          and _b15["apertura"]["m2"]["restDefense"]["nivelFocoPersiguiendo"] == "sin"
+          and [p["lado"] for p in _b15["apertura"]["m2"]["piezas"]] == ["rival", "foco"]
+          and _b15["cierre"]["casoBloque"]["tipo"] == "empate_que_sirve"
+          and _b15["cierre"]["casoBloque"]["conUnoMas"] is True and _b15["cierre"]["casoBloque"]["linea"] == "Cen1-Cen2"
+          and _b15["cierre"]["mecanismoAbierto"]["regimen"] == "persiguiendo"
+          and not any("xiReferencia" in x["donde"] for x in _r15), (_b15, _r15))
+    check("v1.5: el SOB2 del TDE sigue heredando el nivel de hoy, no la rama persiguiendo",
+          _d15.herencia_tde(_x15)["a"].get("SOB2", {}).get("valor") == 0.0)
+    _of15 = {"a": {"titulares": ["Arquero", "Lat1", "Cen1", "Cen2", "Lat2", "Vol1", "Vol2", "Vol3", "Ext1", "Nueve", "Ext2"],
+                   "banca": [], "formacion": "4-3-3", "defensores": 4},
+             "b": {"titulares": [f"Tit{i}" for i in range(11)], "banca": ["Pérez Solanke"], "formacion": "4-4-2"}}
+    _rh15 = _d15.rehacer(_b15, _of15)
+    check("v1.5 (525): una pieza RIVAL del M2 que arrancó en el banco rehace el bloque sin llegar al corte de ausentes",
+          _rh15["rehacer"] and any("Solanke" in m and "rival" in m for m in _rh15["motivos"]), _rh15)
+    _av15 = _d15.avisos_carril(_x15, {"a": "Local"})
+    check("v1.5: aviso con un solo carril de banda y con un mismatch sin vuelta",
+          len(_av15) == 2 and "carril" in _av15[0]["costara"] and "vuelta" in _av15[1]["costara"], _av15)
     g_dtp = c.get(f"{A}/analisis/cowork/{ns_dtp}").json()["dtp"]["bloques"][0]
     check("GET: el bloque vuelve normalizado (tramo inválido fuera, vía canónica, veredicto sin «MATCHUP»)",
           [f["tramo"] for f in g_dtp["apertura"]["m3Fases"]] == ["0-25"]
