@@ -15,6 +15,7 @@ import type { MatrizParte,
   BloqueTde, DisponibilidadParte, DocumentoParte, EquipoParte, JugadorParte, ParteCoworkDTO, RamaF, Semaforo, TdeParte,
   VeredictoParte, ZonaF,
 } from '../api/types'
+import { COLOR_TRAMO, tramoConfianza } from '../lib/confianza'
 import { parsearMd, type MdBloque, type MdInline } from '../lib/md'
 import { parsearOnce } from '../lib/once'
 import { loadCalendarioSad, resolverXiParte, type PartidoCalendarioUI } from '../services/appdata'
@@ -728,9 +729,6 @@ function MatrizEscenarios({ m, nombreDe, dosCol }: { m: MatrizParte; nombreDe: (
 const SEL_1X2: Record<string, string> = { local: 'LOCAL', empate: 'EMPATE', visita: 'VISITA' }
 
 /** El tramo de confianza del 1X2 declarado, el mismo corte que lee Aprendizaje. */
-function tramoConfianza(pct: number): string {
-  return pct >= 60 ? '60+' : pct >= 50 ? '50-59' : pct >= 40 ? '40-49' : '<40'
-}
 
 /** «Dijimos LOCAL 62 % (62/23/15) · salió LOCAL ✓ · Brier 0,220 · exacto 1-0 ✓»:
  *  cuánto dijimos, no solo si acertamos. Las probabilidades llegan en % (o en
@@ -753,7 +751,7 @@ function ConfianzaUnXDos({ o }: { o: VeredictoParte['objetivo'] }) {
         <>
           Dijimos <b style={{ color: 'var(--t1)' }}>{SEL_1X2[u.declarado] ?? u.declarado} {p} %</b>{' '}
           <span style={{ color: 'var(--t3)' }}>({vals.map(pct).join('/')})</span>
-          {' '}<span style={{ padding: '1px 6px', borderRadius: 5, background: 'var(--bg3, var(--bg))', border: '1px solid var(--line)', font: '700 9.5px var(--mono)', color: 'var(--t2)' }}>tramo {tramoConfianza(p)}</span>
+          {' '}<span style={{ padding: '1px 6px', borderRadius: 5, background: `color-mix(in oklch, ${COLOR_TRAMO[tramoConfianza(p)]}, transparent 85%)`, font: '700 9.5px var(--mono)', color: COLOR_TRAMO[tramoConfianza(p)] }}>tramo {tramoConfianza(p)}</span>
         </>
       ) : <span style={{ color: 'var(--t3)' }}>sin 1X2 declarado</span>}
       {sep}salió <b style={{ color: 'var(--t1)' }}>{SEL_1X2[u.real] ?? u.real}</b>
@@ -791,7 +789,7 @@ function PronosticoDelEnsayo({ parte, nombreDe }: { parte: ParteCoworkDTO; nombr
           {sel ? <>Decimos <b style={{ color: 'var(--t1)' }}>{SEL_1X2[sel]} {max} %</b> <span style={{ color: 'var(--t3)' }}>({quien})</span></>
             : <span style={{ color: 'var(--t3)' }}>sin favorito claro</span>}
           {' '}<span style={{ color: 'var(--t3)' }}>({pct.join('/')})</span>
-          {sel && <>{' '}<span style={{ padding: '1px 6px', borderRadius: 5, background: 'var(--bg3, var(--bg))', border: '1px solid var(--line)', font: '700 9.5px var(--mono)', color: 'var(--t2)' }}>tramo {tramoConfianza(max)}</span></>}
+          {sel && <>{' '}<span style={{ padding: '1px 6px', borderRadius: 5, background: `color-mix(in oklch, ${COLOR_TRAMO[tramoConfianza(max)]}, transparent 85%)`, font: '700 9.5px var(--mono)', color: COLOR_TRAMO[tramoConfianza(max)] }}>tramo {tramoConfianza(max)}</span></>}
           {parte.pronostico?.marcador && <><span style={{ color: 'var(--t3)' }}> · </span>marcador {parte.pronostico.marcador}</>}
         </span>
       )}

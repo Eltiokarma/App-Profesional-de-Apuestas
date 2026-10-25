@@ -1783,6 +1783,10 @@ components:
             `tarjeta` mide la espina de la tarjeta sola y al analista contra ella (lo mismo
             que /analisis/cowork/espina/calibracion), y en `tarjeta.partido` las dos tarjetas
             del partido como un 1X2: si concuerdan, ¿aciertan más que una sola?
+            `confianza`: la calibración del 1X2 por tramo de la probabilidad declarada
+            (<40 · 40-49 · 50-59 · 60+), por versión de sad-analysis al depositar
+            (`porVersion`) y junta (`todas`): n, aciertos con intervalo de Wilson, lo que
+            dijimos y lo que el mercado le daba al mismo elegido.
           additionalProperties: true
         porSkill:
           type: array
@@ -3912,6 +3916,15 @@ components:
               onceCerrado: { type: boolean }
               conVeredicto: { type: boolean }
               actualizadoEn: { type: string }
+              confianza:
+                type: object
+                nullable: true
+                description: 'el 1X2 declarado del parte (la selección con más probabilidad) con su tramo de la tabla de Aprendizaje; acerto null hasta que el partido termina'
+                properties:
+                  declarado: { type: string, enum: [local, empate, visita] }
+                  probabilidad: { type: number }
+                  tramo: { type: string, enum: ['<40', '40-49', '50-59', '60+'] }
+                  acerto: { type: boolean, nullable: true }
     PartePendiente:
       type: object
       required: [fixtureId, partido, faltaXi]

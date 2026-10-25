@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import type { DerrotaFavorito, DerrotasFavoritoDTO, ExplicacionDerrota, InventarioLecciones, LeccionItem, ModoFalloEtiqueta, RevisionSkillDTO, SkillAprendizaje } from '../api/types'
+import type { TablaConfianzaDTO, DerrotaFavorito, DerrotasFavoritoDTO, ExplicacionDerrota, InventarioLecciones, LeccionItem, ModoFalloEtiqueta, RevisionSkillDTO, SkillAprendizaje } from '../api/types'
 import { getDataSource } from '../services/datasource'
 import { useAsync } from '../services/useAsync'
+import { COLOR_TRAMO } from '../lib/confianza'
 
 /** Fase C del bucle de aprendizaje (docs/APRENDIZAJE.md).
  *
@@ -69,7 +70,7 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
   const cuar = d.enCuarentena?.cuantas ?? 0
   const pestanas: [Pestana, string][] = [
     ['skills', `Lecciones por skill · ${pendientesTotal} pend.`],
-    ['metricas', 'Métricas'],
+    ['metricas', 'Métricas · confianza'],
     ['derrotas', 'Derrotas del favorito'],
     ...(cuar ? [['cuarentena', `Cuarentena · ${cuar}`] as [Pestana, string]] : []),
     ...(d.sinSkill.cuantas ? [['sinSkill', `Sin skill · ${d.sinSkill.cuantas}`] as [Pestana, string]] : []),
@@ -260,11 +261,79 @@ function ListaLecciones({ cohorte, skill, de, estado, recarga, onCambio }: {
   )
 }
 
+/** LA CONFIANZA DEL 1X2 POR TRAMO (25/10/2026, pedido del usuario): lo que
+ *  dijimos del elegido contra lo que salió y lo que le daba el mercado, por
+ *  versión de sad-analysis. Un tramo que acierta menos de lo que dice está
+ *  sobreconfiado; con n chico el intervalo manda, no el punto. */
+function TablaConfianza({ t }: { t: TablaConfianzaDTO }) {
+  const [todas, setTodas] = useState(false)
+  const bloques = todas
+    ? [{ version: 'todas las versiones', desde: '', hasta: '', n: t.todas.reduce((s, x) => s + x.n, 0), aciertos: t.todas.reduce((s, x) => s + x.aciertos, 0), tramos: t.todas }]
+    : t.porVersion
+  const celda: React.CSSProperties = { font: '600 11px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums', textAlign: 'right', whiteSpace: 'nowrap' }
+  const cab: React.CSSProperties = { font: '700 9px var(--mono)', color: 'var(--t3)', letterSpacing: '.4px', textAlign: 'right' }
+  const columnas = 'minmax(0,1.1fr) minmax(0,.6fr) minmax(0,.9fr) minmax(0,1.7fr) minmax(0,.9fr)'
+  return (
+    <Seccion titulo="CONFIANZA DEL 1X2 · POR TRAMO" nota={t.nota}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+        {[['por versión', false], ['todas juntas', true]].map(([label, v]) => (
+          <button key={String(label)} onClick={() => setTodas(v as boolean)}
+            style={{ padding: '5px 10px', borderRadius: 8, border: `1px solid ${todas === v ? 'var(--accent)' : 'var(--line)'}`, background: todas === v ? 'var(--bg3)' : 'transparent', color: todas === v ? 'var(--t1)' : 'var(--t2)', cursor: 'pointer', font: '600 10.5px var(--sans)' }}>
+            {label as string}
+          </button>
+        ))}
+      </div>
+      {bloques.length === 0 && <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t3)' }}>Sin casos ciegos con 1X2 declarado en esta cohorte.</div>}
+      {bloques.map((b) => (
+        <div key={b.version} style={{ marginBottom: 14 }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', flexWrap: 'wrap', marginBottom: 6 }}>
+            <span style={{ font: '700 12.5px var(--sans)', color: 'var(--t1)' }}>sad-analysis {b.version}</span>
+            {b.desde && <span style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)' }}>{b.desde} → {b.hasta}</span>}
+            <span style={{ font: '600 10.5px var(--mono)', color: 'var(--t2)' }}>
+              acertó {b.aciertos}/{b.n}{b.n ? ` · ${Math.round((100 * b.aciertos) / b.n)}%` : ''}
+            </span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: columnas, gap: '6px 8px', alignItems: 'center' }}>
+            <span style={{ ...cab, textAlign: 'left' }}>TRAMO</span>
+            <span style={cab}>N</span>
+            <span style={cab}>DIJIMOS</span>
+            <span style={cab}>ACERTÓ</span>
+            <span style={cab}>MERCADO</span>
+            {b.tramos.map((x) => {
+              const color = COLOR_TRAMO[x.tramo]
+              // sobreconfiado de verdad: ni el techo del intervalo llega a lo dicho
+              const sobre = x.intervalo && x.dijimos !== null && x.intervalo[1] * 100 < x.dijimos
+              const bajo = x.intervalo && x.dijimos !== null && x.intervalo[0] * 100 > x.dijimos
+              return [
+                <span key={x.tramo + 't'} style={{ justifySelf: 'start', padding: '2px 7px', borderRadius: 6, background: `color-mix(in oklch, ${color}, transparent 84%)`, font: '700 10.5px var(--mono)', color }}>{x.tramo}</span>,
+                <span key={x.tramo + 'n'} style={celda}>{x.n}</span>,
+                <span key={x.tramo + 'd'} style={celda}>{x.dijimos === null ? '—' : `${Math.round(x.dijimos)}%`}</span>,
+                <span key={x.tramo + 'a'} style={{ ...celda, color: sobre ? 'var(--down)' : bajo ? 'var(--up)' : 'var(--t1)' }}
+                  title={x.intervalo ? `intervalo de Wilson al 95 %: ${Math.round(x.intervalo[0] * 100)}–${Math.round(x.intervalo[1] * 100)}%` : undefined}>
+                  <b>{x.aciertos}/{x.n}</b> · {x.tasa === null ? '—' : `${Math.round(x.tasa * 100)}%`}
+                  {/* el intervalo debajo: en una línea no entra a 360 px */}
+                  {x.intervalo && <span style={{ display: 'block', color: 'var(--t3)', fontWeight: 500, fontSize: 9.5 }}>[{Math.round(x.intervalo[0] * 100)}–{Math.round(x.intervalo[1] * 100)}%]</span>}
+                </span>,
+                <span key={x.tramo + 'm'} style={celda} title={x.nMercado < x.n ? `con cuotas ${x.nMercado} de ${x.n}` : undefined}>{x.mercado === null ? '—' : `${Math.round(x.mercado)}%`}</span>,
+              ]
+            })}
+          </div>
+        </div>
+      ))}
+      <div style={{ font: '500 10.5px var(--sans)', color: 'var(--t3)' }}>
+        <b style={{ color: 'var(--down)' }}>Rojo</b>: el intervalo entero queda por debajo de lo que dijimos (sobreconfiado) ·{' '}
+        <b style={{ color: 'var(--up)' }}>verde</b>: por encima (subconfiado). Los colores del tramo son los de la marca en Partidos.
+      </div>
+    </Seccion>
+  )
+}
+
 /** Población y lo medible: lo que antes abría la pantalla, ahora en su pestaña. */
 function Metricas({ d }: { d: InventarioLecciones }) {
   const a = d.acreditables
   return (
     <>
+      {a.confianza && <TablaConfianza t={a.confianza} />}
       {/* LA POBLACIÓN VA ANTES QUE CUALQUIER NÚMERO. Un porcentaje que mezcla
           casos ciegos con casos sembrados no es una métrica pesimista ni
           optimista: es otra cosa con el mismo nombre. */}

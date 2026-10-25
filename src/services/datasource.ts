@@ -871,7 +871,13 @@ class MockDataSource implements SadDataSource {
       const m = MATCHES.find((x) => FIXTURE_NUM(x.id) === fid)
       if (!m) continue
       const fin = m.status === 'fin'
-      partes[String(fid)] = { estado: fin ? 'confirmado' : 'pendiente_xi', onceCerrado: fin, conVeredicto: fin, actualizadoEn: MOCK_NOW }
+      // confianza de muestra, estable por partido: recorre los cuatro tramos
+      const prob = 34 + (fid % 34)
+      const tramo = prob < 40 ? '<40' : prob < 50 ? '40-49' : prob < 60 ? '50-59' : '60+'
+      partes[String(fid)] = {
+        estado: fin ? 'confirmado' : 'pendiente_xi', onceCerrado: fin, conVeredicto: fin, actualizadoEn: MOCK_NOW,
+        confianza: { declarado: 'local', probabilidad: prob, tramo, acerto: fin ? fid % 2 === 0 : null },
+      }
     }
     return { partes, total: Object.keys(partes).length }
   }

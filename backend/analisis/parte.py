@@ -3989,15 +3989,30 @@ def marcas(fixture_ids: list[int]) -> dict:
     marcas_sql = ",".join("?" * len(ids))
     with _conectar() as con:
         filas = con.execute(
-            f"""SELECT fixture_id, estado, xi_json, veredicto_json, actualizado_en
+            f"""SELECT fixture_id, estado, xi_json, veredicto_json, actualizado_en,
+                       json_extract(parte_json, '$.pronostico.probabilidades') AS reparto
                 FROM parte_cowork WHERE fixture_id IN ({marcas_sql})""", ids).fetchall()
+    # LA CONFIANZA DEL 1X2 EN LA LISTA (25/10/2026, pedido del usuario: ver de
+    # un vistazo los partidos con más confianza). El tramo es el de la tabla de
+    # Aprendizaje, donde se ve cuánto acierta cada uno.
+    from backend.analisis import lecciones as _lec, veredicto as _ver
+    salieron = _ver.resultados([f["fixture_id"] for f in filas])
     partes = {}
     for f in filas:
+        try:
+            reparto = json.loads(f["reparto"]) if f["reparto"] else None
+        except (TypeError, ValueError):
+            reparto = None
+        decl, prob = _ver.declarado_1x2(reparto if isinstance(reparto, dict) else None)
+        real = salieron.get(f["fixture_id"])
         partes[str(f["fixture_id"])] = {
             "estado": f["estado"],
             "onceCerrado": bool(f["xi_json"]) and f["estado"] == "confirmado",
             "conVeredicto": bool(f["veredicto_json"]),
             "actualizadoEn": f["actualizado_en"],
+            "confianza": ({"declarado": decl, "probabilidad": round(prob, 1),
+                           "tramo": _lec.tramo_confianza(prob),
+                           "acerto": (real == decl) if real else None} if decl else None),
         }
     return {"partes": partes, "total": len(partes)}
 
