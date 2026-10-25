@@ -3900,7 +3900,7 @@ components:
             lados: { type: array, items: { type: string } }
             claseBloqueRival: { type: object, additionalProperties: { type: string } }
             aperturaEnCadena: { type: array, items: { type: string } }
-            aperturaNoGuardada: { type: array, items: { type: object, additionalProperties: true } }
+            aperturaNoGuardada: { type: array, description: "manda la primera apertura; única excepción (581): una apertura sin xiReferencia se reemplaza una vez, antes del pitazo, por una con XI (queda marcada reemplazaSinXi)", items: { type: object, additionalProperties: true } }
     MarcasCowork:
       type: object
       required: [partes, total]

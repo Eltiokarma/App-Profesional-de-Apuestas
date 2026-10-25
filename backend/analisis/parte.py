@@ -888,7 +888,10 @@ def alertas_extremo(reventon: dict | None, nombres: dict) -> list[dict]:
         total = ("La total no está en su récord (sí en su franja alta, K-CERCA-EXTREMO)"
                  if (r.get("extremo") or {}).get("cerca") else "La total no está en extremo")
         out.append({
-            "codigo": "K-EXTREMO-CONDICION", "equipo": lado, "tipo": "dato",
+            # récord → K-EXTREMO-CONDICION; franja alta sin récord → su propio
+            # código, como la total (incidencia 494: cuatro corridas lo pidieron)
+            "codigo": "K-EXTREMO-CONDICION" if ext.get("activo") else "K-CERCA-EXTREMO-CONDICION",
+            "equipo": lado, "tipo": "dato",
             "detalle": f"{nombres.get(lado, lado)}: burbuja {donde} K {k:+.2f} "
                        + ("en su máximo histórico" if ext.get("activo") else "en la franja más alta de su historia")
                        + f" ({' · '.join(ext.get('motivos') or [])}). {total} y es la que "
@@ -1503,6 +1506,9 @@ _CLAVES_RAMA = {"sob1", "sob2", "sob3", "tipologia", "nota", "ventana"}
 _SOB_RAMA = ("sob1", "sob2", "sob3")
 
 
+DUAL_TDE = 5.0  # disciplina 43 del TDE: IE ≥ 5 Y ISE ≥ 5
+
+
 def tipologia_vs_indices(b: dict) -> dict | None:
     """TDE PASO 3: el tipo modal sale de cuál índice manda (ISE > IE → SOB;
     IE > ISE → ECHADA). Una tipología declarada del otro lado se avisa."""
@@ -1511,17 +1517,26 @@ def tipologia_vs_indices(b: dict) -> dict | None:
         ie, ise = float(b.get("ie")), float(b.get("ise"))
     except (TypeError, ValueError):
         return None
-    if ie == ise or not tip:
+    if not tip:
         return None
-    if tip.startswith("ECHADA") and ise > ie:
-        manda = "SOB"
+    # CONFIGURACIÓN DUAL (disciplina 43 del TDE, incidencia 598): con IE ≥ 5 e
+    # ISE ≥ 5 la vía echada no operó nunca en el registro (0 de 7) y el tramo
+    # final se lee por SOB aunque el IE sea mayor (Inter de Bogotá 6,81 / 5).
+    if ie >= DUAL_TDE and ise >= DUAL_TDE:
+        if not tip.startswith("ECHADA"):
+            return None
+        manda, porque = "SOB", "la disciplina 43 del TDE (configuración dual, IE e ISE ≥ 5)"
+    elif ie == ise:
+        return None
+    elif tip.startswith("ECHADA") and ise > ie:
+        manda, porque = "SOB", "el PASO 3 del TDE"
     elif tip.startswith("SOB") and ie > ise:
-        manda = "ECHADA"
+        manda, porque = "ECHADA", "el PASO 3 del TDE"
     else:
         return None
     return {"codigo": "TIPOLOGIA-VS-INDICES", "tipo": "dato",
-            "detalle": f"tipología modal {b.get('tipologia')} con IE {ie:g} e ISE {ise:g}: por el PASO 3 del "
-                       f"TDE el tipo modal es {manda}. O se corrige la tipología, o el índice que no cuadra"}
+            "detalle": f"tipología modal {b.get('tipologia')} con IE {ie:g} e ISE {ise:g}: por {porque} "
+                       f"el tipo modal es {manda}. O se corrige la tipología, o el índice que no cuadra"}
 
 
 def _reasignacion(x, rechazos: list, donde: str) -> dict:
@@ -1849,7 +1864,7 @@ _CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto", "ligas", "dtBa
 # F3 y las de DT las pone la lectura a partir de la base y del propio parte;
 # si el eco del GET vuelve con ellas, se descartan sin rechazo (se van a
 # recalcular igual) en vez de guardarse por duplicado.
-_ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "K-EXTREMO-CONDICION", "FAMILIA-RECORD", "ESPINA-VS-RIESGO", "HERENCIA-DTP", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT",
+_ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "K-EXTREMO-CONDICION", "K-CERCA-EXTREMO-CONDICION", "FAMILIA-RECORD", "ESPINA-VS-RIESGO", "HERENCIA-DTP", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT",
                         "COLAPSO-EN-CASCADA", "F1-DECISIVO-FUERA", "DTP-REHACER", "DTP-SIN-REFERENCIA",
                         "TIPOLOGIA-VS-INDICES"}
 # LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
@@ -2841,8 +2856,21 @@ def _guardar_apertura_dtp(fx, dtp: dict) -> tuple[list[str], list[dict]]:
             continue
         previo = efedb.eslabon_de_fixture(foco, fx["id"]) or {}
         if previo.get("apertura"):
+            # UNA VEZ, ANTES DEL PITAZO, Y SOLO SI LA PRIMERA NO TENÍA XI (581):
+            # sin XI de referencia el DTP no puede avisar contra el once oficial
+            nueva = _dtp.apertura_para_cadena(b)
+            sin_xi_antes = not str(((previo["apertura"].get("m1") or {}).get("xiReferencia")) or "").strip()
+            con_xi_ahora = bool(str(((nueva.get("m1") or {}).get("xiReferencia")) or "").strip())
+            if sin_xi_antes and con_xi_ahora:
+                nueva["reemplazaSinXi"] = {"en": efedb.ahora(),
+                                           "porque": "la primera apertura entró sin XI de referencia (581)"}
+                if efedb.reemplazar_apertura_sin_xi(foco, fx["id"], nueva):
+                    guardados.append(foco)
+                    continue
             no.append({"equipo": foco, "porque": "ya había una apertura guardada para este partido: "
-                                                 "manda la primera"})
+                                                 "manda la primera"
+                                                 + ("" if not sin_xi_antes else
+                                                    " (estaba sin XI, pero esta tampoco trae xiReferencia)")})
             continue
         efedb.guardar_cadena(foco, _partido_n(tid, fx["date"] or ""), rival, (fx["date"] or "")[:10] or None,
                              fx["id"], _dtp.apertura_para_cadena(b))

@@ -412,6 +412,26 @@ def guardar_cadena(equipo_foco: str, partido_n: int, rival: str, fecha: str | No
         con.commit()
 
 
+def reemplazar_apertura_sin_xi(equipo_foco: str, fixture_id: int, apertura: dict) -> bool:
+    """La ÚNICA excepción a «manda la primera» (incidencia 581, 25/10/2026): una
+    apertura que entró SIN XI de referencia —por el rechazo de la lista que el
+    #232 ya arregló— se reemplaza por una con XI, antes del pitazo (lo controla
+    quien llama). Sin XI el DTP no puede avisar DTP-REHACER contra el once. La
+    nueva lleva XI, así que no se puede volver a reemplazar: es una sola vez."""
+    with conectar() as con:
+        f = con.execute("SELECT apertura_json FROM cadena_dtp WHERE equipo_foco=? AND fixture_id=?",
+                        (equipo_foco, fixture_id)).fetchone()
+        if not f or not f["apertura_json"]:
+            return False
+        vieja = json.loads(f["apertura_json"])
+        if str(((vieja.get("m1") or {}).get("xiReferencia")) or "").strip():
+            return False
+        con.execute("UPDATE cadena_dtp SET apertura_json=? WHERE equipo_foco=? AND fixture_id=?",
+                    (json.dumps(apertura, ensure_ascii=False), equipo_foco, fixture_id))
+        con.commit()
+        return True
+
+
 def _fila_cadena(f) -> dict:
     return {
         "equipoFoco": f["equipo_foco"],
