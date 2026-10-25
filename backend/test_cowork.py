@@ -3507,6 +3507,10 @@ def main():
     _wj, _ = _dedup([{"id": 1, "nombre": "Wesley Natã", "minutos": 71, "partidos": 3},
                      {"id": 2, "nombre": "Wesley Nata", "minutos": 39, "partidos": 3}], {}, lambda a, b: True)
     check("381: si estuvieron en la misma hoja de partido son dos personas: no se funden", len(_wj) == 2, _wj)
+    _lp, _ = _dedup([{"id": 180961, "nombre": "Luan Patrick", "minutos": 600, "partidos": 8},
+                     {"id": 80563, "nombre": "Patrick Luan", "minutos": 200, "partidos": 3}], {})
+    check("502: «Luan Patrick» / «Patrick Luan» con dos ids son uno (el otro id alterno); «A. Luan» no casa con «Luan A.»",
+          len(_lp) == 1 and _lp[0].get("idsAlternos") == [80563] and not _mj("A. Luan", "Luan A."), _lp)
     from backend.analisis import bloque_f as _bf381
     _res381 = _bf381.resolver([{"nombre": "Wesley Natã", "jugadorId": 515671, "idsAlternos": [568706],
                                 "zona": "MID", "rol": "TF"}], [], ["W. Nobre"], [], {"W. Nobre": 568706})

@@ -171,7 +171,14 @@ def mismo_jugador(uno: str, otro: str) -> bool:
     una letra cambiada) y la misma pila o su inicial: «S. Peña»/«S. Pena»,
     «E. Griffa»/«Emiliano Griffa», «Y. Guzmán»/«Y. Guzman»."""
     a, b = _tok_jugador(uno), _tok_jugador(otro)
-    if len(a) < 2 or len(b) < 2 or not bloque_f._misma_pila(a[0], b[0]):
+    if len(a) < 2 or len(b) < 2:
+        return False
+    # EL MISMO NOMBRE AL REVÉS: «Luan Patrick» (180961) y «Patrick Luan»
+    # (80563), el central del Estrela con dos ids (incidencia 502). Solo con
+    # las palabras enteras (ninguna inicial) y las mismas.
+    if all(len(t) > 1 for t in a + b) and sorted(a) == sorted(b):
+        return True
+    if not bloque_f._misma_pila(a[0], b[0]):
         return False
     return a[-1] == b[-1] or _casi_igual(a[-1], b[-1])
 
@@ -192,7 +199,7 @@ def _mismo_nombre_completo(uno: str, otro: str) -> bool:
     Natã» / «Wesley Nata». «T. Palacios» con «T. Palacios» no alcanza: con la
     inicial sola pueden ser dos personas (incidencia 386)."""
     a, b = _tok_jugador(uno), _tok_jugador(otro)
-    return len(a) >= 2 and a == b and len(a[0]) > 1
+    return len(a) >= 2 and len(a[0]) > 1 and (a == b or (all(len(t) > 1 for t in a + b) and sorted(a) == sorted(b)))
 
 
 def _sumar(q: dict, j: dict) -> dict:
