@@ -65,7 +65,7 @@ def _onces_previos(team_id: int, fecha: str, cuantos: int = VENTANA_F1) -> list[
     for f in filas:
         jug = saddb.query(
             "sad",
-            "SELECT player_id, jugador FROM alineaciones "
+            "SELECT player_id, jugador, entrenador FROM alineaciones "
             "WHERE fixture_id=? AND team_id=? AND titular=1",
             (f["id"], team_id),
         )
@@ -73,11 +73,54 @@ def _onces_previos(team_id: int, fecha: str, cuantos: int = VENTANA_F1) -> list[
             continue  # ficha no capturada: no se inventa un once
         onces.append({
             "fixtureId": f["id"], "fecha": str(f["date"])[:10],
+            "entrenador": next((j["entrenador"] for j in jug if j["entrenador"]), "") or "",
             # el player_id es la clave buena; el nombre solo para poder leerlo
             "ids": {j["player_id"] for j in jug if j["player_id"]},
             "nombres": [j["jugador"] for j in jug],
         })
     return onces
+
+
+DT_CAMBIO_DIAS = 7      # disciplina 30 del TDE: cambio de DT en los 7 días previos
+
+
+def cambio_dt_reciente(team_id: int, fecha: str, onces: list[dict], dt_base: dict | None = None) -> dict | None:
+    """¿Cambió el entrenador en los DT_CAMBIO_DIAS previos al partido?
+    (incidencia 593, Famalicão y Sport Boys: F1 salía calculado con los onces
+    del DT anterior). Dos señales, de la más dura a la más blanda:
+    1. En los onces mirados se sentaron dos DT distintos y el primer partido del
+       actual es de la semana previa.
+    2. El DT de la base no es el del último once y su llegada (`desde`) cae en
+       esa semana: cambió después del último partido."""
+    from datetime import timedelta
+    from backend.analisis.parte import mismo_dt
+    try:
+        limite = (datetime.strptime(fecha[:10], "%Y-%m-%d") - timedelta(days=DT_CAMBIO_DIAS)).strftime("%Y-%m-%d")
+    except ValueError:
+        return None
+    con_dt = [o for o in onces if o.get("entrenador")]
+    if con_dt:
+        actual = con_dt[0]["entrenador"]
+        primero = con_dt[0]["fecha"]
+        for o in con_dt[1:]:
+            if not mismo_dt(o["entrenador"], actual):
+                if primero >= limite:
+                    return {"nuevo": actual, "anterior": o["entrenador"], "desde": primero,
+                            "porque": f"{actual} debutó en el banco el {primero}, después de {o['entrenador']}"}
+                break
+            primero = o["fecha"]
+    if dt_base is None:
+        try:
+            from backend.analisis.parte import dt_de_base
+            dt_base = dt_de_base(team_id)
+        except Exception:  # noqa: BLE001 — sin DT en la base no hay segunda señal
+            dt_base = None
+    nombre, desde = (dt_base or {}).get("nombre") or "", str((dt_base or {}).get("desde") or "")[:10]
+    if nombre and desde and limite <= desde <= fecha[:10] and (
+            not con_dt or not mismo_dt(nombre, con_dt[0]["entrenador"])):
+        return {"nuevo": nombre, "anterior": con_dt[0]["entrenador"] if con_dt else "", "desde": desde,
+                "porque": f"{nombre} llegó el {desde} y no dirigió ninguno de los onces mirados"}
+    return None
 
 
 def f1_rotacion(team_id: int, fecha: str) -> dict:
@@ -91,6 +134,12 @@ def f1_rotacion(team_id: int, fecha: str) -> dict:
     base = {"partidosMirados": len(onces), "ventana": VENTANA_F1,
             "definicion": "cambios de titulares entre onces consecutivos, promediados; "
                           "núcleo fijo = los que arrancaron en TODOS los partidos mirados"}
+    cambio = cambio_dt_reciente(team_id, fecha, onces)
+    if cambio:
+        return {**base, "sinDato": True, "cambioDt": cambio,
+                "porque": ("disciplina 30 del TDE: cambio de entrenador en los 7 días previos "
+                           f"({cambio['porque']}); los onces que se mirarían son del hábito del DT "
+                           "anterior. F1 y C2 van sin dato y el bloque F se apoya en un XI no confirmado")}
     if len(onces) < 2:
         return {**base, "sinDato": True,
                 "porque": ("no hay dos onces titulares capturados antes de este partido: "

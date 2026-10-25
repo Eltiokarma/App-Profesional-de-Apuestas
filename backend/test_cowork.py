@@ -1657,6 +1657,12 @@ def main():
     check("la K de la condición en su extremo sale en la tira (K-EXTREMO-CONDICION, dato); si ya grita la total, no se duplica",
           [(x["codigo"], x["equipo"]) for x in _alc] == [("K-EXTREMO", "a"), ("K-EXTREMO-CONDICION", "b")]
           and _alc[1]["tipo"] == "dato" and "de visita" in _alc[1]["detalle"], _alc)
+    _a494 = alertas_extremo({"b": {"actual": {"k": 1.0}, "extremo": {},
+                                   "condicion": {"familia": "visita", "actual": {"k": -35.45},
+                                                 "extremo": {"activo": False, "cerca": True, "motivos": ["más que el 93 %"]}}}},
+                            {"b": "Blooming"})
+    check("494: la K de la condición cerca del récord (sin récord) sale como K-CERCA-EXTREMO-CONDICION, no K-EXTREMO-CONDICION",
+          [x["codigo"] for x in _a494] == ["K-CERCA-EXTREMO-CONDICION"] and "franja más alta" in _a494[0]["detalle"], _a494)
     sint_c = {"a": {"actual": {"k": -17.93}, "riesgo": {"nivel": "bajo"},
                     "extremo": {"activo": False, "cerca": True, "motivos": ["K -17.93: más baja que el 95 % de las 39 burbujas - que reventaron (récord previo -19.54, a 1.61)"]}},
               "b": {"actual": {"k": 3.0}, "extremo": {"activo": False, "cerca": False, "motivos": []}}}
@@ -3204,6 +3210,21 @@ def main():
     check("re-depositar NO pisa la apertura de la cadena: manda la primera, y el recibo lo dice",
           (_efedb_dtp.eslabon_de_fixture(fxn["a"], ns_dtp) or {})["apertura"]["m1"]["sistema"] == "4-3-3"
           and r_dtp2["dtp"]["aperturaNoGuardada"], r_dtp2.get("dtp"))
+    # 581: una apertura que entró SIN XI se reemplaza una vez (antes del pitazo) por una con XI
+    _ap0 = (_efedb_dtp.eslabon_de_fixture(fxn["a"], ns_dtp) or {})["apertura"]
+    _ap_sin = _copy.deepcopy(_ap0); _ap_sin["m1"]["xiReferencia"] = ""
+    with _efedb_dtp.conectar() as _cx:
+        _cx.execute("UPDATE cadena_dtp SET apertura_json=? WHERE equipo_foco=? AND fixture_id=?",
+                    (json.dumps(_ap_sin), fxn["a"], ns_dtp)); _cx.commit()
+    p_581 = _copy.deepcopy(p_dtp2)
+    p_581["dtp"]["bloques"][0]["apertura"]["m1"]["xiReferencia"] = [
+        "Arquero Uno", "Lateral Dos", "Central Tres", "Central Cuatro", "Lateral Cinco", "Medio Seis",
+        "Medio Siete", "Medio Ocho", "Extremo Nueve", "Punta Diez", "Extremo Once"]
+    r_581 = c.post(f"{A}/analisis/cowork", json=p_581).json()
+    _ap1 = (_efedb_dtp.eslabon_de_fixture(fxn["a"], ns_dtp) or {})["apertura"]
+    check("581: la apertura sin XI se reemplaza por la que trae XI, marcada; y ya no se vuelve a pisar",
+          _ap1["m1"]["sistema"] == "5-4-1" and _ap1.get("reemplazaSinXi") and fxn["a"] in r_581["dtp"]["aperturaEnCadena"]
+          and _efedb_dtp.reemplazar_apertura_sin_xi(fxn["a"], ns_dtp, _ap0) is False, (r_581.get("dtp"), _ap1.get("m1")))
     # ── herencia DTP → TDE: C1 del bloque rival y SOB2 del rest defense ──
     p_her = _copy.deepcopy(p_dtp)
     p_her["dtp"]["bloques"][0]["apertura"]["m2"]["restDefense"].update({"nivelFoco": "pivote fijo",
@@ -3870,6 +3891,22 @@ def main():
     check("538: ECHADA-PSI con ISE > IE avisa TIPOLOGIA-VS-INDICES; SOB con ISE > IE no",
           (_tvi({"tipologia": "ECHADA-PSI", "ie": 2.94, "ise": 3.33}) or {}).get("codigo") == "TIPOLOGIA-VS-INDICES"
           and _tvi({"tipologia": "SOB-URG", "ie": 2.94, "ise": 3.33}) is None)
+    check("598: configuración dual (IE e ISE ≥ 5): SOB con IE > ISE no avisa (disciplina 43); ECHADA sí, citando la 43",
+          _tvi({"tipologia": "SOB", "ie": 6.81, "ise": 5}) is None
+          and "disciplina 43" in ((_tvi({"tipologia": "ECHADA-FIS", "ie": 6.81, "ise": 5}) or {}).get("detalle") or "")
+          and (_tvi({"tipologia": "SOB", "ie": 6.81, "ise": 4.9}) or {}).get("codigo") == "TIPOLOGIA-VS-INDICES")
+    from backend.analisis.tde import cambio_dt_reciente as _cdr
+    _on = [{"fecha": "2026-10-21", "entrenador": "J. Nuevo"}, {"fecha": "2026-10-14", "entrenador": "P. Viejo"},
+           {"fecha": "2026-10-07", "entrenador": "P. Viejo"}]
+    _sin = {"nombre": "", "desde": ""}
+    check("593: DT nuevo que debutó en la semana previa → cambio (F1 sin dato por la disciplina 30)",
+          (_cdr(1, "2026-10-25", _on, _sin) or {}).get("nuevo") == "J. Nuevo")
+    check("593: si debutó hace más de 7 días, no hay cambio reciente",
+          _cdr(1, "2026-11-02", _on, _sin) is None)
+    check("593: el DT de la base llegó en la semana y no dirigió ningún once mirado → cambio",
+          (_cdr(1, "2026-10-25", _on[1:], {"nombre": "R. Otro", "desde": "2026-10-20"}) or {}).get("nuevo") == "R. Otro"
+          and _cdr(1, "2026-10-25", _on[1:], {"nombre": "P. Viejo", "desde": "2026-10-20"}) is None
+          and _cdr(1, "2026-10-25", _on[1:], {"nombre": "R. Otro", "desde": "2026-09-01"}) is None)
     from backend.analisis.parte import _bloque_tde as _bt533
     _rz533: list = []
     _b533 = _bt533({"equipo": "a", "ie": 6.1, "ieNivel": "banda 5-7"}, _rz533, "tde.bloques[0]", "a")
