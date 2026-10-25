@@ -1,7 +1,7 @@
 // Análisis EFE y timeline de muestra para el modo demo (espejo de
 // backend/analisis/demo.py): permiten desarrollar y probar la sección
 // Análisis sin API ni créditos. Regla del proyecto: la simulación vive SOLO en demo.
-import type { InventarioLecciones, LeccionItem, BloqueParte, VeredictoParte, EfeBloque, EfeComparativo, EfeEquipo, EquipoParte, EslabonDtpDTO, JugadorParte, ParteCoworkDTO, RamaF, RolF, TimelineData, TlEvento, ZonaF } from '../api/types'
+import type { InventarioLecciones, LeccionesParams, LeccionItem, BloqueParte, VeredictoParte, EfeBloque, EfeComparativo, EfeEquipo, EquipoParte, EslabonDtpDTO, JugadorParte, ParteCoworkDTO, RamaF, RolF, TimelineData, TlEvento, ZonaF } from '../api/types'
 
 export function timelineDemo(equipoA: string, equipoB: string): TimelineData {
   const ev = (fecha: string, equipo: string, tipo: TlEvento['tipo'], titulo: string, detalle: string, marcador = '', jornada = 0, destacado = false): TlEvento => ({
@@ -415,6 +415,25 @@ function veredictoDemo(fixtureId: number, marcador: string): VeredictoParte {
  *  ciego y uno contaminado, para que se vea en pantalla la distinción que el
  *  dossier no puede dejar al criterio del día — solo lo acreditable puede mover
  *  un número; lo demás fija rúbrica. */
+/** La misma paginación que el backend (`lecciones.inventario`): `resumen` vacía
+ *  las listas, `cuantas` pagina `items` sacadas de `de`, `total` las cuenta. */
+export function paginarLecciones(inv: InventarioLecciones, p?: LeccionesParams): InventarioLecciones {
+  if (!p || (!p.resumen && !p.cuantas)) return inv
+  const normales = inv.porSkill.flatMap((s) => s.items).concat(inv.sinSkill.items)
+  const fuente = p.de === 'cuarentena' ? (inv.enCuarentena?.items ?? []) : p.de === 'sinSkill' ? inv.sinSkill.items : normales
+  const pool = fuente.filter((i) => (!p.skill || i.skill === p.skill) && (!p.estado || i.estado === p.estado))
+  const desde = Math.max(0, p.desde ?? 0)
+  return {
+    ...inv,
+    porSkill: inv.porSkill.map((s) => ({ ...s, items: [] })),
+    sinSkill: { ...inv.sinSkill, items: [] },
+    ...(inv.enCuarentena ? { enCuarentena: { ...inv.enCuarentena, items: [] } } : {}),
+    items: p.resumen ? [] : pool.slice(desde, desde + (p.cuantas ?? 0)),
+    total: pool.length,
+    desde,
+  }
+}
+
 export function leccionesDemo(skill: string, estado: string, cohorte = ''): InventarioLecciones {
   const base = (x: Partial<LeccionItem> & { clave: string }): LeccionItem => ({
     fixtureId: 9001, lado: 'b', equipo: 'Villarreal', rival: 'Atlético',
@@ -476,6 +495,8 @@ export function leccionesDemo(skill: string, estado: string, cohorte = ''): Inve
           nota: 'modo demo: números de muestra',
         }
         : null,
+      versionVigente: nombre === 'teorema-del-echado' ? 'v0.1.23' : nombre === 'efe-clasificador' ? 'v1.6' : undefined,
+      anterioresAlCorte: suyas.filter((i) => i.estado === 'pendiente').length,
       items: filtrados.filter((i) => i.skill === nombre),
     }
   })

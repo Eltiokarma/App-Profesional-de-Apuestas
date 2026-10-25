@@ -692,18 +692,56 @@ def _por_modo_fallo(items: list[dict]) -> dict:
 COHORTE_VIGENTE = "vigente"
 
 
-def inventario(skill: str = "", estado: str = "", limite: int = 400, cohorte: str = "") -> dict:
-    """Todo lo aprendido, por skill, con las métricas de la población ciega.
+# EL INVENTARIO ENTERO, MIENTRAS NADA CAMBIE (25/10/2026). Con 2.886
+# lecciones la pantalla tardaba 46 s y bajaba 6,3 MB (las lecciones viajaban
+# dos veces), y cada botón de estado lo rehacía todo. El núcleo —casos,
+# lecciones, población y métricas— se guarda con la HUELLA de lo que lo
+# decide: los partes con veredicto (incluye cuarentena, banco desmentido y
+# modo de fallo), los estados de las lecciones y un contador que sube con cada
+# escritura de este módulo. Lo que cambia por fuera (una alineación que
+# confirma o desmiente un DT) entra en ≤ TTL.
+INVENTARIO_TTL_S = float(os.environ.get("SAD_CACHE_INVENTARIO_S", "1800") or "0")
+_INV_CACHE: dict[tuple, tuple[float, tuple, dict]] = {}
+_INV_LOCK = threading.Lock()
+_GENERACION = [0]
 
-    `cohorte`: "" = todas; "vigente" = la del proceso actual; o una clave
-    concreta. Las métricas y los conteos por skill se calculan SOBRE LA
-    COHORTE ELEGIDA; el resumen de cohortes viaja siempre entero para que se
-    vea cuánto queda fuera. Lo que está en cuarentena se lista aparte y no
-    entra en ningún conteo."""
-    from backend.analisis.parte import COHORTE, COHORTES, cohorte_de
+
+def _invalidar() -> None:
+    _GENERACION[0] += 1
+
+
+def _huella() -> tuple:
+    from backend.analisis.parte import _conectar as conectar_parte
+    with conectar_parte() as con:
+        p = con.execute(
+            "SELECT COUNT(*), MAX(actualizado_en), SUM(LENGTH(veredicto_json)), "
+            "SUM(LENGTH(COALESCE(cuarentena_json,''))), SUM(LENGTH(COALESCE(banco_desmentido_json,''))), "
+            "SUM(LENGTH(COALESCE(modo_fallo_json,''))) FROM parte_cowork WHERE veredicto_json IS NOT NULL"
+        ).fetchone()
+    with _conectar() as con:
+        e = con.execute("SELECT COUNT(*), MAX(actualizado_en), SUM(LENGTH(estado)) FROM leccion_estado").fetchone()
+    return (*tuple(p), *tuple(e), _GENERACION[0])
+
+
+def _nucleo(limite: int, clave_cohorte: str) -> dict:
+    if INVENTARIO_TTL_S <= 0:
+        return _calcular_nucleo(limite, clave_cohorte)
+    huella = _huella()
+    with _INV_LOCK:
+        hit = _INV_CACHE.get((limite, clave_cohorte))
+        if hit and hit[1] == huella and time.monotonic() - hit[0] < INVENTARIO_TTL_S:
+            return hit[2]
+        n = _calcular_nucleo(limite, clave_cohorte)
+        if len(_INV_CACHE) > 16:
+            _INV_CACHE.clear()
+        _INV_CACHE[(limite, clave_cohorte)] = (time.monotonic(), huella, n)
+        return n
+
+
+def _calcular_nucleo(limite: int, clave_cohorte: str) -> dict:
+    from backend.analisis.parte import COHORTE, cohorte_de
     estados = _estados()
     todos_los_casos = _casos(limite)
-    clave_cohorte = COHORTE if cohorte == COHORTE_VIGENTE else cohorte
     cohortes = []
     for clave in sorted({c["cohorte"] for c in todos_los_casos} | {COHORTE}):
         de = [c for c in todos_los_casos if c["cohorte"] == clave]
@@ -719,10 +757,41 @@ def inventario(skill: str = "", estado: str = "", limite: int = 400, cohorte: st
     if clave_cohorte in ("", COHORTE):
         from backend.analisis import reventones as _rev
         todos += _rev.items_leccion(estados, COHORTE)
+    return {"cohortes": cohortes, "todos": todos, "enCuarentena": en_cuarentena,
+            "poblacion": poblacion, "metricas": metricas}
+
+
+def inventario(skill: str = "", estado: str = "", limite: int = 400, cohorte: str = "",
+               resumen: bool = False, de: str = "", desde: int = 0, cuantas: int = 0) -> dict:
+    """Todo lo aprendido, por skill, con las métricas de la población ciega.
+
+    `cohorte`: "" = todas; "vigente" = la del proceso actual; o una clave
+    concreta. Las métricas y los conteos por skill se calculan SOBRE LA
+    COHORTE ELEGIDA; el resumen de cohortes viaja siempre entero para que se
+    vea cuánto queda fuera. Lo que está en cuarentena se lista aparte y no
+    entra en ningún conteo.
+
+    Para la pantalla (25/10/2026): `resumen` no manda ninguna lección (solo
+    los conteos), y `cuantas` > 0 pagina las lecciones de `items` desde
+    `desde`, sacadas de `de` ("" = las normales · `cuarentena` · `sinSkill`)
+    con el filtro de skill y estado; `total` dice cuántas hay en ese filtro."""
+    from backend.analisis.parte import COHORTE, COHORTES
+    clave_cohorte = COHORTE if cohorte == COHORTE_VIGENTE else cohorte
+    nucleo = _nucleo(limite, clave_cohorte)
+    cohortes, todos, en_cuarentena = nucleo["cohortes"], nucleo["todos"], nucleo["enCuarentena"]
+    poblacion, metricas = nucleo["poblacion"], nucleo["metricas"]
 
     filtrados = [i for i in todos
                  if (not skill or i["skill"] == skill)
                  and (not estado or i["estado"] == estado)]
+    paginar = cuantas > 0 or resumen
+    if paginar:
+        fuente = {"cuarentena": en_cuarentena, "sinSkill": [i for i in todos if not i["skill"]]}.get(de, todos)
+        pool = [i for i in fuente
+                if (not skill or i["skill"] == skill)
+                and (not estado or i["estado"] == estado)]
+        total = len(pool)
+        pagina = [] if resumen else pool[max(0, desde):max(0, desde) + cuantas]
 
     por_skill = []
     for nombre in sorted({i["skill"] for i in todos if i["skill"]}):
@@ -750,7 +819,9 @@ def inventario(skill: str = "", estado: str = "", limite: int = 400, cohorte: st
                           "ABREN la revisión; no autorizan ningún cambio",
             "liston": _liston(nombre, metricas),
             "porModoFallo": _por_modo_fallo(suyas),
-            "items": [i for i in filtrados if i["skill"] == nombre],
+            "versionVigente": version_skill(nombre),
+            "anterioresAlCorte": _anteriores_al_corte(nombre, suyas),
+            "items": [] if paginar else [i for i in filtrados if i["skill"] == nombre],
         })
 
     huerfanas = [i for i in todos if not i["skill"]]
@@ -771,7 +842,7 @@ def inventario(skill: str = "", estado: str = "", limite: int = 400, cohorte: st
             "porque": "casos apartados por criterio (qué le faltaba al parte antes del pitazo), "
                       "nunca por resultado: no cuentan ni fijan rúbrica. Las automáticas son "
                       "partes sin DT declarado en un lado; se levantan re-depositando el parte con el DT",
-            "items": en_cuarentena,
+            "items": [] if paginar else en_cuarentena,
         },
         "poblacion": {
             **poblacion,
@@ -783,10 +854,11 @@ def inventario(skill: str = "", estado: str = "", limite: int = 400, cohorte: st
         "sinSkill": {
             "cuantas": len(huerfanas),
             "porque": "la lección no declaró de qué skill es: no se reparte a ojo",
-            "items": [i for i in filtrados if not i["skill"]],
+            "items": [] if paginar else [i for i in filtrados if not i["skill"]],
         },
         "estados": list(ESTADOS),
-        "items": filtrados,
+        "items": pagina if paginar else filtrados,
+        **({"total": total, "desde": max(0, desde)} if paginar else {}),
     }
 
 
@@ -1021,6 +1093,7 @@ def abrir_revision(skill: str, cohorte: str = COHORTE_VIGENTE) -> dict:
                 "estado=excluded.estado, actualizado_en=excluded.actualizado_en",
                 (i["clave"], "en_revision", "", f"revisión de {skill} abierta", efedb.ahora()))
         movidas.append(i["clave"])
+    _invalidar()
     print(f"[cowork] revisión de {skill} abierta: {len(movidas)} lección(es) a en_revision", flush=True)
     return {"skill": skill, "movidas": movidas, "versionVigente": d["versionVigente"]}
 
@@ -1044,6 +1117,22 @@ CORTE_VERSION = {
 }
 
 
+def _version_que_leyo(skill: str, fecha: str) -> tuple[str, str] | None:
+    """La primera versión del skill cuyo corte es posterior al partido: la que
+    ya leyó esa lección. `None` si el partido es posterior al último corte."""
+    historial = sorted(CORTE_VERSION.get(skill, []), key=lambda vc: vc[1])
+    f = (fecha or "")[:10]
+    return next(((v, c) for v, c in historial if f < c), None)
+
+
+def _anteriores_al_corte(skill: str, items: list[dict]) -> int | None:
+    """Cuántas pendientes cerraría hoy el botón «Cerrar las anteriores»: la
+    pantalla lo muestra sin tener que abrir el dossier. `None` = sin corte."""
+    if skill not in CORTE_VERSION:
+        return None
+    return sum(1 for i in items if i["estado"] == "pendiente" and _version_que_leyo(skill, i.get("fecha")))
+
+
 def cerrar_anteriores(skill: str) -> dict:
     """Pasa a `aplicada` (con la versión) las lecciones PENDIENTES del skill
     cuyos partidos son anteriores al corte de su versión vigente: esa revisión
@@ -1058,8 +1147,7 @@ def cerrar_anteriores(skill: str) -> dict:
     for i in inv["items"]:
         if i["estado"] != "pendiente":
             continue
-        f = (i.get("fecha") or "")[:10]
-        v = next(((vv, cc) for vv, cc in historial if f < cc), None)
+        v = _version_que_leyo(skill, i.get("fecha"))
         if not v:
             continue
         filas.append((i["clave"], v[0], f"cerrada en bloque: el dossier de {v[0]} (redactado el {v[1]}) "
@@ -1073,6 +1161,7 @@ def cerrar_anteriores(skill: str) -> dict:
             "estado=excluded.estado, aplicada_en=excluded.aplicada_en, nota=excluded.nota, "
             "actualizado_en=excluded.actualizado_en",
             [(k, v, n, ahora) for k, v, n in filas])
+    _invalidar()
     quedan = sum(1 for i in inv["items"] if i["estado"] == "pendiente") - len(filas)
     print(f"[cowork] {skill}: {len(filas)} lecciones anteriores al {corte} → aplicada ({porVersion})", flush=True)
     return {"skill": skill, "version": version, "corte": corte, "cerradas": len(filas),
@@ -1104,6 +1193,7 @@ def descartar_cohorte(cohorte: str, nota: str = "") -> dict:
             "VALUES (?,'descartada','',?,?) ON CONFLICT(clave) DO UPDATE SET "
             "estado=excluded.estado, nota=excluded.nota, actualizado_en=excluded.actualizado_en",
             [(k, nota, ahora) for k in claves])
+    _invalidar()
     print(f"[cowork] cohorte {cohorte}: {len(claves)} lecciones pendientes → descartada", flush=True)
     return {"cohorte": cohorte, "descartadas": len(claves), "claves": claves, "nota": nota}
 
@@ -1132,6 +1222,7 @@ def mover(clave: str, estado: str, aplicada_en: str = "", nota: str = "") -> dic
             "estado=excluded.estado, aplicada_en=excluded.aplicada_en, "
             "nota=excluded.nota, actualizado_en=excluded.actualizado_en",
             (clave, estado, aplicada_en, (nota or "").strip(), efedb.ahora()))
+    _invalidar()
     print(f"[cowork] lección {clave} → {estado}"
           + (f" (en {aplicada_en})" if aplicada_en else ""), flush=True)
     return {**item, "estado": estado, "aplicadaEn": aplicada_en,

@@ -1272,9 +1272,27 @@ paths:
             por skill son SOLO de la cohorte elegida; `cohortes` viaja siempre entero. La
             cohorte se sella al depositar y un re-depósito no la cambia.
           schema: { type: string }
+        - name: resumen
+          in: query
+          description: >
+            Sin lecciones: solo conteos, métricas y la versión de cada skill. La pantalla de
+            Aprendizaje abre con esto (25/10/2026: la lista entera eran 46 s y 6,3 MB).
+          schema: { type: boolean, default: false }
+        - name: de
+          in: query
+          description: "con `cuantas`: de dónde salen las lecciones de `items` ('' = las normales · cuarentena · sinSkill)"
+          schema: { type: string, enum: ['', cuarentena, sinSkill] }
+        - { name: desde, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+        - name: cuantas
+          in: query
+          description: '0 = todas (como siempre); > 0 pagina `items` y deja vacías las listas por skill. `total` dice cuántas hay en el filtro'
+          schema: { type: integer, minimum: 0, maximum: 500, default: 0 }
       responses:
         '200':
-          description: OK
+          description: >
+            OK. El núcleo (casos, lecciones, población, métricas) se guarda mientras no cambien
+            los partes con veredicto ni los estados de las lecciones (`SAD_CACHE_INVENTARIO_S`,
+            30 min de tope para lo que cambia por fuera, como una alineación).
           content:
             application/json:
               schema: { $ref: '#/components/schemas/InventarioLecciones' }
@@ -1778,6 +1796,11 @@ components:
               revisionAbierta: { type: boolean, description: 'fase D: 4 fallos con lección pendiente' }
               faltanParaDisparar: { type: integer }
               liston: { type: object, nullable: true, additionalProperties: true }
+              versionVigente: { type: string, description: 'la versión del snapshot en docs/skills (la que va en aplicadaEn)' }
+              anterioresAlCorte:
+                type: integer
+                nullable: true
+                description: 'pendientes de partidos anteriores al corte de la versión vigente: las que cerraría POST …/revision/{skill}/cerrar-anteriores; null = sin corte'
               items: { type: array, items: { $ref: '#/components/schemas/LeccionItem' } }
         sinSkill:
           type: object
@@ -1786,6 +1809,8 @@ components:
         items:
           type: array
           items: { $ref: '#/components/schemas/LeccionItem' }
+        total: { type: integer, description: 'con resumen o cuantas: lecciones en el filtro' }
+        desde: { type: integer }
     Health:
       type: object
       required: [status, version, dbOk, lastPipelineRun]

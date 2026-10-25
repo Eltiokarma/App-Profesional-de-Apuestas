@@ -3,6 +3,7 @@
     python3 -m backend.test_api
 """
 import os as _os_cache; _os_cache.environ.setdefault("SAD_CACHE_OBJETIVO_S", "0")  # los tests cambian fichas y veredictos y releen
+_os_cache.environ.setdefault("SAD_CACHE_INVENTARIO_S", "0")  # ídem el inventario de lecciones
 import os
 import json
 import sys

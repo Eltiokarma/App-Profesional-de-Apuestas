@@ -2090,6 +2090,10 @@ export interface SkillAprendizaje {
   faltanParaDisparar: number
   disparador: string
   porModoFallo?: PorModoFallo
+  /** la versión del skill en docs/skills (la que va en aplicadaEn) */
+  versionVigente?: string
+  /** cuántas pendientes cerraría «Cerrar las anteriores»; null = sin corte de versión */
+  anterioresAlCorte?: number | null
   liston: {
     de: string
     condiciones: Record<string, string>
@@ -2109,8 +2113,23 @@ export interface CohorteDTO {
   enCuarentena: number
 }
 
+/** Pedido del inventario: `resumen` no manda lecciones; `cuantas` pagina `items`
+ *  desde `desde`, sacadas de `de` ('' = normales · cuarentena · sinSkill). */
+export interface LeccionesParams {
+  skill?: string
+  estado?: string
+  cohorte?: string
+  resumen?: boolean
+  de?: '' | 'cuarentena' | 'sinSkill'
+  desde?: number
+  cuantas?: number
+}
+
 export interface InventarioLecciones {
   generadoEn: string
+  /** con `resumen` o `cuantas`: cuántas lecciones hay en el filtro (la página viaja en `items`) */
+  total?: number
+  desde?: number
   filtro: { skill: string; estado: string; cohorte?: string }
   /** Todas las épocas, siempre enteras: las métricas de abajo son solo de la elegida. */
   cohortes?: CohorteDTO[]

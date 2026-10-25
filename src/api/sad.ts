@@ -18,6 +18,7 @@ import type {
   FichaPartidoDTO,
   FixtureDTO,
   InventarioLecciones,
+  LeccionesParams,
   RevisionSkillDTO,
   CierreAnterioresDTO,
   DerrotasFavoritoDTO,
@@ -166,10 +167,12 @@ export const SadApi = {
     apiPost<ParteCoworkDTO>(`/analisis/cowork/${fixtureId}/xi`, body, { timeoutMs: 20_000 }),
 
   /** Lo que el bucle aprendió, por skill (fase C de docs/APRENDIZAJE.md). */
-  lecciones: (params?: { skill?: string; estado?: string; cohorte?: string }) =>
+  lecciones: (params?: LeccionesParams) =>
     // recalcula el objetivo de cada veredicto al leer: con cientos de casos pasa
     // de los 10 s por defecto (20/10/2026, «signal is aborted without reason»)
-    apiGet<InventarioLecciones>('/analisis/cowork/lecciones' + qs(params ?? {}), { timeoutMs: 60_000 }),
+    apiGet<InventarioLecciones>('/analisis/cowork/lecciones' + qs(Object.fromEntries(
+      Object.entries(params ?? {}).filter(([, v]) => v !== undefined && v !== '' && v !== false).map(([k, v]) => [k, String(v)]))),
+    { timeoutMs: 90_000 }),
 
   /** Aparta un caso del aprendizaje POR CRITERIO (qué le faltaba al parte), nunca por resultado. Token maestro. */
   cuarentena: (fixtureId: number, motivo: string) =>

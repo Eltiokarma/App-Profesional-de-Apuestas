@@ -44,6 +44,7 @@ import type {
   ParteCoworkDTO,
   MarcasCoworkDTO,
   InventarioLecciones,
+  LeccionesParams,
   RevisionSkillDTO,
   DerrotasFavoritoDTO,
   LeccionItem,
@@ -60,7 +61,7 @@ import type {
 } from '../api/types'
 import { CONFIG, type DataSourceMode } from '../config'
 import { MARKET_DEFS, MATCHES, STANDINGS, TEAMS } from '../data'
-import { dtpDemo, efeDemo, leccionesDemo, parteCoworkDemo, timelineDemo } from '../data/efeDemo'
+import { dtpDemo, efeDemo, leccionesDemo, paginarLecciones, parteCoworkDemo, timelineDemo } from '../data/efeDemo'
 import { oddsFor, rng } from '../lib/odds'
 import { levelBin } from '../motor/discretizer'
 import { teamEngine } from '../motor/engine'
@@ -167,7 +168,7 @@ export interface SadDataSource {
    *  Sin onces en el cuerpo, se intenta con la ficha ya ingestada. */
   resolverXi(fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }): Promise<ParteCoworkDTO>
   /** Lo que el bucle aprendió, por skill (fase C de docs/APRENDIZAJE.md). */
-  lecciones(params?: { skill?: string; estado?: string; cohorte?: string }): Promise<InventarioLecciones>
+  lecciones(params?: LeccionesParams): Promise<InventarioLecciones>
   /** Cuarentena por criterio (docs/APRENDIZAJE.md): la pone el usuario, con motivo. */
   cuarentena(fixtureId: number, motivo: string): Promise<unknown>
   quitarCuarentena(fixtureId: number): Promise<unknown>
@@ -875,8 +876,8 @@ class MockDataSource implements SadDataSource {
     return { partes, total: Object.keys(partes).length }
   }
 
-  async lecciones(params?: { skill?: string; estado?: string; cohorte?: string }): Promise<InventarioLecciones> {
-    return leccionesDemo(params?.skill ?? '', params?.estado ?? '', params?.cohorte ?? '')
+  async lecciones(params?: LeccionesParams): Promise<InventarioLecciones> {
+    return paginarLecciones(leccionesDemo(params?.skill ?? '', params?.estado ?? '', params?.cohorte ?? ''), params)
   }
   async cuarentena(fixtureId: number, motivo: string): Promise<unknown> {
     if (motivo.trim().length < 12) throw new Error('la cuarentena lleva motivo: qué le faltaba a ESTE parte antes del pitazo')
@@ -1250,7 +1251,7 @@ class HttpDataSource implements SadDataSource {
     fixtureIds.length ? SadApi.coworkMarcas(fixtureIds) : Promise.resolve({ partes: {}, total: 0 })
   resolverXi = (fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }) =>
     SadApi.resolverXi(fixtureId, body)
-  lecciones = (params?: { skill?: string; estado?: string; cohorte?: string }) => SadApi.lecciones(params)
+  lecciones = (params?: LeccionesParams) => SadApi.lecciones(params)
   cuarentena = (fixtureId: number, motivo: string) => SadApi.cuarentena(fixtureId, motivo)
   quitarCuarentena = (fixtureId: number) => SadApi.quitarCuarentena(fixtureId)
   moverLeccion = (clave: string, body: { estado: string; aplicadaEn?: string; nota?: string }) =>
