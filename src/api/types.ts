@@ -1572,6 +1572,8 @@ export interface VeredictoObjetivo {
         concedio: number[]; golEnVentana: boolean | null
         /** Solo tras la roja propia (44d): su minuto y la rama que daba el marcador. */
         rojaPropia?: number; ramaMarcador?: string
+        /** Con alguna roja: la del rival y el balance de jugadores del foco (siExpulsion solo en inferioridad). */
+        rojaRival?: number; numerico?: 'inferioridad' | 'superioridad' | 'paridad'
       }[]
       /** Qué rama de la reasignación jugó el partido (quién marcó primero) y si
        *  estaba declarada. Observación, no acierto. */

@@ -113,7 +113,7 @@ def _rojas(fixture_id: int, home_id: int) -> list[dict]:
     try:
         filas = saddb.query(
             "sad",
-            "SELECT minuto, detalle, equipo_id, jugador, jugador_id FROM fixture_eventos "
+            "SELECT minuto, extra, detalle, equipo_id, jugador, jugador_id FROM fixture_eventos "
             "WHERE fixture_id=? AND tipo='Card' ORDER BY minuto, id",
             (fixture_id,),
         )
@@ -137,7 +137,10 @@ def _rojas(fixture_id: int, home_id: int) -> list[dict]:
         if not f["jugador_id"] or e.get("cuerpoTecnico"):
             continue
         out.append({"minuto": f["minuto"] or 0, "lado": "a" if f["equipo_id"] == home_id else "b",
-                    "jugador": f["jugador"] or ""})
+                    "jugador": f["jugador"] or "",
+                    # el añadido como en los goles: 90+9 es 99 con extra 9 (tramos, incidencia 572)
+                    "enAnadido": bool(f["extra"]),
+                    "baseAnadido": ((f["minuto"] or 0) - (f["extra"] or 0)) if f["extra"] else None})
     return out
 
 
@@ -708,9 +711,17 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
     EL GOL DEL AÑADIDO TAMBIÉN CORTA (incidencia 453: el único gol, un 45+5,
     no abría tramo y el partido salía «0-0 · base» de punta a punta): corta en
     el 45 o el 90 al que se sumó, que es donde el reloj de las ventanas lo
-    pone. Y LA ROJA PROPIA TAMBIÉN (446, 448: TDE v0.1.21, 44d): desde la
-    expulsión manda `siExpulsion`, declarada o no, con la rama del marcador al
-    lado (`ramaMarcador`)."""
+    pone. Los eventos van en el ORDEN en que pasaron (reloj y añadido) y cada
+    gol cae en el tramo que cierra (Westerlo 4-4 Beveren, incidencia 572: con
+    el 90+7, la roja del 90+9 y el 90+12 salían tramos con hasta < desde y el
+    gol del 102 en el tramo del 3-3); un gol del añadido no cuenta en la
+    ventana del tramo, igual que en la del reloj (disciplina 23, 555).
+
+    LAS ROJAS DE LOS DOS LADOS (446, 448, 560, 563, 568: TDE v0.1.21, 44d y
+    disciplina 16): con el foco en INFERIORIDAD manda `siExpulsion`, declarada
+    o no, con la rama del marcador al lado (`ramaMarcador`); con la roja del
+    rival el tramo dice `numerico` superioridad, y si las dos rojas se
+    compensan, paridad —y vuelve la rama del marcador—."""
     if not foco:
         return []
     decl = tde.get("reasignacion") or {}
@@ -719,14 +730,16 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
     def reloj(g: dict) -> int:
         return g["baseAnadido"] if g.get("enAnadido") and g.get("baseAnadido") is not None else g["minuto"]
 
-    eventos = [(reloj(g), g["minuto"], 0, k, "gol", g) for k, g in enumerate(goles)]
-    roja = next((r for r in rojas or [] if r.get("lado") == foco), None)
-    if roja:
-        eventos.append((roja["minuto"], roja["minuto"], 1, 0, "roja", roja))
-    eventos.sort(key=lambda e: e[:4])
-    out, gf, gc, inicio, previo, abre, roja_desde = [], 0, 0, 0, "", None, None
+    def orden(e: dict) -> tuple:
+        return (reloj(e), (e["minuto"] - reloj(e)) if e.get("enAnadido") else 0)
+
+    eventos = [(orden(g), 0, k, "gol", g) for k, g in enumerate(goles)]
+    eventos += [(orden(r), 1, k, "roja", r) for k, r in enumerate(rojas or []) if r.get("lado") in ("a", "b")]
+    eventos.sort(key=lambda e: e[:3])
+    out, gf, gc, inicio, previo = [], 0, 0, 0, ""
+    propias, ajenas, roja_propia, roja_rival, inferior_desde = 0, 0, None, None, None
     for i in range(len(eventos) + 1):
-        fin = eventos[i][0] if i < len(eventos) else 90
+        fin = reloj(eventos[i][4]) if i < len(eventos) else 90
         if gf == gc == 0:
             estado, rama = "inicio", "base"
         elif gf > gc:
@@ -737,35 +750,51 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
             estado = "empatado"
             rama = "siLeEmpatan" if previo == "ganando" else "siIguala"
         rama_marcador = rama
-        if roja_desde is not None:
+        if propias > ajenas:
             rama = "siExpulsion"
         lo = tde if rama == "base" else decl.get(rama)
         texto = (lo or {}).get("ventana") or "" if isinstance(lo, dict) else ""
-        ancla = roja_desde if rama == "siExpulsion" else inicio
+        ancla = inferior_desde if rama == "siExpulsion" else inicio
         rango = _ventana(texto) or (rango_relativo(texto, ancla) if rama != "base" else None)
-        concedio = [e[5] for e in eventos if e[4] == "gol" and e[5]["lado"] == contra and inicio < e[0] <= fin
-                    and e[5] is not abre]
+        # el gol que CIERRA el tramo es el evento i (si es un gol del rival)
+        concedio = ([eventos[i][4]] if i < len(eventos) and eventos[i][3] == "gol"
+                    and eventos[i][4]["lado"] == contra else [])
         en_ventana = None
         if rango:
             a, b = max(rango[0], inicio), min(rango[1], fin)
-            en_ventana = (any(a <= reloj(g) <= b for g in concedio) if a <= b else None)
+            en_ventana = (any(a <= reloj(g) <= b and not g.get("enAnadido") for g in concedio)
+                          if a <= b else None)
         tramo = {"desde": inicio, "hasta": fin, "marcador": f"{gf}-{gc}", "estado": estado, "rama": rama,
                  "declarada": lo is not None if rama != "base" else bool(texto),
                  "ventana": texto, "rango": list(rango) if rango else None,
                  "concedio": [g["minuto"] for g in concedio], "golEnVentana": en_ventana}
-        if roja_desde is not None:
-            tramo.update(rojaPropia=roja_desde, ramaMarcador=rama_marcador)
+        if roja_propia is not None or roja_rival is not None:
+            tramo["numerico"] = ("inferioridad" if propias > ajenas else
+                                 "superioridad" if ajenas > propias else "paridad")
+            if roja_propia is not None:
+                tramo["rojaPropia"] = roja_propia
+            if roja_rival is not None:
+                tramo["rojaRival"] = roja_rival
+            if rama == "siExpulsion":
+                tramo["ramaMarcador"] = rama_marcador
         out.append(tramo)
         if i < len(eventos):
-            e = eventos[i]
-            if e[4] == "roja":
-                roja_desde, inicio, abre = e[0], e[0], None
+            e = eventos[i][4]
+            if eventos[i][3] == "roja":
+                if e["lado"] == foco:
+                    propias += 1
+                    roja_propia = roja_propia if roja_propia is not None else reloj(e)
+                    if propias == ajenas + 1:
+                        inferior_desde = reloj(e)
+                else:
+                    ajenas += 1
+                    roja_rival = roja_rival if roja_rival is not None else reloj(e)
+                inicio = reloj(e)
                 continue
             if estado in ("ganando", "perdiendo"):
                 previo = estado
-            g = e[5]
-            gf, gc = gf + (g["lado"] == foco), gc + (g["lado"] != foco)
-            inicio, abre = e[0], g
+            gf, gc = gf + (e["lado"] == foco), gc + (e["lado"] != foco)
+            inicio = reloj(e)
     return out
 
 

@@ -4362,6 +4362,8 @@ components:
                         rama: { type: string, enum: [base, siMarcaPrimero, siRecibePrimero, siLeEmpatan, siIguala, siExpulsion], description: 'desde la roja PROPIA manda siExpulsion (44d); un gol del añadido corta en el 45 o el 90' }
                         ramaMarcador: { type: string, description: 'solo tras la roja propia: la rama que daba el marcador' }
                         rojaPropia: { type: integer, description: 'solo tras la roja propia: su minuto' }
+                        rojaRival: { type: integer, description: 'solo tras la roja del rival: su minuto' }
+                        numerico: { type: string, enum: [inferioridad, superioridad, paridad], description: 'con alguna roja en el partido: el balance de jugadores del foco en el tramo; siExpulsion solo en inferioridad' }
                         declarada: { type: boolean }
                         ventana: { type: string }
                         rango: { type: array, nullable: true, items: { type: integer } }
