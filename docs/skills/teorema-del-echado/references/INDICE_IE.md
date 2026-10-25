@@ -301,7 +301,7 @@ Se documentan para que no se reinventen, y **no se aplican**:
 |-----------|-----------|------------------|
 | Cuantificar P1a por diferencial de μ | ≥ +0.30 → 1 · −0.30 a +0.30 → 0.5 · ≤ −0.30 → 0 | **Input resuelto en v0.1.4**: es `μ_partido`, no el gap. El **umbral de 0.30 sigue sin validar** — está prestado de los umbrales del gap, que miden otra magnitud. Se aplica de forma provisional y se declara en el output. Revisión a N = 8 |
 | F1 condicionado a F2 | No rotar con 6+ días de descanso y sin viaje es cohesión, no carga acumulada | Razonable y sin validar. Cambiaría el signo de F1 en un subconjunto de casos sin evidencia acumulada |
-| Ventana `90+` con duración endógena *(v0.1.8)* | Séptima ventana estimada desde eventos contables (VAR, goles, cambios, atenciones), operando como **amplificador de la vía activa** y no como vía nueva | Un solo caso (TDE-023/024). Añadir una ventana desplaza las ventanas modales de todo el registro sobre un MAE ya sesgado tardío seis veces seguidas. Revisión cuando haya **≥3 casos con gol del tramo caído en el añadido** |
+| Ventana `90+` con duración endógena *(v0.1.8)* | Séptima ventana estimada desde eventos contables (VAR, goles, cambios, atenciones), operando como **amplificador de la vía activa** y no como vía nueva | Un solo caso (TDE-023/024). Añadir una ventana desplaza las ventanas modales de todo el registro sobre un MAE ya sesgado tardío seis veces seguidas. Revisión cuando haya **≥3 casos con gol del tramo caído en el añadido**. *v0.1.23:* los casos ya pasan el umbral (14 de 151 goles concedidos en el añadido del segundo tiempo en 56 partes del 22-24.10.2026), pero entra solo la **casilla de cierre `anadido`** (disciplina 23); la duración endógena y el amplificador siguen como candidatos hasta poder contarlos con la casilla |
 
 Si se usan como referencia en un análisis, **decirlo y dar también el número sin el candidato**.
 
@@ -396,6 +396,8 @@ No sale del IE. Se estima desde la capacidad ofensiva del rival y las vías de g
 Las seis ventanas del módulo terminan en el 90. En **TDE-023/024** el partido tuvo doce minutos de añadido y **los dos goles del tramo final cayeron ahí**: 90+2 y 90+10, ambos de penal por revisión de VAR. La ventana modal declarada —75-90 en los dos equipos— no es ni acierto ni error, porque no existe el casillero.
 
 **Obligación de output mientras el candidato no se aplique:** decir que la ventana modal **no incluye el tiempo añadido**, y en el cierre anotar si el gol del tramo cayó dentro o fuera de las seis ventanas.
+
+**Casilla de cierre «añadido» *(v0.1.23)*.** Desde esta versión el cierre cuenta **aparte** el gol concedido en el añadido del segundo tiempo, con la vía activa en ese momento (la rama del marcador del tramo), y marca si un gol o una roja del añadido cambió el tramo. No es una séptima ventana: el 75-90 estricto y las seis ventanas modales no se tocan, para no romper la serie del sesgo tardío. El dato que la pidió: en los 56 partes del 22-24.10.2026, 14 de 151 goles concedidos cayeron en el añadido del segundo tiempo, en 12 partidos, contra 27 en el 75-90.
 
 **Sub-hipótesis del candidato, la parte con mecanismo.** El añadido no es exógeno: el equipo que administra lo produce. Pérdidas de tiempo en saques, cambios y atenciones alargan el partido, y el equipo termina **teniendo que sobrevivir la prolongación que él mismo generó**. Es observable, falsable y encaja en la ficha de `ECHADA-VOL`.
 

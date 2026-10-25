@@ -1487,11 +1487,37 @@ def _via_tde(v, rechazos: list, donde: str) -> dict | None:
 # TDE v0.1.21 (21/10/2026): además de las dos del primer gol, la línea del
 # EMPATE POSTERIOR (la rama de ventaja caduca si la ventaja se pierde) y la de
 # la EXPULSIÓN (disciplina 16 desdoblada). Opcionales: la 44 exige las dos primeras.
-RAMAS_REASIGNACION = ("siMarcaPrimero", "siRecibePrimero", "siLeEmpatan", "siExpulsion")
+# TDE v0.1.23 (25/10/2026): `siIguala` (el que estaba abajo empata; 30 tramos
+# del 22-24/10 sin poder declararla) y la roja del RIVAL con su línea
+# (`siExpulsion: {"propia": …, "rival": …}` → se guarda como `siExpulsion` y
+# `siExpulsionRival`; la forma plana vieja es la propia).
+RAMAS_REASIGNACION = ("siMarcaPrimero", "siRecibePrimero", "siLeEmpatan", "siExpulsion", "siIguala",
+                      "siExpulsionRival")
 RAMAS_OBLIGATORIAS = RAMAS_REASIGNACION[:2]
 _CLAVES_RAMA = {"sob1", "sob2", "sob3", "tipologia", "nota", "ventana"}
 # las SOB que una rama puede declarar (TDE v0.1.22: cada rama con su número)
 _SOB_RAMA = ("sob1", "sob2", "sob3")
+
+
+def tipologia_vs_indices(b: dict) -> dict | None:
+    """TDE PASO 3: el tipo modal sale de cuál índice manda (ISE > IE → SOB;
+    IE > ISE → ECHADA). Una tipología declarada del otro lado se avisa."""
+    tip = (b.get("tipologia") or "").upper()
+    try:
+        ie, ise = float(b.get("ie")), float(b.get("ise"))
+    except (TypeError, ValueError):
+        return None
+    if ie == ise or not tip:
+        return None
+    if tip.startswith("ECHADA") and ise > ie:
+        manda = "SOB"
+    elif tip.startswith("SOB") and ie > ise:
+        manda = "ECHADA"
+    else:
+        return None
+    return {"codigo": "TIPOLOGIA-VS-INDICES", "tipo": "dato",
+            "detalle": f"tipología modal {b.get('tipologia')} con IE {ie:g} e ISE {ise:g}: por el PASO 3 del "
+                       f"TDE el tipo modal es {manda}. O se corrige la tipología, o el índice que no cuadra"}
 
 
 def _reasignacion(x, rechazos: list, donde: str) -> dict:
@@ -1511,6 +1537,10 @@ def _reasignacion(x, rechazos: list, donde: str) -> dict:
                                      '"siRecibePrimero": {"sob1": 1, …}}'})
         return {}
     fuera: dict = {}
+    exp = x.get("siExpulsion")
+    if isinstance(exp, dict) and ({"propia", "rival"} & set(exp)):
+        x = {**x, "siExpulsion": exp.get("propia"), "siExpulsionRival": exp.get("rival")}
+        x = {k: v for k, v in x.items() if v is not None}
     for clave in x:
         if clave not in RAMAS_REASIGNACION:
             rechazos.append({"donde": f"{donde}.{clave}", "porque": f"rama desconocida {clave!r}: no se guardó",
@@ -1605,6 +1635,13 @@ def _bloque_tde(x, rechazos: list, donde: str, lado: str = "") -> dict:
         crudo = x.get(clave_nivel)
         niveles[clave_nivel] = _sem(crudo)
         if crudo in (None, "") or niveles[clave_nivel]:
+            continue
+        # EL SKILL NO PUBLICA COLOR (TDE v0.1.20+: «el IE no lleva semáforo; se
+        # publica el valor y la banda ordinal»). Una banda («banda 5-7») no es un
+        # error del analista: la banda ordinal la calcula el backend
+        # (`calculado.bandaOrdinal`), así que se acepta sin guardar y sin
+        # rechazo (incidencia 533: el rechazo era ruido en cada parte)
+        if isinstance(crudo, str) and re.search(r"banda|\d\s*[-–]\s*\d", crudo, re.I):
             continue
         numero = None
         try:
@@ -1809,7 +1846,8 @@ _CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto", "ligas", "dtBa
 # si el eco del GET vuelve con ellas, se descartan sin rechazo (se van a
 # recalcular igual) en vez de guardarse por duplicado.
 _ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "K-EXTREMO-CONDICION", "FAMILIA-RECORD", "ESPINA-VS-RIESGO", "HERENCIA-DTP", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT",
-                        "COLAPSO-EN-CASCADA", "F1-DECISIVO-FUERA", "DTP-REHACER", "DTP-SIN-REFERENCIA"}
+                        "COLAPSO-EN-CASCADA", "F1-DECISIVO-FUERA", "DTP-REHACER", "DTP-SIN-REFERENCIA",
+                        "TIPOLOGIA-VS-INDICES"}
 # LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
 # selladas (coherencia_json), porque no son deterministas y rehacerlas al leer
 # las haría parpadear. Del depósito se descartan igual que las calculadas
@@ -2418,6 +2456,19 @@ def guardar(payload: dict) -> dict:
             "comoSeArregla": 'en cada bloque: "reasignacion": {"siMarcaPrimero": {"sob1": …, "tipologia": "…"}, '
                              '"siRecibePrimero": {…}} (disciplina 44)',
         })
+    # TDE v0.1.23 (cambio 2): la línea del empate y la de la expulsión en SU
+    # campo —65 notas de siMarcaPrimero hablaban del empate en prosa y no cuentan—
+    sin_lineas = [f"{b.get('equipo') or '?'}: {', '.join(r for r in ('siLeEmpatan', 'siExpulsion') if r not in (b.get('reasignacion') or {}))}"
+                  for b in tde_bloques if b.get("reasignacion")
+                  and not all(r in b["reasignacion"] for r in ("siLeEmpatan", "siExpulsion"))]
+    if sin_lineas:
+        faltan.append({
+            "bloque": "tde.reasignacion",
+            "costara": f"sin la línea del empate o de la expulsión en su campo ({'; '.join(sin_lineas)}): "
+                       "si el partido pasa por ahí, el tramo sale «no declarado» aunque la nota lo diga",
+            "comoSeArregla": '"siLeEmpatan": {…} y "siExpulsion": {"propia": {…}, "rival": {…}} en cada bloque; '
+                             '"siIguala" si el equipo puede ir abajo y empatar (TDE v0.1.23)',
+        })
     # UNA RAMA QUE CAMBIA AL RÉGIMEN SOB SIN SU SEGURO DE ATRÁS (TDE v0.1.22):
     # el SOB2 del arranque no se hereda al que persigue (Sporting–LASK)
     sin_sob2 = [f"{b.get('equipo') or '?'}.{rama}" for b in tde_bloques
@@ -2963,6 +3014,13 @@ def dto(fixture_id: int) -> dict | None:
                                f"{h['valor']} ({h['de']}). Manda el DTP —el skill prohíbe re-estimarlo—; "
                                "si el DTP está mal, se corrige el DTP",
                 })
+    # LA TIPOLOGÍA MODAL CONTRA LOS DOS ÍNDICES (TDE PASO 3, incidencia 538:
+    # Porto con ECHADA-PSI e IE 2.94 < ISE 3.33). Si el ISE supera al IE el
+    # tipo modal es SOB, y al revés: un aviso de tipo dato, no se corrige solo.
+    for b in tde_calc.get("bloques") or []:
+        alerta = tipologia_vs_indices(b)
+        if alerta and b.get("equipo") in LADOS:
+            alertas.append({**alerta, "equipo": b["equipo"]})
     # EL MISMO HUECO, LEÍDO AL REVÉS POR DOS ESCALAS. El EFE cuenta el bloque
     # ausente como 0 y hunde el porcentaje; el TDE promedia solo sobre los
     # indicadores presentes, así que uno alto con denominador chico dispara el

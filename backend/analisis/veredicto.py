@@ -84,6 +84,7 @@ def _goles(fixture_id: int, home_id: int) -> list[dict]:
         if "missed" in detalle:
             continue
         autogol = "own" in detalle
+        penal = "penalty" in detalle
         de_local = f["equipo_id"] == home_id
         # `minuto` ya trae sumado el añadido (ficha_partido.guardar_eventos:
         # 90+4 se guarda como minuto 94, extra 4). Sumarlo otra vez ponía ese
@@ -93,6 +94,7 @@ def _goles(fixture_id: int, home_id: int) -> list[dict]:
             "lado": "a" if de_local else "b",
             "jugador": f["jugador"] or "",
             "autogol": autogol,
+            "penal": penal,
             # EL AÑADIDO NO TIENE VENTANA (disciplina 23 del TDE): las seis
             # ventanas de 15' terminan en el 45 y en el 90. Un 45+2 guardado
             # como 47 caía en la 45-60 (Westerlo–Antwerp, Pumas–Cruz Azul).
@@ -406,6 +408,8 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
             # TRAMO POR TRAMO (TDE v0.1.22, disciplina 64): en cada tramo manda
             # la rama del marcador de ese momento, no la del primer gol
             "tramos": tramos_por_marcador(tde, goles, foco, rojas) if out["evidencia"]["conFicha"] else [],
+            # TDE v0.1.23: el añadido es una casilla del cierre, no una ventana
+            "anadido": anadido_del_cierre(goles, rojas, foco) if out["evidencia"]["conFicha"] else None,
             "nota": ("sin ficha de eventos no se puede comprobar la ventana: queda sin veredicto"
                      if not out["evidencia"]["conFicha"] else vencida if vencida else
                      f"el equipo recibió {recibidos} goles antes de la ventana: no se echó, se rompió "
@@ -663,8 +667,15 @@ def rama_jugada(tde: dict, goles: list[dict], total_goles: int, con_ficha: bool,
             salida = "concedio"
         else:
             salida = "marco"
+        # TDE v0.1.23 (disciplina 61, cuarta salida): un penal o un autogol no
+        # es la vía de la exposición; la pelota parada y el error individual los
+        # dice la autopsia (la API no los marca)
+        if salida == "concedio" and (siguiente.get("penal") or siguiente.get("autogol")):
+            salida = "otra_via"
         out["salida"] = salida
-        out["notaSalida"] = {"concedio": "la vía se pagó: concedió de nuevo persiguiendo",
+        out["notaSalida"] = {"otra_via": "concedió por otra vía (penal o autogol): no es el régimen de "
+                                         "exposición el que se pagó (disciplina 61, v0.1.23)",
+                             "concedio": "la vía se pagó: concedió de nuevo persiguiendo",
                              "marco": "la exposición rindió a favor (disciplina 61: no cuenta contra la rama)",
                              "sinMasGoles": "no hubo más goles: si el rival administró es la disciplina 14 "
                                             "(lo dice la autopsia), no un fallo de la rama"}[salida]
@@ -752,9 +763,14 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
         rama_marcador = rama
         if propias > ajenas:
             rama = "siExpulsion"
+        elif ajenas > propias and decl.get("siExpulsionRival") is not None:
+            # TDE v0.1.23 (disciplina 16): la roja del rival tiene su línea; sin
+            # escribir, manda la rama del marcador (no se cobra lo que no se pidió)
+            rama = "siExpulsionRival"
         lo = tde if rama == "base" else decl.get(rama)
         texto = (lo or {}).get("ventana") or "" if isinstance(lo, dict) else ""
-        ancla = inferior_desde if rama == "siExpulsion" else inicio
+        ancla = (inferior_desde if rama == "siExpulsion" else
+                 roja_rival if rama == "siExpulsionRival" and roja_rival is not None else inicio)
         rango = _ventana(texto) or (rango_relativo(texto, ancla) if rama != "base" else None)
         # el gol que CIERRA el tramo es el evento i (si es un gol del rival)
         concedio = ([eventos[i][4]] if i < len(eventos) and eventos[i][3] == "gol"
@@ -775,7 +791,7 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
                 tramo["rojaPropia"] = roja_propia
             if roja_rival is not None:
                 tramo["rojaRival"] = roja_rival
-            if rama == "siExpulsion":
+            if rama in ("siExpulsion", "siExpulsionRival"):
                 tramo["ramaMarcador"] = rama_marcador
         out.append(tramo)
         if i < len(eventos):
@@ -796,6 +812,21 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
             gf, gc = gf + (e["lado"] == foco), gc + (e["lado"] != foco)
             inicio = reloj(e)
     return out
+
+
+def anadido_del_cierre(goles: list[dict], rojas: list[dict] | None, foco: str) -> dict:
+    """TDE v0.1.23 (cambio 6): lo que pasó en el AÑADIDO de cada tiempo, para
+    el foco. No es una ventana modal (el 75-90 estricto no se toca): es la
+    casilla que dice si un gol o una roja del descuento cambió el tramo final.
+    14 de 151 goles concedidos del 22-24/10 cayeron ahí."""
+    if not foco:
+        return {}
+    ev = [g for g in goles if g.get("enAnadido")]
+    rj = [r for r in rojas or [] if r.get("enAnadido")]
+    return {"concedidos": [g["minuto"] for g in ev if g["lado"] != foco],
+            "marcados": [g["minuto"] for g in ev if g["lado"] == foco],
+            "rojas": [{"minuto": r["minuto"], "propia": r["lado"] == foco} for r in rj],
+            "cambioElTramo": bool(ev or rj)}
 
 
 def declarado_ok(reasig: dict) -> bool:

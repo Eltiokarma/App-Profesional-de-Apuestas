@@ -3253,7 +3253,9 @@ components:
             siMarcaPrimero: { $ref: '#/components/schemas/RamaReasignacion' }
             siRecibePrimero: { $ref: '#/components/schemas/RamaReasignacion' }
             siLeEmpatan: { $ref: '#/components/schemas/RamaReasignacion', description: 'TDE v0.1.21 (44a), opcional: si el que marcó primero recibe el empate antes del 75 —la rama de ventaja caduca—, qué vía reabre y desde qué minuto' }
-            siExpulsion: { $ref: '#/components/schemas/RamaReasignacion', description: 'TDE v0.1.21 (44d, disciplina 16 desdoblada), opcional: roja yendo empatado o ganando → ECHADA-NUM e ISE anulado; yendo perdiendo → ISE agravado' }
+            siExpulsion: { description: 'TDE v0.1.21 (44d, disciplina 16 desdoblada): roja yendo empatado o ganando → ECHADA-NUM e ISE anulado; yendo perdiendo → ISE agravado. v0.1.23: {propia: RamaReasignacion, rival: RamaReasignacion} — la roja del rival con su línea (se guarda como siExpulsionRival); la forma plana es la propia. El recibo la pide junto con siLeEmpatan' }
+            siIguala: { $ref: '#/components/schemas/RamaReasignacion', description: 'TDE v0.1.23: el que iba abajo empata; por defecto sigue empujando en SOB, ventana desde el empate +15' }
+            siExpulsionRival: { $ref: '#/components/schemas/RamaReasignacion', description: 'TDE v0.1.23: lo que llega en siExpulsion.rival' }
         calculado:
           type: object
           description: 'el índice CALCULADO con sus compuertas (solo en la respuesta). Sin ningún indicador S el IE sale PARCIAL sobre F, C y P (divisor 7.0) con `sinS: true` y `notaSinS` (decisión del 21/10/2026); sin F, C o P sigue sin calcularse (`sinDato`)'
@@ -3388,7 +3390,7 @@ components:
               seleccion: { type: string }
               cuarentena: { type: boolean }
               explicacion: { type: string, enum: [rama_escrita, rama_sin_escribir, sin_ficha, sin_goles] }
-              tde: { type: object, additionalProperties: true, description: 'ramaJugada, minuto, loDeclarado, segundoGiro, salida, tipologia, ventana, golEnVentana' }
+              tde: { type: object, additionalProperties: true, description: 'ramaJugada, minuto, loDeclarado, segundoGiro, salida (concedio|marco|sinMasGoles|otra_via: v0.1.23, penal o autogol), tipologia, ventana, golEnVentana, anadido (v0.1.23: {concedidos[], marcados[], rojas[{minuto, propia}], cambioElTramo})' }
               tdeRival: { type: object, additionalProperties: true, description: 'ramaJugada, loDeclarado' }
               dtpViasRival: { type: array, items: { type: string }, description: 'las vías de gol del rival que había escrito el DTP del favorito' }
               leccion: { type: string }
