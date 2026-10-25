@@ -962,8 +962,22 @@ conversación se pierde en la siguiente.
      jugadores manda en la disciplina 16, `salida: otra_via` (penal o autogol)
      y la casilla `anadido` del cierre; el IE no lleva color (una banda en
      `ieNivel` ya no se rechaza, 533) y `TIPOLOGIA-VS-INDICES` avisa la
-     tipología que contradice IE contra ISE (538). Pendiente del usuario:
-     subir los tres zips.
+     tipología que contradice IE contra ISE (538). Los tres subidos el 25/10.
+     Y **EFE v1.7** + `efe-dashboard` v1.10 (aprobada entera el 25/10, desde
+     las 168 lecciones del 21-24/10, `docs/revisiones/EFE_v1.7_propuesta.md`):
+     F3 por zona y recambio de oficio/reconvertido, jerarquía de fuentes del F1
+     (agregador = duda), D3 con contexto, rama «once alternativo» con
+     calendario exigente, brecha de porcentaje solo en la misma base,
+     EJE-DEBUTANTE en el clasificador con ≤ 1 partido juntos
+     (`dtp_cowork.parejas_nuevas_de`) y T.54 con interino que repite el once.
+     Pendiente del usuario: subir los dos zips y cerrar con 🔑 las anteriores.
+   - **Aprendizaje reordenado (25/10)**: resumen sin lecciones, pestañas, el
+     cierre en bloque arriba de cada skill, lecciones de a 20 y el inventario
+     guardado por huella (`SAD_CACHE_INVENTARIO_S`; antes 46 s y 6,3 MB). La
+     versión vigente sale de `CORTE_VERSION` (en Railway no hay `docs/`): con
+     cada versión nueva se suma ahí, y un test exige que coincida con el
+     snapshot. **Confianza del 1X2**: tabla por tramo y versión en «Métricas ·
+     confianza» y marca de color en Partidos (`src/lib/confianza.ts`).
    - **Escala entre ligas** (300, 309, 294, 79): decidido «solo marcar» (22/10):
      rival (`escalaComparable`), tarjeta de la espina, perfil DC y P1a llevan la
      marca y su nota; ningún número calibrado se mueve.

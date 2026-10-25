@@ -32,7 +32,7 @@ from backend import db as saddb
 
 LADOS = ("a", "b")
 _FIN = "(status_short IN ('FT','AET','PEN') OR status_long='Match Finished')"
-FICHAS_PAREJAS = 5          # onces capturados que se miran para «nunca juntos»
+FICHAS_PAREJAS = 5          # onces capturados que se miran para «≤ 1 vez juntos» (EFE v1.7)
 TRAMOS = ("0-25", "25-65", "65-80+")
 VIAS = ("pelota_parada", "transicion", "juego_abierto")
 NIVELES_RESP = ("principal", "secundario", "estructural")
@@ -128,26 +128,38 @@ def _stat(st: dict, *claves) -> str:
     return ""
 
 
-def _parejas_nuevas(team_id: int, fecha: str, xi: list[dict]) -> list[dict]:
-    """Parejas de la MISMA línea del XI de referencia que no arrancaron juntas
-    en ninguno de los onces capturados antes (minutos compartidos, v1.1; el
-    `EJE-DEBUTANTE` del EFE). Es un proxy: mira titularidades en las fichas
-    que hay, no minutos."""
-    previos = []
-    for f in _anteriores(team_id, fecha, FICHAS_PAREJAS + 1)[1:]:
-        ids = {j["player_id"] for j in _titulares(f["id"], team_id) if j["player_id"]}
-        if ids:
-            previos.append(ids)
+# EJE-DEBUTANTE del EFE v1.7 (25/10/2026): la pareja que arrancó junta UNA vez
+# también es nueva (Mainz: los dos penales de la pareja con un partido junta;
+# Bolívar: línea de fondo con un partido). Antes era «nunca juntos».
+PAREJA_MAX_JUNTOS = 1
+
+
+def parejas_nuevas_de(xi: list[dict], previos: list[set]) -> list[dict]:
+    """Parejas de la misma línea del XI que arrancaron juntas ≤ PAREJA_MAX_JUNTOS
+    veces en los onces previos (cada uno, el conjunto de ids titulares)."""
     if not previos:
         return []
     out = []
     for linea in ("D", "M"):
         de_linea = [j for j in xi if (j.get("posicion") or "") == linea and j.get("jugadorId")]
         for x, y in combinations(de_linea, 2):
-            if not any(x["jugadorId"] in p and y["jugadorId"] in p for p in previos):
+            juntos = sum(1 for p in previos if x["jugadorId"] in p and y["jugadorId"] in p)
+            if juntos <= PAREJA_MAX_JUNTOS:
                 out.append({"linea": "defensa" if linea == "D" else "medio",
-                            "jugadores": [x["nombre"], y["nombre"]]})
+                            "jugadores": [x["nombre"], y["nombre"]], "vecesJuntos": juntos})
     return out
+
+
+def _parejas_nuevas(team_id: int, fecha: str, xi: list[dict]) -> list[dict]:
+    """Parejas de la MISMA línea del XI de referencia con ≤ 1 titularidad juntas
+    en los onces capturados antes (minutos compartidos; el `EJE-DEBUTANTE` del
+    EFE v1.7). Es un proxy: mira titularidades en las fichas que hay, no minutos."""
+    previos = []
+    for f in _anteriores(team_id, fecha, FICHAS_PAREJAS + 1)[1:]:
+        ids = {j["player_id"] for j in _titulares(f["id"], team_id) if j["player_id"]}
+        if ids:
+            previos.append(ids)
+    return parejas_nuevas_de(xi, previos)
 
 
 def _apertura_previa(nombre: str, fixture_id: int) -> dict | None:

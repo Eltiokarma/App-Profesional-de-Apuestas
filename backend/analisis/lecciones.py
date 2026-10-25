@@ -1231,7 +1231,7 @@ class LeccionInvalida(ValueError):
 # en la PRIMERA versión cuyo corte es posterior a su partido (la que la leyó).
 CORTE_VERSION = {
     "diagnostico-tactico": [("v1.4", "2026-10-21"), ("v1.5", "2026-10-25")],
-    "efe-clasificador": [("v1.6", "2026-10-21")],
+    "efe-clasificador": [("v1.6", "2026-10-21"), ("v1.7", "2026-10-25")],
     "sad-analysis": [("v4.0", "2026-10-21"), ("v4.1", "2026-10-25")],
     "teorema-del-echado": [("v0.1.22", "2026-10-22"), ("v0.1.23", "2026-10-25")],
 }
