@@ -314,6 +314,9 @@ def plantilla_de(team_id: int) -> dict:
             rating = round((r["rating_pond"] or 0) / r["min_con_rating"], 2)
         jugadores.append({
             "id": r["player_id"],
+            # el mismo id con el nombre de la tabla F1 y del bloque F (incidencia
+            # 473: Cowork copiaba `id` de acá y `jugadorId` de /f1 y los mezclaba)
+            "jugadorId": r["player_id"],
             "nombre": r["nombre"] or "?",
             "edad": r["edad"],
             "foto": r["foto"],

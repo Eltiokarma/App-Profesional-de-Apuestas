@@ -359,22 +359,31 @@ def titulares_fijos_fuera(jugadores: list[dict]) -> list[str]:
             if (j.get("rol") or "").upper() == "TF" and (j.get("estado") or "") == "baja"]
 
 
-def alerta_f3(clasificacion: str, ip_nivel: str, tf_fuera: list[str] | None = None) -> dict | None:
-    """F3 · formación fraccionada: EFE 🟢/🟡 pero, para esta fecha, IP > 7 (🔴)
-    **o** ≥ 2 titulares fijos ausentes — las dos condiciones de la rúbrica.
+def alerta_f3(clasificacion: str, ip_nivel: str, tf_fuera: list[str] | None = None,
+              zonas_criticas: list[str] | None = None, provisional: bool = False) -> dict | None:
+    """F3 · formación fraccionada: EFE 🟢/🟡 pero, para esta fecha, IP > 7 (🔴),
+    ≥ 2 titulares fijos ausentes **o una zona en 🔴 (> 40 %)** —la F3 por zona
+    de la EFE v1.7, que la nombra (Bayern MID 41,7 % con IP 5)—.
     Solo con la primera, la Juve del 11/10/2026 (Yildiz y Locatelli fuera, IP
-    6.5) se quedaba sin alerta."""
-    tf_fuera = tf_fuera or []
+    6.5) se quedaba sin alerta. `provisional`: antes del once, sobre las bajas
+    ya conocidas (rama A del bloque congelado, incidencia 383)."""
+    tf_fuera, zonas_criticas = tf_fuera or [], zonas_criticas or []
     if clasificacion not in ("FORMADO", "EN_FORMACION"):
         return None
-    if ip_nivel != "rojo" and len(tf_fuera) < 2:
+    if ip_nivel != "rojo" and len(tf_fuera) < 2 and not zonas_criticas:
         return None
     motivo = ("impacto 🔴" if ip_nivel == "rojo" else
-              f"{len(tf_fuera)} titulares fijos ausentes ({', '.join(tf_fuera)})")
+              f"{len(tf_fuera)} titulares fijos ausentes ({', '.join(tf_fuera)})" if len(tf_fuera) >= 2 else
+              f"zona {'/'.join(zonas_criticas)} en 🔴 (> 40 %)")
+    if zonas_criticas and ip_nivel == "rojo":
+        motivo += f"; zona {'/'.join(zonas_criticas)} en 🔴"
     return {
         "codigo": "F3",
         "tipo": "fecha",
+        **({"provisional": True} if provisional else {}),
         "detalle": f"El EFE es {clasificacion.replace('_', ' ')}, pero para esta fecha el equipo "
                    f"opera degradado ({motivo}). Reducir confianza en las K históricas y bajar "
-                   "un nivel la confianza efectiva.",
+                   "un nivel la confianza efectiva."
+                   + (" PROVISIONAL: sin once confirmado, con las bajas ya conocidas (rama A); se "
+                      "rehace al cerrar el once" if provisional else ""),
     }

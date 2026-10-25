@@ -187,6 +187,30 @@ def main():
     check("EJE-DEBUTANTE v1.7: ≤ 1 vez juntos es pareja nueva, 2+ no; otras líneas no cuentan",
           sorted((tuple(x["jugadores"]), x["vecesJuntos"]) for x in _pn) == [(("A", "C"), 1)], _pn)
     check("sin onces previos no se inventa una pareja nueva", parejas_nuevas_de(_xi, []) == [])
+    # 540: un partido reprogramado no pierde su apertura en la cadena
+    efedb.guardar_cadena("Reprogramado FC", 5, "Rival A", "2026-10-14", 9001, {"m1": {"sistema": "4-4-2"}})
+    efedb.guardar_cadena("Reprogramado FC", 5, "Rival B", "2026-10-18", 9002, {"m1": {"sistema": "3-5-2"}})
+    _e1, _e2 = efedb.eslabon_de_fixture("Reprogramado FC", 9001), efedb.eslabon_de_fixture("Reprogramado FC", 9002)
+    check("540: el partido que toma el número de uno reprogramado no hereda ni borra su apertura",
+          (_e1 or {}).get("apertura", {}).get("m1", {}).get("sistema") == "4-4-2"
+          and (_e2 or {}).get("apertura", {}).get("m1", {}).get("sistema") == "3-5-2"
+          and _e2["partidoN"] == 5, (_e1, _e2))
+    efedb.guardar_cadena("Reprogramado FC", 7, "Rival A", "2026-10-21", 9001, {"m1": {"sistema": "5-4-1"}})
+    _e1b = efedb.eslabon_de_fixture("Reprogramado FC", 9001)
+    check("540: re-guardar el reprogramado con su número nuevo conserva la primera apertura y se mueve",
+          _e1b["partidoN"] == 7 and _e1b["apertura"]["m1"]["sistema"] == "4-4-2"
+          and [x["fixtureId"] for x in efedb.cadena_de("Reprogramado FC")] == [9001, 9002], _e1b)
+    from backend.analisis.dtp_cowork import rehacer as _reh
+    _b559 = {"equipo": "a", "apertura": {"m1": {"sistema": "4-2-3-1", "xiReferencia": ""}}}
+    _r559 = _reh(_b559, {"a": {"formacion": "3-4-3", "formacionAlCerrar": "4-2-3-1", "titulares": [], "defensores": 3}})
+    _r559b = _reh(_b559, {"a": {"formacion": "3-4-3", "titulares": [], "defensores": 3}})
+    check("559: si la apertura cuadraba con la formación al cerrar y la API la corrigió después, no pide rehacer",
+          not any(m.startswith("sistema") for m in _r559["motivos"]) and _r559.get("formacionCorregidaPorLaApi")
+          and any(m.startswith("sistema") for m in _r559b["motivos"]), (_r559, _r559b))
+    from backend.analisis.dtp_cowork import sin_referencia
+    check("527: una nota entre paréntesis con «sin dato» no anula el XI de referencia",
+          not sin_referencia("A, B, C, D, E, F, G, H, I, J (el undécimo titular no viene en la ficha: sin dato)")
+          and sin_referencia("sin XI de referencia") and sin_referencia("(sin dato)"))
 
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)

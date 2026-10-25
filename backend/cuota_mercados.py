@@ -57,6 +57,11 @@ def cuota_key(bet_name, value):
 # margen de la casa (TOLERANCIA_DC en probabilidad implícita).
 _DC_PARTES = {"1X": ("1", "X"), "12": ("1", "2"), "X2": ("X", "2")}
 TOLERANCIA_DC = 0.05
+# …y por ABAJO la cuenta es la misma suma, no el mayor de los dos (incidencia
+# 412, Brest–Nice 23/10/2026): 1xBet dio 1X 1.80 con su 1X2 en 2.31/3.50 (1X
+# ≈ 1.39); quedaba entre «1» y «1 + X» y pasaba, y la media subía a 1.52. En
+# las otras siete casas del mismo partido la DC cayó a ≤ 0.04 de la suma.
+TOLERANCIA_DC_SUMA = 0.10
 
 
 def dc_incoherente(seleccion: str, odd, x12: dict) -> bool:
@@ -70,7 +75,8 @@ def dc_incoherente(seleccion: str, odd, x12: dict) -> bool:
         pa, pb, p = 1 / float(x12[partes[0]]), 1 / float(x12[partes[1]]), 1 / float(odd)
     except (KeyError, TypeError, ValueError, ZeroDivisionError):
         return False
-    return p < max(pa, pb) - TOLERANCIA_DC or p > pa + pb + TOLERANCIA_DC
+    return (p < max(pa, pb) - TOLERANCIA_DC or p < pa + pb - TOLERANCIA_DC_SUMA
+            or p > pa + pb + TOLERANCIA_DC)
 
 
 def sin_dc_incoherente(filas: list[dict]) -> list[dict]:

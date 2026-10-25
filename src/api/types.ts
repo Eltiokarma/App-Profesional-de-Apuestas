@@ -300,6 +300,11 @@ export interface EquipoStatsDTO {
     ventana: number
     n: { xg: number; xgContra: number; posesion: number; tirosPuerta: number; corners: number }
   }
+  /** La temporada en curso en su liga doméstica; lo de arriba es toda la historia de la base. */
+  temporada?: {
+    ligaId: number; liga: string; temporada: number; partidosJugados: number; puntos: number
+    puntosPorPartido: number | null; golesFavor: number; golesContra: number; posicion: number | null; nota: string
+  } | null
 }
 
 // ── capa de jugadores (docs/JUGADORES.md, capa 1) ───────────────────────────
@@ -315,6 +320,8 @@ export const esBajaReal = (j: Pick<JugadorDTO, 'baja'>): boolean =>
  *  por minutos y flags (baja, recién llegado, en capilla). */
 export interface JugadorDTO {
   id: number
+  /** el mismo id, con el nombre de la tabla F1 */
+  jugadorId?: number
   nombre: string
   edad: number | null
   foto: string | null
@@ -527,6 +534,8 @@ export interface PartidoCalendarioDTO {
   torneo: string | null
   ronda: string | null
   posicionRival: number | null
+  /** de qué tabla sale la posición: fase internacional, torneo corto en curso o «año» */
+  tablaDe?: string
   equiposEnLaTabla: number | null
   zonaRival: 'alta' | 'media' | 'descenso' | null
   /** Días desde el partido anterior: la congestión se lee de un vistazo. */
@@ -1227,6 +1236,8 @@ export interface BloqueParte {
   topePonderado: number
   excluido: boolean
   motivoExclusion?: string
+  /** indicadores del bloque sin dato (p. ej. ["B5"]): fuera del denominador, `max` ya descontado */
+  sinDato?: string[]
   /** false = nadie puntuó este bloque. Un hueco no es un cero. */
   declarado?: boolean
   /** true = parte anterior al campo: la declaración se infirió del sub-score. */
@@ -2018,6 +2029,8 @@ export interface ParteAgendaItemDTO {
   etiquetas: string[]
   /** las etiquetas son del visitante (calculadas como rival del local) */
   etiquetasDe?: 'b'
+  /** el nombre del equipo al que pertenecen las etiquetas (el visitante) */
+  etiquetasEquipo?: string
   parte: string
 }
 

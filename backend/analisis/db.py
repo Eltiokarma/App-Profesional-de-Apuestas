@@ -391,10 +391,30 @@ def guardar_cadena(equipo_foco: str, partido_n: int, rival: str, fecha: str | No
     posterior al partido: eso convertiría el pronóstico en hindsight."""
     with conectar() as con:
         previa = con.execute(
-            "SELECT apertura_json, cierre_json, registro FROM cadena_dtp "
+            "SELECT apertura_json, cierre_json, registro, fixture_id FROM cadena_dtp "
             "WHERE equipo_foco=? AND partido_n=?",
             (equipo_foco, partido_n),
         ).fetchone()
+        # EL ESLABÓN ES DEL PARTIDO, NO DEL NÚMERO (incidencia 540, Once Caldas):
+        # el número se calcula por fecha, y un partido reprogramado (Millonarios–
+        # Once Caldas, del 14/10 al 21/10) le dejaba su número al del 18/10, que
+        # heredaba su apertura y lo borraba. Si el número lo tiene OTRO partido,
+        # ese se reubica al final (no se pisa); si este partido ya tenía fila con
+        # otro número, esa es la previa y se mueve.
+        if fixture_id and previa is not None and previa["fixture_id"] not in (None, fixture_id):
+            libre = con.execute("SELECT COALESCE(MAX(partido_n), 0) + 1 FROM cadena_dtp WHERE equipo_foco=?",
+                                (equipo_foco,)).fetchone()[0]
+            con.execute("UPDATE cadena_dtp SET partido_n=? WHERE equipo_foco=? AND partido_n=?",
+                        (libre, equipo_foco, partido_n))
+            previa = None
+        if fixture_id and previa is None:
+            propia = con.execute(
+                "SELECT apertura_json, cierre_json, registro, fixture_id, partido_n FROM cadena_dtp "
+                "WHERE equipo_foco=? AND fixture_id=?", (equipo_foco, fixture_id)).fetchone()
+            if propia is not None:
+                con.execute("DELETE FROM cadena_dtp WHERE equipo_foco=? AND partido_n=?",
+                            (equipo_foco, propia["partido_n"]))
+                previa = propia
         apertura_txt = None
         if previa and previa["apertura_json"]:
             apertura_txt = previa["apertura_json"]   # la de antes manda
@@ -449,7 +469,8 @@ def cadena_de(equipo_foco: str, limite: int = 20) -> list[dict]:
     """La película del equipo, del partido más reciente hacia atrás."""
     with conectar() as con:
         filas = con.execute(
-            "SELECT * FROM cadena_dtp WHERE equipo_foco=? ORDER BY partido_n DESC LIMIT ?",
+            # por fecha: un eslabón reubicado (partido reprogramado) conserva su lugar
+            "SELECT * FROM cadena_dtp WHERE equipo_foco=? ORDER BY COALESCE(fecha, '') DESC, partido_n DESC LIMIT ?",
             (equipo_foco, limite),
         ).fetchall()
     return [_fila_cadena(f) for f in filas]

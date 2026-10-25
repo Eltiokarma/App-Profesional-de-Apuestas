@@ -1099,6 +1099,9 @@ class MockDataSource implements SadDataSource {
       tirosPuertaProm: +(T.gf * 2.7).toFixed(1),
       cornersProm: +(3.6 + T.gf * 1.2).toFixed(1),
       avanzadas: { partidos: 10, ventana: 10, n: { xg: 10, xgContra: 10, posesion: 10, tirosPuerta: 10, corners: 10 } },
+      temporada: { ligaId: 0, liga: 'demo', temporada: 2026, partidosJugados: 38, puntos: T.pts,
+        puntosPorPartido: +(T.pts / 38).toFixed(2), golesFavor: Math.round(T.gf * 38), golesContra: Math.round(T.gc * 38),
+        posicion: null, nota: 'modo demo' },
     }
   }
 

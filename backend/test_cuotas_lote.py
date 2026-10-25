@@ -194,6 +194,11 @@ def main():
           all(dc_incoherente(s, o, _x) for s, o in (("1X", 2.6), ("X2", 1.32), ("12", 1.01)))
           and not any(dc_incoherente(s, o, {"1": 1.29, "X": 6.5, "2": 10.5}) for s, o in (("1X", 1.08), ("X2", 3.85), ("12", 1.12))))
     check("sin el 1X2 de la casa no se juzga", not dc_incoherente("1X", 2.6, {}))
+    _b412 = {"1": 2.31, "X": 3.5, "2": 3.38}
+    check("412: la DC muy por debajo de la suma de su 1X2 (1xBet 1X 1.80 con 1X ≈ 1.39) es incoherente; las de las otras casas no",
+          dc_incoherente("1X", 1.8, _b412) and not dc_incoherente("12", 1.35, _b412) and not dc_incoherente("X2", 1.61, _b412)
+          and not dc_incoherente("1X", 1.36, {"1": 2.25, "X": 3.4, "2": 3.1})
+          and not dc_incoherente("1X", 1.3, {"1": 2.25, "X": 3.5, "2": 3.2}))
     _f = [{"casa": "a", "mercado": "1x2", "seleccion": "1", "cuota": 1.29}, {"casa": "a", "mercado": "1x2", "seleccion": "X", "cuota": 6.91},
           {"casa": "a", "mercado": "1x2", "seleccion": "2", "cuota": 10.7}, {"casa": "a", "mercado": "dc", "seleccion": "1X", "cuota": 2.6},
           {"casa": "b", "mercado": "dc", "seleccion": "1X", "cuota": 1.06}]

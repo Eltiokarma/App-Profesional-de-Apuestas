@@ -207,7 +207,7 @@ paths:
               schema: { type: array, items: { $ref: '#/components/schemas/Equipo' } }
   /equipos/{equipoId}/stats:
     get:
-      summary: Stats de temporada calculadas de los fixtures terminados
+      summary: Stats calculadas de los fixtures terminados (historia de la base) y la temporada en curso en `temporada`
       parameters:
         - { name: equipoId, in: path, required: true, schema: { type: integer } }
       responses:
@@ -2179,6 +2179,25 @@ components:
         posesionProm: { type: number, nullable: true, description: 0-100 }
         tirosPuertaProm: { type: number, nullable: true }
         cornersProm: { type: number, nullable: true }
+        temporada:
+          type: object
+          nullable: true
+          description: >
+            La temporada en curso en su liga doméstica (`escala.base_de`). Los campos de
+            arriba (partidosJugados, puntos, promedios de goles) son TODA la historia de la
+            base; esto es lo que el E2 del EFE pide (incidencias 520 y 539). null sin liga
+            doméstica en la base.
+          properties:
+            ligaId: { type: integer }
+            liga: { type: string }
+            temporada: { type: integer }
+            partidosJugados: { type: integer }
+            puntos: { type: integer }
+            puntosPorPartido: { type: number, nullable: true }
+            golesFavor: { type: integer }
+            golesContra: { type: integer }
+            posicion: { type: integer, nullable: true, description: 'en la tabla del año' }
+            nota: { type: string }
         avanzadas:
           type: object
           description: La muestra de los promedios avanzados
@@ -2202,6 +2221,7 @@ components:
                  goles, asistencias, participacionOfensiva, amarillas, rojas, enCapilla]
       properties:
         id: { type: integer }
+        jugadorId: { type: integer, description: 'el mismo id, con el nombre que usan la tabla F1 y el bloque F' }
         nombre: { type: string }
         edad: { type: integer, nullable: true }
         foto: { type: string, nullable: true }
@@ -2386,6 +2406,7 @@ components:
         torneo: { type: string, nullable: true }
         ronda: { type: string, nullable: true }
         posicionRival: { type: integer, nullable: true }
+        tablaDe: { type: string, description: 'de qué tabla sale la posición: la fase internacional, el torneo corto en curso (con 5+ fechas) o «año»' }
         equiposEnLaTabla: { type: integer, nullable: true }
         zonaRival: { type: string, nullable: true, enum: [alta, media, descenso, null] }
         diasDescanso: { type: integer, nullable: true, description: 'contra el partido anterior' }
@@ -3612,6 +3633,10 @@ components:
         topePonderado: { type: number }
         excluido: { type: boolean }
         motivoExclusion: { type: string }
+        sinDato:
+          type: array
+          items: { type: string }
+          description: 'indicadores del bloque sin dato (p. ej. ["B5"]): salen del denominador y `max` baja uno por cada uno (incidencia 467)' 
         declarado:
           type: boolean
           description: >
@@ -3972,6 +3997,7 @@ components:
         motivo: { type: string }
         etiquetas: { type: array, items: { type: string } }
         etiquetasDe: { type: string, enum: [b], description: 'las etiquetas se calculan sobre el visitante como rival del local: son de ese lado' }
+        etiquetasEquipo: { type: string, description: 'el nombre del equipo al que pertenecen las etiquetas (el visitante)' }
         parte: { type: string, description: 'estado del parte ya depositado, "" si no hay' }
     AgendaCowork:
       type: object
