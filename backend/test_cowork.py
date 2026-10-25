@@ -3765,11 +3765,32 @@ def main():
     _tx = tramos_por_marcador({"reasignacion": {"siMarcaPrimero": {"sob1": 0}, "siExpulsion": "roja ganando → ECHADA-NUM"}},
                               [{"minuto": 26, "lado": "a"}, {"minuto": 61, "lado": "b"}], "a",
                               [{"minuto": 27, "lado": "a", "jugador": "x"}, {"minuto": 70, "lado": "b", "jugador": "y"}])
-    check("446: Grau 1-0 al 26 y roja propia al 27 → siExpulsion desde el 27, con la rama del marcador al lado",
+    check("446/563: Grau 1-0 al 26 y roja propia al 27 → siExpulsion desde el 27 con la rama del marcador al lado; "
+          "la roja del rival al 70 devuelve la paridad y la rama del marcador",
           [(t["desde"], t["hasta"], t["rama"]) for t in _tx] == [(0, 26, "base"), (26, 27, "siMarcaPrimero"),
-                                                              (27, 61, "siExpulsion"), (61, 90, "siExpulsion")]
+                                                              (27, 61, "siExpulsion"), (61, 70, "siExpulsion"),
+                                                              (70, 90, "siLeEmpatan")]
           and _tx[2]["declarada"] is True and _tx[2]["ramaMarcador"] == "siMarcaPrimero"
-          and _tx[3]["ramaMarcador"] == "siLeEmpatan" and _tx[3]["rojaPropia"] == 27 and _tx[2]["concedio"] == [61], _tx)
+          and _tx[3]["ramaMarcador"] == "siLeEmpatan" and _tx[3]["rojaPropia"] == 27 and _tx[2]["concedio"] == [61]
+          and _tx[4]["numerico"] == "paridad" and _tx[4]["rojaRival"] == 70, _tx)
+    # 572: goles y roja en el añadido, en el orden en que pasaron
+    _ad = lambda m, base, lado: {"minuto": m, "lado": lado, "enAnadido": True, "baseAnadido": base}  # noqa: E731
+    _t572 = tramos_por_marcador({"reasignacion": {}}, [{"minuto": 60, "lado": "b"}, _ad(97, 90, "a"), _ad(102, 90, "b")],
+                                "a", [{"minuto": 99, "lado": "a", "jugador": "x", "enAnadido": True, "baseAnadido": 90}])
+    check("572: 90+7, roja al 90+9 y 90+12 → ningún tramo con hasta < desde y el 90+12 cae en el tramo con diez",
+          all(t["desde"] <= t["hasta"] for t in _t572)
+          and [(t["marcador"], t["concedio"]) for t in _t572] == [("0-0", [60]), ("0-1", []), ("1-1", []), ("1-1", [102]), ("1-2", [])]
+          and _t572[3]["numerico"] == "inferioridad" and _t572[3]["rama"] == "siExpulsion", _t572)
+    # 555: el gol del añadido no cuenta en la ventana del tramo (como en la del reloj)
+    _t555 = tramos_por_marcador({"ventana": "75-90'", "reasignacion": {}}, [_ad(92, 90, "b")], "a")
+    check("555: 90+2 con la ventana base 75-90 → golEnVentana false en el tramo, igual que el reloj",
+          _t555[0]["golEnVentana"] is False and _t555[0]["concedio"] == [92], _t555)
+    # 568: la roja del rival da superioridad, no siExpulsion
+    _t568 = tramos_por_marcador({"reasignacion": {}}, [{"minuto": 30, "lado": "a"}], "a",
+                                [{"minuto": 79, "lado": "b", "jugador": "y"}])
+    check("568: con la roja del rival el tramo sigue con la rama del marcador y marca superioridad",
+          _t568[-1]["rama"] == "siMarcaPrimero" and _t568[-1]["numerico"] == "superioridad"
+          and _t568[-1]["rojaRival"] == 79, _t568)
     _t448 = tramos_por_marcador({"reasignacion": {}}, [], "b", [{"minuto": 50, "lado": "b", "jugador": "x"}])
     check("448: sin goles y roja propia al 50, el partido tiene su tramo siExpulsion (no declarada)",
           [(t["desde"], t["hasta"], t["rama"], t["declarada"]) for t in _t448]
