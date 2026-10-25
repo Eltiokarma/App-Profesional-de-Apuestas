@@ -2836,6 +2836,23 @@ def main():
           and c.post(f"{A}/analisis/cowork/cohortes/c9-no-existe/descartar", json={}).status_code == 404)
     with _pm_desc._conectar() as _cn:
         _cn.execute("UPDATE parte_cowork SET cohorte='c2-2026-09-19' WHERE fixture_id=?", (_pid,))
+    # 25/10/2026: cerrar en bloque lo que la versión vigente ya leyó (maestro, no Cowork)
+    check("cerrar-anteriores NO está abierto al token de Cowork",
+          not _app_mod._cowork_puede("POST", f"{A}/analisis/cowork/revision/teorema-del-echado/cerrar-anteriores"))
+    check("cerrar-anteriores de un skill sin corte → 422",
+          c.post(f"{A}/analisis/cowork/revision/no-existe/cerrar-anteriores", json={}).status_code == 422)
+    from backend.analisis import lecciones as _lec_ca
+    _sk_ca = "teorema-del-echado"
+    _pend_antes = [i for i in _lec_ca.inventario(skill=_sk_ca, limite=100000)["items"] if i["estado"] == "pendiente"]
+    _r_ca = c.post(f"{A}/analisis/cowork/revision/{_sk_ca}/cerrar-anteriores", json={}).json()
+    _ver, _corte = _lec_ca.CORTE_VERSION[_sk_ca]
+    _items_ca = {i["clave"]: i for i in _lec_ca.inventario(skill=_sk_ca, limite=100000)["items"]}
+    _viejas = [i["clave"] for i in _pend_antes if (i.get("fecha") or "")[:10] < _corte]
+    _nuevas = [i["clave"] for i in _pend_antes if (i.get("fecha") or "")[:10] >= _corte]
+    check("cerrar-anteriores: las anteriores al corte quedan aplicadas EN la versión; las posteriores, pendientes",
+          _r_ca.get("cerradas") == len(_viejas)
+          and all(_items_ca[k]["estado"] == "aplicada" and _items_ca[k]["aplicadaEn"] == _ver for k in _viejas)
+          and all(_items_ca[k]["estado"] == "pendiente" for k in _nuevas), (_r_ca, len(_viejas), len(_nuevas)))
     r_desc = c.post(f"{A}/analisis/cowork/cohortes/c2-2026-09-19/descartar", json={"nota": "no calibra"})
     _vieja = c.get(f"{A}/analisis/cowork/lecciones?cohorte=c2-2026-09-19").json()
     _todas_c2 = [i for i in _vieja["items"] + _vieja["enCuarentena"]["items"] if i["cohorte"] == "c2-2026-09-19"]

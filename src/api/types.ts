@@ -2229,6 +2229,16 @@ export interface ReglaRevision {
 
 /** El dossier de revisión de un skill (fase D de docs/APRENDIZAJE.md): ABRE la
  *  revisión, no autoriza nada. `lectura` dice, calculado, qué puede concluir. */
+/** Respuesta de cerrar en bloque las lecciones anteriores a la versión vigente. */
+export interface CierreAnterioresDTO {
+  skill: string
+  version: string
+  corte: string
+  cerradas: number
+  quedanPendientes: number
+  nota: string
+}
+
 export interface RevisionSkillDTO {
   skill: string
   /** Versión del snapshot en docs/skills: la que va en `aplicadaEn`. */

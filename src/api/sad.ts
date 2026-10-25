@@ -19,6 +19,7 @@ import type {
   FixtureDTO,
   InventarioLecciones,
   RevisionSkillDTO,
+  CierreAnterioresDTO,
   DerrotasFavoritoDTO,
   LeccionItem,
   FixtureLiveDTO,
@@ -192,6 +193,9 @@ export const SadApi = {
   /** El dossier de revisión de un skill (fase D): abre la revisión, no autoriza nada. */
   revisionSkill: (skill: string, cohorte = 'vigente') =>
     apiGet<RevisionSkillDTO>(`/analisis/cowork/revision/${encodeURIComponent(skill)}` + qs({ cohorte }), { timeoutMs: 60_000 }),
+  /** Cierra como `aplicada` las pendientes anteriores al corte de la versión vigente. Token maestro. */
+  cerrarAnteriores: (skill: string) =>
+    apiPost<CierreAnterioresDTO>(`/analisis/cowork/revision/${encodeURIComponent(skill)}/cerrar-anteriores`, {}),
   /** Pasa a `en_revision` las lecciones pendientes del dossier. Token maestro (modo administrador). */
   abrirRevision: (skill: string, cohorte = 'vigente') =>
     apiPost<{ skill: string; movidas: string[]; versionVigente: string }>(

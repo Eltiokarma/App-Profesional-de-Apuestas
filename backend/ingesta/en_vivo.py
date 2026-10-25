@@ -838,7 +838,8 @@ def orden_rescate(con: sqlite3.Connection, fixtures: "list[int]") -> list[int]:
     return sorted(fixtures, key=lambda f: (ultimo.get(f, ""), f))
 
 
-def fixtures_para_xi(con: sqlite3.Connection, ligas: "set[int]") -> list[int]:
+def fixtures_para_xi(con: sqlite3.Connection, ligas: "set[int]",
+                     con_parte: "set[int] | None" = None) -> list[int]:
     """Fixtures de las ligas en vivo cuya alineación conviene pedir YA. Dos
     casos, orden por saque más próximo primero:
     1. SIN XI capturado, con saque entre XI_VENTANA_PREVIA_MIN antes y
@@ -847,7 +848,14 @@ def fixtures_para_xi(con: sqlite3.Connection, ligas: "set[int]") -> list[int]:
     2. CON XI, pero capturado temprano (> XI_CAPTURA_VIEJA_MIN antes del
        saque): un refresco único al entrar en los últimos
        XI_REFRESCO_ANTES_MIN minutos, por si la formación cambió — tras ese
-       intento la condición deja de cumplirse sola."""
+       intento la condición deja de cumplirse sola.
+
+    ORDEN (25/10/2026, Leipzig, Coventry y Antwerp sin rehacer): primero los
+    partidos CON PARTE (`con_parte`: su once es el que dispara DTP-REHACER),
+    después los que todavía no empezaron y al final los ya en juego, cada grupo
+    por saque. Antes iba solo por saque y un sábado a las 15:00 de Inglaterra
+    los partidos ya empezados de ligas que nunca publican el once (reintento
+    cada 5 min) se comían los TOPE_XI lugares de cada ciclo."""
     if not ligas or TOPE_XI <= 0:
         return []
     ahora = datetime.now(timezone.utc)
@@ -858,8 +866,8 @@ def fixtures_para_xi(con: sqlite3.Connection, ligas: "set[int]") -> list[int]:
     estados = PREVIOS + EN_JUEGO
     marcas_e = ",".join("?" * len(estados))
     marcas_l = ",".join("?" * len(ligas))
-    return [fid for fid, _ in con.execute(
-        f"""SELECT f.id, f.date FROM fixtures f
+    filas = con.execute(
+        f"""SELECT f.id, f.date, f.status_short FROM fixtures f
             WHERE f.league_id IN ({marcas_l})
               AND f.status_short IN ({marcas_e})
               AND f.date BETWEEN ? AND ?
@@ -867,7 +875,7 @@ def fixtures_para_xi(con: sqlite3.Connection, ligas: "set[int]") -> list[int]:
               AND NOT EXISTS (SELECT 1 FROM xi_intentos i
                               WHERE i.fixture_id = f.id AND i.intentada_en > ?)
             UNION
-            SELECT f.id, f.date FROM fixtures f
+            SELECT f.id, f.date, f.status_short FROM fixtures f
             WHERE f.league_id IN ({marcas_l})
               AND f.status_short IN ({marcas_e})
               AND f.date BETWEEN ? AND ?
@@ -877,7 +885,25 @@ def fixtures_para_xi(con: sqlite3.Connection, ligas: "set[int]") -> list[int]:
                   < datetime(f.date, '-{XI_CAPTURA_VIEJA_MIN} minutes')
             ORDER BY 2""",
         (*sorted(ligas), *estados, desde, hasta, corte_intento,
-         *sorted(ligas), *estados, desde, hasta_refresco))]
+         *sorted(ligas), *estados, desde, hasta_refresco)).fetchall()
+    con_parte = con_parte or set()
+    filas = sorted(filas, key=lambda r: (r[0] not in con_parte, r[2] not in PREVIOS, str(r[1])))
+    return [r[0] for r in filas]
+
+
+def fixtures_con_parte() -> set[int]:
+    """Los fixtures con parte depositado y sin veredicto: sus onces van primero
+    en la cola (`fixtures_para_xi`). Un fallo devuelve vacío: el orden vuelve a
+    ser por saque, nunca corta el ciclo."""
+    os.environ.setdefault("SAD_SIN_HILOS", "1")
+    try:
+        from backend.analisis.parte import _conectar
+        with _conectar() as c:
+            return {int(r[0]) for r in c.execute(
+                "SELECT fixture_id FROM parte_cowork WHERE veredicto_json IS NULL")}
+    except Exception as e:  # noqa: BLE001
+        print(f"fixtures con parte: no se pudo leer ({e}); la cola de onces va por saque")
+        return set()
 
 
 def capturar_xi(cliente, con: sqlite3.Connection, fixtures: list[int], capturado: str) -> int:
@@ -1239,7 +1265,7 @@ def main() -> int:
     candidatos = {fid for fids in locales.values() for fid in fids}
     # la ventana del XI arranca ANTES que la de juego: puede haber alineaciones
     # que pedir cuando todavía no hay ningún partido en juego
-    xi_pendientes = fixtures_para_xi(con, vivo)
+    xi_pendientes = fixtures_para_xi(con, vivo, fixtures_con_parte())
     # los VIP entran aunque su liga sea menor: la marca manda para ESE partido
     vip = fixtures_vip(con)
     if not candidatos and not xi_pendientes and not vip and not ligas_a_refrescar():

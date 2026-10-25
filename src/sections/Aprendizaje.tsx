@@ -381,6 +381,25 @@ function Dossier({ skill, abierta, onCambio }: { skill: string; abierta: boolean
     }
   }
 
+  // cerrar en bloque lo que la versión vigente ya leyó (25/10/2026): con
+  // cuatro versiones salidas de estos dossiers, nada estaba marcado aplicada
+  const [cierre, setCierre] = useState<'' | 'confirmar' | 'yendo'>('')
+  const [msgCierre, setMsgCierre] = useState('')
+  async function cerrarAnteriores() {
+    setError('')
+    setCierre('yendo')
+    try {
+      const r = await getDataSource().cerrarAnteriores(skill)
+      setMsgCierre(`${r.cerradas} lecciones anteriores al ${r.corte} quedaron aplicadas en ${r.version}; quedan ${r.quedanPendientes} pendientes`)
+      await cargar()
+      onCambio()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'no se pudieron cerrar')
+    } finally {
+      setCierre('')
+    }
+  }
+
   const boton: React.CSSProperties = { padding: '6px 11px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--t1)', font: '600 11px var(--sans)', cursor: 'pointer' }
   return (
     <div style={{ padding: '0 16px 12px' }}>
@@ -395,6 +414,29 @@ function Dossier({ skill, abierta, onCambio }: { skill: string; abierta: boolean
           </button>
         )}
       </div>
+      {ver && d?.versionVigente && (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 8 }}>
+          {cierre === '' && (
+            <button style={boton} onClick={() => setCierre('confirmar')}
+              title="las lecciones de partidos anteriores al corte de la versión vigente ya entraron en esa revisión (modo administrador)">
+              Cerrar las anteriores a {d.versionVigente}
+            </button>
+          )}
+          {cierre !== '' && (
+            <>
+              <span style={{ font: '500 11px var(--sans)', color: 'var(--t1)' }}>
+                ¿Marcar como aplicadas en {d.versionVigente} las pendientes de partidos anteriores a esa versión? Las posteriores quedan para el próximo dossier.
+              </span>
+              <button onClick={cerrarAnteriores} disabled={cierre === 'yendo'}
+                style={{ ...boton, background: 'var(--accent)', color: '#fff', border: 0 }}>
+                {cierre === 'yendo' ? 'Cerrando…' : 'Sí, cerrar'}
+              </button>
+              <button style={boton} disabled={cierre === 'yendo'} onClick={() => setCierre('')}>Cancelar</button>
+            </>
+          )}
+          {msgCierre && <span style={{ font: '600 11px var(--sans)', color: 'var(--up)' }}>{msgCierre}</span>}
+        </div>
+      )}
       {error && <div style={{ font: '500 11px var(--sans)', color: 'var(--down)', marginTop: 6 }}>{error}</div>}
       {ver && d && (
         <div style={{ marginTop: 10, padding: '12px 14px', borderRadius: 11, background: 'var(--bg)', border: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 10 }}>

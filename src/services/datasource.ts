@@ -11,6 +11,7 @@ import { SadApi } from '../api/sad'
 import type {
   AnalisisPrepartidoDTO,
   AnalisisRegistroDTO,
+  CierreAnterioresDTO,
   CargaDespensaDTO,
   CargaDespensaResultadoDTO,
   GeneracionEfeDTO,
@@ -179,6 +180,7 @@ export interface SadDataSource {
   /** Derrotas del favorito declarado con lo que el TDE y el DTP habían escrito antes. */
   derrotasFavorito(cohorte?: string): Promise<DerrotasFavoritoDTO>
   abrirRevision(skill: string, cohorte?: string): Promise<{ skill: string; movidas: string[]; versionVigente: string }>
+  cerrarAnteriores(skill: string): Promise<CierreAnterioresDTO>
 }
 
 // ---------- mapeo de ids internos (strings) ↔ contrato (números) ----------
@@ -936,6 +938,13 @@ class MockDataSource implements SadDataSource {
     return { skill, movidas: d.lecciones.filter((i) => i.estado === 'pendiente').map((i) => i.clave), versionVigente: d.versionVigente }
   }
 
+  async cerrarAnteriores(skill: string): Promise<CierreAnterioresDTO> {
+    // el modo demo no persiste: dice cuántas cerraría
+    const inv = leccionesDemo(skill, 'pendiente')
+    return { skill, version: 'demo', corte: '2026-10-21', cerradas: inv.items.length, quedanPendientes: 0,
+             nota: 'modo demo: no se guarda' }
+  }
+
   async moverLeccion(clave: string, body: { estado: string; aplicadaEn?: string; nota?: string }): Promise<LeccionItem> {
     // el modo demo no persiste: devuelve la lección con el estado pedido para
     // que la pantalla se pueda probar sin backend
@@ -1252,6 +1261,7 @@ class HttpDataSource implements SadDataSource {
   revisionSkill = (skill: string, cohorte?: string) => SadApi.revisionSkill(skill, cohorte)
   derrotasFavorito = (cohorte?: string) => SadApi.derrotasFavorito(cohorte)
   abrirRevision = (skill: string, cohorte?: string) => SadApi.abrirRevision(skill, cohorte)
+  cerrarAnteriores = (skill: string) => SadApi.cerrarAnteriores(skill)
 }
 
 let _ds: SadDataSource | null = null
