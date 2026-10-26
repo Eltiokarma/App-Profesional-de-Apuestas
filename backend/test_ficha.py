@@ -367,6 +367,23 @@ def main():
           not _ev[2].get("cuerpoTecnico") and _ev[2]["jugadorId"] == 323935 and not _ev[4].get("cuerpoTecnico"), _ev)
     check("166: el gol sin id toma el de la plantilla si el nombre casa con uno solo",
           _ev[3]["jugadorId"] == 656976 and _ev[3].get("jugadorIdResuelto") is True, _ev[3])
+    # 645: el id resuelto por nombre no puede ser el de otro jugador de la misma hoja
+    _oq, _op = _ft.db.query, _ft._plantilla
+    try:
+        _ft.db.query = lambda base, sql, params=(): [
+            {"formacion": "4-3-3", "entrenador": "X", "player_id": 51343, "jugador": "L. Rodríguez", "numero": 23,
+             "posicion": "M", "grid": "3:2", "titular": 1},
+            {"formacion": "4-3-3", "entrenador": "X", "player_id": -7, "jugador": "Luciano Rodriguez", "numero": 37,
+             "posicion": "D", "grid": "2:3", "titular": 1}]
+        _ft._plantilla = lambda team_id: [(51343, "L. Rodríguez")]
+        _l645 = _ft._lado(1, 438)
+    finally:
+        _ft.db.query, _ft._plantilla = _oq, _op
+    _luc = next(j for j in _l645["titulares"] if j["numero"] == 37)
+    check("645: «Luciano Rodriguez» sin id no toma el id de «L. Rodríguez», otro titular de la misma hoja",
+          _luc["jugadorId"] == -7 and not _luc.get("jugadorIdResuelto"), _l645["titulares"])
+    from backend.analisis.bloque_f import _tokens as _tk
+    check("653: «Mouhamed N'Diaye» y «M. Ndiaye» dan el mismo apellido", _tk("Mouhamed N'Diaye")[-1] == _tk("M. Ndiaye")[-1] == "ndiaye")
     check("125: el id por nombre no se adivina con dos candidatos",
           _ft._id_por_nombre("J. Rojas", [(1, "Juan Rojas"), (2, "José Rojas")]) is None
           and _ft._id_por_nombre("J. Orantes", [(424701, "Javier Orantes"), (3, "Otro")]) == 424701)

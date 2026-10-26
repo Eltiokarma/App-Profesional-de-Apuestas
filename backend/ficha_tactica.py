@@ -83,6 +83,10 @@ def _lado(fixture_id: int, team_id: int) -> dict:
                 pass
     titulares, suplentes = [], []
     plantilla = None
+    # un id que ya trae otro jugador de esta misma hoja no se le asigna a este:
+    # «Luciano Rodriguez» #37 quedaba con el id de «L. Rodríguez» #23, otro
+    # titular del mismo once (Nacional, incidencia 645)
+    en_hoja = {f["player_id"] for f in filas if f["player_id"] and f["player_id"] > 0}
     for f in filas:
         pid = f["player_id"]
         j = {"jugadorId": pid, "nombre": limpiar_nombre(f["jugador"]), "numero": f["numero"],
@@ -91,8 +95,9 @@ def _lado(fixture_id: int, team_id: int) -> dict:
         if not pid or pid < 0:
             plantilla = _plantilla(team_id) if plantilla is None else plantilla
             resuelto = _id_por_nombre(j["nombre"], plantilla)
-            if resuelto:
+            if resuelto and resuelto not in en_hoja:
                 j.update({"jugadorId": resuelto, "jugadorIdResuelto": True})
+                en_hoja.add(resuelto)
         (titulares if f["titular"] else suplentes).append(j)
     return {
         "equipoId": team_id,
