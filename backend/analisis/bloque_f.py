@@ -147,7 +147,9 @@ def _tokens(nombre: str) -> list[str]:
     """Palabras útiles del nombre: sin tildes, sin puntos ("A." → "a") y sin
     partículas. El punto importa: la ficha de API-Football abrevia el nombre
     de pila y sin quitarlo "a." nunca casaría con "ángelo"."""
-    limpio = re.sub(r"[^a-z0-9ñ ]+", " ", normalizar(nombre))
+    # el apóstrofo une, no separa: «N'Diaye» y «Ndiaye» son la misma palabra
+    # (Le Havre, incidencia 653: el suplente salía baja con id negativo)
+    limpio = re.sub(r"[^a-z0-9ñ ]+", " ", re.sub(r"['’`´]", "", normalizar(nombre)))
     return [t for t in limpio.split() if t and t not in _PARTICULAS]
 
 
