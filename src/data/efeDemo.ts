@@ -280,6 +280,10 @@ export function parteCoworkDemo(fixtureId: number, equipoA: string, equipoB: str
             restDefense: { foco: 'dos centrales y pivote', rival: 'sin seguro tras la pérdida', nivelFoco: 'fijo', nivelRival: 'sin' },
             posesion: { valor: '58%', contraQuien: 'rival que cede el balón', marcador: 'empatado la mayor parte', sede: 'local' },
             veredicto: 'FAVORABLE', razon: 'superioridad por fuera contra un bloque no probado',
+            veredictoRamas: {
+              igualadoOArriba: { veredicto: 'FAVORABLE', razon: 'carga el carril derecho a la espalda del lateral que sube' },
+              persiguiendo: { veredicto: 'NEUTRO', razon: 'contra un bloque bajo solo queda el centro al segundo palo' },
+            },
           },
           m3Fases: [
             { tramo: '0-25', plan: 'golpear si el rival arranca frío', palancas: ['presión tras pérdida'] },

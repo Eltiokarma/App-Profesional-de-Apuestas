@@ -1287,7 +1287,9 @@ negritas, citas y tablas se pintan bien en la app.
               "posesion": {"igualadoOArriba": {"valor", "contraQuien", "marcador", "sede"},
                            "persiguiendo": {"valor", "contraQuien", "marcador", "sede"}},
               "piezas": [{"nombre", "lado": "foco"|"rival", "rol"}],
-              "veredicto": "FAVORABLE"|"NEUTRO"|"DESFAVORABLE", "razon"},
+              "veredicto": "FAVORABLE"|"NEUTRO"|"DESFAVORABLE", "razon",
+              "veredictoRamas": {"igualadoOArriba": {"veredicto", "razon"},
+                                 "persiguiendo": {"veredicto", "razon"}}},
        "m3Fases": [{"tramo": "0-25"|"25-65"|"65-80+", "plan", "palancas": []}],
        "m6": {"competitivo": true, "rotacion", "fatiga", "ausencias", "otros"}},
      "cierre": {"sinAnterior": false,
@@ -1301,7 +1303,8 @@ negritas, citas y tablas se pintan bien en la app.
                             "regimen": "cualquiera"|"persiguiendo"},
        "casoBloque": {"sostuvo": true|false, "caso": "1-0 sostenido 50' ante un obligado", "conUnoMenos": false,
                       "conUnoMas": false, "tipo": "ventaja"|"empate_que_sirve"|"cero_cero",
-                      "sostuvoArquero": false, "linea": "la pareja o línea que lo sostuvo"}}}
+                      "sostuvoArquero": false, "linea": "la pareja o línea que lo sostuvo",
+                      "sede": "local"|"visita"|"neutral", "competicion": "liga o copa del caso"}}}
     · DTP v1.5 (25/10/2026, skill `diagnostico-tactico`): posesión y seguro de
       atrás en DOS ramas (igualado o arriba · persiguiendo); `piezas` = de quién
       depende la capa de nombres del M2 (duelos con nombre, contenedor del
@@ -1310,6 +1313,19 @@ negritas, citas y tablas se pintan bien en la app.
       el último once oficial, dicho en `senalXi`); los dos carriles de banda de
       cada lado con su `vuelta` (si no, el recibo lo avisa); quinta vía de gol:
       el error en la salida bajo presión. Detalle en el skill.
+    · DTP v1.6 (26/10/2026): `veredictoRamas` = un veredicto para igualado o
+      arriba y otro para persiguiendo, cada uno con la vía del foco en esa
+      rama (el veredicto del partido juzga el de la rama jugada; que el rival
+      ceda la pelota puede ser su plan, no una señal a favor); el área desde
+      el lado débil (quién llega al segundo palo y quién lo defiende) y desde
+      la segunda línea, el centro por zona y altura; el sistema y los carriles
+      del M1 salen del ÚLTIMO ONCE OFICIAL con su grid (`partidoAnterior.xi` de
+      los insumos), y si te apartás escribí por qué en `senalXi` (si no, el
+      recibo avisa M1-VS-ULTIMO-ONCE); el EJECUTOR DE PENALES sale de
+      `penales` de los insumos, en los dos lados («por jerarquía» no es
+      fuente; si falta, DTP-PENAL-SIN-EJECUTOR); `casoBloque` con `sede` y
+      `competicion`, y un caso de la otra sede no responde la 6
+      (P6-OTRA-SEDE). Detalle en el skill.
     · El CHECKLIST es el del skill v1.2: respondé las SEIS preguntas del
       bloque RIVAL (meses con el modelo · minutos de la línea · centrales de
       oficio · banco de recambio · repliegue como plan · ¿sostuvo un

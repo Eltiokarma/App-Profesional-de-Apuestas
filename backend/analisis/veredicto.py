@@ -497,6 +497,57 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     out["tarjetas"] = tarjetas_partido(out["espina"], real)
     # ── la matriz: qué escenario se jugó y qué se había escrito para él ────
     out["matriz"] = matriz_objetivo(parte.get("matriz") or {}, real)
+    # ── el veredicto del M2 del DTP: la rama que se jugó (DTP v1.6) ─────────
+    if (parte.get("dtp") or {}).get("bloques"):
+        out["dtp"] = dtp_objetivo(parte.get("dtp") or {}, goles, sin_eventos=not goles and bool(gl or gv))
+    return out
+
+
+def rama_del_foco(goles: list[dict], lado: str) -> dict:
+    """Minutos del foco igualado o arriba y persiguiendo, de los minutos de gol
+    (0-90; el añadido no suma minutos). La rama jugada es la de más minutos."""
+    t, dif, acc = 0, 0, {"igualadoOArriba": 0, "persiguiendo": 0}
+    for g in sorted(goles, key=lambda g: g["minuto"] or 0):
+        m = min(max(int(g["minuto"] or 0), t), 90)
+        acc["persiguiendo" if dif < 0 else "igualadoOArriba"] += m - t
+        t, dif = m, dif + (1 if g["lado"] == lado else -1)
+    acc["persiguiendo" if dif < 0 else "igualadoOArriba"] += 90 - t
+    return {"minutos": acc, "rama": max(acc, key=acc.get)}
+
+
+def dtp_objetivo(dtp: dict, goles: list[dict], sin_eventos: bool = False) -> dict:
+    """DTP v1.6 (cambio 1): por bloque, la rama del estado de marcador en que se
+    jugó el partido para el foco y el veredicto del M2 escrito para ESA rama.
+    Sin acierto: si el veredicto se cumplió lo juzga el cierre, por lo que
+    generó la rama (volumen), con la conversión aparte (cambio 7)."""
+    out = {"nota": "la rama jugada es la de más minutos para el foco (igualado o arriba · persiguiendo), "
+                   "desde los minutos de gol; el cierre juzga el veredicto de ESA rama por lo que generó, "
+                   "con la conversión y el arquero rival aparte",
+           "porBloque": []}
+    for b in dtp.get("bloques") or []:
+        lado = b.get("equipo")
+        if lado not in ("a", "b"):
+            continue
+        m2 = ((b.get("apertura") or {}).get("m2") or {})
+        ramas = m2.get("veredictoRamas") or {}
+        if sin_eventos:
+            # hubo goles y la ficha no trae sus minutos: la rama no se puede decir
+            out["porBloque"].append({"equipo": lado, "ramaJugada": None, "minutos": None,
+                                     "veredictoDeLaRama": "", "razonDeLaRama": "",
+                                     "veredictoUnico": m2.get("veredicto") or "",
+                                     "sinEventos": "la ficha no trae los minutos de gol: la rama no se calcula"})
+            continue
+        rj = rama_del_foco(goles, lado)
+        escrito = (ramas.get(rj["rama"]) or {})
+        out["porBloque"].append({
+            "equipo": lado, "ramaJugada": rj["rama"], "minutos": rj["minutos"],
+            "veredictoDeLaRama": escrito.get("veredicto") or "",
+            "razonDeLaRama": escrito.get("razon") or "",
+            "veredictoUnico": m2.get("veredicto") or "",
+            **({"sinRamas": "el parte trae un solo veredicto (anterior a la v1.6): se juzga ese y se "
+                            "dice en qué rama se jugó"} if not any((ramas.get(r) or {}).get("veredicto")
+                                                                   for r in ("igualadoOArriba", "persiguiendo")) else {}),
+        })
     return out
 
 

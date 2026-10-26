@@ -988,6 +988,17 @@ conversación se pierde en la siguiente.
      el veredicto no carga un `tardio` al skill. Y los partidos CON parte
      piden el once otra vez a 40 min del saque (`en_vivo._refresco_temprano`)
      para que el disparo de :07/:37 vea la versión corregida.
+   - **DTP v1.6 (26/10, usuario aprobó entera)**, desde las 123 lecciones del
+     25/10 (`docs/revisiones/DTP_v1.6_propuesta.md`): `m2.veredictoRamas` (un
+     veredicto por rama; `objetivo.dtp.porBloque[].ramaJugada` dice cuál se
+     jugó, por minutos), el área desde el lado débil y la segunda línea, M1
+     desde el último once y su grid (aviso `M1-VS-ULTIMO-ONCE`), el ejecutor
+     de penales de la base (`penales` en los insumos del DTP, aviso
+     `DTP-PENAL-SIN-EJECUTOR`), `casoBloque.sede`/`competicion` (calculadas si
+     faltan; aviso `P6-OTRA-SEDE`), el costo de rearmar la línea, el
+     reasignado con tarjetas, la media distancia contra el estructural y M5
+     con volumen y conversión aparte. Pendiente del usuario: subir el zip y
+     cerrar con 🔑 las anteriores a v1.6.
    - **Aprendizaje reordenado (25/10)**: resumen sin lecciones, pestañas, el
      cierre en bloque arriba de cada skill, lecciones de a 20 y el inventario
      guardado por huella (`SAD_CACHE_INVENTARIO_S`; antes 46 s y 6,3 MB). La

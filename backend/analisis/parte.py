@@ -2541,6 +2541,11 @@ def guardar(payload: dict) -> dict:
     faltan = []
     # DTP v1.5: los dos carriles de banda, con su vuelta (aviso, sin rechazo)
     faltan.extend(_dtp.avisos_carril(parte.get("dtp") or {}, {"a": fx["home_name"], "b": fx["away_name"]}))
+    # DTP v1.6: el sistema contra el último once, el ejecutor de penales y la sede del caso de la 6
+    try:
+        faltan.extend(_dtp.avisos_v16(parte.get("dtp") or {}, fx, {"a": fx["home_name"], "b": fx["away_name"]}))
+    except Exception:  # noqa: BLE001 — un aviso nunca tumba el depósito
+        pass
     if not any((parte.get("cadena") or {}).get(l) for l in LADOS):
         faltan.append({
             "bloque": "cadena",

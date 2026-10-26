@@ -1,10 +1,11 @@
 # Propuesta de revisión · `diagnostico-tactico` v1.5 → v1.6
 
-**Estado:** PROPUESTA, sin aprobar. Redactada el 26/10/2026 a partir del
-dossier (`GET /analisis/cowork/revision/diagnostico-tactico`, cohorte
-`c3-2026-09-23`) y de las lecciones abiertas del skill. Parte de la v1.5
-vigente (25/10), que está en `docs/skills/diagnostico-tactico/SKILL.md`. No se
-tocaron el skill ni el estado de ninguna lección.
+**Estado:** APROBADA por el usuario (26/10/2026, entera: los siete cambios,
+con (b) y (c) del 6 incluidos). Redactada en
+`docs/skills/diagnostico-tactico/SKILL.md` (v1.6); falta que el usuario la suba
+a su cuenta. Propuesta escrita el 26/10/2026 a partir del dossier
+(`GET /analisis/cowork/revision/diagnostico-tactico`, cohorte `c3-2026-09-23`)
+y de las lecciones abiertas del skill, sobre la v1.5 vigente (25/10).
 
 ## De dónde sale
 
