@@ -1419,6 +1419,26 @@ export interface RamaReasignacion {
   nota: string
   /** la ventana de 15' de esta rama, si cambia (minutos de reloj) */
   ventana?: string
+  /** TDE v0.1.24 (65): cómo termina el régimen del que persigue (siRecibePrimero, siLeEmpatan, siIguala) */
+  desenlace?: DesenlaceTde
+  /** el hecho que sostiene «rescata» con ISE de rama ≥ 7 */
+  porqueDesenlace?: string
+  /** CALCULADO: la lectura por defecto del ISE de rama (≥ 7 → se_rompe) */
+  desenlaceDefecto?: 'se_rompe' | 'abierto'
+}
+
+export type DesenlaceTde = 'se_rompe' | 'rescata' | 'abierto'
+
+/** TDE v0.1.24 (65): el desenlace leído contra el evento que cerró el tramo. */
+export interface DesenlaceTramo {
+  declarado: DesenlaceTde | null
+  defecto: 'se_rompe' | 'abierto' | null
+  lectura: DesenlaceTde
+  deDefecto: boolean
+  observado: 'se_rompe' | 'rescata' | 'sin_mas_goles' | null
+  cumplido: boolean | null
+  iseRama: number | null
+  porque: string
 }
 
 export interface BloqueTde {
@@ -1587,6 +1607,8 @@ export interface VeredictoObjetivo {
         rama: 'base' | 'siMarcaPrimero' | 'siRecibePrimero' | 'siLeEmpatan' | 'siIguala' | 'siExpulsion' | 'siExpulsionRival'
         declarada: boolean; ventana: string; rango: number[] | null
         concedio: number[]; golEnVentana: boolean | null
+        /** TDE v0.1.24 (65): solo en los tramos del que persigue con desenlace o ISE de rama. */
+        desenlace?: DesenlaceTramo
         /** Solo tras la roja propia (44d): su minuto y la rama que daba el marcador. */
         rojaPropia?: number; ramaMarcador?: string
         /** Con alguna roja: la del rival y el balance de jugadores del foco (siExpulsion solo en inferioridad). */
@@ -2193,6 +2215,9 @@ export interface InventarioLecciones {
     ventanaTde: { observadas: number; conGol: number; sinFicha: number; nota: string
       /** la base del reloj sola (sesgo tardío, TDE 44c/45), también con la rama cobrada */
       reloj?: { observadas: number; conGol: number; nota: string } }
+    /** TDE v0.1.24 (65): el desenlace leído del que persigue, por lectura. */
+    desenlaceTde?: Record<DesenlaceTde, { tramos: number; cumplidos: number | null; deDefecto: number;
+      observado: Record<string, number>; tasa: number | null; intervalo: [number, number] | null }> & { nota: string }
     /** El reventón en producción contra el backtest (docs/REVENTON.md §11). */
     reventon?: ReventonMetricas
     /** ¿La espina de la burbuja acierta más que la frecuencia de cada movimiento? */

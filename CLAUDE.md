@@ -995,6 +995,21 @@ conversación se pierde en la siguiente.
      condición (311); racha récord con mínimo 3 partidos (67). Y recalibrar
      el umbral del 25 % de `Missing Fixture` con 28, 71 y 312 (ruido que era
      baja real; la API que no marca una lesión publicada).
+   - **TDE v0.1.24 (26/10, usuario aprobó)**, desde la medición sobre los 253
+     casos ciegos de la cohorte c3 (`docs/revisiones/TDE_v0.1.24_propuesta.md`):
+     disciplina 65, las ramas del que persigue declaran `desenlace` (`se_rompe`
+     · `rescata` · `abierto`; con ISE de rama ≥ 7 el defecto es `se_rompe`:
+     remontó 2 de 38 contra 7 de 33 con < 7), el recibo lo pide, el veredicto lo
+     mide por tramo (`tramos[].desenlace`) y Aprendizaje lo cuenta
+     (`acreditables.desenlaceTde`, tasa con n ≥ 10; el corte en 7 se revisa con
+     n ≥ 30); disciplina 66, con la ventaja manda el minuto del gol y no el IE
+     (`GET /analisis/cowork/tde/{id}` → `referencias.ventajaPorMinuto`, de la
+     base y anterior al partido). Lo medido que NO se sostuvo y no se escribe:
+     las dos espinas en «cero» no anuncian el empate, la espina contra la
+     tarjeta acierta igual que la que la sigue, la brecha del EFE con T.54 y la
+     rama «persiguiendo» del DTP no separaron; EFE v1.7, DTP v1.5 y sad v4.1 se
+     miden antes de proponerles nada. Pendiente del usuario: subir el zip del
+     TDE v0.1.24 a la cuenta.
    - **Ideas, no pedidas**: pintar los `tramos` del veredicto en Aprendizaje y
      en la vista de derrotas del favorito (12 de 44 tuvieron segundo giro);
      el 1X2 de la cohorte sale SUBCONFIADO (60 %+ acertó 18 de 18, 40-49 %

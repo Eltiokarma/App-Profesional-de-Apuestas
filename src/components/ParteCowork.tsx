@@ -996,7 +996,7 @@ function BandaVeredicto({ v, nombreDe }: { v: VeredictoParte; nombreDe: (l: 'a' 
 
 function Reasignacion({ r }: { r?: BloqueTde['reasignacion'] }) {
   const ramas = [['siMarcaPrimero', 'SI MARCA PRIMERO'], ['siRecibePrimero', 'SI RECIBE PRIMERO'],
-    ['siLeEmpatan', 'SI LE EMPATAN'], ['siExpulsion', 'SI HAY ROJA']] as const
+    ['siLeEmpatan', 'SI LE EMPATAN'], ['siIguala', 'SI IGUALA'], ['siExpulsion', 'SI HAY ROJA']] as const
   const falta = ramas.slice(0, 2).filter(([k]) => !r?.[k]).length
   return (
     <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -1013,8 +1013,17 @@ function Reasignacion({ r }: { r?: BloqueTde['reasignacion'] }) {
                 ISE rama {x.iseRama.toFixed(1)}
               </span>
             )}
+            {(x.desenlace || x.desenlaceDefecto) && (
+              <span title={x.desenlace ? (x.porqueDesenlace || 'el desenlace escrito por el TDE (disciplina 65)')
+                : 'sin escribir: la lectura por defecto del ISE de rama (≥ 7 → se rompe)'}
+                style={{ font: '700 10.5px var(--mono)', color: (x.desenlace ?? x.desenlaceDefecto) === 'se_rompe' ? 'var(--down)'
+                  : (x.desenlace ?? x.desenlaceDefecto) === 'rescata' ? 'var(--up)' : 'var(--t3)' }}>
+                {{ se_rompe: 'SE ROMPE', rescata: 'RESCATA', abierto: 'ABIERTO' }[(x.desenlace ?? x.desenlaceDefecto)!]}
+                {!x.desenlace && ' (defecto)'}
+              </span>
+            )}
             <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', flex: 1, minWidth: 0 }}>
-              {[x.tipologia, x.nota].filter(Boolean).join(' · ')}
+              {[x.tipologia, x.nota, x.porqueDesenlace].filter(Boolean).join(' · ')}
             </span>
           </div>
         )

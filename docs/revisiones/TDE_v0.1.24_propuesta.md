@@ -1,10 +1,15 @@
 # Propuesta de revisión · `teorema-del-echado` v0.1.23 → v0.1.24
 
-**Estado:** PROPUESTA, sin aprobar. Redactada el 26/10/2026 a partir de las
+**Estado:** APROBADA por el usuario (26/10/2026, los dos cambios). Redactada
+en `docs/skills/teorema-del-echado/SKILL.md` (disciplinas 65 y 66) y con sitio
+en la app: `desenlace`/`porqueDesenlace` en las ramas del parte (con
+`desenlaceDefecto` calculado y el aviso en `faltan`), `tramos[].desenlace` en
+el veredicto, `acreditables.desenlaceTde` en Aprendizaje y
+`referencias.ventajaPorMinuto` en `GET /analisis/cowork/tde/{id}`. Falta que
+el usuario suba el zip a su cuenta. Se redactó el 26/10/2026 a partir de las
 autopsias de la corrida de veredictos del 26/10 (30 partidos del 25/10, 16
 fallos del 1X2) y de una medición sobre la cohorte vigente entera
 (`c3-2026-09-23`: 253 casos ciegos `PRE` con veredicto, sin cuarentena).
-Nada de esto está en `docs/skills/teorema-del-echado/SKILL.md` todavía.
 
 ## De dónde sale
 

@@ -373,6 +373,13 @@ function Metricas({ d }: { d: InventarioLecciones }) {
             color={a.brier.media === null ? undefined : a.brier.mejorQueLaBase ? 'var(--up)' : 'var(--down)'} />
           <Cifra etiqueta="VENTANA TDE" valor={`${a.ventanaTde.conGol}/${a.ventanaTde.observadas}`}
             pie={a.ventanaTde.sinFicha ? `${a.ventanaTde.sinFicha} sin ficha: no comprobable` : 'comprobadas contra los goles recibidos'} />
+          {a.desenlaceTde && a.desenlaceTde.se_rompe.tramos > 0 && (
+            <Cifra etiqueta="TDE · SE ROMPE" valor={`${a.desenlaceTde.se_rompe.cumplidos ?? 0}/${a.desenlaceTde.se_rompe.tramos}`}
+              pie={a.desenlaceTde.se_rompe.tasa === null
+                ? `el que persigue leído «se rompe» (disciplina 65) · tasa con n ≥ 10`
+                : `el que persigue leído «se rompe» · ${Math.round(a.desenlaceTde.se_rompe.tasa * 100)}%`
+                  + (a.desenlaceTde.se_rompe.intervalo ? ` (IC ${Math.round(a.desenlaceTde.se_rompe.intervalo[0] * 100)}-${Math.round(a.desenlaceTde.se_rompe.intervalo[1] * 100)})` : '')} />
+          )}
           {a.reventon && (
             <Cifra etiqueta="REVENTÓN" valor={`${a.reventon.reventadas}/${a.reventon.observadas}`}
               pie={a.reventon.observadas ? `burbujas que reventaron · tasa base del backtest ${Math.round(a.reventon.tasaBaseBacktest * 100)}%` : 'sin burbujas comprobadas en población ciega'}

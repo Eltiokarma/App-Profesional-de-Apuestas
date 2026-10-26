@@ -1787,6 +1787,10 @@ components:
             (<40 · 40-49 · 50-59 · 60+), por versión de sad-analysis al depositar
             (`porVersion`) y junta (`todas`): n, aciertos con intervalo de Wilson, lo que
             dijimos y lo que el mercado le daba al mismo elegido.
+            `desenlaceTde` (TDE v0.1.24, disciplina 65): por lectura del desenlace del que
+            persigue (se_rompe · rescata · abierto) cuántos tramos jugados la cumplieron, cuántos
+            iban con la lectura por defecto del ISE de rama y qué se observó; tasa e intervalo
+            solo con n ≥ 10, y «abierto» nunca se cobra.
           additionalProperties: true
         porSkill:
           type: array
@@ -3455,6 +3459,9 @@ components:
         tipologia: { type: string, description: 'el tipo modal en esa rama, si cambia' }
         nota: { type: string }
         ventana: { type: string, description: "la ventana de 15' de esta rama, si cambia (minutos de reloj): el veredicto mide la de la rama que jugó el partido" }
+        desenlace: { type: string, enum: [se_rompe, rescata, abierto], description: 'TDE v0.1.24 (disciplina 65), solo en siRecibePrimero, siLeEmpatan y siIguala: cómo termina el régimen del que persigue —se_rompe (concede otro antes de igualar), rescata (iguala o vuelve a ponerse adelante), abierto—. En otra rama o fuera de la lista se rechaza con motivo; sin él, con sob1 ≥ 0.5, el recibo lo pide en `faltan`' }
+        porqueDesenlace: { type: string, description: 'el hecho que sostiene «rescata» con ISE de rama ≥ 7 (rival que no administra, banco ofensivo documentado, roja rival); sin él, `faltan`' }
+        desenlaceDefecto: { type: string, enum: [se_rompe, abierto], description: 'CALCULADO: la lectura por defecto del ISE de rama (≥ 7 → se_rompe; si no, abierto)' }
     TdeParte:
       type: object
       description: >
@@ -4216,6 +4223,32 @@ components:
             properties:
               indicador: { type: string }
               porque: { type: string }
+        referencias:
+          type: object
+          description: 'TDE v0.1.24: referencias calculadas de la base. REFERENCIA, no peso'
+          properties:
+            ventajaPorMinuto:
+              type: object
+              description: >
+                Disciplina 66: el que marcó primero, cuántas veces no perdió y ganó a los 90' según
+                el minuto de ese gol, sobre los partidos con ficha de eventos ANTERIORES al día del
+                partido (el añadido cae en su tiempo; la prórroga no cuenta). Sin n no hay tasa.
+              properties:
+                partidos: { type: integer }
+                antesDe: { type: string }
+                nota: { type: string }
+                tramos:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      tramo: { type: string, enum: ["≤15'", "16-30'", "31-45+'", "46-60'", "61-75'", "76'+"] }
+                      n: { type: integer }
+                      noPierde: { type: integer }
+                      gana: { type: integer }
+                      tasaNoPierde: { type: number, nullable: true }
+                      intervaloNoPierde: { type: array, nullable: true, items: { type: number } }
+                      tasaGana: { type: number, nullable: true }
     SobrePendientes:
       type: object
       required: [ventanaHoras, criterio, sinCerrar, pendientes, noListados]
@@ -4452,6 +4485,22 @@ components:
                         rango: { type: array, nullable: true, items: { type: integer } }
                         concedio: { type: array, items: { type: integer }, description: 'minutos de los goles que recibió el foco en el tramo' }
                         golEnVentana: { type: boolean, nullable: true, description: 'null = la rama sin ventana legible o su ventana fuera del tramo' }
+                        desenlace:
+                          type: object
+                          description: >
+                            TDE v0.1.24 (disciplina 65), solo en tramos de siRecibePrimero, siLeEmpatan
+                            y siIguala con desenlace escrito o ISE de rama: lo leído contra el evento que
+                            cerró el tramo (gol del rival → se_rompe · propio → rescata · final →
+                            sin_mas_goles · roja → null). `abierto` no se cobra.
+                          properties:
+                            declarado: { type: string, nullable: true }
+                            defecto: { type: string, nullable: true, enum: [se_rompe, abierto, null] }
+                            lectura: { type: string, enum: [se_rompe, rescata, abierto] }
+                            deDefecto: { type: boolean }
+                            observado: { type: string, nullable: true, enum: [se_rompe, rescata, sin_mas_goles, null] }
+                            cumplido: { type: boolean, nullable: true }
+                            iseRama: { type: number, nullable: true }
+                            porque: { type: string }
                   reasignacion:
                     type: object
                     description: >
