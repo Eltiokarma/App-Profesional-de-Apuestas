@@ -106,6 +106,29 @@ def _goles(fixture_id: int, home_id: int) -> list[dict]:
     return out
 
 
+def _en_cancha(fixture_id: int) -> dict:
+    """{equipo_id: f(jugador_id, minuto) → ¿estaba en cancha?}: titular, o
+    nombrado en un cambio (entra o sale) hasta ese minuto. Sin titulares
+    capturados del equipo, no hay entrada (no se sabe)."""
+    try:
+        tit = saddb.query("sad", "SELECT team_id, player_id FROM alineaciones WHERE fixture_id=? AND titular=1",
+                          (fixture_id,))
+        cambios = saddb.query("sad", "SELECT equipo_id, minuto, jugador_id, asistente_id FROM fixture_eventos "
+                                     "WHERE fixture_id=? AND lower(tipo)='subst'", (fixture_id,))
+    except Exception:  # noqa: BLE001 — base sin la ficha
+        return {}
+    titulares: dict = {}
+    for t in tit:
+        if t["player_id"]:
+            titulares.setdefault(t["team_id"], set()).add(t["player_id"])
+    out = {}
+    for equipo, ids in titulares.items():
+        entradas = [(c["minuto"] or 0, {c["jugador_id"], c["asistente_id"]}) for c in cambios if c["equipo_id"] == equipo]
+        out[equipo] = (lambda ids, entradas: lambda jid, minuto: jid in ids or any(
+            m <= minuto and jid in quienes for m, quienes in entradas))(ids, entradas)
+    return out
+
+
 def _rojas(fixture_id: int, home_id: int) -> list[dict]:
     """Expulsiones de JUGADORES con minuto y lado. Una roja reordena el partido
     entero (disciplina 16 del TDE): un gol en la ventana que llega después ya
@@ -131,12 +154,20 @@ def _rojas(fixture_id: int, home_id: int) -> list[dict]:
         _cuerpo_tecnico_e_ids(fixture_id, evs)
     except Exception:  # noqa: BLE001 — sin la capa de jugadores queda como venía
         pass
+    en_cancha = _en_cancha(fixture_id)
     out = []
     for f, e in zip(filas, evs):
         detalle = (f["detalle"] or "").lower()
         if "red" not in detalle and "second yellow" not in detalle:
             continue
         if not f["jugador_id"] or e.get("cuerpoTecnico"):
+            continue
+        # LA ROJA A UN SUPLENTE QUE NO ENTRÓ NO CAMBIA EL NÚMERO (Once Caldas–
+        # Pereira, incidencia 655: las rojas del 90+1 y 90+2 eran de suplentes
+        # sin entrar y los tramos marcaban inferioridad y siExpulsion). Solo con
+        # la hoja capturada: sin titulares, la roja cuenta como siempre.
+        cancha = en_cancha.get(f["equipo_id"])
+        if cancha is not None and not cancha(f["jugador_id"], f["minuto"] or 0):
             continue
         out.append({"minuto": f["minuto"] or 0, "lado": "a" if f["equipo_id"] == home_id else "b",
                     "jugador": f["jugador"] or "",
