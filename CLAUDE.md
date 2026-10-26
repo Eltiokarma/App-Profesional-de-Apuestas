@@ -999,6 +999,13 @@ conversación se pierde en la siguiente.
      reasignado con tarjetas, la media distancia contra el estructural y M5
      con volumen y conversión aparte. Pendiente del usuario: subir el zip y
      cerrar con 🔑 las anteriores a v1.6.
+   - **EFE y sad, reglas que se incumplían, calculadas (26/10, usuario)**: de
+     las lecciones del 25/10, `EFE-EMPATE-TECNICO` (brecha del EFE ≥ 5 con T.54 /
+     R-KT.2 en un lado o ESCALA-LIGAS: no ordena el partido; el recibo lo avisa
+     si el parte no dice «empate técnico») y `ESPINA-SIGUE-EN-EXTREMO` (la
+     espina «sigue» con K-EXTREMO o K-CERCA-EXTREMO, total o de la condición).
+     Las revisiones EFE v1.8 y sad v4.2 quedan para el 28-29/10, con partes
+     escritos de punta a punta con v1.7 y v4.1.
    - **Aprendizaje reordenado (25/10)**: resumen sin lecciones, pestañas, el
      cierre en bloque arriba de cada skill, lecciones de a 20 y el inventario
      guardado por huella (`SAD_CACHE_INVENTARIO_S`; antes 46 s y 6,3 MB). La

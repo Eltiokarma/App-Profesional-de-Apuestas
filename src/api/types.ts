@@ -1337,6 +1337,9 @@ export interface AlertaParte {
   /** Solo en DTP-REHACER ya jugado el partido: cuándo llegó el once que la
    *  dispara (tardio = después del último rehacer posible · sinRehacer = a
    *  tiempo y nadie rehízo · conocido = ya estaba en el último depósito). */
+  /** Solo en EFE-EMPATE-TECNICO: la brecha del EFE y qué la vuelve empate técnico. */
+  brecha?: number
+  motivos?: string[]
   momento?: 'tardio' | 'sinRehacer' | 'conocido'
   onceFinalEn?: string
   ultimoDepositoPrevio?: string
