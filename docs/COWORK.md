@@ -1064,7 +1064,9 @@ Escribís vos (es juicio, no se puede calcular):
     · LA VENTAJA SOBRE EL MERCADO LA CALCULA LA APP (`vsMercado` del GET,
       26/10/2026): no la escribas ni la estimes. Quedarte en el número del
       mercado (6-B del sad v4.1) es el mejor pronóstico, no una apuesta con
-      valor: no lo presentes como «valor» en el ensayo.
+      valor: no lo presentes como «valor» en el ensayo. Y el «valor en el papel» que la app
+      marca en otro resultado no es una recomendación: mientras el historial no
+      lo confirme, no se escribe en el ensayo como oportunidad.
     · CORREGIR SOLO EL DT de un parte ya depositado: `POST
       /analisis/cowork/{id}/dt` con `{"a": {"nombre": "…", "desde":
       "AAAA-MM-DD"}}` (o `b`, o los dos; `desde` solo si lo verificaste). NO

@@ -560,6 +560,13 @@ export function leccionesDemo(skill: string, estado: string, cohorte = ''): Inve
         ],
         todas: [],
       },
+      valorMercado: {
+        n: 12, ganadas: 2, roi: -0.214, intervalo: [-0.71, 0.282] as [number, number], confirmado: false, minimo: 50,
+        naceDeRecorte: { n: 7, ganadas: 1, roi: -0.31, intervalo: [-0.98, 0.36] as [number, number] },
+        sinRecorte: { n: 5, ganadas: 1, roi: -0.08, intervalo: [-0.9, 0.74] as [number, number] },
+        nuestroFavorito: { n: 40, ganadas: 22, roi: -0.04, intervalo: [-0.22, 0.14] as [number, number] },
+        nota: 'modo demo: números de muestra (forma de la tabla real)',
+      },
       brier: {
         media: 0.4712, n: 2, lineaBase: 0.4444, mejorQueLaBase: false,
         nota: 'la línea de base es el reparto constante con la frecuencia observada de esta misma muestra: lo que sacaría quien no mira el partido',

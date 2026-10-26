@@ -2221,6 +2221,8 @@ export interface InventarioLecciones {
     tasaNota: string
     unXDos: { aciertos: number; de: number; tasa: number | null }
     confianza?: TablaConfianzaDTO
+    /** ¿Las selecciones con valor ganaron a su cuota? (26/10/2026) */
+    valorMercado?: HistorialValorDTO | null
     brier: {
       media: number | null
       n: number
@@ -2432,13 +2434,29 @@ export interface DerrotasFavoritoDTO {
 /** El 1X2 declarado contra el mercado: puntos sobre la probabilidad sin margen
  *  y valor esperado a la cuota media de las casas (con su margen). */
 export interface VentajaMercado {
-  estado: 'con valor' | 'sin ventaja' | 'sobre el mercado' | 'bajo el mercado'
+  /** `con valor` solo con el historial confirmado; si no, `valor en el papel`. */
+  estado: 'con valor' | 'valor en el papel' | 'sin ventaja' | 'sobre el mercado' | 'bajo el mercado'
   pick: 'local' | 'empate' | 'visita'
   puntosPick: number
   mejorValor: 'local' | 'empate' | 'visita' | null
+  /** El valor sale de recortar al favorito sin un dato escrito (regla 6-B). */
+  naceDeRecorte?: boolean
+  historial?: Pick<HistorialValorDTO, 'n' | 'ganadas' | 'roi' | 'intervalo' | 'confirmado'> | null
   texto: string
   casas: number | null
   nota: string
   seleccion: Record<'local' | 'empate' | 'visita', {
     nuestra: number; mercado: number; puntos: number; cuota: number; cuotaJusta: number | null; valor: number }>
+}
+
+/** Apostar 1 unidad a cada selección con valor, a la cuota media prepartido,
+ *  en los partes cerrados que acreditan: lo que habría dado. */
+export interface GananciaValor { n: number; ganadas: number; roi: number | null; intervalo: [number, number] | null }
+export interface HistorialValorDTO extends GananciaValor {
+  confirmado: boolean
+  minimo: number
+  naceDeRecorte: GananciaValor
+  sinRecorte: GananciaValor
+  nuestroFavorito: GananciaValor
+  nota: string
 }

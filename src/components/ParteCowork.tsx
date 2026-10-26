@@ -1602,6 +1602,7 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
  *  mercado es el mejor pronóstico, no una apuesta con valor. Calculada al leer. */
 const COLOR_MERCADO: Record<VentajaMercado['estado'], [string, string]> = {
   'con valor': ['var(--up)', 'var(--up-soft)'],
+  'valor en el papel': ['var(--mark)', 'var(--bg3)'],
   'sin ventaja': ['var(--t2)', 'var(--bg3)'],
   'sobre el mercado': ['var(--accent)', 'var(--accent-soft)'],
   'bajo el mercado': ['var(--mark)', 'var(--bg3)'],
@@ -1629,6 +1630,13 @@ function MarcaMercado({ v }: { v: VentajaMercado }) {
           )
         })}
       </div>
+      {v.historial && (
+        <div style={{ font: '500 10.5px var(--sans)', color: 'var(--t2)', marginTop: 5 }}>
+          Historial de las selecciones con valor: {v.historial.n === 0 ? 'todavía sin casos cerrados'
+            : `${v.historial.ganadas}/${v.historial.n} ganadas · ${v.historial.roi !== null && v.historial.roi >= 0 ? '+' : ''}${v.historial.roi !== null ? (v.historial.roi * 100).toFixed(1) : '—'} % por unidad`}
+          {v.historial.confirmado ? ' · confirmado' : ' · sin confirmar (hace falta n suficiente y el intervalo sobre cero)'}
+        </div>
+      )}
       <div style={{ font: '400 10px var(--sans)', color: 'var(--t3)', marginTop: 5 }}>
         nuestro / mercado sin margen · valor = nuestra × cuota media − 1. No es una recomendación de apuesta.
       </div>

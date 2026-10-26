@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { TablaConfianzaDTO, DerrotaFavorito, DerrotasFavoritoDTO, ExplicacionDerrota, InventarioLecciones, LeccionItem, ModoFalloEtiqueta, RevisionSkillDTO, SkillAprendizaje } from '../api/types'
+import type { HistorialValorDTO, TablaConfianzaDTO, DerrotaFavorito, DerrotasFavoritoDTO, ExplicacionDerrota, InventarioLecciones, LeccionItem, ModoFalloEtiqueta, RevisionSkillDTO, SkillAprendizaje } from '../api/types'
 import { getDataSource } from '../services/datasource'
 import { useAsync } from '../services/useAsync'
 import { COLOR_TRAMO } from '../lib/confianza'
@@ -328,12 +328,45 @@ function TablaConfianza({ t }: { t: TablaConfianzaDTO }) {
   )
 }
 
+/** EL VALOR CONTRA EL MERCADO, MEDIDO (26/10/2026, pedido del usuario tras
+ *  Santa Clara–Benfica): apostar 1 unidad a cada selección marcada con valor, a
+ *  su cuota, en los partes cerrados. La marca del parte dice «valor en el papel»
+ *  hasta que esto salga positivo con n suficiente. */
+function TablaValor({ h }: { h: HistorialValorDTO }) {
+  const filas: [string, typeof h.naceDeRecorte][] = [
+    ['Todas las selecciones con valor', h],
+    ['· nacidas de recortar al favorito', h.naceDeRecorte],
+    ['· sin recorte', h.sinRecorte],
+    ['Referencia: siempre a nuestro elegido', h.nuestroFavorito],
+  ]
+  const pct = (x: number | null) => (x === null ? '—' : `${x >= 0 ? '+' : ''}${(x * 100).toFixed(1)}%`)
+  return (
+    <Seccion titulo="VALOR CONTRA EL MERCADO · ¿GANÓ?" nota={h.nota}>
+      <div style={{ font: '600 11.5px var(--sans)', color: h.confirmado ? 'var(--up)' : 'var(--mark)', marginBottom: 8 }}>
+        {h.confirmado ? 'Confirmado: las selecciones con valor ganan a su cuota.'
+          : `Sin confirmar: hacen falta ${h.minimo} casos o más y el intervalo por encima de cero. Hasta entonces el parte dice «valor en el papel».`}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,2fr) minmax(0,.6fr) minmax(0,1.4fr)', gap: '6px 8px' }}>
+        {filas.map(([k, g]) => [
+          <span key={k + 'k'} style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{k}</span>,
+          <span key={k + 'n'} style={{ font: '600 11px var(--mono)', color: 'var(--t2)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{g.ganadas}/{g.n}</span>,
+          <span key={k + 'r'} style={{ font: '600 11px var(--mono)', textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: g.roi === null ? 'var(--t3)' : g.roi >= 0 ? 'var(--up)' : 'var(--down)' }}>
+            {pct(g.roi)}
+            {g.intervalo && <span style={{ display: 'block', color: 'var(--t3)', fontWeight: 500, fontSize: 9.5 }}>[{pct(g.intervalo[0])} a {pct(g.intervalo[1])}]</span>}
+          </span>,
+        ])}
+      </div>
+    </Seccion>
+  )
+}
+
 /** Población y lo medible: lo que antes abría la pantalla, ahora en su pestaña. */
 function Metricas({ d }: { d: InventarioLecciones }) {
   const a = d.acreditables
   return (
     <>
       {a.confianza && <TablaConfianza t={a.confianza} />}
+      {a.valorMercado && <TablaValor h={a.valorMercado} />}
       {/* LA POBLACIÓN VA ANTES QUE CUALQUIER NÚMERO. Un porcentaje que mezcla
           casos ciegos con casos sembrados no es una métrica pesimista ni
           optimista: es otra cosa con el mismo nombre. */}

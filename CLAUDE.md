@@ -1013,6 +1013,16 @@ conversación se pierde en la siguiente.
      `con valor` (valor ≥ 3 % Y ≥ 3 pts sobre el mercado) · `sin ventaja` ·
      `sobre`/`bajo el mercado`. Caja «Contra el mercado» en el pronóstico del
      parte. Seguir al mercado (sad v4.1) es el mejor pronóstico, no una apuesta.
+     **Corregido el mismo día** (usuario, Santa Clara–Benfica: «valor» de 14 %
+     contra 10 % a cuota 9 en verde, nacido de recortar al favorito): sin
+     historial el estado es `valor en el papel` (ámbar); `naceDeRecorte` lo
+     dice cuando sale de dejar al favorito del mercado (50 %+) 3 pts abajo sin
+     «−N puntos al favorito por <dato>» escrito (6-B). `con valor` vuelve solo
+     con `parte.historial_valor` confirmado: apostar 1 unidad a cada selección
+     con valor, a su cuota, en los partes que acreditan, n ≥ 50 y el intervalo
+     de la ganancia sobre cero; la tabla «Valor contra el mercado · ¿ganó?» de
+     Aprendizaje lo muestra (con recorte, sin recorte y siempre a nuestro
+     elegido de referencia).
    - **Aprendizaje reordenado (25/10)**: resumen sin lecciones, pestañas, el
      cierre en bloque arriba de cada skill, lecciones de a 20 y el inventario
      guardado por huella (`SAD_CACHE_INVENTARIO_S`; antes 46 s y 6,3 MB). La

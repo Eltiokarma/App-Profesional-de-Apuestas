@@ -409,6 +409,8 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
                    "tasa": round(unxdos_ok / unxdos_de, 3) if unxdos_de else None},
         "brier": _brier_con_linea_base(briers, reales),
         "confianza": _tabla_confianza(confianza),
+        # 26/10/2026: ¿las selecciones con «valor en el papel» ganaron a su cuota?
+        "valorMercado": _valor_mercado(),
         "ventanaTde": {
             "observadas": tde_obs, "conGol": tde_positivos,
             "sinFicha": tde_sin_ficha, "conRojaAntes": tde_contaminadas,
@@ -492,6 +494,14 @@ def cuotas_mercado(ids: list[int]) -> dict[int, dict]:
                           "cuota": {k: sum(v) / len(v) for k, v in acc.items()},
                           "casas": max(len(v) for v in acc.values())}
     return fuera
+
+
+def _valor_mercado() -> dict | None:
+    try:
+        from backend.analisis.parte import historial_valor
+        return historial_valor()
+    except Exception:  # noqa: BLE001 — sin cuotas o sin partes, la tabla no sale
+        return None
 
 
 def _tabla_confianza(filas: list[dict]) -> dict:
