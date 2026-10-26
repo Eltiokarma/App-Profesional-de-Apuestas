@@ -43,6 +43,7 @@ python -m backend.test_backtest_familias  # detecta un reventón plantado y no i
 python -m backend.backtest_unxdos_motor --padron # el 1X2 del motor desde μ: logística calibrada contra frecuencia y contra el Poisson sobre μ (MOTOR §5.6; --desde-dir para historias bajadas de /constantes y /niveles)
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
 python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--horizonte/--calibrar/--por-liga)
+python -m backend.backtest_forma --desde-dir carpeta  # ¿la forma de 5 SIN amistosos mejora el gap? (MOTOR §5; medido 26/10: no) · test_backtest_forma
 
 # ingesta (dueña de los datos; el backend HTTP sigue siendo de solo lectura)
 python -m backend.ingesta.extractor --probar    # 1 request de prueba (API_FOOTBALL_KEY en .env)
