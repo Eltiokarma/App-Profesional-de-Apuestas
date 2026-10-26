@@ -187,6 +187,18 @@ def main():
     check("EJE-DEBUTANTE v1.7: ≤ 1 vez juntos es pareja nueva, 2+ no; otras líneas no cuentan",
           sorted((tuple(x["jugadores"]), x["vecesJuntos"]) for x in _pn) == [(("A", "C"), 1)], _pn)
     check("sin onces previos no se inventa una pareja nueva", parejas_nuevas_de(_xi, []) == [])
+    # 623: el último once (el XI de referencia) cuenta como partido juntos
+    import backend.analisis.dtp_cowork as _dc623
+    _onces623 = {10: {1, 2, 3}, 11: {1, 3}, 12: {1, 3}}
+    _ant623, _tit623 = _dc623._anteriores, _dc623._titulares
+    _dc623._anteriores = lambda t, f, n: [{"id": i} for i in (10, 11, 12)][:n]
+    _dc623._titulares = lambda fx, t: [{"player_id": p} for p in _onces623[fx]]
+    try:
+        _pn623 = {tuple(x["jugadores"]): x["vecesJuntos"] for x in _dc623._parejas_nuevas(1, "2026-10-25", _xi)}
+    finally:
+        _dc623._anteriores, _dc623._titulares = _ant623, _tit623
+    check("623: la pareja que debutó en el último once tiene 1 partido juntos; la de 3 no es nueva",
+          _pn623 == {("A", "B"): 1, ("B", "C"): 1}, _pn623)
     # 540: un partido reprogramado no pierde su apertura en la cadena
     efedb.guardar_cadena("Reprogramado FC", 5, "Rival A", "2026-10-14", 9001, {"m1": {"sistema": "4-4-2"}})
     efedb.guardar_cadena("Reprogramado FC", 5, "Rival B", "2026-10-18", 9002, {"m1": {"sistema": "3-5-2"}})
