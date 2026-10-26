@@ -441,6 +441,23 @@ def main():
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:   # que no los tome otro test como «el último jugado»
         _con.execute("DELETE FROM alineaciones WHERE fixture_id BETWEEN 990470 AND 990472")
         _con.execute("DELETE FROM fixtures WHERE id BETWEEN 990470 AND 990472")
+    # incidencia 655: la roja a un suplente que no entró no cuenta; la del titular y la del que entró, sí
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.executemany("INSERT INTO alineaciones (fixture_id, team_id, player_id, jugador, titular) VALUES (?,?,?,?,?)",
+                         [(990655, 990601, 1, "Tit", 1), (990655, 990601, 2, "Banco", 0), (990655, 990601, 3, "Entró", 0)])
+        _con.executemany("INSERT INTO fixture_eventos (fixture_id, minuto, extra, tipo, detalle, equipo_id, jugador, "
+                         "jugador_id, asistente_id) VALUES (?,?,?,?,?,?,?,?,?)",
+                         [(990655, 60, 0, "subst", "Substitution 1", 990601, "Sale", 9, 3),
+                          (990655, 91, 1, "Card", "Red Card", 990601, "Banco", 2, None),
+                          (990655, 80, 0, "Card", "Red Card", 990601, "Entró", 3, None),
+                          (990655, 70, 0, "Card", "Red Card", 990601, "Tit", 1, None)])
+    from backend.analisis.veredicto import _rojas as _r655
+    _rj655 = _r655(990655, 990601)
+    check("655: la roja del suplente que no entró no cuenta; la del titular (70) y la del que entró (80) sí",
+          sorted(r["minuto"] for r in _rj655) == [70, 80], _rj655)
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM alineaciones WHERE fixture_id=990655")
+        _con.execute("DELETE FROM fixture_eventos WHERE fixture_id=990655")
     # pretemporada: Millwall (base Championship) con su próximo partido de liga en la Premier
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("INSERT OR REPLACE INTO leagues (id, name, country, season) VALUES (39, 'Premier League', 'England', 2026)")
@@ -2471,6 +2488,9 @@ def main():
     with _sq2.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("INSERT INTO fixture_eventos (fixture_id, minuto, extra, tipo, detalle, equipo_id, jugador, jugador_id) "
                      "VALUES (?,?,?,?,?,?,?,?)", (con_ficha, 47, 0, "Card", "Red Card", _hid_r, "Expulsado", 777))
+        # el expulsado estaba en cancha: titular de la hoja (655, una roja de suplente sin entrar no cuenta)
+        _con.execute("INSERT INTO alineaciones (fixture_id, team_id, player_id, jugador, titular) VALUES (?,?,?,?,1)",
+                     (con_ficha, _hid_r, 777, "Expulsado"))
         _con.execute("INSERT INTO fixture_eventos (fixture_id, minuto, extra, tipo, detalle, equipo_id, jugador) "
                      "VALUES (?,?,?,?,?,?,?)", (con_ficha, 46, 0, "Card", "Red Card", _hid_r, "DT expulsado"))
         _con.execute("INSERT INTO fixture_eventos (fixture_id, minuto, extra, tipo, detalle, equipo_id, jugador) "
@@ -2482,6 +2502,8 @@ def main():
     check("la ventana sin roja previa se cobra normal", od_r["b"]["cobrable"] is True, od_r["b"])
     check("un gol del añadido del primer tiempo (45+2 guardado como 47) no cae en la 45-60",
           all(g["jugador"] != "Añadido 1T" for g in od_r["a"]["goles"]), od_r["a"]["goles"])
+    with _sq2.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM alineaciones WHERE fixture_id=? AND player_id=777", (con_ficha,))
     # (17/10/2026) sin gol en la ventana, una roja ANTES de que termine tampoco
     # deja cobrar el «no hubo gol», y el añadido se anota solo en la ventana
     # que cierra su tiempo
