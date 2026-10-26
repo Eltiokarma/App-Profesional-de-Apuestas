@@ -598,6 +598,17 @@ señal_calendario = blando si recuperabilidad > μ_genérica + 0.15
    débiles de nivel y localía, y hoy alimentan forma y niveles como
    cualquier partido oficial. Refinamientos candidatos (sin decidir):
    localía por liga/región y tratamiento especial de amistosos.
+   **Amistosos en la forma de 5: MEDIDO el 26/10/2026, NO se cambia**
+   (incidencia 504, `backend/backtest_forma.py`, 85 918 partidos de 470
+   equipos del padrón, 2019-2026). Sacar los amistosos de la ventana no
+   mejora el gap: en los 5 599 partidos donde las dos ventanas difieren, la
+   correlación del gap con el residual del partido baja de 0.032 a 0.010 y la
+   del horizonte de 5 de 0.040 a 0.014 (diferencia −0.022 y −0.026, IC
+   bootstrap por equipo [−0.050, 0.006] y [−0.069, 0.019]); el bucket
+   «fuerte mejora» con todas da +0.087 de residual y sin amistosos +0.008. La
+   señal cambia de bucket en 3 292 casos y se invierte en 308 (La Louvière),
+   pero el cambio no predice mejor. La regla de la ley queda como LECTURA
+   (declarar la composición de la ventana), no como corrección del número.
 4. **Veredicto de la ley con μ v2** (re-medición limpia, n=8 816): las
    señales del gap son débiles al partido siguiente (≤0.1 pts). Lo único
    que replicó en dos muestras: el **sobrerinde fuerte PERSISTE** al
