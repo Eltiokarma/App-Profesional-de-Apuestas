@@ -3784,6 +3784,35 @@ def main():
     check("462/497/582: el id de la hoja casa con su fila de la plantilla (fuera del corte) y va a idsAlternos",
           _gem5["id"] in _t5 and 999001 in (_t5[_gem5["id"]].get("idsAlternos") or [])
           and _t5[_gem5["id"]].get("titularEnElUltimo") and 999001 not in _t5, (_t5.get(_gem5["id"]), list(_t5)))
+    # 627: el id alterno que deduplicar ya fundió no suma sus titularidades dos veces
+    _j627 = {"posicion": "Defender", "pctMinutos": 1.0, "partidos": 1, "titularidades": 1, "minutos": 90,
+             "goles": 0, "asistencias": 0}
+    _pl627 = {"jugadores": [{**_j627, "id": 406623, "nombre": "I. Ramírez"},
+                            {**_j627, "id": 554584, "nombre": "I. Ramirez"}]}
+    _pd627, _f1m.jug.plantilla_de = _f1m.jug.plantilla_de, (lambda t: _pl627)
+    _f1m.onces_recientes = lambda t, a: {"onces": 9, "ultimo": 1, "jugadores": {
+        406623: {"nombre": "I. Ramírez", "posicion": "D", "titular": 6, "convocado": 6, "enUltimo": True},
+        554584: {"nombre": "I. Ramirez", "posicion": "D", "titular": 3, "convocado": 3, "enUltimo": False}}}
+    _f1m._juntos = lambda a, b: False
+    try:
+        _t627 = _tabla_eq(_hid, "local", "2100-01-01")["candidatos"]
+    finally:
+        _f1m.onces_recientes, _f1m._juntos, _f1m.jug.plantilla_de = _orig_rec, _f1m_juntos, _pd627
+    check("627: el id fundido por deduplicar no vuelve a sumar sus titularidades (9/9, no 12/9)",
+          len(_t627) == 1 and _t627[0]["titularEnUltimos"] == "9/9"
+          and _t627[0].get("idsAlternos") == [554584], _t627)
+    # 610: una hoja que la API nombró con otro jugador no le pone nombreEnLaHoja
+    _pl610 = {"jugadores": [{**_j627, "id": 35514, "nombre": "J. Purata"}]}
+    _f1m.jug.plantilla_de = lambda t: _pl610
+    _f1m.onces_recientes = lambda t, a: {"onces": 9, "ultimo": 1, "jugadores": {
+        35514: {"nombre": "J. Sanchez", "nombres": ["J. Purata", "J. Sanchez"], "posicion": "D",
+                "titular": 7, "convocado": 8, "enUltimo": True}}}
+    try:
+        _t610 = _tabla_eq(_hid, "local", "2100-01-01")["candidatos"]
+    finally:
+        _f1m.onces_recientes, _f1m.jug.plantilla_de = _orig_rec, _pd627
+    check("610: si alguna hoja lo nombra como la plantilla, no sale con el nombre de otro en nombreEnLaHoja",
+          len(_t610) == 1 and "nombreEnLaHoja" not in _t610[0], _t610)
     # UN JUGADOR CON DOS IDS ES UNO (Leones del Norte, Nacional Potosí: 17-19/10/2026)
     from backend.analisis.f1_base import deduplicar as _dedup, mismo_jugador as _mj
     _js = [{"id": 362224, "nombre": "Emiliano Griffa", "minutos": 900, "partidos": 10},

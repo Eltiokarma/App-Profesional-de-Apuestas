@@ -76,6 +76,11 @@ def onces_recientes(team_id: int, antes: str) -> dict:
                                            "titular": 0, "convocado": 0, "enUltimo": False})
         j["convocado"] += 1
         j["titular"] += 1 if f["titular"] else 0
+        # todos los nombres con que figura ESE id: la API a veces nombra una
+        # hoja con otro jugador (Atlas, 35514 «J. Purata» en cinco y
+        # «J. Sanchez» en dos, incidencia 610)
+        if f["jugador"]:
+            j.setdefault("nombres", set()).add(limpiar_nombre(f["jugador"]))
         if f["titular"] and f["fixture_id"] == fx[0]:
             j["enUltimo"] = True
         # LA POSICIÓN CON LA QUE ARRANCÓ SU ÚLTIMO ONCE (incidencias 171, 323 y
@@ -90,6 +95,8 @@ def onces_recientes(team_id: int, antes: str) -> dict:
         # Pumas salió una vez en 5-4-1 y Juninho pasó a MID y Antuna a DEF; Saka
         # «MID» por un 4-2-3-1. La más repetida en sus titularidades; empate → la
         # más reciente.
+        if "nombres" in j:
+            j["nombres"] = sorted(j["nombres"])
         pos = j.pop("_pos", [])
         if pos:
             cuenta: dict[str, int] = {}
@@ -405,7 +412,11 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
         # parte lo sumaba dos veces y la fila de prensa salía de baja
         en_hoja = (rec["jugadores"].get(j["id"]) or {}).get("nombre") or ""
         f["nombre"] = nombre_sano(f["nombre"], en_hoja)
-        if en_hoja and not mismo_jugador(en_hoja, j["nombre"]) and normalizar_simple(en_hoja) != normalizar_simple(j["nombre"]):
+        # …solo si NINGUNA hoja lo nombra como la plantilla: una hoja que la API
+        # nombró con otro jugador no le cambia la identidad (610)
+        hojas = (rec["jugadores"].get(j["id"]) or {}).get("nombres") or {en_hoja}
+        if en_hoja and not any(h and (mismo_jugador(h, j["nombre"])
+                                      or normalizar_simple(h) == normalizar_simple(j["nombre"])) for h in hojas):
             f["nombreEnLaHoja"] = en_hoja
         filas.append(f)
     # titulares recientes que la plantilla de la temporada no tiene (fichajes,
@@ -415,6 +426,11 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     if con_onces:
         for pid, r in sorted(rec["jugadores"].items(), key=lambda kv: -kv[1]["titular"]):
             if pid in ids or pid <= 0 or (r["titular"] < 2 and not r.get("enUltimo")):
+                continue
+            # YA FUNDIDO POR `deduplicar`: sus titularidades ya están en la fila
+            # que lo lleva en `idsAlternos`. Sumarlas otra vez daba «12/9»
+            # (Metropolitanos, I. Ramírez 406623 + 554584, incidencia 627)
+            if any(pid in (f.get("idsAlternos") or []) for f in filas):
                 continue
             # QUEDÓ FUERA DEL CORTE PERO ESTÁ EN LA PLANTILLA: entra con sus stats
             # (Ambríz, 16 PJ y 6 titularidades, salía «sin stats de temporada»,
