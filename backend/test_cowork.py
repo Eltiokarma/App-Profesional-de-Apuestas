@@ -3455,6 +3455,48 @@ def main():
           and len(ce["ausentesDeLaReferencia"]) >= 3, ce)
     check("y la alerta DTP-REHACER va a la tira",
           any(a["codigo"] == "DTP-REHACER" and a["equipo"] == "a" for a in g_reh["alertas"]), g_reh["alertas"])
+    # 26/10/2026: CUÁNDO llegó el once que dispara DTP-REHACER (el veredicto del
+    # 25/10 leyó «sonó y no se rehízo» en partes que la rutina sí había rehecho)
+    from backend.ingesta.ficha_partido import guardar_alineaciones as _gal
+    from backend.analisis.parte import momento_rehacer as _mom, _antes_del_pitazo as _antes
+    _once = lambda form, base: [{"team": {"id": 990481}, "formation": form, "coach": {"name": "DT"},
+                                 "startXI": [{"player": {"id": base + k, "name": f"J{k}"}} for k in range(11)],
+                                 "substitutes": []}]
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                     "home_team_id, away_team_id) VALUES (990480, '2026-10-25 16:15:00', 'FT', 'Match Finished', "
+                     "39, 2026, 990481, 990482)")
+        _gal(_con, 990480, _once("4-2-3-1", 700), "2026-10-25 15:10:00")
+        _gal(_con, 990480, _once("4-2-3-1", 700), "2026-10-25 15:40:00")   # misma versión: no se re-sella
+        _nv = _con.execute("SELECT COUNT(*) FROM alineaciones_versiones WHERE fixture_id=990480").fetchone()[0]
+        _gal(_con, 990480, _once("4-3-1-2", 700), "2026-10-25 16:05:00")   # la API corrige la formación
+        _nv2 = _con.execute("SELECT COUNT(*) FROM alineaciones_versiones WHERE fixture_id=990480").fetchone()[0]
+    check("cada versión distinta del once queda con su hora (la repetida no suma)", (_nv, _nv2) == (1, 2), (_nv, _nv2))
+    _fx480 = {"id": 990480, "date": "2026-10-25 16:15:00"}
+    _al = [{"codigo": "DTP-REHACER", "equipo": "a", "tipo": "dato", "detalle": "x"}, {"codigo": "T.54", "detalle": "y"}]
+    _m = _mom(_al, _fx480, "2026-10-25 15:13:00")
+    check("once corregido a 10 min del pitazo, después del último depósito: `tardio`, no «ignorado»",
+          _m[0].get("momento") == "tardio" and "once tardío" in _m[0]["detalle"] and _m[1] == _al[1], _m)
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("UPDATE alineaciones_versiones SET capturada_en='2026-10-25 15:40:00' "
+                     "WHERE fixture_id=990480 AND formacion='4-3-1-2'")
+    check("llegó a 35 min y el parte no se re-depositó: `sinRehacer`",
+          _mom(_al, _fx480, "2026-10-25 15:13:00")[0].get("momento") == "sinRehacer")
+    check("ya estaba en el último depósito y la apertura lo contradice: `conocido`",
+          _mom(_al, _fx480, "2026-10-25 15:45:00")[0].get("momento") == "conocido")
+    check("sin depósito previo sellado (partes viejos) la alerta sale como estaba",
+          _mom(_al, _fx480, None) == _al)
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("UPDATE fixtures SET status_short='NS' WHERE id=990480")
+    check("antes del pitazo no se clasifica (todavía se puede rehacer)",
+          _mom(_al, _fx480, "2026-10-25 15:13:00") == _al)
+    check("el depósito previo se sella solo antes del pitazo",
+          _antes("2026-10-25 15:13:00", "2026-10-25T16:15:00+00:00")
+          and not _antes("2026-10-25 18:00:00", "2026-10-25 16:15:00"))
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM alineaciones WHERE fixture_id=990480")
+        _con.execute("DELETE FROM alineaciones_versiones WHERE fixture_id=990480")
+        _con.execute("DELETE FROM fixtures WHERE id=990480")
     p_reh["dtp"]["bloques"][0]["apertura"]["m1"] = {"sistema": _form, "xiReferencia": ", ".join(_xi)}
     c.post(f"{A}/analisis/cowork", json=p_reh)
     g_ok = c.get(f"{A}/analisis/cowork/{con_ficha}").json()

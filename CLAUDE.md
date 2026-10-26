@@ -975,6 +975,16 @@ conversación se pierde en la siguiente.
      EJE-DEBUTANTE en el clasificador con ≤ 1 partido juntos
      (`dtp_cowork.parejas_nuevas_de`) y T.54 con interino que repite el once.
      Pendiente del usuario: subir los dos zips y cerrar con 🔑 las anteriores.
+   - **DTP-REHACER con su hora (26/10)**: el veredicto del 25/10 dio 12
+     lecciones «sonó y no se rehízo» y la rutina había rehecho 18 partes: la API
+     corrige la formación en el refresco de los últimos 15 min, cuando ya no
+     queda disparo. Cada versión del once queda con su hora
+     (`alineaciones_versiones` en sad.db), el parte sella su último depósito
+     antes del pitazo (`deposito_previo_en`) y, jugado el partido, la alerta
+     trae `momento` (`tardio` · `sinRehacer` · `conocido`, `parte.momento_rehacer`);
+     el veredicto no carga un `tardio` al skill. Y los partidos CON parte
+     piden el once otra vez a 40 min del saque (`en_vivo._refresco_temprano`)
+     para que el disparo de :07/:37 vea la versión corregida.
    - **Aprendizaje reordenado (25/10)**: resumen sin lecciones, pestañas, el
      cierre en bloque arriba de cada skill, lecciones de a 20 y el inventario
      guardado por huella (`SAD_CACHE_INVENTARIO_S`; antes 46 s y 6,3 MB). La

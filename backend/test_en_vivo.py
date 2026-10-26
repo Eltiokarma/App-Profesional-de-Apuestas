@@ -1050,6 +1050,39 @@ def main():
     check("XI: tras el refresco la condición se apaga sola", 21 not in fixtures_para_xi(con, {PERU}),
           fixtures_para_xi(con, {PERU}))
 
+    # 26/10/2026: refresco TEMPRANO de los partidos con parte (40 min antes), para
+    # que la rutina de rehacer vea la formación corregida antes de su último disparo
+    con.executemany("INSERT INTO fixtures (id, date, status_short, league_id) VALUES (?,?,?,?)", [
+        (24, hace(-35), "NS", PERU),   # capturado 1 h antes del saque, faltan 35 min
+        (25, hace(-35), "NS", PERU),   # capturado hace 5 min: no se refresca todavía
+        (26, hace(-55), "NS", PERU),   # faltan 55 min: fuera de la ventana temprana
+    ])
+    con.executemany(
+        "INSERT INTO alineaciones (fixture_id, team_id, formacion, entrenador, player_id, "
+        "jugador, numero, posicion, grid, titular) VALUES (?, 1, '4-4-2', 'DT', 5, 'Alguien', 1, 'G', '1:1', 1)",
+        [(24,), (25,), (26,)])
+    con.executemany("INSERT INTO xi_intentos (fixture_id, intentada_en, con_datos) VALUES (?,?,1)",
+                    [(24, hace(25)), (25, hace(5)), (26, hace(10))])
+    con.commit()
+    sin_parte = fixtures_para_xi(con, {PERU})
+    con_parte = fixtures_para_xi(con, {PERU}, {24, 25, 26})
+    check("XI: sin parte, el once capturado temprano espera al refresco de los 15 min", 24 not in sin_parte,
+          sin_parte)
+    check("XI: CON parte se refresca a 40 min del saque (la rutina de rehacer llega a verlo)",
+          24 in con_parte, con_parte)
+    check("XI: con parte pero capturado hace nada, no se refresca", 25 not in con_parte, con_parte)
+    check("XI: el refresco temprano espera a los últimos 40 minutos", 26 not in con_parte, con_parte)
+    con.execute("UPDATE xi_intentos SET intentada_en=? WHERE fixture_id=24", (hace(0),))
+    con.commit()
+    check("XI: tras el refresco temprano la condición se apaga sola",
+          24 not in fixtures_para_xi(con, {PERU}, {24}), fixtures_para_xi(con, {PERU}, {24}))
+    # a 10 min del saque el refresco de los 15 minutos sigue en pie (el temprano fue a los 35)
+    con.execute("UPDATE fixtures SET date=? WHERE id=24", (hace(-10),))
+    con.execute("UPDATE xi_intentos SET intentada_en=? WHERE fixture_id=24", (hace(25),))
+    con.commit()
+    check("XI: después del temprano, el de los 15 minutos se pide igual (el once final)",
+          24 in fixtures_para_xi(con, {PERU}, {24}), fixtures_para_xi(con, {PERU}, {24}))
+
     # hipo de la API en el refresco: la respuesta vacía NO borra el XI que había
     con.execute("UPDATE xi_intentos SET intentada_en=? WHERE fixture_id=21", (hace(50),))
     con.commit()

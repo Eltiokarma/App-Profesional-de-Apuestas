@@ -267,6 +267,17 @@ cada 30 minutos y es CORTA: casi siempre no hay nada que hacer.
 > confirmación de una regla también es lección («disciplina 44 declarada y
 > cumplida»): es lo que cuenta casos a favor.
 >
+> **DTP-REHACER en el cierre: leé su `momento`** (26/10/2026: el 25/10 doce
+> lecciones dijeron «sonó y no se rehízo» y la rutina había rehecho 18 partes;
+> la API corrigió la formación cuando ya no quedaba disparo). `tardio` = la
+> versión final del once llegó a menos de 15 min del pitazo: es apertura caída
+> por un once TARDÍO, no un aviso ignorado — no escribas «no se rehízo» ni lo
+> cargues como fallo del skill. `sinRehacer` = llegó a tiempo y nadie rehízo:
+> anotalo en «Roto o a mirar» (falla de la corrida de rehacer), no como
+> lección del DTP. `conocido` = el once ya estaba al depositar y la apertura
+> igual lo contradice: ahí sí es lección. Sin `momento` (partes viejos), decí
+> que no se sabe cuándo llegó el once.
+>
 > La matriz: `GET $B/analisis/cowork/{id}/objetivo` (antes del veredicto; el
 > GET de `…/veredicto` da 404 hasta el primer POST) trae en `objetivo.matriz`
 > qué escenario jugó cada equipo y qué se había escrito para él. Con
