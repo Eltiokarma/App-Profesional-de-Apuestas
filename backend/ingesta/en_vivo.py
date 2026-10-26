@@ -415,6 +415,18 @@ TOPE_XI = int(os.environ.get("SAD_LIVE_XI", "4"))  # fixtures por ciclo (0 = apa
 # la condición se apaga sola (1 request extra por partido, como mucho).
 XI_CAPTURA_VIEJA_MIN = 30
 XI_REFRESCO_ANTES_MIN = 15
+# REFRESCO TEMPRANO de los partidos CON PARTE (26/10/2026: Torque–Cerro, Rennes,
+# Marsella, Gent…). El refresco de los 15 minutos cae DESPUÉS del último disparo
+# de la rutina de rehacer (mira de 80 a 15 min del pitazo, a :07 y :37): si la
+# API corrigió la formación o el DT cambió una pieza, DTP-REHACER aparecía
+# cuando ya nadie podía rehacer, y el veredicto lo leía como «sonó y no se
+# rehízo». Un pedido más a XI_REFRESCO_TEMPRANO_MIN del saque, solo para los
+# capturados más de XI_CAPTURA_TEMPRANA_MIN antes y solo con parte (1 request
+# extra por parte), deja la versión corregida a tiempo para el disparo que cae
+# entre 40 y 15 minutos antes. El de los 15 minutos se queda: es el que el
+# veredicto lee como once final.
+XI_REFRESCO_TEMPRANO_MIN = 40
+XI_CAPTURA_TEMPRANA_MIN = 50
 
 DDL_ODDS_LIVE = """
 CREATE TABLE IF NOT EXISTS odds_live (
@@ -887,8 +899,35 @@ def fixtures_para_xi(con: sqlite3.Connection, ligas: "set[int]",
         (*sorted(ligas), *estados, desde, hasta, corte_intento,
          *sorted(ligas), *estados, desde, hasta_refresco)).fetchall()
     con_parte = con_parte or set()
+    if con_parte:
+        filas = list(filas) + _refresco_temprano(con, ligas, con_parte, ahora, {r[0] for r in filas})
     filas = sorted(filas, key=lambda r: (r[0] not in con_parte, r[2] not in PREVIOS, str(r[1])))
     return [r[0] for r in filas]
+
+
+def _refresco_temprano(con: sqlite3.Connection, ligas: "set[int]", con_parte: "set[int]",
+                       ahora: datetime, ya: "set[int]") -> list:
+    """Los partidos CON PARTE cuyo once se capturó más de XI_CAPTURA_TEMPRANA_MIN
+    antes del saque y que ya entraron en los últimos XI_REFRESCO_TEMPRANO_MIN:
+    un pedido, y el intento queda reciente (la condición se apaga sola; el
+    refresco de los 15 minutos sigue en pie porque ese intento es anterior a
+    saque − XI_CAPTURA_VIEJA_MIN)."""
+    ids = sorted(con_parte - ya)
+    if not ids:
+        return []
+    desde = ahora.strftime("%Y-%m-%d %H:%M:%S")
+    hasta = (ahora + timedelta(minutes=XI_REFRESCO_TEMPRANO_MIN)).strftime("%Y-%m-%d %H:%M:%S")
+    marcas_l, marcas_f = ",".join("?" * len(ligas)), ",".join("?" * len(ids))
+    return con.execute(
+        f"""SELECT f.id, f.date, f.status_short FROM fixtures f
+            WHERE f.id IN ({marcas_f}) AND f.league_id IN ({marcas_l})
+              AND f.status_short IN ({",".join("?" * len(PREVIOS))})
+              AND f.date BETWEEN ? AND ?
+              AND EXISTS (SELECT 1 FROM alineaciones a WHERE a.fixture_id = f.id)
+              AND COALESCE((SELECT MAX(i.intentada_en) FROM xi_intentos i
+                            WHERE i.fixture_id = f.id), '')
+                  < datetime(f.date, '-{XI_CAPTURA_TEMPRANA_MIN} minutes')""",
+        (*ids, *sorted(ligas), *PREVIOS, desde, hasta)).fetchall()
 
 
 def fixtures_con_parte() -> set[int]:
@@ -923,7 +962,7 @@ def capturar_xi(cliente, con: sqlite3.Connection, fixtures: list[int], capturado
         # una respuesta vacía NO pisa un XI ya capturado: guardar_alineaciones
         # borra antes de insertar, y el refresco cerca del saque no puede dejar
         # la ficha peor de lo que estaba por un hipo de la API
-        n = guardar_alineaciones(con, fid, respuesta) if respuesta else 0
+        n = guardar_alineaciones(con, fid, respuesta, str(capturado)[:19]) if respuesta else 0
         con.execute(
             "INSERT INTO xi_intentos (fixture_id, intentada_en, con_datos) VALUES (?, ?, ?) "
             "ON CONFLICT(fixture_id) DO UPDATE SET intentada_en=excluded.intentada_en, "

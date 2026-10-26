@@ -104,7 +104,10 @@ class ParteInvalido(ValueError):
 # existe es un error, no un problema)
 _COLUMNAS_NUEVAS = (("veredicto_json", "TEXT"), ("cohorte", "TEXT"), ("cuarentena_json", "TEXT"),
                     ("coherencia_json", "TEXT"), ("modo_fallo_json", "TEXT"),
-                    ("banco_desmentido_json", "TEXT"), ("dt_base_json", "TEXT"))
+                    ("banco_desmentido_json", "TEXT"), ("dt_base_json", "TEXT"),
+                    # el último depósito ANTES del pitazo (26/10/2026): lo que separa un
+                    # DTP-REHACER ignorado de uno que llegó cuando ya no se podía rehacer
+                    ("deposito_previo_en", "TEXT"))
 # el registro del revisor nació sin `via`; se añade en caliente igual
 _COLUMNAS_LOG = (("via", "TEXT"),)
 
@@ -2430,7 +2433,8 @@ def guardar(payload: dict) -> dict:
                              (parte["fixtureId"],)).fetchone()
         con.execute(
             "INSERT INTO parte_cowork (fixture_id, fecha, equipo_a, equipo_b, estado, version, "
-            "parte_json, xi_json, creado_en, actualizado_en, cohorte, dt_base_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?) "
+            "parte_json, xi_json, creado_en, actualizado_en, cohorte, dt_base_json, deposito_previo_en) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) "
             "ON CONFLICT(fixture_id) DO UPDATE SET fecha=excluded.fecha, equipo_a=excluded.equipo_a, "
             "equipo_b=excluded.equipo_b, version=excluded.version, parte_json=excluded.parte_json, "
             "actualizado_en=excluded.actualizado_en, "
@@ -2438,12 +2442,15 @@ def guardar(payload: dict) -> dict:
             # parte que ya existía sin marca es de antes de la primera cohorte (rodaje)
             f"cohorte=COALESCE(parte_cowork.cohorte, '{COHORTE_RODAJE}'), "
             # la base de la PRIMERA vez, igual que la cohorte
-            "dt_base_json=COALESCE(parte_cowork.dt_base_json, excluded.dt_base_json)",
+            "dt_base_json=COALESCE(parte_cowork.dt_base_json, excluded.dt_base_json), "
+            # un re-depósito DESPUÉS del pitazo no cuenta como rehacer
+            "deposito_previo_en=COALESCE(excluded.deposito_previo_en, parte_cowork.deposito_previo_en)",
             (parte["fixtureId"], (fx["date"] or "")[:10], fx["home_name"], fx["away_name"],
              "pendiente_xi", parte["version"], json.dumps(parte, ensure_ascii=False),
              previo["xi_json"] if previo else None,
              previo["creado_en"] if previo else ahora, ahora, COHORTE,
-             json.dumps(dt_base, ensure_ascii=False) if dt_base else None),
+             json.dumps(dt_base, ensure_ascii=False) if dt_base else None,
+             ahora if _antes_del_pitazo(ahora, fx["date"]) else None),
         )
     # COHERENCIA (Jev): se evalúa AQUÍ y se guarda sellada, no al leer —Jev no
     # es determinista y dos lecturas darían hallazgos distintos—. Nunca tumba
@@ -3116,13 +3123,81 @@ def _formacion_al_dia(fixture_id: int, xi: dict) -> dict:
     return out
 
 
+def _utc(t) -> datetime | None:
+    try:
+        d = datetime.fromisoformat(str(t).strip().replace("Z", "+00:00").replace(" ", "T"))
+    except (TypeError, ValueError):
+        return None
+    return d.replace(tzinfo=timezone.utc) if d.tzinfo is None else d.astimezone(timezone.utc)
+
+
+def _antes_del_pitazo(ahora: str, pitazo) -> bool:
+    a, p = _utc(ahora), _utc(pitazo)
+    return bool(a and p and a < p)
+
+
+def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> list[dict]:
+    """CUÁNDO llegó el once que dispara DTP-REHACER, una vez jugado el partido
+    (26/10/2026: 12 lecciones del DTP del 25/10 decían «sonó y no se rehízo» y
+    la rutina había rehecho 18 partes; la API corrigió la formación en el
+    refresco de los últimos 15 minutos, cuando ya no quedaba disparo). Con la
+    hora de la versión final del once (`alineaciones_versiones`) y la del último
+    depósito ANTES del pitazo, cada DTP-REHACER sale con `momento`:
+      · `tardio` — el once final llegó a menos de REHACER_DESDE_MIN del pitazo:
+        nadie podía rehacer; apertura caída por un once tardío, no un aviso ignorado.
+      · `sinRehacer` — llegó a tiempo y el parte no se volvió a depositar
+        después: falla de la corrida de rehacer.
+      · `conocido` — el once ya estaba cuando se depositó por última vez y la
+        apertura igual lo contradice: lo rehecho no lo corrigió.
+    Antes del pitazo, sin la tabla de versiones o sin depósito previo sellado
+    (partes anteriores a esta regla), la alerta sale como estaba."""
+    if not alertas or not fx:
+        return alertas
+    try:
+        est = saddb.query_one("sad", "SELECT status_short FROM fixtures WHERE id=?", (fx["id"],))
+        if (est and (est["status_short"] or "NS") in ("NS", "TBD", "PST")) or not deposito_previo:
+            return alertas
+        filas = saddb.query("sad", "SELECT team_id, formacion, capturada_en FROM alineaciones_versiones "
+                                   "WHERE fixture_id=? ORDER BY capturada_en", (fx["id"],))
+    except Exception:  # noqa: BLE001 — sin la tabla (base vieja) no hay momento que decir
+        return alertas
+    pitazo, dep = _utc(fx["date"]), _utc(deposito_previo)
+    finales = {}
+    for f in filas:
+        finales[f["team_id"]] = f   # ordenadas: queda la última de cada equipo
+    if not finales or not pitazo or not dep:
+        return alertas
+    t = max(_utc(f["capturada_en"]) for f in finales.values())
+    limite = pitazo - timedelta(minutes=REHACER_DESDE_MIN)
+    antes = int((pitazo - t).total_seconds() // 60)
+    hora = t.strftime("%H:%M UTC")
+    if t <= dep:
+        momento, texto = "conocido", (f"el once final ya estaba ({hora}) cuando se depositó por última vez "
+                                      f"({dep.strftime('%H:%M UTC')}): lo rehecho no lo corrigió")
+    elif t > limite:
+        momento, texto = "tardio", (f"la versión final del once llegó a las {hora}, {antes} min antes del pitazo, "
+                                    f"después del último rehacer posible (pitazo − {REHACER_DESDE_MIN} min): "
+                                    "apertura caída por un once tardío, no un aviso ignorado")
+    else:
+        momento, texto = "sinRehacer", (f"el once final llegó a las {hora}, {antes} min antes del pitazo, y el "
+                                        "parte no se volvió a depositar después: la corrida de rehacer no lo tomó")
+    out = []
+    for a in alertas:
+        if a.get("codigo") == "DTP-REHACER":
+            a = {**a, "momento": momento, "onceFinalEn": t.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                 "ultimoDepositoPrevio": dep.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                 "detalle": f"{a['detalle']} [{texto}]"}
+        out.append(a)
+    return out
+
+
 def dto(fixture_id: int) -> dict | None:
     """Todo lo que la pantalla necesita, con lo calculable ya calculado."""
     with _conectar() as con:
         fila = con.execute(
             "SELECT fixture_id, fecha, equipo_a, equipo_b, estado, version, parte_json, "
             "xi_json, creado_en, actualizado_en, cohorte, cuarentena_json, coherencia_json, "
-            "banco_desmentido_json FROM parte_cowork WHERE fixture_id=?",
+            "banco_desmentido_json, deposito_previo_en FROM parte_cowork WHERE fixture_id=?",
             (fixture_id,),
         ).fetchone()
     if not fila:
@@ -3221,7 +3296,8 @@ def dto(fixture_id: int) -> dict | None:
         if (xi.get(lado) or {}).get("formacionAlCerrar") and lado in oficial:
             oficial[lado] = {**oficial[lado], "formacionAlCerrar": xi[lado]["formacionAlCerrar"]}
     dtp_leido = _dtp.leer_dtp(parte.get("dtp") or {}, oficial)
-    alertas.extend(_dtp.alertas_rehacer(dtp_leido, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
+    alertas.extend(momento_rehacer(_dtp.alertas_rehacer(dtp_leido, {"a": fila["equipo_a"], "b": fila["equipo_b"]}),
+                                   fx, fila["deposito_previo_en"]))
     # las de coherencia se LEEN, no se rehacen (ver _ALERTAS_CAPTURADAS)
     coherencia = json.loads(fila["coherencia_json"]) if fila["coherencia_json"] else None
     alertas.extend(_coherencia.alertas_de(coherencia))

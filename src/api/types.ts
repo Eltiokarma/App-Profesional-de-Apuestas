@@ -1332,6 +1332,12 @@ export interface AlertaParte {
   modelo?: string
   evaluadoEn?: string
   jev?: { pregunta: string; valor: unknown; confianza: number } | null
+  /** Solo en DTP-REHACER ya jugado el partido: cuándo llegó el once que la
+   *  dispara (tardio = después del último rehacer posible · sinRehacer = a
+   *  tiempo y nadie rehízo · conocido = ya estaba en el último depósito). */
+  momento?: 'tardio' | 'sinRehacer' | 'conocido'
+  onceFinalEn?: string
+  ultimoDepositoPrevio?: string
 }
 
 /** El guardrail semántico del parte (docs/JEV.md), sellado al depositar.

@@ -69,6 +69,17 @@ CREATE TABLE IF NOT EXISTS alineaciones (
 CREATE INDEX IF NOT EXISTS idx_alineaciones_fixture ON alineaciones(fixture_id);
 -- la revolución con minutos (backend/jugadores.revolucion_de) busca los onces por equipo
 CREATE INDEX IF NOT EXISTS idx_alineaciones_team ON alineaciones(team_id, titular);
+-- CUÁNDO llegó cada versión del once (26/10/2026): la alineación se reemplaza
+-- entera y su hora se perdía; sin ella el veredicto no separa «DTP-REHACER sonó
+-- y nadie rehízo» de «la API corrigió la formación cuando ya no quedaba rehacer»
+CREATE TABLE IF NOT EXISTS alineaciones_versiones (
+    fixture_id   INTEGER NOT NULL,
+    team_id      INTEGER NOT NULL,
+    huella       TEXT NOT NULL,   -- formación + ids de los titulares
+    formacion    TEXT,
+    capturada_en TEXT NOT NULL,   -- UTC, «YYYY-MM-DD HH:MM:SS»
+    PRIMARY KEY (fixture_id, team_id, huella)
+);
 
 CREATE TABLE IF NOT EXISTS fixture_stats (
     fixture_id INTEGER NOT NULL,
@@ -215,10 +226,37 @@ def guardar_eventos(con: sqlite3.Connection, item: dict) -> int:
     return n
 
 
-def guardar_alineaciones(con: sqlite3.Connection, fixture_id: int, respuesta: list) -> int:
+DDL_VERSIONES = DDL[DDL.index("CREATE TABLE IF NOT EXISTS alineaciones_versiones"):].split(";")[0]
+
+
+def huella_once(formacion, titulares) -> str:
+    """La identidad de una versión del once: formación + ids de los titulares."""
+    return f"{formacion or ''}|" + ",".join(str(i) for i in sorted(titulares))
+
+
+def registrar_version(con: sqlite3.Connection, fixture_id: int, team_id: int, formacion,
+                      titulares, cuando: str | None = None) -> bool:
+    """Anota la versión del once si NO es la última que se vio de ese equipo en
+    ese partido (una que vuelve —A→B→A— se re-sella con la hora nueva: lo que
+    importa es desde cuándo rige la que quedó). Devuelve si era nueva."""
+    con.execute(DDL_VERSIONES)
+    huella = huella_once(formacion, titulares)
+    ultima = con.execute("SELECT huella FROM alineaciones_versiones WHERE fixture_id=? AND team_id=? "
+                         "ORDER BY capturada_en DESC LIMIT 1", (fixture_id, team_id)).fetchone()
+    if ultima and ultima[0] == huella:
+        return False
+    cuando = cuando or datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    con.execute("INSERT OR REPLACE INTO alineaciones_versiones (fixture_id, team_id, huella, formacion, "
+                "capturada_en) VALUES (?,?,?,?,?)", (fixture_id, team_id, huella, formacion, cuando))
+    return True
+
+
+def guardar_alineaciones(con: sqlite3.Connection, fixture_id: int, respuesta: list,
+                         cuando: str | None = None) -> int:
     """Un item por equipo: {team, coach, formation, startXI[], substitutes[]}.
     Se reemplaza entero: la alineación de un partido no cambia, pero un XI
-    probable puede volverse oficial."""
+    probable puede volverse oficial. Cada versión distinta queda anotada con
+    su hora en `alineaciones_versiones`."""
     con.execute("DELETE FROM alineaciones WHERE fixture_id=?", (fixture_id,))
     n = 0
     for lado in respuesta:
@@ -227,6 +265,7 @@ def guardar_alineaciones(con: sqlite3.Connection, fixture_id: int, respuesta: li
             continue
         formacion = lado.get("formation")
         dt = limpiar_nombre((lado.get("coach") or {}).get("name"))
+        titulares = []
         for titular, lista in ((1, lado.get("startXI") or []), (0, lado.get("substitutes") or [])):
             for it in lista:
                 p = it.get("player") or {}
@@ -248,7 +287,11 @@ def guardar_alineaciones(con: sqlite3.Connection, fixture_id: int, respuesta: li
                     (fixture_id, tid, formacion, dt, pid, limpiar_nombre(p.get("name")),
                      _i(p.get("number")), p.get("pos"), p.get("grid"), titular),
                 )
+                if titular:
+                    titulares.append(pid)
                 n += 1
+        if titulares:
+            registrar_version(con, fixture_id, tid, formacion, titulares, cuando)
     return n
 
 
