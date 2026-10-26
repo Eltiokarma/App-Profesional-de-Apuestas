@@ -94,8 +94,10 @@ def _parte(fixture_id: int, nombre_a: str = "", nombre_b: str = "") -> dict:
              "vias": [{"nombre": "echada", "indice": 58, "ventana": "75-90'", "detalle": "baja el bloque"}],
              "falsador": "si sostiene la línea tras el 75'",
              "reasignacion": {"siMarcaPrimero": {"sob1": 0, "tipologia": "ECHADA-VOL", "nota": "administra"},
-                              "siRecibePrimero": {"sob1": 1, "sob2": 0.5, "nota": "persigue y se expone"},
-                              "siLeEmpatan": {"sob1": 0.5, "sob2": 0.5, "nota": "vuelve a empujar"},
+                              "siRecibePrimero": {"sob1": 1, "sob2": 0.5, "nota": "persigue y se expone",
+                                                  "desenlace": "se_rompe"},
+                              "siLeEmpatan": {"sob1": 0.5, "sob2": 0.5, "nota": "vuelve a empujar",
+                                              "desenlace": "abierto"},
                               "siExpulsion": {"propia": {"nota": "ECHADA-NUM"}, "rival": {"nota": "empuja con uno más"}}}},
             {"ie": 24, "ieNivel": "verde", "ise": 47, "iseNivel": "ambar", "equipo": "a",
              "tipologia": "sobreexposición por urgencia", "ventana": "60-75'",
@@ -4041,6 +4043,52 @@ def main():
     check("448: sin goles y roja propia al 50, el partido tiene su tramo siExpulsion (no declarada)",
           [(t["desde"], t["hasta"], t["rama"], t["declarada"]) for t in _t448]
           == [(0, 50, "base", False), (50, 90, "siExpulsion", False)], _t448)
+    # TDE v0.1.24 · DISCIPLINA 65: EL DESENLACE DEL QUE PERSIGUE (cohorte c3: ISE de rama ≥ 7 remontó 2 de 38)
+    from backend.analisis.parte import avisos_desenlace as _avd
+    _rz65 = []
+    _r65 = _idr(_rsg({"siRecibePrimero": {"sob1": 1, "sob2": 1, "sob3": 0.5, "desenlace": "se rompe"},
+                      "siLeEmpatan": {"sob1": 1, "sob2": 0.5, "sob3": 0.5},
+                      "siIguala": {"sob1": 1, "sob2": 1, "sob3": 1, "desenlace": "rescata"},
+                      "siMarcaPrimero": {"sob1": 0, "desenlace": "se_rompe"}}, _rz65, "t"), {"SOB2": 0, "SOB3": 0.5})
+    check("65: «se rompe» se normaliza, el defecto sale del ISE de rama (8.3 → se_rompe, 6.7 → abierto) y en siMarcaPrimero se rechaza",
+          _r65["siRecibePrimero"]["desenlace"] == "se_rompe" and _r65["siRecibePrimero"]["desenlaceDefecto"] == "se_rompe"
+          and _r65["siLeEmpatan"]["desenlaceDefecto"] == "abierto" and "desenlace" not in _r65["siMarcaPrimero"]
+          and [r["donde"] for r in _rz65] == ["t.siMarcaPrimero.desenlace"], (_r65, _rz65))
+    _rz65b = []
+    _rsg({"siRecibePrimero": {"sob1": 1, "desenlace": "remonta"}}, _rz65b, "t")
+    check("65: un desenlace fuera de la lista se rechaza con motivo", _rz65b and "se_rompe" in _rz65b[0]["esperado"], _rz65b)
+    _av65 = _avd([{"equipo": "a", "reasignacion": _r65}])
+    check("65: el recibo pide el desenlace que falta y el «rescata» con ISE ≥ 7 sin porqué",
+          any("a.siLeEmpatan sin" in x for x in _av65) and any("a.siIguala dice «rescata»" in x for x in _av65)
+          and not any("siRecibePrimero" in x for x in _av65), _av65)
+    _r65["siIguala"]["porqueDesenlace"] = "banco ofensivo documentado"
+    check("65: con el porqué, el «rescata» contra ISE alto ya no se avisa",
+          not any("siIguala" in x for x in _avd([{"equipo": "a", "reasignacion": _r65}])))
+    _td65 = {"reasignacion": {"siRecibePrimero": {"sob1": 1, "iseRama": 8.33}, "siLeEmpatan": {"desenlace": "rescata", "iseRama": 5.0}}}
+    _t65 = tramos_por_marcador(_td65, [{"minuto": 20, "lado": "b"}, {"minuto": 70, "lado": "b"}], "a")
+    check("65: perdiendo 0-1 con ISE de rama 8.3 y sin desenlace escrito, el defecto «se_rompe» se cumple con el 0-2",
+          _t65[1]["desenlace"]["lectura"] == "se_rompe" and _t65[1]["desenlace"]["deDefecto"]
+          and _t65[1]["desenlace"]["observado"] == "se_rompe" and _t65[1]["desenlace"]["cumplido"] is True
+          and "desenlace" not in _t65[0], _t65)
+    _t65b = tramos_por_marcador(_td65, [{"minuto": 20, "lado": "a"}, {"minuto": 50, "lado": "b"}, {"minuto": 80, "lado": "a"}], "a")
+    check("65: siLeEmpatan con «rescata» escrito se cumple con el 2-1 propio; el tramo final sin goles no tiene rama de desenlace",
+          _t65b[2]["rama"] == "siLeEmpatan" and _t65b[2]["desenlace"]["cumplido"] is True
+          and _t65b[2]["desenlace"]["deDefecto"] is False and "desenlace" not in _t65b[3], _t65b)
+    _t65c = tramos_por_marcador(_td65, [{"minuto": 20, "lado": "b"}], "a")
+    check("65: perdiendo hasta el final sin más goles: observado «sin_mas_goles», «se_rompe» no cumplido",
+          _t65c[1]["desenlace"]["observado"] == "sin_mas_goles" and _t65c[1]["desenlace"]["cumplido"] is False, _t65c)
+    _t65d = tramos_por_marcador({"reasignacion": {"siRecibePrimero": {"iseRama": 5.0}}}, [{"minuto": 20, "lado": "b"}], "a",
+                                [{"minuto": 60, "lado": "b", "jugador": "x"}])
+    check("65: con ISE < 7 el defecto es «abierto» y no se cobra; una roja cierra el tramo sin observado",
+          _t65d[1]["desenlace"]["lectura"] == "abierto" and _t65d[1]["desenlace"]["cumplido"] is None
+          and _t65d[1]["desenlace"]["observado"] is None, _t65d)
+    from backend.analisis.lecciones import _cerrar_desenlace
+    _cd = _cerrar_desenlace({"se_rompe": {"tramos": 12, "cumplidos": 8, "deDefecto": 12, "observado": {"se_rompe": 8}},
+                             "rescata": {"tramos": 3, "cumplidos": 1, "deDefecto": 0, "observado": {}},
+                             "abierto": {"tramos": 20, "cumplidos": 0, "deDefecto": 20, "observado": {}}})
+    check("65: Aprendizaje da tasa con n ≥ 10 y «abierto» nunca se cobra",
+          _cd["se_rompe"]["tasa"] == 0.667 and _cd["se_rompe"]["intervalo"] and _cd["rescata"]["tasa"] is None
+          and _cd["abierto"]["tasa"] is None and _cd["abierto"]["cumplidos"] is None, _cd)
     _gs = [{"minuto": 20, "lado": "a"}, {"minuto": 60, "lado": "a"}, {"minuto": 81, "lado": "a"}, {"minuto": 86, "lado": "b"}]
     check("un 3 arriba alcanzado DENTRO de la ventana, antes del gol que se cobra, abandona la rama (Nacional 3-0 al 81', 3-1 al 86')",
           _cv(_gs, 86, "b")[0] == "rama_abandonada" and _cv(_gs, 75, "b")[0] == "")
@@ -4855,6 +4903,17 @@ def main():
         _p395 = next((x for x in _mv["pendientes"] if x["fixtureId"] == _ns[0]), None)
         check("395: un parte escrito 8 días antes de un partido reprogramado entra a la ventana y pide rehacerse entero",
               _p395 is not None and any(a["codigo"] == "PARTE-OTRA-FECHA" for a in _p395["alertas"]), _mv)
+
+    # TDE v0.1.24 · DISCIPLINA 66: la ventaja por el minuto del primer gol, de la base y antes del partido
+    from backend.analisis.tde import ventaja_por_minuto as _vpm, _VENTAJA_CACHE
+    _VENTAJA_CACHE.clear()
+    _v66 = _vpm("2100-01-01")
+    _v66v = _vpm("1900-01-01")
+    check("66: la tabla del minuto trae los seis tramos, cuenta solo lo anterior a la fecha y no inventa tasas sin n",
+          [t["tramo"] for t in _v66["tramos"]] == ["≤15'", "16-30'", "31-45+'", "46-60'", "61-75'", "76'+"]
+          and _v66v["partidos"] == 0 and all(t["tasaNoPierde"] is None for t in _v66v["tramos"])
+          and all(t["noPierde"] >= t["gana"] for t in _v66["tramos"])
+          and sum(t["n"] for t in _v66["tramos"]) == _v66["partidos"], (_v66, _v66v))
 
     print()
     print(f"{'TODO OK' if not fallos else f'{fallos} FALLAS'}")

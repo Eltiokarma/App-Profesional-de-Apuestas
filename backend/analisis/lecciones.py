@@ -284,6 +284,9 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
     confianza: list[dict] = []
     tde_obs, tde_positivos, tde_sin_ficha, tde_contaminadas = 0, 0, 0, 0
     reloj_obs, reloj_positivos = 0, 0
+    # TDE v0.1.24 (disciplina 65): el desenlace leído del que persigue, por lectura
+    desenlace = {l: {"tramos": 0, "cumplidos": 0, "deDefecto": 0, "observado": {}}
+                 for l in ("se_rompe", "rescata", "abierto")}
     rev = _reventon_vacio()
     espina = {e: {"lados": 0, "aciertos": 0} for e in ("positiva", "cero", "negativa", "neutra")}
     movimientos = {m: 0 for m in ("positiva", "cero", "negativa")}
@@ -356,6 +359,16 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
                 continue
             tde_obs += 1
             tde_positivos += 1 if b["golEnVentana"] else 0
+        for b in (obj.get("tde") or {}).get("bloques") or []:
+            for t in b.get("tramos") or []:
+                d = t.get("desenlace") or {}
+                c = desenlace.get(d.get("lectura"))
+                if not c or d.get("observado") is None:
+                    continue
+                c["tramos"] += 1
+                c["cumplidos"] += 1 if d.get("cumplido") else 0
+                c["deDefecto"] += 1 if d.get("deDefecto") else 0
+                c["observado"][d["observado"]] = c["observado"].get(d["observado"], 0) + 1
         _acumular_reventon(rev, obj.get("reventon") or {}, ux, br)
         tp = obj.get("tarjetas") or {}
         if tp.get("estado") == "concuerdan":
@@ -405,6 +418,7 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
             "nota": "ventanas del TDE comprobadas contra los goles recibidos, en población "
                     "ciega. `sinFicha` no cuenta como no ocurrido: no se pudo comprobar",
         },
+        "desenlaceTde": _cerrar_desenlace(desenlace),
         "reventon": _cerrar_reventon(rev),
         "espina": {**_cerrar_espina(espina, movimientos),
                    "porGuia": {g: _cerrar_espina(*por_guia[g]) for g in por_guia},
@@ -654,6 +668,29 @@ def _acumular_reventon(acc: dict, reventon: dict, unxdos: dict | None = None,
                 cel["aciertos1x2"] += 1 if unxdos.get("acerto") else 0
             if brier is not None:
                 cel["briers"].append(float(brier))
+
+
+DESENLACE_N_MINIMO = 10
+
+
+def _cerrar_desenlace(d: dict) -> dict:
+    """TDE v0.1.24 (disciplina 65): cada lectura del desenlace contra lo que
+    terminó pasando en el tramo. `abierto` no se cobra (sin tasa); las otras
+    dan tasa con intervalo solo con n ≥ 10. La revisión del corte en 7 pide
+    n ≥ 30 tramos jugados por lectura."""
+    out = {}
+    for lectura, c in d.items():
+        n = c["tramos"]
+        cobrable = lectura != "abierto" and n >= DESENLACE_N_MINIMO
+        out[lectura] = {"tramos": n, "cumplidos": c["cumplidos"] if lectura != "abierto" else None,
+                        "deDefecto": c["deDefecto"], "observado": c["observado"],
+                        "tasa": round(c["cumplidos"] / n, 3) if cobrable else None,
+                        "intervalo": intervalo_wilson(c["cumplidos"], n) if cobrable else None}
+    out["nota"] = ("el desenlace del régimen del que persigue (TDE v0.1.24, disciplina 65): «se_rompe» se "
+                   "cumple si el tramo lo cierra un gol del rival, «rescata» si lo cierra uno propio; "
+                   "«abierto» no se cobra. Lectura por defecto: ISE de rama ≥ 7 → se_rompe. Tasa con "
+                   f"n ≥ {DESENLACE_N_MINIMO}; el corte en 7 se revisa con n ≥ 30 por lectura")
+    return out
 
 
 def intervalo_wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float] | None:
@@ -1233,7 +1270,7 @@ CORTE_VERSION = {
     "diagnostico-tactico": [("v1.4", "2026-10-21"), ("v1.5", "2026-10-25")],
     "efe-clasificador": [("v1.6", "2026-10-21"), ("v1.7", "2026-10-25")],
     "sad-analysis": [("v4.0", "2026-10-21"), ("v4.1", "2026-10-25")],
-    "teorema-del-echado": [("v0.1.22", "2026-10-22"), ("v0.1.23", "2026-10-25")],
+    "teorema-del-echado": [("v0.1.22", "2026-10-22"), ("v0.1.23", "2026-10-25"), ("v0.1.24", "2026-10-26")],
 }
 
 

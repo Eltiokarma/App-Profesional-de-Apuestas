@@ -404,10 +404,75 @@ def ficha(fixture_id: int) -> dict | None:
                             "es imposible con nuestras fuentes; esto es lo que hay"
                             + ("" if con_once else " — y sin onces capturados baja a C")),
         "noCalculables": NO_CALCULABLES,
+        "referencias": {"ventajaPorMinuto": ventaja_por_minuto(fecha)},
         "nota": "esto NO es el IE. Son los insumos que el skill manda tomar del motor "
                 "(P1a es input inviolable; F2 es dato del motor o no es dato) más F1, "
                 "que sale de las alineaciones ya ingestadas. El resto lo escribe quien analiza.",
     }
+
+
+# ── referencia: la ventaja según el minuto del primer gol (TDE v0.1.24) ─────
+# Disciplina 66: con la ventaja manda el minuto, no el IE. En la cohorte c3
+# (253 casos) el que marcó primero hasta el 30' no perdió ~79 % y desde el 31'
+# ~91-100 %, y el IE del que iba adelante no separó (31-41 % se le escapó en
+# los tres tramos). Lo que está en la base se calcula y no se le pide al
+# modelo: la tabla sale de los goles con minuto de las fichas ANTERIORES al
+# partido. Es REFERENCIA, no peso (disciplina 14 del TDE).
+TRAMOS_PRIMER_GOL = (("≤15'", 0, 15), ("16-30'", 16, 30), ("31-45+'", 31, 45),
+                     ("46-60'", 46, 60), ("61-75'", 61, 75), ("76'+", 76, 200))
+_VENTAJA_CACHE: dict = {}
+
+
+def ventaja_por_minuto(antes_de: str) -> dict:
+    """Del que marcó primero, cuántas veces no perdió y cuántas ganó (a los
+    90'), por el minuto de ese gol. Solo partidos terminados con ficha de
+    eventos y fecha ANTERIOR a `antes_de` (el día del partido). Un gol del
+    añadido cae en el tiempo al que se sumó; la prórroga no cuenta."""
+    dia = (antes_de or "")[:10]
+    if dia in _VENTAJA_CACHE:
+        return _VENTAJA_CACHE[dia]
+    try:
+        filas = saddb.query(
+            "sad",
+            "SELECT e.fixture_id, e.minuto, e.extra, e.detalle, e.equipo_id, f.home_team_id, "
+            "COALESCE(f.fulltime_home, f.goals_home) AS gl, COALESCE(f.fulltime_away, f.goals_away) AS gv "
+            "FROM fixture_eventos e JOIN fixtures f ON f.id=e.fixture_id "
+            f"WHERE e.tipo='Goal' AND f.date < ? AND {_FIN.replace('status_', 'f.status_')} "
+            "ORDER BY e.fixture_id, e.minuto, e.id",
+            (dia,),
+        )
+    except Exception:  # noqa: BLE001 — base sin eventos: se dice, no se inventa
+        filas = []
+    primeros: dict = {}
+    for f in filas:
+        if f["fixture_id"] in primeros or "missed" in (f["detalle"] or "").lower():
+            continue
+        extra = f["extra"] or 0
+        reloj = (f["minuto"] or 0) - extra
+        if reloj > 90 or f["gl"] is None or f["gv"] is None:
+            continue   # prórroga, o sin marcador
+        de_local = f["equipo_id"] == f["home_team_id"]
+        propios, ajenos = (f["gl"], f["gv"]) if de_local else (f["gv"], f["gl"])
+        primeros[f["fixture_id"]] = (reloj, propios, ajenos)
+    from backend.analisis.lecciones import intervalo_wilson
+    tramos = []
+    for nombre, desde, hasta in TRAMOS_PRIMER_GOL:
+        sel = [p for p in primeros.values() if desde <= p[0] <= hasta]
+        n = len(sel)
+        no_pierde = sum(1 for _, a, b in sel if a >= b)
+        gana = sum(1 for _, a, b in sel if a > b)
+        tramos.append({"tramo": nombre, "n": n, "noPierde": no_pierde, "gana": gana,
+                       "tasaNoPierde": round(no_pierde / n, 3) if n else None,
+                       "intervaloNoPierde": intervalo_wilson(no_pierde, n) if n else None,
+                       "tasaGana": round(gana / n, 3) if n else None})
+    out = {"partidos": len(primeros), "antesDe": dia, "tramos": tramos,
+           "nota": "el que marcó primero: no pierde y gana a los 90', por el minuto de ese gol, sobre los "
+                   "partidos con ficha de eventos anteriores a este. REFERENCIA de la base (TDE v0.1.24, "
+                   "disciplina 66), no un peso: la ventana y el IE se siguen escribiendo y puntuando"}
+    if len(_VENTAJA_CACHE) > 64:
+        _VENTAJA_CACHE.clear()
+    _VENTAJA_CACHE[dia] = out
+    return out
 
 
 # ── la aritmética del IE y del ISE ──────────────────────────────────────────

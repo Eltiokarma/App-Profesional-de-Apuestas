@@ -1540,9 +1540,15 @@ def _via_tde(v, rechazos: list, donde: str) -> dict | None:
 RAMAS_REASIGNACION = ("siMarcaPrimero", "siRecibePrimero", "siLeEmpatan", "siExpulsion", "siIguala",
                       "siExpulsionRival")
 RAMAS_OBLIGATORIAS = RAMAS_REASIGNACION[:2]
-_CLAVES_RAMA = {"sob1", "sob2", "sob3", "tipologia", "nota", "ventana"}
+_CLAVES_RAMA = {"sob1", "sob2", "sob3", "tipologia", "nota", "ventana", "desenlace", "porqueDesenlace"}
 # las SOB que una rama puede declarar (TDE v0.1.22: cada rama con su número)
 _SOB_RAMA = ("sob1", "sob2", "sob3")
+# TDE v0.1.24 (disciplina 65): la rama del que persigue declara CÓMO TERMINA el
+# régimen. En la cohorte c3 (253 casos) el que recibió primero con ISE de rama
+# ≥ 7 lo dio vuelta 2 de 38 y con < 7, 7 de 33. Es lectura, no número.
+RAMAS_DESENLACE = ("siRecibePrimero", "siLeEmpatan", "siIguala")
+DESENLACES = ("se_rompe", "rescata", "abierto")
+ISE_RAMA_SE_ROMPE = 7.0   # con ISE de rama ≥ 7 la lectura por defecto es `se_rompe`
 
 
 DUAL_TDE = 5.0  # disciplina 43 del TDE: IE ≥ 5 Y ISE ≥ 5
@@ -1633,6 +1639,22 @@ def _reasignacion(x, rechazos: list, donde: str) -> dict:
         # partido (Junior–Pereira y Roma–Madrid se medían contra la original)
         if _txt(r.get("ventana")):
             rama_ok["ventana"] = _txt(r.get("ventana"))
+        # TDE v0.1.24 (disciplina 65): el desenlace del régimen del que persigue
+        des = _txt(r.get("desenlace")).lower().replace("-", "_").replace(" ", "_")
+        if des:
+            if rama not in RAMAS_DESENLACE:
+                rechazos.append({"donde": f"{donde}.{rama}.desenlace",
+                                 "porque": f"`desenlace` es de las ramas del que persigue o vuelve a empujar "
+                                           f"({', '.join(RAMAS_DESENLACE)}), no de {rama}: no se guardó",
+                                 "esperado": "el desenlace en siRecibePrimero, siLeEmpatan o siIguala (TDE v0.1.24)"})
+            elif des not in DESENLACES:
+                rechazos.append({"donde": f"{donde}.{rama}.desenlace",
+                                 "porque": f"llegó {r.get('desenlace')!r}: no se guardó",
+                                 "esperado": " · ".join(DESENLACES) + " (TDE v0.1.24, disciplina 65)"})
+            else:
+                rama_ok["desenlace"] = des
+                if _txt(r.get("porqueDesenlace")):
+                    rama_ok["porqueDesenlace"] = _txt(r.get("porqueDesenlace"))
         if rama_ok["sob1"] is None and not rama_ok["tipologia"] and not rama_ok["nota"] \
                 and not rama_ok.get("ventana"):
             continue
@@ -1793,7 +1815,27 @@ def ise_de_ramas(reasig: dict, indicadores: dict) -> dict:
         rama["iseRama"] = round((s1 + s2 + s3) / 3 * 10, 2)
         if heredados:
             rama["iseRamaHeredados"] = heredados
+        # TDE v0.1.24 (disciplina 65): la lectura por defecto sale del número
+        if nombre in RAMAS_DESENLACE:
+            rama["desenlaceDefecto"] = "se_rompe" if rama["iseRama"] >= ISE_RAMA_SE_ROMPE else "abierto"
     return reasig
+
+
+def avisos_desenlace(bloques: list[dict]) -> list[str]:
+    """TDE v0.1.24 (disciplina 65): ramas de sobreexposición sin `desenlace`, o
+    con `rescata` contra un ISE de rama ≥ 7 sin el hecho que lo sostiene."""
+    out = []
+    for b in bloques:
+        for rama, r in (b.get("reasignacion") or {}).items():
+            if rama not in RAMAS_DESENLACE or (r.get("sob1") or 0) < 0.5:
+                continue
+            donde = f"{b.get('equipo') or '?'}.{rama}"
+            if not r.get("desenlace"):
+                out.append(f"{donde} sin `desenlace`")
+            elif r["desenlace"] == "rescata" and (r.get("iseRama") or 0) >= ISE_RAMA_SE_ROMPE \
+                    and not r.get("porqueDesenlace"):
+                out.append(f"{donde} dice «rescata» con ISE de rama {r['iseRama']:g} y sin `porqueDesenlace`")
+    return out
 
 
 def _tde(x, rechazos: list) -> dict:
@@ -2554,6 +2596,18 @@ def guardar(payload: dict) -> dict:
                        "se calcula y queda el del arranque, como en Sporting–LASK (ISE 1.67 con la rama que decía «se expone»)",
             "comoSeArregla": 'en la rama: "sob2": 0 | 0.5 | 1 —el seguro de atrás CUANDO persigue, no el del arranque; '
                              'sin evidencia, 0.5— y, si cambia, "sob3" (TDE v0.1.22)',
+        })
+    # EL DESENLACE DEL QUE PERSIGUE (TDE v0.1.24, disciplina 65): con ISE de
+    # rama ≥ 7 la cohorte c3 remontó 2 de 38; la lectura se declara y se mide
+    sin_des = avisos_desenlace(tde_bloques)
+    if sin_des:
+        faltan.append({
+            "bloque": "tde.reasignacion.desenlace",
+            "costara": f"{'; '.join(sin_des)}: el veredicto no va a poder decir si el régimen del que "
+                       "persigue terminó como se leyó",
+            "comoSeArregla": '"desenlace": "se_rompe" | "rescata" | "abierto" en la rama —con ISE de rama ≥ 7 '
+                             'el defecto es «se_rompe»; «rescata» ahí pide "porqueDesenlace" con el hecho '
+                             '(rival que no administra, banco ofensivo documentado, roja rival)— (TDE v0.1.24)',
         })
     # UN IE QUE NO SE PUEDE CALCULAR SE DICE AL DEPOSITAR. Athletico-PR y
     # Gimnasia de Mendoza (17/10/2026) llegaron sin un solo indicador S: el IE

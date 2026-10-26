@@ -839,6 +839,10 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
                  "declarada": lo is not None if rama != "base" else bool(texto),
                  "ventana": texto, "rango": list(rango) if rango else None,
                  "concedio": [g["minuto"] for g in concedio], "golEnVentana": en_ventana}
+        if rama in RAMAS_DESENLACE:
+            d = desenlace_del_tramo(lo, eventos[i] if i < len(eventos) else None, foco)
+            if d:
+                tramo["desenlace"] = d
         if roja_propia is not None or roja_rival is not None:
             tramo["numerico"] = ("inferioridad" if propias > ajenas else
                                  "superioridad" if ajenas > propias else "paridad")
@@ -867,6 +871,43 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
             gf, gc = gf + (e["lado"] == foco), gc + (e["lado"] != foco)
             inicio = reloj(e)
     return out
+
+
+# TDE v0.1.24 (disciplina 65): las ramas del que persigue declaran su desenlace
+RAMAS_DESENLACE = ("siRecibePrimero", "siLeEmpatan", "siIguala")
+ISE_RAMA_SE_ROMPE = 7.0
+
+
+def desenlace_del_tramo(lo: dict | None, evento: tuple | None, foco: str) -> dict | None:
+    """Cómo terminó el régimen de una rama del que persigue, contra lo leído.
+
+    Lo observado lo da el evento que CIERRA el tramo: un gol del rival es
+    `se_rompe` (concedió otro antes de igualar), uno propio es `rescata`
+    (igualó o volvió a ponerse adelante), el final sin goles es `sin_mas_goles`
+    y una roja no cierra el régimen por el marcador (`null`: cambió el número,
+    disciplina 16). Lo declarado es el `desenlace` de la rama o, si no vino, la
+    lectura por defecto de su ISE (≥ 7 → `se_rompe`, si no `abierto`), dicha
+    como `defecto`. `abierto` no se cobra."""
+    if not isinstance(lo, dict):
+        return None
+    declarado = lo.get("desenlace") or None
+    defecto = None
+    ise = lo.get("iseRama")
+    if isinstance(ise, (int, float)):
+        defecto = "se_rompe" if ise >= ISE_RAMA_SE_ROMPE else "abierto"
+    if not declarado and not defecto:
+        return None
+    if evento is None:
+        observado = "sin_mas_goles"
+    elif evento[3] != "gol":
+        observado = None
+    else:
+        observado = "rescata" if evento[4]["lado"] == foco else "se_rompe"
+    lectura = declarado or defecto
+    cumplido = None if lectura == "abierto" or observado is None else observado == lectura
+    return {"declarado": declarado, "defecto": defecto, "lectura": lectura, "deDefecto": not declarado,
+            "observado": observado, "cumplido": cumplido, "iseRama": ise,
+            "porque": lo.get("porqueDesenlace") or ""}
 
 
 def anadido_del_cierre(goles: list[dict], rojas: list[dict] | None, foco: str) -> dict:

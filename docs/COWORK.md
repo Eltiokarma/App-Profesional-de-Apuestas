@@ -1451,6 +1451,16 @@ el pantallazo es el procedimiento.
   `siExpulsion` con `propia` y `rival`, y la cuenta de jugadores manda antes
   que el marcador (10 contra 10 caduca ECHADA-NUM). El IE no lleva color: el
   nivel puede ir vacío (la banda ordinal la calcula la app).
+  **TDE v0.1.24 (26/10/2026):** las ramas del que persigue (`siRecibePrimero`,
+  `siLeEmpatan` empujando, `siIguala`) declaran `desenlace`: `se_rompe`
+  (concede otro antes de igualar) · `rescata` (iguala o vuelve adelante) ·
+  `abierto`. Con ISE de rama ≥ 7 el defecto es `se_rompe` (en la cohorte c3,
+  2 de 38 remontaron); `rescata` ahí pide `porqueDesenlace` con el hecho. El
+  recibo lo pide en `faltan` y el veredicto lo mide por tramo. Y la ventaja se
+  lee por el MINUTO del gol, no por el IE (disciplina 66): con gol hasta el 30'
+  escribí primero `siLeEmpatan`; con ventaja desde el 31', la nota cita la
+  referencia `referencias.ventajaPorMinuto` de `GET /analisis/cowork/tde/{id}`
+  (la calcula la app: no la copies ni la rehagas).
 - **Cuando salga el once oficial, mirá `DTP-REHACER`**: si el sistema o el XI
   de referencia de tu apertura no son los que salieron (9 de 24 el 11/10), el
   mapa de duelos se escribió sobre otro equipo. Antes del pitazo: rehacé M1/M2
