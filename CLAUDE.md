@@ -876,8 +876,11 @@ conversación se pierde en la siguiente.
      próxima corrida del pipeline saca los duplicados (Rayo Zuliano 16/09 y
      11/06/2025, Portuguesa 16/09: su K deja de sumar el partido dos veces;
      `pipeline --duplicados` los lista); las bajas `desmentida` en Equipo.
-   - **Rutina de rehacer**: desde el 24/10 en su sesión NUEVA
-     `session_01X5KodpKV93A7bBePdiczAZ` (rutinas `:07, v2` y `:37, v2`, el
+   - **Rutina de rehacer**: desde el 26/10 en la sesión
+     `session_01RrrZSSk2eoz89TzKFput5q` (rutinas `:07, v3` y `:37, v3`; la v2,
+     `session_01X5KodpKV93A7bBePdiczAZ`, llegó a 570.000 tokens en dos días y
+     ~0,36 USD por disparo vacío: con los rehaceres el historial crece rápido,
+     rehacerla cada pocos días). Antes, desde el 24/10, en la v2 (el
      texto llama a `GET /analisis/cowork/rehacer` ANTES de cualquier git); la
      vieja (`session_01V3tPBuV4pgvD7rMF39twu9`, rutinas desactivadas) releía
      ~490.000 tokens de historial en cada disparo vacío (~0,33 USD, ~12 al
