@@ -455,6 +455,12 @@ def _prob_mercado(ids: list[int]) -> dict[int, dict]:
     """El 1X2 del mercado de cada partido: media de las casas (la misma regla
     que GET /cuotas, sin las casas con la doble oportunidad incoherente),
     sin margen. Lo que no tiene las tres cuotas no viene."""
+    return {fid: m["prob"] for fid, m in cuotas_mercado(ids).items()}
+
+
+def cuotas_mercado(ids: list[int]) -> dict[int, dict]:
+    """Por partido, `prob` (sin margen, en %) y `cuota` (la media de las casas,
+    CON su margen: la que se cobra)."""
     if not ids:
         return {}
     from backend import db as saddb
@@ -482,7 +488,9 @@ def _prob_mercado(ids: list[int]) -> dict[int, dict]:
         if len(acc) == 3:
             inv = {k: 1 / (sum(v) / len(v)) for k, v in acc.items()}
             tot = sum(inv.values())
-            fuera[fid] = {k: 100 * x / tot for k, x in inv.items()}
+            fuera[fid] = {"prob": {k: 100 * x / tot for k, x in inv.items()},
+                          "cuota": {k: sum(v) / len(v) for k, v in acc.items()},
+                          "casas": max(len(v) for v in acc.values())}
     return fuera
 
 

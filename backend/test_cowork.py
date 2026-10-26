@@ -1755,6 +1755,28 @@ def main():
           and empate_tecnico({"a": 74.0, "b": 62.0}, [{"codigo": "K-EXTREMO", "equipo": "a"}]) is None
           and empate_tecnico({"a": 46.3, "b": 43.8}, _al54) is None
           and empate_tecnico({"a": None, "b": 40.0}, _al54) is None)
+    # 26/10/2026: la ventaja sobre el mercado (PSG–Lyon: 70 % nuestro contra 71 % del mercado)
+    from backend.analisis.parte import ventaja_mercado
+    _cu = {"local": 1.36, "empate": 5.3, "visita": 8.1}
+    _inv = {k: 1 / v for k, v in _cu.items()}
+    _mk = {"prob": {k: 100 * x / sum(_inv.values()) for k, x in _inv.items()}, "cuota": _cu, "casas": 9}
+    _vm = ventaja_mercado({"probabilidades": {"local": 70, "empate": 17, "visita": 13}}, _mk)
+    check("PSG–Lyon: igual al mercado → «sin ventaja», con el valor negativo de la cuota con margen",
+          _vm["estado"] == "sin ventaja" and _vm["pick"] == "local" and abs(_vm["puntosPick"]) < 3
+          and _vm["seleccion"]["local"]["valor"] == round(0.70 * 1.36 - 1, 3) and _vm["mejorValor"] is None
+          and _vm["seleccion"]["local"]["cuotaJusta"] == 1.43, _vm)
+    _vv = ventaja_mercado({"probabilidades": {"local": 50, "empate": 32, "visita": 18}}, _mk)
+    check("un empate que damos muy por encima de la cuota → «con valor» en empate",
+          _vv["estado"] == "con valor" and _vv["mejorValor"] == "empate" and "empate" in _vv["texto"], _vv)
+    _vb = ventaja_mercado({"probabilidades": {"local": 66, "empate": 20, "visita": 14}}, _mk)
+    check("el favorito 4 pts bajo el mercado, repartidos sin desacuerdo real en los otros → «bajo el mercado»",
+          _vb["estado"] == "bajo el mercado" and _vb["puntosPick"] < -3, _vb)
+    _vg = ventaja_mercado({"probabilidades": {"local": 69, "empate": 17, "visita": 14}}, _mk)
+    check("13-14 % contra 12 % a cuota 8 no es «valor»: hace falta un desacuerdo de 3 pts o más",
+          _vg["estado"] == "sin ventaja" and _vg["seleccion"]["visita"]["valor"] > 0, _vg)
+    check("sin cuotas o sin 1X2, no hay marca",
+          ventaja_mercado({"probabilidades": {"local": 50, "empate": 30, "visita": 20}}, None) is None
+          and ventaja_mercado({}, _mk) is None)
     check("con riesgo BAJO, una espina que corta la racha también va contra",
           espina_vs_riesgo({"a": {"actual": {"signo": "+"}, "riesgo": {"nivel": "bajo"}}},
                            {"a": {"lectura": "cero"}})[0]["como"] == "la lee cortarse")

@@ -2027,6 +2027,8 @@ export interface ParteCoworkDTO {
   pendientes: string[]
   /** Evaluación de coherencia (Jev) sellada al depositar; null en partes anteriores. */
   coherencia?: CoherenciaParte | null
+  /** La ventaja del 1X2 sobre el mercado, calculada al leer (26/10/2026). */
+  vsMercado?: VentajaMercado | null
   fuentes: string[]
   notas: string
   xi: Record<'a' | 'b', { once?: string[]; formacion?: string; fuente?: string; capturadoEn?: string }>
@@ -2425,4 +2427,18 @@ export interface DerrotasFavoritoDTO {
   resumen: Record<ExplicacionDerrota, number>
   nota: string
   derrotas: DerrotaFavorito[]
+}
+
+/** El 1X2 declarado contra el mercado: puntos sobre la probabilidad sin margen
+ *  y valor esperado a la cuota media de las casas (con su margen). */
+export interface VentajaMercado {
+  estado: 'con valor' | 'sin ventaja' | 'sobre el mercado' | 'bajo el mercado'
+  pick: 'local' | 'empate' | 'visita'
+  puntosPick: number
+  mejorValor: 'local' | 'empate' | 'visita' | null
+  texto: string
+  casas: number | null
+  nota: string
+  seleccion: Record<'local' | 'empate' | 'visita', {
+    nuestra: number; mercado: number; puntos: number; cuota: number; cuotaJusta: number | null; valor: number }>
 }

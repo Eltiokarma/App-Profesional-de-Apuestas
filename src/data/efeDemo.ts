@@ -324,6 +324,16 @@ export function parteCoworkDemo(fixtureId: number, equipoA: string, equipoB: str
       probabilidades: { local: 54, empate: 26, visita: 20 }, marcador: '2-1',
       falsador: 'si el visitante abre el marcador antes del minuto 20, la lectura de bloque bajo queda fallada.',
     },
+    vsMercado: {
+      estado: 'sin ventaja' as const, pick: 'local' as const, puntosPick: 2.0, mejorValor: null, casas: 1,
+      texto: 'sin ventaja sobre el mercado: local 54 % contra 52 % (+2.0 pts); a cuota 1.80, con el margen de la casa, se espera -2.8 % por unidad',
+      nota: 'medido contra la última captura prepartido (demo)',
+      seleccion: {
+        local: { nuestra: 54, mercado: 52, puntos: 2.0, cuota: 1.8, cuotaJusta: 1.85, valor: -0.028 },
+        empate: { nuestra: 26, mercado: 26.7, puntos: -0.7, cuota: 3.5, cuotaJusta: 3.85, valor: -0.09 },
+        visita: { nuestra: 20, mercado: 21.3, puntos: -1.3, cuota: 4.4, cuotaJusta: 5.0, valor: -0.12 },
+      },
+    },
     matriz: {
       a: {
         ganar: { probabilidad: 54, tactica: 'acumular por fuera y cargar el segundo palo', pelotaParada: 'córner cerrado al primer palo con los dos centrales', reloj: 'doble pivote desde el 70′ si va arriba', base: 'Lago-Peñas 2014: el local gana más por ataque posicional' },

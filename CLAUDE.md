@@ -1006,6 +1006,13 @@ conversación se pierde en la siguiente.
      espina «sigue» con K-EXTREMO o K-CERCA-EXTREMO, total o de la condición).
      Las revisiones EFE v1.8 y sad v4.2 quedan para el 28-29/10, con partes
      escritos de punta a punta con v1.7 y v4.1.
+   - **Ventaja sobre el mercado (26/10, usuario, tras PSG–Lyon 70 % contra 71 %)**:
+     `vsMercado` del GET del parte (`parte.ventaja_mercado`, al leer, contra la
+     última captura prepartido): por selección, nuestra contra el mercado sin
+     margen, la cuota media (con margen), la justa y el valor esperado; estado
+     `con valor` (valor ≥ 3 % Y ≥ 3 pts sobre el mercado) · `sin ventaja` ·
+     `sobre`/`bajo el mercado`. Caja «Contra el mercado» en el pronóstico del
+     parte. Seguir al mercado (sad v4.1) es el mejor pronóstico, no una apuesta.
    - **Aprendizaje reordenado (25/10)**: resumen sin lecciones, pestañas, el
      cierre en bloque arriba de cada skill, lecciones de a 20 y el inventario
      guardado por huella (`SAD_CACHE_INVENTARIO_S`; antes 46 s y 6,3 MB). La
