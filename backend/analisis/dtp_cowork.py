@@ -153,9 +153,14 @@ def parejas_nuevas_de(xi: list[dict], previos: list[set]) -> list[dict]:
 def _parejas_nuevas(team_id: int, fecha: str, xi: list[dict]) -> list[dict]:
     """Parejas de la MISMA línea del XI de referencia con ≤ 1 titularidad juntas
     en los onces capturados antes (minutos compartidos; el `EJE-DEBUTANTE` del
-    EFE v1.7). Es un proxy: mira titularidades en las fichas que hay, no minutos."""
+    EFE v1.7). Es un proxy: mira titularidades en las fichas que hay, no minutos.
+
+    EL ÚLTIMO ONCE CUENTA: el XI de referencia ES ese once, así que la pareja
+    ya arrancó junta ahí. Saltarlo daba «0 juntos» a la que debutó en él
+    (Barracas, Taborda–Rolón en 1493195, incidencia 623) y marcaba como nueva
+    a la que tenía DOS partidos juntos, contra el «≤ 1» del EFE v1.7."""
     previos = []
-    for f in _anteriores(team_id, fecha, FICHAS_PAREJAS + 1)[1:]:
+    for f in _anteriores(team_id, fecha, FICHAS_PAREJAS):
         ids = {j["player_id"] for j in _titulares(f["id"], team_id) if j["player_id"]}
         if ids:
             previos.append(ids)
