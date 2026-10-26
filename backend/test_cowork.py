@@ -3437,6 +3437,27 @@ def main():
     check("contraElOnce: misma inicial casa, otra inicial pegada al apellido no, y con dos Álvarez en el once un "
           "«Álvarez» suelto no dice cuál (K. vs Carlos Álvarez, incidencia 390)",
           sorted(_ini["ausentesDeLaReferencia"]) == ["F. Rossano", "K. Álvarez"], _ini)
+    # 607 (Colo Colo): «V. Méndez» del oficial es el «Víctor Felipe Méndez» de la
+    # referencia (la inicial es la del primer nombre, no la de la palabra pegada)
+    _of11 = ["Vózinha", "J. Sosa", "A. Vidal", "J. Villagra", "G. Díaz", "V. Méndez", "Á. Madrid",
+             "J. Rojas", "L. Pastrán", "L. Hernández", "J. Correa"]
+    _i607 = _rehacer({"equipo": "b", "apertura": {"m1": {"sistema": "4-3-3", "xiReferencia":
+                      "Vózinha; Sosa, Vidal, Villagra, Díaz; Víctor Felipe Méndez, Madrid, Rojas; Pastrán, "
+                      "Hernández, Correa"}}}, {"b": {"formacion": "4-3-3", "titulares": _of11}})
+    check("607: el oficial «V. Méndez» casa con «Víctor Felipe Méndez» de la referencia",
+          _i607["ausentesDeLaReferencia"] == [], _i607)
+    # 651 (Angers): «pueden volver» en la señal no anuncia a nadie
+    _ref651 = "Fernandes; Biumla, Gernigon, Mouton, Allevinah; Abdelli, Belkhdim; Sima, Raolisoa, Cherif; Diony"
+    _of651 = ["Y. Fernandes", "O. Camara", "J. Kalulu", "J. Lefort", "P. Peter", "Allevinah", "H. Abdelli",
+              "H. Belkhdim", "A. Sima", "Raolisoa", "L. Diony"]
+    _i651 = lambda senal: _rehacer({"equipo": "a", "apertura": {"m1": {  # noqa: E731
+        "sistema": "4-2-3-1", "xiReferencia": _ref651, "senalXi": senal}}},
+        {"a": {"formacion": "4-2-3-1", "titulares": _of651}})
+    check("651: «Lefort, Camara y Kalulu pueden volver» no los da por anunciados; «vuelven» sí",
+          sorted(_i651("Lefort, Camara y Kalulu pueden volver a la zaga")["ausentesDeLaReferencia"])
+          == ["J. Kalulu", "J. Lefort", "O. Camara", "P. Peter"]
+          and _i651("Lefort, Camara y Kalulu vuelven a la zaga")["ausentesDeLaReferencia"] == ["P. Peter"],
+          (_i651("Lefort, Camara y Kalulu pueden volver a la zaga"), _i651("Lefort, Camara y Kalulu vuelven a la zaga")))
     # Huracán–Gimnasia y Estudiantes–Flamengo (16/10/2026): dos avisos falsos
     _fam = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-2-2-2"}}},
                     {"a": {"formacion": "4-4-2", "titulares": []}})

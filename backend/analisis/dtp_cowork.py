@@ -934,7 +934,35 @@ def _inicial_choca(nombre: str, crudo: str, estricto: bool = False) -> bool:
             return False
         if not p and not estricto:
             return False
+    # DOS NOMBRES DE PILA: «Víctor Felipe Méndez» es el «V. Méndez» del oficial
+    # (Colo Colo, incidencia 607). La previa pegada es «Felipe»; la inicial
+    # puede ser la de cualquier nombre de la cadena pegada al apellido.
+    if previas and any(partes[0] in ini for ini in _iniciales_previas(nombre, crudo)):
+        return False
     return bool(previas)
+
+
+def _iniciales_previas(nombre: str, crudo: str):
+    """Por cada mención del apellido, las iniciales de hasta tres palabras con
+    mayúscula pegadas antes (sin coma), saltando las del propio nombre."""
+    propias = set(_plano(nombre).split()[1:])
+    for a in _apellidos(nombre):
+        for m in re.finditer(r"(?:^|[\s,;:/(])([^\s,;:/()]+)", crudo or ""):
+            if _plano(m.group(1)).strip() != a:
+                continue
+            fin, ini = m.start(1), set()
+            for _ in range(4):
+                antes = re.search(r"([A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]*\.?)\s+$", crudo[:fin])
+                if not antes:
+                    break
+                w = _plano(antes.group(1)).strip()
+                fin = antes.start(1)
+                if not w or w in propias or w in _PARTICULAS:
+                    continue
+                ini.add(w[0])
+                if len(ini) >= 3:
+                    break
+            yield ini
 
 
 def _en_referencia(nombre: str, ref: str, crudo: str = "", estricto: bool = False) -> bool:
@@ -988,6 +1016,22 @@ def sin_ausentes(texto: str) -> str:
     seguro de Werder Bremen sobre Lynen, que arrancó en el banco, y saltaba
     DTP-REHACER falso (incidencia 526, cuatro veces)."""
     return _AUSENTES.sub(" ", texto or "")
+
+
+# «pueden volver», «podría entrar», «en duda»: lo que la señal da como POSIBLE
+# no es el once anunciado
+_DUDA = re.compile(r"\b(?:pued[ea]n?|podr[íi]an?|quiz[áa]s?|tal vez|posibles?|posiblemente|en duda|dudas?|"
+                   r"a confirmar|sin confirmar|ser[íi]an?)\b", re.I)
+
+
+def sin_dudas(texto: str) -> str:
+    """La señal sin las frases que solo dan un regreso como posible. Angers
+    (incidencia 651): «Lefort, Camara y Kalulu pueden volver a la zaga» los
+    daba por anunciados; salieron los tres y DTP-REHACER no sonó aunque el M2
+    se había escrito sobre la otra zaga. Se corta por frase (punto, punto y
+    coma, dos puntos o salto de línea), no por coma: la coma separa nombres."""
+    trozos = re.split(r"([.;:\n]+)", texto or "")   # los separadores quedan: `sin_salientes` corta en ellos
+    return "".join(" " if i % 2 == 0 and _DUDA.search(t) else t for i, t in enumerate(trozos))
 
 
 def sin_referencia(texto: str) -> bool:
@@ -1086,7 +1130,7 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
         # LO QUE LA APERTURA YA ANUNCIÓ NO ES SORPRESA: un cambio nombrado en
         # `senalXi` o en `rolesReasignados` (Villa, 17/10/2026) no cuenta; y el
         # nombre de la plantilla, que a veces trae el apodo («Abde»), también sirve
-        anunciado_crudo = sin_salientes(sin_alternativas(" ".join([m1.get("senalXi") or ""]
+        anunciado_crudo = sin_salientes(sin_alternativas(" ".join([sin_dudas(m1.get("senalXi") or "")]
                                                                   + list(m1.get("rolesReasignados") or []))))
         anunciado = _plano(anunciado_crudo)
         alt = of.get("alias") or {}
