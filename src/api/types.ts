@@ -479,6 +479,8 @@ export interface AperturaDtp {
     vias_gol: { foco: string[]; rival: string[] }
     veredicto: string
     razon: string
+    /** DTP v1.6 (solo partes de Cowork): un veredicto por rama del estado de marcador. */
+    veredicto_ramas?: Record<'igualadoOArriba' | 'persiguiendo', { veredicto: string; razon: string }>
   }
   m3_fases: { tramo: string; plan: string; palancas: string[] }[]
   m6: { competitivo: boolean; rotacion: string; fatiga: string; ausencias_clave: string; otros: string }
@@ -1663,6 +1665,10 @@ export interface VeredictoObjetivo {
     aciertaA?: boolean | null
     aciertaB?: boolean | null
   }
+  /** DTP v1.6: la rama en que jugó cada foco y el veredicto del M2 de esa rama. */
+  dtp?: { nota: string; porBloque: { equipo: 'a' | 'b'; ramaJugada: 'igualadoOArriba' | 'persiguiendo' | null
+    minutos: Record<string, number> | null; veredictoDeLaRama: string; razonDeLaRama: string; veredictoUnico: string
+    sinRamas?: string; sinEventos?: string }[] } | null
   /** El escenario que dio el marcador para cada lado y lo que la matriz había escrito para él. */
   matriz?: { nota: string } & Partial<Record<'a' | 'b', { escenario: EscenarioMatriz; escrito: Record<string, string>; declarado: boolean }>>
   /** Las otras burbujas (DC, márgenes, goles) destacadas antes del partido que
@@ -2272,6 +2278,8 @@ export interface DtpBloque {
       piezas?: { nombre: string; lado: 'foco' | 'rival'; rol: string }[]
       veredicto: string
       razon: string
+      /** v1.6: un veredicto por rama del estado de marcador. */
+      veredictoRamas?: Record<'igualadoOArriba' | 'persiguiendo', { veredicto: string; razon: string }>
     }
     m3Fases: { tramo: '0-25' | '25-65' | '65-80+'; plan: string; palancas: string[] }[]
     m6: { competitivo: boolean | null; rotacion: string; fatiga: string; ausencias: string; otros: string }
@@ -2293,7 +2301,9 @@ export interface DtpBloque {
     /** v1.4: el caso de la pregunta 6 del bloque propio del foco en el partido que se cierra. */
     casoBloque?: { sostuvo: boolean | null; caso: string; conUnoMenos: boolean
       /** v1.5: el caso completo. */
-      conUnoMas?: boolean; tipo?: '' | 'ventaja' | 'empate_que_sirve' | 'cero_cero'; sostuvoArquero?: boolean | null; linea?: string } | null
+      conUnoMas?: boolean; tipo?: '' | 'ventaja' | 'empate_que_sirve' | 'cero_cero'; sostuvoArquero?: boolean | null; linea?: string
+      /** v1.6: la sede y la competición del caso (si faltan, las pone la app al leer). */
+      sede?: '' | 'local' | 'visita' | 'neutral'; competicion?: string } | null
   }
   calculado?: {
     bloqueRival: ClaseBloqueDTO

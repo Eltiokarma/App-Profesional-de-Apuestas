@@ -284,6 +284,15 @@ export function DtpPizarra({ eslabon, isMobile }: { eslabon: EslabonDtpDTO; isMo
                 )}
                 <Campo label="Veredicto">{apertura.m2?.veredicto}</Campo>
                 <Campo label="Razón táctica">{apertura.m2?.razon}</Campo>
+                {([['igualadoOArriba', 'Igualado o arriba'], ['persiguiendo', 'Persiguiendo']] as const).map(([k, lab]) => {
+                  const r = apertura.m2?.veredicto_ramas?.[k]
+                  return r && (r.veredicto || r.razon) ? (
+                    <Campo key={k} label={`Veredicto · ${lab}`}>
+                      {r.veredicto && <b style={{ font: '600 12px var(--mono)' }}>{r.veredicto}</b>}
+                      {r.veredicto && r.razon ? ' · ' : ''}{r.razon}
+                    </Campo>
+                  ) : null
+                })}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 {([['Vías de gol propias', apertura.m2?.vias_gol?.foco, 'var(--up)'],
@@ -410,7 +419,8 @@ export function eslabonDeBloque(b: DtpBloque, foco: string, rival: string, fixtu
             senal_del_xi: ap.m1.senalXi, vulnerabilidad_propia: ap.m1.vulnerabilidad, forma_sin_balon: ap.m1.formaSinBalon },
       m2: { choque_sistemas: ap.m2.choqueSistemas, duelos_carril: ap.m2.duelosCarril,
             vida_util_rival: { tipo: clase?.clase === 'improvisado' ? 'improvisado' : 'estructural', minutos: clase?.vidaUtilMin ?? '' },
-            vias_gol: ap.m2.viasGol, veredicto: ap.m2.veredicto, razon: ap.m2.razon },
+            vias_gol: ap.m2.viasGol, veredicto: ap.m2.veredicto, razon: ap.m2.razon,
+            veredicto_ramas: ap.m2.veredictoRamas },
       m3_fases: ap.m3Fases,
       m6: { competitivo: ap.m6.competitivo ?? true, rotacion: ap.m6.rotacion, fatiga: ap.m6.fatiga,
             ausencias_clave: ap.m6.ausencias, otros: ap.m6.otros },

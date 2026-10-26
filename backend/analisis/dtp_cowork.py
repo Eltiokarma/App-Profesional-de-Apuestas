@@ -279,9 +279,49 @@ def insumos_equipo(team_id: int, nombre: str, fx) -> dict:
         # DTP v1.4: para responder la pregunta 6 sobre ESTE bloque (la apertura
         # del rival la lee de acá)
         "casosBloque": casos_bloque(team_id, fecha),
+        # DTP v1.6 (cambio 4): el ejecutor de penales sale de la base, no de la
+        # «jerarquía»: los penales de la temporada con convertidos y errados
+        "penales": penales_temporada(team_id, fecha),
         "nivelDeDato": "C" if anterior["amistoso"] or not xi else "B",
         "faltan": faltan,
     }
+
+
+PENALES_DIAS = 365
+
+
+def penales_temporada(team_id: int, antes: str, dias: int = PENALES_DIAS) -> dict:
+    """Quién tiró los penales del equipo en el último año ANTES de `antes`
+    (eventos de la ficha: `Goal` con «Penalty» = convertido, «Missed Penalty» =
+    errado; la tanda va como `Shootout` y no cuenta). Solo cubre los partidos
+    con ficha capturada: lo dice `partidosConEventos`."""
+    try:
+        desde = (datetime.strptime(str(antes)[:10], "%Y-%m-%d") - timedelta(days=dias)).strftime("%Y-%m-%d")
+        filas = saddb.query(
+            "sad",
+            "SELECT e.jugador, e.detalle FROM fixture_eventos e JOIN fixtures f ON f.id = e.fixture_id "
+            "WHERE e.equipo_id = ? AND e.tipo = 'Goal' AND lower(e.detalle) LIKE '%penalty%' "
+            "AND lower(e.detalle) NOT LIKE '%own%' AND f.date >= ? AND f.date < ?",
+            (team_id, desde, str(antes)[:19]))
+        con_ev = saddb.query_one(
+            "sad",
+            "SELECT COUNT(DISTINCT e.fixture_id) n FROM fixture_eventos e JOIN fixtures f ON f.id = e.fixture_id "
+            "WHERE (f.home_team_id = ? OR f.away_team_id = ?) AND f.date >= ? AND f.date < ?",
+            (team_id, team_id, desde, str(antes)[:19]))
+    except Exception:  # noqa: BLE001 — base sin eventos: sin dato, no cero
+        return {"ejecutores": [], "partidosConEventos": 0, "nota": "sin eventos en la base"}
+    por = {}
+    for f in filas:
+        nombre = (f["jugador"] or "").strip()
+        if not nombre:
+            continue
+        e = por.setdefault(nombre, {"nombre": nombre, "convertidos": 0, "errados": 0})
+        e["errados" if "missed" in (f["detalle"] or "").lower() else "convertidos"] += 1
+    ejecutores = sorted(por.values(), key=lambda e: (-(e["convertidos"] + e["errados"]), -e["convertidos"]))
+    return {"ejecutores": ejecutores, "partidosConEventos": (con_ev or {"n": 0})["n"],
+            "nota": ("sin penales en los partidos con eventos del último año: decilo así, no «sin dato»"
+                     if not ejecutores else
+                     "el primero es el que más tiró: va como ejecutor salvo fuente del partido que diga otro")}
 
 
 NO_CALCULABLES = [
@@ -454,11 +494,39 @@ def _caso_bloque(x) -> dict | None:
             "conUnoMas": x.get("conUnoMas") is True,
             "tipo": tipo if tipo in TIPOS_CASO else "",
             "sostuvoArquero": x.get("sostuvoArquero") if isinstance(x.get("sostuvoArquero"), bool) else None,
-            "linea": _txt(x.get("linea"))}
+            "linea": _txt(x.get("linea")),
+            # DTP v1.6 (cambio 5): sede y competición del caso; si no vienen, la
+            # app las toma del partido que se cierra al leer (`casos_bloque`)
+            "sede": _sede(x.get("sede")), "competicion": _txt(x.get("competicion"))}
+
+
+SEDES = ("local", "visita", "neutral")
+
+
+def _sede(v) -> str:
+    t = _txt(v).lower()
+    t = {"l": "local", "v": "visita", "visitante": "visita", "de local": "local", "de visita": "visita",
+         "neutro": "neutral", "neutra": "neutral"}.get(t, t)
+    return t if t in SEDES else ""
 
 
 TIPOS_CASO = ("ventaja", "empate_que_sirve", "cero_cero")
 REGIMENES = ("cualquiera", "persiguiendo")
+
+
+VEREDICTOS = ("FAVORABLE", "NEUTRO", "DESFAVORABLE")
+RAMAS_VEREDICTO = ("igualadoOArriba", "persiguiendo")
+
+
+def _veredicto(v) -> str:
+    t = _txt(v).upper().replace("MATCHUP ", "").strip()
+    return t if t in VEREDICTOS else ""
+
+
+def _veredicto_ramas(x) -> dict:
+    x = _dict(x)
+    return {r: {"veredicto": _veredicto(_dict(x.get(r)).get("veredicto")), "razon": _txt(_dict(x.get(r)).get("razon"))}
+            for r in RAMAS_VEREDICTO}
 
 
 def _rama_posesion(x) -> dict:
@@ -522,7 +590,18 @@ def casos_bloque(team_id: int, antes: str, dias: int = 180) -> list[dict]:
         for b in con_caso:
             tid = fx["home_team_id"] if b.get("equipo") == "a" else fx["away_team_id"]
             if tid == team_id:
-                out.append({**b["cierre"]["casoBloque"], "deParte": f["fixture_id"], "fecha": (f["fecha"] or "")[:10]})
+                caso = {**b["cierre"]["casoBloque"], "deParte": f["fixture_id"], "fecha": (f["fecha"] or "")[:10]}
+                # DTP v1.6: el caso es del partido que ese cierre cerró —el anterior
+                # del equipo a la fecha del parte—; de ahí salen la sede y la
+                # competición cuando no se escribieron
+                if not caso.get("sede") or not caso.get("competicion"):
+                    ant = _anteriores(team_id, str(f["fecha"] or ""), 1)
+                    if ant:
+                        caso.setdefault("sede", "")
+                        caso["sede"] = caso["sede"] or ("local" if ant[0]["home_team_id"] == team_id else "visita")
+                        caso["competicion"] = caso.get("competicion") or (ant[0]["liga"] or "")
+                        caso["sedeCalculada"] = True
+                out.append(caso)
     return out[:6]
 
 
@@ -567,7 +646,9 @@ def _bloque(x: dict, lado: str) -> dict:
                    "posesion": _posesion(pos),
                    "piezas": _piezas(m2.get("piezas")),
                    "veredicto": _txt(m2.get("veredicto")).upper().replace("MATCHUP ", ""),
-                   "razon": _txt(m2.get("razon"))},
+                   "razon": _txt(m2.get("razon")),
+                   # DTP v1.6 (cambio 1): un veredicto por rama del estado de marcador
+                   "veredictoRamas": _veredicto_ramas(m2.get("veredictoRamas"))},
             "m3Fases": fases,
             "m6": {"competitivo": m6.get("competitivo") if isinstance(m6.get("competitivo"), bool) else None,
                    "rotacion": _txt(m6.get("rotacion")), "fatiga": _txt(m6.get("fatiga")),
@@ -1135,6 +1216,82 @@ def avisos_carril(dtp: dict, nombres: dict) -> list[dict]:
                         "costara": f"{quien}: duelo con mismatch sin `vuelta` en {', '.join(sin_vuelta)} — "
                                    "falta lo que expone ese carril si pierde la pelota",
                         "comoSeArregla": "llenar `vuelta` en cada duelo con mismatch (DTP v1.4-1.5)"})
+    return out
+
+
+_MOTIVO_SISTEMA = re.compile(r"anunci|previa|prensa|confirm|expuls|roja|con diez|con 10|variante|cambi|"
+                             r"vuelve|regres|probable|rotaci|interino|declar", re.I)
+_PENAL = re.compile(r"penal|penalt", re.I)
+
+
+def _formacion_ultima(team_id: int, fecha: str) -> tuple[str, int | None]:
+    ant = _anteriores(team_id, fecha, 1)
+    if not ant:
+        return "", None
+    f = saddb.query_one("sad", "SELECT formacion FROM alineaciones WHERE fixture_id=? AND team_id=? "
+                               "AND formacion IS NOT NULL AND formacion != '' LIMIT 1", (ant[0]["id"], team_id))
+    return (f["formacion"] if f else "") or "", ant[0]["id"]
+
+
+def avisos_v16(dtp: dict, fx, nombres: dict) -> list[dict]:
+    """DTP v1.6, avisos del recibo (sin rechazo):
+    · M1-VS-ULTIMO-ONCE (cambio 3): `m1.sistema` distinto de la formación del
+      último once oficial del foco, sin motivo escrito en `senalXi` ni en el
+      propio `sistema`;
+    · el ejecutor de penales (cambio 4): `viasGol` de un bloque sin penal de
+      los dos lados;
+    · la sede del caso de la 6 (cambio 5): p6 del lado estructural y todos los
+      casos con sede conocida del bloque rival son de la otra sede."""
+    out = []
+    if not fx:
+        return out
+    fecha = str(fx["date"])
+    for b in (dtp or {}).get("bloques") or []:
+        lado = b["equipo"]
+        rival = "b" if lado == "a" else "a"
+        quien = nombres.get(lado, lado)
+        ap = b.get("apertura") or {}
+        m1, m2 = ap.get("m1") or {}, ap.get("m2") or {}
+        tid = fx["home_team_id"] if lado == "a" else fx["away_team_id"]
+        tid_rival = fx["away_team_id"] if lado == "a" else fx["home_team_id"]
+        decl = m1.get("sistema") or ""
+        try:
+            ultima, fid = _formacion_ultima(tid, fecha)
+        except Exception:  # noqa: BLE001 — sin alineaciones en la base no hay contra qué comparar
+            ultima, fid = "", None
+        if _sistemas(decl) and _cifras_sistema(ultima) and _cifras_sistema(ultima) not in _sistemas(decl) \
+                and not _MOTIVO_SISTEMA.search(f"{decl} {m1.get('senalXi') or ''}"):
+            out.append({"bloque": f"dtp.{lado}.m1.sistema", "codigo": "M1-VS-ULTIMO-ONCE",
+                        "costara": f"{quien}: la apertura dice «{decl}» y el último once oficial (fixture {fid}) "
+                                   f"salió {ultima}, sin motivo escrito: los carriles del M2 pueden estar sobre "
+                                   "otro equipo (Emelec, Aucas, Torque, Rennes el 25/10)",
+                        "comoSeArregla": "tomar el sistema y los carriles del último once y su grid (insumos "
+                                         "`partidoAnterior.xi`), o escribir en `senalXi` por qué se aparta "
+                                         "(DTP v1.6)"})
+        vias = m2.get("viasGol") or {}
+        sin_penal = [q for q, k in (("propio", "foco"), ("del rival", "rival"))
+                     if not any(_PENAL.search(v or "") for v in vias.get(k) or [])]
+        if (vias.get("foco") or vias.get("rival")) and sin_penal:
+            out.append({"bloque": f"dtp.{lado}.m2.viasGol", "codigo": "DTP-PENAL-SIN-EJECUTOR",
+                        "costara": f"{quien}: las vías de gol no nombran al ejecutor de penales "
+                                   f"{' ni '.join(sin_penal)} (seis partidos del 25/10 sin nombrarlo, y en los "
+                                   "seis hubo penal)",
+                        "comoSeArregla": "el ejecutor sale de `penales` en los insumos del DTP; «por jerarquía» "
+                                         "no es fuente; sin penales en el año, decirlo así (DTP v1.6)"})
+        chk = m2.get("checklistBloqueRival") or {}
+        if chk.get("p6") == "der":
+            sede_hoy = "visita" if rival == "b" else "local"
+            try:
+                casos = [c for c in casos_bloque(tid_rival, fecha) if c.get("sede") in ("local", "visita")]
+            except Exception:  # noqa: BLE001
+                casos = []
+            if casos and all(c["sede"] != sede_hoy for c in casos):
+                out.append({"bloque": f"dtp.{lado}.m2.checklistBloqueRival.p6", "codigo": "P6-OTRA-SEDE",
+                            "costara": f"la 6 del bloque de {nombres.get(rival, rival)} se respondió «sí» y hoy "
+                                       f"juega de {sede_hoy}: los casos de su cadena son todos de la otra sede "
+                                       "(Leones–Libertad y Lecce–Juventus el 25/10)",
+                            "comoSeArregla": "un caso de la otra sede no responde la 6: «no» o «sin dato» → "
+                                             "estructural no probado (DTP v1.6)"})
     return out
 
 

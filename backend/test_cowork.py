@@ -3189,6 +3189,73 @@ def main():
     _av15 = _d15.avisos_carril(_x15, {"a": "Local"})
     check("v1.5: aviso con un solo carril de banda y con un mismatch sin vuelta",
           len(_av15) == 2 and "carril" in _av15[0]["costara"] and "vuelta" in _av15[1]["costara"], _av15)
+    # DTP v1.6: veredicto por rama, sede del caso, avisos del recibo, penales de la base
+    _x16 = _d15.normalizar_dtp({"bloques": [{"equipo": "a", "apertura": {
+        "m1": {"sistema": "4-3-3", "xiReferencia": "Arquero, Lat1, Cen1, Cen2, Lat2, Vol1, Vol2, Vol3, Ext1, Nueve, Ext2"},
+        "m2": {"checklistBloqueRival": {"p6": "si"},
+               "viasGol": {"foco": ["centro al segundo palo"], "rival": ["transición"]},
+               "veredicto": "matchup favorable",
+               "veredictoRamas": {"igualadoOArriba": {"veredicto": "favorable", "razon": "2v2 arriba"},
+                                  "persiguiendo": {"veredicto": "DESFAVORABLE", "razon": "sin vía contra el bloque bajo"},
+                                  "otra": {"veredicto": "NEUTRO"}}}},
+        "cierre": {"casoBloque": {"caso": "sostuvo 1-0", "sostuvo": True, "sede": "de visita", "competicion": "Liga"}}}]}, [])
+    _b16 = _x16["bloques"][0]
+    check("v1.6: un veredicto por rama (canónico, la rama desconocida fuera) y la sede del caso normalizada",
+          _b16["apertura"]["m2"]["veredictoRamas"] == {
+              "igualadoOArriba": {"veredicto": "FAVORABLE", "razon": "2v2 arriba"},
+              "persiguiendo": {"veredicto": "DESFAVORABLE", "razon": "sin vía contra el bloque bajo"}}
+          and _b16["cierre"]["casoBloque"]["sede"] == "visita"
+          and _b16["cierre"]["casoBloque"]["competicion"] == "Liga", _b16)
+    _orig16 = (_d15._formacion_ultima, _d15.casos_bloque)
+    _fx16 = {"date": "2026-10-25 20:00:00", "home_team_id": 1, "away_team_id": 2}
+    try:
+        _d15._formacion_ultima = lambda tid, fecha: ("3-4-2-1", 123)
+        _d15.casos_bloque = lambda tid, antes, dias=180: [{"sede": "local", "caso": "4-0 de local"}]
+        _av16 = _d15.avisos_v16(_x16, _fx16, {"a": "Leones", "b": "Libertad"})
+        _x16b = _copy.deepcopy(_x16)
+        _ap16 = _x16b["bloques"][0]["apertura"]
+        _ap16["m1"]["senalXi"] = "el DT anunció la línea de tres en la previa"
+        _ap16["m2"]["viasGol"] = {"foco": ["penal: E. Ramírez (temporada)"], "rival": ["penal: Ngoura"]}
+        _d15.casos_bloque = lambda tid, antes, dias=180: [{"sede": "visita", "caso": "1-0 de visita"}]
+        _av16b = _d15.avisos_v16(_x16b, _fx16, {"a": "Leones", "b": "Libertad"})
+    finally:
+        _d15._formacion_ultima, _d15.casos_bloque = _orig16
+    check("v1.6: avisa sistema distinto del último once, penal sin ejecutor y la 6 con un caso de otra sede",
+          {a["codigo"] for a in _av16} == {"M1-VS-ULTIMO-ONCE", "DTP-PENAL-SIN-EJECUTOR", "P6-OTRA-SEDE"}, _av16)
+    check("v1.6: con el motivo escrito, los penales de los dos lados y un caso de la misma sede, no avisa",
+          _av16b == [], _av16b)
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                     "home_team_id, away_team_id, goals_home, goals_away) VALUES (990490, '2026-09-01 20:00:00', "
+                     "'FT', 'Match Finished', 39, 2026, 990491, 990492, 2, 0)")
+        _con.executemany("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador) "
+                         "VALUES (990490, ?, ?, ?, ?, ?)",
+                         [(10, "Goal", "Penalty", 990491, "E. Ramírez"), (30, "Goal", "Missed Penalty", 990491, "E. Ramírez"),
+                          (50, "Goal", "Penalty", 990491, "Otro"), (60, "Goal", "Normal Goal", 990491, "Nueve"),
+                          (70, "Goal", "Own Goal", 990491, "Rival")])
+    _pen = _d15.penales_temporada(990491, "2026-10-25 20:00:00")
+    check("v1.6: los penales de la temporada salen de los eventos (convertidos y errados, sin goles comunes)",
+          _pen["ejecutores"] == [{"nombre": "E. Ramírez", "convertidos": 1, "errados": 1},
+                                 {"nombre": "Otro", "convertidos": 1, "errados": 0}]
+          and _pen["partidosConEventos"] == 1, _pen)
+    check("v1.6: sin penales en el año lo dice, no «sin dato»",
+          _d15.penales_temporada(990492, "2026-10-25")["ejecutores"] == [])
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM fixture_eventos WHERE fixture_id=990490")
+        _con.execute("DELETE FROM fixtures WHERE id=990490")
+    from backend.analisis.veredicto import dtp_objetivo as _dobj, rama_del_foco as _rfoco
+    _gs16 = [{"minuto": 24, "lado": "b"}, {"minuto": 62, "lado": "a"}, {"minuto": 74, "lado": "b"}]
+    check("v1.6: la rama jugada es la de más minutos (Sporting persiguió 54' de 90)",
+          _rfoco(_gs16, "a") == {"minutos": {"igualadoOArriba": 36, "persiguiendo": 54}, "rama": "persiguiendo"})
+    _o16 = _dobj(_x16, _gs16)["porBloque"][0]
+    check("v1.6: el objetivo trae el veredicto escrito para la rama jugada",
+          _o16["ramaJugada"] == "persiguiendo" and _o16["veredictoDeLaRama"] == "DESFAVORABLE"
+          and _o16["veredictoUnico"] == "FAVORABLE" and "sinRamas" not in _o16, _o16)
+    _o16b = _dobj({"bloques": [{"equipo": "b", "apertura": {"m2": {"veredicto": "NEUTRO"}}}]}, [], sin_eventos=True)
+    check("v1.6: sin minutos de gol la rama no se inventa; sin ramas lo dice",
+          _o16b["porBloque"][0]["ramaJugada"] is None and "sinEventos" in _o16b["porBloque"][0]
+          and "sinRamas" in _dobj({"bloques": [{"equipo": "b", "apertura": {"m2": {"veredicto": "NEUTRO"}}}]},
+                                  [])["porBloque"][0])
     g_dtp = c.get(f"{A}/analisis/cowork/{ns_dtp}").json()["dtp"]["bloques"][0]
     check("GET: el bloque vuelve normalizado (tramo inválido fuera, vía canónica, veredicto sin «MATCHUP»)",
           [f["tramo"] for f in g_dtp["apertura"]["m3Fases"]] == ["0-25"]
