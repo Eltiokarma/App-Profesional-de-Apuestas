@@ -1789,6 +1789,12 @@ components:
             (<40 · 40-49 · 50-59 · 60+), por versión de sad-analysis al depositar
             (`porVersion`) y junta (`todas`): n, aciertos con intervalo de Wilson, lo que
             dijimos y lo que el mercado le daba al mismo elegido.
+            `valorMercado` (26/10/2026): apostar 1 unidad a cada selección marcada con valor
+            (vsMercado.mejorValor), a la cuota media de la última captura prepartido, en los
+            partes cerrados que acreditan y sin cuarentena: n, ganadas, roi (ganancia media por
+            unidad) con intervalo al 95 %, `confirmado` (n ≥ `minimo` y el intervalo sobre
+            cero), lo mismo para `naceDeRecorte` / `sinRecorte` y, de referencia,
+            `nuestroFavorito` (apostar siempre a nuestro elegido).
             `desenlaceTde` (TDE v0.1.24, disciplina 65): por lectura del desenlace del que
             persigue (se_rompe · rescata · abierto) cuántos tramos jugados la cumplieron, cuántos
             iban con la lectura por defecto del ISE de rama y qué se observó; tasa e intervalo
@@ -3796,9 +3802,11 @@ components:
         vsMercado:
           type: object
           nullable: true
-          description: 'la ventaja del 1X2 declarado sobre el mercado, calculada AL LEER contra la última captura prepartido (26/10/2026). `estado`: con valor (alguna selección con valor esperado ≥ 3 % a la cuota media) · sin ventaja (el pick a menos de 3 pts del mercado sin margen) · sobre el mercado · bajo el mercado. Por selección: nuestra, mercado (sin margen), puntos, cuota (media de las casas, con margen), cuotaJusta (100/nuestra) y valor (nuestra × cuota − 1). Null sin las tres cuotas. No es una recomendación de apuesta'
+          description: 'la ventaja del 1X2 declarado sobre el mercado, calculada AL LEER contra la última captura prepartido (26/10/2026). `estado`: valor en el papel (alguna selección con valor esperado ≥ 3 % y ≥ 3 pts sobre el mercado; `con valor` recién con el historial confirmado) · sin ventaja (el pick a menos de 3 pts del mercado sin margen) · sobre el mercado · bajo el mercado. Por selección: nuestra, mercado (sin margen), puntos, cuota (media de las casas, con margen), cuotaJusta (100/nuestra) y valor (nuestra × cuota − 1). Null sin las tres cuotas. No es una recomendación de apuesta'
           properties:
-            estado: { type: string, enum: [con valor, sin ventaja, sobre el mercado, bajo el mercado] }
+            estado: { type: string, enum: [con valor, valor en el papel, sin ventaja, sobre el mercado, bajo el mercado], description: '`con valor` solo con el historial confirmado (acreditables.valorMercado); si no, `valor en el papel`' }
+            naceDeRecorte: { type: boolean, description: 'el valor sale de dejar al favorito del mercado (50 %+) 3 pts o más por debajo sin «−N puntos al favorito por <dato>» escrito (regla 6-B del sad v4.1)' }
+            historial: { type: object, nullable: true, additionalProperties: true, description: 'n, ganadas, roi, intervalo y confirmado de acreditables.valorMercado' }
             pick: { type: string, enum: [local, empate, visita] }
             puntosPick: { type: number }
             mejorValor: { type: string, nullable: true }

@@ -2349,7 +2349,23 @@ VENTAJA_PTS = 3.0     # menos de esto contra el mercado es «sin ventaja»
 VALOR_MIN = 0.03      # valor esperado desde el que una selección «tiene valor»
 
 
-def ventaja_mercado(pron: dict, mercado: dict | None) -> dict | None:
+VALOR_N_MIN = 50      # selecciones con valor cerradas antes de confiar en el historial
+_RECORTE_DECLARADO = re.compile(r"puntos al favorito", re.I)
+
+
+def ventaja_mercado(pron: dict, mercado: dict | None, historial: dict | None = None,
+                    texto_parte: str = "") -> dict | None:
+    """La ventaja del 1X2 declarado sobre el mercado.
+
+    26/10/2026 (usuario, Santa Clara–Benfica): un «valor» de 14 % contra 10 % a
+    cuota 9 salía verde, y nacía de haberle quitado 5 puntos al favorito contra
+    la regla 6-B. Sin historial que muestre que nuestras desviaciones ganan, un
+    valor es `valor en el papel`; pasa a `con valor` solo con el historial
+    confirmado (`historial_valor`: n ≥ VALOR_N_MIN y el intervalo de la
+    ganancia por encima de cero). `naceDeRecorte`: el mercado da al favorito
+    50 %+, lo elegimos igual, lo dejamos VENTAJA_PTS o más por debajo sin
+    «−N puntos al favorito por <dato>» escrito, y el valor aparece en otro
+    resultado."""
     probs = (pron or {}).get("probabilidades") or {}
     claves = ("local", "empate", "visita")
     if not mercado or not all(isinstance(probs.get(k), (int, float)) for k in claves):
@@ -2369,11 +2385,21 @@ def ventaja_mercado(pron: dict, mercado: dict | None) -> dict | None:
     # el valor cuenta solo con un desacuerdo real con el mercado, de VENTAJA_PTS o más
     con_valor = [k for k in claves if sel[k]["valor"] >= VALOR_MIN and sel[k]["puntos"] >= VENTAJA_PTS]
     mejor = max(con_valor, key=lambda k: sel[k]["valor"]) if con_valor else None
+    fav_mercado = max(claves, key=lambda k: sel[k]["mercado"])
+    recorte = bool(mejor and mejor != pick and pick == fav_mercado and sel[pick]["mercado"] >= 50
+                   and sel[pick]["puntos"] <= -VENTAJA_PTS and not _RECORTE_DECLARADO.search(texto_parte or ""))
+    confirmado = bool(historial and historial.get("confirmado"))
     pp = sel[pick]["puntos"]
     if mejor:
-        estado = "con valor"
-        texto = (f"valor en {mejor}: {sel[mejor]['nuestra']:.0f} % nuestro contra {sel[mejor]['mercado']:.0f} % del "
-                 f"mercado; a cuota {sel[mejor]['cuota']:.2f} se espera {sel[mejor]['valor'] * 100:+.1f} % por unidad")
+        estado = "con valor" if confirmado else "valor en el papel"
+        texto = (f"{'valor' if confirmado else 'valor en el papel'} en {mejor}: {sel[mejor]['nuestra']:.0f} % nuestro "
+                 f"contra {sel[mejor]['mercado']:.0f} % del mercado; a cuota {sel[mejor]['cuota']:.2f} saldría "
+                 f"{sel[mejor]['valor'] * 100:+.1f} % por unidad SI nuestro número es el bueno")
+        if recorte:
+            texto += (f". Nace de recortar al favorito ({pick} {pp:+.1f} pts bajo el mercado) sin un dato escrito: "
+                      "la regla 6-B del sad v4.1 lo prohíbe porque es un sesgo medido nuestro")
+        if not confirmado:
+            texto += ". Sin historial que muestre que estas desviaciones ganan"
     elif abs(pp) < VENTAJA_PTS:
         estado = "sin ventaja"
         texto = (f"sin ventaja sobre el mercado: {pick} {sel[pick]['nuestra']:.0f} % contra {sel[pick]['mercado']:.0f} % "
@@ -2384,16 +2410,93 @@ def ventaja_mercado(pron: dict, mercado: dict | None) -> dict | None:
         texto = (f"{pick} {pp:+.1f} pts {'sobre' if pp > 0 else 'bajo'} el mercado ({sel[pick]['nuestra']:.0f} % contra "
                  f"{sel[pick]['mercado']:.0f} %), y aun así sin valor a cuota {sel[pick]['cuota']:.2f} "
                  f"({sel[pick]['valor'] * 100:+.1f} % por unidad)")
-    return {"estado": estado, "pick": pick, "puntosPick": pp, "mejorValor": mejor, "texto": texto,
-            "seleccion": sel, "casas": mercado.get("casas"),
-            "nota": "medido contra la última captura prepartido; el pronóstico no es una recomendación de apuesta: "
+    return {"estado": estado, "pick": pick, "puntosPick": pp, "mejorValor": mejor, "naceDeRecorte": recorte,
+            "texto": texto, "seleccion": sel, "casas": mercado.get("casas"),
+            "historial": ({k: historial.get(k) for k in ("n", "ganadas", "roi", "intervalo", "confirmado")}
+                          if historial else None),
+            "nota": "medido contra la última captura prepartido; no es una recomendación de apuesta: "
                     "valor = probabilidad nuestra × cuota media − 1 (la cuota trae el margen de la casa)"}
 
 
-def _ventaja_o_nada(fixture_id: int, pron: dict) -> dict | None:
+# EL HISTORIAL DEL VALOR: ¿las selecciones marcadas con valor ganaron plata a
+# su cuota? Sobre los partes con veredicto que ACREDITAN (ciega + PRE) y sin
+# cuarentena, la misma población que Aprendizaje. Se cachea en el proceso: lo
+# pide cada GET de un parte y cambia solo cuando se cierra un veredicto.
+HISTORIAL_TTL_S = int(os.environ.get("SAD_CACHE_VALOR_S", "1800"))
+_HIST_CACHE: dict = {}
+
+
+def _ganancia(filas: list[float]) -> dict:
+    n = len(filas)
+    if not n:
+        return {"n": 0, "ganadas": 0, "roi": None, "intervalo": None}
+    media = sum(filas) / n
+    var = sum((x - media) ** 2 for x in filas) / (n - 1) if n > 1 else 0.0
+    ee = (var / n) ** 0.5
+    return {"n": n, "ganadas": sum(1 for x in filas if x > 0), "roi": round(media, 3),
+            "intervalo": [round(media - 1.96 * ee, 3), round(media + 1.96 * ee, 3)] if n > 1 else None}
+
+
+def historial_valor(cache: bool = True) -> dict:
+    ahora_s = datetime.now(timezone.utc).timestamp()
+    if cache and HISTORIAL_TTL_S > 0 and _HIST_CACHE.get("t", 0) + HISTORIAL_TTL_S > ahora_s:
+        return _HIST_CACHE["v"]
+    from backend.analisis import veredicto as _vered
+    from backend.analisis.lecciones import cuotas_mercado
+    with _conectar() as con:
+        filas = con.execute("SELECT fixture_id, parte_json, veredicto_json FROM parte_cowork "
+                            "WHERE veredicto_json IS NOT NULL AND cuarentena_json IS NULL").fetchall()
+    casos = []
+    for f in filas:
+        try:
+            v = json.loads(f["veredicto_json"])
+            if not _vered.acredita(v.get("seleccion", ""), v.get("modoEvaluacion", "")):
+                continue
+            casos.append((f["fixture_id"], json.loads(f["parte_json"]), f["parte_json"]))
+        except (ValueError, TypeError):
+            continue
+    ids = [c[0] for c in casos]
+    reales = _vered.resultados(ids)
+    mercados = cuotas_mercado(ids)
+    valor, recorte, sin_recorte, favorito = [], [], [], []
+    for fid, parte, crudo in casos:
+        real = reales.get(fid)
+        vm = ventaja_mercado(parte.get("pronostico") or {}, mercados.get(fid), None, crudo)
+        if not real or not vm:
+            continue
+        pk = vm["pick"]
+        favorito.append(vm["seleccion"][pk]["cuota"] - 1 if real == pk else -1.0)
+        if vm["mejorValor"]:
+            s = vm["mejorValor"]
+            g = vm["seleccion"][s]["cuota"] - 1 if real == s else -1.0
+            valor.append(g)
+            (recorte if vm["naceDeRecorte"] else sin_recorte).append(g)
+    h = _ganancia(valor)
+    h["confirmado"] = bool(h["n"] >= VALOR_N_MIN and h["intervalo"] and h["intervalo"][0] > 0)
+    h["naceDeRecorte"] = _ganancia(recorte)
+    h["sinRecorte"] = _ganancia(sin_recorte)
+    h["nuestroFavorito"] = _ganancia(favorito)
+    h["minimo"] = VALOR_N_MIN
+    h["nota"] = ("apostar 1 unidad a cada selección marcada con valor, a la cuota media de la última captura "
+                 "prepartido, en los partes cerrados que acreditan (ciega + PRE, sin cuarentena): roi = ganancia "
+                 "media por unidad, intervalo al 95 %. `con valor` vuelve a la pantalla recién con n ≥ "
+                 f"{VALOR_N_MIN} y el intervalo por encima de cero. `nuestroFavorito` = apostar siempre a nuestro "
+                 "elegido, como referencia")
+    _HIST_CACHE.update(t=ahora_s, v=h)
+    return h
+
+
+def _ventaja_o_nada(fixture_id: int, pron: dict, texto_parte: str = "") -> dict | None:
     try:
         from backend.analisis.lecciones import cuotas_mercado
-        return ventaja_mercado(pron, cuotas_mercado([fixture_id]).get(fixture_id))
+        m = cuotas_mercado([fixture_id]).get(fixture_id)
+        if not m:
+            return None
+        try:
+            hist = historial_valor()
+        except Exception:  # noqa: BLE001 — sin historial la marca dice «en el papel»
+            hist = None
+        return ventaja_mercado(pron, m, hist, texto_parte)
     except Exception:  # noqa: BLE001 — sin cuotas no hay marca, nunca un error
         return None
 
@@ -3512,7 +3615,7 @@ def dto(fixture_id: int) -> dict | None:
         "timeline": timeline,
         "pronostico": parte["pronostico"],
         # la ventaja sobre el mercado (26/10/2026): calculada al leer, nunca declarada
-        "vsMercado": _ventaja_o_nada(fila["fixture_id"], parte["pronostico"]),
+        "vsMercado": _ventaja_o_nada(fila["fixture_id"], parte["pronostico"], fila["parte_json"]),
         "matriz": parte.get("matriz") or {},
         "documentos": parte["documentos"],
         "pendientes": parte["pendientes"],

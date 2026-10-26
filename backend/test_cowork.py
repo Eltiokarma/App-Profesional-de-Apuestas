@@ -1766,8 +1766,31 @@ def main():
           and _vm["seleccion"]["local"]["valor"] == round(0.70 * 1.36 - 1, 3) and _vm["mejorValor"] is None
           and _vm["seleccion"]["local"]["cuotaJusta"] == 1.43, _vm)
     _vv = ventaja_mercado({"probabilidades": {"local": 50, "empate": 32, "visita": 18}}, _mk)
-    check("un empate que damos muy por encima de la cuota → «con valor» en empate",
-          _vv["estado"] == "con valor" and _vv["mejorValor"] == "empate" and "empate" in _vv["texto"], _vv)
+    check("un empate que damos muy por encima de la cuota, SIN historial → «valor en el papel» en empate",
+          _vv["estado"] == "valor en el papel" and _vv["mejorValor"] == "empate" and "empate" in _vv["texto"]
+          and "Sin historial" in _vv["texto"], _vv)
+    check("con el historial confirmado, el mismo caso vuelve a «con valor»",
+          ventaja_mercado({"probabilidades": {"local": 50, "empate": 32, "visita": 18}}, _mk,
+                          {"n": 60, "ganadas": 20, "roi": 0.08, "intervalo": [0.01, 0.15], "confirmado": True})["estado"]
+          == "con valor")
+    # Santa Clara–Benfica (26/10/2026): el valor en el local nace de recortar al favorito visitante
+    _cs = {"local": 9.27, "empate": 5.32, "visita": 1.31}
+    _is = {k: 1 / v for k, v in _cs.items()}
+    _ms = {"prob": {k: 100 * x / sum(_is.values()) for k, x in _is.items()}, "cuota": _cs, "casas": 8}
+    _sc = ventaja_mercado({"probabilidades": {"local": 14, "empate": 19, "visita": 67}}, _ms)
+    check("Santa Clara–Benfica: valor en el local que nace de recortar a Benfica (regla 6-B), en el papel",
+          _sc["estado"] == "valor en el papel" and _sc["mejorValor"] == "local" and _sc["naceDeRecorte"] is True
+          and "recortar al favorito" in _sc["texto"], _sc)
+    check("con «−5 puntos al favorito por <dato>» escrito, no es un recorte sin dato",
+          ventaja_mercado({"probabilidades": {"local": 14, "empate": 19, "visita": 67}}, _ms, None,
+                          "−5 puntos al favorito por la baja de Otamendi confirmada hoy")["naceDeRecorte"] is False)
+    from backend.analisis.parte import _ganancia, historial_valor
+    _g = _ganancia([8.27, -1.0, -1.0, -1.0])
+    check("la ganancia del historial: 1 de 4 a cuota 9.27 → +1.32 por unidad, con intervalo",
+          _g["n"] == 4 and _g["ganadas"] == 1 and _g["roi"] == 1.317 and _g["intervalo"][0] < 0, _g)
+    _hv = historial_valor(cache=False)
+    check("el historial corre sobre la base (sin cuotas en la demo: n 0, sin confirmar)",
+          _hv["confirmado"] is False and isinstance(_hv["n"], int) and "nuestroFavorito" in _hv, _hv)
     _vb = ventaja_mercado({"probabilidades": {"local": 66, "empate": 20, "visita": 14}}, _mk)
     check("el favorito 4 pts bajo el mercado, repartidos sin desacuerdo real en los otros → «bajo el mercado»",
           _vb["estado"] == "bajo el mercado" and _vb["puntosPick"] < -3, _vb)
