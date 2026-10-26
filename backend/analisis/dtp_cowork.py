@@ -342,7 +342,10 @@ def _col(v) -> str:
     return "izq" if t in _IZQ else "der" if t in _DER else "sin dato"
 
 
-def _suplentes_nombrados(banca: list[str], titulares: list[str], texto: str) -> list[str]:
+_DESDE_BANCO = re.compile(r"desde el banco|de suplente|suplente|revulsivo|de cambio|ingresa|entra desde", re.I)
+
+
+def _suplentes_nombrados(banca: list[str], titulares: list[str], texto: str, crudo: str = "") -> list[str]:
     """Los de la banca que el texto nombra, sin los que el texto nombra por un
     titular. Un suplente que casa SOLO por la letra de tolerancia no cuenta si
     un titular casa exacto con esa palabra: Freiburg–Bayern (incidencia 605)
@@ -358,6 +361,10 @@ def _suplentes_nombrados(banca: list[str], titulares: list[str], texto: str) -> 
         if any(_en_referencia(t, texto) and set(_apellidos(t)) & set(_apellidos(n)) for t in titulares):
             continue
         if not exacto(n) and any(_casi(a, w) for a in _apellidos(n) for w in tit_exactos):
+            continue
+        # la inicial también nombra: «A. Terrazas» no es J. Terrazas, el arquero
+        # suplente (incidencia 638)
+        if _inicial_choca(n, crudo):
             continue
         out.append(n)
     return out
@@ -1022,7 +1029,8 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
     rd = ((bloque.get("apertura") or {}).get("m2") or {}).get("restDefense") or {}
     texto_rd = _plano(sin_ausentes(sin_alternativas(rd.get("foco") or "")))
     if texto_rd.strip():
-        en_banca = _suplentes_nombrados(of.get("banca") or [], of["titulares"], texto_rd)
+        en_banca = _suplentes_nombrados(of.get("banca") or [], of["titulares"], texto_rd,
+                                        sin_ausentes(sin_alternativas(rd.get("foco") or "")))
         if en_banca:
             motivos.append(f"seguro: el rest defense de la apertura se apoyaba en {', '.join(en_banca)}, "
                            "que arrancó en el banco")
@@ -1034,8 +1042,13 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
         lado_of = (oficial or {}).get(bloque.get("equipo") if pz.get("lado") == "foco" else rival_lado)
         if not lado_of:
             continue
+        # UNA PIEZA DECLARADA DESDE EL BANCO NO SE CAE POR ARRANCAR EN EL BANCO
+        # (Barracas, incidencia 633: «ejecutor de penales desde el banco: R. Insúa»)
+        if _DESDE_BANCO.search(f"{pz.get('rol') or ''} {pz.get('nombre') or ''}"):
+            continue
         texto_pz = _plano(pz.get("nombre") or "")
-        en_banca = _suplentes_nombrados(lado_of.get("banca") or [], lado_of.get("titulares") or [], texto_pz)
+        en_banca = _suplentes_nombrados(lado_of.get("banca") or [], lado_of.get("titulares") or [], texto_pz,
+                                        pz.get("nombre") or "")
         if en_banca:
             motivos.append(f"pieza del M2 ({'rival' if pz.get('lado') == 'rival' else 'propia'}"
                            f"{', ' + pz['rol'] if pz.get('rol') else ''}): {', '.join(en_banca)} arrancó en el banco")

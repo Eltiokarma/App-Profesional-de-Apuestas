@@ -3297,6 +3297,13 @@ def main():
     check("605: «Ginter» nombra al titular M. Ginter, no al suplente C. Günter; «Günter» sí al suplente",
           _sn(["C. Günter"], ["M. Ginter", "P. Lienhart"], " ginter sigue a kane ") == []
           and _sn(["C. Günter"], ["M. Ginter"], " gunter sigue a kane ") == ["C. Günter"])
+    check("638: la pieza «A. Terrazas» no nombra al suplente J. Terrazas",
+          _sn(["A. Terrazas", "J. Terrazas"], ["X. Uno"], " a terrazas ", "A. Terrazas") == ["A. Terrazas"])
+    _pz633 = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3"}, "m2": {"piezas": [
+        {"nombre": "R. Insúa", "rol": "ejecutor de penales desde el banco", "lado": "foco"}]}}},
+        {"a": {"formacion": "4-3-3", "titulares": ["M. Uno"], "banca": ["R. Insúa"]}})
+    check("633: una pieza declarada «desde el banco» no pide rehacer por arrancar en el banco",
+          not any(m.startswith("pieza") for m in _pz633["motivos"]), _pz633)
     check("526: «sin Lynen» no marca el seguro en el banco; «fijo en Lynen» sí",
           not any(m.startswith("seguro") for m in _rd526("Chuky San José y Reis; sin Lynen, depende de que un lateral se quede")["motivos"])
           and any(m.startswith("seguro") for m in _rd526("pivote fijo en Lynen")["motivos"]))
