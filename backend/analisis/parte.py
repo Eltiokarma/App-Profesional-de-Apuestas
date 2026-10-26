@@ -1040,6 +1040,92 @@ def alertas_espina(reventon: dict | None, espina: dict | None, nombres: dict) ->
     } for x in espina_vs_riesgo(reventon, espina) if not x["dicho"]]
 
 
+def espina_sigue_en_extremo(reventon: dict | None, espina: dict | None) -> list[dict]:
+    """La espina que dice que la racha SIGUE con esa burbuja en su récord o en
+    la franja alta (K-EXTREMO · K-CERCA-EXTREMO, la total o la de la condición
+    que guía la lectura). 25/10/2026: Leones–Libertad (K de Libertad en su
+    récord de 175 partidos, espina «sigue», reventó con goleada) y Nacional–
+    Braga (K −32.8 cerca del extremo, espina negativa siguiendo la tarjeta
+    fuerte, reventó). El extremo no puntúa en el riesgo, pero es la regla
+    dura del prompt: no se carga a que la racha siga."""
+    out = []
+    for lado in LADOS:
+        e = (espina or {}).get(lado) or {}
+        lect = e.get("lectura")
+        r = (reventon or {}).get(lado) or {}
+        if not lect or not r:
+            continue
+        candidatas = [("total", r)]
+        if r.get("condicion"):
+            candidatas.append(("de local" if (r["condicion"].get("familia") == "local") else "de visita",
+                               r["condicion"]))
+        for donde, b in candidatas:
+            ext, act = b.get("extremo") or {}, b.get("actual") or {}
+            signo = act.get("signo")
+            if signo not in ("+", "-") or not (ext.get("activo") or ext.get("cerca")):
+                continue
+            if lect == ("positiva" if signo == "+" else "negativa"):
+                out.append({"lado": lado, "donde": donde, "signo": signo, "k": act.get("k"),
+                            "nivel": "récord" if ext.get("activo") else "franja alta",
+                            "lectura": lect})
+                break
+    return out
+
+
+def alertas_espina_extremo(reventon: dict | None, espina: dict | None, nombres: dict) -> list[dict]:
+    return [{
+        "codigo": "ESPINA-SIGUE-EN-EXTREMO", "equipo": x["lado"], "tipo": "dato",
+        "detalle": (f"{nombres.get(x['lado'], x['lado'])}: la espina dice que la racha {x['signo']} SIGUE "
+                    f"({x['lectura']}) con la burbuja {x['donde']} en su {x['nivel']}"
+                    + (f" (K {x['k']:+.2f})" if isinstance(x.get("k"), (int, float)) else "")
+                    + ": con K-EXTREMO o K-CERCA-EXTREMO la espina no declara que la racha sigue —se dice "
+                      "«cero» o «neutra», o se nombra el hecho del partido que la sostiene— y el 1X2 no se "
+                      "carga a la continuidad (Leones–Libertad y Nacional–Braga, 25/10/2026)"),
+    } for x in espina_sigue_en_extremo(reventon, espina)]
+
+
+# EFE v1.7: el porcentaje dice cuánto creerle a la K de cada equipo, no quién
+# gana, y la brecha entre los dos solo se lee en la misma base y sin R-KT.2 ni
+# T.54 en un lado. El 25/10/2026 nueve partes usaron esa brecha para ordenar el
+# partido o empujar el 1X2 con T.54 o ESCALA-LIGAS a la vista (Aucas, Barça–
+# Madrid, Leones–Libertad, Nacional–Braga, Sporting–Viseu, Toulouse…): una
+# regla que se incumple tanto se calcula, no se repite.
+BRECHA_EMPATE_MIN = 5.0
+_CORTAN_BRECHA = ("T.54", "R-KT.2")
+
+
+def empate_tecnico(porcentajes: dict, alertas: list[dict]) -> dict | None:
+    pa, pb = porcentajes.get("a"), porcentajes.get("b")
+    if not isinstance(pa, (int, float)) or not isinstance(pb, (int, float)) or abs(pa - pb) < BRECHA_EMPATE_MIN:
+        return None
+    motivos = []
+    for a in alertas or []:
+        cod = str(a.get("codigo") or "")
+        lado = a.get("equipo") or ""
+        if cod == "ESCALA-LIGAS":
+            motivos.append("ESCALA-LIGAS")
+        elif any(cod.startswith(c) for c in _CORTAN_BRECHA) and lado in ("a", "b", "ambos"):
+            motivos.append(f"{cod.split()[0]} en {'los dos' if lado == 'ambos' else lado}")
+    motivos = list(dict.fromkeys(motivos))
+    if not motivos:
+        return None
+    return {"a": pa, "b": pb, "brecha": round(abs(pa - pb), 1), "motivos": motivos}
+
+
+def alerta_empate_tecnico(porcentajes: dict, alertas: list[dict], nombres: dict) -> list[dict]:
+    e = empate_tecnico(porcentajes, alertas)
+    if not e:
+        return []
+    return [{
+        "codigo": "EFE-EMPATE-TECNICO", "equipo": "global", "tipo": "dato",
+        "detalle": (f"EFE {nombres.get('a', 'a')} {e['a']:.1f} % contra {nombres.get('b', 'b')} {e['b']:.1f} % "
+                    f"(brecha {e['brecha']:.1f}) con {', '.join(e['motivos'])}: es EMPATE TÉCNICO DE FORMACIÓN "
+                    "(EFE v1.7). El porcentaje dice cuánto creerle a la K de cada equipo, no quién gana: la "
+                    "brecha no ordena el partido, no hace favorito a nadie en el matchup ni empuja el 1X2"),
+        "brecha": e["brecha"], "motivos": e["motivos"],
+    }]
+
+
 _AMBITO_TXT = {"local": "de local", "visita": "de visita", "total": "en total"}
 def _estado_familia(f: dict) -> str:
     """El estado en que está la burbuja, con el par (sí, no) de la narrativa.
@@ -1965,7 +2051,7 @@ _CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto", "ligas", "dtBa
 # recalcular igual) en vez de guardarse por duplicado.
 _ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "K-EXTREMO-CONDICION", "K-CERCA-EXTREMO-CONDICION", "FAMILIA-RECORD", "ESPINA-VS-RIESGO", "HERENCIA-DTP", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT",
                         "COLAPSO-EN-CASCADA", "F1-DECISIVO-FUERA", "DTP-REHACER", "DTP-SIN-REFERENCIA",
-                        "TIPOLOGIA-VS-INDICES"}
+                        "TIPOLOGIA-VS-INDICES", "ESPINA-SIGUE-EN-EXTREMO", "EFE-EMPATE-TECNICO"}
 # LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
 # selladas (coherencia_json), porque no son deterministas y rehacerlas al leer
 # las haría parpadear. Del depósito se descartan igual que las calculadas
@@ -2712,6 +2798,35 @@ def guardar(payload: dict) -> dict:
                              "<lo que encontró el EFE/TDE/DTP>» (GET /analisis/cowork/espina/calibracion dice "
                              "quién viene ganando cuando se la contradice)",
         })
+    # 25/10/2026: la espina que dice «sigue» con la burbuja en su extremo y la
+    # brecha del EFE que es empate técnico, avisadas mientras se puede corregir
+    try:
+        _ext = espina_sigue_en_extremo(_rc, _esp)
+    except Exception:  # noqa: BLE001
+        _ext = []
+    for x in _ext:
+        faltan.append({
+            "bloque": f"lecturaSad.espina.{x['lado']}", "codigo": "ESPINA-SIGUE-EN-EXTREMO",
+            "costara": f"la espina dice que la racha {x['signo']} sigue con la burbuja {x['donde']} en su "
+                       f"{x['nivel']}: el 25/10 reventaron así Libertad y Nacional",
+            "comoSeArregla": "con K-EXTREMO o K-CERCA-EXTREMO la espina va «cero» o «neutra», o el `porque` "
+                             "nombra el hecho del partido que la sostiene; el 1X2 no se carga a la continuidad",
+        })
+    try:
+        _pct = {l: _totales(parte["equipos"][l]).get("porcentaje") for l in LADOS}
+        _emp = empate_tecnico(_pct, list(parte.get("alertas") or [])
+                              + alerta_escala(fx, {"a": fx["home_name"], "b": fx["away_name"]}))
+    except Exception:  # noqa: BLE001
+        _emp = None
+    _dicho = re.search(r"empate t[eé]cnico", json.dumps(parte, ensure_ascii=False), re.I)
+    if _emp and not _dicho:
+        faltan.append({
+            "bloque": "equipos.porcentaje", "codigo": "EFE-EMPATE-TECNICO",
+            "costara": f"brecha de {_emp['brecha']:.1f} puntos con {', '.join(_emp['motivos'])}: es empate técnico "
+                       "de formación (EFE v1.7); nueve partes del 25/10 la usaron para ordenar el partido",
+            "comoSeArregla": "el ensayo, el matchup y el 1X2 no se apoyan en la brecha del EFE; decirlo con esas "
+                             "palabras («empate técnico de formación») en la lectura o el ensayo, y el aviso se apaga",
+        })
     for x in contra:
         faltan.append({
             "bloque": f"lecturaSad.espina.{x['lado']}",
@@ -3287,6 +3402,12 @@ def dto(fixture_id: int) -> dict | None:
     # dos equipos de ligas distintas: el nivel no compara entre bases, y el
     # parte lo dice antes de que alguien lea los dos números uno contra otro
     alertas.extend(alerta_escala(fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
+    # la espina que dice «sigue» con la burbuja en su extremo, y la brecha del
+    # EFE que es empate técnico (25/10/2026): reglas que se incumplían, calculadas
+    alertas.extend(alertas_espina_extremo(reventon, (parte.get("lecturaSad") or {}).get("espina"),
+                                          {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
+    alertas.extend(alerta_empate_tecnico({l: equipos[l].get("porcentaje") for l in LADOS}, alertas,
+                                         {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     alertas.extend(alertas_dt(parte, fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     alertas.extend(alertas_colapso(parte, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # un decisivo de la base que no está en la tabla F1 no pesa en el IP

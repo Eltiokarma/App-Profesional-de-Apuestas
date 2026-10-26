@@ -981,7 +981,10 @@ Escribís vos (es juicio, no se puede calcular):
 - LA BRECHA DE PORCENTAJE ENTRE LOS DOS EQUIPOS solo se lee si son de la
   misma base (sin ESCALA-LIGAS) y sin R-KT.2 ni T.54 en un lado. Si no, es
   «empate técnico de formación». El EFE dice cuánto creerle a la K, no quién
-  gana. D3 va con su contexto (condición, competición, escala): medido solo
+  gana. Desde el 26/10/2026 la app lo calcula: con brecha ≥ 5 y alguno de
+  esos motivos pone EFE-EMPATE-TECNICO en la tira, y el recibo lo avisa si el
+  parte no dice «empate técnico de formación» en algún lado (nueve partes del
+  25/10 usaron esa brecha para empujar el 1X2). D3 va con su contexto (condición, competición, escala): medido solo
   de local, en la visita baja una franja; medido en otra competición o
   escala, «sin dato».
 - El matchup H: diagnóstico, razón, el perfil táctico de cada equipo Y los tres
@@ -1053,6 +1056,11 @@ Escribís vos (es juicio, no se puede calcular):
       récord o K-CERCA-EXTREMO-CONDICION cuando es la franja alta). NO la declares
       vos en `alertas` (ni «CERCA_DEL_EXTREMO» ni con otro nombre): sale
       duplicada. Va en `lecturaSad.reventon` y en el falsador.
+      CON K-EXTREMO O K-CERCA-EXTREMO (la total o la de la condición), LA
+      ESPINA NO DICE QUE LA RACHA SIGUE: va «cero» o «neutra», o el `porque`
+      nombra el hecho del partido que la sostiene. Si no, el backend pone
+      ESPINA-SIGUE-EN-EXTREMO y el recibo lo avisa (Leones–Libertad y
+      Nacional–Braga, 25/10/2026: las dos reventaron).
     · CORREGIR SOLO EL DT de un parte ya depositado: `POST
       /analisis/cowork/{id}/dt` con `{"a": {"nombre": "…", "desde":
       "AAAA-MM-DD"}}` (o `b`, o los dos; `desde` solo si lo verificaste). NO

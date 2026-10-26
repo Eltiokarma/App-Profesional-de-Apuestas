@@ -1401,6 +1401,10 @@ def main():
     lleno["cadena"] = {"a": {"pronostico": "A domina el balón parado"}}
     lleno["pronostico"] = {"probabilidades": {"local": 50, "empate": 30, "visita": 20},
                            "falsador": "si el visitante abre antes del 20', la lectura falla"}
+    rec0 = c.post(f"{A}/analisis/cowork", json=lleno).json()
+    check("26/10: brecha del EFE con T.54 sin decir «empate técnico» → el recibo lo avisa",
+          [x.get("codigo") for x in rec0["faltan"]] == ["EFE-EMPATE-TECNICO"], rec0["faltan"])
+    lleno["notas"] = "la brecha del EFE es empate técnico de formación (T.54 en el visitante)"
     rec = c.post(f"{A}/analisis/cowork", json=lleno).json()
     check("un parte completo no inventa avisos", rec["faltan"] == [], rec["faltan"])
     c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
@@ -1729,6 +1733,28 @@ def main():
           espina_vs_riesgo(_rv, _es2)[0]["dicho"] is True)
     check("…y la que ya lo dice no sale a la tira (Fenerbahçe y Slavia, 291)",
           alertas_espina(_rv, _es2, {"a": "Albion"}) == [], alertas_espina(_rv, _es2, {"a": "Albion"}))
+    # 26/10/2026: la espina «sigue» con la burbuja en su extremo, y la brecha del EFE empate técnico
+    from backend.analisis.parte import alertas_espina_extremo, empate_tecnico, alerta_empate_tecnico
+    _rx = {"a": {"actual": {"signo": "-", "k": -32.8}, "extremo": {"cerca": True}},
+           "b": {"actual": {"signo": "+", "k": 12.0}, "extremo": {},
+                 "condicion": {"familia": "visita", "actual": {"signo": "+", "k": 9.0}, "extremo": {"activo": True}}}}
+    _ax = alertas_espina_extremo(_rx, {"a": {"lectura": "negativa"}, "b": {"lectura": "positiva"}},
+                                 {"a": "Nacional", "b": "Libertad"})
+    check("espina «sigue» con la total cerca del extremo o la de la condición en récord → ESPINA-SIGUE-EN-EXTREMO",
+          [(x["codigo"], x["equipo"]) for x in _ax] == [("ESPINA-SIGUE-EN-EXTREMO", "a"), ("ESPINA-SIGUE-EN-EXTREMO", "b")]
+          and "franja alta" in _ax[0]["detalle"] and "de visita en su récord" in _ax[1]["detalle"], _ax)
+    check("la espina que corta o va neutra con el extremo no avisa",
+          alertas_espina_extremo(_rx, {"a": {"lectura": "cero"}, "b": {"lectura": "neutra"}}, {}) == [])
+    _al54 = [{"codigo": "T.54", "equipo": "b"}]
+    _et = alerta_empate_tecnico({"a": 74.0, "b": 62.0}, _al54, {"a": "Sporting", "b": "Viseu"})
+    check("brecha del EFE ≥ 5 con T.54 en un lado → EFE-EMPATE-TECNICO con brecha y motivo",
+          len(_et) == 1 and _et[0]["brecha"] == 12.0 and _et[0]["motivos"] == ["T.54 en b"]
+          and "EMPATE TÉCNICO" in _et[0]["detalle"], _et)
+    check("con ESCALA-LIGAS también; sin motivo, o con brecha < 5, no",
+          empate_tecnico({"a": 64.8, "b": 37.0}, [{"codigo": "ESCALA-LIGAS", "equipo": "global"}])["motivos"] == ["ESCALA-LIGAS"]
+          and empate_tecnico({"a": 74.0, "b": 62.0}, [{"codigo": "K-EXTREMO", "equipo": "a"}]) is None
+          and empate_tecnico({"a": 46.3, "b": 43.8}, _al54) is None
+          and empate_tecnico({"a": None, "b": 40.0}, _al54) is None)
     check("con riesgo BAJO, una espina que corta la racha también va contra",
           espina_vs_riesgo({"a": {"actual": {"signo": "+"}, "riesgo": {"nivel": "bajo"}}},
                            {"a": {"lectura": "cero"}})[0]["como"] == "la lee cortarse")
