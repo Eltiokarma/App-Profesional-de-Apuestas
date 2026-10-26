@@ -13,7 +13,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { MatrizParte,
   BloqueTde, DisponibilidadParte, DocumentoParte, EquipoParte, JugadorParte, ParteCoworkDTO, RamaF, Semaforo, TdeParte,
-  VeredictoParte, ZonaF,
+  VentajaMercado, VeredictoParte, ZonaF,
 } from '../api/types'
 import { COLOR_TRAMO, tramoConfianza } from '../lib/confianza'
 import { parsearMd, type MdBloque, type MdInline } from '../lib/md'
@@ -1446,6 +1446,7 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
                 </div>
               )}
             </div>
+            {parte.vsMercado && <MarcaMercado v={parte.vsMercado} />}
             {([['Motor de regresión', p.motor], ['Matriz (estimación)', p.matriz], ['Mercado', p.mercado]] as const).map(([k, v]) => (
               <div key={k} style={{ display: 'flex', gap: 10, padding: '5px 0', borderBottom: '1px solid var(--line)' }}>
                 <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)', width: 128, flexShrink: 0, textTransform: 'uppercase', letterSpacing: '.3px' }}>{k}</span>
@@ -1590,6 +1591,45 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
         <Plegable titulo="Cargar el once" resumen={pendienteXi ? 'pendiente de once' : 'XI confirmado'} alarma={pendienteXi}>
           <CajaOnce parte={parte} matchId={matchId} onParte={onParte} />
         </Plegable>
+      </div>
+    </div>
+  )
+}
+
+
+/** La ventaja del 1X2 sobre el mercado (26/10/2026): el número igual al del
+ *  mercado es el mejor pronóstico, no una apuesta con valor. Calculada al leer. */
+const COLOR_MERCADO: Record<VentajaMercado['estado'], [string, string]> = {
+  'con valor': ['var(--up)', 'var(--up-soft)'],
+  'sin ventaja': ['var(--t2)', 'var(--bg3)'],
+  'sobre el mercado': ['var(--accent)', 'var(--accent-soft)'],
+  'bajo el mercado': ['var(--mark)', 'var(--bg3)'],
+}
+
+function MarcaMercado({ v }: { v: VentajaMercado }) {
+  const [color, fondo] = COLOR_MERCADO[v.estado] ?? COLOR_MERCADO['sin ventaja']
+  const nombre = { local: 'Local', empate: 'Empate', visita: 'Visita' } as const
+  return (
+    <div style={{ marginBottom: 11, padding: '9px 12px', borderRadius: 10, background: fondo, border: `1px solid ${color}` }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ font: '700 9.5px var(--mono)', color, letterSpacing: '.5px', textTransform: 'uppercase' }}>
+          Contra el mercado · {v.estado}
+        </span>
+        <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{v.texto}</span>
+      </div>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 6 }}>
+        {(['local', 'empate', 'visita'] as const).map((k) => {
+          const x = v.seleccion[k]
+          return (
+            <span key={k} style={{ font: '500 10.5px var(--mono)', color: k === v.pick ? 'var(--t1)' : 'var(--t3)', fontVariantNumeric: 'tabular-nums' }}>
+              {nombre[k]} {x.nuestra.toFixed(0)}/{x.mercado.toFixed(0)} % · cuota {x.cuota.toFixed(2)}
+              {x.cuotaJusta ? ` (justa ${x.cuotaJusta.toFixed(2)})` : ''} · {x.valor >= 0 ? '+' : ''}{(x.valor * 100).toFixed(1)} %
+            </span>
+          )
+        })}
+      </div>
+      <div style={{ font: '400 10px var(--sans)', color: 'var(--t3)', marginTop: 5 }}>
+        nuestro / mercado sin margen · valor = nuestra × cuota media − 1. No es una recomendación de apuesta.
       </div>
     </div>
   )

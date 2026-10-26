@@ -368,7 +368,7 @@ _CLAVES_PARTE = {"fixtureId", "version", "generadoEn", "equipos", "alertas", "ma
 # falsos y escondería los de verdad.
 _ECO_PARTE = {"partido", "estado", "creadoEn", "actualizadoEn", "xi", "veredicto",
               "timeline", "rechazos", "perdido", "aviso", "entrada", "cohorte", "cuarentena", "bancoDesmentido",
-              "xiConservados", "coherencia"}
+              "xiConservados", "coherencia", "vsMercado"}
 _ECO_EQUIPO = {"total", "maximoAlcanzable", "porcentaje", "clasificacion", "disponibilidad",
                "sinBloques", "bloquesSinDeclarar", "notaTotales"}
 _ECO_JUGADOR = {"soloBaja"}
@@ -2339,6 +2339,65 @@ def pronostico_vs_motor(pron: dict, pred: dict | None) -> dict | None:
     return out
 
 
+# LA VENTAJA SOBRE EL MERCADO (26/10/2026, pedido del usuario tras el PSG–Lyon:
+# el parte dio 70 % al PSG, el mercado 71 %). Nuestro número igual al del
+# mercado es el mejor pronóstico que tenemos, no una apuesta con valor: la
+# cuota trae el margen de la casa. Se calcula al leer contra la última captura
+# prepartido: `puntos` = nuestra − mercado sin margen; `valor` = lo que se
+# espera ganar por unidad a la cuota media de las casas (con su margen).
+VENTAJA_PTS = 3.0     # menos de esto contra el mercado es «sin ventaja»
+VALOR_MIN = 0.03      # valor esperado desde el que una selección «tiene valor»
+
+
+def ventaja_mercado(pron: dict, mercado: dict | None) -> dict | None:
+    probs = (pron or {}).get("probabilidades") or {}
+    claves = ("local", "empate", "visita")
+    if not mercado or not all(isinstance(probs.get(k), (int, float)) for k in claves):
+        return None
+    tot = sum(float(probs[k]) for k in claves)
+    if tot <= 0:
+        return None
+    nuestra = {k: 100 * float(probs[k]) / tot for k in claves}
+    sel = {}
+    for k in claves:
+        m, c = mercado["prob"][k], mercado["cuota"][k]
+        sel[k] = {"nuestra": round(nuestra[k], 1), "mercado": round(m, 1), "puntos": round(nuestra[k] - m, 1),
+                  "cuota": round(c, 2), "cuotaJusta": round(100 / nuestra[k], 2) if nuestra[k] > 0 else None,
+                  "valor": round(nuestra[k] / 100 * c - 1, 3)}
+    pick = max(claves, key=lambda k: nuestra[k])
+    # una diferencia chica en un resultado de cuota alta da valor en el papel (13 % contra 12 % a cuota 8):
+    # el valor cuenta solo con un desacuerdo real con el mercado, de VENTAJA_PTS o más
+    con_valor = [k for k in claves if sel[k]["valor"] >= VALOR_MIN and sel[k]["puntos"] >= VENTAJA_PTS]
+    mejor = max(con_valor, key=lambda k: sel[k]["valor"]) if con_valor else None
+    pp = sel[pick]["puntos"]
+    if mejor:
+        estado = "con valor"
+        texto = (f"valor en {mejor}: {sel[mejor]['nuestra']:.0f} % nuestro contra {sel[mejor]['mercado']:.0f} % del "
+                 f"mercado; a cuota {sel[mejor]['cuota']:.2f} se espera {sel[mejor]['valor'] * 100:+.1f} % por unidad")
+    elif abs(pp) < VENTAJA_PTS:
+        estado = "sin ventaja"
+        texto = (f"sin ventaja sobre el mercado: {pick} {sel[pick]['nuestra']:.0f} % contra {sel[pick]['mercado']:.0f} % "
+                 f"({pp:+.1f} pts); a cuota {sel[pick]['cuota']:.2f}, con el margen de la casa, se espera "
+                 f"{sel[pick]['valor'] * 100:+.1f} % por unidad")
+    else:
+        estado = "sobre el mercado" if pp > 0 else "bajo el mercado"
+        texto = (f"{pick} {pp:+.1f} pts {'sobre' if pp > 0 else 'bajo'} el mercado ({sel[pick]['nuestra']:.0f} % contra "
+                 f"{sel[pick]['mercado']:.0f} %), y aun así sin valor a cuota {sel[pick]['cuota']:.2f} "
+                 f"({sel[pick]['valor'] * 100:+.1f} % por unidad)")
+    return {"estado": estado, "pick": pick, "puntosPick": pp, "mejorValor": mejor, "texto": texto,
+            "seleccion": sel, "casas": mercado.get("casas"),
+            "nota": "medido contra la última captura prepartido; el pronóstico no es una recomendación de apuesta: "
+                    "valor = probabilidad nuestra × cuota media − 1 (la cuota trae el margen de la casa)"}
+
+
+def _ventaja_o_nada(fixture_id: int, pron: dict) -> dict | None:
+    try:
+        from backend.analisis.lecciones import cuotas_mercado
+        return ventaja_mercado(pron, cuotas_mercado([fixture_id]).get(fixture_id))
+    except Exception:  # noqa: BLE001 — sin cuotas no hay marca, nunca un error
+        return None
+
+
 def _prediccion_o_nada(fixture_id: int) -> dict | None:
     try:
         from backend.app import prediccion
@@ -3452,6 +3511,8 @@ def dto(fixture_id: int) -> dict | None:
         "dtp": dtp_leido,
         "timeline": timeline,
         "pronostico": parte["pronostico"],
+        # la ventaja sobre el mercado (26/10/2026): calculada al leer, nunca declarada
+        "vsMercado": _ventaja_o_nada(fila["fixture_id"], parte["pronostico"]),
         "matriz": parte.get("matriz") or {},
         "documentos": parte["documentos"],
         "pendientes": parte["pendientes"],

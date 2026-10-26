@@ -1061,6 +1061,10 @@ Escribís vos (es juicio, no se puede calcular):
       nombra el hecho del partido que la sostiene. Si no, el backend pone
       ESPINA-SIGUE-EN-EXTREMO y el recibo lo avisa (Leones–Libertad y
       Nacional–Braga, 25/10/2026: las dos reventaron).
+    · LA VENTAJA SOBRE EL MERCADO LA CALCULA LA APP (`vsMercado` del GET,
+      26/10/2026): no la escribas ni la estimes. Quedarte en el número del
+      mercado (6-B del sad v4.1) es el mejor pronóstico, no una apuesta con
+      valor: no lo presentes como «valor» en el ensayo.
     · CORREGIR SOLO EL DT de un parte ya depositado: `POST
       /analisis/cowork/{id}/dt` con `{"a": {"nombre": "…", "desde":
       "AAAA-MM-DD"}}` (o `b`, o los dos; `desde` solo si lo verificaste). NO

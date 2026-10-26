@@ -3793,6 +3793,29 @@ components:
             partidos calculados. Se arma AL LEER, no al depositar, para que una corrección
             de la ingesta se refleje sin re-depositar nada.
         pronostico: { $ref: '#/components/schemas/PronosticoParte' }
+        vsMercado:
+          type: object
+          nullable: true
+          description: 'la ventaja del 1X2 declarado sobre el mercado, calculada AL LEER contra la última captura prepartido (26/10/2026). `estado`: con valor (alguna selección con valor esperado ≥ 3 % a la cuota media) · sin ventaja (el pick a menos de 3 pts del mercado sin margen) · sobre el mercado · bajo el mercado. Por selección: nuestra, mercado (sin margen), puntos, cuota (media de las casas, con margen), cuotaJusta (100/nuestra) y valor (nuestra × cuota − 1). Null sin las tres cuotas. No es una recomendación de apuesta'
+          properties:
+            estado: { type: string, enum: [con valor, sin ventaja, sobre el mercado, bajo el mercado] }
+            pick: { type: string, enum: [local, empate, visita] }
+            puntosPick: { type: number }
+            mejorValor: { type: string, nullable: true }
+            texto: { type: string }
+            casas: { type: integer, nullable: true }
+            nota: { type: string }
+            seleccion:
+              type: object
+              additionalProperties:
+                type: object
+                properties:
+                  nuestra: { type: number }
+                  mercado: { type: number }
+                  puntos: { type: number }
+                  cuota: { type: number }
+                  cuotaJusta: { type: number, nullable: true }
+                  valor: { type: number }
         matriz: { $ref: '#/components/schemas/MatrizParte' }
         documentos: { type: array, items: { $ref: '#/components/schemas/DocumentoParte' } }
         coherencia:
