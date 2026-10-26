@@ -1549,6 +1549,7 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
       {tab === 'ensayo' && ensayo && (
         <div>
           <PronosticoDelEnsayo parte={parte} nombreDe={nombreDe} />
+          {parte.vsMercado && <MarcaMercado v={parte.vsMercado} />}
           <Documento d={ensayo} />
         </div>
       )}
