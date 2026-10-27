@@ -107,7 +107,11 @@ _COLUMNAS_NUEVAS = (("veredicto_json", "TEXT"), ("cohorte", "TEXT"), ("cuarenten
                     ("banco_desmentido_json", "TEXT"), ("dt_base_json", "TEXT"),
                     # el último depósito ANTES del pitazo (26/10/2026): lo que separa un
                     # DTP-REHACER ignorado de uno que llegó cuando ya no se podía rehacer
-                    ("deposito_previo_en", "TEXT"))
+                    ("deposito_previo_en", "TEXT"),
+                    # el DT con que se ESCRIBIÓ el parte, cuando se corrige después del
+                    # pitazo (27/10/2026, incidencia 712): la corrección arregla el dato,
+                    # no el análisis, y el caso sigue en cuarentena
+                    ("dt_original_json", "TEXT"))
 # el registro del revisor nació sin `via`; se añade en caliente igual
 _COLUMNAS_LOG = (("via", "TEXT"),)
 
@@ -1299,11 +1303,18 @@ def dt_equivocado(parte: dict, fixture_id: int, desmentidos: "dict | None" = Non
     out = []
     malos = set(sin_dt(parte)) | set(desmentidos or {})
     base_al_depositar = dt_base_al_depositar(fixture_id)
+    originales = dt_original(fixture_id)
     for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])):
         if lado in malos:
             continue
         dt = ((parte.get("equipos") or {}).get(lado) or {}).get("dt") or {}
         nombre = _txt(dt.get("nombre")) if isinstance(dt, dict) else ""
+        # CORREGIDO DESPUÉS DEL PITAZO: manda el DT con que se escribió el
+        # análisis (incidencia 712, Biaggio por Hernández): el EFE, el TDE y el
+        # DTP se puntuaron sobre él, y corregir el nombre no los rehace
+        orig = (originales.get(lado) or {}).get("nombre") if originales else ""
+        if orig:
+            nombre = orig
         try:
             fila = saddb.query_one(
                 "sad", "SELECT entrenador FROM alineaciones WHERE fixture_id=? AND team_id=? "
@@ -1351,6 +1362,18 @@ def dt_base_al_depositar(fixture_id: int) -> dict:
         return {}
 
 
+def dt_original(fixture_id: int) -> dict:
+    """{lado: {nombre, corregidoEn, por}} del DT con que se escribió el parte,
+    sellado la PRIMERA vez que `corregir_dt` lo cambia después del pitazo."""
+    try:
+        with _conectar() as con:
+            fila = con.execute("SELECT dt_original_json FROM parte_cowork WHERE fixture_id=?",
+                               (fixture_id,)).fetchone()
+        return json.loads(fila["dt_original_json"]) if fila and fila["dt_original_json"] else {}
+    except (sqlite3.Error, ValueError):
+        return {}
+
+
 def corregir_dt(fixture_id: int, cambios: dict) -> dict:
     """Cambia SOLO el `dt` de uno o los dos lados de un parte ya depositado.
 
@@ -1390,9 +1413,27 @@ def corregir_dt(fixture_id: int, cambios: dict) -> dict:
             antes[lado] = equipo.get("dt")
             equipo["dt"] = nuevo
             ahora[lado] = nuevo
+        # DESPUÉS DEL PITAZO la corrección arregla el dato, no el análisis
+        # (incidencia 712): se sella el DT con que se escribió el parte, una sola
+        # vez por lado, y `dt_equivocado` lo sigue mirando. Antes del pitazo no:
+        # ahí el parte todavía se puede rehacer con el DT bueno.
+        sellado = None
+        cuando = efedb.ahora()
+        if ahora and fx and not _antes_del_pitazo(cuando, fx["date"]):
+            prev = con.execute("SELECT dt_original_json FROM parte_cowork WHERE fixture_id=?",
+                               (fixture_id,)).fetchone()
+            orig = json.loads(prev["dt_original_json"]) if prev and prev["dt_original_json"] else {}
+            for lado in ahora:
+                viejo = antes.get(lado) if isinstance(antes.get(lado), dict) else {}
+                n_viejo = _txt((viejo or {}).get("nombre"))
+                if lado not in orig and n_viejo and not mismo_dt(n_viejo, _txt(ahora[lado].get("nombre"))):
+                    orig[lado] = {"nombre": n_viejo, "corregidoEn": cuando, "por": _txt(ahora[lado].get("nombre"))}
+            sellado = orig or None
         if ahora:
-            con.execute("UPDATE parte_cowork SET parte_json=?, actualizado_en=? WHERE fixture_id=?",
-                        (json.dumps(parte, ensure_ascii=False), efedb.ahora(), fixture_id))
+            con.execute("UPDATE parte_cowork SET parte_json=?, actualizado_en=?"
+                        + (", dt_original_json=?" if sellado else "") + " WHERE fixture_id=?",
+                        (json.dumps(parte, ensure_ascii=False), cuando,
+                         *((json.dumps(sellado, ensure_ascii=False),) if sellado else ()), fixture_id))
     return {
         "fixtureId": fixture_id,
         "antes": antes,
@@ -1402,6 +1443,9 @@ def corregir_dt(fixture_id: int, cambios: dict) -> dict:
         # ya casa con el que se sentó en el banco (o no hay alineación)
         "dtEquivocado": dt_equivocado(parte, fixture_id, bancos_desmentidos(fixture_id)),
         "sinDt": sin_dt(parte),
+        # el DT con que se escribió el parte, si se corrigió después del pitazo:
+        # el caso sigue en cuarentena (incidencia 712)
+        "dtOriginal": dt_original(fixture_id),
     }
 
 

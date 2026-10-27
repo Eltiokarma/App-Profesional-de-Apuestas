@@ -1124,7 +1124,10 @@ paths:
         onces (incidencia 387, Meza 3 de 10); el de goles y asistencias, en alguno. El mismo
         jugador con dos ids y minutos en los dos (mismo nombre completo con la pila entera, nunca
         juntos en una hoja) sale en UNA fila con los minutos sumados y el otro id en
-        `idsAlternos` (incidencia 381, Wesley Natã / Wesley Nata).
+        `idsAlternos` (incidencia 381, Wesley Natã / Wesley Nata). Con INICIALES distintas o sin la
+        pila entera («J. Bisanz» / «F. Bisanz», incidencia 673) se funden solo con el mismo apellido,
+        nunca juntos en una hoja y, además, uno que deja de aparecer cuando aparece el otro o los
+        mismos goles y asistencias (no cero); la fila lleva `fundidoPorInicial: true`.
         El rol es SUGERIDO: lo confirma la prensa. Un decisivo que
         no figura en la tabla depositada dispara `F1-DECISIVO-FUERA` en el parte. Los
         titulares del ÚLTIMO once entran todos aunque queden fuera del corte de 16
@@ -1428,6 +1431,10 @@ paths:
                     type: array
                     items: { type: object, properties: { lado: { type: string }, parte: { type: string }, banco: { type: string } } }
                   sinDt: { type: array, items: { type: string } }
+                  dtOriginal:
+                    type: object
+                    additionalProperties: true
+                    description: '{lado: {nombre, corregidoEn, por}}: el DT con que se ESCRIBIÓ el parte, sellado la primera vez que se corrige DESPUÉS del pitazo (27/10/2026, incidencia 712). `dtEquivocado` lo sigue mirando y el caso sigue en cuarentena: la corrección arregla el dato, no el análisis. Antes del pitazo no se sella nada'
         '404': { description: no hay parte para ese fixture }
         '422': { description: sin lados en el cuerpo }
   /analisis/cowork/{fixtureId}/banco-desmentido:
