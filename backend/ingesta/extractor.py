@@ -38,7 +38,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
-from backend.cuota_mercados import cuota_key, dc_incoherente, es_del_contrato
+from backend.cuota_mercados import casas_dos_salidas_incoherentes, cuota_key, dc_incoherente, es_del_contrato
 
 # API-Football directo (clave de dashboard.api-football.com): mismo API v3
 # que servía RapidAPI, cambian solo el host y la cabecera de autenticación.
@@ -886,9 +886,18 @@ def guardar_odds(con: sqlite3.Connection, fixture_id: int, respuesta: list) -> i
                             referencias[(league_id, bk.get("id"), casa_nombre,
                                          bet.get("id"), bet_nombre, v)] = odd
                     n += 1
-    # snapshot para el historial de movimiento: media entre casas por selección
+    # snapshot para el historial de movimiento: media entre casas por selección,
+    # sin la casa que da otro mercado bajo «ambos marcan» o «más/menos»
+    # (incidencia 717: Marathonbet con Sí 7.8 / No 1.04 entre casas de 1.45/2.6)
+    claves = {m: cuota_key(m[2], m[3]) for m in medias}
+    fuera = casas_dos_salidas_incoherentes([
+        {"casa": casa, "mercado": k[0], "seleccion": k[1], "cuota": odd}
+        for m, k in claves.items() if k for casa, odd in medias[m].items()])
     for (liga, bet_id, bet_name, value), por_casa in medias.items():
-        odds = list(por_casa.values())
+        k = claves[(liga, bet_id, bet_name, value)]
+        odds = [o for c, o in por_casa.items() if not (k and (c, k[0]) in fuera)]
+        if not odds:
+            continue
         con.execute(
             "INSERT INTO odds_history (fixture_id, league_id, bet_id, bet_name, "
             "value, odd, casas, captured_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",

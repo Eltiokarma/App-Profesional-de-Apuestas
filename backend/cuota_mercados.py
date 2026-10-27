@@ -90,6 +90,58 @@ def sin_dc_incoherente(filas: list[dict]) -> list[dict]:
                                      and dc_incoherente(f["seleccion"], f["cuota"], x12.get(f["casa"], {})))]
 
 
+# LOS MERCADOS DE DOS SALIDAS (ambos marcan, más/menos 2.5) TAMBIÉN TIENEN QUE
+# CUADRAR (incidencia 717, 27/10/2026): en 1576182 cinco casas daban «ambos
+# marcan» Sí 1.40-1.50 / No 2.50-2.63 y Marathonbet Sí 7.8 / No 1.04, otro
+# mercado con el mismo nombre. La media subía el Sí a 2.5: en 2.355 partidos
+# la suma implícita de la media quedaba bajo 1 en el 47 % (imposible con
+# margen) y «ambos marcan sí» salía con un ROI de +25 % que era el artefacto.
+# Una casa sale de ESE mercado si su par no suma lo que suma un par con margen
+# o si su probabilidad sin margen se aparta de la mediana de las otras casas
+# (con 3+ casas: con dos no se sabe cuál es la rara). El par de Marathonbet
+# suma 1.09 —parece sano solo— y se va por el consenso (0.12 contra 0.64).
+_DOS_SALIDAS = {"btts": ("Y", "N"), "ou": ("O", "U")}
+SUMA_DOS_SALIDAS = (0.98, 1.25)
+DESVIO_CONSENSO = 0.25
+
+
+def casas_dos_salidas_incoherentes(filas: list[dict]) -> set[tuple[str, str]]:
+    """Las (casa, mercado) de `filas` ({casa, mercado, seleccion, cuota}) cuyo
+    par de dos salidas no cuadra. Un par incompleto no se juzga."""
+    pares: dict[str, dict[str, dict[str, float]]] = {}
+    for f in filas:
+        if f["mercado"] in _DOS_SALIDAS:
+            pares.setdefault(f["mercado"], {}).setdefault(f["casa"], {})[f["seleccion"]] = f["cuota"]
+    fuera: set[tuple[str, str]] = set()
+    for mercado, por_casa in pares.items():
+        a, b = _DOS_SALIDAS[mercado]
+        prob: dict[str, float] = {}
+        for casa, sel in por_casa.items():
+            try:
+                pa, pb = 1 / float(sel[a]), 1 / float(sel[b])
+            except (KeyError, TypeError, ValueError, ZeroDivisionError):
+                continue
+            if not SUMA_DOS_SALIDAS[0] <= pa + pb <= SUMA_DOS_SALIDAS[1]:
+                fuera.add((casa, mercado))
+            else:
+                prob[casa] = pa / (pa + pb)
+        if len(prob) >= 3:
+            for casa, p in prob.items():
+                otras = sorted(v for c, v in prob.items() if c != casa)
+                n = len(otras)
+                med = otras[n // 2] if n % 2 else (otras[n // 2 - 1] + otras[n // 2]) / 2
+                if abs(p - med) > DESVIO_CONSENSO:
+                    fuera.add((casa, mercado))
+    return fuera
+
+
+def sin_incoherentes(filas: list[dict]) -> list[dict]:
+    """`sin_dc_incoherente` y, además, sin las casas cuyo par de dos salidas
+    (btts, ou) no cuadra: lo que entra a una media entre casas."""
+    fuera = casas_dos_salidas_incoherentes(filas)
+    return [f for f in sin_dc_incoherente(filas) if (f["casa"], f["mercado"]) not in fuera]
+
+
 def es_del_contrato(bet_name, value) -> bool:
     """¿Esta fila de cuotas la lee alguna pantalla? Si no, no se guarda."""
     return cuota_key(bet_name, value) is not None
