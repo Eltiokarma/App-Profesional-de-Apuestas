@@ -2037,7 +2037,7 @@ export interface ParteCoworkDTO {
   /** Época del proceso en la que se depositó (docs/APRENDIZAJE.md, cohortes). */
   cohorte?: { clave: string; vigente: boolean; descripcion: string }
   /** Apartado del aprendizaje por criterio; null si cuenta. */
-  cuarentena?: { motivo: string; puestaEn: string; veredictoAlPoner: Record<'a' | 'b', string> | null } | null
+  cuarentena?: { motivo: string; puestaEn: string; veredictoAlPoner: Record<'a' | 'b', string> | null; ensena?: boolean } | null
   /** Lados donde el usuario probó que el DT del banco de la API está mal. */
   bancoDesmentido?: Partial<Record<'a' | 'b', BancoDesmentidoLado>>
   creadoEn: string
@@ -2125,6 +2125,8 @@ export interface LeccionItem {
   cuarentena?: string
   /** true = la puso la app por criterio (parte sin DT declarado); se levanta re-depositando con el DT. */
   cuarentenaAutomatica?: boolean
+  /** Cuarentena que enseña: fuera de toda métrica, pero la lección sigue con las del skill y fija rúbrica. */
+  cuarentenaEnsena?: boolean
   /** Si la automática es por DT equivocado: qué lado y qué nombres chocaron. */
   dtEquivocado?: { lado: 'a' | 'b'; parte: string; banco: string }[]
   /** El parte contradijo a la base con la prensa y el banco de la API no le da la razón: se ve, no aparta el caso. */

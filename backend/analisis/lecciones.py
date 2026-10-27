@@ -202,6 +202,8 @@ def _item(caso, lado, clave, lv, mf, orden, propio, rival, estados, seleccion, m
         "cohorte": caso.get("cohorte", ""),
         "cuarentena": (caso.get("cuarentena") or {}).get("motivo", "") if caso.get("cuarentena") else "",
         "cuarentenaAutomatica": bool((caso.get("cuarentena") or {}).get("automatica")),
+        # fuera de toda métrica, pero la lección sigue en el skill y el dossier
+        "cuarentenaEnsena": bool((caso.get("cuarentena") or {}).get("ensena")),
         # por qué lado y con qué nombres saltó la automática por DT: es lo que
         # el usuario desmiente cuando el banco de la API es el equivocado
         "dtEquivocado": (caso.get("cuarentena") or {}).get("dtEquivocado") or [],
@@ -212,7 +214,9 @@ def _item(caso, lado, clave, lv, mf, orden, propio, rival, estados, seleccion, m
         # un caso contaminado enseña, pero no mueve un número. Uno en
         # cuarentena ni siquiera enseña: su insumo estaba roto.
         "puedeMoverNumeros": acredita and not caso.get("cuarentena"),
-        "queAutoriza": ("en cuarentena: no cuenta ni fija rúbrica" if caso.get("cuarentena") else
+        "queAutoriza": ("en cuarentena que enseña: no cuenta en ninguna métrica, pero fija rúbrica"
+                        if (caso.get("cuarentena") or {}).get("ensena") else
+                        "en cuarentena: no cuenta ni fija rúbrica" if caso.get("cuarentena") else
                         "puede sostener un cambio de peso" if acredita else
                         "solo fija rúbrica: aclara cómo se aplica una regla, "
                         "no mueve ningún número"),
@@ -920,8 +924,9 @@ def _calcular_nucleo(limite: int, clave_cohorte: str) -> dict:
     casos = [c for c in todos_los_casos if not clave_cohorte or c["cohorte"] == clave_cohorte]
     todos = [i for caso in casos for i in _items_de(caso, estados)]
     poblacion, metricas = _metricas(casos)
-    en_cuarentena = [i for i in todos if i["cuarentena"]]
-    todos = [i for i in todos if not i["cuarentena"]]
+    # la cuarentena que enseña deja sus lecciones con las del skill
+    en_cuarentena = [i for i in todos if i["cuarentena"] and not i["cuarentenaEnsena"]]
+    todos = [i for i in todos if not i["cuarentena"] or i["cuarentenaEnsena"]]
     # los estudios de reventones hacia atrás (backend/analisis/reventones.py):
     # mismas lecciones por skill, población post_resultado (fijan rúbrica)
     if clave_cohorte in ("", COHORTE):

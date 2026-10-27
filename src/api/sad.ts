@@ -175,8 +175,8 @@ export const SadApi = {
     { timeoutMs: 90_000 }),
 
   /** Aparta un caso del aprendizaje POR CRITERIO (qué le faltaba al parte), nunca por resultado. Token maestro. */
-  cuarentena: (fixtureId: number, motivo: string) =>
-    apiPost<{ fixtureId: number; cuarentena: unknown }>(`/analisis/cowork/${fixtureId}/cuarentena`, { motivo }),
+  cuarentena: (fixtureId: number, motivo: string, ensena = false) =>
+    apiPost<{ fixtureId: number; cuarentena: unknown }>(`/analisis/cowork/${fixtureId}/cuarentena`, { motivo, ensena }),
   quitarCuarentena: (fixtureId: number) =>
     apiDelete<{ fixtureId: number; cuarentena: null }>(`/analisis/cowork/${fixtureId}/cuarentena`),
 

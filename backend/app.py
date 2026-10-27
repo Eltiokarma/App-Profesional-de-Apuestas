@@ -2684,6 +2684,8 @@ def cowork_corregir_dt(fixture_id: int, body: DtBody):
 
 class CuarentenaBody(BaseModel):
     motivo: str = ""
+    # true = fuera de toda métrica, pero sus lecciones siguen fijando rúbrica
+    ensena: bool = False
 
 
 @app.post(API + "/analisis/cowork/{fixture_id}/cuarentena")
@@ -2696,7 +2698,7 @@ def cowork_cuarentena(fixture_id: int, body: CuarentenaBody):
     para que una auditoría vea si se puso después de saber cómo terminó."""
     from backend.analisis import parte as cowork
     try:
-        return cowork.poner_cuarentena(fixture_id, body.motivo)
+        return cowork.poner_cuarentena(fixture_id, body.motivo, body.ensena)
     except cowork.ParteInvalido as e:
         raise HTTPException(422, str(e))
     except KeyError:

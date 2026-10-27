@@ -143,7 +143,8 @@ def antecedentes(fixture_id: int, n: int = N_DEFECTO) -> dict | None:
     estados = lec._estados()
     # las lecciones de estos casos como las arma el inventario: fuera de
     # cuarentena (el inventario las aparta), con su estado guardado
-    items = [i for c in casos for i in lec._items_de(c, estados) if not i["cuarentena"]]
+    items = [i for c in casos for i in lec._items_de(c, estados)
+             if not i["cuarentena"] or i["cuarentenaEnsena"]]
     inv = {"items": items}
     out = {"fixtureId": fixture_id,
            "partido": {"equipoA": fx["home_name"], "equipoB": fx["away_name"], "fecha": fecha[:10]}}

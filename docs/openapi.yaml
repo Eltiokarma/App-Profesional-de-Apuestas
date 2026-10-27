@@ -1525,7 +1525,10 @@ paths:
         tenía el caso al ponerla (`veredictoAlPoner`, para que una auditoría vea si se puso
         después de saber cómo terminó) y NO está en la lista de permitidos del token de
         Cowork. Un caso en cuarentena sale de todas las métricas y sus lecciones no cuentan
-        ni fijan rúbrica; se listan aparte en `enCuarentena`.
+        ni fijan rúbrica; se listan aparte en `enCuarentena`. Con `ensena: true` (la
+        CUARENTENA QUE ENSEÑA, 27/10/2026: el sistema falló y de eso se aprende) el caso sale
+        igual de toda métrica, pero sus lecciones siguen en `items`, con las del skill y en el
+        dossier, con `cuarentenaEnsena: true`: fijan rúbrica y nunca mueven un número.
       parameters:
         - { name: fixtureId, in: path, required: true, schema: { type: integer } }
       requestBody:
@@ -1537,6 +1540,7 @@ paths:
               required: [motivo]
               properties:
                 motivo: { type: string, description: 'qué le faltaba a ESTE parte antes del pitazo' }
+                ensena: { type: boolean, default: false, description: 'fuera de toda métrica, pero sus lecciones siguen fijando rúbrica' }
       responses:
         '200':
           description: OK
@@ -1712,6 +1716,7 @@ components:
         cohorte: { type: string, description: 'época del proceso en la que se depositó el parte' }
         cuarentena: { type: string, description: 'motivo de la cuarentena; vacío si el caso cuenta' }
         cuarentenaAutomatica: { type: boolean, description: 'la puso la app por criterio: parte sin DT declarado en un lado, o DT del parte distinto del banco. Se levanta re-depositando con el DT o desmintiendo el banco' }
+        cuarentenaEnsena: { type: boolean, description: 'cuarentena que enseña: el caso no cuenta en ninguna métrica, pero la lección sigue en items y fija rúbrica' }
         dtEquivocado:
           type: array
           description: 'si la automática es por DT equivocado: qué lado y qué nombres chocaron (parte vs banco de la API)'
@@ -1738,6 +1743,7 @@ components:
           nullable: true
           description: 'el veredicto por lado que tenía el caso al ponerla: evidencia para la auditoría'
           additionalProperties: { type: string }
+        ensena: { type: boolean, description: 'cuarentena que enseña: sus lecciones siguen con las del skill' }
     Cohorte:
       type: object
       description: >

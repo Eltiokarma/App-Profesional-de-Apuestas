@@ -170,7 +170,8 @@ export interface SadDataSource {
   /** Lo que el bucle aprendió, por skill (fase C de docs/APRENDIZAJE.md). */
   lecciones(params?: LeccionesParams): Promise<InventarioLecciones>
   /** Cuarentena por criterio (docs/APRENDIZAJE.md): la pone el usuario, con motivo. */
-  cuarentena(fixtureId: number, motivo: string): Promise<unknown>
+  /** `ensena`: fuera de toda métrica, pero sus lecciones siguen fijando rúbrica. */
+  cuarentena(fixtureId: number, motivo: string, ensena?: boolean): Promise<unknown>
   quitarCuarentena(fixtureId: number): Promise<unknown>
   /** Mueve una lección de estado. Lo hace el usuario, no el agente. */
   moverLeccion(clave: string, body: { estado: string; aplicadaEn?: string; nota?: string }): Promise<LeccionItem>
@@ -885,9 +886,9 @@ class MockDataSource implements SadDataSource {
   async lecciones(params?: LeccionesParams): Promise<InventarioLecciones> {
     return paginarLecciones(leccionesDemo(params?.skill ?? '', params?.estado ?? '', params?.cohorte ?? ''), params)
   }
-  async cuarentena(fixtureId: number, motivo: string): Promise<unknown> {
+  async cuarentena(fixtureId: number, motivo: string, ensena = false): Promise<unknown> {
     if (motivo.trim().length < 12) throw new Error('la cuarentena lleva motivo: qué le faltaba a ESTE parte antes del pitazo')
-    return { fixtureId, cuarentena: { motivo, puestaEn: new Date().toISOString() } }
+    return { fixtureId, cuarentena: { motivo, puestaEn: new Date().toISOString(), ...(ensena ? { ensena } : {}) } }
   }
   async quitarCuarentena(fixtureId: number): Promise<unknown> {
     return { fixtureId, cuarentena: null }
@@ -1261,7 +1262,7 @@ class HttpDataSource implements SadDataSource {
   resolverXi = (fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }) =>
     SadApi.resolverXi(fixtureId, body)
   lecciones = (params?: LeccionesParams) => SadApi.lecciones(params)
-  cuarentena = (fixtureId: number, motivo: string) => SadApi.cuarentena(fixtureId, motivo)
+  cuarentena = (fixtureId: number, motivo: string, ensena = false) => SadApi.cuarentena(fixtureId, motivo, ensena)
   quitarCuarentena = (fixtureId: number) => SadApi.quitarCuarentena(fixtureId)
   moverLeccion = (clave: string, body: { estado: string; aplicadaEn?: string; nota?: string }) =>
     SadApi.moverLeccion(clave, body)

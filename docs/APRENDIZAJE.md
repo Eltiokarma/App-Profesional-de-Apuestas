@@ -585,6 +585,15 @@ poder mover números ni fijar rúbrica. La regla dura, y la razón de que exista
 > que tenía el caso al ponerla: una auditoría ve de un vistazo si se puso
 > después de saber cómo terminó.
 
+**La cuarentena que enseña** (27/10/2026, pedido del usuario tras
+Comerciantes Unidos 3-1 Cienciano: el parte se escribió con el DT cesado). Un
+caso donde FALLÓ EL SISTEMA no debe calibrar nada, pero es justo el que más
+enseña. Con `ensena: true` en el POST (en la pantalla, la casilla «que siga
+enseñando», marcada por defecto) el caso sale igual de TODA métrica y de la
+población ciega, pero sus lecciones se quedan con las del skill, en el dossier
+y en los antecedentes, con `cuarentenaEnsena: true`: fijan rúbrica y nunca
+mueven un número (`puedeMoverNumeros: false`). Las automáticas no enseñan.
+
 **Cuarentena automática: sin DT no hay caso.** El bloque A, F3 y S1 se
 apoyan en la continuidad del entrenador. Un parte con `dt` «sin establecer»
 (o vacío, en los de rodaje) en un lado se hizo sin ese insumo: `lecciones.py`

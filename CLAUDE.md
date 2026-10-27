@@ -1032,6 +1032,10 @@ conversación se pierde en la siguiente.
      (uno deja de aparecer cuando aparece el otro) o los mismos goles y
      asistencias (no cero); sin pedir la posición, y la fila queda marcada
      `fundidoPorInicial`. Dos pilas enteras distintas siguen siendo dos personas.
+     Y la **cuarentena que enseña** (usuario, por Comerciantes–Cienciano):
+     `POST …/cuarentena` con `ensena: true` saca el caso de toda métrica pero
+     deja sus lecciones con las del skill y en el dossier, fijando rúbrica
+     (`cuarentenaEnsena`, casilla marcada por defecto en Aprendizaje).
    - **Aprendizaje reordenado (25/10)**: resumen sin lecciones, pestañas, el
      cierre en bloque arriba de cada skill, lecciones de a 20 y el inventario
      guardado por huella (`SAD_CACHE_INVENTARIO_S`; antes 46 s y 6,3 MB). La
