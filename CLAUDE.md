@@ -1035,7 +1035,9 @@ conversación se pierde en la siguiente.
      Y la **cuarentena que enseña** (usuario, por Comerciantes–Cienciano):
      `POST …/cuarentena` con `ensena: true` saca el caso de toda métrica pero
      deja sus lecciones con las del skill y en el dossier, fijando rúbrica
-     (`cuarentenaEnsena`, casilla marcada por defecto en Aprendizaje).
+     (`cuarentenaEnsena`, casilla marcada por defecto en Aprendizaje). La
+     automática por DT EQUIVOCADO también enseña (usuario, mismo día); la de
+     parte sin DT y la de parte de otra fecha no.
    - **Aprendizaje reordenado (25/10)**: resumen sin lecciones, pestañas, el
      cierre en bloque arriba de cada skill, lecciones de a 20 y el inventario
      guardado por huella (`SAD_CACHE_INVENTARIO_S`; antes 46 s y 6,3 MB). La

@@ -131,7 +131,10 @@ def _casos(limite: int = 400, ids=None) -> list[dict]:
                                         + " · ".join(f"lado {m['lado']}: parte «{m['parte']}», banco «{m['banco']}»"
                                                      for m in malos) + ")",
                               "automatica": True, "puestaEn": "", "veredictoAlPoner": None,
-                              "dtEquivocado": malos}
+                              "dtEquivocado": malos,
+                              # ENSEÑA (usuario, 27/10/2026): el sistema falló con el DT y
+                              # de eso se aprende; fuera de toda métrica, fija rúbrica
+                              "ensena": True}
         fuera.append({
             "fixtureId": f["fixture_id"], "fecha": (f["fecha"] or "")[:10],
             "creadoEn": (f["creado_en"] or "")[:10],

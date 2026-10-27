@@ -1528,7 +1528,8 @@ paths:
         ni fijan rúbrica; se listan aparte en `enCuarentena`. Con `ensena: true` (la
         CUARENTENA QUE ENSEÑA, 27/10/2026: el sistema falló y de eso se aprende) el caso sale
         igual de toda métrica, pero sus lecciones siguen en `items`, con las del skill y en el
-        dossier, con `cuarentenaEnsena: true`: fijan rúbrica y nunca mueven un número.
+        dossier, con `cuarentenaEnsena: true`: fijan rúbrica y nunca mueven un número. La
+        automática por DT equivocado también enseña; la de parte sin DT y la de otra fecha no.
       parameters:
         - { name: fixtureId, in: path, required: true, schema: { type: integer } }
       requestBody:
