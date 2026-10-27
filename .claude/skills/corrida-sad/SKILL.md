@@ -200,7 +200,10 @@ cada 30 minutos y es CORTA: casi siempre no hay nada que hacer.
    contradice la apertura del DTP) o **PARTE-OTRA-FECHA** (el parte se
    escribió para la fecha vieja de un partido reprogramado: ese se rehace
    ENTERO, con el modo `partes`, no solo el DTP; desde el 25/10/2026,
-   incidencia 395). Con `pendientes` vacío: terminá YA en una
+   incidencia 395) o **DT-VS-BANCO** (el once oficial sienta a otro DT que el
+   del parte: confirmalo en prensa y corregí SOLO el DT con `POST
+   /analisis/cowork/{id}/dt`, o declará `dt.banco` si el titular no se sienta;
+   desde el 27/10/2026, incidencia 711). Con `pendientes` vacío: terminá YA en una
    línea («Nada que rehacer a las HH:MM de Lima»), sin `git pull`, sin leer
    el resto de este skill, sin otra llamada y **sin avisar al celular** (corre
    cada media hora: un aviso vacío cada vez se deja de leer).

@@ -2871,6 +2871,17 @@ def main():
         if not _hay:
             _con.execute("INSERT INTO alineaciones (fixture_id, team_id, entrenador, player_id, jugador, titular) "
                          "VALUES (?, ?, ?, ?, ?, 1)", (pasado["id"], _fx[0], "R. Dudamel", 999001, "Jugador Demo"))
+    # 711 (Comerciantes Unidos, Biaggio en el banco y Hernández en el parte): el
+    # once capturado con OTRO entrenador avisa en el parte, y el lado que declaró
+    # con fuente quién se sienta no
+    _al711 = [x for x in c.get(f"{A}/analisis/cowork/{pasado['id']}").json()["alertas"] if x["codigo"] == "DT-VS-BANCO"]
+    check("711: el banco del once (R. Dudamel) contra el DT del parte da DT-VS-BANCO en ese lado",
+          [(x["equipo"], x["banco"]) for x in _al711] == [("a", "R. Dudamel")], _al711)
+    from backend.analisis.parte import alertas_dt as _adt, _fixture as _fx711
+    _p711 = {"equipos": {"a": {"dt": {"nombre": "Otro Técnico", "banco": {
+        "motivo": "suspendido", "nombre": "R. Dudamel", "fuente": "prensa"}}}, "b": {"dt": {"nombre": "x"}}}}
+    check("711: con `dt.banco` declarado con fuente y el mismo nombre, no avisa",
+          not [x for x in _adt(_p711, _fx711(pasado["id"]), {}) if x["codigo"] == "DT-VS-BANCO"])
     from backend.analisis.parte import dt_base_al_depositar as _dtb
     check("al depositar se guarda qué DT tenía la base", bool(_dtb(pasado["id"]).get("a")), _dtb(pasado["id"]))
     def _base_fue(nombre):  # qué decía la base al depositar (sellado en la primera vez)

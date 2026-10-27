@@ -1573,7 +1573,11 @@ def alertas_colapso(parte: dict, nombres: dict) -> list[dict]:
 def alertas_dt(parte: dict, fx, nombres: dict) -> list[dict]:
     """DT-DISCREPANCIA cuando el parte (la prensa) y la base no dicen el mismo
     DT: manda el parte, y la base queda marcada para refrescarse. DT-SIN-DT
-    cuando el bloque A no tiene entrenador: el caso no entra al aprendizaje."""
+    cuando el bloque A no tiene entrenador: el caso no entra al aprendizaje.
+    DT-VS-BANCO cuando el once oficial ya capturado trae en el banco a otro
+    (incidencia 711, Comerciantes Unidos 25/10/2026: el once de las 15:33
+    traía a Biaggio, oficializado el 21/10, y el parte y la base decían
+    Hernández; nada sonó hasta el veredicto)."""
     from backend.ingesta.jugadores import mismo_nombre_dt
     out = []
     if not fx:
@@ -1595,7 +1599,29 @@ def alertas_dt(parte: dict, fx, nombres: dict) -> list[dict]:
                                    f"({base['nota']}). Manda el parte —es lo verificado en prensa—; el registro "
                                    "de la base se refresca en la próxima corrida (DT de la agenda)",
                         "dtBase": base})
+        banco = dt_del_banco(fx["id"], tid)
+        if banco and _tokens_dt(nombre) and _tokens_dt(banco) and not mismo_dt(nombre, banco):
+            declarado = dt.get("banco") if isinstance(dt.get("banco"), dict) else None
+            if (declarado and declarado.get("motivo") in MOTIVOS_BANCO and declarado.get("fuente")
+                    and (not declarado.get("nombre") or mismo_dt(declarado["nombre"], banco))):
+                continue   # el parte ya dijo, con fuente, quién se sienta
+            out.append({"codigo": "DT-VS-BANCO", "equipo": lado, "tipo": "dato", "banco": banco,
+                        "detalle": f"{quien}: el once oficial de ESTE partido trae en el banco a «{banco}» y el "
+                                   f"parte dice «{nombre}». Antes del pitazo: confirmalo en prensa y corregí con "
+                                   "POST /analisis/cowork/{id}/dt (o declarás `dt.banco` si el titular no se "
+                                   "sienta); después del pitazo el caso queda con el DT con que se escribió"})
     return out
+
+
+def dt_del_banco(fixture_id, team_id) -> str:
+    """El entrenador que trae la alineación capturada de ESE partido, o ""."""
+    try:
+        fila = saddb.query_one(
+            "sad", "SELECT entrenador FROM alineaciones WHERE fixture_id=? AND team_id=? "
+                   "AND entrenador IS NOT NULL AND entrenador <> '' LIMIT 1", (fixture_id, team_id))
+    except Exception:  # noqa: BLE001 — sin tabla de alineaciones no hay con qué comparar
+        return ""
+    return (fila["entrenador"] if fila else "") or ""
 
 
 def alerta_escala(fx, nombres: dict) -> list[dict]:
@@ -2093,7 +2119,7 @@ _CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto", "ligas", "dtBa
 # F3 y las de DT las pone la lectura a partir de la base y del propio parte;
 # si el eco del GET vuelve con ellas, se descartan sin rechazo (se van a
 # recalcular igual) en vez de guardarse por duplicado.
-_ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "K-EXTREMO-CONDICION", "K-CERCA-EXTREMO-CONDICION", "FAMILIA-RECORD", "ESPINA-VS-RIESGO", "HERENCIA-DTP", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT",
+_ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "K-EXTREMO-CONDICION", "K-CERCA-EXTREMO-CONDICION", "FAMILIA-RECORD", "ESPINA-VS-RIESGO", "HERENCIA-DTP", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT", "DT-VS-BANCO",
                         "COLAPSO-EN-CASCADA", "F1-DECISIVO-FUERA", "DTP-REHACER", "DTP-SIN-REFERENCIA",
                         "TIPOLOGIA-VS-INDICES", "ESPINA-SIGUE-EN-EXTREMO", "EFE-EMPATE-TECNICO"}
 # LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
@@ -5408,7 +5434,8 @@ def rehacer_pendientes(desde_min: int = REHACER_DESDE_MIN, hasta_min: int = REHA
                 "minutosAlPitazo": int((pitazo - ahora).total_seconds() // 60)}
         en_ventana.append(item)
         d = dto(f["fixture_id"]) or {}
-        rehacer = [a for a in d.get("alertas") or [] if a.get("codigo") == "DTP-REHACER"]
+        # el DT del banco contra el del parte también se corrige antes del pitazo (711)
+        rehacer = [a for a in d.get("alertas") or [] if a.get("codigo") in ("DTP-REHACER", "DT-VS-BANCO")]
         movido = dias_movido(f["fecha"], fx["date"])
         if movido:
             # se escribió con otra semana de datos: se rehace ENTERO, no solo el DTP

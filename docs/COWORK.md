@@ -885,7 +885,8 @@ Escribís vos (es juicio, no se puede calcular):
     1. Buscá en prensa de ESTA semana quién dirige. Si la prensa dice un
        nombre, ES ESE, aunque la base diga otro y aunque `fiable` sea true.
        Escribilo en `dt` con la fuente en `notas.A`; la app marca la
-       discrepancia sola (alerta `DT-DISCREPANCIA`) y la base se corrige en
+       discrepancia sola (alerta `DT-DISCREPANCIA`; si el once oficial ya
+       capturado sienta a otro, `DT-VS-BANCO`) y la base se corrige en
        la próxima corrida. No discutas con la base, no promedies, no dejes el
        bloque A a medias por la duda.
     2. Si la prensa no dice nada y `fiable` es true, tomá el de la base y
