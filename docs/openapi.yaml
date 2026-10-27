@@ -848,7 +848,7 @@ paths:
         arregla con tests o lo deriva. Por defecto las abiertas, las que bloquean y las más
         repetidas primero; `estado=todas` trae todo.
       parameters:
-        - { name: estado, in: query, schema: { type: string, default: abierta, enum: [abierta, en_curso, resuelta, dato_api, por_diseno, usuario, descartada, todas] } }
+        - { name: estado, in: query, schema: { type: string, default: abierta, enum: [abierta, en_curso, resuelta, dato_api, por_diseno, usuario, descartada, aprobada, por_desplegar, todas] } }
         - { name: limite, in: query, schema: { type: integer, default: 200, minimum: 1, maximum: 1000 } }
       responses:
         '200':
@@ -901,12 +901,82 @@ paths:
                   repetidas: { type: array, items: { type: integer } }
                   rechazos: { type: array, items: { type: object, additionalProperties: true } }
         '422': { description: origen desconocido o sin items }
+  /analisis/cowork/incidencias/causas:
+    get:
+      summary: Las familias de causa, para no investigar dos veces lo mismo
+      description: >
+        27/10/2026, pedido del usuario. Junta las incidencias que son la misma causa escrita con
+        otras palabras (3+ palabras compartidas y 60 % de las del título más corto). Cada
+        familia trae su `conocida` (la última cerrada, con la resolución), `recurrente` (un
+        dato_api visto en 3+ partidos distintos sin que nadie haya decidido: se lleva al usuario
+        con una regla de código propuesta) y `reaparece` (se reportó de nuevo después de un PR:
+        el parche no alcanzó). Es una pista: no cierra nada.
+      parameters:
+        - { name: recurrentes, in: query, schema: { type: boolean, default: false, description: 'solo las recurrentes y las que reaparecen' } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  causas:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        raiz: { type: integer }
+                        titulo: { type: string }
+                        area: { type: string }
+                        ids: { type: array, items: { type: integer } }
+                        incidencias: { type: integer }
+                        veces: { type: integer }
+                        fixtures: { type: integer }
+                        fixturesDatoApi: { type: integer }
+                        porEstado: { type: object, additionalProperties: { type: integer } }
+                        abiertas: { type: array, items: { type: integer } }
+                        ultimaVez: { type: string }
+                        conocida: { $ref: '#/components/schemas/IncidenciaConocida' }
+                        recurrente: { type: boolean }
+                        reaparece: { type: boolean }
+                  total: { type: integer }
+                  regla: { type: string }
+  /analisis/cowork/incidencias/{incId}/decision:
+    post:
+      summary: El usuario decide una incidencia que le tocaba (llave maestra, no Cowork)
+      description: >
+        Solo sobre una en `usuario`. `aprobar: true` la pasa a `aprobada`: el mantenimiento la
+        implementa en su próxima pasada, antes que las abiertas. `aprobar: false` la deja
+        `por_diseno` (cerrada) con la decisión y la propuesta que se rechazó.
+      parameters:
+        - { name: incId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [aprobar]
+              properties:
+                aprobar: { type: boolean }
+                nota: { type: string }
+      responses:
+        '200':
+          description: la incidencia decidida
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Incidencia' }
+        '404': { description: no existe }
+        '422': { description: no está en `usuario` }
   /analisis/cowork/incidencias/{incId}/estado:
     post:
       summary: Qué se hizo con una incidencia
       description: >
         `{estado, resolucion, pr?}`. Cerrar o derivar (resuelta, dato_api, por_diseno, usuario,
-        descartada) EXIGE `resolucion`: cerrar callado es esconderla.
+        descartada, por_desplegar) EXIGE `resolucion`: cerrar callado es esconderla.
+        `por_desplegar` (27/10/2026): el PR está mergeado pero `/health.commit` todavía no
+        lo contiene; NO cierra la incidencia, la pasada siguiente la confirma.
       parameters:
         - { name: incId, in: path, required: true, schema: { type: integer } }
       requestBody:
@@ -917,7 +987,7 @@ paths:
               type: object
               required: [estado]
               properties:
-                estado: { type: string, enum: [abierta, en_curso, resuelta, dato_api, por_diseno, usuario, descartada] }
+                estado: { type: string, enum: [abierta, en_curso, resuelta, dato_api, por_diseno, usuario, descartada, por_desplegar], description: '`aprobada` NO se pone por acá: es la decisión del usuario (POST …/decision)' }
                 resolucion: { type: string }
                 pr: { type: string }
       responses:
@@ -1848,6 +1918,7 @@ components:
         status: { type: string, enum: [ok, degraded] }
         version: { type: string }
         dbOk: { type: boolean }
+        commit: { type: string, description: 'el commit que corre en producción (RAILWAY_GIT_COMMIT_SHA; vacío si no se sabe): el mantenimiento cierra una incidencia como resuelta solo cuando contiene su merge' }
         lastPipelineRun: { type: string, format: date-time, nullable: true }
         jev:
           type: object
@@ -3445,6 +3516,18 @@ components:
         creadoEn: { type: string }
         ultimaVez: { type: string }
         cerradoEn: { type: string, nullable: true }
+        conocida: { $ref: '#/components/schemas/IncidenciaConocida' }
+    IncidenciaConocida:
+      type: object
+      nullable: true
+      description: 'la última cerrada de la misma familia de causa (27/10/2026): si la nueva no trae nada distinto, se cierra remitiendo a ella'
+      properties:
+        id: { type: integer }
+        estado: { type: string }
+        titulo: { type: string }
+        resolucion: { type: string }
+        pr: { type: string }
+        cerradoEn: { type: string, nullable: true }
     DerrotasFavoritoDTO:
       type: object
       properties:
@@ -4202,6 +4285,8 @@ components:
             bloquean: { type: integer }
             masVieja: { type: string, nullable: true }
             esperanAlUsuario: { type: integer }
+            aprobadas: { type: integer, description: 'decididas por el usuario, esperando al mantenimiento' }
+            porDesplegar: { type: integer, description: 'con PR mergeado que producción todavía no corre' }
         presupuestoApi:
           type: object
           description: >

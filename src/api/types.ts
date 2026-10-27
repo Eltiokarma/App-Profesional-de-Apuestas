@@ -9,6 +9,64 @@ export interface HealthDTO {
   dbOk: boolean
   /** ISO-8601 del último ciclo completo del pipeline (null si nunca corrió). */
   lastPipelineRun: string | null
+  /** El commit que corre en producción (RAILWAY_GIT_COMMIT_SHA); '' si no se sabe. */
+  commit?: string
+}
+
+/** La última cerrada de la misma familia de causa: si la nueva no trae nada distinto, se cierra remitiendo a ella. */
+export interface IncidenciaConocida {
+  id: number
+  estado: string
+  titulo: string
+  resolucion: string
+  pr: string
+  cerradoEn: string | null
+}
+
+export type EstadoIncidencia =
+  | 'abierta' | 'en_curso' | 'resuelta' | 'dato_api' | 'por_diseno' | 'usuario' | 'descartada'
+  | 'aprobada' | 'por_desplegar'
+
+/** Lo que una corrida vio roto (GET /analisis/cowork/incidencias). */
+export interface IncidenciaDTO {
+  id: number
+  origen: string
+  corrida: string
+  fixtureId: number | null
+  area: string
+  severidad: 'bloquea' | 'error' | 'aviso'
+  titulo: string
+  detalle: string
+  estado: EstadoIncidencia
+  /** Qué se hizo, o —en `usuario`— la propuesta que el usuario aprueba o rechaza. */
+  resolucion: string
+  pr: string
+  veces: number
+  fixtures: number[]
+  creadoEn: string
+  ultimaVez: string
+  cerradoEn: string | null
+  conocida?: IncidenciaConocida | null
+}
+
+/** Una familia de causa: la misma causa escrita con otras palabras. */
+export interface CausaIncidencia {
+  raiz: number
+  titulo: string
+  area: string
+  ids: number[]
+  incidencias: number
+  veces: number
+  fixtures: number
+  fixturesDatoApi: number
+  porEstado: Record<string, number>
+  abiertas: number[]
+  ultimaVez: string
+  conocida: IncidenciaConocida | null
+  /** dato_api en 3+ partidos sin decisión: se lleva al usuario con una regla propuesta. */
+  recurrente: boolean
+  /** Reportada de nuevo después de un PR: el parche no alcanzó. */
+  reaparece: boolean
 }
 
 export interface EquipoDTO {
@@ -1929,7 +1987,13 @@ export interface LatidoCoworkDTO {
   /** El plan diario de API-Football: lo usado, en qué, por hora y cuándo se agotó (hoy y ayer). */
   presupuestoApi?: { hoy: PresupuestoDiaDTO | null; ayer: PresupuestoDiaDTO | null; alarma: string }
   /** lo que las corridas vieron roto y sigue sin resolver (incidencias) */
-  incidencias?: { abiertas: number; bloquean: number; masVieja: string | null; esperanAlUsuario: number } | null
+  incidencias?: {
+    abiertas: number; bloquean: number; masVieja: string | null; esperanAlUsuario: number
+    /** Decididas por el usuario, esperando al mantenimiento. */
+    aprobadas?: number
+    /** Con PR mergeado que producción todavía no corre. */
+    porDesplegar?: number
+  } | null
   nota: string
 }
 
