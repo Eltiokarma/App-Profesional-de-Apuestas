@@ -1023,6 +1023,15 @@ conversación se pierde en la siguiente.
      de la ganancia sobre cero; la tabla «Valor contra el mercado · ¿ganó?» de
      Aprendizaje lo muestra (con recorte, sin recorte y siempre a nuestro
      elegido de referencia).
+   - **Mantenimiento del 27/10, decisiones del usuario**: (712) el DT corregido
+     DESPUÉS del pitazo con `POST …/dt` no saca el caso de la cuarentena: se sella
+     el original (`dt_original_json`, una vez por lado) y `dt_equivocado` compara
+     con ese; antes del pitazo la corrección manda. (673, con 619 y 667) el mismo
+     jugador con iniciales distintas («J. Bisanz» / «F. Bisanz») se funde en la
+     tabla F1 con el mismo apellido, nunca juntos en una hoja y, además, sucesión
+     (uno deja de aparecer cuando aparece el otro) o los mismos goles y
+     asistencias (no cero); sin pedir la posición, y la fila queda marcada
+     `fundidoPorInicial`. Dos pilas enteras distintas siguen siendo dos personas.
    - **Aprendizaje reordenado (25/10)**: resumen sin lecciones, pestañas, el
      cierre en bloque arriba de cada skill, lecciones de a 20 y el inventario
      guardado por huella (`SAD_CACHE_INVENTARIO_S`; antes 46 s y 6,3 MB). La

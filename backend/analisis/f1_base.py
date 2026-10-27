@@ -225,6 +225,9 @@ def _fila(j: dict) -> dict:
         # los ids que `deduplicar` fundió en esta fila: sin esto se perdían en la
         # tabla y el bloque F no casaba la hoja con el otro id (incidencia 582)
         **({"idsAlternos": j["idsAlternos"]} if j.get("idsAlternos") else {}),
+        # fundido con iniciales distintas o sin la pila entera (incidencia 673):
+        # se marca para que, si alguna vez une a dos personas, se vea y se revierta
+        **({"fundidoPorInicial": True} if j.get("fundidoPorInicial") else {}),
     }
 
 
@@ -291,7 +294,23 @@ def _sumar(q: dict, j: dict) -> dict:
     return out
 
 
-def deduplicar(js: list[dict], tit: dict[int, int], juntos=None) -> tuple[list[dict], dict[int, int]]:
+def _mismo_apellido(uno: str, otro: str) -> bool:
+    """El mismo apellido (o con una letra cambiada) con la pila en INICIAL en
+    al menos uno: «J. Bisanz» / «F. Bisanz». Dos pilas enteras distintas
+    («Juan Bisanz» / «Pedro Bisanz») son dos personas, hermanos incluidos."""
+    a, b = _tok_jugador(uno), _tok_jugador(otro)
+    return (len(a) >= 2 and len(b) >= 2 and (len(a[0]) == 1 or len(b[0]) == 1)
+            and a[0].isalpha() and b[0].isalpha()
+            and (a[-1] == b[-1] or _casi_igual(a[-1], b[-1])))
+
+
+def _mismos_ga(a: dict, b: dict) -> bool:
+    """Los mismos goles y asistencias, y no cero: la API partió el registro."""
+    ga = ((a.get("goles") or 0), (a.get("asistencias") or 0))
+    return sum(ga) > 0 and ga == ((b.get("goles") or 0), (b.get("asistencias") or 0))
+
+
+def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None) -> tuple[list[dict], dict[int, int]]:
     """UN JUGADOR CON DOS IDS ES UNO. La API da a veces dos ids para la misma
     persona: el de la temporada, con sus minutos, y una copia vacía creada por
     una hoja del partido (Leones del Norte con «E. Griffa» 566349 y «Emiliano
@@ -309,13 +328,31 @@ def deduplicar(js: list[dict], tit: dict[int, int], juntos=None) -> tuple[list[d
     partidos en dos filas. Se funden si la pila es entera (no una inicial) y
     nunca estuvieron en la misma hoja de partido (`juntos(a, b)`: dos ids en
     el mismo once o banco son dos personas). Los minutos se suman y el otro id
-    queda en `idsAlternos`."""
+    queda en `idsAlternos`.
+
+    CON INICIALES DISTINTAS O SIN LA PILA ENTERA TAMBIÉN (incidencias 619, 667
+    y 673, decisión del usuario 27/10/2026): «J. Bisanz» 304371 (el titular
+    habitual) y «F. Bisanz» 304389 (el id con que la hoja lo trae de titular)
+    salían como dos, y uno de BAJA inflaba la reducción del ataque de Huracán
+    al 40 %; «S. Córdoba» con dos ids sumaba sus goles dos veces. Se funden con
+    minutos en los dos solo si se cumplen las tres: el mismo apellido, NUNCA en
+    la misma hoja de partido, y o uno deja de aparecer cuando aparece el otro
+    (`sucesion(a, b)`: las hojas de uno terminan antes de que empiecen las del
+    otro) o tienen los mismos goles y asistencias (no cero). No se pide la
+    misma posición (Bisanz es delantero en un id y mediocampista en el otro).
+    La fila queda marcada `fundidoPorInicial`."""
     tit = dict(tit)
     quedan: list[dict] = []
     for j in sorted(js, key=lambda j: (_sin_minutos(j), -(j.get("minutos") or 0), -tit.get(j["id"], 0))):
         gemela, sumar = None, False
         for i, q in enumerate(quedan):
             if not mismo_jugador(j["nombre"], q["nombre"]):
+                if (_mismo_apellido(j["nombre"], q["nombre"]) and not _sin_minutos(j) and juntos
+                        and not juntos(j["id"], q["id"])
+                        and ((sucesion and sucesion(j["id"], q["id"])) or _mismos_ga(j, q))):
+                    gemela, sumar = q, True
+                    quedan[i] = {**_sumar(q, j), "fundidoPorInicial": True}
+                    break
                 continue
             if _sin_minutos(j) or _mismas_stats(j, q):
                 gemela = q
@@ -323,6 +360,13 @@ def deduplicar(js: list[dict], tit: dict[int, int], juntos=None) -> tuple[list[d
             if _mismo_nombre_completo(j["nombre"], q["nombre"]) and not (juntos and juntos(j["id"], q["id"])):
                 gemela, sumar = q, True
                 quedan[i] = _sumar(q, j)
+                break
+            # misma inicial pero sin la pila entera («M. Perea» y «M. Perea»): la misma
+            # regla de la inicial distinta (sucesión o mismos goles y asistencias)
+            if (juntos and not juntos(j["id"], q["id"])
+                    and ((sucesion and sucesion(j["id"], q["id"])) or _mismos_ga(j, q))):
+                gemela, sumar = q, True
+                quedan[i] = {**_sumar(q, j), "fundidoPorInicial": True}
                 break
         if gemela is None:
             quedan.append(j)
@@ -348,6 +392,25 @@ def _juntos(a: int, b: int) -> bool:
         return False
 
 
+def _sucesion(a: int, b: int) -> bool:
+    """¿Uno de los dos ids dejó de aparecer en las hojas cuando apareció el
+    otro? Las fechas de sus hojas (once o banco) no se cruzan. Sin hojas de
+    alguno de los dos, no se puede decir: no."""
+    try:
+        fechas = {}
+        for pid in (a, b):
+            fila = saddb.query_one(
+                "sad", "SELECT MIN(f.date) AS desde, MAX(f.date) AS hasta FROM alineaciones x "
+                       "JOIN fixtures f ON f.id = x.fixture_id WHERE x.player_id=?", (pid,))
+            if not fila or not fila["desde"]:
+                return False
+            fechas[pid] = (str(fila["desde"]), str(fila["hasta"]))
+    except Exception:  # noqa: BLE001 — sin fichas no hay sucesión que mostrar
+        return False
+    (da, ha), (db_, hb) = fechas[a], fechas[b]
+    return ha < db_ or hb < da
+
+
 def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     p = jug.plantilla_de(team_id)
     js = p.get("jugadores") or []
@@ -355,7 +418,7 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     rec = onces_recientes(team_id, antes)
     con_onces = rec["onces"] >= ONCES_MINIMOS
     tit = {pid: j["titular"] for pid, j in rec["jugadores"].items()}
-    js, tit = deduplicar(js, tit, _juntos)
+    js, tit = deduplicar(js, tit, _juntos, _sucesion)
     # DECISIVO DE LA TEMPORADA, NO DE HOY. Elvio Vera (Ameliano) y Martín Arias
     # (Cerro) salían «titular habitual 100 %» por el Apertura con 0 de 10 en los
     # últimos onces (incidencia 45): con onces recientes, quien no fue titular

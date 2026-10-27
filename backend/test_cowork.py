@@ -2994,14 +2994,31 @@ def main():
     r_dt = c.post(f"{A}/analisis/cowork/{pasado['id']}/dt", json={"a": {"nombre": "Rafael Dudamel", "desde": "2026-02-01"}})
     despues_dt = c.get(f"{A}/analisis/cowork/{pasado['id']}").json()
     _sin = lambda d: {k: v for k, v in d.items() if k not in ("equipos", "actualizadoEn", "coherencia", "alertas")}  # noqa: E731
-    check("POST …/dt cambia el DT del lado a, dice que ya casa con el banco y deja el resto del parte igual",
+    check("POST …/dt cambia el DT del lado a y deja el resto del parte igual",
           r_dt.status_code == 200 and r_dt.json()["ahora"]["a"]["nombre"] == "Rafael Dudamel"
-          and r_dt.json()["dtEquivocado"] == [] and despues_dt["equipos"]["a"]["dt"]["nombre"] == "Rafael Dudamel"
+          and despues_dt["equipos"]["a"]["dt"]["nombre"] == "Rafael Dudamel"
           and _sin(antes_dt) == _sin(despues_dt)
           and {k: v for k, v in despues_dt["equipos"]["a"].items() if k != "dt"}
               == {k: v for k, v in antes_dt["equipos"]["a"].items() if k != "dt"}
           and despues_dt["equipos"]["b"] == antes_dt["equipos"]["b"],
           r_dt.text[:300])
+    # 712 (27/10/2026): corregido DESPUÉS del pitazo, el caso sigue en cuarentena con el DT
+    # con que se escribió el parte; el dato queda corregido, el análisis no se rehízo
+    check("712: corregido después del pitazo se sella el DT original y el caso sigue con DT equivocado",
+          r_dt.json()["dtOriginal"].get("a", {}).get("nombre") == "Pablo Repetto"
+          and [x["parte"] for x in r_dt.json()["dtEquivocado"]] == ["Pablo Repetto"]
+          and any(i["clave"].startswith(f"{pasado['id']}:") for i in
+                  c.get(f"{A}/analisis/cowork/lecciones").json()["enCuarentena"]["items"]),
+          r_dt.text[:400])
+    r_dt2 = c.post(f"{A}/analisis/cowork/{pasado['id']}/dt", json={"a": {"nombre": "Otro Nombre", "desde": "2026-02-01"}})
+    check("712: una segunda corrección no pisa el original (manda el DT con que se ESCRIBIÓ)",
+          r_dt2.json()["dtOriginal"]["a"]["nombre"] == "Pablo Repetto", r_dt2.text[:300])
+    c.post(f"{A}/analisis/cowork/{pasado['id']}/dt", json={"a": {"nombre": "Rafael Dudamel", "desde": "2026-02-01"}})
+    with _pm_desc._conectar() as _cn:   # que no arrastre la cuarentena a los checks siguientes
+        _cn.execute("UPDATE parte_cowork SET dt_original_json=NULL WHERE fixture_id=?", (pasado["id"],))
+    check("sin el original sellado, el DT que casa con el banco ya no está equivocado",
+          c.post(f"{A}/analisis/cowork/{pasado['id']}/dt",
+                 json={"a": {"nombre": "Rafael Dudamel", "desde": "2026-02-01"}}).json()["dtEquivocado"] == [])
     r_dt_mal = c.post(f"{A}/analisis/cowork/{pasado['id']}/dt",
                       json={"a": {"nombre": "Según la prensa dirige el interino tras la salida del anterior DT del club"}})
     check("un DT en prosa se rechaza con motivo y NO pisa el que había",
@@ -3327,6 +3344,9 @@ def main():
           _o16b["porBloque"][0]["ramaJugada"] is None and "sinEventos" in _o16b["porBloque"][0]
           and "sinRamas" in _dobj({"bloques": [{"equipo": "b", "apertura": {"m2": {"veredicto": "NEUTRO"}}}]},
                                   [])["porBloque"][0])
+    _r_ns_dt = c.post(f"{A}/analisis/cowork/{ns_dtp}/dt", json={"a": {"nombre": "Nuevo Entrenador", "desde": "2026-02-01"}}).json()
+    check("712: corregido ANTES del pitazo no se sella nada (el parte todavía se puede rehacer)",
+          _r_ns_dt.get("dtOriginal") == {} and _r_ns_dt["ahora"].get("a"), _r_ns_dt)
     g_dtp = c.get(f"{A}/analisis/cowork/{ns_dtp}").json()["dtp"]["bloques"][0]
     check("GET: el bloque vuelve normalizado (tramo inválido fuera, vía canónica, veredicto sin «MATCHUP»)",
           [f["tramo"] for f in g_dtp["apertura"]["m3Fases"]] == ["0-25"]
@@ -3965,6 +3985,36 @@ def main():
     _tp, _ = _dedup([{"id": 1, "nombre": "T. Palacios", "minutos": 500, "partidos": 6},
                      {"id": 2, "nombre": "T. Palacios", "minutos": 200, "partidos": 3}], {})
     check("381: con la inicial sola («T. Palacios») no alcanza: quedan dos (386)", len(_tp) == 2, _tp)
+    # 673 (con 619 y 667, 27/10/2026): iniciales distintas, el mismo apellido
+    _bz = [{"id": 304371, "nombre": "J. Bisanz", "minutos": 900, "partidos": 11, "goles": 2, "asistencias": 1},
+           {"id": 304389, "nombre": "F. Bisanz", "minutos": 300, "partidos": 4, "goles": 0, "asistencias": 0}]
+    _nunca = lambda a, b: False  # noqa: E731
+    _b1, _ = _dedup(_bz, {}, _nunca, lambda a, b: True)
+    check("673: «J. Bisanz» / «F. Bisanz» nunca juntos y uno sucede al otro → una fila marcada fundidoPorInicial",
+          len(_b1) == 1 and _b1[0]["minutos"] == 1200 and _b1[0].get("idsAlternos") == [304389]
+          and _b1[0].get("fundidoPorInicial") is True, _b1)
+    _b2, _ = _dedup(_bz, {}, lambda a, b: True, lambda a, b: True)
+    check("673: si estuvieron en la misma hoja son dos personas", len(_b2) == 2, _b2)
+    _b3, _ = _dedup(_bz, {}, _nunca, lambda a, b: False)
+    check("673: sin sucesión y con goles/asistencias distintos no se funden", len(_b3) == 2, _b3)
+    _b4, _ = _dedup([{**_bz[0]}, {**_bz[1], "goles": 2, "asistencias": 1}], {}, _nunca, lambda a, b: False)
+    check("673: los mismos goles y asistencias (no cero) alcanzan sin sucesión (S. Córdoba)",
+          len(_b4) == 1 and _b4[0].get("fundidoPorInicial") is True, _b4)
+    _b5, _ = _dedup([{**_bz[0], "goles": 0, "asistencias": 0}, {**_bz[1]}], {}, _nunca, lambda a, b: False)
+    check("673: cero goles y cero asistencias en los dos no cuenta como «los mismos»", len(_b5) == 2, _b5)
+    _b6, _ = _dedup([{"id": 1, "nombre": "M. Perea", "minutos": 500, "partidos": 6},
+                     {"id": 2, "nombre": "M. Perea", "minutos": 200, "partidos": 3}], {}, _nunca, lambda a, b: True)
+    check("673: dos «M. Perea» con sucesión y nunca juntos se funden, marcados",
+          len(_b6) == 1 and _b6[0].get("fundidoPorInicial") is True, _b6)
+    _b7, _ = _dedup([{"id": 1, "nombre": "J. Bisanz", "minutos": 500, "partidos": 6},
+                     {"id": 2, "nombre": "J. Gomez", "minutos": 200, "partidos": 3}], {}, _nunca, lambda a, b: True)
+    check("673: otro apellido nunca se funde", len(_b7) == 2, _b7)
+    _b8, _ = _dedup([{"id": 1, "nombre": "Juan Bisanz", "minutos": 500, "partidos": 6},
+                     {"id": 2, "nombre": "Pedro Bisanz", "minutos": 200, "partidos": 3}], {}, _nunca, lambda a, b: True)
+    check("673: dos pilas enteras distintas con el mismo apellido son dos personas", len(_b8) == 2, _b8)
+    from backend.analisis.f1_base import _fila as _f1_fila
+    check("673: la fila de la tabla F1 lleva la marca",
+          _f1_fila({**_b1[0], "posicion": "Attacker", "titularidades": 0, "pctMinutos": 0.5}).get("fundidoPorInicial") is True)
     from backend.analisis.f1_base import _en_tabla as _f1_en_tabla
     check("el mismo jugador con dos ids y el apellido mal escrito («Juan Bizans» / «Juan Bisanz») está en la tabla",
           _f1_en_tabla({"id": 406291, "nombre": "Juan Bizans"}, [{"nombre": "Juan Bisanz", "jugadorId": 304371}]))
