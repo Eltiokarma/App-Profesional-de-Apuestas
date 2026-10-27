@@ -195,7 +195,7 @@ def _brier(reparto: dict, real: str) -> float | None:
 # UNA VENTANA RELATIVA AL GOL NO SON MINUTOS DEL RELOJ. «15-30' desde la
 # ventaja» se leía como 15-30 y Feyenoord–Como daba por buena la ventana con
 # el gol del 18' (veredictos del 17/10/2026; Sarmiento–River igual).
-_RELATIVA = re.compile(r"desde (la|el|que)|tras (el|la)|despu[eé]s de|luego de|del gol|de la ventaja|"
+_RELATIVA = re.compile(r"desde (la|el|que|su)|tras (el|la)|despu[eé]s de|luego de|del gol|de la ventaja|"
                        r"relativ|\+\s*\d+\s*(min|')|post[- ]gol|posteriores|siguientes", re.I)
 
 
@@ -240,7 +240,12 @@ _POSTERIORES = re.compile(r"(\d{1,2})\s*['’]*\s*(?:min\w*\s*)?(?:posteriores|s
 _SIN_GOL = re.compile(r"sin gol[^0-9]{0,20}(\d{1,3})\s*[-–a]+\s*(\d{1,3})", re.I)
 
 
-def rango_relativo(texto: str, minuto) -> tuple[int, int] | None:
+# «desde el gol hasta el empate»: la rama vale hasta que el marcador cambie,
+# que en un tramo es su propio final (incidencia 695, América)
+_HASTA_CAMBIO = re.compile(r"hasta (el|la|que) ?(empate|iguala|igualdad|final|pitazo|remontada|cambi)", re.I)
+
+
+def rango_relativo(texto: str, minuto, abierto: bool = False) -> tuple[int, int] | None:
     """«desde el gol +15» con el gol al 50' → (50, 65). El TDE v0.1.21 pide la
     ventana de cada rama RELATIVA al gol que la abre, y el veredicto la mandaba
     entera a la autopsia (incidencia 345, Levante–Athletic 21/10/2026). Sin el
@@ -249,7 +254,9 @@ def rango_relativo(texto: str, minuto) -> tuple[int, int] | None:
         return None
     m = _MAS_N.search(texto or "") or _POSTERIORES.search(texto or "")
     if not m:
-        return None
+        # `abierto` (solo en los tramos, que ya terminan en el próximo cambio
+        # del marcador): «hasta el empate» va del gol al final del tramo
+        return (int(minuto), 90) if abierto and _HASTA_CAMBIO.search(texto or "") else None
     return int(minuto), int(minuto) + int(m.group(1))
 
 
@@ -399,7 +406,11 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
                             "ventanaDeRama": bool(de_rama),
                             "nota": ("la ventana es relativa a un gol, no al reloj: no se cobra en minutos; "
                                      "se juzga en la autopsia" if rel else
-                                     "la ventana declarada no trae dos minutos: no hay nada que comprobar")})
+                                     "la ventana declarada no trae dos minutos: no hay nada que comprobar"),
+                            # LOS TRAMOS Y EL RELOJ SE MIDEN IGUAL (incidencia 695: América
+                            # con «desde el gol hasta el empate» perdía los tres tramos, su
+                            # desenlace y la base 75-90 del reloj)
+                            **_por_tramo(tde, goles, rojas, out["evidencia"]["conFicha"], bool(de_rama))})
             continue
         desde, hasta = rango
         foco = tde.get("equipo") or ""
@@ -797,6 +808,16 @@ def rama_jugada(tde: dict, goles: list[dict], total_goles: int, con_ficha: bool,
     return out
 
 
+def _por_tramo(tde: dict, goles: list[dict], rojas: list[dict], con_ficha: bool, de_rama: bool) -> dict:
+    """El reloj, los tramos y el añadido de un bloque cuya ventana de rama no
+    se pudo pasar a minutos: lo que no depende de esa ventana se mide igual."""
+    foco = tde.get("equipo") or ""
+    contra = "b" if foco == "a" else ("a" if foco == "b" else "")
+    return {"reloj": ventana_reloj(tde.get("ventana") or "", goles, rojas, contra, con_ficha) if de_rama else None,
+            "tramos": tramos_por_marcador(tde, goles, foco, rojas) if con_ficha else [],
+            "anadido": anadido_del_cierre(goles, rojas, foco) if con_ficha else None}
+
+
 def ventana_reloj(texto: str, goles: list[dict], rojas: list[dict], contra: str, con_ficha: bool) -> dict | None:
     """La ventana base del reloj medida sola, con el gol que abre la rama
     incluido: es la serie del sesgo tardío (disciplinas 44c y 45)."""
@@ -854,6 +875,10 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
     eventos += [(orden(r), 1, k, "roja", r) for k, r in enumerate(rojas or []) if r.get("lado") in ("a", "b")]
     eventos.sort(key=lambda e: e[:3])
     out, gf, gc, inicio, previo = [], 0, 0, 0, ""
+    abre_anadido = False   # el evento que abrió el tramo fue del añadido
+    # UN DESENLACE POR RÉGIMEN (disciplina 65): resuelto en un tramo, el
+    # siguiente de la MISMA rama no lo vuelve a juzgar (incidencias 687 y 689)
+    resuelta = None
     propias, ajenas, roja_propia, roja_rival, inferior_desde = 0, 0, None, None, None
     for i in range(len(eventos) + 1):
         fin = reloj(eventos[i][4]) if i < len(eventos) else 90
@@ -877,7 +902,7 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
         texto = (lo or {}).get("ventana") or "" if isinstance(lo, dict) else ""
         ancla = (inferior_desde if rama == "siExpulsion" else
                  roja_rival if rama == "siExpulsionRival" and roja_rival is not None else inicio)
-        rango = _ventana(texto) or (rango_relativo(texto, ancla) if rama != "base" else None)
+        rango = _ventana(texto) or (rango_relativo(texto, ancla, abierto=True) if rama != "base" else None)
         # el gol que CIERRA el tramo es el evento i (si es un gol del rival)
         concedio = ([eventos[i][4]] if i < len(eventos) and eventos[i][3] == "gol"
                     and eventos[i][4]["lado"] == contra else [])
@@ -890,10 +915,18 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
                  "declarada": lo is not None if rama != "base" else bool(texto),
                  "ventana": texto, "rango": list(rango) if rango else None,
                  "concedio": [g["minuto"] for g in concedio], "golEnVentana": en_ventana}
-        if rama in RAMAS_DESENLACE:
-            d = desenlace_del_tramo(lo, eventos[i] if i < len(eventos) else None, foco)
+        if resuelta and resuelta != rama:
+            resuelta = None
+        # roto (3 recibidos) o con 3 de diferencia, la rama ya no se juega
+        # (disciplinas 3 y 24); y el tramo que abre un gol del añadido final
+        # dura segundos: no pone a prueba la rama (incidencias 693 y 692)
+        sin_prueba = gc >= 3 or abs(gf - gc) >= 3 or (abre_anadido and i == len(eventos) and inicio >= 90)
+        if rama in RAMAS_DESENLACE and resuelta != rama and not sin_prueba:
+            d = desenlace_del_tramo(lo, eventos[i] if i < len(eventos) else None, foco, gf, gc)
             if d:
                 tramo["desenlace"] = d
+                if d.get("observado") in ("se_rompe", "rescata"):
+                    resuelta = rama
         if roja_propia is not None or roja_rival is not None:
             tramo["numerico"] = ("inferioridad" if propias > ajenas else
                                  "superioridad" if ajenas > propias else "paridad")
@@ -915,12 +948,12 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
                 else:
                     ajenas += 1
                     roja_rival = roja_rival if roja_rival is not None else reloj(e)
-                inicio = reloj(e)
+                inicio, abre_anadido = reloj(e), bool(e.get("enAnadido"))
                 continue
             if estado in ("ganando", "perdiendo"):
                 previo = estado
             gf, gc = gf + (e["lado"] == foco), gc + (e["lado"] != foco)
-            inicio = reloj(e)
+            inicio, abre_anadido = reloj(e), bool(e.get("enAnadido"))
     return out
 
 
@@ -929,7 +962,8 @@ RAMAS_DESENLACE = ("siRecibePrimero", "siLeEmpatan", "siIguala")
 ISE_RAMA_SE_ROMPE = 7.0
 
 
-def desenlace_del_tramo(lo: dict | None, evento: tuple | None, foco: str) -> dict | None:
+def desenlace_del_tramo(lo: dict | None, evento: tuple | None, foco: str,
+                        gf: int | None = None, gc: int | None = None) -> dict | None:
     """Cómo terminó el régimen de una rama del que persigue, contra lo leído.
 
     Lo observado lo da el evento que CIERRA el tramo: un gol del rival es
@@ -952,8 +986,14 @@ def desenlace_del_tramo(lo: dict | None, evento: tuple | None, foco: str) -> dic
         observado = "sin_mas_goles"
     elif evento[3] != "gol":
         observado = None
+    elif evento[4]["lado"] != foco:
+        observado = "se_rompe"
+    elif gf is not None and gc is not None and gf + 1 < gc:
+        # UN DESCUENTO NO RESCATA (incidencia 710, Los Chankas 1-4 al 90+2):
+        # rescatar es igualar o volver adelante; el régimen sigue abierto
+        observado = None
     else:
-        observado = "rescata" if evento[4]["lado"] == foco else "se_rompe"
+        observado = "rescata"
     lectura = declarado or defecto
     cumplido = None if lectura == "abierto" or observado is None else observado == lectura
     return {"declarado": declarado, "defecto": defecto, "lectura": lectura, "deDefecto": not declarado,
