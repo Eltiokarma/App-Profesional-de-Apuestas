@@ -4344,6 +4344,38 @@ def main():
     check("65: con ISE < 7 el defecto es «abierto» y no se cobra; una roja cierra el tramo sin observado",
           _t65d[1]["desenlace"]["lectura"] == "abierto" and _t65d[1]["desenlace"]["cumplido"] is None
           and _t65d[1]["desenlace"]["observado"] is None, _t65d)
+    # grupo del desenlace del 26/10 (687/689, 692, 693, 698, 710, 715, 695)
+    _sr = {"reasignacion": {"siRecibePrimero": {"iseRama": 8.33}}}
+    _t687 = tramos_por_marcador(_sr, [{"minuto": 24, "lado": "b"}, {"minuto": 82, "lado": "b"}], "a")
+    check("687/689: resuelto el régimen con el 0-2, el tramo siguiente de la misma rama no vuelve a juzgarlo",
+          _t687[1]["desenlace"]["cumplido"] is True and "desenlace" not in _t687[2], _t687)
+    _t710 = tramos_por_marcador(_sr, [{"minuto": 20, "lado": "b"}, {"minuto": 60, "lado": "a"},
+                                      {"minuto": 70, "lado": "b"}], "a")
+    check("710: un gol propio que iguala rescata; perdiendo 0-1 el gol del 1-1 no es descuento",
+          _t710[1]["desenlace"]["observado"] == "rescata", _t710)
+    _t710b = tramos_por_marcador(_sr, [{"minuto": 10, "lado": "b"}, {"minuto": 20, "lado": "b", "penal": True},
+                                       {"minuto": 50, "lado": "a"}, {"minuto": 80, "lado": "a"}], "a")
+    check("710: con 0-2 el descuento del 1-2 no rescata (el régimen ya se rompió con el 0-2 y no se rejuzga)",
+          _t710b[1]["desenlace"]["observado"] == "se_rompe"
+          and all("desenlace" not in t for t in _t710b[2:4]), _t710b)
+    from backend.analisis.veredicto import desenlace_del_tramo as _ddt
+    check("710: un descuento que deja al equipo perdiendo no es «rescata» (observado null)",
+          _ddt({"iseRama": 8.33}, ((50, 0), 0, 0, "gol", {"minuto": 50, "lado": "a"}), "a", 0, 2)["observado"] is None
+          and _ddt({"iseRama": 8.33}, ((50, 0), 0, 0, "gol", {"minuto": 50, "lado": "a"}), "a", 1, 2)["observado"]
+          == "rescata")
+    _t693 = tramos_por_marcador({"reasignacion": {"siRecibePrimero": {"desenlace": "se_rompe"}}},
+                                [{"minuto": 10, "lado": "b", "penal": True}, {"minuto": 20, "lado": "b"},
+                                 {"minuto": 57, "lado": "b"}, {"minuto": 80, "lado": "a"}], "a")
+    check("693: con 3 abajo (roto) el tramo no cobra desenlace",
+          "desenlace" not in _t693[3] and "desenlace" not in _t693[4], _t693)
+    _t692 = tramos_por_marcador(_sr, [_ad(99, 90, "b")], "a")
+    check("692: el tramo que abre un gol del añadido final no cobra desenlace (dura segundos)",
+          _t692[-1]["rama"] == "siRecibePrimero" and "desenlace" not in _t692[-1], _t692)
+    check("715: «desde su gol +15» es una ventana relativa", rango_relativo("desde su gol +15", 13) == (13, 28))
+    _t695 = tramos_por_marcador({"reasignacion": {"siRecibePrimero": {"ventana": "desde el gol hasta el empate"}}},
+                                [{"minuto": 12, "lado": "b"}, {"minuto": 46, "lado": "a"}], "a")
+    check("695: «desde el gol hasta el empate» en un tramo va del gol al final del tramo",
+          _t695[1]["rango"] == [12, 90] and rango_relativo("desde el gol hasta el empate", 12) is None, _t695)
     from backend.analisis.lecciones import _cerrar_desenlace
     _cd = _cerrar_desenlace({"se_rompe": {"tramos": 12, "cumplidos": 8, "deDefecto": 12, "observado": {"se_rompe": 8}},
                              "rescata": {"tramos": 3, "cumplidos": 1, "deDefecto": 0, "observado": {}},
