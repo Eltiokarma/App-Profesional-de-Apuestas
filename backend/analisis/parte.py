@@ -3431,8 +3431,9 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> lis
         después: falla de la corrida de rehacer.
       · `conocido` — el once ya estaba cuando se depositó por última vez y la
         apertura igual lo contradice: lo rehecho no lo corrigió.
-    Antes del pitazo, sin la tabla de versiones o sin depósito previo sellado
-    (partes anteriores a esta regla), la alerta sale como estaba."""
+    Antes del pitazo, sin la tabla de versiones, sin una versión capturada
+    hasta el pitazo o sin depósito previo sellado (partes anteriores a esta
+    regla), la alerta sale como estaba."""
     if not alertas or not fx:
         return alertas
     try:
@@ -3446,6 +3447,14 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> lis
     pitazo, dep = _utc(fx["date"]), _utc(deposito_previo)
     finales = {}
     for f in filas:
+        # LA VERSIÓN DEL PITAZO, NO LA DEL FINAL: el refresco de la ficha en
+        # juego o al terminar vuelve a sellar el once (Guabirá a las 23:54 con
+        # pitazo 21:59, Riestra 116 min después: «-117 min antes del pitazo» y
+        # todo `tardio`, incidencias 688 y 697). Lo capturado después del saque
+        # no es el once con que se podía rehacer.
+        t_f = _utc(f["capturada_en"])
+        if pitazo and t_f and t_f > pitazo:
+            continue
         finales[f["team_id"]] = f   # ordenadas: queda la última de cada equipo
     if not finales or not pitazo or not dep:
         return alertas

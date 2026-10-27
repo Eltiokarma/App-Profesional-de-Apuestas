@@ -3643,6 +3643,15 @@ def main():
           _mom(_al, _fx480, "2026-10-25 15:13:00")[0].get("momento") == "sinRehacer")
     check("ya estaba en el último depósito y la apertura lo contradice: `conocido`",
           _mom(_al, _fx480, "2026-10-25 15:45:00")[0].get("momento") == "conocido")
+    # 688/697: el refresco de la ficha DESPUÉS del pitazo no es la versión final
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _gal(_con, 990480, _once("4-1-3-2", 700), "2026-10-25 18:10:00")
+    _m697 = _mom(_al, _fx480, "2026-10-25 15:13:00")[0]
+    check("688/697: una versión capturada después del pitazo no cuenta como once final",
+          _m697.get("momento") == "sinRehacer" and _m697.get("onceFinalEn") == "2026-10-25T15:40:00Z"
+          and "-" not in _m697["detalle"].split("llegó a las")[1].split("min")[0], _m697)
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM alineaciones_versiones WHERE fixture_id=990480 AND capturada_en > '2026-10-25 16:15:00'")
     check("sin depósito previo sellado (partes viejos) la alerta sale como estaba",
           _mom(_al, _fx480, None) == _al)
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
