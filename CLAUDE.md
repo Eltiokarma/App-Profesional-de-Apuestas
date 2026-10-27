@@ -873,10 +873,13 @@ conversación se pierde en la siguiente.
    `contraElOnce`, identidad del jugador, tabla F1, bajas, duplicados). Railway
    estuvo caído el 21-22/10 y producción quedó en el PR #171: un push durante
    la caída se pierde (`docs/DESPLIEGUE.md`); desplegado el 22/10 con el #185.
-   **El mantenimiento corre en su propia sesión fija** desde el 22/10: «SAD ·
-   mantenimiento (rutina)» (`session_018rYwkkxMKQpJpfTdkxScvd`), 12:23 y 21:47
-   de Lima, POR GRUPOS de causa (hasta 3 grupos de código por pasada, un PR
-   por grupo). Las dos rutinas viejas, que disparaban en la sesión de trabajo,
+   **El mantenimiento corre en su propia sesión fija** desde el 22/10, 12:23 y
+   21:47 de Lima, POR GRUPOS de causa (hasta 3 grupos de código por pasada, un
+   PR por grupo). Desde el 27/10 en «SAD · mantenimiento (rutina, v2)»
+   (`session_01WwsfbSrNaKynS84SUXEwvA`, rutinas «mediodía, v2» y «noche, v2»,
+   con el paso 0 de aprobadas, por desplegar y cola del usuario); la v1
+   (`session_018rYwkkxMKQpJpfTdkxScvd`) llegó a 341.000 tokens y 69 USD en
+   cinco días y sus rutinas quedaron desactivadas. Las dos rutinas viejas, que disparaban en la sesión de trabajo,
    quedaron DESACTIVADAS (no borradas). **Pendiente, en orden:**
    - **Del usuario**: subir `teorema-del-echado` v0.1.22 a la cuenta (zip de
      `docs/skills/teorema-del-echado/`) y verificar que cargue; marcar con 🔑
