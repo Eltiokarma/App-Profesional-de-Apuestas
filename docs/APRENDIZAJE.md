@@ -592,7 +592,9 @@ enseña. Con `ensena: true` en el POST (en la pantalla, la casilla «que siga
 enseñando», marcada por defecto) el caso sale igual de TODA métrica y de la
 población ciega, pero sus lecciones se quedan con las del skill, en el dossier
 y en los antecedentes, con `cuarentenaEnsena: true`: fijan rúbrica y nunca
-mueven un número (`puedeMoverNumeros: false`). Las automáticas no enseñan.
+mueven un número (`puedeMoverNumeros: false`). De las automáticas enseña
+la de **DT equivocado** (usuario, 27/10/2026: también es el sistema que falló);
+la de parte sin DT y la de parte de otra fecha siguen apartando sus lecciones.
 
 **Cuarentena automática: sin DT no hay caso.** El bloque A, F3 y S1 se
 apoyan en la continuidad del entrenador. Un parte con `dt` «sin establecer»

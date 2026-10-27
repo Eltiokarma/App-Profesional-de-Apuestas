@@ -2879,6 +2879,11 @@ def main():
                        (json.dumps({"a": nombre}), pasado["id"]))
     # (17/10/2026) un parte que CONTRADIJO a la base con la prensa no copió un
     # DT rancio: si el banco de la API no le da la razón es «disputado», no cuarentena
+    # la cuarentena por DT equivocado ENSEÑA (27/10/2026): sus lecciones viajan en
+    # `items`, no en `enCuarentena`; esto las busca en los dos sitios
+    def _cuar_de(inv, pid):
+        return [i for i in inv["items"] + inv["enCuarentena"]["items"]
+                if i["clave"].startswith(f"{pid}:") and i["cuarentena"]]
     p_eq = _copy.deepcopy(p_lec)
     p_eq["equipos"]["a"]["dt"] = {"nombre": "Pablo Repetto", "desde": "2026-01-01"}
     c.post(f"{A}/analisis/cowork", json=p_eq)
@@ -2886,16 +2891,19 @@ def main():
     inv_d = c.get(f"{A}/analisis/cowork/lecciones").json()
     _todos_d = [i for s in inv_d["porSkill"] for i in s["items"]]
     check("el parte que contradijo a la base y no casa con el banco NO va a cuarentena: va como disputado",
-          not [i for i in inv_d["enCuarentena"]["items"] if i["clave"].startswith(f"{pasado['id']}:")]
+          not _cuar_de(inv_d, pasado["id"])
           and any(i["fixtureId"] == pasado["id"] and i["dtDisputado"] for i in _todos_d),
           [i.get("dtDisputado") for i in _todos_d if i["fixtureId"] == pasado["id"]])
     # el caso que la cuarentena SÍ atrapa (22/09): el parte copió el DT de la
     # base (Repetto) y en el banco se sentó otro (Dudamel)
     _base_fue("Pablo Repetto")
     inv_eq = c.get(f"{A}/analisis/cowork/lecciones").json()
-    item_eq = [i for i in inv_eq["enCuarentena"]["items"] if i["clave"].startswith(f"{pasado['id']}:")]
-    check("DT del parte (Repetto, copiado de la base) distinto del que se sentó en el banco (Dudamel) → cuarentena AUTOMÁTICA con los dos nombres",
-          item_eq and all(i["cuarentenaAutomatica"] for i in item_eq)
+    item_eq = _cuar_de(inv_eq, pasado["id"])
+    check("DT del parte (Repetto, copiado de la base) distinto del que se sentó en el banco (Dudamel) → cuarentena AUTOMÁTICA "
+          "con los dos nombres, que ENSEÑA: fuera de las métricas, sus lecciones con las del skill",
+          item_eq and all(i["cuarentenaAutomatica"] and i["cuarentenaEnsena"] for i in item_eq)
+          and not any(i["clave"].startswith(f"{pasado['id']}:") for i in inv_eq["enCuarentena"]["items"])
+          and inv_eq["poblacion"]["cuarentena"]["casos"] >= 1
           and "Repetto" in item_eq[0]["cuarentena"] and "Dudamel" in item_eq[0]["cuarentena"],
           [i.get("cuarentena") for i in item_eq] or inv_eq["enCuarentena"])
     # (20/10/2026, Atlante y Juárez) el parte declara CON FUENTE quién se sienta
@@ -2906,7 +2914,7 @@ def main():
         r_b = c.post(f"{A}/analisis/cowork", json=p_b).json()
         _base_fue("Pablo Repetto")
         inv_b = c.get(f"{A}/analisis/cowork/lecciones").json()
-        return (r_b, [i for i in inv_b["enCuarentena"]["items"] if i["clave"].startswith(f"{pasado['id']}:")],
+        return (r_b, _cuar_de(inv_b, pasado["id"]),
                 [d for s in inv_b["porSkill"] for i in s["items"] if i["fixtureId"] == pasado["id"]
                  for d in (i.get("dtDisputado") or [])])
     _r, _cu, _di = _con_banco({"motivo": "suspendido", "nombre": "Rafael Dudamel", "fuente": "prensa: sanción de 2 fechas"})
@@ -2946,7 +2954,7 @@ def main():
     inv_des = c.get(f"{A}/analisis/cowork/lecciones").json()
     check("con el banco desmentido el caso sale de la cuarentena automática, sin tocar el DT del parte",
           r_des.status_code == 200 and r_des.json()["dtEquivocado"] == []
-          and not any(i["clave"].startswith(f"{_pid}:") for i in inv_des["enCuarentena"]["items"])
+          and not _cuar_de(inv_des, _pid)
           and c.get(f"{A}/analisis/cowork/{_pid}").json()["equipos"]["a"]["dt"]["nombre"] == "Pablo Repetto",
           r_des.text[:300])
     check("el GET del parte trae el desmentido con la fuente y el banco que traía la API",
@@ -2954,8 +2962,7 @@ def main():
           c.get(f"{A}/analisis/cowork/{_pid}").json().get("bancoDesmentido"))
     c.delete(f"{A}/analisis/cowork/{_pid}/banco-desmentido/a")
     check("quitar el desmentido devuelve el caso a la cuarentena",
-          any(i["clave"].startswith(f"{_pid}:") for i in
-              c.get(f"{A}/analisis/cowork/lecciones").json()["enCuarentena"]["items"]))
+          _cuar_de(c.get(f"{A}/analisis/cowork/lecciones").json(), _pid))
     from backend import app as _app_mod
     check("desmentir el banco y descartar una cohorte NO están abiertos a Cowork",
           not _app_mod._cowork_puede("POST", f"{A}/analisis/cowork/{_pid}/banco-desmentido")
@@ -2983,8 +2990,13 @@ def main():
     _nuevas = [i["clave"] for i in _pend_antes if (i.get("fecha") or "")[:10] >= _corte]
     check("cerrar-anteriores: las anteriores al corte quedan aplicadas EN la versión; las posteriores, pendientes",
           _r_ca.get("cerradas") == len(_viejas)
-          and all(_items_ca[k]["estado"] == "aplicada" and _items_ca[k]["aplicadaEn"] == _ver for k in _viejas)
+          and all(_items_ca[k]["estado"] == "aplicada"
+                  and _items_ca[k]["aplicadaEn"] == _lec_ca._version_que_leyo(_sk_ca, _items_ca[k].get("fecha"))[0]
+                  for k in _viejas)
           and all(_items_ca[k]["estado"] == "pendiente" for k in _nuevas), (_r_ca, len(_viejas), len(_nuevas)))
+    with _lec_desc._conectar() as _cn:   # que el cierre en bloque no tape el descarte de abajo
+        _cn.executemany("DELETE FROM leccion_estado WHERE clave=?", [(k,) for k in _viejas])
+    _lec_desc._invalidar()
     r_desc = c.post(f"{A}/analisis/cowork/cohortes/c2-2026-09-19/descartar", json={"nota": "no calibra"})
     _vieja = c.get(f"{A}/analisis/cowork/lecciones?cohorte=c2-2026-09-19").json()
     _todas_c2 = [i for i in _vieja["items"] + _vieja["enCuarentena"]["items"] if i["cohorte"] == "c2-2026-09-19"]
@@ -2999,8 +3011,7 @@ def main():
     p_eq["equipos"]["a"]["dt"] = {"nombre": "Rafael Dudamel", "desde": "2026-01-01"}
     c.post(f"{A}/analisis/cowork", json=p_eq)
     check("re-depositar con el DT del banco («Rafael Dudamel» vs «R. Dudamel») la levanta",
-          not any(i["clave"].startswith(f"{pasado['id']}:") for i in
-                  c.get(f"{A}/analisis/cowork/lecciones").json()["enCuarentena"]["items"]))
+          not _cuar_de(c.get(f"{A}/analisis/cowork/lecciones").json(), pasado["id"]))
     # ── corregir SOLO el DT: el resto del parte no se toca ──
     p_eq["equipos"]["a"]["dt"] = {"nombre": "Pablo Repetto", "desde": "2026-01-01"}
     c.post(f"{A}/analisis/cowork", json=p_eq)
@@ -3021,8 +3032,7 @@ def main():
     check("712: corregido después del pitazo se sella el DT original y el caso sigue con DT equivocado",
           r_dt.json()["dtOriginal"].get("a", {}).get("nombre") == "Pablo Repetto"
           and [x["parte"] for x in r_dt.json()["dtEquivocado"]] == ["Pablo Repetto"]
-          and any(i["clave"].startswith(f"{pasado['id']}:") for i in
-                  c.get(f"{A}/analisis/cowork/lecciones").json()["enCuarentena"]["items"]),
+          and _cuar_de(c.get(f"{A}/analisis/cowork/lecciones").json(), pasado["id"]),
           r_dt.text[:400])
     r_dt2 = c.post(f"{A}/analisis/cowork/{pasado['id']}/dt", json={"a": {"nombre": "Otro Nombre", "desde": "2026-02-01"}})
     check("712: una segunda corrección no pisa el original (manda el DT con que se ESCRIBIÓ)",
