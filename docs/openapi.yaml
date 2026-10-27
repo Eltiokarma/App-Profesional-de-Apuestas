@@ -1004,7 +1004,8 @@ paths:
       description: >
         22/10/2026: la rutina de rehacer dispara cada 30 minutos y casi siempre no hay nada. En UNA
         llamada: los partes sin veredicto cuyo partido (NS) arranca entre `desdeMin` y `hastaMin`
-        minutos (`enVentana`) y, de esos, los que traen DTP-REHACER en sus alertas (`pendientes`).
+        minutos (`enVentana`) y, de esos, los que traen DTP-REHACER o DT-VS-BANCO (el once oficial
+        sienta a otro entrenador que el del parte, incidencia 711) en sus alertas (`pendientes`).
         `pendientes` vacío = la corrida termina en una línea. Abierto al token acotado (GET de
         /analisis/cowork).
       parameters:
