@@ -441,11 +441,45 @@ usuario, 18/10/2026: la API siempre puede fallar y van a aparecer errores
 nuevos). Acá SÍ se toca el código, con las reglas del repo (`CLAUDE.md` manda)
 y con freno.
 
+0. **Primero lo que quedó a medias y lo que decidió el usuario** (27/10/2026):
+   - `GET $B/health` → `commit` (lo que corre en producción) y
+     `GET $B/analisis/cowork/incidencias?estado=por_desplegar`: cada una cuyo
+     merge YA está en ese commit (`git merge-base --is-ancestor <merge> <commit>`
+     tras `git fetch origin main`) pasa a `resuelta`. Si lleva más de 24 h sin
+     desplegarse, deposita UNA incidencia `bloquea` «despliegue atascado» con
+     el PR y pasala a `usuario`.
+   - `GET …/incidencias?estado=aprobada`: el usuario aprobó la propuesta desde
+     la app. Van ANTES que las abiertas y cuentan como grupos de código del
+     paso 3. Si la propuesta era una acción suya (una cuarentena, un
+     desmentido, una variable), aprobar significa «hecho»: verificá con los
+     GET que esté hecho y cerrala `resuelta`; si no, devolvela a `usuario`
+     diciendo qué falta. Aprobar NO abre las zonas del paso 4 (motor, skills,
+     tokens, datos, Railway): esas siguen siendo del usuario.
+   - `GET …/incidencias?estado=usuario` + `GET …/incidencias/causas`: **limpiá
+     la cola del usuario**. La que ya resolvió un PR mergeado después de que
+     se derivó, cerrala `resuelta` con ese PR; las de la misma familia de
+     causa (`causas[].ids`) déjalas en UNA: las demás pasan a `descartada`
+     con «agrupada en #N». Al usuario le llega una decisión por causa, en la
+     tarjeta «Decisiones pendientes» de Partidos, con la `resolucion` como
+     propuesta: escribila para que se pueda aprobar sin abrir otra cosa (qué
+     cambia, dónde, qué se pierde).
 1. `git fetch origin main`; trabajá en la rama designada de la sesión
    recreada desde `origin/main` (`git checkout -B <rama> origin/main`: su PR
    anterior ya se mergeó o no existe). `GET $B/analisis/cowork/incidencias`
    (abiertas, graves y repetidas primero) y `GET $B/analisis/cowork/latido`.
-   Sin incidencias abiertas: avisá «nada que arreglar» y terminá.
+   Sin incidencias abiertas ni aprobadas: avisá «nada que arreglar» y terminá.
+   **Causa conocida, no se re-investiga** (27/10/2026): cada abierta trae
+   `conocida` (la última cerrada de su familia, con la resolución). Si es
+   `dato_api` · `por_diseno` · `descartada` y la nueva no trae nada que la
+   resolución no cubra, cerrala igual remitiendo a ella («misma causa que
+   #N: …») sin volver a verificar contra la base. Si la conocida es
+   `resuelta` y la causa volvió, el parche no alcanzó: es código otra vez.
+   **Lo que se repite sube al usuario**: `GET …/incidencias/causas?recurrentes=true`
+   lista los `dato_api` vistos en 3+ partidos distintos sin decisión
+   (`recurrente`) y lo que volvió después de un PR (`reaparece`). Por cada
+   recurrente, pasá UNA incidencia de la familia a `usuario` con la regla de
+   código que taparía el dato (como 381 y 673, que pasaron a código cuando el
+   usuario las vio): qué se calcularía, con qué fuente, y qué caso lo pide.
    **Agrupá por CAUSA antes de tocar nada** (pedido del usuario, 22/10/2026:
    la cola llegó a 88 arreglando de a una). Varias incidencias suelen ser la
    misma raíz —el cruce de nombres de `contraElOnce`, la identidad del jugador
@@ -504,10 +538,15 @@ y con freno.
    `usuario` con el enlace.
 7. Cerrá cada incidencia: `POST $B/analisis/cowork/incidencias/{id}/estado`
    con `{"estado": …, "resolucion": "…", "pr": "#N"}` (cerrar exige
-   resolución).
-8. Respuesta final, tres líneas: grupos e incidencias resueltas (con PR),
-   derivadas (dato_api · por_diseno · usuario, con qué tiene que hacer el
-   usuario) y los grupos que quedan abiertos para la próxima.
+   resolución). **Resuelta es resuelta EN PRODUCCIÓN**: tras el merge, mirá
+   `GET $B/health` → `commit`. Si ya contiene el merge, `resuelta`; si no
+   (Railway tarda o está caído), `por_desplegar` con el PR, y la próxima
+   pasada la confirma (paso 0). Con `commit` vacío (no se sabe) queda
+   `resuelta` con «despliegue sin confirmar» en la resolución.
+8. Respuesta final, tres líneas: grupos e incidencias resueltas (con PR y si
+   ya están en producción), derivadas (dato_api · por_diseno · cuántas
+   cerradas por causa conocida · cuántas causas nuevas esperan al usuario en
+   «Decisiones pendientes») y los grupos que quedan abiertos para la próxima.
 
 ## Al terminar cualquier modo: avisá al celular
 

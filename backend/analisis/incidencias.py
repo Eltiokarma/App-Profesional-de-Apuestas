@@ -35,7 +35,12 @@ ORIGENES = ("partes", "veredictos", "reventones", "mantenimiento", "usuario")
 AREAS = ("dt", "once", "ficha", "tde", "dtp", "f1", "timeline", "reventon", "burbujas", "agenda",
          "latido", "cuotas", "api", "contrato", "skill", "aprendizaje", "otro")
 SEVERIDADES = ("bloquea", "error", "aviso")
-ESTADOS = ("abierta", "en_curso", "resuelta", "dato_api", "por_diseno", "usuario", "descartada")
+# `aprobada`: el usuario aprobó la propuesta de una `usuario` y el mantenimiento
+# la implementa (solo se llega con `decidir`, nunca con el token de Cowork);
+# `por_desplegar`: el PR está mergeado pero producción todavía no corre ese
+# commit (27/10/2026: el 21-22/10 Railway estuvo caído y un push se perdió).
+ESTADOS = ("abierta", "en_curso", "resuelta", "dato_api", "por_diseno", "usuario", "descartada",
+           "aprobada", "por_desplegar")
 CERRADOS = ("resuelta", "dato_api", "por_diseno", "descartada")
 
 DDL = """
@@ -216,16 +221,34 @@ def listar(estado: str | None = "abierta", limite: int = 200) -> dict:
             filas = con.execute("SELECT * FROM incidencia ORDER BY id DESC LIMIT ?", (limite,)).fetchall()
         conteo = {r["estado"]: r["n"] for r in con.execute(
             "SELECT estado, COUNT(*) AS n FROM incidencia GROUP BY estado")}
-    return {"incidencias": [_dto(r) for r in filas], "porEstado": conteo,
+        todas = con.execute("SELECT * FROM incidencia").fetchall() if any(
+            r["estado"] not in CERRADOS for r in filas) else []
+    # LA PISTA DE LA CAUSA CONOCIDA: a cada una sin cerrar, la última cerrada de
+    # su familia (27/10/2026: se re-investigaba lo ya clasificado)
+    conocida: dict[int, dict] = {}
+    for fam in _familias(todas):
+        cerradas = [r for r in fam if r["estado"] in CERRADOS]
+        if not cerradas:
+            continue
+        ult = _conocida(max(cerradas, key=lambda r: (r["cerrado_en"] or "", r["id"])))
+        for r in fam:
+            if r["estado"] not in CERRADOS:
+                conocida[r["id"]] = ult
+    return {"incidencias": [{**_dto(r), "conocida": conocida.get(r["id"])} for r in filas], "porEstado": conteo,
             "nota": ("abierta = sin mirar · en_curso = alguien la está arreglando · resuelta = con PR · "
                      "dato_api = la API trajo algo malo y no hay código que lo evite · por_diseno = "
-                     "funciona como se decidió · usuario = le toca a una persona · descartada = no era")}
+                     "funciona como se decidió · usuario = le toca a una persona · descartada = no era · "
+                     "aprobada = el usuario aprobó la propuesta: la implementa el mantenimiento · "
+                     "por_desplegar = PR mergeado que producción todavía no corre")}
 
 
 def cambiar_estado(inc_id: int, payload: dict) -> dict:
     estado = _txt(payload.get("estado")).lower()
     if estado not in ESTADOS:
         raise IncidenciaInvalida(f"estado {estado!r} desconocido: {' · '.join(ESTADOS)}")
+    if estado == "aprobada":
+        # aprobar es del usuario, con la llave maestra: POST …/decision
+        raise IncidenciaInvalida("`aprobada` la pone el usuario con POST …/incidencias/{id}/decision")
     resolucion = _txt(payload.get("resolucion"))
     if estado != "en_curso" and estado != "abierta" and not resolucion:
         # cerrar sin decir qué se hizo es esconderla
@@ -248,6 +271,136 @@ def resumen_latido() -> dict:
     with _con() as con:
         abiertas = con.execute("SELECT COUNT(*) AS n, SUM(severidad='bloquea') AS b, MIN(creado_en) AS v "
                                "FROM incidencia WHERE estado IN ('abierta', 'en_curso')").fetchone()
-        usuario = con.execute("SELECT COUNT(*) AS n FROM incidencia WHERE estado='usuario'").fetchone()
+        n = {r["estado"]: r["n"] for r in con.execute(
+            "SELECT estado, COUNT(*) AS n FROM incidencia WHERE estado IN ('usuario', 'aprobada', 'por_desplegar') "
+            "GROUP BY estado")}
     return {"abiertas": abiertas["n"] or 0, "bloquean": abiertas["b"] or 0,
-            "masVieja": abiertas["v"], "esperanAlUsuario": usuario["n"] or 0}
+            "masVieja": abiertas["v"], "esperanAlUsuario": n.get("usuario", 0),
+            "aprobadas": n.get("aprobada", 0), "porDesplegar": n.get("por_desplegar", 0)}
+
+
+# ── LA MISMA CAUSA CON OTRAS PALABRAS (27/10/2026, pedido del usuario) ──────
+# La clave exacta junta lo que se escribe igual; las corridas escriben la misma
+# causa de muchas formas («Fecha de llegada del DT mal en la base…», «…no casa
+# con la prensa»): 19 incidencias de 18 partidos, cada una verificada desde
+# cero y cerrada como dato_api. La familia las junta por las palabras que
+# comparten (raíz de 6 letras, sin vacías): una pista para no investigar dos
+# veces y la cuenta que hace visible lo que se repite. NO cierra nada sola.
+_VACIAS = set("de del la las el los un una unos unas y o en con sin por para que se su sus al lo a no es "
+              "mas como cuando desde ya le les otro otra".split())
+SIMILITUD = 0.6        # palabras compartidas sobre las del título más corto
+COMPARTIDAS_MIN = 3    # y al menos tres: dos títulos cortos no se juntan por «DT» y «base»
+RECURRENTE_FIXTURES = 3
+
+
+def _toks(titulo: str) -> frozenset:
+    t = re.sub(r"\([^)]*\)", " ", titulo or "")
+    t = unicodedata.normalize("NFKD", t).encode("ascii", "ignore").decode().lower()
+    return frozenset(w[:6] for w in re.sub(r"[^a-z0-9 ]+", " ", t).split() if len(w) >= 3 and w not in _VACIAS)
+
+
+def parecidos(a: frozenset, b: frozenset) -> bool:
+    comunes = len(a & b)
+    corto = min(len(a), len(b))
+    return corto >= COMPARTIDAS_MIN and comunes >= COMPARTIDAS_MIN and comunes / corto >= SIMILITUD
+
+
+def _agrupada(r) -> bool:
+    return r["estado"] == "descartada" and "agrupada en #" in (r["resolucion"] or "")
+
+
+def _familias(filas) -> list[list]:
+    """Por orden de id: cada incidencia entra en la primera familia cuya raíz
+    (o una de sus primeras cinco) se le parece. Las «agrupada en #N» no cuentan."""
+    fams: list[tuple[list, list]] = []
+    for r in sorted(filas, key=lambda r: r["id"]):
+        if _agrupada(r):
+            continue
+        t = _toks(r["titulo"])
+        destino = next((f for f in fams if parecidos(t, f[1][0]) or any(parecidos(t, x) for x in f[1][1:5])), None)
+        if destino:
+            destino[0].append(r)
+            destino[1].append(t)
+        else:
+            fams.append(([r], [t]))
+    return [f[0] for f in fams]
+
+
+def _conocida(r) -> dict:
+    return {"id": r["id"], "estado": r["estado"], "titulo": r["titulo"], "resolucion": r["resolucion"] or "",
+            "pr": r["pr"] or "", "cerradoEn": r["cerrado_en"]}
+
+
+def causas(solo_recurrentes: bool = False) -> dict:
+    """Las familias de causa, con lo que hace falta para decidir:
+
+    - `conocida`: la última cerrada de la familia (dato_api · por_diseno ·
+      descartada · resuelta), con su resolución: una nueva parecida se cierra
+      remitiendo a ella sin volver a investigar, salvo que traiga algo nuevo;
+    - `recurrente`: un dato de la API que ya pasó en 3+ partidos distintos y
+      nadie decidió nada: va al usuario con una regla de código propuesta
+      (como 381 y 673, que se convirtieron en código a pedido suyo);
+    - `reaparece`: hubo un PR (`resuelta`) y la causa volvió a reportarse
+      después: el parche no alcanzó."""
+    with _con() as con:
+        filas = con.execute("SELECT * FROM incidencia").fetchall()
+    out = []
+    for fam in _familias(filas):
+        fx: list[int] = []
+        for r in fam:
+            fx += [f for f in _fixtures(r) if f not in fx]
+        estados: dict[str, int] = {}
+        for r in fam:
+            estados[r["estado"]] = estados.get(r["estado"], 0) + 1
+        cerradas = [r for r in fam if r["estado"] in CERRADOS]
+        ultima = max(cerradas, key=lambda r: (r["cerrado_en"] or "", r["id"])) if cerradas else None
+        fx_dato = []
+        for r in fam:
+            if r["estado"] == "dato_api":
+                fx_dato += [f for f in _fixtures(r) if f not in fx_dato]
+        decidida = any(r["estado"] in ("usuario", "aprobada") for r in fam)
+        resueltas = [r for r in fam if r["estado"] in ("resuelta", "por_desplegar")]
+        cierre_pr = max((r["cerrado_en"] or r["ultima_vez"] for r in resueltas), default=None)
+        reaparece = bool(cierre_pr) and any(r["creado_en"] > cierre_pr for r in fam if r["estado"] not in CERRADOS)
+        item = {
+            "raiz": fam[0]["id"], "titulo": fam[0]["titulo"], "area": fam[0]["area"],
+            "ids": [r["id"] for r in fam], "incidencias": len(fam), "veces": sum(r["veces"] for r in fam),
+            "fixtures": len(fx), "porEstado": estados,
+            "abiertas": [r["id"] for r in fam if r["estado"] in ("abierta", "en_curso")],
+            "ultimaVez": max(r["ultima_vez"] for r in fam),
+            "conocida": _conocida(ultima) if ultima else None,
+            "recurrente": len(fx_dato) >= RECURRENTE_FIXTURES and not decidida,
+            "fixturesDatoApi": len(fx_dato),
+            "reaparece": reaparece,
+        }
+        if not solo_recurrentes or item["recurrente"] or item["reaparece"]:
+            out.append(item)
+    out.sort(key=lambda f: (not f["recurrente"], not f["reaparece"], -f["fixtures"], -f["veces"]))
+    return {"causas": out, "total": len(out),
+            "regla": (f"misma causa = {COMPARTIDAS_MIN}+ palabras compartidas y {int(SIMILITUD * 100)} % de las del "
+                      f"título más corto · recurrente = dato_api en {RECURRENTE_FIXTURES}+ partidos sin decisión · "
+                      "reaparece = reportada de nuevo después de un PR")}
+
+
+def decidir(inc_id: int, aprobar: bool, nota: str = "") -> dict:
+    """La decisión del usuario sobre una `usuario` (con la llave maestra, desde
+    la app). Aprobada: el mantenimiento la implementa en su próxima pasada,
+    antes que las abiertas. Rechazada: queda `por_diseno` con la decisión."""
+    nota = _txt(nota, 1000)
+    ahora = efedb.ahora()
+    with _con() as con:
+        fila = con.execute("SELECT * FROM incidencia WHERE id=?", (inc_id,)).fetchone()
+        if not fila:
+            raise KeyError(inc_id)
+        if fila["estado"] != "usuario":
+            raise IncidenciaInvalida(f"solo se decide una incidencia en `usuario` (esta está en `{fila['estado']}`)")
+        previa = fila["resolucion"] or ""
+        if aprobar:
+            estado, res = "aprobada", f"{previa}\nAPROBADA por el usuario el {ahora[:10]}" + (f": {nota}" if nota else "")
+        else:
+            estado, res = "por_diseno", f"Decisión del usuario el {ahora[:10]}: NO" + (f" ({nota})" if nota else "") \
+                + (f"\nPropuesta: {previa}" if previa else "")
+        con.execute("UPDATE incidencia SET estado=?, resolucion=?, cerrado_en=? WHERE id=?",
+                    (estado, res.strip(), ahora if estado in CERRADOS else None, inc_id))
+        fila = con.execute("SELECT * FROM incidencia WHERE id=?", (inc_id,)).fetchone()
+    return _dto(fila)

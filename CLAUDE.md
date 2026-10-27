@@ -218,6 +218,18 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   sagradas (motor, números calibrados, skills, tokens, datos, cuarentenas,
   Railway): eso va a `usuario` con la propuesta. El latido cuenta las
   abiertas (`incidencias`) y pasa a ámbar con alguna que bloquea.
+  **Con memoria** (27/10/2026, pedido del usuario): la misma causa escrita
+  con otras palabras forma una FAMILIA (`incidencias.causas`, `GET
+  …/incidencias/causas`; 3+ palabras compartidas y 60 % del título más
+  corto). Cada abierta trae su `conocida` (la última cerrada de la familia) y
+  no se re-investiga; un `dato_api` visto en 3+ partidos sin decisión sale
+  `recurrente` y sube al usuario con una regla de código propuesta; lo que
+  vuelve después de un PR sale `reaparece`. Las `usuario` se deciden en la
+  tarjeta **Decisiones pendientes** de Partidos (agrupadas por causa, 🔑:
+  `POST …/{id}/decision` → `aprobada`, que la próxima pasada implementa
+  primero, o `por_diseno`). Y **resuelta es en producción**: `/health` trae el
+  `commit` que corre (`RAILWAY_GIT_COMMIT_SHA`); un PR mergeado que todavía no
+  está ahí queda `por_desplegar` hasta que la pasada siguiente lo confirma.
 - **El tamaño de `sad.db` es la factura de Railway.** Cobra la RAM por hora
   y cuenta la caché de archivos: cada página de la base que algo lee queda en
   memoria facturada. En 09/2026 la base llegó a 30 GB y costó 61 dólares con

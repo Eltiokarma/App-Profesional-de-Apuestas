@@ -2,6 +2,8 @@
 import type { BurbujasEquipoDTO } from './types'
 import { apiDelete, apiGet, apiPost, qs } from './client'
 import type {
+  CausaIncidencia,
+  IncidenciaDTO,
   AgendaCoworkDTO,
   AnalisisPrepartidoDTO,
   AnalisisRegistroDTO,
@@ -218,6 +220,15 @@ export const SadApi = {
   /** El reporte del día del revisor de coherencia (Jev). */
   coworkRevisor: (horas?: number, dia?: string) =>
     apiGet<RevisorDiarioDTO>('/analisis/cowork/revisor' + qs({ horas, dia })),
+  /** Lo que las corridas vieron roto, por estado (la cola del mantenimiento). */
+  incidencias: (estado = 'abierta', limite = 200) =>
+    apiGet<{ incidencias: IncidenciaDTO[]; porEstado: Record<string, number> }>('/analisis/cowork/incidencias' + qs({ estado, limite })),
+  /** Las familias de causa (la misma causa con otras palabras). */
+  causasIncidencias: (recurrentes = false) =>
+    apiGet<{ causas: CausaIncidencia[]; total: number; regla: string }>('/analisis/cowork/incidencias/causas' + qs({ recurrentes: recurrentes ? 'true' : undefined })),
+  /** La decisión del usuario sobre una incidencia en `usuario`. Llave maestra. */
+  decidirIncidencia: (id: number, aprobar: boolean, nota = '') =>
+    apiPost<IncidenciaDTO>(`/analisis/cowork/incidencias/${id}/decision`, { aprobar, nota }),
   veredictosPendientes: (horas?: number, limite?: number) =>
     apiGet<SobrePendientesDTO>('/analisis/cowork/veredictos/pendientes' + qs({ horas, limite })),
 

@@ -5225,6 +5225,69 @@ def main():
                                                   json={"origen": "x", "items": [{"titulo": "t"}]}).status_code == 422)
     check("y el latido cuenta las incidencias", "incidencias" in c.get(f"{A}/analisis/cowork/latido").json())
 
+    # ── MANTENIMIENTO CON MEMORIA (27/10/2026, pedido del usuario) ──────────
+    # 1. la misma causa con otras palabras: la nueva trae la conocida
+    _dt1 = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "veredictos", "items": [
+        {"titulo": "Fecha de llegada del DT mal en la base con el nombre correcto", "area": "dt", "fixtureId": 901}]}).json()["nuevas"][0]
+    c.post(f"{A}/analisis/cowork/incidencias/{_dt1}/estado",
+           json={"estado": "dato_api", "resolucion": "la API da el mes, no el día; DT-DISCREPANCIA lo cubre"})
+    _dt2 = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "partes", "items": [
+        {"titulo": "Fecha de llegada del DT en la base no coincide con la prensa", "area": "dt", "fixtureId": 902}]}).json()["nuevas"][0]
+    _l2 = next(x for x in c.get(f"{A}/analisis/cowork/incidencias").json()["incidencias"] if x["id"] == _dt2)
+    check("una nueva con la misma causa en otras palabras trae la conocida (id, estado y resolución) para no re-investigar",
+          (_l2.get("conocida") or {}).get("id") == _dt1 and _l2["conocida"]["estado"] == "dato_api"
+          and "mes" in _l2["conocida"]["resolucion"], _l2.get("conocida"))
+    check("…y una causa sin parecido no trae ninguna",
+          all(x.get("conocida") is None for x in c.get(f"{A}/analisis/cowork/incidencias").json()["incidencias"]
+              if x["titulo"].startswith("Sede errónea")))
+    check("dos títulos que solo comparten «DT» y «base» no son la misma causa",
+          not _incm.parecidos(_incm._toks("DT de la base viejo"), _incm._toks("DT de la base sin desde")))
+    # 2. el dato de la API que se repite en 3+ partidos sale como recurrente
+    c.post(f"{A}/analisis/cowork/incidencias/{_dt2}/estado", json={"estado": "dato_api", "resolucion": "igual que la anterior"})
+    _fam = lambda: next(f for f in c.get(f"{A}/analisis/cowork/incidencias/causas").json()["causas"] if _dt1 in f["ids"])  # noqa: E731
+    check("con 2 partidos todavía no es recurrente", _fam()["recurrente"] is False and _fam()["fixturesDatoApi"] == 2, _fam())
+    _dt3 = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "partes", "items": [
+        {"titulo": "Fecha de llegada del DT de la base no casa con la prensa", "area": "dt", "fixtureId": 903}]}).json()["nuevas"][0]
+    c.post(f"{A}/analisis/cowork/incidencias/{_dt3}/estado", json={"estado": "dato_api", "resolucion": "igual"})
+    check("con 3 partidos distintos clasificados dato_api es recurrente, y `recurrentes=true` la trae primero",
+          _fam()["recurrente"] is True
+          and c.get(f"{A}/analisis/cowork/incidencias/causas?recurrentes=true").json()["causas"][0]["raiz"] == _dt1, _fam())
+    # 3. la decisión del usuario: solo con la llave maestra y solo sobre una `usuario`
+    c.post(f"{A}/analisis/cowork/incidencias/{_dt3}/estado",
+           json={"estado": "usuario", "resolucion": "propuesta: tomar el desde de la primera alineación con ese DT"})
+    check("una vez derivada al usuario la familia deja de ser recurrente (ya hay quien decida)", _fam()["recurrente"] is False)
+    check("decidir NO está abierto al token de Cowork, ni puede poner `aprobada` por /estado",
+          not _appmod._cowork_puede("POST", f"{A}/analisis/cowork/incidencias/{_dt3}/decision")
+          and c.post(f"{A}/analisis/cowork/incidencias/{_dt1}/estado",
+                     json={"estado": "aprobada", "resolucion": "x"}).status_code == 422)
+    check("decidir una que no está en `usuario` → 422",
+          c.post(f"{A}/analisis/cowork/incidencias/{_dt1}/decision", json={"aprobar": True}).status_code == 422)
+    _ap = c.post(f"{A}/analisis/cowork/incidencias/{_dt3}/decision", json={"aprobar": True, "nota": "sí, con la alineación"}).json()
+    check("aprobada: conserva la propuesta y dice quién y cuándo, y el latido la cuenta",
+          _ap["estado"] == "aprobada" and "propuesta" in _ap["resolucion"] and "APROBADA por el usuario" in _ap["resolucion"]
+          and c.get(f"{A}/analisis/cowork/latido").json()["incidencias"]["aprobadas"] >= 1, _ap)
+    _rz = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "partes", "items": [
+        {"titulo": "Regla nueva para decidir", "area": "otro"}]}).json()["nuevas"][0]
+    c.post(f"{A}/analisis/cowork/incidencias/{_rz}/estado", json={"estado": "usuario", "resolucion": "propuesta x"})
+    _no = c.post(f"{A}/analisis/cowork/incidencias/{_rz}/decision", json={"aprobar": False, "nota": "no vale la pena"}).json()
+    check("rechazada: queda por_diseno, cerrada, con la decisión y la propuesta",
+          _no["estado"] == "por_diseno" and _no["cerradoEn"] and "NO" in _no["resolucion"] and "propuesta x" in _no["resolucion"], _no)
+    # 4. lo que vuelve después de un PR: el parche no alcanzó
+    _rp = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "partes", "items": [
+        {"titulo": "Formación del once del parte distinta de la ficha", "area": "dtp"}]}).json()["nuevas"][0]
+    c.post(f"{A}/analisis/cowork/incidencias/{_rp}/estado", json={"estado": "resuelta", "resolucion": "arreglado", "pr": "#1"})
+    with _incm._con() as _ci:   # el cierre fue «ayer»
+        _ci.execute("UPDATE incidencia SET cerrado_en='2026-10-01 00:00:00' WHERE id=?", (_rp,))
+    c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "veredictos", "items": [
+        {"titulo": "Formación del xi del parte no coincide con la ficha", "area": "dtp"}]})
+    _fr = next(f for f in c.get(f"{A}/analisis/cowork/incidencias/causas").json()["causas"] if _rp in f["ids"])
+    check("una causa con PR que se reporta otra vez después sale `reaparece`", _fr["reaparece"] is True and len(_fr["ids"]) == 2, _fr)
+    # 5. por desplegar: el PR mergeado que producción todavía no corre
+    _pd = c.post(f"{A}/analisis/cowork/incidencias/{_rz}/estado", json={"estado": "por_desplegar", "resolucion": "merge #9", "pr": "#9"})
+    check("por_desplegar es un estado válido y NO cierra la incidencia",
+          _pd.status_code == 200 and _pd.json()["cerradoEn"] is None, _pd.text[:200])
+    check("/health dice qué commit corre (vacío si no se sabe)", "commit" in c.get(f"{A}/health").json())
+
     # ── la comprobación barata de la rutina de rehacer (22/10/2026) ─────────
     _rh = c.get(f"{A}/analisis/cowork/rehacer")
     check("rehacer: responde la ventana y la lista (vacía = nada que hacer)",

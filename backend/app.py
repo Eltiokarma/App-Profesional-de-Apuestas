@@ -1162,7 +1162,11 @@ def health():
     # depósito y leer el recibo. Dice si está y en qué modo corre el revisor;
     # nunca la clave. Probarla de verdad es /analisis/jev/ping (maestro).
     from backend.analisis import coherencia as _coh, jev as _jev
-    return {"status": "ok" if db_ok else "degraded", "version": app.version, "dbOk": db_ok,
+    # QUÉ COMMIT CORRE (27/10/2026): el mantenimiento cierra una incidencia como
+    # resuelta solo cuando producción ya tiene el merge; Railway lo da en
+    # RAILWAY_GIT_COMMIT_SHA en los despliegues desde GitHub. "" = no se sabe.
+    commit = (os.environ.get("RAILWAY_GIT_COMMIT_SHA") or os.environ.get("SAD_COMMIT") or "").strip()
+    return {"status": "ok" if db_ok else "degraded", "version": app.version, "dbOk": db_ok, "commit": commit,
             "lastPipelineRun": last_run,
             "jev": {"disponible": _jev.disponible(), "modo": _coh.modo(), "modelo": _jev.MODELO,
                     "via": _jev.via(), "oficial": _jev.oficial()}}
@@ -2868,6 +2872,34 @@ def cowork_incidencias(estado: str = "abierta", limite: int = Query(default=200,
     """Las incidencias por estado (por defecto las abiertas), graves y repetidas primero."""
     from backend.analisis import incidencias
     return incidencias.listar(estado, limite)
+
+
+@app.get(API + "/analisis/cowork/incidencias/causas")
+def cowork_incidencias_causas(recurrentes: bool = False):
+    """Las familias de causa (27/10/2026): la misma causa escrita con otras
+    palabras, con su `conocida` (la última cerrada), `recurrente` (dato_api en
+    3+ partidos sin decisión del usuario) y `reaparece` (volvió después de un PR)."""
+    from backend.analisis import incidencias
+    return incidencias.causas(solo_recurrentes=recurrentes)
+
+
+class DecisionBody(BaseModel):
+    aprobar: bool
+    nota: str = ""
+
+
+@app.post(API + "/analisis/cowork/incidencias/{inc_id}/decision")
+def cowork_incidencia_decision(inc_id: int, body: DecisionBody):
+    """El usuario decide una incidencia en `usuario` desde la app (llave
+    maestra; NO está abierto a Cowork): aprobada la implementa el
+    mantenimiento, rechazada queda `por_diseno` con la decisión."""
+    from backend.analisis import incidencias
+    try:
+        return incidencias.decidir(inc_id, body.aprobar, body.nota)
+    except incidencias.IncidenciaInvalida as e:
+        raise HTTPException(422, str(e))
+    except KeyError:
+        raise HTTPException(404, f"no hay incidencia {inc_id}")
 
 
 @app.post(API + "/analisis/cowork/incidencias/{inc_id}/estado")
