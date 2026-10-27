@@ -838,6 +838,8 @@ function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
   const [yendo, setYendo] = useState('')
   const [cuarAbierta, setCuarAbierta] = useState(false)
   const [motivo, setMotivo] = useState('')
+  // el sistema falló: por defecto el caso sigue enseñando (usuario, 27/10/2026)
+  const [ensena, setEnsena] = useState(true)
 
   async function mover(estado: string) {
     setError('')
@@ -876,7 +878,7 @@ function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
     setError('')
     setYendo('cuarentena')
     try {
-      if (poner) await getDataSource().cuarentena(it.fixtureId, motivo)
+      if (poner) await getDataSource().cuarentena(it.fixtureId, motivo, ensena)
       else await getDataSource().quitarCuarentena(it.fixtureId)
       setCuarAbierta(false)
       onCambio()
@@ -920,7 +922,7 @@ function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
         {it.proponeMoverNumero === true && !it.puedeMoverNumeros && (
           <span style={{ font: '700 9px var(--mono)', color: 'var(--down)' }}>PIDE MOVER UN NÚMERO SIN PODER</span>
         )}
-        {it.cuarentena && <span style={{ font: '600 9.5px var(--mono)', color: 'var(--down)' }}>en cuarentena: {it.cuarentena}</span>}
+        {it.cuarentena && <span style={{ font: '600 9.5px var(--mono)', color: it.cuarentenaEnsena ? 'var(--mark)' : 'var(--down)' }}>{it.cuarentenaEnsena ? 'cuarentena que enseña' : 'en cuarentena'}: {it.cuarentena}</span>}
       </div>
       {det && <>
       {/* LA ETIQUETA DE JEV: de qué naturaleza fue el fallo y si la lección pide
@@ -953,7 +955,9 @@ function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
       {(it.cohorte || it.cuarentena) && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 5 }}>
           {it.cohorte && <span style={{ font: '600 9.5px var(--mono)', color: 'var(--t3)', padding: '2px 7px', borderRadius: 6, border: '1px solid var(--line)' }}>cohorte {it.cohorte}</span>}
-          {it.cuarentena && <span style={{ font: '600 9.5px var(--mono)', color: 'var(--down)', padding: '2px 7px', borderRadius: 6, background: 'var(--down-soft)' }}>en cuarentena: {it.cuarentena}</span>}
+          {it.cuarentena && (it.cuarentenaEnsena
+            ? <span title="fuera de toda métrica; la lección sigue fijando rúbrica" style={{ font: '600 9.5px var(--mono)', color: 'var(--mark)', padding: '2px 7px', borderRadius: 6, border: '1px solid var(--mark)' }}>cuarentena que enseña: {it.cuarentena}</span>
+            : <span style={{ font: '600 9.5px var(--mono)', color: 'var(--down)', padding: '2px 7px', borderRadius: 6, background: 'var(--down-soft)' }}>en cuarentena: {it.cuarentena}</span>)}
         </div>
       )}
 
@@ -1019,6 +1023,10 @@ function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
               {yendo === 'cuarentena' ? '…' : 'Poner en cuarentena'}
             </button>
           </div>
+          <label style={{ display: 'flex', gap: 6, alignItems: 'flex-start', marginTop: 7, font: '500 10.5px var(--sans)', color: 'var(--t1)', cursor: 'pointer' }}>
+            <input type="checkbox" checked={ensena} onChange={(e) => setEnsena(e.target.checked)} style={{ marginTop: 2 }} />
+            <span>Que siga enseñando: el caso sale de toda métrica, pero sus lecciones quedan con las del skill y fijan rúbrica (nunca mueven un número).</span>
+          </label>
         </div>
       )}
       {abierto && (

@@ -2817,6 +2817,20 @@ def main():
     check("quitar la cuarentena devuelve lo quitado y el caso vuelve a contar",
           r_q.status_code == 200 and r_q.json()["quitada"]["motivo"].startswith("rodaje")
           and c.get(f"{A}/analisis/cowork/lecciones").json()["poblacion"]["cuarentena"]["casos"] == 0, r_q.text[:200])
+    # LA CUARENTENA QUE ENSEÑA (27/10/2026, Comerciantes–Cienciano con el DT cesado)
+    r_q = c.post(f"{A}/analisis/cowork/{pasado['id']}/cuarentena",
+                 json={"motivo": "parte escrito con el DT cesado", "ensena": True})
+    inv_e = c.get(f"{A}/analisis/cowork/lecciones").json()
+    _it_e = [i for i in inv_e["items"] if i["clave"] == f"{pasado['id']}:a"]
+    check("cuarentena que enseña: fuera de las métricas igual que la otra",
+          r_q.status_code == 200 and r_q.json()["cuarentena"].get("ensena") is True
+          and inv_e["poblacion"]["cuarentena"]["casos"] == 1
+          and inv_e["acreditables"]["casos"] == inv["acreditables"]["casos"] - 1, (r_q.text[:200], inv_e["poblacion"]))
+    check("…pero su lección sigue con las del skill, fija rúbrica y no mueve números",
+          _it_e and _it_e[0]["cuarentenaEnsena"] is True and _it_e[0]["puedeMoverNumeros"] is False
+          and "fija rúbrica" in _it_e[0]["queAutoriza"]
+          and not any(i["clave"] == f"{pasado['id']}:a" for i in inv_e["enCuarentena"]["items"]), _it_e)
+    c.delete(f"{A}/analisis/cowork/{pasado['id']}/cuarentena")
     # ── SIN DT NO HAY CASO: cuarentena automática ──
     p_sin = dict(p_lec)
     import copy as _copy

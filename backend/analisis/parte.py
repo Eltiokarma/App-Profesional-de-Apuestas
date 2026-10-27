@@ -3821,7 +3821,7 @@ def cohorte_de(valor: str | None) -> dict:
 CUARENTENA_MOTIVO_MIN = 12
 
 
-def poner_cuarentena(fixture_id: int, motivo: str) -> dict:
+def poner_cuarentena(fixture_id: int, motivo: str, ensena: bool = False) -> dict:
     motivo = _txt(motivo)
     if len(motivo) < CUARENTENA_MOTIVO_MIN:
         raise ParteInvalido("la cuarentena lleva motivo: qué le faltaba a ESTE parte antes del pitazo "
@@ -3839,6 +3839,12 @@ def poner_cuarentena(fixture_id: int, motivo: str) -> dict:
             "veredictoAlPoner": {l: ((ver.get("porLado") or {}).get(l) or {}).get("veredicto", "")
                                  for l in LADOS} if ver else None,
         }
+        # LA CUARENTENA QUE ENSEÑA (usuario, 27/10/2026, Comerciantes–Cienciano:
+        # el parte se escribió con el DT cesado). El caso sale de TODA métrica,
+        # pero el sistema falló y de eso se aprende: sus lecciones siguen en la
+        # lista del skill y en el dossier, fijando rúbrica sin mover un número.
+        if ensena:
+            marca["ensena"] = True
         con.execute("UPDATE parte_cowork SET cuarentena_json=? WHERE fixture_id=?",
                     (json.dumps(marca, ensure_ascii=False), fixture_id))
     return {"fixtureId": fixture_id, "cuarentena": marca}
