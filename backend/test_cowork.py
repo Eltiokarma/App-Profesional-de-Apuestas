@@ -3466,6 +3466,29 @@ def main():
         {"a": {"formacion": "4-3-3", "titulares": ["M. Uno"], "banca": ["R. Insúa"]}})
     check("633: una pieza declarada «desde el banco» no pide rehacer por arrancar en el banco",
           not any(m.startswith("pieza") for m in _pz633["motivos"]), _pz633)
+    # grupo de piezas del 26/10 (686, 690/702/708, 704, 709, 713, 714)
+    _xi10 = [f"T. Jugador{k}" for k in range(10)]
+    _pz = lambda nombre, rol, tit, banca: _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3"},  # noqa: E731
+        "m2": {"piezas": [{"nombre": nombre, "rol": rol, "lado": "foco"}]}}},
+        {"a": {"formacion": "4-3-3", "titulares": tit, "banca": banca}})["motivos"]
+    check("704: «banco del que persigue» es una pieza declarada desde el banco",
+          _pz("S. Rosané", "banco del que persigue", _xi10 + ["X. Uno"], ["S. Rosané"]) == [])
+    check("709: «J. Castillo» en el banco no lo tapa E. Castillo titular",
+          any("J. Castillo arrancó en el banco" in m for m in _pz("J. Castillo", "ancla", _xi10 + ["E. Castillo"],
+                                                                  ["J. Castillo"])))
+    check("686: «Andrés Rentería» titular no nombra a «Faber Andrés Gil» del banco",
+          _pz("Andrés Rentería", "9", _xi10 + ["A. Rentería"], ["Faber Andrés Gil"]) == [])
+    check("690/702/708: una pieza que no está ni de titular ni de suplente pide rehacer",
+          any("no figura en la hoja" in m for m in _pz("C. Garcés", "9 goleador", _xi10 + ["X. Uno"], ["Y. Dos"]))
+          and _pz("C. Garcés", "9 goleador", _xi10 + ["C. Garcés"], ["Y. Dos"]) == []
+          and _pz("C. Garcés", "9 goleador", _xi10, []) == [])
+    from backend.analisis.dtp_cowork import _en_referencia as _er, _plano as _pl, sin_salientes as _ss
+    _cr713 = "Ramírez; Aguirre, Alfonso Parot, Fuentes"
+    check("713: la tolerancia de una letra no casa «A. Alfonzo» con el nombre de pila de «Alfonso Parot»",
+          not _er("A. Alfonzo", _pl(_cr713), _cr713) and _er("A. Parol", _pl(_cr713), _cr713))
+    check("714: «por C. Fuentes» saca a Fuentes de lo anunciado (el punto de la inicial no corta)",
+          "Fuentes" not in _ss("entra Llantén por C. Fuentes respecto del once") and "Llantén" in
+          _ss("entra Llantén por C. Fuentes respecto del once"))
     check("526: «sin Lynen» no marca el seguro en el banco; «fijo en Lynen» sí",
           not any(m.startswith("seguro") for m in _rd526("Chuky San José y Reis; sin Lynen, depende de que un lateral se quede")["motivos"])
           and any(m.startswith("seguro") for m in _rd526("pivote fijo en Lynen")["motivos"]))

@@ -387,7 +387,10 @@ def _col(v) -> str:
     return "izq" if t in _IZQ else "der" if t in _DER else "sin dato"
 
 
-_DESDE_BANCO = re.compile(r"desde el banco|de suplente|suplente|revulsivo|de cambio|ingresa|entra desde", re.I)
+# …y «banco del que persigue», «el banco» a secas: el rol ya dice que arranca
+# suplente (Barracas, S. Rosané, incidencia 704)
+_DESDE_BANCO = re.compile(r"desde el banco|de suplente|suplente|revulsivo|de cambio|ingresa|entra desde|\bbanco\b",
+                          re.I)
 
 
 def _suplentes_nombrados(banca: list[str], titulares: list[str], texto: str, crudo: str = "") -> list[str]:
@@ -400,10 +403,18 @@ def _suplentes_nombrados(banca: list[str], titulares: list[str], texto: str, cru
         return {a for a in _apellidos(n) if f" {a} " in f" {texto} "}
     tit_exactos = set().union(*(exacto(t) for t in titulares)) if titulares else set()
     out = []
+    ap_tit = set().union(*(set(_apellidos(t)) for t in titulares)) if titulares else set()
     for n in banca:
         if not _apellidos(n) or not _en_referencia(n, texto):
             continue
-        if any(_en_referencia(t, texto) and set(_apellidos(t)) & set(_apellidos(n)) for t in titulares):
+        # el titular del mismo apellido tapa al suplente solo si TAMBIÉN casa
+        # con la inicial: «J. Castillo» en el texto es el suplente aunque E.
+        # Castillo sea titular (Alianza, incidencia 709)
+        if any(_en_referencia(t, texto, crudo) and set(_apellidos(t)) & set(_apellidos(n)) for t in titulares):
+            continue
+        # un nombre de pila compartido no nombra al suplente: «Andrés Rentería»
+        # (titular) no es «Faber Andrés Gil» (banco) (Jaguares, incidencia 686)
+        if crudo and _solo_como_pila(n, crudo, ap_tit):
             continue
         if not exacto(n) and any(_casi(a, w) for a in _apellidos(n) for w in tit_exactos):
             continue
@@ -413,6 +424,21 @@ def _suplentes_nombrados(banca: list[str], titulares: list[str], texto: str, cru
             continue
         out.append(n)
     return out
+
+
+def _solo_como_pila(n: str, crudo: str, apellidos_titulares: set) -> bool:
+    """Cada mención en el texto de las palabras de `n` va seguida (sin coma)
+    del apellido de un titular: es el nombre de pila de ese titular."""
+    vistas = 0
+    for a in _apellidos(n):
+        for m in re.finditer(r"(?:^|[\s,;:/(])([^\s,;:/()]+)", crudo):
+            if _plano(m.group(1)).strip() != a:
+                continue
+            vistas += 1
+            sig = re.match(r"\s+([^\s,;:/()]+)", crudo[m.end(1):])
+            if not sig or _plano(sig.group(1)).strip() not in apellidos_titulares:
+                return False
+    return vistas > 0
 
 
 def _xi_texto(v) -> str:
@@ -970,7 +996,11 @@ def _en_referencia(nombre: str, ref: str, crudo: str = "", estricto: bool = Fals
         return False
     if any(f" {a} " in f" {ref} " for a in _apellidos(nombre)):
         return True
-    palabras = ref.split()
+    # la tolerancia de una letra no casa con el NOMBRE DE PILA de otro: «A.
+    # Alfonzo» no es el «Alfonso» de «Alfonso Parot» (Limache, incidencia 713)
+    pilas = {_plano(w).strip() for w in re.findall(
+        r"(?:^|[,;:/(])\s*([A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]+)\s+[A-ZÁÉÍÓÚÑÜ]", crudo or "")}
+    palabras = [p for p in ref.split() if p not in pilas]
     return any(_casi(a, p) for a in _apellidos(nombre) for p in palabras)
 
 
@@ -992,8 +1022,9 @@ def sin_alternativas(texto: str) -> str:
     return t
 
 
+# el punto de una inicial («por C. Fuentes») no corta la frase (incidencia 714)
 _SALIENTES = re.compile(r"\b(?:por|en lugar de|en vez de|reemplaz\w*(?:\s+a)?|sale[n]?|salieron|fuera)\s+"
-                        r"[^.;:()]+", re.I)
+                        r"(?:(?<![\wÀ-ÿ])[A-ZÁÉÍÓÚÑÜ]\.|[^.;:()])+", re.I)
 
 
 def sin_salientes(texto: str) -> str:
@@ -1179,9 +1210,18 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
         texto_pz = _plano(pz.get("nombre") or "")
         en_banca = _suplentes_nombrados(lado_of.get("banca") or [], lado_of.get("titulares") or [], texto_pz,
                                         pz.get("nombre") or "")
+        quien = f"pieza del M2 ({'rival' if pz.get('lado') == 'rival' else 'propia'}" \
+                f"{', ' + pz['rol'] if pz.get('rol') else ''})"
         if en_banca:
-            motivos.append(f"pieza del M2 ({'rival' if pz.get('lado') == 'rival' else 'propia'}"
-                           f"{', ' + pz['rol'] if pz.get('rol') else ''}): {', '.join(en_banca)} arrancó en el banco")
+            motivos.append(f"{quien}: {', '.join(en_banca)} arrancó en el banco")
+        # NI TITULAR NI SUPLENTE: fuera de la convocatoria tumba la capa de
+        # nombres igual que el banco (Garcés, Paciência, Cuevas: incidencias
+        # 690, 702, 708). Solo con la hoja completa (once y banco).
+        elif _apellidos(pz.get("nombre") or "") and len(lado_of.get("titulares") or []) >= 10 \
+                and lado_of.get("banca") and not any(
+                    _en_referencia(x, texto_pz, pz.get("nombre") or "") or _en_referencia(pz.get("nombre") or "", _plano(x), x)
+                    for x in [*(lado_of.get("titulares") or []), *(lado_of.get("banca") or [])]):
+            motivos.append(f"{quien}: {pz.get('nombre')} no figura en la hoja del partido (ni titular ni suplente)")
     # UNA REFERENCIA CON VARIAS PROYECCIONES NO ES UN XI (Tigres, incidencia
     # 163: «SI proyecta a E. Gómez…; Milenio, a Herrera, Simeone…» y todos
     # pasaban por la referencia: cinco titulares nuevos y ni un ausente)
