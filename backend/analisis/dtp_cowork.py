@@ -304,7 +304,7 @@ def penales_temporada(team_id: int, antes: str, dias: int = PENALES_DIAS) -> dic
         desde = (datetime.strptime(str(antes)[:10], "%Y-%m-%d") - timedelta(days=dias)).strftime("%Y-%m-%d")
         filas = saddb.query(
             "sad",
-            "SELECT e.jugador, e.detalle FROM fixture_eventos e JOIN fixtures f ON f.id = e.fixture_id "
+            "SELECT e.jugador, e.jugador_id, e.detalle FROM fixture_eventos e JOIN fixtures f ON f.id = e.fixture_id "
             "WHERE e.equipo_id = ? AND e.tipo = 'Goal' AND lower(e.detalle) LIKE '%penalty%' "
             "AND lower(e.detalle) NOT LIKE '%own%' AND f.date >= ? AND f.date < ?",
             (team_id, desde, str(antes)[:19]))
@@ -315,18 +315,47 @@ def penales_temporada(team_id: int, antes: str, dias: int = PENALES_DIAS) -> dic
             (team_id, team_id, desde, str(antes)[:19]))
     except Exception:  # noqa: BLE001 — base sin eventos: sin dato, no cero
         return {"ejecutores": [], "partidosConEventos": 0, "nota": "sin eventos en la base"}
+    # EL AÑO CRUZA EL MERCADO (incidencia 718, 27/10/2026): Sassuolo salía con
+    # Pinamonti de ejecutor, que hoy juega en la Lazio, y la Lazio con
+    # Artistico, que ya no está en su plantel. Cada ejecutor dice si sigue en
+    # la plantilla de hoy (`enPlantilla`; None = sin id o sin plantilla
+    # ingestada, no se juzga) y el que se fue no encabeza la lista.
+    plantel = _ids_plantel(team_id)
     por = {}
     for f in filas:
         nombre = (f["jugador"] or "").strip()
         if not nombre:
             continue
-        e = por.setdefault(nombre, {"nombre": nombre, "convertidos": 0, "errados": 0})
+        e = por.setdefault(nombre, {"nombre": nombre, "convertidos": 0, "errados": 0, "enPlantilla": None})
+        jid = f["jugador_id"] if "jugador_id" in f.keys() else None
+        if plantel and jid:
+            e["enPlantilla"] = jid in plantel
         e["errados" if "missed" in (f["detalle"] or "").lower() else "convertidos"] += 1
-    ejecutores = sorted(por.values(), key=lambda e: (-(e["convertidos"] + e["errados"]), -e["convertidos"]))
-    return {"ejecutores": ejecutores, "partidosConEventos": (con_ev or {"n": 0})["n"],
-            "nota": ("sin penales en los partidos con eventos del último año: decilo así, no «sin dato»"
-                     if not ejecutores else
-                     "el primero es el que más tiró: va como ejecutor salvo fuente del partido que diga otro")}
+    ejecutores = sorted(por.values(), key=lambda e: (e["enPlantilla"] is False,
+                                                     -(e["convertidos"] + e["errados"]), -e["convertidos"]))
+    idos = [e["nombre"] for e in ejecutores if e["enPlantilla"] is False]
+    if not ejecutores:
+        nota = "sin penales en los partidos con eventos del último año: decilo así, no «sin dato»"
+    elif len(idos) == len(ejecutores):
+        nota = (f"ninguno de los que tiraron penales en el año sigue en el plantel ({', '.join(idos)}): "
+                "el ejecutor de hoy sale de la prensa, o se dice «sin ejecutor conocido»")
+    else:
+        nota = "el primero es el que más tiró: va como ejecutor salvo fuente del partido que diga otro"
+        if idos:
+            nota += f"; ya no están en el plantel: {', '.join(idos)}"
+    return {"ejecutores": ejecutores, "partidosConEventos": (con_ev or {"n": 0})["n"], "nota": nota}
+
+
+def _ids_plantel(team_id: int) -> set[int]:
+    """Los ids de la plantilla de HOY (con stats o solo en la lista actual).
+    Vacío si no hay ingesta: entonces no se juzga quién sigue."""
+    try:
+        from backend.jugadores import plantilla_de
+        p = plantilla_de(team_id)
+    except Exception:  # noqa: BLE001
+        return set()
+    return ({j.get("id") for j in p.get("jugadores") or []}
+            | {j.get("jugadorId") for j in p.get("plantelSinStats") or []}) - {None}
 
 
 NO_CALCULABLES = [

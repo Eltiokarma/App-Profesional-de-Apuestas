@@ -3347,11 +3347,32 @@ def main():
                           (70, "Goal", "Own Goal", 990491, "Rival")])
     _pen = _d15.penales_temporada(990491, "2026-10-25 20:00:00")
     check("v1.6: los penales de la temporada salen de los eventos (convertidos y errados, sin goles comunes)",
-          _pen["ejecutores"] == [{"nombre": "E. Ramírez", "convertidos": 1, "errados": 1},
-                                 {"nombre": "Otro", "convertidos": 1, "errados": 0}]
+          _pen["ejecutores"] == [{"nombre": "E. Ramírez", "convertidos": 1, "errados": 1, "enPlantilla": None},
+                                 {"nombre": "Otro", "convertidos": 1, "errados": 0, "enPlantilla": None}]
           and _pen["partidosConEventos"] == 1, _pen)
     check("v1.6: sin penales en el año lo dice, no «sin dato»",
           _d15.penales_temporada(990492, "2026-10-25")["ejecutores"] == [])
+    # incidencia 718 (Sassuolo con Pinamonti, hoy en la Lazio): el que tiró en el
+    # año y ya no está en el plantel no encabeza y la nota lo nombra
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM fixture_eventos WHERE fixture_id=990490")
+        _con.executemany("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador, jugador_id) "
+                         "VALUES (990490, ?, 'Goal', 'Penalty', 990491, ?, ?)",
+                         [(10, "A. Pinamonti", 7001), (30, "A. Pinamonti", 7001), (50, "D. Berardi", 7002)])
+    _ipl = _d15._ids_plantel
+    try:
+        _d15._ids_plantel = lambda tid: {7002, 7003}
+        _pen718 = _d15.penales_temporada(990491, "2026-10-25 20:00:00")
+        _d15._ids_plantel = lambda tid: {7003}
+        _pen718b = _d15.penales_temporada(990491, "2026-10-25 20:00:00")
+    finally:
+        _d15._ids_plantel = _ipl
+    check("718: Berardi (sigue) encabeza aunque Pinamonti (se fue) tiró más, y la nota lo dice",
+          [(e["nombre"], e["enPlantilla"]) for e in _pen718["ejecutores"]]
+          == [("D. Berardi", True), ("A. Pinamonti", False)]
+          and "ya no están en el plantel: A. Pinamonti" in _pen718["nota"], _pen718)
+    check("718: si ninguno sigue, la nota manda a la prensa",
+          "ninguno de los que tiraron" in _pen718b["nota"], _pen718b)
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM fixture_eventos WHERE fixture_id=990490")
         _con.execute("DELETE FROM fixtures WHERE id=990490")
