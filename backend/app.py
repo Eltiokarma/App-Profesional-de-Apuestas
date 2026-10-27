@@ -1139,7 +1139,7 @@ def niveles_de(team_id: int, limit: int, hasta: str | None = None, antes: str | 
 # Mapeo bet_name/value de API-Football → mercados del contrato: vive en
 # backend/cuota_mercados.py porque la INGESTA lo usa para no guardar lo que
 # ninguna pantalla lee (y esa fue la razón de una sad.db de 30 GB).
-from backend.cuota_mercados import _BETS_FUERA, cuota_key, sin_dc_incoherente  # noqa: E402,F401
+from backend.cuota_mercados import _BETS_FUERA, cuota_key, sin_dc_incoherente, sin_incoherentes  # noqa: E402,F401
 
 
 # ---------------------------------------------------------------------------
@@ -1806,9 +1806,10 @@ def cuotas(fixture_id: int):
             filas.append({"casa": (r["bookmaker_name"] or "").strip().lower(), "mercado": key[0],
                           "seleccion": key[1], "cuota": float(r["odd"])})
     # una casa con la doble oportunidad que no cuadra con su propio 1X2 no entra
-    # a la media (incidencia 68: 1xBet arrastraba el 1X de 1.05 a 1.46)
+    # a la media (incidencia 68: 1xBet arrastraba el 1X de 1.05 a 1.46), ni la
+    # que da otro mercado bajo «ambos marcan» o «más/menos» (incidencia 717)
     acc: dict[tuple[str, str], list[float]] = {}
-    for f in sin_dc_incoherente(filas):
+    for f in sin_incoherentes(filas):
         acc.setdefault((f["mercado"], f["seleccion"]), []).append(f["cuota"])
     # la hora de la última CAPTURA, no la del pedido (incidencia 363, Santos–Pumas:
     # el parte citaba como «cuota de las 19:58» una leída horas antes); sin
@@ -2112,7 +2113,7 @@ def cuotas_casas(fixture_id: int):
                 "casa": casa,
                 "cuota": round(float(r["odd"]), 2),
             }
-    vivas = sin_dc_incoherente(list(ultima.values()))  # incidencia 68
+    vivas = sin_incoherentes(list(ultima.values()))  # incidencias 68 y 717
     por_sel: dict[tuple[str, str], list[dict]] = {}
     for fila in vivas:
         key = (fila["mercado"], fila["seleccion"])

@@ -220,6 +220,33 @@ def main():
     check("al guardar: la DC rota de 1xBet queda NULL, la de Bet365 se guarda, y la media del historial cuenta 1 casa",
           dc[("1xBet", "Home/Draw")] is None and dc[("Bet365", "Home/Draw")] == 1.2 and hist == [1], (dc, hist))
 
+    # «AMBOS MARCAN» CON OTRO MERCADO ADENTRO (incidencia 717, 1576182): cinco
+    # casas en Sí ~1.45 / No ~2.6 y Marathonbet en Sí 7.8 / No 1.04; su par suma
+    # 1.09 (parece sano) y se va por el consenso. La media del Sí volvía a 1.45.
+    from backend.cuota_mercados import casas_dos_salidas_incoherentes, sin_incoherentes
+    _bt = [("bet365", 1.5, 2.5), ("betano", 1.45, 2.62), ("william hill", 1.44, 2.6), ("1xbet", 1.44, 2.6),
+           ("betvictor", 1.4, 2.63), ("marathonbet", 7.8, 1.04)]
+    _fb = [{"casa": c, "mercado": "btts", "seleccion": s, "cuota": o}
+           for c, y, n in _bt for s, o in (("Y", y), ("N", n))]
+    _fb += [{"casa": "rara", "mercado": "ou", "seleccion": "O", "cuota": 1.6},
+            {"casa": "rara", "mercado": "ou", "seleccion": "U", "cuota": 3.0}]
+    check("717: Marathonbet sale de «ambos marcan» por el consenso y el par que suma 0.96 (sin margen) sale del O/U",
+          casas_dos_salidas_incoherentes(_fb) == {("marathonbet", "btts"), ("rara", "ou")},
+          casas_dos_salidas_incoherentes(_fb))
+    _si = [f["cuota"] for f in sin_incoherentes(_fb) if f["mercado"] == "btts" and f["seleccion"] == "Y"]
+    check("717: la media del Sí queda en ~1.45, no en 2.5", round(sum(_si) / len(_si), 2) == 1.45, _si)
+    check("717: con dos casas no se juzga por consenso (no se sabe cuál es la rara)",
+          casas_dos_salidas_incoherentes([f for f in _fb if f["casa"] in ("bet365", "marathonbet")]) == set())
+    con4 = db([(900011, "2026-10-26 19:00:00", "NS")])
+    it4 = {"league": {"id": 39}, "fixture": {"id": 900011}, "bookmakers": [
+        {"id": i, "name": c, "bets": [{"id": 8, "name": "Both Teams Score",
+                                        "values": [{"value": "Yes", "odd": str(y)}, {"value": "No", "odd": str(n)}]}]}
+        for i, (c, y, n) in enumerate(_bt, start=1)]}
+    ex.guardar_odds(con4, 900011, [it4])
+    _h = con4.execute("SELECT odd, casas FROM odds_history WHERE fixture_id=900011 AND value='Yes' AND casa IS NULL").fetchall()
+    check("717: el historial guarda la media del Sí sin Marathonbet (5 casas, ~1.45)",
+          len(_h) == 1 and _h[0][1] == 5 and abs(_h[0][0] - 1.446) < 0.01, _h)
+
     print(f"\n{'TODO OK' if not fallos else f'{fallos} FALLAS'}")
     return 1 if fallos else 0
 
