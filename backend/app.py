@@ -2601,6 +2601,15 @@ def cowork_lecciones(skill: str = Query(default=""), estado: str = Query(default
                                 desde=desde, cuantas=cuantas)
 
 
+@app.get(API + "/analisis/simulacion")
+def analisis_simulacion():
+    """Simulación de apuesta sobre nuestros 1X2 desde el 28/10/2026: plana
+    (control), Kelly (entero, ½ y ¼) y martingala, cada apuesta con la versión
+    de los skills con la que se escribió el parte. Se recalcula al leer."""
+    from backend.analisis import simulacion
+    return simulacion.simulacion()
+
+
 @app.get(API + "/analisis/cowork/espina/calibracion")
 def cowork_espina_calibracion(limite: int = Query(default=400, ge=1, le=2000)):
     """La espina de la tarjeta medida contra nuestros veredictos ciegos: por

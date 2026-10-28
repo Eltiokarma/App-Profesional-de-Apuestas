@@ -45,6 +45,7 @@ import type {
   MarcasCoworkDTO,
   InventarioLecciones,
   LeccionesParams,
+  SimulacionApuesta,
   RevisionSkillDTO,
   DerrotasFavoritoDTO,
   LeccionItem,
@@ -61,6 +62,7 @@ import type {
 } from '../api/types'
 import { CONFIG, type DataSourceMode } from '../config'
 import { MARKET_DEFS, MATCHES, STANDINGS, TEAMS } from '../data'
+import { SIMULACION_DEMO } from '../data/simulacionDemo'
 import { dtpDemo, efeDemo, leccionesDemo, paginarLecciones, parteCoworkDemo, timelineDemo } from '../data/efeDemo'
 import { oddsFor, rng } from '../lib/odds'
 import { levelBin } from '../motor/discretizer'
@@ -167,6 +169,8 @@ export interface SadDataSource {
   /** Llega el once y el bloque F se cierra en el backend (aritmética, sin IA).
    *  Sin onces en el cuerpo, se intenta con la ficha ya ingestada. */
   resolverXi(fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }): Promise<ParteCoworkDTO>
+  /** Simulación de apuesta sobre nuestros 1X2 desde el 28/10/2026: plana, Kelly y martingala. */
+  simulacion(): Promise<SimulacionApuesta>
   /** Lo que el bucle aprendió, por skill (fase C de docs/APRENDIZAJE.md). */
   lecciones(params?: LeccionesParams): Promise<InventarioLecciones>
   /** Cuarentena por criterio (docs/APRENDIZAJE.md): la pone el usuario, con motivo. */
@@ -883,6 +887,10 @@ class MockDataSource implements SadDataSource {
     return { partes, total: Object.keys(partes).length }
   }
 
+  async simulacion(): Promise<SimulacionApuesta> {
+    return SIMULACION_DEMO
+  }
+
   async lecciones(params?: LeccionesParams): Promise<InventarioLecciones> {
     return paginarLecciones(leccionesDemo(params?.skill ?? '', params?.estado ?? '', params?.cohorte ?? ''), params)
   }
@@ -1261,6 +1269,7 @@ class HttpDataSource implements SadDataSource {
     fixtureIds.length ? SadApi.coworkMarcas(fixtureIds) : Promise.resolve({ partes: {}, total: 0 })
   resolverXi = (fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }) =>
     SadApi.resolverXi(fixtureId, body)
+  simulacion = () => SadApi.simulacion()
   lecciones = (params?: LeccionesParams) => SadApi.lecciones(params)
   cuarentena = (fixtureId: number, motivo: string, ensena = false) => SadApi.cuarentena(fixtureId, motivo, ensena)
   quitarCuarentena = (fixtureId: number) => SadApi.quitarCuarentena(fixtureId)

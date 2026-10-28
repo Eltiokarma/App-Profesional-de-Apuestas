@@ -1,5 +1,5 @@
 // Endpoints del backend SAD (contrato: docs/openapi.yaml).
-import type { BurbujasEquipoDTO } from './types'
+import type { BurbujasEquipoDTO, SimulacionApuesta } from './types'
 import { apiDelete, apiGet, apiPost, qs } from './client'
 import type {
   CausaIncidencia,
@@ -167,6 +167,9 @@ export const SadApi = {
    *  Sin onces, se intenta con la ficha que ya capturó la ingesta. */
   resolverXi: (fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }) =>
     apiPost<ParteCoworkDTO>(`/analisis/cowork/${fixtureId}/xi`, body, { timeoutMs: 20_000 }),
+
+  /** Simulación de apuesta sobre nuestros 1X2 desde el 28/10/2026 (plana, Kelly, martingala). */
+  simulacion: () => apiGet<SimulacionApuesta>('/analisis/simulacion', { timeoutMs: 60_000 }),
 
   /** Lo que el bucle aprendió, por skill (fase C de docs/APRENDIZAJE.md). */
   lecciones: (params?: LeccionesParams) =>

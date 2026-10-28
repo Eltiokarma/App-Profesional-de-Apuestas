@@ -96,6 +96,11 @@ export function Sidebar({ store }: { store: SadStore }) {
             <span title="lecciones pendientes de la cohorte vigente" style={{ marginLeft: 'auto', font: '600 9.5px var(--mono)', color: 'var(--t3)' }}>{pendientes} pend.</span>
           ) : null}
         </button>
+        {/* Simulación de apuesta: tampoco depende del partido seleccionado */}
+        <button onClick={store.go('simulacion')} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 12px', border: 0, borderRadius: 10, cursor: 'pointer', background: navB('simulacion'), color: navF('simulacion'), font: '600 13.5px var(--sans)', textAlign: 'left', transition: 'background .14s,color .14s' }}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="8.5" /><path d="M14.8 9.2c-.5-.9-1.6-1.4-2.8-1.4-1.6 0-2.8.8-2.8 2s1.2 1.7 2.8 2.1 2.8 1 2.8 2.2-1.3 2-2.8 2c-1.3 0-2.4-.6-2.9-1.5M12 6v1.8M12 16.2V18" /></svg>
+          <span>Simulación</span>
+        </button>
         <button onClick={store.go('estadisticas')} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 12px', border: 0, borderRadius: 10, cursor: 'pointer', background: navB('estadisticas'), color: navF('estadisticas'), font: '600 13.5px var(--sans)', textAlign: 'left', transition: 'background .14s,color .14s' }}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M5 21V11M12 21V4M19 21v-8" /><path d="M3 21h18" /></svg>
           <span>Estadísticas</span>

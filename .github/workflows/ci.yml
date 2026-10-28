@@ -59,6 +59,8 @@ jobs:
         run: python -m backend.test_preflight
       - name: Tests del parte de Cowork (bloque F calculado y cruce del once)
         run: python -m backend.test_cowork
+      - name: Simulación de apuesta (plana, Kelly y martingala; versión por hora de subida)
+        run: python -m backend.test_simulacion
       - name: Tests del reventón de burbuja (guía calculada, vectores dorados compartidos con el TS)
         run: python -m backend.test_burbuja
       - name: Tests del backtest del reventón (anti-fuga y conteos)

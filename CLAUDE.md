@@ -33,6 +33,7 @@ python -m backend.test_cowork    # parte de Cowork: bloque F calculado y cruce d
 python -m backend.test_burbuja   # reventón de burbuja: mismos vectores dorados que el TS
 python -m backend.test_jev       # adaptador de Jev (System One): sin clave corre simulado y no decide
 python -m backend.test_coherencia # guardrail semántico del parte (Jev): etiqueta la prosa, el código compara con el número
+python -m backend.test_simulacion # simulación de apuesta: plana (control), Kelly entero/½/¼ y martingala desde el 28/10/2026, con la versión de cada skill
 python -m backend.test_modo_fallo # modo de fallo del veredicto (Jev): etiqueta para el dossier, no toca población ni métricas
 python -m backend.backtest_burbuja --padron --calibrar # backtest del reventón en las ligas importantes: tasa por riesgo, lift por señal, regla del nivel, por liga, y la logística que propone los puntos (--horizonte/--liga/--muestra/--json; en el servidor: GET /analisis/burbujas/backtest?calibrar=true, maestro)
 python -m backend.test_backtest_burbuja # anti-fuga y conteos del backtest, sobre la demo
@@ -323,6 +324,24 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   motor o no es dato»— y F1 por las alineaciones ya ingestadas. Los 16
   indicadores que siguen siendo juicio viajan en `noCalculables` con su motivo;
   lo que no se puede calcular se declara, no se rellena.
+- **Simulación de apuesta** (28/10/2026, pedido del usuario;
+  `backend/analisis/simulacion.py`, `GET /analisis/simulacion`, sección
+  **Simulación**): una banca de 100 unidades sobre los 1X2 declarados en los
+  partes, con cinco series —plana (control, 1 u al elegido), Kelly entero, ½ y
+  ¼ (f* = (p·c − 1)/(c − 1) sobre NUESTRAS probabilidades, a la selección con
+  más ventaja; sin ventaja no apuesta) y martingala (1 u al elegido, se duplica
+  tras perder)—. Cuenta SOLO desde los partidos del 28/10/2026 (`DESDE`, 00:00
+  de Lima); entra el parte depositado antes del pitazo, sin cuarentena, con el
+  1X2 completo y las tres cuotas (media de las casas de la última captura
+  prepartido, con margen); lo que no entra viaja en `excluidos` con su motivo.
+  Se recalcula al leer y los partidos simultáneos se liquidan en orden de
+  pitazo. Cada apuesta lleva la VERSIÓN de cada skill vigente al depositar
+  (`version_al`: `CORTE_VERSION` por día y, si se sabe, la hora en que el zip
+  llegó a la cuenta en `SUBIDA_VERSION` —con cada versión nueva subida, anotar
+  la hora ahí—) y la tabla «por versión de sad-analysis» separa lo que ganó
+  cada una. La demo (`src/data/simulacionDemo.ts`) se GENERA con `simular` del
+  backend: no hay copia de la cuenta en TS. No es una recomendación de apuesta
+  y no se abre al token de Cowork.
 - Gráficas de K: tres valores a la vista (último · últimos dos de la condición
   que se analiza, saltando los que repiten valor) vía `puntosEtiquetados` de
   `src/lib/kview.ts`. Una gráfica nueva usa ese helper, no su propia regla.
