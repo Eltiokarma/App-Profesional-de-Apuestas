@@ -650,12 +650,17 @@ def casos_bloque(team_id: int, antes: str, dias: int = 180) -> list[dict]:
         for b in con_caso:
             tid = fx["home_team_id"] if b.get("equipo") == "a" else fx["away_team_id"]
             if tid == team_id:
-                caso = {**b["cierre"]["casoBloque"], "deParte": f["fixture_id"], "fecha": (f["fecha"] or "")[:10]}
+                caso = {**b["cierre"]["casoBloque"], "deParte": f["fixture_id"], "fecha": (f["fecha"] or "")[:10],
+                        "fechaParte": (f["fecha"] or "")[:10]}
                 # DTP v1.6: el caso es del partido que ese cierre cerró —el anterior
                 # del equipo a la fecha del parte—; de ahí salen la sede y la
-                # competición cuando no se escribieron
+                # competición cuando no se escribieron, y la FECHA es la de ese
+                # partido, no la del parte (incidencia 762: Rennes jugado el 22/10
+                # viajaba con el 25/10 del parte que lo cerró)
+                ant = _anteriores(team_id, str(f["fecha"] or ""), 1)
+                if ant:
+                    caso["fecha"] = str(ant[0]["date"] or "")[:10] or caso["fecha"]
                 if not caso.get("sede") or not caso.get("competicion"):
-                    ant = _anteriores(team_id, str(f["fecha"] or ""), 1)
                     if ant:
                         caso.setdefault("sede", "")
                         caso["sede"] = caso["sede"] or ("local" if ant[0]["home_team_id"] == team_id else "visita")
@@ -1340,6 +1345,8 @@ def avisos_carril(dtp: dict, nombres: dict) -> list[dict]:
 _MOTIVO_SISTEMA = re.compile(r"anunci|previa|prensa|confirm|expuls|roja|con diez|con 10|variante|cambi|"
                              r"vuelve|regres|probable|rotaci|interino|declar", re.I)
 _PENAL = re.compile(r"penal|penalt", re.I)
+_SEDE_TXT = {"visita": re.compile(r"visita|visitante|\bfuera\b", re.I),
+             "local": re.compile(r"\bde local\b|\ben casa\b|\blocal\)|\(local", re.I)}
 
 
 def _formacion_ultima(team_id: int, fecha: str) -> tuple[str, int | None]:
@@ -1403,13 +1410,21 @@ def avisos_v16(dtp: dict, fx, nombres: dict) -> list[dict]:
                 casos = [c for c in casos_bloque(tid_rival, fecha) if c.get("sede") in ("local", "visita")]
             except Exception:  # noqa: BLE001
                 casos = []
-            if casos and all(c["sede"] != sede_hoy for c in casos):
+            # el caso escrito en `casoP6` de la misma sede responde la 6 aunque la
+            # cadena no lo tenga (incidencia 721: Fiorentina 1-3 Como, de visita)
+            caso_p6 = _txt(chk.get("casoP6"))
+            if casos and all(c["sede"] != sede_hoy for c in casos) and not _SEDE_TXT[sede_hoy].search(caso_p6):
+                # los casos de ESTA cadena con su fecha; el ejemplo fijo del 25/10
+                # (Leones–Libertad, Lecce–Juventus) se leía como caso propio (721, 762)
+                lista = "; ".join(f"{c.get('caso') or '?'} ({c['sede']}"
+                                  + (f", {c['fecha']}" if c.get("fecha") else "") + ")" for c in casos[:3])
                 out.append({"bloque": f"dtp.{lado}.m2.checklistBloqueRival.p6", "codigo": "P6-OTRA-SEDE",
                             "costara": f"la 6 del bloque de {nombres.get(rival, rival)} se respondió «sí» y hoy "
                                        f"juega de {sede_hoy}: los casos de su cadena son todos de la otra sede "
-                                       "(Leones–Libertad y Lecce–Juventus el 25/10)",
+                                       f"({lista}) y `casoP6` no nombra uno de {sede_hoy}",
                             "comoSeArregla": "un caso de la otra sede no responde la 6: «no» o «sin dato» → "
-                                             "estructural no probado (DTP v1.6)"})
+                                             "estructural no probado, o nombrar en `casoP6` el partido de la "
+                                             "misma sede que la responde (DTP v1.6)"})
     return out
 
 
