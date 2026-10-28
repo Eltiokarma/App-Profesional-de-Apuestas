@@ -310,7 +310,18 @@ def _mismos_ga(a: dict, b: dict) -> bool:
     return sum(ga) > 0 and ga == ((b.get("goles") or 0), (b.get("asistencias") or 0))
 
 
-def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None) -> tuple[list[dict], dict[int, int]]:
+def _caben(q: dict, j: dict, tope: int | None) -> bool:
+    """¿Los partidos de los dos registros SUMADOS caben en los que jugó el
+    equipo? Un registro partido reparte los partidos de UNA persona; si la suma
+    pasa de los partidos del equipo, se pisan y son dos personas (Junior,
+    27/10/2026, incidencia 741: «J. Peña» 13803 con 33 PJ y 538301 con 25 daban
+    58 PJ y 4.605 minutos en una temporada que nadie del plantel pasa de 40).
+    Sin tope conocido, no se juzga."""
+    return tope is None or (q.get("partidos") or 0) + (j.get("partidos") or 0) <= tope
+
+
+def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None,
+               tope: int | None = None) -> tuple[list[dict], dict[int, int]]:
     """UN JUGADOR CON DOS IDS ES UNO. La API da a veces dos ids para la misma
     persona: el de la temporada, con sus minutos, y una copia vacía creada por
     una hoja del partido (Leones del Norte con «E. Griffa» 566349 y «Emiliano
@@ -340,7 +351,12 @@ def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None) 
     (`sucesion(a, b)`: las hojas de uno terminan antes de que empiecen las del
     otro) o tienen los mismos goles y asistencias (no cero). No se pide la
     misma posición (Bisanz es delantero en un id y mediocampista en el otro).
-    La fila queda marcada `fundidoPorInicial`."""
+    La fila queda marcada `fundidoPorInicial`.
+
+    Y NUNCA SI LA SUMA NO CABE (`tope`, los partidos del equipo en la
+    temporada; incidencia 741): con onces que la liga casi no publica (Colombia)
+    «nunca juntos» y la «sucesión» se cumplen con dos o tres hojas, y dos
+    personas distintas se fundían."""
     tit = dict(tit)
     quedan: list[dict] = []
     for j in sorted(js, key=lambda j: (_sin_minutos(j), -(j.get("minutos") or 0), -tit.get(j["id"], 0))):
@@ -348,7 +364,7 @@ def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None) 
         for i, q in enumerate(quedan):
             if not mismo_jugador(j["nombre"], q["nombre"]):
                 if (_mismo_apellido(j["nombre"], q["nombre"]) and not _sin_minutos(j) and juntos
-                        and not juntos(j["id"], q["id"])
+                        and _caben(q, j, tope) and not juntos(j["id"], q["id"])
                         and ((sucesion and sucesion(j["id"], q["id"])) or _mismos_ga(j, q))):
                     gemela, sumar = q, True
                     quedan[i] = {**_sumar(q, j), "fundidoPorInicial": True}
@@ -357,13 +373,14 @@ def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None) 
             if _sin_minutos(j) or _mismas_stats(j, q):
                 gemela = q
                 break
-            if _mismo_nombre_completo(j["nombre"], q["nombre"]) and not (juntos and juntos(j["id"], q["id"])):
+            if (_mismo_nombre_completo(j["nombre"], q["nombre"]) and _caben(q, j, tope)
+                    and not (juntos and juntos(j["id"], q["id"]))):
                 gemela, sumar = q, True
                 quedan[i] = _sumar(q, j)
                 break
             # misma inicial pero sin la pila entera («M. Perea» y «M. Perea»): la misma
             # regla de la inicial distinta (sucesión o mismos goles y asistencias)
-            if (juntos and not juntos(j["id"], q["id"])
+            if (juntos and _caben(q, j, tope) and not juntos(j["id"], q["id"])
                     and ((sucesion and sucesion(j["id"], q["id"])) or _mismos_ga(j, q))):
                 gemela, sumar = q, True
                 quedan[i] = {**_sumar(q, j), "fundidoPorInicial": True}
@@ -411,6 +428,20 @@ def _sucesion(a: int, b: int) -> bool:
     return ha < db_ or hb < da
 
 
+def _partidos_temporada(team_id: int, temporada) -> int | None:
+    """Los partidos terminados del equipo en esa temporada (todas las
+    competiciones de la base). Sin temporada o sin partidos: None (no se juzga)."""
+    if not temporada:
+        return None
+    try:
+        fila = saddb.query_one(
+            "sad", f"SELECT COUNT(*) AS n FROM fixtures f WHERE (f.home_team_id=? OR f.away_team_id=?) "
+                   f"AND f.league_season=? AND {_FIN}", (team_id, team_id, temporada))
+    except Exception:  # noqa: BLE001
+        return None
+    return (fila["n"] or None) if fila else None
+
+
 def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     p = jug.plantilla_de(team_id)
     js = p.get("jugadores") or []
@@ -418,7 +449,7 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     rec = onces_recientes(team_id, antes)
     con_onces = rec["onces"] >= ONCES_MINIMOS
     tit = {pid: j["titular"] for pid, j in rec["jugadores"].items()}
-    js, tit = deduplicar(js, tit, _juntos, _sucesion)
+    js, tit = deduplicar(js, tit, _juntos, _sucesion, _partidos_temporada(team_id, p.get("temporada")))
     # DECISIVO DE LA TEMPORADA, NO DE HOY. Elvio Vera (Ameliano) y Martín Arias
     # (Cerro) salían «titular habitual 100 %» por el Apertura con 0 de 10 en los
     # últimos onces (incidencia 45): con onces recientes, quien no fue titular

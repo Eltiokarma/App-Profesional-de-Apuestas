@@ -4068,6 +4068,14 @@ def main():
     _b8, _ = _dedup([{"id": 1, "nombre": "Juan Bisanz", "minutos": 500, "partidos": 6},
                      {"id": 2, "nombre": "Pedro Bisanz", "minutos": 200, "partidos": 3}], {}, _nunca, lambda a, b: True)
     check("673: dos pilas enteras distintas con el mismo apellido son dos personas", len(_b8) == 2, _b8)
+    # 741 (Junior): «J. Peña» 33 PJ + 538301 con 25 PJ = 58, más que los partidos
+    # del equipo: se pisan, son dos personas aunque la liga casi no dé onces
+    _pe = [{"id": 13803, "nombre": "J. Peña", "minutos": 2746, "partidos": 33},
+           {"id": 538301, "nombre": "J. Peña", "minutos": 1859, "partidos": 25}]
+    _b9, _ = _dedup(_pe, {}, _nunca, lambda a, b: True, 40)
+    check("741: la suma de partidos que no cabe en los del equipo (58 > 40) no se funde", len(_b9) == 2, _b9)
+    _b10, _ = _dedup(_bz, {}, _nunca, lambda a, b: True, 40)
+    check("741: la que cabe (Bisanz 11 + 4 ≤ 40) se sigue fundiendo", len(_b10) == 1, _b10)
     from backend.analisis.f1_base import _fila as _f1_fila
     check("673: la fila de la tabla F1 lleva la marca",
           _f1_fila({**_b1[0], "posicion": "Attacker", "titularidades": 0, "pctMinutos": 0.5}).get("fundidoPorInicial") is True)
