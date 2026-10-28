@@ -3375,12 +3375,23 @@ def main():
         _ap16["m2"]["viasGol"] = {"foco": ["penal: E. Ramírez (temporada)"], "rival": ["penal: Ngoura"]}
         _d15.casos_bloque = lambda tid, antes, dias=180: [{"sede": "visita", "caso": "1-0 de visita"}]
         _av16b = _d15.avisos_v16(_x16b, _fx16, {"a": "Leones", "b": "Libertad"})
+        # 721: el caso de la misma sede escrito en `casoP6` responde la 6
+        _d15.casos_bloque = lambda tid, antes, dias=180: [{"sede": "local", "caso": "4-0 de local", "fecha": "2026-10-19"}]
+        _x721 = _copy.deepcopy(_x16b)
+        _x721["bloques"][0]["apertura"]["m2"]["checklistBloqueRival"]["casoP6"] = "Fiorentina 1-3 Como (visita, Serie A)"
+        _av721 = _d15.avisos_v16(_x721, _fx16, {"a": "Leones", "b": "Libertad"})
+        _av762 = _d15.avisos_v16(_x16b, _fx16, {"a": "Leones", "b": "Libertad"})
     finally:
         _d15._formacion_ultima, _d15.casos_bloque = _orig16
     check("v1.6: avisa sistema distinto del último once, penal sin ejecutor y la 6 con un caso de otra sede",
           {a["codigo"] for a in _av16} == {"M1-VS-ULTIMO-ONCE", "DTP-PENAL-SIN-EJECUTOR", "P6-OTRA-SEDE"}, _av16)
     check("v1.6: con el motivo escrito, los penales de los dos lados y un caso de la misma sede, no avisa",
           _av16b == [], _av16b)
+    check("721: con `casoP6` de la misma sede (visita) no avisa P6-OTRA-SEDE", _av721 == [], _av721)
+    _p762 = [a for a in _av762 if a["codigo"] == "P6-OTRA-SEDE"]
+    check("721/762: el aviso nombra los casos de ESTA cadena con su fecha, no el ejemplo del 25/10",
+          _p762 and "4-0 de local (local, 2026-10-19)" in _p762[0]["costara"]
+          and "Leones–Libertad" not in _p762[0]["costara"], _p762)
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
                      "home_team_id, away_team_id, goals_home, goals_away) VALUES (990490, '2026-09-01 20:00:00', "
