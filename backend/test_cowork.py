@@ -3749,7 +3749,20 @@ def main():
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("UPDATE alineaciones_versiones SET capturada_en='2026-10-25 15:40:00' "
                      "WHERE fixture_id=990480 AND formacion='4-3-1-2'")
-    check("llegó a 35 min y el parte no se re-depositó: `sinRehacer`",
+    # 732: a las 15:40 con pitazo 16:15 el disparo de las 15:37 ya pasó y el de
+    # las 16:07 cae a 8 min: ningún disparo podía rehacerlo
+    _m732 = _mom(_al, _fx480, "2026-10-25 15:13:00")[0]
+    check("732: once a 35 min pero entre dos disparos sin ninguno útil: `tardio` por la grilla",
+          _m732.get("momento") == "tardio" and "ningún disparo" in _m732["detalle"], _m732)
+    from backend.analisis.parte import disparo_entre as _dent, _utc as _u732
+    check("732: la grilla de :07/:37 de 05:07 a 23:37 de Lima",
+          _dent(_u732("2026-10-25 15:30:00"), _u732("2026-10-25 16:00:00"))
+          and not _dent(_u732("2026-10-25 15:40:00"), _u732("2026-10-25 16:00:00"))
+          and not _dent(_u732("2026-10-25 04:40:00"), _u732("2026-10-25 05:00:00")))  # 23:40-00:00 de Lima: sin disparos
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("UPDATE alineaciones_versiones SET capturada_en='2026-10-25 15:30:00' "
+                     "WHERE fixture_id=990480 AND formacion='4-3-1-2'")
+    check("llegó a 45 min, hubo disparo (15:37) y el parte no se re-depositó: `sinRehacer`",
           _mom(_al, _fx480, "2026-10-25 15:13:00")[0].get("momento") == "sinRehacer")
     check("ya estaba en el último depósito y la apertura lo contradice: `conocido`",
           _mom(_al, _fx480, "2026-10-25 15:45:00")[0].get("momento") == "conocido")
@@ -3758,7 +3771,7 @@ def main():
         _gal(_con, 990480, _once("4-1-3-2", 700), "2026-10-25 18:10:00")
     _m697 = _mom(_al, _fx480, "2026-10-25 15:13:00")[0]
     check("688/697: una versión capturada después del pitazo no cuenta como once final",
-          _m697.get("momento") == "sinRehacer" and _m697.get("onceFinalEn") == "2026-10-25T15:40:00Z"
+          _m697.get("momento") == "sinRehacer" and _m697.get("onceFinalEn") == "2026-10-25T15:30:00Z"
           and "-" not in _m697["detalle"].split("llegó a las")[1].split("min")[0], _m697)
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM alineaciones_versiones WHERE fixture_id=990480 AND capturada_en > '2026-10-25 16:15:00'")

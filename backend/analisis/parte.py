@@ -3488,6 +3488,27 @@ def _antes_del_pitazo(ahora: str, pitazo) -> bool:
     return bool(a and p and a < p)
 
 
+# La grilla de la rutina de rehacer (CLAUDE.md, deuda 11): dos disparos por
+# hora, a :07 y :37, de 05:07 a 23:37 de Lima (UTC−5, sin horario de verano).
+REHACER_DISPAROS_MIN = (7, 37)
+REHACER_HORAS_LIMA = (5, 23)
+
+
+def disparo_entre(desde: datetime, hasta: datetime) -> bool:
+    """¿Cae algún disparo de la rutina de rehacer en (desde, hasta]?"""
+    if not desde or not hasta or hasta <= desde:
+        return False
+    lima = timezone(timedelta(hours=-5))
+    t = desde.astimezone(lima).replace(second=0, microsecond=0)
+    fin = hasta.astimezone(lima)
+    while t <= fin:
+        if (t.minute in REHACER_DISPAROS_MIN and REHACER_HORAS_LIMA[0] <= t.hour <= REHACER_HORAS_LIMA[1]
+                and desde.astimezone(lima) < t):
+            return True
+        t += timedelta(minutes=1)
+    return False
+
+
 def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> list[dict]:
     """CUÁNDO llegó el once que dispara DTP-REHACER, una vez jugado el partido
     (26/10/2026: 12 lecciones del DTP del 25/10 decían «sonó y no se rehízo» y
@@ -3497,8 +3518,10 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> lis
     depósito ANTES del pitazo, cada DTP-REHACER sale con `momento`:
       · `tardio` — el once final llegó a menos de REHACER_DESDE_MIN del pitazo:
         nadie podía rehacer; apertura caída por un once tardío, no un aviso ignorado.
-      · `sinRehacer` — llegó a tiempo y el parte no se volvió a depositar
-        después: falla de la corrida de rehacer.
+        También si llegó antes de ese límite pero ningún disparo de la rutina
+        (:07 y :37 de Lima) cayó entre su hora y el límite (incidencia 732).
+      · `sinRehacer` — llegó a tiempo para un disparo y el parte no se volvió
+        a depositar después: falla de la corrida de rehacer.
       · `conocido` — el once ya estaba cuando se depositó por última vez y la
         apertura igual lo contradice: lo rehecho no lo corrigió.
     Antes del pitazo, sin la tabla de versiones, sin una versión capturada
@@ -3539,6 +3562,13 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> lis
         momento, texto = "tardio", (f"la versión final del once llegó a las {hora}, {antes} min antes del pitazo, "
                                     f"después del último rehacer posible (pitazo − {REHACER_DESDE_MIN} min): "
                                     "apertura caída por un once tardío, no un aviso ignorado")
+    elif not disparo_entre(t, limite):
+        # incidencia 732: el once de las 19:17 con pitazo 19:45 llegó después del
+        # disparo de las 19:07 y el de las 19:37 ya cae a 8 min; nadie podía rehacer
+        momento, texto = "tardio", (f"la versión final del once llegó a las {hora}, {antes} min antes del pitazo, "
+                                    "y ningún disparo de la rutina de rehacer (:07 y :37 de Lima) cayó entre esa "
+                                    f"hora y el pitazo − {REHACER_DESDE_MIN} min: once tardío para la grilla, "
+                                    "no un aviso ignorado")
     else:
         momento, texto = "sinRehacer", (f"el once final llegó a las {hora}, {antes} min antes del pitazo, y el "
                                         "parte no se volvió a depositar después: la corrida de rehacer no lo tomó")
