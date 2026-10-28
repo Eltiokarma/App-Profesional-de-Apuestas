@@ -3689,6 +3689,7 @@ components:
         tipo: { type: string, enum: [estructural, fecha, dato], description: '`dato` = la pone el backend sobre los datos, no el skill' }
         detalle: { type: string, description: '`texto` se acepta como alias' }
         origen: { type: string, enum: [jev], description: 'solo en COHERENCIA-*: la puso Jev al depositar; no se recalcula al leer' }
+        posteriorAlParte: { type: boolean, description: 'solo en ESPINA-SIGUE-EN-EXTREMO y EFE-EMPATE-TECNICO (27/10/2026): la regla nació el 26/10, después de que se creó este parte; se muestra, pero el veredicto no la cobra como incumplida' }
         modelo: { type: string, description: 'solo en COHERENCIA-*: la versión exacta que respondió (jev-1.13.0)' }
         evaluadoEn: { type: string, description: 'solo en COHERENCIA-*: cuándo se evaluó (al depositar)' }
         momento:
@@ -4641,6 +4642,7 @@ components:
                             cumplido: { type: boolean, nullable: true }
                             iseRama: { type: number, nullable: true }
                             porque: { type: string }
+                            noEvaluable: { type: string, description: 'el parte es anterior a la lectura por defecto (TDE v0.1.24, 26/10/2026) y no declaró desenlace: `cumplido` null y no entra a `desenlaceTde`' }
                   reasignacion:
                     type: object
                     description: >

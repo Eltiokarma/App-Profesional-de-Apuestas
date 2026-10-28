@@ -416,7 +416,9 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     # otro no existía para ninguna métrica.
     from backend.analisis.parte import bloques_tde
     rojas = _rojas(fixture_id, fx["home_team_id"])
-    sin_ramas = servidor_sin_ramas(_creado_en(fixture_id))
+    creado = _creado_en(fixture_id)
+    sin_ramas = servidor_sin_ramas(creado)
+    con_defecto = regla_desenlace_vigente(creado)
     bloques = []
     for tde in bloques_tde(parte.get("tde") or {}):
         reasig = rama_jugada(tde, goles, gl + gv, out["evidencia"]["conFicha"], rojas, sin_ramas)
@@ -442,7 +444,8 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
                             # LOS TRAMOS Y EL RELOJ SE MIDEN IGUAL (incidencia 695: América
                             # con «desde el gol hasta el empate» perdía los tres tramos, su
                             # desenlace y la base 75-90 del reloj)
-                            **_por_tramo(tde, goles, rojas, out["evidencia"]["conFicha"], bool(de_rama))})
+                            **_por_tramo(tde, goles, rojas, out["evidencia"]["conFicha"], bool(de_rama),
+                                         con_defecto)})
             continue
         desde, hasta = rango
         foco = tde.get("equipo") or ""
@@ -505,7 +508,8 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
                                     out["evidencia"]["conFicha"]) if de_rama else None),
             # TRAMO POR TRAMO (TDE v0.1.22, disciplina 64): en cada tramo manda
             # la rama del marcador de ese momento, no la del primer gol
-            "tramos": tramos_por_marcador(tde, goles, foco, rojas) if out["evidencia"]["conFicha"] else [],
+            "tramos": (tramos_por_marcador(tde, goles, foco, rojas, con_defecto)
+                       if out["evidencia"]["conFicha"] else []),
             # TDE v0.1.23: el añadido es una casilla del cierre, no una ventana
             "anadido": anadido_del_cierre(goles, rojas, foco) if out["evidencia"]["conFicha"] else None,
             "nota": ("sin ficha de eventos no se puede comprobar la ventana: queda sin veredicto"
@@ -840,13 +844,14 @@ def rama_jugada(tde: dict, goles: list[dict], total_goles: int, con_ficha: bool,
     return out
 
 
-def _por_tramo(tde: dict, goles: list[dict], rojas: list[dict], con_ficha: bool, de_rama: bool) -> dict:
+def _por_tramo(tde: dict, goles: list[dict], rojas: list[dict], con_ficha: bool, de_rama: bool,
+               con_defecto: bool = True) -> dict:
     """El reloj, los tramos y el añadido de un bloque cuya ventana de rama no
     se pudo pasar a minutos: lo que no depende de esa ventana se mide igual."""
     foco = tde.get("equipo") or ""
     contra = "b" if foco == "a" else ("a" if foco == "b" else "")
     return {"reloj": ventana_reloj(tde.get("ventana") or "", goles, rojas, contra, con_ficha) if de_rama else None,
-            "tramos": tramos_por_marcador(tde, goles, foco, rojas) if con_ficha else [],
+            "tramos": tramos_por_marcador(tde, goles, foco, rojas, con_defecto) if con_ficha else [],
             "anadido": anadido_del_cierre(goles, rojas, foco) if con_ficha else None}
 
 
@@ -868,7 +873,8 @@ def ventana_reloj(texto: str, goles: list[dict], rojas: list[dict], contra: str,
             "cobrable": None if not con_ficha else (not rojas_antes and not clase), "clase": clase or None}
 
 
-def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dict] | None = None) -> list[dict]:
+def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dict] | None = None,
+                        con_defecto: bool = True) -> list[dict]:
     """El partido partido en tramos por cada gol, con la rama que MANDA en
     cada uno según el marcador de ese momento (TDE v0.1.22, disciplina 64):
     ganando → siMarcaPrimero; perdiendo → siRecibePrimero (aunque haya ido
@@ -954,7 +960,7 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
         # dura segundos: no pone a prueba la rama (incidencias 693 y 692)
         sin_prueba = gc >= 3 or abs(gf - gc) >= 3 or (abre_anadido and i == len(eventos) and inicio >= 90)
         if rama in RAMAS_DESENLACE and resuelta != rama and not sin_prueba:
-            d = desenlace_del_tramo(lo, eventos[i] if i < len(eventos) else None, foco, gf, gc)
+            d = desenlace_del_tramo(lo, eventos[i] if i < len(eventos) else None, foco, gf, gc, con_defecto)
             if d:
                 tramo["desenlace"] = d
                 if d.get("observado") in ("se_rompe", "rescata"):
@@ -992,10 +998,21 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
 # TDE v0.1.24 (disciplina 65): las ramas del que persigue declaran su desenlace
 RAMAS_DESENLACE = ("siRecibePrimero", "siLeEmpatan", "siIguala")
 ISE_RAMA_SE_ROMPE = 7.0
+# LA LECTURA POR DEFECTO NO SE COBRA HACIA ATRÁS (27/10/2026, Chapecoense 2-1
+# Fluminense, parte del 24/10): el defecto por ISE de rama nació con la
+# v0.1.24 (merge del 26/10 a las 03:59 UTC). Un parte creado antes no podía
+# saberlo: su desenlace por defecto sale «no evaluable», como la 44a en los
+# partes de la caída de Railway. Lo DECLARADO se mide siempre.
+DESENLACE_DEFECTO_DESDE = "2026-10-26 04:00:00"
+
+
+def regla_desenlace_vigente(creado_en: str | None) -> bool:
+    t = str(creado_en or "").replace("T", " ")[:19]
+    return not t or t >= DESENLACE_DEFECTO_DESDE
 
 
 def desenlace_del_tramo(lo: dict | None, evento: tuple | None, foco: str,
-                        gf: int | None = None, gc: int | None = None) -> dict | None:
+                        gf: int | None = None, gc: int | None = None, con_defecto: bool = True) -> dict | None:
     """Cómo terminó el régimen de una rama del que persigue, contra lo leído.
 
     Lo observado lo da el evento que CIERRA el tramo: un gol del rival es
@@ -1028,9 +1045,14 @@ def desenlace_del_tramo(lo: dict | None, evento: tuple | None, foco: str,
         observado = "rescata"
     lectura = declarado or defecto
     cumplido = None if lectura == "abierto" or observado is None else observado == lectura
-    return {"declarado": declarado, "defecto": defecto, "lectura": lectura, "deDefecto": not declarado,
-            "observado": observado, "cumplido": cumplido, "iseRama": ise,
-            "porque": lo.get("porqueDesenlace") or ""}
+    out = {"declarado": declarado, "defecto": defecto, "lectura": lectura, "deDefecto": not declarado,
+           "observado": observado, "cumplido": cumplido, "iseRama": ise,
+           "porque": lo.get("porqueDesenlace") or ""}
+    if not declarado and not con_defecto:
+        out["cumplido"] = None
+        out["noEvaluable"] = ("el parte es anterior a la lectura por defecto (TDE v0.1.24, 26/10/2026): "
+                              "no se le cobra")
+    return out
 
 
 def anadido_del_cierre(goles: list[dict], rojas: list[dict] | None, foco: str) -> dict:

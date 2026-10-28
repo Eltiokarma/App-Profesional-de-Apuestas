@@ -1076,6 +1076,27 @@ def espina_sigue_en_extremo(reventon: dict | None, espina: dict | None) -> list[
     return out
 
 
+# UNA REGLA NO SE COBRA HACIA ATRÁS (27/10/2026): ESPINA-SIGUE-EN-EXTREMO y
+# EFE-EMPATE-TECNICO nacieron el 26/10 (merge a las 05:02 UTC). En un parte
+# creado antes siguen a la vista —el dato es el mismo— pero marcadas
+# `posteriorAlParte`: el veredicto no las cuenta como regla incumplida.
+REGLAS_CALCULADAS_DESDE = {"ESPINA-SIGUE-EN-EXTREMO": "2026-10-26 05:00:00",
+                           "EFE-EMPATE-TECNICO": "2026-10-26 05:00:00"}
+
+
+def marcar_posteriores(alertas: list[dict], creado_en: str | None) -> list[dict]:
+    t = str(creado_en or "").replace("T", " ")[:19]
+    if not t:
+        return alertas
+    for a in alertas:
+        desde = REGLAS_CALCULADAS_DESDE.get(a.get("codigo"))
+        if desde and t < desde:
+            a["posteriorAlParte"] = True
+            a["detalle"] = (a.get("detalle") or "") + (
+                f" · REGLA POSTERIOR A ESTE PARTE (vigente desde el {desde[:10]}): se muestra, no se le cobra")
+    return alertas
+
+
 def alertas_espina_extremo(reventon: dict | None, espina: dict | None, nombres: dict) -> list[dict]:
     return [{
         "codigo": "ESPINA-SIGUE-EN-EXTREMO", "equipo": x["lado"], "tipo": "dato",
@@ -3675,10 +3696,12 @@ def dto(fixture_id: int) -> dict | None:
     alertas.extend(alerta_escala(fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # la espina que dice «sigue» con la burbuja en su extremo, y la brecha del
     # EFE que es empate técnico (25/10/2026): reglas que se incumplían, calculadas
-    alertas.extend(alertas_espina_extremo(reventon, (parte.get("lecturaSad") or {}).get("espina"),
-                                          {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
-    alertas.extend(alerta_empate_tecnico({l: equipos[l].get("porcentaje") for l in LADOS}, alertas,
-                                         {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
+    alertas.extend(marcar_posteriores(
+        alertas_espina_extremo(reventon, (parte.get("lecturaSad") or {}).get("espina"),
+                               {"a": fila["equipo_a"], "b": fila["equipo_b"]})
+        + alerta_empate_tecnico({l: equipos[l].get("porcentaje") for l in LADOS}, alertas,
+                                {"a": fila["equipo_a"], "b": fila["equipo_b"]}),
+        fila["creado_en"]))
     alertas.extend(alertas_dt(parte, fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     alertas.extend(alertas_colapso(parte, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # un decisivo de la base que no está en la tabla F1 no pesa en el IP

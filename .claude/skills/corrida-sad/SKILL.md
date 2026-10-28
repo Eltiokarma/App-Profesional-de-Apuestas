@@ -281,6 +281,13 @@ cada 30 minutos y es CORTA: casi siempre no hay nada que hacer.
 > igual lo contradice: ahí sí es lección. Sin `momento` (partes viejos), decí
 > que no se sabe cuándo llegó el once.
 >
+> **Una regla no se cobra hacia atrás** (27/10/2026): una alerta con
+> `posteriorAlParte` (ESPINA-SIGUE-EN-EXTREMO, EFE-EMPATE-TECNICO en partes
+> anteriores al 26/10) y un desenlace del TDE con `noEvaluable` son reglas que
+> el parte no podía conocer: no escribas «la incumplió» ni la cargues como
+> fallo. Si el caso enseña algo sobre esa regla, va como confirmación o
+> contraejemplo, no como incumplimiento.
+>
 > La matriz: `GET $B/analisis/cowork/{id}/objetivo` (antes del veredicto; el
 > GET de `…/veredicto` da 404 hasta el primer POST) trae en `objetivo.matriz`
 > qué escenario jugó cada equipo y qué se había escrito para él. Con
