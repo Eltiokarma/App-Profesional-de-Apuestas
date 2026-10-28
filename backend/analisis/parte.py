@@ -1044,6 +1044,10 @@ def alertas_espina(reventon: dict | None, espina: dict | None, nombres: dict) ->
     } for x in espina_vs_riesgo(reventon, espina) if not x["dicho"]]
 
 
+# el `porque` que nombra el extremo —y con él el hecho que sostiene la racha—
+_NOMBRA_EXTREMO = re.compile(r"extremo|r[eé]cord|techo|m[aá]ximo|franja alta", re.I)
+
+
 def espina_sigue_en_extremo(reventon: dict | None, espina: dict | None) -> list[dict]:
     """La espina que dice que la racha SIGUE con esa burbuja en su récord o en
     la franja alta (K-EXTREMO · K-CERCA-EXTREMO, la total o la de la condición
@@ -1071,7 +1075,7 @@ def espina_sigue_en_extremo(reventon: dict | None, espina: dict | None) -> list[
             if lect == ("positiva" if signo == "+" else "negativa"):
                 out.append({"lado": lado, "donde": donde, "signo": signo, "k": act.get("k"),
                             "nivel": "récord" if ext.get("activo") else "franja alta",
-                            "lectura": lect})
+                            "lectura": lect, "dicho": bool(_NOMBRA_EXTREMO.search(e.get("porque") or ""))})
                 break
     return out
 
@@ -1103,6 +1107,7 @@ def alertas_espina_extremo(reventon: dict | None, espina: dict | None, nombres: 
         "detalle": (f"{nombres.get(x['lado'], x['lado'])}: la espina dice que la racha {x['signo']} SIGUE "
                     f"({x['lectura']}) con la burbuja {x['donde']} en su {x['nivel']}"
                     + (f" (K {x['k']:+.2f})" if isinstance(x.get("k"), (int, float)) else "")
+                    + (" —el `porque` lo nombra—" if x.get("dicho") else "")
                     + ": con K-EXTREMO o K-CERCA-EXTREMO la espina no declara que la racha sigue —se dice "
                       "«cero» o «neutra», o se nombra el hecho del partido que la sostiene— y el 1X2 no se "
                       "carga a la continuidad (Leones–Libertad y Nacional–Braga, 25/10/2026)"),
@@ -2436,7 +2441,10 @@ MATRIZ_TOLERANCIA = 5.0
 PRONOSTICO_SOBRE_MOTOR_PTS = 8
 
 
-def pronostico_vs_motor(pron: dict, pred: dict | None) -> dict | None:
+_NOMBRA_MOTOR = re.compile(r"\bmotor\b", re.I)
+
+
+def pronostico_vs_motor(pron: dict, pred: dict | None, notas: str = "") -> dict | None:
     """El 1X2 declarado contra `unXDos` de /predicciones. Con `fiabilidadMu`
     baja y el resultado favorito del pronóstico más de PRONOSTICO_SOBRE_MOTOR_PTS
     por encima del motor, `aviso` explica qué hacer; si no, solo informa."""
@@ -2450,7 +2458,12 @@ def pronostico_vs_motor(pron: dict, pred: dict | None) -> dict | None:
     fia = ((pred or {}).get("fiabilidadMu") or {}).get("nivel") or ""
     out = {"declarado": {k: probs[k] for k in claves}, "motor": {k: ux[k] for k in claves},
            "favorito": top, "sobreElMotor": delta, "fiabilidadMu": fia, "aviso": ""}
-    if fia == "baja" and delta > PRONOSTICO_SOBRE_MOTOR_PTS:
+    # la razón escrita en `notas` (lo que el aviso pide) lo apaga (incidencia 752:
+    # Venezia y Monza recién ascendidos, el dato que el motor no ve ya escrito y
+    # el aviso volvía en cada depósito)
+    if fia == "baja" and delta > PRONOSTICO_SOBRE_MOTOR_PTS and _NOMBRA_MOTOR.search(notas or ""):
+        out["razonEscrita"] = True
+    elif fia == "baja" and delta > PRONOSTICO_SOBRE_MOTOR_PTS:
         out["aviso"] = (f"el pronóstico pone «{top}» {delta:+.1f} puntos SOBRE el motor ({ux[top]} %) con la μ en "
                         "fiabilidad baja (ESCALA-LIGAS): con la escala el rango se abre hacia el motor, no se sube "
                         "sobre él (Sporting–LASK). Acercá el 1X2 al motor o decí en `notas` qué dato que el motor "
@@ -3086,12 +3099,17 @@ def guardar(payload: dict) -> dict:
     except Exception:  # noqa: BLE001
         _ext = []
     for x in _ext:
+        # el `porque` que nombra el extremo y lo sostiene ya hizo lo que la regla
+        # pide (incidencias 659 y 719: Guabirá y Lazio, cobrados con la razón escrita)
+        if x.get("dicho"):
+            continue
         faltan.append({
             "bloque": f"lecturaSad.espina.{x['lado']}", "codigo": "ESPINA-SIGUE-EN-EXTREMO",
             "costara": f"la espina dice que la racha {x['signo']} sigue con la burbuja {x['donde']} en su "
                        f"{x['nivel']}: el 25/10 reventaron así Libertad y Nacional",
             "comoSeArregla": "con K-EXTREMO o K-CERCA-EXTREMO la espina va «cero» o «neutra», o el `porque` "
-                             "nombra el hecho del partido que la sostiene; el 1X2 no se carga a la continuidad",
+                             "nombra el extremo (récord, franja alta) y el hecho del partido que la sostiene; el "
+                             "1X2 no se carga a la continuidad",
         })
     try:
         _pct = {l: _totales(parte["equipos"][l]).get("porcentaje") for l in LADOS}
@@ -3125,7 +3143,8 @@ def guardar(payload: dict) -> dict:
         "documentos": [d["id"] for d in parte["documentos"]],
         "filasMatriz": filas_matriz(parte.get("matriz") or {}),
         "matrizVsPronostico": matriz_vs_pronostico(parte.get("matriz") or {}, parte.get("pronostico") or {}),
-        "pronosticoVsMotor": pronostico_vs_motor(parte.get("pronostico") or {}, _prediccion_o_nada(parte["fixtureId"])),
+        "pronosticoVsMotor": pronostico_vs_motor(parte.get("pronostico") or {}, _prediccion_o_nada(parte["fixtureId"]),
+                                                 json.dumps(parte.get("notas") or "", ensure_ascii=False)),
         "alertas": len(parte["alertas"]),
         "discrepancias": discrepancias,
         "xiResuelto": bool(previo and previo["xi_json"]),
