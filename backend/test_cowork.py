@@ -457,6 +457,17 @@ def main():
     _rj655 = _r655(990655, 990601)
     check("655: la roja del suplente que no entró no cuenta; la del titular (70) y la del que entró (80) sí",
           sorted(r["minuto"] for r in _rj655) == [70, 80], _rj655)
+    # 730 (JPII–Huancayo, Labrador al 61' sin jugador_id, id negativo en el once):
+    # la roja sin id de un titular de la hoja cuenta; la sin id que no casa, no
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT INTO alineaciones (fixture_id, team_id, player_id, jugador, titular) VALUES (990655, 990601, -1377846119, 'J. Labrador', 1)")
+        _con.executemany("INSERT INTO fixture_eventos (fixture_id, minuto, extra, tipo, detalle, equipo_id, jugador, "
+                         "jugador_id, asistente_id) VALUES (?,?,?,?,?,?,?,?,?)",
+                         [(990655, 61, 0, "Card", "Red Card", 990601, "Labrador", None, None),
+                          (990655, 85, 0, "Card", "Red Card", 990601, "El Técnico", None, None)])
+    _rj730 = _r655(990655, 990601)
+    check("730: la roja sin id de Labrador (titular de la hoja) cuenta al 61'; la sin id que no casa no",
+          sorted(r["minuto"] for r in _rj730) == [61, 70, 80], _rj730)
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM alineaciones WHERE fixture_id=990655")
         _con.execute("DELETE FROM fixture_eventos WHERE fixture_id=990655")
