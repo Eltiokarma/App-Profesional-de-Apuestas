@@ -129,6 +129,35 @@ def _en_cancha(fixture_id: int) -> dict:
     return out
 
 
+def _id_en_la_hoja(fixture_id: int, equipo_id, nombre) -> int | None:
+    """LA ROJA SIN ID DE UN JUGADOR DE LA HOJA (incidencia 730, JPII–Huancayo:
+    la de Labrador al 61' llegó con jugador_id null —su id en el once es uno
+    negativo nuestro— y se descartaba como si fuera del cuerpo técnico; la
+    ventana 60-75 se cobró con un gol posterior a la roja). El id del ÚNICO
+    jugador de la hoja de ese equipo con el mismo apellido; si no hay uno solo,
+    None (sin hoja la roja sin id sigue sin contar: puede ser del DT)."""
+    from backend.analisis.f1_base import _tok_jugador
+    from backend.analisis.f1_base import mismo_jugador
+    tok = _tok_jugador(nombre or "")
+    if not tok or len(tok[-1]) < 3:
+        return None
+    try:
+        filas = saddb.query("sad", "SELECT player_id, jugador, entrenador FROM alineaciones "
+                                   "WHERE fixture_id=? AND team_id=?", (fixture_id, equipo_id))
+    except Exception:  # noqa: BLE001
+        return None
+    # el DT con el apellido de un jugador (Simeone, incidencia 155) no es un jugador
+    if any(r["entrenador"] and mismo_jugador(r["entrenador"], nombre) for r in filas):
+        return None
+
+    def casa(hoja: str) -> bool:
+        # «Labrador» con «J. Labrador»: el apellido solo; con pila, la pila tiene que casar
+        th = _tok_jugador(hoja or "")
+        return bool(th) and ((len(tok) == 1 and th[-1] == tok[0]) or mismo_jugador(nombre, hoja))
+    ids = {r["player_id"] for r in filas if r["player_id"] and casa(r["jugador"])}
+    return ids.pop() if len(ids) == 1 else None
+
+
 def _rojas(fixture_id: int, home_id: int) -> list[dict]:
     """Expulsiones de JUGADORES con minuto y lado. Una roja reordena el partido
     entero (disciplina 16 del TDE): un gol en la ventana que llega después ya
@@ -160,14 +189,17 @@ def _rojas(fixture_id: int, home_id: int) -> list[dict]:
         detalle = (f["detalle"] or "").lower()
         if "red" not in detalle and "second yellow" not in detalle:
             continue
-        if not f["jugador_id"] or e.get("cuerpoTecnico"):
+        if e.get("cuerpoTecnico"):
+            continue
+        jid = f["jugador_id"] or _id_en_la_hoja(fixture_id, f["equipo_id"], f["jugador"])
+        if not jid:
             continue
         # LA ROJA A UN SUPLENTE QUE NO ENTRÓ NO CAMBIA EL NÚMERO (Once Caldas–
         # Pereira, incidencia 655: las rojas del 90+1 y 90+2 eran de suplentes
         # sin entrar y los tramos marcaban inferioridad y siExpulsion). Solo con
         # la hoja capturada: sin titulares, la roja cuenta como siempre.
         cancha = en_cancha.get(f["equipo_id"])
-        if cancha is not None and not cancha(f["jugador_id"], f["minuto"] or 0):
+        if cancha is not None and not cancha(jid, f["minuto"] or 0):
             continue
         out.append({"minuto": f["minuto"] or 0, "lado": "a" if f["equipo_id"] == home_id else "b",
                     "jugador": f["jugador"] or "",
