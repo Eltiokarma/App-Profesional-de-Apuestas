@@ -894,8 +894,10 @@ conversación se pierde en la siguiente.
      próxima corrida del pipeline saca los duplicados (Rayo Zuliano 16/09 y
      11/06/2025, Portuguesa 16/09: su K deja de sumar el partido dos veces;
      `pipeline --duplicados` los lista); las bajas `desmentida` en Equipo.
-   - **Rutina de rehacer**: desde el 26/10 en la sesión
-     `session_01RrrZSSk2eoz89TzKFput5q` (rutinas `:07, v3` y `:37, v3`; la v2,
+   - **Rutina de rehacer**: desde el 27/10 en la sesión
+     `session_01WwsfbTrhC56SCybz9zK3CQ` (rutinas `:07, v4` y `:37, v4`); la v3
+     (`session_01RrrZSSk2eoz89TzKFput5q`) llegó a 660.000 tokens y 30 USD en dos
+     días. Del 26/10 al 27/10 en la v3 (la v2,
      `session_01X5KodpKV93A7bBePdiczAZ`, llegó a 570.000 tokens en dos días y
      ~0,36 USD por disparo vacío: con los rehaceres el historial crece rápido,
      rehacerla cada pocos días). Antes, desde el 24/10, en la v2 (el
