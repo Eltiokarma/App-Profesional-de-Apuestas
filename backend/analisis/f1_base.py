@@ -459,6 +459,15 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
         por_dec = {d["id"]: d for d in decisivos(p)}
         for pid in [p for p in dec if not decisivo_hoy(por_dec.get(p, {}), tit.get(p, 0), rec["onces"])]:
             de_temporada[pid] = dec.pop(pid)
+        # EL QUE SIGUE DECISIVO SOLO POR GOLES no se anuncia «titular habitual»
+        # (incidencia 747, ADT: J. Bauman ROT con 4 de 10 y «titular habitual
+        # (84 % de los minutos) · 5 goles» a la vez). El motivo de hoy son los
+        # goles; los minutos de la temporada quedan dichos aparte.
+        for pid in list(dec):
+            d = por_dec.get(pid, {})
+            if d.get("porTitular") and d.get("porGoles") and tit.get(pid, 0) < rec["onces"] * DECISIVO_HOY_PCT:
+                goles = dec[pid].split(" · ", 1)[1] if " · " in dec[pid] else dec[pid]
+                dec[pid] = f"{goles} (titular habitual en la temporada, hoy {tit.get(pid, 0)}/{rec['onces']})"
     # con onces recientes, el orden y el rol salen de ahí; la temporada desempata
     if con_onces:
         js = sorted(js, key=lambda j: (-tit.get(j["id"], 0), -j["minutos"]))

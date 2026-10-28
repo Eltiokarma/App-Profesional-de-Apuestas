@@ -3959,6 +3959,22 @@ def main():
               and (_sol["id"] not in _t387 or "3 de 10" in _t387[_sol["id"]].get("decisivoTemporada", "")),
               (_t387.get(_sol["id"]), _fal387))
     check("387: la demo tiene un decisivo solo por minutos para probarlo", _sol is not None, _dec_all)
+    # 747 (ADT, J. Bauman ROT 4/10 con «titular habitual (84 %) · 5 goles»): el que
+    # sigue decisivo solo por goles no se anuncia titular habitual
+    if _sol:
+        _orig_dec = _f1m.decisivos
+        _f1m.decisivos = lambda p: [{**_sol, "porQue": "titular habitual (84 % de los minutos) · 5 goles y 1 asistencias",
+                                     "porTitular": True, "porGoles": True}]
+        _f1m.onces_recientes = lambda t, a: {"onces": 10, "ultimo": 1, "jugadores": {
+            **{p: {"nombre": "x", "posicion": "M", "titular": 10, "convocado": 10, "enUltimo": True} for p in _otros},
+            _sol["id"]: {"nombre": "x", "posicion": "M", "titular": 4, "convocado": 10, "enUltimo": False}}}
+        try:
+            _t747 = {x["jugadorId"]: x for x in _tabla_eq(_hid, "local", "2100-01-01")["candidatos"]}
+        finally:
+            _f1m.onces_recientes, _f1m.decisivos = _orig_rec, _orig_dec
+        _d747 = (_t747.get(_sol["id"]) or {}).get("decisivo", "")
+        check("747: decisivo solo por goles con 4 de 10 dice los goles y «hoy 4/10», no «titular habitual» de entrada",
+              _d747.startswith("5 goles") and "hoy 4/10" in _d747, _t747.get(_sol["id"]))
     # GRUPO 4 DE INCIDENCIAS (22/10/2026): fuera del corte con stats (360) y la zona del último once (171, 323, 66, 359)
     _pl4 = _jugm.plantilla_de(_hid)["jugadores"]
     _fuera = next(j for j in reversed(_pl4) if j["posicion"] != "Defensa")
