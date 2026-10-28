@@ -1766,6 +1766,16 @@ def main():
           and empate_tecnico({"a": 74.0, "b": 62.0}, [{"codigo": "K-EXTREMO", "equipo": "a"}]) is None
           and empate_tecnico({"a": 46.3, "b": 43.8}, _al54) is None
           and empate_tecnico({"a": None, "b": 40.0}, _al54) is None)
+    # 27/10/2026: una regla no se cobra hacia atrás (Chapecoense–Fluminense, parte del 24/10)
+    from backend.analisis.parte import marcar_posteriores
+    _mp = marcar_posteriores([dict(_et[0]), {"codigo": "K-EXTREMO", "equipo": "a", "detalle": "x"}],
+                             "2026-10-24 21:00:00")
+    check("en un parte anterior al 26/10, EFE-EMPATE-TECNICO se muestra marcado «posteriorAlParte», y lo demás no",
+          _mp[0].get("posteriorAlParte") is True and "REGLA POSTERIOR" in _mp[0]["detalle"]
+          and "posteriorAlParte" not in _mp[1], _mp)
+    check("…y en un parte del 26/10 en adelante (o sin fecha) se cobra como siempre",
+          "posteriorAlParte" not in marcar_posteriores([dict(_et[0])], "2026-10-26 12:00:00")[0]
+          and "posteriorAlParte" not in marcar_posteriores([dict(_et[0])], None)[0])
     # 26/10/2026: la ventaja sobre el mercado (PSG–Lyon: 70 % nuestro contra 71 % del mercado)
     from backend.analisis.parte import ventaja_mercado
     _cu = {"local": 1.36, "empate": 5.3, "visita": 8.1}
@@ -4501,6 +4511,15 @@ def main():
           _ddt({"iseRama": 8.33}, ((50, 0), 0, 0, "gol", {"minuto": 50, "lado": "a"}), "a", 0, 2)["observado"] is None
           and _ddt({"iseRama": 8.33}, ((50, 0), 0, 0, "gol", {"minuto": 50, "lado": "a"}), "a", 1, 2)["observado"]
           == "rescata")
+    from backend.analisis.veredicto import regla_desenlace_vigente as _rdv
+    _sin = _ddt({"iseRama": 10}, ((56, 0), 0, 0, "gol", {"minuto": 56, "lado": "a"}), "a", 1, 1, False)
+    check("parte anterior a la v0.1.24: el desenlace POR DEFECTO sale «no evaluable», no fallo (Chapecoense 2-1 Flu)",
+          _sin["cumplido"] is None and _sin.get("noEvaluable") and _sin["observado"] == "rescata"
+          and _rdv("2026-10-24 22:12:00") is False and _rdv("2026-10-26 04:00:00") is True and _rdv(None) is True, _sin)
+    _dec = _ddt({"iseRama": 10, "desenlace": "se_rompe"}, ((56, 0), 0, 0, "gol", {"minuto": 56, "lado": "a"}),
+                "a", 1, 1, False)
+    check("…pero lo DECLARADO se mide igual en cualquier parte", _dec["cumplido"] is False
+          and "noEvaluable" not in _dec, _dec)
     _t693 = tramos_por_marcador({"reasignacion": {"siRecibePrimero": {"desenlace": "se_rompe"}}},
                                 [{"minuto": 10, "lado": "b", "penal": True}, {"minuto": 20, "lado": "b"},
                                  {"minuto": 57, "lado": "b"}, {"minuto": 80, "lado": "a"}], "a")

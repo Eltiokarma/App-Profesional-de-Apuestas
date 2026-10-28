@@ -1058,6 +1058,12 @@ conversación se pierde en la siguiente.
      (`cuarentenaEnsena`, casilla marcada por defecto en Aprendizaje). La
      automática por DT EQUIVOCADO también enseña (usuario, mismo día); la de
      parte sin DT y la de parte de otra fecha no.
+     **Una regla no se cobra hacia atrás** (usuario, 28/10): el desenlace por
+     defecto del TDE v0.1.24 sale `noEvaluable` en un parte creado antes del
+     26/10 04:00 UTC (`veredicto.DESENLACE_DEFECTO_DESDE`; lo declarado se mide
+     siempre) y ESPINA-SIGUE-EN-EXTREMO / EFE-EMPATE-TECNICO en un parte
+     anterior al 26/10 05:00 UTC viajan con `posteriorAlParte`
+     (`parte.REGLAS_CALCULADAS_DESDE`): se muestran, no se cobran.
    - **Aprendizaje reordenado (25/10)**: resumen sin lecciones, pestañas, el
      cierre en bloque arriba de cada skill, lecciones de a 20 y el inventario
      guardado por huella (`SAD_CACHE_INVENTARIO_S`; antes 46 s y 6,3 MB). La

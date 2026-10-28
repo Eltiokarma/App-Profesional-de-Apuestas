@@ -1387,6 +1387,8 @@ export interface AlertaParte {
   detalle: string
   /** Solo en ESCALA-LIGAS: la liga doméstica de cada lado. */
   ligas?: Record<'a' | 'b', { id: number; nombre: string | null; pais: string | null; partidos: number } | null> | null
+  /** Solo en ESPINA-SIGUE-EN-EXTREMO y EFE-EMPATE-TECNICO: la regla es posterior al parte; se muestra, no se cobra. */
+  posteriorAlParte?: boolean
   /** Solo en COHERENCIA-*: la puso Jev al depositar y se lee sellada, no se recalcula. */
   origen?: 'jev'
   modelo?: string
@@ -1508,6 +1510,8 @@ export interface DesenlaceTramo {
   cumplido: boolean | null
   iseRama: number | null
   porque: string
+  /** Parte anterior a la lectura por defecto (v0.1.24, 26/10/2026) sin desenlace declarado: no se cobra. */
+  noEvaluable?: string
 }
 
 export interface BloqueTde {

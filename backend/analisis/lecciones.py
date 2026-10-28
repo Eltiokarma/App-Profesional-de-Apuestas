@@ -370,7 +370,7 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
             for t in b.get("tramos") or []:
                 d = t.get("desenlace") or {}
                 c = desenlace.get(d.get("lectura"))
-                if not c or d.get("observado") is None:
+                if not c or d.get("observado") is None or d.get("noEvaluable"):
                     continue
                 c["tramos"] += 1
                 c["cumplidos"] += 1 if d.get("cumplido") else 0
