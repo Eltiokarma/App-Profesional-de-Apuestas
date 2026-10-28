@@ -19,6 +19,7 @@ import { Analisis } from './sections/Analisis'
 import { Skills } from './sections/Skills'
 import { Estadisticas } from './sections/Estadisticas'
 import { Aprendizaje } from './sections/Aprendizaje'
+import { Simulacion } from './sections/Simulacion'
 
 const PAD = '16px'
 
@@ -144,6 +145,7 @@ export function App() {
             {showContent && m && s.section === 'estadisticas' && <Estadisticas store={store} m={m} isMobile={isMobile} />}
             {/* Aprendizaje NO depende del partido seleccionado: es lo acumulado */}
             {s.section === 'aprendizaje' && <Aprendizaje isMobile={isMobile} />}
+            {s.section === 'simulacion' && <Simulacion isMobile={isMobile} />}
           </main>
 
           {isMobile && <BottomNav store={store} />}

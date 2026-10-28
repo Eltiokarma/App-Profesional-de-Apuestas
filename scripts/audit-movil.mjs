@@ -72,6 +72,9 @@ for (const t of ['Métricas', 'Derrotas del favorito', 'Cuarentena']) {
   const b = p.locator('button', { hasText: t }).first()
   if (await b.count()) { await b.click({ timeout: 5000 }).catch(() => {}); await medir('08-aprende-' + t.toLowerCase().replace(/[^a-z]/g, '')) }
 }
+// la simulación de apuesta (28/10/2026) y su botonera de Kelly
+await nav('Simula'); await medir('10-simulacion')
+{ const k = p.locator('button', { hasText: '¼' }).first(); if (await k.count()) { await k.click({ timeout: 5000 }).catch(() => {}); await medir('10-simulacion-kelly-cuarto') } }
 // página de equipo vía buscador
 await nav('Partidos')
 const buscador = p.locator('input[placeholder*="Buscar equipo"]').first()

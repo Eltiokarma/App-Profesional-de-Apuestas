@@ -1228,6 +1228,8 @@ def main():
           c.get(A + "/analisis/cowork/lecciones", headers=cw).status_code == 200)
     check("Cowork lee la calibración de la espina de la tarjeta",
           c.get(A + "/analisis/cowork/espina/calibracion", headers=cw).status_code == 200)
+    check("cowork: la simulación NO está abierta a su token (nace denegada)",
+          c.get(A + "/analisis/simulacion", headers=cw).status_code == 403)
     # QUIEN ESCRIBE LA LECCIÓN NO DECLARA APLICADA LA SUYA. El agente propone;
     # mover el estado —y con él el disparador de la revisión— es del usuario.
     check("cowork: NO puede mover una lección de estado",
@@ -1283,6 +1285,10 @@ def main():
     check("web: NO borra ni pone cuarentenas",
           c.delete(A + f"/analisis/cowork/{fx}", headers=wb).status_code == 403
           and c.post(A + f"/analisis/cowork/{fx}/cuarentena", json={"motivo": "x" * 20}, headers=wb).status_code == 403)
+    r_sim = c.get(A + "/analisis/simulacion", headers=wb)
+    check("web: lee la simulación de apuesta (cinco estrategias, desde el 28/10)",
+          r_sim.status_code == 200 and len(r_sim.json()["estrategias"]) == 5
+          and r_sim.json()["desde"].startswith("2026-10-28"), r_sim.text[:200])
     check("web: el backtest (calibración pesada) tampoco", 
           c.get(A + "/analisis/burbujas/backtest", headers=wb).status_code == 403)
     eq_w = c.get(A + "/fixtures?limit=1", headers=wb).json()[0]["local"]["id"]

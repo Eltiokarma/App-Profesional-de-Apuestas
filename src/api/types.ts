@@ -2530,3 +2530,59 @@ export interface HistorialValorDTO extends GananciaValor {
   nuestroFavorito: GananciaValor
   nota: string
 }
+
+// ── Simulación de apuesta (GET /analisis/simulacion, 28/10/2026) ─────────────
+export type EstrategiaClave = 'plana' | 'kelly' | 'kellyMedio' | 'kellyCuarto' | 'martingala'
+export type Resultado1x2 = 'local' | 'empate' | 'visita'
+
+export interface EstrategiaSimulada {
+  clave: EstrategiaClave
+  nombre: string
+  descripcion: string
+  banca: number
+  ganancia: number
+  apostado: number
+  apuestas: number
+  ganadas: number
+  /** ganancia / apostado */
+  roi: number | null
+  /** la peor caída desde un pico, 0-1 */
+  caidaMaxima: number
+  /** fixture en que la banca llegó a cero */
+  quebro: number | null
+  /** solo martingala: derrotas seguidas al día de hoy */
+  rachaPerdidas: number | null
+  serie: { fixtureId: number | null; pitazo: string | null; banca: number }[]
+}
+
+export interface ApuestaSimulada {
+  fixtureId: number
+  pitazo: string
+  partido: { local: string; visita: string; liga: string }
+  depositadoEn: string
+  /** por skill, la versión vigente al depositar el parte (la del 1X2 es sad-analysis) */
+  versiones: Record<string, string>
+  versionPrompt: string
+  probabilidades: Record<Resultado1x2, number>
+  cuotas: Record<Resultado1x2, number>
+  mercado: Record<Resultado1x2, number>
+  resultado: Resultado1x2 | null
+  elegido: Resultado1x2
+  estado: 'cerrada' | 'pendiente'
+  kelly: { seleccion: Resultado1x2; fraccion: number; valor: number }
+  porEstrategia: Record<EstrategiaClave, { seleccion: Resultado1x2 | null; monto: number; ganancia: number | null; banca: number | null }>
+}
+
+export interface SimulacionApuesta {
+  desde: string
+  bancaInicial: number
+  unidad: number
+  cerradas: number
+  pendientes: number
+  aciertos: number
+  nota: string
+  estrategias: EstrategiaSimulada[]
+  porVersion: { version: string; partidos: number; aciertos: number; estrategias: Partial<Record<EstrategiaClave, { apostado: number; ganancia: number; apuestas: number; roi: number | null }>> }[]
+  apuestas: ApuestaSimulada[]
+  excluidos: { fixtureId: number; pitazo: string; partido: { local: string; visita: string; liga: string }; motivo: string }[]
+}

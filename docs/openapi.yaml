@@ -1274,6 +1274,26 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/SobrePendientes' }
+  /analisis/simulacion:
+    get:
+      summary: Simulación de apuesta sobre nuestros 1X2 (desde el 28/10/2026)
+      description: >
+        Qué habría pasado con una banca de 100 unidades apostando con los 1X2 declarados en los
+        partes, con cinco series lado a lado: plana (control, 1 unidad al elegido), Kelly entero,
+        ½ y ¼ (f* = (p·c − 1)/(c − 1) sobre NUESTRAS probabilidades, a la selección con más
+        ventaja; sin ventaja no apuesta) y martingala (1 unidad al elegido, se duplica tras cada
+        derrota). Cuenta desde los partidos del 28/10/2026 (hora de Lima); entran los partes
+        depositados antes del pitazo, sin cuarentena, con el 1X2 completo y las tres cuotas. La
+        cuota es la media de las casas en la última captura prepartido (con su margen). Cada
+        apuesta trae la versión de cada skill que estaba en la cuenta al depositar (la del 1X2 es
+        `sad-analysis`). Se recalcula al leer. No es una recomendación de apuesta. Lectura
+        (token web); no abierto a Cowork.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SimulacionApuesta' }
   /analisis/cowork/espina/calibracion:
     get:
       summary: La espina de la tarjeta medida contra los veredictos ciegos
@@ -1729,6 +1749,105 @@ components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer }
   schemas:
+    SimulacionApuesta:
+      type: object
+      properties:
+        desde: { type: string, description: 'UTC; 00:00 de Lima del 28/10/2026' }
+        bancaInicial: { type: number }
+        unidad: { type: number }
+        cerradas: { type: integer }
+        pendientes: { type: integer }
+        aciertos: { type: integer, description: 'cerradas donde salió nuestro elegido' }
+        nota: { type: string }
+        estrategias:
+          type: array
+          items:
+            type: object
+            properties:
+              clave: { type: string, enum: [plana, kelly, kellyMedio, kellyCuarto, martingala] }
+              nombre: { type: string }
+              descripcion: { type: string }
+              banca: { type: number }
+              ganancia: { type: number }
+              apostado: { type: number }
+              apuestas: { type: integer }
+              ganadas: { type: integer }
+              roi: { type: number, nullable: true, description: 'ganancia / apostado' }
+              caidaMaxima: { type: number, description: 'la peor caída desde un pico, 0-1' }
+              quebro: { type: integer, nullable: true, description: 'fixture en que la banca llegó a cero' }
+              rachaPerdidas: { type: integer, nullable: true, description: 'solo martingala: derrotas seguidas al día de hoy' }
+              serie:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    fixtureId: { type: integer, nullable: true }
+                    pitazo: { type: string, nullable: true }
+                    banca: { type: number }
+        porVersion:
+          type: array
+          items:
+            type: object
+            properties:
+              version: { type: string, description: 'de sad-analysis (la del 1X2)' }
+              partidos: { type: integer }
+              aciertos: { type: integer }
+              estrategias:
+                type: object
+                additionalProperties:
+                  type: object
+                  properties:
+                    apostado: { type: number }
+                    ganancia: { type: number }
+                    apuestas: { type: integer }
+                    roi: { type: number, nullable: true }
+        apuestas:
+          type: array
+          description: la más nueva primero
+          items:
+            type: object
+            properties:
+              fixtureId: { type: integer }
+              pitazo: { type: string }
+              partido:
+                type: object
+                properties:
+                  local: { type: string }
+                  visita: { type: string }
+                  liga: { type: string }
+              depositadoEn: { type: string }
+              versiones: { type: object, additionalProperties: { type: string }, description: 'por skill, la vigente al depositar' }
+              versionPrompt: { type: string }
+              probabilidades: { type: object, description: 'local · empate · visita, nuestras, en %' }
+              cuotas: { type: object, description: 'media de las casas, con margen' }
+              mercado: { type: object, description: 'probabilidad del mercado sin margen, en %' }
+              resultado: { type: string, nullable: true, enum: [local, empate, visita, null] }
+              elegido: { type: string }
+              estado: { type: string, enum: [cerrada, pendiente] }
+              kelly:
+                type: object
+                properties:
+                  seleccion: { type: string }
+                  fraccion: { type: number, description: 'f*; ≤ 0 = no apuesta' }
+                  valor: { type: number, description: 'p·c − 1' }
+              porEstrategia:
+                type: object
+                additionalProperties:
+                  type: object
+                  properties:
+                    seleccion: { type: string, nullable: true, description: 'null = no apostó' }
+                    monto: { type: number }
+                    ganancia: { type: number, nullable: true }
+                    banca: { type: number, nullable: true }
+        excluidos:
+          type: array
+          items:
+            type: object
+            properties:
+              fixtureId: { type: integer }
+              pitazo: { type: string }
+              partido: { type: object }
+              motivo: { type: string }
     ModoFallo:
       type: object
       nullable: true

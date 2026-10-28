@@ -24,6 +24,11 @@
   --lv-medio: #f2c744;
   --lv-bajo: #34c759;
   --pad: 16px;
+  /* series de la Simulación de apuesta (categóricas, validadas con el
+     validador de paletas contra el fondo de cada tema) */
+  --sim-plana: #3987e5;
+  --sim-kelly: #d95926;
+  --sim-martingala: #9085e9;
   /* grid de las gráficas: la línea base acercada un 20% al texto para que
      las guías se lean sin robar protagonismo a las series */
   --grid: color-mix(in oklch, var(--line), var(--t2) 20%);
@@ -51,6 +56,9 @@
   --down-soft: rgba(196, 80, 79, 0.1);
   --mark: #a87e1e;
   --mark-soft: rgba(168, 126, 30, 0.13);
+  --sim-plana: #2a78d6;
+  --sim-kelly: #eb6834;
+  --sim-martingala: #6250d6;
   /* se redeclara aquí: var() dentro de una custom property se resuelve donde
      se define, no donde se usa — sin esto el grid claro heredaría el oscuro */
   --grid: color-mix(in oklch, var(--line), var(--t2) 20%);
