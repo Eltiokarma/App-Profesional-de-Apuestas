@@ -246,10 +246,10 @@ cada 30 minutos y es CORTA: casi siempre no hay nada que hacer.
 
 ## Modo `veredictos` (después del partido)
 
-1. `GET $B/analisis/cowork/veredictos/pendientes?limite=30` → los partes
+1. `GET $B/analisis/cowork/veredictos/pendientes?limite=45` → los partes
    jugados sin veredicto (lo que no entra queda para la próxima corrida, los
-   más viejos primero: un fin de semana deja ~55 y en una sola ventana de 5 h
-   no caben; si el disparo trae otro `limite`, manda ese). Si no hay, decilo en una
+   más viejos primero; 45 desde el 27/10/2026: con 30 la cola llegó a 40
+   vencidos tras un fin de semana; si el disparo trae otro `limite`, manda ese). Si no hay, decilo en una
    línea y terminá.
 2. Un subagente por partido, en paralelo, con este encargo:
 
