@@ -1064,6 +1064,20 @@ conversación se pierde en la siguiente.
      siempre) y ESPINA-SIGUE-EN-EXTREMO / EFE-EMPATE-TECNICO en un parte
      anterior al 26/10 05:00 UTC viajan con `posteriorAlParte`
      (`parte.REGLAS_CALCULADAS_DESDE`): se muestran, no se cobran.
+   - **EFE v1.8 y sad-analysis v4.2 (28/10, usuario aprobó enteras)**, desde
+     las 179 y 165 lecciones de los partes del 25-27/10
+     (`docs/revisiones/EFE_v1.8_propuesta.md`, `SAD_v4.2_propuesta.md`). EFE:
+     T.54 en los dos lados con la fecha del DT (alerta calculada
+     `T.54-SIN-DECLARAR`, que cuenta para `EFE-EMPATE-TECNICO`), arquero
+     suplente con rodaje y arco sin dueño, la zona del ausente por su rol en el
+     once y el eje del medio, fuentes del F1 con fecha y la caja de
+     sensibilidad que baja al matchup; `efe-dashboard` v1.11. sad: el delta de
+     la cuota y la razón que cae (6-A), los dos perfiles DC alineados como
+     hecho (6-B), la tarjeta débil de la condición no se sigue por defecto y
+     la lista de lo que no es un hecho (1.6), falsador sobre conversión o vía
+     y marcador con el volumen de los dos lados. La v4.1 acertó 44 de 67 (66 %)
+     y la v4.2 no afloja ninguna de sus reglas. Pendiente del usuario: subir
+     los tres zips y cerrar con 🔑 las anteriores a v1.8 y a v4.2.
    - **Aprendizaje reordenado (25/10)**: resumen sin lecciones, pestañas, el
      cierre en bloque arriba de cada skill, lecciones de a 20 y el inventario
      guardado por huella (`SAD_CACHE_INVENTARIO_S`; antes 46 s y 6,3 MB). La

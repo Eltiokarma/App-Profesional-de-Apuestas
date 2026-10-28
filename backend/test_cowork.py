@@ -1766,6 +1766,19 @@ def main():
           and empate_tecnico({"a": 74.0, "b": 62.0}, [{"codigo": "K-EXTREMO", "equipo": "a"}]) is None
           and empate_tecnico({"a": 46.3, "b": 43.8}, _al54) is None
           and empate_tecnico({"a": None, "b": 40.0}, _al54) is None)
+    # EFE v1.8 (28/10/2026): T.54 en los dos lados con la fecha del DT (Angers–Lorient)
+    from backend.analisis.parte import alertas_t54_sin_declarar
+    _pt54 = {"equipos": {"a": {"dt": {"nombre": "Dujeux", "meses": 4.5}},
+                         "b": {"dt": {"nombre": "Le Bris", "meses": 4.4}}}}
+    _t54 = alertas_t54_sin_declarar(_pt54, [{"codigo": "T.54", "equipo": "a"}], {"a": "Angers", "b": "Lorient"})
+    check("v1.8: DT de menos de 6 meses sin T.54 en ese lado → T.54-SIN-DECLARAR solo en ese lado",
+          [(x["codigo"], x["equipo"]) for x in _t54] == [("T.54-SIN-DECLARAR", "b")], _t54)
+    check("…con T.54-B declarada, o con un DT de 6 meses o más, o sin meses, no avisa",
+          alertas_t54_sin_declarar(_pt54, [{"codigo": "T.54", "equipo": "a"}, {"codigo": "T.54-B", "equipo": "b"}], {}) == []
+          and alertas_t54_sin_declarar({"equipos": {"a": {"dt": {"meses": 6}}, "b": {"dt": {"meses": None}}}}, [], {}) == [])
+    check("…y la brecha del EFE la cuenta como T.54 (empate técnico)",
+          empate_tecnico({"a": 44.0, "b": 68.0}, _t54) is not None
+          and "T.54-SIN-DECLARAR en b" in empate_tecnico({"a": 44.0, "b": 68.0}, _t54)["motivos"])
     # 27/10/2026: una regla no se cobra hacia atrás (Chapecoense–Fluminense, parte del 24/10)
     from backend.analisis.parte import marcar_posteriores
     _mp = marcar_posteriores([dict(_et[0]), {"codigo": "K-EXTREMO", "equipo": "a", "detalle": "x"}],
