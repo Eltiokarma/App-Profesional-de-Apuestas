@@ -707,8 +707,11 @@ conversación se pierde en la siguiente.
    el tramo lo fija el SKILL por la hora de
    Lima, porque el texto de una rutina solo se cambia desde su propia
    conversación— en la sesión «SAD · corrida de partes
-   (rutina)»; veredictos 20:12 (`limite=30`) en «SAD · corrida de veredictos
-   (rutina)»; **mantenimiento** 12:23 y 21:47 en «SAD · mantenimiento
+   (rutina)»; veredictos 20:12 (`limite=45` desde el 27/10/2026: con 30 la cola llegó a
+   40 vencidos) en «SAD · corrida de veredictos (rutina, v2)»
+   (`session_01WwsfbUiB1MkP3VjjniTpvR`; la v1, `session_01BG2WdPWLP7jrAqFiDCC26P`,
+   llegó a 571.000 tokens y se había usado para otra conversación: una sesión
+   fija es SOLO de su rutina); **mantenimiento** 12:23 y 21:47 en «SAD · mantenimiento
    (rutina)» (desde el 22/10, deuda 17); **rehacer** cada 30 min (05:07 a 23:37 Lima, dos disparos :07 y
    :37) en «SAD · rehacer DTP con el once (rutina)», desde el 22/10/2026:
    modo `rehacer` de `corrida-sad`, los partes con DTP-REHACER a 15-80 min del
@@ -891,8 +894,10 @@ conversación se pierde en la siguiente.
      próxima corrida del pipeline saca los duplicados (Rayo Zuliano 16/09 y
      11/06/2025, Portuguesa 16/09: su K deja de sumar el partido dos veces;
      `pipeline --duplicados` los lista); las bajas `desmentida` en Equipo.
-   - **Rutina de rehacer**: desde el 26/10 en la sesión
-     `session_01RrrZSSk2eoz89TzKFput5q` (rutinas `:07, v3` y `:37, v3`; la v2,
+   - **Rutina de rehacer**: desde el 27/10 en la sesión
+     `session_01WwsfbTrhC56SCybz9zK3CQ` (rutinas `:07, v4` y `:37, v4`); la v3
+     (`session_01RrrZSSk2eoz89TzKFput5q`) llegó a 660.000 tokens y 30 USD en dos
+     días. Del 26/10 al 27/10 en la v3 (la v2,
      `session_01X5KodpKV93A7bBePdiczAZ`, llegó a 570.000 tokens en dos días y
      ~0,36 USD por disparo vacío: con los rehaceres el historial crece rápido,
      rehacerla cada pocos días). Antes, desde el 24/10, en la v2 (el
