@@ -1,9 +1,13 @@
 ---
 name: sad-analysis
-description: "Skill de la SÍNTESIS del sistema SAD (v4.1): lee las constantes K de cada equipo (la espina y el reventón de la burbuja, 60 % de la lectura), la Regresión al Nivel (μ_partido, gap), la doble oportunidad trampa, goles por fecha y condición y rivales futuros, y arma el pronóstico con sus tres fuentes a la vista —el 1X2 del motor calculado, la matriz y el mercado—, el marcador declarado y el falsador. Activar en todo análisis pre-partido de fútbol o de apuestas, al escribir la lectura SAD o el pronóstico de un parte, al leer las K o las burbujas de un equipo, y al cerrar un veredicto. Lee los datos de la API de la app SAD, no CSV."
+description: "Skill de la SÍNTESIS del sistema SAD (v4.2): lee las constantes K de cada equipo (la espina y el reventón de la burbuja, 60 % de la lectura), la Regresión al Nivel (μ_partido, gap), la doble oportunidad trampa, goles por fecha y condición y rivales futuros, y arma el pronóstico con sus tres fuentes a la vista —el 1X2 del motor calculado, la matriz y el mercado—, el marcador declarado y el falsador. Activar en todo análisis pre-partido de fútbol o de apuestas, al escribir la lectura SAD o el pronóstico de un parte, al leer las K o las burbujas de un equipo, y al cerrar un veredicto. Lee los datos de la API de la app SAD, no CSV."
 ---
 
-# SAD — Análisis Deportivo (v4.1)
+# SAD — Análisis Deportivo (v4.2)
+
+> **v4.2 · 28.10.2026 — Lo que la v4.1 dejó a la vista.** Revisión desde las 165 lecciones pendientes (130 de partes escritos con la v4.1, 25-27/10), la calibración del 1X2 por versión (la v4.1 acertó 44 de 67, 66 %, contra 46 % con la v4.0, pegada al mercado en cada tramo) y la calibración de la espina (582 lados ciegos con tarjeta). Propuesta aprobada: `docs/revisiones/SAD_v4.2_propuesta.md`. **No afloja ninguna regla de la v4.1** ni toca la Ley 1, el reventón o un número de la app.
+>
+> **1. El mercado que se mueve y la razón que cae** (6-A): no apartarse en contra del delta apertura → cierre sin dato propio; una razón que una alerta del propio parte anula no sostiene el número. **2. Los dos perfiles DC alineados son un hecho; uno solo no** (6-B). **3. La tarjeta débil de la condición no se sigue por defecto** y queda escrita la lista de lo que no es un hecho (1.6). **4. El falsador mide conversión o vía, y el marcador lee el volumen de los dos lados** (6-C, 3.5).
 
 > **v4.1 · 25.10.2026 — Cómo sale el número del 1X2.** Revisión desde la calibración del 1X2 declarado: 260 partes ciegos con veredicto (14/09-24/10/2026), 231 con el mercado capturado antes del depósito, validación por fecha (ajustar en la primera mitad, medir en la segunda). Propuesta aprobada: `docs/revisiones/SAD_v4.1_propuesta.md`. Toca solo el paso 6 y la Ley 4; no toca la Ley 1, la espina, el reventón ni ningún número de la app.
 >
@@ -253,14 +257,14 @@ Va en `lecturaSad.espina` por equipo: `{lectura, guia, porque}`.
 
 1. **Empezar por la tarjeta** (`espinaTarjeta`). Leer antes `espina/calibracion`.
 2. **Tarjeta fuerte:** la espina la sigue, salvo un **hecho de ESTE partido** que la contradiga (DT nuevo con el once de vuelta, once roto, rotación por copa, un rival que el TDE ve cerrando). Entonces el `porque` dice «contra la tarjeta porque <el hecho>».
-3. **Tarjeta débil:** deciden los skills; decir cuál.
+3. **Tarjeta débil:** deciden los skills; decir cuál. **La tarjeta débil de la condición no se sigue por defecto** *(v4.2)*: acertó el 26 % de local (10 de 38) y el 34 % de visita (12 de 35), peor que el azar; con guía `condicion` y tarjeta débil, la espina sale de los skills y el `porque` no la cita como apoyo. La fuerte sí: acierta el 59 % (101 de 170).
 4. Ir contra el riesgo calculado se dice: «contra el riesgo alto porque…».
 
 **Reglas de la cohorte c3:**
 
 - **(a) `cero` necesita un hecho de ESTE partido.** Leída como `cero`, la espina acertó 8 de 37 (22 %), lo mismo que la frecuencia del empate. La frecuencia con que el equipo corta sus burbujas empatando **no alcanza** (falló en Cagliari, IdV, ADT, Guabirá, Racing). Sí empujan al empate: los dos perfiles DC apuntando al empate, dos burbujas negativas enfrentadas, un rival que empata la mitad de sus partidos.
 - **(b) El `porque` y la lectura van en la misma dirección.** Si el porqué dice que la racha se corta, la espina no lee que sigue (Puerto Cabello, Bucaramanga, Newcastle).
-- **(c) Contra la tarjeta, con un hecho, no con un perfil.** Ganó un DT nuevo invicto con el once de vuelta (Nacional); perdieron la diferencia de EFE, la altura o el perfil de visita (Independiente Petrolero, Pasto, Chicó). Cuando el analista contradijo a la tarjeta con hechos, acertó 21 de 55 contra 10.
+- **(c) Contra la tarjeta, con un hecho, no con un perfil.** Ganó un DT nuevo invicto con el once de vuelta (Nacional); perdieron la diferencia de EFE, la altura o el perfil de visita (Independiente Petrolero, Pasto, Chicó). Cuando el analista contradijo a la tarjeta con hechos, acertó 21 de 55 contra 10 (al 28/10: 63 de 134 contra 29 de la tarjeta). **No son un hecho** *(v4.2)*: la frecuencia propia del equipo (de local, de visita, de empates: Gremio «0 de 15 de visita», Portuguesa, Cerro Largo), un perfil DC de un solo lado, una rotación que no confirmó el club ni una fuente de nivel A (Tigre–Tucumán: una sola cadena de prensa), la brecha del EFE con T.54 / R-KT.2 / ESCALA-LIGAS (Palestino, City) y el H2H de la sede (Aucas: «nueve visitas sin ganar»).
 - **(d) Burbuja de un partido:** «se da vuelta» no tiene más base que «se reinicia».
 - **(e) Guía de la condición con T.54 o ESCALA-LIGAS:** si la K de la condición se armó con otro DT o en otra categoría, se lee la total o se declara la reserva (San Lorenzo, UCV Moquegua, Málaga). La serie del DT nuevo cuenta (EFE v1.6, T.54).
 - **(f) `neutra` es honesta pero no puntúa** (0 de 18). Con riesgo alto o muy alto, una `neutra` que no nombra el riesgo deja sin lectura al lado que decide el partido.
@@ -313,6 +317,7 @@ Mirar los **últimos 6 partidos del equipo en esa condición** y las K de goles.
 - Un rótulo («los que menos marcan», «partido cerrado») no achica la banda de goles que dicen los promedios (Delfín–Manta: 6 goles).
 - Una racha de goles en contra no convierte el gol del rival en certeza (Everton–Chelsea).
 - Entre dos celdas casi empatadas, se nombran las dos.
+- **El volumen de los dos lados** *(v4.2)*: el marcador lee lo que genera uno **contra lo que concede el otro** (`/equipos/{id}/stats`, xG a favor y en contra). El xG medio de un equipo no viaja solo (Central Córdoba–Vélez: el 0-1 salió de «Vélez genera poco», 0,9 de xG, contra un local que concede 1,81; fue 0-5). Un ataque que remata mucho y no convierte, contra un bloque que concede volumen, no sostiene un under (Jaguares–Tolima).
 
 ---
 
@@ -364,6 +369,8 @@ Sin motor ni dato en la app. Presión de la hinchada o del entorno va como conte
 
 - **Cuando dos señales propias van contra el 1X2, el número se mueve o se publican los dos con su origen.** Escribir la contradicción en prosa y dejar el número anclado en un lado es resolverla en silencio (Alianza Atlético, Fluminense–Santos, Santos Laguna, Estudiantes de Mérida).
 - **Un descuento propio contra el mercado pide un dato que el mercado no tenga.** El mercado ya descuenta las bajas conocidas (Nacional en Chicó); la rotación por copa la ve el mercado y el motor no (São Paulo–Vasco).
+- **El mercado que se mueve** *(v4.2)*. El 1X2 no se aparta del mercado **en la dirección contraria al delta** apertura → cierre (`/cuotas/{id}/historial`) sin un dato propio que lo explique: un delta que se corre es información que el mercado ya tiene (Cúcuta–Águilas: local 3,6 puntos sobre el mercado con la cuota corriéndose a la visita y Berdugo en duda; ganó la visita 0-2).
+- **La razón que cae** *(v4.2)*. Una razón que una alerta del propio parte anula no sostiene el número: con `EFE-EMPATE-TECNICO`, ESCALA-LIGAS o T.54, el porcentaje del EFE no es razón para separarse del mercado ni del motor; si era la razón, el número vuelve al mercado (Cagliari–Bologna; Aston Villa–City, Leones–Libertad y Barcelona–Real Madrid se apoyaron en la brecha con T.54 del otro lado y fallaron).
 - **DIV-MOTOR-MERCADO:** con ≥ 20 puntos entre el mercado y el motor sobre el favorito, se declara con las dos cifras. No ordena apostar: documenta. La serie se sigue contando (hoy acierta a veces uno y a veces el otro).
 
 ### 6-B — Las probabilidades
@@ -371,12 +378,15 @@ Sin motor ni dato en la app. Presión de la hinchada o del entorno va como conte
 `pronostico.probabilidades` {local, empate, visita}: parte de las tres fuentes; la lectura de cada equipo (60 % K, 40 % lo demás) lo mueve con su porqué. FACTOR-X, EJE-DEBUTANTE o GOLEADOR-AL-BANCO **amplían el rango, no mueven el centro** (EFE). G-SORPRESA también amplía el rango (EFE v1.6).
 
 - **El empate parte del mercado** *(v4.1)*. El empate de `pronostico.probabilidades` arranca en el empate sin margen del mercado (sin mercado, en el de `unXDos`) y se aparta **más de 2 puntos** solo con un **hecho de ESTE partido** que empuje al empate o lo saque, nombrado en la lectura del 1X2: una eliminatoria donde el empate de los 90 tiene premio (penales, la ida a favor), un rival que defiende en bloque probado sin su ataque (Ley 4, bajas por zona), los dos perfiles DC apuntando al empate, dos burbujas negativas enfrentadas. Un «partido parejo» o un margen de μ bajo 0,30 **no** son un hecho: el mercado ya los tiene. Medido en 231 partes ciegos (14/09-24/10/2026): decíamos el empate 2 puntos sobre el mercado (27 contra 25) y pasó el 20 %; igualarlo al mercado bajó el Brier de 0,585 a 0,580 sin ajustar nada. Ni nosotros ni el mercado distinguimos qué partido termina empatado: no se inventa un empate alto sin un hecho.
+- **Los dos perfiles DC alineados son un hecho; uno solo no** *(v4.2)*. Cuando el perfil de doble oportunidad de la condición de **los dos** equipos apunta al mismo resultado —el local no pierde y el visitante no gana, **cada uno en dos de cada tres partidos o más**—, es un **hecho de ESTE partido**: el 1X2 puede apartarse del mercado hacia ese lado, nombrándolo («+N al empate y al local por los dos perfiles DC, 78 % / 79 %»). Acertó en Leones–Libertad (78/79, ganó el local 4-1 con el motor, el EFE y las dos tarjetas en contra), Fortaleza–Cali (76/77, empate; el parte subió el empate solo 2 puntos), Palestino–Colo Colo (70/57, empate) y Pumas–Tigres (empate). **Un perfil extremo de un solo lado es frecuencia, no un hecho**, y no mueve el 1X2 sobre el mercado (Coritiba: el rival no ganaba de visita 0 de 15 y ganó; Vélez: no gana el 70 % fuera y ganó 0-5). El umbral «dos de cada tres» es de lectura, sin peso en la app; la serie se mide en Aprendizaje antes de darle más.
 - **El favorito no se recorta por costumbre** *(v4.1)*. Cuando el mercado da al favorito 50 % o más y nuestro pick va al mismo lado, el número no queda por debajo del mercado salvo con un **dato que el mercado no tenga**, escrito con su cifra en la lectura del 1X2: «−N puntos al favorito por <el dato>». Valen el once oficial o la rotación confirmada después de la última captura, una baja estructural que salió después de la cuota y la Ley 3 confirmada. No valen el riesgo del reventón (1.7 a: frena la carga, no elige el lado), la espina contra el favorito, la localía cualitativa ni un μ con ESCALA-LIGAS. Medido en 231 partes ciegos: 66 de 78 picks de 50 %+ quedaron 7,4 puntos bajo el mercado; en el tramo 60+ dijimos 67 y acertó el 90 % (26 de 29, IC 74-96). La Auditoría 1 y el mínimo del underdog siguen valiendo: si los gatillos K piden no-victoria, se publican los dos números (disciplina 33), no se recorta en silencio.
 - **Calibración de la cohorte** *(v4.1)*. Las tablas de acierto por tramo del dossier son para leer de dónde sale el error, no para multiplicar el número. Estirar las probabilidades con un factor sacado de la cohorte (temperatura, «+N al favorito», «empate a la frecuencia») empeoró el Brier fuera de la muestra (validación por fecha, 25.10.2026). El 1X2 se corrige con las reglas del empate y del favorito, que no tienen ningún número ajustado.
 
 ### 6-C — El falsador *(v4.0)*
 
 Una **condición observable pura**, escrita sobre el **mecanismo** (quién genera, por dónde, con qué). **No** sobre el estado del marcador («si el favorito marca primero» en Braga: marcó y perdió sin que sonara), **no** sobre un minuto (Fluminense–Palmeiras: el gol llegó al 45), y **cubre los dos lados** de la lectura (Juventus–Lazio, Real Oruro–Aurora).
+
+**No sobre el volumen** *(v4.2)*. El xG, los remates o la posesión no separan el resultado: el falsador se escribe sobre la **conversión** o sobre la **vía de gol** que la lectura da por cerrada (Sporting–Viseu: el falsador medía xG y no sonó con el favorito perdiendo 1-2, porque Sporting superó en xG y Viseu convirtió su transición; Aurora–Real Tomayapo: «si genera peligro en juego abierto, la lectura está mal» se cumplió y el 1X2 se sostuvo).
 
 ### 6-D — La lectura integrada (`lecturaSad`)
 

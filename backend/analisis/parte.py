@@ -1109,6 +1109,33 @@ def alertas_espina_extremo(reventon: dict | None, espina: dict | None, nombres: 
     } for x in espina_sigue_en_extremo(reventon, espina)]
 
 
+# EFE v1.8 (28/10/2026): T.54 se revisa en LOS DOS lados con la fecha del DT.
+# Angers–Lorient: los dos DT habían llegado en junio y T.54 se declaró solo en
+# un lado; con T.54 en los dos, la brecha 44/68 era empate técnico (0-0). El
+# umbral de 6 meses es el que ya define T.54; esto solo avisa que falta.
+T54_MESES = 6
+
+
+def alertas_t54_sin_declarar(parte: dict, alertas: list[dict], nombres: dict) -> list[dict]:
+    out = []
+    for lado in LADOS:
+        dt = ((parte.get("equipos") or {}).get(lado) or {}).get("dt") or {}
+        meses = dt.get("meses") if isinstance(dt, dict) else None
+        if not isinstance(meses, (int, float)) or meses >= T54_MESES:
+            continue
+        if any(str(a.get("codigo") or "").startswith("T.54") and a.get("equipo") in (lado, "ambos")
+               for a in alertas or []):
+            continue
+        out.append({
+            "codigo": "T.54-SIN-DECLARAR", "equipo": lado, "tipo": "dato", "meses": round(float(meses), 1),
+            "detalle": (f"{nombres.get(lado, lado)}: el DT ({dt.get('nombre') or 'sin nombre'}) lleva "
+                        f"{meses:.1f} meses y el parte no declara T.54 ni T.54-B en ese lado. Con un DT de "
+                        "menos de 6 meses, T.54 o T.54-B se declara siempre, en los dos lados (EFE v1.8); "
+                        "para la brecha del EFE cuenta como T.54"),
+        })
+    return out
+
+
 # EFE v1.7: el porcentaje dice cuánto creerle a la K de cada equipo, no quién
 # gana, y la brecha entre los dos solo se lee en la misma base y sin R-KT.2 ni
 # T.54 en un lado. El 25/10/2026 nueve partes usaron esa brecha para ordenar el
@@ -2142,7 +2169,8 @@ _CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto", "ligas", "dtBa
 # recalcular igual) en vez de guardarse por duplicado.
 _ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "K-EXTREMO-CONDICION", "K-CERCA-EXTREMO-CONDICION", "FAMILIA-RECORD", "ESPINA-VS-RIESGO", "HERENCIA-DTP", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT", "DT-VS-BANCO",
                         "COLAPSO-EN-CASCADA", "F1-DECISIVO-FUERA", "DTP-REHACER", "DTP-SIN-REFERENCIA",
-                        "TIPOLOGIA-VS-INDICES", "ESPINA-SIGUE-EN-EXTREMO", "EFE-EMPATE-TECNICO"}
+                        "TIPOLOGIA-VS-INDICES", "ESPINA-SIGUE-EN-EXTREMO", "EFE-EMPATE-TECNICO",
+                        "T.54-SIN-DECLARAR"}
 # LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
 # selladas (coherencia_json), porque no son deterministas y rehacerlas al leer
 # las haría parpadear. Del depósito se descartan igual que las calculadas
@@ -3696,6 +3724,7 @@ def dto(fixture_id: int) -> dict | None:
     alertas.extend(alerta_escala(fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # la espina que dice «sigue» con la burbuja en su extremo, y la brecha del
     # EFE que es empate técnico (25/10/2026): reglas que se incumplían, calculadas
+    alertas.extend(alertas_t54_sin_declarar(parte, alertas, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     alertas.extend(marcar_posteriores(
         alertas_espina_extremo(reventon, (parte.get("lecturaSad") or {}).get("espina"),
                                {"a": fila["equipo_a"], "b": fila["equipo_b"]})

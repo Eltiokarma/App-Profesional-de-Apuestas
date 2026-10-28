@@ -969,9 +969,16 @@ Escribís vos (es juicio, no se puede calcular):
   · prensa local;
   · prensa nacional;
   · previa de agregador (Sports Mole, Khel Now…).
-  Una baja que solo dice un agregador va «en duda», NUNCA «fuera». Una hoja
+  Una baja que solo dice un agregador va «en duda», NUNCA «fuera». Las
+  fuentes tienen fecha (EFE v1.8): en el mismo nivel manda la más reciente,
+  una baja de más de 7 días que la previa de la víspera contradice va «en
+  duda», y una salida que el club no confirmó no saca al jugador de la F1. Una hoja
   con menos de 11 titulares no cierra el bloque F. El titular fijo que falta
   de la hoja sin parte va a la caja de sensibilidad.
+- T.54 EN LOS DOS LADOS (EFE v1.8), con la fecha de llegada del DT en el
+  bloque A: un DT de menos de 6 meses es T.54 o T.54-B, nunca en blanco, y el
+  oficializado en los 7 días previos se puntúa como el banco que dirige. Si
+  falta, la app pone T.54-SIN-DECLARAR y lo cuenta para el empate técnico.
 - CALENDARIO EXIGENTE (EFE v1.7). Aplica con una eliminatoria a ≤ 5 días, o
   con el 3.er partido en 8 días o más.
   · Abrí en la caja de sensibilidad la rama «once alternativo» (quién
@@ -1137,7 +1144,11 @@ Escribís vos (es juicio, no se puede calcular):
   de hoy): agrega al 1X2 del motor (§15.1) —un equipo que de visita empata
   mucho o se planta a no perder no está del todo en su nivel—; tenelo a la
   vista al fijar las probabilidades y nombralo en el párrafo de las burbujas
-  del ensayo y en el `porque` de la espina si mueve tu lectura. Los números no
+  del ensayo y en el `porque` de la espina si mueve tu lectura. Los DOS
+  perfiles alineados (el local no pierde y el visitante no gana, cada uno en
+  dos de cada tres o más) son un hecho del partido que permite separarte del
+  mercado, nombrándolo; un perfil extremo de UN solo lado no lo es (sad v4.2,
+  6-B). Los números no
   se copian: el backend los recalcula en `reventonCalculado.*.otrasFamilias`.
   LA ESPINA CONTRA EL RIESGO SE DICE (18/10/2026, Albion–Torque: la tarjeta
   decía riesgo ALTO de cortar su mala racha, la espina era «neutra» sin

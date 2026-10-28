@@ -1,6 +1,9 @@
 # Propuesta de revisión · `sad-analysis` v4.1 → v4.2
 
-**Estado:** PROPUESTA, para aprobar por el usuario. Redactada el 28/10/2026
+**Estado:** APROBADA por el usuario entera (28/10/2026). Redactada en `docs/skills/sad-analysis/SKILL.md` (v4.2). En la app:
+`CORTE_VERSION` con la v4.2; no hay código nuevo. Falta que el usuario suba
+el zip.
+Propuesta escrita el 28/10/2026
 desde las **165 lecciones pendientes** del skill (130 de partes escritos con
 la v4.1, del 25 al 27/10), la calibración del 1X2 por versión y la
 calibración de la espina (`GET /analisis/cowork/espina/calibracion`). La base

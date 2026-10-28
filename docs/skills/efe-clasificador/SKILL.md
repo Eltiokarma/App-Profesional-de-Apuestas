@@ -1,15 +1,15 @@
 ---
 name: efe-clasificador
-description: Rubrica completa del clasificador EFE v1.7 del sistema SAD, Estado de Formacion de Equipo, con los ocho bloques A-H, los pesos ponderados, la tabla de puntuacion, las alertas automaticas estructurales y por fecha, y el registro de casos de validacion. Activar siempre que el usuario pida un EFE de un equipo o un partido, hablar de estado de formacion, bloques A-E, sub-scores, impacto ponderado de ausencias, reduccion por zona, clasificacion FORMADO o EN FORMACION o SIN FORMACION, o cualquier alerta del sistema como T.54, T.54-B, R-KT.2, GK-DOWNGRADE, GK-FALLA-ACTIVA, EJE-DEBUTANTE, FACTOR-X, F3, G-BLOQUE o COLAPSO EN CASCADA. Activar tambien antes de correr el skill efe-dashboard, porque este skill aporta la rubrica y el otro aporta la visualizacion. Activar tambien en corridas batch del pipeline SAD donde haya que puntuar equipos pre-partido.
+description: Rubrica completa del clasificador EFE v1.8 del sistema SAD, Estado de Formacion de Equipo, con los ocho bloques A-H, los pesos ponderados, la tabla de puntuacion, las alertas automaticas estructurales y por fecha, y el registro de casos de validacion. Activar siempre que el usuario pida un EFE de un equipo o un partido, hablar de estado de formacion, bloques A-E, sub-scores, impacto ponderado de ausencias, reduccion por zona, clasificacion FORMADO o EN FORMACION o SIN FORMACION, o cualquier alerta del sistema como T.54, T.54-B, R-KT.2, GK-DOWNGRADE, GK-FALLA-ACTIVA, EJE-DEBUTANTE, FACTOR-X, F3, G-BLOQUE o COLAPSO EN CASCADA. Activar tambien antes de correr el skill efe-dashboard, porque este skill aporta la rubrica y el otro aporta la visualizacion. Activar tambien en corridas batch del pipeline SAD donde haya que puntuar equipos pre-partido.
 ---
 
-# Clasificador EFE v1.7
+# Clasificador EFE v1.8
 
 Este skill guarda la rúbrica operativa del EFE (Estado de Formación de Equipo), el módulo estructural del sistema SAD.
 
 ## Cómo usarlo
 
-1. **Leé `references/rubrica-efe-v1.7.md` completo antes de puntuar nada.** Contiene los ocho bloques con sus tablas de indicadores, los fundamentos de cada regla y los casos de validación. No puntúes de memoria.
+1. **Leé `references/rubrica-efe-v1.8.md` completo antes de puntuar nada.** Contiene los ocho bloques con sus tablas de indicadores, los fundamentos de cada regla y los casos de validación. No puntúes de memoria.
 2. Investigá en la web lo que pide la sección "Instrucciones de ejecución" de la rúbrica: cuerpo técnico, historial de cambios de DT, plantel, mercado, tabla, resultados, ausencias de la fecha, fixture y sistema táctico del rival.
 3. Completá los bloques en orden, justificando cada indicador con el dato encontrado y citando la fuente.
 4. Aplicá los pesos, calculá el porcentaje y emití el diagnóstico con las implicaciones para el SAD.
@@ -21,6 +21,8 @@ Este skill guarda la rúbrica operativa del EFE (Estado de Formación de Equipo)
 - **Disciplina 35 — el Bloque F no se puntúa sin XI confirmado.** No lo rellenes con el plantel ni lo estimes. Si no hay XI confirmado, ver más abajo.
 - **Sin dato es respuesta válida.** Si un indicador no tiene información, se escribe `sin dato`, se excluye del denominador cuando la rúbrica lo permite y se abre caja de sensibilidad. No se estima para rellenar.
 - **Las fuentes de bajas tienen jerarquía (v1.7).** Club > prensa local > prensa nacional > previa de agregador. Una baja que solo dice un agregador va ⚠️ Duda, nunca ❌ Baja.
+- **T.54 en los dos lados, con la fecha del DT (v1.8).** Un DT de menos de 6 meses es T.54 o T.54-B, nunca en blanco; el oficializado en los 7 días previos se puntúa como banco que dirige. La app avisa `T.54-SIN-DECLARAR`.
+- **Las fuentes del F1 tienen fecha (v1.8).** Dentro del mismo nivel manda la más reciente; una baja de más de 7 días que la previa de la víspera contradice es Duda, y una salida que el club no confirmó no saca al jugador de la tabla.
 - **El porcentaje no se compara entre bases distintas (v1.7).** Con otra liga u otra categoría, o con R-KT.2 / T.54 en un lado, la brecha es «empate técnico de formación».
 - **Contradicciones se declaran, no se resuelven en silencio.** Si dos fuentes dicen cosas distintas (típico: quién dirige al equipo según el acta oficial vs la prensa), van las dos y se marca la contradicción.
 - **No sobreescribas filas ya declaradas** en ningún registro. Los datos de reconciliación van en columnas nuevas.
@@ -46,4 +48,4 @@ Pasa casi siempre en Liga 1 Perú, donde ningún medio publica el once la noche 
 
 | Archivo | Qué contiene | Cuándo leerlo |
 |---|---|---|
-| `references/rubrica-efe-v1.7.md` | Rúbrica completa — bloques A a H, tablas de indicadores, reglas especiales, tabla de puntuación, alertas automáticas, casos de validación | Siempre, antes de puntuar |
+| `references/rubrica-efe-v1.8.md` | Rúbrica completa — bloques A a H, tablas de indicadores, reglas especiales, tabla de puntuación, alertas automáticas, casos de validación | Siempre, antes de puntuar |

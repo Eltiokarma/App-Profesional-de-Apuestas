@@ -1,6 +1,11 @@
 # Propuesta de revisión · `efe-clasificador` v1.7 → v1.8
 
-**Estado:** PROPUESTA, para aprobar por el usuario. Redactada el 28/10/2026
+**Estado:** APROBADA por el usuario entera (28/10/2026). Redactada en `docs/skills/efe-clasificador/` (v1.8; la rúbrica pasa a
+`references/rubrica-efe-v1.8.md`) y `efe-dashboard` v1.11 (la caja de
+sensibilidad baja al matchup). En la app: `CORTE_VERSION` con la v1.8 y la
+alerta `T.54-SIN-DECLARAR` en `parte.py`, contada por `EFE-EMPATE-TECNICO`
+(test en `test_cowork`). Falta que el usuario suba los dos zips.
+Propuesta escrita el 28/10/2026
 desde las **179 lecciones pendientes** del skill, todas de partes escritos con
 la v1.7 (del 25 al 27/10) y todas ciegas PRE. La base es la v1.7 vigente
 (`docs/skills/efe-clasificador/`, `references/rubrica-efe-v1.7.md`).
