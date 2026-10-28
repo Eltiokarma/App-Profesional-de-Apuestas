@@ -1754,6 +1754,11 @@ def main():
     check("espina «sigue» con la total cerca del extremo o la de la condición en récord → ESPINA-SIGUE-EN-EXTREMO",
           [(x["codigo"], x["equipo"]) for x in _ax] == [("ESPINA-SIGUE-EN-EXTREMO", "a"), ("ESPINA-SIGUE-EN-EXTREMO", "b")]
           and "franja alta" in _ax[0]["detalle"] and "de visita en su récord" in _ax[1]["detalle"], _ax)
+    from backend.analisis.parte import espina_sigue_en_extremo as _ese
+    _x659 = _ese(_rx, {"a": {"lectura": "negativa", "porque": "pese a la franja alta: rival en crisis y sin arquero"},
+                       "b": {"lectura": "positiva", "porque": "rival más flojo"}})
+    check("659/719: el porque que nombra el extremo queda `dicho`; el que no, no",
+          [(x["lado"], x["dicho"]) for x in _x659] == [("a", True), ("b", False)], _x659)
     check("la espina que corta o va neutra con el extremo no avisa",
           alertas_espina_extremo(_rx, {"a": {"lectura": "cero"}, "b": {"lectura": "neutra"}}, {}) == [])
     _al54 = [{"codigo": "T.54", "equipo": "b"}]
@@ -4362,6 +4367,9 @@ def main():
           and _pvm(_pr, {**_ux, "fiabilidadMu": {"nivel": "alta"}})["aviso"] == ""
           and _pvm({"probabilidades": {"local": 60, "empate": 22, "visita": 18}}, {**_ux, "fiabilidadMu": {"nivel": "baja"}})["aviso"] == ""
           and _pvm(_pr, None) is None, _av)
+    _av752 = _pvm(_pr, {**_ux, "fiabilidadMu": {"nivel": "baja"}}, '{"pronostico": "Venezia ascendido: el motor no ve la Serie A"}')
+    check("752: con la razón escrita en `notas` (nombra al motor) el aviso se apaga y queda `razonEscrita`",
+          _av752["aviso"] == "" and _av752.get("razonEscrita") is True, _av752)
     # EL REVENTÓN SE OBSERVA CON EL MARCADOR SI EL PIPELINE NO CORRIÓ (incidencias 100 y 373)
     from backend.analisis.veredicto import observado_por_marcador as _opm
     _dec = {"signo": "+", "k": 12.5, "partidos": 3}

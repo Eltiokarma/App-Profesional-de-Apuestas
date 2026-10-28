@@ -1066,7 +1066,8 @@ Escribís vos (es juicio, no se puede calcular):
       duplicada. Va en `lecturaSad.reventon` y en el falsador.
       CON K-EXTREMO O K-CERCA-EXTREMO (la total o la de la condición), LA
       ESPINA NO DICE QUE LA RACHA SIGUE: va «cero» o «neutra», o el `porque`
-      nombra el hecho del partido que la sostiene. Si no, el backend pone
+      nombra el extremo (récord, franja alta) y el hecho del partido que la
+      sostiene —así el recibo no la cobra—. Si no, el backend pone
       ESPINA-SIGUE-EN-EXTREMO y el recibo lo avisa (Leones–Libertad y
       Nacional–Braga, 25/10/2026: las dos reventaron).
     · LA VENTAJA SOBRE EL MERCADO LA CALCULA LA APP (`vsMercado` del GET,
