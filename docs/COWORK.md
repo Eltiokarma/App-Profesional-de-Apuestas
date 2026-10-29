@@ -1221,6 +1221,13 @@ Escribís vos (es juicio, no se puede calcular):
   vuelve en `rechazos` (y el número se rescata en `ie`). `disciplina43` solo
   va en true si mandás las dos vías (o los indicadores): sin eso se rechaza.
 - Los eventos INSTITUCIONALES del timeline en `timelineEventos` (nunca partidos).
+  **Quién pasó una llave NO se deduce del marcador** (incidencia 774: Palmeiras
+  pasó a la final por penales y un parte lo dio por eliminado): sale de
+  `eliminatoria` en `GET /fixtures/{id}/ficha` (`avanzaLado`, `penales`,
+  `global`) o del título del evento del timeline («· PASA por penales (5-3)»);
+  el marcador es a 90'. Sin ese dato, «sin confirmar». Una frase del parte que
+  contradice a la base vuelve como `ELIMINATORIA-AL-REVES` en `faltan` y en las
+  alertas: se corrige antes del partido.
 - El pronóstico clave por equipo foco en `cadena`: una frase, la que después se
   va a poder declarar acertada o fallada.
 - El pronóstico con sus TRES fuentes declaradas en simultáneo (Disciplina 33):

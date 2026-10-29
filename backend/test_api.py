@@ -510,6 +510,8 @@ def main():
           and "diasDescanso" in fi["local"]["congestion"] and fi["local"]["congestion"]["partidos21d"] >= 0, fi["local"].get("congestion"))
     check("ficha: nombres de los equipos", fi["local"]["nombre"] and fi["visitante"]["nombre"])
     check("/fixtures/999999/ficha → 404", c.get(A + "/fixtures/999999/ficha").status_code == 404)
+    check("ficha: trae `eliminatoria` (null en un partido de liga; incidencia 774)",
+          "eliminatoria" in fi and fi["eliminatoria"] is None, fi.get("eliminatoria"))
     # ficha TÁCTICA (fase A del DTP): XI con carriles, goles con asistente, stats
     t = fi.get("tactica") or {}
     check("ficha táctica: capturada", t.get("capturada") is True, t.get("capturada"))

@@ -518,6 +518,26 @@ export interface FichaPartidoDTO {
   local: FichaEquipoDTO
   visitante: FichaEquipoDTO
   tactica?: FichaTacticaDTO
+  /** Quién pasó la llave (`avanzaLado`); null si no es eliminatoria o no se sabe. */
+  eliminatoria?: EliminatoriaDTO | null
+}
+
+/** Quién pasó una llave de eliminación directa, calculado de la base: la
+ *  tanda, el global con la ida o la prórroga, nunca el marcador a 90'
+ *  (incidencia 774). `avanza` null = no se sabe. */
+export interface EliminatoriaDTO {
+  fixtureId: number
+  competicion?: string
+  ronda?: string
+  marcador: string
+  prorroga: boolean
+  penales?: string | null
+  global?: string | null
+  ida?: number | null
+  avanza?: number | null
+  eliminado?: number | null
+  avanzaLado?: string | null
+  nota?: string
 }
 
 /** APERTURA del DTP: M1/M2/M3/M6, escritos ANTES del partido. */
@@ -1662,6 +1682,8 @@ export interface VeredictoObjetivo {
     nota: string
   }
   marcadorExacto?: { declarado: string; real: string; acerto: boolean }
+  /** Solo en eliminación directa: quién pasó (`avanzaLado` a | b). */
+  eliminatoria?: EliminatoriaDTO
   /** Brier de TRES resultados (0 perfecto, 2 máximo). No es el binario del TDE. */
   brier?: { valor: number | null; escala: string }
   /** Una comprobación POR BLOQUE: la echada de cada equipo se ve en los goles

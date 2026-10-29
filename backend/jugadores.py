@@ -591,7 +591,19 @@ def ficha_partido(fixture_id: int) -> dict | None:
         # goles con autor y asistente, y métricas del partido. Vacío si la
         # ingesta aún no capturó la ficha — nunca reconstruido a ojo.
         "tactica": ficha_tactica.tactica_de(fixture_id, fila["home_team_id"], fila["away_team_id"]),
+        # QUIÉN PASÓ LA LLAVE (incidencia 774): los `Shootout` de los eventos no
+        # se cuentan a mano; null si no es eliminatoria o no se sabe
+        "eliminatoria": _eliminatoria(fixture_id, fila["home_team_id"]),
     }
+
+
+def _eliminatoria(fixture_id: int, local_id: int) -> dict | None:
+    from backend import eliminatoria
+    d = eliminatoria.desenlace(fixture_id)
+    if not d:
+        return None
+    lado = ("local" if d["avanza"] == local_id else "visitante") if d.get("avanza") else None
+    return {**d, "avanzaLado": lado}
 
 
 # ── resúmenes de texto para el cruce con los skills (EFE / timeline) ─────────

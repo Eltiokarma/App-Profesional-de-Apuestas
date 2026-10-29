@@ -1623,6 +1623,85 @@ def alertas_colapso(parte: dict, nombres: dict) -> list[dict]:
     return out
 
 
+# ── UNA LLAVE AL REVÉS (incidencia 774, 29/10/2026) ──────────────────────────
+# Palmeiras pasó a la final de la Libertadores por penales y el parte del
+# Palmeiras–Bragantino lo dio por eliminado: D3, C4, la sensibilidad y el ensayo
+# sobre una «resaca» que no existía. Quién pasó sale de `backend/eliminatoria.py`
+# y una frase del parte que lo contradice se grita, al depositar y al leer.
+_DICE_ELIMINADO = re.compile(r"elimin|qued[oó] (?:afuera|fuera|out)|se despidi[oó]|perdi[oó] la (?:llave|serie)|"
+                             r"cay[oó] en (?:la )?(?:semi|cuartos|octavos|final|repechaje)", re.I)
+_DICE_PASA = re.compile(r"clasific[oó]|pas[oó] a (?:la )?(?:final|semi|cuartos|octavos)|finalista|avanz[oó]|"
+                        r"sigue (?:vivo|en carrera)", re.I)
+_ACTIVA = re.compile(r"elimin(?:[oó]|ando|ar|aron)\s+a\b|dej[oó] (?:afuera|fuera) a\b", re.I)
+# «evitó la eliminación», «estuvo a punto de quedar afuera»: no afirma la eliminación
+_NIEGA = re.compile(r"evit|casi|a punto|cerca de|roz[oó]|salv[oó]|sin |no (?:fue|qued|cay)|lejos de|pese a", re.I)
+_GENERICAS = {"conmebol", "uefa", "league", "copa", "primera", "division", "liga", "championship", "nacional",
+              "national", "torneo", "trophy", "super", "cup"}
+
+
+def _palabras(texto: str, minimo: int = 5) -> set[str]:
+    t = unicodedata.normalize("NFKD", texto or "").encode("ascii", "ignore").decode().lower()
+    return {w for w in re.findall(r"[a-z]+", t) if len(w) >= minimo and w not in _GENERICAS}
+
+
+def _frases(obj, lado: str | None = None):
+    """(frase, lado del bloque donde está o None) de todo el texto del parte."""
+    if isinstance(obj, str):
+        for f in re.split(r"(?<=[.;!?])\s+|\n+", obj):
+            if f.strip():
+                yield f, lado
+    elif isinstance(obj, dict):
+        for k, v in obj.items():
+            yield from _frases(v, lado)
+    elif isinstance(obj, list):
+        for v in obj:
+            yield from _frases(v, lado)
+
+
+def alertas_eliminatoria(parte: dict, fx, nombres: dict) -> list[dict]:
+    from backend import eliminatoria
+    if not fx:
+        return []
+    frases = list(_frases({k: v for k, v in parte.items() if k not in ("equipos", "alertas")}))
+    for lado in LADOS:
+        frases += list(_frases(((parte.get("equipos") or {}).get(lado) or {}), lado))
+    out = []
+    for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])):
+        try:
+            llaves = eliminatoria.recientes(tid, str(fx["date"]))
+        except Exception:  # noqa: BLE001 — base sin fixtures
+            llaves = []
+        equipo = _palabras(nombres.get(lado, ""), 4)
+        for ll in llaves:
+            anclas = _palabras(ll.get("competicion") or "") | ({"penal"} if ll.get("penales") else set())
+            dice = _DICE_ELIMINADO if ll["pasa"] else _DICE_PASA
+            rival = _palabras(ll.get("rival") or "", 4)
+            for frase, donde in frases:
+                plano = " ".join(_palabras(frase, 3))
+                # «eliminó a Fluminense» es lo que HIZO, no lo que le pasó
+                activa = _ACTIVA.sub(" ", frase)
+                if not dice.search(activa) or _NIEGA.search(activa):
+                    continue
+                if not any(a in plano for a in anclas):
+                    continue
+                # fuera del bloque del equipo: la frase lo nombra a él y NO al de la
+                # otra punta de la llave («Palmeiras clasificó eliminando a Fluminense»
+                # habla de los dos y no se le carga a ninguno)
+                if donde != lado and (not (equipo & _palabras(frase, 4)) or (rival & _palabras(frase, 4))):
+                    continue
+                out.append({
+                    "codigo": "ELIMINATORIA-AL-REVES", "equipo": lado, "tipo": "dato",
+                    "detalle": (f"{nombres.get(lado, lado)}: el parte dice «{frase.strip()[:160]}» y la base dice "
+                                f"{ll['texto']} en {ll.get('competicion') or 'la copa'} (fixture {ll['fixtureId']}"
+                                f"{', marcador a 90 ' + ll['marcador'] if ll.get('marcador') else ''}). Quién pasa "
+                                "una llave sale de `eliminatoria` (ficha, timeline, veredicto), nunca del marcador "
+                                "a 90' ni de contar los Shootout: corregir lo que se apoyó en eso (D3, C4, "
+                                "sensibilidad, ensayo)"),
+                })
+                break
+    return out
+
+
 def alertas_dt(parte: dict, fx, nombres: dict) -> list[dict]:
     """DT-DISCREPANCIA cuando el parte (la prensa) y la base no dicen el mismo
     DT: manda el parte, y la base queda marcada para refrescarse. DT-SIN-DT
@@ -2175,7 +2254,7 @@ _CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto", "ligas", "dtBa
 _ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "K-EXTREMO-CONDICION", "K-CERCA-EXTREMO-CONDICION", "FAMILIA-RECORD", "ESPINA-VS-RIESGO", "HERENCIA-DTP", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT", "DT-VS-BANCO",
                         "COLAPSO-EN-CASCADA", "F1-DECISIVO-FUERA", "DTP-REHACER", "DTP-SIN-REFERENCIA",
                         "TIPOLOGIA-VS-INDICES", "ESPINA-SIGUE-EN-EXTREMO", "EFE-EMPATE-TECNICO",
-                        "T.54-SIN-DECLARAR"}
+                        "T.54-SIN-DECLARAR", "ELIMINATORIA-AL-REVES"}
 # LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
 # selladas (coherencia_json), porque no son deterministas y rehacerlas al leer
 # las haría parpadear. Del depósito se descartan igual que las calculadas
@@ -2924,6 +3003,14 @@ def guardar(payload: dict) -> dict:
     # DTP v1.6: el sistema contra el último once, el ejecutor de penales y la sede del caso de la 6
     try:
         faltan.extend(_dtp.avisos_v16(parte.get("dtp") or {}, fx, {"a": fx["home_name"], "b": fx["away_name"]}))
+    except Exception:  # noqa: BLE001 — un aviso nunca tumba el depósito
+        pass
+    # una llave al revés (774): se corrige ANTES del partido, no en el veredicto
+    try:
+        for a in alertas_eliminatoria(parte, fx, {"a": fx["home_name"], "b": fx["away_name"]}):
+            faltan.append({"bloque": f"equipos.{a['equipo']}", "codigo": a["codigo"], "costara": a["detalle"],
+                           "comoSeArregla": "reescribir con la llave como la dice la base (GET /fixtures/{id}/ficha "
+                                            "→ `eliminatoria`, o el título del evento en el timeline)"})
     except Exception:  # noqa: BLE001 — un aviso nunca tumba el depósito
         pass
     if not any((parte.get("cadena") or {}).get(l) for l in LADOS):
@@ -3752,6 +3839,7 @@ def dto(fixture_id: int) -> dict | None:
         fila["creado_en"]))
     alertas.extend(alertas_dt(parte, fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     alertas.extend(alertas_colapso(parte, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
+    alertas.extend(alertas_eliminatoria(parte, fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # un decisivo de la base que no está en la tabla F1 no pesa en el IP
     alertas.extend(_f1_base.alertas(parte, fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # el once oficial contra la apertura del DTP: si no cuadra, el M2 se
