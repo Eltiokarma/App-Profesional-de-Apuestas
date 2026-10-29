@@ -343,6 +343,14 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   timeline y en `objetivo.eliminatoria` del veredicto (el 1X2 y `ganador`
   siguen a 90'). Un parte que lo contradice suena `ELIMINATORIA-AL-REVES` (tipo
   `dato`, calculada) en `faltan` al depositar y en la tira al leer.
+- **El rol contra el grid, en sombra** (29/10/2026, incidencia 646):
+  `contraElOnce.rolesVsGrid` compara el rol que `m1.rolesReasignados` le da a
+  un titular con su casilla del grid oficial (línea, y banda de laterales,
+  carrileros y centrales; un 9 en la fila de la mediapunta no cuenta). Medido
+  sobre 315 partes: 13 con hallazgo, casi todos reales (Gray, Castillo,
+  Velasco). NO pide rehacer (`dtp_cowork.ROLES_GRID_REHACE = False`) hasta que
+  los veredictos de una semana digan cuántos fueron reales; la caja del DTP lo
+  muestra «en observación».
 - **Simulación de apuesta** (28/10/2026, pedido del usuario;
   `backend/analisis/simulacion.py`, `GET /analisis/simulacion`, sección
   **Simulación**): una banca de 100 unidades sobre los 1X2 declarados en los

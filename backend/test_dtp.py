@@ -262,6 +262,39 @@ def main():
     check("648: el arquero que no estaba en el XI de referencia pide rehacer (revisar B6); el mismo arquero no",
           _r648["rehacer"] and any(m.startswith("arquero: Mele") for m in _r648["motivos"])
           and not _r648b["rehacer"], (_r648, _r648b))
+    # 646: el rol de rolesReasignados contra la casilla del grid, EN SOMBRA
+    from backend.analisis import dtp_cowork as _dc646
+    _cas = [("A. Kinský", "1:1"), ("A. Robertson", "2:1"), ("M. van de Ven", "2:2"), ("J. van Hecke", "2:3"),
+            ("A. Gray", "2:4"), ("S. Tonali", "3:1"), ("Mateus Fernandes", "3:2"), ("M. Tel", "4:1"),
+            ("J. Maddison", "4:2"), ("M. Kudus", "4:3"), ("Omar Marmoush", "5:1")]
+    _carr = {"2:1": "izquierda", "2:4": "derecha", "4:1": "izquierda", "4:3": "derecha", "3:1": "izquierda",
+             "3:2": "derecha", "2:2": "centro", "2:3": "centro", "4:2": "centro", "5:1": "centro", "1:1": "centro"}
+    _of646 = {"a": {"formacion": "4-2-3-1", "titulares": [n for n, _ in _cas], "defensores": 4,
+                    "casillas": [{"nombre": n, "grid": g, "carril": _carr[g]} for n, g in _cas]}}
+    _b646 = {"equipo": "a", "apertura": {"m1": {"sistema": "4-2-3-1", "xiReferencia": "", "rolesReasignados": [
+        "Gray de pivote siendo lateral/medio",            # pivote → jugó en la defensa
+        "Robertson de lateral derecho",                   # banda cambiada
+        "Kudus de extremo derecho",                       # cuadra
+        "Marmoush de 9 sin Solanke",                      # cuadra
+        "Maddison de referencia",                         # un 9 en la fila de la mediapunta: frontera, no cuenta
+        "Tel de lateral izquierdo si no está Udogie",     # condicional: no es una afirmación
+        "Tonali de central a pivote",                     # vale el destino (pivote, 3:1): cuadra
+        "Kevin Fernandes de pivote"]}}}                   # «Kevin» no es «Mateus»: otro jugador
+    _r646 = _reh(_b646, _of646)
+    _rg = {r["jugador"]: r["motivo"] for r in _r646["rolesVsGrid"]}
+    check("646: pivote en la defensa y lateral cambiado de banda salen en rolesVsGrid; lo demás no",
+          set(_rg) == {"A. Gray", "A. Robertson"} and "defensa (2:4)" in _rg["A. Gray"]
+          and "por la derecha y el grid, por la izquierda" in _rg["A. Robertson"], _r646["rolesVsGrid"])
+    check("646: en sombra no pide rehacer", not _r646["rehacer"] and not _dc646.ROLES_GRID_REHACE, _r646["motivos"])
+    _dc646.ROLES_GRID_REHACE = True
+    try:
+        _r646b = _reh(_b646, _of646)
+    finally:
+        _dc646.ROLES_GRID_REHACE = False
+    check("646: promovida, cada rol contradicho es un motivo de rehacer",
+          _r646b["rehacer"] and sum(m.startswith("rol:") for m in _r646b["motivos"]) == 2, _r646b["motivos"])
+    check("646: sin grid completo no se compara nada",
+          _reh(_b646, {"a": {**_of646["a"], "casillas": []}})["rolesVsGrid"] == [])
     from backend.analisis.dtp_cowork import sin_referencia
     check("527: una nota entre paréntesis con «sin dato» no anula el XI de referencia",
           not sin_referencia("A, B, C, D, E, F, G, H, I, J (el undécimo titular no viene en la ficha: sin dato)")

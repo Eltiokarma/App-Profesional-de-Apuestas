@@ -1192,6 +1192,8 @@ def oficial_de(fixture_id: int) -> dict:
                        # el arquero titular: posición G, o la fila 1 del grid
                        "arquero": next((j["jugador"] or "" for j in xi if (j["posicion"] or "") == "G"
                                         or str(j["grid"] or "") == "1:1"), ""),
+                       # la casilla de cada titular, para leer los roles contra el grid (646)
+                       "casillas": _casillas(xi) if con_grid else [],
                        # sin formación en la ficha, la línea de atrás se cuenta
                        # por la posición de los titulares (D)
                        # …y un titular SIN posición en la fila 2 del grid también es
@@ -1200,6 +1202,107 @@ def oficial_de(fixture_id: int) -> dict:
                                       sum(1 for j in xi if (j["posicion"] or "") == "D"
                                           or (not j["posicion"] and str(j["grid"] or "").startswith("2:"))))}
     return fuera
+
+
+def _casillas(xi: list[dict]) -> list[dict]:
+    from backend.ficha_tactica import _carril
+    por_fila: dict[int, int] = {}
+    for j in xi:
+        f = str(j["grid"]).split(":")[0]
+        if f.isdigit():
+            por_fila[int(f)] = por_fila.get(int(f), 0) + 1
+    return [{"nombre": j["jugador"] or "", "grid": str(j["grid"]), "carril": _carril(str(j["grid"]), por_fila)}
+            for j in xi]
+
+
+# ── EL ROL DE LA APERTURA CONTRA LA CASILLA DEL GRID (incidencia 646) ────────
+# Gray «de pivote» jugó de lateral (Chelsea–Tottenham), Castillo «de lateral
+# izquierdo» de extremo derecho (Aucas–Barcelona), Velasco «interior, no de
+# central» de central: con uno o dos cambios de rol el corte de ausentes no
+# llega y el M2 queda escrito sobre otro equipo. Medido el 29/10/2026 sobre 315
+# partes: 15 con una contradicción (≈ 1 por día), 11 sin DTP-REHACER; una o dos
+# de cada quince pueden ser el grid de la API (516). Por eso nace EN SOMBRA:
+# viaja en `contraElOnce.rolesVsGrid` y en la pantalla, NO pide rehacer. Se
+# promueve (ROLES_GRID_REHACE) cuando los veredictos de una semana digan cuántas
+# fueron reales. Solo la LÍNEA (defensa contra medio/ataque) y la BANDA de un
+# lateral, carrilero o central: un extremo que cambia de banda es del partido.
+ROLES_GRID_REHACE = False
+_ROL = (r"doble pivote|pivote|mediocentro|medio centro|volante|interior|lateral|central|zaguero|defensor|libero|"
+        r"carrilero|extremo|mediapunta|media punta|enganche|delantero|referencia|centrodelantero|nueve|9")
+_CLASE_ROL = {"lateral": {"DEF"}, "central": {"DEF"}, "zaguero": {"DEF"}, "defensor": {"DEF"}, "libero": {"DEF"},
+              "carrilero": {"DEF", "MED"}, "pivote": {"MED"}, "doble pivote": {"MED"}, "mediocentro": {"MED"},
+              "medio centro": {"MED"}, "volante": {"MED", "ATQ"}, "interior": {"MED", "ATQ"},
+              "extremo": {"MED", "ATQ"}, "mediapunta": {"MED", "ATQ"}, "media punta": {"MED", "ATQ"},
+              "enganche": {"MED", "ATQ"},
+              # un 9 en la fila de la mediapunta es frontera (falso 9): solo choca en la defensa
+              "delantero": {"MED", "ATQ"}, "referencia": {"MED", "ATQ"}, "centrodelantero": {"MED", "ATQ"},
+              "nueve": {"MED", "ATQ"}, "9": {"MED", "ATQ"}}
+
+
+def _roles_declarados(linea: str) -> list[tuple[list[str], str, str]]:
+    """[(nombres, rol, banda)] de una línea de `rolesReasignados`. Un rol
+    condicional («si no está…», «según el once») o doble («lateral/extremo») no
+    es una afirmación; «de 9 a volante» y «de central, juega de lateral» valen
+    por el destino."""
+    if re.search(r"\bsi\b|\bsegun\b|\bsegún\b|\bo\b|/", re.split(r"\bsiendo\b|\(", (linea or "").lower())[0]):
+        return []
+    t = _plano_num(linea)
+    t = re.split(r"\bsiendo\b|\bcuando\b|\bes\b", t)[0]
+    t = re.sub(r"\bde origen \w+|\bde oficio\b", " ", t)
+    t = re.sub(rf"\bde ({_ROL})( (?:derecho|izquierdo))? a ", " de ", t)
+    t = re.sub(rf"\bde ({_ROL})\s+juega de ", " de ", t)
+    out = []
+    for m in re.finditer(rf"([a-z0-9 ]+?)\s+de\s+({_ROL})\b(\s+(?:derecho|izquierdo|por la derecha|por la izquierda))?", t):
+        nombres = [n.strip() for n in re.split(r"\s+y\s+|\s+con\s+", m.group(1).strip()) if n.strip()]
+        if " con " in f" {m.group(1)} ":
+            nombres = nombres[-1:]      # «X de extremo con Y de lateral»: Y es el del segundo rol
+        banda = m.group(3) or ""
+        out.append((nombres, m.group(2), "derecha" if "derech" in banda else ("izquierda" if "izquierd" in banda else "")))
+    return out
+
+
+def _plano_num(t: str) -> str:
+    t = unicodedata.normalize("NFKD", t or "").encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z0-9 ]+", " ", t)
+
+
+def roles_vs_grid(bloque: dict, of: dict) -> list[dict]:
+    casillas = of.get("casillas") or []
+    if len(casillas) < 10:
+        return []
+    filas = [int(c["grid"].split(":")[0]) for c in casillas if c["grid"].split(":")[0].isdigit()]
+    if not filas:
+        return []
+    n = max(filas)
+    tres = (of.get("formacion") or "")[:1] in ("3", "5")
+    out = []
+    for linea in ((bloque.get("apertura") or {}).get("m1") or {}).get("rolesReasignados") or []:
+        for nombres, rol, banda in _roles_declarados(linea):
+            for nombre in nombres:
+                palabras = [w for w in nombre.split() if len(w) > 2]
+                if not palabras:
+                    continue
+                cands = [c for c in casillas if palabras[-1] in _plano_num(c["nombre"]).split()]
+                pila = nombre.split()[0] if len(nombre.split()) > 1 else ""
+                if pila and cands and _plano_num(cands[0]["nombre"]).split()[0][:1] != pila[:1]:
+                    cands = []          # «Kevin Parra» no es «N. Parra»
+                if len(cands) != 1:
+                    continue
+                c = cands[0]
+                fila = int(c["grid"].split(":")[0])
+                linea_grid = "GK" if fila == 1 else "DEF" if fila == 2 else "ATQ" if fila == n else "MED"
+                acepta = set(_CLASE_ROL[rol]) | ({"MED"} if rol == "lateral" and tres else set())
+                motivo = []
+                if linea_grid not in acepta:
+                    nombre_linea = {"GK": "el arco", "DEF": "la defensa", "MED": "el medio", "ATQ": "el ataque"}
+                    motivo.append(f"la apertura lo pone de {rol} y el grid oficial, en {nombre_linea[linea_grid]} "
+                                  f"({c['grid']})")
+                if banda and rol in ("lateral", "carrilero", "central") and c.get("carril") in ("izquierda", "derecha") \
+                        and c["carril"] != banda:
+                    motivo.append(f"la apertura lo pone por la {banda} y el grid, por la {c['carril']}")
+                if motivo:
+                    out.append({"jugador": c["nombre"], "rol": linea, "grid": c["grid"], "motivo": "; ".join(motivo)})
+    return out
 
 
 def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
@@ -1319,6 +1422,10 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
                     _en_referencia(x, texto_pz, pz.get("nombre") or "") or _en_referencia(pz.get("nombre") or "", _plano(x), x)
                     for x in [*(lado_of.get("titulares") or []), *(lado_of.get("banca") or [])]):
             motivos.append(f"{quien}: {pz.get('nombre')} no figura en la hoja del partido (ni titular ni suplente)")
+    # el rol contra el grid (646): en sombra hasta medirlo con los veredictos
+    roles_grid = roles_vs_grid(bloque, of)
+    if ROLES_GRID_REHACE:
+        motivos += [f"rol: {r['jugador']}: {r['motivo']}" for r in roles_grid]
     # UNA REFERENCIA CON VARIAS PROYECCIONES NO ES UN XI (Tigres, incidencia
     # 163: «SI proyecta a E. Gómez…; Milenio, a Herrera, Simeone…» y todos
     # pasaban por la referencia: cinco titulares nuevos y ni un ausente)
@@ -1332,6 +1439,8 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
             # que no estaban en el XI de referencia, no los de la referencia que
             # faltaron en el once
             "ausentesDeLaReferencia": ausentes,
+            # EN SOMBRA (646): el rol de `rolesReasignados` contra la casilla del grid
+            "rolesVsGrid": roles_grid,
             "nota": ("`ausentesDeLaReferencia`: titulares del once OFICIAL que no figuraban en el XI de "
                      f"referencia de la apertura; con {REHACER_AUSENTES} o más, el bloque se rehace")}
 

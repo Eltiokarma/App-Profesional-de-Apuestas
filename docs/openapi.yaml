@@ -3672,6 +3672,20 @@ components:
                       sistemaOficial: { type: string }
                       defensoresOficiales: { type: integer, nullable: true }
                       ausentesDeLaReferencia: { type: array, items: { type: string } }
+                      rolesVsGrid:
+                        type: array
+                        description: >
+                          EN SOMBRA (incidencia 646, 29/10/2026): el rol que `m1.rolesReasignados`
+                          le da a un titular contra su casilla del grid oficial (la línea, y la
+                          banda de un lateral, carrilero o central). No pide rehacer hasta que
+                          los veredictos digan cuántas son reales; vacío sin grid completo.
+                        items:
+                          type: object
+                          properties:
+                            jugador: { type: string }
+                            rol: { type: string, description: 'la línea de rolesReasignados' }
+                            grid: { type: string }
+                            motivo: { type: string }
     Incidencia:
       type: object
       properties:

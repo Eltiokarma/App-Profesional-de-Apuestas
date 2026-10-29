@@ -2433,6 +2433,8 @@ export interface DtpBloque {
       sistemaOficial: string
       defensoresOficiales?: number | null
       ausentesDeLaReferencia: string[]
+      /** EN SOMBRA (646): el rol declarado contra la casilla del grid; no pide rehacer. */
+      rolesVsGrid?: { jugador: string; rol: string; grid: string; motivo: string }[]
     }
   }
 }
