@@ -231,9 +231,37 @@ def main():
     _b559 = {"equipo": "a", "apertura": {"m1": {"sistema": "4-2-3-1", "xiReferencia": ""}}}
     _r559 = _reh(_b559, {"a": {"formacion": "3-4-3", "formacionAlCerrar": "4-2-3-1", "titulares": [], "defensores": 3}})
     _r559b = _reh(_b559, {"a": {"formacion": "3-4-3", "titulares": [], "defensores": 3}})
-    check("559: si la apertura cuadraba con la formación al cerrar y la API la corrigió después, no pide rehacer",
-          not any(m.startswith("sistema") for m in _r559["motivos"]) and _r559.get("formacionCorregidaPorLaApi")
+    check("735: si la API corrigió la formación después del cierre, igual pide rehacer y dice la corrección",
+          any(m.startswith("sistema") and "corrigió" in m for m in _r559["motivos"])
+          and _r559.get("formacionCorregidaPorLaApi")
           and any(m.startswith("sistema") for m in _r559b["motivos"]), (_r559, _r559b))
+    # 734: la línea de tres con carrileros es una forma, cuenten como cuenten las puntas
+    from backend.analisis.dtp_cowork import _sistemas
+    _r734 = [_reh({"equipo": "a", "apertura": {"m1": {"sistema": d, "xiReferencia": ""}}},
+                  {"a": {"formacion": "3-4-1-2", "titulares": [], "defensores": 3}}) for d in ("5-4-1", "3-4-3")]
+    _r734b = _reh({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3", "xiReferencia": ""}}},
+                  {"a": {"formacion": "4-4-2", "titulares": [], "defensores": 4}})
+    check("734: 5-4-1 y 3-4-3 contra 3-4-1-2 no piden rehacer; 4-3-3 contra 4-4-2 sí",
+          all(not r["rehacer"] for r in _r734) and _r734b["rehacer"], (_r734, _r734b))
+    # 706: un sistema citado como partido anterior no es una opción declarada
+    _d706 = "4-3-3 (probable sin Vásquez; el 20/10 jugó 3-4-3)"
+    _r706 = _reh({"equipo": "b", "apertura": {"m1": {"sistema": _d706, "xiReferencia": ""}}},
+                 {"b": {"formacion": "3-4-3", "titulares": [], "defensores": 3}})
+    check("706: «el 20/10 jugó 3-4-3» es antecedente; salir 3-4-3 contra un 4-3-3 pide rehacer",
+          _sistemas(_d706) == {"433"} and _sistemas(_d706, True) == {"433", "343"}
+          and _sistemas("4-2-3-1 / 4-3-3") == {"4231", "433"} and _sistemas("jugó 3-5-2") == {"352"}
+          and _r706["rehacer"], (_sistemas(_d706), _r706))
+    # 648: otro arquero en el once oficial es un cambio aunque sea el único
+    _ref648 = "Rey; Barreto, Valdez, Zabala, Isla; Marcone, Fernández; Ávalos, Cabral, Montiel; Ávalos B"
+    _of648 = ["Mele", "Barreto", "Valdez", "Zabala", "Isla", "Marcone", "Fernández", "Ávalos", "Cabral",
+              "Montiel", "Ávalos B"]
+    _b648 = {"equipo": "a", "apertura": {"m1": {"sistema": "4-2-3-1", "xiReferencia": _ref648}}}
+    _r648 = _reh(_b648, {"a": {"formacion": "4-2-3-1", "titulares": _of648, "arquero": "Mele", "defensores": 4}})
+    _r648b = _reh(_b648, {"a": {"formacion": "4-2-3-1", "titulares": ["Rey", *_of648[1:]], "arquero": "Rey",
+                                "defensores": 4}})
+    check("648: el arquero que no estaba en el XI de referencia pide rehacer (revisar B6); el mismo arquero no",
+          _r648["rehacer"] and any(m.startswith("arquero: Mele") for m in _r648["motivos"])
+          and not _r648b["rehacer"], (_r648, _r648b))
     from backend.analisis.dtp_cowork import sin_referencia
     check("527: una nota entre paréntesis con «sin dato» no anula el XI de referencia",
           not sin_referencia("A, B, C, D, E, F, G, H, I, J (el undécimo titular no viene en la ficha: sin dato)")
