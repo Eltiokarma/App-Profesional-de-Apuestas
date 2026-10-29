@@ -1640,6 +1640,12 @@ def equipo_burbujas(equipo_id: int, antesDe: int | None = None, proximo: int | N
     except Exception:  # noqa: BLE001 — sin base, «sin medir», no un error
         _base = None
     r["separacionLiga"] = separacion_liga.de_liga((_base or {}).get("id"), (_base or {}).get("nombre"))
+    if prox:
+        # si el próximo es de COPA medida, manda la separación de esa copa
+        _fx_copa = db.query_one("sad", "SELECT league_id FROM fixtures WHERE id=?", (prox["fixtureId"],))
+        _lc = _fx_copa["league_id"] if _fx_copa else None
+        if _lc in separacion_liga.COPAS_MEDIDAS:
+            r["separacionLiga"] = separacion_liga.de_liga(_lc, liga_meta(_lc).get("nombre"))
     if antesDe is not None:
         r["estabilidad"]["motivos"] = [
             "vista al día del partido: la plantilla de hoy no es la de entonces y no se usa; "

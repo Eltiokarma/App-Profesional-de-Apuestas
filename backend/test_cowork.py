@@ -972,6 +972,24 @@ def main():
           prio_de(141, segundas=True)[0] == 0 and "fuera del padrón" in prio_de(141, segundas=True)[1],
           prio_de(141, segundas=True))
     check("una primera división sin equipo arriba sigue entrando (6)", prio_de(140)[0] == 6, prio_de(140))
+    # LAS COPAS NACIONALES (29/10/2026, REVENTON §16.1): entran según cuánto separa el riesgo en cada una
+    check("Copa del Rey, Taça, Coupe y Pokal (separan alto) entran desde cualquier ronda, al final (8)",
+          all(prio_de(c, "Round of 32")[0] == 8 for c in (143, 96, 66, 81)),
+          [prio_de(c, "Round of 32") for c in (143, 96, 66, 81)])
+    check("y su motivo dice que el 1X2 sale del mercado, no del motor",
+          "no del motor" in prio_de(143, "Round of 32")[1], prio_de(143, "Round of 32"))
+    check("FA Cup y Coppa Italia (separan a medias): fuera en rondas tempranas y en octavos, con motivo",
+          prio_de(45, "3rd Round")[0] == 0 and "desde cuartos" in prio_de(45, "3rd Round")[1]
+          and prio_de(137, "8th Finals")[0] == 0 and prio_de(45, "Round of 16")[0] == 0,
+          (prio_de(45, "3rd Round"), prio_de(137, "8th Finals")))
+    check("FA Cup y Coppa Italia entran desde cuartos: cuartos, semis y final",
+          all(prio_de(c, r)[0] == 8 for c in (45, 137) for r in ("Quarter-finals", "Semi-finals", "Final")))
+    check("la EFL Cup no entra nunca (rotaciones: la burbuja no es la del once que sale)",
+          prio_de(48, "Final")[0] == 0 and "suplentes" in prio_de(48, "Final")[1], prio_de(48, "Final"))
+    check("una copa va detrás de una primera y de una segunda del padrón",
+          prio_de(143, "Final")[0] > prio_de(72, segundas=True)[0] > prio_de(140)[0], prio_de(143, "Final"))
+    check("una copa no medida sigue fuera del padrón (Copa Chile)",
+          prio_de(267, "Final")[0] == 0 and "fuera del padrón" in prio_de(267, "Final")[1])
     check("una fase decisiva manda sobre la fase de grupos",
           prio_de(13, "Quarter-finals")[0] < prio_de(13, "Group Stage - 4", grupos=True)[0],
           (prio_de(13, "Quarter-finals"), prio_de(13, "Group Stage - 4", grupos=True)))

@@ -4784,6 +4784,14 @@ def _internacionales_de_clubes() -> set[int]:
         return {lid for lid in INTERNACIONALES if lid != 1}
 
 
+def _nombre_ingesta(liga_id: int) -> str:
+    try:
+        from backend.ingesta.extractor import LIGAS
+        return LIGAS.get(liga_id, "")
+    except Exception:
+        return ""
+
+
 def _padron() -> dict[int, str]:
     """Las ligas cubiertas, con su nombre. Sale de la ingesta, no de una copia."""
     try:
@@ -4835,6 +4843,14 @@ def _prioridad(liga: dict, etiquetas: set[str], pos_local: int, pos_visita: int,
                        "queda fuera por defecto (de octavos en adelante entra sola); "
                        "pasá grupos=true para incluirla")
         return 5, f"{nombre_i} · {ronda or 'fase de grupos'}"
+    # LAS COPAS NACIONALES MEDIDAS (29/10/2026, usuario; REVENTON §16.1): no son
+    # del padrón (sin cuotas en vivo) pero entran a la agenda, al final, según
+    # cuánto separa el riesgo del reventón en cada una
+    from backend.analisis import separacion_liga as _sep
+    copa = _sep.copa_en_agenda(liga_id, ronda, padron.get(liga_id) or _nombre_ingesta(liga_id)
+                               or liga.get("nombre") or f"copa {liga_id}")
+    if copa is not None:
+        return copa
     if liga_id not in padron:
         # EL DESCARTE TIENE QUE SER EL MISMO SIEMPRE. Antes el clásico se
         # miraba ANTES del padrón, así que un torneo fuera de él entraba o no
@@ -5309,7 +5325,8 @@ def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: in
     if liga_txt:
         # el texto casa contra el nombre de la ingesta («España - La Liga») y el de
         # la tabla leagues con su país: «España», «LaLiga» y «Spain» encuentran lo mismo
-        for lid, nombre in _padron().items():
+        from backend.analisis.separacion_liga import COPAS_MEDIDAS
+        for lid, nombre in {**_padron(), **{c: _nombre_ingesta(c) or "" for c in COPAS_MEDIDAS}}.items():
             meta = sadapp.liga_meta(lid)
             texto = normalizar(f"{nombre} {meta.get('nombre') or ''} {meta.get('pais') or ''}")
             if liga_txt in texto:

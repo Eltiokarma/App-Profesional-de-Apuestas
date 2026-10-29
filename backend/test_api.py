@@ -447,6 +447,11 @@ def main():
     check("los cortes de la separación: 0.64 alta · 0.60 media · debajo baja · sin dato sin medir",
           [_sep.nivel_de(x) for x in (0.68, 0.64, 0.63, 0.60, 0.58, None)]
           == ["alta", "alta", "media", "media", "baja", "sin medir"])
+    sc = _sep.de_liga(143, "Copa del Rey")
+    check("una copa medida da su separación como copa, con la nota del 1X2 del mercado",
+          sc["competicion"] == "copa" and sc["auc"] == 0.727 and sc["nivel"] == "alta"
+          and "no del motor" in sc["nota"], sc)
+    check("la EFL Cup separa poco: nivel baja", _sep.de_liga(48)["nivel"] == "baja")
     check("una liga sin medir no inventa un AUC", _sep.de_liga(999)["auc"] is None
           and _sep.de_liga(999)["nivel"] == "sin medir")
     check("/equipos/999999/burbujas → 404", c.get(A + "/equipos/999999/burbujas").status_code == 404)

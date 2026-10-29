@@ -1864,6 +1864,13 @@ lo que sobre queda para la próxima (la agenda lo retoma con `yaHechos`).
      rachas se cortan casi al azar—, aunque los puntos no cambian; con
      `alta`, la guía pesa como está escrita. Decilo en la línea del reventón
      cuando la liga sea de paridad.
+     PARTIDO DE COPA NACIONAL (Copa del Rey, Taça, Coupe de France, DFB
+     Pokal; FA Cup y Coppa Italia desde cuartos, 29/10/2026): el 1X2 sale
+     del MERCADO y de los skills, NO de `unXDos` del motor —en las copas la
+     localía sale negativa porque el chico juega en casa, y el nivel de un
+     equipo de otra categoría no compara (mirá `escala` y la alerta
+     ESCALA-LIGAS)—. `separacionLiga` trae la de la copa (`competicion:
+     copa`): ahí la burbuja se lee igual o mejor que en una liga.
      Leé también `otrasFamilias` de los dos: el `perfilDc` de la condición
      de hoy pesa en el 1X2 (§15.1); el resto es narrativa, y un récord de
      esas familias se sostiene, no revienta (§15), pero uno GRANDE (FAMILIA-RECORD) es cuidado con la carga (§15.2).

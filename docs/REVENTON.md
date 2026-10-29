@@ -1064,3 +1064,34 @@ de Europa y la Liga de Expansión MX pasaron a menores (sin cuotas en vivo ni
 agenda; su historia sigue entera). La tabla es una medición fechada: con cada
 backtest nuevo se rehace.
 
+### 16.1 Las copas nacionales (29/10/2026)
+
+Misma medición, sobre las copas que ya estaban en la base:
+
+| Copa | Riesgo bajo → muy alto | AUC | n |
+|---|---|---|---|
+| Taça de Portugal | 32 % → 84 % | 0,746 | 1.203 |
+| Coupe de France | 34 % → 84 % | 0,736 | 1.184 |
+| Copa del Rey | 33 % → 83 % | 0,727 | 1.215 |
+| DFB Pokal | 37 % → 76 % | 0,652 | 1.042 |
+| FA Cup | 46 % → 72 % | 0,611 | 3.776 |
+| Coppa Italia | 44 % → 69 % | 0,601 | 744 |
+| EFL Cup | 51 % → 64 % | 0,555 | 1.310 |
+
+Donde un grande cruza con uno de tercera o cuarta (Taça, Coupe, Copa del Rey)
+el riesgo separa MÁS que en cualquier liga: la diferencia de nivel es enorme y
+se lee fácil —que se lea fácil no quiere decir que pague: la casa también la
+ve—. La EFL Cup es la más floja de todo lo medido: los grandes la juegan con
+suplentes y la burbuja no es la del once que sale. Y el MOTOR se equivoca en
+las copas más que en cualquier liga (`backtest_gap --por-liga`: localía −0,22
+en la Copa del Rey y −0,19 en la Coupe —el chico juega en casa—; calibrar por
+torneo mejora el error ~0,04 contra ≤ 0,01 en las ligas).
+
+**Lo que se hizo** (decisión del usuario): las copas medidas entran a la
+agenda AL FINAL (prioridad 8, `separacion_liga.copa_en_agenda`): las de
+separación alta en cualquier ronda (Taça, Coupe, Copa del Rey, Pokal), las de
+media solo desde cuartos (FA Cup, Coppa Italia), la EFL Cup nunca. Siguen sin
+cuotas en vivo. `separacionLiga` de `/burbujas` trae la de la copa cuando el
+próximo partido es de copa (`competicion: copa`), y el prompt pide sacar el
+1X2 de un partido de copa del mercado y de los skills, no del motor.
+

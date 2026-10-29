@@ -177,12 +177,17 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   sola desde el 14/10/2026— · resto de primeras. **Desde el 29/10/2026** (fase
   0 de ligas, REVENTON §16) entran Eredivisie, Grecia y Süper Lig (con sus copas
   como menores), y las segundas de Europa y la Liga de Expansión MX pasan a
-  MENORES: el reventón separa poco en ellas y gastaban cuotas en vivo. La fase de grupos / fase liga
+  MENORES: el reventón separa poco en ellas y gastaban cuotas en vivo. Las
+  **copas nacionales medidas** (REVENTON §16.1) entran a la agenda AL FINAL
+  (prioridad 8) sin ser del padrón: Taça, Coupe de France, Copa del Rey y DFB
+  Pokal en cualquier ronda, FA Cup y Coppa Italia desde cuartos, la EFL Cup
+  nunca (`separacion_liga.copa_en_agenda`); su 1X2 sale del mercado, no del
+  motor (localía negativa en copas). La fase de grupos / fase liga
   de los demás torneos internacionales y las segundas divisiones quedan FUERA por defecto
   (`grupos=true` / `segundas=true` las meten, al final): un jueves de Europa
   League llenaba los cupos con partidos de relleno. Sin `fecha` la agenda es
   «desde ahora y por 24 h», a la hora que se corra (no «mañana en UTC»), y
-  `liga=<texto>` acota por país o nombre. Las copas nacionales quedan fuera a
+  `liga=<texto>` acota por país o nombre. Las demás copas nacionales quedan fuera a
   propósito. El clásico se evalúa DESPUÉS del padrón: mirarlo antes hacía que
   un mismo torneo entrara o no según se activara el etiquetador de derbis. Un
   descarte viaja SIEMPRE con su motivo y el id de la liga, y la respuesta trae
