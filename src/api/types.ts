@@ -2233,6 +2233,8 @@ export interface LeccionItem {
   cuarentenaAutomatica?: boolean
   /** Cuarentena que enseña: fuera de toda métrica, pero la lección sigue con las del skill y fija rúbrica. */
   cuarentenaEnsena?: boolean
+  /** Copa nacional (nombre): se analiza y enseña, pero no cuenta en ninguna métrica ni mueve números. */
+  copa?: string
   /** Si la automática es por DT equivocado: qué lado y qué nombres chocaron. */
   dtEquivocado?: { lado: 'a' | 'b'; parte: string; banco: string }[]
   /** El parte contradijo a la base con la prensa y el banco de la API no le da la razón: se ve, no aparta el caso. */
@@ -2572,7 +2574,7 @@ export interface HistorialValorDTO extends GananciaValor {
 }
 
 // ── Simulación de apuesta (GET /analisis/simulacion, 28/10/2026) ─────────────
-export type EstrategiaClave = 'plana' | 'plana60' | 'kelly' | 'kellyMedio' | 'kellyCuarto' | 'martingala'
+export type EstrategiaClave = 'plana' | 'plana60' | 'kelly' | 'kellyMedio' | 'kellyCuarto' | 'martingala' | 'martingala60'
 export type Resultado1x2 = 'local' | 'empate' | 'visita'
 
 export interface EstrategiaSimulada {

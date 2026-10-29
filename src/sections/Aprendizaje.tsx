@@ -372,16 +372,19 @@ function Metricas({ d }: { d: InventarioLecciones }) {
           optimista: es otra cosa con el mismo nombre. */}
       <Seccion titulo="LA POBLACIÓN MANDA" >
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
-          {(['ciega', 'por_resultado', 'post_resultado', 'cuarentena'] as const).map((k) => {
+          {(['ciega', 'por_resultado', 'post_resultado', 'cuarentena', 'copa'] as const).map((k) => {
             const p = d.poblacion[k]
             const n = typeof p === 'object' ? p : { casos: 0, lados: 0 }
             const ciega = k === 'ciega'
             const cuar = k === 'cuarentena'
+            // copas nacionales: se analizan y enseñan, pero no entran a las tablas
+            if (k === 'copa' && !n.casos) return null
             return (
-              <div key={k} title={cuar ? 'apartados por criterio (qué le faltaba al parte antes del pitazo), nunca por resultado: no cuentan ni fijan rúbrica' : undefined}
+              <div key={k} title={cuar ? 'apartados por criterio (qué le faltaba al parte antes del pitazo), nunca por resultado: no cuentan ni fijan rúbrica'
+                : k === 'copa' ? 'copas nacionales: se analizan y sus lecciones fijan rúbrica, pero no cuentan en ninguna métrica (el favorito al 90 % contra uno de quinta inflaría el acierto)' : undefined}
                 style={{ flex: 1, minWidth: 140, padding: '11px 13px', borderRadius: 11, background: ciega ? 'var(--up-soft)' : cuar ? 'var(--down-soft)' : 'var(--bg3)' }}>
                 <div style={{ font: '700 9.5px var(--mono)', color: ciega ? 'var(--up)' : cuar ? 'var(--down)' : 'var(--t3)', letterSpacing: '.4px' }}>
-                  {k.replace('_', ' ').toUpperCase()}
+                  {k === 'copa' ? 'COPAS NACIONALES' : k.replace('_', ' ').toUpperCase()}
                 </div>
                 <div style={{ font: '800 21px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>{n.casos}</div>
                 <div style={{ font: '500 10px var(--sans)', color: 'var(--t3)' }}>
@@ -923,6 +926,7 @@ function Leccion({ it, onCambio }: { it: LeccionItem; onCambio: () => void }) {
           <span style={{ font: '700 9px var(--mono)', color: 'var(--down)' }}>PIDE MOVER UN NÚMERO SIN PODER</span>
         )}
         {it.cuarentena && <span style={{ font: '600 9.5px var(--mono)', color: it.cuarentenaEnsena ? 'var(--mark)' : 'var(--down)' }}>{it.cuarentenaEnsena ? 'cuarentena que enseña' : 'en cuarentena'}: {it.cuarentena}</span>}
+        {it.copa && !it.cuarentena && <span style={{ font: '600 9.5px var(--mono)', color: 'var(--t3)' }}>copa nacional ({it.copa}): fuera de las métricas</span>}
       </div>
       {det && <>
       {/* LA ETIQUETA DE JEV: de qué naturaleza fue el fallo y si la lección pide

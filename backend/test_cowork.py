@@ -2921,6 +2921,29 @@ def main():
           and "fija rúbrica" in _it_e[0]["queAutoriza"]
           and not any(i["clave"] == f"{pasado['id']}:a" for i in inv_e["enCuarentena"]["items"]), _it_e)
     c.delete(f"{A}/analisis/cowork/{pasado['id']}/cuarentena")
+    # ── COPA NACIONAL: se analiza y enseña, pero fuera de las tablas (29/10/2026, usuario) ──
+    import sqlite3 as _sq_copa
+    from backend.analisis import lecciones as _lec_copa
+    _ruta_sad = os.path.join(os.environ["SAD_DATA_DIR"], "sad.db")
+    with _sq_copa.connect(_ruta_sad) as _cc:
+        _liga_orig = _cc.execute("SELECT league_id FROM fixtures WHERE id=?", (pasado["id"],)).fetchone()[0]
+        _cc.execute("INSERT OR REPLACE INTO leagues (id, name, country) VALUES (143, 'Copa del Rey', 'Spain')")
+        _cc.execute("UPDATE fixtures SET league_id=143 WHERE id=?", (pasado["id"],))
+    _lec_copa._invalidar()
+    inv_c = c.get(f"{A}/analisis/cowork/lecciones").json()
+    _it_c = [i for i in inv_c["items"] if i["clave"] == f"{pasado['id']}:a"]
+    check("copa nacional: el caso sale de la población ciega y de las métricas, y se cuenta en `copa`",
+          inv_c["poblacion"]["copa"]["casos"] == 1
+          and inv_c["poblacion"]["ciega"]["casos"] == inv["poblacion"]["ciega"]["casos"] - 1
+          and inv_c["acreditables"]["casos"] == inv["acreditables"]["casos"] - 1, inv_c["poblacion"])
+    check("copa nacional: su lección sigue con las del skill, marcada y sin mover números",
+          _it_c and _it_c[0]["copa"] == "Copa del Rey" and _it_c[0]["puedeMoverNumeros"] is False
+          and "copa nacional" in _it_c[0]["queAutoriza"], _it_c)
+    with _sq_copa.connect(_ruta_sad) as _cc:
+        _cc.execute("UPDATE fixtures SET league_id=? WHERE id=?", (_liga_orig, pasado["id"]))
+    _lec_copa._invalidar()
+    check("devuelto a su liga, el caso vuelve a contar",
+          c.get(f"{A}/analisis/cowork/lecciones").json()["poblacion"]["copa"]["casos"] == 0)
     # ── SIN DT NO HAY CASO: cuarentena automática ──
     p_sin = dict(p_lec)
     import copy as _copy

@@ -1766,7 +1766,7 @@ components:
           items:
             type: object
             properties:
-              clave: { type: string, enum: [plana, plana60, kelly, kellyMedio, kellyCuarto, martingala] }
+              clave: { type: string, enum: [plana, plana60, kelly, kellyMedio, kellyCuarto, martingala, martingala60] }
               nombre: { type: string }
               descripcion: { type: string }
               banca: { type: number }
@@ -1922,6 +1922,7 @@ components:
         cuarentena: { type: string, description: 'motivo de la cuarentena; vacío si el caso cuenta' }
         cuarentenaAutomatica: { type: boolean, description: 'la puso la app por criterio: parte sin DT declarado en un lado, o DT del parte distinto del banco. Se levanta re-depositando con el DT o desmintiendo el banco' }
         cuarentenaEnsena: { type: boolean, description: 'cuarentena que enseña: el caso no cuenta en ninguna métrica, pero la lección sigue en items y fija rúbrica' }
+        copa: { type: string, description: 'copa nacional (nombre) o vacío: se analiza y enseña, pero no cuenta en ninguna métrica ni mueve números (29/10/2026)' }
         dtEquivocado:
           type: array
           description: 'si la automática es por DT equivocado: qué lado y qué nombres chocaron (parte vs banco de la API)'
@@ -1984,7 +1985,7 @@ components:
             items: { type: array, items: { $ref: '#/components/schemas/LeccionItem' } }
         poblacion:
           type: object
-          description: 'los casos cerrados por población (más `cuarentena`, que no cuenta en nada); NUNCA se suman entre sí'
+          description: 'los casos cerrados por población (más `cuarentena`, que no cuenta en nada, y `copa`: copas nacionales, que enseñan pero no entran a las métricas); NUNCA se suman entre sí'
           additionalProperties: true
         acreditables:
           type: object

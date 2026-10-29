@@ -343,6 +343,15 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   timeline y en `objetivo.eliminatoria` del veredicto (el 1X2 y `ganador`
   siguen a 90'). Un parte que lo contradice suena `ELIMINATORIA-AL-REVES` (tipo
   `dato`, calculada) en `faltan` al depositar y en la tira al leer.
+- **Las copas nacionales no entran a las tablas** (29/10/2026, usuario, al
+  entrar 22 partidos de la Copa del Rey en un día): se analizan y sus lecciones
+  fijan rúbrica, pero quedan fuera de toda métrica de Aprendizaje (población
+  `copa`, como la cuarentena que enseña, sin mover números), del historial de
+  valor contra el mercado, del resumen de derrotas del favorito y de la
+  simulación (`excluidos`). Un favorito al 90 % contra uno de quinta a cuota
+  1.02 inflaba el tramo de 60 %+ y la simulación. La marca sale de
+  `escala.copas_nacionales` (lista `COPAS` o el nombre; los torneos
+  internacionales de clubes no son copa aunque digan «Cup»).
 - **El rol contra el grid, en sombra** (29/10/2026, incidencia 646):
   `contraElOnce.rolesVsGrid` compara el rol que `m1.rolesReasignados` le da a
   un titular con su casilla del grid oficial (línea, y banda de laterales,
@@ -361,7 +370,8 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   más ventaja; sin ventaja no apuesta) y martingala POR LÍNEAS (29/10/2026,
   usuario: cada línea es una martingala de 1 u que se duplica tras perder;
   una apuesta toma la línea libre más antigua y, con todas en juego, abre
-  otra)—. El tiempo es el real: se apuesta en el pitazo y se cobra
+  otra) y la misma martingala solo con el elegido a 60 %+ (`martingala60`,
+  29/10/2026, usuario)—. El tiempo es el real: se apuesta en el pitazo y se cobra
   `DURACION` (2 h) después, los simultáneos usan la banca de antes y ninguna
   apuesta pasa de la plata libre (banca − lo comprometido). Cuenta SOLO desde los partidos del 28/10/2026 (`DESDE`, 00:00
   de Lima); entra el parte depositado antes del pitazo, sin cuarentena, con el
