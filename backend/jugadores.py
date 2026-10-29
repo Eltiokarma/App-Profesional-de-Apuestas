@@ -539,7 +539,26 @@ def _congestion(team_id: int, fecha_fixture: str) -> dict:
     en_ventana = sum(
         1 for r in previos if datetime.strptime(str(r["date"])[:10], "%Y-%m-%d") >= corte
     )
-    return {"diasDescanso": (d_fix - ultimo).days, "partidos21d": en_ventana}
+    return {"diasDescanso": dias_descanso(str(previos[0]["date"]), fecha), "partidos21d": en_ventana}
+
+
+def dias_descanso(desde: str, hasta: str) -> int | None:
+    """Días ENTEROS entre dos saques, por las horas y no por el día del
+    calendario en UTC (incidencia 769: Inter de Bogotá del 25/10 21:05 al 29/10
+    01:05 UTC son ~3,2 días y salían 4 —el partido de la noche de Sudamérica cae
+    al día siguiente en UTC—, y el F2 del TDE quedaba en el tramo de 4-5)."""
+    def _dt(t: str) -> datetime | None:
+        t = str(t or "").replace("T", " ").rstrip("Z")[:19]
+        for f in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(t, f)
+            except ValueError:
+                continue
+        return None
+    a, b = _dt(desde), _dt(hasta)
+    if not a or not b:
+        return None
+    return int((b - a).total_seconds() // 86400)
 
 
 def ficha_partido(fixture_id: int) -> dict | None:
