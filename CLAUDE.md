@@ -329,13 +329,16 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   **Simulación**): una banca de 100 unidades sobre los 1X2 declarados en los
   partes, con cinco series —plana (control, 1 u al elegido), Kelly entero, ½ y
   ¼ (f* = (p·c − 1)/(c − 1) sobre NUESTRAS probabilidades, a la selección con
-  más ventaja; sin ventaja no apuesta) y martingala (1 u al elegido, se duplica
-  tras perder)—. Cuenta SOLO desde los partidos del 28/10/2026 (`DESDE`, 00:00
+  más ventaja; sin ventaja no apuesta) y martingala POR LÍNEAS (29/10/2026,
+  usuario: cada línea es una martingala de 1 u que se duplica tras perder;
+  una apuesta toma la línea libre más antigua y, con todas en juego, abre
+  otra)—. El tiempo es el real: se apuesta en el pitazo y se cobra
+  `DURACION` (2 h) después, los simultáneos usan la banca de antes y ninguna
+  apuesta pasa de la plata libre (banca − lo comprometido). Cuenta SOLO desde los partidos del 28/10/2026 (`DESDE`, 00:00
   de Lima); entra el parte depositado antes del pitazo, sin cuarentena, con el
   1X2 completo y las tres cuotas (media de las casas de la última captura
   prepartido, con margen); lo que no entra viaja en `excluidos` con su motivo.
-  Se recalcula al leer y los partidos simultáneos se liquidan en orden de
-  pitazo. Cada apuesta lleva la VERSIÓN de cada skill vigente al depositar
+  Se recalcula al leer. Cada apuesta lleva la VERSIÓN de cada skill vigente al depositar
   (`version_al`: `CORTE_VERSION` por día y, si se sabe, la hora en que el zip
   llegó a la cuenta en `SUBIDA_VERSION` —con cada versión nueva subida, anotar
   la hora ahí—) y la tabla «por versión de sad-analysis» separa lo que ganó

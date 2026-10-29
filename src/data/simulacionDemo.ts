@@ -22,7 +22,9 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    "roi": 0.16,
    "caidaMaxima": 0.0099,
    "quebro": null,
-   "rachaPerdidas": null,
+   "exposicionMaxima": 2.0,
+   "montoMaximo": 1.0,
+   "lineas": null,
    "serie": [
     {
      "fixtureId": null,
@@ -36,7 +38,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     },
     {
      "fixtureId": 900002,
-     "pitazo": "2026-10-28 19:30:00",
+     "pitazo": "2026-10-28 15:00:00",
      "banca": 100.05
     },
     {
@@ -68,7 +70,9 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    "roi": 0.8415,
    "caidaMaxima": 0.0,
    "quebro": null,
-   "rachaPerdidas": null,
+   "exposicionMaxima": 11.09,
+   "montoMaximo": 6.93,
+   "lineas": null,
    "serie": [
     {
      "fixtureId": null,
@@ -76,8 +80,23 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 100.0
     },
     {
+     "fixtureId": 900001,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900002,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
      "fixtureId": 900003,
      "pitazo": "2026-10-28 19:45:00",
+     "banca": 104.0
+    },
+    {
+     "fixtureId": 900004,
+     "pitazo": "2026-10-28 20:00:00",
      "banca": 104.0
     },
     {
@@ -99,7 +118,9 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    "roi": 0.8426,
    "caidaMaxima": 0.0,
    "quebro": null,
-   "rachaPerdidas": null,
+   "exposicionMaxima": 5.44,
+   "montoMaximo": 3.4,
+   "lineas": null,
    "serie": [
     {
      "fixtureId": null,
@@ -107,8 +128,23 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 100.0
     },
     {
+     "fixtureId": 900001,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900002,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
      "fixtureId": 900003,
      "pitazo": "2026-10-28 19:45:00",
+     "banca": 102.0
+    },
+    {
+     "fixtureId": 900004,
+     "pitazo": "2026-10-28 20:00:00",
      "banca": 102.0
     },
     {
@@ -130,7 +166,9 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    "roi": 0.8432,
    "caidaMaxima": 0.0,
    "quebro": null,
-   "rachaPerdidas": null,
+   "exposicionMaxima": 2.69,
+   "montoMaximo": 1.68,
+   "lineas": null,
    "serie": [
     {
      "fixtureId": null,
@@ -138,8 +176,23 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 100.0
     },
     {
+     "fixtureId": 900001,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900002,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
      "fixtureId": 900003,
      "pitazo": "2026-10-28 19:45:00",
+     "banca": 101.0
+    },
+    {
+     "fixtureId": 900004,
+     "pitazo": "2026-10-28 20:00:00",
      "banca": 101.0
     },
     {
@@ -152,16 +205,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
   {
    "clave": "martingala",
    "nombre": "Martingala",
-   "descripcion": "1 unidad a nuestro elegido, se duplica tras cada derrota y vuelve a 1 al ganar",
-   "banca": 102.55,
-   "ganancia": 2.55,
-   "apostado": 7.0,
+   "descripcion": "por líneas: cada línea va 1 unidad a nuestro elegido, se duplica tras perder y vuelve a 1 al ganar; con todas en juego se abre otra",
+   "banca": 99.8,
+   "ganancia": -0.2,
+   "apostado": 6.0,
    "apuestas": 5,
    "ganadas": 3,
-   "roi": 0.3643,
-   "caidaMaxima": 0.0099,
+   "roi": -0.0333,
+   "caidaMaxima": 0.0198,
    "quebro": null,
-   "rachaPerdidas": 0,
+   "exposicionMaxima": 5.0,
+   "montoMaximo": 4.0,
+   "lineas": {
+    "abiertas": 2,
+    "perdiendo": 1,
+    "proximoMayor": 4.0
+   },
    "serie": [
     {
      "fixtureId": null,
@@ -175,23 +234,23 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     },
     {
      "fixtureId": 900002,
-     "pitazo": "2026-10-28 19:30:00",
+     "pitazo": "2026-10-28 15:00:00",
      "banca": 100.05
     },
     {
      "fixtureId": 900003,
      "pitazo": "2026-10-28 19:45:00",
-     "banca": 102.05
+     "banca": 101.05
     },
     {
      "fixtureId": 900004,
      "pitazo": "2026-10-28 20:00:00",
-     "banca": 101.05
+     "banca": 99.05
     },
     {
      "fixtureId": 900005,
      "pitazo": "2026-10-29 19:30:00",
-     "banca": 102.55
+     "banca": 99.8
     }
    ]
   }
@@ -264,10 +323,10 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "roi": 0.8432
     },
     "martingala": {
-     "apostado": 5.0,
-     "ganancia": 2.5,
+     "apostado": 4.0,
+     "ganancia": -0.25,
      "apuestas": 3,
-     "roi": 0.5
+     "roi": -0.0625
     }
    }
   }
@@ -317,31 +376,41 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "seleccion": "local",
      "monto": 1.0,
      "ganancia": null,
-     "banca": null
+     "banca": null,
+     "linea": null,
+     "motivo": ""
     },
     "kelly": {
      "seleccion": "visita",
-     "monto": 4.368,
+     "monto": 4.16,
      "ganancia": null,
-     "banca": null
+     "banca": null,
+     "linea": null,
+     "motivo": ""
     },
     "kellyMedio": {
      "seleccion": "visita",
-     "monto": 2.091,
+     "monto": 2.04,
      "ganancia": null,
-     "banca": null
+     "banca": null,
+     "linea": null,
+     "motivo": ""
     },
     "kellyCuarto": {
      "seleccion": "visita",
-     "monto": 1.0226,
+     "monto": 1.01,
      "ganancia": null,
-     "banca": null
+     "banca": null,
+     "linea": null,
+     "motivo": ""
     },
     "martingala": {
      "seleccion": "local",
-     "monto": 1.0,
+     "monto": 4.0,
      "ganancia": null,
-     "banca": null
+     "banca": null,
+     "linea": 2,
+     "motivo": ""
     }
    }
   },
@@ -389,31 +458,41 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "seleccion": "local",
      "monto": 1.0,
      "ganancia": 0.75,
-     "banca": 100.8
+     "banca": 100.8,
+     "linea": null,
+     "motivo": ""
     },
     "kelly": {
      "seleccion": "local",
      "monto": 6.9333,
      "ganancia": 5.2,
-     "banca": 109.2
+     "banca": 109.2,
+     "linea": null,
+     "motivo": ""
     },
     "kellyMedio": {
      "seleccion": "local",
      "monto": 3.4,
      "ganancia": 2.55,
-     "banca": 104.55
+     "banca": 104.55,
+     "linea": null,
+     "motivo": ""
     },
     "kellyCuarto": {
      "seleccion": "local",
      "monto": 1.6833,
      "ganancia": 1.2625,
-     "banca": 102.26
+     "banca": 102.26,
+     "linea": null,
+     "motivo": ""
     },
     "martingala": {
      "seleccion": "local",
-     "monto": 2.0,
-     "ganancia": 1.5,
-     "banca": 102.55
+     "monto": 1.0,
+     "ganancia": 0.75,
+     "banca": 99.8,
+     "linea": 1,
+     "motivo": ""
     }
    }
   },
@@ -461,31 +540,41 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "seleccion": "local",
      "monto": 1.0,
      "ganancia": -1.0,
-     "banca": 100.05
+     "banca": 100.05,
+     "linea": null,
+     "motivo": ""
     },
     "kelly": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 104.0
+     "banca": 104.0,
+     "linea": null,
+     "motivo": "sin ventaja"
     },
     "kellyMedio": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 102.0
+     "banca": 102.0,
+     "linea": null,
+     "motivo": "sin ventaja"
     },
     "kellyCuarto": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 101.0
+     "banca": 101.0,
+     "linea": null,
+     "motivo": "sin ventaja"
     },
     "martingala": {
      "seleccion": "local",
-     "monto": 1.0,
-     "ganancia": -1.0,
-     "banca": 101.05
+     "monto": 2.0,
+     "ganancia": -2.0,
+     "banca": 99.05,
+     "linea": 2,
+     "motivo": ""
     }
    }
   },
@@ -533,37 +622,47 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "seleccion": "local",
      "monto": 1.0,
      "ganancia": 1.0,
-     "banca": 101.05
+     "banca": 101.05,
+     "linea": null,
+     "motivo": ""
     },
     "kelly": {
      "seleccion": "local",
      "monto": 4.0,
      "ganancia": 4.0,
-     "banca": 104.0
+     "banca": 104.0,
+     "linea": null,
+     "motivo": ""
     },
     "kellyMedio": {
      "seleccion": "local",
      "monto": 2.0,
      "ganancia": 2.0,
-     "banca": 102.0
+     "banca": 102.0,
+     "linea": null,
+     "motivo": ""
     },
     "kellyCuarto": {
      "seleccion": "local",
      "monto": 1.0,
      "ganancia": 1.0,
-     "banca": 101.0
+     "banca": 101.0,
+     "linea": null,
+     "motivo": ""
     },
     "martingala": {
      "seleccion": "local",
-     "monto": 2.0,
-     "ganancia": 2.0,
-     "banca": 102.05
+     "monto": 1.0,
+     "ganancia": 1.0,
+     "banca": 101.05,
+     "linea": 1,
+     "motivo": ""
     }
    }
   },
   {
    "fixtureId": 900002,
-   "pitazo": "2026-10-28 19:30:00",
+   "pitazo": "2026-10-28 15:00:00",
    "partido": {
     "local": "Arsenal",
     "visita": "Tottenham",
@@ -605,31 +704,41 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "seleccion": "local",
      "monto": 1.0,
      "ganancia": -1.0,
-     "banca": 100.05
+     "banca": 100.05,
+     "linea": null,
+     "motivo": ""
     },
     "kelly": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 100.0
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "sin ventaja"
     },
     "kellyMedio": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 100.0
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "sin ventaja"
     },
     "kellyCuarto": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 100.0
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "sin ventaja"
     },
     "martingala": {
      "seleccion": "local",
      "monto": 1.0,
      "ganancia": -1.0,
-     "banca": 100.05
+     "banca": 100.05,
+     "linea": 2,
+     "motivo": ""
     }
    }
   },
@@ -677,31 +786,41 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "seleccion": "local",
      "monto": 1.0,
      "ganancia": 1.05,
-     "banca": 101.05
+     "banca": 101.05,
+     "linea": null,
+     "motivo": ""
     },
     "kelly": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 100.0
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "sin ventaja"
     },
     "kellyMedio": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 100.0
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "sin ventaja"
     },
     "kellyCuarto": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 100.0
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "sin ventaja"
     },
     "martingala": {
      "seleccion": "local",
      "monto": 1.0,
      "ganancia": 1.05,
-     "banca": 101.05
+     "banca": 101.05,
+     "linea": 1,
+     "motivo": ""
     }
    }
   }

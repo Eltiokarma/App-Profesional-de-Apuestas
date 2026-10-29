@@ -9,9 +9,11 @@ declarados, con tres estrategias puestas lado a lado:
   la selección con la fracción f* = (p·c − 1)/(c − 1) más alta. Con f* ≤ 0 no
   se apuesta: la cuota no paga lo que creemos. Se apuesta f*·banca, entero
   (`kelly`), a la mitad (`kellyMedio`) y a un cuarto (`kellyCuarto`).
-- **martingala**: a nuestro elegido, 1 unidad que se DUPLICA tras cada
-  derrota y vuelve a 1 tras una victoria; si la banca no alcanza, se apuesta
-  lo que queda (y una derrota la quiebra).
+- **martingala**: a nuestro elegido, por LÍNEAS (29/10/2026, usuario): cada
+  línea es una martingala propia —1 unidad, se DUPLICA tras perder, vuelve a
+  1 al ganar—; una apuesta toma la línea libre que más tiempo lleva libre y,
+  si todas están ocupadas con partidos en juego, abre una nueva en 1. Si se
+  pierden tres a las 15:00, los tres partidos siguientes van por 2.
 
 Cuenta SOLO desde `DESDE` (los partidos del 28/10/2026 en adelante, hora de
 Lima): lo anterior no se simula. Entran los partes depositados ANTES del
@@ -25,15 +27,21 @@ depositar el parte; la del 1X2 es la de `sad-analysis`. La versión sale de
 usuario subió el zip, de `SUBIDA_VERSION`: un parte de la madrugada del día
 del corte se escribió con la versión anterior.
 
+EL TIEMPO ES EL DE LA VIDA REAL (29/10/2026, usuario): se apuesta en el
+pitazo y se cobra `DURACION` después. Una apuesta solo sabe lo que ya se
+liquidó: los partidos simultáneos —y los que se solapan— se apuestan con la
+banca que había antes, ninguno espera el resultado de otro. Lo que está en
+juego queda comprometido: una apuesta nueva no puede pasar de la plata libre
+(banca − lo comprometido), así que Kelly no se pasa de la banca con ocho
+partidos a la vez y la martingala no apuesta plata que ya está en otra línea.
+
 Esto NO es una recomendación de apuesta. La cuota es la media de las casas
-en la última captura prepartido y trae su margen; los partidos que arrancan
-a la misma hora se liquidan uno detrás del otro por orden de pitazo, cosa que
-en la vida real no se puede (la martingala no sabe el resultado del otro).
+en la última captura prepartido y trae su margen.
 """
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from backend import db as saddb
 from backend.analisis import veredicto as _vered
@@ -43,6 +51,9 @@ from backend.analisis.lecciones import CORTE_VERSION, cuotas_mercado
 DESDE = "2026-10-28 05:00:00"
 BANCA_INICIAL = 100.0
 UNIDAD = 1.0
+# cuánto después del pitazo se cobra: no tenemos la hora de fin de cada
+# partido, y 90 minutos con el descanso y el añadido son unas dos horas
+DURACION = timedelta(minutes=120)
 CLAVES = ("local", "empate", "visita")
 SKILLS = ("sad-analysis", "efe-clasificador", "teorema-del-echado", "diagnostico-tactico")
 
@@ -63,7 +74,8 @@ ESTRATEGIAS = (
     ("kellyMedio", "Kelly ½", "la mitad de la fracción de Kelly"),
     ("kellyCuarto", "Kelly ¼", "un cuarto de la fracción de Kelly"),
     ("martingala", "Martingala",
-     f"{UNIDAD:g} unidad a nuestro elegido, se duplica tras cada derrota y vuelve a {UNIDAD:g} al ganar"),
+     f"por líneas: cada línea va {UNIDAD:g} unidad a nuestro elegido, se duplica tras perder y vuelve a "
+     f"{UNIDAD:g} al ganar; con todas en juego se abre otra"),
 )
 _FRACCION_KELLY = {"kelly": 1.0, "kellyMedio": 0.5, "kellyCuarto": 0.25}
 
@@ -118,64 +130,112 @@ def _mejor_kelly(p: dict, cuotas: dict) -> tuple[str, float]:
     return s, kelly(p[s], cuotas[s])
 
 
+def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
+    """Arma la apuesta de una estrategia en el pitazo, con lo que ya se cobró."""
+    libre = max(e["banca"] - e["comprometido"], 0.0)
+    linea = None
+    if clave in _FRACCION_KELLY:
+        sel = fila["kelly"]["seleccion"]
+        # la banca de AHORA: lo cobrado; lo que está en juego no cuenta todavía
+        previsto = _FRACCION_KELLY[clave] * fila["_f"] * e["banca"] if fila["_f"] > 0 else 0.0
+    elif clave == "martingala":
+        sel = fila["elegido"]
+        libres = [l for l in e["lineas"] if not l["ocupada"]]
+        if libres:
+            linea = min(libres, key=lambda l: (l["libreDesde"], l["id"]))
+        else:
+            linea = {"id": len(e["lineas"]) + 1, "proximo": UNIDAD, "libreDesde": t, "ocupada": False}
+            e["lineas"].append(linea)
+        previsto = linea["proximo"]
+    else:
+        sel = fila["elegido"]
+        previsto = UNIDAD
+    monto = round(max(min(previsto, libre), 0.0), 4)
+    if monto <= 0:
+        fila["porEstrategia"][clave] = {"seleccion": None, "monto": 0.0, "ganancia": None, "banca": None,
+                                        "linea": None,
+                                        "motivo": "sin ventaja" if clave in _FRACCION_KELLY and previsto <= 0
+                                        else "sin plata libre"}
+        return
+    e["comprometido"] += monto
+    e["exposicion"] = max(e["exposicion"], e["comprometido"])
+    e["montoMax"] = max(e["montoMax"], monto)
+    if linea is not None:
+        linea["ocupada"] = True
+    fila["porEstrategia"][clave] = {"seleccion": sel, "monto": monto, "ganancia": None, "banca": None,
+                                    "linea": linea["id"] if linea else None, "motivo": "",
+                                    "_previsto": previsto}
+
+
+def _cobrar(e: dict, clave: str, fila: dict, t: datetime) -> None:
+    """Liquida la apuesta del partido (o solo anota la banca si no hubo)."""
+    r = fila["porEstrategia"][clave]
+    if r["monto"] > 0:
+        gano = fila["resultado"] == r["seleccion"]
+        ganancia = r["monto"] * (fila["cuotas"][r["seleccion"]] - 1) if gano else -r["monto"]
+        e["banca"] += ganancia
+        e["comprometido"] -= r["monto"]
+        e["apostado"] += r["monto"]
+        e["apuestas"] += 1
+        e["ganadas"] += 1 if gano else 0
+        if r["linea"]:
+            l = e["lineas"][r["linea"] - 1]
+            # una derrota duplica lo que la línea IBA a apostar, aunque la plata libre lo haya recortado
+            l.update(ocupada=False, libreDesde=t, proximo=UNIDAD if gano else r["_previsto"] * 2)
+        r["ganancia"] = round(ganancia, 4)
+        e["pico"] = max(e["pico"], e["banca"])
+        if e["pico"] > 0:
+            e["caida"] = max(e["caida"], (e["pico"] - e["banca"]) / e["pico"])
+        if e["banca"] < 0.01 and e["quebro"] is None:
+            e["quebro"] = fila["fixtureId"]
+    else:
+        r["ganancia"] = 0.0
+    r["banca"] = round(e["banca"], 2)
+    e["serie"].append({"fixtureId": fila["fixtureId"], "pitazo": fila["pitazo"], "banca": round(e["banca"], 2)})
+
+
 def simular(apuestas: list[dict]) -> dict:
     """El corazón, sin base: recibe las apuestas ya armadas
     ({fixtureId, pitazo, probabilidades (en %), cuotas, resultado | None, …})
-    y devuelve las bancas. Las cerradas se liquidan en orden de pitazo; las
-    abiertas solo dicen qué se apostaría con la banca de hoy."""
-    estado = {c: {"banca": BANCA_INICIAL, "pico": BANCA_INICIAL, "caida": 0.0, "apostado": 0.0,
-                  "apuestas": 0, "ganadas": 0, "quebro": None, "racha": 0,
+    y las corre en una línea de tiempo: se apuesta en el pitazo y se cobra
+    `DURACION` después. A la misma hora, primero se cobra y después se
+    apuesta (la línea que se libera a las 17:00 sirve al partido de las
+    17:00). Las abiertas se apuestan pero no se cobran: dicen el monto."""
+    orden = sorted(apuestas, key=lambda x: (x["pitazo"], x["fixtureId"]))
+    filas, eventos = [], []
+    for i, a in enumerate(orden):
+        p = _normalizar(a["probabilidades"])
+        sel_k, f = _mejor_kelly(p, a["cuotas"])
+        filas.append({**a, "probabilidades": {k: round(100 * p[k], 1) for k in CLAVES},
+                      "elegido": _elegido(p), "_f": f,
+                      "kelly": {"seleccion": sel_k, "fraccion": round(f, 4),
+                                "valor": round(p[sel_k] * a["cuotas"][sel_k] - 1, 4)},
+                      "estado": "cerrada" if a.get("resultado") else "pendiente", "porEstrategia": {}})
+        t0 = _utc(a["pitazo"])
+        eventos.append((t0, 1, i))                       # 1 = apostar
+        if a.get("resultado"):
+            eventos.append((t0 + DURACION, 0, i))        # 0 = cobrar (va antes a la misma hora)
+    eventos.sort(key=lambda e: (e[0], e[1], e[2]))
+
+    estado = {c: {"banca": BANCA_INICIAL, "comprometido": 0.0, "pico": BANCA_INICIAL, "caida": 0.0,
+                  "apostado": 0.0, "apuestas": 0, "ganadas": 0, "quebro": None,
+                  "exposicion": 0.0, "montoMax": 0.0, "lineas": [],
                   "serie": [{"fixtureId": None, "pitazo": None, "banca": BANCA_INICIAL}]}
               for c, _, _ in ESTRATEGIAS}
-    filas = []
-    for a in sorted(apuestas, key=lambda x: (x["pitazo"], x["fixtureId"])):
-        p = _normalizar(a["probabilidades"])
-        cuotas = a["cuotas"]
-        elegido = _elegido(p)
-        sel_k, f = _mejor_kelly(p, cuotas)
-        real = a.get("resultado")
-        fila = {**a, "elegido": elegido,
-                "kelly": {"seleccion": sel_k, "fraccion": round(f, 4),
-                          "valor": round(p[sel_k] * cuotas[sel_k] - 1, 4)},
-                "estado": "cerrada" if real else "pendiente", "porEstrategia": {}}
+
+    for t, tipo, i in eventos:
+        fila = filas[i]
         for clave, _, _ in ESTRATEGIAS:
             e = estado[clave]
-            if clave in _FRACCION_KELLY:
-                sel = sel_k
-                monto = _FRACCION_KELLY[clave] * f * e["banca"] if f > 0 else 0.0
-            elif clave == "martingala":
-                sel = elegido
-                monto = min(UNIDAD * 2 ** e["racha"], e["banca"])
+            if tipo == 1:
+                _apostar(e, clave, fila, t)
             else:
-                sel = elegido
-                monto = min(UNIDAD, e["banca"])
-            monto = round(max(monto, 0.0), 4)
-            if not real:
-                fila["porEstrategia"][clave] = {"seleccion": sel if monto > 0 else None,
-                                                "monto": monto, "ganancia": None, "banca": None}
-                continue
-            if monto <= 0:
-                fila["porEstrategia"][clave] = {"seleccion": None, "monto": 0.0, "ganancia": 0.0,
-                                                "banca": round(e["banca"], 2)}
-                continue
-            gano = real == sel
-            ganancia = monto * (cuotas[sel] - 1) if gano else -monto
-            e["banca"] += ganancia
-            e["apostado"] += monto
-            e["apuestas"] += 1
-            e["ganadas"] += 1 if gano else 0
-            if clave == "martingala":
-                e["racha"] = 0 if gano else e["racha"] + 1
-            e["pico"] = max(e["pico"], e["banca"])
-            if e["pico"] > 0:
-                e["caida"] = max(e["caida"], (e["pico"] - e["banca"]) / e["pico"])
-            if e["banca"] < 0.01 and e["quebro"] is None:
-                e["quebro"] = a["fixtureId"]
-            e["serie"].append({"fixtureId": a["fixtureId"], "pitazo": a["pitazo"], "banca": round(e["banca"], 2)})
-            fila["porEstrategia"][clave] = {"seleccion": sel, "monto": monto, "ganancia": round(ganancia, 4),
-                                            "banca": round(e["banca"], 2)}
-        fila["probabilidades"] = {k: round(100 * p[k], 1) for k in CLAVES}
-        filas.append(fila)
+                _cobrar(e, clave, fila, t)
+
+    for f in filas:
+        f.pop("_f", None)
+        for r in f["porEstrategia"].values():
+            r.pop("_previsto", None)
 
     estrategias = []
     for clave, nombre, desc in ESTRATEGIAS:
@@ -186,7 +246,12 @@ def simular(apuestas: list[dict]) -> dict:
             "apostado": round(e["apostado"], 2), "apuestas": e["apuestas"], "ganadas": e["ganadas"],
             "roi": round((e["banca"] - BANCA_INICIAL) / e["apostado"], 4) if e["apostado"] else None,
             "caidaMaxima": round(e["caida"], 4), "quebro": e["quebro"],
-            "rachaPerdidas": e["racha"] if clave == "martingala" else None,
+            # lo más que estuvo en juego a la vez y la apuesta más grande
+            "exposicionMaxima": round(e["exposicion"], 2), "montoMaximo": round(e["montoMax"], 2),
+            "lineas": ({"abiertas": len(e["lineas"]),
+                        "perdiendo": sum(1 for l in e["lineas"] if l["proximo"] > UNIDAD),
+                        "proximoMayor": round(max((l["proximo"] for l in e["lineas"]), default=UNIDAD), 2)}
+                       if clave == "martingala" else None),
             "serie": e["serie"],
         })
 
@@ -291,6 +356,6 @@ def simulacion() -> dict:
     out["excluidos"] = sorted(excluidos, key=lambda x: x["pitazo"], reverse=True)
     out["nota"] = ("simulación sobre los 1X2 declarados en los partes, desde los partidos del 28/10/2026 "
                    "(hora de Lima); cuota = media de las casas en la última captura prepartido, con su margen; "
-                   "los partidos se liquidan en orden de pitazo (los simultáneos, uno tras otro). No es una "
-                   "recomendación de apuesta")
+                   "se apuesta en el pitazo y se cobra dos horas después: los simultáneos se apuestan con la banca "
+                   "de antes y ninguna apuesta pasa de la plata libre. No es una recomendación de apuesta")
     return out

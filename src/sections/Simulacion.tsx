@@ -154,11 +154,16 @@ function TarjetaEstrategia({ e, color }: { e: EstrategiaSimulada; color: string 
         <span>apuestas {e.apuestas} · ganó {e.ganadas}</span>
         <span>apostado {num(e.apostado)}</span>
         <span>caída máx. {num(100 * e.caidaMaxima, 1)} %</span>
+        <span title="lo más que estuvo en juego a la vez">en juego máx. {num(e.exposicionMaxima)}</span>
+        <span>apuesta máx. {num(e.montoMaximo)}</span>
       </div>
       {e.quebro != null && <div style={{ marginTop: 6, font: '700 10.5px var(--sans)', color: 'var(--down)' }}>La banca quebró (partido {e.quebro}).</div>}
-      {e.clave === 'martingala' && (e.rachaPerdidas ?? 0) > 0 && e.quebro == null && (
+      {e.lineas && e.lineas.abiertas > 0 && e.quebro == null && (
         <div style={{ marginTop: 6, font: '500 10.5px var(--sans)', color: 'var(--t2)' }}>
-          {e.rachaPerdidas} derrota{e.rachaPerdidas === 1 ? '' : 's'} seguida{e.rachaPerdidas === 1 ? '' : 's'}: la próxima va por {num(Math.min(2 ** (e.rachaPerdidas ?? 0), e.banca))} u.
+          {e.lineas.abiertas} línea{e.lineas.abiertas === 1 ? '' : 's'} abierta{e.lineas.abiertas === 1 ? '' : 's'}
+          {e.lineas.perdiendo > 0
+            ? ` · ${e.lineas.perdiendo} viene${e.lineas.perdiendo === 1 ? '' : 'n'} de perder (la más cargada va por ${num(e.lineas.proximoMayor)} u)`
+            : ' · todas en 1 u'}
         </div>
       )}
       {e.apuestas === 0 && e.clave.startsWith('kelly') && (
@@ -351,13 +356,15 @@ function FilaApuesta({ a, visibles }: { a: ApuestaSimulada; visibles: { clave: E
               <span style={{ color: 'var(--t2)', fontFamily: 'var(--sans)', fontWeight: 600 }}>{CORTO[v.clave]}</span>
               {r.seleccion ? (
                 <span style={{ minWidth: 0 }}>
-                  {num(r.monto)} u a {RES[r.seleccion]}
+                  {num(r.monto)} u a {RES[r.seleccion]}{r.linea ? <span style={{ color: 'var(--t3)' }}> (línea {r.linea})</span> : null}
                   {r.ganancia != null && <> · <b style={{ color: colorDe(r.ganancia) }}>{signo(r.ganancia)}</b></>}
                   {r.banca != null && <span style={{ color: 'var(--t3)' }}> · banca {num(r.banca)}</span>}
                 </span>
               ) : (
                 <span style={{ color: 'var(--t3)', minWidth: 0 }}>
-                  {v.clave.startsWith('kelly') ? `no apuesta: sin ventaja (mejor f* ${signo(100 * a.kelly.fraccion, 1)} % en ${RES[a.kelly.seleccion]})` : 'no apuesta: banca en cero'}
+                  {r.motivo === 'sin plata libre'
+                    ? 'no apuesta: toda la banca está en juego en otros partidos'
+                    : v.clave.startsWith('kelly') ? `no apuesta: sin ventaja (mejor f* ${signo(100 * a.kelly.fraccion, 1)} % en ${RES[a.kelly.seleccion]})` : 'no apuesta: banca en cero'}
                 </span>
               )}
             </div>
