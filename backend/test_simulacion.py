@@ -76,10 +76,50 @@ check("la serie arranca en la banca inicial y suma un punto por cerrada",
       len(mg["serie"]) == 5 and mg["serie"][0]["banca"] == 100, mg["serie"])
 
 # 4) martingala sin banca: apuesta lo que queda y quiebra
-larga = [ap(100 + i, f"2026-10-29 {i:02d}:00:00", (60, 25, 15), (1.5, 4, 6), "visita") for i in range(8)]
+larga = [ap(100 + i, f"2026-10-29 {2 * i:02d}:00:00", (60, 25, 15), (1.5, 4, 6), "visita") for i in range(8)]
 mg = est(sim.simular(larga), "martingala")
 check("martingala quiebra con 7 derrotas (1+2+…+64 > 100)", mg["banca"] == 0 and mg["quebro"] == 106, mg)
 check("caída máxima 100 %", mg["caidaMaxima"] == 1.0, mg)
+
+# 4-bis) LÍNEAS EN PARALELO (29/10/2026, usuario): tres perdidas a las 15:00 → las tres
+# siguientes van por 2; una cuarta a la misma hora abre una línea nueva en 1
+par = [ap(40 + i, "2026-10-28 15:00:00", (60, 25, 15), (1.5, 4, 6), "visita") for i in range(3)]
+par += [ap(50 + i, "2026-10-28 18:00:00", (60, 25, 15), (1.5, 4, 6), "local") for i in range(4)]
+out = sim.simular(par)
+por_fx = {a["fixtureId"]: a["porEstrategia"]["martingala"] for a in out["apuestas"]}
+check("15:00 · tres líneas en 1", [por_fx[40 + i]["monto"] for i in range(3)] == [1, 1, 1]
+      and sorted(por_fx[40 + i]["linea"] for i in range(3)) == [1, 2, 3], por_fx)
+check("18:00 · las tres que perdieron van por 2",
+      [por_fx[50 + i]["monto"] for i in range(3)] == [2, 2, 2], por_fx)
+check("18:00 · la cuarta abre la línea 4 en 1", por_fx[53]["monto"] == 1 and por_fx[53]["linea"] == 4, por_fx)
+mg = est(out, "martingala")
+check("martingala: 4 líneas, ninguna perdiendo al final, máximo en juego 7",
+      mg["lineas"] == {"abiertas": 4, "perdiendo": 0, "proximoMayor": 1} and mg["exposicionMaxima"] == 7, mg)
+check("una línea ocupada no se usa: el partido de las 16:00 abre otra",
+      [a["porEstrategia"]["martingala"]["linea"] for a in reversed(sim.simular(
+          [ap(60, "2026-10-28 15:00:00", (60, 25, 15), (1.5, 4, 6), "visita"),
+           ap(61, "2026-10-28 16:00:00", (60, 25, 15), (1.5, 4, 6), "visita"),
+           ap(62, "2026-10-28 17:00:00", (60, 25, 15), (1.5, 4, 6), "visita")])["apuestas"])] == [1, 2, 1])
+fifo = sim.simular([ap(70, "2026-10-28 12:00:00", (60, 25, 15), (1.5, 4, 6), "visita"),
+                    ap(71, "2026-10-28 13:00:00", (60, 25, 15), (1.5, 4, 6), "local"),
+                    ap(72, "2026-10-28 18:00:00", (60, 25, 15), (1.5, 4, 6), "local")])
+f72 = next(a for a in fifo["apuestas"] if a["fixtureId"] == 72)["porEstrategia"]["martingala"]
+check("con dos libres toma la que más tiempo lleva libre (la 1, que perdió: va por 2)",
+      f72["linea"] == 1 and f72["monto"] == 2, f72)
+
+# 4-ter) KELLY SIN MIRAR EL FUTURO: los simultáneos con la banca de antes, y sin pasarse de la plata libre
+out = sim.simular([ap(80, "2026-10-28 15:00:00", (50, 30, 20), (2.5, 3.2, 4.0), "local"),
+                   ap(81, "2026-10-28 15:00:00", (50, 30, 20), (2.5, 3.2, 4.0), "local"),
+                   ap(82, "2026-10-28 16:00:00", (50, 30, 20), (2.5, 3.2, 4.0), "local")])
+mk = {a["fixtureId"]: a["porEstrategia"]["kelly"]["monto"] for a in out["apuestas"]}
+check("kelly: los dos de las 15:00 y el de las 16:00 apuestan sobre la banca de 100 (nada se cobró)",
+      all(abs(mk[f] - 100 / 6) < 0.01 for f in (80, 81, 82)), mk)
+out = sim.simular([ap(90 + i, "2026-10-28 15:00:00", (80, 10, 10), (2.0, 8, 8), "local") for i in range(3)])
+mk = [a["porEstrategia"]["kelly"]["monto"] for a in reversed(out["apuestas"])]
+check("kelly entero con f* = 0.6 en tres simultáneos: 60 · 40 · nada (no pasa de la plata libre)",
+      mk == [60, 40, 0], mk)
+check("el tercero dice que no hubo plata libre", out["apuestas"][0]["porEstrategia"]["kelly"]["motivo"]
+      == "sin plata libre", out["apuestas"][0]["porEstrategia"]["kelly"])
 
 # 5) pendiente: no mueve la banca pero dice qué se apostaría
 out = sim.simular([ap(20, "2026-10-28 20:00:00", (50, 30, 20), (2.5, 3.2, 4.0), "local"),

@@ -2550,8 +2550,12 @@ export interface EstrategiaSimulada {
   caidaMaxima: number
   /** fixture en que la banca llegó a cero */
   quebro: number | null
-  /** solo martingala: derrotas seguidas al día de hoy */
-  rachaPerdidas: number | null
+  /** lo más que estuvo en juego a la vez */
+  exposicionMaxima: number
+  /** la apuesta más grande */
+  montoMaximo: number
+  /** solo martingala: líneas abiertas, cuántas vienen de perder y el próximo monto más alto */
+  lineas: { abiertas: number; perdiendo: number; proximoMayor: number } | null
   serie: { fixtureId: number | null; pitazo: string | null; banca: number }[]
 }
 
@@ -2570,7 +2574,7 @@ export interface ApuestaSimulada {
   elegido: Resultado1x2
   estado: 'cerrada' | 'pendiente'
   kelly: { seleccion: Resultado1x2; fraccion: number; valor: number }
-  porEstrategia: Record<EstrategiaClave, { seleccion: Resultado1x2 | null; monto: number; ganancia: number | null; banca: number | null }>
+  porEstrategia: Record<EstrategiaClave, { seleccion: Resultado1x2 | null; monto: number; ganancia: number | null; banca: number | null; linea: number | null; motivo: string }>
 }
 
 export interface SimulacionApuesta {

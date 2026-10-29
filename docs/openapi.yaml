@@ -1282,7 +1282,9 @@ paths:
         partes, con cinco series lado a lado: plana (control, 1 unidad al elegido), Kelly entero,
         ½ y ¼ (f* = (p·c − 1)/(c − 1) sobre NUESTRAS probabilidades, a la selección con más
         ventaja; sin ventaja no apuesta) y martingala (1 unidad al elegido, se duplica tras cada
-        derrota). Cuenta desde los partidos del 28/10/2026 (hora de Lima); entran los partes
+        derrota, por líneas en paralelo). Se apuesta en el pitazo y se cobra dos horas después:
+        los partidos simultáneos se apuestan con la banca de antes y ninguna apuesta pasa de la plata
+        libre. Cuenta desde los partidos del 28/10/2026 (hora de Lima); entran los partes
         depositados antes del pitazo, sin cuarentena, con el 1X2 completo y las tres cuotas. La
         cuota es la media de las casas en la última captura prepartido (con su margen). Cada
         apuesta trae la versión de cada skill que estaba en la cuenta al depositar (la del 1X2 es
@@ -1775,7 +1777,16 @@ components:
               roi: { type: number, nullable: true, description: 'ganancia / apostado' }
               caidaMaxima: { type: number, description: 'la peor caída desde un pico, 0-1' }
               quebro: { type: integer, nullable: true, description: 'fixture en que la banca llegó a cero' }
-              rachaPerdidas: { type: integer, nullable: true, description: 'solo martingala: derrotas seguidas al día de hoy' }
+              exposicionMaxima: { type: number, description: 'lo más que estuvo en juego a la vez' }
+              montoMaximo: { type: number, description: 'la apuesta más grande' }
+              lineas:
+                type: object
+                nullable: true
+                description: 'solo martingala: líneas abiertas, cuántas vienen de perder y el próximo monto más alto'
+                properties:
+                  abiertas: { type: integer }
+                  perdiendo: { type: integer }
+                  proximoMayor: { type: number }
               serie:
                 type: array
                 items:
@@ -1837,6 +1848,8 @@ components:
                   properties:
                     seleccion: { type: string, nullable: true, description: 'null = no apostó' }
                     monto: { type: number }
+                    linea: { type: integer, nullable: true, description: 'solo martingala: en qué línea entró' }
+                    motivo: { type: string, description: "sin apuesta: 'sin ventaja' · 'sin plata libre'" }
                     ganancia: { type: number, nullable: true }
                     banca: { type: number, nullable: true }
         excluidos:
