@@ -562,6 +562,18 @@ function ContraElOnce({ b, foco }: { b: DtpBloque; foco: string }) {
       {r.motivos.map((m, i) => (
         <div key={i} style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)', marginTop: 4, overflowWrap: 'anywhere' }}>{m}</div>
       ))}
+      {(r.rolesVsGrid ?? []).length > 0 && (
+        <div style={{ marginTop: 8, paddingTop: 7, borderTop: '1px dashed var(--line)' }}>
+          <div style={{ font: '700 9px var(--mono)', letterSpacing: '.4px', color: 'var(--t3)' }}>
+            ROLES CONTRA EL GRID · en observación, no pide rehacer
+          </div>
+          {(r.rolesVsGrid ?? []).map((x, i) => (
+            <div key={i} style={{ font: '500 11px var(--sans)', color: 'var(--t2)', marginTop: 3, overflowWrap: 'anywhere' }}>
+              <b style={{ color: 'var(--t1)' }}>{x.jugador}</b>: {x.motivo}
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   )
 }
