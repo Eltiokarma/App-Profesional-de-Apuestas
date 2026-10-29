@@ -902,20 +902,43 @@ def _cifras_sistema(texto: str) -> str:
     return re.sub(r"\D", "", m.group(0)) if m else ""
 
 
-def _sistemas(texto: str) -> set[str]:
+# UN SISTEMA CITADO COMO ANTECEDENTE NO ES UNA OPCIÓN DECLARADA. Inter de
+# Bogotá (incidencia 706): «4-3-3 (probable sin Vásquez; el 20/10 jugó 3-4-3)»
+# daba {433, 343}; salió 3-4-3 y no sonó nada con el M2 escrito sobre línea de
+# cuatro. Lo que va después de «jugó», «usó», «venía», «el último», una fecha…
+# en la misma cláusula es historia, no la apuesta de hoy.
+_ANTECEDENTE = re.compile(r"jug[oóa]|jugaba|us[oó]\b|usaba|ven[ií]a|anterior|[uú]ltim|pasad|antes\b|"
+                          r"\b\d{1,2}/\d{1,2}\b|fecha \d|jornada \d", re.I)
+
+
+def _sistemas(texto: str, antecedentes: bool = False) -> set[str]:
     """TODOS los sistemas que nombra la apertura: «4-2-3-1 / 4-3-3» son dos
     opciones declaradas, y salir con cualquiera de ellas no contradice nada
-    (Boca–Vasco, 15/10/2026: el aviso DTP-REHACER salía falso)."""
-    return {re.sub(r"\D", "", m) for m in re.findall(r"\d(?:\s*[-–]\s*\d){2,4}", texto or "")}
+    (Boca–Vasco, 15/10/2026: el aviso DTP-REHACER salía falso). Sin
+    `antecedentes`, deja fuera los citados como partido anterior (706); si
+    todos lo son, quedan todos (la apertura no declaró otro)."""
+    texto = texto or ""
+    todos, hoy = set(), set()
+    for m in re.finditer(r"\d(?:\s*[-–]\s*\d){2,4}", texto):
+        cifras = re.sub(r"\D", "", m.group(0))
+        todos.add(cifras)
+        clausula = re.split(r"[;(),.]", texto[:m.start()])[-1]
+        if not _ANTECEDENTE.search(clausula):
+            hoy.add(cifras)
+    return todos if antecedentes or not hoy else hoy
 
 
 def _forma(cifras: str) -> str:
-    """Línea de atrás (4 · 3/5) y puntas (2 · 1/3): «4-3-3», «4-2-3-1» y
-    «4-1-4-1» son una forma; «4-4-2» y «4-2-2-2» otra; «3-4-3», «3-4-2-1» y
-    «5-4-1» otra."""
+    """Línea de atrás (4 · 3/5) y, con línea de cuatro, puntas (2 · 1/3):
+    «4-3-3», «4-2-3-1» y «4-1-4-1» son una forma; «4-4-2» y «4-2-2-2» otra.
+    Con línea de tres/cinco las puntas no cuentan: «3-4-3», «3-4-2-1»,
+    «3-4-1-2» y «5-4-1» son la misma línea de tres con carrileros (Riestra y
+    La Serena, incidencia 734: el motivo «sistema» salía con 5-4-1 contra
+    3-4-1-2)."""
     if len(cifras) < 3:
         return cifras
-    return _linea(cifras[0]) + ("·2" if cifras[-1] == "2" else "·1/3")
+    linea = _linea(cifras[0])
+    return linea if linea != "4" else linea + ("·2" if cifras[-1] == "2" else "·1/3")
 
 
 def _linea(d: str) -> str:
@@ -1166,6 +1189,9 @@ def oficial_de(fixture_id: int) -> dict:
                        "titulares": [j["jugador"] or "" for j in xi],
                        "banca": _banca(fixture_id, tid),
                        "alias": alias,
+                       # el arquero titular: posición G, o la fila 1 del grid
+                       "arquero": next((j["jugador"] or "" for j in xi if (j["posicion"] or "") == "G"
+                                        or str(j["grid"] or "") == "1:1"), ""),
                        # sin formación en la ficha, la línea de atrás se cuenta
                        # por la posición de los titulares (D)
                        # …y un titular SIN posición en la fila 2 del grid también es
@@ -1193,9 +1219,16 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
     nota_api = ""
     if decl and real and _forma(real) not in {_forma(d) for d in decl if d}:
         if al_cerrar and _forma(al_cerrar) in {_forma(d) for d in decl if d}:
-            # cuadraba con la que la API daba al cerrar el once: la corrigió después
+            # cuadraba con la que la API daba al cerrar el once: la corrigió después.
+            # IGUAL PIDE REHACER (incidencia 735, Chapecoense 4-2-3-1 → 4-4-2,
+            # Alianza Valledupar 4-2-3-1 → 3-4-3): el M2 quedó escrito sobre
+            # otra forma y, antes del pitazo, la rutina de rehacer todavía
+            # llega. Si llegó tarde, `momento_rehacer` lo marca `tardio` y el
+            # veredicto no se lo carga al skill (la 559 ya no hace falta).
             nota_api = (f"la API corrigió la formación después del cierre ({of['formacionAlCerrar']} → "
                         f"{of['formacion']}): la apertura cuadraba con el dato del momento")
+            motivos.append(f"sistema: la apertura dice {m1.get('sistema')!r}, que cuadraba con el once al "
+                           f"cerrar ({of['formacionAlCerrar']}), y la API lo corrigió a {of['formacion']}")
         else:
             motivos.append(f"sistema: la apertura dice {m1.get('sistema')!r} y salió {of['formacion']}")
     elif decl and not real and 3 <= (of.get("defensores") or 0) <= 5 \
@@ -1239,6 +1272,13 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
         if len(ausentes) >= REHACER_AUSENTES:
             motivos.append(f"once: {len(ausentes)} titulares que no estaban en el XI de referencia "
                            f"({', '.join(ausentes)})")
+        # OTRO ARQUERO ES UN CAMBIO AUNQUE SEA EL ÚNICO (incidencia 648:
+        # Independiente con Mele, Sassuolo con Turati; el B6 y el ensayo
+        # siguieron con el de la referencia). Un ausente no llega al corte de
+        # tres, pero el arquero cambia el B6 del EFE y la salida desde atrás.
+        if of.get("arquero") and of["arquero"] in ausentes:
+            motivos.append(f"arquero: {of['arquero']} ataja hoy y no estaba en el XI de referencia "
+                           "(revisar el B6 del EFE y lo que dependía del arquero)")
     # EL SEGURO DE ATRÁS EN EL BANCO. Napoli (incidencia 152): la apertura
     # sostenía el rest defense «fijo en Lobotka» y Lobotka arrancó suplente;
     # con dos ausentes no saltaba nada. Si el texto del seguro nombra a un
@@ -1366,7 +1406,7 @@ def avisos_carril(dtp: dict, nombres: dict) -> list[dict]:
 
 
 _MOTIVO_SISTEMA = re.compile(r"anunci|previa|prensa|confirm|expuls|roja|con diez|con 10|variante|cambi|"
-                             r"vuelve|regres|probable|rotaci|interino|declar", re.I)
+                             r"vuelve|regres|probable|rotaci|interino|declar|oficial|alineaci", re.I)
 from backend.jugadores import dias_descanso as jug_dias_descanso  # noqa: E402
 
 _PENAL = re.compile(r"penal|penalt", re.I)
@@ -1410,8 +1450,16 @@ def avisos_v16(dtp: dict, fx, nombres: dict) -> list[dict]:
             ultima, fid = _formacion_ultima(tid, fecha)
         except Exception:  # noqa: BLE001 — sin alineaciones en la base no hay contra qué comparar
             ultima, fid = "", None
-        if _sistemas(decl) and _cifras_sistema(ultima) and _cifras_sistema(ultima) not in _sistemas(decl) \
-                and not _MOTIVO_SISTEMA.search(f"{decl} {m1.get('senalXi') or ''}"):
+        # EL ONCE OFICIAL DE HOY YA RESPONDE (incidencia 671, Carabobo–La Guaira y
+        # Fluminense–Internacional: rehecho con el once del día, el aviso seguía
+        # comparando contra el partido anterior)
+        try:
+            hoy = _cifras_sistema(((oficial_de(fx["id"]) or {}).get(lado) or {}).get("formacion") or "")
+        except Exception:  # noqa: BLE001
+            hoy = ""
+        cuadra_hoy = bool(hoy) and _forma(hoy) in {_forma(d) for d in _sistemas(decl, True)}
+        if _sistemas(decl) and _cifras_sistema(ultima) and _cifras_sistema(ultima) not in _sistemas(decl, True) \
+                and not cuadra_hoy and not _MOTIVO_SISTEMA.search(f"{decl} {m1.get('senalXi') or ''}"):
             out.append({"bloque": f"dtp.{lado}.m1.sistema", "codigo": "M1-VS-ULTIMO-ONCE",
                         "costara": f"{quien}: la apertura dice «{decl}» y el último once oficial (fixture {fid}) "
                                    f"salió {ultima}, sin motivo escrito: los carriles del M2 pueden estar sobre "

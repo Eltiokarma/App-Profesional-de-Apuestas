@@ -3438,6 +3438,22 @@ def main():
     check("792: «penal: sin ejecutor confirmado» no cuenta como ejecutor nombrado → DTP-PENAL-SIN-EJECUTOR",
           [a["codigo"] for a in _av792] == ["DTP-PENAL-SIN-EJECUTOR"], _av792)
     check("721: con `casoP6` de la misma sede (visita) no avisa P6-OTRA-SEDE", _av721 == [], _av721)
+    # 671: rehecho con el once oficial de hoy, M1-VS-ULTIMO-ONCE no compara contra el partido anterior
+    _orig671 = (_d15._formacion_ultima, _d15.casos_bloque, _d15.oficial_de)
+    try:
+        _d15._formacion_ultima = lambda tid, fecha: ("3-4-2-1", 123)
+        _d15.casos_bloque = lambda tid, antes, dias=180: []
+        _d15.oficial_de = lambda fid: {"a": {"formacion": "4-3-3", "titulares": []}}
+        _av671 = _d15.avisos_v16(_x16, {**_fx16, "id": 671}, {"a": "Leones", "b": "Libertad"})
+        _d15.oficial_de = lambda fid: {}
+        _av671b = _d15.avisos_v16(_x16, {**_fx16, "id": 671}, {"a": "Leones", "b": "Libertad"})
+    finally:
+        _d15._formacion_ultima, _d15.casos_bloque, _d15.oficial_de = _orig671
+    check("671: con el once oficial de hoy igual al sistema declarado, no avisa M1-VS-ULTIMO-ONCE; sin once, sí",
+          "M1-VS-ULTIMO-ONCE" not in {a["codigo"] for a in _av671}
+          and "M1-VS-ULTIMO-ONCE" in {a["codigo"] for a in _av671b}, (_av671, _av671b))
+    check("671: «once oficial» en senalXi es un motivo escrito",
+          bool(_d15._MOTIVO_SISTEMA.search("rehecho con el once oficial de la ficha")))
     _p762 = [a for a in _av762 if a["codigo"] == "P6-OTRA-SEDE"]
     check("721/762: el aviso nombra los casos de ESTA cadena con su fecha, no el ejemplo del 25/10",
           _p762 and "4-0 de local (local, 2026-10-19)" in _p762[0]["costara"]
