@@ -111,7 +111,7 @@ function separacionDemo(key: string): SeparacionLigaDTO {
   const s = SEPARACION_DEMO[lk]
   if (!s) return { ligaId: null, liga: null, auc: null, n: null, nivel: 'sin medir', medidoEn: null, nota: 'su liga: sin medir liga por liga; la guía es la calibrada sobre el padrón' }
   const nivel = s.auc >= 0.64 ? 'alta' : s.auc >= 0.6 ? 'media' : 'baja'
-  return { ...s, nivel, medidoEn: '2026-10-29', nota: `en ${s.liga} el riesgo del reventón separa bien (AUC ${s.auc.toFixed(2)}): liga con jerarquía, una burbuja fuera de lugar dice algo; la guía pesa en la lectura` }
+  return { ...s, nivel, competicion: 'liga', medidoEn: '2026-10-29', nota: `en ${s.liga} el riesgo del reventón separa bien (AUC ${s.auc.toFixed(2)}): liga con jerarquía, una burbuja fuera de lugar dice algo; la guía pesa en la lectura` }
 }
 
 export interface SadDataSource {

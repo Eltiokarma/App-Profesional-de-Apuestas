@@ -2961,6 +2961,7 @@ components:
             auc: { type: number, nullable: true }
             n: { type: integer, nullable: true }
             nivel: { type: string, enum: [alta, media, baja, sin medir], description: 'alta ≥ 0.64 · media ≥ 0.60 · baja < 0.60' }
+            competicion: { type: string, enum: [liga, copa], description: 'copa = el próximo partido es de una copa nacional medida y manda su separación' }
             medidoEn: { type: string, nullable: true }
             nota: { type: string }
         escala:

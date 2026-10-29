@@ -802,6 +802,8 @@ export interface SeparacionLigaDTO {
   n: number | null
   /** alta ≥ 0.64 · media ≥ 0.60 · baja < 0.60 */
   nivel: 'alta' | 'media' | 'baja' | 'sin medir'
+  /** copa = el próximo partido es de una copa nacional medida y manda su separación */
+  competicion?: 'liga' | 'copa'
   medidoEn: string | null
   nota: string
 }
