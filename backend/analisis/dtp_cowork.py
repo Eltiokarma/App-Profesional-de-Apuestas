@@ -287,7 +287,7 @@ def insumos_equipo(team_id: int, nombre: str, fx) -> dict:
                        "formacionAhora": ali.get("formacion") or ""}
     return {
         **base,
-        "diasDescanso": _dias(fecha, a["date"]),
+        "diasDescanso": jug_dias_descanso(str(a["date"]), str(fecha)),  # por horas (769)
         "partidoAnterior": anterior,
         "cambiosXi": cambios,
         "parejasNuevas": _parejas_nuevas(team_id, fecha, xi) if xi else [],
@@ -1367,6 +1367,8 @@ def avisos_carril(dtp: dict, nombres: dict) -> list[dict]:
 
 _MOTIVO_SISTEMA = re.compile(r"anunci|previa|prensa|confirm|expuls|roja|con diez|con 10|variante|cambi|"
                              r"vuelve|regres|probable|rotaci|interino|declar", re.I)
+from backend.jugadores import dias_descanso as jug_dias_descanso  # noqa: E402
+
 _PENAL = re.compile(r"penal|penalt", re.I)
 _SIN_EJECUTOR = re.compile(r"sin ejecutor|ejecutor (?:no|sin) (?:confirmad|defin|conocid)|por jerarqu", re.I)
 _SEDE_TXT = {"visita": re.compile(r"visita|visitante|\bfuera\b", re.I),

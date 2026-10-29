@@ -440,6 +440,9 @@ def main():
     check("466/471: el once del amistoso no entra a la rotación (mismo once en liga) ni a los 21 días",
           _f466.get("rotadosPromedio") == 0 and _f466.get("partidosMirados") == 2
           and _c471 == {"diasDescanso": 8, "partidos21d": 2}, (_f466, _c471))
+    check("769: del 25/10 21:05 al 29/10 01:05 UTC son 3 días de descanso, no 4; 8 días a la misma hora son 8",
+          _jug471.dias_descanso("2026-10-25 21:05:00", "2026-10-29T01:05:00Z") == 3
+          and _jug471.dias_descanso("2026-10-01", "2026-10-09") == 8)
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:   # que no los tome otro test como «el último jugado»
         _con.execute("DELETE FROM alineaciones WHERE fixture_id BETWEEN 990470 AND 990472")
         _con.execute("DELETE FROM fixtures WHERE id BETWEEN 990470 AND 990472")
