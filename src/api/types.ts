@@ -790,6 +790,20 @@ export interface BurbujasEquipoDTO {
   /** Doble oportunidad, márgenes y goles contados para la narrativa (descripción,
    *  no riesgo, §15) con el perfil de doble oportunidad por condición (§15.1). */
   otrasFamilias?: OtrasFamiliasDTO
+  /** Cuánto separa el riesgo del reventón en la liga del equipo (AUC medido liga
+   *  por liga el 29/10/2026). No mueve los puntos: dice cuánto pesar la guía. */
+  separacionLiga?: SeparacionLigaDTO
+}
+
+export interface SeparacionLigaDTO {
+  ligaId: number | null
+  liga: string | null
+  auc: number | null
+  n: number | null
+  /** alta ≥ 0.64 · media ≥ 0.60 · baja < 0.60 */
+  nivel: 'alta' | 'media' | 'baja' | 'sin medir'
+  medidoEn: string | null
+  nota: string
 }
 
 // ── las OTRAS burbujas contadas (backend/analisis/familias.py, REVENTON §15-15.1) ──

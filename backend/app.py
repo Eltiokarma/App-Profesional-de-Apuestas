@@ -1632,6 +1632,14 @@ def equipo_burbujas(equipo_id: int, antesDe: int | None = None, proximo: int | N
         # (decisión del usuario, 22/10/2026: se marca, no se mueve ningún número)
         escala.marcar(r.get("familias") or {}, r["escala"])
         escala.marcar_perfil(r.get("otrasFamilias"), r["escala"])
+    # CUÁNTO SEPARA EL RIESGO EN SU LIGA (29/10/2026): medido liga por liga; no
+    # mueve los puntos, dice cuánto pesar la guía (backend/analisis/separacion_liga.py)
+    from backend.analisis import escala as _escala, separacion_liga
+    try:
+        _base = _escala.base_de(equipo_id, prox["fecha"] if prox else None)
+    except Exception:  # noqa: BLE001 — sin base, «sin medir», no un error
+        _base = None
+    r["separacionLiga"] = separacion_liga.de_liga((_base or {}).get("id"), (_base or {}).get("nombre"))
     if antesDe is not None:
         r["estabilidad"]["motivos"] = [
             "vista al día del partido: la plantilla de hoy no es la de entonces y no se usa; "

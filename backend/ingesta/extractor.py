@@ -234,6 +234,13 @@ LIGAS = {
     # Europa otros
     94: "Portugal - Primeira Liga",
     144: "Bélgica - Pro League",
+    # Ligas nuevas del padrón (29/10/2026, usuario, tras la fase 0 de ligas:
+    # backend/fase0_ligas.py). Las tres tenían 7 temporadas en la base por los
+    # equipos de copas europeas, 100 % de onces en las fichas y el reventón
+    # separa como en las grandes (AUC 0,68 · 0,67 · 0,63, separacion_liga.py).
+    88: "Países Bajos - Eredivisie",
+    197: "Grecia - Super League 1",
+    203: "Turquía - Süper Lig",
     # Copas nacionales de Europa (incidencia 406, decisión del usuario
     # 23/10/2026): la misma regla que Sudamérica —«para analizar un país no
     # puede faltar la copa donde juega el equipo»—. Faltaba la Taça del 17-18/10
@@ -250,6 +257,9 @@ LIGAS = {
     66: "Francia - Coupe de France",
     96: "Portugal - Taça de Portugal",
     147: "Bélgica - Copa de Bélgica",
+    90: "Países Bajos - KNVB Beker",
+    199: "Grecia - Copa de Grecia",
+    206: "Turquía - Copa de Turquía",
 }
 
 
@@ -337,12 +347,23 @@ _MENORES_DEFAULT = {
     66,       # Coupe de France
     96,       # Taça de Portugal
     147,      # Copa de Bélgica
+    90, 199, 206,  # KNVB Beker, Copa de Grecia, Copa de Turquía (29/10/2026)
+    # Segundas de Europa y Liga de Expansión MX (29/10/2026, usuario, fase 0):
+    # el reventón separa poco en ellas (AUC 0,57-0,59, ligas de paridad) y no
+    # entran a la agenda, pero gastaban cuotas EN VIVO cada 2 minutos. Siguen
+    # en la base entera (fixtures, historia, cuotas prepartido): sus K no cambian.
+    40,       # Championship
+    141,      # Segunda División (España)
+    136,      # Serie B (Italia)
+    79,       # 2. Bundesliga
+    62,       # Ligue 2
+    263,      # Liga de Expansión MX
 }
 # Las copas nacionales de Europa (incidencia 406): sus partidos entran a la base
 # y al motor, pero un equipo de quinta división que juega la FA Cup no nos
 # interesa por sí mismo. Un partido de copa NO elige equipos para la ingesta de
 # fichas (3 requests por partido) ni cuenta como «liga doméstica» de nadie.
-COPAS_EUROPA = {45, 48, 143, 137, 81, 66, 96, 147}
+COPAS_EUROPA = {45, 48, 143, 137, 81, 66, 96, 147, 90, 199, 206}
 
 _menores_env = os.environ.get("SAD_LIGAS_MENORES")
 if _menores_env is None:

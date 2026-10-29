@@ -2948,6 +2948,21 @@ components:
             fixtureId: { type: integer }
             fecha: { type: string, nullable: true }
         otrasFamilias: { $ref: '#/components/schemas/OtrasFamilias' }
+        separacionLiga:
+          type: object
+          description: >-
+            Cuánto separa el riesgo del reventón en la liga doméstica del equipo, medido liga por
+            liga (AUC de los puntos, backtest sin fuga del 29/10/2026; backend/analisis/separacion_liga.py).
+            Sube con la jerarquía de la liga (r = 0,89 con el peso del nivel en la μ). NO mueve los
+            puntos ni los cortes: dice cuánto pesar la guía en la lectura.
+          properties:
+            ligaId: { type: integer, nullable: true }
+            liga: { type: string, nullable: true }
+            auc: { type: number, nullable: true }
+            n: { type: integer, nullable: true }
+            nivel: { type: string, enum: [alta, media, baja, sin medir], description: 'alta ≥ 0.64 · media ≥ 0.60 · baja < 0.60' }
+            medidoEn: { type: string, nullable: true }
+            nota: { type: string }
         escala:
           type: object
           description: >-

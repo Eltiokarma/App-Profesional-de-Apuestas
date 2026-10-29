@@ -1034,3 +1034,33 @@ e improbable; `porExplicar`, además de grande o en su récord, improbable. Un
 récord grande pero habitual lo dice en su línea («una racha así es
 esperable»). Es regla de narrativa, no un número calibrado: no mueve ningún
 riesgo. Espejo TS y vectores dorados («Sequía habitual»).
+
+## 16. Cuánto separa el riesgo en cada liga (29/10/2026)
+
+La fase 0 de ligas nuevas (`python -m backend.fase0_ligas` y
+`backtest_burbuja --liga` liga por liga, horizonte 1, sin fuga) midió el AUC
+de los puntos del riesgo en 23 ligas, con 2.000-10.000 observaciones cada una.
+
+| AUC | Ligas |
+|---|---|
+| ≥ 0,64 (alta) | Eredivisie 0,679 · Serie A 0,676 · Grecia 0,669 · Bolivia 0,656 · Perú Liga 2 0,649 · Premier 0,648 · LaLiga 0,648 · Bundesliga 0,644 · Ligue 1 0,641 |
+| 0,60-0,64 (media) | Süper Lig 0,632 · Liga MX 0,627 · Perú Liga 1 0,626 · Ecuador 0,622 · Conference 0,609 |
+| < 0,60 (baja) | Europa League 0,593 · Serie B 0,593 · Brasil 0,590 · 2. Bundesliga 0,590 · Colombia 0,581 · Championship 0,578 · Argentina 0,577 · Ligue 2 0,575 · Segunda 0,572 |
+
+**La regla**: el AUC sube con el peso del nivel en la μ de esa liga
+(`backtest_gap --por-liga`): r = 0,89 sobre 22 ligas. Donde hay jerarquía una
+burbuja «fuera de lugar» (el grande con racha negativa, el chico con racha
+positiva) dice algo; en las ligas de paridad las rachas se cortan casi al azar
+y el riesgo «bajo» ya revienta la mitad de las veces (49-54 % contra 34-41 %).
+La Liga 2 de Perú separa como una primera: lo que fallaba ahí no era la
+burbuja, eran las cuotas (38 % de partidos con 1X2 capturado).
+
+**Lo que se hizo**: los puntos y los cortes NO cambian (son los calibrados con
+el padrón). `/burbujas` trae `separacionLiga` (`backend/analisis/separacion_liga.py`:
+AUC, n y nivel de la liga doméstica del equipo, con su nota) y la tarjeta lo
+pinta; el prompt pide pesar menos la guía en una liga de nivel `baja`. Con el
+mismo dato entraron al padrón Eredivisie, Grecia y Süper Lig, y las segundas
+de Europa y la Liga de Expansión MX pasaron a menores (sin cuotas en vivo ni
+agenda; su historia sigue entera). La tabla es una medición fechada: con cada
+backtest nuevo se rehace.
+

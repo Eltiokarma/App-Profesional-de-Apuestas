@@ -1858,6 +1858,12 @@ lo que sobre queda para la próxima (la agenda lo retoma con `yaHechos`).
      esa racha siga (bajá la confianza del pronóstico y decilo en el
      falsador). Una línea por equipo en `lecturaSad.reventon`, sin copiar
      números (el backend los recalcula al leer).
+     Mirá `separacionLiga` (29/10/2026): cuánto separa el riesgo en la liga
+     del equipo. Con `nivel: baja` (Argentina, Colombia, Brasil y otras
+     ligas de paridad) el riesgo pesa MENOS en la lectura y en el 1X2 —las
+     rachas se cortan casi al azar—, aunque los puntos no cambian; con
+     `alta`, la guía pesa como está escrita. Decilo en la línea del reventón
+     cuando la liga sea de paridad.
      Leé también `otrasFamilias` de los dos: el `perfilDc` de la condición
      de hoy pesa en el 1X2 (§15.1); el resto es narrativa, y un récord de
      esas familias se sostiene, no revienta (§15), pero uno GRANDE (FAMILIA-RECORD) es cuidado con la carga (§15.2).

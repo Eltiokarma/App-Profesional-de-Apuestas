@@ -417,10 +417,10 @@ def main():
         "INSERT INTO fixtures (id, date, status_short, league_id, league_season, "
         "home_team_id, away_team_id) VALUES (?,?,?,?,?,?,?)",
         [(20, lejos, "NS", 3, 2026, 500, 501),      # Europa League 2026-27: Beşiktaş (500) vs Real Betis (501)
-         (21, prox, "NS", 203, 2026, 500, 502),     # Süper Lig (fuera de LIGAS): Beşiktaş en 1 día
-         (22, prox, "NS", 203, 2026, 503, 504),     # Süper Lig entre equipos que NO nos interesan
+         (21, prox, "NS", 179, 2026, 500, 502),     # Premiership escocesa (fuera de LIGAS): Beşiktaş en 1 día
+         (22, prox, "NS", 179, 2026, 503, 504),     # Premiership escocesa entre equipos que NO nos interesan
          (23, hace(24 * 400), "FT", 3, 2025, 600, 601),  # Europa League 2025-26: edición pasada
-         (24, prox, "NS", 88, 2026, 600, 602)],     # Eredivisie del que ya no juega Europa
+         (24, prox, "NS", 218, 2026, 600, 602)],     # Bundesliga austríaca del que ya no juega Europa
     )
     con.commit()
     interes = equipos_de_interes(con)
@@ -428,24 +428,24 @@ def main():
           interes == {500, 501}, sorted(interes))
     check("la edición pasada no cuenta", not ({600, 601} & interes), sorted(interes))
     check("un fixture de liga desconocida entra si lo juega un equipo de interés",
-          _es_nuestro({"league": {"id": 203}, "teams": {"home": {"id": 500}, "away": {"id": 502}}}, interes))
+          _es_nuestro({"league": {"id": 179}, "teams": {"home": {"id": 500}, "away": {"id": 502}}}, interes))
     check("y no entra si no lo juega ninguno",
-          not _es_nuestro({"league": {"id": 203}, "teams": {"home": {"id": 503}, "away": {"id": 504}}}, interes))
+          not _es_nuestro({"league": {"id": 179}, "teams": {"home": {"id": 503}, "away": {"id": 504}}}, interes))
     check("los de LIGAS entran como siempre",
           _es_nuestro({"league": {"id": 128}, "teams": {"home": {"id": 1}, "away": {"id": 2}}}, set()))
     ids = {t for t, _ in equipos_pendientes(con, 3, 168)}
     check("el plantel del equipo de interés se pide aunque su NS próximo sea en su liga fuera del padrón",
           500 in ids, sorted(ids))
-    check("su rival de esa liga y los otros de la Süper Lig siguen fuera",
+    check("su rival de esa liga y los otros de la Premiership escocesa siguen fuera",
           not ({502, 503, 504} & ids), sorted(ids))
-    check("el que ya no juega Europa no entra por su Eredivisie", 600 not in ids, sorted(ids))
+    check("el que ya no juega Europa no entra por su Bundesliga austríaca", 600 not in ids, sorted(ids))
     faltan = equipos_sin_liga_en_la_base(con, interes)
     check("sin partido doméstico en la base, a los dos se les pide la temporada (1 request, una vez)",
           faltan == [(500, 2026), (501, 2026)], faltan)
     con.execute("INSERT INTO fixtures (id, date, status_short, league_id, league_season, "
                 "home_team_id, away_team_id) VALUES (25, ?, 'FT', 140, 2026, 501, 505)", (hace(72),))
     con.commit()
-    check("con su LaLiga en la base, el Betis sale de esa lista; Beşiktaş (Süper Lig fuera de LIGAS) queda",
+    check("con su LaLiga en la base, el Betis sale de esa lista; Beşiktaş (Premiership escocesa fuera de LIGAS) queda",
           equipos_sin_liga_en_la_base(con, interes) == [(500, 2026)])
     purgados = purgar_ns_sin_mantenimiento(con)
     quedan = {r[0] for r in con.execute("SELECT id FROM fixtures WHERE status_short='NS'")}
