@@ -139,10 +139,19 @@ def base_de(team_id: int, fecha: str | None) -> dict | None:
 _ORDEN = {"primera": 0, "segunda": 1, "fuera del padrón": 2}
 
 
+# SIN PARTIDOS OFICIALES EN LA BASE ES ESTAR FUERA DEL PADRÓN (incidencias 801 y
+# 798, Copa del Rey 29/10/2026: Varea y Laredo, de Tercera RFEF, contra Andorra
+# y Burgos de Segunda salían «sin dato» y comparables, sin ESCALA-LIGAS ni
+# fiabilidad baja; Coruxo–Zamora, dos de Federación, igual). Un equipo que juega
+# hoy y no tiene un partido de liga ni de copa terminado en el año juega una liga
+# que la base no sigue.
+SIN_BASE = {"id": None, "nombre": None, "pais": None, "partidos": 0, "categoria": "fuera del padrón",
+            "sinPartidos": True}
+
+
 def relacion(a: dict | None, b: dict | None) -> str:
     """Cómo es la base de `b` (el rival) frente a la de `a` (el equipo)."""
-    if not a or not b:
-        return "sin dato"
+    a, b = a or SIN_BASE, b or SIN_BASE
     if a.get("id") is not None and a.get("id") == b.get("id"):
         return "misma"
     ca, cb = _ORDEN[a["categoria"]], _ORDEN[b["categoria"]]

@@ -413,6 +413,11 @@ def main():
                             {"id": 39, "pais": "England", "categoria": "primera"}) == "rival de categoría superior"
           and _esc.relacion({"id": 268, "pais": "Uruguay", "categoria": "primera"},
                             {"id": 270, "pais": "Uruguay", "categoria": "primera"}) == "misma")
+    _seg = {"id": 141, "pais": "Spain", "categoria": "segunda"}
+    check("801/798: sin partidos oficiales en la base es fuera del padrón: no comparable contra Segunda ni entre dos así",
+          _esc.relacion(_seg, None) == "rival fuera del padrón"
+          and _esc.relacion(None, _seg) == "rival de categoría superior"
+          and _esc.relacion(None, None) == "otra liga")
     check("cambio de categoría: el de la Championship jugando Premier es ascendido; al revés, descendido; "
           "una copa no es cambio",
           _esc.cambio_de_categoria(_esc.base_de(990103, None), 39) == "ascendido"
@@ -444,6 +449,10 @@ def main():
     check("466/471: el once del amistoso no entra a la rotación (mismo once en liga) ni a los 21 días",
           _f466.get("rotadosPromedio") == 0 and _f466.get("partidosMirados") == 2
           and _c471 == {"diasDescanso": 8, "partidos21d": 2}, (_f466, _c471))
+    # 828 (Zamora, onces de 2024): un once de hace más de F1_ANTIGUEDAD_DIAS no es la rotación de hoy
+    _f828 = _tde466.f1_rotacion(990471, (t0 + _dt.timedelta(days=400)).strftime("%Y-%m-%d %H:%M:%S"))
+    check("828: con los onces de hace más de 120 días F1 va sin dato, no «rotación amplia»",
+          _f828.get("sinDato") is True and _f828["partidosMirados"] == 0, _f828)
     check("769: del 25/10 21:05 al 29/10 01:05 UTC son 3 días de descanso, no 4; 8 días a la misma hora son 8",
           _jug471.dias_descanso("2026-10-25 21:05:00", "2026-10-29T01:05:00Z") == 3
           and _jug471.dias_descanso("2026-10-01", "2026-10-09") == 8)
@@ -1251,6 +1260,14 @@ def main():
         check("339: clásico a 5 días → piso de F2 en 1 con el motivo, aunque el descanso fuera 7",
               _f2c["scorePiso"] == 1.0 and "clásico ante Fenerbahçe" in _f2c["porque"]
               and _f2c["exigenciaProxima"]["dias"] == 5, _f2c)
+        # 797 (Coruxo, 1446 días): el último oficial de hace años no es descanso
+        _cg339 = _jug339._congestion
+        _jug339._congestion = lambda t, f: {"diasDescanso": 1446, "partidos21d": 0}
+        _f797 = _tde339.f2_calendario(645, "2026-10-21", {"proximos": [], "senalCalendario": "neutro"})
+        _jug339._congestion = _cg339
+        check("797: 1446 días desde el último oficial → descanso desconocido (sin piso), con el dato aparte",
+              _f797["diasDescanso"] is None and _f797["scorePiso"] is None
+              and _f797["ultimoOficialHaceDias"] == 1446, _f797)
         _ctx6 = {**_ctx, "proximos": [{**_ctx["proximos"][0], "diasDescanso": 6}]}
         check("339: el mismo clásico a 6 días no sube nada",
               _tde339.f2_calendario(645, "2026-10-21", _ctx6)["scorePiso"] == 0.0)
@@ -3451,15 +3468,28 @@ def main():
           _av16b == [], _av16b)
     _x792 = _copy.deepcopy(_x16b)
     _x792["bloques"][0]["apertura"]["m2"]["viasGol"]["rival"] = ["penal: sin ejecutor confirmado entre los titulares"]
-    _orig792 = (_d15._formacion_ultima, _d15.casos_bloque)
+    _orig792 = (_d15._formacion_ultima, _d15.casos_bloque, _d15._ejecutores_en_base)
     try:
+        _d15._ejecutores_en_base = lambda tid, fecha: True   # la base sí tiene ejecutores (Palmeiras)
         _d15._formacion_ultima = lambda tid, fecha: ("3-4-2-1", 123)
         _d15.casos_bloque = lambda tid, antes, dias=180: [{"sede": "visita", "caso": "1-0 de visita"}]
         _av792 = _d15.avisos_v16(_x792, _fx16, {"a": "Leones", "b": "Libertad"})
     finally:
-        _d15._formacion_ultima, _d15.casos_bloque = _orig792
+        _d15._formacion_ultima, _d15.casos_bloque, _d15._ejecutores_en_base = _orig792
     check("792: «penal: sin ejecutor confirmado» no cuenta como ejecutor nombrado → DTP-PENAL-SIN-EJECUTOR",
           [a["codigo"] for a in _av792] == ["DTP-PENAL-SIN-EJECUTOR"], _av792)
+    _ej802 = _d15._ejecutores_en_base
+    _orig802 = (_d15._formacion_ultima, _d15.casos_bloque)
+    try:
+        _d15._ejecutores_en_base = lambda tid, fecha: False   # la base no tiene penales de nadie
+        _d15._formacion_ultima = lambda tid, fecha: ("3-4-2-1", 123)
+        _d15.casos_bloque = lambda tid, antes, dias=180: [{"sede": "visita", "caso": "1-0 de visita"}]
+        _av802 = _d15.avisos_v16(_x792, _fx16, {"a": "Leones", "b": "Libertad"})
+    finally:
+        _d15._ejecutores_en_base = _ej802
+        _d15._formacion_ultima, _d15.casos_bloque = _orig802
+    check("802: sin penales del equipo en la base, «sin ejecutor» es lo que pide la nota: no avisa",
+          _av802 == [], _av802)
     check("721: con `casoP6` de la misma sede (visita) no avisa P6-OTRA-SEDE", _av721 == [], _av721)
     # 671: rehecho con el once oficial de hoy, M1-VS-ULTIMO-ONCE no compara contra el partido anterior
     _orig671 = (_d15._formacion_ultima, _d15.casos_bloque, _d15.oficial_de)

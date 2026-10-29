@@ -1766,9 +1766,10 @@ def alerta_escala(fx, nombres: dict) -> list[dict]:
         return []
     try:
         fecha = str(fx["date"])[:10]
-        la = _liga_domestica(fx["home_team_id"], fecha)
-        lb = _liga_domestica(fx["away_team_id"], fecha)
         from backend.analisis import escala
+        # sin partidos oficiales en la base: fuera del padrón (801, 798)
+        la = _liga_domestica(fx["home_team_id"], fecha) or escala.SIN_BASE
+        lb = _liga_domestica(fx["away_team_id"], fecha) or escala.SIN_BASE
         rel = escala.relacion(la, lb)
         if rel in ("misma", "sin dato"):
             return []
@@ -1779,7 +1780,10 @@ def alerta_escala(fx, nombres: dict) -> list[dict]:
             niv[lado] = nv[0]["nivel"] if nv else None
         fmt = lambda v: f"{v:.2f}" if v is not None else "sin nivel"  # noqa: E731
         def nom(x):
-            return x["nombre"] if x.get("nombre") else "liga fuera del padrón: solo copas en la base"
+            if x.get("nombre"):
+                return x["nombre"]
+            return ("liga fuera del padrón: sin partidos oficiales en la base" if x.get("sinPartidos")
+                    else "liga fuera del padrón: solo copas en la base")
         return [{
             "codigo": "ESCALA-LIGAS", "equipo": "global", "tipo": "dato",
             "detalle": (f"{nombres.get('a', 'A')} ({nom(la)}, {la['categoria']}) y {nombres.get('b', 'B')} "
