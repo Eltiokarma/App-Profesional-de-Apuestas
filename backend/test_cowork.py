@@ -413,6 +413,11 @@ def main():
                             {"id": 39, "pais": "England", "categoria": "primera"}) == "rival de categoría superior"
           and _esc.relacion({"id": 268, "pais": "Uruguay", "categoria": "primera"},
                             {"id": 270, "pais": "Uruguay", "categoria": "primera"}) == "misma")
+    _seg = {"id": 141, "pais": "Spain", "categoria": "segunda"}
+    check("801/798: sin partidos oficiales en la base es fuera del padrón: no comparable contra Segunda ni entre dos así",
+          _esc.relacion(_seg, None) == "rival fuera del padrón"
+          and _esc.relacion(None, _seg) == "rival de categoría superior"
+          and _esc.relacion(None, None) == "otra liga")
     check("cambio de categoría: el de la Championship jugando Premier es ascendido; al revés, descendido; "
           "una copa no es cambio",
           _esc.cambio_de_categoria(_esc.base_de(990103, None), 39) == "ascendido"
