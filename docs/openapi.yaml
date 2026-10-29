@@ -2606,6 +2606,31 @@ components:
         local: { $ref: '#/components/schemas/FichaEquipo' }
         visitante: { $ref: '#/components/schemas/FichaEquipo' }
         tactica: { $ref: '#/components/schemas/FichaTactica' }
+        eliminatoria:
+          allOf: [{ $ref: '#/components/schemas/Eliminatoria' }]
+          nullable: true
+          description: 'quién pasó la llave (`avanzaLado` local | visitante); null si no es eliminatoria o no terminó'
+    Eliminatoria:
+      type: object
+      description: >
+        Quién pasó una llave de eliminación directa, calculado de la base
+        (`backend/eliminatoria.py`, incidencia 774: Palmeiras pasó a la final de
+        la Libertadores por penales y un parte lo dio por eliminado). Sale de la
+        tanda, del global con la ida o de la prórroga; NUNCA del marcador a 90'.
+        `avanza` null = no se sabe (ida de una llave, ronda sin la otra pierna).
+      required: [fixtureId, marcador, prorroga]
+      properties:
+        fixtureId: { type: integer }
+        competicion: { type: string }
+        ronda: { type: string }
+        marcador: { type: string, description: 'con prórroga, local-visita' }
+        prorroga: { type: boolean }
+        penales: { type: string, nullable: true, description: 'la tanda, local-visita' }
+        global: { type: string, nullable: true, description: 'el global con la ida, local-visita de este partido' }
+        ida: { type: integer, nullable: true }
+        avanza: { type: integer, nullable: true, description: 'id del equipo que pasa' }
+        eliminado: { type: integer, nullable: true }
+        avanzaLado: { type: string, nullable: true }
     EtiquetaRival:
       type: object
       description: >
@@ -4704,6 +4729,9 @@ components:
             declarado: { type: string }
             real: { type: string }
             acerto: { type: boolean }
+        eliminatoria:
+          allOf: [{ $ref: '#/components/schemas/Eliminatoria' }]
+          description: 'solo en eliminación directa; `avanzaLado` a | b (el 1X2 y `marcador.ganador` siguen a 90'')'
         brier:
           type: object
           properties:

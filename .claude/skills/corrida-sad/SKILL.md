@@ -160,6 +160,16 @@ cae en la raíz del repo (17/10/2026).
 >   de `pronostico.probabilidades` (el recibo avisa en `matrizVsPronostico`).
 >   Es cómo puede darse el partido: no olvides la pelota parada ni el gatillo
 >   del que pierde. Ya no va como documento.
+> - **Quién pasó una llave NO se deduce del marcador** (29/10/2026, incidencia
+>   774: Palmeiras pasó a la final de la Libertadores por penales y un parte lo
+>   dio por eliminado, con el D3, el C4 y el ensayo encima). Un partido de
+>   copa que se fue a penales o a la vuelta de una llave: lo dice `eliminatoria`
+>   de `GET fixtures/{id}/ficha` (`avanzaLado`, `penales`, `global`) y el
+>   título del evento del timeline («Derrota 0-1 ante X · PASA por penales
+>   (5-3) tras 2-2 en el global»). El marcador es a 90' y NO dice quién pasó;
+>   los `Shootout` no se cuentan a mano. Sin `eliminatoria` (o con `avanza`
+>   null), la prensa confirma o se escribe «sin confirmar». Si el recibo trae
+>   `ELIMINATORIA-AL-REVES`, se corrige antes de cerrar.
 > - **Alertas: solo códigos que existen en los skills** (T.54, T.54-B,
 >   R-KT.2, GK-DOWNGRADE, GK-FALLA-ACTIVA, FACTOR-X, G-BLOQUE, G-SORPRESA,
 >   COLAPSO EN CASCADA del EFE; DIV-MOTOR-MERCADO de `sad-analysis`, con tipo

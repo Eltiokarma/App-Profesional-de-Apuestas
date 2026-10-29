@@ -547,6 +547,15 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     # ── el veredicto del M2 del DTP: la rama que se jugó (DTP v1.6) ─────────
     if (parte.get("dtp") or {}).get("bloques"):
         out["dtp"] = dtp_objetivo(parte.get("dtp") or {}, goles, sin_eventos=not goles and bool(gl or gv))
+    # ── la llave: el 1X2 es a 90' y el «ganador» de arriba también; quién PASÓ
+    # sale aparte, con la tanda y el global (incidencia 774: «ganador b» y
+    # Palmeiras había pasado a la final por penales) ─────────────────────────
+    from backend import eliminatoria
+    llave = eliminatoria.desenlace(fixture_id)
+    if llave:
+        lado = ("a" if llave["avanza"] == fx["home_team_id"] else "b") if llave.get("avanza") else None
+        out["eliminatoria"] = {**llave, "avanzaLado": lado,
+                               "nota": "el 1X2 y `marcador.ganador` son a 90'; quién pasa la llave es `avanzaLado`"}
     return out
 
 

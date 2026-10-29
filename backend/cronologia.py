@@ -29,7 +29,7 @@ La regla de 90' es la misma de todo el proyecto: `fulltime_*` manda sobre
 import re
 from datetime import datetime, timedelta, timezone
 
-from backend import db
+from backend import db, eliminatoria
 
 VENTANA_DIAS = 182       # default del protocolo TIMELINE: últimos 6 meses
 MAX_PARTIDOS = 60        # techo por equipo: un semestre no da para más
@@ -69,7 +69,7 @@ def _partidos(team_id: int, desde: str, hasta: str) -> list[dict]:
     """Partidos terminados del equipo en el período, del más viejo al más nuevo
     (el esquema TIMELINE exige orden cronológico estricto)."""
     return _q(
-        f"""SELECT f.id, f.date, f.home_team_id, f.away_team_id, f.league_round AS ronda,
+        f"""SELECT f.id, f.date, f.home_team_id, f.away_team_id, f.league_round AS ronda, f.status_short AS est,
                    {_GH} AS gh, {_GA} AS ga, ht.name AS local, at.name AS visitante,
                    l.name AS liga
             FROM fixtures f
@@ -106,21 +106,33 @@ def eventos_de(team_id: int, nombre: str, desde: str, hasta: str,
         jornada = _jornada(r["ronda"])
         liga = r["liga"] or ""
         directo = rival_id is not None and rival_id in (r["home_team_id"], r["away_team_id"])
+        # QUIÉN PASÓ LA LLAVE VA EN EL EVENTO (incidencia 774): «Derrota 0-1 ante
+        # Fluminense» era cierto a 90' y Palmeiras había pasado a la final por
+        # penales; el parte siguiente lo dio por eliminado. El marcador sigue
+        # siendo el de 90' (la regla de todo el proyecto); la llave se dice al lado.
+        llave = (eliminatoria.desenlace(r["id"])
+                 if (r["est"] == "PEN" or eliminatoria.es_eliminatoria(r["ronda"])) else None)
         if directo:
             # el cruce entre los dos equipos del timeline: uno solo, centrado
+            pasa = ""
+            if llave and llave.get("avanza"):
+                quien = r["local"] if llave["avanza"] == r["home_team_id"] else r["visitante"]
+                pasa = f"pasa {quien}" + (f" por penales ({llave['penales']})" if llave.get("penales") else "")
             out.append(_evento(
                 fecha, "ambos", "empate" if r["gh"] == r["ga"] else "resultado",
-                f"{r['local']} {r['gh']}-{r['ga']} {r['visitante']}",
+                f"{r['local']} {r['gh']}-{r['ga']} {r['visitante']}" + (f" · {pasa}" if pasa else ""),
                 " · ".join(x for x in ["Enfrentamiento directo", liga] if x),
                 jornada, f"{r['gh']}-{r['ga']}", True,
             ))
             continue
         tipo = "resultado" if gf > gc else "empate" if gf == gc else "derrota"
         verbo = {"resultado": "Victoria", "empate": "Empate", "derrota": "Derrota"}[tipo]
+        cierre = eliminatoria.texto_para(llave, team_id) if llave else ""
         out.append(_evento(
-            fecha, nombre, tipo, f"{verbo} {gf}-{gc} ante {rival}",
-            " · ".join(x for x in [("Local" if es_local else "Visitante"), liga] if x),
-            jornada, f"{gf}-{gc}", False,
+            fecha, nombre, tipo, f"{verbo} {gf}-{gc} ante {rival}" + (f" · {cierre}" if cierre else ""),
+            " · ".join(x for x in [("Local" if es_local else "Visitante"), liga,
+                                   ("marcador a 90'; la llave la dice el título" if cierre else "")] if x),
+            jornada, f"{gf}-{gc}", bool(cierre),
         ))
     return out
 

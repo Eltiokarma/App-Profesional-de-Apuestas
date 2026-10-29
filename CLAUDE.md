@@ -28,6 +28,7 @@ python -m backend.test_ficha      # ficha de partido (alineaciones/eventos/stats
 python -m backend.test_dtp        # DTP: cadena rodante, anti-hindsight y sin búsqueda web
 python -m backend.test_calendario # calendario SAD: bloque G del EFE calculado (sin IA)
 python -m backend.test_cronologia  # cronología SAD: los partidos del timeline, calculados
+python -m backend.test_eliminatoria # quién pasó una llave (penales, global, prórroga): ficha, timeline, veredicto y ELIMINATORIA-AL-REVES
 python -m backend.test_preflight  # chequeo previo del EFE: qué va a costar antes de gastar
 python -m backend.test_cowork    # parte de Cowork: bloque F calculado y cruce del once
 python -m backend.test_burbuja   # reventón de burbuja: mismos vectores dorados que el TS
@@ -333,6 +334,15 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   motor o no es dato»— y F1 por las alineaciones ya ingestadas. Los 16
   indicadores que siguen siendo juicio viajan en `noCalculables` con su motivo;
   lo que no se puede calcular se declara, no se rellena.
+- **Quién pasó una llave sale de la base, nunca del marcador** (29/10/2026,
+  incidencia 774: Palmeiras pasó a la final de la Libertadores por penales y un
+  parte lo dio por eliminado). `backend/eliminatoria.py` lo calcula de la tanda
+  (`penalty_*` o los `Shootout` convertidos), del global con la ida o de la
+  prórroga; sin eso, `avanza` null, nunca adivinado (la ida de una llave no
+  cierra nada). Viaja en la ficha (`eliminatoria`), en el título del evento del
+  timeline y en `objetivo.eliminatoria` del veredicto (el 1X2 y `ganador`
+  siguen a 90'). Un parte que lo contradice suena `ELIMINATORIA-AL-REVES` (tipo
+  `dato`, calculada) en `faltan` al depositar y en la tira al leer.
 - **Simulación de apuesta** (28/10/2026, pedido del usuario;
   `backend/analisis/simulacion.py`, `GET /analisis/simulacion`, sección
   **Simulación**): una banca de 100 unidades sobre los 1X2 declarados en los
