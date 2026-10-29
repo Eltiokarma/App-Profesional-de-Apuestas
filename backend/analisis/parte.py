@@ -4841,8 +4841,8 @@ def _prioridad(liga: dict, etiquetas: set[str], pos_local: int, pos_visita: int,
         # según se activara el etiquetador de derbis: la Copa Uruguay entró
         # para un partido y se descartó para otros tres, el mismo día.
         return 0, (f"fuera del padrón: {liga.get('nombre') or 'liga'} (id {liga_id}). "
-                   "El padrón son las ligas con cuotas en vivo (primeras divisiones, "
-                   "segundas de Europa y los torneos internacionales); las copas "
+                   "El padrón son las ligas con cuotas en vivo (primeras divisiones y "
+                   "los torneos internacionales; las segundas de Europa salieron el 29/10/2026); las copas "
                    "nacionales y los amistosos quedan fuera a propósito")
     if liga_id == 281:
         return 1, "Liga 1 Perú (la casa)"

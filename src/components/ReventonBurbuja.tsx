@@ -2,7 +2,7 @@
 // de resultado del equipo suele volver a cero, tal como llega del contrato
 // (GET /equipos/{id}/burbujas). La pantalla no calcula nada: pinta los números
 // y los motivos que vienen con ellos. No es una probabilidad y se dice.
-import type { BaseNivelDTO, BurbujasEquipoDTO, OtrasFamiliasDTO, DistribucionDTO, EscalaRivalDTO, FamiliaBurbuja, FamiliaBurbujaDTO, HistorialPeriodoDTO, HistorialSignoDTO, ReventonDTO } from '../api/types'
+import type { BaseNivelDTO, BurbujasEquipoDTO, OtrasFamiliasDTO, DistribucionDTO, EscalaRivalDTO, FamiliaBurbuja, FamiliaBurbujaDTO, HistorialPeriodoDTO, HistorialSignoDTO, ReventonDTO, SeparacionLigaDTO } from '../api/types'
 import type { KCondKey } from '../data/types'
 import { fmtK, signFmt } from '../lib/kview'
 
@@ -325,6 +325,9 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
           {/* la escala del rival: copa, ascendido, otra liga (Cristal–Bentín) */}
           {data.escala && !data.escala.comparable && <EscalaRival escala={data.escala} rival={data.proximo?.rival ?? 'el rival'} />}
 
+          {/* cuánto separa el riesgo en SU liga (29/10/2026): con paridad, la guía pesa menos */}
+          {data.separacionLiga && <SeparacionLiga s={data.separacionLiga} />}
+
           {/* el veredicto con sus motivos, uno por punto */}
           <div style={{ padding: '9px 11px', borderRadius: 9, background: `color-mix(in oklch, ${RIESGO_COLOR[riesgo.nivel]}, transparent 90%)`, border: `1px solid color-mix(in oklch, ${RIESGO_COLOR[riesgo.nivel]}, transparent 60%)` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 5 }}>
@@ -469,6 +472,19 @@ function EscalaRival({ escala, rival }: { escala: EscalaRivalDTO; rival: string 
 }
 
 /** El récord se armó con la mitad o más de amistosos: la alerta sigue (cuentan), pero se dice. */
+function SeparacionLiga({ s }: { s: SeparacionLigaDTO }) {
+  const color = s.nivel === 'baja' ? 'var(--mark)' : s.nivel === 'sin medir' ? 'var(--t3)' : 'var(--t2)'
+  const texto = s.nivel === 'sin medir' ? 'SIN MEDIR EN SU LIGA'
+    : `SEPARA ${s.nivel.toUpperCase()} EN ${(s.liga ?? 'SU LIGA').toUpperCase()} · AUC ${num(s.auc ?? 0, 2)}`
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}
+      title={s.medidoEn ? `medido el ${s.medidoEn} sobre ${s.n} observaciones (backtest sin fuga, liga por liga)` : undefined}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}><Chip texto={texto} color={color} /></div>
+      <div style={{ font: '500 10.5px var(--sans)', color: 'var(--t3)', lineHeight: 1.45 }}>{s.nota}</div>
+    </div>
+  )
+}
+
 function ChipInflada({ inf }: { inf: { amistosos: number; partidos: number; texto: string } }) {
   return (
     <span title={inf.texto} style={{ padding: '2px 7px', borderRadius: 6, border: '1px solid var(--t3)', color: 'var(--t2)', font: '700 10px var(--mono)', fontVariantNumeric: 'tabular-nums' }}>

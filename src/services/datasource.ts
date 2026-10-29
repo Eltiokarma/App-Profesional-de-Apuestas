@@ -46,6 +46,7 @@ import type {
   InventarioLecciones,
   LeccionesParams,
   SimulacionApuesta,
+  SeparacionLigaDTO,
   RevisionSkillDTO,
   DerrotasFavoritoDTO,
   LeccionItem,
@@ -96,6 +97,21 @@ export interface FixturesParams {
   /** Con equipoId: solo enfrentamientos directos entre ambos (H2H). */
   rivalId?: number
   limit?: number
+}
+
+// Cuánto separa el riesgo del reventón por liga: los AUC medidos en el backend
+// (backend/analisis/separacion_liga.py), solo para las tres ligas de la demo.
+const SEPARACION_DEMO: Record<string, { ligaId: number; liga: string; auc: number; n: number }> = {
+  laliga: { ligaId: 140, liga: 'La Liga', auc: 0.648, n: 6789 },
+  premier: { ligaId: 39, liga: 'Premier League', auc: 0.648, n: 7032 },
+  seriea: { ligaId: 135, liga: 'Serie A', auc: 0.676, n: 6684 },
+}
+function separacionDemo(key: string): SeparacionLigaDTO {
+  const lk = MATCHES.find((m) => m.home === key || m.away === key)?.lk ?? ''
+  const s = SEPARACION_DEMO[lk]
+  if (!s) return { ligaId: null, liga: null, auc: null, n: null, nivel: 'sin medir', medidoEn: null, nota: 'su liga: sin medir liga por liga; la guía es la calibrada sobre el padrón' }
+  const nivel = s.auc >= 0.64 ? 'alta' : s.auc >= 0.6 ? 'media' : 'baja'
+  return { ...s, nivel, medidoEn: '2026-10-29', nota: `en ${s.liga} el riesgo del reventón separa bien (AUC ${s.auc.toFixed(2)}): liga con jerarquía, una burbuja fuera de lugar dice algo; la guía pesa en la lectura` }
 }
 
 export interface SadDataSource {
@@ -789,7 +805,7 @@ class MockDataSource implements SadDataSource {
     // las otras burbujas contadas: el mismo espejo TS que el backend (scripts/casos_familias.json)
     // la espina de la tarjeta por familia, como la agrega el backend en /burbujas
     for (const f of Object.values(r.familias)) f.espinaTarjeta = espinaTarjeta(f.actual?.signo, f.riesgo?.movimiento)
-    return { ...r, otrasFamilias: describirFamilias(filas, proximo?.condicion ?? null, TEAMS[key].name) }
+    return { ...r, otrasFamilias: describirFamilias(filas, proximo?.condicion ?? null, TEAMS[key].name), separacionLiga: separacionDemo(key) }
   }
 
   async cadena(equipoId: number): Promise<EslabonDtpDTO[]> {

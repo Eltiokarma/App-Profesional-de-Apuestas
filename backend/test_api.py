@@ -439,6 +439,16 @@ def main():
     check("burbujas: dueños/organización declarado sin dato, jamás rellenado",
           any("dueños" in s for s in bu["estabilidad"]["sinDato"]))
     check("burbujas: el aviso dice que es guía, no probabilidad", "no probabilidad" in bu["aviso"])
+    # cuánto separa el riesgo en SU liga (29/10/2026, REVENTON §16): el Betis es de LaLiga
+    sl = bu.get("separacionLiga") or {}
+    check("/burbujas trae separacionLiga de LaLiga: AUC 0.648, nivel alta, con nota",
+          sl.get("ligaId") == 140 and sl.get("auc") == 0.648 and sl.get("nivel") == "alta" and sl.get("nota"), sl)
+    from backend.analisis import separacion_liga as _sep
+    check("los cortes de la separación: 0.64 alta · 0.60 media · debajo baja · sin dato sin medir",
+          [_sep.nivel_de(x) for x in (0.68, 0.64, 0.63, 0.60, 0.58, None)]
+          == ["alta", "alta", "media", "media", "baja", "sin medir"])
+    check("una liga sin medir no inventa un AUC", _sep.de_liga(999)["auc"] is None
+          and _sep.de_liga(999)["nivel"] == "sin medir")
     check("/equipos/999999/burbujas → 404", c.get(A + "/equipos/999999/burbujas").status_code == 404)
 
     # vista «al día del partido» (antesDe): la historia se corta ANTES del fixture

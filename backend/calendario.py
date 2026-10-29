@@ -278,6 +278,10 @@ CLASICOS_NACIONALES = (
     ("marseille", "paris saint germain"),          # Le Classique
     ("liverpool", "manchester united"),            # North West Derby
     ("alianza lima", "sporting cristal"), ("universitario", "sporting cristal"),
+    # Grecia entra al padrón el 29/10/2026: el Pireo y Atenas son ciudades
+    # distintas en `venue_city`, así que el derbi de los eternos rivales no sale solo
+    ("olympiakos", "panathinaikos"), ("aek athens", "olympiakos"), ("aek athens", "panathinaikos"),
+    ("trabzonspor", "fenerbahce"),                 # Turquía · el clásico fuera de Estambul
 )
 
 # PARES QUE COMPARTEN CIUDAD SIN SER DERBI: uno de los dos juega de local en

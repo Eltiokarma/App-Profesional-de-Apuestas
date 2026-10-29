@@ -354,6 +354,10 @@ def main():
         _con.execute("INSERT OR REPLACE INTO teams (id, name, country) VALUES (990101, 'Galatasaray', 'Turkey')")
         _con.execute("INSERT OR REPLACE INTO leagues (id, name, country, season) VALUES (203, 'Süper Lig', 'Turkey', 2026)")
         _con.execute("INSERT OR REPLACE INTO leagues (id, name, country, season) VALUES (3, 'UEFA Europa League', 'World', 2026)")
+    # liga_meta guarda los nombres en caché, y desde el 29/10/2026 la Süper Lig está en el
+    # padrón: algo ya la consultó antes de que este test insertara su nombre
+    appmod.liga_meta.cache_clear()
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         for i in range(3):  # su Süper Lig, terminada, en el último año
             _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
                          "home_team_id, away_team_id, goals_home, goals_away) VALUES (?,?,?,?,?,?,?,?,?,?)",
@@ -954,10 +958,19 @@ def main():
     check("la Champions entra sola también en fase liga (14/10/2026), con prioridad de top 6; Europa y Conference no",
           prio_de(2, "League Stage - 3")[0] == 4 and prio_de(3, "League Stage - 3")[0] == 0
           and prio_de(848, "League Stage - 3")[0] == 0, (prio_de(2, "League Stage - 3"), prio_de(848, "League Stage - 3")))
-    check("por defecto las segundas divisiones QUEDAN FUERA, con motivo",
-          all(prio_de(lid)[0] == 0 and "segundas=true" in prio_de(lid)[1] for lid in SEGUNDAS),
-          [prio_de(lid) for lid in SEGUNDAS if prio_de(lid)[0]])
-    check("con segundas=true entran, al final (7)", all(prio_de(lid, segundas=True)[0] == 7 for lid in SEGUNDAS))
+    # desde el 29/10/2026 las segundas de Europa y la Liga de Expansión son MENORES
+    # (fase 0 de ligas: el reventón separa poco en ellas): salen del padrón
+    from backend.ingesta.extractor import ligas_vivo as _lv
+    seg_padron = [lid for lid in SEGUNDAS if lid in _lv()]
+    check("queda alguna segunda en el padrón (Brasil Serie B) y las de Europa salieron",
+          seg_padron == [72] and all(lid not in _lv() for lid in (40, 62, 79, 136, 141, 263)), seg_padron)
+    check("por defecto las segundas divisiones del padrón QUEDAN FUERA, con motivo",
+          all(prio_de(lid)[0] == 0 and "segundas=true" in prio_de(lid)[1] for lid in seg_padron),
+          [prio_de(lid) for lid in seg_padron if prio_de(lid)[0]])
+    check("con segundas=true entran, al final (7)", all(prio_de(lid, segundas=True)[0] == 7 for lid in seg_padron))
+    check("una segunda que pasó a menor no entra ni con segundas=true: fuera del padrón, con motivo",
+          prio_de(141, segundas=True)[0] == 0 and "fuera del padrón" in prio_de(141, segundas=True)[1],
+          prio_de(141, segundas=True))
     check("una primera división sin equipo arriba sigue entrando (6)", prio_de(140)[0] == 6, prio_de(140))
     check("una fase decisiva manda sobre la fase de grupos",
           prio_de(13, "Quarter-finals")[0] < prio_de(13, "Group Stage - 4", grupos=True)[0],
@@ -968,7 +981,7 @@ def main():
           [prio_de(2, r)[1] for r in ("Round of 16", "Quarter-finals", "Semi-finals", "Final")])
     check("la Liga 1 de Perú sigue primera", prio_de(281)[0] == 1, prio_de(281))
     check("una segunda división (con segundas=true) entra, pero al final",
-          prio_de(141, segundas=True)[0] > prio_de(140)[0] > 0, (prio_de(141, segundas=True), prio_de(140)))
+          prio_de(72, segundas=True)[0] > prio_de(140)[0] > 0, (prio_de(72, segundas=True), prio_de(140)))
     check("dentro de una liga, el equipo en el top 6 o en crisis va antes",
           prio_de(71, pl=3)[0] < prio_de(71, pl=14, pv=17)[0],
           (prio_de(71, pl=3), prio_de(71, pl=14, pv=17)))

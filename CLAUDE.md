@@ -174,7 +174,10 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   separan solas —y ya se separaron—. Orden: Liga 1 Perú · internacional en fase
   decisiva (de octavos, leída de `league_round`) · clásico DENTRO del padrón ·
   liga con equipo top 6 o en crisis —y la fase liga de la CHAMPIONS, que entra
-  sola desde el 14/10/2026— · resto de primeras. La fase de grupos / fase liga
+  sola desde el 14/10/2026— · resto de primeras. **Desde el 29/10/2026** (fase
+  0 de ligas, REVENTON §16) entran Eredivisie, Grecia y Süper Lig (con sus copas
+  como menores), y las segundas de Europa y la Liga de Expansión MX pasan a
+  MENORES: el reventón separa poco en ellas y gastaban cuotas en vivo. La fase de grupos / fase liga
   de los demás torneos internacionales y las segundas divisiones quedan FUERA por defecto
   (`grupos=true` / `segundas=true` las meten, al final): un jueves de Europa
   League llenaba los cupos con partidos de relleno. Sin `fecha` la agenda es
@@ -348,6 +351,13 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   cada una. La demo (`src/data/simulacionDemo.ts`) se GENERA con `simular` del
   backend: no hay copia de la cuenta en TS. No es una recomendación de apuesta
   y no se abre al token de Cowork.
+- **Separación del riesgo por liga** (29/10/2026, usuario; REVENTON §16,
+  `backend/analisis/separacion_liga.py`): el AUC del riesgo del reventón medido
+  liga por liga sube con la jerarquía de la liga (r = 0,89 con el peso del
+  nivel en la μ). `/burbujas` trae `separacionLiga` (alta ≥ 0,64 · media ≥ 0,60 ·
+  baja) y la tarjeta lo pinta; NO mueve puntos ni cortes, dice cuánto pesar la
+  guía (el prompt lo pide en ligas de paridad). Tabla fechada: rehacerla con
+  cada backtest liga por liga.
 - Gráficas de K: tres valores a la vista (último · últimos dos de la condición
   que se analiza, saltando los que repiten valor) vía `puntosEtiquetados` de
   `src/lib/kview.ts`. Una gráfica nueva usa ese helper, no su propia regla.
