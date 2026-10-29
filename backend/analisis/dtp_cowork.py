@@ -33,6 +33,8 @@ from backend import db as saddb
 LADOS = ("a", "b")
 _FIN = "(status_short IN ('FT','AET','PEN') OR status_long='Match Finished')"
 FICHAS_PAREJAS = 5          # onces capturados que se miran para «≤ 1 vez juntos» (EFE v1.7)
+PARTIDOS_PAREJAS = 15       # hasta cuántos partidos atrás se buscan esos onces
+ONCES_PAREJAS_MIN = 3       # con menos onces con hoja, «≤ 1 vez juntos» no dice nada
 TRAMOS = ("0-25", "25-65", "65-80+")
 VIAS = ("pelota_parada", "transicion", "juego_abierto")
 NIVELES_RESP = ("principal", "secundario", "estructural")
@@ -159,11 +161,20 @@ def _parejas_nuevas(team_id: int, fecha: str, xi: list[dict]) -> list[dict]:
     ya arrancó junta ahí. Saltarlo daba «0 juntos» a la que debutó en él
     (Barracas, Taborda–Rolón en 1493195, incidencia 623) y marcaba como nueva
     a la que tenía DOS partidos juntos, contra el «≤ 1» del EFE v1.7."""
+    # LOS ONCES QUE HAY, NO LOS PARTIDOS (incidencia 777, Carabobo y La Guaira:
+    # de los últimos 5 partidos solo uno tenía hoja —la liga venezolana publica
+    # pocas— y cada pareja de titulares fijos salía «1 vez juntos», un
+    # EJE-DEBUTANTE falso). Se buscan FICHAS_PAREJAS onces con hoja entre los
+    # últimos PARTIDOS_PAREJAS; con menos de ONCES_PAREJAS_MIN no se juzga.
     previos = []
-    for f in _anteriores(team_id, fecha, FICHAS_PAREJAS):
+    for f in _anteriores(team_id, fecha, PARTIDOS_PAREJAS):
         ids = {j["player_id"] for j in _titulares(f["id"], team_id) if j["player_id"]}
         if ids:
             previos.append(ids)
+        if len(previos) >= FICHAS_PAREJAS:
+            break
+    if len(previos) < ONCES_PAREJAS_MIN:
+        return []
     return parejas_nuevas_de(xi, previos)
 
 

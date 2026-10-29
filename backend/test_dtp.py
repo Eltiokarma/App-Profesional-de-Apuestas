@@ -199,6 +199,21 @@ def main():
         _dc623._anteriores, _dc623._titulares = _ant623, _tit623
     check("623: la pareja que debutó en el último once tiene 1 partido juntos; la de 3 no es nueva",
           _pn623 == {("A", "B"): 1, ("B", "C"): 1}, _pn623)
+    # 777 (Carabobo): de los últimos partidos solo uno tiene hoja → no se juzga;
+    # los onces se buscan entre más partidos hasta juntar los que hacen falta
+    _onces777 = {10: {1, 2, 3}, 11: set(), 12: set(), 13: set(), 14: set(), 15: {1, 2, 3}, 16: {1, 2, 3}}
+    _dc623._anteriores = lambda t, f, n: [{"id": i} for i in range(10, 17)][:n]
+    _dc623._titulares = lambda fx, t: [{"player_id": p} for p in _onces777[fx]]
+    try:
+        _dc623._anteriores = lambda t, f, n: [{"id": i} for i in range(10, 15)][:n]
+        _pn777a = _dc623._parejas_nuevas(1, "2026-10-25", _xi)
+        _dc623._anteriores = lambda t, f, n: [{"id": i} for i in range(10, 17)][:n]
+        _pn777b = _dc623._parejas_nuevas(1, "2026-10-25", _xi)
+    finally:
+        _dc623._anteriores, _dc623._titulares = _ant623, _tit623
+    check("777: con un solo once con hoja no se marca ninguna pareja nueva (Carabobo)", _pn777a == [], _pn777a)
+    check("777: los onces sin hoja no cuentan; con 3 onces de 7 partidos, los fijos no son pareja nueva",
+          _pn777b == [], _pn777b)
     # 540: un partido reprogramado no pierde su apertura en la cadena
     efedb.guardar_cadena("Reprogramado FC", 5, "Rival A", "2026-10-14", 9001, {"m1": {"sistema": "4-4-2"}})
     efedb.guardar_cadena("Reprogramado FC", 5, "Rival B", "2026-10-18", 9002, {"m1": {"sistema": "3-5-2"}})
