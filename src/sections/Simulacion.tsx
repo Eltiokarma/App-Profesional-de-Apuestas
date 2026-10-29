@@ -11,15 +11,15 @@ import { useAsync } from '../services/useAsync'
 
 type Kelly = 'kelly' | 'kellyMedio' | 'kellyCuarto'
 const KELLY_OPC: [Kelly, string][] = [['kelly', 'entero'], ['kellyMedio', '½'], ['kellyCuarto', '¼']]
-const COLOR: Record<'plana' | 'kelly' | 'martingala', string> = {
-  plana: 'var(--sim-plana)', kelly: 'var(--sim-kelly)', martingala: 'var(--sim-martingala)',
+const COLOR: Record<'plana' | 'plana60' | 'kelly' | 'martingala', string> = {
+  plana: 'var(--sim-plana)', plana60: 'var(--sim-plana60)', kelly: 'var(--sim-kelly)', martingala: 'var(--sim-martingala)',
 }
 const RES: Record<Resultado1x2, string> = { local: 'Local', empate: 'Empate', visita: 'Visita' }
 const SKILL_CORTO: [string, string][] = [
   ['sad-analysis', 'sad'], ['efe-clasificador', 'EFE'], ['teorema-del-echado', 'TDE'], ['diagnostico-tactico', 'DTP'],
 ]
 const CORTO: Record<EstrategiaClave, string> = {
-  plana: 'Plana', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala',
+  plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala',
 }
 const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
@@ -59,7 +59,7 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
   const d = sim.data
   const est = (c: EstrategiaClave) => d.estrategias.find((e) => e.clave === c)!
   const visibles: { clave: EstrategiaClave; color: string }[] = [
-    { clave: 'plana', color: COLOR.plana }, { clave: kelly, color: COLOR.kelly }, { clave: 'martingala', color: COLOR.martingala },
+    { clave: 'plana', color: COLOR.plana }, { clave: 'plana60', color: COLOR.plana60 }, { clave: kelly, color: COLOR.kelly }, { clave: 'martingala', color: COLOR.martingala },
   ]
   const cerradas = [...d.apuestas].reverse().filter((a) => a.estado === 'cerrada')
 
@@ -85,7 +85,7 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
         {sim.loading && <span style={{ font: '500 10.5px var(--sans)', color: 'var(--t3)' }}>actualizando…</span>}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0,1fr)' : 'repeat(3, minmax(0,1fr))', gap: 10, marginBottom: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0,1fr)' : 'repeat(2, minmax(0,1fr))', gap: 10, marginBottom: 12 }}>
         {visibles.map((v) => <TarjetaEstrategia key={v.clave} e={est(v.clave)} color={v.color} />)}
       </div>
 
@@ -129,7 +129,7 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
       )}
 
       <div style={{ marginTop: 16, font: '500 11px var(--sans)', color: 'var(--t3)', lineHeight: 1.5 }}>
-        {d.estrategias.filter((e) => ['plana', kelly, 'martingala'].includes(e.clave)).map((e) => (
+        {d.estrategias.filter((e) => ['plana', 'plana60', kelly, 'martingala'].includes(e.clave)).map((e) => (
           <div key={e.clave}><b style={{ color: 'var(--t2)' }}>{e.nombre}</b>: {e.descripcion}.</div>
         ))}
         <div style={{ marginTop: 6 }}>{d.nota}.</div>
@@ -364,6 +364,7 @@ function FilaApuesta({ a, visibles }: { a: ApuestaSimulada; visibles: { clave: E
                 <span style={{ color: 'var(--t3)', minWidth: 0 }}>
                   {r.motivo === 'sin plata libre'
                     ? 'no apuesta: toda la banca está en juego en otros partidos'
+                    : v.clave === 'plana60' ? `no apuesta: el elegido tiene ${num(a.probabilidades[a.elegido], 0)} %, bajo el 60 %`
                     : v.clave.startsWith('kelly') ? `no apuesta: sin ventaja (mejor f* ${signo(100 * a.kelly.fraccion, 1)} % en ${RES[a.kelly.seleccion]})` : 'no apuesta: banca en cero'}
                 </span>
               )}

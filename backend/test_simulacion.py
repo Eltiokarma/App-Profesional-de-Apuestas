@@ -121,6 +121,19 @@ check("kelly entero con f* = 0.6 en tres simultáneos: 60 · 40 · nada (no pasa
 check("el tercero dice que no hubo plata libre", out["apuestas"][0]["porEstrategia"]["kelly"]["motivo"]
       == "sin plata libre", out["apuestas"][0]["porEstrategia"]["kelly"])
 
+# 4-quater) CONTROL DE CONFIANZA: plana solo con nuestro elegido a 60 %+ (29/10/2026, usuario)
+out = sim.simular([ap(110, "2026-10-28 15:00:00", (65, 20, 15), (1.5, 4.2, 6.0), "local"),
+                   ap(111, "2026-10-28 18:00:00", (55, 25, 20), (1.8, 3.6, 4.5), "visita"),
+                   ap(112, "2026-10-28 21:00:00", (30, 10, 60), (4.0, 6.0, 1.6), "empate")])
+p60 = {a["fixtureId"]: a["porEstrategia"]["plana60"] for a in out["apuestas"]}
+check("plana 60 %+: apuesta al local de 65 % y a la visita de 60 %", p60[110]["monto"] == 1
+      and p60[112]["monto"] == 1 and p60[112]["seleccion"] == "visita", p60)
+check("plana 60 %+: no apuesta al de 55 % y dice por qué",
+      p60[111]["seleccion"] is None and p60[111]["motivo"] == "bajo 60 %", p60[111])
+e60 = est(out, "plana60")
+check("plana 60 %+: +0.5 −1 = 99.5 en 2 apuestas", e60["banca"] == 99.5 and e60["apuestas"] == 2, e60)
+check("la plana de control apostó en las tres", est(out, "plana")["apuestas"] == 3)
+
 # 5) pendiente: no mueve la banca pero dice qué se apostaría
 out = sim.simular([ap(20, "2026-10-28 20:00:00", (50, 30, 20), (2.5, 3.2, 4.0), "local"),
                    ap(21, "2026-10-28 23:00:00", (50, 30, 20), (2.5, 3.2, 4.0), None)])
@@ -147,7 +160,7 @@ check("TDE sin hora de subida: rige desde el día del corte",
 
 # 8) el armado desde la base corre sobre la demo (sin partes desde el 28/10: vacío, no un error)
 out = sim.simulacion()
-check("simulacion() responde con las cinco estrategias", len(out["estrategias"]) == 5, out.keys())
+check("simulacion() responde con las seis estrategias", len(out["estrategias"]) == 6, out.keys())
 check("simulacion() trae desde y nota", out["desde"] == sim.DESDE and out["nota"])
 
 # 9) de punta a punta: un parte de verdad en la base, depositado antes del pitazo

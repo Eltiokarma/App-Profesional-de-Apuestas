@@ -59,19 +59,19 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    ]
   },
   {
-   "clave": "kelly",
-   "nombre": "Kelly completo",
-   "descripcion": "f* = (p·c − 1)/(c − 1) de la banca a la selección con más ventaja; sin ventaja no apuesta",
-   "banca": 109.2,
-   "ganancia": 9.2,
-   "apostado": 10.93,
+   "clave": "plana60",
+   "nombre": "Plana solo 60 %+",
+   "descripcion": "1 unidad a nuestro elegido solo cuando le damos 60 % o más",
+   "banca": 99.75,
+   "ganancia": -0.25,
+   "apostado": 2.0,
    "apuestas": 2,
-   "ganadas": 2,
-   "roi": 0.8415,
-   "caidaMaxima": 0.0,
+   "ganadas": 1,
+   "roi": -0.125,
+   "caidaMaxima": 0.01,
    "quebro": null,
-   "exposicionMaxima": 11.09,
-   "montoMaximo": 6.93,
+   "exposicionMaxima": 1.0,
+   "montoMaximo": 1.0,
    "lineas": null,
    "serie": [
     {
@@ -87,22 +87,70 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     {
      "fixtureId": 900002,
      "pitazo": "2026-10-28 15:00:00",
-     "banca": 100.0
+     "banca": 99.0
     },
     {
      "fixtureId": 900003,
      "pitazo": "2026-10-28 19:45:00",
-     "banca": 104.0
+     "banca": 99.0
     },
     {
      "fixtureId": 900004,
      "pitazo": "2026-10-28 20:00:00",
-     "banca": 104.0
+     "banca": 99.0
     },
     {
      "fixtureId": 900005,
      "pitazo": "2026-10-29 19:30:00",
-     "banca": 109.2
+     "banca": 99.75
+    }
+   ]
+  },
+  {
+   "clave": "kelly",
+   "nombre": "Kelly completo",
+   "descripcion": "f* = (p·c − 1)/(c − 1) de la banca a la selección con más ventaja; sin ventaja no apuesta",
+   "banca": 108.42,
+   "ganancia": 8.42,
+   "apostado": 11.57,
+   "apuestas": 3,
+   "ganadas": 2,
+   "roi": 0.7285,
+   "caidaMaxima": 0.0071,
+   "quebro": null,
+   "exposicionMaxima": 11.01,
+   "montoMaximo": 6.88,
+   "lineas": null,
+   "serie": [
+    {
+     "fixtureId": null,
+     "pitazo": null,
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900001,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900002,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 99.29
+    },
+    {
+     "fixtureId": 900003,
+     "pitazo": "2026-10-28 19:45:00",
+     "banca": 103.26
+    },
+    {
+     "fixtureId": 900004,
+     "pitazo": "2026-10-28 20:00:00",
+     "banca": 103.26
+    },
+    {
+     "fixtureId": 900005,
+     "pitazo": "2026-10-29 19:30:00",
+     "banca": 108.42
     }
    ]
   },
@@ -110,16 +158,16 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    "clave": "kellyMedio",
    "nombre": "Kelly ½",
    "descripcion": "la mitad de la fracción de Kelly",
-   "banca": 104.55,
-   "ganancia": 4.55,
-   "apostado": 5.4,
-   "apuestas": 2,
+   "banca": 104.18,
+   "ganancia": 4.18,
+   "apostado": 5.74,
+   "apuestas": 3,
    "ganadas": 2,
-   "roi": 0.8426,
-   "caidaMaxima": 0.0,
+   "roi": 0.7286,
+   "caidaMaxima": 0.0035,
    "quebro": null,
-   "exposicionMaxima": 5.44,
-   "montoMaximo": 3.4,
+   "exposicionMaxima": 5.42,
+   "montoMaximo": 3.39,
    "lineas": null,
    "serie": [
     {
@@ -135,22 +183,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     {
      "fixtureId": 900002,
      "pitazo": "2026-10-28 15:00:00",
-     "banca": 100.0
+     "banca": 99.65
     },
     {
      "fixtureId": 900003,
      "pitazo": "2026-10-28 19:45:00",
-     "banca": 102.0
+     "banca": 101.64
     },
     {
      "fixtureId": 900004,
      "pitazo": "2026-10-28 20:00:00",
-     "banca": 102.0
+     "banca": 101.64
     },
     {
      "fixtureId": 900005,
      "pitazo": "2026-10-29 19:30:00",
-     "banca": 104.55
+     "banca": 104.18
     }
    ]
   },
@@ -158,13 +206,13 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    "clave": "kellyCuarto",
    "nombre": "Kelly ¼",
    "descripcion": "un cuarto de la fracción de Kelly",
-   "banca": 102.26,
-   "ganancia": 2.26,
-   "apostado": 2.68,
-   "apuestas": 2,
+   "banca": 102.08,
+   "ganancia": 2.08,
+   "apostado": 2.86,
+   "apuestas": 3,
    "ganadas": 2,
-   "roi": 0.8432,
-   "caidaMaxima": 0.0,
+   "roi": 0.7287,
+   "caidaMaxima": 0.0018,
    "quebro": null,
    "exposicionMaxima": 2.69,
    "montoMaximo": 1.68,
@@ -183,22 +231,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     {
      "fixtureId": 900002,
      "pitazo": "2026-10-28 15:00:00",
-     "banca": 100.0
+     "banca": 99.82
     },
     {
      "fixtureId": 900003,
      "pitazo": "2026-10-28 19:45:00",
-     "banca": 101.0
+     "banca": 100.82
     },
     {
      "fixtureId": 900004,
      "pitazo": "2026-10-28 20:00:00",
-     "banca": 101.0
+     "banca": 100.82
     },
     {
      "fixtureId": 900005,
      "pitazo": "2026-10-29 19:30:00",
-     "banca": 102.26
+     "banca": 102.08
     }
    ]
   },
@@ -267,23 +315,29 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "apuestas": 2,
      "roi": 0.025
     },
+    "plana60": {
+     "apostado": 1.0,
+     "ganancia": -1.0,
+     "apuestas": 1,
+     "roi": -1.0
+    },
     "kelly": {
-     "apostado": 0.0,
-     "ganancia": 0.0,
-     "apuestas": 0,
-     "roi": null
+     "apostado": 0.7097,
+     "ganancia": -0.7097,
+     "apuestas": 1,
+     "roi": -1.0
     },
     "kellyMedio": {
-     "apostado": 0.0,
-     "ganancia": 0.0,
-     "apuestas": 0,
-     "roi": null
+     "apostado": 0.3548,
+     "ganancia": -0.3548,
+     "apuestas": 1,
+     "roi": -1.0
     },
     "kellyCuarto": {
-     "apostado": 0.0,
-     "ganancia": 0.0,
-     "apuestas": 0,
-     "roi": null
+     "apostado": 0.1774,
+     "ganancia": -0.1774,
+     "apuestas": 1,
+     "roi": -1.0
     },
     "martingala": {
      "apostado": 2.0,
@@ -304,21 +358,27 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "apuestas": 3,
      "roi": 0.25
     },
+    "plana60": {
+     "apostado": 1.0,
+     "ganancia": 0.75,
+     "apuestas": 1,
+     "roi": 0.75
+    },
     "kelly": {
-     "apostado": 10.9333,
-     "ganancia": 9.2,
+     "apostado": 10.8557,
+     "ganancia": 9.1347,
      "apuestas": 2,
      "roi": 0.8415
     },
     "kellyMedio": {
-     "apostado": 5.4,
-     "ganancia": 4.55,
+     "apostado": 5.3808,
+     "ganancia": 4.5338,
      "apuestas": 2,
      "roi": 0.8426
     },
     "kellyCuarto": {
-     "apostado": 2.6833,
-     "ganancia": 2.2625,
+     "apostado": 2.6785,
+     "ganancia": 2.2584,
      "apuestas": 2,
      "roi": 0.8432
     },
@@ -380,9 +440,17 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": ""
     },
+    "plana60": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": null,
+     "banca": null,
+     "linea": null,
+     "motivo": "bajo 60 %"
+    },
     "kelly": {
      "seleccion": "visita",
-     "monto": 4.16,
+     "monto": 4.1305,
      "ganancia": null,
      "banca": null,
      "linea": null,
@@ -390,7 +458,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     },
     "kellyMedio": {
      "seleccion": "visita",
-     "monto": 2.04,
+     "monto": 2.0328,
      "ganancia": null,
      "banca": null,
      "linea": null,
@@ -398,7 +466,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     },
     "kellyCuarto": {
      "seleccion": "visita",
-     "monto": 1.01,
+     "monto": 1.0082,
      "ganancia": null,
      "banca": null,
      "linea": null,
@@ -462,27 +530,35 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": ""
     },
+    "plana60": {
+     "seleccion": "local",
+     "monto": 1.0,
+     "ganancia": 0.75,
+     "banca": 99.75,
+     "linea": null,
+     "motivo": ""
+    },
     "kelly": {
      "seleccion": "local",
-     "monto": 6.9333,
-     "ganancia": 5.2,
-     "banca": 109.2,
+     "monto": 6.8841,
+     "ganancia": 5.1631,
+     "banca": 108.42,
      "linea": null,
      "motivo": ""
     },
     "kellyMedio": {
      "seleccion": "local",
-     "monto": 3.4,
-     "ganancia": 2.55,
-     "banca": 104.55,
+     "monto": 3.3879,
+     "ganancia": 2.5409,
+     "banca": 104.18,
      "linea": null,
      "motivo": ""
     },
     "kellyCuarto": {
      "seleccion": "local",
-     "monto": 1.6833,
-     "ganancia": 1.2625,
-     "banca": 102.26,
+     "monto": 1.6803,
+     "ganancia": 1.2602,
+     "banca": 102.08,
      "linea": null,
      "motivo": ""
     },
@@ -544,11 +620,19 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": ""
     },
+    "plana60": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 99.0,
+     "linea": null,
+     "motivo": "bajo 60 %"
+    },
     "kelly": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 104.0,
+     "banca": 103.26,
      "linea": null,
      "motivo": "sin ventaja"
     },
@@ -556,7 +640,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 102.0,
+     "banca": 101.64,
      "linea": null,
      "motivo": "sin ventaja"
     },
@@ -564,7 +648,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 101.0,
+     "banca": 100.82,
      "linea": null,
      "motivo": "sin ventaja"
     },
@@ -626,27 +710,35 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": ""
     },
+    "plana60": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 99.0,
+     "linea": null,
+     "motivo": "bajo 60 %"
+    },
     "kelly": {
      "seleccion": "local",
-     "monto": 4.0,
-     "ganancia": 4.0,
-     "banca": 104.0,
+     "monto": 3.9716,
+     "ganancia": 3.9716,
+     "banca": 103.26,
      "linea": null,
      "motivo": ""
     },
     "kellyMedio": {
      "seleccion": "local",
-     "monto": 2.0,
-     "ganancia": 2.0,
-     "banca": 102.0,
+     "monto": 1.9929,
+     "ganancia": 1.9929,
+     "banca": 101.64,
      "linea": null,
      "motivo": ""
     },
     "kellyCuarto": {
      "seleccion": "local",
-     "monto": 1.0,
-     "ganancia": 1.0,
-     "banca": 101.0,
+     "monto": 0.9982,
+     "ganancia": 0.9982,
+     "banca": 100.82,
      "linea": null,
      "motivo": ""
     },
@@ -677,26 +769,26 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    },
    "versionPrompt": "v2.5",
    "probabilidades": {
-    "local": 57.0,
-    "empate": 24.0,
-    "visita": 19.0
+    "local": 62.0,
+    "empate": 22.0,
+    "visita": 16.0
    },
    "cuotas": {
-    "local": 1.72,
-    "empate": 3.9,
-    "visita": 4.8
+    "local": 1.62,
+    "empate": 4.1,
+    "visita": 5.4
    },
    "mercado": {
-    "local": 55.6,
-    "empate": 24.5,
-    "visita": 19.9
+    "local": 59.0,
+    "empate": 23.3,
+    "visita": 17.7
    },
    "resultado": "empate",
    "elegido": "local",
    "kelly": {
-    "seleccion": "empate",
-    "fraccion": -0.0221,
-    "valor": -0.064
+    "seleccion": "local",
+    "fraccion": 0.0071,
+    "valor": 0.0044
    },
    "estado": "cerrada",
    "porEstrategia": {
@@ -708,29 +800,37 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": ""
     },
-    "kelly": {
-     "seleccion": null,
-     "monto": 0.0,
-     "ganancia": 0.0,
-     "banca": 100.0,
+    "plana60": {
+     "seleccion": "local",
+     "monto": 1.0,
+     "ganancia": -1.0,
+     "banca": 99.0,
      "linea": null,
-     "motivo": "sin ventaja"
+     "motivo": ""
+    },
+    "kelly": {
+     "seleccion": "local",
+     "monto": 0.7097,
+     "ganancia": -0.7097,
+     "banca": 99.29,
+     "linea": null,
+     "motivo": ""
     },
     "kellyMedio": {
-     "seleccion": null,
-     "monto": 0.0,
-     "ganancia": 0.0,
-     "banca": 100.0,
+     "seleccion": "local",
+     "monto": 0.3548,
+     "ganancia": -0.3548,
+     "banca": 99.65,
      "linea": null,
-     "motivo": "sin ventaja"
+     "motivo": ""
     },
     "kellyCuarto": {
-     "seleccion": null,
-     "monto": 0.0,
-     "ganancia": 0.0,
-     "banca": 100.0,
+     "seleccion": "local",
+     "monto": 0.1774,
+     "ganancia": -0.1774,
+     "banca": 99.82,
      "linea": null,
-     "motivo": "sin ventaja"
+     "motivo": ""
     },
     "martingala": {
      "seleccion": "local",
@@ -789,6 +889,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 101.05,
      "linea": null,
      "motivo": ""
+    },
+    "plana60": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "bajo 60 %"
     },
     "kelly": {
      "seleccion": null,

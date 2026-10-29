@@ -2532,7 +2532,7 @@ export interface HistorialValorDTO extends GananciaValor {
 }
 
 // ── Simulación de apuesta (GET /analisis/simulacion, 28/10/2026) ─────────────
-export type EstrategiaClave = 'plana' | 'kelly' | 'kellyMedio' | 'kellyCuarto' | 'martingala'
+export type EstrategiaClave = 'plana' | 'plana60' | 'kelly' | 'kellyMedio' | 'kellyCuarto' | 'martingala'
 export type Resultado1x2 = 'local' | 'empate' | 'visita'
 
 export interface EstrategiaSimulada {

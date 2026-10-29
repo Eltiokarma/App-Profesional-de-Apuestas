@@ -51,6 +51,8 @@ from backend.analisis.lecciones import CORTE_VERSION, cuotas_mercado
 DESDE = "2026-10-28 05:00:00"
 BANCA_INICIAL = 100.0
 UNIDAD = 1.0
+# el tramo alto de confianza del 1X2 (el «60+» de lecciones.TRAMOS_CONFIANZA)
+CONFIANZA_ALTA = 60.0
 # cuánto después del pitazo se cobra: no tenemos la hora de fin de cada
 # partido, y 90 minutos con el descanso y el añadido son unas dos horas
 DURACION = timedelta(minutes=120)
@@ -69,6 +71,11 @@ SUBIDA_VERSION = {
 ESTRATEGIAS = (
     ("plana", "Apuesta plana (control)",
      f"{UNIDAD:g} unidad a nuestro elegido en cada partido"),
+    # CONTROL DE CONFIANZA (29/10/2026, usuario): el tramo de 60 %+ es el que
+    # más acierta en «Métricas · confianza»; esto mide si además gana plata,
+    # porque al favorito claro la cuota le paga poco
+    ("plana60", f"Plana solo {CONFIANZA_ALTA:g} %+",
+     f"{UNIDAD:g} unidad a nuestro elegido solo cuando le damos {CONFIANZA_ALTA:g} % o más"),
     ("kelly", "Kelly completo",
      "f* = (p·c − 1)/(c − 1) de la banca a la selección con más ventaja; sin ventaja no apuesta"),
     ("kellyMedio", "Kelly ½", "la mitad de la fracción de Kelly"),
@@ -147,15 +154,22 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
             linea = {"id": len(e["lineas"]) + 1, "proximo": UNIDAD, "libreDesde": t, "ocupada": False}
             e["lineas"].append(linea)
         previsto = linea["proximo"]
+    elif clave == "plana60":
+        sel = fila["elegido"]
+        previsto = UNIDAD if fila["probabilidades"][sel] >= CONFIANZA_ALTA else 0.0
     else:
         sel = fila["elegido"]
         previsto = UNIDAD
     monto = round(max(min(previsto, libre), 0.0), 4)
     if monto <= 0:
+        if previsto > 0:
+            motivo = "sin plata libre"
+        elif clave == "plana60":
+            motivo = f"bajo {CONFIANZA_ALTA:g} %"
+        else:
+            motivo = "sin ventaja"
         fila["porEstrategia"][clave] = {"seleccion": None, "monto": 0.0, "ganancia": None, "banca": None,
-                                        "linea": None,
-                                        "motivo": "sin ventaja" if clave in _FRACCION_KELLY and previsto <= 0
-                                        else "sin plata libre"}
+                                        "linea": None, "motivo": motivo}
         return
     e["comprometido"] += monto
     e["exposicion"] = max(e["exposicion"], e["comprometido"])
