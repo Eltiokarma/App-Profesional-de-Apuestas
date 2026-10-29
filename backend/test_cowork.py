@@ -3445,15 +3445,28 @@ def main():
           _av16b == [], _av16b)
     _x792 = _copy.deepcopy(_x16b)
     _x792["bloques"][0]["apertura"]["m2"]["viasGol"]["rival"] = ["penal: sin ejecutor confirmado entre los titulares"]
-    _orig792 = (_d15._formacion_ultima, _d15.casos_bloque)
+    _orig792 = (_d15._formacion_ultima, _d15.casos_bloque, _d15._ejecutores_en_base)
     try:
+        _d15._ejecutores_en_base = lambda tid, fecha: True   # la base sí tiene ejecutores (Palmeiras)
         _d15._formacion_ultima = lambda tid, fecha: ("3-4-2-1", 123)
         _d15.casos_bloque = lambda tid, antes, dias=180: [{"sede": "visita", "caso": "1-0 de visita"}]
         _av792 = _d15.avisos_v16(_x792, _fx16, {"a": "Leones", "b": "Libertad"})
     finally:
-        _d15._formacion_ultima, _d15.casos_bloque = _orig792
+        _d15._formacion_ultima, _d15.casos_bloque, _d15._ejecutores_en_base = _orig792
     check("792: «penal: sin ejecutor confirmado» no cuenta como ejecutor nombrado → DTP-PENAL-SIN-EJECUTOR",
           [a["codigo"] for a in _av792] == ["DTP-PENAL-SIN-EJECUTOR"], _av792)
+    _ej802 = _d15._ejecutores_en_base
+    _orig802 = (_d15._formacion_ultima, _d15.casos_bloque)
+    try:
+        _d15._ejecutores_en_base = lambda tid, fecha: False   # la base no tiene penales de nadie
+        _d15._formacion_ultima = lambda tid, fecha: ("3-4-2-1", 123)
+        _d15.casos_bloque = lambda tid, antes, dias=180: [{"sede": "visita", "caso": "1-0 de visita"}]
+        _av802 = _d15.avisos_v16(_x792, _fx16, {"a": "Leones", "b": "Libertad"})
+    finally:
+        _d15._ejecutores_en_base = _ej802
+        _d15._formacion_ultima, _d15.casos_bloque = _orig802
+    check("802: sin penales del equipo en la base, «sin ejecutor» es lo que pide la nota: no avisa",
+          _av802 == [], _av802)
     check("721: con `casoP6` de la misma sede (visita) no avisa P6-OTRA-SEDE", _av721 == [], _av721)
     # 671: rehecho con el once oficial de hoy, M1-VS-ULTIMO-ONCE no compara contra el partido anterior
     _orig671 = (_d15._formacion_ultima, _d15.casos_bloque, _d15.oficial_de)
