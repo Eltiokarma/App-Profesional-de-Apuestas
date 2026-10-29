@@ -357,6 +357,14 @@ def penales_temporada(team_id: int, antes: str, dias: int = PENALES_DIAS) -> dic
     return {"ejecutores": ejecutores, "partidosConEventos": (con_ev or {"n": 0})["n"], "nota": nota}
 
 
+def _ejecutores_en_base(team_id, fecha: str) -> bool:
+    """¿La base tiene algún penal del equipo en el año? Ante la duda (sin base), sí."""
+    try:
+        return bool(penales_temporada(team_id, fecha)["ejecutores"])
+    except Exception:  # noqa: BLE001
+        return True
+
+
 def _ids_plantel(team_id: int) -> set[int]:
     """Los ids de la plantilla de HOY (con stats o solo en la lista actual).
     Vacío si no hay ingesta: entonces no se juzga quién sigue."""
@@ -1520,6 +1528,7 @@ from backend.jugadores import dias_descanso as jug_dias_descanso  # noqa: E402
 
 _PENAL = re.compile(r"penal|penalt", re.I)
 _SIN_EJECUTOR = re.compile(r"sin ejecutor|ejecutor (?:no|sin) (?:confirmad|defin|conocid)|por jerarqu", re.I)
+# (_ejecutores_en_base decide si «sin ejecutor» es un hueco o lo que la base dice)
 _SEDE_TXT = {"visita": re.compile(r"visita|visitante|\bfuera\b", re.I),
              "local": re.compile(r"\bde local\b|\ben casa\b|\blocal\)|\(local", re.I)}
 
@@ -1577,9 +1586,13 @@ def avisos_v16(dtp: dict, fx, nombres: dict) -> list[dict]:
                                          "`partidoAnterior.xi`), o escribir en `senalXi` por qué se aparta "
                                          "(DTP v1.6)"})
         vias = m2.get("viasGol") or {}
-        # «penal: sin ejecutor confirmado» nombra la vía, no al ejecutor (792, Palmeiras)
+        # «penal: sin ejecutor confirmado» nombra la vía, no al ejecutor (792, Palmeiras)…
+        # …salvo que la base no tenga ningún penal de ese equipo en el año: ahí
+        # «sin ejecutor» es justo lo que la nota de `penales` pide decir (802:
+        # Varea, Numancia, Águilas cobrados por escribirlo)
+        sin_base = {"foco": not _ejecutores_en_base(tid, fecha), "rival": not _ejecutores_en_base(tid_rival, fecha)}
         sin_penal = [q for q, k in (("propio", "foco"), ("del rival", "rival"))
-                     if not any(_PENAL.search(v or "") and not _SIN_EJECUTOR.search(v or "")
+                     if not any(_PENAL.search(v or "") and (sin_base[k] or not _SIN_EJECUTOR.search(v or ""))
                                 for v in vias.get(k) or [])]
         if (vias.get("foco") or vias.get("rival")) and sin_penal:
             out.append({"bloque": f"dtp.{lado}.m2.viasGol", "codigo": "DTP-PENAL-SIN-EJECUTOR",
