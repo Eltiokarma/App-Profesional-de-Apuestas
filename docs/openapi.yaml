@@ -1279,7 +1279,7 @@ paths:
       summary: Simulación de apuesta sobre nuestros 1X2 (desde el 28/10/2026)
       description: >
         Qué habría pasado con una banca de 100 unidades apostando con los 1X2 declarados en los
-        partes, con cinco series lado a lado: plana (control, 1 unidad al elegido), Kelly entero,
+        partes, con seis series lado a lado: plana (control, 1 unidad al elegido), plana solo con el elegido a 60 %+ (el tramo alto de confianza), Kelly entero,
         ½ y ¼ (f* = (p·c − 1)/(c − 1) sobre NUESTRAS probabilidades, a la selección con más
         ventaja; sin ventaja no apuesta) y martingala (1 unidad al elegido, se duplica tras cada
         derrota, por líneas en paralelo). Se apuesta en el pitazo y se cobra dos horas después:
@@ -1766,7 +1766,7 @@ components:
           items:
             type: object
             properties:
-              clave: { type: string, enum: [plana, kelly, kellyMedio, kellyCuarto, martingala] }
+              clave: { type: string, enum: [plana, plana60, kelly, kellyMedio, kellyCuarto, martingala] }
               nombre: { type: string }
               descripcion: { type: string }
               banca: { type: number }
@@ -1849,7 +1849,7 @@ components:
                     seleccion: { type: string, nullable: true, description: 'null = no apostó' }
                     monto: { type: number }
                     linea: { type: integer, nullable: true, description: 'solo martingala: en qué línea entró' }
-                    motivo: { type: string, description: "sin apuesta: 'sin ventaja' · 'sin plata libre'" }
+                    motivo: { type: string, description: "sin apuesta: 'sin ventaja' · 'sin plata libre' · 'bajo 60 %'" }
                     ganancia: { type: number, nullable: true }
                     banca: { type: number, nullable: true }
         excluidos:

@@ -327,7 +327,9 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
 - **Simulación de apuesta** (28/10/2026, pedido del usuario;
   `backend/analisis/simulacion.py`, `GET /analisis/simulacion`, sección
   **Simulación**): una banca de 100 unidades sobre los 1X2 declarados en los
-  partes, con cinco series —plana (control, 1 u al elegido), Kelly entero, ½ y
+  partes, con seis series —plana (control, 1 u al elegido), plana solo con el
+  elegido a 60 %+ (`plana60`, 29/10/2026, usuario: el tramo alto de confianza,
+  ¿además de acertar gana a su cuota?), Kelly entero, ½ y
   ¼ (f* = (p·c − 1)/(c − 1) sobre NUESTRAS probabilidades, a la selección con
   más ventaja; sin ventaja no apuesta) y martingala POR LÍNEAS (29/10/2026,
   usuario: cada línea es una martingala de 1 u que se duplica tras perder;
