@@ -93,6 +93,13 @@ def _casos(limite: int = 400, ids=None) -> list[dict]:
                 fecha_real[r["id"]] = str(r["date"] or "")
         except Exception:  # noqa: BLE001 — sin la base de partidos no se juzga
             fecha_real = {}
+    # COPAS NACIONALES FUERA DE LAS TABLAS (29/10/2026, usuario): se analizan y
+    # enseñan, pero no cuentan en ninguna métrica (como la cuarentena que enseña)
+    try:
+        from backend.analisis.escala import copas_nacionales
+        copas = copas_nacionales([f["fixture_id"] for f in filas])
+    except Exception:  # noqa: BLE001
+        copas = {}
     fuera = []
     for f in filas:
         parte = json.loads(f["parte_json"])
@@ -145,6 +152,7 @@ def _casos(limite: int = 400, ids=None) -> list[dict]:
             "cuarentena": cuarentena,
             "modoFallo": json.loads(f["modo_fallo_json"]) if f["modo_fallo_json"] else None,
             "dtDisputado": disputados,
+            "copa": copas.get(f["fixture_id"], ""),
         })
     return fuera
 
@@ -213,12 +221,16 @@ def _item(caso, lado, clave, lv, mf, orden, propio, rival, estados, seleccion, m
         # el parte contradijo a la base con la prensa y el banco de la API no le
         # da la razón: no aparta el caso, pero queda a la vista para revisarlo
         "dtDisputado": caso.get("dtDisputado") or [],
+        # copa nacional: enseña, pero fuera de toda métrica y sin mover números
+        "copa": caso.get("copa", ""),
         # LA DISTINCIÓN QUE EL DOSSIER NO PUEDE DEJAR AL CRITERIO DEL DÍA:
         # un caso contaminado enseña, pero no mueve un número. Uno en
         # cuarentena ni siquiera enseña: su insumo estaba roto.
-        "puedeMoverNumeros": acredita and not caso.get("cuarentena"),
+        "puedeMoverNumeros": acredita and not caso.get("cuarentena") and not caso.get("copa"),
         "queAutoriza": ("en cuarentena que enseña: no cuenta en ninguna métrica, pero fija rúbrica"
                         if (caso.get("cuarentena") or {}).get("ensena") else
+                        f"copa nacional ({caso['copa']}): no cuenta en ninguna métrica, pero fija rúbrica"
+                        if caso.get("copa") and not caso.get("cuarentena") else
                         "en cuarentena: no cuenta ni fija rúbrica" if caso.get("cuarentena") else
                         "puede sostener un cambio de peso" if acredita else
                         "solo fija rúbrica: aclara cómo se aplica una regla, "
@@ -285,6 +297,7 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
     resultado, la cuarentena describe que el insumo estaba roto."""
     poblacion = {s: {"casos": 0, "lados": 0} for s in vered.SELECCIONES}
     poblacion["cuarentena"] = {"casos": 0, "lados": 0}
+    poblacion["copa"] = {"casos": 0, "lados": 0}
     acred = {"acierto": 0, "parcial": 0, "fallo": 0}
     casos_acred, briers, reales, con_reparto = 0, [], [], 0
     unxdos_ok, unxdos_de = 0, 0
@@ -322,6 +335,10 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
         if caso.get("cuarentena"):
             poblacion["cuarentena"]["casos"] += 1
             poblacion["cuarentena"]["lados"] += len(lados)
+            continue
+        if caso.get("copa"):
+            poblacion["copa"]["casos"] += 1
+            poblacion["copa"]["lados"] += len(lados)
             continue
         if sel in poblacion:
             poblacion[sel]["casos"] += 1
@@ -1025,7 +1042,8 @@ def inventario(skill: str = "", estado: str = "", limite: int = 400, cohorte: st
         "poblacion": {
             **poblacion,
             "nota": "las poblaciones no se suman entre sí: solo `ciega` + `PRE` acredita, "
-                    "las demás fijan rúbrica; `cuarentena` no cuenta en nada",
+                    "las demás fijan rúbrica; `cuarentena` no cuenta en nada; `copa` (copas nacionales) "
+                    "se analiza y enseña pero no entra a ninguna métrica",
         },
         "acreditables": metricas,
         "porSkill": por_skill,
@@ -1109,7 +1127,9 @@ def derrotas_favorito(cohorte: str = COHORTE_VIGENTE, limite: int = 400) -> dict
             expl = "sin_ficha"
         else:
             expl = "rama_escrita" if reas.get("declarada") else "rama_sin_escribir"
-        resumen[expl] += 1
+        if not c.get("copa"):
+            # la sorpresa de copa se lista (se estudia) pero no suma al resumen
+            resumen[expl] += 1
         parte = c["parte"]
         dtp_fav = next((b for b in (parte.get("dtp") or {}).get("bloques") or [] if b.get("equipo") == fav), {})
         decl_tde = next((b for b in (parte.get("tde") or {}).get("bloques") or [] if b.get("equipo") == fav), {})
@@ -1123,6 +1143,7 @@ def derrotas_favorito(cohorte: str = COHORTE_VIGENTE, limite: int = 400) -> dict
             "goles": (obj.get("evidencia") or {}).get("goles") or [],
             "seleccion": c["veredicto"].get("seleccion", ""),
             "cuarentena": bool(c.get("cuarentena")),
+            "copa": c.get("copa", ""),
             "explicacion": expl,
             "tde": {"ramaJugada": reas.get("rama"), "minuto": reas.get("minuto"),
                     "loDeclarado": reas.get("loDeclarado"), "segundoGiro": reas.get("segundoGiro"),

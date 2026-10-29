@@ -2666,6 +2666,10 @@ def historial_valor(cache: bool = True) -> dict:
             casos.append((f["fixture_id"], json.loads(f["parte_json"]), f["parte_json"]))
         except (ValueError, TypeError):
             continue
+    # las copas nacionales no entran a las tablas (29/10/2026, usuario)
+    from backend.analisis.escala import copas_nacionales
+    copas = copas_nacionales([c[0] for c in casos])
+    casos = [c for c in casos if c[0] not in copas]
     ids = [c[0] for c in casos]
     reales = _vered.resultados(ids)
     mercados = cuotas_mercado(ids)
@@ -2689,7 +2693,7 @@ def historial_valor(cache: bool = True) -> dict:
     h["nuestroFavorito"] = _ganancia(favorito)
     h["minimo"] = VALOR_N_MIN
     h["nota"] = ("apostar 1 unidad a cada selección marcada con valor, a la cuota media de la última captura "
-                 "prepartido, en los partes cerrados que acreditan (ciega + PRE, sin cuarentena): roi = ganancia "
+                 "prepartido, en los partes cerrados que acreditan (ciega + PRE, sin cuarentena ni copas nacionales): roi = ganancia "
                  "media por unidad, intervalo al 95 %. `con valor` vuelve a la pantalla recién con n ≥ "
                  f"{VALOR_N_MIN} y el intervalo por encima de cero. `nuestroFavorito` = apostar siempre a nuestro "
                  "elegido, como referencia")

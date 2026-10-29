@@ -134,6 +134,19 @@ e60 = est(out, "plana60")
 check("plana 60 %+: +0.5 −1 = 99.5 en 2 apuestas", e60["banca"] == 99.5 and e60["apuestas"] == 2, e60)
 check("la plana de control apostó en las tres", est(out, "plana")["apuestas"] == 3)
 
+# 4-quinquies) MARTINGALA 60 %+ (29/10/2026, usuario): las mismas líneas, solo con el elegido a 60 %+
+out = sim.simular([ap(120, "2026-10-28 12:00:00", (65, 20, 15), (1.5, 4.2, 6.0), "visita"),   # pierde 1
+                   ap(121, "2026-10-28 15:00:00", (55, 25, 20), (1.8, 3.6, 4.5), "visita"),   # bajo 60: no toca
+                   ap(122, "2026-10-28 18:00:00", (70, 18, 12), (1.4, 4.5, 7.0), "local")])   # va por 2, gana
+m60 = {a["fixtureId"]: a["porEstrategia"]["martingala60"] for a in out["apuestas"]}
+check("martingala 60 %+: 1 · (no apuesta bajo 60 %) · 2 en la misma línea",
+      m60[120]["monto"] == 1 and m60[121]["seleccion"] is None and m60[121]["motivo"] == "bajo 60 %"
+      and m60[122]["monto"] == 2 and m60[122]["linea"] == 1, m60)
+e = est(out, "martingala60")
+check("martingala 60 %+: −1 +0.8 = 99.8 y una sola línea, que vuelve a 1",
+      abs(e["banca"] - 99.8) < 1e-9 and e["lineas"]["abiertas"] == 1 and e["lineas"]["perdiendo"] == 0, e)
+check("la martingala de siempre apostó en las tres", est(out, "martingala")["apuestas"] == 3)
+
 # 5) pendiente: no mueve la banca pero dice qué se apostaría
 out = sim.simular([ap(20, "2026-10-28 20:00:00", (50, 30, 20), (2.5, 3.2, 4.0), "local"),
                    ap(21, "2026-10-28 23:00:00", (50, 30, 20), (2.5, 3.2, 4.0), None)])
@@ -160,7 +173,7 @@ check("TDE sin hora de subida: rige desde el día del corte",
 
 # 8) el armado desde la base corre sobre la demo (sin partes desde el 28/10: vacío, no un error)
 out = sim.simulacion()
-check("simulacion() responde con las seis estrategias", len(out["estrategias"]) == 6, out.keys())
+check("simulacion() responde con las siete estrategias", len(out["estrategias"]) == 7, out.keys())
 check("simulacion() trae desde y nota", out["desde"] == sim.DESDE and out["nota"])
 
 # 9) de punta a punta: un parte de verdad en la base, depositado antes del pitazo
@@ -203,6 +216,27 @@ check("la del 29/10 → sad v4.2", next(a for a in out["apuestas"] if a["fixture
       ["versiones"]["sad-analysis"] == "v4.2")
 check("cerrada con el resultado de la base (local 2-1)", a0["estado"] == "cerrada" and a0["resultado"] == "local", a0)
 check("la plana apostó en las dos", est(out, "plana")["apuestas"] == 2, est(out, "plana"))
+
+# 10) COPA NACIONAL FUERA (29/10/2026, usuario: «no hay que contaminar las tablas»)
+_sad = _sql.connect(os.path.join(_tmp, "sad.db"))
+_sad.execute("INSERT OR REPLACE INTO leagues (id, name, country) VALUES (143, 'Copa del Rey', 'Spain')")
+_liga_antes = _sad.execute("SELECT league_id FROM fixtures WHERE id=?", (fids[0],)).fetchone()[0]
+_sad.execute("UPDATE fixtures SET league_id=143 WHERE id=?", (fids[0],))
+_sad.commit()
+out = sim.simulacion()
+check("un partido de la Copa del Rey no entra a la simulación y dice por qué",
+      fids[0] not in [a["fixtureId"] for a in out["apuestas"]]
+      and any(x["fixtureId"] == fids[0] and "copa nacional" in x["motivo"] for x in out["excluidos"]),
+      out["excluidos"])
+from backend.analisis.escala import copas_nacionales  # noqa: E402
+_sad.execute("INSERT OR REPLACE INTO leagues (id, name, country) VALUES (16, 'CONCACAF Champions Cup', 'World')")
+_sad.execute("UPDATE fixtures SET league_id=16 WHERE id=?", (fids[2],))
+_sad.commit()
+check("la Champions Cup de la Concacaf es internacional, no copa nacional",
+      copas_nacionales([fids[0], fids[2]]) == {fids[0]: "Copa del Rey"}, copas_nacionales([fids[0], fids[2]]))
+_sad.execute("UPDATE fixtures SET league_id=? WHERE id IN (?, ?)", (_liga_antes, fids[0], fids[2]))
+_sad.commit()
+_sad.close()
 
 print("\nTODO OK" if not fallas else f"\n{fallas} FALLA(S)")
 sys.exit(1 if fallas else 0)

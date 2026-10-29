@@ -58,6 +58,40 @@ def es_copa(liga_id: int | None, nombre: str | None = None) -> bool:
     return bool(nombre) and bool(_COPA_RE.search(nombre))
 
 
+_INTERNACIONAL_RE = re.compile(r"uefa|conmebol|concacaf|fifa|caf |afc |recopa|leagues cup|club world|"
+                               r"intercontinental|libertadores|sudamericana", re.I)
+
+
+def copas_nacionales(fixture_ids) -> dict[int, str]:
+    """{fixture: nombre de la copa} de los que son de una COPA NACIONAL (29/10/2026,
+    usuario: «no hay que contaminar las tablas»). Se analizan igual, pero no
+    entran a las métricas ni a la simulación: un favorito al 90 % contra uno
+    de quinta división infla el acierto y el tramo alto de confianza. Los
+    torneos internacionales de clubes NO son copa nacional aunque el nombre
+    diga «Cup» (la Champions Cup de la Concacaf)."""
+    ids = sorted({int(i) for i in fixture_ids or []})
+    if not ids:
+        return {}
+    try:
+        from backend.ingesta.extractor import LIGAS_INTERNACIONALES
+        internacionales = set(LIGAS_INTERNACIONALES)
+    except Exception:  # noqa: BLE001
+        internacionales = set()
+    out = {}
+    try:
+        for r in saddb.query("sad", "SELECT f.id, f.league_id, l.name FROM fixtures f "
+                                    "LEFT JOIN leagues l ON l.id=f.league_id "
+                                    f"WHERE f.id IN ({','.join('?' * len(ids))})", tuple(ids)):
+            if r["league_id"] in internacionales or r["league_id"] in AMISTOSOS \
+                    or _INTERNACIONAL_RE.search(r["name"] or ""):
+                continue
+            if es_copa(r["league_id"], r["name"] or ""):
+                out[r["id"]] = r["name"] or f"liga {r['league_id']}"
+    except Exception:  # noqa: BLE001 — sin la base no se marca nada
+        return {}
+    return out
+
+
 def _fuera_de_liga() -> set[int]:
     from backend.analisis.parte import _internacionales_de_clubes
     return _internacionales_de_clubes() | {1} | AMISTOSOS

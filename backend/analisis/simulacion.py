@@ -15,6 +15,12 @@ declarados, con tres estrategias puestas lado a lado:
   si todas están ocupadas con partidos en juego, abre una nueva en 1. Si se
   pierden tres a las 15:00, los tres partidos siguientes van por 2.
 
+- **martingala60**: la misma martingala por líneas, solo con nuestro elegido a
+  60 %+ (como `plana60` respecto de la plana).
+
+Las COPAS NACIONALES quedan fuera (29/10/2026, usuario): se analizan, pero un
+favorito al 90 % contra uno de quinta a cuota 1.02 no es la apuesta que se mide.
+
 Cuenta SOLO desde `DESDE` (los partidos del 28/10/2026 en adelante, hora de
 Lima): lo anterior no se simula. Entran los partes depositados ANTES del
 pitazo (`deposito_previo_en`), sin cuarentena, con el 1X2 completo y las tres
@@ -45,6 +51,7 @@ from datetime import datetime, timedelta, timezone
 
 from backend import db as saddb
 from backend.analisis import veredicto as _vered
+from backend.analisis.escala import copas_nacionales
 from backend.analisis.lecciones import CORTE_VERSION, cuotas_mercado
 
 # 00:00 de Lima (UTC−5) del 28/10/2026: «recién desde los partidos de hoy»
@@ -83,7 +90,13 @@ ESTRATEGIAS = (
     ("martingala", "Martingala",
      f"por líneas: cada línea va {UNIDAD:g} unidad a nuestro elegido, se duplica tras perder y vuelve a "
      f"{UNIDAD:g} al ganar; con todas en juego se abre otra"),
+    # la martingala del tramo alto (29/10/2026, usuario): las mismas líneas,
+    # solo con los partidos donde el elegido tiene 60 %+
+    ("martingala60", f"Martingala {CONFIANZA_ALTA:g} %+",
+     f"la misma martingala por líneas, solo cuando nuestro elegido tiene {CONFIANZA_ALTA:g} % o más"),
 )
+_MARTINGALAS = ("martingala", "martingala60")
+_SOLO_ALTA = ("plana60", "martingala60")
 _FRACCION_KELLY = {"kelly": 1.0, "kellyMedio": 0.5, "kellyCuarto": 0.25}
 
 
@@ -145,8 +158,13 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
         sel = fila["kelly"]["seleccion"]
         # la banca de AHORA: lo cobrado; lo que está en juego no cuenta todavía
         previsto = _FRACCION_KELLY[clave] * fila["_f"] * e["banca"] if fila["_f"] > 0 else 0.0
-    elif clave == "martingala":
+    elif clave in _MARTINGALAS:
         sel = fila["elegido"]
+        if clave in _SOLO_ALTA and fila["probabilidades"][sel] < CONFIANZA_ALTA:
+            # bajo el 60 % no se apuesta ni se toca una línea
+            fila["porEstrategia"][clave] = {"seleccion": None, "monto": 0.0, "ganancia": None, "banca": None,
+                                            "linea": None, "motivo": f"bajo {CONFIANZA_ALTA:g} %"}
+            return
         libres = [l for l in e["lineas"] if not l["ocupada"]]
         if libres:
             linea = min(libres, key=lambda l: (l["libreDesde"], l["id"]))
@@ -164,7 +182,7 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
     if monto <= 0:
         if previsto > 0:
             motivo = "sin plata libre"
-        elif clave == "plana60":
+        elif clave in _SOLO_ALTA:
             motivo = f"bajo {CONFIANZA_ALTA:g} %"
         else:
             motivo = "sin ventaja"
@@ -265,7 +283,7 @@ def simular(apuestas: list[dict]) -> dict:
             "lineas": ({"abiertas": len(e["lineas"]),
                         "perdiendo": sum(1 for l in e["lineas"] if l["proximo"] > UNIDAD),
                         "proximoMayor": round(max((l["proximo"] for l in e["lineas"]), default=UNIDAD), 2)}
-                       if clave == "martingala" else None),
+                       if clave in _MARTINGALAS else None),
             "serie": e["serie"],
         })
 
@@ -319,6 +337,7 @@ def simulacion() -> dict:
             fx[r["id"]] = r
     reales = _vered.resultados(ids)
     mercados = cuotas_mercado(ids)
+    copas = copas_nacionales(ids)
     desde = _utc(DESDE)
     apuestas, excluidos = [], []
     for f in filas:
@@ -341,6 +360,11 @@ def simulacion() -> dict:
             continue
         if f["cuarentena_json"]:
             fuera("en cuarentena: fuera de toda métrica")
+            continue
+        if fid in copas:
+            # COPA NACIONAL, FUERA (29/10/2026, usuario: «no hay que contaminar
+            # las tablas»): el favorito al 90 % contra uno de quinta a cuota 1.02
+            fuera(f"copa nacional ({copas[fid]}): se analiza, pero no entra a las tablas")
             continue
         try:
             parte = json.loads(f["parte_json"])

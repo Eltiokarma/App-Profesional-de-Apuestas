@@ -301,6 +301,58 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 99.8
     }
    ]
+  },
+  {
+   "clave": "martingala60",
+   "nombre": "Martingala 60 %+",
+   "descripcion": "la misma martingala por líneas, solo cuando nuestro elegido tiene 60 % o más",
+   "banca": 100.5,
+   "ganancia": 0.5,
+   "apostado": 3.0,
+   "apuestas": 2,
+   "ganadas": 1,
+   "roi": 0.1667,
+   "caidaMaxima": 0.01,
+   "quebro": null,
+   "exposicionMaxima": 2.0,
+   "montoMaximo": 2.0,
+   "lineas": {
+    "abiertas": 1,
+    "perdiendo": 0,
+    "proximoMayor": 1.0
+   },
+   "serie": [
+    {
+     "fixtureId": null,
+     "pitazo": null,
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900001,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900002,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 99.0
+    },
+    {
+     "fixtureId": 900003,
+     "pitazo": "2026-10-28 19:45:00",
+     "banca": 99.0
+    },
+    {
+     "fixtureId": 900004,
+     "pitazo": "2026-10-28 20:00:00",
+     "banca": 99.0
+    },
+    {
+     "fixtureId": 900005,
+     "pitazo": "2026-10-29 19:30:00",
+     "banca": 100.5
+    }
+   ]
   }
  ],
  "porVersion": [
@@ -344,6 +396,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "ganancia": 0.05,
      "apuestas": 2,
      "roi": 0.025
+    },
+    "martingala60": {
+     "apostado": 1.0,
+     "ganancia": -1.0,
+     "apuestas": 1,
+     "roi": -1.0
     }
    }
   },
@@ -387,6 +445,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "ganancia": -0.25,
      "apuestas": 3,
      "roi": -0.0625
+    },
+    "martingala60": {
+     "apostado": 2.0,
+     "ganancia": 1.5,
+     "apuestas": 1,
+     "roi": 0.75
     }
    }
   }
@@ -479,6 +543,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": null,
      "linea": 2,
      "motivo": ""
+    },
+    "martingala60": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": null,
+     "banca": null,
+     "linea": null,
+     "motivo": "bajo 60 %"
     }
    }
   },
@@ -567,6 +639,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "monto": 1.0,
      "ganancia": 0.75,
      "banca": 99.8,
+     "linea": 1,
+     "motivo": ""
+    },
+    "martingala60": {
+     "seleccion": "local",
+     "monto": 2.0,
+     "ganancia": 1.5,
+     "banca": 100.5,
      "linea": 1,
      "motivo": ""
     }
@@ -659,6 +739,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 99.05,
      "linea": 2,
      "motivo": ""
+    },
+    "martingala60": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 99.0,
+     "linea": null,
+     "motivo": "bajo 60 %"
     }
    }
   },
@@ -749,6 +837,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 101.05,
      "linea": 1,
      "motivo": ""
+    },
+    "martingala60": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 99.0,
+     "linea": null,
+     "motivo": "bajo 60 %"
     }
    }
   },
@@ -838,6 +934,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "ganancia": -1.0,
      "banca": 100.05,
      "linea": 2,
+     "motivo": ""
+    },
+    "martingala60": {
+     "seleccion": "local",
+     "monto": 1.0,
+     "ganancia": -1.0,
+     "banca": 99.0,
+     "linea": 1,
      "motivo": ""
     }
    }
@@ -929,6 +1033,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 101.05,
      "linea": 1,
      "motivo": ""
+    },
+    "martingala60": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "bajo 60 %"
     }
    }
   }
