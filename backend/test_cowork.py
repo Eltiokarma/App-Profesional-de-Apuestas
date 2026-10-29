@@ -3392,6 +3392,17 @@ def main():
           {a["codigo"] for a in _av16} == {"M1-VS-ULTIMO-ONCE", "DTP-PENAL-SIN-EJECUTOR", "P6-OTRA-SEDE"}, _av16)
     check("v1.6: con el motivo escrito, los penales de los dos lados y un caso de la misma sede, no avisa",
           _av16b == [], _av16b)
+    _x792 = _copy.deepcopy(_x16b)
+    _x792["bloques"][0]["apertura"]["m2"]["viasGol"]["rival"] = ["penal: sin ejecutor confirmado entre los titulares"]
+    _orig792 = (_d15._formacion_ultima, _d15.casos_bloque)
+    try:
+        _d15._formacion_ultima = lambda tid, fecha: ("3-4-2-1", 123)
+        _d15.casos_bloque = lambda tid, antes, dias=180: [{"sede": "visita", "caso": "1-0 de visita"}]
+        _av792 = _d15.avisos_v16(_x792, _fx16, {"a": "Leones", "b": "Libertad"})
+    finally:
+        _d15._formacion_ultima, _d15.casos_bloque = _orig792
+    check("792: «penal: sin ejecutor confirmado» no cuenta como ejecutor nombrado → DTP-PENAL-SIN-EJECUTOR",
+          [a["codigo"] for a in _av792] == ["DTP-PENAL-SIN-EJECUTOR"], _av792)
     check("721: con `casoP6` de la misma sede (visita) no avisa P6-OTRA-SEDE", _av721 == [], _av721)
     _p762 = [a for a in _av762 if a["codigo"] == "P6-OTRA-SEDE"]
     check("721/762: el aviso nombra los casos de ESTA cadena con su fecha, no el ejemplo del 25/10",
@@ -3434,6 +3445,20 @@ def main():
           and "ya no están en el plantel: A. Pinamonti" in _pen718["nota"], _pen718)
     check("718: si ninguno sigue, la nota manda a la prensa",
           "ninguno de los que tiraron" in _pen718b["nota"], _pen718b)
+    # 767 (Metropolitanos): el que figura en las hojas recientes sigue en el club
+    # aunque las stats de la API no lo traigan
+    from backend.analisis import f1_base as _f767
+    _jp767, _or767 = _d15.__dict__.get("plantilla_de"), _f767.onces_recientes
+    import backend.jugadores as _jg767
+    _pd767 = _jg767.plantilla_de
+    try:
+        _jg767.plantilla_de = lambda tid: {"jugadores": [{"id": 7002}], "plantelSinStats": []}
+        _f767.onces_recientes = lambda tid, antes: {"onces": 1, "jugadores": {7001: {"titular": 1}}, "ultimo": 1}
+        _ids767 = _d15._ids_plantel(990491)
+    finally:
+        _jg767.plantilla_de, _f767.onces_recientes = _pd767, _or767
+    check("767: el plantel de hoy suma a quien figura en las hojas recientes (Riasco)",
+          _ids767 == {7001, 7002}, _ids767)
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM fixture_eventos WHERE fixture_id=990490")
         _con.execute("DELETE FROM fixtures WHERE id=990490")

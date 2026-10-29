@@ -354,8 +354,20 @@ def _ids_plantel(team_id: int) -> set[int]:
         p = plantilla_de(team_id)
     except Exception:  # noqa: BLE001
         return set()
-    return ({j.get("id") for j in p.get("jugadores") or []}
-            | {j.get("jugadorId") for j in p.get("plantelSinStats") or []}) - {None}
+    ids = ({j.get("id") for j in p.get("jugadores") or []}
+           | {j.get("jugadorId") for j in p.get("plantelSinStats") or []}) - {None}
+    if not ids:
+        return ids
+    # …Y QUIEN FIGURA EN LAS HOJAS RECIENTES (incidencia 767, Metropolitanos:
+    # Riasco convirtió un penal el 25/10 y Ferro fue titular, y salían
+    # «enPlantilla: false» porque las stats de la API van atrasadas). Jugó hace
+    # días: está en el club.
+    try:
+        from backend.analisis.f1_base import onces_recientes
+        ids |= {pid for pid in onces_recientes(team_id, "9999")["jugadores"] if pid}
+    except Exception:  # noqa: BLE001 — sin hojas queda la plantilla
+        pass
+    return ids
 
 
 NO_CALCULABLES = [
@@ -1345,6 +1357,7 @@ def avisos_carril(dtp: dict, nombres: dict) -> list[dict]:
 _MOTIVO_SISTEMA = re.compile(r"anunci|previa|prensa|confirm|expuls|roja|con diez|con 10|variante|cambi|"
                              r"vuelve|regres|probable|rotaci|interino|declar", re.I)
 _PENAL = re.compile(r"penal|penalt", re.I)
+_SIN_EJECUTOR = re.compile(r"sin ejecutor|ejecutor (?:no|sin) (?:confirmad|defin|conocid)|por jerarqu", re.I)
 _SEDE_TXT = {"visita": re.compile(r"visita|visitante|\bfuera\b", re.I),
              "local": re.compile(r"\bde local\b|\ben casa\b|\blocal\)|\(local", re.I)}
 
@@ -1394,8 +1407,10 @@ def avisos_v16(dtp: dict, fx, nombres: dict) -> list[dict]:
                                          "`partidoAnterior.xi`), o escribir en `senalXi` por qué se aparta "
                                          "(DTP v1.6)"})
         vias = m2.get("viasGol") or {}
+        # «penal: sin ejecutor confirmado» nombra la vía, no al ejecutor (792, Palmeiras)
         sin_penal = [q for q, k in (("propio", "foco"), ("del rival", "rival"))
-                     if not any(_PENAL.search(v or "") for v in vias.get(k) or [])]
+                     if not any(_PENAL.search(v or "") and not _SIN_EJECUTOR.search(v or "")
+                                for v in vias.get(k) or [])]
         if (vias.get("foco") or vias.get("rival")) and sin_penal:
             out.append({"bloque": f"dtp.{lado}.m2.viasGol", "codigo": "DTP-PENAL-SIN-EJECUTOR",
                         "costara": f"{quien}: las vías de gol no nombran al ejecutor de penales "
