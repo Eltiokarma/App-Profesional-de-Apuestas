@@ -44,6 +44,7 @@ python -m backend.test_backtest_familias  # detecta un reventón plantado y no i
 python -m backend.backtest_unxdos_motor --padron # el 1X2 del motor desde μ: logística calibrada contra frecuencia y contra el Poisson sobre μ (MOTOR §5.6; --desde-dir para historias bajadas de /constantes y /niveles)
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
 python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--horizonte/--calibrar/--por-liga)
+bash scripts/fase0_ligas.sh          # ¿qué ligas sumar? inventario de datos, μ por liga y reventón por liga, solo lee (29/10/2026; en Railway con nohup, resumen en $SAD_DATA_DIR/fase0/resumen.txt)
 python -m backend.backtest_forma --desde-dir carpeta  # ¿la forma de 5 SIN amistosos mejora el gap? (MOTOR §5; medido 26/10: no) · test_backtest_forma
 
 # ingesta (dueña de los datos; el backend HTTP sigue siendo de solo lectura)
