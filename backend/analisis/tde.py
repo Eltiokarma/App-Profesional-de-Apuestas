@@ -30,6 +30,12 @@ LADOS = ("a", "b")
 # nuestro: vive en references/INDICE_IE.md y aquí solo se aplica.
 UMBRAL_PROTECTOR = 0.30
 VENTANA_F1 = 3          # partidos que mira F1
+# UN ONCE DE HACE AÑOS NO ES LA ROTACIÓN DE HOY, NI UN PARTIDO DE HACE AÑOS EL
+# DESCANSO (incidencias 797 y 828, Copa del Rey 29/10/2026: Coruxo, Zamora y
+# Guijuelo —su liga de Federación no está en la base— salían con «1446 días de
+# descanso» y con F1 armado con onces de 2024). Más allá de esto, sin dato.
+F1_ANTIGUEDAD_DIAS = 120
+F2_DESCANSO_MAX_DIAS = 45
 _FIN = "(status_short IN ('FT','AET','PEN') OR status_long='Match Finished')"
 
 
@@ -57,9 +63,10 @@ def _onces_previos(team_id: int, fecha: str, cuantos: int = VENTANA_F1) -> list[
         "sad",
         f"""SELECT f.id, f.date FROM fixtures f
             WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.date < ? AND {_FIN}
+              AND f.date >= datetime(?, '-{F1_ANTIGUEDAD_DIAS} days')
               AND COALESCE(f.league_id, 0) NOT IN ({",".join("?" * len(AMISTOSOS))})
             ORDER BY f.date DESC LIMIT ?""",
-        (team_id, team_id, fecha, *sorted(AMISTOSOS), cuantos),
+        (team_id, team_id, fecha, str(fecha).replace("T", " ").rstrip("Z")[:19], *sorted(AMISTOSOS), cuantos),
     )
     onces = []
     for f in filas:
@@ -231,7 +238,13 @@ def f2_calendario(team_id: int, fecha: str, contexto: dict) -> dict:
     cong = jug._congestion(team_id, fecha)
     dias = cong.get("diasDescanso")
     senal = contexto.get("senalCalendario") or ""
-    if dias is None:
+    if dias is not None and dias > F2_DESCANSO_MAX_DIAS:
+        piso, porque = None, (f"el último partido oficial del equipo en nuestra base es de hace {dias} días: "
+                              "su liga no está en la base (lo que jugó entre medio no se ve); descanso "
+                              "desconocido, va de la prensa")
+        cong = {**cong, "ultimoOficialHaceDias": dias}
+        dias = None
+    elif dias is None:
         piso, porque = None, "no hay partido anterior en nuestra base: descanso desconocido"
     elif dias <= 3:
         piso, porque = 1.0, f"{dias} días de descanso (≤3 es el tramo alto de la rúbrica)"
@@ -253,6 +266,7 @@ def f2_calendario(team_id: int, fecha: str, contexto: dict) -> dict:
                              f"a {exig['dias']} días (la rúbrica lo pone en 1)")
     return {
         "diasDescanso": dias,
+        **({"ultimoOficialHaceDias": cong["ultimoOficialHaceDias"]} if cong.get("ultimoOficialHaceDias") else {}),
         "partidos21d": cong.get("partidos21d"),
         "senalCalendario": senal,
         "recuperabilidad": contexto.get("recuperabilidad"),
