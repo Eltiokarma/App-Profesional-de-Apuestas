@@ -972,8 +972,16 @@ conversación se pierde en la siguiente.
    **El mantenimiento corre en su propia sesión fija** desde el 22/10, 12:23 y
    21:47 de Lima, POR GRUPOS de causa (hasta 3 grupos de código por pasada, un
    PR por grupo). Desde el 27/10 en «SAD · mantenimiento (rutina, v2)»
-   (`session_01WwsfbSrNaKynS84SUXEwvA`, rutinas «mediodía, v2» y «noche, v2»,
-   con el paso 0 de aprobadas, por desplegar y cola del usuario); la v1
+   (`session_01WwsfbSrNaKynS84SUXEwvA`, con el paso 0 de aprobadas, por
+   desplegar y cola del usuario). **Desde el 30/10/2026** (usuario: «sube el
+   mantenimiento»), tres pasadas con hasta 6 grupos y el escaneo preventivo:
+   «mediodía, v3» `trig_014bHDmKimigTHfUyw7NxqjJ` (12:23), «tarde, v2»
+   `trig_01UptRFtNs3mW8sXUGzmg2ju` (17:41) y «noche, v3»
+   `trig_01GF5XY1GyyskhDNBe496hDG` (21:47); las «mediodía, v2» y «noche, v2»
+   (`trig_01L7qjpE7b5BRCH5DRbQLyPz`, `trig_01AJ8oSr5jAadzyq6ZN6rgid`) quedaron
+   desactivadas porque su texto decía «hasta 3» y solo se edita desde su propia
+   conversación. Con tres pasadas la sesión engorda más rápido: revisar su
+   tamaño cada dos o tres días; la v1
    (`session_018rYwkkxMKQpJpfTdkxScvd`) llegó a 341.000 tokens y 69 USD en
    cinco días y sus rutinas quedaron desactivadas. Las dos rutinas viejas, que disparaban en la sesión de trabajo,
    quedaron DESACTIVADAS (no borradas). **Pendiente, en orden:**
