@@ -3147,6 +3147,17 @@ def guardar(payload: dict) -> dict:
                        "el caso se cierra sin métrica",
             "comoSeArregla": "mandá `pronostico.probabilidades` con local/empate/visita",
         })
+    elif empate_en_la_cima(pron.get("probabilidades") or {}):
+        # 859 (Remo–Botafogo 35/30/35): sin elegido el veredicto no cuenta acierto,
+        # y vsMercado y la simulación eligen uno por el orden de las claves
+        faltan.append({
+            "bloque": "pronostico.probabilidades",
+            "costara": f"el 1X2 tiene a {' y '.join(empate_en_la_cima(pron.get('probabilidades') or {}))} "
+                       "empatados arriba: no hay elegido, el veredicto no cuenta acierto y lo que elige "
+                       "por el máximo toma el primero en el orden de las claves",
+            "comoSeArregla": "decidí: un punto más al que elegís (y uno menos a otro) para que haya un "
+                             "resultado elegido",
+        })
     elif not _txt(pron.get("falsador")):
         faltan.append({
             "bloque": "pronostico.falsador",
@@ -3305,6 +3316,17 @@ def borrar(fixture_id: int) -> bool:
 
 
 # ── lectura: el DTO que pinta la pantalla ───────────────────────────────────
+
+def empate_en_la_cima(probs: dict) -> list[str]:
+    """Los resultados empatados en la probabilidad más alta del 1X2 (vacío si
+    hay un elegido)."""
+    vals = {k: probs.get(k) for k in ("local", "empate", "visita") if isinstance(probs.get(k), (int, float))}
+    if len(vals) < 3:
+        return []
+    top = max(vals.values())
+    cima = [k for k, v in vals.items() if abs(v - top) < 1e-9]
+    return cima if len(cima) > 1 else []
+
 
 def _totales(equipo: dict) -> dict:
     """El total ponderado, y —lo que faltaba— si hay algo que totalizar.
