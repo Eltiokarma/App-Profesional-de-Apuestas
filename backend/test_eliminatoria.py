@@ -63,6 +63,10 @@ def montar():
         (1007, "2026-10-12 20:00:00", "AET", COPA, "Round of 16", OTRO, Y, 1, 2, 1, 1, 0, 1, None, None),
         # final única
         (1008, "2026-10-18 20:00:00", "FT", COPA, "Final", Y, OTRO, 0, 2, 0, 2, None, None, None, None),
+        # 846: Copa del Rey (143) a partido único, resuelta a 90'; y su semifinal (ida y vuelta) no
+        (1010, "2026-10-29 19:00:00", "FT", 143, "Round of 128", X, OTRO, 0, 6, 0, 6, None, None, None, None),
+        (1011, "2026-10-29 19:00:00", "FT", 143, "Semi-finals", Y, OTRO, 2, 1, 2, 1, None, None, None, None),
+        (1012, "2026-10-29 19:00:00", "FT", COPA, "Round of 32", X, Y, 1, 0, 1, 0, None, None, None, None),
         # fase de grupos: nunca es una llave
         (1009, "2026-10-05 20:00:00", "FT", LIB, "Group Stage - 3", PAL, OTRO, 2, 0, 2, 0, None, None, None, None),
     ]
@@ -98,6 +102,12 @@ d7 = eliminatoria.desenlace(1007)
 check("partido único con prórroga: pasa quien ganó el alargue", d7 and d7["avanza"] == Y and d7["prorroga"], d7)
 check("final única: pasa el ganador", eliminatoria.desenlace(1008)["avanza"] == OTRO)
 check("la fase de grupos no es una llave", eliminatoria.desenlace(1009) is None)
+check("846: Copa del Rey a partido único resuelta a 90' (0-6): pasa la visita",
+      eliminatoria.desenlace(1010)["avanza"] == OTRO, eliminatoria.desenlace(1010))
+check("846: la semifinal de la Copa del Rey es a ida y vuelta: a 90' no se afirma",
+      eliminatoria.desenlace(1011)["avanza"] is None, eliminatoria.desenlace(1011))
+check("846: una copa fuera de la lista sigue sin afirmar a 90'",
+      eliminatoria.desenlace(1012)["avanza"] is None, eliminatoria.desenlace(1012))
 check("un partido sin terminar no es una llave", eliminatoria.desenlace(1003) is None)
 rec = eliminatoria.recientes(PAL, "2026-10-24 22:00:00")
 check("las llaves recientes de Palmeiras antes del Bragantino: la semifinal, pasada",

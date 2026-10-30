@@ -15,7 +15,9 @@ Regla: QUIÉN AVANZA NO SE INFIERE DEL MARCADOR. Sale de acá:
 - el global con el partido de ida (misma liga, temporada y ronda, los mismos
   dos equipos con la localía invertida, terminado y a ≤ 45 días), con goles de
   prórroga incluidos;
-- a partido único, el ganador del partido con su prórroga.
+- a partido único, el ganador del partido con su prórroga; una ronda de una
+  copa que se juega a partido único (`PARTIDO_UNICO`) cierra con el ganador
+  a 90' (846).
 Sin una de esas tres cosas no se afirma nada: `avanza` queda en None.
 
 Solo lectura y cero requests: lee `fixtures` y `fixture_eventos` como estén
@@ -114,6 +116,24 @@ def _final_unica(ronda: str | None) -> bool:
     return (ronda or "").strip().lower() in ("final", "finals", "grand final", "gran final")
 
 
+# COPAS QUE SE JUEGAN A PARTIDO ÚNICO (incidencia 846, Copa del Rey del 29/10/2026:
+# 0-6, 1-2, 0-1… resueltos en los 90' salían sin `avanza`, porque una ronda que
+# no sabemos si es a uno o a dos partidos no se afirma). En estas copas cada
+# ronda es un partido —salvo las semifinales de las que se juegan a ida y
+# vuelta—, así que quien gana a 90' pasa. Lista por id de API-Football.
+PARTIDO_UNICO = {143: "Copa del Rey", 45: "FA Cup", 81: "DFB Pokal", 66: "Coupe de France",
+                 96: "Taça de Portugal", 137: "Coppa Italia", 48: "EFL Cup"}
+SEMIS_IDA_Y_VUELTA = {143, 96, 137, 48}
+_SEMI = re.compile(r"semi", re.I)
+
+
+def _ronda_unica(f) -> bool:
+    liga = _g(f, "league_id")
+    if liga not in PARTIDO_UNICO:
+        return False
+    return not (liga in SEMIS_IDA_Y_VUELTA and _SEMI.search(_g(f, "league_round") or ""))
+
+
 def desenlace(fixture_id: int) -> dict | None:
     """La llave que cerró este partido. None si no es de eliminación directa o
     no terminó. `avanza`/`eliminado` son ids de equipo, o None si no se sabe."""
@@ -143,7 +163,7 @@ def desenlace(fixture_id: int) -> dict | None:
         if _g(f, "status_short") == "AET" and None not in et and et[0] != et[1]:
             # la prórroga la decide quien la gana (con ida perdida, el partido entero engaña)
             avanza = h if et[0] > et[1] else a
-        elif _final_unica(_g(f, "league_round")) and tot[0] != tot[1]:
+        elif (_final_unica(_g(f, "league_round")) or _ronda_unica(f)) and tot[0] != tot[1]:
             avanza = h if tot[0] > tot[1] else a
     # el partido de IDA no cierra nada, y una ronda que no sabemos si es a uno o
     # dos partidos tampoco se afirma: `avanza` None, nunca adivinado
