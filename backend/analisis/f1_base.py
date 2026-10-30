@@ -310,6 +310,12 @@ def _mismos_ga(a: dict, b: dict) -> bool:
     return sum(ga) > 0 and ga == ((b.get("goles") or 0), (b.get("asistencias") or 0))
 
 
+def _misma_ficha(a: dict, b: dict) -> bool:
+    """La misma edad y la misma posición, las dos conocidas."""
+    return (a.get("edad") is not None and a.get("edad") == b.get("edad")
+            and bool(a.get("posicion")) and a.get("posicion") == b.get("posicion"))
+
+
 def _caben(q: dict, j: dict, tope: int | None) -> bool:
     """¿Los partidos de los dos registros SUMADOS caben en los que jugó el
     equipo? Un registro partido reparte los partidos de UNA persona; si la suma
@@ -353,10 +359,15 @@ def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None,
     misma posición (Bisanz es delantero en un id y mediocampista en el otro).
     La fila queda marcada `fundidoPorInicial`.
 
-    Y NUNCA SI LA SUMA NO CABE (`tope`, los partidos del equipo en la
-    temporada; incidencia 741): con onces que la liga casi no publica (Colombia)
-    «nunca juntos» y la «sucesión» se cumplen con dos o tres hojas, y dos
-    personas distintas se fundían."""
+    Y NUNCA SE SUMA SI LA SUMA NO CABE (`tope`, los partidos del equipo en la
+    temporada; incidencia 741): los dos registros se PISAN, cuentan los mismos
+    partidos. Pero el mismo nombre (la tilde no cuenta), la misma edad y la
+    misma posición, nunca en la misma hoja, es la MISMA persona que la API
+    duplicó con estadísticas superpuestas, no dos (30/10/2026, incidencias 839
+    y 724: «Y. Guzmán» 13491 con 37 PJ y «Y. Guzman» 531423 con 30 en el
+    América, 27 años, delanteros, los dos decisivos; el «J. Peña»/«J. Pena» de
+    la 741 era lo mismo, 26 años y defensas): se queda la fila con más minutos,
+    SIN sumar, y la otra deja su id en `idsAlternos` (`superpuesto`)."""
     tit = dict(tit)
     quedan: list[dict] = []
     for j in sorted(js, key=lambda j: (_sin_minutos(j), -(j.get("minutos") or 0), -tit.get(j["id"], 0))):
@@ -384,6 +395,13 @@ def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None,
                     and ((sucesion and sucesion(j["id"], q["id"])) or _mismos_ga(j, q))):
                 gemela, sumar = q, True
                 quedan[i] = {**_sumar(q, j), "fundidoPorInicial": True}
+                break
+            # 839/724: la suma no cabe, pero la misma edad y posición, nunca juntos:
+            # la API duplicó a la persona con estadísticas superpuestas; no se suma
+            if (juntos and not _caben(q, j, tope) and not juntos(j["id"], q["id"])
+                    and _misma_ficha(j, q)):
+                quedan[i] = {**q, "superpuesto": True}
+                gemela = quedan[i]
                 break
         if gemela is None:
             quedan.append(j)

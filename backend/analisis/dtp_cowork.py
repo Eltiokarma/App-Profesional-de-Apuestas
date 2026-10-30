@@ -981,12 +981,19 @@ def _sz(t: str) -> str:
 
 
 def _casi(uno: str, otro: str) -> bool:
-    """Una letra cambiada en un apellido largo (5+), tras igualar s/z."""
+    """Una letra cambiada, de más o de menos en un apellido largo (5+), tras
+    igualar s/z: «Berríos» y «Berios» (Carabobo, 30/10/2026, incidencia 856)."""
     uno, otro = _sz(uno), _sz(otro)
     if uno == otro:
         return True
-    return (min(len(uno), len(otro)) >= 5 and len(uno) == len(otro)
-            and sum(a != b for a, b in zip(uno, otro)) <= 1)
+    if min(len(uno), len(otro)) < 5:
+        return False
+    if len(uno) == len(otro):
+        return sum(a != b for a, b in zip(uno, otro)) <= 1
+    if abs(len(uno) - len(otro)) == 1:
+        largo, corto = (uno, otro) if len(uno) > len(otro) else (otro, uno)
+        return any(largo[:k] + largo[k + 1:] == corto for k in range(len(largo)))
+    return False
 
 
 def _pila_en(nombre: str, ref: str) -> bool:

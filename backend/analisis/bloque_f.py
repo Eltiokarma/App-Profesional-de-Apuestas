@@ -199,6 +199,12 @@ def _casa(tokens_plantel: list[str], tokens_hoja: list[str]) -> bool:
                for t in pila_hoja)
 
 
+def _solo_pila(tokens_plantel: list[str], tokens_hoja: list[str]) -> bool:
+    """¿La hoja casa con este jugador solo por el nombre de pila (sin apellido)?"""
+    apellidos = set(tokens_plantel[1:]) or set(tokens_plantel)
+    return not set(tokens_hoja) & apellidos
+
+
 def _una_letra(t: str, apellidos: set) -> str | None:
     """El apellido de la tabla que difiere de `t` en UNA letra (5+ letras,
     mismo largo): «Zampiero» por «Zampieri» (Torque, 21/10/2026, incidencia
@@ -271,6 +277,15 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
             cola = pendientes.get(nombre) or []
             jid = cola.pop(0) if cola else None
             idx = [por_id[jid]] if jid in por_id else _buscar(plantel, nombre)
+            if jid is not None and jid not in por_id:
+                # LA PILA SOLA NO PISA UN ID (30/10/2026, incidencia 855): la hoja
+                # trae «Danilo» 553 del banco y la tabla «Danilo Santos» 275170, que
+                # no viajó; casaba por la pila y salía de la banca en vez de baja.
+                # Con los dos ids a la vista y distintos, una coincidencia de solo
+                # el nombre de pila no es la misma persona.
+                th = _tokens(nombre)
+                idx = [i for i in idx if plantel[i].get("jugadorId") is None
+                       or not _solo_pila(_tokens(plantel[i].get("nombre", "")), th)]
             if jid in por_id:
                 for k in _buscar(plantel, nombre):
                     if k != por_id[jid] and plantel[k].get("jugadorId") is None:
