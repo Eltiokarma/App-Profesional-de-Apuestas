@@ -1824,6 +1824,10 @@ def main():
           [(x["lado"], x["dicho"]) for x in _x659] == [("a", True), ("b", False)], _x659)
     check("la espina que corta o va neutra con el extremo no avisa",
           alertas_espina_extremo(_rx, {"a": {"lectura": "cero"}, "b": {"lectura": "neutra"}}, {}) == [])
+    check("874: la espina «sigue» con el récord nombrado en el `porque` no va a la tira (como ESPINA-VS-RIESGO)",
+          alertas_espina_extremo(_rx, {"a": {"lectura": "negativa", "porque": "K de local récord, sigue por el hecho X"},
+                                       "b": {"lectura": "positiva", "porque": "en su máximo, pero juega en casa"}},
+                                 {}) == [])
     _al54 = [{"codigo": "T.54", "equipo": "b"}]
     _et = alerta_empate_tecnico({"a": 74.0, "b": 62.0}, _al54, {"a": "Sporting", "b": "Viseu"})
     check("brecha del EFE ≥ 5 con T.54 en un lado → EFE-EMPATE-TECNICO con brecha y motivo",
