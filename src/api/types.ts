@@ -1587,6 +1587,8 @@ export interface BloqueTde {
   tipologia?: string
   ventana?: string
   disciplina43?: boolean
+  /** La prosa del bloque (863: antes se perdía callada). */
+  notas?: string
   vias?: { nombre: string; indice: number; ventana: string; detalle: string }[]
   falsador?: string
   /** Disciplina 44 como campo: qué le pasa a las vías de este equipo si marca

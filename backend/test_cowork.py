@@ -1824,6 +1824,12 @@ def main():
           [(x["lado"], x["dicho"]) for x in _x659] == [("a", True), ("b", False)], _x659)
     check("la espina que corta o va neutra con el extremo no avisa",
           alertas_espina_extremo(_rx, {"a": {"lectura": "cero"}, "b": {"lectura": "neutra"}}, {}) == [])
+    from backend.analisis.parte import _bloque_tde as _btde
+    _r863 = []
+    _b863 = _btde({"equipo": "a", "ie": 5.2, "notas": "se echa si gana 1-0", "comentario": "x"}, _r863, "tde.bloques[0]", "a")
+    check("863: `notas` del bloque del TDE se guarda y una clave que no se guarda vuelve en rechazos con su nombre",
+          _b863.get("notas") == "se echa si gana 1-0"
+          and any("`comentario`" in r["porque"] for r in _r863), (_b863, _r863))
     check("874: la espina «sigue» con el récord nombrado en el `porque` no va a la tira (como ESPINA-VS-RIESGO)",
           alertas_espina_extremo(_rx, {"a": {"lectura": "negativa", "porque": "K de local récord, sigue por el hecho X"},
                                        "b": {"lectura": "positiva", "porque": "en su máximo, pero juega en casa"}},

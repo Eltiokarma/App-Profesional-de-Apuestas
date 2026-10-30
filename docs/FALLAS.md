@@ -85,6 +85,7 @@ Tres lugares donde vive una guardia:
   - **Latido:** el silencio cuenta como rojo; `cuotasPrepartido` y `presupuestoApi`.
   - **Test de arquitectura:** regla 4 (cada `except Exception` dice por qué es seguro seguir) y regla 2 (cada test corre en CI).
   - **Escaneo:** chequeos `sin-cuotas` y `ficha-sin-eventos`.
+  - **Depósito:** el bloque del TDE guarda `notas` y devuelve en `rechazos` cada clave que no guarda (`parte.CLAVES_BLOQUE_TDE`, 863): lo que llega y no se guarda se dice.
 - **Si vuelve:** una fase que no guarda nada tiene que verse en el latido. Si no se ve, falta una señal.
 
 ### 6. Una regla del skill que se incumple
