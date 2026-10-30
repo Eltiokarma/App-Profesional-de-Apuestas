@@ -1,8 +1,8 @@
 """De qué está hecho el nivel del motor (backend/analisis/ventana_nivel.py) — sin red.
 
 Konyaspor 0-4 Galatasaray (30/10/2026, incidencia 860): el motor dio 41 % al
-14.º porque la ventana de 20 del nivel del líder traía seis amistosos de
-pretemporada y tres de Champions. Este test arma esa ventana y comprueba que
+14.º y la ventana de 20 del nivel del líder traía seis amistosos de
+pretemporada y tres de Champions (no eran la causa: ver ventana_nivel.py). Este test arma esa ventana y comprueba que
 se cuente bien (con la deduplicación del pipeline), que la fiabilidad de μ
 baje a «media» con 3+ amistosos y no con menos, y que el escaneo lo marque
 como chequeo informativo.
