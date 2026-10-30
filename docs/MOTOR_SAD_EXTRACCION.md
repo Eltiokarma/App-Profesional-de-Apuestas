@@ -609,6 +609,19 @@ señal_calendario = blando si recuperabilidad > μ_genérica + 0.15
    señal cambia de bucket en 3 292 casos y se invierte en 308 (La Louvière),
    pero el cambio no predice mejor. La regla de la ley queda como LECTURA
    (declarar la composición de la ventana), no como corrección del número.
+   **Amistosos e internacionales en el NIVEL: MEDIDO el 30/10/2026, NO se
+   cambia** (incidencia 860, Konyaspor 0-4 Galatasaray;
+   `backend/backtest_nivel_ventana.py --padron`, 9.191 partidos de prueba con
+   corte temporal 80/20, la logística reajustada a cada variante). Sacar los
+   amistosos de la ventana de 20 no mejora el log-loss del 1X2 (+0.00090, IC
+   [−0.00041, 0.00234]); sacar también los internacionales tampoco en general
+   (+0.00053) y EMPEORA en los partidos con 3+ amistosos en un lado (+0.00657,
+   IC [0.00058, 0.01186], n=2 491). En el caso, el local pasa de 41.4 % a
+   40.8 %: el 41 % es la localía (0.382 de μ, una diferencia de nivel de 0.55)
+   contra un nivel que separaba al líder del 14.º por 0.26. Contra el mercado
+   (2 125 partidos con cuota) el motor pierde 0.061 de log-loss en las tres
+   variantes; con 3+ amistosos, 0.084 (n=989) y en el resto 0.041. Queda como
+   LECTURA: `ventanaNivel` y la fiabilidad «media» de `fiabilidadMu`.
 4. **Veredicto de la ley con μ v2** (re-medición limpia, n=8 816): las
    señales del gap son débiles al partido siguiente (≤0.1 pts). Lo único
    que replicó en dos muestras: el **sobrerinde fuerte PERSISTE** al

@@ -51,7 +51,7 @@ python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
 python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--horizonte/--calibrar/--por-liga)
 python -m backend.fase0_ligas      # ¿qué ligas sumar? inventario de datos, μ por liga y reventón por liga, solo lee (29/10/2026; en Railway: nohup … > $SAD_DATA_DIR/fase0.log 2>&1 &, resumen en $SAD_DATA_DIR/fase0/resumen.txt; va en backend/ porque la imagen solo copia esa carpeta)
 python -m backend.backtest_goles --padron # ¿las constantes de goles ACOTAN los goles? intervalo de dos goles, marcador acotado, mercado de más/menos 2,5 y ambos marcan, y si el marcador se repite (REVENTON §17, 30/10/2026) · test_backtest_goles
-python -m backend.backtest_nivel_ventana --padron --fixture 1584455 # ¿el 1X2 del motor mejora con el nivel SIN amistosos o sin internacionales? actual vs variantes, por subconjunto y contra el mercado (860; --json) · test_backtest_nivel_ventana
+python -m backend.backtest_nivel_ventana --padron --fixture 1584455 # ¿el 1X2 del motor mejora con el nivel SIN amistosos o sin internacionales? actual vs variantes, por subconjunto y contra el mercado (860; --json; medido 30/10: no) · test_backtest_nivel_ventana
 python -m backend.backtest_forma --desde-dir carpeta  # ¿la forma de 5 SIN amistosos mejora el gap? (MOTOR §5; medido 26/10: no) · test_backtest_forma
 
 # ingesta (dueña de los datos; el backend HTTP sigue siendo de solo lectura)
@@ -354,13 +354,18 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   once oficial sin fila en la tabla F1, que no pesan en el IP.
 - **De qué está hecho el nivel del motor** (30/10/2026, incidencia 860, usuario:
   «al analista le funciona bien»): Konyaspor 0-4 Galatasaray, el motor dio 41 %
-  al 14.º porque la ventana de 20 del líder traía 6 amistosos de pretemporada y
+  al 14.º y la ventana de 20 del líder traía 6 amistosos de pretemporada y
   3 de Champions (1,65 pts/p en la ventana, 2,44 en la liga). `/predicciones`
   trae por lado `ventanaNivel` (`backend/analisis/ventana_nivel.py`, el mismo
   filtro y deduplicación del pipeline) y con 3+ amistosos en un lado
   `fiabilidadMu` baja a «media» (`porVentana`); el escaneo lo marca como chequeo
-  INFORMATIVO (no se deposita). La fórmula NO se tocó: `backtest_nivel_ventana`
-  mide si el nivel sin amistosos o sin internacionales mejora el 1X2.
+  INFORMATIVO (no se deposita). **Medido el mismo día** (`backtest_nivel_ventana`,
+  9.191 partidos de prueba): sacar los amistosos del nivel NO mejora el 1X2 y
+  sacar también los internacionales lo empeora donde hay amistosos; en el caso,
+  sin amistosos el local queda en 40,8 %. El 41 % es la localía (0,382 de μ =
+  0,55 de nivel) contra 0,26 de diferencia de nivel, y la forma no entra al 1X2.
+  La fórmula NO se toca. El aviso se queda porque con 3+ amistosos el motor
+  queda el doble de lejos del mercado (0,084 de log-loss contra 0,041).
 - **Quién es quién vive en UN archivo** (30/10/2026, usuario): `backend/identidad.py`
   decide si dos nombres son la misma persona —tokens, pila, apellido escrito
   distinto (seseo, ß, una letra cambiada, de más o de menos, doble, en otro

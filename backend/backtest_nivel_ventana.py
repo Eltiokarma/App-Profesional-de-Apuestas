@@ -1,7 +1,7 @@
 """¿El 1X2 del motor mejora con el nivel SIN amistosos o SIN internacionales? (30/10/2026, incidencia 860)
 
-Konyaspor 0-4 Galatasaray: el motor dio 41 % al 14.º porque la ventana de 20
-del nivel del líder traía seis amistosos de pretemporada y tres de Champions
+Konyaspor 0-4 Galatasaray: el motor dio 41 % al 14.º y la ventana de 20 del
+nivel del líder traía seis amistosos de pretemporada y tres de Champions
 (1,65 pts/p en la ventana contra 2,44 en la liga). El nivel (MOTOR §2: P =
 puntos de los últimos 20 + G = balance de goles de los últimos 5 + 1) cuenta
 TODAS las competiciones. La fórmula es sagrada: esto MIDE, no cambia nada.
@@ -24,6 +24,21 @@ prueba con cuota capturada.
 
     python -m backend.backtest_nivel_ventana --padron --fixture 1584455
     python -m backend.backtest_nivel_ventana --json salida.json
+
+MEDIDO el 30/10/2026 en Railway (--padron, 9.191 partidos de prueba, 2.125 con
+cuota), logística reajustada, diferencia de log-loss contra `actual`:
+- todos: sin amistosos +0,00090 (IC −0,00041 a +0,00234), sin amistosos ni
+  internacionales +0,00053 (IC −0,00181 a +0,00281): no se distinguen;
+- con 3+ amistosos (n = 2.491): +0,00480 (IC −0,00034 a +0,00900) y +0,00657
+  (IC +0,00058 a +0,01186): sacar también los internacionales EMPEORA;
+- con 2+ internacionales y el resto: no se distinguen.
+- 1584455: el local 41,4 % → 40,8 % sin amistosos → 40,0 % sin los dos (nivel
+  de Galatasaray 2,81 → 3,06 → 3,13, el de Konyaspor 2,55 → 2,75): la causa
+  del 41 % es la localía (0,382 de μ = 0,55 de nivel), no la ventana.
+- contra el mercado: el motor pierde 0,061 de log-loss en las tres variantes
+  (1,031 contra 0,970); con 3+ amistosos pierde 0,084 (1,024 contra 0,941,
+  n = 989) y en el resto 0,041. Ahí el aviso de fiabilidad «media» se sostiene.
+La fórmula NO se cambia.
 """
 from __future__ import annotations
 

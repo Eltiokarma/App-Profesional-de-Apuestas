@@ -79,8 +79,9 @@ CHEQUEOS: dict[str, dict] = {
     "nivel-con-amistosos": {
         "titulo": "Nivel del motor armado con amistosos de pretemporada",
         "area": "otro", "severidad": "aviso", "informativo": True,
-        "regla": "el nivel cuenta los últimos 20 partidos de todas las competiciones; con 3+ amistosos el "
-                 "nivel puede estar mal medido y μ baja a fiabilidad «media» (Konyaspor 0-4 Galatasaray, 860)",
+        "regla": "el nivel cuenta los últimos 20 partidos de todas las competiciones; con 3+ amistosos en un "
+                 "lado el motor queda el doble de lejos del mercado y μ baja a fiabilidad «media» "
+                 "(Konyaspor 0-4 Galatasaray, 860)",
     },
 }
 

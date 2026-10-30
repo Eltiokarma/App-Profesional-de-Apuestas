@@ -4,15 +4,23 @@ Konyaspor 0-4 Galatasaray: el 1X2 del motor dio 41 % al 14.º contra 31 % al
 líder, con fiabilidad «alta». El nivel de Galatasaray (ventana de los últimos
 20 partidos terminados, todas las competiciones: MOTOR §2) traía SEIS amistosos
 de pretemporada (Monza 0-2, Venezia 0-3, Villarreal 1-2…) y tres de Champions:
-1,65 puntos por partido en la ventana contra 2,44 en la liga. Con ese nivel
-bajo, su forma de 2,4 parecía «rendir de más» y el motor le restó otra vez por
-regresión. Lo salvó seguir al mercado (sad v4.1).
+1,65 puntos por partido en la ventana contra 2,44 en la liga. Lo salvó seguir
+al mercado (sad v4.1).
 
-Esto NO toca la fórmula del motor (es sagrada; el backtest
-`backend/backtest_nivel_ventana.py` mide si sacar los amistosos o los
-internacionales del nivel mejora el 1X2). Acá solo se CUENTA de qué está hecha
-la ventana y se dice cuánto creerle a μ: con `UMBRAL_AMISTOSOS` amistosos o más
-en la ventana de un lado, la fiabilidad de μ baja a «media» con la nota.
+MEDIDO el mismo día (`backend/backtest_nivel_ventana.py`, 9.191 partidos de
+prueba del padrón): los amistosos NO eran la causa. Sacarlos del nivel no mejora
+el 1X2 (+0,0009 de log-loss, IC cruzando cero), sacar también los
+internacionales lo EMPEORA justo donde hay amistosos (+0,0066) y en el caso el
+local pasa de 41,4 % a 40,8 %. El 41 % es la localía (0,382 de μ, lo que vale
+una diferencia de nivel de 0,55) contra un nivel que separaba al líder del 14.º
+por 0,26; la forma y la regresión NO entran al 1X2 (`unXDos` solo ve nivel,
+rival y localía). Lo que sí se midió: con 3+ amistosos en un lado el motor queda
+el doble de lejos del mercado (log-loss 0,084 peor, n = 989, contra 0,041 en el
+resto). Eso sostiene el aviso.
+
+Esto NO toca la fórmula del motor (es sagrada). Acá solo se CUENTA de qué está
+hecha la ventana y se dice cuánto creerle a μ: con `UMBRAL_AMISTOSOS` amistosos
+o más en la ventana de un lado, la fiabilidad de μ baja a «media» con la nota.
 Solo lectura, una consulta por equipo.
 """
 from __future__ import annotations
@@ -108,9 +116,9 @@ def fiabilidad_con_ventana(fia: dict, comps: dict, nombres: dict | None = None) 
         return out
     detalle = "; ".join(f"{nombres.get(l, l)}: {texto(c)}" for l, c in con.items())
     nota = (f"El nivel se armó con partidos de otra exigencia ({detalle} en la ventana de {VENTANA}). "
-            "En pretemporada los grandes rotan y pierden con cualquiera, y el motor los cuenta igual que la "
-            "liga: el nivel puede estar mal medido y la regresión castigar dos veces (Konyaspor 0-4 "
-            "Galatasaray, 30/10/2026). μ no se toca: no te separes del mercado por el motor.")
+            "En partidos así el 1X2 del motor queda el doble de lejos del mercado (log-loss 0,084 peor, "
+            "contra 0,041 en el resto; backtest del 30/10/2026) y sacar los amistosos del nivel no lo "
+            "arregla. μ no se toca: no te separes del mercado por el motor.")
     if out.get("nivel") == "alta":
         out["notaLiga"] = out.get("nota", "")
         out["nivel"] = "media"
