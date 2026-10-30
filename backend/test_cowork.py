@@ -4495,6 +4495,10 @@ def main():
           and _pvm(_pr, {**_ux, "fiabilidadMu": {"nivel": "alta"}})["aviso"] == ""
           and _pvm({"probabilidades": {"local": 60, "empate": 22, "visita": 18}}, {**_ux, "fiabilidadMu": {"nivel": "baja"}})["aviso"] == ""
           and _pvm(_pr, None) is None, _av)
+    from backend.analisis.parte import empate_en_la_cima as _eec
+    check("859: 35/30/35 tiene a local y visita empatados arriba; 40/30/30 tiene elegido",
+          _eec({"local": 35, "empate": 30, "visita": 35}) == ["local", "visita"]
+          and _eec({"local": 40, "empate": 30, "visita": 30}) == [])
     _av752 = _pvm(_pr, {**_ux, "fiabilidadMu": {"nivel": "baja"}}, '{"pronostico": "Venezia ascendido: el motor no ve la Serie A"}')
     check("752: con la razón escrita en `notas` (nombra al motor) el aviso se apaga y queda `razonEscrita`",
           _av752["aviso"] == "" and _av752.get("razonEscrita") is True, _av752)
