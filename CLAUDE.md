@@ -46,6 +46,7 @@ python -m backend.backtest_unxdos_motor --padron # el 1X2 del motor desde μ: lo
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
 python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--horizonte/--calibrar/--por-liga)
 python -m backend.fase0_ligas      # ¿qué ligas sumar? inventario de datos, μ por liga y reventón por liga, solo lee (29/10/2026; en Railway: nohup … > $SAD_DATA_DIR/fase0.log 2>&1 &, resumen en $SAD_DATA_DIR/fase0/resumen.txt; va en backend/ porque la imagen solo copia esa carpeta)
+python -m backend.backtest_goles --padron # ¿las constantes de goles ACOTAN los goles? intervalo de dos goles, marcador acotado, mercado de más/menos 2,5 y ambos marcan, y si el marcador se repite (REVENTON §17, 30/10/2026) · test_backtest_goles
 python -m backend.backtest_forma --desde-dir carpeta  # ¿la forma de 5 SIN amistosos mejora el gap? (MOTOR §5; medido 26/10: no) · test_backtest_forma
 
 # ingesta (dueña de los datos; el backend HTTP sigue siendo de solo lectura)
@@ -1186,6 +1187,27 @@ conversación se pierde en la siguiente.
      el 1X2 de la cohorte sale SUBCONFIADO (60 %+ acertó 18 de 18, 40-49 %
      → 54 %): medir con más n antes de tocar nada; archivar la sesión
      temporal `session_01NuzvTgFR41DgJsU122s6EE`.
+
+18. **Ideas del usuario por hacer** (30/10/2026), sin construir todavía:
+   - **El gol temprano cierra una cuota interesante** (lo vio el usuario con su
+     hermano, y él lo miraba hace tiempo): muchas veces una apuesta a buena
+     cuota se resuelve TEMPRANO —el gol llega pronto y la deja encaminada o
+     cerrada—, no por valor ni por rareza del mercado, sino como un patrón que
+     se repite («funciona como que está amañado o tilt o como sea»). Acotar por
+     ahí: medir con `fixture_eventos` (minuto del primer gol) y las cuotas
+     prepartido y en vivo (`odds_history`, `odds_live`) en qué partidos y a qué
+     cuota el primer gol cae antes del 15-20', y si eso se anticipa (tramo de
+     cuota, liga, burbuja de goles, TDE). Aclarar con el usuario qué apuesta
+     «se cierra» antes de diseñar el backtest. Se ANOTA, no se juzga
+     integridad (deuda 14).
+   - **Las constantes de goles ACOTAN, no adivinan el 1X2**: goles anotados y
+     recibidos por condición (local del local × visita del visitante) dan un
+     intervalo («mete 1 o 2») y un marcador acotado, que puede definir al
+     ganador sin acertarlo siempre. Lo que se midió (§13.4: las K de goles no
+     mejoran el 1X2; §15: la burbuja de goles no predice mejor que la
+     frecuencia propia) NO es esta pregunta. Y el marcador no se repite tanto:
+     un equipo que empata mucho empata con marcadores distintos. Backtest en
+     `backend/backtest_goles.py` (REVENTON §17).
 
 ## Siguientes pasos (en orden)
 
