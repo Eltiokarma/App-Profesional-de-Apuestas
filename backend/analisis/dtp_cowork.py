@@ -168,8 +168,12 @@ def _parejas_nuevas(team_id: int, fecha: str, xi: list[dict]) -> list[dict]:
     # EJE-DEBUTANTE falso). Se buscan FICHAS_PAREJAS onces con hoja entre los
     # últimos PARTIDOS_PAREJAS; con menos de ONCES_PAREJAS_MIN no se juzga.
     previos = []
+    hoy = {j["jugadorId"]: j.get("nombre") for j in xi if j.get("jugadorId")}
     for f in _anteriores(team_id, fecha, PARTIDOS_PAREJAS):
-        ids = {j["player_id"] for j in _titulares(f["id"], team_id) if j["player_id"]}
+        hoja = {j["player_id"]: j.get("jugador") for j in _titulares(f["id"], team_id) if j["player_id"]}
+        # el mismo titular con otro id en esa hoja es el mismo (899, 914)
+        equiv = _identidad.ids_equivalentes(hoja, hoy)
+        ids = {equiv.get(i, i) for i in hoja}
         if ids:
             previos.append(ids)
         if len(previos) >= FICHAS_PAREJAS:
@@ -278,6 +282,8 @@ def insumos_equipo(team_id: int, nombre: str, fx) -> dict:
         prev = {j["player_id"]: j["jugador"] for j in _titulares(ants[1]["id"], team_id) if j["player_id"]}
         ahora = {j["jugadorId"]: j["nombre"] for j in xi if j.get("jugadorId")}
         if prev and ahora:
+            # el mismo jugador con otro id en la hoja anterior no entró ni salió (899)
+            prev = {equiv.get(i, i): n for equiv in [_identidad.ids_equivalentes(prev, ahora)] for i, n in prev.items()}
             prev_ali = ((tactica_de(ants[1]["id"], ants[1]["home_team_id"], ants[1]["away_team_id"])
                          .get("alineaciones") or {}).get("local" if ants[1]["home_team_id"] == team_id
                                                           else "visitante") or {})

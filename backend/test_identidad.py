@@ -61,6 +61,14 @@ check("«PH Ganso» casa con «Paulo Henrique Ganso» (la pila en iniciales)",
 check("«K. Álvarez» no casa con «Carlos Álvarez» (otra inicial, 390)", not idn.casa(T("Carlos Álvarez"), T("K. Álvarez")))
 check("«Danilo» es solo la pila de «Danilo Santos» (855)", idn.solo_pila(T("Danilo Santos"), T("Danilo")))
 
+# ── el mismo jugador con dos ids entre hojas (899) ──────────────────────────
+_eq = idn.ids_equivalentes({1: "Lautaro Herrera", 2: "J. Pérez", 3: "Otro Uno"},
+                           {9: "Lautaro Herrera", 2: "J. Pérez", 8: "Nuevo Dos"})
+check("899: «Lautaro Herrera» con otro id en la hoja anterior es el mismo; el que se fue de verdad, no",
+      _eq == {1: 9}, _eq)
+check("899: con dos candidatos por nombre no se afirma nada",
+      idn.ids_equivalentes({1: "J. Díaz"}, {5: "Juan Díaz", 6: "José Díaz"}) == {})
+
 # ── el DT ────────────────────────────────────────────────────────────────────
 check("DT: «M. Pellegrino» = «Mauricio Pellegrino»", idn.mismo_dt("M. Pellegrino", "Mauricio Pellegrino"))
 check("DT: «S. Hoeneb» = «Sebastian Hoeneß» (ß corrupta)", idn.mismo_dt("S. Hoeneb", "Sebastian Hoeneß")

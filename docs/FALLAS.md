@@ -40,6 +40,7 @@ Tres lugares donde vive una guardia:
   - **Regla única:** `backend/identidad.py`, con sus casos reales en `test_identidad.py`.
   - **Test de arquitectura (regla 1):** ninguna comparación de letras fuera de ese archivo.
   - **Escaneo:** chequeo `jugador-duplicado`.
+  - El mismo jugador con otro id entre dos hojas: `identidad.ids_equivalentes`, que usan `cambiosXi` y las parejas nuevas del DTP (899).
 - **Si vuelve:** el caso nuevo va a `identidad.py` con su test. Nunca un `if` en el módulo donde apareció.
 
 ### 2. El DT de la base, viejo o cruzado
