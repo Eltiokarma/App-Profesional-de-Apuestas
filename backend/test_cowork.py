@@ -4760,6 +4760,22 @@ def main():
     check("65: el recibo pide el desenlace que falta y el «rescata» con ISE ≥ 7 sin porqué",
           any("a.siLeEmpatan sin" in x for x in _av65) and any("a.siIguala dice «rescata»" in x for x in _av65)
           and not any("siRecibePrimero" in x for x in _av65), _av65)
+    # 908 (U. de Concepción): siLeEmpatan/siIguala que se cierran con el empate
+    # (ECHADA) no son del que persigue: ni desenlace pedido ni defecto cobrado
+    _rz908 = []
+    _r908 = _idr(_rsg({"siLeEmpatan": {"sob1": 1, "sob2": 1, "sob3": 1, "tipologia": "ECHADA-VOL"},
+                       "siIguala": {"sob1": 1, "sob2": 1, "sob3": 1, "tipologia": "ECHADA-VOL"},
+                       "siRecibePrimero": {"sob1": 1, "sob2": 1, "sob3": 1, "tipologia": "ECHADA-VOL"}},
+                      _rz908, "t"), {"SOB2": 0, "SOB3": 0.5})
+    _av908 = _avd([{"equipo": "a", "reasignacion": _r908}])
+    check("908: siLeEmpatan y siIguala en ECHADA no piden desenlace ni llevan defecto; siRecibePrimero sí",
+          _av908 == ["a.siRecibePrimero sin `desenlace`"]
+          and "desenlaceDefecto" not in _r908["siLeEmpatan"] and "desenlaceDefecto" not in _r908["siIguala"]
+          and _r908["siRecibePrimero"]["desenlaceDefecto"] == "se_rompe", (_av908, _r908))
+    _t908 = tramos_por_marcador({"reasignacion": {"siLeEmpatan": {"tipologia": "ECHADA-VOL", "iseRama": 9.0}}},
+                                [{"minuto": 20, "lado": "a"}, {"minuto": 50, "lado": "b"}, {"minuto": 80, "lado": "b"}], "a")
+    check("908: el veredicto no le cobra el defecto «se_rompe» a una rama de empate en ECHADA",
+          _t908[2]["rama"] == "siLeEmpatan" and "desenlace" not in _t908[2], _t908)
     _r65["siIguala"]["porqueDesenlace"] = "banco ofensivo documentado"
     check("65: con el porqué, el «rescata» contra ISE alto ya no se avisa",
           not any("siIguala" in x for x in _avd([{"equipo": "a", "reasignacion": _r65}])))

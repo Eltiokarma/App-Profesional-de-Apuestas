@@ -980,7 +980,8 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
         # (disciplinas 3 y 24); y el tramo que abre un gol del añadido final
         # dura segundos: no pone a prueba la rama (incidencias 693 y 692)
         sin_prueba = gc >= 3 or abs(gf - gc) >= 3 or (abre_anadido and i == len(eventos) and inicio >= 90)
-        if rama in RAMAS_DESENLACE and resuelta != rama and not sin_prueba:
+        if rama in RAMAS_DESENLACE and resuelta != rama and not sin_prueba \
+                and (lo is None or _rama_empuja(rama, lo)):
             d = desenlace_del_tramo(lo, eventos[i] if i < len(eventos) else None, foco, gf, gc, con_defecto)
             if d:
                 tramo["desenlace"] = d
@@ -1017,7 +1018,13 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
 
 
 # TDE v0.1.24 (disciplina 65): las ramas del que persigue declaran su desenlace
+# (la regla de cuáles empujan vive en parte.rama_empuja: recibo y veredicto)
 RAMAS_DESENLACE = ("siRecibePrimero", "siLeEmpatan", "siIguala")
+
+
+def _rama_empuja(rama: str, lo: dict) -> bool:
+    from backend.analisis.parte import rama_empuja
+    return rama_empuja(rama, lo)
 ISE_RAMA_SE_ROMPE = 7.0
 # LA LECTURA POR DEFECTO NO SE COBRA HACIA ATRÁS (27/10/2026, Chapecoense 2-1
 # Fluminense, parte del 24/10): el defecto por ISE de rama nació con la

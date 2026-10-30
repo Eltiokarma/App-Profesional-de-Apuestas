@@ -1856,6 +1856,19 @@ _SOB_RAMA = ("sob1", "sob2", "sob3")
 # régimen. En la cohorte c3 (253 casos) el que recibió primero con ISE de rama
 # ≥ 7 lo dio vuelta 2 de 38 y con < 7, 7 de 33. Es lectura, no número.
 RAMAS_DESENLACE = ("siRecibePrimero", "siLeEmpatan", "siIguala")
+
+
+def rama_empuja(rama: str, r: dict | None) -> bool:
+    """¿La rama es un régimen del que persigue? `siRecibePrimero` siempre;
+    `siLeEmpatan` y `siIguala` solo «cuando vuelve a empujar / sigue
+    empujando» (TDE disciplina 65): la que se cierra con el empate (una
+    ECHADA) no tiene desenlace que declarar ni defecto que cobrar (incidencia
+    908, U. de Concepción). La usan el recibo y el veredicto."""
+    if rama not in RAMAS_DESENLACE:
+        return False
+    if rama == "siRecibePrimero":
+        return True
+    return not _txt((r or {}).get("tipologia")).upper().startswith("ECHADA")
 DESENLACES = ("se_rompe", "rescata", "abierto")
 ISE_RAMA_SE_ROMPE = 7.0   # con ISE de rama ≥ 7 la lectura por defecto es `se_rompe`
 
@@ -2160,7 +2173,7 @@ def ise_de_ramas(reasig: dict, indicadores: dict) -> dict:
         if heredados:
             rama["iseRamaHeredados"] = heredados
         # TDE v0.1.24 (disciplina 65): la lectura por defecto sale del número
-        if nombre in RAMAS_DESENLACE:
+        if rama_empuja(nombre, rama):
             rama["desenlaceDefecto"] = "se_rompe" if rama["iseRama"] >= ISE_RAMA_SE_ROMPE else "abierto"
     return reasig
 
@@ -2171,7 +2184,7 @@ def avisos_desenlace(bloques: list[dict]) -> list[str]:
     out = []
     for b in bloques:
         for rama, r in (b.get("reasignacion") or {}).items():
-            if rama not in RAMAS_DESENLACE or (r.get("sob1") or 0) < 0.5:
+            if not rama_empuja(rama, r) or (r.get("sob1") or 0) < 0.5:
                 continue
             donde = f"{b.get('equipo') or '?'}.{rama}"
             if not r.get("desenlace"):

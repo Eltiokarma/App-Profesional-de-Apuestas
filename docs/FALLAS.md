@@ -98,6 +98,7 @@ Tres lugares donde vive una guardia:
   - alertas `EFE-EMPATE-TECNICO`, `ESPINA-SIGUE-EN-EXTREMO`, `T.54-SIN-DECLARAR`, `TIPOLOGIA-VS-INDICES` y `HERENCIA-DTP`;
   - `vsMercado.naceDeRecorte`.
   - Una regla nueva no se cobra hacia atrás (`REGLAS_CALCULADAS_DESDE`).
+  - Una regla del skill que el recibo y el veredicto aplican vive en una función que usan los dos: `parte.rama_empuja` (qué rama del TDE declara `desenlace`, 908: la de empate en ECHADA no).
   - La alerta de una regla que el texto ya cumple (el `porque` la nombra) no va a la tira: un aviso permanente se deja de leer (ESPINA-VS-RIESGO 291, ESPINA-SIGUE-EN-EXTREMO 874).
   - Lo que se dice del PRÓXIMO partido sale de la competición de ese partido, no de la base del último año: `separacion_liga.del_partido` (869, el ascendido).
   - Los días de descanso salen de `jugadores.dias_descanso` (por horas) en el calendario, el TDE, el DTP y el camino de recuperación; `test_arquitectura` lo verifica (769, 870).
