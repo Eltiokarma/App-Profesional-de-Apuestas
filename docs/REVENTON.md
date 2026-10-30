@@ -1095,3 +1095,44 @@ cuotas en vivo. `separacionLiga` de `/burbujas` trae la de la copa cuando el
 próximo partido es de copa (`competicion: copa`), y el prompt pide sacar el
 1X2 de un partido de copa del mercado y de los skills, no del motor.
 
+
+## 17. ¿Las constantes de goles ACOTAN los goles? (`backend/backtest_goles.py`, 30/10/2026)
+
+Pedido del usuario: «las constantes de goles no predicen el resultado, acotan
+los goles. Goles anotados, goles en contra. Esto va con un marcador. Puede
+definir al ganador, pero no necesariamente acierta. Y teníamos dos, local y
+visita: era brutal». Su método era mirar la serie de goles de cada equipo
+(Alianza mete 1, 2, 2, 2, 1, 2, 2, 1, 2, 3, 4, 1…), quedarse con un INTERVALO
+(«1 o 2») sin decimales y cruzarlo con lo que recibe el rival.
+
+Lo que ya se midió NO es esa pregunta: §13.4 probó las K de goles contra el
+1X2 (no agregan) y §15, la burbuja de goles contra la frecuencia propia en el
+partido siguiente. Este backtest mide si acotan LOS GOLES de cada equipo:
+
+| modelo | qué usa (todo anterior al partido) |
+|---|---|
+| G0 · a mano | la ventana de dos goles más repetida en los últimos 10 del equipo en su condición |
+| G1 · frecuencia | la media de esos 10 (encogida hacia 1,45 de local · 1,15 de visita con 3 partidos de peso) |
+| G2 · cruce | Poisson con lo que mete el que ataca EN SU CONDICIÓN, lo que recibe el otro EN LA SUYA, la localía y la μ del motor |
+| G3 · + K | G2 más la K de goles anotados del que ataca y recibidos del que defiende (de la condición y totales) y la racha abierta de marcar / de recibir |
+
+Ajuste con el 80 % de partidos más viejos, prueba en el 20 % más nuevo. Se
+comparan el log-loss de los goles de cada equipo (por partido, bootstrap
+emparejado), el **intervalo de dos goles** (cuánto acierta contra lo que
+prometía), el **marcador acotado** (los cuatro marcadores de los dos
+intervalos) y el exacto; y, en los mismos partidos con cuota, el MERCADO de
+más/menos 2,5 y ambos marcan (log-loss y un valor de 1 unidad donde el modelo
+ve 5+ puntos sobre el mercado). La guardia de cordura corta si la prueba sale
+fuera de 0,8-2,2 goles por equipo.
+
+Y **¿el marcador se repite?** (el usuario: «el marcador no se repite tanto;
+cierto equipo que empata mucho empata con marcador diferente»): por equipo,
+cuántas veces un partido repite el marcador del anterior —y un empate, el del
+empate anterior— contra 200 permutaciones del orden de LOS MISMOS marcadores
+del equipo. Razón < 1 con `pMenos` ≤ 0,025 es «se repite menos que el azar».
+
+`test_backtest_goles` siembra un efecto real de la constante (G3 lo detecta y
+pesan los coeficientes sembrados), uno de ruido (no inventa nada), una serie
+que nunca repite (sale bajo el azar) y una al azar (queda en el azar).
+
+Pendiente: correrlo en el servidor con `--padron` y anotar acá el resultado.
