@@ -248,5 +248,22 @@ _dbm.query = _q0
 check("el escaneo se guarda unos minutos (la segunda llamada sale de la caché)",
       escaneo.CACHE_S >= 300 and "fresco" in escaneo.escanear.__code__.co_varnames)
 
+# 919/920 (Almirón, Peirano): la roja al DT —sin id, nombre del banco— no es un
+# jugador sancionado: va aparte, en `cuerpoTecnico`, y la agenda lo marca
+con.execute("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador, jugador_id) "
+            "VALUES (20, 88, 'Card', 'Red Card', ?, 'Pablo Peirano', NULL)", (CAR,))
+con.execute("INSERT INTO alineaciones VALUES (20, ?, '4-4-2', 'Pablo Peirano', 52722, 'Bryan Castillo', 8, 'M', '3:2', 1)",
+            (CAR,))
+con.commit()
+s21b = sanciones.de_fixture(21)["a"]
+check("919: la roja al DT no entra en `sancionados` (Castillo sí) y va en `cuerpoTecnico`",
+      [x["nombre"] for x in s21b["sancionados"]] == ["Bryan Castillo"]
+      and [x["nombre"] for x in s21b.get("cuerpoTecnico") or []] == ["Pablo Peirano"]
+      and s21b["cuerpoTecnico"][0]["tipo"] == "expulsion_dt", s21b)
+from backend.analisis.parte import _dt_con_expulsion
+_dts = _dt_con_expulsion(21, {"a": {"nombre": "Pablo Peirano"}, "b": None})
+check("920: el DT de la agenda trae `expulsado` cuando viene de una roja; el otro lado queda igual",
+      (_dts["a"].get("expulsado") or {}).get("nombre") == "Pablo Peirano" and _dts["b"] is None, _dts)
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)

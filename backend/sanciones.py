@@ -125,6 +125,23 @@ def _clave(t) -> tuple:
     return (t["jugador_id"],) if t["jugador_id"] else ("nombre", (t["jugador"] or "").strip().lower())
 
 
+def _cuerpo_tecnico(fixture_id: int, team_id: int, rojas: list[dict]) -> set[int]:
+    """Las rojas (por `id()`) que la regla de la ficha da al cuerpo técnico."""
+    if not rojas:
+        return set()
+    try:
+        from backend.ficha_tactica import _cuerpo_tecnico_e_ids
+    except Exception:  # noqa: BLE001 — sin la capa de la ficha, todas siguen siendo de jugadores
+        return set()
+    ev = [{"equipoId": team_id, "jugador": r["nombre"], "jugadorId": r["jugadorId"], "tipo": "Card", "_r": r}
+          for r in rojas]
+    try:
+        _cuerpo_tecnico_e_ids(fixture_id, ev)
+    except Exception:  # noqa: BLE001 — base sin entrenadores ni alineaciones: no se reclasifica
+        return set()
+    return {id(e["_r"]) for e in ev if e.get("cuerpoTecnico")}
+
+
 def del_equipo(team_id: int, fx) -> dict:
     """Los sancionados de `team_id` para el partido `fx` (fila de fixtures con
     id, date, league_id, league_season, league_round)."""
@@ -164,6 +181,19 @@ def del_equipo(team_id: int, fx) -> dict:
                             "último partido de esta competición: se pierde este partido"
                             + ("" if doble else " (una roja directa puede valer más fechas: confirmar en prensa)")),
             }
+    # LA ROJA AL DT NO ES DE UN JUGADOR (incidencia 919: Almirón y Peirano, sin
+    # id, entraban en `sancionados` y SANCION-SIN-DECLARAR pedía ponerlos en
+    # `fuera`, donde pesarían en el IP). La misma regla que la ficha
+    # (`ficha_tactica._cuerpo_tecnico_e_ids`): va aparte, para `dt.banco`.
+    ct = _cuerpo_tecnico(ultimo["id"], team_id, [rojas[k] for k in rojas])
+    for k in list(rojas):
+        if id(rojas[k]) in ct:
+            r = rojas.pop(k)
+            r["tipo"] = "expulsion_dt"
+            r["detalle"] = (f"expulsado al {r['minuto']}' el {fecha} en el último partido de esta competición: "
+                            "no se sienta en el banco hoy (confirmar la pena en prensa); va en `dt.banco`, "
+                            "no en `fuera`")
+            out.setdefault("cuerpoTecnico", []).append(r)
     out["sancionados"].extend(rojas.values())
 
     # AMARILLAS ACUMULADAS: solo con la regla de la competición y el conteo completo
