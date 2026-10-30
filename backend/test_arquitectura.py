@@ -123,6 +123,19 @@ for rel in (os.path.join(".claude", "skills", "corrida-sad", "SKILL.md"), os.pat
             inventadas.append(f"{rel}: {m.group(1)}")
 check("skills y prompt: cada ruta que citan existe en backend/app.py", not inventadas, sorted(set(inventadas)))
 
+# ── 5-bis · LOS DÍAS DE DESCANSO SE CUENTAN EN UN SOLO LUGAR ──────────────
+# Incidencias 769 y 870: el calendario restaba días del calendario y el F2 del
+# TDE horas, y el mismo descanso salía 3 en una pantalla y 2 en la otra. Un
+# `.days` cerca de «descanso» fuera de backend/jugadores.dias_descanso reabre eso.
+descanso_suelto = []
+for rel in fuentes():
+    lineas = leer(rel).split("\n")
+    for i, ln in enumerate(lineas):
+        if ".days" in ln and "descanso" in " ".join(lineas[max(0, i - 6):i + 4]).lower():
+            descanso_suelto.append(f"{rel}:{i + 1}")
+check("descanso: los días entre partidos salen de jugadores.dias_descanso (por horas), no de restar fechas",
+      not descanso_suelto, descanso_suelto)
+
 # ── 6 · CADA CLASE DE FALLA TIENE SU GUARDIA ESCRITA ────────────────────────
 fallas = leer(os.path.join("docs", "FALLAS.md"))
 clases = re.findall(r"^### ", fallas, re.M)
