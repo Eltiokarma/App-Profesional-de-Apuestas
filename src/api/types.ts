@@ -1616,6 +1616,8 @@ export interface BloqueTde {
   disciplina43?: boolean
   /** La prosa del bloque (863: antes se perdía callada). */
   notas?: string
+  /** Indicadores excluidos por falta de dato, con su motivo (928). */
+  sinDato?: Record<string, string>
   vias?: { nombre: string; indice: number; ventana: string; detalle: string }[]
   falsador?: string
   /** Disciplina 44 como campo: qué le pasa a las vías de este equipo si marca

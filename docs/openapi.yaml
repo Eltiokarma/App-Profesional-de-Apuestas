@@ -3680,6 +3680,7 @@ components:
         ventana: { type: string, description: "la ventana de 15 minutos, ej. \"75-90'\"" }
         disciplina43: { type: boolean, description: 'true = se declaran las dos vías por separado' }
         notas: { type: string, description: 'la prosa del bloque (se guarda y vuelve en el GET; una clave que el bloque no guarda vuelve en `rechazos` con su nombre)' }
+        sinDato: { type: object, additionalProperties: { type: string }, description: 'indicadores excluidos por falta de dato, {indicador: motivo}; llega como lista o como objeto (`excluidos` también se acepta) y vuelve como objeto' }
         vias:
           type: array
           items:
