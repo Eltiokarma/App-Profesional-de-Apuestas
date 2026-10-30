@@ -824,8 +824,12 @@ conversación se pierde en la siguiente.
    Lima, porque el texto de una rutina solo se cambia desde su propia
    conversación— en la sesión «SAD · corrida de partes
    (rutina)»; veredictos 20:12 (`limite=45` desde el 27/10/2026: con 30 la cola llegó a
-   40 vencidos) en «SAD · corrida de veredictos (rutina, v2)»
-   (`session_01WwsfbUiB1MkP3VjjniTpvR`; la v1, `session_01BG2WdPWLP7jrAqFiDCC26P`,
+   40 vencidos) en «SAD · corrida de veredictos (rutina, v3)»
+   (`session_01WwsfbT7QwmMGN9rpzPDcW6`, rutina «SAD · veredictos (v3)»
+   `trig_01MnCrTQMjsWo64rWVqoEsv7`, desde el 30/10/2026: la v2,
+   `session_01WwsfbUiB1MkP3VjjniTpvR`, llegó a 692.000 tokens sin compactar y
+   212 USD en tres días, y su rutina `trig_018kTWHJsh8y2evXLMySfJcF` quedó
+   desactivada; la v1, `session_01BG2WdPWLP7jrAqFiDCC26P`,
    llegó a 571.000 tokens y se había usado para otra conversación: una sesión
    fija es SOLO de su rutina); **mantenimiento** 12:23 y 21:47 en «SAD · mantenimiento
    (rutina)» (desde el 22/10, deuda 17); **rehacer** cada 30 min (05:07 a 23:37 Lima, dos disparos :07 y
