@@ -26,9 +26,25 @@ MAX_GOLES = 10
 VARIABLES = ["lnAtaque", "lnDefensa", "local", "d",
              "kGaCondAt", "kGrCondDef", "kGaAt", "kGrDef", "rachaMarcaAt", "rachaRecibeDef"]
 
-# El modelo G3 (cruce + K) ajustado con TODO el padrón. None hasta la primera
-# calibración: sin él no se acota nada (se dice, no se inventa).
-MODELO_GOLES: dict | None = None
+# El modelo G3 (cruce + K) ajustado con TODO el padrón (`backtest_goles --padron
+# --modelo`, 30/10/2026: 50.823 partidos; en la prueba del corte temporal el
+# intervalo de dos goles acertó 64,3 % y el marcador acotado 41,1 %). Con None
+# no se acota nada (se dice, no se inventa). Rehacerlo con el mismo comando.
+MODELO_GOLES: dict | None = {
+    "vars": ["lnAtaque", "lnDefensa", "local", "d", "kGaCondAt", "kGrCondDef", "kGaAt", "kGrDef",
+             "rachaMarcaAt", "rachaRecibeDef"],
+    "intercepto": 0.239914,
+    "media": {"lnAtaque": 0.25493, "lnDefensa": 0.194148, "local": 0.5, "d": 0.0, "kGaCondAt": 1.858406,
+              "kGrCondDef": 1.819846, "kGaAt": 1.833707, "kGrDef": 1.819239, "rachaMarcaAt": 1.024254,
+              "rachaRecibeDef": 0.961377},
+    "desvio": {"lnAtaque": 0.31961, "lnDefensa": 0.305696, "local": 0.5, "d": 0.741049, "kGaCondAt": 1.393559,
+               "kGrCondDef": 1.396259, "kGaAt": 1.371474, "kGrDef": 1.385278, "rachaMarcaAt": 0.801768,
+               "rachaRecibeDef": 0.775419},
+    "beta": {"lnAtaque": 0.100109, "lnDefensa": 0.069641, "local": -0.013141, "d": 0.153472, "kGaCondAt": 0.091563,
+             "kGrCondDef": -0.00722, "kGaAt": 0.022105, "kGrDef": 0.010056, "rachaMarcaAt": -0.094557,
+             "rachaRecibeDef": 0.00496},
+    "calibradoEn": "2026-10-30", "partidos": 50823, "intervaloAcierta": 0.6427, "marcadorAcotadoAcierta": 0.4113,
+}
 
 
 def _slog(x) -> float:
