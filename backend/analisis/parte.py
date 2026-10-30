@@ -33,6 +33,7 @@ import unicodedata
 import sqlite3
 from datetime import date as date_t, datetime, timedelta, timezone
 
+from backend import identidad as _identidad
 from backend import db as saddb
 from backend.analisis import bloque_f, db as efedb, veredicto as vered
 from backend.analisis import coherencia as _coherencia
@@ -1317,34 +1318,13 @@ def sin_dt(parte: dict) -> list[str]:
     return fuera
 
 
+# la identidad del DT vive en backend/identidad.py (30/10/2026)
 def _tokens_dt(nombre: str) -> set[str]:
-    n = (nombre or "").lower().replace("ß", "ss")
-    n = unicodedata.normalize("NFD", n)
-    n = "".join(c for c in n if unicodedata.category(c) != "Mn")
-    return {t for t in re.split(r"[^a-z]+", n) if len(t) >= 3}
+    return set(_identidad.tokens_dt(nombre))
 
 
-def _mismo_apellido(x: str, y: str) -> bool:
-    if x == y:
-        return True
-    # la base trae letras corruptas («S. Hoeneb» por «S. Hoeneß», Stuttgart
-    # 23/09): un apellido largo que coincide en las primeras 5 letras, o que
-    # se parece en ≥ 80 %, es el mismo apellido mal escrito
-    if min(len(x), len(y)) >= 5 and (x[:5] == y[:5] or sorted(x) == sorted(y)):
-        # …o las mismas letras en otro orden («Balazar» por «Bazalar»,
-        # Los Chankas 16/10/2026)
-        return True
-    return min(len(x), len(y)) >= 4 and difflib.SequenceMatcher(None, x, y).ratio() >= 0.8
-
-
-def mismo_dt(a: str, b: str) -> bool:
-    """¿Nombran al mismo entrenador? La API y la prensa los escriben distinto
-    («M. Pellegrino» · «Mauricio Pellegrino» · «Hernán Torres Oliveros» ·
-    «H. Torres» · «S. Hoeneß» y la base con «S. Hoeneb»): basta un apellido en
-    común, tolerando una letra mal codificada. Laxo a propósito: una
-    cuarentena falsa saca un caso bueno, y eso también ensucia la métrica."""
-    ta, tb = _tokens_dt(a), _tokens_dt(b)
-    return any(_mismo_apellido(x, y) for x in ta for y in tb)
+_mismo_apellido = _identidad.apellido_dt
+mismo_dt = _identidad.mismo_dt
 
 
 def dt_equivocado(parte: dict, fixture_id: int, desmentidos: "dict | None" = None) -> list[dict]:

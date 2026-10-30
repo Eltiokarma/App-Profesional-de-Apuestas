@@ -17,6 +17,7 @@ declarado a un IP cómodo.
 """
 import re
 
+from backend import identidad as _id
 from backend.nombres import normalizar
 
 # F1 · pesos por rol (tabla "Clasificación de Rol" del protocolo)
@@ -30,8 +31,9 @@ ROLES = tuple(PESOS_ROL)
 ESTADOS = tuple(FACTOR_ESTADO)
 
 # partículas que no distinguen a nadie: "de la Cruz" y "Cruz" son el mismo
-_PARTICULAS = {"de", "del", "la", "las", "lo", "los", "da", "das", "do", "dos",
-               "van", "von", "di", "el", "al", "san", "santa", "mc", "jr"}
+# la identidad de un jugador vive en backend/identidad.py (30/10/2026): estos
+# nombres quedan como alias para quien los importa desde acá
+_PARTICULAS = _id.PARTICULAS
 
 
 def nivel_ip(ip: float) -> str:
@@ -143,74 +145,17 @@ def ramas(plantel: list[dict], fuera: list[dict]) -> dict:
 
 # ── cruce con el once ───────────────────────────────────────────────────────
 
-def _tokens(nombre: str) -> list[str]:
-    """Palabras útiles del nombre: sin tildes, sin puntos ("A." → "a") y sin
-    partículas. El punto importa: la ficha de API-Football abrevia el nombre
-    de pila y sin quitarlo "a." nunca casaría con "ángelo"."""
-    # el apóstrofo une, no separa: «N'Diaye» y «Ndiaye» son la misma palabra
-    # (Le Havre, incidencia 653: el suplente salía baja con id negativo)
-    limpio = re.sub(r"[^a-z0-9ñ ]+", " ", re.sub(r"['’`´]", "", normalizar(nombre)))
-    return [t for t in limpio.split() if t and t not in _PARTICULAS]
-
-
-def _misma_pila(uno: str, otro: str) -> bool:
-    """Nombre de pila igual, o uno es la inicial del otro ("a" ↔ "ángelo").
-
-    Nada más: "jose" y "joselu" son personas distintas y un prefijo suelto los
-    confundiría."""
-    if uno == otro:
-        return True
-    # una letra doble de más o de menos es el mismo nombre: «Emmanuel» y
-    # «Emanuel» Benítez (Nacional, incidencia 449: salía baja habiendo entrado)
-    if len(uno) > 3 and len(otro) > 3 and re.sub(r"(.)\1", r"\1", uno) == re.sub(r"(.)\1", r"\1", otro):
-        return True
-    if len(uno) == 1:
-        return otro.startswith(uno)
-    if len(otro) == 1:
-        return uno.startswith(otro)
-    return False
-
-
-def _casa(tokens_plantel: list[str], tokens_hoja: list[str]) -> bool:
-    """¿La hoja nombra a este jugador?
-
-    API-Football escribe "A. Campos"; Cowork escribe "Ángelo Campos"; un
-    pantallazo puede traer solo "Campos". El apellido es obligatorio —por el
-    nombre de pila solo no se identifica a nadie— y la pila, si la hoja la
-    trae, tiene que cuadrar.
-    """
-    if not tokens_plantel or not tokens_hoja:
-        return False
-    apellidos = set(tokens_plantel[1:]) or set(tokens_plantel)
-    if not set(tokens_hoja) & apellidos:
-        # LA HOJA A VECES TRAE SOLO EL NOMBRE DE PILA: API-Football escribe
-        # «Saúl», «Breno», «Andre» (Flamengo, Corinthians 11/10/2026) y la tabla
-        # dice «Saúl Ñíguez», «Breno Bidon». Un solo token que es la pila del
-        # jugador casa; si dos jugadores comparten esa pila, `resolver` lo manda
-        # a dudas en vez de adivinar.
-        return len(tokens_hoja) == 1 and len(tokens_plantel) > 1 and tokens_hoja[0] == tokens_plantel[0]
-    pila_plantel = tokens_plantel[0] if len(tokens_plantel) > 1 else ""
-    pila_hoja = [t for t in tokens_hoja if t not in apellidos]
-    if not pila_hoja or not pila_plantel:
-        return True
-    # «PH Ganso» = Paulo Henrique Ganso: la pila en iniciales pegadas
-    iniciales = "".join(t[0] for t in tokens_plantel[:-1])
-    return any(_misma_pila(t, pila_plantel) or (1 < len(t) <= 3 and t == iniciales[:len(t)])
-               for t in pila_hoja)
-
-
-def _solo_pila(tokens_plantel: list[str], tokens_hoja: list[str]) -> bool:
-    """¿La hoja casa con este jugador solo por el nombre de pila (sin apellido)?"""
-    apellidos = set(tokens_plantel[1:]) or set(tokens_plantel)
-    return not set(tokens_hoja) & apellidos
+_tokens = _id.tokens
+_misma_pila = _id.misma_pila
+_casa = _id.casa
+_solo_pila = _id.solo_pila
 
 
 def _una_letra(t: str, apellidos: set) -> str | None:
-    """El apellido de la tabla que difiere de `t` en UNA letra (5+ letras,
-    mismo largo): «Zampiero» por «Zampieri» (Torque, 21/10/2026, incidencia
-    223). Es la misma tolerancia de `dtp_cowork._casi`."""
+    """El apellido de la tabla que es `t` escrito distinto (`identidad.apellido_casi`):
+    «Zampiero» por «Zampieri» (Torque, 21/10/2026, incidencia 223)."""
     for a in apellidos:
-        if len(a) >= 5 and len(a) == len(t) and sum(x != y for x, y in zip(a, t)) == 1:
+        if a != t and _id.apellido_casi(a, t):
             return a
     return None
 

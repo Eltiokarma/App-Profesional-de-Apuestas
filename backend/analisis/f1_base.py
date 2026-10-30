@@ -21,6 +21,7 @@ titularidades, goles y asistencias de la temporada; 0 requests):
 from __future__ import annotations
 
 from backend import db as saddb
+from backend import identidad as _id
 from backend import jugadores as jug
 from backend.analisis import bloque_f
 from backend.nombres import _MARCAS_MOJIBAKE, limpiar_nombre
@@ -242,24 +243,11 @@ def _zona_reciente(f: dict, r: dict | None) -> None:
 
 
 def _tok_jugador(nombre: str) -> list[str]:
-    return [t.replace("ñ", "n") for t in bloque_f._tokens(nombre or "")]
+    return _id.tokens(nombre)
 
 
-def mismo_jugador(uno: str, otro: str) -> bool:
-    """¿Dos nombres de la API son la misma persona? El mismo apellido (o con
-    una letra cambiada) y la misma pila o su inicial: «S. Peña»/«S. Pena»,
-    «E. Griffa»/«Emiliano Griffa», «Y. Guzmán»/«Y. Guzman»."""
-    a, b = _tok_jugador(uno), _tok_jugador(otro)
-    if len(a) < 2 or len(b) < 2:
-        return False
-    # EL MISMO NOMBRE AL REVÉS: «Luan Patrick» (180961) y «Patrick Luan»
-    # (80563), el central del Estrela con dos ids (incidencia 502). Solo con
-    # las palabras enteras (ninguna inicial) y las mismas.
-    if all(len(t) > 1 for t in a + b) and sorted(a) == sorted(b):
-        return True
-    if not bloque_f._misma_pila(a[0], b[0]):
-        return False
-    return a[-1] == b[-1] or _casi_igual(a[-1], b[-1])
+# la regla vive en backend/identidad.py (30/10/2026)
+mismo_jugador = _id.mismo_jugador
 
 
 def _sin_minutos(j: dict) -> bool:
@@ -661,20 +649,7 @@ def tabla(fixture_id: int) -> dict | None:
     }
 
 
-def _casi_igual(uno: str, otro: str) -> bool:
-    """El mismo apellido mal escrito: una letra cambiada, puesta de más o de
-    menos, o las mismas letras en otro orden. La API tiene a Huracán con «Juan
-    Bizans» (406291) y la hoja del partido con «F. Bisanz» (304389): el mismo
-    jugador con dos ids (16/10/2026). Solo apellidos de 5 letras o más: en uno
-    corto una letra ya es otra persona."""
-    if min(len(uno), len(otro)) < 5 or abs(len(uno) - len(otro)) > 1:
-        return False
-    if sorted(uno) == sorted(otro):
-        return True
-    if len(uno) == len(otro):
-        return sum(a != b for a, b in zip(uno, otro)) <= 1
-    corto, largo = sorted((uno, otro), key=len)
-    return any(largo[:i] + largo[i + 1:] == corto for i in range(len(largo)))
+_casi_igual = _id.apellido_casi
 
 
 def _parecido(tok_api: list[str], tok_tabla: list[str]) -> bool:

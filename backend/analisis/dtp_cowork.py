@@ -28,6 +28,7 @@ import unicodedata
 from datetime import datetime, timedelta
 from itertools import combinations
 
+from backend import identidad as _identidad
 from backend import db as saddb
 
 LADOS = ("a", "b")
@@ -992,12 +993,9 @@ def _linea(d: str) -> str:
     return "4" if d == "4" else "3/5"
 
 
-def _plano(t: str) -> str:
-    t = unicodedata.normalize("NFKD", t or "").encode("ascii", "ignore").decode().lower()
-    return re.sub(r"[^a-z ]+", " ", t)
-
-
-_PARTICULAS = {"de", "del", "la", "las", "los", "da", "do", "dos", "das", "van", "von", "di", "le"}
+# la identidad vive en backend/identidad.py (30/10/2026)
+_plano = _identidad.plano
+_PARTICULAS = _identidad.PARTICULAS
 
 
 def _apellidos(nombre: str) -> list[str]:
@@ -1015,20 +1013,7 @@ def _sz(t: str) -> str:
     return t.replace("z", "s")
 
 
-def _casi(uno: str, otro: str) -> bool:
-    """Una letra cambiada, de más o de menos en un apellido largo (5+), tras
-    igualar s/z: «Berríos» y «Berios» (Carabobo, 30/10/2026, incidencia 856)."""
-    uno, otro = _sz(uno), _sz(otro)
-    if uno == otro:
-        return True
-    if min(len(uno), len(otro)) < 5:
-        return False
-    if len(uno) == len(otro):
-        return sum(a != b for a, b in zip(uno, otro)) <= 1
-    if abs(len(uno) - len(otro)) == 1:
-        largo, corto = (uno, otro) if len(uno) > len(otro) else (otro, uno)
-        return any(largo[:k] + largo[k + 1:] == corto for k in range(len(largo)))
-    return False
+_casi = _identidad.apellido_casi
 
 
 def _pila_en(nombre: str, ref: str) -> bool:
