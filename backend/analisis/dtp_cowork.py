@@ -338,8 +338,12 @@ def penales_temporada(team_id: int, antes: str, dias: int = PENALES_DIAS) -> dic
         nombre = (f["jugador"] or "").strip()
         if not nombre:
             continue
-        e = por.setdefault(nombre, {"nombre": nombre, "convertidos": 0, "errados": 0, "enPlantilla": None})
         jid = f["jugador_id"] if "jugador_id" in f.keys() else None
+        # EL MISMO ID ES EL MISMO JUGADOR (incidencia 872: «Esteban Lepaul» 4 y
+        # «E. Lepaul» 2, id 163004): se agrupa por id y queda el nombre más largo
+        e = por.setdefault(jid or nombre, {"nombre": nombre, "convertidos": 0, "errados": 0, "enPlantilla": None})
+        if len(nombre) > len(e["nombre"]):
+            e["nombre"] = nombre
         if jid and not e.get("jugadorId"):
             e["jugadorId"] = jid
         if plantel and jid:
@@ -391,12 +395,35 @@ def _casa_nombre(uno: str, otro: str) -> bool:
     return mismo_jugador(uno, otro) or _plano(uno) == _plano(otro)
 
 
-def _ejecutores_en_base(team_id, fecha: str) -> bool:
-    """¿La base tiene algún penal del equipo en el año? Ante la duda (sin base), sí."""
+def _ejecutores_hoy(team_id, fecha: str, fixture_id=None) -> dict:
+    """Los ejecutores de la base que pueden tirar HOY: `hay` (alguno sigue en el
+    plantel y, con el once oficial ya capturado, es titular) y `nombres` (todos
+    los de la base, para reconocer la línea que nombra a uno). Ante la duda
+    (base que no responde), `hay` es sí.
+    · Incidencia 885 (Konyaspor–Galatasaray): el único ejecutor arrancó en el
+      banco; «sin ejecutor entre los titulares» es entonces la respuesta, no un
+      hueco.
+    · Incidencia 864 (Lille): la línea que nombra a Giroud y agrega «si no está,
+      sin ejecutor documentado» NOMBRA al ejecutor."""
     try:
-        return bool(penales_temporada(team_id, fecha)["ejecutores"])
-    except Exception:  # noqa: BLE001
-        return True
+        ej = penales_temporada(team_id, fecha)["ejecutores"]
+    except Exception:  # noqa: BLE001 — sin base no se puede dar por bueno «sin ejecutor»
+        return {"hay": True, "nombres": []}
+    vivos = [e for e in ej if e.get("enPlantilla") is not False]
+    xi = {j["player_id"] for j in _titulares(fixture_id, team_id)} - {None} if fixture_id else set()
+    if xi:
+        vivos = [e for e in vivos if not e.get("jugadorId") or e["jugadorId"] in xi]
+    return {"hay": bool(vivos), "nombres": [e["nombre"] for e in ej]}
+
+
+def _nombra_ejecutor(linea: str, nombres: list[str]) -> bool:
+    """¿La línea nombra a alguno de los ejecutores de la base (por apellido)?"""
+    txt = f" {_plano_num(linea)} "
+    for n in nombres:
+        ap = _plano_num(n).split()
+        if ap and len(ap[-1]) >= 3 and f" {ap[-1]} " in txt:
+            return True
+    return False
 
 
 def _ids_plantel(team_id: int) -> set[int]:
@@ -1555,7 +1582,7 @@ from backend.jugadores import dias_descanso as jug_dias_descanso  # noqa: E402
 
 _PENAL = re.compile(r"penal|penalt", re.I)
 _SIN_EJECUTOR = re.compile(r"sin ejecutor|ejecutor (?:no|sin) (?:confirmad|defin|conocid)|por jerarqu", re.I)
-# (_ejecutores_en_base decide si «sin ejecutor» es un hueco o lo que la base dice)
+# (_ejecutores_hoy decide si «sin ejecutor» es un hueco o lo que la base dice)
 _SEDE_TXT = {"visita": re.compile(r"visita|visitante|\bfuera\b", re.I),
              "local": re.compile(r"\bde local\b|\ben casa\b|\blocal\)|\(local", re.I)}
 
@@ -1617,9 +1644,14 @@ def avisos_v16(dtp: dict, fx, nombres: dict) -> list[dict]:
         # …salvo que la base no tenga ningún penal de ese equipo en el año: ahí
         # «sin ejecutor» es justo lo que la nota de `penales` pide decir (802:
         # Varea, Numancia, Águilas cobrados por escribirlo)
-        sin_base = {"foco": not _ejecutores_en_base(tid, fecha), "rival": not _ejecutores_en_base(tid_rival, fecha)}
+        # …o que ninguno de la base pueda tirar hoy (en el banco del once oficial,
+        # 885), y la línea que nombra a uno cuenta aunque diga «si no, sin
+        # ejecutor» (864)
+        fid_hoy = fx["id"] if "id" in fx.keys() else None
+        ej = {"foco": _ejecutores_hoy(tid, fecha, fid_hoy), "rival": _ejecutores_hoy(tid_rival, fecha, fid_hoy)}
         sin_penal = [q for q, k in (("propio", "foco"), ("del rival", "rival"))
-                     if not any(_PENAL.search(v or "") and (sin_base[k] or not _SIN_EJECUTOR.search(v or ""))
+                     if not any(_PENAL.search(v or "") and (not ej[k]["hay"] or not _SIN_EJECUTOR.search(v or "")
+                                                            or _nombra_ejecutor(v or "", ej[k]["nombres"]))
                                 for v in vias.get(k) or [])]
         if (vias.get("foco") or vias.get("rival")) and sin_penal:
             out.append({"bloque": f"dtp.{lado}.m2.viasGol", "codigo": "DTP-PENAL-SIN-EJECUTOR",

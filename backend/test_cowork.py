@@ -3480,25 +3480,25 @@ def main():
           _av16b == [], _av16b)
     _x792 = _copy.deepcopy(_x16b)
     _x792["bloques"][0]["apertura"]["m2"]["viasGol"]["rival"] = ["penal: sin ejecutor confirmado entre los titulares"]
-    _orig792 = (_d15._formacion_ultima, _d15.casos_bloque, _d15._ejecutores_en_base)
+    _orig792 = (_d15._formacion_ultima, _d15.casos_bloque, _d15._ejecutores_hoy)
     try:
-        _d15._ejecutores_en_base = lambda tid, fecha: True   # la base sí tiene ejecutores (Palmeiras)
+        _d15._ejecutores_hoy = lambda tid, fecha, fid=None: {"hay": True, "nombres": ["Flaco López"]}   # la base sí tiene ejecutores (Palmeiras)
         _d15._formacion_ultima = lambda tid, fecha: ("3-4-2-1", 123)
         _d15.casos_bloque = lambda tid, antes, dias=180: [{"sede": "visita", "caso": "1-0 de visita"}]
         _av792 = _d15.avisos_v16(_x792, _fx16, {"a": "Leones", "b": "Libertad"})
     finally:
-        _d15._formacion_ultima, _d15.casos_bloque, _d15._ejecutores_en_base = _orig792
+        _d15._formacion_ultima, _d15.casos_bloque, _d15._ejecutores_hoy = _orig792
     check("792: «penal: sin ejecutor confirmado» no cuenta como ejecutor nombrado → DTP-PENAL-SIN-EJECUTOR",
           [a["codigo"] for a in _av792] == ["DTP-PENAL-SIN-EJECUTOR"], _av792)
-    _ej802 = _d15._ejecutores_en_base
+    _ej802 = _d15._ejecutores_hoy
     _orig802 = (_d15._formacion_ultima, _d15.casos_bloque)
     try:
-        _d15._ejecutores_en_base = lambda tid, fecha: False   # la base no tiene penales de nadie
+        _d15._ejecutores_hoy = lambda tid, fecha, fid=None: {"hay": False, "nombres": []}   # la base no tiene penales de nadie
         _d15._formacion_ultima = lambda tid, fecha: ("3-4-2-1", 123)
         _d15.casos_bloque = lambda tid, antes, dias=180: [{"sede": "visita", "caso": "1-0 de visita"}]
         _av802 = _d15.avisos_v16(_x792, _fx16, {"a": "Leones", "b": "Libertad"})
     finally:
-        _d15._ejecutores_en_base = _ej802
+        _d15._ejecutores_hoy = _ej802
         _d15._formacion_ultima, _d15.casos_bloque = _orig802
     check("802: sin penales del equipo en la base, «sin ejecutor» es lo que pide la nota: no avisa",
           _av802 == [], _av802)
@@ -3560,6 +3560,40 @@ def main():
           and "ya no están en el plantel: A. Pinamonti" in _pen718["nota"], _pen718)
     check("718: si ninguno sigue, la nota manda a la prensa",
           "ninguno de los que tiraron" in _pen718b["nota"], _pen718b)
+    # 872 (Lepaul): el mismo id con dos grafías es UN ejecutor, con el nombre largo
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM fixture_eventos WHERE fixture_id=990490")
+        _con.executemany("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador, jugador_id) "
+                         "VALUES (990490, ?, 'Goal', 'Penalty', 990491, ?, ?)",
+                         [(10, "Esteban Lepaul", 163004), (30, "E. Lepaul", 163004), (50, "Esteban Lepaul", 163004)])
+    _pen872 = _d15.penales_temporada(990491, "2026-10-25 20:00:00")
+    check("872: «Esteban Lepaul» y «E. Lepaul» con el mismo id son un ejecutor con 3 penales",
+          [(e["nombre"], e["convertidos"]) for e in _pen872["ejecutores"]] == [("Esteban Lepaul", 3)], _pen872)
+    # 885 (Konyaspor–Galatasaray): el único ejecutor arranca en el banco del once
+    # oficial → «sin ejecutor» es la respuesta; sin once, todavía puede tirar
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.executemany("INSERT INTO alineaciones (fixture_id, team_id, player_id, jugador, titular) "
+                         "VALUES (990885, 990491, ?, ?, ?)",
+                         [(9001, "Titular Uno", 1), (9002, "Titular Dos", 1), (163004, "Esteban Lepaul", 0)])
+    _h885 = _d15._ejecutores_hoy(990491, "2026-10-25 20:00:00", 990885)
+    _h885b = _d15._ejecutores_hoy(990491, "2026-10-25 20:00:00", 990886)
+    check("885: el ejecutor en el banco del once oficial no cuenta como disponible; sin once, sí",
+          _h885 == {"hay": False, "nombres": ["Esteban Lepaul"]} and _h885b["hay"] is True, (_h885, _h885b))
+    # 864 (Lille): la línea que nombra al ejecutor y agrega «si no, sin ejecutor
+    # documentado» no avisa
+    _x864 = _copy.deepcopy(_x792)
+    _x864["bloques"][0]["apertura"]["m2"]["viasGol"]["rival"] = [
+        "penal: ejecutor Flaco López (2 de 2); si no está en cancha, sin ejecutor documentado"]
+    _o864 = (_d15._formacion_ultima, _d15.casos_bloque, _d15._ejecutores_hoy)
+    try:
+        _d15._ejecutores_hoy = lambda tid, fecha, fid=None: {"hay": True, "nombres": ["Flaco López"]}
+        _d15._formacion_ultima = lambda tid, fecha: ("3-4-2-1", 123)
+        _d15.casos_bloque = lambda tid, antes, dias=180: [{"sede": "visita", "caso": "1-0 de visita"}]
+        _av864 = _d15.avisos_v16(_x864, _fx16, {"a": "Leones", "b": "Libertad"})
+    finally:
+        _d15._formacion_ultima, _d15.casos_bloque, _d15._ejecutores_hoy = _o864
+    check("864: la línea que nombra al ejecutor de la base cuenta aunque diga «sin ejecutor documentado»",
+          _av864 == [], _av864)
     # 767 (Metropolitanos): el que figura en las hojas recientes sigue en el club
     # aunque las stats de la API no lo traigan
     from backend.analisis import f1_base as _f767
