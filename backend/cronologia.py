@@ -47,7 +47,7 @@ TIPOS_PARTIDO = ("resultado", "derrota", "empate")
 def _q(sql: str, params: tuple = ()) -> list:
     try:
         return db.query("sad", sql, params)
-    except Exception:
+    except Exception:  # noqa: BLE001 — base sin la tabla (vieja o demo): vacío, no un 500
         return []
 
 
@@ -171,7 +171,7 @@ def stats_de(team_id: int, liga_id: int | None, temporada: int | None,
                     stats["posicion"] = int(fila.get("posicion") or 0)
                     stats["puntos"] = int(fila.get("puntos") or 0)
                     break
-        except Exception:
+        except Exception:  # noqa: BLE001 — liga sin tabla de posiciones: el timeline va sin posición
             pass
     d, h = (desde, hasta) if desde and hasta else ventana()
     for r in reversed(_partidos(team_id, d, h)):

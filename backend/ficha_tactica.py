@@ -184,7 +184,7 @@ def _stats(fixture_id: int, team_id: int) -> dict:
             "sad", "SELECT clave, valor FROM fixture_stats WHERE fixture_id=? AND team_id=?",
             (fixture_id, team_id),
         )
-    except Exception:
+    except Exception:  # noqa: BLE001 — base anterior a fixture_stats: sin stats
         return {}
     return {f["clave"]: f["valor"] for f in filas if f["valor"] is not None}
 
@@ -193,7 +193,7 @@ def tactica_de(fixture_id: int, home_id: int, away_id: int) -> dict:
     """Bloque `tactica` de la ficha. Todo vacío si no se capturó nada."""
     try:
         local, visitante = _lado(fixture_id, home_id), _lado(fixture_id, away_id)
-    except Exception:
+    except Exception:  # noqa: BLE001 — base sin alineaciones (anterior a la fase A del DTP): sin lados
         local = visitante = None
     if local is None:  # DB sin la tabla (anterior a la fase A del DTP)
         return {"alineaciones": None, "eventos": [], "estadisticas": None, "capturada": False}

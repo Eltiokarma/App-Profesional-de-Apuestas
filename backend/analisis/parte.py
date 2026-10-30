@@ -1244,13 +1244,13 @@ def _segunda(liga_id: int, nombre: str | None = None) -> bool:
         from backend.ingesta.extractor import LIGAS_MENORES
         if liga_id in LIGAS_MENORES:
             return True
-    except Exception:
+    except Exception:  # noqa: BLE001 — sin la ingesta importable (tests aislados) se decide por el nombre
         pass
     if nombre is None and liga_id is not None:
         try:
             from backend.app import liga_meta
             nombre = liga_meta(liga_id).get("nombre")
-        except Exception:
+        except Exception:  # noqa: BLE001 — liga sin metadatos en la base: no se la marca segunda
             nombre = None
     return bool(nombre) and bool(_SEGUNDA_RE.search(nombre))
 
@@ -4937,7 +4937,7 @@ def _internacionales_de_clubes() -> set[int]:
     try:
         from backend.ingesta.extractor import LIGAS_INTERNACIONALES
         return set(LIGAS_INTERNACIONALES)
-    except Exception:
+    except Exception:  # noqa: BLE001 — sin la ingesta importable (tests aislados): la lista mínima declarada
         return {lid for lid in INTERNACIONALES if lid != 1}
 
 
@@ -4945,7 +4945,7 @@ def _nombre_ingesta(liga_id: int) -> str:
     try:
         from backend.ingesta.extractor import LIGAS
         return LIGAS.get(liga_id, "")
-    except Exception:
+    except Exception:  # noqa: BLE001 — sin la ingesta importable: liga sin nombre
         return ""
 
 
@@ -5511,7 +5511,7 @@ def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: in
             # la tabla del torneo corto en curso si ya anda (incidencia 441), si no la del año
             posiciones = (cal.posiciones_y_tabla(f["league_id"], f["league_season"], cal._hora(), f["league_round"])[0]
                           if f["league_season"] else {})
-        except Exception:
+        except Exception:  # noqa: BLE001 — una liga sin tabla de posiciones no corta la agenda: sin posiciones
             posiciones = {}
         etiquetas = set()
         try:
@@ -5520,7 +5520,7 @@ def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: in
                                             f["league_season"], (f["date"] or "")[:10], ciudad,
                                             equipo_id=f["home_team_id"]):
                 etiquetas.add(e["codigo"])
-        except Exception:
+        except Exception:  # noqa: BLE001 — un etiquetador que falla no corta la agenda: el partido va sin etiquetas
             pass
         prio, motivo = _prioridad(liga, etiquetas,
                                   posiciones.get(f["home_team_id"], 0),

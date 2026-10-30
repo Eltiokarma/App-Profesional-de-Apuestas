@@ -1083,7 +1083,7 @@ def _historia_nivel(team_id: int) -> list[tuple]:
                ORDER BY date, id""",
             (team_id, team_id),
         )
-    except Exception:
+    except Exception:  # noqa: BLE001 — base sin la tabla: lista vacía, no un 500
         return []
     # sin los duplicados, igual que el pipeline (incidencias 19 y 74)
     from backend.ingesta.pipeline import sin_duplicados
@@ -1156,7 +1156,7 @@ def health():
             db.query_one(name, "SELECT 1")
         row = db.query_one("discreto", "SELECT MAX(processed_at) AS m FROM processed_matches")
         last_run = iso(row["m"]) if row and row["m"] else None
-    except Exception:
+    except Exception:  # noqa: BLE001 — una base que no responde se informa en /health (db_ok false), no revienta
         db_ok = False
     # ¿ESTÁ LA CLAVE DE JEV? Sin esto, la única forma de saberlo era hacer un
     # depósito y leer el recibo. Dice si está y en qué modo corre el revisor;
@@ -1471,7 +1471,7 @@ def _lanzar_ingesta_plantilla(equipo_id: int) -> bool:
     try:  # sin API_FOOTBALL_KEY (p. ej. demo local) no hay nada que lanzar
         from backend.ingesta.extractor import leer_clave
         leer_clave()
-    except BaseException:
+    except BaseException:  # noqa: BLE001 — sin API_FOOTBALL_KEY leer_clave sale con SystemExit: no hay clave
         return False
     with _plantillas_lock:
         if equipo_id in _plantillas_en_curso:
@@ -2007,7 +2007,7 @@ def fixture_live(fixture_id: int):
             "WHERE fixture_id=? ORDER BY captured_at",
             (fixture_id,),
         )
-    except Exception:
+    except Exception:  # noqa: BLE001 — base sin odds_history: sin historial, la pantalla lo dice
         filas = []
     ultima = filas[-1]["captured_at"] if filas else None
     # la marca de la RONDA de la liga (no del fixture): distingue "nunca se
@@ -2082,7 +2082,7 @@ def fixture_live(fixture_id: int):
             "WHERE fixture_id=? ORDER BY minuto, id",
             (fixture_id,),
         )
-    except Exception:
+    except Exception:  # noqa: BLE001 — base anterior a fixture_eventos: sin eventos
         filas_ev = []
     eventos = []
     for e in filas_ev:
@@ -2162,7 +2162,7 @@ def cuotas_historial_fuentes(fixture_id: int):
             (fixture_id,),
         )
         return [r["casa"] for r in rows]
-    except Exception:
+    except Exception:  # noqa: BLE001 — base sin la columna casa: sin casas
         return []
 
 
@@ -2197,7 +2197,7 @@ def cuotas_historial(fixture_id: int, casa: str | None = None):
                 "WHERE fixture_id=? AND odd IS NOT NULL ORDER BY captured_at, bet_name, value",
                 (fixture_id,),
             ) if not casa else []
-        except Exception:
+        except Exception:  # noqa: BLE001 — base sin la tabla de cuotas: sin cuotas
             return []
     # COLAPSO ANTI-DUPLICADOS: si una captura escribió más de una fila para la
     # misma selección (variantes del valor, casas repetidas del upsert viejo),
@@ -2572,14 +2572,15 @@ def cowork_rehacer(desdeMin: int = Query(default=15, ge=0, le=240), hastaMin: in
 
 @app.get(API + "/analisis/cowork/escaneo")
 def cowork_escaneo(horas: int = Query(default=36, ge=1, le=168),
-                   jugadosHoras: int = Query(default=48, ge=1, le=336)):
+                   jugadosHoras: int = Query(default=48, ge=1, le=336),
+                   fresco: bool = Query(default=False, description="saltar la caché de 10 minutos")):
     """EL ESCANEO PREVENTIVO (30/10/2026): los chequeos de lo básico —quién no
     puede jugar, quién es quién, quién dirige, si el partido existe y si el
     mercado está— sobre la agenda de las próximas `horas` y las partes jugadas
     en las últimas `jugadosHoras`, agrupados por chequeo. Solo lee; el
     mantenimiento deposita lo que encuentra como incidencias."""
     from backend.analisis.escaneo import escanear
-    return escanear(horas, jugadosHoras)
+    return escanear(horas, jugadosHoras, fresco=fresco)
 
 
 @app.get(API + "/analisis/cowork/latido")

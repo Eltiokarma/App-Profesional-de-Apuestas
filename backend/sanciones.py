@@ -89,6 +89,20 @@ def _tarjetas(fixture_id: int, team_id: int) -> list:
                "WHERE fixture_id=? AND equipo_id=? AND tipo='Card' ORDER BY minuto", (fixture_id, team_id))
 
 
+def _tarjetas_de(ids: list[int], team_id: int) -> dict[int, list]:
+    """Las tarjetas del equipo en TODOS esos partidos, en UNA consulta (antes
+    era una por partido: ~30 por equipo con una temporada en la base)."""
+    if not ids:
+        return {}
+    out: dict[int, list] = {i: [] for i in ids}
+    for r in db.query(
+            "sad", f"SELECT fixture_id, minuto, detalle, jugador, jugador_id FROM fixture_eventos "
+                   f"WHERE fixture_id IN ({','.join('?' * len(ids))}) AND equipo_id=? AND tipo='Card' "
+                   "ORDER BY fixture_id, minuto", (*ids, team_id)):
+        out.setdefault(r["fixture_id"], []).append(r)
+    return out
+
+
 def _con_eventos(ids: list[int]) -> set[int]:
     if not ids:
         return set()
@@ -128,10 +142,12 @@ def del_equipo(team_id: int, fx) -> dict:
     def en_hoja(t) -> bool:
         return (t["jugador_id"] in en_ids) if t["jugador_id"] else ((t["jugador"] or "").strip().lower() in en_nombres)
 
+    ids = [p["id"] for p in previos]
     try:
-        tarj_ultimo = _tarjetas(ultimo["id"], team_id)
+        por_partido = _tarjetas_de(ids, team_id)
     except Exception:  # noqa: BLE001
         return out
+    tarj_ultimo = por_partido.get(ultimo["id"]) or []
     rival = ultimo["away_team_id"] if ultimo["home_team_id"] == team_id else ultimo["home_team_id"]
     fecha = str(ultimo["date"])[:10]
     rojas = {}
@@ -153,7 +169,6 @@ def del_equipo(team_id: int, fx) -> dict:
     # AMARILLAS ACUMULADAS: solo con la regla de la competición y el conteo completo
     regla = UMBRALES.get(fx["league_id"])
     out["regla"] = regla["regla"] if regla else None
-    ids = [p["id"] for p in previos]
     try:
         cubiertos = _con_eventos(ids)
     except Exception:  # noqa: BLE001
@@ -162,7 +177,7 @@ def del_equipo(team_id: int, fx) -> dict:
     for p in previos:
         if p["id"] not in cubiertos:
             continue
-        tarj = _tarjetas(p["id"], team_id)
+        tarj = por_partido.get(p["id"]) or []
         con_roja = {_clave(t) for t in tarj if _ROJA.search(t["detalle"] or "")}
         for t in tarj:
             if _AMARILLA.search(t["detalle"] or "") and _clave(t) not in con_roja:

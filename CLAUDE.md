@@ -31,6 +31,7 @@ python -m backend.test_cronologia  # cronología SAD: los partidos del timeline,
 python -m backend.test_eliminatoria # quién pasó una llave (penales, global, prórroga): ficha, timeline, veredicto y ELIMINATORIA-AL-REVES
 python -m backend.test_sanciones  # sancionados de la base (roja, doble amarilla, ciclo de amarillas) y el escaneo preventivo
 python -m backend.test_identidad  # quién es quién (jugador y DT): la regla única de backend/identidad.py, con cada caso real
+python -m backend.test_arquitectura # el escaneo preventivo del CÓDIGO: cada clase de falla de docs/FALLAS.md con su guardia (identidad en un lugar, tests en CI, contrato, excepts con motivo, rutas que existen)
 python -m backend.test_preflight  # chequeo previo del EFE: qué va a costar antes de gastar
 python -m backend.test_cowork    # parte de Cowork: bloque F calculado y cruce del once
 python -m backend.test_burbuja   # reventón de burbuja: mismos vectores dorados que el TS
@@ -358,6 +359,18 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   su test en `backend/test_identidad.py`, y vale para todos. Antes eran cinco
   copias y cuatro versiones de «una letra»: la identidad se parchó ocho veces
   en un mes y la 724 volvió 11 veces.
+- **El escaneo preventivo del CÓDIGO** (30/10/2026, usuario: «escaneo preventivo
+  sobre nuestro código o en general todo lo que falla»): `docs/FALLAS.md` es el
+  catálogo de las clases de falla de las 859 incidencias (identidad, DT, once
+  tarde, quién no juega, falla callada, regla del skill incumplida, regla del
+  fútbol leída del marcador, fuga, contrato, rutas inventadas, datos sucios,
+  costo, métrica contaminada, automatización) con la GUARDIA de cada una, y
+  `backend/test_arquitectura.py` (en CI) verifica leyendo el código las que se
+  pueden: la identidad solo en `identidad.py`, cada test en CI, cada endpoint y
+  alerta calculada en `openapi.yaml`, cada `except Exception` con su motivo y
+  cada ruta que citan los skills existe. El mantenimiento deja la guardia de
+  cada grupo que arregla. Lo encontró al nacer: 7 tests que CI no corría, un
+  endpoint y 7 alertas sin documentar, 28 `except` mudos.
 - **El escaneo preventivo** (30/10/2026, usuario: «no esperar a que salten estas
   cosas»; `backend/analisis/escaneo.py`, `GET /analisis/cowork/escaneo`): la
   agenda de las próximas 36 h y las partes jugadas en 48 h contra los chequeos

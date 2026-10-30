@@ -289,7 +289,7 @@ def mercados_mapeados(con: sqlite3.Connection, fid: int) -> int:
         # importar backend.app imprime su banner de programación: fuera del informe
         with contextlib.redirect_stdout(io.StringIO()):
             from backend.app import cuota_key
-    except Exception:
+    except Exception:  # noqa: BLE001 — sin la app importable el diagnóstico no mide: -1
         return -1
     n = 0
     for bet, valor in con.execute(

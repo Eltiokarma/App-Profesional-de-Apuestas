@@ -171,7 +171,7 @@ def _rojas(fixture_id: int, home_id: int) -> list[dict]:
             "WHERE fixture_id=? AND tipo='Card' ORDER BY minuto, id",
             (fixture_id,),
         )
-    except Exception:
+    except Exception:  # noqa: BLE001 — base anterior a la migración de eventos: sin tarjetas, no un 500
         return []
     # ...y la del DT que la API carga con el id de un homónimo del once (Diego
     # Simeone con el de Giuliano, incidencia 155) tampoco: se marca igual que

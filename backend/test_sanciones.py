@@ -203,5 +203,50 @@ check("escaneo: partido con parte jugado sin once antes del pitazo → once-tard
 check("escaneo: todos los chequeos tienen título, área, severidad y la regla que cuidan",
       all({"titulo", "area", "severidad", "regla"} <= set(v) for v in escaneo.CHEQUEOS.values()))
 
+# ── EL PESO: la base no se recorre de más ────────────────────────────────────
+from backend import db as _dbm  # noqa: E402
+_n = {"q": 0}
+_q0, _q1 = _dbm.query, _dbm.query_one
+
+
+def _cq(*a, **k):
+    _n["q"] += 1
+    return _q0(*a, **k)
+
+
+_dbm.query = _cq
+_n["q"] = 0
+sanciones.de_fixture(33)
+_antes = _n["q"]
+# cinco partidos más de la temporada, con tarjetas: las consultas NO crecen con ellos
+for k in range(5):
+    con.execute("INSERT INTO fixtures VALUES (?, ?, 'FT', '', ?, 2026, ?, ?, ?)",
+                (40 + k, f"2026-09-{10 + k:02d} 20:00:00", BRA, f"Regular Season - {20 + k}", ATL, PAL))
+    con.execute("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador, jugador_id) "
+                "VALUES (?, 10, 'Card', 'Yellow Card', ?, 'Otro', 99)", (40 + k, ATL))
+con.commit()
+_n["q"] = 0
+sanciones.de_fixture(33)
+check("peso: las consultas de las sanciones no crecen con los partidos de la temporada (sin N+1)",
+      _n["q"] == _antes, (_antes, _n["q"]))
+_veces = {"n": 0}
+_df0 = sanciones.de_fixture
+
+
+def _df(fid):
+    _veces["n"] += 1
+    return _df0(fid)
+
+
+sanciones.de_fixture = _df
+escaneo._pre({"fixtureId": 33, "partido": "Vasco vs Atlético-MG", "fecha": "2026-10-30", "hora": "22:00",
+              "tieneParte": True, "dt": {}}, _ahora)
+check("peso: el escaneo calcula las sanciones UNA vez por partido (la tabla F1 y la alerta las reciben)",
+      _veces["n"] == 1, _veces)
+sanciones.de_fixture = _df0
+_dbm.query = _q0
+check("el escaneo se guarda unos minutos (la segunda llamada sale de la caché)",
+      escaneo.CACHE_S >= 300 and "fresco" in escaneo.escanear.__code__.co_varnames)
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)
