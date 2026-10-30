@@ -33,8 +33,10 @@ cuota), logística reajustada, diferencia de log-loss contra `actual`:
   (IC +0,00058 a +0,01186): sacar también los internacionales EMPEORA;
 - con 2+ internacionales y el resto: no se distinguen.
 - 1584455: el local 41,4 % → 40,8 % sin amistosos → 40,0 % sin los dos (nivel
-  de Galatasaray 2,81 → 3,06 → 3,13, el de Konyaspor 2,55 → 2,75): la causa
-  del 41 % es la localía (0,382 de μ = 0,55 de nivel), no la ventana.
+  de Galatasaray 2,81 → 3,06 → 3,13, el de Konyaspor 2,55 → 2,75): no es la
+  ventana. El nivel separaba a los dos por 0,26, menos de lo que vale la
+  localía (0,382 de μ = 0,55 de nivel), y la de la Süper Lig no está inflada
+  (0,479 medida por liga, `backtest_localia_liga`).
 - contra el mercado: el motor pierde 0,061 de log-loss en las tres variantes
   (1,031 contra 0,970); con 3+ amistosos pierde 0,084 (1,024 contra 0,941,
   n = 989) y en el resto 0,041. Ahí el aviso de fiabilidad «media» se sostiene.
