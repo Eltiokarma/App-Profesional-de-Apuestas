@@ -1223,8 +1223,8 @@ conversación se pierde en la siguiente.
      entonces el falsador nombra la vía que lo saca (3.5, 6-C); el acotado no
      mueve el 1X2. NO integra las lecciones del 28-30/10: el botón «Cerrar las
      anteriores a v4.3» NO se pulsa para sad (esas lecciones esperan a la
-     revisión siguiente). `SUBIDA_VERSION` provisoria: corregirla con la hora
-     real de la subida del zip.
+     revisión siguiente). Subida a la cuenta el 30/10 a las 05:47 de Lima
+     (`SUBIDA_VERSION`).
 
 ## Siguientes pasos (en orden)
 

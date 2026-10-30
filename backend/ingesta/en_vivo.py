@@ -867,8 +867,13 @@ def fixtures_para_xi(con: sqlite3.Connection, ligas: "set[int]",
     después los que todavía no empezaron y al final los ya en juego, cada grupo
     por saque. Antes iba solo por saque y un sábado a las 15:00 de Inglaterra
     los partidos ya empezados de ligas que nunca publican el once (reintento
-    cada 5 min) se comían los TOPE_XI lugares de cada ciclo."""
-    if not ligas or TOPE_XI <= 0:
+    cada 5 min) se comían los TOPE_XI lugares de cada ciclo.
+
+    Un partido CON PARTE entra aunque su liga no sea del en vivo (30/10/2026,
+    incidencia 737: las copas nacionales entran a la agenda como menores y sus
+    onces se capturaban horas después del pitazo, con la ficha)."""
+    con_parte = con_parte or set()
+    if (not ligas and not con_parte) or TOPE_XI <= 0:
         return []
     ahora = datetime.now(timezone.utc)
     desde = (ahora - timedelta(minutes=XI_VENTANA_TARDE_MIN)).strftime("%Y-%m-%d %H:%M:%S")
@@ -877,10 +882,10 @@ def fixtures_para_xi(con: sqlite3.Connection, ligas: "set[int]",
     corte_intento = (ahora - timedelta(minutes=XI_REINTENTO_MIN)).strftime("%Y-%m-%d %H:%M:%S")
     estados = PREVIOS + EN_JUEGO
     marcas_e = ",".join("?" * len(estados))
-    marcas_l = ",".join("?" * len(ligas))
+    ambito, args_ambito = _ambito_xi(ligas, con_parte)
     filas = con.execute(
         f"""SELECT f.id, f.date, f.status_short FROM fixtures f
-            WHERE f.league_id IN ({marcas_l})
+            WHERE {ambito}
               AND f.status_short IN ({marcas_e})
               AND f.date BETWEEN ? AND ?
               AND NOT EXISTS (SELECT 1 FROM alineaciones a WHERE a.fixture_id = f.id)
@@ -888,7 +893,7 @@ def fixtures_para_xi(con: sqlite3.Connection, ligas: "set[int]",
                               WHERE i.fixture_id = f.id AND i.intentada_en > ?)
             UNION
             SELECT f.id, f.date, f.status_short FROM fixtures f
-            WHERE f.league_id IN ({marcas_l})
+            WHERE {ambito}
               AND f.status_short IN ({marcas_e})
               AND f.date BETWEEN ? AND ?
               AND EXISTS (SELECT 1 FROM alineaciones a WHERE a.fixture_id = f.id)
@@ -896,13 +901,22 @@ def fixtures_para_xi(con: sqlite3.Connection, ligas: "set[int]",
                             WHERE i.fixture_id = f.id), '')
                   < datetime(f.date, '-{XI_CAPTURA_VIEJA_MIN} minutes')
             ORDER BY 2""",
-        (*sorted(ligas), *estados, desde, hasta, corte_intento,
-         *sorted(ligas), *estados, desde, hasta_refresco)).fetchall()
-    con_parte = con_parte or set()
+        (*args_ambito, *estados, desde, hasta, corte_intento,
+         *args_ambito, *estados, desde, hasta_refresco)).fetchall()
     if con_parte:
         filas = list(filas) + _refresco_temprano(con, ligas, con_parte, ahora, {r[0] for r in filas})
     filas = sorted(filas, key=lambda r: (r[0] not in con_parte, r[2] not in PREVIOS, str(r[1])))
     return [r[0] for r in filas]
+
+
+def _ambito_xi(ligas: "set[int]", con_parte: "set[int]") -> "tuple[str, list[int]]":
+    """El filtro de la cola de onces: las ligas del en vivo O los partidos con parte."""
+    partes = []
+    if ligas:
+        partes.append(f"f.league_id IN ({','.join('?' * len(ligas))})")
+    if con_parte:
+        partes.append(f"f.id IN ({','.join('?' * len(con_parte))})")
+    return "(" + " OR ".join(partes) + ")", [*sorted(ligas), *sorted(con_parte)]
 
 
 def _refresco_temprano(con: sqlite3.Connection, ligas: "set[int]", con_parte: "set[int]",
@@ -917,17 +931,17 @@ def _refresco_temprano(con: sqlite3.Connection, ligas: "set[int]", con_parte: "s
         return []
     desde = ahora.strftime("%Y-%m-%d %H:%M:%S")
     hasta = (ahora + timedelta(minutes=XI_REFRESCO_TEMPRANO_MIN)).strftime("%Y-%m-%d %H:%M:%S")
-    marcas_l, marcas_f = ",".join("?" * len(ligas)), ",".join("?" * len(ids))
+    marcas_f = ",".join("?" * len(ids))
     return con.execute(
         f"""SELECT f.id, f.date, f.status_short FROM fixtures f
-            WHERE f.id IN ({marcas_f}) AND f.league_id IN ({marcas_l})
+            WHERE f.id IN ({marcas_f})
               AND f.status_short IN ({",".join("?" * len(PREVIOS))})
               AND f.date BETWEEN ? AND ?
               AND EXISTS (SELECT 1 FROM alineaciones a WHERE a.fixture_id = f.id)
               AND COALESCE((SELECT MAX(i.intentada_en) FROM xi_intentos i
                             WHERE i.fixture_id = f.id), '')
                   < datetime(f.date, '-{XI_CAPTURA_TEMPRANA_MIN} minutes')""",
-        (*ids, *sorted(ligas), *PREVIOS, desde, hasta)).fetchall()
+        (*ids, *PREVIOS, desde, hasta)).fetchall()
 
 
 def fixtures_con_parte() -> set[int]:
