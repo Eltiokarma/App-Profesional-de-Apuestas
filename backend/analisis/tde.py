@@ -394,7 +394,7 @@ def ficha(fixture_id: int) -> dict | None:
     # P1a CON LA MARCA DE ESCALA (incidencia 294, Aston Villa–Viking): μ cruza
     # niveles de bases distintas y el protector puede ser un artefacto de la
     # escala. El P1a no se toca —es input inviolable—: se dice.
-    fiab = sad.fiabilidad_mu_partido(fx)
+    fiab = sad.fiabilidad_mu_fixture(fx)
     if fiab.get("escala") and not p1a.get("sinDato"):
         p1a["escala"] = fiab["escala"]
         p1a["avisos"].append(f"escala distinta ({fiab['escala']}): μ cruza niveles de bases distintas "

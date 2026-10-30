@@ -147,6 +147,11 @@ def main():
     )
     check("gapDiff = local − visitante", abs(p["gapDiff"] - (p["local"]["gap"] - p["visitante"]["gap"])) < 1e-6)
     check("μ recortado a [0,3]", 0 <= p["local"]["ptsEsperados"] <= 3)
+    _vn = p["local"].get("ventanaNivel")
+    check("prediccion: cada lado dice de qué partidos está hecho su nivel (860)",
+          "ventanaNivel" in p["local"] and "ventanaNivel" in p["visitante"]
+          and (_vn is None or {"partidos", "amistosos", "internacionales", "otros"} <= set(_vn))
+          and "ventana" in p["fiabilidadMu"], (_vn, p["fiabilidadMu"]))
     check(
         "gap ajustado por calendario para ambos, señal válida",
         p["local"]["gapAjustado"] is not None and p["visitante"]["gapAjustado"] is not None

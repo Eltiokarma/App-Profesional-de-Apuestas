@@ -73,6 +73,15 @@ CHEQUEOS: dict[str, dict] = {
         "area": "ficha", "severidad": "aviso",
         "regla": "sin eventos no hay goles con minuto, tarjetas (sanciones) ni veredicto del TDE",
     },
+    # INFORMATIVO: no es una falla de nada, es un dato para quien escribe el
+    # parte. El mantenimiento NO lo deposita como incidencia (sería una por
+    # pasada mientras dure la temporada); la fiabilidad de μ ya baja sola.
+    "nivel-con-amistosos": {
+        "titulo": "Nivel del motor armado con amistosos de pretemporada",
+        "area": "otro", "severidad": "aviso", "informativo": True,
+        "regla": "el nivel cuenta los últimos 20 partidos de todas las competiciones; con 3+ amistosos el "
+                 "nivel puede estar mal medido y μ baja a fiabilidad «media» (Konyaspor 0-4 Galatasaray, 860)",
+    },
 }
 
 HORAS_CUOTAS = 12          # a menos de esto del pitazo, sin cuota es hallazgo
@@ -132,6 +141,15 @@ def _pre(item: dict, ahora: datetime) -> list[dict]:
                                  f"{dt.get('edadDias')} días)", lado))
     if item.get("conflicto"):
         out.append(_hallazgo("dos-partidos", item, item["conflicto"]))
+    try:
+        from backend.analisis import ventana_nivel
+        fx = saddb.query_one("sad", "SELECT date, home_team_id, away_team_id FROM fixtures WHERE id=?", (fid,))
+        for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])) if fx else ():
+            c = ventana_nivel.composicion(tid, str(fx["date"]))
+            if c and c["amistosos"] >= ventana_nivel.UMBRAL_AMISTOSOS:
+                out.append(_hallazgo("nivel-con-amistosos", item, ventana_nivel.texto(c), lado))
+    except Exception:  # noqa: BLE001 — sin la tabla de ligas: no se cuenta la ventana
+        pass
     try:
         pitazo = datetime.strptime(f"{item.get('fecha')} {item.get('hora')}", "%Y-%m-%d %H:%M").replace(
             tzinfo=timezone.utc)
