@@ -1641,13 +1641,14 @@ def equipo_burbujas(equipo_id: int, antesDe: int | None = None, proximo: int | N
         _base = _escala.base_de(equipo_id, prox["fecha"] if prox else None)
     except Exception:  # noqa: BLE001 — sin base, «sin medir», no un error
         _base = None
-    r["separacionLiga"] = separacion_liga.de_liga((_base or {}).get("id"), (_base or {}).get("nombre"))
+    # si el próximo es de una competición medida (copa, o la liga a la que subió
+    # un ascendido: 869), manda la separación de esa competición
+    _lc = None
     if prox:
-        # si el próximo es de COPA medida, manda la separación de esa copa
         _fx_copa = db.query_one("sad", "SELECT league_id FROM fixtures WHERE id=?", (prox["fixtureId"],))
         _lc = _fx_copa["league_id"] if _fx_copa else None
-        if _lc in separacion_liga.COPAS_MEDIDAS:
-            r["separacionLiga"] = separacion_liga.de_liga(_lc, liga_meta(_lc).get("nombre"))
+    r["separacionLiga"] = separacion_liga.del_partido((_base or {}).get("id"), (_base or {}).get("nombre"),
+                                                      _lc, liga_meta(_lc).get("nombre") if _lc else None)
     # LOS GOLES ACOTADOS contra el próximo rival (REVENTON §17, 30/10/2026):
     # cuánto mete y cuánto recibe, en un intervalo con su probabilidad. Lectura
     # del marcador, no señal de apuesta; con la historia anterior al partido.

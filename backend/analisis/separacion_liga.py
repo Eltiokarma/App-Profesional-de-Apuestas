@@ -99,6 +99,18 @@ def de_liga(liga_id: int | None, nombre: str | None = None) -> dict:
             "medidoEn": MEDIDO_EN if auc is not None else None, "nota": nota}
 
 
+def del_partido(base_id: int | None, base_nombre: str | None,
+                liga_px: int | None, liga_px_nombre: str | None = None) -> dict:
+    """La separación que va con el PRÓXIMO partido: la de su competición si está
+    medida (copa medida o liga del padrón medida), si no la de la liga
+    doméstica del equipo. Incidencia 869: Elversberg, ascendido, salía con la
+    «baja» de la 2. Bundesliga (su base del último año) en un partido de
+    Bundesliga (alta)."""
+    if liga_px and liga_px != base_id and (liga_px in COPAS_MEDIDAS or liga_px in SEPARACION):
+        return de_liga(liga_px, liga_px_nombre)
+    return de_liga(base_id, base_nombre)
+
+
 def es_desde_cuartos(ronda: str | None) -> bool:
     r = (ronda or "").strip().lower()
     return r == "final" or r.startswith("final") or any(x in r for x in _RONDA_CUARTOS)
