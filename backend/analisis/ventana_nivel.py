@@ -11,10 +11,11 @@ MEDIDO el mismo día (`backend/backtest_nivel_ventana.py`, 9.191 partidos de
 prueba del padrón): los amistosos NO eran la causa. Sacarlos del nivel no mejora
 el 1X2 (+0,0009 de log-loss, IC cruzando cero), sacar también los
 internacionales lo EMPEORA justo donde hay amistosos (+0,0066) y en el caso el
-local pasa de 41,4 % a 40,8 %. El 41 % es la localía (0,382 de μ, lo que vale
-una diferencia de nivel de 0,55) contra un nivel que separaba al líder del 14.º
-por 0,26; la forma y la regresión NO entran al 1X2 (`unXDos` solo ve nivel,
-rival y localía). Lo que sí se midió: con 3+ amistosos en un lado el motor queda
+local pasa de 41,4 % a 40,8 %. El 41 % sale de un nivel que separaba al líder
+del 14.º por solo 0,26, menos de lo que vale jugar en casa (0,382 de μ = 0,55 de
+nivel). La localía tampoco es: la de la Süper Lig medida por liga es 0,479, de
+las del medio (`backtest_localia_liga`). La forma y la regresión NO entran al
+1X2 (`unXDos` solo ve nivel, rival y localía). Lo que sí se midió: con 3+ amistosos en un lado el motor queda
 el doble de lejos del mercado (log-loss 0,084 peor, n = 989, contra 0,041 en el
 resto). Eso sostiene el aviso.
 

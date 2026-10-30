@@ -617,19 +617,28 @@ señal_calendario = blando si recuperabilidad > μ_genérica + 0.15
    [−0.00041, 0.00234]); sacar también los internacionales tampoco en general
    (+0.00053) y EMPEORA en los partidos con 3+ amistosos en un lado (+0.00657,
    IC [0.00058, 0.01186], n=2 491). En el caso, el local pasa de 41.4 % a
-   40.8 %: el 41 % es la localía (0.382 de μ, una diferencia de nivel de 0.55)
-   contra un nivel que separaba al líder del 14.º por 0.26. Contra el mercado
+   40.8 %: el 41 % sale de un nivel que separaba al líder del 14.º por solo
+   0.26, menos de lo que vale jugar en casa (0.382 de μ = 0.55 de nivel; la
+   localía de la Süper Lig no está inflada, ver abajo). Contra el mercado
    (2 125 partidos con cuota) el motor pierde 0.061 de log-loss en las tres
    variantes; con 3+ amistosos, 0.084 (n=989) y en el resto 0.041. Queda como
    LECTURA: `ventanaNivel` y la fiabilidad «media» de `fiabilidadMu`.
-   **Localía por liga en el 1X2: EN MEDICIÓN** (30/10/2026, tras la 860:
-   `backend/backtest_localia_liga.py --padron`). La localía de cada liga se
-   estima en el entrenamiento como la diferencia de puntos local − visitante
-   que el nivel no explica, encogida hacia la de todas (Bayes empírico,
-   K = σ²/τ²), y el 1X2 se compara con la logística reajustada contra la
-   global 0.382, en todos, por liga y contra el mercado. Resultado pendiente
-   de la corrida en Railway; la fórmula no cambia sin el visto bueno del
-   usuario.
+   **Localía por liga en el 1X2: MEDIDO el 30/10/2026, NO se cambia** (tras
+   la 860, `backend/backtest_localia_liga.py --padron`, 9 538 partidos de
+   prueba). La localía de cada liga se estima en el entrenamiento como la
+   diferencia de puntos local − visitante que el nivel no explica, encogida
+   hacia la de todas (Bayes empírico, K = σ²/τ²). Es real y tiene geografía:
+   ~0.57-0.77 en Sudamérica (Libertadores 0.69, Colombia 0.65, Ecuador 0.60,
+   Argentina 0.57) y ~0.30-0.51 en Europa (La Liga 0.51, Bundesliga 0.42,
+   Premier 0.35, Ligue 1 0.32). Con la logística reajustada mejora el log-loss
+   del 1X2 en −0.00171 (IC [−0.00303, −0.00054]); por liga, 4 de 27 mejoran y
+   ninguna empeora. Pero en los 2 126 partidos de la prueba con cuota (los que
+   se analizan) no se distingue (+0.00023), y el mercado le gana al motor por
+   0.061 con la global y con la de cada liga. Tampoco explica el caso: la
+   localía de la Süper Lig es 0.479, de las del medio, y con ella el local
+   queda en 41.2 %. Lo que el motor no ve es la jerarquía de la temporada: la
+   ventana de 20 de los dos cruzaba dos temporadas (desde abril y mayo) y el
+   nivel los separaba por 0.26.
 4. **Veredicto de la ley con μ v2** (re-medición limpia, n=8 816): las
    señales del gap son débiles al partido siguiente (≤0.1 pts). Lo único
    que replicó en dos muestras: el **sobrerinde fuerte PERSISTE** al

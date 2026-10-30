@@ -32,6 +32,18 @@ decide usarla.
 
     python -m backend.backtest_localia_liga --padron --fixture 1584455
     python -m backend.backtest_localia_liga --padron --json salida.json
+
+MEDIDO el 30/10/2026 en Railway (9.538 partidos de prueba, 2.126 con cuota):
+- todos: porLiga −0,00171 (IC −0,00303 a −0,00054), porLigaCruda −0,00183
+  (IC −0,00341 a −0,00052): MEJORA, pero poco;
+- por liga: de 27 con 150+ de prueba, 4 mejoran y ninguna empeora;
+- con cuota: porLiga +0,00023, no se distingue; el mercado le gana a global
+  por 0,06083 y a porLiga por 0,06105;
+- localías: Sudamérica ~0,57-0,77, Europa ~0,30-0,51; la Süper Lig 0,479;
+- 1584455: el local 41,0 % (global reajustada) → 41,2 % (porLiga): la
+  localía no explica el caso.
+La fórmula NO se cambia: lo que gana en todos no aparece en los partidos que
+se analizan, y el motor sigue 0,061 detrás del mercado.
 """
 from __future__ import annotations
 

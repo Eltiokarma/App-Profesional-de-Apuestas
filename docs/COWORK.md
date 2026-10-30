@@ -1243,7 +1243,8 @@ Escribís vos (es juicio, no se puede calcular):
 - **De qué está hecho el nivel del motor** (30/10/2026, incidencia 860: Konyaspor
   0-4 Galatasaray, el motor dio 41 % al 14.º con el nivel del líder hecho con
   seis amistosos de pretemporada y tres de Champions en su ventana de 20;
-  medido: sacarlos no cambia el 1X2, el 41 % era la localía).
+  medido: sacarlos no cambia el 1X2 y la localía de la Süper Lig no está
+  inflada; el nivel separaba poco al líder del 14.º).
   `GET /predicciones/{id}` trae por lado `ventanaNivel` (amistosos,
   internacionales y el resto de los últimos 20) y, con 3+ amistosos en un lado,
   `fiabilidadMu` baja a «media» con `porVentana: true` y la nota: en esos

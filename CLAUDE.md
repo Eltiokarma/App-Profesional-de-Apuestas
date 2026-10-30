@@ -52,7 +52,7 @@ python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--
 python -m backend.fase0_ligas      # ¿qué ligas sumar? inventario de datos, μ por liga y reventón por liga, solo lee (29/10/2026; en Railway: nohup … > $SAD_DATA_DIR/fase0.log 2>&1 &, resumen en $SAD_DATA_DIR/fase0/resumen.txt; va en backend/ porque la imagen solo copia esa carpeta)
 python -m backend.backtest_goles --padron # ¿las constantes de goles ACOTAN los goles? intervalo de dos goles, marcador acotado, mercado de más/menos 2,5 y ambos marcan, y si el marcador se repite (REVENTON §17, 30/10/2026) · test_backtest_goles
 python -m backend.backtest_nivel_ventana --padron --fixture 1584455 # ¿el 1X2 del motor mejora con el nivel SIN amistosos o sin internacionales? actual vs variantes, por subconjunto y contra el mercado (860; --json; medido 30/10: no) · test_backtest_nivel_ventana
-python -m backend.backtest_localia_liga --padron --fixture 1584455 # ¿el 1X2 del motor mejora con la LOCALÍA POR LIGA (encogida a la de todas) en vez de la global 0,382? todos, por liga y contra el mercado, y la tabla lista para copiar (860; --json) · test_backtest_localia_liga
+python -m backend.backtest_localia_liga --padron --fixture 1584455 # ¿el 1X2 del motor mejora con la LOCALÍA POR LIGA (encogida a la de todas) en vez de la global 0,382? todos, por liga y contra el mercado, y la tabla lista para copiar (860; --json; medido 30/10: −0,0017 en todos, nada con cuota: no) · test_backtest_localia_liga
 python -m backend.backtest_forma --desde-dir carpeta  # ¿la forma de 5 SIN amistosos mejora el gap? (MOTOR §5; medido 26/10: no) · test_backtest_forma
 
 # ingesta (dueña de los datos; el backend HTTP sigue siendo de solo lectura)
@@ -363,8 +363,12 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   INFORMATIVO (no se deposita). **Medido el mismo día** (`backtest_nivel_ventana`,
   9.191 partidos de prueba): sacar los amistosos del nivel NO mejora el 1X2 y
   sacar también los internacionales lo empeora donde hay amistosos; en el caso,
-  sin amistosos el local queda en 40,8 %. El 41 % es la localía (0,382 de μ =
-  0,55 de nivel) contra 0,26 de diferencia de nivel, y la forma no entra al 1X2.
+  sin amistosos el local queda en 40,8 %. El 41 % sale de un nivel que separaba
+  al líder del 14.º por solo 0,26, menos de lo que vale jugar en casa (0,382 de
+  μ = 0,55 de nivel); la localía de la Süper Lig no está inflada (0,479, medida
+  por liga) y la forma no entra al 1X2. **La localía por liga** (`backtest_localia_liga`,
+  mismo día) mejora el 1X2 en todos por 0,0017 de log-loss y en los partidos
+  con cuota en nada; el mercado le gana al motor por 0,061 igual: no se cambia.
   La fórmula NO se toca. El aviso se queda porque con 3+ amistosos el motor
   queda el doble de lejos del mercado (0,084 de log-loss contra 0,041).
 - **Quién es quién vive en UN archivo** (30/10/2026, usuario): `backend/identidad.py`

@@ -204,7 +204,7 @@ Tres lugares donde vive una guardia:
   - El motor dio 41 % al 14.º y 31 % al líder.
   - La ventana de 20 del nivel de Galatasaray traía 6 amistosos de pretemporada (Monza 0-2, Venezia 0-3, Villarreal 1-2) y 3 de Champions. En esa ventana sacaba 1,65 puntos por partido; en la liga, 2,44.
   - Lo salvó seguir al mercado.
-  - **Medido después (30/10): los amistosos NO eran la causa.** Sin ellos el local queda en 40,8 %. El 41 % es la localía (0,382 de μ, lo que vale 0,55 de nivel) contra un nivel que separaba a los dos por 0,26. La forma no entra al 1X2. La primera explicación («el nivel mal medido y la regresión castigan dos veces») se contó antes de medir y no se sostuvo.
+  - **Medido después (30/10): los amistosos NO eran la causa.** Sin ellos el local queda en 40,8 %. El 41 % sale de un nivel que separaba a los dos por solo 0,26, menos de lo que vale jugar en casa (0,382 de μ = 0,55 de nivel). La localía tampoco es: la de la Süper Lig, medida por liga, es 0,479, de las del medio. La forma no entra al 1X2. La primera explicación («el nivel mal medido y la regresión castigan dos veces») se contó antes de medir y no se sostuvo.
 - **Guardia:**
   - **Composición contada:** `backend/analisis/ventana_nivel.py` cuenta de qué está hecha la ventana de cada lado (`ventanaNivel` en `/predicciones`).
   - **Fiabilidad:** con 3+ amistosos baja `fiabilidadMu` a «media», con `porVentana` y la nota.
