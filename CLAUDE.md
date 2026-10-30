@@ -52,6 +52,7 @@ python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--
 python -m backend.fase0_ligas      # ¿qué ligas sumar? inventario de datos, μ por liga y reventón por liga, solo lee (29/10/2026; en Railway: nohup … > $SAD_DATA_DIR/fase0.log 2>&1 &, resumen en $SAD_DATA_DIR/fase0/resumen.txt; va en backend/ porque la imagen solo copia esa carpeta)
 python -m backend.backtest_goles --padron # ¿las constantes de goles ACOTAN los goles? intervalo de dos goles, marcador acotado, mercado de más/menos 2,5 y ambos marcan, y si el marcador se repite (REVENTON §17, 30/10/2026) · test_backtest_goles
 python -m backend.backtest_nivel_ventana --padron --fixture 1584455 # ¿el 1X2 del motor mejora con el nivel SIN amistosos o sin internacionales? actual vs variantes, por subconjunto y contra el mercado (860; --json; medido 30/10: no) · test_backtest_nivel_ventana
+python -m backend.backtest_localia_liga --padron --fixture 1584455 # ¿el 1X2 del motor mejora con la LOCALÍA POR LIGA (encogida a la de todas) en vez de la global 0,382? todos, por liga y contra el mercado, y la tabla lista para copiar (860; --json) · test_backtest_localia_liga
 python -m backend.backtest_forma --desde-dir carpeta  # ¿la forma de 5 SIN amistosos mejora el gap? (MOTOR §5; medido 26/10: no) · test_backtest_forma
 
 # ingesta (dueña de los datos; el backend HTTP sigue siendo de solo lectura)

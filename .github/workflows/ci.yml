@@ -69,6 +69,7 @@ jobs:
         run: |
           python -m backend.test_ventana_nivel
           python -m backend.test_backtest_nivel_ventana
+          python -m backend.test_backtest_localia_liga
       - name: El escaneo preventivo del CÓDIGO (cada clase de falla con su guardia)
         run: python -m backend.test_arquitectura
       - name: Otras burbujas (familias) y sus backtests
