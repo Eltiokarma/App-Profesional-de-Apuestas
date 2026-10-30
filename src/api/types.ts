@@ -2226,7 +2226,7 @@ export interface ParteAgendaItemDTO {
   equipoB: string
   /** El DT que tiene la base por lado, con edad y procedencia: es una ALARMA, no la
    *  verdad. Si la prensa de la semana dice otro, manda la prensa. */
-  dt?: Record<'a' | 'b', { nombre: string | null; desde: string | null; actualizadoEn?: string | null; fuente?: string; edadDias: number | null; fiable: boolean; desdeConfirmar?: boolean; desdeNota?: string; nota: string } | null>
+  dt?: Record<'a' | 'b', { nombre: string | null; desde: string | null; actualizadoEn?: string | null; fuente?: string; edadDias: number | null; fiable: boolean; desdeConfirmar?: boolean; desdeNota?: string; nota: string; expulsado?: { nombre: string; fecha: string; detalle: string } } | null>
   liga: string
   pais: string | null
   /** 1-5 del protocolo; 0 = descartado (y `motivo` dice por qué). */

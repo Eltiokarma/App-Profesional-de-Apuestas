@@ -73,6 +73,7 @@ Tres lugares donde vive una guardia:
   - **Alerta** `SANCION-SIN-DECLARAR`.
   - **Missing Fixture:** cuenta solo las marcas vigentes, y una sanción es siempre señal.
   - **Escaneo:** chequeos `sancion` y `sancion-sin-declarar`.
+  - La roja al cuerpo técnico no es de un jugador: `sanciones.del_equipo` la separa en `cuerpoTecnico` con la regla de la ficha (`ficha_tactica._cuerpo_tecnico_e_ids`) y la agenda la marca en `dt.expulsado` (919, 920).
 - **Si vuelve:** si es una regla de amarillas de otra liga, va a `UMBRALES` con la fuente del reglamento.
 
 ### 5. La falla callada

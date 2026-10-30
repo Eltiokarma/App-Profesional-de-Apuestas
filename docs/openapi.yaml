@@ -4452,6 +4452,10 @@ components:
               desdeConfirmar: { type: boolean, description: "la fecha de llegada de la base no es dato (mes de la carrera de /coachs o llegada no vista): confirmar en prensa antes de puntuar el bloque A" }
               desdeNota: { type: string }
               nota: { type: string }
+              expulsado:
+                type: object
+                description: 'el DT viene de una roja en el último partido de esta competición (backend/sanciones.py, `cuerpoTecnico`): no se sienta hoy; el parte lo declara en `dt.banco`'
+                properties: { nombre: { type: string }, fecha: { type: string }, detalle: { type: string } }
         liga: { type: string }
         pais: { type: string, nullable: true }
         prioridad: { type: integer, description: '1-5 del protocolo; 0 = descartado' }

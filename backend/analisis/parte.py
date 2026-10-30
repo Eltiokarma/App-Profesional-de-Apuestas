@@ -1271,6 +1271,23 @@ def misma_base(la: dict | None, lb: dict | None) -> bool:
     return bool(la.get("pais")) and la.get("pais") == lb.get("pais") and _segunda(la["id"]) == _segunda(lb["id"])
 
 
+def _dt_con_expulsion(fixture_id: int, dts: dict) -> dict:
+    """El DT de la agenda dice si viene de una roja (incidencia 920: Almirón,
+    expulsado el 25/10, salía sin marca): `expulsado` con el detalle de
+    `sanciones`, y el parte lo declara en `dt.banco`."""
+    try:
+        from backend import sanciones
+        sanc = sanciones.de_fixture(fixture_id)
+    except Exception:  # noqa: BLE001 — sin eventos no se infiere: el DT viaja como estaba
+        return dts
+    for lado, d in dts.items():
+        ct = (sanc.get(lado) or {}).get("cuerpoTecnico") or []
+        if d is not None and ct:
+            dts[lado] = {**d, "expulsado": {"nombre": ct[0]["nombre"], "fecha": ct[0]["fecha"],
+                                            "detalle": ct[0]["detalle"]}}
+    return dts
+
+
 DT_FIABLE_DIAS = 14   # un registro más viejo que esto se marca para confirmar en prensa
 
 
@@ -5592,7 +5609,8 @@ def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: in
             # EL DT DE LA BASE VIAJA CON SU EDAD Y SU PROCEDENCIA. Es una
             # alarma, no la verdad: si la prensa de la semana dice otro, manda
             # la prensa y este registro se refresca solo en la próxima corrida
-            "dt": {"a": dt_de_base(f["home_team_id"]), "b": dt_de_base(f["away_team_id"])},
+            "dt": _dt_con_expulsion(f["id"], {"a": dt_de_base(f["home_team_id"]),
+                                              "b": dt_de_base(f["away_team_id"])}),
             "liga": liga.get("nombre"), "pais": liga.get("pais"),
             "ronda": f["league_round"] or "",
             "prioridad": prio, "motivo": motivo,
