@@ -164,7 +164,8 @@ cae en la raíz del repo (17/10/2026).
 >   `/burbujas?proximo={id}` de los dos equipos da el intervalo de dos goles de
 >   cada uno y el marcador acotado (REVENTON §17, acierta lo que promete). El
 >   marcador declarado va dentro, o la lectura dice qué hecho de este partido
->   lo saca; el falsador puede ir sobre el intervalo. Es lectura, no apuesta.
+>   lo saca, y entonces el falsador nombra la vía de gol que lo saca (sad-analysis
+>   v4.3, 3.5 y 6-C). No mueve el 1X2. Es lectura, no apuesta.
 > - **Quién pasó una llave NO se deduce del marcador** (29/10/2026, incidencia
 >   774: Palmeiras pasó a la final de la Libertadores por penales y un parte lo
 >   dio por eliminado, con el D3, el C4 y el ensayo encima). Un partido de

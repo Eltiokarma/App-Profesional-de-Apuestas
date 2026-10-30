@@ -73,6 +73,9 @@ SUBIDA_VERSION = {
     # el tramo de las 04:47 todavía corrió con EFE v1.7 y sad v4.1
     ("efe-clasificador", "v1.8"): "2026-10-28 11:50:00",
     ("sad-analysis", "v4.2"): "2026-10-28 11:50:00",
+    # sad v4.3 (goles acotados) se redactó el 30/10 a las 05:05 de Lima, después
+    # del tramo de las 04:47: provisoria hasta que el usuario diga la hora de la subida
+    ("sad-analysis", "v4.3"): "2026-10-30 10:05:00",
 }
 
 ESTRATEGIAS = (

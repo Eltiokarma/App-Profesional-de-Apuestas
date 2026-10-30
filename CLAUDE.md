@@ -1217,9 +1217,14 @@ conversación se pierde en la siguiente.
      (tarjeta), en `lecturaSad` del parte (al leer) y en `objetivo` del
      veredicto, y Aprendizaje lo mide (`acreditables.golesAcotados`). El modelo
      calibrado se pega en `goles.MODELO_GOLES` desde `backtest_goles --padron
-     --modelo`; sin él, `sinDato`. El prompt pide el marcador dentro del
-     acotado; falta escribirlo en `sad-analysis` (paso 3.5 y el falsador 6-C)
-     en la próxima revisión.
+     --modelo` (pegado el 30/10: 50.823 partidos). **`sad-analysis` v4.3**
+     (30/10, `docs/revisiones/SAD_v4.3_propuesta.md`, UN solo punto): el
+     marcador declarado va dentro del acotado salvo un hecho de este partido, y
+     entonces el falsador nombra la vía que lo saca (3.5, 6-C); el acotado no
+     mueve el 1X2. NO integra las lecciones del 28-30/10: el botón «Cerrar las
+     anteriores a v4.3» NO se pulsa para sad (esas lecciones esperan a la
+     revisión siguiente). `SUBIDA_VERSION` provisoria: corregirla con la hora
+     real de la subida del zip.
 
 ## Siguientes pasos (en orden)
 
