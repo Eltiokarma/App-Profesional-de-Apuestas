@@ -30,6 +30,7 @@ python -m backend.test_calendario # calendario SAD: bloque G del EFE calculado (
 python -m backend.test_cronologia  # cronología SAD: los partidos del timeline, calculados
 python -m backend.test_eliminatoria # quién pasó una llave (penales, global, prórroga): ficha, timeline, veredicto y ELIMINATORIA-AL-REVES
 python -m backend.test_sanciones  # sancionados de la base (roja, doble amarilla, ciclo de amarillas) y el escaneo preventivo
+python -m backend.test_identidad  # quién es quién (jugador y DT): la regla única de backend/identidad.py, con cada caso real
 python -m backend.test_preflight  # chequeo previo del EFE: qué va a costar antes de gastar
 python -m backend.test_cowork    # parte de Cowork: bloque F calculado y cruce del once
 python -m backend.test_burbuja   # reventón de burbuja: mismos vectores dorados que el TS
@@ -348,6 +349,15 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   baja al ejecutor de penales del DTP y suena `SANCION-SIN-DECLARAR` (calculada)
   si el parte no lo tiene en `fuera`. Y `ONCE-SIN-FILA-F1` (743): titulares del
   once oficial sin fila en la tabla F1, que no pesan en el IP.
+- **Quién es quién vive en UN archivo** (30/10/2026, usuario): `backend/identidad.py`
+  decide si dos nombres son la misma persona —tokens, pila, apellido escrito
+  distinto (seseo, ß, una letra cambiada, de más o de menos, doble, en otro
+  orden), mismo jugador, la hoja contra la tabla y el DT (laxo a propósito)—.
+  `bloque_f`, `f1_base`, `dtp_cowork`, `parte` e `ingesta/jugadores` la importan
+  (sus nombres viejos son alias): un caso de nombres nuevo se arregla ahí, con
+  su test en `backend/test_identidad.py`, y vale para todos. Antes eran cinco
+  copias y cuatro versiones de «una letra»: la identidad se parchó ocho veces
+  en un mes y la 724 volvió 11 veces.
 - **El escaneo preventivo** (30/10/2026, usuario: «no esperar a que salten estas
   cosas»; `backend/analisis/escaneo.py`, `GET /analisis/cowork/escaneo`): la
   agenda de las próximas 36 h y las partes jugadas en 48 h contra los chequeos

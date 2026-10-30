@@ -61,6 +61,8 @@ jobs:
         run: python -m backend.test_eliminatoria
       - name: Sancionados de la base (rojas y amarillas) y escaneo preventivo
         run: python -m backend.test_sanciones
+      - name: La identidad de jugadores y DT, en un solo lugar
+        run: python -m backend.test_identidad
       - name: Tests del chequeo previo del EFE (qué cuesta antes de gastar)
         run: python -m backend.test_preflight
       - name: Tests del parte de Cowork (bloque F calculado y cruce del once)

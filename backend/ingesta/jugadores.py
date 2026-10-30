@@ -21,6 +21,7 @@ import sys
 import unicodedata
 from datetime import datetime, timedelta, timezone
 
+from backend import identidad as _identidad
 from backend.ingesta.extractor import LIGAS, Cliente, equipos_de_interes, leer_clave, ligas_vivo, reserva_del_dia
 
 TTL_HORAS_DEFAULT = 168  # 7 días: fuera de ventana de traspasos alcanza de sobra
@@ -577,62 +578,11 @@ def necesita_lentas(con: sqlite3.Connection, team_id: int,
     return False
 
 
-def _norm_dt(nombre: str) -> str:
-    """Nombres de DT comparables entre /coachs y las alineaciones (la API los
-    escribe distinto: 'M. Pellegrino' vs 'Mauricio Pellegrino')."""
-    n = unicodedata.normalize("NFD", (nombre or "").lower())
-    n = "".join(c for c in n if unicodedata.category(c) != "Mn")
-    partes = [p for p in n.replace(".", " ").split() if len(p) > 1]
-    return partes[-1] if partes else n.strip()
-
-
-def _tokens_nombre_dt(nombre: str) -> list[str]:
-    n = unicodedata.normalize("NFD", (nombre or "").lower().replace("ß", "ss"))
-    n = "".join(c for c in n if unicodedata.category(c) != "Mn")
-    return [p for p in re.split(r"[^a-z]+", n) if len(p) >= 3]
-
-
-def mismo_nombre_dt(a: str, b: str) -> bool:
-    """¿Nombran al mismo DT? `_norm_dt` compara la ÚLTIMA palabra y desde que
-    `nombre_coach` arma «Nombre Apellidos» con firstname/lastname, en España
-    la última es el apellido MATERNO: «Manuel Luis Pellegrini Ripamonti» daba
-    «ripamonti» contra «pellegrini» de la alineación, y «Miguel Ramis Luis»
-    (alineación) daba «luis» contra «ramis». No casaban, el DT del banco se
-    guardaba como desconocido con `desde` = su primer once capturado (Betis
-    desde 2022, Osasuna desde 19/09/2026: EN_CRISIS falso) y el parte
-    disparaba DT-DISCREPANCIA sobre el mismo entrenador (11/10/2026).
-    Regla: la última palabra de uno está entre las del otro (en cualquier
-    sentido), o comparten dos palabras. Las iniciales no cuentan.
-
-    UNA LETRA CORRUPTA NO ES OTRO DT. La alineación de Stuttgart llega como
-    «S. Hoeneb» (la ß mal codificada) y /coachs como «Sebastian Hoeneß»: no
-    casaban, la racha del banco se cortaba en el primer once con la ß rota y
-    la base lo dio «desde 10/10/2026» con tres años en el club (14/10/2026).
-    La última palabra de uno casa también con una del otro que tiene la
-    misma forma salvo una letra (`_casi_igual`)."""
-    ta, tb = _tokens_nombre_dt(a), _tokens_nombre_dt(b)
-    if not ta or not tb:
-        return _norm_dt(a) == _norm_dt(b)
-    if ta[-1] in tb or tb[-1] in ta:
-        return True
-    if any(_casi_igual(x[-1], y) for x, ys in ((ta, tb), (tb, ta)) for y in ys):
-        return True
-    return len(set(ta) & set(tb)) >= 2
-
-
-def _casi_igual(x: str, y: str) -> bool:
-    """El mismo apellido con una letra mal codificada: la ß que la base guarda
-    como «b» (hoeneb/hoeness), o una sola letra cambiada con el mismo largo.
-    Martínez/Martino NO: no es una letra, es otro apellido."""
-    if min(len(x), len(y)) < 5:
-        return False
-    if x.replace("ss", "b") == y.replace("ss", "b"):
-        return True
-    # las mismas letras en otro orden: «J. Balazar» en el banco de Los Chankas
-    # por Juan Carlos Bazalar (16/10/2026)
-    if sorted(x) == sorted(y):
-        return True
-    return len(x) == len(y) and sum(a != b for a, b in zip(x, y)) == 1
+# la identidad del DT vive en backend/identidad.py (30/10/2026)
+_norm_dt = _identidad.ultima_palabra_dt
+_tokens_nombre_dt = _identidad.tokens_dt
+mismo_nombre_dt = _identidad.mismo_nombre_dt
+_casi_igual = _identidad.apellido_casi
 
 
 def ingestar_equipo(cliente: Cliente, con: sqlite3.Connection, team_id: int, season: int) -> bool:
