@@ -511,13 +511,10 @@ def calendario_de(team_id: int, n: int = PROXIMOS_DEFAULT) -> list[dict]:
         # descanso: contra el partido anterior para el primero, y entre fechas
         # para los siguientes — la congestión se lee de un vistazo
         ref = previo if i == 0 else (filas[i - 1]["date"] or "")
-        dias = None
-        if ref and f["date"]:
-            try:
-                dias = (datetime.strptime(str(f["date"])[:10], "%Y-%m-%d")
-                        - datetime.strptime(str(ref)[:10], "%Y-%m-%d")).days
-            except ValueError:
-                dias = None
+        # …por las HORAS, con la misma regla que el F2 del TDE (incidencia 870,
+        # Elversberg: Pokal 27/10 19:45 → 30/10 19:30 daba 3 aquí y 2 en el TDE)
+        from backend.jugadores import dias_descanso
+        dias = dias_descanso(str(ref), str(f["date"])) if ref and f["date"] else None
         salida.append({
             "fixtureId": f["id"],
             "fecha": fecha,
