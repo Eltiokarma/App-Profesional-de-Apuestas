@@ -3933,6 +3933,14 @@ def main():
           _mom(_al, _fx480, "2026-10-25 15:13:00")[0].get("momento") == "sinRehacer")
     check("ya estaba en el último depósito y la apertura lo contradice: `conocido`",
           _mom(_al, _fx480, "2026-10-25 15:45:00")[0].get("momento") == "conocido")
+    # 848: la API corrige la formación DESPUÉS del pitazo: no es «conocido»
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _gal(_con, 990480, _once("4-1-4-1", 700), "2026-10-25 16:40:00")
+    _m848 = _mom(_al, _fx480, "2026-10-25 15:45:00")[0]
+    check("848: corrección de formación después del pitazo con el once previo ya depositado: `tardio`",
+          _m848.get("momento") == "tardio" and "4-3-1-2 → 4-1-4-1" in _m848["detalle"], _m848)
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM alineaciones_versiones WHERE fixture_id=990480 AND capturada_en > '2026-10-25 16:15:00'")
     # 688/697: el refresco de la ficha DESPUÉS del pitazo no es la versión final
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _gal(_con, 990480, _once("4-1-3-2", 700), "2026-10-25 18:10:00")
@@ -3942,6 +3950,17 @@ def main():
           and "-" not in _m697["detalle"].split("llegó a las")[1].split("min")[0], _m697)
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM alineaciones_versiones WHERE fixture_id=990480 AND capturada_en > '2026-10-25 16:15:00'")
+    # 847: el once llegó solo DESPUÉS del pitazo (la copa lo capturaba con la ficha)
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _guardadas = _con.execute("SELECT * FROM alineaciones_versiones WHERE fixture_id=990480").fetchall()
+        _con.execute("UPDATE alineaciones_versiones SET capturada_en='2026-10-25 18:30:00' WHERE fixture_id=990480")
+    _m847 = _mom(_al, _fx480, "2026-10-25 15:13:00")
+    check("847: sin ninguna versión del once antes del pitazo: `tardio`, no la alerta sin momento",
+          _m847[0].get("momento") == "tardio" and _m847[0].get("onceFinalEn") is None
+          and "antes del pitazo" in _m847[0]["detalle"] and _m847[1] == _al[1], _m847)
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM alineaciones_versiones WHERE fixture_id=990480")
+        _con.executemany(f"INSERT INTO alineaciones_versiones VALUES ({','.join('?' * len(_guardadas[0]))})", _guardadas)
     check("sin depósito previo sellado (partes viejos) la alerta sale como estaba",
           _mom(_al, _fx480, None) == _al)
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:

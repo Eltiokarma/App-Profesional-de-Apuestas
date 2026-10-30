@@ -3721,9 +3721,11 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> lis
         a depositar después: falla de la corrida de rehacer.
       · `conocido` — el once ya estaba cuando se depositó por última vez y la
         apertura igual lo contradice: lo rehecho no lo corrigió.
-    Antes del pitazo, sin la tabla de versiones, sin una versión capturada
-    hasta el pitazo o sin depósito previo sellado (partes anteriores a esta
-    regla), la alerta sale como estaba."""
+    Sin NINGUNA versión del once capturada hasta el pitazo (llegó después, o
+    nunca) también es `tardio`: no había once con que rehacer (30/10/2026,
+    incidencia 847: las copas nacionales capturaban el once con la ficha).
+    Antes del pitazo, sin la tabla de versiones o sin depósito previo sellado
+    (partes anteriores a esta regla), la alerta sale como estaba."""
     if not alertas or not fx:
         return alertas
     try:
@@ -3735,7 +3737,7 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> lis
     except Exception:  # noqa: BLE001 — sin la tabla (base vieja) no hay momento que decir
         return alertas
     pitazo, dep = _utc(fx["date"]), _utc(deposito_previo)
-    finales = {}
+    finales, despues = {}, {}
     for f in filas:
         # LA VERSIÓN DEL PITAZO, NO LA DEL FINAL: el refresco de la ficha en
         # juego o al terminar vuelve a sellar el once (Guabirá a las 23:54 con
@@ -3744,15 +3746,33 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> lis
         # no es el once con que se podía rehacer.
         t_f = _utc(f["capturada_en"])
         if pitazo and t_f and t_f > pitazo:
+            despues[f["team_id"]] = f
             continue
         finales[f["team_id"]] = f   # ordenadas: queda la última de cada equipo
-    if not finales or not pitazo or not dep:
+    if not pitazo or not dep:
         return alertas
+    if not finales:
+        texto = ("ninguna versión del once se capturó antes del pitazo: no había once con que rehacer; "
+                 "apertura caída por un once que llegó tarde, no un aviso ignorado")
+        return [{**a, "momento": "tardio", "onceFinalEn": None,
+                 "ultimoDepositoPrevio": dep.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                 "detalle": f"{a['detalle']} [{texto}]"} if a.get("codigo") == "DTP-REHACER" else a
+                for a in alertas]
     t = max(_utc(f["capturada_en"]) for f in finales.values())
     limite = pitazo - timedelta(minutes=REHACER_DESDE_MIN)
     antes = int((pitazo - t).total_seconds() // 60)
     hora = t.strftime("%H:%M UTC")
-    if t <= dep:
+    # 848: el once previo ya estaba en el depósito, pero la API corrigió la
+    # formación DESPUÉS del pitazo y es esa corrección la que hace sonar la
+    # alerta: nadie podía rehacer con ella
+    corregida = [(finales[k]["formacion"], v["formacion"]) for k, v in despues.items()
+                 if k in finales and v["formacion"] and v["formacion"] != finales[k]["formacion"]]
+    if t <= dep and corregida:
+        momento, texto = "tardio", ("la API corrigió la formación después del pitazo ("
+                                    + ", ".join(f"{a} → {b}" for a, b in corregida)
+                                    + "); el once previo ya estaba en el último depósito: nadie podía rehacer "
+                                    "con la corrección")
+    elif t <= dep:
         momento, texto = "conocido", (f"el once final ya estaba ({hora}) cuando se depositó por última vez "
                                       f"({dep.strftime('%H:%M UTC')}): lo rehecho no lo corrigió")
     elif t > limite:

@@ -1463,7 +1463,7 @@ export interface AlertaParte {
   brecha?: number
   motivos?: string[]
   momento?: 'tardio' | 'sinRehacer' | 'conocido'
-  onceFinalEn?: string
+  onceFinalEn?: string | null
   ultimoDepositoPrevio?: string
 }
 

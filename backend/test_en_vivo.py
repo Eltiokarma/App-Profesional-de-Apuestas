@@ -1074,6 +1074,17 @@ def main():
     check("XI: el refresco temprano espera a los últimos 40 minutos", 26 not in con_parte, con_parte)
     con.execute("UPDATE xi_intentos SET intentada_en=? WHERE fixture_id=24", (hace(0),))
     con.commit()
+    # 737: un partido CON PARTE de una liga que no es del en vivo (copa nacional como menor)
+    con.execute("INSERT INTO fixtures (id, date, status_short, league_id) VALUES (27, ?, 'NS', 143)", (hace(-30),))
+    con.execute("INSERT INTO fixtures (id, date, status_short, league_id) VALUES (28, ?, 'NS', 143)", (hace(-30),))
+    con.commit()
+    _copa = fixtures_para_xi(con, {PERU}, {24, 25, 26, 27})
+    check("XI (737): el partido de copa CON parte pide su once aunque la copa no sea del en vivo",
+          27 in _copa, _copa)
+    check("XI (737): el de la misma copa SIN parte no gasta request", 28 not in _copa, _copa)
+    check("XI (737): sin ligas del en vivo, los con parte siguen entrando", 27 in fixtures_para_xi(con, set(), {27}))
+    con.execute("DELETE FROM fixtures WHERE id IN (27, 28)")
+    con.commit()
     check("XI: tras el refresco temprano la condición se apaga sola",
           24 not in fixtures_para_xi(con, {PERU}, {24}), fixtures_para_xi(con, {PERU}, {24}))
     # a 10 min del saque el refresco de los 15 minutos sigue en pie (el temprano fue a los 35)
