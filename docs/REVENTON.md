@@ -1159,14 +1159,18 @@ goles por equipo y partido):**
 - **El intervalo «a mano» del usuario acierta 61 %**, a tres puntos del modelo.
 - **Más/menos 2,5: el mercado acota mejor** (+0,016 de log-loss para el
   modelo, IC sobre cero) y apostar donde el modelo ve 5+ puntos pierde ~10 %.
-- **Ambos marcan: el modelo empata con el mercado en log-loss**, y el «valor»
-  salió con +17 % / +22 % de ROI, sospechoso: la primera versión promediaba
-  las cuotas de todas las casas sin sacar a las INCOHERENTES (Marathonbet
-  manda otro mercado con ese nombre, Sí 7.8 / No 1.04: el mismo artefacto que
-  ya había inventado un +25 %). Corregido el 30/10 —filtro de
-  `cuota_mercados.casas_dos_salidas_incoherentes`, cobro a la mediana de las
-  casas sanas y el valor separado por lado (sí / no)—: hay que volver a
-  correrlo antes de creer nada.
+- **Ambos marcan: el modelo empata con el mercado** (+0,005 de log-loss, IC
+  cruzando cero). El +17 % / +22 % de la primera corrida ERA EL ARTEFACTO:
+  promediaba todas las casas, Marathonbet incluida (otro mercado con ese
+  nombre, Sí 7.8 / No 1.04). Re-corrido el 30/10 sin las casas incoherentes,
+  cobrando a la mediana de las sanas: −4,4 % (G2) y −1,2 % (G3) en ~690
+  apuestas, con los intervalos cruzando cero, y sin un lado que se salve (sí
+  +0,3 % [−12 %, +11 %], no −2,5 %). Es el margen de la casa: no hay ventaja.
+- **Lectura**: las constantes de goles ACOTAN —el intervalo de dos goles
+  acierta lo que promete y el cruce local × visita es lo que más pesa—, pero
+  NO le ganan al mercado de goles: más/menos 2,5 y ambos marcan ya tienen
+  adentro lo que la serie de goles sabe. Sirven para LEER el marcador, no
+  para apostarle al mercado de goles.
 - **El marcador se repite lo que da el azar**: 7.716 repeticiones contra
   7.636 esperadas (razón 1,01, dentro del rango), y los empates repiten el
   marcador del empate anterior un 1,6 % MÁS que el azar (10.003 contra 9.845),
