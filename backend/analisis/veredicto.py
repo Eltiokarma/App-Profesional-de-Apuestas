@@ -935,8 +935,12 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
     # siguiente de la MISMA rama no lo vuelve a juzgar (incidencias 687 y 689)
     resuelta = None
     propias, ajenas, roja_propia, roja_rival, inferior_desde = 0, 0, None, None, None
+    # CON PRÓRROGA EL PARTIDO TERMINA EN EL 120 (incidencia 854, SS Reyes–Coria:
+    # el último tramo salía «desde 118 hasta 90»): un evento con reloj pasado el
+    # 90 que no es del añadido es de la prórroga
+    final = 120 if any(reloj(e[4]) > 90 for e in eventos) else 90
     for i in range(len(eventos) + 1):
-        fin = reloj(eventos[i][4]) if i < len(eventos) else 90
+        fin = reloj(eventos[i][4]) if i < len(eventos) else final
         if gf == gc == 0:
             estado, rama = "inicio", "base"
         elif gf > gc:

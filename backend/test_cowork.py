@@ -4546,6 +4546,13 @@ def main():
           [t["rama"] for t in _tr2] == ["base", "siMarcaPrimero", "siLeEmpatan", "siRecibePrimero"]
           and _tr2[1]["golEnVentana"] is True and _tr2[2]["rango"] == [66, 81] and _tr2[2]["golEnVentana"] is True,
           _tr2)
+    # 854 (SS Reyes–Coria): con prórroga el último tramo termina en el 120, no «desde 118 hasta 90»
+    _t854 = tramos_por_marcador(_tde, [{"minuto": 60, "lado": "a"}, {"minuto": 80, "lado": "b"},
+                                       {"minuto": 118, "lado": "a"}], "b")
+    check("854: con un gol de la prórroga el último tramo va del 118 al 120 y ninguno termina antes de empezar",
+          _t854[-1]["desde"] == 118 and _t854[-1]["hasta"] == 120
+          and all(t["hasta"] >= t["desde"] for t in _t854), [(t["desde"], t["hasta"]) for t in _t854])
+    check("854: sin prórroga el último tramo sigue cerrando en el 90", _tr2[-1]["hasta"] == 90, _tr2[-1])
     # incidencia 453: el gol del añadido (45+5 guardado como 50) corta el tramo en el 45
     _ta = tramos_por_marcador({"reasignacion": {"siMarcaPrimero": {"ventana": "desde el gol +15"}}},
                               [{"minuto": 50, "lado": "a", "enAnadido": True, "baseAnadido": 45}], "a")
