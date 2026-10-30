@@ -461,9 +461,20 @@ def main():
     _fx_ga = c.get(A + f"/constantes/{betis}?limit=1").json()[0]["fixtureId"]
     bu = c.get(A + f"/equipos/{betis}/burbujas?proximo={_fx_ga}").json()
     if bu.get("proximo"):
-        check("/burbujas: sin modelo calibrado, golesAcotados dice sinDato (no inventa)",
-              "sinDato" in (bu.get("golesAcotados") or {}), bu.get("golesAcotados"))
         _orig_m = _gol.MODELO_GOLES
+        _gol.MODELO_GOLES = None
+        try:
+            _sin = c.get(A + f"/equipos/{betis}/burbujas?proximo={_fx_ga}").json().get("golesAcotados") or {}
+        finally:
+            _gol.MODELO_GOLES = _orig_m
+        check("/burbujas: sin modelo calibrado, golesAcotados dice sinDato (no inventa)", "sinDato" in _sin, _sin)
+        _m = _gol.MODELO_GOLES
+        check("el modelo calibrado es coherente: las 10 variables con media, desvío > 0 y beta, y su tasa medida",
+              _m and _m["vars"] == list(_gol.VARIABLES) and all(_m["desvio"][v] > 0 for v in _m["vars"])
+              and set(_m["beta"]) == set(_m["vars"]) and 0.5 < _m["intervaloAcierta"] < 0.8, _m)
+        _x0 = {v: _m["media"][v] for v in _m["vars"]}
+        check("con un equipo promedio el modelo espera ~1,3 goles (la media de la base es 1,35)",
+              1.1 < _gol.lambda_de(_x0) < 1.5, _gol.lambda_de(_x0))
         _gol.MODELO_GOLES = {"vars": list(_gol.VARIABLES), "intercepto": math.log(1.3),
                              "media": {v: 0.0 for v in _gol.VARIABLES}, "desvio": {v: 1.0 for v in _gol.VARIABLES},
                              "beta": {v: (0.3 if v == "lnAtaque" else 0.0) for v in _gol.VARIABLES},
