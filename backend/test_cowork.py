@@ -3740,6 +3740,12 @@ def main():
     _cr713 = "Ramírez; Aguirre, Alfonso Parot, Fuentes"
     check("713: la tolerancia de una letra no casa «A. Alfonzo» con el nombre de pila de «Alfonso Parot»",
           not _er("A. Alfonzo", _pl(_cr713), _cr713) and _er("A. Parol", _pl(_cr713), _cr713))
+    from backend.analisis.dtp_cowork import _casi as _ca856
+    _cr856 = "Ramírez; J. Berios, Aguirre, Fuentes"
+    check("856: una letra de menos en el apellido («J. Berríos» / «J. Berios») es el mismo",
+          _er("J. Berríos", _pl(_cr856), _cr856) and _ca856("berrios", "berios") and _ca856("berios", "berrios"))
+    check("856: dos letras de diferencia o un apellido corto no casan",
+          not _ca856("berrios", "beros") and not _ca856("sosa", "sossa") and not _ca856("rojas", "rojo"))
     check("714: «por C. Fuentes» saca a Fuentes de lo anunciado (el punto de la inicial no corta)",
           "Fuentes" not in _ss("entra Llantén por C. Fuentes respecto del once") and "Llantén" in
           _ss("entra Llantén por C. Fuentes respecto del once"))
@@ -4300,6 +4306,21 @@ def main():
            {"id": 538301, "nombre": "J. Peña", "minutos": 1859, "partidos": 25}]
     _b9, _ = _dedup(_pe, {}, _nunca, lambda a, b: True, 40)
     check("741: la suma de partidos que no cabe en los del equipo (58 > 40) no se funde", len(_b9) == 2, _b9)
+    # 839/724: la misma persona duplicada por la API con estadísticas que se PISAN
+    # (misma edad y posición, nunca juntos): una fila, sin sumar, con el otro id de alterno
+    _gz = [{"id": 13491, "nombre": "Y. Guzmán", "minutos": 2998, "partidos": 37, "goles": 20, "edad": 27,
+            "posicion": "Delantero"},
+           {"id": 531423, "nombre": "Y. Guzman", "minutos": 2273, "partidos": 30, "goles": 15, "edad": 27,
+            "posicion": "Delantero"}]
+    _b11, _t11 = _dedup(_gz, {13491: 4, 531423: 2}, _nunca, lambda a, b: False, 41)
+    check("839: «Y. Guzmán»/«Y. Guzman» superpuestos (37 + 30 > 41, 27 años, delanteros) son UNO, sin sumar",
+          len(_b11) == 1 and _b11[0]["id"] == 13491 and _b11[0]["minutos"] == 2998
+          and _b11[0].get("idsAlternos") == [531423] and _b11[0].get("superpuesto") is True
+          and _t11.get(13491) == 6, (_b11, _t11))
+    _b12, _ = _dedup([{**_gz[0]}, {**_gz[1], "edad": 22}], {}, _nunca, lambda a, b: False, 41)
+    check("839: con otra edad siguen siendo dos (la 741 sin ficha no se funde)", len(_b12) == 2, _b12)
+    _b13, _ = _dedup(_gz, {}, lambda a, b: True, lambda a, b: False, 41)
+    check("839: juntos en una hoja son dos personas aunque coincida todo", len(_b13) == 2, _b13)
     _b10, _ = _dedup(_bz, {}, _nunca, lambda a, b: True, 40)
     check("741: la que cabe (Bisanz 11 + 4 ≤ 40) se sigue fundiendo", len(_b10) == 1, _b10)
     from backend.analisis.f1_base import _fila as _f1_fila
@@ -5216,6 +5237,20 @@ def main():
           and _est["Paulo Henrique Ganso"] == "banca", _est)
     check("un suplente que casa con un titular ya resuelto no lo pisa (André / André Ramalho)",
           _est["André"] == "titular" and d_br["f4"]["rotados"] == 0, (_est, d_br["f4"]))
+    # 855 (Botafogo): «Danilo» 553 del banco no es «Danilo Santos» 275170, que no viajó
+    t_dan = [{"nombre": "Danilo Santos", "zona": "MID", "rol": "TF", "jugadorId": 275170},
+             {"nombre": "Alex Telles", "zona": "DEF", "rol": "TF", "jugadorId": 1}]
+    d_dan = bf.resolver(t_dan, [], ["Alex Telles"], ["Danilo"], ids={"Alex Telles": 1, "Danilo": 553})
+    _ed = {j["nombre"]: (j["estado"], j.get("hoja")) for j in d_dan["jugadores"]}
+    check("855: la pila sola («Danilo» 553) no casa con otro id («Danilo Santos» 275170): es baja",
+          _ed["Danilo Santos"] == ("baja", "fuera") and "Danilo" in d_dan["noReconocidos"], (_ed, d_dan["noReconocidos"]))
+    d_dan2 = bf.resolver([{**t_dan[0], "jugadorId": None}, t_dan[1]], [], ["Alex Telles"], ["Danilo"],
+                         ids={"Alex Telles": 1, "Danilo": 553})
+    check("855: sin id en la tabla, la pila sigue casando (Flamengo, «Saúl»)",
+          next(j for j in d_dan2["jugadores"] if j["nombre"] == "Danilo Santos")["hoja"] == "banca")
+    d_dan3 = bf.resolver(t_dan, [], ["Alex Telles"], ["D. Santos"], ids={"Alex Telles": 1, "D. Santos": 553})
+    check("855: con el apellido en la hoja casa aunque el id difiera (la regla es solo para la pila)",
+          next(j for j in d_dan3["jugadores"] if j["nombre"] == "Danilo Santos")["hoja"] == "banca")
     d_amb = bf.resolver(t_br, [], ["Saúl"])
     check("si dos jugadores comparten la pila, la hoja con solo la pila va a dudas",
           any("Saúl" in x for x in d_amb["dudas"]), d_amb["dudas"])
