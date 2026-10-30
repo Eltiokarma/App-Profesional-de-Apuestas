@@ -876,7 +876,7 @@ paths:
               type: object
               required: [origen, items]
               properties:
-                origen: { type: string, enum: [partes, veredictos, reventones, mantenimiento, usuario] }
+                origen: { type: string, enum: [partes, veredictos, reventones, mantenimiento, usuario, escaneo] }
                 corrida: { type: string }
                 items:
                   type: array
@@ -1036,6 +1036,29 @@ paths:
                     description: 'los de enVentana con DTP-REHACER, con esas alertas en `alertas`'
                     items: { type: object }
                   nota: { type: string }
+  /analisis/cowork/escaneo:
+    get:
+      summary: El escaneo preventivo de lo básico, antes de que un parte se escriba encima
+      description: >
+        30/10/2026, pedido del usuario: no esperar a que un analista tropiece con un dato
+        malo. Recorre la agenda de las próximas `horas` y las partes jugadas en las últimas
+        `jugadosHoras` con una lista de chequeos (`chequeos`, cada uno con la regla de fútbol
+        que cuida, su área y su severidad): sancionados de la base y partes que los tienen
+        disponibles, el mismo jugador dos veces en la tabla F1, equipo sin plantilla, DT sin
+        confirmar, un equipo con dos partidos a pocas horas, sin cuota prepartido a menos de 12
+        h, partes jugados sin ninguna versión del once antes del pitazo y fichas sin eventos.
+        `porChequeo` agrupa (hallazgos y partidos) y `hallazgos` trae cada uno con su partido,
+        lado y detalle. Solo lee, 0 requests, 0 tokens; el mantenimiento deposita cada
+        chequeo con hallazgos como UNA incidencia. Abierto a Cowork.
+      parameters:
+        - { name: horas, in: query, schema: { type: integer, default: 36, minimum: 1, maximum: 168 } }
+        - { name: jugadosHoras, in: query, schema: { type: integer, default: 48, minimum: 1, maximum: 336 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
   /analisis/cowork/latido:
     get:
       summary: ¿Está corriendo el pipeline, o lleva días muerto en silencio?
@@ -1199,7 +1222,18 @@ paths:
         `idsAlternos` (incidencia 381, Wesley Natã / Wesley Nata). Con INICIALES distintas o sin la
         pila entera («J. Bisanz» / «F. Bisanz», incidencia 673) se funden solo con el mismo apellido,
         nunca juntos en una hoja y, además, uno que deja de aparecer cuando aparece el otro o los
-        mismos goles y asistencias (no cero); la fila lleva `fundidoPorInicial: true`.
+        mismos goles y asistencias (no cero); la fila lleva `fundidoPorInicial: true`. Si la
+        suma de partidos NO cabe en los del equipo (los dos registros se pisan), con el mismo
+        nombre, la misma edad y la misma posición y nunca juntos, es la misma persona duplicada
+        por la API: una fila con la de más minutos, SIN sumar (incidencia 839, Y. Guzmán).
+        Cada lado trae `sancionados` (backend/sanciones.py, 30/10/2026, incidencias 772, 778 y
+        835): roja directa o doble amarilla en el último partido terminado de ESTA competición, o
+        la amarilla que completa el ciclo de la competición (`reglaAmarillas`, solo las reglas
+        conocidas y con los eventos de todos sus partidos; si faltan, `amarillasConteoParcial`),
+        cada uno con `tipo`, `fecha`, `detalle` y `certeza: probable`. La fila del sancionado
+        lleva `sancion` y cada fila sus `amarillasEnLaCompeticion`. Un jugador en la hoja de
+        este partido no se infiere sancionado. Un sancionado que el parte no tiene en `fuera`
+        dispara `SANCION-SIN-DECLARAR`.
         El rol es SUGERIDO: lo confirma la prensa. Un decisivo que
         no figura en la tabla depositada dispara `F1-DECISIVO-FUERA` en el parte. Los
         titulares del ÚLTIMO once entran todos aunque queden fuera del corte de 16
@@ -3928,7 +3962,7 @@ components:
       type: object
       required: [codigo]
       properties:
-        codigo: { type: string, description: 'T.54, R-KT.2, GK-DOWNGRADE, F3… Las que agrega el backend al leer: K-EXTREMO (burbuja en su máximo), K-CERCA-EXTREMO (franja alta sin récord, tipo dato), HERENCIA-DTP (C1/SOB2 del TDE declarados distinto de lo que dice el DTP; manda el DTP), HUECO-DOBLE (EFE y TDE leídos del mismo vacío) ESCALA-LIGAS (los dos equipos vienen de ligas distintas: el nivel no compara entre bases), F1-DECISIVO-FUERA (un titular habitual o goleador de la base que no está en la tabla F1: no pesa en el IP) DTP-REHACER (el once oficial contradice el sistema o el XI de referencia de la apertura del DTP), EFE-EMPATE-TECNICO (26/10/2026: brecha del EFE ≥ 5 puntos con T.54 / R-KT.2 en un lado o ESCALA-LIGAS: empate técnico de formación, no ordena el partido; trae `brecha` y `motivos`), ESPINA-SIGUE-EN-EXTREMO (la espina dice que la racha sigue con la burbuja total o de la condición en K-EXTREMO o K-CERCA-EXTREMO) y T.54-SIN-DECLARAR (EFE v1.8: el DT de un lado lleva menos de 6 meses y el parte no declara T.54 ni T.54-B ahí; trae `meses` y cuenta para EFE-EMPATE-TECNICO). Las CAPTURADAS al depositar por el guardrail de coherencia (Jev, docs/JEV.md): COHERENCIA-BLOQUE, COHERENCIA-1X2, COHERENCIA-MATCHUP, COHERENCIA-REVENTON — solo salen en la tira con SAD_JEV_COHERENCIA=alertas; en sombra viven en `coherencia`' }
+        codigo: { type: string, description: 'T.54, R-KT.2, GK-DOWNGRADE, F3… Las que agrega el backend al leer: K-EXTREMO (burbuja en su máximo), K-CERCA-EXTREMO (franja alta sin récord, tipo dato), HERENCIA-DTP (C1/SOB2 del TDE declarados distinto de lo que dice el DTP; manda el DTP), HUECO-DOBLE (EFE y TDE leídos del mismo vacío) ESCALA-LIGAS (los dos equipos vienen de ligas distintas: el nivel no compara entre bases), F1-DECISIVO-FUERA (un titular habitual o goleador de la base que no está en la tabla F1: no pesa en el IP) DTP-REHACER (el once oficial contradice el sistema o el XI de referencia de la apertura del DTP), EFE-EMPATE-TECNICO (26/10/2026: brecha del EFE ≥ 5 puntos con T.54 / R-KT.2 en un lado o ESCALA-LIGAS: empate técnico de formación, no ordena el partido; trae `brecha` y `motivos`), ESPINA-SIGUE-EN-EXTREMO (la espina dice que la racha sigue con la burbuja total o de la condición en K-EXTREMO o K-CERCA-EXTREMO) T.54-SIN-DECLARAR (EFE v1.8: el DT de un lado lleva menos de 6 meses y el parte no declara T.54 ni T.54-B ahí; trae `meses` y cuenta para EFE-EMPATE-TECNICO) SANCION-SIN-DECLARAR (30/10/2026: un sancionado de la base —roja o amarillas en el último partido de la competición— que el parte no tiene en `fuera`; trae `sancionados`) y ONCE-SIN-FILA-F1 (incidencia 743: titulares del once oficial sin fila en la tabla F1, que no pesan en el IP; trae `titulares`). Las CAPTURADAS al depositar por el guardrail de coherencia (Jev, docs/JEV.md): COHERENCIA-BLOQUE, COHERENCIA-1X2, COHERENCIA-MATCHUP, COHERENCIA-REVENTON — solo salen en la tira con SAD_JEV_COHERENCIA=alertas; en sombra viven en `coherencia`' }
         equipo: { type: string, enum: [a, b, ambos, global] }
         tipo: { type: string, enum: [estructural, fecha, dato], description: '`dato` = la pone el backend sobre los datos, no el skill' }
         detalle: { type: string, description: '`texto` se acepta como alias' }

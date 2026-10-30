@@ -339,6 +339,8 @@ def penales_temporada(team_id: int, antes: str, dias: int = PENALES_DIAS) -> dic
             continue
         e = por.setdefault(nombre, {"nombre": nombre, "convertidos": 0, "errados": 0, "enPlantilla": None})
         jid = f["jugador_id"] if "jugador_id" in f.keys() else None
+        if jid and not e.get("jugadorId"):
+            e["jugadorId"] = jid
         if plantel and jid:
             e["enPlantilla"] = jid in plantel
         e["errados" if "missed" in (f["detalle"] or "").lower() else "convertidos"] += 1
@@ -355,6 +357,37 @@ def penales_temporada(team_id: int, antes: str, dias: int = PENALES_DIAS) -> dic
         if idos:
             nota += f"; ya no están en el plantel: {', '.join(idos)}"
     return {"ejecutores": ejecutores, "partidosConEventos": (con_ev or {"n": 0})["n"], "nota": nota}
+
+
+def _ejecutor_sancionado(fixture_id: int, lados: dict) -> None:
+    """EL EJECUTOR SANCIONADO NO TIRA (incidencia 772, Neymar: roja el 25/10 y
+    primer ejecutor del Santos–Palmeiras del 28/10). Cada ejecutor que la base
+    da por suspendido para este partido lleva `sancionado` y baja al final."""
+    try:
+        from backend import sanciones
+        sanc = sanciones.de_fixture(fixture_id)
+    except Exception:  # noqa: BLE001 — sin eventos no hay inferencia
+        return
+    for lado, ins in lados.items():
+        pen = ins.get("penales") or {}
+        sus = (sanc.get(lado) or {}).get("sancionados") or []
+        if not pen.get("ejecutores") or not sus:
+            continue
+        marcados = []
+        for e in pen["ejecutores"]:
+            x = next((x for x in sus if (x.get("jugadorId") and x["jugadorId"] == e.get("jugadorId"))
+                      or _casa_nombre(x.get("nombre") or "", e["nombre"])), None)
+            if x:
+                e["sancionado"] = x["detalle"]
+                marcados.append(e["nombre"])
+        if marcados:
+            pen["ejecutores"] = sorted(pen["ejecutores"], key=lambda e: "sancionado" in e)
+            pen["nota"] = (pen.get("nota") or "") + f"; sancionados para este partido: {', '.join(marcados)}"
+
+
+def _casa_nombre(uno: str, otro: str) -> bool:
+    from backend.analisis.f1_base import mismo_jugador
+    return mismo_jugador(uno, otro) or _plano(uno) == _plano(otro)
 
 
 def _ejecutores_en_base(team_id, fecha: str) -> bool:
@@ -409,11 +442,13 @@ def ficha(fixture_id: int) -> dict | None:
     fx = _fixture(fixture_id)
     if not fx:
         return None
+    lados = {"a": insumos_equipo(fx["home_team_id"], fx["home_name"], fx),
+             "b": insumos_equipo(fx["away_team_id"], fx["away_name"], fx)}
+    _ejecutor_sancionado(fixture_id, lados)
     return {
         "fixtureId": fixture_id,
         "partido": {"equipoA": fx["home_name"], "equipoB": fx["away_name"], "fecha": str(fx["date"])[:10]},
-        "a": insumos_equipo(fx["home_team_id"], fx["home_name"], fx),
-        "b": insumos_equipo(fx["away_team_id"], fx["away_name"], fx),
+        **lados,
         "noCalculables": NO_CALCULABLES,
         "nota": "esto NO es el DTP: son los insumos que salen de la ficha ya ingestada. El CIERRE "
                 "se valida contra `aperturaPrevia` (lo que se declaró ANTES del partido anterior), "

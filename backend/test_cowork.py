@@ -1601,6 +1601,18 @@ def main():
           r.json()["estado"])
     check("ya no aparece en pendientes",
           all(p["fixtureId"] != sin_ficha for p in c.get(f"{A}/analisis/cowork/pendientes").json()))
+    _al743 = [x for x in c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["alertas"]
+              if x["codigo"] == "ONCE-SIN-FILA-F1"]
+    check("743: con todo el once en la tabla, ONCE-SIN-FILA-F1 no suena", not _al743, _al743)
+    c.post(f"{A}/analisis/cowork/{sin_ficha}/xi", json={"b": {
+        "once": [f"B Jugador{n}" for n in (1, 3, 4, 5, 6, 8, 9, 10, 13, 14)] + ["Zeta Desconocido"],
+        "fuente": "rueda de prensa"}})
+    _al743 = [x for x in c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["alertas"]
+              if x["codigo"] == "ONCE-SIN-FILA-F1"]
+    check("743: un titular del once oficial sin fila en la tabla F1 suena ONCE-SIN-FILA-F1 en su lado",
+          len(_al743) == 1 and _al743[0]["equipo"] == "b" and _al743[0]["titulares"] == ["Zeta Desconocido"], _al743)
+    c.post(f"{A}/analisis/cowork/{sin_ficha}/xi", json={"b": {
+        "once": [f"B Jugador{n}" for n in (1, 3, 4, 5, 6, 8, 9, 10, 13, 14, 15)], "fuente": "rueda de prensa"}})
 
     # re-depositar el parte NO borra el once ya resuelto
     c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))

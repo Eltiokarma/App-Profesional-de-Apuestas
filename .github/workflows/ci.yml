@@ -59,6 +59,8 @@ jobs:
         run: python -m backend.test_backtest_goles
       - name: Quién pasó una llave (penales, global, prórroga; incidencia 774)
         run: python -m backend.test_eliminatoria
+      - name: Sancionados de la base (rojas y amarillas) y escaneo preventivo
+        run: python -m backend.test_sanciones
       - name: Tests del chequeo previo del EFE (qué cuesta antes de gastar)
         run: python -m backend.test_preflight
       - name: Tests del parte de Cowork (bloque F calculado y cruce del once)

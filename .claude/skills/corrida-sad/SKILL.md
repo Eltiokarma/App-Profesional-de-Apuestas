@@ -98,7 +98,11 @@ cae en la raíz del repo (17/10/2026).
 > - Orden: `GET antecedentes/{id}` → `fixtures/{id}` → `analisis/cowork/
 >   tde/{id}` → `analisis/cowork/dtp/{id}` → **`analisis/cowork/f1/{id}`**
 >   (la tabla F1 sale de acá, con `jugadorId`; los `decisivo` no pueden
->   faltar) → `equipos/{id}/burbujas?proximo={id}` de los dos → `cuotas/{id}`
+>   faltar; los `sancionados` —roja o amarillas en el último partido de esta
+>   competición, calculados de la base— van en `fuera` con estado baja y
+>   motivo «sanción» salvo que la prensa diga que juega, y entonces la nota del
+>   equipo lo dice con la fuente: si no, SANCION-SIN-DECLARAR) →
+>   `equipos/{id}/burbujas?proximo={id}` de los dos → `cuotas/{id}`
 >   → prensa (DT de ESTA semana, bajas, once probable) → el JSON del parte
 >   EXACTO al punto 7 (a = local).
 >   El gap, la μ y el 1X2 del motor (`unXDos`) están en `GET predicciones/{id}`
@@ -244,16 +248,30 @@ cada 30 minutos y es CORTA: casi siempre no hay nada que hacer.
 >    se revisa; los duelos con nombre propio se reescriben con ESTE once, en
 >    las dos direcciones del carril. Una vía de gol que dependía de un
 >    jugador que no está, se saca; la del que entró, se escribe.
-> 3. Revisá si el once cambia lo demás, y tocá SOLO lo que cambia: una baja
->    decisiva de la tabla F1 que no juega, un arquero distinto (EFE v1.6,
+> 3. **El sistema sale del grid** (incidencia 849): `m1.sistema` es la
+>    formación de la ficha oficial (o la del grid si la API la corrigió), no
+>    la que traía la apertura; actualizar solo `xiReferencia` deja la alerta
+>    sonando.
+> 4. **Todo lo que NOMBRA al once viejo se reescribe** (incidencia 850, La
+>    Guaira y Vasco: se rehízo el DTP y el TDE, la matriz, el falsador y el
+>    ensayo siguieron con la línea de cinco y con un titular que arrancó en el
+>    banco). Buscá en el parte ENTERO cada jugador que salió del once y cada
+>    mención del sistema viejo —`tde.bloques[]` (indicadores, ramas,
+>    reasignación, tipología), `matriz`, el falsador del pronóstico,
+>    EJE-DEBUTANTE y las alertas declaradas, la prosa del DTP, el ensayo y las
+>    notas del EFE— y reescribí esas frases con el once oficial. Lo demás no
+>    se toca: una baja decisiva que no juega, un arquero distinto (EFE v1.6,
 >    B6), la rama del TDE que dependía de un intérprete. Si el 1X2 se mueve,
 >    movelo con su porqué en la lectura del 1X2 (disciplina 33); si no, no.
-> 4. `POST $B/analisis/cowork` con el cuerpo ENTERO (el POST reemplaza; la
+>    Antes de depositar, listá en tu respuesta los nombres que salieron y
+>    confirmá que ninguno queda en el texto como titular.
+> 5. `POST $B/analisis/cowork` con el cuerpo ENTERO (el POST reemplaza; la
 >    cadena conserva la primera apertura, eso no se toca). Leé el recibo:
 >    DTP-REHACER tiene que haber desaparecido de `alertas` en el GET
 >    siguiente; si sigue, decí por qué (`contraElOnce.motivos`).
-> 5. Después del pitazo NO deposites: decilo. Respuesta final: qué cambió
->    en M1/M2, si se movió el 1X2 (de cuánto a cuánto) y si la alerta se fue.
+> 6. Después del pitazo NO deposites: decilo. Respuesta final: qué cambió
+>    en M1/M2, qué otras secciones reescribiste por el once (paso 4), si se
+>    movió el 1X2 (de cuánto a cuánto) y si la alerta se fue.
 
 4. Depositá lo roto como incidencias (`origen: "partes"`, `corrida: "rehacer
    <fecha hora>"`). Respuesta final, tres líneas: partidos rehechos, los que
@@ -489,6 +507,19 @@ y con freno.
      tarjeta «Decisiones pendientes» de Partidos, con la `resolucion` como
      propuesta: escribila para que se pueda aprobar sin abrir otra cosa (qué
      cambia, dónde, qué se pierde).
+0-bis. **El escaneo preventivo** (30/10/2026, pedido del usuario: «no esperar
+   a que salten estas cosas»): `GET $B/analisis/cowork/escaneo` recorre la
+   agenda de las próximas 36 h y las partes jugadas en las últimas 48 h con los
+   chequeos de lo básico (sancionados, el mismo jugador dos veces en la F1,
+   DT sin confirmar, dos partidos el mismo día, sin cuotas, once tarde, ficha
+   sin eventos). Por CADA chequeo con hallazgos depositá UNA incidencia
+   (`POST …/incidencias`, `origen: "escaneo"`, el `area` y la `severidad` del
+   chequeo, `titulo` = el del chequeo, `detalle` = los partidos y hallazgos,
+   `fixtureId` = el primero): la misma abierta suma `veces`, no se duplica. Desde
+   ahí entran al paso 1 como las demás. Un dato que un parte o un veredicto
+   reporta y que el escaneo NO vio es un chequeo que falta: sumalo a
+   `backend/analisis/escaneo.py` (`CHEQUEOS`, con la regla que cuida y su
+   test en `backend/test_sanciones.py`) como parte del grupo que lo arregla.
 1. `git fetch origin main`; trabajá en la rama designada de la sesión
    recreada desde `origin/main` (`git checkout -B <rama> origin/main`: su PR
    anterior ya se mergeó o no existe). `GET $B/analisis/cowork/incidencias`
@@ -528,8 +559,14 @@ y con freno.
    él (en el `test_*.py` del área o en `backend/test_cowork.py`) y un
    comentario con el caso real que lo motivó, como el resto del repo. Cambios
    de contrato: primero `docs/openapi.yaml`, después backend, `src/api/
-   types.ts`, los dos datasources y tests. **Hasta 3 GRUPOS de código por
-   corrida, un PR por grupo** (cada uno con su batería del paso 5 en verde y
+   types.ts`, los dos datasources y tests. **La CLASE, no el caso** (30/10/2026:
+   la identidad del jugador se parchó 8 veces en un mes, cada vez en un
+   módulo): antes de parchar, buscá la MISMA regla en los otros módulos
+   (`grep` de la función o del criterio: el cruce de nombres vive en
+   `bloque_f`, `f1_base`, `dtp_cowork`, `parte` y `ingesta/jugadores`) y
+   arreglala en todos los que la usan, con un test por cada uno. **Hasta 6
+   GRUPOS de código por corrida (desde el 30/10/2026; antes 3), un PR por
+   grupo** (cada uno con su batería del paso 5 en verde y
    su merge antes del siguiente): un grupo cierra todas sus incidencias de
    una vez. Las que NO son código (`dato_api` · `por_diseno` · `descartada` ·
    `usuario`) no cuentan para ese tope: verificadas, se clasifican TODAS en la

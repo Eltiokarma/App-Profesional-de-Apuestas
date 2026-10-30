@@ -254,6 +254,7 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
     estados: dict[int, tuple[str, str]] = {}
     dudas: list[str] = []
     no_reconocidos: list[str] = []
+    no_reconocidos_once: list[str] = []
 
     por_id = {j["jugadorId"]: i for i, j in enumerate(plantel) if j.get("jugadorId") is not None}
     # el otro id de la misma persona (la tabla F1 funde los dos, incidencia 381)
@@ -311,6 +312,8 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
                     homonimos_once += 1
             else:
                 no_reconocidos.append(nombre)
+                if destino == "titular":
+                    no_reconocidos_once.append(nombre)
 
     # LA FILA CUYO ID ES EL ALTERNO DE OTRA es esa otra persona: la tabla la
     # trajo dos veces (Pasto, «S. Cordoba» 538162 baja con «S. Córdoba» 64215
@@ -359,6 +362,9 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
     diag["jugadores"] = resuelto
     diag["dudas"] = dudas
     diag["noReconocidos"] = no_reconocidos
+    # los TITULARES de la hoja sin fila en la tabla (incidencia 743): no pesan
+    # en el IP ni como disponibles; el parte lo avisa (ONCE-SIN-FILA-F1)
+    diag["noReconocidosOnce"] = no_reconocidos_once
     # cuántos nombres del ONCE (no de la banca) se pudieron casar con la tabla.
     # Es el termómetro de si el cruce vale: un once que casa con 3 de 11 no es
     # un equipo diezmado, es una hoja que no corresponde a esta tabla.

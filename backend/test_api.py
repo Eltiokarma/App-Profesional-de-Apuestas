@@ -1283,6 +1283,10 @@ def main():
           c.post(A + "/analisis/cowork/xi/auto", headers=cw).status_code == 200)
     check("cowork: puede leer el latido del pipeline",
           c.get(A + "/analisis/cowork/latido", headers=cw).status_code == 200)
+    _esc = c.get(A + "/analisis/cowork/escaneo", headers=cw)
+    check("cowork: lee el escaneo preventivo, con sus chequeos y hallazgos agrupados",
+          _esc.status_code == 200 and {"porChequeo", "hallazgos", "chequeos", "partidosRevisados"} <= set(_esc.json())
+          and "sancion" in _esc.json()["chequeos"], _esc.text[:300])
     check("cowork: puede LEER sus lecciones",
           c.get(A + "/analisis/cowork/lecciones", headers=cw).status_code == 200)
     check("Cowork lee la calibración de la espina de la tarjeta",
