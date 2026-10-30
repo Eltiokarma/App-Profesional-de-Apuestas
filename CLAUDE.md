@@ -30,6 +30,7 @@ python -m backend.test_calendario # calendario SAD: bloque G del EFE calculado (
 python -m backend.test_cronologia  # cronología SAD: los partidos del timeline, calculados
 python -m backend.test_eliminatoria # quién pasó una llave (penales, global, prórroga): ficha, timeline, veredicto y ELIMINATORIA-AL-REVES
 python -m backend.test_sanciones  # sancionados de la base (roja, doble amarilla, ciclo de amarillas) y el escaneo preventivo
+python -m backend.test_ventana_nivel # de qué partidos está hecho el nivel del motor (amistosos, internacionales) y la fiabilidad de μ que baja con 3+ amistosos (860)
 python -m backend.test_identidad  # quién es quién (jugador y DT): la regla única de backend/identidad.py, con cada caso real
 python -m backend.test_arquitectura # el escaneo preventivo del CÓDIGO: cada clase de falla de docs/FALLAS.md con su guardia (identidad en un lugar, tests en CI, contrato, excepts con motivo, rutas que existen)
 python -m backend.test_preflight  # chequeo previo del EFE: qué va a costar antes de gastar
@@ -350,6 +351,15 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   baja al ejecutor de penales del DTP y suena `SANCION-SIN-DECLARAR` (calculada)
   si el parte no lo tiene en `fuera`. Y `ONCE-SIN-FILA-F1` (743): titulares del
   once oficial sin fila en la tabla F1, que no pesan en el IP.
+- **De qué está hecho el nivel del motor** (30/10/2026, incidencia 860, usuario:
+  «al analista le funciona bien»): Konyaspor 0-4 Galatasaray, el motor dio 41 %
+  al 14.º porque la ventana de 20 del líder traía 6 amistosos de pretemporada y
+  3 de Champions (1,65 pts/p en la ventana, 2,44 en la liga). `/predicciones`
+  trae por lado `ventanaNivel` (`backend/analisis/ventana_nivel.py`, el mismo
+  filtro y deduplicación del pipeline) y con 3+ amistosos en un lado
+  `fiabilidadMu` baja a «media» (`porVentana`); el escaneo lo marca como chequeo
+  INFORMATIVO (no se deposita). La fórmula NO se tocó: `backtest_nivel_ventana`
+  mide si el nivel sin amistosos o sin internacionales mejora el 1X2.
 - **Quién es quién vive en UN archivo** (30/10/2026, usuario): `backend/identidad.py`
   decide si dos nombres son la misma persona —tokens, pila, apellido escrito
   distinto (seseo, ß, una letra cambiada, de más o de menos, doble, en otro

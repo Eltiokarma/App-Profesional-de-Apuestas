@@ -2355,6 +2355,22 @@ components:
         recuperabilidad: { type: number, nullable: true, description: 'media de muEsperado sobre proximos; null si no hay próximos' }
         senalCalendario: { type: string, enum: [blando, neutro, duro], nullable: true, description: 'recuperabilidad vs μ genérica (umbral ±0.15, provisional hasta backtest)' }
         partidoTrampa: { type: boolean, description: 'rival de hoy claramente inferior con un grande (internacional o nivel ≥ propio) a ≤4 días: candidato a rotación/cansancio' }
+        ventanaNivel:
+          type: object
+          nullable: true
+          description: >
+            De qué partidos está hecho el nivel: los últimos 20 terminados de todas las competiciones
+            (MOTOR §2), con el mismo filtro y deduplicación que el pipeline, contados por tipo
+            (backend/analisis/ventana_nivel.py; 30/10/2026, incidencia 860: Galatasaray con 6
+            amistosos de pretemporada y 3 de Champions en la ventana). Dato contado: no corrige μ.
+          properties:
+            partidos: { type: integer }
+            amistosos: { type: integer }
+            internacionales: { type: integer, description: 'torneos internacionales de clubes' }
+            otros: { type: integer }
+            desde: { type: string }
+            hasta: { type: string }
+            completa: { type: boolean, description: 'false con menos de 20 partidos en la base' }
     ProximoPartido:
       type: object
       required: [fixtureId, fecha, rival, esLocal, nivelRival, muEsperado, esInternacional, diasDescanso]
@@ -2379,12 +2395,14 @@ components:
         fiabilidadMu:
           type: object
           nullable: true
-          description: 'confianza en μ v2 para la liga del fixture (evidencia: calibración por liga 2026-07, doc §5); BAJA si los dos equipos vienen de bases distintas (la condición de ESCALA-LIGAS: μ cruza niveles que no comparan)'
+          description: 'confianza en μ v2 para la liga del fixture (evidencia: calibración por liga 2026-07, doc §5); BAJA si los dos equipos vienen de bases distintas (la condición de ESCALA-LIGAS: μ cruza niveles que no comparan); MEDIA si la ventana de 20 del nivel de un lado tiene 3+ amistosos (incidencia 860; `porVentana`)'
           properties:
             nivel: { type: string, enum: [alta, media, baja] }
             nota: { type: string, description: 'por qué, en lenguaje de apostador' }
             escala: { type: string, description: 'solo con bases distintas: la relación (rival de categoría inferior · superior · fuera del padrón · otra liga)' }
-            notaLiga: { type: string, description: 'solo con bases distintas: lo que diría la liga sola' }
+            notaLiga: { type: string, description: 'solo con bases distintas o con la ventana de amistosos: lo que diría la liga sola' }
+            ventana: { type: object, additionalProperties: { type: string }, description: 'por lado (local/visitante), «6 amistosos y 3 internacionales de 20»; solo los lados que tienen alguno' }
+            porVentana: { type: boolean, description: 'con 3+ amistosos en la ventana de 20 de un lado: «alta» baja a «media» (o la nota lo suma); μ no se toca' }
         unXDos:
           nullable: true
           description: >

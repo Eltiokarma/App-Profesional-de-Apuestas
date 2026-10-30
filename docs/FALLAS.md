@@ -196,3 +196,18 @@ Tres lugares donde vive una guardia:
   - **Ids anotados** en CLAUDE.md (deudas 11 y 17).
   - **El texto manda poco:** el texto de la rutina solo apunta al skill y el skill del repo manda.
 - **Si vuelve:** cambiar el skill, no el texto de la rutina. Si hay que cambiar el texto, crear la rutina nueva y desactivar la vieja.
+
+### 15. El nivel del motor medido con partidos de otra exigencia
+
+- **Síntoma:** el 1X2 del motor favorece al débil con fiabilidad «alta».
+- **Caso:** 860, Konyaspor 0-4 Galatasaray.
+  - El motor dio 41 % al 14.º y 31 % al líder.
+  - La ventana de 20 del nivel de Galatasaray traía 6 amistosos de pretemporada (Monza 0-2, Venezia 0-3, Villarreal 1-2) y 3 de Champions. En esa ventana sacaba 1,65 puntos por partido; en la liga, 2,44.
+  - La regresión le restó una segunda vez por «rendir de más». Lo salvó seguir al mercado.
+- **Guardia:**
+  - **Composición contada:** `backend/analisis/ventana_nivel.py` cuenta de qué está hecha la ventana de cada lado (`ventanaNivel` en `/predicciones`).
+  - **Fiabilidad:** con 3+ amistosos baja `fiabilidadMu` a «media», con `porVentana` y la nota.
+  - **Escaneo:** el chequeo informativo `nivel-con-amistosos`.
+  - **Medición:** `backend/backtest_nivel_ventana.py` mide si sacar los amistosos o los internacionales del nivel mejora el 1X2.
+  - El motor no se toca sin esa medición y sin el visto bueno del usuario.
+- **Si vuelve:** mirar `ventanaNivel` antes de creerle a una divergencia grande entre el motor y el mercado.

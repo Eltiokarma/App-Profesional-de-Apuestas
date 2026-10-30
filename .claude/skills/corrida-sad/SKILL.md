@@ -512,7 +512,9 @@ y con freno.
    agenda de las próximas 36 h y las partes jugadas en las últimas 48 h con los
    chequeos de lo básico (sancionados, el mismo jugador dos veces en la F1,
    DT sin confirmar, dos partidos el mismo día, sin cuotas, once tarde, ficha
-   sin eventos). Por CADA chequeo con hallazgos depositá UNA incidencia
+   sin eventos). Los chequeos con `informativo: true` (como
+   `nivel-con-amistosos`) NO se depositan: son datos para el parte, no fallas.
+   Por CADA otro chequeo con hallazgos depositá UNA incidencia
    (`POST …/incidencias`, `origen: "escaneo"`, el `area` y la `severidad` del
    chequeo, `titulo` = el del chequeo, `detalle` = los partidos y hallazgos,
    `fixtureId` = el primero): la misma abierta suma `veces`, no se duplica. Desde

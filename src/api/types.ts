@@ -269,6 +269,19 @@ export interface GapEquipoDTO {
   senalCalendario: 'blando' | 'neutro' | 'duro' | null
   /** Rival de hoy claramente inferior + un grande a ≤4 días: rotación/cansancio. */
   partidoTrampa: boolean
+  /** De qué partidos está hecho el nivel (los últimos 20, incidencia 860): dato, no corrige μ. */
+  ventanaNivel?: VentanaNivelDTO | null
+}
+
+/** La composición de la ventana de 20 del nivel del motor. */
+export interface VentanaNivelDTO {
+  partidos: number
+  amistosos: number
+  internacionales: number
+  otros: number
+  desde: string
+  hasta: string
+  completa: boolean
 }
 
 /** Un partido futuro del camino de recuperación (§5 v2). */
@@ -296,7 +309,16 @@ export interface PrediccionDTO {
   gapDiffAjustado: number | null
   /** Confianza en μ v2 para la liga del fixture (calibración por liga 2026-07). */
   /** `escala` (y `notaLiga`) cuando los dos equipos vienen de bases distintas: entonces baja. */
-  fiabilidadMu: { nivel: 'alta' | 'media' | 'baja'; nota: string; escala?: string; notaLiga?: string } | null
+  fiabilidadMu: {
+    nivel: 'alta' | 'media' | 'baja'
+    nota: string
+    escala?: string
+    notaLiga?: string
+    /** «6 amistosos y 3 internacionales de 20», por lado (solo los que tienen alguno) */
+    ventana?: { local?: string; visitante?: string }
+    /** bajó (o sumó la nota) por amistosos en la ventana del nivel */
+    porVentana?: boolean
+  } | null
   /** El 1X2 del MOTOR desde los dos μ_partido (logística calibrada, §5.6): la fuente
    *  «motor» del pronóstico. null si falta un μ. μ son puntos, no goles: no va en un Poisson. */
   unXDos?: UnXDosMotorDTO | null

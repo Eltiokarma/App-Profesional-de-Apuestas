@@ -759,6 +759,19 @@ def fiabilidad_mu_partido(f) -> dict:
                      "favorito que sale de acá puede ser un artefacto de la escala (alerta ESCALA-LIGAS).")}
 
 
+def fiabilidad_mu_fixture(f, comps: dict | None = None) -> dict:
+    """La fiabilidad de μ del partido con la COMPOSICIÓN de la ventana del nivel
+    de cada lado (30/10/2026, incidencia 860, Konyaspor 0-4 Galatasaray: seis
+    amistosos en la ventana de 20 del líder). μ no se toca: con 3+ amistosos
+    en un lado, «alta» baja a «media» y la nota lo dice."""
+    from backend.analisis import ventana_nivel
+    if comps is None:
+        fecha = iso(f["date"])
+        comps = {"local": ventana_nivel.composicion(f["home_team_id"], fecha),
+                 "visitante": ventana_nivel.composicion(f["away_team_id"], fecha)}
+    return ventana_nivel.fiabilidad_con_ventana(fiabilidad_mu_partido(f), comps)
+
+
 def gap_equipo(team_id: int, fecha: str | None) -> dict:
     nivel = nivel_a_fecha(team_id, fecha)
     forma = forma_reciente(team_id, fecha)
@@ -1308,13 +1321,19 @@ def prediccion(fixture_id: int):
     gap_diff_adj = None
     if local["gapAjustado"] is not None and visitante["gapAjustado"] is not None:
         gap_diff_adj = round(local["gapAjustado"] - visitante["gapAjustado"], 4)
+    # de qué partidos está hecho el nivel de cada uno (amistosos, internacionales):
+    # dato contado, no corrige μ (incidencia 860)
+    from backend.analisis import ventana_nivel
+    local["ventanaNivel"] = ventana_nivel.composicion(f["home_team_id"], fecha)
+    visitante["ventanaNivel"] = ventana_nivel.composicion(f["away_team_id"], fecha)
     return {
         "fixtureId": fixture_id,
         "local": local,
         "visitante": visitante,
         "gapDiff": gap_diff,
         "gapDiffAjustado": gap_diff_adj,
-        "fiabilidadMu": fiabilidad_mu_partido(f),
+        "fiabilidadMu": fiabilidad_mu_fixture(f, {"local": local["ventanaNivel"],
+                                                  "visitante": visitante["ventanaNivel"]}),
         # la fuente «motor» del pronóstico en la escala del 1X2 (μ son puntos:
         # no se meten en un Poisson). docs/MOTOR_SAD_EXTRACCION.md §5.6
         "unXDos": unxdos_motor.del_partido(local.get("muPartido"), visitante.get("muPartido")),

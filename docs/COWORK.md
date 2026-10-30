@@ -1240,6 +1240,14 @@ Escribís vos (es juicio, no se puede calcular):
   apelación, una sanción que no aplica), la nota del equipo lo dice con la
   fuente. Si no, el recibo devuelve `SANCION-SIN-DECLARAR`. Una roja directa
   puede valer más de una fecha: la base solo sabe de la siguiente.
+- **De qué está hecho el nivel del motor** (30/10/2026, incidencia 860: Konyaspor
+  0-4 Galatasaray, el motor dio 41 % al 14.º porque el nivel del líder traía
+  seis amistosos de pretemporada y tres de Champions en su ventana de 20).
+  `GET /predicciones/{id}` trae por lado `ventanaNivel` (amistosos,
+  internacionales y el resto de los últimos 20) y, con 3+ amistosos en un lado,
+  `fiabilidadMu` baja a «media» con `porVentana: true` y la nota. Con eso el
+  `unXDos` no es razón para separarse del mercado: se publica como sale y la
+  lectura del 1X2 dice que el nivel de ese lado está hecho con amistosos.
 - Los eventos INSTITUCIONALES del timeline en `timelineEventos` (nunca partidos).
   **Quién pasó una llave NO se deduce del marcador** (incidencia 774: Palmeiras
   pasó a la final por penales y un parte lo dio por eliminado): sale de
