@@ -453,6 +453,12 @@ def main():
           sc["competicion"] == "copa" and sc["auc"] == 0.727 and sc["nivel"] == "alta"
           and "no del motor" in sc["nota"], sc)
     check("la EFL Cup separa poco: nivel baja", _sep.de_liga(48)["nivel"] == "baja")
+    _bl, _b2 = next(iter(k for k in _sep.SEPARACION if _sep.SEPARACION[k][0] >= 0.64)), \
+        next(iter(k for k in _sep.SEPARACION if _sep.SEPARACION[k][0] < 0.60))
+    check("869: el ascendido lleva la separación de la liga del PARTIDO si está medida, no la de su base vieja",
+          _sep.del_partido(_b2, "base vieja", _bl)["ligaId"] == _bl
+          and _sep.del_partido(_b2, "base", 999999)["ligaId"] == _b2
+          and _sep.del_partido(_b2, "base", None)["ligaId"] == _b2)
     check("una liga sin medir no inventa un AUC", _sep.de_liga(999)["auc"] is None
           and _sep.de_liga(999)["nivel"] == "sin medir")
     check("/equipos/999999/burbujas → 404", c.get(A + "/equipos/999999/burbujas").status_code == 404)
