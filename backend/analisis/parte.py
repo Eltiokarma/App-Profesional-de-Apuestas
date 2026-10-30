@@ -1115,16 +1115,19 @@ def marcar_posteriores(alertas: list[dict], creado_en: str | None) -> list[dict]
 
 
 def alertas_espina_extremo(reventon: dict | None, espina: dict | None, nombres: dict) -> list[dict]:
+    """Solo la que el `porque` NO explica, como ESPINA-VS-RIESGO: la que nombra
+    el extremo ya cumple la regla —el recibo no la cobra— y a la tira solo la
+    ensuciaba (incidencias 874 y 775: PSG, Brugge y Casa Pia pintadas como dato
+    con el récord escrito en el `porque`)."""
     return [{
         "codigo": "ESPINA-SIGUE-EN-EXTREMO", "equipo": x["lado"], "tipo": "dato",
         "detalle": (f"{nombres.get(x['lado'], x['lado'])}: la espina dice que la racha {x['signo']} SIGUE "
                     f"({x['lectura']}) con la burbuja {x['donde']} en su {x['nivel']}"
                     + (f" (K {x['k']:+.2f})" if isinstance(x.get("k"), (int, float)) else "")
-                    + (" —el `porque` lo nombra—" if x.get("dicho") else "")
                     + ": con K-EXTREMO o K-CERCA-EXTREMO la espina no declara que la racha sigue —se dice "
                       "«cero» o «neutra», o se nombra el hecho del partido que la sostiene— y el 1X2 no se "
                       "carga a la continuidad (Leones–Libertad y Nacional–Braga, 25/10/2026)"),
-    } for x in espina_sigue_en_extremo(reventon, espina)]
+    } for x in espina_sigue_en_extremo(reventon, espina) if not x["dicho"]]
 
 
 # EFE v1.8 (28/10/2026): T.54 se revisa en LOS DOS lados con la fecha del DT.
