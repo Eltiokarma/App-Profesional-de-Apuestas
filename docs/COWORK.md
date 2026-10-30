@@ -1226,8 +1226,9 @@ Escribís vos (es juicio, no se puede calcular):
   probabilidad, y el marcador acotado de cuatro marcadores). Medido sobre el
   padrón, el intervalo acierta lo que promete (64 %) y el marcador acotado 41 %.
   El marcador declarado va DENTRO del acotado salvo un hecho de este partido
-  que lo saque, dicho en la lectura; el falsador puede escribirse sobre el
-  intervalo («si X mete 3 o más»). No copies los números al parte (se calculan
+  que lo saque, dicho en la lectura, y entonces el falsador nombra la vía de
+  gol que lo saca de ahí (sad-analysis v4.3, pasos 3.5 y 6-C; dentro del
+  acotado el veredicto mide el intervalo solo). No mueve el 1X2. No copies los números al parte (se calculan
   al leer en `lecturaSad.golesAcotados`) y NO es señal de apuesta: contra el
   mercado de goles no hay ventaja.
 - Los eventos INSTITUCIONALES del timeline en `timelineEventos` (nunca partidos).

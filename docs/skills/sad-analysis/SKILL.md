@@ -1,9 +1,13 @@
 ---
 name: sad-analysis
-description: "Skill de la SÍNTESIS del sistema SAD (v4.2): lee las constantes K de cada equipo (la espina y el reventón de la burbuja, 60 % de la lectura), la Regresión al Nivel (μ_partido, gap), la doble oportunidad trampa, goles por fecha y condición y rivales futuros, y arma el pronóstico con sus tres fuentes a la vista —el 1X2 del motor calculado, la matriz y el mercado—, el marcador declarado y el falsador. Activar en todo análisis pre-partido de fútbol o de apuestas, al escribir la lectura SAD o el pronóstico de un parte, al leer las K o las burbujas de un equipo, y al cerrar un veredicto. Lee los datos de la API de la app SAD, no CSV."
+description: "Skill de la SÍNTESIS del sistema SAD (v4.3): lee las constantes K de cada equipo (la espina y el reventón de la burbuja, 60 % de la lectura), la Regresión al Nivel (μ_partido, gap), la doble oportunidad trampa, goles por fecha y condición y rivales futuros, y arma el pronóstico con sus tres fuentes a la vista —el 1X2 del motor calculado, la matriz y el mercado—, el marcador declarado y el falsador. Activar en todo análisis pre-partido de fútbol o de apuestas, al escribir la lectura SAD o el pronóstico de un parte, al leer las K o las burbujas de un equipo, y al cerrar un veredicto. Lee los datos de la API de la app SAD, no CSV."
 ---
 
-# SAD — Análisis Deportivo (v4.2)
+# SAD — Análisis Deportivo (v4.3)
+
+> **v4.3 · 30.10.2026 — El marcador sale de los goles acotados.** Revisión de UN solo punto: la app tiene desde hoy un modelo de goles calibrado (`golesAcotados`, REVENTON §17, 50.823 partidos del padrón) y la v4.2 decía «la app no tiene modelo de goles». Propuesta aprobada: `docs/revisiones/SAD_v4.3_propuesta.md`. **No integra las lecciones del 28-30/10** (esas van en la próxima revisión), no afloja ninguna regla de la v4.2 y no toca el 1X2.
+>
+> **1. El marcador declarado va dentro del marcador acotado** salvo un hecho de este partido que lo saque, dicho (3.5). **2. Los goles acotados no mueven el 1X2** ni son señal de apuesta: se miden en Aprendizaje antes de darles peso (3.5, 6-B). **3. El falsador dice qué vía de gol saca el marcador del acotado** cuando la lectura se aparta de él (6-C).
 
 > **v4.2 · 28.10.2026 — Lo que la v4.1 dejó a la vista.** Revisión desde las 165 lecciones pendientes (130 de partes escritos con la v4.1, 25-27/10), la calibración del 1X2 por versión (la v4.1 acertó 44 de 67, 66 %, contra 46 % con la v4.0, pegada al mercado en cada tramo) y la calibración de la espina (582 lados ciegos con tarjeta). Propuesta aprobada: `docs/revisiones/SAD_v4.2_propuesta.md`. **No afloja ninguna regla de la v4.1** ni toca la Ley 1, el reventón o un número de la app.
 >
@@ -66,6 +70,7 @@ Los otros skills aportan: `efe-clasificador` (formación), `teorema-del-echado` 
 | μ, gap, fiabilidad de μ y **1X2 del motor** | `GET /predicciones/{fixture}` → `local`, `visitante`, `fiabilidadMu`, `unXDos` |
 | Mercado | `GET /cuotas/{fixture}` (y `/historial` para el delta apertura → cierre) |
 | Goles y stats | `GET /equipos/{equipo}/stats` (goles, xG, posesión, con su muestra) |
+| **Goles acotados** *(v4.3)* | `golesAcotados` de `GET /equipos/{equipo}/burbujas?proximo={fixture}` (intervalo de cada lado y marcador acotado) |
 | Once y bajas (Ley 4) | `GET /analisis/cowork/f1/{fixture}`, la ficha y la prensa |
 | Calendario (Ley 3) | `GET /equipos/{equipo}/calendario` |
 | Calibración de la espina | `GET /analisis/cowork/espina/calibracion` |
@@ -107,14 +112,14 @@ EXCEPCIONES:
 | 4 | Formación y DT | 0.5 | Vigente · prefiltro |
 | 5 | Tensión del Favorito | 3 | **SUSPENDIDA (v4.0)**: sin motor en la app; el backtest no encontró culebra |
 | 6 | Cuotas Invariables (doble oportunidad) | 2 | Vigente |
-| 7 | Goles × Fecha × Condición | 3.5 | Vigente · el marcador sale de aquí, no de un Poisson |
+| 7 | Goles × Fecha × Condición | 3.5 | Vigente · el marcador sale de los goles acotados *(v4.3)*, nunca de un Poisson con μ |
 | 8 | Canales Opuestos | — | **SUSPENDIDA (v4.0)**: sin dato de audiencia; cero usos |
 | 9 | Nivel sobre nombre | Transversal | Vigente |
 
 | Suspendido | Por qué | Qué lo reemplaza |
 |---|---|---|
 | **Fe Perdida** (péndulo, flags) | Sin motor en la app; dos partes la invocaron sin dato | Nada: presión e hinchada se cuentan como contexto **con fuente** |
-| **Modelo de goles Poisson v6** (`references/ley_marcador.md`) | Sin motor; se improvisó con μ en 78 partes (error de unidad) | El 1X2 del motor calculado (`unXDos`); el marcador, paso 3.5 |
+| **Modelo de goles Poisson v6** (`references/ley_marcador.md`) | Sin motor; se improvisó con μ en 78 partes (error de unidad) | El 1X2 del motor calculado (`unXDos`); el marcador, los goles acotados de la app (paso 3.5, v4.3) |
 | **Entradas por CSV y screenshot** | La corrida lee la API | Las rutas de «Insumos» |
 | **`scripts/audit_protocol.py`** | Revisa los pasos del formato viejo (CSV, Tensión) | El recibo del parte (`faltan`, `rechazos`, alertas como ESPINA-VS-RIESGO) |
 
@@ -312,7 +317,13 @@ La Tensión del Favorito (ICF, Random Forest, tensión acumulada, «convergencia
 
 Mirar los **últimos 6 partidos del equipo en esa condición** y las K de goles. No promedios → ciclos. Un equipo rara vez repite el marcador exacto.
 
-**El marcador** *(v4.0)*: la app **no tiene modelo de goles**. El marcador exacto es **lectura**, no número: sale de la Ley 7, de las stats (`/equipos/{id}/stats`: goles, xG) y del 1X2 del motor, y se declara como celda probable **sin porcentaje inventado**. **Nunca de un Poisson con μ** (μ son puntos, no goles).
+**El marcador** *(v4.3)*: sale de los **goles acotados** de la app (`golesAcotados` en `/burbujas?proximo=`), un modelo de goles calibrado con el padrón (REVENTON §17): para cada lado, un **intervalo de dos goles** («mete 1 o 2») con su probabilidad y uno de tres, y el **marcador acotado** (los cuatro marcadores que salen de cruzar los dos intervalos). Medido en el padrón con corte temporal: el intervalo acierta lo que promete (64 %) y el marcador acotado el 41 %: acota, no adivina el marcador exacto. Sus λ son **goles**, del cruce de lo que mete uno de local (o de visita) contra lo que concede el otro en su condición: no es el Poisson con μ, que sigue prohibido.
+
+- **El marcador declarado va dentro del marcador acotado.** Se elige entre sus cuatro con la Ley 7 y la lectura (espina, TDE, DTP). Sacarlo de ahí pide **un hecho de ESTE partido** que el modelo no ve —una baja del arquero o del goleador confirmada, un once alternativo, la vía de gol que el DTP da por abierta—, escrito en la lectura con su fuente. Una sensación («partido cerrado», «viene goleando») no lo saca.
+- **Los números no se copian**: el parte los recalcula al leer (`lecturaSad.golesAcotados`) y el veredicto mide intervalo y marcador (`objetivo.golesAcotados`).
+- **No mueven el 1X2 ni son señal de apuesta.** Contra el mercado de más/menos 2,5 y de ambos marcan no hubo ventaja, y que los cuatro marcadores acotados den el mismo ganador todavía no está medido como señal: Aprendizaje lo mide primero (`acreditables.golesAcotados`). El 1X2 sigue a las tres fuentes (6-A, 6-B).
+- **Sin modelo o sin historia** (`sinDato`), el marcador vuelve a ser lectura de la Ley 7 y del 1X2 del motor, declarado como celda probable **sin porcentaje inventado**.
+- El marcador **no se repite** más de lo que da el azar (medido, REVENTON §17): que un equipo «empata 1-1 seguido» no es razón para el 1-1.
 
 - Un rótulo («los que menos marcan», «partido cerrado») no achica la banda de goles que dicen los promedios (Delfín–Manta: 6 goles).
 - Una racha de goles en contra no convierte el gol del rival en certeza (Everton–Chelsea).
@@ -386,6 +397,8 @@ Sin motor ni dato en la app. Presión de la hinchada o del entorno va como conte
 
 Una **condición observable pura**, escrita sobre el **mecanismo** (quién genera, por dónde, con qué). **No** sobre el estado del marcador («si el favorito marca primero» en Braga: marcó y perdió sin que sonara), **no** sobre un minuto (Fluminense–Palmeiras: el gol llegó al 45), y **cubre los dos lados** de la lectura (Juventus–Lazio, Real Oruro–Aurora).
 
+**El marcador fuera del acotado** *(v4.3)*. Si el marcador declarado sale del marcador acotado, el falsador nombra la **vía de gol** que lo saca de ahí (la que se abre o la que se cierra): si esa vía no aparece en el partido, la lectura del marcador está mal. Dentro del acotado no hace falta: el veredicto mide el intervalo solo.
+
 **No sobre el volumen** *(v4.2)*. El xG, los remates o la posesión no separan el resultado: el falsador se escribe sobre la **conversión** o sobre la **vía de gol** que la lectura da por cerrada (Sporting–Viseu: el falsador medía xG y no sonó con el favorito perdiendo 1-2, porque Sporting superó en xG y Viseu convirtió su transición; Aurora–Real Tomayapo: «si genera peligro en juego abierto, la lectura está mal» se cumplió y el 1X2 se sostuvo).
 
 ### 6-D — La lectura integrada (`lecturaSad`)
@@ -403,7 +416,7 @@ Una **condición observable pura**, escrita sobre el **mecanismo** (quién gener
 
 1. ¿Estoy concluyendo desde una posición cómoda o desde las leyes?
 2. ¿Revisé **todas** las constantes?
-3. ¿El marcador viene de la Ley 7 y del 1X2 del motor, o del conteo de goles recientes / de un Poisson con μ?
+3. ¿El marcador está dentro del marcador acotado *(v4.3)*? Si no, ¿qué hecho de este partido lo saca, con su fuente, y lo dice el falsador? ¿O viene del conteo de goles recientes / de un Poisson con μ?
 4. ¿Asigné 0 % a algún escenario con gatillos K que lo respalden? → asignar el mínimo.
 5. *(v4.0)* ¿El falsador es observable, sobre el mecanismo y de los dos lados?
 6. *(v4.1)* ¿El empate y el favorito están donde los pone el mercado? Si no, ¿qué dato de ESTE partido, que el mercado no tenga, los movió? Escribirlo con la cifra.
@@ -416,7 +429,8 @@ Una **condición observable pura**, escrita sobre el **mecanismo** (quién gener
 
 - Estadísticas descriptivas usadas como ley.
 - **Un Poisson con `μ` como λ de goles** *(v4.0)*: μ son puntos. El 1X2 del motor es `unXDos`.
-- **Invocar un motor suspendido** *(v4.0)*: Fe Perdida, Tensión del Favorito / culebra / ICF, canales opuestos, «modelo de goles». Sin motor no hay dato.
+- **Invocar un motor suspendido** *(v4.0)*: Fe Perdida, Tensión del Favorito / culebra / ICF, canales opuestos, el «modelo de goles» Poisson v6. Sin motor no hay dato. Los goles acotados de la app *(v4.3)* no son ese modelo: tienen motor y se leen en su ruta.
+- **Mover el 1X2 o recomendar un mercado de goles por los goles acotados** *(v4.3)*.
 - Leer `k_positivo` / `k_negativo` sin fusionar.
 - Revertir una K clara con leyes complementarias en la LECTURA (el número del 1X2 sigue a las tres fuentes).
 - Confundir predicción de constante con predicción de resultado.
