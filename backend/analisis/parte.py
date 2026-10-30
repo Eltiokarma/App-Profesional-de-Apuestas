@@ -2067,13 +2067,29 @@ def _bloque_tde(x, rechazos: list, donde: str, lado: str = "") -> dict:
         # LA PROSA DEL BLOQUE SE GUARDA (incidencia 863: `notas` llegaba, el recibo
         # no la rechazaba y el GET no la devolvía: se perdía callada)
         "notas": _txt(x.get("notas")),
+        # LO QUE NO SE PUDO PUNTUAR, CON SU MOTIVO (incidencia 928: el prompt pide
+        # excluir con motivo el indicador imposible —F4 pide PPDA— y desde la
+        # 863 el bloque rechazaba `sinDato`). Lista o {indicador: motivo}.
+        "sinDato": _sin_dato_tde(x.get("sinDato"), x.get("excluidos")),
     } | _claves_tde_ignoradas(x, rechazos, donde)
+
+
+def _sin_dato_tde(*fuentes) -> dict:
+    out = {}
+    for f in fuentes:
+        if isinstance(f, dict):
+            out.update({str(k): _txt(v) for k, v in f.items() if k})
+        elif isinstance(f, list):
+            out.update({str(k): "" for k in f if isinstance(k, str) and k})
+        elif isinstance(f, str) and f.strip():
+            out[f.strip()] = ""
+    return out
 
 
 # Lo que el bloque del TDE guarda. Una clave fuera de esta lista NO se tira en
 # silencio: vuelve en `rechazos` con su nombre (FALLAS.md §5, la falla callada).
 CLAVES_BLOQUE_TDE = {"equipo", "indicadores", "ie", "ieNivel", "ise", "iseNivel", "tipologia", "ventana",
-                     "disciplina43", "vias", "falsador", "reasignacion", "notas"}
+                     "disciplina43", "vias", "falsador", "reasignacion", "notas", "sinDato", "excluidos"}
 
 
 def _claves_tde_ignoradas(x: dict, rechazos: list, donde: str) -> dict:
