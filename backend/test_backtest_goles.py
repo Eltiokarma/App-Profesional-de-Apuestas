@@ -74,6 +74,16 @@ check("…y los coeficientes que pesan son los plantados",
       r["coeficientes"]["G3 cruce + K"]["kGaCondAt"] > 0.1 and r["coeficientes"]["G3 cruce + K"]["kGrCondDef"] > 0.1
       and abs(r["coeficientes"]["G3 cruce + K"]["kGaAt"]) < 0.08, r["coeficientes"]["G3 cruce + K"])
 
+# 1-bis) el modelo para la app: con lo plantado, lambda_de recupera la verdad
+_obs1 = sinteticos(3000, 0.25, 1)
+_m = bt.modelo_produccion(_obs1, r)
+_lam = [bt._goles.lambda_de(o["local"]["x"], _m) for o in _obs1[:400]]
+_media_lam, _media_y = sum(_lam) / len(_lam), sum(o["local"]["y"] for o in _obs1[:400]) / 400
+check("modelo para la app: trae intercepto, escala y betas de las 10 variables, y la tasa de la prueba",
+      set(_m["beta"]) == set(bt._goles.VARIABLES) and _m["intervaloAcierta"] is not None and _m["partidos"] == 3000, _m)
+check("…y sus goles esperados promedian lo que salió (±10 %)", abs(_media_lam - _media_y) / _media_y < 0.10,
+      (_media_lam, _media_y))
+
 # 2) con la constante de ruido, no inventa nada
 r0 = bt.correr(sinteticos(3000, 0.0, 2))
 c0 = r0["comparaciones"]["G3 cruce + K vs G2 cruce"]

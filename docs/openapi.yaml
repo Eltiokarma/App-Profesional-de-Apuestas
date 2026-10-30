@@ -2611,6 +2611,54 @@ components:
           allOf: [{ $ref: '#/components/schemas/Eliminatoria' }]
           nullable: true
           description: 'quién pasó la llave (`avanzaLado` local | visitante); null si no es eliminatoria o no terminó'
+    GolesLado:
+      type: object
+      properties:
+        equipo: { type: string }
+        esperados: { type: number, description: 'goles esperados (Poisson del modelo G3)' }
+        distribucion: { type: object, additionalProperties: { type: number }, description: '0 · 1 · 2 · 3+' }
+        intervalo: { $ref: '#/components/schemas/IntervaloGoles' }
+        intervaloAmplio: { $ref: '#/components/schemas/IntervaloGoles' }
+    IntervaloGoles:
+      type: object
+      properties:
+        desde: { type: integer }
+        hasta: { type: integer }
+        prob: { type: number }
+    GolesAcotados:
+      type: object
+      description: >
+        Los goles acotados de un partido (backend/analisis/goles.py, REVENTON §17): el intervalo de
+        dos goles (y el de tres, más ancho y más seguro) de cada lado, los cuatro marcadores que salen
+        de cruzarlos y los más probables. Medido sobre el padrón: el intervalo acierta lo que promete;
+        contra el mercado de goles no hay ventaja. `sinDato` sin modelo calibrado o sin historia.
+      properties:
+        sinDato: { type: string }
+        local: { $ref: '#/components/schemas/GolesLado' }
+        visita: { $ref: '#/components/schemas/GolesLado' }
+        marcadorAcotado:
+          type: object
+          properties:
+            marcadores: { type: array, items: { type: string } }
+            prob: { type: number }
+        masProbables: { type: array, items: { type: object, properties: { marcador: { type: string }, prob: { type: number } } } }
+        masDe2_5: { type: number }
+        ambosMarcan: { type: number }
+        modelo: { type: object, additionalProperties: true }
+        nota: { type: string }
+    GolesAcotadosEquipo:
+      type: object
+      description: 'la misma lectura desde un equipo: `mete` (sus goles) y `recibe` (los del rival)'
+      properties:
+        sinDato: { type: string }
+        mete: { $ref: '#/components/schemas/GolesLado' }
+        recibe: { $ref: '#/components/schemas/GolesLado' }
+        marcadorAcotado: { type: object, additionalProperties: true }
+        masProbables: { type: array, items: { type: object, additionalProperties: true } }
+        masDe2_5: { type: number }
+        ambosMarcan: { type: number }
+        modelo: { type: object, additionalProperties: true }
+        nota: { type: string }
     Eliminatoria:
       type: object
       description: >
@@ -2974,6 +3022,9 @@ components:
             fixtureId: { type: integer }
             fecha: { type: string, nullable: true }
         otrasFamilias: { $ref: '#/components/schemas/OtrasFamilias' }
+        golesAcotados:
+          allOf: [{ $ref: '#/components/schemas/GolesAcotadosEquipo' }]
+          description: 'con próximo: cuánto mete y cuánto recibe el equipo, acotado (REVENTON §17); sinDato sin modelo o sin historia'
         separacionLiga:
           type: object
           description: >-
@@ -3503,6 +3554,11 @@ components:
           properties:
             a: { $ref: '#/components/schemas/EspinaLado' }
             b: { $ref: '#/components/schemas/EspinaLado' }
+        golesAcotados:
+          allOf: [{ $ref: '#/components/schemas/GolesAcotados' }]
+          nullable: true
+          readOnly: true
+          description: 'solo en el GET: el intervalo de goles de cada lado y el marcador acotado, calculado al leer (REVENTON §17). Lectura del marcador, no señal de apuesta'
         reventonCalculado:
           type: object
           nullable: true
@@ -4744,6 +4800,15 @@ components:
             declarado: { type: string }
             real: { type: string }
             acerto: { type: boolean }
+        golesAcotados:
+          type: object
+          description: 'si los goles reales cayeron en el intervalo de cada lado y en el marcador acotado (REVENTON §17); ausente sin modelo o sin historia'
+          properties:
+            intervaloLocal: { type: boolean }
+            intervaloVisita: { type: boolean }
+            marcadorAcotado: { type: boolean }
+            probPrometida: { type: number }
+            real: { type: string }
         eliminatoria:
           allOf: [{ $ref: '#/components/schemas/Eliminatoria' }]
           description: 'solo en eliminación directa; `avanzaLado` a | b (el 1X2 y `marcador.ganador` siguen a 90'')'

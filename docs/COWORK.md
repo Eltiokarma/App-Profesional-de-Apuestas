@@ -1220,6 +1220,16 @@ Escribís vos (es juicio, no se puede calcular):
   partes llegaron con el número en `ieNivel` y quedaron sin nivel: ahora eso
   vuelve en `rechazos` (y el número se rescata en `ie`). `disciplina43` solo
   va en true si mandás las dos vías (o los indicadores): sin eso se rechaza.
+- **El marcador y el falsador parten de los GOLES ACOTADOS** (30/10/2026,
+  REVENTON §17): `golesAcotados` de `GET /equipos/{id}/burbujas?proximo={id}`
+  (cuánto mete y cuánto recibe cada equipo, en un intervalo de dos goles con su
+  probabilidad, y el marcador acotado de cuatro marcadores). Medido sobre el
+  padrón, el intervalo acierta lo que promete (64 %) y el marcador acotado 41 %.
+  El marcador declarado va DENTRO del acotado salvo un hecho de este partido
+  que lo saque, dicho en la lectura; el falsador puede escribirse sobre el
+  intervalo («si X mete 3 o más»). No copies los números al parte (se calculan
+  al leer en `lecturaSad.golesAcotados`) y NO es señal de apuesta: contra el
+  mercado de goles no hay ventaja.
 - Los eventos INSTITUCIONALES del timeline en `timelineEventos` (nunca partidos).
   **Quién pasó una llave NO se deduce del marcador** (incidencia 774: Palmeiras
   pasó a la final por penales y un parte lo dio por eliminado): sale de

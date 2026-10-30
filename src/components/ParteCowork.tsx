@@ -10,6 +10,7 @@
 // publica el once a esa hora) y se muestra como dos ramas: el piso y el techo
 // razonable del impacto. Cuando el once aparece —de la ficha ya ingestada o
 // del pantallazo que el usuario pega aquí— el bloque se cierra al instante.
+import { GolesAcotadosPartido } from './GolesAcotados'
 import { useEffect, useMemo, useState } from 'react'
 import type { MatrizParte,
   BloqueTde, DisponibilidadParte, DocumentoParte, EquipoParte, JugadorParte, ParteCoworkDTO, RamaF, Semaforo, TdeParte,
@@ -1316,6 +1317,9 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
               <div style={{ font: '500 12.5px var(--sans)', color: 'var(--t1)', lineHeight: 1.5 }}>{ls.paradoja}</div>
             </section>
           )}
+
+          {/* GOLES ACOTADOS (REVENTON §17): calculados al leer, lectura del marcador */}
+          {ls.golesAcotados && <GolesAcotadosPartido g={ls.golesAcotados} />}
 
           {/* REVENTÓN DE LA BURBUJA: los números los calcula el backend al leer
               (docs/REVENTON.md); la línea de abajo es la lectura de Cowork */}

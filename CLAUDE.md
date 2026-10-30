@@ -1207,7 +1207,19 @@ conversación se pierde en la siguiente.
      mejoran el 1X2; §15: la burbuja de goles no predice mejor que la
      frecuencia propia) NO es esta pregunta. Y el marcador no se repite tanto:
      un equipo que empata mucho empata con marcadores distintos. Backtest en
-     `backend/backtest_goles.py` (REVENTON §17).
+     `backend/backtest_goles.py` (REVENTON §17). **Medido el 30/10**: el cruce
+     local × visita acota de verdad (−0,051 de log-loss), las constantes
+     agregan poco (−0,002), el intervalo de dos goles acierta 64 % (promete 65 %)
+     y el marcador acotado 41 %; contra el mercado de goles NO hay ventaja (el
+     +17 % de «ambos marcan» era el artefacto de Marathonbet) y el marcador se
+     repite lo que da el azar. **HECHO el mismo día**: `backend/analisis/goles.py`
+     (las mismas variables que el backtest) da `golesAcotados` en `/burbujas`
+     (tarjeta), en `lecturaSad` del parte (al leer) y en `objetivo` del
+     veredicto, y Aprendizaje lo mide (`acreditables.golesAcotados`). El modelo
+     calibrado se pega en `goles.MODELO_GOLES` desde `backtest_goles --padron
+     --modelo`; sin él, `sinDato`. El prompt pide el marcador dentro del
+     acotado; falta escribirlo en `sad-analysis` (paso 3.5 y el falsador 6-C)
+     en la próxima revisión.
 
 ## Siguientes pasos (en orden)
 

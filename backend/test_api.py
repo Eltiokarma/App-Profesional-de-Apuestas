@@ -6,6 +6,7 @@ import os as _os_cache; _os_cache.environ.setdefault("SAD_CACHE_OBJETIVO_S", "0"
 _os_cache.environ.setdefault("SAD_CACHE_INVENTARIO_S", "0")  # ídem el inventario de lecciones
 import os
 import json
+import math
 import sys
 import tempfile
 
@@ -455,6 +456,36 @@ def main():
     check("una liga sin medir no inventa un AUC", _sep.de_liga(999)["auc"] is None
           and _sep.de_liga(999)["nivel"] == "sin medir")
     check("/equipos/999999/burbujas → 404", c.get(A + "/equipos/999999/burbujas").status_code == 404)
+    # LOS GOLES ACOTADOS (REVENTON §17): sin modelo calibrado lo dice; con uno, intervalo y marcador acotado
+    from backend.analisis import goles as _gol
+    _fx_ga = c.get(A + f"/constantes/{betis}?limit=1").json()[0]["fixtureId"]
+    bu = c.get(A + f"/equipos/{betis}/burbujas?proximo={_fx_ga}").json()
+    if bu.get("proximo"):
+        check("/burbujas: sin modelo calibrado, golesAcotados dice sinDato (no inventa)",
+              "sinDato" in (bu.get("golesAcotados") or {}), bu.get("golesAcotados"))
+        _orig_m = _gol.MODELO_GOLES
+        _gol.MODELO_GOLES = {"vars": list(_gol.VARIABLES), "intercepto": math.log(1.3),
+                             "media": {v: 0.0 for v in _gol.VARIABLES}, "desvio": {v: 1.0 for v in _gol.VARIABLES},
+                             "beta": {v: (0.3 if v == "lnAtaque" else 0.0) for v in _gol.VARIABLES},
+                             "calibradoEn": "2026-10-30", "partidos": 1, "intervaloAcierta": 0.64,
+                             "marcadorAcotadoAcierta": 0.41}
+        try:
+            ga = c.get(A + f"/equipos/{betis}/burbujas?proximo={bu['proximo']['fixtureId']}").json().get("golesAcotados") or {}
+        finally:
+            _gol.MODELO_GOLES = _orig_m
+        mete = ga.get("mete") or {}
+        check("/burbujas: con modelo, mete y recibe con intervalo de dos y de tres goles, y el marcador acotado",
+              mete.get("intervalo", {}).get("hasta") == mete.get("intervalo", {}).get("desde", -9) + 1
+              and mete.get("intervaloAmplio", {}).get("hasta") == mete.get("intervaloAmplio", {}).get("desde", -9) + 2
+              and 0 < mete["intervalo"]["prob"] <= mete["intervaloAmplio"]["prob"] <= 1
+              and len(ga.get("marcadorAcotado", {}).get("marcadores") or []) == 4
+              and ga.get("modelo", {}).get("intervaloAcierta") == 0.64, ga)
+        _lam = _gol.acotar_lambdas(1.6, 0.9, "A", "B")
+        check("acotar: con 1,6 contra 0,9 goles esperados, local 1-2 y visita 0-1, marcadores 1-0 1-1 2-0 2-1",
+              (_lam["local"]["intervalo"]["desde"], _lam["visita"]["intervalo"]["desde"]) == (1, 0)
+              and _lam["marcadorAcotado"]["marcadores"] == ["1-0", "1-1", "2-0", "2-1"], _lam)
+        check("objetivo: 2-1 cae en el marcador acotado; 3-0 no", _gol.objetivo(_lam, 2, 1)["marcadorAcotado"]
+              and not _gol.objetivo(_lam, 3, 0)["marcadorAcotado"])
 
     # vista «al día del partido» (antesDe): la historia se corta ANTES del fixture
     # y ese fixture hace de próximo — releer un análisis pasado sin el resultado

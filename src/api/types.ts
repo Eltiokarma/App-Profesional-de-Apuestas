@@ -813,7 +813,33 @@ export interface BurbujasEquipoDTO {
   /** Cuánto separa el riesgo del reventón en la liga del equipo (AUC medido liga
    *  por liga el 29/10/2026). No mueve los puntos: dice cuánto pesar la guía. */
   separacionLiga?: SeparacionLigaDTO
+  /** Con próximo: cuánto mete y cuánto recibe, acotado (REVENTON §17). Lectura, no apuesta. */
+  golesAcotados?: GolesAcotadosEquipoDTO
 }
+
+export interface IntervaloGolesDTO { desde: number; hasta: number; prob: number }
+export interface GolesLadoDTO {
+  equipo: string
+  esperados: number
+  distribucion: Record<string, number>
+  /** el intervalo de dos goles más probable («mete 1 o 2») */
+  intervalo: IntervaloGolesDTO
+  /** el de tres goles: más ancho, más seguro */
+  intervaloAmplio: IntervaloGolesDTO
+}
+interface GolesComunDTO {
+  sinDato?: string
+  marcadorAcotado?: { marcadores: string[]; prob: number }
+  masProbables?: { marcador: string; prob: number }[]
+  masDe2_5?: number
+  ambosMarcan?: number
+  modelo?: { calibradoEn?: string; partidos?: number; intervaloAcierta?: number | null; marcadorAcotadoAcierta?: number | null }
+  nota?: string
+}
+/** Los goles acotados de un partido (backend/analisis/goles.py). */
+export interface GolesAcotadosDTO extends GolesComunDTO { local?: GolesLadoDTO; visita?: GolesLadoDTO }
+/** La misma lectura desde un equipo. */
+export interface GolesAcotadosEquipoDTO extends GolesComunDTO { mete?: GolesLadoDTO; recibe?: GolesLadoDTO }
 
 export interface SeparacionLigaDTO {
   ligaId: number | null
@@ -1482,6 +1508,8 @@ export interface LecturaSadParte {
   /** Solo en el GET: el reventón de cada lado con este partido como próximo,
    *  familia total, calculado al leer (docs/REVENTON.md). */
   reventonCalculado?: Record<'a' | 'b', ReventonLadoDTO> | null
+  /** Solo en el GET: el intervalo de goles de cada lado y el marcador acotado (REVENTON §17). */
+  golesAcotados?: GolesAcotadosDTO | null
 }
 
 export interface ReventonLadoDTO {
@@ -1682,6 +1710,8 @@ export interface VeredictoObjetivo {
     nota: string
   }
   marcadorExacto?: { declarado: string; real: string; acerto: boolean }
+  /** ¿Los goles reales cayeron en lo acotado? (REVENTON §17) */
+  golesAcotados?: { intervaloLocal: boolean; intervaloVisita: boolean; marcadorAcotado: boolean; probPrometida: number; real: string }
   /** Solo en eliminación directa: quién pasó (`avanzaLado` a | b). */
   eliminatoria?: EliminatoriaDTO
   /** Brier de TRES resultados (0 perfecto, 2 máximo). No es el binario del TDE. */
@@ -2347,6 +2377,9 @@ export interface InventarioLecciones {
     /** TDE v0.1.24 (65): el desenlace leído del que persigue, por lectura. */
     desenlaceTde?: Record<DesenlaceTde, { tramos: number; cumplidos: number | null; deDefecto: number;
       observado: Record<string, number>; tasa: number | null; intervalo: [number, number] | null }> & { nota: string }
+    /** Los goles acotados contra lo que salió (REVENTON §17). */
+    golesAcotados?: { partidos: number; intervalo: { aciertos: number; de: number; tasa: number | null };
+      marcadorAcotado: { aciertos: number; de: number; tasa: number | null; prometido: number | null }; nota: string }
     /** El reventón en producción contra el backtest (docs/REVENTON.md §11). */
     reventon?: ReventonMetricas
     /** ¿La espina de la burbuja acierta más que la frecuencia de cada movimiento? */
