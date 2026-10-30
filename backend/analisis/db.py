@@ -331,7 +331,7 @@ def costo_medido(tipo: str, faltantes: int, tolerancia: int = 1,
                 "AND costo > 0 ORDER BY id DESC LIMIT ?",
                 (tipo, faltantes - tolerancia, faltantes + tolerancia, limite),
             ).fetchall()
-    except Exception:
+    except Exception:  # noqa: BLE001 — sin la tabla de costos: sin estimación, nunca un número inventado
         return 0.0, 0.0, 0
     costos = [f["costo"] for f in filas]
     if not costos:
@@ -358,7 +358,7 @@ def corridas_recientes(limite: int = 20, fixture_id: int | None = None) -> list[
                     f"SELECT {_CAMPOS_CORRIDA} FROM corridas ORDER BY id DESC LIMIT ?",
                     (limite,)).fetchall()
         return [dict(f) for f in filas]
-    except Exception:
+    except Exception:  # noqa: BLE001 — sin la tabla de costos: lista vacía
         return []
 
 

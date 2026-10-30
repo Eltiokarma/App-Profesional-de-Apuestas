@@ -564,7 +564,14 @@ y con freno.
    módulo): antes de parchar, buscá la MISMA regla en los otros módulos
    (`grep` de la función o del criterio: el cruce de nombres vive en
    `bloque_f`, `f1_base`, `dtp_cowork`, `parte` y `ingesta/jugadores`) y
-   arreglala en todos los que la usan, con un test por cada uno. **Hasta 6
+   arreglala en todos los que la usan, con un test por cada uno. **Cada grupo
+   deja su guardia** (30/10/2026, usuario: «escaneo preventivo sobre nuestro
+   código»): decí a qué clase de `docs/FALLAS.md` pertenece y, si la clase es
+   nueva, sumala ahí con su guardia; si la regla se puede verificar leyendo el
+   código, va a `backend/test_arquitectura.py`; si se ve en los datos, a
+   `CHEQUEOS` del escaneo; si se ve en un parte, es una alerta calculada. La
+   identidad de un jugador o un DT se arregla SOLO en `backend/identidad.py`
+   (con su caso en `backend/test_identidad.py`). **Hasta 6
    GRUPOS de código por corrida (desde el 30/10/2026; antes 3), un PR por
    grupo** (cada uno con su batería del paso 5 en verde y
    su merge antes del siguiente): un grupo cierra todas sus incidencias de

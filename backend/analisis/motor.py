@@ -140,7 +140,7 @@ def _calendario_de(team_id: int) -> str:
         txt = calsad.texto_para_skills(team_id)
         if txt:
             return txt
-    except Exception:
+    except Exception:  # noqa: BLE001 — sin el calendario calculado cae a la lista escueta de próximos
         pass
     return _proximos_de(team_id)
 
@@ -262,7 +262,7 @@ def _hay_clave_api_football() -> bool:
     try:
         from backend.ingesta.extractor import leer_clave
         return bool(leer_clave())
-    except BaseException:
+    except BaseException:  # noqa: BLE001 — sin API_FOOTBALL_KEY leer_clave sale con SystemExit: no hay clave
         return False
 
 

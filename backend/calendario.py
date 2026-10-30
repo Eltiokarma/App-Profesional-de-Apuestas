@@ -52,7 +52,7 @@ def _hora() -> int:
 def _q(sql: str, params: tuple = ()) -> list:
     try:
         return db.query("sad", sql, params)
-    except Exception:
+    except Exception:  # noqa: BLE001 — base sin la tabla (vieja o demo): vacío, no un 500
         return []
 
 
@@ -356,7 +356,7 @@ def _posiciones(liga_id: int, temporada: int, bucket: int, fase: str | None = No
     from backend.app import standings  # import perezoso: app importa este módulo
     try:
         return {r["equipoId"]: r["posicion"] for r in standings(liga_id, temporada, fase)}
-    except Exception:
+    except Exception:  # noqa: BLE001 — liga sin tabla de posiciones: sin posiciones
         return {}
 
 
@@ -373,7 +373,7 @@ def _max_pj_fase(liga_id: int, temporada: int, bucket: int, fase: str) -> int:
     from backend.app import standings
     try:
         return max((r.get("partidosJugados") or 0 for r in standings(liga_id, temporada, fase)), default=0)
-    except Exception:
+    except Exception:  # noqa: BLE001 — liga sin tabla de posiciones: 0 jugados
         return 0
 
 
@@ -396,7 +396,7 @@ def _gap(team_id: int, fecha: str | None) -> dict | None:
     from backend.app import gap_equipo
     try:
         return gap_equipo(team_id, fecha)
-    except Exception:
+    except Exception:  # noqa: BLE001 — sin niveles para el equipo: sin gap (no se inventa)
         return None
 
 

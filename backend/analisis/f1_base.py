@@ -628,13 +628,16 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     }
 
 
-def tabla(fixture_id: int) -> dict | None:
+def tabla(fixture_id: int, sanc: dict | None = None) -> dict | None:
+    """La tabla F1 de los dos lados. `sanc`: las sanciones ya calculadas
+    (`sanciones.de_fixture`), para no rehacerlas (el escaneo)."""
     from backend.analisis.parte import _fixture
     fx = _fixture(fixture_id)
     if not fx:
         return None
-    from backend import sanciones
-    sanc = sanciones.de_fixture(fixture_id)
+    if sanc is None:
+        from backend import sanciones
+        sanc = sanciones.de_fixture(fixture_id)
     return {
         "fixtureId": fixture_id,
         "a": _con_sanciones(tabla_equipo(fx["home_team_id"], fx["home_name"], fx["date"]), sanc.get("a")),
@@ -748,18 +751,19 @@ def alertas(parte: dict, fx, nombres: dict) -> list[dict]:
     return fuera
 
 
-def alertas_sancion(parte: dict, fx, nombres: dict) -> list[dict]:
+def alertas_sancion(parte: dict, fx, nombres: dict, sanc: dict | None = None) -> list[dict]:
     """SANCION-SIN-DECLARAR (30/10/2026, incidencias 772, 778 y 835): un
     sancionado de la base (`backend/sanciones.py`) que el parte no tiene en
     `fuera`. Se declara de baja con motivo «sanción» o la nota dice por qué
     juega (la prensa manda: una sanción levantada, una roja apelada)."""
     if not fx:
         return []
-    from backend import sanciones
-    try:
-        sanc = sanciones.de_fixture(fx["id"])
-    except Exception:  # noqa: BLE001 — sin la base de eventos no hay inferencia
-        return []
+    if sanc is None:
+        from backend import sanciones
+        try:
+            sanc = sanciones.de_fixture(fx["id"])
+        except Exception:  # noqa: BLE001 — sin la base de eventos no hay inferencia
+            return []
     out = []
     for lado in ("a", "b"):
         eq = (parte.get("equipos") or {}).get(lado) or {}

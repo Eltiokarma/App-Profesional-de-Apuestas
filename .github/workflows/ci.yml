@@ -22,6 +22,8 @@ jobs:
         run: npm run test:kview
       - name: Verificar el reventón de burbuja (espejo TS vs vectores dorados)
         run: npm run test:burbuja
+      - name: Otras burbujas (DC, márgenes, goles), espejo TS vs vectores dorados
+        run: npm run test:familias
       - name: Typecheck + build de producción
         run: npm run build
 
@@ -63,6 +65,18 @@ jobs:
         run: python -m backend.test_sanciones
       - name: La identidad de jugadores y DT, en un solo lugar
         run: python -m backend.test_identidad
+      - name: El escaneo preventivo del CÓDIGO (cada clase de falla con su guardia)
+        run: python -m backend.test_arquitectura
+      - name: Otras burbujas (familias) y sus backtests
+        run: |
+          python -m backend.test_familias
+          python -m backend.test_backtest_familias
+          python -m backend.test_backtest_forma
+      - name: Jev (adaptador, coherencia del parte y modo de fallo; sin clave corre simulado)
+        run: |
+          python -m backend.test_jev
+          python -m backend.test_coherencia
+          python -m backend.test_modo_fallo
       - name: Tests del chequeo previo del EFE (qué cuesta antes de gastar)
         run: python -m backend.test_preflight
       - name: Tests del parte de Cowork (bloque F calculado y cruce del once)

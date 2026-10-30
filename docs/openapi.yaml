@@ -1036,6 +1036,20 @@ paths:
                     description: 'los de enVentana con DTP-REHACER, con esas alertas en `alertas`'
                     items: { type: object }
                   nota: { type: string }
+  /analisis/cowork/contrato:
+    get:
+      summary: La forma del cuerpo del POST del parte, derivada de las constantes que validan
+      description: >
+        `/openapi.json` está apagado en despliegue (expone también lo que gasta dinero) y
+        quien deposita no puede adivinar la forma: esto sale de los mismos `_CLAVES_*` que
+        rechazan en backend/analisis/parte.py, así que no se desincroniza del código.
+        Abierto a Cowork.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
   /analisis/cowork/escaneo:
     get:
       summary: El escaneo preventivo de lo básico, antes de que un parte se escriba encima
@@ -3962,7 +3976,7 @@ components:
       type: object
       required: [codigo]
       properties:
-        codigo: { type: string, description: 'T.54, R-KT.2, GK-DOWNGRADE, F3… Las que agrega el backend al leer: K-EXTREMO (burbuja en su máximo), K-CERCA-EXTREMO (franja alta sin récord, tipo dato), HERENCIA-DTP (C1/SOB2 del TDE declarados distinto de lo que dice el DTP; manda el DTP), HUECO-DOBLE (EFE y TDE leídos del mismo vacío) ESCALA-LIGAS (los dos equipos vienen de ligas distintas: el nivel no compara entre bases), F1-DECISIVO-FUERA (un titular habitual o goleador de la base que no está en la tabla F1: no pesa en el IP) DTP-REHACER (el once oficial contradice el sistema o el XI de referencia de la apertura del DTP), EFE-EMPATE-TECNICO (26/10/2026: brecha del EFE ≥ 5 puntos con T.54 / R-KT.2 en un lado o ESCALA-LIGAS: empate técnico de formación, no ordena el partido; trae `brecha` y `motivos`), ESPINA-SIGUE-EN-EXTREMO (la espina dice que la racha sigue con la burbuja total o de la condición en K-EXTREMO o K-CERCA-EXTREMO) T.54-SIN-DECLARAR (EFE v1.8: el DT de un lado lleva menos de 6 meses y el parte no declara T.54 ni T.54-B ahí; trae `meses` y cuenta para EFE-EMPATE-TECNICO) SANCION-SIN-DECLARAR (30/10/2026: un sancionado de la base —roja o amarillas en el último partido de la competición— que el parte no tiene en `fuera`; trae `sancionados`) y ONCE-SIN-FILA-F1 (incidencia 743: titulares del once oficial sin fila en la tabla F1, que no pesan en el IP; trae `titulares`). Las CAPTURADAS al depositar por el guardrail de coherencia (Jev, docs/JEV.md): COHERENCIA-BLOQUE, COHERENCIA-1X2, COHERENCIA-MATCHUP, COHERENCIA-REVENTON — solo salen en la tira con SAD_JEV_COHERENCIA=alertas; en sombra viven en `coherencia`' }
+        codigo: { type: string, description: 'T.54, R-KT.2, GK-DOWNGRADE, F3… Las que agrega el backend al leer: K-EXTREMO (burbuja en su máximo), K-CERCA-EXTREMO (franja alta sin récord, tipo dato), K-EXTREMO-CONDICION y K-CERCA-EXTREMO-CONDICION (la K de la condición de hoy en su récord o en la franja alta, con la total sin él; tipo dato), ESPINA-VS-RIESGO (la espina declarada contra el riesgo calculado del reventón), DT-DISCREPANCIA (el DT del parte no es el de la base: la prensa manda, la base es alarma) y DT-SIN-DT (el parte o la base sin DT), TIPOLOGIA-VS-INDICES (la tipología modal del TDE contradice IE contra ISE), ELIMINATORIA-AL-REVES (29/10/2026: el parte da por eliminado al que pasó la llave, o al revés; la base lo calcula en backend/eliminatoria.py), HERENCIA-DTP (C1/SOB2 del TDE declarados distinto de lo que dice el DTP; manda el DTP), HUECO-DOBLE (EFE y TDE leídos del mismo vacío) ESCALA-LIGAS (los dos equipos vienen de ligas distintas: el nivel no compara entre bases), F1-DECISIVO-FUERA (un titular habitual o goleador de la base que no está en la tabla F1: no pesa en el IP) DTP-REHACER (el once oficial contradice el sistema o el XI de referencia de la apertura del DTP), EFE-EMPATE-TECNICO (26/10/2026: brecha del EFE ≥ 5 puntos con T.54 / R-KT.2 en un lado o ESCALA-LIGAS: empate técnico de formación, no ordena el partido; trae `brecha` y `motivos`), ESPINA-SIGUE-EN-EXTREMO (la espina dice que la racha sigue con la burbuja total o de la condición en K-EXTREMO o K-CERCA-EXTREMO) T.54-SIN-DECLARAR (EFE v1.8: el DT de un lado lleva menos de 6 meses y el parte no declara T.54 ni T.54-B ahí; trae `meses` y cuenta para EFE-EMPATE-TECNICO) SANCION-SIN-DECLARAR (30/10/2026: un sancionado de la base —roja o amarillas en el último partido de la competición— que el parte no tiene en `fuera`; trae `sancionados`) y ONCE-SIN-FILA-F1 (incidencia 743: titulares del once oficial sin fila en la tabla F1, que no pesan en el IP; trae `titulares`). Las CAPTURADAS al depositar por el guardrail de coherencia (Jev, docs/JEV.md): COHERENCIA-BLOQUE, COHERENCIA-1X2, COHERENCIA-MATCHUP, COHERENCIA-REVENTON — solo salen en la tira con SAD_JEV_COHERENCIA=alertas; en sombra viven en `coherencia`' }
         equipo: { type: string, enum: [a, b, ambos, global] }
         tipo: { type: string, enum: [estructural, fecha, dato], description: '`dato` = la pone el backend sobre los datos, no el skill' }
         detalle: { type: string, description: '`texto` se acepta como alias' }

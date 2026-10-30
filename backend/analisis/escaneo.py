@@ -111,8 +111,10 @@ def _pre(item: dict, ahora: datetime) -> list[dict]:
     for lado in ("a", "b"):
         for x in (sanc.get(lado) or {}).get("sancionados") or []:
             out.append(_hallazgo("sancion", item, f"{x['nombre']}: {x['detalle']}", lado))
+    # LAS SANCIONES SE CALCULAN UNA VEZ por partido y la tabla F1 y la alerta
+    # del parte las reciben hechas (antes, tres veces)
     try:
-        tabla = f1_base.tabla(fid) or {}
+        tabla = f1_base.tabla(fid, sanc=sanc) or {}
     except Exception:  # noqa: BLE001
         tabla = {}
     for lado in ("a", "b"):
@@ -148,7 +150,8 @@ def _pre(item: dict, ahora: datetime) -> list[dict]:
                 fila = con.execute("SELECT parte_json FROM parte_cowork WHERE fixture_id=?", (fid,)).fetchone()
             p = json.loads(fila["parte_json"]) if fila else None
             if p:
-                for a in f1_base.alertas_sancion(p, {"id": fid}, {"a": item.get("equipoA"), "b": item.get("equipoB")}):
+                for a in f1_base.alertas_sancion(p, {"id": fid}, {"a": item.get("equipoA"), "b": item.get("equipoB")},
+                                                 sanc=sanc):
                     out.append(_hallazgo("sancion-sin-declarar", item, a["detalle"], a["equipo"]))
         except Exception:  # noqa: BLE001
             pass
@@ -160,9 +163,13 @@ def _post(horas: int, ahora: datetime) -> tuple[list[dict], int]:
     from backend.analisis import parte as _parte
     desde = (ahora - timedelta(hours=horas)).strftime("%Y-%m-%d %H:%M:%S")
     hasta = ahora.strftime("%Y-%m-%d %H:%M:%S")
+    # SOLO LAS PARTES DE LA VENTANA, por la fecha del partido (índice
+    # idx_parte_fecha): antes se leían todas las partes y se filtraban en sad.db
     try:
         with _parte._conectar() as con:
-            ids = [r["fixture_id"] for r in con.execute("SELECT fixture_id FROM parte_cowork")]
+            ids = [r["fixture_id"] for r in con.execute(
+                "SELECT fixture_id FROM parte_cowork WHERE fecha BETWEEN ? AND ?",
+                ((ahora - timedelta(hours=horas + 24)).strftime("%Y-%m-%d"), ahora.strftime("%Y-%m-%d")))]
     except Exception:  # noqa: BLE001
         return [], 0
     if not ids:
@@ -204,9 +211,28 @@ def _post(horas: int, ahora: datetime) -> tuple[list[dict], int]:
     return out, n
 
 
-def escanear(horas: int = 36, jugados_horas: int = 48, ahora: datetime | None = None) -> dict:
+# el resultado entero se guarda unos minutos: el mantenimiento y la corrida de
+# partes pueden pedirlo seguido y la base no cambia tan rápido
+CACHE_S = 600
+_cache: dict[tuple, tuple[float, dict]] = {}
+
+
+def escanear(horas: int = 36, jugados_horas: int = 48, ahora: datetime | None = None,
+             fresco: bool = False) -> dict:
     """Los chequeos sobre la agenda de las próximas `horas` y las partes jugadas
-    en las últimas `jugados_horas`, agrupados por chequeo."""
+    en las últimas `jugados_horas`, agrupados por chequeo. Guardado `CACHE_S`
+    segundos (`fresco` lo salta); con `ahora` dado (tests) no se guarda."""
+    import time
+    clave = (horas, jugados_horas)
+    if ahora is None and not fresco and clave in _cache and time.time() - _cache[clave][0] < CACHE_S:
+        return {**_cache[clave][1], "deCache": True}
+    r = _escanear(horas, jugados_horas, ahora)
+    if ahora is None:
+        _cache[clave] = (time.time(), r)
+    return r
+
+
+def _escanear(horas: int, jugados_horas: int, ahora: datetime | None) -> dict:
     from backend.analisis import parte as _parte
     ahora = ahora or datetime.now(timezone.utc)
     try:

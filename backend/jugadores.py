@@ -54,7 +54,7 @@ def _query(sql: str, params: tuple = ()) -> list:
     """query sobre sad.db tolerante a DBs sin las tablas de jugadores."""
     try:
         return db.query("sad", sql, params)
-    except Exception:
+    except Exception:  # noqa: BLE001 — base sin la capa de jugadores: vacío, no un 500
         return []
 
 
