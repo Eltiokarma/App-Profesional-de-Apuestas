@@ -108,6 +108,22 @@ def mismo_jugador(uno: str, otro: str) -> bool:
     return a[-1] == b[-1] or apellido_casi(a[-1], b[-1])
 
 
+def ids_equivalentes(antes: dict, ahora: dict) -> dict:
+    """{id de `antes` → id de `ahora`} para el MISMO jugador con otro id entre
+    dos hojas (incidencia 899: «Lautaro Herrera» en entraron y en salieron de
+    `cambiosXi`, dos registros de la API). Solo ids que no están en la otra
+    hoja y con UN candidato por nombre (`mismo_jugador`): dos posibles, nada."""
+    sueltos = {i: n for i, n in ahora.items() if i not in antes}
+    out = {}
+    for i, n in antes.items():
+        if i in ahora or not n:
+            continue
+        cand = [j for j, m in sueltos.items() if m and mismo_jugador(n, m)]
+        if len(cand) == 1:
+            out[i] = cand[0]
+    return out
+
+
 def casa(tokens_plantel: list[str], tokens_hoja: list[str]) -> bool:
     """¿La hoja nombra a este jugador de la tabla? API-Football escribe
     «A. Campos»; la prensa «Ángelo Campos»; un pantallazo solo «Campos». El
