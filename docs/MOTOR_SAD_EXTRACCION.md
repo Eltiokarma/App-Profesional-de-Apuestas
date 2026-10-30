@@ -622,6 +622,14 @@ señal_calendario = blando si recuperabilidad > μ_genérica + 0.15
    (2 125 partidos con cuota) el motor pierde 0.061 de log-loss en las tres
    variantes; con 3+ amistosos, 0.084 (n=989) y en el resto 0.041. Queda como
    LECTURA: `ventanaNivel` y la fiabilidad «media» de `fiabilidadMu`.
+   **Localía por liga en el 1X2: EN MEDICIÓN** (30/10/2026, tras la 860:
+   `backend/backtest_localia_liga.py --padron`). La localía de cada liga se
+   estima en el entrenamiento como la diferencia de puntos local − visitante
+   que el nivel no explica, encogida hacia la de todas (Bayes empírico,
+   K = σ²/τ²), y el 1X2 se compara con la logística reajustada contra la
+   global 0.382, en todos, por liga y contra el mercado. Resultado pendiente
+   de la corrida en Railway; la fórmula no cambia sin el visto bueno del
+   usuario.
 4. **Veredicto de la ley con μ v2** (re-medición limpia, n=8 816): las
    señales del gap son débiles al partido siguiente (≤0.1 pts). Lo único
    que replicó en dos muestras: el **sobrerinde fuerte PERSISTE** al
