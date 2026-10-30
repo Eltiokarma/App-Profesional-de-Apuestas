@@ -1612,6 +1612,8 @@ def equipo_burbujas(equipo_id: int, antesDe: int | None = None, proximo: int | N
         _rg = _fam.get("riesgo") or {}
         _fam["espinaTarjeta"] = _burbuja.espina_tarjeta(((_fam.get("actual") or {}).get("signo")),
                                                         _rg.get("movimiento"))
+        if _fam["espinaTarjeta"] is None:
+            _fam["sinTarjeta"] = _burbuja.sin_tarjeta(_fam)   # el porqué del null (866)
     # LA ESCALA DEL RIVAL (copas, ascendidos): el riesgo compara su nivel con
     # los rivales que reventaron las burbujas en la liga del equipo; si el
     # rival viene de otra base, se dice y se trae lo que sí compara.

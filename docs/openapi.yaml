@@ -2847,6 +2847,7 @@ components:
         partidosEnCondicion: { type: integer }
         historialPorPeriodo: { type: array, items: { $ref: '#/components/schemas/HistorialPeriodo' } }
         espinaTarjeta: { $ref: '#/components/schemas/EspinaTarjeta', nullable: true }
+        sinTarjeta: { type: string, nullable: true, description: 'por qué espinaTarjeta es null (K en 0 · familia que no se mueve en el próximo · sin guía); ausente si hay tarjeta' }
         actual:
           type: object
           nullable: true
@@ -3633,7 +3634,9 @@ components:
             rival: { type: object, nullable: true }
             extremo: { $ref: '#/components/schemas/ExtremoBurbuja', nullable: true }
             espinaTarjeta: { $ref: '#/components/schemas/EspinaTarjeta', nullable: true }
+            sinTarjeta: { type: string, nullable: true, description: 'por qué la tarjeta de la condición es null' }
         espinaTarjeta: { $ref: '#/components/schemas/EspinaTarjeta', nullable: true }
+        sinTarjeta: { type: string, nullable: true, description: 'por qué espinaTarjeta es null (K en 0, sin guía); null si hay tarjeta' }
         estabilidad: { type: string, enum: [estable, en transición, inestable, sin dato] }
         partidos: { type: integer }
         aviso: { type: string }

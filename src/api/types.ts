@@ -728,6 +728,8 @@ export interface FamiliaBurbujaDTO {
   /** La espina que da la tarjeta sola (el movimiento más probable de la guía
    *  calibrada); null sin burbuja abierta o sin guía. */
   espinaTarjeta?: EspinaTarjetaDTO | null
+  /** Por qué no hay tarjeta (K en 0, otra condición, sin guía): 866. */
+  sinTarjeta?: string | null
   /** Dónde está la burbuja abierta frente a los reventones de su signo. */
   posicion: { percentilK: number; percentilRacha: number; kSobreMediana: number | null } | null
   /** El próximo rival frente al nivel con el que suele reventar (solo si la
@@ -1528,8 +1530,11 @@ export interface ReventonLadoDTO {
     rival: FamiliaBurbujaDTO['rival']
     extremo: ExtremoBurbujaDTO | null
     espinaTarjeta?: EspinaTarjetaDTO | null
+    sinTarjeta?: string | null
   }
   espinaTarjeta?: EspinaTarjetaDTO | null
+  /** Por qué no hay tarjeta (866). */
+  sinTarjeta?: string | null
   estabilidad: EstabilidadEquipoDTO['grado']
   partidos: number
   aviso: string

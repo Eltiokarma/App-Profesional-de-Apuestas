@@ -335,6 +335,14 @@ def main():
     check("sin burbuja o sin guía no hay espina de tarjeta",
           espina_tarjeta(None, {"sigue": 1}) is None and espina_tarjeta("+", None) is None)
 
+    from backend.analisis.burbuja import sin_tarjeta
+    _mov = {"sigue": 0.5, "cero": 0.3, "cambio": 0.2}
+    check("866: con la K en 0 la tarjeta vacía dice por qué (Lille tras el 1-1)",
+          "K en 0" in (sin_tarjeta({"actual": {"signo": "0", "k": 0}, "riesgo": {"movimiento": _mov}}) or ""))
+    check("866: la familia que no se mueve en el próximo dice por qué; con tarjeta, nada",
+          "no se mueve" in (sin_tarjeta({"actual": {"signo": "+"}, "riesgo": {"movimiento": None}}) or "")
+          and sin_tarjeta({"actual": {"signo": "+"}, "riesgo": {"movimiento": _mov}}) is None
+          and sin_tarjeta(None) is None)
     print(f"\n{fallos} FALLAS" if fallos else "\nTODO OK")
     return 1 if fallos else 0
 
