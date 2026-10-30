@@ -165,6 +165,23 @@ def espina_tarjeta(signo: str | None, movimiento: dict | None) -> dict | None:
             "fuerza": "fuerte" if prob >= ESPINA_FUERTE else "debil"}
 
 
+def sin_tarjeta(familia: dict | None) -> str | None:
+    """Por qué una familia NO trae espina de la tarjeta (None si la trae o si la
+    familia no existe). Incidencias 866 y 720: Lille tras el 1-1 salía con
+    `espinaTarjeta: null` y ningún campo decía que era porque la K estaba en 0."""
+    fam = familia or {}
+    if not fam:
+        return None
+    signo = (fam.get("actual") or {}).get("signo")
+    if signo not in ("+", "-"):
+        return ("K en 0: no hay burbuja abierta (el último partido la cortó o la dejó en cero); la tarjeta "
+                "dice adónde va una racha y sin racha no hay tarjeta — la espina sale de los skills")
+    if not (fam.get("riesgo") or {}).get("movimiento"):
+        return ("esta familia no se mueve en el próximo partido (se juega en la otra condición) o su riesgo "
+                "no tiene guía de movimiento calibrada: sin tarjeta")
+    return None
+
+
 AVISO = ("Guía, no probabilidad: compara la burbuja abierta con lo que este equipo aguantó "
          "antes de reventar (K, partidos y nivel del rival). Sirve para saber cuándo NO apostar.")
 

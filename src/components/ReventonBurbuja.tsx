@@ -369,6 +369,11 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
                 {fam.espinaTarjeta.escala && <Chip texto="otra escala: no seguirla por fuerte" color="var(--mark)" title={fam.espinaTarjeta.notaEscala} />}
               </div>
             )}
+            {!fam.espinaTarjeta && fam.sinTarjeta && (
+              <div style={{ marginTop: 5, font: '500 10px var(--sans)', color: 'var(--t3)' }}>
+                sin espina de la tarjeta: {fam.sinTarjeta}
+              </div>
+            )}
           </div>
 
           {base && !compact && (

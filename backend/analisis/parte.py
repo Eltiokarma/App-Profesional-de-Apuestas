@@ -868,12 +868,14 @@ def _reventon_calculado(fx) -> dict | None:
                          "extremo": fam.get("extremo"),
                          "espinaTarjeta": burbuja.espina_tarjeta(
                              (fam.get("actual") or {}).get("signo"), (fam.get("riesgo") or {}).get("movimiento")),
+                         "sinTarjeta": burbuja.sin_tarjeta(fam),   # el porqué del null (866)
                          "condicion": {"familia": "local" if cond == "L" else "visita",
                                        "actual": fc["actual"], "riesgo": fc["riesgo"], "rival": fc["rival"],
                                        "extremo": fc.get("extremo"),
                                        "espinaTarjeta": burbuja.espina_tarjeta(
                                            (fc.get("actual") or {}).get("signo"),
-                                           (fc.get("riesgo") or {}).get("movimiento"))},
+                                           (fc.get("riesgo") or {}).get("movimiento")),
+                                       "sinTarjeta": burbuja.sin_tarjeta(fc)},
                          "estabilidad": r["estabilidad"]["grado"], "partidos": r["partidos"], "aviso": r["aviso"],
                          # las OTRAS burbujas contadas (REVENTON §15-15.1): para
                          # la narrativa del parte, con la misma historia cortada
