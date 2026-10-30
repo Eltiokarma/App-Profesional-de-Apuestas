@@ -1135,4 +1135,40 @@ del equipo. Razón < 1 con `pMenos` ≤ 0,025 es «se repite menos que el azar»
 pesan los coeficientes sembrados), uno de ruido (no inventa nada), una serie
 que nunca repite (sale bajo el azar) y una al azar (queda en el azar).
 
-Pendiente: correrlo en el servidor con `--padron` y anotar acá el resultado.
+**Primera corrida (30/10/2026, padrón: 50.821 partidos de 995 equipos;
+entrenamiento 2019-04 → 2025-08, prueba 2025-08 → 2026-10 con 10.165; 1,35
+goles por equipo y partido):**
+
+| modelo | log-loss | intervalo de 2 goles | marcador acotado (2×2) | exacto |
+|---|---|---|---|---|
+| G0 · a mano | — | 61 % | — | — |
+| G1 · frecuencia | 2,679 | 62 % (prometía 64 %) | 39 % (41 %) | 11,4 % |
+| G2 · cruce | 2,628 | 64 % (65 %) | 41 % (42 %) | 12,0 % |
+| G3 · + K | 2,626 | 64 % (65 %) | 41 % (42 %) | 12,0 % |
+
+- **El cruce local × visita acota de verdad**: −0,051 de log-loss por partido
+  contra la frecuencia sola (IC −0,058 a −0,045). Lo que mete el local DE
+  LOCAL contra lo que recibe el visitante DE VISITA es la herramienta del
+  usuario hecha número, y es lo que más agrega.
+- **Las constantes agregan algo, poco**: −0,0019 (IC −0,0029 a −0,0009),
+  real pero 27 veces más chico que el cruce, y el intervalo y el marcador
+  acotado no cambian (64 % y 41 %). Dos señales que se tapan: la K de goles
+  anotados en la condición suma (+0,087 por desvío) y el LARGO de la racha de
+  marcar resta (−0,093): una racha larga de marcar tiende a cortarse, como
+  una burbuja.
+- **El intervalo «a mano» del usuario acierta 61 %**, a tres puntos del modelo.
+- **Más/menos 2,5: el mercado acota mejor** (+0,016 de log-loss para el
+  modelo, IC sobre cero) y apostar donde el modelo ve 5+ puntos pierde ~10 %.
+- **Ambos marcan: el modelo empata con el mercado en log-loss**, y el «valor»
+  salió con +17 % / +22 % de ROI, sospechoso: la primera versión promediaba
+  las cuotas de todas las casas sin sacar a las INCOHERENTES (Marathonbet
+  manda otro mercado con ese nombre, Sí 7.8 / No 1.04: el mismo artefacto que
+  ya había inventado un +25 %). Corregido el 30/10 —filtro de
+  `cuota_mercados.casas_dos_salidas_incoherentes`, cobro a la mediana de las
+  casas sanas y el valor separado por lado (sí / no)—: hay que volver a
+  correrlo antes de creer nada.
+- **El marcador se repite lo que da el azar**: 7.716 repeticiones contra
+  7.636 esperadas (razón 1,01, dentro del rango), y los empates repiten el
+  marcador del empate anterior un 1,6 % MÁS que el azar (10.003 contra 9.845),
+  no menos —esperable en series largas con épocas de más o menos goles—. La
+  intuición de que «empata con marcador diferente» no se sostiene.
