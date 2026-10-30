@@ -1231,6 +1231,15 @@ Escribís vos (es juicio, no se puede calcular):
   acotado el veredicto mide el intervalo solo). No mueve el 1X2. No copies los números al parte (se calculan
   al leer en `lecturaSad.golesAcotados`) y NO es señal de apuesta: contra el
   mercado de goles no hay ventaja.
+- **Los sancionados de la base van en `fuera`** (30/10/2026, incidencias 772, 778
+  y 835: Neymar disponible con una roja encima). `GET /analisis/cowork/f1/{id}`
+  trae por lado `sancionados` (roja directa o doble amarilla en el último
+  partido de ESTA competición, o la amarilla que completa el ciclo de la
+  competición, calculados de las tarjetas de la ficha): cada uno va en `fuera`
+  con estado baja, motivo «sanción», zona y rol. Si la prensa dice que juega (una
+  apelación, una sanción que no aplica), la nota del equipo lo dice con la
+  fuente. Si no, el recibo devuelve `SANCION-SIN-DECLARAR`. Una roja directa
+  puede valer más de una fecha: la base solo sabe de la siguiente.
 - Los eventos INSTITUCIONALES del timeline en `timelineEventos` (nunca partidos).
   **Quién pasó una llave NO se deduce del marcador** (incidencia 774: Palmeiras
   pasó a la final por penales y un parte lo dio por eliminado): sale de

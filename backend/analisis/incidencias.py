@@ -31,7 +31,8 @@ import unicodedata
 
 from backend.analisis import db as efedb
 
-ORIGENES = ("partes", "veredictos", "reventones", "mantenimiento", "usuario")
+# `escaneo`: lo que el escaneo preventivo encontró antes de que un parte tropezara (30/10/2026)
+ORIGENES = ("partes", "veredictos", "reventones", "mantenimiento", "usuario", "escaneo")
 AREAS = ("dt", "once", "ficha", "tde", "dtp", "f1", "timeline", "reventon", "burbujas", "agenda",
          "latido", "cuotas", "api", "contrato", "skill", "aprendizaje", "otro")
 SEVERIDADES = ("bloquea", "error", "aviso")

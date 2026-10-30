@@ -460,6 +460,34 @@ def _partidos_temporada(team_id: int, temporada) -> int | None:
     return (fila["n"] or None) if fila else None
 
 
+def _con_sanciones(t: dict, sanc: dict | None) -> dict:
+    """LA SANCIÓN DE LA BASE EN LA TABLA (30/10/2026, incidencias 772, 778 y
+    835): cada fila del sancionado lleva `sancion` y el lado trae la lista
+    entera en `sancionados` (también los que quedaron fuera del corte) y las
+    amarillas que lleva cada uno en la competición."""
+    if not sanc:
+        return t
+    por_id = {s["jugadorId"]: s for s in sanc.get("sancionados") or [] if s.get("jugadorId")}
+    amar = {a["jugadorId"]: a["amarillas"] for a in sanc.get("amarillas") or [] if a.get("jugadorId")}
+    for f in t["candidatos"]:
+        ids = [f["jugadorId"], *(f.get("idsAlternos") or [])]
+        s_ = next((por_id[i] for i in ids if i in por_id), None)
+        if s_ is None:
+            s_ = next((x for x in sanc.get("sancionados") or [] if not x.get("jugadorId")
+                       and mismo_jugador(x.get("nombre") or "", f["nombre"])), None)
+        if s_ is not None:
+            f["sancion"] = s_
+        n = sum(amar.get(i, 0) for i in ids)
+        if n:
+            f["amarillasEnLaCompeticion"] = n
+    t["sancionados"] = sanc.get("sancionados") or []
+    if sanc.get("regla"):
+        t["reglaAmarillas"] = sanc["regla"]
+    if sanc.get("conteoParcial"):
+        t["amarillasConteoParcial"] = sanc["conteoParcial"]
+    return t
+
+
 def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     p = jug.plantilla_de(team_id)
     js = p.get("jugadores") or []
@@ -617,15 +645,19 @@ def tabla(fixture_id: int) -> dict | None:
     fx = _fixture(fixture_id)
     if not fx:
         return None
+    from backend import sanciones
+    sanc = sanciones.de_fixture(fixture_id)
     return {
         "fixtureId": fixture_id,
-        "a": tabla_equipo(fx["home_team_id"], fx["home_name"], fx["date"]),
-        "b": tabla_equipo(fx["away_team_id"], fx["away_name"], fx["date"]),
+        "a": _con_sanciones(tabla_equipo(fx["home_team_id"], fx["home_name"], fx["date"]), sanc.get("a")),
+        "b": _con_sanciones(tabla_equipo(fx["away_team_id"], fx["away_name"], fx["date"]), sanc.get("b")),
         "nota": ("punto de partida de la tabla F1, calculado de la temporada ingestada: copiá el "
                  "`jugadorId` (es el cruce exacto con la hoja del partido) y confirmá el rol con la "
                  "prensa —`rolSugerido` sale de los últimos onces (o de los minutos, ver `rolPor`) y no sabe de un DT nuevo ni de una "
                  "lesión larga—. Los `decisivo` no pueden faltar: si faltan, el parte avisa "
-                 "F1-DECISIVO-FUERA"),
+                 "F1-DECISIVO-FUERA. Los `sancionados` (roja o amarillas en el último partido de esta "
+                 "competición, de la base) van en `fuera` con estado baja y motivo «sanción», salvo que la "
+                 "prensa diga lo contrario: si no, el parte avisa SANCION-SIN-DECLARAR"),
     }
 
 
@@ -739,3 +771,44 @@ def alertas(parte: dict, fx, nombres: dict) -> list[dict]:
                              "sale de GET /analisis/cowork/f1/{id}.",
             })
     return fuera
+
+
+def alertas_sancion(parte: dict, fx, nombres: dict) -> list[dict]:
+    """SANCION-SIN-DECLARAR (30/10/2026, incidencias 772, 778 y 835): un
+    sancionado de la base (`backend/sanciones.py`) que el parte no tiene en
+    `fuera`. Se declara de baja con motivo «sanción» o la nota dice por qué
+    juega (la prensa manda: una sanción levantada, una roja apelada)."""
+    if not fx:
+        return []
+    from backend import sanciones
+    try:
+        sanc = sanciones.de_fixture(fx["id"])
+    except Exception:  # noqa: BLE001 — sin la base de eventos no hay inferencia
+        return []
+    out = []
+    for lado in ("a", "b"):
+        eq = (parte.get("equipos") or {}).get(lado) or {}
+        fuera = eq.get("fuera") or []
+        ids_fuera = {f.get("jugadorId") for f in fuera if f.get("jugadorId") is not None}
+        notas = " ".join(str((b or {}).get("nota") or "") for b in (eq.get("bloques") or {}).values()
+                         if isinstance(b, dict))
+        sin = []
+        for x in (sanc.get(lado) or {}).get("sancionados") or []:
+            if x.get("jugadorId") in ids_fuera or any(mismo_jugador(x.get("nombre") or "", f.get("nombre") or "")
+                                                       for f in fuera):
+                continue
+            ape = (bloque_f._tokens(x.get("nombre") or "") or [""])[-1]
+            if ape and ape in bloque_f._tokens(notas) and "sancion" in normalizar_simple(notas):
+                continue        # la nota lo trata: «X juega, la sanción se apeló»
+            sin.append(x)
+        if sin:
+            out.append({
+                "codigo": "SANCION-SIN-DECLARAR", "equipo": lado, "tipo": "dato",
+                "detalle": f"La base dice que en {nombres.get(lado, lado)} no juegan "
+                           + "; ".join(f"{x['nombre']} ({x['detalle']})" for x in sin)
+                           + ", y el parte no los tiene en `fuera`. Van de baja con motivo «sanción» (su rol "
+                             "pesa en el IP) o la nota dice por qué juegan, con la fuente. Lista en "
+                             "GET /analisis/cowork/f1/{id} → `sancionados`.",
+                "sancionados": [{k: x.get(k) for k in ("jugadorId", "nombre", "tipo", "fecha")} for x in sin],
+            })
+    return out

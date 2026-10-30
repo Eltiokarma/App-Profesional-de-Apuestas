@@ -2270,7 +2270,8 @@ _CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto", "ligas", "dtBa
 _ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "K-EXTREMO-CONDICION", "K-CERCA-EXTREMO-CONDICION", "FAMILIA-RECORD", "ESPINA-VS-RIESGO", "HERENCIA-DTP", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT", "DT-VS-BANCO",
                         "COLAPSO-EN-CASCADA", "F1-DECISIVO-FUERA", "DTP-REHACER", "DTP-SIN-REFERENCIA",
                         "TIPOLOGIA-VS-INDICES", "ESPINA-SIGUE-EN-EXTREMO", "EFE-EMPATE-TECNICO",
-                        "T.54-SIN-DECLARAR", "ELIMINATORIA-AL-REVES"}
+                        "T.54-SIN-DECLARAR", "ELIMINATORIA-AL-REVES", "SANCION-SIN-DECLARAR",
+                        "ONCE-SIN-FILA-F1"}
 # LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
 # selladas (coherencia_json), porque no son deterministas y rehacerlas al leer
 # las haría parpadear. Del depósito se descartan igual que las calculadas
@@ -3031,6 +3032,14 @@ def guardar(payload: dict) -> dict:
             faltan.append({"bloque": f"equipos.{a['equipo']}", "codigo": a["codigo"], "costara": a["detalle"],
                            "comoSeArregla": "reescribir con la llave como la dice la base (GET /fixtures/{id}/ficha "
                                             "→ `eliminatoria`, o el título del evento en el timeline)"})
+    except Exception:  # noqa: BLE001 — un aviso nunca tumba el depósito
+        pass
+    # un sancionado de la base que el parte tiene disponible: se corrige antes del partido
+    try:
+        for a in _f1_base.alertas_sancion(parte, fx, {"a": fx["home_name"], "b": fx["away_name"]}):
+            faltan.append({"bloque": f"equipos.{a['equipo']}.fuera", "codigo": a["codigo"], "costara": a["detalle"],
+                           "comoSeArregla": "declararlo en `fuera` con estado baja y motivo «sanción» (con zona y "
+                                            "rol), o decir en la nota del equipo por qué juega, con la fuente"})
     except Exception:  # noqa: BLE001 — un aviso nunca tumba el depósito
         pass
     if not any((parte.get("cadena") or {}).get(l) for l in LADOS):
@@ -3834,6 +3843,20 @@ def dto(fixture_id: int) -> dict | None:
                   if ra else None)
         if f3:
             alertas.append({**f3, "equipo": lado})
+        # TITULARES DEL ONCE OFICIAL SIN FILA EN LA TABLA F1 (incidencia 743, 7
+        # veces: Lecce con 8 nombres de la hoja sin reconocer, Vasco con Jair,
+        # Lucas Freitas y Gabriel Pereira). No pesan en el IP ni como factor X:
+        # el bloque F se cerró sobre otro equipo y nadie lo decía.
+        sin_fila = disp.get("noReconocidosOnce") or []
+        if disp.get("resuelto") and sin_fila:
+            alertas.append({
+                "codigo": "ONCE-SIN-FILA-F1", "equipo": lado, "tipo": "dato",
+                "detalle": f"{len(sin_fila)} titular(es) del once oficial sin fila en la tabla F1: "
+                           f"{', '.join(sin_fila)}. No pesan en el IP ni en el FACTOR-X: si son caras "
+                           "nuevas o rotados, el EFE y el bloque F leyeron otro equipo (con 3 o más, "
+                           "rehacer la tabla F1 con GET /analisis/cowork/f1/{id} y re-depositar).",
+                "titulares": sin_fila,
+            })
         equipos[lado] = {**eq, **tot, "disponibilidad": disp}
     tde_calc = _tde_calculado(parte.get("tde") or {}, _dtp.herencia_tde(parte.get("dtp") or {}))
     # la herencia que contradice lo declarado se dice: el DTP manda, pero un
@@ -3904,6 +3927,8 @@ def dto(fixture_id: int) -> dict | None:
     alertas.extend(alertas_eliminatoria(parte, fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # un decisivo de la base que no está en la tabla F1 no pesa en el IP
     alertas.extend(_f1_base.alertas(parte, fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
+    # un sancionado de la base (roja o amarillas) que el parte no declaró de baja
+    alertas.extend(_f1_base.alertas_sancion(parte, fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # el once oficial contra la apertura del DTP: si no cuadra, el M2 se
     # escribió sobre otro equipo
     oficial = _dtp.oficial_de(fila["fixture_id"])

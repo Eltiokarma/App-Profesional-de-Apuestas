@@ -2570,6 +2570,18 @@ def cowork_rehacer(desdeMin: int = Query(default=15, ge=0, le=240), hastaMin: in
     return cowork.rehacer_pendientes(desdeMin, hastaMin)
 
 
+@app.get(API + "/analisis/cowork/escaneo")
+def cowork_escaneo(horas: int = Query(default=36, ge=1, le=168),
+                   jugadosHoras: int = Query(default=48, ge=1, le=336)):
+    """EL ESCANEO PREVENTIVO (30/10/2026): los chequeos de lo básico —quién no
+    puede jugar, quién es quién, quién dirige, si el partido existe y si el
+    mercado está— sobre la agenda de las próximas `horas` y las partes jugadas
+    en las últimas `jugadosHoras`, agrupados por chequeo. Solo lee; el
+    mantenimiento deposita lo que encuentra como incidencias."""
+    from backend.analisis.escaneo import escanear
+    return escanear(horas, jugadosHoras)
+
+
 @app.get(API + "/analisis/cowork/latido")
 def cowork_latido(horas: int = Query(default=36, ge=1, le=336)):
     """¿Está corriendo el pipeline, o lleva dos días muerto y nadie se enteró?
