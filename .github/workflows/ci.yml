@@ -66,7 +66,9 @@ jobs:
       - name: La identidad de jugadores y DT, en un solo lugar
         run: python -m backend.test_identidad
       - name: De qué está hecho el nivel del motor (amistosos e internacionales en la ventana)
-        run: python -m backend.test_ventana_nivel
+        run: |
+          python -m backend.test_ventana_nivel
+          python -m backend.test_backtest_nivel_ventana
       - name: El escaneo preventivo del CÓDIGO (cada clase de falla con su guardia)
         run: python -m backend.test_arquitectura
       - name: Otras burbujas (familias) y sus backtests
