@@ -550,6 +550,14 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     # ── la llave: el 1X2 es a 90' y el «ganador» de arriba también; quién PASÓ
     # sale aparte, con la tanda y el global (incidencia 774: «ganador b» y
     # Palmeiras había pasado a la final por penales) ─────────────────────────
+    # ── los goles acotados: ¿los goles reales cayeron en el intervalo? ───────
+    from backend.analisis import goles as goles_acotados
+    try:
+        ga = goles_acotados.objetivo(goles_acotados.acotar_fixture(fx), gl, gv)
+    except Exception:  # noqa: BLE001 — sin historia o sin modelo, no se mide
+        ga = None
+    if ga:
+        out["golesAcotados"] = ga
     from backend import eliminatoria
     llave = eliminatoria.desenlace(fixture_id)
     if llave:

@@ -301,6 +301,7 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
     acred = {"acierto": 0, "parcial": 0, "fallo": 0}
     casos_acred, briers, reales, con_reparto = 0, [], [], 0
     unxdos_ok, unxdos_de = 0, 0
+    goles_ac = {"partidos": 0, "intervalos": 0, "marcador": 0, "prometido": 0.0}
     confianza: list[dict] = []
     tde_obs, tde_positivos, tde_sin_ficha, tde_contaminadas = 0, 0, 0, 0
     reloj_obs, reloj_positivos = 0, 0
@@ -353,6 +354,12 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
         obj = _objetivo(caso["fixtureId"], caso["parte"])
         if not obj.get("jugado"):
             continue
+        gac = obj.get("golesAcotados")
+        if gac:
+            goles_ac["partidos"] += 1
+            goles_ac["intervalos"] += int(gac["intervaloLocal"]) + int(gac["intervaloVisita"])
+            goles_ac["marcador"] += int(gac["marcadorAcotado"])
+            goles_ac["prometido"] += gac["probPrometida"]
         ux = obj.get("unXDos") or {}
         if ux.get("declarado"):
             unxdos_de += 1
@@ -445,12 +452,29 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
                     "ciega. `sinFicha` no cuenta como no ocurrido: no se pudo comprobar",
         },
         "desenlaceTde": _cerrar_desenlace(desenlace),
+        # los goles acotados (REVENTON §17): ¿acierta lo que promete en los partidos del parte?
+        "golesAcotados": _cerrar_goles(goles_ac),
         "reventon": _cerrar_reventon(rev),
         "espina": {**_cerrar_espina(espina, movimientos),
                    "porGuia": {g: _cerrar_espina(*por_guia[g]) for g in por_guia},
                    "tarjeta": _cerrar_tarjeta(tar)},
     }
     return poblacion, metricas
+
+
+def _cerrar_goles(g: dict) -> dict:
+    n = g["partidos"]
+    return {
+        "partidos": n,
+        "intervalo": {"aciertos": g["intervalos"], "de": 2 * n,
+                      "tasa": round(g["intervalos"] / (2 * n), 3) if n else None},
+        "marcadorAcotado": {"aciertos": g["marcador"], "de": n,
+                            "tasa": round(g["marcador"] / n, 3) if n else None,
+                            "prometido": round(g["prometido"] / n, 3) if n else None},
+        "nota": "el intervalo de dos goles de cada equipo y el marcador acotado (calculados, REVENTON §17) "
+                "contra lo que salió, en los partes que acreditan; en el backtest del padrón el intervalo "
+                "acertó 64 % y el marcador acotado 41 %",
+    }
 
 
 # LA CONFIANZA DEL 1X2 POR TRAMO (25/10/2026, pedido del usuario): lo que

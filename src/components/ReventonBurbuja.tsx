@@ -5,6 +5,7 @@
 import type { BaseNivelDTO, BurbujasEquipoDTO, OtrasFamiliasDTO, DistribucionDTO, EscalaRivalDTO, FamiliaBurbuja, FamiliaBurbujaDTO, HistorialPeriodoDTO, HistorialSignoDTO, ReventonDTO, SeparacionLigaDTO } from '../api/types'
 import type { KCondKey } from '../data/types'
 import { fmtK, signFmt } from '../lib/kview'
+import { GolesAcotadosEquipo } from './GolesAcotados'
 
 interface Props {
   data: BurbujasEquipoDTO | null
@@ -327,6 +328,9 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
 
           {/* cuánto separa el riesgo en SU liga (29/10/2026): con paridad, la guía pesa menos */}
           {data.separacionLiga && <SeparacionLiga s={data.separacionLiga} />}
+
+          {/* los goles acotados contra el próximo rival (REVENTON §17): lectura, no apuesta */}
+          {data.golesAcotados && <GolesAcotadosEquipo g={data.golesAcotados} equipo={data.nombre ?? 'el equipo'} />}
 
           {/* el veredicto con sus motivos, uno por punto */}
           <div style={{ padding: '9px 11px', borderRadius: 9, background: `color-mix(in oklch, ${RIESGO_COLOR[riesgo.nivel]}, transparent 90%)`, border: `1px solid color-mix(in oklch, ${RIESGO_COLOR[riesgo.nivel]}, transparent 60%)` }}>

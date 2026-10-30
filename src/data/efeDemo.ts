@@ -258,6 +258,8 @@ export function parteCoworkDemo(fixtureId: number, equipoA: string, equipoB: str
       h2a: 'verde', h2b: 'verde', h2c: 'ambar',
     },
     lecturaSad: {
+      // generado con backend.analisis.goles.acotar_lambdas(1.55, 1.05): la demo usa la MISMA cuenta
+      golesAcotados: golesDemo(equipoA, equipoB),
       moduloOperativo: 'Regresión al Nivel con gap favorable al local; módulo de goles habilitado.',
       unXDos: { texto: 'Local con ventaja estructural; el empate es el escenario de cobertura.', rangoAmpliado: false },
       contextoEmocional: 'El visitante llega de dos derrotas y con el interino sin margen: la presión externa empuja a un planteo conservador.',
@@ -595,4 +597,13 @@ export function leccionesDemo(skill: string, estado: string, cohorte = ''): Inve
     estados: ['pendiente', 'en_revision', 'aplicada', 'descartada'],
     items: filtrados,
   }
+}
+
+// Goles acotados de la demo: generados con backend.analisis.goles.acotar_lambdas
+// (1,55 contra 1,05 goles esperados), no calculados en TS.
+const GOLES_DEMO = {"local": {"equipo": "@A", "esperados": 1.55, "distribucion": {"0": 0.212, "1": 0.329, "2": 0.255, "3+": 0.204}, "intervalo": {"desde": 1, "hasta": 2, "prob": 0.584}, "intervaloAmplio": {"desde": 0, "hasta": 2, "prob": 0.796}}, "visita": {"equipo": "@B", "esperados": 1.05, "distribucion": {"0": 0.35, "1": 0.367, "2": 0.193, "3+": 0.09}, "intervalo": {"desde": 0, "hasta": 1, "prob": 0.717}, "intervaloAmplio": {"desde": 0, "hasta": 2, "prob": 0.91}}, "marcadorAcotado": {"marcadores": ["1-0", "1-1", "2-0", "2-1"], "prob": 0.419}, "masProbables": [{"marcador": "1-1", "prob": 0.121}, {"marcador": "1-0", "prob": 0.115}, {"marcador": "2-1", "prob": 0.094}, {"marcador": "2-0", "prob": 0.089}, {"marcador": "0-1", "prob": 0.078}], "masDe2_5": 0.482, "ambosMarcan": 0.512, "modelo": {"calibradoEn": "demo", "partidos": 0, "intervaloAcierta": 0.64, "marcadorAcotadoAcierta": 0.41}, "nota": "lectura del marcador, calculada (0 tokens): el intervalo de dos goles de cada equipo y los cuatro marcadores que salen de cruzarlos, con su probabilidad. Medido sobre el padrón: el intervalo acierta lo que promete y el cruce local × visita es lo que más pesa; contra el mercado de goles no hay ventaja (REVENTON §17): no es una señal de apuesta"} as const
+
+function golesDemo(a: string, b: string): ParteCoworkDTO['lecturaSad']['golesAcotados'] {
+  const g = JSON.parse(JSON.stringify(GOLES_DEMO).split('@A').join(a).split('@B').join(b))
+  return g
 }

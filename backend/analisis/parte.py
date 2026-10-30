@@ -798,6 +798,18 @@ def _espina(x, rechazos: list) -> dict:
     return out
 
 
+def _goles_acotados(fx) -> dict | None:
+    """El intervalo de goles de cada lado y el marcador acotado (REVENTON §17),
+    con la historia anterior al partido. Un fallo se declara, no tumba el parte."""
+    if not fx:
+        return None
+    from backend.analisis import goles as _goles
+    try:
+        return _goles.acotar_fixture(fx)
+    except Exception as e:  # noqa: BLE001
+        return {"sinDato": f"no se pudo calcular: {e}"}
+
+
 def _reventon_calculado(fx) -> dict | None:
     """El reventón de la burbuja de cada equipo con ESTE partido como próximo
     (docs/REVENTON.md), calculado AL LEER como el timeline y el bloque F: si la
@@ -3885,7 +3897,9 @@ def dto(fixture_id: int) -> dict | None:
         "alertas": alertas,
         "matchup": parte["matchup"],
         # la lectura de Cowork + el reventón CALCULADO al leer, uno por lado
-        "lecturaSad": {**(parte.get("lecturaSad") or _lectura_sad({})), "reventonCalculado": reventon},
+        "lecturaSad": {**(parte.get("lecturaSad") or _lectura_sad({})), "reventonCalculado": reventon,
+                       # los goles acotados del partido (REVENTON §17), calculados al leer
+                       "golesAcotados": _goles_acotados(fx)},
         "tde": tde_calc,
         "dtp": dtp_leido,
         "timeline": timeline,

@@ -54,48 +54,28 @@ from datetime import datetime, timezone
 os.environ.setdefault("SAD_SIN_HILOS", "1")
 
 from backend import db  # noqa: E402
+from backend.analisis import goles as _goles  # noqa: E402
 from backend.app import constantes_de, mu, niveles_de  # noqa: E402
 from backend.backtest_burbuja import (MIN_PREFIJO, _equipos, _nivel_a_fecha, _nombres_ligas,  # noqa: E402
                                       _resolver, padron)
 
 GUARDADO = ".backtest_goles.json"
-N_SERIE = 10            # partidos de la serie en la condición (el «1, 2, 2, 2, 1…»)
-PREVIA = 3.0            # cuántos partidos «imaginarios» con la media de la condición
-MEDIA_LOCAL, MEDIA_VISITA = 1.45, 1.15   # goles por partido de referencia (sin mirar la prueba)
+# las variables y su construcción son las de backend/analisis/goles.py: lo que
+# la app muestra es exactamente lo que se mide acá
+N_SERIE, PREVIA = _goles.N_SERIE, _goles.PREVIA
+MEDIA_LOCAL, MEDIA_VISITA = _goles.MEDIA_LOCAL, _goles.MEDIA_VISITA
 PRUEBA = 0.2
 RIDGE = 1e-2
 NEWTON_ITER = 25
 BOOTSTRAP = 500
 PERMUTACIONES = 200
-MAX_GOLES = 10
+MAX_GOLES = _goles.MAX_GOLES
 CLASES = ("0", "1", "2", "3+")
 
 MODELOS = {
     "G2 cruce": ["lnAtaque", "lnDefensa", "local", "d"],
-    "G3 cruce + K": ["lnAtaque", "lnDefensa", "local", "d",
-                     "kGaCondAt", "kGrCondDef", "kGaAt", "kGrDef", "rachaMarcaAt", "rachaRecibeDef"],
+    "G3 cruce + K": list(_goles.VARIABLES),
 }
-
-
-def _slog(x) -> float:
-    x = float(x or 0.0)
-    return math.copysign(math.log1p(abs(x)), x)
-
-
-def _media(serie: list[int], previa: float) -> float:
-    """Lo que mete (o recibe) en la condición, encogido hacia la referencia:
-    con 3 partidos no se sabe lo mismo que con 10."""
-    return (sum(serie) + PREVIA * previa) / (len(serie) + PREVIA)
-
-
-def _racha(serie: list[int]) -> int:
-    """Partidos seguidos, contando desde el último, con al menos un gol."""
-    n = 0
-    for g in reversed(serie):
-        if g < 1:
-            break
-        n += 1
-    return n
 
 
 def banda_usuario(serie: list[int]) -> int | None:
@@ -124,23 +104,12 @@ def lado_equipo(team_id: int, ligas: set[int] | None) -> dict[int, dict]:
         if nv is None:
             continue
         cond = fila["condicion"]
-        previas = [f for f in filas[:i] if f["golesFavor"] is not None and f["golesContra"] is not None]
-        en_cond = [f for f in previas if f["condicion"] == cond][-N_SERIE:]
-        if len(en_cond) < 3:
+        v = _goles.variables_de(filas[:i], cond)
+        if v is None:
             continue
-        marca = [int(f["golesFavor"]) for f in en_cond]
-        recibe = [int(f["golesContra"]) for f in en_cond]
-        k = filas[i - 1]["fusion"]          # la fila de ESTE partido ya trae su resultado
-        c = "Local" if cond == "Local" else "Visita"
         out[fila["fixtureId"]] = {
             "local": cond == "Local", "nivel": nv, "fecha": fila["fecha"], "liga": fila["ligaId"],
-            "gf": int(fila["golesFavor"]), "ga": int(fila["golesContra"]),
-            "serieMarca": marca, "serieRecibe": recibe,
-            "mediaMarca": _media(marca, MEDIA_LOCAL if cond == "Local" else MEDIA_VISITA),
-            "mediaRecibe": _media(recibe, MEDIA_VISITA if cond == "Local" else MEDIA_LOCAL),
-            "kGaCond": _slog(k[f"goles{c}Anotado"]), "kGrCond": _slog(k[f"goles{c}Recibido"]),
-            "kGa": _slog(k["golesAnotado"]), "kGr": _slog(k["golesRecibido"]),
-            "rachaMarca": math.log1p(_racha(marca)), "rachaRecibe": math.log1p(_racha(recibe)),
+            "gf": int(fila["golesFavor"]), "ga": int(fila["golesContra"]), **v,
         }
     return out
 
@@ -148,11 +117,7 @@ def lado_equipo(team_id: int, ligas: set[int] | None) -> dict[int, dict]:
 def _ataque(at: dict, de: dict, d: float) -> dict:
     """Una observación por equipo que ATACA: sus goles contra la defensa del otro."""
     return {"y": at["gf"], "serie": at["serieMarca"], "mediaFrecuencia": at["mediaMarca"],
-            "x": {"lnAtaque": math.log(at["mediaMarca"]), "lnDefensa": math.log(de["mediaRecibe"]),
-                  "local": 1.0 if at["local"] else 0.0, "d": d,
-                  "kGaCondAt": at["kGaCond"], "kGrCondDef": de["kGrCond"],
-                  "kGaAt": at["kGa"], "kGrDef": de["kGr"],
-                  "rachaMarcaAt": at["rachaMarca"], "rachaRecibeDef": de["rachaRecibe"]}}
+            "x": _goles.vector_ataque(at, de, at["local"], d)}
 
 
 def observaciones(equipos: list[int], ligas: set[int] | None) -> list[dict]:
@@ -216,10 +181,7 @@ def _fila(f: dict, vars_: list[str], esc: dict) -> list[float]:
     return [1.0] + [(f["x"][v] - esc[v][0]) / esc[v][1] for v in vars_]
 
 
-def poisson(lam: float) -> list[float]:
-    """P(0..MAX_GOLES) con la cola en el último."""
-    ps = [math.exp(-lam) * lam ** k / math.factorial(k) for k in range(MAX_GOLES)]
-    return ps + [max(0.0, 1.0 - sum(ps))]
+poisson = _goles.poisson
 
 
 def _clase(y: int) -> int:
@@ -232,8 +194,7 @@ def _ll(ps: list[float], y: int) -> float:
 
 
 def mejor_banda(ps: list[float]) -> int:
-    """La ventana (k, k+1) más probable."""
-    return max(range(0, 5), key=lambda k: (ps[k] + ps[k + 1], -k))
+    return _goles.mejor_banda(ps, 2)
 
 
 def _ic_dif(a: list[float], b: list[float], semilla: int = 7) -> dict:
@@ -320,6 +281,27 @@ def correr(obs: list[dict], mercado_de=None) -> dict:
     if mercado_de is not None:
         out["mercado"] = contra_mercado(test, lam, mercado_de([o["fixtureId"] for o in test]))
     return out
+
+
+# ── el modelo para la app ────────────────────────────────────────────────────
+
+def modelo_produccion(obs: list[dict], res: dict | None = None) -> dict:
+    """G3 ajustado con TODOS los partidos (la prueba ya habló): lo que se pega
+    en `backend/analisis/goles.MODELO_GOLES`. Con `res` (la corrida con corte)
+    lleva cuánto acertó en la prueba, que es lo que la pantalla promete."""
+    vars_ = list(_goles.VARIABLES)
+    ataques = [o[l] for o in obs for l in ("local", "visita")]
+    esc = _escala(ataques, vars_)
+    beta = ajustar([_fila(a, vars_, esc) for a in ataques], [a["y"] for a in ataques])
+    g3 = (res or {}).get("modelos", {}).get("G3 cruce + K") or {}
+    return {
+        "vars": vars_, "intercepto": round(beta[0], 6),
+        "media": {v: round(esc[v][0], 6) for v in vars_}, "desvio": {v: round(esc[v][1], 6) for v in vars_},
+        "beta": {v: round(b, 6) for v, b in zip(vars_, beta[1:])},
+        "calibradoEn": datetime.now(timezone.utc).strftime("%Y-%m-%d"), "partidos": len(obs),
+        "intervaloAcierta": (g3.get("intervalo") or {}).get("acierta"),
+        "marcadorAcotadoAcierta": (g3.get("marcadorAcotado") or {}).get("acierta"),
+    }
 
 
 # ── el mercado de goles en los mismos partidos ───────────────────────────────
@@ -512,7 +494,7 @@ def lectura(res: dict, comp: dict) -> str:
 
 
 def correr_backtest(*, padron_: bool = False, liga: int | None = None, muestra: int = 0,
-                    min_filas: int = 12, semilla: int = 42) -> dict:
+                    min_filas: int = 12, semilla: int = 42, modelo: bool = False) -> dict:
     ligas, nombres = None, {}
     if padron_:
         nombres = padron()
@@ -524,7 +506,10 @@ def correr_backtest(*, padron_: bool = False, liga: int | None = None, muestra: 
     if muestra and muestra < len(equipos):
         random.seed(semilla)
         equipos = random.sample(equipos, muestra)
-    r = correr(observaciones(equipos, ligas), mercado_de=cuotas_goles)
+    obs = observaciones(equipos, ligas)
+    r = correr(obs, mercado_de=cuotas_goles)
+    if modelo and not r.get("error"):
+        r["modeloProduccion"] = modelo_produccion(obs, r)
     r["repeticion"] = repeticion_marcadores(series_de(equipos, ligas))
     r["equipos"] = len(equipos)
     r["ligasEvaluadas"] = sorted(nombres.values()) if ligas else ["todas"]
@@ -605,9 +590,15 @@ def main():
     ap.add_argument("--min-filas", type=int, default=12)
     ap.add_argument("--semilla", type=int, default=42)
     ap.add_argument("--json", help="guardar también en este archivo")
+    ap.add_argument("--modelo", action="store_true",
+                    help="ajustar G3 con todos los partidos e imprimir MODELO_GOLES para backend/analisis/goles.py")
     a = ap.parse_args()
-    r = correr_backtest(padron_=a.padron, liga=a.liga, muestra=a.muestra, min_filas=a.min_filas, semilla=a.semilla)
+    r = correr_backtest(padron_=a.padron, liga=a.liga, muestra=a.muestra, min_filas=a.min_filas, semilla=a.semilla,
+                        modelo=a.modelo)
     imprimir(r)
+    if r.get("modeloProduccion"):
+        print("\n— pegar en backend/analisis/goles.py —")
+        print("MODELO_GOLES = " + json.dumps(r["modeloProduccion"], ensure_ascii=False))
     if not r.get("error"):
         print(f"\nguardado en {guardar(r)}")
     if a.json:

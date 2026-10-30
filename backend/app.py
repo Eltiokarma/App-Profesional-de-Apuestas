@@ -1646,6 +1646,17 @@ def equipo_burbujas(equipo_id: int, antesDe: int | None = None, proximo: int | N
         _lc = _fx_copa["league_id"] if _fx_copa else None
         if _lc in separacion_liga.COPAS_MEDIDAS:
             r["separacionLiga"] = separacion_liga.de_liga(_lc, liga_meta(_lc).get("nombre"))
+    # LOS GOLES ACOTADOS contra el próximo rival (REVENTON §17, 30/10/2026):
+    # cuánto mete y cuánto recibe, en un intervalo con su probabilidad. Lectura
+    # del marcador, no señal de apuesta; con la historia anterior al partido.
+    if prox:
+        from backend.analisis import goles as _goles
+        try:
+            _fx_g = get_fixture(prox["fixtureId"])
+            r["golesAcotados"] = _goles.desde_equipo(_goles.acotar_fixture(_fx_g),
+                                                     _fx_g["home_team_id"] == equipo_id)
+        except Exception as e:  # noqa: BLE001 — se declara, no tumba la tarjeta
+            r["golesAcotados"] = {"sinDato": f"no se pudo calcular: {e}"}
     if antesDe is not None:
         r["estabilidad"]["motivos"] = [
             "vista al día del partido: la plantilla de hoy no es la de entonces y no se usa; "
