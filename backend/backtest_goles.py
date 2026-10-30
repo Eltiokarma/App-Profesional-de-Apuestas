@@ -325,10 +325,14 @@ def correr(obs: list[dict], mercado_de=None) -> dict:
 # ── el mercado de goles en los mismos partidos ───────────────────────────────
 
 def cuotas_goles(fixture_ids: list[int]) -> dict:
-    """{fx: {"ou": P(más de 2,5), "btts": P(ambos marcan), "cuotas": {...}}} sin
-    margen, promedio entre casas; sin cuotas sintéticas."""
-    from backend.cuota_mercados import cuota_key
-    por_fx: dict[int, dict] = {}
+    """{fx: {"ou": P(más de 2,5), "btts": P(ambos marcan), "ouCuotas": (sí, no), …}}
+    sin margen, promedio entre casas, sin cuotas sintéticas y SIN LAS CASAS
+    INCOHERENTES (`cuota_mercados.casas_dos_salidas_incoherentes`): Marathonbet
+    manda otro mercado con el nombre de «ambos marcan» (Sí 7.8 / No 1.04) y la
+    media inventaba un ROI de +25 % (ya pasó una vez). Se cobra a la cuota
+    MEDIANA de las casas sanas, no a la media: una casa rara no la mueve."""
+    from backend.cuota_mercados import casas_dos_salidas_incoherentes, cuota_key
+    filas_fx: dict[int, list[dict]] = {}
     ids = list(dict.fromkeys(fixture_ids))
     for i in range(0, len(ids), 500):
         lote = ids[i:i + 500]
@@ -343,20 +347,33 @@ def cuotas_goles(fixture_ids: list[int]) -> dict:
             k = cuota_key(f["bet_name"], f["value"])
             if not k or k[0] not in ("ou", "btts"):
                 continue
-            casa = f["bookmaker_id"] if f["bookmaker_id"] is not None else f["bookmaker_name"]
-            por_fx.setdefault(f["fixture_id"], {}).setdefault(k[0], {}).setdefault(casa, {})[k[1]] = float(f["odd"])
+            casa = str(f["bookmaker_id"] if f["bookmaker_id"] is not None else f["bookmaker_name"])
+            filas_fx.setdefault(f["fixture_id"], []).append(
+                {"casa": casa, "mercado": k[0], "seleccion": k[1], "cuota": float(f["odd"])})
     out = {}
-    for fx, mercados in por_fx.items():
+    for fx, filas in filas_fx.items():
+        fuera = casas_dos_salidas_incoherentes(filas)
         r = {}
         for m, (si, no) in (("ou", ("O", "U")), ("btts", ("Y", "N"))):
-            casas = [c for c in (mercados.get(m) or {}).values() if si in c and no in c]
+            por_casa: dict[str, dict[str, float]] = {}
+            for f in filas:
+                if f["mercado"] == m and (f["casa"], m) not in fuera:
+                    por_casa.setdefault(f["casa"], {})[f["seleccion"]] = f["cuota"]
+            casas = [c for c in por_casa.values() if si in c and no in c]
             if casas:
                 ps = [(1 / c[si]) / (1 / c[si] + 1 / c[no]) for c in casas]
                 r[m] = sum(ps) / len(ps)
-                r[m + "Cuotas"] = (sum(c[si] for c in casas) / len(casas), sum(c[no] for c in casas) / len(casas))
+                r[m + "Cuotas"] = (_mediana([c[si] for c in casas]), _mediana([c[no] for c in casas]))
+                r[m + "Casas"] = len(casas)
         if r:
             out[fx] = r
     return out
+
+
+def _mediana(xs: list[float]) -> float:
+    s = sorted(xs)
+    n = len(s)
+    return s[n // 2] if n % 2 else (s[n // 2 - 1] + s[n // 2]) / 2
 
 
 def _bin_ll(p: float, y: bool) -> float:
@@ -369,6 +386,11 @@ def _modelo_mercados(ll_: float, lv_: float) -> tuple[float, float]:
     return 1 - sum(total[:3]), (1 - math.exp(-ll_)) * (1 - math.exp(-lv_))
 
 
+def _roi(g: list[float]) -> dict:
+    return {"apuestas": len(g), "roi": round(sum(g) / len(g), 4) if g else None,
+            "ic95": _ic_dif([0.0] * len(g), g)["ic95"] if len(g) >= 20 else None}
+
+
 def contra_mercado(test: list[dict], lam: dict, cuotas: dict) -> dict:
     out = {}
     for m, idx_p in (("ou", 0), ("btts", 1)):
@@ -379,7 +401,7 @@ def contra_mercado(test: list[dict], lam: dict, cuotas: dict) -> dict:
         ll_merc = []
         por_modelo = {}
         for n in ("G2 cruce", "G3 cruce + K"):
-            lls, ganancia = [], []
+            lls, ganancia, lado_si, lado_no = [], [], [], []
             for i in idx:
                 o = test[i]
                 yl, yv = o["local"]["y"], o["visita"]["y"]
@@ -391,9 +413,12 @@ def contra_mercado(test: list[dict], lam: dict, cuotas: dict) -> dict:
                 # apuesta de 1 unidad donde el modelo ve 5+ puntos de ventaja sobre el mercado
                 if p - pm >= 0.05:
                     ganancia.append(c_si - 1 if y else -1.0)
+                    lado_si.append(ganancia[-1])
                 elif pm - p >= 0.05:
                     ganancia.append(c_no - 1 if not y else -1.0)
-            por_modelo[n] = {"logLoss": round(sum(lls) / len(lls), 5), "_ll": lls, "apuestas": ganancia}
+                    lado_no.append(ganancia[-1])
+            por_modelo[n] = {"logLoss": round(sum(lls) / len(lls), 5), "_ll": lls, "apuestas": ganancia,
+                             "si": lado_si, "no": lado_no}
         for i in idx:
             o = test[i]
             yl, yv = o["local"]["y"], o["visita"]["y"]
@@ -403,12 +428,12 @@ def contra_mercado(test: list[dict], lam: dict, cuotas: dict) -> dict:
         for n, v in por_modelo.items():
             g = v["apuestas"]
             r[n] = {"logLoss": v["logLoss"], "modeloMenosMercado": _ic_dif(ll_merc, v["_ll"]),
-                    "valor": {"apuestas": len(g), "roi": round(sum(g) / len(g), 4) if g else None,
-                              "ic95": _ic_dif([0.0] * len(g), g)["ic95"] if len(g) >= 20 else None}}
+                    "valor": _roi(g), "valorSi": _roi(v["si"]), "valorNo": _roi(v["no"])}
         out[m] = r
     out["nota"] = ("más/menos 2,5 goles y ambos marcan, en los MISMOS partidos de la prueba con cuota; mercado sin "
                    "margen, promedio entre casas. modeloMenosMercado negativo = el modelo acota mejor que el mercado. "
-                   "`valor`: 1 unidad donde el modelo ve 5+ puntos sobre el mercado, a la cuota media (con margen)")
+                   "`valor`: 1 unidad donde el modelo ve 5+ puntos sobre el mercado, a la cuota MEDIANA de las casas "
+                   "coherentes (con margen); `valorSi` / `valorNo`: la misma cuenta separada por lado")
     return out
 
 
@@ -557,6 +582,10 @@ def imprimir(r: dict):
                 roi = f"{vl['roi']:+.1%}" if vl["roi"] is not None else "—"
                 print(f"  {n:<14} log-loss {y['logLoss']:.4f} · modelo − mercado {d['media']:+.5f} {d['ic95']} · "
                       f"valor: {vl['apuestas']} apuestas, roi {roi} {vl['ic95'] or ''}")
+                for lado, et in (("valorSi", "a «sí/más»"), ("valorNo", "a «no/menos»")):
+                    z = y.get(lado) or {}
+                    if z.get("apuestas"):
+                        print(f"  {'':<14}   {et}: {z['apuestas']} apuestas, roi {z['roi']:+.1%} {z['ic95'] or ''}")
         print(f"\n{r['lectura']}")
     rep = r.get("repeticion")
     if rep:

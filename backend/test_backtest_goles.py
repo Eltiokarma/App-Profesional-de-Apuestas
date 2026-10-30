@@ -98,6 +98,20 @@ cm = bt.contra_mercado(test, lam, cuotas)
 check("modelo idéntico al mercado: diferencia de log-loss cero y ninguna apuesta de valor",
       cm["ou"]["G2 cruce"]["modeloMenosMercado"]["media"] == 0 and cm["ou"]["G2 cruce"]["valor"]["apuestas"] == 0, cm["ou"])
 
+# 4-bis) la casa que manda OTRO mercado con el nombre de «ambos marcan» no entra
+import sqlite3 as _sq  # noqa: E402
+_con = _sq.connect(os.path.join(_tmp, "sad.db"))
+_filas = [(1, "Bet365", "Yes", 1.80), (1, "Bet365", "No", 1.95), (2, "Unibet", "Yes", 1.85), (2, "Unibet", "No", 1.90),
+          (3, "Pinnacle", "Yes", 1.83), (3, "Pinnacle", "No", 1.97), (4, "Marathonbet", "Yes", 7.80),
+          (4, "Marathonbet", "No", 1.04)]
+_con.executemany("INSERT INTO odds (fixture_id, league_id, bookmaker_id, bookmaker_name, bet_id, bet_name, value, odd) "
+                 "VALUES (777001, 1, ?, ?, 8, 'Both Teams Score', ?, ?)", _filas)
+_con.commit()
+_con.close()
+_cg = bt.cuotas_goles([777001])[777001]
+check("Marathonbet (Sí 7.8 / No 1.04) sale por el consenso: 3 casas, cuota mediana 1.83 y P(sí) ≈ 0,51",
+      _cg["bttsCasas"] == 3 and _cg["bttsCuotas"][0] == 1.83 and 0.49 < _cg["btts"] < 0.53, _cg)
+
 # 5) ¿el marcador se repite?
 rnd = random.Random(5)
 marcadores = [(1, 0), (0, 0), (2, 1), (1, 1), (0, 1), (2, 2), (3, 0)]
