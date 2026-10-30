@@ -2062,7 +2062,26 @@ def _bloque_tde(x, rechazos: list, donde: str, lado: str = "") -> dict:
         "vias": vias,
         "falsador": _txt(x.get("falsador")),
         "reasignacion": ise_de_ramas(_reasignacion(x.get("reasignacion"), rechazos, f"{donde}.reasignacion"), ind),
-    }
+        # LA PROSA DEL BLOQUE SE GUARDA (incidencia 863: `notas` llegaba, el recibo
+        # no la rechazaba y el GET no la devolvía: se perdía callada)
+        "notas": _txt(x.get("notas")),
+    } | _claves_tde_ignoradas(x, rechazos, donde)
+
+
+# Lo que el bloque del TDE guarda. Una clave fuera de esta lista NO se tira en
+# silencio: vuelve en `rechazos` con su nombre (FALLAS.md §5, la falla callada).
+CLAVES_BLOQUE_TDE = {"equipo", "indicadores", "ie", "ieNivel", "ise", "iseNivel", "tipologia", "ventana",
+                     "disciplina43", "vias", "falsador", "reasignacion", "notas"}
+
+
+def _claves_tde_ignoradas(x: dict, rechazos: list, donde: str) -> dict:
+    fuera = sorted(k for k in x if k not in CLAVES_BLOQUE_TDE)
+    if fuera:
+        rechazos.append({"donde": donde,
+                         "porque": f"el bloque del TDE no guarda {', '.join(f'`{k}`' for k in fuera)}: "
+                                   "no se guardó; la prosa va en `notas`",
+                         "esperado": ", ".join(sorted(CLAVES_BLOQUE_TDE))})
+    return {}
 
 
 HEREDA_SOB2 = ("siMarcaPrimero",)   # la rama donde el equipo va adelante, no persigue
