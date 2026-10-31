@@ -265,6 +265,12 @@ def guardar_alineaciones(con: sqlite3.Connection, fixture_id: int, respuesta: li
             continue
         formacion = lado.get("formation")
         dt = limpiar_nombre((lado.get("coach") or {}).get("name"))
+        # UN PAÍS O UN EQUIPO NO ES UN DT (incidencia 1019, «Bolívia» en la hoja
+        # de San Antonio): no se guarda, como en /coachs
+        if dt:
+            from backend.ingesta.jugadores import _nombre_entero, nombres_que_no_son_dt
+            if _nombre_entero(dt) in nombres_que_no_son_dt(con):
+                dt = None
         titulares = []
         for titular, lista in ((1, lado.get("startXI") or []), (0, lado.get("substitutes") or [])):
             for it in lista:

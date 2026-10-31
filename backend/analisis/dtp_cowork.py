@@ -255,7 +255,8 @@ def insumos_equipo(team_id: int, nombre: str, fx) -> dict:
         "stats": {"tiros": _stat(st, "Total Shots"), "tirosAlArco": _stat(st, "Shots on Goal"),
                   "xg": _stat(st, "expected_goals"), "pases": _stat(st, "Total passes"),
                   "tirosRival": _stat(st_r, "Total Shots"), "xgRival": _stat(st_r, "expected_goals")},
-        "xi": {"formacion": ali.get("formacion") or "", "entrenador": ali.get("entrenador") or "",
+        "xi": {"formacion": ali.get("formacion") or "",
+               "entrenador": (ali.get("entrenador") or "") if jug_es_dt(ali.get("entrenador")) else "",
                "conGrid": bool(ali.get("conGrid")),
                "titulares": [{"nombre": j["nombre"], "posicion": j["posicion"], "carril": j["carril"]}
                              for j in xi]},
@@ -380,9 +381,16 @@ def penales_temporada(team_id: int, antes: str, dias: int = PENALES_DIAS) -> dic
             e["deBaja"] = x["baja"]
         if x.get("titularEnUltimos") is not None:
             e["titularEnUltimos"] = x["titularEnUltimos"]
+    # …y con los mismos penales, el titular antes que el suplente (956, Feyenoord:
+    # Ueda suplente 1/1 delante de Valente titular 8 de 9)
+    def _tit(e) -> int:
+        try:
+            return int(str(e.get("titularEnUltimos") or "0/").split("/")[0])
+        except ValueError:
+            return 0
     ejecutores = sorted(lista, key=lambda e: (e["enPlantilla"] is False, bool(e.get("deBaja")),
                                               str(e.get("titularEnUltimos", "1")).startswith("0/"),
-                                              -(e["convertidos"] + e["errados"]), -e["convertidos"]))
+                                              -(e["convertidos"] + e["errados"]), -e["convertidos"], -_tit(e)))
     idos = [e["nombre"] for e in ejecutores if e["enPlantilla"] is False]
     n_ev = (con_ev or {"n": 0})["n"]
     if not ejecutores and n_ev < PENALES_MUESTRA_MIN:
@@ -1653,6 +1661,7 @@ def avisos_carril(dtp: dict, nombres: dict) -> list[dict]:
 _MOTIVO_SISTEMA = re.compile(r"anunci|previa|prensa|confirm|expuls|roja|con diez|con 10|variante|cambi|"
                              r"vuelve|regres|probable|rotaci|interino|declar|oficial|alineaci", re.I)
 from backend.jugadores import dias_descanso as jug_dias_descanso  # noqa: E402
+from backend.jugadores import es_nombre_de_dt as jug_es_dt  # noqa: E402
 
 _PENAL = re.compile(r"penal|penalt", re.I)
 _SIN_EJECUTOR = re.compile(r"sin ejecutor|ejecutor (?:no|sin) (?:confirmad|defin|conocid)|por jerarqu", re.I)

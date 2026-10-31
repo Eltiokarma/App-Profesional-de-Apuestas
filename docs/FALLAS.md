@@ -59,6 +59,7 @@ Tres lugares donde vive una guardia:
   - **Alertas** `DT-DISCREPANCIA` y `DT-SIN-DT`.
   - **Cuarentena automática** que enseña.
   - **Escaneo:** chequeo `dt-sin-confirmar`.
+  - Un país o un equipo no es un DT: se filtra al guardar la hoja (como en /coachs) y al leerla (`jugadores.es_nombre_de_dt`, 1019, «Bolívia»).
   - Lo que se lee del DT es del DT que está: la formación dominante del calendario cuenta solo los onces de su banco (665), y su «primer banco visto» es la llegada solo si el partido anterior tiene hoja con otro DT; si no, `desdeConfirmar` (750).
 - **Si vuelve:** la prensa manda; la base es la alarma, no la verdad.
 
@@ -129,6 +130,7 @@ Tres lugares donde vive una guardia:
   - **Alerta** `ELIMINATORIA-AL-REVES`.
   - **Tests:** `test_eliminatoria`.
   - Los tramos del veredicto del TDE: el régimen lo define el marcador (una roja no abre otro, 943), el tramo que abre y cierra en el mismo añadido no pone a prueba la rama (745) y la roja con el id real de un titular con id negativo en la hoja se busca por nombre (940).
+  - La prórroga se jugó solo si hay su marcador (la EFL Cup va directo a penales, 977); las copas a partido único van en `eliminatoria.PARTIDO_UNICO` con su caso (Copa Paraguay, 1017).
 - **Si vuelve:** toda regla de competición (llaves, sanciones, desempates) sale de la base con su fuente, nunca del texto.
 
 ### 8. La fuga del resultado (mirar el futuro sin querer)
