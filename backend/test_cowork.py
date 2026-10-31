@@ -894,6 +894,25 @@ def main():
     check("la contradicción EFE/TDE se declara JUNTA, en una alerta",
           any(x["codigo"] == "HUECO-DOBLE" and x["equipo"] == "a" for x in d_h["alertas"]),
           [x["codigo"] for x in d_h["alertas"]])
+    # 750 (Bologna): el «primer banco visto» solo es la llegada si el partido
+    # anterior tiene hoja con OTRO DT; si no, desdeConfirmar
+    from backend.analisis.parte import _llegada_vista as _lv750
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.executemany("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                         "home_team_id, away_team_id, goals_home, goals_away) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                         [(990750, "2026-09-19 18:00:00", "FT", "Match Finished", 135, 2026, 990751, 990752, 1, 1),
+                          (990753, "2026-09-26 18:00:00", "FT", "Match Finished", 135, 2026, 990751, 990752, 1, 0)])
+    _sin_hoja = _lv750(990751, "Vincenzo Italiano", "2026-09-26")
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT INTO alineaciones (fixture_id, team_id, player_id, jugador, titular, entrenador) "
+                     "VALUES (990750, 990751, 1, 'X', 1, 'Otro Entrenador')")
+    _con_otro = _lv750(990751, "Vincenzo Italiano", "2026-09-26")
+    _mismo = _lv750(990751, "Otro Entrenador", "2026-09-26")
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM alineaciones WHERE fixture_id=990750")
+        _con.execute("DELETE FROM fixtures WHERE id IN (990750, 990753)")
+    check("750: la llegada se vio solo con hoja del partido anterior con OTRO DT; sin hoja o el mismo, a confirmar",
+          _sin_hoja is False and _con_otro is True and _mismo is False, (_sin_hoja, _con_otro, _mismo))
     from backend.analisis.parte import _fuera as _fu807
     from backend.analisis.bloque_f import FACTOR_ESTADO as _fe807
     _r807: list = []

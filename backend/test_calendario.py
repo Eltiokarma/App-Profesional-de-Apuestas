@@ -48,7 +48,7 @@ def montar():
             fulltime_home INTEGER, fulltime_away INTEGER);
         CREATE TABLE entrenadores (team_id INTEGER, coach_id INTEGER, nombre TEXT, desde TEXT);
         CREATE TABLE alineaciones (fixture_id INTEGER, team_id INTEGER, formacion TEXT,
-            player_id INTEGER, titular INTEGER);
+            player_id INTEGER, titular INTEGER, entrenador TEXT);
     """)
     con.executemany("INSERT INTO teams (id, name) VALUES (?,?)", [
         (FOCO, "Equipo Foco"), (ASCENDIDO, "Recién Subido"), (CRISIS, "En Caída"),
@@ -200,6 +200,16 @@ def main():
         calendario._q = _q_orig
     check("un solo partido con 5-3-2 no hace formación dominante; dos de tres sí", _una is None and _dos == "5-3-2",
           (_una, _dos))
+    # 665 (Osasuna): el 5-4-1 de Ramis no es la formación del DT de hoy (Arrasate, 4-3-3)
+    try:
+        calendario._q = lambda sql, args: [{"formacion": "4-3-3", "n": 11, "entrenador": "Jagoba Arrasate"},
+                                           {"formacion": "5-4-1", "n": 11, "entrenador": "Iñigo Ramis"},
+                                           {"formacion": "5-4-1", "n": 11, "entrenador": "Iñigo Ramis"},
+                                           {"formacion": "4-3-3", "n": 11, "entrenador": "J. Arrasate"}]
+        _dt665 = calendario._formacion_dominante(BLOQUE)
+    finally:
+        calendario._q = _q_orig
+    check("665: la formación dominante es la del DT del último partido, no la del anterior", _dt665 == "4-3-3", _dt665)
 
     # 493/547 (31/10/2026, decisión del usuario): EQUIPO SORPRESA con el gap de LIGA y
     # nunca para el tercio alto por nivel de su liga
