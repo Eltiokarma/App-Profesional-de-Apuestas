@@ -50,11 +50,36 @@ def tokens(nombre: str) -> list[str]:
     return [t for t in plano(limpiar_nombre(nombre or "") or "").split() if t and t not in PARTICULAS]
 
 
+# EL DIMINUTIVO ES LA MISMA PILA (31/10/2026, incidencia 937: el once de Oriente
+# Petrolero trae «Fran Lopez» y la tabla F1 «Francisco López»; sonó
+# ONCE-SIN-FILA-F1 y no pesó en el IP; y 887/893, «Rafa Llorente»). Una lista
+# CERRADA, no «el prefijo»: «jose» y «joselu», «juan» y «juanjo» pueden ser dos
+# personas del mismo plantel.
+HIPOCORISTICOS = {
+    "fran": ("francisco", "franco", "francesc"), "paco": ("francisco",), "pancho": ("francisco",),
+    "rafa": ("rafael",), "pepe": ("jose",), "nacho": ("ignacio",), "lucho": ("luis",),
+    "toni": ("antonio",), "tony": ("antonio", "anthony"), "manu": ("manuel", "emmanuel"),
+    "dani": ("daniel",), "santi": ("santiago",), "seba": ("sebastian",), "nico": ("nicolas",),
+    "fede": ("federico",), "gonza": ("gonzalo",), "rodri": ("rodrigo",), "edu": ("eduardo",),
+    "javi": ("javier",), "kike": ("enrique",), "quique": ("enrique",), "guille": ("guillermo",),
+    "memo": ("guillermo",), "pipe": ("felipe",), "mati": ("matias",), "maxi": ("maximiliano",),
+    "gabi": ("gabriel",), "tomi": ("tomas",), "agus": ("agustin",), "facu": ("facundo",),
+    "nando": ("fernando",), "fer": ("fernando",), "migue": ("miguel",), "tincho": ("martin",),
+    "joaco": ("joaquin",), "isma": ("ismael",), "moi": ("moises",), "pato": ("patricio",),
+    "chucho": ("jesus",), "lalo": ("eduardo",), "alex": ("alejandro", "alexander", "alexis"),
+}
+
+
+def _hipocoristico(uno: str, otro: str) -> bool:
+    return otro in HIPOCORISTICOS.get(uno, ()) or uno in HIPOCORISTICOS.get(otro, ())
+
+
 def misma_pila(uno: str, otro: str) -> bool:
     """Nombre de pila igual, con una letra doble de más o de menos («Emmanuel» /
-    «Emanuel», incidencia 449), o uno es la inicial del otro («a» ↔ «ángelo»).
-    Nada más: «jose» y «joselu» son personas distintas."""
-    if uno == otro:
+    «Emanuel», incidencia 449), uno es la inicial del otro («a» ↔ «ángelo») o el
+    diminutivo de la lista cerrada («fran» ↔ «francisco», 937). Nada más:
+    «jose» y «joselu» son personas distintas."""
+    if uno == otro or _hipocoristico(uno, otro):
         return True
     if len(uno) > 3 and len(otro) > 3 and re.sub(r"(.)\1", r"\1", uno) == re.sub(r"(.)\1", r"\1", otro):
         return True

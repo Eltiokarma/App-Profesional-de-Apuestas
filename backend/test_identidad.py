@@ -58,6 +58,13 @@ check("«Campos» solo casa con «Ángelo Campos»", idn.casa(T("Ángelo Campos"
 check("«Saúl» (solo la pila) casa con «Saúl Ñíguez»", idn.casa(T("Saúl Ñíguez"), T("Saúl")))
 check("«PH Ganso» casa con «Paulo Henrique Ganso» (la pila en iniciales)",
       idn.casa(T("Paulo Henrique Ganso"), T("PH Ganso")))
+check("937: «Fran Lopez» casa con «Francisco López» (diminutivo de la lista)",
+      idn.casa(T("Francisco López"), T("Fran Lopez")) and idn.mismo_jugador("Fran Lopez", "Francisco López"))
+check("887/893: «Rafa Llorente» es «Rafael Llorente» y «R. Llorente»",
+      idn.mismo_jugador("Rafa Llorente", "Rafael Llorente") and idn.mismo_jugador("Rafa Llorente", "R. Llorente"))
+check("el diminutivo es una lista cerrada: «Joselu Mato» no es «José Mato», «Juanjo Pérez» no es «Juan Pérez»",
+      not idn.mismo_jugador("Joselu Mato", "José Mato") and not idn.mismo_jugador("Juanjo Pérez", "Juan Pérez"))
+check("«Fran» no es «Rafael» (diminutivo de otra pila)", not idn.mismo_jugador("Fran García", "Rafael García"))
 check("«K. Álvarez» no casa con «Carlos Álvarez» (otra inicial, 390)", not idn.casa(T("Carlos Álvarez"), T("K. Álvarez")))
 check("«Danilo» es solo la pila de «Danilo Santos» (855)", idn.solo_pila(T("Danilo Santos"), T("Danilo")))
 

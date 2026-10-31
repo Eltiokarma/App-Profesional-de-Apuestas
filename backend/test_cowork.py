@@ -4343,6 +4343,61 @@ def main():
     check("673: «J. Bisanz» / «F. Bisanz» nunca juntos y uno sucede al otro → una fila marcada fundidoPorInicial",
           len(_b1) == 1 and _b1[0]["minutos"] == 1200 and _b1[0].get("idsAlternos") == [304389]
           and _b1[0].get("fundidoPorInicial") is True, _b1)
+    # 904 (31/10/2026): la sombra de la API (0 PJ con minutos) sin una hoja, con el
+    # mismo apellido y la pila compatible, es el registro de temporada de la misma
+    _bz904 = [{"id": 304371, "nombre": "J. Bisanz", "minutos": 33, "partidos": 5, "posicion": "Delantero"},
+              {"id": 304389, "nombre": "F. Bisanz", "minutos": 119, "partidos": 0, "posicion": "Centrocampista"},
+              {"id": 406291, "nombre": "Juan Bizans", "minutos": 1359, "partidos": 0, "goles": 2, "asistencias": 2,
+               "posicion": "Delantero"}]
+    _s904, _st904 = _dedup(_bz904, {304371: 6, 304389: 1}, _nunca, lambda a, b: False, 30,
+                           lambda pid: pid == 406291)
+    check("904: «Juan Bizans» (0 PJ, 1.359 min, sin hojas), «J. Bisanz» y «F. Bisanz» son UNA fila",
+          len(_s904) == 1 and set([_s904[0]["id"], *_s904[0].get("idsAlternos", [])]) == {304371, 304389, 406291}
+          and _st904.get(_s904[0]["id"]) == 7, (_s904, _st904))
+    _s904b, _ = _dedup(_bz904, {}, _nunca, lambda a, b: False, 30, lambda pid: False)
+    check("904: si la sombra SÍ tiene hojas (sin sucesión ni mismos goles), no se funde por sombra",
+          len(_s904b) == 3, _s904b)
+    _s904c, _ = _dedup([{"id": 1, "nombre": "Pedro Bizans", "minutos": 900, "partidos": 0},
+                        {"id": 2, "nombre": "Juan Bisanz", "minutos": 300, "partidos": 4}], {}, _nunca,
+                       lambda a, b: False, 30, lambda pid: True)
+    check("904: dos pilas enteras distintas no se funden aunque una sea sombra sin hojas", len(_s904c) == 2, _s904c)
+    # 932/893 (31/10/2026): dos filas del mismo nombre que NUNCA compartieron hoja
+    from backend.analisis.f1_base import marcar_posibles as _mp
+    _f932 = [{"jugadorId": 352477, "nombre": "L. Pratto"}, {"jugadorId": 6014, "nombre": "L. Pratto"},
+             {"jugadorId": 311360, "nombre": "T. Palacios"}, {"jugadorId": 206984, "nombre": "T. Palacios"}]
+    _mp(_f932, lambda a, b: {a, b} == {311360, 206984})
+    check("932: «L. Pratto» ×2 nunca juntos → posibleMismoQue; los dos «T. Palacios» que compartieron hoja, no",
+          _f932[0].get("posibleMismoQue") == 6014 and _f932[1].get("posibleMismoQue") == 352477
+          and "posibleMismoQue" not in _f932[2] and "posibleMismoQue" not in _f932[3], _f932)
+    from backend.analisis import bloque_f as _bf932
+    _pl932 = [{"nombre": "L. Pratto", "jugadorId": 352477, "zona": "ATK", "rol": "TH"},
+              {"nombre": "L. Pratto", "jugadorId": 6014, "zona": "ATK", "rol": "ROT"},
+              {"nombre": "J. Otro", "jugadorId": 7, "zona": "MID", "rol": "TF"}]
+    _est = lambda r: {j["jugadorId"]: j["estado"] for j in r["jugadores"]}  # noqa: E731
+    _r932 = _bf932.resolver(_pl932, [], ["L. Pratto", "J. Otro"], ids={"L. Pratto": 6014, "J. Otro": 7},
+                            nunca_juntos=lambda a, b: True)
+    check("932: el «L. Pratto» que no figura en la hoja, con su homónimo jugando y nunca juntos, NO es baja",
+          _est(_r932)[352477] == "duplicado" and _est(_r932)[6014] == "disponible", _r932["jugadores"])
+    _r932b = _bf932.resolver(_pl932, [], ["L. Pratto", "J. Otro"], ids={"L. Pratto": 6014, "J. Otro": 7},
+                             nunca_juntos=lambda a, b: False)
+    _r932c = _bf932.resolver(_pl932, [], ["L. Pratto", "J. Otro"], ids={"L. Pratto": 6014, "J. Otro": 7})
+    check("932: si compartieron una hoja (o no se sabe), el que falta sigue siendo baja",
+          _est(_r932b)[352477] == "baja" and _est(_r932c)[352477] == "baja", (_r932b["jugadores"], _r932c["jugadores"]))
+    # 931 (31/10/2026): la última hoja con OTRO club, posterior a la de este, dice que se fue
+    import backend.analisis.f1_base as _f1m931
+    _q931 = _f1m931.saddb.query
+    _f1m931.saddb.query = lambda base, sql, params=(): [  # noqa: E731
+        {"player_id": 36088, "team_id": 2287, "equipo": "Pumas", "ultima": "2026-09-20 20:00:00"},
+        {"player_id": 36088, "team_id": 2279, "equipo": "Tigres", "ultima": "2026-10-25 21:00:00"},
+        {"player_id": 5, "team_id": 2287, "equipo": "Pumas", "ultima": "2026-10-26 20:00:00"},
+        {"player_id": 5, "team_id": 16, "equipo": "Otro", "ultima": "2026-08-01 20:00:00"},
+        {"player_id": 6, "team_id": 2279, "equipo": "Tigres", "ultima": "2026-10-20 20:00:00"}]
+    try:
+        _o931 = _f1m931.juegan_en_otro(2287, [36088, 5, 6], "2026-10-31")
+    finally:
+        _f1m931.saddb.query = _q931
+    check("931: «G. Martínez» con su última hoja en Tigres después de la última en Pumas → juega en otro club",
+          set(_o931) == {36088} and _o931[36088]["equipo"] == "Tigres", _o931)
     _b2, _ = _dedup(_bz, {}, lambda a, b: True, lambda a, b: True)
     check("673: si estuvieron en la misma hoja son dos personas", len(_b2) == 2, _b2)
     _b3, _ = _dedup(_bz, {}, _nunca, lambda a, b: False)

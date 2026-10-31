@@ -178,7 +178,8 @@ def _buscar(plantel: list[dict], nombre_hoja: str) -> list[int]:
 
 
 def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
-             banca: list[str] | None = None, ids: dict[str, int] | None = None) -> dict:
+             banca: list[str] | None = None, ids: dict[str, int] | None = None,
+             nunca_juntos=None) -> dict:
     """Cruza la hoja del partido con la tabla de Cowork y cierra el bloque F.
 
     - en el once  → disponible (y titular)
@@ -189,6 +190,12 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
     `ids` (nombre de la hoja → id de API-Football) manda sobre el nombre cuando
     la tabla trae `jugadorId`: la API y la prensa escriben distinto al mismo
     jugador («J. Cerro» / «Joshua Cantt») y ninguna regla de nombres los une.
+
+    `nunca_juntos(a, b)` (opcional, de la base): dos ids que nunca estuvieron en
+    la misma hoja de partido. Con eso, la fila que no figura en la hoja y tiene
+    el MISMO nombre que una que jugó es esa persona con otro id de la API, no
+    una baja (incidencia 932: «L. Pratto» 352477 contado de baja con impacto
+    2.0 en el ataque de Coquimbo mientras «L. Pratto» 6014 jugaba).
 
     Devuelve el plantel con estados, el diagnóstico F2 y lo que no se pudo
     casar, para que la pantalla lo muestre en vez de esconderlo.
@@ -269,6 +276,18 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
         if dueno is not None and dueno != k and k not in estados:
             duplicados[k] = dueno
 
+    # EL MISMO NOMBRE CON OTRO ID QUE NUNCA COMPARTIÓ HOJA (932): no es una baja
+    posibles: dict[int, int] = {}
+    if nunca_juntos:
+        jugaron = [m for m in estados if plantel[m].get("jugadorId") is not None]
+        for k, j in enumerate(plantel):
+            if k in estados or k in duplicados or j.get("jugadorId") is None:
+                continue
+            m = next((m for m in jugaron if _id.mismo_jugador(j.get("nombre", ""), plantel[m].get("nombre", ""))
+                      and nunca_juntos(j["jugadorId"], plantel[m]["jugadorId"])), None)
+            if m is not None:
+                posibles[k] = m
+
     resuelto: list[dict] = []
     for i, j in enumerate(plantel):
         clave = normalizar(j.get("nombre", ""))
@@ -277,6 +296,12 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
             resuelto.append({**j, "estado": "duplicado", "hoja": "duplicado",
                              "motivo": f"es «{otro.get('nombre', '?')}» (jugadorId {otro.get('jugadorId')}): la hoja "
                                        "lo nombra así y ya está contado en esa fila"})
+        elif i in posibles:
+            otro = plantel[posibles[i]]
+            resuelto.append({**j, "estado": "duplicado", "hoja": "duplicado",
+                             "motivo": f"posible «{otro.get('nombre', '?')}» (jugadorId {otro.get('jugadorId')}), que "
+                                       "jugó: el mismo nombre con otro id de la API y nunca estuvieron en la misma "
+                                       "hoja; no se cuenta como baja"})
         elif i in estados:
             resuelto.append({**j, "estado": "disponible", "motivo": "",
                              "hoja": estados[i][1]})
@@ -316,7 +341,7 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
     diag["casados"] = sum(1 for i, _ in enumerate(plantel)
                           if estados.get(i, ("", ""))[1] == "titular") + homonimos_once
     diag["homonimos"] = sum(1 for v in estados.values() if v[1].endswith("(homónimo)"))
-    diag["duplicados"] = [plantel[i].get("nombre", "") for i in duplicados if i not in estados]
+    diag["duplicados"] = [plantel[i].get("nombre", "") for i in [*duplicados, *posibles] if i not in estados]
     diag["once"] = len(once)
     return diag
 
