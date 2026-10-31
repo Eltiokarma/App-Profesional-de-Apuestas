@@ -1457,7 +1457,7 @@ export interface EquipoParte {
   notaTotales?: string
   /** El DT del bloque A. `meses` null = no se pudo establecer (NUNCA 0, que es «recién
    *  llegado»); `nombre` «sin establecer» es el canónico de DT desconocido. */
-  dt: { nombre: string; meses: number | null; desde?: string; origenMeses?: 'declarado' | 'desde' | 'base' | '' }
+  dt: { nombre: string; meses: number | null; desde?: string; origenMeses?: 'declarado' | 'desde' | 'base' | ''; sinAntiguedad?: string }
   perfil: { sistema: string; estilo: string; fortaleza: string; vulnerabilidad: string }
   plantel: JugadorParte[]
   /** Las bajas públicas. Con `zona` y `rol` pesan en el IP aunque no estén en la F1. */
@@ -1626,6 +1626,8 @@ export interface BloqueTde {
   notas?: string
   /** Indicadores excluidos por falta de dato, con su motivo (928). */
   sinDato?: Record<string, string>
+  /** Disciplina 45: el régimen en configuración dual (967). */
+  regimen?: string | { inicio?: number; duracion?: number; nota?: string }
   vias?: { nombre: string; indice: number; ventana: string; detalle: string }[]
   falsador?: string
   /** Disciplina 44 como campo: qué le pasa a las vías de este equipo si marca

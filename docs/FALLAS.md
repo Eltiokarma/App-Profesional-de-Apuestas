@@ -98,7 +98,7 @@ Tres lugares donde vive una guardia:
   - **Un valor desconocido se dice, no se convierte callado:** un `estado` de baja que no es baja · duda · descanso vuelve en `rechazos`; el no convocado por descanso va a F4 y no pesa en el IP (807, rúbrica EFE v1.7).
   - **Un null dice por qué:** la tarjeta de la espina vacía trae `sinTarjeta` (K en 0, otra condición, sin guía; 866, 720). Un campo calculado que sale null sin motivo se lee como «falla» o como «cero».
   - **Lo declarado sin dato no se cobra:** el recibo no pide un bloque del TDE que el parte trae en `sinDato` (808) ni rechaza el `xiReferencia` que dice por qué no hay ningún once (813).
-  - **Depósito:** el bloque del TDE guarda `notas` y devuelve en `rechazos` cada clave que no guarda (`parte.CLAVES_BLOQUE_TDE`, 863): lo que llega y no se guarda se dice. Una lista de claves nuevas nace con TODO lo que el prompt pide mandar en ese bloque (928: `sinDato` quedó fuera y se rechazaba).
+  - **Depósito:** el bloque del TDE guarda `notas` y devuelve en `rechazos` cada clave que no guarda (`parte.CLAVES_BLOQUE_TDE`, 863): lo que llega y no se guarda se dice. Una lista de claves nuevas nace con TODO lo que el prompt pide mandar en ese bloque (928: `sinDato` quedó fuera y se rechazaba). Y con lo que el GET le agrega (`ECO_BLOQUE_TDE`): el eco de un parte vuelve con eso (981). Lo que no se perdió no es un rechazo (1010: el `dt` sin antigüedad va en `sinAntiguedad`).
 - **Si vuelve:** una fase que no guarda nada tiene que verse en el latido. Si no se ve, falta una señal.
 
 ### 6. Una regla del skill que se incumple
