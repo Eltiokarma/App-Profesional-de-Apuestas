@@ -87,6 +87,13 @@ check("DT: «S. Hoeneb» = «Sebastian Hoeneß» (ß corrupta)", idn.mismo_dt("S
 check("DT: «Manuel Luis Pellegrini Ripamonti» = «M. Pellegrini» (apellido materno al final)",
       idn.mismo_nombre_dt("Manuel Luis Pellegrini Ripamonti", "M. Pellegrini"))
 check("DT: «J. Balazar» = «Juan Carlos Bazalar»", idn.mismo_nombre_dt("J. Balazar", "Juan Carlos Bazalar"))
+check("951: «Pacheta» es «José Rojo Martín» (apodo conocido del DT)",
+      idn.mismo_dt("Pacheta", "José Rojo Martín") and idn.mismo_nombre_dt("Pacheta", "José Rojo Martín"))
+check("811: la «ð» es «d» en la normalización que usan todos (Guðmundsson = Gudmundsson)",
+      idn.plano("A. Guðmundsson") == idn.plano("A. Gudmundsson"))
+from backend.analisis import dtp_cowork as _dtp811  # noqa: E402
+check("811: el ejecutor «A. Gudmundsson» se reconoce en una línea que dice «Guðmundsson»",
+      _dtp811._nombra_ejecutor("penal: Guðmundsson (3 de 3)", ["A. Gudmundsson"]))
 check("DT: «Gustavo Alfaro» no es «Ricardo Gareca»", not idn.mismo_dt("Gustavo Alfaro", "Ricardo Gareca")
       and not idn.mismo_nombre_dt("Gustavo Alfaro", "Ricardo Gareca"))
 

@@ -189,9 +189,17 @@ def solo_pila(tokens_plantel: list[str], tokens_hoja: list[str]) -> bool:
 # la base escribe al entrenador con letras rotas: acá basta un apellido en
 # común (con tolerancia), no el nombre entero.
 
+# EL APODO DEL DT ES SU NOMBRE (31/10/2026, incidencia 951: la base marcó un
+# cambio de DT en el Granada de «Pacheta» a «José Rojo Martín», que es la misma
+# persona). Lista CERRADA, con el caso que la pidió: apodo → nombre civil.
+APODOS_DT = {"pacheta": "jose rojo martin"}
+
+
 def tokens_dt(nombre: str) -> list[str]:
-    """Las palabras de 3 letras o más del nombre de un DT (las iniciales no cuentan)."""
-    return [t for t in plano(nombre).split() if len(t) >= 3]
+    """Las palabras de 3 letras o más del nombre de un DT (las iniciales no
+    cuentan); un apodo conocido se lee como su nombre civil."""
+    t = " ".join(plano(nombre).split())
+    return [x for x in APODOS_DT.get(t, t).split() if len(x) >= 3]
 
 
 def apellido_dt(x: str, y: str) -> bool:

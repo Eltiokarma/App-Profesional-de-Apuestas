@@ -501,9 +501,8 @@ def _nombre_entero(nombre: str) -> str:
     última palabra de un equipo o país —«Benat San Jose» por San Jose,
     «Juan Carlos León» por Club León— y la base volvía a /coachs, que trae al
     saliente (Rayo con Íñigo Pérez, Delfín con Zubeldía: 18-19/10/2026)."""
-    import unicodedata
-    t = unicodedata.normalize("NFKD", nombre or "").encode("ascii", "ignore").decode().lower()
-    return " ".join(t.replace(".", " ").split())
+    from backend.identidad import plano
+    return " ".join(plano(nombre).split())
 
 
 def nombres_que_no_son_dt(con: sqlite3.Connection) -> set[str]:

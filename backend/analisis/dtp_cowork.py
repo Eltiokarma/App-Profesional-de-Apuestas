@@ -1330,8 +1330,9 @@ def _roles_declarados(linea: str) -> list[tuple[list[str], str, str]]:
 
 
 def _plano_num(t: str) -> str:
-    t = unicodedata.normalize("NFKD", t or "").encode("ascii", "ignore").decode().lower()
-    return re.sub(r"[^a-z0-9 ]+", " ", t)
+    # la normalización de nombres es la de identidad (incidencia 811: el NFKD
+    # suelto tiraba la «ð» y «A. Guðmundsson» no casaba con «A. Gudmundsson»)
+    return _identidad.plano(t)
 
 
 def roles_vs_grid(bloque: dict, of: dict) -> list[dict]:

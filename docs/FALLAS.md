@@ -38,7 +38,8 @@ Tres lugares donde vive una guardia:
 - **Causa:** cinco módulos con cuatro versiones de «una letra» y dos formas de quitar tildes.
 - **Guardia:**
   - **Regla única:** `backend/identidad.py`, con sus casos reales en `test_identidad.py`.
-  - **Test de arquitectura (regla 1):** ninguna comparación de letras fuera de ese archivo.
+  - **Test de arquitectura (regla 1):** ninguna comparación de letras fuera de ese archivo, y ningún módulo que quite tildes a un nombre por su cuenta (811: el NFKD suelto tiraba la «ð»).
+  - Los apodos conocidos del DT van en `identidad.APODOS_DT`, lista cerrada con su caso (951, «Pacheta»).
   - **Escaneo:** chequeo `jugador-duplicado`.
   - El mismo jugador con otro id entre dos hojas: `identidad.ids_equivalentes`, que usan `cambiosXi` y las parejas nuevas del DTP (899).
   - **El diminutivo** es una lista cerrada en `identidad.HIPOCORISTICOS` («Fran»/«Francisco», «Rafa»/«Rafael», 937), nunca «el prefijo»: «Joselu» y «José» pueden ser dos personas.
