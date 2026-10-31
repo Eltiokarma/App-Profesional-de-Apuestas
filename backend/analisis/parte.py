@@ -1762,10 +1762,16 @@ def alertas_eliminatoria(parte: dict, fx, nombres: dict) -> list[dict]:
         except Exception:  # noqa: BLE001 — base sin fixtures
             llaves = []
         equipo = _palabras(nombres.get(lado, ""), 4)
-        for ll in llaves:
+        for i, ll in enumerate(llaves):
             anclas = _palabras(ll.get("competicion") or "") | ({"penal"} if ll.get("penales") else set())
             dice = _DICE_ELIMINADO if ll["pasa"] else _DICE_PASA
             rival = _palabras(ll.get("rival") or "", 4)
+            # UNA LLAVE POSTERIOR DE LA MISMA COPA CON EL OTRO DESENLACE (incidencia
+            # 1031, Luqueño: pasó octavos por penales y cayó en cuartos ante
+            # Recoleta; «eliminado de la Copa» es la de cuartos, no la de octavos).
+            # Entonces la frase solo contradice a ESTA llave si nombra a su rival.
+            despues = any(o.get("competicion") == ll.get("competicion") and o["pasa"] != ll["pasa"]
+                          for o in llaves[i + 1:])
             for frase, donde in frases:
                 plano = " ".join(_palabras(frase, 3))
                 # «eliminó a Fluminense» es lo que HIZO, no lo que le pasó
@@ -1773,6 +1779,8 @@ def alertas_eliminatoria(parte: dict, fx, nombres: dict) -> list[dict]:
                 if not dice.search(activa) or _NIEGA.search(activa):
                     continue
                 if not any(a in plano for a in anclas):
+                    continue
+                if despues and not (rival & _palabras(frase, 4)):
                     continue
                 # fuera del bloque del equipo: la frase lo nombra a él y NO al de la
                 # otra punta de la llave («Palmeiras clasificó eliminando a Fluminense»
