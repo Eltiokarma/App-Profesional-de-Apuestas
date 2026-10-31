@@ -229,9 +229,10 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   resuelta que reaparece entra nueva) y la rutina de **mantenimiento**
   (`corrida-sad`, modo `mantenimiento`) las verifica contra los datos, las
   clasifica (`dato_api` · `por_diseno` · `usuario` · `descartada`) o las
-  arregla con un test —AGRUPADAS POR CAUSA, hasta 3 grupos de código por
-  corrida y un PR por grupo; lo que no es código se clasifica entero en la
-  misma corrida (22/10/2026: la cola llegó a 88 arreglando de a 8 sueltas)—,
+  arregla con un test —AGRUPADAS POR CAUSA, todos los grupos de código (sin
+  tope desde el 31/10/2026) y un PR por grupo; lo que no es código se
+  clasifica entero en la misma corrida (22/10/2026: la cola llegó a 88
+  arreglando de a 8 sueltas)—,
   valida TODO y mergea solo en verde y fuera de las zonas
   sagradas (motor, números calibrados, skills, tokens, datos, cuarentenas,
   Railway): eso va a `usuario` con la propuesta. El latido cuenta las
@@ -401,8 +402,15 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   chequeo. El mantenimiento lo corre en su paso 0-bis y deposita UNA incidencia
   por chequeo (`origen: escaneo`); lo que un parte reporta y el escaneo no vio es
   un chequeo que falta. **El mantenimiento arregla la CLASE, no el caso** (la
-  identidad del jugador se parchó 8 veces en un mes, cada vez en un módulo) y
-  hace hasta 6 grupos por pasada, en tres pasadas (12:23, 17:41 y 21:47 de Lima).
+  identidad del jugador se parchó 8 veces en un mes, cada vez en un módulo),
+  en tres pasadas (12:23, 17:41 y 21:47 de Lima). **La cola no puede crecer**
+  (31/10/2026, usuario: «el mantenimiento tiene que cerrar todo, optimizar
+  todo hasta casi quedarse sin chamba»): sin tope de grupos, la meta de cada
+  pasada es la cola en CERO, la familia más grande va primero («grande» se
+  parte en sub-causas, nunca se deja para después) y, con la cola vacía, la
+  prevención (paso 7-bis del skill: la guardia de las familias que más entran
+  y la lista «No se reporta» de lo que se cierra siempre igual). El informe
+  dice la cola al empezar → al terminar y cuántas entraron.
 - **Quién pasó una llave sale de la base, nunca del marcador** (29/10/2026,
   incidencia 774: Palmeiras pasó a la final de la Libertadores por penales y un
   parte lo dio por eliminado). `backend/eliminatoria.py` lo calcula de la tanda
@@ -1022,13 +1030,16 @@ conversación se pierde en la siguiente.
    PR por grupo). Desde el 27/10 en «SAD · mantenimiento (rutina, v2)»
    (`session_01WwsfbSrNaKynS84SUXEwvA`, con el paso 0 de aprobadas, por
    desplegar y cola del usuario). **Desde el 30/10/2026** (usuario: «sube el
-   mantenimiento»), tres pasadas con hasta 6 grupos y el escaneo preventivo:
-   «mediodía, v3» `trig_014bHDmKimigTHfUyw7NxqjJ` (12:23), «tarde, v2»
-   `trig_01UptRFtNs3mW8sXUGzmg2ju` (17:41) y «noche, v3»
-   `trig_01GF5XY1GyyskhDNBe496hDG` (21:47); las «mediodía, v2» y «noche, v2»
+   mantenimiento»), tres pasadas con el escaneo preventivo. **Desde el
+   31/10/2026, sin tope y con la cola en cero como meta**: «mediodía, v4»
+   `trig_015duhSraveED4viUq6nFXkL` (12:23), «tarde, v4»
+   `trig_01FM66KeT2BUGgcdRJhCCBnw` (17:41) y «noche, v4»
+   `trig_01QVZvEiqDoHi33Y6KRFZCev` (21:47), con un texto que NO lleva números
+   («manda el skill, no este texto»): las v3 (`trig_014bHDmKimigTHfUyw7NxqjJ`,
+   `trig_01UptRFtNs3mW8sXUGzmg2ju`, `trig_01GF5XY1GyyskhDNBe496hDG`) y las v2
    (`trig_01L7qjpE7b5BRCH5DRbQLyPz`, `trig_01AJ8oSr5jAadzyq6ZN6rgid`) quedaron
-   desactivadas porque su texto decía «hasta 3» y solo se edita desde su propia
-   conversación. Con tres pasadas la sesión engorda más rápido: revisar su
+   desactivadas porque su texto decía «hasta 6» o «hasta 3» y solo se edita
+   desde su propia conversación. Con tres pasadas la sesión engorda más rápido: revisar su
    tamaño cada dos o tres días; la v1
    (`session_018rYwkkxMKQpJpfTdkxScvd`) llegó a 341.000 tokens y 69 USD en
    cinco días y sus rutinas quedaron desactivadas. Las dos rutinas viejas, que disparaban en la sesión de trabajo,
