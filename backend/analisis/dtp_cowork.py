@@ -311,6 +311,7 @@ def insumos_equipo(team_id: int, nombre: str, fx) -> dict:
 
 
 PENALES_DIAS = 365
+PENALES_MUESTRA_MIN = 20   # con menos partidos con eventos en el año, «sin penales» no se afirma
 
 
 def penales_temporada(team_id: int, antes: str, dias: int = PENALES_DIAS) -> dict:
@@ -355,10 +356,41 @@ def penales_temporada(team_id: int, antes: str, dias: int = PENALES_DIAS) -> dic
         if plantel and jid:
             e["enPlantilla"] = jid in plantel
         e["errados" if "missed" in (f["detalle"] or "").lower() else "convertidos"] += 1
-    ejecutores = sorted(por.values(), key=lambda e: (e["enPlantilla"] is False,
-                                                     -(e["convertidos"] + e["errados"]), -e["convertidos"]))
+    # EL MISMO JUGADOR CON DOS IDS Y DOS GRAFÍAS (895: «Luis Alí» y «L. Alí» en
+    # Potosí): se funde por la regla de identidad
+    lista = []
+    for e in por.values():
+        gem = next((x for x in lista if _identidad.mismo_jugador(x["nombre"], e["nombre"])), None)
+        if gem is None:
+            lista.append(e)
+            continue
+        gem["convertidos"] += e["convertidos"]
+        gem["errados"] += e["errados"]
+        if len(e["nombre"]) > len(gem["nombre"]):
+            gem["nombre"] = e["nombre"]
+        if gem.get("enPlantilla") is not True and e.get("enPlantilla") is not None:
+            gem["enPlantilla"] = e["enPlantilla"]
+    # QUIÉN TIRA HOY VA PRIMERO (895: Potosí con S. Plaza, 0 de 10 titular;
+    # Querétaro con Homenchenko de baja y operado): la baja vigente de la base y
+    # no haber sido titular en los últimos onces bajan al ejecutor; se dicen
+    hoy = _estado_ejecutores(team_id, antes)
+    for e in lista:
+        x = hoy.get(e.get("jugadorId")) or {}
+        if x.get("baja"):
+            e["deBaja"] = x["baja"]
+        if x.get("titularEnUltimos") is not None:
+            e["titularEnUltimos"] = x["titularEnUltimos"]
+    ejecutores = sorted(lista, key=lambda e: (e["enPlantilla"] is False, bool(e.get("deBaja")),
+                                              str(e.get("titularEnUltimos", "1")).startswith("0/"),
+                                              -(e["convertidos"] + e["errados"]), -e["convertidos"]))
     idos = [e["nombre"] for e in ejecutores if e["enPlantilla"] is False]
-    if not ejecutores:
+    n_ev = (con_ev or {"n": 0})["n"]
+    if not ejecutores and n_ev < PENALES_MUESTRA_MIN:
+        # CON MUESTRA CORTA NO SE AFIRMA (942: Nice con 13 partidos con eventos
+        # en el año «sin penales» y Wahi había convertido dos)
+        nota = (f"solo {n_ev} partidos con eventos en la base en el último año: muestra corta, no se afirma "
+                "que no tenga penales; el ejecutor sale de la prensa")
+    elif not ejecutores:
         nota = "sin penales en los partidos con eventos del último año: decilo así, no «sin dato»"
     elif len(idos) == len(ejecutores):
         nota = (f"ninguno de los que tiraron penales en el año sigue en el plantel ({', '.join(idos)}): "
@@ -367,7 +399,32 @@ def penales_temporada(team_id: int, antes: str, dias: int = PENALES_DIAS) -> dic
         nota = "el primero es el que más tiró: va como ejecutor salvo fuente del partido que diga otro"
         if idos:
             nota += f"; ya no están en el plantel: {', '.join(idos)}"
-    return {"ejecutores": ejecutores, "partidosConEventos": (con_ev or {"n": 0})["n"], "nota": nota}
+    if ejecutores and n_ev < PENALES_MUESTRA_MIN:
+        nota += f" (muestra corta: {n_ev} partidos con eventos; otro ejecutor de la prensa puede tirar)"
+    return {"ejecutores": ejecutores, "partidosConEventos": n_ev, "nota": nota}
+
+
+def _estado_ejecutores(team_id: int, antes: str) -> dict:
+    """{jugadorId: {baja, titularEnUltimos}}: la baja vigente de la plantilla
+    (señal y no desmentida) y las titularidades en los últimos onces."""
+    out: dict = {}
+    try:
+        from backend.jugadores import plantilla_de
+        for j in plantilla_de(team_id).get("jugadores") or []:
+            b = j.get("baja") or {}
+            if b and b.get("lectura") == "senal" and not b.get("desmentida"):
+                out.setdefault(j["id"], {})["baja"] = b.get("detalle") or b.get("tipo") or "baja"
+    except Exception:  # noqa: BLE001 — sin la capa de jugadores no se marca la baja
+        pass
+    try:
+        from backend.analisis.f1_base import onces_recientes
+        rec = onces_recientes(team_id, str(antes)[:19])
+        if rec["onces"] >= 5:
+            for pid, r in rec["jugadores"].items():
+                out.setdefault(pid, {})["titularEnUltimos"] = f"{r['titular']}/{rec['onces']}"
+    except Exception:  # noqa: BLE001 — sin alineaciones no se juzga la titularidad
+        pass
+    return out
 
 
 def _ejecutor_sancionado(fixture_id: int, lados: dict) -> None:
@@ -415,7 +472,7 @@ def _ejecutores_hoy(team_id, fecha: str, fixture_id=None) -> dict:
         ej = penales_temporada(team_id, fecha)["ejecutores"]
     except Exception:  # noqa: BLE001 — sin base no se puede dar por bueno «sin ejecutor»
         return {"hay": True, "nombres": []}
-    vivos = [e for e in ej if e.get("enPlantilla") is not False]
+    vivos = [e for e in ej if e.get("enPlantilla") is not False and not e.get("deBaja") and not e.get("sancionado")]
     xi = {j["player_id"] for j in _titulares(fixture_id, team_id)} - {None} if fixture_id else set()
     if xi:
         vivos = [e for e in vivos if not e.get("jugadorId") or e["jugadorId"] in xi]
