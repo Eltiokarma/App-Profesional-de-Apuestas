@@ -1473,7 +1473,7 @@ def _stats_temporada(equipo_id: int) -> dict | None:
     return {"ligaId": b["id"], "liga": b.get("nombre"), "temporada": season, "partidosJugados": pj,
             "puntos": pts, "puntosPorPartido": round(pts / pj, 2) if pj else None,
             "golesFavor": gf_t, "golesContra": gc_t, "posicion": posicion,
-            "nota": "tabla del año de la liga doméstica; en torneos cortos (Apertura/Clausura) la fase va en /ligas/{id}/tabla"}
+            "nota": "tabla del año de la liga doméstica; en torneos cortos (Apertura/Clausura) la fase va en /ligas/{id}/standings?fase="}
 
 
 # Ingesta de plantilla BAJO DEMANDA: al entrar a un equipo sin datos de

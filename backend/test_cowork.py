@@ -3765,6 +3765,24 @@ def main():
           == [("Luis Alí", 2), ("S. Plaza", 3), ("Homenchenko", 4)]
           and _pen895["ejecutores"][2].get("deBaja") == "operado", _pen895)
     check("942: con pocos partidos con eventos la nota dice muestra corta", "muestra corta" in _pen895["nota"], _pen895)
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM fixture_eventos WHERE fixture_id=990490")
+        _con.executemany("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador, jugador_id) "
+                         "VALUES (990490, ?, 'Goal', 'Penalty', 990491, ?, ?)", [(10, "A. Ueda", 8101), (20, "L. Valente", 8102)])
+    try:
+        _d15._estado_ejecutores = lambda tid, antes: {8101: {"titularEnUltimos": "2/9"}, 8102: {"titularEnUltimos": "8/9"}}
+        _pen956 = _d15.penales_temporada(990491, "2026-10-25 20:00:00")
+    finally:
+        _d15._estado_ejecutores = _ee895
+    check("956: con los mismos penales, el titular (Valente 8/9) va antes que el suplente (Ueda 2/9)",
+          [e["nombre"] for e in _pen956["ejecutores"]] == ["L. Valente", "A. Ueda"], _pen956)
+    import backend.jugadores as _jg1019
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT OR REPLACE INTO teams (id, name, country) VALUES (991019, 'San Antonio Bulo Bulo', 'Bolivia')")
+    _jg1019._NO_SON_DT = None
+    check("1019: un país o un equipo no es un DT de la hoja; una persona sí",
+          not _jg1019.es_nombre_de_dt("Bolívia") and not _jg1019.es_nombre_de_dt("San Antonio Bulo Bulo")
+          and _jg1019.es_nombre_de_dt("Gustavo Benítez"))
     # 767 (Metropolitanos): el que figura en las hojas recientes sigue en el club
     # aunque las stats de la API no lo traigan
     from backend.analisis import f1_base as _f767

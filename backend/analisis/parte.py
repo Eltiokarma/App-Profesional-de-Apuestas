@@ -1843,7 +1843,10 @@ def dt_del_banco(fixture_id, team_id) -> str:
                    "AND entrenador IS NOT NULL AND entrenador <> '' LIMIT 1", (fixture_id, team_id))
     except Exception:  # noqa: BLE001 — sin tabla de alineaciones no hay con qué comparar
         return ""
-    return (fila["entrenador"] if fila else "") or ""
+    e = (fila["entrenador"] if fila else "") or ""
+    # un país o un equipo no es un DT (1019, «Bolívia»): sin banco, no un banco falso
+    from backend.jugadores import es_nombre_de_dt
+    return e if es_nombre_de_dt(e) else ""
 
 
 def alerta_escala(fx, nombres: dict) -> list[dict]:

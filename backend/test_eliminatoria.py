@@ -67,6 +67,10 @@ def montar():
         (1010, "2026-10-29 19:00:00", "FT", 143, "Round of 128", X, OTRO, 0, 6, 0, 6, None, None, None, None),
         (1011, "2026-10-29 19:00:00", "FT", 143, "Semi-finals", Y, OTRO, 2, 1, 2, 1, None, None, None, None),
         (1012, "2026-10-29 19:00:00", "FT", COPA, "Round of 32", X, Y, 1, 0, 1, 0, None, None, None, None),
+        # 977: EFL Cup, directo a penales sin prórroga (sin marcador de alargue)
+        (1013, "2026-10-28 20:00:00", "PEN", 48, "Round of 16", X, Y, 2, 2, 2, 2, None, None, 4, 3),
+        # 1017: Copa Paraguay (501), cuartos a partido único resueltos a 90'
+        (1014, "2026-10-28 20:00:00", "FT", 501, "Quarter-finals", X, Y, 0, 2, 0, 2, None, None, None, None),
         # fase de grupos: nunca es una llave
         (1009, "2026-10-05 20:00:00", "FT", LIB, "Group Stage - 3", PAL, OTRO, 2, 0, 2, 0, None, None, None, None),
     ]
@@ -109,6 +113,12 @@ check("846: la semifinal de la Copa del Rey es a ida y vuelta: a 90' no se afirm
 check("846: una copa fuera de la lista sigue sin afirmar a 90'",
       eliminatoria.desenlace(1012)["avanza"] is None, eliminatoria.desenlace(1012))
 check("un partido sin terminar no es una llave", eliminatoria.desenlace(1003) is None)
+check("977: la EFL Cup que va directo a penales no tuvo prórroga; la tanda la gana el local",
+      eliminatoria.desenlace(1013)["prorroga"] is False and eliminatoria.desenlace(1013)["avanza"] == X,
+      eliminatoria.desenlace(1013))
+check("977: con marcador de alargue (1004) sí hubo prórroga", eliminatoria.desenlace(1004)["prorroga"] is True)
+check("1017: Copa Paraguay a partido único resuelta a 90': pasa la visita",
+      eliminatoria.desenlace(1014)["avanza"] == Y, eliminatoria.desenlace(1014))
 rec = eliminatoria.recientes(PAL, "2026-10-24 22:00:00")
 check("las llaves recientes de Palmeiras antes del Bragantino: la semifinal, pasada",
       [(r["fixtureId"], r["pasa"]) for r in rec] == [(1002, True)], rec)

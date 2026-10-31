@@ -122,7 +122,9 @@ def _final_unica(ronda: str | None) -> bool:
 # ronda es un partido —salvo las semifinales de las que se juegan a ida y
 # vuelta—, así que quien gana a 90' pasa. Lista por id de API-Football.
 PARTIDO_UNICO = {143: "Copa del Rey", 45: "FA Cup", 81: "DFB Pokal", 66: "Coupe de France",
-                 96: "Taça de Portugal", 137: "Coppa Italia", 48: "EFL Cup"}
+                 96: "Taça de Portugal", 137: "Coppa Italia", 48: "EFL Cup",
+                 # 1017: Luqueño 0-2 Recoleta, cuartos a partido único
+                 501: "Copa Paraguay"}
 SEMIS_IDA_Y_VUELTA = {143, 96, 137, 48}
 _SEMI = re.compile(r"semi", re.I)
 
@@ -169,7 +171,11 @@ def desenlace(fixture_id: int) -> dict | None:
     # dos partidos tampoco se afirma: `avanza` None, nunca adivinado
     return {
         "fixtureId": fixture_id, "competicion": _g(f, "liga") or "", "ronda": _g(f, "league_round") or "",
-        "marcador": f"{tot[0]}-{tot[1]}", "prorroga": (_g(f, "status_short") in ("AET", "PEN")),
+        # LA PRÓRROGA SE JUGÓ SI HAY SU MARCADOR (incidencia 977, City–Brighton de
+        # la EFL Cup: va directo a penales y salía «prorroga: true» por el PEN)
+        "marcador": f"{tot[0]}-{tot[1]}",
+        "prorroga": (_g(f, "status_short") == "AET"
+                     or (_g(f, "status_short") == "PEN" and None not in et)),
         "penales": f"{pen[0]}-{pen[1]}" if pen else None,
         "global": f"{glob[0]}-{glob[1]}" if glob else None,
         "ida": ida["id"] if ida is not None else None,

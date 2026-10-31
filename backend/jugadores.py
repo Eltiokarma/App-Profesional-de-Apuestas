@@ -613,6 +613,30 @@ def dias_descanso(desde: str, hasta: str) -> int | None:
     return int((b - a).total_seconds() // 86400)
 
 
+_NO_SON_DT: set[str] | None = None
+
+
+def es_nombre_de_dt(nombre: str | None) -> bool:
+    """¿El «entrenador» de una hoja es una persona? Un país o un equipo no
+    (incidencia 1019: la hoja de San Antonio trae «Bolívia» de DT y llevó a
+    cuarentena un parte). La misma lista que la ingesta de /coachs
+    (`ingesta.jugadores.nombres_que_no_son_dt`), leída una vez."""
+    global _NO_SON_DT
+    if not nombre or not str(nombre).strip():
+        return False
+    from backend.identidad import plano
+    if _NO_SON_DT is None:
+        out: set[str] = set()
+        for sql in ("SELECT DISTINCT country AS n FROM leagues", "SELECT DISTINCT country AS n FROM teams",
+                    "SELECT DISTINCT name AS n FROM teams"):
+            try:
+                out |= {" ".join(plano(r["n"]).split()) for r in db.query("sad", sql) if r["n"]}
+            except Exception:  # noqa: BLE001 — sin las tablas no se filtra: el nombre pasa
+                pass
+        _NO_SON_DT = out - {""}
+    return " ".join(plano(nombre).split()) not in _NO_SON_DT
+
+
 HORAS_CHOQUE = 24   # dos partidos del mismo equipo a menos de esto: uno es un aplazado sin marcar o un duplicado
 
 
