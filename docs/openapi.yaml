@@ -2394,6 +2394,7 @@ components:
         muEsperado: { type: number, description: 'μ(nivel, nivelRival, localía) de ese partido futuro' }
         esInternacional: { type: boolean }
         diasDescanso: { type: integer, description: 'días desde el partido anterior del camino (el analizado para el primero)' }
+        conflicto: { type: boolean, description: 'otro partido del equipo a menos de 24 h: uno de los dos es un aplazado sin marcar o un duplicado (jugadores.choque)' }
     Prediccion:
       type: object
       required: [fixtureId, local, visitante, generadoEn]
@@ -2793,7 +2794,8 @@ components:
         tablaDe: { type: string, description: 'de qué tabla sale la posición: la fase internacional, el torneo corto en curso (con 5+ fechas) o «año»' }
         equiposEnLaTabla: { type: integer, nullable: true }
         zonaRival: { type: string, nullable: true, enum: [alta, media, descenso, null] }
-        diasDescanso: { type: integer, nullable: true, description: 'contra el partido anterior' }
+        diasDescanso: { type: integer, nullable: true, description: 'contra el partido anterior; null si choca con él (conflicto)' }
+        conflicto: { type: string, description: 'otro partido del equipo a menos de 24 h: uno es un aplazado sin marcar o un duplicado; ausente si no hay choque' }
         etiquetas: { type: array, items: { $ref: '#/components/schemas/EtiquetaRival' } }
     Distribucion:
       type: object

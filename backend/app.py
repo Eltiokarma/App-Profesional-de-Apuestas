@@ -27,7 +27,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
 
 from backend import db
-from backend.jugadores import dias_descanso
+from backend.jugadores import choque, dias_descanso
 from backend.nombres import canonizar, normalizar
 
 # /docs, /redoc y /openapi.json: encendidos en local, apagados por defecto en
@@ -831,7 +831,11 @@ def proximos_de(team_id: int, nivel: float, fixture) -> list[dict]:
             "esInternacional": (r["league_id"] or 0) in INTL_LEAGUE_IDS,
             # por horas, la misma regla del calendario y del TDE (870)
             "diasDescanso": dias_descanso(str(prev), str(d)) or 0,
+            # el mismo equipo dos veces a menos de 24 h: uno de los dos está mal (843, 892)
+            **({"conflicto": True} if choque(str(prev), str(d)) else {}),
         })
+        if prox[-1].get("conflicto") and len(prox) > 1:
+            prox[-2]["conflicto"] = True
         prev = d
     return prox
 

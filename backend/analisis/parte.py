@@ -5255,7 +5255,7 @@ def contrato() -> dict:
         ],
         "laAgenda": {
             "conflicto": "cada candidato lo trae: vacío casi siempre. Si un equipo «también "
-                         "figura en» otro partido a menos de 20 h, uno de los dos fixtures está "
+                         "figura en» otro partido a menos de 24 h, uno de los dos fixtures está "
                          "mal (aplazado sin marcar o duplicado). Con los DOS equipos chocando el "
                          "fixture va a `descartados` con ese motivo",
             "porHacer": "los de `analizar` que todavía no tienen parte: la lista de trabajo",
@@ -5487,7 +5487,7 @@ def latido(horas: int = 36) -> dict:
 
 # un equipo no juega dos partidos oficiales con menos de esto de diferencia:
 # si figura en dos, uno de los fixtures es un aplazado sin marcar o un duplicado
-HORAS_CHOQUE = 20
+from backend.jugadores import HORAS_CHOQUE  # noqa: E402 — la misma regla del calendario y los próximos
 
 
 def _choques(filas) -> dict[int, dict[int, str]]:

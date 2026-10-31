@@ -608,6 +608,28 @@ def dias_descanso(desde: str, hasta: str) -> int | None:
     return int((b - a).total_seconds() // 86400)
 
 
+HORAS_CHOQUE = 24   # dos partidos del mismo equipo a menos de esto: uno es un aplazado sin marcar o un duplicado
+
+
+def choque(desde: str, hasta: str) -> bool:
+    """¿Dos saques del mismo equipo a menos de HORAS_CHOQUE? La misma regla en
+    la agenda (`conflicto`), el calendario y los próximos (incidencias 843 y
+    892: Santa Fe con Copa y liga el 02/11, a 22 h —por eso 24 y no las 20 de
+    antes—; la ida y la vuelta de Coquimbo–La Calera con la misma fecha
+    provisoria, «0 días de descanso» en el F2). Nadie juega dos partidos
+    oficiales en el mismo día."""
+    def _dt(t: str) -> datetime | None:
+        t = str(t or "").replace("T", " ").rstrip("Z")[:19]
+        for f in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(t, f)
+            except ValueError:
+                continue
+        return None
+    a, b = _dt(desde), _dt(hasta)
+    return bool(a and b) and abs((b - a).total_seconds()) < HORAS_CHOQUE * 3600
+
+
 def ficha_partido(fixture_id: int) -> dict | None:
     """FichaPartidoDTO: plantilla + congestión de ambos equipos. None si el
     fixture no existe (el endpoint lo convierte en 404)."""
