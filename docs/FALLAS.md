@@ -118,6 +118,7 @@ Tres lugares donde vive una guardia:
   - **Llaves:** `backend/eliminatoria.py`, con `avanza` en null cuando no se sabe.
   - **Alerta** `ELIMINATORIA-AL-REVES`.
   - **Tests:** `test_eliminatoria`.
+  - Los tramos del veredicto del TDE: el régimen lo define el marcador (una roja no abre otro, 943), el tramo que abre y cierra en el mismo añadido no pone a prueba la rama (745) y la roja con el id real de un titular con id negativo en la hoja se busca por nombre (940).
 - **Si vuelve:** toda regla de competición (llaves, sanciones, desempates) sale de la base con su fuente, nunca del texto.
 
 ### 8. La fuga del resultado (mirar el futuro sin querer)

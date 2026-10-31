@@ -473,6 +473,16 @@ def main():
     _rj655 = _r655(990655, 990601)
     check("655: la roja del suplente que no entró no cuenta; la del titular (70) y la del que entró (80) sí",
           sorted(r["minuto"] for r in _rj655) == [70, 80], _rj655)
+    # 940 (Conquense, M. Koita): la roja con el id REAL de un titular que en la
+    # hoja tiene id negativo cuenta (se busca por nombre en la hoja)
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT INTO alineaciones (fixture_id, team_id, player_id, jugador, titular) "
+                     "VALUES (990940, 990601, -1176129738, 'M. Koita', 1)")
+        _con.execute("INSERT INTO fixture_eventos (fixture_id, minuto, extra, tipo, detalle, equipo_id, jugador, "
+                     "jugador_id, asistente_id) VALUES (990940, 78, 0, 'Card', 'Red Card', 990601, 'M. Koita', 590362, NULL)")
+    _rj940 = _r655(990940, 990601)
+    check("940: la roja con id real de un titular con id negativo en la hoja cuenta", [r["minuto"] for r in _rj940] == [78],
+          _rj940)
     # 730 (JPII–Huancayo, Labrador al 61' sin jugador_id, id negativo en el once):
     # la roja sin id de un titular de la hoja cuenta; la sin id que no casa, no
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
@@ -4917,6 +4927,20 @@ def main():
           _t65[1]["desenlace"]["lectura"] == "se_rompe" and _t65[1]["desenlace"]["deDefecto"]
           and _t65[1]["desenlace"]["observado"] == "se_rompe" and _t65[1]["desenlace"]["cumplido"] is True
           and "desenlace" not in _t65[0], _t65)
+    # 943: con la roja del rival y después la propia (paridad), la rama del marcador
+    # vuelve y su desenlace ya cumplido no se re-mide
+    _td943 = {"reasignacion": {"siRecibePrimero": {"sob1": 1, "iseRama": 8.33}, "siExpulsionRival": {"sob1": 0}}}
+    _t943 = tramos_por_marcador(_td943, [{"minuto": 10, "lado": "b"}, {"minuto": 30, "lado": "b"}], "a",
+                                [{"minuto": 50, "lado": "b"}, {"minuto": 70, "lado": "a"}])
+    check("943: el se_rompe cumplido en 10-30 no se vuelve a medir tras una roja que iguala el número",
+          sum(1 for x in _t943 if "desenlace" in x) == 1 and "desenlace" not in _t943[-1], _t943)
+    # 745: un tramo que abre y cierra dentro del mismo añadido dura segundos: sin prueba
+    _t745 = tramos_por_marcador({"reasignacion": {"siRecibePrimero": {"sob1": 1, "iseRama": 8.33}}},
+                                [{"minuto": 46, "lado": "b", "enAnadido": True, "baseAnadido": 45},
+                                 {"minuto": 48, "lado": "b", "enAnadido": True, "baseAnadido": 45}], "a")
+    check("745: el tramo 45-45 dentro del añadido se marca y no mide el desenlace",
+          _t745[1]["desde"] == _t745[1]["hasta"] == 45 and _t745[1].get("enElAnadido")
+          and "desenlace" not in _t745[1], _t745)
     _t65b = tramos_por_marcador(_td65, [{"minuto": 20, "lado": "a"}, {"minuto": 50, "lado": "b"}, {"minuto": 80, "lado": "a"}], "a")
     check("65: siLeEmpatan con «rescata» escrito se cumple con el 2-1 propio; el tramo final sin goles no tiene rama de desenlace",
           _t65b[2]["rama"] == "siLeEmpatan" and _t65b[2]["desenlace"]["cumplido"] is True

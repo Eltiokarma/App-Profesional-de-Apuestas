@@ -199,6 +199,14 @@ def _rojas(fixture_id: int, home_id: int) -> list[dict]:
         # sin entrar y los tramos marcaban inferioridad y siExpulsion). Solo con
         # la hoja capturada: sin titulares, la roja cuenta como siempre.
         cancha = en_cancha.get(f["equipo_id"])
+        # EL ID DEL EVENTO Y EL DE LA HOJA PUEDEN SER OTROS (incidencia 940,
+        # Conquense: la roja de M. Koita llegó con su id real y en la hoja tenía
+        # uno negativo nuestro; se daba «fuera de cancha» y los tramos decían
+        # superioridad con 10 contra 10): se busca por nombre en la hoja
+        if cancha is not None and not cancha(jid, f["minuto"] or 0):
+            alt = _id_en_la_hoja(fixture_id, f["equipo_id"], f["jugador"])
+            if alt and alt != jid and cancha(alt, f["minuto"] or 0):
+                jid = alt
         if cancha is not None and not cancha(jid, f["minuto"] or 0):
             continue
         out.append({"minuto": f["minuto"] or 0, "lado": "a" if f["equipo_id"] == home_id else "b",
@@ -974,12 +982,21 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
                  "declarada": lo is not None if rama != "base" else bool(texto),
                  "ventana": texto, "rango": list(rango) if rango else None,
                  "concedio": [g["minuto"] for g in concedio], "golEnVentana": en_ventana}
-        if resuelta and resuelta != rama:
+        # el régimen lo define el MARCADOR: una roja que corta el tramo (y la que
+        # después iguala el número) no abre uno nuevo (incidencia 943: tras la
+        # roja de Antonini se volvía a medir un se_rompe ya cumplido)
+        if resuelta and resuelta != rama_marcador:
             resuelta = None
         # roto (3 recibidos) o con 3 de diferencia, la rama ya no se juega
         # (disciplinas 3 y 24); y el tramo que abre un gol del añadido final
         # dura segundos: no pone a prueba la rama (incidencias 693 y 692)
         sin_prueba = gc >= 3 or abs(gf - gc) >= 3 or (abre_anadido and i == len(eventos) and inicio >= 90)
+        # UN TRAMO DENTRO DEL AÑADIDO DURA SEGUNDOS (incidencia 745: Lebrijana
+        # 45-45, Los Chankas 90-90 entre la roja del 92 y el gol del 98): abre y
+        # cierra en el mismo añadido, no pone a prueba la rama
+        if abre_anadido and fin == inicio and i < len(eventos) and eventos[i][4].get("enAnadido"):
+            sin_prueba = True
+            tramo["enElAnadido"] = True
         if rama in RAMAS_DESENLACE and resuelta != rama and not sin_prueba \
                 and (lo is None or _rama_empuja(rama, lo)):
             d = desenlace_del_tramo(lo, eventos[i] if i < len(eventos) else None, foco, gf, gc, con_defecto)
