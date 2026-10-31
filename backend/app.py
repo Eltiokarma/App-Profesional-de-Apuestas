@@ -1158,7 +1158,7 @@ def niveles_de(team_id: int, limit: int, hasta: str | None = None, antes: str | 
 # Mapeo bet_name/value de API-Football → mercados del contrato: vive en
 # backend/cuota_mercados.py porque la INGESTA lo usa para no guardar lo que
 # ninguna pantalla lee (y esa fue la razón de una sad.db de 30 GB).
-from backend.cuota_mercados import _BETS_FUERA, cuota_key, sin_dc_incoherente, sin_incoherentes  # noqa: E402,F401
+from backend.cuota_mercados import _BETS_FUERA, cuota_key, sin_dc_incoherente, historial_util, sin_incoherentes  # noqa: E402,F401
 
 
 # ---------------------------------------------------------------------------
@@ -2256,7 +2256,8 @@ def cuotas_historial(fixture_id: int, casa: str | None = None):
         for (mk, sel, cap) in orden
         for (suma, peso) in (acumulado[(mk, sel, cap)],)
     ]
-    return out
+    fx = db.query_one("sad", "SELECT date FROM fixtures WHERE id=?", (fixture_id,))
+    return historial_util(out, fx["date"] if fx else None)
 
 
 # ---------------------------------------------------------------------------

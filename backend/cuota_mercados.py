@@ -137,9 +137,47 @@ def casas_dos_salidas_incoherentes(filas: list[dict]) -> set[tuple[str, str]]:
 
 def sin_incoherentes(filas: list[dict]) -> list[dict]:
     """`sin_dc_incoherente` y, además, sin las casas cuyo par de dos salidas
-    (btts, ou) no cuadra: lo que entra a una media entre casas."""
+    (btts, ou) no cuadra: lo que entra a una media entre casas. Una cuota de
+    1,00 o menos no paga nada: no es una cuota (incidencia 829, Hortaleza–Sevilla
+    con X2 1,00 de una sola casa)."""
     fuera = casas_dos_salidas_incoherentes(filas)
-    return [f for f in sin_dc_incoherente(filas) if (f["casa"], f["mercado"]) not in fuera]
+    return [f for f in sin_dc_incoherente(filas)
+            if (f["casa"], f["mercado"]) not in fuera and float(f["cuota"] or 0) > 1.0]
+
+
+# EL HISTORIAL ES EL DE ESTE PARTIDO (incidencias 765 y 779): un aplazado (el
+# terremoto de agosto en 1549731) dejaba como «apertura» una captura de dos
+# meses antes, de otra fecha, y la primera foto con UNA casa (06:30 con 1, 12:30
+# con 9) exageraba el delta apertura→cierre. Quedan las capturas de las últimas
+# HISTORIAL_DIAS_MAX antes del pitazo y, por selección, desde la primera con
+# HISTORIAL_CASAS_MIN casas (o con las que haya, si nunca llegó a tantas).
+HISTORIAL_DIAS_MAX = 21
+HISTORIAL_CASAS_MIN = 3
+
+
+def historial_util(puntos: list[dict], pitazo: str | None) -> list[dict]:
+    """`puntos` ({mercado, seleccion, cuota, casas, capturadoEn}, en orden)."""
+    from datetime import datetime, timedelta
+    corte = None
+    try:
+        corte = (datetime.strptime(str(pitazo)[:19].replace("T", " "), "%Y-%m-%d %H:%M:%S")
+                 - timedelta(days=HISTORIAL_DIAS_MAX)).strftime("%Y-%m-%dT%H:%M:%S")
+    except (TypeError, ValueError):
+        corte = None
+    vivos = [p for p in puntos if float(p.get("cuota") or 0) > 1.0
+             and (corte is None or str(p.get("capturadoEn") or "")[:19] >= corte)]
+    tope: dict[tuple, int] = {}
+    for p in vivos:
+        k = (p["mercado"], p["seleccion"])
+        tope[k] = max(tope.get(k, 0), int(p.get("casas") or 1))
+    out, arranco = [], set()
+    for p in vivos:
+        k = (p["mercado"], p["seleccion"])
+        if k not in arranco and int(p.get("casas") or 1) < min(HISTORIAL_CASAS_MIN, tope[k]):
+            continue
+        arranco.add(k)
+        out.append(p)
+    return out
 
 
 def es_del_contrato(bet_name, value) -> bool:
