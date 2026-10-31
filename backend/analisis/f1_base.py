@@ -65,7 +65,7 @@ def onces_recientes(team_id: int, antes: str) -> dict:
         if not fx:
             return {"onces": 0, "jugadores": {}, "ultimo": None}
         filas = saddb.query(
-            "sad", f"SELECT fixture_id, player_id, jugador, posicion, titular FROM alineaciones "
+            "sad", f"SELECT fixture_id, player_id, jugador, posicion, titular, grid FROM alineaciones "
                    f"WHERE team_id=? AND fixture_id IN ({','.join('?' * len(fx))})", (team_id, *fx))
         ga = saddb.query(
             "sad", f"SELECT jugador_id AS a, asistente_id AS b, detalle FROM fixture_eventos "
@@ -75,6 +75,7 @@ def onces_recientes(team_id: int, antes: str) -> dict:
         return {"onces": 0, "jugadores": {}, "ultimo": None}
     js: dict[int, dict] = {}
     orden = {fid: i for i, fid in enumerate(fx)}
+    lineas = _lineas_por_grid(filas)
     for f in filas:
         j = js.setdefault(f["player_id"], {"nombre": limpiar_nombre(f["jugador"] or ""), "posicion": f["posicion"] or "",
                                            "titular": 0, "convocado": 0, "enUltimo": False})
@@ -94,10 +95,18 @@ def onces_recientes(team_id: int, antes: str) -> dict:
         # LA POSICIÓN CON LA QUE ARRANCÓ SU ÚLTIMO ONCE (incidencias 171, 323 y
         # 66: A. García «MID» de central en la línea de 5, Tamara MID con «D» en
         # la ficha, un arquero «Defensa» que atajó el 09/10)
-        if f["titular"] and f["posicion"] and orden[f["fixture_id"]] < j.get("_ordenPos", 99):
-            j["_ordenPos"], j["posicionReciente"] = orden[f["fixture_id"]], f["posicion"]
-        if f["titular"] and f["posicion"]:
-            j.setdefault("_pos", []).append((orden[f["fixture_id"]], f["posicion"]))
+        # …Y CON EL GRID COMPLETO, LA LÍNEA ES LA FILA (incidencia 725: J. Parodi
+        # «M» de la API siendo lateral derecho en 2:4; la misma regla que el once
+        # oficial del DTP, 137)
+        pos_f = lineas.get((f["fixture_id"], f["player_id"])) or f["posicion"]
+        if f["titular"] and pos_f and orden[f["fixture_id"]] < j.get("_ordenPos", 99):
+            j["_ordenPos"], j["posicionReciente"] = orden[f["fixture_id"]], pos_f
+        if f["titular"] and pos_f:
+            j.setdefault("_pos", []).append((orden[f["fixture_id"]], pos_f))
+        # la posición de cualquier hoja (también del banco) para el que nunca
+        # arrancó: sin ella la fila salía sin zona (897, S. Plaza en Potosí)
+        if f["posicion"] and not j.get("posicionBanco"):
+            j["posicionBanco"] = f["posicion"]
     for j in js.values():
         # LA POSICIÓN HABITUAL, NO LA DEL ÚLTIMO ONCE (incidencias 457 y 523):
         # Pumas salió una vez en 5-4-1 y Juninho pasó a MID y Antuna a DEF; Saka
@@ -120,6 +129,28 @@ def onces_recientes(team_id: int, antes: str) -> dict:
             if pid and pid in js:
                 js[pid]["gaRecientes"] = js[pid].get("gaRecientes", 0) + 1
     return {"onces": len(fx), "jugadores": js, "ultimo": fx[0]}
+
+
+def _lineas_por_grid(filas) -> dict:
+    """{(fixture, jugador): G/D/M/F} de los onces con el grid completo (≥ 10
+    titulares con «fila:columna»): fila 1 arquero, 2 defensa, la última
+    delantera, el resto medio."""
+    por_fx: dict[int, list] = {}
+    for f in filas:
+        if f["titular"]:
+            por_fx.setdefault(f["fixture_id"], []).append(f)
+    out = {}
+    for fid, xi in por_fx.items():
+        try:
+            filas_g = [int(str(j["grid"]).split(":")[0]) for j in xi]
+        except (KeyError, ValueError, TypeError, IndexError):
+            continue
+        if len(filas_g) < 10 or max(filas_g) < 3:
+            continue
+        ult = max(filas_g)
+        for j, r in zip(xi, filas_g):
+            out[(fid, j["player_id"])] = "G" if r == 1 else "D" if r == 2 else "F" if r == ult else "M"
+    return out
 
 
 PARON_DIAS = 35   # un hueco así entre dos partidos es el fin de una temporada
@@ -154,6 +185,11 @@ def onces_disponible(r: dict | None, onces: int) -> int:
     E. Martínez, titular en todos desde que llegó, «TH 6 de 10»; Julián Álvarez
     ROT por las fechas que se perdió). Con pocas hojas, la ventana entera."""
     conv = (r or {}).get("convocado") or 0
+    # EL ARQUERO QUE NO ESTÁ EN LA HOJA FUE REEMPLAZADO POR OTRO ARQUERO: es
+    # rotación, no ausencia (incidencia 879, Casa Pia: André Gomes TF con 5 de
+    # 10 y tres arqueros que se alternan)
+    if (r or {}).get("posicionHabitual") == "G":
+        return onces
     if conv >= CONVOCADO_MINIMO:
         return max(conv, (r or {}).get("titular") or 0)
     return onces
@@ -243,6 +279,8 @@ def _zona_reciente(f: dict, r: dict | None) -> None:
     """La zona de la tabla es la del ÚLTIMO once en que fue titular, si lo hay;
     la de la plantilla de la temporada queda en `zonaTemporada` cuando difiere."""
     z = _ZONA_API.get((r or {}).get("posicionHabitual") or (r or {}).get("posicionReciente") or "", "")
+    if not z and not f.get("zona"):
+        z = _ZONA_API.get((r or {}).get("posicionBanco") or "", "")
     if z and z != f.get("zona"):
         if f.get("zona"):
             f["zonaTemporada"] = f["zona"]

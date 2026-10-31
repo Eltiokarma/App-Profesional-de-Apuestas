@@ -161,6 +161,7 @@ Tres lugares donde vive una guardia:
 - **Guardia:**
   - `cuota_mercados.casas_dos_salidas_incoherentes`;
   - `nombres.limpiar_nombre`;
+  - la línea del jugador sale de la fila del grid cuando el once lo trae completo, no de la letra de la API (`f1_base._lineas_por_grid`, 725; la misma regla que el once oficial del DTP);
   - el pipeline sin duplicados;
   - la cobertura de fichas aprendida por liga;
   - el `conflicto` de la agenda y el chequeo `dos-partidos`.
