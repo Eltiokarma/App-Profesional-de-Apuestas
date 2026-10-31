@@ -112,6 +112,21 @@ def main():
           ft[4]["rol"] is None and ft[4]["k"] == ft[3]["k"]
           and favorito_tapado([fs[0]], {})[0]["k"]["favorito"] == 0.0)
 
+    from backend.cuota_mercados import historial_util, sin_incoherentes
+    check("829: una cuota de 1,00 no entra a la media",
+          [f["cuota"] for f in sin_incoherentes([{"casa": "a", "mercado": "dc", "seleccion": "X2", "cuota": 1.0},
+                                                 {"casa": "b", "mercado": "1x2", "seleccion": "1", "cuota": 1.9}])]
+          == [1.9])
+    _pts = [{"mercado": "1x2", "seleccion": "1", "cuota": 1.57, "casas": 9, "capturadoEn": "2026-08-10T12:00:00"},
+            {"mercado": "1x2", "seleccion": "1", "cuota": 1.20, "casas": 1, "capturadoEn": "2026-10-20T06:30:00"},
+            {"mercado": "1x2", "seleccion": "1", "cuota": 1.45, "casas": 9, "capturadoEn": "2026-10-20T12:30:00"},
+            {"mercado": "1x2", "seleccion": "1", "cuota": 1.40, "casas": 9, "capturadoEn": "2026-10-21T12:30:00"}]
+    _h = historial_util(_pts, "2026-10-21 20:00:00")
+    check("765/779: fuera la captura de otra fecha (agosto, antes del aplazamiento) y la primera con una sola casa",
+          [p["cuota"] for p in _h] == [1.45, 1.40], _h)
+    check("779: si nunca hubo 3 casas, quedan las que hay",
+          len(historial_util([{**p, "casas": 1} for p in _pts[1:]], "2026-10-21 20:00:00")) == 3)
+
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
 
