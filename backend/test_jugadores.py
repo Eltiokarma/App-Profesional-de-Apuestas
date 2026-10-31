@@ -615,6 +615,24 @@ def main():
     check("410/599: si jugó después de la roja, la sanción queda desmentida (ya la cumplió)",
           _bd["lectura"] == "desmentida", _bd)
 
+    # 649 (31/10/2026, decisión del usuario): la convocatoria (banco de la hoja) desmiente
+    _mf = {"player_id": 129142, "tipo": "Missing Fixture", "detalle": "Knee Injury", "fecha": "2026-10-26"}
+    _b649 = _jg._baja_dto(_mf, {"lectura": "senal"}, None, "2026-10-26 15:00:00")
+    check("649: en el banco de la hoja del mismo día de la baja → desmentida (convocadoEl)",
+          _b649["lectura"] == "desmentida" and _b649["desmentidaPorOnce"].get("convocadoEl") == "2026-10-26", _b649)
+    _b649b = _jg._baja_dto(_mf, {"lectura": "senal"}, None, "2026-10-19 15:00:00")
+    check("649: una convocatoria ANTERIOR a la baja no la desmiente", _b649b["lectura"] == "senal", _b649b)
+    _lm = _jg.lectura_missing_fixture({129142: _mf}, {129142, 2, 3}, {}, {129142: "2026-10-26 15:00:00"})
+    check("649: la marca desmentida por la convocatoria no cuenta para la densidad",
+          _lm["marcados"] == 0 and _lm["desmentidas"] == 1, _lm)
+    # 522: «Off the roster» de la lista de Champions es ruido para la liga
+    _off = {"player_id": 9, "tipo": "Missing Fixture", "detalle": "Off the roster", "fecha": "2026-10-21"}
+    _b522 = _jg._baja_dto(_off, {"lectura": "senal"}, None, None, {"2026-10-21"})
+    check("522: «Off the roster» en la fecha de un partido internacional → ruido (soloLista)",
+          _b522["lectura"] == "ruido" and _b522.get("soloLista") == "internacional", _b522)
+    _b522b = _jg._baja_dto(_off, {"lectura": "senal"}, None, None, {"2026-09-30"})
+    check("522: «Off the roster» en una fecha de liga sigue como venía", _b522b["lectura"] == "senal", _b522b)
+
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     return 1 if fallos else 0
 

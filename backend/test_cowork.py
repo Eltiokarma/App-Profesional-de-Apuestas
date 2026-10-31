@@ -2771,8 +2771,20 @@ def main():
     d2 = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["equipos"]["a"]
     check("los bloques que faltan se declaran, no se disimulan",
           d2["bloquesSinDeclarar"] == ["C", "D", "E"], d2.get("bloquesSinDeclarar"))
-    check("y se avisa que cuentan como 0 y bajan el porcentaje",
-          "bajan el porcentaje" in d2["notaTotales"], d2["notaTotales"])
+    # 799 (31/10/2026, decisión del usuario): con menos de 3 bloques declarados no hay
+    # porcentaje (Prat salía 2,4 % «SIN FORMACIÓN» con solo A puntuado)
+    check("799: con 2 bloques declarados el EFE no tiene porcentaje ni clasificación (pocos bloques)",
+          d2["porcentaje"] is None and d2["clasificacion"] == "" and d2.get("pocosBloques")
+          and "pocos bloques" in d2["notaTotales"], (d2["porcentaje"], d2["notaTotales"]))
+    c.post(f"{A}/analisis/cowork", json={"fixtureId": sin_ficha,
+                                         "equipos": {l: {"bloques": {"A": 4, "B": 6, "C": 3}}
+                                                     for l in ("a", "b")}})
+    d3 = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["equipos"]["a"]
+    _max3 = sum(d3["bloques"][l]["topePonderado"] for l in "ABC")
+    _tot3 = sum(d3["bloques"][l]["ponderado"] for l in "ABC")
+    check("799: con 3 declarados el porcentaje es sobre lo DECLARADO (los que faltan no cuentan como 0)",
+          d3["porcentaje"] == round(_tot3 / _max3 * 100, 1) and "sobre los bloques declarados" in d3["notaTotales"],
+          (d3["porcentaje"], _tot3, _max3, d3["notaTotales"]))
 
     # UN PARTE VIEJO NO PIERDE SU EFE POR UN CAMPO QUE NO EXISTÍA. Los partes
     # guardados antes de `declarado` no tienen la clave: tratar «ausente» como
@@ -3994,6 +4006,14 @@ def main():
           _dent(_u732("2026-10-25 15:30:00"), _u732("2026-10-25 16:00:00"))
           and not _dent(_u732("2026-10-25 15:40:00"), _u732("2026-10-25 16:00:00"))
           and not _dent(_u732("2026-10-25 04:40:00"), _u732("2026-10-25 05:00:00")))  # 23:40-00:00 de Lima: sin disparos
+    # 636 (31/10/2026, decisión del usuario): desde el cambio, :02/:22/:42 con piso de 5;
+    # lo anterior se juzga con su grilla (una regla no se cobra hacia atrás)
+    from backend.analisis.parte import grilla_rehacer as _gr636
+    check("636: la grilla de un parte viejo es :07/:37 con piso 15; la de uno nuevo, :02/:22/:42 con piso 5",
+          _gr636(_u732("2026-10-25 15:30:00")) == ((7, 37), 15)
+          and _gr636(_u732("2026-11-01 15:30:00")) == ((2, 22, 42), 5)
+          and _dent(_u732("2026-11-01 15:10:00"), _u732("2026-11-01 15:25:00"))   # 10:22 de Lima
+          and not _dent(_u732("2026-11-01 15:23:00"), _u732("2026-11-01 15:41:00")))  # 10:23-10:41: ninguno
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("UPDATE alineaciones_versiones SET capturada_en='2026-10-25 15:30:00' "
                      "WHERE fixture_id=990480 AND formacion='4-3-1-2'")
@@ -4266,6 +4286,22 @@ def main():
         _t627 = _tabla_eq(_hid, "local", "2100-01-01")["candidatos"]
     finally:
         _f1m.onces_recientes, _f1m._juntos, _f1m.jug.plantilla_de = _orig_rec, _f1m_juntos, _pd627
+    # 683 (31/10/2026, decisión del usuario): titular en uno de los últimos 3 onces y fuera de
+    # la plantilla de la API → entra a la F1 marcado fueraDePlantilla
+    _f1m.onces_recientes = lambda t, a: {"onces": 9, "ultimo": 1, "jugadores": {
+        406623: {"nombre": "I. Ramírez", "posicion": "D", "titular": 9, "convocado": 9, "enUltimo": True},
+        999683: {"nombre": "Bruno Baldini", "posicion": "M", "titular": 1, "convocado": 2, "enUltimo": False,
+                 "enUltimos3": True},
+        999684: {"nombre": "Otro Viejo", "posicion": "M", "titular": 1, "convocado": 1, "enUltimo": False}}}
+    _pd683, _f1m.jug.plantilla_de = _f1m.jug.plantilla_de, (lambda t: {"jugadores": [{**_j627, "id": 406623,
+                                                                                       "nombre": "I. Ramírez"}]})
+    try:
+        _t683 = {x["jugadorId"]: x for x in _tabla_eq(_hid, "local", "2100-01-01")["candidatos"]}
+    finally:
+        _f1m.onces_recientes, _f1m.jug.plantilla_de = _orig_rec, _pd683
+    check("683: el titular de uno de los últimos 3 onces fuera de la plantilla entra marcado fueraDePlantilla;"
+          " uno de hace más, no",
+          _t683.get(999683, {}).get("fueraDePlantilla") is True and 999684 not in _t683, list(_t683))
     check("627: el id fundido por deduplicar no vuelve a sumar sus titularidades (9/9, no 12/9)",
           len(_t627) == 1 and _t627[0]["titularEnUltimos"] == "9/9"
           and _t627[0].get("idsAlternos") == [554584], _t627)
@@ -4381,6 +4417,14 @@ def main():
                        lambda pid: False, _alt904)
     check("904: si el id nuevo compartió hoja con uno de los ya fundidos, no entra a la fila",
           not any({304371, 304389} <= set([r["id"], *r.get("idsAlternos", [])]) for r in _s904g), _s904g)
+    # 691 (31/10/2026, decisión del usuario): el DT de /coachs que ninguna hoja sostiene
+    from backend.analisis import parte as _p691
+    check("691: última hoja sin DT y ninguna de las últimas 3 con «Risueno» → /coachs no es fiable",
+          _p691._coachs_sin_sosten("Jonathan Risueno", ["", "", "D. Merino"]), "")
+    check("691: si alguna hoja reciente lo sostiene, o la última trae DT, no se toca",
+          not _p691._coachs_sin_sosten("Jonathan Risueno", ["", "J. Risueno"])
+          and not _p691._coachs_sin_sosten("Jonathan Risueno", ["D. Merino", ""])
+          and not _p691._coachs_sin_sosten("Jonathan Risueno", []), "")
     # 932/893 (31/10/2026): dos filas del mismo nombre que NUNCA compartieron hoja
     from backend.analisis.f1_base import marcar_posibles as _mp
     _f932 = [{"jugadorId": 352477, "nombre": "L. Pratto"}, {"jugadorId": 6014, "nombre": "L. Pratto"},
@@ -5787,13 +5831,16 @@ def main():
         _en = _pt.rehacer_pendientes(ahora=_pit - _td(minutes=45))
         _fuera = _pt.rehacer_pendientes(ahora=_pit - _td(minutes=120))
         _tarde = _pt.rehacer_pendientes(ahora=_pit - _td(minutes=20))
-        _encima = _pt.rehacer_pendientes(ahora=_pit - _td(minutes=10))
+        _encima = _pt.rehacer_pendientes(ahora=_pit - _td(minutes=3))
+        _diez = _pt.rehacer_pendientes(ahora=_pit - _td(minutes=10))
         check("rehacer: un parte a 45 min del pitazo entra en la ventana; a 120 min, no",
               any(x["fixtureId"] == _ns[0] for x in _en["enVentana"])
               and all(x["fixtureId"] != _ns[0] for x in _fuera["enVentana"]), (_en, _fuera))
-        check("rehacer: el once que llega a ~27 min (444, 451, 454) entra a 20 min; a 10 min ya no",
+        check("rehacer: el once que llega a ~27 min (444, 451, 454) entra a 20 min y, con el piso de 5 "
+              "(636, 31/10/2026), también a 10; a 3 min ya no",
               any(x["fixtureId"] == _ns[0] for x in _tarde["enVentana"])
-              and all(x["fixtureId"] != _ns[0] for x in _encima["enVentana"]), (_tarde, _encima))
+              and any(x["fixtureId"] == _ns[0] for x in _diez["enVentana"])
+              and all(x["fixtureId"] != _ns[0] for x in _encima["enVentana"]), (_tarde, _diez, _encima))
     check("rehacer: hay un parte NS en la demo para probar la ventana", _ns is not None)
     if _ns:
         # 395: el parte escrito para una fecha vieja (reprogramado) entra igual y pide rehacer entero

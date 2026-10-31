@@ -1258,6 +1258,8 @@ paths:
         UNA fila, con el `jugadorId`. La `zona` es la del último once en que fue titular
         (la de la plantilla de la temporada viaja en `zonaTemporada` si difiere), y un titular
         reciente que quedó fuera del corte pero está en la plantilla entra con sus stats.
+        Un titular de uno de los últimos 3 onces que la plantilla de la API no tiene entra con
+        `sinStatsDeTemporada` y `fueraDePlantilla` (incidencia 683).
         La sombra de la API (0 partidos con minutos y ninguna hoja) se funde con su gemelo del
         mismo apellido (incidencia 904), y también dos ids que se ALTERNAN: nunca juntos en una
         hoja y 6 o más hojas entre los dos con este equipo (un arquero y uno de campo, nunca). Dos filas del mismo nombre que NUNCA compartieron una
@@ -2558,7 +2560,8 @@ components:
           properties:
             tipo: { type: string, nullable: true }
             detalle: { type: string, nullable: true }
-            lectura: { type: string, enum: [senal, ruido, desmentida], description: 'desmentida = jugó (titular o con un evento) un partido posterior a la fecha de la baja: no cuenta. Una sanción (roja, amarillas, suspensión) es senal aunque el equipo esté en ruido' }
+            lectura: { type: string, enum: [senal, ruido, desmentida], description: 'desmentida = jugó (titular o con un evento) un partido posterior a la fecha de la baja, o figura en una hoja (once o banco) de esa fecha o posterior (incidencia 649): no cuenta. Una sanción (roja, amarillas, suspensión) es senal aunque el equipo esté en ruido' }
+            soloLista: { type: string, enum: [internacional], description: '«Off the roster» en la fecha de un partido internacional del equipo: fuera de la LISTA de ese torneo, no de la liga; se lee ruido (incidencia 522)' }
             sancion: { type: boolean, description: 'el motivo es disciplinario (Red Card, Yellow Cards, Suspended): cuenta como baja siempre (incidencias 71 y 415, 24/10/2026)' }
             lecturaApi: { type: string, enum: [senal, ruido], description: 'con desmentida, la lectura que tenía' }
             desmentidaPorOnce:
@@ -2566,6 +2569,7 @@ components:
               properties:
                 fechaBaja: { type: string, format: date }
                 jugoEl: { type: string, format: date }
+                convocadoEl: { type: string, format: date, description: 'la hoja (once o banco) que la desmintió sin que jugara (649)' }
         recienLlegado:
           type: object
           nullable: true
@@ -4159,16 +4163,19 @@ components:
           type: number
           nullable: true
           description: >
-            null = el parte no trae NI UN sub-score. No es 0%: es que nadie puntuó, y
-            pintarlo como 0 convierte una ausencia en el peor juicio de la rúbrica.
+            null = el parte no trae NI UN sub-score, o trae menos de 3 bloques de A-E
+            (`pocosBloques`). No es 0%: es que nadie puntuó, y pintarlo como 0 convierte
+            una ausencia en el peor juicio de la rúbrica. Con 3 o más, el porcentaje es
+            sobre los bloques DECLARADOS.
         clasificacion:
           type: string
           enum: [FORMADO, EN_FORMACION, SIN_FORMACION, '']
           description: "'' cuando no hay bloques declarados: no se clasifica lo que no se evaluó"
         sinBloques: { type: boolean, description: 'true = ni un sub-score declarado' }
+        pocosBloques: { type: boolean, description: 'true = menos de 3 bloques de A-E declarados: sin porcentaje ni clasificación (incidencia 799)' }
         bloquesSinDeclarar:
           type: array
-          description: 'letras que nadie puntuó: cuentan como 0 y arrastran el porcentaje'
+          description: 'letras que nadie puntuó: NO entran al total ni al máximo; el porcentaje es sobre lo declarado (desde el 31/10/2026, incidencia 799)'
           items: { type: string }
         notaTotales: { type: string }
         dt:

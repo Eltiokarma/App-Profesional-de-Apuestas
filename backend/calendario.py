@@ -8,7 +8,7 @@ por un dato propio:
 | Etiqueta            | Criterio del protocolo                        | De dónde sale |
 |---------------------|-----------------------------------------------|---------------|
 | 🆕 RECIÉN ASCENDIDO | ascendió en la última temporada               | primera temporada del club en esa liga en nuestro histórico |
-| 🔥 EQUIPO SORPRESA  | rinde por encima de su expectativa            | el gap §5 del motor (forma reciente vs μ esperada) |
+| 🔥 EQUIPO SORPRESA  | rinde por encima de su expectativa            | el gap §5 con los últimos 5 de LIGA; nunca el tercio alto por nivel de su liga |
 | 🏠 LOCAL FUERTE     | ≥70% de victorias como local                  | cuenta de sus partidos en casa |
 | ✈️ VISITA DÉBIL     | <25% de victorias como visitante              | cuenta de sus partidos fuera |
 | 📉 EN CRISIS        | 3+ derrotas seguidas o cambio de DT en 4 sem. | resultados + tabla `entrenadores` |
@@ -393,11 +393,69 @@ def posiciones_y_tabla(liga_id: int, temporada: int, bucket: int, ronda: str | N
 
 
 def _gap(team_id: int, fecha: str | None) -> dict | None:
-    from backend.app import gap_equipo
+    """EL GAP DE LIGA (31/10/2026, incidencias 493 y 547, decisión del usuario):
+    la misma cuenta del gap §5 (`app.gap_equipo`: μ esperada contra rival
+    promedio − puntos de los últimos 5) pero con los últimos 5 de LIGA, sin
+    copas, internacionales ni amistosos. O'Higgins salía «sorpresa» por sus
+    partidos de copa siendo 13.º en la liga. El motor no se toca: esto solo
+    decide una etiqueta del calendario."""
+    from backend.analisis import escala
+    from backend.app import RECENT_WINDOW, mu, nivel_a_fecha
+    cond, params = "", [team_id, team_id]
+    if fecha:
+        cond = " AND f.date < ?"
+        params.append(fecha.replace("T", " ").rstrip("Z"))
+    filas = _q(f"""SELECT f.league_id, f.home_team_id, {_GH} AS gh, {_GA} AS ga FROM fixtures f
+                   WHERE (f.home_team_id=? OR f.away_team_id=?) AND {_FIN}
+                     AND {_GH} IS NOT NULL AND {_GA} IS NOT NULL{cond}
+                   ORDER BY f.date DESC LIMIT 40""", tuple(params))
+    liga = [r for r in filas if escala.es_liga(r["league_id"])][:RECENT_WINDOW]
+    if len(liga) < RECENT_WINDOW:
+        return None
     try:
-        return gap_equipo(team_id, fecha)
+        nivel = nivel_a_fecha(team_id, fecha)
     except Exception:  # noqa: BLE001 — sin niveles para el equipo: sin gap (no se inventa)
         return None
+    pts = 0
+    for r in liga:
+        gf, ga = (r["gh"], r["ga"]) if r["home_team_id"] == team_id else (r["ga"], r["gh"])
+        pts += 3 if gf > ga else 1 if gf == ga else 0
+    gap = mu(nivel, 2.0, 0.5) - pts / RECENT_WINDOW
+    return {"gap": round(gap, 4), "nivel": nivel}
+
+
+TERCIO_ALTO = 1 / 3   # el tercio de arriba por nivel de su liga no es «sorpresa»
+
+
+@lru_cache(maxsize=256)
+def _niveles_liga(liga_id: int, temporada: int | None, dia: str) -> tuple[float, ...]:
+    """Los niveles a la fecha de los equipos de la liga en la temporada, de mayor a menor."""
+    from backend.app import nivel_a_fecha
+    cond, params = "", [liga_id]
+    if temporada:
+        cond, params = " AND league_season=?", [liga_id, temporada]
+    equipos = {r["t"] for r in _q(f"SELECT home_team_id AS t FROM fixtures WHERE league_id=?{cond} "
+                                  f"UNION SELECT away_team_id FROM fixtures WHERE league_id=?{cond}",
+                                  tuple(params + params))}
+    out = []
+    for t in equipos:
+        try:
+            out.append(nivel_a_fecha(t, dia, fallback=None))
+        except Exception:  # noqa: BLE001 — un equipo sin niveles no entra al ranking
+            continue
+    return tuple(sorted((x for x in out if x is not None), reverse=True))
+
+
+def _tercio_alto(nivel: float | None, liga_id: int | None, temporada: int | None, fecha: str | None) -> bool:
+    """¿El equipo está en el tercio de arriba por nivel de su liga? Lanús (nivel
+    3,23, campeón de la Sudamericana 2025) salía «sorpresa» por rendir +0,80."""
+    if nivel is None or not liga_id:
+        return False
+    niveles = _niveles_liga(liga_id, temporada, (fecha or "")[:10])
+    if len(niveles) < 6:
+        return False
+    corte = niveles[max(0, int(len(niveles) * TERCIO_ALTO) - 1)]
+    return nivel >= corte
 
 
 # ── etiquetas ───────────────────────────────────────────────────────────────
@@ -437,9 +495,12 @@ def etiquetas_de_rival(rival_id: int, rival_local: bool, liga_id: int | None,
 
     g = _gap(rival_id, fecha)
     if g and g.get("gap") is not None and g["gap"] <= SORPRESA_GAP:
-        et.append({"codigo": "EQUIPO_SORPRESA", "label": "EQUIPO SORPRESA",
-                   "dato": f"rinde {abs(g['gap']):.2f} pts/partido por encima de su nivel",
-                   "nota": "candidato a regresión: la ventaja puede no sostenerse"})
+        from backend.analisis import escala
+        liga_rival = liga_id if escala.es_liga(liga_id) else escala.liga_vigente(rival_id, fecha)
+        if not _tercio_alto(g.get("nivel"), liga_rival, temporada if liga_rival == liga_id else None, fecha):
+            et.append({"codigo": "EQUIPO_SORPRESA", "label": "EQUIPO SORPRESA",
+                       "dato": f"rinde {abs(g['gap']):.2f} pts/partido por encima de su nivel en la liga",
+                       "nota": "candidato a regresión: la ventaja puede no sostenerse"})
 
     formacion = _formacion_dominante(rival_id)
     if formacion and formacion.split("-")[0] == "5":

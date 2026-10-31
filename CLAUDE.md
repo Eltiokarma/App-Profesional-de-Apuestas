@@ -861,10 +861,13 @@ conversación se pierde en la siguiente.
    desactivada; la v1, `session_01BG2WdPWLP7jrAqFiDCC26P`,
    llegó a 571.000 tokens y se había usado para otra conversación: una sesión
    fija es SOLO de su rutina); **mantenimiento** 12:23 y 21:47 en «SAD · mantenimiento
-   (rutina)» (desde el 22/10, deuda 17); **rehacer** cada 30 min (05:07 a 23:37 Lima, dos disparos :07 y
-   :37) en «SAD · rehacer DTP con el once (rutina)», desde el 22/10/2026:
-   modo `rehacer` de `corrida-sad`, los partes con DTP-REHACER a 15-80 min del
-   pitazo, avisa solo si hizo algo. Un fin de semana trae 50-65 candidatos del padrón (15-23 por
+   (rutina)» (desde el 22/10, deuda 17); **rehacer** cada 20 min desde el
+   31/10/2026 (:02, :22 y :42, de 05 a 23 de Lima; antes cada 30, :07 y :37) en
+   «SAD · rehacer DTP con el once (rutina)», desde el 22/10/2026: modo `rehacer`
+   de `corrida-sad`, los partes con DTP-REHACER a 5-80 min del pitazo (antes
+   15-80; depósito hasta el pitazo − 5), avisa solo si hizo algo. El once llega
+   ~25 min antes y caía entre dos disparos (incidencia 636): `parte.REHACER_GRILLAS`
+   juzga cada parte con la grilla de SU día. Un fin de semana trae 50-65 candidatos del padrón (15-23 por
    tramo) y la meta es el 80 % (`COBERTURA_META`, latido); medido el 17/10:
    ~5 dólares por parte y ~2,7 por veredicto a precio de lista, y una ventana
    de 5 h da ~150-200. Corren en sesiones FIJAS con el repo
@@ -1055,7 +1058,13 @@ conversación se pierde en la siguiente.
      11/06/2025, Portuguesa 16/09: su K deja de sumar el partido dos veces;
      `pipeline --duplicados` los lista); las bajas `desmentida` en Equipo.
    - **Rutina de rehacer**: desde el 27/10 en la sesión
-     `session_01WwsfbTrhC56SCybz9zK3CQ` (rutinas `:07, v4` y `:37, v4`); la v3
+     `session_01WwsfbTrhC56SCybz9zK3CQ`; desde el 31/10/2026 con las rutinas
+     `:02, v5` `trig_01Gv8F164s7s6aYVMRXyD5Lr`, `:22, v5`
+     `trig_01HaXT3mjisnuqwhoC7LnuAy` y `:42, v5` `trig_01M8XfUko8f6H4r26HYm14Rr`
+     (las `:07, v4` y `:37, v4` quedaron desactivadas); al rehacer, el SOB2 y el
+     C1 del TDE se reescriben con el DTP rehecho, nunca el DTP vuelve atrás para
+     callar HERENCIA-DTP (634). Los pendientes ya aprobados para la próxima
+     revisión de cada skill viven en `docs/revisiones/PENDIENTES.md`. La v3
      (`session_01RrrZSSk2eoz89TzKFput5q`) llegó a 660.000 tokens y 30 USD en dos
      días. Del 26/10 al 27/10 en la v3 (la v2,
      `session_01X5KodpKV93A7bBePdiczAZ`, llegó a 570.000 tokens en dos días y
