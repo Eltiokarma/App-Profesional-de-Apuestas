@@ -457,6 +457,12 @@ def main():
     check("974/975: con la mitad o más de los últimos partidos de liga en otra categoría, se marca; si no, no",
           (_esc974.historia_otra_categoria(_f974, 144) or {}).get("partidos") == 14
           and _esc974.historia_otra_categoria(_f974, 145) is None)
+    # 1034 (Atlante): 14 de los últimos 20 en la base de hoy, pero 130 de 150 de liga de la de abajo
+    _f1034 = [{"ligaId": 263}] * 130 + [{"ligaId": 262}] * 6 + [{"ligaId": 263}] * 0 + [{"ligaId": 262}] * 14
+    _h1034 = _esc974.historia_otra_categoria(_f1034, 262) or {}
+    check("1034: el ascendido con la historia casi entera de la categoría de abajo se marca (enTodaLaHistoria)",
+          _h1034.get("enTodaLaHistoria") is True and _h1034.get("partidos") == 130 and _h1034.get("de") == 150
+          and _esc974.historia_otra_categoria([{"ligaId": 262}] * 150, 262) is None, _h1034)
     from backend.analisis import separacion_liga as _sep
     check("los cortes de la separación: 0.64 alta · 0.60 media · debajo baja · sin dato sin medir",
           [_sep.nivel_de(x) for x in (0.68, 0.64, 0.63, 0.60, 0.58, None)]

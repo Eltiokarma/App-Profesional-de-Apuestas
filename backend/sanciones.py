@@ -257,6 +257,21 @@ def del_equipo(team_id: int, fx) -> dict:
     if len(cubiertos) < len(ids):
         out["conteoParcial"] = f"{len(cubiertos)} de {len(ids)} partidos de la competición con eventos en la base"
         return out
+    # EN EL UMBRAL SE DICE SI YA CUMPLIÓ (incidencia 1043, Monterrey: I. Tona
+    # con 5 amarillas y suspensión cada 5, fuera de `sancionados` y sin nada
+    # que dijera por qué): la amarilla del ciclo en un partido ANTERIOR al
+    # último de la competición ya se cumplió; en el último, suspende (o la
+    # hoja de hoy lo desmiente)
+    ciclo = {}
+    for k, c in conteo.items():
+        if not suspende(fx["league_id"], c["n"]):
+            continue
+        en_hoja = (c["jugadorId"] in en_ids) if c["jugadorId"] else ((c["nombre"] or "").strip().lower() in en_nombres)
+        ciclo[k] = ("cumplido" if not c["enElUltimo"] else "enLaHoja" if en_hoja
+                    else "roja" if k in rojas else "suspende")
+    for a, (k, c) in zip(out["amarillas"], sorted(conteo.items(), key=lambda kc: -kc[1]["n"])):
+        if k in ciclo:
+            a["ciclo"] = ciclo[k]
     for k, c in conteo.items():
         if k in rojas or not c["enElUltimo"] or not suspende(fx["league_id"], c["n"]):
             continue

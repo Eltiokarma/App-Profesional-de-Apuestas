@@ -614,6 +614,7 @@ def _con_sanciones(t: dict, sanc: dict | None) -> dict:
         return t
     por_id = {s["jugadorId"]: s for s in sanc.get("sancionados") or [] if s.get("jugadorId")}
     amar = {a["jugadorId"]: a["amarillas"] for a in sanc.get("amarillas") or [] if a.get("jugadorId")}
+    ciclo = {a["jugadorId"]: a["ciclo"] for a in sanc.get("amarillas") or [] if a.get("jugadorId") and a.get("ciclo")}
     for f in t["candidatos"]:
         ids = [f["jugadorId"], *(f.get("idsAlternos") or [])]
         s_ = next((por_id[i] for i in ids if i in por_id), None)
@@ -625,6 +626,9 @@ def _con_sanciones(t: dict, sanc: dict | None) -> dict:
         n = sum(amar.get(i, 0) for i in ids)
         if n:
             f["amarillasEnLaCompeticion"] = n
+        c_ = next((ciclo[i] for i in ids if i in ciclo), None)
+        if c_:
+            f["cicloAmarillas"] = c_   # cumplido · suspende · enLaHoja · roja (1043)
     t["sancionados"] = sanc.get("sancionados") or []
     if sanc.get("regla"):
         t["reglaAmarillas"] = sanc["regla"]

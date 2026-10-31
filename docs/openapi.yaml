@@ -1246,7 +1246,7 @@ paths:
         la amarilla que completa el ciclo de la competición (`reglaAmarillas`, solo las reglas
         conocidas y con los eventos de todos sus partidos; si faltan, `amarillasConteoParcial`),
         cada uno con `tipo`, `fecha`, `detalle` y `certeza: probable`. La fila del sancionado
-        lleva `sancion` y cada fila sus `amarillasEnLaCompeticion`. Un jugador en la hoja de
+        lleva `sancion` y cada fila sus `amarillasEnLaCompeticion` (y, si están en el umbral de la regla, `cicloAmarillas`: `suspende` · `cumplido` · `enLaHoja` · `roja`, 1043). Un jugador en la hoja de
         este partido no se infiere sancionado. Un sancionado que el parte no tiene en `fuera`
         dispara `SANCION-SIN-DECLARAR`.
         El rol es SUGERIDO: lo confirma la prensa. Un decisivo que

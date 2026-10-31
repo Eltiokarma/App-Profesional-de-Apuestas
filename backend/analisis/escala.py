@@ -298,13 +298,25 @@ def historia_otra_categoria(filas: list[dict], base_id: int | None) -> dict | No
     hoy; con la mitad o más, se marca. Solo marca: no mueve ningún número."""
     if not base_id:
         return None
-    ligas = [f.get("ligaId") for f in filas if es_liga(f.get("ligaId"))][-HISTORIA_VENTANA:]
+    todas = [f.get("ligaId") for f in filas if es_liga(f.get("ligaId"))]
+    ligas = todas[-HISTORIA_VENTANA:]
     otras = [l for l in ligas if l != base_id]
-    if not ligas or len(otras) * 2 < len(ligas):
-        return None
-    return {"partidos": len(otras), "de": len(ligas),
-            "nota": f"{len(otras)} de los últimos {len(ligas)} partidos de liga son de otra categoría: "
-                    "las K y las rachas se armaron contra otros rivales (el ascendido); leer la tarjeta con reserva"}
+    if ligas and len(otras) * 2 >= len(ligas):
+        return {"partidos": len(otras), "de": len(ligas),
+                "nota": f"{len(otras)} de los últimos {len(ligas)} partidos de liga son de otra categoría: "
+                        "las K y las rachas se armaron contra otros rivales (el ascendido); leer la tarjeta con reserva"}
+    # …Y EN TODA LA HISTORIA (incidencia 1034, Atlante: 14 de los últimos 20 en
+    # la Liga MX, pero el perfil DC y las otras familias leen 130-262 partidos
+    # casi todos de la Liga de Expansión). Las rachas de hoy ya son de la base;
+    # las frecuencias de toda la historia, no.
+    otras_t = [l for l in todas if l != base_id]
+    if todas and len(otras_t) * 2 >= len(todas):
+        return {"partidos": len(otras_t), "de": len(todas), "enTodaLaHistoria": True,
+                "nota": f"{len(otras_t)} de sus {len(todas)} partidos de liga en la base son de otra categoría: "
+                        "las rachas recientes ya son de esta liga, pero las frecuencias de toda la historia "
+                        "(perfil de doble oportunidad, otras burbujas, reventones) se armaron contra otros "
+                        "rivales; leerlas con reserva"}
+    return None
 
 
 def historial(team_id: int, filas: list[dict], cerrados: set[int] | None = None) -> dict:

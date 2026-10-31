@@ -313,5 +313,18 @@ check("969/959: la baja sin id que nombra la fila del mismo id apaga la alerta; 
       _f969.alertas_sancion(_p969, {"id": 1}, {"a": "Augsburg"}, _s969) == []
       and _f969.alertas_sancion(_p959, {"id": 1}, {"a": "Augsburg"}, _s969) == [])
 
+# 1043 (I. Tona): en el umbral se dice si suspende o si ya cumplió
+_v33 = next(a for a in sanciones.de_fixture(33)["b"]["amarillas"] if a["jugadorId"] == 30398)
+con.execute("UPDATE fixtures SET status_short='FT' WHERE id=33")
+con.execute("INSERT INTO fixtures VALUES (34, '2026-11-03 22:00:00', 'NS', '', ?, 2026, 'Regular Season - 34', ?, ?)",
+            (BRA, ATL, PAL))
+con.execute("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador, jugador_id) "
+            "VALUES (33, 50, 'Card', 'Yellow Card', ?, 'Otro', 999)", (ATL,))
+con.commit()
+_v34 = next(a for a in sanciones.de_fixture(34)["a"]["amarillas"] if a["jugadorId"] == 30398)
+check("1043: la 3.ª amarilla en el último partido suspende; un partido después, ya está cumplida",
+      _v33.get("ciclo") == "suspende" and _v34.get("ciclo") == "cumplido"
+      and not any(x["jugadorId"] == 30398 for x in sanciones.de_fixture(34)["a"]["sancionados"]), (_v33, _v34))
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)
