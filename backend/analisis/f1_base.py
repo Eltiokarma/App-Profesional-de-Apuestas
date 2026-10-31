@@ -214,6 +214,11 @@ def decisivos(plantilla: dict) -> list[dict]:
     """Los que no pueden faltar en la tabla F1: titulares habituales y los
     tres que más goles generan. Cada uno con su porqué."""
     js = plantilla.get("jugadores") or []
+    # LAS STATS DE OTRO CLUB NO HACEN DECISIVO AQUÍ (incidencia 983, Cerro:
+    # Mauro Villar «titular habitual (100 %)» por su temporada anterior en
+    # Huracán, recién llegado y titular 0 de 10)
+    if plantilla.get("origenTemporada") == "anterior":
+        js = [j for j in js if not j.get("recienLlegado")]
     fuera: dict[int, dict] = {}
     for j in js:
         if j["minutos"] >= DECISIVO_MIN_MINUTOS and j["pctMinutos"] >= DECISIVO_PCT:
@@ -716,8 +721,13 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     # juveniles subidos): sin ellos la tabla se queda con el equipo de antes
     ids = {j["id"] for j in elegidos}
     por_id = {j["id"]: j for j in js}
-    if con_onces:
+    # …también con menos de ONCES_MINIMOS onces (incidencia 1008, Willem II con
+    # 4: el arquero titular del 24/10 quedaba fuera porque el rol sale de los
+    # minutos de la temporada); con pocos, solo los titulares de los últimos 3
+    if rec["onces"]:
         for pid, r in sorted(rec["jugadores"].items(), key=lambda kv: -kv[1]["titular"]):
+            if not con_onces and not r.get("enUltimos3"):
+                continue
             # TITULAR EN UNO DE LOS ÚLTIMOS 3 ONCES (31/10/2026, incidencia 683,
             # decisión del usuario): Bruno Gonçalves Baldini (Athletico), Diogo
             # Leite (Lazio) y Labrador (Huancayo) no estaban en la plantilla de la
@@ -763,7 +773,8 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
             if gemela is not None:
                 gemela["idsAlternos"] = sorted({*(gemela.get("idsAlternos") or []), pid})
                 if "titularEnUltimos" in gemela:
-                    t = tit.get(gemela["jugadorId"], 0) + r["titular"]
+                    # dos ids en la misma hoja no son dos titularidades (994: «10/9»)
+                    t = min(tit.get(gemela["jugadorId"], 0) + r["titular"], rec["onces"])
                     tit[gemela["jugadorId"]] = t
                     gemela["titularEnUltimos"] = f"{t}/{rec['onces']}"
                     gemela["rolSugerido"] = rol_por_onces(t, onces_disponible(r, rec["onces"]))
@@ -776,6 +787,21 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
                           "titularEnUltimos": f"{r['titular']}/{rec['onces']}", "apps": None, "minutos": None,
                           "decisivo": "", "sinStatsDeTemporada": True, "fueraDePlantilla": True,
                           **({"titularEnElUltimo": True} if r.get("enUltimo") else {})})
+    # DOS ARQUEROS EN LA TABLA (incidencia 986, Standard: con Epolo sancionado
+    # el suplente Pirard no estaba y el bloque F no tenía a quién poner): si la
+    # tabla trae menos de dos, entra el de la plantilla con más minutos
+    gks = [f for f in filas if f.get("zona") == "GK"]
+    if len(gks) < 2:
+        en = {f["jugadorId"] for f in filas}
+        extra = sorted((j for j in js if _ZONA.get(j.get("posicion") or "") == "GK" and j["id"] not in en),
+                       key=lambda j: -(j.get("minutos") or 0))[:2 - len(gks)]
+        for j in extra:
+            f = {**_fila(j), "decisivo": "", "arqueroDeReserva": True}
+            if con_onces:
+                f["titularEnUltimos"] = f"{tit.get(j['id'], 0)}/{rec['onces']}"
+                f["rolSugerido"] = rol_por_onces(tit.get(j["id"], 0), onces_disponible(rec["jugadores"].get(j["id"]),
+                                                                                         rec["onces"]))
+            filas.append(f)
     marcar_posibles(filas, lambda a, b: not nunca_juntos(a, b))
     return {
         "equipo": nombre, "teamId": team_id, "temporada": p.get("temporada"),
@@ -851,6 +877,16 @@ ONCES_PARA_AUSENTE = 5
 OTRO_EQUIPO_DIAS = 120   # la hoja con el otro club tiene que ser de esta temporada
 
 
+OTRO_EQUIPO_GAP_DIAS = 3   # menos que esto entre la hoja propia y la ajena: el mismo id para dos personas
+
+
+def _dias_entre(a: str, b: str) -> int:
+    try:
+        return abs((datetime.fromisoformat(str(b)[:10]) - datetime.fromisoformat(str(a)[:10])).days)
+    except ValueError:
+        return 99
+
+
 def juegan_en_otro(team_id: int, ids: list[int], antes: str = "9999") -> dict[int, dict]:
     """LOS QUE YA JUEGAN EN OTRO CLUB (31/10/2026, incidencia 931: «G. Martínez»
     36088 salía candidato de Pumas con 10 partidos y el 25/10 asistió el empate
@@ -886,7 +922,10 @@ def juegan_en_otro(team_id: int, ids: list[int], antes: str = "9999") -> dict[in
         if not propia:
             continue
         otra = max(((u, e, tid) for tid, (u, e) in eqs.items() if tid != team_id), default=None)
-        if otra and otra[0] > propia[0] and otra[0] >= corte:
+        # DOS CLUBES EN DOS DÍAS NO ES UN TRASPASO, ES UN ID CHOCADO (incidencia
+        # 961: el arquero 81224 de Kifisia, titular el 24/10, «en Leones del
+        # Norte» por una hoja del 25/10 de un homónimo)
+        if otra and otra[0] > propia[0] and otra[0] >= corte and _dias_entre(propia[0], otra[0]) >= OTRO_EQUIPO_GAP_DIAS:
             out[pid] = {"equipo": otra[1], "teamId": otra[2], "ultimaHoja": otra[0][:10]}
     return out
 

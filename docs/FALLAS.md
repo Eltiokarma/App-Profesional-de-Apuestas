@@ -41,6 +41,7 @@ Tres lugares donde vive una guardia:
   - **Test de arquitectura (regla 1):** ninguna comparación de letras fuera de ese archivo, y ningún módulo que quite tildes a un nombre por su cuenta (811: el NFKD suelto tiraba la «ð»).
   - Los apodos conocidos del DT van en `identidad.APODOS_DT`, lista cerrada con su caso (951, «Pacheta»).
   - **Escaneo:** chequeo `jugador-duplicado`.
+  - Un id que aparece en dos clubes con menos de 3 días entre hojas es un id chocado, no un traspaso (`f1_base.OTRO_EQUIPO_GAP_DIAS`, 961).
   - Al depositar, la fila F1 cuyo nombre no es el de su `jugadorId` en la base se avisa en `faltan` (`parte.nombres_vs_id`, 938): el id manda en el IP, el nombre en la pantalla.
   - El mismo jugador con otro id entre dos hojas: `identidad.ids_equivalentes`, que usan `cambiosXi` y las parejas nuevas del DTP (899).
   - **El diminutivo** es una lista cerrada en `identidad.HIPOCORISTICOS` («Fran»/«Francisco», «Rafa»/«Rafael», 937), nunca «el prefijo»: «Joselu» y «José» pueden ser dos personas.

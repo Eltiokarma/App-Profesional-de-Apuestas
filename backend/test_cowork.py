@@ -4342,6 +4342,23 @@ def main():
               and (_sol["id"] not in _t387 or "3 de 10" in _t387[_sol["id"]].get("decisivoTemporada", "")),
               (_t387.get(_sol["id"]), _fal387))
     check("387: la demo tiene un decisivo solo por minutos para probarlo", _sol is not None, _dec_all)
+    # 983: las stats de otro club (temporada anterior) no hacen decisivo al recién llegado
+    _p983 = {"origenTemporada": "anterior", "jugadores": [
+        {"id": 1, "nombre": "Mauro Villar", "minutos": 2000, "pctMinutos": 1.0, "goles": 0, "asistencias": 0,
+         "recienLlegado": {"desde": "Huracán", "fecha": "2026-08-30"}},
+        {"id": 2, "nombre": "Otro", "minutos": 2000, "pctMinutos": 0.9, "goles": 0, "asistencias": 0}]}
+    check("983: con la temporada anterior, el recién llegado no es decisivo por stats de su club anterior",
+          [d["id"] for d in _f1m.decisivos(_p983)] == [2], _f1m.decisivos(_p983))
+    # 961: dos clubes en dos días es un id chocado, no un traspaso
+    check("961: entre la hoja propia y la ajena hacen falta 3 días para leer un traspaso",
+          _f1m._dias_entre("2026-10-24", "2026-10-25") < _f1m.OTRO_EQUIPO_GAP_DIAS <= _f1m._dias_entre("2026-10-01", "2026-10-25"))
+    # 986: la tabla trae dos arqueros (el de reserva, marcado)
+    _t986 = _tabla_eq(_hid, "local", "2100-01-01")["candidatos"]
+    _gk_pl = [j for j in _jugm.plantilla_de(_hid)["jugadores"] if _f1m._ZONA.get(j.get("posicion") or "") == "GK"]
+    check("986: con dos arqueros en la plantilla, la tabla F1 trae dos",
+          len(_gk_pl) < 2 or sum(1 for f in _t986 if f.get("zona") == "GK") >= 2,
+          [(f["nombre"], f.get("zona")) for f in _t986])
+
     # 747 (ADT, J. Bauman ROT 4/10 con «titular habitual (84 %) · 5 goles»): el que
     # sigue decisivo solo por goles no se anuncia titular habitual
     if _sol:
