@@ -282,5 +282,36 @@ _dts = _dt_con_expulsion(21, {"a": {"nombre": "Pablo Peirano"}, "b": None})
 check("920: el DT de la agenda trae `expulsado` cuando viene de una roja; el otro lado queda igual",
       (_dts["a"].get("expulsado") or {}).get("nombre") == "Pablo Peirano" and _dts["b"] is None, _dts)
 
+# 958 (Cole Palmer): en Inglaterra la roja de la Premier se cumple en la Copa de la Liga
+con.executemany("INSERT INTO fixtures VALUES (?,?,?,'',?,2026,?,?,?)", [
+    (90, "2026-10-24 14:00:00", "FT", 39, "Regular Season - 9", 49, 50),
+    (91, "2026-10-28 19:00:00", "FT", 48, "Round of 16", 49, 51),
+    (92, "2026-11-01 14:00:00", "NS", 39, "Regular Season - 10", 49, 52)])
+con.execute("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador, jugador_id) "
+            "VALUES (90, 80, 'Card', 'Red Card', 49, 'Cole Palmer', 152982)")
+con.commit()
+check("958: la roja de la Premier ya cumplida en la Copa de la Liga no suspende el siguiente de la Premier",
+      not sanciones.de_fixture(92)["a"]["sancionados"], sanciones.de_fixture(92)["a"])
+check("958: sin el partido de copa en medio, sí suspende",
+      sanciones.del_equipo(49, {"id": 91, "date": "2026-10-28 19:00:00", "league_id": 48, "league_season": 2026,
+                                "league_round": "Round of 16"})["sancionados"])
+# 971: el mismo evento repetido no es otra amarilla
+con.executemany("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador, jugador_id) "
+                "VALUES (?, ?, 'Card', 'Yellow Card', ?, ?, ?)", [(30, 44, ATL, "Dup", 777), (30, 44, ATL, "Dup", 777)])
+con.commit()
+_am = {a["nombre"]: a["amarillas"] for a in sanciones.de_fixture(33)["b"]["amarillas"]}
+check("971: la amarilla duplicada en los eventos cuenta una vez", _am.get("Dup") == 1, _am)
+check("1011: sin la regla de la competición lo dice (`sinRegla`)",
+      "sinRegla" in sanciones.de_fixture(21)["a"] and "sinRegla" not in sanciones.de_fixture(12)["a"])
+# 969/959: la baja sin id casa por la fila de la tabla y la nota se lee de `notas`
+from backend.analisis import f1_base as _f969  # noqa: E402
+_s969 = {"a": {"sancionados": [{"jugadorId": 449509, "nombre": "Juma Bah", "detalle": "roja", "tipo": "roja"}]}, "b": {}}
+_p969 = {"equipos": {"a": {"fuera": [{"nombre": "Abdulay Bah", "estado": "baja"}],
+                           "plantel": [{"jugadorId": 449509, "nombre": "Abdulay Bah"}]}, "b": {}}}
+_p959 = {"equipos": {"a": {"fuera": [], "plantel": [], "notas": {"B": "Juma Bah juega: la sanción se apeló"}}, "b": {}}}
+check("969/959: la baja sin id que nombra la fila del mismo id apaga la alerta; la nota en `notas.B` también",
+      _f969.alertas_sancion(_p969, {"id": 1}, {"a": "Augsburg"}, _s969) == []
+      and _f969.alertas_sancion(_p959, {"id": 1}, {"a": "Augsburg"}, _s969) == [])
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)

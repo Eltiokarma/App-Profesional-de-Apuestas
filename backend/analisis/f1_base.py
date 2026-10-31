@@ -975,8 +975,19 @@ def alertas_sancion(parte: dict, fx, nombres: dict, sanc: dict | None = None) ->
         eq = (parte.get("equipos") or {}).get(lado) or {}
         fuera = eq.get("fuera") or []
         ids_fuera = {f.get("jugadorId") for f in fuera if f.get("jugadorId") is not None}
-        notas = " ".join(str((b or {}).get("nota") or "") for b in (eq.get("bloques") or {}).values()
-                         if isinstance(b, dict))
+        # LA BAJA DECLARADA SIN ID CASA POR LA FILA DE LA TABLA (incidencia 969,
+        # Augsburg: la base dice «Juma Bah» y el parte, sin id, «Abdulay Bah»,
+        # que es el nombre de la fila 449509): el id de la fila que la nombra
+        for f in fuera:
+            if f.get("jugadorId") is None:
+                ids_fuera |= {j.get("jugadorId") for j in eq.get("plantel") or []
+                              if j.get("jugadorId") is not None and mismo_jugador(j.get("nombre") or "", f.get("nombre") or "")}
+        # …y la nota del bloque se lee venga en `bloques.X.nota` o en `notas.X`
+        # (incidencia 959: una pisaba a la otra y solo una apagaba la alerta)
+        nt = eq.get("notas")
+        notas = " ".join([str((b or {}).get("nota") or "") for b in (eq.get("bloques") or {}).values()
+                          if isinstance(b, dict)]
+                         + ([str(v or "") for v in nt.values()] if isinstance(nt, dict) else [str(nt or "")]))
         sin = []
         for x in (sanc.get(lado) or {}).get("sancionados") or []:
             if x.get("jugadorId") in ids_fuera or any(mismo_jugador(x.get("nombre") or "", f.get("nombre") or "")
