@@ -2560,6 +2560,13 @@ def main():
     check("un bloque del TDE sin indicadores S → el recibo avisa que el IE sale PARCIAL",
           any(x["bloque"] == "tde.ie (lado a)" and "PARCIAL" in x["costara"] for x in rec_ie["faltan"]),
           [x for x in rec_ie["faltan"] if x["bloque"].startswith("tde")])
+    # 808 (Lebrijana): con los S declarados en `sinDato` (y su motivo), no se cobra
+    p_808 = json.loads(json.dumps(p_ie))
+    p_808["tde"]["bloques"][0]["sinDato"] = {"S1": "sin dato de faltas", "S2": "sin dato", "S3": "pide PPDA"}
+    rec_808 = c.post(f"{A}/analisis/cowork", json=p_808).json()
+    check("808: el IE sin S con los S declarados en `sinDato` no se cobra en faltan",
+          not any(x["bloque"] == "tde.ie (lado a)" for x in rec_808["faltan"]),
+          [x for x in rec_808["faltan"] if x["bloque"].startswith("tde")])
     c.post(f"{A}/analisis/cowork", json=p_tde)
     od_ra = {b["equipo"]: b for b in c.get(f"{A}/analisis/cowork/{con_ficha}/veredicto").json()["objetivo"]["tde"]["bloques"]}
     check("el que marcó primero juega la rama siMarcaPrimero, declarada",
@@ -3449,6 +3456,13 @@ def main():
           _n574["bloques"][0]["apertura"]["m1"]["xiReferencia"].startswith("Atubolu, Kübler")
           and "Grifo" in _n574["bloques"][0]["apertura"]["m1"]["xiReferencia"]
           and not any("xiReferencia" in x["donde"] for x in _r574), (_n574, _r574))
+    _r813a: list = []
+    _ndtp({"bloques": [{"equipo": "a", "apertura": {"m1": {"xiReferencia": "sin dato: no hay once en la base ni en la prensa"}}}]}, _r813a)
+    _r813b: list = []
+    _ndtp({"bloques": [{"equipo": "a", "apertura": {"m1": {"xiReferencia": "sin dato"}}}]}, _r813b)
+    check("813: «sin dato» con el motivo (no hay once en ninguna fuente) no se rechaza; «sin dato» a secas, sí",
+          not any("xiReferencia" in x["donde"] for x in _r813a) and any("xiReferencia" in x["donde"] for x in _r813b),
+          (_r813a, _r813b))
     _rch: list = []
     _ndtp({"bloques": [{"equipo": "a", "apertura": {"m2": {"checklistBloqueRival": {
         "p1": "der", "p2": "improvisado", "p3": "bloque bajo", "p4": "sin dato", "p6": "tal vez"}}}}]}, _rch)

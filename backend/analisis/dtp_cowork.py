@@ -1009,12 +1009,15 @@ def normalizar_dtp(x, rechazos: list) -> dict:
         # v1.5 (cambio 6): sin XI de referencia el once oficial no se puede
         # comparar (Chapecoense, incidencia 525) — se dice al depositar
         xi_ref = _xi_texto(_dict(_dict(y.get("apertura")).get("m1")).get("xiReferencia"))
-        if sin_referencia(xi_ref) or len(_plano(xi_ref).split()) < 8:
+        # …salvo que diga POR QUÉ no hay ninguno (incidencia 813, Laredo: sin once
+        # en la base ni en la prensa, no había forma de declararlo sin dato)
+        if (sin_referencia(xi_ref) or len(_plano(xi_ref).split()) < 8) and not _SIN_REF_MOTIVO.search(xi_ref):
             rechazos.append({"donde": f"dtp.bloques[{i}].apertura.m1.xiReferencia",
                              "porque": "XI de referencia vacío o en prosa: el once oficial no se va a poder "
                                        "comparar y DTP-REHACER no saltará (DTP v1.5)",
                              "esperado": "lista de los 11 titulares; sin previa, el último once oficial, "
-                                         "dicho en `senalXi`"})
+                                         "dicho en `senalXi`; sin ningún once en ninguna fuente, «sin dato: "
+                                         "no hay once en la base ni en la prensa»"})
         bloques.append(_bloque(y, lado))
     return {"bloques": bloques} if bloques else {}
 
@@ -1209,6 +1212,8 @@ def _en_referencia(nombre: str, ref: str, crudo: str = "", estricto: bool = Fals
     return any(_casi(a, p) for a in _apellidos(nombre) for p in palabras)
 
 
+_SIN_REF_MOTIVO = re.compile(r"ninguna fuente|ni en (la )?prensa|sin once (capturado|en la base|en ninguna)|"
+                             r"no hay (ningún|ningun) once|no existe (ningún|ningun|un) once", re.I)
 _SIN_REF = re.compile(r"^\s*(sin|no hay|ninguno|n/?a\b)|sin (dato|xi|once|referencia)|no (hay|existe|tenemos) (xi|once)", re.I)
 
 
