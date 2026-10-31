@@ -3727,6 +3727,19 @@ def main():
           and "ya no están en el plantel: A. Pinamonti" in _pen718["nota"], _pen718)
     check("718: si ninguno sigue, la nota manda a la prensa",
           "ninguno de los que tiraron" in _pen718b["nota"], _pen718b)
+    # 1029 (Táchira): el que la tabla F1 da en otro club no está en el plantel para los penales
+    import backend.analisis.f1_base as _f1m1029
+    _jeo = _f1m1029.juegan_en_otro
+    try:
+        _d15._ids_plantel = lambda tid: {7001, 7002}
+        _f1m1029.juegan_en_otro = lambda tid, ids, antes="9999": {7001: {"equipo": "Lazio", "teamId": 487,
+                                                                         "ultimaHoja": "2026-10-20"}}
+        _pen1029 = _d15.penales_temporada(990491, "2026-10-25 20:00:00")
+    finally:
+        _d15._ids_plantel, _f1m1029.juegan_en_otro = _ipl, _jeo
+    check("1029: la hoja con otro club manda sobre la plantilla (enPlantilla false, juegaEn)",
+          [(e["nombre"], e["enPlantilla"], e.get("juegaEn")) for e in _pen1029["ejecutores"]]
+          == [("D. Berardi", True, None), ("A. Pinamonti", False, "Lazio")], _pen1029)
     # 872 (Lepaul): el mismo id con dos grafías es UN ejecutor, con el nombre largo
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM fixture_eventos WHERE fixture_id=990490")
@@ -4345,6 +4358,17 @@ def main():
     _f1n = {x["jugadorId"]: x for x in _tabla_eq(_hid, "local", "2100-01-01")["candidatos"]}
     check("si la alineación lo llama distinto que la base, la fila trae nombreEnLaHoja (335)",
           _f1n[_cola[0]["id"]].get("nombreEnLaHoja") == "Dayan Pérez", _f1n.get(_cola[0]["id"]))
+    # 1032 (San Lorenzo, M. Reali): el que juega en otro club no vuelve por los onces recientes
+    _jeo1032 = _f1m.juegan_en_otro
+    try:
+        _f1m.juegan_en_otro = lambda tid, ids, antes="9999": {_cola[1]["id"]: {"equipo": "Otro", "teamId": 9,
+                                                                               "ultimaHoja": "2099-12-30"}}
+        _t1032 = _tabla_eq(_hid, "local", "2100-01-01")
+    finally:
+        _f1m.juegan_en_otro = _jeo1032
+    check("1032: el de jueganEnOtroEquipo no es también candidato aunque fuera titular en el último once",
+          _cola[1]["id"] not in {x["jugadorId"] for x in _t1032["candidatos"]}
+          and [x["jugadorId"] for x in _t1032.get("jueganEnOtroEquipo", [])] == [_cola[1]["id"]], _t1032.get("jueganEnOtroEquipo"))
     check("los titulares del último once están todos en la tabla F1, marcados",
           _rec["onces"] > 0 and _ult and _ult <= _ids_f1, (_rec["onces"], _ult, _ids_f1))
     with _sq3f.connect(os.path.join(tmp, "sad.db")) as _con:

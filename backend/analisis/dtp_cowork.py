@@ -428,6 +428,18 @@ def penales_temporada(team_id: int, antes: str, dias: int = PENALES_DIAS) -> dic
         if plantel and jid:
             e["enPlantilla"] = jid in plantel
         e["errados" if "missed" in (f["detalle"] or "").lower() else "convertidos"] += 1
+    # LA HOJA CON OTRO CLUB MANDA SOBRE LA PLANTILLA (incidencia 1029, Táchira:
+    # «L. Gonzalez» enPlantilla true para los penales y en `jueganEnOtroEquipo`
+    # de la tabla F1). Una sola regla de «se fue»: `f1_base.juegan_en_otro`.
+    try:
+        from backend.analisis.f1_base import juegan_en_otro
+        otro = juegan_en_otro(team_id, [e.get("jugadorId") for e in por.values() if e.get("jugadorId")], antes)
+    except Exception:  # noqa: BLE001 — sin alineaciones nadie se afirma ido
+        otro = {}
+    for e in por.values():
+        if e.get("jugadorId") in otro:
+            e["enPlantilla"] = False
+            e["juegaEn"] = otro[e["jugadorId"]]["equipo"]
     # EL MISMO JUGADOR CON DOS IDS Y DOS GRAFÍAS (895: «Luis Alí» y «L. Alí» en
     # Potosí): se funde por la regla de identidad
     lista = []
