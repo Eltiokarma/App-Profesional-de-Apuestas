@@ -1372,11 +1372,34 @@ def dt_de_base(team_id: int) -> dict | None:
             # en enero) y 12 equipos del 18/10/2026 salieron con la fecha mal; el
             # parte anterior del Alavés puntuó el bloque A en 0 por eso. La
             # antigüedad se confirma en prensa y se declara en `dt.desde`.
-            "desdeConfirmar": e.get("fuente") != "alineacion" or not e.get("desde"),
+            "desdeConfirmar": (e.get("fuente") != "alineacion" or not e.get("desde")
+                               or not _llegada_vista(team_id, e.get("nombre") or "", str(e.get("desde")))),
             "desdeNota": ("la fecha de llegada es el primer partido visto en el banco" if
-                          e.get("fuente") == "alineacion" and e.get("desde") else
+                          e.get("fuente") == "alineacion" and e.get("desde")
+                          and _llegada_vista(team_id, e.get("nombre") or "", str(e.get("desde"))) else
                           "la fecha de llegada de la base es aproximada (mes de la carrera de la API, o no se "
                           "vio la llegada): confirmala en prensa antes de puntuar el bloque A")}
+
+
+def _llegada_vista(team_id: int, nombre: str, desde: str) -> bool:
+    """¿La base VIO la llegada? El partido anterior a `desde` tiene hoja con OTRO
+    DT en el banco. Si no (sin hoja, o el mismo), «el primer banco visto» es un
+    techo de la llegada, no la llegada (incidencia 750, Bologna: Palladino
+    «desde 2026-10-11» por la primera hoja capturada, cuando dirigía desde el
+    16/09 y ya había dirigido el 1-1 con el Torino)."""
+    try:
+        prev = saddb.query_one(
+            "sad", "SELECT f.id FROM fixtures f WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.date < ? "
+                   "AND (f.status_short IN ('FT','AET','PEN') OR f.status_long='Match Finished') "
+                   "ORDER BY f.date DESC LIMIT 1", (team_id, team_id, desde[:10]))
+        if not prev:
+            return False
+        al = saddb.query_one("sad", "SELECT MAX(entrenador) AS e FROM alineaciones WHERE fixture_id=? AND team_id=?",
+                             (prev["id"], team_id))
+    except Exception:  # noqa: BLE001 — sin la base no se afirma la llegada: se pide confirmar
+        return False
+    otro = (al or {})["e"] if al else None
+    return bool(otro) and not mismo_dt(otro, nombre)
 
 
 def sin_dt(parte: dict) -> list[str]:

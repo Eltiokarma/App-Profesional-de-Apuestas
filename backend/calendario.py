@@ -131,7 +131,7 @@ def _dt_reciente(team_id: int) -> str | None:
 def _formacion_dominante(team_id: int) -> str | None:
     """La formación más repetida en sus últimas alineaciones capturadas."""
     filas = _q(
-        """SELECT a.formacion, COUNT(*) AS n FROM alineaciones a
+        """SELECT a.formacion, MAX(a.entrenador) AS entrenador, COUNT(*) AS n FROM alineaciones a
            JOIN fixtures f ON f.id = a.fixture_id
            WHERE a.team_id=? AND a.formacion IS NOT NULL AND a.titular=1
            GROUP BY a.fixture_id, a.formacion ORDER BY f.date DESC LIMIT 5""",
@@ -139,6 +139,14 @@ def _formacion_dominante(team_id: int) -> str | None:
     )
     if not filas:
         return None
+    # LA FORMACIÓN ES DEL DT QUE ESTÁ (incidencia 665, Osasuna: BLOQUE BAJO por
+    # el 5-4-1 de Ramis con Arrasate en 4-3-3): cuentan los onces del DT del
+    # último partido; los de otro banco, no
+    from backend.identidad import mismo_dt
+    filas = [dict(r) for r in filas]
+    actual = next((r.get("entrenador") for r in filas if r.get("entrenador")), "")
+    if actual:
+        filas = [r for r in filas if not r.get("entrenador") or mismo_dt(r["entrenador"], actual)]
     conteo: dict[str, int] = {}
     for r in filas:
         conteo[r["formacion"]] = conteo.get(r["formacion"], 0) + 1

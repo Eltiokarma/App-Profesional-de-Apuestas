@@ -57,6 +57,7 @@ Tres lugares donde vive una guardia:
   - **Alertas** `DT-DISCREPANCIA` y `DT-SIN-DT`.
   - **Cuarentena automática** que enseña.
   - **Escaneo:** chequeo `dt-sin-confirmar`.
+  - Lo que se lee del DT es del DT que está: la formación dominante del calendario cuenta solo los onces de su banco (665), y su «primer banco visto» es la llegada solo si el partido anterior tiene hoja con otro DT; si no, `desdeConfirmar` (750).
 - **Si vuelve:** la prensa manda; la base es la alarma, no la verdad.
 
 ### 3. El once que llega tarde, y el rehacer que no alcanza
