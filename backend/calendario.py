@@ -574,8 +574,14 @@ def calendario_de(team_id: int, n: int = PROXIMOS_DEFAULT) -> list[dict]:
         ref = previo if i == 0 else (filas[i - 1]["date"] or "")
         # …por las HORAS, con la misma regla que el F2 del TDE (incidencia 870,
         # Elversberg: Pokal 27/10 19:45 → 30/10 19:30 daba 3 aquí y 2 en el TDE)
-        from backend.jugadores import dias_descanso
+        from backend.jugadores import choque, dias_descanso
         dias = dias_descanso(str(ref), str(f["date"])) if ref and f["date"] else None
+        # DOS PARTIDOS A MENOS DE 20 H: uno está mal (843, 892); sin descanso
+        # que contar, y se dice
+        conflicto = bool(i and ref and f["date"] and choque(str(ref), str(f["date"])))
+        if conflicto:
+            dias = None
+            salida[-1]["conflicto"] = "otro partido del equipo a menos de 24 h: uno es un aplazado sin marcar o un duplicado"
         salida.append({
             "fixtureId": f["id"],
             "fecha": fecha,
@@ -591,6 +597,8 @@ def calendario_de(team_id: int, n: int = PROXIMOS_DEFAULT) -> list[dict]:
             "zonaRival": None if not pos or not total else (
                 "alta" if pos <= 4 else "descenso" if pos > total - 3 else "media"),
             "diasDescanso": dias,
+            **({"conflicto": "otro partido del equipo a menos de 24 h: uno es un aplazado sin marcar o un "
+                             "duplicado"} if conflicto else {}),
             "etiquetas": etiquetas_de_rival(rival_id, not es_local, f["league_id"],
                                             f["league_season"], fecha, ciudad_equipo,
                                             equipo_id=team_id),

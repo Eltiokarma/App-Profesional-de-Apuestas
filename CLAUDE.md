@@ -201,7 +201,7 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   descarte viaja SIEMPRE con su motivo y el id de la liga, y la respuesta trae
   `corte` con lo que quedó fuera SOLO por el `limite` —que es lo que hace que
   una jornada entera de LaLiga no aparezca sin que nadie entienda por qué—.
-  Un equipo que figura en DOS partidos a menos de 20 h viaja con `conflicto`
+  Un equipo que figura en DOS partidos a menos de 24 h viaja con `conflicto`
   (uno de los dos fixtures es un aplazado sin marcar o un duplicado); si
   chocan los dos equipos del fixture, se descarta con ese motivo. Un
   aplazado/cancelado (`PST`/`CANC`/`ABD`) se descarta como tal. La tanda de

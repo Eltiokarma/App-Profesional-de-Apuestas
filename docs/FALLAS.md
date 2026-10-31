@@ -168,7 +168,7 @@ Tres lugares donde vive una guardia:
   - la línea del jugador sale de la fila del grid cuando el once lo trae completo, no de la letra de la API (`f1_base._lineas_por_grid`, 725; la misma regla que el once oficial del DTP);
   - el pipeline sin duplicados;
   - la cobertura de fichas aprendida por liga;
-  - el `conflicto` de la agenda y el chequeo `dos-partidos`.
+  - el `conflicto` de la agenda y el chequeo `dos-partidos`, con la misma regla (`jugadores.choque`, 24 h) en el calendario y los próximos de /predicciones (843, 892).
   - Un `dato_api` visto en 3+ partidos sube al usuario con una regla de código propuesta.
 - **Si vuelve:** si se repite, deja de ser «dato de la API» y pasa a ser una regla nuestra.
 

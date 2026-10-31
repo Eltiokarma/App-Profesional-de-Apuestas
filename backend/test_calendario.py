@@ -293,6 +293,10 @@ def main():
     check("441: con el Clausura andando (6 fechas) la posición sale de su tabla; con 2, del año; sin fases, del año",
           _p6 == ({7: 3}, "Clausura") and _p2 == ({7: 9}, "año") and _pr == ({7: 9}, "año"), (_p6, _p2, _pr))
 
+    from backend.jugadores import choque as _choque  # noqa: E402
+    check("843/892: dos saques del mismo equipo a menos de 24 h chocan (Santa Fe, 22 h); a 47 h no",
+          _choque("2026-11-02 01:15:00", "2026-11-02 23:10:00") and _choque("2026-11-04 22:00", "2026-11-04 22:00")
+          and not _choque("2026-11-02 01:15:00", "2026-11-04 00:15:00"))
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
 

@@ -297,6 +297,8 @@ export interface ProximoPartidoDTO {
   esInternacional: boolean
   /** Días desde el partido anterior del camino (el analizado para el primero). */
   diasDescanso: number
+  /** Otro partido del equipo a menos de 24 h: uno de los dos está mal (843). */
+  conflicto?: boolean
 }
 
 export interface PrediccionDTO {
@@ -642,6 +644,8 @@ export interface PartidoCalendarioDTO {
   zonaRival: 'alta' | 'media' | 'descenso' | null
   /** Días desde el partido anterior: la congestión se lee de un vistazo. */
   diasDescanso: number | null
+  /** Otro partido del equipo a menos de 24 h (892): sin descanso que contar. */
+  conflicto?: string
   etiquetas: EtiquetaRivalDTO[]
 }
 
