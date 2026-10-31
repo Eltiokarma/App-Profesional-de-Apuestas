@@ -4017,6 +4017,10 @@ def main():
     check("526: «sin Lynen» no marca el seguro en el banco; «fijo en Lynen» sí",
           not any(m.startswith("seguro") for m in _rd526("Chuky San José y Reis; sin Lynen, depende de que un lateral se quede")["motivos"])
           and any(m.startswith("seguro") for m in _rd526("pivote fijo en Lynen")["motivos"]))
+    check("1047: el seguro que nombra al suplente «en el banco» no salta; el que se apoya en él, sí",
+          not any(m.startswith("seguro") for m in _rd526("con Lynen en el banco el seguro es Reis")["motivos"])
+          and not any(m.startswith("seguro") for m in _rd526("Reis fijo atrás; Lynen de suplente")["motivos"])
+          and any(m.startswith("seguro") for m in _rd526("Lynen fijo atrás, Reis en el banco")["motivos"]))
     # incidencia 390 (América): el oficial «K. Álvarez» no es el «Carlos Álvarez»
     # de la referencia; «B. Gallego» sí es «Baltasar Gallego Rodríguez»
     _ini = _rehacer({"equipo": "b", "apertura": {"m1": {"sistema": "4-3-3",
