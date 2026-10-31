@@ -287,6 +287,26 @@ def entre(team_id: int, rival_id: int, fecha: str | None, liga_partido: int | No
                             "burbujas del equipo en SU liga: tomalo con esa reserva" if nota else "")}
 
 
+HISTORIA_VENTANA = 20
+
+
+def historia_otra_categoria(filas: list[dict], base_id: int | None) -> dict | None:
+    """¿Las K de hoy se armaron en OTRA liga? (incidencias 974 y 975: Beveren y
+    Cambuur, ascendidos, con «escala misma» y la racha hecha casi entera en la
+    categoría de abajo). De los últimos HISTORIA_VENTANA partidos de liga (sin
+    copas, internacionales ni amistosos), los de una liga que no es la base de
+    hoy; con la mitad o más, se marca. Solo marca: no mueve ningún número."""
+    if not base_id:
+        return None
+    ligas = [f.get("ligaId") for f in filas if es_liga(f.get("ligaId"))][-HISTORIA_VENTANA:]
+    otras = [l for l in ligas if l != base_id]
+    if not ligas or len(otras) * 2 < len(ligas):
+        return None
+    return {"partidos": len(otras), "de": len(ligas),
+            "nota": f"{len(otras)} de los últimos {len(ligas)} partidos de liga son de otra categoría: "
+                    "las K y las rachas se armaron contra otros rivales (el ascendido); leer la tarjeta con reserva"}
+
+
 def historial(team_id: int, filas: list[dict], cerrados: set[int] | None = None) -> dict:
     """Los partidos del equipo contra rivales de otra base (copas, amistosos
     internacionales fuera), con el resultado y si reventaron una burbuja.

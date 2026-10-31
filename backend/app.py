@@ -1648,6 +1648,9 @@ def equipo_burbujas(equipo_id: int, antesDe: int | None = None, proximo: int | N
             liga_px = _f["league_id"] if _f else None
             r["escala"] = {**escala.entre(equipo_id, prox["rivalId"], prox["fecha"], liga_px),
                            "historial": escala.historial(equipo_id, filas, {c["fixtureId"] for c in cerrados})}
+            _hist = escala.historia_otra_categoria(filas, (escala.base_de(equipo_id, prox["fecha"]) or {}).get("id"))
+            if _hist:
+                r["escala"]["historiaOtraCategoria"] = _hist
         except Exception as e:  # noqa: BLE001 — se declara, no tumba la tarjeta
             r["escala"] = {"relacion": "sin dato", "comparable": True, "nota": f"no se pudo calcular: {e}"}
         # LA ESCALA MUEVE LA CONFIANZA, NUNCA EL RIESGO (la misma regla que la
