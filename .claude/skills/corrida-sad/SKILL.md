@@ -500,7 +500,17 @@ POST $B/analisis/cowork/incidencias
   que la prensa corrige (877, 921: el detalle ya dice «confirmar en prensa»);
   y los campos que viajan en otro lugar del GET (`calculado.sinS`,
   `otrasFamilias.perfilDc`, `calculado.contraElOnce`: 678, 900, 944) —leé el
-  contrato antes de reportar un campo ausente.
+  contrato antes de reportar un campo ausente. Y desde la pasada del 31/10
+  (mediodía): la roja que vale más de una fecha o el ciclo de amarillas con
+  `conteoParcial` (993, 1007, 1012: la base solo infiere el partido siguiente
+  y lo dice; la prensa manda); «sin ejecutor de penales» con menos de
+  `PENALES_MUESTRA_MIN` partidos con eventos (995: la nota ya manda a la
+  prensa; pasa en las ligas recién sumadas); el hándicap asiático −0,5 con la
+  misma cuota que el 1 del 1X2 (1009: son la misma apuesta); el titular
+  habitual contado sobre los onces en que estaba disponible (1013, 398/509);
+  y un `contraElOnce` de ANTES de un rehacer: el rehacer pisa la apertura, así
+  que reportá con el `xiReferencia` y la `senalXi` originales copiados en el
+  detalle, o no se puede verificar (1021).
 
 ## Modo `mantenimiento` (los parches, automáticos)
 
