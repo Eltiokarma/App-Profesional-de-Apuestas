@@ -64,6 +64,10 @@ check("887/893: «Rafa Llorente» es «Rafael Llorente» y «R. Llorente»",
       idn.mismo_jugador("Rafa Llorente", "Rafael Llorente") and idn.mismo_jugador("Rafa Llorente", "R. Llorente"))
 check("el diminutivo es una lista cerrada: «Joselu Mato» no es «José Mato», «Juanjo Pérez» no es «Juan Pérez»",
       not idn.mismo_jugador("Joselu Mato", "José Mato") and not idn.mismo_jugador("Juanjo Pérez", "Juan Pérez"))
+check("893: «A. Torrez» es «A. W. Torrez Suarez» (el corto lleva el primer apellido)",
+      idn.mismo_jugador("A. Torrez", "A. W. Torrez Suarez") and idn.mismo_jugador("A. W. Torrez Suarez", "A. Torrez"))
+check("893: el apellido del corto tiene que estar en el largo y la pila cuadrar",
+      not idn.mismo_jugador("A. Romero", "A. W. Torrez Suarez") and not idn.mismo_jugador("B. Torrez", "A. W. Torrez Suarez"))
 check("«Fran» no es «Rafael» (diminutivo de otra pila)", not idn.mismo_jugador("Fran García", "Rafael García"))
 check("«K. Álvarez» no casa con «Carlos Álvarez» (otra inicial, 390)", not idn.casa(T("Carlos Álvarez"), T("K. Álvarez")))
 check("«Danilo» es solo la pila de «Danilo Santos» (855)", idn.solo_pila(T("Danilo Santos"), T("Danilo")))
