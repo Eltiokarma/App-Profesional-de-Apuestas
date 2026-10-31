@@ -130,7 +130,15 @@ def mismo_jugador(uno: str, otro: str) -> bool:
         return True
     if not misma_pila(a[0], b[0]):
         return False
-    return a[-1] == b[-1] or apellido_casi(a[-1], b[-1])
+    if a[-1] == b[-1] or apellido_casi(a[-1], b[-1]):
+        return True
+    # EL NOMBRE CORTO LLEVA EL PRIMER APELLIDO (31/10/2026, incidencia 893: «A.
+    # Torrez» y «A. W. Torrez Suarez» de Oriente, el mismo arquero con dos ids):
+    # una pila y UN apellido contra el nombre largo con dos o más, el apellido
+    # corto casa con cualquiera de los del largo, no solo con el último.
+    corto, largo = (a, b) if len(a) <= len(b) else (b, a)
+    return (len(corto) == 2 and len(largo) >= 3
+            and any(corto[-1] == x or apellido_casi(corto[-1], x) for x in largo[1:] if len(x) > 1))
 
 
 def ids_equivalentes(antes: dict, ahora: dict) -> dict:
