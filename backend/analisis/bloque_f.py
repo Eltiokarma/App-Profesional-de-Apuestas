@@ -23,7 +23,9 @@ from backend.nombres import normalizar
 # F1 · pesos por rol (tabla "Clasificación de Rol" del protocolo)
 PESOS_ROL = {"TF": 3.0, "TH": 2.0, "ROT": 1.0, "SUP": 0.5}
 # F2a · factor por estado
-FACTOR_ESTADO = {"baja": 1.0, "duda": 0.5, "disponible": 0.0}
+FACTOR_ESTADO = {"baja": 1.0, "duda": 0.5, "disponible": 0.0,
+                 # el no convocado por descanso no pesa en el IP: va a F4 (rúbrica v1.7)
+                 "descanso": 0.0}
 # F2c · monopolio del arquero: el titular fijo ausente pesa ×1.5
 MULT_GK = 1.5
 ZONAS = ("GK", "DEF", "MID", "ATK")

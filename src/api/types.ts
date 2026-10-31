@@ -1131,7 +1131,7 @@ export interface EfeJugador {
   zona: 'GK' | 'DEF' | 'MID' | 'ATK'
   rol: 'TF' | 'TH' | 'ROT' | 'SUP'
   apps: string
-  estado: 'disponible' | 'baja' | 'duda'
+  estado: 'disponible' | 'baja' | 'duda' | 'descanso'
   motivo: string
 }
 
@@ -1357,7 +1357,7 @@ export interface TimelineData {
 export type ZonaF = 'GK' | 'DEF' | 'MID' | 'ATK'
 export type RolF = 'TF' | 'TH' | 'ROT' | 'SUP'
 /** `duplicado`: la misma persona que otra fila con jugadorId (la hoja la nombra distinto); no pesa en el IP. */
-export type EstadoJugadorF = '' | 'disponible' | 'baja' | 'duda' | 'duplicado'
+export type EstadoJugadorF = '' | 'disponible' | 'baja' | 'duda' | 'descanso' | 'duplicado'
 
 export interface JugadorParte {
   nombre: string

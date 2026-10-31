@@ -324,6 +324,9 @@ def _bloque_crudo(v):
 _CLAVES_FUERA = {"nombre", "estado", "motivo", "zona", "rol", "posicion", "apps", "jugadorId"}
 
 
+_DESCANSO = re.compile(r"descans|rotaci|rotad|dosific|reservad", re.I)
+
+
 def _fuera(f: dict, rechazos: list, donde: str) -> dict | None:
     """Una baja pública. Puede traer zona y rol, y conviene que los traiga.
 
@@ -345,8 +348,17 @@ def _fuera(f: dict, rechazos: list, donde: str) -> dict | None:
         rechazos.append({"donde": donde, "porque": "baja sin nombre"})
         return None
     estado = _txt(f.get("estado")).lower()
+    # EL NO CONVOCADO POR DESCANSO VA A F4, NO AL IP (rúbrica EFE v1.7, «Descanso
+    # planificado»; incidencia 807: los cinco de Osasuna con estado «descanso» se
+    # guardaban como «baja», sumaban al IP y encendían F3). Y un estado que no es
+    # ninguno de los conocidos se dice, no se vuelve «baja» callado.
+    if _DESCANSO.search(estado):
+        estado = "descanso"
+    elif estado and estado not in ("baja", "duda"):
+        rechazos.append({"donde": f"{donde}.estado", "porque": f"estado {f.get('estado')!r} desconocido: se guardó «baja»",
+                         "esperado": "baja · duda · descanso (el no convocado por descanso va a F4, no al IP)"})
     out = {"nombre": nombre,
-           "estado": estado if estado in ("baja", "duda") else "baja",
+           "estado": estado if estado in ("baja", "duda", "descanso") else "baja",
            "motivo": _txt(f.get("motivo")),
            "zona": _alias(f.get("zona"), _ZONA_ALIAS) or _alias(f.get("posicion"), _ZONA_ALIAS),
            "rol": _alias(f.get("rol"), _ROL_ALIAS)}
@@ -4037,10 +4049,12 @@ def dto(fixture_id: int) -> dict | None:
                 "detalle": f"al mismo equipo le faltan sub-scores del EFE "
                            f"({', '.join(equipos[lado].get('bloquesSinDeclarar') or []) or 'todos'}) "
                            f"y el TDE se calculó con {cob.get('usados')} de "
-                           f"{cob.get('nominales')} indicadores. El hueco tira el EFE hacia "
-                           "abajo y empuja el IE hacia arriba: los dos números salen del "
-                           "mismo vacío y apuntan al revés. No es un equipo pésimo con "
-                           "riesgo altísimo, es un equipo sin datos",
+                           f"{cob.get('nominales')} indicadores. El EFE se calcula solo sobre los "
+                           "bloques declarados y el IE sobre los indicadores que hay: los dos "
+                           "números miran menos partido del que parece y salen del mismo vacío. "
+                           "No es un equipo pésimo con riesgo altísimo, es un equipo con pocos "
+                           "datos (incidencia 815: el texto decía que el hueco hundía el EFE, y el "
+                           "denominador ya se ajusta)",
             })
     fx = _fixture(fila["fixture_id"])
     reventon = _reventon_calculado(fx)

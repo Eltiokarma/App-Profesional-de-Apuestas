@@ -873,8 +873,17 @@ def main():
     check("la contradicción EFE/TDE se declara JUNTA, en una alerta",
           any(x["codigo"] == "HUECO-DOBLE" and x["equipo"] == "a" for x in d_h["alertas"]),
           [x["codigo"] for x in d_h["alertas"]])
+    from backend.analisis.parte import _fuera as _fu807
+    from backend.analisis.bloque_f import FACTOR_ESTADO as _fe807
+    _r807: list = []
+    _f807 = _fu807({"nombre": "Moncayola", "estado": "descanso", "motivo": "no convocado, va en F4"}, _r807, "fuera[0]")
+    _f807b = _fu807({"nombre": "X", "estado": "sancionado"}, _r807, "fuera[1]")
+    check("807: el no convocado por descanso se guarda «descanso» (factor 0 en el IP); un estado raro se dice",
+          _f807["estado"] == "descanso" and _fe807["descanso"] == 0.0 and _f807b["estado"] == "baja"
+          and any(r["donde"] == "fuera[1].estado" for r in _r807), (_f807, _r807))
     check("y la alerta dice qué NO significa",
-          any("es un equipo sin datos" in x.get("detalle", "") for x in d_h["alertas"]),
+          any("es un equipo con pocos datos" in x.get("detalle", "") and "hacia abajo" not in x.get("detalle", "")
+              for x in d_h["alertas"]),
           [x.get("detalle", "")[:60] for x in d_h["alertas"]])
     c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
 
