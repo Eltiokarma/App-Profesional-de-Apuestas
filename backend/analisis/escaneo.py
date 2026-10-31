@@ -96,13 +96,23 @@ def _hallazgo(chequeo: str, item: dict, detalle: str, lado: str | None = None) -
             "detalle": detalle}
 
 
-def _duplicados(candidatos: list[dict]) -> list[str]:
+def _duplicados(candidatos: list[dict], juntos=None) -> list[str]:
+    """El mismo jugador dos veces en la F1 que la tabla NO resolvió. Lo marcado
+    `posibleMismoQue` ya está cubierto (el bloque F no lo cuenta de baja) y dos
+    ids que compartieron una hoja de partido son dos personas (31/10/2026,
+    incidencia 887: los dos «T. Palacios» de Estudiantes y los dos «A. Romero»
+    de Monagas salían como duplicados y eran dos jugadores)."""
     from backend.analisis.f1_base import mismo_jugador
     out = []
     for i, a in enumerate(candidatos):
         alt_a = {a.get("jugadorId"), *(a.get("idsAlternos") or [])}
         for b in candidatos[i + 1:]:
             if b.get("jugadorId") in alt_a or a.get("jugadorId") in (b.get("idsAlternos") or []):
+                continue
+            if a.get("posibleMismoQue") == b.get("jugadorId") or b.get("posibleMismoQue") == a.get("jugadorId"):
+                continue
+            if (juntos and a.get("jugadorId") is not None and b.get("jugadorId") is not None
+                    and juntos(a["jugadorId"], b["jugadorId"])):
                 continue
             if mismo_jugador(a.get("nombre") or "", b.get("nombre") or ""):
                 out.append(f"«{a['nombre']}» {a.get('jugadorId')} y «{b['nombre']}» {b.get('jugadorId')}")
@@ -131,7 +141,7 @@ def _pre(item: dict, ahora: datetime) -> list[dict]:
         t = tabla.get(lado) or {}
         if t.get("sinDato"):
             out.append(_hallazgo("sin-plantel", item, t["sinDato"], lado))
-        for d in _duplicados(t.get("candidatos") or []):
+        for d in _duplicados(t.get("candidatos") or [], f1_base._juntos):
             out.append(_hallazgo("jugador-duplicado", item, d, lado))
         dt = (item.get("dt") or {}).get(lado)
         if not dt:

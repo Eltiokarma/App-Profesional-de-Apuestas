@@ -944,7 +944,11 @@ Escribís vos (es juicio, no se puede calcular):
   alineación de la API lo nombra de otra forma): no lo agregues de nuevo sin
   id. Cúcuta, 20/10/2026: «D. Gelvez» (555163) y «Dayan Pérez» eran el mismo y
   la fila de prensa salía de baja; ahora el backend la marca `duplicado` y no
-  pesa, pero la tabla queda mal escrita.
+  pesa, pero la tabla queda mal escrita. Dos filas con `posibleMismoQue` son
+  probablemente la misma persona con dos ids de la API (nunca compartieron una
+  hoja): no las sumes dos veces ni cuentes de baja a una si la otra juega
+  (el bloque F ya no lo hace, Pratto 31/10). `jueganEnOtroEquipo` son los que
+  ya se fueron del club según sus hojas: no van en la tabla.
 - Las bajas y sanciones ya públicas, en `fuera`, con su motivo y su fuente. Y
   a esos mismos jugadores, TAMBIÉN en `plantel` con su zona y su rol: una baja
   que no está en la tabla F1 no pesa en el Impacto Ponderado.

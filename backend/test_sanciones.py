@@ -180,6 +180,14 @@ check("escaneo: dos filas con el mismo jugador en la tabla F1 son un hallazgo (y
                            {"jugadorId": 3, "nombre": "J. Peña", "idsAlternos": [4]},
                            {"jugadorId": 4, "nombre": "J. Pena"}]) == ["«Y. Guzmán» 1 y «Y. Guzman» 2"])
 _ahora = datetime(2026, 10, 28, 12, 0, tzinfo=timezone.utc)
+# 887 (31/10/2026): lo marcado `posibleMismoQue` ya está cubierto y dos ids que
+# compartieron una hoja son dos personas (los dos «T. Palacios» de Estudiantes)
+_dos = [{"jugadorId": 311360, "nombre": "T. Palacios"}, {"jugadorId": 206984, "nombre": "T. Palacios"}]
+check("887: dos homónimos que compartieron una hoja no son un hallazgo; sin esa prueba, sí",
+      escaneo._duplicados(_dos, lambda a, b: True) == [] and len(escaneo._duplicados(_dos, lambda a, b: False)) == 1)
+check("887: el par marcado posibleMismoQue por la tabla F1 ya está cubierto",
+      escaneo._duplicados([{**_dos[0], "posibleMismoQue": 206984}, {**_dos[1], "posibleMismoQue": 311360}],
+                          lambda a, b: False) == [])
 _pre = escaneo._pre({"fixtureId": 12, "partido": "Santos vs Palmeiras", "fecha": "2026-10-28", "hora": "22:30",
                      "equipoA": "Santos", "equipoB": "Palmeiras", "conflicto": "Santos también juega el 28/10",
                      "dt": {"a": {"nombre": "X", "fiable": True}, "b": None}}, _ahora)

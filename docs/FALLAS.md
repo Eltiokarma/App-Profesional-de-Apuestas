@@ -41,6 +41,10 @@ Tres lugares donde vive una guardia:
   - **Test de arquitectura (regla 1):** ninguna comparación de letras fuera de ese archivo.
   - **Escaneo:** chequeo `jugador-duplicado`.
   - El mismo jugador con otro id entre dos hojas: `identidad.ids_equivalentes`, que usan `cambiosXi` y las parejas nuevas del DTP (899).
+  - **El diminutivo** es una lista cerrada en `identidad.HIPOCORISTICOS` («Fran»/«Francisco», «Rafa»/«Rafael», 937), nunca «el prefijo»: «Joselu» y «José» pueden ser dos personas.
+  - **La sombra de la API** (0 partidos con minutos y ninguna hoja) se funde con su gemelo en `f1_base.deduplicar` (904, Bisanz/Bizans).
+  - **Lo que los datos no alcanzan a decidir** se marca y se protege, no se adivina: dos filas del mismo nombre que nunca compartieron hoja llevan `posibleMismoQue` y el bloque F no cuenta a una de baja si la otra jugó (932, Pratto). Dos ids que compartieron una hoja son dos personas, y el escaneo ya no las reporta (887, los dos «T. Palacios»).
+  - **El que se fue:** su última hoja con otro club lo saca de la tabla (`f1_base.juegan_en_otro`, 931).
 - **Si vuelve:** el caso nuevo va a `identidad.py` con su test. Nunca un `if` en el módulo donde apareció.
 
 ### 2. El DT de la base, viejo o cruzado

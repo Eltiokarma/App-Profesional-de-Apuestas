@@ -20,6 +20,8 @@ titularidades, goles y asistencias de la temporada; 0 requests):
 """
 from __future__ import annotations
 
+from datetime import datetime, timedelta
+
 from backend import db as saddb
 from backend import identidad as _id
 from backend import jugadores as jug
@@ -304,6 +306,23 @@ def _misma_ficha(a: dict, b: dict) -> bool:
             and bool(a.get("posicion")) and a.get("posicion") == b.get("posicion"))
 
 
+def _sombra(j: dict) -> bool:
+    """El registro roto de la API: 0 partidos con minutos en la temporada
+    («Juan Bizans» 406291, 0 PJ y 1.359 minutos)."""
+    return not j.get("partidos") and bool(j.get("minutos"))
+
+
+def _sombra_sin_hojas(q: dict, j: dict, sin_hojas) -> bool:
+    """¿Uno de los dos es la SOMBRA de la API —0 partidos con minutos— y nunca
+    figuró en una hoja de partido? Huracán (30/10/2026, incidencia 904): «J.
+    Bisanz» 304371 (el id de los onces, 6 de 10), «F. Bisanz» 304389 y «Juan
+    Bizans» 406291 (0 PJ y 1.359 minutos, sin una sola hoja) salían como tres
+    filas. Sin hojas, la sucesión no se puede medir; el registro roto sin hojas
+    con el mismo apellido y la pila compatible es el de la temporada de la
+    misma persona."""
+    return bool(sin_hojas) and ((_sombra(q) and sin_hojas(q["id"])) or (_sombra(j) and sin_hojas(j["id"])))
+
+
 def _caben(q: dict, j: dict, tope: int | None) -> bool:
     """¿Los partidos de los dos registros SUMADOS caben en los que jugó el
     equipo? Un registro partido reparte los partidos de UNA persona; si la suma
@@ -315,7 +334,7 @@ def _caben(q: dict, j: dict, tope: int | None) -> bool:
 
 
 def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None,
-               tope: int | None = None) -> tuple[list[dict], dict[int, int]]:
+               tope: int | None = None, sin_hojas=None) -> tuple[list[dict], dict[int, int]]:
     """UN JUGADOR CON DOS IDS ES UNO. La API da a veces dos ids para la misma
     persona: el de la temporada, con sus minutos, y una copia vacía creada por
     una hoja del partido (Leones del Norte con «E. Griffa» 566349 y «Emiliano
@@ -355,7 +374,12 @@ def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None,
     y 724: «Y. Guzmán» 13491 con 37 PJ y «Y. Guzman» 531423 con 30 en el
     América, 27 años, delanteros, los dos decisivos; el «J. Peña»/«J. Pena» de
     la 741 era lo mismo, 26 años y defensas): se queda la fila con más minutos,
-    SIN sumar, y la otra deja su id en `idsAlternos` (`superpuesto`)."""
+    SIN sumar, y la otra deja su id en `idsAlternos` (`superpuesto`).
+
+    LA SOMBRA SIN HOJAS (31/10/2026, incidencia 904): en las dos reglas de la
+    inicial, la sucesión se puede reemplazar por `_sombra_sin_hojas` —uno de
+    los dos registros tiene 0 partidos con minutos y nunca figuró en una hoja
+    (`sin_hojas(id)`)—: Juan Bizans / J. Bisanz / F. Bisanz de Huracán."""
     tit = dict(tit)
     quedan: list[dict] = []
     for j in sorted(js, key=lambda j: (_sin_minutos(j), -(j.get("minutos") or 0), -tit.get(j["id"], 0))):
@@ -364,7 +388,8 @@ def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None,
             if not mismo_jugador(j["nombre"], q["nombre"]):
                 if (_mismo_apellido(j["nombre"], q["nombre"]) and not _sin_minutos(j) and juntos
                         and _caben(q, j, tope) and not juntos(j["id"], q["id"])
-                        and ((sucesion and sucesion(j["id"], q["id"])) or _mismos_ga(j, q))):
+                        and ((sucesion and sucesion(j["id"], q["id"])) or _mismos_ga(j, q)
+                             or _sombra_sin_hojas(q, j, sin_hojas))):
                     gemela, sumar = q, True
                     quedan[i] = {**_sumar(q, j), "fundidoPorInicial": True}
                     break
@@ -380,7 +405,8 @@ def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None,
             # misma inicial pero sin la pila entera («M. Perea» y «M. Perea»): la misma
             # regla de la inicial distinta (sucesión o mismos goles y asistencias)
             if (juntos and _caben(q, j, tope) and not juntos(j["id"], q["id"])
-                    and ((sucesion and sucesion(j["id"], q["id"])) or _mismos_ga(j, q))):
+                    and ((sucesion and sucesion(j["id"], q["id"])) or _mismos_ga(j, q)
+                         or _sombra_sin_hojas(q, j, sin_hojas))):
                 gemela, sumar = q, True
                 quedan[i] = {**_sumar(q, j), "fundidoPorInicial": True}
                 break
@@ -405,6 +431,41 @@ def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None,
     return quedan, tit
 
 
+def marcar_posibles(filas: list[dict], juntos) -> None:
+    """DOS FILAS QUE PUEDEN SER LA MISMA PERSONA y los datos no alcanzan para
+    fundirlas (31/10/2026, incidencias 887, 893 y 932): el mismo nombre (o el
+    mismo apellido con una inicial) y NUNCA en la misma hoja de partido, pero
+    sin sucesión ni los mismos goles. Se marcan las dos con `posibleMismoQue`:
+    el bloque F no cuenta a una de baja si la otra jugó, y el parte no las
+    suma dos veces. Dos que compartieron una hoja son dos personas (los dos
+    «T. Palacios» de Estudiantes, defensa y volante) y no se marcan."""
+    con_id = [f for f in filas if f.get("jugadorId") is not None]
+    for i, a in enumerate(con_id):
+        alt_a = {a["jugadorId"], *(a.get("idsAlternos") or [])}
+        for b in con_id[i + 1:]:
+            if b["jugadorId"] in alt_a or a["jugadorId"] in (b.get("idsAlternos") or []):
+                continue
+            if "posibleMismoQue" in a or "posibleMismoQue" in b:
+                continue
+            if not (mismo_jugador(a.get("nombre") or "", b.get("nombre") or "")
+                    or _mismo_apellido(a.get("nombre") or "", b.get("nombre") or "")):
+                continue
+            if juntos(a["jugadorId"], b["jugadorId"]):
+                continue
+            a["posibleMismoQue"], b["posibleMismoQue"] = b["jugadorId"], a["jugadorId"]
+
+
+def nunca_juntos(a: int, b: int) -> bool:
+    """¿Consta que los dos ids NUNCA estuvieron en la misma hoja? Sin fichas en la
+    base no consta nada: False (no se afirma lo que no se sabe)."""
+    try:
+        return not saddb.query(
+            "sad", "SELECT 1 FROM alineaciones x JOIN alineaciones y ON x.fixture_id = y.fixture_id "
+                   "AND x.team_id = y.team_id WHERE x.player_id=? AND y.player_id=? LIMIT 1", (a, b))
+    except Exception:  # noqa: BLE001 — sin fichas no consta: no se marca ni se protege
+        return False
+
+
 def _juntos(a: int, b: int) -> bool:
     """¿Estuvieron los dos ids en la misma hoja de partido (once o banco)?"""
     try:
@@ -412,6 +473,14 @@ def _juntos(a: int, b: int) -> bool:
             "sad", "SELECT 1 FROM alineaciones x JOIN alineaciones y ON x.fixture_id = y.fixture_id "
                    "AND x.team_id = y.team_id WHERE x.player_id=? AND y.player_id=? LIMIT 1", (a, b)))
     except Exception:  # noqa: BLE001 — sin fichas: el nombre completo decide
+        return False
+
+
+def _sin_hojas(pid: int) -> bool:
+    """¿El id nunca figuró en una hoja de partido (once o banco)?"""
+    try:
+        return not saddb.query("sad", "SELECT 1 FROM alineaciones WHERE player_id=? LIMIT 1", (pid,))
+    except Exception:  # noqa: BLE001 — sin fichas no se afirma que no tenga hojas
         return False
 
 
@@ -483,7 +552,10 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     rec = onces_recientes(team_id, antes)
     con_onces = rec["onces"] >= ONCES_MINIMOS
     tit = {pid: j["titular"] for pid, j in rec["jugadores"].items()}
-    js, tit = deduplicar(js, tit, _juntos, _sucesion, _partidos_temporada(team_id, p.get("temporada")))
+    js, tit = deduplicar(js, tit, _juntos, _sucesion, _partidos_temporada(team_id, p.get("temporada")), _sin_hojas)
+    otro = juegan_en_otro(team_id, [j["id"] for j in js], antes)
+    idos = [{"jugadorId": j["id"], "nombre": j["nombre"], **otro[j["id"]]} for j in js if j["id"] in otro]
+    js = [j for j in js if j["id"] not in otro]
     # DECISIVO DE LA TEMPORADA, NO DE HOY. Elvio Vera (Ameliano) y Martín Arias
     # (Cerro) salían «titular habitual 100 %» por el Apertura con 0 de 10 en los
     # últimos onces (incidencia 45): con onces recientes, quien no fue titular
@@ -616,12 +688,15 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
                           "titularEnUltimos": f"{r['titular']}/{rec['onces']}", "apps": None, "minutos": None,
                           "decisivo": "", "sinStatsDeTemporada": True,
                           **({"titularEnElUltimo": True} if r.get("enUltimo") else {})})
+    marcar_posibles(filas, lambda a, b: not nunca_juntos(a, b))
     return {
         "equipo": nombre, "teamId": team_id, "temporada": p.get("temporada"),
         "origenTemporada": p.get("origenTemporada"),
         "rolPor": (f"titularidades en los últimos {rec['onces']} onces" if con_onces else
                    f"minutos de la temporada (solo {rec['onces']} onces recientes en la base)"),
         "candidatos": filas,
+        # los de la plantilla cuya última hoja es con otro club (931): fuera de la tabla
+        **({"jueganEnOtroEquipo": idos} if idos else {}),
         # los que la API lista sin un minuto (recién llegados): la prensa dirá
         "plantelSinStats": p.get("plantelSinStats") or [],
         "sinDato": "" if js else "sin plantilla ingestada para este equipo: la tabla sale de la prensa",
@@ -683,6 +758,49 @@ def _en_tabla(j: dict, plantel: list[dict]) -> bool:
 # una salida registrada del club, o ninguna convocatoria en los últimos onces
 # capturados (con al menos ONCES_PARA_AUSENTE para que el silencio diga algo).
 ONCES_PARA_AUSENTE = 5
+
+
+OTRO_EQUIPO_DIAS = 120   # la hoja con el otro club tiene que ser de esta temporada
+
+
+def juegan_en_otro(team_id: int, ids: list[int], antes: str = "9999") -> dict[int, dict]:
+    """LOS QUE YA JUEGAN EN OTRO CLUB (31/10/2026, incidencia 931: «G. Martínez»
+    36088 salía candidato de Pumas con 10 partidos y el 25/10 asistió el empate
+    de Tigres). La API tarda en registrar el traspaso (`salidos` no lo veía),
+    pero la hoja no: la última hoja del jugador con OTRO club, posterior a la
+    última con este y de los últimos `OTRO_EQUIPO_DIAS`, dice que se fue. Las
+    selecciones no cuentan (en la API se llaman como su país) y el que nunca
+    jugó para este equipo (un fichaje recién llegado) tampoco. Una selección
+    juvenil («Mexico U20») empieza con el nombre del país y tampoco cuenta."""
+    ids = [i for i in ids if i and i > 0]
+    if not ids:
+        return {}
+    try:
+        filas = saddb.query(
+            "sad", f"""SELECT x.player_id, x.team_id, t.name AS equipo, MAX(f.date) AS ultima
+                       FROM alineaciones x JOIN fixtures f ON f.id = x.fixture_id
+                       LEFT JOIN teams t ON t.id = x.team_id
+                       WHERE x.player_id IN ({','.join('?' * len(ids))}) AND f.date < ?
+                         AND (t.country IS NULL OR t.name IS NULL OR t.name NOT LIKE t.country || '%')
+                       GROUP BY x.player_id, x.team_id""", (*ids, antes))
+    except Exception:  # noqa: BLE001 — sin fichas: nadie se afirma ido
+        return {}
+    por: dict[int, dict[int, tuple[str, str]]] = {}
+    for r in filas:
+        por.setdefault(r["player_id"], {})[r["team_id"]] = (str(r["ultima"] or ""), r["equipo"] or "")
+    out = {}
+    try:
+        corte = (datetime.fromisoformat(str(antes)[:10]) - timedelta(days=OTRO_EQUIPO_DIAS)).strftime("%Y-%m-%d")
+    except ValueError:
+        corte = ""
+    for pid, eqs in por.items():
+        propia = eqs.get(team_id)
+        if not propia:
+            continue
+        otra = max(((u, e, tid) for tid, (u, e) in eqs.items() if tid != team_id), default=None)
+        if otra and otra[0] > propia[0] and otra[0] >= corte:
+            out[pid] = {"equipo": otra[1], "teamId": otra[2], "ultimaHoja": otra[0][:10]}
+    return out
 
 
 def salidos(team_id: int, antes: str = "9999") -> set[int]:

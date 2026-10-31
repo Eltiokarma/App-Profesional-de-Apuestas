@@ -3452,8 +3452,9 @@ def _disponibilidad(equipo: dict, xi: dict | None) -> dict:
     }
     if not (xi and xi.get("once")):
         return congelado
+    from backend.analisis.f1_base import nunca_juntos
     d = bloque_f.resolver(plantel, fuera, xi.get("once") or [], xi.get("banca") or [],
-                          ids=xi.get("ids") or None)
+                          ids=xi.get("ids") or None, nunca_juntos=nunca_juntos)
     if d["casados"] < MINIMO_CASADOS:
         # un once que casa con 3 de 11 no describe a un equipo diezmado: describe
         # una hoja que no corresponde a esta tabla (otro partido, otro equipo, o
