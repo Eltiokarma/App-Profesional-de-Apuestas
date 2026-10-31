@@ -4385,6 +4385,12 @@ components:
           type: array
           items: { type: string }
           description: 'campos que este depósito dejó con MENOS contenido del que había'
+        alertasAlLeer:
+          type: array
+          description: 'las alertas CALCULADAS que el GET le pone a este parte (HERENCIA-DTP, TIPOLOGIA-VS-INDICES, K-EXTREMO…): se ven al depositar, sin otro GET (771, 806)'
+          items:
+            type: object
+            properties: { codigo: { type: string }, equipo: { type: string }, tipo: { type: string }, detalle: { type: string } }
         aviso: { type: string, description: 'explicación del depósito destructivo; "" si no lo hubo' }
         eventosTimeline: { type: integer }
         cadena:
