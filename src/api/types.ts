@@ -437,7 +437,7 @@ export interface JugadorDTO {
    *  'ruido' (el flag Missing Fixture marcó más del umbral de la plantilla: no cuenta). */
   baja: { tipo: string | null; detalle: string | null; lectura?: LecturaBaja
           /** con lectura `desmentida`: lo que decía la API y cuándo jugó después de la baja */
-          lecturaApi?: LecturaBaja; desmentidaPorOnce?: { fechaBaja: string; jugoEl: string }
+          lecturaApi?: LecturaBaja; desmentidaPorOnce?: { fechaBaja: string; jugoEl?: string; convocadoEl?: string }; soloLista?: 'internacional'
           /** motivo disciplinario (roja, amarillas, suspensión): señal siempre (415). */
           sancion?: boolean } | null
   /** Traspaso hacia el equipo en ≤90 días: sus stats vienen de otro contexto. */
@@ -1444,8 +1444,10 @@ export interface EquipoParte {
   clasificacion: 'FORMADO' | 'EN_FORMACION' | 'SIN_FORMACION' | ''
   /** true = ni un sub-score declarado; la pantalla no debe pintar un 0%. */
   sinBloques?: boolean
-  /** Letras que nadie puntuó: cuentan como 0 y arrastran el porcentaje. */
+  /** Letras que nadie puntuó: no entran al total ni al máximo (el % es sobre lo declarado, 799). */
   bloquesSinDeclarar?: string[]
+  /** Menos de 3 bloques de A-E declarados: sin porcentaje ni clasificación (799). */
+  pocosBloques?: boolean
   notaTotales?: string
   /** El DT del bloque A. `meses` null = no se pudo establecer (NUNCA 0, que es «recién
    *  llegado»); `nombre` «sin establecer» es el canónico de DT desconocido. */

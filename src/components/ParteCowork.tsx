@@ -150,7 +150,8 @@ function Anillo({ eq }: { eq: EquipoParte }) {
         <span style={{ padding: '3px 10px', borderRadius: 7, background: SUAVE[cl.sem], color: COLOR[cl.sem], font: '700 10px var(--mono)', letterSpacing: '.4px' }}>{cl.label}</span>
       ) : (
         <span style={{ padding: '3px 10px', borderRadius: 7, background: 'var(--bg3)', color: 'var(--t2)', font: '700 10px var(--mono)', letterSpacing: '.4px' }}
-          title="El parte no trae ni un sub-score: no hay EFE que calcular">SIN BLOQUES DECLARADOS</span>
+          title={eq.pocosBloques ? 'Menos de 3 bloques de A-E puntuados: el EFE no tiene porcentaje' : 'El parte no trae ni un sub-score: no hay EFE que calcular'}>
+          {eq.pocosBloques ? 'POCOS BLOQUES DECLARADOS' : 'SIN BLOQUES DECLARADOS'}</span>
       )}
       {eq.dt.nombre && (
         <div style={{ font: '500 10px var(--mono)', color: 'var(--t3)', textAlign: 'center' }}

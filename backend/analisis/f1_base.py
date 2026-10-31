@@ -39,6 +39,7 @@ _ZONA = {"Portero": "GK", "Defensa": "DEF", "Centrocampista": "MID", "Delantero"
          "Goalkeeper": "GK", "Defender": "DEF", "Midfielder": "MID", "Attacker": "ATK", "Forward": "ATK"}
 _ZONA_API = {"G": "GK", "D": "DEF", "M": "MID", "F": "ATK"}
 ONCES_RECIENTES = 10     # onces que se miran para el rol
+ONCES_FUERA_DE_PLANTILLA = 3   # titular en uno de estos últimos onces entra aunque la plantilla no lo tenga
 ONCES_MINIMOS = 5        # con menos, el rol sale de los minutos de la temporada
 _FIN = "(f.status_short IN ('FT','AET','PEN') OR f.status_long='Match Finished')"
 
@@ -86,6 +87,10 @@ def onces_recientes(team_id: int, antes: str) -> dict:
             j.setdefault("nombres", set()).add(limpiar_nombre(f["jugador"]))
         if f["titular"] and f["fixture_id"] == fx[0]:
             j["enUltimo"] = True
+        # titular en alguno de los ÚLTIMOS 3 onces (683): entra a la tabla aunque
+        # la plantilla de la API no lo tenga
+        if f["titular"] and orden[f["fixture_id"]] < ONCES_FUERA_DE_PLANTILLA:
+            j["enUltimos3"] = True
         # LA POSICIÓN CON LA QUE ARRANCÓ SU ÚLTIMO ONCE (incidencias 171, 323 y
         # 66: A. García «MID» de central en la línea de 5, Tamara MID con «D» en
         # la ficha, un arquero «Defensa» que atajó el 09/10)
@@ -675,7 +680,11 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     por_id = {j["id"]: j for j in js}
     if con_onces:
         for pid, r in sorted(rec["jugadores"].items(), key=lambda kv: -kv[1]["titular"]):
-            if pid in ids or pid <= 0 or (r["titular"] < 2 and not r.get("enUltimo")):
+            # TITULAR EN UNO DE LOS ÚLTIMOS 3 ONCES (31/10/2026, incidencia 683,
+            # decisión del usuario): Bruno Gonçalves Baldini (Athletico), Diogo
+            # Leite (Lazio) y Labrador (Huancayo) no estaban en la plantilla de la
+            # API ni en la F1 siendo titulares recientes
+            if pid in ids or pid <= 0 or (r["titular"] < 2 and not r.get("enUltimo") and not r.get("enUltimos3")):
                 continue
             # YA FUNDIDO POR `deduplicar`: sus titularidades ya están en la fila
             # que lo lleva en `idsAlternos`. Sumarlas otra vez daba «12/9»
@@ -727,7 +736,7 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
                           "zona": _ZONA_API.get(r.get("posicionReciente") or r["posicion"], ""),
                           "posicion": r["posicion"], "rolSugerido": rol_por_onces(r["titular"], rec["onces"]),
                           "titularEnUltimos": f"{r['titular']}/{rec['onces']}", "apps": None, "minutos": None,
-                          "decisivo": "", "sinStatsDeTemporada": True,
+                          "decisivo": "", "sinStatsDeTemporada": True, "fueraDePlantilla": True,
                           **({"titularEnElUltimo": True} if r.get("enUltimo") else {})})
     marcar_posibles(filas, lambda a, b: not nunca_juntos(a, b))
     return {

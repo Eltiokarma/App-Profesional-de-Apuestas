@@ -201,6 +201,31 @@ def main():
     check("un solo partido con 5-3-2 no hace formación dominante; dos de tres sí", _una is None and _dos == "5-3-2",
           (_una, _dos))
 
+    # 493/547 (31/10/2026, decisión del usuario): EQUIPO SORPRESA con el gap de LIGA y
+    # nunca para el tercio alto por nivel de su liga
+    import backend.app as _app493
+    _q493, _niv493, _nl493, _gap493 = (calendario._q, _app493.nivel_a_fecha, calendario._niveles_liga,
+                                       calendario._gap)
+    _filas493 = [{"league_id": 143, "home_team_id": 7, "gh": 3, "ga": 0}] * 4 + [
+        {"league_id": 281, "home_team_id": 7, "gh": 0, "ga": 1}] * 5
+    try:
+        calendario._q = lambda sql, args=(): _filas493
+        _app493.nivel_a_fecha = lambda t, f=None, fallback=0.5: 2.0
+        _g493 = calendario._gap(7, "2026-10-20")
+        calendario._q, _app493.nivel_a_fecha = _q493, _niv493
+        calendario._gap = lambda t, f: {"gap": -0.8, "nivel": 3.23}
+        calendario._niveles_liga = lambda l, tmp, d: (3.5, 3.3, 3.2, 3.0, 2.8, 2.6, 2.4, 2.2, 2.0)
+        _alto = {x["codigo"] for x in calendario.etiquetas_de_rival(BLOQUE, True, 281, 2026, "2026-08-20", None)}
+        calendario._gap = lambda t, f: {"gap": -0.8, "nivel": 2.2}
+        _bajo = {x["codigo"] for x in calendario.etiquetas_de_rival(BLOQUE, True, 281, 2026, "2026-08-20", None)}
+    finally:
+        calendario._q, _app493.nivel_a_fecha, calendario._niveles_liga, calendario._gap = (
+            _q493, _niv493, _nl493, _gap493)
+    check("493: el gap de la etiqueta sale de los últimos 5 de LIGA (las copas ganadas no inflan la forma)",
+          _g493 is not None and _g493["gap"] > 0, _g493)
+    check("493: un equipo del tercio alto por nivel de su liga no es EQUIPO SORPRESA (Lanús); uno de abajo, sí",
+          "EQUIPO_SORPRESA" not in _alto and "EQUIPO_SORPRESA" in _bajo, (_alto, _bajo))
+
     # CLÁSICO: mismo municipio, y se declara parcial
     et_vecino = calendario.etiquetas_de_rival(LOCALON, True, 281, 2026, "2026-08-20", "Ciudad F")
     cl = next((x for x in et_vecino if x["codigo"] == "CLASICO"), None)

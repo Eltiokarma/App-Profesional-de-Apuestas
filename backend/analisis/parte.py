@@ -77,6 +77,8 @@ CREATE INDEX IF NOT EXISTS idx_coherencia_log_fecha ON coherencia_log(evaluado_e
 PESO_BLOQUE = {"A": 1.0, "B": 1.5, "C": 1.0, "D": 1.0, "E": 2.0}
 MAX_BLOQUE = {"A": 4.0, "B": 6.0, "C": 4.0, "D": 4.0, "E": 3.0}
 LETRAS = ("A", "B", "C", "D", "E")
+# con menos bloques declarados que esto, el EFE no tiene porcentaje (799)
+MINIMO_BLOQUES_EFE = 3
 LADOS = ("a", "b")
 # por debajo de esto, el cruce del once con la tabla no es creíble y el bloque F
 # se queda congelado en vez de publicar un IP inventado (ver _disponibilidad)
@@ -1289,6 +1291,27 @@ def _dt_con_expulsion(fixture_id: int, dts: dict) -> dict:
 
 
 DT_FIABLE_DIAS = 14   # un registro más viejo que esto se marca para confirmar en prensa
+DT_ONCES_SOSTIENEN = 3   # las últimas hojas que pueden sostener al DT de /coachs
+
+
+def _bancos_recientes(team_id: int) -> list[str]:
+    """El DT de las últimas `DT_ONCES_SOSTIENEN` hojas del equipo, de la más
+    nueva a la más vieja («» = la hoja vino sin entrenador)."""
+    try:
+        return [r["e"] or "" for r in saddb.query(
+            "sad", "SELECT a.fixture_id, MAX(COALESCE(a.entrenador, '')) AS e, MAX(f.date) AS d "
+                   "FROM alineaciones a JOIN fixtures f ON f.id = a.fixture_id WHERE a.team_id=? "
+                   "GROUP BY a.fixture_id ORDER BY d DESC LIMIT ?", (team_id, DT_ONCES_SOSTIENEN))]
+    except Exception:  # noqa: BLE001 — base sin la ficha de partido: no hay hojas que mirar
+        return []
+
+
+def _coachs_sin_sosten(nombre: str, bancos: list[str]) -> bool:
+    """El DT de /coachs que ninguna hoja reciente sostiene, con la última hoja
+    SIN entrenador (31/10/2026, incidencia 691, decisión del usuario: Pasto con
+    «Jonathan Risueno» fiable por /coachs dirigiendo Diego Merino desde el
+    12/10, y la alineación de la API sin DT; también Águilas y Tolima)."""
+    return bool(bancos) and not bancos[0] and not any(b and mismo_dt(nombre, b) for b in bancos)
 
 
 def dt_de_base(team_id: int) -> dict | None:
@@ -1311,10 +1334,15 @@ def dt_de_base(team_id: int) -> dict | None:
         except ValueError:
             edad = None
     fiable = e.get("fuente") == "alineacion" or (edad is not None and edad <= DT_FIABLE_DIAS)
+    sin_sosten = (e.get("fuente") != "alineacion" and fiable
+                  and _coachs_sin_sosten(e.get("nombre") or "", _bancos_recientes(team_id)))
+    if sin_sosten:
+        fiable = False
     return {**e, "edadDias": edad, "fiable": fiable,
             "nota": ("visto en el banco en el último partido" if e.get("fuente") == "alineacion" else
                      f"carrera de la API, registro de hace {edad} días" if edad is not None else
                      "carrera de la API, sin fecha de registro")
+                    + (" · la última hoja vino sin DT y ninguna de las últimas lo sostiene" if sin_sosten else "")
                     + ("" if fiable else " · CONFIRMAR EN PRENSA: si la red dice otro, manda la red"),
             # EL NOMBRE PUEDE SER FIABLE Y LA FECHA NO. /coachs trae la llegada
             # como «el mes de la temporada» (Carrick «desde 2025-08» cuando llegó
@@ -3405,6 +3433,11 @@ def _totales(equipo: dict) -> dict:
             b = equipo["bloques"][letra]
             b["declarado"] = bool(b["score"]) or b["excluido"]
             b["declaradoInferido"] = True
+    # EL PORCENTAJE SE CUENTA SOBRE LO DECLARADO (31/10/2026, incidencia 799,
+    # decisión del usuario): con la Copa del Rey salieron Guijuelo 4,8 % (solo E)
+    # y Prat 2,4 % «SIN FORMACIÓN» (solo A) porque los bloques sin puntuar
+    # contaban como 0 en el máximo de 21 —el peor juicio de la rúbrica sobre lo
+    # que nadie evaluó—. Un bloque sin declarar no entra ni al total ni al máximo.
     total = maximo = 0.0
     sin_declarar = []
     for letra in LETRAS:
@@ -3415,6 +3448,7 @@ def _totales(equipo: dict) -> dict:
             continue
         if not b.get("declarado"):
             sin_declarar.append(letra)
+            continue
         total += b["ponderado"]
         maximo += b["topePonderado"]
     declarados = [l for l in LETRAS
@@ -3427,15 +3461,20 @@ def _totales(equipo: dict) -> dict:
                 "sinBloques": True, "bloquesSinDeclarar": list(sin_declarar),
                 "notaTotales": "el parte no trae ni un sub-score: no hay EFE que calcular. "
                                "Esto NO es 0% ni SIN FORMACIÓN, es que nadie puntuó" + nota_legado}
+    if len(declarados) < MINIMO_BLOQUES_EFE:
+        return {"total": round(total, 2), "maximoAlcanzable": round(maximo, 2),
+                "porcentaje": None, "clasificacion": "",
+                "sinBloques": False, "pocosBloques": True, "bloquesSinDeclarar": sin_declarar,
+                "notaTotales": (f"pocos bloques declarados ({', '.join(declarados)}): con menos de "
+                                f"{MINIMO_BLOQUES_EFE} de A-E el EFE no tiene porcentaje ni clasificación"
+                                + nota_legado)}
     pct = round((total / maximo) * 100, 1) if maximo else 0.0
     return {"total": round(total, 2), "maximoAlcanzable": round(maximo, 2),
             "porcentaje": pct, "clasificacion": clasificacion_de(pct),
             "sinBloques": False, "bloquesSinDeclarar": sin_declarar,
-            # un bloque ausente arrastra el porcentaje hacia abajo como si
-            # fuera un cero: la cuenta se mantiene (la rúbrica los pide todos)
-            # pero el hueco se DICE, para que nadie lea el número como completo
-            "notaTotales": ((f"faltan los sub-scores {', '.join(sin_declarar)}: cuentan como 0 "
-                             "y bajan el porcentaje" if sin_declarar else "") + nota_legado).strip(". ")}
+            # el hueco se DICE: el porcentaje es sobre lo declarado, no sobre la rúbrica entera
+            "notaTotales": ((f"faltan los sub-scores {', '.join(sin_declarar)}: el porcentaje es sobre "
+                             "los bloques declarados" if sin_declarar else "") + nota_legado).strip(". ")}
 
 
 def _disponibilidad(equipo: dict, xi: dict | None) -> dict:
@@ -3745,10 +3784,24 @@ def _antes_del_pitazo(ahora: str, pitazo) -> bool:
     return bool(a and p and a < p)
 
 
-# La grilla de la rutina de rehacer (CLAUDE.md, deuda 11): dos disparos por
-# hora, a :07 y :37, de 05:07 a 23:37 de Lima (UTC−5, sin horario de verano).
-REHACER_DISPAROS_MIN = (7, 37)
+# La grilla de la rutina de rehacer (CLAUDE.md, deuda 11), de 05 a 23 de Lima
+# (UTC−5, sin horario de verano). Hasta el 31/10/2026 eran dos disparos por
+# hora (:07 y :37) con piso de 15 min; desde entonces (incidencia 636, decisión
+# del usuario: el once llega ~25 min antes y caía entre dos disparos) son tres
+# (:02, :22 y :42) con piso de 5. Un parte se juzga con la grilla de SU día:
+# una regla no se cobra hacia atrás.
+REHACER_GRILLAS = (("2026-10-31 01:21:00", (2, 22, 42), 5),)
+REHACER_DISPAROS_MIN, REHACER_PISO_ANTES = (7, 37), 15
 REHACER_HORAS_LIMA = (5, 23)
+
+
+def grilla_rehacer(t: datetime | None) -> tuple[tuple[int, ...], int]:
+    """(minutos de los disparos, piso en minutos antes del pitazo) vigentes en `t`."""
+    out = (REHACER_DISPAROS_MIN, REHACER_PISO_ANTES)
+    for desde, minutos, piso in REHACER_GRILLAS:
+        if t is not None and t >= _utc(desde):
+            out = (minutos, piso)
+    return out
 
 
 def disparo_entre(desde: datetime, hasta: datetime) -> bool:
@@ -3759,7 +3812,8 @@ def disparo_entre(desde: datetime, hasta: datetime) -> bool:
     t = desde.astimezone(lima).replace(second=0, microsecond=0)
     fin = hasta.astimezone(lima)
     while t <= fin:
-        if (t.minute in REHACER_DISPAROS_MIN and REHACER_HORAS_LIMA[0] <= t.hour <= REHACER_HORAS_LIMA[1]
+        minutos, _ = grilla_rehacer(t.astimezone(timezone.utc))
+        if (t.minute in minutos and REHACER_HORAS_LIMA[0] <= t.hour <= REHACER_HORAS_LIMA[1]
                 and desde.astimezone(lima) < t):
             return True
         t += timedelta(minutes=1)
@@ -3819,7 +3873,8 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> lis
                  "detalle": f"{a['detalle']} [{texto}]"} if a.get("codigo") == "DTP-REHACER" else a
                 for a in alertas]
     t = max(_utc(f["capturada_en"]) for f in finales.values())
-    limite = pitazo - timedelta(minutes=REHACER_DESDE_MIN)
+    piso = grilla_rehacer(pitazo)[1]
+    limite = pitazo - timedelta(minutes=piso)
     antes = int((pitazo - t).total_seconds() // 60)
     hora = t.strftime("%H:%M UTC")
     # 848: el once previo ya estaba en el depósito, pero la API corrigió la
@@ -3837,14 +3892,14 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> lis
                                       f"({dep.strftime('%H:%M UTC')}): lo rehecho no lo corrigió")
     elif t > limite:
         momento, texto = "tardio", (f"la versión final del once llegó a las {hora}, {antes} min antes del pitazo, "
-                                    f"después del último rehacer posible (pitazo − {REHACER_DESDE_MIN} min): "
+                                    f"después del último rehacer posible (pitazo − {piso} min): "
                                     "apertura caída por un once tardío, no un aviso ignorado")
     elif not disparo_entre(t, limite):
         # incidencia 732: el once de las 19:17 con pitazo 19:45 llegó después del
         # disparo de las 19:07 y el de las 19:37 ya cae a 8 min; nadie podía rehacer
         momento, texto = "tardio", (f"la versión final del once llegó a las {hora}, {antes} min antes del pitazo, "
-                                    "y ningún disparo de la rutina de rehacer (:07 y :37 de Lima) cayó entre esa "
-                                    f"hora y el pitazo − {REHACER_DESDE_MIN} min: once tardío para la grilla, "
+                                    "y ningún disparo de la rutina de rehacer cayó entre esa "
+                                    f"hora y el pitazo − {piso} min: once tardío para la grilla, "
                                     "no un aviso ignorado")
     else:
         momento, texto = "sinRehacer", (f"el once final llegó a las {hora}, {antes} min antes del pitazo, y el "
@@ -3918,8 +3973,10 @@ def dto(fixture_id: int) -> dict | None:
                 alertas.append({
                     "codigo": "HERENCIA-DTP", "equipo": b["equipo"], "tipo": "dato",
                     "detalle": f"{h['indicador']} del TDE: se declaró {h['declarado']} y el DTP dice "
-                               f"{h['valor']} ({h['de']}). Manda el DTP —el skill prohíbe re-estimarlo—; "
-                               "si el DTP está mal, se corrige el DTP",
+                               f"{h['valor']} ({h['de']}). Manda el DTP —el skill prohíbe re-estimarlo—: "
+                               "se corrige el indicador del TDE al del DTP (al rehacer con el once, el "
+                               "DTP NO vuelve atrás para callar esta alerta, incidencia 634); si el DTP "
+                               "está mal, se corrige el DTP",
                 })
     # LA TIPOLOGÍA MODAL CONTRA LOS DOS ÍNDICES (TDE PASO 3, incidencia 538:
     # Porto con ECHADA-PSI e IE 2.94 < ISE 3.33). Si el ISE supera al IE el
@@ -5743,9 +5800,10 @@ def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: in
 # agente leía la agenda y después cada parte. Esto contesta en UNA llamada qué
 # partes tienen DTP-REHACER y arrancan dentro de la ventana; vacío = terminar.
 # Piso en 15 (24/10/2026, incidencias 444, 451 y 454): la API publica el once
-# ~27 min antes y con piso en 30 esos partidos nunca entraban; el depósito
-# sigue topado en el pitazo − 10 (skill corrida-sad).
-REHACER_DESDE_MIN, REHACER_HASTA_MIN = 15, 80
+# ~27 min antes y con piso en 30 esos partidos nunca entraban. Piso en 5 desde el
+# 31/10/2026 (636, con disparos cada 20 min): el depósito se topa en el pitazo − 5
+# (skill corrida-sad).
+REHACER_DESDE_MIN, REHACER_HASTA_MIN = 5, 80
 
 
 REHACER_DIAS_ATRAS = 30   # un parte reprogramado puede tener semanas

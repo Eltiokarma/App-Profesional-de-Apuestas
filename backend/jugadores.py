@@ -280,7 +280,9 @@ def plantilla_de(team_id: int) -> dict:
     for pid, b in sanciones_de_ficha(team_id).items():
         bajas.setdefault(pid, b)
     jugo = ultimo_partido_jugado(team_id)
-    missing = lectura_missing_fixture(bajas, {r["player_id"] for r in filas}, jugo)
+    convocado = ultima_convocatoria(team_id)
+    fechas_int = fechas_internacionales(team_id)
+    missing = lectura_missing_fixture(bajas, {r["player_id"] for r in filas}, jugo, convocado)
 
     # MINUTOS QUE NO CABEN EN LOS PARTIDOS. La API dio a J. García (Tigres,
     # 20/10/2026) 1 partido y 1.708 minutos: salía «titular habitual (81 %)» y
@@ -339,7 +341,8 @@ def plantilla_de(team_id: int) -> dict:
             "enCapilla": (r["amarillas"] or 0) >= EN_CAPILLA_AMARILLAS and not (r["rojas"] or 0),
             "paradasP90": _p90(r["paradas"] or 0, minutos) if es_gk else None,
             "golesEncajadosP90": _p90(r["goles_encajados"] or 0, minutos) if es_gk else None,
-            "baja": (_baja_dto(baja, missing, jugo.get(r["player_id"])) if baja else None),
+            "baja": (_baja_dto(baja, missing, jugo.get(r["player_id"]), convocado.get(r["player_id"]),
+                               fechas_int) if baja else None),
             "recienLlegado": (
                 {"desde": llegada["team_out_nombre"], "fecha": llegada["fecha"]} if llegada else None
             ),
@@ -442,12 +445,49 @@ def ultimo_partido_jugado(team_id: int) -> dict[int, str]:
     return out
 
 
-def _baja_dto(baja, missing: dict, jugo_el: str | None) -> dict:
+def ultima_convocatoria(team_id: int) -> dict[int, str]:
+    """{jugador: fecha de la última hoja del equipo (once O BANCO) en que figura},
+    terminado o no el partido: la hoja publicada manda (incidencia 649)."""
+    try:
+        return {r["pid"]: str(r["d"]) for r in _query(
+            "SELECT a.player_id AS pid, MAX(f.date) AS d FROM alineaciones a JOIN fixtures f "
+            "ON f.id = a.fixture_id WHERE a.team_id=? GROUP BY a.player_id", (team_id,)) if r["pid"] and r["d"]}
+    except Exception:  # noqa: BLE001 — base sin la ficha de partido: nadie se da por convocado
+        return {}
+
+
+def fechas_internacionales(team_id: int) -> set[str]:
+    """Los días en que el equipo jugó (o juega) un torneo internacional de clubes."""
+    try:
+        from backend.ingesta.extractor import LIGAS_INTERNACIONALES
+        inter = tuple(LIGAS_INTERNACIONALES)
+    except Exception:  # noqa: BLE001 — sin la ingesta importable: la lista conocida
+        inter = (2, 3, 848, 13, 11)
+    try:
+        return {str(r["d"])[:10] for r in _query(
+            f"SELECT date AS d FROM fixtures WHERE (home_team_id=? OR away_team_id=?) "
+            f"AND league_id IN ({','.join('?' * len(inter))})", (team_id, team_id, *inter))}
+    except Exception:  # noqa: BLE001 — base sin fixtures: ninguna fecha internacional conocida
+        return set()
+
+
+def _baja_dto(baja, missing: dict, jugo_el: str | None, convocado_el: str | None = None,
+              fechas_int: set | None = None) -> dict:
     """La baja con su lectura. `desmentida`: el jugador jugó (titular o con un
     evento) un partido POSTERIOR a la fecha de la baja —la API la dejó vieja—,
     y entonces no cuenta como baja en ningún lado (incidencias 2, 132, 142,
     143, 149, 167, 312; pedido del usuario 22/10/2026). Sin fecha de la baja no
-    hay contra qué comparar y queda como venía."""
+    hay contra qué comparar y queda como venía.
+
+    LA CONVOCATORIA TAMBIÉN DESMIENTE (31/10/2026, incidencia 649, decisión del
+    usuario): I. Gruev (Leeds) «Missing Fixture · Knee Injury» y en el banco de
+    la hoja de ese mismo partido. Figurar en una hoja (once o banco) de la
+    fecha de la baja o posterior es estar disponible: la hoja manda.
+
+    «OFF THE ROSTER» DE UNA LISTA INTERNACIONAL ES RUIDO EN LA LIGA (522,
+    decisión del usuario): Prpić y Gabriel Mec (Porto) fuera de la lista de
+    Champions salían «señal» para la liga. Si la fecha de la baja es la de un
+    partido internacional del equipo, se lee `ruido` con `soloLista`."""
     lectura = missing["lectura"] if _es_missing(baja["tipo"]) else "senal"
     # UNA SANCIÓN ES SEÑAL SIEMPRE (incidencias 71 y 415, usuario 24/10/2026):
     # roja, acumulación de amarillas o suspensión son registros disciplinarios
@@ -459,9 +499,15 @@ def _baja_dto(baja, missing: dict, jugo_el: str | None) -> dict:
     fecha = str(baja["fecha"] or "")[:10] if "fecha" in baja.keys() else ""
     out = {"tipo": baja["tipo"], "detalle": baja["detalle"], "lectura": lectura,
            **({"sancion": True} if sancion else {})}
+    if (fecha and "off the roster" in (baja["detalle"] or "").lower() and fecha in (fechas_int or set())
+            and not sancion):
+        out.update({"lectura": "ruido", "soloLista": "internacional"})
     if fecha and jugo_el and jugo_el[:10] > fecha:
         out.update({"lectura": "desmentida", "lecturaApi": lectura,
                     "desmentidaPorOnce": {"fechaBaja": fecha, "jugoEl": jugo_el[:10]}})
+    elif fecha and convocado_el and convocado_el[:10] >= fecha:
+        out.update({"lectura": "desmentida", "lecturaApi": lectura,
+                    "desmentidaPorOnce": {"fechaBaja": fecha, "convocadoEl": convocado_el[:10]}})
     return out
 
 
@@ -478,12 +524,13 @@ def es_sancion(detalle) -> bool:
     return any(d.startswith(s) or f" {s}" in d for s in _SANCION)
 
 
-def _desmentida(b, jugo_el: str | None) -> bool:
+def _desmentida(b, jugo_el: str | None, convocado_el: str | None = None) -> bool:
     fecha = str(b["fecha"] or "")[:10] if "fecha" in b.keys() else ""
-    return bool(fecha and jugo_el and jugo_el[:10] > fecha)
+    return bool(fecha and ((jugo_el and jugo_el[:10] > fecha) or (convocado_el and convocado_el[:10] >= fecha)))
 
 
-def lectura_missing_fixture(bajas: dict, plantilla_ids: set, jugo: dict | None = None) -> dict:
+def lectura_missing_fixture(bajas: dict, plantilla_ids: set, jugo: dict | None = None,
+                            convocado: dict | None = None) -> dict:
     """Cuántos de la plantilla trae marcados como «Missing Fixture» y qué
     lectura merece: `senal` (pocos: bajas reales) o `ruido` (media plantilla:
     la API marcó a todo el que no jugó un partido). La densidad se mide
@@ -494,10 +541,10 @@ def lectura_missing_fixture(bajas: dict, plantilla_ids: set, jugo: dict | None =
     a jugar, y esas viejas —ya `desmentida`— inflaban la densidad. El Real
     Madrid tenía 10 de 30 marcados (33 %, todo «ruido», Vinícius incluido),
     pero 7 ya habían jugado después: vigentes, 3 de 30 (10 %, señal)."""
-    jugo = jugo or {}
+    jugo, convocado = jugo or {}, convocado or {}
     total = len(plantilla_ids)
     marcas = [(pid, b) for pid, b in bajas.items() if pid in plantilla_ids and _es_missing(b["tipo"])]
-    vigentes = [pid for pid, b in marcas if not _desmentida(b, jugo.get(pid))]
+    vigentes = [pid for pid, b in marcas if not _desmentida(b, jugo.get(pid), convocado.get(pid))]
     marcados = len(vigentes)
     densidad = round(marcados / total, 3) if total else 0.0
     return {
