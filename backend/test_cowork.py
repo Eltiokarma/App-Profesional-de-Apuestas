@@ -2564,6 +2564,13 @@ def main():
     p_808 = json.loads(json.dumps(p_ie))
     p_808["tde"]["bloques"][0]["sinDato"] = {"S1": "sin dato de faltas", "S2": "sin dato", "S3": "pide PPDA"}
     rec_808 = c.post(f"{A}/analisis/cowork", json=p_808).json()
+    _get808 = c.get(f"{A}/analisis/cowork/{p_808['fixtureId']}").json()
+    from backend.analisis.parte import _ALERTAS_CALCULADAS as _AC771
+    check("771/806: el recibo trae la lista de las alertas calculadas al leer, las mismas que el GET",
+          isinstance(rec_808.get("alertasAlLeer"), list)
+          and sorted(a["codigo"] for a in rec_808["alertasAlLeer"])
+          == sorted(a["codigo"] for a in _get808.get("alertas") or [] if a.get("codigo") in _AC771),
+          (rec_808.get("alertasAlLeer"), [a.get("codigo") for a in _get808.get("alertas") or []]))
     check("808: el IE sin S con los S declarados en `sinDato` no se cobra en faltan",
           not any(x["bloque"] == "tde.ie (lado a)" for x in rec_808["faltan"]),
           [x for x in rec_808["faltan"] if x["bloque"].startswith("tde")])
@@ -5603,6 +5610,10 @@ def main():
          {"nombre": "Didier Frédéric Thierry Digard", "fuente": "coachs", "desde": "2025-07-01"})
     check("577: el mismo DT de la base sin `desde` se rechaza diciendo que la fecha de /coachs no sirve, no «no casa»",
           _rz577 and "es el mismo de la base" in _rz577[0]["porque"] and "no casa" not in _rz577[0]["porque"], _rz577)
+    _rz827: list = []
+    _o827 = _dte({"nombre": "Cristián Gómez", "desde": ""}, _rz827, "a", "2026-10-25", None)
+    check("827: el `desde` vacío a propósito (sin fuente, como pide el prompt) no se rechaza y la antigüedad queda null",
+          _rz827 == [] and _o827["meses"] is None, (_o827, _rz827))
     check("383: antes del once la F3 sale provisional (rama A) y lo dice",
           (bf.alerta_f3("FORMADO", "rojo", provisional=True) or {}).get("provisional") is True
           and "PROVISIONAL" in bf.alerta_f3("FORMADO", "rojo", provisional=True)["detalle"])

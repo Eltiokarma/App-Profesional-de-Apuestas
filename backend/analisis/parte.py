@@ -474,7 +474,12 @@ def _dt_equipo(crudo, rechazos: list, lado: str, fecha_partido: str,
             desde = desde or _txt(entrenador_base.get("desde"))[:10]
             meses = round(max(0, (partido - _fecha(entrenador_base["desde"])).days) / _DIAS_MES, 1)
             origen = "base"
-    if nombre and meses is None:
+    # «SIN FUENTE, EL `desde` VA VACÍO» es la regla del prompt (COWORK.md, DT): el
+    # `desde` que llega vacío A PROPÓSITO es lo declarado, no un hueco (incidencia
+    # 827, Prat: rechazo permanente en el recibo de los equipos chicos). El
+    # rechazo queda para el `dt` que ni siquiera trae la clave.
+    declarado_vacio = "desde" in crudo and not _txt(crudo.get("desde")) and crudo.get("meses") in (None, "")
+    if nombre and meses is None and not declarado_vacio:
         # EL MOTIVO, EL DE VERDAD (incidencia 577: Le Havre, Toulouse y Troyes
         # mandaron el mismo nombre que la base y el rechazo decía «no casa»): con
         # el mismo DT, lo que falta es una fecha que sirva
@@ -3389,6 +3394,12 @@ def guardar(payload: dict) -> dict:
                   f"({'; '.join(perdido)}). El POST reemplaza el parte entero: si fue sin "
                   "querer, vuelve a depositarlo completo." if perdido else ""),
     }
+    # LAS ALERTAS QUE SE CALCULAN AL LEER, YA EN EL RECIBO (incidencias 771 y
+    # 806: HERENCIA-DTP y TIPOLOGIA-VS-INDICES aparecían recién en el GET —el
+    # SOB2 heredado daba vuelta la tipología de Internacional y nadie lo veía
+    # al depositar—, y el recibo solo traía cuántas alertas había). Con la lista
+    # se corrige en el mismo depósito, sin otro GET.
+    resumen["alertasAlLeer"] = _alertas_al_leer(parte["fixtureId"])
     print(f"[cowork] parte {resumen['estado']}: {resumen['partido']} "
           f"({resumen['jugadores']['a']}+{resumen['jugadores']['b']} jugadores, "
           f"{len(parte['documentos'])} documentos, "
@@ -3403,6 +3414,18 @@ def guardar(payload: dict) -> dict:
              if faltan else "")
           + (f" · DISCREPANCIAS: {discrepancias}" if discrepancias else ""), flush=True)
     return resumen
+
+
+def _alertas_al_leer(fixture_id: int) -> list[dict]:
+    """Las alertas calculadas que el GET le va a poner a este parte (código,
+    lado y detalle); [] si el DTO no se puede armar todavía."""
+    try:
+        leido = dto(fixture_id) or {}
+    except Exception:  # noqa: BLE001 — el depósito ya quedó guardado: sin la lista, el GET la trae
+        return []
+    return [{"codigo": a.get("codigo"), "equipo": a.get("equipo") or "", "tipo": a.get("tipo") or "",
+             "detalle": a.get("detalle") or ""}
+            for a in leido.get("alertas") or [] if a.get("codigo") in _ALERTAS_CALCULADAS]
 
 
 def borrar(fixture_id: int) -> bool:
