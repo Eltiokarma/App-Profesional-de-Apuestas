@@ -1461,7 +1461,8 @@ paths:
         Por lado: `partes[]` (los últimos N de partidos anteriores al que se analiza, nunca este ni
         uno posterior), cada uno con clasificación y % del EFE, pronóstico de la cadena, 1X2,
         marcador pronosticado, TDE (ie, nivel, ventana), la clase de su bloque según el DTP del
-        rival, marcador real, veredicto, queP, lección, skill, población y `cuarentena`;
+        rival, marcador real (`marcador` desde el EQUIPO, sus goles primero; `marcadorPartido`
+        local-visita, el orden de `marcadorPronosticado`; 907), veredicto, queP, lección, skill, población y `cuarentena`;
         `aciertoCiego` (solo ciega + PRE fuera de cuarentena) y `leccionesVigentes` (pendientes o en
         revisión). El caso nuevo sigue siendo ciego: son desenlaces de OTROS partidos. 0 tokens.
       parameters:

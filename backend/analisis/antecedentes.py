@@ -82,7 +82,13 @@ def _resumen_parte(fila, fx: dict, lado: str, cuarentenas: dict) -> dict:
         # la clase del bloque de ESTE equipo que calculó el DTP del rival
         "claseBloque": clase_bloque,
         # cómo SALIÓ
+        # EL MARCADOR DICE DESDE DÓNDE SE LEE (incidencia 907, Trinidense: «1-0»
+        # con condición V, que era su 0-1 de visita): `marcador` es el del
+        # EQUIPO (sus goles primero) y `marcadorPartido` el de la ficha
+        # (local-visita), el mismo orden que `marcadorPronosticado`
         "marcador": (f"{gf}-{gc}" if gf is not None and gc is not None else ""),
+        "marcadorPartido": (f"{fx['gh']}-{fx['ga']}" if fx["gh"] is not None and fx["ga"] is not None else ""),
+        "marcadorDesde": "el equipo (sus goles primero); marcadorPartido y marcadorPronosticado: local-visita",
         "terminado": (fx.get("status_short") or "") in ("FT", "AET", "PEN", "AWD", "WO"),
         "veredicto": lv.get("veredicto", ""),
         "queP": lv.get("queP", ""),

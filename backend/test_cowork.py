@@ -3275,6 +3275,11 @@ def main():
               "veredicto y lección",
               prev and prev[0]["marcador"] and "veredicto" in prev[0] and "leccion" in prev[0]
               and {"aciertoCiego", "leccionesVigentes"} <= set(an[lado_eq]), an[lado_eq])
+        if prev:
+            _g = prev[0]["marcadorPartido"].split("-")
+            check("907: `marcadorPartido` es local-visita y `marcador` el del equipo (sus goles primero)",
+                  prev[0]["marcador"] == (prev[0]["marcadorPartido"] if prev[0]["condicion"] == "L"
+                                          else f"{_g[1]}-{_g[0]}") and prev[0]["marcadorDesde"], prev[0])
     an_propio = c.get(f"{A}/analisis/cowork/antecedentes/{pasado['id']}").json()
     check("antecedentes: NUNCA el partido que se analiza ni uno posterior (anti-hindsight)",
           all(p_["fixtureId"] != pasado["id"] and p_["fecha"] <= str(fx_pas["date"])[:10]
