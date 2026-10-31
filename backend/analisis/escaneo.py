@@ -89,6 +89,18 @@ HORAS_CUOTAS = 12          # a menos de esto del pitazo, sin cuota es hallazgo
 HORAS_FICHA = 6            # jugado hace más de esto, sin eventos es hallazgo
 
 
+def _nunca_publicado(fixture_id: int) -> bool:
+    """¿La ficha post-partido se selló SIN alineaciones y no hay ninguna en la
+    base? Entonces la API no la dio nunca para ese partido."""
+    try:
+        meta = saddb.query_one("sad", "SELECT alineaciones FROM fichas_meta WHERE fixture_id=?", (fixture_id,))
+        if not meta or (meta["alineaciones"] or 0) > 0:
+            return False
+        return not saddb.query_one("sad", "SELECT 1 AS x FROM alineaciones WHERE fixture_id=? LIMIT 1", (fixture_id,))
+    except Exception:  # noqa: BLE001 — base sin la tabla de fichas: se cuenta como siempre
+        return False
+
+
 def _hallazgo(chequeo: str, item: dict, detalle: str, lado: str | None = None) -> dict:
     return {"chequeo": chequeo, "fixtureId": item["fixtureId"], "partido": item.get("partido", ""),
             "fecha": item.get("fecha", ""), "hora": item.get("hora", ""),
@@ -224,7 +236,12 @@ def _post(horas: int, ahora: datetime) -> tuple[list[dict], int]:
                 previa = saddb.query_one(
                     "sad", "SELECT 1 AS x FROM alineaciones_versiones WHERE fixture_id=? AND capturada_en <= ? "
                            "LIMIT 1", (f["id"], str(f["date"])[:19]))
-                if not previa:
+                # LA API QUE NUNCA PUBLICÓ EL ONCE NO ES UN ONCE TARDE (incidencias
+                # 934, 941, 953: 22 partidos de la Copa del Rey con clubes de Tercera
+                # y regionales cada pasada, con la ficha post-partido sellada sin
+                # alineaciones). Eso es cobertura (deuda 5, `nuncaVaALlegar`):
+                # el chequeo es para el once que existió y llegó tarde.
+                if not previa and not _nunca_publicado(f["id"]):
                     out.append(_hallazgo("once-tarde", item, f"pitazo {item['hora']} UTC: ninguna versión del "
                                                              "once capturada antes"))
             except Exception:  # noqa: BLE001 — base sin la tabla de versiones
