@@ -312,6 +312,15 @@ def _sombra(j: dict) -> bool:
     return not j.get("partidos") and bool(j.get("minutos"))
 
 
+def _alguna_vez_juntos(q: dict, j: dict, juntos) -> bool:
+    """¿El id nuevo compartió hoja con la fila o con alguno de los ids que ya fundió?"""
+    return any(juntos(j["id"], x) for x in [q["id"], *(q.get("idsAlternos") or [])])
+
+
+def _se_alternan(q: dict, j: dict, alternan) -> bool:
+    return bool(alternan) and not _arquero_y_no(q, j) and alternan(j["id"], q["id"])
+
+
 def _sombra_sin_hojas(q: dict, j: dict, sin_hojas) -> bool:
     """¿Uno de los dos es la SOMBRA de la API —0 partidos con minutos— y nunca
     figuró en una hoja de partido? Huracán (30/10/2026, incidencia 904): «J.
@@ -321,6 +330,15 @@ def _sombra_sin_hojas(q: dict, j: dict, sin_hojas) -> bool:
     con el mismo apellido y la pila compatible es el de la temporada de la
     misma persona."""
     return bool(sin_hojas) and ((_sombra(q) and sin_hojas(q["id"])) or (_sombra(j) and sin_hojas(j["id"])))
+
+
+HOJAS_ALTERNAN = 6   # hojas entre los dos ids para que «nunca juntos» sea evidencia
+
+
+def _arquero_y_no(q: dict, j: dict) -> bool:
+    """Un arquero y uno de campo con el mismo nombre son dos personas."""
+    g = [x.get("posicion") == "Portero" for x in (q, j) if x.get("posicion")]
+    return len(g) == 2 and g[0] != g[1]
 
 
 def _caben(q: dict, j: dict, tope: int | None) -> bool:
@@ -334,7 +352,7 @@ def _caben(q: dict, j: dict, tope: int | None) -> bool:
 
 
 def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None,
-               tope: int | None = None, sin_hojas=None) -> tuple[list[dict], dict[int, int]]:
+               tope: int | None = None, sin_hojas=None, alternan=None) -> tuple[list[dict], dict[int, int]]:
     """UN JUGADOR CON DOS IDS ES UNO. La API da a veces dos ids para la misma
     persona: el de la temporada, con sus minutos, y una copia vacía creada por
     una hoja del partido (Leones del Norte con «E. Griffa» 566349 y «Emiliano
@@ -379,7 +397,15 @@ def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None,
     LA SOMBRA SIN HOJAS (31/10/2026, incidencia 904): en las dos reglas de la
     inicial, la sucesión se puede reemplazar por `_sombra_sin_hojas` —uno de
     los dos registros tiene 0 partidos con minutos y nunca figuró en una hoja
-    (`sin_hojas(id)`)—: Juan Bizans / J. Bisanz / F. Bisanz de Huracán."""
+    (`sin_hojas(id)`)—: Juan Bizans / J. Bisanz / F. Bisanz de Huracán.
+
+    Y LOS QUE SE ALTERNAN (31/10/2026, el mismo caso en producción): Juan
+    Francisco Bisanz figuró en las hojas como 304371 (mayo a octubre), 406291
+    (julio-agosto, en medio) y 304389 (desde el 15/10), nunca dos a la vez. No
+    es una sucesión limpia, pero dos personas distintas del mismo plantel
+    comparten alguna hoja (once o banco) en `HOJAS_ALTERNAN` hojas: con ese
+    total entre los dos y nunca juntos, es la misma (`alternan(a, b)`). Un
+    arquero y uno de campo no se funden nunca por esta vía."""
     tit = dict(tit)
     quedan: list[dict] = []
     for j in sorted(js, key=lambda j: (_sin_minutos(j), -(j.get("minutos") or 0), -tit.get(j["id"], 0))):
@@ -387,9 +413,9 @@ def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None,
         for i, q in enumerate(quedan):
             if not mismo_jugador(j["nombre"], q["nombre"]):
                 if (_mismo_apellido(j["nombre"], q["nombre"]) and not _sin_minutos(j) and juntos
-                        and _caben(q, j, tope) and not juntos(j["id"], q["id"])
+                        and _caben(q, j, tope) and not _alguna_vez_juntos(q, j, juntos)
                         and ((sucesion and sucesion(j["id"], q["id"])) or _mismos_ga(j, q)
-                             or _sombra_sin_hojas(q, j, sin_hojas))):
+                             or _sombra_sin_hojas(q, j, sin_hojas) or _se_alternan(q, j, alternan))):
                     gemela, sumar = q, True
                     quedan[i] = {**_sumar(q, j), "fundidoPorInicial": True}
                     break
@@ -404,9 +430,9 @@ def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None,
                 break
             # misma inicial pero sin la pila entera («M. Perea» y «M. Perea»): la misma
             # regla de la inicial distinta (sucesión o mismos goles y asistencias)
-            if (juntos and _caben(q, j, tope) and not juntos(j["id"], q["id"])
+            if (juntos and _caben(q, j, tope) and not _alguna_vez_juntos(q, j, juntos)
                     and ((sucesion and sucesion(j["id"], q["id"])) or _mismos_ga(j, q)
-                         or _sombra_sin_hojas(q, j, sin_hojas))):
+                         or _sombra_sin_hojas(q, j, sin_hojas) or _se_alternan(q, j, alternan))):
                 gemela, sumar = q, True
                 quedan[i] = {**_sumar(q, j), "fundidoPorInicial": True}
                 break
@@ -474,6 +500,20 @@ def _juntos(a: int, b: int) -> bool:
                    "AND x.team_id = y.team_id WHERE x.player_id=? AND y.player_id=? LIMIT 1", (a, b)))
     except Exception:  # noqa: BLE001 — sin fichas: el nombre completo decide
         return False
+
+
+def _alternan(a: int, b: int, team_id: int) -> bool:
+    """Los dos ids tienen hojas CON ESTE EQUIPO y entre los dos suman
+    `HOJAS_ALTERNAN` o más (las de otro club no cuentan: un fichaje con 30
+    hojas en su club anterior y un juvenil homónimo no son evidencia). Que
+    nunca estuvieron juntos lo mira quien llama."""
+    try:
+        n = {r["player_id"]: r["n"] for r in saddb.query(
+            "sad", "SELECT player_id, COUNT(*) AS n FROM alineaciones WHERE player_id IN (?, ?) AND team_id=? "
+                   "GROUP BY player_id", (a, b, team_id))}
+    except Exception:  # noqa: BLE001 — sin fichas no hay evidencia de alternancia
+        return False
+    return bool(n.get(a)) and bool(n.get(b)) and n[a] + n[b] >= HOJAS_ALTERNAN
 
 
 def _sin_hojas(pid: int) -> bool:
@@ -552,7 +592,8 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     rec = onces_recientes(team_id, antes)
     con_onces = rec["onces"] >= ONCES_MINIMOS
     tit = {pid: j["titular"] for pid, j in rec["jugadores"].items()}
-    js, tit = deduplicar(js, tit, _juntos, _sucesion, _partidos_temporada(team_id, p.get("temporada")), _sin_hojas)
+    js, tit = deduplicar(js, tit, _juntos, _sucesion, _partidos_temporada(team_id, p.get("temporada")), _sin_hojas,
+                         lambda a, b: _alternan(a, b, team_id))
     otro = juegan_en_otro(team_id, [j["id"] for j in js], antes)
     idos = [{"jugadorId": j["id"], "nombre": j["nombre"], **otro[j["id"]]} for j in js if j["id"] in otro]
     js = [j for j in js if j["id"] not in otro]

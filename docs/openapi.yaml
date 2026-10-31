@@ -1259,7 +1259,8 @@ paths:
         (la de la plantilla de la temporada viaja en `zonaTemporada` si difiere), y un titular
         reciente que quedó fuera del corte pero está en la plantilla entra con sus stats.
         La sombra de la API (0 partidos con minutos y ninguna hoja) se funde con su gemelo del
-        mismo apellido (incidencia 904). Dos filas del mismo nombre que NUNCA compartieron una
+        mismo apellido (incidencia 904), y también dos ids que se ALTERNAN: nunca juntos en una
+        hoja y 6 o más hojas entre los dos con este equipo (un arquero y uno de campo, nunca). Dos filas del mismo nombre que NUNCA compartieron una
         hoja y que los datos no alcanzan a fundir llevan `posibleMismoQue` (el id de la otra):
         el bloque F no cuenta a una de baja si la otra jugó (932). Los de la plantilla cuya
         última hoja (de los últimos 120 días) es con OTRO club, posterior a la última con este,
