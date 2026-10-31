@@ -146,6 +146,7 @@ Tres lugares donde vive una guardia:
   - **Recibo:** `rechazos` y `faltan` en cada depósito.
   - **Forma del cuerpo:** `GET /analisis/cowork/contrato`, que sale de las mismas constantes que validan.
   - **Test de arquitectura (regla 3):** cada endpoint y cada alerta calculada están en `docs/openapi.yaml`.
+  - Un marcador viaja con el orden en que se lee: en los antecedentes `marcador` es el del equipo y `marcadorPartido` local-visita, como `marcadorPronosticado` (907).
   - El recibo trae `alertasAlLeer` (las calculadas que el GET le pone al parte, 771 y 806) y no rechaza lo que el prompt pide dejar vacío (el `dt.desde` sin fuente, 827): recibo y prompt dicen lo mismo.
 - **Si vuelve:** primero el contrato, después el código (CLAUDE.md).
 
