@@ -1620,6 +1620,7 @@ def alertas_rehacer(dtp_leido: dict, nombres: dict) -> list[dict]:
 
 
 _BANDA = re.compile(r"izq|der|lateral|banda|carril|extremo|wing", re.I)
+_CARRIL_SIN_DATO = re.compile(r"sin dato|por l[ií]nea|sin grid|sin carril", re.I)
 
 
 def avisos_carril(dtp: dict, nombres: dict) -> list[dict]:
@@ -1631,7 +1632,11 @@ def avisos_carril(dtp: dict, nombres: dict) -> list[dict]:
         quien = nombres.get(b["equipo"], b["equipo"])
         duelos = ((b.get("apertura") or {}).get("m2") or {}).get("duelosCarril") or []
         banda = [d for d in duelos if _BANDA.search(d.get("carril") or "")]
-        if duelos and len(banda) < 2:
+        # SIN GRID, EL CARRIL VA «SIN DATO» Y NO SE COBRA (incidencia 628, La
+        # Guaira–Metropolitanos: la regla de `sinCarriles` de COWORK.md pide
+        # duelos por línea o «sin dato» y este aviso pedía dos de banda igual)
+        sin_dato = any(_CARRIL_SIN_DATO.search(d.get("carril") or "") for d in duelos)
+        if duelos and len(banda) < 2 and not sin_dato:
             out.append({"bloque": f"dtp.{b['equipo']}.m2.duelosCarril",
                         "costara": f"el M2 de {quien} escribe {len(banda)} carril(es) de banda: los fallos del "
                                    "21-24/10 vinieron del carril que no se escribió (Sporting–LASK, Lille–Galatasaray)",

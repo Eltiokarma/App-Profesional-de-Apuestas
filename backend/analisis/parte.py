@@ -995,13 +995,19 @@ def alertas_familias(reventon: dict | None, nombres: dict) -> list[dict]:
         grandes = [f for f in of.get("familias") or [] if f.get("cuidado")]
         if not grandes:
             continue
+        # EL RÉCORD IGUALADO TIENE PRECEDENTE (incidencia 723, Huancayo: «récord
+        # igualado» dentro de un «terreno sin precedente»): se dice aparte, como
+        # el récord de racha igualado de la K (67), que queda en ámbar
+        supera = any(f["record"] == "supera" for f in grandes)
         out.append({
             "codigo": "FAMILIA-RECORD", "equipo": lado, "tipo": "dato",
             "detalle": f"{nombres.get(lado, lado)}: " + " · ".join(
                 f"{f['partidos']} {_AMBITO_TXT.get(f['ambito'], f['ambito'])} "
                 f"{_estado_familia(f)} (récord{'' if f['record'] == 'supera' else ' igualado'})"
                 for f in grandes)
-                + ". Terreno sin precedente: cuidado con cargar a que siga. No es probabilidad de corte "
+                + (". Terreno sin precedente: cuidado con cargar a que siga" if supera else
+                   ". Igualan su récord (ya lo vivió una vez): cuidado con cargar a que siga")
+                + ". No es probabilidad de corte "
                   "(en su récord estas burbujas se sostienen, REVENTON §15); si se corta, hay una causa que "
                   "rastrear en el veredicto",
         })

@@ -449,6 +449,9 @@ def main():
     sl = bu.get("separacionLiga") or {}
     check("/burbujas trae separacionLiga de LaLiga: AUC 0.648, nivel alta, con nota",
           sl.get("ligaId") == 140 and sl.get("auc") == 0.648 and sl.get("nivel") == "alta" and sl.get("nota"), sl)
+    import backend.app as _app837
+    check("837: el Brasileirão desempata por victorias antes que por diferencia de gol",
+          71 in _app837.DESEMPATE_VICTORIAS and 140 not in _app837.DESEMPATE_VICTORIAS)
     from backend.analisis import separacion_liga as _sep
     check("los cortes de la separación: 0.64 alta · 0.60 media · debajo baja · sin dato sin medir",
           [_sep.nivel_de(x) for x in (0.68, 0.64, 0.63, 0.60, 0.58, None)]
