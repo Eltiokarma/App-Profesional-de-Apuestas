@@ -3208,6 +3208,15 @@ def guardar(payload: dict) -> dict:
         if not ind:
             continue
         calc = _tdemod.indice(dict(ind))
+        # LO DECLARADO SIN DATO NO SE COBRA (incidencia 808, Lebrijana: la regla
+        # es no rellenar, y el recibo pedía «puntuá al menos un indicador» de C
+        # y S aunque el bloque los traía en `sinDato` con su motivo)
+        sin_dato = {str(k)[:1].upper() for k in (b.get("sinDato") or {})}
+        presentes = {str(k)[:1].upper() for k in ind if not str(k).upper().startswith("SOB")}
+        if calc.get("sinDato") and ({"F", "C", "P"} - presentes) <= sin_dato:
+            continue
+        if calc.get("sinS") and "S" in sin_dato:
+            continue
         if calc.get("sinDato"):
             faltan.append({
                 "bloque": f"tde.ie (lado {b.get('equipo') or '?'})",

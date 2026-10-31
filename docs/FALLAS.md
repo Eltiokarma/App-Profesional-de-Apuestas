@@ -94,6 +94,7 @@ Tres lugares donde vive una guardia:
   - **Test de arquitectura:** regla 4 (cada `except Exception` dice por qué es seguro seguir) y regla 2 (cada test corre en CI).
   - **Escaneo:** chequeos `sin-cuotas` y `ficha-sin-eventos`.
   - **Un null dice por qué:** la tarjeta de la espina vacía trae `sinTarjeta` (K en 0, otra condición, sin guía; 866, 720). Un campo calculado que sale null sin motivo se lee como «falla» o como «cero».
+  - **Lo declarado sin dato no se cobra:** el recibo no pide un bloque del TDE que el parte trae en `sinDato` (808) ni rechaza el `xiReferencia` que dice por qué no hay ningún once (813).
   - **Depósito:** el bloque del TDE guarda `notas` y devuelve en `rechazos` cada clave que no guarda (`parte.CLAVES_BLOQUE_TDE`, 863): lo que llega y no se guarda se dice. Una lista de claves nuevas nace con TODO lo que el prompt pide mandar en ese bloque (928: `sinDato` quedó fuera y se rechazaba).
 - **Si vuelve:** una fase que no guarda nada tiene que verse en el latido. Si no se ve, falta una señal.
 
