@@ -184,11 +184,36 @@ def _parejas_nuevas(team_id: int, fecha: str, xi: list[dict]) -> list[dict]:
 
 
 def _apertura_previa_reciente(team_id: int, nombre: str, fecha: str, cuantos: int = 5) -> dict | None:
-    for f in _anteriores(team_id, fecha, cuantos):
+    for k, f in enumerate(_anteriores(team_id, fecha, cuantos)):
         ap = _apertura_previa(nombre, f["id"])
         if ap:
-            return {**ap, "fixtureId": f["id"]}
+            out = {**ap, "fixtureId": f["id"]}
+            if k:
+                out["cierreContra"] = _cierre_contra(team_id, f)
+            return out
     return None
+
+
+def _cierre_contra(team_id: int, f) -> dict:
+    """EL CIERRE SE VALIDA CONTRA EL PARTIDO DE LA APERTURA, NO CONTRA EL ÚLTIMO
+    (incidencia 1035, Libertad: apertura del 23/10 de liga y `partidoAnterior`
+    del 27/10 de copa; el cierre no tenía los goles del partido que validaba).
+    Con la apertura de un partido anterior al último, viajan su marcador y sus
+    goles, y la nota lo dice."""
+    from backend.ficha_tactica import tactica_de
+    f = dict(f)
+    local = f.get("home_team_id") == team_id
+    gf, gc = (f.get("gh"), f.get("ga")) if local else (f.get("ga"), f.get("gh"))
+    try:
+        goles = _goles(tactica_de(f["id"], f.get("home_team_id"), f.get("away_team_id")), team_id)
+    except Exception:  # noqa: BLE001 — sin ficha: el marcador alcanza, los goles van vacíos
+        goles = []
+    return {"fixtureId": f["id"], "fecha": str(f["date"])[:10],
+            "rival": (f.get("away_name") if local else f.get("home_name")) or "", "condicion": "L" if local else "V",
+            "competicion": f.get("liga") or "", "marcador": {"favor": gf, "contra": gc}, "goles": goles,
+            "nota": ("la apertura previa es de un partido ANTERIOR al último (el último no tuvo parte): el "
+                     "CIERRE se valida contra ESTE partido, con este marcador y estos goles; "
+                     "`partidoAnterior` es otro partido y sirve para el M1 de hoy, no para el cierre")}
 
 
 def _ultimo_de_liga(team_id: int, fecha: str, a) -> dict:

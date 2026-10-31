@@ -61,6 +61,7 @@ Tres lugares donde vive una guardia:
   - **Cuarentena automática** que enseña.
   - **Escaneo:** chequeo `dt-sin-confirmar`.
   - Un país o un equipo no es un DT: se filtra al guardar la hoja (como en /coachs) y al leerla (`jugadores.es_nombre_de_dt`, 1019, «Bolívia»).
+  - Un once sin DT en la hoja entre dos entrenadores hace incierto el debut: el cambio de la semana (F1 del TDE sin dato) se afirma solo si el debut más viejo posible cae en la semana (`tde.cambio_dt_reciente`, 1037, Llaneros).
   - Lo que se lee del DT es del DT que está: la formación dominante del calendario cuenta solo los onces de su banco (665), y su «primer banco visto» es la llegada solo si el partido anterior tiene hoja con otro DT; si no, `desdeConfirmar` (750).
 - **Si vuelve:** la prensa manda; la base es la alarma, no la verdad.
 
@@ -75,6 +76,7 @@ Tres lugares donde vive una guardia:
   - **Escaneo:** chequeo `once-tarde`.
   - El chequeo `once-tarde` del escaneo no cuenta el partido cuya ficha post-partido se selló sin alineaciones: la API no la dio nunca, es cobertura (deuda 5), no un once tarde (953; Copa del Rey con clubes de Tercera).
   - El último partido de copa no corta la cadena ni fija el M1: `aperturaPrevia` busca el último partido con parte (997), y el caso del bloque toma la fecha y la competición de ese mismo partido (`dtp_cowork._anterior_con_parte`, 1016) y `ultimoOnceDeLiga` acompaña al once rotado de copa (966); una apertura que entró «sin dato» de XI se reemplaza con la que lo trae (992).
+  - Con la apertura de un partido anterior al último, `aperturaPrevia.cierreContra` trae el marcador y los goles de ESE partido: el cierre se valida contra él, no contra `partidoAnterior` (1035).
 - **Si vuelve:** mirar primero si el partido entró en la cola, y recién después la rutina.
 
 ### 4. Quién no puede jugar
@@ -158,6 +160,7 @@ Tres lugares donde vive una guardia:
   - **Test de arquitectura (regla 3):** cada endpoint y cada alerta calculada están en `docs/openapi.yaml`.
   - Un marcador viaja con el orden en que se lee: en los antecedentes `marcador` es el del equipo y `marcadorPartido` local-visita, como `marcadorPronosticado` (907).
   - El recibo trae `alertasAlLeer` (las calculadas que el GET le pone al parte, 771 y 806) y no rechaza lo que el prompt pide dejar vacío (el `dt.desde` sin fuente, 827): recibo y prompt dicen lo mismo.
+  - **El ejemplo del prompt pasa el recibo:** un test lee la `reasignacion` de ejemplo de `docs/COWORK.md` y exige que no dispare `faltan` (1030: el recibo pedía `desenlace` y `sob2` que el ejemplo no traía).
 - **Si vuelve:** primero el contrato, después el código (CLAUDE.md).
 
 ### 10. Lo que el skill o el prompt inventan

@@ -311,6 +311,24 @@ def main():
         _dc997._anteriores, _dc997._apertura_previa = _ant, _ap
     check("997: con el último partido (copa) sin parte, la apertura previa es la del anterior con parte",
           _r997 and _r997["fixtureId"] == 10, _r997)
+    # 1035: y entonces viaja el partido contra el que se valida el cierre (marcador y goles)
+    _cc = _dc997._cierre_contra
+    try:
+        _dc997._anteriores = lambda tid, fecha, n: [
+            {"id": 11, "date": "2026-10-27", "home_team_id": 1, "away_team_id": 3, "gh": 0, "ga": 0,
+             "home_name": "Libertad", "away_name": "Otro", "liga": "Copa Paraguay"},
+            {"id": 10, "date": "2026-10-23", "home_team_id": 2, "away_team_id": 1, "gh": 1, "ga": 2,
+             "home_name": "Cerro", "away_name": "Libertad", "liga": "Primera División"}]
+        _dc997._apertura_previa = lambda nombre, fid: {"apertura": {"m1": {}}} if fid == 10 else None
+        _r1035 = _dc997._apertura_previa_reciente(1, "Libertad", "2026-10-31")
+        _dc997._apertura_previa = lambda nombre, fid: {"apertura": {"m1": {}}}
+        _r1035b = _dc997._apertura_previa_reciente(1, "Libertad", "2026-10-31")
+    finally:
+        _dc997._anteriores, _dc997._apertura_previa = _ant, _ap
+    _c1035 = (_r1035 or {}).get("cierreContra") or {}
+    check("1035: la apertura de un partido anterior al último trae `cierreContra` con ese marcador; la del último no",
+          _c1035.get("fixtureId") == 10 and _c1035.get("marcador") == {"favor": 2, "contra": 1}
+          and _c1035.get("rival") == "Cerro" and "cierreContra" not in (_r1035b or {}), (_r1035, _r1035b))
     # 966: si el último fue de copa, viaja el último once de LIGA
     import backend.ficha_tactica as _ft966
     _td = _ft966.tactica_de

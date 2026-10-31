@@ -5028,6 +5028,13 @@ def main():
           (_cdr(1, "2026-10-25", _on, _sin) or {}).get("nuevo") == "J. Nuevo")
     check("593: si debutó hace más de 7 días, no hay cambio reciente",
           _cdr(1, "2026-11-02", _on, _sin) is None)
+    # 1037 (Llaneros): la hoja del 21/10 sin entrenador; Sandoval ya dirigía, el debut no es el 26/10
+    _on1037 = [{"fecha": "2026-10-26", "entrenador": "Sandoval"}, {"fecha": "2026-10-21", "entrenador": ""},
+               {"fecha": "2026-10-12", "entrenador": "J. García"}]
+    check("1037: con un once sin DT en medio el debut pudo ser antes; fuera de la semana no se afirma el cambio",
+          _cdr(1, "2026-10-31", _on1037, _sin) is None
+          and (_cdr(1, "2026-10-27", _on1037, _sin) or {}).get("nuevo") == "Sandoval",
+          (_cdr(1, "2026-10-31", _on1037, _sin), _cdr(1, "2026-10-27", _on1037, _sin)))
     check("593: el DT de la base llegó en la semana y no dirigió ningún once mirado → cambio",
           (_cdr(1, "2026-10-25", _on[1:], {"nombre": "R. Otro", "desde": "2026-10-20"}) or {}).get("nuevo") == "R. Otro"
           and _cdr(1, "2026-10-25", _on[1:], {"nombre": "P. Viejo", "desde": "2026-10-20"}) is None
@@ -5093,6 +5100,22 @@ def main():
           == [(0, 50, "base", False), (50, 90, "siExpulsion", False)], _t448)
     # TDE v0.1.24 · DISCIPLINA 65: EL DESENLACE DEL QUE PERSIGUE (cohorte c3: ISE de rama ≥ 7 remontó 2 de 38)
     from backend.analisis.parte import avisos_desenlace as _avd
+    # 1030: el EJEMPLO del prompt (docs/COWORK.md, punto 7) pasa el recibo: sus ramas
+    # traen el desenlace y el SOB2 que el recibo pide; un ejemplo que el recibo
+    # rechaza enseña a depositar mal
+    _cw = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "docs", "COWORK.md"),
+               encoding="utf-8").read()
+    _i30 = _cw.index('"reasignacion": {\n         "siMarcaPrimero"') + len('"reasignacion": ')
+    _d30, _k30 = 0, _i30
+    for _k30 in range(_i30, len(_cw)):
+        _d30 += {"{": 1, "}": -1}.get(_cw[_k30], 0)
+        if _d30 == 0:
+            break
+    _ej30 = json.loads(_cw[_i30:_k30 + 1])
+    check("1030: el ejemplo de reasignación del prompt no dispara el recibo (desenlace y SOB2 en las ramas)",
+          _avd([{"equipo": "a", "reasignacion": _ej30}]) == []
+          and all(r.get("sob2") is not None for k, r in _ej30.items()
+                  if k in ("siRecibePrimero", "siLeEmpatan") and (r.get("sob1") or 0) >= 0.5), _ej30)
     _rz65 = []
     _r65 = _idr(_rsg({"siRecibePrimero": {"sob1": 1, "sob2": 1, "sob3": 0.5, "desenlace": "se rompe"},
                       "siLeEmpatan": {"sob1": 1, "sob2": 0.5, "sob3": 0.5},

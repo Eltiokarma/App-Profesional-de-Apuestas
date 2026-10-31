@@ -1135,7 +1135,7 @@ paths:
         con convertidos y errados, de los eventos de la ficha; el ejecutor sale de acá; cada uno
         con `enPlantilla` —false si ya no está en el plantel de hoy o su última hoja es con otro club, que viaja en `juegaEn` (1029), y entonces no encabeza—) y
         `ultimoOnceDeLiga` (si el último partido fue de copa: el último once de liga, formación y grid; 966);
-        `aperturaPrevia` (la del último partido CON parte, con su `fixtureId`; 997): lo que se declaró ANTES del partido anterior, contra lo que se valida el
+        `aperturaPrevia` (la del último partido CON parte, con su `fixtureId`; 997; si no es el último partido, `cierreContra` trae el marcador y los goles de ESE partido, que es contra el que se valida el cierre, 1035): lo que se declaró ANTES del partido anterior, contra lo que se valida el
         cierre. Lo que es juicio va en `noCalculables`. 0 tokens, 0 requests.
       parameters:
         - { name: fixtureId, in: path, required: true, schema: { type: integer } }
