@@ -325,6 +325,11 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
 
           {/* la escala del rival: copa, ascendido, otra liga (Cristal–Bentín) */}
           {data.escala && !data.escala.comparable && <EscalaRival escala={data.escala} rival={data.proximo?.rival ?? 'el rival'} />}
+          {data.escala?.historiaOtraCategoria && (
+            <div style={{ font: '500 10.5px var(--sans)', color: 'var(--mark)', lineHeight: 1.45 }}>
+              Historia de otra categoría: {data.escala.historiaOtraCategoria.nota}
+            </div>
+          )}
 
           {/* cuánto separa el riesgo en SU liga (29/10/2026): con paridad, la guía pesa menos */}
           {data.separacionLiga && <SeparacionLiga s={data.separacionLiga} />}

@@ -452,6 +452,11 @@ def main():
     import backend.app as _app837
     check("837: el Brasileirão desempata por victorias antes que por diferencia de gol",
           71 in _app837.DESEMPATE_VICTORIAS and 140 not in _app837.DESEMPATE_VICTORIAS)
+    from backend.analisis import escala as _esc974
+    _f974 = [{"ligaId": 145}] * 14 + [{"ligaId": 144}] * 6
+    check("974/975: con la mitad o más de los últimos partidos de liga en otra categoría, se marca; si no, no",
+          (_esc974.historia_otra_categoria(_f974, 144) or {}).get("partidos") == 14
+          and _esc974.historia_otra_categoria(_f974, 145) is None)
     from backend.analisis import separacion_liga as _sep
     check("los cortes de la separación: 0.64 alta · 0.60 media · debajo baja · sin dato sin medir",
           [_sep.nivel_de(x) for x in (0.68, 0.64, 0.63, 0.60, 0.58, None)]
