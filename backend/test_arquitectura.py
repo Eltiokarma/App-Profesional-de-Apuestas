@@ -50,6 +50,14 @@ for rel in fuentes():
     fuera += [f"{rel}: {m.group(0)}" for m in _LETRAS.finditer(txt)]
     fuera += [f"{rel}: def {m.group(1)}" for m in _DEF_IDENTIDAD.finditer(txt)]
 check("identidad: ninguna comparación de letras de nombres fuera de backend/identidad.py", not fuera, fuera)
+# …ni otra forma de quitar tildes a un NOMBRE (incidencia 811: el NFKD suelto de
+# dtp_cowork tiraba la «ð»). Fuera de identidad.py solo se normaliza texto que
+# no es un nombre de persona, con su motivo:
+NFKD_PERMITIDO = {os.path.join("backend", "analisis", "incidencias.py"): "títulos de incidencias, no nombres",
+                  os.path.join("backend", "analisis", "parte.py"): "_palabras: nombres de liga/torneo, no personas"}
+nfkd = [rel for rel in fuentes() if rel != os.path.join("backend", "identidad.py") and rel not in NFKD_PERMITIDO
+        and 'normalize("NFKD"' in leer(rel)]
+check("identidad: ningún módulo quita tildes a un nombre por su cuenta (usa identidad.plano)", not nfkd, nfkd)
 
 # ── 2 · UN TEST QUE NO CORRE NO PROTEGE (FALLAS.md: tests fuera de CI) ──────
 # El 30/10/2026 siete tests existían y CI no los corría (Jev, coherencia, modo
