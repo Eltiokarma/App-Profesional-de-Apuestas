@@ -4077,6 +4077,17 @@ def main():
     _al = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3", "xiReferencia": _ref + ", Abde"}}},
                    {"a": {"formacion": "4-3-3", "titulares": ["A. Ezzalzouli"], "alias": {"A. Ezzalzouli": ["Abde Ezzalzouli"]}}})
     check("el nombre de la plantilla (con el apodo) también casa con la referencia", _al["ausentesDeLaReferencia"] == [], _al)
+    # Emelec (incidencia 1027): «A. Mina» de la referencia es Angelo Mina, titular;
+    # Madison Ariel Mina Ibarra, también titular, no estaba
+    _mina = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3",
+                      "xiReferencia": "J. Pérez; A. Mina, B. Uno; C. Dos"}}},
+                     {"a": {"formacion": "4-3-3", "titulares": ["A. Mina", "Madison Ariel Mina Ibarra", "B. Uno"]}})
+    _mina1 = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3",
+                       "xiReferencia": "J. Pérez; A. Mina, B. Uno; C. Dos"}}},
+                      {"a": {"formacion": "4-3-3", "titulares": ["Madison Ariel Mina Ibarra", "B. Uno"]}})
+    check("con dos titulares del mismo apellido, la mención con la inicial de uno no nombra al otro (1027)",
+          _mina["ausentesDeLaReferencia"] == ["Madison Ariel Mina Ibarra"]
+          and _mina1["ausentesDeLaReferencia"] == [], (_mina, _mina1))
     _dos = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3", "xiReferencia": _ref}}},
                     {"a": {"formacion": "4-3-3", "titulares": ["Baltasar Gallego Rodríguez", "Fernando Muslera"]}})
     check("un titular con dos apellidos casa con la referencia por cualquiera de ellos",

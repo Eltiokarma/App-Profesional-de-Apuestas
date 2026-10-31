@@ -48,6 +48,7 @@ Tres lugares donde vive una guardia:
   - **La sombra de la API** (0 partidos con minutos y ninguna hoja) se funde con su gemelo en `f1_base.deduplicar` (904). **Los ids que se alternan** también: nunca juntos en una hoja y 6+ hojas entre los dos con este equipo (Juan Francisco Bisanz figuró como 304371, 406291 y 304389, nunca dos a la vez); un arquero y uno de campo nunca se funden así.
   - **Lo que los datos no alcanzan a decidir** se marca y se protege, no se adivina: dos filas del mismo nombre que nunca compartieron hoja llevan `posibleMismoQue` y el bloque F no cuenta a una de baja si la otra jugó (932, Pratto). Dos ids que compartieron una hoja son dos personas, y el escaneo ya no las reporta (887, los dos «T. Palacios»).
   - **El que se fue:** su última hoja con otro club lo saca de la tabla (`f1_base.juegan_en_otro`, 931).
+  - **Dos titulares con el mismo apellido:** la mención pegada a la inicial de uno no nombra al otro en `contraElOnce` (1027, los dos Mina del Emelec), y dos ids con el mismo nombre visible salen con el nombre largo o el id en el XI y los cambios del DTP (`dtp_cowork.desambiguar`, 1040, los dos «T. Palacios»).
 - **Si vuelve:** el caso nuevo va a `identidad.py` con su test. Nunca un `if` en el módulo donde apareció.
 
 ### 2. El DT de la base, viejo o cruzado
