@@ -734,6 +734,11 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
             # API ni en la F1 siendo titulares recientes
             if pid in ids or pid <= 0 or (r["titular"] < 2 and not r.get("enUltimo") and not r.get("enUltimos3")):
                 continue
+            # EL QUE SE FUE NO VUELVE POR LA PUERTA DE LOS ONCES (incidencia 1032,
+            # San Lorenzo: M. Reali candidato ROT y en `jueganEnOtroEquipo` en la
+            # misma respuesta, porque sus titularidades viejas lo metían de nuevo)
+            if pid in otro:
+                continue
             # YA FUNDIDO POR `deduplicar`: sus titularidades ya están en la fila
             # que lo lleva en `idsAlternos`. Sumarlas otra vez daba «12/9»
             # (Metropolitanos, I. Ramírez 406623 + 554584, incidencia 627)
