@@ -1836,6 +1836,19 @@ def main():
     check("928: `sinDato` del TDE (objeto o lista, y `excluidos`) se guarda con su motivo y no se rechaza",
           _b928["sinDato"] == {"S3": "pide PPDA", "F4": ""} and _b928b["sinDato"] == {"S3": ""} and _r928 == [],
           (_b928, _r928))
+    from backend.analisis import f1_base as _f725
+    _xi725 = [{"fixture_id": 1, "player_id": i, "titular": 1, "posicion": "M", "grid": g} for i, g in
+              enumerate(["1:1", "2:4", "2:3", "2:2", "2:1", "3:2", "3:1", "4:3", "4:2", "4:1", "5:1"])]
+    _l725 = _f725._lineas_por_grid(_xi725)
+    check("725: con el grid completo la fila manda (2:4 → D aunque la API diga M; la última fila → F)",
+          _l725[(1, 1)] == "D" and _l725[(1, 0)] == "G" and _l725[(1, 10)] == "F" and _l725[(1, 5)] == "M", _l725)
+    check("725: sin grid completo no se deduce nada", _f725._lineas_por_grid(_xi725[:9]) == {})
+    check("879: el arquero que alterna rota sobre la ventana entera (5 de 10 → TH, no TF)",
+          _f725.rol_por_onces(5, _f725.onces_disponible({"convocado": 5, "titular": 5, "posicionHabitual": "G"}, 10))
+          == "TH")
+    _z897 = {"zona": ""}
+    _f725._zona_reciente(_z897, {"posicionBanco": "D"})
+    check("897: el que nunca arrancó toma la zona de su posición en el banco", _z897["zona"] == "DEF", _z897)
     check("874: la espina «sigue» con el récord nombrado en el `porque` no va a la tira (como ESPINA-VS-RIESGO)",
           alertas_espina_extremo(_rx, {"a": {"lectura": "negativa", "porque": "K de local récord, sigue por el hecho X"},
                                        "b": {"lectura": "positiva", "porque": "en su máximo, pero juega en casa"}},
