@@ -108,6 +108,7 @@ Tres lugares donde vive una guardia:
   - La alerta de una regla que el texto ya cumple (el `porque` la nombra) no va a la tira: un aviso permanente se deja de leer (ESPINA-VS-RIESGO 291, ESPINA-SIGUE-EN-EXTREMO 874).
   - Lo que se dice del PRÓXIMO partido sale de la competición de ese partido, no de la base del último año: `separacion_liga.del_partido` (869, el ascendido).
   - Los días de descanso salen de `jugadores.dias_descanso` (por horas) en el calendario, el TDE, el DTP y el camino de recuperación; `test_arquitectura` lo verifica (769, 870).
+  - Un insumo calculado con muestra corta lo dice y no afirma (`PENALES_MUESTRA_MIN`, 942); el ejecutor de baja o sin titularidad reciente baja en la lista (895).
   - Un aviso que cobra contra una lista de la base mira quién puede HOY (plantel y once oficial) y reconoce el texto que nombra al de la lista: `dtp_cowork._ejecutores_hoy` y `_nombra_ejecutor` (864, 885: el ejecutor en el banco, la línea que lo nombra con un «si no»). El mismo id con dos grafías es un jugador (872).
 - **Si vuelve:** si la regla se puede calcular, se calcula. Si no, va a la próxima revisión del skill.
 

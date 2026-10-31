@@ -3645,6 +3645,27 @@ def main():
         _d15._formacion_ultima, _d15.casos_bloque, _d15._ejecutores_hoy = _o864
     check("864: la línea que nombra al ejecutor de la base cuenta aunque diga «sin ejecutor documentado»",
           _av864 == [], _av864)
+    # 895 (Potosí, Querétaro): «Luis Alí»/«L. Alí» con dos ids son uno; el de baja
+    # y el que no fue titular en los últimos onces bajan; 942: muestra corta lo dice
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM fixture_eventos WHERE fixture_id=990490")
+        _con.executemany("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador, jugador_id) "
+                         "VALUES (990490, ?, 'Goal', 'Penalty', 990491, ?, ?)",
+                         [(10, "S. Plaza", 8001), (20, "S. Plaza", 8001), (30, "S. Plaza", 8001),
+                          (40, "Luis Alí", 8002), (50, "L. Alí", 8003), (60, "Homenchenko", 8004),
+                          (70, "Homenchenko", 8004), (80, "Homenchenko", 8004), (85, "Homenchenko", 8004)])
+    _ee895 = _d15._estado_ejecutores
+    try:
+        _d15._estado_ejecutores = lambda tid, antes: {8001: {"titularEnUltimos": "0/10"}, 8002: {"titularEnUltimos": "8/10"},
+                                                      8004: {"baja": "operado", "titularEnUltimos": "0/10"}}
+        _pen895 = _d15.penales_temporada(990491, "2026-10-25 20:00:00")
+    finally:
+        _d15._estado_ejecutores = _ee895
+    check("895: L. Alí (titular, 2 penales en dos grafías) encabeza; Plaza (0/10) y Homenchenko (de baja) bajan",
+          [(e["nombre"], e["convertidos"]) for e in _pen895["ejecutores"]]
+          == [("Luis Alí", 2), ("S. Plaza", 3), ("Homenchenko", 4)]
+          and _pen895["ejecutores"][2].get("deBaja") == "operado", _pen895)
+    check("942: con pocos partidos con eventos la nota dice muestra corta", "muestra corta" in _pen895["nota"], _pen895)
     # 767 (Metropolitanos): el que figura en las hojas recientes sigue en el club
     # aunque las stats de la API no lo traigan
     from backend.analisis import f1_base as _f767
