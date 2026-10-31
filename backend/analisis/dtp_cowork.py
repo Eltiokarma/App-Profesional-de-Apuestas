@@ -183,6 +183,38 @@ def _parejas_nuevas(team_id: int, fecha: str, xi: list[dict]) -> list[dict]:
     return parejas_nuevas_de(xi, previos)
 
 
+def _apertura_previa_reciente(team_id: int, nombre: str, fecha: str, cuantos: int = 5) -> dict | None:
+    for f in _anteriores(team_id, fecha, cuantos):
+        ap = _apertura_previa(nombre, f["id"])
+        if ap:
+            return {**ap, "fixtureId": f["id"]}
+    return None
+
+
+def _ultimo_de_liga(team_id: int, fecha: str, a) -> dict:
+    """{"ultimoOnceDeLiga": …} si el último partido fue de copa y antes hay uno
+    de liga con once en la base (los 3 anteriores); si no, {}."""
+    from backend.analisis.escala import es_copa
+    from backend.ficha_tactica import tactica_de
+    if not es_copa(a["league_id"], a["liga"]):
+        return {}
+    for f in _anteriores(team_id, str(a["date"]), 3):
+        if es_copa(f["league_id"], f["liga"]):
+            continue
+        local = f["home_team_id"] == team_id
+        ali = ((tactica_de(f["id"], f["home_team_id"], f["away_team_id"]).get("alineaciones") or {})
+               .get("local" if local else "visitante")) or {}
+        if not ali.get("titulares"):
+            continue
+        return {"ultimoOnceDeLiga": {
+            "fixtureId": f["id"], "fecha": str(f["date"])[:10], "competicion": f["liga"] or "",
+            "formacion": ali.get("formacion") or "", "conGrid": bool(ali.get("conGrid")),
+            "titulares": [{"nombre": j["nombre"], "posicion": j["posicion"], "carril": j["carril"]}
+                          for j in ali.get("titulares") or []],
+            "nota": "el último partido fue de copa: si el once fue alternativo, el M1 se apoya en este"}}
+    return {}
+
+
 def _apertura_previa(nombre: str, fixture_id: int) -> dict | None:
     from backend.analisis import db as efedb
     e = efedb.eslabon_de_fixture(nombre, fixture_id)
@@ -299,7 +331,13 @@ def insumos_equipo(team_id: int, nombre: str, fx) -> dict:
         "partidoAnterior": anterior,
         "cambiosXi": cambios,
         "parejasNuevas": _parejas_nuevas(team_id, fecha, xi) if xi else [],
-        "aperturaPrevia": _apertura_previa(nombre, a["id"]),
+        # LA APERTURA PREVIA ES LA DEL ÚLTIMO PARTIDO CON PARTE (incidencia 997:
+        # Bayern y Dortmund jugaron Pokal sin parte y la cadena se cortaba con
+        # las aperturas de liga guardadas): se busca hacia atrás
+        "aperturaPrevia": _apertura_previa_reciente(team_id, nombre, fecha),
+        # EL ÚLTIMO ONCE DE LIGA, SI EL ÚLTIMO PARTIDO FUE DE COPA (966:
+        # Heerenveen con el once rotado de la KNVB Beker sin grid como base del M1)
+        **_ultimo_de_liga(team_id, fecha, a),
         # DTP v1.4: para responder la pregunta 6 sobre ESTE bloque (la apertura
         # del rival la lee de acá)
         "casosBloque": casos_bloque(team_id, fecha),
