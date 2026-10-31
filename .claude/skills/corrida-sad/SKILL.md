@@ -490,7 +490,17 @@ POST $B/analisis/cowork/incidencias
 - **No se reporta** (lo decidido; el mantenimiento suma acá lo que se cierra
   siempre igual, 31/10/2026): una liga que no publica onces (`nuncaVaALlegar`,
   deuda 5 de `CLAUDE.md`); un amistoso o una copa de categorías bajas sin
-  ficha; un 502 pasajero del servidor durante un despliegue.
+  ficha; un 502 pasajero del servidor durante un despliegue. Y desde la pasada
+  del 31/10 (noche), cerradas siempre con la misma causa conocida: el `desde`
+  de /coachs que es el mes de la carrera (482, 949: `desdeConfirmar` ya lo
+  marca y la prensa manda); el gol o la tarjeta que la API acredita a otro
+  jugador o equipo (642, 896, 910: el marcador manda); el /coachs atrasado con
+  el DT que se fue (766, 880, 903: DT-DISCREPANCIA ya avisa); la sede o la
+  fecha que la API no actualizó (814, 871, 882, 902); la sanción «probable»
+  que la prensa corrige (877, 921: el detalle ya dice «confirmar en prensa»);
+  y los campos que viajan en otro lugar del GET (`calculado.sinS`,
+  `otrasFamilias.perfilDc`, `calculado.contraElOnce`: 678, 900, 944) —leé el
+  contrato antes de reportar un campo ausente.
 
 ## Modo `mantenimiento` (los parches, automáticos)
 
