@@ -477,6 +477,10 @@ POST $B/analisis/cowork/incidencias
   (`GET …/incidencias`) y reusá su título si es la misma causa.
 - Lo que es tuyo de corregir en el parte (un DT mal escrito) no es incidencia;
   lo que la APP hizo mal, sí, aunque lo hayas sorteado.
+- **No se reporta** (lo decidido; el mantenimiento suma acá lo que se cierra
+  siempre igual, 31/10/2026): una liga que no publica onces (`nuncaVaALlegar`,
+  deuda 5 de `CLAUDE.md`); un amistoso o una copa de categorías bajas sin
+  ficha; un 502 pasajero del servidor durante un despliegue.
 
 ## Modo `mantenimiento` (los parches, automáticos)
 
@@ -484,6 +488,16 @@ La rutina diaria que arregla lo que las corridas vieron roto (pedido del
 usuario, 18/10/2026: la API siempre puede fallar y van a aparecer errores
 nuevos). Acá SÍ se toca el código, con las reglas del repo (`CLAUDE.md` manda)
 y con freno.
+
+**La cola no puede crecer** (31/10/2026, usuario: «el mantenimiento tiene que
+cerrar todo, optimizar todo hasta casi quedarse sin chamba»). La meta de CADA
+pasada es la cola de abiertas en CERO. El mínimo aceptable: terminar con menos
+abiertas que al empezar Y haber cerrado más de las que entraron desde la pasada
+anterior. No hay tope de grupos: se trabaja hasta vaciar la cola, y con la
+cola vacía se sigue con la prevención (paso 7-bis), que es lo que hace que
+mañana entren menos. Al empezar anotá cuántas abiertas hay y cuántas entraron
+desde la pasada anterior (las de `creadoEn` posterior): el informe final las
+compara.
 
 0. **Primero lo que quedó a medias y lo que decidió el usuario** (27/10/2026):
    - `GET $B/health` → `commit` (lo que corre en producción) y
@@ -526,7 +540,10 @@ y con freno.
    recreada desde `origin/main` (`git checkout -B <rama> origin/main`: su PR
    anterior ya se mergeó o no existe). `GET $B/analisis/cowork/incidencias`
    (abiertas, graves y repetidas primero) y `GET $B/analisis/cowork/latido`.
-   Sin incidencias abiertas ni aprobadas: avisá «nada que arreglar» y terminá.
+   Sin incidencias abiertas ni aprobadas: seguí con la prevención (7-bis).
+   Una `en_curso` cuya resolución dice que la toma OTRA sesión (la de trabajo
+   del usuario) no se toca; una `en_curso` de una pasada anterior sin PR se
+   retoma como abierta.
    **Causa conocida, no se re-investiga** (27/10/2026): cada abierta trae
    `conocida` (la última cerrada de su familia, con la resolución). Si es
    `dato_api` · `por_diseno` · `descartada` y la nueva no trae nada que la
@@ -544,7 +561,12 @@ y con freno.
    misma raíz —el cruce de nombres de `contraElOnce`, la identidad del jugador
    en la ficha, la tabla F1, las ventanas del TDE, la escala entre ligas, las
    bajas de la API—: se arregla la raíz y se cierran todas las que cubre. Armá
-   la lista de grupos (área + causa + ids) y ordenala por gravedad y `veces`.
+   la lista de grupos (área + causa + ids) y ordenala por TAMAÑO (cuántas
+   incidencias y `veces` suma la familia) y después por gravedad: **la familia
+   más grande va PRIMERO**. «Grande» nunca es motivo para dejarla para
+   después (30/10: la identidad de la F1, la clase que más pesa, quedó abierta
+   «por grande» y la cola subió de 50 a 69): se parte en sub-causas y cada
+   sub-causa es un grupo con su PR.
 2. **Verificá cada una contra los datos antes de tocar nada** (los GET de la
    API, el código, los tests): una incidencia es un reporte, no una orden.
    Clasificala:
@@ -573,14 +595,14 @@ y con freno.
    código, va a `backend/test_arquitectura.py`; si se ve en los datos, a
    `CHEQUEOS` del escaneo; si se ve en un parte, es una alerta calculada. La
    identidad de un jugador o un DT se arregla SOLO en `backend/identidad.py`
-   (con su caso en `backend/test_identidad.py`). **Hasta 6
-   GRUPOS de código por corrida (desde el 30/10/2026; antes 3), un PR por
-   grupo** (cada uno con su batería del paso 5 en verde y
-   su merge antes del siguiente): un grupo cierra todas sus incidencias de
-   una vez. Las que NO son código (`dato_api` · `por_diseno` · `descartada` ·
-   `usuario`) no cuentan para ese tope: verificadas, se clasifican TODAS en la
-   misma corrida. Los grupos de código que no entren quedan abiertos para la
-   siguiente, y la respuesta final dice cuáles.
+   (con su caso en `backend/test_identidad.py`). **Todos los grupos de
+   código, sin tope** (31/10/2026; antes 6, y antes 3), **un PR por grupo**
+   (cada uno con su batería del paso 5 en verde y su merge antes del
+   siguiente): un grupo cierra todas sus incidencias de una vez. Las que NO
+   son código (`dato_api` · `por_diseno` · `descartada` · `usuario`) se
+   clasifican TODAS en la misma corrida. Solo queda abierto lo que de verdad
+   no se puede cerrar en esta pasada (un test rojo que no es tuyo, un
+   despliegue caído), y la respuesta final dice qué y por qué.
 4. **Lo que NO se toca solo** (va a `usuario` con la propuesta escrita en
    `resolucion`, sin commit):
    - la matemática del motor (`src/motor/`, `backend/analisis/motor.py`,
@@ -592,8 +614,9 @@ y con freno.
      abrir un endpoint es una decisión;
    - borrar datos, levantar o poner cuarentenas, el presupuesto de la API
      (`SAD_*` de cuota) y las variables de Railway;
-   - un grupo cuyo arreglo pase de 10 archivos o ~400 líneas: es un
-     rediseño, no un parche.
+   - un REDISEÑO: un cambio de contrato o de arquitectura que nadie pidió.
+     Un grupo grande NO es un rediseño: se parte en sub-causas (paso 1) y
+     cada una va en su PR de ≤ 10 archivos o ~400 líneas.
 5. **Validá todo**: `npm run build`, `npm run test:motor`, `test:kview`,
    `test:burbuja`, `test:familias` y TODOS los `python -m backend.test_*` de
    `CLAUDE.md` (test_api, test_cowork, test_jugadores, test_ficha,
@@ -615,10 +638,25 @@ y con freno.
    (Railway tarda o está caído), `por_desplegar` con el PR, y la próxima
    pasada la confirma (paso 0). Con `commit` vacío (no se sabe) queda
    `resuelta` con «despliegue sin confirmar» en la resolución.
-8. Respuesta final, tres líneas: grupos e incidencias resueltas (con PR y si
-   ya están en producción), derivadas (dato_api · por_diseno · cuántas
-   cerradas por causa conocida · cuántas causas nuevas esperan al usuario en
-   «Decisiones pendientes») y los grupos que quedan abiertos para la próxima.
+7-bis. **Con la cola en cero: la prevención** (31/10/2026, usuario: «optimizar
+   todo hasta casi quedarse sin chamba»). Lo que entra mañana se decide hoy:
+   - `GET …/incidencias/causas`: las familias que MÁS entraron en los últimos
+     3 días. ¿Cada una tiene su guardia (chequeo del escaneo, regla de
+     `backend/test_arquitectura.py`, alerta calculada, o el arreglo en la
+     fuente que hace que no se produzca)? La que no, la gana en esta pasada,
+     con su clase en `docs/FALLAS.md`.
+   - Lo que las corridas reportan y se cierra siempre igual (`dato_api` o
+     `por_diseno` con `conocida`): el reporte es ruido. Sumalo a la lista
+     «No se reporta» de «Al terminar partes, veredictos o reventones» con la
+     causa y dónde está decidida, para que la corrida no lo vuelva a abrir.
+   - Las clases de `docs/FALLAS.md` sin guardia en código: una por pasada.
+   Cada prevención va en su PR, con la misma batería y el mismo merge.
+8. Respuesta final, cuatro líneas: **la cola** (abiertas al empezar → al
+   terminar, y cuántas entraron desde la pasada anterior); grupos e
+   incidencias resueltas (con PR y si ya están en producción); derivadas
+   (dato_api · por_diseno · cuántas cerradas por causa conocida · cuántas
+   causas nuevas esperan al usuario en «Decisiones pendientes»); y lo que
+   quedó abierto, con el porqué, y la prevención que se hizo.
 
 ## Al terminar cualquier modo: avisá al celular
 
