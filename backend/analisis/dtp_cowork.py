@@ -1388,6 +1388,20 @@ _AUSENTES = re.compile(r"\b(?i:sin|ausente[s]?|sin contar con|baja de)\s+(?:[A-Z
                        r"(?:\s+(?:y|ni)\s+(?:[A-ZÁÉÍÓÚÑÜ]\.\s*)?[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]*)*")
 
 
+# «con Araújo en el banco el seguro es Gorriarán» (incidencia 1047, Pachuca–
+# Tigres): el nombre pegado a «en el banco» dice dónde NO está el seguro
+_EN_BANCO = re.compile(r"(?:[A-ZÁÉÍÓÚÑÜ]\.\s*)?[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]*"
+                       r"(?:\s+(?:y|e)\s+(?:[A-ZÁÉÍÓÚÑÜ]\.\s*)?[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]*)*"
+                       r"\s+(?:en el banco|en la banca|al banco|desde el banco|de suplentes?|como suplentes?)", re.I)
+
+
+def sin_en_banco(texto: str) -> str:
+    """El texto sin los nombres que él mismo pone en el banco: no son el
+    seguro y no pueden tumbarlo por arrancar suplentes (1047). Es la misma
+    excepción que las piezas del M2 tienen con `_DESDE_BANCO`."""
+    return _EN_BANCO.sub(" ", texto or "")
+
+
 def sin_ausentes(texto: str) -> str:
     """Lo que el texto dice que NO está no es en quien se apoya: «Chuky San
     José y Reis; sin Lynen, depende de que un lateral se quede» marcaba el
@@ -1675,10 +1689,10 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
     # jugador que está en la BANCA del once oficial (y a ningún titular con ese
     # apellido), el M2 se escribió sobre otra pieza.
     rd = ((bloque.get("apertura") or {}).get("m2") or {}).get("restDefense") or {}
-    texto_rd = _plano(sin_ausentes(sin_alternativas(rd.get("foco") or "")))
+    crudo_rd = sin_en_banco(sin_ausentes(sin_alternativas(rd.get("foco") or "")))
+    texto_rd = _plano(crudo_rd)
     if texto_rd.strip():
-        en_banca = _suplentes_nombrados(of.get("banca") or [], of["titulares"], texto_rd,
-                                        sin_ausentes(sin_alternativas(rd.get("foco") or "")))
+        en_banca = _suplentes_nombrados(of.get("banca") or [], of["titulares"], texto_rd, crudo_rd)
         if en_banca:
             motivos.append(f"seguro: el rest defense de la apertura se apoyaba en {', '.join(en_banca)}, "
                            "que arrancó en el banco")

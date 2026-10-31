@@ -77,6 +77,7 @@ Tres lugares donde vive una guardia:
   - El chequeo `once-tarde` del escaneo no cuenta el partido cuya ficha post-partido se selló sin alineaciones: la API no la dio nunca, es cobertura (deuda 5), no un once tarde (953; Copa del Rey con clubes de Tercera).
   - El último partido de copa no corta la cadena ni fija el M1: `aperturaPrevia` busca el último partido con parte (997), y el caso del bloque toma la fecha y la competición de ese mismo partido (`dtp_cowork._anterior_con_parte`, 1016) y `ultimoOnceDeLiga` acompaña al once rotado de copa (966); una apertura que entró «sin dato» de XI se reemplaza con la que lo trae (992).
   - Con la apertura de un partido anterior al último, `aperturaPrevia.cierreContra` trae el marcador y los goles de ESE partido: el cierre se valida contra él, no contra `partidoAnterior` (1035).
+  - Lo que el texto pone en el banco no es el seguro: el rest defense quita los nombres pegados a «en el banco» / «de suplente» antes de buscar suplentes (`dtp_cowork.sin_en_banco`, 1047), como las piezas del M2 con `_DESDE_BANCO`.
 - **Si vuelve:** mirar primero si el partido entró en la cola, y recién después la rutina.
 
 ### 4. Quién no puede jugar
