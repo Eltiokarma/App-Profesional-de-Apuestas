@@ -208,6 +208,15 @@ _post, _n = escaneo._post(72, datetime(2026, 10, 26, 12, 0, tzinfo=timezone.utc)
 _cp = {(h["chequeo"], h["fixtureId"]) for h in _post}
 check("escaneo: partido con parte jugado sin once antes del pitazo → once-tarde (y el que lo tuvo, no)",
       ("once-tarde", 11) in _cp and ("once-tarde", 20) not in _cp and _n == 2, (_post, _n))
+# 953/941: si la ficha post-partido se selló SIN alineaciones (la API no las dio
+# nunca: Copa del Rey con clubes de Tercera), no es un once tarde
+con.execute("CREATE TABLE IF NOT EXISTS fichas_meta (fixture_id INTEGER PRIMARY KEY, capturado_en TEXT, "
+            "alineaciones INTEGER, eventos INTEGER, stats INTEGER)")
+con.execute("INSERT OR REPLACE INTO fichas_meta VALUES (11, '2026-10-26 03:00:00', 0, 12, 0)")
+con.commit()
+_post2, _ = escaneo._post(72, datetime(2026, 10, 26, 12, 0, tzinfo=timezone.utc))
+check("953: con la ficha sellada sin alineaciones el partido no sale como once-tarde",
+      ("once-tarde", 11) not in {(h["chequeo"], h["fixtureId"]) for h in _post2}, _post2)
 check("escaneo: todos los chequeos tienen título, área, severidad y la regla que cuidan",
       all({"titulo", "area", "severidad", "regla"} <= set(v) for v in escaneo.CHEQUEOS.values()))
 

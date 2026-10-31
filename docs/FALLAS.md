@@ -68,6 +68,7 @@ Tres lugares donde vive una guardia:
   - **Etiqueta del momento:** `momento_rehacer` distingue `tardio`, `sinRehacer` y `conocido`.
   - **El rehacer:** el modo rehacer de `corrida-sad` reescribe todo lo que nombra al once viejo.
   - **Escaneo:** chequeo `once-tarde`.
+  - El chequeo `once-tarde` del escaneo no cuenta el partido cuya ficha post-partido se selló sin alineaciones: la API no la dio nunca, es cobertura (deuda 5), no un once tarde (953; Copa del Rey con clubes de Tercera).
 - **Si vuelve:** mirar primero si el partido entró en la cola, y recién después la rutina.
 
 ### 4. Quién no puede jugar
