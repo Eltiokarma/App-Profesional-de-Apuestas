@@ -1339,8 +1339,11 @@ negritas, citas y tablas se pintan bien en la app.
     descanso, si es primera fecha, el candidato a MECANISMO-ABIERTO y
     `aperturaPrevia`: LO QUE SE DECLARÓ ANTES del partido anterior. El
     CIERRE se valida contra eso, no contra tu memoria; sin apertura previa,
-    el cierre no emite veredicto (anti-hindsight). No copies esos números
-    al parte: úsalos.
+    el cierre no emite veredicto (anti-hindsight). Si la apertura es de un
+    partido anterior al último (el último no tuvo parte), `cierreContra`
+    trae el marcador y los goles de ESE partido: el cierre se valida contra
+    él, no contra `partidoAnterior` (1035). No copies esos números al parte:
+    úsalos.
     {"equipo": "a",
      "apertura": {
        "m1": {"sistema", "xiReferencia", "senalXi", "rolesReasignados": [],
@@ -1634,10 +1637,11 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
        "reasignacion": {
          "siMarcaPrimero": {"sob1": 0, "tipologia": "ECHADA-VOL",
                             "nota": "administra: la ventana cuenta desde el minuto del gol"},
-         "siRecibePrimero": {"sob1": 1, "tipologia": "SOBREEXPOSICION",
+         "siRecibePrimero": {"sob1": 1, "sob2": 0.5, "tipologia": "SOBREEXPOSICION", "desenlace": "se_rompe",
                              "nota": "persigue con los laterales arriba", "ventana": "desde el gol +15"},
-         "siLeEmpatan": {"sob1": 0.5, "sob2": 0.5, "nota": "si le empatan reabre la SOB desde ese minuto"},
-         "siIguala": {"sob1": 1, "sob2": 0.5, "nota": "si iba abajo y empata, sigue empujando"},
+         "siLeEmpatan": {"sob1": 0.5, "sob2": 0.5, "desenlace": "abierto",
+                         "nota": "si le empatan reabre la SOB desde ese minuto"},
+         "siIguala": {"sob1": 1, "sob2": 0.5, "desenlace": "rescata", "nota": "si iba abajo y empata, sigue empujando"},
          "siExpulsion": {"propia": {"nota": "roja ganando → ECHADA-NUM, ISE anulado; perdiendo → ISE agravado"},
                          "rival": {"nota": "con uno más empuja: ventana desde la roja +15"}}}},
       {"equipo": "a",

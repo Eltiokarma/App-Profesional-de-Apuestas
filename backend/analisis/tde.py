@@ -109,13 +109,21 @@ def cambio_dt_reciente(team_id: int, fecha: str, onces: list[dict], dt_base: dic
     if con_dt:
         actual = con_dt[0]["entrenador"]
         primero = con_dt[0]["fecha"]
-        for o in con_dt[1:]:
+        # UN ONCE SIN DT EN MEDIO HACE INCIERTO EL DEBUT (incidencia 1037,
+        # Llaneros: la hoja del 21/10 no trae entrenador, Sandoval ya dirigía
+        # desde el 16/10 y el F1 salía «debutó el 26/10»): el debut pudo ser en
+        # cualquiera de esos partidos; se toma el más viejo posible
+        posible = primero
+        for o in onces[onces.index(con_dt[0]) + 1:]:
+            if not o.get("entrenador"):
+                posible = o["fecha"]
+                continue
             if not mismo_dt(o["entrenador"], actual):
-                if primero >= limite:
+                if posible >= limite:
                     return {"nuevo": actual, "anterior": o["entrenador"], "desde": primero,
                             "porque": f"{actual} debutó en el banco el {primero}, después de {o['entrenador']}"}
                 break
-            primero = o["fecha"]
+            primero = posible = o["fecha"]
     if dt_base is None:
         try:
             from backend.analisis.parte import dt_de_base
