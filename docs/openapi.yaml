@@ -3588,7 +3588,7 @@ components:
             type: object
             properties:
               nombre: { type: string }
-              estado: { type: string, enum: [baja, duda] }
+              estado: { type: string, enum: [baja, duda, descanso], description: 'descanso = no convocado por descanso: va a F4, no pesa en el IP (rúbrica EFE v1.7)' }
               motivo: { type: string }
               zona: { type: string, description: 'necesario si no está en `plantel`' }
               rol: { type: string, description: 'necesario si no está en `plantel`' }
