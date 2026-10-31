@@ -505,7 +505,10 @@ def _baja_dto(baja, missing: dict, jugo_el: str | None, convocado_el: str | None
     if fecha and jugo_el and jugo_el[:10] > fecha:
         out.update({"lectura": "desmentida", "lecturaApi": lectura,
                     "desmentidaPorOnce": {"fechaBaja": fecha, "jugoEl": jugo_el[:10]}})
-    elif fecha and convocado_el and convocado_el[:10] >= fecha:
+    # LA HOJA DEL PARTIDO DE LA ROJA NO DESMIENTE LA SANCIÓN (incidencias 972 y
+    # 980: Epolo, Campbell, Sander y Curda «desmentidas» por el once del mismo
+    # día en que vieron la roja): para una sanción la hoja tiene que ser POSTERIOR
+    elif fecha and convocado_el and (convocado_el[:10] > fecha if sancion else convocado_el[:10] >= fecha):
         out.update({"lectura": "desmentida", "lecturaApi": lectura,
                     "desmentidaPorOnce": {"fechaBaja": fecha, "convocadoEl": convocado_el[:10]}})
     return out
@@ -526,7 +529,9 @@ def es_sancion(detalle) -> bool:
 
 def _desmentida(b, jugo_el: str | None, convocado_el: str | None = None) -> bool:
     fecha = str(b["fecha"] or "")[:10] if "fecha" in b.keys() else ""
-    return bool(fecha and ((jugo_el and jugo_el[:10] > fecha) or (convocado_el and convocado_el[:10] >= fecha)))
+    sancion = es_sancion(b["detalle"] if "detalle" in b.keys() else "")
+    return bool(fecha and ((jugo_el and jugo_el[:10] > fecha)
+                           or (convocado_el and (convocado_el[:10] > fecha if sancion else convocado_el[:10] >= fecha))))
 
 
 def lectura_missing_fixture(bajas: dict, plantilla_ids: set, jugo: dict | None = None,

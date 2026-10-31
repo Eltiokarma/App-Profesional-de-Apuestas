@@ -74,13 +74,27 @@ def _fase(ronda: str | None) -> str:
     return ""
 
 
-def _previos(team_id: int, liga: int, temporada, antes: str, fase: str) -> list:
+# LA ROJA QUE SE CUMPLE EN CUALQUIER COMPETICIÓN DOMÉSTICA (incidencia 958,
+# Cole Palmer: doble amarilla en la Premier el 24/10, cumplida en la Copa de la
+# Liga el 28/10, y la base lo daba suspendido para la Premier siguiente). En
+# Inglaterra la suspensión por roja corre sobre los partidos domésticos del
+# club, sea la competición que sea: la «misma competición» es el grupo.
+ROJA_DOMESTICA = ({39, 40, 41, 42, 45, 48},)
+
+
+def _grupo_roja(liga: int) -> tuple:
+    return next((tuple(sorted(g)) for g in ROJA_DOMESTICA if liga in g), (liga,))
+
+
+def _previos(team_id: int, liga: int | tuple, temporada, antes: str, fase: str) -> list:
+    ligas = liga if isinstance(liga, tuple) else (liga,)
+    temp = "" if len(ligas) > 1 else " AND league_season=?"
     filas = db.query(
         "sad", "SELECT id, date, league_round, home_team_id, away_team_id FROM fixtures "
-               "WHERE (home_team_id=? OR away_team_id=?) AND league_id=? AND league_season=? "
+               f"WHERE (home_team_id=? OR away_team_id=?) AND league_id IN ({','.join('?' * len(ligas))}){temp} "
                f"AND status_short IN ({','.join('?' * len(FIN))}) AND date < ? ORDER BY date DESC",
-        (team_id, team_id, liga, temporada, *FIN, antes))
-    return [f for f in filas if _fase(f["league_round"]) == fase]
+        (team_id, team_id, *ligas, *(() if len(ligas) > 1 else (temporada,)), *FIN, antes))
+    return [f for f in filas if len(ligas) > 1 or _fase(f["league_round"]) == fase]
 
 
 def _tarjetas(fixture_id: int, team_id: int) -> list:
@@ -95,10 +109,17 @@ def _tarjetas_de(ids: list[int], team_id: int) -> dict[int, list]:
     if not ids:
         return {}
     out: dict[int, list] = {i: [] for i in ids}
+    vistos: set = set()
     for r in db.query(
             "sad", f"SELECT fixture_id, minuto, detalle, jugador, jugador_id FROM fixture_eventos "
                    f"WHERE fixture_id IN ({','.join('?' * len(ids))}) AND equipo_id=? AND tipo='Card' "
                    "ORDER BY fixture_id, minuto", (*ids, team_id)):
+        # EL MISMO EVENTO DOS VECES NO SON DOS AMARILLAS (incidencia 971, Pathé
+        # Ciss con 6 contadas y la 5.ª en la prensa): fixture, minuto, jugador y tipo
+        k = (r["fixture_id"], r["minuto"], r["jugador_id"] or (r["jugador"] or "").strip().lower(), r["detalle"])
+        if k in vistos:
+            continue
+        vistos.add(k)
         out.setdefault(r["fixture_id"], []).append(r)
     return out
 
@@ -151,22 +172,32 @@ def del_equipo(team_id: int, fx) -> dict:
         previos = _previos(team_id, fx["league_id"], fx["league_season"], str(fx["date"]), fase)
     except Exception:  # noqa: BLE001 — base sin la tabla o sin columnas: no se infiere nada
         return out
-    if not previos:
+    # la roja mira el último partido del GRUPO doméstico (958); las amarillas,
+    # la competición. Un primer partido de copa también hereda la roja de la liga
+    grupo = _grupo_roja(fx["league_id"])
+    previos_r = previos
+    if len(grupo) > 1:
+        try:
+            previos_r = _previos(team_id, grupo, fx["league_season"], str(fx["date"]), fase) or previos
+        except Exception:  # noqa: BLE001 — sin el grupo, la regla de la competición
+            previos_r = previos
+    if not previos_r:
         return out
-    ultimo = previos[0]
+    ultimo = previos[0] if previos else previos_r[0]
     en_ids, en_nombres = _en_la_hoja(fx["id"], team_id)
 
     def en_hoja(t) -> bool:
         return (t["jugador_id"] in en_ids) if t["jugador_id"] else ((t["jugador"] or "").strip().lower() in en_nombres)
 
     ids = [p["id"] for p in previos]
+    ultimo_r = previos_r[0]
     try:
-        por_partido = _tarjetas_de(ids, team_id)
+        por_partido = _tarjetas_de(sorted({*ids, ultimo_r["id"]}), team_id)
     except Exception:  # noqa: BLE001
         return out
-    tarj_ultimo = por_partido.get(ultimo["id"]) or []
-    rival = ultimo["away_team_id"] if ultimo["home_team_id"] == team_id else ultimo["home_team_id"]
-    fecha = str(ultimo["date"])[:10]
+    tarj_ultimo = por_partido.get(ultimo_r["id"]) or []
+    rival = ultimo_r["away_team_id"] if ultimo_r["home_team_id"] == team_id else ultimo_r["home_team_id"]
+    fecha = str(ultimo_r["date"])[:10]
     rojas = {}
     for t in tarj_ultimo:
         if _ROJA.search(t["detalle"] or "") and not en_hoja(t):
@@ -175,7 +206,7 @@ def del_equipo(team_id: int, fx) -> dict:
                             and (y["minuto"] or 0) <= (t["minuto"] or 0) for y in tarj_ultimo))
             rojas[_clave(t)] = {
                 "jugadorId": t["jugador_id"], "nombre": t["jugador"], "tipo": "doble_amarilla" if doble else "roja",
-                "partido": ultimo["id"], "fecha": fecha, "minuto": t["minuto"], "rivalId": rival,
+                "partido": ultimo_r["id"], "fecha": fecha, "minuto": t["minuto"], "rivalId": rival,
                 "certeza": "probable",
                 "detalle": (f"{'doble amarilla' if doble else 'roja directa'} al {t['minuto']}' el {fecha} en el "
                             "último partido de esta competición: se pierde este partido"
@@ -199,6 +230,11 @@ def del_equipo(team_id: int, fx) -> dict:
     # AMARILLAS ACUMULADAS: solo con la regla de la competición y el conteo completo
     regla = UMBRALES.get(fx["league_id"])
     out["regla"] = regla["regla"] if regla else None
+    if not regla:
+        # SIN REGLA SE DICE (incidencia 1011, Ligue 1 y Paraguay: 4 y 5 amarillas
+        # sin marca): el conteo viaja, el ciclo no se afirma
+        out["sinRegla"] = ("sin la regla de amarillas de esta competición en `sanciones.UMBRALES`: el conteo "
+                           "viaja, el ciclo no se afirma (confirmar en prensa)")
     try:
         cubiertos = _con_eventos(ids)
     except Exception:  # noqa: BLE001

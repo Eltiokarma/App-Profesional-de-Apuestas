@@ -82,6 +82,7 @@ Tres lugares donde vive una guardia:
   - **Alerta** `SANCION-SIN-DECLARAR`.
   - **Missing Fixture:** cuenta solo las marcas vigentes, y una sanción es siempre señal.
   - **Escaneo:** chequeos `sancion` y `sancion-sin-declarar`.
+  - La regla de la competición es la del reglamento: en Inglaterra la roja se cumple en cualquier competición doméstica (`sanciones.ROJA_DOMESTICA`, 958); el mismo evento dos veces no son dos amarillas (971); sin la regla de amarillas se dice (`sinRegla`, 1011); la hoja del partido de la roja no desmiente la sanción (980); la baja sin id casa por la fila de su id y la nota se lee venga donde venga (969, 959).
   - La roja al cuerpo técnico no es de un jugador: `sanciones.del_equipo` la separa en `cuerpoTecnico` con la regla de la ficha (`ficha_tactica._cuerpo_tecnico_e_ids`) y la agenda la marca en `dt.expulsado` (919, 920).
 - **Si vuelve:** si es una regla de amarillas de otra liga, va a `UMBRALES` con la fuente del reglamento.
 

@@ -625,6 +625,12 @@ def main():
     _lm = _jg.lectura_missing_fixture({129142: _mf}, {129142, 2, 3}, {}, {129142: "2026-10-26 15:00:00"})
     check("649: la marca desmentida por la convocatoria no cuenta para la densidad",
           _lm["marcados"] == 0 and _lm["desmentidas"] == 1, _lm)
+    # 980/972: la hoja del MISMO día de la roja no desmiente la sanción; una posterior, sí
+    _rc = {"player_id": 77, "tipo": "Missing Fixture", "detalle": "Red Card", "fecha": "2026-10-26"}
+    _b980 = _jg._baja_dto(_rc, {"lectura": "senal"}, None, "2026-10-26 15:00:00")
+    _b980b = _jg._baja_dto(_rc, {"lectura": "senal"}, None, "2026-10-29 15:00:00")
+    check("980: la roja con la hoja del mismo día sigue siendo sanción; con una hoja posterior, desmentida",
+          _b980["lectura"] == "senal" and _b980b["lectura"] == "desmentida", (_b980, _b980b))
     # 522: «Off the roster» de la lista de Champions es ruido para la liga
     _off = {"player_id": 9, "tipo": "Missing Fixture", "detalle": "Off the roster", "fecha": "2026-10-21"}
     _b522 = _jg._baja_dto(_off, {"lectura": "senal"}, None, None, {"2026-10-21"})
