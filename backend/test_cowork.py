@@ -5812,7 +5812,7 @@ def main():
     # ── la comprobación barata de la rutina de rehacer (22/10/2026) ─────────
     _rh = c.get(f"{A}/analisis/cowork/rehacer")
     check("rehacer: responde la ventana y la lista (vacía = nada que hacer)",
-          _rh.status_code == 200 and _rh.json()["ventanaMin"] == [15, 80]
+          _rh.status_code == 200 and _rh.json()["ventanaMin"] == [5, 80]
           and isinstance(_rh.json()["pendientes"], list), _rh.text[:300])
     from backend.analisis import parte as _pt
     from datetime import datetime as _dtm, timedelta as _td, timezone as _tz
@@ -5842,6 +5842,9 @@ def main():
               and any(x["fixtureId"] == _ns[0] for x in _diez["enVentana"])
               and all(x["fixtureId"] != _ns[0] for x in _encima["enVentana"]), (_tarde, _diez, _encima))
     check("rehacer: hay un parte NS en la demo para probar la ventana", _ns is not None)
+    _vr = c.get(f"{A}/analisis/cowork/rehacer").json()
+    check("636: el endpoint sin parámetros usa la ventana vigente del módulo (5-80), no un defecto duplicado",
+          _vr.get("ventanaMin") == [_pt.REHACER_DESDE_MIN, _pt.REHACER_HASTA_MIN] == [5, 80], _vr.get("ventanaMin"))
     if _ns:
         # 395: el parte escrito para una fecha vieja (reprogramado) entra igual y pide rehacer entero
         with _pt._conectar() as _cn:

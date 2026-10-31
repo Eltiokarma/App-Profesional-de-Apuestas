@@ -2586,12 +2586,16 @@ def cowork_revisor(horas: int = Query(default=24, ge=1, le=336),
 
 
 @app.get(API + "/analisis/cowork/rehacer")
-def cowork_rehacer(desdeMin: int = Query(default=15, ge=0, le=240), hastaMin: int = Query(default=80, ge=1, le=240)):
+def cowork_rehacer(desdeMin: int | None = Query(default=None, ge=0, le=240),
+                   hastaMin: int | None = Query(default=None, ge=1, le=240)):
     """La comprobación barata de la rutina de rehacer (22/10/2026): los partes
     con DTP-REHACER que arrancan entre `desdeMin` y `hastaMin` minutos. Vacío =
-    no hay nada que rehacer, sin leer la agenda ni cada parte."""
+    no hay nada que rehacer, sin leer la agenda ni cada parte. Sin parámetros,
+    la ventana vigente de `parte.REHACER_DESDE_MIN`/`REHACER_HASTA_MIN` (el
+    defecto vivía duplicado acá y se quedó en 15 cuando el piso bajó a 5)."""
     from backend.analisis import parte as cowork
-    return cowork.rehacer_pendientes(desdeMin, hastaMin)
+    return cowork.rehacer_pendientes(cowork.REHACER_DESDE_MIN if desdeMin is None else desdeMin,
+                                     cowork.REHACER_HASTA_MIN if hastaMin is None else hastaMin)
 
 
 @app.get(API + "/analisis/cowork/escaneo")
