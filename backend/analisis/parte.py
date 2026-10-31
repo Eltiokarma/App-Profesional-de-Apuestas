@@ -504,11 +504,13 @@ def _dt_equipo(crudo, rechazos: list, lado: str, fecha_partido: str,
         else:
             porque = (f"el DT «{nombre}» llegó sin `desde` ni `meses` y no casa con el de la base"
                       + (f" ({base_nom})" if base_nom else ""))
-        rechazos.append({
-            "donde": f"equipos.{lado}.dt",
-            "porque": porque + ": la antigüedad queda en null, no en cero",
-            "esperado": '`desde`: "YYYY-MM-DD" (la fecha de asunción, del mes si no se sabe el día)'})
+        # NO ES UN RECHAZO (incidencia 1010, Troyes y Le Mans): sin fuente, el
+        # `desde` va vacío o ausente por regla del prompt y no se perdió nada;
+        # el motivo viaja en el DT (`sinAntiguedad`) para quien quiera completarlo
+        sin_antiguedad = porque + ": la antigüedad queda en null, no en cero"
     out = {"nombre": nombre or DT_SIN_ESTABLECER, "meses": meses, "desde": desde, "origenMeses": origen}
+    if nombre and meses is None and not declarado_vacio:
+        out["sinAntiguedad"] = sin_antiguedad
     banco = _dt_banco(crudo.get("banco"), rechazos, lado)
     if banco:
         out["banco"] = banco
@@ -2175,6 +2177,8 @@ def _bloque_tde(x, rechazos: list, donde: str, lado: str = "") -> dict:
         # excluir con motivo el indicador imposible —F4 pide PPDA— y desde la
         # 863 el bloque rechazaba `sinDato`). Lista o {indicador: motivo}.
         "sinDato": _sin_dato_tde(x.get("sinDato"), x.get("excluidos")),
+        "regimen": _txt(x.get("regimen")) if not isinstance(x.get("regimen"), dict)
+        else {k: x["regimen"][k] for k in ("inicio", "duracion", "nota") if k in x["regimen"]},
     } | _claves_tde_ignoradas(x, rechazos, donde)
 
 
@@ -2193,11 +2197,19 @@ def _sin_dato_tde(*fuentes) -> dict:
 # Lo que el bloque del TDE guarda. Una clave fuera de esta lista NO se tira en
 # silencio: vuelve en `rechazos` con su nombre (FALLAS.md §5, la falla callada).
 CLAVES_BLOQUE_TDE = {"equipo", "indicadores", "ie", "ieNivel", "ise", "iseNivel", "tipologia", "ventana",
-                     "disciplina43", "vias", "falsador", "reasignacion", "notas", "sinDato", "excluidos"}
+                     "disciplina43", "vias", "falsador", "reasignacion", "notas", "sinDato", "excluidos",
+                     # disciplina 45 del TDE: en configuración dual, el régimen (inicio + duración)
+                     # además de la ventana (incidencia 967: se rechazaba y quedaba en notas)
+                     "regimen"}
+# LO QUE EL GET LE AGREGA AL BLOQUE: el eco de un parte vuelve con esto y se
+# ignora en silencio, como dice el prompt (incidencia 981: «calculado»,
+# «declarado», «discrepancia» y «heredadoDtp» salían en `rechazos` al
+# re-depositar el eco)
+ECO_BLOQUE_TDE = {"calculado", "declarado", "discrepancia", "heredadoDtp", "sinS", "notaSinS"}
 
 
 def _claves_tde_ignoradas(x: dict, rechazos: list, donde: str) -> dict:
-    fuera = sorted(k for k in x if k not in CLAVES_BLOQUE_TDE)
+    fuera = sorted(k for k in x if k not in CLAVES_BLOQUE_TDE and k not in ECO_BLOQUE_TDE)
     if fuera:
         rechazos.append({"donde": donde,
                          "porque": f"el bloque del TDE no guarda {', '.join(f'`{k}`' for k in fuera)}: "

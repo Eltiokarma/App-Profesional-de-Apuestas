@@ -3555,6 +3555,7 @@ components:
             desde: { type: string, description: 'YYYY-MM-DD, fecha de asunción' }
             meses: { type: number, nullable: true, description: 'antigüedad al día del partido; null = no se pudo establecer' }
             origenMeses: { type: string, enum: [declarado, desde, base, ''], description: 'de dónde salió `meses` (solo en la lectura)' }
+            sinAntiguedad: { type: string, description: 'por qué `meses` quedó null (sin `desde` ni fecha de la base que sirva); no es un rechazo (1010)' }
             banco:
               type: object
               description: >
@@ -3697,6 +3698,7 @@ components:
         disciplina43: { type: boolean, description: 'true = se declaran las dos vías por separado' }
         notas: { type: string, description: 'la prosa del bloque (se guarda y vuelve en el GET; una clave que el bloque no guarda vuelve en `rechazos` con su nombre)' }
         sinDato: { type: object, additionalProperties: { type: string }, description: 'indicadores excluidos por falta de dato, {indicador: motivo}; llega como lista o como objeto (`excluidos` también se acepta) y vuelve como objeto' }
+        regimen: { description: 'disciplina 45 del TDE: en configuración dual, el régimen (texto o {inicio, duracion, nota}) además de la ventana. El eco del GET (calculado, declarado, discrepancia, heredadoDtp) se ignora en silencio' }
         vias:
           type: array
           items:

@@ -1905,6 +1905,11 @@ def main():
     from backend.analisis.parte import _bloque_tde as _btde
     _r863 = []
     _b863 = _btde({"equipo": "a", "ie": 5.2, "notas": "se echa si gana 1-0", "comentario": "x"}, _r863, "tde.bloques[0]", "a")
+    _r981 = []
+    _b981 = _btde({"equipo": "a", "ie": 5.0, "calculado": {"ie": 5.0}, "declarado": {}, "discrepancia": None,
+                   "heredadoDtp": [], "regimen": {"inicio": 60, "duracion": 30}}, _r981, "tde.bloques[0]", "a")
+    check("981/967: el eco del GET (calculado, declarado…) se ignora en silencio y el régimen de la disciplina 45 se guarda",
+          _r981 == [] and _b981.get("regimen") == {"inicio": 60, "duracion": 30}, (_b981.get("regimen"), _r981))
     check("863: `notas` del bloque del TDE se guarda y una clave que no se guarda vuelve en rechazos con su nombre",
           _b863.get("notas") == "se echa si gana 1-0"
           and any("`comentario`" in r["porque"] for r in _r863), (_b863, _r863))
@@ -2069,9 +2074,9 @@ def main():
     check("`dt: {nombre, desde}` calcula los meses hasta el partido",
           da["nombre"] == "Diego Simeone" and da["meses"] == round(dias / (365.25 / 12), 1)
           and da["origenMeses"] == "desde" and da["desde"] == "2025-06-15", da)
-    check("`dt` como texto ya NO guarda meses 0: queda null y se rechaza pidiendo `desde`",
-          db_["nombre"] == "Edin Terzić" and db_["meses"] is None
-          and any(x["donde"] == "equipos.b.dt" for x in d_dt["rechazos"]), (db_, d_dt["rechazos"]))
+    check("`dt` como texto ya NO guarda meses 0: queda null y lo dice en `sinAntiguedad` (no es un rechazo, 1010)",
+          db_["nombre"] == "Edin Terzić" and db_["meses"] is None and db_.get("sinAntiguedad")
+          and not any(x["donde"] == "equipos.b.dt" for x in d_dt["rechazos"]), (db_, d_dt["rechazos"]))
     p_dt["equipos"]["a"]["dt"] = {"nombre": dt_base["nombre"]}
     d_dt = c.post(f"{A}/analisis/cowork", json=p_dt).json()
     d_dt = {**c.get(f"{A}/analisis/cowork/{sin_ficha}").json(), "rechazos": d_dt["rechazos"]}
@@ -5679,10 +5684,12 @@ def main():
           (_e467["bloques"]["B"], _r467))
     from backend.analisis.parte import _dt_equipo as _dte
     _rz577: list = []
-    _dte({"nombre": "Didier Digard"}, _rz577, "a", "2026-10-25",
-         {"nombre": "Didier Frédéric Thierry Digard", "fuente": "coachs", "desde": "2025-07-01"})
-    check("577: el mismo DT de la base sin `desde` se rechaza diciendo que la fecha de /coachs no sirve, no «no casa»",
-          _rz577 and "es el mismo de la base" in _rz577[0]["porque"] and "no casa" not in _rz577[0]["porque"], _rz577)
+    _o577 = _dte({"nombre": "Didier Digard"}, _rz577, "a", "2026-10-25",
+                 {"nombre": "Didier Frédéric Thierry Digard", "fuente": "coachs", "desde": "2025-07-01"})
+    check("577/1010: el mismo DT de la base sin `desde` NO se rechaza; `sinAntiguedad` dice que la fecha de /coachs "
+          "no sirve, no «no casa»",
+          _rz577 == [] and "es el mismo de la base" in _o577.get("sinAntiguedad", "")
+          and "no casa" not in _o577["sinAntiguedad"], (_o577, _rz577))
     _rz827: list = []
     _o827 = _dte({"nombre": "Cristián Gómez", "desde": ""}, _rz827, "a", "2026-10-25", None)
     check("827: el `desde` vacío a propósito (sin fuente, como pide el prompt) no se rechaza y la antigüedad queda null",
