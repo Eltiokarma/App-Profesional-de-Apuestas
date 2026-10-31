@@ -241,6 +241,35 @@ def goles_cuadran(goles: list[dict], gf, gc) -> bool:
     return sum(1 for g in en_90 if g["aFavor"]) == gf and sum(1 for g in en_90 if not g["aFavor"]) == gc
 
 
+def desambiguar(nombres: dict) -> dict:
+    """{id: nombre} con los HOMÓNIMOS separados (incidencia 1040, Estudiantes:
+    Tiago y Tomás Palacios salían los dos «T. Palacios» en el XI y en los
+    cambios, y el DTP no sabía cuál jugó). Dos ids distintos con el mismo
+    nombre visible toman el nombre largo de `jugadores`; si también coincide,
+    llevan el id entre paréntesis. Un nombre único no se toca."""
+    por_nombre: dict[str, list] = {}
+    for i, n in nombres.items():
+        por_nombre.setdefault(_plano(n or "").strip(), []).append(i)
+    dup = [i for ids in por_nombre.values() if len(ids) > 1 for i in ids if i]
+    if not dup:
+        return dict(nombres)
+    largos = {}
+    try:
+        largos = {f["id"]: f["nombre"] for f in saddb.query(
+            "sad", f"SELECT id, nombre FROM jugadores WHERE id IN ({','.join('?' * len(dup))})", tuple(dup))}
+    except Exception:  # noqa: BLE001 — sin la tabla de jugadores, el id separa igual
+        largos = {}
+    out = dict(nombres)
+    for ids in por_nombre.values():
+        if len(ids) < 2:
+            continue
+        cand = {i: largos.get(i) or "" for i in ids}
+        distintos = len({_plano(v) for v in cand.values() if v}) == len(ids)
+        for i in ids:
+            out[i] = cand[i] if distintos else f"{nombres[i]} ({i})"
+    return out
+
+
 def insumos_equipo(team_id: int, nombre: str, fx) -> dict:
     from backend.ficha_tactica import tactica_de
 
@@ -259,6 +288,8 @@ def insumos_equipo(team_id: int, nombre: str, fx) -> dict:
     tac = tactica_de(a["id"], a["home_team_id"], a["away_team_id"])
     ali = (tac.get("alineaciones") or {}).get("local" if local else "visitante") or {}
     xi = ali.get("titulares") or []
+    _nom = desambiguar({j.get("jugadorId") or -k: j["nombre"] for k, j in enumerate(xi, 1)})
+    xi = [{**j, "nombre": _nom[j.get("jugadorId") or -k]} for k, j in enumerate(xi, 1)]
     goles = _goles(tac, team_id)
     st = ((tac.get("estadisticas") or {}).get("local" if local else "visitante")) or {}
     st_r = ((tac.get("estadisticas") or {}).get("visitante" if local else "local")) or {}
@@ -317,6 +348,8 @@ def insumos_equipo(team_id: int, nombre: str, fx) -> dict:
         if prev and ahora:
             # el mismo jugador con otro id en la hoja anterior no entró ni salió (899)
             prev = {equiv.get(i, i): n for equiv in [_identidad.ids_equivalentes(prev, ahora)] for i, n in prev.items()}
+            _uno = desambiguar({**prev, **ahora})
+            prev, ahora = {i: _uno[i] for i in prev}, {i: _uno[i] for i in ahora}
             prev_ali = ((tactica_de(ants[1]["id"], ants[1]["home_team_id"], ants[1]["away_team_id"])
                          .get("alineaciones") or {}).get("local" if ants[1]["home_team_id"] == team_id
                                                           else "visitante") or {})
@@ -1563,11 +1596,30 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
             return any(t != n and set(_apellidos(t)) & set(_apellidos(n)) and _anclado(t, texto)
                        for t in of["titulares"])
 
+        # LA MENCIÓN ES DEL HOMÓNIMO (incidencia 1027, Emelec: «A. Mina» era
+        # Angelo Mina, también titular; Madison Ariel Mina Ibarra casaba por el
+        # apellido y el cuarto titular nuevo no se contaba). Si cada mención del
+        # apellido va pegada a la pila o la inicial de OTRO titular con ese
+        # apellido, y no a la de este, la mención es del otro.
+        def _de_otro(n: str, texto: str) -> bool:
+            propia = (_plano(n).split() or [""])[0]
+            otros = [(_plano(t).split() or [""])[0] for t in of["titulares"]
+                     if t != n and set(_apellidos(t)) & set(_apellidos(n))]
+            previas = _previas(n, texto)
+            if not otros or not previas:
+                return False
+
+            def es(p: str, pila: str) -> bool:
+                return bool(p) and bool(pila) and (p == pila or (min(len(p), len(pila)) == 1 and p[0] == pila[0]))
+            return all(p and not es(p, propia) and any(es(p, o) for o in otros) for p in previas)
+
         ausentes = [n for n in of["titulares"] if _apellidos(n)
-                    and not any(_en_referencia(x, ref, crudo, _homonimo(n, crudo))
-                                or (_pila_en(x, ref) and not _inicial_choca(x, crudo, _homonimo(n, crudo)))
-                                or (anunciado and _en_referencia(x, anunciado, anunciado_crudo,
-                                                                 _homonimo(n, anunciado_crudo)))
+                    and not any((not _de_otro(n, crudo)
+                                 and (_en_referencia(x, ref, crudo, _homonimo(n, crudo))
+                                      or (_pila_en(x, ref) and not _inicial_choca(x, crudo, _homonimo(n, crudo)))))
+                                or (anunciado and not _de_otro(n, anunciado_crudo)
+                                    and _en_referencia(x, anunciado, anunciado_crudo,
+                                                       _homonimo(n, anunciado_crudo)))
                                 for x in [n, *alt.get(n, [])])
                     and not any(_palabra_en(x, ref) for x in alt.get(n, []))]
         if len(ausentes) >= REHACER_AUSENTES:

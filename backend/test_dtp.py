@@ -325,6 +325,19 @@ def main():
         _dc997._anteriores, _ft966.tactica_de = _ant, _td
     check("966: con el último partido de copa viaja el último once de liga (4-2-3-1 con grid); de liga, nada",
           (_u966.get("ultimoOnceDeLiga") or {}).get("formacion") == "4-2-3-1" and _u966b == {}, (_u966, _u966b))
+    # 1040: dos «T. Palacios» distintos se separan con el nombre largo (o el id)
+    _q = _dc997.saddb.query
+    try:
+        _dc997.saddb.query = lambda db, sql, args=(): [{"id": 206984, "nombre": "Tiago Palacios"},
+                                                       {"id": 311360, "nombre": "Tomás Palacios"}]
+        _d1040 = _dc997.desambiguar({206984: "T. Palacios", 311360: "T. Palacios", 5: "J. Uno"})
+        _dc997.saddb.query = lambda db, sql, args=(): []
+        _d1040b = _dc997.desambiguar({206984: "T. Palacios", 311360: "T. Palacios"})
+    finally:
+        _dc997.saddb.query = _q
+    check("1040: dos jugadores con la misma abreviatura salen con el nombre largo; sin él, con el id; el único no se toca",
+          _d1040 == {206984: "Tiago Palacios", 311360: "Tomás Palacios", 5: "J. Uno"}
+          and _d1040b == {206984: "T. Palacios (206984)", 311360: "T. Palacios (311360)"}, (_d1040, _d1040b))
 
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
