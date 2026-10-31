@@ -913,6 +913,16 @@ def main():
         _con.execute("DELETE FROM fixtures WHERE id IN (990750, 990753)")
     check("750: la llegada se vio solo con hoja del partido anterior con OTRO DT; sin hoja o el mismo, a confirmar",
           _sin_hoja is False and _con_otro is True and _mismo is False, (_sin_hoja, _con_otro, _mismo))
+    # 938 (Coquimbo, PSG): la fila con el nombre de otro jugador en su id se avisa al depositar
+    from backend.analisis.parte import nombres_vs_id as _nvi938
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("CREATE TABLE IF NOT EXISTS jugadores (id INTEGER PRIMARY KEY, nombre TEXT)")
+        _con.executemany("INSERT OR REPLACE INTO jugadores (id, nombre) VALUES (?, ?)",
+                         [(9938001, "A. Camargo"), (9938002, "Lucas Pratto")])
+    _n938 = _nvi938({"equipos": {"a": {"plantel": [{"nombre": "S. Cordero", "jugadorId": 9938001},
+                                                    {"nombre": "L. Pratto", "jugadorId": 9938002}]}}}, {"a": "Coquimbo"})
+    check("938: «S. Cordero» con el id de A. Camargo se avisa; «L. Pratto» con el de Lucas Pratto, no",
+          len(_n938) == 1 and "S. Cordero" in _n938[0]["costara"] and "L. Pratto" not in _n938[0]["costara"], _n938)
     from backend.analisis.parte import _fuera as _fu807
     from backend.analisis.bloque_f import FACTOR_ESTADO as _fe807
     _r807: list = []
