@@ -102,6 +102,27 @@ def categoria(liga_id: int, nombre: str | None = None) -> str:
     return "segunda" if _segunda(liga_id, nombre) else "primera"
 
 
+BASE_RECIENTES = 5   # partidos de liga seguidos en la misma que cambian la base del año
+
+
+def _liga_reciente(team_id: int, hasta: str, desde: str, fuera: list) -> int | None:
+    """La liga de los últimos BASE_RECIENTES partidos de LIGA (sin copas), si
+    son todos de la misma; None si no hay tantos o si se mezclan."""
+    try:
+        filas = saddb.query(
+            "sad",
+            f"""SELECT league_id FROM fixtures
+                WHERE (home_team_id=? OR away_team_id=?) AND date < ? AND date >= ?
+                  AND (status_short IN ('FT','AET','PEN') OR status_long='Match Finished')
+                  AND league_id IS NOT NULL AND league_id NOT IN ({",".join("?" * len(fuera))})
+                ORDER BY date DESC LIMIT 40""",
+            (team_id, team_id, hasta, desde, *fuera))
+    except Exception:  # noqa: BLE001 — sin la base se queda la regla del año
+        return None
+    ligas = [f["league_id"] for f in filas if es_liga(f["league_id"])][:BASE_RECIENTES]
+    return ligas[0] if len(ligas) == BASE_RECIENTES and len(set(ligas)) == 1 else None
+
+
 def base_de(team_id: int, fecha: str | None) -> dict | None:
     """La base del nivel de un equipo. None si no tiene partidos terminados en
     el año (equipo nuevo en la base)."""
@@ -123,6 +144,14 @@ def base_de(team_id: int, fecha: str | None) -> dict | None:
     )
     if not filas:
         return None
+    # LA TEMPORADA EN CURSO MANDA SOBRE EL AÑO (incidencias 824 y 826: Racing de
+    # Santander con 10 jornadas de LaLiga salía «Segunda División» porque el año
+    # todavía tenía más partidos de Segunda; el Alavés de enero de 2024 figuraba
+    # de categoría inferior estando en LaLiga). Si los últimos BASE_RECIENTES
+    # partidos de liga son todos de la misma, esa es la base.
+    reciente = _liga_reciente(team_id, hasta, desde, fuera)
+    if reciente is not None and reciente != filas[0]["league_id"]:
+        filas = sorted(filas, key=lambda f: f["league_id"] != reciente)
     copas = []
     for f in filas:
         meta = liga_meta(f["league_id"])
@@ -281,7 +310,9 @@ def historial(team_id: int, filas: list[dict], cerrados: set[int] | None = None)
         partidos.append({"fixtureId": f.get("fixtureId"), "fecha": fecha, "rival": f.get("rivalNombre"),
                          "ligaId": f.get("ligaId"), "relacion": rel, "resultado": f"{gf}-{gc}",
                          "reventoBurbuja": f.get("fixtureId") in cerrados})
-    return {"porRelacion": por, "partidos": partidos[-10:],
+    # `porRelacion` cuenta TODOS los casos y la lista trae los últimos 10 (826):
+    # se dice, para que los conteos no parezcan descuadrados
+    return {"porRelacion": por, "partidos": partidos[-10:], "partidosTotal": len(partidos),
             "nota": "partidos de copa contra rivales de otra base; un E o P contra un rival de categoría "
                     "inferior es el reventón que el nivel no ve venir"}
 

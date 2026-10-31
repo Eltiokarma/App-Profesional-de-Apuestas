@@ -109,6 +109,7 @@ Tres lugares donde vive una guardia:
   - Una regla nueva no se cobra hacia atrás (`REGLAS_CALCULADAS_DESDE`).
   - Una regla del skill que el recibo y el veredicto aplican vive en una función que usan los dos: `parte.rama_empuja` (qué rama del TDE declara `desenlace`, 908: la de empate en ECHADA no).
   - La alerta de una regla que el texto ya cumple (el `porque` la nombra) no va a la tira: un aviso permanente se deja de leer (ESPINA-VS-RIESGO 291, ESPINA-SIGUE-EN-EXTREMO 874).
+  - La base de un equipo es la liga de su temporada en curso cuando sus últimos 5 partidos de liga son de ella, no la mayoría del año (`escala.base_de`, 824: el ascendido).
   - Lo que se dice del PRÓXIMO partido sale de la competición de ese partido, no de la base del último año: `separacion_liga.del_partido` (869, el ascendido).
   - Los días de descanso salen de `jugadores.dias_descanso` (por horas) en el calendario, el TDE, el DTP y el camino de recuperación; `test_arquitectura` lo verifica (769, 870).
   - Un insumo calculado con muestra corta lo dice y no afirma (`PENALES_MUESTRA_MIN`, 942); el ejecutor de baja o sin titularidad reciente baja en la lista (895).

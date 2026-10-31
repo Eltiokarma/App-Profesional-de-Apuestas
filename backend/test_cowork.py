@@ -342,6 +342,27 @@ def main():
     ld = _liga_domestica(fxr["home_team_id"], None)
     check("la liga doméstica es la más frecuente fuera de los torneos internacionales (LaLiga, no la Champions)",
           ld and ld["id"] == 140 and ld["pais"] == "Spain", ld)
+    # 824 (Racing de Santander, ascendido): 12 de Segunda en el año y las últimas
+    # 5 de LaLiga → la base es LaLiga; con 4 todavía manda el año
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        for i in range(12):
+            _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                         "home_team_id, away_team_id, goals_home, goals_away) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                         (990824 + i, (t0 - _dt.timedelta(days=60 + 7 * i)).strftime("%Y-%m-%d %H:%M:%S"),
+                          "FT", "Match Finished", 141, 2025, 990840, 990841, 1, 0))
+        for i in range(5):
+            _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                         "home_team_id, away_team_id, goals_home, goals_away) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                         (990860 + i, (t0 - _dt.timedelta(days=1 + 7 * i)).strftime("%Y-%m-%d %H:%M:%S"),
+                          "FT", "Match Finished", 140, 2026, 990840, 990842, 1, 1))
+    _b824 = _liga_domestica(990840, t0.strftime("%Y-%m-%d %H:%M:%S"))
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM fixtures WHERE id=990860")
+    _b824b = _liga_domestica(990840, t0.strftime("%Y-%m-%d %H:%M:%S"))
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM fixtures WHERE id BETWEEN 990824 AND 990864")
+    check("824: con las últimas 5 de liga en LaLiga el ascendido tiene base LaLiga; con 4, todavía el año (Segunda)",
+          (_b824 or {}).get("id") == 140 and (_b824b or {}).get("id") == 141, (_b824, _b824b))
     check("misma base: misma liga · Apertura y Clausura del mismo país · sin dato",
           misma_base({"id": 140, "pais": "Spain"}, {"id": 140, "pais": "Spain"})
           and misma_base({"id": 268, "pais": "Uruguay"}, {"id": 270, "pais": "Uruguay"})
