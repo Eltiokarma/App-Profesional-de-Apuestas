@@ -510,7 +510,14 @@ POST $B/analisis/cowork/incidencias
   habitual contado sobre los onces en que estaba disponible (1013, 398/509);
   y un `contraElOnce` de ANTES de un rehacer: el rehacer pisa la apertura, así
   que reportá con el `xiReferencia` y la `senalXi` originales copiados en el
-  detalle, o no se puede verificar (1021).
+  detalle, o no se puede verificar (1021). Y desde la pasada del 31/10
+  (tarde): el nombre del DT de /coachs en otro orden («Dario Insua Ruben»,
+  1033: la comparación del DT no depende del orden); la primera captura del
+  once sin formación, sin grid o con 10 titulares (1045, 988: el refresco a
+  40 min la corrige si la API la publica); el orden de /constantes, que va del
+  más nuevo al más viejo (1044, 782); la `zona` de la tabla F1, que es la de
+  los onces recientes y no la del último grid (1042); y dos filas F1 con el
+  mismo nombre que compartieron una hoja: son dos personas (1039).
 
 ## Modo `mantenimiento` (los parches, automáticos)
 
