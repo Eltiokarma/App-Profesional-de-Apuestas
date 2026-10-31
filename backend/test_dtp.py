@@ -300,6 +300,32 @@ def main():
           not sin_referencia("A, B, C, D, E, F, G, H, I, J (el undécimo titular no viene en la ficha: sin dato)")
           and sin_referencia("sin XI de referencia") and sin_referencia("(sin dato)"))
 
+    # 997: la apertura previa es la del último partido CON parte (Pokal sin parte en medio)
+    from backend.analisis import dtp_cowork as _dc997
+    _ant, _ap = _dc997._anteriores, _dc997._apertura_previa
+    try:
+        _dc997._anteriores = lambda tid, fecha, n: [{"id": 11, "date": "2026-10-28"}, {"id": 10, "date": "2026-10-25"}]
+        _dc997._apertura_previa = lambda nombre, fid: {"apertura": {"m1": {}}} if fid == 10 else None
+        _r997 = _dc997._apertura_previa_reciente(1, "Bayern", "2026-10-31")
+    finally:
+        _dc997._anteriores, _dc997._apertura_previa = _ant, _ap
+    check("997: con el último partido (copa) sin parte, la apertura previa es la del anterior con parte",
+          _r997 and _r997["fixtureId"] == 10, _r997)
+    # 966: si el último fue de copa, viaja el último once de LIGA
+    import backend.ficha_tactica as _ft966
+    _td = _ft966.tactica_de
+    try:
+        _dc997._anteriores = lambda tid, fecha, n: [{"id": 20, "date": "2026-10-24", "league_id": 88, "liga": "Eredivisie",
+                                                     "home_team_id": 1, "away_team_id": 2}]
+        _ft966.tactica_de = lambda fid, h, a: {"alineaciones": {"local": {"formacion": "4-2-3-1", "conGrid": True,
+                                               "titulares": [{"nombre": "X", "posicion": "G", "carril": ""}]}}}
+        _u966 = _dc997._ultimo_de_liga(1, "2026-10-31", {"league_id": 90, "liga": "KNVB Beker", "date": "2026-10-28"})
+        _u966b = _dc997._ultimo_de_liga(1, "2026-10-31", {"league_id": 88, "liga": "Eredivisie", "date": "2026-10-28"})
+    finally:
+        _dc997._anteriores, _ft966.tactica_de = _ant, _td
+    check("966: con el último partido de copa viaja el último once de liga (4-2-3-1 con grid); de liga, nada",
+          (_u966.get("ultimoOnceDeLiga") or {}).get("formacion") == "4-2-3-1" and _u966b == {}, (_u966, _u966b))
+
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
 

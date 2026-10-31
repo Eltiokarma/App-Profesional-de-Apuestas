@@ -3749,8 +3749,13 @@ def _guardar_apertura_dtp(fx, dtp: dict) -> tuple[list[str], list[dict]]:
             # UNA VEZ, ANTES DEL PITAZO, Y SOLO SI LA PRIMERA NO TENÍA XI (581):
             # sin XI de referencia el DTP no puede avisar contra el once oficial
             nueva = _dtp.apertura_para_cadena(b)
-            sin_xi_antes = not str(((previo["apertura"].get("m1") or {}).get("xiReferencia")) or "").strip()
-            con_xi_ahora = bool(str(((nueva.get("m1") or {}).get("xiReferencia")) or "").strip())
+            # «vacío» es también «sin dato» o una frase (incidencia 992: la primera
+            # apertura entró con el xiReferencia rechazado y la corrección no la pisaba)
+            def _sin_xi(ap) -> bool:
+                x = str(((ap.get("m1") or {}).get("xiReferencia")) or "")
+                return _dtp.sin_referencia(x) or len(_dtp._plano(x).split()) < 8
+            sin_xi_antes = _sin_xi(previo["apertura"])
+            con_xi_ahora = not _sin_xi(nueva)
             if sin_xi_antes and con_xi_ahora:
                 nueva["reemplazaSinXi"] = {"en": efedb.ahora(),
                                            "porque": "la primera apertura entró sin XI de referencia (581)"}

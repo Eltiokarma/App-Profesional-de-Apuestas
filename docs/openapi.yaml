@@ -1134,7 +1134,8 @@ paths:
         `competicion`), `penales` (DTP v1.6: quién tiró los penales del equipo en el último año,
         con convertidos y errados, de los eventos de la ficha; el ejecutor sale de acá; cada uno
         con `enPlantilla` —false si ya no está en el plantel de hoy, y entonces no encabeza—) y
-        `aperturaPrevia`: lo que se declaró ANTES del partido anterior, contra lo que se valida el
+        `ultimoOnceDeLiga` (si el último partido fue de copa: el último once de liga, formación y grid; 966);
+        `aperturaPrevia` (la del último partido CON parte, con su `fixtureId`; 997): lo que se declaró ANTES del partido anterior, contra lo que se valida el
         cierre. Lo que es juicio va en `noCalculables`. 0 tokens, 0 requests.
       parameters:
         - { name: fixtureId, in: path, required: true, schema: { type: integer } }
