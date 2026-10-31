@@ -89,6 +89,7 @@ Tres lugares donde vive una guardia:
   - **Missing Fixture:** cuenta solo las marcas vigentes, y una sanción es siempre señal.
   - **Escaneo:** chequeos `sancion` y `sancion-sin-declarar`.
   - La regla de la competición es la del reglamento: en Inglaterra la roja se cumple en cualquier competición doméstica (`sanciones.ROJA_DOMESTICA`, 958); el mismo evento dos veces no son dos amarillas (971); sin la regla de amarillas se dice (`sinRegla`, 1011); la hoja del partido de la roja no desmiente la sanción (980); la baja sin id casa por la fila de su id y la nota se lee venga donde venga (969, 959).
+  - En el umbral del ciclo de amarillas se dice si suspende o si ya cumplió (`cicloAmarillas`, 1043): un número en el umbral sin explicación se lee como sanción olvidada.
   - La roja al cuerpo técnico no es de un jugador: `sanciones.del_equipo` la separa en `cuerpoTecnico` con la regla de la ficha (`ficha_tactica._cuerpo_tecnico_e_ids`) y la agenda la marca en `dt.expulsado` (919, 920).
 - **Si vuelve:** si es una regla de amarillas de otra liga, va a `UMBRALES` con la fuente del reglamento.
 
@@ -118,7 +119,7 @@ Tres lugares donde vive una guardia:
   - Una regla nueva no se cobra hacia atrás (`REGLAS_CALCULADAS_DESDE`).
   - Una regla del skill que el recibo y el veredicto aplican vive en una función que usan los dos: `parte.rama_empuja` (qué rama del TDE declara `desenlace`, 908: la de empate en ECHADA no).
   - La alerta de una regla que el texto ya cumple (el `porque` la nombra) no va a la tira: un aviso permanente se deja de leer (ESPINA-VS-RIESGO 291, ESPINA-SIGUE-EN-EXTREMO 874).
-  - Las K armadas en otra categoría se marcan en la tarjeta (`escala.historiaOtraCategoria`, 974/975): solo marca, ningún número se mueve (decisión del 22/10).
+  - Las K armadas en otra categoría se marcan en la tarjeta (`escala.historiaOtraCategoria`, 974/975; también si la historia ENTERA de liga es de la categoría de abajo, `enTodaLaHistoria`, 1034: el perfil DC y las otras familias leen toda la historia): solo marca, ningún número se mueve (decisión del 22/10).
   - La base de un equipo es la liga de su temporada en curso cuando sus últimos 5 partidos de liga son de ella, no la mayoría del año (`escala.base_de`, 824: el ascendido).
   - Lo que se dice del PRÓXIMO partido sale de la competición de ese partido, no de la base del último año: `separacion_liga.del_partido` (869, el ascendido).
   - Los días de descanso salen de `jugadores.dias_descanso` (por horas) en el calendario, el TDE, el DTP y el camino de recuperación; `test_arquitectura` lo verifica (769, 870).

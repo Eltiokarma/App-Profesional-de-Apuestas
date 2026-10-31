@@ -961,7 +961,7 @@ export interface EscalaRivalDTO {
     nota: string
   }
   /** Las K se armaron en otra categoría (el ascendido, 974/975): solo marca. */
-  historiaOtraCategoria?: { partidos: number; de: number; nota: string }
+  historiaOtraCategoria?: { partidos: number; de: number; nota: string; enTodaLaHistoria?: boolean }
 }
 
 /** Un partido de la cadena DTP (GET /equipos/{id}/cadena). */
