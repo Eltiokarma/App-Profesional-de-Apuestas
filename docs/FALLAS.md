@@ -130,7 +130,7 @@ Tres lugares donde vive una guardia:
 - **Casos:** 774 (Palmeiras pasó por penales y el parte lo dio por eliminado); 846 (partido único resuelto en los 90').
 - **Guardia:**
   - **Llaves:** `backend/eliminatoria.py`, con `avanza` en null cuando no se sabe.
-  - **Alerta** `ELIMINATORIA-AL-REVES`.
+  - **Alerta** `ELIMINATORIA-AL-REVES`. Con dos llaves de la misma copa y desenlaces distintos (pasó octavos, cayó en cuartos), la frase solo se compara con la anterior si nombra a su rival (1031, Luqueño).
   - **Tests:** `test_eliminatoria`.
   - Los tramos del veredicto del TDE: el régimen lo define el marcador (una roja no abre otro, 943), el tramo que abre y cierra en el mismo añadido no pone a prueba la rama (745) y la roja con el id real de un titular con id negativo en la hoja se busca por nombre (940).
   - La prórroga se jugó solo si hay su marcador (la EFL Cup va directo a penales, 977); las copas a partido único van en `eliminatoria.PARTIDO_UNICO` con su caso (Copa Paraguay, 1017).

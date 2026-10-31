@@ -166,6 +166,29 @@ al_flu = parte.alertas_eliminatoria({"equipos": {"a": {"bloques": {"D": {"nota":
                                                  "b": {}}}, fx_flu, {"a": "Fluminense", "b": "Bragantino"})
 check("al revés también: dar por finalista al eliminado suena", [a["equipo"] for a in al_flu] == ["a"], al_flu)
 
+# 1031 (Luqueño): pasó octavos por penales y cayó en cuartos en la misma copa;
+# «eliminado de la Copa Paraguay» es la llave de cuartos
+_rec_orig = eliminatoria.recientes
+_ll1031 = [{"fixtureId": 1639172, "competicion": "Copa Paraguay", "penales": "2-4", "pasa": True,
+            "texto": "pasó por penales", "rival": "Nacional Asunción"},
+           {"fixtureId": 1644000, "competicion": "Copa Paraguay", "penales": None, "pasa": False,
+            "texto": "quedó eliminado", "rival": "Deportivo Recoleta"}]
+try:
+    eliminatoria.recientes = lambda tid, antes, dias=30: _ll1031 if tid == 1 else []
+    _fx1031 = {"home_team_id": 1, "away_team_id": 9, "date": "2026-10-31 20:00:00"}
+    _nom1031 = {"a": "Sportivo Luqueño", "b": "Nacional"}
+    _al1031 = parte.alertas_eliminatoria({"equipos": {"a": {"nota": "Luqueño: cuatro derrotas en cinco, eliminado "
+                                                                    "de la Copa Paraguay y su DT pidiendo apoyo."}}},
+                                         _fx1031, _nom1031)
+    _al1031b = parte.alertas_eliminatoria({"equipos": {"a": {"nota": "En octavos quedó eliminado por Nacional "
+                                                                     "Asunción en la Copa Paraguay."}}},
+                                          _fx1031, _nom1031)
+finally:
+    eliminatoria.recientes = _rec_orig
+check("1031: con una llave posterior de la misma copa que lo eliminó, «eliminado de la Copa» no suena; "
+      "nombrar al rival de la llave que pasó, sí",
+      _al1031 == [] and [a["equipo"] for a in _al1031b] == ["a"], (_al1031, _al1031b))
+
 print()
 print("TODO OK" if not fallos else f"{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)
