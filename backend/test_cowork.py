@@ -1831,6 +1831,15 @@ def main():
           _aq and "5 de visita sin anotar" in _aq[0]["detalle"] and "8 de local sin ganar por 3 o más" in _aq[0]["detalle"]
           and " anotando" not in _aq[0]["detalle"], _aq)
     check("sin reventón calculado, FAMILIA-RECORD no rompe", alertas_familias(None, {}) == [])
+    _a723 = alertas_familias({"a": {"otrasFamilias": {"familias": [
+        {"familia": "noPierde", "ambito": "total", "partidos": 7, "record": "iguala", "cuidado": True}]}}}, {"a": "Huancayo"})
+    check("723: con el récord solo igualado no dice «terreno sin precedente»",
+          _a723 and "sin precedente" not in _a723[0]["detalle"] and "Igualan su récord" in _a723[0]["detalle"], _a723)
+    from backend.analisis.dtp_cowork import avisos_carril as _avc628
+    _av628 = _avc628({"bloques": [{"equipo": "a", "apertura": {"m2": {"duelosCarril": [
+        {"carril": "sin dato (la ficha no trae grid)", "duelo": "x"}, {"carril": "centro", "duelo": "y"}]}}}]}, {"a": "La Guaira"})
+    check("628: con el carril «sin dato» (sin grid) no se piden dos carriles de banda", _av628 == [], _av628)
+
     # ESPINA CONTRA EL RIESGO (Albion–Torque, 18/10/2026): riesgo ALTO de la
     # racha − y espina «neutra» sin nombrar el riesgo
     from backend.analisis.parte import alertas_espina, espina_vs_riesgo

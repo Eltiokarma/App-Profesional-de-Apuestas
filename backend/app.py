@@ -1818,6 +1818,7 @@ def tabla_posiciones(liga_id: int, temporada: int | None = None, fase: str | Non
         e["golesFavor"] += gf
         e["golesContra"] += ga
         e["puntos"] += 3 if gf > ga else 1 if gf == ga else 0
+        e["_ganados"] = e.get("_ganados", 0) + (1 if gf > ga else 0)
 
     for r in rows:
         if fase is not None and _fase_de_round(r["ronda"]) != fase:
@@ -1841,8 +1842,20 @@ def tabla_posiciones(liga_id: int, temporada: int | None = None, fase: str | Non
         if r["tid"] not in acc:
             acc[r["tid"]] = {"equipoId": r["tid"], "nombre": r["nombre"], "puntos": 0,
                              "partidosJugados": 0, "golesFavor": 0, "golesContra": 0}
-    tabla = sorted(acc.values(), key=lambda e: (-e["puntos"], -(e["golesFavor"] - e["golesContra"]), -e["golesFavor"], e["nombre"]))
-    return [{"posicion": i + 1, **e} for i, e in enumerate(tabla)]
+    # EL DESEMPATE ES EL DEL REGLAMENTO (incidencia 837: Cruzeiro salía 5.º con
+    # 54 puntos y la prensa lo daba 3.º: en el Brasileirão el primer criterio son
+    # las victorias, no la diferencia de gol)
+    if liga_id in DESEMPATE_VICTORIAS:
+        clave = lambda e: (-e["puntos"], -e.get("_ganados", 0), -(e["golesFavor"] - e["golesContra"]),  # noqa: E731
+                           -e["golesFavor"], e["nombre"])
+    else:
+        clave = lambda e: (-e["puntos"], -(e["golesFavor"] - e["golesContra"]), -e["golesFavor"], e["nombre"])  # noqa: E731
+    tabla = sorted(acc.values(), key=clave)
+    return [{"posicion": i + 1, **{k: v for k, v in e.items() if not k.startswith("_")}} for i, e in enumerate(tabla)]
+
+
+# ligas cuyo primer desempate son las victorias (reglamento): Brasileirão A y B
+DESEMPATE_VICTORIAS = {71, 72}
 
 
 @app.get(API + "/cuotas/{fixture_id}")
