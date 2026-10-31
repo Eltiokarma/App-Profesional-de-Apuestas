@@ -1009,7 +1009,7 @@ paths:
         `pendientes` vacío = la corrida termina en una línea. Abierto al token acotado (GET de
         /analisis/cowork).
       parameters:
-        - { name: desdeMin, in: query, schema: { type: integer, default: 15, minimum: 0, maximum: 240 }, description: 'piso en 15 desde el 24/10/2026: el once llega ~27 min antes' }
+        - { name: desdeMin, in: query, schema: { type: integer, default: 5, minimum: 0, maximum: 240 }, description: 'piso en 15 desde el 24/10/2026 y en 5 desde el 31/10/2026 (rehacer cada 20 min, incidencia 636): el once llega ~25 min antes. Sin el parámetro, la ventana vigente del servidor' }
         - { name: hastaMin, in: query, schema: { type: integer, default: 80, minimum: 1, maximum: 240 } }
       responses:
         '200':
