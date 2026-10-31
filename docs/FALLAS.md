@@ -41,6 +41,7 @@ Tres lugares donde vive una guardia:
   - **Test de arquitectura (regla 1):** ninguna comparación de letras fuera de ese archivo, y ningún módulo que quite tildes a un nombre por su cuenta (811: el NFKD suelto tiraba la «ð»).
   - Los apodos conocidos del DT van en `identidad.APODOS_DT`, lista cerrada con su caso (951, «Pacheta»).
   - **Escaneo:** chequeo `jugador-duplicado`.
+  - Al depositar, la fila F1 cuyo nombre no es el de su `jugadorId` en la base se avisa en `faltan` (`parte.nombres_vs_id`, 938): el id manda en el IP, el nombre en la pantalla.
   - El mismo jugador con otro id entre dos hojas: `identidad.ids_equivalentes`, que usan `cambiosXi` y las parejas nuevas del DTP (899).
   - **El diminutivo** es una lista cerrada en `identidad.HIPOCORISTICOS` («Fran»/«Francisco», «Rafa»/«Rafael», 937), nunca «el prefijo»: «Joselu» y «José» pueden ser dos personas.
   - **La sombra de la API** (0 partidos con minutos y ninguna hoja) se funde con su gemelo en `f1_base.deduplicar` (904). **Los ids que se alternan** también: nunca juntos en una hoja y 6+ hojas entre los dos con este equipo (Juan Francisco Bisanz figuró como 304371, 406291 y 304389, nunca dos a la vez); un arquero y uno de campo nunca se funden así.

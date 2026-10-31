@@ -3143,6 +3143,11 @@ def guardar(payload: dict) -> dict:
     # ventana en la que arreglarlo es legítimo. Callarlo es descubrirlo medio
     # día tarde, que fue exactamente lo que pasó con `cadena` y con `tde`.
     faltan = []
+    # EL NOMBRE DE LA FILA CONTRA EL DE SU ID (incidencia 938: 11735 «S. Cordero»
+    # era A. Camargo, 352477 «L. Pratto» era N. Johansen; el bloque F calcula por
+    # id y el IP salía bien, pero la pantalla y F4 mostraban bajas y rotados
+    # falsos y la previa confundió arqueros). Aviso, sin rechazo: el id manda.
+    faltan.extend(nombres_vs_id(parte, {"a": fx["home_name"], "b": fx["away_name"]}))
     # DTP v1.5: los dos carriles de banda, con su vuelta (aviso, sin rechazo)
     faltan.extend(_dtp.avisos_carril(parte.get("dtp") or {}, {"a": fx["home_name"], "b": fx["away_name"]}))
     # DTP v1.6: el sistema contra el último once, el ejecutor de penales y la sede del caso de la 6
@@ -3455,6 +3460,40 @@ def guardar(payload: dict) -> dict:
              if faltan else "")
           + (f" · DISCREPANCIAS: {discrepancias}" if discrepancias else ""), flush=True)
     return resumen
+
+
+def nombres_vs_id(parte: dict, nombres: dict) -> list[dict]:
+    """Filas de la tabla F1 del parte cuyo nombre no es el de su `jugadorId` en
+    la base (ni por la regla de identidad)."""
+    from backend.identidad import mismo_jugador
+    out = []
+    for lado in LADOS:
+        filas = [j for j in (((parte.get("equipos") or {}).get(lado) or {}).get("plantel") or [])
+                 if j.get("jugadorId") and int(j["jugadorId"]) > 0 and j.get("nombre")]
+        if not filas:
+            continue
+        ids = sorted({int(j["jugadorId"]) for j in filas})
+        try:
+            base = {r["id"]: r["nombre"] for r in saddb.query(
+                "sad", f"SELECT id, nombre FROM jugadores WHERE id IN ({','.join('?' * len(ids))})", tuple(ids))}
+        except Exception:  # noqa: BLE001 — base sin la capa de jugadores: no hay contra qué comparar
+            return out
+        malos = [f"{j['nombre']} (id {j['jugadorId']} = {base[int(j['jugadorId'])]})" for j in filas
+                 if base.get(int(j["jugadorId"])) and not mismo_jugador(j["nombre"], base[int(j["jugadorId"])])
+                 and _plano_txt(j["nombre"]) != _plano_txt(base[int(j["jugadorId"])])
+                 and _plano_txt(j["nombre"]).split()[-1:] != _plano_txt(base[int(j["jugadorId"])]).split()[-1:]]
+        if malos:
+            out.append({"bloque": f"equipos.{lado}.plantel",
+                        "costara": f"{nombres.get(lado, lado)}: {len(malos)} fila(s) con un nombre que no es el de su "
+                                   f"id en la base: {'; '.join(malos[:6])}. El IP calcula por id, pero la pantalla, "
+                                   "F4 y la previa leen el nombre",
+                        "comoSeArregla": "tomar nombre e id de la misma fila de GET /analisis/cowork/f1/{id}"})
+    return out
+
+
+def _plano_txt(t: str) -> str:
+    from backend.identidad import plano
+    return " ".join(plano(t).split())
 
 
 def _alertas_al_leer(fixture_id: int) -> list[dict]:
