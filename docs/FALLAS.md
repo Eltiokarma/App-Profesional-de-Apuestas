@@ -73,7 +73,7 @@ Tres lugares donde vive una guardia:
   - **El rehacer:** el modo rehacer de `corrida-sad` reescribe todo lo que nombra al once viejo.
   - **Escaneo:** chequeo `once-tarde`.
   - El chequeo `once-tarde` del escaneo no cuenta el partido cuya ficha post-partido se selló sin alineaciones: la API no la dio nunca, es cobertura (deuda 5), no un once tarde (953; Copa del Rey con clubes de Tercera).
-  - El último partido de copa no corta la cadena ni fija el M1: `aperturaPrevia` busca el último partido con parte (997) y `ultimoOnceDeLiga` acompaña al once rotado de copa (966); una apertura que entró «sin dato» de XI se reemplaza con la que lo trae (992).
+  - El último partido de copa no corta la cadena ni fija el M1: `aperturaPrevia` busca el último partido con parte (997), y el caso del bloque toma la fecha y la competición de ese mismo partido (`dtp_cowork._anterior_con_parte`, 1016) y `ultimoOnceDeLiga` acompaña al once rotado de copa (966); una apertura que entró «sin dato» de XI se reemplaza con la que lo trae (992).
 - **Si vuelve:** mirar primero si el partido entró en la cola, y recién después la rutina.
 
 ### 4. Quién no puede jugar

@@ -825,6 +825,23 @@ def _piezas(v) -> list[dict]:
     return out
 
 
+def _anterior_con_parte(team_id: int, fecha: str, cuantos: int = 5) -> list:
+    """[el último partido del equipo antes de `fecha` que tiene parte], o el
+    último a secas si ninguno de los `cuantos` anteriores lo tiene."""
+    from backend.analisis.parte import _conectar
+    ants = _anteriores(team_id, fecha, cuantos)
+    if not ants:
+        return []
+    try:
+        with _conectar() as con:
+            con_parte = {r[0] for r in con.execute(
+                f"SELECT fixture_id FROM parte_cowork WHERE fixture_id IN ({','.join('?' * len(ants))})",
+                tuple(a["id"] for a in ants))}
+    except Exception:  # noqa: BLE001 — sin la tabla de partes, el último a secas
+        con_parte = set()
+    return [next((a for a in ants if a["id"] in con_parte), ants[0])]
+
+
 def casos_bloque(team_id: int, antes: str, dias: int = 180) -> list[dict]:
     """Los casos de la pregunta 6 que dejaron los cierres sobre el bloque de
     ESTE equipo (DTP v1.4): en la cohorte c3 el propio partido fue «el caso que
@@ -860,7 +877,11 @@ def casos_bloque(team_id: int, antes: str, dias: int = 180) -> list[dict]:
                 # competición cuando no se escribieron, y la FECHA es la de ese
                 # partido, no la del parte (incidencia 762: Rennes jugado el 22/10
                 # viajaba con el 25/10 del parte que lo cerró)
-                ant = _anteriores(team_id, str(f["fecha"] or ""), 1)
+                # …y el partido que el cierre cerró es el último CON parte (incidencia
+                # 1016, Porto: el cierre del 1575521 cerró la apertura de liga y el caso
+                # salía con la fecha y la Champions del PSV, que no tenía parte; la
+                # misma regla que `aperturaPrevia`, 997)
+                ant = _anterior_con_parte(team_id, str(f["fecha"] or ""))
                 if ant:
                     caso["fecha"] = str(ant[0]["date"] or "")[:10] or caso["fecha"]
                 if not caso.get("sede") or not caso.get("competicion"):

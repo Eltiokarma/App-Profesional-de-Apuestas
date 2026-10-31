@@ -3670,6 +3670,23 @@ def main():
     check("671: «once oficial» en senalXi es un motivo escrito",
           bool(_d15._MOTIVO_SISTEMA.search("rehecho con el once oficial de la ficha")))
     _p762 = [a for a in _av762 if a["codigo"] == "P6-OTRA-SEDE"]
+    _ant1016 = _d15._anteriores
+    try:
+        _d15._anteriores = lambda tid, fecha, n: [{"id": 9910161, "date": "2026-10-21"}, {"id": 9910162, "date": "2026-10-18"}]
+        _c1016 = _d15._anterior_con_parte(1, "2026-10-25")
+        from backend.analisis.parte import _conectar as _cx1016
+        with _cx1016() as _c:
+            _c.execute("INSERT INTO parte_cowork (fixture_id, fecha, parte_json, creado_en, actualizado_en) "
+                       "VALUES (9910162, '2026-10-18', '{}', '2026-10-17', '2026-10-17')")
+        _c1016b = _d15._anterior_con_parte(1, "2026-10-25")
+        with _cx1016() as _c:
+            _c.execute("DELETE FROM parte_cowork WHERE fixture_id=9910162")
+    finally:
+        _d15._anteriores = _ant1016
+    check("1016: el partido que el cierre cerró es el último CON parte (la Champions sin parte se salta)",
+          _c1016b and _c1016b[0]["id"] == 9910162, _c1016b)
+    check("1016: sin parte en ninguno de los anteriores, el último a secas (la regla no inventa uno)",
+          _c1016 and _c1016[0]["id"] == 9910161, _c1016)
     check("721/762: el aviso nombra los casos de ESTA cadena con su fecha, no el ejemplo del 25/10",
           _p762 and "4-0 de local (local, 2026-10-19)" in _p762[0]["costara"]
           and "Leones–Libertad" not in _p762[0]["costara"], _p762)
