@@ -4361,6 +4361,26 @@ def main():
                         {"id": 2, "nombre": "Juan Bisanz", "minutos": 300, "partidos": 4}], {}, _nunca,
                        lambda a, b: False, 30, lambda pid: True)
     check("904: dos pilas enteras distintas no se funden aunque una sea sombra sin hojas", len(_s904c) == 2, _s904c)
+    # 904 en producción: los tres ids se ALTERNAN en las hojas (304371 mayo-octubre,
+    # 406291 julio-agosto en medio, 304389 desde el 15/10), nunca juntos
+    _hojas904 = {304371: 13, 406291: 3, 304389: 3}
+    _alt904 = lambda a, b: _hojas904.get(a, 0) and _hojas904.get(b, 0) and _hojas904[a] + _hojas904[b] >= 6  # noqa: E731
+    _s904d, _st904d = _dedup(_bz904, {304371: 6, 304389: 1}, _nunca, lambda a, b: False, 30,
+                             lambda pid: False, _alt904)
+    check("904: los tres ids de Bisanz que se ALTERNAN en las hojas sin coincidir nunca son UNA fila",
+          len(_s904d) == 1 and set([_s904d[0]["id"], *_s904d[0].get("idsAlternos", [])]) == {304371, 304389, 406291},
+          _s904d)
+    _s904e, _ = _dedup(_bz904, {}, _nunca, lambda a, b: False, 30, lambda pid: False,
+                       lambda a, b: False)
+    check("904: con pocas hojas entre los dos (sin alternancia probada) no se funden", len(_s904e) == 3, _s904e)
+    _s904f, _ = _dedup([{"id": 1, "nombre": "J. Pérez", "minutos": 900, "partidos": 12, "posicion": "Delantero"},
+                        {"id": 2, "nombre": "J. Pérez", "minutos": 90, "partidos": 1, "posicion": "Portero"}],
+                       {}, _nunca, lambda a, b: False, 30, lambda pid: False, lambda a, b: True)
+    check("904: un arquero y un delantero con el mismo nombre no se funden por alternancia", len(_s904f) == 2, _s904f)
+    _s904g, _ = _dedup(_bz904, {}, lambda a, b: {a, b} == {304371, 304389}, lambda a, b: False, 30,
+                       lambda pid: False, _alt904)
+    check("904: si el id nuevo compartió hoja con uno de los ya fundidos, no entra a la fila",
+          not any({304371, 304389} <= set([r["id"], *r.get("idsAlternos", [])]) for r in _s904g), _s904g)
     # 932/893 (31/10/2026): dos filas del mismo nombre que NUNCA compartieron hoja
     from backend.analisis.f1_base import marcar_posibles as _mp
     _f932 = [{"jugadorId": 352477, "nombre": "L. Pratto"}, {"jugadorId": 6014, "nombre": "L. Pratto"},
