@@ -956,6 +956,8 @@ export interface EscalaRivalDTO {
   historial?: {
     porRelacion: Record<string, { partidos: number; G: number; E: number; P: number; reventones: number }>
     partidos: { fixtureId: number; fecha: string; rival: string | null; ligaId: number; relacion: string; resultado: string; reventoBurbuja: boolean }[]
+    /** cuántos casos cuenta porRelacion (la lista trae los últimos 10, 826) */
+    partidosTotal?: number
     nota: string
   }
 }
