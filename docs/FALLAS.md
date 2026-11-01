@@ -78,6 +78,7 @@ Tres lugares donde vive una guardia:
   - El chequeo `once-tarde` del escaneo no cuenta el partido cuya ficha post-partido se selló sin alineaciones: la API no la dio nunca, es cobertura (deuda 5), no un once tarde (953; Copa del Rey con clubes de Tercera).
   - El último partido de copa no corta la cadena ni fija el M1: `aperturaPrevia` busca el último partido con parte (997), y el caso del bloque toma la fecha y la competición de ese mismo partido (`dtp_cowork._anterior_con_parte`, 1016) y `ultimoOnceDeLiga` acompaña al once rotado de copa (966); una apertura que entró «sin dato» de XI se reemplaza con la que lo trae (992).
   - Con la apertura de un partido anterior al último, `aperturaPrevia.cierreContra` trae el marcador y los goles de ESE partido: el cierre se valida contra él, no contra `partidoAnterior` (1035).
+  - La rama jugada del DTP con los minutos empatados se resuelve a `igualadoOArriba` y lo dice (`empateDeMinutos`, 1057).
   - Lo que el texto pone en el banco no es el seguro: el rest defense quita los nombres pegados a «en el banco» / «de suplente» antes de buscar suplentes (`dtp_cowork.sin_en_banco`, 1047), como las piezas del M2 con `_DESDE_BANCO`.
 - **Si vuelve:** mirar primero si el partido entró en la cola, y recién después la rutina.
 
@@ -161,6 +162,7 @@ Tres lugares donde vive una guardia:
   - **Recibo:** `rechazos` y `faltan` en cada depósito.
   - **Forma del cuerpo:** `GET /analisis/cowork/contrato`, que sale de las mismas constantes que validan.
   - **Test de arquitectura (regla 3):** cada endpoint y cada alerta calculada están en `docs/openapi.yaml`.
+  - **Test de arquitectura (regla 3-bis):** ningún enum del contrato trae un `no`/`yes`/`on`/`off` sin comillas, que YAML 1.1 lee como booleano (1059).
   - Un marcador viaja con el orden en que se lee: en los antecedentes `marcador` es el del equipo y `marcadorPartido` local-visita, como `marcadorPronosticado` (907).
   - El recibo trae `alertasAlLeer` (las calculadas que el GET le pone al parte, 771 y 806) y no rechaza lo que el prompt pide dejar vacío (el `dt.desde` sin fuente, 827): recibo y prompt dicen lo mismo.
   - **El ejemplo del prompt pasa el recibo:** un test lee la `reasignacion` de ejemplo de `docs/COWORK.md` y exige que no dispare `faltan` (1030: el recibo pedía `desenlace` y `sob2` que el ejemplo no traía).

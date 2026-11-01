@@ -2121,7 +2121,7 @@ components:
           description: 'si TYPESAFE_API_KEY está puesta (nunca la clave), el modo del revisor de coherencia y el alias de modelo. Probarla de verdad: GET /analisis/jev/ping (maestro)'
           properties:
             disponible: { type: boolean }
-            modo: { type: string, enum: [off, sombra, alertas] }
+            modo: { type: string, enum: ['off', sombra, alertas] }
             modelo: { type: string }
             via: { type: string, description: 'host del endpoint configurado' }
             oficial: { type: boolean }
@@ -4196,7 +4196,7 @@ components:
         fuera: { type: array, items: { type: object, additionalProperties: true } }
         factorX: { type: array, items: { type: object, additionalProperties: true } }
         sensibilidad: { type: array, items: { type: object, additionalProperties: true } }
-        d3: { type: string, enum: [si, parcial, no, sin dato], description: 'solo si el parte lo declaró' }
+        d3: { type: string, enum: [si, parcial, 'no', sin dato], description: 'solo si el parte lo declaró' }
         disponibilidad: { $ref: '#/components/schemas/DisponibilidadParte' }
     ParteCowork:
       type: object
@@ -4310,7 +4310,7 @@ components:
         viaja `simulado: true`, sin hallazgos posibles. Es lo único que muestra
         la evaluación en modo `sombra`.
       properties:
-        modo: { type: string, enum: [off, sombra, alertas] }
+        modo: { type: string, enum: ['off', sombra, alertas] }
         evaluadoEn: { type: string }
         modelo: { type: string, description: 'jev-1.13.0, o «simulado» sin clave' }
         via: { type: string, description: 'host que respondió (api.typesafe.ai, o un intermediario; «simulado» sin clave)' }
@@ -4368,7 +4368,7 @@ components:
           type: object
           description: 'resumen del guardrail de coherencia (Jev): modo, preguntas hechas, hallazgos, si fue simulado, y el error si lo hubo. El detalle va en el GET'
           properties:
-            modo: { type: string, enum: [off, sombra, alertas] }
+            modo: { type: string, enum: ['off', sombra, alertas] }
             preguntas: { type: integer }
             hallazgos: { type: integer }
             simulado: { type: boolean }
@@ -4535,7 +4535,7 @@ components:
       type: object
       required: [modo, ventana, totales, partes, paraMirar]
       properties:
-        modo: { type: string, enum: [off, sombra, alertas], description: 'el modo vigente del revisor' }
+        modo: { type: string, enum: ['off', sombra, alertas], description: 'el modo vigente del revisor' }
         via: { type: string, description: 'host al que salen las preguntas hoy' }
         oficial: { type: boolean, description: 'false = intermediario no afiliado (SAD_JEV_ENDPOINT distinto del oficial)' }
         ventana:
@@ -4784,7 +4784,7 @@ components:
           type: object
           description: '¿apareció lo que la matriz escribió para el escenario jugado (la palanca, el gatillo)? Observación para la autopsia, sin tasa'
           properties:
-            aparecio: { type: string, enum: [si, parcial, no, ''] }
+            aparecio: { type: string, enum: [si, parcial, 'no', ''] }
             que: { type: string }
         cortes:
           type: array
@@ -5098,6 +5098,7 @@ components:
                   razonDeLaRama: { type: string }
                   veredictoUnico: { type: string }
                   sinRamas: { type: string, description: 'parte anterior a la v1.6, con un solo veredicto' }
+                  empateDeMinutos: { type: string, description: 'las dos ramas jugaron los mismos minutos: se juzga igualadoOArriba y el veredicto de persiguiendo también vale (1057)' }
                   sinEventos: { type: string, description: 'hubo goles y la ficha no trae sus minutos' }
         matriz:
           type: object
