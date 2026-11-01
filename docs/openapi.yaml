@@ -5041,6 +5041,7 @@ components:
                   jugador: { type: string }
                   autogol: { type: boolean }
             primerGol: { type: object, nullable: true, additionalProperties: true }
+            var: { type: array, items: { type: object, additionalProperties: true }, description: 'decisiones del VAR de la ficha (gol anulado, penal confirmado o anulado) con minuto, extra, detalle, jugador y lado (1066): evidencia, no cambia el marcador' }
             conFicha: { type: boolean }
             nota: { type: string }
         reventon:

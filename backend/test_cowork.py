@@ -2522,6 +2522,19 @@ def main():
     check("la evidencia trae los goles con su minuto",
           len(o2["evidencia"]["goles"]) >= 2 and o2["evidencia"]["primerGol"]["minuto"] == 34,
           o2["evidencia"].get("goles"))
+    # 1066: las decisiones del VAR viajan en la evidencia (un gol anulado no es gol)
+    import sqlite3 as _sq1066
+    _hid1066 = dbmod.query_one("sad", "SELECT home_team_id FROM fixtures WHERE id=?", (con_ficha,))["home_team_id"]
+    with _sq1066.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT INTO fixture_eventos (fixture_id, minuto, extra, tipo, detalle, equipo_id, jugador) "
+                     "VALUES (?, 97, 7, 'Var', 'Goal cancelled', ?, 'Juan Batista')", (con_ficha, _hid1066))
+    _o1066 = c.get(f"{A}/analisis/cowork/{con_ficha}/veredicto").json()["objetivo"]["evidencia"]
+    with _sq1066.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM fixture_eventos WHERE fixture_id=? AND tipo='Var'", (con_ficha,))
+    check("1066: el gol anulado por el VAR viaja en evidencia.var con su lado, sin sumarse a los goles",
+          _o1066.get("var") == [{"minuto": 97, "extra": 7, "detalle": "Goal cancelled", "jugador": "Juan Batista",
+                                 "lado": "a"}]
+          and len(_o1066["goles"]) == len(o2["evidencia"]["goles"]), _o1066.get("var"))
     # EL AÑADIDO SE SUMA UNA VEZ, Y LA TANDA NO SON GOLES. Un gol al 90+4 se
     # guarda como minuto 94 / extra 4; el veredicto lo ponía en el 98. Y los
     # 24 «goles» del 121' al 142' de un Santa Fe–River eran la definición por
@@ -2594,6 +2607,17 @@ def main():
           any(x["bloque"] == "tde.reasignacion.sob2" for x in rec_s2["faltan"]), rec_s2["faltan"])
     check("el recibo trae pronosticoVsMotor (o null sin pronóstico): la clave existe",
           "pronosticoVsMotor" in rec_s2, list(rec_s2)[:30])
+    # 1051 (Monterrey): el de `fuera` nombrado como recambio en las ramas del TDE se avisa
+    p_1051 = json.loads(json.dumps(p_s2))
+    p_1051["equipos"]["b"]["fuera"] = [{"nombre": "S. De la Rosa", "estado": "baja", "rol": "ROT"}]
+    p_1051["tde"]["bloques"][1]["reasignacion"]["siRecibePrimero"]["nota"] = "entra De la Rosa desde el banco"
+    rec_1051 = c.post(f"{A}/analisis/cowork", json=p_1051).json()
+    from backend.analisis.parte import fuera_en_el_banco as _feb
+    check("1051: un jugador de `fuera` nombrado como recambio se avisa en `faltan`; con «sin …», no",
+          any(x["bloque"] == "equipos.fuera" and "De la Rosa" in x["costara"] for x in rec_1051["faltan"])
+          and _feb({"equipos": {"a": {"fuera": [{"nombre": "S. De la Rosa", "estado": "baja"}]}},
+                    "tde": {"bloques": [{"equipo": "a", "reasignacion": {"siRecibePrimero": {
+                        "nota": "sin De la Rosa, el banco es corto"}}}]}}) == [], rec_1051["faltan"])
     # LA VENTANA RELATIVA AL GOL Y LA VENTANA DE LA RAMA (veredictos del 17/10/2026)
     from backend.analisis.veredicto import _ventana as _vv, ventana_relativa as _vr
     check("«15-30' desde la ventaja» es relativa: no se lee como minutos 15-30",

@@ -79,6 +79,7 @@ Tres lugares donde vive una guardia:
   - El último partido de copa no corta la cadena ni fija el M1: `aperturaPrevia` busca el último partido con parte (997), y el caso del bloque toma la fecha y la competición de ese mismo partido (`dtp_cowork._anterior_con_parte`, 1016) y `ultimoOnceDeLiga` acompaña al once rotado de copa (966); una apertura que entró «sin dato» de XI se reemplaza con la que lo trae (992).
   - Con la apertura de un partido anterior al último, `aperturaPrevia.cierreContra` trae el marcador y los goles de ESE partido: el cierre se valida contra él, no contra `partidoAnterior` (1035).
   - La rama jugada del DTP con los minutos empatados se resuelve a `igualadoOArriba` y lo dice (`empateDeMinutos`, 1057).
+  - Las decisiones del VAR (gol anulado, penal confirmado) viajan en `objetivo.evidencia.var` para la autopsia, sin tocar el marcador (1066).
   - Lo que el texto pone en el banco no es el seguro: el rest defense quita los nombres pegados a «en el banco» / «de suplente» antes de buscar suplentes (`dtp_cowork.sin_en_banco`, 1047), como las piezas del M2 con `_DESDE_BANCO`.
 - **Si vuelve:** mirar primero si el partido entró en la cola, y recién después la rutina.
 
@@ -93,6 +94,7 @@ Tres lugares donde vive una guardia:
   - **Escaneo:** chequeos `sancion` y `sancion-sin-declarar`.
   - La regla de la competición es la del reglamento: en Inglaterra la roja se cumple en cualquier competición doméstica (`sanciones.ROJA_DOMESTICA`, 958); el mismo evento dos veces no son dos amarillas (971); sin la regla de amarillas se dice (`sinRegla`, 1011); la hoja del partido de la roja no desmiente la sanción (980); la baja sin id casa por la fila de su id y la nota se lee venga donde venga (969, 959).
   - En el umbral del ciclo de amarillas se dice si suspende o si ya cumplió (`cicloAmarillas`, 1043): un número en el umbral sin explicación se lee como sanción olvidada.
+  - El que el parte da de baja no es su recambio: el recibo avisa (`faltan`, bloque `equipos.fuera`) cuando un jugador de `fuera` aparece como suplente o recambio en el DTP, las ramas del TDE o la matriz, en una frase sin negación (`parte.fuera_en_el_banco`, 1051).
   - La roja al cuerpo técnico no es de un jugador: `sanciones.del_equipo` la separa en `cuerpoTecnico` con la regla de la ficha (`ficha_tactica._cuerpo_tecnico_e_ids`) y la agenda la marca en `dt.expulsado` (919, 920).
 - **Si vuelve:** si es una regla de amarillas de otra liga, va a `UMBRALES` con la fuente del reglamento.
 
