@@ -116,6 +116,13 @@ def es_desde_cuartos(ronda: str | None) -> bool:
     return r == "final" or r.startswith("final") or any(x in r for x in _RONDA_CUARTOS)
 
 
+# Copas que traen rondas de equipos amateurs y de ultramar sin datos: entran
+# desde la ronda indicada (01/11/2026, incidencia 990, decisión del usuario: la
+# Coupe de France metía a la agenda el 7.º tour de Martinica, Franciscain–Aiglon,
+# sin plantilla, cuotas, once ni historia).
+DESDE_RONDA = {66: ("round of 64", "round of 32", "round of 16", "quarter", "semi", "final")}
+
+
 def copa_en_agenda(liga_id: int | None, ronda: str | None, nombre: str) -> tuple[int, str] | None:
     """Prioridad de agenda de un partido de copa nacional medida; None si no es una."""
     if liga_id not in COPAS_MEDIDAS:
@@ -123,6 +130,10 @@ def copa_en_agenda(liga_id: int | None, ronda: str | None, nombre: str) -> tuple
     auc = SEPARACION[liga_id][0]
     nivel = nivel_de(auc)
     pie = "; el 1X2 sale del mercado, no del motor (en copas la localía sale negativa)"
+    rondas = DESDE_RONDA.get(liga_id)
+    if rondas and not any(x in (ronda or "").strip().lower() for x in rondas):
+        return 0, (f"{nombre} · {ronda or 'ronda temprana'}: esta copa entra desde la ronda de 64 (las "
+                   "anteriores son de amateurs y de ultramar, sin datos)")
     if nivel == "alta":
         return 8, f"{nombre} · {ronda or 'copa'} (copa nacional: el riesgo separa alto, AUC {auc:.2f}; al final{pie})"
     if nivel == "media":

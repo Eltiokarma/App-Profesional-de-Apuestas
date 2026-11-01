@@ -320,6 +320,8 @@ export interface PrediccionDTO {
     ventana?: { local?: string; visitante?: string }
     /** bajó (o sumó la nota) por amistosos en la ventana del nivel */
     porVentana?: boolean
+    /** la sede no es la habitual del local: la localía de μ no aplica (991) */
+    canchaNeutral?: boolean
   } | null
   /** El 1X2 del MOTOR desde los dos μ_partido (logística calibrada, §5.6): la fuente
    *  «motor» del pronóstico. null si falta un μ. μ son puntos, no goles: no va en un Poisson. */
@@ -439,7 +441,7 @@ export interface JugadorDTO {
    *  'ruido' (el flag Missing Fixture marcó más del umbral de la plantilla: no cuenta). */
   baja: { tipo: string | null; detalle: string | null; lectura?: LecturaBaja
           /** con lectura `desmentida`: lo que decía la API y cuándo jugó después de la baja */
-          lecturaApi?: LecturaBaja; desmentidaPorOnce?: { fechaBaja: string; jugoEl?: string; convocadoEl?: string }; soloLista?: 'internacional'
+          lecturaApi?: LecturaBaja; desmentidaPorOnce?: { fechaBaja: string; jugoEl?: string; convocadoEl?: string }; soloLista?: 'internacional'; lesion?: boolean
           /** motivo disciplinario (roja, amarillas, suspensión): señal siempre (415). */
           sancion?: boolean } | null
   /** Traspaso hacia el equipo en ≤90 días: sus stats vienen de otro contexto. */

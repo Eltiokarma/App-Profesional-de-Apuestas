@@ -1127,7 +1127,8 @@ def espina_sigue_en_extremo(reventon: dict | None, espina: dict | None) -> list[
 # creado antes siguen a la vista —el dato es el mismo— pero marcadas
 # `posteriorAlParte`: el veredicto no las cuenta como regla incumplida.
 REGLAS_CALCULADAS_DESDE = {"ESPINA-SIGUE-EN-EXTREMO": "2026-10-26 05:00:00",
-                           "EFE-EMPATE-TECNICO": "2026-10-26 05:00:00"}
+                           "EFE-EMPATE-TECNICO": "2026-10-26 05:00:00",
+                           "TDE-RELEVANCIA-SIN-DECLARAR": "2026-11-01 05:30:00"}
 
 
 def marcar_posteriores(alertas: list[dict], creado_en: str | None) -> list[dict]:
@@ -2036,6 +2037,31 @@ def tipologia_vs_indices(b: dict) -> dict | None:
                        f"el tipo modal es {manda}. O se corrige la tipología, o el índice que no cuadra"}
 
 
+RELEVANCIA_BAJA_MAX = 0.5
+
+
+def relevancia_tde(tde: dict) -> dict | None:
+    """LA RELEVANCIA BAJA QUE EL SKILL PIDE DECLARAR (01/11/2026, incidencia 791,
+    decisión del usuario): con P1a y SOB1 en 0,5 o menos en los DOS lados el TDE
+    pide declarar RELEVANCIA BAJA (el tramo final no decide) y nadie lo cobraba
+    (Santos–Palmeiras). Aviso de tipo dato si ningún texto del TDE la nombra."""
+    bloques = [b for b in tde.get("bloques") or [] if b.get("equipo") in LADOS]
+    if len({b["equipo"] for b in bloques}) < 2:
+        return None
+    for b in bloques:
+        ind = b.get("indicadores") or {}
+        try:
+            if float(ind["P1a"]) > RELEVANCIA_BAJA_MAX or float(ind["SOB1"]) > RELEVANCIA_BAJA_MAX:
+                return None
+        except (KeyError, TypeError, ValueError):
+            return None
+    if "relevancia" in json.dumps(tde, ensure_ascii=False).lower():
+        return None
+    return {"codigo": "TDE-RELEVANCIA-SIN-DECLARAR", "tipo": "dato",
+            "detalle": f"P1a y SOB1 en {RELEVANCIA_BAJA_MAX:g} o menos en los dos lados: el TDE pide declarar "
+                       "RELEVANCIA BAJA (el tramo final no decide el partido) y el parte no lo dice"}
+
+
 def _reasignacion(x, rechazos: list, donde: str) -> dict:
     """La disciplina 44 del TDE como CAMPO: qué le pasa a las vías de ESTE
     equipo si marca primero y si recibe primero.
@@ -2461,7 +2487,7 @@ _ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "K-EXTREMO-CONDICION", "K
                         "COLAPSO-EN-CASCADA", "F1-DECISIVO-FUERA", "DTP-REHACER", "DTP-SIN-REFERENCIA",
                         "TIPOLOGIA-VS-INDICES", "ESPINA-SIGUE-EN-EXTREMO", "EFE-EMPATE-TECNICO",
                         "T.54-SIN-DECLARAR", "ELIMINATORIA-AL-REVES", "SANCION-SIN-DECLARAR",
-                        "ONCE-SIN-FILA-F1"}
+                        "ONCE-SIN-FILA-F1", "TDE-RELEVANCIA-SIN-DECLARAR"}
 # LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
 # selladas (coherencia_json), porque no son deterministas y rehacerlas al leer
 # las haría parpadear. Del depósito se descartan igual que las calculadas
@@ -3985,9 +4011,14 @@ def _antes_del_pitazo(ahora: str, pitazo) -> bool:
 # del usuario: el once llega ~25 min antes y caía entre dos disparos) son tres
 # (:02, :22 y :42) con piso de 5. Un parte se juzga con la grilla de SU día:
 # una regla no se cobra hacia atrás.
-REHACER_GRILLAS = (("2026-10-31 01:21:00", (2, 22, 42), 5),)
+REHACER_GRILLAS = (("2026-10-31 01:21:00", (2, 22, 42), 5),
+                   # 989 (01/11/2026, decisión del usuario): con :02/:22/:42 el once
+                   # de un partido de y media que llega después de las :03 solo tenía
+                   # el :22, a 3 min del tope; el :12 corre de 10 a 23 (REHACER_SOLO_HORAS)
+                   ("2026-11-01 05:30:00", (2, 12, 22, 42), 5))
 REHACER_DISPAROS_MIN, REHACER_PISO_ANTES = (7, 37), 15
 REHACER_HORAS_LIMA = (5, 23)
+REHACER_SOLO_HORAS = {12: (10, 23)}   # minutos que no corren todo el día
 
 
 def grilla_rehacer(t: datetime | None) -> tuple[tuple[int, ...], int]:
@@ -4008,7 +4039,8 @@ def disparo_entre(desde: datetime, hasta: datetime) -> bool:
     fin = hasta.astimezone(lima)
     while t <= fin:
         minutos, _ = grilla_rehacer(t.astimezone(timezone.utc))
-        if (t.minute in minutos and REHACER_HORAS_LIMA[0] <= t.hour <= REHACER_HORAS_LIMA[1]
+        h0, h1 = REHACER_SOLO_HORAS.get(t.minute, REHACER_HORAS_LIMA)
+        if (t.minute in minutos and h0 <= t.hour <= h1 and REHACER_HORAS_LIMA[0] <= t.hour <= REHACER_HORAS_LIMA[1]
                 and desde.astimezone(lima) < t):
             return True
         t += timedelta(minutes=1)
@@ -4180,6 +4212,9 @@ def dto(fixture_id: int) -> dict | None:
         alerta = tipologia_vs_indices(b)
         if alerta and b.get("equipo") in LADOS:
             alertas.append({**alerta, "equipo": b["equipo"]})
+    rel = relevancia_tde(parte.get("tde") or {})
+    if rel:
+        alertas.append(rel)
     # EL MISMO HUECO, LEÍDO AL REVÉS POR DOS ESCALAS. El EFE cuenta el bloque
     # ausente como 0 y hunde el porcentaje; el TDE promedia solo sobre los
     # indicadores presentes, así que uno alto con denominador chico dispara el

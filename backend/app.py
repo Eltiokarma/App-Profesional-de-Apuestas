@@ -765,11 +765,16 @@ def fiabilidad_mu_fixture(f, comps: dict | None = None) -> dict:
     amistosos en la ventana de 20 del líder). μ no se toca: con 3+ amistosos
     en un lado, «alta» baja a «media» y la nota lo dice."""
     from backend.analisis import ventana_nivel
+    fecha = iso(f["date"])
     if comps is None:
-        fecha = iso(f["date"])
         comps = {"local": ventana_nivel.composicion(f["home_team_id"], fecha),
                  "visitante": ventana_nivel.composicion(f["away_team_id"], fecha)}
-    return ventana_nivel.fiabilidad_con_ventana(fiabilidad_mu_partido(f), comps)
+    try:
+        sede = f["venue_name"]
+    except (KeyError, IndexError):
+        sede = None
+    neutral = ventana_nivel.cancha_neutral(f["home_team_id"], sede, fecha)
+    return ventana_nivel.fiabilidad_con_ventana(fiabilidad_mu_partido(f), comps, fecha=fecha, neutral=neutral)
 
 
 def gap_equipo(team_id: int, fecha: str | None) -> dict:

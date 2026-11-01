@@ -496,9 +496,17 @@ def _baja_dto(baja, missing: dict, jugo_el: str | None, convocado_el: str | None
     sancion = es_sancion(baja["detalle"])
     if sancion and lectura == "ruido":
         lectura = "senal"
+    # UNA LESIÓN CON NOMBRE TAMBIÉN (01/11/2026, incidencia 1014, decisión del
+    # usuario): Tomori (Milan) con el flexor roto un mes salía «ruido» por la
+    # densidad del equipo. La API no trae fecha de regreso; lo que separa la baja
+    # real del «no jugó» genérico es la lesión con nombre («Muscle Injury»,
+    # «Knee Injury»), como la sanción. El umbral del 25 % no se mueve.
+    lesion = es_lesion(baja["detalle"])
+    if lesion and lectura == "ruido":
+        lectura = "senal"
     fecha = str(baja["fecha"] or "")[:10] if "fecha" in baja.keys() else ""
     out = {"tipo": baja["tipo"], "detalle": baja["detalle"], "lectura": lectura,
-           **({"sancion": True} if sancion else {})}
+           **({"sancion": True} if sancion else {}), **({"lesion": True} if lesion else {})}
     if (fecha and "off the roster" in (baja["detalle"] or "").lower() and fecha in (fechas_int or set())
             and not sancion):
         out.update({"lectura": "ruido", "soloLista": "internacional"})
@@ -519,6 +527,12 @@ def _es_missing(tipo) -> bool:
 
 
 _SANCION = ("red card", "yellow card", "suspen", "sanci", "ban")
+
+
+def es_lesion(detalle) -> bool:
+    """«Muscle Injury», «Knee Injury», «Hamstring Injury»: una lesión con nombre."""
+    d = (detalle or "").strip().lower()
+    return "injury" in d and not d.startswith("no ")
 
 
 def es_sancion(detalle) -> bool:

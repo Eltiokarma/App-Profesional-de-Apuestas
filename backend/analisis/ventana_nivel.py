@@ -105,14 +105,78 @@ def texto(c: dict | None) -> str:
     return (" y ".join(partes) + f" de {c['partidos']}") if partes else ""
 
 
-def fiabilidad_con_ventana(fia: dict, comps: dict, nombres: dict | None = None) -> dict:
+VENTANA_CORTA = 10      # con menos partidos en la ventana, el nivel casi no tiene historia
+VENTANA_VIEJA_DIAS = 365   # con el último partido de hace más, el nivel es de otra época
+
+
+def cancha_neutral(home_id: int, sede: str | None, antes: str | None) -> bool:
+    """¿El partido se juega fuera de la cancha habitual del local? La sede más
+    repetida en sus últimos 20 partidos de local (con 5+), distinta de esta
+    (01/11/2026, incidencia 991: Franciscain–Aiglon en el Stade Louis-Achille)."""
+    if not sede:
+        return False
+    params: list = [home_id]
+    cond = ""
+    if antes:
+        cond = " AND date < ?"
+        params.append(str(antes).replace("T", " ").rstrip("Z")[:19])
+    try:
+        filas = saddb.query("sad", f"SELECT venue_name FROM fixtures WHERE home_team_id=? AND venue_name IS NOT NULL"
+                                   f"{cond} ORDER BY date DESC LIMIT 20", tuple(params))
+    except Exception:  # noqa: BLE001 — base sin la sede: no se afirma cancha neutral
+        return False
+    if len(filas) < 5:
+        return False
+    cuenta: dict[str, int] = {}
+    for f in filas:
+        cuenta[f["venue_name"]] = cuenta.get(f["venue_name"], 0) + 1
+    habitual = max(cuenta, key=cuenta.get)
+    return cuenta[habitual] * 2 > len(filas) and habitual.strip().lower() != sede.strip().lower()
+
+
+def _vieja_o_corta(c: dict | None, fecha: str | None) -> str:
+    if not c:
+        return ""
+    if c["partidos"] < VENTANA_CORTA:
+        return f"solo {c['partidos']} partidos en la ventana"
+    if fecha and c.get("hasta"):
+        try:
+            from datetime import datetime
+            dias = (datetime.fromisoformat(str(fecha)[:10]) - datetime.fromisoformat(c["hasta"][:10])).days
+        except ValueError:
+            return ""
+        if dias > VENTANA_VIEJA_DIAS:
+            return f"el último partido de la ventana es de hace {dias} días ({c['hasta']})"
+    return ""
+
+
+def fiabilidad_con_ventana(fia: dict, comps: dict, nombres: dict | None = None,
+                           fecha: str | None = None, neutral: bool = False) -> dict:
     """La fiabilidad de μ con lo que dice la ventana de cada lado. Con
     `UMBRAL_AMISTOSOS`+ amistosos en un lado, «alta» baja a «media»; «media» y
-    «baja» se quedan y la nota lo suma. Nunca la sube."""
+    «baja» se quedan y la nota lo suma. Nunca la sube.
+
+    VENTANA CORTA O VIEJA Y CANCHA NEUTRAL (01/11/2026, incidencia 991, decisión
+    del usuario): con menos de `VENTANA_CORTA` partidos o el último de hace más
+    de un año, la fiabilidad baja a «baja»; en cancha neutral la localía de μ no
+    aplica y se dice (`canchaNeutral`). La fórmula no se toca."""
     nombres = nombres or {"local": "el local", "visitante": "el visitante"}
     con = {lado: c for lado, c in comps.items() if c and c["amistosos"] >= UMBRAL_AMISTOSOS}
     out = dict(fia or {})
     out["ventana"] = {lado: texto(c) for lado, c in comps.items() if texto(c)}
+    viejas = {lado: m for lado, c in comps.items() if (m := _vieja_o_corta(c, fecha))}
+    if viejas:
+        out["nivel"] = "baja"
+        out["porVentana"] = True
+        out["nota"] = (f"{out.get('nota', '')} El nivel casi no tiene historia útil ("
+                       + "; ".join(f"{nombres.get(l, l)}: {m}" for l, m in viejas.items())
+                       + "): μ apenas orienta.").strip()
+    if neutral:
+        out["canchaNeutral"] = True
+        out["nota"] = (f"{out.get('nota', '')} Se juega en cancha neutral: la localía que suma μ al local no "
+                       "aplica (el motor la suma igual).").strip()
+        if out.get("nivel") == "alta":
+            out["nivel"] = "media"
     if not con:
         return out
     detalle = "; ".join(f"{nombres.get(l, l)}: {texto(c)}" for l, c in con.items())

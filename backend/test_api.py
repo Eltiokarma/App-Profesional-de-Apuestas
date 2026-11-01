@@ -467,6 +467,9 @@ def main():
     check("los cortes de la separación: 0.64 alta · 0.60 media · debajo baja · sin dato sin medir",
           [_sep.nivel_de(x) for x in (0.68, 0.64, 0.63, 0.60, 0.58, None)]
           == ["alta", "alta", "media", "media", "baja", "sin medir"])
+    check("990: la Coupe de France entra a la agenda desde la ronda de 64; el 7.º tour (ultramar) no",
+          _sep.copa_en_agenda(66, "7th Round", "Coupe de France")[0] == 0
+          and _sep.copa_en_agenda(66, "Round of 64", "Coupe de France")[0] == 8)
     sc = _sep.de_liga(143, "Copa del Rey")
     check("una copa medida da su separación como copa, con la nota del 1X2 del mercado",
           sc["competicion"] == "copa" and sc["auc"] == 0.727 and sc["nivel"] == "alta"

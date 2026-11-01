@@ -1061,7 +1061,8 @@ conversación se pierde en la siguiente.
      `session_01WwsfbTrhC56SCybz9zK3CQ`; desde el 31/10/2026 con las rutinas
      `:02, v5` `trig_01Gv8F164s7s6aYVMRXyD5Lr`, `:22, v5`
      `trig_01HaXT3mjisnuqwhoC7LnuAy` y `:42, v5` `trig_01M8XfUko8f6H4r26HYm14Rr`
-     (las `:07, v4` y `:37, v4` quedaron desactivadas); al rehacer, el SOB2 y el
+     (las `:07, v4` y `:37, v4` quedaron desactivadas), más `:12, v5`
+     `trig_01Lo32FnwNkLfNc4RcBYPRma` de 10 a 23 desde el 01/11/2026 (989); al rehacer, el SOB2 y el
      C1 del TDE se reescriben con el DTP rehecho, nunca el DTP vuelve atrás para
      callar HERENCIA-DTP (634). Los pendientes ya aprobados para la próxima
      revisión de cada skill viven en `docs/revisiones/PENDIENTES.md`. La v3

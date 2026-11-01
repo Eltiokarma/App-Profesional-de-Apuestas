@@ -251,7 +251,8 @@ const conSigno = (v: number, signo: SignoBurbuja) => `${signo === '+' ? '+' : '-
  *  equipo y ahí no se carga la apuesta a que siga. Aparte del riesgo.
  *  `cerca` es el escalón de abajo; `activo` sigue siendo solo el récord. */
 export function extremoDe(kAbs: number, partidos: number, base: HistorialSignoDTO, nCond: number, signo: SignoBurbuja, de: ReventonDTO[] = [], amistosos = 0): ExtremoBurbujaDTO {
-  const kRecord = kAbs >= base.kPico.max
+  // la K récord también pide 3+ partidos (818): con 1-2 queda en ámbar (cerca)
+  const kRecord = kAbs >= base.kPico.max && partidos >= RACHA_RECORD_MIN
   const rachaRecord = partidos > base.partidos.max && partidos >= RACHA_RECORD_MIN
   const n = de.length
   const pctK = n ? Math.floor((100 * de.filter((r) => r.kPico < kAbs).length) / n + 0.5) : 0
@@ -265,7 +266,8 @@ export function extremoDe(kAbs: number, partidos: number, base: HistorialSignoDT
   const maxTxt = conSigno(base.kPico.max, signo)
   if (kRecord) motivos.push(`K ${kTxt}: la más ${lado} de los ${nCond} partidos que hay en la base (récord previo ${maxTxt})`)
   if (rachaRecord) motivos.push(`${partidos} partidos seguidos: la racha más larga de los ${nCond} partidos que hay en la base (máximo previo ${base.partidos.max})`)
-  if (cerca && kCerca) motivos.push(`K ${kTxt}: más ${lado} que el ${pctK} % de las ${n} burbujas ${signo} que reventaron (récord previo ${maxTxt}, a ${r2(base.kPico.max - kAbs)})`)
+  if (cerca && kCerca && kAbs >= base.kPico.max) motivos.push(`K ${kTxt}: en su récord (previo ${maxTxt}) pero con ${partidos} ${partidos === 1 ? 'partido' : 'partidos'}: con menos de ${RACHA_RECORD_MIN} no es récord`)
+  else if (cerca && kCerca) motivos.push(`K ${kTxt}: más ${lado} que el ${pctK} % de las ${n} burbujas ${signo} que reventaron (récord previo ${maxTxt}, a ${r2(base.kPico.max - kAbs)})`)
   if (cerca && rCerca) motivos.push(`${partidos} partidos seguidos: más que el ${pctR} % de las ${n} burbujas ${signo} que reventaron (máximo previo ${base.partidos.max})`)
   const texto = kRecord || rachaRecord
     ? 'EXTREMO: la burbuja está en su máximo histórico. El modelo no lo puntúa como riesgo (la tasa de reventón no sube con la K), pero es terreno sin precedente para este equipo: no cargar la apuesta a que la racha siga'

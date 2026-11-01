@@ -391,7 +391,10 @@ def _extremo(k_abs: float, partidos: int, base: dict, n_cond: int, signo: str,
     superan al CERCA_PCT % de los reventones del signo (estricto: «más alta
     que»). Se avisa en ámbar, no en rojo, y `activo` sigue siendo solo el
     récord: la alerta K-EXTREMO y el veredicto no cambian de significado."""
-    k_rec = k_abs >= base["kPico"]["max"]
+    # LA K RÉCORD TAMBIÉN PIDE 3+ PARTIDOS (01/11/2026, incidencia 818, decisión del
+    # usuario): Gimnástica gritaba K-EXTREMO por un +0,7 de UN amistoso. Con 1-2
+    # partidos la K en su máximo queda en ámbar (`cerca`), como la racha (67)
+    k_rec = k_abs >= base["kPico"]["max"] and partidos >= RACHA_RECORD_MIN
     max_p = base["partidos"]["max"]
     max_p = int(max_p) if float(max_p).is_integer() else max_p  # «3 partidos», no «3.0»
     r_rec = partidos > max_p and partidos >= RACHA_RECORD_MIN
@@ -411,7 +414,10 @@ def _extremo(k_abs: float, partidos: int, base: dict, n_cond: int, signo: str,
     if r_rec:
         motivos.append(f"{partidos} partidos seguidos: la racha más larga de los {n_cond} partidos que hay "
                        f"en la base (máximo previo {max_p})")
-    if cerca and k_cerca:
+    if cerca and k_cerca and k_abs >= base["kPico"]["max"]:
+        motivos.append(f"K {k_txt}: en su récord (previo {max_txt}) pero con {partidos} "
+                       f"{'partido' if partidos == 1 else 'partidos'}: con menos de {RACHA_RECORD_MIN} no es récord")
+    elif cerca and k_cerca:
         motivos.append(f"K {k_txt}: más {lado} que el {pct_k} % de las {n} burbujas {signo} que reventaron "
                        f"(récord previo {max_txt}, a {_r2(base['kPico']['max'] - k_abs)})")
     if cerca and r_cerca:

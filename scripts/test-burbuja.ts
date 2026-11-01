@@ -128,7 +128,11 @@ check('con 0 amistosos y 7 sobre 5 → récord limpio, sin marca', extremoDe(20,
     eq(ce.motivos, ['K -17.93: más baja que el 90 % de las 10 burbujas - que reventaron (récord previo -19.54, a 1.61)',
       '3 partidos seguidos: más que el 90 % de las 10 burbujas - que reventaron (máximo previo 4)'])
     && ce.texto.startsWith('CERCA DEL EXTREMO') && ce.texto.includes('no cargar fuerte'), ce.motivos)
-  const rec = extremoDe(26.04, 1, baseC, 280, '-', deC)
+  const rec = extremoDe(26.04, 3, baseC, 280, '-', deC)
+  const uno = extremoDe(26.04, 1, baseC, 280, '-', deC)
+  check('818: la K en su récord con UN partido no es K-EXTREMO: queda en ámbar y lo dice',
+    !uno.activo && uno.cerca && !uno.kRecord
+    && uno.motivos[0] === 'K -26.04: en su récord (previo -19.54) pero con 1 partido: con menos de 3 no es récord', uno)
   check('récord negativo: el motivo lleva el signo y cerca queda en false', rec.activo && !rec.cerca && rec.motivos[0].startsWith('K -26.04: la más baja') && rec.motivos[0].includes('récord previo -19.54'), rec)
   const lejos = extremoDe(9.5, 1, baseC, 280, '-', deC)
   check('K −9.5 (80 %) y racha 1 → ni extremo ni cerca', !lejos.activo && !lejos.cerca && lejos.motivos.length === 0 && lejos.texto === '', lejos)
