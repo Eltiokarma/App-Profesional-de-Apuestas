@@ -1800,6 +1800,49 @@ def alertas_eliminatoria(parte: dict, fx, nombres: dict) -> list[dict]:
     return out
 
 
+_USO_BANCO = re.compile(r"\b(banco|banca|suplente|recambio|revulsivo|entra|entrar[ií]a|ingresa|ingresar[ií]a|"
+                        r"desde el banco|de cambio)\b", re.I)
+_NIEGA_USO = re.compile(r"\b(sin|no (?:est[aá]|va|juega|convocad[oa]|disponible)|fuera|baja|ausente|lesionad[oa]|"
+                        r"suspendid[oa]|sancionad[oa]|descartad[oa]|no convocado|ya no)\b", re.I)
+
+
+def fuera_en_el_banco(parte: dict) -> list[dict]:
+    """Los jugadores dados de BAJA en `equipos.{lado}.fuera` que el parte nombra
+    como suplente o recambio de ese lado (DTP, ramas del TDE, matriz), en una
+    frase sin negación. Aviso, no rechazo: la prosa puede tener matices."""
+    out = []
+    for lado in LADOS:
+        eq = (parte.get("equipos") or {}).get(lado) or {}
+        bajas = [x for x in eq.get("fuera") or [] if isinstance(x, dict) and (x.get("estado") or "baja") == "baja"]
+        if not bajas:
+            continue
+        textos = []
+        for b in (parte.get("dtp") or {}).get("bloques") or []:
+            if b.get("equipo") == lado:
+                textos.append(("dtp", b.get("apertura") or {}))
+        for b in (parte.get("tde") or {}).get("bloques") or []:
+            if b.get("equipo") == lado:
+                textos.append(("tde", b.get("reasignacion") or {}))
+        textos.append(("matriz", ((parte.get("matriz") or {}).get(lado)) or {}))
+        for x in bajas:
+            nombre = x.get("nombre") or ""
+            apell = [t for t in _identidad.tokens(nombre)[1:] if len(t) >= 4] or \
+                    [t for t in _identidad.tokens(nombre) if len(t) >= 4][-1:]
+            if not apell:
+                continue
+            hecho = False
+            for donde, obj in textos:
+                for frase, _ in _frases(obj):
+                    pl = f" {_identidad.plano(frase)} "
+                    if any(f" {a} " in pl for a in apell) and _USO_BANCO.search(frase) and not _NIEGA_USO.search(frase):
+                        out.append({"lado": lado, "nombre": nombre, "donde": donde, "frase": frase.strip()[:140]})
+                        hecho = True
+                        break
+                if hecho:
+                    break
+    return out
+
+
 def alertas_dt(parte: dict, fx, nombres: dict) -> list[dict]:
     """DT-DISCREPANCIA cuando el parte (la prensa) y la base no dicen el mismo
     DT: manda el parte, y la base queda marcada para refrescarse. DT-SIN-DT
@@ -3243,6 +3286,18 @@ def guardar(payload: dict) -> dict:
                        "si el partido pasa por ahí, el tramo sale «no declarado» aunque la nota lo diga",
             "comoSeArregla": '"siLeEmpatan": {…} y "siExpulsion": {"propia": {…}, "rival": {…}} en cada bloque; '
                              '"siIguala" si el equipo puede ir abajo y empatar (TDE v0.1.23)',
+        })
+    # EL QUE ESTÁ FUERA NO ES SUPLENTE (incidencia 1051, Monterrey: De la Rosa en
+    # `fuera` y como recambio en el DTP, en las ramas del TDE y en la matriz)
+    fuera_usado = fuera_en_el_banco(parte)
+    if fuera_usado:
+        faltan.append({
+            "bloque": "equipos.fuera",
+            "costara": "jugador(es) de `fuera` nombrados como suplente o recambio: "
+                       + "; ".join(f"{x['lado']}: {x['nombre']} en {x['donde']} («{x['frase']}»)" for x in fuera_usado[:6])
+                       + ": el plan B del parte cuenta con quien no juega",
+            "comoSeArregla": "sacarlo del banco y de los recambios del DTP, de las ramas del TDE y de la matriz, "
+                             "o, si la baja es una duda, pasarlo a `estado: duda`",
         })
     # UNA RAMA QUE CAMBIA AL RÉGIMEN SOB SIN SU SEGURO DE ATRÁS (TDE v0.1.22):
     # el SOB2 del arranque no se hereda al que persigue (Sporting–LASK)

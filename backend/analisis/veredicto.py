@@ -158,6 +158,21 @@ def _id_en_la_hoja(fixture_id: int, equipo_id, nombre) -> int | None:
     return ids.pop() if len(ids) == 1 else None
 
 
+def _var(fixture_id: int, home_id: int) -> list[dict]:
+    """LAS DECISIONES DEL VAR (incidencia 1066, Nacional–ABB: un gol anulado en
+    el 90+7 con diez, que cuenta para la disciplina 16 del TDE y solo se veía en
+    los eventos de la ficha): gol anulado, penal confirmado o anulado, con su
+    minuto y su lado. Evidencia para la autopsia, no cambia el marcador."""
+    try:
+        filas = saddb.query(
+            "sad", "SELECT minuto, extra, detalle, equipo_id, jugador FROM fixture_eventos "
+                   "WHERE fixture_id=? AND tipo='Var' ORDER BY minuto, id", (fixture_id,))
+    except Exception:  # noqa: BLE001 — base sin eventos: sin VAR, no un 500
+        return []
+    return [{"minuto": f["minuto"], "extra": f["extra"] or 0, "detalle": f["detalle"] or "",
+             "jugador": f["jugador"] or "", "lado": "a" if f["equipo_id"] == home_id else "b"} for f in filas]
+
+
 def _rojas(fixture_id: int, home_id: int) -> list[dict]:
     """Expulsiones de JUGADORES con minuto y lado. Una roja reordena el partido
     entero (disciplina 16 del TDE): un gol en la ventana que llega después ya
@@ -411,6 +426,7 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
         "evidencia": {
             "goles": goles,
             "primerGol": goles[0] if goles else None,
+            "var": _var(fixture_id, fx["home_team_id"]),
             "conFicha": bool(goles) or (gl + gv == 0),
             "nota": ("" if goles or gl + gv == 0 else
                      "el partido tuvo goles pero la ficha no está capturada: "
