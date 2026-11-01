@@ -4160,6 +4160,35 @@ def main():
         _dcm._fixture, _dcm._titulares, _dcm._banca = _orig
     check("137: con grid, los defensores son la fila 2 (4), no los etiquetados «D» (2)",
           _of137["a"]["defensores"] == 4, _of137.get("a"))
+    # 1054 (Racing): «A. Assis» en la hoja de hoy y «S. Assis» en las anteriores, id 51396
+    _q1054 = _dcm.saddb.query
+
+    def _fq1054(base, sql, args=()):
+        if "FROM jugadores" in sql:
+            return [{"pid": 51396, "nombre": "A. Assis"}]
+        if "AND fixture_id != ?" in sql:
+            return [{"pid": 51396, "nombre": "S. Assis"}, {"pid": 51396, "nombre": "A. Assis"}]
+        if "titular=0" in sql:
+            return []
+        return _q1054(base, sql, args)
+    _xi1054 = [{"player_id": 51396, "jugador": "A. Assis", "posicion": "M", "grid": ""}] + [
+        {"player_id": 900 + k, "jugador": f"J. Otro{k}", "posicion": "M", "grid": ""} for k in range(10)]
+    try:
+        _dcm._fixture = lambda fx: {"home_team_id": 1, "away_team_id": 2}
+        _dcm._titulares = lambda fx, tid: _xi1054 if tid == 1 else []
+        _dcm._banca = lambda fx, tid: ["B. Banco"]
+        _dcm.saddb.query = _fq1054
+        _of1054 = _dcm.oficial_de(1646897)
+    finally:
+        _dcm._fixture, _dcm._titulares, _dcm._banca = _orig
+        _dcm.saddb.query = _q1054
+    _ref1054 = "S. Assis, " + ", ".join(f"J. Otro{k}" for k in range(10))
+    _r1054 = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-4-2", "xiReferencia": _ref1054},
+                                                    "m2": {"piezas": [{"lado": "foco", "nombre": "S. Assis",
+                                                                       "rol": "contenedor"}]}}}, _of1054)
+    check("1054: el mismo id con otro nombre en hojas anteriores casa con la referencia y con la pieza del M2",
+          _of1054["a"]["alias"].get("A. Assis") == ["S. Assis"] and _r1054["ausentesDeLaReferencia"] == []
+          and not any("Assis" in m for m in _r1054["motivos"]), (_of1054["a"].get("alias"), _r1054))
     from backend.analisis.dtp_cowork import alertas_rehacer as _alr
     _als = _alr({"bloques": [{"equipo": "a", "calculado": {"contraElOnce": {"rehacer": False, "sinReferencia": True}}},
                              {"equipo": "b", "calculado": {"contraElOnce": {"rehacer": False, "sinReferencia": False}}}]},
@@ -4172,8 +4201,11 @@ def main():
           _sin("5-3-2", 4) is True and _sin("5-3-2", 3) is False and _sin("4-4-2", 4) is False)
     check("y el campo de ausentes explica qué lista", "OFICIAL" in _sz.get("nota", ""), _sz)
     ce = g_reh["dtp"]["bloques"][0]["calculado"]["contraElOnce"]
-    check("con el once oficial distinto, el bloque del DTP queda a rehacer (sistema y once)",
-          ce["rehacer"] is True and ce["sistemaOficial"] == _form and len(ce["motivos"]) == 2
+    # (el motivo de «sistema» no salta: 3-5-2 y 3-4-2-1 son la misma forma; desde
+    # la 1054 el arquero casa por su id con el nombre de otra hoja de la base demo)
+    check("con el once oficial distinto, el bloque del DTP queda a rehacer (once)",
+          ce["rehacer"] is True and ce["sistemaOficial"] == _form
+          and any(m.startswith("once:") for m in ce["motivos"])
           and len(ce["ausentesDeLaReferencia"]) >= 3, ce)
     check("y la alerta DTP-REHACER va a la tira",
           any(a["codigo"] == "DTP-REHACER" and a["equipo"] == "a" for a in g_reh["alertas"]), g_reh["alertas"])

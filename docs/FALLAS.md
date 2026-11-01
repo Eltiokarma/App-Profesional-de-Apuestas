@@ -49,6 +49,7 @@ Tres lugares donde vive una guardia:
   - **Lo que los datos no alcanzan a decidir** se marca y se protege, no se adivina: dos filas del mismo nombre que nunca compartieron hoja llevan `posibleMismoQue` y el bloque F no cuenta a una de baja si la otra jugó (932, Pratto). Dos ids que compartieron una hoja son dos personas, y el escaneo ya no las reporta (887, los dos «T. Palacios»).
   - **El que se fue:** su última hoja con otro club lo saca de la tabla (`f1_base.juegan_en_otro`, 931). La misma regla vale para todo: el ido no vuelve a la tabla por sus onces recientes (1032) y los penales lo dan fuera del plantel (`enPlantilla: false`, `juegaEn`, 1029).
   - **Dos titulares con el mismo apellido:** la mención pegada a la inicial de uno no nombra al otro en `contraElOnce` (1027, los dos Mina del Emelec), y dos ids con el mismo nombre visible salen con el nombre largo o el id en el XI y los cambios del DTP (`dtp_cowork.desambiguar`, 1040, los dos «T. Palacios»).
+  - **El id manda en el once oficial:** el alias de cada titular y suplente suma los nombres con que ese mismo id figuró en otras hojas y en `jugadores`, y `contraElOnce` (ausentes y piezas del M2) casa con cualquiera (1054: «A. Assis»/«S. Assis», «C. Jaime»/«Leonel Jaime»).
 - **Si vuelve:** el caso nuevo va a `identidad.py` con su test. Nunca un `if` en el módulo donde apareció.
 
 ### 2. El DT de la base, viejo o cruzado

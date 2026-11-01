@@ -1451,17 +1451,37 @@ def oficial_de(fixture_id: int) -> dict:
         except Exception:  # noqa: BLE001
             f = None
         alias: dict[str, list[str]] = {}
+        # EL MISMO ID CON OTRO NOMBRE EN OTRAS HOJAS (incidencia 1054: «A. Assis»
+        # en la hoja de hoy y «S. Assis» en las anteriores y en la tabla F1, id
+        # 51396; «C. Jaime»/«Leonel Jaime»; «Guilherme Smith»/«Guilherme
+        # Henriques da Silva Carvalho»): la referencia se escribe con la tabla
+        # F1, y el id manda. Para titulares y banco.
         try:
-            ids = [j["player_id"] for j in xi if j["player_id"] and j["player_id"] > 0]
-            if ids:
-                nombres = {r["id"]: r["nombre"] for r in saddb.query(
-                    "sad", f"SELECT id, nombre FROM jugadores WHERE id IN ({','.join('?' * len(ids))})", tuple(ids))}
-                for j in xi:
-                    otro = nombres.get(j["player_id"])
-                    if otro and otro != j["jugador"]:
-                        alias[j["jugador"] or ""] = [otro]
-        except Exception:  # noqa: BLE001 — base sin la capa de jugadores
-            pass
+            banca_ids = [r for r in saddb.query(
+                "sad", "SELECT player_id, jugador FROM alineaciones WHERE fixture_id=? AND team_id=? AND titular=0",
+                (fixture_id, tid))]
+        except Exception:  # noqa: BLE001 — sin hoja del banco, solo los titulares
+            banca_ids = []
+        pares = [(j["player_id"], j["jugador"] or "") for j in xi] + \
+                [(r["player_id"], r["jugador"] or "") for r in banca_ids]
+        ids = sorted({i for i, _ in pares if i and i > 0})
+        if ids:
+            otros: dict[int, set] = {}
+            marca = ",".join("?" * len(ids))
+            for sql in (f"SELECT id AS pid, nombre FROM jugadores WHERE id IN ({marca})",
+                        f"SELECT DISTINCT player_id AS pid, jugador AS nombre FROM alineaciones "
+                        f"WHERE player_id IN ({marca}) AND fixture_id != ?"):
+                try:
+                    args = tuple(ids) + ((fixture_id,) if "alineaciones" in sql else ())
+                    for r in saddb.query("sad", sql, args):
+                        if r["nombre"]:
+                            otros.setdefault(r["pid"], set()).add(r["nombre"])
+                except Exception:  # noqa: BLE001 — base sin la capa de jugadores
+                    pass
+            for pid, nombre in pares:
+                extra = sorted(n for n in otros.get(pid, ()) if n != nombre)
+                if extra:
+                    alias[nombre] = extra
         # CON EL GRID COMPLETO, LA LÍNEA DE ATRÁS ES LA FILA 2: la API etiqueta
         # «M» a carrileros y laterales que el grid pone en la línea (UCV, fila 2
         # con cuatro y defensoresOficiales=2, incidencia 137)
@@ -1721,7 +1741,8 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
         elif _apellidos(pz.get("nombre") or "") and len(lado_of.get("titulares") or []) >= 10 \
                 and lado_of.get("banca") and not any(
                     _en_referencia(x, texto_pz, pz.get("nombre") or "") or _en_referencia(pz.get("nombre") or "", _plano(x), x)
-                    for x in [*(lado_of.get("titulares") or []), *(lado_of.get("banca") or [])]):
+                    for h in [*(lado_of.get("titulares") or []), *(lado_of.get("banca") or [])]
+                    for x in [h, *((lado_of.get("alias") or {}).get(h) or [])]):
             motivos.append(f"{quien}: {pz.get('nombre')} no figura en la hoja del partido (ni titular ni suplente)")
     # el rol contra el grid (646): en sombra hasta medirlo con los veredictos
     roles_grid = roles_vs_grid(bloque, of)
