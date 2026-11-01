@@ -68,7 +68,7 @@ se perdería.
 | `teorema-del-echado` | P1a, F2 y F1 **los calcula el backend** (`GET /analisis/cowork/tde/{id}`); el resto lo escribís vos | pestaña **Teorema del Echado** |
 | `teorema-del-echado` | `tde.bloques[]`: IE, ISE, tipología, ventana, vías — **uno por equipo** | pestaña **Teorema del Echado** |
 | *(cualquiera)* | `veredicto.porLado[l].leccion` + `skill` + `reglaTocada` | sección **Aprendizaje** |
-| espina de la burbuja | `lecturaSad.espina`: por equipo `{lectura: positiva\|cero\|negativa\|neutra, guia: total\|condicion, porque}` — adónde va su K total después de ESTE partido según la historia de sus burbujas (tope, forma, cómo se cortan); parte de `espinaTarjeta` y dice «contra la tarjeta porque…» si se aparta de una fuerte | caja «Reventón de la burbuja» del parte; el veredicto la compara con lo que hizo la K y **Aprendizaje** mide cada lectura contra la frecuencia de ese movimiento |
+| espina de la burbuja | `lecturaSad.espina`: por equipo `{lectura: positiva\|cero\|negativa, guia: total\|condicion\|pronostico, porque}` («neutra» salió en sad-analysis v4.4) — adónde va su K total después de ESTE partido según la historia de sus burbujas (tope, forma, cómo se cortan); parte de `espinaTarjeta` y dice «contra la tarjeta porque…» si se aparta de una fuerte | caja «Reventón de la burbuja» del parte; el veredicto la compara con lo que hizo la K y **Aprendizaje** mide cada lectura contra la frecuencia de ese movimiento |
 | reventón, después del partido | **nada**: `objetivo.reventon` reconstruye la burbuja declarada antes del partido y dice si ese partido la reventó (`docs/REVENTON.md` §11); observación, no veredicto | banda del veredicto (`↯ reventó` / `→ siguió`) y sección **Aprendizaje** (tasa por nivel de riesgo contra el backtest) |
 | `futbol-timeline` | `timelineEventos` (solo institucional) + narrativa | pestaña **Timeline** (fundida con los partidos calculados) |
 | `diagnostico-tactico` | los insumos **los calcula el backend** (`GET /analisis/cowork/dtp/{id}`: partido anterior con goles y posesión atada al marcador, XI de referencia con carriles, cambios, parejas nuevas, descanso y la **apertura previa** contra la que se cierra); vos escribís `dtp.bloques[]` —uno por equipo foco— con M1, M2 (incluidas las 6 respuestas del checklist del bloque rival: la CLASE la calcula el backend), M3, M6 y el cierre (M4, M5, mecanismo abierto); más `cadena.{a,b}.pronostico` y el documento `dtp` en prosa si querés | recibo (`dtp.claseBloqueRival`), la cadena de la página de **Equipo** y la pestaña **DTP** (el documento `dtp`, debajo de la pizarra) |
@@ -1069,7 +1069,7 @@ Escribís vos (es juicio, no se puede calcular):
       vos en `alertas` (ni «CERCA_DEL_EXTREMO» ni con otro nombre): sale
       duplicada. Va en `lecturaSad.reventon` y en el falsador.
       CON K-EXTREMO O K-CERCA-EXTREMO (la total o la de la condición), LA
-      ESPINA NO DICE QUE LA RACHA SIGUE: va «cero» o «neutra», o el `porque`
+      ESPINA NO DICE QUE LA RACHA SIGUE: va «cero» o al corte, o el `porque`
       nombra el extremo (récord, franja alta) y el hecho del partido que la
       sostiene —así el recibo no la cobra—. Si no, el backend pone
       ESPINA-SIGUE-EN-EXTREMO y el recibo lo avisa (Leones–Libertad y
@@ -1099,7 +1099,12 @@ Escribís vos (es juicio, no se puede calcular):
     · `positiva`: la K crece (o arranca si estaba en 0) → gana;
     · `cero`: la K se reinicia → empata;
     · `negativa`: la K se va (o se hunde más) en negativo → pierde;
-    · `neutra`: la historia no dice nada para este partido (válido y honesto).
+    («neutra» SALIÓ en sad-analysis v4.4, 01/11/2026: acertó 0 de 17 porque la
+    K siempre se mueve. SIN LECTURA PROPIA —sin tarjeta fuerte que seguir, sin
+    hecho de ESTE partido y sin lectura de los skills con la tarjeta débil— la
+    espina SIGUE AL 1X2 que declaraste, con `"guia": "pronostico"`: el elegido
+    `positiva`, el otro `negativa`; si elegiste el empate, `cero` en los dos.
+    Aprendizaje la mide aparte. Un depósito con «neutra» se rechaza.)
   Con `porque` en una frase. Guía calibrada para no inventar (backtest de 87
   mil burbujas, REVENTON §14; viaja en `riesgo.movimiento` de cada burbuja y
   la tarjeta la muestra):
@@ -1118,7 +1123,8 @@ Escribís vos (es juicio, no se puede calcular):
   que la frecuencia de ese movimiento. Ejemplo:
   `"espina": {"a": {"lectura": "positiva", "porque": "rachas regulares, lejos de
   su tope y sus burbujas se cortan empatando, no perdiendo"}, "b": {"lectura":
-  "neutra", "porque": "DT nuevo: la historia de las K es de otro equipo"}}`.
+  "negativa", "guia": "pronostico", "porque": "DT nuevo: la historia de las K es de
+  otro equipo; sin lectura propia, sigue al 1X2 (gana el local)"}}`.
   QUÉ K LEÉS (`guia`, desde el 15/10/2026). Hay equipos que son otros según
   dónde juegan: en casa ganan siempre y afuera les cuesta, o al revés. Para
   esos la burbuja que cuenta es la de la CONDICIÓN de hoy: `familias.local`
@@ -1156,8 +1162,8 @@ Escribís vos (es juicio, no se puede calcular):
   6-B). Los números no
   se copian: el backend los recalcula en `reventonCalculado.*.otrasFamilias`.
   LA ESPINA CONTRA EL RIESGO SE DICE (18/10/2026, Albion–Torque: la tarjeta
-  decía riesgo ALTO de cortar su mala racha, la espina era «neutra» sin
-  nombrarlo, y Albion ganó). Podés leer contra el riesgo calculado, pero
+  decía riesgo ALTO de cortar su mala racha, la espina era «neutra» —ya no
+  existe— sin nombrarlo, y Albion ganó). Podés leer contra el riesgo calculado, pero
   entonces el `porque` dice «contra el riesgo alto porque…» y el ensayo lo
   cuenta con esas palabras; si no, la tira grita ESPINA-VS-RIESGO y el
   recibo lo cobra en `faltan`. El riesgo es de la BURBUJA, no del equipo:
@@ -1495,8 +1501,8 @@ negritas, citas y tablas se pintan bien en la app.
             ganador. Es lo primero que se lee: escribilo para eso. Lleva UN
             PÁRRAFO DE LAS BURBUJAS: si las K de cada equipo le dan buena
             espina o no —la espina que declaraste en `lecturaSad.espina`
-            (crece, se reinicia, negativa o neutra), con qué K la leíste (total,
-            de local, de visita) y por qué, contada en prosa—. Si el ensayo no
+            (crece, se reinicia o negativa), con qué K la leíste (total,
+            de local, de visita, o el 1X2 con `guia: pronostico`) y por qué, contada en prosa—. Si el ensayo no
             nombra la espina ni las burbujas, el recibo lo avisa en `faltan`
             (`ensayo.espina`).
 
@@ -1546,8 +1552,11 @@ el pantallazo es el procedimiento.
   **TDE v0.1.24 (26/10/2026):** las ramas del que persigue (`siRecibePrimero`,
   `siLeEmpatan` empujando, `siIguala`) declaran `desenlace`: `se_rompe`
   (concede otro antes de igualar) · `rescata` (iguala o vuelve adelante) ·
-  `abierto`. Con ISE de rama ≥ 7 el defecto es `se_rompe` (en la cohorte c3,
-  2 de 38 remontaron); `rescata` ahí pide `porqueDesenlace` con el hecho. El
+  `abierto`. **Desde la v0.1.25 (01/11/2026) el defecto es `abierto` con
+  cualquier ISE de rama** (el corte en 7 no separó: 39 % contra 41 % de
+  remontadas en 220 tramos), y `se_rompe` o `rescata` piden `porqueDesenlace`
+  con el hecho de ESTE partido; los partes de la v0.1.24 se cobran con su
+  regla. El
   recibo lo pide en `faltan` y el veredicto lo mide por tramo. Y la ventaja se
   lee por el MINUTO del gol, no por el IE (disciplina 66): con gol hasta el 30'
   escribí primero `siLeEmpatan`; con ventaja desde el 31', la nota cita la
@@ -1638,10 +1647,13 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
          "siMarcaPrimero": {"sob1": 0, "tipologia": "ECHADA-VOL",
                             "nota": "administra: la ventana cuenta desde el minuto del gol"},
          "siRecibePrimero": {"sob1": 1, "sob2": 0.5, "tipologia": "SOBREEXPOSICION", "desenlace": "se_rompe",
+                             "porqueDesenlace": "el rival administra con bloque bajo y contra de 3 (DTP)",
                              "nota": "persigue con los laterales arriba", "ventana": "desde el gol +15"},
          "siLeEmpatan": {"sob1": 0.5, "sob2": 0.5, "desenlace": "abierto",
                          "nota": "si le empatan reabre la SOB desde ese minuto"},
-         "siIguala": {"sob1": 1, "sob2": 0.5, "desenlace": "rescata", "nota": "si iba abajo y empata, sigue empujando"},
+         "siIguala": {"sob1": 1, "sob2": 0.5, "desenlace": "rescata",
+                      "porqueDesenlace": "banco ofensivo documentado (dos delanteros de cambio)",
+                      "nota": "si iba abajo y empata, sigue empujando"},
          "siExpulsion": {"propia": {"nota": "roja ganando → ECHADA-NUM, ISE anulado; perdiendo → ISE agravado"},
                          "rival": {"nota": "con uno más empuja: ventana desde la roja +15"}}}},
       {"equipo": "a",

@@ -1327,6 +1327,20 @@ conversación se pierde en la siguiente.
      revisión siguiente). Subida a la cuenta el 30/10 a las 05:47 de Lima
      (`SUBIDA_VERSION`).
 
+19. **Cuatro skills redactados el 01/11/2026** (usuario aprobó las propuestas
+   de `docs/revisiones/`): **TDE v0.1.25** (el defecto del desenlace pasa a
+   `abierto` con cualquier ISE de rama —el corte en 7 no separó: 39 % contra
+   41 %—, `se_rompe`/`rescata` piden `porqueDesenlace`, la pelota parada va a
+   `otra_via` (744); la app cobra los partes de la v0.1.24 con su regla,
+   `veredicto.regimen_desenlace`), **sad-analysis v4.4** (sale la espina
+   `neutra` —0 de 17—, entra `guia: pronostico`: sin lectura propia la espina
+   sigue al 1X2; un depósito con `neutra` se rechaza; el favorito con el número
+   del mercado), **DTP v1.7** y **EFE v1.9** + `efe-dashboard` v1.12.
+   `CORTE_VERSION` con fecha 01/11. Lo que los skills marcan «pendiente de la
+   app» está en `docs/revisiones/PENDIENTES.md`. **Pendiente del usuario**:
+   subir los cinco zips, anotar la hora en `SUBIDA_VERSION` y cerrar con 🔑 las
+   anteriores de cada skill.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel

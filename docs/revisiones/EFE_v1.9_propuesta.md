@@ -1,6 +1,6 @@
 # Propuesta de revisión · `efe-clasificador` v1.8 → v1.9
 
-**Estado:** PROPUESTA, sin aprobar. Escrita el 01/11/2026 desde las **296
+**Estado:** APROBADA por el usuario entera (01/11/2026) y redactada (ver «Redactada (01/11/2026)» al final). Escrita el 01/11/2026 desde las **296
 lecciones pendientes** del dossier (294 de `efe-clasificador` y 2 de
 `efe-dashboard`). Salen de los partes del 28/10 al 01/11, escritos con la v1.8.
 La única excepción es una lección del dashboard del 24/10. La base es la v1.8
@@ -610,3 +610,38 @@ contraejemplos confirman que amplía el rango.
 La asignación es por la regla que cita cada lección. Una lección que toca dos
 reglas cuenta en la primera que nombra. Las cuentas por punto se hicieron sobre
 el JSON de `/analisis/cowork/lecciones` del 01/11/2026 (05:08 UTC).
+
+## Redactada (01/11/2026)
+
+- **`efe-clasificador` v1.9:** la rúbrica pasa a
+  `docs/skills/efe-clasificador/references/rubrica-efe-v1.9.md` (con `git mv`
+  desde la v1.8), con el changelog de los cambios 1 a 7 y las notas sin
+  cambio. Cada regla va en su bloque con sus casos: la tabla F1 con recambios,
+  rotables, la prosa y el once (F1); la rama del once alternativo y el
+  recomputo (F4); el rodaje en la categoría y el suplente sin rodaje (B6) y
+  la zona GK del día (F3); las fuentes en las dos direcciones (F1, y FACTOR-X
+  en F5); la F3 por zona con su tabla y quién cubre, y B5/F4 (B5, F3); D3 y E
+  por condición (D, E) y COLAPSO (alertas); EJE-DEBUTANTE con el once
+  oficial (alertas, y la tabla resumen). Los matices de la brecha van bajo la
+  regla de la v1.7. `SKILL.md` en v1.9 con cuatro líneas nuevas en «Reglas
+  que no se negocian» (las tres del plan más la jerarquía de fuentes) y la
+  rama de los dos lados en el protocolo sin XI.
+- **`efe-dashboard` v1.12:** los tres puntos de su sección (récord de racha
+  no baja la banda de goleada, la goleada como rama en «Para perder», y lo
+  que baja a la caja de sensibilidad y al F6 con su origen).
+- **Lo que la rúbrica cita como hecho de la app** (existe hoy):
+  `GET /analisis/cowork/f1/{id}` (`titularidades`, `rolSugerido`,
+  `sancionados`), `F1-DECISIVO-FUERA`, `ONCE-SIN-FILA-F1`,
+  `SANCION-SIN-DECLARAR`, `EFE-EMPATE-TECNICO` y `parejasNuevas` de los
+  insumos del DTP (sobre el XI de referencia).
+- **Escrito como «pendiente de la app», sin nombrar campos ni alertas que no
+  existen:** el aviso del recibo por nombres de la prosa sin fila F1 y el
+  recambio sugerido por zona (cambio 1); la alerta del recomputo pendiente
+  (cambio 2, propuesta como `EFE-RECOMPUTO-PENDIENTE`); el arquero titular
+  del día y los dos que se alternan (cambio 3); las parejas nuevas sobre el
+  once oficial y sus dos avisos (cambio 7, propuestos como
+  `EJE-DEBUTANTE-SIN-DECLARAR` / `-SIN-OBJETO`); la tasa del de mayor
+  porcentaje con y sin `EFE-EMPATE-TECNICO` en Aprendizaje.
+- **Falta:** el paso 3 de «Cómo se aplica» (la app: `CORTE_VERSION` con
+  v1.9 y v1.12, las alertas, el aviso del recibo y el `recambio`), el paso 4
+  (`docs/COWORK.md`) y los zips para que el usuario los suba a la cuenta.

@@ -756,7 +756,12 @@ def _lectura_sad(x, rechazos: list | None = None) -> dict:
     }
 
 
-ESPINAS = ("positiva", "cero", "negativa", "neutra")
+# sad-analysis v4.4 (01/11/2026): `neutra` SALE de los depósitos nuevos —acertó
+# 0 de 17: no puede acertar nunca, la K siempre se mueve—. Sin lectura propia la
+# espina sigue al 1X2 declarado con `guia: pronostico`. Los partes viejos con
+# `neutra` se leen igual (veredicto y Aprendizaje la siguen contando aparte)
+ESPINAS = ("positiva", "cero", "negativa")
+ESPINAS_LEGADO = ESPINAS + ("neutra",)
 # las palabras del usuario también entran: «crece», «se reinicia», «se va a negativo»
 _ESPINA_ALIAS = {"crece": "positiva", "sube": "positiva", "reinicia": "cero", "se reinicia": "cero",
                  "baja": "negativa", "negativo": "negativa", "positivo": "positiva"}
@@ -764,10 +769,15 @@ _ESPINA_ALIAS = {"crece": "positiva", "sube": "positiva", "reinicia": "cero", "s
 # local si es local, la de visita si es visitante). Pedido del usuario
 # (15/10/2026): hay equipos que en casa ganan siempre y afuera no, y otros al
 # revés; para esos la burbuja que cuenta es la de la condición
-GUIAS = ("total", "condicion")
+# `pronostico` (sad-analysis v4.4): sin tarjeta fuerte, sin hecho del partido
+# y sin lectura de los skills, la espina sigue al 1X2 declarado —el elegido
+# `positiva`, el otro `negativa`; el empate, `cero` en los dos— y Aprendizaje la
+# mide aparte para que no se mezcle con la lectura propia
+GUIAS = ("total", "condicion", "pronostico")
 _GUIA_ALIAS = {"condición": "condicion", "local": "condicion", "visita": "condicion",
                "visitante": "condicion", "k local": "condicion", "k visita": "condicion",
-               "general": "total", "k total": "total"}
+               "general": "total", "k total": "total",
+               "pronóstico": "pronostico", "1x2": "pronostico", "el 1x2": "pronostico"}
 
 
 def _espina(x, rechazos: list) -> dict:
@@ -777,8 +787,9 @@ def _espina(x, rechazos: list) -> dict:
     burbujas (a 0 o al otro signo), lo regular que es— le sirve al analista
     para LEER el partido. Esto le pide que diga, por equipo, adónde va su K
     total después de ESTE partido: `positiva` (crece, o arranca si estaba en 0:
-    gana), `cero` (se reinicia: empata), `negativa` (pierde) o `neutra` (la
-    historia no dice nada), con su porqué. El veredicto lo compara con lo que
+    gana), `cero` (se reinicia: empata) o `negativa` (pierde), con su porqué
+    (`neutra` salió en la v4.4 de sad-analysis: sin lectura propia se sigue al
+    1X2 con `guia: pronostico`). El veredicto lo compara con lo que
     hizo la K (`objetivo.espina`) y las lecciones dicen si la lectura acierta
     más que la frecuencia de cada movimiento.
 
@@ -790,7 +801,7 @@ def _espina(x, rechazos: list) -> dict:
     if not x:
         return {}
     x = _dict(x, rechazos, "lecturaSad.espina",
-              '{"a": {"lectura": "positiva|cero|negativa|neutra", "guia": "total|condicion", "porque": "…"}, "b": {…}}')
+              '{"a": {"lectura": "positiva|cero|negativa", "guia": "total|condicion|pronostico", "porque": "…"}, "b": {…}}')
     out = {}
     for lado in ("a", "b"):
         v = x.get(lado)
@@ -800,21 +811,28 @@ def _espina(x, rechazos: list) -> dict:
             v = {"lectura": v}
         if not isinstance(v, dict):
             rechazos.append({"donde": f"lecturaSad.espina.{lado}", "porque": "va un objeto",
-                             "esperado": '{"lectura": "positiva|cero|negativa|neutra", "porque": "…"}'})
+                             "esperado": '{"lectura": "positiva|cero|negativa", "porque": "…"}'})
             continue
         lectura = _txt(v.get("lectura")).lower()
         lectura = _ESPINA_ALIAS.get(lectura, lectura)
+        if lectura == "neutra":
+            rechazos.append({"donde": f"lecturaSad.espina.{lado}.lectura",
+                             "porque": "«neutra» salió en sad-analysis v4.4: acertó 0 de 17, la K siempre se mueve",
+                             "esperado": "sin lectura propia, la del 1X2 declarado con guia «pronostico»: el "
+                                         "elegido positiva, el otro negativa; el empate, cero en los dos"})
+            continue
         if lectura not in ESPINAS:
             rechazos.append({"donde": f"lecturaSad.espina.{lado}.lectura",
                              "porque": f"«{lectura}» no es una lectura",
-                             "esperado": "positiva (crece) · cero (se reinicia) · negativa · neutra"})
+                             "esperado": "positiva (crece) · cero (se reinicia) · negativa"})
             continue
         guia = _txt(v.get("guia")).lower() or "total"
         guia = _GUIA_ALIAS.get(guia, guia)
         if guia not in GUIAS:
             rechazos.append({"donde": f"lecturaSad.espina.{lado}.guia",
                              "porque": f"«{guia}» no es una guía: se tomó la total",
-                             "esperado": "total · condicion (la K local si juega de local, la de visita si es visitante)"})
+                             "esperado": "total · condicion (la K local si juega de local, la de visita si es visitante) · "
+                                         "pronostico (sin lectura propia: sigue al 1X2 declarado)"})
             guia = "total"
         out[lado] = {"lectura": lectura, "guia": guia, "porque": _txt(v.get("porque"))}
     return out
@@ -1155,7 +1173,7 @@ def alertas_espina_extremo(reventon: dict | None, espina: dict | None, nombres: 
                     f"({x['lectura']}) con la burbuja {x['donde']} en su {x['nivel']}"
                     + (f" (K {x['k']:+.2f})" if isinstance(x.get("k"), (int, float)) else "")
                     + ": con K-EXTREMO o K-CERCA-EXTREMO la espina no declara que la racha sigue —se dice "
-                      "«cero» o «neutra», o se nombra el hecho del partido que la sostiene— y el 1X2 no se "
+                      "«cero» o el corte, o se nombra el hecho del partido que la sostiene— y el 1X2 no se "
                       "carga a la continuidad (Leones–Libertad y Nacional–Braga, 25/10/2026)"),
     } for x in espina_sigue_en_extremo(reventon, espina) if not x["dicho"]]
 
@@ -2338,15 +2356,17 @@ def ise_de_ramas(reasig: dict, indicadores: dict) -> dict:
         rama["iseRama"] = round((s1 + s2 + s3) / 3 * 10, 2)
         if heredados:
             rama["iseRamaHeredados"] = heredados
-        # TDE v0.1.24 (disciplina 65): la lectura por defecto sale del número
+        # TDE v0.1.25 (disciplina 65): el corte en 7 no separó (39 % contra 41 %
+        # de remontadas en 220 tramos) y el defecto es `abierto` con cualquier
+        # ISE; el veredicto cobra los partes de la v0.1.24 con su regla
         if rama_empuja(nombre, rama):
-            rama["desenlaceDefecto"] = "se_rompe" if rama["iseRama"] >= ISE_RAMA_SE_ROMPE else "abierto"
+            rama["desenlaceDefecto"] = "abierto"
     return reasig
 
 
 def avisos_desenlace(bloques: list[dict]) -> list[str]:
-    """TDE v0.1.24 (disciplina 65): ramas de sobreexposición sin `desenlace`, o
-    con `rescata` contra un ISE de rama ≥ 7 sin el hecho que lo sostiene."""
+    """TDE v0.1.24-25 (disciplina 65): ramas de sobreexposición sin `desenlace`,
+    o con `se_rompe`/`rescata` sin el hecho que lo sostiene (`porqueDesenlace`)."""
     out = []
     for b in bloques:
         for rama, r in (b.get("reasignacion") or {}).items():
@@ -2355,9 +2375,10 @@ def avisos_desenlace(bloques: list[dict]) -> list[str]:
             donde = f"{b.get('equipo') or '?'}.{rama}"
             if not r.get("desenlace"):
                 out.append(f"{donde} sin `desenlace`")
-            elif r["desenlace"] == "rescata" and (r.get("iseRama") or 0) >= ISE_RAMA_SE_ROMPE \
-                    and not r.get("porqueDesenlace"):
-                out.append(f"{donde} dice «rescata» con ISE de rama {r['iseRama']:g} y sin `porqueDesenlace`")
+            elif r["desenlace"] in ("se_rompe", "rescata") and not r.get("porqueDesenlace"):
+                # v0.1.25: `se_rompe` y `rescata` se escriben con el hecho que los
+                # sostiene; sin él, la lectura es `abierto`
+                out.append(f"{donde} dice «{r['desenlace']}» sin `porqueDesenlace` (el hecho que lo sostiene)")
     return out
 
 
@@ -3346,9 +3367,9 @@ def guardar(payload: dict) -> dict:
             "bloque": "tde.reasignacion.desenlace",
             "costara": f"{'; '.join(sin_des)}: el veredicto no va a poder decir si el régimen del que "
                        "persigue terminó como se leyó",
-            "comoSeArregla": '"desenlace": "se_rompe" | "rescata" | "abierto" en la rama —con ISE de rama ≥ 7 '
-                             'el defecto es «se_rompe»; «rescata» ahí pide "porqueDesenlace" con el hecho '
-                             '(rival que no administra, banco ofensivo documentado, roja rival)— (TDE v0.1.24)',
+            "comoSeArregla": '"desenlace": "se_rompe" | "rescata" | "abierto" en la rama —el defecto es '
+                             '«abierto»; «se_rompe» y «rescata» piden "porqueDesenlace" con el hecho de ESTE '
+                             'partido (rival que no administra, banco ofensivo documentado, roja rival)— (TDE v0.1.25)',
         })
     # UN IE QUE NO SE PUEDE CALCULAR SE DICE AL DEPOSITAR. Athletico-PR y
     # Gimnasia de Mendoza (17/10/2026) llegaron sin un solo indicador S: el IE
@@ -3438,8 +3459,8 @@ def guardar(payload: dict) -> dict:
             "bloque": "ensayo.espina",
             "costara": "la espina está declarada pero el ensayo no la cuenta: quien lee el ensayo "
                        "no se entera de qué dicen las burbujas de cada equipo",
-            "comoSeArregla": "un párrafo en el ensayo: la espina de cada equipo (crece, se reinicia, "
-                             "negativa o neutra), con qué K se leyó (total, de local, de visita) y por qué",
+            "comoSeArregla": "un párrafo en el ensayo: la espina de cada equipo (crece, se reinicia "
+                             "o negativa), con qué K se leyó (total, de local, de visita, o el 1X2) y por qué",
         })
     # LA ESPINA CONTRA EL RIESGO, SIN DECIRLO (Albion–Torque, 18/10/2026)
     try:
@@ -3476,7 +3497,7 @@ def guardar(payload: dict) -> dict:
             "bloque": f"lecturaSad.espina.{x['lado']}", "codigo": "ESPINA-SIGUE-EN-EXTREMO",
             "costara": f"la espina dice que la racha {x['signo']} sigue con la burbuja {x['donde']} en su "
                        f"{x['nivel']}: el 25/10 reventaron así Libertad y Nacional",
-            "comoSeArregla": "con K-EXTREMO o K-CERCA-EXTREMO la espina va «cero» o «neutra», o el `porque` "
+            "comoSeArregla": "con K-EXTREMO o K-CERCA-EXTREMO la espina va «cero» o al corte, o el `porque` "
                              "nombra el extremo (récord, franja alta) y el hecho del partido que la sostiene; el "
                              "1X2 no se carga a la continuidad",
         })
@@ -5451,13 +5472,14 @@ def contrato() -> dict:
         "lecturaSad": {
             "claves": ["moduloOperativo", "unXDos", "contextoEmocional", "datoEstructural", "paradoja", "reventon",
                        "espina"],
-            "espina": '{"a": {"lectura": "positiva|cero|negativa|neutra", "guia": "total|condicion", '
+            "espina": '{"a": {"lectura": "positiva|cero|negativa", "guia": "total|condicion|pronostico", '
                       '"porque": "…"}, "b": {…}}: por '
                       "equipo, adónde va su K después de ESTE partido según la historia de sus burbujas "
                       "(tope, forma de las rachas, cómo se cortaron: `historial.*.termina`): positiva = crece "
-                      "o arranca (gana), cero = se reinicia (empata), negativa (pierde), neutra = no dice nada. "
-                      "`guia`: qué burbuja leíste — `total`, o `condicion` (familias.local si juega de local, "
-                      "familias.visita si es visitante) cuando el equipo es otro en casa que afuera. "
+                      "o arranca (gana), cero = se reinicia (empata), negativa (pierde); «neutra» ya no entra "
+                      "(sad-analysis v4.4). `guia`: qué burbuja leíste — `total`, o `condicion` (familias.local "
+                      "si juega de local, familias.visita si es visitante) cuando el equipo es otro en casa que "
+                      "afuera, o `pronostico` cuando no hay lectura propia y la espina sigue al 1X2 declarado. "
                       "El veredicto la compara con lo que hizo la K y Aprendizaje mide cada guía aparte",
             "reventon": "UNA línea por equipo con tu lectura del reventón de la burbuja "
                         "(GET /equipos/{id}/burbujas, docs/REVENTON.md): qué racha NO se recomienda "

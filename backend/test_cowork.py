@@ -95,7 +95,8 @@ def _parte(fixture_id: int, nombre_a: str = "", nombre_b: str = "") -> dict:
              "falsador": "si sostiene la línea tras el 75'",
              "reasignacion": {"siMarcaPrimero": {"sob1": 0, "tipologia": "ECHADA-VOL", "nota": "administra"},
                               "siRecibePrimero": {"sob1": 1, "sob2": 0.5, "nota": "persigue y se expone",
-                                                  "desenlace": "se_rompe"},
+                                                  "desenlace": "se_rompe",
+                                                  "porqueDesenlace": "el rival administra con contra de 3"},
                               "siLeEmpatan": {"sob1": 0.5, "sob2": 0.5, "nota": "vuelve a empujar",
                                               "desenlace": "abierto"},
                               "siExpulsion": {"propia": {"nota": "ECHADA-NUM"}, "rival": {"nota": "empuja con uno más"}}}},
@@ -5200,17 +5201,17 @@ def main():
                       "siLeEmpatan": {"sob1": 1, "sob2": 0.5, "sob3": 0.5},
                       "siIguala": {"sob1": 1, "sob2": 1, "sob3": 1, "desenlace": "rescata"},
                       "siMarcaPrimero": {"sob1": 0, "desenlace": "se_rompe"}}, _rz65, "t"), {"SOB2": 0, "SOB3": 0.5})
-    check("65: «se rompe» se normaliza, el defecto sale del ISE de rama (8.3 → se_rompe, 6.7 → abierto) y en siMarcaPrimero se rechaza",
-          _r65["siRecibePrimero"]["desenlace"] == "se_rompe" and _r65["siRecibePrimero"]["desenlaceDefecto"] == "se_rompe"
+    check("65 (v0.1.25): «se rompe» se normaliza, el defecto es «abierto» con cualquier ISE de rama (8.3 y 6.7) y en siMarcaPrimero se rechaza",
+          _r65["siRecibePrimero"]["desenlace"] == "se_rompe" and _r65["siRecibePrimero"]["desenlaceDefecto"] == "abierto"
           and _r65["siLeEmpatan"]["desenlaceDefecto"] == "abierto" and "desenlace" not in _r65["siMarcaPrimero"]
           and [r["donde"] for r in _rz65] == ["t.siMarcaPrimero.desenlace"], (_r65, _rz65))
     _rz65b = []
     _rsg({"siRecibePrimero": {"sob1": 1, "desenlace": "remonta"}}, _rz65b, "t")
     check("65: un desenlace fuera de la lista se rechaza con motivo", _rz65b and "se_rompe" in _rz65b[0]["esperado"], _rz65b)
     _av65 = _avd([{"equipo": "a", "reasignacion": _r65}])
-    check("65: el recibo pide el desenlace que falta y el «rescata» con ISE ≥ 7 sin porqué",
+    check("65 (v0.1.25): el recibo pide el desenlace que falta y el «se_rompe»/«rescata» sin porqué",
           any("a.siLeEmpatan sin" in x for x in _av65) and any("a.siIguala dice «rescata»" in x for x in _av65)
-          and not any("siRecibePrimero" in x for x in _av65), _av65)
+          and any("a.siRecibePrimero dice «se_rompe»" in x for x in _av65), _av65)
     # 908 (U. de Concepción): siLeEmpatan/siIguala que se cierran con el empate
     # (ECHADA) no son del que persigue: ni desenlace pedido ni defecto cobrado
     _rz908 = []
@@ -5222,7 +5223,7 @@ def main():
     check("908: siLeEmpatan y siIguala en ECHADA no piden desenlace ni llevan defecto; siRecibePrimero sí",
           _av908 == ["a.siRecibePrimero sin `desenlace`"]
           and "desenlaceDefecto" not in _r908["siLeEmpatan"] and "desenlaceDefecto" not in _r908["siIguala"]
-          and _r908["siRecibePrimero"]["desenlaceDefecto"] == "se_rompe", (_av908, _r908))
+          and _r908["siRecibePrimero"]["desenlaceDefecto"] == "abierto", (_av908, _r908))
     _t908 = tramos_por_marcador({"reasignacion": {"siLeEmpatan": {"tipologia": "ECHADA-VOL", "iseRama": 9.0}}},
                                 [{"minuto": 20, "lado": "a"}, {"minuto": 50, "lado": "b"}, {"minuto": 80, "lado": "b"}], "a")
     check("908: el veredicto no le cobra el defecto «se_rompe» a una rama de empate en ECHADA",
@@ -5290,6 +5291,20 @@ def main():
                 "a", 1, 1, False)
     check("…pero lo DECLARADO se mide igual en cualquier parte", _dec["cumplido"] is False
           and "noEvaluable" not in _dec, _dec)
+    from backend.analisis.parte import _espina as _esp44
+    _rz44 = []
+    _e44 = _esp44({"a": {"lectura": "neutra"}, "b": {"lectura": "positiva", "guia": "1X2", "porque": "sigue al 1X2"}}, _rz44)
+    check("sad v4.4: «neutra» se rechaza con motivo (sugiere guía pronostico) y la guía «pronostico» entra",
+          "a" not in _e44 and _e44["b"]["guia"] == "pronostico" and len(_rz44) == 1
+          and "pronostico" in _rz44[0]["esperado"], (_e44, _rz44))
+    from backend.analisis.veredicto import regimen_desenlace as _rgd
+    _ab = _ddt({"iseRama": 10}, ((56, 0), 0, 0, "gol", {"minuto": 56, "lado": "b"}), "a", 0, 2, "abierto")
+    _v24 = _ddt({"iseRama": 10}, ((56, 0), 0, 0, "gol", {"minuto": 56, "lado": "b"}), "a", 0, 2, True)
+    check("TDE v0.1.25: con ISE de rama 10 el defecto es «abierto» (no se cobra); un parte de la v0.1.24 conserva «se_rompe»",
+          _ab["defecto"] == "abierto" and _ab["cumplido"] is None and _v24["defecto"] == "se_rompe"
+          and _v24["cumplido"] is True and _rgd("2026-11-01 07:00:00") == "abierto"
+          and _rgd("2026-10-28 12:00:00") is True and _rgd("2026-10-24 12:00:00") is False and _rgd(None) == "abierto",
+          (_ab, _v24))
     _t693 = tramos_por_marcador({"reasignacion": {"siRecibePrimero": {"desenlace": "se_rompe"}}},
                                 [{"minuto": 10, "lado": "b", "penal": True}, {"minuto": 20, "lado": "b"},
                                  {"minuto": 57, "lado": "b"}, {"minuto": 80, "lado": "a"}], "a")
@@ -5435,9 +5450,9 @@ def main():
           set(esm) >= {"positiva", "cero", "negativa", "neutra", "lectura"} and esm["lectura"] == "sin n"
           and "frecuenciaDelMovimiento" in esm["positiva"], esm)
     _pg = esm.get("porGuia") or {}
-    check("y aparte por guía (K total · K de la condición), cada una con sus lados, que suman el total",
-          set(_pg) == {"total", "condicion"} and _pg["condicion"]["lados"] > 0
-          and _pg["total"]["lados"] + _pg["condicion"]["lados"] == esm["lados"], _pg)
+    check("y aparte por guía (K total · K de la condición · el 1X2, v4.4), cada una con sus lados, que suman el total",
+          set(_pg) == {"total", "condicion", "pronostico"} and _pg["condicion"]["lados"] > 0
+          and sum(_pg[g]["lados"] for g in _pg) == esm["lados"], _pg)
 
     rvm = inv["acreditables"]["reventon"]
     check("las métricas traen la tasa de reventón por nivel de riesgo con el rango del backtest al lado",

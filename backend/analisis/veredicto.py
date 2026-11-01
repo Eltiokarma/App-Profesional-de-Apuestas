@@ -442,7 +442,7 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     rojas = _rojas(fixture_id, fx["home_team_id"])
     creado = _creado_en(fixture_id)
     sin_ramas = servidor_sin_ramas(creado)
-    con_defecto = regla_desenlace_vigente(creado)
+    con_defecto = regimen_desenlace(creado)
     bloques = []
     for tde in bloques_tde(parte.get("tde") or {}):
         reasig = rama_jugada(tde, goles, gl + gv, out["evidencia"]["conFicha"], rojas, sin_ramas)
@@ -1074,9 +1074,27 @@ ISE_RAMA_SE_ROMPE = 7.0
 DESENLACE_DEFECTO_DESDE = "2026-10-26 04:00:00"
 
 
+# TDE v0.1.25 (01/11/2026, aprobada por el usuario): el corte en 7 no separó
+# —220 tramos, remontó el 39 % con ISE de rama ≥ 7 y el 41 % con < 7— y el
+# defecto `se_rompe` se retira: desde acá la lectura por defecto es `abierto`
+# con cualquier ISE, que no se cobra. Los partes de la v0.1.24 se cobran con su
+# regla (una regla no se cobra hacia atrás, ni hacia adelante).
+DESENLACE_ABIERTO_DESDE = "2026-11-01 06:00:00"
+
+
 def regla_desenlace_vigente(creado_en: str | None) -> bool:
     t = str(creado_en or "").replace("T", " ")[:19]
     return not t or t >= DESENLACE_DEFECTO_DESDE
+
+
+def regimen_desenlace(creado_en: str | None):
+    """Con qué regla se cobra el desenlace POR DEFECTO de un parte: False
+    (anterior a la v0.1.24: no evaluable), True (v0.1.24: ISE de rama ≥ 7 →
+    `se_rompe`) o "abierto" (v0.1.25 en adelante, y sin fecha)."""
+    t = str(creado_en or "").replace("T", " ")[:19]
+    if not t or t >= DESENLACE_ABIERTO_DESDE:
+        return "abierto"
+    return regla_desenlace_vigente(creado_en)
 
 
 def desenlace_del_tramo(lo: dict | None, evento: tuple | None, foco: str,
@@ -1088,15 +1106,16 @@ def desenlace_del_tramo(lo: dict | None, evento: tuple | None, foco: str,
     (igualó o volvió a ponerse adelante), el final sin goles es `sin_mas_goles`
     y una roja no cierra el régimen por el marcador (`null`: cambió el número,
     disciplina 16). Lo declarado es el `desenlace` de la rama o, si no vino, la
-    lectura por defecto de su ISE (≥ 7 → `se_rompe`, si no `abierto`), dicha
-    como `defecto`. `abierto` no se cobra."""
+    lectura por defecto de su ISE (≥ 7 → `se_rompe`, si no `abierto`; desde la
+    v0.1.25, `con_defecto="abierto"`: siempre `abierto`), dicha como
+    `defecto`. `abierto` no se cobra."""
     if not isinstance(lo, dict):
         return None
     declarado = lo.get("desenlace") or None
     defecto = None
     ise = lo.get("iseRama")
     if isinstance(ise, (int, float)):
-        defecto = "se_rompe" if ise >= ISE_RAMA_SE_ROMPE else "abierto"
+        defecto = ("abierto" if con_defecto == "abierto" or ise < ISE_RAMA_SE_ROMPE else "se_rompe")
     if not declarado and not defecto:
         return None
     if evento is None:

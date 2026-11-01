@@ -728,3 +728,37 @@ Las 86 lecciones de copa nacional están repartidas en sus puntos y fijan
 rúbrica: no sostienen ningún número. La única que mueve uno, el punto 1, se
 sostiene en los 220 tramos acreditables de la medición, no en las lecciones
 sueltas.
+
+## Redactada (01/11/2026)
+
+Aprobada entera por el usuario y redactada en
+`docs/skills/teorema-del-echado/SKILL.md` (v0.1.25). No se tocó código.
+
+- **Encabezado:** entrada v0.1.25 con lo medido, lo que no entra y los sesgos.
+- **Disciplina 65 (puntos 1 y 2):** el defecto pasa a `abierto` con cualquier
+  ISE de rama; `se_rompe` y `rescata` piden un hecho; sale la cita «2 de 38
+  contra 7 de 33»; punto nuevo «El hecho»; candidato del defecto por quién
+  persigue, declarado y no aplicado; la revisión del corte queda hecha.
+- **Disciplina 61 (punto 3):** la vía del gol se declara en el cierre, con
+  fuente; la excepción de la pelota parada que era la vía escrita; el doble
+  golpe como candidato. **Disciplina 24:** la ventana del reloj separa la vía.
+- **Disciplina 66 (punto 4):** la referencia se lee completa (no pierde y
+  gana), `siLeEmpatan` en las dos ventajas, el banco ofensivo del rival y no
+  copiar la referencia de un minuto que no pasó.
+- **Disciplina 44 (b) y (f) (punto 5):** antecedente sostenido por el bloque y
+  no por el arquero, el que terminó roto, la pieza ausente y `ECHADA-PSI`.
+- **Disciplina 16 (puntos 6 y 8):** roja propia temprana empatando, el ISE
+  anulado no anula la vía propia, prórroga hasta el 120; `S1` con insumos de
+  la base y ARQUERO-NUEVO al rehacer.
+- **Disciplina 23 (punto 7)** y la casilla del añadido en
+  `references/INDICE_IE.md`: los dos añadidos y la prórroga declarada.
+- **Disciplina 63 (punto 9):** `HERENCIA-DTP` en el `sob2` de rama.
+
+Lo que es de la app quedó escrito como **pendiente de la app**, sin campos
+nuevos: `viaGol`, `porOtraVia`, quién persigue en los tramos, el aviso de la
+referencia citada, el banco del rival, la concesión tras roja y los insumos de
+`S1` en `GET …/tde/{id}`, `ARQUERO-NUEVO` calculada, `HERENCIA-DTP` en el
+`sob2` de rama y el recálculo del ISE de rama al rehacer. Lo que ya existe se
+cita: `ventajaPorMinuto` con `tasaNoPierde` y `tasaGana`, la casilla
+`anadido` con los dos tiempos y `amarillasEnLaCompeticion`/`sancionados` de
+`GET /analisis/cowork/f1/{id}`.

@@ -127,7 +127,8 @@ cae en la raíz del repo (17/10/2026).
 >   valen contra ESTE rival y con ESTE once.
 > - **La espina de la burbuja** (`lecturaSad.espina`, desde el 14/10): por
 >   equipo, adónde va su K TOTAL después de este partido —`positiva` (crece:
->   gana) · `cero` (se reinicia: empata) · `negativa` (pierde) · `neutra`—, con
+>   gana) · `cero` (se reinicia: empata) · `negativa` (pierde); sin lectura
+>   propia, la del 1X2 con `"guia": "pronostico"` (sad v4.4: `neutra` salió)—, con
 >   `porque`, leyendo su gráfica de K y cómo se le cortan las burbujas
 >   (`historial.*.termina` en `/burbujas`). No la acomodes a tu 1X2: lo que se
 >   mide es si acierta sola. Y el ENSAYO la cuenta en un párrafo de las
@@ -145,7 +146,7 @@ cae en la raíz del repo (17/10/2026).
 >   las dos lecturas en una: qué dice la historia de las burbujas y qué le
 >   agregan los skills de este partido.
 > - **La espina contra el riesgo se dice**: si leés la espina contra el riesgo
->   calculado (alto y la dejás neutra o siguiendo la racha; bajo y la cortás),
+>   calculado (alto y la dejás siguiendo la racha; bajo y la cortás),
 >   el `porque` empieza «contra el riesgo X porque…» y el ensayo lo nombra.
 >   El riesgo es de la burbuja: con racha negativa, ALTO = que reviente,
 >   o sea que el equipo deje de perder.

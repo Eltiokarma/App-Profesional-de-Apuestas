@@ -5171,17 +5171,17 @@ components:
     EspinaLado:
       type: object
       properties:
-        lectura: { type: string, enum: [positiva, cero, negativa, neutra] }
+        lectura: { type: string, enum: [positiva, cero, negativa, neutra], description: 'neutra solo en partes anteriores a sad-analysis v4.4: un depósito nuevo con neutra se rechaza con motivo (sugiere guia pronostico)' }
         guia:
           type: string
-          enum: [total, condicion]
-          description: 'qué K guió la lectura: la total (por defecto) o la de la condición en que juega hoy (local si es local, visita si es visitante). Una guía desconocida se rechaza con motivo y se toma la total'
+          enum: [total, condicion, pronostico]
+          description: 'qué K guió la lectura: la total (por defecto), la de la condición en que juega hoy (local si es local, visita si es visitante) o, sin lectura propia, el 1X2 declarado (`pronostico`, sad-analysis v4.4: el elegido positiva, el otro negativa, el empate cero en los dos; Aprendizaje la mide aparte en porGuia). Una guía desconocida se rechaza con motivo y se toma la total'
         porque: { type: string }
     EspinaObservada:
       type: object
       properties:
         lectura: { type: string, nullable: true, enum: [positiva, cero, negativa, neutra, null] }
-        guia: { type: string, enum: [total, condicion] }
+        guia: { type: string, enum: [total, condicion, pronostico] }
         porque: { type: string }
         resultado: { type: string, nullable: true, enum: [gana, empata, pierde, null] }
         movimiento: { type: string, nullable: true, enum: [positiva, cero, negativa, null], description: 'adónde fue la K total del equipo' }

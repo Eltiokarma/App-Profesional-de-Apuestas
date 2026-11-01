@@ -1887,9 +1887,10 @@ export interface CorteFamilia {
 
 export type LecturaEspina = 'positiva' | 'cero' | 'negativa' | 'neutra'
 
-/** Qué K guió la espina: la total, o la de la condición en que juega hoy
- *  (la local si es local, la de visita si es visitante). */
-export type GuiaEspina = 'total' | 'condicion'
+/** Qué K guió la espina: la total, la de la condición en que juega hoy
+ *  (la local si es local, la de visita si es visitante) o, sin lectura propia,
+ *  el 1X2 declarado (`pronostico`, sad-analysis v4.4). */
+export type GuiaEspina = 'total' | 'condicion' | 'pronostico'
 
 export interface EspinaLado {
   lectura: LecturaEspina
@@ -1943,7 +1944,7 @@ export interface EspinaMetricas {
   nMinimo: number
   nota: string
   /** la misma cuenta por guía, cada una contra la frecuencia de SUS lados */
-  porGuia?: Record<GuiaEspina, Omit<EspinaMetricas, 'porGuia'>>
+  porGuia?: Partial<Record<GuiaEspina, Omit<EspinaMetricas, 'porGuia'>>>
 }
 
 export interface ReventonObservado {
