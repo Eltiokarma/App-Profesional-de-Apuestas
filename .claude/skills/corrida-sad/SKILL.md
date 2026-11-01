@@ -517,7 +517,14 @@ POST $B/analisis/cowork/incidencias
   40 min la corrige si la API la publica); el orden de /constantes, que va del
   más nuevo al más viejo (1044, 782); la `zona` de la tabla F1, que es la de
   los onces recientes y no la del último grid (1042); y dos filas F1 con el
-  mismo nombre que compartieron una hoja: son dos personas (1039).
+  mismo nombre que compartieron una hoja: son dos personas (1039). Y desde la
+  pasada del 01/11 (noche): DTP-REHACER `tardio` con el once ya en el último
+  depósito y la formación corregida DESPUÉS del pitazo (1053, 848: el detalle
+  lo dice); la salida «pelota parada» del TDE (1058, 744: espera la v0.1.25);
+  el bloque F cerrado con la ficha después del partido (1061: lo sellado
+  antes del pitazo no se toca); la etiqueta `lectura_efe` del modo de fallo
+  de Jev (1062, 794: insumo de la fase D, no juez); y un once que la API
+  publica con 10 titulares (1060, 1045).
 
 ## Modo `mantenimiento` (los parches, automáticos)
 
