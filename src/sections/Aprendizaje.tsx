@@ -500,7 +500,7 @@ function Metricas({ d }: { d: InventarioLecciones }) {
               {a.espina.lectura === 'sin n' ? `menos de ${a.espina.nMinimo} lados por lectura: todavía no se compara` : a.espina.lectura}
             </div>
             {/* ¿qué burbuja lee mejor: la total o la de la condición (local/visita)? */}
-            {a.espina.porGuia && (['total', 'condicion'] as const).map((g) => {
+            {a.espina.porGuia && (['total', 'condicion', 'pronostico'] as const).map((g) => {
               const m = a.espina!.porGuia![g]
               if (!m || !m.lados) return null
               const juzg = (['positiva', 'cero', 'negativa'] as const).map((k) => m[k])
@@ -508,7 +508,7 @@ function Metricas({ d }: { d: InventarioLecciones }) {
               const n = juzg.reduce((s, c) => s + c.lados, 0)
               return (
                 <div key={g} style={{ font: '500 10.5px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
-                  {g === 'total' ? 'con la K total' : 'con la K de la condición'}: acertó {ac}/{n}
+                  {g === 'total' ? 'con la K total' : g === 'condicion' ? 'con la K de la condición' : 'siguiendo al 1X2'}: acertó {ac}/{n}
                   {n ? ` · ${Math.round((ac / n) * 100)}%` : ''} · {m.lectura === 'sin n' ? 'sin n todavía' : m.lectura}
                 </div>
               )

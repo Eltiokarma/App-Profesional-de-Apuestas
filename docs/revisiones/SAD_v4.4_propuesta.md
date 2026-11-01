@@ -749,3 +749,31 @@ métrica (CLAUDE.md: las copas no entran a las tablas). Fijan rúbrica:
 De las 139, 115 son acreditables y 24 de copa fijan solo rúbrica. Las dos de
 cuarentena que no enseña (Huracán–Tigre, San Antonio–Real Potosí) quedan fuera
 de la cuenta.
+
+## Redactada (01/11/2026)
+
+Aprobada entera por el usuario y redactada en `docs/skills/sad-analysis/SKILL.md`
+(v4.4 en el frontmatter, el título y el changelog de arriba). Los nueve puntos
+quedan así:
+
+- **1 y 2** en 6-B (la lista de lo que no es dato, sin «+N» hacia arriba ni
+  hacia abajo, cuándo se reabre) y 6-A (el delta ya está en el cierre, el delta
+  sin noticia, los dos elegidos en el partido parejo); pregunta 6 de la
+  Auditoría 2 ampliada.
+- **3 y 4** en el glosario y 1.6: sale `neutra`, guía `pronostico` (nombre
+  exacto del contrato: `guia: total | condicion | pronostico`), procedimiento
+  en cuatro pasos, lista cerrada de `cero` (a), lo que no es hecho (c), (e)
+  endurecida, (f) nueva sobre las tarjetas débiles que concuerdan, (g) el
+  extremo (la regla de ESPINA-SIGUE-EN-EXTREMO) y (h) espina contra marcador;
+  1.7 (e) con INFLADA.
+- **5** en 6-B (los perfiles DC restan a la visita, una sola fuente). **6** en
+  1.7 (a) (qué es cargar). **7** en 3.5 (la goleada como rama, el gol del débil
+  desde el volumen cruzado). **8** en 6-C (comprobable, por cláusula, todas las
+  vías, sin corte antes de la palanca). **9** en la sección nueva 6-E (copa
+  nacional).
+- Auditoría 2 suma las preguntas 7 (espina sin lectura) y 8 (falsador
+  comprobable); Prohibiciones suma `neutra` y el «+N».
+- No se tocó nada de la app ni `docs/COWORK.md` (punto 2 y 4 de «Cómo se
+  aplica»): van por su lado. Pendiente del usuario: subir el zip, sumar
+  `("v4.4", <fecha>)` a `CORTE_VERSION` y la hora a `SUBIDA_VERSION`, y cerrar
+  con 🔑 las anteriores a v4.4.

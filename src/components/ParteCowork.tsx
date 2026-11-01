@@ -1408,7 +1408,7 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
                           {ESPINA_TXT[e.lectura]} · {l === 'a' ? parte.partido.equipoA : parte.partido.equipoB}
                         </div>
                         <div style={{ font: '600 9.5px var(--mono)', color: 'var(--t3)', marginTop: 2 }}>
-                          {e.guia === 'condicion' ? `leída con la K de ${l === 'a' ? 'local' : 'visita'}` : 'leída con la K total'}
+                          {e.guia === 'condicion' ? `leída con la K de ${l === 'a' ? 'local' : 'visita'}` : e.guia === 'pronostico' ? 'sin lectura propia: sigue al 1X2' : 'leída con la K total'}
                         </div>
                         {e.porque && <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t2)', lineHeight: 1.45, marginTop: 4 }}>{e.porque}</div>}
                         {/* la espina de la TARJETA de esa guía: el analista la sigue o

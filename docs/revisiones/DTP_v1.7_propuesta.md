@@ -712,3 +712,27 @@ son las `ciega` + `PRE` que no son de copa.
 | 10 · MECANISMO-ABIERTO: frecuencia calculada | 29 | 8 | 4 | 17 | 26 | 3 |
 | Confirman sin cambio (DTP-REHACER `tardio`, carriles, piezas y dos capas) | 74 | 12 | 14 | 48 | 60 | 14 |
 | **Total** | **660** | **162** | **125** | **373** | **584** | **76** |
+
+## Redactada (01/11/2026)
+
+Aprobada entera por el usuario y redactada en
+`docs/skills/diagnostico-tactico/SKILL.md` como **v1.7**: entrada en el
+encabezado y los diez puntos en su módulo, con sus casos (M1: once oficial,
+otra competición, amarillas de las piezas; M2: vía entera por rama, ramas por
+número, rehacer y espejo, penales en lista de dos, media distancia, pelota
+parada con córners, banco ofensivo; checklist: línea del caso, caso armado
+con la ficha, la 6 no mide el arranque; posesión desde el mismo perfil; M3:
+rearme en cualquier tramo; MECANISMO-ABIERTO: frecuencia contada; M5:
+volumen dentro del área, sin stats no evaluable). Los candidatos (5.(d), el
+reconvertido que ataca, los dos del punto 10, San Lorenzo, los dos mismatch)
+quedan escritos como candidatos, no como regla. Ningún número se movió.
+
+Lo que la app ya trae se cita por su nombre (`M1-VS-ULTIMO-ONCE`,
+`ultimoOnceDeLiga`, `amarillasEnLaCompeticion`, `penales` con convertidos y
+errados, `avanzadas.corners` en `/equipos/{id}/stats`,
+`partidoAnterior.stats`, `partidoAnterior.mecanismoAbiertoCandidato`,
+`dtp.porBloque[].ramaJugada`). Todo lo demás de la tabla «Lo que va al
+código» va en el skill como **pendiente de la app**, sin nombre de campo ni
+de alerta, hasta que exista: el skill no promete un campo que el recibo
+todavía no conoce. Falta el paso 3 de «Cómo se aplica» (contrato, backend,
+tipos, tests y prompt), `CORTE_VERSION` y el zip.

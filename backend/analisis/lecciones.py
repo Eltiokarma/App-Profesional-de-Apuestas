@@ -314,7 +314,7 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
     # la misma cuenta por guía (K total o K de la condición): la que lee mejor
     # se ve aparte, cada una contra la frecuencia de SUS lados
     por_guia = {g: ({e: {"lados": 0, "aciertos": 0} for e in espina}, {m: 0 for m in movimientos})
-                for g in ("total", "condicion")}
+                for g in ("total", "condicion", "pronostico")}
     # la espina de la TARJETA y el analista contra ella (19/10/2026)
     tar = {"porFuerza": {f: {"lados": 0, "aciertos": 0} for f in ("fuerte", "debil")},
            # la tarjeta GENERAL (K total) o la de la condición que leyó el parte:
@@ -1338,10 +1338,10 @@ class LeccionInvalida(ValueError):
 # Historial por skill, de la más vieja a la vigente: cada lección se cierra
 # en la PRIMERA versión cuyo corte es posterior a su partido (la que la leyó).
 CORTE_VERSION = {
-    "diagnostico-tactico": [("v1.4", "2026-10-21"), ("v1.5", "2026-10-25"), ("v1.6", "2026-10-26")],
-    "efe-clasificador": [("v1.6", "2026-10-21"), ("v1.7", "2026-10-25"), ("v1.8", "2026-10-28")],
-    "sad-analysis": [("v4.0", "2026-10-21"), ("v4.1", "2026-10-25"), ("v4.2", "2026-10-28"), ("v4.3", "2026-10-30")],
-    "teorema-del-echado": [("v0.1.22", "2026-10-22"), ("v0.1.23", "2026-10-25"), ("v0.1.24", "2026-10-26")],
+    "diagnostico-tactico": [("v1.4", "2026-10-21"), ("v1.5", "2026-10-25"), ("v1.6", "2026-10-26"), ("v1.7", "2026-11-01")],
+    "efe-clasificador": [("v1.6", "2026-10-21"), ("v1.7", "2026-10-25"), ("v1.8", "2026-10-28"), ("v1.9", "2026-11-01")],
+    "sad-analysis": [("v4.0", "2026-10-21"), ("v4.1", "2026-10-25"), ("v4.2", "2026-10-28"), ("v4.3", "2026-10-30"), ("v4.4", "2026-11-01")],
+    "teorema-del-echado": [("v0.1.22", "2026-10-22"), ("v0.1.23", "2026-10-25"), ("v0.1.24", "2026-10-26"), ("v0.1.25", "2026-11-01")],
 }
 
 
