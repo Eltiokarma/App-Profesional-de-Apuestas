@@ -584,6 +584,10 @@ def rama_del_foco(goles: list[dict], lado: str) -> dict:
         acc["persiguiendo" if dif < 0 else "igualadoOArriba"] += m - t
         t, dif = m, dif + (1 if g["lado"] == lado else -1)
     acc["persiguiendo" if dif < 0 else "igualadoOArriba"] += 90 - t
+    # EMPATE DE MINUTOS (incidencia 1057, Dortmund: 45 y 45): la regla resuelve a
+    # igualadoOArriba, pero lo dice; las dos ramas se juzgan con la misma vara
+    if acc["igualadoOArriba"] == acc["persiguiendo"]:
+        return {"minutos": acc, "rama": "igualadoOArriba", "empateDeMinutos": True}
     return {"minutos": acc, "rama": max(acc, key=acc.get)}
 
 
@@ -613,6 +617,9 @@ def dtp_objetivo(dtp: dict, goles: list[dict], sin_eventos: bool = False) -> dic
         escrito = (ramas.get(rj["rama"]) or {})
         out["porBloque"].append({
             "equipo": lado, "ramaJugada": rj["rama"], "minutos": rj["minutos"],
+            **({"empateDeMinutos": "las dos ramas jugaron los mismos minutos: se juzga igualadoOArriba y "
+                                   "el veredicto de persiguiendo también vale (1057)"}
+               if rj.get("empateDeMinutos") else {}),
             "veredictoDeLaRama": escrito.get("veredicto") or "",
             "razonDeLaRama": escrito.get("razon") or "",
             "veredictoUnico": m2.get("veredicto") or "",

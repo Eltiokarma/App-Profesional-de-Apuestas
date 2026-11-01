@@ -3834,6 +3834,12 @@ def main():
     _gs16 = [{"minuto": 24, "lado": "b"}, {"minuto": 62, "lado": "a"}, {"minuto": 74, "lado": "b"}]
     check("v1.6: la rama jugada es la de más minutos (Sporting persiguió 54' de 90)",
           _rfoco(_gs16, "a") == {"minutos": {"igualadoOArriba": 36, "persiguiendo": 54}, "rama": "persiguiendo"})
+    _r1057 = _rfoco([{"minuto": 45, "lado": "b"}, {"minuto": 90, "lado": "a"}], "a")
+    _o1057 = _dobj(_x16, [{"minuto": 45, "lado": "b"}, {"minuto": 90, "lado": "a"}])["porBloque"][0]
+    check("1057: con los minutos empatados (45 y 45) la rama se resuelve a igualadoOArriba y lo dice",
+          _r1057.get("empateDeMinutos") is True and _r1057["rama"] == "igualadoOArriba"
+          and "empateDeMinutos" in _o1057
+          and "empateDeMinutos" not in _rfoco(_gs16, "a"), (_r1057, _o1057))
     _o16 = _dobj(_x16, _gs16)["porBloque"][0]
     check("v1.6: el objetivo trae el veredicto escrito para la rama jugada",
           _o16["ramaJugada"] == "persiguiendo" and _o16["veredictoDeLaRama"] == "DESFAVORABLE"

@@ -144,6 +144,15 @@ for rel in fuentes():
 check("descanso: los días entre partidos salen de jugadores.dias_descanso (por horas), no de restar fechas",
       not descanso_suelto, descanso_suelto)
 
+# 3-bis · un `no`, `off`, `yes` u `on` sin comillas en un enum del contrato es un
+# booleano en YAML 1.1 (incidencia 1059: `escenario.aparecio` y `d3` traían
+# [si, parcial, no] y un validador rechazaba «no»)
+_bools = [f"docs/openapi.yaml:{i}" for i, ln in enumerate(oa.split("\n"), 1)
+          for m in re.finditer(r"enum: \[([^\]]*)\]", ln)
+          if any(x.strip() in ("no", "yes", "on", "off", "No", "Yes", "On", "Off") for x in m.group(1).split(","))]
+check("contrato: ningún enum de docs/openapi.yaml trae un no/yes/on/off sin comillas (YAML lo lee booleano)",
+      not _bools, _bools)
+
 # ── 6 · CADA CLASE DE FALLA TIENE SU GUARDIA ESCRITA ────────────────────────
 fallas = leer(os.path.join("docs", "FALLAS.md"))
 clases = re.findall(r"^### ", fallas, re.M)
