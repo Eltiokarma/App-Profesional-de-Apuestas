@@ -631,6 +631,13 @@ def main():
     _b980b = _jg._baja_dto(_rc, {"lectura": "senal"}, None, "2026-10-29 15:00:00")
     check("980: la roja con la hoja del mismo día sigue siendo sanción; con una hoja posterior, desmentida",
           _b980["lectura"] == "senal" and _b980b["lectura"] == "desmentida", (_b980, _b980b))
+    # 1014 (01/11/2026, decisión del usuario): una lesión con nombre es señal aunque el equipo esté en ruido
+    _b1014 = _jg._baja_dto({"player_id": 1, "tipo": "Missing Fixture", "detalle": "Muscle Injury",
+                            "fecha": "2026-10-30"}, {"lectura": "ruido"}, None)
+    _b1014b = _jg._baja_dto({"player_id": 2, "tipo": "Missing Fixture", "detalle": "Rest", "fecha": "2026-10-30"},
+                            {"lectura": "ruido"}, None)
+    check("1014: «Muscle Injury» es señal aunque el equipo esté en ruido; «Rest», no",
+          _b1014["lectura"] == "senal" and _b1014.get("lesion") and _b1014b["lectura"] == "ruido", (_b1014, _b1014b))
     # 522: «Off the roster» de la lista de Champions es ruido para la liga
     _off = {"player_id": 9, "tipo": "Missing Fixture", "detalle": "Off the roster", "fecha": "2026-10-21"}
     _b522 = _jg._baja_dto(_off, {"lectura": "senal"}, None, None, {"2026-10-21"})

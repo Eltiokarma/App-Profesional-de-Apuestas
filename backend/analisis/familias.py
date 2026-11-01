@@ -48,6 +48,10 @@ CUIDADO_DESDE = 5        # en su récord y de 5+ partidos: cuidado con la carga
 # racha así le sale sola. `probRacha` = frecuencia propia del estado de hoy
 # elevada al largo (la chance de encadenar tantos seguidos); cuidado solo < 5 %.
 IMPROBABLE_BAJO = 0.05
+# ...y nunca con un estado que el equipo vive el 90 %+ de las veces (01/11/2026,
+# incidencia 834, decisión del usuario: Grêmio «70 de local sin ganar por 3+», un
+# estado del 93 %; elevado a 70 da < 5 %, pero la racha larga es lo normal del equipo)
+FRECUENCIA_BANAL = 0.9
 _AMBITO = {"local": "de local", "visita": "de visita", "total": "en total"}
 
 
@@ -76,7 +80,9 @@ def _burbuja(filas: list[dict], clave: str) -> dict | None:
 
 
 def es_cuidado(b: dict) -> bool:
-    return b["record"] in ("supera", "iguala") and b["partidos"] >= CUIDADO_DESDE and b["improbable"]
+    estado = b["frecuencia"] if b["valor"] else 1 - b["frecuencia"]
+    return (b["record"] in ("supera", "iguala") and b["partidos"] >= CUIDADO_DESDE and b["improbable"]
+            and estado < FRECUENCIA_BANAL)
 
 
 def _pct(p: float) -> str:

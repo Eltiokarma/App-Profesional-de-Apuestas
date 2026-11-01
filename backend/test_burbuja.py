@@ -201,7 +201,12 @@ def main():
           ce["motivos"] == ["K -17.93: más baja que el 90 % de las 10 burbujas - que reventaron (récord previo -19.54, a 1.61)",
                             "3 partidos seguidos: más que el 90 % de las 10 burbujas - que reventaron (máximo previo 4)"]
           and ce["texto"].startswith("CERCA DEL EXTREMO") and "no cargar fuerte" in ce["texto"], ce)
-    rec = _extremo(26.04, 1, base_c, 280, "-", de_c)
+    rec = _extremo(26.04, 3, base_c, 280, "-", de_c)
+    uno = _extremo(26.04, 1, base_c, 280, "-", de_c)
+    check("818: la K en su récord con UN partido no es K-EXTREMO: queda en ámbar y lo dice",
+          not uno["activo"] and uno["cerca"] and not uno["kRecord"]
+          and uno["motivos"][0] == "K -26.04: en su récord (previo -19.54) pero con 1 partido: con menos de 3 no es récord",
+          uno)
     check("récord negativo: el motivo lleva el signo (K -26.04 … récord previo -19.54) y cerca queda en false",
           rec["activo"] and not rec["cerca"] and rec["motivos"][0].startswith("K -26.04: la más baja")
           and "récord previo -19.54" in rec["motivos"][0], rec)

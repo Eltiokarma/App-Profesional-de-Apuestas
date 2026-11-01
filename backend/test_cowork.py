@@ -4279,9 +4279,12 @@ def main():
     from backend.analisis.parte import grilla_rehacer as _gr636
     check("636: la grilla de un parte viejo es :07/:37 con piso 15; la de uno nuevo, :02/:22/:42 con piso 5",
           _gr636(_u732("2026-10-25 15:30:00")) == ((7, 37), 15)
-          and _gr636(_u732("2026-11-01 15:30:00")) == ((2, 22, 42), 5)
-          and _dent(_u732("2026-11-01 15:10:00"), _u732("2026-11-01 15:25:00"))   # 10:22 de Lima
-          and not _dent(_u732("2026-11-01 15:23:00"), _u732("2026-11-01 15:41:00")))  # 10:23-10:41: ninguno
+          and _gr636(_u732("2026-10-31 15:30:00")) == ((2, 22, 42), 5)
+          and _dent(_u732("2026-10-31 15:10:00"), _u732("2026-10-31 15:25:00"))   # 10:22 de Lima
+          and _dent(_u732("2026-10-31 15:23:00"), _u732("2026-10-31 15:41:00")) is False)  # 10:23-10:41: ninguno
+    check("989: desde el 01/11 hay disparo a las :12, solo de 10 a 23 de Lima",
+          _dent(_u732("2026-11-01 15:03:00"), _u732("2026-11-01 15:15:00"))       # 10:12 de Lima
+          and not _dent(_u732("2026-11-01 13:03:00"), _u732("2026-11-01 13:15:00")))  # 08:12: sin :12
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("UPDATE alineaciones_versiones SET capturada_en='2026-10-25 15:30:00' "
                      "WHERE fixture_id=990480 AND formacion='4-3-1-2'")
@@ -4713,6 +4716,16 @@ def main():
                        lambda pid: False, _alt904)
     check("904: si el id nuevo compartió hoja con uno de los ya fundidos, no entra a la fila",
           not any({304371, 304389} <= set([r["id"], *r.get("idsAlternos", [])]) for r in _s904g), _s904g)
+    # 791 (01/11/2026, decisión del usuario): relevancia baja del TDE sin declarar
+    from backend.analisis.parte import relevancia_tde as _rel791
+    _t791 = {"bloques": [{"equipo": "a", "indicadores": {"P1a": 0.5, "SOB1": 0.5}},
+                         {"equipo": "b", "indicadores": {"P1a": 0, "SOB1": 0.5}}]}
+    check("791: P1a y SOB1 ≤ 0,5 en los dos lados sin «relevancia» escrita → TDE-RELEVANCIA-SIN-DECLARAR; "
+          "declarada o con un lado alto, no",
+          (_rel791(_t791) or {}).get("codigo") == "TDE-RELEVANCIA-SIN-DECLARAR"
+          and _rel791({**_t791, "nota": "RELEVANCIA BAJA: el tramo final no decide"}) is None
+          and _rel791({"bloques": [_t791["bloques"][0], {"equipo": "b", "indicadores": {"P1a": 1, "SOB1": 0.5}}]})
+          is None, _rel791(_t791))
     # 691 (31/10/2026, decisión del usuario): el DT de /coachs que ninguna hoja sostiene
     from backend.analisis import parte as _p691
     check("691: última hoja sin DT y ninguna de las últimas 3 con «Risueno» → /coachs no es fiable",

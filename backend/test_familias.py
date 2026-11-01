@@ -85,6 +85,10 @@ def main():
     t = _texto("Everton", "local", habitual, "sin perder", "perdiendo")
     check("un récord grande pero HABITUAL para su frecuencia no es cuidado y lo dice (420, 450)",
           not es_cuidado(habitual) and "CUIDADO" not in t and "esperable" in t and "13 %" in t, t)
+    gremio = {**grande, "valor": False, "frecuencia": 0.07, "partidos": 70, "probRacha": 0.006, "improbable": True,
+              "record": "supera"}
+    check("834: un estado que el equipo vive el 90 %+ (Grêmio, 70 de local sin ganar por 3+) no es CUIDADO "
+          "aunque la racha salga improbable", not es_cuidado(gremio) and es_cuidado({**gremio, "frecuencia": 0.2}))
     sh = next(c for c in guardados if c["nombre"] == "Sequía habitual")["esperado"]
     g3 = next(f for f in sh["familias"] if f["familia"] == "gana3+" and f["ambito"] == "local")
     check("vectores: 14 sin ganar por 3+ en su récord, pero con 94 % de frecuencia: sin CUIDADO",

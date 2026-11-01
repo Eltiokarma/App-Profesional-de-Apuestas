@@ -108,8 +108,14 @@ function burbuja(filas: FilaFamilia[], clave: string) {
   }
 }
 
-function esCuidado(b: { record: BurbujaFamiliaDTO['record']; partidos: number; improbable: boolean }): boolean {
+// …y nunca con un estado que el equipo vive el 90 %+ de las veces (834, ver familias.py)
+const FRECUENCIA_BANAL = 0.9
+
+function esCuidado(b: { record: BurbujaFamiliaDTO['record']; partidos: number; improbable: boolean;
+                        valor: boolean; frecuencia: number }): boolean {
+  const estado = b.valor ? b.frecuencia : 1 - b.frecuencia
   return (b.record === 'supera' || b.record === 'iguala') && b.partidos >= CUIDADO_DESDE && b.improbable
+    && estado < FRECUENCIA_BANAL
 }
 
 function pct(p: number): string {

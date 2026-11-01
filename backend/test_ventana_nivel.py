@@ -94,5 +94,19 @@ check("escaneo: `nivel-con-amistosos` marca a Galatasaray (lado b) y no a Konyas
       len(nv) == 1 and nv[0]["lado"] == "b" and "6 amistosos" in nv[0]["detalle"], nv)
 check("…y es informativo: el mantenimiento no lo deposita", escaneo.CHEQUEOS["nivel-con-amistosos"].get("informativo"))
 
+# 991 (01/11/2026, decisión del usuario): ventana corta o vieja → baja; cancha neutral se dice
+_corta = {"partidos": 7, "amistosos": 0, "internacionales": 0, "otros": 7, "desde": "2021-08-01",
+          "hasta": "2022-05-01", "completa": False}
+_f991 = vn.fiabilidad_con_ventana(alta, {"local": _corta, "visitante": None}, fecha="2026-10-31")
+check("991: 7 partidos en la ventana, el último de 2022 → fiabilidad «baja» con el motivo",
+      _f991["nivel"] == "baja" and "solo 7 partidos" in _f991["nota"], _f991)
+_vieja = {**_corta, "partidos": 20, "completa": True}
+_f991b = vn.fiabilidad_con_ventana(alta, {"local": _vieja, "visitante": None}, fecha="2026-10-31")
+check("991: 20 partidos pero el último de hace más de un año → «baja»",
+      _f991b["nivel"] == "baja" and "hace" in _f991b["nota"], _f991b)
+_f991c = vn.fiabilidad_con_ventana(alta, {"local": None, "visitante": None}, fecha="2026-10-31", neutral=True)
+check("991: en cancha neutral la fiabilidad lo dice (canchaNeutral) y «alta» baja a «media»",
+      _f991c.get("canchaNeutral") and _f991c["nivel"] == "media" and "neutral" in _f991c["nota"], _f991c)
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)
