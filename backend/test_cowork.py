@@ -2685,15 +2685,32 @@ def main():
     p_808["tde"]["bloques"][0]["sinDato"] = {"S1": "sin dato de faltas", "S2": "sin dato", "S3": "pide PPDA"}
     rec_808 = c.post(f"{A}/analisis/cowork", json=p_808).json()
     _get808 = c.get(f"{A}/analisis/cowork/{p_808['fixtureId']}").json()
-    from backend.analisis.parte import _ALERTAS_CALCULADAS as _AC771
-    check("771/806: el recibo trae la lista de las alertas calculadas al leer, las mismas que el GET",
+    from backend.analisis.parte import _ALERTAS_CALCULADAS as _AC771, _ALERTAS_CAPTURADAS as _ACAP
+    check("771/806/1155: el recibo trae la lista de las alertas calculadas (y las de coherencia) al leer, "
+          "las mismas que el GET",
           isinstance(rec_808.get("alertasAlLeer"), list)
           and sorted(a["codigo"] for a in rec_808["alertasAlLeer"])
-          == sorted(a["codigo"] for a in _get808.get("alertas") or [] if a.get("codigo") in _AC771),
+          == sorted(a["codigo"] for a in _get808.get("alertas") or [] if a.get("codigo") in _AC771 | _ACAP),
           (rec_808.get("alertasAlLeer"), [a.get("codigo") for a in _get808.get("alertas") or []]))
     check("808: el IE sin S con los S declarados en `sinDato` no se cobra en faltan",
           not any(x["bloque"] == "tde.ie (lado a)" for x in rec_808["faltan"]),
           [x for x in rec_808["faltan"] if x["bloque"].startswith("tde")])
+    # 1150 (Pereira–Tolima): `notas.F` se descartaba sin rechazo y `notas.X`
+    # pisaba la nota de `bloques.X`
+    p_1150 = json.loads(json.dumps(p_808))
+    _ea = p_1150["equipos"]["a"]
+    _ea["bloques"]["B"] = {"score": _ea["bloques"].get("B", 3) if not isinstance(_ea["bloques"].get("B"), dict)
+                           else _ea["bloques"]["B"].get("score", 3), "nota": "eje central estable"}
+    _ea["notas"] = {"B": "lateral derecho nuevo", "F": "el once casa con la F1 salvo el 9"}
+    rec_1150 = c.post(f"{A}/analisis/cowork", json=p_1150).json()
+    _get1150 = c.get(f"{A}/analisis/cowork/{p_1150['fixtureId']}").json()
+    check("1150: una nota con clave fuera de A-E sale en rechazos con su texto, no se tira callada",
+          any(r["donde"] == "equipos.a.notas.F" and "el once casa" in r["porque"] for r in rec_1150["rechazos"]),
+          rec_1150["rechazos"])
+    _nb = _get1150["equipos"]["a"]["bloques"]["B"]["nota"]
+    check("1150: `notas.B` y `bloques.B.nota` se juntan, ninguna pisa a la otra",
+          "eje central estable" in _nb and "lateral derecho nuevo" in _nb, _nb)
+    c.post(f"{A}/analisis/cowork", json=p_808)
     c.post(f"{A}/analisis/cowork", json=p_tde)
     od_ra = {b["equipo"]: b for b in c.get(f"{A}/analisis/cowork/{con_ficha}/veredicto").json()["objetivo"]["tde"]["bloques"]}
     check("el que marcó primero juega la rama siMarcaPrimero, declarada",

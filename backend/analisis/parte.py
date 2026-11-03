@@ -556,6 +556,17 @@ def _dt_banco(crudo, rechazos: list, lado: str) -> dict | None:
     return {"motivo": motivo, "nombre": nombre, "fuente": fuente}
 
 
+def _juntar_notas(a: str, b: str) -> str:
+    """La nota de `bloques.X.nota` y la de `notas.X`: una sola si son la misma
+    (o una contiene a la otra), las dos unidas si dicen cosas distintas."""
+    a, b = (a or "").strip(), (b or "").strip()
+    if not a or not b or b in a:
+        return a or b
+    if a in b:
+        return b
+    return f"{a} · {b}"
+
+
 def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
             rechazos: list, lado: str, fecha_partido: str = "",
             entrenador_base: dict | None = None) -> dict:
@@ -566,6 +577,19 @@ def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
     excluidos_in = _dict(bruto.get("excluidos"), rechazos, f"equipos.{lado}.excluidos",
                          '{"C": "motivo de la exclusión"}')
     notas_in = _dict(bruto.get("notas"), rechazos, f"equipos.{lado}.notas", '{"A": "…"}')
+    # UNA NOTA CON UNA CLAVE QUE NO ES UN BLOQUE SE DICE (incidencia 1150,
+    # Pereira–Tolima: `notas.F` se descartaba en silencio, sin rechazo ni
+    # `perdido`). El bloque F lo calcula el backend; la prosa que no es de la A
+    # a la E va en `notas` del parte. El texto viaja en el rechazo para que se
+    # pueda rescatar sin otro GET.
+    for clave, texto in notas_in.items():
+        if str(clave).strip().upper() in LETRAS or not _txt(texto):
+            continue
+        rechazos.append({"donde": f"equipos.{lado}.notas.{clave}",
+                         "porque": f"no es un bloque del EFE (A-E): la nota no se guardó ({_txt(texto)[:160]!r})",
+                         "esperado": "las notas por bloque van de la A a la E; la del bloque F o una general va en "
+                                     "`notas` del parte"})
+    notas_in = {str(k).strip().upper(): v for k, v in notas_in.items()}
     bloques = {}
     for letra in LETRAS:
         crudo, nota_obj, motivo_obj = _bloque_crudo(bloques_in.get(letra))
@@ -604,7 +628,9 @@ def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
             # FORMACIÓN», que es un veredicto durísimo inventado sobre un dato
             # ausente — y el equipo salía en pantalla como el peor posible.
             "declarado": crudo is not None or bool(motivo),
-            "nota": _txt(notas_in.get(letra)) or nota_obj,
+            # LAS DOS NOTAS DEL BLOQUE SE JUNTAN (incidencia 1150: `notas.X`
+            # pisaba la nota de `bloques.X`, y lo pisado no salía en ningún lado)
+            "nota": _juntar_notas(nota_obj, _txt(notas_in.get(letra))),
         }
     plantel = [j for j in (_jugador(x, rechazos, f"equipos.{lado}.plantel[{i}]")
                            for i, x in enumerate(_lista(bruto.get("plantel"), rechazos,
@@ -3689,15 +3715,20 @@ def _plano_txt(t: str) -> str:
 
 
 def _alertas_al_leer(fixture_id: int) -> list[dict]:
-    """Las alertas calculadas que el GET le va a poner a este parte (código,
-    lado y detalle); [] si el DTO no se puede armar todavía."""
+    """Las alertas calculadas (y las de coherencia, selladas al depositar) que
+    el GET le va a poner a este parte (código, lado y detalle); [] si el DTO no
+    se puede armar todavía."""
     try:
         leido = dto(fixture_id) or {}
     except Exception:  # noqa: BLE001 — el depósito ya quedó guardado: sin la lista, el GET la trae
         return []
     return [{"codigo": a.get("codigo"), "equipo": a.get("equipo") or "", "tipo": a.get("tipo") or "",
              "detalle": a.get("detalle") or ""}
-            for a in leido.get("alertas") or [] if a.get("codigo") in _ALERTAS_CALCULADAS]
+            # las de coherencia (Jev) también: el GET las pone en la tira y el
+            # recibo no las listaba (incidencia 1155, Barcelona–Aston Villa:
+            # COHERENCIA-BLOQUE en el GET y ausente de `alertasAlLeer`)
+            for a in leido.get("alertas") or []
+            if a.get("codigo") in _ALERTAS_CALCULADAS or a.get("codigo") in _ALERTAS_CAPTURADAS]
 
 
 def borrar(fixture_id: int) -> bool:
