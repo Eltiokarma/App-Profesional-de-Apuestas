@@ -57,7 +57,7 @@ def tokens(nombre: str) -> list[str]:
 # personas del mismo plantel.
 HIPOCORISTICOS = {
     "fran": ("francisco", "franco", "francesc"), "paco": ("francisco",), "pancho": ("francisco",),
-    "rafa": ("rafael",), "pepe": ("jose",), "nacho": ("ignacio",), "lucho": ("luis",),
+    "rafa": ("rafael",), "pepe": ("jose",), "pep": ("josep",), "nacho": ("ignacio",), "lucho": ("luis",),
     "toni": ("antonio",), "tony": ("antonio", "anthony"), "manu": ("manuel", "emmanuel"),
     "dani": ("daniel",), "santi": ("santiago",), "seba": ("sebastian",), "nico": ("nicolas",),
     "fede": ("federico",), "gonza": ("gonzalo",), "rodri": ("rodrigo",), "edu": ("eduardo",),
@@ -213,12 +213,48 @@ def apellido_dt(x: str, y: str) -> bool:
     return min(len(x), len(y)) >= 4 and difflib.SequenceMatcher(None, x, y).ratio() >= 0.8
 
 
+def pilas_distintas_dt(a: str, b: str) -> bool:
+    """¿Los dos nombres traen la PILA ENTERA y no es la misma? Entonces son dos
+    personas aunque compartan apellido (incidencia 1096, Defensor 02/11/2026:
+    la base tenía a «Héctor Ignacio Rodríguez Peña» y dirigía el interino
+    «Andrés Rodríguez»; como bastaba el apellido, DT-DISCREPANCIA no sonó y
+    /burbujas lo dio por «asentado, 1826 días»). La pila de cada uno son las
+    palabras ANTES de la primera que comparte con el otro; las iniciales no
+    cuentan (`tokens_dt` las saca: «A. Rodríguez» sigue casando con «Andrés»),
+    y una contenida en la otra es la misma («Pep» / «Josep»)."""
+    ta, tb = tokens_dt(a), tokens_dt(b)
+
+    def pila(t: list[str], otro: list[str]) -> list[str]:
+        for i, x in enumerate(t):
+            if any(apellido_dt(x, y) for y in otro):
+                return t[:i]
+        return []
+    pa, pb = pila(ta, tb), pila(tb, ta)
+    if not pa or not pb:
+        return False
+    return not any(misma_pila(x, y) or x in y or y in x for x in pa for y in pb)
+
+
 def mismo_dt(a: str, b: str) -> bool:
     """¿Nombran al mismo entrenador? («M. Pellegrino» · «Mauricio Pellegrino» ·
     «Hernán Torres Oliveros» · «H. Torres» · «S. Hoeneß» / «S. Hoeneb»): basta
-    un apellido en común con la tolerancia de `apellido_dt`."""
+    un apellido en común con la tolerancia de `apellido_dt`, salvo que las dos
+    pilas enteras sean distintas (`pilas_distintas_dt`, 1096)."""
     ta, tb = tokens_dt(a), tokens_dt(b)
-    return any(apellido_dt(x, y) for x in ta for y in tb)
+    return any(apellido_dt(x, y) for x in ta for y in tb) and not pilas_distintas_dt(a, b)
+
+
+def forma_dt(nombre: str) -> str:
+    """Cómo escribe la fuente al DT: «inicial» («W. Ribonetto», «G. Huerta») o
+    «completo» («Davis Gonzalez», «Gustavo Huerta»). Un cambio de forma en el
+    banco de un equipo es un cambio de FUENTE de la API, no una llegada
+    (incidencias 1100 y 1123: la liga chilena pasó el 10/10/2026 de «Gustavo
+    Huerta» a «G. Huerta», y en Everton y La Serena el nombre de antes era
+    otro: Ribonetto y Gutiérrez salían «DT nuevo desde 2026-10-11»)."""
+    partes = plano(nombre).split()
+    if not partes:
+        return ""
+    return "inicial" if len(partes) > 1 and len(partes[0]) == 1 else "completo"
 
 
 def ultima_palabra_dt(nombre: str) -> str:
@@ -237,6 +273,8 @@ def mismo_nombre_dt(a: str, b: str) -> bool:
     ta, tb = tokens_dt(a), tokens_dt(b)
     if not ta or not tb:
         return ultima_palabra_dt(a) == ultima_palabra_dt(b)
+    if pilas_distintas_dt(a, b):
+        return False   # dos pilas enteras distintas son dos personas (1096)
     if ta[-1] in tb or tb[-1] in ta:
         return True
     if any(apellido_casi(x[-1], y) for x, ys in ((ta, tb), (tb, ta)) for y in ys):

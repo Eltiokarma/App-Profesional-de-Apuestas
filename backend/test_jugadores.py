@@ -235,6 +235,35 @@ def main():
     con.commit()
     check("con la racha del anterior a la vista, la llegada vuelve a leerse",
           dt_de_alineaciones(con, 700)[1] == hace(24 * 12)[:10])
+    # CAMBIÓ LA FUENTE, NO EL DT (1100/1123, Everton de Viña 02/11/2026): desde
+    # el 10/10 la API escribe «W. Ribonetto» donde antes escribía «Davis
+    # Gonzalez»; con toda la racha de cada uno en una forma distinta, la
+    # llegada no se vio (y la agenda no lo marca EN_CRISIS por «DT nuevo»)
+    con.executemany("INSERT INTO fixtures (id, date, status_short, league_id, home_team_id) "
+                    "VALUES (?, ?, 'FT', 265, 720)",
+                    [(1100 + k, hace(24 * d)) for k, d in enumerate((2, 9, 16, 30, 37, 44))])
+    con.executemany("INSERT INTO alineaciones (fixture_id, team_id, entrenador) VALUES (?, 720, ?)",
+                    [(1100 + k, n) for k, n in enumerate(["W. Ribonetto"] * 3 + ["Davis Gonzalez"] * 3)])
+    con.commit()
+    check("1123: el corte que coincide con un cambio de forma del nombre no es una llegada",
+          dt_de_alineaciones(con, 720) == ("W. Ribonetto", None), dt_de_alineaciones(con, 720))
+    con.execute("UPDATE alineaciones SET entrenador='D. Gonzalez' WHERE team_id=720 AND entrenador='Davis Gonzalez'")
+    con.commit()
+    check("1123: con la misma forma de los dos lados, el corte sí es la llegada",
+          dt_de_alineaciones(con, 720) == ("W. Ribonetto", hace(24 * 16)[:10]), dt_de_alineaciones(con, 720))
+    # LA LLEGADA VISTA GANA A UNA ETAPA VIEJA DE LA CARRERA (1128, Famalicão
+    # 01/11/2026): Ricardo Silva reemplazó a Carvalhal el 25/10 y /coachs solo
+    # tiene su interinato de 12/2024, abierto: salía «asentado, ~700 días»
+    _fam = [{"id": 5, "firstname": "Ricardo Jorge", "lastname": "Ferreira Pinto da Silva",
+             "career": [{"team": {"id": 242}, "start": "2024-12-01", "end": None}]}]
+    e_fam = elegir_entrenador(_fam, 242, "Ricardo Silva", "2026-10-25")
+    check("1128: con el corte visto después de la etapa de /coachs, `desde` es el del banco",
+          e_fam["desde"] == "2026-10-25" and e_fam["fuente"] == "alineacion"
+          and e_fam["nombre"] == "Ricardo Jorge Ferreira Pinto da Silva", e_fam)
+    check("1128: sin corte visto (`desde` vacío) queda la carrera",
+          elegir_entrenador(_fam, 242, "Ricardo Silva", None)["desde"] == "2024-12-01")
+    check("1128: una etapa de /coachs posterior al primer banco visto no se toca",
+          elegir_entrenador(_fam, 242, "Ricardo Silva", "2024-10-01")["desde"] == "2024-12-01")
     # UN PAÍS COMO DT (Bulo Bulo con «Bolivia», 17/10/2026): basura de la API
     from backend.ingesta.jugadores import nombres_que_no_son_dt as _nqs
     con.execute("CREATE TABLE IF NOT EXISTS leagues (id INTEGER PRIMARY KEY, name TEXT, country TEXT, logo TEXT, flag TEXT, season INTEGER)")

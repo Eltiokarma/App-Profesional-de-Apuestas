@@ -1894,8 +1894,14 @@ def alertas_dt(parte: dict, fx, nombres: dict) -> list[dict]:
         banco = dt_del_banco(fx["id"], tid)
         if banco and _tokens_dt(nombre) and _tokens_dt(banco) and not mismo_dt(nombre, banco):
             declarado = dt.get("banco") if isinstance(dt.get("banco"), dict) else None
+            # `api_errada` dice que el banco de la API ES el error: su `nombre` es
+            # quien se sienta de verdad, no el de la hoja (incidencia 1103,
+            # 1645530 San José: banco «Artur Costa», api_errada con La Patria, y
+            # la hoja con «J. Baldivieso», que renunció el 25/08: DT-VS-BANCO
+            # sonaba igual y pedía rehacer). Como en `dt_equivocado`.
             if (declarado and declarado.get("motivo") in MOTIVOS_BANCO and declarado.get("fuente")
-                    and (not declarado.get("nombre") or mismo_dt(declarado["nombre"], banco))):
+                    and (declarado.get("motivo") == "api_errada" or not declarado.get("nombre")
+                         or mismo_dt(declarado["nombre"], banco))):
                 continue   # el parte ya dijo, con fuente, quién se sienta
             out.append({"codigo": "DT-VS-BANCO", "equipo": lado, "tipo": "dato", "banco": banco,
                         "detalle": f"{quien}: el once oficial de ESTE partido trae en el banco a «{banco}» y el "

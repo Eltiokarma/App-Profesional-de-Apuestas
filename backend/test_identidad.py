@@ -96,6 +96,17 @@ check("811: el ejecutor «A. Gudmundsson» se reconoce en una línea que dice «
       _dtp811._nombra_ejecutor("penal: Guðmundsson (3 de 3)", ["A. Gudmundsson"]))
 check("DT: «Gustavo Alfaro» no es «Ricardo Gareca»", not idn.mismo_dt("Gustavo Alfaro", "Ricardo Gareca")
       and not idn.mismo_nombre_dt("Gustavo Alfaro", "Ricardo Gareca"))
+check("1096: «Héctor Ignacio Rodríguez Peña» no es «Andrés Rodríguez» (dos pilas enteras distintas)",
+      not idn.mismo_dt("Héctor Ignacio Rodríguez Peña", "Andrés Rodríguez")
+      and not idn.mismo_nombre_dt("Héctor Ignacio Rodríguez Peña", "Andrés Rodríguez"))
+check("1096: con la inicial o la pila dentro de la otra sigue casando (A. Rodríguez, Pep/Josep, Ricardo Silva)",
+      idn.mismo_dt("A. Rodríguez", "Andrés Rodríguez") and idn.mismo_nombre_dt("Pep Guardiola", "Josep Guardiola Sala")
+      and idn.mismo_nombre_dt("Ricardo Silva", "Ricardo Jorge Ferreira Pinto da Silva")
+      and idn.mismo_nombre_dt("Luis Enrique", "Enrique Luis")
+      and idn.mismo_nombre_dt("Victor Manuel Vucetich", "Manuel Vucetich Rojas Victor"))
+check("1100/1123: la forma del nombre del DT (inicial o completo)",
+      idn.forma_dt("W. Ribonetto") == "inicial" and idn.forma_dt("Davis Gonzalez") == "completo"
+      and idn.forma_dt("Ribonetto") == "completo")
 
 # ── los módulos usan ESTA regla, no una copia ────────────────────────────────
 from backend.analisis import bloque_f, dtp_cowork, f1_base, parte  # noqa: E402
