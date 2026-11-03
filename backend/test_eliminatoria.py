@@ -117,6 +117,12 @@ check("846: la semifinal de la Copa del Rey es a ida y vuelta: a 90' no se afirm
 check("846: una copa fuera de la lista sigue sin afirmar a 90'",
       eliminatoria.desenlace(1012)["avanza"] is None, eliminatoria.desenlace(1012))
 check("un partido sin terminar no es una llave", eliminatoria.desenlace(1003) is None)
+# 1166 (Aurora–Independiente Petrolero): la vuelta por jugar trae la ida y el global
+_pv = eliminatoria.previa(1006)
+check("1166: la vuelta sin jugar trae la ida (3-0) y el global desde el local de hoy (0-3), sin quién pasa",
+      _pv and _pv["ida"] == 1005 and _pv["marcadorIda"] == "3-0" and _pv["global"] == "0-3" and "avanza" not in _pv, _pv)
+check("1166: un partido de liga, una ida o uno terminado no traen llave previa",
+      eliminatoria.previa(1003) is None and eliminatoria.previa(1005) is None and eliminatoria.previa(1002) is None)
 check("977: la EFL Cup que va directo a penales no tuvo prórroga; la tanda la gana el local",
       eliminatoria.desenlace(1013)["prorroga"] is False and eliminatoria.desenlace(1013)["avanza"] == X,
       eliminatoria.desenlace(1013))

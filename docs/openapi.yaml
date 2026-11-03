@@ -2722,6 +2722,18 @@ components:
           allOf: [{ $ref: '#/components/schemas/Eliminatoria' }]
           nullable: true
           description: 'quién pasó la llave (`avanzaLado` local | visitante); null si no es eliminatoria o no terminó'
+        llaveAntes:
+          type: object
+          nullable: true
+          description: 'la vuelta de una llave ANTES de jugarse (03/11/2026, 1166): la ida ya jugada y el global con el que se arranca, local-visita de este partido; no dice quién pasa. null si terminó, no es eliminatoria o no hay ida en la base'
+          properties:
+            competicion: { type: string }
+            ronda: { type: string }
+            ida: { type: integer }
+            fechaIda: { type: string }
+            marcadorIda: { type: string, description: 'como se jugó la ida (local de la ida - visita de la ida)' }
+            global: { type: string, description: 'local-visita de este partido antes de jugarlo' }
+            nota: { type: string }
     GolesLado:
       type: object
       properties:

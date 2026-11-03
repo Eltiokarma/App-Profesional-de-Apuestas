@@ -206,6 +206,32 @@ def desenlace(fixture_id: int) -> dict | None:
     }
 
 
+def previa(fixture_id: int) -> dict | None:
+    """La llave ANTES de la vuelta: la ida ya jugada y el global con el que se
+    arranca (03/11/2026, incidencia 1166: Aurora–Independiente Petrolero, vuelta
+    de cuartos con un 0-4 en la ida que estaba en la base, y ni la ficha ni la
+    agenda lo decían; el subagente lo sacó de la prensa). No dice quién pasa:
+    eso se sabe al terminar (`desenlace`). None si el partido ya terminó, no es
+    de eliminación directa o no tiene ida jugada en la base."""
+    f = _q1("SELECT f.*, l.name AS liga FROM fixtures f LEFT JOIN leagues l ON l.id=f.league_id "
+            "WHERE f.id=?", (fixture_id,))
+    if not f or (_g(f, "status_short") or "") in FIN or not es_eliminatoria(_g(f, "league_round")):
+        return None
+    ida = _ida(f)
+    gi = _goles_totales(ida) if ida is not None else None
+    if not gi:
+        return None
+    return {
+        "competicion": _g(f, "liga") or "", "ronda": _g(f, "league_round") or "",
+        "ida": ida["id"], "fechaIda": str(ida["date"])[:10],
+        # en la ida el local de hoy jugó de visita: el marcador va como se jugó
+        "marcadorIda": f"{gi[0]}-{gi[1]}",
+        "global": f"{gi[1]}-{gi[0]}",
+        "nota": ("vuelta de una llave a ida y vuelta: `global` es local-visita de ESTE partido antes de jugarlo; "
+                 "quién pasa lo dice `eliminatoria` cuando termine (penales, global o prórroga)"),
+    }
+
+
 def texto_para(d: dict, team_id: int) -> str:
     """«pasa por penales (5-3) tras 2-2 en el global» desde el lado de `team_id`."""
     if not d or not d.get("avanza"):

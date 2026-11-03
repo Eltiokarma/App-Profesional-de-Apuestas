@@ -546,6 +546,19 @@ export interface FichaPartidoDTO {
   tactica?: FichaTacticaDTO
   /** Quién pasó la llave (`avanzaLado`); null si no es eliminatoria o no se sabe. */
   eliminatoria?: EliminatoriaDTO | null
+  /** La vuelta de una llave antes de jugarse: la ida y el global con el que se
+   *  arranca (incidencia 1166); no dice quién pasa. */
+  llaveAntes?: LlaveAntesDTO | null
+}
+
+export interface LlaveAntesDTO {
+  competicion?: string
+  ronda?: string
+  ida: number
+  fechaIda?: string
+  marcadorIda: string
+  global: string
+  nota?: string
 }
 
 /** Quién pasó una llave de eliminación directa, calculado de la base: la
