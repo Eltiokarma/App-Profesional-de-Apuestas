@@ -125,7 +125,7 @@ nuevo o el plantel cambió, la historia de K es de *otro* equipo.
     `docs/JUGADORES.md`) no es una baja, en los dos lados (Python y TS).
   - Plantilla sin capturar → `sin dato`.
   - Plantilla con **≥ 30 días** de edad: se avisa que el DT y las bajas pueden
-    estar viejos (deuda 2 de `CLAUDE.md`).
+    estar viejos (deuda 2 de `docs/DEUDA.md`).
 - Tope por estabilidad: `inestable` → baja · `en transición` / `sin dato` →
   media. Nunca sube por encima de lo que da la muestra.
 - **Dueños / organización que maneja el club** no está en la base: viaja en

@@ -188,7 +188,7 @@ def _tabla(con: sqlite3.Connection, nombre: str) -> bool:
 
 def interes(con: sqlite3.Connection) -> int:
     """¿Los equipos que entran por un torneo internacional tienen historia y
-    plantel? (deuda 6 del CLAUDE.md: Beşiktaş, NEC, Marsella… salían vacíos).
+    plantel? (deuda 6 de docs/DEUDA.md: Beşiktaş, NEC, Marsella… salían vacíos).
 
     - historia: partidos COMPETITIVOS jugados en el último año (con los
       internacionales, sin amistosos). Con menos de 20 el nivel (ventana 20,

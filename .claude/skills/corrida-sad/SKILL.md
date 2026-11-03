@@ -490,7 +490,7 @@ POST $B/analisis/cowork/incidencias
   lo que la APP hizo mal, sí, aunque lo hayas sorteado.
 - **No se reporta** (lo decidido; el mantenimiento suma acá lo que se cierra
   siempre igual, 31/10/2026): una liga que no publica onces (`nuncaVaALlegar`,
-  deuda 5 de `CLAUDE.md`); un amistoso o una copa de categorías bajas sin
+  deuda 5 de `docs/DEUDA.md`); un amistoso o una copa de categorías bajas sin
   ficha; un 502 pasajero del servidor durante un despliegue. Y desde la pasada
   del 31/10 (noche), cerradas siempre con la misma causa conocida: el `desde`
   de /coachs que es el mes de la carrera (482, 949: `desdeConfirmar` ya lo
@@ -615,7 +615,7 @@ compara.
 2. **Verificá cada una contra los datos antes de tocar nada** (los GET de la
    API, el código, los tests): una incidencia es un reporte, no una orden.
    Clasificala:
-   - `por_diseno`: la app hace lo que se decidió (está en `CLAUDE.md` o en el
+   - `por_diseno`: la app hace lo que se decidió (está en `CLAUDE.md`, en `docs/DEUDA.md` o en el
      doc del área). Resolución: la regla y dónde está escrita.
    - `dato_api`: la API trajo algo malo y no hay regla razonable que lo
      evite. Resolución: qué dato, de dónde, y qué alerta ya lo cubre.

@@ -404,7 +404,7 @@ def main():
     check("pero su rival de ascenso sigue fuera", 202 not in ids, sorted(ids))
 
     # --- 4. los equipos de interés: entran por el torneo, no por su liga ----
-    # (deuda 6 de CLAUDE.md, corrida del 16/09: Beşiktaş y NEC con el
+    # (deuda 6 de docs/DEUDA.md, corrida del 16/09: Beşiktaş y NEC con el
     # calendario vacío y cuatro planteles sin ingestar). El que juega la
     # edición vigente de un torneo internacional se sigue AUNQUE su NS
     # próximo sea en una liga fuera de LIGAS.
