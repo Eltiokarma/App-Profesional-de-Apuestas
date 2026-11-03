@@ -4042,6 +4042,7 @@ components:
           description: 'solo en DTP-REHACER, ya jugado el partido (26/10/2026): cuándo llegó el once que la dispara. `tardio` = la versión final llegó a menos de 15 min del pitazo, después del último rehacer posible (apertura caída por un once tardío, no un aviso ignorado) · `sinRehacer` = llegó a tiempo y el parte no se volvió a depositar (falla de la corrida de rehacer) · `conocido` = ya estaba en el último depósito previo y la apertura igual lo contradice. La versión final es la última capturada HASTA el pitazo (un refresco en juego o al terminar no cuenta). Sin versiones del once hasta el pitazo o sin depósito previo sellado (partes anteriores) no viaja'
         onceFinalEn: { type: string, nullable: true, description: 'solo con `momento`: cuándo se capturó la versión final del once (UTC); null si ninguna versión llegó antes del pitazo (847)' }
         ultimoDepositoPrevio: { type: string, description: 'solo con `momento`: el último depósito del parte ANTES del pitazo (UTC)' }
+        formacionCorregidaEn: { type: string, description: 'solo con `momento: tardio` por una corrección de la formación DESPUÉS del pitazo (848): cuándo la capturó la API (UTC). `onceFinalEn` sigue siendo la versión del once hasta el pitazo (1133)' }
         jev:
           type: object
           nullable: true

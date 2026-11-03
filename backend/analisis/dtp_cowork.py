@@ -216,12 +216,18 @@ def _cierre_contra(team_id: int, f) -> dict:
                      "`partidoAnterior` es otro partido y sirve para el M1 de hoy, no para el cierre")}
 
 
-def _ultimo_de_liga(team_id: int, fecha: str, a) -> dict:
-    """{"ultimoOnceDeLiga": …} si el último partido fue de copa y antes hay uno
-    de liga con once en la base (los 3 anteriores); si no, {}."""
+def _ultimo_de_liga(team_id: int, fecha: str, a, sin_xi: bool = False) -> dict:
+    """{"ultimoOnceDeLiga": …} si el último partido fue de copa —o no tiene
+    once capturado (`sin_xi`)— y antes hay uno de liga con once en la base
+    (los 3 anteriores); si no, {}."""
     from backend.analisis.escala import es_copa
     from backend.ficha_tactica import tactica_de
-    if not es_copa(a["league_id"], a["liga"]):
+    copa = es_copa(a["league_id"], a["liga"])
+    # EL ÚLTIMO DE LIGA SIN ONCE CAPTURADO TAMBIÉN DEJA AL M1 SIN BASE
+    # (incidencia 1117, Venezia 1550180: sin el once del 28/10 contra el Inter
+    # la referencia salió del de dos partidos atrás, armado a mano, y
+    # DTP-REHACER sonó por Helgason y Lauberbach): viaja el último once de liga
+    if not copa and not sin_xi:
         return {}
     for f in _anteriores(team_id, str(a["date"]), 3):
         if es_copa(f["league_id"], f["liga"]):
@@ -236,7 +242,10 @@ def _ultimo_de_liga(team_id: int, fecha: str, a) -> dict:
             "formacion": ali.get("formacion") or "", "conGrid": bool(ali.get("conGrid")),
             "titulares": [{"nombre": j["nombre"], "posicion": j["posicion"], "carril": j["carril"]}
                           for j in ali.get("titulares") or []],
-            "nota": "el último partido fue de copa: si el once fue alternativo, el M1 se apoya en este"}}
+            "nota": ("el último partido fue de copa: si el once fue alternativo, el M1 se apoya en este"
+                     if copa else "el último partido no tiene once capturado: este es el último once de liga en la "
+                                  "base, NO el del último partido; el once de ese partido se busca en la prensa "
+                                  "antes de tomarlo de referencia")}}
     return {}
 
 
@@ -320,7 +329,15 @@ def insumos_equipo(team_id: int, nombre: str, fx) -> dict:
     st_r = ((tac.get("estadisticas") or {}).get("visitante" if local else "local")) or {}
     recibidos = [g for g in goles if not g["aFavor"]]
     cuadran = goles_cuadran(goles, gf, gc)
-    if not xi:
+    ult_liga = _ultimo_de_liga(team_id, fecha, a, sin_xi=not xi)
+    if not xi and ult_liga:
+        # CON EL ÚLTIMO ONCE DE LIGA, EL M1 SÍ TIENE REFERENCIA (incidencia
+        # 1125, Viseu 1575527: la Taça da Liga sin once y `ultimoOnceDeLiga`
+        # presente, y `faltan` decía «M1 sin XI de referencia»)
+        u = ult_liga["ultimoOnceDeLiga"]
+        faltan.append(f"sin alineación capturada del partido anterior: el M1 se apoya en `ultimoOnceDeLiga` "
+                      f"(fixture {u['fixtureId']}, {u['fecha']}, {u['competicion']})")
+    elif not xi:
         faltan.append("sin alineación capturada del partido anterior: M1 sin XI de referencia "
                       "(`ficha_partido` no la trajo o la liga no da onces)")
     if not goles and (gf or gc):
@@ -395,7 +412,7 @@ def insumos_equipo(team_id: int, nombre: str, fx) -> dict:
         "aperturaPrevia": _apertura_previa_reciente(team_id, nombre, fecha),
         # EL ÚLTIMO ONCE DE LIGA, SI EL ÚLTIMO PARTIDO FUE DE COPA (966:
         # Heerenveen con el once rotado de la KNVB Beker sin grid como base del M1)
-        **_ultimo_de_liga(team_id, fecha, a),
+        **ult_liga,
         # DTP v1.4: para responder la pregunta 6 sobre ESTE bloque (la apertura
         # del rival la lee de acá)
         "casosBloque": casos_bloque(team_id, fecha),
@@ -429,6 +446,9 @@ def penales_temporada(team_id: int, antes: str, dias: int = PENALES_DIAS) -> dic
             "SELECT COUNT(DISTINCT e.fixture_id) n FROM fixture_eventos e JOIN fixtures f ON f.id = e.fixture_id "
             "WHERE (f.home_team_id = ? OR f.away_team_id = ?) AND f.date >= ? AND f.date < ?",
             (team_id, team_id, desde, str(antes)[:19]))
+        jugados = saddb.query_one(
+            "sad", f"SELECT COUNT(*) n FROM fixtures WHERE (home_team_id = ? OR away_team_id = ?) AND date >= ? "
+                   f"AND date < ? AND {_FIN}", (team_id, team_id, desde, str(antes)[:19]))
     except Exception:  # noqa: BLE001 — base sin eventos: sin dato, no cero
         return {"ejecutores": [], "partidosConEventos": 0, "nota": "sin eventos en la base"}
     # EL AÑO CRUZA EL MERCADO (incidencia 718, 27/10/2026): Sassuolo salía con
@@ -501,11 +521,19 @@ def penales_temporada(team_id: int, antes: str, dias: int = PENALES_DIAS) -> dic
                                               -(e["convertidos"] + e["errados"]), -e["convertidos"], -_tit(e)))
     idos = [e["nombre"] for e in ejecutores if e["enPlantilla"] is False]
     n_ev = (con_ev or {"n": 0})["n"]
+    n_jug = max((jugados or {"n": 0})["n"] or 0, n_ev)
     if not ejecutores and n_ev < PENALES_MUESTRA_MIN:
         # CON MUESTRA CORTA NO SE AFIRMA (942: Nice con 13 partidos con eventos
         # en el año «sin penales» y Wahi había convertido dos)
         nota = (f"solo {n_ev} partidos con eventos en la base en el último año: muestra corta, no se afirma "
                 "que no tenga penales; el ejecutor sale de la prensa")
+    elif not ejecutores and n_jug > n_ev:
+        # LOS PARTIDOS SIN FICHA NO SON «SIN PENALES» (incidencia 1121, Boca
+        # 1493214: 26 con eventos y «sin penales», pero el River 0-1 Boca del
+        # 19/04 —penal de Paredes— no tiene ficha capturada)
+        nota = (f"sin penales en los {n_ev} partidos con eventos del último año, pero {n_jug - n_ev} de los "
+                f"{n_jug} jugados no tienen eventos en la base: un penal de esos no se ve; el ejecutor se "
+                "confirma en la prensa antes de escribir «sin penales»")
     elif not ejecutores:
         nota = "sin penales en los partidos con eventos del último año: decilo así, no «sin dato»"
     elif len(idos) == len(ejecutores):
@@ -517,7 +545,7 @@ def penales_temporada(team_id: int, antes: str, dias: int = PENALES_DIAS) -> dic
             nota += f"; ya no están en el plantel: {', '.join(idos)}"
     if ejecutores and n_ev < PENALES_MUESTRA_MIN:
         nota += f" (muestra corta: {n_ev} partidos con eventos; otro ejecutor de la prensa puede tirar)"
-    return {"ejecutores": ejecutores, "partidosConEventos": n_ev, "nota": nota}
+    return {"ejecutores": ejecutores, "partidosConEventos": n_ev, "partidosJugados": n_jug, "nota": nota}
 
 
 def _estado_ejecutores(team_id: int, antes: str) -> dict:
@@ -912,6 +940,26 @@ def _anterior_con_parte(team_id: int, fecha: str, cuantos: int = 5) -> list:
     return [next((a for a in ants if a["id"] in con_parte), ants[0])]
 
 
+_GENERICAS_EQUIPO = {"club", "real", "deportivo", "atletico", "sporting", "united", "city", "sport", "athletic",
+                     "union", "racing", "olympique", "borussia", "football", "calcio", "futbol"}
+
+
+def _partido_del_caso(team_id: int, fecha_parte: str, caso: str) -> list:
+    """[el partido del que habla el caso]: el anterior (de los 5) cuyo RIVAL
+    nombra el texto del caso; si no nombra a ninguno, el último con parte
+    (1016). Incidencia 1116, Frankfurt y HSV (1575205): «1-0 sostenido 13'
+    ante Köln» (16/10) y «0-0 sostenido 88' ante Stuttgart» (17/10) viajaban
+    con el 19/09 de la última apertura con parte, que no era el partido
+    cerrado: el cierre se escribió sobre `partidoAnterior`, sin parte."""
+    texto = f" {_plano(caso or '')} "
+    for a in _anteriores(team_id, fecha_parte, 5) if texto.strip() else []:
+        rival = a["away_name"] if a["home_team_id"] == team_id else a["home_name"]
+        claves = [t for t in _plano(rival or "").split() if len(t) > 3 and t not in _GENERICAS_EQUIPO]
+        if claves and any(f" {t} " in texto for t in claves):
+            return [a]
+    return _anterior_con_parte(team_id, fecha_parte)
+
+
 def casos_bloque(team_id: int, antes: str, dias: int = 180) -> list[dict]:
     """Los casos de la pregunta 6 que dejaron los cierres sobre el bloque de
     ESTE equipo (DTP v1.4): en la cohorte c3 el propio partido fue «el caso que
@@ -951,7 +999,8 @@ def casos_bloque(team_id: int, antes: str, dias: int = 180) -> list[dict]:
                 # 1016, Porto: el cierre del 1575521 cerró la apertura de liga y el caso
                 # salía con la fecha y la Champions del PSV, que no tenía parte; la
                 # misma regla que `aperturaPrevia`, 997)
-                ant = _anterior_con_parte(team_id, str(f["fecha"] or ""))
+                # …salvo que el caso NOMBRE al rival de otro partido (1116)
+                ant = _partido_del_caso(team_id, str(f["fecha"] or ""), caso.get("caso") or "")
                 if ant:
                     caso["fecha"] = str(ant[0]["date"] or "")[:10] or caso["fecha"]
                 if not caso.get("sede") or not caso.get("competicion"):
@@ -1354,6 +1403,9 @@ _SIN_REF_MOTIVO = re.compile(r"ninguna fuente|ni en (la )?prensa|sin once (captu
 _SIN_REF = re.compile(r"^\s*(sin|no hay|ninguno|n/?a\b)|sin (dato|xi|once|referencia)|no (hay|existe|tenemos) (xi|once)", re.I)
 
 
+_ALTERNATIVAS = re.compile(r"\balternativas?\s*:\s*(?:(?<![\wÀ-ÿ])[A-ZÁÉÍÓÚÑÜ]\.|[^.])+", re.I)
+
+
 def sin_alternativas(texto: str) -> str:
     """El texto sin lo que va entre paréntesis o corchetes. «Kerkez (o
     Tsimikas)», «Barcola (o Gakpo/Ngumoha)»: una alternativa NO es el once
@@ -1366,6 +1418,11 @@ def sin_alternativas(texto: str) -> str:
     # …y la alternativa SIN paréntesis: «B. Duarte o Villanueva» (Querétaro,
     # incidencia 260) anunciaba a los dos. Solo con mayúscula después de la «o»
     t = re.sub(r"\s[oóu]\s+(?:[A-ZÁÉÍÓÚÑÜ]\.\s*)?[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]*(?:\s+[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]*)?", " ", t)
+    # …y la lista rotulada «Alternativas: entra Calafiori por Lewis-Skelly; entra
+    # Havertz por Gyökeres» (incidencia 1075, Arsenal 1557453: cinco titulares
+    # fuera del XI de referencia y contaba uno, porque los demás iban como
+    # alternativas). Hasta el punto que cierra la frase (no el de una inicial).
+    t = _ALTERNATIVAS.sub(" ", t)
     return t
 
 
@@ -1395,11 +1452,18 @@ _EN_BANCO = re.compile(r"(?:[A-ZÁÉÍÓÚÑÜ]\.\s*)?[A-ZÁÉÍÓÚÑÜ][\wÀ-�
                        r"\s+(?:en el banco|en la banca|al banco|desde el banco|de suplentes?|como suplentes?)", re.I)
 
 
+# «En el banco del 25/10: Pinos, Laurino, J. Quiñónez, Cabezas, Bolaños y Naula»
+# (incidencia 1075, Emelec 1639857): la lista va DESPUÉS del rótulo
+_BANCO_LISTA = re.compile(r"\b(?:en el banco|en la banca|suplentes?|banco)\b[^:.;()]{0,30}:\s*"
+                          r"(?:(?<![\wÀ-ÿ])[A-ZÁÉÍÓÚÑÜ]\.|[^.;()])+", re.I)
+
+
 def sin_en_banco(texto: str) -> str:
     """El texto sin los nombres que él mismo pone en el banco: no son el
     seguro y no pueden tumbarlo por arrancar suplentes (1047). Es la misma
-    excepción que las piezas del M2 tienen con `_DESDE_BANCO`."""
-    return _EN_BANCO.sub(" ", texto or "")
+    excepción que las piezas del M2 tienen con `_DESDE_BANCO`. Tampoco son
+    un cambio anunciado del once (1075)."""
+    return _EN_BANCO.sub(" ", _BANCO_LISTA.sub(" ", texto or ""))
 
 
 def sin_ausentes(texto: str) -> str:
@@ -1545,6 +1609,13 @@ def _roles_declarados(linea: str) -> list[tuple[list[str], str, str]]:
     condicional («si no está…», «según el once») o doble («lateral/extremo») no
     es una afirmación; «de 9 a volante» y «de central, juega de lateral» valen
     por el destino."""
+    # LA APOSICIÓN ENTRE COMAS NO ES PARTE DEL NOMBRE (incidencia 1074, Cercle
+    # Brugge 1558664: «Erick Nunes, mediocampista de origen, de lateral
+    # derecho», «Adaramola, con 2 partidos y ninguna titularidad en la base, de
+    # extremo izquierdo»: el nombre salía «erick nunes mediocampista de origen»
+    # o «ninguna titularidad en la base», no casaba con ninguna casilla y
+    # rolesVsGrid quedaba vacío con cuatro roles contra el grid)
+    linea = re.sub(r"^\s*([^,;:()]+?)\s*,[^,;:()]*,\s*(?=de\s)", r"\1 ", linea or "")
     if re.search(r"\bsi\b|\bsegun\b|\bsegún\b|\bo\b|/", re.split(r"\bsiendo\b|\(", (linea or "").lower())[0]):
         return []
     t = _plano_num(linea)
@@ -1656,8 +1727,9 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
         # LO QUE LA APERTURA YA ANUNCIÓ NO ES SORPRESA: un cambio nombrado en
         # `senalXi` o en `rolesReasignados` (Villa, 17/10/2026) no cuenta; y el
         # nombre de la plantilla, que a veces trae el apodo («Abde»), también sirve
-        anunciado_crudo = sin_salientes(sin_alternativas(" ".join([sin_dudas(m1.get("senalXi") or "")]
-                                                                  + list(m1.get("rolesReasignados") or []))))
+        # …ni lo que la señal pone en el banco (1075: «En el banco del 25/10: … Bolaños»)
+        anunciado_crudo = sin_en_banco(sin_salientes(sin_alternativas(" ".join([sin_dudas(m1.get("senalXi") or "")]
+                                                                  + list(m1.get("rolesReasignados") or [])))))
         anunciado = _plano(anunciado_crudo)
         alt = of.get("alias") or {}
         def _palabra_en(x: str, texto: str) -> bool:   # el apodo puede ser la primera palabra

@@ -4108,7 +4108,7 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> lis
     except Exception:  # noqa: BLE001 — sin la tabla (base vieja) no hay momento que decir
         return alertas
     pitazo, dep = _utc(fx["date"]), _utc(deposito_previo)
-    finales, despues = {}, {}
+    finales, despues, corregida_en = {}, {}, {}
     for f in filas:
         # LA VERSIÓN DEL PITAZO, NO LA DEL FINAL: el refresco de la ficha en
         # juego o al terminar vuelve a sellar el once (Guabirá a las 23:54 con
@@ -4118,6 +4118,14 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> lis
         t_f = _utc(f["capturada_en"])
         if pitazo and t_f and t_f > pitazo:
             despues[f["team_id"]] = f
+            # LA HORA DE LA CORRECCIÓN, NO SOLO LA DE LA LISTA (incidencia 1133,
+            # Auxerre 1552808: «tardio» con onceFinalEn 13:32 anterior al
+            # depósito de 13:45 parecía no cuadrar; la corrección 4-2-3-1 →
+            # 3-4-2-1 fue después del pitazo y su hora no viajaba)
+            previa = finales.get(f["team_id"])
+            if previa and f["formacion"] and f["formacion"] != previa["formacion"] \
+                    and f["team_id"] not in corregida_en:
+                corregida_en[f["team_id"]] = t_f
             continue
         finales[f["team_id"]] = f   # ordenadas: queda la última de cada equipo
     if not pitazo or not dep:
@@ -4139,9 +4147,11 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> lis
     # alerta: nadie podía rehacer con ella
     corregida = [(finales[k]["formacion"], v["formacion"]) for k, v in despues.items()
                  if k in finales and v["formacion"] and v["formacion"] != finales[k]["formacion"]]
+    t_corr = min(corregida_en.values()) if corregida_en else None
     if t <= dep and corregida:
         momento, texto = "tardio", ("la API corrigió la formación después del pitazo ("
                                     + ", ".join(f"{a} → {b}" for a, b in corregida)
+                                    + (f", a las {t_corr.strftime('%H:%M UTC')}" if t_corr else "")
                                     + "); el once previo ya estaba en el último depósito: nadie podía rehacer "
                                     "con la corrección")
     elif t <= dep:
@@ -4166,6 +4176,8 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> lis
         if a.get("codigo") == "DTP-REHACER":
             a = {**a, "momento": momento, "onceFinalEn": t.strftime("%Y-%m-%dT%H:%M:%SZ"),
                  "ultimoDepositoPrevio": dep.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                 **({"formacionCorregidaEn": t_corr.strftime("%Y-%m-%dT%H:%M:%SZ")}
+                    if t_corr and momento == "tardio" and t <= dep and corregida else {}),
                  "detalle": f"{a['detalle']} [{texto}]"}
         out.append(a)
     return out

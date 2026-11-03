@@ -3721,6 +3721,21 @@ def main():
           _c1016b and _c1016b[0]["id"] == 9910162, _c1016b)
     check("1016: sin parte en ninguno de los anteriores, el último a secas (la regla no inventa uno)",
           _c1016 and _c1016[0]["id"] == 9910161, _c1016)
+    # 1116: el caso que NOMBRA al rival de otro partido es de ese partido (Frankfurt «ante Köln»)
+    _acp1116 = _d15._anterior_con_parte
+    try:
+        _d15._anteriores = lambda tid, fecha, n: [
+            {"id": 1575187, "date": "2026-10-16", "home_team_id": 169, "away_team_id": 192,
+             "home_name": "Eintracht Frankfurt", "away_name": "1. FC Köln"},
+            {"id": 1575170, "date": "2026-09-19", "home_team_id": 165, "away_team_id": 169,
+             "home_name": "VfB Stuttgart", "away_name": "Eintracht Frankfurt"}]
+        _d15._anterior_con_parte = lambda tid, fecha, cuantos=5: [{"id": 1575170, "date": "2026-09-19"}]
+        _p1116 = _d15._partido_del_caso(169, "2026-10-24", "1-0 sostenido 13' en casa ante Köln")
+        _p1116b = _d15._partido_del_caso(169, "2026-10-24", "1-0 sostenido 80' con línea de cinco")
+    finally:
+        _d15._anteriores, _d15._anterior_con_parte = _ant1016, _acp1116
+    check("1116: «ante Köln» es el partido del 16/10 aunque la última apertura con parte sea del 19/09; sin rival nombrado, la regla 1016",
+          _p1116[0]["id"] == 1575187 and _p1116b[0]["id"] == 1575170, (_p1116, _p1116b))
     check("721/762: el aviso nombra los casos de ESTA cadena con su fecha, no el ejemplo del 25/10",
           _p762 and "4-0 de local (local, 2026-10-19)" in _p762[0]["costara"]
           and "Leones–Libertad" not in _p762[0]["costara"], _p762)
@@ -4308,6 +4323,9 @@ def main():
     _m848 = _mom(_al, _fx480, "2026-10-25 15:45:00")[0]
     check("848: corrección de formación después del pitazo con el once previo ya depositado: `tardio`",
           _m848.get("momento") == "tardio" and "4-3-1-2 → 4-1-4-1" in _m848["detalle"], _m848)
+    check("1133: la corrección viaja con SU hora (formacionCorregidaEn), aparte de la del once previo",
+          _m848.get("formacionCorregidaEn") == "2026-10-25T16:40:00Z" and "a las 16:40 UTC" in _m848["detalle"]
+          and _m848.get("onceFinalEn") == "2026-10-25T15:30:00Z", _m848)
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM alineaciones_versiones WHERE fixture_id=990480 AND capturada_en > '2026-10-25 16:15:00'")
     # 688/697: el refresco de la ficha DESPUÉS del pitazo no es la versión final
