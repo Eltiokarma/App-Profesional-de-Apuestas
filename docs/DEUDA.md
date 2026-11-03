@@ -778,16 +778,22 @@ conversación se pierde en la siguiente.
    releer), la de partes a 389 mil y 2.715 USD acumulados, y rehacer gastaba
    ~0,30 USD por cada uno de sus 71 disparos diarios vacíos. Se rotaron las
    cuatro el 03/11 y desde entonces una rutina de esta sesión de trabajo
-   («SAD · rotar sesiones fijas de las rutinas», 03:17 de Lima cada dos días)
-   rota la que pase de 150 mil tokens. **Sesiones y rutinas vigentes**:
+   («SAD · rotar sesiones fijas de las rutinas», `trig_0156fv2ZZpxW5z1rgo3pbeXN`,
+   03:17 de Lima TODOS los días) rota la que pase de 150 mil tokens. Medido en
+   la primera noche: una sesión nueva arranca en ~90 mil tokens (sistema,
+   herramientas, CLAUDE.md); rehacer suma ~3.500 por disparo vacío (~250 mil
+   por día) y cada disparo vacío costó ~0,10 USD con la sesión chica (antes
+   ~0,30); una pasada de mantenimiento suma ~200 mil y costó 40 USD. **Sesiones y rutinas vigentes**:
    - partes: `session_01WwsfbVQPxVPkxUsYtR2D9V` · tramos 04:47
      `trig_01H8uddXTKzsV4JrBH9ukRHf`, 09:52 `trig_015NT3DmUx1QcPCYSZVxkrsU`,
      14:56 `trig_01SqoZgb3oRK6jec3zu2Ls94` (antes `session_014NFRg8vpomVRAptrKnGpNz`);
    - veredictos: `session_01WwsfbVRbeKmuposR5pHMKr` · 20:12
      `trig_01LF6Fuc2Fqk7Mz2AQk9bGtW` (antes `session_01WwsfbT7QwmMGN9rpzPDcW6`);
-   - mantenimiento: `session_01WwsfbSE7FFaUEYTgJuMo5d` · 12:23
-     `trig_018UmsFXVy8G4fGk5KnqcpBM`, 17:41 `trig_014JqGths24VMnSXipvVsnH7`,
-     21:47 `trig_01FUGXi9jYsKbqMGDjAkZkA2` (antes `session_01WwsfbSrNaKynS84SUXEwvA`);
+   - mantenimiento: `session_01WwsfbT1idxY3J7mkUGXzvf` · 12:23
+     `trig_01PBNkthvxGYUKrMAwwWwM2H`, 17:41 `trig_01PmA4XCWpbFkedTLpJHcpsX`,
+     21:47 `trig_01XcfsTWnLarQr2i6zWZxU5p` (rotada el 03/11 03:17 con 289 mil tokens
+     tras UNA pasada; antes `session_01WwsfbSE7FFaUEYTgJuMo5d` y
+     `session_01WwsfbSrNaKynS84SUXEwvA`);
    - rehacer: `session_01WwsfbV88R2FfNBzhkFkNdQ` · :02 `trig_01DU2uVej7bV3kkuFGc77xyF`,
      :12 `trig_01LhgFVbc74Hug6AW3LAfhxY`, :22 `trig_016VcNauvidJYEt36WVhKxDD`,
      :42 `trig_01MuEv7fBHxjdngfVc85hLMB` (antes `session_01WwsfbTrhC56SCybz9zK3CQ`).
