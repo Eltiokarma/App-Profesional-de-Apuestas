@@ -1381,6 +1381,8 @@ export interface JugadorParte {
   soloBaja?: boolean
   /** dónde apareció en la hoja del partido, una vez resuelto el once. */
   hoja?: 'titular' | 'banca' | 'fuera' | 'duplicado'
+  /** casó por la inicial de una primera pila que la tabla no escribe («O. Arias» = «Nahuel Arias», 1077). */
+  porPilaCompuesta?: string
 }
 
 export interface BloqueParte {

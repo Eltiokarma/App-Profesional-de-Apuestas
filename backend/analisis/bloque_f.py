@@ -269,6 +269,31 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
                 if destino == "titular":
                     no_reconocidos_once.append(nombre)
 
+    # LA INICIAL DE UNA PRIMERA PILA QUE LA TABLA NO ESCRIBE (02/11/2026,
+    # incidencia 1077, San Lorenzo): la hoja trae «O. Arias» (Óscar Nahuel
+    # Arias) y la tabla «Nahuel Arias», sin `jugadorId`; sonaba ONCE-SIN-FILA-F1
+    # y la fila salía de baja. Último recurso (`identidad.pila_compuesta_posible`):
+    # la fila sin id y libre, el apellido de una sola fila de la tabla y de un
+    # solo nombre de la hoja. Queda dicho en la fila (`porPilaCompuesta`).
+    compuestas: dict[int, str] = {}
+    hoja_toks = [(n, _tokens(n)) for n in [*once, *banca]]
+    for lista, destino, sueltos in ((once, "titular", no_reconocidos_once), (banca, "banca", None)):
+        for nombre in [n for n in lista if n in no_reconocidos]:
+            th = _tokens(nombre)
+            cand = [i for i, j in enumerate(plantel) if i not in estados and j.get("jugadorId") is None
+                    and _id.pila_compuesta_posible(_tokens(j.get("nombre", "")), th)]
+            if len(cand) != 1 or len(th) != 2:
+                continue
+            mismo_apellido = [j for j in plantel if th[1] in _tokens(j.get("nombre", ""))[1:]]
+            en_hoja = [n for n, t in hoja_toks if th[1] in t[1:]]
+            if len(mismo_apellido) != 1 or len(en_hoja) != 1:
+                continue
+            estados[cand[0]] = ("disponible", destino)
+            compuestas[cand[0]] = nombre
+            no_reconocidos.remove(nombre)
+            if sueltos is not None and nombre in sueltos:
+                sueltos.remove(nombre)
+
     # LA FILA CUYO ID ES EL ALTERNO DE OTRA es esa otra persona: la tabla la
     # trajo dos veces (Pasto, «S. Cordoba» 538162 baja con «S. Córdoba» 64215
     # en la banca, incidencia 423)
@@ -306,7 +331,8 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
                                        "hoja; no se cuenta como baja"})
         elif i in estados:
             resuelto.append({**j, "estado": "disponible", "motivo": "",
-                             "hoja": estados[i][1]})
+                             "hoja": estados[i][1],
+                             **({"porPilaCompuesta": compuestas[i]} if i in compuestas else {})})
         elif clave in conocidas:
             estado, motivo = conocidas[clave]
             # CON LA HOJA A LA VISTA YA NO HAY DUDA: quien estaba en duda y no

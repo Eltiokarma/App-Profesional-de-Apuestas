@@ -380,6 +380,16 @@ def _sombra_sin_hojas(q: dict, j: dict, sin_hojas) -> bool:
     return bool(sin_hojas) and ((_sombra(q) and sin_hojas(q["id"])) or (_sombra(j) and sin_hojas(j["id"])))
 
 
+def _pilas_distintas(q: dict, j: dict, nombres: dict | None) -> bool:
+    """Los nombres conocidos de los dos (la plantilla, las hojas, los ids que
+    ya fundió la fila) tienen la pila entera y distinta (1107)."""
+    nombres = nombres or {}
+    def de(f):
+        return [f.get("nombre") or "", *[n for i in [f["id"], *(f.get("idsAlternos") or [])]
+                                         for n in nombres.get(i) or ()]]
+    return _id.pilas_enteras_distintas(de(q), de(j))
+
+
 HOJAS_ALTERNAN = 6   # hojas entre los dos ids para que «nunca juntos» sea evidencia
 
 
@@ -400,7 +410,8 @@ def _caben(q: dict, j: dict, tope: int | None) -> bool:
 
 
 def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None,
-               tope: int | None = None, sin_hojas=None, alternan=None) -> tuple[list[dict], dict[int, int]]:
+               tope: int | None = None, sin_hojas=None, alternan=None,
+               nombres: dict | None = None) -> tuple[list[dict], dict[int, int]]:
     """UN JUGADOR CON DOS IDS ES UNO. La API da a veces dos ids para la misma
     persona: el de la temporada, con sus minutos, y una copia vacía creada por
     una hoja del partido (Leones del Norte con «E. Griffa» 566349 y «Emiliano
@@ -453,7 +464,18 @@ def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None,
     es una sucesión limpia, pero dos personas distintas del mismo plantel
     comparten alguna hoja (once o banco) en `HOJAS_ALTERNAN` hojas: con ese
     total entre los dos y nunca juntos, es la misma (`alternan(a, b)`). Un
-    arquero y uno de campo no se funden nunca por esta vía."""
+    arquero y uno de campo no se funden nunca por esta vía.
+
+    PERO DOS PILAS ENTERAS DISTINTAS SON DOS PERSONAS (02/11/2026, incidencia
+    1107, Los Chankas): «Ángel Gonzales» 101280 y «D. Gonzáles» 107017 se
+    fundían por la inicial, y la hoja escribe al segundo «David Gonzales».
+    `nombres` (id → los nombres con que lo escriben las hojas) entra a la
+    comparación: si en algún nombre de cada uno la pila es entera y distinta
+    (`identidad.pilas_enteras_distintas`), las reglas de la inicial no funden.
+
+    Y DOS IDS QUE COMPARTIERON HOJA NUNCA SON UNO (1039, 1076: «A. Romero»
+    159161 titular y 53129, que entró al 40', en Monagas): tampoco la copia
+    sin minutos se funde con quien estuvo en la misma hoja."""
     tit = dict(tit)
     quedan: list[dict] = []
     for j in sorted(js, key=lambda j: (_sin_minutos(j), -(j.get("minutos") or 0), -tit.get(j["id"], 0))):
@@ -461,6 +483,7 @@ def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None,
         for i, q in enumerate(quedan):
             if not mismo_jugador(j["nombre"], q["nombre"]):
                 if (_mismo_apellido(j["nombre"], q["nombre"]) and not _sin_minutos(j) and juntos
+                        and not _pilas_distintas(q, j, nombres)
                         and _caben(q, j, tope) and not _alguna_vez_juntos(q, j, juntos)
                         and ((sucesion and sucesion(j["id"], q["id"])) or _mismos_ga(j, q)
                              or _sombra_sin_hojas(q, j, sin_hojas) or _se_alternan(q, j, alternan))):
@@ -468,7 +491,7 @@ def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None,
                     quedan[i] = {**_sumar(q, j), "fundidoPorInicial": True}
                     break
                 continue
-            if _sin_minutos(j) or _mismas_stats(j, q):
+            if (_sin_minutos(j) or _mismas_stats(j, q)) and not (juntos and _alguna_vez_juntos(q, j, juntos)):
                 gemela = q
                 break
             if (_mismo_nombre_completo(j["nombre"], q["nombre"]) and _caben(q, j, tope)
@@ -479,6 +502,7 @@ def deduplicar(js: list[dict], tit: dict[int, int], juntos=None, sucesion=None,
             # misma inicial pero sin la pila entera («M. Perea» y «M. Perea»): la misma
             # regla de la inicial distinta (sucesión o mismos goles y asistencias)
             if (juntos and _caben(q, j, tope) and not _alguna_vez_juntos(q, j, juntos)
+                    and not _pilas_distintas(q, j, nombres)
                     and ((sucesion and sucesion(j["id"], q["id"])) or _mismos_ga(j, q)
                          or _sombra_sin_hojas(q, j, sin_hojas) or _se_alternan(q, j, alternan))):
                 gemela, sumar = q, True
@@ -645,7 +669,8 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     con_onces = rec["onces"] >= ONCES_MINIMOS
     tit = {pid: j["titular"] for pid, j in rec["jugadores"].items()}
     js, tit = deduplicar(js, tit, _juntos, _sucesion, _partidos_temporada(team_id, p.get("temporada")), _sin_hojas,
-                         lambda a, b: _alternan(a, b, team_id))
+                         lambda a, b: _alternan(a, b, team_id),
+                         nombres={pid: r.get("nombres") or {r.get("nombre")} for pid, r in rec["jugadores"].items()})
     otro = juegan_en_otro(team_id, [j["id"] for j in js], antes)
     idos = [{"jugadorId": j["id"], "nombre": j["nombre"], **otro[j["id"]]} for j in js if j["id"] in otro]
     js = [j for j in js if j["id"] not in otro]

@@ -117,5 +117,74 @@ check("bloque_f, f1_base, dtp_cowork, parte e ingesta/jugadores apuntan a identi
       and dtp_cowork._plano is idn.plano and parte.mismo_dt is idn.mismo_dt
       and jugadores.mismo_nombre_dt is idn.mismo_nombre_dt and jugadores._casi_igual is idn.apellido_casi)
 
+# ── mantenimiento del 02/11/2026 (grupo identidad-jugador) ───────────────────
+# 1077 (San Lorenzo): la pila compuesta, en la regla y en el bloque F
+check("1077: «Nahuel Arias» es «Óscar Nahuel Arias» (la segunda pila del largo)",
+      idn.mismo_jugador("Nahuel Arias", "Óscar Nahuel Arias") and idn.mismo_jugador("Óscar Nahuel Arias", "Nahuel Arias")
+      and not idn.mismo_jugador("Pedro Arias", "Óscar Nahuel Arias"))
+check("1077: «O. Arias» PUEDE ser «Nahuel Arias» (inicial de una primera pila que la tabla no escribe); "
+      "«N. Arias» no entra por acá (ya casa) y otro apellido tampoco",
+      idn.pila_compuesta_posible(T("Nahuel Arias"), T("O. Arias"))
+      and not idn.pila_compuesta_posible(T("Nahuel Arias"), T("N. Arias"))
+      and not idn.pila_compuesta_posible(T("Nahuel Arias"), T("O. Arce")))
+_pl1077 = [{"nombre": "J. Devecchi", "jugadorId": 6595, "zona": "GK", "rol": "TF"},
+           {"nombre": "Nahuel Arias", "zona": "MID", "rol": "TH"},
+           {"nombre": "G. Alassia", "jugadorId": 296488, "zona": "MID", "rol": "TH"}]
+_r1077 = bloque_f.resolver(_pl1077, [], ["J. Devecchi", "O. Arias"], [], {"J. Devecchi": 6595, "O. Arias": 414527})
+_e1077 = {x["nombre"]: (x["estado"], x.get("hoja"), x.get("porPilaCompuesta")) for x in _r1077["jugadores"]}
+check("1077: el bloque F casa «O. Arias» con «Nahuel Arias» (sin id, apellido único) y no suena ONCE-SIN-FILA-F1",
+      _e1077["Nahuel Arias"] == ("disponible", "titular", "O. Arias") and not _r1077["noReconocidosOnce"], _r1077)
+_r1077b = bloque_f.resolver([*_pl1077, {"nombre": "Martín Arias", "zona": "DEF", "rol": "ROT"}], [],
+                            ["J. Devecchi", "O. Arias"], [], {"J. Devecchi": 6595})
+check("1077: con dos Arias en la tabla no se adivina (390: «K. Álvarez» no es «Carlos Álvarez»)",
+      _r1077b["noReconocidosOnce"] == ["O. Arias"], _r1077b["noReconocidosOnce"])
+_r1077c = bloque_f.resolver([{**_pl1077[1], "jugadorId": 999}], [], ["O. Arias"], [], {"O. Arias": 414527})
+check("1077: una fila CON otro id no casa por la pila compuesta", _r1077c["noReconocidosOnce"] == ["O. Arias"], _r1077c)
+_r1077d = bloque_f.resolver(_pl1077, [], ["J. Devecchi", "O. Arias"], ["N. Arias"], {"J. Devecchi": 6595})
+check("1077: si la hoja trae también a «N. Arias», «Nahuel Arias» es ese y «O. Arias» queda sin fila",
+      {x["nombre"]: x.get("hoja") for x in _r1077d["jugadores"]}["Nahuel Arias"] == "banca"
+      and _r1077d["noReconocidosOnce"] == ["O. Arias"], _r1077d)
+
+# 1107 (Los Chankas): dos pilas enteras distintas no se funden por la inicial
+check("1107: «Ángel Gonzales» y «D. Gonzáles» (hoja «David Gonzales») tienen pilas enteras distintas",
+      idn.pilas_enteras_distintas(["Ángel Gonzales"], ["D. Gonzáles", "David Gonzales"])
+      and not idn.pilas_enteras_distintas(["Ángel Gonzales"], ["D. Gonzáles"])
+      and not idn.pilas_enteras_distintas(["Juan Bizans"], ["F. Bisanz", "Juan Francisco Bisanz"]))
+_gz = [{"id": 101280, "nombre": "Ángel Gonzales", "minutos": 1800, "partidos": 22, "goles": 1, "asistencias": 0},
+       {"id": 107017, "nombre": "D. Gonzáles", "minutos": 213, "partidos": 4, "goles": 1, "asistencias": 0}]
+_g1, _ = f1_base.deduplicar(_gz, {}, lambda a, b: False, lambda a, b: True)
+_g2, _ = f1_base.deduplicar(_gz, {}, lambda a, b: False, lambda a, b: True,
+                            nombres={107017: ["David Gonzales"], 101280: ["Ángel Gonzales"]})
+check("1107: sin el nombre de la hoja la inicial funde (673); con «David Gonzales» en la hoja quedan dos filas",
+      len(_g1) == 1 and len(_g2) == 2 and not any(r.get("fundidoPorInicial") for r in _g2), (_g1, _g2))
+
+# 1111 (Boston River) y 1094 (Cercle, Twente): el aviso de `equipos.fuera`
+check("1111: «N. da Silva» no menciona a «K. Silva»; «K. Silva», «Kevin Silva» y «Silva» suelto sí",
+      not idn.menciona("K. Silva", "N. da Silva desde el banco")
+      and idn.menciona("K. Silva", "K. Silva desde el banco") and idn.menciona("K. Silva", "entra Kevin Silva")
+      and idn.menciona("K. Silva", "entra Silva por la derecha") and idn.menciona("K. Silva", "Silva entra"))
+_p1111 = {"equipos": {"a": {"fuera": [{"nombre": "K. Silva", "estado": "baja"}]}},
+          "dtp": {"bloques": [{"equipo": "a", "apertura": {"m6": {"recambio": "N. da Silva en el banco"}}}]}}
+check("1111: el sancionado «K. Silva» no se avisa por el «N. da Silva» del banco", parte.fuera_en_el_banco(_p1111) == [])
+_p1094 = {"equipos": {"a": {"fuera": [{"nombre": "A. Vanzeir", "estado": "baja"}]}},
+          "dtp": {"bloques": [{"equipo": "a", "apertura": {"m1": {
+              "senalXi": "entra Mondele por Vanzeir (roja directa ante el Genk)"}}}]}}
+_p1094b = {"equipos": {"a": {"fuera": [{"nombre": "A. Vanzeir", "estado": "baja"}]}},
+           "dtp": {"bloques": [{"equipo": "a", "apertura": {"m1": {"senalXi": "entra Vanzeir desde el banco"}}}]}}
+check("1094: «entra Mondele por Vanzeir» no cuenta con Vanzeir (el que sale); «entra Vanzeir» sí se avisa",
+      parte.fuera_en_el_banco(_p1094) == [] and len(parte.fuera_en_el_banco(_p1094b)) == 1,
+      (parte.fuera_en_el_banco(_p1094), parte.fuera_en_el_banco(_p1094b)))
+
+# 1076 (Monagas): dos «A. Romero» en la misma hoja son dos personas
+_r1076 = bloque_f.resolver([{"nombre": "A. Romero", "jugadorId": 159161, "zona": "MID", "rol": "TH"}], [],
+                           ["A. Romero"], ["A. Romero"], {"A. Romero": [159161, 53129]})
+check("1076: el titular casa por su id (159161) y el suplente homónimo (53129) no se suma a su fila",
+      [(x["estado"], x.get("hoja")) for x in _r1076["jugadores"]] == [("disponible", "titular")]
+      and _r1076["noReconocidos"] == ["A. Romero"], _r1076)
+_rm, _ = f1_base.deduplicar([{"id": 159161, "nombre": "A. Romero", "minutos": 900, "partidos": 10},
+                             {"id": 53129, "nombre": "A. Romero", "minutos": 0, "partidos": 0}], {},
+                            lambda a, b: True)
+check("1076: la copia sin minutos que COMPARTIÓ hoja con el otro id no se funde (1039)", len(_rm) == 2, _rm)
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)

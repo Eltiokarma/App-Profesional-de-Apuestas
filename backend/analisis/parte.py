@@ -1754,9 +1754,11 @@ def _palabras(texto: str, minimo: int = 5) -> set[str]:
 
 
 def _frases(obj, lado: str | None = None):
-    """(frase, lado del bloque donde está o None) de todo el texto del parte."""
+    """(frase, lado del bloque donde está o None) de todo el texto del parte.
+    El punto de una inicial no corta la frase («N. da Silva en el banco»,
+    incidencia 1111; la misma regla que `_SALIENTES`, 714)."""
     if isinstance(obj, str):
-        for f in re.split(r"(?<=[.;!?])\s+|\n+", obj):
+        for f in re.split(r"(?<=[.;!?])(?<!\b[A-ZÁÉÍÓÚÑÜ]\.)\s+|\n+", obj):
             if f.strip():
                 yield f, lado
     elif isinstance(obj, dict):
@@ -1845,15 +1847,15 @@ def fuera_en_el_banco(parte: dict) -> list[dict]:
         textos.append(("matriz", ((parte.get("matriz") or {}).get(lado)) or {}))
         for x in bajas:
             nombre = x.get("nombre") or ""
-            apell = [t for t in _identidad.tokens(nombre)[1:] if len(t) >= 4] or \
-                    [t for t in _identidad.tokens(nombre) if len(t) >= 4][-1:]
-            if not apell:
-                continue
             hecho = False
             for donde, obj in textos:
                 for frase, _ in _frases(obj):
-                    pl = f" {_identidad.plano(frase)} "
-                    if any(f" {a} " in pl for a in apell) and _USO_BANCO.search(frase) and not _NIEGA_USO.search(frase):
+                    # quién es quién lo decide identidad.py (1111: «N. da Silva» no
+                    # es el sancionado «K. Silva»), y el que SALE no es el recambio
+                    # (1094: «entra Mondele por Vanzeir» no cuenta con Vanzeir; la
+                    # misma regla que contraElOnce, `sin_salientes`)
+                    if (_identidad.menciona(nombre, _dtp.sin_salientes(frase)) and _USO_BANCO.search(frase)
+                            and not _NIEGA_USO.search(frase)):
                         out.append({"lado": lado, "nombre": nombre, "donde": donde, "frase": frase.strip()[:140]})
                         hecho = True
                         break

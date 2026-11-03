@@ -3521,6 +3521,7 @@ components:
         idsAlternos: { type: array, items: { type: integer }, description: 'el otro id de la API para la misma persona (lo trae la tabla F1, incidencia 381): la hoja del partido casa con cualquiera' }
         estado: { type: string, enum: ['', disponible, baja, duda, duplicado], description: 'lo pone el backend al resolver el once. `duplicado`: una fila SIN jugadorId que casa por nombre con un titular o suplente que ya casó por id con OTRA fila (la base y la prensa lo escriben distinto, «D. Gelvez» / «Dayan Pérez»): es la misma persona y no pesa en el IP' }
         motivo: { type: string }
+        porPilaCompuesta: { type: string, description: 'el nombre de la hoja con que casó por la inicial de una PRIMERA pila que la tabla no escribe («O. Arias» = «Nahuel Arias», incidencia 1077): fila sin jugadorId y apellido único en la tabla y en la hoja' }
     EquipoParteEntrada:
       type: object
       description: Lo que Cowork escribe de un equipo. a = local, b = visitante.

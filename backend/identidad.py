@@ -129,7 +129,14 @@ def mismo_jugador(uno: str, otro: str) -> bool:
     if all(len(t) > 1 for t in a + b) and sorted(a) == sorted(b):
         return True
     if not misma_pila(a[0], b[0]):
-        return False
+        # LA PILA COMPUESTA (02/11/2026, incidencia 1077: «Nahuel Arias» de la
+        # tabla y «Óscar Nahuel Arias» de la prensa, San Lorenzo): el nombre
+        # corto usa la SEGUNDA pila del largo. Con la pila entera y el mismo
+        # apellido.
+        corto, largo = (a, b) if len(a) <= len(b) else (b, a)
+        return (len(corto) == 2 and len(largo) >= 3 and len(corto[0]) > 1
+                and any(misma_pila(corto[0], p) for p in largo[1:-1] if len(p) > 1)
+                and (corto[-1] == largo[-1] or apellido_casi(corto[-1], largo[-1])))
     if a[-1] == b[-1] or apellido_casi(a[-1], b[-1]):
         return True
     # EL NOMBRE CORTO LLEVA EL PRIMER APELLIDO (31/10/2026, incidencia 893: «A.
@@ -176,6 +183,69 @@ def casa(tokens_plantel: list[str], tokens_hoja: list[str]) -> bool:
     iniciales = "".join(t[0] for t in tokens_plantel[:-1])
     return any(misma_pila(t, pila_plantel) or (1 < len(t) <= 3 and t == iniciales[:len(t)])
                for t in pila_hoja)
+
+
+def pila_compuesta_posible(tokens_plantel: list[str], tokens_hoja: list[str]) -> bool:
+    """¿La inicial de la hoja puede ser la de una PRIMERA pila que la tabla no
+    escribe? «O. Arias» (Óscar Nahuel Arias) contra «Nahuel Arias» de la tabla
+    (San Lorenzo, incidencia 1077): el mismo apellido, la hoja con una inicial
+    y la tabla con una sola pila entera de otra letra. Es una POSIBILIDAD, no
+    la misma persona («K. Álvarez» no es «Carlos Álvarez», 390): quien llama
+    la usa solo como último recurso, con la fila sin `jugadorId` y el apellido
+    único en la tabla y en la hoja."""
+    return (len(tokens_plantel) == 2 and len(tokens_hoja) == 2
+            and len(tokens_plantel[0]) > 1 and len(tokens_hoja[0]) == 1 and tokens_hoja[0].isalpha()
+            and tokens_hoja[0] != tokens_plantel[0][0]
+            and len(tokens_plantel[1]) > 1 and tokens_plantel[1] == tokens_hoja[1])
+
+
+def pilas_enteras_distintas(nombres_uno, nombres_otro) -> bool:
+    """¿Dos registros tienen, en alguno de sus nombres conocidos (la plantilla y
+    las hojas), la pila ENTERA y distinta? Entonces son dos personas aunque la
+    plantilla escriba a uno con inicial: «Ángel Gonzales» 101280 y «D.
+    Gonzáles» 107017, que la hoja escribe «David Gonzales» (Los Chankas,
+    incidencia 1107). Una pila del uno que está entre las del otro no es
+    distinta (la pila compuesta: «Juan Bizans» / «Juan Francisco Bisanz»)."""
+    def pilas(nombres):
+        out = []
+        for n in nombres or ():
+            t = tokens(n)
+            if len(t) >= 2 and len(t[0]) > 1:
+                out.append(t[:-1])
+        return out
+    pu, po = pilas(nombres_uno), pilas(nombres_otro)
+    if not pu or not po:
+        return False
+    return all(not any(misma_pila(x, y) for x in a for y in b if len(x) > 1 and len(y) > 1)
+               for a in pu for b in po)
+
+
+def menciona(nombre: str, frase: str) -> bool:
+    """¿La frase nombra a ESTE jugador? Una mención de su apellido (4 letras o
+    más) que no vaya pegada a la inicial o la pila de OTRO: «N. da Silva» no
+    es «K. Silva» (Boston River, incidencia 1111: el aviso de `equipos.fuera`
+    tomaba al sancionado K. Silva por el N. da Silva del banco). Las
+    partículas entre la pila y el apellido se saltan; una mención suelta
+    («Silva») sí cuenta, porque no se sabe de quién es."""
+    t = tokens(nombre)
+    apell = [x for x in t[1:] if len(x) >= 4] or [x for x in t if len(x) >= 4][-1:]
+    if not apell:
+        return False
+    pila = t[0] if len(t) > 1 else ""
+    crudo = re.findall(r"[^\W_][\w'’]*", limpiar_nombre(frase or "") or "")
+    palabras = [plano(w).replace(" ", "") for w in crudo]
+    for k, w in enumerate(palabras):
+        if w not in apell:
+            continue
+        j = k - 1
+        while j >= 0 and (palabras[j] in PARTICULAS or palabras[j] in t[1:]):
+            j -= 1
+        # la palabra de antes es una pila si es una inicial o va con mayúscula
+        # en medio de la frase («Entra Silva» al empezar no nombra a otro)
+        otra_pila = j >= 0 and crudo[j][:1].isupper() and (len(palabras[j]) == 1 or j > 0)
+        if not pila or not otra_pila or misma_pila(palabras[j], pila):
+            return True
+    return False
 
 
 def solo_pila(tokens_plantel: list[str], tokens_hoja: list[str]) -> bool:
