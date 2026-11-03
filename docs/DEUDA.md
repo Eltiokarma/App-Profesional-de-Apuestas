@@ -845,6 +845,17 @@ conversación se pierde en la siguiente.
      subidas el 01/11 (TDE v0.1.25, sad v4.4, DTP v1.7, EFE v1.9); lo que los
      skills marcan «pendiente de la app» en `docs/revisiones/PENDIENTES.md`.
 
+22. **El método de apuesta** (03/11/2026, usuario): el win rate es lo que se
+   mejora y Kelly sobre nuestras probabilidades queda como alarma (con que no
+   baje mucho alcanza), no como meta: la cuota la pone la casa. Investigado el
+   mismo día sobre 374 partes (15/09-01/11) con remuestreo por días y con los
+   resultados sorteados según el mercado (sin ventaja): el elegido es el
+   **proporcional al 1 % con freno por tramo** (`docs/METODO_APUESTA.md`), en
+   la simulación como serie `proporcional`. Martingala, Fibonacci y
+   D'Alembert no agregan ventaja y sin ella quiebran la mitad de las veces o
+   más. **Pendiente**: volver a medir con un mes sin huecos (los datos del
+   domingo 01/11 desde las 17:00 al lunes 02/11 a las 12:00 se perdieron).
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel

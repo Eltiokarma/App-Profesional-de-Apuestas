@@ -18,6 +18,18 @@ declarados, con tres estrategias puestas lado a lado:
 - **martingala60**: la misma martingala por líneas, solo con nuestro elegido a
   60 %+ (como `plana60` respecto de la plana).
 
+- **proporcional** (EL MÉTODO, 03/11/2026, usuario: «investiguemos el método
+  definitivo»): el 1 % de la banca a nuestro elegido, con un FRENO POR TRAMO
+  de confianza (<40 · 40-49 · 50-59 · 60+, los de `lecciones`). El tramo se
+  pausa si en sus últimos `FRENO_VENTANA` partidos cerrados acertó menos de lo
+  que pedía la cuota (1/cuota media), con `FRENO_Z` errores estándar de
+  tolerancia y al menos `FRENO_MINIMO` partidos; en pausa sigue ANOTANDO (los
+  partidos sin apuesta cuentan), así que vuelve solo cuando el tramo se
+  recupera. No busca valor contra el mercado: la cuota la pone la casa y
+  nosotros elegimos dónde poner la plata. Medido el 03/11 sobre 374 partes
+  (15/09-01/11) con remuestreo por días y con los resultados sorteados según
+  el mercado (sin ventaja): ver `docs/METODO_APUESTA.md`.
+
 Las COPAS NACIONALES quedan fuera (29/10/2026, usuario): se analizan, pero un
 favorito al 90 % contra uno de quinta a cuota 1.02 no es la apuesta que se mide.
 
@@ -47,12 +59,14 @@ en la última captura prepartido y trae su margen.
 from __future__ import annotations
 
 import json
+import math
+from collections import deque
 from datetime import datetime, timedelta, timezone
 
 from backend import db as saddb
 from backend.analisis import veredicto as _vered
 from backend.analisis.escala import copas_nacionales
-from backend.analisis.lecciones import CORTE_VERSION, cuotas_mercado
+from backend.analisis.lecciones import CORTE_VERSION, TRAMOS_CONFIANZA, cuotas_mercado, tramo_confianza
 
 # 00:00 de Lima (UTC−5) del 28/10/2026: «recién desde los partidos de hoy»
 DESDE = "2026-10-28 05:00:00"
@@ -64,6 +78,11 @@ CONFIANZA_ALTA = 60.0
 # partido, y 90 minutos con el descanso y el añadido son unas dos horas
 DURACION = timedelta(minutes=120)
 CLAVES = ("local", "empate", "visita")
+# EL MÉTODO (docs/METODO_APUESTA.md): fracción de la banca y su freno por tramo
+PROPORCION = 0.01
+FRENO_VENTANA = 50     # últimos partidos cerrados del tramo que se miran
+FRENO_MINIMO = 15      # con menos, el tramo no se juzga: se apuesta
+FRENO_Z = 0.5          # tolerancia, en errores estándar, antes de pausar
 SKILLS = ("sad-analysis", "efe-clasificador", "teorema-del-echado", "diagnostico-tactico")
 
 # Hora (UTC) en que la versión llegó a la cuenta del usuario, cuando se sabe.
@@ -85,6 +104,9 @@ SUBIDA_VERSION = {
 }
 
 ESTRATEGIAS = (
+    ("proporcional", "Proporcional con freno",
+     f"{100 * PROPORCION:g} % de la banca a nuestro elegido; un tramo de confianza se pausa si en sus últimos "
+     f"{FRENO_VENTANA} partidos acertó menos de lo que pedía la cuota, y vuelve cuando se recupera"),
     ("plana", "Apuesta plana (control)",
      f"{UNIDAD:g} unidad a nuestro elegido en cada partido"),
     # CONTROL DE CONFIANZA (29/10/2026, usuario): el tramo de 60 %+ es el que
@@ -159,11 +181,39 @@ def _mejor_kelly(p: dict, cuotas: dict) -> tuple[str, float]:
     return s, kelly(p[s], cuotas[s])
 
 
+def freno_tramo(historia) -> dict:
+    """El estado del freno de UN tramo con su historia [(acertó, 1/cuota), …]:
+    cuánto acertó, cuánto pedía la cuota y si está en pausa."""
+    n = len(historia)
+    aciertos = sum(1 for g, _ in historia if g)
+    pide = sum(x for _, x in historia) / n if n else None
+    tasa = aciertos / n if n else None
+    z = None
+    if n and pide is not None and 0 < pide < 1:
+        z = (tasa - pide) / math.sqrt(pide * (1 - pide) / n)
+    pausado = n >= FRENO_MINIMO and z is not None and z < -FRENO_Z
+    return {"n": n, "aciertos": aciertos, "tasa": round(tasa, 4) if tasa is not None else None,
+            "pide": round(pide, 4) if pide is not None else None,
+            "z": round(z, 2) if z is not None else None, "pausado": pausado}
+
+
 def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
     """Arma la apuesta de una estrategia en el pitazo, con lo que ya se cobró."""
     libre = max(e["banca"] - e["comprometido"], 0.0)
     linea = None
-    if clave in _FRACCION_KELLY:
+    if clave == "proporcional":
+        sel = fila["elegido"]
+        tr = tramo_confianza(fila["probabilidades"][sel])
+        f = freno_tramo(e["tramos"].setdefault(tr, deque(maxlen=FRENO_VENTANA)))
+        if f["pausado"]:
+            fila["porEstrategia"][clave] = {
+                "seleccion": None, "monto": 0.0, "ganancia": None, "banca": None, "linea": None,
+                "motivo": (f"tramo {tr} en pausa: acertó {f['aciertos']} de {f['n']} "
+                           f"({100 * f['tasa']:.0f} %) y la cuota pedía {100 * f['pide']:.0f} %")}
+            return
+        # la banca de AHORA (lo cobrado), como Kelly
+        previsto = PROPORCION * e["banca"]
+    elif clave in _FRACCION_KELLY:
         sel = fila["kelly"]["seleccion"]
         # la banca de AHORA: lo cobrado; lo que está en juego no cuenta todavía
         previsto = _FRACCION_KELLY[clave] * fila["_f"] * e["banca"] if fila["_f"] > 0 else 0.0
@@ -193,6 +243,8 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
             motivo = "sin plata libre"
         elif clave in _SOLO_ALTA:
             motivo = f"bajo {CONFIANZA_ALTA:g} %"
+        elif clave == "proporcional":
+            motivo = "banca en cero"
         else:
             motivo = "sin ventaja"
         fila["porEstrategia"][clave] = {"seleccion": None, "monto": 0.0, "ganancia": None, "banca": None,
@@ -231,6 +283,11 @@ def _cobrar(e: dict, clave: str, fila: dict, t: datetime) -> None:
             e["quebro"] = fila["fixtureId"]
     else:
         r["ganancia"] = 0.0
+    if clave == "proporcional":
+        # el freno anota TODO partido cerrado del tramo, se haya apostado o no
+        sel = fila["elegido"]
+        e["tramos"].setdefault(tramo_confianza(fila["probabilidades"][sel]), deque(maxlen=FRENO_VENTANA)).append(
+            (fila["resultado"] == sel, 1 / fila["cuotas"][sel]))
     r["banca"] = round(e["banca"], 2)
     e["serie"].append({"fixtureId": fila["fixtureId"], "pitazo": fila["pitazo"], "banca": round(e["banca"], 2)})
 
@@ -260,7 +317,7 @@ def simular(apuestas: list[dict]) -> dict:
 
     estado = {c: {"banca": BANCA_INICIAL, "comprometido": 0.0, "pico": BANCA_INICIAL, "caida": 0.0,
                   "apostado": 0.0, "apuestas": 0, "ganadas": 0, "quebro": None,
-                  "exposicion": 0.0, "montoMax": 0.0, "lineas": [],
+                  "exposicion": 0.0, "montoMax": 0.0, "lineas": [], "tramos": {},
                   "serie": [{"fixtureId": None, "pitazo": None, "banca": BANCA_INICIAL}]}
               for c, _, _ in ESTRATEGIAS}
 
@@ -293,6 +350,9 @@ def simular(apuestas: list[dict]) -> dict:
                         "perdiendo": sum(1 for l in e["lineas"] if l["proximo"] > UNIDAD),
                         "proximoMayor": round(max((l["proximo"] for l in e["lineas"]), default=UNIDAD), 2)}
                        if clave in _MARTINGALAS else None),
+            # solo el método: cómo está hoy el freno de cada tramo
+            "tramos": ([{"tramo": tr, **freno_tramo(e["tramos"].get(tr, ()))} for tr, _, _ in TRAMOS_CONFIANZA]
+                       if clave == "proporcional" else None),
             "serie": e["serie"],
         })
 

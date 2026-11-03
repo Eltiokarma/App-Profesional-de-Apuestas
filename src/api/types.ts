@@ -2667,8 +2667,23 @@ export interface HistorialValorDTO extends GananciaValor {
 }
 
 // ── Simulación de apuesta (GET /analisis/simulacion, 28/10/2026) ─────────────
-export type EstrategiaClave = 'plana' | 'plana60' | 'kelly' | 'kellyMedio' | 'kellyCuarto' | 'martingala' | 'martingala60'
+export type EstrategiaClave = 'proporcional' | 'plana' | 'plana60' | 'kelly' | 'kellyMedio' | 'kellyCuarto' | 'martingala' | 'martingala60'
 export type Resultado1x2 = 'local' | 'empate' | 'visita'
+
+/** El freno de un tramo de confianza del método, sobre sus últimos 50 partidos cerrados */
+export interface FrenoTramo {
+  tramo: '<40' | '40-49' | '50-59' | '60+'
+  n: number
+  aciertos: number
+  /** 0-1 */
+  tasa: number | null
+  /** lo que pedía la cuota (media de 1/cuota), 0-1 */
+  pide: number | null
+  /** (tasa − pide) en errores estándar */
+  z: number | null
+  /** n ≥ 15 y z < −0.5 */
+  pausado: boolean
+}
 
 export interface EstrategiaSimulada {
   clave: EstrategiaClave
@@ -2691,6 +2706,8 @@ export interface EstrategiaSimulada {
   montoMaximo: number
   /** solo martingala: líneas abiertas, cuántas vienen de perder y el próximo monto más alto */
   lineas: { abiertas: number; perdiendo: number; proximoMayor: number } | null
+  /** solo el método (proporcional): el freno de cada tramo de confianza ahora */
+  tramos: FrenoTramo[] | null
   serie: { fixtureId: number | null; pitazo: string | null; banca: number }[]
 }
 

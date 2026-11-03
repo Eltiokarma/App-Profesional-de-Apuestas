@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ApuestaSimulada, EstrategiaClave, EstrategiaSimulada, Resultado1x2, SimulacionApuesta } from '../api/types'
+import type { ApuestaSimulada, EstrategiaClave, EstrategiaSimulada, FrenoTramo, Resultado1x2, SimulacionApuesta } from '../api/types'
 import { getDataSource } from '../services/datasource'
 import { useAsync } from '../services/useAsync'
 
@@ -7,12 +7,15 @@ import { useAsync } from '../services/useAsync'
  *  con una banca apostando con nuestros 1X2 desde los partidos de ese día. La
  *  cuenta la hace el backend (`backend/analisis/simulacion.py`) y se rehace al
  *  leer; la pantalla solo elige qué fracción de Kelly mirar. Cada apuesta trae
- *  la versión de los skills con la que se escribió su parte. */
+ *  la versión de los skills con la que se escribió su parte.
+ *  EL MÉTODO (03/11/2026, docs/METODO_APUESTA.md) va primero: 1 % de la banca
+ *  al elegido con un freno por tramo de confianza; su tarjeta dice cómo está
+ *  hoy cada tramo. */
 
 type Kelly = 'kelly' | 'kellyMedio' | 'kellyCuarto'
 const KELLY_OPC: [Kelly, string][] = [['kelly', 'entero'], ['kellyMedio', '½'], ['kellyCuarto', '¼']]
-const COLOR: Record<'plana' | 'plana60' | 'kelly' | 'martingala' | 'martingala60', string> = {
-  plana: 'var(--sim-plana)', plana60: 'var(--sim-plana60)', kelly: 'var(--sim-kelly)', martingala: 'var(--sim-martingala)',
+const COLOR: Record<'proporcional' | 'plana' | 'plana60' | 'kelly' | 'martingala' | 'martingala60', string> = {
+  proporcional: 'var(--sim-proporcional)', plana: 'var(--sim-plana)', plana60: 'var(--sim-plana60)', kelly: 'var(--sim-kelly)', martingala: 'var(--sim-martingala)',
   martingala60: 'var(--sim-martingala60)',
 }
 const RES: Record<Resultado1x2, string> = { local: 'Local', empate: 'Empate', visita: 'Visita' }
@@ -20,7 +23,7 @@ const SKILL_CORTO: [string, string][] = [
   ['sad-analysis', 'sad'], ['efe-clasificador', 'EFE'], ['teorema-del-echado', 'TDE'], ['diagnostico-tactico', 'DTP'],
 ]
 const CORTO: Record<EstrategiaClave, string> = {
-  plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala', martingala60: 'Martin. 60 %+',
+  proporcional: 'Método', plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala', martingala60: 'Martin. 60 %+',
 }
 const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
@@ -60,6 +63,7 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
   const d = sim.data
   const est = (c: EstrategiaClave) => d.estrategias.find((e) => e.clave === c)!
   const visibles: { clave: EstrategiaClave; color: string }[] = [
+    { clave: 'proporcional', color: COLOR.proporcional },
     { clave: 'plana', color: COLOR.plana }, { clave: 'plana60', color: COLOR.plana60 }, { clave: kelly, color: COLOR.kelly }, { clave: 'martingala', color: COLOR.martingala },
     { clave: 'martingala60', color: COLOR.martingala60 },
   ]
@@ -131,7 +135,7 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
       )}
 
       <div style={{ marginTop: 16, font: '500 11px var(--sans)', color: 'var(--t3)', lineHeight: 1.5 }}>
-        {d.estrategias.filter((e) => ['plana', 'plana60', kelly, 'martingala', 'martingala60'].includes(e.clave)).map((e) => (
+        {d.estrategias.filter((e) => ['proporcional', 'plana', 'plana60', kelly, 'martingala', 'martingala60'].includes(e.clave)).map((e) => (
           <div key={e.clave}><b style={{ color: 'var(--t2)' }}>{e.nombre}</b>: {e.descripcion}.</div>
         ))}
         <div style={{ marginTop: 6 }}>{d.nota}.</div>
@@ -141,11 +145,13 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
 }
 
 function TarjetaEstrategia({ e, color }: { e: EstrategiaSimulada; color: string }) {
+  const metodo = e.clave === 'proporcional'
   return (
-    <div style={tarjeta}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
+    <div style={{ ...tarjeta, ...(metodo ? { borderColor: color, boxShadow: `inset 3px 0 0 ${color}` } : {}) }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6, flexWrap: 'wrap' }}>
         <span style={{ width: 10, height: 3, borderRadius: 2, background: color, flexShrink: 0 }} />
         <span style={{ font: '700 12px var(--sans)', color: 'var(--t1)' }}>{e.nombre}</span>
+        {metodo && <span style={{ ...rotulo, color, marginLeft: 'auto' }}>el método</span>}
       </div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
         <span style={{ font: '800 24px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>{num(e.banca)}</span>
@@ -168,9 +174,32 @@ function TarjetaEstrategia({ e, color }: { e: EstrategiaSimulada; color: string 
             : ' · todas en 1 u'}
         </div>
       )}
+      {e.tramos && <FrenoTramos tramos={e.tramos} />}
       {e.apuestas === 0 && e.clave.startsWith('kelly') && (
         <div style={{ marginTop: 6, font: '500 10.5px var(--sans)', color: 'var(--t3)' }}>Sin apuestas: en ningún partido nuestra probabilidad superó lo que paga la cuota.</div>
       )}
+    </div>
+  )
+}
+
+/** El freno del método por tramo: cuánto acertó en sus últimos 50 contra lo que pedía la cuota */
+function FrenoTramos({ tramos }: { tramos: FrenoTramo[] }) {
+  return (
+    <div style={{ marginTop: 9, paddingTop: 8, borderTop: '1px solid var(--line)' }}>
+      <div style={{ ...rotulo, marginBottom: 5 }}>Freno por tramo · acierta / pide la cuota</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: '3px 10px', font: '500 10.5px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+        {tramos.map((t) => (
+          <span key={t.tramo} title={t.n ? `${t.aciertos} de ${t.n}${t.z != null ? ` · z ${signo(t.z, 1)}` : ''}` : 'sin partidos cerrados'}>
+            <b style={{ color: 'var(--t1)' }}>{t.tramo}</b>{' '}
+            {t.n && t.tasa != null && t.pide != null ? (
+              <>
+                <span style={{ color: t.tasa >= t.pide ? 'var(--up)' : 'var(--down)' }}>{num(100 * t.tasa, 0)}</span>/{num(100 * t.pide, 0)} %
+                {t.pausado ? <b style={{ color: 'var(--down)' }}> · pausa</b> : <span style={{ color: 'var(--t3)' }}> · n {t.n}</span>}
+              </>
+            ) : <span style={{ color: 'var(--t3)' }}>sin datos</span>}
+          </span>
+        ))}
+      </div>
     </div>
   )
 }
@@ -366,6 +395,7 @@ function FilaApuesta({ a, visibles }: { a: ApuestaSimulada; visibles: { clave: E
                 <span style={{ color: 'var(--t3)', minWidth: 0 }}>
                   {r.motivo === 'sin plata libre'
                     ? 'no apuesta: toda la banca está en juego en otros partidos'
+                    : v.clave === 'proporcional' ? `no apuesta: ${r.motivo}`
                     : v.clave === 'plana60' || v.clave === 'martingala60' ? `no apuesta: el elegido tiene ${num(a.probabilidades[a.elegido], 0)} %, bajo el 60 %`
                     : v.clave.startsWith('kelly') ? `no apuesta: sin ventaja (mejor f* ${signo(100 * a.kelly.fraccion, 1)} % en ${RES[a.kelly.seleccion]})` : 'no apuesta: banca en cero'}
                 </span>

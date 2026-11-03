@@ -31,6 +31,7 @@
   --sim-kelly: #d95926;
   --sim-martingala: #9085e9;
   --sim-martingala60: #c98500;
+  --sim-proporcional: #e0559f;
   /* grid de las gráficas: la línea base acercada un 20% al texto para que
      las guías se lean sin robar protagonismo a las series */
   --grid: color-mix(in oklch, var(--line), var(--t2) 20%);
@@ -63,6 +64,7 @@
   --sim-kelly: #eb6834;
   --sim-martingala: #6250d6;
   --sim-martingala60: #b07400;
+  --sim-proporcional: #c2307e;
   /* se redeclara aquí: var() dentro de una custom property se resuelve donde
      se define, no donde se usa — sin esto el grid claro heredaría el oscuro */
   --grid: color-mix(in oklch, var(--line), var(--t2) 20%);

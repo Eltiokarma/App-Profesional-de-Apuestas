@@ -440,7 +440,13 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
 - **Simulación de apuesta** (28/10/2026, pedido del usuario;
   `backend/analisis/simulacion.py`, `GET /analisis/simulacion`, sección
   **Simulación**): una banca de 100 unidades sobre los 1X2 declarados en los
-  partes, con seis series —plana (control, 1 u al elegido), plana solo con el
+  partes. **EL MÉTODO va primero** (`proporcional`, 03/11/2026, usuario:
+  «investiguemos el método definitivo»; `docs/METODO_APUESTA.md`): el 1 % de
+  la banca a nuestro elegido, con un freno que pausa el tramo de confianza que
+  en sus últimos 50 partidos acertó menos de lo que pedía la cuota (z < −0,5,
+  15+ partidos) y sigue anotando hasta que se recupera. No busca valor contra
+  el mercado: lo que se mide es el win rate contra lo que pide la cuota, y
+  Kelly queda como alarma, no como meta (usuario, 03/11). Las otras series —plana (control, 1 u al elegido), plana solo con el
   elegido a 60 %+ (`plana60`, 29/10/2026, usuario: el tramo alto de confianza,
   ¿además de acertar gana a su cuota?), Kelly entero, ½ y
   ¼ (f* = (p·c − 1)/(c − 1) sobre NUESTRAS probabilidades, a la selección con

@@ -1346,7 +1346,7 @@ paths:
       summary: Simulación de apuesta sobre nuestros 1X2 (desde el 28/10/2026)
       description: >
         Qué habría pasado con una banca de 100 unidades apostando con los 1X2 declarados en los
-        partes, con seis series lado a lado: plana (control, 1 unidad al elegido), plana solo con el elegido a 60 %+ (el tramo alto de confianza), Kelly entero,
+        partes, con ocho series lado a lado: EL MÉTODO (`proporcional`, 03/11/2026: el 1 % de la banca al elegido con un freno que pausa el tramo de confianza que en sus últimos 50 partidos acertó menos de lo que pedía la cuota; docs/METODO_APUESTA.md), plana (control, 1 unidad al elegido), plana solo con el elegido a 60 %+ (el tramo alto de confianza), Kelly entero,
         ½ y ¼ (f* = (p·c − 1)/(c − 1) sobre NUESTRAS probabilidades, a la selección con más
         ventaja; sin ventaja no apuesta) y martingala (1 unidad al elegido, se duplica tras cada
         derrota, por líneas en paralelo). Se apuesta en el pitazo y se cobra dos horas después:
@@ -1834,7 +1834,7 @@ components:
           items:
             type: object
             properties:
-              clave: { type: string, enum: [plana, plana60, kelly, kellyMedio, kellyCuarto, martingala, martingala60] }
+              clave: { type: string, enum: [proporcional, plana, plana60, kelly, kellyMedio, kellyCuarto, martingala, martingala60] }
               nombre: { type: string }
               descripcion: { type: string }
               banca: { type: number }
@@ -1855,6 +1855,20 @@ components:
                   abiertas: { type: integer }
                   perdiendo: { type: integer }
                   proximoMayor: { type: number }
+              tramos:
+                type: array
+                nullable: true
+                description: 'solo el método (proporcional): el freno de cada tramo de confianza AHORA, sobre sus últimos 50 partidos cerrados (con o sin apuesta)'
+                items:
+                  type: object
+                  properties:
+                    tramo: { type: string, enum: ['<40', '40-49', '50-59', '60+'] }
+                    n: { type: integer }
+                    aciertos: { type: integer }
+                    tasa: { type: number, nullable: true, description: 'aciertos / n, 0-1' }
+                    pide: { type: number, nullable: true, description: 'lo que pedía la cuota: media de 1/cuota, 0-1' }
+                    z: { type: number, nullable: true, description: '(tasa − pide) en errores estándar' }
+                    pausado: { type: boolean, description: 'n ≥ 15 y z < −0.5: el tramo no apuesta hasta recuperarse' }
               serie:
                 type: array
                 items:
