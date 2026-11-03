@@ -156,7 +156,7 @@ def depositar(payload: dict) -> dict:
         raise IncidenciaInvalida("`items` tiene que ser una lista con al menos una incidencia")
     corrida = _txt(payload.get("corrida"), 120)
     ahora = efedb.ahora()
-    nuevas, repetidas, rechazos = [], [], []
+    nuevas, repetidas, rechazos, ya_clasificadas = [], [], [], []
     with _con() as con:
         for i, it in enumerate(items[:60]):
             if not isinstance(it, dict):
@@ -181,6 +181,19 @@ def depositar(payload: dict) -> dict:
             except (TypeError, ValueError):
                 fid = None
             clave = clave_de(titulo, area)
+            # EL MISMO HALLAZGO DEL MISMO PARTIDO YA CLASIFICADO NO SE REABRE
+            # (03/11/2026: el escaneo mira 48 h de jugados y corre en tres
+            # pasadas, así que Lommel–Gent volvió como 1159 con la 1145 ya
+            # cerrada `dato_api` para ese mismo partido). Solo los cierres sin
+            # parche (dato_api · por_diseno · descartada): lo que vuelve después
+            # de un PR (`resuelta`) sí entra nuevo, porque el parche no alcanzó.
+            if fid:
+                previa = next((r for r in con.execute(
+                    "SELECT id, fixture_id, fixtures FROM incidencia WHERE clave=? AND estado IN "
+                    "('dato_api','por_diseno','descartada')", (clave,)) if fid in _fixtures(r)), None)
+                if previa:
+                    ya_clasificadas.append({"id": previa["id"], "fixtureId": fid})
+                    continue
             fila = con.execute(
                 f"SELECT * FROM incidencia WHERE clave=? AND estado NOT IN ({','.join('?' * len(CERRADOS))})",
                 (clave, *CERRADOS)).fetchone()
@@ -198,7 +211,7 @@ def depositar(payload: dict) -> dict:
                 "creado_en, ultima_vez) VALUES (?,?,?,?,?,?,?,?,?,?)",
                 (clave, origen, corrida, fid, area, sev, titulo, _txt(it.get("detalle")), ahora, ahora))
             nuevas.append(cur.lastrowid)
-    return {"nuevas": nuevas, "repetidas": repetidas, "rechazos": rechazos}
+    return {"nuevas": nuevas, "repetidas": repetidas, "rechazos": rechazos, "yaClasificadas": ya_clasificadas}
 
 
 def _dto(r) -> dict:

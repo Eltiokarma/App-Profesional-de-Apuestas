@@ -900,6 +900,12 @@ paths:
                   nuevas: { type: array, items: { type: integer } }
                   repetidas: { type: array, items: { type: integer } }
                   rechazos: { type: array, items: { type: object, additionalProperties: true } }
+                  yaClasificadas:
+                    type: array
+                    description: 'el mismo hallazgo (misma causa) del mismo partido ya cerrado como dato_api, por_diseno o descartada: no se reabre (03/11/2026, el escaneo re-reportaba los jugados de 48 h). Lo que vuelve después de un PR (resuelta) sí entra nuevo'
+                    items:
+                      type: object
+                      properties: { id: { type: integer }, fixtureId: { type: integer } }
         '422': { description: origen desconocido o sin items }
   /analisis/cowork/incidencias/causas:
     get:

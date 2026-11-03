@@ -532,7 +532,16 @@ POST $B/analisis/cowork/incidencias
   parte); las capturas de «ambos marcan» anteriores al 27/10 (776, 1099); el
   límite del plan de Claude (1132: el latido ya lo pone en ámbar); y el «sin
   penales» o «sin otro ejecutor» con muestra corta o plantilla incompleta
-  (1064, 1085, 1089, 1097).
+  (1064, 1085, 1089, 1097). Y desde la pasada del 03/11 (mediodía): el
+  ejecutor de penales que se fue del club y sigue en la lista con
+  `enPlantilla: false` (718, 1154: va al final, la nota dice «ya no están en
+  el plantel» y no cuenta como ejecutor vivo); el DT que vuelve al club y
+  /coachs no registra la segunda etapa (1152: es el `desde` de la carrera,
+  482/949, y /burbujas ya dice «aproximado: confirmar en prensa»); el
+  sancionado por ciclo de amarillas que aparece en la hoja oficial (1156: la
+  hoja manda y la F1 ya dice `cicloAmarillas: enLaHoja`); y la grafía rota del
+  DT en la ficha que `identidad.mismo_dt` casa («S. Hoeneb» por Hoeneß, 1158:
+  si no suena DT-VS-BANCO, el cruce ya la absorbió).
 
 ## Modo `mantenimiento` (los parches, automáticos)
 
