@@ -5573,6 +5573,26 @@ def main():
     check("cada skill trae su versión vigente y cuántas cerraría «Cerrar las anteriores» (sin abrir el dossier)",
           all("versionVigente" in s and "anterioresAlCorte" in s for s in _r1["porSkill"]), [s["skill"] for s in _r1["porSkill"]])
     _cal = calibracion_espina()
+    # 1149: trece subagentes en paralelo la rehacían cada uno (> 100 s): sale
+    # del núcleo guardado y un segundo pedido no vuelve a leer los casos
+    import backend.analisis.lecciones as _lcal
+    _casos_orig, _n_casos = _lcal._casos, [0]
+
+    def _contar_casos(*a, **k):
+        _n_casos[0] += 1
+        return _casos_orig(*a, **k)
+    _ttl_cal = _lcal.INVENTARIO_TTL_S
+    _lcal.INVENTARIO_TTL_S = 600
+    try:
+        calibracion_espina()                 # el primero arma el núcleo
+        _lcal._casos = _contar_casos
+        _cal2 = calibracion_espina()         # el segundo lo lee
+    finally:
+        _lcal._casos, _lcal.INVENTARIO_TTL_S = _casos_orig, _ttl_cal
+        _lcal._INV_CACHE.clear()
+    check("1149: la calibración sale del núcleo guardado: el segundo pedido no rehace los casos y da lo mismo",
+          _n_casos[0] == 0 and _cal2["tarjeta"] == _cal["tarjeta"]
+          and _cal2["analistaPorLectura"] == _cal["analistaPorLectura"], _n_casos)
     check("GET de calibración: la tabla de la tarjeta, la del analista por lectura y cómo leerla",
           set(_cal) >= {"tarjeta", "analistaPorLectura", "comoLeerlo"}
           and set((_cal["tarjeta"] or {})) >= {"porFuerza", "porNivel", "analistaLaSigue", "analistaVaContra", "partido"}, _cal)

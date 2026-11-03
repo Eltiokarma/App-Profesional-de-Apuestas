@@ -1100,8 +1100,15 @@ def calibracion_espina(limite: int = 400) -> dict:
     """Lo que el analista lee ANTES de escribir su espina: cuánto acierta la
     espina de la tarjeta por nivel de riesgo y fuerza, cuánto acierta él
     cuando la sigue y quién gana cuando la contradice. Sale de nuestros propios
-    veredictos ciegos, así que se recalibra solo con cada caso cerrado."""
-    _pob, metricas = _metricas(_casos(limite))
+    veredictos ciegos, así que se recalibra solo con cada caso cerrado.
+
+    SALE DEL NÚCLEO GUARDADO (incidencia 1149, 03/11/2026: 11 de 13
+    subagentes de la corrida de partes la vieron tardar más de 100-120 s,
+    porque cada uno rehacía todos los veredictos a la vez). Las métricas son
+    las mismas que las del núcleo de Aprendizaje sin cohorte, con su huella:
+    un veredicto nuevo o un cambio de estado la rehace, y el candado hace que
+    los pedidos simultáneos esperen al primero y lean lo guardado."""
+    metricas = _nucleo(limite, "")["metricas"]
     esp = metricas.get("espina") or {}
     return {
         "generadoEn": efedb.ahora(),
