@@ -293,6 +293,49 @@ def main():
         _dc646.ROLES_GRID_REHACE = False
     check("646: promovida, cada rol contradicho es un motivo de rehacer",
           _r646b["rehacer"] and sum(m.startswith("rol:") for m in _r646b["motivos"]) == 2, _r646b["motivos"])
+    # 1074: la aposición entre comas no es parte del nombre (Cercle Brugge 1558664, grid corregido)
+    _cas1074 = [("G. Coucke", "1:1", "centro"), ("T. Adaramola", "2:1", "izquierda"), ("R. Caicedo", "2:2", "izquierda"),
+                ("G. Kondo", "2:3", "derecha"), ("I. Diakite", "2:4", "derecha"), ("H. van der Bruggen", "3:1", "izquierda"),
+                ("L. Le Roux", "3:2", "derecha"), ("Erick Nunes", "4:1", "izquierda"), ("A. Manneh", "4:2", "centro"),
+                ("T. Akinsola", "4:3", "derecha"), ("S. Ngoura", "5:1", "centro")]
+    _of1074 = {"a": {"formacion": "4-2-3-1", "titulares": [n for n, _, _ in _cas1074], "defensores": 4,
+                     "casillas": [{"nombre": n, "grid": g, "carril": c} for n, g, c in _cas1074]}}
+    _r1074 = _reh({"equipo": "a", "apertura": {"m1": {"sistema": "4-2-3-1", "xiReferencia": "", "rolesReasignados": [
+        "Erick Nunes, mediocampista de origen, de lateral derecho (grid 2:4)",
+        "Diakité de central derecho (2:3) junto a Caicedo",
+        "Kondo, defensa de oficio, de lateral izquierdo (2:1): el carril izquierdo deja de ser reconvertido",
+        "Adaramola, con 2 partidos y ninguna titularidad en la base, de extremo izquierdo (4:1)"]}}}, _of1074)
+    check("1074: con la aposición entre comas el rol se lee contra la casilla (Nunes, Kondo y Adaramola; Diakité cuadra)",
+          {r["jugador"] for r in _r1074["rolesVsGrid"]} == {"Erick Nunes", "G. Kondo", "T. Adaramola"}
+          and not _r1074["rehacer"], _r1074["rolesVsGrid"])
+    # 1075: lo rotulado «Alternativas:» o «En el banco…:» en senalXi no es un cambio anunciado
+    _of1075 = {"b": {"formacion": "4-2-3-1", "defensores": 4, "titulares": [
+        "David Raya", "Gabriel Magalhães", "M. Ødegaard", "J. Timber", "E. Konsa", "C. Tzolis", "N. Madueke",
+        "K. Havertz", "R. Calafiori", "Bruno Guimarães", "D. Rice"]}}
+    _r1075 = _reh({"equipo": "b", "apertura": {"m1": {
+        "sistema": "4-2-3-1",
+        "xiReferencia": "David Raya, Ben White, Ezri Konsa, Gabriel Magalhães, Myles Lewis-Skelly, Declan Rice, "
+                        "Mikel Merino, Noni Madueke, Martin Ødegaard, Eberechi Eze, Viktor Gyökeres",
+        "senalXi": "Último once de LIGA (Everton, 24/10, ficha con grid). Previas nivel C: futboltotal 31/10 (Raya; "
+                   "Calafiori, Konsa, Gabriel, Timber; Rice, Guimarães, Ødegaard; Eze, Madueke, Havertz). Alternativas: "
+                   "entra Zubimendi por Rice si no llega; entra Calafiori por Lewis-Skelly; entra Havertz por "
+                   "Gyökeres; entra Timber por White; entra Guimarães por Merino.",
+        "rolesReasignados": ["Madueke por la derecha en lugar de Saka", "Lewis-Skelly de lateral izquierdo"]}}},
+        _of1075)
+    _ref1075b = ("G. Napa, Y. Rodríguez, R. Caicedo, R. Arias, E. Ladines, D. Arroyo, J. Ayovi, P. Mancilla, "
+                 "P. González, D. Dorregaray, E. Mero")
+    _tit1075b = ["G. Napa", "Y. Rodríguez", "E. Ladines", "R. Arias", "E. Mero", "D. Arroyo", "J. Ayovi",
+                 "D. Dorregaray", "M. Bolaños", "P. Mancilla", "P. González"]
+    _r1075b = _reh({"equipo": "a", "apertura": {"m1": {
+        "sistema": "4-3-1-2", "xiReferencia": _ref1075b,
+        "senalXi": "XI de referencia = último once oficial. Sin previa publicada: nivel C. En el banco del 25/10: "
+                   "Pinos, Laurino, J. Quiñónez, Cabezas, Bolaños y Naula"}}},
+        {"a": {"formacion": "4-1-3-2", "defensores": 4, "titulares": _tit1075b}})
+    check("1075: las «Alternativas:» no anuncian (Arsenal: cinco titulares nuevos, rehacer) y el banco de la señal tampoco (Bolaños)",
+          set(_r1075["ausentesDeLaReferencia"]) == {"J. Timber", "C. Tzolis", "K. Havertz", "R. Calafiori",
+                                                     "Bruno Guimarães"} and _r1075["rehacer"]
+          and _r1075b["ausentesDeLaReferencia"] == ["M. Bolaños"],
+          (_r1075["ausentesDeLaReferencia"], _r1075b["ausentesDeLaReferencia"]))
     check("646: sin grid completo no se compara nada",
           _reh(_b646, {"a": {**_of646["a"], "casillas": []}})["rolesVsGrid"] == [])
     from backend.analisis.dtp_cowork import sin_referencia
@@ -339,10 +382,49 @@ def main():
                                                "titulares": [{"nombre": "X", "posicion": "G", "carril": ""}]}}}
         _u966 = _dc997._ultimo_de_liga(1, "2026-10-31", {"league_id": 90, "liga": "KNVB Beker", "date": "2026-10-28"})
         _u966b = _dc997._ultimo_de_liga(1, "2026-10-31", {"league_id": 88, "liga": "Eredivisie", "date": "2026-10-28"})
+        _u1117 = _dc997._ultimo_de_liga(1, "2026-10-31", {"league_id": 88, "liga": "Eredivisie", "date": "2026-10-28"},
+                                        sin_xi=True)
+        # 1125: el último (copa) sin once y el de liga con once: `faltan` no dice «M1 sin XI de referencia»
+        _dc997._anteriores = lambda tid, fecha, n: (
+            [{"id": 30, "date": "2026-10-28", "league_id": 90, "liga": "KNVB Beker", "league_round": "",
+              "home_team_id": 1, "away_team_id": 3, "gh": 0, "ga": 0, "home_name": "Foco", "away_name": "Copero"}]
+            if fecha > "2026-10-29" else
+            [{"id": 20, "date": "2026-10-24", "league_id": 88, "liga": "Eredivisie", "home_team_id": 1, "away_team_id": 2}])
+        _ft966.tactica_de = lambda fid, h, a: ({} if fid == 30 else {"alineaciones": {"local": {
+            "formacion": "4-2-3-1", "conGrid": True, "titulares": [{"nombre": "X", "posicion": "G", "carril": ""}]}}})
+        _orig1125 = (_dc997._apertura_previa_reciente, _dc997.casos_bloque, _dc997.penales_temporada)
+        _dc997._apertura_previa_reciente = lambda *a, **k: None
+        _dc997.casos_bloque = lambda *a, **k: []
+        _dc997.penales_temporada = lambda *a, **k: {}
+        try:
+            _i1125 = _dc997.insumos_equipo(1, "Foco", {"date": "2026-10-31 18:00:00", "league_round": "Round 9"})
+        finally:
+            _dc997._apertura_previa_reciente, _dc997.casos_bloque, _dc997.penales_temporada = _orig1125
     finally:
         _dc997._anteriores, _ft966.tactica_de = _ant, _td
+    check("1117: el último de liga sin once capturado también trae el último once de liga, con la nota de que no es el del último",
+          (_u1117.get("ultimoOnceDeLiga") or {}).get("fixtureId") == 20
+          and "NO el del último partido" in _u1117["ultimoOnceDeLiga"]["nota"], _u1117)
+    check("1125: con `ultimoOnceDeLiga`, `faltan` dice en qué se apoya el M1, no «M1 sin XI de referencia»",
+          (_i1125.get("ultimoOnceDeLiga") or {}).get("fixtureId") == 20
+          and not any("M1 sin XI de referencia" in f for f in _i1125["faltan"])
+          and any("ultimoOnceDeLiga" in f and "fixture 20" in f for f in _i1125["faltan"]), _i1125.get("faltan"))
     check("966: con el último partido de copa viaja el último once de liga (4-2-3-1 con grid); de liga, nada",
           (_u966.get("ultimoOnceDeLiga") or {}).get("formacion") == "4-2-3-1" and _u966b == {}, (_u966, _u966b))
+    # 1121: «sin penales» no se afirma del año si hay partidos jugados sin eventos (Boca, River 0-1 del 19/04 sin ficha)
+    _q, _q1, _ipl1121 = _dc997.saddb.query, _dc997.saddb.query_one, _dc997._ids_plantel
+    try:
+        _dc997.saddb.query = lambda db, sql, args=(): []
+        _dc997._ids_plantel = lambda tid: set()
+        _dc997.saddb.query_one = lambda db, sql, args=(): {"n": 26 if "fixture_eventos" in sql else 41}
+        _p1121 = _dc997.penales_temporada(451, "2026-11-01 18:00:00")
+        _dc997.saddb.query_one = lambda db, sql, args=(): {"n": 26}
+        _p1121b = _dc997.penales_temporada(451, "2026-11-01 18:00:00")
+    finally:
+        _dc997.saddb.query, _dc997.saddb.query_one, _dc997._ids_plantel = _q, _q1, _ipl1121
+    check("1121: con 15 de 41 partidos sin eventos, «sin penales» va con la reserva; con todos cubiertos, se afirma",
+          _p1121["partidosJugados"] == 41 and "15 de los 41" in _p1121["nota"] and "prensa" in _p1121["nota"]
+          and "decilo así" in _p1121b["nota"], (_p1121, _p1121b))
     # 1040: dos «T. Palacios» distintos se separan con el nombre largo (o el id)
     _q = _dc997.saddb.query
     try:

@@ -1502,6 +1502,8 @@ export interface AlertaParte {
   motivos?: string[]
   momento?: 'tardio' | 'sinRehacer' | 'conocido'
   onceFinalEn?: string | null
+  /** solo con `momento: tardio` por una corrección de formación después del pitazo (1133) */
+  formacionCorregidaEn?: string
   ultimoDepositoPrevio?: string
 }
 

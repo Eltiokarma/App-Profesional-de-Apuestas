@@ -87,6 +87,11 @@ Tres lugares donde vive una guardia:
   - La rama jugada del DTP con los minutos empatados se resuelve a `igualadoOArriba` y lo dice (`empateDeMinutos`, 1057).
   - Las decisiones del VAR (gol anulado, penal confirmado) viajan en `objetivo.evidencia.var` para la autopsia, sin tocar el marcador (1066).
   - Lo que el texto pone en el banco no es el seguro: el rest defense quita los nombres pegados a «en el banco» / «de suplente» antes de buscar suplentes (`dtp_cowork.sin_en_banco`, 1047), como las piezas del M2 con `_DESDE_BANCO`.
+  - Lo que la señal rotula «Alternativas: …» o pone «En el banco …: lista» no es un cambio anunciado: `contraElOnce` lo quita antes de dar por anunciado a un titular nuevo (`sin_alternativas`, `sin_en_banco`, 1075, Arsenal y Emelec).
+  - El rol de `rolesReasignados` con una aposición entre comas («Erick Nunes, mediocampista de origen, de lateral derecho») se lee con el nombre de antes de la coma (`_roles_declarados`, 1074); `rolesVsGrid` sigue en sombra.
+  - Un `DTP-REHACER` tardío por una corrección de formación después del pitazo trae la hora de la corrección (`formacionCorregidaEn`, 1133): `onceFinalEn` es la versión del once hasta el pitazo.
+  - Sin once capturado del último partido (de liga o de copa) viaja `ultimoOnceDeLiga` con la nota de que no es el del último, y `faltan` dice en qué se apoya el M1 (1117, 1125).
+  - El caso del bloque que nombra al rival de otro partido toma la fecha de ese partido, no la del último con parte (`_partido_del_caso`, 1116).
 - **Si vuelve:** mirar primero si el partido entró en la cola, y recién después la rutina.
 
 ### 4. Quién no puede jugar
@@ -115,6 +120,7 @@ Tres lugares donde vive una guardia:
   - **Latido:** el silencio cuenta como rojo; `cuotasPrepartido` y `presupuestoApi`.
   - **Test de arquitectura:** regla 4 (cada `except Exception` dice por qué es seguro seguir) y regla 2 (cada test corre en CI).
   - **Escaneo:** chequeos `sin-cuotas` y `ficha-sin-eventos`.
+  - **Sin dato no es cero en los penales:** «sin penales» del año se afirma solo si todos los partidos jugados tienen eventos; si no, la nota dice cuántos faltan y manda a la prensa (`penales.partidosJugados`, 1121, Boca sin la ficha del River 0-1).
   - **Un valor desconocido se dice, no se convierte callado:** un `estado` de baja que no es baja · duda · descanso vuelve en `rechazos`; el no convocado por descanso va a F4 y no pesa en el IP (807, rúbrica EFE v1.7).
   - **Un null dice por qué:** la tarjeta de la espina vacía trae `sinTarjeta` (K en 0, otra condición, sin guía; 866, 720). Un campo calculado que sale null sin motivo se lee como «falla» o como «cero».
   - **Lo declarado sin dato no se cobra:** el recibo no pide un bloque del TDE que el parte trae en `sinDato` (808) ni rechaza el `xiReferencia` que dice por qué no hay ningún once (813).
