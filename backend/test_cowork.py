@@ -3170,6 +3170,15 @@ def main():
         "motivo": "suspendido", "nombre": "R. Dudamel", "fuente": "prensa"}}}, "b": {"dt": {"nombre": "x"}}}}
     check("711: con `dt.banco` declarado con fuente y el mismo nombre, no avisa",
           not [x for x in _adt(_p711, _fx711(pasado["id"]), {}) if x["codigo"] == "DT-VS-BANCO"])
+    # 1103 (1645530, San José): `api_errada` nombra a quien se sienta DE VERDAD
+    # (Artur Costa), no al de la hoja (J. Baldivieso): tampoco avisa
+    _p1103 = {"equipos": {"a": {"dt": {"nombre": "Otro Técnico", "banco": {
+        "motivo": "api_errada", "nombre": "Otro Técnico", "fuente": "La Patria"}}}, "b": {"dt": {"nombre": "x"}}}}
+    check("1103: con `dt.banco` api_errada declarado con fuente, DT-VS-BANCO no suena",
+          not [x for x in _adt(_p1103, _fx711(pasado["id"]), {}) if x["codigo"] == "DT-VS-BANCO"])
+    _p1103["equipos"]["a"]["dt"]["banco"]["motivo"] = "suspendido"
+    check("1103: con `suspendido` y otro nombre que el del banco, sí suena",
+          [x["equipo"] for x in _adt(_p1103, _fx711(pasado["id"]), {}) if x["codigo"] == "DT-VS-BANCO"] == ["a"])
     from backend.analisis.parte import dt_base_al_depositar as _dtb
     check("al depositar se guarda qué DT tenía la base", bool(_dtb(pasado["id"]).get("a")), _dtb(pasado["id"]))
     def _base_fue(nombre):  # qué decía la base al depositar (sellado en la primera vez)

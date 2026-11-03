@@ -40,6 +40,7 @@ Tres lugares donde vive una guardia:
   - **Regla única:** `backend/identidad.py`, con sus casos reales en `test_identidad.py`.
   - **Test de arquitectura (regla 1):** ninguna comparación de letras fuera de ese archivo, y ningún módulo que quite tildes a un nombre por su cuenta (811: el NFKD suelto tiraba la «ð»).
   - Los apodos conocidos del DT van en `identidad.APODOS_DT`, lista cerrada con su caso (951, «Pacheta»).
+  - **Dos pilas enteras distintas son dos DT** aunque compartan apellido (`identidad.pilas_distintas_dt`, 1096: «Héctor Ignacio Rodríguez Peña» no es el interino «Andrés Rodríguez»); la inicial no cuenta como pila y una contenida en la otra es la misma.
   - **Escaneo:** chequeo `jugador-duplicado`.
   - Un id que aparece en dos clubes con menos de 3 días entre hojas es un id chocado, no un traspaso (`f1_base.OTRO_EQUIPO_GAP_DIAS`, 961).
   - Al depositar, la fila F1 cuyo nombre no es el de su `jugadorId` en la base se avisa en `faltan` (`parte.nombres_vs_id`, 938): el id manda en el IP, el nombre en la pantalla.
@@ -64,6 +65,9 @@ Tres lugares donde vive una guardia:
   - Un país o un equipo no es un DT: se filtra al guardar la hoja (como en /coachs) y al leerla (`jugadores.es_nombre_de_dt`, 1019, «Bolívia»).
   - Un once sin DT en la hoja entre dos entrenadores hace incierto el debut: el cambio de la semana (F1 del TDE sin dato) se afirma solo si el debut más viejo posible cae en la semana (`tde.cambio_dt_reciente`, 1037, Llaneros).
   - Lo que se lee del DT es del DT que está: la formación dominante del calendario cuenta solo los onces de su banco (665), y su «primer banco visto» es la llegada solo si el partido anterior tiene hoja con otro DT; si no, `desdeConfirmar` (750).
+  - **Un cambio de forma del nombre en el banco es un cambio de fuente, no una llegada** (`identidad.forma_dt` en `jugadores.dt_de_alineaciones`, 1100/1123: la liga chilena pasó el 10/10 de «Davis Gonzalez» a «W. Ribonetto»): toda la racha del actual en una forma y toda la del anterior en otra → `desde` vacío.
+  - **El corte visto en el banco gana a una etapa vieja de /coachs** (`jugadores.elegir_entrenador`, 1128, Famalicão: el interinato de 2024 de Silva daba «asentado ~700 días» con el cambio del 25/10 a la vista); `--dt-agenda` rehace ese registro.
+  - Con `dt.banco` `api_errada` declarado con fuente, `DT-VS-BANCO` no suena (1103): su `nombre` es quien se sienta de verdad, no el de la hoja.
 - **Si vuelve:** la prensa manda; la base es la alarma, no la verdad.
 
 ### 3. El once que llega tarde, y el rehacer que no alcanza

@@ -380,7 +380,19 @@ def elegir_entrenador(filas: list, team_id: int, dt_alineacion: str | None = Non
     if dt_alineacion:
         casan = [c for c in candidatos if mismo_nombre_dt(c["nombre"] or "", dt_alineacion)]
         if casan:
-            return max(casan, key=lambda c: c["desde"])
+            elegido = max(casan, key=lambda c: c["desde"])
+            # LA LLEGADA VISTA EN EL BANCO GANA A UNA ETAPA VIEJA DE LA CARRERA
+            # (incidencia 1128, Famalicão 01/11/2026): Ricardo Silva reemplazó a
+            # Carvalhal el 25/10 y /coachs solo tiene su interinato de 12/2024,
+            # todavía abierto: /burbujas lo daba «asentado, ~700 días» mientras
+            # tde/{id} veía el cambio en las hojas. Si el corte se vio
+            # (`desde_alineacion`, solo con la racha del anterior a la vista) y
+            # es posterior a la etapa, el anterior dirigió después de ella: esa
+            # etapa es otra, y la llegada es la del banco.
+            corte = (desde_alineacion or "")[:10]
+            if corte and corte > (elegido["desde"] or "")[:10]:
+                return {**elegido, "desde": corte, "fuente": "alineacion"}
+            return elegido
         return {"coach_id": 0, "nombre": dt_alineacion.strip(), "foto": None,
                 "desde": (desde_alineacion or "")[:10], "abierta": True, "fuente": "alineacion"}
     if not candidatos:
@@ -454,6 +466,25 @@ def dt_de_alineaciones(con: sqlite3.Connection, team_id: int,
             # y EN_CRISIS por «DT nuevo». Si el actual aparece también ANTES
             # del corte, su llegada no se ve: `desde` vacío.
             if any(mismo_nombre_dt(n, actual) for n, _ in filas[i + 1:]):
+                desde = None
+                break
+            # EL CORTE COINCIDE CON UN CAMBIO DE FORMA DEL NOMBRE: cambió la
+            # FUENTE de la API, no el DT (incidencias 1100 y 1123, 02/11/2026).
+            # Desde el 10/10 la liga chilena escribe «W. Ribonetto» donde antes
+            # escribía «Davis Gonzalez» (y «G. Huerta» donde «Gustavo Huerta»):
+            # Everton y La Serena salían «DT nuevo desde 2026-10-11», EN_CRISIS
+            # en la agenda e «inestable» en /burbujas, con Ribonetto en el cargo
+            # desde marzo. Si TODA la racha del actual va en una forma y TODA la
+            # del anterior en la otra, la llegada no se vio (una racha mezclada,
+            # «Pep Guardiola» y «P. Guardiola», es la misma fuente).
+            antes = []
+            for n, _ in filas[i:]:
+                if not mismo_nombre_dt(n, nombre):
+                    break
+                antes.append(n)
+            formas_hoy = {_identidad.forma_dt(n) for n, _ in filas[:i]}
+            formas_antes = {_identidad.forma_dt(n) for n in antes}
+            if len(formas_hoy) == 1 and len(formas_antes) == 1 and formas_hoy != formas_antes:
                 desde = None
                 break
             # EL CORTE SE VE, PERO LA LLEGADA PUEDE ESTAR EN UN HUECO. Águilas
@@ -733,6 +764,11 @@ def dt_agenda(cliente, con: sqlite3.Connection, dias: int = DT_AGENDA_DIAS,
         # rehace (1 request: /coachs trae la llegada real si casa el nombre).
         desfasado = bool(fila and (fila[2] or "") == "alineacion" and dt_alin
                          and (fila[3] or None) != (_desde or None))
+        # una etapa de /coachs anterior a un corte que se VIO en el banco
+        # (Famalicão, 1128): se rehace, `elegir_entrenador` toma la del banco
+        desfasado = desfasado or bool(fila and (fila[2] or "") == "coachs" and dt_alin and _desde
+                                      and mismo_nombre_dt(dt_alin, fila[0] or "")
+                                      and (fila[3] or "") < str(_desde)[:10])
         # UN PAÍS O UN EQUIPO COMO DT (Bulo Bulo con «Bolivia»): se rehace ya
         basura = bool(fila and fila[0] and _nombre_entero(fila[0]) in nombres_que_no_son_dt(con))
         if not (viejo or contradice or rancio or desfasado or basura):
