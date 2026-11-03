@@ -372,7 +372,13 @@ def causas(solo_recurrentes: bool = False) -> dict:
         for r in fam:
             if r["estado"] == "dato_api":
                 fx_dato += [f for f in _fixtures(r) if f not in fx_dato]
-        decidida = any(r["estado"] in ("usuario", "aprobada") for r in fam)
+        # LA DECISIÓN DEL USUARIO CUENTA AUNQUE HAYA SIDO «NO» (03/11/2026: 36
+        # familias salían `recurrente` y una rechazada en la tarjeta —que queda
+        # `por_diseno` con «Decisión del usuario»— volvía a pedir decisión con
+        # el próximo dato_api de la misma causa)
+        decidida = any(r["estado"] in ("usuario", "aprobada")
+                       or (r["estado"] == "por_diseno" and (r["resolucion"] or "").startswith("Decisión del usuario"))
+                       for r in fam)
         resueltas = [r for r in fam if r["estado"] in ("resuelta", "por_desplegar")]
         cierre_pr = max((r["cerrado_en"] or r["ultima_vez"] for r in resueltas), default=None)
         reaparece = bool(cierre_pr) and any(r["creado_en"] > cierre_pr for r in fam if r["estado"] not in CERRADOS)

@@ -511,7 +511,8 @@ POST $B/analisis/cowork/incidencias
   habitual contado sobre los onces en que estaba disponible (1013, 398/509);
   y un `contraElOnce` de ANTES de un rehacer: el rehacer pisa la apertura, así
   que reportá con el `xiReferencia` y la `senalXi` originales copiados en el
-  detalle, o no se puede verificar (1021). Y desde la pasada del 31/10
+  detalle, o no se puede verificar (1021; la PRIMERA apertura queda en
+  `GET /equipos/{id}/cadena`, que es contra la que el mantenimiento reproduce). Y desde la pasada del 31/10
   (tarde): el nombre del DT de /coachs en otro orden («Dario Insua Ruben»,
   1033: la comparación del DT no depende del orden); la primera captura del
   once sin formación, sin grid o con 10 titulares (1045, 988: el refresco a
@@ -541,7 +542,15 @@ POST $B/analisis/cowork/incidencias
   sancionado por ciclo de amarillas que aparece en la hoja oficial (1156: la
   hoja manda y la F1 ya dice `cicloAmarillas: enLaHoja`); y la grafía rota del
   DT en la ficha que `identidad.mismo_dt` casa («S. Hoeneb» por Hoeneß, 1158:
-  si no suena DT-VS-BANCO, el cruce ya la absorbió).
+  si no suena DT-VS-BANCO, el cruce ya la absorbió). Y desde la pasada del
+  03/11 (tarde): el titular que la `senalXi` ANUNCIA y contraElOnce no cuenta
+  como nuevo (1162: anunciado es referencia); la pieza del M2 —propia o
+  rival— que pide rehacer aunque M1 y los duelos ya estén reescritos (1161,
+  1163: DTP v1.5, el motivo dice «pieza del M2»); los titulares que la F1 trae
+  con `fueraDePlantilla: true` (1167: la plantilla de la API no los tiene y la
+  tabla los suma desde los onces); el ejecutor de penales con un id distinto
+  del de su fila F1 (1168: dos ids de la API); y la fila F1 con nombre que no
+  es el de su id, que el recibo ya avisa en `faltan` (1160, 938).
 
 ## Modo `mantenimiento` (los parches, automáticos)
 
