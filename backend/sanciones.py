@@ -97,22 +97,84 @@ def _previos(team_id: int, liga: int | tuple, temporada, antes: str, fase: str) 
     return [f for f in filas if len(ligas) > 1 or _fase(f["league_round"]) == fase]
 
 
-def _tarjetas(fixture_id: int, team_id: int) -> list:
-    return db.query(
-        "sad", "SELECT minuto, detalle, jugador, jugador_id FROM fixture_eventos "
-               "WHERE fixture_id=? AND equipo_id=? AND tipo='Card' ORDER BY minuto", (fixture_id, team_id))
+_UPGRADE = re.compile(r"card upgrade", re.I)
+
+
+def _rojas_en_stats(ids: list[int], team_id: int) -> dict[int, int]:
+    """«Red Cards» de las estadísticas de la ficha, por partido (sin el número,
+    el partido no está en el dict)."""
+    try:
+        filas = db.query(
+            "sad", f"SELECT fixture_id, valor FROM fixture_stats WHERE fixture_id IN ({','.join('?' * len(ids))}) "
+                   "AND team_id=? AND clave='Red Cards'", (*ids, team_id))
+    except Exception:  # noqa: BLE001 — base sin fixture_stats: sin verificación, queda la regla del fútbol sola
+        return {}
+    out = {}
+    for r in filas:
+        try:
+            out[r["fixture_id"]] = int(str(r["valor"]).strip())
+        except (TypeError, ValueError):
+            continue   # «None» o vacío: la API no dio el número
+    return out
+
+
+def _depurar(tarj: list[dict], rojas_stats: int | None) -> list[dict]:
+    """LA TARJETA SE VERIFICA CON LA REGLA DEL FÚTBOL Y CON LAS STATS DE LA FICHA.
+
+    - 1080 (Monzón, Atlas, 1551020): amarilla al 90' y otra al 90+5, sin roja, y
+      las stats de la ficha con 4 amarillas y 0 rojas para Atlas. Dos amarillas
+      al mismo jugador sin roja no existen: o la API duplicó el evento (cuenta
+      UNA) o le faltó la roja; solo las stats con más rojas que los eventos
+      dicen lo segundo, y entonces la segunda amarilla es la doble amarilla.
+    - 1135 (F. Chamorro 61' en 1505551, S. Castro 97' en 1639857): «Card upgrade
+      confirmed» del VAR sin evento de roja. Cuenta como roja SOLO si las stats
+      traen más rojas que los eventos (y la amarilla del mismo minuto, la que se
+      mejoró, deja de contar); sin stats o con las stats en contra, no. Un
+      upgrade con su «Red Card» al lado (G. Figueroa 48') es UNA roja.
+    """
+    cards = [t for t in tarj if (t["tipo"] or "") == "Card"]
+    upgrades = [t for t in tarj if (t["tipo"] or "") == "Var" and _UPGRADE.search(t["detalle"] or "")]
+    n_rojas = sum(1 for t in cards if _ROJA.search(t["detalle"] or ""))
+
+    def sobra_roja() -> bool:
+        return rojas_stats is not None and rojas_stats > n_rojas
+
+    for u in upgrades:
+        k = _clave(u)
+        if any(_clave(c) == k and _ROJA.search(c["detalle"] or "") for c in cards) or not sobra_roja():
+            continue
+        cards = [c for c in cards if not (_clave(c) == k and _AMARILLA.search(c["detalle"] or "")
+                                          and c["minuto"] == u["minuto"])]
+        cards.append({**u, "tipo": "Card", "detalle": "Red Card", "deVar": True})
+        n_rojas += 1
+    out, vistos = [], set()
+    for c in sorted(cards, key=lambda c: c["minuto"] or 0):
+        k = _clave(c)
+        if not _AMARILLA.search(c["detalle"] or ""):
+            out.append(c)
+        elif k not in vistos:
+            vistos.add(k)
+            out.append(c)
+        elif any(_clave(x) == k and _ROJA.search(x["detalle"] or "") for x in cards):
+            out.append(c)
+        elif sobra_roja():
+            out.append({**c, "detalle": "Second Yellow card", "deStats": True})
+            n_rojas += 1
+        # si no: la misma amarilla dos veces, no suma
+    return out
 
 
 def _tarjetas_de(ids: list[int], team_id: int) -> dict[int, list]:
     """Las tarjetas del equipo en TODOS esos partidos, en UNA consulta (antes
-    era una por partido: ~30 por equipo con una temporada en la base)."""
+    era una por partido: ~30 por equipo con una temporada en la base), ya
+    depuradas contra la regla del fútbol y las stats (`_depurar`)."""
     if not ids:
         return {}
     out: dict[int, list] = {i: [] for i in ids}
     vistos: set = set()
     for r in db.query(
-            "sad", f"SELECT fixture_id, minuto, detalle, jugador, jugador_id FROM fixture_eventos "
-                   f"WHERE fixture_id IN ({','.join('?' * len(ids))}) AND equipo_id=? AND tipo='Card' "
+            "sad", f"SELECT fixture_id, minuto, tipo, detalle, jugador, jugador_id FROM fixture_eventos "
+                   f"WHERE fixture_id IN ({','.join('?' * len(ids))}) AND equipo_id=? AND tipo IN ('Card', 'Var') "
                    "ORDER BY fixture_id, minuto", (*ids, team_id)):
         # EL MISMO EVENTO DOS VECES NO SON DOS AMARILLAS (incidencia 971, Pathé
         # Ciss con 6 contadas y la 5.ª en la prensa): fixture, minuto, jugador y tipo
@@ -120,8 +182,9 @@ def _tarjetas_de(ids: list[int], team_id: int) -> dict[int, list]:
         if k in vistos:
             continue
         vistos.add(k)
-        out.setdefault(r["fixture_id"], []).append(r)
-    return out
+        out.setdefault(r["fixture_id"], []).append(dict(r))
+    stats = _rojas_en_stats(ids, team_id)
+    return {i: _depurar(t, stats.get(i)) for i, t in out.items()}
 
 
 def _con_eventos(ids: list[int]) -> set[int]:
@@ -161,6 +224,33 @@ def _cuerpo_tecnico(fixture_id: int, team_id: int, rojas: list[dict]) -> set[int
     except Exception:  # noqa: BLE001 — base sin entrenadores ni alineaciones: no se reclasifica
         return set()
     return {id(e["_r"]) for e in ev if e.get("cuerpoTecnico")}
+
+
+def _fuera_del_plantel(fixture_id: int, team_id: int, nombre: str | None) -> bool:
+    """LA ROJA SIN ID A ALGUIEN QUE NO ES DEL PLANTEL ES DEL CUERPO TÉCNICO
+    (incidencia 1101: Artur William Costa, Gualberto Villarroel, roja al 19' el
+    01/11 en 1645530 sin jugadorId; no es el DT de la base —Baldivieso—, ni está
+    en la plantilla ni en la hoja, y salía en `sancionados` con
+    SANCION-SIN-DECLARAR pidiéndolo en `fuera`, la misma clase que la 919). Sin
+    plantilla en la base no se reclasifica (no se sabe), y basta un jugador que
+    case por nombre (`identidad`) para que siga siendo de un jugador."""
+    if not nombre:
+        return False
+    from backend.identidad import casa, mismo_jugador, tokens
+    try:
+        from backend.ficha_tactica import _plantilla
+        plantel = [n for _, n in _plantilla(team_id)]
+    except Exception:  # noqa: BLE001 — sin la capa de jugadores no se sabe quién es del plantel
+        return False
+    if not plantel:
+        return False
+    try:
+        hoja = [r["jugador"] for r in db.query("sad", "SELECT jugador FROM alineaciones WHERE fixture_id=? "
+                                                      "AND team_id=?", (fixture_id, team_id)) if r["jugador"]]
+    except Exception:  # noqa: BLE001 — base sin alineaciones: alcanza la plantilla
+        hoja = []
+    te = tokens(nombre)
+    return not any(mismo_jugador(nombre, p) or casa(tokens(p), te) for p in plantel + hoja)
 
 
 def del_equipo(team_id: int, fx) -> dict:
@@ -216,7 +306,7 @@ def del_equipo(team_id: int, fx) -> dict:
     # id, entraban en `sancionados` y SANCION-SIN-DECLARAR pedía ponerlos en
     # `fuera`, donde pesarían en el IP). La misma regla que la ficha
     # (`ficha_tactica._cuerpo_tecnico_e_ids`): va aparte, para `dt.banco`.
-    ct = _cuerpo_tecnico(ultimo["id"], team_id, [rojas[k] for k in rojas])
+    ct = _cuerpo_tecnico(ultimo_r["id"], team_id, [rojas[k] for k in rojas])
     for k in list(rojas):
         if id(rojas[k]) in ct:
             r = rojas.pop(k)
@@ -224,6 +314,13 @@ def del_equipo(team_id: int, fx) -> dict:
             r["detalle"] = (f"expulsado al {r['minuto']}' el {fecha} en el último partido de esta competición: "
                             "no se sienta en el banco hoy (confirmar la pena en prensa); va en `dt.banco`, "
                             "no en `fuera`")
+            out.setdefault("cuerpoTecnico", []).append(r)
+        elif not rojas[k]["jugadorId"] and _fuera_del_plantel(ultimo_r["id"], team_id, rojas[k]["nombre"]):
+            r = rojas.pop(k)
+            r["tipo"] = "expulsion_cuerpo_tecnico"
+            r["detalle"] = (f"roja al {r['minuto']}' el {fecha} a alguien sin id que no está en el plantel ni en la "
+                            "hoja (cuerpo técnico): si es quien dirige, no se sienta hoy y va en `dt.banco` "
+                            "(confirmar en prensa); no va en `fuera`")
             out.setdefault("cuerpoTecnico", []).append(r)
     out["sancionados"].extend(rojas.values())
 

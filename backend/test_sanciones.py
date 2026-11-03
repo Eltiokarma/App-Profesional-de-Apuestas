@@ -326,5 +326,71 @@ check("1043: la 3.ª amarilla en el último partido suspende; un partido despué
       _v33.get("ciclo") == "suspende" and _v34.get("ciclo") == "cumplido"
       and not any(x["jugadorId"] == 30398 for x in sanciones.de_fixture(34)["a"]["sancionados"]), (_v33, _v34))
 
+# 1080 (Monzón, Atlas, 1551020) y 1135 (F. Chamorro, 1505551): la tarjeta se
+# verifica con la regla del fútbol y las stats de la ficha
+MX, ATS, RIV = 262, 2283, 2314
+con.executescript("""
+    CREATE TABLE fixture_stats (fixture_id INTEGER NOT NULL, team_id INTEGER NOT NULL, clave TEXT, valor TEXT);
+    CREATE TABLE plantel_actual (team_id INTEGER, player_id INTEGER, nombre TEXT);
+""")
+con.executemany("INSERT INTO fixtures VALUES (?,?,?,'',?,2026,?,?,?)", [
+    (101 + k, f"2026-09-{5 + 7 * k:02d} 20:00:00", "FT", MX, f"Apertura - {k + 1}", ATS, RIV) for k in range(4)]
+    + [(106, "2026-10-20 20:00:00", "NS", MX, "Apertura - 5", ATS, RIV)])
+_ev = [(101 + k, 30, "Card", "Yellow Card", ATS, "Florián Monzón", 196743) for k in range(3)]
+_ev += [(104, 90, "Card", "Yellow Card", ATS, "Florián Monzón", 196743),
+        (104, 95, "Card", "Yellow Card", ATS, "Florián Monzón", 196743),
+        # 1135: amarilla mejorada por el VAR sin su roja y con las stats en contra; Figueroa con upgrade + roja
+        (104, 61, "Card", "Yellow Card", ATS, "Felipe Chamorro", 274563),
+        (104, 61, "Var", "Card upgrade confirmed", ATS, "Felipe Chamorro", 274563),
+        (104, 48, "Var", "Card upgrade confirmed", ATS, "G. Figueroa", 537295),
+        (104, 48, "Card", "Red Card", ATS, "G. Figueroa", 537295)]
+con.executemany("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador, jugador_id) "
+                "VALUES (?,?,?,?,?,?,?)", _ev)
+con.executemany("INSERT INTO fixture_stats VALUES (?,?,?,?)",
+                [(101 + k, ATS, "Red Cards", "0") for k in range(3)] + [(104, ATS, "Red Cards", "1")])
+con.commit()
+_s106 = sanciones.de_fixture(106)["a"]
+_am106 = {a["nombre"]: a["amarillas"] for a in _s106["amarillas"]}
+_sn = {x["nombre"]: x["tipo"] for x in _s106["sancionados"]}
+check("1080: dos amarillas al mismo jugador sin roja (90' y 90+5) cuentan UNA: 4, no 5, y no suspende",
+      _am106.get("Florián Monzón") == 4 and "Florián Monzón" not in _sn, (_am106, _sn))
+check("1135: el upgrade con su roja es UNA roja; el upgrade sin roja y con las stats en contra no es roja",
+      _sn.get("G. Figueroa") == "roja" and "Felipe Chamorro" not in _sn and _am106.get("Felipe Chamorro") == 1,
+      (_sn, _am106))
+# con las stats que traen una roja de más, la segunda amarilla es la doble amarilla y el upgrade, una roja
+con.execute("UPDATE fixture_stats SET valor='3' WHERE fixture_id=104")
+con.commit()
+_s106 = sanciones.de_fixture(106)["a"]
+_sn = {x["nombre"]: x["tipo"] for x in _s106["sancionados"]}
+check("1080/1135: con las stats sosteniendo las rojas que faltan, doble amarilla y roja del VAR",
+      _sn.get("Florián Monzón") == "doble_amarilla" and _sn.get("Felipe Chamorro") == "roja"
+      and _sn.get("G. Figueroa") == "roja", _sn)
+con.execute("UPDATE fixture_stats SET valor='1' WHERE fixture_id=104")
+
+# 1101 (Artur William Costa, 1645530): la roja sin id a alguien que no está en
+# el plantel ni en la hoja es del cuerpo técnico; con el nombre de un jugador, no
+con.executemany("INSERT INTO plantel_actual VALUES (?,?,?)",
+                [(ATS, 196743, "Florián Monzón"), (ATS, 2405, "José Vargas")])
+con.executemany("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador, jugador_id) "
+                "VALUES (104, ?, 'Card', 'Red Card', ?, ?, NULL)", [(19, ATS, "Artur William Costa"),
+                                                                   (70, ATS, "José Vargas")])
+con.execute("UPDATE fixture_stats SET valor='3' WHERE fixture_id=104")
+con.commit()
+_s106 = sanciones.de_fixture(106)["a"]
+_sn = {x["nombre"]: x["tipo"] for x in _s106["sancionados"]}
+_ct = {x["nombre"]: x["tipo"] for x in _s106.get("cuerpoTecnico") or []}
+check("1101: la roja sin id fuera del plantel va en `cuerpoTecnico`; la del jugador sin id sigue en `sancionados`",
+      _ct == {"Artur William Costa": "expulsion_cuerpo_tecnico"} and _sn.get("José Vargas") == "roja"
+      and "Artur William Costa" not in _sn, (_sn, _ct))
+_dts = _dt_con_expulsion(106, {"a": {"nombre": "Benjamín Mora"}, "b": None})
+check("1101: el DT de la agenda trae `expulsado` con la roja del cuerpo técnico",
+      (_dts["a"].get("expulsado") or {}).get("nombre") == "Artur William Costa", _dts)
+# 1126: la tabla F1 dice que no hay regla (y lleva el cuerpo técnico aparte)
+_t = _f969._con_sanciones({"candidatos": []}, sanciones.de_fixture(21)["a"])
+_t106 = _f969._con_sanciones({"candidatos": []}, _s106)
+check("1126: sin regla, la tabla F1 trae `amarillasSinRegla`; con regla, no; y `cuerpoTecnico` viaja",
+      "amarillasSinRegla" in _t and "amarillasSinRegla" not in _t106
+      and [x["nombre"] for x in _t106.get("cuerpoTecnico") or []] == ["Artur William Costa"], (_t, _t106))
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)
