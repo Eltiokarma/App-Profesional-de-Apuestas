@@ -6330,6 +6330,22 @@ def main():
     _no = c.post(f"{A}/analisis/cowork/incidencias/{_rz}/decision", json={"aprobar": False, "nota": "no vale la pena"}).json()
     check("rechazada: queda por_diseno, cerrada, con la decisión y la propuesta",
           _no["estado"] == "por_diseno" and _no["cerradoEn"] and "NO" in _no["resolucion"] and "propuesta x" in _no["resolucion"], _no)
+    # 3-bis. una familia que el usuario rechazó en la tarjeta no vuelve a pedir decisión
+    _rec = []
+    for _k, _f in enumerate((7101, 7102, 7103)):
+        _n = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "partes", "items": [
+            {"titulo": "Hora del saque de la base atrasada frente al club", "area": "agenda", "fixtureId": _f}]}).json()
+        _rec.append((_n["nuevas"] or _n["repetidas"])[0])
+        c.post(f"{A}/analisis/cowork/incidencias/{_rec[-1]}/estado",
+               json={"estado": "usuario" if _k == 2 else "dato_api", "resolucion": "propuesta: leer la hora del club"})
+    c.post(f"{A}/analisis/cowork/incidencias/{_rec[-1]}/decision", json={"aprobar": False, "nota": "no"})
+    _n4 = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "partes", "items": [
+        {"titulo": "Hora del saque de la base atrasada frente al club", "area": "agenda", "fixtureId": 7104}]}).json()
+    c.post(f"{A}/analisis/cowork/incidencias/{(_n4['nuevas'] or _n4['repetidas'])[0]}/estado",
+           json={"estado": "dato_api", "resolucion": "igual"})
+    _fhs = next(f for f in c.get(f"{A}/analisis/cowork/incidencias/causas").json()["causas"] if _rec[0] in f["ids"])
+    check("una familia rechazada por el usuario (por_diseno «Decisión del usuario») no vuelve a salir recurrente",
+          _fhs["recurrente"] is False and _fhs["fixturesDatoApi"] >= 3, _fhs)
     # 4. lo que vuelve después de un PR: el parche no alcanzó
     _rp = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "partes", "items": [
         {"titulo": "Formación del once del parte distinta de la ficha", "area": "dtp"}]}).json()["nuevas"][0]
