@@ -4991,6 +4991,11 @@ components:
                         rojaPropia: { type: integer, description: 'solo tras la roja propia: su minuto' }
                         rojaRival: { type: integer, description: 'solo tras la roja del rival: su minuto' }
                         numerico: { type: string, enum: [inferioridad, superioridad, paridad], description: 'con alguna roja en el partido: el balance de jugadores del foco en el tramo; siExpulsion solo en inferioridad' }
+                        enCancha: { type: object, description: 'con alguna roja: jugadores en cancha {foco, rival} (1078: la segunda roja deja 9)', properties: { foco: { type: integer }, rival: { type: integer } } }
+                        desdeTexto: { type: string, description: 'el minuto real que abre el tramo («90+5»); desde/hasta son el reloj de las ventanas, que deja el añadido en el 45 o el 90 (1078)' }
+                        hastaTexto: { type: string, description: 'el minuto real que lo cierra, o «final»' }
+                        clase: { type: string, enum: [roto, rama_abandonada], description: 'al abrir el tramo el foco ya recibió 3 (disciplina 3) o el marcador tenía 3 de diferencia (24): la rama no se juega (1079)' }
+                        cobrable: { type: boolean, description: 'solo false, con clase: el tramo no se cobra en ninguna métrica' }
                         declarada: { type: boolean }
                         ventana: { type: string }
                         rango: { type: array, nullable: true, items: { type: integer } }
@@ -5038,6 +5043,7 @@ components:
                       salida: { type: string, enum: [concedio, marco, sinMasGoles], description: 'TDE v0.1.21 (disciplina 61), solo en siRecibePrimero: lo decide el PRIMER gol posterior al gol en contra (un gol del rival después del empate propio es otro tramo). «marco» no cuenta contra la rama; «sinMasGoles» puede ser la disciplina 14 (lo dice la autopsia)' }
                       notaSalida: { type: string }
                       rojaPrevia: { type: integer, description: 'minuto de la roja propia antes del gol concedido: el mecanismo cambió (disciplina 16) y no cuenta como concesión persiguiendo' }
+                      rojaRivalPrevia: { type: integer, description: 'minuto de la roja del rival antes del gol concedido, con la línea siExpulsionRival escrita: regía esa rama (disciplinas 16 y 64) y no cuenta como concesión persiguiendo (1140)' }
                   nota: { type: string }
         evidencia:
           type: object
@@ -5051,6 +5057,10 @@ components:
                   lado: { type: string, enum: [a, b] }
                   jugador: { type: string }
                   autogol: { type: boolean }
+                  penal: { type: boolean }
+                  rebotePenal: { type: boolean, description: 'gol del mismo equipo en el minuto de su penal errado: la vía del penal (1136); `penal` va true' }
+                  enAnadido: { type: boolean }
+                  baseAnadido: { type: integer, nullable: true }
             primerGol: { type: object, nullable: true, additionalProperties: true }
             var: { type: array, items: { type: object, additionalProperties: true }, description: 'decisiones del VAR de la ficha (gol anulado, penal confirmado o anulado) con minuto, extra, detalle, jugador y lado (1066): evidencia, no cambia el marcador' }
             conFicha: { type: boolean }

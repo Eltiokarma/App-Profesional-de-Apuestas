@@ -3526,6 +3526,13 @@ def main():
           dtpc._estado_por_tiempo([{"minuto": 30, "extra": 0, "aFavor": False},
                                    {"minuto": 60, "extra": 0, "aFavor": True}])
           == {"ganando": 0, "empatando": 60, "perdiendo": 30, "dominante": "empatando"})
+    # 1113 (ida de UC Ecuador, 1639721): 1-0 al 14, 1-1 al 77, 1-2 al 90+6 y 2-2 al 90+13
+    _ept = dtpc._estado_por_tiempo(
+        [{"minuto": 14, "extra": 0, "aFavor": True}, {"minuto": 77, "extra": 0, "aFavor": False},
+         {"minuto": 96, "extra": 6, "aFavor": False}, {"minuto": 103, "extra": 13, "aFavor": True}],
+        [{"minuto": 14, "extra": 0}, {"minuto": 96, "extra": 6}, {"minuto": 103, "extra": 13}])
+    check("1113: el añadido se juega — perdió 1-2 del 90+6 al 90+13 → 7 minutos perdiendo, no 0",
+          (_ept["ganando"], _ept["empatando"], _ept["perdiendo"]) == (63, 33, 7), _ept)
 
     # el DTP en el parte: normaliza, calcula la clase al leer, entra a la cadena
     ns_dtp = next((f["id"] for f in dbmod.query("sad", "SELECT id FROM fixtures WHERE status_short='NS' "
@@ -5191,6 +5198,60 @@ def main():
           all(t["desde"] <= t["hasta"] for t in _t572)
           and [(t["marcador"], t["concedio"]) for t in _t572] == [("0-0", [60]), ("0-1", []), ("1-1", []), ("1-1", [102]), ("1-2", [])]
           and _t572[3]["numerico"] == "inferioridad" and _t572[3]["rama"] == "siExpulsion", _t572)
+    # 1078 (Sarmiento, 1493225): rojas propias al 67 y al 90 y el 1-2 del 90+5 → la cuenta y el minuto real
+    _t1078 = tramos_por_marcador({"reasignacion": {}}, [{"minuto": 5, "lado": "a"}, {"minuto": 29, "lado": "b"},
+                                                        _ad(95, 90, "b")], "a",
+                                 [{"minuto": 67, "lado": "a", "jugador": "Orihuela"},
+                                  {"minuto": 90, "lado": "a", "jugador": "Salle"}])
+    check("1078: con la segunda roja el tramo dice 9 contra 11 y el gol del añadido se escribe 90+5",
+          [t.get("enCancha") for t in _t1078[3:]] == [{"foco": 10, "rival": 11}, {"foco": 9, "rival": 11},
+                                                      {"foco": 9, "rival": 11}]
+          and (_t1078[4]["desdeTexto"], _t1078[4]["hastaTexto"], _t1078[4]["concedio"]) == ("90", "90+5", [95])
+          and (_t1078[5]["desdeTexto"], _t1078[5]["hastaTexto"]) == ("90+5", "final"), _t1078)
+    # 1079 (Juárez, 1551021): 3-0 al 83 y el 3-1 al 89 → el tramo no se cobra (disciplina 24)
+    _t1079 = tramos_por_marcador({"reasignacion": {"siMarcaPrimero": {"sob1": 0, "ventana": "desde el gol +15"}}},
+                                 [{"minuto": 17, "lado": "a"}, {"minuto": 39, "lado": "a"}, {"minuto": 83, "lado": "a"},
+                                  {"minuto": 89, "lado": "b"}], "a")
+    check("1079: el tramo 83-89 con 3-0 sale rama_abandonada y no cobrable; el 2-0 se sigue cobrando",
+          (_t1079[3]["marcador"], _t1079[3].get("clase"), _t1079[3].get("cobrable")) == ("3-0", "rama_abandonada", False)
+          and "clase" not in _t1079[2], _t1079)
+    # 1140 (Chicó, 1549846): recibe al 32, roja del rival al 59 con siExpulsionRival escrita, 0-2 al 79
+    _r1140 = _rj23({"equipo": "b", "reasignacion": {"siExpulsionRival": {"sob1": 1}}},
+                   [{"minuto": 32, "lado": "a"}, {"minuto": 79, "lado": "a"}], 2, True,
+                         [{"minuto": 59, "lado": "a", "jugador": "Benedetti"}])
+    _r1140b = _rj23({"equipo": "b", "reasignacion": {}},
+                          [{"minuto": 32, "lado": "a"}, {"minuto": 79, "lado": "a"}], 2, True,
+                          [{"minuto": 59, "lado": "a", "jugador": "Benedetti"}])
+    check("1140: con la línea de la roja rival escrita, el gol posterior no se cobra como «la vía se pagó»; "
+          "sin la línea manda el marcador",
+          _r1140.get("rojaRivalPrevia") == 59 and "siExpulsionRival" in _r1140["notaSalida"]
+          and "rojaRivalPrevia" not in _r1140b and _r1140b["salida"] == "concedio", (_r1140, _r1140b))
+    # 1137 (Auxerre, 1552808): ECHADA-PSI 45-60 y perdiendo desde el 41 → la ventana del reloj no se cobra
+    from backend.analisis.veredicto import ventana_reloj as _vr1137, goles_de_filas as _gf1136, \
+        reloj_gol as _rg1082, ventana_a_cobrar as _vac1082
+    _g1137 = [{"minuto": 41, "lado": "a"}, {"minuto": 55, "lado": "a"}]
+    _v1137 = _vr1137("45-60'", _g1137, [], "a", True, True)
+    _v1137s = _vr1137("45-60'", _g1137, [], "a", True, False)
+    _v1137e = _vr1137("45-60'", [{"minuto": 50, "lado": "a"}], [], "a", True, True)
+    check("1137: la echada de base con el foco ya abajo es rama_abandonada; un SOB igual se cobra y la echada "
+          "que recibe el primero en su ventana también",
+          (_v1137["clase"], _v1137["cobrable"]) == ("rama_abandonada", False) and _v1137s["cobrable"] is True
+          and _v1137e["cobrable"] is True, (_v1137, _v1137s, _v1137e))
+    # 1136 (1551026): penal errado y gol del mismo equipo en el mismo minuto → la vía del penal
+    _g1136 = _gf1136([{"minuto": 42, "extra": 0, "detalle": "Normal Goal", "equipo_id": 2, "jugador": "V"},
+                      {"minuto": 87, "extra": 0, "detalle": "Missed Penalty", "equipo_id": 2, "jugador": "Vega"},
+                      {"minuto": 87, "extra": 0, "detalle": "Normal Goal", "equipo_id": 2, "jugador": "Vega"}], 1)
+    check("1136: el rebote del penal errado sale penal con rebotePenal; el gol de juego del 42 no",
+          [(g["minuto"], g["penal"], g.get("rebotePenal")) for g in _g1136] == [(42, False, None), (87, True, True)],
+          _g1136)
+    # 1082 (1584456): el 45+2 se guarda 47 y ancla «desde el gol +15» en el 45, como los tramos
+    _g1082 = _gf1136([{"minuto": 46, "extra": 0, "detalle": "Normal Goal", "equipo_id": 2, "jugador": "y"},
+                      {"minuto": 47, "extra": 2, "detalle": "Normal Goal", "equipo_id": 1, "jugador": "Savić"}], 1)
+    _vc1082 = _vac1082({"reasignacion": {}}, {"rama": "siRecibePrimero", "minuto": 47,
+                                               "loDeclarado": {"ventana": "desde el gol +15"}}, _rg1082(_g1082[0]))
+    check("1082: el 45+2 va antes que el 46' del segundo tiempo y su reloj es 45",
+          [g["minuto"] for g in _g1082] == [47, 46] and _rg1082(_g1082[0]) == 45
+          and rango_relativo("desde el gol +15", _rg1082(_g1082[0])) == (45, 60) and _vc1082[2] == "", (_g1082, _vc1082))
     # 555: el gol del añadido no cuenta en la ventana del tramo (como en la del reloj)
     _t555 = tramos_por_marcador({"ventana": "75-90'", "reasignacion": {}}, [_ad(92, 90, "b")], "a")
     check("555: 90+2 con la ventana base 75-90 → golEnVentana false en el tramo, igual que el reloj",

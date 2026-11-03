@@ -78,13 +78,26 @@ def _goles(fixture_id: int, home_id: int) -> list[dict]:
         )
     except Exception:
         return []  # DB anterior a la migración de eventos
+    return goles_de_filas(filas, home_id)
+
+
+def goles_de_filas(filas: list, home_id: int) -> list[dict]:
+    """Las filas `Goal` de `fixture_eventos` (minuto, extra, detalle,
+    equipo_id, jugador) como goles del veredicto."""
+    # EL REBOTE DE UN PENAL ERRADO ES LA VÍA DEL PENAL (incidencia 1136, Vega
+    # al 87' en 1551026: «Missed Penalty» y «Normal Goal» del mismo equipo en el
+    # mismo minuto; el gol salía como de juego y la salida de la rama lo cobraba
+    # como «concedio»). La API no marca el rebote: se lee del par de eventos.
+    errados = {(f["equipo_id"], f["minuto"] or 0) for f in filas if "missed" in (f["detalle"] or "").lower()}
     out = []
     for f in filas:
         detalle = (f["detalle"] or "").lower()
         if "missed" in detalle:
             continue
         autogol = "own" in detalle
-        penal = "penalty" in detalle
+        rebote = (not autogol and "penalty" not in detalle
+                  and any((f["equipo_id"], (f["minuto"] or 0) - d) in errados for d in (0, 1)))
+        penal = "penalty" in detalle or rebote
         de_local = f["equipo_id"] == home_id
         # `minuto` ya trae sumado el añadido (ficha_partido.guardar_eventos:
         # 90+4 se guarda como minuto 94, extra 4). Sumarlo otra vez ponía ese
@@ -102,8 +115,22 @@ def _goles(fixture_id: int, home_id: int) -> list[dict]:
             # 45 o 90: el tiempo al que se sumó el añadido (45+4 → minuto 49,
             # extra 4 → base 45). Sirve para no listarlo en ventanas lejanas
             "baseAnadido": ((f["minuto"] or 0) - (f["extra"] or 0)) if f["extra"] else None,
+            **({"rebotePenal": True} if rebote else {}),
         })
+    # EN EL ORDEN EN QUE PASARON: un 45+2 (minuto 47) va antes de un gol al 46'
+    # del segundo tiempo (el primer gol decide la rama, incidencia 1082)
+    out.sort(key=lambda g: (reloj_gol(g), g["minuto"] - reloj_gol(g)))
     return out
+
+
+def reloj_gol(g: dict) -> int:
+    """El minuto del RELOJ de las ventanas: un evento del añadido se queda en el
+    45 o el 90 al que se sumó (45+2 → 45). Es el ancla de una ventana relativa
+    al gol: «desde el gol +15» de un 45+2 es 45-60, no 47-62 (incidencia 1082,
+    1584456: el bloque daba gol en la ventana con el 61' y el tramo no)."""
+    if g.get("enAnadido") and g.get("baseAnadido") is not None:
+        return g["baseAnadido"]
+    return g.get("minuto") or 0
 
 
 def _en_cancha(fixture_id: int) -> dict:
@@ -254,19 +281,32 @@ _RELATIVA = re.compile(r"desde (la|el|que|su)|tras (el|la)|despu[eé]s de|luego 
                        r"relativ|\+\s*\d+\s*(min|')|post[- ]gol|posteriores|siguientes", re.I)
 
 
-def clase_ventana(goles: list[dict], desde: int, contra: str) -> tuple[str, int, int]:
+def clase_ventana(goles: list[dict], desde: int, contra: str, echada: bool = False) -> tuple[str, int, int]:
     """(clase, goles recibidos por el foco, diferencia) ANTES de la ventana.
     `roto`: el foco ya recibió 3 (disciplina 3); `rama_abandonada`: el
-    marcador ya estaba 3 arriba (disciplina 24); "" si la ventana se juega."""
+    marcador ya estaba 3 arriba (disciplina 24) o, con una tipología de ECHADA,
+    el foco ya iba perdiendo; "" si la ventana se juega.
+
+    LA ECHADA DEL QUE YA PERSIGUE NO SE JUEGA (incidencia 1137, Auxerre en
+    1552808: ECHADA-PSI 45-60 cobrable con el gol del 55' y Auxerre perdiendo
+    desde el 41'). Echarse es replegar para sostener un resultado (disciplina
+    16: la echada es «yendo empatado o ganando»); el que va abajo persigue, y
+    la disciplina 24 dice que «el que iba a administrar pasó a perseguir» es
+    `rama_abandonada` y no se cobra."""
     previos = [g for g in goles
                if (not g.get("enAnadido") and g["minuto"] < desde)
                or (g.get("enAnadido") and (g.get("baseAnadido") or 0) < desde)]
     recibidos = sum(1 for g in previos if contra and g["lado"] == contra)
     dif = abs(sum(1 for g in previos if g["lado"] == "a") - sum(1 for g in previos if g["lado"] == "b"))
-    return ("roto" if recibidos >= 3 else "rama_abandonada" if dif >= 3 else ""), recibidos, dif
+    persigue = echada and bool(contra) and recibidos > len(previos) - recibidos
+    return ("roto" if recibidos >= 3 else "rama_abandonada" if dif >= 3 or persigue else ""), recibidos, dif
 
 
-def ventana_a_cobrar(tde: dict, reasig: dict | None) -> tuple[str, bool, str]:
+def es_echada(tipologia) -> bool:
+    return str(tipologia or "").strip().upper().startswith("ECHADA")
+
+
+def ventana_a_cobrar(tde: dict, reasig: dict | None, minuto_reloj: int | None = None) -> tuple[str, bool, str]:
     """(texto de la ventana que se cobra, si es la de la rama, motivo para no
     cobrarla). La rama que jugó el partido reemplaza a la ventana base DESDE
     el gol que la abre; si su ventana termina ANTES de ese gol, la rama nunca
@@ -276,7 +316,8 @@ def ventana_a_cobrar(tde: dict, reasig: dict | None) -> tuple[str, bool, str]:
     de_rama = ((reasig or {}).get("loDeclarado") or {}).get("ventana") or ""
     if not de_rama:
         return base, False, ""
-    rango, minuto = _ventana(de_rama), (reasig or {}).get("minuto")
+    rango = _ventana(de_rama)
+    minuto = minuto_reloj if minuto_reloj is not None else (reasig or {}).get("minuto")
     if rango and minuto is not None and rango[1] < minuto:
         return de_rama, True, (f"la rama se abrió al {minuto}' y su ventana ({de_rama}) ya había terminado: "
                                "la rama no tuvo tramo que evaluar; no se cobra")
@@ -447,8 +488,12 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     for tde in bloques_tde(parte.get("tde") or {}):
         reasig = rama_jugada(tde, goles, gl + gv, out["evidencia"]["conFicha"], rojas, sin_ramas)
         # LA VENTANA DE LA RAMA QUE SE JUGÓ, si la declaró (disciplina 44)
-        texto_v, de_rama, vencida = ventana_a_cobrar(tde, reasig)
         minuto_r, rama_r = (reasig or {}).get("minuto"), (reasig or {}).get("rama")
+        # la ventana relativa al primer gol se ancla en el RELOJ: un 45+2 abre
+        # 45-60, como en los tramos (incidencia 1082)
+        if minuto_r is not None and goles and rama_r in ("siMarcaPrimero", "siRecibePrimero"):
+            minuto_r = reloj_gol(goles[0])
+        texto_v, de_rama, vencida = ventana_a_cobrar(tde, reasig, minuto_r)
         # una ventana BASE relativa al gol («los 15 posteriores al gol propio;
         # sin gol, 75-90'») se ancla en el gol que jugó si casa con lo escrito,
         # y sin goles vale la del reloj (incidencia 114: se cobraba 75-90 con
@@ -506,7 +551,10 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
         # ...Y DENTRO DE LA VENTANA ANTES DEL GOL QUE SE COBRA (1644705, 19/10/2026:
         # Nacional 3-0 al 81' y el 3-1 del 86' se cobraba en la 75-90; con 3 arriba
         # la rama ya estaba abandonada cuando llegó ese gol)
-        clase, recibidos, dif = clase_ventana(goles, primera if primera is not None else desde, contra)
+        # la echada de la BASE con el foco ya abajo no se juega (1137); la de una
+        # rama la escribió el analista para ese marcador
+        clase, recibidos, dif = clase_ventana(goles, primera if primera is not None else desde, contra,
+                                              echada=not de_rama and es_echada(tde.get("tipologia")))
         cobrable = (None if not out["evidencia"]["conFicha"] else
                     False if vencida else (not rojas_antes and not clase))
         bloques.append({
@@ -529,7 +577,8 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
             # romper la serie del sesgo tardío (incidencia 367: el 77' en la
             # 75-90 quedaba sin puntuar porque la rama ya estaba vencida)
             "reloj": (ventana_reloj(tde.get("ventana") or "", goles, rojas, contra,
-                                    out["evidencia"]["conFicha"]) if de_rama else None),
+                                    out["evidencia"]["conFicha"], es_echada(tde.get("tipologia")))
+                      if de_rama else None),
             # TRAMO POR TRAMO (TDE v0.1.22, disciplina 64): en cada tramo manda
             # la rama del marcador de ese momento, no la del primer gol
             "tramos": (tramos_por_marcador(tde, goles, foco, rojas, con_defecto)
@@ -543,6 +592,9 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
                      if clase == "roto" else
                      f"el marcador ya estaba {dif} goles arriba antes de la ventana: la rama quedó abandonada "
                      "(disciplina 24); no se cobra en ninguna métrica"
+                     if clase == "rama_abandonada" and dif >= 3 else
+                     "el equipo ya iba perdiendo antes de la ventana de su echada: persiguió, no administró "
+                     "(disciplinas 16 y 24); la rama quedó abandonada y no se cobra en ninguna métrica"
                      if clase == "rama_abandonada" else
                      "hubo una roja antes del gol de la ventana: el mecanismo declarado no se puso a "
                      "prueba (disciplina 24, acierto no testeado) y no cuenta en ninguna métrica"
@@ -889,6 +941,19 @@ def rama_jugada(tde: dict, goles: list[dict], total_goles: int, con_ficha: bool,
             out["rojaPrevia"] = roja["minuto"]
             out["notaSalida"] = (f"concedió con una roja propia del {roja['minuto']}': el mecanismo cambió "
                                  "(disciplina 16), no cuenta como concesión persiguiendo")
+        # ...Y CON LA DEL RIVAL, si su línea estaba escrita (incidencia 1140,
+        # Chicó en 1549846: roja de Benedetti al 59' y el 0-2 del 79' se cobraba
+        # «la vía se pagó» con Chicó en superioridad). Manda la cuenta de
+        # jugadores (disciplinas 16 y 64): desde esa roja regía siExpulsionRival,
+        # igual que en los tramos; sin la línea escrita manda el marcador.
+        elif salida == "concedio" and declarada.get("siExpulsionRival") is not None:
+            antes = [r for r in rojas or [] if r["minuto"] < siguiente["minuto"]]
+            ajenas = [r for r in antes if r["lado"] != foco]
+            if len(ajenas) > len(antes) - len(ajenas):
+                out["rojaRivalPrevia"] = ajenas[0]["minuto"]
+                out["notaSalida"] = (f"concedió con el rival en inferioridad desde el {ajenas[0]['minuto']}': "
+                                     "regía siExpulsionRival (disciplinas 16 y 64), no cuenta como concesión "
+                                     "persiguiendo")
     return out
 
 
@@ -898,12 +963,14 @@ def _por_tramo(tde: dict, goles: list[dict], rojas: list[dict], con_ficha: bool,
     se pudo pasar a minutos: lo que no depende de esa ventana se mide igual."""
     foco = tde.get("equipo") or ""
     contra = "b" if foco == "a" else ("a" if foco == "b" else "")
-    return {"reloj": ventana_reloj(tde.get("ventana") or "", goles, rojas, contra, con_ficha) if de_rama else None,
+    return {"reloj": (ventana_reloj(tde.get("ventana") or "", goles, rojas, contra, con_ficha,
+                                    es_echada(tde.get("tipologia"))) if de_rama else None),
             "tramos": tramos_por_marcador(tde, goles, foco, rojas, con_defecto) if con_ficha else [],
             "anadido": anadido_del_cierre(goles, rojas, foco) if con_ficha else None}
 
 
-def ventana_reloj(texto: str, goles: list[dict], rojas: list[dict], contra: str, con_ficha: bool) -> dict | None:
+def ventana_reloj(texto: str, goles: list[dict], rojas: list[dict], contra: str, con_ficha: bool,
+                  echada: bool = False) -> dict | None:
     """La ventana base del reloj medida sola, con el gol que abre la rama
     incluido: es la serie del sesgo tardío (disciplinas 44c y 45)."""
     rango = _ventana(texto)
@@ -915,7 +982,8 @@ def ventana_reloj(texto: str, goles: list[dict], rojas: list[dict], contra: str,
     primera = min((g["minuto"] for g in en), default=None)
     corte = primera if primera is not None else hasta
     rojas_antes = [r for r in rojas if r["minuto"] < corte]
-    clase, _, _ = clase_ventana(goles, primera if primera is not None else desde, contra)
+    # con una ECHADA de base y el foco ya abajo, la ventana no se jugó (1137)
+    clase, _, _ = clase_ventana(goles, primera if primera is not None else desde, contra, echada)
     return {"ventana": texto, "desde": desde, "hasta": hasta,
             "golEnVentana": bool(en) if con_ficha else None, "goles": en,
             "cobrable": None if not con_ficha else (not rojas_antes and not clase), "clase": clase or None}
@@ -970,8 +1038,16 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
     # el último tramo salía «desde 118 hasta 90»): un evento con reloj pasado el
     # 90 que no es del añadido es de la prórroga
     final = 120 if any(reloj(e[4]) > 90 for e in eventos) else 90
+
+    # EL MINUTO COMO SE ESCRIBE (incidencia 1078, Sarmiento: el añadido salía
+    # como tramos «desde 90 hasta 90» con el gol del 90+5 pegado al 90). El
+    # reloj de la ventana se queda en el 90; el texto dice el minuto real.
+    def texto_min(e: dict) -> str:
+        return f"{reloj(e)}+{e['minuto'] - reloj(e)}" if e.get("enAnadido") else str(e["minuto"])
+    inicio_txt = "0"
     for i in range(len(eventos) + 1):
         fin = reloj(eventos[i][4]) if i < len(eventos) else final
+        fin_txt = texto_min(eventos[i][4]) if i < len(eventos) else "final"
         if gf == gc == 0:
             estado, rama = "inicio", "base"
         elif gf > gc:
@@ -1004,7 +1080,15 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
         tramo = {"desde": inicio, "hasta": fin, "marcador": f"{gf}-{gc}", "estado": estado, "rama": rama,
                  "declarada": lo is not None if rama != "base" else bool(texto),
                  "ventana": texto, "rango": list(rango) if rango else None,
-                 "concedio": [g["minuto"] for g in concedio], "golEnVentana": en_ventana}
+                 "concedio": [g["minuto"] for g in concedio], "golEnVentana": en_ventana,
+                 "desdeTexto": inicio_txt, "hastaTexto": fin_txt}
+        # ROTO O CON TRES DE DIFERENCIA AL ABRIR EL TRAMO, LA RAMA NO SE COBRA
+        # (incidencia 1079, Juárez en 1551021: tramo 83-89 con 3-0, gol en la
+        # ventana por el 3-1 del 89' y sin clase; disciplinas 3 y 24), con la
+        # misma clase que la ventana del bloque
+        if gc >= 3 or abs(gf - gc) >= 3:
+            tramo["clase"] = "roto" if gc >= 3 else "rama_abandonada"
+            tramo["cobrable"] = False
         # el régimen lo define el MARCADOR: una roja que corta el tramo (y la que
         # después iguala el número) no abre uno nuevo (incidencia 943: tras la
         # roja de Antonini se volvía a medir un se_rompe ya cumplido)
@@ -1034,6 +1118,10 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
                 tramo["rojaPropia"] = roja_propia
             if roja_rival is not None:
                 tramo["rojaRival"] = roja_rival
+            # LA CUENTA DE JUGADORES, no solo el signo (1078: con la segunda
+            # roja de Sarmiento al 90' quedó con 9 y el tramo decía lo mismo
+            # que con 10)
+            tramo["enCancha"] = {"foco": 11 - propias, "rival": 11 - ajenas}
             if rama in ("siExpulsion", "siExpulsionRival"):
                 tramo["ramaMarcador"] = rama_marcador
         out.append(tramo)
@@ -1048,12 +1136,12 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
                 else:
                     ajenas += 1
                     roja_rival = roja_rival if roja_rival is not None else reloj(e)
-                inicio, abre_anadido = reloj(e), bool(e.get("enAnadido"))
+                inicio, abre_anadido, inicio_txt = reloj(e), bool(e.get("enAnadido")), texto_min(e)
                 continue
             if estado in ("ganando", "perdiendo"):
                 previo = estado
             gf, gc = gf + (e["lado"] == foco), gc + (e["lado"] != foco)
-            inicio, abre_anadido = reloj(e), bool(e.get("enAnadido"))
+            inicio, abre_anadido, inicio_txt = reloj(e), bool(e.get("enAnadido")), texto_min(e)
     return out
 
 
