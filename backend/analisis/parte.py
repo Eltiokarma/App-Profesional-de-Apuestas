@@ -1327,7 +1327,8 @@ def _dt_con_expulsion(fixture_id: int, dts: dict) -> dict:
     except Exception:  # noqa: BLE001 — sin eventos no se infiere: el DT viaja como estaba
         return dts
     for lado, d in dts.items():
-        ct = (sanc.get(lado) or {}).get("cuerpoTecnico") or []
+        # el DT de la base primero; la roja sin id a alguien del cuerpo técnico (1101) después
+        ct = sorted((sanc.get(lado) or {}).get("cuerpoTecnico") or [], key=lambda r: r.get("tipo") != "expulsion_dt")
         if d is not None and ct:
             dts[lado] = {**d, "expulsado": {"nombre": ct[0]["nombre"], "fecha": ct[0]["fecha"],
                                             "detalle": ct[0]["detalle"]}}

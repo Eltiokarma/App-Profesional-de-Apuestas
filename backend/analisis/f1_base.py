@@ -658,6 +658,15 @@ def _con_sanciones(t: dict, sanc: dict | None) -> dict:
         t["reglaAmarillas"] = sanc["regla"]
     if sanc.get("conteoParcial"):
         t["amarillasConteoParcial"] = sanc["conteoParcial"]
+    # SIN REGLA SE DICE TAMBIÉN EN LA TABLA (incidencia 1126, Mauro Brasil con 5
+    # amarillas en Uruguay, sin regla en `UMBRALES`: la tabla daba el conteo
+    # sin decir que el ciclo no se afirma; la nota de la 1011 se quedaba en
+    # `sanciones`). Y la roja al cuerpo técnico (919, 1101) viaja aparte, para
+    # `dt.banco`, nunca en `sancionados`.
+    if sanc.get("sinRegla"):
+        t["amarillasSinRegla"] = sanc["sinRegla"]
+    if sanc.get("cuerpoTecnico"):
+        t["cuerpoTecnico"] = sanc["cuerpoTecnico"]
     return t
 
 

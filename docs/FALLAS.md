@@ -101,7 +101,8 @@ Tres lugares donde vive una guardia:
   - La regla de la competición es la del reglamento: en Inglaterra la roja se cumple en cualquier competición doméstica (`sanciones.ROJA_DOMESTICA`, 958); el mismo evento dos veces no son dos amarillas (971); sin la regla de amarillas se dice (`sinRegla`, 1011); la hoja del partido de la roja no desmiente la sanción (980); la baja sin id casa por la fila de su id y la nota se lee venga donde venga (969, 959).
   - En el umbral del ciclo de amarillas se dice si suspende o si ya cumplió (`cicloAmarillas`, 1043): un número en el umbral sin explicación se lee como sanción olvidada.
   - El que el parte da de baja no es su recambio: el recibo avisa (`faltan`, bloque `equipos.fuera`) cuando un jugador de `fuera` aparece como suplente o recambio en el DTP, las ramas del TDE o la matriz, en una frase sin negación (`parte.fuera_en_el_banco`, 1051).
-  - La roja al cuerpo técnico no es de un jugador: `sanciones.del_equipo` la separa en `cuerpoTecnico` con la regla de la ficha (`ficha_tactica._cuerpo_tecnico_e_ids`) y la agenda la marca en `dt.expulsado` (919, 920).
+  - La roja al cuerpo técnico no es de un jugador: `sanciones.del_equipo` la separa en `cuerpoTecnico` con la regla de la ficha (`ficha_tactica._cuerpo_tecnico_e_ids`) y la agenda la marca en `dt.expulsado` (919, 920); la roja sin id a alguien que no está en el plantel ni en la hoja también (`expulsion_cuerpo_tecnico`, 1101).
+  - El evento de tarjeta de la API no es la verdad: `sanciones._depurar` lo verifica con la regla del fútbol (dos amarillas sin roja al mismo jugador son UNA, 1080) y con las «Red Cards» de las stats de la ficha (la roja que falta en los eventos, y el «Card upgrade» del VAR, que es roja solo si las stats la sostienen, 1135). La tabla F1 dice `amarillasSinRegla` (1126).
 - **Si vuelve:** si es una regla de amarillas de otra liga, va a `UMBRALES` con la fuente del reglamento.
 
 ### 5. La falla callada

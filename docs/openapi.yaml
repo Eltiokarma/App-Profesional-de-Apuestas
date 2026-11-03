@@ -1244,7 +1244,14 @@ paths:
         Cada lado trae `sancionados` (backend/sanciones.py, 30/10/2026, incidencias 772, 778 y
         835): roja directa o doble amarilla en el último partido terminado de ESTA competición, o
         la amarilla que completa el ciclo de la competición (`reglaAmarillas`, solo las reglas
-        conocidas y con los eventos de todos sus partidos; si faltan, `amarillasConteoParcial`),
+        conocidas y con los eventos de todos sus partidos; si faltan, `amarillasConteoParcial`; sin
+        regla de la competición, `amarillasSinRegla` dice que el conteo viaja y el ciclo no se
+        afirma, 1126). Las tarjetas se depuran con la regla del fútbol y las stats de la ficha: dos
+        amarillas al mismo jugador sin roja cuentan UNA salvo que las stats traigan una roja de más
+        (1080), y un «Card upgrade» del VAR sin su «Red Card» es roja solo si las stats la
+        sostienen (1135). La roja al DT o a alguien sin id fuera del plantel y de la hoja va en
+        `cuerpoTecnico` (tipo `expulsion_dt` · `expulsion_cuerpo_tecnico`, 919 y 1101), para
+        `dt.banco`, nunca en `sancionados`;
         cada uno con `tipo`, `fecha`, `detalle` y `certeza: probable`. La fila del sancionado
         lleva `sancion` y cada fila sus `amarillasEnLaCompeticion` (y, si están en el umbral de la regla, `cicloAmarillas`: `suspende` · `cumplido` · `enLaHoja` · `roja`, 1043). Un jugador en la hoja de
         este partido no se infiere sancionado. Un sancionado que el parte no tiene en `fuera`
