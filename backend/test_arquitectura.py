@@ -153,6 +153,19 @@ _bools = [f"docs/openapi.yaml:{i}" for i, ln in enumerate(oa.split("\n"), 1)
 check("contrato: ningún enum de docs/openapi.yaml trae un no/yes/on/off sin comillas (YAML lo lee booleano)",
       not _bools, _bools)
 
+# 5-ter · cada copa nacional de la base tiene su formato decidido (FALLAS.md: una
+# regla del fútbol leída del marcador; 1106: la KNVB Beker entró a LIGAS el
+# 29/10 y sus partidos únicos salían con `avanza` null sin que nadie lo notara)
+from backend import eliminatoria as _elim  # noqa: E402
+from backend.analisis.escala import COPAS as _COPAS  # noqa: E402
+from backend.ingesta.extractor import LIGAS as _LIGAS  # noqa: E402
+_sin_formato = sorted(f"{i} {_LIGAS[i]}" for i in set(_LIGAS) & _COPAS
+                      if i not in _elim.PARTIDO_UNICO and i not in _elim.FORMATO_SIN_AFIRMAR)
+check("copas: cada copa nacional de extractor.LIGAS está en eliminatoria.PARTIDO_UNICO o en "
+      "FORMATO_SIN_AFIRMAR con su motivo", not _sin_formato, _sin_formato)
+_doble = sorted(set(_elim.PARTIDO_UNICO) & set(_elim.FORMATO_SIN_AFIRMAR))
+check("copas: ninguna copa está a la vez en PARTIDO_UNICO y en FORMATO_SIN_AFIRMAR", not _doble, _doble)
+
 # ── 6 · CADA CLASE DE FALLA TIENE SU GUARDIA ESCRITA ────────────────────────
 fallas = leer(os.path.join("docs", "FALLAS.md"))
 clases = re.findall(r"^### ", fallas, re.M)

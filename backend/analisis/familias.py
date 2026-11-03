@@ -101,6 +101,12 @@ def _texto(nombre: str, ambito: str, b: dict, si: str, no: str) -> str:
         if es_cuidado(b):
             t += " — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más " \
                  "(§15), así que si se corta hay una causa que buscar"
+        elif b["partidos"] >= CUIDADO_DESDE and b["improbable"]:
+            # 1091 (1552214, Utrecht 36 de visita sin ganar por 3+): improbable
+            # (3 %) pero banal para el equipo (91 %); decir «esperable, sale el
+            # 3 %» se contradecía con el `improbable` que viaja al lado
+            t += f" — encadenarla sale solo el {_pct(b['probRacha'])} de las veces, pero es su estado de " \
+                 "casi siempre: una racha larga así es lo normal suyo, no terreno raro"
         elif b["partidos"] >= CUIDADO_DESDE:
             t += f" — pero con su frecuencia una racha así es esperable (sale el {_pct(b['probRacha'])} de las " \
                  "veces): no es terreno raro"

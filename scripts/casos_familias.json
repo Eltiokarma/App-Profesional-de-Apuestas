@@ -7397,6 +7397,985 @@
   }
  },
  {
+  "nombre": "Banal improbable",
+  "condicion": "V",
+  "filas": [
+   {
+    "fecha": "2025-01-01T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-02T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-03T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-04T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-05T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-06T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-07T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-08T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-09T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-10T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-11T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-12T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-13T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-14T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-15T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-16T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-17T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-18T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-19T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-20T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-21T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-22T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-23T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-24T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-25T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-26T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-27T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-01-28T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-01T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-02T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-03T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-04T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-05T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-06T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-07T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-08T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-09T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-10T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-11T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-12T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-13T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-14T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-15T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-16T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-17T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-18T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-19T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-20T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-21T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-22T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-23T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-24T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-25T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-26T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-27T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-02-28T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-01T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-02T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-03T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-04T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-05T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-06T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-07T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-08T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-09T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-10T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-11T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-12T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-13T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-14T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-15T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-16T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 3,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-17T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-18T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-19T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-20T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-21T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-22T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-23T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-24T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-25T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-26T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-27T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-03-28T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-01T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-02T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-03T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-04T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-05T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-06T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-07T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-08T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-09T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-10T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-11T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-12T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-13T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-14T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-15T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-16T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-17T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-18T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-19T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-20T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-21T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-22T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-23T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   },
+   {
+    "fecha": "2025-04-24T20:00:00Z",
+    "condicion": "Visita",
+    "golesFavor": 1,
+    "golesContra": 0
+   }
+  ],
+  "esperado": {
+   "nota": "descripción, no riesgo: el largo y el récord de estas burbujas no predicen el partido siguiente mejor que la frecuencia del equipo, y en su récord se sostienen algo más, no revientan (REVENTON §15). El PERFIL de doble oportunidad por condición sí agrega al 1X2 del motor (§15.1)",
+   "condicion": "visita",
+   "familias": [
+    {
+     "familia": "noPierde",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 108,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 1.0,
+     "n": 108,
+     "probRacha": 1.0,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Banal improbable lleva 108 partidos de visita sin perder. En 108 partidos de visita va sin perder el 100 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 108,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 0.0,
+     "n": 108,
+     "probRacha": 1.0,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Banal improbable lleva 108 partidos de visita con victoria. En 108 partidos de visita va con victoria el 100 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 36,
+     "maximoPrevio": 7,
+     "burbujasPrevias": 9,
+     "record": "supera",
+     "frecuencia": 0.083,
+     "n": 108,
+     "probRacha": 0.0442,
+     "improbable": true,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Banal improbable lleva 36 partidos de visita sin ganar por 2 o más (su máximo previo era 7): está en terreno nuevo, por encima de su récord — encadenarla sale solo el 4 % de las veces, pero es su estado de casi siempre: una racha larga así es lo normal suyo, no terreno raro. En 108 partidos de visita va sin ganar por 2 o más el 92 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 36,
+     "maximoPrevio": 7,
+     "burbujasPrevias": 9,
+     "record": "supera",
+     "frecuencia": 0.083,
+     "n": 108,
+     "probRacha": 0.0442,
+     "improbable": true,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Banal improbable lleva 36 partidos de visita sin ganar por 3 o más (su máximo previo era 7): está en terreno nuevo, por encima de su récord — encadenarla sale solo el 4 % de las veces, pero es su estado de casi siempre: una racha larga así es lo normal suyo, no terreno raro. En 108 partidos de visita va sin ganar por 3 o más el 92 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 108,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 0.0,
+     "n": 108,
+     "probRacha": 1.0,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Banal improbable lleva 108 partidos de visita sin perder por 2 o más. En 108 partidos de visita va sin perder por 2 o más el 100 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "visita",
+     "valor": true,
+     "partidos": 108,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 1.0,
+     "n": 108,
+     "probRacha": 1.0,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Banal improbable lleva 108 partidos de visita anotando. En 108 partidos de visita va anotando el 100 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 108,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 0.0,
+     "n": 108,
+     "probRacha": 1.0,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Banal improbable lleva 108 partidos de visita con la valla invicta. En 108 partidos de visita va con la valla invicta el 100 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 108,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 0.0,
+     "n": 108,
+     "probRacha": 1.0,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Banal improbable lleva 108 partidos de visita sin que marquen los dos. En 108 partidos de visita va sin que marquen los dos el 100 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "visita",
+     "valor": false,
+     "partidos": 36,
+     "maximoPrevio": 7,
+     "burbujasPrevias": 9,
+     "record": "supera",
+     "frecuencia": 0.083,
+     "n": 108,
+     "probRacha": 0.0442,
+     "improbable": true,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Banal improbable lleva 36 partidos de visita con 2 goles o menos (su máximo previo era 7): está en terreno nuevo, por encima de su récord — encadenarla sale solo el 4 % de las veces, pero es su estado de casi siempre: una racha larga así es lo normal suyo, no terreno raro. En 108 partidos de visita va con 2 goles o menos el 92 %."
+    },
+    {
+     "familia": "noPierde",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 108,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 1.0,
+     "n": 108,
+     "probRacha": 1.0,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Banal improbable lleva 108 partidos en total sin perder. En 108 partidos en total va sin perder el 100 %."
+    },
+    {
+     "familia": "noGana",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 108,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 0.0,
+     "n": 108,
+     "probRacha": 1.0,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Banal improbable lleva 108 partidos en total con victoria. En 108 partidos en total va con victoria el 100 %."
+    },
+    {
+     "familia": "gana2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 36,
+     "maximoPrevio": 7,
+     "burbujasPrevias": 9,
+     "record": "supera",
+     "frecuencia": 0.083,
+     "n": 108,
+     "probRacha": 0.0442,
+     "improbable": true,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Banal improbable lleva 36 partidos en total sin ganar por 2 o más (su máximo previo era 7): está en terreno nuevo, por encima de su récord — encadenarla sale solo el 4 % de las veces, pero es su estado de casi siempre: una racha larga así es lo normal suyo, no terreno raro. En 108 partidos en total va sin ganar por 2 o más el 92 %."
+    },
+    {
+     "familia": "gana3+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 36,
+     "maximoPrevio": 7,
+     "burbujasPrevias": 9,
+     "record": "supera",
+     "frecuencia": 0.083,
+     "n": 108,
+     "probRacha": 0.0442,
+     "improbable": true,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Banal improbable lleva 36 partidos en total sin ganar por 3 o más (su máximo previo era 7): está en terreno nuevo, por encima de su récord — encadenarla sale solo el 4 % de las veces, pero es su estado de casi siempre: una racha larga así es lo normal suyo, no terreno raro. En 108 partidos en total va sin ganar por 3 o más el 92 %."
+    },
+    {
+     "familia": "pierde2+",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 108,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 0.0,
+     "n": 108,
+     "probRacha": 1.0,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Banal improbable lleva 108 partidos en total sin perder por 2 o más. En 108 partidos en total va sin perder por 2 o más el 100 %."
+    },
+    {
+     "familia": "anota",
+     "ambito": "total",
+     "valor": true,
+     "partidos": 108,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 1.0,
+     "n": 108,
+     "probRacha": 1.0,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Banal improbable lleva 108 partidos en total anotando. En 108 partidos en total va anotando el 100 %."
+    },
+    {
+     "familia": "recibe",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 108,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 0.0,
+     "n": 108,
+     "probRacha": 1.0,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Banal improbable lleva 108 partidos en total con la valla invicta. En 108 partidos en total va con la valla invicta el 100 %."
+    },
+    {
+     "familia": "ambosMarcan",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 108,
+     "maximoPrevio": null,
+     "burbujasPrevias": 0,
+     "record": null,
+     "frecuencia": 0.0,
+     "n": 108,
+     "probRacha": 1.0,
+     "improbable": false,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Banal improbable lleva 108 partidos en total sin que marquen los dos. En 108 partidos en total va sin que marquen los dos el 100 %."
+    },
+    {
+     "familia": "mas2.5",
+     "ambito": "total",
+     "valor": false,
+     "partidos": 36,
+     "maximoPrevio": 7,
+     "burbujasPrevias": 9,
+     "record": "supera",
+     "frecuencia": 0.083,
+     "n": 108,
+     "probRacha": 0.0442,
+     "improbable": true,
+     "destacada": true,
+     "cuidado": false,
+     "texto": "Banal improbable lleva 36 partidos en total con 2 goles o menos (su máximo previo era 7): está en terreno nuevo, por encima de su récord — encadenarla sale solo el 4 % de las veces, pero es su estado de casi siempre: una racha larga así es lo normal suyo, no terreno raro. En 108 partidos en total va con 2 goles o menos el 92 %."
+    }
+   ],
+   "lineas": [
+    "Perfil de doble oportunidad de visita: no pierde 108 de 108 (100 %) y no gana 0 de 108 (0 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de visita empata mucho o se planta a no perder no está del todo en el nivel",
+    "Banal improbable lleva 108 partidos de visita sin perder. En 108 partidos de visita va sin perder el 100 %.",
+    "Banal improbable lleva 108 partidos de visita con victoria. En 108 partidos de visita va con victoria el 100 %.",
+    "Banal improbable lleva 36 partidos de visita sin ganar por 2 o más (su máximo previo era 7): está en terreno nuevo, por encima de su récord — encadenarla sale solo el 4 % de las veces, pero es su estado de casi siempre: una racha larga así es lo normal suyo, no terreno raro. En 108 partidos de visita va sin ganar por 2 o más el 92 %.",
+    "Banal improbable lleva 36 partidos de visita sin ganar por 3 o más (su máximo previo era 7): está en terreno nuevo, por encima de su récord — encadenarla sale solo el 4 % de las veces, pero es su estado de casi siempre: una racha larga así es lo normal suyo, no terreno raro. En 108 partidos de visita va sin ganar por 3 o más el 92 %.",
+    "Banal improbable lleva 108 partidos de visita sin perder por 2 o más. En 108 partidos de visita va sin perder por 2 o más el 100 %.",
+    "Banal improbable lleva 108 partidos de visita anotando. En 108 partidos de visita va anotando el 100 %.",
+    "Banal improbable lleva 108 partidos de visita con la valla invicta. En 108 partidos de visita va con la valla invicta el 100 %.",
+    "Banal improbable lleva 108 partidos de visita sin que marquen los dos. En 108 partidos de visita va sin que marquen los dos el 100 %.",
+    "Banal improbable lleva 36 partidos de visita con 2 goles o menos (su máximo previo era 7): está en terreno nuevo, por encima de su récord — encadenarla sale solo el 4 % de las veces, pero es su estado de casi siempre: una racha larga así es lo normal suyo, no terreno raro. En 108 partidos de visita va con 2 goles o menos el 92 %.",
+    "Banal improbable lleva 108 partidos en total sin perder. En 108 partidos en total va sin perder el 100 %.",
+    "Banal improbable lleva 108 partidos en total con victoria. En 108 partidos en total va con victoria el 100 %.",
+    "Banal improbable lleva 36 partidos en total sin ganar por 2 o más (su máximo previo era 7): está en terreno nuevo, por encima de su récord — encadenarla sale solo el 4 % de las veces, pero es su estado de casi siempre: una racha larga así es lo normal suyo, no terreno raro. En 108 partidos en total va sin ganar por 2 o más el 92 %.",
+    "Banal improbable lleva 36 partidos en total sin ganar por 3 o más (su máximo previo era 7): está en terreno nuevo, por encima de su récord — encadenarla sale solo el 4 % de las veces, pero es su estado de casi siempre: una racha larga así es lo normal suyo, no terreno raro. En 108 partidos en total va sin ganar por 3 o más el 92 %.",
+    "Banal improbable lleva 108 partidos en total sin perder por 2 o más. En 108 partidos en total va sin perder por 2 o más el 100 %.",
+    "Banal improbable lleva 108 partidos en total anotando. En 108 partidos en total va anotando el 100 %.",
+    "Banal improbable lleva 108 partidos en total con la valla invicta. En 108 partidos en total va con la valla invicta el 100 %.",
+    "Banal improbable lleva 108 partidos en total sin que marquen los dos. En 108 partidos en total va sin que marquen los dos el 100 %.",
+    "Banal improbable lleva 36 partidos en total con 2 goles o menos (su máximo previo era 7): está en terreno nuevo, por encima de su récord — encadenarla sale solo el 4 % de las veces, pero es su estado de casi siempre: una racha larga así es lo normal suyo, no terreno raro. En 108 partidos en total va con 2 goles o menos el 92 %."
+   ],
+   "perfilDc": {
+    "condicion": "Visita",
+    "partidos": 108,
+    "noPierde": 0.9909,
+    "noGana": 0.0091,
+    "burbuja": 108,
+    "maximoPrevio": 0,
+    "record": 0,
+    "texto": "Perfil de doble oportunidad de visita: no pierde 108 de 108 (100 %) y no gana 0 de 108 (0 %). Este perfil SÍ agrega al 1X2 del motor (REVENTON §15.1): un equipo que de visita empata mucho o se planta a no perder no está del todo en el nivel"
+   }
+  }
+ },
+ {
   "nombre": "Vacío",
   "condicion": "V",
   "filas": [],
