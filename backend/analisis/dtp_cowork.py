@@ -1845,6 +1845,14 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
     # 163: «SI proyecta a E. Gómez…; Milenio, a Herrera, Simeone…» y todos
     # pasaban por la referencia: cinco titulares nuevos y ni un ausente)
     mezclada = bool(re.search(r"proyect|seg[uú]n |otra fuente|o bien\b", m1.get("xiReferencia") or "", re.I))
+    # EL CAMBIO PROPIO VA PRIMERO (incidencia 1157, Galatasaray–Stuttgart: el
+    # motivo era una pieza del rival en el banco y el cambio del propio once
+    # —Lemina por Gabriel Sara— quedaba solo en `ausentesDeLaReferencia`, por
+    # debajo del corte). No decide nada: con el bloque ya marcado para rehacer,
+    # el detalle nombra también a los titulares propios que el rehacer reescribe.
+    if motivos and ausentes and not any(m.startswith("once:") for m in motivos):
+        motivos.insert(0, f"once propio: {', '.join(ausentes)} titular(es) que no estaban en el XI de referencia "
+                          f"(menos de {REHACER_AUSENTES}: no piden rehacer solos, pero el rehacer los reescribe)")
     return {"rehacer": bool(motivos), "motivos": motivos, "sinReferencia": sin_ref,
             "referenciaMezclada": mezclada,
             "sistemaDeclarado": m1.get("sistema") or "", "sistemaOficial": of.get("formacion") or "",
