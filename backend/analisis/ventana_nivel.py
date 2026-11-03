@@ -115,6 +115,29 @@ def _sede_norm(nombre) -> str:
     return " ".join(plano(str(nombre or "")).split())
 
 
+# las palabras que no distinguen un estadio de otro (incidencia 1165)
+_SEDE_GENERICAS = frozenset(
+    "estadio stadium stade stadio estadi estadio stadion stadionul arena campo field ground park parque "
+    "polideportivo municipal olimpico olympic nacional national complejo coliseo coliseum club sporting "
+    "sc fc cf ac de del la el los las le du des di da do dos das of the y and".split())
+
+
+def _sede_tokens(nombre) -> frozenset:
+    return frozenset(t for t in _sede_norm(nombre).replace("-", " ").split()
+                     if len(t) >= 2 and t not in _SEDE_GENERICAS)
+
+
+def misma_sede(a, b) -> bool:
+    """¿Dos nombres de estadio son el mismo? Las palabras que lo distinguen de
+    uno están todas en el otro (03/11/2026, incidencia 1165, reaparecida tras la
+    1090: Táchira en «Pueblo Nuevo» / «Estadio Polideportivo de Pueblo Nuevo»,
+    Mushuc Runa en «Estadio del Mushuc Runa Sporting Club» / «Estadio COAC
+    Mushuc Runa», con otro venue_id). «Stade Louis-Achille» y «Stade
+    Pierre-Aliker» no comparten nada: siguen siendo dos."""
+    ta, tb = _sede_tokens(a), _sede_tokens(b)
+    return bool(ta) and bool(tb) and (ta <= tb or tb <= ta)
+
+
 def cancha_neutral(home_id: int, sede: str | None, antes: str | None, fixture_id: int | None = None) -> bool:
     """¿El partido se juega fuera de la cancha habitual del local? La sede más
     repetida en sus últimos 20 partidos de local (con 5+), distinta de esta
@@ -173,7 +196,13 @@ def cancha_neutral(home_id: int, sede: str | None, antes: str | None, fixture_id
     mismo_nombre = sum(1 for f in previas if nombre_hoy and _sede_norm(_col(f, "venue_name")) == nombre_hoy)
     if cuenta.get(clave_hoy, 0) >= 2 or mismo_nombre >= 2:
         return False
-    return clave_hoy != habitual
+    if clave_hoy == habitual:
+        return False
+    # el estadio habitual con el nombre recortado o ampliado (y otro venue_id)
+    # es el mismo: no es neutral (1165)
+    nombres_habitual = {_col(f, "venue_name") for f in previas if _clave(f) == habitual}
+    nombre_crudo_hoy = (_col(hoy, "venue_name") if hoy is not None else None) or sede
+    return not any(misma_sede(nombre_crudo_hoy, n) for n in nombres_habitual if n)
 
 
 def _vieja_o_corta(c: dict | None, fecha: str | None) -> str:

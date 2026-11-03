@@ -151,6 +151,16 @@ _sede_fx(90220, _UC, "11-01", 555, "San Carlos de Apoquindo")
 for _i in range(10):
     _sede_fx(90300 + _i, _FRA, f"0{1 + _i % 9}-0{1 + _i % 9}", 100, "Stade Pierre-Aliker")
 _sede_fx(90320, _FRA, "10-31", 200, "Stade Louis-Achille")
+# 1165 (reapareció tras la 1090): Táchira en «Pueblo Nuevo» con otro venue_id
+# que el «Estadio Polideportivo de Pueblo Nuevo» de siempre; Mushuc Runa igual
+_TAC, _MUS = 2807, 1162
+for _i in range(12):
+    _sede_fx(90400 + _i, _TAC, f"0{1 + _i % 9}-0{1 + _i % 9}", 300, "Estadio Polideportivo de Pueblo Nuevo")
+_sede_fx(90420, _TAC, "10-27", 301, "Pueblo Nuevo")
+_sede_fx(90421, _TAC, "11-03", 301, "Pueblo Nuevo")
+for _i in range(12):
+    _sede_fx(90500 + _i, _MUS, f"0{1 + _i % 9}-0{1 + _i % 9}", 400, "Estadio COAC Mushuc Runa")
+_sede_fx(90520, _MUS, "11-01", 401, "Estadio del Mushuc Runa Sporting Club")
 _c.commit()
 _c.close()
 _F = "2026-11-01T18:00:00"
@@ -166,6 +176,16 @@ check("991 sigue: el local en un estadio de otro id que nunca usó SÍ es neutra
       vn.cancha_neutral(_FRA, "Stade Louis-Achille", "2026-10-31T18:00:00", fixture_id=90320))
 check("991 sigue: …también solo por el nombre",
       vn.cancha_neutral(_FRA, "Stade Louis-Achille", "2026-10-31T18:00:00"))
+
+check("1165: Táchira en «Pueblo Nuevo» (otro venue_id, nombre recortado) no es neutral",
+      not vn.cancha_neutral(_TAC, "Pueblo Nuevo", "2026-11-03T22:00:00", fixture_id=90421))
+check("1165: Mushuc Runa en «Estadio del Mushuc Runa Sporting Club» (otro venue_id) no es neutral",
+      not vn.cancha_neutral(_MUS, "Estadio del Mushuc Runa Sporting Club", _F, fixture_id=90520))
+check("1165: misma_sede — recortado y ampliado sí; dos estadios distintos o solo palabras genéricas, no",
+      vn.misma_sede("Pueblo Nuevo", "Estadio Polideportivo de Pueblo Nuevo")
+      and not vn.misma_sede("Stade Louis-Achille", "Stade Pierre-Aliker")
+      and not vn.misma_sede("Estadio Municipal", "Estadio Nacional")
+      and not vn.misma_sede("PSC Arena", "Stadio Benito Stirpe"))
 
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)
