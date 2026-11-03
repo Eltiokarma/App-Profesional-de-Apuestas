@@ -766,9 +766,10 @@ conversación se pierde en la siguiente.
    sigue al 1X2; un depósito con `neutra` se rechaza; el favorito con el número
    del mercado), **DTP v1.7** y **EFE v1.9** + `efe-dashboard` v1.12.
    `CORTE_VERSION` con fecha 01/11. Lo que los skills marcan «pendiente de la
-   app» está en `docs/revisiones/PENDIENTES.md`. **Pendiente del usuario**:
-   subir los cinco zips, anotar la hora en `SUBIDA_VERSION` y cerrar con 🔑 las
-   anteriores de cada skill.
+   app» está en `docs/revisiones/PENDIENTES.md`. Los cinco zips se
+   subieron el 01/11 hacia las 08:00 de Lima (anotado en `SUBIDA_VERSION`, 1143;
+   el tramo de las 04:47 de ese día corrió con la versión anterior).
+   **Pendiente del usuario**: cerrar con 🔑 las anteriores de cada skill.
 
 20. **Sesiones fijas que no engordan** (03/11/2026, usuario; el límite
    semanal se agotó el 02/11 y las rutinas quedaron paradas hasta las 20:00 de

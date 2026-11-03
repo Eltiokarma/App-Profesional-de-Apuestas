@@ -170,6 +170,12 @@ check("sad 28/10 12:00 UTC → v4.2", sim.version_al("sad-analysis", "2026-10-28
 check("efe 28/10 09:50 UTC → v1.7", sim.version_al("efe-clasificador", "2026-10-28 09:50:00") == "v1.7")
 check("TDE sin hora de subida: rige desde el día del corte",
       sim.version_al("teorema-del-echado", "2026-10-28 09:50:00") == "v0.1.24")
+# 1143: los zips del 01/11 subieron a las 08:00 de Lima (13:00 UTC)
+for _sk, _antes, _despues in (("sad-analysis", "v4.3", "v4.4"), ("teorema-del-echado", "v0.1.24", "v0.1.25"),
+                              ("diagnostico-tactico", "v1.6", "v1.7"), ("efe-clasificador", "v1.8", "v1.9")):
+    check(f"{_sk} 01/11 10:00 UTC → {_antes}", sim.version_al(_sk, "2026-11-01 10:00:00") == _antes,
+          sim.version_al(_sk, "2026-11-01 10:00:00"))
+    check(f"{_sk} 01/11 13:30 UTC → {_despues}", sim.version_al(_sk, "2026-11-01 13:30:00") == _despues)
 
 # 8) el armado desde la base corre sobre la demo (sin partes desde el 28/10: vacío, no un error)
 out = sim.simulacion()

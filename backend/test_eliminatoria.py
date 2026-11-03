@@ -189,6 +189,28 @@ check("1031: con una llave posterior de la misma copa que lo eliminó, «elimina
       "nombrar al rival de la llave que pasó, sí",
       _al1031 == [] and [a["equipo"] for a in _al1031b] == ["a"], (_al1031, _al1031b))
 
+# 1130 (1632044/1632043, Cerro): pasó a San Lorenzo por penales 5-3 en la copa y
+# la apertura del DTP de Cerro decía «eliminado de la copa por este rival»; la
+# frase no nombra la copa ni a Cerro y vivía en el DTP, que se leía suelto
+_ll1130 = [{"fixtureId": 1644260, "competicion": "Copa Paraguay", "penales": "5-3", "pasa": True,
+            "texto": "pasó por penales (5-3)", "rival": "San Lorenzo", "rivalId": 9}]
+try:
+    eliminatoria.recientes = lambda tid, antes, dias=30: _ll1130 if tid == 1 else []
+    _fx1130 = {"home_team_id": 1, "away_team_id": 9, "date": "2026-11-02 20:00:00"}
+    _nom1130 = {"a": "Cerro Porteño", "b": "San Lorenzo"}
+    _dtp1130 = {"dtp": {"bloques": [{"equipo": "a", "apertura": {"m6": {
+        "otros": "Revancha: eliminado de la copa por este rival el 14/10, viene herido."}}}]}}
+    _al1130 = parte.alertas_eliminatoria(_dtp1130, _fx1130, _nom1130)
+    _al1130b = parte.alertas_eliminatoria({"dtp": {"bloques": [{"equipo": "b", "apertura": {"m6": {
+        "otros": "Revancha: eliminado de la copa por este rival el 14/10."}}}]}}, _fx1130, _nom1130)
+    _al1130c = parte.alertas_eliminatoria(_dtp1130, {**_fx1130, "away_team_id": 77}, _nom1130)
+finally:
+    eliminatoria.recientes = _rec_orig
+check("1130: la prosa del bloque DTP de Cerro («eliminado por este rival») suena ELIMINATORIA-AL-REVES",
+      [a["equipo"] for a in _al1130] == ["a"], _al1130)
+check("1130: la misma frase en el bloque del otro equipo, o con otro rival hoy, no se le carga a Cerro",
+      _al1130b == [] and _al1130c == [], (_al1130b, _al1130c))
+
 print()
 print("TODO OK" if not fallos else f"{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)

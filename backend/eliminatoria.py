@@ -227,5 +227,5 @@ def recientes(team_id: int, antes: str, dias: int = 30) -> list[dict]:
             otro = d["eliminado"] if d["avanza"] == team_id else d["avanza"]
             fila = _q1("SELECT name FROM teams WHERE id=?", (otro,))
             out.append({**d, "pasa": d["avanza"] == team_id, "texto": texto_para(d, team_id),
-                        "rival": (fila["name"] if fila else "") or ""})
+                        "rival": (fila["name"] if fila else "") or "", "rivalId": otro})
     return out

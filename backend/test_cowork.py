@@ -1004,6 +1004,28 @@ def main():
     check("y se DECLARA con la forma buena al lado",
           any(x["donde"].startswith("equipos.a.sensibilidad") and x.get("esperado")
               for x in r_s.json().get("rechazos", [])), r_s.json().get("rechazos"))
+    # 1088 (1552212): `sensibilidad` como TEXTO, no como lista. El primer
+    # rechazo solo decía «tiene que ser una lista» y la forma {supuesto,
+    # efecto} salía recién en el segundo depósito
+    r_s2 = c.post(f"{A}/analisis/cowork", json={
+        "fixtureId": sin_ficha,
+        "equipos": {"a": {"bloques": {"A": 3}, "sensibilidad": "si el central no llega, DEF debilitada"},
+                    "b": {"bloques": {"A": 3}}}}).json()
+    _rs2 = [x for x in r_s2["rechazos"] if x["donde"] == "equipos.a.sensibilidad"]
+    check("el PRIMER rechazo de `sensibilidad` ya da la forma {supuesto, efecto} con ejemplo (1088)",
+          _rs2 and "supuesto" in _rs2[0]["esperado"] and "efecto" in _rs2[0]["esperado"], _rs2)
+    # 1102 (1550183): el perfil táctico mandado DENTRO de `matchup` se tiraba
+    # sin rechazo; ahora sale en el recibo y dice dónde va
+    r_m = c.post(f"{A}/analisis/cowork", json={
+        "fixtureId": sin_ficha,
+        "equipos": {"a": {"bloques": {"A": 3}}, "b": {"bloques": {"A": 3}}},
+        "matchup": {"diagnostico": "FAVORABLE", "favorece": "a", "razon": "…", "h2a": "verde",
+                    "perfilA": "4-3-3 presión alta", "loQueNoExiste": 1}}).json()
+    _rm = {x["donde"]: x for x in r_m["rechazos"] if x["donde"].startswith("matchup.")}
+    check("una clave desconocida del matchup sale en `rechazos` (1102)",
+          "matchup.loQueNoExiste" in _rm and "matchup.perfilA" in _rm, list(_rm))
+    check("y el perfil táctico dice que va en equipos.{a|b}.perfil (1102)",
+          "equipos.a.perfil" in _rm.get("matchup.perfilA", {}).get("esperado", ""), _rm)
     c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
 
     # ── EL PADRÓN DE LA AGENDA: UNA SOLA FUENTE ────────────────────────────
@@ -4761,6 +4783,10 @@ def main():
           and _rel791({**_t791, "nota": "RELEVANCIA BAJA: el tramo final no decide"}) is None
           and _rel791({"bloques": [_t791["bloques"][0], {"equipo": "b", "indicadores": {"P1a": 1, "SOB1": 0.5}}]})
           is None, _rel791(_t791))
+    check("1105: la relevancia baja escrita en el DOCUMENTO tde (no en tde.bloques) también apaga la alerta "
+          "(1570438), y el aviso dice dónde escribirla",
+          _rel791(_t791, "## TDE\nRELEVANCIA BAJA: el tramo final no decide") is None
+          and "documento `tde`" in (_rel791(_t791, "otro texto") or {}).get("detalle", ""), _rel791(_t791))
     # 691 (31/10/2026, decisión del usuario): el DT de /coachs que ninguna hoja sostiene
     from backend.analisis import parte as _p691
     check("691: última hoja sin DT y ninguna de las últimas 3 con «Risueno» → /coachs no es fiable",
@@ -5989,6 +6015,11 @@ def main():
     check("383: antes del once la F3 sale provisional (rama A) y lo dice",
           (bf.alerta_f3("FORMADO", "rojo", provisional=True) or {}).get("provisional") is True
           and "PROVISIONAL" in bf.alerta_f3("FORMADO", "rojo", provisional=True)["detalle"])
+    _f3d = bf.alerta_f3("FORMADO", "verde", [], ["GK"], provisional=True, por_dudas=["Kevin Trapp"])
+    check("1114: la F3 provisional que sale SOLO por una duda (Trapp, Paris FC) lo dice y no habla de "
+          "«bajas ya conocidas»",
+          _f3d["porDudas"] == ["Kevin Trapp"] and "DUDA" in _f3d["detalle"] and "Kevin Trapp" in _f3d["detalle"]
+          and "bajas ya conocidas" not in _f3d["detalle"], _f3d)
 
     # ── EL ESTUDIO DE LOS REVENTONES HACIA ATRÁS (13/10/2026) ────────────────
     from backend.analisis import reventones as rv
