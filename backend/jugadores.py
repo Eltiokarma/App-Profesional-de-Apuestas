@@ -706,7 +706,18 @@ def ficha_partido(fixture_id: int) -> dict | None:
         # QUIÉN PASÓ LA LLAVE (incidencia 774): los `Shootout` de los eventos no
         # se cuentan a mano; null si no es eliminatoria o no se sabe
         "eliminatoria": _eliminatoria(fixture_id, fila["home_team_id"]),
+        # LA LLAVE ANTES DE LA VUELTA (incidencia 1166): la ida y el global con
+        # el que se arranca; null si no hay ida jugada o el partido terminó
+        "llaveAntes": _llave_antes(fixture_id),
     }
+
+
+def _llave_antes(fixture_id: int) -> dict | None:
+    from backend import eliminatoria
+    try:
+        return eliminatoria.previa(fixture_id)
+    except Exception:  # noqa: BLE001 — base sin la columna de la ronda: la ficha sale sin la llave
+        return None
 
 
 def _eliminatoria(fixture_id: int, local_id: int) -> dict | None:
