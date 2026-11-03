@@ -770,6 +770,37 @@ conversación se pierde en la siguiente.
    subir los cinco zips, anotar la hora en `SUBIDA_VERSION` y cerrar con 🔑 las
    anteriores de cada skill.
 
+20. **Sesiones fijas que no engordan** (03/11/2026, usuario; el límite
+   semanal se agotó el 02/11 y las rutinas quedaron paradas hasta las 20:00 de
+   Lima). Una sesión fija relee su historial ENTERO en cada paso: la de
+   veredictos llegó a 708 mil tokens en tres días (~14 USD por corrida solo en
+   releer), la de partes a 389 mil y 2.715 USD acumulados, y rehacer gastaba
+   ~0,30 USD por cada uno de sus 71 disparos diarios vacíos. Se rotaron las
+   cuatro el 03/11 y desde entonces una rutina de esta sesión de trabajo
+   («SAD · rotar sesiones fijas de las rutinas», 03:17 de Lima cada dos días)
+   rota la que pase de 150 mil tokens. **Sesiones y rutinas vigentes**:
+   - partes: `session_01WwsfbVQPxVPkxUsYtR2D9V` · tramos 04:47
+     `trig_01H8uddXTKzsV4JrBH9ukRHf`, 09:52 `trig_015NT3DmUx1QcPCYSZVxkrsU`,
+     14:56 `trig_01SqoZgb3oRK6jec3zu2Ls94` (antes `session_014NFRg8vpomVRAptrKnGpNz`);
+   - veredictos: `session_01WwsfbVRbeKmuposR5pHMKr` · 20:12
+     `trig_01LF6Fuc2Fqk7Mz2AQk9bGtW` (antes `session_01WwsfbT7QwmMGN9rpzPDcW6`);
+   - mantenimiento: `session_01WwsfbSE7FFaUEYTgJuMo5d` · 12:23
+     `trig_018UmsFXVy8G4fGk5KnqcpBM`, 17:41 `trig_014JqGths24VMnSXipvVsnH7`,
+     21:47 `trig_01FUGXi9jYsKbqMGDjAkZkA2` (antes `session_01WwsfbSrNaKynS84SUXEwvA`);
+   - rehacer: `session_01WwsfbV88R2FfNBzhkFkNdQ` · :02 `trig_01DU2uVej7bV3kkuFGc77xyF`,
+     :12 `trig_01LhgFVbc74Hug6AW3LAfhxY`, :22 `trig_016VcNauvidJYEt36WVhKxDD`,
+     :42 `trig_01MuEv7fBHxjdngfVc85hLMB` (antes `session_01WwsfbTrhC56SCybz9zK3CQ`).
+   Las rutinas viejas quedaron desactivadas, no borradas. **Probado el mismo
+   día**: una rutina con sesión NUEVA por disparo sigue arrancando sin el repo
+   (en `/home/user`, sin `git`) y con otro modelo; las credenciales sí están.
+   Sirve solo para un `curl`, y aun así cuesta más que una sesión fija chica
+   (escribe en caché el prompt de sistema cada vez): no se usa. Y `CLAUDE.md`
+   pasó de 27 mil a 12 mil tokens (esta deuda vive acá desde ese día), porque
+   se carga en cada paso de cada agente. Pendientes del mismo estudio, sin
+   aprobar todavía: separar el núcleo de cada skill de su historial (el TDE
+   lleva 24 mil tokens de registro de cambios) y traer los insumos de un parte
+   en un solo paso.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
