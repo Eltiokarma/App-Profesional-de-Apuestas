@@ -773,7 +773,14 @@ def fiabilidad_mu_fixture(f, comps: dict | None = None) -> dict:
         sede = f["venue_name"]
     except (KeyError, IndexError):
         sede = None
-    neutral = ventana_nivel.cancha_neutral(f["home_team_id"], sede, fecha)
+    try:
+        fid = f["id"]
+    except (KeyError, IndexError):
+        fid = None
+    # 1090: la sede se mira en la base por el id del partido (venue_id), así
+    # /predicciones y tde/{id} dicen lo mismo aunque el fixture que les llega
+    # traiga o no `venue_name`
+    neutral = ventana_nivel.cancha_neutral(f["home_team_id"], sede, fecha, fixture_id=fid)
     return ventana_nivel.fiabilidad_con_ventana(fiabilidad_mu_partido(f), comps, fecha=fecha, neutral=neutral)
 
 

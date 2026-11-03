@@ -194,6 +194,7 @@ Tres lugares donde vive una guardia:
   - el pipeline sin duplicados;
   - la cobertura de fichas aprendida por liga;
   - el `conflicto` de la agenda y el chequeo `dos-partidos`, con la misma regla (`jugadores.choque`, 24 h) en el calendario y los próximos de /predicciones (843, 892).
+  - el estadio renombrado por la API (patrocinio, traducción) no es cancha neutral: `ventana_nivel.cancha_neutral` compara por `venue_id`, normaliza el nombre, ignora el vacío y toma por casa la sede donde el local ya jugó 2+ veces (1090, `test_ventana_nivel`);
   - Un `dato_api` visto en 3+ partidos sube al usuario con una regla de código propuesta.
 - **Si vuelve:** si se repite, deja de ser «dato de la API» y pasa a ser una regla nuestra.
 
