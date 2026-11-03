@@ -808,6 +808,43 @@ conversación se pierde en la siguiente.
    lleva 24 mil tokens de registro de cambios) y traer los insumos de un parte
    en un solo paso.
 
+21. **Pendientes al cerrar la conversación del 03/11/2026** (se retoman en
+   una conversación nueva: esta llegó a 545 mil tokens y cada paso la releía).
+   - **Punto 3 del ahorro, propuesta lista para decidir**:
+     `docs/revisiones/NUCLEO_SKILLS_propuesta.md`. Pasar el registro de cambios
+     de cada skill a `references/HISTORIAL.md` baja lo que carga cada
+     subagente de partes de 142,8 mil a 106,7 mil tokens (−25 %, ~0,65 USD por
+     parte). Hay **13 reglas que hoy viven SOLO en un historial** (10 del TDE,
+     entre ellas las disciplinas 34 a 39, que el núcleo cita; 1 del DTP; 2 de
+     efe-dashboard) y se copian literales al núcleo antes de mover. **Dudas
+     del usuario antes de aplicar**: (1) disciplina 35 del TDE («sin XI, F1 sin
+     dato») contra la 55 («once probable = nivel C»): ¿cuál vale?; (2) ¿siguen
+     vigentes la 34, la 37 y «no bajar P(gol) con ejecutor de penales» tras la
+     suspensión del riesgo compuesto en v0.1.20?; (3) ¿`registro.csv` (16,5 mil
+     tokens) se busca con Grep por equipo en vez de leerse entero en el PASO 0?;
+     (4) ¿el FACTOR-X del suplente con impacto desde el banco entra también en
+     la rúbrica del EFE?; (5) ¿el encargo dice si se carga efe-dashboard?
+     Contradicciones que el traslado deja a la vista (sin corregir: serían
+     cambios de reglas): LA TESIS del TDE todavía pide el riesgo compuesto, la
+     tabla IE→probabilidad de INDICE_IE no dice que está suspendida, la rúbrica
+     v1.9 se presenta como «EFE v1.7» y `docs/skills/README.md` dice TDE
+     v0.1.22.
+   - **Punto 4 del ahorro (sin empezar)**: los insumos de un parte en UN paso
+     (`scripts/insumos_parte.sh <fixture>`) y una vista corta del parte para
+     veredictos (el GET del parte pesa ~27 mil tokens).
+   - **Palancas de volumen, para que decida el usuario** (medido 03/11, a
+     precio de lista; el límite semanal ronda los 2.000 USD): los veredictos
+     cuestan ~3,3 USD cada uno (45 por noche ≈ 50 % del límite) y una pasada
+     de mantenimiento ~40 USD (tres por día ≈ 40 %). Opciones: mantenimiento en
+     1-2 pasadas por día y/o tope de veredictos por noche en ~25.
+   - **Verificar mañana**: el gasto de un día entero con las sesiones nuevas
+     (`get_session` de las cuatro, `usage.cost_usd`) contra estos números, y
+     que la rotación de las 03:17 haya corrido.
+   - **Ya anotados en otros puntos y siguen**: medir `rolesVsGrid` (rutina del
+     05/11, 646); cerrar con 🔑 las lecciones anteriores a las versiones
+     subidas el 01/11 (TDE v0.1.25, sad v4.4, DTP v1.7, EFE v1.9); lo que los
+     skills marcan «pendiente de la app» en `docs/revisiones/PENDIENTES.md`.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
