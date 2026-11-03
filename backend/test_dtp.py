@@ -346,6 +346,24 @@ def main():
     check("1157: sin otro motivo, un ausente solo no pide rehacer",
           not _reh({"equipo": "a", "apertura": {"m1": {"sistema": "4-1-3-2", "xiReferencia": _ref1075b}}},
                    {"a": {"formacion": "4-1-3-2", "defensores": 4, "titulares": _tit1075b}})["rehacer"])
+    # 1170 (Nacional Asunción): una pieza del M2 que el mismo parte tiene en `fuera`
+    from backend.analisis.dtp_cowork import avisos_piezas_fuera
+    _dtp1170 = {"bloques": [{"equipo": "a", "apertura": {"m2": {"piezas": [
+        {"nombre": "Á. Cardozo Lucena", "rol": "pivote, seguro de atrás", "lado": "foco"},
+        {"nombre": "Espínola", "rol": "lateral", "lado": "foco"},
+        {"nombre": "I. Valdez", "rol": "segundo palo", "lado": "foco"},
+        {"nombre": "R. Insúa", "rol": "ejecutor desde el banco", "lado": "foco"},
+        {"nombre": "L. Franco", "rol": "arquero", "lado": "rival"}]}}}]}
+    _eq1170 = {"a": {"fuera": [{"nombre": "Cardozo Lucena", "estado": "baja", "motivo": "lesión"},
+                               {"nombre": "C. Espínola", "estado": "baja"},
+                               {"nombre": "R. Insúa", "estado": "baja"},
+                               {"nombre": "I. Valdez", "estado": "duda"}]},
+               "b": {"fuera": [{"nombre": "L. Franco", "estado": "baja", "motivo": "roja"}]}}
+    _av1170 = avisos_piezas_fuera(_dtp1170, _eq1170, {"a": "Nacional", "b": "San Lorenzo"})
+    _txt1170 = " | ".join(a["costara"] for a in _av1170)
+    check("1170: las piezas en `fuera` (propia con y sin inicial, y la rival) avisan; la duda y la de banco no",
+          len(_av1170) == 3 and "Cardozo Lucena" in _txt1170 and "Espínola" in _txt1170 and "L. Franco" in _txt1170
+          and "Valdez" not in _txt1170 and "Insúa" not in _txt1170, _av1170)
     check("646: sin grid completo no se compara nada",
           _reh(_b646, {"a": {**_of646["a"], "casillas": []}})["rolesVsGrid"] == [])
     from backend.analisis.dtp_cowork import sin_referencia

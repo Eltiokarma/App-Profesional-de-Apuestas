@@ -1942,6 +1942,46 @@ def avisos_carril(dtp: dict, nombres: dict) -> list[dict]:
     return out
 
 
+def _es_el_de_fuera(pieza: str, baja: str) -> bool:
+    """¿La pieza del M2 es el jugador de la baja? Por la regla de identidad, o
+    un apellido a secas en un lado que es el apellido del otro («Espínola» y
+    «C. Espínola»)."""
+    if _identidad.mismo_jugador(pieza, baja):
+        return True
+    a, b = _identidad.plano(pieza).split(), _identidad.plano(baja).split()
+    corto, largo = (a, b) if len(a) <= len(b) else (b, a)
+    return len(corto) == 1 and len(corto[0]) >= 4 and bool(largo) and corto[0] == largo[-1]
+
+
+def avisos_piezas_fuera(dtp: dict, equipos: dict, nombres: dict) -> list[dict]:
+    """Las piezas del M2 que el MISMO parte tiene en `fuera` (03/11/2026,
+    incidencia 1170, Nacional Asunción: la apertura apoyaba el seguro en Cardozo
+    Lucena y el lateral en Espínola, y `equipos.a.fuera` ya los declaraba fuera;
+    el once lo confirmó y el bloque se rehízo). Aviso del recibo, sin rechazo:
+    una pieza que no juega es un mapa de duelos escrito sobre otro equipo."""
+    out = []
+    for b in (dtp or {}).get("bloques") or []:
+        foco = b.get("equipo")
+        rival = "b" if foco == "a" else "a"
+        for pz in ((b.get("apertura") or {}).get("m2") or {}).get("piezas") or []:
+            nombre = (pz.get("nombre") or "").strip()
+            if not nombre or _DESDE_BANCO.search(f"{pz.get('rol') or ''} {nombre}"):
+                continue
+            lado = foco if pz.get("lado") != "rival" else rival
+            bajas = [f for f in ((equipos or {}).get(lado) or {}).get("fuera") or []
+                     if f.get("estado") in ("baja", "descanso") and _es_el_de_fuera(nombre, f.get("nombre") or "")]
+            if bajas:
+                out.append({"bloque": f"dtp.{foco}.m2.piezas",
+                            "costara": f"{nombres.get(foco, foco)}: la pieza del M2 «{nombre}»"
+                                       f"{' (' + pz['rol'] + ')' if pz.get('rol') else ''} figura en `fuera` de "
+                                       f"{nombres.get(lado, lado)} ({bajas[0].get('estado')}"
+                                       f"{': ' + bajas[0]['motivo'] if bajas[0].get('motivo') else ''}): el mapa de "
+                                       "duelos se apoya en alguien que el propio parte da por fuera",
+                            "comoSeArregla": "cambiar la pieza por quien la reemplaza, o sacar al jugador de `fuera` "
+                                             "si la prensa dice que juega"})
+    return out
+
+
 _MOTIVO_SISTEMA = re.compile(r"anunci|previa|prensa|confirm|expuls|roja|con diez|con 10|variante|cambi|"
                              r"vuelve|regres|probable|rotaci|interino|declar|oficial|alineaci", re.I)
 from backend.jugadores import dias_descanso as jug_dias_descanso  # noqa: E402
