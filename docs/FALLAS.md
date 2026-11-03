@@ -230,7 +230,7 @@ Tres lugares donde vive una guardia:
   - El texto de una rutina solo se edita desde su propia conversación: las de mantenimiento seguían en «3 grupos» (30/10).
 - **Guardia:**
   - **Sesiones fijas** con `git pull` en cada disparo.
-  - **Ids anotados** en CLAUDE.md (deudas 11 y 17).
+  - **Ids anotados** en docs/DEUDA.md (deudas 11 y 17).
   - **El texto manda poco:** el texto de la rutina solo apunta al skill y el skill del repo manda.
 - **Si vuelve:** cambiar el skill, no el texto de la rutina. Si hay que cambiar el texto, crear la rutina nueva y desactivar la vieja.
 

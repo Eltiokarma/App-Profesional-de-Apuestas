@@ -4026,7 +4026,7 @@ def _antes_del_pitazo(ahora: str, pitazo) -> bool:
     return bool(a and p and a < p)
 
 
-# La grilla de la rutina de rehacer (CLAUDE.md, deuda 11), de 05 a 23 de Lima
+# La grilla de la rutina de rehacer (docs/DEUDA.md, deuda 11), de 05 a 23 de Lima
 # (UTC−5, sin horario de verano). Hasta el 31/10/2026 eran dos disparos por
 # hora (:07 y :37) con piso de 15 min; desde entonces (incidencia 636, decisión
 # del usuario: el once llega ~25 min antes y caía entre dos disparos) son tres
