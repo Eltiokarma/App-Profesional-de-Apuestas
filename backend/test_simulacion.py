@@ -179,7 +179,7 @@ for _sk, _antes, _despues in (("sad-analysis", "v4.3", "v4.4"), ("teorema-del-ec
 
 # 8) el armado desde la base corre sobre la demo (sin partes desde el 28/10: vacío, no un error)
 out = sim.simulacion()
-check("simulacion() responde con las siete estrategias", len(out["estrategias"]) == 7, out.keys())
+check("simulacion() responde con las ocho estrategias (con el método)", len(out["estrategias"]) == 8, out.keys())
 check("simulacion() trae desde y nota", out["desde"] == sim.DESDE and out["nota"])
 
 # 9) de punta a punta: un parte de verdad en la base, depositado antes del pitazo
@@ -222,6 +222,48 @@ check("la del 29/10 → sad v4.2", next(a for a in out["apuestas"] if a["fixture
       ["versiones"]["sad-analysis"] == "v4.2")
 check("cerrada con el resultado de la base (local 2-1)", a0["estado"] == "cerrada" and a0["resultado"] == "local", a0)
 check("la plana apostó en las dos", est(out, "plana")["apuestas"] == 2, est(out, "plana"))
+
+# 11) EL MÉTODO (03/11/2026, usuario; docs/METODO_APUESTA.md): 1 % de la banca al
+# elegido, con freno por tramo de confianza
+out = sim.simular([ap(200, "2026-10-28 20:00:00", (50, 30, 20), (2.5, 3.2, 4.0), "local")])
+pr = est(out, "proporcional")
+check("proporcional: 1 % de 100 al elegido a cuota 2.5 → +1.5", pr["banca"] == 101.5
+      and out["apuestas"][0]["porEstrategia"]["proporcional"]["seleccion"] == "local", pr)
+out = sim.simular([ap(201, "2026-10-28 12:00:00", (50, 30, 20), (2.5, 3.2, 4.0), "local"),
+                   ap(202, "2026-10-28 18:00:00", (50, 30, 20), (2.5, 3.2, 4.0), "local")])
+m202 = next(a for a in out["apuestas"] if a["fixtureId"] == 202)["porEstrategia"]["proporcional"]["monto"]
+check("proporcional: la segunda va por el 1 % de la banca nueva (101.5 → 1.015)", abs(m202 - 1.015) < 1e-9, m202)
+
+check("freno: con menos de FRENO_MINIMO partidos no se juzga",
+      not sim.freno_tramo([(False, 0.7)] * (sim.FRENO_MINIMO - 1))["pausado"])
+check("freno: 15 de 15 perdidos a cuota 1.3 → pausa",
+      sim.freno_tramo([(False, 1 / 1.3)] * sim.FRENO_MINIMO)["pausado"])
+f = sim.freno_tramo([(True, 0.5)] * 9 + [(False, 0.5)] * 11)
+check("freno: 9 de 20 donde se pedía 50 % (z −0.45) está dentro de la tolerancia", not f["pausado"]
+      and f["tasa"] == 0.45 and f["pide"] == 0.5, f)
+
+# el tramo 60+ pierde 15 seguidos y se pausa; el 40-49 sigue apostando; en pausa sigue
+# anotando y vuelve cuando las derrotas salen de la ventana
+seq = [ap(300 + i, f"2026-11-0{1 + i // 8} {(3 * (i % 8)):02d}:00:00", (65, 20, 15), (1.3, 5, 9), "visita")
+       for i in range(sim.FRENO_MINIMO)]
+seq.append(ap(400, "2026-11-03 00:00:00", (65, 20, 15), (1.3, 5, 9), "local"))      # 60+: en pausa
+seq.append(ap(401, "2026-11-03 00:00:00", (45, 30, 25), (2.1, 3.3, 3.6), "local"))  # 40-49: apuesta
+out = sim.simular(seq)
+pf = {a["fixtureId"]: a["porEstrategia"]["proporcional"] for a in out["apuestas"]}
+check("freno: tras 15 derrotas el 60+ no apuesta y dice por qué",
+      pf[400]["monto"] == 0 and "tramo 60+ en pausa" in pf[400]["motivo"], pf[400])
+check("freno: el tramo 40-49 no se contagia", pf[401]["monto"] > 0, pf[401])
+t60 = next(t for t in est(out, "proporcional")["tramos"] if t["tramo"] == "60+")
+check("freno: el partido en pausa también se anota (16 en el tramo, 1 acierto)",
+      t60["n"] == sim.FRENO_MINIMO + 1 and t60["aciertos"] == 1 and t60["pausado"], t60)
+check("solo el método trae el estado de los tramos", est(out, "plana")["tramos"] is None
+      and [t["tramo"] for t in est(out, "proporcional")["tramos"]] == ["<40", "40-49", "50-59", "60+"])
+vuelta = seq[:sim.FRENO_MINIMO] + [
+    ap(500 + i, f"2026-11-{4 + i // 8:02d} {(3 * (i % 8)):02d}:00:00", (65, 20, 15), (1.3, 5, 9), "local")
+    for i in range(sim.FRENO_VENTANA)]
+out = sim.simular(vuelta)
+ult = min(out["apuestas"], key=lambda a: -a["fixtureId"])["porEstrategia"]["proporcional"]
+check("freno: con las derrotas fuera de la ventana el tramo vuelve a apostar", ult["monto"] > 0, ult)
 
 # 10) COPA NACIONAL FUERA (29/10/2026, usuario: «no hay que contaminar las tablas»)
 _sad = _sql.connect(os.path.join(_tmp, "sad.db"))

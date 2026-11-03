@@ -11,6 +11,92 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
  "aciertos": 3,
  "estrategias": [
   {
+   "clave": "proporcional",
+   "nombre": "Proporcional con freno",
+   "descripcion": "1 % de la banca a nuestro elegido; un tramo de confianza se pausa si en sus últimos 50 partidos acertó menos de lo que pedía la cuota, y vuelve cuando se recupera",
+   "banca": 100.8,
+   "ganancia": 0.8,
+   "apostado": 5.0,
+   "apuestas": 5,
+   "ganadas": 3,
+   "roi": 0.16,
+   "caidaMaxima": 0.0099,
+   "quebro": null,
+   "exposicionMaxima": 2.0,
+   "montoMaximo": 1.0,
+   "lineas": null,
+   "tramos": [
+    {
+     "tramo": "<40",
+     "n": 0,
+     "aciertos": 0,
+     "tasa": null,
+     "pide": null,
+     "z": null,
+     "pausado": false
+    },
+    {
+     "tramo": "40-49",
+     "n": 1,
+     "aciertos": 1,
+     "tasa": 1.0,
+     "pide": 0.4878,
+     "z": 1.02,
+     "pausado": false
+    },
+    {
+     "tramo": "50-59",
+     "n": 2,
+     "aciertos": 1,
+     "tasa": 0.5,
+     "pide": 0.5357,
+     "z": -0.1,
+     "pausado": false
+    },
+    {
+     "tramo": "60+",
+     "n": 2,
+     "aciertos": 1,
+     "tasa": 0.5,
+     "pide": 0.5944,
+     "z": -0.27,
+     "pausado": false
+    }
+   ],
+   "serie": [
+    {
+     "fixtureId": null,
+     "pitazo": null,
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900001,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 101.05
+    },
+    {
+     "fixtureId": 900002,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.05
+    },
+    {
+     "fixtureId": 900003,
+     "pitazo": "2026-10-28 19:45:00",
+     "banca": 101.05
+    },
+    {
+     "fixtureId": 900004,
+     "pitazo": "2026-10-28 20:00:00",
+     "banca": 100.05
+    },
+    {
+     "fixtureId": 900005,
+     "pitazo": "2026-10-29 19:30:00",
+     "banca": 100.8
+    }
+   ]
+  },
+  {
    "clave": "plana",
    "nombre": "Apuesta plana (control)",
    "descripcion": "1 unidad a nuestro elegido en cada partido",
@@ -25,6 +111,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    "exposicionMaxima": 2.0,
    "montoMaximo": 1.0,
    "lineas": null,
+   "tramos": null,
    "serie": [
     {
      "fixtureId": null,
@@ -73,6 +160,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    "exposicionMaxima": 1.0,
    "montoMaximo": 1.0,
    "lineas": null,
+   "tramos": null,
    "serie": [
     {
      "fixtureId": null,
@@ -121,6 +209,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    "exposicionMaxima": 11.01,
    "montoMaximo": 6.88,
    "lineas": null,
+   "tramos": null,
    "serie": [
     {
      "fixtureId": null,
@@ -169,6 +258,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    "exposicionMaxima": 5.42,
    "montoMaximo": 3.39,
    "lineas": null,
+   "tramos": null,
    "serie": [
     {
      "fixtureId": null,
@@ -217,6 +307,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    "exposicionMaxima": 2.69,
    "montoMaximo": 1.68,
    "lineas": null,
+   "tramos": null,
    "serie": [
     {
      "fixtureId": null,
@@ -269,6 +360,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "perdiendo": 1,
     "proximoMayor": 4.0
    },
+   "tramos": null,
    "serie": [
     {
      "fixtureId": null,
@@ -321,6 +413,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "perdiendo": 0,
     "proximoMayor": 1.0
    },
+   "tramos": null,
    "serie": [
     {
      "fixtureId": null,
@@ -361,6 +454,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    "partidos": 2,
    "aciertos": 1,
    "estrategias": {
+    "proporcional": {
+     "apostado": 2.0,
+     "ganancia": 0.05,
+     "apuestas": 2,
+     "roi": 0.025
+    },
     "plana": {
      "apostado": 2.0,
      "ganancia": 0.05,
@@ -410,6 +509,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    "partidos": 3,
    "aciertos": 2,
    "estrategias": {
+    "proporcional": {
+     "apostado": 3.0015,
+     "ganancia": 0.7504,
+     "apuestas": 3,
+     "roi": 0.25
+    },
     "plana": {
      "apostado": 3.0,
      "ganancia": 0.75,
@@ -496,6 +601,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    },
    "estado": "pendiente",
    "porEstrategia": {
+    "proporcional": {
+     "seleccion": "local",
+     "monto": 1.0005,
+     "ganancia": null,
+     "banca": null,
+     "linea": null,
+     "motivo": ""
+    },
     "plana": {
      "seleccion": "local",
      "monto": 1.0,
@@ -594,6 +707,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    },
    "estado": "cerrada",
    "porEstrategia": {
+    "proporcional": {
+     "seleccion": "local",
+     "monto": 1.0005,
+     "ganancia": 0.7504,
+     "banca": 100.8,
+     "linea": null,
+     "motivo": ""
+    },
     "plana": {
      "seleccion": "local",
      "monto": 1.0,
@@ -692,6 +813,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    },
    "estado": "cerrada",
    "porEstrategia": {
+    "proporcional": {
+     "seleccion": "local",
+     "monto": 1.0005,
+     "ganancia": -1.0005,
+     "banca": 100.05,
+     "linea": null,
+     "motivo": ""
+    },
     "plana": {
      "seleccion": "local",
      "monto": 1.0,
@@ -790,6 +919,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    },
    "estado": "cerrada",
    "porEstrategia": {
+    "proporcional": {
+     "seleccion": "local",
+     "monto": 1.0005,
+     "ganancia": 1.0005,
+     "banca": 101.05,
+     "linea": null,
+     "motivo": ""
+    },
     "plana": {
      "seleccion": "local",
      "monto": 1.0,
@@ -888,6 +1025,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    },
    "estado": "cerrada",
    "porEstrategia": {
+    "proporcional": {
+     "seleccion": "local",
+     "monto": 1.0,
+     "ganancia": -1.0,
+     "banca": 100.05,
+     "linea": null,
+     "motivo": ""
+    },
     "plana": {
      "seleccion": "local",
      "monto": 1.0,
@@ -986,6 +1131,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    },
    "estado": "cerrada",
    "porEstrategia": {
+    "proporcional": {
+     "seleccion": "local",
+     "monto": 1.0,
+     "ganancia": 1.05,
+     "banca": 101.05,
+     "linea": null,
+     "motivo": ""
+    },
     "plana": {
      "seleccion": "local",
      "monto": 1.0,
