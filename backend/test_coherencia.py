@@ -208,6 +208,18 @@ rech = []
 check("una COHERENCIA-* depositada por Cowork se descarta",
       parte_mod._alerta({"codigo": "COHERENCIA-1X2", "detalle": "inyectada"}, rech, "alertas[0]") is None and not rech)
 
+print("\n== el recibo lista las de coherencia en alertasAlLeer (1155) ==")
+_dto_orig = parte_mod.dto
+parte_mod.dto = lambda fid: {"alertas": [
+    {"codigo": "COHERENCIA-BLOQUE", "equipo": "a", "tipo": "dato", "detalle": "bloque B"},
+    {"codigo": "K-EXTREMO", "equipo": "b", "tipo": "dato", "detalle": "récord"},
+    {"codigo": "T.54", "equipo": "a", "tipo": "estructural", "detalle": "declarada"}]}
+try:
+    _al = [a["codigo"] for a in parte_mod._alertas_al_leer(1)]
+finally:
+    parte_mod.dto = _dto_orig
+check("COHERENCIA-* y las calculadas entran; las declaradas no", _al == ["COHERENCIA-BLOQUE", "K-EXTREMO"], _al)
+
 print("\n== off: no se pregunta nada ==")
 coherencia.MODO = "off"
 ev6 = coherencia.evaluar(PARTE, NOMBRES, REVENTON)

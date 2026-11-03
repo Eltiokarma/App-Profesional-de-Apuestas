@@ -3563,7 +3563,7 @@ components:
           additionalProperties: { type: string }
         notas:
           type: object
-          description: 'letra → una línea justificando el sub-score'
+          description: 'letra (A-E) → una línea justificando el sub-score; se junta con `bloques.X.nota` si las dos llegan, y una clave que no es A-E vuelve en `rechazos` con su texto (1150): la prosa general o del bloque F va en `notas` del parte'
           additionalProperties: { type: string }
         dt:
           type: object
@@ -4416,7 +4416,7 @@ components:
           description: 'campos que este depósito dejó con MENOS contenido del que había'
         alertasAlLeer:
           type: array
-          description: 'las alertas CALCULADAS que el GET le pone a este parte (HERENCIA-DTP, TIPOLOGIA-VS-INDICES, K-EXTREMO…): se ven al depositar, sin otro GET (771, 806)'
+          description: 'las alertas CALCULADAS que el GET le pone a este parte (HERENCIA-DTP, TIPOLOGIA-VS-INDICES, K-EXTREMO…) y las de coherencia selladas al depositar (COHERENCIA-*, 1155): se ven al depositar, sin otro GET (771, 806)'
           items:
             type: object
             properties: { codigo: { type: string }, equipo: { type: string }, tipo: { type: string }, detalle: { type: string } }
