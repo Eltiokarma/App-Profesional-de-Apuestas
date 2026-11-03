@@ -525,7 +525,14 @@ POST $B/analisis/cowork/incidencias
   el bloque F cerrado con la ficha después del partido (1061: lo sellado
   antes del pitazo no se toca); la etiqueta `lectura_efe` del modo de fallo
   de Jev (1062, 794: insumo de la fase D, no juez); y un once que la API
-  publica con 10 titulares (1060, 1045).
+  publica con 10 titulares (1060, 1045). Y desde la pasada del 02/11 (noche):
+  el ONCE-SIN-FILA-F1 de un debut o recambio fuera de los últimos 3 onces
+  (1069, 1118: espera la decisión de la 1068); el once que la API publica
+  después del pitazo (1072, 1081, 1145: la cola ya prioriza los partidos con
+  parte); las capturas de «ambos marcan» anteriores al 27/10 (776, 1099); el
+  límite del plan de Claude (1132: el latido ya lo pone en ámbar); y el «sin
+  penales» o «sin otro ejecutor» con muestra corta o plantilla incompleta
+  (1064, 1085, 1089, 1097).
 
 ## Modo `mantenimiento` (los parches, automáticos)
 
@@ -571,8 +578,9 @@ compara.
    agenda de las próximas 36 h y las partes jugadas en las últimas 48 h con los
    chequeos de lo básico (sancionados, el mismo jugador dos veces en la F1,
    DT sin confirmar, dos partidos el mismo día, sin cuotas, once tarde, ficha
-   sin eventos). Los chequeos con `informativo: true` (como
-   `nivel-con-amistosos`) NO se depositan: son datos para el parte, no fallas.
+   sin eventos). Los chequeos con `informativo: true` (`nivel-con-amistosos`
+   y, desde el 02/11/2026, `sancion`, `sin-plantel` y `dt-sin-confirmar`, que
+   se cerraban siempre por diseño) NO se depositan: son datos para el parte, no fallas.
    Por CADA otro chequeo con hallazgos depositá UNA incidencia
    (`POST …/incidencias`, `origen: "escaneo"`, el `area` y la `severidad` del
    chequeo, `titulo` = el del chequeo, `detalle` = los partidos y hallazgos,

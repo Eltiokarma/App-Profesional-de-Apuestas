@@ -24,9 +24,16 @@ from backend import db as saddb
 
 # la regla de fútbol que cuida cada chequeo, el área de la incidencia y qué tan grave es
 CHEQUEOS: dict[str, dict] = {
+    # INFORMATIVOS desde el 02/11/2026 (mantenimiento, prevención 7-bis): son
+    # listas PARA EL PARTE, no fallas. Depositados como incidencia se cerraron
+    # siempre igual, por diseño: sancion (889, 935, 954, 1024, 1049, 1073, 1146),
+    # sin-plantel (890, 936, 955, 1026, 1147) y dt-sin-confirmar (933, 952,
+    # 1022, 1048, 1071, 1144). Lo que cobra un parte es SANCION-SIN-DECLARAR
+    # (chequeo `sancion-sin-declarar`, que sí se deposita), DT-DISCREPANCIA y
+    # DT-VS-BANCO; la corrida de partes los sigue leyendo en el GET.
     "sancion": {
         "titulo": "Sancionados de la base para un partido de la agenda",
-        "area": "f1", "severidad": "aviso",
+        "area": "f1", "severidad": "aviso", "informativo": True,
         "regla": "una roja (directa o doble amarilla) suspende el partido siguiente de la competición, y "
                  "el ciclo de amarillas también (backend/sanciones.py)",
     },
@@ -42,12 +49,12 @@ CHEQUEOS: dict[str, dict] = {
     },
     "sin-plantel": {
         "titulo": "Equipo de la agenda sin plantilla ingestada",
-        "area": "f1", "severidad": "aviso",
+        "area": "f1", "severidad": "aviso", "informativo": True,
         "regla": "sin plantilla no hay tabla F1 ni bloque F calculado: la tabla sale de la prensa",
     },
     "dt-sin-confirmar": {
         "titulo": "DT de la base sin confirmar para un partido de la agenda",
-        "area": "dt", "severidad": "aviso",
+        "area": "dt", "severidad": "aviso", "informativo": True,
         "regla": "el DT viene de la alineación del último partido o de un registro de ≤ 7 días; si no, "
                  "se confirma en prensa antes del bloque A",
     },
