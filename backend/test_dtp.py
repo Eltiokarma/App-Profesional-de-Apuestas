@@ -336,6 +336,16 @@ def main():
                                                      "Bruno Guimarães"} and _r1075["rehacer"]
           and _r1075b["ausentesDeLaReferencia"] == ["M. Bolaños"],
           (_r1075["ausentesDeLaReferencia"], _r1075b["ausentesDeLaReferencia"]))
+    # 1157 (Galatasaray–Stuttgart): con el bloque ya marcado por otra cosa, el
+    # cambio propio por debajo del corte encabeza los motivos
+    _r1157 = _reh({"equipo": "a", "apertura": {"m1": {"sistema": "3-5-2", "xiReferencia": _ref1075b}}},
+                  {"a": {"formacion": "4-1-3-2", "defensores": 4, "titulares": _tit1075b}})
+    check("1157: el cambio propio (Bolaños) va primero en los motivos cuando el bloque ya se rehace",
+          _r1157["rehacer"] and _r1157["motivos"][0].startswith("once propio: M. Bolaños")
+          and any(m.startswith("sistema") for m in _r1157["motivos"]), _r1157["motivos"])
+    check("1157: sin otro motivo, un ausente solo no pide rehacer",
+          not _reh({"equipo": "a", "apertura": {"m1": {"sistema": "4-1-3-2", "xiReferencia": _ref1075b}}},
+                   {"a": {"formacion": "4-1-3-2", "defensores": 4, "titulares": _tit1075b}})["rehacer"])
     check("646: sin grid completo no se compara nada",
           _reh(_b646, {"a": {**_of646["a"], "casillas": []}})["rolesVsGrid"] == [])
     from backend.analisis.dtp_cowork import sin_referencia
