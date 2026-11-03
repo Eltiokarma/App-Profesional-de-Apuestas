@@ -93,6 +93,14 @@ nv = [x for x in h if x["chequeo"] == "nivel-con-amistosos"]
 check("escaneo: `nivel-con-amistosos` marca a Galatasaray (lado b) y no a Konyaspor",
       len(nv) == 1 and nv[0]["lado"] == "b" and "6 amistosos" in nv[0]["detalle"], nv)
 check("…y es informativo: el mantenimiento no lo deposita", escaneo.CHEQUEOS["nivel-con-amistosos"].get("informativo"))
+# 02/11/2026 (prevención): las listas para el parte que se cerraban siempre por
+# diseño (sancion 1146, sin-plantel 1147, dt-sin-confirmar 1144) son informativas;
+# lo que cobra un parte se sigue depositando.
+check("escaneo: sancion, sin-plantel y dt-sin-confirmar son informativos",
+      all(escaneo.CHEQUEOS[k].get("informativo") for k in ("sancion", "sin-plantel", "dt-sin-confirmar")))
+check("…y sancion-sin-declarar, once-tarde, dos-partidos y jugador-duplicado no",
+      not any(escaneo.CHEQUEOS[k].get("informativo")
+              for k in ("sancion-sin-declarar", "once-tarde", "dos-partidos", "jugador-duplicado")))
 
 # 991 (01/11/2026, decisión del usuario): ventana corta o vieja → baja; cancha neutral se dice
 _corta = {"partidos": 7, "amistosos": 0, "internacionales": 0, "otros": 7, "desde": "2021-08-01",

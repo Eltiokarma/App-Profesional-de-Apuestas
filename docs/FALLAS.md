@@ -245,7 +245,7 @@ Tres lugares donde vive una guardia:
 - **Guardia:**
   - **Composición contada:** `backend/analisis/ventana_nivel.py` cuenta de qué está hecha la ventana de cada lado (`ventanaNivel` en `/predicciones`).
   - **Fiabilidad:** con 3+ amistosos baja `fiabilidadMu` a «media», con `porVentana` y la nota.
-  - **Escaneo:** el chequeo informativo `nivel-con-amistosos`.
+  - **Escaneo:** el chequeo informativo `nivel-con-amistosos`. Desde el 02/11/2026 también son informativos `sancion`, `sin-plantel` y `dt-sin-confirmar`: listas para el parte que, depositadas, se cerraban siempre por diseño (el ruido de la cola es una falla de la guardia).
   - **Medición:** `backend/backtest_nivel_ventana.py` (30/10, 9.191 partidos de prueba). Sacar los amistosos del nivel no mejora el 1X2; sacar también los internacionales lo empeora donde hay amistosos. Con 3+ amistosos el motor queda el doble de lejos del mercado (0,084 de log-loss contra 0,041): eso sostiene el aviso.
   - El motor no se toca sin esa medición y sin el visto bueno del usuario.
 - **Si vuelve:** mirar `ventanaNivel` antes de creerle a una divergencia grande entre el motor y el mercado. Y la causa de un número del motor se mide (`/predicciones` trae μ, nivel y `unXDos.d`) antes de escribirla.
