@@ -1803,6 +1803,12 @@ export interface VeredictoObjetivo {
         rojaPropia?: number; ramaMarcador?: string
         /** Con alguna roja: la del rival y el balance de jugadores del foco (siExpulsion solo en inferioridad). */
         rojaRival?: number; numerico?: 'inferioridad' | 'superioridad' | 'paridad'
+        /** Con alguna roja: jugadores en cancha de cada lado (1078: la segunda roja deja 9). */
+        enCancha?: { foco: number; rival: number }
+        /** El minuto real que abre y cierra el tramo («90+5», «final»); desde/hasta son el reloj (1078). */
+        desdeTexto?: string; hastaTexto?: string
+        /** Roto o con 3 de diferencia al abrir el tramo: no se cobra (disciplinas 3 y 24, 1079). */
+        clase?: 'roto' | 'rama_abandonada'; cobrable?: false
       }[]
       /** Qué rama de la reasignación jugó el partido (quién marcó primero) y si
        *  estaba declarada. Observación, no acierto. */
@@ -1819,12 +1825,16 @@ export interface VeredictoObjetivo {
         notaSalida?: string
         /** Minuto de la roja propia previa al gol concedido: no cuenta como concesión persiguiendo. */
         rojaPrevia?: number
+        /** Minuto de la roja del rival previa al gol, con siExpulsionRival escrita (1140). */
+        rojaRivalPrevia?: number
       }
       nota: string
     }[]
   }
   evidencia?: {
-    goles: { minuto: number; lado: 'a' | 'b'; jugador: string; autogol: boolean }[]
+    goles: { minuto: number; lado: 'a' | 'b'; jugador: string; autogol: boolean; penal?: boolean
+             /** Gol en el minuto del penal errado del mismo equipo: la vía del penal (1136). */
+             rebotePenal?: boolean; enAnadido?: boolean; baseAnadido?: number | null }[]
     primerGol: { minuto: number; lado: 'a' | 'b'; jugador: string } | null
     conFicha: boolean
     nota: string

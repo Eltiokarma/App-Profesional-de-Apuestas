@@ -110,16 +110,37 @@ def _goles(tac: dict, team_id: int) -> list[dict]:
     return out
 
 
-def _estado_por_tiempo(goles: list[dict]) -> dict:
+def _estado_por_tiempo(goles: list[dict], eventos: list[dict] | None = None) -> dict:
     """Minutos jugados ganando / empatando / perdiendo, desde los minutos de
     gol. Es lo que la regla de posesión condicional (skill v1.2) pide declarar
-    junto al porcentaje: el marcador que lo produjo."""
+    junto al porcentaje: el marcador que lo produjo.
+
+    EL AÑADIDO SE JUEGA (incidencia 1113, reaparece de la 572: la ida de UC
+    Ecuador 1639721 daba «perdiendo 0» y perdió 1-2 del 90+6 al 90+13). Los
+    minutos van sobre el tiempo JUGADO: el añadido del primer tiempo corre el
+    segundo, y el partido termina en el último evento del añadido final (de
+    `eventos`, la ficha entera; sin ella, de los goles). La prórroga sigue
+    fuera: el gol sin `extra` pasado el 90 se queda en el final."""
+    def base_extra(e: dict) -> tuple[int, int]:
+        m, x = int(e.get("minuto") or 0), int(e.get("extra") or 0)
+        return (m - x, x) if x else (m, 0)
+    todos = [base_extra(e) for e in (eventos if eventos else goles)]
+    e1 = max((x for b, x in todos if b == 45), default=0)
+    e2 = max((x for b, x in todos if b == 90), default=0)
+    fin = 90 + e1 + e2
+
+    def jugado(g: dict) -> int:
+        b, x = base_extra(g)
+        if x:
+            return 45 + x if b == 45 else b + e1 + x
+        return min(b + e1 if b > 45 else b, fin)
+
     t, dif, acc = 0, 0, {"ganando": 0, "empatando": 0, "perdiendo": 0}
-    for g in sorted(goles, key=lambda g: (g["minuto"] or 0, g["extra"] or 0)):
-        m = min(max(int(g["minuto"] or 0), t), 90)
+    for g in sorted(goles, key=jugado):
+        m = min(max(jugado(g), t), fin)
         acc["ganando" if dif > 0 else "perdiendo" if dif < 0 else "empatando"] += m - t
         t, dif = m, dif + (1 if g["aFavor"] else -1)
-    acc["ganando" if dif > 0 else "perdiendo" if dif < 0 else "empatando"] += 90 - t
+    acc["ganando" if dif > 0 else "perdiendo" if dif < 0 else "empatando"] += fin - t
     dominante = max(acc, key=acc.get)
     return {**acc, "dominante": dominante}
 
@@ -352,7 +373,7 @@ def insumos_equipo(team_id: int, nombre: str, fx) -> dict:
         "amistoso": "friendl" in (a["liga"] or "").lower(),
         "marcador": {"favor": gf, "contra": gc},
         "goles": goles, "golesCuadran": cuadran,
-        "estadoPorTiempo": _estado_por_tiempo(goles) if cuadran else None,
+        "estadoPorTiempo": _estado_por_tiempo(goles, tac.get("eventos") or []) if cuadran else None,
         "posesion": {"valor": _stat(st, "Ball Possession"), "rival": rival,
                      "marcadorFinal": f"{gf}-{gc}",
                      "nota": "regla de posesión condicional (v1.2): el porcentaje vale contra "
