@@ -109,11 +109,29 @@ VENTANA_CORTA = 10      # con menos partidos en la ventana, el nivel casi no tie
 VENTANA_VIEJA_DIAS = 365   # con el último partido de hace más, el nivel es de otra época
 
 
-def cancha_neutral(home_id: int, sede: str | None, antes: str | None) -> bool:
+def _sede_norm(nombre) -> str:
+    """El nombre del estadio para comparar: el `plano` de identidad, sin espacios de más."""
+    from backend.identidad import plano
+    return " ".join(plano(str(nombre or "")).split())
+
+
+def cancha_neutral(home_id: int, sede: str | None, antes: str | None, fixture_id: int | None = None) -> bool:
     """¿El partido se juega fuera de la cancha habitual del local? La sede más
     repetida en sus últimos 20 partidos de local (con 5+), distinta de esta
-    (01/11/2026, incidencia 991: Franciscain–Aiglon en el Stade Louis-Achille)."""
-    if not sede:
+    (01/11/2026, incidencia 991: Franciscain–Aiglon en el Stade Louis-Achille).
+
+    EL MISMO ESTADIO CON OTRO NOMBRE NO ES NEUTRAL (03/11/2026, incidencia 1090,
+    x10): la API renombra el estadio (patrocinio, traducción) y el texto deja de
+    casar —Universidad Católica en «San Carlos de Apoquindo» / «Claro Arena»,
+    Frosinone en «Stadio Benito Stirpe» / «PSC Arena», Groningen en «Euroborg» /
+    «Hitachi Capital Mobility Stadion», Danubio en «Jardines Del Hipódromo» /
+    «Gardens of the Hippodrome», Levadiakos en «Levadia Stadium» / «Levadia
+    Municipal Stadium», Getafe en «Coliseum» / «Coliseum Alfonso Pérez»—. Por
+    eso: la sede se compara por `venue_id` cuando lo hay (el estadio de la API
+    no cambia de id al cambiar de nombre), los nombres se normalizan, un nombre
+    vacío no es una sede, y una sede donde el local YA jugó de local 2+ veces
+    en la ventana es su casa (renombrada o la de esta temporada), no neutral."""
+    if not sede and fixture_id is None:
         return False
     params: list = [home_id]
     cond = ""
@@ -121,17 +139,41 @@ def cancha_neutral(home_id: int, sede: str | None, antes: str | None) -> bool:
         cond = " AND date < ?"
         params.append(str(antes).replace("T", " ").rstrip("Z")[:19])
     try:
-        filas = saddb.query("sad", f"SELECT venue_name FROM fixtures WHERE home_team_id=? AND venue_name IS NOT NULL"
-                                   f"{cond} ORDER BY date DESC LIMIT 20", tuple(params))
+        filas = saddb.query("sad", f"SELECT * FROM fixtures WHERE home_team_id=?"
+                                   f"{cond} ORDER BY date DESC LIMIT 40", tuple(params))
+        hoy = (saddb.query_one("sad", "SELECT * FROM fixtures WHERE id=?", (fixture_id,))
+               if fixture_id is not None else None)
     except Exception:  # noqa: BLE001 — base sin la sede: no se afirma cancha neutral
         return False
-    if len(filas) < 5:
+
+    def _col(f, c):
+        return f[c] if c in f.keys() else None
+
+    def _clave(f) -> str:
+        if _col(f, "venue_id") is not None:
+            return f"id:{_col(f, 'venue_id')}"
+        n = _sede_norm(_col(f, "venue_name"))
+        return f"n:{n}" if n else ""
+
+    previas = [f for f in filas if _clave(f)][:20]    # un nombre vacío no es una sede
+    if hoy is not None and _clave(hoy):
+        clave_hoy, nombre_hoy = _clave(hoy), _sede_norm(_col(hoy, "venue_name")) or _sede_norm(sede)
+    else:
+        nombre_hoy = _sede_norm(sede)
+        clave_hoy = f"n:{nombre_hoy}" if nombre_hoy else ""
+    if not clave_hoy or len(previas) < 5:
         return False
     cuenta: dict[str, int] = {}
-    for f in filas:
-        cuenta[f["venue_name"]] = cuenta.get(f["venue_name"], 0) + 1
+    for f in previas:
+        cuenta[_clave(f)] = cuenta.get(_clave(f), 0) + 1
     habitual = max(cuenta, key=cuenta.get)
-    return cuenta[habitual] * 2 > len(filas) and habitual.strip().lower() != sede.strip().lower()
+    if cuenta[habitual] * 2 <= len(previas):
+        return False
+    # ya jugó ahí de local 2+ veces (por id o por el nombre normalizado): es su casa
+    mismo_nombre = sum(1 for f in previas if nombre_hoy and _sede_norm(_col(f, "venue_name")) == nombre_hoy)
+    if cuenta.get(clave_hoy, 0) >= 2 or mismo_nombre >= 2:
+        return False
+    return clave_hoy != habitual
 
 
 def _vieja_o_corta(c: dict | None, fecha: str | None) -> str:

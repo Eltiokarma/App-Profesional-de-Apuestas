@@ -116,5 +116,56 @@ _f991c = vn.fiabilidad_con_ventana(alta, {"local": None, "visitante": None}, fec
 check("991: en cancha neutral la fiabilidad lo dice (canchaNeutral) y «alta» baja a «media»",
       _f991c.get("canchaNeutral") and _f991c["nivel"] == "media" and "neutral" in _f991c["nota"], _f991c)
 
+# 1090 (03/11/2026, x10): el mismo estadio con otro nombre NO es cancha neutral.
+# Universidad Católica «San Carlos de Apoquindo» / «Claro Arena», Frosinone
+# «Stadio Benito Stirpe» → «PSC Arena», Levadiakos «Levadia Stadium» → «Levadia
+# Municipal Stadium» (el mismo venue_id): /predicciones marcaba canchaNeutral.
+_c = sqlite3.connect(os.path.join(_TMP, "sad.db"))
+_c.execute("ALTER TABLE fixtures ADD COLUMN venue_id INTEGER")
+_c.execute("ALTER TABLE fixtures ADD COLUMN venue_name TEXT")
+_FRO, _LEV, _UC, _FRA = 512, 957, 2994, 9991
+
+
+def _sede_fx(fid, equipo, dia, vid, nombre):
+    _c.execute("INSERT INTO fixtures (id, date, status_short, league_id, home_team_id, away_team_id, venue_id, "
+               "venue_name) VALUES (?,?,?,?,?,?,?,?)", (fid, f"2026-{dia} 18:00:00", "FT", 203, equipo, 1, vid, nombre))
+
+
+# Frosinone: 11 en el Benito Stirpe, 6 sin nombre, 2 ya en «PSC Arena»; sin venue_id
+for _i in range(11):
+    _sede_fx(90000 + _i, _FRO, f"0{1 + _i % 8}-1{_i % 9}", None, "Stadio Benito Stirpe")
+for _i in range(6):
+    _sede_fx(90020 + _i, _FRO, f"09-2{_i}", None, "")
+_sede_fx(90030, _FRO, "10-16", None, "PSC Arena")
+_sede_fx(90031, _FRO, "10-29", None, "PSC Arena")
+_sede_fx(90032, _FRO, "11-01", None, "PSC Arena")
+# Levadiakos: 16 en «Levadia Stadium» (venue 777), hoy «Levadia Municipal Stadium» con el mismo id
+for _i in range(16):
+    _sede_fx(90100 + _i, _LEV, f"0{1 + _i % 9}-0{1 + _i % 9}", 777, "Levadia Stadium")
+_sede_fx(90120, _LEV, "11-01", 777, "Levadia Municipal Stadium")
+# UC: el nombre viejo y el nuevo, mismo id
+for _i in range(10):
+    _sede_fx(90200 + _i, _UC, f"0{1 + _i % 9}-0{1 + _i % 9}", 555, "Claro Arena" if _i % 2 else "San Carlos de Apoquindo")
+_sede_fx(90220, _UC, "11-01", 555, "San Carlos de Apoquindo")
+# el caso de 991 sigue: 10 en su estadio, hoy en otro id que nunca usó
+for _i in range(10):
+    _sede_fx(90300 + _i, _FRA, f"0{1 + _i % 9}-0{1 + _i % 9}", 100, "Stade Pierre-Aliker")
+_sede_fx(90320, _FRA, "10-31", 200, "Stade Louis-Achille")
+_c.commit()
+_c.close()
+_F = "2026-11-01T18:00:00"
+check("1090: Frosinone en «PSC Arena», donde ya jugó de local 2 veces, no es neutral (sin venue_id)",
+      not vn.cancha_neutral(_FRO, "PSC Arena", _F, fixture_id=90032))
+check("1090: Levadiakos con el estadio renombrado (mismo venue_id) no es neutral",
+      not vn.cancha_neutral(_LEV, "Levadia Municipal Stadium", _F, fixture_id=90120))
+check("1090: …ni sin pasar el fixture si el nombre es el mismo normalizado («LEVADIA  stadium»)",
+      not vn.cancha_neutral(_LEV, "LEVADIA  stadium", _F))
+check("1090: Universidad Católica en San Carlos / Claro Arena (mismo id) no es neutral",
+      not vn.cancha_neutral(_UC, "San Carlos de Apoquindo", _F, fixture_id=90220))
+check("991 sigue: el local en un estadio de otro id que nunca usó SÍ es neutral",
+      vn.cancha_neutral(_FRA, "Stade Louis-Achille", "2026-10-31T18:00:00", fixture_id=90320))
+check("991 sigue: …también solo por el nombre",
+      vn.cancha_neutral(_FRA, "Stade Louis-Achille", "2026-10-31T18:00:00"))
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)
