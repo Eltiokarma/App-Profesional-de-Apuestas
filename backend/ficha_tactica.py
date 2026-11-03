@@ -189,6 +189,38 @@ def _stats(fixture_id: int, team_id: int) -> dict:
     return {f["clave"]: f["valor"] for f in filas if f["valor"] is not None}
 
 
+# LAS STATS QUE SON DE UN EQUIPO Y LA API A VECES COPIA AL OTRO (565 con
+# goals_prevented; 1138, 1558667: expected_goals 1,34 y goals_prevented −0,32
+# iguales en los dos lados). Un valor idéntico en los dos equipos del mismo
+# partido no mide a ninguno: se descarta, como un null («sin dato», no un cero).
+ESPEJO = ("expected_goals", "goals_prevented")
+
+
+def es_espejo(clave: str, propio, ajeno) -> bool:
+    """¿El valor de `clave` vino igual para los dos equipos del partido?"""
+    if clave not in ESPEJO:
+        return False
+    a, b = _num(propio), _num(ajeno)
+    return a is not None and b is not None and abs(a - b) < 1e-9
+
+
+def valor_del_equipo(filas: list, clave: str, team_id: int) -> float | None:
+    """La stat `clave` de ESTE equipo en las filas de UN partido
+    (`fixture_stats`: clave, team_id, valor), o None si no vino o si es una
+    de `ESPEJO` repetida en el otro lado."""
+    propio = next((s["valor"] for s in filas if s["clave"] == clave and s["team_id"] == team_id), None)
+    ajeno = next((s["valor"] for s in filas if s["clave"] == clave and s["team_id"] != team_id), None)
+    if _num(propio) is None or es_espejo(clave, propio, ajeno):
+        return None
+    return _num(propio)
+
+
+def _sin_espejo(local: dict, visitante: dict) -> tuple[dict, dict]:
+    fuera = {c for c in ESPEJO if es_espejo(c, local.get(c), visitante.get(c))}
+    return ({k: v for k, v in local.items() if k not in fuera},
+            {k: v for k, v in visitante.items() if k not in fuera})
+
+
 def tactica_de(fixture_id: int, home_id: int, away_id: int) -> dict:
     """Bloque `tactica` de la ficha. Todo vacío si no se capturó nada."""
     try:
@@ -198,11 +230,11 @@ def tactica_de(fixture_id: int, home_id: int, away_id: int) -> dict:
     if local is None:  # DB sin la tabla (anterior a la fase A del DTP)
         return {"alineaciones": None, "eventos": [], "estadisticas": None, "capturada": False}
     eventos = _eventos(fixture_id)
+    st_l, st_v = _sin_espejo(_stats(fixture_id, home_id), _stats(fixture_id, away_id))
     return {
         "alineaciones": {"local": local, "visitante": visitante},
         "eventos": eventos,
-        "estadisticas": {"local": _stats(fixture_id, home_id),
-                         "visitante": _stats(fixture_id, away_id)},
+        "estadisticas": {"local": st_l, "visitante": st_v},
         # lo que el DTP mira antes de decidir si puede abrir
         "capturada": bool(local["titulares"] or visitante["titulares"] or eventos),
     }
@@ -265,10 +297,17 @@ def promedios_avanzados(team_id: int, ventana: int = VENTANA_AVANZADAS) -> dict:
     propio: dict[str, list[float]] = {k: [] for k in _CLAVES_AVANZADAS}
     xg_contra: list[float] = []
     clave_a_campo = {v: k for k, v in _CLAVES_AVANZADAS.items()}
+    por_fx: dict[int, list] = {}
+    for f in filas:
+        por_fx.setdefault(f["fixture_id"], []).append(f)
     for f in filas:
         v = _num(f["valor"])
         if v is None:
             continue
+        otro = next((o["valor"] for o in por_fx[f["fixture_id"]]
+                     if o["clave"] == f["clave"] and o["team_id"] != f["team_id"]), None)
+        if es_espejo(f["clave"], f["valor"], otro):
+            continue   # 1138: el xG copiado al otro lado no entra al promedio
         campo = clave_a_campo[f["clave"]]
         if f["team_id"] == team_id:
             propio[campo].append(v)

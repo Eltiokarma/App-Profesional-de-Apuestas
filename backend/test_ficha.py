@@ -393,6 +393,18 @@ def main():
                          {"clave": "goals_prevented", "team_id": 2, "valor": b}]
     check("565: goals_prevented repetido en los dos equipos se descarta; distinto, se usa",
           _gp(_gpf("-1.31", "-1.31"), 1) is None and _gp(_gpf("0.5", "-0.2"), 1) == 0.5)
+    # 1138 (1558667): expected_goals 1,34 en los dos lados, la misma copia
+    from backend.ficha_tactica import valor_del_equipo as _vde, _sin_espejo
+    _xgf = lambda a, b: [{"clave": "expected_goals", "team_id": 1, "valor": a},
+                         {"clave": "expected_goals", "team_id": 2, "valor": b}]
+    check("1138: el xG idéntico en los dos equipos se descarta; distinto, se usa",
+          _vde(_xgf("1.34", "1.34"), "expected_goals", 1) is None
+          and _vde(_xgf("1.34", "0.80"), "expected_goals", 2) == 0.8)
+    _l1138, _v1138 = _sin_espejo({"expected_goals": "1.34", "goals_prevented": "-0.32", "Shots on Goal": 4},
+                                 {"expected_goals": "1.34", "goals_prevented": "-0.32", "Shots on Goal": 4})
+    check("1138: la ficha no muestra el xG ni los goles evitados copiados (los tiros iguales sí quedan)",
+          "expected_goals" not in _l1138 and "goals_prevented" not in _v1138 and _l1138["Shots on Goal"] == 4,
+          (_l1138, _v1138))
 
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)

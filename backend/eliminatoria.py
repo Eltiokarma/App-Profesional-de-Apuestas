@@ -124,8 +124,31 @@ def _final_unica(ronda: str | None) -> bool:
 PARTIDO_UNICO = {143: "Copa del Rey", 45: "FA Cup", 81: "DFB Pokal", 66: "Coupe de France",
                  96: "Taça de Portugal", 137: "Coppa Italia", 48: "EFL Cup",
                  # 1017: Luqueño 0-2 Recoleta, cuartos a partido único
-                 501: "Copa Paraguay"}
-SEMIS_IDA_Y_VUELTA = {143, 96, 137, 48}
+                 501: "Copa Paraguay",
+                 # 1106: Groningen 0-2 Emmen (1641972, ronda de 64) salía sin
+                 # `avanza`; la KNVB Beker es a partido único hasta la final, y la
+                 # copa de Bélgica también, salvo las semifinales (ida y vuelta)
+                 90: "KNVB Beker", 147: "Copa de Bélgica"}
+SEMIS_IDA_Y_VUELTA = {143, 96, 137, 48, 147}
+# LAS COPAS DE LIGAS CUYO FORMATO NO AFIRMAMOS (1106): una ronda de estas que no
+# trae la tanda, el global ni la prórroga queda con `avanza` null a propósito.
+# Toda copa nacional de `extractor.LIGAS` va en PARTIDO_UNICO o acá con su
+# motivo (lo exige backend/test_arquitectura.py): una copa nueva en la base
+# obliga a decidir, en vez de quedar callada en null como la KNVB Beker.
+FORMATO_SIN_AFIRMAR = {
+    73: "Copa do Brasil: las primeras fases a partido único y desde la tercera a ida y vuelta",
+    241: "Copa Colombia: llaves a ida y vuelta (la ida sola no cierra nada)",
+    267: "Copa Chile: fases a ida y vuelta según la edición",
+    1220: "Copa de la Liga de Chile: fase de grupos y llaves según la edición",
+    502: "Copa Bicentenario (Perú): grupos y llaves según la edición",
+    1232: "Copa de la Liga (Perú): formato sin confirmar",
+    930: "Copa AUF Uruguay: formato sin confirmar por ronda",
+    917: "Copa Ecuador: llaves a ida y vuelta en algunas rondas",
+    1113: "Copa Venezuela: formato sin confirmar por ronda",
+    130: "Copa Argentina: a partido único, sin confirmar contra la base todavía",
+    199: "Copa de Grecia: cambió de formato en 2024-25 (fase liga y llaves a ida y vuelta)",
+    206: "Copa de Turquía: fase de grupos desde 2024-25; las llaves, sin confirmar",
+}
 _SEMI = re.compile(r"semi", re.I)
 
 

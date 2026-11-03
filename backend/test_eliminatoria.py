@@ -71,6 +71,10 @@ def montar():
         (1013, "2026-10-28 20:00:00", "PEN", 48, "Round of 16", X, Y, 2, 2, 2, 2, None, None, 4, 3),
         # 1017: Copa Paraguay (501), cuartos a partido único resueltos a 90'
         (1014, "2026-10-28 20:00:00", "FT", 501, "Quarter-finals", X, Y, 0, 2, 0, 2, None, None, None, None),
+        # 1106: KNVB Beker (90), ronda de 64 a partido único: Groningen 0-2 Emmen
+        (1015, "2026-10-29 20:00:00", "FT", 90, "Round of 64", X, Y, 0, 2, 0, 2, None, None, None, None),
+        # 1106: la semifinal de la copa de Bélgica (147) es a ida y vuelta: no se afirma a 90'
+        (1016, "2026-10-29 20:00:00", "FT", 147, "Semi-finals", X, Y, 1, 0, 1, 0, None, None, None, None),
         # fase de grupos: nunca es una llave
         (1009, "2026-10-05 20:00:00", "FT", LIB, "Group Stage - 3", PAL, OTRO, 2, 0, 2, 0, None, None, None, None),
     ]
@@ -119,6 +123,10 @@ check("977: la EFL Cup que va directo a penales no tuvo prórroga; la tanda la g
 check("977: con marcador de alargue (1004) sí hubo prórroga", eliminatoria.desenlace(1004)["prorroga"] is True)
 check("1017: Copa Paraguay a partido único resuelta a 90': pasa la visita",
       eliminatoria.desenlace(1014)["avanza"] == Y, eliminatoria.desenlace(1014))
+check("1106: KNVB Beker a partido único resuelta a 90': pasa Emmen (la visita)",
+      eliminatoria.desenlace(1015)["avanza"] == Y, eliminatoria.desenlace(1015))
+check("1106: la semifinal de la copa de Bélgica (ida y vuelta) no se afirma con la ida",
+      eliminatoria.desenlace(1016)["avanza"] is None, eliminatoria.desenlace(1016))
 rec = eliminatoria.recientes(PAL, "2026-10-24 22:00:00")
 check("las llaves recientes de Palmeiras antes del Bragantino: la semifinal, pasada",
       [(r["fixtureId"], r["pasa"]) for r in rec] == [(1002, True)], rec)

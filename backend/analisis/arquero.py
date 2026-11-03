@@ -24,6 +24,7 @@ from __future__ import annotations
 from collections import Counter
 
 from backend import db as saddb
+from backend.ficha_tactica import valor_del_equipo
 
 VENTANA = 10
 MUESTRA_MINIMA = 5   # con menos partidos con xG, una goleada domina el número (Casa Pia: el 0-7 con Benfica)
@@ -37,11 +38,7 @@ def goles_prevenidos_del_equipo(filas: list, team_id: int) -> float | None:
     (incidencia 565: La Louvière–Zulte −1,31/−1,31 con un arco en cero y el
     otro con tres goles; también 1558661, 1558653, 1558658): un valor que no
     se reparte por equipo no mide a ningún arquero y se descarta."""
-    propio = next((_num(s["valor"]) for s in filas if s["clave"] == "goals_prevented" and s["team_id"] == team_id), None)
-    ajeno = next((_num(s["valor"]) for s in filas if s["clave"] == "goals_prevented" and s["team_id"] != team_id), None)
-    if propio is None or (ajeno is not None and abs(propio - ajeno) < 1e-9):
-        return None
-    return propio
+    return valor_del_equipo(filas, "goals_prevented", team_id)
 
 def _num(v):
     try:
@@ -105,7 +102,9 @@ def perfil(team_id: int, antes: str, fixture_id: int | None = None) -> dict:
         local = f["home_team_id"] == team_id
         ga = (f["goals_away"] if local else f["goals_home"]) or 0
         filas = por_fx.get(f["id"], [])
-        xg = next((_num(s["valor"]) for s in filas if s["clave"] == "expected_goals" and s["team_id"] != team_id), None)
+        # el xG del rival, y nunca uno copiado en los dos lados (1138)
+        xg = valor_del_equipo(filas, "expected_goals", next(
+            (s["team_id"] for s in filas if s["clave"] == "expected_goals" and s["team_id"] != team_id), -1))
         at = next((_num(s["valor"]) for s in filas if s["clave"] == "Goalkeeper Saves" and s["team_id"] == team_id), None)
         gp = goles_prevenidos_del_equipo(filas, team_id)
         if gp is not None:

@@ -131,6 +131,10 @@ function texto(nombre: string, ambito: string, b: NonNullable<ReturnType<typeof 
     if (esCuidado(b))
       t += ' — CUIDADO con cargar a que siga: no hay precedente. El backtest no dice que se corte más ' +
         '(§15), así que si se corta hay una causa que buscar'
+    // 1091: improbable pero banal para el equipo (el espejo de familias.py)
+    else if (b.partidos >= CUIDADO_DESDE && b.improbable)
+      t += ` — encadenarla sale solo el ${pct(b.probRacha)} de las veces, pero es su estado de ` +
+        'casi siempre: una racha larga así es lo normal suyo, no terreno raro'
     else if (b.partidos >= CUIDADO_DESDE)
       t += ` — pero con su frecuencia una racha así es esperable (sale el ${pct(b.probRacha)} de las ` +
         'veces): no es terreno raro'

@@ -48,6 +48,9 @@ def casos():
     # incidencias 420/450: sequía de «gana por 3+» en su récord pero HABITUAL para el equipo
     seq = ([(1, 0)] * 10 + [(3, 0)] + [(1, 0)] * 12 + [(3, 0)] + [(1, 1)] * 8 + [(4, 0)] + [(1, 0)] * 14)
     out.append({"nombre": "Sequía habitual", "condicion": "L", "filas": _filas(seq, ["Local"] * len(seq))})
+    # 1091 (Utrecht 1552214): sin ganar por 3+ de visita, récord, improbable (< 5 %) pero banal (91 %+)
+    banal = ([(1, 0)] * 7 + [(3, 0)]) * 9 + [(1, 0)] * 36
+    out.append({"nombre": "Banal improbable", "condicion": "V", "filas": _filas(banal, ["Visita"] * len(banal))})
     out.append({"nombre": "Vacío", "condicion": "V", "filas": []})
     return [{**c, "esperado": describir(c["filas"], c["condicion"], c["nombre"])} for c in out]
 
@@ -94,6 +97,11 @@ def main():
     check("vectores: 14 sin ganar por 3+ en su récord, pero con 94 % de frecuencia: sin CUIDADO",
           g3["partidos"] == 14 and g3["record"] == "supera" and not g3["improbable"] and not g3["cuidado"]
           and "esperable" in g3["texto"], g3)
+    bi = next(c for c in guardados if c["nombre"] == "Banal improbable")["esperado"]
+    g3b = next(f for f in bi["familias"] if f["familia"] == "gana3+" and f["ambito"] == "visita")
+    check("1091: improbable pero banal (Utrecht): sin CUIDADO y el texto NO dice «esperable» junto a un 3-4 %",
+          g3b["record"] == "supera" and g3b["improbable"] and not g3b["cuidado"]
+          and "esperable" not in g3b["texto"] and "lo normal suyo" in g3b["texto"], g3b)
     rl = next(c for c in guardados if c["nombre"] == "Racha larga")["esperado"]
     check("los vectores dorados traen un caso con CUIDADO (lo prueba también el TS)",
           any(f["cuidado"] and "CUIDADO" in f["texto"] for f in rl["familias"]),
