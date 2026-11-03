@@ -1000,7 +1000,10 @@ Escribís vos (es juicio, no se puede calcular):
   de local, en la visita baja una franja; medido en otra competición o
   escala, «sin dato».
 - El matchup H: diagnóstico, razón, el perfil táctico de cada equipo Y los tres
-  indicadores `h2a` / `h2b` / `h2c` (verde/ambar/rojo/na) que lo sostienen. Un
+  indicadores `h2a` / `h2b` / `h2c` (verde/ambar/rojo/na) que lo sostienen.
+  El perfil táctico NO va dentro de `matchup`: va en `equipos.{a|b}.perfil`
+  (`sistema`, `estilo`, `fortaleza`, `vulnerabilidad`); otra clave en `matchup`
+  vuelve en `rechazos`. Un
   "MATCHUP FAVORABLE" sin los tres es una etiqueta que nadie puede discutir.
 - EL REVENTÓN DE LA BURBUJA, ANTES de escribir la lectura SAD y el 1X2:
     GET {base}/fixtures/{fixtureId}            → `local.id` y `visitante.id`

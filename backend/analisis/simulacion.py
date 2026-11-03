@@ -75,6 +75,13 @@ SUBIDA_VERSION = {
     ("sad-analysis", "v4.2"): "2026-10-28 11:50:00",
     # el usuario subió sad v4.3 (goles acotados) el 30/10 a las 05:47 de Lima
     ("sad-analysis", "v4.3"): "2026-10-30 10:47:00",
+    # 1143: el usuario subió los cuatro zips el domingo 01/11 hacia las 08:00
+    # de Lima; el tramo de las 04:47 de ese día corrió con la versión anterior
+    # (efe-dashboard v1.12 no tiene CORTE_VERSION: va con el EFE)
+    ("teorema-del-echado", "v0.1.25"): "2026-11-01 13:00:00",
+    ("diagnostico-tactico", "v1.7"): "2026-11-01 13:00:00",
+    ("efe-clasificador", "v1.9"): "2026-11-01 13:00:00",
+    ("sad-analysis", "v4.4"): "2026-11-01 13:00:00",
 }
 
 ESTRATEGIAS = (

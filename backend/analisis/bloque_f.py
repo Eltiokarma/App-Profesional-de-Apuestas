@@ -381,13 +381,19 @@ def titulares_fijos_fuera(jugadores: list[dict]) -> list[str]:
 
 
 def alerta_f3(clasificacion: str, ip_nivel: str, tf_fuera: list[str] | None = None,
-              zonas_criticas: list[str] | None = None, provisional: bool = False) -> dict | None:
+              zonas_criticas: list[str] | None = None, provisional: bool = False,
+              por_dudas: list[str] | None = None) -> dict | None:
     """F3 · formación fraccionada: EFE 🟢/🟡 pero, para esta fecha, IP > 7 (🔴),
     ≥ 2 titulares fijos ausentes **o una zona en 🔴 (> 40 %)** —la F3 por zona
     de la EFE v1.7, que la nombra (Bayern MID 41,7 % con IP 5)—.
     Solo con la primera, la Juve del 11/10/2026 (Yildiz y Locatelli fuera, IP
     6.5) se quedaba sin alerta. `provisional`: antes del once, sobre las bajas
-    ya conocidas (rama A del bloque congelado, incidencia 383)."""
+    ya conocidas (rama A del bloque congelado, incidencia 383). `por_dudas`:
+    la F3 provisional sale SOLO por jugadores en duda (sin ellos no habría
+    F3), y el texto lo dice en vez de llamarlas «bajas ya conocidas» (1114,
+    Paris FC 1552807: Trapp en duda, probable titular, daba «zona GK en rojo,
+    rama A con las bajas ya conocidas»). La duda sigue pesando lo que manda la
+    rúbrica (FACTOR_ESTADO); lo que cambia es qué se afirma."""
     tf_fuera, zonas_criticas = tf_fuera or [], zonas_criticas or []
     if clasificacion not in ("FORMADO", "EN_FORMACION"):
         return None
@@ -402,9 +408,13 @@ def alerta_f3(clasificacion: str, ip_nivel: str, tf_fuera: list[str] | None = No
         "codigo": "F3",
         "tipo": "fecha",
         **({"provisional": True} if provisional else {}),
+        **({"porDudas": list(por_dudas)} if provisional and por_dudas else {}),
         "detalle": f"El EFE es {clasificacion.replace('_', ' ')}, pero para esta fecha el equipo "
                    f"opera degradado ({motivo}). Reducir confianza en las K históricas y bajar "
                    "un nivel la confianza efectiva."
-                   + (" PROVISIONAL: sin once confirmado, con las bajas ya conocidas (rama A); se "
+                   + ((f" PROVISIONAL: sin once confirmado y SOLO por jugadores en DUDA "
+                       f"({', '.join(por_dudas)}), no por bajas confirmadas: si juegan, no hay F3; se "
+                       "rehace al cerrar el once") if provisional and por_dudas else
+                      " PROVISIONAL: sin once confirmado, con las bajas ya conocidas (rama A); se "
                       "rehace al cerrar el once" if provisional else ""),
     }

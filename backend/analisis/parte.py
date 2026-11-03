@@ -378,6 +378,8 @@ _CLAVES_PARTE = {"fixtureId", "version", "generadoEn", "equipos", "alertas", "ma
                  "lecturaSad", "lectura_sad", "tde", "timelineEventos", "timelineNarrativa",
                  "cadena", "documentos", "pendientes", "fuentes", "descartados", "notas",
                  "pronostico", "dtp", "matriz"}
+_CLAVES_MATCHUP = {"diagnostico", "favorece", "razon", "h2a", "h2b", "h2c"}
+_LADOS_ALIAS_MATCHUP = {"a", "b", "local", "visita", "visitante"}
 
 # EL VIAJE DE IDA Y VUELTA. Corregir un parte es leer → modificar →
 # re-depositar, así que el POST tiene que aceptar TAL CUAL lo que devuelve el
@@ -662,15 +664,35 @@ def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
     }
 
 
+# La forma de CADA ELEMENTO de las listas del parte, para que el primer
+# rechazo ya la diga (1088, 1552212: `sensibilidad` como texto devolvía solo
+# «tiene que ser una lista» con `esperado: […]`; la forma {supuesto, efecto}
+# recién salía en el segundo depósito, al rechazar el elemento: un
+# re-depósito de más por no decirlo de entrada).
+_FORMA_ELEMENTO = {
+    "plantel": '{"nombre": "…", "zona": "DEF", "rol": "TF", "apps": "18/20"}',
+    "fuera": '{"nombre": "…", "estado": "baja", "motivo": "…"}',
+    "factorX": '{"nombre": "…", "contexto": "…"}',
+    "sensibilidad": '{"supuesto": "el central 2 no llega", "efecto": "DEF pasa a zona debilitada"}',
+    "alertas": '{"codigo": "T.54", "equipo": "b", "tipo": "estructural", "detalle": "…"}',
+    "timelineEventos": '{"fecha": "2026-03-02", "tipo": "tecnico", "titulo": "…"}',
+    "documentos": '{"id": "ensayo", "cuerpo": "markdown"}',
+}
+
+
 def _lista(v, rechazos: list, donde: str) -> list:
-    """Lo que tiene que ser una lista y no lo es se DICE, no revienta."""
+    """Lo que tiene que ser una lista y no lo es se DICE, no revienta, y dice
+    la forma de cada elemento (`_FORMA_ELEMENTO`, por el último tramo de
+    `donde`)."""
     if v is None:
         return []
     if isinstance(v, list):
         return v
+    forma = _FORMA_ELEMENTO.get(donde.rsplit(".", 1)[-1])
     rechazos.append({"donde": donde,
-                     "porque": f"tiene que ser una lista, llegó {type(v).__name__}",
-                     "esperado": "[…]"})
+                     "porque": f"tiene que ser una lista, llegó {type(v).__name__}"
+                               + (" (una lista de objetos, aunque sea uno solo)" if forma else ""),
+                     "esperado": f"[{forma}, …]" if forma else "[…]"})
     return []
 
 
@@ -1745,6 +1767,7 @@ _DICE_PASA = re.compile(r"clasific[oó]|pas[oó] a (?:la )?(?:final|semi|cuartos
 _ACTIVA = re.compile(r"elimin(?:[oó]|ando|ar|aron)\s+a\b|dej[oó] (?:afuera|fuera) a\b", re.I)
 # «evitó la eliminación», «estuvo a punto de quedar afuera»: no afirma la eliminación
 _NIEGA = re.compile(r"evit|casi|a punto|cerca de|roz[oó]|salv[oó]|sin |no (?:fue|qued|cay)|lejos de|pese a", re.I)
+_ESTE_RIVAL = re.compile(r"\b(?:por|ante|contra|frente a)\s+(?:este|el mismo|su)\s+rival\b", re.I)
 _GENERICAS = {"conmebol", "uefa", "league", "copa", "primera", "division", "liga", "championship", "nacional",
               "national", "torneo", "trophy", "super", "cup"}
 
@@ -1774,11 +1797,22 @@ def alertas_eliminatoria(parte: dict, fx, nombres: dict) -> list[dict]:
     from backend import eliminatoria
     if not fx:
         return []
-    frases = list(_frases({k: v for k, v in parte.items() if k not in ("equipos", "alertas")}))
+    # 1130 (1632043, Cerro): el DTP y el TDE van UNO POR EQUIPO, así que su
+    # prosa (`apertura.m6.otros`, notas…) es del bloque de ese equipo, como la
+    # de `equipos.{lado}`; leída como texto suelto la frase «eliminado de la
+    # copa por este rival» no nombraba a Cerro y se perdía, y el error pasó a la
+    # aperturaPrevia del parte siguiente.
+    por_equipo = ("dtp", "tde")
+    frases = list(_frases({k: v for k, v in parte.items() if k not in ("equipos", "alertas", *por_equipo)}))
+    for k in por_equipo:
+        for b in ((parte.get(k) or {}).get("bloques") or []) if isinstance(parte.get(k), dict) else []:
+            lado_b = b.get("equipo") if isinstance(b, dict) else None
+            frases += list(_frases(b, lado_b if lado_b in LADOS else None))
     for lado in LADOS:
         frases += list(_frases(((parte.get("equipos") or {}).get(lado) or {}), lado))
     out = []
     for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])):
+        rival_hoy = fx["away_team_id"] if lado == "a" else fx["home_team_id"]
         try:
             llaves = eliminatoria.recientes(tid, str(fx["date"]))
         except Exception:  # noqa: BLE001 — base sin fixtures
@@ -1800,7 +1834,13 @@ def alertas_eliminatoria(parte: dict, fx, nombres: dict) -> list[dict]:
                 activa = _ACTIVA.sub(" ", frase)
                 if not dice.search(activa) or _NIEGA.search(activa):
                     continue
-                if not any(a in plano for a in anclas):
+                # la llave también se nombra por su RIVAL: por su nombre, o «este
+                # rival» cuando el de hoy es el mismo de la llave (1130: Cerro
+                # «eliminado de la copa por este rival», San Lorenzo, que pasó Cerro)
+                por_rival = bool(rival & _palabras(frase, 4)) or (
+                    ll.get("rivalId") is not None and ll["rivalId"] == rival_hoy
+                    and _ESTE_RIVAL.search(frase))
+                if not any(a in plano for a in anclas) and not (donde == lado and por_rival):
                     continue
                 if despues and not (rival & _palabras(frase, 4)):
                     continue
@@ -2067,11 +2107,16 @@ def tipologia_vs_indices(b: dict) -> dict | None:
 RELEVANCIA_BAJA_MAX = 0.5
 
 
-def relevancia_tde(tde: dict) -> dict | None:
+def relevancia_tde(tde: dict, documento: str = "") -> dict | None:
     """LA RELEVANCIA BAJA QUE EL SKILL PIDE DECLARAR (01/11/2026, incidencia 791,
     decisión del usuario): con P1a y SOB1 en 0,5 o menos en los DOS lados el TDE
     pide declarar RELEVANCIA BAJA (el tramo final no decide) y nadie lo cobraba
-    (Santos–Palmeiras). Aviso de tipo dato si ningún texto del TDE la nombra."""
+    (Santos–Palmeiras). Aviso de tipo dato si ningún texto del TDE la nombra.
+
+    El documento `tde` (la prosa del skill) TAMBIÉN es texto del TDE (1105:
+    1570438 y 1552212 la escribieron ahí y la alerta decía «el parte no lo
+    dice»; hubo que copiarla a `tde.bloques` y re-depositar). El contrato no le
+    da un campo propio, así que vale en cualquiera de los dos."""
     bloques = [b for b in tde.get("bloques") or [] if b.get("equipo") in LADOS]
     if len({b["equipo"] for b in bloques}) < 2:
         return None
@@ -2082,11 +2127,12 @@ def relevancia_tde(tde: dict) -> dict | None:
                 return None
         except (KeyError, TypeError, ValueError):
             return None
-    if "relevancia" in json.dumps(tde, ensure_ascii=False).lower():
+    if "relevancia" in (json.dumps(tde, ensure_ascii=False) + " " + (documento or "")).lower():
         return None
     return {"codigo": "TDE-RELEVANCIA-SIN-DECLARAR", "tipo": "dato",
             "detalle": f"P1a y SOB1 en {RELEVANCIA_BAJA_MAX:g} o menos en los dos lados: el TDE pide declarar "
-                       "RELEVANCIA BAJA (el tramo final no decide el partido) y el parte no lo dice"}
+                       "RELEVANCIA BAJA (el tramo final no decide el partido) y el parte no lo dice: escríbelo "
+                       "en `tde.bloques[].notas` o en el documento `tde`"}
 
 
 def _reasignacion(x, rechazos: list, donde: str) -> dict:
@@ -3082,6 +3128,18 @@ def normalizar_parte(payload: dict) -> dict:
     }
     m = _dict(payload.get("matchup"), rechazos, "matchup",
               '{"diagnostico": "FAVORABLE", "favorece": "a", "razon": "…", "h2a": "verde", …}')
+    # LO QUE EL MATCHUP NO GUARDA SE DICE (1102, 1550183): el prompt pide «el
+    # perfil táctico de cada equipo» junto al matchup y Cowork lo mandaba DENTRO
+    # de `matchup`, donde se tiraba sin un rechazo. El perfil ya tiene sitio:
+    # `equipos.{a|b}.perfil` {sistema, estilo, fortaleza, vulnerabilidad}.
+    _n_rech = len(rechazos)
+    _claves_raras(m, _CLAVES_MATCHUP, rechazos, "matchup")
+    for r_ in rechazos[_n_rech:]:
+        clave_ = r_["donde"].split(".", 1)[-1]
+        if "perfil" in clave_.lower() or clave_.lower() in _LADOS_ALIAS_MATCHUP:
+            r_["esperado"] = ('el perfil táctico de cada equipo va en `equipos.a.perfil` / '
+                              '`equipos.b.perfil`: {"sistema": "4-3-3", "estilo": "…", '
+                              '"fortaleza": "…", "vulnerabilidad": "…"}')
     diag = _txt(m.get("diagnostico")).upper().replace("MATCHUP ", "")
     parte["matchup"] = {
         "diagnostico": diag if diag in ("FAVORABLE", "NEUTRO", "DESFAVORABLE") else "NEUTRO",
@@ -4211,11 +4269,20 @@ def dto(fixture_id: int) -> dict | None:
             # ANTES DEL ONCE, con lo ya conocido (incidencia 383, Nacional: IP 15
             # rojo y FORMADO sin F3 hasta cerrar el once). Provisional y dicho.
             ra = (disp.get("ramas") or {}).get("a") or {}
-            f3 = (bloque_f.alerta_f3(tot["clasificacion"], ra.get("ipNivel", "verde"),
-                                     [x.get("nombre", "") for x in ra.get("fuera") or []
-                                      if (x.get("rol") or "").upper() == "TF" and x.get("estado") == "baja"],
-                                     ra.get("zonasCriticas"), provisional=True)
-                  if ra else None)
+
+            def _f3_rama(r: dict, dudas: list[str] | None = None) -> dict | None:
+                return bloque_f.alerta_f3(tot["clasificacion"], r.get("ipNivel", "verde"),
+                                          [x.get("nombre", "") for x in r.get("fuera") or []
+                                           if (x.get("rol") or "").upper() == "TF" and x.get("estado") == "baja"],
+                                          r.get("zonasCriticas"), provisional=True, por_dudas=dudas)
+            f3 = _f3_rama(ra) if ra else None
+            # 1114: si sin las DUDAS no habría F3, sale igual pero dice que es por ellas
+            dudas = [x.get("nombre", "") for x in ra.get("fuera") or [] if x.get("estado") == "duda"]
+            if f3 and dudas and eq.get("plantel"):
+                solo_bajas = bloque_f.ramas(eq["plantel"], [f for f in eq.get("fuera") or []
+                                                            if (f.get("estado") or "baja") != "duda"])["a"]
+                if _f3_rama(solo_bajas) is None:
+                    f3 = _f3_rama(ra, dudas)
         if f3:
             alertas.append({**f3, "equipo": lado})
         # TITULARES DEL ONCE OFICIAL SIN FILA EN LA TABLA F1 (incidencia 743, 7
@@ -4254,7 +4321,9 @@ def dto(fixture_id: int) -> dict | None:
         alerta = tipologia_vs_indices(b)
         if alerta and b.get("equipo") in LADOS:
             alertas.append({**alerta, "equipo": b["equipo"]})
-    rel = relevancia_tde(parte.get("tde") or {})
+    rel = relevancia_tde(parte.get("tde") or {},
+                         " ".join(_txt(d.get("cuerpo")) for d in parte.get("documentos") or []
+                                  if isinstance(d, dict) and d.get("id") == "tde"))
     if rel:
         alertas.append(rel)
     # EL MISMO HUECO, LEÍDO AL REVÉS POR DOS ESCALAS. El EFE cuenta el bloque
