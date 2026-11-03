@@ -6234,6 +6234,20 @@ def main():
     _ri3 = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "partes", "items": [
         {"titulo": "DT de Bournemouth: la base dice Tindall", "area": "dt", "fixtureId": 1557427}]}).json()
     check("si vuelve a aparecer después de resuelta, entra NUEVA (el parche no alcanzó)", len(_ri3["nuevas"]) == 1, _ri3)
+    # EL MISMO HALLAZGO DEL MISMO PARTIDO YA CLASIFICADO NO SE REABRE (1145 → 1159,
+    # Lommel–Gent: el escaneo mira 48 h de jugados y corre tres veces por día)
+    _ya = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "escaneo", "items": [
+        {"titulo": "Partido con parte sin ninguna versión del once antes del pitazo", "area": "once",
+         "fixtureId": 1558667}]}).json()["nuevas"][0]
+    c.post(f"{A}/analisis/cowork/incidencias/{_ya}/estado",
+           json={"estado": "dato_api", "resolucion": "la API no publicó el once antes del pitazo"})
+    _ya2 = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "escaneo", "items": [
+        {"titulo": "Partido con parte sin ninguna versión del once antes del pitazo", "area": "once",
+         "fixtureId": 1558667},
+        {"titulo": "Partido con parte sin ninguna versión del once antes del pitazo", "area": "once",
+         "fixtureId": 1558999}]}).json()
+    check("el mismo partido ya clasificado dato_api no se reabre (yaClasificadas); otro partido sí entra",
+          _ya2["yaClasificadas"] == [{"id": _ya, "fixtureId": 1558667}] and len(_ya2["nuevas"]) == 1, _ya2)
     # LA MISMA CAUSA EN OTRO PARTIDO NO ES OTRA INCIDENCIA (20/10/2026: 254 abiertas)
     _g1 = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "veredictos", "items": [
         {"titulo": "Titular de la ficha sin jugadorId (Rayo)", "area": "once", "fixtureId": 111},

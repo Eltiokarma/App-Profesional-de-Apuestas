@@ -248,6 +248,7 @@ Tres lugares donde vive una guardia:
   - **Sesiones fijas** con `git pull` en cada disparo.
   - **Ids anotados** en docs/DEUDA.md (deudas 11 y 17).
   - **El texto manda poco:** el texto de la rutina solo apunta al skill y el skill del repo manda.
+  - **La cola no se llena de lo mismo:** el escaneo mira 48 h de jugados en tres pasadas por día; un hallazgo del mismo partido que ya se cerró sin parche (`dato_api` · `por_diseno` · `descartada`) vuelve en `yaClasificadas` y no se reabre (`incidencias.depositar`, 03/11/2026: Lommel–Gent, 1145 → 1159).
 - **Si vuelve:** cambiar el skill, no el texto de la rutina. Si hay que cambiar el texto, crear la rutina nueva y desactivar la vieja.
 
 ### 15. El nivel del motor medido con partidos de otra exigencia
