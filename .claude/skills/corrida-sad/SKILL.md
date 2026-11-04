@@ -232,8 +232,10 @@ casi siempre no hay nada que hacer.
    el resto de este skill, sin otra llamada y **sin avisar al celular** (corre
    cada 20 minutos: un aviso vacío cada vez se deja de leer).
 2. Con algún pendiente, recién ahí: `TZ=America/Lima date` y seguí.
-3. Como mucho **6** partidos. Un subagente por partido, en paralelo, con este
-   encargo:
+3. Como mucho **8** partidos (decisión del usuario, 04/11/2026, incidencia
+   1164: el 03/11 hubo 7 para el pitazo de las 15:00 y Feyenoord–Inter quedó
+   sin rehacer con el tope de 6). Si hay más de 8, primero los que arrancan
+   antes. Un subagente por partido, en paralelo, con este encargo:
 
 > Tus archivos van SOLO en `<scratchpad>/rehacer-{id}/`. El partido {id}
 > arranca a las {hora Lima}; hora tope de depósito: el pitazo − 5 minutos.
