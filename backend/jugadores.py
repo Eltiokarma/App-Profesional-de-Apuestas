@@ -533,6 +533,14 @@ def _baja_dto(baja, missing: dict, jugo_el: str | None, convocado_el: str | None
     if sancion and fecha and fecha in (fechas_int or set()):
         out["soloCompeticion"] = "internacional"
         jugo_el, convocado_el = jugo_int, None
+    # Y AL REVÉS: LA SANCIÓN DE LA LIGA NO LA CUMPLE LA COPA INTERNACIONAL
+    # (04/11/2026, incidencia 1193): Vinícius «Missing Fixture · Red Card» del
+    # 01/11 (4 fechas de LaLiga) salía «señal» en la F1 de AEK–Real Madrid de
+    # la Champions. La fecha de la baja es la del partido que se pierde: si el
+    # equipo juega torneos internacionales y esa fecha no es uno, la sanción es
+    # del torneo nacional. La tabla F1 la lee contra la competición del partido.
+    elif sancion and fecha and fechas_int:
+        out["soloCompeticion"] = "nacional"
     if fecha and jugo_el and jugo_el[:10] > fecha:
         out.update({"lectura": "desmentida", "lecturaApi": lectura,
                     "desmentidaPorOnce": {"fechaBaja": fecha, "jugoEl": jugo_el[:10]}})

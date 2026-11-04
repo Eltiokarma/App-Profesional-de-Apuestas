@@ -439,7 +439,7 @@ def insumos_equipo(team_id: int, nombre: str, fx) -> dict:
         "casosBloque": casos_bloque(team_id, fecha),
         # DTP v1.6 (cambio 4): el ejecutor de penales sale de la base, no de la
         # «jerarquía»: los penales de la temporada con convertidos y errados
-        "penales": penales_temporada(team_id, fecha),
+        "penales": penales_temporada(team_id, fecha, competicion=competicion_de(fx["league_id"] if "league_id" in fx.keys() else None)),
         "nivelDeDato": "C" if anterior["amistoso"] or not xi else "B",
         "faltan": faltan,
     }
@@ -449,7 +449,14 @@ PENALES_DIAS = 365
 PENALES_MUESTRA_MIN = 20   # con menos partidos con eventos en el año, «sin penales» no se afirma
 
 
-def penales_temporada(team_id: int, antes: str, dias: int = PENALES_DIAS) -> dict:
+def competicion_de(league_id) -> str:
+    """«internacional» (torneo de clubes de la lista de la ingesta) o «nacional»:
+    contra esto se lee la `soloCompeticion` de una sanción (1178, 1193)."""
+    from backend.jugadores import _ligas_internacionales
+    return "internacional" if league_id in _ligas_internacionales() else "nacional"
+
+
+def penales_temporada(team_id: int, antes: str, dias: int = PENALES_DIAS, competicion: str | None = None) -> dict:
     """Quién tiró los penales del equipo en el último año ANTES de `antes`
     (eventos de la ficha: `Goal` con «Penalty» = convertido, «Missed Penalty» =
     errado; la tanda va como `Shootout` y no cuenta). Solo cubre los partidos
@@ -523,7 +530,7 @@ def penales_temporada(team_id: int, antes: str, dias: int = PENALES_DIAS) -> dic
     # QUIÉN TIRA HOY VA PRIMERO (895: Potosí con S. Plaza, 0 de 10 titular;
     # Querétaro con Homenchenko de baja y operado): la baja vigente de la base y
     # no haber sido titular en los últimos onces bajan al ejecutor; se dicen
-    hoy = _estado_ejecutores(team_id, antes)
+    hoy = _estado_ejecutores(team_id, antes, competicion)
     for e in lista:
         x = hoy.get(e.get("jugadorId")) or {}
         if x.get("baja"):
@@ -569,7 +576,7 @@ def penales_temporada(team_id: int, antes: str, dias: int = PENALES_DIAS) -> dic
     return {"ejecutores": ejecutores, "partidosConEventos": n_ev, "partidosJugados": n_jug, "nota": nota}
 
 
-def _estado_ejecutores(team_id: int, antes: str) -> dict:
+def _estado_ejecutores(team_id: int, antes: str, competicion: str | None = None) -> dict:
     """{jugadorId: {baja, titularEnUltimos}}: la baja vigente de la plantilla
     (señal y no desmentida) y las titularidades en los últimos onces."""
     out: dict = {}
@@ -577,6 +584,10 @@ def _estado_ejecutores(team_id: int, antes: str) -> dict:
         from backend.jugadores import plantilla_de
         for j in plantilla_de(team_id).get("jugadores") or []:
             b = j.get("baja") or {}
+            # la sanción de OTRA competición no baja al ejecutor (1193, Vinícius:
+            # la roja de LaLiga no lo saca del penal de la Champions)
+            if competicion and b.get("soloCompeticion") and b["soloCompeticion"] != competicion:
+                continue
             if b and b.get("lectura") == "senal" and not b.get("desmentida"):
                 out.setdefault(j["id"], {})["baja"] = b.get("detalle") or b.get("tipo") or "baja"
     except Exception:  # noqa: BLE001 — sin la capa de jugadores no se marca la baja
