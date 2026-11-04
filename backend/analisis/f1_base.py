@@ -548,6 +548,11 @@ def marcar_posibles(filas: list[dict], juntos) -> None:
             if not (mismo_jugador(a.get("nombre") or "", b.get("nombre") or "")
                     or _mismo_apellido(a.get("nombre") or "", b.get("nombre") or "")):
                 continue
+            # UN ARQUERO Y UNO DE CAMPO SON DOS PERSONAS (04/11/2026, incidencia
+            # 1209: «C. Rodriguez» defensa y «E. Rodriguez» arquero de Always
+            # Ready salían posibleMismoQue); `deduplicar` ya lo sabía (_arquero_y_no)
+            if _arquero_y_no(a, b):
+                continue
             if juntos(a["jugadorId"], b["jugadorId"]):
                 continue
             a["posibleMismoQue"], b["posibleMismoQue"] = b["jugadorId"], a["jugadorId"]

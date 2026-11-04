@@ -1890,8 +1890,12 @@ def alertas_eliminatoria(parte: dict, fx, nombres: dict) -> list[dict]:
 
 _USO_BANCO = re.compile(r"\b(banco|banca|suplente|recambio|revulsivo|entra|entrar[ií]a|ingresa|ingresar[ií]a|"
                         r"desde el banco|de cambio)\b", re.I)
-_NIEGA_USO = re.compile(r"\b(sin|no (?:est[aá]|va|juega|convocad[oa]|disponible)|fuera|baja|ausente|lesionad[oa]|"
-                        r"suspendid[oa]|sancionad[oa]|descartad[oa]|no convocado|ya no)\b", re.I)
+# EN PLURAL TAMBIÉN (04/11/2026, incidencia 1210, Flamengo–Grêmio: «Weverton y
+# Carlos Vinícius suspendidos» no negaba porque `suspendid[oa]\b` no casa con
+# «suspendidos»: la \b cae entre la «o» y la «s»)
+_NIEGA_USO = re.compile(r"\b(sin|no (?:est[aá]n?|van?|juegan?|convocad[oa]s?|disponibles?)|fuera|bajas?|ausentes?|"
+                        r"lesionad[oa]s?|suspendid[oa]s?|sancionad[oa]s?|descartad[oa]s?|no convocad[oa]s?|ya no)\b",
+                        re.I)
 
 
 def fuera_en_el_banco(parte: dict) -> list[dict]:
