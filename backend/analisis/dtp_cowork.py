@@ -1409,12 +1409,18 @@ def _iniciales_previas(nombre: str, crudo: str):
 def _en_referencia(nombre: str, ref: str, crudo: str = "", estricto: bool = False) -> bool:
     if _inicial_choca(nombre, crudo, estricto):
         return False
-    if any(f" {a} " in f" {ref} " for a in _apellidos(nombre)):
-        return True
     # la tolerancia de una letra no casa con el NOMBRE DE PILA de otro: «A.
     # Alfonzo» no es el «Alfonso» de «Alfonso Parot» (Limache, incidencia 713)
     pilas = {_plano(w).strip() for w in re.findall(
         r"(?:^|[,;:/(])\s*([A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]+)\s+[A-ZÁÉÍÓÚÑÜ]", crudo or "")}
+    # …y un SEGUNDO NOMBRE del titular tampoco casa con el nombre de pila de
+    # otro (incidencia 1171, Jaguares: «Faber Andrés Gil» quedaba tapado por
+    # «Andrés Rentería» de la referencia y contraElOnce contaba 3 nuevos en vez
+    # de 4). El apellido final sí puede estar en primer lugar («C. Nunes» /
+    # «Nunes Cesar»).
+    aps = _apellidos(nombre)
+    if any(f" {a} " in f" {ref} " and (a == aps[-1] or a not in pilas) for a in aps):
+        return True
     palabras = [p for p in ref.split() if p not in pilas]
     return any(_casi(a, p) for a in _apellidos(nombre) for p in palabras)
 
@@ -1468,9 +1474,16 @@ _AUSENTES = re.compile(r"\b(?i:sin|ausente[s]?|sin contar con|baja de)\s+(?:[A-Z
 
 # «con Araújo en el banco el seguro es Gorriarán» (incidencia 1047, Pachuca–
 # Tigres): el nombre pegado a «en el banco» dice dónde NO está el seguro
+# …y las otras formas de decirlo (incidencia 1172, Puerto Cabello: el rehacer
+# escribió que Marchán no arrancaba y el seguro siguió «apoyado» en él):
+# «Marchán (banco)», «Marchán arranca en el banco», «Marchán, suplente»,
+# «Marchán fuera del once»
 _EN_BANCO = re.compile(r"(?:[A-ZÁÉÍÓÚÑÜ]\.\s*)?[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]*"
                        r"(?:\s+(?:y|e)\s+(?:[A-ZÁÉÍÓÚÑÜ]\.\s*)?[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]*)*"
-                       r"\s+(?:en el banco|en la banca|al banco|desde el banco|de suplentes?|como suplentes?)", re.I)
+                       r"(?:\s+(?:(?:arranca|empieza|inicia|comienza|queda|sale|va|parte)\s+)?"
+                       r"(?:en el banco|en la banca|al banco|desde el banco|de suplentes?|como suplentes?|"
+                       r"fuera del once|fuera del xi)"
+                       r"|\s*\((?:en el )?banco\)|\s*,\s*suplente\b)", re.I)
 
 
 # «En el banco del 25/10: Pinos, Laurino, J. Quiñónez, Cabezas, Bolaños y Naula»
@@ -1484,7 +1497,10 @@ def sin_en_banco(texto: str) -> str:
     seguro y no pueden tumbarlo por arrancar suplentes (1047). Es la misma
     excepción que las piezas del M2 tienen con `_DESDE_BANCO`. Tampoco son
     un cambio anunciado del once (1075)."""
-    return _EN_BANCO.sub(" ", _BANCO_LISTA.sub(" ", texto or ""))
+    # primero «X en el banco» y después las listas «en el banco: A, B»: al revés,
+    # «Marchán arranca en el banco: el seguro pasa a Saggiomo» leía todo lo que
+    # sigue a los dos puntos como lista y dejaba a Marchán (1172)
+    return _BANCO_LISTA.sub(" ", _EN_BANCO.sub(" ", texto or ""))
 
 
 def sin_ausentes(texto: str) -> str:
@@ -1802,7 +1818,8 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
     # jugador que está en la BANCA del once oficial (y a ningún titular con ese
     # apellido), el M2 se escribió sobre otra pieza.
     rd = ((bloque.get("apertura") or {}).get("m2") or {}).get("restDefense") or {}
-    crudo_rd = sin_en_banco(sin_ausentes(sin_alternativas(rd.get("foco") or "")))
+    # «Lynen (banco)» se lee ANTES de borrar los paréntesis de las alternativas (1172)
+    crudo_rd = sin_alternativas(sin_ausentes(sin_en_banco(rd.get("foco") or "")))
     texto_rd = _plano(crudo_rd)
     if texto_rd.strip():
         en_banca = _suplentes_nombrados(of.get("banca") or [], of["titulares"], texto_rd, crudo_rd)
@@ -1958,14 +1975,17 @@ def avisos_piezas_fuera(dtp: dict, equipos: dict, nombres: dict) -> list[dict]:
     incidencia 1170, Nacional Asunción: la apertura apoyaba el seguro en Cardozo
     Lucena y el lateral en Espínola, y `equipos.a.fuera` ya los declaraba fuera;
     el once lo confirmó y el bloque se rehízo). Aviso del recibo, sin rechazo:
-    una pieza que no juega es un mapa de duelos escrito sobre otro equipo."""
+    una pieza que no juega es un mapa de duelos escrito sobre otro equipo. La
+    que entra desde el banco cuenta igual (1173): fuera no está ni en el banco."""
     out = []
     for b in (dtp or {}).get("bloques") or []:
         foco = b.get("equipo")
         rival = "b" if foco == "a" else "a"
         for pz in ((b.get("apertura") or {}).get("m2") or {}).get("piezas") or []:
             nombre = (pz.get("nombre") or "").strip()
-            if not nombre or _DESDE_BANCO.search(f"{pz.get('rol') or ''} {nombre}"):
+            # la pieza declarada DESDE EL BANCO también: fuera no está ni en el
+            # banco (incidencia 1173, Coritiba: Fabinho de «banco ofensivo»)
+            if not nombre:
                 continue
             lado = foco if pz.get("lado") != "rival" else rival
             bajas = [f for f in ((equipos or {}).get(lado) or {}).get("fuera") or []

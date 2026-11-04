@@ -4096,6 +4096,13 @@ def main():
     check("709: «J. Castillo» en el banco no lo tapa E. Castillo titular",
           any("J. Castillo arrancó en el banco" in m for m in _pz("J. Castillo", "ancla", _xi10 + ["E. Castillo"],
                                                                   ["J. Castillo"])))
+    from backend.analisis.dtp_cowork import _en_referencia as _er_1171, _plano as _pl_1171
+    _cr1171 = "Franklin Mosquera, Juan Esteban Franco, Johar Mejía, Andrés Rentería"
+    check("1171: el segundo nombre de «Faber Andrés Gil» no casa con el de pila de «Andrés Rentería»; "
+          "«C. Nunes» sigue casando con «Nunes Cesar» y «A. Rentería» con su fila",
+          not _er_1171("Faber Andrés Gil", _pl_1171(_cr1171), _cr1171)
+          and _er_1171("C. Nunes", _pl_1171("Nunes Cesar, Otro Uno"), "Nunes Cesar, Otro Uno")
+          and _er_1171("A. Rentería", _pl_1171(_cr1171), _cr1171))
     check("686: «Andrés Rentería» titular no nombra a «Faber Andrés Gil» del banco",
           _pz("Andrés Rentería", "9", _xi10 + ["A. Rentería"], ["Faber Andrés Gil"]) == [])
     check("690/702/708: una pieza que no está ni de titular ni de suplente pide rehacer",
@@ -4122,6 +4129,11 @@ def main():
           not any(m.startswith("seguro") for m in _rd526("con Lynen en el banco el seguro es Reis")["motivos"])
           and not any(m.startswith("seguro") for m in _rd526("Reis fijo atrás; Lynen de suplente")["motivos"])
           and any(m.startswith("seguro") for m in _rd526("Lynen fijo atrás, Reis en el banco")["motivos"]))
+    check("1172: «Lynen (banco)», «Lynen arranca en el banco: …», «Lynen, suplente» y «Lynen fuera del once» "
+          "no lo hacen seguro",
+          all(not any(m.startswith("seguro") for m in _rd526(t)["motivos"]) for t in (
+              "Lynen (banco); el seguro pasa a Reis", "Lynen arranca en el banco: el seguro pasa a Reis",
+              "Lynen, suplente; seguro Reis", "con Lynen fuera del once, el seguro pasa a Reis")))
     # incidencia 390 (América): el oficial «K. Álvarez» no es el «Carlos Álvarez»
     # de la referencia; «B. Gallego» sí es «Baltasar Gallego Rodríguez»
     _ini = _rehacer({"equipo": "b", "apertura": {"m1": {"sistema": "4-3-3",
@@ -4372,6 +4384,22 @@ def main():
     check("1133: la corrección viaja con SU hora (formacionCorregidaEn), aparte de la del once previo",
           _m848.get("formacionCorregidaEn") == "2026-10-25T16:40:00Z" and "a las 16:40 UTC" in _m848["detalle"]
           and _m848.get("onceFinalEn") == "2026-10-25T15:30:00Z", _m848)
+    # 1189 (Mushuc Runa–Manta): el momento del lado b sale del once de b, no de
+    # la corrección del once de a
+    _once_b = [{"team": {"id": 990482}, "formation": "4-4-2", "coach": {"name": "DT2"},
+                "startXI": [{"player": {"id": 800 + k, "name": f"K{k}"}} for k in range(11)], "substitutes": []}]
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _gal(_con, 990480, _once_b, "2026-10-25 15:00:00")
+    _fx1189 = {"id": 990480, "date": "2026-10-25 16:15:00", "home_team_id": 990481, "away_team_id": 990482}
+    _m1189 = _mom([{"codigo": "DTP-REHACER", "equipo": "a", "tipo": "dato", "detalle": "x"},
+                   {"codigo": "DTP-REHACER", "equipo": "b", "tipo": "dato", "detalle": "y"}],
+                  _fx1189, "2026-10-25 15:45:00")
+    check("1189: cada lado con SU once: a `tardio` por su corrección de después del pitazo, b `conocido` "
+          "(su once de las 15:00 ya estaba y nadie lo corrigió)",
+          _m1189[0].get("momento") == "tardio" and _m1189[1].get("momento") == "conocido"
+          and _m1189[1].get("onceFinalEn") == "2026-10-25T15:00:00Z" and "4-1-4-1" not in _m1189[1]["detalle"], _m1189)
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM alineaciones_versiones WHERE fixture_id=990480 AND team_id=990482")
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM alineaciones_versiones WHERE fixture_id=990480 AND capturada_en > '2026-10-25 16:15:00'")
     # 688/697: el refresco de la ficha DESPUÉS del pitazo no es la versión final

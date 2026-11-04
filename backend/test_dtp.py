@@ -361,9 +361,10 @@ def main():
                "b": {"fuera": [{"nombre": "L. Franco", "estado": "baja", "motivo": "roja"}]}}
     _av1170 = avisos_piezas_fuera(_dtp1170, _eq1170, {"a": "Nacional", "b": "San Lorenzo"})
     _txt1170 = " | ".join(a["costara"] for a in _av1170)
-    check("1170: las piezas en `fuera` (propia con y sin inicial, y la rival) avisan; la duda y la de banco no",
-          len(_av1170) == 3 and "Cardozo Lucena" in _txt1170 and "Espínola" in _txt1170 and "L. Franco" in _txt1170
-          and "Valdez" not in _txt1170 and "Insúa" not in _txt1170, _av1170)
+    check("1170/1173: las piezas en `fuera` (propia con y sin inicial, la rival y la que entra desde el banco) "
+          "avisan; la duda no",
+          len(_av1170) == 4 and "Cardozo Lucena" in _txt1170 and "Espínola" in _txt1170 and "L. Franco" in _txt1170
+          and "Insúa" in _txt1170 and "Valdez" not in _txt1170, _av1170)
     check("646: sin grid completo no se compara nada",
           _reh(_b646, {"a": {**_of646["a"], "casillas": []}})["rolesVsGrid"] == [])
     from backend.analisis.dtp_cowork import sin_referencia
