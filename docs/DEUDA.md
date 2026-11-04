@@ -783,21 +783,22 @@ conversación se pierde en la siguiente.
    la primera noche: una sesión nueva arranca en ~90 mil tokens (sistema,
    herramientas, CLAUDE.md); rehacer suma ~3.500 por disparo vacío (~250 mil
    por día) y cada disparo vacío costó ~0,10 USD con la sesión chica (antes
-   ~0,30); una pasada de mantenimiento suma ~200 mil y costó 40 USD. **Sesiones y rutinas vigentes**:
-   - partes: `session_01WwsfbVQPxVPkxUsYtR2D9V` · tramos 04:47
-     `trig_01H8uddXTKzsV4JrBH9ukRHf`, 09:52 `trig_015NT3DmUx1QcPCYSZVxkrsU`,
-     14:56 `trig_01SqoZgb3oRK6jec3zu2Ls94` (antes `session_014NFRg8vpomVRAptrKnGpNz`);
-   - veredictos: `session_01WwsfbVRbeKmuposR5pHMKr` · 20:12
-     `trig_01LF6Fuc2Fqk7Mz2AQk9bGtW` (antes `session_01WwsfbT7QwmMGN9rpzPDcW6`);
-   - mantenimiento: `session_01WwsfbT1idxY3J7mkUGXzvf` · 12:23
-     `trig_01PBNkthvxGYUKrMAwwWwM2H`, 17:41 `trig_01PmA4XCWpbFkedTLpJHcpsX`,
-     21:47 `trig_01XcfsTWnLarQr2i6zWZxU5p` (rotada el 03/11 03:17 con 289 mil tokens
-     tras UNA pasada; antes `session_01WwsfbSE7FFaUEYTgJuMo5d` y
-     `session_01WwsfbSrNaKynS84SUXEwvA`);
-   - rehacer: `session_01WwsfbV88R2FfNBzhkFkNdQ` · :02 `trig_01DU2uVej7bV3kkuFGc77xyF`,
-     :12 `trig_01LhgFVbc74Hug6AW3LAfhxY`, :22 `trig_016VcNauvidJYEt36WVhKxDD`,
-     :42 `trig_01MuEv7fBHxjdngfVc85hLMB` (antes `session_01WwsfbTrhC56SCybz9zK3CQ`).
-   Las rutinas viejas quedaron desactivadas, no borradas. **Probado el mismo
+   ~0,30); una pasada de mantenimiento suma ~200 mil y costó 40 USD. **Sesiones y rutinas vigentes** (rotadas las cuatro el 04/11 03:17 de Lima:
+   partes 314 mil, veredictos 262 mil, mantenimiento 488 mil, rehacer 533 mil):
+   - partes: `session_01WwsfbW3ze9hLXKtcrUbWqy` · 04:47
+     `trig_01UTkAXMXLgDZFT4UqV2X6en`, 09:52 `trig_01BmQw6txuKmfg6QZHVWUweA`,
+     14:56 `trig_018DPiAbRr3EG19RKUmKqwjk`;
+   - veredictos: `session_01WwsfbV87v8ZQtqpA5hHYeX` · 20:12
+     `trig_01RR5UNpmZpfu4svZ6YLE9yA`;
+   - mantenimiento: `session_01WwsfbSceKzWQJxGJbPx7Gf` · 12:23
+     `trig_01ErrkahKVmT82p8knSa2Aob`, 17:41 `trig_017HpqnJmciTG9qPskkLiGg2`,
+     21:47 `trig_014jntFoux6FNrxnvwrj7gw2`;
+   - rehacer: `session_01WwsfbW98UGtzkTBBHJgRFf` · :02 `trig_01PLhqmwtEwKf8eCeq2Wz9uM`,
+     :12 `trig_011Jv31AbUdUwnUkbU6HbSBC`, :22 `trig_01K1s1WGgUu1sSwM4fgrfRD3`,
+     :42 `trig_01GQSqbTTWcqJQswqAULovAC`.
+   Medido el 03/11 con las sesiones nuevas: partes 117 USD (8 partes en el tramo
+   3), veredictos 50 USD (18 veredictos), mantenimiento 29 USD por pasada,
+   rehacer 41 USD en el día (hubo rehaceres reales). Las rutinas viejas quedaron desactivadas, no borradas. **Probado el mismo
    día**: una rutina con sesión NUEVA por disparo sigue arrancando sin el repo
    (en `/home/user`, sin `git`) y con otro modelo; las credenciales sí están.
    Sirve solo para un `curl`, y aun así cuesta más que una sesión fija chica
