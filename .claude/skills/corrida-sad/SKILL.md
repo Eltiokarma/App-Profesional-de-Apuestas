@@ -566,7 +566,13 @@ POST $B/analisis/cowork/incidencias
   plantilla (1174, 1186, 1191: la app casa por id); la ficha de Venezuela o
   de la copa de Bolivia sin alineaciones, estadísticas o tarjetas (1176,
   1183, 1192); y la formación 4-1-4-1 contra 4-2-3-1 que no pide rehacer
-  (1181: misma línea de atrás y un solo punta).
+  (1181: misma línea de atrás y un solo punta). Y desde la pasada del 04/11
+  (mediodía): el lesionado largo o el que no sumó minutos y que la plantilla
+  de la API no lista (1195: va en `fuera` sin `jugadorId`, el bloque F casa
+  por nombre; sumarlo a la F1 espera la decisión de la 1068); y el cierre del
+  DTP contra un partido anterior al último, que viaja en
+  `aperturaPrevia.cierreContra` de `GET /analisis/cowork/dtp/{id}` (1196: leé
+  esa clave antes de reportarlo ausente).
 
 ## Modo `mantenimiento` (los parches, automáticos)
 
