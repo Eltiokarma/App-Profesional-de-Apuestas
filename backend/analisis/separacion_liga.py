@@ -16,6 +16,8 @@ fechada: con cada backtest nuevo se rehace la tabla.
 """
 from __future__ import annotations
 
+import re
+
 MEDIDO_EN = "2026-10-29"
 # liga → (AUC de los puntos, observaciones). backtest_burbuja --liga, horizonte 1.
 SEPARACION = {
@@ -111,9 +113,39 @@ def del_partido(base_id: int | None, base_nombre: str | None,
     return de_liga(base_id, base_nombre)
 
 
+_RONDA_1_N = re.compile(r"\b1\s*/\s*(\d+)\s*-?\s*finals?\b")
+
+
+def equipos_de_ronda(ronda: str | None) -> int | None:
+    """«1/8-finals» = octavos = ronda de 16; «1/128-finals» = ronda de 256. La
+    API nombra así las rondas de algunas copas (Coupe de France, 04/11/2026,
+    incidencia 1200): el texto CONTIENE «final» y no es la final."""
+    m = _RONDA_1_N.search((ronda or "").strip().lower())
+    return 2 * int(m.group(1)) if m else None
+
+
+def _es_la_final(r: str) -> bool:
+    return equipos_de_ronda(r) is None and (r == "final" or r.startswith("final"))
+
+
 def es_desde_cuartos(ronda: str | None) -> bool:
     r = (ronda or "").strip().lower()
-    return r == "final" or r.startswith("final") or any(x in r for x in _RONDA_CUARTOS)
+    n = equipos_de_ronda(r)
+    if n is not None:
+        return n <= 8
+    return _es_la_final(r) or any(x in r for x in _RONDA_CUARTOS)
+
+
+def entra_desde(ronda: str | None, rondas: tuple, equipos_max: int) -> bool:
+    """¿La ronda entra a la agenda de una copa con `DESDE_RONDA`? La «1/N-finals»
+    se lee por su número (entra con 2N ≤ `equipos_max`), la final por nombre
+    entero y el resto por las palabras de la lista (sin «final», que casaba con
+    «1/128-finals»: Sporting Baie-Mahault–Siroco, Guadalupe, 1200)."""
+    r = (ronda or "").strip().lower()
+    n = equipos_de_ronda(r)
+    if n is not None:
+        return n <= equipos_max
+    return _es_la_final(r) or any(x in r for x in rondas if x != "final")
 
 
 # Copas que traen rondas de equipos amateurs y de ultramar sin datos: entran
@@ -121,6 +153,7 @@ def es_desde_cuartos(ronda: str | None) -> bool:
 # Coupe de France metía a la agenda el 7.º tour de Martinica, Franciscain–Aiglon,
 # sin plantilla, cuotas, once ni historia).
 DESDE_RONDA = {66: ("round of 64", "round of 32", "round of 16", "quarter", "semi", "final")}
+DESDE_RONDA_EQUIPOS = {66: 64}   # la misma regla para la ronda escrita «1/N-finals» (1200)
 
 
 def copa_en_agenda(liga_id: int | None, ronda: str | None, nombre: str) -> tuple[int, str] | None:
@@ -131,7 +164,7 @@ def copa_en_agenda(liga_id: int | None, ronda: str | None, nombre: str) -> tuple
     nivel = nivel_de(auc)
     pie = "; el 1X2 sale del mercado, no del motor (en copas la localía sale negativa)"
     rondas = DESDE_RONDA.get(liga_id)
-    if rondas and not any(x in (ronda or "").strip().lower() for x in rondas):
+    if rondas and not entra_desde(ronda, rondas, DESDE_RONDA_EQUIPOS.get(liga_id, 64)):
         return 0, (f"{nombre} · {ronda or 'ronda temprana'}: esta copa entra desde la ronda de 64 (las "
                    "anteriores son de amateurs y de ultramar, sin datos)")
     if nivel == "alta":

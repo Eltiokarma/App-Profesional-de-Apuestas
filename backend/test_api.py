@@ -470,6 +470,22 @@ def main():
     check("990: la Coupe de France entra a la agenda desde la ronda de 64; el 7.º tour (ultramar) no",
           _sep.copa_en_agenda(66, "7th Round", "Coupe de France")[0] == 0
           and _sep.copa_en_agenda(66, "Round of 64", "Coupe de France")[0] == 8)
+    # 1200 (04/11/2026): la API escribe «1/128-finals» y casaba con «final»
+    check("1200: la Coupe de France con la ronda «1/N-finals» entra por el número, no por la palabra final",
+          _sep.copa_en_agenda(66, "1/128-finals", "Coupe de France")[0] == 0
+          and _sep.copa_en_agenda(66, "1/64-finals", "Coupe de France")[0] == 0
+          and _sep.copa_en_agenda(66, "1/32-finals", "Coupe de France")[0] == 8
+          and _sep.copa_en_agenda(66, "Final", "Coupe de France")[0] == 8)
+    check("1200: «1/4-finals» es desde cuartos y «1/16-finals» no; la final sigue siéndolo",
+          _sep.es_desde_cuartos("1/4-finals") and _sep.es_desde_cuartos("1/2-finals")
+          and not _sep.es_desde_cuartos("1/16-finals") and _sep.es_desde_cuartos("Final")
+          and _sep.es_desde_cuartos("Quarter-finals"))
+    from backend.analisis import parte as _p1200, tde as _t1200
+    check("1200: la fase decisiva internacional lee «1/N-finals» por el número; la semifinal «1/2-finals» también",
+          _p1200.es_fase_decisiva("1/8-finals") and not _p1200.es_fase_decisiva("1/16-finals")
+          and not _p1200.es_fase_decisiva("1/128-finals") and _p1200.es_fase_decisiva("Quarter-finals")
+          and _p1200.es_fase_decisiva("Round of 16") and not _p1200.es_fase_decisiva("League Stage - 4")
+          and _t1200._semi_o_final("1/2-finals") and not _t1200._semi_o_final("1/8-finals"))
     sc = _sep.de_liga(143, "Copa del Rey")
     check("una copa medida da su separación como copa, con la nota del 1X2 del mercado",
           sc["competicion"] == "copa" and sc["auc"] == 0.727 and sc["nivel"] == "alta"

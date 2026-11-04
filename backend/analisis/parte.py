@@ -5491,6 +5491,18 @@ _FASE_DECISIVA = ("final", "octavos", "cuartos", "semi", "round of 16",
                   "knockout", "playoff", "play-off", "repechaje")
 
 
+def es_fase_decisiva(ronda: str | None) -> bool:
+    """De octavos en adelante. La ronda «1/N-finals» se lee por su número
+    (1/8 = octavos entra, 1/16 o 1/128 no): por la palabra «final» entraba
+    cualquiera (04/11/2026, incidencia 1200, la misma regla que la copa)."""
+    from backend.analisis.separacion_liga import equipos_de_ronda
+    n = equipos_de_ronda(ronda)
+    if n is not None:
+        return n <= 16
+    r = normalizar(ronda or "")
+    return any(f in r for f in _FASE_DECISIVA)
+
+
 def _prioridad(liga: dict, etiquetas: set[str], pos_local: int, pos_visita: int,
                liga_id: int = 0, ronda: str = "", grupos: bool = False,
                segundas: bool = False) -> tuple[int, str]:
@@ -5509,10 +5521,9 @@ def _prioridad(liga: dict, etiquetas: set[str], pos_local: int, pos_visita: int,
     / `segundas=true`, y mientras tanto van a `descartados` con este motivo.
     """
     padron = _padron()
-    ronda_n = normalizar(ronda or "")
     if liga_id in INTERNACIONALES:
         nombre_i = INTERNACIONALES[liga_id]
-        if any(f in ronda_n for f in _FASE_DECISIVA):
+        if es_fase_decisiva(ronda):
             return 2, f"{nombre_i} · fase decisiva ({ronda or 'sin ronda declarada'})"
         # LA CHAMPIONS ENTRA SOLA, también en fase liga (pedido del usuario,
         # 14/10/2026: Roma–Real Madrid o Bayern–Arsenal no son relleno). El

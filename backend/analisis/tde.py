@@ -194,6 +194,10 @@ def _semi_o_final(ronda: str) -> bool:
     """«Semi-finals», «Semifinal», «Final» (ida o vuelta); NO «Quarter-finals»
     ni «1/8-finals», que también traen la palabra."""
     r = (ronda or "").lower().strip()
+    from backend.analisis.separacion_liga import equipos_de_ronda
+    n = equipos_de_ronda(r)
+    if n is not None:   # «1/2-finals» es la semifinal (1200)
+        return n <= 4
     return "semi" in r or re.match(r"^(the )?finals?\b", r) is not None
 
 
@@ -215,8 +219,8 @@ def exigencia_proxima(team_id: int, contexto: dict) -> dict | None:
             "rival": rival.get("nombre") if isinstance(rival, dict) else rival}
     ronda = (f["league_round"] or "").lower()
     if prox.get("esInternacional"):
-        from backend.analisis.parte import _FASE_DECISIVA
-        if any(x in ronda for x in _FASE_DECISIVA):
+        from backend.analisis.parte import es_fase_decisiva
+        if es_fase_decisiva(ronda):
             return {**base, "motivo": f"eliminatoria internacional ({f['league_round']}) ante {base['rival']}"}
     # semifinal o final de copa nacional (24/10/2026, incidencia 435, decisión del
     # usuario): quien tiene semis de Copa del Rey el miércoles rota como quien
