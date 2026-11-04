@@ -578,7 +578,12 @@ POST $B/analisis/cowork/incidencias
   por nombre; sumarlo a la F1 espera la decisión de la 1068); y el cierre del
   DTP contra un partido anterior al último, que viaja en
   `aperturaPrevia.cierreContra` de `GET /analisis/cowork/dtp/{id}` (1196: leé
-  esa clave antes de reportarlo ausente).
+  esa clave antes de reportarlo ausente). Y desde la pasada del 04/11
+  (tarde): el id de la API que comparten dos jugadores de clubes distintos y
+  saca a uno en `jueganEnOtroEquipo` (1208, misma clase que la 961: se carga
+  sin `jugadorId`); el lateral con el carril cruzado en el grid de la ficha
+  (1205, 987: es la columna que publicó la API); y 4-1-4-1 contra 4-2-3-1 sin
+  rehacer (1203, ya decidido en la 1181).
 
 ## Modo `mantenimiento` (los parches, automáticos)
 
