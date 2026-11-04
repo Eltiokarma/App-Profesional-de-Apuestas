@@ -138,6 +138,19 @@ def misma_sede(a, b) -> bool:
     return bool(ta) and bool(tb) and (ta <= tb or tb <= ta)
 
 
+def _admite_neutral(league_id) -> bool:
+    """¿La competición juega en cancha neutral? Copa (nacional) o torneo
+    internacional de clubes; ante la duda (sin poder leer la liga), sí."""
+    if league_id is None:
+        return True
+    try:
+        from backend.analisis import escala
+        from backend.jugadores import _ligas_internacionales
+        return league_id in _ligas_internacionales() or escala.es_copa(league_id)
+    except Exception:  # noqa: BLE001 — sin la liga legible, la regla de siempre (no se calla un neutral real)
+        return True
+
+
 def cancha_neutral(home_id: int, sede: str | None, antes: str | None, fixture_id: int | None = None) -> bool:
     """¿El partido se juega fuera de la cancha habitual del local? La sede más
     repetida en sus últimos 20 partidos de local (con 5+), distinta de esta
@@ -178,6 +191,16 @@ def cancha_neutral(home_id: int, sede: str | None, antes: str | None, fixture_id
         n = _sede_norm(_col(f, "venue_name"))
         return f"n:{n}" if n else ""
 
+    # EN LA LIGA NO HAY CANCHA NEUTRAL QUE SE PUEDA AFIRMAR POR EL NOMBRE
+    # (04/11/2026, incidencia 1207, reaparición de la 1090): Olimpia en el
+    # «Estadio Manuel Ferreira», que es el viejo nombre del Osvaldo Domínguez
+    # Dibb donde jugó 29 de 39 de local; otro id y ni una palabra en común. Las
+    # once marcas falsas medidas (1090, 1165, 1207) fueron todas de liga y la
+    # verdadera (991, el 7.º tour de la Coupe de France en Martinica) de copa:
+    # con el fixture a la vista, solo copa o torneo internacional pueden dar
+    # neutral. Sin fixture (solo el nombre) queda la regla de siempre.
+    if hoy is not None and not _admite_neutral(_col(hoy, "league_id")):
+        return False
     previas = [f for f in filas if _clave(f)][:20]    # un nombre vacío no es una sede
     if hoy is not None and _clave(hoy):
         clave_hoy, nombre_hoy = _clave(hoy), _sede_norm(_col(hoy, "venue_name")) or _sede_norm(sede)

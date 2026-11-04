@@ -151,6 +151,17 @@ _sede_fx(90220, _UC, "11-01", 555, "San Carlos de Apoquindo")
 for _i in range(10):
     _sede_fx(90300 + _i, _FRA, f"0{1 + _i % 9}-0{1 + _i % 9}", 100, "Stade Pierre-Aliker")
 _sede_fx(90320, _FRA, "10-31", 200, "Stade Louis-Achille")
+# el 991 real era de la Coupe de France (66): ese partido va con su copa
+_c.execute("UPDATE fixtures SET league_id=66 WHERE id=90320")
+# 1207: Olimpia de local en «Manuel Ferreira» (el nombre viejo del Osvaldo
+# Domínguez Dibb, otro id), en la liga paraguaya; y el mismo caso en copa
+_OLI = 1182
+for _i in range(17):
+    _sede_fx(90600 + _i, _OLI, f"0{1 + _i % 9}-0{1 + _i % 9}", 600, "Estadio Osvaldo Dominguez Dibb")
+_sede_fx(90620, _OLI, "11-04", 601, "Estadio Manuel Ferreira")
+_c.execute("UPDATE fixtures SET league_id=252 WHERE id=90620")
+_sede_fx(90621, _OLI, "11-04", 602, "Estadio Hipotético")
+_c.execute("UPDATE fixtures SET league_id=66 WHERE id=90621")
 # 1165 (reapareció tras la 1090): Táchira en «Pueblo Nuevo» con otro venue_id
 # que el «Estadio Polideportivo de Pueblo Nuevo» de siempre; Mushuc Runa igual
 _TAC, _MUS = 2807, 1162
@@ -177,6 +188,10 @@ check("991 sigue: el local en un estadio de otro id que nunca usó SÍ es neutra
 check("991 sigue: …también solo por el nombre",
       vn.cancha_neutral(_FRA, "Stade Louis-Achille", "2026-10-31T18:00:00"))
 
+check("1207: Olimpia en «Manuel Ferreira» (su estadio con el nombre viejo, otro id) en la LIGA no es neutral",
+      not vn.cancha_neutral(_OLI, "Estadio Manuel Ferreira", "2026-11-04T22:00:00", fixture_id=90620))
+check("1207: un estadio que nunca usó en un partido de COPA sigue pudiendo ser neutral (991)",
+      vn.cancha_neutral(_OLI, "Estadio Hipotético", "2026-11-04T22:00:00", fixture_id=90621))
 check("1165: Táchira en «Pueblo Nuevo» (otro venue_id, nombre recortado) no es neutral",
       not vn.cancha_neutral(_TAC, "Pueblo Nuevo", "2026-11-03T22:00:00", fixture_id=90421))
 check("1165: Mushuc Runa en «Estadio del Mushuc Runa Sporting Club» (otro venue_id) no es neutral",
