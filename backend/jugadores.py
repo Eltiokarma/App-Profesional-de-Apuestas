@@ -282,6 +282,7 @@ def plantilla_de(team_id: int) -> dict:
     jugo = ultimo_partido_jugado(team_id)
     convocado = ultima_convocatoria(team_id)
     fechas_int = fechas_internacionales(team_id)
+    jugo_int = ultimo_partido_internacional(team_id) if fechas_int else {}
     missing = lectura_missing_fixture(bajas, {r["player_id"] for r in filas}, jugo, convocado)
 
     # MINUTOS QUE NO CABEN EN LOS PARTIDOS. La API dio a J. García (Tigres,
@@ -342,7 +343,7 @@ def plantilla_de(team_id: int) -> dict:
             "paradasP90": _p90(r["paradas"] or 0, minutos) if es_gk else None,
             "golesEncajadosP90": _p90(r["goles_encajados"] or 0, minutos) if es_gk else None,
             "baja": (_baja_dto(baja, missing, jugo.get(r["player_id"]), convocado.get(r["player_id"]),
-                               fechas_int) if baja else None),
+                               fechas_int, jugo_int.get(r["player_id"])) if baja else None),
             "recienLlegado": (
                 {"desde": llegada["team_out_nombre"], "fecha": llegada["fecha"]} if llegada else None
             ),
@@ -421,7 +422,24 @@ def sanciones_de_ficha(team_id: int) -> dict[int, dict]:
     return out
 
 
-def ultimo_partido_jugado(team_id: int) -> dict[int, str]:
+def _ligas_internacionales() -> tuple:
+    try:
+        from backend.ingesta.extractor import LIGAS_INTERNACIONALES
+        return tuple(LIGAS_INTERNACIONALES)
+    except Exception:  # noqa: BLE001 — sin la ingesta importable: la lista conocida
+        return (2, 3, 848, 13, 11)
+
+
+def ultimo_partido_internacional(team_id: int) -> dict[int, str]:
+    """{jugador: fecha del último partido INTERNACIONAL de clubes terminado en
+    que fue titular o figura en un evento}. Es lo único que desmiente una
+    sanción de la UEFA o la CONMEBOL (incidencia 1178)."""
+    inter = _ligas_internacionales()
+    filtro = f" AND f.league_id IN ({','.join(str(int(x)) for x in inter)})"
+    return ultimo_partido_jugado(team_id, filtro)
+
+
+def ultimo_partido_jugado(team_id: int, _filtro: str = "") -> dict[int, str]:
     """{jugador: fecha del último partido TERMINADO del equipo en que fue
     titular o figura en un evento (gol, tarjeta, cambio)}. Es lo que desmiente
     una baja: Prass titular y goleador del Hoffenheim, Lerma entrando al 53'
@@ -429,13 +447,13 @@ def ultimo_partido_jugado(team_id: int) -> dict[int, str]:
     out: dict[int, str] = {}
     for sql in (f"""SELECT a.player_id AS pid, MAX(f.date) AS d FROM alineaciones a
                     JOIN fixtures f ON f.id = a.fixture_id
-                    WHERE a.team_id=? AND a.titular=1 AND {_FIN90.replace('status', 'f.status')} GROUP BY a.player_id""",
+                    WHERE a.team_id=? AND a.titular=1 AND {_FIN90.replace('status', 'f.status')}{_filtro} GROUP BY a.player_id""",
                 f"""SELECT e.jugador_id AS pid, MAX(f.date) AS d FROM fixture_eventos e
                     JOIN fixtures f ON f.id = e.fixture_id
-                    WHERE e.equipo_id=? AND e.jugador_id > 0 AND {_FIN90.replace('status', 'f.status')} GROUP BY e.jugador_id""",
+                    WHERE e.equipo_id=? AND e.jugador_id > 0 AND {_FIN90.replace('status', 'f.status')}{_filtro} GROUP BY e.jugador_id""",
                 f"""SELECT e.asistente_id AS pid, MAX(f.date) AS d FROM fixture_eventos e
                     JOIN fixtures f ON f.id = e.fixture_id
-                    WHERE e.equipo_id=? AND e.asistente_id > 0 AND {_FIN90.replace('status', 'f.status')} GROUP BY e.asistente_id"""):
+                    WHERE e.equipo_id=? AND e.asistente_id > 0 AND {_FIN90.replace('status', 'f.status')}{_filtro} GROUP BY e.asistente_id"""):
         try:
             for r in _query(sql, (team_id,)):
                 if r["pid"] and r["d"] and str(r["d"]) > out.get(r["pid"], ""):
@@ -458,11 +476,7 @@ def ultima_convocatoria(team_id: int) -> dict[int, str]:
 
 def fechas_internacionales(team_id: int) -> set[str]:
     """Los días en que el equipo jugó (o juega) un torneo internacional de clubes."""
-    try:
-        from backend.ingesta.extractor import LIGAS_INTERNACIONALES
-        inter = tuple(LIGAS_INTERNACIONALES)
-    except Exception:  # noqa: BLE001 — sin la ingesta importable: la lista conocida
-        inter = (2, 3, 848, 13, 11)
+    inter = _ligas_internacionales()
     try:
         return {str(r["d"])[:10] for r in _query(
             f"SELECT date AS d FROM fixtures WHERE (home_team_id=? OR away_team_id=?) "
@@ -472,7 +486,7 @@ def fechas_internacionales(team_id: int) -> set[str]:
 
 
 def _baja_dto(baja, missing: dict, jugo_el: str | None, convocado_el: str | None = None,
-              fechas_int: set | None = None) -> dict:
+              fechas_int: set | None = None, jugo_int: str | None = None) -> dict:
     """La baja con su lectura. `desmentida`: el jugador jugó (titular o con un
     evento) un partido POSTERIOR a la fecha de la baja —la API la dejó vieja—,
     y entonces no cuenta como baja en ningún lado (incidencias 2, 132, 142,
@@ -510,6 +524,15 @@ def _baja_dto(baja, missing: dict, jugo_el: str | None, convocado_el: str | None
     if (fecha and "off the roster" in (baja["detalle"] or "").lower() and fecha in (fechas_int or set())
             and not sancion):
         out.update({"lectura": "ruido", "soloLista": "internacional"})
+    # UNA SANCIÓN INTERNACIONAL NO LA CUMPLE LA LIGA (03/11/2026, incidencia
+    # 1178): Mbappé (Lille) cumplía la 3.ª de 3 fechas UEFA por la roja y el
+    # «Red Card» quedaba `desmentida` porque jugó en la Ligue 1; salía
+    # disponible para la Champions. Si la fecha de la sanción es la de un
+    # partido internacional del equipo, solo la desmiente haber jugado otro
+    # partido internacional después (la hoja de la liga no cuenta).
+    if sancion and fecha and fecha in (fechas_int or set()):
+        out["soloCompeticion"] = "internacional"
+        jugo_el, convocado_el = jugo_int, None
     if fecha and jugo_el and jugo_el[:10] > fecha:
         out.update({"lectura": "desmentida", "lecturaApi": lectura,
                     "desmentidaPorOnce": {"fechaBaja": fecha, "jugoEl": jugo_el[:10]}})

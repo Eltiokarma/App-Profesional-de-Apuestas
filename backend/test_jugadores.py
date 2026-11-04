@@ -675,6 +675,16 @@ def main():
     _b522b = _jg._baja_dto(_off, {"lectura": "senal"}, None, None, {"2026-09-30"})
     check("522: «Off the roster» en una fecha de liga sigue como venía", _b522b["lectura"] == "senal", _b522b)
 
+    # 1178 (Mbappé, Lille): la roja de la UEFA no la cumple la liga
+    _uefa = {"player_id": 11, "tipo": "Missing Fixture", "detalle": "Red Card", "fecha": "2026-10-21"}
+    _b1178 = _jg._baja_dto(_uefa, {"lectura": "senal"}, "2026-10-31", "2026-10-31 15:00:00", {"2026-10-21", "2026-11-04"})
+    _b1178b = _jg._baja_dto(_uefa, {"lectura": "senal"}, "2026-10-31", None, {"2026-10-21", "2026-11-04"}, "2026-11-04")
+    _b1178c = _jg._baja_dto({**_uefa, "fecha": "2026-10-25"}, {"lectura": "senal"}, "2026-10-31", None, {"2026-10-21"})
+    check("1178: la roja con fecha de un partido UEFA no la desmiente jugar en la liga; un partido UEFA "
+          "posterior sí; la roja de liga se desmiente como siempre",
+          _b1178["lectura"] == "senal" and _b1178.get("soloCompeticion") == "internacional"
+          and _b1178b["lectura"] == "desmentida" and _b1178c["lectura"] == "desmentida", (_b1178, _b1178b, _b1178c))
+
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     return 1 if fallos else 0
 
