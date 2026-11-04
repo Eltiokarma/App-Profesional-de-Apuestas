@@ -5580,6 +5580,18 @@ def main():
     check("el resumen no manda lecciones y trae el total; la página manda `cuantas`",
           _r1["items"] == [] and all(s["items"] == [] for s in _r1["porSkill"]) and _r1["total"] == len(_todas["items"])
           and len(_p1["items"]) == min(1, len(_todas["items"])) and _p1["total"] == _r1["total"], (_r1.get("total"), len(_p1["items"])))
+    # EL BUSCADOR DE APRENDIZAJE (04/11/2026, usuario: «estoy scrolleando y no encuentro nada»)
+    _it = {"fixtureId": 1631509, "partido": "LDU de Quito vs Palmeiras", "equipo": "LDU de Quito", "rival": "Palmeiras"}
+    check("buscar: por fixture, por nombre sin tildes y varios a la vez; una palabra corta no cuenta",
+          _lmod.coincide_busqueda(_it, "1631509") and _lmod.coincide_busqueda(_it, "palmeíras")
+          and _lmod.coincide_busqueda(_it, "1492426, 1631509") and not _lmod.coincide_busqueda(_it, "1492426")
+          and not _lmod.coincide_busqueda(_it, "de") and not _lmod.coincide_busqueda(_it, "163150"))
+    if _todas["items"]:
+        _b = _todas["items"][0]
+        _rb = _lmod.inventario(cuantas=50, buscar=str(_b["fixtureId"]))
+        check("buscar pagina solo las lecciones de ese fixture y las cuenta en total",
+              _rb["items"] and all(i["fixtureId"] == _b["fixtureId"] for i in _rb["items"])
+              and _rb["total"] == len(_rb["items"]), (_rb.get("total"), len(_rb["items"])))
     from backend.analisis import veredicto as _ver_c
     check("el tramo de confianza: <40 · 40-49 · 50-59 · 60+",
           [_lmod.tramo_confianza(p) for p in (35, 40, 49.9, 50, 59.5, 60, 100)] == ["<40", "40-49", "40-49", "50-59", "50-59", "60+", "60+"])

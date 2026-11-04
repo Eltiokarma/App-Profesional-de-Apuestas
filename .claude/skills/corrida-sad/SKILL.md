@@ -236,7 +236,12 @@ casi siempre no hay nada que hacer.
 3. Como mucho **8** partidos (decisión del usuario, 04/11/2026, incidencia
    1164: el 03/11 hubo 7 para el pitazo de las 15:00 y Feyenoord–Inter quedó
    sin rehacer con el tope de 6). Si hay más de 8, primero los que arrancan
-   antes. Un subagente por partido, en paralelo, con este encargo:
+   antes. **Excepción: un partido que el disparo siguiente ya no alcanza no
+   espera** (usuario, 04/11/2026, noches de Champions con 8-10 pitazos a la
+   misma hora): si su hora tope (pitazo − 5) cae antes del próximo disparo de
+   la grilla (:02 · :12 · :22 · :42) más 10 minutos de trabajo, entra en ESTE
+   disparo aunque pase el tope. El tope solo difiere a los que todavía tienen
+   otra vuelta. Un subagente por partido, en paralelo, con este encargo:
 
 > Tus archivos van SOLO en `<scratchpad>/rehacer-{id}/`. El partido {id}
 > arranca a las {hora Lima}; hora tope de depósito: el pitazo − 5 minutos.

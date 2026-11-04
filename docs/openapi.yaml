@@ -1455,6 +1455,13 @@ paths:
           description: "con `cuantas`: de dónde salen las lecciones de `items` ('' = las normales · cuarentena · sinSkill)"
           schema: { type: string, enum: ['', cuarentena, sinSkill] }
         - { name: desde, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+        - name: buscar
+          in: query
+          description: >
+            Buscador de Aprendizaje (04/11/2026): fixtures o pedazos de nombre (partido, equipo o rival)
+            separados por espacio o coma; basta que coincida uno. Con `cuantas`, pagina las lecciones que
+            coinciden de lo normal Y de la cuarentena juntas, en toda la historia (sube `limite` a 2000).
+          schema: { type: string, maxLength: 200 }
         - name: cuantas
           in: query
           description: '0 = todas (como siempre); > 0 pagina `items` y deja vacías las listas por skill. `total` dice cuántas hay en el filtro'
