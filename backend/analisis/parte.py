@@ -4200,6 +4200,36 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> lis
     except Exception:  # noqa: BLE001 — sin la tabla (base vieja) no hay momento que decir
         return alertas
     pitazo, dep = _utc(fx["date"]), _utc(deposito_previo)
+    if not pitazo or not dep:
+        return alertas
+    # EL MOMENTO ES DEL ONCE DE ESE LADO (03/11/2026, incidencia 1189, Mushuc
+    # Runa–Manta: la alerta de Manta salía `tardio` por la corrección 4-4-2 →
+    # 4-1-4-1 del once de Mushuc, porque la hora y la corrección se tomaban de
+    # las capturas de los dos equipos). Sin versiones de ese equipo, las de los dos.
+    equipo_de = {"a": fx["home_team_id"] if "home_team_id" in fx.keys() else None,
+                 "b": fx["away_team_id"] if "away_team_id" in fx.keys() else None}
+    cache: dict = {}
+    out = []
+    for a in alertas:
+        if a.get("codigo") != "DTP-REHACER":
+            out.append(a)
+            continue
+        tid = equipo_de.get(a.get("equipo") or "")
+        propias = [f for f in filas if f["team_id"] == tid] if tid is not None else []
+        clave = tid if propias else None
+        if clave not in cache:
+            cache[clave] = _momento_de(propias or filas, pitazo, dep)
+        m = cache[clave]
+        if m is None:
+            out.append(a)
+            continue
+        out.append({**a, **m["campos"], "detalle": f"{a['detalle']} [{m['texto']}]"})
+    return out
+
+
+def _momento_de(filas, pitazo, dep) -> dict | None:
+    """El `momento` de DTP-REHACER con las versiones del once dadas (las de un
+    equipo, o las de los dos si no hay de ese). None = la alerta sale como estaba."""
     finales, despues, corregida_en = {}, {}, {}
     for f in filas:
         # LA VERSIÓN DEL PITAZO, NO LA DEL FINAL: el refresco de la ficha en
@@ -4220,15 +4250,11 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> lis
                 corregida_en[f["team_id"]] = t_f
             continue
         finales[f["team_id"]] = f   # ordenadas: queda la última de cada equipo
-    if not pitazo or not dep:
-        return alertas
+    base = {"ultimoDepositoPrevio": dep.strftime("%Y-%m-%dT%H:%M:%SZ")}
     if not finales:
-        texto = ("ninguna versión del once se capturó antes del pitazo: no había once con que rehacer; "
-                 "apertura caída por un once que llegó tarde, no un aviso ignorado")
-        return [{**a, "momento": "tardio", "onceFinalEn": None,
-                 "ultimoDepositoPrevio": dep.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                 "detalle": f"{a['detalle']} [{texto}]"} if a.get("codigo") == "DTP-REHACER" else a
-                for a in alertas]
+        return {"campos": {**base, "momento": "tardio", "onceFinalEn": None},
+                "texto": ("ninguna versión del once se capturó antes del pitazo: no había once con que rehacer; "
+                          "apertura caída por un once que llegó tarde, no un aviso ignorado")}
     t = max(_utc(f["capturada_en"]) for f in finales.values())
     piso = grilla_rehacer(pitazo)[1]
     limite = pitazo - timedelta(minutes=piso)
@@ -4263,16 +4289,10 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> lis
     else:
         momento, texto = "sinRehacer", (f"el once final llegó a las {hora}, {antes} min antes del pitazo, y el "
                                         "parte no se volvió a depositar después: la corrida de rehacer no lo tomó")
-    out = []
-    for a in alertas:
-        if a.get("codigo") == "DTP-REHACER":
-            a = {**a, "momento": momento, "onceFinalEn": t.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                 "ultimoDepositoPrevio": dep.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                 **({"formacionCorregidaEn": t_corr.strftime("%Y-%m-%dT%H:%M:%SZ")}
-                    if t_corr and momento == "tardio" and t <= dep and corregida else {}),
-                 "detalle": f"{a['detalle']} [{texto}]"}
-        out.append(a)
-    return out
+    campos = {**base, "momento": momento, "onceFinalEn": t.strftime("%Y-%m-%dT%H:%M:%SZ"),
+              **({"formacionCorregidaEn": t_corr.strftime("%Y-%m-%dT%H:%M:%SZ")}
+                 if t_corr and momento == "tardio" and t <= dep and corregida else {})}
+    return {"campos": campos, "texto": texto}
 
 
 def dto(fixture_id: int) -> dict | None:
