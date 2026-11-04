@@ -1120,6 +1120,23 @@ _RAIZ = __import__("os").path.dirname(__import__("os").path.dirname(__import__("
     __import__("os").path.abspath(__file__))))
 
 
+# LA CALIBRACIÓN ACEPTA UN NÚCLEO DE HASTA 6 HORAS (04/11/2026, incidencia
+# 1206, tras la 1149): un veredicto nuevo cambia la huella y el primer pedido
+# rehacía el núcleo en frío (60-120 s, con 5 subagentes de partes colgados
+# detrás del candado). La tabla cambia un caso por veredicto: para leerla
+# antes de la espina, la de hace unas horas es la misma. Aprendizaje sigue
+# exigiendo la huella al día.
+CALIBRACION_VIEJA_S = float(os.environ.get("SAD_CALIBRACION_VIEJA_S", "21600") or "0")
+
+
+def _nucleo_reciente(limite: int) -> dict:
+    with _INV_LOCK:
+        hit = _INV_CACHE.get((limite, ""))
+    if hit and CALIBRACION_VIEJA_S > 0 and time.monotonic() - hit[0] < CALIBRACION_VIEJA_S:
+        return hit[2]
+    return _nucleo(limite, "")
+
+
 def calibracion_espina(limite: int = 400) -> dict:
     """Lo que el analista lee ANTES de escribir su espina: cuánto acierta la
     espina de la tarjeta por nivel de riesgo y fuerza, cuánto acierta él
@@ -1132,7 +1149,7 @@ def calibracion_espina(limite: int = 400) -> dict:
     las mismas que las del núcleo de Aprendizaje sin cohorte, con su huella:
     un veredicto nuevo o un cambio de estado la rehace, y el candado hace que
     los pedidos simultáneos esperen al primero y lean lo guardado."""
-    metricas = _nucleo(limite, "")["metricas"]
+    metricas = _nucleo_reciente(limite)["metricas"]
     esp = metricas.get("espina") or {}
     return {
         "generadoEn": efedb.ahora(),

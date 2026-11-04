@@ -2641,6 +2641,13 @@ def main():
           and _feb({"equipos": {"a": {"fuera": [{"nombre": "S. De la Rosa", "estado": "baja"}]}},
                     "tde": {"bloques": [{"equipo": "a", "reasignacion": {"siRecibePrimero": {
                         "nota": "sin De la Rosa, el banco es corto"}}}]}}) == [], rec_1051["faltan"])
+    check("1210: «Weverton y Carlos Vinícius suspendidos» en una frase con «banco» niega el uso (plural)",
+          _feb({"equipos": {"b": {"fuera": [{"nombre": "Weverton", "estado": "baja"}]}},
+                "dtp": {"bloques": [{"equipo": "b", "apertura": {"m1": {"senalXi":
+                    "Wallace y Enamorado al banco, arquero cambiado (Weverton y Carlos Vinícius suspendidos)"}}}]}})
+          == [] and len(_feb({"equipos": {"b": {"fuera": [{"nombre": "Weverton", "estado": "baja"}]}},
+                "dtp": {"bloques": [{"equipo": "b", "apertura": {"m1": {"senalXi":
+                    "Weverton al banco como recambio"}}}]}})) == 1, "")
     # LA VENTANA RELATIVA AL GOL Y LA VENTANA DE LA RAMA (veredictos del 17/10/2026)
     from backend.analisis.veredicto import _ventana as _vv, ventana_relativa as _vr
     check("«15-30' desde la ventaja» es relativa: no se lee como minutos 15-30",
@@ -4848,6 +4855,12 @@ def main():
     check("932: «L. Pratto» ×2 nunca juntos → posibleMismoQue; los dos «T. Palacios» que compartieron hoja, no",
           _f932[0].get("posibleMismoQue") == 6014 and _f932[1].get("posibleMismoQue") == 352477
           and "posibleMismoQue" not in _f932[2] and "posibleMismoQue" not in _f932[3], _f932)
+    # 1209 (04/11/2026, Always Ready): el defensa y el arquero con el mismo apellido no se marcan
+    _f1209 = [{"jugadorId": 372201, "nombre": "C. Rodriguez", "posicion": "Defensa"},
+              {"jugadorId": 404942, "nombre": "E. Rodriguez", "posicion": "Portero"}]
+    _mp(_f1209, lambda a, b: False)
+    check("1209: un arquero y un defensa con el mismo apellido nunca juntos NO salen posibleMismoQue",
+          not any("posibleMismoQue" in f for f in _f1209), _f1209)
     from backend.analisis import bloque_f as _bf932
     _pl932 = [{"nombre": "L. Pratto", "jugadorId": 352477, "zona": "ATK", "rol": "TH"},
               {"nombre": "L. Pratto", "jugadorId": 6014, "zona": "ATK", "rol": "ROT"},
@@ -5623,16 +5636,25 @@ def main():
         return _casos_orig(*a, **k)
     _ttl_cal = _lcal.INVENTARIO_TTL_S
     _lcal.INVENTARIO_TTL_S = 600
+    _huella_orig = _lcal._huella
     try:
         calibracion_espina()                 # el primero arma el núcleo
         _lcal._casos = _contar_casos
         _cal2 = calibracion_espina()         # el segundo lo lee
+        # 1206: un veredicto nuevo (otra huella) no hace que la calibración
+        # rehaga el núcleo en frío: lee el de hace menos de 6 h
+        _lcal._huella = lambda: ("otra", "huella")
+        _cal3 = calibracion_espina()
+        _n_tras_huella = _n_casos[0]
     finally:
+        _lcal._huella = _huella_orig
         _lcal._casos, _lcal.INVENTARIO_TTL_S = _casos_orig, _ttl_cal
         _lcal._INV_CACHE.clear()
     check("1149: la calibración sale del núcleo guardado: el segundo pedido no rehace los casos y da lo mismo",
           _n_casos[0] == 0 and _cal2["tarjeta"] == _cal["tarjeta"]
           and _cal2["analistaPorLectura"] == _cal["analistaPorLectura"], _n_casos)
+    check("1206: con la huella cambiada (un veredicto nuevo) la calibración lee el núcleo reciente, no lo rehace",
+          _n_tras_huella == 0 and _cal3["tarjeta"] == _cal["tarjeta"], _n_tras_huella)
     check("GET de calibración: la tabla de la tarjeta, la del analista por lectura y cómo leerla",
           set(_cal) >= {"tarjeta", "analistaPorLectura", "comoLeerlo"}
           and set((_cal["tarjeta"] or {})) >= {"porFuerza", "porNivel", "analistaLaSigue", "analistaVaContra", "partido"}, _cal)

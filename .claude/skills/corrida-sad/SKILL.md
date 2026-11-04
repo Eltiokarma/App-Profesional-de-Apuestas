@@ -54,6 +54,9 @@ cae en la raíz del repo (17/10/2026).
    | 09:00 y 13:59 | 2 (hasta ~16:00) | 6 |
    | 14:00 y 02:59 | 3 (hasta la madrugada) | 14 |
 
+   Leé también `GET $B/analisis/cowork/espina/calibracion` UNA vez acá y
+   pasale el resultado a cada subagente en su encargo: que no la pida cada uno
+   (incidencia 1206, cinco subagentes colgados de la misma llamada).
    Si el mensaje del disparo trae otros parámetros de agenda, mandan esos,
    salvo un `limite` menor que 30 (ver arriba).
    Usá la misma consulta en el paso 4 → la lista de trabajo es
@@ -139,8 +142,8 @@ cae en la raíz del repo (17/10/2026).
 > - **La espina empieza en la tarjeta** (desde el 19/10): cada familia de
 >   `/burbujas` trae `espinaTarjeta` (la espina que da la tarjeta sola, `fuerte`
 >   o `debil`) y `GET /analisis/cowork/espina/calibracion` dice cuánto acierta y
->   quién gana cuando el analista la contradice. Leé la calibración UNA vez al
->   empezar la corrida. Con tarjeta FUERTE, la espina la sigue salvo que un
+>   quién gana cuando el analista la contradice. La calibración te llega en el
+>   encargo (la lee el orquestador); pedila solo si no vino. Con tarjeta FUERTE, la espina la sigue salvo que un
 >   skill (EFE, TDE, DTP, matriz) traiga un hecho de ESTE partido que la
 >   contradiga, y entonces el `porque` dice «contra la tarjeta porque…» (si no,
 >   el recibo lo cobra). Con tarjeta DÉBIL deciden los skills. El ensayo junta
@@ -284,7 +287,10 @@ casi siempre no hay nada que hacer.
 >    NUNCA se devuelve el DTP al nivel de la apertura para que se calle
 >    HERENCIA-DTP: eso deja el DTP más viejo que el once.
 > 5. `POST $B/analisis/cowork` con el cuerpo ENTERO (el POST reemplaza; la
->    cadena conserva la primera apertura, eso no se toca). Leé el recibo:
+>    cadena conserva la primera apertura, eso no se toca). El cuerpo es la
+>    respuesta del GET con tus cambios, **`entrada` incluida**: ahí viajan los
+>    eventos del timeline y los pronósticos de la cadena, y sacarla los borra
+>    (incidencia 1201; el GET re-depositado tal cual no pierde nada). Leé el recibo:
 >    DTP-REHACER tiene que haber desaparecido de `alertas` en el GET
 >    siguiente; si sigue, decí por qué (`contraElOnce.motivos`).
 > 6. Después del pitazo NO deposites: decilo. Respuesta final: qué cambió
