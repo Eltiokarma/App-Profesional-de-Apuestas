@@ -778,8 +778,12 @@ conversación se pierde en la siguiente.
    releer), la de partes a 389 mil y 2.715 USD acumulados, y rehacer gastaba
    ~0,30 USD por cada uno de sus 71 disparos diarios vacíos. Se rotaron las
    cuatro el 03/11 y desde entonces una rutina de esta sesión de trabajo
-   («SAD · rotar sesiones fijas de las rutinas», `trig_0156fv2ZZpxW5z1rgo3pbeXN`,
-   03:17 de Lima TODOS los días) rota la que pase de 150 mil tokens. Medido en
+   («SAD · rotar sesiones fijas de las rutinas (v2)», `trig_015FqQ7fuvPtKmJfqmB1aL1E`,
+   03:17 de Lima TODOS los días, en su PROPIA sesión fija
+   `session_01WwsfbVU6T15uLMLwCcCFfe` desde el 04/11 —antes disparaba en la
+   conversación de trabajo, ya cerrada: `trig_0156fv2ZZpxW5z1rgo3pbeXN`
+   desactivada—; la misma sesión lleva la medición de `rolesVsGrid` del 05/11,
+   `trig_01Hvq4UW8N1xCCLSXDwDkhHF`) rota la que pase de 150 mil tokens. Medido en
    la primera noche: una sesión nueva arranca en ~90 mil tokens (sistema,
    herramientas, CLAUDE.md); rehacer suma ~3.500 por disparo vacío (~250 mil
    por día) y cada disparo vacío costó ~0,10 USD con la sesión chica (antes
