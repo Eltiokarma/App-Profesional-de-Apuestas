@@ -26,7 +26,7 @@ const ETIQUETA_ESTADO: Record<string, string> = {
   pendiente: 'PENDIENTE', en_revision: 'EN REVISIÓN', aplicada: 'APLICADA', descartada: 'DESCARTADA',
 }
 
-type Pestana = 'skills' | 'metricas' | 'derrotas' | 'cuarentena' | 'sinSkill'
+type Pestana = 'skills' | 'buscar' | 'metricas' | 'derrotas' | 'cuarentena' | 'sinSkill'
 const POR_PAGINA = 20
 
 /** REORDENADA EL 25/10/2026 (usuario: «no encuentro nada, todo se ve
@@ -70,6 +70,7 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
   const cuar = d.enCuarentena?.cuantas ?? 0
   const pestanas: [Pestana, string][] = [
     ['skills', `Lecciones por skill · ${pendientesTotal} pend.`],
+    ['buscar', 'Buscar caso'],
     ['metricas', 'Métricas · confianza'],
     ['derrotas', 'Derrotas del favorito'],
     ...(cuar ? [['cuarentena', `Cuarentena · ${cuar}`] as [Pestana, string]] : []),
@@ -160,6 +161,8 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
           )
       )}
 
+      {pestana === 'buscar' && <BuscarCaso recarga={recarga} onCambio={recargar} />}
+
       {pestana === 'metricas' && <Metricas d={d} />}
 
       {pestana === 'derrotas' && <DerrotasDelFavorito cohorte={cohorte} />}
@@ -198,16 +201,16 @@ function TarjetaSkill({ sk, activa, onClick }: { sk: SkillAprendizaje; activa: b
 
 /** Las lecciones de a 20: un filtro (skill · estado · cuarentena) pide su
  *  página al backend, «ver más» trae la siguiente. */
-function ListaLecciones({ cohorte, skill, de, estado, recarga, onCambio }: {
-  cohorte: string; skill?: string; de?: 'cuarentena' | 'sinSkill'; estado?: string; recarga: number; onCambio: () => void
+function ListaLecciones({ cohorte, skill, de, estado, buscar, recarga, onCambio }: {
+  cohorte: string; skill?: string; de?: 'cuarentena' | 'sinSkill'; estado?: string; buscar?: string; recarga: number; onCambio: () => void
 }) {
   const [items, setItems] = useState<LeccionItem[]>([])
   const [total, setTotal] = useState(0)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
-  const filtro = `${cohorte}|${skill ?? ''}|${de ?? ''}|${estado ?? ''}`
+  const filtro = `${cohorte}|${skill ?? ''}|${de ?? ''}|${estado ?? ''}|${buscar ?? ''}`
   const pedir = (desde: number, cuantas: number) =>
-    getDataSource().lecciones({ cohorte, skill, de, estado, desde, cuantas })
+    getDataSource().lecciones({ cohorte, skill, de, estado, buscar, desde, cuantas })
   // un cambio de filtro empieza de cero; una recarga (lección movida) rehace
   // lo que ya estaba a la vista, sin volver a la primera página
   const visibles = useRef(POR_PAGINA)
@@ -258,6 +261,39 @@ function ListaLecciones({ cohorte, skill, de, estado, recarga, onCambio }: {
         )}
       </div>
     </div>
+  )
+}
+
+/** BUSCAR UN CASO (04/11/2026, usuario: «estoy scrolleando y no encuentro nada»):
+ *  por número de partido o nombre de equipo, en TODA la historia y con las
+ *  cuarentenas incluidas. Es la forma de llegar a un caso viejo para ponerle o
+ *  quitarle la cuarentena: la lista por skill solo carga los 400 más nuevos. */
+function BuscarCaso({ recarga, onCambio }: { recarga: number; onCambio: () => void }) {
+  const [texto, setTexto] = useState('')
+  const [q, setQ] = useState('')
+  const valido = texto.split(/[\s,]+/).some((w) => /^\d+$/.test(w) || w.length >= 3)
+  return (
+    <Seccion titulo="BUSCAR UN CASO" nota="Número de partido (fixture) o nombre de equipo. Varios a la vez, separados por espacio o coma. Busca en toda la historia, cuarentenas incluidas.">
+      <form onSubmit={(e) => { e.preventDefault(); if (valido) setQ(texto.trim()) }}
+        style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+        <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="p. ej. 1631509 1492426 o Manta"
+          inputMode="search" enterKeyHint="search"
+          style={{ flex: '1 1 220px', minWidth: 0, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--t1)', font: '500 12px var(--mono)' }} />
+        <button type="submit" disabled={!valido}
+          style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid var(--accent)', background: valido ? 'var(--bg3)' : 'transparent', color: valido ? 'var(--t1)' : 'var(--t3)', font: '700 11.5px var(--sans)', cursor: valido ? 'pointer' : 'default' }}>
+          Buscar
+        </button>
+        {q && (
+          <button type="button" onClick={() => { setQ(''); setTexto('') }}
+            style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--line)', background: 'transparent', color: 'var(--t2)', font: '600 11.5px var(--sans)', cursor: 'pointer' }}>
+            Limpiar
+          </button>
+        )}
+      </form>
+      {q
+        ? <ListaLecciones cohorte="" buscar={q} recarga={recarga} onCambio={onCambio} />
+        : <div style={{ font: '500 11px var(--sans)', color: 'var(--t3)' }}>Cada resultado es una lección del caso; la cuarentena se pone desde cualquiera de ellas (abrir la lección → «Poner en cuarentena», con 🔑).</div>}
+    </Seccion>
   )
 }
 

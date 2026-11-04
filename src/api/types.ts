@@ -2410,6 +2410,8 @@ export interface LeccionesParams {
   de?: '' | 'cuarentena' | 'sinSkill'
   desde?: number
   cuantas?: number
+  /** fixtures o nombres separados por espacio: busca en toda la historia, cuarentenas incluidas */
+  buscar?: string
 }
 
 export interface InventarioLecciones {

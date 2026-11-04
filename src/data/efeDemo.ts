@@ -436,7 +436,14 @@ function veredictoDemo(fixtureId: number, marcador: string): VeredictoParte {
 export function paginarLecciones(inv: InventarioLecciones, p?: LeccionesParams): InventarioLecciones {
   if (!p || (!p.resumen && !p.cuantas)) return inv
   const normales = inv.porSkill.flatMap((s) => s.items).concat(inv.sinSkill.items)
-  const fuente = p.de === 'cuarentena' ? (inv.enCuarentena?.items ?? []) : p.de === 'sinSkill' ? inv.sinSkill.items : normales
+  const plano = (x: string) => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  const palabras = (p.buscar ?? '').split(/[\s,]+/).filter(Boolean)
+  // el mismo criterio que lecciones.coincide_busqueda del backend
+  const coincide = (i: LeccionItem) => palabras.some((w) => /^\d+$/.test(w)
+    ? Number(w) === i.fixtureId
+    : w.length >= 3 && plano([i.partido, i.equipo, i.rival].join(' ')).includes(plano(w)))
+  const fuente = palabras.length ? normales.concat(inv.enCuarentena?.items ?? []).filter(coincide)
+    : p.de === 'cuarentena' ? (inv.enCuarentena?.items ?? []) : p.de === 'sinSkill' ? inv.sinSkill.items : normales
   const pool = fuente.filter((i) => (!p.skill || i.skill === p.skill) && (!p.estado || i.estado === p.estado))
   const desde = Math.max(0, p.desde ?? 0)
   return {

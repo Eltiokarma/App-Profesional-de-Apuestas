@@ -980,8 +980,27 @@ def _calcular_nucleo(limite: int, clave_cohorte: str) -> dict:
             "poblacion": poblacion, "metricas": metricas}
 
 
+def coincide_busqueda(item: dict, buscar: str) -> bool:
+    """El buscador de Aprendizaje (04/11/2026, usuario: «estoy scrolleando y no
+    encuentro nada»): cada palabra es un número de fixture o un pedazo de nombre
+    (partido, equipo o rival, sin tildes ni mayúsculas). Basta que coincida UNA:
+    se pegan varios fixtures separados por espacio o coma y salen todos."""
+    import unicodedata
+
+    def plano(x: str) -> str:
+        return "".join(c for c in unicodedata.normalize("NFD", (x or "").lower()) if unicodedata.category(c) != "Mn")
+    texto = plano(" ".join(str(item.get(k) or "") for k in ("partido", "equipo", "rival")))
+    for palabra in [w for w in buscar.replace(",", " ").split() if w]:
+        if palabra.isdigit():
+            if int(palabra) == item.get("fixtureId"):
+                return True
+        elif len(palabra) >= 3 and plano(palabra) in texto:
+            return True
+    return False
+
+
 def inventario(skill: str = "", estado: str = "", limite: int = 400, cohorte: str = "",
-               resumen: bool = False, de: str = "", desde: int = 0, cuantas: int = 0) -> dict:
+               resumen: bool = False, de: str = "", desde: int = 0, cuantas: int = 0, buscar: str = "") -> dict:
     """Todo lo aprendido, por skill, con las métricas de la población ciega.
 
     `cohorte`: "" = todas; "vigente" = la del proceso actual; o una clave
@@ -993,7 +1012,9 @@ def inventario(skill: str = "", estado: str = "", limite: int = 400, cohorte: st
     Para la pantalla (25/10/2026): `resumen` no manda ninguna lección (solo
     los conteos), y `cuantas` > 0 pagina las lecciones de `items` desde
     `desde`, sacadas de `de` ("" = las normales · `cuarentena` · `sinSkill`)
-    con el filtro de skill y estado; `total` dice cuántas hay en ese filtro."""
+    con el filtro de skill y estado; `total` dice cuántas hay en ese filtro.
+    `buscar` (04/11/2026) pagina las que coinciden por fixture o nombre, de
+    lo normal y de la cuarentena juntas (`coincide_busqueda`)."""
     from backend.analisis.parte import COHORTE, COHORTES
     clave_cohorte = COHORTE if cohorte == COHORTE_VIGENTE else cohorte
     nucleo = _nucleo(limite, clave_cohorte)
@@ -1006,6 +1027,9 @@ def inventario(skill: str = "", estado: str = "", limite: int = 400, cohorte: st
     paginar = cuantas > 0 or resumen
     if paginar:
         fuente = {"cuarentena": en_cuarentena, "sinSkill": [i for i in todos if not i["skill"]]}.get(de, todos)
+        if buscar.strip():
+            # el buscador mira todo: lo normal y lo que ya está en cuarentena
+            fuente = [i for i in list(todos) + list(en_cuarentena) if coincide_busqueda(i, buscar)]
         pool = [i for i in fuente
                 if (not skill or i["skill"] == skill)
                 and (not estado or i["estado"] == estado)]

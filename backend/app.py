@@ -2686,7 +2686,9 @@ def cowork_lecciones(skill: str = Query(default=""), estado: str = Query(default
                      resumen: bool = Query(default=False, description="sin lecciones: solo conteos y métricas"),
                      de: str = Query(default="", description="'' = lecciones · 'cuarentena' · 'sinSkill' (con cuantas)"),
                      desde: int = Query(default=0, ge=0),
-                     cuantas: int = Query(default=0, ge=0, le=500, description="0 = todas; > 0 pagina `items`")):
+                     cuantas: int = Query(default=0, ge=0, le=500, description="0 = todas; > 0 pagina `items`"),
+                     buscar: str = Query(default="", max_length=200,
+                                         description="fixtures o nombres separados por espacio (con `cuantas`)")):
     """Lo que el bucle aprendió, indexado por skill (fase C).
 
     El CONTENIDO de cada lección se deriva del veredicto al leer —no hay copia
@@ -2696,8 +2698,12 @@ def cowork_lecciones(skill: str = Query(default=""), estado: str = Query(default
     Las métricas salen SOLO de la población acreditable (ciega + PRE) y con su
     `n` a la vista; las otras poblaciones se cuentan aparte y no se suman."""
     from backend.analisis import lecciones
+    # el buscador mira TODA la historia: con el límite de 400 veredictos un caso
+    # de septiembre no aparecía (LDU 1631509, 04/11/2026)
+    if buscar.strip() and limite == 400:
+        limite = 2000
     return lecciones.inventario(skill, estado, limite, cohorte, resumen=resumen, de=de,
-                                desde=desde, cuantas=cuantas)
+                                desde=desde, cuantas=cuantas, buscar=buscar)
 
 
 @app.get(API + "/analisis/simulacion")
