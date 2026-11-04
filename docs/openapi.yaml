@@ -1883,6 +1883,44 @@ components:
                     fixtureId: { type: integer, nullable: true }
                     pitazo: { type: string, nullable: true }
                     banca: { type: number }
+        trasFallos:
+          type: object
+          description: >
+            CRITERIO DE CONTACTO (04/11/2026): el acierto del elegido justo después de k fallos seguidos, sobre
+            las apuestas cerradas en orden de pitazo, contra el promedio. Se toma en serio con 100+ casos tras
+            3 fallos, una tasa de 65 %+ y el intervalo entero sobre el promedio (docs/METODO_APUESTA.md). Se mide
+            cada fin de semana (`python -m backend.contacto`).
+          properties:
+            base:
+              type: object
+              properties:
+                n: { type: integer }
+                aciertos: { type: integer }
+                tasa: { type: number, nullable: true }
+                intervalo: { type: array, nullable: true, items: { type: number }, description: 'Wilson 95 %, 0-1' }
+            porK:
+              type: array
+              items:
+                type: object
+                properties:
+                  k: { type: integer, description: 'fallos seguidos antes del partido' }
+                  n: { type: integer }
+                  aciertos: { type: integer }
+                  tasa: { type: number, nullable: true }
+                  intervalo: { type: array, nullable: true, items: { type: number } }
+            contacto:
+              type: object
+              properties:
+                k: { type: integer }
+                nMinimo: { type: integer }
+                tasaMinima: { type: number }
+                n: { type: integer }
+                tasa: { type: number, nullable: true }
+                intervalo: { type: array, nullable: true, items: { type: number } }
+                faltan: { type: integer }
+                cumple: { type: boolean }
+                estado: { type: string, enum: [en_observacion, sin_contacto, contacto] }
+                texto: { type: string }
         porVersion:
           type: array
           items:

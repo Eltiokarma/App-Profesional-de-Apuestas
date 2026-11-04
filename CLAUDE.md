@@ -39,6 +39,7 @@ python -m backend.test_burbuja   # reventón de burbuja: mismos vectores dorados
 python -m backend.test_jev       # adaptador de Jev (System One): sin clave corre simulado y no decide
 python -m backend.test_coherencia # guardrail semántico del parte (Jev): etiqueta la prosa, el código compara con el número
 python -m backend.test_simulacion # simulación de apuesta: plana (control), Kelly entero/½/¼ y martingala desde el 28/10/2026, con la versión de cada skill
+python -m backend.contacto        # criterio de contacto (acierto tras 3 fallos seguidos) desde la API con el token de Cowork; lo corre la rutina del lunes (docs/METODO_APUESTA.md)
 python -m backend.test_modo_fallo # modo de fallo del veredicto (Jev): etiqueta para el dossier, no toca población ni métricas
 python -m backend.backtest_burbuja --padron --calibrar # backtest del reventón en las ligas importantes: tasa por riesgo, lift por señal, regla del nivel, por liga, y la logística que propone los puntos (--horizonte/--liga/--muestra/--json; en el servidor: GET /analisis/burbujas/backtest?calibrar=true, maestro)
 python -m backend.test_backtest_burbuja # anti-fuga y conteos del backtest, sobre la demo
@@ -446,7 +447,7 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   en sus últimos 50 partidos acertó menos de lo que pedía la cuota (z < −0,5,
   15+ partidos) y sigue anotando hasta que se recupera. No busca valor contra
   el mercado: lo que se mide es el win rate contra lo que pide la cuota, y
-  Kelly queda como alarma, no como meta (usuario, 03/11). Las otras series —plana (control, 1 u al elegido), plana solo con el
+  Kelly queda como alarma, no como meta (usuario, 03/11). El **criterio de contacto** (`trasFallos`, 04/11/2026): el acierto tras k fallos seguidos, que es lo que la martingala cobra; se toma en serio con 100+ casos tras 3 fallos, 65 %+ y el intervalo sobre el promedio, regla fija, medida cada lunes. Las otras series —plana (control, 1 u al elegido), plana solo con el
   elegido a 60 %+ (`plana60`, 29/10/2026, usuario: el tramo alto de confianza,
   ¿además de acertar gana a su cuota?), Kelly entero, ½ y
   ¼ (f* = (p·c − 1)/(c − 1) sobre NUESTRAS probabilidades, a la selección con

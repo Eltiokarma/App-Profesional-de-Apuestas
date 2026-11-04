@@ -856,6 +856,15 @@ conversación se pierde en la siguiente.
    más. **Pendiente**: volver a medir con un mes sin huecos (los datos del
    domingo 01/11 desde las 17:00 al lunes 02/11 a las 12:00 se perdieron).
 
+23. **El criterio de contacto de la martingala** (04/11/2026, usuario: «las
+   gráficas son muy reveladoras… hay que medirlo cada fin de semana»). En
+   nuestros partes, tras 3 fallos seguidos se acertó 20 de 30; en la base, no.
+   Regla fija (100+ casos tras 3 fallos, 65 %+, intervalo sobre el promedio):
+   `trasFallos` en la simulación y la rutina «SAD · criterio de contacto
+   (semanal)» `trig_011ha3sLwm2qqjCpfpHLmFYx`, lunes 07:43 de Lima, en la sesión
+   de trabajo `session_01WwsfbUajmjoAmjLG4pPY2i`. Si esa sesión se archiva, la
+   rutina se rehace en otra con el repo. `docs/METODO_APUESTA.md`.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel

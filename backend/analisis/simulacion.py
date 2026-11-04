@@ -83,6 +83,18 @@ PROPORCION = 0.01
 FRENO_VENTANA = 50     # últimos partidos cerrados del tramo que se miran
 FRENO_MINIMO = 15      # con menos, el tramo no se juzga: se apuesta
 FRENO_Z = 0.5          # tolerancia, en errores estándar, antes de pausar
+# CRITERIO DE CONTACTO (04/11/2026, usuario: «las gráficas de la martingala son
+# muy reveladoras»): ¿después de k fallos seguidos del elegido acertamos más que
+# el promedio? En los 374 partes del 15/09-01/11 tras 3 fallos se acertó 20 de 30
+# (66,7 %) contra el 55,6 %; en los 2.638 partidos de liga de la base, el
+# favorito de la casa tras 3 fallos acertó el 51 %. Se toma en serio con
+# `CONTACTO_N`+ casos tras `CONTACTO_K` fallos, una tasa de `CONTACTO_TASA`+ y el
+# intervalo de confianza entero por encima del promedio. Fijado ANTES de mirar
+# los datos nuevos: no se mueve para que se cumpla (docs/METODO_APUESTA.md).
+TRAS_FALLOS_K = (1, 2, 3, 4)
+CONTACTO_K = 3
+CONTACTO_N = 100
+CONTACTO_TASA = 0.65
 SKILLS = ("sad-analysis", "efe-clasificador", "teorema-del-echado", "diagnostico-tactico")
 
 # Hora (UTC) en que la versión llegó a la cuenta del usuario, cuando se sabe.
@@ -179,6 +191,52 @@ def _elegido(p: dict) -> str:
 def _mejor_kelly(p: dict, cuotas: dict) -> tuple[str, float]:
     s = max(CLAVES, key=lambda k: kelly(p[k], cuotas[k]))
     return s, kelly(p[s], cuotas[s])
+
+
+def _wilson(k: int, n: int, z: float = 1.96) -> list[float] | None:
+    if not n:
+        return None
+    p = k / n
+    d = 1 + z * z / n
+    c = p + z * z / (2 * n)
+    m = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
+    return [round((c - m) / d, 4), round((c + m) / d, 4)]
+
+
+def tras_fallos(secuencia: list[bool]) -> dict:
+    """Con la secuencia de aciertos del elegido en orden de pitazo: cuánto se
+    acierta en general y justo después de k fallos seguidos, y cómo va el
+    criterio de contacto. Los simultáneos van por pitazo y fixture: el orden
+    entre ellos no lo sabe nadie de antemano, y ninguno ve el resultado del otro."""
+    n = len(secuencia)
+    k_base = sum(1 for g in secuencia if g)
+    base = {"n": n, "aciertos": k_base, "tasa": round(k_base / n, 4) if n else None,
+            "intervalo": _wilson(k_base, n)}
+    filas = []
+    for k in TRAS_FALLOS_K:
+        casos = [secuencia[i] for i in range(k, n) if not any(secuencia[i - k:i])]
+        a = sum(1 for g in casos if g)
+        filas.append({"k": k, "n": len(casos), "aciertos": a,
+                      "tasa": round(a / len(casos), 4) if casos else None, "intervalo": _wilson(a, len(casos))})
+    c = next(f for f in filas if f["k"] == CONTACTO_K)
+    cumple = (c["n"] >= CONTACTO_N and c["tasa"] is not None and c["tasa"] >= CONTACTO_TASA
+              and base["tasa"] is not None and c["intervalo"][0] > base["tasa"])
+    if cumple:
+        texto = (f"CONTACTO: tras {CONTACTO_K} fallos seguidos se acierta el {100 * c['tasa']:.1f} % en {c['n']} casos, "
+                 f"con el intervalo entero sobre el promedio ({100 * base['tasa']:.1f} %): tomarlo en serio")
+    elif c["n"] < CONTACTO_N:
+        texto = (f"en observación: {c['n']} de {CONTACTO_N} casos tras {CONTACTO_K} fallos"
+                 + (f", acierta el {100 * c['tasa']:.1f} % (pide {100 * CONTACTO_TASA:.0f} % y el intervalo sobre el "
+                    f"promedio)" if c["tasa"] is not None else ""))
+    else:
+        texto = (f"sin contacto: con {c['n']} casos tras {CONTACTO_K} fallos se acierta el {100 * c['tasa']:.1f} %"
+                 f" (pide {100 * CONTACTO_TASA:.0f} % y el intervalo sobre el promedio)")
+    return {"base": base, "porK": filas,
+            "contacto": {"k": CONTACTO_K, "nMinimo": CONTACTO_N, "tasaMinima": CONTACTO_TASA,
+                         "n": c["n"], "tasa": c["tasa"], "intervalo": c["intervalo"],
+                         "faltan": max(0, CONTACTO_N - c["n"]), "cumple": cumple,
+                         "estado": "contacto" if cumple else ("en_observacion" if c["n"] < CONTACTO_N else "sin_contacto"),
+                         "texto": texto}}
 
 
 def freno_tramo(historia) -> dict:
@@ -377,6 +435,8 @@ def simular(apuestas: list[dict]) -> dict:
 
     cerradas = [f for f in filas if f["estado"] == "cerrada"]
     return {
+        # el criterio de contacto: acierto del elegido justo después de k fallos seguidos
+        "trasFallos": tras_fallos([f["resultado"] == f["elegido"] for f in cerradas]),
         "desde": DESDE, "bancaInicial": BANCA_INICIAL, "unidad": UNIDAD,
         "cerradas": len(cerradas), "pendientes": len(filas) - len(cerradas),
         "aciertos": sum(1 for f in cerradas if f["resultado"] == f["elegido"]),

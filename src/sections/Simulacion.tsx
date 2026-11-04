@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ApuestaSimulada, EstrategiaClave, EstrategiaSimulada, FrenoTramo, Resultado1x2, SimulacionApuesta } from '../api/types'
+import type { ApuestaSimulada, EstrategiaClave, EstrategiaSimulada, FrenoTramo, Resultado1x2, SimulacionApuesta, TrasFallos } from '../api/types'
 import { getDataSource } from '../services/datasource'
 import { useAsync } from '../services/useAsync'
 
@@ -107,6 +107,8 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
       </div>
 
       {d.porVersion.length > 0 && <PorVersion d={d} visibles={visibles.map((v) => v.clave)} isMobile={isMobile} />}
+
+      {d.trasFallos && d.trasFallos.base.n > 0 && <TablaTrasFallos t={d.trasFallos} isMobile={isMobile} />}
 
       <div style={{ ...rotulo, margin: '18px 0 8px' }}>Apuestas · la más nueva primero</div>
       {d.apuestas.length ? (
@@ -291,6 +293,62 @@ function GraficaBanca({ cerradas, series, inicial }: {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+/** CRITERIO DE CONTACTO (04/11/2026): ¿después de varios fallos seguidos acertamos más? Es lo que
+ *  la martingala cobra. La regla para tomarlo en serio está fijada de antemano y no se mueve. */
+function TablaTrasFallos({ t, isMobile }: { t: TrasFallos; isMobile: boolean }) {
+  const c = t.contacto
+  const ic = (i: [number, number] | null) => (i ? `${num(100 * i[0], 0)}-${num(100 * i[1], 0)} %` : '—')
+  const tasa = (x: number | null) => (x == null ? '—' : `${num(100 * x, 1)} %`)
+  const color = c.estado === 'contacto' ? 'var(--up)' : c.estado === 'sin_contacto' ? 'var(--t2)' : 'var(--mark)'
+  const celda: React.CSSProperties = { padding: '5px 6px', textAlign: 'right' }
+  return (
+    <div style={{ ...tarjeta, marginTop: 12 }}>
+      <div style={{ ...rotulo, marginBottom: 4 }}>Criterio de contacto · acierto tras fallos seguidos</div>
+      <div style={{ font: '500 11px var(--sans)', color: 'var(--t3)', marginBottom: 8, lineHeight: 1.45 }}>
+        Es lo que la martingala cobra: si después de varios fallos acertamos más que el promedio. Se toma en serio con{' '}
+        {c.nMinimo}+ casos tras {c.k} fallos, {num(100 * c.tasaMinima, 0)} %+ de acierto y el intervalo entero sobre el promedio.
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%', font: isMobile ? '500 10px var(--mono)' : '500 11px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+          <thead>
+            <tr style={{ color: 'var(--t3)' }}>
+              <th style={{ ...celda, textAlign: 'left', fontWeight: 600 }}>después de</th>
+              <th style={{ ...celda, fontWeight: 600 }}>casos</th>
+              <th style={{ ...celda, fontWeight: 600 }}>acierta</th>
+              <th style={{ ...celda, fontWeight: 600 }}>IC 95 %</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style={{ borderTop: '1px solid var(--line)' }}>
+              <td style={{ ...celda, textAlign: 'left', color: 'var(--t1)', fontWeight: 700 }}>promedio</td>
+              <td style={celda}>{t.base.n}</td>
+              <td style={{ ...celda, color: 'var(--t1)', fontWeight: 700 }}>{tasa(t.base.tasa)}</td>
+              <td style={celda}>{ic(t.base.intervalo)}</td>
+            </tr>
+            {t.porK.map((f) => {
+              const arriba = f.tasa != null && t.base.tasa != null && f.tasa > t.base.tasa
+              return (
+                <tr key={f.k} style={{ borderTop: '1px solid var(--line)', background: f.k === c.k ? 'var(--bg3)' : undefined }}>
+                  <td style={{ ...celda, textAlign: 'left', color: 'var(--t1)', fontWeight: f.k === c.k ? 700 : 500 }}>
+                    {f.k} fallo{f.k === 1 ? '' : 's'}
+                  </td>
+                  <td style={celda}>{f.n}</td>
+                  <td style={{ ...celda, fontWeight: 700, color: f.tasa == null ? 'var(--t3)' : arriba ? 'var(--up)' : 'var(--down)' }}>{tasa(f.tasa)}</td>
+                  <td style={celda}>{ic(f.intervalo)}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ marginTop: 8, font: '600 11px var(--sans)', color, lineHeight: 1.45 }}>
+        {c.estado === 'en_observacion' ? `En observación: ${c.n} de ${c.nMinimo} casos tras ${c.k} fallos (faltan ${c.faltan}).`
+          : c.estado === 'contacto' ? 'Contacto: el criterio se cumple. Tomarlo en serio.' : 'Sin contacto: con los casos suficientes, el criterio no se cumple.'}
+      </div>
     </div>
   )
 }
