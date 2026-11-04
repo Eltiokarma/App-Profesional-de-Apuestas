@@ -80,6 +80,38 @@ Sobre la simulación del sistema (desde el 28/10, con el tiempo real de la
 pantalla), el método queda en 125,59 con una caída máxima de 7,6 % y una sola
 pausa en 165 partidos.
 
+## El criterio de contacto (04/11/2026)
+
+El usuario: «me sigue sorprendiendo cómo crece la martingala en la
+simulación… las gráficas son muy reveladoras». Medido ese día:
+
+- En nuestros 374 partes (15/09-01/11), después de varios fallos seguidos del
+  elegido se acertó MÁS: tras 2 fallos 58,9 % (73 casos), tras 3 66,7 % (30) y
+  tras 4 80,0 % (10), contra un promedio de 55,6 %. Eso es lo que la martingala
+  cobra: ahí ganó +16,9 % por unidad apostada contra +2,5 % de la plana.
+- En los 2.638 partidos de liga de la base, con el favorito de la casa en
+  orden de fecha, NO aparece: tras 3 fallos 51,0 % (251 casos), tras 4 47,2 %
+  (123); la racha más larga fue de 10 y la martingala pura quiebra.
+- Los mismos 374 partes en otro orden (2.000 órdenes al azar): la martingala
+  termina bajo 50 o quiebra el 41 % de las veces.
+- 20 de 30 y 8 de 10, con un acierto de 55,6 %, salen por azar ~1 vez en 10.
+
+No se descarta ni se cree: **se mide con una regla fijada antes de mirar los
+datos nuevos**, que no se mueve para que se cumpla. **Contacto** = 100+ casos
+tras 3 fallos seguidos, acierto de 65 %+ y el intervalo de confianza (Wilson
+95 %) entero por encima del promedio. La cuenta es `simulacion.tras_fallos`
+sobre las apuestas cerradas de la simulación (desde el 28/10, en orden de
+pitazo), viaja en `trasFallos` de `GET /analisis/simulacion` y la sección
+Simulación la muestra en la tabla «Criterio de contacto».
+
+**Se mide cada fin de semana**: la rutina «SAD · criterio de contacto
+(semanal)» (`trig_011ha3sLwm2qqjCpfpHLmFYx`, lunes 07:43 de Lima, para que
+entren los partidos del domingo por la noche) corre `python -m backend.contacto`,
+que rearma las mismas apuestas desde la API con el token de Cowork (la
+simulación no está abierta a ese token) y reporta la tabla y el estado. El
+primer conteo, el 04/11: 9 casos tras 3 fallos desde el 28/10 (6 aciertos), a
+~9 por semana: el criterio se puede decidir hacia febrero de 2027.
+
 ## Qué falta
 
 - Volver a medirlo con un mes de datos y sin huecos (se perdieron los datos

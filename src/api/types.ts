@@ -2742,6 +2742,33 @@ export interface ApuestaSimulada {
   porEstrategia: Record<EstrategiaClave, { seleccion: Resultado1x2 | null; monto: number; ganancia: number | null; banca: number | null; linea: number | null; motivo: string }>
 }
 
+/** Acierto del elegido justo después de k fallos seguidos (criterio de contacto, 04/11/2026) */
+export interface TrasFallosFila {
+  k: number
+  n: number
+  aciertos: number
+  tasa: number | null
+  /** Wilson 95 %, 0-1 */
+  intervalo: [number, number] | null
+}
+
+export interface TrasFallos {
+  base: Omit<TrasFallosFila, 'k'>
+  porK: TrasFallosFila[]
+  contacto: {
+    k: number
+    nMinimo: number
+    tasaMinima: number
+    n: number
+    tasa: number | null
+    intervalo: [number, number] | null
+    faltan: number
+    cumple: boolean
+    estado: 'en_observacion' | 'sin_contacto' | 'contacto'
+    texto: string
+  }
+}
+
 export interface SimulacionApuesta {
   desde: string
   bancaInicial: number
@@ -2751,6 +2778,7 @@ export interface SimulacionApuesta {
   aciertos: number
   nota: string
   estrategias: EstrategiaSimulada[]
+  trasFallos: TrasFallos
   porVersion: { version: string; partidos: number; aciertos: number; estrategias: Partial<Record<EstrategiaClave, { apostado: number; ganancia: number; apuestas: number; roi: number | null }>> }[]
   apuestas: ApuestaSimulada[]
   excluidos: { fixtureId: number; pitazo: string; partido: { local: string; visita: string; liga: string }; motivo: string }[]

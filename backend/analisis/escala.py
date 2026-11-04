@@ -62,6 +62,14 @@ _INTERNACIONAL_RE = re.compile(r"uefa|conmebol|concacaf|fifa|caf |afc |recopa|le
                                r"intercontinental|libertadores|sudamericana", re.I)
 
 
+def es_copa_nacional(liga_id: int | None, nombre: str, internacionales: set[int]) -> bool:
+    """La regla de `copas_nacionales` para UN torneo, sin base: la usa también
+    quien la reconstruye desde la API (`backend.contacto`)."""
+    if liga_id in internacionales or liga_id in AMISTOSOS or _INTERNACIONAL_RE.search(nombre or ""):
+        return False
+    return es_copa(liga_id, nombre or "")
+
+
 def copas_nacionales(fixture_ids) -> dict[int, str]:
     """{fixture: nombre de la copa} de los que son de una COPA NACIONAL (29/10/2026,
     usuario: «no hay que contaminar las tablas»). Se analizan igual, pero no
@@ -82,10 +90,7 @@ def copas_nacionales(fixture_ids) -> dict[int, str]:
         for r in saddb.query("sad", "SELECT f.id, f.league_id, l.name FROM fixtures f "
                                     "LEFT JOIN leagues l ON l.id=f.league_id "
                                     f"WHERE f.id IN ({','.join('?' * len(ids))})", tuple(ids)):
-            if r["league_id"] in internacionales or r["league_id"] in AMISTOSOS \
-                    or _INTERNACIONAL_RE.search(r["name"] or ""):
-                continue
-            if es_copa(r["league_id"], r["name"] or ""):
+            if es_copa_nacional(r["league_id"], r["name"] or "", internacionales):
                 out[r["id"]] = r["name"] or f"liga {r['league_id']}"
     except Exception:  # noqa: BLE001 — sin la base no se marca nada
         return {}

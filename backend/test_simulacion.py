@@ -265,6 +265,59 @@ out = sim.simular(vuelta)
 ult = min(out["apuestas"], key=lambda a: -a["fixtureId"])["porEstrategia"]["proporcional"]
 check("freno: con las derrotas fuera de la ventana el tramo vuelve a apostar", ult["monto"] > 0, ult)
 
+# 12) CRITERIO DE CONTACTO (04/11/2026, usuario): acierto tras k fallos seguidos
+tf = sim.tras_fallos([True, False, True, False, False, True, False, False, False, True, False, False, False, False])
+pk = {f["k"]: f for f in tf["porK"]}
+check("tras 1 fallo: 3 de 9", pk[1]["n"] == 9 and pk[1]["aciertos"] == 3, pk[1])
+check("tras 2 fallos: 2 de 5", pk[2]["n"] == 5 and pk[2]["aciertos"] == 2, pk[2])
+check("tras 3 fallos: 1 de 2 (el 4.º fallo de la última racha también cuenta)", pk[3]["n"] == 2 and pk[3]["aciertos"] == 1, pk[3])
+check("tras 4 fallos: ninguno todavía", pk[4]["n"] == 0 and pk[4]["tasa"] is None and pk[4]["intervalo"] is None, pk[4])
+check("promedio: 4 de 14", tf["base"]["n"] == 14 and tf["base"]["aciertos"] == 4)
+check("con pocos casos queda en observación y dice cuántos faltan",
+      tf["contacto"]["estado"] == "en_observacion" and tf["contacto"]["faltan"] == sim.CONTACTO_N - 2, tf["contacto"])
+# 100 casos tras 3 fallos, todos aciertos, con un promedio de 25 %: contacto
+tf = sim.tras_fallos(([False] * 3 + [True]) * sim.CONTACTO_N)
+c3 = next(f for f in tf["porK"] if f["k"] == 3)
+check("contacto: 100+ casos, tasa ≥ 65 % y el intervalo entero sobre el promedio",
+      c3["n"] >= sim.CONTACTO_N and tf["contacto"]["cumple"] and tf["contacto"]["estado"] == "contacto", tf["contacto"])
+tf = sim.tras_fallos(([False] * 3 + [True, False]) * 120)
+check("100+ casos sin la tasa: sin contacto", tf["contacto"]["estado"] == "sin_contacto" and not tf["contacto"]["cumple"],
+      tf["contacto"])
+out = sim.simular([ap(600 + i, f"2026-10-30 {i:02d}:00:00", (60, 25, 15), (1.5, 4, 6),
+                      "local" if i % 4 == 3 else "visita") for i in range(12)])
+check("simular trae trasFallos sobre las cerradas (12 partidos, 9 casos tras 1 fallo)",
+      out["trasFallos"]["base"]["n"] == 12 and out["trasFallos"]["porK"][0]["n"] == 9, out["trasFallos"]["porK"][0])
+
+# la medición del fin de semana (backend.contacto) arma las apuestas con los MISMOS filtros, sin red
+from backend import contacto  # noqa: E402
+def _dato(fid, fecha, creado, liga_id=135, liga="Serie A", probs=(50, 27, 23), cu=(2.0, 3.4, 3.9),
+          goles=(2, 1), cuarentena=None, real=None):
+    return {"parte": {"creadoEn": creado, "cuarentena": cuarentena, "version": "cowork/1",
+                      "pronostico": {"probabilidades": dict(zip(("local", "empate", "visita"), probs))},
+                      "veredicto": {"objetivo": {"unXDos": {"real": real}}} if real else None},
+            "fx": {"fecha": fecha, "estado": "finalizado", "ligaId": liga_id, "liga": liga,
+                   "local": {"nombre": "A"}, "visitante": {"nombre": "B"}, "golesLocal": goles[0], "golesVisitante": goles[1]},
+            "cuotas": [{"mercado": "1x2", "seleccion": s, "cuota": c} for s, c in zip("1X2", cu)]}
+datos = {
+    "1": _dato(1, "2026-10-29T20:00:00Z", "2026-10-29 12:00:00"),
+    "2": _dato(2, "2026-10-29T20:00:00Z", "2026-10-29 21:00:00"),                       # depositado después
+    "3": _dato(3, "2026-10-29T20:00:00Z", "2026-10-29 12:00:00", liga_id=143, liga="Copa del Rey"),
+    "4": _dato(4, "2026-10-29T20:00:00Z", "2026-10-29 12:00:00", cuarentena={"motivo": "DT"}),
+    "5": _dato(5, "2026-10-27T20:00:00Z", "2026-10-27 12:00:00"),                       # antes de DESDE
+    "6": _dato(6, "2026-10-30T20:00:00Z", "2026-10-30 12:00:00", liga_id=2, liga="UEFA Champions League", goles=(0, 0)),
+    "7": _dato(7, "2026-10-30T20:00:00Z", "2026-10-30 12:00:00", goles=(1, 0), real="visita"),
+}
+ap_, ex_ = contacto.armar(datos)
+ids = sorted(a["fixtureId"] for a in ap_)
+check("contacto.armar: entran 1, 6 y 7; la Champions no es copa nacional", ids == [1, 6, 7], ids)
+motivos = {x["fixtureId"]: x["motivo"] for x in ex_}
+check("contacto.armar: fuera el depositado tarde, la copa y la cuarentena, con su motivo",
+      "antes del pitazo" in motivos.get(2, "") and "copa nacional" in motivos.get(3, "")
+      and "cuarentena" in motivos.get(4, "") and 5 not in motivos, motivos)
+res = {a["fixtureId"]: a["resultado"] for a in ap_}
+check("contacto.armar: el resultado del veredicto manda sobre el marcador; sin veredicto, el marcador",
+      res == {1: "local", 6: "empate", 7: "visita"}, res)
+
 # 10) COPA NACIONAL FUERA (29/10/2026, usuario: «no hay que contaminar las tablas»)
 _sad = _sql.connect(os.path.join(_tmp, "sad.db"))
 _sad.execute("INSERT OR REPLACE INTO leagues (id, name, country) VALUES (143, 'Copa del Rey', 'Spain')")

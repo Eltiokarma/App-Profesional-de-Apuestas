@@ -3,6 +3,62 @@
 import type { SimulacionApuesta } from '../api/types'
 
 export const SIMULACION_DEMO: SimulacionApuesta = {
+ "trasFallos": {
+  "base": {
+   "n": 5,
+   "aciertos": 3,
+   "tasa": 0.6,
+   "intervalo": [
+    0.2307,
+    0.8824
+   ]
+  },
+  "porK": [
+   {
+    "k": 1,
+    "n": 2,
+    "aciertos": 2,
+    "tasa": 1.0,
+    "intervalo": [
+     0.3424,
+     1.0
+    ]
+   },
+   {
+    "k": 2,
+    "n": 0,
+    "aciertos": 0,
+    "tasa": null,
+    "intervalo": null
+   },
+   {
+    "k": 3,
+    "n": 0,
+    "aciertos": 0,
+    "tasa": null,
+    "intervalo": null
+   },
+   {
+    "k": 4,
+    "n": 0,
+    "aciertos": 0,
+    "tasa": null,
+    "intervalo": null
+   }
+  ],
+  "contacto": {
+   "k": 3,
+   "nMinimo": 100,
+   "tasaMinima": 0.65,
+   "n": 0,
+   "tasa": null,
+   "intervalo": null,
+   "faltan": 100,
+   "cumple": false,
+   "estado": "en_observacion",
+   "texto": "en observación: 0 de 100 casos tras 3 fallos"
+  }
+ },
  "desde": "2026-10-28 05:00:00",
  "bancaInicial": 100.0,
  "unidad": 1.0,
