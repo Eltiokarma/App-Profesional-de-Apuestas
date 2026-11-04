@@ -95,7 +95,8 @@ cae en la raíz del repo (17/10/2026).
 >   `anthropic-skills:diagnostico-tactico`, `anthropic-skills:sad-analysis`.
 >   Prensa con WebSearch/WebFetch (cargalos con ToolSearch
 >   `select:WebSearch,WebFetch`).
-> - Orden: `GET antecedentes/{id}` → `fixtures/{id}` → `analisis/cowork/
+> - Orden: `GET analisis/cowork/antecedentes/{id}` (con ese prefijo; sin él da 403 al
+>   token acotado, incidencia 1177) → `fixtures/{id}` → `analisis/cowork/
 >   tde/{id}` → `analisis/cowork/dtp/{id}` → **`analisis/cowork/f1/{id}`**
 >   (la tabla F1 sale de acá, con `jugadorId`; los `decisivo` no pueden
 >   faltar; los `sancionados` —roja o amarillas en el último partido de esta
@@ -552,7 +553,15 @@ POST $B/analisis/cowork/incidencias
   con `fueraDePlantilla: true` (1167: la plantilla de la API no los tiene y la
   tabla los suma desde los onces); el ejecutor de penales con un id distinto
   del de su fila F1 (1168: dos ids de la API); y la fila F1 con nombre que no
-  es el de su id, que el recibo ya avisa en `faltan` (1160, 938).
+  es el de su id, que el recibo ya avisa en `faltan` (1160, 938). Y desde la
+  pasada del 03/11 (noche): el `desde` del DT vacío con fuente alineación
+  (1184: a propósito, la prensa lo llena); ESPINA-SIGUE-EN-EXTREMO callada
+  porque el `porque` nombra el extremo (1185, 874: la regla pide decirlo);
+  el mismo jugador con dos ids o dos nombres entre la hoja, los eventos y la
+  plantilla (1174, 1186, 1191: la app casa por id); la ficha de Venezuela o
+  de la copa de Bolivia sin alineaciones, estadísticas o tarjetas (1176,
+  1183, 1192); y la formación 4-1-4-1 contra 4-2-3-1 que no pide rehacer
+  (1181: misma línea de atrás y un solo punta).
 
 ## Modo `mantenimiento` (los parches, automáticos)
 
