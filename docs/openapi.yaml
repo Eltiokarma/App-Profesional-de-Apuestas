@@ -2639,9 +2639,10 @@ components:
             lectura: { type: string, enum: [senal, ruido, desmentida], description: 'desmentida = jugó (titular o con un evento) un partido posterior a la fecha de la baja, o figura en una hoja (once o banco) de esa fecha o posterior (incidencia 649): no cuenta. Una sanción (roja, amarillas, suspensión) es senal aunque el equipo esté en ruido' }
             lesion: { type: boolean, description: 'lesión con nombre («Muscle Injury», «Knee Injury»): señal aunque el equipo esté en ruido, como la sanción (incidencia 1014)' }
             soloLista: { type: string, enum: [internacional], description: '«Off the roster» en la fecha de un partido internacional del equipo: fuera de la LISTA de ese torneo, no de la liga; se lee ruido (incidencia 522)' }
-            soloCompeticion: { type: string, enum: [internacional], description: 'sanción con la fecha de un partido internacional del equipo: solo la desmiente haber jugado OTRO partido internacional después, no la liga (incidencia 1178, Mbappé)' }
+            soloCompeticion: { type: string, enum: [internacional, nacional], description: 'internacional = sanción con la fecha de un partido internacional del equipo: solo la desmiente haber jugado OTRO partido internacional después, no la liga (incidencia 1178, Mbappé). nacional = sanción con la fecha de un partido de liga o copa nacional de un equipo que juega torneos internacionales (incidencia 1193, Vinícius). En la tabla F1 de un partido de la OTRA competición se lee ruido con `otraCompeticion`' }
+            otraCompeticion: { type: boolean, description: 'solo en la tabla F1 (/analisis/cowork/f1): la sanción es de otra competición que la de este partido; no es baja aquí (incidencia 1193)' }
             sancion: { type: boolean, description: 'el motivo es disciplinario (Red Card, Yellow Cards, Suspended): cuenta como baja siempre (incidencias 71 y 415, 24/10/2026)' }
-            lecturaApi: { type: string, enum: [senal, ruido], description: 'con desmentida, la lectura que tenía' }
+            lecturaApi: { type: string, enum: [senal, ruido], description: 'con desmentida (o con otraCompeticion en la F1), la lectura que tenía' }
             desmentidaPorOnce:
               type: object
               properties:

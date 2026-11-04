@@ -3880,7 +3880,7 @@ def main():
                           (70, "Homenchenko", 8004), (80, "Homenchenko", 8004), (85, "Homenchenko", 8004)])
     _ee895 = _d15._estado_ejecutores
     try:
-        _d15._estado_ejecutores = lambda tid, antes: {8001: {"titularEnUltimos": "0/10"}, 8002: {"titularEnUltimos": "8/10"},
+        _d15._estado_ejecutores = lambda tid, antes, *_: {8001: {"titularEnUltimos": "0/10"}, 8002: {"titularEnUltimos": "8/10"},
                                                       8004: {"baja": "operado", "titularEnUltimos": "0/10"}}
         _pen895 = _d15.penales_temporada(990491, "2026-10-25 20:00:00")
     finally:
@@ -3895,7 +3895,7 @@ def main():
         _con.executemany("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador, jugador_id) "
                          "VALUES (990490, ?, 'Goal', 'Penalty', 990491, ?, ?)", [(10, "A. Ueda", 8101), (20, "L. Valente", 8102)])
     try:
-        _d15._estado_ejecutores = lambda tid, antes: {8101: {"titularEnUltimos": "2/9"}, 8102: {"titularEnUltimos": "8/9"}}
+        _d15._estado_ejecutores = lambda tid, antes, *_: {8101: {"titularEnUltimos": "2/9"}, 8102: {"titularEnUltimos": "8/9"}}
         _pen956 = _d15.penales_temporada(990491, "2026-10-25 20:00:00")
     finally:
         _d15._estado_ejecutores = _ee895

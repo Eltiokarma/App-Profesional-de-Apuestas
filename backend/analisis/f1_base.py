@@ -860,6 +860,21 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     }
 
 
+def sancion_de_otra_competicion(t: dict, competicion: str) -> dict:
+    """UNA SANCIÓN SE CUMPLE EN SU COMPETICIÓN (incidencias 1178 y 1193): la
+    baja disciplinaria de la plantilla trae `soloCompeticion` (internacional ·
+    nacional, por la fecha del partido que se pierde). En un partido de la
+    OTRA competición no es baja: se lee `ruido` con `otraCompeticion` y la
+    lectura que tenía en `lecturaApi` (Vinícius, roja de LaLiga, salía «señal»
+    en la Champions). La desmentida queda como venía."""
+    for f in t.get("candidatos") or []:
+        b = f.get("baja") or {}
+        solo = b.get("soloCompeticion")
+        if solo and solo != competicion and b.get("lectura") != "desmentida":
+            f["baja"] = {**b, "lectura": "ruido", "lecturaApi": b.get("lectura"), "otraCompeticion": True}
+    return t
+
+
 def tabla(fixture_id: int, sanc: dict | None = None) -> dict | None:
     """La tabla F1 de los dos lados. `sanc`: las sanciones ya calculadas
     (`sanciones.de_fixture`), para no rehacerlas (el escaneo)."""
@@ -870,10 +885,13 @@ def tabla(fixture_id: int, sanc: dict | None = None) -> dict | None:
     if sanc is None:
         from backend import sanciones
         sanc = sanciones.de_fixture(fixture_id)
+    comp = "internacional" if fx["league_id"] in jug._ligas_internacionales() else "nacional"
     return {
         "fixtureId": fixture_id,
-        "a": _con_sanciones(tabla_equipo(fx["home_team_id"], fx["home_name"], fx["date"]), sanc.get("a")),
-        "b": _con_sanciones(tabla_equipo(fx["away_team_id"], fx["away_name"], fx["date"]), sanc.get("b")),
+        "a": _con_sanciones(sancion_de_otra_competicion(
+            tabla_equipo(fx["home_team_id"], fx["home_name"], fx["date"]), comp), sanc.get("a")),
+        "b": _con_sanciones(sancion_de_otra_competicion(
+            tabla_equipo(fx["away_team_id"], fx["away_name"], fx["date"]), comp), sanc.get("b")),
         "nota": ("punto de partida de la tabla F1, calculado de la temporada ingestada: copiá el "
                  "`jugadorId` (es el cruce exacto con la hoja del partido) y confirmá el rol con la "
                  "prensa —`rolSugerido` sale de los últimos onces (o de los minutos, ver `rolPor`) y no sabe de un DT nuevo ni de una "

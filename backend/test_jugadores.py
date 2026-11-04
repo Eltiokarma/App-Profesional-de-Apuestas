@@ -685,6 +685,38 @@ def main():
           _b1178["lectura"] == "senal" and _b1178.get("soloCompeticion") == "internacional"
           and _b1178b["lectura"] == "desmentida" and _b1178c["lectura"] == "desmentida", (_b1178, _b1178b, _b1178c))
 
+    # 1193 (Vinícius, Real Madrid): la roja de LaLiga no la cumple la Champions
+    _liga = {"player_id": 12, "tipo": "Missing Fixture", "detalle": "Red Card", "fecha": "2026-11-01"}
+    _b1193 = _jg._baja_dto(_liga, {"lectura": "senal"}, "2026-10-26", None, {"2026-10-21", "2026-11-04"})
+    _b1193b = _jg._baja_dto(_liga, {"lectura": "senal"}, "2026-10-26", None, set())
+    check("1193: la roja con fecha de liga de un equipo con torneo internacional lleva soloCompeticion "
+          "«nacional»; sin torneo internacional no se marca",
+          _b1193["lectura"] == "senal" and _b1193.get("soloCompeticion") == "nacional"
+          and "soloCompeticion" not in _b1193b, (_b1193, _b1193b))
+    from backend.analisis import f1_base as _f1b
+    _t = {"candidatos": [{"jugadorId": 12, "baja": dict(_b1193)}, {"jugadorId": 11, "baja": dict(_b1178)},
+                         {"jugadorId": 13, "baja": {"lectura": "senal", "detalle": "Knee Injury"}}]}
+    _f1b.sancion_de_otra_competicion(_t, "internacional")
+    _c = {f["jugadorId"]: f["baja"] for f in _t["candidatos"]}
+    check("1193: en la F1 de un partido internacional la sanción de liga se lee ruido (otraCompeticion); "
+          "la UEFA y la lesión siguen como venían",
+          _c[12]["lectura"] == "ruido" and _c[12].get("otraCompeticion") and _c[12]["lecturaApi"] == "senal"
+          and _c[11]["lectura"] == "senal" and _c[13]["lectura"] == "senal", _c)
+    _t2 = {"candidatos": [{"jugadorId": 11, "baja": dict(_b1178)}]}
+    _f1b.sancion_de_otra_competicion(_t2, "nacional")
+    check("1178/1193: en la F1 de un partido de liga la sanción UEFA se lee ruido",
+          _t2["candidatos"][0]["baja"].get("otraCompeticion") is True, _t2)
+    from backend.analisis import dtp_cowork as _dc
+    _pj = _jg.plantilla_de
+    try:
+        _jg.plantilla_de = lambda tid: {"jugadores": [{"id": 12, "baja": dict(_b1193)}]}
+        _e_int = _dc._estado_ejecutores(1, "2026-11-04", "internacional")
+        _e_nac = _dc._estado_ejecutores(1, "2026-11-04", "nacional")
+    finally:
+        _jg.plantilla_de = _pj
+    check("1193: el ejecutor sancionado en la liga no queda de baja para el penal de la Champions",
+          "baja" not in (_e_int.get(12) or {}) and (_e_nac.get(12) or {}).get("baja") == "Red Card", (_e_int, _e_nac))
+
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     return 1 if fallos else 0
 
