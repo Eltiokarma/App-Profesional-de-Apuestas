@@ -123,10 +123,12 @@ for rel in (os.path.join(".claude", "skills", "corrida-sad", "SKILL.md"), os.pat
             os.path.join("docs", "skills", "sad-analysis", "SKILL.md")):
     t = leer(rel)
     t = re.sub(r"\$(B|SAD_API_BASE)/", " /", t)
-    t = re.sub(r"(GET|POST)\s+(?=analisis/|equipos/|fixtures/|cuotas/|predicciones/)", r"\1 /", t)
+    # `antecedentes/` también: el encargo pedía «GET antecedentes/{id}», que no
+    # existe (es /analisis/cowork/antecedentes/{id}) y daba 403 (1177)
+    t = re.sub(r"(GET|POST)\s+(?=analisis/|equipos/|fixtures/|cuotas/|predicciones/|antecedentes/)", r"\1 /", t)
     t = re.sub(r"\{[^}/\n]*\}", "{x}", t)
     for m in re.finditer(r"(?<![\w.…])(/(?:analisis|equipos|fixtures|cuotas|constantes|constantes-cuota|predicciones|"
-                         r"niveles|health|ligas|analisis-prepartido)(?:/[A-Za-z0-9_{}\-]+)*)", t):
+                         r"niveles|health|ligas|analisis-prepartido|antecedentes)(?:/[A-Za-z0-9_{}\-]+)*)", t):
         if not existe(m.group(1)):
             inventadas.append(f"{rel}: {m.group(1)}")
 check("skills y prompt: cada ruta que citan existe en backend/app.py", not inventadas, sorted(set(inventadas)))
