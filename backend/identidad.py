@@ -226,13 +226,17 @@ def menciona(nombre: str, frase: str) -> bool:
     es «K. Silva» (Boston River, incidencia 1111: el aviso de `equipos.fuera`
     tomaba al sancionado K. Silva por el N. da Silva del banco). Las
     partículas entre la pila y el apellido se saltan; una mención suelta
-    («Silva») sí cuenta, porque no se sabe de quién es."""
+    («Silva») sí cuenta, porque no se sabe de quién es. Tampoco cuenta el
+    apellido que es la pila de otro: «Felipe Anderson» no es «Matheus Felipe»
+    (1236)."""
     t = tokens(nombre)
     apell = [x for x in t[1:] if len(x) >= 4] or [x for x in t if len(x) >= 4][-1:]
     if not apell:
         return False
     pila = t[0] if len(t) > 1 else ""
-    crudo = re.findall(r"[^\W_][\w'’]*", limpiar_nombre(frase or "") or "")
+    limpio = limpiar_nombre(frase or "") or ""
+    hallados = list(re.finditer(r"[^\W_][\w'’]*", limpio))
+    crudo = [m.group(0) for m in hallados]
     palabras = [plano(w).replace(" ", "") for w in crudo]
     for k, w in enumerate(palabras):
         if w not in apell:
@@ -243,7 +247,20 @@ def menciona(nombre: str, frase: str) -> bool:
         # la palabra de antes es una pila si es una inicial o va con mayúscula
         # en medio de la frase («Entra Silva» al empezar no nombra a otro)
         otra_pila = j >= 0 and crudo[j][:1].isupper() and (len(palabras[j]) == 1 or j > 0)
-        if not pila or not otra_pila or misma_pila(palabras[j], pila):
+        propia = j >= 0 and bool(pila) and misma_pila(palabras[j], pila)
+        # Y AL REVÉS: el «apellido» es la PILA de otro si lo sigue, pegado y con
+        # mayúscula, un apellido que no es de este jugador (05/11/2026,
+        # incidencia 1236, Palmeiras–Remo: «Flaco López y Felipe Anderson en el
+        # banco» se leía como Matheus Felipe, baja de Remo, nombrado de
+        # recambio). Solo con un espacio en medio: «Felipe, Anderson» o
+        # «Felipe. Anderson» son dos menciones.
+        n = k + 1
+        otro_apellido = (n < len(crudo) and crudo[n][:1].isupper() and len(palabras[n]) >= 3
+                         and palabras[n] not in t and palabras[n] not in PARTICULAS
+                         and limpio[hallados[k].end():hallados[n].start()] == " ")
+        if otro_apellido and not propia:
+            continue
+        if not pila or not otra_pila or propia:
             return True
     return False
 
