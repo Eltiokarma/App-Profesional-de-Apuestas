@@ -159,6 +159,13 @@ check("1107: sin el nombre de la hoja la inicial funde (673); con «David Gonzal
       len(_g1) == 1 and len(_g2) == 2 and not any(r.get("fundidoPorInicial") for r in _g2), (_g1, _g2))
 
 # 1111 (Boston River) y 1094 (Cercle, Twente): el aviso de `equipos.fuera`
+check("1236: «Felipe Anderson» no menciona a «Matheus Felipe»; «Felipe» suelto, «Matheus Felipe» y «Felipe, Anderson» sí",
+      not idn.menciona("Matheus Felipe", "Flaco López y Felipe Anderson en el banco")
+      and not idn.menciona("Matheus Felipe", "Felipe Anderson entra por la izquierda")
+      and idn.menciona("Matheus Felipe", "entra Felipe por la derecha")
+      and idn.menciona("Matheus Felipe", "Matheus Felipe desde el banco")
+      and idn.menciona("Matheus Felipe", "en el banco Felipe, Anderson y Gómez")
+      and idn.menciona("Matheus Felipe", "recambio: Felipe."))
 check("1111: «N. da Silva» no menciona a «K. Silva»; «K. Silva», «Kevin Silva» y «Silva» suelto sí",
       not idn.menciona("K. Silva", "N. da Silva desde el banco")
       and idn.menciona("K. Silva", "K. Silva desde el banco") and idn.menciona("K. Silva", "entra Kevin Silva")
