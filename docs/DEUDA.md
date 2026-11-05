@@ -787,19 +787,20 @@ conversación se pierde en la siguiente.
    la primera noche: una sesión nueva arranca en ~90 mil tokens (sistema,
    herramientas, CLAUDE.md); rehacer suma ~3.500 por disparo vacío (~250 mil
    por día) y cada disparo vacío costó ~0,10 USD con la sesión chica (antes
-   ~0,30); una pasada de mantenimiento suma ~200 mil y costó 40 USD. **Sesiones y rutinas vigentes** (rotadas las cuatro el 04/11 03:17 de Lima:
-   partes 314 mil, veredictos 262 mil, mantenimiento 488 mil, rehacer 533 mil):
-   - partes: `session_01WwsfbW3ze9hLXKtcrUbWqy` · 04:47
-     `trig_01UTkAXMXLgDZFT4UqV2X6en`, 09:52 `trig_01BmQw6txuKmfg6QZHVWUweA`,
-     14:56 `trig_018DPiAbRr3EG19RKUmKqwjk`;
-   - veredictos: `session_01WwsfbV87v8ZQtqpA5hHYeX` · 20:12
-     `trig_01RR5UNpmZpfu4svZ6YLE9yA`;
-   - mantenimiento: `session_01WwsfbSceKzWQJxGJbPx7Gf` · 12:23
-     `trig_01ErrkahKVmT82p8knSa2Aob`, 17:41 `trig_017HpqnJmciTG9qPskkLiGg2`,
-     21:47 `trig_014jntFoux6FNrxnvwrj7gw2`;
-   - rehacer: `session_01WwsfbW98UGtzkTBBHJgRFf` · :02 `trig_01PLhqmwtEwKf8eCeq2Wz9uM`,
-     :12 `trig_011Jv31AbUdUwnUkbU6HbSBC`, :22 `trig_01K1s1WGgUu1sSwM4fgrfRD3`,
-     :42 `trig_01GQSqbTTWcqJQswqAULovAC`.
+   ~0,30); una pasada de mantenimiento suma ~200 mil y costó 40 USD. **Sesiones y rutinas vigentes** (rotadas las cuatro el 05/11 03:17 de Lima:
+   partes 267 mil, veredictos 376 mil, mantenimiento 414 mil, rehacer 467 mil;
+   las del 04/11 quedan desactivadas):
+   - partes: `session_01WwsfbSkJwrs5LWiMFZzYHU` · 04:47
+     `trig_01GVbK8xZXsmVT1hUwXSQFfQ`, 09:52 `trig_01FDPAbW1pum3Sv9dKgCG42H`,
+     14:56 `trig_01GmG98MArsEaJC7yRcZZYxk`;
+   - veredictos: `session_01WwsfbWKczUtVyUDfp1CrpB` · 20:12
+     `trig_01KuFvJ39R4conmP1bchw2KD`;
+   - mantenimiento: `session_01WwsfbTmeb1X5HQ4Q71A4v3` · 12:23
+     `trig_01Pj9PK1WNgLYDCgntCsXe71`, 17:41 `trig_012XRmYt4AxXvmdGGQx1nBed`,
+     21:47 `trig_01NXxAtA47ahk3xk8jQWCL6a`;
+   - rehacer: `session_01WwsfbS94PTDd2msi58JqpE` · :02 `trig_01JB1MBTZ2U6gzBCJFWz4HCt`,
+     :12 `trig_013pKRuq7xcwGxWbkDhG7LKT`, :22 `trig_01DUMjpLXmpW6ueQMn4iEz3e`,
+     :42 `trig_015GNd475PmS4Qc79Ygjms7V`.
    Medido el 03/11 con las sesiones nuevas: partes 117 USD (8 partes en el tramo
    3), veredictos 50 USD (18 veredictos), mantenimiento 29 USD por pasada,
    rehacer 41 USD en el día (hubo rehaceres reales). Las rutinas viejas quedaron desactivadas, no borradas. **Probado el mismo
