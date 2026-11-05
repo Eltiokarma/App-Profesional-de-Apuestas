@@ -4968,6 +4968,28 @@ def main():
     from backend.analisis.f1_base import _en_tabla as _f1_en_tabla
     check("el mismo jugador con dos ids y el apellido mal escrito («Juan Bizans» / «Juan Bisanz») está en la tabla",
           _f1_en_tabla({"id": 406291, "nombre": "Juan Bizans"}, [{"nombre": "Juan Bisanz", "jugadorId": 304371}]))
+    # 1233 (Real Potosí): la fila fundida «H. Rojas» (65974) con el id de «J. Rojas»
+    # (546779) en sus alternos cuenta a J. Rojas; sin el id, J. Rojas no está
+    check("1233: el decisivo cuyo id la tabla fundió en otra fila está en la tabla (por equivalentes o idsAlternos)",
+          _f1_en_tabla({"id": 546779, "nombre": "J. Rojas"}, [{"nombre": "H. Rojas", "jugadorId": 65974}], {546779, 65974})
+          and _f1_en_tabla({"id": 546779, "nombre": "J. Rojas"},
+                           [{"nombre": "H. Rojas", "jugadorId": 65974, "idsAlternos": [546779]}])
+          and not _f1_en_tabla({"id": 546779, "nombre": "J. Rojas"}, [{"nombre": "H. Rojas", "jugadorId": 65974}]))
+    from backend.analisis import f1_base as _f1m1233
+    _orig1233 = (_f1m1233.tabla_equipo, _f1m1233.onces_recientes, _f1m1233.salidos, _f1m1233.decisivos)
+    try:
+        _f1m1233.decisivos = lambda p: []
+        _f1m1233.salidos = lambda t, a="9999": set()
+        _f1m1233.onces_recientes = lambda t, a: {"onces": 10, "jugadores": {
+            546779: {"nombre": "J. Rojas", "titular": 9}}}
+        _f1m1233.tabla_equipo = lambda t, n, a="9999": {"candidatos": [{"jugadorId": 65974, "idsAlternos": [546779]}]}
+        _fal1233 = _f1m1233.faltantes(1, [{"nombre": "H. Rojas", "jugadorId": 65974}])
+        _f1m1233.tabla_equipo = lambda t, n, a="9999": {"candidatos": []}
+        _fal1233b = _f1m1233.faltantes(1, [{"nombre": "H. Rojas", "jugadorId": 65974}])
+    finally:
+        (_f1m1233.tabla_equipo, _f1m1233.onces_recientes, _f1m1233.salidos, _f1m1233.decisivos) = _orig1233
+    check("1233: F1-DECISIVO-FUERA no suena por el id que la tabla de la base fundió en la fila cargada (y sin fundir, sí)",
+          _fal1233 == [] and [f["jugadorId"] for f in _fal1233b] == [546779], (_fal1233, _fal1233b))
     check("pero otra pila con un apellido parecido es otra persona",
           not _f1_en_tabla({"id": 1, "nombre": "Juan Gomez"}, [{"nombre": "Pedro Gomes", "jugadorId": 2}]))
     check("con los decisivos en la tabla (por jugadorId), la alerta se va",

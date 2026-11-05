@@ -921,9 +921,13 @@ def _parecido(tok_api: list[str], tok_tabla: list[str]) -> bool:
     return any(_casi_igual(a, t) for a in tok_api[1:] for t in tok_tabla[1:])
 
 
-def _en_tabla(j: dict, plantel: list[dict]) -> bool:
+def _en_tabla(j: dict, plantel: list[dict], equivalentes=None) -> bool:
+    """¿El jugador `j` está en la tabla F1 del parte? Por id —el suyo, los
+    `equivalentes` (los otros ids con los que la tabla de la base lo fundió) o
+    los `idsAlternos` de la fila— o por nombre."""
+    ids = {int(j["id"]), *(int(x) for x in (equivalentes or ()))}
     for p in plantel:
-        if p.get("jugadorId") and int(p["jugadorId"]) == int(j["id"]):
+        if any(x is not None and int(x) in ids for x in [p.get("jugadorId"), *(p.get("idsAlternos") or [])]):
             return True
     tok_api = bloque_f._tokens(j["nombre"])
     return any(bloque_f._casa(bloque_f._tokens(p.get("nombre") or ""), tok_api)
@@ -1037,6 +1041,30 @@ def faltantes(team_id: int, plantel: list[dict], antes: str = "9999") -> list[di
             if not _en_tabla(j, plantel):
                 out.append({"jugadorId": pid, "nombre": r["nombre"],
                             "porQue": f"titular en {r['titular']} de los últimos {rec['onces']} onces"})
+    if out:
+        eq = _equivalentes(team_id, antes)
+        out = [f for f in out if not _en_tabla({"id": f["jugadorId"], "nombre": f["nombre"]}, plantel,
+                                               eq.get(f["jugadorId"]))]
+    return out
+
+
+def _equivalentes(team_id: int, antes: str) -> dict[int, set[int]]:
+    """Los ids que la tabla F1 de la base fundió en una fila, por id.
+
+    LA ALERTA Y LA TABLA TIENEN QUE CONTAR A LA MISMA PERSONA (05/11/2026,
+    incidencia 1233, Real Potosí): GET f1 daba «H. Rojas» (65974) con
+    `idsAlternos` [546779], el parte cargó esa fila y F1-DECISIVO-FUERA sonaba
+    por «J. Rojas» (546779), que es el mismo. Solo se calcula si hay algo que
+    avisar: la tabla entera es cara."""
+    try:
+        filas = tabla_equipo(team_id, "", antes).get("candidatos") or []
+    except Exception:  # noqa: BLE001 — sin la capa de jugadores no se funde nada: la alerta queda como estaba
+        return {}
+    out: dict[int, set[int]] = {}
+    for f in filas:
+        grupo = {int(x) for x in [f.get("jugadorId"), *(f.get("idsAlternos") or [])] if x is not None}
+        for x in grupo:
+            out[x] = grupo
     return out
 
 
