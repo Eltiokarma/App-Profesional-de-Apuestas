@@ -108,6 +108,26 @@ def _nunca_publicado(fixture_id: int) -> bool:
         return False
 
 
+def _publicado_tarde(fixture_id: int, fecha_utc) -> bool:
+    """¿La primera versión del once llegó ENTRE el pitazo y el fin de la
+    ventana tardía del ciclo en vivo (`en_vivo.XI_VENTANA_TARDE_MIN`)? Entonces
+    el ciclo lo estaba pidiendo y la API lo publicó tarde: es la causa ya
+    decidida (1072, 1081, 1145; 1231: Cúcuta–Santa Fe, Liga BetPlay), no un
+    once que nadie pidió. El que llega horas después —con la ficha
+    post-partido— sí es hallazgo: el ciclo no lo pidió a tiempo."""
+    try:
+        from backend.ingesta.en_vivo import XI_VENTANA_TARDE_MIN
+        pitazo = datetime.strptime(str(fecha_utc)[:19].replace("T", " "), "%Y-%m-%d %H:%M:%S")
+        fila = saddb.query_one("sad", "SELECT MIN(capturada_en) AS t FROM alineaciones_versiones WHERE fixture_id=?",
+                               (fixture_id,))
+        if not fila or not fila["t"]:
+            return False
+        primera = datetime.strptime(str(fila["t"])[:19], "%Y-%m-%d %H:%M:%S")
+        return pitazo < primera <= pitazo + timedelta(minutes=XI_VENTANA_TARDE_MIN)
+    except Exception:  # noqa: BLE001 — base sin la tabla de versiones o fecha ilegible: se marca como siempre
+        return False
+
+
 def _hallazgo(chequeo: str, item: dict, detalle: str, lado: str | None = None) -> dict:
     return {"chequeo": chequeo, "fixtureId": item["fixtureId"], "partido": item.get("partido", ""),
             "fecha": item.get("fecha", ""), "hora": item.get("hora", ""),
@@ -250,7 +270,7 @@ def _post(horas: int, ahora: datetime) -> tuple[list[dict], int]:
                 # y regionales cada pasada, con la ficha post-partido sellada sin
                 # alineaciones). Eso es cobertura (deuda 5, `nuncaVaALlegar`):
                 # el chequeo es para el once que existió y llegó tarde.
-                if not previa and not _nunca_publicado(f["id"]):
+                if not previa and not _nunca_publicado(f["id"]) and not _publicado_tarde(f["id"], f["date"]):
                     out.append(_hallazgo("once-tarde", item, f"pitazo {item['hora']} UTC: ninguna versión del "
                                                              "once capturada antes"))
             except Exception:  # noqa: BLE001 — base sin la tabla de versiones

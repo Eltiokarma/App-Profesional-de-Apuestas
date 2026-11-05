@@ -229,6 +229,30 @@ con.commit()
 _post2, _ = escaneo._post(72, datetime(2026, 10, 26, 12, 0, tzinfo=timezone.utc))
 check("953: con la ficha sellada sin alineaciones el partido no sale como once-tarde",
       ("once-tarde", 11) not in {(h["chequeo"], h["fixtureId"]) for h in _post2}, _post2)
+# 1231 (05/11/2026, Cúcuta–Santa Fe): la primera versión del once llegó DENTRO de
+# la ventana tardía del ciclo en vivo (el ciclo lo pedía y la API lo publicó
+# después del pitazo): causa decidida, no hallazgo. Horas después, sí.
+from backend.ingesta.en_vivo import XI_VENTANA_TARDE_MIN as _VT  # noqa: E402
+with _parte._conectar() as _c:
+    for _fx in (9031, 9032):
+        _c.execute("INSERT INTO parte_cowork (fixture_id, fecha, parte_json, creado_en, actualizado_en) "
+                   "VALUES (?, '2026-10-25', '{}', '2026-10-24', '2026-10-24')", (_fx,))
+_base_fx = con.execute("SELECT * FROM fixtures WHERE id=11").fetchone()
+_cols = [d[0] for d in con.execute("SELECT * FROM fixtures LIMIT 0").description]
+for _fx in (9031, 9032):
+    con.execute(f"INSERT INTO fixtures ({','.join(_cols)}) VALUES ({','.join('?' * len(_cols))})",
+                [(_fx if c == "id" else _base_fx[i]) for i, c in enumerate(_cols)])
+_pit = datetime.strptime(str(_base_fx[_cols.index("date")])[:19].replace("T", " "), "%Y-%m-%d %H:%M:%S")
+from datetime import timedelta as _td  # noqa: E402
+con.execute("INSERT INTO alineaciones_versiones VALUES (9031, ?, '4-3-3', ?)",
+            (CAR, (_pit + _td(minutes=_VT - 10)).strftime("%Y-%m-%d %H:%M:%S")))
+con.execute("INSERT INTO alineaciones_versiones VALUES (9032, ?, '4-3-3', ?)",
+            (CAR, (_pit + _td(hours=4)).strftime("%Y-%m-%d %H:%M:%S")))
+con.commit()
+_post3, _ = escaneo._post(72, datetime(2026, 10, 26, 12, 0, tzinfo=timezone.utc))
+_cp3 = {(h["chequeo"], h["fixtureId"]) for h in _post3}
+check("1231: el once que la API publicó en la ventana tardía del ciclo no es once-tarde; el de horas después, sí",
+      ("once-tarde", 9031) not in _cp3 and ("once-tarde", 9032) in _cp3, _post3)
 check("1230: el hallazgo del escaneo trae la hora de Lima al lado de la UTC",
       bool(_post) and all(h.get("horaLima") for h in _post), _post[:1])
 check("escaneo: todos los chequeos tienen título, área, severidad y la regla que cuidan",
