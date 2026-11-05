@@ -111,6 +111,8 @@ def _nunca_publicado(fixture_id: int) -> bool:
 def _hallazgo(chequeo: str, item: dict, detalle: str, lado: str | None = None) -> dict:
     return {"chequeo": chequeo, "fixtureId": item["fixtureId"], "partido": item.get("partido", ""),
             "fecha": item.get("fecha", ""), "hora": item.get("hora", ""),
+            # la hora de la base es UTC; la de Lima viaja al lado (incidencia 1230)
+            "horaLima": item.get("horaLima", ""),
             **({"lado": lado, "equipo": item.get("equipoA" if lado == "a" else "equipoB", "")} if lado else {}),
             "detalle": detalle}
 
@@ -238,7 +240,7 @@ def _post(horas: int, ahora: datetime) -> tuple[list[dict], int]:
                 continue
             n += 1
             item = {"fixtureId": f["id"], "partido": f"{f['a']} vs {f['b']}", "fecha": str(f["date"])[:10],
-                    "hora": str(f["date"])[11:16]}
+                    "hora": str(f["date"])[11:16], **_parte.hora_lima(f["date"])}
             try:
                 previa = saddb.query_one(
                     "sad", "SELECT 1 AS x FROM alineaciones_versiones WHERE fixture_id=? AND capturada_en <= ? "

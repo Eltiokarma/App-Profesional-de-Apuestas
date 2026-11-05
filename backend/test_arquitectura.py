@@ -168,6 +168,18 @@ check("copas: cada copa nacional de extractor.LIGAS está en eliminatoria.PARTID
 _doble = sorted(set(_elim.PARTIDO_UNICO) & set(_elim.FORMATO_SIN_AFIRMAR))
 check("copas: ninguna copa está a la vez en PARTIDO_UNICO y en FORMATO_SIN_AFIRMAR", not _doble, _doble)
 
+# 5-quater · una hora de pitazo que viaja a un agente lleva la de Lima al lado
+# (FALLAS.md: contrato; 1230: la agenda daba «18:00» en UTC sin decirlo y el
+# orquestador fijó la hora tope cuatro horas después del pitazo de Aldosivi–River)
+_horas_sin_lima = []
+for _rel in ("backend/analisis/parte.py", "backend/analisis/escaneo.py"):
+    _ls = leer(_rel).split("\n")
+    for _i, _ln in enumerate(_ls):
+        if re.search(r'"hora":\s*[^,]*\[11:16\]', _ln) and not any("hora_lima" in x for x in _ls[_i:_i + 8]):
+            _horas_sin_lima.append(f"{_rel}:{_i + 1}")
+check("contrato: cada «hora» de pitazo cortada de la fecha UTC viaja con hora_lima al lado",
+      not _horas_sin_lima, _horas_sin_lima)
+
 # ── 6 · CADA CLASE DE FALLA TIENE SU GUARDIA ESCRITA ────────────────────────
 fallas = leer(os.path.join("docs", "FALLAS.md"))
 clases = re.findall(r"^### ", fallas, re.M)

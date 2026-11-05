@@ -183,6 +183,7 @@ Tres lugares donde vive una guardia:
   - **Test de arquitectura (regla 3-bis):** ningún enum del contrato trae un `no`/`yes`/`on`/`off` sin comillas, que YAML 1.1 lee como booleano (1059).
   - Un marcador viaja con el orden en que se lee: en los antecedentes `marcador` es el del equipo y `marcadorPartido` local-visita, como `marcadorPronosticado` (907).
   - El recibo trae `alertasAlLeer` (las calculadas que el GET le pone al parte, 771 y 806) y no rechaza lo que el prompt pide dejar vacío (el `dt.desde` sin fuente, 827): recibo y prompt dicen lo mismo.
+  - **Una hora viaja con su zona:** la agenda y el escaneo dan `hora` en UTC (la de la base) y `horaLima`/`fechaLima` al lado; la regla de los 60 min y la hora tope salen de la de Lima (1230: Aldosivi–River «18:00» leído como Lima). Test de arquitectura (regla 5-quater).
   - **El ejemplo del prompt pasa el recibo:** un test lee la `reasignacion` de ejemplo de `docs/COWORK.md` y exige que no dispare `faltan` (1030: el recibo pedía `desenlace` y `sob2` que el ejemplo no traía).
 - **Si vuelve:** primero el contrato, después el código (CLAUDE.md).
 
