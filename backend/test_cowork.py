@@ -169,6 +169,24 @@ def main():
     check("los analizables van ordenados por prioridad",
           [i["prioridad"] for i in ag["analizar"]] == sorted(i["prioridad"] for i in ag["analizar"]))
     check("ningún analizable tiene prioridad 0", all(i["prioridad"] > 0 for i in ag["analizar"]))
+    # LA HORA DE LA AGENDA ES UTC Y VIAJA CON LA DE LIMA (05/11/2026, incidencia
+    # 1230: Aldosivi–River «18:00» se leyó como hora de Lima y la hora tope
+    # quedó cuatro horas después del pitazo)
+    from backend.analisis.parte import hora_lima as _hl
+    check("hora_lima: 18:00 UTC son las 13:00 de Lima",
+          _hl("2026-11-05 18:00:00") == {"fechaLima": "2026-11-05", "horaLima": "13:00"}, _hl("2026-11-05 18:00:00"))
+    check("hora_lima: 03:30 UTC del 6 son las 22:30 del 5 en Lima",
+          _hl("2026-11-06T03:30:00+00:00") == {"fechaLima": "2026-11-05", "horaLima": "22:30"})
+    check("hora_lima: sin fecha no se adivina", _hl(None) == {"fechaLima": "", "horaLima": ""})
+    check("cada fila de la agenda trae horaLima = hora UTC − 5", todos and all(
+        i["horaLima"] == _hl(f"{i['fecha']} {i['hora']}")["horaLima"] for i in todos),
+          [(i["hora"], i.get("horaLima")) for i in todos[:3]])
+    # y el orden de prioridad pareja va por fecha Y hora: una agenda de 24 h
+    # cruza la medianoche UTC y el 01:00 de mañana no va antes que el 23:00 de hoy
+    from backend.analisis import parte as _p_ag
+    _ag_src = open(_p_ag.__file__, encoding="utf-8").read()
+    check("la agenda ordena por fecha y hora, no por la hora sola",
+          'i["prioridad"], i["fecha"], i["hora"]' in _ag_src)
 
     # ── los mandos manuales de la agenda ────────────────────────────────────
     import datetime as _dt0

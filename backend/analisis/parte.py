@@ -4131,6 +4131,22 @@ def _antes_del_pitazo(ahora: str, pitazo) -> bool:
     return bool(a and p and a < p)
 
 
+LIMA = timezone(timedelta(hours=-5))   # Perú no tiene horario de verano
+
+
+def hora_lima(fecha_utc) -> dict:
+    """`fechaLima` y `horaLima` de una fecha de la base (que es UTC).
+
+    La agenda y el escaneo daban `hora` en UTC sin decirlo y el orquestador la
+    leía como hora de Lima (incidencia 1230). Sin fecha legible, vacías."""
+    try:
+        t = datetime.strptime(str(fecha_utc)[:16].replace("T", " "), "%Y-%m-%d %H:%M")
+    except (TypeError, ValueError):  # fecha nula o mal formada: no se adivina
+        return {"fechaLima": "", "horaLima": ""}
+    t = t.replace(tzinfo=timezone.utc).astimezone(LIMA)
+    return {"fechaLima": t.strftime("%Y-%m-%d"), "horaLima": t.strftime("%H:%M")}
+
+
 # La grilla de la rutina de rehacer (docs/DEUDA.md, deuda 11), de 05 a 23 de Lima
 # (UTC−5, sin horario de verano). Hasta el 31/10/2026 eran dos disparos por
 # hora (:07 y :37) con piso de 15 min; desde entonces (incidencia 636, decisión
@@ -6088,6 +6104,11 @@ def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: in
             "fixtureId": f["id"],
             "hora": (f["date"] or "")[11:16],
             "fecha": (f["date"] or "")[:10],
+            # LA HORA DE LA BASE ES UTC Y NO LO DECÍA (05/11/2026, incidencia
+            # 1230: Aldosivi–River, «18:00» leído como hora de Lima dio una
+            # hora tope de 17:15 con el pitazo a las 13:00 de Lima). La regla
+            # de los 60 min y la hora tope se fijan con la de Lima.
+            **hora_lima(f["date"]),
             "partido": f"{f['home_name']} vs {f['away_name']}",
             "equipoA": f["home_name"], "equipoB": f["away_name"],
             # EL DT DE LA BASE VIAJA CON SU EDAD Y SU PROCEDENCIA. Es una
@@ -6112,11 +6133,13 @@ def agenda(fecha: date_t | None = None, limite: int = AGENDA_LIMITE, liga_id: in
             "conflicto": "; ".join(choque.values()) if choque else "",
         }
         (candidatos if prio else descartados).append(item)
-    candidatos.sort(key=lambda i: (i["prioridad"], i["hora"]))
+    # por fecha Y hora: con solo la hora, el 01:00 de mañana (UTC) iba antes
+    # que el 23:00 de hoy en una agenda de 24 h que cruza la medianoche
+    candidatos.sort(key=lambda i: (i["prioridad"], i["fecha"], i["hora"]))
     # con el mando manual puesto, los de prioridad 0 entran al final y CON su
     # motivo: se ve que no habrían entrado por sí solos
     if incluir_descartados:
-        candidatos += sorted(descartados, key=lambda i: i["hora"])
+        candidatos += sorted(descartados, key=lambda i: (i["fecha"], i["hora"]))
         descartados = []
     manual = bool(liga_id is not None or liga_txt or (desde_ahora and horas != 24) or incluir_descartados
                   or grupos or segundas)

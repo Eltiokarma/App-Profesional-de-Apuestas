@@ -4543,8 +4543,10 @@ components:
       required: [fixtureId, partido, prioridad, motivo]
       properties:
         fixtureId: { type: integer }
-        hora: { type: string }
+        hora: { type: string, description: 'HH:MM del pitazo en UTC (la hora de la base)' }
         fecha: { type: string, description: 'día del partido (UTC)' }
+        horaLima: { type: string, description: 'HH:MM del pitazo en Lima (UTC−5): la que fija la regla de los 60 min y la hora tope (incidencia 1230)' }
+        fechaLima: { type: string, description: 'día del partido en Lima' }
         rehacer: { type: string, description: 'no vacío si el parte guardado es de OTRA fecha del partido (aplazado o movido más de un día): vuelve a porHacer y se rehace entero (incidencia 371)' }
         partido: { type: string }
         equipoA: { type: string }

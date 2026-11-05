@@ -63,7 +63,9 @@ cae en la raíz del repo (17/10/2026).
    `porHacer` (lo ya depositado está en `yaHechos`: no se rehace). Un partido
    en `aRehacer` tiene un parte de OTRA fecha (aplazado o movido): va en
    `porHacer` y se rehace ENTERO, con la semana nueva —sin rehacerlo, el caso
-   cae en cuarentena automática al cerrar el veredicto—. Descartá
+   cae en cuarentena automática al cerrar el veredicto—. La `hora` de la
+   fila es UTC: la de Lima viaja en `horaLima`/`fechaLima` (incidencia 1230),
+   y con esa se fija la hora tope del encargo. Descartá
    los que arrancan en menos de 60 minutos: un parte no se escribe con el
    pitazo encima y JAMÁS después del pitazo.
 3. **Un subagente por partido, en paralelo** (herramienta Agent, tipo

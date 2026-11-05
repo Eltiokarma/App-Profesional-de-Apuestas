@@ -2262,7 +2262,13 @@ export interface XiLadoDTO {
 
 export interface ParteAgendaItemDTO {
   fixtureId: number
+  /** HH:MM del pitazo en UTC (la hora de la base) */
   hora: string
+  /** día del partido en UTC */
+  fecha?: string
+  /** HH:MM y día del pitazo en Lima (UTC−5): con estos se fija la hora tope (incidencia 1230) */
+  horaLima?: string
+  fechaLima?: string
   partido: string
   equipoA: string
   equipoB: string

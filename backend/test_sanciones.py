@@ -229,6 +229,8 @@ con.commit()
 _post2, _ = escaneo._post(72, datetime(2026, 10, 26, 12, 0, tzinfo=timezone.utc))
 check("953: con la ficha sellada sin alineaciones el partido no sale como once-tarde",
       ("once-tarde", 11) not in {(h["chequeo"], h["fixtureId"]) for h in _post2}, _post2)
+check("1230: el hallazgo del escaneo trae la hora de Lima al lado de la UTC",
+      bool(_post) and all(h.get("horaLima") for h in _post), _post[:1])
 check("escaneo: todos los chequeos tienen título, área, severidad y la regla que cuidan",
       all({"titulo", "area", "severidad", "regla"} <= set(v) for v in escaneo.CHEQUEOS.values()))
 
