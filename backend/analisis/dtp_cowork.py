@@ -1465,8 +1465,12 @@ def sin_alternativas(texto: str) -> str:
 
 
 # el punto de una inicial («por C. Fuentes») no corta la frase (incidencia 714)
+# …hasta el signo que corta la frase o hasta la coma que abre OTRO par «X por
+# Y» (04/11/2026, incidencia 1212, Lens: «entra Ivanović por Hazard o Sotoca,
+# Antonio por Baidoo, Skóraś por Abdulhamid» se tragaba a Antonio y a Skóraś)
 _SALIENTES = re.compile(r"\b(?:por|en lugar de|en vez de|reemplaz\w*(?:\s+a)?|sale[n]?|salieron|fuera)\s+"
-                        r"(?:(?<![\wÀ-ÿ])[A-ZÁÉÍÓÚÑÜ]\.|[^.;:()])+", re.I)
+                        r"(?:(?<![\wÀ-ÿ])[A-ZÁÉÍÓÚÑÜ]\.|(?!,[^,.;:()]*\b(?:por|en lugar de|en vez de)\b)[^.;:()])+",
+                        re.I)
 
 
 def sin_salientes(texto: str) -> str:
@@ -1535,7 +1539,13 @@ def sin_dudas(texto: str) -> str:
     se había escrito sobre la otra zaga. Se corta por frase (punto, punto y
     coma, dos puntos o salto de línea), no por coma: la coma separa nombres."""
     trozos = re.split(r"([.;:\n]+)", texto or "")   # los separadores quedan: `sin_salientes` corta en ellos
-    return "".join(" " if i % 2 == 0 and _DUDA.search(t) else t for i, t in enumerate(trozos))
+    # LA DUDA QUE ABRE CON DOS PUNTOS ALCANZA A LA LISTA QUE SIGUE (1212, Lens:
+    # «puede rotar: entra Ivanović por Hazard…» daba a Ivanović por anunciado)
+    duda = [i % 2 == 0 and bool(_DUDA.search(t)) for i, t in enumerate(trozos)]
+    for i in range(2, len(trozos), 2):
+        if duda[i - 2] and ":" in trozos[i - 1] and "\n" not in trozos[i - 1]:
+            duda[i] = True
+    return "".join(" " if duda[i] else t for i, t in enumerate(trozos))
 
 
 def sin_referencia(texto: str) -> bool:

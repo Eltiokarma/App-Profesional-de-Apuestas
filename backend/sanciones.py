@@ -183,8 +183,39 @@ def _tarjetas_de(ids: list[int], team_id: int) -> dict[int, list]:
             continue
         vistos.add(k)
         out.setdefault(r["fixture_id"], []).append(dict(r))
+    _ids_de_la_hoja(out, team_id)
     stats = _rojas_en_stats(ids, team_id)
     return {i: _depurar(t, stats.get(i)) for i, t in out.items()}
+
+
+def _ids_de_la_hoja(por_partido: dict[int, list], team_id: int) -> None:
+    """LA TARJETA CON OTRO ID ES DEL MISMO JUGADOR DE LA HOJA (04/11/2026,
+    incidencia 1224, Kortrijk: «M. Fofana» 551229 en los eventos y 515771 en la
+    alineación y el plantel; su amarilla no sumaba al ciclo). Un id del evento
+    que no está en la hoja de ese partido toma el de la hoja si UN solo nombre
+    casa (la regla de `identidad.ids_equivalentes`)."""
+    from backend.identidad import ids_equivalentes
+    ids = [i for i, t in por_partido.items() if t]
+    if not ids:
+        return
+    try:
+        filas = db.query("sad", f"SELECT fixture_id, player_id, jugador FROM alineaciones WHERE team_id=? "
+                                f"AND fixture_id IN ({','.join('?' * len(ids))})", (team_id, *ids))
+    except Exception:  # noqa: BLE001 — base sin alineaciones: los ids quedan como vinieron
+        return
+    hojas: dict[int, dict] = {}
+    for r in filas:
+        if r["player_id"]:
+            hojas.setdefault(r["fixture_id"], {})[r["player_id"]] = r["jugador"] or ""
+    for fid, tarj in por_partido.items():
+        hoja = hojas.get(fid)
+        if not hoja:
+            continue
+        sueltos = {t["jugador_id"]: t["jugador"] or "" for t in tarj if t["jugador_id"] and t["jugador_id"] not in hoja}
+        equiv = ids_equivalentes(sueltos, hoja)
+        for t in tarj:
+            if t["jugador_id"] in equiv:
+                t["jugador_id"] = equiv[t["jugador_id"]]
 
 
 def _con_eventos(ids: list[int]) -> set[int]:

@@ -277,7 +277,8 @@ def _brier(reparto: dict, real: str) -> float | None:
 # UNA VENTANA RELATIVA AL GOL NO SON MINUTOS DEL RELOJ. «15-30' desde la
 # ventaja» se leía como 15-30 y Feyenoord–Como daba por buena la ventana con
 # el gol del 18' (veredictos del 17/10/2026; Sarmiento–River igual).
-_RELATIVA = re.compile(r"desde (la|el|que|su)|tras (el|la)|despu[eé]s de|luego de|del gol|de la ventaja|"
+# «desde el minuto 0» es reloj, no relativa (04/11/2026, incidencia 1218)
+_RELATIVA = re.compile(r"desde (la|el(?! minuto \d)|que|su)|tras (el|la)|despu[eé]s de|luego de|del gol|de la ventaja|"
                        r"relativ|\+\s*\d+\s*(min|')|post[- ]gol|posteriores|siguientes", re.I)
 
 
@@ -383,9 +384,19 @@ def ancla_casa(texto: str, rama: str | None) -> bool:
     return True
 
 
+_RELOJ = re.compile(r"\breloj\b[^0-9;.]{0,20}(\d{1,3})\s*['’]?\s*[-–a]+\s*(\d{1,3})", re.I)
+
+
 def _ventana(texto: str) -> tuple[int, int] | None:
     """"75-90'" → (75, 90). Sin dos números, o relativa a un gol, no hay
     ventana de reloj que comprobar."""
+    # LA CLÁUSULA DEL RELOJ MANDA AUNQUE NO VAYA PRIMERA (04/11/2026, incidencia
+    # 1218, Fenerbahçe: «desde el minuto 0 (SOB1 = 1); ventana del reloj 60-75'»
+    # salía null y el gol del 69' no se cobró)
+    r = _RELOJ.search(texto or "")
+    if r:
+        desde, hasta = int(r.group(1)), int(r.group(2))
+        return (desde, hasta) if desde <= hasta else (hasta, desde)
     if ventana_relativa(texto):
         return None
     m = re.search(r"(\d{1,3})\s*[-–a]+\s*(\d{1,3})", texto or "")
