@@ -589,7 +589,14 @@ POST $B/analisis/cowork/incidencias
   saca a uno en `jueganEnOtroEquipo` (1208, misma clase que la 961: se carga
   sin `jugadorId`); el lateral con el carril cruzado en el grid de la ficha
   (1205, 987: es la columna que publicó la API); y 4-1-4-1 contra 4-2-3-1 sin
-  rehacer (1203, ya decidido en la 1181).
+  rehacer (1203, ya decidido en la 1181). Y desde la pasada del 05/11
+  (tarde): el `desde` del DT por el primer banco visto que la prensa adelanta
+  (786, 1234: `_llegada_vista` solo lo da por confirmado si la hoja anterior
+  trae a OTRO DT; si la API dejó al saliente en esa hoja, la prensa manda);
+  el evento del tiempo añadido que la API guarda con el minuto ya sumado
+  (1082, 1216: la ventana se ancla al reloj del gol); y la ficha de un partido
+  con las estadísticas vacías (12 casos, todos `dato_api`: la API no las
+  publica para esa liga).
 
 ## Modo `mantenimiento` (los parches, automáticos)
 
