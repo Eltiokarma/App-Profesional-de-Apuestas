@@ -274,7 +274,11 @@ casi siempre no hay nada que hacer.
 >    mención del sistema viejo —`tde.bloques[]` (indicadores, ramas,
 >    reasignación, tipología), `matriz`, el falsador del pronóstico,
 >    EJE-DEBUTANTE y las alertas declaradas, la prosa del DTP, el ensayo y las
->    notas del EFE— y reescribí esas frases con el once oficial. Lo demás no
+>    notas del EFE, y también `documentos[]` (el del TDE repite C1 y SOB2: 1219)
+>    y las listas de banco del DTP (`viasGol`, `veredictoRamas`: un titular de
+>    la hoja no va ahí, 1225)— y reescribí esas frases con el once oficial.
+>    Y al revés: un jugador de `fuera` que está en la hoja (titular o banco)
+>    sale de `fuera` (1213, Pollero entró y marcó). Lo demás no
 >    se toca: una baja decisiva que no juega, un arquero distinto (EFE v1.6,
 >    B6), la rama del TDE que dependía de un intérprete. Si el 1X2 se mueve,
 >    movelo con su porqué en la lectura del 1X2 (disciplina 33); si no, no.

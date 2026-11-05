@@ -122,6 +122,18 @@ con.execute("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equ
             "VALUES (30, 20, 'Card', 'Yellow Card', ?, 'Vitor Hugo', 30398)", (ATL,))
 con.commit()
 
+# 1224 (Kortrijk, M. Fofana 551229 en los eventos y 515771 en la hoja): la
+# amarilla con otro id es del jugador de la hoja de ese partido
+con.execute("UPDATE fixture_eventos SET jugador_id=99398 WHERE fixture_id=30 AND jugador_id=30398")
+con.execute("INSERT INTO alineaciones VALUES (30, ?, '4-4-2', 'DT', 30398, 'Vitor Hugo', 3, 'D', '2:2', 1)", (ATL,))
+con.commit()
+n33i = {x["jugadorId"]: x for x in sanciones.de_fixture(33)["b"]["sancionados"]}
+check("1224: la amarilla con otro id en el evento suma al jugador de la hoja (3.ª, sancionado)",
+      30398 in n33i and n33i[30398]["amarillas"] == 3 and 99398 not in n33i, n33i)
+con.execute("UPDATE fixture_eventos SET jugador_id=30398 WHERE fixture_id=30 AND jugador_id=99398")
+con.execute("DELETE FROM alineaciones WHERE fixture_id=30")
+con.commit()
+
 # la hoja de ESTE partido manda: Neymar en el once → no estaba suspendido
 con.execute("INSERT INTO alineaciones VALUES (12, ?, '4-3-3', 'DT', 276, 'Neymar', 10, 'F', '4:2', 1)", (SAN,))
 con.commit()

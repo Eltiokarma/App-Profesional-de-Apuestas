@@ -2650,6 +2650,9 @@ def main():
                     "Weverton al banco como recambio"}}}]}})) == 1, "")
     # LA VENTANA RELATIVA AL GOL Y LA VENTANA DE LA RAMA (veredictos del 17/10/2026)
     from backend.analisis.veredicto import _ventana as _vv, ventana_relativa as _vr
+    check("1218: la cláusula «ventana del reloj 60-75'» manda aunque no vaya primera; «desde el minuto 0» no es relativa",
+          _vv("desde el minuto 0 (SOB1 = 1); ventana del reloj 60-75'") == (60, 75)
+          and not _vr("desde el minuto 0") and _vr("desde el minuto del gol +15"))
     check("«15-30' desde la ventaja» es relativa: no se lee como minutos 15-30",
           _vr("15-30' desde la ventaja") and _vv("15-30' desde la ventaja") is None and _vv("75-90'") == (75, 90))
     from backend.analisis.veredicto import clase_ventana as _cv
@@ -4129,6 +4132,15 @@ def main():
     check("714: «por C. Fuentes» saca a Fuentes de lo anunciado (el punto de la inicial no corta)",
           "Fuentes" not in _ss("entra Llantén por C. Fuentes respecto del once") and "Llantén" in
           _ss("entra Llantén por C. Fuentes respecto del once"))
+    from backend.analisis.dtp_cowork import sin_dudas as _sd1212
+    _s1212 = "entra Ivanović por Hazard o Sotoca, Antonio por Baidoo, Skóraś por Abdulhamid"
+    check("1212: con varios pares «X por Y» separados por coma, cada entrante queda y cada saliente sale",
+          all(n in _ss(_s1212) for n in ("Ivanović", "Antonio", "Skóraś"))
+          and not any(n in _ss(_s1212) for n in ("Hazard", "Sotoca", "Baidoo", "Abdulhamid"))
+          and "Galindo" not in _ss("entraron Bambú y Meraz por Mora y Galindo"), _ss(_s1212))
+    check("1212: «puede rotar: entra …» es duda también después de los dos puntos; «rota: entra …», no",
+          "Ivanović" not in _sd1212("puede rotar: " + _s1212) and "Ivanović" in _sd1212("rota: " + _s1212)
+          and "Kalulu" not in _sd1212("Lefort, Camara y Kalulu pueden volver a la zaga"), _sd1212("puede rotar: " + _s1212))
     check("526: «sin Lynen» no marca el seguro en el banco; «fijo en Lynen» sí",
           not any(m.startswith("seguro") for m in _rd526("Chuky San José y Reis; sin Lynen, depende de que un lateral se quede")["motivos"])
           and any(m.startswith("seguro") for m in _rd526("pivote fijo en Lynen")["motivos"]))
