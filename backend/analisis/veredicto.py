@@ -491,6 +491,13 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     # los dos, son dos ventanas y dos veredictos. Antes solo se miraba uno y el
     # otro no existía para ninguna métrica.
     from backend.analisis.parte import bloques_tde
+    # LA LLAVE SE MIRA ANTES: en una vuelta, quién va arriba sale del global (1247)
+    from backend import eliminatoria
+    try:
+        llave = eliminatoria.desenlace(fixture_id)
+    except Exception:  # noqa: BLE001 — sin la tabla de la llave no se afirma nada: queda como antes
+        llave = None
+    ventaja = ventaja_de_la_ida(llave)
     rojas = _rojas(fixture_id, fx["home_team_id"])
     creado = _creado_en(fixture_id)
     sin_ramas = servidor_sin_ramas(creado)
@@ -594,6 +601,14 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
             # la rama del marcador de ese momento, no la del primer gol
             "tramos": (tramos_por_marcador(tde, goles, foco, rojas, con_defecto)
                        if out["evidencia"]["conFicha"] else []),
+            # LOS TRAMOS VAN CON EL MARCADOR DE HOY (la rama que manda en cada uno es
+            # la disciplina 64 del TDE); en la vuelta de una llave se dice con qué
+            # global arrancó el foco, para que «perdiendo» no se cobre a quien iba
+            # arriba en la llave (1247)
+            **({"llave": (f"vuelta de una llave: el foco arrancó {(ventaja or {}).get(foco, 0):+d} en el global; "
+                          "los tramos se etiquetan con el marcador de hoy, y un tramo «perdiendo» con el "
+                          "global a favor no es perseguir")}
+               if (ventaja or {}).get(foco) else {}),
             # TDE v0.1.23: el añadido es una casilla del cierre, no una ventana
             "anadido": anadido_del_cierre(goles, rojas, foco) if out["evidencia"]["conFicha"] else None,
             "nota": ("sin ficha de eventos no se puede comprobar la ventana: queda sin veredicto"
@@ -633,7 +648,8 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     out["matriz"] = matriz_objetivo(parte.get("matriz") or {}, real)
     # ── el veredicto del M2 del DTP: la rama que se jugó (DTP v1.6) ─────────
     if (parte.get("dtp") or {}).get("bloques"):
-        out["dtp"] = dtp_objetivo(parte.get("dtp") or {}, goles, sin_eventos=not goles and bool(gl or gv))
+        out["dtp"] = dtp_objetivo(parte.get("dtp") or {}, goles, sin_eventos=not goles and bool(gl or gv),
+                                  ventaja_ida=ventaja)
     # ── la llave: el 1X2 es a 90' y el «ganador» de arriba también; quién PASÓ
     # sale aparte, con la tanda y el global (incidencia 774: «ganador b» y
     # Palmeiras había pasado a la final por penales) ─────────────────────────
@@ -645,8 +661,6 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
         ga = None
     if ga:
         out["golesAcotados"] = ga
-    from backend import eliminatoria
-    llave = eliminatoria.desenlace(fixture_id)
     if llave:
         lado = ("a" if llave["avanza"] == fx["home_team_id"] else "b") if llave.get("avanza") else None
         out["eliminatoria"] = {**llave, "avanzaLado": lado,
@@ -654,10 +668,12 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     return out
 
 
-def rama_del_foco(goles: list[dict], lado: str) -> dict:
+def rama_del_foco(goles: list[dict], lado: str, inicial: int = 0) -> dict:
     """Minutos del foco igualado o arriba y persiguiendo, de los minutos de gol
-    (0-90; el añadido no suma minutos). La rama jugada es la de más minutos."""
-    t, dif, acc = 0, 0, {"igualadoOArriba": 0, "persiguiendo": 0}
+    (0-90; el añadido no suma minutos). La rama jugada es la de más minutos.
+    `inicial` es la diferencia con la que el foco arranca: en la vuelta de una
+    llave, la de la ida (1247)."""
+    t, dif, acc = 0, inicial, {"igualadoOArriba": 0, "persiguiendo": 0}
     for g in sorted(goles, key=lambda g: g["minuto"] or 0):
         m = min(max(int(g["minuto"] or 0), t), 90)
         acc["persiguiendo" if dif < 0 else "igualadoOArriba"] += m - t
@@ -670,7 +686,27 @@ def rama_del_foco(goles: list[dict], lado: str) -> dict:
     return {"minutos": acc, "rama": max(acc, key=acc.get)}
 
 
-def dtp_objetivo(dtp: dict, goles: list[dict], sin_eventos: bool = False) -> dict:
+def ventaja_de_la_ida(llave: dict | None) -> dict | None:
+    """Con cuánto arrancó cada lado la vuelta de una llave: el global menos el
+    marcador de hoy. None si no es una vuelta con la ida en la base.
+
+    05/11/2026, incidencia 1247, Bolívar 1-0 Real Potosí (vuelta de cuartos,
+    global 2-3): la rama jugada salía «persiguiendo» para Potosí, que fue
+    arriba en la llave todo el partido. Quién va ganando una vuelta sale del
+    global, nunca del marcador (misma clase que 774)."""
+    if not llave or not llave.get("global") or not llave.get("marcador"):
+        return None
+    try:
+        gh, ga = (int(x) for x in str(llave["global"]).split("-"))
+        th, ta = (int(x) for x in str(llave["marcador"]).split("-"))
+    except ValueError:  # un marcador ilegible no se adivina
+        return None
+    d = (gh - th) - (ga - ta)
+    return {"a": d, "b": -d}
+
+
+def dtp_objetivo(dtp: dict, goles: list[dict], sin_eventos: bool = False,
+                 ventaja_ida: dict | None = None) -> dict:
     """DTP v1.6 (cambio 1): por bloque, la rama del estado de marcador en que se
     jugó el partido para el foco y el veredicto del M2 escrito para ESA rama.
     Sin acierto: si el veredicto se cumplió lo juzga el cierre, por lo que
@@ -692,10 +728,16 @@ def dtp_objetivo(dtp: dict, goles: list[dict], sin_eventos: bool = False) -> dic
                                      "veredictoUnico": m2.get("veredicto") or "",
                                      "sinEventos": "la ficha no trae los minutos de gol: la rama no se calcula"})
             continue
-        rj = rama_del_foco(goles, lado)
+        ida = (ventaja_ida or {}).get(lado) or 0
+        rj = rama_del_foco(goles, lado, ida)
         escrito = (ramas.get(rj["rama"]) or {})
         out["porBloque"].append({
             "equipo": lado, "ramaJugada": rj["rama"], "minutos": rj["minutos"],
+            # EN LA VUELTA MANDA EL GLOBAL (1247): la rama del marcador de hoy viaja
+            # al lado, para que se vea qué cambió
+            **({"ramaDelPartido": rama_del_foco(goles, lado)["rama"],
+                "llave": (f"vuelta de una llave: el foco arrancó {ida:+d} en el global por la ida, así que la "
+                          "rama jugada se mide con el global, no con el marcador de hoy")} if ida else {}),
             **({"empateDeMinutos": "las dos ramas jugaron los mismos minutos: se juzga igualadoOArriba y "
                                    "el veredicto de persiguiendo también vale (1057)"}
                if rj.get("empateDeMinutos") else {}),

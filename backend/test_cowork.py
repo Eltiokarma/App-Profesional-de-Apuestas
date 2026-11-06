@@ -3963,6 +3963,21 @@ def main():
           _r1057.get("empateDeMinutos") is True and _r1057["rama"] == "igualadoOArriba"
           and "empateDeMinutos" in _o1057
           and "empateDeMinutos" not in _rfoco(_gs16, "a"), (_r1057, _o1057))
+    # 1247 (Bolívar 1-0 Real Potosí, vuelta de cuartos, global 2-3): Potosí fue
+    # arriba en la llave todo el partido; la rama jugada sale del global
+    from backend.analisis.veredicto import ventaja_de_la_ida as _vida
+    _v1247 = _vida({"global": "2-3", "marcador": "1-0"})
+    _x1247 = {"bloques": [{"equipo": "b", "apertura": {"m2": {"veredictoRamas": {
+        "persiguiendo": {"veredicto": "DESFAVORABLE"}, "igualadoOArriba": {"veredicto": "FAVORABLE"}}}}}]}
+    _o1247 = _dobj(_x1247, [{"minuto": 30, "lado": "a"}], ventaja_ida=_v1247)["porBloque"][0]
+    check("1247: en la vuelta, la rama jugada es la del global (Potosí +2 de la ida: igualadoOArriba) y la del partido viaja al lado",
+          _v1247 == {"a": -2, "b": 2} and _o1247["ramaJugada"] == "igualadoOArriba"
+          and _o1247["ramaDelPartido"] == "persiguiendo" and "llave" in _o1247
+          and _o1247["veredictoDeLaRama"] == "FAVORABLE", _o1247)
+    check("1247: sin ida en la base (o un partido sin llave) la rama queda como siempre",
+          _vida(None) is None and _vida({"global": None, "marcador": "1-0"}) is None
+          and "llave" not in _dobj(_x1247, [{"minuto": 30, "lado": "a"}])["porBloque"][0]
+          and _dobj(_x1247, [{"minuto": 30, "lado": "a"}])["porBloque"][0]["ramaJugada"] == "persiguiendo")
     _o16 = _dobj(_x16, _gs16)["porBloque"][0]
     check("v1.6: el objetivo trae el veredicto escrito para la rama jugada",
           _o16["ramaJugada"] == "persiguiendo" and _o16["veredictoDeLaRama"] == "DESFAVORABLE"

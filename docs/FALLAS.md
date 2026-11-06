@@ -153,6 +153,7 @@ Tres lugares donde vive una guardia:
 - **Síntoma:** se deduce del resultado algo que el resultado no dice.
 - **Casos:** 774 (Palmeiras pasó por penales y el parte lo dio por eliminado); 846 (partido único resuelto en los 90').
 - **Guardia:**
+  - **En la vuelta de una llave, quién va arriba sale del global (1247):** `veredicto.ventaja_de_la_ida` da con cuánto arrancó cada lado; la rama jugada del DTP se mide con eso (`ramaDelPartido` lleva la de los 90') y los tramos del TDE dicen el global en `llave`, sin cambiar la rama que manda cada tramo (disciplina 64 del skill).
   - **Llaves:** `backend/eliminatoria.py`, con `avanza` en null cuando no se sabe.
   - **Alerta** `ELIMINATORIA-AL-REVES`. Con dos llaves de la misma copa y desenlaces distintos (pasó octavos, cayó en cuartos), la frase solo se compara con la anterior si nombra a su rival (1031, Luqueño).
   - **Tests:** `test_eliminatoria`.

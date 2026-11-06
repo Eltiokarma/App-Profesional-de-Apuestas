@@ -5211,6 +5211,8 @@ components:
                   sinRamas: { type: string, description: 'parte anterior a la v1.6, con un solo veredicto' }
                   empateDeMinutos: { type: string, description: 'las dos ramas jugaron los mismos minutos: se juzga igualadoOArriba y el veredicto de persiguiendo también vale (1057)' }
                   sinEventos: { type: string, description: 'hubo goles y la ficha no trae sus minutos' }
+                  ramaDelPartido: { type: string, enum: [igualadoOArriba, persiguiendo], description: 'solo en la vuelta de una llave: la rama con el marcador de hoy; `ramaJugada` es la del global (1247)' }
+                  llave: { type: string, description: 'solo en la vuelta de una llave: con cuánto arrancó el foco en el global (1247)' }
         matriz:
           type: object
           description: 'por lado, el escenario que dio el marcador (ganar · empatar · perder) y lo que la matriz había escrito para él. Sin acierto: la matriz es narrativa; si lo escrito apareció lo dice `porLado.*.escenario`'
