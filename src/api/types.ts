@@ -444,7 +444,7 @@ export interface JugadorDTO {
    *  'ruido' (el flag Missing Fixture marcó más del umbral de la plantilla: no cuenta). */
   baja: { tipo: string | null; detalle: string | null; lectura?: LecturaBaja
           /** con lectura `desmentida`: lo que decía la API y cuándo jugó después de la baja */
-          lecturaApi?: LecturaBaja; desmentidaPorOnce?: { fechaBaja: string; jugoEl?: string; convocadoEl?: string }; soloLista?: 'internacional'; soloCompeticion?: 'internacional' | 'nacional'; otraCompeticion?: boolean; lesion?: boolean
+          lecturaApi?: LecturaBaja; desmentidaPorOnce?: { fechaBaja: string; jugoEl?: string; convocadoEl?: string }; soloLista?: 'internacional'; soloCompeticion?: 'internacional' | 'nacional'; otraCompeticion?: boolean; ligaId?: number; lesion?: boolean
           /** motivo disciplinario (roja, amarillas, suspensión): señal siempre (415). */
           sancion?: boolean } | null
   /** Traspaso hacia el equipo en ≤90 días: sus stats vienen de otro contexto. */
