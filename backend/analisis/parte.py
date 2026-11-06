@@ -114,7 +114,10 @@ _COLUMNAS_NUEVAS = (("veredicto_json", "TEXT"), ("cohorte", "TEXT"), ("cuarenten
                     # el DT con que se ESCRIBIÓ el parte, cuando se corrige después del
                     # pitazo (27/10/2026, incidencia 712): la corrección arregla el dato,
                     # no el análisis, y el caso sigue en cuarentena
-                    ("dt_original_json", "TEXT"))
+                    ("dt_original_json", "TEXT"),
+                    # el PRIMER cierre lleno de cada bloque del DTP (06/11/2026, incidencia
+                    # 1258): restaurarlo en un rehacer no es reescribirlo
+                    ("cierres_json", "TEXT"))
 # el registro del revisor nació sin `via`; se añade en caliente igual
 _COLUMNAS_LOG = (("via", "TEXT"),)
 
@@ -3243,8 +3246,9 @@ def guardar(payload: dict) -> dict:
         if b and b.get("nombre"):
             dt_base[lado] = b["nombre"]
     with _conectar() as con:
-        previo = con.execute("SELECT creado_en, xi_json, parte_json FROM parte_cowork WHERE fixture_id=?",
-                             (parte["fixtureId"],)).fetchone()
+        previo = con.execute("SELECT creado_en, xi_json, parte_json, cierres_json FROM parte_cowork "
+                             "WHERE fixture_id=?", (parte["fixtureId"],)).fetchone()
+        cierres_originales = cierres_primeros(previo, parte)
         con.execute(
             "INSERT INTO parte_cowork (fixture_id, fecha, equipo_a, equipo_b, estado, version, "
             "parte_json, xi_json, creado_en, actualizado_en, cohorte, dt_base_json, deposito_previo_en) "
@@ -3266,6 +3270,9 @@ def guardar(payload: dict) -> dict:
              json.dumps(dt_base, ensure_ascii=False) if dt_base else None,
              ahora if _antes_del_pitazo(ahora, fx["date"]) else None),
         )
+        if cierres_originales:
+            con.execute("UPDATE parte_cowork SET cierres_json=? WHERE fixture_id=?",
+                        (json.dumps(cierres_originales, ensure_ascii=False), parte["fixtureId"]))
     # COHERENCIA (Jev): se evalúa AQUÍ y se guarda sellada, no al leer —Jev no
     # es determinista y dos lecturas darían hallazgos distintos—. Nunca tumba
     # el depósito: un fallo se declara dentro del propio JSON.
@@ -3343,8 +3350,9 @@ def guardar(payload: dict) -> dict:
                 "filasMatriz": filas_matriz(p_.get("matriz") or {}),
             }
         t_antes, t_ahora = _tam(antes), _tam(parte)
+        t_antes["bajas"] -= _sacados_de_fuera_en_la_hoja(antes, parte, parte["fixtureId"])
         perdido = [f"{k}: {t_antes[k]} → {t_ahora[k]}" for k in t_antes if t_ahora[k] < t_antes[k]]
-        cierre_modificado = cierres_modificados(antes, parte)
+        cierre_modificado = cierres_modificados(antes, parte, cierres_originales)
 
     cadena, cadena_ignorada = _guardar_cadena(fx, parte.get("cadena") or {})
     dtp_guardado, dtp_no_guardado = _guardar_apertura_dtp(fx, parte.get("dtp") or {})
@@ -3698,7 +3706,65 @@ def guardar(payload: dict) -> dict:
     return resumen
 
 
-def cierres_modificados(antes: dict, ahora: dict) -> list[dict]:
+def _sacados_de_fuera_en_la_hoja(antes: dict, ahora: dict, fixture_id: int) -> int:
+    """Cuántos de los que este depósito SACÓ de `fuera` están en la hoja oficial
+    de este partido (titulares o banco). Sacarlos es lo que pide el skill (1213),
+    no una pérdida: `perdido` no los cuenta (06/11/2026, incidencia 1260,
+    Hamburger SV–Gladbach: el rehacer sacó a Bornauw, Poulsen, Diks y Honorat,
+    que estaban en la hoja, y el recibo avisaba «bajas: 14 → 10»)."""
+    from backend.identidad import mismo_jugador
+    try:
+        hoja = saddb.query("sad", "SELECT player_id, jugador FROM alineaciones WHERE fixture_id=?", (fixture_id,))
+    except Exception:  # noqa: BLE001 — sin la ficha capturada no hay hoja contra la que descontar
+        return 0
+    if not hoja:
+        return 0
+    ids = {h["player_id"] for h in hoja if h["player_id"]}
+    n = 0
+    for lado in LADOS:
+        quedan = ((ahora.get("equipos") or {}).get(lado) or {}).get("fuera") or []
+        for f in ((antes.get("equipos") or {}).get(lado) or {}).get("fuera") or []:
+            nom, jid = f.get("nombre") or "", f.get("jugadorId")
+            if any((jid and q.get("jugadorId") == jid) or mismo_jugador(nom, q.get("nombre") or "") for q in quedan):
+                continue  # sigue en fuera
+            if (jid and jid in ids) or any(nom and mismo_jugador(nom, h["jugador"] or "") for h in hoja):
+                n += 1
+    return n
+
+
+def _bloques_dtp(p_: dict) -> dict:
+    return {b.get("equipo"): b for b in ((p_.get("dtp") or {}).get("bloques") or []) if isinstance(b, dict)}
+
+
+def _cierre_lleno(v) -> bool:
+    if isinstance(v, dict):
+        return any(_cierre_lleno(x) for k, x in v.items() if k != "sinAnterior")
+    if isinstance(v, list):
+        return any(_cierre_lleno(x) for x in v)
+    return v not in (None, "", False)
+
+
+def cierres_primeros(previo, parte: dict) -> dict:
+    """El PRIMER cierre lleno de cada bloque del DTP: lo guardado, o el del parte
+    anterior, o el de este depósito (el primero). Es contra lo que se dice si un
+    rehacer reescribió el cierre (1258)."""
+    try:
+        guardados = json.loads(previo["cierres_json"] or "{}") if previo else {}
+    except (ValueError, TypeError, KeyError, IndexError):
+        guardados = {}
+    try:
+        antes = json.loads(previo["parte_json"]) if previo else {}
+    except (ValueError, TypeError):
+        antes = {}
+    out = dict(guardados or {})
+    for fuente in (antes, parte):
+        for lado, b in _bloques_dtp(fuente).items():
+            if lado not in out and _cierre_lleno(b.get("cierre")):
+                out[lado] = b["cierre"]
+    return out
+
+
+def cierres_modificados(antes: dict, ahora: dict, originales: dict | None = None) -> list[dict]:
     """Los bloques del DTP cuyo `cierre` (la autopsia del partido ANTERIOR) cambió
     entre el parte guardado y este depósito, con los campos que cambiaron.
 
@@ -3706,22 +3772,24 @@ def cierres_modificados(antes: dict, ahora: dict) -> list[dict]:
     reemplazó texto apurado y cambió los goles y asistencias del cierre contra
     Río Cuarto (I. Fernández pasó a N. Schelotto) sin que nadie se enterara. No
     se rechaza —puede ser una corrección legítima—, se dice. Un cierre vacío
-    antes no cuenta: llenarlo es completar, no reescribir."""
-    def _bloques(p_: dict) -> dict:
-        return {b.get("equipo"): b for b in ((p_.get("dtp") or {}).get("bloques") or []) if isinstance(b, dict)}
-    def _lleno(v) -> bool:
-        if isinstance(v, dict):
-            return any(_lleno(x) for k, x in v.items() if k != "sinAnterior")
-        if isinstance(v, list):
-            return any(_lleno(x) for x in v)
-        return v not in (None, "", False)
+    antes no cuenta: llenarlo es completar, no reescribir.
+
+    VOLVER AL CIERRE ORIGINAL NO ES REESCRIBIRLO (06/11/2026, incidencia 1258,
+    Willem II–PEC Zwolle: un POST del rehacer tocó `casoBloque` por error, el
+    siguiente lo devolvió idéntico y el recibo seguía avisando): con
+    `originales` (el primer cierre lleno de cada bloque), un cierre igual al
+    original no se marca."""
+    _bloques, _lleno = _bloques_dtp, _cierre_lleno
     previos, nuevos = _bloques(antes), _bloques(ahora)
+    _j = lambda v: json.dumps(v, sort_keys=True, ensure_ascii=False)  # noqa: E731
     out = []
     for lado, b in nuevos.items():
         viejo = (previos.get(lado) or {}).get("cierre") or {}
         nuevo = b.get("cierre") or {}
         if not _lleno(viejo) or not _lleno(nuevo):
             continue  # vacío antes: se completa; vacío ahora: lo cuenta `perdido` (bloquesDtp) o no hay cierre
+        if originales and lado in originales and _j(originales[lado]) == _j(nuevo):
+            continue
         campos = sorted(k for k in set(viejo) | set(nuevo)
                         if json.dumps(viejo.get(k), sort_keys=True, ensure_ascii=False)
                         != json.dumps(nuevo.get(k), sort_keys=True, ensure_ascii=False))

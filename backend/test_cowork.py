@@ -4105,6 +4105,18 @@ def main():
     _eco1246 = c.get(f"{A}/analisis/cowork/{ns_dtp}").json()
     r_eco1246 = c.post(f"{A}/analisis/cowork", json={**_eco1246, "fixtureId": ns_dtp}).json()
     check("1246: el eco del GET no reescribe nada", r_eco1246.get("cierreModificado") == [], r_eco1246.get("cierreModificado"))
+    # 1258 (Willem II–PEC Zwolle): devolver el cierre a como estaba la primera vez no es reescribirlo
+    r_v1258 = c.post(f"{A}/analisis/cowork", json=p_dtp).json()
+    check("1258: restaurar el cierre original después de tocarlo no sale en cierreModificado",
+          r_v1258.get("cierreModificado") == [], r_v1258.get("cierreModificado"))
+    # 1260 (Hamburger SV–Gladbach): sacar de `fuera` a quien está en la hoja no es perder una baja
+    from backend.analisis.parte import _sacados_de_fuera_en_la_hoja as _sf1260
+    _h1260 = dbmod.query_one("sad", "SELECT player_id, jugador FROM alineaciones WHERE fixture_id=? LIMIT 1", (con_ficha,))
+    _a1260 = {"equipos": {"a": {"fuera": [{"nombre": _h1260["jugador"], "jugadorId": _h1260["player_id"]},
+                                          {"nombre": "Nadie Delahoja", "estado": "baja"}]}}}
+    check("1260: el sacado de `fuera` que está en la hoja se descuenta; el que no está, no",
+          _sf1260(_a1260, {"equipos": {"a": {"fuera": []}}}, con_ficha) == 1
+          and _sf1260(_a1260, _a1260, con_ficha) == 0, _h1260)
     from backend.analisis.parte import cierres_modificados as _cm1246
     check("1246: llenar un cierre que estaba vacío es completar, no reescribir",
           _cm1246({"dtp": {"bloques": [{"equipo": "a", "cierre": {"sinAnterior": False, "m4Goles": []}}]}},
