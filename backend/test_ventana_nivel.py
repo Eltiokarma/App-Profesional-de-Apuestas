@@ -202,5 +202,29 @@ check("1165: misma_sede — recortado y ampliado sí; dos estadios distintos o s
       and not vn.misma_sede("Estadio Municipal", "Estadio Nacional")
       and not vn.misma_sede("PSC Arena", "Stadio Benito Stirpe"))
 
+
+# 1251 (06/11/2026): Coventry, recién ascendido, con su Championship de abril-mayo
+# en la ventana del nivel; la liga de hoy es la del partido analizado (Premier)
+COV = 1346
+con = sqlite3.connect(os.path.join(_TMP, "sad.db"))
+con.executemany("INSERT OR IGNORE INTO leagues (id, name, country) VALUES (?,?,?)",
+                [(39, "Premier League", "England"), (40, "Championship", "England"), (48, "League Cup", "England")])
+_cov = [("2026-04-0%d" % (i + 1), 40) for i in range(7)] + [("2026-08-28", 48)] \
+    + [("2026-09-%02d" % (i + 1), 39) for i in range(12)]
+for i, (d, liga) in enumerate(_cov):
+    con.execute("INSERT INTO fixtures VALUES (?,?, 'FT', 'Match Finished', ?, 2026, ?, ?, 1, 1, 1, 1, NULL, NULL)",
+                (7000 + i, d + " 15:00:00", liga, COV, 9700 + i))
+con.execute("INSERT INTO fixtures VALUES (7100, '2026-11-07 15:00:00', 'NS', '', 39, 2026, ?, 9800, NULL, NULL, NULL, NULL, "
+            "NULL, NULL)",
+            (COV,))
+con.commit()
+cc = vn.composicion(COV, "2026-11-07T15:00:00Z")
+check("1251: la ventana del ascendido cuenta 7 de otra liga (Championship); la copa no cuenta como otra liga",
+      cc and cc["otraLiga"] == 7 and cc["otraLigaNombre"] == "Championship" and cc["otros"] == 20, cc)
+check("1251: el texto lo dice", vn.texto(cc) == "7 de otra liga (Championship) de 20", vn.texto(cc))
+check("1251: Galatasaray (toda la liga es la de hoy) no trae otra liga", c["otraLiga"] == 0, c)
+check("1251: solo se cuenta: sin amistosos, la fiabilidad «alta» no baja por la otra liga",
+      vn.fiabilidad_con_ventana(alta, {"local": cc})["nivel"] == "alta")
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)
