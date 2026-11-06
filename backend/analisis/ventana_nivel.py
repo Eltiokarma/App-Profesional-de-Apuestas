@@ -83,15 +83,40 @@ def composicion(team_id: int, antes: str | None) -> dict | None:
     inter = _internacionales()
     amistosos = [f for f in ventana if es_amistoso(f["league_id"], f["liga"])]
     internacionales = [f for f in ventana if f["league_id"] in inter]
+    otra = _de_otra_liga(team_id, antes, [f for f in ventana if f not in amistosos and f not in internacionales])
+    nombres = [f["liga"] or f"liga {f['league_id']}" for f in otra]
     return {
         "partidos": len(ventana),
         "amistosos": len(amistosos),
         "internacionales": len(internacionales),
         "otros": len(ventana) - len(amistosos) - len(internacionales),
+        "otraLiga": len(otra),
+        "otraLigaNombre": max(set(nombres), key=nombres.count) if nombres else None,
         "desde": str(ventana[0]["date"])[:10],
         "hasta": str(ventana[-1]["date"])[:10],
         "completa": len(ventana) >= VENTANA,
     }
+
+
+def _de_otra_liga(team_id: int, antes: str | None, filas: list) -> list:
+    """Los partidos de LIGA de la ventana que no son de la liga que juega hoy
+    (06/11/2026, incidencia 1251, Coventry recién ascendido: la ventana del
+    nivel traía sus partidos de Championship de abril-mayo sin marcar y el motor
+    le daba más nivel que a Everton). Es la misma regla que ya marca las K del
+    ascendido (`escala.historia_otra_categoria`, incidencias 974 y 975): liga
+    = ni copa, ni internacional, ni amistoso (`escala.es_liga`); la de hoy es
+    `escala.liga_vigente`. Solo se CUENTA: μ y la fiabilidad no se tocan."""
+    if not antes or not filas:
+        return []
+    try:
+        from backend.analisis import escala
+        base = escala.liga_vigente(team_id, str(antes))
+        if not base:
+            return []
+        es = {lid: escala.es_liga(lid) for lid in {f["league_id"] for f in filas}}
+    except Exception:  # noqa: BLE001 — sin la escala legible no se afirma que una liga sea otra
+        return []
+    return [f for f in filas if es.get(f["league_id"]) and f["league_id"] != base]
 
 
 def texto(c: dict | None) -> str:
@@ -102,6 +127,9 @@ def texto(c: dict | None) -> str:
         partes.append(f"{c['amistosos']} amistoso{'s' if c['amistosos'] != 1 else ''}")
     if c["internacionales"]:
         partes.append(f"{c['internacionales']} internacional{'es' if c['internacionales'] != 1 else ''}")
+    if c.get("otraLiga"):
+        partes.append(f"{c['otraLiga']} de otra liga"
+                      + (f" ({c['otraLigaNombre']})" if c.get("otraLigaNombre") else ""))
     return (" y ".join(partes) + f" de {c['partidos']}") if partes else ""
 
 

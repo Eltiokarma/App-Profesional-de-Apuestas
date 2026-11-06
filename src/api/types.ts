@@ -279,6 +279,9 @@ export interface VentanaNivelDTO {
   amistosos: number
   internacionales: number
   otros: number
+  /** De los «otros», los de liga que no son la que juega hoy (ascendido/descendido, 1251). */
+  otraLiga?: number
+  otraLigaNombre?: string | null
   desde: string
   hasta: string
   completa: boolean

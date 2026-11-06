@@ -2453,6 +2453,8 @@ components:
             amistosos: { type: integer }
             internacionales: { type: integer, description: 'torneos internacionales de clubes' }
             otros: { type: integer }
+            otraLiga: { type: integer, description: 'de los «otros», los de LIGA que no son la liga que juega hoy (escala.liga_vigente): el ascendido o el descendido con su temporada anterior en la ventana (06/11/2026, incidencia 1251, Coventry). Solo se cuenta: μ y la fiabilidad no se tocan' }
+            otraLigaNombre: { type: string, nullable: true, description: 'la más repetida de esas otras ligas' }
             desde: { type: string }
             hasta: { type: string }
             completa: { type: boolean, description: 'false con menos de 20 partidos en la base' }
@@ -2487,7 +2489,7 @@ components:
             nota: { type: string, description: 'por qué, en lenguaje de apostador' }
             escala: { type: string, description: 'solo con bases distintas: la relación (rival de categoría inferior · superior · fuera del padrón · otra liga)' }
             notaLiga: { type: string, description: 'solo con bases distintas o con la ventana de amistosos: lo que diría la liga sola' }
-            ventana: { type: object, additionalProperties: { type: string }, description: 'por lado (local/visitante), «6 amistosos y 3 internacionales de 20»; solo los lados que tienen alguno' }
+            ventana: { type: object, additionalProperties: { type: string }, description: 'por lado (local/visitante), «6 amistosos y 3 internacionales de 20» (o «… 17 de otra liga (Championship) de 20», 1251); solo los lados que tienen alguno' }
             porVentana: { type: boolean, description: 'con 3+ amistosos en la ventana de 20 de un lado: «alta» baja a «media» (o la nota lo suma); con menos de 10 partidos en la ventana o el último de hace más de un año, «baja» (incidencia 991); μ no se toca' }
             canchaNeutral: { type: boolean, description: 'la sede no es la habitual del local (la más repetida en sus últimos 20 de local): la localía que μ suma no aplica; «alta» baja a «media» (incidencia 991)' }
         unXDos:
