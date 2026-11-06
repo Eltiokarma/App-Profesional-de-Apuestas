@@ -4109,6 +4109,13 @@ def main():
           and _sn(["C. Günter"], ["M. Ginter"], " gunter sigue a kane ") == ["C. Günter"])
     check("638: la pieza «A. Terrazas» no nombra al suplente J. Terrazas",
           _sn(["A. Terrazas", "J. Terrazas"], ["X. Uno"], " a terrazas ", "A. Terrazas") == ["A. Terrazas"])
+    _pz1241 = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "3-5-2"}, "m2": {"piezas": [
+        {"nombre": "Gabriel Justino", "rol": "central y rematador aéreo", "lado": "rival"}]}}},
+        {"a": {"formacion": "3-5-2", "titulares": ["M. Uno"], "banca": []},
+         "b": {"formacion": "4-2-3-1", "titulares": ["Vitor Hugo", "Gustavo Scarpa"],
+               "banca": ["João Gabriel Castro Santos", "Gabriel Delfim"]}})
+    check("1241: la pieza rival «Gabriel Justino» no casa con «João Gabriel Castro Santos» ni «Gabriel Delfim» del banco",
+          not any("arrancó en el banco" in m for m in _pz1241["motivos"]), _pz1241["motivos"])
     _pz633 = _rehacer({"equipo": "a", "apertura": {"m1": {"sistema": "4-3-3"}, "m2": {"piezas": [
         {"nombre": "R. Insúa", "rol": "ejecutor de penales desde el banco", "lado": "foco"}]}}},
         {"a": {"formacion": "4-3-3", "titulares": ["M. Uno"], "banca": ["R. Insúa"]}})
