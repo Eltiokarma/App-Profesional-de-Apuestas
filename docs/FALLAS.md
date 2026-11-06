@@ -168,6 +168,7 @@ Tres lugares donde vive una guardia:
 - **Síntoma:** un backtest demasiado bueno.
 - **Casos:** deuda 13: el nivel del rival escrito después del partido. El 1X2 subió de 47 % a 54 % y los puntos se calibraron con la fuga.
 - **Guardia:**
+  - **El cierre de un partido jugado no se reescribe callado (1246):** un re-depósito que cambia `dtp.bloques[].cierre` sale en `cierreModificado` y en el `aviso` del recibo (Gimnasia–Belgrano: un rehacer apurado cambió goles y asistencias del cierre contra Río Cuarto).
   - **Nivel previo:** `backtest_burbuja.nivel_rival_previo`, con su test anti-fuga.
   - **Vista al día del partido:** `antesDe=<fixture>` en `/constantes`, `/niveles` y `/burbujas`.
   - **Corte temporal** en todos los backtests; la guardia de 15-35 % de empates.

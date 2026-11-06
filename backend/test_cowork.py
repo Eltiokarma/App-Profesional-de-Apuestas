@@ -4078,6 +4078,22 @@ def main():
     r_dtp3 = c.post(f"{A}/analisis/cowork", json=p_dtp3).json()
     check("un re-depósito sin el DTP lo delata en `perdido`",
           any(x.startswith("bloquesDtp") for x in r_dtp3["perdido"]), r_dtp3["perdido"])
+    # 1246 (Gimnasia–Belgrano): un re-depósito que REESCRIBE el cierre del partido
+    # anterior se dice en el recibo; el eco del GET y completar un cierre vacío, no
+    c.post(f"{A}/analisis/cowork", json=p_dtp)
+    p_c1246 = _copy.deepcopy(p_dtp)
+    p_c1246["dtp"]["bloques"][0]["cierre"]["m4Goles"][0]["minuto"] = 61
+    r_c1246 = c.post(f"{A}/analisis/cowork", json=p_c1246).json()
+    check("1246: el cierre del partido anterior reescrito sale en cierreModificado y en el aviso",
+          r_c1246.get("cierreModificado") == [{"equipo": p_dtp["dtp"]["bloques"][0]["equipo"], "campos": ["m4Goles"]}]
+          and "REESCRIBIÓ el cierre" in r_c1246.get("aviso", ""), (r_c1246.get("cierreModificado"), r_c1246.get("aviso")))
+    _eco1246 = c.get(f"{A}/analisis/cowork/{ns_dtp}").json()
+    r_eco1246 = c.post(f"{A}/analisis/cowork", json={**_eco1246, "fixtureId": ns_dtp}).json()
+    check("1246: el eco del GET no reescribe nada", r_eco1246.get("cierreModificado") == [], r_eco1246.get("cierreModificado"))
+    from backend.analisis.parte import cierres_modificados as _cm1246
+    check("1246: llenar un cierre que estaba vacío es completar, no reescribir",
+          _cm1246({"dtp": {"bloques": [{"equipo": "a", "cierre": {"sinAnterior": False, "m4Goles": []}}]}},
+                  {"dtp": {"bloques": [{"equipo": "a", "cierre": {"m4Goles": [{"minuto": 3}]}}]}}) == [])
 
     # EL DTP A REHACER: el once oficial contradice la apertura (9 de 24 el 11/10)
     _hid_d = dbmod.query_one("sad", "SELECT home_team_id FROM fixtures WHERE id=?", (con_ficha,))["home_team_id"]
