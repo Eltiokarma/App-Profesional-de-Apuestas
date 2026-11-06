@@ -207,6 +207,17 @@ _ch = {(h["chequeo"], h.get("lado")) for h in _pre}
 check("escaneo: el sancionado, el DT sin confirmar y el doble partido salen como hallazgos",
       ("sancion", "a") in _ch and ("dt-sin-confirmar", "b") in _ch and ("dos-partidos", None) in _ch
       and ("dt-sin-confirmar", "a") not in _ch, _pre)
+# 1255: sin cuota es hallazgo solo cuando el refresco (<= SAD_REFRESCO_VENTANA_HORAS) ya pasó
+con.execute("CREATE TABLE IF NOT EXISTS odds_history (fixture_id INTEGER, captured_at TEXT)")
+con.commit()
+_c7 = {h["chequeo"] for h in escaneo._pre({"fixtureId": 13, "partido": "Fortaleza vs Medellín", "fecha": "2026-10-28",
+                                          "hora": "19:30", "equipoA": "Fortaleza", "equipoB": "Medellín"}, _ahora)}
+_c4 = {h["chequeo"] for h in escaneo._pre({"fixtureId": 13, "partido": "Fortaleza vs Medellín", "fecha": "2026-10-28",
+                                          "hora": "16:00", "equipoA": "Fortaleza", "equipoB": "Medellín"}, _ahora)}
+from backend import app as _app  # noqa: E402
+check("1255: a 7,5 h el refresco de cuotas todavía no lo pidió (no es hallazgo); a 4 h sin cuota, sí",
+      "sin-cuotas" not in _c7 and "sin-cuotas" in _c4
+      and escaneo.HORAS_CUOTAS < int(_app.REFRESCO_VENTANA_H), (_c7, _c4, escaneo.HORAS_CUOTAS))
 # jugados: el 11 con parte, sin ninguna versión del once antes del pitazo y con eventos
 from backend.analisis import parte as _parte  # noqa: E402
 with _parte._conectar() as _c:

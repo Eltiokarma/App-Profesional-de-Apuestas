@@ -596,7 +596,13 @@ POST $B/analisis/cowork/incidencias
   el evento del tiempo añadido que la API guarda con el minuto ya sumado
   (1082, 1216: la ventana se ancla al reloj del gol); y la ficha de un partido
   con las estadísticas vacías (12 casos, todos `dato_api`: la API no las
-  publica para esa liga).
+  publica para esa liga). Y desde la pasada del 06/11 (mediodía): la etiqueta
+  EN_CRISIS de un equipo que gana (1252: el criterio G2 es «3 derrotas
+  seguidas O DT nuevo en 4 semanas», `calendario.CRISIS_DT_DIAS`, y viaja con
+  su `dato`); el titular de la temporada que no fue titular en los últimos 10
+  onces y no está en la F1 (1253, 809: el probable de la prensa lo suma con su
+  `jugadorId`); y una liga sin regla de amarillas en `sanciones.UMBRALES`
+  (1254: espera la decisión de la 1067; sumá el caso a esa).
 
 ## Modo `mantenimiento` (los parches, automáticos)
 
