@@ -865,17 +865,26 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
     }
 
 
-def sancion_de_otra_competicion(t: dict, competicion: str) -> dict:
+def sancion_de_otra_competicion(t: dict, competicion: str, liga_id: int | None = None) -> dict:
     """UNA SANCIÓN SE CUMPLE EN SU COMPETICIÓN (incidencias 1178 y 1193): la
     baja disciplinaria de la plantilla trae `soloCompeticion` (internacional ·
     nacional, por la fecha del partido que se pierde). En un partido de la
     OTRA competición no es baja: se lee `ruido` con `otraCompeticion` y la
     lectura que tenía en `lecturaApi` (Vinícius, roja de LaLiga, salía «señal»
-    en la Champions). La desmentida queda como venía."""
+    en la Champions). La desmentida queda como venía.
+
+    LA ROJA DE NUESTRA FICHA TRAE SU LIGA (06/11/2026, incidencia 1262): con
+    `ligaId` de otra competición (fuera del grupo de `sanciones.ROJA_DOMESTICA`)
+    tampoco es baja de este partido, que es lo que ya dice `sanciones.py`
+    (`sancionados` vacío): las rojas de la copa boliviana salían «señal» en la
+    F1 de la liga."""
+    from backend import sanciones
+    grupo = sanciones._grupo_roja(liga_id) if liga_id else ()
     for f in t.get("candidatos") or []:
         b = f.get("baja") or {}
         solo = b.get("soloCompeticion")
-        if solo and solo != competicion and b.get("lectura") != "desmentida":
+        otra = (solo and solo != competicion) or (grupo and b.get("ligaId") and b["ligaId"] not in grupo)
+        if otra and b.get("lectura") != "desmentida":
             f["baja"] = {**b, "lectura": "ruido", "lecturaApi": b.get("lectura"), "otraCompeticion": True}
     return t
 
@@ -894,9 +903,9 @@ def tabla(fixture_id: int, sanc: dict | None = None) -> dict | None:
     return {
         "fixtureId": fixture_id,
         "a": _con_sanciones(sancion_de_otra_competicion(
-            tabla_equipo(fx["home_team_id"], fx["home_name"], fx["date"]), comp), sanc.get("a")),
+            tabla_equipo(fx["home_team_id"], fx["home_name"], fx["date"]), comp, fx["league_id"]), sanc.get("a")),
         "b": _con_sanciones(sancion_de_otra_competicion(
-            tabla_equipo(fx["away_team_id"], fx["away_name"], fx["date"]), comp), sanc.get("b")),
+            tabla_equipo(fx["away_team_id"], fx["away_name"], fx["date"]), comp, fx["league_id"]), sanc.get("b")),
         "nota": ("punto de partida de la tabla F1, calculado de la temporada ingestada: copiá el "
                  "`jugadorId` (es el cruce exacto con la hoja del partido) y confirmá el rol con la "
                  "prensa —`rolSugerido` sale de los últimos onces (o de los minutos, ver `rolPor`) y no sabe de un DT nuevo ni de una "

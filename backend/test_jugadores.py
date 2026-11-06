@@ -706,6 +706,30 @@ def main():
     _f1b.sancion_de_otra_competicion(_t2, "nacional")
     check("1178/1193: en la F1 de un partido de liga la sanción UEFA se lee ruido",
           _t2["candidatos"][0]["baja"].get("otraCompeticion") is True, _t2)
+    # 1262 (liga boliviana): la roja de nuestra ficha en la COPA no es baja en la F1 de la liga
+    _q1 = _jg._query
+    def _qs1262(sql, params=()):
+        if "FROM fixtures" in sql:
+            return [{"id": 88, "date": "2026-11-03T20:00:00+00:00", "league_id": 964}]
+        if "FROM leagues" in sql:
+            return [{"name": "Copa de la División Profesional"}]
+        return [{"jugador_id": 21, "detalle": "Red Card"}]
+    try:
+        _jg._query = _qs1262
+        _sf1262 = _jg.sanciones_de_ficha(1)
+    finally:
+        _jg._query = _q1
+    _bd1262 = _jg._baja_dto(_sf1262[21], {"lectura": "senal"}, None)
+    _t1262 = {"candidatos": [{"jugadorId": 21, "baja": dict(_bd1262)}]}
+    _f1b.sancion_de_otra_competicion(_t1262, "nacional", 344)
+    _t1262b = {"candidatos": [{"jugadorId": 21, "baja": dict(_bd1262)}]}
+    _f1b.sancion_de_otra_competicion(_t1262b, "nacional", 964)
+    check("1262: la roja de la ficha dice el torneo y su ligaId; en la F1 de OTRA competición se lee ruido, "
+          "en la misma sigue señal",
+          "en Copa de la División Profesional" in _bd1262["detalle"] and _bd1262.get("ligaId") == 964
+          and _t1262["candidatos"][0]["baja"]["lectura"] == "ruido"
+          and _t1262["candidatos"][0]["baja"].get("otraCompeticion")
+          and _t1262b["candidatos"][0]["baja"]["lectura"] == "senal", (_bd1262, _t1262, _t1262b))
     from backend.analisis import dtp_cowork as _dc
     _pj = _jg.plantilla_de
     try:

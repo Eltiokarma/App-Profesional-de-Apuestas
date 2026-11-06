@@ -403,8 +403,8 @@ def sanciones_de_ficha(team_id: int) -> dict[int, dict]:
     (`es_sancion`), y si después jugó otro partido queda desmentida sola (la
     fecha de la baja es la del partido de la roja)."""
     try:
-        ult = _query(f"SELECT id, date FROM fixtures WHERE (home_team_id=? OR away_team_id=?) AND {_FIN90} "
-                     "ORDER BY date DESC LIMIT 1", (team_id, team_id))
+        ult = _query(f"SELECT id, date, league_id FROM fixtures WHERE (home_team_id=? OR away_team_id=?) "
+                     f"AND {_FIN90} ORDER BY date DESC LIMIT 1", (team_id, team_id))
         if not ult:
             return {}
         filas = _query("SELECT jugador_id, detalle FROM fixture_eventos WHERE fixture_id=? AND equipo_id=? "
@@ -412,13 +412,27 @@ def sanciones_de_ficha(team_id: int) -> dict[int, dict]:
     except Exception:  # noqa: BLE001 — base sin la ficha de partido
         return {}
     fecha = str(ult[0]["date"] or "")[:10]
+    # LA ROJA DICE EN QUÉ COMPETICIÓN FUE (06/11/2026, incidencia 1262, liga
+    # boliviana: las rojas de Mercado y Palma en la Copa de la División
+    # Profesional viajaban en la F1 de la liga como «Suspended» sin decir de qué
+    # torneo eran). `ligaId` deja que la tabla F1 la lea con la regla de
+    # sanciones.py: se cumple en su competición (o en su grupo, ROJA_DOMESTICA).
+    _u = dict(ult[0]) if not isinstance(ult[0], dict) else ult[0]
+    liga_id, liga = _u.get("league_id"), None
+    if liga_id:
+        try:
+            _l = _query("SELECT name FROM leagues WHERE id=?", (liga_id,))
+            liga = (dict(_l[0]).get("name") if _l else None) or None
+        except Exception:  # noqa: BLE001 — sin la tabla de ligas: la roja va sin el nombre del torneo
+            liga = None
     out = {}
     for f in filas:
         det = (f["detalle"] or "").lower()
         if "red" in det or "second yellow" in det:
             out[f["jugador_id"]] = {"player_id": f["jugador_id"], "tipo": "Suspended",
-                                    "detalle": f"Red Card ({f['detalle']} el {fecha}, de nuestra ficha)",
-                                    "fecha": fecha}
+                                    "detalle": f"Red Card ({f['detalle']} el {fecha}"
+                                               + (f" en {liga}" if liga else "") + ", de nuestra ficha)",
+                                    "fecha": fecha, **({"ligaId": liga_id} if liga_id else {})}
     return out
 
 
@@ -521,6 +535,8 @@ def _baja_dto(baja, missing: dict, jugo_el: str | None, convocado_el: str | None
     fecha = str(baja["fecha"] or "")[:10] if "fecha" in baja.keys() else ""
     out = {"tipo": baja["tipo"], "detalle": baja["detalle"], "lectura": lectura,
            **({"sancion": True} if sancion else {}), **({"lesion": True} if lesion else {})}
+    if isinstance(baja, dict) and baja.get("ligaId"):
+        out["ligaId"] = baja["ligaId"]   # la roja de nuestra ficha: en qué competición fue (1262)
     if (fecha and "off the roster" in (baja["detalle"] or "").lower() and fecha in (fechas_int or set())
             and not sancion):
         out.update({"lectura": "ruido", "soloLista": "internacional"})
