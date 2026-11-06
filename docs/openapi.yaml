@@ -2692,6 +2692,7 @@ components:
                   jugadorId: { type: integer }
                   nombre: { type: string }
                   participacion: { type: number }
+                  idsAlternos: { type: array, items: { type: integer }, description: 'solo en la ficha de partido: los otros ids de la API que la tabla F1 de la base junta con este jugador; su participación ya está sumada (1243)' }
         revolucion:
           type: object
           description: >

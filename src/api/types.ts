@@ -461,7 +461,7 @@ export interface PlantillaDTO {
    *  cuándo se fijó: sin eso no hay forma de marcar un DT viejo. */
   entrenador: { nombre: string | null; desde: string | null; actualizadoEn?: string | null; fuente?: 'coachs' | 'alineacion' } | null
   /** HHI de shares de G+A: ~1/n coral · →1 él-dependiente. */
-  dependencia: { hhi: number | null; top: { jugadorId: number; nombre: string; participacion: number }[] }
+  dependencia: { hhi: number | null; top: { jugadorId: number; nombre: string; participacion: number; idsAlternos?: number[] }[] }
   /** Traspasos de la ventana reciente (estabilidad de plantel). */
   /** Llegadas y salidas CON MINUTOS en el primer equipo (23/10/2026, incidencia 43); `enPapeles`, todos los traspasos. */
   revolucion: { llegadas: number; salidas: number; ventanaDias: number; criterio?: string; enPapeles?: { llegadas: number; salidas: number } }

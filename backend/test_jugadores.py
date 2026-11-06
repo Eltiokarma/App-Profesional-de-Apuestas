@@ -717,6 +717,29 @@ def main():
     check("1193: el ejecutor sancionado en la liga no queda de baja para el penal de la Champions",
           "baja" not in (_e_int.get(12) or {}) and (_e_nac.get(12) or {}).get("baja") == "Red Card", (_e_int, _e_nac))
 
+    # 1243 (Millonarios–América): «Y. Guzmán» con dos ids partía la dependencia
+    from backend import jugadores as _jg1243
+    _js1243 = [{"id": 13491, "nombre": "Y. Guzmán", "goles": 4, "asistencias": 2},
+               {"id": 531423, "nombre": "Y. Guzman", "goles": 2, "asistencias": 2},
+               {"id": 5, "nombre": "C. Otro", "goles": 8, "asistencias": 1},
+               {"id": 6, "nombre": "D. Mas", "goles": 0, "asistencias": 8}]
+    _g1243 = {13491: {13491, 531423}, 531423: {13491, 531423}}
+    _d1243 = _jg1243.dependencia_fundida(_js1243, _g1243)
+    check("1243: los dos ids que la tabla F1 junta cuentan como UNO en el top y en el HHI",
+          _d1243["top"][0] == {"jugadorId": 13491, "nombre": "Y. Guzmán", "participacion": 0.37, "idsAlternos": [531423]}
+          and len(_d1243["top"]) == 3 and _d1243["hhi"] == 0.336, _d1243)
+    check("1243: sin nada que fundir no cambia la dependencia", _jg1243.dependencia_fundida(_js1243, {}) is None)
+    from backend.analisis import f1_base as _f1_1243
+    _o1243 = _f1_1243.ids_equivalentes_tabla
+    try:
+        _f1_1243.ids_equivalentes_tabla = lambda t, a: _g1243
+        _dep_ficha = _jg1243._dependencia_de_la_ficha(1, {"jugadores": _js1243, "dependencia": {"hhi": 0.3, "top": []}})
+        _f1_1243.ids_equivalentes_tabla = lambda t, a: (_ for _ in ()).throw(AssertionError("no debía armarse la tabla"))
+        _sin_dup = _jg1243._dependencia_de_la_ficha(1, {"jugadores": _js1243[2:], "dependencia": {"hhi": 0.5, "top": []}})
+    finally:
+        _f1_1243.ids_equivalentes_tabla = _o1243
+    check("1243: la ficha funde con la tabla F1, y sin apellidos repetidos ni la arma",
+          _dep_ficha == _d1243 and _sin_dup == {"hhi": 0.5, "top": []}, (_dep_ficha, _sin_dup))
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     return 1 if fallos else 0
 

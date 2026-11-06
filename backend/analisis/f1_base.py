@@ -1042,13 +1042,13 @@ def faltantes(team_id: int, plantel: list[dict], antes: str = "9999") -> list[di
                 out.append({"jugadorId": pid, "nombre": r["nombre"],
                             "porQue": f"titular en {r['titular']} de los últimos {rec['onces']} onces"})
     if out:
-        eq = _equivalentes(team_id, antes)
+        eq = ids_equivalentes_tabla(team_id, antes)
         out = [f for f in out if not _en_tabla({"id": f["jugadorId"], "nombre": f["nombre"]}, plantel,
                                                eq.get(f["jugadorId"]))]
     return out
 
 
-def _equivalentes(team_id: int, antes: str) -> dict[int, set[int]]:
+def ids_equivalentes_tabla(team_id: int, antes: str) -> dict[int, set[int]]:
     """Los ids que la tabla F1 de la base fundió en una fila, por id.
 
     LA ALERTA Y LA TABLA TIENEN QUE CONTAR A LA MISMA PERSONA (05/11/2026,
@@ -1141,3 +1141,6 @@ def alertas_sancion(parte: dict, fx, nombres: dict, sanc: dict | None = None) ->
                 "sancionados": [{k: x.get(k) for k in ("jugadorId", "nombre", "tipo", "fecha")} for x in sin],
             })
     return out
+
+
+_equivalentes = ids_equivalentes_tabla   # nombre viejo (1233)
