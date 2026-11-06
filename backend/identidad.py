@@ -95,8 +95,9 @@ def apellido_casi(uno: str, otro: str, minimo: int = 5) -> bool:
     seseo («Quirós»/«Quiroz») o la ß mal codificada («Hoeneß»/«Hoeneb»); y,
     en apellidos de `minimo` letras o más: una letra cambiada («Zampiero»/
     «Zampieri»), una de más o de menos («Berríos»/«Berios», 856), una letra
-    doble («Emmanuel»/«Emanuel») o las mismas letras en otro orden («Bizans»/
-    «Bisanz», «Balazar»/«Bazalar»). En uno corto, una letra ya es otra persona
+    doble («Emmanuel»/«Emanuel») o dos letras que cambiaron de lugar («Bizans»/
+    «Bisanz», «Balazar»/«Bazalar»; un anagrama entero no: «mientras» no es
+    «Martínez», 1256). En uno corto, una letra ya es otra persona
     (Martínez/Martino no: son dos letras)."""
     a, b = (uno or "").replace("z", "s"), (otro or "").replace("z", "s")
     if a == b:
@@ -105,7 +106,13 @@ def apellido_casi(uno: str, otro: str, minimo: int = 5) -> bool:
         return True
     if min(len(a), len(b)) < minimo:
         return False
-    if sorted(a) == sorted(b):
+    # LAS MISMAS LETRAS EN OTRO ORDEN ES UN INTERCAMBIO, NO UN ANAGRAMA
+    # (06/11/2026, incidencia 1256, Barracas–Racing: «mientras» de la prosa del
+    # DTP es anagrama de «martines» y casaba con D. Martínez, y el DTP pedía
+    # rehacer por un titular que no cambió). «Bizans»/«Bisanz» y «Balazar»/
+    # «Bazalar» son dos letras que cambiaron de lugar: a lo sumo dos posiciones
+    # distintas, como cualquier errata.
+    if len(a) == len(b) and sorted(a) == sorted(b) and sum(x != y for x, y in zip(a, b)) <= 2:
         return True
     if re.sub(r"(.)\1", r"\1", a) == re.sub(r"(.)\1", r"\1", b):
         return True

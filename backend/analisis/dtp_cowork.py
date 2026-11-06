@@ -2016,6 +2016,16 @@ def avisos_piezas_fuera(dtp: dict, equipos: dict, nombres: dict) -> list[dict]:
             lado = foco if pz.get("lado") != "rival" else rival
             bajas = [f for f in ((equipos or {}).get(lado) or {}).get("fuera") or []
                      if f.get("estado") in ("baja", "descanso") and _es_el_de_fuera(nombre, f.get("nombre") or "")]
+            # DOS DEL PLANTEL CON EL MISMO NOMBRE CORTO (06/11/2026, incidencia
+            # 1256, Fortaleza–Medellín: la pieza «D. Moreno» era Didier Moreno,
+            # convocado, y casaba con Diego Moreno, sancionado en `fuera` con su
+            # jugadorId). Si otro del plantel, con OTRO id, también es esa
+            # pieza, no se sabe de quién habla: no se afirma que esté fuera.
+            ids_fuera = {f.get("jugadorId") for f in bajas if f.get("jugadorId")}
+            if ids_fuera and any(j.get("jugadorId") and j["jugadorId"] not in ids_fuera
+                                 and _es_el_de_fuera(nombre, j.get("nombre") or "")
+                                 for j in ((equipos or {}).get(lado) or {}).get("plantel") or []):
+                continue
             if bajas:
                 out.append({"bloque": f"dtp.{foco}.m2.piezas",
                             "costara": f"{nombres.get(foco, foco)}: la pieza del M2 «{nombre}»"

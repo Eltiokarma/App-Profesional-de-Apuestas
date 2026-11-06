@@ -365,6 +365,14 @@ def main():
           "avisan; la duda no",
           len(_av1170) == 4 and "Cardozo Lucena" in _txt1170 and "Espínola" in _txt1170 and "L. Franco" in _txt1170
           and "Insúa" in _txt1170 and "Valdez" not in _txt1170, _av1170)
+    # 1256 (Fortaleza–Medellín): «D. Moreno» es Didier (convocado) y en `fuera` está Diego (sancionado)
+    _dtp1256 = {"bloques": [{"equipo": "a", "apertura": {"m2": {"piezas": [
+        {"nombre": "D. Moreno", "rol": "pivote", "lado": "rival"}]}}}]}
+    _fz1256 = [{"nombre": "Diego Moreno", "estado": "baja", "motivo": "roja", "jugadorId": 13259}]
+    _pl1256 = [{"nombre": "Didier Moreno", "jugadorId": 46804}, {"nombre": "Diego Moreno", "jugadorId": 13259}]
+    check("1256: con otro del plantel (otro id) que también es la pieza, no se afirma que esté fuera; sin él, sí",
+          avisos_piezas_fuera(_dtp1256, {"b": {"fuera": _fz1256, "plantel": _pl1256}}, {}) == []
+          and len(avisos_piezas_fuera(_dtp1256, {"b": {"fuera": _fz1256, "plantel": _pl1256[1:]}}, {})) == 1)
     check("646: sin grid completo no se compara nada",
           _reh(_b646, {"a": {**_of646["a"], "casillas": []}})["rolesVsGrid"] == [])
     from backend.analisis.dtp_cowork import sin_referencia
