@@ -5323,6 +5323,13 @@ def main():
           _cdr(1, "2026-10-31", _on1037, _sin) is None
           and (_cdr(1, "2026-10-27", _on1037, _sin) or {}).get("nuevo") == "Sandoval",
           (_cdr(1, "2026-10-31", _on1037, _sin), _cdr(1, "2026-10-27", _on1037, _sin)))
+    # 1249 (PEC Zwolle): la API sentó a Clifford tres partidos y después otra vez a Van der Vegt
+    _on1249 = [{"fecha": "2026-11-01", "entrenador": "H. van der Vegt"}, {"fecha": "2026-10-25", "entrenador": "M. Clifford"},
+               {"fecha": "2026-10-18", "entrenador": "M. Clifford"}, {"fecha": "2026-10-04", "entrenador": "H. van der Vegt"}]
+    check("1249: el DT que vuelve al banco (A-B-A) no debutó: no hay cambio reciente; sin la vuelta, sí",
+          _cdr(0, "2026-11-06", _on1249, _sin) is None
+          and (_cdr(0, "2026-11-06", _on1249[:3], _sin) or {}).get("nuevo") == "H. van der Vegt",
+          (_cdr(0, "2026-11-06", _on1249, _sin), _cdr(0, "2026-11-06", _on1249[:3], _sin)))
     check("593: el DT de la base llegó en la semana y no dirigió ningún once mirado → cambio",
           (_cdr(1, "2026-10-25", _on[1:], {"nombre": "R. Otro", "desde": "2026-10-20"}) or {}).get("nuevo") == "R. Otro"
           and _cdr(1, "2026-10-25", _on[1:], {"nombre": "P. Viejo", "desde": "2026-10-20"}) is None
