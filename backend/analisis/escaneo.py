@@ -108,6 +108,18 @@ def _nunca_publicado(fixture_id: int) -> bool:
         return False
 
 
+def _ficha_sellada(fixture_id: int) -> bool:
+    """¿Ya se capturó la ficha post-partido? Antes de eso «nunca publicado» y
+    «publicado tarde» no se distinguen (05/11/2026, incidencia 1248: Bolívar–
+    Real Potosí, copa de Bolivia, que no publica onces, salía once-tarde dos
+    horas después del partido, con la ficha sin sellar). La ficha que nunca se
+    captura la marca `ficha-sin-eventos` a las HORAS_FICHA."""
+    try:
+        return bool(saddb.query_one("sad", "SELECT 1 AS x FROM fichas_meta WHERE fixture_id=?", (fixture_id,)))
+    except Exception:  # noqa: BLE001 — base sin la tabla de fichas: se juzga como siempre
+        return True
+
+
 def _publicado_tarde(fixture_id: int, fecha_utc) -> bool:
     """¿La primera versión del once llegó ENTRE el pitazo y el fin de la
     ventana tardía del ciclo en vivo (`en_vivo.XI_VENTANA_TARDE_MIN`)? Entonces
@@ -270,7 +282,8 @@ def _post(horas: int, ahora: datetime) -> tuple[list[dict], int]:
                 # y regionales cada pasada, con la ficha post-partido sellada sin
                 # alineaciones). Eso es cobertura (deuda 5, `nuncaVaALlegar`):
                 # el chequeo es para el once que existió y llegó tarde.
-                if not previa and not _nunca_publicado(f["id"]) and not _publicado_tarde(f["id"], f["date"]):
+                if (not previa and _ficha_sellada(f["id"]) and not _nunca_publicado(f["id"])
+                        and not _publicado_tarde(f["id"], f["date"])):
                     out.append(_hallazgo("once-tarde", item, f"pitazo {item['hora']} UTC: ninguna versión del "
                                                              "once capturada antes"))
             except Exception:  # noqa: BLE001 — base sin la tabla de versiones
