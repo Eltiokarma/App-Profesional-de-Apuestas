@@ -91,6 +91,30 @@ def _onces_previos(team_id: int, fecha: str, cuantos: int = VENTANA_F1) -> list[
 DT_CAMBIO_DIAS = 7      # disciplina 30 del TDE: cambio de DT en los 7 días previos
 
 
+DT_HISTORIAL = 10       # onces que se miran para saber si el «nuevo» ya había dirigido
+
+
+def _vuelve_al_banco(team_id: int, fecha: str, onces: list[dict], anterior: dict, actual: str) -> bool:
+    """¿El «nuevo» ya se había sentado en el banco ANTES del otro DT? Entonces
+    no debutó: volvió (A-B-A). Incidencia 1249, PEC Zwolle (06/11/2026): la API
+    sentó a «Mirjam Clifford» tres partidos y después otra vez a Van der Vegt
+    —despedido el 13/10—, y el TDE afirmaba que Van der Vegt «debutó el 01/11»
+    y dejaba F1 sin dato por la disciplina 30. Un banco que va y vuelve es una
+    hoja dudosa o un interinato corto, no un DT nuevo: no se afirma el cambio
+    (DT-DISCREPANCIA ya avisa cuando la prensa dice otro)."""
+    resto = onces[onces.index(anterior) + 1:]
+    if len(onces) < DT_HISTORIAL and team_id:
+        try:
+            mas = _onces_previos(team_id, fecha, DT_HISTORIAL)
+        except Exception:  # noqa: BLE001 — sin la base (tests, demo) se mira solo lo que vino
+            mas = []
+        if len(mas) > len(onces):
+            ya = {o.get("fecha") for o in onces}
+            resto = resto + [o for o in mas if o.get("fecha") not in ya and o.get("fecha", "") < anterior.get("fecha", "")]
+    from backend.analisis.parte import mismo_dt
+    return any(o.get("entrenador") and mismo_dt(o["entrenador"], actual) for o in resto)
+
+
 def cambio_dt_reciente(team_id: int, fecha: str, onces: list[dict], dt_base: dict | None = None) -> dict | None:
     """¿Cambió el entrenador en los DT_CAMBIO_DIAS previos al partido?
     (incidencia 593, Famalicão y Sport Boys: F1 salía calculado con los onces
@@ -98,7 +122,8 @@ def cambio_dt_reciente(team_id: int, fecha: str, onces: list[dict], dt_base: dic
     1. En los onces mirados se sentaron dos DT distintos y el primer partido del
        actual es de la semana previa.
     2. El DT de la base no es el del último once y su llegada (`desde`) cae en
-       esa semana: cambió después del último partido."""
+       esa semana: cambió después del último partido.
+    Un DT que ya había dirigido antes del otro no debuta: vuelve (1249)."""
     from datetime import timedelta
     from backend.analisis.parte import mismo_dt
     try:
@@ -119,7 +144,7 @@ def cambio_dt_reciente(team_id: int, fecha: str, onces: list[dict], dt_base: dic
                 posible = o["fecha"]
                 continue
             if not mismo_dt(o["entrenador"], actual):
-                if posible >= limite:
+                if posible >= limite and not _vuelve_al_banco(team_id, fecha, onces, o, actual):
                     return {"nuevo": actual, "anterior": o["entrenador"], "desde": primero,
                             "porque": f"{actual} debutó en el banco el {primero}, después de {o['entrenador']}"}
                 break
