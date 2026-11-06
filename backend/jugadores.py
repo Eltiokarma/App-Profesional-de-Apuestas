@@ -704,6 +704,57 @@ def choque(desde: str, hasta: str) -> bool:
     return bool(a and b) and abs((b - a).total_seconds()) < HORAS_CHOQUE * 3600
 
 
+def dependencia_fundida(jugadores: list[dict], grupos: dict[int, set[int]]) -> dict | None:
+    """La dependencia (HHI y top 3) con los ids que la tabla F1 de la base junta
+    en una persona contados como UNO. None si no hay nada que fundir.
+
+    05/11/2026, incidencia 1243, Millonarios–América: «Y. Guzmán» viajaba dos
+    veces en el top (13491 con 0,222 y 531423 con 0,143) y partía su
+    participación y el HHI. Las participaciones se suman; el HHI se rehace
+    con las sumadas."""
+    ga = {j["id"]: (j.get("goles") or 0) + (j.get("asistencias") or 0) for j in jugadores}
+    total = sum(ga.values())
+    if not total:
+        return None
+    rep: dict[int, int] = {}
+    for j in jugadores:
+        grupo = [x for x in (grupos.get(j["id"]) or {j["id"]}) if x in ga]
+        rep[j["id"]] = max(grupo, key=lambda x: (ga[x], -x)) if grupo else j["id"]
+    juntos = {r for r in rep.values() if sum(1 for x, y in rep.items() if y == r and ga[x] > 0) > 1}
+    if not juntos:
+        return None
+    suma: dict[int, int] = {}
+    for x, r in rep.items():
+        suma[r] = suma.get(r, 0) + ga[x]
+    nombre = {j["id"]: j["nombre"] for j in jugadores}
+    shares = {r: v / total for r, v in suma.items() if v > 0}
+    top = sorted(shares, key=lambda r: -shares[r])[:3]
+    return {
+        "hhi": round(sum(v * v for v in shares.values()), 3),
+        "top": [{"jugadorId": r, "nombre": nombre.get(r, ""), "participacion": round(shares[r], 3),
+                 **({"idsAlternos": sorted(x for x, y in rep.items() if y == r and x != r)} if r in juntos else {})}
+                for r in top],
+    }
+
+
+def _dependencia_de_la_ficha(team_id: int, p: dict) -> dict:
+    """La dependencia de la plantilla, fundida si dos filas con G+A comparten
+    apellido y la tabla F1 de la base las junta (solo entonces se arma la
+    tabla, que es cara)."""
+    dep = p.get("dependencia") or {"hhi": None, "top": []}
+    con_ga = [j for j in p.get("jugadores") or [] if (j.get("goles") or 0) + (j.get("asistencias") or 0) > 0]
+    from backend.identidad import tokens
+    apellidos = [(tokens(j["nombre"]) or [""])[-1] for j in con_ga]
+    if len(set(apellidos)) == len(apellidos):
+        return dep
+    try:
+        from backend.analisis.f1_base import ids_equivalentes_tabla
+        fundida = dependencia_fundida(p.get("jugadores") or [], ids_equivalentes_tabla(team_id, "9999"))
+    except Exception:  # noqa: BLE001 — sin la tabla F1 la dependencia queda como la da la plantilla
+        return dep
+    return fundida or dep
+
+
 def ficha_partido(fixture_id: int) -> dict | None:
     """FichaPartidoDTO: plantilla + congestión de ambos equipos. None si el
     fixture no existe (el endpoint lo convierte en 404)."""
@@ -722,6 +773,7 @@ def ficha_partido(fixture_id: int) -> dict | None:
                               ("visitante", fila["away_team_id"], fila["away_name"])):
         p = plantilla_de(tid)
         p["nombre"] = nombre
+        p["dependencia"] = _dependencia_de_la_ficha(tid, p)   # el mismo jugador con dos ids, uno (1243)
         p["congestion"] = _congestion(tid, str(fila["date"]))
         lados[lado] = p
     from backend import ficha_tactica
