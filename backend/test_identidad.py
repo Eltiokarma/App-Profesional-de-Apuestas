@@ -38,7 +38,8 @@ for a, b, caso in [("berrios", "berios", "856, Carabobo"), ("zampiero", "zampier
                    ("emmanuel", "emanuel", "449, letra doble")]:
     check(f"apellido casi: «{a}» / «{b}» ({caso})", idn.apellido_casi(a, b))
 for a, b, caso in [("martinez", "martino", "dos letras"), ("rojas", "rojo", "corto"), ("sosa", "sossa", "corto"),
-                   ("berrios", "beros", "dos letras de menos")]:
+                   ("berrios", "beros", "dos letras de menos"),
+                   ("mientras", "martinez", "1256: un anagrama entero de una palabra de la prosa")]:
     check(f"apellido distinto: «{a}» / «{b}» ({caso})", not idn.apellido_casi(a, b))
 
 # ── el mismo jugador ──────────────────────────────────────────────────────────
