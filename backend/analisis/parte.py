@@ -3302,6 +3302,7 @@ def guardar(payload: dict) -> dict:
     # que ya no aplica). Pero un cuerpo incompleto borraba lo anterior sin que
     # nadie se enterara hasta abrir la pantalla. Ahora se cuenta y se dice.
     perdido = []
+    cierre_modificado: list[dict] = []
     if previo:
         try:
             antes = json.loads(previo["parte_json"])
@@ -3343,6 +3344,7 @@ def guardar(payload: dict) -> dict:
             }
         t_antes, t_ahora = _tam(antes), _tam(parte)
         perdido = [f"{k}: {t_antes[k]} → {t_ahora[k]}" for k in t_antes if t_ahora[k] < t_antes[k]]
+        cierre_modificado = cierres_modificados(antes, parte)
 
     cadena, cadena_ignorada = _guardar_cadena(fx, parte.get("cadena") or {})
     dtp_guardado, dtp_no_guardado = _guardar_apertura_dtp(fx, parte.get("dtp") or {})
@@ -3661,9 +3663,18 @@ def guardar(payload: dict) -> dict:
         # el guardrail semántico (Jev): qué se preguntó y qué no cuadró. En modo
         # sombra se ve acá y en el GET, no en la tira de alertas
         "coherencia": _coherencia.resumen_recibo(coh),
-        "aviso": ("Este depósito dejó el parte con MENOS contenido del que tenía "
-                  f"({'; '.join(perdido)}). El POST reemplaza el parte entero: si fue sin "
-                  "querer, vuelve a depositarlo completo." if perdido else ""),
+        # el cierre del partido ANTERIOR que este depósito reescribió (1246)
+        "cierreModificado": cierre_modificado,
+        "aviso": " ".join(x for x in (
+            ("Este depósito dejó el parte con MENOS contenido del que tenía "
+             f"({'; '.join(perdido)}). El POST reemplaza el parte entero: si fue sin "
+             "querer, vuelve a depositarlo completo." if perdido else ""),
+            ("Este depósito REESCRIBIÓ el cierre del partido anterior en el DTP ("
+             + "; ".join(f"{c['equipo']}: {', '.join(c['campos'])}" for c in cierre_modificado)
+             + "). El cierre es la autopsia de un partido ya jugado: si fue sin querer (un rehacer que "
+               "reemplazó texto), vuelve a depositarlo con el cierre de `GET /analisis/cowork/{id}`; si "
+               "es una corrección, decilo en `notas`." if cierre_modificado else ""),
+        ) if x),
     }
     # LAS ALERTAS QUE SE CALCULAN AL LEER, YA EN EL RECIBO (incidencias 771 y
     # 806: HERENCIA-DTP y TIPOLOGIA-VS-INDICES aparecían recién en el GET —el
@@ -3685,6 +3696,38 @@ def guardar(payload: dict) -> dict:
              if faltan else "")
           + (f" · DISCREPANCIAS: {discrepancias}" if discrepancias else ""), flush=True)
     return resumen
+
+
+def cierres_modificados(antes: dict, ahora: dict) -> list[dict]:
+    """Los bloques del DTP cuyo `cierre` (la autopsia del partido ANTERIOR) cambió
+    entre el parte guardado y este depósito, con los campos que cambiaron.
+
+    05/11/2026, incidencia 1246, Gimnasia–Belgrano: el rehacer de las 22:04
+    reemplazó texto apurado y cambió los goles y asistencias del cierre contra
+    Río Cuarto (I. Fernández pasó a N. Schelotto) sin que nadie se enterara. No
+    se rechaza —puede ser una corrección legítima—, se dice. Un cierre vacío
+    antes no cuenta: llenarlo es completar, no reescribir."""
+    def _bloques(p_: dict) -> dict:
+        return {b.get("equipo"): b for b in ((p_.get("dtp") or {}).get("bloques") or []) if isinstance(b, dict)}
+    def _lleno(v) -> bool:
+        if isinstance(v, dict):
+            return any(_lleno(x) for k, x in v.items() if k != "sinAnterior")
+        if isinstance(v, list):
+            return any(_lleno(x) for x in v)
+        return v not in (None, "", False)
+    previos, nuevos = _bloques(antes), _bloques(ahora)
+    out = []
+    for lado, b in nuevos.items():
+        viejo = (previos.get(lado) or {}).get("cierre") or {}
+        nuevo = b.get("cierre") or {}
+        if not _lleno(viejo) or not _lleno(nuevo):
+            continue  # vacío antes: se completa; vacío ahora: lo cuenta `perdido` (bloquesDtp) o no hay cierre
+        campos = sorted(k for k in set(viejo) | set(nuevo)
+                        if json.dumps(viejo.get(k), sort_keys=True, ensure_ascii=False)
+                        != json.dumps(nuevo.get(k), sort_keys=True, ensure_ascii=False))
+        if campos:
+            out.append({"equipo": lado, "campos": campos})
+    return out
 
 
 def nombres_vs_id(parte: dict, nombres: dict) -> list[dict]:
@@ -5697,6 +5740,7 @@ def contrato() -> dict:
             "rechazos": "lo que NO se guardó, con el motivo y la forma esperada",
             "faltan": "bloques ausentes y qué van a costar al cerrar el caso",
             "perdido": "lo que este depósito borró de lo que ya había",
+            "cierreModificado": "el cierre del partido anterior en el DTP que este depósito reescribió (1246)",
         },
         "nota": "esto sale de las mismas constantes que validan el depósito, así que no "
                 "puede desincronizarse del código.",

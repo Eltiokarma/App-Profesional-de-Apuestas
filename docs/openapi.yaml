@@ -4479,6 +4479,14 @@ components:
           type: array
           items: { type: string }
           description: 'campos que este depósito dejó con MENOS contenido del que había'
+        cierreModificado:
+          type: array
+          description: 'bloques del DTP cuyo `cierre` (la autopsia del partido anterior) este re-depósito REESCRIBIÓ, con los campos que cambiaron; no se rechaza (puede ser una corrección) y el `aviso` lo dice (1246)'
+          items:
+            type: object
+            properties:
+              equipo: { type: string }
+              campos: { type: array, items: { type: string } }
         alertasAlLeer:
           type: array
           description: 'las alertas CALCULADAS que el GET le pone a este parte (HERENCIA-DTP, TIPOLOGIA-VS-INDICES, K-EXTREMO…) y las de coherencia selladas al depositar (COHERENCIA-*, 1155): se ven al depositar, sin otro GET (771, 806)'
