@@ -265,6 +265,11 @@ casi siempre no hay nada que hacer.
 >    se revisa; los duelos con nombre propio se reescriben con ESTE once, en
 >    las dos direcciones del carril. Una vía de gol que dependía de un
 >    jugador que no está, se saca; la del que entró, se escribe.
+>    **Cambiar el nombre no es reescribir** (06/11/2026, incidencia 1259,
+>    Willem II–PEC Zwolle: los duelos del extremo Slory pasaron a Vilhena,
+>    que juega por dentro, con la misma frase): el duelo del que entró se
+>    escribe con SU rol y su casilla del grid; si no hay tiempo para eso, el
+>    duelo se saca y se dice en `notas`, no se deja con el rol del que salió.
 > 3. **El sistema sale del grid** (incidencia 849): `m1.sistema` es la
 >    formación de la ficha oficial (o la del grid si la API la corrigió), no
 >    la que traía la apertura; actualizar solo `xiReferencia` deja la alerta
@@ -280,7 +285,9 @@ casi siempre no hay nada que hacer.
 >    y las listas de banco del DTP (`viasGol`, `veredictoRamas`: un titular de
 >    la hoja no va ahí, 1225)— y reescribí esas frases con el once oficial.
 >    Y al revés: un jugador de `fuera` que está en la hoja (titular o banco)
->    sale de `fuera` (1213, Pollero entró y marcó). Lo demás no
+>    sale de `fuera` (1213, Pollero entró y marcó). **El `cierre` de cada
+>    bloque del DTP NO entra en el reemplazo de nombres** (1258): es la
+>    autopsia del partido ANTERIOR, con los nombres de ese día. Lo demás no
 >    se toca: una baja decisiva que no juega, un arquero distinto (EFE v1.6,
 >    B6), la rama del TDE que dependía de un intérprete. Si el 1X2 se mueve,
 >    movelo con su porqué en la lectura del 1X2 (disciplina 33); si no, no.
@@ -602,7 +609,13 @@ POST $B/analisis/cowork/incidencias
   su `dato`); el titular de la temporada que no fue titular en los últimos 10
   onces y no está en la F1 (1253, 809: el probable de la prensa lo suma con su
   `jugadorId`); y una liga sin regla de amarillas en `sanciones.UMBRALES`
-  (1254: espera la decisión de la 1067; sumá el caso a esa).
+  (1254: espera la decisión de la 1067; sumá el caso a esa). Y desde la
+  pasada del 06/11 (tarde): el rehacer que no rehízo el EFE, el B6 del arquero
+  nuevo ni la tabla F1 (1257, 1265: el paso 4 del modo `rehacer` los deja como
+  estaban; el veredicto lo lee); el once que la API publica a minutos del
+  pitazo (1264, familia de la 1072); y la sanción que la prensa dio y la base
+  no (1263: si `f1/{id}` no la tiene en `sancionados` ni en `baja`, la fuente
+  fue la prensa y la hoja manda).
 
 ## Modo `mantenimiento` (los parches, automáticos)
 
