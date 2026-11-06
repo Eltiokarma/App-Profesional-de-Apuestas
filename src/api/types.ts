@@ -1873,7 +1873,9 @@ export interface VeredictoObjetivo {
   /** DTP v1.6: la rama en que jugó cada foco y el veredicto del M2 de esa rama. */
   dtp?: { nota: string; porBloque: { equipo: 'a' | 'b'; ramaJugada: 'igualadoOArriba' | 'persiguiendo' | null
     minutos: Record<string, number> | null; veredictoDeLaRama: string; razonDeLaRama: string; veredictoUnico: string
-    sinRamas?: string; sinEventos?: string }[] } | null
+    sinRamas?: string; sinEventos?: string
+    /** solo en la vuelta de una llave: la rama con el marcador de hoy (`ramaJugada` es la del global, 1247) */
+    ramaDelPartido?: 'igualadoOArriba' | 'persiguiendo'; llave?: string }[] } | null
   /** El escenario que dio el marcador para cada lado y lo que la matriz había escrito para él. */
   matriz?: { nota: string } & Partial<Record<'a' | 'b', { escenario: EscenarioMatriz; escrito: Record<string, string>; declarado: boolean }>>
   /** Las otras burbujas (DC, márgenes, goles) destacadas antes del partido que
