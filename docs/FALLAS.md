@@ -257,6 +257,7 @@ Tres lugares donde vive una guardia:
   - **Ids anotados** en docs/DEUDA.md (deudas 11 y 17).
   - **El texto manda poco:** el texto de la rutina solo apunta al skill y el skill del repo manda.
   - **La cola no se llena de lo mismo:** el escaneo mira 48 h de jugados en tres pasadas por día; un hallazgo del mismo partido que ya se cerró sin parche (`dato_api` · `por_diseno` · `descartada`) vuelve en `yaClasificadas` y no se reabre (`incidencias.depositar`, 03/11/2026: Lommel–Gent, 1145 → 1159).
+  - **El escaneo no juzga lo que la automatización todavía no intentó:** «sin cuotas» suena a menos de `SAD_REFRESCO_VENTANA_HORAS` − 1 del pitazo (`escaneo.HORAS_CUOTAS`, 06/11/2026, 1255): con 12 h depositaba partidos que el refresco de 6 h aún no había pedido. Test en `backend/test_sanciones.py`.
 - **Si vuelve:** cambiar el skill, no el texto de la rutina. Si hay que cambiar el texto, crear la rutina nueva y desactivar la vieja.
 
 ### 15. El nivel del motor medido con partidos de otra exigencia

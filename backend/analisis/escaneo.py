@@ -18,6 +18,8 @@ chequeo que falta, no una incidencia más.
 """
 from __future__ import annotations
 
+import os
+
 from datetime import datetime, timedelta, timezone
 
 from backend import db as saddb
@@ -92,7 +94,14 @@ CHEQUEOS: dict[str, dict] = {
     },
 }
 
-HORAS_CUOTAS = 12          # a menos de esto del pitazo, sin cuota es hallazgo
+# A menos de esto del pitazo, sin cuota es hallazgo. LO QUE EL REFRESCO TODAVÍA
+# NO INTENTÓ NO ES UNA FALLA (06/11/2026, incidencia 1255, Fortaleza–Medellín a
+# 7,5 h): el refresco de cuotas mira solo los NS a <= SAD_REFRESCO_VENTANA_HORAS
+# (6) del pitazo, y con 12 h acá el escaneo depositaba partidos que el refresco
+# aún no había pedido (la familia 318 llegó a 8 casos). Una hora menos que esa
+# ventana: para entonces el refresco ya pasó al menos una vez.
+VENTANA_REFRESCO = int(os.environ.get("SAD_REFRESCO_VENTANA_HORAS", "6").strip() or "6")
+HORAS_CUOTAS = max(1, VENTANA_REFRESCO - 1)
 HORAS_FICHA = 6            # jugado hace más de esto, sin eventos es hallazgo
 
 
