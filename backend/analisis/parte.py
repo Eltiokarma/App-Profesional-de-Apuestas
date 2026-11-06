@@ -4704,7 +4704,11 @@ def xi_de_ficha(fixture_id: int, team_id: int) -> dict | None:
         (fixture_id, team_id),
     )
     from backend.nombres import limpiar_nombre
+    from backend.ficha_tactica import ids_de_la_hoja
     filas = [{**dict(f), "jugador": limpiar_nombre(f["jugador"])} for f in filas]
+    # el id que la API no mandó se resuelve con la MISMA regla que la ficha
+    # (incidencia 1238: Espíndola 606836 resuelto en la ficha y ausente de xi.ids)
+    filas = [{**f, "player_id": pid} for f, (pid, _) in zip(filas, ids_de_la_hoja(team_id, filas))]
     titulares = [f["jugador"] for f in filas if f["titular"] and f["jugador"]]
     if len(titulares) < 7:  # media alineación no es una alineación
         return None

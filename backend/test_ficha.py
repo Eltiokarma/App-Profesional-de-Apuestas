@@ -382,6 +382,26 @@ def main():
     _luc = next(j for j in _l645["titulares"] if j["numero"] == 37)
     check("645: «Luciano Rodriguez» sin id no toma el id de «L. Rodríguez», otro titular de la misma hoja",
           _luc["jugadorId"] == -7 and not _luc.get("jugadorIdResuelto"), _l645["titulares"])
+    # 1238 (Aldosivi–River): la ficha y el once del parte resuelven el id con la MISMA regla
+    _filas1238 = [{"formacion": "4-3-1-2", "player_id": 624, "jugador": "N. Otamendi", "titular": 1}] * 1 + [
+        {"formacion": "4-3-1-2", "player_id": 6000 + k, "jugador": f"Jugador Numero{k}", "titular": 1} for k in range(9)] + [
+        {"formacion": "4-3-1-2", "player_id": None, "jugador": "Santiago Joaquín Espíndola", "titular": 1},
+        {"formacion": "4-3-1-2", "player_id": -974088088, "jugador": "Elias Carlos Nuñez", "titular": 0}]
+    _op = _ft._plantilla
+    from backend.analisis import parte as _parte1238
+    _oq2 = _parte1238.saddb.query
+    try:
+        _ft._plantilla = lambda team_id: [(606836, "S. Espíndola"), (624, "N. Otamendi")]
+        _r1238 = _ft.ids_de_la_hoja(438, _filas1238)
+        _parte1238.saddb.query = lambda base, sql, params=(): [dict(f) for f in _filas1238]
+        _xi1238 = _parte1238.xi_de_ficha(1, 438)
+    finally:
+        _ft._plantilla, _parte1238.saddb.query = _op, _oq2
+    check("1238: ids_de_la_hoja resuelve al titular sin id (Espíndola → 606836) y deja el sintético del suplente como vino",
+          _r1238[-2] == (606836, True) and _r1238[-1] == (-974088088, False) and _r1238[0] == (624, False), _r1238)
+    check("1238: xi_de_ficha lleva el id resuelto en xi.ids, como la ficha (y el sintético no entra)",
+          _xi1238["ids"].get("Santiago Joaquín Espíndola") == 606836 and "Elias Carlos Nuñez" not in _xi1238["ids"],
+          _xi1238["ids"])
     from backend.analisis.bloque_f import _tokens as _tk
     check("653: «Mouhamed N'Diaye» y «M. Ndiaye» dan el mismo apellido", _tk("Mouhamed N'Diaye")[-1] == _tk("M. Ndiaye")[-1] == "ndiaye")
     check("125: el id por nombre no se adivina con dos candidatos",
