@@ -64,6 +64,32 @@ def _id_por_nombre(nombre: str | None, plantilla: list[tuple[int, str]]) -> int 
     return hits[0] if len(set(hits)) == 1 else None
 
 
+def ids_de_la_hoja(team_id: int, filas) -> list[tuple[int | None, bool]]:
+    """El id de cada fila de una hoja (`alineaciones`: `player_id`, `jugador`)
+    y si se RESOLVIÓ por nombre contra la plantilla.
+
+    UNA sola regla para la ficha y para el once del parte (05/11/2026,
+    incidencia 1238, Aldosivi–River: la ficha resolvía a Espíndola 606836 y
+    `parte.xi_de_ficha` lo dejaba sin id, así que no casaba con su fila F1).
+    Un id que ya trae otro jugador de la misma hoja no se le asigna a otro
+    («Luciano Rodriguez» #37 con el id de «L. Rodríguez» #23, incidencia 645);
+    sin un único jugador que case, se deja como vino."""
+    en_hoja = {int(f["player_id"]) for f in filas if f["player_id"] and int(f["player_id"]) > 0}
+    plantilla = None
+    out: list[tuple[int | None, bool]] = []
+    for f in filas:
+        pid = int(f["player_id"]) if f["player_id"] else None
+        if not pid or pid < 0:
+            plantilla = _plantilla(team_id) if plantilla is None else plantilla
+            resuelto = _id_por_nombre(limpiar_nombre(f["jugador"]), plantilla)
+            if resuelto and resuelto not in en_hoja:
+                en_hoja.add(resuelto)
+                out.append((resuelto, True))
+                continue
+        out.append((pid, False))
+    return out
+
+
 def _lado(fixture_id: int, team_id: int) -> dict:
     filas = db.query(
         "sad",
@@ -82,22 +108,11 @@ def _lado(fixture_id: int, team_id: int) -> dict:
             except ValueError:
                 pass
     titulares, suplentes = [], []
-    plantilla = None
-    # un id que ya trae otro jugador de esta misma hoja no se le asigna a este:
-    # «Luciano Rodriguez» #37 quedaba con el id de «L. Rodríguez» #23, otro
-    # titular del mismo once (Nacional, incidencia 645)
-    en_hoja = {f["player_id"] for f in filas if f["player_id"] and f["player_id"] > 0}
-    for f in filas:
-        pid = f["player_id"]
+    for f, (pid, resuelto) in zip(filas, ids_de_la_hoja(team_id, filas)):
         j = {"jugadorId": pid, "nombre": limpiar_nombre(f["jugador"]), "numero": f["numero"],
              "posicion": f["posicion"], "grid": f["grid"],
-             "carril": _carril(f["grid"], por_fila) if f["titular"] else None}
-        if not pid or pid < 0:
-            plantilla = _plantilla(team_id) if plantilla is None else plantilla
-            resuelto = _id_por_nombre(j["nombre"], plantilla)
-            if resuelto and resuelto not in en_hoja:
-                j.update({"jugadorId": resuelto, "jugadorIdResuelto": True})
-                en_hoja.add(resuelto)
+             "carril": _carril(f["grid"], por_fila) if f["titular"] else None,
+             **({"jugadorIdResuelto": True} if resuelto else {})}
         (titulares if f["titular"] else suplentes).append(j)
     return {
         "equipoId": team_id,

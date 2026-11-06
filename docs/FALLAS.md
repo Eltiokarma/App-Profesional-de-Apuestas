@@ -37,6 +37,7 @@ Tres lugares donde vive una guardia:
   - DT: Hoeneß/Hoeneb y Bazalar/Balazar.
 - **Causa:** cinco módulos con cuatro versiones de «una letra» y dos formas de quitar tildes.
 - **Guardia:**
+  - **El id que la API no mandó se resuelve en un lugar (1238):** `ficha_tactica.ids_de_la_hoja` lo usan la ficha y `parte.xi_de_ficha`: Espíndola 606836 salía resuelto en la ficha y sin id en `xi.ids`.
   - **La alerta y la tabla cuentan a la misma persona (1233):** `f1_base.faltantes` mira los ids que la tabla F1 de la base fundió en una fila (`idsAlternos`): F1-DECISIVO-FUERA no suena por «J. Rojas» 546779 cuando el parte cargó la fila «H. Rojas» 65974 que lo lleva.
   - **Regla única:** `backend/identidad.py`, con sus casos reales en `test_identidad.py`.
   - **Test de arquitectura (regla 1):** ninguna comparación de letras fuera de ese archivo, y ningún módulo que quite tildes a un nombre por su cuenta (811: el NFKD suelto tiraba la «ð»).
