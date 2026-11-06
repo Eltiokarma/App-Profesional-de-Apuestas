@@ -265,6 +265,34 @@ def menciona(nombre: str, frase: str) -> bool:
     return False
 
 
+def solo_como_pila_de_otro(nombre: str, frase: str) -> bool:
+    """¿Toda mención de las palabras de `nombre` en la frase es la PILA de otro
+    jugador? Cada vez que aparece la sigue, con un solo espacio y mayúscula,
+    un apellido que no es de `nombre`.
+
+    Pieza «Gabriel Justino» contra «João Gabriel Castro Santos», del banco
+    (05/11/2026, incidencia 1241, Botafogo–Atlético MG: saltó DTP-REHACER por
+    «Gabriel»); la misma regla que `menciona` aplica desde la 1236. Sin
+    ninguna mención exacta, False: no se tapa un cruce por tolerancia."""
+    t = tokens(nombre)
+    if not t:
+        return False
+    limpio = limpiar_nombre(frase or "") or ""
+    hallados = list(re.finditer(r"[^\W_][\w'’]*", limpio))
+    palabras = [plano(m.group(0)).replace(" ", "") for m in hallados]
+    vistas = 0
+    for k, w in enumerate(palabras):
+        if w not in t or len(w) < 3:
+            continue
+        vistas += 1
+        n = k + 1
+        if not (n < len(hallados) and hallados[n].group(0)[:1].isupper() and len(palabras[n]) >= 3
+                and palabras[n] not in t and palabras[n] not in PARTICULAS
+                and limpio[hallados[k].end():hallados[n].start()] == " "):
+            return False
+    return vistas > 0
+
+
 def solo_pila(tokens_plantel: list[str], tokens_hoja: list[str]) -> bool:
     """¿La hoja casa con este jugador solo por el nombre de pila (sin apellido)?"""
     apellidos = set(tokens_plantel[1:]) or set(tokens_plantel)

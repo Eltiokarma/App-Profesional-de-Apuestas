@@ -778,6 +778,11 @@ def _suplentes_nombrados(banca: list[str], titulares: list[str], texto: str, cru
         # (titular) no es «Faber Andrés Gil» (banco) (Jaguares, incidencia 686)
         if crudo and _solo_como_pila(n, crudo, ap_tit):
             continue
+        # …ni el de OTRO que no es titular de este lado: «Gabriel Justino» no es
+        # «João Gabriel Castro Santos» del banco (incidencia 1241; la regla vive
+        # en identidad.py)
+        if crudo and _identidad.solo_como_pila_de_otro(n, crudo):
+            continue
         if not exacto(n) and any(_casi(a, w) for a in _apellidos(n) for w in tit_exactos):
             continue
         # la inicial también nombra: «A. Terrazas» no es J. Terrazas, el arquero
