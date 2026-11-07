@@ -737,7 +737,10 @@ def choque(desde: str, hasta: str) -> bool:
     892: Santa Fe con Copa y liga el 02/11, a 22 h —por eso 24 y no las 20 de
     antes—; la ida y la vuelta de Coquimbo–La Calera con la misma fecha
     provisoria, «0 días de descanso» en el F2). Nadie juega dos partidos
-    oficiales en el mismo día."""
+    oficiales en el mismo día. Y 24 h JUSTAS también es choque (07/11/2026,
+    incidencia 1288: Sporting Cristal con Cienciano el 14/11 21:00 y Alianza
+    Atlético el 15/11 21:00, una fecha provisoria de la API que no saltaba
+    por quedar en el borde)."""
     def _dt(t: str) -> datetime | None:
         t = str(t or "").replace("T", " ").rstrip("Z")[:19]
         for f in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
@@ -747,7 +750,7 @@ def choque(desde: str, hasta: str) -> bool:
                 continue
         return None
     a, b = _dt(desde), _dt(hasta)
-    return bool(a and b) and abs((b - a).total_seconds()) < HORAS_CHOQUE * 3600
+    return bool(a and b) and abs((b - a).total_seconds()) <= HORAS_CHOQUE * 3600
 
 
 def dependencia_fundida(jugadores: list[dict], grupos: dict[int, set[int]]) -> dict | None:
