@@ -1396,6 +1396,11 @@ def main():
             _ex = _tde339.exigencia_proxima(645, _ctx)
             check(f"435: copa nacional «{_ronda}» a 5 días {'cuenta' if _cuenta else 'NO cuenta'}",
                   bool(_ex and "copa nacional" in _ex["motivo"]) == _cuenta, _ex)
+        # 1287: el motivo nombra el torneo (la Supercopa no es «la final de copa nacional»)
+        _tde339.saddb.query_one = lambda *a, **k: {"league_id": 143, "league_season": 2026,
+                                                   "league_round": "Final", "name": "Supercopa Argentina"}
+        check("1287: la final de la Supercopa dice «Final de Supercopa Argentina»",
+              "Final de Supercopa Argentina" in ((_tde339.exigencia_proxima(645, _ctx) or {}).get("motivo") or ""))
         _tde339.saddb.query_one = lambda *a, **k: {"league_id": 140, "league_season": 2026,
                                                    "league_round": "Final"}
         check("435: «Final» de una liga (no copa) no la toma la regla de copa",

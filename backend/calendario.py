@@ -468,6 +468,22 @@ def _tercio_alto(nivel: float | None, liga_id: int | None, temporada: int | None
 
 # ── etiquetas ───────────────────────────────────────────────────────────────
 
+def _copa_entre_categorias(liga_id, equipo_id, rival_id, fecha) -> bool:
+    """¿Es un cruce de COPA entre equipos de ligas distintas? (07/11/2026,
+    incidencia 1287: Valencia–Tavernes de la Copa del Rey salía «clásico, derbi
+    de Valencia» por la misma `venue_city`, y el F2 del TDE lo subía a 1 como
+    altísima exigencia). En una copa la misma ciudad no hace derbi si los dos no
+    juegan la misma liga; sin la liga de alguno (la del modesto no está en la
+    base) tampoco: el clásico documentado sigue por su lista."""
+    if not equipo_id or not liga_id:
+        return False
+    from backend.analisis import escala
+    if not escala.es_copa(liga_id):
+        return False
+    la, lb = escala.liga_vigente(equipo_id, fecha), escala.liga_vigente(rival_id, fecha)
+    return not (la and lb and la == lb)
+
+
 def etiquetas_de_rival(rival_id: int, rival_local: bool, liga_id: int | None,
                        temporada: int | None, fecha: str | None,
                        ciudad_equipo: str | None, equipo_id: int | None = None) -> list[dict]:
@@ -524,7 +540,8 @@ def etiquetas_de_rival(rival_id: int, rival_local: bool, liga_id: int | None,
                    "nota": "rivalidad sin vecindad: sale de la lista de clásicos nacionales, no de la ciudad"})
         return et
     ciudad_rival = _ciudad(rival_id)
-    if ciudad_equipo and ciudad_rival and ciudad_equipo.strip().lower() == ciudad_rival.strip().lower():
+    if (ciudad_equipo and ciudad_rival and ciudad_equipo.strip().lower() == ciudad_rival.strip().lower()
+            and not _copa_entre_categorias(liga_id, equipo_id, rival_id, fecha)):
         n_clubes = _clubes_en_ciudad(liga_id, temporada, ciudad_rival)
         if n_clubes < CIUDAD_DENSA:
             et.append({"codigo": "CLASICO", "label": "CLÁSICO", "dato": f"derbi de {ciudad_rival}",
