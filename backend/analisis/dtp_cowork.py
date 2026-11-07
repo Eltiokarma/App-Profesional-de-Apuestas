@@ -237,13 +237,27 @@ def _cierre_contra(team_id: int, f) -> dict:
                      "`partidoAnterior` es otro partido y sirve para el M1 de hoy, no para el cierre")}
 
 
-def _ultimo_de_liga(team_id: int, fecha: str, a, sin_xi: bool = False) -> dict:
-    """{"ultimoOnceDeLiga": …} si el último partido fue de copa —o no tiene
-    once capturado (`sin_xi`)— y antes hay uno de liga con once en la base
-    (los 3 anteriores); si no, {}."""
+def _es_internacional(liga_id, nombre) -> bool:
+    from backend.analisis.escala import _INTERNACIONAL_RE
+    from backend.jugadores import _ligas_internacionales
+    return liga_id in _ligas_internacionales() or bool(_INTERNACIONAL_RE.search(nombre or ""))
+
+
+def _ultimo_de_liga(team_id: int, fecha: str, a, sin_xi: bool = False, fx=None) -> dict:
+    """{"ultimoOnceDeLiga": …} si el último partido fue de copa —o de un torneo
+    internacional y hoy se juega la liga, o no tiene once capturado
+    (`sin_xi`)— y antes hay uno de liga con once en la base (los 3
+    anteriores); si no, {}."""
     from backend.analisis.escala import es_copa
     from backend.ficha_tactica import tactica_de
-    copa = es_copa(a["league_id"], a["liga"])
+    # EL ONCE DE LA CHAMPIONS TAMPOCO ES EL DE LA LIGA (07/11/2026, incidencia
+    # 1283, Man City 1557465: el último partido fue la Champions con once
+    # rotado y hubo que armar a mano el XI de referencia con el de liga del
+    # 31/10). Si hoy NO es internacional y el último sí, viaja el de liga.
+    _hoy = dict(fx) if fx is not None else {}
+    hoy_inter = _es_internacional(_hoy.get("league_id"), _hoy.get("liga") or _hoy.get("league_name"))
+    inter = not hoy_inter and _es_internacional(a["league_id"], a["liga"])
+    copa = es_copa(a["league_id"], a["liga"]) or inter
     # EL ÚLTIMO DE LIGA SIN ONCE CAPTURADO TAMBIÉN DEJA AL M1 SIN BASE
     # (incidencia 1117, Venezia 1550180: sin el once del 28/10 contra el Inter
     # la referencia salió del de dos partidos atrás, armado a mano, y
@@ -251,7 +265,7 @@ def _ultimo_de_liga(team_id: int, fecha: str, a, sin_xi: bool = False) -> dict:
     if not copa and not sin_xi:
         return {}
     for f in _anteriores(team_id, str(a["date"]), 3):
-        if es_copa(f["league_id"], f["liga"]):
+        if es_copa(f["league_id"], f["liga"]) or (not hoy_inter and _es_internacional(f["league_id"], f["liga"])):
             continue
         local = f["home_team_id"] == team_id
         ali = ((tactica_de(f["id"], f["home_team_id"], f["away_team_id"]).get("alineaciones") or {})
@@ -263,7 +277,8 @@ def _ultimo_de_liga(team_id: int, fecha: str, a, sin_xi: bool = False) -> dict:
             "formacion": ali.get("formacion") or "", "conGrid": bool(ali.get("conGrid")),
             "titulares": [{"nombre": j["nombre"], "posicion": j["posicion"], "carril": j["carril"]}
                           for j in ali.get("titulares") or []],
-            "nota": ("el último partido fue de copa: si el once fue alternativo, el M1 se apoya en este"
+            "nota": (("el último partido fue internacional" if inter else "el último partido fue de copa")
+                     + ": si el once fue alternativo, el M1 se apoya en este"
                      if copa else "el último partido no tiene once capturado: este es el último once de liga en la "
                                   "base, NO el del último partido; el once de ese partido se busca en la prensa "
                                   "antes de tomarlo de referencia")}}
@@ -350,7 +365,7 @@ def insumos_equipo(team_id: int, nombre: str, fx) -> dict:
     st_r = ((tac.get("estadisticas") or {}).get("visitante" if local else "local")) or {}
     recibidos = [g for g in goles if not g["aFavor"]]
     cuadran = goles_cuadran(goles, gf, gc)
-    ult_liga = _ultimo_de_liga(team_id, fecha, a, sin_xi=not xi)
+    ult_liga = _ultimo_de_liga(team_id, fecha, a, sin_xi=not xi, fx=fx)
     if not xi and ult_liga:
         # CON EL ÚLTIMO ONCE DE LIGA, EL M1 SÍ TIENE REFERENCIA (incidencia
         # 1125, Viseu 1575527: la Taça da Liga sin once y `ultimoOnceDeLiga`
