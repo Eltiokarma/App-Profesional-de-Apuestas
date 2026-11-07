@@ -322,6 +322,8 @@ def main():
     check("843/892: dos saques del mismo equipo a menos de 24 h chocan (Santa Fe, 22 h); a 47 h no",
           _choque("2026-11-02 01:15:00", "2026-11-02 23:10:00") and _choque("2026-11-04 22:00", "2026-11-04 22:00")
           and not _choque("2026-11-02 01:15:00", "2026-11-04 00:15:00"))
+    check("1288: 24 h justas también es choque (Cristal el 14/11 21:00 y el 15/11 21:00); 25 h no",
+          _choque("2026-11-14 21:00:00", "2026-11-15 21:00:00") and not _choque("2026-11-14 21:00:00", "2026-11-15 22:00:00"))
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
 
