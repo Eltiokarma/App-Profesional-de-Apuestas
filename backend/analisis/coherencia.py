@@ -36,6 +36,7 @@ adaptador responde simulado con confianza 0 y no hay hallazgo posible: el
 código corre entero y decide nada, que es lo que se quiere sin credenciales.
 """
 import os
+import re
 from datetime import datetime, timezone
 
 from backend.analisis import jev
@@ -187,8 +188,27 @@ def preguntas_de(parte: dict, nombres: dict, reventon: dict | None) -> tuple[dic
                     f"Leé SOLO lecturaSad.reventon. ¿Qué riesgo de reventón le asigna ese texto {que}?",
                     RIESGOS)
                 comparar[clave] = {"tipo": "reventon", "equipo": lado, "calculado": nivel,
-                                   "etiqueta": etiqueta, "ambito": ambito}
+                                   "etiqueta": etiqueta, "ambito": ambito, "texto": texto_rev}
     return preguntas, comparar
+
+
+def dice_literal(texto: str, ambito: str, etiqueta: str) -> bool:
+    """¿El texto escribe, pegado al ámbito de la condición, el MISMO nivel que el
+    cálculo, y ningún otro? («de local medio», «de visita, riesgo alto»).
+
+    EL CÓDIGO COMPARA LO QUE SE PUEDE LEER SIN MODELO (07/11/2026, incidencia
+    1273, Sevilla–Alavés: «… y de local medio con la tarjeta fuerte» y Jev
+    respondió «bajo» con confianza 0,76: COHERENCIA-REVENTON falso). Solo para
+    la burbuja de la condición, cuyo ámbito («de local» / «de visita») nombra
+    sin ambigüedad de qué burbuja habla; la total se sigue preguntando a Jev.
+    Solo puede CALLAR una alerta, nunca levantarla."""
+    if not texto or not ambito or ambito == "total":
+        return False
+    niveles = r"(muy alto|alto|medio|bajo)"
+    vistos = {m.group(1) for m in re.finditer(
+        rf"\b{re.escape(ambito)}\b[\s,:]+(?:(?:riesgo|el|es|con|en)\s+){{0,2}}{niveles}\b", texto, re.I)}
+    vistos = {_RIESGO_A_ETIQUETA.get(v.lower(), v.lower()) for v in vistos}
+    return vistos == {etiqueta}
 
 
 def _hallazgo(clave: str, r: jev.Respuesta, c: dict, nombres: dict) -> dict | None:
@@ -222,6 +242,8 @@ def _hallazgo(clave: str, r: jev.Respuesta, c: dict, nombres: dict) -> dict | No
     if c["tipo"] == "reventon":
         if r.valor in ("no lo dice", c["etiqueta"]):
             return None
+        if dice_literal(c.get("texto") or "", c.get("ambito") or "", c["etiqueta"]):
+            return None   # 1273: el texto lo escribe tal cual; Jev lo leyó mal
         return {"codigo": "COHERENCIA-REVENTON", "equipo": c["equipo"], "tipo": "dato",
                 "detalle": f"el texto de reventón le da a la burbuja {c.get('ambito') or 'total'} de "
                            f"{nombres[c['equipo']]} riesgo «{r.valor}» y el "

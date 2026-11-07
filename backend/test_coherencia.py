@@ -95,6 +95,22 @@ _h = coherencia._hallazgo("reventon_cond_b", _r("bajo"), comp3["reventon_cond_b"
 check("una contradicción en la condición se dice con su ámbito",
       _h and "burbuja de visita" in _h["detalle"], _h)
 
+print("\n== incidencia 1273: lo que el texto escribe tal cual no lo decide Jev (Sevilla–Alavés) ==")
+REV_1273 = {"a": {"riesgo": {"nivel": "muy alto"}, "condicion": {"familia": "local", "riesgo": {"nivel": "medio"}}}}
+P1273 = {**PARTE, "lecturaSad": {**PARTE["lecturaSad"], "reventon":
+         "A: total muy alto con racha negativa de un partido, y de local medio con la tarjeta fuerte."}}
+_p73, _c73 = coherencia.preguntas_de(P1273, NOMBRES, REV_1273)
+check("1273: «de local medio» escrito tal cual: Jev diciendo «bajo» no es hallazgo",
+      coherencia._hallazgo("reventon_cond_a", _r("bajo"), _c73["reventon_cond_a"], NOMBRES) is None)
+P1273b = {**PARTE, "lecturaSad": {**PARTE["lecturaSad"], "reventon": "A: de local bajo, la racha sigue."}}
+_p73b, _c73b = coherencia.preguntas_de(P1273b, NOMBRES, REV_1273)
+check("1273: si el texto escribe OTRO nivel para la condición, el hallazgo sigue",
+      coherencia._hallazgo("reventon_cond_a", _r("bajo"), _c73b["reventon_cond_a"], NOMBRES) is not None)
+check("1273: la total no se decide por literal (el ámbito no dice de qué equipo)",
+      not coherencia.dice_literal("total medio", "total", "medio")
+      and coherencia.dice_literal("de visita, riesgo alto", "de visita", "alto")
+      and not coherencia.dice_literal("de visita alto y de visita bajo", "de visita", "alto"))
+
 print("\n== el texto de Cowork va en el estado, nunca en las instrucciones ==")
 estado = coherencia._estado(PARTE, NOMBRES)
 prosa = PARTE["equipos"]["a"]["bloques"]["B"]["nota"]
