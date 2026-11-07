@@ -77,6 +77,7 @@ jobs:
           python -m backend.test_familias
           python -m backend.test_backtest_familias
           python -m backend.test_backtest_forma
+          python -m backend.test_backtest_culebra
       - name: Jev (adaptador, coherencia del parte y modo de fallo; sin clave corre simulado)
         run: |
           python -m backend.test_jev

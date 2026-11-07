@@ -873,6 +873,32 @@ conversación se pierde en la siguiente.
    de trabajo `session_01WwsfbUajmjoAmjLG4pPY2i`. Si esa sesión se archiva, la
    rutina se rehace en otra con el repo. `docs/METODO_APUESTA.md`.
 
+24. **La ley anticulebras del usuario, medida** (07/11/2026, usuario: «no
+   pueden ser los siete locales… si no, cualquier pastrulo gana»; el empate
+   de la U contra Sport Boys). `backend/backtest_culebra.py` (test:
+   `test_backtest_culebra`): por LIGA-DÍA (misma liga, mismo día de Lima, 3+
+   partidos), el partido siguiente según lo que ya terminó 2 h antes. Medido
+   sobre 34.970 partidos de las ligas nacionales del padrón (2022-2026) y
+   1.221 con cuota en 324 liga-días (jul-nov 2026): **sin culebra**. Tras
+   locales ganadores el empate del siguiente NO sube (+0,7 · −1,1 · −1,9 pts
+   con 1 · 2 · 3+ previos) y el local gana igual o algo más; los días con
+   todos los locales ganando salen MÁS que la permutación (405 contra 376,
+   z +1,9): los días van en racha. La combinada pierde por el margen cobrado
+   una vez por partido, no por culebras. **Pistas abiertas, con pocos casos**
+   (rehacer con más meses de cuotas: `--api` y `--cache`):
+   - **Empate tras 2+ locales ganadores**: 1 u al empate con la cuota real dio
+     ROI +5,9 % (n = 50; tras 1+, +0,8 % con n = 201) contra −12,3 % a ciegas.
+     La frecuencia de empate en la muestra grande no sube: probablemente suerte.
+   - **Favorito VISITANTE tras un día en que ganaron todos los favoritos**:
+     ganó 39,7 % contra 46,6 % de su cuota (n = 68; con 2+ previos, 31,8 %
+     contra 45,6 %, n = 22). Lo único con forma de culebra.
+   - La **combinada de los favoritos más fuertes** del día (punto 16) sigue
+     abierta.
+   Falta medirla con NUESTROS elegidos (días en que los elegidos de una liga
+   van todos al mismo lado): los datos de la simulación no están abiertos al
+   token de Cowork; iría en `backend/analisis/simulacion.py`. Unas 30
+   comparaciones: una o dos «significativas» son lo esperable por azar.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
