@@ -1604,7 +1604,7 @@ paths:
                   rechazos: { type: array, items: { type: object, additionalProperties: true } }
                   dtEquivocado:
                     type: array
-                    items: { type: object, properties: { lado: { type: string }, parte: { type: string }, banco: { type: string } } }
+                    items: { type: object, properties: { lado: { type: string }, parte: { type: string }, banco: { type: string }, porCorreccion: { type: boolean, description: 'la ficha no trae entrenador: el «banco» es el DT corregido después del pitazo (dtOriginal sellado), 07/11/2026, incidencia 1269' } } }
                   sinDt: { type: array, items: { type: string } }
                   dtOriginal:
                     type: object

@@ -1536,6 +1536,17 @@ def dt_equivocado(parte: dict, fixture_id: int, desmentidos: "dict | None" = Non
         except Exception:  # noqa: BLE001 — sin tabla de alineaciones no hay con qué comparar
             fila = None
         banco = (fila["entrenador"] if fila else "") or ""
+        # SIN BANCO EN LA FICHA, LA CORRECCIÓN SELLADA ES LA EVIDENCIA (07/11/2026,
+        # incidencia 1269, Gaziantep 0-2 Kasımpaşa: el parte tenía a Belözoğlu,
+        # que se fue el 03/11; el veredicto corrigió a Schreuder con POST …/dt y
+        # la ficha trae el entrenador en null, así que el caso quedaba
+        # acreditando con el DT equivocado). El original sellado después del
+        # pitazo ya dice quién dirigió: el DT corregido.
+        por_correccion = False
+        if not banco and orig:
+            actual = _txt(dt.get("nombre")) if isinstance(dt, dict) else ""
+            if actual and not mismo_dt(orig, actual):
+                banco, por_correccion = actual, True
         # sin un apellido comparable de algún lado («DT A») no se puede decir
         # que sean distintos: no se marca
         if banco and _tokens_dt(nombre) and _tokens_dt(banco) and not mismo_dt(nombre, banco):
@@ -1558,6 +1569,11 @@ def dt_equivocado(parte: dict, fixture_id: int, desmentidos: "dict | None" = Non
                     continue   # se sentó quien el parte dijo: no hay nada que comparar
                 out.append({"lado": lado, "parte": nombre, "banco": banco, "disputado": True,
                             "bancoDeclarado": declarado})
+                continue
+            if por_correccion:
+                # la prensa contra la base no es «disputado» acá: el que corrigió
+                # el DT después del pitazo ya confirmó quién dirigió
+                out.append({"lado": lado, "parte": nombre, "banco": banco, "porCorreccion": True})
                 continue
             out.append({"lado": lado, "parte": nombre, "banco": banco,
                         **({"disputado": True, "baseAlDepositar": base} if disputado else {})})
