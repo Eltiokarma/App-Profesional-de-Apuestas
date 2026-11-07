@@ -5441,6 +5441,14 @@ def main():
           "que recibe el primero en su ventana también",
           (_v1137["clase"], _v1137["cobrable"]) == ("rama_abandonada", False) and _v1137s["cobrable"] is True
           and _v1137e["cobrable"] is True, (_v1137, _v1137s, _v1137e))
+    # 1271 (Venezia–Udinese): el autogol en la ventana no se cobra (TDE v0.1.25, disciplina 24)
+    _v1271 = _vr1137("53-68'", [{"minuto": 57, "lado": "a", "autogol": True}], [], "a", True)
+    _v1271n = _vr1137("53-68'", [{"minuto": 57, "lado": "a"}], [], "a", True)
+    _t1271 = tramos_por_marcador({"equipo": "b", "reasignacion": {"siMarcaPrimero": {"ventana": "53-68'"}}},
+                                 [{"minuto": 30, "lado": "b"}, {"minuto": 57, "lado": "a", "autogol": True}], "b")
+    check("1271: un autogol (o penal) como único gol de la ventana la deja otra_via y no cobrable; un gol normal se cobra",
+          (_v1271["clase"], _v1271["cobrable"]) == ("otra_via", False) and _v1271n["cobrable"] is True
+          and any(t.get("clase") == "otra_via" and t.get("cobrable") is False for t in _t1271), (_v1271, _t1271))
     # 1136 (1551026): penal errado y gol del mismo equipo en el mismo minuto → la vía del penal
     _g1136 = _gf1136([{"minuto": 42, "extra": 0, "detalle": "Normal Goal", "equipo_id": 2, "jugador": "V"},
                       {"minuto": 87, "extra": 0, "detalle": "Missed Penalty", "equipo_id": 2, "jugador": "Vega"},
