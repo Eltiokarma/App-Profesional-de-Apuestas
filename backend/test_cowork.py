@@ -3409,6 +3409,17 @@ def main():
           and [x["parte"] for x in r_dt.json()["dtEquivocado"]] == ["Pablo Repetto"]
           and _cuar_de(c.get(f"{A}/analisis/cowork/lecciones").json(), pasado["id"]),
           r_dt.text[:400])
+    # 1269 (Gaziantep–Kasımpaşa): sin entrenador en la ficha, el original sellado es la evidencia
+    _qo1269 = _pm_desc.saddb.query_one
+    try:
+        _pm_desc.saddb.query_one = lambda db, sql, params=(): (None if "FROM alineaciones" in sql
+                                                                else _qo1269(db, sql, params))
+        _eq1269 = _pm_desc.dt_equivocado(c.get(f"{A}/analisis/cowork/{pasado['id']}").json(), pasado["id"])
+    finally:
+        _pm_desc.saddb.query_one = _qo1269
+    check("1269: sin entrenador en la ficha, el DT corregido después del pitazo marca el DT equivocado",
+          [(x["parte"], x["banco"], x.get("porCorreccion")) for x in _eq1269]
+          == [("Pablo Repetto", "Rafael Dudamel", True)], _eq1269)
     r_dt2 = c.post(f"{A}/analisis/cowork/{pasado['id']}/dt", json={"a": {"nombre": "Otro Nombre", "desde": "2026-02-01"}})
     check("712: una segunda corrección no pisa el original (manda el DT con que se ESCRIBIÓ)",
           r_dt2.json()["dtOriginal"]["a"]["nombre"] == "Pablo Repetto", r_dt2.text[:300])
