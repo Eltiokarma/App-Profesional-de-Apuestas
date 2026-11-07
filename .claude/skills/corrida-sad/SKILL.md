@@ -107,7 +107,8 @@ cae en la raíz del repo (17/10/2026).
 >   faltar; los `sancionados` —roja o amarillas en el último partido de esta
 >   competición, calculados de la base— van en `fuera` con estado baja y
 >   motivo «sanción» salvo que la prensa diga que juega, y entonces la nota del
->   equipo lo dice con la fuente: si no, SANCION-SIN-DECLARAR) →
+>   equipo lo dice con la fuente —en una nota de bloque A-E, nunca `notas.F`,
+>   que se rechaza (1276)—: si no, SANCION-SIN-DECLARAR) →
 >   `equipos/{id}/burbujas?proximo={id}` de los dos → `cuotas/{id}`
 >   → prensa (DT de ESTA semana, bajas, once probable) → el JSON del parte
 >   EXACTO al punto 7 (a = local).
