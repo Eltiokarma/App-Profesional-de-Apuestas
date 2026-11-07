@@ -899,6 +899,34 @@ conversación se pierde en la siguiente.
    token de Cowork; iría en `backend/analisis/simulacion.py`. Unas 30
    comparaciones: una o dos «significativas» son lo esperable por azar.
 
+25. **La resaca del clásico, PISTA** (07/11/2026, usuario: «tras ganar el
+   clásico iba con cuidado; el siguiente gana, el otro rompe»; Cristal le
+   ganó a Alianza y empató 1-1 en Tarma con ADT). Medido el mismo día sobre
+   35 mil partidos de las ligas nacionales del padrón (2023-2026; 2022 de
+   calentamiento): fuerza Elo secuencial (solo partidos anteriores, K 20,
+   localía 60) y lo esperado por liga y tramo de diferencia de Elo; el
+   ganador en su partido siguiente y subsiguiente (≤ 14 días por paso).
+   Clásicos: `calendario.clasico_documentado` + `clasico_nacional` + derbis
+   de ciudad puestos a mano para la prueba (Manchester, Merseyside, Milán,
+   Roma, Madrid, Rosario, Avellaneda…): 417 en 69 rivalidades. **En todas
+   las ligas, no hay resaca**: tras ganar un clásico el siguiente sale +3,3 ±
+   4,5 pts sobre lo esperado y el subsiguiente +1,0 ± 4,7; grande le gana a
+   grande (ambos Elo 1600+), +3,3 y −1,4. Por país, mitad y mitad. **La
+   pista**: en el SUBSIGUIENTE, las grandes ligas europeas van todas abajo
+   —Inglaterra −8 (n 34), Turquía −16 (24), España −7 (20), Portugal −8
+   (13), Italia −3 (21)—, juntas unos −9 ± 9; y grande le gana a grande,
+   Italia −16, Turquía −28, Alemania −12. Encontrada MIRANDO la tabla
+   (selección después de ver; ~70 comparaciones, 5 cruzan su margen, 3 hacia
+   arriba). Brasil, Grecia, Colombia y Paraguay van al revés. **Regla fija
+   para medirla** sin volver a elegir el grupo: desde el 08/11/2026, los
+   clásicos ganados en Inglaterra, España, Italia, Portugal y Turquía; el
+   subsiguiente partido de liga del ganador contra lo esperado por Elo (o por
+   la cuota sin margen, cuando haya). Se toma en serio si con 60+ casos nuevos
+   sigue por debajo con el intervalo entero bajo cero. Aparte, sin clásico:
+   tras CUALQUIER victoria el siguiente rinde −2,7 ± 3,0 en Perú y −2,3 ±
+   3,4 en Bolivia; es la altura (una sola localía por liga subestima la de
+   Tarma o La Paz), no una resaca, y el mercado ya la paga.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
