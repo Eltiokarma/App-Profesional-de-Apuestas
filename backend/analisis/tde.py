@@ -253,7 +253,14 @@ def exigencia_proxima(team_id: int, contexto: dict) -> dict | None:
     if _semi_o_final(ronda):
         from backend.analisis import escala
         if escala.es_copa(f["league_id"]):
-            return {**base, "motivo": f"{f['league_round']} de copa nacional ante {base['rival']}"}
+            # el motivo nombra el torneo (incidencia 1287: la Supercopa Argentina
+            # salía «Final de copa nacional», como si fuera la de la Copa Argentina)
+            try:
+                _l = saddb.query_one("sad", "SELECT name FROM leagues WHERE id=?", (f["league_id"],))
+                torneo = (dict(_l).get("name") if _l else "") or ""
+            except Exception:  # noqa: BLE001 — sin la tabla de ligas: el motivo genérico
+                torneo = ""
+            return {**base, "motivo": f"{f['league_round']} de {torneo or 'copa nacional'} ante {base['rival']}"}
     if rival_id:
         from backend import calendario as cal
         et = cal.etiquetas_de_rival(rival_id, not prox.get("esLocal"), f["league_id"], f["league_season"],

@@ -254,6 +254,21 @@ def main():
     finally:
         calendario.CIUDAD_DENSA = densa
         calendario._clubes_en_ciudad.cache_clear()
+    # 1287: en una COPA, la misma ciudad entre ligas distintas no es derbi (Valencia–Tavernes)
+    from backend.analisis import escala as _esc1287
+    _lv, _ec = _esc1287.liga_vigente, _esc1287.es_copa
+    try:
+        _esc1287.es_copa = lambda lid, nombre=None: lid == 143
+        _esc1287.liga_vigente = lambda tid, f: {1: 140}.get(tid)
+        _c1287 = calendario.etiquetas_de_rival(LOCALON, True, 143, 2026, "2026-08-20", "Ciudad F", equipo_id=1)
+        _esc1287.liga_vigente = lambda tid, f: 140
+        _c1287b = calendario.etiquetas_de_rival(LOCALON, True, 143, 2026, "2026-08-20", "Ciudad F", equipo_id=1)
+    finally:
+        _esc1287.liga_vigente, _esc1287.es_copa = _lv, _ec
+    check("1287: cruce de copa con el modesto de la misma ciudad sin su liga → no es CLÁSICO; "
+          "los dos de la misma liga en la copa → sí",
+          all(x["codigo"] != "CLASICO" for x in _c1287) and any(x["codigo"] == "CLASICO" for x in _c1287b),
+          ([x["codigo"] for x in _c1287], [x["codigo"] for x in _c1287b]))
     check("los clásicos documentados casan por nombre, en cualquier orden y con acentos",
           calendario.clasico_documentado("Peñarol", "Club Nacional")
           and calendario.clasico_documentado("Cerro Porteño", "Olimpia")
