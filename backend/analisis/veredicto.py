@@ -1022,6 +1022,12 @@ def _por_tramo(tde: dict, goles: list[dict], rojas: list[dict], con_ficha: bool,
             "anadido": anadido_del_cierre(goles, rojas, foco) if con_ficha else None}
 
 
+def _otra_via(g: dict) -> bool:
+    """Penal o autogol: la vía que marca la API y que no es la exposición
+    (disciplinas 24 y 61 del TDE)."""
+    return bool(g.get("penal") or g.get("autogol"))
+
+
 def ventana_reloj(texto: str, goles: list[dict], rojas: list[dict], contra: str, con_ficha: bool,
                   echada: bool = False) -> dict | None:
     """La ventana base del reloj medida sola, con el gol que abre la rama
@@ -1037,6 +1043,14 @@ def ventana_reloj(texto: str, goles: list[dict], rojas: list[dict], contra: str,
     rojas_antes = [r for r in rojas if r["minuto"] < corte]
     # con una ECHADA de base y el foco ya abajo, la ventana no se jugó (1137)
     clase, _, _ = clase_ventana(goles, primera if primera is not None else desde, contra, echada)
+    # UN GOL DE OTRA VÍA EN LA VENTANA NO SE COBRA (TDE v0.1.25, disciplina 24:
+    # «extenderla a penal y autogol está aprobado y pendiente de la app»;
+    # 07/11/2026, incidencia 1271, Venezia–Udinese: el autogol de Moreno al 57'
+    # dejaba cobrable la ventana 53-68). Si TODOS los goles de la ventana son
+    # penal o autogol, ni a favor ni en contra; la vía declarada en el cierre
+    # (pelota parada, error individual) la dice la autopsia.
+    if not clase and en and all(_otra_via(g) for g in en):
+        clase = "otra_via"
     return {"ventana": texto, "desde": desde, "hasta": hasta,
             "golEnVentana": bool(en) if con_ficha else None, "goles": en,
             "cobrable": None if not con_ficha else (not rojas_antes and not clase), "clase": clase or None}
@@ -1141,6 +1155,11 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
         # misma clase que la ventana del bloque
         if gc >= 3 or abs(gf - gc) >= 3:
             tramo["clase"] = "roto" if gc >= 3 else "rama_abandonada"
+            tramo["cobrable"] = False
+        # …y el que cierra el tramo con un penal o un autogol tampoco (1271,
+        # disciplina 24 v0.1.25): no es la vía de la rama
+        elif en_ventana and concedio and all(_otra_via(g) for g in concedio):
+            tramo["clase"] = "otra_via"
             tramo["cobrable"] = False
         # el régimen lo define el MARCADOR: una roja que corta el tramo (y la que
         # después iguala el número) no abre uno nuevo (incidencia 943: tras la

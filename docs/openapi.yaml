@@ -5045,7 +5045,7 @@ components:
                   golesEnAnadido: { type: array, items: { type: object, additionalProperties: true } }
                   rojasAntes: { type: array, items: { type: object, additionalProperties: true } }
                   cobrable: { type: boolean, nullable: true, description: 'false = una roja antes del gol o del fin de la ventana, o el partido roto/resuelto antes de ella: no se cobra' }
-                  clase: { type: string, nullable: true, enum: [roto, rama_abandonada, null], description: 'roto = el equipo recibió 3 antes de la ventana (disciplina 3); rama_abandonada = marcador 3 arriba antes de la ventana (24)' }
+                  clase: { type: string, nullable: true, enum: [roto, rama_abandonada, otra_via, null], description: 'roto = el equipo recibió 3 antes de la ventana (disciplina 3); rama_abandonada = marcador 3 arriba antes de la ventana (24); otra_via = todos los goles de la ventana fueron penal o autogol (TDE v0.1.25, disciplina 24; incidencia 1271)' }
                   ventanaDeRama: { type: boolean, description: 'se midió la ventana declarada en la rama que jugó el partido' }
                   ventanaBase: { type: string, description: 'la ventana del bloque sin rama; `ventana` es la que se cobra (la de la rama si la hubo)' }
                   reloj:
@@ -5087,7 +5087,7 @@ components:
                         enCancha: { type: object, description: 'con alguna roja: jugadores en cancha {foco, rival} (1078: la segunda roja deja 9)', properties: { foco: { type: integer }, rival: { type: integer } } }
                         desdeTexto: { type: string, description: 'el minuto real que abre el tramo («90+5»); desde/hasta son el reloj de las ventanas, que deja el añadido en el 45 o el 90 (1078)' }
                         hastaTexto: { type: string, description: 'el minuto real que lo cierra, o «final»' }
-                        clase: { type: string, enum: [roto, rama_abandonada], description: 'al abrir el tramo el foco ya recibió 3 (disciplina 3) o el marcador tenía 3 de diferencia (24): la rama no se juega (1079)' }
+                        clase: { type: string, enum: [roto, rama_abandonada, otra_via], description: 'al abrir el tramo el foco ya recibió 3 (disciplina 3) o el marcador tenía 3 de diferencia (24): la rama no se juega (1079); otra_via = el gol que cierra el tramo en su ventana fue penal o autogol (1271)' }
                         cobrable: { type: boolean, description: 'solo false, con clase: el tramo no se cobra en ninguna métrica' }
                         declarada: { type: boolean }
                         ventana: { type: string }
