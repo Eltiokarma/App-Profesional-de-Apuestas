@@ -419,6 +419,12 @@ def main():
                                                "titulares": [{"nombre": "X", "posicion": "G", "carril": ""}]}}}
         _u966 = _dc997._ultimo_de_liga(1, "2026-10-31", {"league_id": 90, "liga": "KNVB Beker", "date": "2026-10-28"})
         _u966b = _dc997._ultimo_de_liga(1, "2026-10-31", {"league_id": 88, "liga": "Eredivisie", "date": "2026-10-28"})
+        # 1283 (Man City): el último fue la Champions y hoy es la liga → viaja el de liga;
+        # si hoy también es Champions, nada
+        _u1283 = _dc997._ultimo_de_liga(1, "2026-10-31", {"league_id": 2, "liga": "UEFA Champions League",
+                                                          "date": "2026-10-28"}, fx={"league_id": 39})
+        _u1283b = _dc997._ultimo_de_liga(1, "2026-10-31", {"league_id": 2, "liga": "UEFA Champions League",
+                                                           "date": "2026-10-28"}, fx={"league_id": 2})
         _u1117 = _dc997._ultimo_de_liga(1, "2026-10-31", {"league_id": 88, "liga": "Eredivisie", "date": "2026-10-28"},
                                         sin_xi=True)
         # 1125: el último (copa) sin once y el de liga con once: `faltan` no dice «M1 sin XI de referencia»
@@ -446,6 +452,9 @@ def main():
           (_i1125.get("ultimoOnceDeLiga") or {}).get("fixtureId") == 20
           and not any("M1 sin XI de referencia" in f for f in _i1125["faltan"])
           and any("ultimoOnceDeLiga" in f and "fixture 20" in f for f in _i1125["faltan"]), _i1125.get("faltan"))
+    check("1283: con el último partido de Champions y hoy la liga viaja el último once de liga; hoy Champions, nada",
+          (_u1283.get("ultimoOnceDeLiga") or {}).get("fixtureId") == 20
+          and "internacional" in _u1283["ultimoOnceDeLiga"]["nota"] and _u1283b == {}, (_u1283, _u1283b))
     check("966: con el último partido de copa viaja el último once de liga (4-2-3-1 con grid); de liga, nada",
           (_u966.get("ultimoOnceDeLiga") or {}).get("formacion") == "4-2-3-1" and _u966b == {}, (_u966, _u966b))
     # 1121: «sin penales» no se afirma del año si hay partidos jugados sin eventos (Boca, River 0-1 del 19/04 sin ficha)
