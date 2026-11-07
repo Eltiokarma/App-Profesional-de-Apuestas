@@ -622,7 +622,15 @@ POST $B/analisis/cowork/incidencias
   tarjetas de las ESTADÍSTICAS de la ficha que no cuadran con los eventos
   (1274: nada las lee, manda `fixture_eventos`); y la fila F1 del parte sin
   `jugadorId` que no casa con un apodo de la hoja (1272, 1242: copiá el id de
-  `f1/{id}`, es el cruce exacto).
+  `f1/{id}`, es el cruce exacto). Y desde la pasada del 07/11 (mediodía): la
+  lesión de esta semana que la API no lista o deja «Questionable» (1279:
+  `jugador_bajas` es lo que da /injuries, la prensa del parte manda); una
+  burbuja de otras familias larga y sin `cuidado` cuando su estado es banal
+  (90 %+) o tiene menos de 3 burbujas previas (`record: null`; 1289, 834); la
+  plantilla de `/equipos/{id}/plantilla` más corta que la F1 (1291, 1167: es
+  la de la API, la F1 suma los onces); y la `linea` o el `caso` de
+  `casosBloque` con nombres de otro partido (1293: es prosa del cierre que lo
+  escribió, la `fecha` es la calculada).
 
 ## Modo `mantenimiento` (los parches, automáticos)
 
