@@ -630,7 +630,16 @@ POST $B/analisis/cowork/incidencias
   plantilla de `/equipos/{id}/plantilla` más corta que la F1 (1291, 1167: es
   la de la API, la F1 suma los onces); y la `linea` o el `caso` de
   `casosBloque` con nombres de otro partido (1293: es prosa del cierre que lo
-  escribió, la `fecha` es la calculada).
+  escribió, la `fecha` es la calculada). Y desde la pasada del 07/11
+  (tarde): DT-DISCREPANCIA que sigue sonando con `dt.banco` declarado con
+  fuente (1296, 1302: DT-VS-BANCO se apaga a propósito, 1103; la que queda
+  avisa de /coachs atrasado, 766/880/903); la hoja de la API sin entrenador
+  (1301: sin nombre no hay cruce, se declara `dt.banco` si hace falta); el F2
+  del TDE en 1 con 3 días de descanso o menos (1300: es el tramo alto de la
+  rúbrica, moverlo es revisión del TDE); y una «posible identidad» entre dos
+  nombres sin efecto en el parte (1303): corré
+  `identidad.mismo_jugador(a, b)` antes; si da False son dos personas y la
+  app los trata así.
 
 ## Modo `mantenimiento` (los parches, automáticos)
 
