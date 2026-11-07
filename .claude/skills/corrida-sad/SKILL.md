@@ -615,7 +615,13 @@ POST $B/analisis/cowork/incidencias
   estaban; el veredicto lo lee); el once que la API publica a minutos del
   pitazo (1264, familia de la 1072); y la sanción que la prensa dio y la base
   no (1263: si `f1/{id}` no la tiene en `sancionados` ni en `baja`, la fuente
-  fue la prensa y la hoja manda).
+  fue la prensa y la hoja manda). Y desde la pasada del 07/11 (noche): el
+  banco de la API con el DT que se fue y que la prensa desmiente (1268, 1153:
+  DT-VS-BANCO ya avisa; se corrige con la llave en `bancoDesmentido`); las
+  tarjetas de las ESTADÍSTICAS de la ficha que no cuadran con los eventos
+  (1274: nada las lee, manda `fixture_eventos`); y la fila F1 del parte sin
+  `jugadorId` que no casa con un apodo de la hoja (1272, 1242: copiá el id de
+  `f1/{id}`, es el cruce exacto).
 
 ## Modo `mantenimiento` (los parches, automáticos)
 
