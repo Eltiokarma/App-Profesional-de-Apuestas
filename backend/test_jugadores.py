@@ -679,7 +679,8 @@ def main():
     _uefa = {"player_id": 11, "tipo": "Missing Fixture", "detalle": "Red Card", "fecha": "2026-10-21"}
     _b1178 = _jg._baja_dto(_uefa, {"lectura": "senal"}, "2026-10-31", "2026-10-31 15:00:00", {"2026-10-21", "2026-11-04"})
     _b1178b = _jg._baja_dto(_uefa, {"lectura": "senal"}, "2026-10-31", None, {"2026-10-21", "2026-11-04"}, "2026-11-04")
-    _b1178c = _jg._baja_dto({**_uefa, "fecha": "2026-10-25"}, {"lectura": "senal"}, "2026-10-31", None, {"2026-10-21"})
+    _b1178c = _jg._baja_dto({**_uefa, "fecha": "2026-10-25"}, {"lectura": "senal"}, "2026-10-31", None, {"2026-10-21"},
+                            None, "2026-10-31")  # el 31/10 fue de liga (1277: la sanción de liga la desmiente la hoja nacional)
     check("1178: la roja con fecha de un partido UEFA no la desmiente jugar en la liga; un partido UEFA "
           "posterior sí; la roja de liga se desmiente como siempre",
           _b1178["lectura"] == "senal" and _b1178.get("soloCompeticion") == "internacional"
@@ -693,6 +694,14 @@ def main():
           "«nacional»; sin torneo internacional no se marca",
           _b1193["lectura"] == "senal" and _b1193.get("soloCompeticion") == "nacional"
           and "soloCompeticion" not in _b1193b, (_b1193, _b1193b))
+    # 1277 (Dowman, Arsenal): la roja de liga no la desmiente el once de la Champions
+    _b1277 = _jg._baja_dto(_liga, {"lectura": "senal"}, "2026-11-04", "2026-11-04 20:00:00",
+                           {"2026-10-21", "2026-11-04"}, "2026-11-04", None, None)
+    _b1277b = _jg._baja_dto(_liga, {"lectura": "senal"}, "2026-11-08", None,
+                            {"2026-10-21", "2026-11-04"}, "2026-11-04", "2026-11-08", None)
+    check("1277: la sanción de liga no la desmiente jugar la Champions después; una hoja de liga posterior sí",
+          _b1277["lectura"] == "senal" and _b1277.get("soloCompeticion") == "nacional"
+          and _b1277b["lectura"] == "desmentida", (_b1277, _b1277b))
     from backend.analisis import f1_base as _f1b
     _t = {"candidatos": [{"jugadorId": 12, "baja": dict(_b1193)}, {"jugadorId": 11, "baja": dict(_b1178)},
                          {"jugadorId": 13, "baja": {"lectura": "senal", "detalle": "Knee Injury"}}]}
