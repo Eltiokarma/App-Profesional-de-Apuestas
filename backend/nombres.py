@@ -57,17 +57,28 @@ def canonizar(nombre: str, equipos: "list[tuple[str, str]]") -> str:
 _MARCAS_MOJIBAKE = ("Ã", "Ä", "Å", "Â", "Ð")
 
 
+def _reparar(t: str) -> str:
+    """El UTF-8 leído como Latin-1 (o cp1252), vuelto a leer bien; si no se
+    puede, el texto como vino."""
+    for cod in ("latin-1", "cp1252"):
+        try:
+            return t.encode(cod).decode("utf-8")
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            continue
+    return t
+
+
 def limpiar_nombre(nombre):
     if not nombre or not isinstance(nombre, str):
         return nombre
     t = html.unescape(nombre)
     if any(m in t for m in _MARCAS_MOJIBAKE):
-        for cod in ("latin-1", "cp1252"):
-            try:
-                t = t.encode(cod).decode("utf-8")
-                break
-            except (UnicodeEncodeError, UnicodeDecodeError):
-                continue
+        t = _reparar(t)
+        # ROTO A MEDIAS (07/11/2026, incidencia 1275, Atlético Grau–Cusco: «J. AlÃ­
+        # Gutiérrez»): con una palabra bien escrita al lado, el nombre entero no
+        # se puede re-decodificar; se repara palabra por palabra
+        if any(m in t for m in _MARCAS_MOJIBAKE):
+            t = " ".join(_reparar(w) if any(m in w for m in _MARCAS_MOJIBAKE) else w for w in t.split(" "))
     # el punto medio como separador de nombre y apellido («Kevin Isaias·Silva»,
     # gol del 89' de Torque, 21/10/2026) no está en la prensa ni en la plantilla
     # y rompe el cruce; la «l·l» catalana (Marcel·lí) sí es ortografía y se queda
