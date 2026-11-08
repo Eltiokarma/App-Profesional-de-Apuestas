@@ -82,6 +82,18 @@ CHEQUEOS: dict[str, dict] = {
         "area": "ficha", "severidad": "aviso",
         "regla": "sin eventos no hay goles con minuto, tarjetas (sanciones) ni veredicto del TDE",
     },
+    # EL MERCADO SE ENTERÓ Y LA BASE NO (08/11/2026, incidencia 1332, Santa Fe–
+    # Pasto: Pasto jugó con 20 canteranos por un paro del plantel y sin su DT; el
+    # 1X2 del motor, los goles acotados y la F1 describían al plantel
+    # profesional y solo la cuota se movió: local 1,66 → 1,08 en 24 h). Un salto
+    # así sin nada en la base es un hecho que el parte tiene que buscar en prensa.
+    "mercado-salto": {
+        "titulo": "El 1X2 del mercado saltó en las últimas horas",
+        "area": "cuotas", "severidad": "aviso",
+        "regla": "un salto de más de 25 puntos en la probabilidad implícita de un resultado entre la "
+                 "primera captura de las últimas 24 h y la última es un hecho (paro, once alternativo, "
+                 "DT ausente) que la base no ve: se busca en prensa y el parte lo dice",
+    },
     # INFORMATIVO: no es una falla de nada, es un dato para quien escribe el
     # parte. El mantenimiento NO lo deposita como incidencia (sería una por
     # pasada mientras dure la temporada); la fiabilidad de μ ya baja sola.
@@ -103,6 +115,40 @@ CHEQUEOS: dict[str, dict] = {
 VENTANA_REFRESCO = int(os.environ.get("SAD_REFRESCO_VENTANA_HORAS", "6").strip() or "6")
 HORAS_CUOTAS = max(1, VENTANA_REFRESCO - 1)
 HORAS_FICHA = 6            # jugado hace más de esto, sin eventos es hallazgo
+SALTO_MERCADO_PTS = 25     # puntos de probabilidad implícita (1332)
+SALTO_MERCADO_HORAS = 24
+
+
+def _salto_mercado(fixture_id: int, ahora: datetime) -> str:
+    """El mayor salto del 1X2 (probabilidad implícita normalizada, la media de
+    las casas) entre la primera captura de las últimas SALTO_MERCADO_HORAS y la
+    última; "" si no pasa de SALTO_MERCADO_PTS o no hay dos capturas."""
+    desde = (ahora - timedelta(hours=SALTO_MERCADO_HORAS)).strftime("%Y-%m-%d %H:%M:%S")
+    filas = saddb.query(
+        "sad", "SELECT captured_at AS t, value AS v, odd FROM odds_history WHERE fixture_id=? "
+               "AND casa IS NULL AND lower(bet_name) IN ('match winner', '1x2', 'fulltime result') "
+               "AND captured_at >= ? ORDER BY captured_at", (fixture_id, desde)) or []
+    por_t: dict[str, dict] = {}
+    for f in filas:
+        v = {"Home": "1", "Draw": "X", "Away": "2"}.get(str(f["v"]), str(f["v"]))
+        if v in ("1", "X", "2") and f["odd"] and float(f["odd"]) > 1:
+            por_t.setdefault(str(f["t"]), {})[v] = float(f["odd"])
+    capturas = [(t, c) for t, c in sorted(por_t.items()) if len(c) == 3]
+    if len(capturas) < 2:
+        return ""
+
+    def _prob(c: dict) -> dict:
+        inv = {k: 1 / o for k, o in c.items()}
+        tot = sum(inv.values())
+        return {k: x / tot for k, x in inv.items()}
+    (t0, c0), (t1, c1) = capturas[0], capturas[-1]
+    p0, p1 = _prob(c0), _prob(c1)
+    k = max(p0, key=lambda x: abs(p1[x] - p0[x]))
+    salto = (p1[k] - p0[k]) * 100
+    if abs(salto) <= SALTO_MERCADO_PTS:
+        return ""
+    return (f"el {k} pasó de cuota {c0[k]:.2f} ({p0[k]:.0%}) a {c1[k]:.2f} ({p1[k]:.0%}) entre {t0[:16]} y "
+            f"{t1[:16]} UTC: buscar en prensa qué pasó (paro, once alternativo, DT ausente)")
 
 
 def _nunca_publicado(fixture_id: int) -> bool:
@@ -232,6 +278,12 @@ def _pre(item: dict, ahora: datetime) -> list[dict]:
                 out.append(_hallazgo("sin-cuotas", item, f"pitazo {item.get('hora')} UTC y ninguna captura "
                                                          "en odds_history"))
     except Exception:  # noqa: BLE001 — sin la tabla de historial: no se juzga
+        pass
+    try:
+        salto = _salto_mercado(fid, ahora)
+        if salto:
+            out.append(_hallazgo("mercado-salto", item, salto))
+    except Exception:  # noqa: BLE001 — sin el historial completo de cuotas: no se juzga
         pass
     if item.get("tieneParte"):
         try:

@@ -480,5 +480,31 @@ check("UEFA: la fase liga y la eliminatoria hasta cuartos cuentan juntas; semis 
 check("fuera de la UEFA, «1st»/«2nd» siguen separando torneos cortos",
       sanciones._fase("Apertura - 3") == "apertura" and sanciones._fase("2nd Phase - 1", 128) == "2nd")
 
+# 1332 (08/11/2026, Santa Fe–Pasto): el 1X2 del mercado salta 25+ puntos en 24 h y la base no lo ve
+def _filas1332(*capturas):
+    out = []
+    for t, (h, d, a) in capturas:
+        out += [{"t": t, "v": "Home", "odd": h}, {"t": t, "v": "Draw", "odd": d}, {"t": t, "v": "Away", "odd": a}]
+    return out
+
+
+_q1332 = escaneo.saddb.query
+try:
+    escaneo.saddb.query = lambda base, sql, args=(): _filas1332(("2026-10-27 13:00:00", (1.66, 3.8, 5.0)),
+                                                                ("2026-10-28 11:00:00", (1.08, 9.0, 21.0)))
+    _s1332 = escaneo._salto_mercado(1549862, _ahora)
+    escaneo.saddb.query = lambda base, sql, args=(): _filas1332(("2026-10-27 13:00:00", (1.66, 3.8, 5.0)),
+                                                                ("2026-10-28 11:00:00", (1.55, 4.0, 5.5)))
+    _s1332b = escaneo._salto_mercado(1549862, _ahora)
+    escaneo.saddb.query = lambda base, sql, args=(): _filas1332(("2026-10-28 11:00:00", (1.08, 9.0, 21.0)))
+    _s1332c = escaneo._salto_mercado(1549862, _ahora)
+finally:
+    escaneo.saddb.query = _q1332
+check("1332: local de 1,66 a 1,08 en 24 h es salto del mercado; un movimiento chico o una sola captura, no",
+      "1,66".replace(",", ".") in _s1332 and "1.08" in _s1332 and _s1332b == "" and _s1332c == "",
+      (_s1332, _s1332b, _s1332c))
+check("1332: el chequeo mercado-salto existe y se deposita (no es informativo)",
+      "mercado-salto" in escaneo.CHEQUEOS and not escaneo.CHEQUEOS["mercado-salto"].get("informativo"))
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)
