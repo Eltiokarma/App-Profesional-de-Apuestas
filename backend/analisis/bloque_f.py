@@ -101,12 +101,28 @@ def evaluar(plantel: list[dict]) -> dict:
     }
 
 
-def _con_estados(plantel: list[dict], bajas: dict[str, tuple[str, str]]) -> list[dict]:
-    """Copia del plantel con `estado`/`motivo` puestos por clave normalizada."""
+def _con_estados(plantel: list[dict], bajas: dict[str, tuple[str, str]],
+                 por_id: dict | None = None, ids_fuera: set | None = None) -> list[dict]:
+    """Copia del plantel con `estado`/`motivo` puestos por id y, si no, por
+    clave normalizada.
+
+    EL ID MANDA SOBRE EL NOMBRE (07/11/2026, incidencia 1307, Monagas–Táchira:
+    dos «A. Romero» en la tabla —Andrés 159161 y Antonio 53129, sancionado—; el
+    parte puso en `fuera` solo el 53129 y la rama A daba de baja a los dos, con
+    el IP inflado y la reducción MID en 25 %). Una fila con `jugadorId` que
+    `fuera` no nombra por id no se cae por compartir el nombre con una baja que
+    sí trae id."""
+    por_id, ids_fuera = por_id or {}, ids_fuera or set()
     out = []
     for j in plantel:
-        clave = normalizar(j.get("nombre", ""))
-        estado, motivo = bajas.get(clave, ("disponible", ""))
+        jid = j.get("jugadorId")
+        if jid is not None and jid in por_id:
+            estado, motivo = por_id[jid]
+        else:
+            clave = normalizar(j.get("nombre", ""))
+            estado, motivo = bajas.get(clave, ("disponible", ""))
+            if jid is not None and clave in ids_fuera:
+                estado, motivo = "disponible", ""   # la baja de ese nombre es de OTRO id
         out.append({**j, "estado": estado, "motivo": motivo})
     return out
 
@@ -124,7 +140,15 @@ def ramas(plantel: list[dict], fuera: list[dict]) -> dict:
     """
     bajas = {normalizar(f.get("nombre", "")):
              ((f.get("estado") or "baja").lower(), f.get("motivo", "")) for f in fuera}
-    a = _con_estados(plantel, bajas)
+    por_id = {f["jugadorId"]: ((f.get("estado") or "baja").lower(), f.get("motivo", ""))
+              for f in fuera if f.get("jugadorId") is not None}
+    # los nombres de `fuera` que llegaron con un id QUE ESTÁ EN LA TABLA: con ese
+    # nombre, solo cae su id (con un id que la tabla no tiene, el nombre manda:
+    # puede ser el mismo jugador con dos ids de la API)
+    ids_tabla = {j.get("jugadorId") for j in plantel if j.get("jugadorId") is not None}
+    con_id = {normalizar(f.get("nombre", "")) for f in fuera if f.get("jugadorId") in ids_tabla}
+    sin_id = {normalizar(f.get("nombre", "")) for f in fuera if f.get("jugadorId") is None}
+    a = _con_estados(plantel, bajas, por_id, con_id - sin_id)
     eval_a = evaluar(a)
 
     # el 🔴 más pesado que todavía cuenta como disponible (el arquero titular
