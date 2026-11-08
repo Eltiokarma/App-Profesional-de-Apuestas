@@ -202,5 +202,18 @@ _rm, _ = f1_base.deduplicar([{"id": 159161, "nombre": "A. Romero", "minutos": 90
                             lambda a, b: True)
 check("1076: la copia sin minutos que COMPARTIÓ hoja con el otro id no se funde (1039)", len(_rm) == 2, _rm)
 
+# 1331 (08/11/2026, U. Católica–Deportes Limache): el apellido con guion es el mismo pegado
+check("1331: «T. Asta-Buruaga» de la tabla casa con «Tomas Astaburuaga» de la ficha, en los dos sentidos",
+      idn.casa(idn.tokens("T. Asta-Buruaga"), idn.tokens("Tomas Astaburuaga"))
+      and idn.casa(idn.tokens("Tomas Astaburuaga"), idn.tokens("T. Asta-Buruaga"))
+      and idn.mismo_jugador("T. Asta-Buruaga", "Tomas Astaburuaga"))
+check("1331: con otra pila no casa, y dos apellidos sueltos distintos tampoco",
+      not idn.casa(idn.tokens("T. Asta-Buruaga"), idn.tokens("Mario Astaburuaga"))
+      and not idn.mismo_jugador("Juan Perez", "Juan Lopez"))
+_r1331 = bloque_f.resolver([{"nombre": "T. Asta-Buruaga", "zona": "DEF", "rol": "TH"}], [],
+                           ["Tomas Astaburuaga"], ["Tomas Astaburuaga"], {})
+check("1331: el bloque F lo cuenta titular, no «no figura en la hoja»",
+      [(x["estado"], x.get("hoja")) for x in _r1331["jugadores"]] == [("disponible", "titular")], _r1331)
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)
