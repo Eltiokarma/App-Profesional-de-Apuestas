@@ -122,6 +122,17 @@ con.execute("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equ
             "VALUES (30, 20, 'Card', 'Yellow Card', ?, 'Vitor Hugo', 30398)", (ATL,))
 con.commit()
 
+# 1313 (Samsunspor): una amarilla sin jugador no se suma a nadie y se dice
+con.execute("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador, jugador_id) "
+            "VALUES (32, 96, 'Card', 'Yellow Card', ?, NULL, NULL)", (ATL,))
+con.commit()
+s33j = sanciones.de_fixture(33)
+check("1313: la amarilla sin jugador no suma a nadie y viaja en `sinJugador`",
+      "sinJugador" in s33j["b"] and "1 amarilla" in s33j["b"]["sinJugador"]
+      and all(a["nombre"] for a in s33j["b"]["amarillas"]), s33j["b"])
+con.execute("DELETE FROM fixture_eventos WHERE fixture_id=32 AND minuto=96")
+con.commit()
+
 # 1224 (Kortrijk, M. Fofana 551229 en los eventos y 515771 en la hoja): la
 # amarilla con otro id es del jugador de la hoja de ese partido
 con.execute("UPDATE fixture_eventos SET jugador_id=99398 WHERE fixture_id=30 AND jugador_id=30398")
