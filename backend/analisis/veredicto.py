@@ -548,8 +548,12 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
         # el añadido se anota aparte, y solo en la ventana que cierra ESE tiempo
         # (la que termina en el 45 o en el 90): un 45+4 aparecía también en la
         # 60-75 (Chankas–ADT, 17/10/2026)
+        # …y en la ventana de RAMA que pasa del 90 o del 45 («81-96», 07/11/2026,
+        # incidencia 1310, Caracas: el 90+3 estaba en `anadido.concedidos` y en
+        # ninguna lista de la ventana). Se anota, no se cobra (disciplina 23).
         en_anadido = [g for g in goles if g.get("enAnadido") and (not contra or g["lado"] == contra)
-                      and (g.get("baseAnadido") is None or g["baseAnadido"] == hasta)]
+                      and (g.get("baseAnadido") is None or g["baseAnadido"] == hasta
+                           or (desde <= g["baseAnadido"] < hasta and g["minuto"] <= hasta))]
         # UN GOL EN LA VENTANA DESPUÉS DE UNA ROJA NO COMPRUEBA EL MECANISMO
         # (disciplinas 16 y 24): Liverpool 0-3 City, Pumas 3-3 Cruz Azul y
         # América 1-2 Medellín se contaban como acierto de ventana con goles

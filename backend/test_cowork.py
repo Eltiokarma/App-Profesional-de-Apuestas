@@ -2920,6 +2920,18 @@ def main():
           _ob["a"]["golEnVentana"] is False and _ob["a"]["cobrable"] is False and _ob["a"]["rojasAntes"], _ob["a"])
     check("un gol del 45+4 se anota en la ventana que cierra el primer tiempo y no en la 75-90",
           _ob["b"]["golesEnAnadido"] and not _ob["a"]["golesEnAnadido"], (_ob["a"], _ob["b"]))
+    # 1310 (Caracas): la ventana de rama 81-96 anota el 90+3 en el añadido (no lo cobra)
+    _g1310 = [{"minuto": 89, "lado": "b", "jugador": "x", "autogol": False, "enAnadido": False, "baseAnadido": None},
+              {"minuto": 93, "lado": "b", "jugador": "y", "autogol": False, "enAnadido": True, "baseAnadido": 90}]
+    _vd._goles, _vd._rojas = (lambda fid, hid: _g1310), (lambda fid, hid: [])
+    try:
+        _ob1310 = {b["equipo"]: b for b in _vd.objetivo(con_ficha, {"tde": {"bloques": [
+            {"equipo": "a", "ventana": "81-96'"}]}})["tde"]["bloques"]}
+    finally:
+        _vd._goles, _vd._rojas = _orig_g, _orig_r
+    check("1310: la ventana 81-96 cobra el 89 y anota el 90+3 en golesEnAnadido",
+          [g["minuto"] for g in _ob1310["a"]["goles"]] == [89]
+          and [g["minuto"] for g in _ob1310["a"]["golesEnAnadido"]] == [93], _ob1310["a"])
     with _sq2.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM fixture_eventos WHERE fixture_id=? AND jugador IN "
                      "('Expulsado', 'DT expulsado', 'Añadido 1T')", (con_ficha,))
