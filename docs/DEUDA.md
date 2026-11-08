@@ -927,6 +927,39 @@ conversación se pierde en la siguiente.
    3,4 en Bolivia; es la altura (una sola localía por liga subestima la de
    Tarma o La Paz), no una resaca, y el mercado ya la paga.
 
+26. **Burbuja inflada contra burbuja construida, CONTRA LA CASA** (08/11/2026,
+   usuario: «si el Real Madrid le gana por accidente al PSG, en el siguiente
+   grande se va a la mierda»). Fuente nueva: **football-data.co.uk** (CSV
+   públicos, cuota de CIERRE de Pinnacle y promedio de casas), 62.320
+   partidos 2012-2026 de Inglaterra, España, Italia, Alemania, Francia,
+   Países Bajos, Portugal, Bélgica, Grecia, Turquía, Argentina, Brasil y
+   México; sin Perú, Colombia ni Chile. Cada señal partida en 2012-18 y
+   2019-26: lo real sale en las DOS mitades. Resultado:
+   - **Muerto con esta muestra**: la anticulebra por liga-día (empate tras
+     favoritos ganadores +0,6 · +0,9 · +0,1 pts con 1 · 2 · 3+ previos, las
+     mitades no coinciden), los partidos a la MISMA hora (todos los favoritos:
+     154 de 1.687 tandas contra 146,5 esperados) y el amaño contra el grande
+     (los favoritos ganan +0,8 sobre su cuota en los 62 mil).
+   - **Señal 1, el batacazo** (burbuja INFLADA por un golpe): el que ganó con
+     ≤ 25 % rinde bajo su cuota en el siguiente (−1,4 ± 1,2; mitades −1,0 y
+     −1,8) y el subsiguiente (−2,1 ± 1,2; −2,1 y −2,0), y contra rival fuerte
+     −2,6 ± 1,6. La casa lo sobrevalora.
+   - **Señal 2, el invicto largo** (burbuja CONSTRUIDA): 10+ sin perder gana
+     +1,8 ± 1,3 sobre su cuota y 15+ +2,6 ± 2,1, las dos mitades igual. La
+     casa lo subestima.
+   - Ninguna gana sola al margen del promedio de casas (−1 a −8 %); con
+     Pinnacle quedan en cero. Casi todo es Europa (Américas: pocos casos, no
+     se ve). Son AJUSTES de confianza dentro del método, no apuestas.
+   **Medido en NUESTRAS elecciones el mismo día** (269 cerradas desde el 28/10,
+   historia del elegido por `/fixtures?equipoId` y la cuota del partido previo
+   por `/cuotas`): todas +8,9 ± 5,8 sobre la cuota; elegido tras batacazo
+   +10,5 ± 25,5 (n = 14); invicto 5+ +21,0 ± 13,7 (n = 46), 10+ +10,5 ± 25,5
+   (n = 13), 15+ n = 3. Sin muestra para decidir. **Pendiente**: rehacerlo con
+   100+ apuestas por grupo; si el batacazo resta y el invicto suma sobre
+   NUESTRO acierto, avisos en el parte (como K-EXTREMO) que muevan la
+   confianza, no el 1X2. Los scripts de esta medición no quedaron en el repo:
+   el método es este texto.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
