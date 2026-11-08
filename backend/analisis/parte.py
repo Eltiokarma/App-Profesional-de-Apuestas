@@ -1961,6 +1961,13 @@ def fuera_en_el_banco(parte: dict) -> list[dict]:
             if b.get("equipo") == lado:
                 textos.append(("tde", b.get("reasignacion") or {}))
         textos.append(("matriz", ((parte.get("matriz") or {}).get(lado)) or {}))
+        # EL BLOQUE DE UN LADO NOMBRA AL RIVAL (08/11/2026, incidencia 1337, La
+        # Guaira–Carabobo: «Loureins Martínez» de Carabobo, en el M2 de La Guaira,
+        # se avisaba como el sancionado «L. Martinez» de La Guaira). Una mención
+        # que también nombra a un jugador del OTRO equipo es ambigua: no se avisa.
+        rival = (parte.get("equipos") or {}).get("b" if lado == "a" else "a") or {}
+        rivales = [r.get("nombre") or "" for r in (rival.get("plantel") or []) + (rival.get("fuera") or [])
+                   if isinstance(r, dict) and r.get("nombre")]
         for x in bajas:
             nombre = x.get("nombre") or ""
             hecho = False
@@ -1970,8 +1977,10 @@ def fuera_en_el_banco(parte: dict) -> list[dict]:
                     # es el sancionado «K. Silva»), y el que SALE no es el recambio
                     # (1094: «entra Mondele por Vanzeir» no cuenta con Vanzeir; la
                     # misma regla que contraElOnce, `sin_salientes`)
-                    if (_identidad.menciona(nombre, _dtp.sin_salientes(frase)) and _USO_BANCO.search(frase)
-                            and not _NIEGA_USO.search(frase)):
+                    limpia = _dtp.sin_salientes(frase)
+                    if (_identidad.menciona(nombre, limpia) and _USO_BANCO.search(frase)
+                            and not _NIEGA_USO.search(frase)
+                            and not any(_identidad.menciona(r, limpia) for r in rivales)):
                         out.append({"lado": lado, "nombre": nombre, "donde": donde, "frase": frase.strip()[:140]})
                         hecho = True
                         break
