@@ -2074,6 +2074,39 @@ def _formacion_ultima(team_id: int, fecha: str) -> tuple[str, int | None]:
     return (f["formacion"] if f else "") or "", ant[0]["id"]
 
 
+def avisos_vacios(dtp: dict, nombres: dict) -> list[dict]:
+    """DTP-INCOMPLETO (07/11/2026, incidencia 1308, Always Ready–ABB): tras un
+    rehacer, los dos bloques quedaron sin veredicto, rest defense, posesión, M3
+    ni piezas, y ni el recibo ni una alerta lo dijeron; el SOB2 del TDE no tuvo
+    de qué heredar. Aviso del recibo (sin rechazo) por bloque, con lo que falta."""
+    out = []
+    for b in (dtp or {}).get("bloques") or []:
+        ap = b.get("apertura") or {}
+        if not ap:
+            continue
+        m2 = ap.get("m2") or {}
+        ramas = m2.get("veredictoRamas") or {}
+        rest, pos = m2.get("restDefense") or {}, m2.get("posesion") or {}
+        vacios = []
+        if not (m2.get("veredicto") or any((ramas.get(r) or {}).get("veredicto")
+                                           for r in ("igualadoOArriba", "persiguiendo"))):
+            vacios.append("veredicto (único o por rama)")
+        if not any(rest.get(k) for k in ("foco", "nivelFoco", "rival", "nivelRival")):
+            vacios.append("restDefense")
+        if not (pos.get("valor") or any((pos.get(r) or {}).get("valor") for r in ("igualadoOArriba", "persiguiendo"))):
+            vacios.append("posesion")
+        if not (ap.get("m3Fases") or ap.get("m3")):
+            vacios.append("M3 (fases)")
+        if len(vacios) >= 2:
+            lado = b.get("equipo") or ""
+            out.append({"bloque": f"dtp.{lado}", "codigo": "DTP-INCOMPLETO",
+                        "costara": f"{nombres.get(lado, lado)}: el DTP llegó sin {', '.join(vacios)}: el veredicto "
+                                   "no tiene qué juzgar y el TDE no hereda el rest defense (SOB2)",
+                        "comoSeArregla": "re-depositar el bloque entero (un POST reemplaza: el GET con tus cambios, "
+                                         "no un bloque recortado) con esos campos del DTP"})
+    return out
+
+
 def avisos_v16(dtp: dict, fx, nombres: dict) -> list[dict]:
     """DTP v1.6, avisos del recibo (sin rechazo):
     · M1-VS-ULTIMO-ONCE (cambio 3): `m1.sistema` distinto de la formación del

@@ -3386,6 +3386,8 @@ def guardar(payload: dict) -> dict:
     faltan.extend(nombres_vs_id(parte, {"a": fx["home_name"], "b": fx["away_name"]}))
     # DTP v1.5: los dos carriles de banda, con su vuelta (aviso, sin rechazo)
     faltan.extend(_dtp.avisos_carril(parte.get("dtp") or {}, {"a": fx["home_name"], "b": fx["away_name"]}))
+    # un bloque del DTP vacío tras un rehacer (1308): se dice, no se calla
+    faltan.extend(_dtp.avisos_vacios(parte.get("dtp") or {}, {"a": fx["home_name"], "b": fx["away_name"]}))
     # una pieza del M2 que el mismo parte tiene en `fuera` (1170)
     faltan.extend(_dtp.avisos_piezas_fuera(parte.get("dtp") or {}, parte.get("equipos") or {},
                                            {"a": fx["home_name"], "b": fx["away_name"]}))

@@ -452,6 +452,15 @@ def main():
           (_i1125.get("ultimoOnceDeLiga") or {}).get("fixtureId") == 20
           and not any("M1 sin XI de referencia" in f for f in _i1125["faltan"])
           and any("ultimoOnceDeLiga" in f and "fixture 20" in f for f in _i1125["faltan"]), _i1125.get("faltan"))
+    # 1308 (Always Ready–ABB): el bloque del DTP vacío tras un rehacer se avisa en el recibo
+    _vac = _dc997.avisos_vacios({"bloques": [
+        {"equipo": "a", "apertura": {"m1": {"sistema": "4-4-2"}, "m2": {"restDefense": {"foco": ""}, "posesion": {}}}},
+        {"equipo": "b", "apertura": {"m1": {}, "m3Fases": [{"fase": "x"}], "m2": {
+            "veredicto": "gana", "restDefense": {"nivelFoco": "fijo"}, "posesion": {"valor": "50"}}}}]},
+        {"a": "Local", "b": "Visita"})
+    check("1308: DTP-INCOMPLETO para el bloque sin veredicto, rest defense, posesión ni M3; el completo, nada",
+          [x["bloque"] for x in _vac] == ["dtp.a"] and _vac[0]["codigo"] == "DTP-INCOMPLETO"
+          and "veredicto" in _vac[0]["costara"], _vac)
     check("1283: con el último partido de Champions y hoy la liga viaja el último once de liga; hoy Champions, nada",
           (_u1283.get("ultimoOnceDeLiga") or {}).get("fixtureId") == 20
           and "internacional" in _u1283["ultimoOnceDeLiga"]["nota"] and _u1283b == {}, (_u1283, _u1283b))

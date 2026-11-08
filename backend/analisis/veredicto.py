@@ -744,9 +744,14 @@ def dtp_objetivo(dtp: dict, goles: list[dict], sin_eventos: bool = False,
             "veredictoDeLaRama": escrito.get("veredicto") or "",
             "razonDeLaRama": escrito.get("razon") or "",
             "veredictoUnico": m2.get("veredicto") or "",
-            **({"sinRamas": "el parte trae un solo veredicto (anterior a la v1.6): se juzga ese y se "
-                            "dice en qué rama se jugó"} if not any((ramas.get(r) or {}).get("veredicto")
-                                                                   for r in ("igualadoOArriba", "persiguiendo")) else {}),
+            # SIN NINGÚN VEREDICTO NO ES «UN SOLO VEREDICTO» (incidencia 1308, Always
+            # Ready–ABB: el bloque llegó sin veredicto ni ramas y el objetivo decía
+            # «un solo veredicto (anterior a la v1.6)»)
+            **({"sinRamas": ("el parte trae un solo veredicto (anterior a la v1.6): se juzga ese y se "
+                             "dice en qué rama se jugó") if m2.get("veredicto") else
+                            "el bloque no trae ningún veredicto del DTP (ni único ni por rama): no hay qué juzgar"}
+               if not any((ramas.get(r) or {}).get("veredicto")
+                          for r in ("igualadoOArriba", "persiguiendo")) else {}),
         })
     return out
 
