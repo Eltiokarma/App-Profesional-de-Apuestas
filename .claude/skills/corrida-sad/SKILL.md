@@ -639,7 +639,16 @@ POST $B/analisis/cowork/incidencias
   rúbrica, moverlo es revisión del TDE); y una «posible identidad» entre dos
   nombres sin efecto en el parte (1303): corré
   `identidad.mismo_jugador(a, b)` antes; si da False son dos personas y la
-  app los trata así.
+  app los trata así. Y desde la pasada del 07/11 (noche): la «Red Card»
+  después de una amarilla sin el detalle «Second Yellow card» (1309: puede ser
+  directa, el detalle ya pide confirmar en prensa); el `5-3-2` del `xi` con un
+  `capturadoEn` anterior a la formación (1315: `formacionAlCerrar` vacío dice
+  que la formación llegó en un refresco); el mismo jugador con dos registros de
+  la API y nombres distintos («M. Ubandoma» / «M. Isah», 1314: sin nombre ni id
+  común no hay regla); 5-4-1 contra 3-4-1-2 o 3-5-2 contra 3-4-2-1 sin rehacer
+  (1311: misma línea de tres con carrileros, 734/1240); y un DTP-REHACER
+  `sinRehacer` con el once a tiempo (1305: sumalo a la #1052, que espera la
+  decisión).
 
 ## Modo `mantenimiento` (los parches, automáticos)
 
