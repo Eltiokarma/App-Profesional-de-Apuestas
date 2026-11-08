@@ -816,3 +816,152 @@ puede alimentar más de un punto; cada lección cuenta una vez.
 | 10 · El reconvertido ataca | (dentro de M1) | — | — | — | — | — | — | — |
 | Confirman sin cambio (checklist y dos capas, vías, carril, piezas, otras) | | 154 | 37 | 37 | 80 | 145 | 6 | 3 |
 | **Total** | | **764** | **207** | **164** | **393** | **736** | **18** | **10** |
+
+## Cambio adicional (08/11, pedido del usuario): la génesis del gol
+
+**Pedido:** «al DTP le falta la teoría de cómo llegó el gol». **Base:**
+`docs/revisiones/DTP_autopsia_gol_estudio.md` (15 partidos de la semana,
+45 goles, 36 con crónica que nombra la jugada). Se aprueba aparte de los
+puntos 1 a 10. **Ningún número del skill se mueve**: no hay umbral, peso ni
+minuto nuevo; son una lista cerrada, un procedimiento y dos obligaciones de
+escritura.
+
+**Lo medido, en corto:**
+
+- El M4 de los cierres casi nunca trae la jugada: **1 de 43** goles de la
+  muestra con mecánica real en el cierre siguiente, y **36 de esos 43 tenían
+  crónica en la web**. En todo el archivo, ~19 % de los 973 goles del M4 traen
+  algo parecido a una mecánica; el resto es autor y asistente de la ficha.
+- `via` hoy es `juego_abierto` en 636 de 973: es el cajón por defecto, no una
+  clase.
+- Las `viasGol` del M2 cubrieron la forma del gol en 17 de 36 (**Sí**), a
+  medias en 15 y no en 4. Las listas son un menú de 5 a 14 vías que casi
+  siempre repite lo mismo; lo que separa el acierto es **la zona y el
+  intérprete**.
+- Lo que más se escapa: **la pelota sucia del área** (rebote, error del
+  arquero, autogol, desvío: 2 «Sí» de 7, más 3 desvíos), **el balón largo a la
+  espalda** (0 de 2), **la transición del dominante** (Barça, Cali) y **el
+  ejecutor real del penal** (Monterrey, Toluca).
+
+### (a) M4: la categoría del gol, de una lista cerrada
+
+Cada gol del M4 lleva **una categoría principal** de esta lista, y nada fuera
+de ella:
+
+| Familia | Categoría |
+|---|---|
+| Pelota parada | córner directo · segunda jugada de córner (incluye el córner en corto) · tiro libre directo · centro de tiro libre · lateral |
+| Penal | penal (con su origen: falta, mano o VAR; y «en el rebote» si se atajó y se convirtió después) |
+| Transición | transición tras recuperación alta · media · baja (la contra tras un córner rival es baja) |
+| Salida | error en la salida bajo presión (pase o despeje propio en campo propio) |
+| Ataque elaborado | centro lateral · pase interior entre líneas · combinación por dentro · desborde individual |
+| Directo | balón largo a la espalda (pelotazo o pase elevado sin recuperación previa) |
+| Remate | tiro de media distancia |
+| Pelota sucia | rebote o segunda jugada en el área · error del arquero (en la atajada) · autogol |
+| — | sin fuente |
+
+Y dos **marcas** que no son categoría: **desvío** (el remate cambió de
+dirección en un rival) y **banco** (el autor o la pieza del gol había entrado).
+
+Reglas de uso:
+
+1. **Sin fuente es una categoría, no un hueco.** Si ninguna página abierta
+   nombra el disparador o la secuencia, la categoría es «sin fuente», con lo
+   que sí se sepa (autor, asistente, «de cabeza»). Nunca se deduce la jugada de
+   la asistencia, del tipo de la ficha ni del puesto del autor (un central que
+   marca no es «pelota parada» sin fuente). La disciplina de no inventar no
+   cambia.
+2. **La categoría la decide el disparador**, no la definición: el gol de
+   Havertz es «error en la salida» aunque terminó en un centro; el de Karl
+   también, aunque fue una vaselina.
+3. **`via`** (`pelota_parada` · `transicion` · `juego_abierto`) se deriva de la
+   familia y deja de escribirse a mano cuando la app guarde la categoría (ver
+   (d)). Hasta entonces, «sin fuente» va con `via` vacía, no con
+   `juego_abierto`.
+4. **MECANISMO-ABIERTO** se sigue nombrando con precisión (zona o rol); la
+   categoría es el piso, no el reemplazo («segunda jugada de córner» no alcanza:
+   «córner en corto, centro al segundo palo sin marca del lateral»).
+5. Si la crónica aparece después del cierre, **se reclasifica** (ya lo dice la
+   v1.4 para `sin mecánica`); con la app, el cambio queda fechado.
+
+### (b) Protocolo de fuentes para la crónica, por liga
+
+Antes de escribir «sin fuente», el cierre **abre** al menos dos páginas de la
+lista de su liga. El resumen del buscador **no es fuente**: en el estudio
+inventó la jugada dos veces (Berdugo, Pedro) y le atribuyó a una página un
+dato que no traía (Di Lollo). Se cita la URL de la
+página abierta en `absolucion` o en la nota del gol.
+
+| Liga | Buscar en | Probar primero | Si no sale |
+|---|---|---|---|
+| Premier y equipos ingleses en Europa | inglés | sitio del club (match report), flashscore.com/news, PA Media (irishnews.com y otros) | 101greatgoals.com |
+| Bundesliga y alemanes en Europa | inglés | bundesliga.com (match report) | flashscore.com/news (fcbayern.com da 403) |
+| Serie A | inglés o italiano | livescore.com (Football Italia) | flashscore |
+| LaLiga | español | (sin medir: el único partido no estaba indexado) | flashscore.es, sitio del club |
+| Argentina | español | contextotucuman.com | 442.perfil.com (solo definición; elgrafico y tudn dan 403) |
+| Brasil | portugués, con «como foi» | jb.com.br, flashscore.com.br | — |
+| Liga MX | español | foxsports.com.mx | planoinformativo.com, record.com.mx |
+| Perú | español | exitosanoticias.pe, caretas.pe | prensa del país del jugador extranjero (primicias.ec para un ecuatoriano); americatv.com.pe da poco |
+| Colombia | español | noticiasrcn.com | winsports.co, occidente.co |
+
+Consulta que funcionó: «[local] [marcador] [visitante] [goleadores]
+[report / crónica / como foi]». **Partidos de menos de 48 horas**: la crónica
+puede no estar indexada (Valencia–Real Madrid y Forest–City no salieron); se
+escribe «sin fuente · a reintentar» y el cierre siguiente del mismo equipo la
+vuelve a buscar. La tabla es fechada: se rehace con cada revisión del skill.
+
+### (c) M2: lo que tiene que figurar sí o sí en `viasGol`
+
+Con lo medido, **de los dos lados**, además de lo que ya pide la v1.5:
+
+1. **La pelota sucia del área**: quién llega al rebote y contra qué arquero.
+   Obligatoria cuando el arquero rival es suplente o viene de un error (fue el
+   único caso donde se escribió, Grando, y acertó dos de dos).
+2. **El balón largo a la espalda**: del que defiende, contra la línea alta del
+   rival, con el central que queda mano a mano (Viñas contra Bueno, Nusa con
+   Nkunku). Hoy solo se escribe la espalda del lateral «en transición».
+3. **La transición también del favorito**: el que domina la pelota recupera
+   alto y medio; su contra se escribe aunque sea el que ataca (Barça al 52',
+   Cali al 32').
+4. **El ejecutor del penal según la hoja del día**, no el de la temporada:
+   quién patea si el habitual no está en cancha **y** quién del banco puede
+   tomarlo (Monterrey: escrito Ocampos, pateó Cuypers; Toluca: escritos
+   Helinho y Viñas, pateó Vega al entrar). Precisa la v1.5, no la cambia.
+5. **El origen de la pelota parada además del rematador**: córner en corto,
+   lateral al área y el tiro libre directo de quien no es el lanzador
+   habitual (Amuzu).
+
+Y una regla de forma: **cada vía nombra zona o intérprete**. Una vía que solo
+dice la categoría («pelota parada», «media distancia») no cuenta como vía en
+el cierre: con listas de 14 entradas, cubrir la categoría es casi seguro y no
+dice nada.
+
+### (d) Para la app (no para el skill; se escribe «pendiente de la app»)
+
+1. **Guardar la categoría de cada gol** en el M4 del parte (la lista cerrada
+   de (a), validada al depositar; fuera de lista → aviso en el recibo, no
+   rechazo), con `desvio` y `banco` como marcas, la `fuente` (URL) y
+   `reclasificadoEn` si cambia después.
+2. **Medir**: por categoría, cuántos goles estaban en las `viasGol` del
+   equipo que anotó, separando «categoría» de «zona o intérprete». Es el
+   número que hoy este estudio hizo a mano sobre 36 goles; con la app sale de
+   cientos. Va a las métricas del DTP como **observación sin tasa** hasta que
+   el usuario decida otra cosa.
+3. **Marcar en los insumos del cierre** (`GET /analisis/cowork/dtp/{id}`) los
+   goles que la ficha ya permite pre-etiquetar sin juicio: `Penalty` (penal),
+   `Own Goal` (autogol), el `Missed Penalty` seguido de un gol del mismo
+   jugador en el mismo minuto (penal en el rebote) y el autor que entró desde
+   el banco (marca `banco`). Lo demás sigue siendo de la crónica.
+4. **Aviso del recibo** cuando un cierre trae todos sus goles «sin fuente» en
+   un partido de una liga con fuente de la tabla de (b) y de más de 48 horas:
+   no rechaza, avisa que la crónica probablemente existe. Si entra, va a la
+   lista de alertas calculadas que `test_arquitectura` exige documentadas.
+
+### Qué NO se propone
+
+- Ningún umbral nuevo para MECANISMO-ABIERTO ni para el M2; ninguna «tasa de
+  vía» que mueva un veredicto. La muestra es de 36 goles.
+- No se le pide a Jev ni a la ficha que deduzcan la jugada: la categoría la
+  pone quien leyó la crónica, o es «sin fuente».
+- No se ordena la lista de `viasGol` por probabilidad: no hay con qué
+  calibrarla todavía (lo da el punto (d).2 cuando junte casos).
