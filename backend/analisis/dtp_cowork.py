@@ -2074,6 +2074,16 @@ def _formacion_ultima(team_id: int, fecha: str) -> tuple[str, int | None]:
     return (f["formacion"] if f else "") or "", ant[0]["id"]
 
 
+def _formacion_de_liga(team_id: int, fecha: str, fx) -> str:
+    """La formación del `ultimoOnceDeLiga` de los insumos (si el último partido
+    fue de copa o internacional y hoy no), o "" si no aplica."""
+    ant = _anteriores(team_id, fecha, 1)
+    if not ant:
+        return ""
+    u = _ultimo_de_liga(team_id, fecha, ant[0], fx=fx).get("ultimoOnceDeLiga") or {}
+    return u.get("formacion") or ""
+
+
 def avisos_vacios(dtp: dict, nombres: dict) -> list[dict]:
     """DTP-INCOMPLETO (07/11/2026, incidencia 1308, Always Ready–ABB): tras un
     rehacer, los dos bloques quedaron sin veredicto, rest defense, posesión, M3
@@ -2141,8 +2151,18 @@ def avisos_v16(dtp: dict, fx, nombres: dict) -> list[dict]:
         except Exception:  # noqa: BLE001
             hoy = ""
         cuadra_hoy = bool(hoy) and _forma(hoy) in {_forma(d) for d in _sistemas(decl, True)}
+        # EL ONCE ROTADO DE LA COPA NO FIJA LA REFERENCIA (08/11/2026, incidencia
+        # 1320, Panathinaikos y Brugge: la apertura con el 4-4-2 de liga y el
+        # aviso comparando contra el 4-2-3-1 rotado de la Conference, aunque los
+        # insumos traían `ultimoOnceDeLiga`; DTP v1.7). Si la apertura cuadra con
+        # el último once de liga que viaja en los insumos, no avisa.
+        try:
+            de_liga = _cifras_sistema(_formacion_de_liga(tid, fecha, fx))
+        except Exception:  # noqa: BLE001 — sin alineaciones de liga, se compara con el último como siempre
+            de_liga = ""
+        cuadra_liga = bool(de_liga) and de_liga in _sistemas(decl, True)
         if _sistemas(decl) and _cifras_sistema(ultima) and _cifras_sistema(ultima) not in _sistemas(decl, True) \
-                and not cuadra_hoy and not _MOTIVO_SISTEMA.search(f"{decl} {m1.get('senalXi') or ''}"):
+                and not cuadra_hoy and not cuadra_liga and not _MOTIVO_SISTEMA.search(f"{decl} {m1.get('senalXi') or ''}"):
             out.append({"bloque": f"dtp.{lado}.m1.sistema", "codigo": "M1-VS-ULTIMO-ONCE",
                         "costara": f"{quien}: la apertura dice «{decl}» y el último once oficial (fixture {fid}) "
                                    f"salió {ultima}, sin motivo escrito: los carriles del M2 pueden estar sobre "
