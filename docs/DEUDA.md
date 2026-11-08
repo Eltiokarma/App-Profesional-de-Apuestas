@@ -875,6 +875,93 @@ conversación se pierde en la siguiente.
    de trabajo `session_01WwsfbUajmjoAmjLG4pPY2i`. Si esa sesión se archiva, la
    rutina se rehace en otra con el repo. `docs/METODO_APUESTA.md`.
 
+24. **La ley anticulebras del usuario, medida** (07/11/2026, usuario: «no
+   pueden ser los siete locales… si no, cualquier pastrulo gana»; el empate
+   de la U contra Sport Boys). `backend/backtest_culebra.py` (test:
+   `test_backtest_culebra`): por LIGA-DÍA (misma liga, mismo día de Lima, 3+
+   partidos), el partido siguiente según lo que ya terminó 2 h antes. Medido
+   sobre 34.970 partidos de las ligas nacionales del padrón (2022-2026) y
+   1.221 con cuota en 324 liga-días (jul-nov 2026): **sin culebra**. Tras
+   locales ganadores el empate del siguiente NO sube (+0,7 · −1,1 · −1,9 pts
+   con 1 · 2 · 3+ previos) y el local gana igual o algo más; los días con
+   todos los locales ganando salen MÁS que la permutación (405 contra 376,
+   z +1,9): los días van en racha. La combinada pierde por el margen cobrado
+   una vez por partido, no por culebras. **Pistas abiertas, con pocos casos**
+   (rehacer con más meses de cuotas: `--api` y `--cache`):
+   - **Empate tras 2+ locales ganadores**: 1 u al empate con la cuota real dio
+     ROI +5,9 % (n = 50; tras 1+, +0,8 % con n = 201) contra −12,3 % a ciegas.
+     La frecuencia de empate en la muestra grande no sube: probablemente suerte.
+   - **Favorito VISITANTE tras un día en que ganaron todos los favoritos**:
+     ganó 39,7 % contra 46,6 % de su cuota (n = 68; con 2+ previos, 31,8 %
+     contra 45,6 %, n = 22). Lo único con forma de culebra.
+   - La **combinada de los favoritos más fuertes** del día (punto 16) sigue
+     abierta.
+   Falta medirla con NUESTROS elegidos (días en que los elegidos de una liga
+   van todos al mismo lado): los datos de la simulación no están abiertos al
+   token de Cowork; iría en `backend/analisis/simulacion.py`. Unas 30
+   comparaciones: una o dos «significativas» son lo esperable por azar.
+
+25. **La resaca del clásico, PISTA** (07/11/2026, usuario: «tras ganar el
+   clásico iba con cuidado; el siguiente gana, el otro rompe»; Cristal le
+   ganó a Alianza y empató 1-1 en Tarma con ADT). Medido el mismo día sobre
+   35 mil partidos de las ligas nacionales del padrón (2023-2026; 2022 de
+   calentamiento): fuerza Elo secuencial (solo partidos anteriores, K 20,
+   localía 60) y lo esperado por liga y tramo de diferencia de Elo; el
+   ganador en su partido siguiente y subsiguiente (≤ 14 días por paso).
+   Clásicos: `calendario.clasico_documentado` + `clasico_nacional` + derbis
+   de ciudad puestos a mano para la prueba (Manchester, Merseyside, Milán,
+   Roma, Madrid, Rosario, Avellaneda…): 417 en 69 rivalidades. **En todas
+   las ligas, no hay resaca**: tras ganar un clásico el siguiente sale +3,3 ±
+   4,5 pts sobre lo esperado y el subsiguiente +1,0 ± 4,7; grande le gana a
+   grande (ambos Elo 1600+), +3,3 y −1,4. Por país, mitad y mitad. **La
+   pista**: en el SUBSIGUIENTE, las grandes ligas europeas van todas abajo
+   —Inglaterra −8 (n 34), Turquía −16 (24), España −7 (20), Portugal −8
+   (13), Italia −3 (21)—, juntas unos −9 ± 9; y grande le gana a grande,
+   Italia −16, Turquía −28, Alemania −12. Encontrada MIRANDO la tabla
+   (selección después de ver; ~70 comparaciones, 5 cruzan su margen, 3 hacia
+   arriba). Brasil, Grecia, Colombia y Paraguay van al revés. **Regla fija
+   para medirla** sin volver a elegir el grupo: desde el 08/11/2026, los
+   clásicos ganados en Inglaterra, España, Italia, Portugal y Turquía; el
+   subsiguiente partido de liga del ganador contra lo esperado por Elo (o por
+   la cuota sin margen, cuando haya). Se toma en serio si con 60+ casos nuevos
+   sigue por debajo con el intervalo entero bajo cero. Aparte, sin clásico:
+   tras CUALQUIER victoria el siguiente rinde −2,7 ± 3,0 en Perú y −2,3 ±
+   3,4 en Bolivia; es la altura (una sola localía por liga subestima la de
+   Tarma o La Paz), no una resaca, y el mercado ya la paga.
+
+26. **Burbuja inflada contra burbuja construida, CONTRA LA CASA** (08/11/2026,
+   usuario: «si el Real Madrid le gana por accidente al PSG, en el siguiente
+   grande se va a la mierda»). Fuente nueva: **football-data.co.uk** (CSV
+   públicos, cuota de CIERRE de Pinnacle y promedio de casas), 62.320
+   partidos 2012-2026 de Inglaterra, España, Italia, Alemania, Francia,
+   Países Bajos, Portugal, Bélgica, Grecia, Turquía, Argentina, Brasil y
+   México; sin Perú, Colombia ni Chile. Cada señal partida en 2012-18 y
+   2019-26: lo real sale en las DOS mitades. Resultado:
+   - **Muerto con esta muestra**: la anticulebra por liga-día (empate tras
+     favoritos ganadores +0,6 · +0,9 · +0,1 pts con 1 · 2 · 3+ previos, las
+     mitades no coinciden), los partidos a la MISMA hora (todos los favoritos:
+     154 de 1.687 tandas contra 146,5 esperados) y el amaño contra el grande
+     (los favoritos ganan +0,8 sobre su cuota en los 62 mil).
+   - **Señal 1, el batacazo** (burbuja INFLADA por un golpe): el que ganó con
+     ≤ 25 % rinde bajo su cuota en el siguiente (−1,4 ± 1,2; mitades −1,0 y
+     −1,8) y el subsiguiente (−2,1 ± 1,2; −2,1 y −2,0), y contra rival fuerte
+     −2,6 ± 1,6. La casa lo sobrevalora.
+   - **Señal 2, el invicto largo** (burbuja CONSTRUIDA): 10+ sin perder gana
+     +1,8 ± 1,3 sobre su cuota y 15+ +2,6 ± 2,1, las dos mitades igual. La
+     casa lo subestima.
+   - Ninguna gana sola al margen del promedio de casas (−1 a −8 %); con
+     Pinnacle quedan en cero. Casi todo es Europa (Américas: pocos casos, no
+     se ve). Son AJUSTES de confianza dentro del método, no apuestas.
+   **Medido en NUESTRAS elecciones el mismo día** (269 cerradas desde el 28/10,
+   historia del elegido por `/fixtures?equipoId` y la cuota del partido previo
+   por `/cuotas`): todas +8,9 ± 5,8 sobre la cuota; elegido tras batacazo
+   +10,5 ± 25,5 (n = 14); invicto 5+ +21,0 ± 13,7 (n = 46), 10+ +10,5 ± 25,5
+   (n = 13), 15+ n = 3. Sin muestra para decidir. **Pendiente**: rehacerlo con
+   100+ apuestas por grupo; si el batacazo resta y el invicto suma sobre
+   NUESTRO acierto, avisos en el parte (como K-EXTREMO) que muevan la
+   confianza, no el 1X2. Los scripts de esta medición no quedaron en el repo:
+   el método es este texto.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel

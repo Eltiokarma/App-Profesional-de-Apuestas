@@ -47,27 +47,60 @@ UMBRALES: dict[int, dict] = {
     262: {"cada": 5, "regla": "Liga MX: cada 5 amarillas"},
     135: {"en": (5, 10, 14, 17), "regla": "Serie A: a la 5.ª, 10.ª, 14.ª y 17.ª amarilla"},
     39: {"en": (5, 10, 15), "regla": "Premier League: a la 5.ª, 10.ª y 15.ª (con tope de fecha)"},
-    2: {"en": (3, 5, 7, 9), "regla": "UEFA: a la 3.ª, 5.ª, 7.ª… amarilla"},
-    3: {"en": (3, 5, 7, 9), "regla": "UEFA: a la 3.ª, 5.ª, 7.ª… amarilla"},
-    848: {"en": (3, 5, 7, 9), "regla": "UEFA: a la 3.ª, 5.ª, 7.ª… amarilla"},
+    # UEFA DESDE LA 2026/27 (EFE v1.10, 08/11/2026: Škriniar 1635658, Lepinjica
+    # 1635745 y Marlon Gomes 1635723 salían sancionados y jugaron). Artículo
+    # 63.02 del reglamento 2026/27 (uefa.com, 13/10/2026): la suspensión es a la
+    # 4.ª amarilla y a cada par siguiente (6.ª, 8.ª…), en Champions, Europa y
+    # Conference; antes era a la 3.ª, 5.ª, 7.ª. Las amarillas de la PREVIA se
+    # borran al empezar la fase liga (solo viaja la roja) y todas vencen al
+    # terminar los cuartos (63.04): eso lo hace `_fase`.
+    2: {"en": (4, 6, 8, 10, 12), "antes": {2025: (3, 5, 7, 9)},
+        "regla": "UEFA 2026/27: a la 4.ª, 6.ª, 8.ª… amarilla; las de la previa no cuentan y vencen tras cuartos"},
+    3: {"en": (4, 6, 8, 10, 12), "antes": {2025: (3, 5, 7, 9)},
+        "regla": "UEFA 2026/27: a la 4.ª, 6.ª, 8.ª… amarilla; las de la previa no cuentan y vencen tras cuartos"},
+    848: {"en": (4, 6, 8, 10, 12), "antes": {2025: (3, 5, 7, 9)},
+          "regla": "UEFA 2026/27: a la 4.ª, 6.ª, 8.ª… amarilla; las de la previa no cuentan y vencen tras cuartos"},
 }
+
+UEFA = {2, 3, 848}
 
 _ROJA = re.compile(r"red card|second yellow|roja", re.I)
 _AMARILLA = re.compile(r"^yellow card$|^amarilla$", re.I)
 
 
-def suspende(liga: int, n: int) -> bool:
-    """¿La amarilla número `n` en la competición completa un ciclo?"""
+def suspende(liga: int, n: int, temporada: int | None = None) -> bool:
+    """¿La amarilla número `n` en la competición completa un ciclo? La
+    `temporada` elige la regla vigente ese año (`antes`, para la UEFA de 2025 o
+    anterior); sin temporada, la de hoy."""
     u = UMBRALES.get(liga)
     if not u or n <= 0:
         return False
-    return n % u["cada"] == 0 if "cada" in u else n in u["en"]
+    if "cada" in u:
+        return n % u["cada"] == 0
+    en = u["en"]
+    if temporada is not None:
+        viejas = [t for t in u.get("antes", {}) if int(temporada) <= t]
+        if viejas:
+            en = u["antes"][min(viejas)]
+    return n in en
 
 
-def _fase(ronda: str | None) -> str:
+_PREVIA_UEFA = re.compile(r"qualifying|preliminary|^play-?offs?$", re.I)
+_SEMIS_UEFA = re.compile(r"semi|^final", re.I)
+
+
+def _fase(ronda: str | None, liga: int | None = None) -> str:
     """Apertura y Clausura (o 1st/2nd stage) son torneos aparte: el ciclo de
-    amarillas arranca de cero en cada uno."""
-    r = (ronda or "").lower()
+    amarillas arranca de cero en cada uno. En la UEFA las fases del ciclo son
+    otras: la previa (rondas de clasificación y el play-off ANTERIOR a la fase
+    liga; el «Knockout Round Play-offs» es de la fase final) no viaja a la fase
+    liga, y en semis y final se empieza de cero (las amarillas vencen tras los
+    cuartos)."""
+    r = (ronda or "").lower().strip()
+    if liga in UEFA:
+        if _PREVIA_UEFA.search(r):
+            return "previa"
+        return "semis" if _SEMIS_UEFA.search(r) else ""
     for clave in ("apertura", "clausura", "1st", "2nd", "first", "second"):
         if clave in r:
             return clave
@@ -94,7 +127,7 @@ def _previos(team_id: int, liga: int | tuple, temporada, antes: str, fase: str) 
                f"WHERE (home_team_id=? OR away_team_id=?) AND league_id IN ({','.join('?' * len(ligas))}){temp} "
                f"AND status_short IN ({','.join('?' * len(FIN))}) AND date < ? ORDER BY date DESC",
         (team_id, team_id, *ligas, *(() if len(ligas) > 1 else (temporada,)), *FIN, antes))
-    return [f for f in filas if len(ligas) > 1 or _fase(f["league_round"]) == fase]
+    return [f for f in filas if len(ligas) > 1 or _fase(f["league_round"], ligas[0]) == fase]
 
 
 _UPGRADE = re.compile(r"card upgrade", re.I)
@@ -289,7 +322,7 @@ def del_equipo(team_id: int, fx) -> dict:
     id, date, league_id, league_season, league_round)."""
     out = {"sancionados": [], "amarillas": [], "conteoParcial": None, "regla": None}
     try:
-        fase = _fase(fx["league_round"] if "league_round" in fx.keys() else None)
+        fase = _fase(fx["league_round"] if "league_round" in fx.keys() else None, fx["league_id"])
         previos = _previos(team_id, fx["league_id"], fx["league_season"], str(fx["date"]), fase)
     except Exception:  # noqa: BLE001 — base sin la tabla o sin columnas: no se infiere nada
         return out
@@ -403,7 +436,7 @@ def del_equipo(team_id: int, fx) -> dict:
     # hoja de hoy lo desmiente)
     ciclo = {}
     for k, c in conteo.items():
-        if not suspende(fx["league_id"], c["n"]):
+        if not suspende(fx["league_id"], c["n"], fx["league_season"]):
             continue
         en_hoja = (c["jugadorId"] in en_ids) if c["jugadorId"] else ((c["nombre"] or "").strip().lower() in en_nombres)
         ciclo[k] = ("cumplido" if not c["enElUltimo"] else "enLaHoja" if en_hoja
@@ -412,7 +445,7 @@ def del_equipo(team_id: int, fx) -> dict:
         if k in ciclo:
             a["ciclo"] = ciclo[k]
     for k, c in conteo.items():
-        if k in rojas or not c["enElUltimo"] or not suspende(fx["league_id"], c["n"]):
+        if k in rojas or not c["enElUltimo"] or not suspende(fx["league_id"], c["n"], fx["league_season"]):
             continue
         if (c["jugadorId"] in en_ids) if c["jugadorId"] else ((c["nombre"] or "").strip().lower() in en_nombres):
             continue
