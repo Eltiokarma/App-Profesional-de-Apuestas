@@ -6261,10 +6261,18 @@ def main():
           "no sirve, no «no casa»",
           _rz577 == [] and "es el mismo de la base" in _o577.get("sinAntiguedad", "")
           and "no casa" not in _o577["sinAntiguedad"], (_o577, _rz577))
+    # 1326 (08/11/2026, Le Mans–Monaco): el DT sin antigüedad se avisa en `faltan` al depositar
+    from backend.analisis.parte import avisos_dt_sin_antiguedad as _adsa
+    _f1326 = _adsa({"equipos": {"a": {"dt": _o577}, "b": {"dt": {"nombre": "X", "meses": 3.0}}}})
+    check("1326: el DT sin `desde` ni `meses` sale en `faltan` del recibo (DT-SIN-ANTIGUEDAD), sin rechazo",
+          len(_f1326) == 1 and _f1326[0]["bloque"] == "equipos.a.dt"
+          and _f1326[0]["codigo"] == "DT-SIN-ANTIGUEDAD", _f1326)
     _rz827: list = []
     _o827 = _dte({"nombre": "Cristián Gómez", "desde": ""}, _rz827, "a", "2026-10-25", None)
     check("827: el `desde` vacío a propósito (sin fuente, como pide el prompt) no se rechaza y la antigüedad queda null",
           _rz827 == [] and _o827["meses"] is None, (_o827, _rz827))
+    check("1326: el `desde` vacío a propósito no se avisa en `faltan`",
+          _adsa({"equipos": {"a": {"dt": _o827}}}) == [], _o827)
     check("383: antes del once la F3 sale provisional (rama A) y lo dice",
           (bf.alerta_f3("FORMADO", "rojo", provisional=True) or {}).get("provisional") is True
           and "PROVISIONAL" in bf.alerta_f3("FORMADO", "rojo", provisional=True)["detalle"])

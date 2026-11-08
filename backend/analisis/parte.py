@@ -522,6 +522,26 @@ def _dt_equipo(crudo, rechazos: list, lado: str, fecha_partido: str,
     return out
 
 
+def avisos_dt_sin_antiguedad(parte: dict) -> list[dict]:
+    """El DT que llegó sin `desde` ni `meses` (y sin la clave vacía a
+    propósito) queda con la antigüedad en null y `sinAntiguedad` (1010: no es
+    un rechazo). Pero el recibo lo tiene que DECIR al depositar: Le Mans–Monaco
+    (08/11/2026, incidencia 1326) salió con los dos `dt` sin fecha, recibo
+    limpio, y el motivo recién apareció al releer. Aviso en `faltan`."""
+    out = []
+    for lado in LADOS:
+        dt = (((parte.get("equipos") or {}).get(lado) or {}).get("dt") or {})
+        if isinstance(dt, dict) and dt.get("sinAntiguedad"):
+            out.append({
+                "bloque": f"equipos.{lado}.dt",
+                "codigo": "DT-SIN-ANTIGUEDAD",
+                "costara": dt["sinAntiguedad"] + " (la estabilidad del DT en la tarjeta sale sin dato)",
+                "comoSeArregla": "`desde` con la llegada que diga la prensa (\"YYYY-MM-DD\"); sin fuente, "
+                                 "`\"desde\": \"\"` a propósito y se deja de avisar",
+            })
+    return out
+
+
 # EL DT NO SIEMPRE SE SIENTA EN EL BANCO, Y EL BANCO DE LA API NO SIEMPRE ES EL
 # DT. Atlante (Herrera suspendido, dirigió Galindo) y Juárez (la API puso a «T.
 # Campos» con Lema en el banco según la prensa), 20/10/2026: el parte tenía el DT
@@ -3384,6 +3404,8 @@ def guardar(payload: dict) -> dict:
     # id y el IP salía bien, pero la pantalla y F4 mostraban bajas y rotados
     # falsos y la previa confundió arqueros). Aviso, sin rechazo: el id manda.
     faltan.extend(nombres_vs_id(parte, {"a": fx["home_name"], "b": fx["away_name"]}))
+    # el DT sin antigüedad se dice AL DEPOSITAR (aviso, sin rechazo, 1010)
+    faltan.extend(avisos_dt_sin_antiguedad(parte))
     # DTP v1.5: los dos carriles de banda, con su vuelta (aviso, sin rechazo)
     faltan.extend(_dtp.avisos_carril(parte.get("dtp") or {}, {"a": fx["home_name"], "b": fx["away_name"]}))
     # un bloque del DTP vacío tras un rehacer (1308): se dice, no se calla
