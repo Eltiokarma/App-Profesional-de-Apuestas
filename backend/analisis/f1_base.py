@@ -670,6 +670,8 @@ def _con_sanciones(t: dict, sanc: dict | None) -> dict:
     # `dt.banco`, nunca en `sancionados`.
     if sanc.get("sinRegla"):
         t["amarillasSinRegla"] = sanc["sinRegla"]
+    if sanc.get("sinJugador"):
+        t["amarillasSinJugador"] = sanc["sinJugador"]   # 1313
     if sanc.get("cuerpoTecnico"):
         t["cuerpoTecnico"] = sanc["cuerpoTecnico"]
     return t
