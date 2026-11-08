@@ -35,7 +35,8 @@ check("los dígitos se conservan (hojas de prueba «Jugador10»)", idn.tokens("A
 for a, b, caso in [("berrios", "berios", "856, Carabobo"), ("zampiero", "zampieri", "223, Torque"),
                    ("quiros", "quiroz", "seseo, Atlas"), ("bizans", "bisanz", "Huracán, letras cambiadas"),
                    ("balazar", "bazalar", "Los Chankas, DT"), ("hoeness", "hoeneb", "ß mal codificada, Stuttgart"),
-                   ("emmanuel", "emanuel", "449, letra doble")]:
+                   ("emmanuel", "emanuel", "449, letra doble"),
+                   ("barbopoulos", "barmpopoulos", "1306, μπ griega: mp ↔ b")]:
     check(f"apellido casi: «{a}» / «{b}» ({caso})", idn.apellido_casi(a, b))
 for a, b, caso in [("martinez", "martino", "dos letras"), ("rojas", "rojo", "corto"), ("sosa", "sossa", "corto"),
                    ("berrios", "beros", "dos letras de menos"),
@@ -45,7 +46,8 @@ for a, b, caso in [("martinez", "martino", "dos letras"), ("rojas", "rojo", "cor
 # ── el mismo jugador ──────────────────────────────────────────────────────────
 for a, b, caso in [("S. Peña", "S. Pena", "Nacional Potosí"), ("E. Griffa", "Emiliano Griffa", "Leones del Norte"),
                    ("Y. Guzmán", "Y. Guzman", "839, América"), ("Luan Patrick", "Patrick Luan", "502, Estrela"),
-                   ("J. Berríos", "J. Berios", "856")]:
+                   ("J. Berríos", "J. Berios", "856"),
+                   ("Apostolos Barbopoulos", "Apostolos Barmpopoulos", "1306, Aris")]:
     check(f"mismo jugador: «{a}» / «{b}» ({caso})", idn.mismo_jugador(a, b))
 for a, b, caso in [("J. Bisanz", "F. Bisanz", "otra inicial: la decide f1_base con más datos"),
                    ("Juan Bisanz", "Pedro Bisanz", "dos pilas enteras: hermanos"),
