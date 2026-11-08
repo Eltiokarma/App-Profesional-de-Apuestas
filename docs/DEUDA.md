@@ -962,6 +962,105 @@ conversación se pierde en la siguiente.
    confianza, no el 1X2. Los scripts de esta medición no quedaron en el repo:
    el método es este texto.
 
+27. **Cierre del fin de semana 07-08/11/2026: lo que NO se puede olvidar**
+   (usuario: «grandes avances teóricos… no lo olvides»). Se retoma el
+   **lunes 09/11 a las 20:00 de Lima**.
+
+   **A. Pendiente de aprobar: las cuatro revisiones de los skills** (redactadas
+   el 07/11 de noche desde las lecciones del 01-07/11; ninguna mueve un número;
+   se aprueban enteras o por cambio): `docs/revisiones/SAD_v4.5_propuesta.md`
+   (7 cambios, el 1 es el origen de la burbuja del punto 26),
+   `EFE_v1.10_propuesta.md`, `TDE_v0.1.26_propuesta.md` y
+   `DTP_v1.8_propuesta.md` (con la génesis del gol al final y su estudio
+   `DTP_autopsia_gol_estudio.md`: 45 goles, el cierre trae la jugada en 1 de 43
+   aunque la crónica exista en 36; vías que se escapan: rebote/desvío, pelotazo
+   a la espalda, contragolpe del favorito, pateador del día). Al aprobar: se
+   redactan los SKILL, `CORTE_VERSION`, y el usuario sube los zips (anotar la
+   hora en `SUBIDA_VERSION`). El plan era subirlos el lunes antes de los
+   primeros partidos; como la sesión vuelve a las 20:00, el lunes corre con las
+   versiones vigentes y la subida queda para después de aprobar.
+   **Decisiones abiertas del usuario** que traen las propuestas: (1) el riesgo
+   ALTO del reventón reventó 19 de 21 (el backtest promete 62-67 %): ¿se
+   revisan los puntos? (número calibrado de la app); (2) F2 del TDE (viaje y
+   altura): manda el motor o se sube a mano —recomendado: el motor, el viaje en
+   la caja de sensibilidad—; (3) ¿la app agrega sola a la tabla F1 los
+   titulares que faltan?; (4) ¿los veredictos dejan de escribir una lección
+   cuando el empate técnico solo se cumple? (100 de 416 del EFE); (5) el rol
+   contra el grid del DTP: ¿sale de sombra? (9 reales, 0 falsos, incidencia
+   1232). **Para incidencias del mantenimiento**: Peralta (Cúcuta–Santa Fe)
+   dado de baja, jugó y dio el gol; y el penal atajado que entra en el rebote
+   (Vega, 87') sale en la ficha como «Missed Penalty» más un gol en el mismo
+   minuto.
+
+   **B. Hecho y en producción (PR #442, 08/11):** la regla de amarillas de
+   UEFA 2026/27 (4.ª, 6.ª, 8.ª…; la previa no cuenta; vencen tras cuartos) en
+   `backend/sanciones.py`; el backtest de la culebra; los puntos 24-26.
+
+   **C. La teoría de la martingala** (08/11, usuario: «funciona porque
+   perdemos… ¿hay una curva donde es eficiente?»). Sí:
+   - Lo que gana cualquier método a la larga es **lo apostado × la ventaja**.
+     El método no crea ventaja, decide cuánto se apuesta en cada partido.
+   - La martingala sube la apuesta SOLO tras perder: **sin fallos no tiene
+     combustible** (apuesta 1 u, crece como la plana); con muchos fallos,
+     una racha larga pide más que la banca y quiebra. Su **zona** es un
+     acierto de ~50-65 % con cuotas cerca de 2: pierde lo bastante para subir
+     seguido y rara vez encadena 6-7 fallos. Estamos ahí (60 %).
+   - Con cuota menor a 2, doblar tras perder **no recupera**: si gana es
+     porque cada apuesta lleva nuestra ventaja y porque las apuestas
+     grandes (tras fallar) acertaron más de lo normal.
+   - El 08/11 la martingala pasó de ROI +12,4 % a **+14,1 %** mientras la
+     plana bajaba de +13,5 % a +10,6 % y el método a +9,8 %: sus apuestas tras
+     fallar acertaron más que el promedio. Es el **criterio de contacto**
+     (punto 23), que mide la rutina del lunes 07:43 con regla fija.
+   - **La curva eficiente es Kelly**: apostar en proporción a la ventaja
+     REAL (con 100 % de acierto, toda la banca). El Kelly de la pantalla
+     pierde porque usa NUESTRAS probabilidades. **Si el contacto se
+     confirma**, la versión eficiente de la martingala es un método que suba
+     la apuesta en proporción a la ventaja MEDIDA tras k fallos (un Kelly por
+     estado: tramo de confianza × fallos seguidos, contra la cuota), con techo,
+     en vez de doblar a ciegas. Mismo combustible, sin explotar. **Si no se
+     confirma**, la martingala es más riesgo con la misma ventaja.
+   - Riesgo a la vista (08/11): caída máx 35,6 %, una línea en 32 u, 28
+     líneas abiertas y hasta 68 u en juego. Con plata real a S/20 o $20 por
+     unidad, 32 u son S/640 o $640 en un partido y el escalón siguiente, 128
+     u, pasa la banca entera.
+   - El freno del método pausó el tramo 50-59 (56 % contra 57 % que pide la
+     cuota) y por eso quedó bajo la plana; el 60+ acertó 88 % contra 75 % (n 50).
+
+   **D. «La fe contra el precio»** (08/11, usuario: «un filtro del hinchismo…
+   una digievolución de la Fe Perdida»). Línea de investigación, sin ley ni
+   número. La Fe Perdida medía el ánimo de la hinchada desde los resultados y
+   nunca miraba el precio: no tenía cómo demostrar que pagaba. La versión 2.0
+   mide **la emoción CONTRA la cuota**: solo importa si la fe infla o desinfla
+   el precio. Lo que sobrevivió contra la casa ya es eso: la burbuja inflada
+   (euforia mal cobrada) y la construida (fe que falta), punto 26. Candidatos
+   a medir, siempre antes del pitazo y en dos mitades: euforia (batacazo,
+   clásico ganado, goleada, fichaje, DT nuevo que gana), depresión (crisis, DT
+   en duda), corazón (necesidad desigual en la tabla: ya en la v4.5, cambio 5),
+   y el tono de la prensa etiquetado por Jev (clasificador de texto: euforia ·
+   normal · crisis) como dato en sombra, sin tocar el 1X2. Evidencia de fondo:
+   los partidos sin público de la pandemia bajaron la localía: la tribuna
+   mueve resultados, pero el mercado lo cobra.
+
+   **E. Apostar de verdad: la ejecución** (08/11). El usuario no puede poner
+   ~30 apuestas por día a mano. Va a programar ÉL una app de alarmas (no
+   programarla nosotros por ahora): alarma ruidosa por partido o tanda, el
+   partido, el elegido, el monto con la banca del momento, la **cuota
+   mínima** (si paga menos, no se apuesta), el link directo y un botón
+   «apostada / no llegué» para comparar lo real con la simulación; todo sale
+   de los partes y de la Simulación en una llamada. Antes de poner plata:
+   (1) simular el método apostando en 2-3 tandas al día con la cuota de esa
+   hora (la simulación apuesta en el pitazo); (2) medir si se sostiene solo con
+   las ligas de más mercado; (3) empezar chico, S/20 por unidad, solo el
+   método proporcional, sin martingala, 2-3 semanas comparando lo real con lo
+   simulado. **Betfair**: no se encontró licencia de MINCETUR (obligatoria
+   desde 2024): verificar en el portal antes de nada; la API permite apostar
+   con un script, pero en Liga 1, Bolivia, Venezuela o Paraguay casi no hay
+   liquidez; comisión 2-5 % sobre lo ganado. Contratar a alguien: con S/20 por
+   unidad el sueldo se come casi toda la ganancia esperada (~S/1.800 al mes si
+   el ROI siguiera en ~10 %, que no está asegurado); con $20 da, si el ROI
+   aguanta. Una persona solo copia la boleta, no decide.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
