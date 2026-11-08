@@ -106,6 +106,12 @@ def apellido_casi(uno: str, otro: str, minimo: int = 5) -> bool:
         return True
     if min(len(a), len(b)) < minimo:
         return False
+    # LA «μπ» GRIEGA SE TRANSLITERA «mp» O «b» (07/11/2026, incidencia 1306,
+    # Aris–Panetolikos: «Barbopoulos» en la hoja y «Barmpopoulos» en la
+    # plantilla; el arquero suplente quedaba de baja y la zona GK subía 14,3 %).
+    # Solo si uno trae «mp» donde el otro trae «b», y en apellidos largos.
+    if "mp" in a + b and a.replace("mp", "b") == b.replace("mp", "b"):
+        return True
     # LAS MISMAS LETRAS EN OTRO ORDEN ES UN INTERCAMBIO, NO UN ANAGRAMA
     # (06/11/2026, incidencia 1256, Barracas–Racing: «mientras» de la prosa del
     # DTP es anagrama de «martines» y casaba con D. Martínez, y el DTP pedía
