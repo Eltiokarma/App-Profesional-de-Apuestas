@@ -32,8 +32,8 @@ está redactado en `docs/skills/diagnostico-tactico/SKILL.md` todavía.
   `proponeMoverNumero: false` y ninguna con `true`; `pidenMoverSinPoder` está
   vacío. Como la v1.4 a la v1.7, esta revisión fija rúbrica.
 - **El «lectura_efe» del modo de fallo, otra vez.** Jev etiqueta 38 de las
-  pendientes como `lectura_efe` (20 fallos y 18 parciales). Solo 4 nombran al
-  EFE. Las demás son rúbrica del DTP mal aplicada: 16 de volumen, 11 del
+  pendientes como `lectura_efe` (20 fallos y 18 parciales). Ninguna nombra al
+  EFE: las 38 son rúbrica del DTP mal aplicada, 16 de volumen, 11 del
   veredicto por rama, 4 de posesión y el resto del checklist, las vías, el
   carril, el rearme y el banco. Es el mismo hallazgo de la v1.7 y sigue siendo
   una decisión del usuario (ver «Lo que NO se propone»).
@@ -619,7 +619,7 @@ construyen, la mitad de las lecciones de esta ventana no habría hecho falta:
 | `penales[].muestra`, `ultimoErrado`, `enCancha` y aviso `DTP-PENAL-EJECUTOR-FUERA` | punto 5.(c): Charleroi 1558679, Cobresal 1505547, Los Chankas 1549542 (nombrados fuera de la hoja) |
 | Aviso `M1-VS-ONCE-OFICIAL` | punto 6.(a): 14 partidos |
 | `casoBloquePropuesto` en los insumos del cierre y aviso `P6-OTRA-LINEA` | 35 cierres que escribieron a mano el caso de la 6 para la apertura siguiente |
-| `dtp.porBloque[].volumen` (dentro y fuera del área, xG, córners, atajadas, `cubreRama`) y `sinStats` | punto 1 |
+| `dtp.porBloque[].volumen` (dentro y fuera del área, xG, córners, atajadas, `cubreRama`) | punto 1 |
 | Minutos con diferencia numérica de cada rama (`minutosEnDiferencia`) | Atlante 1551031, La Serena 1505551, Real Oruro 1645535, Bologna 1550194, Metropolitanos 1646931 |
 | `posesionReferencias` y `m2.posesion.*.perfilRival` | punto 3 |
 | `rearmes` en los insumos del cierre | punto 8 |
@@ -711,8 +711,8 @@ construyen, la mitad de las lecciones de esta ventana no habría hecho falta:
 - **`ROLES_GRID_REHACE`:** la medición está hecha (incidencia 1232); lo decide
   el usuario.
 - **El casillero del DTP en la taxonomía de Jev** (`lectura_dtp` o
-  redefinir `lectura_efe`): 34 de las 38 etiquetas `lectura_efe` no hablan del
-  EFE. Es código y toca cómo se agrupan los fallos; lo decide el usuario.
+  redefinir `lectura_efe`): ninguna de las 38 etiquetas `lectura_efe` habla
+  del EFE. Es código y toca cómo se agrupan los fallos; lo decide el usuario.
 - **Candidatos con uno o dos casos**, que quedan anotados y no entran:
   - el lateral o defensor fresco como banco ofensivo (Başakşehir 1584463,
     Bolívar 1645531);
