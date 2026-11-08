@@ -727,8 +727,8 @@ o `T.54-SIN-DECLARAR` sin dato. Va como incidencia.
   siguen apareciendo en más de 5 partidos por semana, la app los suma sola
   (opción para decidir de A1).
 - **COLAPSO + AGRAVANTE:** con 5 casos de un mismo agravante y su cuenta de
-  contraejemplos (hoy, R-KT.2 de visita: Marítimo, quizás Remo, y Elversberg
-  en contra).
+  contraejemplos (hoy, R-KT.2 de visita: Marítimo y Remo —verificado el
+  08/11—, y Elversberg en contra).
 - **D3-DEGRADADO:** con la próxima tanda que traiga un 🔶 medido en otra
   condición o competición que recibe primero, contando también los que no
   colapsaron.
@@ -741,9 +741,11 @@ o `T.54-SIN-DECLARAR` sin dato. Va como incidencia.
   lecciones.
 - **El suplente sin rodaje (cambio 4):** si en una tanda la vía firme por
   error del arquero aparece en 3 o más partidos sin GK-FALLA-ACTIVA previa.
-- **La sanción por ciclo (cambio 5):** cuando A3 diga si los tres casos de
-  UEFA fueron error del conteo. Si el conteo estaba bien y la regla de UEFA
-  es otra, se corrige `UMBRALES` y el ciclo de UEFA puede volver a nivel 1.
+- **La sanción por ciclo (cambio 5):** ~~cuando A3 diga si los tres casos de
+  UEFA fueron error del conteo~~. **RESUELTO el 08/11** (ver «Verificado el
+  08/11» al final): la regla de UEFA era otra y `UMBRALES` ya se corrigió.
+  El ciclo de UEFA puede volver a nivel 1 cuando una semana de partidos de
+  UEFA no dé ningún sancionado que juegue.
 
 ## Cómo se aplica si se aprueba
 
@@ -807,3 +809,35 @@ la tabla F1, que va primero. Los partidos se cuentan por grupo y se repiten
 entre grupos. Las cuentas se hicieron sobre el JSON del dossier del
 08/11/2026 (02:31 UTC). Los conteos no son una tasa de acierto del skill
 (`sesgoDeAtribucion`).
+
+## Verificado el 08/11 (después de redactar, pedido del usuario)
+
+**1. Remo (1492447) era recién ascendido y el parte lo tenía.** El bloque C
+del parte dice «R-KT.2: recién ascendido de la Serie B 2025; sus K están en
+cuarentena». La prensa lo confirma: Remo subió el 23/11/2025 (3-1 a Goiás),
+cuarto de la Série B, y volvió a la Série A después de 31 años
+([Diário de Pernambuco](https://www.diariodepernambuco.com.br/esportes-dp/nacional/2025/11/11701233-coritiba-athletico-chape-e-remo-conquistam-acesso-para-a-serie-a-do-brasileiro.html),
+[Diário do Pará](https://diariodopara.com.br/bola/remo-volta-a-serie-a-pela-16a-vez/)).
+Remo cuenta a favor de COLAPSO + AGRAVANTE con R-KT.2 de visita, como
+Marítimo: dos a favor y uno en contra (Elversberg). **Sigue candidato.**
+
+**2. Los tres sancionados de UEFA que jugaron eran un error de la REGLA, no
+del conteo.** Desde la temporada 2026/27 la UEFA suspende a la **4.ª**
+amarilla y a cada par siguiente (6.ª, 8.ª…), en Champions, Europa y
+Conference; antes era a la 3.ª, 5.ª, 7.ª. Además, las amarillas de las
+rondas de clasificación **se borran al empezar la fase liga** (solo viaja la
+roja) y todas vencen al terminar los cuartos (artículos 63.02 y 63.04;
+[UEFA.com, 13/10/2026](https://www.uefa.com/uefachampionsleague/news/0295-1cd661bbe9cd-ded5a1c8b04d-1000--champions-league-europa-league-conference-league-yellow/),
+[Inside World Football](https://www.insideworldfootball.com/2026/08/06/uefa-confirms-rule-changes-on-bookings-and-timekeeping-in-champions-league/)).
+La base tenía la regla vieja (`UMBRALES` 2, 3 y 848 a la 3.ª) y, para la
+3.ª ronda previa y el play-off previo, sumaba sus amarillas a la fase liga.
+Fenerbahçe, Sabah y Shakhtar jugaron la previa: los tres casos se explican.
+
+**Ya corregido en la app** (código, no skill; `backend/sanciones.py`, con
+tests en `backend/test_sanciones.py`): la UEFA 2026/27 suspende a la 4.ª, 6.ª,
+8.ª…; la 2025/26 y anteriores conservan la regla vieja; la previa es su propia
+fase y no viaja a la fase liga; semis y final cuentan de cero. **Para el
+cambio 5 de esta propuesta**: la regla «en competiciones de UEFA va siempre
+condicionado a la hoja» se puede aflojar cuando una semana de UEFA no dé
+ningún falso sancionado; hasta entonces se queda como está escrita.
+

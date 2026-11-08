@@ -454,5 +454,20 @@ check("1126: sin regla, la tabla F1 trae `amarillasSinRegla`; con regla, no; y `
       "amarillasSinRegla" in _t and "amarillasSinRegla" not in _t106
       and [x["nombre"] for x in _t106.get("cuerpoTecnico") or []] == ["Artur William Costa"], (_t, _t106))
 
+# EFE v1.10 (08/11/2026): la UEFA de la 2026/27 suspende a la 4.ª y a cada par
+# siguiente (Škriniar 1635658, Lepinjica 1635745, Marlon Gomes 1635723 jugaron
+# con «la 3.ª»); las amarillas de la previa no viajan y vencen tras cuartos
+check("UEFA 2026/27: la 3.ª amarilla no suspende, la 4.ª sí, la 5.ª no, la 6.ª sí",
+      [sanciones.suspende(2, n, 2026) for n in (3, 4, 5, 6)] == [False, True, False, True])
+check("UEFA 2025/26 y antes: la regla vieja, a la 3.ª y a cada impar",
+      [sanciones.suspende(3, n, 2025) for n in (3, 4, 5)] == [True, False, True])
+check("UEFA: la previa es su propia fase (las rondas de clasificación y el play-off anterior a la fase liga)",
+      {sanciones._fase(r, 848) for r in ("1st Qualifying Round", "3rd Qualifying Round", "Play-offs")} == {"previa"})
+check("UEFA: la fase liga y la eliminatoria hasta cuartos cuentan juntas; semis y final, aparte",
+      {sanciones._fase(r, 2) for r in ("League Stage - 4", "Knockout Round Play-offs", "Round of 16", "Quarter-finals")}
+      == {""} and sanciones._fase("Semi-finals", 2) == sanciones._fase("Final", 2) == "semis")
+check("fuera de la UEFA, «1st»/«2nd» siguen separando torneos cortos",
+      sanciones._fase("Apertura - 3") == "apertura" and sanciones._fase("2nd Phase - 1", 128) == "2nd")
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)
