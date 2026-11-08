@@ -150,7 +150,7 @@ def mismo_jugador(uno: str, otro: str) -> bool:
         return (len(corto) == 2 and len(largo) >= 3 and len(corto[0]) > 1
                 and any(misma_pila(corto[0], p) for p in largo[1:-1] if len(p) > 1)
                 and (corto[-1] == largo[-1] or apellido_casi(corto[-1], largo[-1])))
-    if a[-1] == b[-1] or apellido_casi(a[-1], b[-1]):
+    if a[-1] == b[-1] or apellido_casi(a[-1], b[-1]) or apellidos_juntos(a, b):
         return True
     # EL NOMBRE CORTO LLEVA EL PRIMER APELLIDO (31/10/2026, incidencia 893: «A.
     # Torrez» y «A. W. Torrez Suarez» de Oriente, el mismo arquero con dos ids):
@@ -177,6 +177,20 @@ def ids_equivalentes(antes: dict, ahora: dict) -> dict:
     return out
 
 
+def apellidos_juntos(uno: list[str], otro: list[str]) -> bool:
+    """EL APELLIDO CON GUION ES EL MISMO PEGADO (08/11/2026, incidencia 1331,
+    U. Católica–Deportes Limache: «Tomas Astaburuaga» de la ficha y «T.
+    Asta-Buruaga» de la tabla F1; sonó ONCE-SIN-FILA-F1 y el titular quedaba en
+    `fuera`). El guion se hace espacio en `plano`, así que «asta buruaga» no
+    casaba con «astaburuaga». Los apellidos (todo después de la pila) pegados
+    son iguales, con 6 letras o más, y con dos o más palabras en un lado: dos
+    apellidos de una palabra distinta no entran por acá."""
+    if len(uno) < 2 or len(otro) < 2 or max(len(uno), len(otro)) < 3:
+        return False
+    a, b = "".join(uno[1:]), "".join(otro[1:])
+    return len(a) >= 6 and a == b
+
+
 def casa(tokens_plantel: list[str], tokens_hoja: list[str]) -> bool:
     """¿La hoja nombra a este jugador de la tabla? API-Football escribe
     «A. Campos»; la prensa «Ángelo Campos»; un pantallazo solo «Campos». El
@@ -188,6 +202,8 @@ def casa(tokens_plantel: list[str], tokens_hoja: list[str]) -> bool:
         return False
     apellidos = set(tokens_plantel[1:]) or set(tokens_plantel)
     if not set(tokens_hoja) & apellidos:
+        if apellidos_juntos(tokens_plantel, tokens_hoja):  # «Asta-Buruaga» = «Astaburuaga» (1331)
+            return misma_pila(tokens_plantel[0], tokens_hoja[0])
         return len(tokens_hoja) == 1 and len(tokens_plantel) > 1 and tokens_hoja[0] == tokens_plantel[0]
     pila_plantel = tokens_plantel[0] if len(tokens_plantel) > 1 else ""
     pila_hoja = [t for t in tokens_hoja if t not in apellidos]
