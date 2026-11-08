@@ -648,7 +648,19 @@ POST $B/analisis/cowork/incidencias
   común no hay regla); 5-4-1 contra 3-4-1-2 o 3-5-2 contra 3-4-2-1 sin rehacer
   (1311: misma línea de tres con carrileros, 734/1240); y un DTP-REHACER
   `sinRehacer` con el once a tiempo (1305: sumalo a la #1052, que espera la
-  decisión).
+  decisión). Y desde la pasada del 08/11 (mediodía): el F2 o los
+  `diasDescanso` «un día corto» (1322: son días ENTEROS por las horas entre
+  saques, 769); `cierreContra` null del lado cuya apertura previa ES el último
+  partido (1319, 1196: solo viaja cuando no lo es); la roja UEFA `senal` en
+  `/equipos/{id}/plantilla` y `ruido` en `f1/{id}` (1327: la plantilla no sabe
+  de qué partido se trata, 1178/1193); el `rolSugerido` del arquero sobre
+  todos los onces y el de campo sobre los onces en que estaba en la hoja
+  (1334, 879 y 398/509); RECIÉN ASCENDIDO durante toda la primera temporada
+  (1335: se verifica con `/ligas/{id}/standings?temporada=<anterior>`); un
+  falso positivo de COHERENCIA-* que se arregla reescribiendo la prosa (1336:
+  Jev no es determinista y el revisor lo cuenta); y el titular de la temporada
+  sin fila porque no jugó los últimos 10 onces (1318, 1253: el probable de la
+  prensa lo suma con su `jugadorId`).
 
 ## Modo `mantenimiento` (los parches, automáticos)
 
