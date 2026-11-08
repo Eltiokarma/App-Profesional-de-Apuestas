@@ -6206,6 +6206,15 @@ def main():
     # una duda pública pesa la mitad MIENTRAS no hay hoja (ramas)…
     r_duda = bf.ramas(tabla, [{"nombre": "Paolo Guerrero", "estado": "duda", "motivo": "molestia"}])
     check("sin hoja, la duda pesa la mitad que la baja", r_duda["a"]["ip"] == 1.5, r_duda["a"]["ip"])
+    # 1307 (Monagas): dos «A. Romero» en la tabla; la baja con el id de uno no tumba al otro
+    _t1307 = [{"nombre": "A. Romero", "jugadorId": 159161, "zona": "MID", "rol": "TF"},
+              {"nombre": "A. Romero", "jugadorId": 53129, "zona": "ATK", "rol": "TF"},
+              {"nombre": "X. Otro", "jugadorId": 1, "zona": "MID", "rol": "TF"}]
+    _r1307 = bf.ramas(_t1307, [{"nombre": "A. Romero", "jugadorId": 53129, "estado": "baja", "motivo": "sanción"}])
+    _r1307b = bf.ramas(_t1307, [{"nombre": "A. Romero", "estado": "baja", "motivo": "sanción"}])
+    check("1307: la baja con id cae sola (no el homónimo); sin id, el nombre sigue tumbando a los dos",
+          [f["zona"] for f in _r1307["a"]["fuera"]] == ["ATK"] and len(_r1307b["a"]["fuera"]) == 2,
+          (_r1307["a"]["fuera"], _r1307b["a"]["fuera"]))
     # …y con la hoja a la vista, si no figura, es baja con su motivo público
     d = bf.resolver(tabla, [{"nombre": "Paolo Guerrero", "estado": "duda", "motivo": "molestia"}],
                     ["A. Campos", "Zambrano", "Trauco", "Concha", "Ceppelini", "Barcos"], ["Valera"])
