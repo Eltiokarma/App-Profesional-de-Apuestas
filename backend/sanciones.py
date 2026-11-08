@@ -401,12 +401,19 @@ def del_equipo(team_id: int, fx) -> dict:
     except Exception:  # noqa: BLE001
         return out
     conteo: dict[tuple, dict] = {}
+    sin_jugador = []
     for p in previos:
         if p["id"] not in cubiertos:
             continue
         tarj = por_partido.get(p["id"]) or []
         con_roja = {_clave(t) for t in tarj if _ROJA.search(t["detalle"] or "")}
         for t in tarj:
+            # LA AMARILLA SIN JUGADOR NO SE LE SUMA A NADIE, Y SE DICE (07/11/2026,
+            # incidencia 1313, Samsunspor: la del 90+6' vino con jugador null —según
+            # la prensa, Tavşan—): el conteo de alguien puede estar corto
+            if _AMARILLA.search(t["detalle"] or "") and not t["jugador_id"] and not (t["jugador"] or "").strip():
+                sin_jugador.append(f"{str(p['date'])[:10]} {t['minuto']}'")
+                continue
             if _AMARILLA.search(t["detalle"] or "") and _clave(t) not in con_roja:
                 c = conteo.setdefault(_clave(t), {"jugadorId": t["jugador_id"], "nombre": t["jugador"], "n": 0,
                                                   "enElUltimo": False})
@@ -415,6 +422,10 @@ def del_equipo(team_id: int, fx) -> dict:
                     c["enElUltimo"] = True
     out["amarillas"] = [{"jugadorId": c["jugadorId"], "nombre": c["nombre"], "amarillas": c["n"]}
                         for c in sorted(conteo.values(), key=lambda c: -c["n"])]
+    if sin_jugador:
+        out["sinJugador"] = (f"{len(sin_jugador)} amarilla(s) de la competición sin jugador en los eventos de la API "
+                             f"({', '.join(sin_jugador[:5])}): no se suman a nadie, así que un conteo puede estar "
+                             "corto (confirmar en prensa)")
     if len(cubiertos) < len(ids):
         out["conteoParcial"] = f"{len(cubiertos)} de {len(ids)} partidos de la competición con eventos en la base"
         return out

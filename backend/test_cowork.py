@@ -1396,6 +1396,11 @@ def main():
             _ex = _tde339.exigencia_proxima(645, _ctx)
             check(f"435: copa nacional «{_ronda}» a 5 días {'cuenta' if _cuenta else 'NO cuenta'}",
                   bool(_ex and "copa nacional" in _ex["motivo"]) == _cuenta, _ex)
+        # 1287: el motivo nombra el torneo (la Supercopa no es «la final de copa nacional»)
+        _tde339.saddb.query_one = lambda *a, **k: {"league_id": 143, "league_season": 2026,
+                                                   "league_round": "Final", "name": "Supercopa Argentina"}
+        check("1287: la final de la Supercopa dice «Final de Supercopa Argentina»",
+              "Final de Supercopa Argentina" in ((_tde339.exigencia_proxima(645, _ctx) or {}).get("motivo") or ""))
         _tde339.saddb.query_one = lambda *a, **k: {"league_id": 140, "league_season": 2026,
                                                    "league_round": "Final"}
         check("435: «Final» de una liga (no copa) no la toma la regla de copa",
@@ -2915,6 +2920,18 @@ def main():
           _ob["a"]["golEnVentana"] is False and _ob["a"]["cobrable"] is False and _ob["a"]["rojasAntes"], _ob["a"])
     check("un gol del 45+4 se anota en la ventana que cierra el primer tiempo y no en la 75-90",
           _ob["b"]["golesEnAnadido"] and not _ob["a"]["golesEnAnadido"], (_ob["a"], _ob["b"]))
+    # 1310 (Caracas): la ventana de rama 81-96 anota el 90+3 en el añadido (no lo cobra)
+    _g1310 = [{"minuto": 89, "lado": "b", "jugador": "x", "autogol": False, "enAnadido": False, "baseAnadido": None},
+              {"minuto": 93, "lado": "b", "jugador": "y", "autogol": False, "enAnadido": True, "baseAnadido": 90}]
+    _vd._goles, _vd._rojas = (lambda fid, hid: _g1310), (lambda fid, hid: [])
+    try:
+        _ob1310 = {b["equipo"]: b for b in _vd.objetivo(con_ficha, {"tde": {"bloques": [
+            {"equipo": "a", "ventana": "81-96'"}]}})["tde"]["bloques"]}
+    finally:
+        _vd._goles, _vd._rojas = _orig_g, _orig_r
+    check("1310: la ventana 81-96 cobra el 89 y anota el 90+3 en golesEnAnadido",
+          [g["minuto"] for g in _ob1310["a"]["goles"]] == [89]
+          and [g["minuto"] for g in _ob1310["a"]["golesEnAnadido"]] == [93], _ob1310["a"])
     with _sq2.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM fixture_eventos WHERE fixture_id=? AND jugador IN "
                      "('Expulsado', 'DT expulsado', 'Añadido 1T')", (con_ficha,))
@@ -6201,6 +6218,15 @@ def main():
     # una duda pública pesa la mitad MIENTRAS no hay hoja (ramas)…
     r_duda = bf.ramas(tabla, [{"nombre": "Paolo Guerrero", "estado": "duda", "motivo": "molestia"}])
     check("sin hoja, la duda pesa la mitad que la baja", r_duda["a"]["ip"] == 1.5, r_duda["a"]["ip"])
+    # 1307 (Monagas): dos «A. Romero» en la tabla; la baja con el id de uno no tumba al otro
+    _t1307 = [{"nombre": "A. Romero", "jugadorId": 159161, "zona": "MID", "rol": "TF"},
+              {"nombre": "A. Romero", "jugadorId": 53129, "zona": "ATK", "rol": "TF"},
+              {"nombre": "X. Otro", "jugadorId": 1, "zona": "MID", "rol": "TF"}]
+    _r1307 = bf.ramas(_t1307, [{"nombre": "A. Romero", "jugadorId": 53129, "estado": "baja", "motivo": "sanción"}])
+    _r1307b = bf.ramas(_t1307, [{"nombre": "A. Romero", "estado": "baja", "motivo": "sanción"}])
+    check("1307: la baja con id cae sola (no el homónimo); sin id, el nombre sigue tumbando a los dos",
+          [f["zona"] for f in _r1307["a"]["fuera"]] == ["ATK"] and len(_r1307b["a"]["fuera"]) == 2,
+          (_r1307["a"]["fuera"], _r1307b["a"]["fuera"]))
     # …y con la hoja a la vista, si no figura, es baja con su motivo público
     d = bf.resolver(tabla, [{"nombre": "Paolo Guerrero", "estado": "duda", "motivo": "molestia"}],
                     ["A. Campos", "Zambrano", "Trauco", "Concha", "Ceppelini", "Barcos"], ["Valera"])

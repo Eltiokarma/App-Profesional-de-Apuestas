@@ -283,6 +283,8 @@ def plantilla_de(team_id: int) -> dict:
     convocado = ultima_convocatoria(team_id)
     fechas_int = fechas_internacionales(team_id)
     jugo_int = ultimo_partido_internacional(team_id) if fechas_int else {}
+    jugo_nac = ultimo_partido_nacional(team_id) if fechas_int else {}
+    convocado_nac = ultima_convocatoria_nacional(team_id) if fechas_int else {}
     missing = lectura_missing_fixture(bajas, {r["player_id"] for r in filas}, jugo, convocado)
 
     # MINUTOS QUE NO CABEN EN LOS PARTIDOS. La API dio a J. García (Tigres,
@@ -343,7 +345,8 @@ def plantilla_de(team_id: int) -> dict:
             "paradasP90": _p90(r["paradas"] or 0, minutos) if es_gk else None,
             "golesEncajadosP90": _p90(r["goles_encajados"] or 0, minutos) if es_gk else None,
             "baja": (_baja_dto(baja, missing, jugo.get(r["player_id"]), convocado.get(r["player_id"]),
-                               fechas_int, jugo_int.get(r["player_id"])) if baja else None),
+                               fechas_int, jugo_int.get(r["player_id"]),
+                               jugo_nac.get(r["player_id"]), convocado_nac.get(r["player_id"])) if baja else None),
             "recienLlegado": (
                 {"desde": llegada["team_out_nombre"], "fecha": llegada["fecha"]} if llegada else None
             ),
@@ -453,6 +456,27 @@ def ultimo_partido_internacional(team_id: int) -> dict[int, str]:
     return ultimo_partido_jugado(team_id, filtro)
 
 
+def ultimo_partido_nacional(team_id: int) -> dict[int, str]:
+    """{jugador: fecha del último partido NO internacional terminado en que
+    jugó}. Es lo único que desmiente una sanción de la liga en un equipo que
+    juega torneos internacionales (incidencia 1277)."""
+    inter = _ligas_internacionales()
+    filtro = f" AND f.league_id NOT IN ({','.join(str(int(x)) for x in inter)})"
+    return ultimo_partido_jugado(team_id, filtro)
+
+
+def ultima_convocatoria_nacional(team_id: int) -> dict[int, str]:
+    """Como `ultima_convocatoria`, sin las hojas de torneos internacionales (1277)."""
+    inter = _ligas_internacionales()
+    try:
+        return {r["pid"]: str(r["d"]) for r in _query(
+            "SELECT a.player_id AS pid, MAX(f.date) AS d FROM alineaciones a JOIN fixtures f "
+            f"ON f.id = a.fixture_id WHERE a.team_id=? AND f.league_id NOT IN ({','.join('?' * len(inter))}) "
+            "GROUP BY a.player_id", (team_id, *inter)) if r["pid"] and r["d"]}
+    except Exception:  # noqa: BLE001 — base sin la ficha de partido: nadie se da por convocado
+        return {}
+
+
 def ultimo_partido_jugado(team_id: int, _filtro: str = "") -> dict[int, str]:
     """{jugador: fecha del último partido TERMINADO del equipo en que fue
     titular o figura en un evento (gol, tarjeta, cambio)}. Es lo que desmiente
@@ -500,7 +524,8 @@ def fechas_internacionales(team_id: int) -> set[str]:
 
 
 def _baja_dto(baja, missing: dict, jugo_el: str | None, convocado_el: str | None = None,
-              fechas_int: set | None = None, jugo_int: str | None = None) -> dict:
+              fechas_int: set | None = None, jugo_int: str | None = None,
+              jugo_nac: str | None = None, convocado_nac: str | None = None) -> dict:
     """La baja con su lectura. `desmentida`: el jugador jugó (titular o con un
     evento) un partido POSTERIOR a la fecha de la baja —la API la dejó vieja—,
     y entonces no cuenta como baja en ningún lado (incidencias 2, 132, 142,
@@ -557,6 +582,11 @@ def _baja_dto(baja, missing: dict, jugo_el: str | None, convocado_el: str | None
     # del torneo nacional. La tabla F1 la lee contra la competición del partido.
     elif sancion and fecha and fechas_int:
         out["soloCompeticion"] = "nacional"
+        # Y POR ESO TAMPOCO LA DESMIENTE EL ONCE DE LA CHAMPIONS (07/11/2026,
+        # incidencia 1277): Dowman (Arsenal) cumplía la 2.ª de 3 fechas
+        # domésticas y salía `desmentida` porque jugó el 04/11 en la Champions,
+        # donde no rige. Solo la desmiente una hoja nacional posterior.
+        jugo_el, convocado_el = jugo_nac, convocado_nac
     if fecha and jugo_el and jugo_el[:10] > fecha:
         out.update({"lectura": "desmentida", "lecturaApi": lectura,
                     "desmentidaPorOnce": {"fechaBaja": fecha, "jugoEl": jugo_el[:10]}})
@@ -707,7 +737,10 @@ def choque(desde: str, hasta: str) -> bool:
     892: Santa Fe con Copa y liga el 02/11, a 22 h —por eso 24 y no las 20 de
     antes—; la ida y la vuelta de Coquimbo–La Calera con la misma fecha
     provisoria, «0 días de descanso» en el F2). Nadie juega dos partidos
-    oficiales en el mismo día."""
+    oficiales en el mismo día. Y 24 h JUSTAS también es choque (07/11/2026,
+    incidencia 1288: Sporting Cristal con Cienciano el 14/11 21:00 y Alianza
+    Atlético el 15/11 21:00, una fecha provisoria de la API que no saltaba
+    por quedar en el borde)."""
     def _dt(t: str) -> datetime | None:
         t = str(t or "").replace("T", " ").rstrip("Z")[:19]
         for f in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
@@ -717,7 +750,7 @@ def choque(desde: str, hasta: str) -> bool:
                 continue
         return None
     a, b = _dt(desde), _dt(hasta)
-    return bool(a and b) and abs((b - a).total_seconds()) < HORAS_CHOQUE * 3600
+    return bool(a and b) and abs((b - a).total_seconds()) <= HORAS_CHOQUE * 3600
 
 
 def dependencia_fundida(jugadores: list[dict], grupos: dict[int, set[int]]) -> dict | None:

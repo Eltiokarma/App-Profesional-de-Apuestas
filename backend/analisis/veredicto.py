@@ -548,8 +548,12 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
         # el añadido se anota aparte, y solo en la ventana que cierra ESE tiempo
         # (la que termina en el 45 o en el 90): un 45+4 aparecía también en la
         # 60-75 (Chankas–ADT, 17/10/2026)
+        # …y en la ventana de RAMA que pasa del 90 o del 45 («81-96», 07/11/2026,
+        # incidencia 1310, Caracas: el 90+3 estaba en `anadido.concedidos` y en
+        # ninguna lista de la ventana). Se anota, no se cobra (disciplina 23).
         en_anadido = [g for g in goles if g.get("enAnadido") and (not contra or g["lado"] == contra)
-                      and (g.get("baseAnadido") is None or g["baseAnadido"] == hasta)]
+                      and (g.get("baseAnadido") is None or g["baseAnadido"] == hasta
+                           or (desde <= g["baseAnadido"] < hasta and g["minuto"] <= hasta))]
         # UN GOL EN LA VENTANA DESPUÉS DE UNA ROJA NO COMPRUEBA EL MECANISMO
         # (disciplinas 16 y 24): Liverpool 0-3 City, Pumas 3-3 Cruz Azul y
         # América 1-2 Medellín se contaban como acierto de ventana con goles
@@ -744,9 +748,14 @@ def dtp_objetivo(dtp: dict, goles: list[dict], sin_eventos: bool = False,
             "veredictoDeLaRama": escrito.get("veredicto") or "",
             "razonDeLaRama": escrito.get("razon") or "",
             "veredictoUnico": m2.get("veredicto") or "",
-            **({"sinRamas": "el parte trae un solo veredicto (anterior a la v1.6): se juzga ese y se "
-                            "dice en qué rama se jugó"} if not any((ramas.get(r) or {}).get("veredicto")
-                                                                   for r in ("igualadoOArriba", "persiguiendo")) else {}),
+            # SIN NINGÚN VEREDICTO NO ES «UN SOLO VEREDICTO» (incidencia 1308, Always
+            # Ready–ABB: el bloque llegó sin veredicto ni ramas y el objetivo decía
+            # «un solo veredicto (anterior a la v1.6)»)
+            **({"sinRamas": ("el parte trae un solo veredicto (anterior a la v1.6): se juzga ese y se "
+                             "dice en qué rama se jugó") if m2.get("veredicto") else
+                            "el bloque no trae ningún veredicto del DTP (ni único ni por rama): no hay qué juzgar"}
+               if not any((ramas.get(r) or {}).get("veredicto")
+                          for r in ("igualadoOArriba", "persiguiendo")) else {}),
         })
     return out
 

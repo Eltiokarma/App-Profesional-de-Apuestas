@@ -3386,6 +3386,8 @@ def guardar(payload: dict) -> dict:
     faltan.extend(nombres_vs_id(parte, {"a": fx["home_name"], "b": fx["away_name"]}))
     # DTP v1.5: los dos carriles de banda, con su vuelta (aviso, sin rechazo)
     faltan.extend(_dtp.avisos_carril(parte.get("dtp") or {}, {"a": fx["home_name"], "b": fx["away_name"]}))
+    # un bloque del DTP vacío tras un rehacer (1308): se dice, no se calla
+    faltan.extend(_dtp.avisos_vacios(parte.get("dtp") or {}, {"a": fx["home_name"], "b": fx["away_name"]}))
     # una pieza del M2 que el mismo parte tiene en `fuera` (1170)
     faltan.extend(_dtp.avisos_piezas_fuera(parte.get("dtp") or {}, parte.get("equipos") or {},
                                            {"a": fx["home_name"], "b": fx["away_name"]}))
@@ -6051,6 +6053,13 @@ def latido(horas: int = 36) -> dict:
 from backend.jugadores import HORAS_CHOQUE  # noqa: E402 — la misma regla del calendario y los próximos
 
 
+def _fecha_o(o) -> "datetime | None":
+    try:
+        return datetime.strptime((o["date"] or "")[:19], "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return None
+
+
 def _choques(filas) -> dict[int, dict[int, str]]:
     """fixture_id → {team_id: «también figura en …»} para los equipos de `filas`
     que aparecen en OTRO fixture a menos de HORAS_CHOQUE. Los aplazados y
@@ -6088,14 +6097,17 @@ def _choques(filas) -> dict[int, dict[int, str]]:
         except ValueError:
             continue
         for tid, nombre in ((f["home_team_id"], f["home_name"]), (f["away_team_id"], f["away_name"])):
-            for o in por_equipo.get(tid, []):
+            # el MÁS CERCANO primero: con 24 h justas (1288) entra también el de la
+            # jornada siguiente, y el motivo tiene que nombrar el choque de verdad
+            for o in sorted(por_equipo.get(tid, []), key=lambda o, _t=t0: (
+                    abs((_fecha_o(o) - _t).total_seconds()) if _fecha_o(o) else 1e12)):
                 if o["id"] == f["id"]:
                     continue
                 try:
                     t1 = datetime.strptime((o["date"] or "")[:19], "%Y-%m-%d %H:%M:%S")
                 except ValueError:
                     continue
-                if abs((t1 - t0).total_seconds()) < margen.total_seconds():
+                if abs((t1 - t0).total_seconds()) <= margen.total_seconds():   # la regla de jugadores.choque (1288)
                     out.setdefault(f["id"], {})[tid] = (
                         f"{nombre} también figura en {o['id']} ({o['home_name']} vs {o['away_name']}, "
                         f"{(o['date'] or '')[:16]} UTC)")

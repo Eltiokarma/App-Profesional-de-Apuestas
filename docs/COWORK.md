@@ -1251,7 +1251,10 @@ Escribís vos (es juicio, no se puede calcular):
   competición, calculados de las tarjetas de la ficha): cada uno va en `fuera`
   con estado baja, motivo «sanción», zona y rol. Si la prensa dice que juega (una
   apelación, una sanción que no aplica), la nota del equipo lo dice con la
-  fuente. Si no, el recibo devuelve `SANCION-SIN-DECLARAR`. Una roja directa
+  fuente, en una nota de bloque de la A a la E (`equipos.X.notas` con la
+  letra del bloque): NO existe `notas.F` —el bloque F lo calcula el backend y esa clave
+  se rechaza (incidencia 1276: siete de 18 subagentes la usaron el 07/11)—; lo
+  que no es de un bloque va en `notas` del parte. Si no, el recibo devuelve `SANCION-SIN-DECLARAR`. Una roja directa
   puede valer más de una fecha: la base solo sabe de la siguiente.
 - **De qué está hecho el nivel del motor** (30/10/2026, incidencia 860: Konyaspor
   0-4 Galatasaray, el motor dio 41 % al 14.º con el nivel del líder hecho con

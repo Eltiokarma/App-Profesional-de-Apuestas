@@ -107,7 +107,8 @@ cae en la raíz del repo (17/10/2026).
 >   faltar; los `sancionados` —roja o amarillas en el último partido de esta
 >   competición, calculados de la base— van en `fuera` con estado baja y
 >   motivo «sanción» salvo que la prensa diga que juega, y entonces la nota del
->   equipo lo dice con la fuente: si no, SANCION-SIN-DECLARAR) →
+>   equipo lo dice con la fuente —en una nota de bloque A-E, nunca `notas.F`,
+>   que se rechaza (1276)—: si no, SANCION-SIN-DECLARAR) →
 >   `equipos/{id}/burbujas?proximo={id}` de los dos → `cuotas/{id}`
 >   → prensa (DT de ESTA semana, bajas, once probable) → el JSON del parte
 >   EXACTO al punto 7 (a = local).
@@ -621,7 +622,33 @@ POST $B/analisis/cowork/incidencias
   tarjetas de las ESTADÍSTICAS de la ficha que no cuadran con los eventos
   (1274: nada las lee, manda `fixture_eventos`); y la fila F1 del parte sin
   `jugadorId` que no casa con un apodo de la hoja (1272, 1242: copiá el id de
-  `f1/{id}`, es el cruce exacto).
+  `f1/{id}`, es el cruce exacto). Y desde la pasada del 07/11 (mediodía): la
+  lesión de esta semana que la API no lista o deja «Questionable» (1279:
+  `jugador_bajas` es lo que da /injuries, la prensa del parte manda); una
+  burbuja de otras familias larga y sin `cuidado` cuando su estado es banal
+  (90 %+) o tiene menos de 3 burbujas previas (`record: null`; 1289, 834); la
+  plantilla de `/equipos/{id}/plantilla` más corta que la F1 (1291, 1167: es
+  la de la API, la F1 suma los onces); y la `linea` o el `caso` de
+  `casosBloque` con nombres de otro partido (1293: es prosa del cierre que lo
+  escribió, la `fecha` es la calculada). Y desde la pasada del 07/11
+  (tarde): DT-DISCREPANCIA que sigue sonando con `dt.banco` declarado con
+  fuente (1296, 1302: DT-VS-BANCO se apaga a propósito, 1103; la que queda
+  avisa de /coachs atrasado, 766/880/903); la hoja de la API sin entrenador
+  (1301: sin nombre no hay cruce, se declara `dt.banco` si hace falta); el F2
+  del TDE en 1 con 3 días de descanso o menos (1300: es el tramo alto de la
+  rúbrica, moverlo es revisión del TDE); y una «posible identidad» entre dos
+  nombres sin efecto en el parte (1303): corré
+  `identidad.mismo_jugador(a, b)` antes; si da False son dos personas y la
+  app los trata así. Y desde la pasada del 07/11 (noche): la «Red Card»
+  después de una amarilla sin el detalle «Second Yellow card» (1309: puede ser
+  directa, el detalle ya pide confirmar en prensa); el `5-3-2` del `xi` con un
+  `capturadoEn` anterior a la formación (1315: `formacionAlCerrar` vacío dice
+  que la formación llegó en un refresco); el mismo jugador con dos registros de
+  la API y nombres distintos («M. Ubandoma» / «M. Isah», 1314: sin nombre ni id
+  común no hay regla); 5-4-1 contra 3-4-1-2 o 3-5-2 contra 3-4-2-1 sin rehacer
+  (1311: misma línea de tres con carrileros, 734/1240); y un DTP-REHACER
+  `sinRehacer` con el once a tiempo (1305: sumalo a la #1052, que espera la
+  decisión).
 
 ## Modo `mantenimiento` (los parches, automáticos)
 

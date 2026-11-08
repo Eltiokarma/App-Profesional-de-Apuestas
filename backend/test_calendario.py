@@ -254,6 +254,21 @@ def main():
     finally:
         calendario.CIUDAD_DENSA = densa
         calendario._clubes_en_ciudad.cache_clear()
+    # 1287: en una COPA, la misma ciudad entre ligas distintas no es derbi (Valencia–Tavernes)
+    from backend.analisis import escala as _esc1287
+    _lv, _ec = _esc1287.liga_vigente, _esc1287.es_copa
+    try:
+        _esc1287.es_copa = lambda lid, nombre=None: lid == 143
+        _esc1287.liga_vigente = lambda tid, f: {1: 140}.get(tid)
+        _c1287 = calendario.etiquetas_de_rival(LOCALON, True, 143, 2026, "2026-08-20", "Ciudad F", equipo_id=1)
+        _esc1287.liga_vigente = lambda tid, f: 140
+        _c1287b = calendario.etiquetas_de_rival(LOCALON, True, 143, 2026, "2026-08-20", "Ciudad F", equipo_id=1)
+    finally:
+        _esc1287.liga_vigente, _esc1287.es_copa = _lv, _ec
+    check("1287: cruce de copa con el modesto de la misma ciudad sin su liga → no es CLÁSICO; "
+          "los dos de la misma liga en la copa → sí",
+          all(x["codigo"] != "CLASICO" for x in _c1287) and any(x["codigo"] == "CLASICO" for x in _c1287b),
+          ([x["codigo"] for x in _c1287], [x["codigo"] for x in _c1287b]))
     check("los clásicos documentados casan por nombre, en cualquier orden y con acentos",
           calendario.clasico_documentado("Peñarol", "Club Nacional")
           and calendario.clasico_documentado("Cerro Porteño", "Olimpia")
@@ -307,6 +322,8 @@ def main():
     check("843/892: dos saques del mismo equipo a menos de 24 h chocan (Santa Fe, 22 h); a 47 h no",
           _choque("2026-11-02 01:15:00", "2026-11-02 23:10:00") and _choque("2026-11-04 22:00", "2026-11-04 22:00")
           and not _choque("2026-11-02 01:15:00", "2026-11-04 00:15:00"))
+    check("1288: 24 h justas también es choque (Cristal el 14/11 21:00 y el 15/11 21:00); 25 h no",
+          _choque("2026-11-14 21:00:00", "2026-11-15 21:00:00") and not _choque("2026-11-14 21:00:00", "2026-11-15 22:00:00"))
     print("\n" + ("TODO OK" if fallos == 0 else f"{fallos} FALLAS"))
     sys.exit(1 if fallos else 0)
 
