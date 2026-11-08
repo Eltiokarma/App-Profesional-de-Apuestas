@@ -215,5 +215,15 @@ _r1331 = bloque_f.resolver([{"nombre": "T. Asta-Buruaga", "zona": "DEF", "rol": 
 check("1331: el bloque F lo cuenta titular, no «no figura en la hoja»",
       [(x["estado"], x.get("hoja")) for x in _r1331["jugadores"]] == [("disponible", "titular")], _r1331)
 
+# 1337 (08/11/2026, La Guaira–Carabobo): «Loureins Martínez» del rival no es el sancionado «L. Martinez»
+_p1337 = {"equipos": {"a": {"fuera": [{"nombre": "L. Martinez", "estado": "baja"}]},
+                      "b": {"plantel": [{"nombre": "Loureins Martínez", "zona": "ATK"}]}},
+          "dtp": {"bloques": [{"equipo": "a", "apertura": {"m2": {"duelos": "entra Loureins Martínez desde el banco"}}}]}}
+_p1337b = {"equipos": {"a": {"fuera": [{"nombre": "L. Martinez", "estado": "baja"}]}, "b": {"plantel": []}},
+           "dtp": {"bloques": [{"equipo": "a", "apertura": {"m2": {"duelos": "entra L. Martinez desde el banco"}}}]}}
+check("1337: la mención que también nombra a un jugador del rival no se avisa; sin ese rival, sí",
+      parte.fuera_en_el_banco(_p1337) == [] and len(parte.fuera_en_el_banco(_p1337b)) == 1,
+      (parte.fuera_en_el_banco(_p1337), parte.fuera_en_el_banco(_p1337b)))
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)
