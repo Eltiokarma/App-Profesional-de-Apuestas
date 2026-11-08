@@ -2133,11 +2133,22 @@ def main():
     import sqlite3 as _sq3dt
     with _sq3dt.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("UPDATE entrenadores SET fuente='alineacion' WHERE nombre=?", (dt_base["nombre"],))
-    d_dt = c.post(f"{A}/analisis/cowork", json=p_dt).json()
-    da = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["equipos"]["a"]["dt"]
-    check("con la llegada VISTA en el banco (fuente alineacion), toma la fecha de asunción de la base",
-          da["meses"] is not None and da["origenMeses"] == "base" and da["desde"] == dt_base["desde"],
-          (da, dict(dt_base)))
+    from backend.analisis import parte as _p1338
+    _lv1338 = _p1338._llegada_vista
+    try:
+        _p1338._llegada_vista = lambda tid, nombre, desde: True   # la hoja anterior trae a OTRO DT
+        d_dt = c.post(f"{A}/analisis/cowork", json=p_dt).json()
+        da = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["equipos"]["a"]["dt"]
+        check("con la llegada VISTA en el banco (fuente alineacion), toma la fecha de asunción de la base",
+              da["meses"] is not None and da["origenMeses"] == "base" and da["desde"] == dt_base["desde"],
+              (da, dict(dt_base)))
+        _p1338._llegada_vista = lambda tid, nombre, desde: False  # primer banco visto: techo, no llegada
+        c.post(f"{A}/analisis/cowork", json=p_dt)
+        da = c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["equipos"]["a"]["dt"]
+        check("1338: fuente alineacion SIN la llegada vista (desdeConfirmar): la antigüedad queda null",
+              da["meses"] is None and da["origenMeses"] != "base" and da.get("sinAntiguedad"), da)
+    finally:
+        _p1338._llegada_vista = _lv1338
     with _sq3dt.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("UPDATE entrenadores SET fuente='coachs' WHERE nombre=?", (dt_base["nombre"],))
     p_dt["equipos"]["a"]["dt"] = {"nombre": "Según prensa de esta semana dirige el interino tras la salida "
@@ -6283,6 +6294,14 @@ def main():
     check("1326: el DT sin `desde` ni `meses` sale en `faltan` del recibo (DT-SIN-ANTIGUEDAD), sin rechazo",
           len(_f1326) == 1 and _f1326[0]["bloque"] == "equipos.a.dt"
           and _f1326[0]["codigo"] == "DT-SIN-ANTIGUEDAD", _f1326)
+    # 1338: el DT de la base con fuente alineación pero sin la llegada vista no completa la antigüedad
+    _b1338 = {"nombre": "Cristian Muñoz", "fuente": "alineacion", "desde": "2026-08-14"}
+    _o1338 = _dte({"nombre": "Cristian Muñoz"}, [], "a", "2026-11-08", {**_b1338, "llegadaVista": False})
+    _o1338b = _dte({"nombre": "Cristian Muñoz"}, [], "a", "2026-11-08", {**_b1338, "llegadaVista": True})
+    check("1338: sin la llegada vista, el `desde` de la base no rellena la antigüedad (null y sinAntiguedad); "
+          "con la llegada vista, sí",
+          _o1338["meses"] is None and _o1338.get("sinAntiguedad") and _o1338b["origenMeses"] == "base",
+          (_o1338, _o1338b))
     _rz827: list = []
     _o827 = _dte({"nombre": "Cristián Gómez", "desde": ""}, _rz827, "a", "2026-10-25", None)
     check("827: el `desde` vacío a propósito (sin fuente, como pide el prompt) no se rechaza y la antigüedad queda null",

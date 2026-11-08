@@ -484,7 +484,13 @@ def _dt_equipo(crudo, rechazos: list, lado: str, fecha_partido: str,
     # vacío y el parte salió con «2026-01-01 · 9.5 meses» de la base. Solo sirve
     # la llegada VISTA en el banco (fuente `alineacion`).
     if (meses is None and nombre and entrenador_base and entrenador_base.get("nombre")
-            and (entrenador_base.get("fuente") or "coachs") == "alineacion"):
+            and (entrenador_base.get("fuente") or "coachs") == "alineacion"
+            # EL PRIMER BANCO VISTO NO ES LA LLEGADA (08/11/2026, incidencia 1338,
+            # U. de Concepción: el parte dejó el `desde` vacío porque la agenda lo
+            # traía `desdeConfirmar`, y al leer se rellenó con el 2026-08-14 de la
+            # base, «2,8 meses»). Sin la llegada vista (`_llegada_vista`, 750) el
+            # `desde` de la base no es dato: la antigüedad queda null.
+            and entrenador_base.get("llegadaVista", True)):
         # el mismo apellido que el DT de la base → su fecha de asunción sirve
         from backend.ingesta.jugadores import mismo_nombre_dt
         if mismo_nombre_dt(nombre, entrenador_base["nombre"]) and _fecha(entrenador_base.get("desde")) and partido:
@@ -3166,6 +3172,12 @@ def normalizar_parte(payload: dict) -> dict:
                 entrenadores_base[l] = jug.plantilla_de(tid).get("entrenador")
             except sqlite3.Error:
                 entrenadores_base[l] = None
+            # ¿la base VIO la llegada? (1338): si no, su `desde` es un techo y
+            # no completa la antigüedad del parte
+            eb = entrenadores_base[l]
+            if eb and eb.get("fuente") == "alineacion" and eb.get("desde"):
+                entrenadores_base[l] = {**eb, "llegadaVista": _llegada_vista(tid, eb.get("nombre") or "",
+                                                                              str(eb["desde"]))}
     parte = {
         "fixtureId": fixture_id,
         "version": _txt(payload.get("version")) or VERSION,
