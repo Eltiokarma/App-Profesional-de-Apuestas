@@ -3800,6 +3800,22 @@ def main():
         _av671b = _d15.avisos_v16(_x16, {**_fx16, "id": 671}, {"a": "Leones", "b": "Libertad"})
     finally:
         _d15._formacion_ultima, _d15.casos_bloque, _d15.oficial_de = _orig671
+    # 1320: el último partido fue de copa con once rotado; la apertura cuadra con el último once de liga
+    _orig1320 = (_d15._formacion_ultima, _d15.casos_bloque, _d15.oficial_de, _d15._formacion_de_liga)
+    try:
+        _d15._formacion_ultima = lambda tid, fecha: ("3-4-2-1", 123)
+        _d15.casos_bloque = lambda tid, antes, dias=180: []
+        _d15.oficial_de = lambda fid: {}
+        _d15._formacion_de_liga = lambda tid, fecha, fx: "4-3-3"
+        _av1320 = _d15.avisos_v16(_x16, {**_fx16, "id": 1320}, {"a": "Leones", "b": "Libertad"})
+        _d15._formacion_de_liga = lambda tid, fecha, fx: "4-4-2"
+        _av1320b = _d15.avisos_v16(_x16, {**_fx16, "id": 1320}, {"a": "Leones", "b": "Libertad"})
+    finally:
+        _d15._formacion_ultima, _d15.casos_bloque, _d15.oficial_de, _d15._formacion_de_liga = _orig1320
+    check("1320: con la apertura igual al último once de LIGA (el último fue de copa), no avisa M1-VS-ULTIMO-ONCE; "
+          "si tampoco cuadra con el de liga, sí",
+          "M1-VS-ULTIMO-ONCE" not in {a["codigo"] for a in _av1320}
+          and "M1-VS-ULTIMO-ONCE" in {a["codigo"] for a in _av1320b}, (_av1320, _av1320b))
     check("671: con el once oficial de hoy igual al sistema declarado, no avisa M1-VS-ULTIMO-ONCE; sin once, sí",
           "M1-VS-ULTIMO-ONCE" not in {a["codigo"] for a in _av671}
           and "M1-VS-ULTIMO-ONCE" in {a["codigo"] for a in _av671b}, (_av671, _av671b))
