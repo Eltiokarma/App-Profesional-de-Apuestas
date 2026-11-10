@@ -979,8 +979,10 @@ conversación se pierde en la siguiente.
      reescribió, una firma estrecha de la historia de los dos equipos hasta ese
      día decide si el caso cambió); `historias_compartidas()` dentro de cada
      caso; hilo `calentar-aprendizaje` (`SAD_CALENTAR_S`, 300 s). **PR #456**:
-     un candado por clave (una cohorte lista esperaba detrás del buscador) y el
-     buscador (límite 2000) también caliente.
+     un candado por clave (una cohorte lista esperaba detrás del buscador), el
+     buscador (límite 2000) también caliente, y el chequeo de DT de cada caso
+     lee `dt_base_json`/`dt_original_json` de la fila ya leída en vez de abrir
+     dos conexiones más por caso (`_casos` 330 → 132 ms en el banco).
    - **PR #454**: `cuotas_mercado` pide a SQL solo 1X2 y doble oportunidad (era
      el 85 % de la simulación) y `simulacion()` se rehace solo si cambia su
      huella (partes desde el 28/10, partidos con su liga, cuotas).

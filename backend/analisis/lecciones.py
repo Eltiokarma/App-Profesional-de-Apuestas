@@ -79,7 +79,8 @@ def _casos(limite: int = 400, ids=None) -> list[dict]:
     with conectar_parte() as con:
         filas = con.execute(
             "SELECT fixture_id, fecha, equipo_a, equipo_b, parte_json, veredicto_json, "
-            "cohorte, cuarentena_json, modo_fallo_json, banco_desmentido_json, creado_en FROM parte_cowork "
+            "cohorte, cuarentena_json, modo_fallo_json, banco_desmentido_json, creado_en, "
+            "dt_base_json, dt_original_json FROM parte_cowork "
             "WHERE veredicto_json IS NOT NULL"
             + filtro + " ORDER BY fecha DESC LIMIT ?", (*params, limite)).fetchall()
     # la fecha REAL de cada partido, para el parte escrito para otra fecha
@@ -128,7 +129,7 @@ def _casos(limite: int = 400, ids=None) -> list[dict]:
         desmentidos = json.loads(f["banco_desmentido_json"]) if f["banco_desmentido_json"] else {}
         disputados = []
         if not cuarentena:
-            todos = dt_equivocado(parte, f["fixture_id"], desmentidos)
+            todos = dt_equivocado(parte, f["fixture_id"], desmentidos, fila_parte=f)
             # los `disputados` (el parte contradijo a la base con la prensa) se
             # ven en el item pero no apartan el caso
             disputados = [m for m in todos if m.get("disputado")]
