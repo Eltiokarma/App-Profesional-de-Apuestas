@@ -967,6 +967,7 @@ paths:
               properties:
                 aprobar: { type: boolean }
                 nota: { type: string }
+                hecha: { type: boolean, default: false, description: 'con `aprobar`: el usuario YA la aplicó (la cuarentena en un paso, 10/11/2026) y queda `resuelta` en vez de `aprobada`; no hay nada que el mantenimiento implemente' }
       responses:
         '200':
           description: la incidencia decidida
@@ -996,6 +997,17 @@ paths:
                 estado: { type: string, enum: [abierta, en_curso, resuelta, dato_api, por_diseno, usuario, descartada, por_desplegar], description: '`aprobada` NO se pone por acá: es la decisión del usuario (POST …/decision)' }
                 resolucion: { type: string }
                 pr: { type: string }
+                cuarentena:
+                  type: object
+                  description: >
+                    La cuarentena PROPUESTA al usuario, estructurada (10/11/2026): la tarjeta Decisiones
+                    pendientes la aplica en un paso con el formulario ya escrito. Motivo de 12+ caracteres
+                    (por criterio, nunca por resultado); la pone el usuario con la llave maestra.
+                  required: [fixtures, motivo]
+                  properties:
+                    fixtures: { type: array, items: { type: integer }, description: 'los partes a apartar (hasta 20)' }
+                    motivo: { type: string, minLength: 12 }
+                    ensena: { type: boolean, default: false }
       responses:
         '200':
           description: la incidencia actualizada
@@ -3946,6 +3958,18 @@ components:
         ultimaVez: { type: string }
         cerradoEn: { type: string, nullable: true }
         conocida: { $ref: '#/components/schemas/IncidenciaConocida' }
+        propuestaCuarentena:
+          type: object
+          nullable: true
+          description: >
+            La cuarentena que propone la incidencia (10/11/2026): `declarada` si el mantenimiento la
+            mandó en POST …/estado, `texto` si se leyó de una propuesta escrita antes («poner [el] N en
+            cuarentena … con motivo «…»»). null si no propone ninguna.
+          properties:
+            fixtures: { type: array, items: { type: integer } }
+            motivo: { type: string }
+            ensena: { type: boolean }
+            origen: { type: string, enum: [declarada, texto] }
     IncidenciaConocida:
       type: object
       nullable: true

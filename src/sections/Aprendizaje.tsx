@@ -3,6 +3,7 @@ import type { HistorialValorDTO, TablaConfianzaDTO, DerrotaFavorito, DerrotasFav
 import { getDataSource } from '../services/datasource'
 import { useAsync } from '../services/useAsync'
 import { COLOR_TRAMO } from '../lib/confianza'
+import { FormCuarentena } from '../components/FormCuarentena'
 
 /** Fase C del bucle de aprendizaje (docs/APRENDIZAJE.md).
  *
@@ -70,7 +71,7 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
   const cuar = d.enCuarentena?.cuantas ?? 0
   const pestanas: [Pestana, string][] = [
     ['skills', `Lecciones por skill · ${pendientesTotal} pend.`],
-    ['buscar', 'Buscar caso'],
+    ['buscar', 'Buscar caso · cuarentena'],
     ['metricas', 'Métricas · confianza'],
     ['derrotas', 'Derrotas del favorito'],
     ...(cuar ? [['cuarentena', `Cuarentena · ${cuar}`] as [Pestana, string]] : []),
@@ -161,7 +162,12 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
           )
       )}
 
-      {pestana === 'buscar' && <BuscarCaso recarga={recarga} onCambio={recargar} />}
+      {pestana === 'buscar' && (
+        <>
+          <CuarentenaPorPartido onCambio={recargar} />
+          <BuscarCaso recarga={recarga} onCambio={recargar} />
+        </>
+      )}
 
       {pestana === 'metricas' && <Metricas d={d} />}
 
@@ -292,7 +298,18 @@ function BuscarCaso({ recarga, onCambio }: { recarga: number; onCambio: () => vo
       </form>
       {q
         ? <ListaLecciones cohorte="" buscar={q} recarga={recarga} onCambio={onCambio} />
-        : <div style={{ font: '500 11px var(--sans)', color: 'var(--t3)' }}>Cada resultado es una lección del caso; la cuarentena se pone desde cualquiera de ellas (abrir la lección → «Poner en cuarentena», con 🔑).</div>}
+        : <div style={{ font: '500 11px var(--sans)', color: 'var(--t3)' }}>Cada resultado es una lección del caso.</div>}
+    </Seccion>
+  )
+}
+
+/** CUARENTENA POR PARTIDO (10/11/2026, usuario: «poner algo en cuarentena es
+ *  un dolor de huevos»): sin buscar el caso ni abrir una lección. Uno o varios
+ *  fixtures, el motivo y si enseña; con 🔑. */
+function CuarentenaPorPartido({ onCambio }: { onCambio: () => void }) {
+  return (
+    <Seccion titulo="CUARENTENA POR PARTIDO" nota="Aparta el caso entero (sus dos lados) por lo que le faltaba al parte antes del pitazo, nunca por cómo terminó. Varios partidos a la vez, separados por espacio o coma.">
+      <FormCuarentena onHecho={() => onCambio()} />
     </Seccion>
   )
 }

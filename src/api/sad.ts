@@ -230,8 +230,9 @@ export const SadApi = {
   causasIncidencias: (recurrentes = false) =>
     apiGet<{ causas: CausaIncidencia[]; total: number; regla: string }>('/analisis/cowork/incidencias/causas' + qs({ recurrentes: recurrentes ? 'true' : undefined })),
   /** La decisión del usuario sobre una incidencia en `usuario`. Llave maestra. */
-  decidirIncidencia: (id: number, aprobar: boolean, nota = '') =>
-    apiPost<IncidenciaDTO>(`/analisis/cowork/incidencias/${id}/decision`, { aprobar, nota }),
+  /** `hecha`: el usuario ya la aplicó (la cuarentena en un paso) y queda `resuelta`. */
+  decidirIncidencia: (id: number, aprobar: boolean, nota = '', hecha = false) =>
+    apiPost<IncidenciaDTO>(`/analisis/cowork/incidencias/${id}/decision`, { aprobar, nota, ...(hecha ? { hecha } : {}) }),
   veredictosPendientes: (horas?: number, limite?: number) =>
     apiGet<SobrePendientesDTO>('/analisis/cowork/veredictos/pendientes' + qs({ horas, limite })),
 

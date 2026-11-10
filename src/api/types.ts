@@ -47,6 +47,16 @@ export interface IncidenciaDTO {
   ultimaVez: string
   cerradoEn: string | null
   conocida?: IncidenciaConocida | null
+  /** La cuarentena que propone (10/11/2026): la tarjeta la aplica en un paso. */
+  propuestaCuarentena?: PropuestaCuarentena | null
+}
+
+/** `declarada` = la mandó el mantenimiento estructurada; `texto` = leída de una propuesta escrita antes. */
+export interface PropuestaCuarentena {
+  fixtures: number[]
+  motivo: string
+  ensena: boolean
+  origen: 'declarada' | 'texto'
 }
 
 /** Una familia de causa: la misma causa escrita con otras palabras. */

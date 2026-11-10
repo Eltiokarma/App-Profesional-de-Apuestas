@@ -3001,6 +3001,7 @@ def cowork_incidencias_causas(recurrentes: bool = False):
 class DecisionBody(BaseModel):
     aprobar: bool
     nota: str = ""
+    hecha: bool = False
 
 
 @app.post(API + "/analisis/cowork/incidencias/{inc_id}/decision")
@@ -3010,7 +3011,7 @@ def cowork_incidencia_decision(inc_id: int, body: DecisionBody):
     mantenimiento, rechazada queda `por_diseno` con la decisión."""
     from backend.analisis import incidencias
     try:
-        return incidencias.decidir(inc_id, body.aprobar, body.nota)
+        return incidencias.decidir(inc_id, body.aprobar, body.nota, body.hecha)
     except incidencias.IncidenciaInvalida as e:
         raise HTTPException(422, str(e))
     except KeyError:
@@ -3019,7 +3020,9 @@ def cowork_incidencia_decision(inc_id: int, body: DecisionBody):
 
 @app.post(API + "/analisis/cowork/incidencias/{inc_id}/estado")
 def cowork_incidencia_estado(inc_id: int, body: dict = Body(...)):
-    """`{estado, resolucion, pr?}`: qué se hizo con ella. Cerrar exige `resolucion`."""
+    """`{estado, resolucion, pr?, cuarentena?}`: qué se hizo con ella. Cerrar exige
+    `resolucion`; `cuarentena` = {fixtures, motivo, ensena} es la propuesta
+    estructurada que la tarjeta del usuario aplica en un paso."""
     from backend.analisis import incidencias
     try:
         return incidencias.cambiar_estado(inc_id, body)

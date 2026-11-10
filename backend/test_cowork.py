@@ -6589,6 +6589,42 @@ def main():
     _no = c.post(f"{A}/analisis/cowork/incidencias/{_rz}/decision", json={"aprobar": False, "nota": "no vale la pena"}).json()
     check("rechazada: queda por_diseno, cerrada, con la decisión y la propuesta",
           _no["estado"] == "por_diseno" and _no["cerradoEn"] and "NO" in _no["resolucion"] and "propuesta x" in _no["resolucion"], _no)
+    # 3-ter. LA CUARENTENA EN UN PASO (10/11/2026, usuario: «poner algo en cuarentena es
+    # un dolor de huevos»): la propuesta viaja estructurada y la tarjeta la aplica
+    from backend.analisis.incidencias import propuesta_de_texto as _pdt
+    check("cuarentena en un paso: la propuesta vieja se lee del texto (la 7: un partido y su motivo)",
+          _pdt("En Aprendizaje, con la llave 🔑: poner en cuarentena el 1631509 con motivo «DT equivocado "
+               "(Nunes por Álvarez), Ecuador sin onces para detectarlo».»")
+          == {"fixtures": [1631509], "motivo": "DT equivocado (Nunes por Álvarez), Ecuador sin onces para detectarlo",
+              "ensena": False})
+    _p774 = _pdt("el parte 1492426 (Palmeiras–Bragantino) dio a Palmeiras eliminado (veredicto 1640021). Propuesta: "
+                 "poner el 1492426 en cuarentena que enseña (`ensena: true`) con motivo «insumo falso: Palmeiras "
+                 "eliminado de la Libertadores, pasó por penales»; sale de las métricas")
+    check("…la 774: el partido a apartar (no el del veredicto que se cita) y que enseña",
+          _p774 and _p774["fixtures"] == [1492426] and _p774["ensena"] is True, _p774)
+    _p1153 = _pdt("poner en cuarentena 1639824 y 1639827 (Manta FC) con motivo «DT equivocado: Carvajal renunció "
+                  "el 30/07 y dirige Raúl Duarte»")
+    check("…la 1153: dos partidos", _p1153 and _p1153["fixtures"] == [1639824, 1639827], _p1153)
+    check("…y una propuesta que no es de cuarentena no inventa una", _pdt("propuesta: leer la hora del club") is None)
+    _cq = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "mantenimiento", "items": [
+        {"titulo": "Parte con un insumo falso sobre la llave", "area": "otro", "fixtureId": pasado["id"]}]}).json()["nuevas"][0]
+    _mal = c.post(f"{A}/analisis/cowork/incidencias/{_cq}/estado", json={
+        "estado": "usuario", "resolucion": "poner en cuarentena", "cuarentena": {"fixtures": [pasado["id"]], "motivo": "corto"}})
+    check("una propuesta de cuarentena con motivo de menos de 12 caracteres se rechaza", _mal.status_code == 422, _mal.text[:200])
+    _dq = c.post(f"{A}/analisis/cowork/incidencias/{_cq}/estado", json={
+        "estado": "usuario", "resolucion": "Propuesta: apartar el caso, su insumo era falso",
+        "cuarentena": {"fixtures": [pasado["id"]], "motivo": "insumo falso: la llave ya estaba cerrada", "ensena": True}}).json()
+    check("la propuesta declarada viaja estructurada en la incidencia (origen declarada)",
+          _dq["propuestaCuarentena"] == {"fixtures": [pasado["id"]], "motivo": "insumo falso: la llave ya estaba cerrada",
+                                         "ensena": True, "origen": "declarada"}, _dq.get("propuestaCuarentena"))
+    check("y en la lista de las que esperan al usuario",
+          next(i for i in c.get(f"{A}/analisis/cowork/incidencias?estado=usuario").json()["incidencias"]
+               if i["id"] == _cq)["propuestaCuarentena"]["origen"] == "declarada")
+    _hq = c.post(f"{A}/analisis/cowork/incidencias/{_cq}/decision",
+                 json={"aprobar": True, "hecha": True, "nota": f"cuarentena puesta: {pasado['id']}"}).json()
+    check("aplicada por el usuario (`hecha`): queda resuelta y cerrada, con la propuesta y quién la hizo",
+          _hq["estado"] == "resuelta" and _hq["cerradoEn"] and "HECHA por el usuario" in _hq["resolucion"]
+          and "Propuesta" in _hq["resolucion"], _hq)
     # 3-bis. una familia que el usuario rechazó en la tarjeta no vuelve a pedir decisión
     _rec = []
     for _k, _f in enumerate((7101, 7102, 7103)):
