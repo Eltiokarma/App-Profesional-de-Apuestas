@@ -205,8 +205,8 @@ etiqueta es de la app y lo decide el usuario (A0).
 
 ## Los cambios propuestos
 
-Doce cambios al clasificador, todos independientes: se aprueban o se rechazan
-uno por uno. Los seis primeros eran los de la propuesta del 08/11.
+Trece cambios al clasificador, todos independientes: se aprueban o se rechazan
+uno por uno. El 13 salió de la comprobación del segundo corte. Los seis primeros eran los de la propuesta del 08/11.
 
 Marcas: **[rúbrica]**, cambia el texto de la regla · **[CALCULABLE→app]**, lo
 calcula la app y no la corrida · **[MEDIR PRIMERO]**, no entra sin medir ·
@@ -1366,6 +1366,10 @@ dossier del 10/11 (02:13 UTC) y no son una tasa de acierto
 | FACTOR-X y G-BLOQUE | 5 | 2 / 3 / 0 | 2 | 1 / 1 / 0 | sin cambio |
 | Otros | 7 | 3 / 2 / 2 | 0 | — | notas |
 | **Total** | **568** | **278 / 126 / 164** | **152** | **76 / 31 / 45** | |
+
+Esta tabla es del primer corte. Las 71 lecciones del segundo corte (04:29 UTC)
+se cuentan por grupo en «De dónde sale» y se leen en la «Comprobación 10/11» de
+cada cambio.
 
 Fuera de esta tabla, 88 lecciones pendientes de otros skills con `lectura_efe`
 (39 del TDE, 46 del DTP y 3 del EFE, que están arriba) se leyeron para el
