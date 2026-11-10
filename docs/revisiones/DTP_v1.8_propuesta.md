@@ -24,6 +24,20 @@ Unos 50 veredictos del 08-09/11 se estaban cerrando cuando se cortó el
 dossier: cada cambio lleva su línea «Se sostiene si… / Lo tumba si…» para
 mirarlos.
 
+**Segundo corte, 10/11 a las 04:29 UTC:** se cerraron los veredictos que
+faltaban. Traen **118 lecciones nuevas de 29 partidos** (73 del 07/11 y 45 del
+08/11) que no estaban en el dossier de las 02:13. Lo que se agregó con ellas:
+
+- debajo de cada «Se sostiene si…», una **«Comprobación 10/11»** con lo que
+  dicen las lecciones nuevas (sostiene, matiza, tumba o sin casos);
+- el **cambio 15**, que sale de las lecciones nuevas (tres casos);
+- el **cambio 16**, la incidencia 1056, **APROBADO por el usuario el 10/11**
+  (el texto viejo y el nuevo del skill, exactos);
+- al final, la sección «Tabla de cambios».
+
+Salvo el 16, todo sigue sin aprobar. Nada de esto está redactado en el
+`SKILL.md`.
+
 ## De dónde sale
 
 - **Ventana:** las **764 lecciones pendientes** del skill, de **169 partidos**
@@ -134,6 +148,65 @@ mirarlos.
   caso en contra** al 5.(c) y al 3; y hacen subir a regla tres candidatos que
   ya estaban anotados (cambios 12, 13 y 14). Aparece una precisión nueva de
   la posesión (cambio 11).
+
+### Segundo corte 10/11 (04:29 UTC): los veredictos que faltaban
+
+- **Lo nuevo:** **118 lecciones de 29 partidos** (73 del 07/11 y 45 del
+  08/11). Por veredicto del lado: 43 fallos, 18 parciales y 57 aciertos. Con
+  las del primer corte, la ventana suma **1150 lecciones pendientes**.
+- **Población:** **113 acreditan** (`ciega` + `PRE`, sin copa ni cuarentena).
+  **5 están en cuarentena que enseña**: Once Caldas–Águilas Doradas 1549861,
+  los dos lados (el parte dice Hernán Darío Herrera, el banco dice Carlos
+  Valencia). No cuentan y fijan rúbrica. Ninguna es de copa. Ninguno de los
+  cuatro partidos que todavía deben su cuarentena (LDU 1631509, Palmeiras
+  1492426, Manta 1639824 y 1639827) aparece en este skill. Todas leyeron la
+  v1.7.
+- **Ningún número:** 13 lecciones nuevas con `proponeMoverNumero: false` y
+  ninguna con `true`.
+- **Modo de fallo:** 7 `lectura_efe` nuevas. Ninguna nombra al EFE: son
+  rúbrica del DTP, como las 46 anteriores (53 en total). Se reparten así:
+  - Audax 1505555: posesión;
+  - O'Higgins 1505561 y Viseu 1575540: volumen (Viseu también ceder);
+  - Sport Huancayo 1549546: la vía entera;
+  - Comerciantes 1549547: la 6 sostenida por el arquero;
+  - Alianza Atlético 1549549: la vía que no sobrevive a los cambios (cambio 15);
+  - Nacional 1575540: el banco.
+
+  Una más es `varianza` (Banfield 1493229).
+- **Las 118, por la regla que citan primero** (la misma agrupación de
+  siempre; cada lección cuenta una vez):
+
+  | Regla que cita | Lecciones | Fallos | Parciales | Aciertos | Partidos |
+  |---|---|---|---|---|---|
+  | M5 · volumen y conversión | 25 | 9 | 5 | 11 | 22 |
+  | M2 · veredicto por rama | 20 | 6 | 3 | 11 | 18 |
+  | Banco ofensivo | 14 | 6 | 3 | 5 | 12 |
+  | Checklist del bloque (casi todo la 6) y dos capas | 11 | 4 | 1 | 6 | 11 |
+  | Vías (pelota parada por zona, centrales, segunda línea) | 9 | 2 | 2 | 5 | 8 |
+  | M3 · costo de rearmar | 8 | 4 | 0 | 4 | 8 |
+  | Ejecutor de penales | 7 | 1 | 1 | 5 | 7 |
+  | Posesión por rama | 5 | 3 | 1 | 1 | 4 |
+  | DTP-REHACER (momento tardío) | 4 | 1 | 0 | 3 | 4 |
+  | M1 · el grid manda | 4 | 3 | 1 | 0 | 3 |
+  | Pelota parada con materia | 4 | 1 | 0 | 3 | 4 |
+  | MECANISMO-ABIERTO | 3 | 2 | 1 | 0 | 3 |
+  | Duelos por carril | 3 | 1 | 0 | 2 | 3 |
+  | Piezas (M6) | 1 | 0 | 0 | 1 | 1 |
+
+  Las 5 de cuarentena están dentro de la tabla: una en M5, una en veredicto,
+  una en la 6, una en penales y una en pelota parada. Igual que en el primer
+  corte, la columna «Fallos» es el veredicto del LADO, no de la lección.
+- **Lo que cambia:**
+  - **ningún cambio se cae**;
+  - **sostienen** el 1, 2, 5, 7, 8, 9, 11, 12 y la génesis;
+  - **matizan** el 4, el 6 y el 14;
+  - no traen casos para el 3 ni para el 13;
+  - el 10 suma un caso.
+
+  **Sube un candidato a tres casos:** el rearme del medio, en el cambio 8.
+  **Entra una regla nueva**, la vía persiguiendo que sobrevive a los cambios
+  (cambio 15). **El hallazgo nuevo de la tanda no es del skill:** en seis
+  partidos la API corrigió la formación después del pitazo (ver el cambio 6).
 
 ### Primero, el hallazgo que ordena todo lo demás
 
@@ -362,6 +435,45 @@ generado muy por encima de lo concedido, rematado en el área, cobrados como
 fallo de mapa (entonces el problema no es la vara sino la conversión, y el
 (a) no agrega nada).
 
+**Comprobación 10/11 (118 lecciones nuevas; 25 citan M5):** **SOSTIENE.**
+
+- **FAVORABLE que no remató en el área o concedió lo mismo**, otra vez:
+  - Sporting Cristal–ADT 1549545: 3 remates en el área, 0,39 de xG;
+  - Alianza Lima–Los Chankas 1549551: 0,92 contra 1,67, apoyado en tener la
+    pelota;
+  - O'Higgins–U. de Concepción 1505561: 20 remates, 12 de afuera, 1,32 de xG
+    «a la par del local». El cierre pide NEUTRO: es el (a) tal cual;
+  - Viseu–Nacional 1575540: 0,65 de xG;
+  - Coquimbo 1505555 (parcial): 36 % de pelota y 3 al arco;
+  - Tigre 1493240: 9 de 13 remates de afuera; lo sostuvo solo la diferencia
+    numérica.
+- **NEUTRO o DESFAVORABLE que generó mucho más de lo que concedió:**
+  - La Serena–Palestino 1505557: 1,61 contra 0,95;
+  - Unión La Calera–Huachipato 1505562: 1,44, con 13 de 16 remates en el área;
+  - Cajamarca–Alianza Atlético 1549549: 3,13 con el 41 % de pelota;
+  - Los Chankas 1549551: 1,67 contra 0,92;
+  - Nacional–Viseu 1575540: DESFAVORABLE con 1,17 contra 0,65;
+  - Audax–Coquimbo 1505555: persiguiendo DESFAVORABLE con 1,55 de xG y 12
+    remates en el área.
+- **Lo que podía tumbarlo, mirado:** cuatro lados fallados tienen un FAVORABLE
+  con mucho más generado que concedido y rematado en el área:
+  - Lanús 1493232: 1,88 contra 0,47;
+  - Talleres 1493239: 1,14 contra 0,31;
+  - Cienciano 1549546: 2,1 contra 1,52;
+  - Garcilaso 1549547: 1,52 de xG, 10 remates en el área.
+
+  **Ninguno se cobró como fallo de mapa.** Los cuatro cierres lo leyeron como
+  conversión y arquero, que es lo que ordena el (a). No tumban.
+- **(b):** Nacional 1575540 sacó el DESFAVORABLE de «0,34 de xG en Arouca»,
+  un solo partido. Es la precisión del primer corte.
+- **(c):** sin casos explícitos. Cienciano 1549546 trae un penal en cada xG y
+  el cierre no los separó.
+- **El punto que sostuvo el arquero propio:** Comerciantes 1549547 (5
+  atajadas) y Coquimbo 1505555 (8).
+- **Para la app, no para el skill:** sin stats por tramo, la rama no se
+  separa del total (Millonarios 1549857, Audax 1505555). Es el `cubreRama`
+  pendiente.
+
 **Mueve un número:** no.
 
 ### 2. M2: el veredicto con condición escribe su contrario, y ceder la pelota no es señal en ninguna dirección
@@ -460,6 +572,40 @@ ramas con gol por un renglón de la lista que la razón no citó, o ramas sin v�
 dadas NEUTRO. Lo tumba si las ramas que citan su lista entera fallan igual
 que las recortadas (la lista entera no separaría nada).
 
+**Comprobación 10/11 (20 lecciones citan el veredicto por rama):**
+**SOSTIENE.**
+
+- **(a) Ramas con gol por un renglón de la lista que la razón no citó:**
+  - Sport Huancayo–Cienciano 1549546: el empate fue el penal sobre Falconí,
+    el lateral que llega. El M2 lo listaba en el carril y la rama persiguiendo
+    no lo citó;
+  - Independiente Medellín–Fortaleza 1549858: la pelota parada de Simarra y
+    Escorcia estaba en las vías y no en la razón. El 1-0 fue un córner.
+- **(a) Ramas sin vía dadas NEUTRO:**
+  - Huachipato 1505562;
+  - Nublense 1505558: 0,47 de xG, 5 de 7 remates de afuera;
+  - Alianza Atlético 1549549: persiguiendo, un remate al arco.
+
+  Águilas 1549861 lo repite, pero está en cuarentena.
+- **(b) La condición y su contrario:** Viseu 1575540 apoyó el FAVORABLE en que
+  el improvisado de Nacional «se vencía al 55-65», y no se venció. Es el caso
+  de Rubio Ñu.
+- **(c) Ceder no es señal:** Cajamarca 1549549 cedió (41 %) y generó 3,13. Y
+  del lado de la v1.6, tener la pelota tampoco: O'Higgins 1505561, Alianza
+  Lima 1549551 y Coquimbo 1505555 apoyaron el FAVORABLE en eso y no
+  generaron.
+- **La rama con diferencia numérica (v1.7), bien juzgada como «no puesta a
+  prueba»:**
+  - Argentinos–Huracán 1493228, los dos lados: 65 minutos con diez;
+  - Independiente Rivadavia–Gimnasia 1493234, los dos lados.
+
+  Sarmiento 1493240 tenía la roja a la vista y no escribió la línea con uno
+  menos (va en el cambio 7).
+- **Lo que podía tumbarlo:** ninguna rama que citara su lista entera falló
+  igual que las recortadas. No apareció.
+- **Nuevo en esta tanda:** la vía que no sobrevive a los cambios del DT. Ver
+  el cambio 15.
+
 **Mueve un número:** no.
 
 ### 3. Posesión: «igualado» y «arriba» se escriben aparte cuando la ventaja puede llegar temprano
@@ -518,6 +664,17 @@ pero dice que la dirección tampoco es segura con ella.
 «igualado o arriba» vuelve a fallar en partidos con gol temprano del foco.
 Lo tumba si fallan igual las ramas que no tuvieron gol temprano: entonces el
 problema no es mezclar los dos estados.
+
+**Comprobación 10/11 (5 lecciones de posesión):** **SIN CASOS** para lo que el
+cambio propone. Ninguna rama mezcló «igualado» y «arriba» con un gol temprano
+del foco: los goles tempranos de la tanda (U. de Chile 1505560 al 14',
+Juan Pablo II 1549548 al 9') no traen lección de posesión.
+
+- **La precisión del DT nuevo suma un caso:** Nacional–Viseu 1575540 («con un
+  DT de dos partidos… la dirección no se sostiene en el anuncio del rival»).
+- **Las otras inversiones de posesión son de otros puntos:** del cambio 11, o
+  de la cuenta de jugadores (Gimnasia 1493234: 59 % con 11 contra 10, que ya
+  es v1.7).
 
 **Mueve un número:** no. La magnitud sigue sin calibrarse.
 
@@ -586,6 +743,27 @@ vuelve a quedarse sin córners. Lo tumba si los equipos que ceden y tienen la
 pelota parada como vía principal la convierten con pocos córners en varios
 partidos (como Chapecoense 1492443): entonces la materia no es el córner del
 cruce.
+
+**Comprobación 10/11 (4 lecciones de pelota parada y 2 de vías):**
+**SOSTIENE el (a) y lo MATIZA.**
+
+- **Sostiene, el que cede sin córners:**
+  - U. de Concepción–O'Higgins 1505561: el que cedía (O'Higgins tuvo el 62 %)
+    llevaba el córner a los centrales como vía principal y tuvo 2 córners. El
+    cierre pide lo mismo que el (a): «debió ir condicional»;
+  - Nublense–Colo Colo 1505558: la pelota parada de Bosso y Céspedes, con 1
+    córner en 90'.
+
+  Ninguno de los que ceden convirtió de pelota parada con pocos córners. Lo
+  que podía tumbarlo no apareció.
+- **Matiza, desde la otra punta: con materia, la vía tampoco está dada.**
+  Limache–U. Católica 1505559 tuvo 10 córners contra 4 y la vía aérea no dio
+  xG («los córners solos no hacen la vía cuando el rival defiende el área
+  con…»). Va como precisión: la materia es necesaria, no suficiente; la vía
+  depende también de quién defiende el área.
+- **Con materia y gol:** Rosario Central 1493237 (12 córners contra 2) y La
+  Serena 1505557 (11).
+- **(b), la media distancia del que cede:** sin casos.
 
 **Mueve un número:** no.
 
@@ -680,6 +858,36 @@ un suplente o el 9 que entra por el ejecutor nombrado. Lo tumba si los
 penales que faltan los patea siempre el primero de la base estando en
 cancha: entonces el tercer nombre es ruido.
 
+**Comprobación 10/11 (14 lecciones de banco y 7 de penales):** **SOSTIENE.**
+
+- **(c) Penales:**
+  - **el «si entra» se cumplió:** Pereira–Nacional 1549855. M. Pérez,
+    nombrado y rotado al banco, entró al 61' y convirtió al 63';
+  - **la muestra mínima no fija el orden:** en U. de Chile–Cobresal 1505560
+    pateó el tercero nombrado (Vargas) con Rivero en cancha. En Cienciano
+    1549546, con Garcés 0 de 1 en la base, pateó Succar, que no estaba
+    nombrado;
+  - **«nunca vacía»:** Tolima–Millonarios 1549857. El parte dejó «sin fuente
+    entre los titulares» y pateó E. Valencia, titular.
+- **Lo que podía tumbarlo:** el primero de la base, estando en cancha, pateó
+  en tres partidos: Sarmiento 1493240 (le atajaron el penal), U. Católica
+  1505559 (Zampedri) y Guabirá 1645537 (Garzón). No tumba: en los otros
+  cuatro no fue él.
+- **La lista del banco:**
+  - **le faltó el que decidió:** Gimnasia–Independiente Rivadavia 1493234
+    (Sequeira y Díaz), Talleres 1493239 (Chiavassa, que entró al descanso),
+    Colo Colo 1505558 (Bolados), Cobresal 1505560 (un volante y un defensor)
+    y Pereira 1549855 (E. Moreno);
+  - **el titular habitual rotado primero (v1.7)** se incumplió en Newell's
+    1493236 (Mazzantti, en duda, hizo el 2-1 desde el banco) y se cumplió en
+    Nacional 1549855.
+- **(b) El banco sin minuto fijo:** dos goles de suplentes entrados al
+  descanso (Talleres 1493239, Cobresal 1505560).
+- **(a):** sin casos.
+
+Once Caldas 1549861 dice que el segundo nombre tiene que ser un titular
+probable, pero está en cuarentena: no cuenta.
+
 **Mueve un número:** no.
 
 ### 6. M1 y `rehacer`: el grid se copia, y al rehacer también el plan
@@ -765,6 +973,34 @@ apartarse del grid ya capturado. Lo tumba si los M1 que faltan copian el grid
 y el mapa de carriles falla igual: entonces el grid de la API no describe la
 banda real.
 
+**Comprobación 10/11 (4 lecciones de M1 y 4 de DTP-REHACER):** **SOSTIENE el
+(a) y lo MATIZA.**
+
+- **Sostiene.** El grid ya estaba capturado y el rehacer lo leyó a ojo en tres
+  partidos:
+  - Sporting Cristal 1549545: L. Díaz y J. González, cada uno en la banda del
+    otro;
+  - Comerciantes 1549547: Salinas y Parodi al revés (uno en el medio y el otro
+    en la línea);
+  - Alianza Atlético 1549549: 4-1-4-1 con pivote único, donde el grid ponía
+    doble pivote.
+- **Matiza: en seis partidos la API corrigió la formación después del
+  pitazo.** Fueron Argentinos 1493228, Estudiantes de Río Cuarto 1493237,
+  Juan Pablo II 1549548, Millonarios 1549857, Fortaleza 1549858 y
+  Guabirá–Bulo Bulo 1645537. Ahí, copiar el grid de antes del pitazo es copiar
+  el dato equivocado.
+  - Los seis cierres lo trataron bien, con la regla de dos capas de la v1.4:
+    «apertura caída por once tardío, no fallo del skill». La capa de nombres
+    quedó sin juzgar. La capa estructural se juzgó y casi siempre se cumplió.
+  - **No tumba.** Lo que tumbaba era copiar el grid y fallar el carril igual,
+    y en estos la capa estructural se sostuvo.
+  - Lo que pide es de la app: guardar la hora de la formación y marcar la que
+    cambió después del pitazo (`dato_api`), para que el cierre no tenga que
+    deducirla.
+- **(b):** el banco escrito de Fortaleza 1549858 no estaba en la hoja, pero
+  es del once tardío, no del rehacer.
+- **(c):** sin casos.
+
 **Mueve un número:** no.
 
 ### 7. La vía de expulsión, de los dos lados y con el historial
@@ -815,6 +1051,26 @@ Y tres más con la pieza del seguro sin su carga:
 seguro o de la línea que el M1 no cargó. Lo tumba si las rojas que faltan son
 de piezas sin amarillas previas ni papel en el duelo: entonces la vía de
 expulsión no se puede leer antes.
+
+**Comprobación 10/11 (dentro del veredicto por rama, M3 y M1):**
+**SOSTIENE.**
+
+- **Rojas de piezas del seguro o de la línea que el M1 no cargó:**
+  - Independiente Rivadavia–Gimnasia 1493234: Florentín, del doble pivote
+    del seguro, expulsado al 17'. La vía no estaba nombrada;
+  - Sarmiento–Tigre 1493240: el TDE del mismo parte decía que venía de dos
+    rojas y el M2 no escribió la línea con uno menos. Jugó 40' con nueve.
+- **La regla, cumplida:** Argentinos–Huracán 1493228 nombró a Paredes, con 4
+  amarillas, en el carril de Kalinger, y la rama persiguiendo «con uno menos
+  pasa a DESFAVORABLE». Se cumplió.
+- **Candidato (un caso):** el recambio que entra al seguro con carga de
+  tarjetas también es vía de expulsión. Gimnasia 1493234: Cingolani, con 5
+  amarillas en la competición, entró al descanso por el doble pivote y vio
+  dos.
+- **Rojas que ninguna lección dice si se podían leer:** Rosario Central
+  1493237 (Ávila), Cienciano 1549546 (Amondarain) y Comerciantes 1549547
+  (Salinas, al 89'). No tumban: ninguna lección dice que fueran piezas sin
+  carga.
 
 **Mueve un número:** no. Las amarillas ya salen de la base
 (`amarillasEnLaCompeticion` en `f1/{id}`).
@@ -886,6 +1142,37 @@ un gol en contra a pocos minutos de un cambio atrás con el foco ganando o
 igualado. Lo tumba si los goles tras un rearme salen siempre de otra zona que
 la rearmada: entonces el «quién queda atrás» no es la vía.
 
+**Comprobación 10/11 (8 lecciones de rearme):** **SOSTIENE.**
+
+- **Gol en contra a pocos minutos de un cambio atrás, con el foco ganando o
+  igualado:**
+  - Sporting Cristal–ADT 1549545: sale un central al 88' con 1-0 y llega el
+    empate de pelota parada al 90+4;
+  - Defensa y Justicia–Boca 1493231: doble cambio defensivo al 90+1 para
+    cerrar el 0-0 y gol al 90+6 por el carril derecho propio. **El rearme para
+    administrar también cuesta**;
+  - Alianza Lima–Los Chankas 1549551: con ventaja, sale el lateral amonestado
+    al 54' y llega el empate al 59'.
+- **Observado sin crónica:** Cienciano 1549546 (un central sale al descanso,
+  gol al 58').
+- **Contraejemplos que confirman «vía, no certeza»:** Rosario Central 1493237
+  (roja del central, pero el rival ya no tenía la vía) y La Serena 1505557 (la
+  vía del rearme existió y se anuló por un fuera de juego).
+- **Lo que podía tumbarlo:** en estas lecciones, ningún gol tras un rearme
+  salió de otra zona.
+
+**El candidato del medio sube a tres casos:**
+- Fiorentina 1550189 (primer corte);
+- Instituto–Newell's 1493236: doble cambio en el medio al 62' y gol al 66';
+- Gimnasia–Independiente Rivadavia 1493234: salen los dos del doble pivote al
+  descanso y llega el gol 11 minutos después de la expulsión del recambio.
+
+Por «Cuándo se reabre» (tres casos acreditables en partidos distintos) entra.
+**Propuesta:** sumar al cambio 8 «el rearme del doble pivote o del medio de
+contención se escribe como el de la línea de fondo, con quién queda delante
+de los centrales». **[DECIDE USUARIO]:** Gimnasia mezcla el rearme con una
+roja. Sin Gimnasia quedan dos casos y el candidato espera.
+
 **Mueve un número:** no.
 
 ### 9. MECANISMO-ABIERTO: qué es una corrección y con qué reserva viaja el par
@@ -948,6 +1235,24 @@ veredictos que faltan vuelven a necesitar la reserva (con diez, autogol,
 partido resuelto) para leerse. Lo tumba si ningún par nuevo la necesita: la
 reserva sería letra muerta.
 
+**Comprobación 10/11 (3 lecciones de MECANISMO):** **SOSTIENE, con poco.**
+
+- **El conteo a mano salió bien y nadie fabricó la jugada:**
+  - Banfield 1493229: dos goles en 3', con el mismo centrador y el central
+    rival, sin corrección. Es un MECANISMO de zona;
+  - Pereira 1549855: dos goles en 7', con el mismo asistidor; su primer cambio
+    fue al 60'.
+- **(c):** Pereira es el segundo partido seguido (ante Tolima fueron tres en
+  cinco minutos) y va a la rama del próximo rival.
+- **(b), la reserva:** aparece una vez y fuera del umbral. Argentinos 1493228:
+  dos goles a 23', con la roja en medio, que el cierre anota como vía a
+  verificar con su reserva.
+- **(a):** sin casos de un cambio de otra zona entre los goles.
+- **Candidato (un caso):** el asistidor repetido por la misma banda, por
+  debajo del umbral de 15', como vía a verificar (Argentinos 1493228,
+  Kalinger). Pereira 1549855 y Macará 1639805 lo tienen dentro del umbral: no
+  cuentan.
+
 **Mueve un número:** no.
 
 ### 10. El reconvertido también ataca: pasa de candidato a regla
@@ -972,6 +1277,16 @@ no está dado): va en el cambio 14.
 **Comprobación.** Se sostiene si aparece en lo que falta otro reasignado con
 gol o asistencia desde el puesto de hoy. Lo tumba si los reasignados de los
 veredictos que faltan solo aparecen como vulnerabilidad.
+
+**Comprobación 10/11:** **SOSTIENE, un caso.** Cajamarca–Alianza Atlético
+1549549: el lateral nuevo se leyó solo como vulnerabilidad («la espalda de
+Timaná») e hizo el 1-0 llegando al área. El cierre lo anota como caso del
+candidato.
+
+Con una reserva: la lección dice «lateral nuevo», no si estaba reasignado.
+
+La otra cara, el reconvertido como vulnerabilidad, se pagó en Talleres
+1493239 (ver el cambio 14).
 
 ## Cambios nuevos (10/11)
 
@@ -1021,6 +1336,25 @@ invertirse en partidos donde el rival tiene perfiles distintos de local y de
 visita. **Lo tumba si** las inversiones que faltan son de rivales con el mismo
 perfil en las dos sedes: entonces la condición no es la causa.
 
+**Comprobación 10/11 (5 lecciones de posesión):** **SOSTIENE.** La dirección
+se invirtió cuando el perfil salió de otra condición o de otro objetivo:
+
+- **Audax–Coquimbo 1505555:** la dirección «no salía de un partido de Coquimbo
+  de visita ante un local que cede». Audax tuvo el 64 %.
+- **Garcilaso–Comerciantes 1549547, los dos lados:** «más pelota» salió del
+  4-1 a Los Chankas, un visitante que cedía. El visitante, sin nada en juego,
+  no cedió: 49 % y 51 %. El cierre: «la dirección no sale de la sede ni de la
+  tabla».
+
+Los dos piden lo que dice el cambio: la condición de hoy, **con el objetivo
+de hoy**.
+
+- **Matiza:** Los Chankas–Alianza Lima 1549551. El rival llegó sin Vélez ni
+  R. Garcés y no se impuso (51 % contra 49 %): la condición de hoy incluye
+  también las bajas del rival.
+- **Lo que podía tumbarlo:** ninguna inversión de un rival con el mismo
+  perfil en las dos sedes. No apareció.
+
 **Mueve un número:** no. La magnitud sigue sin calibrarse.
 
 ### 12. El lateral o el defensor fresco que llega es banco ofensivo (de candidato a regla)
@@ -1048,6 +1382,15 @@ lateral entra si su último partido lo tuvo de lateral o carrilero.
 **Se sostiene si** en los veredictos que faltan vuelve a marcar o asistir un
 lateral o defensor entrado. **Lo tumba si** no aparece ninguno y las listas
 crecen sin acertar más (la lista se vuelve el banco entero).
+
+**Comprobación 10/11:** **SOSTIENE, dos casos.**
+
+- **Cobresal–U. de Chile 1505560:** Sandoval, defensor que entró al descanso,
+  asistió el descuento al 90+2.
+- **Pereira–Nacional 1549855:** E. Moreno, defensa que entró al 86', asistió
+  el 3-2. No estaba en el banco nombrado.
+
+Los dos son del que persigue o va igualado, como dice la regla.
 
 **Mueve un número:** no.
 
@@ -1077,6 +1420,10 @@ partidos, de los eventos (`Penalty` del rival), en los insumos del DTP.
 concediendo penal vuelve a conceder. **Lo tumba si** los que vienen de dos
 seguidos no conceden en el tercero, en varios equipos.
 
+**Comprobación 10/11:** **SIN CASOS.** Ninguna lección habla de un equipo con
+penales concedidos en serie. La pregunta [DECIDE EL USUARIO] sigue como
+estaba.
+
 **Mueve un número:** no.
 
 ### 14. Un reconvertido o una línea nueva es vía a verificar, no un mismatch dado (de candidato a regla)
@@ -1103,7 +1450,125 @@ y ninguna está dada.
 rival no genera. **Lo tumba si** los FAVORABLE apoyados en un reconvertido
 generan más que los demás en los veredictos que faltan.
 
+**Comprobación 10/11:** **MATIZA.**
+
+- **Unión La Calera–Huachipato 1505562:** la línea de tres del rival, con dos
+  reconvertidos (P. Vargas, Toro), le dio a La Calera 1,44 de xG, con 13 de 16
+  remates en el área. El cierre dice que la rama, dada NEUTRO «por nivel», era
+  FAVORABLE por el área. El mismatch contra la línea nueva **sí pagó**.
+- **Talleres–Estudiantes 1493239:** la vuelta escrita contra Schott, central
+  reconvertido a lateral, fue la jugada del 0-1.
+
+Ninguno es un FAVORABLE apoyado en un reconvertido que no generó, ni uno que
+generó más que los demás. No apareció lo que lo sostenía ni lo que lo
+tumbaba.
+
+Lo que agregan es la mitad de la regla que el cambio deja entre líneas:
+**con la vía que lo ataca nombrada, el mismatch sí sube la rama**. Talleres la
+tenía nombrada y pagó; La Calera no la escribió y la rama quedó corta.
+
+**Propuesta de redacción:** «…sostiene un FAVORABLE solo si la vía que lo
+ataca está nombrada; con la vía nombrada, la rama sube por él».
+
+Sport Huancayo–Cienciano 1549546 (el caso de la 6 era con otra línea) es la
+misma idea del lado del bloque, y eso ya es v1.7 (g).
+
 **Mueve un número:** no.
+
+## Cambios nuevos del segundo corte (10/11, 04:29 UTC)
+
+### 15. La vía de la rama persiguiendo tiene que sobrevivir a los cambios del DT
+
+Sale de las 118 lecciones del segundo corte. Son tres partidos, los tres
+acreditables:
+
+- **Huachipato–Unión La Calera 1505562:** la rama persiguiendo salió NEUTRO
+  con sus vías (el centro de Briceño, la media distancia de Altez, la pelota
+  parada y el banco). Altez salió al 45' y Briceño al 59'. En 67 minutos
+  persiguiendo hubo un remate al arco y 0,35 de xG. El cierre: «una rama cuyas
+  vías dependen de piezas que el DT suele cambiar pronto, contra un local que
+  no cedió la pelota, es DESFAVORABLE».
+- **Alianza Atlético–Cajamarca 1549549:** la vía escrita (segunda línea,
+  centros de Gordillo, media distancia de Lupú) salió del campo al descanso
+  con los tres. En todo el partido hubo un remate al arco. El cierre: «sin vía
+  nombrada que sobreviva a los cambios, la rama persiguiendo es
+  DESFAVORABLE».
+- **Palestino–La Serena 1505557:** la vía principal (Montes entre líneas)
+  se apagó cuando salió al 63'. La rama quedó con Gallegos y el banco, y
+  generó un remate al arco. Es un acierto: el veredicto estaba bien, y la
+  lección es la misma.
+
+La v1.7 ya dice que una rama sin vía contra el bloque rival es DESFAVORABLE.
+Lo que no dice es **dónde mirar**: las vías se escriben con el once de
+arranque, y el que persigue suele cambiar primero, justamente, a las piezas
+que las sostienen.
+
+**Regla propuesta (rúbrica).**
+- En la rama persiguiendo, el M2 cruza sus vías con el M3. Si las piezas que
+  las sostienen son las que el DT de hoy suele cambiar primero, o están
+  amonestadas, la razón dice **qué vía queda después de los cambios**, con el
+  nombre del suplente que la hereda.
+- Si no queda ninguna, la rama es DESFAVORABLE, que es lo que ya dice la v1.7.
+- Sin minuto fijo y sin umbral, como el banco del cambio 5.(b).
+
+**Encaja con** el cambio 2.(a) (la razón cita la vía por su renglón), con el
+cambio 8 (quién queda atrás después de los cambios; este es el espejo, quién
+queda adelante) y con el 12 (el banco que hereda la vía).
+
+**Calculable (pendiente de la app):** el minuto habitual de salida de cada
+titular con el DT de hoy, de los eventos `subst` de sus últimos partidos, en
+los insumos del DTP. Va al lado de `bancoOfensivo`.
+
+**Se sostiene si** en los próximos cierres vuelve a apagarse la rama
+persiguiendo cuando salen las piezas de sus vías. **Lo tumba si** las ramas
+persiguiendo cuyas piezas salen temprano generan lo mismo que las demás: en
+ese caso, el banco que entra hereda la vía y el cruce no agrega nada.
+
+**Mueve un número:** no.
+
+### 16. APROBADO (10/11, incidencia 1056): el TDE hereda el seguro persiguiendo del DTP
+
+**Estado: APROBADO por el usuario el 10/11/2026.** Es la contraparte del
+cambio 14 del TDE v0.1.26 (`docs/revisiones/TDE_v0.1.26_propuesta.md`). La
+disciplina 63 del TDE (v0.1.23) ya manda que el `sob2` de las ramas del que
+persigue salga del `nivelFocoPersiguiendo` del DTP. Pero el DTP vigente decía
+que eso no se hereda hasta que el usuario decida. Los dos skills se
+contradecían, y la app hacía lo que decía el DTP.
+
+**Los casos** están en la propuesta del TDE: Westerlo–Charleroi 1558679,
+Konyaspor–Galatasaray 1584465 y Como–Inter 1550191. Los tres partes lo
+hicieron bien a mano.
+
+**(a) Integración, el texto que se reemplaza.**
+
+El texto viejo (`docs/skills/diagnostico-tactico/SKILL.md`, Integración,
+«Hacia el módulo del tramo final», exacto):
+
+> *(v1.5)* El SOB2 **sigue heredando el nivel de hoy** del seguro (`nivelFoco`/`nivelRival`); la rama persiguiendo (`nivelFocoPersiguiendo`/`nivelRivalPersiguiendo`) se declara pero no se hereda hasta que el usuario decida si el SOB2 sale de ella.
+
+El texto nuevo:
+
+> *(v1.5)* El SOB2 **sigue heredando el nivel de hoy** del seguro (`nivelFoco`/`nivelRival`) fuera de las ramas del que persigue. *(v1.8)* El TDE hereda `nivelFocoPersiguiendo` en las ramas del que persigue; HERENCIA-DTP avisa si difiere — aprobado 10/11, incidencia 1056. Si el que persigue es el rival, la fuente es `nivelRivalPersiguiendo`, como dice la disciplina 63 del TDE.
+
+**(b) El arrastre en M2.** La línea del rest defense del M2 termina con «Lo
+que hereda el TDE no cambia», y con el (a) eso deja de ser cierto. Si no se
+cambia, el skill se contradice solo.
+
+El texto viejo (M2, línea del rest defense, final, exacto):
+
+> Lo que hereda el TDE no cambia: ver Integración.
+
+El texto nuevo:
+
+> Desde la v1.8 el TDE también hereda la rama persiguiendo: ver Integración.
+
+**Para la app:** que `HERENCIA-DTP` compare también el `sob2` de la rama. En
+el TDE figura como «aprobado y pendiente de la app» desde la v0.1.25. El
+alcance (si se recalculan o no los partes viejos) es el que fija el cambio 14
+del TDE, no este.
+
+**Mueve un número:** no. El nivel del seguro ya se declaraba; lo que cambia
+es de dónde lo lee el TDE.
 
 ## El modo de fallo `lectura_efe`, uno por uno
 
@@ -1380,7 +1845,8 @@ uno:
   lista que faltaba.
 - **Cuando un candidato junte tres casos acreditables** (sin copa ni
   cuarentena) en partidos distintos.
-- **Cuando el usuario decida** el SOB2 desde la rama persiguiendo,
+- **Cuando el usuario decida** el SOB2 desde la rama persiguiendo
+  (**decidido el 10/11: cambio 16, aprobado**),
   `ROLES_GRID_REHACE` (1232) o el casillero de Jev.
 - **Una banda de «parejo» para el volumen o un valor por penal** solo con un
   backtest sobre los veredictos cerrados (volumen a favor y en contra por rama
@@ -1652,6 +2118,22 @@ tumba si, buscando con la tabla, los cierres no encuentran crónica fuera de los
 15 partidos del estudio: el protocolo no rendiría y quedaría solo la
 categoría «sin fuente».
 
+**Comprobación 10/11:** **SOSTIENE y MATIZA la tabla (b).**
+
+- **Donde se buscó en la lista, apareció la crónica:**
+  - Banfield–Tucumán 1493229: Contexto Tucumán. Trae el tiro libre directo de
+    L. Gómez, que no estaba en la vía: es el (c).5;
+  - Boca–Defensa 1493231: El Gráfico. Trae el gol de Valencia en el rebote;
+  - La Serena–Palestino 1505557: la encontró en Redgol.
+
+  Lo que tumbaba (buscar con la tabla y no encontrar) no apareció.
+- **Dos correcciones a la tabla (b), con un caso cada una:**
+  - **El Gráfico respondió**, y la tabla dice que da 403;
+  - **falta Chile**, y Redgol sirvió.
+- **«Sin crónica» sigue** en Argentinos 1493228, La Calera 1505562,
+  Melgar–Juan Pablo II 1549548, Pereira 1549855 y Cienciano 1549546. Ninguno
+  fabricó la jugada. Ninguno cita una página abierta.
+
 ## Comprobación con los veredictos del 08-09/11
 
 El dossier se cortó a las 02:13 UTC del 10/11 con unos 50 veredictos del
@@ -1679,6 +2161,10 @@ tumba si…» dentro de su punto; en corto:
 Lo que se mira es el texto de las lecciones nuevas, no una tasa: por el
 sesgo de atribución, un conteo de «se sostiene» no es un acierto del skill.
 
+**Hecho el 10/11 con el corte de las 04:29 UTC** (118 lecciones, 113
+acreditables): el resultado va en la «Comprobación 10/11» de cada cambio y en
+la «Tabla de cambios» del final.
+
 ## Núcleo e historial
 
 `docs/revisiones/NUCLEO_SKILLS_propuesta.md` (03/11) **no se aplica acá**.
@@ -1702,6 +2188,8 @@ historial (`references/HISTORIAL.md`: casos, de dónde salió, conteos):
 | 12 | M2 banco: el lateral o carrilero fresco y, persiguiendo, el defensor que entra a cargar | los seis partidos |
 | 13 | M2 vías del rival: «penal en contra» como vía del equipo tras dos seguidos | La Guaira, Portuguesa, Universitario |
 | 14 | M2: un mismatch contra reconvertido, suplente o línea nueva sostiene un FAVORABLE solo con la vía que lo ataca nombrada | Getafe, Lille–Bodø, Napoli–Lazio |
+| 15 | M2: en la rama persiguiendo, la razón dice qué vía queda después de los cambios habituales del DT y quién la hereda; si no queda ninguna, DESFAVORABLE | Huachipato, Alianza Atlético, Palestino |
+| 16 | Integración: el TDE hereda `nivelFocoPersiguiendo` en las ramas del que persigue; HERENCIA-DTP avisa si difiere | la incidencia 1056 y los tres casos del TDE |
 | Génesis | M4: la lista cerrada de categorías y las dos marcas; «sin fuente» es categoría; M2: las cinco vías obligatorias y «cada vía nombra zona o intérprete». El protocolo de fuentes por liga, en una referencia aparte que el cierre abre al buscar | el estudio (`DTP_autopsia_gol_estudio.md`) y sus mediciones |
 
 Dos cosas para quien aplique el núcleo:
@@ -1711,3 +2199,30 @@ Dos cosas para quien aplique el núcleo:
 - La tabla de fuentes por liga de la génesis (b) es fechada y se rehace con
   cada revisión: conviene que viva en `references/` y no en el núcleo, para que
   la corrida de partes no la cargue (solo la usa el cierre).
+
+
+## Tabla de cambios
+
+Una fila por cambio. En la comprobación, «sostiene» quiere decir que lo
+sostiene el texto de las 113 lecciones acreditables del segundo corte. No es
+una tasa: rige el sesgo de atribución.
+
+| # | Cambio (una línea) | Tipo | Comprobación 10/11 | Núcleo o historial |
+|---|---|---|---|---|
+| 1 | M5: la rama se juzga por lo generado contra lo concedido, en el área primero; la referencia no viaja; los penales al lado del xG | rúbrica | sostiene | núcleo (regla) · historial (casos) |
+| 2 | M2: la razón de la rama cita sus vías por renglón; la condición lleva su contrario; ceder no es señal | rúbrica + app (aviso) | sostiene | núcleo · historial |
+| 3 | Posesión: «igualado» y «arriba» aparte cuando el foco puede ponerse arriba temprano | rúbrica | sin casos | núcleo · historial |
+| 4 | Vías: la pelota parada del que cede va condicional; la media distancia en los dos lados | rúbrica | matiza (con materia la vía tampoco está dada) | núcleo · historial |
+| 5 | Banco y penales desde la hoja: sin titulares, sin minuto fijo, tercer nombre «si entra», quién patea tras un errado | rúbrica + app (`bancoOfensivo`) | sostiene | núcleo · historial |
+| 6 | M1: el grid se copia y la coordenada existe; `rehacer` reescribe todo lo que nombra piezas | rúbrica + app (lectura del grid, hora de la formación) | sostiene y matiza (formación corregida tras el pitazo) | núcleo · historial |
+| 7 | La vía de expulsión de los dos lados, con toda la línea del duelo y la vuelta de suspensión | rúbrica | sostiene | núcleo · historial |
+| 8 | M3: quién queda atrás en todas las ramas; lateral y extremo de la misma banda = costo del carril (más el rearme del medio, a decidir) | rúbrica · decide (el medio) | sostiene | núcleo · historial |
+| 9 | MECANISMO: qué es una corrección, la reserva del par, `sin mecánica` repetido a su rama | rúbrica | sostiene | núcleo · historial |
+| 10 | El reconvertido también ataca (sus dos caras) | rúbrica | sostiene (un caso) | núcleo · historial |
+| 11 | Posesión: el perfil del rival en su condición y con su objetivo de hoy | rúbrica + app (`posesionReferencias`) | sostiene | núcleo · historial |
+| 12 | Banco: el lateral o defensor fresco que llega es banco ofensivo | rúbrica + app | sostiene | núcleo · historial |
+| 13 | Penales concedidos en serie: vía del equipo | decide | sin casos | núcleo (si entra) · historial |
+| 14 | El mismatch contra un reconvertido o una línea nueva sube la rama solo con la vía nombrada | rúbrica | matiza (con la vía nombrada, sí sube) | núcleo · historial |
+| 15 | La vía persiguiendo tiene que sobrevivir a los cambios del DT | rúbrica + app (minuto de salida habitual) | nuevo (tres casos del segundo corte) | núcleo · historial |
+| 16 | El TDE hereda `nivelFocoPersiguiendo` en las ramas del que persigue; HERENCIA-DTP avisa si difiere | aprobado (usuario, 10/11) + app | no aplica (decisión del usuario) | núcleo |
+| G | Génesis del gol: categoría cerrada, protocolo de fuentes, vías obligatorias | rúbrica + app + medir | sostiene y matiza la tabla de fuentes (El Gráfico, Chile) | núcleo (M4/M2) · referencia aparte (tabla de fuentes) · historial (estudio) |

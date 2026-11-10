@@ -12,7 +12,7 @@ Eso se hace después de que el usuario apruebe, por cambio o entera.
 |---|---|---|---|
 | sad-analysis | [`SAD_v4.5_propuesta.md`](SAD_v4.5_propuesta.md) (ampliada) | v4.4 → v4.5 | 1-9 + «Medido en conversación» 10-19 |
 | teorema-del-echado | [`TDE_v0.1.26_propuesta.md`](TDE_v0.1.26_propuesta.md) (ampliada) | v0.1.25 → v0.1.26 | 1-14 |
-| efe-clasificador + efe-dashboard | [`EFE_v2.0_propuesta.md`](EFE_v2.0_propuesta.md) (nueva, absorbe la `EFE_v1.10`) | v1.9 → v2.0 (o 1.10) · dashboard v1.12 → v1.13 | 1-12 + D1-D4 |
+| efe-clasificador + efe-dashboard | [`EFE_v1.10_propuesta.md`](EFE_v1.10_propuesta.md) (nueva, absorbe la `EFE_v1.10`) | v1.9 → v1.10 (decidido 10/11) · dashboard v1.12 → v1.13 | 1-12 + D1-D4 |
 | diagnostico-tactico | [`DTP_v1.8_propuesta.md`](DTP_v1.8_propuesta.md) (ampliada) | v1.7 → v1.8 | 1-14 + génesis del gol |
 
 ## Con qué se hizo, y qué quedó fuera
@@ -154,7 +154,7 @@ del 08-09/11 (112 aciertos, 47 parciales y 68 fallos). Se leyeron enteros los
     DTP todavía dice «no se hereda hasta que el usuario decida». Si se aprueba,
     hay que cambiar también esa línea del DTP y la de `DEUDA.md`.
 
-## efe-clasificador v1.9 → v2.0 (+ efe-dashboard v1.12 → v1.13)
+## efe-clasificador v1.9 → v1.10 (+ efe-dashboard v1.12 → v1.13)
 
 **De dónde sale:** 568 pendientes, de las que 152 son nuevas (76 aciertos, 31
 parciales y 45 fallos). Se leyeron las 88 `lectura_efe` del TDE, el DTP y el
@@ -337,3 +337,29 @@ Por cada skill aprobado: redactar en `docs/skills/<skill>/SKILL.md`, sellar
 el zip. Las lecciones pasan a `aplicada` o `descartada` con
 `aplicadaEn`. Lo marcado [APP] va al mantenimiento como pendientes de
 `PENDIENTES.md`.
+
+---
+
+## Actualización del 10/11 (segundo corte, 04:29 UTC)
+
+Ya se cerraron todos los veredictos (0 pendientes). Las 315 lecciones nuevas, de 29 partidos del 07 y el 08/11, se usaron para COMPROBAR cada cambio. Cada propuesta lleva, por cambio, su «Comprobación 10/11» y al final una **Tabla de cambios**.
+
+**Decidido por el usuario el 10/11**
+- **Incidencia 1056: APROBADA, opción (a) «heredar y avisar».** Es el TDE 14 y el DTP 16: sin recalcular partes viejos y con el texto del DTP reemplazado. En la app falta marcarla `aprobada` con la llave maestra (🔑, tarjeta Decisiones pendientes): el token de Cowork no puede.
+- **EFE: v1.10, no 2.0.** El archivo es `EFE_v1.10_propuesta.md`. Absorbe la propuesta del 08/11, que queda en la historia de git.
+- **Origen de la burbuja (SAD 1):** sigue vigente la decisión del 03/11, que DEUDA 26 (08/11) confirma y que ninguna decisión posterior contradice. El dato «contra la casa» es la fuente, no el objetivo. Si con 100+ casos por grupo se confirma sobre nuestro win rate, mueve la confianza del elegido, nunca el 1X2.
+
+**Lo que trajo el segundo corte**
+- **Ningún cambio cae, salvo el EFE 6.2** (la costumbre de rotación del DT condiciona el porcentaje). Con calendario exigente rotaron 4 de cada 5 DT. Se propone sacarlo y mantener la v1.7. **[DECIDE]**
+- **Cambios nuevos:**
+  - SAD 20: el banco del rival que nombra el falsador también frena la carga del 1X2. Cuatro fallos: Newell's, Viseu, Everton de Viña y Alianza Lima.
+  - TDE 15: «sigue atacando» se lee por la amenaza, no por la posesión. Casos: Coquimbo, Medellín y Tolima.
+  - EFE 13: con un once tardío, de menos de 20 minutos, la F1 queda «sin verificar». Casos: Fortaleza e Instituto–Newell's.
+  - DTP 15: la vía del que persigue tiene que sobrevivir a los cambios habituales del DT. Casos: Huachipato, Alianza Atlético y Palestino.
+- **Para decidir:**
+  - SAD 2: la mitad de las espinas «sigue» contra riesgo alto se cortaron. La recomendación es aprobarlo como rúbrica.
+  - EFE 3: la frase del condicional pasa al aviso de la app.
+  - DTP 8: el rearme del medio tiene 2 casos limpios.
+  - DTP 14: «con la vía nombrada, la rama sube».
+- **1068, recomendación (c) empezando por la (b).** Con el once a la vista, 31 lados de 27 partidos tenían titulares sin fila. En el segundo corte, 18 de 20 lados tenían 1 o 2 filas de menos, que es cruzar listas. En 8 de esos 20 lados el jugador sin fila marcó o asistió. La (a), que el rehacer cargue el EFE, se usa solo con 3 o más titulares fijos cambiados o con otro arquero.
+- **Para la app (nuevo):** guardar a qué hora llegó la formación y marcar la que la API corrigió después del pitazo. Pasó en 6 partidos.

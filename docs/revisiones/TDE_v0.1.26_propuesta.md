@@ -10,6 +10,16 @@ usuario**. Cada punto lleva su línea de comprobación («Se sostiene si… / Lo
 tumba si…») para los ~50 veredictos del 08-09/11 que todavía se estaban
 cerrando cuando se cortó el dossier, y su marca de núcleo o historial.
 
+**Comprobada el 10/11/2026** con el segundo corte (04:29 UTC): las **103
+lecciones** que no estaban en el dossier de las 02:13. Cada punto lleva su
+«Comprobación 10/11». Ninguna tumba nada; el 1, el 2, el 5 y el 6 traen un
+matiz, el 10 sigue a medir y el 11 y el 13 quedan sin casos. **El punto 14 lo APROBÓ el usuario el
+10/11/2026 con la opción (a)** («heredar y avisar», sin recalcular partes
+viejos): falta la app (la implementa el mantenimiento), la línea del skill DTP
+y `DEUDA.md`. Se agrega el **punto 15** («sigue atacando» se lee por la
+amenaza, no por la pelota; tres casos) y los candidatos de un caso van a «Lo
+que NO se propone». Al final, la «Tabla de cambios».
+
 Se redactó el 08/11/2026 desde:
 
 - el dossier (`GET /analisis/cowork/revision/teorema-del-echado`, generado el
@@ -82,6 +92,25 @@ versión vigente `v0.1.25`, cohorte `c3-2026-09-23`):
   está en el dossier y no se bajó (el encargo prohíbe llamar a la API): el
   punto 14 sale de la lección y del código.
 
+**Segundo corte, comprobación del 10/11/2026** (04:29 UTC; solo las lecciones
+pendientes que no estaban en el dossier de las 02:13):
+
+- **103 lecciones de 29 partidos**, 64 con fecha del 07/11 y 39 del 08/11
+  (Argentina, Chile, Perú, Colombia, Portugal y Bolivia): 51 aciertos, 20
+  parciales y 32 fallos. Se leyeron todas, enteras.
+- **Población:** ninguna de copa nacional. **3 en cuarentena que enseña** (Once
+  Caldas–Águilas Doradas, 1549861: DT del parte distinto del que dirigió):
+  fijan rúbrica y no sostienen nada. Los cuatro casos todavía sin la cuarentena
+  que les toca (LDU 1631509, Palmeiras 1492426, Manta 1639824 y 1639827) no
+  aparecen.
+- **Piden mover un número (Jev):** ninguna (15 `false`, 88 sin etiqueta).
+  **Modo de fallo:** 5 `lectura_efe` (Estudiantes LP, Coquimbo, U. de
+  Concepción, Alianza Lima, Fortaleza), 98 sin etiqueta. Caen en los puntos 3,
+  5, 9 y 15.
+- Igual que antes: muchas «fallo» son el 1X2 y dicen «declarado y cumplido» o
+  «confirmación». Los casos de cada comprobación son lecciones que lo dicen, no
+  tasas.
+
 **Sesgo de atribución, declarado antes de proponer:** buena parte de los 174
 «fallos» dicen en la propia lección que la regla del TDE **se cumplió**
 («declarada y cumplida», «confirmación», «abierto no se cobra», «no cuenta
@@ -128,11 +157,13 @@ Ninguno se cae. Se agregan:
     la app).
 13. La rama del TDE y el plan del DTP del mismo equipo dicen lo mismo antes de
     depositar.
-14. **[DECIDE USUARIO] Incidencia 1056:** el `sob2` de las ramas del que
-    persigue se hereda del `nivelFocoPersiguiendo` del DTP y `HERENCIA-DTP` lo
+14. **Incidencia 1056 (APROBADO por el usuario el 10/11, opción a):** el
+    `sob2` de las ramas del que persigue se hereda del `nivelFocoPersiguiendo` del DTP y `HERENCIA-DTP` lo
     compara. El skill ya lo dice desde la v0.1.23; lo que falta es que lo haga
     la app y que el DTP deje de decir «no se hereda hasta que el usuario
     decida».
+15. «Sigue atacando» se lee por la amenaza, no por la pelota (nuevo en la
+    comprobación del 10/11).
 
 ## Lo que no se toca
 
@@ -237,6 +268,22 @@ empujando. *Lo tumba si* aparecen varias más como PAOK: «sostiene» con el
 empate o la visita como motivo y sin conceder, con el bloque de pie. Habría
 que contarlas aparte de las que sostuvo el arquero.
 
+**Comprobación 10/11 (4 lecciones nuevas): SOSTIENE, con un matiz.** Dos
+«sostiene el punto» más con motivos de la lista de lo que no es motivo:
+Banfield–Atl. Tucumán (1493229:a, «promedios, semifinal de Copa a 8 días»: tras
+el 2-2 no hubo más goles, pero la crónica dice que Banfield buscó la victoria
+al final, así que la conducta escrita no se dio) y Ñublense–Colo Colo
+(1505558:a, un motivo de tabla y sin antecedente: sostuvo 61 minutos y concedió
+en el 90+2 con el banco fresco del favorito). El defecto «sigue empujando» se
+cumplió en Los Chankas–Alianza Lima (1549551:a). No aparece ningún caso como
+PAOK («sostiene» por el empate o la visita, sin conceder y con el bloque de
+pie): la lista no se afloja.
+
+**Matiz:** el mismo motivo falló en `siLeEmpatan`, que este punto no cubre:
+Millonarios–Tolima (1549857:b, «el empate le sirve, vuelve a la pelota sin
+volcarse»; concedió a los 11 minutos del empate, dentro de su ventana). Es un
+caso: va a candidatos (extender la lista a `siLeEmpatan`), no al punto.
+
 **Núcleo / historial.** Núcleo: la lista de lo que no es motivo y la vida útil
 del bloque improvisado (dos líneas en la 44 (f)). Historial: los casos.
 
@@ -324,6 +371,28 @@ escritos «sigue atacando» por falta de antecedente vuelven a administrar
 (Osasuna, La Louvière). O si varios favoritos cierran con cambios defensivos
 **y conceden**: eso pediría que la rama nombre el cierre.
 
+**Comprobación 10/11 (15 lecciones nuevas): SOSTIENE el defecto de los tres;
+MATIZA la lectura de «sigue atacando».** El favorito por μ con margen ≥ 0,30 o
+el obligado de tabla siguió atacando en once: Rosario Central (1493237:a,
+margen 1,77; amplió con diez), Huracán (1493228:b), U. Católica–Limache
+(1505559:a), U. de Chile–Cobresal (1505560:a, margen 1,72), La
+Calera–Huachipato (1505562:a), Melgar (1549548:a), Cajamarca (1549549:a), Colo
+Colo (1505558:b, margen 0,49), Atl. Nacional (1549855:a: siguió atacando y
+perdió la ventaja, que es la línea del empate y no la tipología), Sport
+Huancayo (1549546:b) y La Serena (1505557:a, con antecedente). Guabirá
+(1645537:a) escribió «sigue atacando» «sin antecedente de administrar» y goleó;
+la lección no dice si era de los tres, así que no cuenta ni a favor ni en
+contra de «en su plan». Ningún no favorito escrito «sigue atacando» por falta
+de antecedente administró, y ningún favorito cerró con cambios defensivos y
+concedió: lo que tumbaría el punto no apareció.
+
+**Matiz:** tres equipos con ventaja cedieron la pelota. Tolima (1549857:a,
+obligado) cedió y cortó con faltas sin partirse; Independiente Medellín
+(1549858:b, obligado) cedió (38 %) y siguió amenazando; Coquimbo (1505555:b)
+escribió «sigue atacando con la pelota» por la posesión de temporada y
+administró. No tumba el defecto (ninguno concedió por cerrar): pide leer la
+tipología por la amenaza y no por la pelota. Va como punto 15.
+
 **Núcleo / historial.** Núcleo: el defecto de los tres, «en su plan» para los
 demás y la lista corta de motivos y de lo que no es motivo. Historial: los
 casos y los conteos.
@@ -377,6 +446,18 @@ antecedentes con otro marcador o con otra cuenta siguen sin anticipar el
 partido. *Lo tumba si* aparecen ramas con un antecedente de otro marcador que
 igual se cumplen. Para que cuente, tiene que verse en «administra» y no solo
 en «sostiene».
+
+**Comprobación 10/11 (5 lecciones nuevas): SOSTIENE.** Estudiantes LP–Talleres
+(1493239:b): ECHADA-VOL apoyada en el 0-0 del Maracaná, de Libertadores, **con
+uno menos** y con una pieza ausente hoy; le empataron a los 14 minutos. Es
+«otra cuenta de jugadores». Atl. Tucumán–Banfield (1493229:b): el antecedente
+lo habían sostenido una pieza ausente hoy y el arquero; administró y perdió un
+2-0 del 18'. Es además el caso que equilibra a Recoleta («En contra 10/11»):
+ahí la pieza ausente sí importó. Del otro lado, los antecedentes que coincidían
+en todo se cumplieron: Concepción–Everton (1505556:b, el 1-0 de visita en
+Ñublense: no se partió y amplió) y Nacional–Viseu (1575540:a, «misma condición,
+perfil y línea», con pocos minutos de prueba). Ninguna rama con un antecedente
+de otro marcador se cumplió.
 
 **Núcleo / historial.** Núcleo: «el antecedente coincide en condición, perfil
 del rival, piezas, marcador que se cuidaba y cuenta de jugadores» (una
@@ -462,6 +543,21 @@ tras la roja o dentro del régimen, y no se juntan en el 75-90 cuando la roja
 fue antes. *Lo tumba si* varias rojas tempranas conceden recién en el 75-90:
 ahí la ventana del reloj describiría mejor que la de la roja.
 
+**Comprobación 10/11 (9 lecciones nuevas): SOSTIENE.** Las rojas propias antes
+del 75' que terminaron en gol concedieron cerca de la roja o dentro del
+régimen, ninguna recién en el 75-90: Argentinos–Huracán (1493228:a, roja al 25'
+perdiendo, 0-2 al 31': a los 6 minutos), Sarmiento–Tigre (1493240:b, rojas al
+50' y al 55' con 0-0, gol al 70': a los 15 de la segunda) e Independiente
+Rivadavia–Gimnasia (1493234:b, roja al 17' con 0-0, gol al 45: a los 28, de
+pelota parada con error del arquero). Independiente Rivadavia es el segundo
+caso, tras Santa Clara, que cae fuera del «+15» y dentro del régimen: confirma
+que el régimen siga hasta el final y no se corte en +15. Las rojas tardías
+concedieron tarde o no concedieron: Gimnasia (1493234:a, roja al 84' ganando,
+gol en el 90+5), Cienciano (1549546:a, 74' perdiendo, sin más goles),
+Comerciantes Unidos (1549547:b, 89') y Juan Pablo II (1549548:b, 82', de un
+suplente). Rosario Central (1493237:a, roja al 72' ganando 1-0) no se echó y
+amplió con diez: otro «no concedió» con ventaja.
+
 **Núcleo / historial.** Núcleo: «la ventana de `siExpulsion.propia` va desde
 la roja; el régimen de inferioridad, hasta el final». Historial: las cifras
 (11 de 12, 8 de 19) y los partidos.
@@ -522,6 +618,26 @@ cierres siguen encontrando la vía en el banco nombrado y aparecen más
 «nombró a un titular» en los partes sin rehacer. *Lo tumba si* el banco
 nombrado casi nunca es la vía, porque entonces la lista no aporta y solo
 alarga la rama. Contra eso, esta tanda trae diez a favor.
+
+**Comprobación 10/11 (10 lecciones nuevas): SOSTIENE, con dos matices.** El
+banco nombrado fue la vía en cuatro partidos: Atl. Tucumán–Banfield (1493229:b,
+Machado, entrado al 46', hizo el 2-1), Newell's–Instituto (1493236:b, Tissera,
+2-2 en el 90+3), U. de Concepción–O'Higgins (1505561:a, Toloza entró al 68' y
+asistió el 2-2 al 71') y Alianza Lima–Los Chankas (1549551:b, y 1549551:a desde
+el otro lado: K. Sánchez entró al 56' y empató al 59'). Y el que no lo nombró
+lo pagó: Estudiantes LP–Talleres (1493239:b, empate del suplente entrado al
+descanso). Huachipato (1505562:b): el banco nombrado entró y no cambió el
+volumen, que es lo normal en una rama y no tumba. En esta tanda no hay ningún
+titular nombrado como banco.
+
+**Matices.** (1) U. de Chile–Cobresal (1505560:a): la rama nombró a tres
+delanteros y el gol fue de dos cambios del descanso, un volante y un defensor:
+«el banco del rival se escribe entero y contando los cambios de medio tiempo,
+no solo los delanteros». Cabe en «se toma de la hoja»; agrega «entero», con un
+caso. (2) Palestino–La Serena (1505557:b): la rama escribió como hecho un banco
+que ya había entrado al 63', antes del gol del 65'. Es la regla vigente de la
+65 (el banco condicionado a los cambios que quedan al minuto del gol) y el
+punto 2 de «Para la app».
 
 **Núcleo / historial.** Núcleo: «el banco sale de la hoja, se reescribe en
 `rehacer` y se nombra en todas las ramas donde puede entrar». Historial: los
@@ -587,6 +703,17 @@ apareciendo antes de la concesión. *Lo tumba si* las concesiones llegan con
 la pieza en cancha tanto como sin ella. Eso no se puede contar hasta que la
 app marque el minuto de salida.
 
+**Comprobación 10/11 (2 lecciones nuevas): SOSTIENE, con un caso.**
+Everton–Concepción (1505556:a): con `nivelFocoPersiguiendo` «sin», sacó al
+contenedor Moya y al lateral Ramos al 77' por dos delanteros y concedió al 84'.
+**Matiz:** Alianza Lima–Los Chankas (1549551:b) concedió el empate a los 5
+minutos de cambiar a su lateral derecho amonestado, pero en la rama de ventaja,
+que este punto no cubre. Con Barcelona–Atlético (1570443:b, del «Refuerzo
+10/11») son dos casos del mismo mecanismo (amarilla de la pieza → cambio →
+concesión): la redacción del punto puede decir «la rama que persigue y la de
+ventaja» sin cambiar nada más. Si la salida de la pieza adelanta la concesión
+sigue sin poder contarse hasta que la app marque el minuto.
+
 **Núcleo / historial.** Núcleo: «nombrar la pieza que sostiene `sob2`; el
 cierre anota cuándo salió (cambio o roja) y no recobra la rama». Historial:
 los diez partidos.
@@ -637,6 +764,17 @@ que ordenan el partido siguen siendo de titulares de la zaga, el pivote o el
 9. *Lo tumba si* son sobre todo de suplentes que entran (Strasbourg, Orense):
 entonces lo que falta es el casillero del banco, no el foco en los titulares.
 
+**Comprobación 10/11 (3 lecciones nuevas): SOSTIENE.** (Tres tocan `S1`; se
+miraron también las rojas de otras cinco.) Las rojas que ordenaron el partido
+fueron tempranas y, por lo que dicen las lecciones, de jugadores que estaban
+desde el inicio: Paredes en Argentinos (1493228:a, 25'), Florentín en
+Independiente Rivadavia (1493234:b, 17', conducta violenta: otro caso para el
+candidato de la v0.1.12) y G. González y L. Suárez en Sarmiento (1493240:b, 50'
+y 55'). Las de suplentes llegaron tarde y no ordenaron nada: Durán en Juan
+Pablo II (1549548:b, 82') y Aguayo en Tolima (1549857:a, 90+5). Sarmiento
+agrega que «llegaba de dos rojas en su último partido» con `S1` = 0,5: el
+historial disciplinario también es del equipo (punto 12).
+
 **Núcleo / historial.** Núcleo: «`S1` sobre los titulares que van al choque,
 con quien vuelve de una roja, y con el dato de la base cuando está» (una
 línea). Historial: los casos.
@@ -680,6 +818,14 @@ la decisión: es la fila de F2 del motor, que nadie discute.
 los F2 subidos a mano vuelven a dar cierres que dicen «iba en la nota». *La
 tumba si* aparecen viajes o altitudes que el motor no ve y que explican la
 echada: eso daría razón a la (b).
+
+**Comprobación 10/11 (2 lecciones nuevas): SOSTIENE la (a), débil.** Ninguna
+lección sube F2 a mano. Dos ramas pusieron la vía en la echada física por la
+altura y no se pagó: Juan Pablo II–Melgar (1549548:b: la rama del empate la
+ponía desde el 60' en altura y el gol cayó al 48') y Comerciantes
+Unidos–Garcilaso (1549547:b: «la vía secundaria de echada en la altura (60-75)
+tampoco se pagó»). No apareció ningún viaje ni altitud que el motor no vea y
+que explique una echada, que es lo que daría razón a la (b).
 
 **Núcleo / historial.** Núcleo: la regla que el usuario elija (una línea en la
 21 y la fila de `INDICE_IE.md`). Historial: los dos cierres.
@@ -769,6 +915,36 @@ tumba* una que empiece a acumular fallos en los que la regla se cumplió y el
 tramo salió al revés. La que habría que mirar primero es `abierto`: si
 aparecen `se_rompe` con un hecho de hoy nombrado y que no se rompen.
 
+**Comprobación 10/11 (unas 60 lecciones nuevas): SOSTIENEN.**
+
+- **65:** `abierto` fue la lectura correcta en unas veinte (Argentinos
+  1493228:a, Lanús 1493232:b, Independiente Rivadavia 1493234:b, Audax Italiano
+  1505555:a, Everton 1505556:a, Limache 1505559:b, U. de Concepción 1505561:a,
+  O'Higgins 1505561:b, Huachipato 1505562:b, ADT 1549545:a, Los Chankas
+  1549551:a, Alianza Atlético 1549549:b, Fortaleza 1549858:a, Viseu 1575540:b,
+  Bulo Bulo 1645537:b). No hay ningún `se_rompe` con un hecho de hoy que no se
+  rompiera. Los dos «hechos» apoyados en el once se cayeron con el once
+  oficial: Bulo Bulo (un grid que la API corrigió después del pitazo) y Águilas
+  Doradas (1549861:b, cuarentena que enseña: «la espalda a Barrios», que no
+  estuvo en la hoja). Es la revisión con el once oficial que ya está en la 65.
+- **61** (la salida «marcó él» no cuenta contra la rama; sin crónica, la vía
+  escrita): Lanús, Newell's 1493236:b, Talleres 1493239:a, Ñublense 1505558:a,
+  Melgar 1549548:a, Sport Huancayo 1549546:b, Cobresal 1505560:b (la vía pagada
+  a los 75 minutos del gol: la rama se cobra por su salida).
+- **66** (las dos ventajas y la línea del empate): Central Córdoba 1493232:a,
+  Instituto 1493236:a, Gimnasia 1493234:a, Colo Colo 1505558:b, Sporting
+  Cristal 1549545:b, Cienciano 1549546:a, Atl. Nacional 1549855:a, Juan Pablo
+  II 1549548:b, Cajamarca 1549549:a.
+- **23** (añadido): Boca–Defensa (1493231:a y b), Gimnasia, Newell's, Guabirá
+  1645537:a. **14:** Boca (1493231:a) y Millonarios (1549857:b), con el rival
+  que no quiere correr. **16** (superioridad no administra): Tigre 1493240:a,
+  Huracán 1493228:b, Melgar, Sport Huancayo.
+- **17, 24, 43 y 50:** Huracán 1493228:b (no testeado); Viseu 1575540:b y Atl.
+  Tucumán 1493229:b (la ventana coincide pero la vía es otra); Cajamarca
+  1549549:a (dual, otra vez sin echada); Audax 1505555:a y Fortaleza 1549858:a.
+
+Ningún grupo junta fallos con la regla cumplida y el tramo al revés.
+
 **Núcleo / historial.** No agrega texto: las reglas ya están en el núcleo y
 los casos van al historial.
 
@@ -811,6 +987,18 @@ están en los eventos de la ficha (la misma materia que `S2` en
 más goles de la vía del banco o de la SOB dentro de los 15 minutos de un
 cambio ofensivo y fuera de la +15 del gol. *Lo tumba si* esos goles caen
 igual de seguido lejos de los cambios.
+
+**Comprobación 10/11 (6 lecciones nuevas): MATIZA; sigue en medir primero.** A
+favor: U. de Concepción–O'Higgins (1505561:a: ventaja desde el 41', la +15
+limpia, y el 2-2 al 71', a los 3 minutos de que entrara Toloza); Alianza Lima
+(1549551:b: K. Sánchez entró al 56' y empató al 59', aunque dentro de la +15
+del gol) y Everton (1505556:a: el 0-2 al 84', a los 7 minutos del cambio
+ofensivo propio del 77' y a los 12 de la entrada de Henríquez). En contra,
+goles del banco lejos de su entrada: U. de Chile–Cobresal (1505560:a, cambios
+del descanso, gol en el 90+2), Ñublense–Colo Colo (1505558:a, Bolados entró al
+68' y marcó en el 90+2) y Viseu (1575540:b, tres cambios ofensivos al 70', gol
+al 86'). Los tres relojes no se separan a ojo: decide la medición de «Para la
+app», punto 10.
 
 **Núcleo / historial.** Si se aprueba tras la medición, una línea en la
 44 (c). Hoy es historial (candidato).
@@ -858,6 +1046,12 @@ visitantes con 0-0 y el empate útil no empujan a la hora cuando la SOB no
 traía un hecho. *Lo tumba si* empujan y conceden: entonces la tabla sola sí
 abría la SOB.
 
+**Comprobación 10/11 (0 lecciones nuevas): SIN CASOS.** Ningún visitante con
+0-0, la tabla abajo y el empate útil. Lo más cercano, Defensa y Justicia en la
+Bombonera (1493231:b), es un visitante ya clasificado que cerró con cambios
+defensivos en el 90+1 y concedió en el 90+6: no es el régimen de este punto. La
+pregunta al usuario sigue abierta.
+
 **Núcleo / historial.** Núcleo: la línea de la 18 y, si se aprueba, la frase
 que separa los dos regímenes en la 44 (f). Historial: los casos.
 
@@ -894,6 +1088,14 @@ roja, con `S1` sin dato. *Lo tumba si* las rojas que ordenan el partido no
 tienen nada que ver con el historial disciplinario. Entonces el dato no
 aportaría y bastaría con declararlo sin dato.
 
+**Comprobación 10/11 (1 lecciones nuevas): SOSTIENE, con un caso.**
+Sarmiento–Tigre (1493240:b): «llegaba de dos rojas en su último partido», `S1`
+= 0,5, y volvió a quedarse con nueve. La roja del último partido es justo lo
+que `sanciones.py` ya tiene. El caso agrega que el dato sirva también como
+cuenta del equipo, no solo por jugador; con un caso va a candidatos.
+Independiente Rivadavia (1493234:b): conducta violenta con `S1` sin dato; la
+lección no dice si había historial, así que no tumba.
+
 **Núcleo / historial.** Núcleo: la línea del bloque S. Historial: los casos.
 
 ### 13. La rama del TDE y el plan del DTP del mismo equipo dicen lo mismo antes de depositar (disciplinas 63 y 44 (b)) — RÚBRICA
@@ -928,10 +1130,37 @@ más casos en los que el equipo jugó el plan del DTP contra la rama del TDE.
 *Lo tumba si* cuando las dos capas difieren el equipo juega la rama del TDE
 tanto como el DTP: entonces nombrar cuál manda no aporta.
 
+**Comprobación 10/11 (0 lecciones nuevas): SIN CASOS.** Ninguna lección nueva
+compara la rama del TDE con el M3 o con el veredicto por rama del DTP.
+
 **Núcleo / historial.** Núcleo: una línea en la 44 (b). Historial: los dos
 casos.
 
-### 14. [DECIDE USUARIO] Incidencia 1056: el `sob2` de las ramas del que persigue se hereda del DTP y `HERENCIA-DTP` lo compara (disciplina 63) — A DECIDIR
+### 14. Incidencia 1056: el `sob2` de las ramas del que persigue se hereda del DTP y `HERENCIA-DTP` lo compara (disciplina 63) — APROBADO por el usuario el 10/11/2026 (opción a)
+
+**APROBADO por el usuario el 10/11/2026 (opción a, «heredar y avisar»).** Las
+ramas del que persigue (`siRecibePrimero`, `siLeEmpatan` cuando vuelve a
+empujar y `siIguala`) heredan el `sob2` de `nivelFocoPersiguiendo` del DTP (o
+de `nivelRivalPersiguiendo` del DTP del rival) y `HERENCIA-DTP` compara también
+la rama. **No se recalculan los partes viejos:** el ISE de rama de lo
+depositado antes se lee como se declaró. Lo que hace falta (nada se tocó en
+esta revisión):
+
+- **(1) La app** — la implementa el mantenimiento: `parte.py` (`HEREDA_SOB2` en
+  `ise_de_ramas`, `_heredar` y la alerta `HERENCIA-DTP`) y `dtp_cowork.py`
+  (`herencia_tde`), con el contrato primero y los tests, en el orden de «Qué
+  tendría que cambiar en la app» de abajo.
+- **(2) El skill DTP:** la línea de `diagnostico-tactico` (M2 e Integración)
+  que dice que la rama persiguiendo «no se hereda hasta que el usuario decida»
+  cambia por «viaja al `sob2` de las ramas del que persigue del TDE»,
+  coordinada con `DTP_v1.8_propuesta.md` para que las dos versiones salgan
+  juntas.
+- **(3) `DEUDA.md`:** cerrar el «pendiente del usuario» de la entrada DTP v1.6
+  / TDE v0.1.23 con esta decisión.
+
+En el TDE, la línea de la 63 pierde «pendiente de la app» cuando la app lo
+haga. Lo de abajo («Las dos salidas», «Recomendación») queda como la historia
+de la decisión.
 
 **El caso.** Westerlo–Charleroi (1558679:a, 07/11; la incidencia 1056 no está
 en el dossier y no se bajó, el caso sale de la lección). La rama
@@ -1044,9 +1273,65 @@ partes que declararon otro `sob2` que el DTP fallan la vía más que las que
 copiaron el DTP. *Lo tumba si* el `sob2` del DTP persiguiendo no separa
 («sin» y «fijo» conceden igual). En ese caso, mejor la (b) hasta medir.
 
+**Comprobación 10/11 (2 lecciones nuevas): SOSTIENE, sin separar.** Dos partes
+más lo hicieron a mano y la vía se pagó: Everton–Concepción (1505556:a:
+`nivelFocoPersiguiendo` «sin», ISE de rama 8,33, concedió al 84' tras sacar al
+contenedor) y Limache–U. Católica (1505559:b: `sob2` del «depende»
+persiguiendo, ISE de rama 5, concedió a los 8 minutos). No hay ramas con «fijo»
+en esta tanda: «sin» contra «fijo» sigue sin poder separarse y queda la
+revisión con n ≥ 10 por valor.
+
 **Núcleo / historial.** Núcleo: la línea de la 63 sin «pendiente». Historial:
 Westerlo, Konyaspor, Como, Rayo–Celta y Xerez–Cádiz, y la cifra 11 de 36 /
 6 de 16.
+
+### 15. «Sigue atacando» se lee por la amenaza, no por la pelota (disciplina 44 (b)) — RÚBRICA (nuevo en la comprobación del 10/11)
+
+**Qué dice hoy.** La 44 (b) da el defecto «sigue atacando» a los tres y pide
+nombrar por qué para «administra». No dice con qué se comprueba la tipología ni
+con qué hecho se escribe.
+
+**Qué casos lo piden** (tres, del 07-08/11, de la comprobación):
+
+- Coquimbo–Audax Italiano (1505555:b, Jev: `lectura_efe`): la rama se escribió
+  «sigue atacando con la pelota (tiene posesión con su doble pivote)» y con 0-1
+  de visita desde el 50' cedió la pelota (36 %) y cerró con un defensor por un
+  delantero. «La posesión de temporada no es hecho del partido de hoy para
+  descartar que administre.»
+- Independiente Medellín–Fortaleza (1549858:b): el obligado con ventaja
+  temprana cedió la pelota (38 %), siguió amenazando (12 remates, 7 en el área)
+  y amplió. «"Sigue atacando" se lee por la amenaza y no por la posesión.»
+- Tolima–Millonarios (1549857:a): el obligado con ventaja desde el 36' cedió la
+  pelota (46 % contra su 57,8 de media), cortó con faltas y no se partió (0,66
+  de xG del rival). Pide «la variante de administrar cediendo cuando el rival
+  persigue sin profundidad».
+
+Van en la misma dirección los matices del punto 2 (Union SG–Genk y
+Atalanta–Monza cerraron sin conceder).
+
+**Qué se propone redactar** (44 (b), una línea junto al defecto): **«sigue
+atacando» describe la amenaza (remates, llegadas al área), no la pelota.** La
+posesión de temporada y el modelo del equipo no son motivo para escribirlo (es
+identidad, disciplina 6, ya en la lista del punto 2). El que cede la pelota y
+sigue llegando cumple la rama; el que cede y deja de llegar administró, y el
+cierre lo dice.
+
+**Qué NO se propone.** Una tipología nueva «administra cediendo» (Tolima es un
+caso y las tipologías no se tocan). Un umbral de posesión o de remates: no hay
+datos por tramo (La Serena, 1505557:a: «sin datos por tramo, el volumen tras el
+gol no se mide»).
+
+**Calculable.** Los remates y el xG del que va arriba **desde el gol** saldrían
+de la ficha si trajera estadísticas por tramo; hoy solo hay totales. Candidato
+para la app, junto al punto 10.
+
+**Comprobación.** *Se sostiene si* las ramas «sigue atacando» que ceden la
+pelota y siguen llegando no conceden más que las que la conservan. *Lo tumba
+si* ceder la pelota con «sigue atacando» escrito precede a la concesión:
+entonces la pelota sí importaba.
+
+**Núcleo / historial.** Núcleo: una línea en la 44 (b). Historial: Coquimbo,
+Medellín y Tolima.
 
 ---
 
@@ -1111,8 +1396,8 @@ calibrado.
     ciclo y quién vuelve de una roja, desde `backend/sanciones.py` (lo mismo
     que ya viaja en `f1/{id}`), y saca `S1` de `noCalculables` cuando hay
     dato. Era pendiente de la v0.1.25.
-12. **La herencia del `sob2` de rama (punto 14), si el usuario elige la (a)
-    o la (b).** Contrato primero (`heredadoDtp` con `rama`), después
+12. **La herencia del `sob2` de rama (punto 14), APROBADA el 10/11 con la
+    (a): la implementa el mantenimiento.** Contrato primero (`heredadoDtp` con `rama`), después
     `dtp_cowork.herencia_tde`, `parte._heredar` / `parte.ise_de_ramas` y la
     alerta `HERENCIA-DTP`, el rehacer y los tests. El detalle está en el punto
     14. Ya figura en `PENDIENTES.md`.
@@ -1165,7 +1450,9 @@ calibrado.
   sería inventado. *10/11:* dos más del lado del que va arriba,
   Feyenoord–Heerenveen (1552221:b, 45+3 y 47) y U. Católica–Macará
   (1639805:b, 56' y 58', los dos de titulares). La lección de UC lo pide «con
-  sus minutos», no como regla.
+  sus minutos», no como regla. *Comprobación 10/11:* dos más del lado del que
+  persigue, Banfield (1493229:a, a los 3 minutos) y O'Higgins (1505561:b, a los
+  2), antes de desarmarse persiguiendo.
 - **La ventaja de dos.** Cinco partidos perdieron o vieron descontar una ventaja
   de dos (Kasımpaşa–Beşiktaş 1584453:b, Cobresal–Everton 1505547:a,
   Sittard–Telstar 1552217:a, Universitario–Sport Boys 1549535:b,
@@ -1176,6 +1463,8 @@ calibrado.
   (1639805:b, 2-0 empatado en 4 minutos), y Aston Villa–United (1557464:b,
   4-2 desde el 53', dos en el añadido). Ya son nueve partidos: es lo primero
   que habría que medir cuando la app parta `ventajaPorMinuto` por margen.
+  *Comprobación 10/11:* diez, con Atl. Tucumán–Banfield (1493229:b, 2-0 al 18'
+  que terminó 2-2).
 - **Un umbral de atajadas o de xG** para «lo sostuvo el arquero» (Cagliari,
   Galatasaray, Marseille, Universitario, Cusco): se dice con el dato a la vista.
 - **Una tipología nueva** para la pérdida en salida bajo presión
@@ -1192,6 +1481,21 @@ calibrado.
   disciplina 36). El DT expulsado sin casillero (UTC, 1549552:b). Cada uno es
   un caso.
 
+- **Candidatos de la comprobación del 10/11 (un caso cada uno; no son regla).**
+
+  - Extender a `siLeEmpatan` la lista del punto 1 («el empate le sirve» no pone
+    a salvo al que vuelve a la pelota sin volcarse): Millonarios–Tolima
+    (1549857:b).
+  - El banco del rival se nombra entero, con los cambios del descanso y no solo
+    los delanteros: U. de Chile–Cobresal (1505560:a). Cabe en el punto 5.
+  - El historial disciplinario del equipo (rojas del último partido) como dato de
+    `S1`, además del del jugador: Sarmiento–Tigre (1493240:b).
+  - El segundo gol rápido tras el empate como hecho repetido de un equipo:
+    Pereira (1549855:b), «candidato a medir y no a regla».
+  - Un «hecho» de `se_rompe` sacado de un grid que la API corrige después del
+    pitazo no es hecho: Bulo Bulo (1645537:b); Águilas Doradas (1549861:b) va
+    igual, pero está en cuarentena y no cuenta.
+
 ## Cuándo se reabre
 
 - **El defecto por quién persigue:** cuando el veredicto guarde quién persigue
@@ -1206,8 +1510,8 @@ calibrado.
 - **F2:** con la decisión del usuario sobre el punto 8.
 - **La ventana desde el cambio (punto 10):** cuando la app dé los minutos
   desde el cambio ofensivo por gol concedido, con n ≥ 30 por reloj.
-- **La herencia del `sob2` de rama (punto 14):** con la decisión del usuario;
-  si se aplica, revisar con n ≥ 10 ramas jugadas por valor (fijo · depende ·
+- **La herencia del `sob2` de rama (punto 14):** aprobada el 10/11 (a); cuando
+  la app la aplique, revisar con n ≥ 10 ramas jugadas por valor (fijo · depende ·
   sin) si el heredado separa mejor que el 0.5.
 - **La SOB de la hora con el empate en la mano (punto 11):** si los veredictos
   del 08-09/11 traen visitantes con 0-0 que empujaron y concedieron sin hecho
@@ -1262,7 +1566,8 @@ necesita para escribir el parte) y lo que va a `references/HISTORIAL.md`:
 | 11 | 18: la SOB de la hora con 0-0 de visita pide un hecho; la frase que la separa del punto 1 | Atromitos, Levante |
 | 12 | bloque S: con el dato de la app, `S1` se puntúa o se declara sin dato con su motivo | los casos |
 | 13 | 44 (b): si el DTP del mismo equipo dice otra cosa, se nombra cuál manda | Chivas, Union–Köln |
-| 14 | 63 sin «pendiente de la app», con las tres ramas | Westerlo, Konyaspor, Como, Rayo–Celta, Xerez–Cádiz, 11 de 36 / 6 de 16 |
+| 14 | 63 sin «pendiente de la app», con las tres ramas (aprobado el 10/11) | Westerlo, Konyaspor, Como, Everton, Limache, Rayo–Celta, Xerez–Cádiz, 11 de 36 / 6 de 16 |
+| 15 | 44 (b): «sigue atacando» describe la amenaza, no la pelota; la posesión de temporada no es motivo | Coquimbo, Medellín, Tolima |
 
 Ninguno de los cambios agrega una regla que viva solo en el historial. Los
 casos y los conteos de esta propuesta son todos historial.
@@ -1284,7 +1589,8 @@ casos y los conteos de esta propuesta son todos historial.
 | 11 | Con 0-0 de visita y el empate útil, la SOB de la hora pide un hecho (tensión con el 1) | 18, 56 | rúbrica, con pregunta | 2 |
 | 12 | `S1` desde la base (amarillas y rojas de `sanciones.py`) | bloque S | calculable → app, sin peso | 7 |
 | 13 | La rama del TDE y el plan del DTP del mismo equipo dicen lo mismo | 44 (b), 63 | rúbrica | 2 |
-| 14 | 1056: el `sob2` de rama se hereda del DTP persiguiendo y `HERENCIA-DTP` lo compara | 63 | **decide el usuario** + app + DTP | 3 (Westerlo, Konyaspor, Como) |
+| 14 | 1056: el `sob2` de rama se hereda del DTP persiguiendo y `HERENCIA-DTP` lo compara | 63 | **APROBADO (a) el 10/11** → app (mantenimiento) + DTP + DEUDA | 5 (Westerlo, Konyaspor, Como, Everton, Limache) |
+| 15 | «Sigue atacando» se lee por la amenaza, no por la pelota | 44 (b) | rúbrica | 3 (Coquimbo, Medellín, Tolima) |
 
 **Ningún peso, umbral, compuerta, banda ni ventana por defecto se mueve.** La
 única frase que se retira es de la v0.1.25 (la roja propia ubicada en el
@@ -1292,3 +1598,24 @@ casos y los conteos de esta propuesta son todos historial.
 10/11 sigue igual: el punto 10 movería el inicio de una ventana y por eso va a
 medir primero, y el 14 no cambia la escala ni la fórmula, sino de qué fuente
 sale el `sob2` de la rama.
+
+
+## Tabla de cambios
+
+| # | Cambio (una línea) | Tipo | Comprobación 10/11 | Núcleo o historial |
+|---|---|---|---|---|
+| 1 | «Sostiene el punto» en `siIguala`: qué NO es motivo; vida útil del bloque improvisado | rúbrica | sostiene (matiz: el mismo motivo falla en `siLeEmpatan`, a candidatos) | núcleo |
+| 2 | Rama de ventaja: «sigue atacando» por defecto solo para los tres; los demás «en su plan» | rúbrica | sostiene (matiz: ceder la pelota → punto 15) | núcleo |
+| 3 | El antecedente coincide también en el marcador que se cuidaba y en la cuenta de jugadores | rúbrica | sostiene | núcleo |
+| 4 | Con roja propia, la ventana va desde la roja y el régimen hasta el final (sale el 75-90) | rúbrica | sostiene | núcleo |
+| 5 | El banco se toma de la hoja, se reescribe en `rehacer` y se nombra en todas las ramas | rúbrica | sostiene (matiz: banco entero con los cambios del descanso) | núcleo |
+| 6 | Se nombra la pieza que sostiene `sob2`; el cierre anota cuándo salió | rúbrica | sostiene (matiz: también en la rama de ventaja) | núcleo |
+| 7 | `S1` sobre los titulares que van al choque y quien vuelve de una roja | rúbrica | sostiene | núcleo |
+| 8 | F2 subido a mano por viaje y altitud: (a) manda el motor o (b) manda la tabla | decide | sostiene la (a), débil | núcleo (la que elija el usuario) |
+| 9 | Confirmaciones sin cambio (65, 61, 66, 43, 16, 14, 23, 50, 17, 24) | rúbrica | sostiene | historial |
+| 10 | La ventana de la vía del banco rival cuenta desde que el banco entra | medir | matiza (casos en los dos sentidos) | historial (candidato) |
+| 11 | Con 0-0 de visita y el empate útil, la SOB de la hora pide un hecho de hoy | decide | sin casos | núcleo (si se aprueba) |
+| 12 | `S1` desde la base: amarillas y rojas de `sanciones.py` en `GET …/tde/{id}` | app | sostiene (un caso) | núcleo |
+| 13 | La rama del TDE y el plan del DTP del mismo equipo dicen lo mismo, o se nombra cuál manda | rúbrica | sin casos | núcleo |
+| 14 | 1056: el `sob2` de las ramas del que persigue se hereda del DTP y `HERENCIA-DTP` lo compara — APROBADO (a) el 10/11 | app | sostiene (sin «fijo» para separar) | núcleo |
+| 15 | «Sigue atacando» se lee por la amenaza, no por la pelota; la posesión de temporada no es motivo | rúbrica | nuevo (3 casos) | núcleo |
