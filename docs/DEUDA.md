@@ -291,7 +291,8 @@ conversación se pierde en la siguiente.
    llegó a 571.000 tokens y se había usado para otra conversación: una sesión
    fija es SOLO de su rutina); **mantenimiento** 12:23 y 21:47 en «SAD · mantenimiento
    (rutina)» (desde el 22/10, deuda 17); **rehacer** cada 20 min desde el
-   31/10/2026 (:02, :22 y :42, de 05 a 23 de Lima; antes cada 30, :07 y :37) en
+   31/10/2026 (:02, :22 y :42, de 05 a 23 de Lima; :12 de 10 a 23 desde el 01/11;
+   :52 de 05 a 23 desde el 10/11, incidencia 1304; antes cada 30, :07 y :37) en
    «SAD · rehacer DTP con el once (rutina)», desde el 22/10/2026: modo `rehacer`
    de `corrida-sad`, los partes con DTP-REHACER a 5-80 min del pitazo (antes
    15-80; depósito hasta el pitazo − 5), avisa solo si hizo algo. El once llega
@@ -807,7 +808,8 @@ conversación se pierde en la siguiente.
      21:47 `trig_01Vhfn3vZAiTUk5ymtbewqZK`;
    - rehacer (v12): `session_01WwsfbVieJrnoTR4LviRH3x` · :02
      `trig_01JFqTRJcnhVcAZYEJZgqBo4`, :12 `trig_014kCpq2M4dZHf4TSEtUFJqa`,
-     :22 `trig_01Y5foB3Fe6cEctAj2Qqmtbm`, :42 `trig_01KvCbKCs11oYF4CsnqCowZG`.
+     :22 `trig_01Y5foB3Fe6cEctAj2Qqmtbm`, :42 `trig_01KvCbKCs11oYF4CsnqCowZG`,
+     :52 `trig_01QU4EEAcPSP1Sp9nRj8JJLf` (desde el 10/11, incidencia 1304).
    Medido el 03/11 con las sesiones nuevas: partes 117 USD (8 partes en el tramo
    3), veredictos 50 USD (18 veredictos), mantenimiento 29 USD por pasada,
    rehacer 41 USD en el día (hubo rehaceres reales). Las rutinas viejas quedaron desactivadas, no borradas. **Probado el mismo
