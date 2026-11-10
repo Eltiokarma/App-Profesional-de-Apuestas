@@ -2949,7 +2949,15 @@ components:
       properties:
         codigo:
           type: string
-          enum: [RECIEN_ASCENDIDO, EN_CRISIS, LOCAL_FUERTE, VISITA_DEBIL, EQUIPO_SORPRESA, BLOQUE_BAJO, CLASICO]
+          enum: [RECIEN_ASCENDIDO, EN_CRISIS, LOCAL_FUERTE, VISITA_DEBIL, EQUIPO_SORPRESA, BLOQUE_BAJO, CLASICO,
+                 ULTIMO_RIVAL_FUERTE_LOCAL]
+          description: >
+            EN_CRISIS cuenta solo las derrotas de los últimos 60 días, sin
+            amistosos ni copas perdidas con un rival de categoría superior
+            (1362). ULTIMO_RIVAL_FUERTE_LOCAL (1227 (c), SIN PESO hasta
+            medirla): en un partido de local contra un rival de zona alta, el
+            último que el equipo jugó en casa contra uno de arriba de la misma
+            tabla, con fecha y resultado en `dato`.
         label: { type: string, description: 'el nombre del protocolo, para mostrar' }
         dato: { type: string, description: 'la cifra que dispara la etiqueta ("3 derrotas seguidas")' }
         nota: { type: string, description: 'qué implica para la lectura' }

@@ -19,6 +19,8 @@ const TONO: Record<CodigoEtiquetaRival, 'up' | 'down' | 'warn'> = {
   EQUIPO_SORPRESA: 'warn',
   BLOQUE_BAJO: 'down',
   CLASICO: 'warn',
+  // informativa, sin peso (1227 (c)): ni ayuda ni frena
+  ULTIMO_RIVAL_FUERTE_LOCAL: 'warn',
 }
 
 const COLORES = {
