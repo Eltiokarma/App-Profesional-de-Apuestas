@@ -6,6 +6,24 @@
 generado el 08/11 a las 02:31) sobre la v1.7 vigente (01/11). Nada de esto
 está redactado en `docs/skills/diagnostico-tactico/SKILL.md` todavía.
 
+**Actualizada el 10/11/2026** con el dossier generado el 10/11 a las 02:13 UTC
+(misma cohorte, misma v1.7): **1032 lecciones pendientes** de **236 partidos**
+del 01/11 al 09/11, de las que **268 (67 partidos, 08-09/11) son nuevas**.
+Sigue sin aprobar. Lo escrito el 08/11 queda como estaba, con su numeración;
+lo nuevo va así:
+
+- en los cambios 1 a 10 y en la génesis del gol, un párrafo **«Refuerzo
+  10/11»** o **«En contra 10/11»** cuando las lecciones nuevas los tocan;
+- los cambios **11 a 14**, nuevos, a continuación del 10;
+- las secciones nuevas: «El modo de fallo `lectura_efe`, uno por uno»,
+  «`rolesVsGrid`: lo que dicen las lecciones», «Comprobación con los
+  veredictos del 08-09/11» y «Núcleo e historial»;
+- en «Para la app», lo pendiente verificado contra el código del 10/11.
+
+Unos 50 veredictos del 08-09/11 se estaban cerrando cuando se cortó el
+dossier: cada cambio lleva su línea «Se sostiene si… / Lo tumba si…» para
+mirarlos.
+
 ## De dónde sale
 
 - **Ventana:** las **764 lecciones pendientes** del skill, de **169 partidos**
@@ -36,7 +54,9 @@ está redactado en `docs/skills/diagnostico-tactico/SKILL.md` todavía.
   EFE: las 38 son rúbrica del DTP mal aplicada, 16 de volumen, 11 del
   veredicto por rama, 4 de posesión y el resto del checklist, las vías, el
   carril, el rearme y el banco. Es el mismo hallazgo de la v1.7 y sigue siendo
-  una decisión del usuario (ver «Lo que NO se propone»).
+  una decisión del usuario (ver «Lo que NO se propone»). **10/11:** ahora son
+  46 (26 fallos y 20 parciales); la clasificación de las 46, una por una, está
+  en «El modo de fallo `lectura_efe`, uno por uno».
 - **Versión que leyó cada parte.** La v1.7 entró a la cuenta el 01/11 a las
   13:00 UTC (`simulacion.SUBIDA_VERSION`). El tramo de las 04:47 de ese día
   corrió con la v1.6. Tres lecciones lo dicen solas y no se cobran como
@@ -66,6 +86,54 @@ está redactado en `docs/skills/diagnostico-tactico/SKILL.md` todavía.
   | Media distancia | 6 | 1 | 2 | 3 | 6 |
   | Piezas y rotación (M6) | 5 | 2 | 0 | 3 | 5 |
   | Otras (no fabricar mecánica, señal del XI, plan 65-80) | 4 | 2 | 0 | 2 | 4 |
+
+### Actualización 10/11: lo que suma el dossier nuevo
+
+- **Ventana entera:** 1032 lecciones pendientes, 236 partidos, 01/11 a 09/11:
+  291 fallos, 201 parciales y 540 aciertos. **1004 acreditan**; las 18 de
+  copa y las 10 de cuarentena que enseña son las mismas del 08/11.
+- **Lo nuevo:** **268 lecciones de 67 partidos** (250 del 08/11 y 18 del
+  09/11): 84 fallos, 37 parciales y 147 aciertos. **Las 268 acreditan**
+  (`ciega` + `PRE`): ninguna es de copa ni está en cuarentena. Todas leyeron la
+  v1.7. Ninguno de los cuatro partidos que todavía deben su cuarentena (LDU
+  1631509, Palmeiras 1492426, Manta 1639824 y 1639827) aparece en este skill.
+  El dossier lista en `enCuarentena` a Huracán–Tigre 1493219 (automática, sin
+  DT declarado, no enseña): fuera.
+- **Cohorte del dossier:** 126 casos ciegos (252 lados: 105 aciertos, 55
+  parciales y 92 fallos del lado). El 1X2 acertó 67 de 126 (53 %); Brier
+  0,583 contra una línea de base de 0,648. Siguen sin ser una tasa de acierto
+  del skill (`sesgoDeAtribucion`).
+- **Ningún número:** Jev marcó 80 lecciones con `proponeMoverNumero: false`
+  (15 de las nuevas) y ninguna con `true`; `pidenMoverSinPoder` sigue vacío.
+- **Las 268 nuevas, por la regla que citan primero** (la misma agrupación,
+  hecha con el texto de `reglaTocada`; cada lección cuenta una vez):
+
+  | Regla que cita | Lecciones | Fallos | Parciales | Aciertos | Partidos |
+  |---|---|---|---|---|---|
+  | M5 · volumen y conversión | 58 | 24 | 10 | 24 | 46 |
+  | M2 · veredicto por rama | 42 | 10 | 9 | 23 | 38 |
+  | Vías (segunda línea, quinta línea, lado débil, banco en vías) | 31 | 6 | 3 | 22 | 26 |
+  | Checklist del bloque (casi todo la 6) y dos capas | 26 | 6 | 3 | 17 | 24 |
+  | Banco ofensivo | 25 | 8 | 2 | 15 | 23 |
+  | Ejecutor de penales | 20 | 5 | 3 | 12 | 17 |
+  | M3 · costo de rearmar | 15 | 5 | 4 | 6 | 14 |
+  | M1 (grid, variantes, amarillas) | 14 | 4 | 1 | 9 | 13 |
+  | Posesión por rama | 13 | 6 | 2 | 5 | 11 |
+  | MECANISMO-ABIERTO | 7 | 4 | 0 | 3 | 7 |
+  | Duelos por carril | 5 | 1 | 0 | 4 | 5 |
+  | Otras | 4 | 1 | 0 | 3 | 4 |
+  | DTP-REHACER | 3 | 1 | 0 | 2 | 3 |
+  | Pelota parada | 3 | 1 | 0 | 2 | 3 |
+  | Piezas y rotación (M6) | 2 | 2 | 0 | 0 | 2 |
+
+  OJO con la columna «Fallos»: es el veredicto del LADO, no de la lección.
+  Muchas lecciones de lados fallados dicen «confirmación» (Marseille 1552818,
+  Olympiakos 1593357, Sunderland 1557466 y otras).
+- **Lo que cambia respecto del 08/11:** nada de lo escrito se cae. Las
+  lecciones nuevas **refuerzan** los cambios 1, 2, 5, 6, 7 y 8; dan **un
+  caso en contra** al 5.(c) y al 3; y hacen subir a regla tres candidatos que
+  ya estaban anotados (cambios 12, 13 y 14). Aparece una precisión nueva de
+  la posesión (cambio 11).
 
 ### Primero, el hallazgo que ordena todo lo demás
 
@@ -135,6 +203,34 @@ propuesta tiene dos partes:
 - **La vuelta del carril escrita (v1.4/v1.5):** Volos 1593358, Coventry
   1557460, Vélez 1493241, Carabobo 1646931, AEK 1635606 y Cerro–Olimpia
   1632044.
+
+**Refuerzo 10/11.** Las 147 lecciones de acierto del 08-09/11 confirman lo
+mismo:
+- **El banco nombrado, en cualquier rama** (también ganando o igualado), fue
+  el gol o la asistencia en St. Truiden 1558678 (Matsuzawa, al minuto de entrar),
+  Beşiktaş 1584458 (Poku con 2-0), Fenerbahçe 1584459, Olympiakos 1593357
+  (González, a los dos minutos), Marseille 1552818 (Abdallah), Cerro
+  1632056, Villarreal 1570452 (Pépé y Ayoze), Köln 1575219, Cambuur 1552219,
+  Genoa 1550190, Oriente Petrolero 1645540, Le Mans 1552814 (Colas al 90') y
+  los dos lados de Portuguesa–Metropolitanos 1646934.
+- **El ejecutor de la base, primero y en cancha:** Bolívar 1645539, Rio Ave y
+  Braga 1575541 (Horta), St. Truiden 1558678, Brighton 1557458, Cruz Azul
+  1551033, Sunderland 1557466 (Le Fée), América 1551035 (H. Martín),
+  Universitario 1549553 (Lapadula), Twente 1552222 (Weghorst) y Pumas
+  1551035 (Morales, el segundo, con el primero ya fuera).
+- **`sin mecánica` bien declarado, con la frecuencia contada:** Çorum
+  1584459 (tres pares a ≤ 15'), Zulte Waregem 1558678, Genoa 1550190,
+  Feyenoord 1552221 y Macará 1639805 (mismo asistidor y mismo definidor).
+- **Volumen y conversión por separado, en los dos sentidos:** varianza bien
+  separada en Celta 1570444 (3,12 de xG), Brugge 1558672, OFI 1593356, Cerro
+  1632056, Querétaro 1551036 y Monza 1550192; acierto por encima de lo
+  generado sin acreditarlo en Milan 1550190, Independiente del Valle 1639803,
+  Benfica 1575538, Lille 1552816 y Cuenca 1639833.
+- **La vuelta del carril escrita** dio los goles en Querétaro–Puebla 1551036
+  (las dos vueltas), Cambuur 1552219, Levadiakos 1593352 e Iraklis 1593355.
+- **Las dos capas con once tardío:** Real Sociedad 1570449, The Strongest
+  1645539, Toluca 1551034, Anderlecht 1558672, Orense 1639833 y Santa Fe
+  1549862: cayó la capa de nombres y sostuvo la estructural.
 
 ## Los cambios propuestos
 
@@ -214,6 +310,58 @@ penales), La Louvière 1558675 y The Strongest 1645530 (tres penales).
 juego abierto aparte. **No se resta ningún valor fijo por penal:** sería un
 número nuevo.
 
+**Refuerzo 10/11.** Es el grupo más grande de las nuevas (58 lecciones, 46
+partidos), y el error va **en los dos sentidos**, que es lo que pide juzgar
+contra lo concedido y no con un número propio:
+- **FAVORABLE que no generó** (apertura sin «quién remata en el área»):
+  América de Cali–Deportivo Cali 1549854 (pelota parada con 7 córners, 4
+  remates en el área y 0,40), Macará–U. Católica 1639805 (7 de 14 de afuera),
+  Santa Clara–Gil Vicente 1575542 (0 al arco; el gol fue un autogol),
+  Feyenoord–Heerenveen 1552221 (1,22 contra 1,97) y América–Pumas
+  1551035.
+- **NEUTRO o DESFAVORABLE que generó mucho más de lo que concedió:**
+  Sunderland–Chelsea 1557466 (2,58 contra 0,55 cediendo el 69 %), Brest–Lyon
+  1552812 (1,92 contra 0,70), Napoli–Lazio 1550193 (2,44 contra 0,92),
+  Twente–Ajax 1552222 (2,56 contra 0,72), LDU–Barcelona SC 1639804 (1,1
+  contra 0,16) y Çorum 1584459 (2,00 contra 1,30, perdiendo 0-5).
+- **FAVORABLE que generó y concedió igual** (el (a) tal cual): Groningen–AZ
+  1552224 (2,18 contra 3,96), Marseille–Lens 1552818 («más cerca de NEUTRO
+  que de dominio»: 2,22 contra 2,0), Hoffenheim 1575215 (1,94 contra 2,61) y
+  Universitario–Moquegua 1549553 («un FAVORABLE de volumen no dice nada del
+  seguro detrás»). Y Querétaro–Puebla 1551036: el FAVORABLE de igualado duró
+  9 minutos contra un rival armado para correr por las vueltas.
+- **El punto que sostuvo el arquero propio** tampoco confirma la rama: Elche
+  1570445 (7 atajadas), Levante 1570444 (9 de Ryan con 3,12 en contra) y
+  Atalanta 1550192. Es el mismo (a) leído desde lo concedido.
+- **(b), el volumen que no viaja:** Atromitos 1593356 (NEUTRO por el 1,62 de
+  temporada; de visita, 0 al arco), Le Mans 1552814 (DESFAVORABLE por «en
+  Troyes así no generó»: 1,53 y 12 remates en el área), Schalke 1575215
+  (DESFAVORABLE por «4 sin marcar», una racha: 2,61), PAOK 1593357 («un
+  DESFAVORABLE que se apoya en el nivel dice cuánto volumen le deja») y
+  Moquegua 1549553 («0,6 goles esperados» y generó 1,2). Precisión que piden:
+  **la referencia tampoco sale de un solo partido ni de una racha.**
+- **(c), los penales en el xG:** América 1551035 (casi la mitad de 1,85),
+  Kortrijk 1558673 (~0,5 en juego abierto), Orense 1639833 (casi todo el 0,97
+  era el penal errado) e Ipswich 1557462. Cuatro más.
+
+**En contra 10/11 (un caso):** NEC–Utrecht 1552223. El cierre pide
+FAVORABLE porque las tres vías de los goles estaban en la lista y el seguro
+rival era «depende»; con el (a), 2,31 contra 2,1 es parejo y la rama queda
+NEUTRO, que es lo que se escribió. Las dos lecturas no caben juntas: **¿manda
+la diferencia de volumen o la lista de vías cumplida?** (pregunta para el
+usuario). Los cierres que juzgaron solo por lo generado (AZ 1552224, Sport
+Boys 1549552, OFI 1593356) no van en contra: generaron mucho más de lo que
+concedieron y dan lo mismo con el (a). Man United–Aston Villa 1557464 (3,63
+contra 2,94, persiguiendo DESFAVORABLE) también encaja: parejo, NEUTRO, no
+DESFAVORABLE.
+
+**Comprobación (veredictos del 08-09/11 que faltan).** Se sostiene si los
+FAVORABLE que se cobran como fallo son, otra vez, los que concedieron tanto
+como generaron o remataron de afuera. Lo tumba si aparecen FAVORABLE con lo
+generado muy por encima de lo concedido, rematado en el área, cobrados como
+fallo de mapa (entonces el problema no es la vara sino la conversión, y el
+(a) no agrega nada).
+
 **Mueve un número:** no.
 
 ### 2. M2: el veredicto con condición escribe su contrario, y ceder la pelota no es señal en ninguna dirección
@@ -281,6 +429,37 @@ por la posesión.
 «sin» en la rama persiguiendo, esa rama no sale FAVORABLE sin pesar la vuelta
 (The Strongest 1645456, de copa; Groningen 1552215).
 
+**Refuerzo 10/11.**
+- **(a) La vía entera, en los dos sentidos.** Rama recortada que igual dio
+  gol por lo que la lista tenía: Man United–Aston Villa 1557464 (DESFAVORABLE
+  persiguiendo y «las cuatro vías escritas dieron gol»), Le Mans 1552814,
+  Gil Vicente 1575542 (dejó afuera la transición de Murilo, la primera vía
+  del propio M2), Iraklis 1593355 (la vía listada tercera), Betis 1570445 y
+  PSV 1552219 (las secundarias). Y el reverso, NEUTRO para una rama sin vía:
+  Barcelona SC 1639804, Levante 1570444, Chelsea 1557466, Monterrey 1551034 y
+  Lyon 1552812 (con el 9 titular fuera y cinco piezas rotadas). Son cinco de
+  las ocho `lectura_efe` nuevas.
+- **(b) La condición y su contrario:** Carabobo–La Guaira 1646935 (la
+  transición dependía de que el obligado se volcara; sin stats, no se sabe si
+  lo hizo). Y la confirmación de escribirlo: Deportivo Cali 1549854 («si
+  América no se abre, poco volumen propio», y así fue).
+- **(c) Ceder no es señal en contra:** Sunderland 1557466 (31 % y 2,58),
+  Brest 1552812 (cedió el 69 % y generó 1,92) y UTC 1549552 (la razón «cede y
+  vive de la transición» fue falsa: tuvo el 52 %).
+- **La rama jugada con diferencia numérica (v1.7) se cumplió bien** en
+  Beşiktaş 1584458, Brighton y Brentford 1557458, Oriente Petrolero 1645540 y
+  Jaguares 1549859 («no puesta a prueba»). Chivas 1551037 la juzgó igual con
+  37 de sus 90 minutos con uno más. Es el `minutosEnDiferencia` pendiente.
+- **Dos FAVORABLE en la misma rama** (v1.7): Atlético–Barcelona 1570443 (1,71
+  contra 1,62). Es el primer caso del aviso `M2-RAMAS-ESPEJO`, que no existe.
+
+**En contra 10/11:** ninguna.
+
+**Comprobación.** Se sostiene si los veredictos que faltan siguen trayendo
+ramas con gol por un renglón de la lista que la razón no citó, o ramas sin vía
+dadas NEUTRO. Lo tumba si las ramas que citan su lista entera fallan igual
+que las recortadas (la lista entera no separaría nada).
+
 **Mueve un número:** no.
 
 ### 3. Posesión: «igualado» y «arriba» se escriben aparte cuando la ventaja puede llegar temprano
@@ -320,6 +499,25 @@ ganando en La Nueva Olla»).
 
 Y cuando la rama queda sin referencia, va **la dirección**, nunca vacía
 (Telstar y Utrecht 1552214 dejaron una rama «sin dato»).
+
+**Refuerzo 10/11.** Un caso nuevo de «igualado» y «arriba» mezclados:
+Trinidense–Ameliano 1632061 («la ficha no parte la posesión por tramo»,
+45-55 con 46 minutos ganando). Y uno más para la precisión del DT nuevo: Rio
+Ave–Braga 1575541 (la referencia era de otro DT y otro modelo: con Franclim
+en 3-4-3, 53 %): es el mismo Rio Ave de 1575527, ya citado arriba, en otro
+partido. Lo demás de la posesión que traen las
+nuevas es otra cosa y va en el cambio 11.
+
+**En contra 10/11 (un caso):** Heerenveen–Feyenoord 1552221. La referencia
+era del mismo perfil (NEC, que quería la pelota: 38 %) y la dirección igual
+se invirtió (54 %). El cierre lo anota «contraejemplo de un caso, sin mover
+magnitud». No tumba la regla —sin referencia del mismo perfil sería peor—,
+pero dice que la dirección tampoco es segura con ella.
+
+**Comprobación.** Se sostiene si en los veredictos que faltan la posesión de
+«igualado o arriba» vuelve a fallar en partidos con gol temprano del foco.
+Lo tumba si fallan igual las ramas que no tuvieron gol temprano: entonces el
+problema no es mezclar los dos estados.
 
 **Mueve un número:** no. La magnitud sigue sin calibrarse.
 
@@ -368,6 +566,26 @@ bloque que cede. Faltó el otro lado y faltaron nombres:
 **Regla propuesta:** la línea de media distancia va **en las vías de los dos
 lados** cuando uno de los dos ataca un bloque replegado, con **todos** los
 rematadores de afuera del once, no uno.
+
+**Refuerzo 10/11 (a).** Santa Clara–Gil Vicente 1575542: la pelota parada de
+Pacheco y Fernandes tuvo 1 córner en 90 minutos contra un rival que se quedó
+la pelota, y el cierre pide lo mismo que el (a). Ameliano 1632061: la pelota
+parada de Falabella y Paredes, con 1 córner. Y el cruce decide, no el
+promedio: Trinidense 1632061 (6,6 de promedio, 4 en el cruce, ningún gol de
+pelota parada), Juventus–Fiorentina 1550189 (12 córners y el 2-2 de Bremer) y
+Monza 1550192 (7 contra 2, vía bien nombrada que cerró el arquero).
+
+**Refuerzo 10/11 (b).** Genoa–Milan 1550190: 10 de 17 remates de afuera
+persiguiendo, la media distancia que el M2 listaba fue la vía principal.
+Ningún caso nuevo de la media distancia del que cede.
+
+**En contra 10/11:** ninguna.
+
+**Comprobación.** Se sostiene si en lo que falta la pelota parada del que cede
+vuelve a quedarse sin córners. Lo tumba si los equipos que ceden y tienen la
+pelota parada como vía principal la convierten con pocos córners en varios
+partidos (como Chapecoense 1492443): entonces la materia no es el córner del
+cruce.
 
 **Mueve un número:** no.
 
@@ -420,7 +638,47 @@ no está fijado y se dice así (ADT–Comerciantes 1549539, River 1493227).
 
 **Candidato, no regla (dos casos):** el lateral o defensor fresco que llega es
 banco ofensivo por rol (Başakşehir 1584463: Bulut asistió el gol decisivo;
-Bolívar 1645531: Rivero, defensor que entró al 65').
+Bolívar 1645531: Rivero, defensor que entró al 65'). **10/11: sube a regla,
+ver el cambio 12.**
+
+**Refuerzo 10/11 (la lista).** El titular habitual rotado primero, que **ya
+es regla de la v1.7**, se incumplió en tres partidos y en los tres decidió:
+Heerenveen–Feyenoord 1552221 (Meerveld, en el XI de referencia, salió
+suplente, entró al descanso e hizo tres goles; el parte escribió «banco
+corto»), Asteras–Kalamata 1593354 (Carreazo asistió) y Kortrijk 1558673
+(Dejaegere, 9 de 10 titularidades, recibió el penal del 83'; además el banco
+escrito, Roche y Podgoreanu, no estaba en la hoja). Le faltó quien decidió:
+Rayo 1570449 (Nteka), PSV 1552219 (A. Santos con 3-1), Porto 1575544 (Martim
+Fernandes) y las vías de Le Havre contra Lorient 1552813 (Kone, al 66'). Y
+**(a)** Cruz Azul 1551033: Ibáñez, nombrado en el banco, fue titular y marcó.
+Todo esto es la lista calculada que falta (`bancoOfensivo`).
+
+**Refuerzo 10/11 (c), el más claro de la tanda.** El que patea entró del
+banco o es el 9 que entra por el ejecutor, en seis partidos:
+- Crystal Palace 1557459: Nketiah, que entró por Strand Larsen;
+- Bucaramanga 1549859: B. Caicedo, el 9 que entraba por Pons (suspendido);
+- UCV Moquegua 1549553: Angulo, el único de la base, en el banco: entró al
+  73' y pateó al 78';
+- Freiburg 1575216: Grifo, entrado al 68', con Ginter en cancha;
+- Ipswich 1557462: Clarke, entrado al 53', con los dos nombrados en cancha;
+- Trinidense 1632061: O. Giménez, del banco ofensivo, con los dos nombrados ya
+  fuera.
+
+Y la muestra mínima no fija el orden: Llaneros 1549853 (pateó Vásquez con
+Ospina en cancha), Santa Fe 1549862 (Fagúndez 1 de 1; pateó Rodallega) y
+Orense 1639833 (Herrera 1 de 1; pateó Mena). Panathinaikos 1593355 suma un
+caso nuevo y suelto: el segundo de la lista fue el que recibió la falta
+(candidato, un caso).
+
+**En contra 10/11 (un caso), del «después de un errado»:** AZ 1552224.
+Meerdink erró el penal del 59' y pateó y convirtió el del 90+1. La regla del
+(c) dice que la lista dice quién patea después de un errado; tiene que poder
+decir **«el mismo»**: no es que patee otro, es que se escribe.
+
+**Comprobación.** Se sostiene si en los veredictos que faltan vuelve a patear
+un suplente o el 9 que entra por el ejecutor nombrado. Lo tumba si los
+penales que faltan los patea siempre el primero de la base estando en
+cancha: entonces el tercer nombre es ruido.
 
 **Mueve un número:** no.
 
@@ -473,6 +731,40 @@ anunciaba la vuelta de Pollero, que hizo un gol). **No cambia la regla:** el
 recibo puede comparar la caja de sensibilidad del EFE con las variantes del M1
 (ver «Para la app»).
 
+**Refuerzo 10/11.**
+- **(a) El grid ya capturado, leído a ojo, en cuatro partidos nuevos:**
+  Beşiktaş 1584458 (once con grid a las 17:37, rehacer a las 17:46: Trossard y
+  Fakılı en la banda contraria, y los duelos de carril del M2 al revés), Le
+  Havre 1552813 (Mizuta y Samatta, cada uno en la casilla del otro), Rayo
+  1570449 (4-3-3 escrito, 4-2-3-1 en el grid con Pedro Díaz de mediapunta) y
+  América de Cali–Deportivo Cali 1549854 (Bertel lateral en 2:1 y Tovar
+  central en 2:3: la vía rival «Martínez a la espalda de Tovar» se escribió
+  sobre una casilla que no existía, el mismo hueco que Espanyol). Brentford
+  1557458 es parecido, pero el once llegó después del depósito: no cuenta.
+- **(b) Al rehacer, las piezas del seguro:** Kalamata–Asteras 1593354 (el
+  doble pivote del seguro rival «fijo» con Piñeiro, que no estaba en la hoja;
+  el corte de ausentes no pidió rehacer). Y Alianza Valledupar 1549853 da el
+  costado opuesto: la apertura (3-4-3) era la buena y el rehacer la pasó a
+  4-2-3-1 por un dato de la API que se corrigió después del pitazo. Es
+  `dato_api`, no del skill.
+- **(c) La señal anunciaba otra línea:** UCV Moquegua 1549553 (la caja de
+  sensibilidad del EFE decía «Soto mete línea de cinco para el punto», la
+  apertura escribió solo el 4-2-3-1 y jugó 5-4-1). Tercer caso con el EFE como
+  fuente de la señal (Levadiakos 1593348 y Táchira 1646932 eran del 01-07/11).
+  Y Brugge–Anderlecht 1558672: el rol reasignado sin el pivote fijo no estaba
+  entre las alternativas del M1 (un caso).
+
+**En contra 10/11:** ninguna de los cambios (a)-(c). Sobre la excepción del
+M1 que ya existe (apartarse del último once con fuente), dos a favor y uno en
+contra: Carabobo 1646935 y Bournemouth 1557462 se apartaron y acertaron 11 de
+11; Blooming 1645540 se apartó por una previa de prensa y salió el último
+once oficial. No pide cambio: la excepción ya exige la fuente.
+
+**Comprobación.** Se sostiene si en los rehacer que faltan el M1 vuelve a
+apartarse del grid ya capturado. Lo tumba si los M1 que faltan copian el grid
+y el mapa de carriles falla igual: entonces el grid de la API no describe la
+banda real.
+
 **Mueve un número:** no.
 
 ### 7. La vía de expulsión, de los dos lados y con el historial
@@ -503,6 +795,26 @@ Y tres más con la pieza del seguro sin su carga:
   con eso.
 - La rama más probable escribe su línea con uno menos (v1.7) cuando cualquiera
   de esas piezas está en el once.
+
+**Refuerzo 10/11.** Tres más, y uno pide precisar:
+- **Monterrey–Toluca 1551034:** el M1 nombró a Chávez (4 amarillas, la del
+  límite) y la roja fue del central Salcedo al 61', tras cinco amarillas de
+  Monterrey entre el 48' y el 71'. Precisión: **la vía de expulsión va con
+  todas las piezas de la línea que defiende el duelo**, no solo con la que
+  está al borde del ciclo.
+- **Barcelona 1570443:** Marc Bernal, contenedor único sin Rodri, vio amarilla
+  al 74' y salió en el acto; el M1 lo nombró como rol reasignado sin sus
+  amarillas, que la tabla F1 ya traía.
+- **Gençlerbirliği–Beşiktaş 1584458:** el M1 nombró la zaga nueva como
+  vulnerabilidad sin las amarillas de sus centrales; Baltacı se fue a los 22' y
+  la rama persiguiendo se jugó 68 minutos con diez.
+
+**En contra 10/11:** ninguna.
+
+**Comprobación.** Se sostiene si en lo que falta hay rojas de piezas del
+seguro o de la línea que el M1 no cargó. Lo tumba si las rojas que faltan son
+de piezas sin amarillas previas ni papel en el duelo: entonces la vía de
+expulsión no se puede leer antes.
 
 **Mueve un número:** no. Las amarillas ya salen de la base
 (`amarillasEnLaCompeticion` en `f1/{id}`).
@@ -543,6 +855,36 @@ Panathinaikos 1593349 y Santa Fe–Cúcuta 1549845.
 
 **Candidato, no regla (un caso):** «con ventaja, un cambio atrás por vez»
 funcionó como palanca en Roma–Sassuolo 1550187, contra un rival de 0,3 de xG.
+
+**Refuerzo 10/11.** Quince lecciones nuevas, y casi todas lo dicen igual:
+- **Con ventaja o igualado:** Aston Villa–Man United 1557464 (cinco cambios
+  del 71' al 86' con 4-2: dos goles en el añadido), Porto 1575544 (central
+  cambiado al 66' con ventaja mínima, gol al 77'), Cerro–Recoleta 1632056
+  (cuádruple cambio con 0-0 y dos defensores fuera: gol en el minuto
+  siguiente) y Fiorentina–Juventus 1550189 (el cambio para sostener la
+  ventaja, en el doble pivote, un minuto antes del 2-2).
+- **Persiguiendo, sin el «quién queda atrás»:** Feyenoord–Heerenveen 1552221
+  (sale Watanabe al 65': goles al 84' y al 90+3), Man United 1557464 (Maguire
+  al descanso: penal al 48' y gol al 53'), Tigres 1551033 (dos rearmes, dos
+  concesiones), León y Chivas 1551037 (los dos lados, uno de ellos con uno
+  más), Orense 1639833 y Lazio 1550193.
+- **El costo de un carril:** Milan–Genoa 1550190 (Musah, carrilero derecho,
+  sale al 87' y al 88' marca el carrilero rival que atacaba ese lado, con el
+  duelo escrito en el M2).
+- Con la roja: Jaguares 1549859 y Gençlerbirliği 1584458 (la línea rehecha
+  en minutos).
+
+**En contra 10/11 (contraejemplos, como los de la v1.7):** Barcelona SC
+1639804 y Barcelona 1570443 rearmaron y no concedieron. Sostienen que es vía y
+no certeza; no van contra el cambio.
+
+**Candidato que suma un caso:** el rearme del doble pivote cuenta como el de
+la línea de fondo (Fiorentina 1550189, sin crónica del gol). Uno.
+
+**Comprobación.** Se sostiene si en los veredictos que faltan vuelve a llegar
+un gol en contra a pocos minutos de un cambio atrás con el foco ganando o
+igualado. Lo tumba si los goles tras un rearme salen siempre de otra zona que
+la rearmada: entonces el «quién queda atrás» no es la vía.
 
 **Mueve un número:** no.
 
@@ -591,6 +933,21 @@ como el régimen de la v1.5). Sigue siendo vía a verificar y no degrada K.
 **baje el veredicto** de esa rama (Cúcuta, de la v1.7, y Westerlo 1558679).
 Con dos casos no se aprueba.
 
+**Refuerzo 10/11.** El conteo a mano sigue saliendo bien (Çorum 1584459,
+Zulte Waregem 1558678, Genoa 1550190, Feyenoord 1552221 con dos pares,
+Macará 1639805 con el mismo asistidor y definidor) y ninguno fabricó la
+jugada. Del (c): Metropolitanos 1646934, el mecanismo de no sostener una
+ventaja de un gol fuera, **cuarta vez en el cuadrangular**, aun con siete
+cambios en el once. Del candidato de los penales en serie, un tercer caso:
+ver el cambio 13.
+
+**En contra 10/11:** ninguna. Nada nuevo para (a) ni (b).
+
+**Comprobación.** Se sostiene si los pares de MECANISMO que traen los
+veredictos que faltan vuelven a necesitar la reserva (con diez, autogol,
+partido resuelto) para leerse. Lo tumba si ningún par nuevo la necesita: la
+reserva sería letra muerta.
+
 **Mueve un número:** no.
 
 ### 10. El reconvertido también ataca: pasa de candidato a regla
@@ -607,6 +964,213 @@ vías del foco.
 
 **Honestidad:** de los tres casos, dos acreditan y uno es de copa. Es rúbrica,
 no un número; se aprueba aparte.
+
+**10/11:** ningún caso nuevo de un reconvertido que ataque. Lo que traen las
+lecciones nuevas del reconvertido es la otra cara (que el mismatch contra él
+no está dado): va en el cambio 14.
+
+**Comprobación.** Se sostiene si aparece en lo que falta otro reasignado con
+gol o asistencia desde el puesto de hoy. Lo tumba si los reasignados de los
+veredictos que faltan solo aparecen como vulnerabilidad.
+
+## Cambios nuevos (10/11)
+
+Salen de las 268 lecciones del 08-09/11, que acreditan todas, sumadas a las
+del 01-07/11 cuando el candidato ya estaba anotado. Ninguno mueve un número.
+
+### 11. Posesión: el perfil de balón del rival se mide en su condición de hoy
+
+La v1.7 pide la referencia de un rival «del mismo perfil». En siete partidos
+nuevos el perfil se tomó bien por su tipo y mal por su **condición**: del
+promedio de temporada, de un partido en la otra sede o de la etiqueta del
+sistema, y la **dirección** se invirtió.
+
+| Partido | De dónde salió el perfil | Lo que pasó |
+|---|---|---|
+| OFI–Atromitos 1593356 (los dos lados) | el 54 % de temporada de Atromitos | de visita cedió: 37 %; OFI, escrito «menos pelota», tuvo el 63 % |
+| Genk–Union 1558676 (los dos lados) | el 58 % de Genk en Mechelen | en el campo del 3.º, que no cede de local, 46 %; Union 54 % |
+| Olympiakos–PAOK 1593357 | la media de PAOK contra otros rivales | de local, ante un 4-4-2 que cedió, 64 % |
+| Le Mans–Monaco 1552814 | Troyes, un rival que cedía (61 %) | contra Monaco, que la quiere, 48 % |
+| Hoffenheim–Schalke 1575215 | el 40 % de Schalke ante Leipzig | contra un local que cede y sale, 51 % |
+| Sport Boys–UTC 1549552 | «el descendido cede» | sin objetivo, no cedió: 48 % |
+| Nacional Potosí–Real Potosí 1645538 | «el 5-4-1 cede» (la etiqueta del sistema) | un bloque de cinco que sale de contra no cedió: 47 % |
+
+**Regla propuesta (rúbrica).**
+- El perfil de balón del rival es **el de su condición de hoy**: su posesión
+  de local o de visita en la competición, y con el objetivo de hoy. Ni su
+  promedio de temporada, ni un partido en la otra sede, ni la etiqueta del
+  sistema («un bloque de cinco cede»).
+- Sin partidos en esa condición, va la dirección con su razón, como ya dice la
+  v1.7.
+
+**Contradicción a la vista (pregunta para el usuario).** La v1.7 cita a
+Paderborn: «con dos equipos que ceden, decide el perfil del rival, no la
+sede». Leído como «la sede del foco no decide», no choca: lo que se propone
+es que **el perfil del rival se lea en su sede**. Leído como «la sede no
+importa», sí choca. ¿Se reescribe el ejemplo de Paderborn con esta lectura?
+
+**En contra:** Heerenveen–Feyenoord 1552221 (la referencia era del mismo
+perfil y la dirección igual se invirtió; ver el cambio 3).
+
+**Calculable:** la posesión media del rival **por condición** (local y
+visita) y con el DT de cada partido, en los insumos del DTP. Es la misma
+`posesionReferencias` pendiente desde la v1.7, con la sede adentro.
+
+**Se sostiene si** en los veredictos que faltan la posesión vuelve a
+invertirse en partidos donde el rival tiene perfiles distintos de local y de
+visita. **Lo tumba si** las inversiones que faltan son de rivales con el mismo
+perfil en las dos sedes: entonces la condición no es la causa.
+
+**Mueve un número:** no. La magnitud sigue sin calibrarse.
+
+### 12. El lateral o el defensor fresco que llega es banco ofensivo (de candidato a regla)
+
+El 08/11 quedó como candidato con dos casos (Başakşehir 1584463: Bulut asistió
+el gol decisivo; Bolívar 1645531: Rivero, defensor que entró al 65'). Las
+lecciones nuevas suman cuatro partidos, todos acreditables:
+- **Man United–Aston Villa 1557464:** Dorgu, que entró al 66' como lateral,
+  asistió el 3-4 e hizo el 4-4; no estaba en la lista del banco.
+- **Bucaramanga 1549859:** la asistencia del 0-3 la dio Hinestroza, lateral
+  entrado al 63'.
+- **Porto–Vitória 1575544:** el gol del triunfo, de Martim Fernandes, lateral
+  que entró al 58' por un extremo y no estaba en el banco nombrado.
+- **Chivas–León 1551037:** el empate de León llegó de un defensor entrado
+  (Bellón), asistido por un central, cuando la rama nombraba solo atacantes.
+
+**Regla propuesta (rúbrica):** el banco ofensivo por rol incluye al **lateral
+o carrilero fresco que llega** y, en la rama persiguiendo, al **defensor que
+entra a cargar el área**. No es todo el banco: es el que por su rol de hoy
+llega al área rival.
+
+**Calculable:** en `bancoOfensivo` (pendiente), con el rol de la hoja; el
+lateral entra si su último partido lo tuvo de lateral o carrilero.
+
+**Se sostiene si** en los veredictos que faltan vuelve a marcar o asistir un
+lateral o defensor entrado. **Lo tumba si** no aparece ninguno y las listas
+crecen sin acertar más (la lista se vuelve el banco entero).
+
+**Mueve un número:** no.
+
+### 13. Los penales concedidos en serie son del equipo, no de una línea
+
+Candidato desde la v1.7 (La Guaira 1646922), con un segundo caso el 08/11
+(Portuguesa–La Guaira 1646930: «tercer penal concedido en dos partidos ante
+el mismo rival», con otra línea). Tercer caso, de otro equipo:
+**Universitario–UCV Moquegua 1549553** (segundo partido seguido en que la U
+concede un penal en el Monumental, el 05/11 y hoy al 78', con líneas
+parecidas).
+
+**Regla propuesta (rúbrica):** un equipo que concedió penales en dos partidos
+seguidos lleva **«penal en contra»** en las vías del rival como vía **del
+equipo**, sin atarla a una línea ni nombrar al infractor sin crónica. Sigue
+siendo vía a verificar: no degrada K ni baja un veredicto.
+
+**[DECIDE EL USUARIO]:** llega a tres casos, pero dos son del mismo cruce del
+cuadrangular venezolano y los tres están sin crónica. Por la letra de «Cuándo
+se reabre» (tres casos acreditables en partidos distintos) entra; por el
+espíritu (tres equipos distintos) no. ¿Entra o espera un caso de otro equipo?
+
+**Calculable:** los penales concedidos por el equipo en sus últimos
+partidos, de los eventos (`Penalty` del rival), en los insumos del DTP.
+
+**Se sostiene si** en lo que falta un equipo con dos partidos seguidos
+concediendo penal vuelve a conceder. **Lo tumba si** los que vienen de dos
+seguidos no conceden en el tercero, en varios equipos.
+
+**Mueve un número:** no.
+
+### 14. Un reconvertido o una línea nueva es vía a verificar, no un mismatch dado (de candidato a regla)
+
+Candidato del 08/11 con Getafe 1570438 y Lille y Bodø 1635640 (dos de los tres
+eran del mismo partido). Suma un tercer partido, de los dos lados:
+**Napoli–Lazio 1550193**. La Lazio apoyó el FAVORABLE de igualado en el 2
+contra 1 sobre el carrilero reconvertido del Napoli y generó 0,92 contra
+2,44; el cierre del Napoli lo dice desde el otro lado: «un bloque improvisado
+de local con De Bruyne y McTominay no pierde el volumen por la reconversión
+de un carril». Con el candidato de la v1.7 (el mismatch contra un lateral
+suplente que nadie ataca, Lille–Lens), es la misma idea.
+
+**Regla propuesta (rúbrica):** un mismatch contra un reconvertido, un lateral
+suplente o una línea nueva **sostiene un FAVORABLE solo si la vía que lo ataca
+está nombrada** (quién, por dónde y qué remate sale de ahí). Sin eso, va como
+vía a verificar y la rama no sube por él. Es la misma vara del cambio 1: la
+superioridad en una zona dice cómo termina en remate.
+
+**Encaja con el cambio 10**, no lo contradice: el reconvertido tiene dos caras
+y ninguna está dada.
+
+**Se sostiene si** en lo que falta otro FAVORABLE apoyado en un reconvertido
+rival no genera. **Lo tumba si** los FAVORABLE apoyados en un reconvertido
+generan más que los demás en los veredictos que faltan.
+
+**Mueve un número:** no.
+
+## El modo de fallo `lectura_efe`, uno por uno
+
+Jev puso `lectura_efe` en **46 lecciones pendientes del DTP** (26 de lados
+fallados y 20 parciales): 38 del 01-07/11 y **8 nuevas** del 08/11. (El
+`porModoFallo` del dossier dice 58, pero cuenta otra cosa: los lados fallados
+de la cohorte, no las lecciones.)
+
+**Las 46 son del DTP. Ninguna es del EFE.** Ninguna nombra un bloque, un
+sub-score, la F1 ni la clasificación del EFE; la única que menciona algo
+parecido (Tijuana 1551030: «DTP-REHACER tardío, la API corrigió la
+formación») habla del once, no del EFE. Por la regla que citan:
+
+| Regla del DTP que citan | Lecciones | Las 8 nuevas | Cambio de esta propuesta |
+|---|---|---|---|
+| M2 · veredicto por rama (vía entera, sin vía → DESFAVORABLE, condición) | 21 | Barcelona SC 1639804, Levante 1570444, Chelsea 1557466, Man United 1557464, Monterrey 1551034 | 1.(a) y 2 |
+| M5 · volumen y conversión | 11 | — | 1 |
+| Posesión por rama | 5 | OFI 1593356 | 3 y 11 |
+| Checklist del bloque · la 6 | 3 | Aston Villa 1557464 (la línea del caso cambió en dos de cuatro) | ya es v1.7 (5.(g)) |
+| Banco ofensivo | 2 | Heerenveen 1552221 (el titular rotado) | 5 y 12 |
+| Vías (quinta línea) | 2 | — | candidato «presión con su vuelta» |
+| Duelos por carril | 1 | — | ya es v1.5 |
+| M3 · rearme | 1 | — | 8 |
+
+**Para el EFE (no son regla del DTP).** Fuera de la etiqueta, tres lecciones
+del DTP leen al EFE como fuente: UCV Moquegua 1549553, Levadiakos 1593348 y
+Táchira 1646932. En las tres la caja de sensibilidad del EFE anunciaba otra
+línea u otro once, y **el que falló fue el DTP** (la regla de las dos
+variantes es de la v1.6: cambio 6.(c)). Lo único que le tocaría al EFE es de
+forma: que la caja de sensibilidad escriba la línea alternativa con su sistema
+y la pieza que entra, de modo que la app pueda compararla con el M1. Se anota
+para la revisión del EFE, no acá. Y Rennes–Lille 1552816: la alerta
+EJE-DEBUTANTE del EFE (Oliveira por Rouault) era la señal de que la línea del
+caso de la 6 había cambiado; cruzarlas es de la app.
+
+**Lo que sigue siendo del usuario** (ya estaba en «Lo que NO se propone»): un
+casillero propio del DTP en la taxonomía de Jev (`lectura_dtp`) o redefinir
+`lectura_efe` como «lectura del skill». Con 46 de 46 mal etiquetadas, el
+`porModoFallo` del DTP no dice nada útil hoy.
+
+## `rolesVsGrid`: lo que dicen las lecciones
+
+`ROLES_GRID_REHACE` sigue en `False` (`backend/analisis/dtp_cowork.py`), y la
+medición del 05/11 dio 9 reales y 0 falsos (incidencia 1232,
+`docs/DEUDA.md` punto 20).
+
+**Las lecciones no alcanzan para contar sus hallazgos.** Solo una de las 1032
+nombra `rolesVsGrid`: Belgrano–Gimnasia 1493233 (05/11), **real** (marcó a
+Benítez y la pareja Ricca–López, el rehacer no tocó a Belgrano y el descuento
+fue de Benítez por la banda que el mapa tenía al revés). City 1635710 lo trae
+como `contraElOnce`, también real.
+
+**Lo que sí traen:** cuatro rehacer nuevos con el grid ya capturado y el rol
+leído al revés, que el cierre comprobó contra la ficha y son reales por
+definición: Beşiktaş 1584458, Le Havre 1552813, Rayo 1570449 y América de
+Cali 1549854 (cambio 6.(a)). Ninguna lección cita un hallazgo de
+`rolesVsGrid` que haya resultado falso.
+
+**Medición para decidir (calculable, 0 tokens):** cruzar
+`contraElOnce.rolesVsGrid` de esos cuatro partidos y de Belgrano y City.
+- Si los marcó, son hallazgos reales que la corrida no rehízo: suman a los 9
+  del 05/11.
+- Si no los marcó (Rayo es de sistema, no de rol, y le tocaría a
+  `M1-VS-ONCE-OFICIAL`), es su techo de cobertura.
+
+En cualquiera de los dos casos, **nada de las lecciones va en contra de
+promoverlo**; la decisión sigue siendo del usuario.
 
 ## Para la app, no para el skill
 
@@ -651,6 +1215,44 @@ construyen, la mitad de las lecciones de esta ventana no habría hecho falta:
   6.(c)): si el EFE del mismo parte anota otra línea y el M1 escribe una sola,
   aviso.
 
+**Actualización 10/11: verificado en el código.** Con `grep` sobre `backend/`,
+`src/` y `docs/openapi.yaml` (rama del 10/11, desde `origin/main` 60ba263),
+**lo pendiente del DTP en `docs/revisiones/PENDIENTES.md` sigue sin hacerse**:
+no existe ninguno de `P6-OTRA-LINEA`, `M1-VS-ONCE-OFICIAL`, `bancoOfensivo`,
+`DTP-BANCO-UN-LADO`, `DTP-PENAL-EJECUTOR-FUERA`, `M2-RAMAS-ESPEJO`,
+`casoBloquePropuesto`, `posesionReferencias`, `minutosEnDiferencia`,
+`cubreRama`, `rearmes` ni los córners concedidos; tampoco el volumen dentro del
+área en ningún módulo, ni los pares de MECANISMO (el backend solo marca
+`mecanismoAbiertoCandidato` con ≥ 2 goles recibidos). `rolesVsGrid` existe, en
+sombra (`ROLES_GRID_REHACE = False`). Lo que las 268 nuevas le suman a cada
+uno:
+
+| Pendiente (de PENDIENTES.md o del 08/11) | Casos nuevos del 08-09/11 |
+|---|---|
+| `bancoOfensivo` y `DTP-BANCO-UN-LADO` | Heerenveen 1552221, Asteras 1593354, Kortrijk 1558673 (fuera de la hoja), Rayo 1570449, PSV 1552219, Porto 1575544, Le Havre 1552813, Cruz Azul 1551033 y los cuatro del cambio 12 |
+| `penales[]` con quién entra y `DTP-PENAL-EJECUTOR-FUERA` | los seis del cambio 5.(c) y los tres de muestra mínima |
+| `M1-VS-ONCE-OFICIAL` | Beşiktaş 1584458, Le Havre 1552813, Rayo 1570449, América de Cali 1549854 |
+| `P6-OTRA-LINEA` y `casoBloquePropuesto` | Aston Villa 1557464 (la línea del caso cambió en dos de cuatro), Rennes 1552816 (un central cambiado), Gent–Kortrijk 1558673 (el checklist respondió por una zaga que no jugó); y al menos 15 cierres que escribieron a mano el caso de la 6 para la apertura siguiente (Inter 1550191, Puebla 1551036, Brest 1552812, Sunderland 1557466, UTC 1549552, Toluca 1551034, Bournemouth 1557462, entre otros) |
+| M5 con volumen dentro del área (`dtp.porBloque[].volumen`, `cubreRama`) | las 58 del cambio 1; y Trinidense 1632061 («la ficha no parte la posesión por tramo») |
+| Pares de MECANISMO a ≤ 15' | Çorum 1584459, Zulte Waregem 1558678, Genoa 1550190, Feyenoord 1552221, Macará 1639805 |
+| `minutosEnDiferencia` | Beşiktaş 1584458, Brighton y Brentford 1557458, Oriente Petrolero 1645540, Jaguares 1549859, Chivas 1551037, Nacional Potosí 1645538 |
+| `M2-RAMAS-ESPEJO` | Atlético–Barcelona 1570443 (el primero) |
+| `rearmes` | los quince del cambio 8 |
+| `posesionReferencias` | los siete del cambio 11, ahora **por condición** |
+
+**Nuevo del 10/11, para la app:**
+- **`posesionReferencias` por condición** (local y visita) y con el DT de
+  cada partido (cambio 11).
+- **El rol de la hoja en `bancoOfensivo`**, para que entren el lateral y el
+  carrilero frescos (cambio 12).
+- **Los penales concedidos por el equipo en sus últimos partidos**, de los
+  eventos (cambio 13).
+- **EJE-DEBUTANTE del EFE contra `casoBloque.linea`**: si el EFE del mismo
+  parte marca un debutante en la línea del caso, aviso de que la 6 se mira de
+  nuevo (Rennes 1552816).
+- **El cruce de `rolesVsGrid` con los cuatro partidos del cambio 6.(a)**: es la
+  medición para decidir `ROLES_GRID_REHACE` (ver su sección).
+
 **Datos y pipeline (no son del skill ni de la app de juicio):**
 
 - **La API corrige la formación después del pitazo.** Trece partidos de la
@@ -675,6 +1277,15 @@ construyen, la mitad de las lecciones de esta ventana no habría hecho falta:
 - **El rest defense cambia con los cambios** (Monagas–Caracas 1646928: el doble
   pivote del seguro estaba fuera al 68'). Si se mide, es del TDE (SOB2 del tramo
   final), no del DTP. Un caso.
+- **10/11, once tardío y su reverso.** Siguen los onces corregidos por la API
+  después del pitazo (Real Sociedad 1570449, Orense 1639833, Tigres 1551033,
+  Cerro 1632056, Toluca 1551034, Santa Fe 1549862, The Strongest 1645539,
+  Anderlecht 1558672: 7 minutos antes del pitazo). Y uno al revés: Alianza
+  Valledupar 1549853, donde **el rehacer empeoró** una apertura buena por un
+  dato de la API que se corrigió después. Es `dato_api`; si se repite, es una
+  incidencia para la rutina de rehacer, no para el skill.
+- **10/11, sin stats:** Carabobo–La Guaira 1646935 (Venezuela otra vez); la
+  regla «no evaluable por volumen» se aplicó bien.
 
 ## Lo que no cambia
 
@@ -737,6 +1348,26 @@ construyen, la mitad de las lecciones de esta ventana no habría hecho falta:
   - guardar los cambios en el tercer partido en ocho días (Caracas 1646928);
   - un 1-0 once contra once no prueba administrar una ventaja amplia
     (Instituto 1493217, el mismo caso de la v1.7: no suma).
+- **10/11, lo que cambió en esta lista:**
+  - suben a regla el lateral o defensor fresco como banco ofensivo (cambio
+    12), los penales concedidos en serie (cambio 13, con la decisión del
+    usuario) y la línea nueva o el reconvertido como vía a verificar (cambio
+    14);
+  - candidatos nuevos, sin regla: una presión alta como vía a favor se
+    escribe con su vuelta, qué pasa si la salida la supera y qué seguro queda
+    (Utrecht–NEC 1552223 y Lille–Bodø 1635640: dos); el rearme del doble
+    pivote cuenta como el de la línea (Fiorentina 1550189: uno, sin crónica);
+    el segundo de la lista de penales que es el que recibe la falta
+    (Panathinaikos 1593355: uno); y el FAVORABLE de igualado que dura minutos
+    contra un rival armado para correr por la vuelta nombra qué seguro la
+    cubre (Querétaro 1551036, con el Juárez de la v1.7: dos, y queda dentro
+    del cambio 1.(a));
+  - siguen igual el MECANISMO activo que baja el veredicto, el rest defense
+    «sin» que impide un FAVORABLE persiguiendo, el caso de la 6 con el arquero
+    que lo sostuvo, «lo sostuvo el rival fallando», el seguro en la pelota
+    parada propia, un cambio atrás por vez, la pregunta 5 con ventaja
+    temprana, guardar los cambios en el tercer partido en ocho días y el 1-0
+    once contra once: ninguna lección nueva les suma.
 - **La rotación en copa** (Palmeiras 1492447, el triple cambio del 46' con la
   vuelta a tres días): la cubre la v1.5.
 
@@ -771,16 +1402,26 @@ construyen, la mitad de las lecciones de esta ventana no habría hecho falta:
 | 8 | `rearmes` (pendiente de la v1.7), con la banda de cada cambio | calculable |
 | 9 | pares de MECANISMO (pendiente de la v1.7) con la zona de cada cambio y la reserva (`con diez`, `autogol/penal`) | calculable |
 | 10 | — | rúbrica pura |
+| 11 | `posesionReferencias` por condición (local y visita) y con el DT de cada partido | calculable |
+| 12 | el rol de la hoja en `bancoOfensivo` (laterales y carrileros frescos) | calculable |
+| 13 | penales concedidos por el equipo en sus últimos partidos, de los eventos | calculable |
+| 14 | — | rúbrica pura |
 
 Lo calculado se calcula al leer, como el resto de lo derivado. Ninguno de
 estos campos toca el motor ni un número calibrado. Los puntos 2.(b), 2.(c),
-3, 4.(b), 5.(b), 5.(c), 6.(b), 7, 8, 9.(c) y 10 son rúbrica pura.
+3, 4.(b), 5.(b), 5.(c), 6.(b), 7, 8, 9.(c) y 10 son rúbrica pura; del 10/11,
+el 14 y la regla de los cambios 11 a 13 (lo calculable de esos tres es la
+ayuda, no la regla).
 
 ## Cómo se aplica si se aprueba
 
 1. El usuario aprueba o corrige punto por punto. Se aprueban por separado:
    - el 1.(a), porque cambia cómo se juzga el veredicto en el cierre;
    - el 10, que se apoya en un caso de copa;
+   - el 11, por la pregunta sobre el ejemplo de Paderborn de la v1.7;
+   - el 13, que llega a tres casos con dos del mismo cruce;
+   - el 1.(a) con la pregunta del caso NEC 1552223 (¿manda la diferencia de
+     volumen o la lista de vías cumplida?);
    - los candidatos, que no entran.
 2. **Antes de redactar, la app** (si el usuario lo pide al mantenimiento): lo
    pendiente de la v1.7 y lo nuevo de la tabla de arriba, con
@@ -793,8 +1434,10 @@ estos campos toca el motor ni un número calibrado. Los puntos 2.(b), 2.(c),
 4. Se suma `("v1.8", fecha)` a `lecciones.CORTE_VERSION`, y la hora de subida
    del zip a `simulacion.SUBIDA_VERSION`.
 5. Se entrega el `.zip` para subir a la cuenta.
-6. Se cierran con 🔑 las anteriores a la v1.8. Las 18 de copa y las 10 de
-   cuarentena cierran igual, porque fijaron rúbrica. Sigue pendiente cerrar
+6. Se cierran con 🔑 las anteriores a la v1.8 (al 10/11, las 1032 pendientes
+   más las que dejen los veredictos del 08-09/11 que se estaban cerrando).
+   Las 18 de copa y las 10 de cuarentena cierran igual, porque fijaron
+   rúbrica. Sigue pendiente cerrar
    las anteriores a la v1.7 (`docs/DEUDA.md` punto 20).
 
 ## Resumen: qué lecciones toca cada punto
@@ -816,6 +1459,23 @@ puede alimentar más de un punto; cada lección cuenta una vez.
 | 10 · El reconvertido ataca | (dentro de M1) | — | — | — | — | — | — | — |
 | Confirman sin cambio (checklist y dos capas, vías, carril, piezas, otras) | | 154 | 37 | 37 | 80 | 145 | 6 | 3 |
 | **Total** | | **764** | **207** | **164** | **393** | **736** | **18** | **10** |
+
+**Las 268 nuevas (08-09/11), con la tabla de «Actualización 10/11».** Todas
+acreditan; ninguna es de copa ni de cuarentena.
+
+| Punto | Grupos de lecciones | Lecciones | Fallos | Parciales | Aciertos |
+|---|---|---|---|---|---|
+| 1 (y 14) · Volumen de los dos lados | M5 | 58 | 24 | 10 | 24 |
+| 2 · Rama con su contrario; ceder no es señal | veredicto por rama | 42 | 10 | 9 | 23 |
+| 3 y 11 · Posesión | posesión | 13 | 6 | 2 | 5 |
+| 4 · Pelota parada; media distancia | pelota parada | 3 | 1 | 0 | 2 |
+| 5 y 12 · Banco y penales | banco, penales | 45 | 13 | 5 | 27 |
+| 6 · Grid; rehacer | M1, DTP-REHACER | 17 | 5 | 1 | 11 |
+| 7 · Expulsión | (dentro de M1) | — | — | — | — |
+| 8 · Quién queda atrás | rearme | 15 | 5 | 4 | 6 |
+| 9 y 13 · MECANISMO | MECANISMO-ABIERTO | 7 | 4 | 0 | 3 |
+| Confirman sin cambio (checklist, vías, carril, M6, otras) | | 68 | 16 | 6 | 46 |
+| **Total** | | **268** | **84** | **37** | **147** |
 
 ## Cambio adicional (08/11, pedido del usuario): la génesis del gol
 
