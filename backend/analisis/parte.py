@@ -4459,7 +4459,19 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> lis
         if m is None:
             out.append(a)
             continue
-        out.append({**a, **m["campos"], "detalle": f"{a['detalle']} [{m['texto']}]"})
+        campos, texto = dict(m["campos"]), m["texto"]
+        # CADA MOTIVO TIENE SU MOMENTO (10/11/2026, incidencia 1350, Cuenca–Orense:
+        # `tardio` por el sistema, que la API corrigió después del pitazo, cuando
+        # el otro motivo —B. Quiñonez titular, Achilier al banco— ya estaba en el
+        # once del último depósito). Si la corrección tardía es solo la del
+        # sistema y hay motivos que no son del sistema, esos eran `conocido`.
+        otros = [x for x in a.get("motivos") or [] if not str(x).startswith("sistema:")]
+        if campos.get("momento") == "tardio" and campos.get("formacionCorregidaEn") and otros:
+            campos["momento"] = "conocido"
+            campos["motivosTardios"] = [x for x in a.get("motivos") or [] if str(x).startswith("sistema:")]
+            texto = (f"{texto}. PERO {'; '.join(otros)} ya estaba en el once del último depósito: ese motivo "
+                     "era conocido y lo rehecho no lo corrigió")
+        out.append({**a, **campos, "detalle": f"{a['detalle']} [{texto}]"})
     return out
 
 

@@ -1964,6 +1964,7 @@ def alertas_rehacer(dtp_leido: dict, nombres: dict) -> list[dict]:
                                       "Un solo XI de 11 en `xiReferencia`; las otras proyecciones, en `senalXi`.")})
         if r.get("rehacer"):
             fuera.append({"codigo": "DTP-REHACER", "equipo": b["equipo"], "tipo": "dato",
+                          "motivos": list(r["motivos"]),
                           "detalle": f"El once oficial de {nombres.get(b['equipo'], b['equipo'])} contradice "
                                      f"la apertura del DTP ({'; '.join(r['motivos'])}): el mapa de duelos "
                                      "(M2) y las vías de gol se escribieron sobre otro equipo. Rehacer M1/M2 "

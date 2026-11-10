@@ -1528,8 +1528,10 @@ export interface AlertaParte {
   motivos?: string[]
   momento?: 'tardio' | 'sinRehacer' | 'conocido'
   onceFinalEn?: string | null
-  /** solo con `momento: tardio` por una corrección de formación después del pitazo (1133) */
+  /** solo con `momento` por una corrección de formación después del pitazo (1133) */
   formacionCorregidaEn?: string
+  /** DTP-REHACER `conocido` con la corrección tardía: los motivos del sistema que llegaron tarde (1350) */
+  motivosTardios?: string[]
   ultimoDepositoPrevio?: string
 }
 
