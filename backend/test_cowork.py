@@ -4526,6 +4526,19 @@ def main():
     check("1133: la corrección viaja con SU hora (formacionCorregidaEn), aparte de la del once previo",
           _m848.get("formacionCorregidaEn") == "2026-10-25T16:40:00Z" and "a las 16:40 UTC" in _m848["detalle"]
           and _m848.get("onceFinalEn") == "2026-10-25T15:30:00Z", _m848)
+    # 1350 (Cuenca–Orense): con la corrección tardía del sistema, un motivo que no es del sistema ya era conocido
+    _m1350 = _mom([{"codigo": "DTP-REHACER", "equipo": "a", "tipo": "dato", "detalle": "x",
+                    "motivos": ["sistema: la apertura dice '4-4-2' y salió 5-4-1",
+                                "once: 3 titulares que no estaban en el XI de referencia"]}],
+                  _fx480, "2026-10-25 15:45:00")[0]
+    _m1350b = _mom([{"codigo": "DTP-REHACER", "equipo": "a", "tipo": "dato", "detalle": "x",
+                     "motivos": ["sistema: la apertura dice '4-4-2' y salió 5-4-1"]}],
+                   _fx480, "2026-10-25 15:45:00")[0]
+    check("1350: corrección tardía del sistema + otro motivo que ya estaba: `conocido` y lo dice; "
+          "solo el sistema: sigue `tardio`",
+          _m1350.get("momento") == "conocido" and _m1350.get("motivosTardios") == ["sistema: la apertura dice '4-4-2' y salió 5-4-1"]
+          and "ya estaba en el once del último depósito" in _m1350["detalle"]
+          and _m1350b.get("momento") == "tardio", (_m1350, _m1350b))
     # 1189 (Mushuc Runa–Manta): el momento del lado b sale del once de b, no de
     # la corrección del once de a
     _once_b = [{"team": {"id": 990482}, "formation": "4-4-2", "coach": {"name": "DT2"},
