@@ -176,6 +176,12 @@ for _sk, _antes, _despues in (("sad-analysis", "v4.3", "v4.4"), ("teorema-del-ec
     check(f"{_sk} 01/11 10:00 UTC → {_antes}", sim.version_al(_sk, "2026-11-01 10:00:00") == _antes,
           sim.version_al(_sk, "2026-11-01 10:00:00"))
     check(f"{_sk} 01/11 13:30 UTC → {_despues}", sim.version_al(_sk, "2026-11-01 13:30:00") == _despues)
+# los zips del 10/11 subieron hacia las 07:15 de Lima (12:15 UTC)
+for _sk, _antes, _despues in (("sad-analysis", "v4.4", "v4.5"), ("teorema-del-echado", "v0.1.25", "v0.1.26"),
+                              ("diagnostico-tactico", "v1.7", "v1.8"), ("efe-clasificador", "v1.9", "v1.10")):
+    check(f"{_sk} 10/11 10:00 UTC → {_antes}", sim.version_al(_sk, "2026-11-10 10:00:00") == _antes,
+          sim.version_al(_sk, "2026-11-10 10:00:00"))
+    check(f"{_sk} 10/11 12:30 UTC → {_despues}", sim.version_al(_sk, "2026-11-10 12:30:00") == _despues)
 
 # 8) el armado desde la base corre sobre la demo (sin partes desde el 28/10: vacío, no un error)
 out = sim.simulacion()

@@ -1041,8 +1041,8 @@ conversación se pierde en la siguiente.
    - **El núcleo** (`NUCLEO_SKILLS_propuesta.md`) queda aprobado con las cinco
      recomendaciones del resumen, pero **no se aplicó**: va después de subir
      estas versiones.
-   **Pendiente del usuario**: subir los zips, anotar la hora en
-   `SUBIDA_VERSION`, marcar la 1056 y la 1068 con 🔑 y cerrar las lecciones
+   Los cinco zips se subieron el 10/11 hacia las 07:15 de Lima (anotado en
+   `SUBIDA_VERSION`). **Pendiente del usuario**: marcar la 1056 y la 1068 con 🔑 y cerrar las lecciones
    anteriores de cada skill. **Pendiente de la app**: lo que está en
    `docs/revisiones/PENDIENTES.md`, «Redactado el 10/11».
 
