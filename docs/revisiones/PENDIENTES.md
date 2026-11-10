@@ -4,6 +4,26 @@ Lo que el usuario ya aprobó para una revisión que todavía no se escribió. La
 revisión de cada skill empieza por acá (y por su dossier en Aprendizaje): un
 pendiente que solo vive en una incidencia cerrada se pierde.
 
+## Aprobado el 10/11/2026 para la PRÓXIMA versión — «en quién desconfiar»
+
+El usuario lo aprobó para sad-analysis v4.6 y TDE v0.1.27:
+`docs/revisiones/DESCONFIAR_propuesta.md`, que sale de
+`ESTUDIO_ECHADOS_2026-11.md`.
+
+- **Alerta DESCONFIAR** en la tira del parte, con dos motivos:
+  - `SOBRE-LA-CASA`: le damos al elegido 2+ pts sobre la casa;
+  - `BURBUJA-DE-UN-PARTIDO`: racha + de un partido con riesgo alto.
+- **Una racha de un partido no sostiene al elegido.**
+- **El descarte**, declarado en el pronóstico y medido en el veredicto.
+- **`ventajaPorFuerza`** en el TDE: la ventaja por minuto, partida por
+  probabilidad previa.
+- **El desenlace de la rama de ventaja** lo pone la fuerza; la tipología
+  describe la vía.
+
+Ya registrado en la Simulación desde el 10/11 (PR #469). Qué hacer con la
+alerta en el método (seguir, bajar carga o jugar elegido-o-empate) se decide
+con 100+ partidos con alerta.
+
 ## Redactado el 10/11/2026 — lo que queda de la APP
 
 Las cuatro revisiones aprobadas el 10/11 (sad-analysis v4.5, TDE v0.1.26,
