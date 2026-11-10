@@ -85,7 +85,67 @@ def _con():
     elif con.execute(f"SELECT 1 FROM incidencia WHERE clave LIKE '%:%' AND estado NOT IN "
                      f"({','.join('?' * len(CERRADOS))}) LIMIT 1", CERRADOS).fetchone():
         reagrupar(con)
+    if "propuesta_cuarentena" not in cols:   # 10/11/2026: la cuarentena propuesta, estructurada
+        con.execute("ALTER TABLE incidencia ADD COLUMN propuesta_cuarentena TEXT")
     return con
+
+
+# LA CUARENTENA EN UN PASO (10/11/2026, usuario: «poner algo en cuarentena es
+# un dolor de huevos»). Cuando el mantenimiento deriva al usuario una
+# cuarentena, la propuesta viaja ESTRUCTURADA (`propuestaCuarentena`: los
+# partidos, el motivo y si enseña) y la tarjeta «Decisiones pendientes» la
+# aplica con un botón, con el formulario ya escrito. La regla no cambia: la
+# cuarentena va por criterio, con motivo de 12+ caracteres y con la llave
+# maestra; el mantenimiento PROPONE, el usuario la pone.
+MOTIVO_MIN = 12
+_RE_FIXTURE = re.compile(r"\b(\d{6,8})\b")
+_RE_MOTIVO = re.compile(r"«([^«»]{12,600})»")
+
+
+def _validar_propuesta(raw) -> dict | None:
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise IncidenciaInvalida("`cuarentena` es {fixtures: [ids], motivo, ensena}")
+    fixtures = raw.get("fixtures")
+    if not isinstance(fixtures, list) or not fixtures or not all(
+            isinstance(f, int) and not isinstance(f, bool) and f > 0 for f in fixtures):
+        raise IncidenciaInvalida("`cuarentena.fixtures`: la lista de partidos (ids enteros) a apartar")
+    motivo = _txt(raw.get("motivo"), 600)
+    if len(motivo) < MOTIVO_MIN:
+        raise IncidenciaInvalida(f"`cuarentena.motivo`: qué le faltaba al parte antes del pitazo ({MOTIVO_MIN}+ "
+                                 "caracteres). Un fallo no es motivo")
+    return {"fixtures": sorted(set(fixtures))[:20], "motivo": motivo, "ensena": bool(raw.get("ensena"))}
+
+
+def propuesta_de_texto(texto: str) -> dict | None:
+    """Para las propuestas escritas antes del 10/11/2026 (la 7, la 774, la
+    1153): «poner [el] N [y M] en cuarentena [que enseña] … con motivo «…»».
+    Los partidos son los números entre «poner» y «motivo» (no el del veredicto
+    que se cita después); el motivo, lo que va entre comillas angulares. Sin
+    alguna de las dos cosas no hay propuesta: no se adivina."""
+    t = texto or ""
+    m = re.search(r"poner\b(.{0,240}?)\bmotivo", t, re.I | re.S)
+    if not m or "cuarentena" not in m.group(0).lower():
+        return None
+    fixtures = sorted({int(x) for x in _RE_FIXTURE.findall(m.group(1))})
+    mot = _RE_MOTIVO.search(t[m.end():])
+    if not fixtures or not mot:
+        return None
+    tramo = m.group(0).lower()
+    return {"fixtures": fixtures, "motivo": mot.group(1).strip(),
+            "ensena": "enseña" in tramo or "ensena" in tramo}
+
+
+def _propuesta(r) -> dict | None:
+    crudo = r["propuesta_cuarentena"] if "propuesta_cuarentena" in r.keys() else None
+    if crudo:
+        try:
+            return {**json.loads(crudo), "origen": "declarada"}
+        except ValueError:  # una propuesta ilegible no se inventa: se intenta leer del texto
+            pass
+    p = propuesta_de_texto(r["resolucion"] or "")
+    return {**p, "origen": "texto"} if p else None
 
 
 def reagrupar(con) -> int:
@@ -219,7 +279,8 @@ def _dto(r) -> dict:
             "area": r["area"], "severidad": r["severidad"], "titulo": r["titulo"], "detalle": r["detalle"] or "",
             "estado": r["estado"], "resolucion": r["resolucion"] or "", "pr": r["pr"] or "",
             "veces": r["veces"], "creadoEn": r["creado_en"], "ultimaVez": r["ultima_vez"],
-            "cerradoEn": r["cerrado_en"], "fixtures": _fixtures(r)}
+            "cerradoEn": r["cerrado_en"], "fixtures": _fixtures(r),
+            "propuestaCuarentena": _propuesta(r)}
 
 
 def listar(estado: str | None = "abierta", limite: int = 200) -> dict:
@@ -264,6 +325,7 @@ def cambiar_estado(inc_id: int, payload: dict) -> dict:
         # aprobar es del usuario, con la llave maestra: POST …/decision
         raise IncidenciaInvalida("`aprobada` la pone el usuario con POST …/incidencias/{id}/decision")
     resolucion = _txt(payload.get("resolucion"))
+    propuesta = _validar_propuesta(payload.get("cuarentena"))
     if estado != "en_curso" and estado != "abierta" and not resolucion:
         # cerrar sin decir qué se hizo es esconderla
         raise IncidenciaInvalida("para cerrar o derivar una incidencia hace falta `resolucion`: qué se hizo o por qué")
@@ -276,6 +338,9 @@ def cambiar_estado(inc_id: int, payload: dict) -> dict:
                     "pr=COALESCE(NULLIF(?, ''), pr), cerrado_en=? WHERE id=?",
                     (estado, resolucion, _txt(payload.get("pr"), 300),
                      ahora if estado in CERRADOS else None, inc_id))
+        if propuesta:
+            con.execute("UPDATE incidencia SET propuesta_cuarentena=? WHERE id=?",
+                        (json.dumps(propuesta, ensure_ascii=False), inc_id))
         fila = con.execute("SELECT * FROM incidencia WHERE id=?", (inc_id,)).fetchone()
     return _dto(fila)
 
@@ -402,10 +467,12 @@ def causas(solo_recurrentes: bool = False) -> dict:
                       "reaparece = reportada de nuevo después de un PR")}
 
 
-def decidir(inc_id: int, aprobar: bool, nota: str = "") -> dict:
+def decidir(inc_id: int, aprobar: bool, nota: str = "", hecha: bool = False) -> dict:
     """La decisión del usuario sobre una `usuario` (con la llave maestra, desde
     la app). Aprobada: el mantenimiento la implementa en su próxima pasada,
-    antes que las abiertas. Rechazada: queda `por_diseno` con la decisión."""
+    antes que las abiertas. Rechazada: queda `por_diseno` con la decisión.
+    `hecha` (10/11/2026): el usuario ya la aplicó él mismo —la cuarentena en un
+    paso— y queda `resuelta`; no hay nada que el mantenimiento implemente."""
     nota = _txt(nota, 1000)
     ahora = efedb.ahora()
     with _con() as con:
@@ -415,7 +482,9 @@ def decidir(inc_id: int, aprobar: bool, nota: str = "") -> dict:
         if fila["estado"] != "usuario":
             raise IncidenciaInvalida(f"solo se decide una incidencia en `usuario` (esta está en `{fila['estado']}`)")
         previa = fila["resolucion"] or ""
-        if aprobar:
+        if aprobar and hecha:
+            estado, res = "resuelta", f"{previa}\nHECHA por el usuario el {ahora[:10]}" + (f": {nota}" if nota else "")
+        elif aprobar:
             estado, res = "aprobada", f"{previa}\nAPROBADA por el usuario el {ahora[:10]}" + (f": {nota}" if nota else "")
         else:
             estado, res = "por_diseno", f"Decisión del usuario el {ahora[:10]}: NO" + (f" ({nota})" if nota else "") \

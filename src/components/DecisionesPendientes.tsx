@@ -3,6 +3,7 @@ import { CONFIG } from '../config'
 import { SadApi } from '../api/sad'
 import { llaveAdmin } from '../lib/admin'
 import type { CausaIncidencia, IncidenciaDTO } from '../api/types'
+import { FormCuarentena } from './FormCuarentena'
 
 /** Lo que el mantenimiento no decide solo (27/10/2026, pedido del usuario).
  *
@@ -11,7 +12,12 @@ import type { CausaIncidencia, IncidenciaDTO } from '../api/types'
  *  dos disparos» son una sola decisión), con la propuesta del mantenimiento, y
  *  en modo administrador (🔑) se aprueban o rechazan: aprobada, la implementa
  *  la próxima pasada; rechazada, queda «por diseño» con la nota. Sin nada que
- *  decidir no ocupa lugar. */
+ *  decidir no ocupa lugar.
+ *
+ *  Cuando la propuesta es una CUARENTENA (10/11/2026, `propuestaCuarentena`:
+ *  la 7, la 774, la 1153), «Poner en cuarentena» abre el formulario con los
+ *  partidos y el motivo ya escritos (editables): al confirmar la pone y la
+ *  incidencia queda resuelta, sin pasar por Aprendizaje. */
 type Grupo = { clave: number; titulo: string; items: IncidenciaDTO[] }
 
 function agrupar(items: IncidenciaDTO[], causas: CausaIncidencia[]): Grupo[] {
@@ -83,8 +89,20 @@ function GrupoDecision({ g, onHecho }: { g: Grupo; onHecho: () => void }) {
   const [yendo, setYendo] = useState(false)
   const [error, setError] = useState('')
   const admin = !!llaveAdmin()
+  const [cuarAbierta, setCuarAbierta] = useState(false)
   // la propuesta más reciente del grupo es la que se decide
   const ultima = [...g.items].sort((a, b) => b.id - a.id)[0]
+  // la cuarentena propuesta: la de la más reciente que traiga una, con los
+  // partidos de todas las del grupo que propongan la misma
+  const propuesta = [...g.items].sort((a, b) => b.id - a.id).find((i) => i.propuestaCuarentena)?.propuestaCuarentena ?? null
+  const fixturesPropuestos = propuesta
+    ? [...new Set(g.items.flatMap((i) => (i.propuestaCuarentena && i.propuestaCuarentena.motivo === propuesta.motivo ? i.propuestaCuarentena.fixtures : [])))]
+    : []
+  async function cuarentenaHecha(r: { fixtures: number[]; motivo: string; ensena: boolean }) {
+    const nota = `cuarentena${r.ensena ? ' que enseña' : ''} puesta desde Decisiones pendientes: ${r.fixtures.join(', ')} — «${r.motivo}»`
+    for (const it of g.items) await SadApi.decidirIncidencia(it.id, true, nota, true)
+    onHecho()
+  }
   const desde = g.items.map((i) => i.creadoEn).sort()[0]?.slice(0, 10)
   async function decidir(aprobar: boolean) {
     setYendo(true)
@@ -110,8 +128,26 @@ function GrupoDecision({ g, onHecho }: { g: Grupo; onHecho: () => void }) {
       <div style={{ font: '500 11px var(--sans)', color: 'var(--t2)', marginTop: 5, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
         {ultima.resolucion || 'sin propuesta escrita'}
       </div>
+      {propuesta && (
+        <div style={{ font: '500 10.5px var(--mono)', color: 'var(--t2)', marginTop: 6, overflowWrap: 'anywhere' }}>
+          propone cuarentena{propuesta.ensena ? ' que enseña' : ''}: {fixturesPropuestos.join(', ')}
+          {propuesta.origen === 'texto' && <span style={{ color: 'var(--t3)' }}> · leída del texto: revisala antes de confirmar</span>}
+        </div>
+      )}
+      {admin && propuesta && cuarAbierta && (
+        <div style={{ marginTop: 7 }}>
+          <FormCuarentena fixtures={fixturesPropuestos} motivo={propuesta.motivo} ensena={propuesta.ensena}
+            textoBoton="Confirmar cuarentena" onHecho={cuarentenaHecha} onCancelar={() => setCuarAbierta(false)} />
+        </div>
+      )}
       {admin ? (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 7 }}>
+          {propuesta && !cuarAbierta && (
+            <button onClick={() => setCuarAbierta(true)} disabled={yendo}
+              style={{ padding: '5px 11px', borderRadius: 7, border: 0, background: 'var(--down)', color: '#fff', font: '600 10.5px var(--sans)', cursor: 'pointer' }}>
+              Poner en cuarentena
+            </button>
+          )}
           <input value={nota} onChange={(e) => setNota(e.target.value)} placeholder="nota (opcional)"
             style={{ flex: 1, minWidth: 150, padding: '5px 8px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--bg2)', color: 'var(--t1)', font: '500 11px var(--mono)' }} />
           <button onClick={() => decidir(true)} disabled={yendo}

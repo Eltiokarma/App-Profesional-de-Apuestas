@@ -707,7 +707,14 @@ compara.
      con «agrupada en #N». Al usuario le llega una decisión por causa, en la
      tarjeta «Decisiones pendientes» de Partidos, con la `resolucion` como
      propuesta: escribila para que se pueda aprobar sin abrir otra cosa (qué
-     cambia, dónde, qué se pierde).
+     cambia, dónde, qué se pierde). **Si lo que proponés es una CUARENTENA**
+     (10/11/2026, usuario: «poner algo en cuarentena es un dolor de huevos»),
+     mandala también ESTRUCTURADA en el mismo POST …/estado:
+     `"cuarentena": {"fixtures": [1492426], "motivo": "insumo falso: …", "ensena": true}`
+     (motivo de 12+ caracteres, por criterio y nunca por resultado; los
+     partidos a APARTAR, no el de la incidencia si es otro). La tarjeta abre el
+     formulario ya escrito y, cuando el usuario confirma, pone la cuarentena y
+     la incidencia queda `resuelta` sola: no hay nada que verificar después.
 0-bis. **El escaneo preventivo** (30/10/2026, pedido del usuario: «no esperar
    a que salten estas cosas»): `GET $B/analisis/cowork/escaneo` recorre la
    agenda de las próximas 36 h y las partes jugadas en las últimas 48 h con los

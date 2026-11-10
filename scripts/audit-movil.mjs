@@ -68,8 +68,10 @@ await nav('Aprende'); await medir('08-aprende')
 // la lección desplegada y las pestañas de Aprendizaje (reordenada el 25/10/2026)
 const detL = p.locator('button', { hasText: 'detalles y acciones' }).first()
 if (await detL.count()) { await detL.click({ timeout: 5000 }).catch(() => {}); await medir('08-aprende-leccion') }
-for (const t of ['Métricas', 'Derrotas del favorito', 'Cuarentena']) {
-  const b = p.locator('button', { hasText: t }).first()
+// «Buscar caso · cuarentena» lleva la cuarentena por partido (10/11/2026): las
+// pestañas se buscan por su comienzo para no confundirla con «Cuarentena · N»
+for (const t of ['Buscar caso', 'Métricas', 'Derrotas del favorito', 'Cuarentena']) {
+  const b = p.locator('button', { hasText: new RegExp('^' + t) }).first()
   if (await b.count()) { await b.click({ timeout: 5000 }).catch(() => {}); await medir('08-aprende-' + t.toLowerCase().replace(/[^a-z]/g, '')) }
 }
 // la simulación de apuesta (28/10/2026) y su botonera de Kelly
