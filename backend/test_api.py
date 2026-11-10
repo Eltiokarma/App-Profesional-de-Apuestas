@@ -209,6 +209,19 @@ def main():
 
     # fiabilidad de μ por liga (calibración por liga 2026-07)
     check("fiabilidadMu: LaLiga → confianza alta con nota", p["fiabilidadMu"]["nivel"] == "alta" and p["fiabilidadMu"]["nota"], p["fiabilidadMu"])
+    # 1333: estadio compartido (Nacional Potosí–Real Potosí en el Ugarte) viaja en fiabilidadMu;
+    # en la demo cada uno juega en su cancha y la marca no aparece
+    from backend.analisis import ventana_nivel as _vn1333
+    from backend.app import fiabilidad_mu_fixture, get_fixture
+    _sc1333 = _vn1333.sede_compartida
+    try:
+        _vn1333.sede_compartida = lambda h, a, antes: "Estadio Víctor Agustín Ugarte"
+        _f1333 = fiabilidad_mu_fixture(get_fixture(prog_fx["id"]))
+    finally:
+        _vn1333.sede_compartida = _sc1333
+    check("fiabilidadMu: sedeCompartida con el estadio y la nota de la localía; en la demo no aparece (1333)",
+          _f1333.get("sedeCompartida") == "Estadio Víctor Agustín Ugarte" and "estadio compartido" in _f1333["nota"]
+          and "sedeCompartida" not in p["fiabilidadMu"] and "sedeCompartida" not in pp["fiabilidadMu"], _f1333)
     from backend.app import fiabilidad_mu
     check("fiabilidadMu: amistosos → baja · liga CONMEBOL → media",
           fiabilidad_mu(667)["nivel"] == "baja" and fiabilidad_mu(281)["nivel"] == "media",

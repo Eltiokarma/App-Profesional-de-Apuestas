@@ -293,6 +293,60 @@ _ac = {"local": {"equipo": "Galatasaray"}, "visita": {"equipo": "Konyaspor"}, "m
 check("1108: la marca viaja también desde el equipo (la tarjeta de /burbujas)",
       _goles.desde_equipo(_ac, False).get("porVentana") is True
       and "porVentana" not in _goles.desde_equipo({k: x for k, x in _ac.items() if k not in _v}, True))
+# 1333 (10/11/2026, decisión del usuario): ESTADIO COMPARTIDO. Nacional Potosí–
+# Real Potosí, los dos de local en el Víctor Agustín Ugarte (1645538): el motor
+# sumó la localía (49 % local contra 37 % del mercado). Blooming–Oriente en el
+# Tahuichi, con otro venue_id y el nombre recortado. Y dos «Monumental» de
+# ciudades distintas, que NO son el mismo estadio.
+con = sqlite3.connect(os.path.join(_TMP, "sad.db"))
+con.execute("ALTER TABLE fixtures ADD COLUMN venue_city TEXT")
+_NAC, _REA, _BLO, _ORI, _UNI, _RIV, _NUE = 3901, 3902, 3903, 3904, 3905, 3906, 3907
+
+
+def _local(fid, equipo, dia, vid, nombre, ciudad=None, liga=344):
+    con.execute("INSERT INTO fixtures (id, date, status_short, league_id, home_team_id, away_team_id, venue_id, "
+                "venue_name, venue_city) VALUES (?,?,?,?,?,?,?,?,?)",
+                (fid, f"2026-{dia} 20:00:00", "FT", liga, equipo, 1, vid, nombre, ciudad))
+
+
+for _i in range(8):
+    _d = f"{3 + _i:02d}-1{_i % 9}"
+    _local(95000 + _i, _NAC, _d, 900, "Estadio Víctor Agustín Ugarte", "Potosí")
+    _local(95010 + _i, _REA, _d, 900, "Estadio Víctor Agustín Ugarte", "Potosí")
+    _local(95020 + _i, _BLO, _d, 910, "Estadio Ramón Tahuichi Aguilera", "Santa Cruz de la Sierra")
+    _local(95030 + _i, _ORI, _d, None, "Tahuichi Aguilera", None)
+    _local(95040 + _i, _UNI, _d, 920, "Estadio Monumental", "Lima")
+    _local(95050 + _i, _RIV, _d, 921, "Estadio Monumental", "Buenos Aires")
+for _i in range(2):   # recién llegado: dos de local no alcanzan para afirmar su sede
+    _local(95060 + _i, _NUE, f"10-0{1 + _i}", 900, "Estadio Víctor Agustín Ugarte", "Potosí")
+con.execute("INSERT INTO fixtures (id, date, status_short, league_id, home_team_id, away_team_id, venue_id, "
+            "venue_name) VALUES (1645538, '2026-11-08 20:00:00', 'NS', 344, ?, ?, 900, "
+            "'Estadio Víctor Agustín Ugarte')", (_NAC, _REA))
+con.commit()
+con.close()
+_F13 = "2026-11-08T20:00:00"
+check("1333: Nacional Potosí y Real Potosí, mismo venue_id de local → estadio compartido",
+      vn.sede_compartida(_NAC, _REA, _F13) == "Estadio Víctor Agustín Ugarte", vn.sede_compartida(_NAC, _REA, _F13))
+check("1333: Blooming–Oriente, el Tahuichi con otro venue_id y el nombre recortado → compartido",
+      bool(vn.sede_compartida(_BLO, _ORI, _F13)))
+check("1333: dos «Estadio Monumental» de Lima y Buenos Aires (otro id, otra ciudad) NO son el mismo",
+      vn.sede_compartida(_UNI, _RIV, _F13) is None)
+check("1333: dos estadios distintos no se comparten", vn.sede_compartida(_NAC, _BLO, _F13) is None)
+check("1333: con 2 partidos de local no se afirma la sede (ni que se comparta)",
+      vn.sede_compartida(_NAC, _NUE, _F13) is None)
+check("1333: lo de hace más de un año no es la sede de esta temporada",
+      vn.sede_compartida(_NAC, _REA, "2028-01-01T00:00:00") is None)
+_f13 = vn.fiabilidad_con_ventana(alta, {"local": None, "visitante": None}, compartida="Estadio Víctor Agustín Ugarte")
+check("1333: la fiabilidad lo avisa (sedeCompartida), «alta» baja a «media» y la nota dice que la localía no aplica",
+      _f13.get("sedeCompartida") == "Estadio Víctor Agustín Ugarte" and _f13["nivel"] == "media"
+      and "estadio compartido" in _f13["nota"] and "no aplica" in _f13["nota"], _f13)
+check("1333: sin sede compartida no aparece la marca",
+      "sedeCompartida" not in vn.fiabilidad_con_ventana(alta, {"local": None, "visitante": None}))
+_h13 = escaneo._pre({"fixtureId": 1645538, "partido": "Nacional Potosí vs Real Potosí", "fecha": "2026-11-08",
+                     "hora": "20:00", "dt": {"a": {"fiable": True}, "b": {"fiable": True}}},
+                    datetime(2026, 11, 8, 12, tzinfo=timezone.utc))
+check("1333: el escaneo marca `sede-compartida` en el clásico de Potosí",
+      any(x["chequeo"] == "sede-compartida" and "Ugarte" in x["detalle"] for x in _h13), _h13)
 
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)

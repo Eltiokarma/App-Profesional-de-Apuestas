@@ -335,6 +335,8 @@ export interface PrediccionDTO {
     porVentana?: boolean
     /** la sede no es la habitual del local: la localía de μ no aplica (991) */
     canchaNeutral?: boolean
+    /** el estadio que los dos tienen de local en la temporada: la localía de μ no aplica (1333) */
+    sedeCompartida?: string
   } | null
   /** El 1X2 del MOTOR desde los dos μ_partido (logística calibrada, §5.6): la fuente
    *  «motor» del pronóstico. null si falta un μ. μ son puntos, no goles: no va en un Poisson. */

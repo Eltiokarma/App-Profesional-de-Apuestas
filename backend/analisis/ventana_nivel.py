@@ -274,6 +274,85 @@ def cancha_neutral(home_id: int, sede: str | None, antes: str | None, fixture_id
     return not any(misma_sede(nombre_crudo_hoy, n) for n in nombres_habitual if n)
 
 
+SEDE_MIN_LOCAL = 3        # partidos de local con sede para afirmar cuál es la de un equipo
+SEDE_TEMPORADA_DIAS = 365  # la sede de local «de la temporada»: lo jugado de local en el último año
+
+
+def _col(f, c):
+    return f[c] if c in f.keys() else None
+
+
+def sede_de_local(team_id: int, antes: str | None) -> dict | None:
+    """La sede de local del equipo en la temporada: la más repetida en sus
+    últimos 20 partidos de local del último año (con `SEDE_MIN_LOCAL`+ y más de
+    la mitad), por `venue_id` o, sin él, por el nombre normalizado. None si no
+    se puede afirmar."""
+    params: list = [team_id]
+    cond = ""
+    if antes:
+        from datetime import datetime, timedelta
+        corte = str(antes).replace("T", " ").rstrip("Z")[:19]
+        cond = " AND date < ?"
+        params.append(corte)
+        try:
+            desde = datetime.fromisoformat(corte[:10]) - timedelta(days=SEDE_TEMPORADA_DIAS)
+            cond += " AND date >= ?"
+            params.append(desde.strftime("%Y-%m-%d"))
+        except ValueError:
+            pass
+    try:
+        filas = saddb.query("sad", f"SELECT * FROM fixtures WHERE home_team_id=?{cond} "
+                                   "ORDER BY date DESC LIMIT 40", tuple(params))
+    except Exception:  # noqa: BLE001 — base sin la sede: no se afirma ninguna
+        return None
+
+    def _clave(f) -> str:
+        if _col(f, "venue_id") is not None:
+            return f"id:{_col(f, 'venue_id')}"
+        n = _sede_norm(_col(f, "venue_name"))
+        return f"n:{n}" if n else ""
+
+    previas = [f for f in filas if _clave(f)][:20]
+    if len(previas) < SEDE_MIN_LOCAL:
+        return None
+    cuenta: dict[str, int] = {}
+    for f in previas:
+        cuenta[_clave(f)] = cuenta.get(_clave(f), 0) + 1
+    habitual = max(cuenta, key=cuenta.get)
+    if cuenta[habitual] < SEDE_MIN_LOCAL or cuenta[habitual] * 2 <= len(previas):
+        return None
+    suyas = [f for f in previas if _clave(f) == habitual]
+    nombres = [n for f in suyas if (n := _col(f, "venue_name"))]
+    ciudades = {_sede_norm(c) for f in suyas if (c := _col(f, "venue_city")) and _sede_norm(c)}
+    return {"clave": habitual, "nombre": max(set(nombres), key=nombres.count) if nombres else None,
+            "nombres": set(nombres), "ciudades": ciudades, "partidos": cuenta[habitual]}
+
+
+def sede_compartida(home_id: int, away_id: int, antes: str | None) -> str | None:
+    """¿Los dos equipos tienen la MISMA sede de local en la temporada? Devuelve
+    el nombre del estadio (o «el mismo estadio») si sí, None si no o sin dato.
+
+    ESTADIO COMPARTIDO (10/11/2026, incidencias 1333 y su gemela del 08/11,
+    decisión del usuario): Nacional Potosí–Real Potosí juegan los dos de local
+    en el Víctor Agustín Ugarte (1645538) y Blooming–Oriente Petrolero en el
+    Tahuichi; el motor les sumó la localía de 0,382 igual y dio 49 % al «local»
+    contra 37 % del mercado. La fórmula NO se toca (es sagrada): esto se mide
+    en la base y viaja como aviso de fiabilidad. Mismo `venue_id` alcanza; por
+    el nombre (`misma_sede`) solo si las ciudades no se contradicen —«Estadio
+    Monumental» de Lima y el de Buenos Aires son dos—."""
+    a, b = sede_de_local(home_id, antes), sede_de_local(away_id, antes)
+    if not a or not b:
+        return None
+    nombre = a["nombre"] or b["nombre"] or "el mismo estadio"
+    if a["clave"] == b["clave"]:
+        return nombre
+    if a["ciudades"] and b["ciudades"] and not (a["ciudades"] & b["ciudades"]):
+        return None
+    if any(misma_sede(x, y) for x in a["nombres"] for y in b["nombres"]):
+        return nombre
+    return None
+
+
 def _vieja_o_corta(c: dict | None, fecha: str | None) -> str:
     if not c:
         return ""
@@ -316,7 +395,8 @@ def nivel_por_defecto(team_id: int, fecha: str | None) -> str:
 
 
 def fiabilidad_con_ventana(fia: dict, comps: dict, nombres: dict | None = None,
-                           fecha: str | None = None, neutral: bool = False) -> dict:
+                           fecha: str | None = None, neutral: bool = False,
+                           compartida: str | None = None) -> dict:
     """La fiabilidad de μ con lo que dice la ventana de cada lado. Con
     `UMBRAL_AMISTOSOS`+ amistosos en un lado, «alta» baja a «media»; «media» y
     «baja» se quedan y la nota lo suma. Nunca la sube.
@@ -340,6 +420,14 @@ def fiabilidad_con_ventana(fia: dict, comps: dict, nombres: dict | None = None,
         out["canchaNeutral"] = True
         out["nota"] = (f"{out.get('nota', '')} Se juega en cancha neutral: la localía que suma μ al local no "
                        "aplica (el motor la suma igual).").strip()
+        if out.get("nivel") == "alta":
+            out["nivel"] = "media"
+    if compartida:
+        # 1333: los dos de local en el mismo estadio; como la cancha neutral,
+        # «alta» baja a «media» y la nota lo dice (μ no se toca)
+        out["sedeCompartida"] = compartida
+        out["nota"] = (f"{out.get('nota', '')} La localía del motor no aplica: estadio compartido "
+                       f"({compartida}, sede de local de los dos en la temporada; el motor la suma igual).").strip()
         if out.get("nivel") == "alta":
             out["nivel"] = "media"
     if not con:
