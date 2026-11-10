@@ -143,6 +143,121 @@ pierde.
 | Caracas – Puerto Cabello (1646933) | 81' | 34.8 | roja_propia | banco_rival | 89 | parcial |
 | Portuguesa FC – Metropolitanos FC (08/11), elegido visita (1646934) | 5' | 37.5 | penal |  | 41 | parcial |
 
-## Lo que sigue
+# Parte 2 · Los 70 que nunca arrancaron (10/11/2026)
 
-El estudio de los **70** fallos en los que el elegido nunca se puso adelante: por qué la burbuja no arrancó (rival, sede, fatiga, DT, mercado), contra burbujas de riesgo parecido que siguieron.
+De los 107 fallos, en **70** el elegido **nunca se puso adelante**: 32
+terminaron en empate y 38 en derrota. La pregunta es por qué la burbuja que
+leímos no arrancó. Se hizo una autopsia con el lente de la burbuja primero
+(skill `sad-analysis` v4.5 y `docs/REVENTON.md`). El control son los **194**
+partidos en que el elegido sí se puso adelante. La base es que el elegido
+nunca se adelanta en **26,5 %** de los casos.
+
+## 6. Por qué no arrancó (autopsia, 70 casos)
+
+| Causa | Partidos |
+|---|---:|
+| **Varianza** (dominó y no la metió: xG o remates a favor, penales errados, arquero rival) | **23** |
+| Rival más fuerte de lo que leímos | 12 |
+| Le creímos de más a nuestra burbuja (corta, inflada, contra la casa) | 9 |
+| Mandó la burbuja del rival | 8 |
+| Partido cerrado (el empate era lo esperable) | 6 |
+| Once o bajas | 5 |
+| Fatiga o rotación | 4 |
+| Sede o viaje | 2 |
+| DT o sistema | 1 |
+
+**¿Lo merecimos por la estadística?** Sí en **27**, parejo en 15, no en 23 y
+sin datos en 5. En 4 de cada 10 «nunca arrancó» generamos más que el rival.
+Esos no son burbujas mal leídas: son goles que no entraron.
+
+## 7. Qué separa a los 70 de los 194 (control)
+
+| Señal previa (antes del pitazo) | Nunca | Arrancó | Con la señal, nunca se adelantó |
+|---|---:|---:|---:|
+| **Nuestra prob. 2+ pts sobre la casa y la casa < 48 %** | 13/70 | 6/194 | **68,4 %** (n 19) |
+| **Nuestra prob. 2+ pts sobre la casa** | 13/70 | 10/194 | **56,5 %** (n 23) |
+| Prob. de la casa < 45 % | 41/70 | 55/194 | 42,7 % (n 96) |
+| Burbuja propia + de 1 partido con riesgo alto/muy alto | 11/70 | 17/194 | 39,3 % (n 28) |
+| Sin burbuja propia (K en 0) | 15/70 | 30/194 | 33,3 % (n 45) |
+| Rival cerca o en su extremo en su condición | 9/70 | 20/194 | 31,0 % (n 29) |
+| Motor y nosotros eligen distinto | 4/70 | 9/194 | 30,8 % (n 13) |
+| Burbuja propia − de 1-2 con riesgo alto («deja de perder») | 16/70 | 56/194 | 22,2 % (n 72) |
+| **Burbuja propia larga (3+ partidos)** | 6/70 | 49/194 | **10,9 %** (n 55) |
+| **Prob. de la casa ≥ 60 %** | 4/70 | 61/194 | **6,2 %** (n 65) |
+
+## 8. Lo que dice
+
+1. **La señal más fuerte es ponerse por encima de la casa.** Cuando nuestra
+   probabilidad del elegido quedó 2+ puntos sobre la de la casa, el elegido
+   nunca se puso adelante en más de la mitad de los casos (68 % si además
+   era un equipo de menos de 48 %). Es la burbuja **leída de más**: la
+   racha o los perfiles nos convencieron más que al mercado. Confirma la
+   decisión del 03/11 y la regla de la v4.5 de no apartarse del número de la
+   casa. Los perfiles DC eran la causa más común de esos puntos, y la v4.5 ya
+   los devuelve al mercado.
+2. **Una burbuja larga sí arranca; una burbuja de un partido no es una
+   burbuja.** Con 3+ partidos de racha, el elegido nunca se adelantó solo en
+   el 11 % de los casos. Con una racha + de un solo partido y riesgo alto, en
+   el 39 %. La burbuja del usuario funciona cuando existe: el error fue
+   llamar burbuja a un resultado suelto.
+3. **«Deja de perder» no es la trampa.** Una racha − corta con riesgo alto
+   leída como corte arrancó **más** que la base (22 % contra 26,5 %).
+4. **Un tercio fue fútbol puro.** En 27 de los 70 dominamos y no la metimos.
+   Ninguna regla convierte eso en acierto.
+
+## 9. La tabla de la base: ¿cuánto se sostiene una ventaja según la fuerza?
+
+Fuente: football-data.co.uk, 11 ligas europeas del padrón (Inglaterra 1 y 2,
+España, Italia, Alemania, Francia, Países Bajos, Portugal, Bélgica, Grecia y
+Turquía), 2012/13-2025/26. Son **53.108 partidos** con la cuota de cierre
+sin margen (Pinnacle o, si no hay, el promedio de casas) y el marcador al
+descanso. El CSV no trae minutos, así que la ventaja medida es la del
+**descanso**.
+
+**Gana por 1 al descanso:**
+
+| Prob. previa del que gana | n | Gana | Empata | Pierde | **No gana (se le escapa)** |
+|---|---:|---:|---:|---:|---:|
+| < 35 % | 8.145 | 53,1 % | 27,8 % | 19,0 % | **46,9 %** ± 1,1 |
+| 35-48 % | 5.988 | 69,0 % | 22,1 % | 8,9 % | **31,0 %** ± 1,2 |
+| 48-60 % | 3.940 | 75,6 % | 18,3 % | 6,1 % | **24,4 %** ± 1,3 |
+| 60-75 % | 3.143 | 84,3 % | 12,6 % | 3,1 % | **15,7 %** ± 1,3 |
+| 75 %+ | 1.338 | 90,6 % | 8,1 % | 1,3 % | **9,4 %** ± 1,6 |
+
+**Gana por 2+ al descanso:** se le escapa a 17,4 % · 8,1 % · 5,4 % · 3,4 % ·
+1,3 % (mismos tramos).
+
+**Local y visita dan igual:** con 1 de ventaja al descanso se le escapa a
+45,7 % y 47,5 % (< 35 %), a 30,4 % y 32,0 % (35-48 %), a 24,7 % y 23,6 %
+(48-60 %) y a 15,8 % y 15,4 % (60-75 %). La condición no cambia nada una vez
+que el equipo va ganando: manda la fuerza.
+
+**Estable en el tiempo** (1 de ventaja, % que no gana): en 2012-18, 46,1 ·
+29,6 · 22,8 · 15,6 · 8,7; en 2018-26, 47,4 · 32,1 · 25,5 · 15,7 · 10,0.
+
+**Lo que confirma.** El 35 % de nuestro estudio (elegido de menos de 48 %
+adelante antes del 30') cae justo entre el 31 % y el 47 % de la base. Esto
+ya no es una pista de 37 casos: es una ley con 53 mil partidos detrás.
+**Un gol del débil no cambia lo que es el débil.** El equipo de menos de 35 %
+que va ganando al descanso no gana casi la mitad de las veces, y el de 75 %+
+no gana solo 1 de cada 10.
+
+## 10. Propuesta para la próxima revisión
+
+- **TDE (rama `siMarcaPrimero`), calculable:** el desenlace por defecto de
+  la rama de ventaja sale de esta tabla según la prob. previa de la casa, y
+  no de la tipología. La app la sirve en `GET …/tde/{id}` como
+  `ventajaPorFuerza`. El TDE describe la vía (banco, penal, contra); la
+  tabla pone el número. **Pendiente:** rehacerla por minuto con los eventos
+  de `sad.db` en el servidor (el CSV solo trae el descanso), y para las ligas
+  americanas, que no están en football-data.
+- **sad-analysis (burbuja):** una burbuja de **1 partido** no se lee como
+  burbuja para sostener al elegido. Con riesgo alto, la espina no dice
+  «sigue» con un solo partido (va con la regla (i) de la v4.5, ahora con su
+  número: 39 % contra 11 %).
+- **sad-analysis (mercado):** la medición confirma la regla de la v4.5 de no
+  quedar sobre la casa. El aviso «nuestra prob. 2+ sobre la casa» es
+  calculable (`vsMercado`) y puede ir como alerta de confianza en el recibo.
+- **Medir:** con 100+ casos nuevos se repiten estas tres señales (perder la
+  ventaja, nunca arrancar, burbuja de 1 partido). El script de la tabla de la
+  base está en `docs/revisiones/datos/tabla_ventaja_por_fuerza.py`.
