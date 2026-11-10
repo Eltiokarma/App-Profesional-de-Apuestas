@@ -28,6 +28,7 @@ la jornada = 2 equipos × 1 anterior × 3 = 6 requests.
     python -m backend.ingesta.ficha_partido --estado      # qué hay, 0 requests
 """
 import argparse
+import hashlib
 import os
 import sqlite3
 import sys
@@ -75,9 +76,11 @@ CREATE INDEX IF NOT EXISTS idx_alineaciones_team ON alineaciones(team_id, titula
 CREATE TABLE IF NOT EXISTS alineaciones_versiones (
     fixture_id   INTEGER NOT NULL,
     team_id      INTEGER NOT NULL,
-    huella       TEXT NOT NULL,   -- formación + ids de los titulares
+    huella       TEXT NOT NULL,   -- formación + ids de los titulares (+ «|g» y la huella del grid)
     formacion    TEXT,
     capturada_en TEXT NOT NULL,   -- UTC, «YYYY-MM-DD HH:MM:SS»
+    huella_grid  TEXT,            -- hash corto de titular→casilla del grid (NULL: sin grid o versión vieja)
+    primera_en   TEXT,            -- la primera vez que se vio ESTA versión (una que vuelve se re-sella)
     PRIMARY KEY (fixture_id, team_id, huella)
 );
 
@@ -125,6 +128,7 @@ def preparar_tablas(con: sqlite3.Connection) -> None:
     """DDL + migración de fixture_eventos. Idempotente: se puede llamar en
     cada arranque (lo hacen la ingesta y el ciclo en vivo)."""
     con.executescript(DDL)
+    migrar_versiones(con)
     existentes = {f[1] for f in con.execute("PRAGMA table_info(fixture_eventos)")}
     for col, tipo in COLUMNAS_EVENTOS.items():
         if col not in existentes:
@@ -229,25 +233,65 @@ def guardar_eventos(con: sqlite3.Connection, item: dict) -> int:
 DDL_VERSIONES = DDL[DDL.index("CREATE TABLE IF NOT EXISTS alineaciones_versiones"):].split(";")[0]
 
 
-def huella_once(formacion, titulares) -> str:
-    """La identidad de una versión del once: formación + ids de los titulares."""
-    return f"{formacion or ''}|" + ",".join(str(i) for i in sorted(titulares))
+# LA HUELLA DEL GRID, POR LADO (10/11/2026, incidencia 1220, aprobada por el
+# usuario): la versión del once era formación + titulares, así que un cambio de
+# CASILLA no era versión nueva y no se sabía cuándo cambió el grid. Libertad–
+# Cerro (1632052): `tardio` por la formación corregida a las 23:52, sin saber si
+# el grid de las 21:33 ya traía la línea de cinco. Hash corto (12 hex), no el
+# grid entero: el tamaño de sad.db es la factura (CLAUDE.md).
+COLUMNAS_VERSIONES = {"huella_grid": "TEXT", "primera_en": "TEXT"}
+
+
+def migrar_versiones(con: sqlite3.Connection) -> None:
+    """Las columnas nuevas de `alineaciones_versiones`, si faltan. Idempotente."""
+    con.execute(DDL_VERSIONES)
+    existentes = {f[1] for f in con.execute("PRAGMA table_info(alineaciones_versiones)")}
+    for col, tipo in COLUMNAS_VERSIONES.items():
+        if col not in existentes:
+            con.execute(f"ALTER TABLE alineaciones_versiones ADD COLUMN {col} {tipo}")
+
+
+def huella_grid(grids) -> str | None:
+    """Hash corto de los titulares en su casilla ({player_id: "fila:col"}); sin
+    ninguna casilla, None (la liga no da grid: no hay nada que comparar)."""
+    pares = sorted((int(pid), str(g)) for pid, g in (grids or {}).items() if g)
+    if not pares:
+        return None
+    return hashlib.sha1(";".join(f"{p}@{g}" for p, g in pares).encode()).hexdigest()[:12]
+
+
+def huella_once(formacion, titulares, grid: str | None = None) -> str:
+    """La identidad de una versión del once: formación + ids de los titulares
+    (+ la huella del grid, si la hay: un cambio de casilla es versión nueva)."""
+    base = f"{formacion or ''}|" + ",".join(str(i) for i in sorted(titulares))
+    return f"{base}|g{grid}" if grid else base
 
 
 def registrar_version(con: sqlite3.Connection, fixture_id: int, team_id: int, formacion,
-                      titulares, cuando: str | None = None) -> bool:
+                      titulares, cuando: str | None = None, grids: dict | None = None) -> bool:
     """Anota la versión del once si NO es la última que se vio de ese equipo en
     ese partido (una que vuelve —A→B→A— se re-sella con la hora nueva: lo que
-    importa es desde cuándo rige la que quedó). Devuelve si era nueva."""
-    con.execute(DDL_VERSIONES)
-    huella = huella_once(formacion, titulares)
-    ultima = con.execute("SELECT huella FROM alineaciones_versiones WHERE fixture_id=? AND team_id=? "
+    importa es desde cuándo rige la que quedó; `primera_en` guarda cuándo se vio
+    por primera vez). Devuelve si era nueva."""
+    migrar_versiones(con)
+    hg = huella_grid(grids)
+    huella = huella_once(formacion, titulares, hg)
+    ultima = con.execute("SELECT huella, huella_grid FROM alineaciones_versiones WHERE fixture_id=? AND team_id=? "
                          "ORDER BY capturada_en DESC LIMIT 1", (fixture_id, team_id)).fetchone()
     if ultima and ultima[0] == huella:
         return False
+    if ultima and hg and ultima[1] is None and ultima[0] == huella_once(formacion, titulares):
+        # la misma versión capturada antes de que hubiera huella del grid: se le
+        # pone la huella SIN tocar su hora (no es un once nuevo)
+        con.execute("UPDATE alineaciones_versiones SET huella=?, huella_grid=? WHERE fixture_id=? AND team_id=? "
+                    "AND huella=?", (huella, hg, fixture_id, team_id, ultima[0]))
+        return False
     cuando = cuando or datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    previa = con.execute("SELECT COALESCE(primera_en, capturada_en) FROM alineaciones_versiones "
+                         "WHERE fixture_id=? AND team_id=? AND huella=?", (fixture_id, team_id, huella)).fetchone()
     con.execute("INSERT OR REPLACE INTO alineaciones_versiones (fixture_id, team_id, huella, formacion, "
-                "capturada_en) VALUES (?,?,?,?,?)", (fixture_id, team_id, huella, formacion, cuando))
+                "capturada_en, huella_grid, primera_en) VALUES (?,?,?,?,?,?,?)",
+                (fixture_id, team_id, huella, formacion, cuando, hg, previa[0] if previa else cuando))
     return True
 
 
@@ -271,7 +315,7 @@ def guardar_alineaciones(con: sqlite3.Connection, fixture_id: int, respuesta: li
             from backend.ingesta.jugadores import _nombre_entero, nombres_que_no_son_dt
             if _nombre_entero(dt) in nombres_que_no_son_dt(con):
                 dt = None
-        titulares = []
+        titulares, grids = [], {}
         for titular, lista in ((1, lado.get("startXI") or []), (0, lado.get("substitutes") or [])):
             for it in lista:
                 p = it.get("player") or {}
@@ -295,9 +339,10 @@ def guardar_alineaciones(con: sqlite3.Connection, fixture_id: int, respuesta: li
                 )
                 if titular:
                     titulares.append(pid)
+                    grids[pid] = p.get("grid")
                 n += 1
         if titulares:
-            registrar_version(con, fixture_id, tid, formacion, titulares, cuando)
+            registrar_version(con, fixture_id, tid, formacion, titulares, cuando, grids)
     return n
 
 
