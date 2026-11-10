@@ -404,9 +404,37 @@ def titulares_fijos_fuera(jugadores: list[dict]) -> list[str]:
             if (j.get("rol") or "").upper() == "TF" and (j.get("estado") or "") == "baja"]
 
 
+# LA F3 POR ZONA GK CON UN SUPLENTE QUE YA ATAJA (10/11/2026, incidencia 1323,
+# decisión aprobada por el usuario). Rúbrica EFE §F3: «la F3 por zona GK no se
+# activa sola si el suplente tiene ≥ 15 partidos en la categoría o titularidades
+# en los últimos 12 meses» —«Pendiente de la app»—. OFI 1593356: Lilo llevaba 3
+# titularidades seguidas y la F3 salía sola por la zona GK en 🔴. Proxy de los
+# 12 meses: las titularidades de la TEMPORADA en la tabla F1 de la base (los
+# partidos en la categoría no están en la base). Solo cuando la GK es la ÚNICA
+# zona crítica; el IP y el ×1,5 NO cambian, y la F3 por IP 🔴 o por 2+ titulares
+# fijos sigue saliendo. Se pierde la alerta del suplente con 1 titularidad y sin
+# rodaje real: es lo que se aprobó.
+GK_CUBIERTA_TITULARIDADES = 1
+GK_CUBIERTA_TEXTO = "zona GK cubierta: amplía el rango, no baja el centro"
+
+
+def gk_cubierta(arqueros: list[dict]) -> dict | None:
+    """El arquero DISPONIBLE (filas ya filtradas, con `titularidades` de la
+    base) que cubre la zona GK: el de más titularidades, si llega al mínimo."""
+    validos = [a for a in arqueros if (a.get("titularidades") or 0) >= GK_CUBIERTA_TITULARIDADES]
+    if not validos:
+        return None
+    a = max(validos, key=lambda x: x.get("titularidades") or 0)
+    n = int(a.get("titularidades") or 0)
+    return {"arquero": a.get("nombre", ""), "titularidades": n,
+            "detalle": f"{GK_CUBIERTA_TEXTO} ({a.get('nombre', '')}, {n} "
+                       f"titularidad{'es' if n != 1 else ''} en la temporada): la F3 no sale por la "
+                       "zona GK; el IP y el ×1,5 no cambian"}
+
+
 def alerta_f3(clasificacion: str, ip_nivel: str, tf_fuera: list[str] | None = None,
               zonas_criticas: list[str] | None = None, provisional: bool = False,
-              por_dudas: list[str] | None = None) -> dict | None:
+              por_dudas: list[str] | None = None, gk: dict | None = None) -> dict | None:
     """F3 · formación fraccionada: EFE 🟢/🟡 pero, para esta fecha, IP > 7 (🔴),
     ≥ 2 titulares fijos ausentes **o una zona en 🔴 (> 40 %)** —la F3 por zona
     de la EFE v1.7, que la nombra (Bayern MID 41,7 % con IP 5)—.
@@ -417,10 +445,15 @@ def alerta_f3(clasificacion: str, ip_nivel: str, tf_fuera: list[str] | None = No
     F3), y el texto lo dice en vez de llamarlas «bajas ya conocidas» (1114,
     Paris FC 1552807: Trapp en duda, probable titular, daba «zona GK en rojo,
     rama A con las bajas ya conocidas»). La duda sigue pesando lo que manda la
-    rúbrica (FACTOR_ESTADO); lo que cambia es qué se afirma."""
+    rúbrica (FACTOR_ESTADO); lo que cambia es qué se afirma. `gk`: el arquero
+    que cubre la zona GK (`gk_cubierta`, incidencia 1323): si la GK es la única
+    zona crítica, no dispara la F3 y, si sale por otro motivo, el detalle lo dice."""
     tf_fuera, zonas_criticas = tf_fuera or [], zonas_criticas or []
     if clasificacion not in ("FORMADO", "EN_FORMACION"):
         return None
+    cubierta = bool(gk) and [z.upper() for z in zonas_criticas] == ["GK"]
+    if cubierta:
+        zonas_criticas = []
     if ip_nivel != "rojo" and len(tf_fuera) < 2 and not zonas_criticas:
         return None
     motivo = ("impacto 🔴" if ip_nivel == "rojo" else
@@ -440,5 +473,6 @@ def alerta_f3(clasificacion: str, ip_nivel: str, tf_fuera: list[str] | None = No
                        f"({', '.join(por_dudas)}), no por bajas confirmadas: si juegan, no hay F3; se "
                        "rehace al cerrar el once") if provisional and por_dudas else
                       " PROVISIONAL: sin once confirmado, con las bajas ya conocidas (rama A); se "
-                      "rehace al cerrar el once" if provisional else ""),
+                      "rehace al cerrar el once" if provisional else "")
+                   + (f" ({gk['detalle']})" if cubierta else ""),
     }

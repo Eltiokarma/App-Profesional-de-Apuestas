@@ -6501,6 +6501,42 @@ def main():
           "«bajas ya conocidas»",
           _f3d["porDudas"] == ["Kevin Trapp"] and "DUDA" in _f3d["detalle"] and "Kevin Trapp" in _f3d["detalle"]
           and "bajas ya conocidas" not in _f3d["detalle"], _f3d)
+    # 1323 (OFI 1593356, decisión del usuario 10/11/2026): la zona GK sola no dispara la F3
+    # si el arquero disponible ya ataja (titularidades en la temporada, tabla F1 de la base)
+    _gk1323 = bf.gk_cubierta([{"nombre": "Lilo", "titularidades": 3}, {"nombre": "Tercero", "titularidades": 0}])
+    check("1323: el arquero disponible con titularidades cubre la zona GK; sin titularidades, no",
+          _gk1323 and _gk1323["arquero"] == "Lilo" and _gk1323["titularidades"] == 3
+          and "zona GK cubierta: amplía el rango, no baja el centro" in _gk1323["detalle"]
+          and bf.gk_cubierta([{"nombre": "Tercero", "titularidades": 0}]) is None
+          and bf.gk_cubierta([]) is None, _gk1323)
+    check("1323: GK única zona crítica + suplente con titularidades → sin F3 por zona (también provisional)",
+          bf.alerta_f3("FORMADO", "ambar", [], ["GK"], gk=_gk1323) is None
+          and bf.alerta_f3("FORMADO", "verde", [], ["GK"], provisional=True, gk=_gk1323) is None)
+    _f3sin = bf.alerta_f3("FORMADO", "ambar", [], ["GK"], gk=None)
+    check("1323: suplente sin titularidades → la F3 por zona GK sale como hoy",
+          _f3sin and "zona GK en 🔴" in _f3sin["detalle"], _f3sin)
+    _f3otra = bf.alerta_f3("FORMADO", "ambar", [], ["GK", "DEF"], gk=_gk1323)
+    check("1323: GK + otra zona crítica → la F3 sale como hoy, sin la nota de GK cubierta",
+          _f3otra and "zona GK/DEF en 🔴" in _f3otra["detalle"] and "cubierta" not in _f3otra["detalle"], _f3otra)
+    _f3ip = bf.alerta_f3("FORMADO", "rojo", [], ["GK"], gk=_gk1323)
+    check("1323: con IP 🔴 la F3 sigue saliendo, no nombra la zona GK en rojo y dice que está cubierta",
+          _f3ip and "impacto 🔴" in _f3ip["detalle"] and "zona GK en 🔴" not in _f3ip["detalle"]
+          and "zona GK cubierta" in _f3ip["detalle"], _f3ip)
+    from backend.analisis import parte as _p1323
+    _orig1323 = _p1323._f1_base.tabla
+    try:
+        _p1323._f1_base.tabla = lambda fid, sanc=None: {"b": {"candidatos": [
+            {"jugadorId": 777, "nombre": "Lilo", "zona": "GK", "titularidades": 3},
+            {"jugadorId": 778, "nombre": "J. Tercero", "zona": "GK", "titularidades": 0}]}}
+        _c1323: dict = {}
+        _g1 = _p1323._gk_cubierta(1593356, "b", [{"nombre": "Lilo", "zona": "GK", "jugadorId": 777}], _c1323)
+        _g0 = _p1323._gk_cubierta(1593356, "b", [{"nombre": "J. Tercero", "zona": "GK", "jugadorId": 778}], _c1323)
+        _gn = _p1323._gk_cubierta(1593356, "a", [{"nombre": "Lilo", "zona": "GK", "jugadorId": 777}], _c1323)
+    finally:
+        _p1323._f1_base.tabla = _orig1323
+    check("1323: las titularidades del arquero salen de la tabla F1 de la base, por id y por lado",
+          _g1 and _g1["titularidades"] == 3 and _g0 is None and _gn is None
+          and _p1323._solo_gk(["GK"]) and not _p1323._solo_gk(["GK", "MID"]), (_g1, _g0, _gn))
 
     # ── EL ESTUDIO DE LOS REVENTONES HACIA ATRÁS (13/10/2026) ────────────────
     from backend.analisis import reventones as rv

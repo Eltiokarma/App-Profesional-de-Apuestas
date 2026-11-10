@@ -4311,6 +4311,16 @@ components:
           additionalProperties: { type: string, enum: [verde, ambar, rojo] }
         multiplicadorGk: { type: boolean }
         zonasCriticas: { type: array, items: { type: string } }
+        gkCubierta:
+          type: object
+          description: >
+            Incidencia 1323 (EFE §F3, 10/11/2026): la GK es la ÚNICA zona crítica y el arquero
+            disponible tiene titularidades en la temporada (tabla F1 de la base, proxy de los
+            12 meses). La F3 no sale por la zona GK; el IP y el ×1,5 no cambian. Ausente si no aplica.
+          properties:
+            arquero: { type: string }
+            titularidades: { type: integer }
+            detalle: { type: string, description: '«zona GK cubierta: amplía el rango, no baja el centro (…)»' }
         fuera:
           type: array
           items:
