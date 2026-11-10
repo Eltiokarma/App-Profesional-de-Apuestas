@@ -565,7 +565,7 @@ function ContraElOnce({ b, foco }: { b: DtpBloque; foco: string }) {
       {(r.rolesVsGrid ?? []).length > 0 && (
         <div style={{ marginTop: 8, paddingTop: 7, borderTop: '1px dashed var(--line)' }}>
           <div style={{ font: '700 9px var(--mono)', letterSpacing: '.4px', color: 'var(--t3)' }}>
-            ROLES CONTRA EL GRID · en observación, no pide rehacer
+            ROLES CONTRA EL GRID · cada uno pide rehacer (desde el 10/11/2026)
           </div>
           {(r.rolesVsGrid ?? []).map((x, i) => (
             <div key={i} style={{ font: '500 11px var(--sans)', color: 'var(--t2)', marginTop: 3, overflowWrap: 'anywhere' }}>
