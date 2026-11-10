@@ -2888,6 +2888,9 @@ components:
         ambosMarcan: { type: number }
         modelo: { type: object, additionalProperties: true }
         nota: { type: string }
+        porVentana: { type: boolean, description: 'solo true: el mismo `porVentana` de `fiabilidadMu` (ventana del nivel con 3+ amistosos, corta o vieja; 10/11/2026, incidencia 1108). El acotado no cambia: se marca' }
+        ventana: { type: object, additionalProperties: { type: string }, description: 'con porVentana: de qué está hecha la ventana de cada lado (local · visitante)' }
+        notaVentana: { type: string }
     GolesAcotadosEquipo:
       type: object
       description: 'la misma lectura desde un equipo: `mete` (sus goles) y `recibe` (los del rival)'
@@ -2901,6 +2904,9 @@ components:
         ambosMarcan: { type: number }
         modelo: { type: object, additionalProperties: true }
         nota: { type: string }
+        porVentana: { type: boolean, description: 'el mismo que en GolesAcotados (1108)' }
+        ventana: { type: object, additionalProperties: { type: string } }
+        notaVentana: { type: string }
     Eliminatoria:
       type: object
       description: >
@@ -3085,6 +3091,18 @@ components:
             tramo: { type: string, enum: [lejos, zona, fuerte, muy fuerte], description: 'en la dirección del riesgo (más fuerte para la burbuja +, más flojo para la −): lejos < −0.15 · zona ±0.15 · fuerte ≥ 0.15 · muy fuerte ≥ 0.45' }
             escalaComparable: { type: boolean, description: 'false con escala distinta (22/10/2026): el tramo compara niveles de bases distintas; los puntos NO cambian, se marca' }
             notaEscala: { type: string }
+            aFavor: { type: number, description: 'diferencia de nivel A FAVOR de que la racha siga (favorito con racha +, débil con racha −; REVENTON §12)' }
+            favorito: { type: string, enum: ['no', favorito, muy favorito] }
+            nivelConAmistosos:
+              type: object
+              description: >
+                solo con `favorito` ≠ no y 3+ amistosos en la ventana del nivel de algún lado (10/11/2026,
+                incidencia 1104, de backend/analisis/ventana_nivel.py): la diferencia de nivel sale de una
+                ventana con amistosos, pesar con reserva. Los puntos y el riesgo NO cambian (REVENTON §13.2).
+              properties:
+                equipo: { type: integer, description: 'amistosos en la ventana del nivel del equipo' }
+                rival: { type: integer, description: 'amistosos en la ventana del nivel del rival' }
+                nota: { type: string }
         riesgo:
           type: object
           nullable: true

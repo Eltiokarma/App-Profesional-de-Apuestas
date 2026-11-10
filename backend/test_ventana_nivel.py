@@ -255,5 +255,44 @@ check("1251: Galatasaray (toda la liga es la de hoy) no trae otra liga", c["otra
 check("1251: solo se cuenta: sin amistosos, la fiabilidad «alta» no baja por la otra liga",
       vn.fiabilidad_con_ventana(alta, {"local": cc})["nivel"] == "alta")
 
+
+# 1104 (10/11/2026, decisión del usuario): el rival del reventón con la
+# diferencia de nivel a favor lleva la marca si alguna ventana trae 3+ amistosos
+# (Strasbourg 1552808: −3 por «rival muy favorito» con 6 amistosos). Solo marca.
+_fams = {"total": {"rival": {"aFavor": 1.36, "favorito": "muy favorito"}, "riesgo": {"puntos": -2, "nivel": "bajo"}},
+         "local": {"rival": {"aFavor": 0.2, "favorito": "no"}}, "visita": {"rival": None}}
+vn.marcar_rival(_fams, ck, c)
+_m = _fams["total"]["rival"].get("nivelConAmistosos")
+check("1104: «muy favorito» con 6 amistosos en la ventana del rival lleva nivelConAmistosos con los dos conteos",
+      _m and _m["equipo"] == 2 and _m["rival"] == 6 and "6 amistosos" in _m["nota"] and "reserva" in _m["nota"], _m)
+check("1104: los puntos y el riesgo no se tocan",
+      _fams["total"]["riesgo"] == {"puntos": -2, "nivel": "bajo"} and _fams["total"]["rival"]["aFavor"] == 1.36)
+check("1104: donde la diferencia no puntúa (favorito «no») no se marca",
+      "nivelConAmistosos" not in _fams["local"]["rival"])
+_fams2 = {"total": {"rival": {"aFavor": 1.1, "favorito": "muy favorito"}}}
+vn.marcar_rival(_fams2, ck, ck)
+check("1104: con 2 amistosos de cada lado (debajo del umbral) no hay marca",
+      "nivelConAmistosos" not in _fams2["total"]["rival"])
+
+# 1108 (10/11/2026, decisión del usuario): los goles acotados llevan el mismo
+# porVentana que fiabilidadMu (Kasımpaşa–Beşiktaş 1584453, 6 amistosos en el local)
+from backend.analisis import goles as _goles  # noqa: E402
+_fx = {"id": 3000, "date": "2026-10-30 17:00:00", "home_team_id": GAL, "away_team_id": KON,
+       "home_name": "Galatasaray", "away_name": "Konyaspor"}
+_v = _goles._ventana(_fx, {"local": c, "visitante": ck})
+check("1108: con 6 amistosos en el local, golesAcotados trae porVentana, la ventana y la nota",
+      _v.get("porVentana") is True and _v["ventana"]["local"].startswith("6 amistosos")
+      and "Galatasaray: 6 amistosos" in _v["notaVentana"], _v)
+check("1108: es el MISMO porVentana que fiabilidadMu",
+      _v.get("porVentana") == vn.fiabilidad_con_ventana({}, {"local": c, "visitante": ck}).get("porVentana"))
+check("1108: debajo del umbral no se marca", _goles._ventana(_fx, {"local": ck, "visitante": ck}) == {})
+check("1108: sin la ventana pasada, se lee de la base (la misma marca)",
+      _goles._ventana(_fx).get("porVentana") is True)
+_ac = {"local": {"equipo": "Galatasaray"}, "visita": {"equipo": "Konyaspor"}, "marcadorAcotado": {}, "masProbables": [],
+       "masDe2_5": 0.5, "ambosMarcan": 0.5, "modelo": {}, "nota": "", **_v}
+check("1108: la marca viaja también desde el equipo (la tarjeta de /burbujas)",
+      _goles.desde_equipo(_ac, False).get("porVentana") is True
+      and "porVentana" not in _goles.desde_equipo({k: x for k, x in _ac.items() if k not in _v}, True))
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)

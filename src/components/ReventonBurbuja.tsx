@@ -314,6 +314,11 @@ export function ReventonBurbuja({ data, loading, error, familia, onFamilia, comp
                   {fam.rival.escalaComparable === false && (
                     <div style={{ marginTop: 3 }}><Chip texto="OTRA ESCALA" color="var(--mark)" title={fam.rival.notaEscala} /></div>
                   )}
+                  {fam.rival.nivelConAmistosos && (
+                    <div style={{ font: '500 10px var(--sans)', color: 'var(--mark)', marginTop: 3, lineHeight: 1.4, overflowWrap: 'anywhere' }}>
+                      {fam.rival.nivelConAmistosos.nota}
+                    </div>
+                  )}
                 </>
               ) : (
                 <div style={{ font: '600 11px var(--sans)', color: 'var(--t3)' }}>

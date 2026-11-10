@@ -39,6 +39,9 @@ function Pie({ g }: { g: GolesAcotadosDTO | GolesAcotadosEquipoDTO }) {
           más probables: {g.masProbables.map((x) => `${x.marcador} ${pct(x.prob)}`).join(' · ')} · más de 2,5: {pct(g.masDe2_5)} · ambos marcan: {pct(g.ambosMarcan)}
         </div>
       )}
+      {g.porVentana && g.notaVentana && (
+        <div style={{ font: '500 10px var(--sans)', color: 'var(--mark)', lineHeight: 1.45, overflowWrap: 'anywhere' }}>{g.notaVentana}</div>
+      )}
       <div style={{ font: '500 10px var(--sans)', color: 'var(--t3)', lineHeight: 1.45 }}>
         {m?.intervaloAcierta != null && <>Medido en el padrón: el intervalo acertó {pct(m.intervaloAcierta)} y el marcador acotado {pct(m.marcadorAcotadoAcierta)}. </>}
         Lectura del marcador, no señal de apuesta: contra el mercado de goles no hay ventaja.

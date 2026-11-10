@@ -277,6 +277,7 @@ Tres lugares donde vive una guardia:
 - **Guardia:**
   - **Composición contada:** `backend/analisis/ventana_nivel.py` cuenta de qué está hecha la ventana de cada lado (`ventanaNivel` en `/predicciones`).
   - **Fiabilidad:** con 3+ amistosos baja `fiabilidadMu` a «media», con `porVentana` y la nota.
+  - **La misma marca donde el nivel entra a otra cuenta** (10/11/2026, decisiones del usuario): la diferencia de nivel del reventón (`rival.aFavor`/`favorito` de `/burbujas`) lleva `nivelConAmistosos` (`ventana_nivel.marcar_rival`, 1104, Strasbourg con −3 por «rival muy favorito» y 6 amistosos) y `golesAcotados` el mismo `porVentana` (`goles._ventana`, que usa `fiabilidad_con_ventana`, 1108, Kasımpaşa–Beşiktaş). Ningún punto ni MODELO_GOLES se mueve. Tests en `backend/test_ventana_nivel.py`. Un cálculo nuevo que use la diferencia de nivel trae la marca de la ventana o no sale.
   - **Escaneo:** el chequeo informativo `nivel-con-amistosos`. Desde el 02/11/2026 también son informativos `sancion`, `sin-plantel` y `dt-sin-confirmar`: listas para el parte que, depositadas, se cerraban siempre por diseño (el ruido de la cola es una falla de la guardia).
   - **Medición:** `backend/backtest_nivel_ventana.py` (30/10, 9.191 partidos de prueba). Sacar los amistosos del nivel no mejora el 1X2; sacar también los internacionales lo empeora donde hay amistosos. Con 3+ amistosos el motor queda el doble de lejos del mercado (0,084 de log-loss contra 0,041): eso sostiene el aviso.
   - El motor no se toca sin esa medición y sin el visto bueno del usuario.
