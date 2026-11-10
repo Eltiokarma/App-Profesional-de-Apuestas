@@ -954,6 +954,43 @@ def sancion_de_otra_competicion(t: dict, competicion: str, liga_id: int | None =
     return t
 
 
+def del_once_oficial(t: dict, fixture_id: int, team_id: int) -> dict:
+    """LOS TITULARES DEL ONCE OFICIAL QUE LA TABLA NO TIENE (10/11/2026,
+    incidencia 1068, aprobada por el usuario; familia ONCE-SIN-FILA-F1: 1046,
+    1050, 1069): Estêvão en Palmeiras, D. James sin minutos en la temporada, el
+    arquero suplente Görgen, cuatro del Estoril. No fueron titulares en los
+    últimos 3 onces ni están en la plantilla (debuts, recambios, juveniles), así
+    que no tenían fila: no pesaban en el IP ni en el bloque F y el parte sonaba
+    ONCE-SIN-FILA-F1. Con el once de ESTE partido capturado (7+ titulares), cada
+    titular que no está en la tabla —ni por id, ni por `idsAlternos`, ni por
+    nombre— entra como fila `delOnceOficial`, rol ROT y `sinStatsDeTemporada`,
+    con la zona de su casilla en la hoja."""
+    try:
+        filas = [dict(f) for f in saddb.query(
+            "sad", "SELECT fixture_id, player_id, jugador, posicion, grid, titular FROM alineaciones "
+                   "WHERE fixture_id=? AND team_id=? AND titular=1", (fixture_id, team_id))]
+    except Exception:  # noqa: BLE001 — base sin alineaciones: la tabla queda como estaba
+        return t
+    if len(filas) < 7:   # media alineación no es una alineación (parte.xi_de_ficha)
+        return t
+    cand = t.setdefault("candidatos", [])
+    en = {i for c in cand for i in [c.get("jugadorId"), *(c.get("idsAlternos") or [])] if i is not None}
+    lineas = _lineas_por_grid(filas)
+    for f in filas:
+        pid, nombre = f["player_id"], limpiar_nombre(f["jugador"] or "")
+        if not nombre or (pid is not None and pid in en):
+            continue
+        if any(mismo_jugador(nombre, c.get("nombre") or "") for c in cand):
+            continue
+        cand.append({"jugadorId": pid if pid and pid > 0 else None, "nombre": nombre,
+                     "zona": _ZONA_API.get(lineas.get((fixture_id, pid)) or f["posicion"] or "", ""),
+                     "posicion": f["posicion"] or "", "rolSugerido": "ROT", "apps": None, "minutos": None,
+                     "decisivo": "", "sinStatsDeTemporada": True, "delOnceOficial": True})
+        if pid is not None:
+            en.add(pid)
+    return t
+
+
 def tabla(fixture_id: int, sanc: dict | None = None) -> dict | None:
     """La tabla F1 de los dos lados. `sanc`: las sanciones ya calculadas
     (`sanciones.de_fixture`), para no rehacerlas (el escaneo)."""
@@ -967,10 +1004,12 @@ def tabla(fixture_id: int, sanc: dict | None = None) -> dict | None:
     comp = "internacional" if fx["league_id"] in jug._ligas_internacionales() else "nacional"
     return {
         "fixtureId": fixture_id,
-        "a": _con_sanciones(sancion_de_otra_competicion(
-            tabla_equipo(fx["home_team_id"], fx["home_name"], fx["date"]), comp, fx["league_id"]), sanc.get("a")),
-        "b": _con_sanciones(sancion_de_otra_competicion(
-            tabla_equipo(fx["away_team_id"], fx["away_name"], fx["date"]), comp, fx["league_id"]), sanc.get("b")),
+        "a": _con_sanciones(sancion_de_otra_competicion(del_once_oficial(
+            tabla_equipo(fx["home_team_id"], fx["home_name"], fx["date"]), fixture_id, fx["home_team_id"]),
+            comp, fx["league_id"]), sanc.get("a")),
+        "b": _con_sanciones(sancion_de_otra_competicion(del_once_oficial(
+            tabla_equipo(fx["away_team_id"], fx["away_name"], fx["date"]), fixture_id, fx["away_team_id"]),
+            comp, fx["league_id"]), sanc.get("b")),
         "nota": ("punto de partida de la tabla F1, calculado de la temporada ingestada: copiá el "
                  "`jugadorId` (es el cruce exacto con la hoja del partido) y confirmá el rol con la "
                  "prensa —`rolSugerido` sale de los últimos onces (o de los minutos, ver `rolPor`) y no sabe de un DT nuevo ni de una "
