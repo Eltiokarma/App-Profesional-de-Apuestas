@@ -562,7 +562,7 @@ POST $B/analisis/cowork/incidencias
   de Jev (1062, 794: insumo de la fase D, no juez); y un once que la API
   publica con 10 titulares (1060, 1045). Y desde la pasada del 02/11 (noche):
   el ONCE-SIN-FILA-F1 de un debut o recambio fuera de los últimos 3 onces
-  (1069, 1118: espera la decisión de la 1068); el once que la API publica
+  (1069, 1118: con el once capturado la F1 ya lo suma como `delOnceOficial`, #1068); el once que la API publica
   después del pitazo (1072, 1081, 1145: la cola ya prioriza los partidos con
   parte); las capturas de «ambos marcan» anteriores al 27/10 (776, 1099); el
   límite del plan de Claude (1132: el latido ya lo pone en ámbar); y el «sin
@@ -595,7 +595,7 @@ POST $B/analisis/cowork/incidencias
   (1181: misma línea de atrás y un solo punta). Y desde la pasada del 04/11
   (mediodía): el lesionado largo o el que no sumó minutos y que la plantilla
   de la API no lista (1195: va en `fuera` sin `jugadorId`, el bloque F casa
-  por nombre; sumarlo a la F1 espera la decisión de la 1068); y el cierre del
+  por nombre; la F1 lo suma recién con el once oficial, #1068); y el cierre del
   DTP contra un partido anterior al último, que viaja en
   `aperturaPrevia.cierreContra` de `GET /analisis/cowork/dtp/{id}` (1196: leé
   esa clave antes de reportarlo ausente). Y desde la pasada del 04/11
@@ -676,7 +676,19 @@ POST $B/analisis/cowork/incidencias
   lo casa por nombre); el evento VAR «Penalty confirmed» que no terminó en
   penal (1355: es el evento de la API, se cobran el marcador y los goles); y ONCE-SIN-FILA-F1
   con 1, 2 o 3 titulares que el rehacer no rehízo en la F1 (1339: sumalo a la
-  #1068, que espera la decisión; 1265).
+  #1068, que espera la decisión; 1265). Y desde la pasada del 10/11
+  (mediodía): la sede de la ficha con el local nominal que juega en la cancha
+  del visitante (1361, 832, 814: la API no publica el traslado; la sede real va
+  en el parte); la cuota extrema o sin línea visible del mercado de goles en un
+  cruce de categorías muy distintas (1363, 831: llega así de la casa); el IE
+  null cuando falta el F2 del motor (1358, 433: Disciplina 21, el ISE sale
+  igual); y el equipo de categoría no ingestada sin plantilla ni calendario en
+  una copa (1356, 1147: desde el 10/11 el descanso, el P1a y la cancha neutral
+  de ese equipo ya salen «sin dato», #1357/#1366/#1360). La ONCE-SIN-FILA-F1
+  de un titular del once oficial ya no va a la #1068: desde el 10/11 la F1 lo
+  suma como `delOnceOficial` (PR #487); en un parte depositado ANTES del once
+  sigue sonando hasta el rehacer (por diseño), pero si suena en uno depositado
+  con el once ya capturado, es código otra vez.
 
 ## Modo `mantenimiento` (los parches, automáticos)
 
