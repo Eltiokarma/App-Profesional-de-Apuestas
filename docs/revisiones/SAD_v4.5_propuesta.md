@@ -1,8 +1,11 @@
 # Propuesta de revisión · `sad-analysis` v4.4 → v4.5
 
-**Estado:** PROPUESTA, falta que el usuario la apruebe (08/11/2026, usuario:
-«ese aprendizaje está al nivel de un skill… vamos corrigiendo la brújula»).
-No toca `docs/skills/sad-analysis/SKILL.md` hasta la aprobación. Al aprobarse:
+**Estado:** DECIDIDA por el usuario el 10/11/2026 (sección «Decisiones del
+10/11», abajo) y **lista para redactar** (sección «Lista para redactar», al
+final, con el texto exacto de cada cambio y su lugar en el SKILL). Nació como
+propuesta el 08/11/2026 (usuario: «ese aprendizaje está al nivel de un
+skill… vamos corrigiendo la brújula»). No toca
+`docs/skills/sad-analysis/SKILL.md` hasta que se redacte. Al redactarse:
 se redacta en el SKILL, `CORTE_VERSION` con la v4.5 y, cuando el usuario suba
 el zip, su hora en `SUBIDA_VERSION`.
 
@@ -35,6 +38,49 @@ por el usuario el 10/11** (aviso de confianza, no de 1X2; ver el cambio).
 
 **Jev no marcó ninguna lección que pida mover un número**, tampoco en esta
 tanda ni en el segundo corte: la revisión sigue fijando rúbrica.
+
+## Decisiones del 10/11
+
+El usuario decidió el 10/11/2026, en conversación: el cambio 1 (origen de la
+burbuja, decisión del 03/11 confirmada por DEUDA 26) y, para todo lo demás,
+**«lo demás como recomiendas»**: cada pregunta abierta se resuelve con la
+recomendación que la propia propuesta escribe y, donde no recomendaba nada,
+con la regla conservadora (no aflojar una regla vigente, no mover números, lo
+que tiene 1-2 casos queda como candidato, y lo que contradice a la v4.4 se
+resuelve a favor de la v4.4 salvo que 3+ casos la desmientan). En cada lugar
+del texto la pregunta quedó tachada y reemplazada por «**Decidido por el
+usuario el 10/11/2026:** …».
+
+| Punto | Decisión | Efecto en el texto |
+|---|---|---|
+| 1. Origen de la burbuja | Ya decidido: aviso de **confianza** y de carga, nunca de 1X2 (03/11, DEUDA 26) | Entra la regla (f) de 1.7. El dato lo da la app (`origen`): sin él, no se declara origen |
+| 2. «Sigue» contra el riesgo alto | **(a)**: entra ahora como rúbrica, con los dos matices (la recomendación de la propuesta) | Regla nueva (i) de 1.6 y una línea en los pasos 3 y 4 del procedimiento; «de la total o de la condición que guía» |
+| 3. La condición en el extremo | Entra como se propone (no tenía pregunta) | Una oración en (e) y una cláusula en (g) |
+| 4. Perfiles DC | Entra. El punto 2 queda **contenido en el 11** | 6-B se reescribe junto con el 11; el punto 2 pasa a ser el caso de esa regla |
+| 5. La tabla en juego | Entra «lo que está en juego, por los dos» y «a quién le sirve el empate» **como contexto**. Lo que no se aprueba: que el hecho de 6-B / 1.6 (a) se extienda a la fase de liga (un caso, Carabobo) | 6-D (3) con el texto ajustado; la extensión a «Candidatos» |
+| 6. El falsador | Entran los puntos 1-4. Lo que no se aprueba: el xG o los remates dentro del área como cláusula «(lectura)», porque contradice la v4.2 y una de las tres lecciones la confirma | El punto 2 entra como está; el volumen del dominio, a «Candidatos» |
+| 7. El marcador | Entra como se propone | Tres viñetas en 3.5 y una oración en (h) |
+| 8. Riesgo en las dos burbujas | Entra como rúbrica. El número del empate espera su medición | Reemplaza la línea «"más empate" no es regla» de 1.7 (a) |
+| 9. La cadena | Entra como se propone (endurece) | Una oración en (h) |
+| 20. El banco del rival en el falsador | Entra como se propone: frena la subida y no baja del mercado | Punto 7 de 6-C y una línea en 6-B |
+| 10. El empate | Entran los dos textos. Copa: observación | 6-B (empate) y 1.6 (c) |
+| 11. Perfiles DC alineados | **Aprobado**: los perfiles no restan a la visita bajo el mercado (endurece; n 195). **No se saca** el «+N al empate» (recomendación de la propuesta: la medición es de 1X) | 6-B reescrito: «la visita no gana», no restan. Para que no choque con «el favorito no se recorta» (v4.1), con el local de 50 %+ el empate no se aparta por los perfiles |
+| 12, 14, 16, 17, 18 | Nada que cambiar u observación sin regla (como decía la propuesta) | No entran al SKILL |
+| 13. Elegir la visita | Entra el texto; la pista 40-49 es observación | 6-B (favorito) y, para la app, el tramo partido |
+| 15. Rachas entre partidos | Entra el texto | Paso 3 |
+| 19. No se busca valor contra la casa | Entra el párrafo al empezar 6-B. **El disparador es el win rate del tramo contra la cuota, leído como confianza**; `valorMercado` es alarma | Reemplaza el «Cuándo se reabre» de 6-B de la v4.4 |
+| No se propone: K-EXTREMO como excepción a 6-B | **No** (no hay medición; apartarse 2+ bajo la casa costó ROI −20 %) | Queda como está |
+| No se propone: la espina en el extremo sin hecho | **Sigue la v4.4** (al corte más frecuente) hasta la medición de las reventadas por movimiento | Queda como está |
+| Candidato: F3 en la defensa | **Sigue de candidato** (dos casos, leídos por lados distintos) | Queda en «Candidatos» |
+
+Cuántos son: **15 cambios entran al SKILL.md**: los cambios 1-9 y 20, y los
+textos de los puntos 10, 11, 13, 15 y 19. Además entran el changelog y la
+Auditoría 2. **5 quedan de candidato**: F3 en la defensa, el perfil DC de
+Fortaleza, la rama de sensibilidad de Estudiantes, el empate que le sirve a
+uno en la fase de liga y el volumen del dominio. **6 quedan como
+observación** (los puntos 12, 14, 16, 17 y 18, y la copa del punto 10).
+**13 puntos son para la app** (sección «Para la app», al final). El detalle
+y los textos listos están en «Lista para redactar», al final.
 
 ## De dónde sale
 
@@ -545,7 +591,7 @@ Porto), o si las apoyadas en los skills «por juego» aciertan tanto como las
 apoyadas en un hecho de la lista.
 
 **Comprobación 10/11 (23 lecciones nuevas): MATIZA, y en la tanda sola se
-cumple la letra del «lo tumba» [DECIDE USUARIO].** 7 lecciones en 7 partidos
+cumple la letra del «lo tumba» (decidido: (a), abajo).** 7 lecciones en 7 partidos
 (3 fallos, 1 parcial y 3 aciertos) con una espina que dijo «sigue» contra el
 riesgo alto o muy alto:
 
@@ -590,7 +636,7 @@ lista pudo estar y la lección no lo nombra. En la serie entera (51 lecciones:
 25 fallos, 9 parciales y 17 aciertos) los cortes siguen siendo más que los
 aciertos; las que van en contra suben de 7 a 10.
 
-Dos matices para el texto, si se aprueba:
+Dos matices para el texto (aprobados con la (a) el 10/11):
 
 1. **El riesgo alto que pide el hecho es el de la total O el de la
    condición**: Garcilaso (la total en alto, la condición en bajo) se cortó y
@@ -604,12 +650,12 @@ Dos matices para el texto, si se aprueba:
    lista, pero el número se escribe en el historial para que se vea que no es
    0 a 5.
 
-**[DECIDE USUARIO]:** (a) aprobar el cambio 2 ahora, como rúbrica, con los dos
-matices; o (b) dejar los puntos 1, 2 y 4 en espera hasta la alerta calculable
-`ESPINA-CONTRA-RIESGO` con n ≥ 30 («Cuándo se reabre»), y aprobar solo el
-punto 3 (el hecho que la hoja desmiente se rehace con el once), que ningún
-caso contradice. La propuesta sigue recomendando (a): la serie sostiene la
-regla y 6 lecciones elegidas de una tanda no deciden solas.
+**Decidido por el usuario el 10/11/2026:** (a) el cambio 2 entra ahora, como rúbrica,
+con los dos matices (la serie de 51 lecciones lo sostiene y 6 lecciones
+elegidas de una tanda no deciden solas; era la recomendación de la propuesta).
+Se descartó la (b). En el SKILL va como regla nueva **(i) de 1.6** más una
+línea en los pasos 3 y 4 del procedimiento (texto en «Lista para redactar»);
+el 2 a 4 de los perfiles DC contra el riesgo va al historial.
 
 **Núcleo:** los puntos 1 a 4 en 1.6 (procedimiento y reglas c y g) y la
 pregunta nueva de la Auditoría 2. **Historial:** las listas de casos.
@@ -738,6 +784,9 @@ aciertos; 3 son de la copa boliviana).**
    cargar a que la racha negativa siga (1.7 a, «qué es cargar», al revés).
    Tampoco sacan del primer lugar a un favorito del mercado ni suben al local
    sobre el mercado con su K de la condición en el extremo.
+   *(10/11: queda **contenido en el punto 11**, aprobado por el usuario: los
+   dos perfiles no restan a la visita bajo el mercado en ningún caso. Estos
+   casos pasan a ser los de esa regla.)*
 3. **Un perfil armado con otro DT no es hecho** (la misma regla que (e) para
    la K): con T.54 del lado, el perfil de la condición se nombra y no mueve
    el 1X2.
@@ -830,9 +879,15 @@ D4.
   tiene premio». Si «tiene premio» incluye «clasifica a la final» en la última
   fecha de una fase, el parte incumplió una regla vigente. Si el usuario la
   lee solo para llaves, el texto propuesto la extiende, y eso se dice.
-  **Texto propuesto (6-D, punto 3):** «… y a quién le sirve el empate (la
+  ~~**Texto propuesto (6-D, punto 3):** «… y a quién le sirve el empate (la
   final, la clasificación, la ida a favor): si le sirve a uno, es el hecho de
-  6-B y de (a) de 1.6, y se nombra».
+  6-B y de (a) de 1.6, y se nombra».~~
+  **Decidido por el usuario el 10/11/2026:** «a quién le sirve el empate» entra
+  en 6-D (3) **como contexto nombrado**; el hecho de 6-B y de (a) de 1.6 se
+  queda en la eliminatoria o el partido único (la letra vigente) y **no se
+  extiende** a la fase de liga (un caso, Carabobo: regla conservadora, no se
+  afloja «el empate parte del mercado» con un caso). La extensión pasa a
+  «Candidatos (un caso)».
 - **Puebla (1551036:b:3, cambio 2):** «eliminado» no fue un hecho contra el
   riesgo alto. Confirma el segundo punto de este cambio: la tabla es contexto.
 
@@ -938,10 +993,16 @@ cuatro son «el falsador sonó y el 1X2 acertó»):**
 **En contra 10/11, en parte (Vitória SC–Porto, 1575544:a:5).** «Más remates
 al arco del local» sonó 6 contra 4 con el 1X2 acertado. Refuerza el punto 2,
 pero la lección propone escribir el falsador del dominio **«con xG o remates
-dentro del área»**, y el punto 2 saca también el xG. **Pregunta para el
+dentro del área»**, y el punto 2 saca también el xG. ~~**Pregunta para el
 usuario:** ¿el xG queda fuera de la cláusula del 1X2 (como dice el punto 2,
 porque es volumen) o vale como cláusula del DOMINIO, etiquetada «(lectura)»
-y no «(1X2)»? Mientras no se decida, el punto 2 queda como está. El DTP ya
+y no «(1X2)»?~~ **Decidido por el usuario el 10/11/2026:** el xG y los remates
+quedan **fuera** de la cláusula del 1X2 y el punto 2 entra como está (es la
+regla vigente de la v4.2, «no sobre el volumen»; de las tres lecciones que
+piden el volumen, una —Vitória SC–Porto— la confirma, así que no la
+desmienten). La etiqueta «(lectura)» para el dominio **no entra**: pasa a
+«Candidatos» hasta que la app traiga el M5 con volumen dentro del área
+(DTP v1.8, cambio 1). El DTP ya
 pide «M5 con volumen dentro del área» (`PENDIENTES.md`): si la app lo trae,
 la pregunta se responde con el dato.
 
@@ -970,10 +1031,9 @@ el problema es otro.
   (1575540:b:6) la cláusula «4+ remates al arco del local» se dio **con el
   1X2 caído**, y la lección de Melgar pide escribir el falsador «sobre el
   volumen o la vía». Con Vitória SC–Porto (refuerzo 10/11) son tres lecciones
-  que piden el volumen como cláusula del DOMINIO. Suma a la **pregunta para el
-  usuario** que ya está arriba (¿el xG o los remates dentro del área valen
-  como cláusula «(lectura)», no «(1X2)»?). Mientras no se decida, el punto 2
-  queda como está.
+  que piden el volumen como cláusula del DOMINIO. Sumaba a la pregunta de
+  arriba, **decidida el 10/11**: el punto 2 entra como está y el volumen del
+  dominio queda de candidato.
 
 **Núcleo:** los puntos 1 a 4 en 6-C y la pregunta 8 de la Auditoría 2.
 **Historial:** los ejemplos.
@@ -1355,16 +1415,22 @@ bajados por la API). Los scripts no quedaron en el repo: el método es el texto.
   punto 1 del cambio 4.** Es la medición que la v4.4 dejó marcada con ⚠️
   («la cuantía de N no se toca hasta que Aprendizaje mida…»): la cuantía que
   la medición sostiene es **cero**. Es narrativa, no ventaja.
-- **[DECIDE USUARIO] Texto propuesto (6-B), que endurece la v4.2/v4.4, no la
-  afloja:** «Los dos perfiles alineados se escriben como "la visita no gana" y
+- **Decidido por el usuario el 10/11/2026:** aprobado (endurece la v4.2/v4.4, no la afloja, y lo
+  sostiene la medición de n 195). **Texto (6-B):** «Los dos perfiles alineados se escriben como "la visita no gana" y
   **no restan a la visita bajo el mercado**: el mercado ya lo cobra (n 195: la
   visita no ganó el 80 %, la cuota de 1X pedía 81,7 %). Siguen siendo un
-  hecho para la espina `cero` (1.6 a) y se nombran una vez». Si se aprueba,
-  el punto 2 del cambio 4 (no restar con la burbuja negativa en riesgo) queda
-  contenido en esta regla, más amplia. **Pregunta:** ¿se saca también el
-  «+N al empate» por los perfiles? La medición es de «la visita no gana» (1X),
-  no del empate solo. Hasta medir el empate de esos 195, el empate sigue
-  pudiendo apartarse más de 2 puntos con ese hecho, como dice la v4.1.
+  hecho para la espina `cero` (1.6 a) y se nombran una vez». El punto 2 del
+  cambio 4 (no restar con la burbuja negativa en riesgo) queda contenido en
+  esta regla, más amplia, y pasa a ser su caso. ~~**Pregunta:** ¿se saca
+  también el «+N al empate» por los perfiles?~~ **Decidido por el usuario el 10/11/2026:** **no se saca**
+  (la medición es de «la visita no gana», 1X, no del empate solo; era la
+  recomendación de la propuesta): hasta medir el empate de esos 195, el empate
+  sigue pudiendo apartarse más de 2 puntos con ese hecho, como dice la v4.1.
+  **Consecuencia para el texto** (derivada, para que dos reglas vigentes no
+  choquen): si la visita no baja, lo que sube el empate sale del local; con el
+  local de 50 %+ rige «el favorito no se recorta» (v4.1) y los perfiles no son
+  un dato que el mercado no tenga (lo cobra: n 195), así que ahí el empate no
+  se aparta por ellos. Ver «Lista para redactar», fila 11.
 
 ### 12. Cómo fallamos: como el favorito de la casa
 
@@ -1512,12 +1578,16 @@ bajados por la API). Los scripts no quedaron en el repo: el método es el texto.
     reabren «el favorito sobre el mercado» si `valorMercado.nuestroFavorito`
     sale con el intervalo sobre cero. **Eso usa el valor como disparador para
     apartarse del mercado: choca.** Además el punto 13 mide que apartarse
-    cuesta. **Pregunta para el usuario:** ¿el disparador pasa a ser el win
+    cuesta. ~~**Pregunta para el usuario:** ¿el disparador pasa a ser el win
     rate del tramo contra lo que pide la cuota (el mismo del freno), y aun
-    así sin subir sobre el mercado, solo como lectura de confianza? Mientras
-    no decida, se deja escrito: «`valorMercado` es alarma: si baja mucho, se
-    revisa el skill; si sube, no autoriza a subir al favorito sobre el
-    mercado».
+    así sin subir sobre el mercado, solo como lectura de confianza?~~
+    **Decidido por el usuario el 10/11/2026:** **sí**: el disparador es el win
+    rate del tramo contra lo que pide la cuota, y se lee como **confianza**
+    (tramo y freno del método), nunca para subir sobre el mercado (es la
+    decisión del 03/11 y la misma salida que el cambio 1). Queda escrito:
+    «`valorMercado` es alarma: si baja mucho, se revisa el skill; si sube, no
+    autoriza a subir al favorito sobre el mercado». Reemplaza el «Cuándo se
+    reabre» de 6-B de la v4.4 («Lista para redactar», fila 19).
   - **«Lo que dicen nuestras apuestas» (+8,9 sobre la cuota)** es win rate
     contra lo que pide la cuota: es la medida del método y no choca.
   - **Cambios 2 a 9 y 20:** ninguno aparta del mercado. El 4, el 8, el 20 y
@@ -1570,10 +1640,12 @@ bajados por la API). Los scripts no quedaron en el repo: el método es el texto.
 
     Las dos chocan con «qué es cargar» (1.7 a, v4.4: quedarse en el mercado
     no es cargar) y con 6-B. El punto 13 mide que bajar al elegido 2+ puntos
-    bajo la casa costó un ROI de −20 % (n 31). **Queda como está**, a la
-    vista: **¿el usuario quiere que K-EXTREMO sea la única excepción a «el
-    número del favorito es el del mercado»?** Hoy no hay medición que la
-    sostenga (1.7 e: la alerta no adelanta el corte).
+    bajo la casa costó un ROI de −20 % (n 31). **Queda como está.**
+    ~~¿el usuario quiere que K-EXTREMO sea la única excepción a «el número
+    del favorito es el del mercado»?~~ **Decidido por el usuario el 10/11/2026:** **no**:
+    K-EXTREMO no es excepción (no hay medición que la sostenga —1.7 e: la
+    alerta no adelanta el corte— y apartarse 2+ bajo la casa costó ROI −20 %;
+    regla conservadora: no se afloja 6-B).
 - **Cambiar el corte por defecto de (g), «al otro signo»** (marcado ⚠️ en la
   v4.4).
   - Muchas burbujas en riesgo alto se cortaron por el **empate**: 2 de Mayo,
@@ -1605,10 +1677,14 @@ bajados por la API). Los scripts no quedaron en el repo: el método es el texto.
     línea de lo que (g) ya dice («Leer el corte en el extremo sin hecho tampoco
     funcionó»: Medellín, Querétaro). Junto con Twente, dice que en el extremo
     la espina **no orienta en ninguna dirección**, la misma lógica del cambio 3
-    para la condición. **Pregunta para el usuario:** sin hecho, ¿la espina en el
-    extremo sigue yendo «al corte más frecuente de la guía calibrada», o pasa a
-    `pronostico` (sigue al 1X2, que no carga)? No se cambia sin la medición
-    calculable de arriba.
+    para la condición. ~~**Pregunta para el usuario:** sin hecho, ¿la espina en
+    el extremo sigue yendo «al corte más frecuente de la guía calibrada», o pasa
+    a `pronostico` (sigue al 1X2, que no carga)?~~ **Decidido por el usuario el 10/11/2026:** **sigue la
+    v4.4** (al corte más frecuente de la guía calibrada, con el ⚠️ a la vista)
+    hasta la medición calculable de arriba (reventadas por movimiento, n ≥ 30
+    por nivel): la propuesta ya decía «no se cambia sin la medición», y lo que
+    contradice a la vigente con dos casos (Heerenveen, Twente) se resuelve a
+    favor de la vigente.
 - **La tarjeta fuerte en el borde.**
   - Esta tanda suma cuatro fallos: Chicó (1549856:a, 52 %), Groningen
     (1552215, 53 %), Bodø (1635640:a, 54 %, con ESCALA-LIGAS) y Sport Boys
@@ -1701,12 +1777,25 @@ revisión siguiente si suman casos.
   sostener la lectura positiva sin rebajar la confianza.» Hay un antecedente
   del 10/11 que va en la misma línea pero se leyó por otro lado: Santa
   Clara–Gil Vicente (1575542:a:4, «la concordancia no compensa el degradado
-  del once»). Si el usuario lo lee como el mismo patrón, son dos casos y pasa
-  a cambio (confianza, no 1X2). **Calculable:** la tasa de la tarjeta fuerte
+  del once»). **Decidido por el usuario el 10/11/2026:** **sigue de candidato**: son dos
+  casos, leídos por lados distintos (uno por la tarjeta fuerte con F3, el
+  otro por la concordancia de dos tarjetas), y con 1-2 casos no se hace regla.
+  Pasa a cambio si suma un tercero del mismo patrón. **Calculable:** la tasa de la tarjeta fuerte
   con y sin F3 en el lado, en Aprendizaje.
 - **El perfil DC de temporada no pesa contra un local sin gol en juego
   abierto.** Fortaleza FC–Independiente Medellín (1549858:a:6 y :b:6, un
   partido, cambio 4).
+- *(Decidido el 10/11, viene del cambio 5)* **El empate que le sirve a uno en
+  la fase de liga (la final, la clasificación) como hecho de 6-B y de (a) de
+  1.6.** Carabobo–La Guaira (1646935:b, 0-0 que le daba la final). Hasta un
+  segundo caso, se nombra como contexto en 6-D (3) y el hecho sigue siendo la
+  eliminatoria o el partido único.
+- *(Decidido el 10/11, viene del cambio 6)* **El volumen como cláusula del
+  DOMINIO, etiquetada «(lectura)» y no «(1X2)»** (xG o remates dentro del
+  área). Vitória SC–Porto (1575544:a:5), Nacional–Académico de Viseu
+  (1575540:b:6) y Melgar–Juan Pablo II (1549548:a:6) lo piden; la primera
+  confirma la regla vigente. Se mira de nuevo cuando la app traiga el M5 con
+  volumen dentro del área (DTP v1.8, cambio 1, `dtp.porBloque[].volumen`).
 - **Una rama de sensibilidad que mueve el 1X2 y se cumple en el once obliga a
   decir en el rehecho por qué el 1X2 se sostiene.** Talleres–Estudiantes
   (1493239:b:5, parcial): Castro y Piovi salieron titulares, como decía la
@@ -1717,7 +1806,7 @@ revisión siguiente si suman casos.
   cuando una rama declarada como movedora del 1X2 se cumple en el once
   oficial y el 1X2 no cambia.
 
-## Cómo se aplica si se aprueba
+## Cómo se aplica (decidida el 10/11; el detalle, en «Lista para redactar»)
 
 1. **Skill:** `SKILL.md` a v4.5, con el changelog arriba. Cambian:
    - 1.6: el procedimiento (pasos 3 y 4), la regla (c) y la (g) extendida al
@@ -1733,8 +1822,8 @@ revisión siguiente si suman casos.
    - *(10/11)* 1.6 (h): la cadena (cambio 9);
    - *(segundo corte, 10/11)* 6-C y una línea en 6-B: el banco del rival que
      nombra el falsador (cambio 20);
-   - *(10/11)* 6-B: los textos de los puntos 10, 13 y 19, y el del 11 si el
-     usuario lo aprueba; 1.6 (c): el número del punto 10; Paso 3: el texto
+   - *(10/11)* 6-B: los textos de los puntos 10, 13, 19 y 11 (este, aprobado
+     el 10/11); 1.6 (c): el número del punto 10; Paso 3: el texto
      del punto 15;
    - Auditoría 2: una pregunta nueva, «¿alguna espina dice "sigue" contra
      riesgo alto o muy alto? ¿con qué hecho de la lista?», y la 8 suma
@@ -1793,8 +1882,10 @@ revisión siguiente si suman casos.
 - **El valor:** si `valorMercado.nuestroFavorito` sale con el intervalo entero
   sobre cero (hoy −1,8 % a +14,5 %), se reabre «el favorito sobre el mercado»
   con la validación por fecha de la v4.1, como dice 6-B. *(10/11: hoy −2,4 % a
-  +13,0 %. **Choca con la decisión del usuario del 03/11**: está a la vista,
-  con la pregunta, en el punto 19.)*
+  +13,0 %. **Chocaba con la decisión del usuario del 03/11**; decidido el
+  10/11 en el punto 19: el disparador pasa a ser el win rate del tramo contra
+  la cuota, leído como confianza, y `valorMercado` es alarma.)* **Este
+  disparador sale** con la v4.5.
 - *(10/11)* **Cambio 8:** con la medición calculable (n ≥ 100 partidos con las
   dos en riesgo, con cuota).
 - *(10/11)* **Cambio 9:** si `CADENA-VS-PARTE` (o la cuenta a mano) muestra
@@ -1896,7 +1987,7 @@ caso van mezclados. Esta propuesta ya los escribe separables:
 | 20. El banco del rival en el falsador | los dos puntos en 6-C y una línea en 6-B | los cuatro casos del segundo corte y los tres anteriores |
 | Candidatos (un caso) | nada | todo |
 | 10, 13, 15, 19 | la frase de cada texto propuesto, en su paso | las cifras completas de la medición |
-| 11 | el texto de 6-B, si se aprueba | la medición de los 195 |
+| 11 | el texto de 6-B (aprobado el 10/11) | la medición de los 195 |
 | 12, 14, 16, 17, 18 | nada (observación o nada que cambiar) | todo: el estado de la medición de cada uno |
 
 **Lo que la corrida no necesita leer:** los conteos por cambio, las tablas
@@ -1911,7 +2002,7 @@ cambios). La comprobación es la del segundo corte: 23 lecciones del 07-08/11,
 | # | Cambio (una línea) | Tipo | Comprobación 10/11 | Núcleo o historial |
 |---|---|---|---|---|
 | 1 | El origen de la burbuja (inflada / construida) frena la carga y, si se confirma sobre nuestro win rate, mueve la confianza, nunca el 1X2 | rúbrica (decidido por el usuario el 10/11; el dato, app) | sin casos | núcleo: la regla (f) de 1.7 · historial: la fuente y las 269 apuestas |
-| 2 | Contra el riesgo alto o muy alto (de la total o de la condición que guía), «sigue» solo con un hecho de la lista | decide | matiza (la tanda sola cumple la letra del «lo tumba»: 3 de 6) | núcleo: puntos 1-4 en 1.6 y la pregunta de la Auditoría 2 · historial: los casos |
+| 2 | Contra el riesgo alto o muy alto (de la total o de la condición que guía), «sigue» solo con un hecho de la lista | rúbrica (decidido el 10/11: (a)) | matiza (la tanda sola cumple la letra del «lo tumba»: 3 de 6) | núcleo: puntos 1-4 en 1.6 y la pregunta de la Auditoría 2 · historial: los casos |
 | 3 | Con la K de la condición en el extremo, la guía no es `condicion` | rúbrica | sin casos | núcleo: la oración en (e) y (g) · historial: los casos |
 | 4 | Los perfiles DC dicen «la visita no gana», no restan contra el riesgo y se leen con su burbuja | rúbrica | matiza (Fortaleza–Medellín: ganó la visita) | núcleo: puntos 1-4 en 6-B y (c) · historial: los casos y la 1227 |
 | 5 | Lo que está en juego en la tabla, para los dos y con a quién le sirve el empate | rúbrica | sin casos | núcleo: el punto 3 de 6-D · historial: U–Sport Boys y Carabobo |
@@ -1920,3 +2011,214 @@ cambios). La comprobación es la del segundo corte: 23 lecciones del 07-08/11,
 | 8 | Riesgo alto en las dos burbujas: el empate se nombra, no se carga a que siga una sola | medir | sin casos | núcleo: los tres puntos de 1.7 (a) · historial: los casos |
 | 9 | La cadena y el pronóstico por equipo dicen lo mismo que el parte | rúbrica | sin casos | núcleo: una oración en (h) · historial: los dos casos |
 | 20 | El banco del rival que nombra el falsador también se lee en el 1X2 (frena la carga, no baja del mercado) | medir | nuevo (4 fallos: Newell's, Viseu, Everton de Viña, Alianza Lima) | núcleo: los dos puntos de 6-C · historial: los casos |
+
+## Lista para redactar
+
+Comprobada el 10/11/2026 contra el SKILL vigente,
+`docs/skills/sad-analysis/SKILL.md` (v4.4, 514 líneas). Las líneas son de ese
+archivo, abiertas hoy: cada sección citada existe. Lo que es solo de la app
+va aparte, en «Para la app». Ningún cambio mueve un número de la app ni del
+skill.
+
+| # | Entra | Dónde va en el SKILL.md (v4.4) | Texto nuevo listo | Caso nombrado | ¿Afloja algo vigente? | ¿Toca otro skill? |
+|---|---|---|---|---|---|---|
+| CL | sí | Encabezado: `description` (l. 3), título (l. 6) y un bloque de changelog v4.5 antes del de la v4.4 (l. 8) | sí (T-CL) | — | no | no |
+| 1 | sí | Paso 1.7: regla nueva **(f)** entre la (e) (l. 307) y «La estabilidad…» (l. 308) | sí (T1) | (el ejemplo del Bayern; la fuente va al historial) | no (frena la carga; no mueve el 1X2) | no; **depende de la app** (`origen`, punto 1 de «Para la app») |
+| 2 | sí | Paso 1.6: una línea al final de los pasos 3 (l. 271) y 4 (l. 272) del procedimiento; regla nueva **(i)** después de la (h) (l. 292) y antes de «La espina puede ir contra el 1X2» (l. 293) | sí (T2) | Caracas–Puerto Cabello 1646933, Leeds–Tottenham 1557463, Galatasaray–Stuttgart 1635669 | no: endurece el paso 3 («deciden los skills») contra el riesgo alto | `corrida-sad` (modo `rehacer`: el hecho que depende del once) |
+| 3 | sí | 1.6 (e) (l. 287), al final; y en (g) (l. 289) una cláusula | sí (T3) | Libertad–Emelec 1639859, Excelsior–Go Ahead 1552218 | no | no |
+| 4 | sí | 6-B: la viñeta de los perfiles (l. 417) y sus subviñetas (l. 418-420), reescritas junto con el 11 | sí (T4-11) | Rubio Ñu–Luqueño 1632055, Vitória 1492449, Universitario–Sport Boys 1549535 | no: endurece la v4.2/v4.4 (ya no se resta a la visita) | EFE (T.54, vigente desde la v1.6; la v1.10 no lo cambia) |
+| 5 | sí | 6-D, punto 3 (l. 454), reemplazado; una fila nueva en «Insumos» después de la l. 80 | sí (T5) | Universitario–Sport Boys 1549535, Caracas–Puerto Cabello 1646933 | no (la extensión del hecho de 6-B, que aflojaba, no entra) | no |
+| 6 | sí | 6-C: el punto 1 (l. 443) se corrige y suma dos puntos nuevos, 5 y 6, después del 4 (l. 446) | sí (T6) | Venezia–Udinese 1550196, Aris–Panetolikos 1593353, Mainz–Bayern 1575217 | no: el punto 1 quitaba los remates de la regla del volumen de la v4.2, y ahora se la devuelve | DTP (las vías que el falsador toma; no cambia el DTP) |
+| 7 | sí | 3.5: tres viñetas después de «La goleada como rama» (l. 351); 1.6 (h) (l. 292), una oración | sí (T7) | Unión–Vélez 1493241, Barcelona–Aston Villa 1635627, Pereira–Tolima 1549852 | no | no |
+| 8 | sí | 1.7 (a): reemplaza la subviñeta de la l. 303 | sí (T8) | Chivas–León 1551037, Barcelona SC–LDU 1639804 | no (el empate no sube) | no |
+| 9 | sí | 1.6 (h) (l. 292), una oración después de la del 7 | sí (T7, segunda oración) | Sport Boys–UTC 1549552, Alianza Valledupar–Llaneros 1549853 | no | DTP: la apertura de `cadena_dtp` es el pronóstico por equipo foco que escribe el parte (CLAUDE.md), no el DTP. La v1.8 del DTP no lo toca: no hace falta un espejo |
+| 20 | sí | 6-C: un punto nuevo, el 7, después de los del 6; una línea en 6-B después de «El número del favorito…» (l. 422-430) | sí (T20) | Instituto–Newell's 1493236, Nacional–Académico de Viseu 1575540 | no (frena la subida; prohíbe bajar sin dato) | DTP y EFE: de dónde salen los nombres del banco (ver «Coherencia entre skills») |
+| 10 | sí | 6-B, al final de «El empate parte del mercado» (l. 416); 1.6 (c) (l. 285), después de «de empates» | sí (T10, el texto del punto 10) | (medición, 2.638 y 175 partidos) | no | no |
+| 11 | sí | 6-B (l. 417-420), junto con el 4 | sí (T4-11) | (medición, n 195) | no: endurece. La consecuencia para el empate (sale del local; con el local de 50 %+ no se aparta por los perfiles) es **derivada** y conservadora | no |
+| 13 | sí | 6-B, al final de «El número del favorito…», después de «Ningún "+N" al favorito…» (l. 428) | sí (T13, el texto del punto 13) | (medición, 100 partes) | no | no |
+| 15 | sí | Paso 3, después de «Lo que queda en pie…» (l. 333) | sí (T15, el texto del punto 15) | (medición, 2.638 partidos y 28 casos) | no | no |
+| 19 | sí | 6-B: un párrafo nuevo entre el título (l. 412) y la intro (l. 414); reemplaza «Cuándo se reabre» (l. 430) | sí (T19) | (decisión del usuario, 03/11) | **sí, a propósito**: saca `valorMercado` como disparador para subir al favorito sobre el mercado. Es la decisión del usuario del 03/11, no una regla aflojada: lo que se afloja es una vía para apartarse del mercado | no |
+| A2 | sí | Auditoría 2: la 8 (l. 479) suma una oración y entra una pregunta 9 nueva | sí (T-A2) | — | no | no |
+| — | como nota | 12, 14, 16, 17, 18 y la copa del punto 10: no entran (observación o nada que cambiar) | — | — | — | — |
+| — | no (candidato) | F3 en la defensa; el perfil DC de Fortaleza; la rama de sensibilidad de Estudiantes; el empate que sirve en la fase de liga; el volumen del dominio «(lectura)» | — | uno o dos casos cada uno | — | EFE (F3), DTP (M5) |
+
+**El núcleo y el historial.** `references/HISTORIAL.md` todavía no existe
+(`NUCLEO_SKILLS_propuesta.md` no se aplicó). Por eso los textos de abajo
+llevan uno o dos casos por regla y el resto de los casos se queda en esta
+propuesta, como en la v4.4.
+
+### Los textos, listos para pegar
+
+**T-CL. Encabezado.** En la l. 3, «(v4.4)» pasa a «(v4.5)». En la l. 6, «SAD — Análisis Deportivo (v4.5)». Antes de la l. 8:
+
+> **v4.5 · <fecha de la subida> — Contra el riesgo alto, un hecho; el falsador dice qué refuta; el parte no busca valor contra la casa.** Revisión desde las 260 lecciones pendientes (01-09/11; 254 acreditables, 5 de copa nacional, 1 en cuarentena que enseña) y lo medido en conversación con el usuario entre el 03 y el 09/11. Ninguna lección pide mover un número (Jev): la revisión fija rúbrica.
+>
+> **1. El origen de la burbuja** (1.7 f): inflada por un batacazo o construida por una racha; mueve la confianza y la carga, nunca el 1X2. **2. Contra el riesgo alto o muy alto, «sigue» pide un hecho de la lista** (1.6 i), y la guía `pronostico` no lleva a «sigue». **3. La K de la condición en su extremo no es guía** (1.6 e). **4. Los dos perfiles DC dicen «la visita no gana» y no le restan bajo el mercado** (6-B): el mercado ya lo cobra (n 195). **5. Lo que está en juego en la tabla, por los dos y con a quién le sirve el empate**, como contexto (6-D). **6. Cada cláusula del falsador dice qué refuta**, el volumen no va en el 1X2, no niega una vía del DTP, y el banco del rival que nombra va también en el 1X2 (6-C). **7. El marcador no se elige por un récord ni contra el elegido en silencio**, y la cadena dice lo mismo que el parte (3.5, 1.6 h). **8. Riesgo alto en las dos burbujas: el empate se nombra, no se carga a que siga una sola** (1.7 a). **9. El parte no busca valor contra la casa** (6-B; usuario, 03/11): `valorMercado` es alarma.
+
+**T1. Paso 1.7, regla nueva (f)** (entre l. 307 y l. 308):
+
+> - **(f) El origen de la burbuja: inflada o construida** *(v4.5)*. La línea de `lecturaSad.reventon` dice de dónde viene la burbuja de cada equipo, con el dato que lo prueba **tomado de la app** (`origen` de `/burbujas`, alertas BURBUJA-INFLADA y BURBUJA-CONSTRUIDA). Sin ese dato no se declara origen: no se cuenta a mano ni se adivina desde el Elo. **Inflada**: ganó como gran no-favorito (≤ 25 % sin margen) en uno de sus dos partidos anteriores. Con el elegido inflado, el 1X2 **no sube sobre el mercado** a ese lado, y el `porque` lo nombra («viene de ganar con 18 % al Bayern: burbuja inflada»). **Construida**: 10+ partidos sin perder. Con el elegido construido, el riesgo del reventón **no es razón para bajarlo del mercado** (6-B), y el `porque` lo nombra **sin sumar puntos sobre el mercado**. Las dos mueven la **confianza** y la carga, como la estabilidad: nunca el 1X2 sobre ni bajo el mercado. Se reabre con 100+ apuestas por grupo sobre nuestro win rate contra lo que pide la cuota (`docs/METODO_APUESTA.md`).
+
+**T2. Paso 1.6.** Al final del paso 3 del procedimiento (l. 271):
+
+> *(v4.5)* Contra el riesgo alto o muy alto, los skills no alcanzan para «sigue»: rige (i).
+
+Al final del paso 4 (l. 272):
+
+> *(v4.5)* Salvo contra el riesgo alto o muy alto del lado de la racha elegida: ahí rige (i).
+
+Regla nueva, después de la (h) (l. 292):
+
+> - **(i) Contra el riesgo alto o muy alto, «sigue» pide un hecho de la lista** *(v4.5)*. Con riesgo alto o muy alto en la burbuja que guía (**de la total o de la condición que guía**, como en (g)), la espina dice «sigue» **solo con un hecho de ESTE partido nombrado en el `porque`**: la diferencia de nivel a favor de la racha que trae el riesgo (`rival.aFavor` / `rival.favorito`), una baja del rival confirmada en el once o por una fuente de nivel A, o una rotación o un descanso corto confirmados por el club o en el once. **No son un hecho para ir contra el riesgo**: los perfiles DC, de un lado o de los dos (para `cero` siguen valiendo, regla a); el objetivo de tabla o un rival eliminado (es contexto, 6-D); el calendario de otra competición sin rotación confirmada; un promedio de temporada o el volumen del DTP; las bajas propias sin rotación; y lo que ya lista (c). Falló sin hecho en Caracas–Puerto Cabello (1646933: «obligado contra eliminado»); acertó con uno en Galatasaray–Stuttgart (1635669: sin Stiller).
+>   - **Un hecho que depende del once probable se rehace con el once oficial**: si la hoja lo desmiente, el hecho cae, la espina vuelve a la tarjeta y se dice (Leeds–Tottenham 1557463: «Okafor fuera», y salió del banco e hizo el gol).
+>   - **La guía `pronostico` no lleva a «sigue» contra el riesgo alto o muy alto.** Si el 1X2 elige al lado de la racha con ese riesgo, la espina de ese lado va como en (g) sin hecho: con la tarjeta si la tarjeta lee el corte y, si no, al corte más frecuente de la guía calibrada. El `porque` dice «sin hecho contra el riesgo alto: no sigue al 1X2». El 1X2 no cambia: la espina va contra el elegido y se dice (viñeta siguiente).
+
+**T3. 1.6 (e)**, al final (l. 287):
+
+> *(v4.5)* **Con K-EXTREMO-CONDICION o K-CERCA-EXTREMO-CONDICION la guía tampoco es `condicion`**: la espina se lee con la `total` y, si la total no da lectura, con `pronostico`. Si la total también está en el extremo, rige (g) entera. Una K de la condición en su franja más alta no orienta en ninguna dirección (Libertad–Emelec 1639859 leyó «sigue» y se cortó; Excelsior–Go Ahead 1552218 leyó el corte y siguió). La alerta sigue frenando la carga (1.7 e).
+
+En (g) (l. 289), después de «(de la total o de la condición)», se agrega: «—la de la condición, leída con la guía de (e)—».
+
+**T4-11. 6-B, los perfiles DC.** Cambian tres cosas: en la l. 417, la oración «es un **hecho de ESTE partido**: el 1X2 puede apartarse del mercado hacia ese lado, nombrándolo (…78 % / 79 %»)»; y las l. 418 y 420.
+
+l. 417, la oración central pasa a decir:
+
+> …es un **hecho de ESTE partido** para el empate (viñeta anterior) y para `cero` (1.6 a), nombrado una vez. *(v4.5)* **No mueven el 1X2 bajo ni sobre el mercado**: ver la subviñeta siguiente.
+
+(Los casos de la v4.2 —Leones–Libertad, Fortaleza–Cali, Palestino–Colo Colo, Pumas–Tigres— y la oración del perfil de un solo lado se quedan.)
+
+l. 418, reemplazada:
+
+> - **Lo que dicen juntos se escribe «la visita no gana»** *(v4.4; v4.5)*, también en el `porque` del 1X2 y en el marcador declarado; con el local elegido, la celda del empate del acotado se nombra como salida. *(v4.5)* **No restan a la visita bajo el mercado ni suben al local sobre él**: el mercado ya lo cobra (con los dos perfiles alineados, n 195, la visita no ganó el 80 % y la cuota de 1X pedía 81,7 %; la cuantía que la medición sostiene es cero). Si el empate se aparta por ellos, lo que sube sale del local; con el local de 50 %+ rige «el favorito no se recorta» (v4.1), y los perfiles no son un dato que el mercado no tenga: ahí el empate no se aparta por ellos. Restarle a la visita con su burbuja negativa en riesgo alto o muy alto era además cargar a que esa racha siga (1.7 a), y reventó: Rubio Ñu–Luqueño (1632055, 0-5) y Metropolitanos–Carabobo (1646931). Los empates leídos como ventaja del local (Universitario–Sport Boys 1549535, 2-2) eran lo que los dos decían juntos.
+> - **Un perfil armado con otro DT no es hecho** *(v4.5)*: con T.54 del lado, el perfil de la condición se nombra y no mueve el 1X2 (Vitória 1492449: el 70 % de local que no pierde era del ciclo anterior). Es la regla de (e) de 1.6, aplicada al perfil.
+> - **La burbuja DC se lee con su largo, su máximo y su regularidad** *(v4.5; usuario, 05/11, incidencia 1227)*, de `otrasFamilias` en `/burbujas` (descripción, sin puntos), antes del 1X2. No se calcula a mano y no suma por sí sola (Universitario: 10 sin perder de local, máximo previo 19, 20 burbujas previas).
+
+(La l. 419, «no son dos fuentes independientes», se queda.) l. 420, reemplazada:
+
+> - ⚠️ El umbral «dos de cada tres» no se toca. Cuánto puede ir al empate espera medir el empate de esos 195 partidos contra el del mercado.
+
+**T5. 6-D, punto 3** (reemplaza la l. 454):
+
+> 3. **Contexto:** presión de tabla, hinchada, clima del club, **con fuente citada**. *(v4.5; usuario, 05/11, incidencia 1227)* **Lo que está en juego, por los dos lados**, con los puntos y la distancia al objetivo (título, cupos internacionales, descenso) que da la tabla de la app (`GET /ligas/{ligaId}/standings`, con `fase=` en torneos cortos), no como adjetivo, y **a quién le sirve el empate** (la final, la clasificación), nombrado. Es **contexto, no un hecho**: ni para ir contra el riesgo (1.6 i) ni para apartar el empate del mercado. El hecho de 6-B y de 1.6 (a) sigue siendo la eliminatoria o el partido único con premio al empate de los 90. Universitario–Sport Boys (1549535): Sport Boys peleaba la Sudamericana y no era «un visitante sin objetivo»; «obligado contra eliminado» falló en Caracas–Puerto Cabello (1646933).
+
+Fila nueva en «Insumos», después de la l. 80:
+
+> | Tabla (lo que está en juego) *(v4.5)* | `GET /ligas/{ligaId}/standings` (`fase=` en Apertura/Clausura) |
+
+**T6. 6-C.** En el punto 1 (l. 443), «y las stats de la ficha (remates al arco, xG si viene)» se reemplaza por:
+
+> …y los cambios. *(v4.5)* Las stats de la ficha (remates al arco, xG, posesión) se pueden comprobar, pero son volumen: **no van en una cláusula del 1X2** («No sobre el volumen», arriba). **Comprobable no quiere decir válido** (Venezia–Udinese 1550196 y Genoa–Milan 1550190: el volumen sonó con el 1X2 acertado). **La pelota parada y la transición no se comprueban en la ficha**: se escriben por el autor, el minuto o el tipo que la ficha sí trae, o no van (Chapecoense–Mirassol 1492443).
+
+(El resto del punto 1, con Monza–Napoli, se queda.) Después del punto 4 (l. 446):
+
+> 5. **Cada cláusula dice qué refuta** *(v4.5)*: «(1X2)» si cae el pronóstico, «(marcador)» si cae el marcador declarado o una rama suya. La rama de goleada (3.5) y el gol del rival que solo rompe el marcador van como «(marcador)»: así el falsador cubre la rama sin gatillar el del 1X2 (Aris–Panetolikos 1593353: «abre al 11'» era la rama del 3-0; Crystal Palace–Liverpool 1557459).
+> 6. **El falsador no niega una vía que el DTP del mismo parte escribió** *(v4.5)* —banco, transición, pelota parada—: la toma (punto 3) y nunca la declara falsa (Mainz–Bayern 1575217: «si marca un suplente, la vía fue otra», con el banco nombrado en el DTP).
+
+**T7. 3.5**, después de «La goleada como rama nombrada» (l. 351):
+
+> - **Con FAMILIA-RECORD el marcador declarado no se elige por el récord** *(v4.5)*, ni a que siga ni a que se corte. Se elige entre las celdas del acotado con el volumen cruzado y, si la celda elegida depende del récord, se dice y se nombra la otra: un récord es terreno sin precedente, no un piso (Unión–Vélez 1493241: 2-1 sobre una racha de recibir gol en récord; Rayo–Real Sociedad 1570449). Una racha de condición hecha en el estadio propio no viaja a una sede prestada (São Paulo–Corinthians 1492448).
+> - **La goleada como rama se nombra siempre que el tramo 3+ del favorito sea, por sí solo, el más probable de su distribución** *(v4.5)*, aunque el resto del parte no la escriba (Barcelona–Aston Villa 1635627: 44 % con 2,42 goles esperados).
+> - **El volumen cruzado es el de la condición en la temporada** *(v4.5)*, no el de un partido (Paris FC 1552811: los 2,19 de xG ante Monaco no sostenían el segundo gol).
+
+En 1.6 (h) (l. 292), al final (cambios 7 y 9):
+
+> *(v4.5)* **Lo mismo con el 1X2**: el marcador declarado lo gana el elegido del 1X2; si no, la lectura dice cuál de los dos manda y por qué (Pereira–Tolima 1549852: 1-0 local con 57 % a la visita; a veces el acotado lee mejor, Willem II–PEC 1552216). **Y con la cadena**: la apertura de `cadena_dtp` (el pronóstico por equipo foco) dice lo mismo que el 1X2 y la espina del parte. Si el parte frena la carga por una alerta (FAMILIA-RECORD, K-EXTREMO, K-CERCA-EXTREMO, riesgo alto), la cadena no la carga, y un récord no se escribe como «por N+1.º partido» (Alianza Valledupar–Llaneros 1549853: el parte respetó la alerta y la cadena la dio por sexta derrota).
+
+**T8. 1.7 (a)** (reemplaza la l. 303):
+
+> - **Riesgo alto o muy alto (o K-EXTREMO / K-CERCA-EXTREMO) en las DOS burbujas totales** *(v4.5)*: el `porque` del 1X2 **nombra el empate como la salida que corta las dos** (es descripción, no un hecho de 6-B: el empate sigue partiendo del mercado); el elegido **no sube sobre el mercado** si su victoria hace seguir la racha en riesgo del otro lado; y la espina no dice «sigue» en los dos lados a la vez sin un hecho de la lista de 1.6 (i). Chivas–León (1551037) y Barcelona SC–LDU (1639804) cargaron a que siguiera una y salió el empate. «Más empate» **sigue sin ser regla**: es candidato hasta medir el empate de esos partidos contra el del mercado (n ≥ 100). La casa calibra el empate (6-B).
+
+**T10. El empate (punto 10).** Al final de «El empate parte del mercado» (l. 416):
+
+> *(v4.5)* Medido en 2.638 partidos de liga con cuota (01/09-03/11/2026): la casa calibra el empate tramo por tramo (bajo 17 %: 11,6 contra 13,6; 23-26 %: 25,2 contra 24,6). No hay de dónde sacarle puntos sin un hecho.
+
+En 1.6 (c) (l. 285), después de «de empates»:
+
+> (medido: con los dos al 25 %+ en su condición, el empate salió 17,7 % contra 28,7 % de la cuota, n 175)
+
+**T13. El número del favorito (punto 13).** En la viñeta de la l. 422, después de «Ningún "+N" al favorito, ninguna temperatura ni factor.» (l. 428):
+
+> *(v4.5)* Medido con la visita elegida (100 partes): a la par del mercado ganó el 64,5 % (n 62); 2+ puntos bajo la casa, ROI −20 % (n 31); 2+ puntos sobre la casa, 1 de 7. Lo que cuesta no es el lado: es apartarse del número.
+
+**T15. Paso 3** (después de la l. 333):
+
+> *(v4.5)* Tampoco hay dependencia entre partidos distintos en nuestros aciertos: tras 3 fallos seguidos, la base da 51 % al favorito y nuestros partes del 28/10 al 09/11, 12 de 28. El resultado de otro partido no es un hecho de ESTE.
+
+**T19. 6-B.** Párrafo nuevo entre el título (l. 412) y la intro (l. 414):
+
+> **El parte no busca valor contra la casa** *(v4.5; usuario, 03/11)*. Lo que se mejora es el acierto del elegido. Ninguna regla aparta al 1X2 del mercado para «encontrar valor»: `valorMercado` y Kelly son alarmas de la app, no metas del parte (`docs/METODO_APUESTA.md`).
+
+«Cuándo se reabre» (l. 430), reemplazado:
+
+> **Cuándo se reabre** *(v4.5; usuario, 03/11)*: si un tramo llega a n ≥ 30 con el win rate del elegido con el intervalo entero por encima de lo que pide la cuota (la vara de `docs/METODO_APUESTA.md`), se lee como **confianza** del elegido —el tramo y el freno del método—, nunca como «el favorito sobre el mercado». `valorMercado.nuestroFavorito` es alarma: si baja mucho, se revisa el skill; si sube, no autoriza a subir al favorito sobre el mercado.
+
+**T20. El banco del rival en el falsador.** En 6-C, después del punto 6 nuevo:
+
+> 7. **El banco del rival que el falsador nombra como vía de gol va también en el `porque` del 1X2** *(v4.5)*, con los nombres: antes del once, los del banco probable de la F1 y del DTP; con el once oficial, los de la hoja. Lo que el falsador cree capaz de tumbar el pronóstico no falta en la lectura. Pesa en la carga, no en el número: con esa vía nombrada el elegido **no sube sobre el mercado** a ese lado (1.7 a) y tampoco baja bajo él sin un dato con su cifra (6-B). En Instituto–Newell's (1493236) y Nacional–Académico de Viseu (1575540) el falsador nombró el banco, el 1X2 lo dio por menor y por ahí se cayó.
+
+En 6-B, una línea después de la viñeta «El número del favorito…» (después de la l. 430):
+
+> - *(v4.5)* **El banco del rival que nombra el falsador frena la subida del elegido** sobre el mercado (6-C, punto 7). No lo baja.
+
+**T-A2. Auditoría 2.** Al final de la 8 (l. 479):
+
+> *(v4.5)* ¿Cada cláusula dice si refuta el 1X2 o el marcador, ninguna del 1X2 es de volumen, y el banco del rival que nombra está también en el `porque` del 1X2?
+
+Pregunta nueva, después de la 8:
+
+> 9. *(v4.5)* ¿Alguna espina dice «sigue» contra riesgo alto o muy alto (de la total o de la condición que guía)? ¿Con qué hecho de la lista de 1.6 (i)? ¿El once oficial lo desmiente?
+
+### Lo que se mira al redactar
+
+- **No hay bloqueo de sección**: todas las líneas citadas existen en la v4.4
+  de hoy. Si el SKILL cambia antes de redactar, se ubica cada texto por la
+  sección y la regla, no por el número de línea.
+- **Las letras de 1.6**: hoy van de (a) a (h). La regla nueva del cambio 2 es
+  la **(i)**, y los textos de esta propuesta (cambios 5, 8 y T-A2) ya la
+  citan así. En la propuesta, «la lista del cambio 2» es esa (i).
+- **El 6-B del 4 y del 11 se redacta junto**: la l. 417 deja de decir «el 1X2
+  puede apartarse del mercado hacia ese lado» y la l. 418 deja de decir «los
+  puntos se restan a la visita». La regla del empate (l. 416) sigue listando
+  «los dos perfiles DC apuntando al empate» como hecho. Por eso T4-11 dice de
+  dónde sale lo que sube el empate.
+- **La (f) de 1.7 no se puede aplicar hasta que la app traiga `origen`**.
+  Igual se puede redactar, y mientras tanto el texto dice «sin ese dato no se
+  declara origen».
+- **Las rutas que el skill cita** (`GET /ligas/{ligaId}/standings`,
+  `docs/METODO_APUESTA.md`) existen, y `/ligas` está en la lista de GET del
+  token de Cowork (`backend/app.py`, `_COWORK_PERMITIDO`).
+  `test_arquitectura` verifica las rutas que citan los skills.
+
+## Para la app
+
+Esto no va al SKILL.md. Cada punto es una incidencia, con su test, si el
+usuario la pide. Va en el orden de valor de «Cómo se aplica».
+
+1. **`origen` en `/burbujas`** (inflada: el partido del golpe y su probabilidad sin margen, de `/cuotas` del partido previo; construida: los partidos sin perder), con las alertas `dato` BURBUJA-INFLADA y BURBUJA-CONSTRUIDA en `docs/openapi.yaml`. Sin cuota capturada, no hay alerta. Es requisito de la regla (f).
+2. **ESPINA-CONTRA-RIESGO** (`dato`): la espina «sigue» con riesgo alto o muy alto de la total o de la condición que guía (cambio 2).
+3. **Las reventadas partidas por movimiento** (a cero / al otro signo) y por nivel en `metricas.reventon`. Destraba la pregunta de la espina en el extremo («Lo que NO se propone»).
+4. **GUIA-CONDICION-EN-EXTREMO** (`dato`) (cambio 3).
+5. **La distancia al objetivo** (punta, cupos, descenso) en el insumo del parte (cambio 5). La tabla ya se lee de `/ligas/{id}/standings`.
+6. **El conteo de los falsadores que sonaron con el 1X2 acertado**, por etiqueta «(1X2)/(marcador)» (cambio 6).
+7. **El empate con las dos totales en riesgo alto o muy alto** contra el empate del mercado, en la base y en nuestros partes, y la alerta RIESGO-EN-LOS-DOS (cambio 8).
+8. **CADENA-VS-PARTE** (`dato`) (cambio 9).
+9. **El tramo 40-49 partido por el lado del elegido** en Aprendizaje (punto 13).
+10. **La cláusula «gol desde el banco» del rival**: cuántas veces se escribió, cuántas sonó y con qué 1X2. Además, la parte de los goles de cada equipo que hacen los que entran desde el banco, y la alerta BANCO-EN-FALSADOR (cambio 20).
+11. **El empate de los 195 partidos con los dos perfiles alineados**, contra el del mercado (punto 11: destraba cuánto puede ir al empate).
+12. **`lecciones.CORTE_VERSION["sad-analysis"]`** suma `("v4.5", <fecha>)` y **`SUBIDA_VERSION`** la hora de la subida. `REGLAS_CALCULADAS_DESDE` lleva la fecha de la v4.5 para cada alerta nueva.
+13. **`docs/COWORK.md` y el skill `corrida-sad`**: el prompt suma la burbuja DC antes del 1X2 y la etiqueta «(1X2)/(marcador)» del falsador. El modo `rehacer` revisa, con el once oficial, el hecho de la espina que dependía del once probable (cambio 2: Leeds, Progreso, Pereira). Hoy `rehacer` ya carga `sad-analysis` (EFE v1.10, cambio 1). Con la 1068 (c) carga además el EFE solo con 3+ titulares fijos cambiados o con otro arquero, y eso no cambia lo que el SAD pide.
+
+## Coherencia entre skills
+
+| Dependencia | Qué necesita la v4.5 | ¿La otra propuesta lo tiene? |
+|---|---|---|
+| **El banco del rival en el falsador** (cambio 20, 6-C 3 y 7) ↔ DTP / TDE / EFE | Los nombres del banco del rival: antes del once, el banco probable; con el once, la hoja | **Sí.** EFE v1.10, cambio 10: la F1 admite `banco probable` y B5 nombra el banco por rol. DTP v1.8, punto 5: con el once oficial el banco es la hoja (`bancoOfensivo`, pendiente de la app). TDE v0.1.26, cambio 5: el banco de la hoja, reescrito en `rehacer` y en todas las ramas. Las tres dicen lo mismo, y T20 lo cita así |
+| **El falsador no niega una vía del DTP** (cambio 6, punto 6) ↔ DTP | Que el DTP liste sus vías (banco, transición, pelota parada) | **Sí, vigente.** La v1.8 no cambia cómo se escriben las vías |
+| **La pelota parada no se comprueba en la ficha** (cambio 6, en el punto 1) ↔ TDE | La misma lectura que el TDE | **Sí, vigente**: el TDE v0.1.25 ya la pasó a `otra_via` (744) |
+| **El volumen del dominio «(lectura)»** (candidato del cambio 6) ↔ DTP | El M5 con volumen dentro del área | **Sí, como pendiente de la app**: DTP v1.8, cambio 1 (`dtp.porBloque[].volumen`, `cubreRama`). El candidato espera ese dato |
+| **El hecho que la hoja desmiente se rehace** (cambio 2, (i)) ↔ `corrida-sad` y la 1068 | Que `rehacer` cargue `sad-analysis` y revise la espina | **En parte.** `rehacer` ya carga `sad-analysis` (EFE v1.10). La 1068 (c) no lo toca. **Falta** una línea en el modo `rehacer` de `corrida-sad` («revisar el hecho de la espina que dependía del once probable»). No está en ninguna de las cuatro propuestas: va a «Para la app», punto 13. No bloquea el SKILL |
+| **La F1 con la fila del titular que falta** (1068 (c), `delOnceOficial`, rol ROT) ↔ Ley 4 (Paso 0.5) | Nada nuevo: el SAD lee la F1 como esté | No hace falta un cambio en el SAD |
+| **La herencia del TDE desde el DTP** (1056 (a)) | Nada: el SAD no lee el `sob2` | No hace falta un cambio en el SAD |
+| **La cadena dice lo mismo que el parte** (cambio 9) ↔ DTP | Nada en el DTP: la apertura de `cadena_dtp` es el pronóstico que escribe el parte | DTP v1.8: «la cadena rodante… no cambia». No hace falta un espejo |
+| **Un perfil con otro DT** (cambio 4) ↔ EFE T.54 | T.54 como hoy | EFE v1.10 no cambia T.54. Su cambio 11 (D3 con T.54) es «medir primero» y no toca la fecha de T.54 |
+| **El candidato F3** ↔ EFE | F3 como hoy | EFE v1.10, cambios 7 y 8, leen F3 por zona (lo concedido y el ataque degradado). Es coherente con el candidato: F3 baja la confianza, no el 1X2. Sigue de candidato |

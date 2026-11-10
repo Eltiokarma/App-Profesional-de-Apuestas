@@ -1,6 +1,8 @@
 # Propuesta de revisión · `efe-clasificador` v1.9 → v1.10 (+ `efe-dashboard` v1.12 → v1.13)
 
-**Estado:** PROPUESTA, sin aprobar. Escrita el 10/11/2026 desde el dossier de
+**Estado:** PROPUESTA con las decisiones del usuario del 10/11/2026 aplicadas
+(ver «Decisiones del 10/11» y «Lista para redactar»); falta redactar el skill.
+Escrita el 10/11/2026 desde el dossier de
 `GET /analisis/cowork/revision/efe-clasificador` (**dossier generado el 10/11 a
 las 02:13 UTC**): **568 lecciones pendientes** de los partidos del 01/11 al
 09/11, 152 de ellas de partidos del 08/11 o después. **Comprobada el mismo día
@@ -23,6 +25,31 @@ ni lección se tocó para escribir esto.
 50 veredictos del 07 al 09/11 todavía cerrándose. Ya se cerraron: las 71
 lecciones del EFE que trajeron se leyeron todas, una por una, contra la línea
 «Se sostiene si… / Lo tumba si…» de cada cambio.
+
+## Decisiones del 10/11
+
+El usuario decidió el 10/11/2026, en conversación: la **1068** con la opción
+(c), la (b) primero; el número **v1.10**; y «lo demás como recomiendas»: cada
+pregunta se resuelve con la recomendación que la propia propuesta escribe, y
+donde no recomienda nada, con lo conservador (no aflojar una regla vigente, no
+mover números, lo que tiene 1-2 casos queda como nota o candidato, y lo que
+contradice a la v1.9 se resuelve a favor de la v1.9 salvo 3+ casos en contra).
+
+| Punto | Decisión | Efecto en el texto |
+|---|---|---|
+| Número (pregunta 1) | v1.10, con núcleo o sin él | ya estaba escrito |
+| **1068** · cambios 1 y 13 (pregunta 2) | **(c) en dos pasos, la (b) primero.** Paso 1: la app suma la fila del titular que falta (`delOnceOficial`, rol 🟡 Rotación —`ROT` en la app—, sin stats de temporada). Paso 2: el modo `rehacer` carga `efe-clasificador` **solo** con 3+ titulares fijos cambiados respecto del XI de referencia o con un arquero distinto del del B6 | Cambio 1: la contradicción queda resuelta; A1 pasa a describir la fila `delOnceOficial`; el 13 cita esa fila; «Cuándo se reabre» y «Cómo se aplica» cambian; la línea de `corrida-sad` que cambiaría va en «Lista para redactar» (no se tocó la rutina) |
+| Cambio 2 · alcance (pregunta 4) | **(a)**: D1 🔶 o T.54 de ≤ 2 partidos (la propuesta no recomendaba; lo conservador es no estirar con 1 caso) | La (b), «toda serie más corta que la ventana de validación» (Genk, 1 caso), pasa a candidato |
+| Cambio 3 · la frase del condicional (pregunta 3) | **Se saca del cambio** (lo que recomendaba la comprobación): la v1.9 ya la dice y el refuerzo es el aviso de la app (A2) | Se tacha; quedan la línea entera del grid y el once tardío. El eje que vuelve por un cambio (León–Chivas) y Atlético Tucumán siguen candidatos |
+| Cambio 5 · la roja (pregunta 5) | **(a)**: la roja de la misma competición es ❌ Baja con la rama «si juega» cuando ninguna fuente de nivel 1-3 la confirma, hasta que A3 aclare Kortrijk | La (b) se tacha (queda en «Cuándo se reabre») |
+| Cambio 6.2 (pregunta 6) | **Se saca** (las lecciones lo tumbaron: 12 con rotación contra 8 sin ella) y se mantiene la v1.7: el calendario condiciona siempre | 6.2 tachado; A8 queda como medición, sin regla atada |
+| Cambio 9 (pregunta 7) | **Nota hasta el tercer caso** (lo que recomendaba la propuesta) | Pasa a «Matices que no son cambio»; no entra como regla |
+| Cambio 11 | **Nota hasta que A7 mida** (2 casos: Estrela y Macará; la propuesta no recomendaba entre regla y nota) | Pasa a «Matices que no son cambio»; el D3 no se toca |
+| Cambio 12 | Sin cambio de texto hasta A6 (ya era lo que proponía) | ninguno |
+| **A0** · la etiqueta `lectura_efe` (pregunta 8) | **(a)**: redefinirla como `lectura` («la rúbrica del skill se aplicó mal»), porque el dossier ya es por skill; lo sellado no se re-etiqueta. Mientras tanto, el dossier del EFE cuenta aparte las de otros skills cuya `reglaTocada` nombra un insumo del EFE | A0 reescrito con la decisión; es app (`modo_fallo.py`), no skill |
+| A6 · menos lecciones de «empate técnico declarado y cumplido» | **Sí, pero solo después de medir A6** (es lo que la propuesta escribía) | La corrida no cambia todavía |
+| 1056 · heredar y avisar | Aprobada (a); no toca a este skill (es TDE↔DTP) | ninguno |
+| Origen de la burbuja (03/11) | No toca a este skill | ninguno |
 
 ## El número: decidido, v1.10 (usuario, 10/11)
 
@@ -146,7 +173,7 @@ Y las 3 lecciones `lectura_efe` del propio EFE:
 parte, un error del EFE: es una casilla de la taxonomía que junta la lectura de
 tres skills. Lo que sí es del EFE se reparte entre la tabla F1, el banco
 probable y la línea nueva, y entra a los cambios 1, 3, 6 y 10. Separar la
-etiqueta es de la app y lo decide el usuario (A0).
+etiqueta es de la app: **decidido por el usuario el 10/11/2026, (a)** (ver A0).
 
 ## Lo que la v1.9 acertó y no hay que tocar (con los casos del 08-09/11)
 
@@ -211,10 +238,12 @@ uno por uno. El 13 salió de la comprobación del segundo corte. Los seis primer
 Marcas: **[rúbrica]**, cambia el texto de la regla · **[CALCULABLE→app]**, lo
 calcula la app y no la corrida · **[MEDIR PRIMERO]**, no entra sin medir ·
 **[DECIDE USUARIO]**, hay una contradicción o una regla que se afloja.
+**Todas las [DECIDE USUARIO] quedaron decididas el 10/11** (ver «Decisiones del
+10/11»): en cada cambio la marca dice cómo.
 
 ---
 
-### 1. El rehacer con el once oficial empieza por la tabla F1, y una baja que está en la hoja deja de ser baja — era el 08/11-1 · [rúbrica] [CALCULABLE→app] [DECIDE USUARIO]
+### 1. El rehacer con el once oficial empieza por la tabla F1, y una baja que está en la hoja deja de ser baja — era el 08/11-1 · [rúbrica] [CALCULABLE→app] [DECIDIDO 10/11: 1068 (c), la (b) primero]
 
 **Qué dice hoy (v1.9).** «Con el once oficial a la vista, los once titulares
 tienen fila.» La app avisa `ONCE-SIN-FILA-F1` al leer, con el texto «con 3 o
@@ -254,11 +283,19 @@ estaba a la vista o el parte se rehízo:
 El mantenimiento ya lo vio y lo dejó esperando una decisión (1257, 1265 y 1339,
 que remiten a la **1068**). Mientras la rutina no cargue el EFE, la regla de la
 v1.9 no se puede cumplir al rehacer, por bien que esté escrita. Es una
-**contradicción entre el skill y la rutina**, y la decide el usuario:
+**contradicción entre el skill y la rutina**. Las opciones eran:
 - **(a)** el rehacer carga el EFE y hace el orden del cambio 1;
-- **(b)** la app suma la fila del titular que falta, con su `rolSugerido` y la
-  marca «agregada por la app» (opción de A1);
+- **(b)** la app suma la fila del titular que falta (opción de A1);
 - **(c)** las dos cosas.
+
+**Decidido por el usuario el 10/11/2026: la (c), en dos pasos y con la (b)
+primero** (la (b) cierra 27 partidos cruzando dos listas; la (a) re-puntúa B y
+B6, que son juicio, en los 5 donde hace falta). Paso 1: la app suma la fila del
+titular que falta como `delOnceOficial`, con rol 🟡 Rotación (`ROT`) y sin
+stats de temporada. Paso 2: el modo `rehacer` carga `efe-clasificador` solo con
+3+ titulares fijos cambiados respecto del XI de referencia o un arquero
+distinto del del B6 (el corte que la v1.9 ya usa para recomputar). La línea de
+la rutina que cambiaría está en «Lista para redactar».
 
 La propuesta del 08/11 no lo había visto.
 
@@ -288,9 +325,10 @@ casilla según el rol de la temporada, no solo el que nombra la previa. El tope
 de 14-16 no se sube como número: la tabla crece solo con quien puede jugar hoy.
 
 **Calculable (A1, A2).** El recibo del depósito avisa de los titulares sin
-fila y de las bajas que están en la hoja. `f1/{id}` trae `onceOficial` con la
-fila lista y, por cada baja, los candidatos por rol (`rolSugerido` y
-titularidades en esa casilla del grid).
+fila y de las bajas que están en la hoja. Con el once capturado, `f1/{id}` suma
+la fila del titular que falta (`delOnceOficial`, rol `ROT`, sin stats de
+temporada: decisión de la 1068) y, por cada baja, trae los candidatos por rol
+(`rolSugerido` y titularidades en esa casilla del grid).
 
 **Qué NO:** subir el tope de filas, ni escribir otra regla para algo que la
 v1.9 ya escribe.
@@ -337,12 +375,12 @@ del primer corte desde el 08/11, son **31 lados de 27 partidos**, más los 37 de
 - **El tiempo:** Los Chankas re-depositó 5 minutos después de capturado el once
   (17:41 → 17:46), Audax 13 minutos después (15:02 → 15:15) y Fortaleza tenía
   el once a 6 minutos del pitazo. Con esos márgenes la F1 a mano no llega: va
-  al cambio 13 y es el argumento de la recomendación de la **1068** (pregunta 2
-  de «Preguntas para el usuario»: la (c), con la (b) primero).
+  al cambio 13 y es el argumento de la decisión de la **1068** (decidida el
+  10/11: la (c), con la (b) primero).
 
 ---
 
-### 2. El sistema se verifica con el once: con D1 🔶 o un DT que todavía prueba, D1, H y la zona del ausente van condicionados — era el 08/11-2 · [rúbrica] [DECIDE USUARIO en el alcance]
+### 2. El sistema se verifica con el once: con D1 🔶 o un DT que todavía prueba, D1, H y la zona del ausente van condicionados — era el 08/11-2 · [rúbrica] [DECIDIDO 10/11: alcance (a)]
 
 **Qué dice hoy.** D1 puntúa el sistema base de más de 6 meses. Con T.54 de ≤ 2
 partidos, B6 y F van condicionados al once (v1.9). Nada condiciona el sistema ni
@@ -373,6 +411,10 @@ Danubio 1646902 y Atlas 1551032.
 La (b) cubre a Genk. Usa un corte que ya existe, así que no es un número nuevo,
 pero condiciona más partes.
 
+**Decidido por el usuario el 10/11/2026: la (a)** (D1 🔶 o T.54 de ≤ 2
+partidos; la (b) se apoya en un solo caso, Genk, y condiciona más partes: pasa a
+candidato en «Matices que no son cambio»).
+
 **Calculable, en parte.** El sistema del once sale del grid
 (`f1_base._lineas_por_grid`). El largo de la serie del DT sale de `dt.desde` y
 de los partidos de la base. Lo que no se calcula es si el sistema cambió
@@ -392,11 +434,12 @@ distinto del D1 declarado ni un H acertado con otro sistema. Lo más cerca no es
 del sistema: Universidad de Chile (1505560a, Gago suspendido y Coloccini en el
 banco, con el modelo intacto: no movió la clasificación) y Ñublense (1505558a,
 el interino en su tercer partido, con T.54 leída como confianza en la K). La
-elección entre (a) y (b) queda con los casos del primer corte (Genk).
+elección entre (a) y (b) quedaba con los casos del primer corte (Genk):
+decidida la (a), la (b) es candidato.
 
 ---
 
-### 3. EJE-DEBUTANTE: con el once se lee la línea entera del grid, y «condicional» con el once a la vista no vale — era el 08/11-3 · [rúbrica] [CALCULABLE→app] [DECIDE USUARIO tras la comprobación]
+### 3. EJE-DEBUTANTE: con el once se lee la línea entera del grid, y «condicional» con el once a la vista no vale — era el 08/11-3 · [rúbrica] [CALCULABLE→app] [DECIDIDO 10/11: la frase del condicional sale del cambio]
 
 **Qué dice hoy (v1.9).** Sin once, va condicional. Con el once, se declara o se
 descarta con el grid.
@@ -464,9 +507,11 @@ este corte se cumplió. **Cómo queda el cambio:**
 - se queda la línea entera del grid (línea de fondo y doble pivote);
 - se queda «once tardío, sin verificar» con el once a menos de 20 minutos, que
   el cambio 13 extiende a la F1;
-- la frase del condicional **no se reescribe**: la v1.9 ya la dice, y el
-  refuerzo pasa al aviso de la app (A2, la alerta condicional con el once
-  capturado). [DECIDE USUARIO: sacar la frase o dejarla como refuerzo.]
+- ~~«condicional con el once a la vista no vale»~~ **no se reescribe**: la
+  v1.9 ya la dice, y el refuerzo pasa al aviso de la app (A2, la alerta
+  condicional con el once capturado). **Decidido por el usuario el 10/11/2026:
+  se saca la frase del cambio** (la v1.9 la dice y en este corte se cumplió; el
+  refuerzo es de la app).
 
 **Candidato nuevo (1 caso):** Atlético Tucumán. El debutante decidió en el área
 rival («la alerta mide el riesgo defensivo, no su cara ofensiva»).
@@ -504,7 +549,11 @@ vía.**
 
 **Propuesta.** La de la propuesta del 08/11 sin cambios. Con Aucas, la frase dice: «vía a
 vigilar: amplía el rango, y con GK-DOWNGRADE declarado la caja nombra la pelota
-parada y el remate al arco como lo que se le cae».
+parada y el remate al arco como lo que se le cae». *(10/11, con la regla
+conservadora: lo de Aucas es un caso y entra como nota dentro del párrafo, no
+como regla. «Vía a vigilar» sí afloja la «vía del rival» firme de la v1.9, y
+entra porque la desmienten 8 casos: los 5 de la propuesta del 08/11 más
+Melo, Ortega y Córdova.)*
 
 **Calculable (A2).** Quién ataja hoy ya lo calcula `backend/analisis/arquero.py`
 (`arquero_suplente`, usado por los reventones). El rehacer del DTP ya avisa
@@ -545,7 +594,7 @@ En contra o sin probar se suman 3 (Melo, Ortega y Córdova).
 
 ---
 
-### 5. La sanción calculada de la base: la roja es Baja con su rama, el ciclo de amarillas es probable — era el 08/11-5, con una corrección · [rúbrica] [DECIDE USUARIO] [CALCULABLE→app]
+### 5. La sanción calculada de la base: la roja es Baja con su rama, el ciclo de amarillas es probable — era el 08/11-5, con una corrección · [rúbrica] [DECIDIDO 10/11: (a)] [CALCULABLE→app]
 
 **Qué dice hoy (v1.9).** «La sanción calculada de la base es nivel 1… le gana a
 una previa.»
@@ -570,21 +619,22 @@ Los tres falsos sancionados de UEFA eran la regla vieja, y ya se corrigió en
   copa (la regla general dice que no suspende en la liga), una sanción anulada
   o una tarjeta mal atribuida. Hay que verificarlo antes de mover la regla (A3).
 
-**La contradicción, para el usuario:**
+**La contradicción (decidida el 10/11):**
 - La v1.9 dice que la sanción de la base es nivel 1 y le gana a la previa.
 - La propuesta del 08/11 dejaba en nivel 1 solo la roja.
 - Kortrijk pide bajar también la roja cuando nadie la confirma.
 
-**Propuesta (elegir una):**
+**Propuesta:**
 - **(a)** la roja sigue en nivel 1 y va como ❌ Baja, **con la rama «si juega»
   en la caja de sensibilidad cuando ninguna fuente de nivel 1-3 la confirma**.
   La prosa (DTP, matriz) no se apoya en la baja sin decir la rama. Es lo menos
   que se afloja.
-- **(b)** la roja sin confirmación de prensa va como ⚠️ Duda, como el ciclo.
-  Es lo que pide la lección, y se apoya en un solo caso.
+- ~~**(b)** la roja sin confirmación de prensa va como ⚠️ Duda, como el ciclo.~~
+  Se apoya en un solo caso (Kortrijk): queda en «Cuándo se reabre».
 
-Esta propuesta recomienda la (a) hasta que A3 diga qué pasó en Kortrijk. El
-resto de la propuesta del 08/11 sigue igual: el ciclo como Duda, la sanción de otra
+**Decidido por el usuario el 10/11/2026: la (a)**, hasta que A3 diga qué pasó
+en Kortrijk (es lo menos que se afloja y la (b) tiene un solo caso). El resto
+de la propuesta del 08/11 sigue igual: el ciclo como Duda, la sanción de otra
 competición no saca al jugador y la de varias fechas la trae la prensa.
 
 **Calculable (A3).** Hoy **todo** sale con `certeza: probable` en
@@ -610,7 +660,7 @@ caso en contra. La recomendación (a) y A3 quedan como están.
 
 ---
 
-### 6. La rama «once alternativo»: se abre por un hecho (calendario, anuncio o costumbre del DT) y carga a los rotables de todas las líneas; la F3 de una rotación elegida es F4 — era el 08/11-6, con un agregado · [rúbrica] [CALCULABLE→app] [DECIDE USUARIO]
+### 6. La rama «once alternativo»: se abre por un hecho (calendario, anuncio o costumbre del DT) y carga a los rotables de todas las líneas; la F3 de una rotación elegida es F4 — era el 08/11-6, con un agregado · [rúbrica] [CALCULABLE→app] [DECIDIDO 10/11: 6.2 sale, queda la v1.7]
 
 **Qué dice hoy.** Con una eliminatoria a ≤ 5 días o el 3.er partido en 8 días,
 la rama se abre y el porcentaje queda «condicionado al once» (v1.7).
@@ -650,15 +700,15 @@ calendario solo.**
 **Propuesta.** La de la propuesta del 08/11, más dos líneas:
 1. **La rama carga a los rotables de todas las líneas** que el calendario toca,
    no solo a los de arriba (The Strongest).
-2. **El porcentaje «condicionado al once» por calendario se apoya en la
+2. ~~**El porcentaje «condicionado al once» por calendario se apoya en la
    costumbre del DT** con ese calendario: lo que rotó en sus últimas ventanas
    cortas. Si el DT repite el once con calendario exigente (OFI, Brighton), la
-   rama va en la caja sin condicionar el porcentaje.
+   rama va en la caja sin condicionar el porcentaje.~~
 
-   **Esto afloja la regla de la v1.7**, que condiciona siempre con el
-   calendario, y por eso lo decide el usuario. Va con ⚠️ medir primero: cuántas
-   veces rota el DT en ventanas cortas lo calcula la app (A8). Sin esa medición
-   se queda como en la v1.7.
+   **Sacado: decidido por el usuario el 10/11/2026.** Aflojaba la regla de la
+   v1.7 (que condiciona siempre con el calendario) y la comprobación lo tumbó
+   (12 partidos con rotación contra 8 sin ella). Se mantiene la v1.7; A8 sigue
+   como medición.
 
 **Calculable (A2, A8).** `EFE-RECOMPUTO-PENDIENTE` y la costumbre de rotación
 por DT: cambios en el once en partidos con ≤ 3 días de descanso, sacados de las
@@ -711,7 +761,8 @@ la tabla F1.
 - **Cómo queda:** 6.2 sale del cambio. Se queda la v1.7 (el calendario
   condiciona siempre), y A8 (la costumbre de rotación por DT) sigue como
   medición, sin regla atada. Se reabre si A8 muestra DT que repiten el once en
-  la mayoría de sus ventanas cortas. [DECIDE USUARIO]
+  la mayoría de sus ventanas cortas. **Decidido por el usuario el 10/11/2026:
+  6.2 sale y se mantiene la v1.7** (las lecciones lo tumbaron).
 
 ---
 
@@ -858,7 +909,7 @@ oficio) sigue sin medir. Va a la parte calculable del cambio.
 
 ---
 
-### 9. La baja de un titular fijo con recambio sin minutos se nombra como vía del rival aunque la zona quede en ámbar — nuevo (sube una nota de la propuesta del 08/11) · [rúbrica] [DECIDE USUARIO: regla o nota]
+### 9. La baja de un titular fijo con recambio sin minutos se nombra como vía del rival aunque la zona quede en ámbar — nuevo (sube una nota de la propuesta del 08/11) · [DECIDIDO 10/11: nota hasta el tercer caso, no entra como regla]
 
 **Qué dice hoy.** «Toda zona **en rojo** dice quién la cubre» (v1.9). La propuesta del 08/11 lo
 dejó como nota para el ámbar, con Lens (1635681): la reducción DEF dio 28,6 %
@@ -872,17 +923,18 @@ con Aguilar reconvertido, y concedió nueve.
 - **En la otra dirección:** Lille (DTP 1635640b) muestra que la línea rehecha
   puede salir limpia. La vía es eso, una vía: amplía el rango.
 
-**Propuesta.** «La baja de un titular fijo cuyo recambio no tiene minutos en esa
+**Propuesta.** ~~«La baja de un titular fijo cuyo recambio no tiene minutos en esa
 casilla se nombra **como vía del rival** (al DTP), aunque la zona quede en
-ámbar.» Son dos casos (Lens y AEK). Si el usuario prefiere esperar a un tercero,
-queda como nota.
+ámbar.»~~ Son dos casos (Lens y AEK). **Decidido por el usuario el 10/11/2026:
+nota hasta el tercer caso** (dos casos no hacen regla). Pasa a «Matices que no
+son cambio».
 
 **Calculable.** El recambio sin minutos en la casilla sale de `f1/{id}`.
 
 **Qué NO:** cambiar el corte del ámbar.
 
-**Núcleo / historial.** Núcleo: una línea bajo «Toda zona en rojo dice quién la
-cubre». Historial: Lens y AEK.
+**Núcleo / historial.** Como nota: una línea bajo «Toda zona en rojo dice quién la
+cubre», marcada candidato. Historial: Lens y AEK.
 
 **Se sostiene si** aparece un tercer caso de ámbar con un recambio sin minutos
 por el que llegó el gol. **Lo tumba si** los ámbar con recambio sin minutos no
@@ -892,7 +944,7 @@ conceden por esa casilla.
 ámbar. Fortaleza (1549858a) se parece: el lateral que entró por Medina Obando,
 sin fila, hizo el autogol. Pero la lección no da la zona, y el problema que
 nombra es la fila (cambio 1). Siguen siendo dos casos (Lens y AEK).
-**Recomendación:** nota hasta el tercero.
+**Recomendación:** nota hasta el tercero (decidido así el 10/11).
 
 ---
 
@@ -929,8 +981,11 @@ profundidad (v1.8). La tabla F1 no dice quién arranca en el banco.
    habitual que rota, la Duda que puede ir al banco y el que vuelve de lesión.
    No es una columna nueva ni un número.
 2. **B5 nombra el banco por rol** (quién entra para qué), no solo por nombre.
-   Esa lista es la que toman el DTP (banco ofensivo), el TDE (ramas) y la matriz
-   (palanca del reloj). Ninguno de esos skills la arma de nuevo con dos nombres.
+   Antes del once, esa lista es la que toman el DTP (banco ofensivo), el TDE
+   (ramas) y la matriz (palanca del reloj) como banco **probable**; ninguno la
+   arma de nuevo con dos nombres. **Con el once oficial, el banco es la hoja**
+   (lo mismo que piden el cambio 5 de `DTP_v1.8_propuesta.md` y el cambio 5 de
+   `TDE_v0.1.26_propuesta.md`; ver «Coherencia entre skills»).
 3. **«Banco corto» solo con la tabla mirada entera:** no hay ningún titular
    habitual, ninguna Duda y ningún suplente con impacto documentado que pueda
    entrar.
@@ -977,7 +1032,7 @@ Ningún caso de un suplente sin historia que ninguna tabla habría nombrado.
 
 ---
 
-### 11. D3 con T.54 y una serie corta: la nota dice cuántos casos tiene, y con pocos el ❌ o el ✅ firme va con caja — nuevo · [MEDIR PRIMERO] [DECIDE USUARIO]
+### 11. D3 con T.54 y una serie corta: la nota dice cuántos casos tiene, y con pocos el ❌ o el ✅ firme va con caja — nuevo · [MEDIR PRIMERO] [DECIDIDO 10/11: nota hasta A7]
 
 **Qué dice hoy.**
 - **v1.6:** T.54 descuenta lo heredado y respeta la serie del DT nuevo.
@@ -994,7 +1049,9 @@ Ningún caso de un suplente sin historia que ninguna tabla habría nombrado.
 
 **Propuesta.** Con T.54 y menos casos de la cara que se evalúa que la ventana de
 validación, D3 se puntúa como dice la tabla y **lleva la caja de sensibilidad
-con la otra cara**. Pasarlo a 🔶 cambiaría un sub-score, que es un número, y
+con la otra cara**. **Decidido por el usuario el 10/11/2026: nota, no regla,
+hasta que A7 mida** (son dos casos, Estrela y Macará, y la propuesta no
+recomendaba entre regla y nota). Pasa a «Matices que no son cambio». Pasarlo a 🔶 cambiaría un sub-score, que es un número, y
 eso **no entra sin medir**: hay que saber cuánto acierta un D3 apoyado en 1-3
 casos contra uno apoyado en 6 o más.
 
@@ -1005,8 +1062,8 @@ muestra contra el partido siguiente. Recién con eso se decide.
 
 **Qué NO:** mover D3 sin la medición.
 
-**Núcleo / historial.** Núcleo: una línea en el bloque D. Historial: Estrela y
-Macará.
+**Núcleo / historial.** Como nota: una línea en el bloque D, marcada sin
+cambio de regla. Historial: Estrela y Macará.
 
 **Se sostiene si** la medición de A7 muestra que el D3 de 1-3 casos acierta
 claramente menos que el de 6 o más. **Lo tumba si** acierta lo mismo.
@@ -1015,6 +1072,8 @@ claramente menos que el de 6 o más. **Lo tumba si** acierta lo mismo.
 (1549855b): el D3 de visita, «reacciona sin remontar», quedó corto, porque
 reaccionó del 1-2 al 3-2. Pero la lección no dice si había T.54 ni cuántos casos
 tenía el D3. Entra a la medición A7 como un dato más y no mueve el cambio.
+Lo mismo el D3 de Başakşehir (1584463:b), que `SAD_v4.5_propuesta.md` deriva a
+este skill: entra a A7 como dato, sin regla.
 
 ---
 
@@ -1078,7 +1137,8 @@ once llegó tarde, y la F1 quedó con titulares sin fila:
 **Propuesta.** «Con el once a menos de 20 minutos del pitazo, el parte rehecho
 no da la tabla F1 por cerrada. Escribe **"once tardío: F1 sin verificar"**, y el
 IP y la F que salen de la tabla vieja se leen como de otro equipo. No se
-inventa la fila a mano con apuro: la pone la app (A1, opción (b) de la 1068).»
+inventa la fila a mano con apuro: la pone la app (`delOnceOficial`, el paso 1
+de la 1068 decidida).»
 Es el «once tardío» del cambio 3, llevado a la F1. El corte de 20 minutos ya
 está en ese cambio, así que no es un número nuevo.
 
@@ -1136,6 +1196,23 @@ casos sin la cuarentena que les toca.
     banco del favorito genere:** Académico Viseu (1575540b).
   - **El arco alternado es continuidad, no rendimiento:** Comerciantes Unidos
     (1549547b, cambio 4).
+- **Decididos como nota el 10/11** (no entran como regla):
+  - **La vía del rival en ámbar (era el cambio 9):** la baja de un titular fijo
+    cuyo recambio no tiene minutos en esa casilla puede ser la vía del rival
+    aunque la zona quede en ámbar. Lens (1635681) y AEK (1593352): 2 casos. Se
+    vuelve regla con el tercero.
+  - **El D3 con pocos casos (era el cambio 11):** con T.54 y menos casos de la
+    cara evaluada que la ventana de validación (6-8), la nota del D3 lo dice y
+    la caja puede escribir la otra cara. Estrela (1575538a) y Macará
+    (1639805a): 2 casos. Espera la medición A7.
+  - **El sistema condicionado con toda serie corta (era la (b) del cambio 2):**
+    T.54 con la serie del DT más corta que la ventana de validación. Genk
+    (1558676b): 1 caso. Candidato.
+  - **El eje que vuelve por un cambio (cambio 3):** León–Chivas (1551037) y
+    Anderlecht (1558672b). Candidato.
+  - **Lo de Aucas en el arco (cambio 4):** con GK-DOWNGRADE declarado, la caja
+    nombra la pelota parada y el remate al arco. 1 caso: nota dentro del
+    párrafo del suplente sin rodaje.
 - **Lo que quedó de la propuesta del 08/11 como nota, sin cambios:** B5 con dos partidos, el
   recambio de oficio que sostuvo la zona, el DT que se verifica en cada parte
   (Kasımpaşa, A5), D4 con lo que se juega, la K por condición contra otra
@@ -1153,8 +1230,11 @@ revisión del dashboard no se abrió sola).
 
 **Cambios (sin números, sin tocar la banda de goleada):**
 - **D1. Lo que dibuja la caja de sensibilidad.** Era lo opcional de la propuesta del 08/11:
-  las dos variantes del sistema (cambio 2) y la rama abierta por anuncio o
-  costumbre (cambio 6), con los rotables de todas las líneas.
+  las dos variantes del sistema (cambio 2, con D1 🔶 o T.54 de ≤ 2 partidos) y
+  la rama abierta por anuncio o costumbre (cambio 6), con los rotables de todas
+  las líneas. La variante escribe **la línea alternativa con su sistema y la
+  pieza que entra**, que es lo que `DTP_v1.8_propuesta.md` («Para el EFE»)
+  pide para que la app la compare con el M1.
 - **D2. La palanca del reloj y el banco de la matriz salen del banco probable
   de la tabla F1** (cambio 10), no de los dos nombres más conocidos
   (Independiente: Tempone).
@@ -1179,15 +1259,13 @@ Si se aplica junto con esta revisión:
 |---|---|
 | El orden del rehacer con el once, con la F1 primero, y la baja que está en la hoja (1) | Los partidos de cada cambio, con sus conteos |
 | Los candidatos al puesto en la F1 (1) | El changelog v1.4 a v1.9 de la rúbrica (líneas 5-57) |
-| El sistema condicionado con D1 🔶 o T.54 corta (2) | El apéndice de casos de validación (Estudiantes y Junior) |
-| La línea entera del grid y la alerta sin condicional con el once (3) | La cuenta «a favor / en contra» del suplente sin rodaje (4), de la roja (5) y de la rotación (6) |
+| El sistema condicionado con D1 🔶 o T.54 de ≤ 2 partidos (2, alcance (a)) | El apéndice de casos de validación (Estudiantes y Junior) |
+| La línea entera del grid y el once tardío (3; la frase del condicional no se reescribe) | La cuenta «a favor / en contra» del suplente sin rodaje (4), de la roja (5) y de la rotación (6) |
 | El suplente sin rodaje como vía a vigilar (4) | Los candidatos: COLAPSO + AGRAVANTE, D3-DEGRADADO, la confianza efectiva y el eje que vuelve por un cambio |
 | La roja con rama y el ciclo como Duda (5) | La lectura de `lectura_efe` en los otros skills (esta propuesta) |
 | La rama por hecho, con los rotables de todas las líneas, y la F3 elegida como F4 (6) | |
 | Las filas DEF, ATK y MID de la tabla de la F3 (7, 8) | |
-| La vía del rival en ámbar (9), si se aprueba como regla | |
-| `banco probable` en la F1 y B5 por rol (10) | |
-| La caja del D3 con pocos casos (11) | |
+| `banco probable` en la F1 y B5 por rol (10) | La vía del rival en ámbar (9) y la caja del D3 con pocos casos (11), decididas como nota el 10/11 |
 | El once tardío: la F1 sin verificar (13) | |
 
 La cabecera de la rúbrica todavía dice «aplicar el **EFE v1.7**» (DEUDA 21). Se
@@ -1199,7 +1277,7 @@ Ordenado por cuántas lecciones cierra. Ninguno toca el motor ni un peso. El
 estado de cada uno se verificó con grep en `backend/` el 10/11, sobre
 `60ba263`.
 
-**A0. La etiqueta `lectura_efe` de Jev** · [DECIDE USUARIO]
+**A0. La etiqueta `lectura_efe` de Jev** · [DECIDIDO 10/11: (a)]
 - **Qué pasa hoy:** junta la lectura de tres skills (ver la sección de arriba).
 - **Opciones:**
   - **(a)** renombrarla a `lectura` («la rúbrica del skill se aplicó mal»),
@@ -1210,6 +1288,17 @@ estado de cada uno se verificó con grep en `backend/` el 10/11, sobre
   del EFE podría contar aparte las `lectura_efe` de otros skills cuya
   `reglaTocada` nombra un insumo del EFE (F1, B5, EJE, rotación), que es la
   cuenta que hizo esta propuesta a mano.
+- **Decidido por el usuario el 10/11/2026: la (a), con la cuenta cruzada
+  mientras tanto.** Es lo mínimo: una etiqueta redefinida y ninguna casilla
+  nueva en una taxonomía cerrada; el dossier ya separa por skill, así que
+  `lectura` en el dossier del DTP es lectura del DTP. Lo que Jev ya selló no
+  se re-etiqueta ni se re-pregunta: al leer, un `lectura_efe` viejo cuenta como
+  `lectura` del skill de su dossier. Y el dossier del EFE suma la cuenta aparte
+  de las lecciones de otros skills cuya `reglaTocada` nombra un insumo del EFE
+  (F1, B5, EJE, rotación), para que lo de la sección de arriba no se pierda. No
+  toca la población, las métricas ni la cuarentena. Es la misma opción que
+  `DTP_v1.8_propuesta.md` deja al usuario («redefinir `lectura_efe` como
+  lectura del skill»).
 
 **A1. La tabla F1 contra el once, al depositar** (cambio 1) · **sin hacer**
 - **El aviso al leer:** `ONCE-SIN-FILA-F1` sale solo al leer, y su texto todavía
@@ -1217,9 +1306,12 @@ estado de cada uno se verificó con grep en `backend/` el 10/11, sobre
 - **El recibo:** no hay `BAJA-EN-LA-HOJA` ni `onceOficial` en `f1/{id}`.
 - **Lo que hay:** `faltan` avisa de un jugador de `fuera` nombrado como banco
   (`fuera_en_el_banco`, 1051). Es la dirección contraria y sirve de molde.
-- **Para decidir:** que la app sume la fila del titular que falta. Es la
-  incidencia **1068**, junto con el modo `rehacer` que no carga el EFE (cambio
-  1).
+- **Decidido el 10/11 (1068, paso 1 de la (c)):** la app suma la fila del
+  titular que falta como `delOnceOficial`, con rol `ROT` y sin stats de
+  temporada (el IP la pesa ×1 como 🟡 Rotación). Va primero. El paso 2 (el
+  rehacer con el EFE) necesita además que `GET /analisis/cowork/rehacer` traiga
+  en `pendientes` el partido con 3+ titulares fijos cambiados o arquero
+  distinto: es `EFE-RECOMPUTO-PENDIENTE` (A2), que no existe.
 
 **A2. Lo pendiente de la v1.9** (`PENDIENTES.md`):
 
@@ -1260,7 +1352,8 @@ sonar el caso.
   `EFE-EMPATE-TECNICO`, y en la misma base contra la cuota.
 - **Después de medir:** el modo `veredictos` deja de escribir una lección por
   cada «empate técnico declarado y cumplido» (138 de 568). Es un cambio de la
-  corrida y lo decide el usuario.
+  corrida. **Decidido el 10/11: sí, pero solo con A6 medido**; la corrida no
+  cambia todavía.
 
 **A7. La base del D3, calculada** (cambio 11) · **nuevo**. Los casos de
 «recibió primero» por condición dentro de la serie del DT, y la cara de cada
@@ -1309,10 +1402,13 @@ se haga queda en `PENDIENTES.md`.
 
 ## Cuándo se reabre
 
-- **La tabla F1 (1):** si con el aviso al depositar (A1) los titulares sin fila
-  siguen apareciendo en más de 5 partidos por semana, la app suma la fila sola
-  (1068).
-- **La roja (5):** cuando A3 diga qué pasó en Kortrijk.
+- **La tabla F1 (1):** si con la fila `delOnceOficial` (1068, paso 1) siguen
+  quedando titulares sin fila, o si el rehacer con el EFE (paso 2) no llega a
+  tiempo antes del pitazo en más de 5 partidos por semana.
+- **La roja (5):** cuando A3 diga qué pasó en Kortrijk. Si aparece otra roja de
+  la misma competición, bien leída, cuyo jugador juega: la (b), Duda.
+- **La vía del rival en ámbar (9):** con el tercer caso.
+- **El sistema con toda serie corta (2 (b)):** con dos casos más como Genk.
 - **La rotación por costumbre (6.2):** con A8 medido, en 30 o más partidos de
   calendario exigente.
 - **El D3 con pocos casos (11):** con A7.
@@ -1328,15 +1424,17 @@ se haga queda en `PENDIENTES.md`.
    - **La rúbrica** pasa a `references/rubrica-efe-v1.10.md`, con
      `git mv` desde la v1.9, y con el changelog de los cambios aprobados.
    - **La cabecera** se corrige (v1.7, DEUDA 21).
-   - **`SKILL.md`** cambia la línea del eje (3) y la de la jerarquía (5), y suma
-     el orden del rehacer (1), el sistema condicionado (2) y el banco probable
-     (10).
+   - **`SKILL.md`** cambia la línea del eje (3), la de la jerarquía (5), la del
+     F1 (1, 13 y 10) y el punto 6 de «Cuando no hay XI» (2 y 6). Las líneas
+     exactas y el texto están en «Lista para redactar».
    - **Si se aplica el núcleo:** el historial se mueve como dice la tabla de
      arriba.
 2. **`efe-dashboard` v1.13:** D1 a D4.
-3. **`corrida-sad`:** el modo `rehacer` carga `efe-clasificador` y sigue el orden
-   del cambio 1, o se elige la opción (b) de la 1068. Es la decisión que más
-   lecciones cierra.
+3. **`corrida-sad` (decidido: 1068 (c), la (b) primero):** primero la app (la
+   fila `delOnceOficial`, A1); después el modo `rehacer` carga
+   `efe-clasificador` solo con `EFE-RECOMPUTO-PENDIENTE` (3+ titulares fijos
+   cambiados o arquero distinto) y sigue el orden del cambio 1. Las líneas de la
+   rutina que cambiarían están en «Lista para redactar»; la rutina no se tocó.
 4. **App:** `lecciones.CORTE_VERSION["efe-clasificador"]` suma la versión con su
    fecha, para que «Cerrar las anteriores» cierre estas 568. Después, A0 a A8,
    cada uno con su test.
@@ -1351,11 +1449,11 @@ dossier del 10/11 (02:13 UTC) y no son una tasa de acierto
 
 | Grupo · cambio | Lecciones (todas) | A / P / F | Del 08/11 en adelante | A / P / F | Tipo |
 |---|---:|---|---:|---|---|
-| Tabla F1 y once · 1 (era 08/11-1) | 113 | 53 / 26 / 34 | 28 | 14 / 4 / 10 | rúbrica + app + decide usuario (1068) |
+| Tabla F1 y once · 1 (era 08/11-1) | 113 | 53 / 26 / 34 | 28 | 14 / 4 / 10 | rúbrica + app + 1068 decidida (c) |
 | Sistema D1/H · 2 (era 08/11-2) | 4 | 1 / 1 / 2 | 0 | — | rúbrica, más casos citados de otros grupos y del TDE |
 | EJE-DEBUTANTE · 3 (era 08/11-3) | 71 | 38 / 17 / 16 | 18 | 11 / 3 / 4 | rúbrica + app |
 | B5, B6 y el arco · 4 (era 08/11-4) y 10 | 42 | 20 / 8 / 14 | 14 | 4 / 2 / 8 | rúbrica + app |
-| Sanción · 5 (era 08/11-5) | 8 | 2 / 3 / 3 | 1 | 1 / 0 / 0 | decide usuario + app |
+| Sanción · 5 (era 08/11-5) | 8 | 2 / 3 / 3 | 1 | 1 / 0 / 0 | rúbrica (a) decidida + app |
 | Rama once alternativo · 6 (era 08/11-6) | 21 | 11 / 3 / 7 | 6 | 3 / 0 / 3 | rúbrica + medir + app |
 | F3 por zona · 7, 8 y 9 | 65 | 39 / 12 / 14 | 22 | 13 / 6 / 3 | rúbrica |
 | Brecha y empate técnico · 12 | 138 | 67 / 23 / 48 | 40 | 21 / 7 / 12 | medir (A6) |
@@ -1375,10 +1473,14 @@ Fuera de esta tabla, 88 lecciones pendientes de otros skills con `lectura_efe`
 (39 del TDE, 46 del DTP y 3 del EFE, que están arriba) se leyeron para el
 cambio 10 y para A0. Además, 2 lecciones de `efe-dashboard`.
 
-## Preguntas para el usuario
+## Preguntas para el usuario (todas decididas el 10/11)
 
 1. **El número:** decidido: v1.10 (usuario, 10/11).
-2. **La 1068 (sin decidir): ¿cómo se cierra la tabla F1 cuando sale el once?**
+2. **La 1068: ¿cómo se cierra la tabla F1 cuando sale el once?**
+   **Decidido por el usuario el 10/11/2026: la (c), en dos pasos y con la (b)
+   primero** (la fila `delOnceOficial`, rol `ROT`, sin stats de temporada; el
+   rehacer con el EFE solo con 3+ titulares fijos cambiados o arquero
+   distinto). Lo que sigue es el argumento con el que se decidió.
    - **(a)** El modo `rehacer` de `corrida-sad` carga `efe-clasificador` y hace
      el orden del cambio 1: F1, bajas de la hoja, B6, EJE, B y F, D1 y H.
    - **(b)** La app suma la fila del titular que falta, con su `rolSugerido`, y
@@ -1408,18 +1510,223 @@ cambio 10 y para A0. Además, 2 lecciones de `efe-dashboard`.
      contra los 27 que cierra la (b). La (a) se dispara solo cuando la app marca 3 o más titulares
      fijos distintos del XI de referencia, o un arquero distinto. Es el corte
      que la v1.9 ya usa para recomputar, así que no hay número nuevo.
-3. **El cambio 3:** ¿se saca la frase del condicional (sin casos nuevos, queda
-   en A2) o se deja como refuerzo?
-4. **El cambio 2:** ¿el sistema condicionado solo con T.54 de ≤ 2 partidos, o
-   con toda serie más corta que la ventana de validación?
-5. **El cambio 5:** ¿la roja sin confirmación va como Baja con rama (a) o como
-   Duda (b)?
-6. **El cambio 6.2:** la comprobación lo tumba (12 partidos con rotación contra
-   8 sin rotación con calendario exigente). ¿Se saca, y queda la v1.7 con A8
-   solo como medición?
-7. **El cambio 9:** ¿regla con dos casos o nota hasta el tercero? El segundo
-   corte no trajo ninguno: la recomendación es la nota.
-8. **A0:** ¿se separa la etiqueta `lectura_efe` de Jev?
+3. **El cambio 3:** **Decidido por el usuario el 10/11/2026: se saca la frase
+   del condicional** (la v1.9 ya la dice; el refuerzo queda en A2).
+4. **El cambio 2:** **Decidido por el usuario el 10/11/2026: la (a)**, solo con
+   D1 🔶 o T.54 de ≤ 2 partidos (la serie corta es candidato, con Genk).
+5. **El cambio 5:** **Decidido por el usuario el 10/11/2026: la (a)**, Baja con
+   rama, hasta que A3 aclare Kortrijk.
+6. **El cambio 6.2:** **Decidido por el usuario el 10/11/2026: se saca** y queda
+   la v1.7, con A8 solo como medición (12 con rotación contra 8 sin ella).
+7. **El cambio 9:** **Decidido por el usuario el 10/11/2026: nota hasta el
+   tercer caso.**
+8. **A0:** **Decidido por el usuario el 10/11/2026: la (a)**, `lectura` por
+   skill, sin re-etiquetar lo sellado y con la cuenta cruzada en el dossier del
+   EFE.
+9. **El cambio 11** (no estaba en la lista): **decidido el 10/11 como nota hasta
+   A7** (dos casos).
+
+## Lista para redactar
+
+Verificada el 10/11 contra los archivos vigentes: `docs/skills/efe-clasificador/SKILL.md`
+(55 líneas), `docs/skills/efe-clasificador/references/rubrica-efe-v1.9.md` (720
+líneas) y `docs/skills/efe-dashboard/SKILL.md` (329 líneas). Cada línea citada
+se abrió y existe. «SK» es el `SKILL.md` del clasificador y «RU» la rúbrica (que
+pasa a `rubrica-efe-v1.10.md` con `git mv`). Lo que es solo app va en «Para la
+app (no va al SKILL.md)».
+
+### Qué entra
+
+| # | Entra | Dónde va (archivo vigente, línea) | Texto nuevo listo | Caso nombrado | ¿Afloja algo vigente? | ¿Toca otro skill? |
+|---|---|---|---|---|---|---|
+| 1 | sí | SK l. 26 (viñeta «La tabla F1 lleva al equipo que puede jugar (v1.9)»: «recambio probable» → «candidatos al puesto») + viñeta nueva después de la l. 26. RU l. 249 (punto 1 del bloque F1) y punto 6 nuevo después de la l. 253 | sí (abajo, T1) | Real Sociedad 1570449, Newell's 1493236, Huracán 1493228, Brujas 1558672, Táchira 1646929 (la baja en la hoja) | no: «sin umbral» ya es la v1.9 (RU l. 253, punto 4); el «con 3 o más» es del texto del aviso de la app | `corrida-sad` (1068, paso 2) y la app (`delOnceOficial`) |
+| 13 | sí, dentro del texto del 1 | SK viñeta nueva del 1; RU punto 6 nuevo del F1 | sí (en T1) | Fortaleza 1549858, Instituto–Newell's 1493236 | no (usa el corte de 20' del cambio 3; procedimiento, no lectura del partido) | la app (`onceTardio` en el recibo) |
+| 2 | sí, alcance (a) | SK l. 43 (punto 6 de «Cuando no hay XI», al final); RU l. 368 (punto 3 de la rama v1.9) | sí (T2) | Alavés 1570450, Panetolikos 1593350, Defensor 1646900, São Paulo 1492448, Danubio 1646902, Atlas 1551032 | no (agrega condicionados) | `efe-dashboard` (D1) y el DTP (pide la variante, «Para el EFE») |
+| 3 | sí, sin la frase del condicional | SK l. 28 (viñeta del eje); RU l. 589 (sub-bloque «Se verifica con el once oficial») y l. 651 (tabla resumen) | sí (T3) | Brujas 1558672 (la pareja que no era), Barcelona 1570443 | no | no (el cruce con `casoBloque.linea` del DTP es app) |
+| 4 | sí (lo de Aucas como nota) | RU l. 128 (reemplaza el párrafo «El suplente sin rodaje es vía del rival (v1.9)»). SK: ninguna línea | sí (T4) | Gremio y Aucas 1639803 (a favor); Chelsea 1557466, PAOK 1593357, OFI 1593356, Jaguares 1549859, Como 1550191, U. Católica 1505559, Tolima 1549857, Comerciantes 1549547 (en contra); Independiente Rivadavia 1493234 (la vía firme) | **sí**: la «vía del rival» firme de la v1.9 pasa a «vía a vigilar». Entra porque la desmienten 8 casos (≥ 3) y porque la v1.9 se contradecía en el mismo párrafo | DTP: coherente con su regla vigente (vía firme con ≥ 2 errores, `diagnostico-tactico` SKILL.md l. 86) |
+| 5 | sí, opción (a) | SK l. 29 (viñeta de la jerarquía: «la sanción calculada de la base … es nivel 1»); RU l. 239 (punto 3) | sí (T5) | Kortrijk 1558673 (en contra), Cusco 1549550 y Antwerp 1558671 (a favor), los tres de UEFA | **sí, en parte**: el ciclo de amarillas deja de ganarle a la previa y pasa a Duda (la v1.9 lo ponía en nivel 1; Sarmiento). Va con la (a) decidida; se apoya en los tres falsos de UEFA, que eran la regla vieja de `sanciones.py`. La roja no se afloja: sigue Baja | DTP (cambio 7) y TDE (cambio 12) leen `sanciones.py`: tienen que tomar la `certeza` de A3 |
+| 6 | sí, sin 6.2 | SK l. 43 (punto 6, después de «recomputá B y F antes de cargar.»); RU l. 363-369 (rama v1.7 y puntos 1-4 de la v1.9) | sí (T6) | Instituto 1493236, The Strongest 1645539, Recoleta 1632056, Union St. Gilloise 1558676, Lyon 1552812, Estudiantes LP 1493239, Atlético Tucumán 1493229 | no (6.2, que aflojaba, salió) | `efe-dashboard` (D1) |
+| 7 | sí | RU l. 340 (fila DEF de la tabla de la F3). SK: ninguna línea | sí (T7) | Alianza Lima 1549551, Atalanta 1550192, Fenerbahçe 1584459, Gent 1558673, Real Sociedad 1570449, Milan 1550190 (volumen); Sporting Cristal 1549545, AEK 1593352 (vía) | **corrige** el «no el volumen» de la v1.9 con 6 casos en contra (≥ 3); la vía del rival se queda | `efe-dashboard` (D3) |
+| 8 | sí (Cienciano como candidato) | RU l. 338-339 (filas ATK y MID) y una línea nueva entre la l. 340 y la l. 342. SK: ninguna línea | sí (T8) | Ameliano 1632061, Celta 1570444, Everton de Viña 1505556 (dónde se remata); Angers 1552810, Fortaleza 1549858 (volumen); Bayern 1635622, Inter 1550191, Gil Vicente 1575542 (cubierta de oficio) | no (la segunda parte es la v1.9 de la l. 342 puesta en la fila) | `efe-dashboard` (D3) |
+| 10 | sí | SK l. 26 (misma viñeta del F1, una frase al final); RU después de la l. 110 (B5) y después del punto 5 del F1 (l. 253) | sí (T10) | Heerenveen 1552221, Le Mans 1552814, Banfield 1493229, Concepción 1505556, Newell's 1493236, Independiente 1493235 | no (no sube B5 con un partido: la v1.9 de la l. 110 se queda) | DTP (cambio 5) y TDE (cambio 5): coherentes, ver abajo; `efe-dashboard` (D2) |
+| 9 | como nota | RU después de la l. 342, marcada candidato | sí (T9) | Lens 1635681, AEK 1593352 | no | no |
+| 11 | como nota | RU después de la l. 171 (última viñeta del D3) | sí (T11) | Estrela 1575538, Macará 1639805 | no | no |
+| 3 (cand.) · 2 (b) · candidatos del 2.º corte | como nota | RU, cada uno en su bloque (o `references/HISTORIAL.md` si se aplica el núcleo) | sí (en «Matices que no son cambio») | León–Chivas 1551037, Genk 1558676, Atlético Tucumán 1493229, Cienciano 1549546 y los demás de esa sección | no | no |
+| 12 | no (MEDIR PRIMERO, A6) | — (la nota vigente de RU l. 510 queda igual) | no hace falta | — | — | — |
+| 6.2 | no (sacado) | — | — | — | — | — |
+| Editorial | sí | SK l. 3, 6, 12 y 55 (v1.9 → v1.10 y el nombre de la rúbrica); RU l. 3 (título) y l. 61 (cabecera «aplicar el **EFE v1.7**» → v1.10, DEUDA 21); changelog v1.10 arriba de la l. 5 | el changelog se escribe con la tabla de decisiones | — | no | no |
+
+**Los textos listos** (en el orden de la tabla; lo que va entre comillas se
+copia tal cual):
+
+- **T1 (cambios 1 y 13).** En SK l. 26 y RU l. 249, «el recambio probable de
+  cada baja o duda» pasa a «**los candidatos al puesto** de cada baja o duda
+  (los que pueden ocupar su casilla según el rol de la temporada, no solo el
+  que nombra la previa)». Viñeta nueva en SK después de la l. 26 y punto 6 del
+  F1 en RU: «**Con el once oficial, el rehacer empieza por la tabla F1 *(v1.10)*.**
+  El orden es fijo: (1) la F1, con los once titulares con fila, sin umbral;
+  (2) las bajas de la hoja: quien está en la hoja, titular o en el banco, deja
+  de ser baja; (3) B6 sobre el arquero de la hoja; (4) EJE-DEBUTANTE sobre la
+  línea entera del grid; (5) B y F; (6) D1 y H. La fila de un titular que
+  faltaba la suma la app (`delOnceOficial`, rol 🟡 Rotación, sin stats de
+  temporada): se usa, no se borra ni se rehace a mano. **Con el once a menos de
+  20 minutos del pitazo**, el parte escribe «once tardío: F1 sin verificar», y
+  el IP y la F de la tabla vieja se leen como de otro equipo (Fortaleza: el once
+  a 6 minutos, el lateral sin fila hizo el autogol; Instituto–Newell's).»
+- **T2 (cambio 2, alcance (a)).** Al final de SK l. 43 y de RU l. 368: «*(v1.10)*
+  Con **D1 🔶 o T.54 de ≤ 2 partidos**, también **D1, H, la zona de cada baja y
+  la F3 por zona** van condicionados al once oficial, o se escriben en las dos
+  variantes. El once de la API antes del pitazo es nivel B y manda el último
+  grid. Un H que acertó el resultado con otro sistema queda «mecanismo no
+  verificado».»
+- **T3 (cambio 3).** Al final de SK l. 28 y en RU l. 589, después de «se
+  declara o se descarta con el dato»: «*(v1.10)* Con el once, el chequeo va
+  sobre **la línea entera** del grid (línea de fondo y doble pivote), no sobre
+  la pareja que nombró la apertura (Brujas: el recambio de Potts fue Tsawa y la
+  alerta quedó sobre la pareja equivocada). Con el once a menos de 20 minutos
+  del pitazo, se escribe «once tardío, sin verificar».» En RU l. 651, la celda
+  suma «; la línea entera del grid (v1.10)».
+- **T4 (cambio 4).** Reemplaza RU l. 128: «**El suplente sin rodaje es una vía a
+  vigilar *(v1.10, reemplaza el párrafo de la v1.9, que se contradecía)*.** B6
+  sin fuente es `sin dato`, y las titularidades de la base cuentan como fuente;
+  con el once oficial, B6 se puntúa sobre el arquero de la hoja. El arquero que
+  ataja hoy con **< 15 partidos en la categoría y sin titularidades recientes**
+  se declara al DTP como **vía a vigilar** (media distancia, rechace o salida):
+  amplía el rango y no es vía de gol por sí sola. Es **vía firme del rival**
+  solo con GK-FALLA-ACTIVA o con errores documentados (Independiente Rivadavia:
+  tercer error con gol en seis partidos). GK-FALLA-ACTIVA conserva su umbral de
+  ≥ 2 errores. Cuenta: 2 a favor de la vía sin GK-FALLA-ACTIVA (Gremio, Aucas) y
+  más de 3 en contra (Once Caldas, Rizespor, Roma; Melo, Ortega, Córdova). *Nota
+  (1 caso, Aucas):* con GK-DOWNGRADE declarado, la caja nombra la pelota parada
+  y el remate al arco como lo que se le cae.»
+- **T5 (cambio 5, opción (a)).** En SK l. 29, «la sanción calculada de la base
+  (`f1/{id}.sancionados`) es nivel 1» pasa a: «la **roja** de la misma
+  competición calculada de la base (`f1/{id}.sancionados`) es nivel 1 y va ❌
+  Baja, **con la rama «si juega» en la caja cuando ninguna fuente de nivel 1-3
+  la confirma** (v1.10); el **ciclo de amarillas** es ⚠️ Duda con su rama; la
+  sanción de otra competición no saca al jugador, y la de varias fechas la trae
+  la prensa». RU l. 239 (punto 3) dice lo mismo y suma: «La prosa (DTP, matriz)
+  no se apoya en la baja sin decir la rama (Kortrijk: Ndjeungoue, de baja por
+  una roja que ninguna prensa confirmaba, fue titular; en revisión, A3).»
+- **T6 (cambio 6, sin 6.2).** En SK l. 43, después de «recomputá B y F antes de
+  cargar.»: «*(v1.10)* La rama también se abre por un **hecho**: una rotación
+  anunciada, un DT que rota de costumbre o un equipo sin nada en juego, nunca
+  por sospecha. Carga a los **rotables de todas las líneas** que el calendario
+  toca, no solo a los de arriba. «Viajó el plantel completo» es nivel C. Con el
+  once oficial, **el condicionado se levanta en las dos direcciones**: B y F se
+  recomputan con el once que salió, haya rotado o no. La F3 de una rotación
+  elegida va a F4 y no infla la F3, y la rama nombra la dosificación en vivo.
+  El porcentaje sigue «condicionado al once» con el calendario exigente, como
+  en la v1.7.» RU: lo mismo como punto 5 después de la l. 369, con los casos.
+- **T7 (cambio 7).** RU l. 340, la celda «Lo que anuncia» de DEF: «**La vía del
+  rival** (penal, pelota parada, el carril del reconvertido) **o el volumen
+  concedido** (uno, el otro o los dos); si el gol llega o no lo decide sobre
+  todo el arquero. Con B6 ✅, la nota nombra al arquero como el sostén y el
+  riesgo como volumen concedido, no como goles *(v1.10; corrige el «no el
+  volumen» de la v1.8)*»; la celda de casos suma «Volumen: Alianza Lima,
+  Atalanta, Fenerbahçe, Gent, Real Sociedad, Milan. Vía: Sporting Cristal, AEK».
+- **T8 (cambio 8).** RU l. 338, la celda de ATK: «**Menos peligro propio**: se
+  ve en el volumen, **en dónde se remata** (de afuera) **o en la conversión**
+  *(v1.10)*», con los casos Ameliano, Celta y Everton de Viña. RU l. 339 (MID)
+  suma «o en la conversión». Línea nueva entre la tabla y la l. 342: «**La F3 de
+  ATK o de MID anuncia solo si la zona está en 🔴 y el recambio no tiene minutos
+  en esa casilla esta temporada** *(v1.10)*. Con un recambio con rodaje, la nota
+  dice «cubierta de oficio» y la F3 es solo confianza en la K (Bayern, Inter,
+  Gil Vicente).»
+- **T9 (nota).** Después de RU l. 342: «*Candidato (v1.10, 2 casos, no regla):*
+  la baja de un titular fijo cuyo recambio no tiene minutos en esa casilla puede
+  ser la vía del rival aunque la zona quede en ámbar (Lens, AEK). Se vuelve
+  regla con el tercero.»
+- **T10 (cambio 10).** Al final de SK l. 26: «*(v1.10)* La columna Estado admite
+  `banco probable` (el titular habitual que rota, la Duda que puede ir al banco
+  y el que vuelve de lesión), y B5 nombra el banco por rol. «Banco corto» solo
+  con la tabla mirada entera.» Después de RU l. 110: «**B5 nombra el banco por
+  rol *(v1.10)*** (quién entra para qué), no solo por nombre. Antes del once,
+  esa lista es el banco probable que toman el DTP (banco ofensivo), el TDE
+  (ramas) y la matriz (palanca del reloj). Con el once oficial, el banco es la
+  hoja. «Banco corto» se escribe solo con la tabla mirada entera: ningún titular
+  habitual, ninguna Duda y ningún suplente con impacto documentado que pueda
+  entrar (Heerenveen: Meerveld, del XI de referencia, arrancó suplente e hizo
+  tres con «banco corto» escrito; Le Mans: Colas, en duda, fue al banco y
+  empató).» Y en el F1 de RU, después del punto 5: «La columna Estado admite
+  `banco probable` (el titular habitual que rota, la Duda que puede ir al banco
+  y el que vuelve de lesión). No es una columna nueva ni un número.»
+- **T11 (nota).** Después de RU l. 171: «*Nota (v1.10, sin cambio de regla):*
+  con T.54 y menos casos de la cara evaluada que la ventana de validación
+  (6-8), la nota del D3 lo dice y la caja puede escribir la otra cara (Estrela,
+  Macará). Pasarlo a 🔶 espera la medición A7.»
+
+### `efe-dashboard` v1.13 (D1-D4)
+
+| # | Entra | Dónde va (`docs/skills/efe-dashboard/SKILL.md`, línea) | Texto nuevo listo | ¿Afloja? | ¿Toca otro skill? |
+|---|---|---|---|---|---|
+| D1 | sí | l. 163 (viñeta «Caja de sensibilidad», al final) | sí: «*(v1.13)* Con D1 🔶 o T.54 de ≤ 2 partidos, las dos variantes del sistema, cada una con su línea y la pieza que entra; y la rama abierta por anuncio, costumbre o equipo sin nada en juego, con los rotables de todas las líneas.» | no | DTP («Para el EFE» de `DTP_v1.8_propuesta.md`: la caja con la línea alternativa) |
+| D2 | sí | PASO 6, después de la l. 230 (la nota v1.12 de la goleada); fila «Gestión del reloj» de la l. 226 | sí: «*(v1.13)* **La palanca del reloj y el banco de la matriz salen del banco probable de la tabla F1** (B5 por rol), no de los dos nombres más conocidos (Independiente: el que decidió, Tempone, no estaba en la palanca).» | no | clasificador (cambio 10) |
+| D3 | sí | l. 195 (fila «F3 / F3-COND» de la tabla de alertas) | sí: la celda pasa a «IP > 7, ≥ 2 titulares fijos ausentes o una zona > 40 %; la nota dice qué anuncia la zona (DEF: la vía del rival o el volumen concedido, y el arquero; ATK: volumen, dónde se remata o conversión) y quién la cubre *(v1.13)*». **Ojo:** la fila vigente ni siquiera tiene la zona > 40 % de la v1.7; se corrige de paso | no | clasificador (7 y 8) |
+| D4 | sí | l. 3 (`description`: «EFE v1.9 (skill v1.12)» → «EFE v1.10 (skill v1.13)»), l. 6 (título v1.12 → v1.13) y un changelog v1.13 nuevo arriba de la l. 8 | sí (el changelog lista D1-D3 y la lección de Konyaspor como ya aplicada) | no | no |
+| Núcleo D1/D2 del dashboard | solo si se aplica el núcleo | `NUCLEO_SKILLS_propuesta.md` §2.4 | no hace falta: se copian tal cual | no | no |
+
+### Para la app (no va al SKILL.md)
+
+| Qué | De qué cambio | Estado (grep en `backend/`, 10/11) | Decisión |
+|---|---|---|---|
+| Fila `delOnceOficial` en `f1/{id}` (rol `ROT`, sin stats de temporada) y aviso en el recibo | 1 y 13 (1068, paso 1) | sin hacer: `delOnceOficial` no existe | **va primero** |
+| `EFE-RECOMPUTO-PENDIENTE` en `_ALERTAS_CALCULADAS` y en `pendientes` de `GET /analisis/cowork/rehacer` (3+ titulares fijos del XI de referencia fuera del once, o arquero distinto del B6) | 1 y 6 (1068, paso 2) | sin hacer (sin rastro en `backend/`) | **sin esto el paso 2 de la 1068 no tiene disparador** |
+| `onceTardio` en el recibo | 13 | sin hacer | — |
+| `BAJA-EN-LA-HOJA` | 1 | sin hacer | — |
+| `parejasNuevas` sobre el once oficial, `EJE-DEBUTANTE-SIN-DECLARAR` y `-SIN-OBJETO` | 3 | sin hacer | refuerza la frase del condicional que salió del cambio |
+| El arquero de la hoja contra el del B6 | 4 | en parte (`arquero.py`) | — |
+| `certeza` de la sanción: roja `segura`, ciclo `probable`; `SANCION-SIN-DECLARAR` dice «baja con rama» o «duda con rama»; verificar Kortrijk | 5 (A3) | sin hacer | — |
+| Banco probable calculado (A8): titulares habituales en el banco de la hoja y suplentes con goles o asistencias desde el banco | 10 | sin hacer | **una sola lista** para EFE, DTP (`bancoOfensivo`) y TDE (punto 2 de su «Para la app») |
+| Costumbre de rotación por DT (A8) | 6 | sin hacer | solo medición |
+| A0: `lectura` por skill en `modo_fallo.py` y la cuenta cruzada en el dossier del EFE | — | sin hacer | (a) decidida |
+| A4 identidad, A5 DT, A6 brecha, A7 base del D3 | 1, 12, 11 | sin hacer | A6 y A7 son mediciones |
+
+Cada alerta nueva va también en `docs/openapi.yaml` y en `test_cowork`
+(`test_arquitectura` lo exige).
+
+### La rutina `corrida-sad` (1068 (c)): qué líneas cambiarían
+
+**No se tocó** `.claude/skills/corrida-sad/SKILL.md`. Con el paso 1 de la 1068
+(la fila `delOnceOficial`) la rutina no cambia. Con el paso 2, cambian tres
+lugares del modo `rehacer`:
+
+1. **L. 229-237 (paso 1, qué trae `pendientes`).** Hoy son DTP-REHACER,
+   PARTE-OTRA-FECHA y DT-VS-BANCO. Se suma: «o **EFE-RECOMPUTO-PENDIENTE** (el
+   once oficial deja fuera a 3+ titulares fijos del XI de referencia o pone otro
+   arquero que el del B6: se rehace también el EFE, decisión de la 1068)».
+2. **L. 255** (el encargo del subagente). Hoy: «Cargá
+   `anthropic-skills:diagnostico-tactico` y `anthropic-skills:sad-analysis`.»
+   Pasaría a: «Cargá `anthropic-skills:diagnostico-tactico` y
+   `anthropic-skills:sad-analysis`; **con EFE-RECOMPUTO-PENDIENTE, también
+   `anthropic-skills:efe-clasificador`** (1068, 10/11/2026).» **Es la línea que
+   pedía el encargo.**
+3. **L. 291-293** (paso 4 del encargo). Hoy: «Lo demás no se toca: una baja
+   decisiva que no juega, un arquero distinto (EFE v1.6, B6), la rama del TDE
+   que dependía de un intérprete.» Pasaría a: «Con EFE-RECOMPUTO-PENDIENTE, el
+   EFE se rehace en el orden de la v1.10 (F1 → bajas de la hoja → B6 → EJE → B
+   y F → D1 y H), usando las filas `delOnceOficial` que sumó la app sin
+   borrarlas. Sin esa alerta, lo demás no se toca: una baja decisiva que no
+   juega, la rama del TDE que dependía de un intérprete.» (El «arquero
+   distinto» sale de la lista de lo que no se toca: ahora dispara el EFE.)
+
+La `description` de la l. 3 («modo `rehacer` rehace el DTP (y lo que el once
+cambie)») sigue valiendo.
+
+### Coherencia entre skills
+
+| Dependencia | Este cambio | La otra propuesta | ¿La tiene? |
+|---|---|---|---|
+| Banco probable EFE ↔ DTP ↔ TDE | 10 (B5 por rol, `banco probable` en la F1) y D2 | `DTP_v1.8_propuesta.md` cambio 5 (el banco sale de la hoja; `bancoOfensivo`) y `TDE_v0.1.26_propuesta.md` cambio 5 («probable» antes del once, la hoja con el once) | **Sí, coherentes**: los tres dicen «probable antes del once, la hoja con el once». Ninguna de las dos dice que toma la lista de la F1 del EFE: la toman de una lista calculada. El texto del cambio 10 se ajustó para no prometer lo contrario. **Pedido a la app:** una sola lista para los tres (A8 = `bancoOfensivo` = punto 2 del TDE), no tres |
+| F1 y 1068 EFE ↔ `corrida-sad` | 1 y 13 | ninguna propuesta de otro skill lo trata (grep de «1068» en DTP, TDE y SAD: nada) | No hace falta en otro skill; la dependencia es con la rutina (arriba) y con la app (`EFE-RECOMPUTO-PENDIENTE`) |
+| La caja del sistema EFE ↔ DTP | 2 y D1 | `DTP_v1.8_propuesta.md`, «Para el EFE»: pide que la caja escriba la línea alternativa con su sistema y la pieza que entra | **Sí**: D1 lo recoge con esas palabras |
+| EJE-DEBUTANTE ↔ `casoBloque.linea` del DTP | 3 | DTP v1.8, «Para la app» (Rennes–Lille) | Sí, y es app |
+| Arquero sin rodaje EFE ↔ DTP | 4 | `diagnostico-tactico` vigente (SKILL.md l. 86): vía de gol con ≥ 2 errores | **Sí, coherente**: «vía firme solo con errores documentados» es lo que ya dice el DTP |
+| Sanción EFE ↔ DTP ↔ TDE | 5 | DTP v1.8 cambio 7 (`m2.piezas` desde `sanciones.py`) y TDE v0.1.26 cambio 12 (`S1` desde `sanciones.py`) | **En parte**: los dos leen `sanciones.py`, pero ninguno habla de la `certeza` (roja `segura` / ciclo `probable`) que agrega A3. No es un bloqueo para redactar el EFE; cuando A3 se haga, el DTP y el TDE tienen que leer la misma certeza |
+| A0 EFE ↔ DTP | A0 | DTP v1.8, «Lo que sigue siendo del usuario» (`lectura_dtp` o redefinir `lectura_efe` como lectura del skill) | **La tiene como pregunta abierta.** La (a) decidida acá es su segunda opción: hay que anotar la misma decisión en la propuesta del DTP (no la toqué) |
+| D3 de Başakşehir SAD → EFE | 11 | `SAD_v4.5_propuesta.md` l. 1675 lo deriva a `efe-clasificador` | Ahora sí: se sumó al 11 como dato para A7 |
+| 1056 (herencia TDE ↔ DTP) y falsador SAD ↔ DTP | — | — | No tocan a este skill |
+
 
 ## Tabla de cambios
 
@@ -1428,16 +1735,16 @@ nuevas, segundo corte de las 04:29 UTC).
 
 | # | Cambio (una línea) | Tipo | Comprobación 10/11 | Núcleo o historial |
 |---|---|---|---|---|
-| 1 | El rehacer con el once empieza por la F1 (los once con fila, sin umbral, y los candidatos al puesto); la baja que está en la hoja deja de ser baja | rúbrica + app + decide (1068) | sostiene (20 lados, 8 decisivos) | núcleo (el orden del rehacer); casos al historial |
-| 2 | Con D1 🔶 o un DT que todavía prueba, D1, H y la zona del ausente van condicionados al once | rúbrica + decide (alcance) | sin casos | núcleo (una línea en «Cuando no hay XI»); casos al historial |
-| 3 | EJE-DEBUTANTE con el once: la línea entera del grid, el once tardío y sin condicional | rúbrica + app + decide | matiza (sin condicionales nuevos: la frase pasa a A2) | núcleo (la regla del eje); casos y candidato al historial |
+| 1 | El rehacer con el once empieza por la F1 (los once con fila, sin umbral, y los candidatos al puesto); la baja que está en la hoja deja de ser baja | rúbrica + app + decidido 1068 (c), la (b) primero | sostiene (20 lados, 8 decisivos) | núcleo (el orden del rehacer); casos al historial |
+| 2 | Con D1 🔶 o T.54 de ≤ 2 partidos, D1, H y la zona del ausente van condicionados al once | rúbrica + decidido alcance (a) | sin casos | núcleo (una línea en «Cuando no hay XI»); casos al historial |
+| 3 | EJE-DEBUTANTE con el once: la línea entera del grid y el once tardío (la frase del condicional sale, decidido) | rúbrica + app | matiza (sin condicionales nuevos: la frase pasa a A2) | núcleo (la regla del eje); casos y candidato al historial |
 | 4 | B6: sin fuente es sin dato, la base es fuente, y el suplente sin rodaje es vía a vigilar | rúbrica + app | sostiene (0 vías sin GK-FALLA-ACTIVA, 3 en contra) | núcleo (el párrafo del suplente); la cuenta al historial |
-| 5 | La roja calculada de la misma competición es Baja con rama; el ciclo de amarillas es Duda | rúbrica + app + decide | sin casos | núcleo (la jerarquía); UEFA y Kortrijk al historial |
-| 6 | La rama «once alternativo» se abre por un hecho, carga a los rotables de todas las líneas, se recomputa con el once en las dos direcciones, y la F3 elegida es F4; 6.2: la costumbre del DT condiciona el porcentaje | rúbrica + app + medir + decide | sostiene 6.1 y el recomputo; tumba 6.2 (12 con rotación contra 8 sin rotación) | núcleo (el punto 6 de «Cuando no hay XI»); casos al historial |
+| 5 | La roja calculada de la misma competición es Baja con rama; el ciclo de amarillas es Duda | rúbrica + app + decidido (a) | sin casos | núcleo (la jerarquía); UEFA y Kortrijk al historial |
+| 6 | La rama «once alternativo» se abre por un hecho, carga a los rotables de todas las líneas, se recomputa con el once en las dos direcciones, y la F3 elegida es F4; ~~6.2~~ sacado (decidido) | rúbrica + app + medir (A8) | sostiene 6.1 y el recomputo; tumba 6.2 (12 con rotación contra 8 sin rotación) | núcleo (el punto 6 de «Cuando no hay XI»); casos al historial |
 | 7 | La F3 DEF anuncia la vía del rival o el volumen concedido, y el gol lo decide el arquero | rúbrica | matiza («o», no «y»: Alianza Lima volumen, Cristal vía) | núcleo (la fila DEF); casos al historial |
 | 8 | La F3 ATK y MID se paga en el volumen, en dónde se remata o en la conversión; con un recambio con rodaje no anuncia | rúbrica | sostiene las tres vías; lo del recambio, sin medir | núcleo (las filas ATK y MID); casos al historial |
-| 9 | La baja de un titular fijo con recambio sin minutos es vía del rival aunque la zona quede en ámbar | rúbrica + decide (regla o nota) | sin casos (nota hasta el tercero) | núcleo si es regla; Lens y AEK al historial |
+| 9 | La baja de un titular fijo con recambio sin minutos es vía del rival aunque la zona quede en ámbar | nota (decidido) | sin casos (nota hasta el tercero) | nota; Lens y AEK al historial |
 | 10 | La F1 admite «banco probable» y B5 nombra el banco por rol; «banco corto» solo con la tabla mirada entera | rúbrica + app | sostiene (8 bancos decisivos nombrables) | núcleo (tres renglones bajo B5); casos al historial |
-| 11 | D3 con T.54 y una serie corta: la nota dice cuántos casos tiene y lleva caja | medir + decide | sin casos | núcleo (una línea en D); Estrela y Macará al historial |
+| 11 | D3 con T.54 y una serie corta: la nota dice cuántos casos tiene y lleva caja | nota hasta A7 (decidido) | sin casos | nota en D; Estrela y Macará al historial |
 | 12 | ¿La brecha en la misma base ordena al ganador? No se toca el texto hasta medir | medir | matiza a favor (1 caso: 5 en contra, 2 a favor) | núcleo (la nota); casos al historial |
 | 13 | Con el once tardío (menos de 20 minutos), la F1 no se da por rehecha: «F1 sin verificar», y la fila la pone la app | rúbrica + app | nuevo (Fortaleza 1549858 e Instituto–Newell's 1493236) | núcleo (una línea junto al orden del rehacer); casos al historial |
