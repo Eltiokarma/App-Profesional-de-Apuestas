@@ -5378,6 +5378,23 @@ def main():
     _av752 = _pvm(_pr, {**_ux, "fiabilidadMu": {"nivel": "baja"}}, '{"pronostico": "Venezia ascendido: el motor no ve la Serie A"}')
     check("752: con la razón escrita en `notas` (nombra al motor) el aviso se apaga y queda `razonEscrita`",
           _av752["aviso"] == "" and _av752.get("razonEscrita") is True, _av752)
+    # 1359: en copa nacional el 1X2 sale del mercado; apartarse del motor no se avisa
+    _av1359 = _pvm({"probabilidades": {"local": 15, "empate": 20, "visita": 65}},
+                   {**_ux, "fiabilidadMu": {"nivel": "baja"}}, "", copa="Copa del Rey")
+    check("1359: en copa nacional (Copa del Rey R128, 45 puntos sobre el motor) no hay aviso: `porque` dice que manda el mercado",
+          _av1359["aviso"] == "" and _av1359["copaNacional"] == "Copa del Rey"
+          and "mercado" in _av1359["porque"] and _av1359["sobreElMotor"] == 46.0, _av1359)
+    from backend.analisis.parte import _copa_nacional as _cn
+    from backend.analisis import escala as _esc1359
+    _fx_liga = efedb.saddb.query_one("sad", "SELECT id FROM fixtures WHERE league_id=140 LIMIT 1")["id"]
+    _sin_copa = _cn(_fx_liga)
+    _esc1359.COPAS.add(140)          # la misma liga marcada como copa: el recibo lo lee de escala
+    try:
+        _con_copa = _cn(_fx_liga)
+    finally:
+        _esc1359.COPAS.discard(140)
+    check("1359: el recibo sabe si el partido es de copa nacional (escala.copas_nacionales)",
+          _sin_copa is None and _con_copa == "LaLiga", (_sin_copa, _con_copa))
     # EL REVENTÓN SE OBSERVA CON EL MARCADOR SI EL PIPELINE NO CORRIÓ (incidencias 100 y 373)
     from backend.analisis.veredicto import observado_por_marcador as _opm
     _dec = {"signo": "+", "k": 12.5, "partidos": 3}

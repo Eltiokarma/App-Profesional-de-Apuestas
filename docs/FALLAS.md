@@ -220,6 +220,7 @@ Tres lugares donde vive una guardia:
   - la cobertura de fichas aprendida por liga;
   - el `conflicto` de la agenda y el chequeo `dos-partidos`, con la misma regla (`jugadores.choque`, 24 h) en el calendario y los próximos de /predicciones (843, 892).
   - el estadio renombrado por la API (patrocinio, traducción) no es cancha neutral: `ventana_nivel.cancha_neutral` compara por `venue_id`, normaliza el nombre, ignora el vacío y toma por casa la sede donde el local ya jugó 2+ veces (1090, `test_ventana_nivel`), y con el fixture a la vista solo una copa o un torneo internacional puede dar neutral (1207, Olimpia en «Manuel Ferreira», el nombre viejo de su estadio: todas las marcas falsas fueron de liga);
+  - la sede habitual del local sale de sus partidos de local del ÚLTIMO AÑO (`ventana_nivel.SEDE_RECIENTE_DIAS`): sin 5 en ese año (equipo que bajó a una categoría que no ingestamos) no se afirma neutral, en liga ni en copa (1360, Amorebieta en Urritxe con la «habitual» de Lezama de 2023-24, `test_ventana_nivel`);
   - Un `dato_api` visto en 3+ partidos sube al usuario con una regla de código propuesta.
 - **Si vuelve:** si se repite, deja de ser «dato de la API» y pasa a ser una regla nuestra.
 
@@ -276,5 +277,6 @@ Tres lugares donde vive una guardia:
   - **Escaneo:** el chequeo informativo `nivel-con-amistosos`. Desde el 02/11/2026 también son informativos `sancion`, `sin-plantel` y `dt-sin-confirmar`: listas para el parte que, depositadas, se cerraban siempre por diseño (el ruido de la cola es una falla de la guardia).
   - **Medición:** `backend/backtest_nivel_ventana.py` (30/10, 9.191 partidos de prueba). Sacar los amistosos del nivel no mejora el 1X2; sacar también los internacionales lo empeora donde hay amistosos. Con 3+ amistosos el motor queda el doble de lejos del mercado (0,084 de log-loss contra 0,041): eso sostiene el aviso.
   - El motor no se toca sin esa medición y sin el visto bueno del usuario.
+  - **Copa nacional:** ahí el 1X2 sale del mercado, no del motor; `pronosticoVsMotor` del recibo no avisa (trae `copaNacional` y `porque`) con la misma marca que las métricas (`escala.copas_nacionales`; 1359, Copa del Rey R128, `test_cowork`).
   - **El plantel que la base no ve** (08/11/2026, incidencia 1332, Santa Fe–Pasto: 20 canteranos por un paro, solo la cuota se enteró): el chequeo `mercado-salto` del escaneo (se deposita) marca un 1X2 del mercado que se movió más de 25 puntos en 24 h; el hecho se busca en prensa.
 - **Si vuelve:** mirar `ventanaNivel` antes de creerle a una divergencia grande entre el motor y el mercado. Y la causa de un número del motor se mide (`/predicciones` trae μ, nivel y `unXDos.d`) antes de escribirla.

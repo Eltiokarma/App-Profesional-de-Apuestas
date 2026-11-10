@@ -2934,10 +2934,18 @@ PRONOSTICO_SOBRE_MOTOR_PTS = 8
 _NOMBRA_MOTOR = re.compile(r"\bmotor\b", re.I)
 
 
-def pronostico_vs_motor(pron: dict, pred: dict | None, notas: str = "") -> dict | None:
+def pronostico_vs_motor(pron: dict, pred: dict | None, notas: str = "", copa: str | None = None) -> dict | None:
     """El 1X2 declarado contra `unXDos` de /predicciones. Con `fiabilidadMu`
     baja y el resultado favorito del pronóstico más de PRONOSTICO_SOBRE_MOTOR_PTS
-    por encima del motor, `aviso` explica qué hacer; si no, solo informa."""
+    por encima del motor, `aviso` explica qué hacer; si no, solo informa.
+
+    EN COPA NACIONAL NO SE AVISA CONTRA EL MOTOR (10/11/2026, incidencia 1359,
+    Copa del Rey R128: 1644336 con 45 puntos sobre el motor, 1644382 con 42):
+    ahí el 1X2 sale del MERCADO, no del motor (localía negativa en copas,
+    REVENTON §16.1, `separacion_liga.copa_en_agenda`), así que apartarse del
+    motor es seguir la regla, no un error. `copa` es el nombre que da
+    `escala.copas_nacionales`; los números se informan igual y `porque` dice
+    por qué no hay aviso."""
     probs = (pron or {}).get("probabilidades") or {}
     ux = (pred or {}).get("unXDos") or {}
     claves = ("local", "empate", "visita")
@@ -2948,6 +2956,11 @@ def pronostico_vs_motor(pron: dict, pred: dict | None, notas: str = "") -> dict 
     fia = ((pred or {}).get("fiabilidadMu") or {}).get("nivel") or ""
     out = {"declarado": {k: probs[k] for k in claves}, "motor": {k: ux[k] for k in claves},
            "favorito": top, "sobreElMotor": delta, "fiabilidadMu": fia, "aviso": ""}
+    if copa:
+        out["copaNacional"] = copa
+        out["porque"] = (f"{copa} es copa nacional: el 1X2 sale del mercado, no del motor (localía negativa "
+                         "en copas); apartarse del motor no se avisa")
+        return out
     # la razón escrita en `notas` (lo que el aviso pide) lo apaga (incidencia 752:
     # Venezia y Monza recién ascendidos, el dato que el motor no ve ya escrito y
     # el aviso volvía en cada depósito)
@@ -3135,6 +3148,12 @@ def _desconfianza_o_nada(fixture_id: int, pron: dict | None, reventon: dict | No
         return _desconfianza.leer(pron, mercado, reventon, nombres)
     except Exception:  # noqa: BLE001 — sin cuotas ni 1X2 no hay bloque; el parte se lee igual
         return None
+
+
+def _copa_nacional(fixture_id: int) -> str | None:
+    """El nombre de la copa nacional del partido (`escala.copas_nacionales`), o None (1359)."""
+    from backend.analisis import escala as _escala
+    return _escala.copas_nacionales([fixture_id]).get(int(fixture_id))
 
 
 def _prediccion_o_nada(fixture_id: int) -> dict | None:
@@ -3760,7 +3779,8 @@ def guardar(payload: dict) -> dict:
         "filasMatriz": filas_matriz(parte.get("matriz") or {}),
         "matrizVsPronostico": matriz_vs_pronostico(parte.get("matriz") or {}, parte.get("pronostico") or {}),
         "pronosticoVsMotor": pronostico_vs_motor(parte.get("pronostico") or {}, _prediccion_o_nada(parte["fixtureId"]),
-                                                 json.dumps(parte.get("notas") or "", ensure_ascii=False)),
+                                                 json.dumps(parte.get("notas") or "", ensure_ascii=False),
+                                                 copa=_copa_nacional(parte["fixtureId"])),
         "alertas": len(parte["alertas"]),
         "discrepancias": discrepancias,
         "xiResuelto": bool(previo and previo["xi_json"]),

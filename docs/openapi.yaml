@@ -4587,6 +4587,12 @@ components:
             sobreElMotor: { type: number, description: 'puntos del favorito del pronóstico sobre el motor (negativo = por debajo)' }
             fiabilidadMu: { type: string }
             aviso: { type: string, description: 'vacío si no hay nada que corregir' }
+            copaNacional:
+              type: string
+              description: >
+                Nombre de la copa nacional (escala.copas_nacionales) si el partido es de una: ahí el 1X2
+                sale del mercado, no del motor, y no hay aviso por apartarse del motor (incidencia 1359).
+            porque: { type: string, description: 'por qué no hay aviso aunque el pronóstico se aparte del motor (copa nacional)' }
         fixtureId: { type: integer }
         partido: { type: string, description: 'los nombres de NUESTRA base, no los del depósito' }
         fecha: { type: string }
