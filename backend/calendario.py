@@ -35,6 +35,7 @@ from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 
 from backend import db
+from backend.partido_ajeno import sql_fuera
 
 PROXIMOS_DEFAULT = 4
 FORMA_N = 5              # ventana de forma reciente (misma que el gap §5)
@@ -77,13 +78,14 @@ def _q(sql: str, params: tuple = ()) -> list:
 
 def _resultados(team_id: int, limite: int = 10) -> list[dict]:
     """Últimos partidos terminados, del más reciente al más viejo."""
+    ajeno, p_ajeno = sql_fuera(team_id)   # sin los del homónimo (1371)
     filas = _q(
         f"""SELECT f.date, f.home_team_id, {_GH} AS gh, {_GA} AS ga, f.league_id, f.league_season
             FROM fixtures f
             WHERE (f.home_team_id=? OR f.away_team_id=?) AND {_FIN}
-              AND {_GH} IS NOT NULL AND {_GA} IS NOT NULL
+              AND {_GH} IS NOT NULL AND {_GA} IS NOT NULL{ajeno}
             ORDER BY f.date DESC LIMIT ?""",
-        (team_id, team_id, limite),
+        (team_id, team_id, *p_ajeno, limite),
     )
     out = []
     for r in filas:
@@ -132,13 +134,14 @@ def _derrotas_para_crisis(team_id: int, fecha: str | None) -> int:
         ref = datetime.now(timezone.utc)
     hasta = ref.strftime("%Y-%m-%d")
     desde = (ref - timedelta(days=CRISIS_VENTANA_DIAS)).strftime("%Y-%m-%d")
+    ajeno, p_ajeno = sql_fuera(team_id)
     filas = _q(
         f"""SELECT f.date, f.home_team_id, f.away_team_id, {_GH} AS gh, {_GA} AS ga, f.league_id
             FROM fixtures f
             WHERE (f.home_team_id=? OR f.away_team_id=?) AND {_FIN}
-              AND {_GH} IS NOT NULL AND {_GA} IS NOT NULL AND f.date >= ? AND f.date < ?
+              AND {_GH} IS NOT NULL AND {_GA} IS NOT NULL AND f.date >= ? AND f.date < ?{ajeno}
             ORDER BY f.date DESC LIMIT 20""",
-        (team_id, team_id, desde, hasta),
+        (team_id, team_id, desde, hasta, *p_ajeno),
     )
     n = 0
     for r in filas:
@@ -508,9 +511,10 @@ def _gap(team_id: int, fecha: str | None) -> dict | None:
     decide una etiqueta del calendario."""
     from backend.analisis import escala
     from backend.app import RECENT_WINDOW, mu, nivel_a_fecha
-    cond, params = "", [team_id, team_id]
+    cond, p_ajeno = sql_fuera(team_id)
+    params = [team_id, team_id, *p_ajeno]
     if fecha:
-        cond = " AND f.date < ?"
+        cond += " AND f.date < ?"
         params.append(fecha.replace("T", " ").rstrip("Z"))
     filas = _q(f"""SELECT f.league_id, f.home_team_id, {_GH} AS gh, {_GA} AS ga FROM fixtures f
                    WHERE (f.home_team_id=? OR f.away_team_id=?) AND {_FIN}
@@ -659,16 +663,18 @@ def etiquetas_de_rival(rival_id: int, rival_local: bool, liga_id: int | None,
 def calendario_de(team_id: int, n: int = PROXIMOS_DEFAULT) -> list[dict]:
     """Los próximos `n` partidos del equipo con el mapa de rivales del bloque G.
     [] si no hay fixtures programados. 0 requests, 0 tokens."""
+    # un partido del homónimo con el id cruzado no es un próximo (1371)
+    ajeno, p_ajeno = sql_fuera(team_id)
     filas = _q(
-        """SELECT f.id, f.date, f.home_team_id, f.away_team_id, f.league_id, f.league_season,
+        f"""SELECT f.id, f.date, f.home_team_id, f.away_team_id, f.league_id, f.league_season,
                   f.league_round, f.venue_city, l.name AS liga,
                   ht.name AS local, at.name AS visitante
            FROM fixtures f
            JOIN teams ht ON ht.id=f.home_team_id JOIN teams at ON at.id=f.away_team_id
            LEFT JOIN leagues l ON l.id=f.league_id
            WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.status_short IN ('NS','TBD')
-             AND f.date >= ? ORDER BY f.date ASC LIMIT ?""",
-        (team_id, team_id, datetime.now(timezone.utc).strftime("%Y-%m-%d 00:00:00"), n),
+             AND f.date >= ?{ajeno} ORDER BY f.date ASC LIMIT ?""",
+        (team_id, team_id, datetime.now(timezone.utc).strftime("%Y-%m-%d 00:00:00"), *p_ajeno, n),
     )
     if not filas:
         return []

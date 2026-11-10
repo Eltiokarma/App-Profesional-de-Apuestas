@@ -55,6 +55,26 @@ def main() -> int:
           leer("SELECT x FROM otra") == [(7,)])
     check("sin archivos sueltos de la corrida", sorted(os.listdir(d)) == ["levels.db"], os.listdir(d))
 
+    # 1371: el partido del homónimo (Copa Perú con el id de Atlético Nacional) sale del pipeline ENTERO
+    from backend.ingesta.pipeline import sin_ajenos
+    sad = os.path.join(d, "sad.db")
+    c = sqlite3.connect(sad)
+    c.executescript("""CREATE TABLE fixtures (id INTEGER PRIMARY KEY, home_team_id INTEGER, away_team_id INTEGER,
+                                              league_id INTEGER);
+                       CREATE TABLE leagues (id INTEGER PRIMARY KEY, name TEXT, country TEXT);
+                       INSERT INTO leagues VALUES (239, 'Primera A', 'Colombia'), (503, 'Copa Peru', 'Peru'),
+                                                  (13, 'CONMEBOL Libertadores', 'World');""")
+    c.executemany("INSERT INTO fixtures VALUES (?,?,?,?)",
+                  [(1, 1137, 1140, 239), (2, 1140, 1137, 239), (3, 1137, 1141, 239), (4, 1137, 50, 13),
+                   (5, 20326, 1137, 503)])
+    c.commit()
+    c.close()
+    fx = [(i, f"2026-11-0{i}", 0, 0, 1, 1) for i in range(1, 6)]
+    quedan, fuera = sin_ajenos(fx, sad)
+    check("1371: el partido de la Copa Perú sale del pipeline y los de Colombia y la Libertadores quedan",
+          [f[0] for f in quedan] == [1, 2, 3, 4] and fuera == [(5, 1137)], (quedan, fuera))
+    os.remove(sad)
+
     print("\nTODO OK" if not fallas else f"\n{fallas} FALLAS")
     return 1 if fallas else 0
 

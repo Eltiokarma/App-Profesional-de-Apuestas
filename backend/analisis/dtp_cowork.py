@@ -55,6 +55,10 @@ def _fixture(fixture_id: int):
 
 
 def _anteriores(team_id: int, fecha: str, cuantos: int) -> list:
+    """Sin los del homónimo con el id cruzado: el 2-2 de Copa Perú dejaba a
+    Atlético Nacional sin partido anterior (1371, backend/partido_ajeno.py)."""
+    from backend.partido_ajeno import sql_fuera
+    ajeno, p_ajeno = sql_fuera(team_id)
     return saddb.query(
         "sad",
         f"""SELECT f.id, f.date, f.league_id, f.league_round, f.home_team_id, f.away_team_id,
@@ -64,9 +68,9 @@ def _anteriores(team_id: int, fecha: str, cuantos: int) -> list:
             FROM fixtures f JOIN teams ht ON ht.id=f.home_team_id
             JOIN teams at ON at.id=f.away_team_id
             LEFT JOIN leagues l ON l.id=f.league_id
-            WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.date < ? AND {_FIN}
+            WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.date < ? AND {_FIN}{ajeno}
             ORDER BY f.date DESC LIMIT ?""",
-        (team_id, team_id, fecha, cuantos),
+        (team_id, team_id, fecha, *p_ajeno, cuantos),
     )
 
 

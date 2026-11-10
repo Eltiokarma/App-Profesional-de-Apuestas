@@ -700,11 +700,20 @@ def nivel_a_fecha(team_id: int, fecha_iso: str | None, fallback: float = 0.5) ->
     return float(row["level"]) if row else fallback
 
 
+def _sin_ajenos(team_id: int, alias: str = "f") -> tuple[str, list]:
+    """El filtro de los partidos del homónimo (1371): UNA regla, en backend/partido_ajeno.py."""
+    from backend.partido_ajeno import sql_fuera
+    frag, params = sql_fuera(team_id, alias)
+    return frag, list(params)
+
+
 def forma_reciente(team_id: int, antes_de: str | None) -> list[dict] | None:
     """Últimos 5 terminados con rival, fecha y localía (None si no hay 5)."""
-    cond, params = "", [team_id, team_id]
+    # sin los partidos del homónimo (1371, backend/partido_ajeno.py)
+    cond, params = _sin_ajenos(team_id)
+    params = [team_id, team_id, *params]
     if antes_de:
-        cond = " AND f.date < ?"
+        cond += " AND f.date < ?"
         params.append(antes_de.replace("T", " ").rstrip("Z"))
     rows = db.query(
         "sad",
@@ -852,12 +861,13 @@ def proximos_de(team_id: int, nivel: float, fixture) -> list[dict]:
     """Camino de recuperación (§5 v2): próximos fixtures del equipo tras el
     analizado, con la μ esperada contra el rival real de cada uno."""
     marks = ",".join("?" * len(_NO_CAMINO))
+    ajeno, p_ajeno = _sin_ajenos(team_id)   # el homónimo no es un próximo (1371)
     rows = db.query(
         "sad",
         FIXTURE_SQL + f""" WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.id != ? AND f.date > ?
-            AND {_SS} NOT IN ({marks})
+            AND {_SS} NOT IN ({marks}){ajeno}
             ORDER BY f.date ASC LIMIT {RECOVERY_NEXT}""",
-        (team_id, team_id, fixture["id"], str(fixture["date"]), *_NO_CAMINO),
+        (team_id, team_id, fixture["id"], str(fixture["date"]), *_NO_CAMINO, *p_ajeno),
     )
     prox, prev = [], _dt(fixture["date"])
     for r in rows:
@@ -893,11 +903,12 @@ def partido_trampa(team_id: int, fixture, nivel: float, nivel_rival_hoy: float) 
     d = _dt(fixture["date"])
     ini = (d - timedelta(days=TRAMPA_VENTANA_DIAS)).strftime("%Y-%m-%d %H:%M:%S")
     fin = (d + timedelta(days=TRAMPA_VENTANA_DIAS)).strftime("%Y-%m-%d %H:%M:%S")
+    ajeno, p_ajeno = _sin_ajenos(team_id)
     rows = db.query(
         "sad",
-        """SELECT f.date, f.league_id, f.home_team_id, f.away_team_id FROM fixtures f
-           WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.id != ? AND f.date BETWEEN ? AND ?""",
-        (team_id, team_id, fixture["id"], ini, fin),
+        f"""SELECT f.date, f.league_id, f.home_team_id, f.away_team_id FROM fixtures f
+           WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.id != ? AND f.date BETWEEN ? AND ?{ajeno}""",
+        (team_id, team_id, fixture["id"], ini, fin, *p_ajeno),
     )
     for r in rows:
         rival_id = r["away_team_id"] if r["home_team_id"] == team_id else r["home_team_id"]
@@ -1179,17 +1190,18 @@ def _historia_nivel(team_id: int) -> list[tuple]:
     (misma selección que `pipeline.leer_fixtures`: terminados con goles de
     los 90', orden date,id): [(fixture_id, date, gf, ga)]."""
     try:
+        ajeno, p_ajeno = _sin_ajenos(team_id, alias="")   # el pipeline los saca (1371)
         filas = db.query(
             "sad",
-            """SELECT id, date, home_team_id, away_team_id,
+            f"""SELECT id, date, home_team_id, away_team_id,
                       COALESCE(fulltime_home, goals_home) AS gh, COALESCE(fulltime_away, goals_away) AS ga
                FROM fixtures
                WHERE (home_team_id=? OR away_team_id=?)
                  AND (status_short IN ('FT','AET','PEN') OR status_long='Match Finished')
                  AND COALESCE(fulltime_home, goals_home) IS NOT NULL
-                 AND COALESCE(fulltime_away, goals_away) IS NOT NULL
+                 AND COALESCE(fulltime_away, goals_away) IS NOT NULL{ajeno}
                ORDER BY date, id""",
-            (team_id, team_id),
+            (team_id, team_id, *p_ajeno),
         )
     except Exception:  # noqa: BLE001 — base sin la tabla: lista vacía, no un 500
         return []
@@ -1345,8 +1357,10 @@ def fixtures(
         cond.append("((f.home_team_id=? AND f.away_team_id=?) OR (f.home_team_id=? AND f.away_team_id=?))")
         params.extend([equipoId, rivalId, rivalId, equipoId])
     elif equipoId is not None:
-        cond.append("(f.home_team_id=? OR f.away_team_id=?)")
-        params.extend([equipoId, equipoId])
+        # los partidos del homónimo con el id cruzado no son del equipo (1371)
+        ajeno, p_ajeno = _sin_ajenos(equipoId)
+        cond.append("(f.home_team_id=? OR f.away_team_id=?)" + ajeno)
+        params.extend([equipoId, equipoId, *p_ajeno])
     where = (" WHERE " + " AND ".join(cond)) if cond else ""
     orden_sql = "ASC" if orden == "asc" else "DESC"
     rows = db.query("sad", FIXTURE_SQL + where + f" ORDER BY f.date {orden_sql} LIMIT ?", (*params, limit))
@@ -1484,15 +1498,16 @@ def equipo_stats(equipo_id: int):
     team = db.query_one("sad", "SELECT id, name FROM teams WHERE id=?", (equipo_id,))
     if not team:
         raise HTTPException(404, f"equipo {equipo_id} no existe")
+    ajeno, p_ajeno = _sin_ajenos(equipo_id)
     rows = db.query(
         "sad",
         f"""SELECT f.home_team_id, {_G90_H} AS goals_home, {_G90_A} AS goals_away
            FROM fixtures f
            WHERE (f.home_team_id=? OR f.away_team_id=?)
              AND {_FIN90_SQL}
-             AND {_G90_H} IS NOT NULL AND {_G90_A} IS NOT NULL
+             AND {_G90_H} IS NOT NULL AND {_G90_A} IS NOT NULL{ajeno}
            ORDER BY f.date DESC LIMIT 2000""",
-        (equipo_id, equipo_id),
+        (equipo_id, equipo_id, *p_ajeno),
     )
     pts = gf_tot = gc_tot = 0
     forma = []

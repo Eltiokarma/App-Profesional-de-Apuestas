@@ -67,7 +67,10 @@ def ventana(hasta: str | None = None, dias: int = VENTANA_DIAS) -> tuple[str, st
 
 def _partidos(team_id: int, desde: str, hasta: str) -> list[dict]:
     """Partidos terminados del equipo en el período, del más viejo al más nuevo
-    (el esquema TIMELINE exige orden cronológico estricto)."""
+    (el esquema TIMELINE exige orden cronológico estricto). Sin los del
+    homónimo con el id cruzado (1371, backend/partido_ajeno.py)."""
+    from backend.partido_ajeno import sql_fuera
+    ajeno, p_ajeno = sql_fuera(team_id)
     return _q(
         f"""SELECT f.id, f.date, f.home_team_id, f.away_team_id, f.league_round AS ronda, f.status_short AS est,
                    {_GH} AS gh, {_GA} AS ga, ht.name AS local, at.name AS visitante,
@@ -78,9 +81,9 @@ def _partidos(team_id: int, desde: str, hasta: str) -> list[dict]:
             LEFT JOIN leagues l ON l.id=f.league_id
             WHERE (f.home_team_id=? OR f.away_team_id=?) AND {_FIN}
               AND {_GH} IS NOT NULL AND {_GA} IS NOT NULL
-              AND f.date >= ? AND f.date <= ?
+              AND f.date >= ? AND f.date <= ?{ajeno}
             ORDER BY f.date ASC LIMIT ?""",
-        (team_id, team_id, desde, hasta + " 23:59:59", MAX_PARTIDOS),
+        (team_id, team_id, desde, hasta + " 23:59:59", *p_ajeno, MAX_PARTIDOS),
     )
 
 

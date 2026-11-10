@@ -129,6 +129,20 @@ def sin_duplicados(fixtures) -> tuple[list[tuple], list[tuple[int, int]]]:
     return fuera, dups
 
 
+def sin_ajenos(fixtures, sad_path: str) -> tuple[list[tuple], list[tuple[int, int]]]:
+    """UN PARTIDO DEL HOMÓNIMO NO ES DEL EQUIPO (10/11/2026, incidencia 1371):
+    la API le dio el id de Atlético Nacional (1137) a un club de la Copa Perú y
+    sus dos partidos ante Juventud Palmeiras entraban a la historia de Nacional
+    (K total y de visita en 0). La regla vive en `backend.partido_ajeno`; acá el
+    partido sale ENTERO: el rival tampoco jugó contra el nivel de ese 1137.
+    Devuelve (los que quedan, [(fixture, equipo)] de los que salieron)."""
+    from backend.partido_ajeno import ajenos_de_la_base
+    with sqlite3.connect(f"file:{sad_path}?mode=ro", uri=True) as con:
+        por_equipo = ajenos_de_la_base(con)
+    fuera = {fid: t for t, fids in por_equipo.items() for fid in fids}
+    return [fx for fx in fixtures if fx[0] not in fuera], sorted(fuera.items())
+
+
 def leer_nombres(sad_path: str) -> dict[int, str]:
     with sqlite3.connect(f"file:{sad_path}?mode=ro", uri=True) as con:
         return dict(con.execute("SELECT id, name FROM teams"))
@@ -304,6 +318,10 @@ def main() -> int:
               + ", ".join(f"{a}→{b}" for a, b in dups[:20]) + (" …" if len(dups) > 20 else ""))
     if args.duplicados:
         return 0
+    fixtures, ajenos = sin_ajenos(fixtures, args.sad)
+    if ajenos:
+        print(f"partidos ajenos fuera: {len(ajenos)} (competición nacional de otro país; fixture/equipo): "
+              + ", ".join(f"{a}/{b}" for a, b in ajenos[:20]) + (" …" if len(ajenos) > 20 else ""))
     nombres = leer_nombres(args.sad)
     hist = construir_historias(fixtures)
     print(f"sad.db: {len(fixtures)} partidos terminados · {len(hist)} equipos")

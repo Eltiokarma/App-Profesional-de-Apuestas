@@ -308,6 +308,44 @@ check("1230: el hallazgo del escaneo trae la hora de Lima al lado de la UTC",
 check("escaneo: todos los chequeos tienen título, área, severidad y la regla que cuidan",
       all({"titulo", "area", "severidad", "regla"} <= set(v) for v in escaneo.CHEQUEOS.values()))
 
+# ── 1371: EL HOMÓNIMO CON EL ID CRUZADO (backend/partido_ajeno.py) ───────────
+# Atlético Nacional (1137) tenía dos partidos de la Copa Perú (503) ante
+# Juventud Palmeiras que son de otro club peruano con el mismo id de la API
+from backend import partido_ajeno  # noqa: E402
+NAC, JPA, ONC, COL, CPERU, LIBERTA = 1137, 20326, 1140, 239, 503, 13
+con.executescript("CREATE TABLE IF NOT EXISTS leagues (id INTEGER PRIMARY KEY, name TEXT, country TEXT);")
+con.executemany("INSERT OR REPLACE INTO leagues VALUES (?,?,?)",
+                [(COL, "Primera A", "Colombia"), (CPERU, "Copa Peru", "Peru"),
+                 (LIBERTA, "CONMEBOL Libertadores", "World"), (BRA, "Serie A", "Brazil")])
+con.executemany("INSERT INTO teams VALUES (?,?)", [(NAC, "Atletico Nacional"), (JPA, "Juventud Palmeiras"),
+                                                    (ONC, "Once Caldas")])
+for k in range(4):
+    con.execute("INSERT INTO fixtures VALUES (?, ?, 'FT', '', ?, 2026, 'Clausura - 1', ?, ?)",
+                (70 + k, f"2026-10-{10 + 5 * k:02d} 23:00:00", COL, NAC if k % 2 else ONC, ONC if k % 2 else NAC))
+con.execute("INSERT INTO fixtures VALUES (74, '2026-10-30 23:00:00', 'FT', '', ?, 2026, 'Final', ?, ?)",
+            (LIBERTA, NAC, ONC))
+con.execute("INSERT INTO fixtures VALUES (75, '2026-11-08 20:00:00', 'FT', '', ?, 2026, 'Etapa Nacional', ?, ?)",
+            (CPERU, JPA, NAC))
+con.execute("INSERT INTO fixtures VALUES (76, '2099-11-14 20:00:00', 'NS', '', ?, 2026, 'Etapa Nacional', ?, ?)",
+            (CPERU, NAC, JPA))
+con.execute("INSERT INTO fixtures VALUES (77, '2026-11-10 23:00:00', 'NS', '', ?, 2026, 'Clausura - 5', ?, ?)",
+            (COL, ONC, NAC))
+con.commit()
+partido_ajeno._cache.clear()
+check("1371: los partidos de la Copa Perú son ajenos a Nacional (Colombia) y la Libertadores no",
+      partido_ajeno.ajenos_del_equipo(NAC) == {75, 76}, partido_ajeno.ajenos_del_equipo(NAC))
+check("1371: el club peruano (todo en Perú) no tiene ajenos, y sin mayoría clara no se afirma nada",
+      partido_ajeno.ajenos_del_equipo(JPA) == set()
+      and partido_ajeno.ajenos([(1, COL, "Colombia"), (2, CPERU, "Peru")], set()) == (None, set()))
+check("1371: un club que cruza la frontera de verdad (Toronto: MLS y Campeonato Canadiense) no se marca",
+      partido_ajeno.ajenos([(i, 253, "USA") for i in range(10)] + [(99, 952, "Canada")], set())[1] == set())
+check("1371: el escaneo lo deposita (`partido-ajeno`, no informativo) en el lado de Nacional",
+      not escaneo.CHEQUEOS["partido-ajeno"].get("informativo")
+      and [(h["chequeo"], h["lado"]) for h in escaneo._pre(
+          {"fixtureId": 77, "partido": "Once Caldas vs Atletico Nacional", "fecha": "2026-11-10", "hora": "23:00",
+           "equipoA": "Once Caldas", "equipoB": "Atletico Nacional"}, _ahora) if h["chequeo"] == "partido-ajeno"]
+      == [("partido-ajeno", "b"), ("partido-ajeno", "b")])
+
 # ── EL PESO: la base no se recorre de más ────────────────────────────────────
 from backend import db as _dbm  # noqa: E402
 _n = {"q": 0}
@@ -572,6 +610,21 @@ check("1332: local de 1,66 a 1,08 en 24 h es salto del mercado; un movimiento ch
       (_s1332, _s1332b, _s1332c))
 check("1332: el chequeo mercado-salto existe y se deposita (no es informativo)",
       "mercado-salto" in escaneo.CHEQUEOS and not escaneo.CHEQUEOS["mercado-salto"].get("informativo"))
+
+# 1371, los lectores (al final: las columnas de goles cambian la forma de la tabla)
+for _col in ("goals_home", "goals_away", "fulltime_home", "fulltime_away", "venue_city"):
+    con.execute(f"ALTER TABLE fixtures ADD COLUMN {_col}")
+con.execute("UPDATE fixtures SET goals_home=1, goals_away=0 WHERE id BETWEEN 70 AND 75")
+con.commit()
+from backend import jugadores as _jug, calendario as _cal  # noqa: E402
+_ant = dtp_cowork._anteriores(NAC, "2026-11-10 23:00:00", 1)
+check("1371: el partido anterior del DTP es el de la Libertadores, no el 2-2 de la Copa Perú",
+      [r["id"] for r in _ant] == [74], [r["id"] for r in _ant])
+check("1371: F2 cuenta el descanso desde el último partido de Nacional (11 días, no 2)",
+      _jug._congestion(NAC, "2026-11-10 23:00:00").get("diasDescanso") == 11,
+      _jug._congestion(NAC, "2026-11-10 23:00:00"))
+check("1371: la vuelta de la Copa Perú no es un próximo del calendario de Nacional",
+      76 not in {p.get("fixtureId") for p in _cal.calendario_de(NAC, 10)}, _cal.calendario_de(NAC, 10))
 
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)

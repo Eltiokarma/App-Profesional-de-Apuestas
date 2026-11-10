@@ -66,6 +66,18 @@ CHEQUEOS: dict[str, dict] = {
         "regla": "un equipo no juega dos veces el mismo día: uno de los dos fixtures es un aplazado sin "
                  "marcar o un duplicado",
     },
+    # EL HOMÓNIMO CON EL ID CRUZADO (10/11/2026, incidencia 1371): la API le dio
+    # el id de Atlético Nacional (1137) a un club de la Copa Perú y sus partidos
+    # entraban a la historia de Nacional (K en 0, DTP sin anterior, F2 corrido).
+    # La regla vive en backend/partido_ajeno.py y los lectores ya los saltean;
+    # el chequeo SE DEPOSITA porque es un dato sucio de la API que hay que ver.
+    "partido-ajeno": {
+        "titulo": "Equipo con partidos de una competición nacional de otro país",
+        "area": "otro", "severidad": "error",
+        "regla": "un partido de una competición nacional (no internacional de clubes, no amistoso) de un "
+                 "país distinto al del equipo es de un homónimo con el id cruzado por la API: no entra a su "
+                 "historia ni a su calendario (backend/partido_ajeno.py)",
+    },
     "sin-cuotas": {
         "titulo": "Partido de la agenda sin cuota prepartido a pocas horas",
         "area": "cuotas", "severidad": "aviso",
@@ -278,6 +290,15 @@ def _pre(item: dict, ahora: datetime) -> list[dict]:
             if c and c["amistosos"] >= ventana_nivel.UMBRAL_AMISTOSOS:
                 out.append(_hallazgo("nivel-con-amistosos", item, ventana_nivel.texto(c), lado))
     except Exception:  # noqa: BLE001 — sin la tabla de ligas: no se cuenta la ventana
+        pass
+    try:
+        from backend import partido_ajeno
+        fx = saddb.query_one("sad", "SELECT home_team_id, away_team_id FROM fixtures WHERE id=?", (fid,))
+        for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])) if fx else ():
+            for x in partido_ajeno.detalle(tid):
+                out.append(_hallazgo("partido-ajeno", item, f"fixture {x['fixtureId']} del {x['fecha']}: "
+                                     f"{x['liga']} ({x['pais']}), liga {x['ligaId']}", lado))
+    except Exception:  # noqa: BLE001 — sin la tabla de ligas: no se afirma que un partido sea ajeno
         pass
     try:
         from backend.analisis import ventana_nivel
