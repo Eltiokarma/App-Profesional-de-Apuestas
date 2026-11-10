@@ -4183,6 +4183,37 @@ def _totales(equipo: dict) -> dict:
                              "los bloques declarados" if sin_declarar else "") + nota_legado).strip(". ")}
 
 
+def _solo_gk(zonas) -> bool:
+    return [(z or "").upper() for z in zonas or []] == ["GK"]
+
+
+def _gk_cubierta(fixture_id: int, lado: str, arqueros: list[dict], cache: dict) -> dict | None:
+    """El arquero disponible que cubre la zona GK (incidencia 1323, EFE §F3):
+    sus titularidades de la temporada salen de la tabla F1 de la BASE —la fila
+    del parte no las trae—, casadas por `jugadorId` (o sus alternos) y, sin
+    id, por la regla única de identidad. `cache` guarda la tabla de los dos
+    lados para no rehacerla."""
+    if not arqueros:
+        return None
+    if "tabla" not in cache:
+        try:
+            cache["tabla"] = _f1_base.tabla(fixture_id) or {}
+        except Exception:  # noqa: BLE001 — sin la capa de jugadores la F3 por zona GK sale como siempre
+            cache["tabla"] = {}
+    candidatos = (cache["tabla"].get(lado) or {}).get("candidatos") or []
+    con_tit = []
+    for a in arqueros:
+        ids = {a.get("jugadorId"), *(a.get("idsAlternos") or [])} - {None}
+        fila = next((c for c in candidatos if ids & ({c.get("jugadorId"), *(c.get("idsAlternos") or [])} - {None})),
+                    None)
+        if fila is None and not ids:
+            fila = next((c for c in candidatos if (c.get("zona") or "").upper() == "GK"
+                         and _identidad.mismo_jugador(c.get("nombre", ""), a.get("nombre", ""))), None)
+        if fila is not None:
+            con_tit.append({**a, "titularidades": fila.get("titularidades") or 0})
+    return bloque_f.gk_cubierta(con_tit)
+
+
 def _disponibilidad(equipo: dict, xi: dict | None) -> dict:
     """El bloque F: resuelto si ya hay once, en dos ramas si todavía no."""
     plantel, fuera = equipo["plantel"], equipo["fuera"]
@@ -4744,24 +4775,41 @@ def dto(fixture_id: int) -> dict | None:
     xi = _formacion_al_dia(fixture_id, xi)
     alertas = list(parte["alertas"])
     equipos = {}
+    base_f1: dict = {}
     for lado in LADOS:
         eq = parte["equipos"][lado]
         tot = _totales(eq)
         disp = _disponibilidad(eq, xi.get(lado))
         if disp.get("resuelto"):
+            gk = None
+            if _solo_gk(disp.get("zonasCriticas")):
+                gk = _gk_cubierta(fixture_id, lado, [j for j in disp.get("jugadores") or []
+                                                     if (j.get("zona") or "").upper() == "GK"
+                                                     and j.get("estado") == "disponible"], base_f1)
+            if gk:
+                disp["gkCubierta"] = gk
             f3 = bloque_f.alerta_f3(tot["clasificacion"], disp.get("ipNivel", "verde"),
                                     bloque_f.titulares_fijos_fuera(disp.get("jugadores") or []),
-                                    disp.get("zonasCriticas"))
+                                    disp.get("zonasCriticas"), gk=gk)
         else:
             # ANTES DEL ONCE, con lo ya conocido (incidencia 383, Nacional: IP 15
             # rojo y FORMADO sin F3 hasta cerrar el once). Provisional y dicho.
             ra = (disp.get("ramas") or {}).get("a") or {}
+            gk = None
+            if ra and _solo_gk(ra.get("zonasCriticas")):
+                fuera_a = {normalizar(x.get("nombre", "")) for x in ra.get("fuera") or []}
+                gk = _gk_cubierta(fixture_id, lado, [j for j in eq.get("plantel") or []
+                                                     if (j.get("zona") or "").upper() == "GK"
+                                                     and normalizar(j.get("nombre", "")) not in fuera_a],
+                                  base_f1)
+            if gk:
+                disp["gkCubierta"] = gk
 
             def _f3_rama(r: dict, dudas: list[str] | None = None) -> dict | None:
                 return bloque_f.alerta_f3(tot["clasificacion"], r.get("ipNivel", "verde"),
                                           [x.get("nombre", "") for x in r.get("fuera") or []
                                            if (x.get("rol") or "").upper() == "TF" and x.get("estado") == "baja"],
-                                          r.get("zonasCriticas"), provisional=True, por_dudas=dudas)
+                                          r.get("zonasCriticas"), provisional=True, por_dudas=dudas, gk=gk)
             f3 = _f3_rama(ra) if ra else None
             # 1114: si sin las DUDAS no habría F3, sale igual pero dice que es por ellas
             dudas = [x.get("nombre", "") for x in ra.get("fuera") or [] if x.get("estado") == "duda"]

@@ -1462,6 +1462,9 @@ export interface DisponibilidadParte {
   reduccionNivel?: Record<ZonaF, Semaforo>
   multiplicadorGk?: boolean
   zonasCriticas?: ZonaF[]
+  /** incidencia 1323: la GK es la única zona crítica y el arquero disponible ya ataja
+   *  (titularidades en la temporada): la F3 no sale por zona; el IP no cambia. */
+  gkCubierta?: { arquero: string; titularidades: number; detalle: string }
   fuera?: RamaF['fuera']
   f4?: { rotados: number; nombres: string[]; diagnostico: string }
   jugadores?: JugadorParte[]
