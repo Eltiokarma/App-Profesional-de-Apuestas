@@ -432,14 +432,17 @@ backend/           FastAPI de SOLO LECTURA sobre sad/levels/constants/discreto.d
   1.02 inflaba el tramo de 60 %+ y la simulación. La marca sale de
   `escala.copas_nacionales` (lista `COPAS` o el nombre; los torneos
   internacionales de clubes no son copa aunque digan «Cup»).
-- **El rol contra el grid, en sombra** (29/10/2026, incidencia 646):
+- **El rol contra el grid** (29/10/2026, incidencia 646):
   `contraElOnce.rolesVsGrid` compara el rol que `m1.rolesReasignados` le da a
   un titular con su casilla del grid oficial (línea, y banda de laterales,
-  carrileros y centrales; un 9 en la fila de la mediapunta no cuenta). Medido
-  sobre 315 partes: 13 con hallazgo, casi todos reales (Gray, Castillo,
-  Velasco). NO pide rehacer (`dtp_cowork.ROLES_GRID_REHACE = False`) hasta que
-  los veredictos de una semana digan cuántos fueron reales; la caja del DTP lo
-  muestra «en observación».
+  carrileros y centrales; un 9 en la fila de la mediapunta no cuenta). Nació en
+  sombra; medido contra los veredictos de una semana (05/11: 9 reales y 0
+  falsos entre 9 decididos), **desde el 10/11/2026 pide rehacer**
+  (`dtp_cowork.ROLES_GRID_REHACE = True`, incidencia 1232): cada rol
+  contradicho es un motivo `rol:` de DTP-REHACER. Y los **duelos del M2**
+  también (1239): un protagonista de `m2.duelosCarril` que arrancó en el banco
+  (de cualquier lado) es un motivo «duelo del M2»; `veredictoRamas` y las
+  palancas del M3 no, porque nombrar un recambio es legítimo.
 - **Simulación de apuesta** (28/10/2026, pedido del usuario;
   `backend/analisis/simulacion.py`, `GET /analisis/simulacion`, sección
   **Simulación**): una banca de 100 unidades sobre los 1X2 declarados en los

@@ -1664,12 +1664,18 @@ def _casillas(xi: list[dict]) -> list[dict]:
 # central» de central: con uno o dos cambios de rol el corte de ausentes no
 # llega y el M2 queda escrito sobre otro equipo. Medido el 29/10/2026 sobre 315
 # partes: 15 con una contradicción (≈ 1 por día), 11 sin DTP-REHACER; una o dos
-# de cada quince pueden ser el grid de la API (516). Por eso nace EN SOMBRA:
-# viaja en `contraElOnce.rolesVsGrid` y en la pantalla, NO pide rehacer. Se
-# promueve (ROLES_GRID_REHACE) cuando los veredictos de una semana digan cuántas
-# fueron reales. Solo la LÍNEA (defensa contra medio/ataque) y la BANDA de un
-# lateral, carrilero o central: un extremo que cambia de banda es del partido.
-ROLES_GRID_REHACE = False
+# de cada quince pueden ser el grid de la API (516). Nació EN SOMBRA (viajaba
+# en `contraElOnce.rolesVsGrid` sin pedir rehacer) hasta medirla contra los
+# veredictos: el 05/11/2026, sobre 190 partes de una semana, 22 hallazgos en
+# 17 partes, 9 REALES y 0 falsos entre los 9 decididos (Caio Paulista, Bruno
+# Gomes, Nunes/Kondo/Adaramola, G. Valera, L. Abreu, S. Benítez) y 13 sin
+# resolver. PROMOVIDA el 10/11/2026 (incidencia 1232, aprobada por el
+# usuario): cada rol contradicho es un motivo de DTP-REHACER (≈ un rehacer más
+# por día). Matiz: un grid que la API corrige DESPUÉS del cierre solo sirve si
+# llega antes de la hora tope. Solo la LÍNEA (defensa contra medio/ataque) y la
+# BANDA de un lateral, carrilero o central: un extremo que cambia de banda es
+# del partido.
+ROLES_GRID_REHACE = True
 _ROL = (r"doble pivote|pivote|mediocentro|medio centro|volante|interior|lateral|central|zaguero|defensor|libero|"
         r"carrilero|extremo|mediapunta|media punta|enganche|delantero|referencia|centrodelantero|nueve|9")
 _CLASE_ROL = {"lateral": {"DEF"}, "central": {"DEF"}, "zaguero": {"DEF"}, "defensor": {"DEF"}, "libero": {"DEF"},
@@ -1898,7 +1904,32 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
                     for h in [*(lado_of.get("titulares") or []), *(lado_of.get("banca") or [])]
                     for x in [h, *((lado_of.get("alias") or {}).get(h) or [])]):
             motivos.append(f"{quien}: {pz.get('nombre')} no figura en la hoja del partido (ni titular ni suplente)")
-    # el rol contra el grid (646): en sombra hasta medirlo con los veredictos
+    # LOS PROTAGONISTAS DE LOS DUELOS DEL M2 EN EL BANCO (10/11/2026,
+    # incidencia 1239, Botafogo–Atlético MG 1492441: la xiReferencia cuadraba
+    # con el once y los duelos por carril seguían nombrando a Montoro, Telles,
+    # Ziyech y Matheus Martins, que arrancaron en el banco; contraElOnce solo
+    # miraba la referencia, las piezas y el seguro). La misma función que las
+    # piezas, con la banca de los DOS lados (un duelo nombra al propio y al
+    # rival) y los titulares de los dos tapando homónimos. Un duelo escrito
+    # «desde el banco» no se cae por eso (633). `veredictoRamas` y las palancas
+    # del M3 NO: nombrar a un suplente como recambio es legítimo.
+    tit_ambos = [*(((oficial or {}).get("a") or {}).get("titulares") or []),
+                 *(((oficial or {}).get("b") or {}).get("titulares") or [])]
+    duelo_banca = []
+    for d in ((bloque.get("apertura") or {}).get("m2") or {}).get("duelosCarril") or []:
+        crudo_d = d.get("duelo") or ""
+        if not crudo_d.strip() or _DESDE_BANCO.search(crudo_d):
+            continue
+        crudo_d = sin_alternativas(sin_ausentes(sin_en_banco(crudo_d)))
+        for lado in ("a", "b"):
+            lado_of = (oficial or {}).get(lado) or {}
+            for n in _suplentes_nombrados(lado_of.get("banca") or [], tit_ambos, _plano(crudo_d), crudo_d):
+                if n not in duelo_banca:
+                    duelo_banca.append(n)
+    if duelo_banca:
+        motivos.append(f"duelo del M2: {', '.join(duelo_banca)} arrancó en el banco "
+                       "(reescribir los duelos por carril con el once oficial)")
+    # el rol contra el grid (646): pide rehacer desde el 10/11/2026 (1232)
     roles_grid = roles_vs_grid(bloque, of)
     if ROLES_GRID_REHACE:
         motivos += [f"rol: {r['jugador']}: {r['motivo']}" for r in roles_grid]
@@ -1923,7 +1954,8 @@ def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
             # que no estaban en el XI de referencia, no los de la referencia que
             # faltaron en el once
             "ausentesDeLaReferencia": ausentes,
-            # EN SOMBRA (646): el rol de `rolesReasignados` contra la casilla del grid
+            # 646: el rol de `rolesReasignados` contra la casilla del grid (pide
+            # rehacer desde el 10/11/2026, incidencia 1232)
             "rolesVsGrid": roles_grid,
             "nota": ("`ausentesDeLaReferencia`: titulares del once OFICIAL que no figuraban en el XI de "
                      f"referencia de la apertura; con {REHACER_AUSENTES} o más, el bloque se rehace")}

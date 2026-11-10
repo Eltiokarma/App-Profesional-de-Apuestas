@@ -285,14 +285,17 @@ def main():
     check("646: pivote en la defensa y lateral cambiado de banda salen en rolesVsGrid; lo demás no",
           set(_rg) == {"A. Gray", "A. Robertson"} and "defensa (2:4)" in _rg["A. Gray"]
           and "por la derecha y el grid, por la izquierda" in _rg["A. Robertson"], _r646["rolesVsGrid"])
-    check("646: en sombra no pide rehacer", not _r646["rehacer"] and not _dc646.ROLES_GRID_REHACE, _r646["motivos"])
-    _dc646.ROLES_GRID_REHACE = True
+    # 1232 (10/11/2026): promovida tras medirla (9 reales, 0 falsos entre 9 decididos)
+    check("1232: promovida, cada rol contradicho es un motivo de rehacer",
+          _dc646.ROLES_GRID_REHACE and _r646["rehacer"]
+          and sum(m.startswith("rol:") for m in _r646["motivos"]) == 2, _r646["motivos"])
+    _dc646.ROLES_GRID_REHACE = False
     try:
         _r646b = _reh(_b646, _of646)
     finally:
-        _dc646.ROLES_GRID_REHACE = False
-    check("646: promovida, cada rol contradicho es un motivo de rehacer",
-          _r646b["rehacer"] and sum(m.startswith("rol:") for m in _r646b["motivos"]) == 2, _r646b["motivos"])
+        _dc646.ROLES_GRID_REHACE = True
+    check("646: con la bandera apagada vuelve a la sombra (viaja, no pide rehacer)",
+          not _r646b["rehacer"] and len(_r646b["rolesVsGrid"]) == 2, _r646b["motivos"])
     # 1348: «Lewis-Potter» (apellido compuesto que empieza como una pila) es «K. Lewis-Potter» del grid
     _cas1348 = [(n if n != "M. Tel" else "K. Lewis-Potter", g) for n, g in _cas]
     _of1348 = {"a": {**_of646["a"], "titulares": [n for n, _ in _cas1348],
@@ -315,7 +318,7 @@ def main():
         "Adaramola, con 2 partidos y ninguna titularidad en la base, de extremo izquierdo (4:1)"]}}}, _of1074)
     check("1074: con la aposición entre comas el rol se lee contra la casilla (Nunes, Kondo y Adaramola; Diakité cuadra)",
           {r["jugador"] for r in _r1074["rolesVsGrid"]} == {"Erick Nunes", "G. Kondo", "T. Adaramola"}
-          and not _r1074["rehacer"], _r1074["rolesVsGrid"])
+          and sum(m.startswith("rol:") for m in _r1074["motivos"]) == 3, _r1074["rolesVsGrid"])
     # 1075: lo rotulado «Alternativas:» o «En el banco…:» en senalXi no es un cambio anunciado
     _of1075 = {"b": {"formacion": "4-2-3-1", "defensores": 4, "titulares": [
         "David Raya", "Gabriel Magalhães", "M. Ødegaard", "J. Timber", "E. Konsa", "C. Tzolis", "N. Madueke",
@@ -354,6 +357,39 @@ def main():
     check("1157: sin otro motivo, un ausente solo no pide rehacer",
           not _reh({"equipo": "a", "apertura": {"m1": {"sistema": "4-1-3-2", "xiReferencia": _ref1075b}}},
                    {"a": {"formacion": "4-1-3-2", "defensores": 4, "titulares": _tit1075b}})["rehacer"])
+    # 1239 (Botafogo–Atlético MG 1492441): la referencia cuadraba con el once y
+    # los duelos del M2 nombraban a cuatro que arrancaron en el banco
+    _tit1239a = ["John", "Vitinho", "Barboza", "Cuiabano", "Marçal", "Marlon Freitas", "Gregore",
+                 "Savarino", "Artur", "Igor Jesus", "Santiago Rodríguez"]
+    _tit1239b = ["Everson", "Natanael", "Lyanco", "Junior Alonso", "Guilherme Arana", "Alan Franco", "Gustavo Scarpa",
+                 "Bernard", "Rony", "Hulk", "Dudu"]
+    _of1239 = {"a": {"formacion": "4-2-3-1", "defensores": 4, "titulares": _tit1239a,
+                     "banca": ["Léo Linck", "Alex Telles", "Montoro", "Ziyech", "Matheus Martins", "Kauã Pascini"]},
+               "b": {"formacion": "4-2-3-1", "defensores": 4, "titulares": _tit1239b,
+                     "banca": ["Gabriel Delfim", "Igor Gomes", "Cuello", "Rubens"]}}
+    _ref1239 = ", ".join(_tit1239a)
+
+    def _b1239(duelos):
+        return {"equipo": "a", "apertura": {"m1": {"sistema": "4-2-3-1", "xiReferencia": _ref1239},
+                                            "m2": {"duelosCarril": duelos}}}
+    _r1239 = _reh(_b1239([
+        {"carril": "izquierdo", "duelo": "Alex Telles contra Natanael"},
+        {"carril": "derecho", "duelo": "Matheus Martins y Ziyech contra Guilherme Arana"},
+        {"carril": "centro", "duelo": "Montoro entre líneas contra Alan Franco"},
+        {"carril": "centro", "duelo": "Igor Jesus contra Lyanco y Junior Alonso"}]), _of1239)
+    _m1239 = [m for m in _r1239["motivos"] if m.startswith("duelo del M2")]
+    check("1239: un protagonista de un duelo del M2 en el banco pide rehacer y el motivo dice «duelo del M2»",
+          _r1239["rehacer"] and len(_m1239) == 1
+          and all(n in _m1239[0] for n in ("Alex Telles", "Matheus Martins", "Ziyech", "Montoro"))
+          and _r1239["ausentesDeLaReferencia"] == [], _r1239["motivos"])
+    check("1239: los duelos con titulares, «desde el banco» o del suplente rival como entrada no piden rehacer",
+          not _reh(_b1239([{"carril": "izquierdo", "duelo": "Cuiabano contra Natanael"},
+                           {"carril": "derecho", "duelo": "Ziyech desde el banco contra Arana"},
+                           {"carril": "centro", "duelo": "Igor Jesus contra Lyanco (o Cuello si entra)"}]),
+                   _of1239)["rehacer"])
+    check("1239: el suplente del RIVAL nombrado en un duelo también pide rehacer",
+          any(m.startswith("duelo del M2: Cuello") for m in
+              _reh(_b1239([{"carril": "derecho", "duelo": "Savarino contra Cuello"}]), _of1239)["motivos"]))
     # 1170 (Nacional Asunción): una pieza del M2 que el mismo parte tiene en `fuera`
     from backend.analisis.dtp_cowork import avisos_piezas_fuera
     _dtp1170 = {"bloques": [{"equipo": "a", "apertura": {"m2": {"piezas": [
