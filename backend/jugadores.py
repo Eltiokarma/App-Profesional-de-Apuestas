@@ -723,12 +723,15 @@ def _congestion(team_id: int, fecha_fixture: str) -> dict:
     motivo = sin_liga_en_la_base(team_id, fecha)
     if motivo:
         return {"diasDescanso": None, "partidos21d": None, "sinLigaEnLaBase": motivo}
+    # sin los del homónimo: el 2-2 de Copa Perú le daba a Nacional 2 días en vez de 3 (1371)
+    from backend.partido_ajeno import sql_fuera
+    ajeno, p_ajeno = sql_fuera(team_id, alias="")
     previos = _query(
         f"""SELECT date FROM fixtures
             WHERE (home_team_id=? OR away_team_id=?) AND date < ? AND {_FIN90}
-              AND COALESCE(league_id, 0) NOT IN ({",".join("?" * len(AMISTOSOS))})
+              AND COALESCE(league_id, 0) NOT IN ({",".join("?" * len(AMISTOSOS))}){ajeno}
             ORDER BY date DESC LIMIT 12""",
-        (team_id, team_id, fecha, *sorted(AMISTOSOS)),
+        (team_id, team_id, fecha, *sorted(AMISTOSOS), *p_ajeno),
     )
     if not previos:
         return {"diasDescanso": None, "partidos21d": 0}

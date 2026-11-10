@@ -59,14 +59,17 @@ def _onces_previos(team_id: int, fecha: str, cuantos: int = VENTANA_F1) -> list[
     «rotación amplia» y F1 = 0 por los onces de los amistosos del parón (03/10).
     Una copa sí cuenta: el once rotado de copa descansa piernas de verdad."""
     from backend.analisis.escala import AMISTOSOS
+    from backend.partido_ajeno import sql_fuera
+    ajeno, p_ajeno = sql_fuera(team_id)   # el once del homónimo no es rotación (1371)
     filas = saddb.query(
         "sad",
         f"""SELECT f.id, f.date FROM fixtures f
             WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.date < ? AND {_FIN}
               AND f.date >= datetime(?, '-{F1_ANTIGUEDAD_DIAS} days')
-              AND COALESCE(f.league_id, 0) NOT IN ({",".join("?" * len(AMISTOSOS))})
+              AND COALESCE(f.league_id, 0) NOT IN ({",".join("?" * len(AMISTOSOS))}){ajeno}
             ORDER BY f.date DESC LIMIT ?""",
-        (team_id, team_id, fecha, str(fecha).replace("T", " ").rstrip("Z")[:19], *sorted(AMISTOSOS), cuantos),
+        (team_id, team_id, fecha, str(fecha).replace("T", " ").rstrip("Z")[:19], *sorted(AMISTOSOS),
+         *p_ajeno, cuantos),
     )
     onces = []
     for f in filas:
@@ -332,13 +335,16 @@ def f2_calendario(team_id: int, fecha: str, contexto: dict) -> dict:
 # ── P1a · el input inviolable ───────────────────────────────────────────────
 
 def _amistosos_en_la_forma(team_id: int, fecha: str, cuantos: int = 5) -> dict:
-    """La prohibición 3 del backtest: que la tira de 5 no sean amistosos."""
+    """La prohibición 3 del backtest: que la tira de 5 no sean amistosos. Sin
+    los del homónimo: Nacional contaba un 2-2 de Copa Perú como liga (1371)."""
+    from backend.partido_ajeno import sql_fuera
+    ajeno, p_ajeno = sql_fuera(team_id)
     filas = saddb.query(
         "sad",
         f"""SELECT l.name AS liga FROM fixtures f JOIN leagues l ON l.id=f.league_id
-            WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.date < ? AND {_FIN}
+            WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.date < ? AND {_FIN}{ajeno}
             ORDER BY f.date DESC LIMIT ?""",
-        (team_id, team_id, fecha, cuantos),
+        (team_id, team_id, fecha, *p_ajeno, cuantos),
     )
     nombres = [str(f["liga"] or "") for f in filas]
     amistosos = [n for n in nombres if "friendl" in n.lower() or "amistoso" in n.lower()]
