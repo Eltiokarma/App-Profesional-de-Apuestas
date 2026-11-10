@@ -1734,9 +1734,12 @@ def roles_vs_grid(bloque: dict, of: dict) -> list[dict]:
                 if not palabras:
                     continue
                 cands = [c for c in casillas if palabras[-1] in _plano_num(c["nombre"]).split()]
-                pila = nombre.split()[0] if len(nombre.split()) > 1 else ""
-                if pila and cands and _plano_num(cands[0]["nombre"]).split()[0][:1] != pila[:1]:
-                    cands = []          # «Kevin Parra» no es «N. Parra»
+                # «Kevin Parra» no es «N. Parra»; y «Lewis-Potter» (apellido compuesto
+                # que empieza como una pila) SÍ es «K. Lewis-Potter» (10/11/2026,
+                # incidencia 1348, Brighton–Brentford): quién es quién, identidad.casa
+                if (len(nombre.split()) > 1 and cands
+                        and not _identidad.casa(_identidad.tokens(cands[0]["nombre"]), _identidad.tokens(nombre))):
+                    cands = []
                 if len(cands) != 1:
                     continue
                 c = cands[0]
