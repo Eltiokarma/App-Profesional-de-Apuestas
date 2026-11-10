@@ -4647,8 +4647,7 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> lis
         est = saddb.query_one("sad", "SELECT status_short FROM fixtures WHERE id=?", (fx["id"],))
         if (est and (est["status_short"] or "NS") in ("NS", "TBD", "PST")) or not deposito_previo:
             return alertas
-        filas = saddb.query("sad", "SELECT team_id, formacion, capturada_en FROM alineaciones_versiones "
-                                   "WHERE fixture_id=? ORDER BY capturada_en", (fx["id"],))
+        filas = _versiones_once(fx["id"])
     except Exception:  # noqa: BLE001 — sin la tabla (base vieja) no hay momento que decir
         return alertas
     pitazo, dep = _utc(fx["date"]), _utc(deposito_previo)
@@ -4691,10 +4690,40 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> lis
     return out
 
 
+def _versiones_once(fixture_id: int) -> list[dict]:
+    """Las versiones del once de un partido como sucesos en el tiempo, por lado.
+    HUELLA DEL GRID Y PRIMERA VEZ (10/11/2026, incidencia 1220): una versión que
+    vuelve (A→B→A) se re-sella con la hora nueva y su primera captura se perdía
+    —Portuguesa–La Guaira (1646930) salió «ninguna versión antes del pitazo» con
+    el parte de las 21:04Z leyendo el once—; con `primera_en` la versión cuenta
+    en las dos horas. Base sin las columnas nuevas: como antes (por formación)."""
+    try:
+        filas = saddb.query("sad", "SELECT team_id, formacion, capturada_en, huella_grid, primera_en "
+                                   "FROM alineaciones_versiones WHERE fixture_id=?", (fixture_id,))
+    except Exception:  # noqa: BLE001 — tabla anterior a la 1220 (sin huella del grid): se lee por formación
+        filas = saddb.query("sad", "SELECT team_id, formacion, capturada_en FROM alineaciones_versiones "
+                                   "WHERE fixture_id=?", (fixture_id,))
+    sucesos = []
+    for f in filas:
+        f = dict(f)
+        f.setdefault("huella_grid", None)
+        primera = f.pop("primera_en", None)
+        if primera and primera < f["capturada_en"]:
+            sucesos.append({**f, "capturada_en": primera})
+        sucesos.append(f)
+    return sorted(sucesos, key=lambda f: f["capturada_en"])
+
+
+def _mismo_grid(a, b) -> bool:
+    """El mismo once en las mismas casillas (las dos huellas conocidas e iguales):
+    lo que cambió fue solo la etiqueta de la formación."""
+    return bool(a.get("huella_grid")) and a.get("huella_grid") == b.get("huella_grid")
+
+
 def _momento_de(filas, pitazo, dep) -> dict | None:
     """El `momento` de DTP-REHACER con las versiones del once dadas (las de un
     equipo, o las de los dos si no hay de ese). None = la alerta sale como estaba."""
-    finales, despues, corregida_en = {}, {}, {}
+    finales, despues, corregida_en, desde_grid = {}, {}, {}, {}
     for f in filas:
         # LA VERSIÓN DEL PITAZO, NO LA DEL FINAL: el refresco de la ficha en
         # juego o al terminar vuelve a sellar el once (Guabirá a las 23:54 con
@@ -4708,18 +4737,25 @@ def _momento_de(filas, pitazo, dep) -> dict | None:
             # Auxerre 1552808: «tardio» con onceFinalEn 13:32 anterior al
             # depósito de 13:45 parecía no cuadrar; la corrección 4-2-3-1 →
             # 3-4-2-1 fue después del pitazo y su hora no viajaba)
+            # 1220 (Libertad–Cerro): si el grid es el mismo, la API solo
+            # re-etiquetó la formación: el once con esas casillas ya estaba
             previa = finales.get(f["team_id"])
             if previa and f["formacion"] and f["formacion"] != previa["formacion"] \
-                    and f["team_id"] not in corregida_en:
+                    and not _mismo_grid(f, previa) and f["team_id"] not in corregida_en:
                 corregida_en[f["team_id"]] = t_f
             continue
+        # LA PRIMERA VERSIÓN CON ESA HUELLA DEL GRID (1220): si la anterior del
+        # mismo lado traía las mismas casillas, el once se leía desde entonces
+        previa = finales.get(f["team_id"])
+        desde_grid[f["team_id"]] = desde_grid[f["team_id"]] if previa and _mismo_grid(f, previa) \
+            else _utc(f["capturada_en"])
         finales[f["team_id"]] = f   # ordenadas: queda la última de cada equipo
     base = {"ultimoDepositoPrevio": dep.strftime("%Y-%m-%dT%H:%M:%SZ")}
     if not finales:
         return {"campos": {**base, "momento": "tardio", "onceFinalEn": None},
                 "texto": ("ninguna versión del once se capturó antes del pitazo: no había once con que rehacer; "
                           "apertura caída por un once que llegó tarde, no un aviso ignorado")}
-    t = max(_utc(f["capturada_en"]) for f in finales.values())
+    t = max(desde_grid.get(k) or _utc(f["capturada_en"]) for k, f in finales.items())
     piso = grilla_rehacer(pitazo)[1]
     limite = pitazo - timedelta(minutes=piso)
     antes = int((pitazo - t).total_seconds() // 60)
@@ -4728,7 +4764,8 @@ def _momento_de(filas, pitazo, dep) -> dict | None:
     # formación DESPUÉS del pitazo y es esa corrección la que hace sonar la
     # alerta: nadie podía rehacer con ella
     corregida = [(finales[k]["formacion"], v["formacion"]) for k, v in despues.items()
-                 if k in finales and v["formacion"] and v["formacion"] != finales[k]["formacion"]]
+                 if k in finales and v["formacion"] and v["formacion"] != finales[k]["formacion"]
+                 and not _mismo_grid(v, finales[k])]
     t_corr = min(corregida_en.values()) if corregida_en else None
     if t <= dep and corregida:
         momento, texto = "tardio", ("la API corrigió la formación después del pitazo ("

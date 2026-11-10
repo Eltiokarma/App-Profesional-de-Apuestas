@@ -4715,7 +4715,9 @@ def main():
     # 847: el once llegó solo DESPUÉS del pitazo (la copa lo capturaba con la ficha)
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _guardadas = _con.execute("SELECT * FROM alineaciones_versiones WHERE fixture_id=990480").fetchall()
-        _con.execute("UPDATE alineaciones_versiones SET capturada_en='2026-10-25 18:30:00' WHERE fixture_id=990480")
+        # (la primera captura también fue después: 1220 la guarda aparte)
+        _con.execute("UPDATE alineaciones_versiones SET capturada_en='2026-10-25 18:30:00', primera_en=NULL "
+                     "WHERE fixture_id=990480")
     _m847 = _mom(_al, _fx480, "2026-10-25 15:13:00")
     check("847: sin ninguna versión del once antes del pitazo: `tardio`, no la alerta sin momento",
           _m847[0].get("momento") == "tardio" and _m847[0].get("onceFinalEn") is None
@@ -4736,6 +4738,66 @@ def main():
         _con.execute("DELETE FROM alineaciones WHERE fixture_id=990480")
         _con.execute("DELETE FROM alineaciones_versiones WHERE fixture_id=990480")
         _con.execute("DELETE FROM fixtures WHERE id=990480")
+    # 1220 (aprobada 10/11/2026): la versión del once lleva la HUELLA DEL GRID por
+    # lado y su primera captura; el momento usa la primera versión con esa huella
+    from backend.ingesta.ficha_partido import registrar_version as _rv
+    _og = lambda form, grids: [{"team": {"id": 990491}, "formation": form, "coach": {"name": "DT"},
+                                "startXI": [{"player": {"id": 900 + k, "name": f"G{k}", "grid": g}}
+                                            for k, g in enumerate(grids)], "substitutes": []}]
+    _g4 = ["1:1", "2:1", "2:2", "2:3", "2:4", "3:1", "3:2", "3:3", "3:4", "4:1", "4:2"]
+    _g5 = ["1:1", "2:1", "2:2", "2:3", "2:4", "2:5", "3:1", "3:2", "3:3", "4:1", "4:2"]
+    _q = "SELECT huella, huella_grid, capturada_en, primera_en FROM alineaciones_versiones WHERE fixture_id=990490 ORDER BY capturada_en"
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                     "home_team_id, away_team_id) VALUES (990490, '2026-10-25 16:15:00', 'FT', 'Match Finished', "
+                     "39, 2026, 990491, 990492)")
+        # una versión de antes de la huella del grid: se le pone la huella sin tocar su hora
+        _rv(_con, 990490, 990491, "4-4-2", [900 + k for k in range(11)], "2026-10-25 15:00:00")
+        _gal(_con, 990490, _og("4-4-2", _g4), "2026-10-25 15:20:00")
+        _v0 = _con.execute(_q).fetchall()
+        _gal(_con, 990490, _og("4-4-2", _g5), "2026-10-25 15:30:00")   # solo cambia el grid
+        _v1 = _con.execute(_q).fetchall()
+    check("1220: la versión vieja sin grid toma la huella sin re-sellarse; un cambio SOLO de casillas es versión nueva",
+          len(_v0) == 1 and _v0[0][1] and len(_v0[0][1]) == 12 and _v0[0][2] == "2026-10-25 15:00:00"
+          and len(_v1) == 2 and _v1[0][1] != _v1[1][1] and _v1[1][0].endswith("|g" + _v1[1][1]), (_v0, _v1))
+    _al1220 = [{"codigo": "DTP-REHACER", "equipo": "a", "tipo": "dato", "detalle": "x"}]
+    _fx1220 = {"id": 990490, "date": "2026-10-25 16:15:00", "home_team_id": 990491, "away_team_id": 990492}
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        # Libertad–Cerro: después del pitazo la API re-etiqueta la formación con las MISMAS casillas
+        _gal(_con, 990490, _og("5-4-1", _g5), "2026-10-25 16:40:00")
+    _m1220 = _mom(_al1220, _fx1220, "2026-10-25 15:45:00")[0]
+    check("1220: formación corregida después del pitazo con el mismo grid: el once ya estaba (`conocido`, sin corrección)",
+          _m1220.get("momento") == "conocido" and "formacionCorregidaEn" not in _m1220
+          and _m1220.get("onceFinalEn") == "2026-10-25T15:30:00Z", _m1220)
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM alineaciones_versiones WHERE fixture_id=990490 AND capturada_en > '2026-10-25 16:15:00'")
+        _gal(_con, 990490, _og("5-4-1", _g4), "2026-10-25 16:40:00")   # grid distinto: corrección de verdad
+    _m1220b = _mom(_al1220, _fx1220, "2026-10-25 15:45:00")[0]
+    check("1220: con el grid cambiado, la corrección de después del pitazo sigue siendo `tardio` (848)",
+          _m1220b.get("momento") == "tardio" and _m1220b.get("formacionCorregidaEn") == "2026-10-25T16:40:00Z", _m1220b)
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM alineaciones_versiones WHERE fixture_id=990490")
+        # Portuguesa–La Guaira: A antes del pitazo, B y otra vez A en juego (A se re-sella)
+        _gal(_con, 990490, _og("4-4-2", _g4), "2026-10-25 15:04:00")
+        _gal(_con, 990490, _og("4-4-2", _g5), "2026-10-25 16:30:00")
+        _gal(_con, 990490, _og("4-4-2", _g4), "2026-10-25 16:50:00")
+        _vA = _con.execute(_q).fetchall()
+    _m1220c = _mom(_al1220, _fx1220, "2026-10-25 15:13:00")[0]
+    check("1220: la versión que vuelve guarda su primera captura y cuenta antes del pitazo (no «ninguna versión»)",
+          any(v[3] == "2026-10-25 15:04:00" and v[2] == "2026-10-25 16:50:00" for v in _vA)
+          and _m1220c.get("onceFinalEn") == "2026-10-25T15:04:00Z" and _m1220c.get("momento") == "conocido", (_vA, _m1220c))
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM alineaciones_versiones WHERE fixture_id=990490")
+        # antes del pitazo: la formación se re-etiqueta con las mismas casillas; el once se leía desde la primera
+        _gal(_con, 990490, _og("4-4-2", _g5), "2026-10-25 15:00:00")
+        _gal(_con, 990490, _og("5-4-1", _g5), "2026-10-25 15:40:00")
+    _m1220d = _mom(_al1220, _fx1220, "2026-10-25 15:13:00")[0]
+    check("1220: el momento sale de la PRIMERA versión con esa huella del grid, no de la re-etiqueta",
+          _m1220d.get("onceFinalEn") == "2026-10-25T15:00:00Z" and _m1220d.get("momento") == "conocido", _m1220d)
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM alineaciones WHERE fixture_id=990490")
+        _con.execute("DELETE FROM alineaciones_versiones WHERE fixture_id=990490")
+        _con.execute("DELETE FROM fixtures WHERE id=990490")
     p_reh["dtp"]["bloques"][0]["apertura"]["m1"] = {"sistema": _form, "xiReferencia": ", ".join(_xi)}
     c.post(f"{A}/analisis/cowork", json=p_reh)
     g_ok = c.get(f"{A}/analisis/cowork/{con_ficha}").json()

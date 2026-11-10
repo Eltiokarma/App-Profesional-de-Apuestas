@@ -87,7 +87,10 @@ def db(vieja=False) -> sqlite3.Connection:
         # sin jugador_id y sin asistente
         con.executescript("""CREATE TABLE fixture_eventos (
             id INTEGER PRIMARY KEY AUTOINCREMENT, fixture_id INTEGER NOT NULL, minuto INTEGER,
-            tipo TEXT, detalle TEXT, equipo_id INTEGER, jugador TEXT);""")
+            tipo TEXT, detalle TEXT, equipo_id INTEGER, jugador TEXT);
+            CREATE TABLE alineaciones_versiones (fixture_id INTEGER NOT NULL, team_id INTEGER NOT NULL,
+            huella TEXT NOT NULL, formacion TEXT, capturada_en TEXT NOT NULL,
+            PRIMARY KEY (fixture_id, team_id, huella));""")
     preparar_tablas(con)
     con.executescript("""CREATE TABLE IF NOT EXISTS fixtures (
         id INTEGER PRIMARY KEY, date TEXT, status_short TEXT, league_id INTEGER,
@@ -101,6 +104,9 @@ def main():
     cols = {f[1] for f in con.execute("PRAGMA table_info(fixture_eventos)")}
     check("migra fixture_eventos (extra, jugador_id, asistente)",
           {"extra", "jugador_id", "asistente", "asistente_id"} <= cols, sorted(cols))
+    vcols = {f[1] for f in con.execute("PRAGMA table_info(alineaciones_versiones)")}
+    check("1220: migra alineaciones_versiones (huella_grid, primera_en)",
+          {"huella_grid", "primera_en"} <= vcols, sorted(vcols))
     preparar_tablas(con)  # segunda pasada: idempotente
     check("preparar_tablas es idempotente", True)
 
