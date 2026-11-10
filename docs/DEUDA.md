@@ -1017,6 +1017,35 @@ conversación se pierde en la siguiente.
      CPU en el fondo (el caché vive en memoria; guardarlo en disco exige saber
      qué código lo produjo, y casi todo PR toca `app.py` o `parte.py`).
 
+28. **Cuatro skills redactados el 10/11/2026** (usuario, 09/11: «fue una
+   semana de muchísimos errores»). Propuestas en `docs/revisiones/` con el
+   dossier del 10/11 (corte de las 02:13 UTC) y comprobadas con los veredictos
+   del 07-08/11 (corte de las 04:29 UTC). Resumen en
+   `docs/revisiones/RESUMEN_GENERACION_2026-11.md`. Las versiones son
+   **sad-analysis v4.5**, **TDE v0.1.26**, **EFE v1.10** + `efe-dashboard`
+   v1.13 y **DTP v1.8**. `CORTE_VERSION` queda con fecha 10/11.
+   Decisiones del usuario del 10/11:
+   - **1056 aprobada** (heredar y avisar): las ramas del que persigue heredan
+     el SOB2 de `nivelFocoPersiguiendo` del DTP. Va en el TDE 14 y en el
+     DTP 16, que se suben juntos.
+   - **1068 opción (c)**, empezando por la (b): la F1 suma al titular del
+     once oficial que falta (`delOnceOficial`); el rehacer carga el EFE solo
+     con 3+ titulares fijos cambiados o con otro arquero.
+   - **El EFE es v1.10, no 2.0.**
+   - **El origen de la burbuja** sigue la decisión del 03/11: mueve la
+     confianza, nunca el 1X2.
+   - Lo demás, como recomendaba cada propuesta, y se confirmaron los cuatro
+     puntos que agregaron los subagentes (EFE 4 y 5 aflojan; SAD 11 reparte
+     el empate desde el local; SAD 9 entra con 2 casos; DTP 10 queda
+     candidato).
+   - **El núcleo** (`NUCLEO_SKILLS_propuesta.md`) queda aprobado con las cinco
+     recomendaciones del resumen, pero **no se aplicó**: va después de subir
+     estas versiones.
+   **Pendiente del usuario**: subir los zips, anotar la hora en
+   `SUBIDA_VERSION`, marcar la 1056 y la 1068 con 🔑 y cerrar las lecciones
+   anteriores de cada skill. **Pendiente de la app**: lo que está en
+   `docs/revisiones/PENDIENTES.md`, «Redactado el 10/11».
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel

@@ -1,6 +1,13 @@
 # Snapshot de los skills — material de referencia, no fuente de verdad
 
-> **Actualizado el 22/10/2026.** `teorema-del-echado` está en **v0.1.22** (cada rama con su número,
+> **Actualizado el 10/11/2026.** La copia del repo está en **sad-analysis v4.5**,
+> **teorema-del-echado v0.1.26**, **efe-clasificador v1.10** (rúbrica en
+> `references/rubrica-efe-v1.10.md`), **efe-dashboard v1.13** y
+> **diagnostico-tactico v1.8** (propuestas y decisiones en
+> `docs/revisiones/RESUMEN_GENERACION_2026-11.md`). La cuenta sigue con la
+> versión anterior hasta que el usuario suba los zips.
+>
+> *Nota anterior (22/10/2026):* `teorema-del-echado` está en **v0.1.22** (cada rama con su número,
 > `docs/revisiones/TDE_v0.1.22_propuesta.md`); antes, en **v0.1.21**:
 > la v0.1.20 vigente de la cuenta más la revisión aprobada por el usuario
 > desde el dossier (`docs/revisiones/TDE_v0.1.21_propuesta.md`). Hasta que el

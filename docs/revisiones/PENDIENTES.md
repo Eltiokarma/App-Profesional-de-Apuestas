@@ -4,6 +4,41 @@ Lo que el usuario ya aprobó para una revisión que todavía no se escribió. La
 revisión de cada skill empieza por acá (y por su dossier en Aprendizaje): un
 pendiente que solo vive en una incidencia cerrada se pierde.
 
+## Redactado el 10/11/2026 — lo que queda de la APP
+
+Las cuatro revisiones aprobadas el 10/11 (sad-analysis v4.5, TDE v0.1.26,
+EFE v1.10 + efe-dashboard v1.13, DTP v1.8) ya están en `docs/skills/`. Cada
+propuesta tiene su lista completa en «Para la app». Lo que bloquea una regla
+redactada:
+
+- **1056 (aprobada):** `HEREDA_SOB2` en `parte.py` también para las ramas
+  del que persigue (`siRecibePrimero`, `siLeEmpatan`, `siIguala`) desde
+  `nivelFocoPersiguiendo` (o `nivelRivalPersiguiendo`), y `HERENCIA-DTP` que
+  compare la rama. No se recalculan partes viejos. Mientras tanto, el analista
+  copia el SOB2.
+- **1068 (c):** primero la fila `delOnceOficial` en `f1/{id}` (rol ROT, sin
+  stats de temporada, marcada «agregada por la app»); después
+  `EFE-RECOMPUTO-PENDIENTE` en `GET …/rehacer` (3+ titulares fijos
+  cambiados o arquero distinto); y recién entonces la rutina `corrida-sad`,
+  modo `rehacer`, que con esa alerta carga `efe-clasificador` (líneas
+  ~229-237, ~255 y ~291-293 de su SKILL.md).
+- **Banco probable:** una sola lista en la app para EFE 10, DTP 5 y TDE 5
+  (hoy cada propuesta la nombra distinto).
+- **Sanciones con `certeza` (A3 del EFE):** la leen EFE 5, DTP 7 y TDE 12.
+  Kortrijk 1558673 va primero.
+- **SAD 1, el origen de la burbuja:** `origen` en `/burbujas`, con las alertas
+  `BURBUJA-INFLADA` y `BURBUJA-CONSTRUIDA`. Sin eso, la regla (f) no se
+  declara.
+- **Alertas de dato nuevas:** `RIESGO-EN-LOS-DOS`, `CADENA-VS-PARTE` y
+  `BANCO-EN-FALSADOR` (SAD); `EJE-DEBUTANTE-SIN-DECLARAR` y `-SIN-OBJETO`, y
+  `onceTardio` (EFE); `P6-OTRA-LINEA`, `M1-VS-ONCE-OFICIAL` y
+  `bancoOfensivo` (DTP); la hora de llegada de la formación y su corrección
+  tras el pitazo (DTP 6).
+- **Jev, A0:** `lectura_efe` pasa a ser `lectura` del skill de su dossier. Lo
+  ya sellado no se reetiqueta.
+- **Medir:** EFE A6, A7 y A8; TDE 10; SAD 8 y 20; DTP `rolesVsGrid` sobre los
+  6 casos del cambio 6.
+
 ## Redactado el 01/11/2026 — lo que queda de la APP
 
 Las cuatro revisiones aprobadas el 01/11 (TDE v0.1.25, sad-analysis v4.4,
