@@ -1,0 +1,817 @@
+[
+ {
+  "fixtureId": 1492448,
+  "partido": "Sao Paulo – Corinthians",
+  "porQueNoArranco": "varianza",
+  "porQue2": "sede_o_viaje",
+  "queDijimos": "São Paulo local 38/32/30 (casa 37): espina + total apostando a que reviente su racha − de 1 (riesgo muy alto); 1-0",
+  "quePaso": "0-0 en la Vila Belmiro (no Morumbis): 19 remates, 5 al arco, xG 1,79-1,24, Corinthians con diez desde el 82'",
+  "senalPrevia": "favorito corto (<40 %) con racha propia − de 1 partido leída como corte (riesgo muy alto) y localía fuera de su estadio; empate de la casa ≥30 %",
+  "estadisticaDice": "sí (xG 1,79 contra 1,24)"
+ },
+ {
+  "fixtureId": 1493229,
+  "partido": "Banfield – Atletico Tucuman",
+  "porQueNoArranco": "varianza",
+  "porQue2": "otro",
+  "queDijimos": "Banfield 38/30/32 = casa; espina + por pronóstico (sin lectura propia) contra su racha − de 1 en riesgo alto; 1-0",
+  "quePaso": "2-2: 0-2 a los 18' (dos goles del central debutante de Tucumán) y remontó a empate; xG 0,73-0,43",
+  "senalPrevia": "elegido = número de la casa (<40 %), las dos burbujas de 1 partido y liga de separación baja: moneda al aire",
+  "estadisticaDice": "sí, por poco (xG 0,73 contra 0,43, 15 remates contra 8)"
+ },
+ {
+  "fixtureId": 1493239,
+  "partido": "Talleres Cordoba – Estudiantes L.P.",
+  "porQueNoArranco": "varianza",
+  "porQue2": "once_o_bajas",
+  "queDijimos": "Talleres 38/31/31 (+3,2 sobre la casa, que elegía a Estudiantes), contra el riesgo alto de su racha + de 1, apoyado en un once alternativo del rival; 1-0",
+  "quePaso": "1-1: autogol al 38' y empate al 52'; Estudiantes salió con titulares; xG 1,14-0,31, 6 al arco",
+  "senalPrevia": "nuestra prob. del elegido 3+ pts sobre la casa y elegido distinto del favorito de la casa, sostenido en una rotación del rival no confirmada; racha + propia de 1 partido en riesgo alto",
+  "estadisticaDice": "sí (xG 1,14 contra 0,31)"
+ },
+ {
+  "fixtureId": 1505556,
+  "partido": "Everton de Vina – Concepción",
+  "porQueNoArranco": "sobrelectura_propia",
+  "porQue2": "dt_o_sistema",
+  "queDijimos": "Everton 51/27/22 = casa; sin burbuja total (K en 0) y la espina «arranca en positivo» por los skills; 2-1",
+  "quePaso": "0-2 con dos suplentes del rival (72' y 84') tras sacar al contenedor al 77'; 18 remates y 2 al arco, xG 0,88-0,84",
+  "senalPrevia": "elegido sin burbuja total abierta (K total en 0): la espina positiva sale de los skills, no de la racha",
+  "estadisticaDice": "no, parejo (xG 0,88 contra 0,84, 2 al arco de 18)"
+ },
+ {
+  "fixtureId": 1549539,
+  "partido": "Comerciantes Unidos – ADT",
+  "porQueNoArranco": "rival_mas_fuerte",
+  "porQue2": "sobrelectura_propia",
+  "queDijimos": "Comerciantes 46/30/24 = casa y motor; sin burbuja total, espina por pronóstico; 2-1",
+  "quePaso": "2-2: persiguió 70', empató con penal y autogol al 90+6; xG 1,58-2,11 a favor de ADT",
+  "senalPrevia": "elegido salvado y sin nada en juego contra rival obligado (descenso); elegido sin burbuja total (K en 0)",
+  "estadisticaDice": "no (xG 1,58 contra 2,11)"
+ },
+ {
+  "fixtureId": 1549547,
+  "partido": "Deportivo Garcilaso – Comerciantes Unidos",
+  "porQueNoArranco": "varianza",
+  "porQue2": "partido_cerrado",
+  "queDijimos": "Garcilaso 59/25/16 = casa; espina + por la K de local FUERTE contra el riesgo alto de la total (+ de 1, contramano); 2-1",
+  "quePaso": "0-0 en Cusco: 22 remates, 5 al arco, xG 1,52-0,59, 9 córners a 0, penal anulado por VAR al 90+11",
+  "senalPrevia": "burbuja + total de 1 partido hecha en la otra condición (contramano, riesgo alto) con la espina apoyada en la K de condición",
+  "estadisticaDice": "sí (xG 1,52 contra 0,59)"
+ },
+ {
+  "fixtureId": 1549853,
+  "partido": "Alianza Valledupar – Llaneros",
+  "porQueNoArranco": "burbuja_rival",
+  "porQue2": "sobrelectura_propia",
+  "queDijimos": "Alianza 46/30/24 (+2,7 sobre la casa, por perfiles DC); racha − de 2 en riesgo muy alto leída como corte; Llaneros con 5 derrotas de visita (K cerca del extremo) leída como que sigue; 2-1",
+  "quePaso": "1-2: Llaneros marcó primero, penal al 35' y administró; su racha + total siguió y cortó las cinco derrotas fuera; xG 1,52-1,39",
+  "senalPrevia": "rival con K de su condición CERCA DEL EXTREMO negativo (racha de derrotas en esa condición) leída como que sigue; nuestra prob. 2+ pts sobre la casa por perfiles DC",
+  "estadisticaDice": "no, parejo (xG 1,52 contra 1,39; 3 al arco contra 6)"
+ },
+ {
+  "fixtureId": 1550189,
+  "partido": "Fiorentina – Juventus",
+  "porQueNoArranco": "rival_mas_fuerte",
+  "porQue2": "fatiga_rotacion",
+  "queDijimos": "Juventus visita 44 = casa; Fiorentina + de 1 en riesgo muy alto leída como corte; 1-2",
+  "quePaso": "2-2: la Juve nunca estuvo arriba, persiguió dos veces; 22 remates y xG 2,14 de Fiorentina contra 2,46",
+  "senalPrevia": "favorito visitante ≤45 % en clásico (G-CLÁSICO) en su tercer partido en 8 días, contra un local en racha + de 1",
+  "estadisticaDice": "no claro, parejo (xG 2,46 contra 2,14)"
+ },
+ {
+  "fixtureId": 1551029,
+  "partido": "Atletico San Luis – FC Juarez",
+  "porQueNoArranco": "varianza",
+  "porQue2": "sobrelectura_propia",
+  "queDijimos": "San Luis 57/24/19 = casa; espina + apostando al corte de su racha − de 1 (riesgo muy alto); 2-1",
+  "quePaso": "0-1 con penal de VAR al 85': 18 remates, 8 al arco, 8 atajadas del arquero rival, xG 1,01-1,48 (penal incluido)",
+  "senalPrevia": "favorito ~57 % con racha propia − de 1 en riesgo muy alto leída como corte, que ya había dominado sin convertir el partido anterior de local",
+  "estadisticaDice": "a medias (8 al arco contra 4, xG 1,01 contra 1,48 con el penal)"
+ },
+ {
+  "fixtureId": 1551036,
+  "partido": "Club Queretaro – Puebla",
+  "porQueNoArranco": "sobrelectura_propia",
+  "porQue2": "rival_mas_fuerte",
+  "queDijimos": "Querétaro 52/25/23 = casa; racha − de 4 con K −26,6 CERCA DEL EXTREMO y riesgo muy alto leída como corte; 2-1",
+  "quePaso": "0-2 al 36' por los extremos de Puebla en transición; persiguió 81' con 21 remates, xG 1,49-1,34, penal anulado",
+  "senalPrevia": "elegido con racha negativa propia de 4+ y K-CERCA-EXTREMO leída como que se corta (riesgo muy alto)",
+  "estadisticaDice": "no, parejo (xG 1,49 contra 1,34, persiguiendo 0-2)"
+ },
+ {
+  "fixtureId": 1552223,
+  "partido": "Utrecht – NEC Nijmegen",
+  "porQueNoArranco": "rival_mas_fuerte",
+  "porQue2": "sobrelectura_propia",
+  "queDijimos": "Utrecht 40/25/35 (+3,8 sobre la casa, motor 47 con fiabilidad media); racha − de 1 leída como corte; 2-1",
+  "quePaso": "2-3: recibió al 34' y 38' (Tadić), persiguió y concedió el tercero; xG 2,10-2,31",
+  "senalPrevia": "nuestra prob. del elegido 3+ pts sobre la casa empujada por un motor de fiabilidad media (amistosos en la ventana) y racha propia − de 1",
+  "estadisticaDice": "no, parejo (xG 2,10 contra 2,31)"
+ },
+ {
+  "fixtureId": 1552818,
+  "partido": "Lens – Marseille",
+  "porQueNoArranco": "burbuja_rival",
+  "porQue2": "sobrelectura_propia",
+  "queDijimos": "Lens 42/26/32 = casa (el motor elegía a Marseille), con K −33,7 cerca del extremo tras el 1-9; Marseille + de 3 leída como corte; 2-1",
+  "quePaso": "1-2: Gouiri al 2', empate al 20' y gol de un suplente al 82'; Marseille sumó su quinta de liga; xG 2,0-2,22",
+  "senalPrevia": "elegido con K negativa cerca del extremo (goleada reciente) contra rival con racha + de 3+; motor elige al rival",
+  "estadisticaDice": "no, parejo (xG 2,0 contra 2,22)"
+ },
+ {
+  "fixtureId": 1557464,
+  "partido": "Manchester United – Aston Villa",
+  "porQueNoArranco": "varianza",
+  "porQue2": "rival_mas_fuerte",
+  "queDijimos": "United 44/26/30 = casa, + de 1 en riesgo alto; la espina del Villa leía el corte de su racha − (riesgo muy alto), contra el propio 1X2; 2-1",
+  "quePaso": "4-4: 0-2 al 4', 2-4 al 53', empate en el añadido; xG 3,63-2,94, 26 remates contra 12",
+  "senalPrevia": "espina del rival positiva (corte de su racha − en riesgo muy alto) mientras el 1X2 elige al propio, con racha + propia de 1 en riesgo alto: lecturas contradictorias",
+  "estadisticaDice": "sí (xG 3,63 contra 2,94)"
+ },
+ {
+  "fixtureId": 1558667,
+  "partido": "Lommel United – Gent",
+  "porQueNoArranco": "once_o_bajas",
+  "porQue2": "fatiga_rotacion",
+  "queDijimos": "Gent visita 54 = casa; + de 1 hecha de local (contramano), riesgo medio; 0-1",
+  "quePaso": "2-0 de Lommel con dos suplentes (82' y 87'); 16 remates contra 15, 7 al arco contra 4",
+  "senalPrevia": "favorito visitante con 4+ bajas publicadas y partido europeo a 3 días; racha + propia de 1 hecha en la otra condición",
+  "estadisticaDice": "no (4 al arco contra 7; sin xG)"
+ },
+ {
+  "fixtureId": 1570444,
+  "partido": "Celta Vigo – Levante",
+  "porQueNoArranco": "varianza",
+  "porQue2": "fatiga_rotacion",
+  "queDijimos": "Celta 52/27/21 = casa; racha − de 2 en riesgo alto leída como corte; 2-1",
+  "quePaso": "0-0: 23 remates, 17 en el área, 8 al arco, xG 3,12-0,27, 9 paradas del arquero y gol anulado por VAR",
+  "senalPrevia": "ninguna",
+  "estadisticaDice": "sí, claro (xG 3,12 contra 0,27)"
+ },
+ {
+  "fixtureId": 1575536,
+  "partido": "Alverca – Casa Pia",
+  "porQueNoArranco": "burbuja_rival",
+  "porQue2": "sobrelectura_propia",
+  "queDijimos": "Alverca 51/28/21 = casa; racha − de 2 (dos 0-1, tres sin marcar) leída como corte; Casa Pia + de 3 de visita cerca del extremo leída como corte; 1-0",
+  "quePaso": "1-1: Casa Pia marcó primero (36') y no perdió de visita; xG 0,76-0,97",
+  "senalPrevia": "elegido con 3 partidos seguidos sin marcar y rival con racha + en su condición (K-CERCA-EXTREMO-CONDICION) leída como que se corta",
+  "estadisticaDice": "no (xG 0,76 contra 0,97)"
+ },
+ {
+  "fixtureId": 1593348,
+  "partido": "Levadiakos – Aris Thessalonikis",
+  "porQueNoArranco": "once_o_bajas",
+  "porQue2": "fatiga_rotacion",
+  "queDijimos": "Aris visita 47 (+2,2 sobre la casa), racha − de 1 en riesgo muy alto leída como corte; matchup FAVORABLE; 0-1",
+  "quePaso": "3-0 de Levadiakos (8 fechas sin marcar) con 30 % de pelota: xG 2,45-0,36",
+  "senalPrevia": "favorito visitante con F3 / COLAPSO-EN-CASCADA (medio degradado por bajas) en su tercer partido en 8 días, y nuestra prob. 2+ pts sobre la casa",
+  "estadisticaDice": "no (xG 0,36 contra 2,45)"
+ },
+ {
+  "fixtureId": 1632052,
+  "partido": "Libertad Asuncion – Cerro Porteno",
+  "porQueNoArranco": "dt_o_sistema",
+  "porQue2": "varianza",
+  "queDijimos": "Libertad 39/28/33 = casa con DT de tres días (T.54, EJE-DEBUTANTE); racha − de 1 leída como corte; 2-1",
+  "quePaso": "0-1 al 31' y persiguió 59' contra un 5-3-2 no previsto; xG 1,38-0,97, 3 al arco",
+  "senalPrevia": "elegido con DT de ≤7 días tras destitución (T.54) y favorito corto <40 %",
+  "estadisticaDice": "sí, por poco (xG 1,38 contra 0,97)"
+ },
+ {
+  "fixtureId": 1632056,
+  "partido": "Cerro Porteno – Deportivo Recoleta",
+  "porQueNoArranco": "varianza",
+  "porQue2": "sobrelectura_propia",
+  "queDijimos": "Cerro 63/22/15 = casa, contra el riesgo alto de su + de 1 hecha de visita (contramano); 2-1",
+  "quePaso": "1-1: 74 % de pelota, 21 remates, xG 1,59-0,88, 6 atajadas; recibió en el único remate al arco rival",
+  "senalPrevia": "favorito fuerte (60 %+) con 4 partidos de local sin ganar y burbuja + de 1 hecha en la otra condición (contramano, riesgo alto)",
+  "estadisticaDice": "sí (xG 1,59 contra 0,88)"
+ },
+ {
+  "fixtureId": 1639804,
+  "partido": "Barcelona SC – LDU de Quito",
+  "porQueNoArranco": "rival_mas_fuerte",
+  "porQue2": "sobrelectura_propia",
+  "queDijimos": "Barcelona 37/29/34 = casa (motor 45); racha − de 1 (0-3 en Ambato) leída como corte; 1-0",
+  "quePaso": "1-1 con autogol a favor; 3 remates y xG 0,16 contra 1,10",
+  "senalPrevia": "elegido ≤40 % con racha propia − de 1 tras goleada en contra leída como corte, con la cuota corriéndose hacia el rival",
+  "estadisticaDice": "no (xG 0,16 contra 1,10)"
+ },
+ {
+  "fixtureId": 1639859,
+  "partido": "Libertad – Emelec",
+  "porQueNoArranco": "sobrelectura_propia",
+  "porQue2": "otro",
+  "queDijimos": "Libertad 48/29/23 (+1,5 sobre la casa por perfiles DC), sin burbuja total y la K de local cerca del extremo leída como que sigue; Emelec en crisis; 2-0",
+  "quePaso": "0-1: Emelec (último, sueldos impagos) generó 17 remates y xG 2,27 contra 0,72",
+  "senalPrevia": "elegido sin burbuja total (K en 0) que se apoya en la K de su condición cerca del extremo, y sin nada en juego (ya clasificado)",
+  "estadisticaDice": "no (xG 0,72 contra 2,27)"
+ },
+ {
+  "fixtureId": 1645535,
+  "partido": "Gualberto Villarroel SJ – Real Oruro",
+  "porQueNoArranco": "sede_o_viaje",
+  "porQue2": "otro",
+  "queDijimos": "San José 44/25/31 (casa 43,4 al cierre tras un delta de 11 pts hacia Oruro sin noticia), racha − de 1 leída como corte; 2-1",
+  "quePaso": "1-3: roja al central al 38' y penal al 43'; Oruro jugó de «visita» en su propio estadio; xG 0,65-2,09",
+  "senalPrevia": "estadio compartido (el visitante juega en su cancha) y delta de 10+ pts de la casa hacia el rival sin noticia identificada",
+  "estadisticaDice": "no (xG 0,65 contra 2,09)"
+ },
+ {
+  "fixtureId": 1646928,
+  "partido": "Monagas SC – Caracas FC",
+  "porQueNoArranco": "sobrelectura_propia",
+  "porQue2": "dt_o_sistema",
+  "queDijimos": "Monagas 41/30/29 = casa, espina por pronóstico CONTRA el riesgo alto de su + de 1 hecha de visita; Caracas − de 1 en riesgo alto; 1-0",
+  "quePaso": "0-2 en el tramo final (81' y 88') con goles de suplentes; las dos rachas se dieron vuelta como decía el riesgo",
+  "senalPrevia": "espina que sigue al 1X2 contra el riesgo alto propio (racha + de 1 en contramano) mientras el rival tiene racha − de 1 en riesgo alto",
+  "estadisticaDice": "sin estadísticas"
+ },
+ {
+  "fixtureId": 1646935,
+  "partido": "Deportivo La Guaira – Carabobo FC",
+  "porQueNoArranco": "partido_cerrado",
+  "porQue2": "burbuja_rival",
+  "queDijimos": "Carabobo visita 38 (casa 39,5), + de 1 en riesgo medio, con el empate que le daba la final; 1-2",
+  "quePaso": "0-0: Carabobo no marcó (cortó 12 seguidos anotando) y se llevó el punto que le alcanzaba",
+  "senalPrevia": "al elegido le alcanza el empate (final o clasificación) y es favorito ≤40 % con empate de la casa ≥29 %",
+  "estadisticaDice": "sin estadísticas"
+ },
+ {
+  "fixtureId": 1493217,
+  "partido": "Estudiantes L.P. – Instituto Cordoba",
+  "elegido": "Estudiantes (local)",
+  "marcador": "3-3",
+  "porQueNoArranco": "once_o_bajas",
+  "porQue2": "burbuja_rival",
+  "queDijimos": "local 47 (mercado); espina A positiva CONTRA su tarjeta (racha − de 1 que la tarjeta da que sigue) porque volvía el once titular; 1-1",
+  "quePaso": "0-1 al 3', 0-3 al 52' con la zaga nueva Núñez–Rojo y roja de Núñez al 50'; empató 3-3 con diez (xG 2,05 vs 1,16)",
+  "senalPrevia": "EJE-DEBUTANTE en la zaga del elegido + espina propia leída contra la tarjeta (racha propia − de 1 partido)",
+  "estadisticaDice": {
+   "merecimos": "si",
+   "detalle": "xG 2,05 vs 1,16, 16 remates vs 9; el daño fue la zaga nueva en el primer tiempo"
+  }
+ },
+ {
+  "fixtureId": 1493232,
+  "partido": "Central Cordoba de Santiago – Lanus",
+  "elegido": "Lanús (visita)",
+  "marcador": "1-1",
+  "porQueNoArranco": "varianza",
+  "porQue2": "burbuja_rival",
+  "queDijimos": "visita 54 (mercado); Lanús sin burbuja (K total 0), espina por los skills; Central con racha − cerca del extremo que 'sigue'; 0-1",
+  "quePaso": "autogol de Guidara al 31', empate de Salvio al 41'; 23 remates y 1,88 xG sin el segundo",
+  "senalPrevia": "rival con burbuja − cerca del extremo (K-CERCA-EXTREMO rival) y T.54 rival por DT interino recién llegado; elegido con K total en 0",
+  "estadisticaDice": {
+   "merecimos": "si",
+   "detalle": "xG 1,88 vs 0,47, 23 remates vs 9 (17 en el área)"
+  }
+ },
+ {
+  "fixtureId": 1505551,
+  "partido": "Huachipato – D. La Serena",
+  "elegido": "Huachipato (local)",
+  "marcador": "0-0",
+  "porQueNoArranco": "varianza",
+  "porQue2": null,
+  "queDijimos": "local 45, +4,7 sobre la casa por perfiles DC alineados; Huachipato sin burbuja total (K 0); 2-1",
+  "quePaso": "0-0 con uno más desde el 48': 22 remates, 17 en el área, 1,61 xG y 5 atajadas de Tapia",
+  "senalPrevia": "nuestra prob. del elegido 2+ pts sobre la casa (por perfiles DC) con el elegido sin burbuja total (K 0)",
+  "estadisticaDice": {
+   "merecimos": "si",
+   "detalle": "xG 1,61 vs 0,53, 22 remates vs 9"
+  }
+ },
+ {
+  "fixtureId": 1505561,
+  "partido": "Universidad de Concepcion – O'Higgins",
+  "elegido": "O'Higgins (visita)",
+  "marcador": "3-2",
+  "porQueNoArranco": "fatiga_rotacion",
+  "porQue2": "burbuja_rival",
+  "queDijimos": "visita 39 (mercado); O'Higgins + de 1 con riesgo bajo; UdeC − cerca del extremo 'sigue' por nivel; 0-1",
+  "quePaso": "O'Higgins rotó pensando en la final del 14/11; 2-0 de UdeC en dos minutos, 2-2 y 3-2 al 90'",
+  "senalPrevia": "elegido con final/partido decisivo a ≤7 días (rotación) contra local obligado (permanencia) con burbuja − cerca del extremo y DT nuevo (T.54 rival)",
+  "estadisticaDice": {
+   "merecimos": "parejo",
+   "detalle": "xG 1,32 vs 1,28; más remates (20 vs 12) pero menos al arco (4 vs 7)"
+  }
+ },
+ {
+  "fixtureId": 1549540,
+  "partido": "Cusco – Sport Boys",
+  "elegido": "Cusco (local)",
+  "marcador": "0-1",
+  "porQueNoArranco": "varianza",
+  "porQue2": "once_o_bajas",
+  "queDijimos": "local 63 (mercado) en la altura; Cusco + de 2 con riesgo ALTO, espina por condición contra el riesgo; 2-1",
+  "quePaso": "10 vs 10 desde el 40'; 24 remates, 1,6 xG, 7 atajadas de Melián y gol del suplente Alarcón al 75'",
+  "senalPrevia": "burbuja propia + corta (2) con riesgo alto y espina leída contra el riesgo, con el elegido favorito ≥60 %",
+  "estadisticaDice": {
+   "merecimos": "si",
+   "detalle": "xG 1,60 vs 0,36, 24 remates vs 10"
+  }
+ },
+ {
+  "fixtureId": 1549552,
+  "partido": "Sport Boys – UTC Cajamarca",
+  "elegido": "Sport Boys (local)",
+  "marcador": "0-0",
+  "porQueNoArranco": "varianza",
+  "porQue2": "sobrelectura_propia",
+  "queDijimos": "local 56 (mercado); K total 0, espina por la de local (12 anotando seguidos, FAMILIA-RECORD); 2-1",
+  "quePaso": "0-0: 20 remates (14 en el área), 1,51 xG, 3 al arco; cortó la racha récord de 12 anotando de local",
+  "senalPrevia": "FAMILIA-RECORD propia (racha de anotar de local en su récord) usada como sostén, con K total 0",
+  "estadisticaDice": {
+   "merecimos": "si",
+   "detalle": "xG 1,51 vs 0,42, 20 remates vs 10"
+  }
+ },
+ {
+  "fixtureId": 1549854,
+  "partido": "America de Cali – Deportivo Cali",
+  "elegido": "América (local)",
+  "marcador": "0-0",
+  "porQueNoArranco": "partido_cerrado",
+  "porQue2": "otro",
+  "queDijimos": "local 48 (mercado) en el clásico; América sin burbuja total, la de local + 2 en riesgo muy alto; 1-0",
+  "quePaso": "0-0 de pocas llegadas: 9 remates por lado, xG 0,40 vs 0,31; plantel con tres quincenas adeudadas",
+  "senalPrevia": "mercado corrido ≥5 pts contra el elegido desde la apertura + crisis salarial del elegido + burbuja de condición propia en riesgo muy alto",
+  "estadisticaDice": {
+   "merecimos": "parejo",
+   "detalle": "xG 0,40 vs 0,31: nadie mereció"
+  }
+ },
+ {
+  "fixtureId": 1550193,
+  "partido": "Napoli – Lazio",
+  "elegido": "Napoli (local)",
+  "marcador": "1-1",
+  "porQueNoArranco": "varianza",
+  "porQue2": "once_o_bajas",
+  "queDijimos": "local 40 (mercado) pero espina A NEGATIVA (− de 2 cerca del extremo, 9 indisponibles) y marcador 1-2: el 1X2 iba contra la propia espina",
+  "quePaso": "Lazio 0-1 al 28', autogol de Pedraza al 48'; Napoli 2,44 xG y 15 remates",
+  "senalPrevia": "1X2 elegido CONTRA la espina propia (elegido con burbuja − de tarjeta fuerte / cerca del extremo) + COLAPSO-EN-CASCADA propio",
+  "estadisticaDice": {
+   "merecimos": "si",
+   "detalle": "xG 2,44 vs 0,92"
+  }
+ },
+ {
+  "fixtureId": 1551031,
+  "partido": "Atlante FC – Santos Laguna",
+  "elegido": "Atlante (local)",
+  "marcador": "0-2",
+  "porQueNoArranco": "once_o_bajas",
+  "porQue2": "sobrelectura_propia",
+  "queDijimos": "local 44 (mercado) con espina A NEGATIVA (− de 2, tarjeta fuerte sigue) y R-KT.2: el 1X2 iba contra la propia espina",
+  "quePaso": "roja directa a Quiroz al 15'; aguantó hasta el 67' y perdió 0-2 (la burbuja − siguió, como decía la tarjeta)",
+  "senalPrevia": "1X2 elegido CONTRA la espina propia (burbuja − con tarjeta fuerte que sigue) + R-KT.2 propio (K armada en otra división)",
+  "estadisticaDice": {
+   "merecimos": "si",
+   "detalle": "xG 1,69 vs 0,71 con diez; la roja decidió"
+  }
+ },
+ {
+  "fixtureId": 1552214,
+  "partido": "Telstar – Utrecht",
+  "elegido": "Utrecht (visita)",
+  "marcador": "4-2",
+  "porQueNoArranco": "sobrelectura_propia",
+  "porQue2": "fatiga_rotacion",
+  "queDijimos": "visita 41 (mercado); Utrecht + de 1 hecha en copa ante un amateur, Telstar − de 3 'sigue'; 1-1",
+  "quePaso": "Telstar 2-0 al 25', 4-2 final con 35 % de pelota y 2,49 xG; Utrecht con copa el jueves y sin hinchas",
+  "senalPrevia": "burbuja propia de 1 partido hecha en copa contra rival muy inferior + copa a mitad de semana; rival con racha − de 3 en casa (riesgo medio)",
+  "estadisticaDice": {
+   "merecimos": "no",
+   "detalle": "xG 1,31 vs 2,49"
+  }
+ },
+ {
+  "fixtureId": 1552812,
+  "partido": "Stade Brestois 29 – Lyon",
+  "elegido": "Lyon (visita)",
+  "marcador": "2-0",
+  "porQueNoArranco": "fatiga_rotacion",
+  "porQue2": "dt_o_sistema",
+  "queDijimos": "visita 37 por margen mínimo (mercado); Lyon K 0, espina = pronóstico sin lectura propia; DT interino de despedida; 1-1",
+  "quePaso": "Brest 1-0 al 22' y penal al 90+4; Lyon 69 % de pelota y 0,70 xG",
+  "senalPrevia": "elegido visitante con ≤2-3 días de descanso tras partido europeo + DT interino + K total 0 (espina = pronóstico)",
+  "estadisticaDice": {
+   "merecimos": "no",
+   "detalle": "xG 0,70 vs 1,92"
+  }
+ },
+ {
+  "fixtureId": 1557461,
+  "partido": "Fulham – Newcastle",
+  "elegido": "Fulham (local)",
+  "marcador": "1-1",
+  "porQueNoArranco": "rival_mas_fuerte",
+  "porQue2": "burbuja_rival",
+  "queDijimos": "local 47 (mercado); Fulham K 0; Newcastle − de 2 con riesgo ALTO pero espina 'sigue' contra el riesgo; 2-1",
+  "quePaso": "0-0 hasta el 80', Murphy 0-1 y Muniz 1-1 al 83'; Newcastle generó más (xG 1,19 vs 0,78)",
+  "senalPrevia": "elegido con K total 0 frente a rival con racha − de riesgo alto leída contra su riesgo (que siga perdiendo)",
+  "estadisticaDice": {
+   "merecimos": "no",
+   "detalle": "xG 0,78 vs 1,19"
+  }
+ },
+ {
+  "fixtureId": 1557465,
+  "partido": "Nottingham Forest – Manchester City",
+  "elegido": "City (visita)",
+  "marcador": "3-1",
+  "porQueNoArranco": "fatiga_rotacion",
+  "porQue2": "varianza",
+  "queDijimos": "visita 55 (mercado); City + de 1 riesgo bajo, Forest − con COLAPSO-EN-CASCADA; 0-1",
+  "quePaso": "Forest 1-0 al 6' y 2-0 al 18' con 22 % de pelota; City 78 % y 1,78 xG, tercer partido en 8 días con 2 de descanso",
+  "senalPrevia": "elegido con ≤2-3 días de descanso tras partido europeo (tercer partido en 8 días) + burbuja propia de 1 partido",
+  "estadisticaDice": {
+   "merecimos": "si",
+   "detalle": "xG 1,78 vs 1,10, pero Forest pegó primero y temprano"
+  }
+ },
+ {
+  "fixtureId": 1558675,
+  "partido": "RAAL La Louvière – Cercle Brugge",
+  "elegido": "La Louvière (local)",
+  "marcador": "0-1",
+  "porQueNoArranco": "varianza",
+  "porQue2": "dt_o_sistema",
+  "queDijimos": "local 37 (+1,5 sobre la casa por perfiles DC, dando vuelta al favorito del mercado); A − de 1 riesgo muy alto que se corta; 2-1",
+  "quePaso": "0-1 al 6' en el debut de Caixinha con un 3-4-2-1 nuevo; La Louvière erró dos penales (xG 3,17, 1 al arco)",
+  "senalPrevia": "rival con DT debutante (DT-DISCREPANCIA / DT-VS-BANCO / DTP-REHACER) + nuestra prob. dando vuelta al favorito del mercado por perfiles DC",
+  "estadisticaDice": {
+   "merecimos": "si",
+   "detalle": "xG 3,17 vs 1,32, casi todo de los dos penales errados"
+  }
+ },
+ {
+  "fixtureId": 1570446,
+  "partido": "Espanyol – Deportivo La Coruna",
+  "elegido": "Espanyol (local)",
+  "marcador": "0-0",
+  "porQueNoArranco": "partido_cerrado",
+  "porQue2": "sobrelectura_propia",
+  "queDijimos": "local 39 (mercado) con espina A NEGATIVA (Sarabia, Hinojo, Urko fuera; DT nuevo): el 1X2 iba contra la propia espina; 1-1",
+  "quePaso": "0-0 de pocas llegadas: 11 remates vs 5, xG 0,72 vs 0,32",
+  "senalPrevia": "1X2 elegido CONTRA la espina propia + burbuja propia + de 1 con riesgo alto y T.54 propio (DT nuevo)",
+  "estadisticaDice": {
+   "merecimos": "si",
+   "detalle": "xG 0,72 vs 0,32, poco para ganar"
+  }
+ },
+ {
+  "fixtureId": 1575540,
+  "partido": "Nacional – Academico Viseu",
+  "elegido": "Viseu (visita)",
+  "marcador": "1-0",
+  "porQueNoArranco": "sede_o_viaje",
+  "porQue2": "rival_mas_fuerte",
+  "queDijimos": "visita 37 (mercado, elegido sin ser favorito de 50 %); Viseu + de 1, Nacional − de 1 'sigue' por nivel; 0-1",
+  "quePaso": "gol de Djaló al 86' con lluvia y viento en Madeira; Nacional 19 remates, 1,17 xG",
+  "senalPrevia": "visitante elegido con ≤40 % y burbuja propia de 1 partido + viaje a isla y clima adverso + R-KT.2/G-SORPRESA propios",
+  "estadisticaDice": {
+   "merecimos": "no",
+   "detalle": "xG 0,65 vs 1,17"
+  }
+ },
+ {
+  "fixtureId": 1593356,
+  "partido": "OFI – Atromitos",
+  "elegido": "OFI (local)",
+  "marcador": "0-0",
+  "porQueNoArranco": "varianza",
+  "porQue2": "fatiga_rotacion",
+  "queDijimos": "local 46,7 (mercado = motor), +3 sobre la casa; OFI + de 2 con riesgo MUY ALTO y espina positiva contra el riesgo; 2-1",
+  "quePaso": "0-0: 63 % de pelota, 1,51 xG, gol de Kodro anulado por VAR al 61'; tercer partido en 8 días tras Europa League",
+  "senalPrevia": "espina propia positiva contra riesgo muy alto de la burbuja propia + nuestra prob. 2+ pts sobre la casa + tercer partido en 8 días tras copa europea",
+  "estadisticaDice": {
+   "merecimos": "si",
+   "detalle": "xG 1,51 vs 0,34"
+  }
+ },
+ {
+  "fixtureId": 1632053,
+  "partido": "Nacional Asuncion – Club Sp. San Lorenzo",
+  "elegido": "Nacional (local)",
+  "marcador": "0-2",
+  "porQueNoArranco": "burbuja_rival",
+  "porQue2": "varianza",
+  "queDijimos": "local 72 (mercado); Nacional + de 1 riesgo bajo; San Lorenzo + de 1 con riesgo MUY ALTO que se corta; 2-0",
+  "quePaso": "San Lorenzo (descendido) ganó 0-2 de contra; Nacional 19 remates, travesaño y despeje en la línea",
+  "senalPrevia": "favorito ≥70 % contra rival con racha + de 1 leída con riesgo muy alto (descendido, sin presión) + FAMILIA-RECORD propia",
+  "estadisticaDice": {
+   "merecimos": "no",
+   "detalle": "xG 1,38 vs 1,79 pese al volumen (19 remates vs 15)"
+  }
+ },
+ {
+  "fixtureId": 1635640,
+  "partido": "Bodo/Glimt – Lille",
+  "elegido": "Bodø (local)",
+  "marcador": "0-0",
+  "porQueNoArranco": "partido_cerrado",
+  "porQue2": "rival_mas_fuerte",
+  "queDijimos": "local 56 (mercado); Bodø + de 1 riesgo bajo, Lille + de 1 riesgo muy alto (contramano) que se corta; 2-1",
+  "quePaso": "0-0 en Aspmyra: 4 remates de Bodø (xG 0,69) contra 9 de Lille (0,61)",
+  "senalPrevia": "ESCALA-LIGAS (favorito de liga menor contra uno de liga mayor) + rival con racha + leída con riesgo muy alto",
+  "estadisticaDice": {
+   "merecimos": "parejo",
+   "detalle": "xG 0,69 vs 0,61"
+  }
+ },
+ {
+  "fixtureId": 1639805,
+  "partido": "Macara – Universidad Catolica",
+  "elegido": "Macará (local)",
+  "marcador": "2-2",
+  "porQueNoArranco": "sobrelectura_propia",
+  "porQue2": "rival_mas_fuerte",
+  "queDijimos": "local 40 (+3,7 sobre la casa); Macará + de 6 en su récord (K-CERCA-EXTREMO + FAMILIA-RECORD), espina 'sigue'; UC + de 1 muy alto; 1-0",
+  "quePaso": "UC 0-2 al 54' (doble de Fajardo), Macará empató en dos minutos; UC 2,1 xG",
+  "senalPrevia": "burbuja propia en o cerca del extremo (K-CERCA-EXTREMO + FAMILIA-RECORD) con nuestra prob. 2+ pts sobre la casa",
+  "estadisticaDice": {
+   "merecimos": "no",
+   "detalle": "xG 0,96 vs 2,10"
+  }
+ },
+ {
+  "fixtureId": 1645456,
+  "partido": "The Strongest – Always Ready",
+  "elegido": "The Strongest (local)",
+  "marcador": "1-4",
+  "porQueNoArranco": "burbuja_rival",
+  "porQue2": "otro",
+  "queDijimos": "local 40 (mercado) por perfiles DC; Tigre + de 1 riesgo alto (de local +4, muy alto); Always Ready + de 2 riesgo alto que se corta; 2-1",
+  "quePaso": "1-4: Always Ready pegó al 5', 28', 71' y 74' (con diez); el Tigre con deuda salarial y clásico el domingo",
+  "senalPrevia": "burbuja de condición propia larga (+4 de local) en riesgo muy alto + crisis salarial del elegido + rival con racha + que la tarjeta da que se corta",
+  "estadisticaDice": {
+   "merecimos": "sin_datos",
+   "detalle": "sin estadísticas"
+  }
+ },
+ {
+  "fixtureId": 1645538,
+  "partido": "Nacional Potosí – Real Potosí",
+  "elegido": "Nacional Potosí (local)",
+  "marcador": "1-1",
+  "porQueNoArranco": "rival_mas_fuerte",
+  "porQue2": "once_o_bajas",
+  "queDijimos": "local 37 contra 36 (mercado); espina = pronóstico sin lectura propia; Nacional + de 1 riesgo alto; 2-1",
+  "quePaso": "Real 0-1 al 39', 1-1 al 47'; Nacional con diez desde el 61' y nueve al 90+4; xG 0,31 vs 1,15",
+  "senalPrevia": "elegido por ≤2 pts (casi triple empate) con espina = pronóstico + mercado corrido ≥5 pts contra el elegido desde la apertura + burbuja propia de 1 con riesgo alto",
+  "estadisticaDice": {
+   "merecimos": "no",
+   "detalle": "xG 0,31 vs 1,15"
+  }
+ },
+ {
+  "fixtureId": 1646930,
+  "partido": "Portuguesa FC – Deportivo La Guaira",
+  "elegido": "Portuguesa (local)",
+  "marcador": "0-3",
+  "porQueNoArranco": "rival_mas_fuerte",
+  "porQue2": "once_o_bajas",
+  "queDijimos": "local 37 en partido parejo (μ margen 0,17), sin burbujas en ninguno de los dos (K 0); 1-1",
+  "quePaso": "0-1 al 25', roja a Lovazzano al 45+5 y penal; 0-3 al 80'",
+  "senalPrevia": "los dos equipos con K total 0 y el elegido por ≤2 pts: sin burbuja, el elegido es una moneda",
+  "estadisticaDice": {
+   "merecimos": "sin_datos",
+   "detalle": "sin estadísticas"
+  }
+ },
+ {
+  "fixtureId": 1493228,
+  "partido": "Argentinos JRS – Huracan",
+  "porQueNoArranco": "once_o_bajas",
+  "porQue2": "burbuja del rival: Huracán con racha − de 4 cerca del extremo (K-CERCA-EXTREMO) reventó ganando",
+  "queDijimos": "Argentinos 47 % (casa 45), espina + por racha de 3 y rival 1,85 de nivel abajo; 1-0",
+  "quePaso": "0-2: gol de Huracán al 8' con la zaga nueva (EJE-DEBUTANTE) y dos rojas propias (25', 29'); xG 0,80 contra 1,78",
+  "senalPrevia": "rival con racha − cerca del extremo (K-CERCA-EXTREMO rival) + EJE-DEBUTANTE propio en la zaga + delta apertura→cierre contra el elegido sin causa",
+  "estadisticaDice": "no (xG 0,80 vs 1,78; 3 vs 9 al arco)"
+ },
+ {
+  "fixtureId": 1493238,
+  "partido": "San Lorenzo – Platense",
+  "porQueNoArranco": "burbuja_rival",
+  "porQue2": "rival_mas_fuerte: Platense tuvo la pelota (58 %) y la pelota parada",
+  "queDijimos": "San Lorenzo 38 % (casa 35,6) sin burbuja propia (K 0), elegido por los perfiles DC; racha + de 1 de Platense leída 'no seguir' (riesgo alto, contramano)",
+  "quePaso": "0-2 con goles de pelota parada y centro; la racha + de Platense siguió; xG 0,77 contra 1,39",
+  "senalPrevia": "elegido sin burbuja propia (K 0) y 2+ pts sobre la casa por perfiles DC, frente a rival con racha + corta leída como corte por contramano",
+  "estadisticaDice": "no (xG 0,77 vs 1,39)"
+ },
+ {
+  "fixtureId": 1505554,
+  "partido": "U. Catolica – Universidad de Chile",
+  "porQueNoArranco": "sobrelectura_propia",
+  "porQue2": "sede_o_viaje: clásico en el Claro Arena (casa de la UC) que el servidor marcaba neutral",
+  "queDijimos": "U de Chile 39 % (casa 37,2) de visita, espina + con K +18,8 cerca del extremo sostenida por las bajas de la UC; 1-2",
+  "quePaso": "1-0: la UC marcó al 4' y administró con 30 % de pelota; la U, 0 remates al arco de 11 (xG 0,83 vs 0,82)",
+  "senalPrevia": "elegido visitante con K propia cerca del extremo (K-CERCA-EXTREMO propio) sostenida por bajas del rival; clásico de visita",
+  "estadisticaDice": "parejo (xG 0,83 vs 0,82, 0 al arco)"
+ },
+ {
+  "fixtureId": 1549535,
+  "partido": "Universitario – Sport Boys",
+  "porQueNoArranco": "varianza",
+  "porQue2": "sobrelectura_propia: K +24,9 cerca del extremo, FAMILIA-RECORD y riesgo alto seguidos 'contra el riesgo'; la burbuja reventó a cero",
+  "queDijimos": "Universitario 63 % (casa 63,8), espina + contra riesgo alto por hechos del partido; 2-0",
+  "quePaso": "2-2: 0-1 de penal al 27', penal errado al 42', 0-2 al 83' y empate en el 88' y 91'; xG 2,37 contra 1,46",
+  "senalPrevia": "favorito local con K propia cerca del extremo + FAMILIA-RECORD + riesgo alto, espina positiva escrita 'contra el riesgo'",
+  "estadisticaDice": "sí (xG 2,37 vs 1,46, 18 remates, penal errado)"
+ },
+ {
+  "fixtureId": 1549542,
+  "partido": "UCV Moquegua – Club Deportivo Los Chankas",
+  "porQueNoArranco": "varianza",
+  "porQue2": "elegido contra su propia burbuja: racha − de local en récord (K-EXTREMO-CONDICION, FAMILIA-RECORD de 8 sin ganar en casa)",
+  "queDijimos": "Moquegua 43 % (casa 46,6) con espinas cero en los dos lados; 1-1",
+  "quePaso": "0-0: 24 remates y 10 al arco de Moquegua (10 atajadas), penal errado del rival; xG 1,39 contra 1,47",
+  "senalPrevia": "elegido con burbuja propia NEGATIVA de local en su récord (K-EXTREMO-CONDICION / FAMILIA-RECORD sin ganar) y espinas cero: el empate era la lectura",
+  "estadisticaDice": "parejo (xG 1,39 vs 1,47, remates 24 vs 13)"
+ },
+ {
+  "fixtureId": 1549851,
+  "partido": "Millonarios – America de Cali",
+  "porQueNoArranco": "varianza",
+  "porQue2": "partido_cerrado: los dos perfiles DC alineados apuntaban al empate, no al local",
+  "queDijimos": "Millonarios 48 % (casa 47,3), sin burbuja propia (K 0), motor del otro lado (América 38 %); 1-0",
+  "quePaso": "0-0: Millonarios 26 remates, 8 al arco, xG 1,45 contra 0,66; la racha + de América cerca del extremo reventó a cero",
+  "senalPrevia": "perfiles DC alineados (local no pierde ≥ 2/3, visita no gana ≥ 2/3) volcados al local; elegido sin burbuja (K 0); motor y mercado en lados distintos",
+  "estadisticaDice": "sí (xG 1,45 vs 0,66, 26 vs 4 remates)"
+ },
+ {
+  "fixtureId": 1550188,
+  "partido": "Cagliari – Frosinone",
+  "porQueNoArranco": "varianza",
+  "porQue2": "burbuja del rival: Cagliari con racha − de 4 cerca del extremo reventó ganando",
+  "queDijimos": "Frosinone 42 % (casa 43,1) de visita, racha + de 2 riesgo bajo, 'sin señal'; 1-2",
+  "quePaso": "1-0 Cagliari al 38' y 9 atajadas de Caprile: Frosinone 29 remates, 13 córners, xG 2,30 contra 0,97",
+  "senalPrevia": "rival con racha − cerca del extremo (K-CERCA-EXTREMO rival) ante favorito por nivel; elegido visitante con K de visita en 0 (4 sin ganar de visita)",
+  "estadisticaDice": "sí (xG 2,30 vs 0,97, 29 vs 14 remates)"
+ },
+ {
+  "fixtureId": 1551026,
+  "partido": "Club America – Toluca",
+  "porQueNoArranco": "rival_mas_fuerte",
+  "porQue2": "once_o_bajas: una pieza del plan (m2) no estuvo en la hoja; T.54-B propio",
+  "queDijimos": "América 45 % (casa 40,9, +4) sin burbuja propia, por perfiles DC y delta; 2-1",
+  "quePaso": "2-2: Toluca adelante dos veces (42', 87'), América rescató al 92' de penal; xG 2,08 contra 1,94",
+  "senalPrevia": "nuestra prob. del elegido 4+ pts sobre la casa por perfiles DC sin burbuja propia (K 0 en los dos)",
+  "estadisticaDice": "parejo (xG 2,08 vs 1,94)"
+ },
+ {
+  "fixtureId": 1551032,
+  "partido": "Atlas – CF Pachuca",
+  "porQueNoArranco": "burbuja_rival",
+  "porQue2": "once_o_bajas: autogol al 5' con zaga de parejas nuevas (EJE-DEBUTANTE)",
+  "queDijimos": "Atlas 39 % (casa 38,8), espina + contra riesgo alto; racha + de 2 de Pachuca leída como corte (riesgo alto); 1-0",
+  "quePaso": "1-4: Pachuca adelante al 5' y 12', su racha + siguió; xG 1,26 contra 1,91",
+  "senalPrevia": "rival con racha + corta leída 'no seguir' por riesgo alto; las dos burbujas + de 2 en riesgo alto y T.54 en los dos; EJE-DEBUTANTE propio",
+  "estadisticaDice": "no (xG 1,26 vs 1,91)"
+ },
+ {
+  "fixtureId": 1552222,
+  "partido": "Twente – Ajax",
+  "porQueNoArranco": "varianza",
+  "porQue2": "sobrelectura_propia: elegido con K-EXTREMO propio (récord en 285 partidos) y espina negativa contra el 1X2; reventó a cero",
+  "queDijimos": "Twente 48 % (casa 48,4) con espina NEGATIVA por K-EXTREMO; 2-1",
+  "quePaso": "2-2: Ajax 0-1 al 3' y 0-2 al 66' con 6 remates; Twente igualó (autogol y penal en el 95'); xG 2,56 contra 0,72",
+  "senalPrevia": "elegido con K-EXTREMO propio (récord) y espina negativa contraria al 1X2",
+  "estadisticaDice": "sí (xG 2,56 vs 0,72, 22 vs 6 remates)"
+ },
+ {
+  "fixtureId": 1552816,
+  "partido": "Rennes – Lille",
+  "porQueNoArranco": "varianza",
+  "porQue2": "fatiga_rotacion: tres días después de Europa League (F2 = 1)",
+  "queDijimos": "Rennes 41 % (casa 40,7) sin burbuja en ningún lado; 2-1",
+  "quePaso": "1-2: Lille 0-1 al 24', 1-1 al 31', 1-2 al 68'; xG 1,59 contra 0,44 pero 2 remates al arco de 15",
+  "senalPrevia": "sin burbuja en ningún lado (K 0 en los dos) + delta apertura→cierre contra el elegido sin causa + F2 = 1",
+  "estadisticaDice": "sí (xG 1,59 vs 0,44)"
+ },
+ {
+  "fixtureId": 1557463,
+  "partido": "Leeds – Tottenham",
+  "porQueNoArranco": "rival_mas_fuerte",
+  "porQue2": "sobrelectura_propia: racha + de 3 de Tottenham hecha de local (contramano) con riesgo alto",
+  "queDijimos": "Tottenham 36,6 % (casa 36,5) de visita por el cruce táctico; 0-1",
+  "quePaso": "1-0 Leeds al 79' (Okafor desde el banco); Leeds 16 remates y xG 2,05 contra 0,80 con 39 % de pelota",
+  "senalPrevia": "elegido visitante con racha + hecha de local (contramano) y riesgo alto, en mercado parejo (<40 %)",
+  "estadisticaDice": "no (xG 0,80 vs 2,05)"
+ },
+ {
+  "fixtureId": 1557466,
+  "partido": "Sunderland – Chelsea",
+  "porQueNoArranco": "rival_mas_fuerte",
+  "porQue2": "sede_o_viaje: Sunderland en casa con bloque bajo; T.54 propio",
+  "queDijimos": "Chelsea 47 % (casa 50,3) de visita, racha + de 1 riesgo medio; 0-1",
+  "quePaso": "1-0 Sunderland de penal al 36'; Chelsea 69 % de pelota y solo 0,55 de xG contra 2,58",
+  "senalPrevia": "elegido visitante con racha + de 1 partido hecha de local (contramano) y T.54 propio",
+  "estadisticaDice": "no (xG 0,55 vs 2,58)"
+ },
+ {
+  "fixtureId": 1570437,
+  "partido": "Elche – Valencia",
+  "porQueNoArranco": "varianza",
+  "porQue2": "dt_o_sistema: Elche cambió los dos laterales al 68' y recibió al 69' (lo que el M3 decía no hacer)",
+  "queDijimos": "Elche 40 % (casa 40,4), racha + de 2 a contramano con riesgo alto, espina siguiendo al 1X2; 1-0",
+  "quePaso": "0-1 de Sadiq al 69'; Elche 69 % de pelota, 16 remates contra 5, xG 1,33 contra 0,96",
+  "senalPrevia": "racha propia de 2 hecha a contramano (riesgo alto) y espina sin lectura propia (guía = pronóstico); rival con DT nuevo (T.54)",
+  "estadisticaDice": "sí, leve (xG 1,33 vs 0,96, 16 vs 5 remates)"
+ },
+ {
+  "fixtureId": 1570450,
+  "partido": "Sevilla – Alaves",
+  "porQueNoArranco": "varianza",
+  "porQue2": "once_o_bajas: Alavés salió con línea de cinco (formación corregida después del pitazo)",
+  "queDijimos": "Sevilla 52 % (casa 51,1), espina + por K de local; total con racha − de 1 en riesgo muy alto; 2-1",
+  "quePaso": "0-0: penal errado de Sevilla al 32'; xG 1,68 contra 0,60; la racha − del Alavés cerca del extremo cortó en empate",
+  "senalPrevia": "elegido con racha TOTAL negativa de 1 partido (riesgo muy alto) leída por la K de condición; rival con K − cerca del extremo",
+  "estadisticaDice": "sí (xG 1,68 vs 0,60, penal errado)"
+ },
+ {
+  "fixtureId": 1584462,
+  "partido": "Gaziantep FK – Kasımpaşa",
+  "porQueNoArranco": "rival_mas_fuerte",
+  "porQue2": "dt_o_sistema: DT nuevo en Kasımpaşa (Schreuder, oficializado dos días antes) que el parte no tenía",
+  "queDijimos": "Gaziantep 37 % (casa 37,1) con espina NEGATIVA contra el propio 1X2; motor del otro lado (visita 43 %); 1-1",
+  "quePaso": "0-2: Kasımpaşa al 3' y penal al 21'; xG 0,88 contra 1,96",
+  "senalPrevia": "elegido con burbuja propia NEGATIVA (sin ganar de local cerca del extremo) y espina contra el 1X2; motor y mercado en lados distintos",
+  "estadisticaDice": "no (xG 0,88 vs 1,96)"
+ },
+ {
+  "fixtureId": 1632050,
+  "partido": "2 de Mayo – Sportivo Trinidense",
+  "porQueNoArranco": "partido_cerrado",
+  "porQue2": "sobrelectura_propia: racha − de 1 de Trinidense leída como corte al +; cortó a cero",
+  "queDijimos": "Trinidense 42 % (casa 42) de visita, motor del otro lado; 0-1",
+  "quePaso": "0-0 con 2 remates al arco por lado; xG 0,65 contra 0,67",
+  "senalPrevia": "elegido con racha propia NEGATIVA de 1 partido (riesgo alto) y motor y mercado en lados distintos",
+  "estadisticaDice": "parejo (xG 0,67 vs 0,65)"
+ },
+ {
+  "fixtureId": 1632055,
+  "partido": "Rubio NU – Sportivo Luqueno",
+  "porQueNoArranco": "rival_mas_fuerte",
+  "porQue2": "burbuja del rival: Luqueño con racha − de 3 cerca del extremo (riesgo muy alto) reventó ganando 0-5; roja propia al 65'",
+  "queDijimos": "Rubio Ñu 43 % (casa 43,2), espina + contra riesgo alto (racha de 1 a contramano); 1-0",
+  "quePaso": "0-5: Luqueño 0-1 al 24', 0-2 al 42', roja de Rubio al 65' y tres más; xG 1,25 contra 2,26",
+  "senalPrevia": "rival con racha − cerca del extremo (K-CERCA-EXTREMO rival, riesgo muy alto) + racha propia de 1 partido a contramano",
+  "estadisticaDice": "no (xG 1,25 vs 2,26)"
+ },
+ {
+  "fixtureId": 1635707,
+  "partido": "PSV Eindhoven – Club Brugge KV",
+  "porQueNoArranco": "burbuja_rival",
+  "porQue2": "varianza: PSV 27 remates y 2,95 de xG",
+  "queDijimos": "PSV 48 % (casa 48,9), racha + de 1; racha + de 8 de Brujas cerca del extremo leída 'no seguir' (riesgo muy alto); 2-1",
+  "quePaso": "1-2: Brujas marcó al 25' y al 65', su racha siguió; xG 2,95 contra 1,78",
+  "senalPrevia": "rival con racha + larga cerca del extremo (K-CERCA-EXTREMO rival, riesgo muy alto) frente a racha propia de 1 partido; ESCALA-LIGAS",
+  "estadisticaDice": "sí (xG 2,95 vs 1,78, 27 vs 10 remates)"
+ },
+ {
+  "fixtureId": 1639857,
+  "partido": "Guayaquil City FC – Libertad",
+  "porQueNoArranco": "partido_cerrado",
+  "porQue2": "sobrelectura_propia: racha + de 1 en riesgo muy alto seguida 'contra el riesgo' por los perfiles DC",
+  "queDijimos": "City 50 % (casa 48,7, +1,3) con espina + contra riesgo muy alto; 1-0",
+  "quePaso": "0-0: City 65 % de pelota y 2 al arco, Libertad en 5-4-1 con el empate que le servía; xG 0,65 contra 0,49",
+  "senalPrevia": "racha propia de 1 partido en riesgo muy alto + rival al que el empate le sirve en la tabla + perfiles DC alineados volcados al local",
+  "estadisticaDice": "parejo (xG 0,65 vs 0,49)"
+ },
+ {
+  "fixtureId": 1645534,
+  "partido": "Independiente Petrolero – Real Tomayapo",
+  "porQueNoArranco": "fatiga_rotacion",
+  "porQue2": "sobrelectura_propia: racha total − de 1 (riesgo muy alto) leída por la K de local cerca del extremo",
+  "queDijimos": "Petrolero 59 % (casa 59,1), espina + por K de local; 2-0",
+  "quePaso": "0-2 con el rival en diez desde el 50': 71 % de pelota sin volumen (xG 0,74 contra 1,28); goles al 56' y 86'",
+  "senalPrevia": "favorito con F2 = 1 (≤ 3 días de descanso, 5 partidos en 21 días) y partido grande a ≤ 5 días; K de condición cerca del extremo",
+  "estadisticaDice": "no (xG 0,74 vs 1,28)"
+ },
+ {
+  "fixtureId": 1646900,
+  "partido": "Progreso – Defensor Sporting",
+  "porQueNoArranco": "sobrelectura_propia",
+  "porQue2": "dt_o_sistema: el interino de Defensor volvió a cuatro atrás y cubrió la baja de Elizalde",
+  "queDijimos": "Progreso 44 % contra 36,5 de la casa (+7,5), arrastrado hacia el motor (55 %); 2-1",
+  "quePaso": "0-2: Defensor al 47' y 83'; Progreso 6 remates y 2 al arco contra 10 y 4 (sin xG)",
+  "senalPrevia": "nuestra prob. del elegido 2+ pts sobre la casa (aquí +7,5), siguiendo al motor en Sudamérica",
+  "estadisticaDice": "no (remates 6 vs 10, al arco 2 vs 4)"
+ },
+ {
+  "fixtureId": 1646931,
+  "partido": "Metropolitanos FC – Carabobo FC",
+  "porQueNoArranco": "sobrelectura_propia",
+  "porQue2": "once_o_bajas: roja del 9 propio al 45+1 con 0-1",
+  "queDijimos": "Metropolitanos 40 % contra 34,8 de la casa (+5) siguiendo al motor; el mercado elegía la visita; 2-1",
+  "quePaso": "0-2: Carabobo al 23' de pelota parada y al 57' con uno más (sin estadísticas)",
+  "senalPrevia": "elegido contra el elegido del mercado (motor y mercado en lados distintos) con nuestra prob. 5 pts sobre la casa; sin burbuja propia (K 0)",
+  "estadisticaDice": "sin datos"
+ }
+]
