@@ -81,6 +81,7 @@ Tres lugares donde vive una guardia:
 - **Síntoma:** `DTP-REHACER` sin rehacer, el once de una copa capturado con la ficha, la prosa escrita sobre el once viejo.
 - **Casos:** 444/451/454 (orden de la cola), 735, 737 (copas fuera de la cola del en vivo), 847, 848, 849 y 850.
 - **Guardia:**
+  - **El titular del once oficial sin fila en la F1** (1068, aprobada el 10/11/2026: Estêvão, D. James, el arquero suplente Görgen, cuatro del Estoril; familia ONCE-SIN-FILA-F1): con el once de ESTE partido capturado, `f1_base.del_once_oficial` suma a la tabla F1 cada titular que no está ni por id ni por nombre, como fila `delOnceOficial` (ROT, `sinStatsDeTemporada`, zona de su casilla), y copiado al parte el bloque F lo casa por id. Guardia en `test_cowork.py`.
   - **Escaneo `once-tarde` (05/11/2026, 1231):** marca el once que el ciclo en vivo no pidió a tiempo, no el que la API publicó después del pitazo: si la primera versión llegó dentro de la ventana tardía del ciclo (`en_vivo.XI_VENTANA_TARDE_MIN`), es la causa decidida (1072, 1081, 1145) y no se deposita. Y solo se juzga con la ficha post-partido sellada (1248): antes, «nunca publicado» (copa de Bolivia, Venezuela) y «tarde» no se distinguen.
   - **Cola de onces:** `en_vivo.fixtures_para_xi` pide el once de todo partido con parte, de cualquier liga, y lo refresca a 40 minutos.
   - **Etiqueta del momento:** `momento_rehacer` distingue `tardio`, `sinRehacer` y `conocido`.

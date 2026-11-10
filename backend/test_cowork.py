@@ -4961,6 +4961,45 @@ def main():
           and _t1330[_otro1330["id"]].get("titularEnElUltimo") is True,
           (_rec_a.get(_otro1330["id"]), _rec_d.get(_otro1330["id"]), _t1330.get(_otro1330["id"])))
     _f1n = {x["jugadorId"]: x for x in _tabla_eq(_hid, "local", "2100-01-01")["candidatos"]}
+    # 1068 (10/11/2026, aprobada): con el once oficial capturado, el titular sin fila (debut, recambio,
+    # juvenil) entra a la tabla como delOnceOficial, ROT, con la zona de su casilla; el que ya está
+    # (por id o por nombre con otro id) no se repite
+    from backend.analisis import bloque_f as _bf1068
+    _t1068 = {"candidatos": [{"jugadorId": _cola[k]["id"], "nombre": _cola[k]["nombre"], "zona": "MID",
+                              "rolSugerido": "TF"} for k in range(9)]}
+    with _sq3f.connect(os.path.join(tmp, "sad.db")) as _con:
+        for k in range(9):
+            _con.execute("INSERT INTO alineaciones (fixture_id, team_id, player_id, jugador, titular, posicion) "
+                         "VALUES (990778, ?, ?, ?, 1, 'M')", (_hid, 990000 + k if k == 8 else _cola[k]["id"],
+                                                              _cola[k]["nombre"]))
+        _con.execute("INSERT INTO alineaciones (fixture_id, team_id, player_id, jugador, titular, posicion) "
+                     "VALUES (990778, ?, 999068, 'Estêvão Willian', 1, 'F')", (_hid,))
+        _con.execute("INSERT INTO alineaciones (fixture_id, team_id, player_id, jugador, titular, posicion) "
+                     "VALUES (990778, ?, 999069, 'D. James', 1, 'D')", (_hid,))
+        _con.execute("INSERT INTO alineaciones (fixture_id, team_id, player_id, jugador, titular, posicion) "
+                     "VALUES (990778, ?, 999070, 'Banco Suplente', 0, 'G')", (_hid,))
+    try:
+        _d1068 = _f1m.del_once_oficial({"candidatos": [dict(c) for c in _t1068["candidatos"]]}, 990778, _hid)
+        _d1068_sin = _f1m.del_once_oficial({"candidatos": []}, 990779, _hid)
+    finally:
+        with _sq3f.connect(os.path.join(tmp, "sad.db")) as _con:
+            _con.execute("DELETE FROM alineaciones WHERE fixture_id=990778")
+    _nuevos = {c["jugadorId"]: c for c in _d1068["candidatos"] if c.get("delOnceOficial")}
+    check("1068: los titulares del once oficial sin fila entran delOnceOficial (ROT, sin stats, zona de la hoja); "
+          "el del banco, el que ya está y su gemelo por nombre con otro id, no; sin once, nada",
+          set(_nuevos) == {999068, 999069} and _nuevos[999068]["zona"] == "ATK"
+          and _nuevos[999069]["zona"] == "DEF" and _nuevos[999068]["rolSugerido"] == "ROT"
+          and _nuevos[999068].get("sinStatsDeTemporada") is True and len(_d1068["candidatos"]) == 11
+          and _d1068_sin["candidatos"] == [], _d1068["candidatos"])
+    _once1068 = [c["nombre"] for c in _d1068["candidatos"]]
+    _ids1068 = {c["nombre"]: c["jugadorId"] for c in _d1068["candidatos"]}
+    _pl = lambda cs: [{"nombre": c["nombre"], "jugadorId": c["jugadorId"], "zona": c["zona"],  # noqa: E731
+                       "rol": c["rolSugerido"]} for c in cs]
+    _r1068 = _bf1068.resolver(_pl(_d1068["candidatos"]), [], _once1068, ids=_ids1068)
+    _r1068_antes = _bf1068.resolver(_pl(_t1068["candidatos"]), [], _once1068, ids=_ids1068)
+    check("1068: con la fila delOnceOficial en la tabla, el titular ya no queda sin fila (ONCE-SIN-FILA-F1)",
+          _r1068["noReconocidosOnce"] == [] and set(_r1068_antes["noReconocidosOnce"]) == {"Estêvão Willian", "D. James"},
+          (_r1068["noReconocidosOnce"], _r1068_antes["noReconocidosOnce"]))
     # 1032 (San Lorenzo, M. Reali): el que juega en otro club no vuelve por los onces recientes
     _jeo1032 = _f1m.juegan_en_otro
     try:
