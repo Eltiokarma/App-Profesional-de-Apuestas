@@ -363,3 +363,32 @@ Ya se cerraron todos los veredictos (0 pendientes). Las 315 lecciones nuevas, de
   - DTP 14: «con la vía nombrada, la rama sube».
 - **1068, recomendación (c) empezando por la (b).** Con el once a la vista, 31 lados de 27 partidos tenían titulares sin fila. En el segundo corte, 18 de 20 lados tenían 1 o 2 filas de menos, que es cruzar listas. En 8 de esos 20 lados el jugador sin fila marcó o asistió. La (a), que el rehacer cargue el EFE, se usa solo con 3 o más titulares fijos cambiados o con otro arquero.
 - **Para la app (nuevo):** guardar a qué hora llegó la formación y marcar la que la API corrigió después del pitazo. Pasó en 6 partidos.
+
+---
+
+## Decisiones del 10/11 y estado: LISTAS PARA REDACTAR
+
+El usuario decidió el 10/11: la **1068 con la opción (c)**, empezando por la (b), y **«lo demás como recomiendas»**. Cada propuesta lleva su sección «Decisiones del 10/11» y su «Lista para redactar», con las anclas comprobadas contra el SKILL.md vigente y el texto exacto de cada cambio. **Ninguna tiene bloqueos para redactar.**
+
+| Skill | Entran al SKILL.md | Notas o candidatos | Solo app | Afloja algo vigente |
+|---|---|---|---|---|
+| sad-analysis v4.5 | 15: 1-9, 20 y los puntos 10, 11, 13, 15 y 19, más el changelog | 5 candidatos, 6 observaciones | 13 | no |
+| teorema-del-echado v0.1.26 | 12: 1-8 y 12-15, más el changelog | 9 y 11 fuera, 10 a medir, 7 candidatos | 13 | no (el 4 corrige una frase que 8+ casos desmienten) |
+| efe-clasificador v1.10 (+ dashboard v1.13) | 10: 1, 2, 3, 4, 5, 6 sin el 6.2, 7, 8, 10 y 13; D1-D4 | 9 y 11 como nota; 12 y 6.2 fuera | 11 | **sí, dos**: el 4 (la vía firme pasa a «vía a vigilar», 8 casos) y el 5 (el ciclo de amarillas pasa a Duda) |
+| diagnostico-tactico v1.8 | 15: 1-9, 11, 12, 14, 15, 16 y la génesis, más el changelog | 4 candidatos (rearme del medio, 10, 13, seguro «sin»), 5 notas | 5 | no |
+
+**Decisiones que aplicó cada subagente y conviene mirar al redactar**
+- **SAD 11:** para que no choque con «el favorito no se recorta» (v4.1), lo que suben los perfiles DC al empate sale del local, y con el local en 50 % o más el empate no se aparta por los perfiles. Lo agregó el subagente; la propuesta no lo traía.
+- **SAD 9** entra con solo 2 casos propios, porque endurece una regla. Con la regla conservadora sería candidato.
+- **DTP 10** (el reconvertido que ataca) queda como candidato, aunque la propuesta lo subía a regla.
+- **EFE 5** se apoya en tres sanciones falsas de la UEFA que salían de la regla vieja de `sanciones.py`.
+- **A0 (Jev):** la (a): `lectura_efe` pasa a ser `lectura` del skill de su dossier, y lo que Jev ya selló no se reetiqueta. Vale para el EFE y el DTP.
+
+**Lo que hay que subir junto y lo que falta en la app**
+- **TDE 14 y DTP 16 (la 1056) se suben juntos.** La app (`HEREDA_SOB2` en `parte.py`) la implementa el mantenimiento; hasta entonces, el analista copia el SOB2.
+- **1068 (c):** primero la app (fila `delOnceOficial`), después `EFE-RECOMPUTO-PENDIENTE` en `GET …/rehacer` y por último la rutina `corrida-sad`, en tres lugares: líneas 255, 229-237 y 291-293. Hoy no existe ninguno de los tres, así que esa línea de la rutina no se activa hasta que la app lo traiga.
+- **El banco probable** lo piden el EFE 10, el DTP 5 y el TDE 5 con tres nombres distintos: en la app tiene que ser una sola lista.
+- **La `certeza` de las sanciones (A3)** la tienen que leer también el DTP 7 y el TDE 12.
+- **La (f) de 1.7 del SAD** no opera hasta que `/burbujas` traiga `origen`.
+
+**El núcleo:** las 5 recomendaciones de arriba quedan aprobadas («como recomiendas»), pero el núcleo **no se aplica en esta tanda**: es otro cambio, con su test (`test_nucleo_skills`), y conviene hacerlo después de subir estas versiones.

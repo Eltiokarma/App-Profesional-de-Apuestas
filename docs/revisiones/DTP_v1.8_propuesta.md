@@ -62,7 +62,7 @@ final. Sigue sin redactarse en el `SKILL.md`.
 | Génesis del gol | Entra (pedido del usuario del 08/11), con las dos correcciones de la tabla de fuentes (El Gráfico respondió; Chile con Redgol) | M4 y M2; la tabla, fechada, dentro del M4 mientras no se aplique el núcleo |
 | Candidato del 2 (seguro «sin» persiguiendo) y los de «Lo que NO se propone» | Siguen candidatos (no traen casos nuevos) | changelog |
 | `ROLES_GRID_REHACE` (1232) | **Sigue en `False`** (conservadora: la propuesta no recomienda; primero la medición cruzada de 0 tokens de «`rolesVsGrid`») | nada al skill; «Para la app» |
-| Casillero de Jev (`lectura_dtp` o redefinir `lectura_efe`) | **No se cambia en esta revisión** (conservadora: es código, toca cómo se agrupan los fallos, y la propuesta no recomienda) | nada al skill; es la A0 del EFE |
+| Casillero de Jev (`lectura_dtp` o redefinir `lectura_efe`) | **Alineado con la A0 del EFE v1.10 (10/11):** `lectura_efe` pasa a ser `lectura` del skill de su dossier; lo que Jev ya selló no se re-etiqueta | nada al skill; es código (A0 del EFE) |
 | Precisiones de un caso (4: con materia la vía tampoco está dada, Limache; 11: las bajas del rival en su condición, Los Chankas; 7: el recambio cargado de tarjetas, Gimnasia; 9: el asistidor repetido bajo el umbral, Argentinos; 5: el segundo de la lista que recibe la falta, Panathinaikos) | **Notas**, no regla | quedan en esta propuesta, fuera del `SKILL.md` |
 
 ## De dónde sale
@@ -2566,7 +2566,7 @@ aprueba» sigue igual. Con las decisiones del 10/11 se suma o se precisa:
   partes viejos. Lo implementa el mantenimiento.
 - **`ROLES_GRID_REHACE` sigue en `False`:** primero la medición cruzada de
   «`rolesVsGrid`» (seis partidos, 0 tokens).
-- **El casillero de Jev:** sin cambio en esta revisión (A0 del EFE).
+- **El casillero de Jev:** se alinea con la A0 del EFE v1.10: `lectura_efe` pasa a `lectura` del skill del dossier (código, no skill).
 - **13 · los penales concedidos por el equipo en sus últimos partidos:** la
   ayuda calculable sirve para juntar los casos del candidato, no para una regla.
 - **1068 (EFE↔corrida-sad):** la fila del titular que falta en la F1
@@ -2581,7 +2581,7 @@ aprueba» sigue igual. Con las decisiones del 10/11 se suma o se precisa:
 | **16 ↔ TDE v0.1.26, cambio 14 (1056)** | el TDE hereda `nivelFocoPersiguiendo` (o `nivelRivalPersiguiendo`) en las ramas del que persigue; los dos skills salen juntos | **Sí**, aprobado (opción a), «coordinada con `DTP_v1.8_propuesta.md`». Su punto (2) resume la línea del DTP con otras palabras («viaja al `sob2`…»); manda el texto exacto del cambio 16 de acá. Sin bloqueo |
 | **5 / 12 ↔ EFE v1.10, cambio 10 (banco probable, B5 por rol)** | el EFE dice que el DTP toma esa lista y no la arma de nuevo | **Sí** en el EFE (rúbrica, sin «decide»); del lado del DTP faltaba: va el arrastre T5c, condicionado a que el EFE 10 se redacte en la misma tanda |
 | **6.(c) ↔ EFE v1.10, cambio 2 y D1 del dashboard** | la caja de sensibilidad dibuja las dos variantes del sistema para que la app la compare con el M1 | **Sí** (D1, «las dos variantes del sistema»). El DTP no cambia la regla (v1.6) |
-| **Casillero de Jev ↔ EFE v1.10, A0** | una sola taxonomía para los tres skills | El EFE la tiene como **[DECIDE USUARIO]** abierta al leerla el 10/11; acá se resolvió conservador (sin cambio). Si el EFE la decide distinto, vale para el DTP sin tocar su `SKILL.md` |
+| **Casillero de Jev ↔ EFE v1.10, A0** | una sola taxonomía para los tres skills | Resuelta en el EFE con la (a) el 10/11 (`lectura` del skill del dossier); vale para el DTP sin tocar su `SKILL.md` |
 | **1068 ↔ EFE v1.10 (cambio 1) y `corrida-sad`** | la F1 con la fila del que falta y el rehacer con EFE con 3+ titulares fijos cambiados o arquero distinto | En el EFE (cambio 1, A1, pregunta 2). El DTP no depende de texto nuevo |
 | **8 ↔ TDE v0.1.26, cambio 13** | la rama del TDE se compara con el M3 del DTP | Del lado del TDE; el DTP no cambia nada para eso |
 | **2 / G ↔ SAD v4.5, cambio 6 (falsador)** | el falsador toma todas las vías del DTP y no niega una que el DTP escribió | **Sí** en el SAD (6-C, punto 3). La lista de vías más larga del DTP (T2b, TGc) no choca |
