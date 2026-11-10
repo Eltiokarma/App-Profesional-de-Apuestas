@@ -1073,18 +1073,42 @@ def _huella() -> tuple:
     return (*tuple(p), *tuple(e), _GENERACION[0])
 
 
+# UN CANDADO POR CLAVE (10/11/2026): con uno solo, la pantalla que pedía la
+# cohorte vigente —ya calculada— esperaba detrás de alguien que calculaba el
+# buscador (límite 2000) o del hilo que calienta: medido en producción, 60 s
+# para una respuesta que estaba lista. Lo guardado se lee sin candado; el
+# candado de cada clave solo evita calcular dos veces lo mismo a la vez.
+_INV_LOCKS: dict[tuple, threading.Lock] = {}
+
+
+def _candado(clave: tuple) -> threading.Lock:
+    with _INV_LOCK:
+        return _INV_LOCKS.setdefault(clave, threading.Lock())
+
+
 def _nucleo(limite: int, clave_cohorte: str) -> dict:
     if INVENTARIO_TTL_S <= 0:
         return _calcular_nucleo(limite, clave_cohorte)
     huella = _huella()
-    with _INV_LOCK:
-        hit = _INV_CACHE.get((limite, clave_cohorte))
+    clave = (limite, clave_cohorte)
+
+    def vigente():
+        hit = _INV_CACHE.get(clave)
         if hit and hit[1] == huella and time.monotonic() - hit[0] < INVENTARIO_TTL_S:
             return hit[2]
+        return None
+    n = vigente()
+    if n is not None:
+        return n
+    with _candado(clave):
+        n = vigente()   # quien esperaba lee lo que el otro acaba de calcular
+        if n is not None:
+            return n
         n = _calcular_nucleo(limite, clave_cohorte)
-        if len(_INV_CACHE) > 16:
-            _INV_CACHE.clear()
-        _INV_CACHE[(limite, clave_cohorte)] = (time.monotonic(), huella, n)
+        with _INV_LOCK:
+            if len(_INV_CACHE) > 16:
+                _INV_CACHE.clear()
+            _INV_CACHE[clave] = (time.monotonic(), huella, n)
         return n
 
 
@@ -1114,15 +1138,17 @@ def _calcular_nucleo(limite: int, clave_cohorte: str) -> dict:
 
 def calentar() -> dict:
     """Deja calculado lo que la pantalla de Aprendizaje pide al abrir (la
-    cohorte vigente, con el límite por defecto) y lo que lee la calibración de
-    la espina (todas). Lo llama el hilo de `backend/app.py`; devuelve cuánto
+    cohorte vigente, con el límite por defecto), lo que lee la calibración de
+    la espina (todas) y el buscador (toda la historia). Lo llama el hilo de `backend/app.py`; devuelve cuánto
     tardó cada uno para el log."""
     from backend.analisis.parte import COHORTE
     out = {}
-    for clave in (COHORTE, ""):
+    # el buscador de la pantalla mira TODA la historia (límite 2000, todas las
+    # cohortes): va último, es el más largo y el que menos se usa
+    for limite, clave in ((400, COHORTE), (400, ""), (2000, "")):
         t = time.monotonic()
-        _nucleo(400, clave)
-        out[clave or "todas"] = round(time.monotonic() - t, 2)
+        _nucleo(limite, clave)
+        out[f"{clave or 'todas'}·{limite}"] = round(time.monotonic() - t, 2)
     if any(v > 5 for v in out.values()):
         print(f"[calentar] aprendizaje recalculado: {out} s", flush=True)
     return out
