@@ -306,8 +306,9 @@ el once a la vista: entonces lo de la propuesta del 08/11 era un pico y alcanza 
 **Comprobación 10/11 (71 lecciones nuevas):** **SOSTIENE, y es el grupo más grande del segundo
 corte.** 21 lecciones de 18 partidos en la tabla F1 (8 / 4 / 9). En 20 lados
 (17 partidos) el parte se rehízo o se depositó con el once a la vista y quedaron
-titulares sin fila (`ONCE-SIN-FILA-F1`). Con el primer corte son **31 lados de
-27 partidos desde el 07/11**: no era un pico.
+titulares sin fila (`ONCE-SIN-FILA-F1`). Sumados a los 11 lados (10 partidos)
+del primer corte desde el 08/11, son **31 lados de 27 partidos**, más los 37 del
+01 al 07/11 que contó la propuesta del 08/11: no era un pico.
 - **El que quedó sin fila decidió el partido en 8 de los 20:** Huracán
   (1493228b, Barticciotto hizo el 0-2), Lanús (1493232b, Moreno asistió el
   empate), Universidad de Concepción (1505561a, I. González asistió el 2-0),
@@ -1382,8 +1383,9 @@ cambio 10 y para A0. Además, 2 lecciones de `efe-dashboard`.
 
    **Recomendación: la (c), en dos pasos y con la (b) primero.**
    - **Por qué la (b) primero:**
-     - En los dos cortes hay 31 lados (27 partidos) con el once a la vista y
-       titulares sin fila desde el 07/11.
+     - Con el once a la vista quedaron titulares sin fila en 31 lados (27
+       partidos): 11 del primer corte desde el 08/11 y 20 del segundo. Antes,
+       del 03 al 07/11, la propuesta del 08/11 había contado 37.
      - En el segundo corte, 18 de los 20 lados tenían 1 o 2 filas de menos.
        Eso es cruzar dos listas y poner el rol, lo mismo que hace `xi/auto`
        con el bloque F, y la regla del proyecto dice que lo calculable lo hace
@@ -1398,19 +1400,40 @@ cambio 10 y para A0. Además, 2 lecciones de `efe-dashboard`.
      que son juicio. Eso pasó en Estudiantes de Río Cuarto (el arquero sin fila
      y B6 sin re-puntuar), Instituto (tres sin fila y tres titulares fijos al
      banco), Atlético Tucumán (cuatro titulares fijos al banco y B quieto en
-     4,5) y Atlético Nacional, más Lyon en el primer corte. Son 5 de unos 30
-     partidos. La (a) se dispara solo cuando la app marca 3 o más titulares
+     4,5) y Atlético Nacional, más Lyon en el primer corte: 5 partidos,
+     contra los 27 que cierra la (b). La (a) se dispara solo cuando la app marca 3 o más titulares
      fijos distintos del XI de referencia, o un arquero distinto. Es el corte
      que la v1.9 ya usa para recomputar, así que no hay número nuevo.
 3. **El cambio 3:** ¿se saca la frase del condicional (sin casos nuevos, queda
    en A2) o se deja como refuerzo?
-3-bis. **El cambio 2:** ¿el sistema condicionado solo con T.54 de ≤ 2 partidos, o
+4. **El cambio 2:** ¿el sistema condicionado solo con T.54 de ≤ 2 partidos, o
    con toda serie más corta que la ventana de validación?
-4. **El cambio 5:** ¿la roja sin confirmación va como Baja con rama (a) o como
+5. **El cambio 5:** ¿la roja sin confirmación va como Baja con rama (a) o como
    Duda (b)?
-5. **El cambio 6.2:** la comprobación lo tumba (12 partidos con rotación contra
+6. **El cambio 6.2:** la comprobación lo tumba (12 partidos con rotación contra
    8 sin rotación con calendario exigente). ¿Se saca, y queda la v1.7 con A8
    solo como medición?
-6. **El cambio 9:** ¿regla con dos casos o nota hasta el tercero? El segundo
+7. **El cambio 9:** ¿regla con dos casos o nota hasta el tercero? El segundo
    corte no trajo ninguno: la recomendación es la nota.
-7. **A0:** ¿se separa la etiqueta `lectura_efe` de Jev?
+8. **A0:** ¿se separa la etiqueta `lectura_efe` de Jev?
+
+## Tabla de cambios
+
+Una fila por cambio, con lo que dijo la comprobación del 10/11 (71 lecciones
+nuevas, segundo corte de las 04:29 UTC).
+
+| # | Cambio (una línea) | Tipo | Comprobación 10/11 | Núcleo o historial |
+|---|---|---|---|---|
+| 1 | El rehacer con el once empieza por la F1 (los once con fila, sin umbral, y los candidatos al puesto); la baja que está en la hoja deja de ser baja | rúbrica + app + decide (1068) | sostiene (20 lados, 8 decisivos) | núcleo (el orden del rehacer); casos al historial |
+| 2 | Con D1 🔶 o un DT que todavía prueba, D1, H y la zona del ausente van condicionados al once | rúbrica + decide (alcance) | sin casos | núcleo (una línea en «Cuando no hay XI»); casos al historial |
+| 3 | EJE-DEBUTANTE con el once: la línea entera del grid, el once tardío y sin condicional | rúbrica + app + decide | matiza (sin condicionales nuevos: la frase pasa a A2) | núcleo (la regla del eje); casos y candidato al historial |
+| 4 | B6: sin fuente es sin dato, la base es fuente, y el suplente sin rodaje es vía a vigilar | rúbrica + app | sostiene (0 vías sin GK-FALLA-ACTIVA, 3 en contra) | núcleo (el párrafo del suplente); la cuenta al historial |
+| 5 | La roja calculada de la misma competición es Baja con rama; el ciclo de amarillas es Duda | rúbrica + app + decide | sin casos | núcleo (la jerarquía); UEFA y Kortrijk al historial |
+| 6 | La rama «once alternativo» se abre por un hecho, carga a los rotables de todas las líneas, se recomputa con el once en las dos direcciones, y la F3 elegida es F4; 6.2: la costumbre del DT condiciona el porcentaje | rúbrica + app + medir + decide | sostiene 6.1 y el recomputo; tumba 6.2 (12 con rotación contra 8 sin rotación) | núcleo (el punto 6 de «Cuando no hay XI»); casos al historial |
+| 7 | La F3 DEF anuncia la vía del rival o el volumen concedido, y el gol lo decide el arquero | rúbrica | matiza («o», no «y»: Alianza Lima volumen, Cristal vía) | núcleo (la fila DEF); casos al historial |
+| 8 | La F3 ATK y MID se paga en el volumen, en dónde se remata o en la conversión; con un recambio con rodaje no anuncia | rúbrica | sostiene las tres vías; lo del recambio, sin medir | núcleo (las filas ATK y MID); casos al historial |
+| 9 | La baja de un titular fijo con recambio sin minutos es vía del rival aunque la zona quede en ámbar | rúbrica + decide (regla o nota) | sin casos (nota hasta el tercero) | núcleo si es regla; Lens y AEK al historial |
+| 10 | La F1 admite «banco probable» y B5 nombra el banco por rol; «banco corto» solo con la tabla mirada entera | rúbrica + app | sostiene (8 bancos decisivos nombrables) | núcleo (tres renglones bajo B5); casos al historial |
+| 11 | D3 con T.54 y una serie corta: la nota dice cuántos casos tiene y lleva caja | medir + decide | sin casos | núcleo (una línea en D); Estrela y Macará al historial |
+| 12 | ¿La brecha en la misma base ordena al ganador? No se toca el texto hasta medir | medir | matiza a favor (1 caso: 5 en contra, 2 a favor) | núcleo (la nota); casos al historial |
+| 13 | Con el once tardío (menos de 20 minutos), la F1 no se da por rehecha: «F1 sin verificar», y la fila la pone la app | rúbrica + app | nuevo (Fortaleza 1549858 e Instituto–Newell's 1493236) | núcleo (una línea junto al orden del rehacer); casos al historial |

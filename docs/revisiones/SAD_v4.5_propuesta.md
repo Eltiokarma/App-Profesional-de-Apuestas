@@ -1893,9 +1893,30 @@ caso van mezclados. Esta propuesta ya los escribe separables:
 | 7. El marcador | puntos 1-4 de 3.5 y (h) | los casos |
 | 8. Las dos burbujas en riesgo | los tres puntos de 1.7 (a) | los casos y el conteo de 6 empates en 9 |
 | 9. La cadena | una oración en (h) | los dos casos |
+| 20. El banco del rival en el falsador | los dos puntos en 6-C y una línea en 6-B | los cuatro casos del segundo corte y los tres anteriores |
+| Candidatos (un caso) | nada | todo |
 | 10, 13, 15, 19 | la frase de cada texto propuesto, en su paso | las cifras completas de la medición |
 | 11 | el texto de 6-B, si se aprueba | la medición de los 195 |
 | 12, 14, 16, 17, 18 | nada (observación o nada que cambiar) | todo: el estado de la medición de cada uno |
 
 **Lo que la corrida no necesita leer:** los conteos por cambio, las tablas
 de este documento y «Lo que NO se propone». Todo eso es historial.
+
+## Tabla de cambios
+
+Una fila por cambio (los puntos 10 a 19 son de la conversación y no son
+cambios). La comprobación es la del segundo corte: 23 lecciones del 07-08/11,
+10/11 a las 04:29 UTC.
+
+| # | Cambio (una línea) | Tipo | Comprobación 10/11 | Núcleo o historial |
+|---|---|---|---|---|
+| 1 | El origen de la burbuja (inflada / construida) frena la carga y, si se confirma sobre nuestro win rate, mueve la confianza, nunca el 1X2 | rúbrica (decidido por el usuario el 10/11; el dato, app) | sin casos | núcleo: la regla (f) de 1.7 · historial: la fuente y las 269 apuestas |
+| 2 | Contra el riesgo alto o muy alto (de la total o de la condición que guía), «sigue» solo con un hecho de la lista | decide | matiza (la tanda sola cumple la letra del «lo tumba»: 3 de 6) | núcleo: puntos 1-4 en 1.6 y la pregunta de la Auditoría 2 · historial: los casos |
+| 3 | Con la K de la condición en el extremo, la guía no es `condicion` | rúbrica | sin casos | núcleo: la oración en (e) y (g) · historial: los casos |
+| 4 | Los perfiles DC dicen «la visita no gana», no restan contra el riesgo y se leen con su burbuja | rúbrica | matiza (Fortaleza–Medellín: ganó la visita) | núcleo: puntos 1-4 en 6-B y (c) · historial: los casos y la 1227 |
+| 5 | Lo que está en juego en la tabla, para los dos y con a quién le sirve el empate | rúbrica | sin casos | núcleo: el punto 3 de 6-D · historial: U–Sport Boys y Carabobo |
+| 6 | Cada cláusula del falsador dice qué refuta, sin volumen en el 1X2 y sin negar al DTP | rúbrica | sostiene (matiza el punto 2: el volumen como cláusula del dominio) | núcleo: puntos 1-4 de 6-C y la pregunta 8 · historial: los ejemplos |
+| 7 | El marcador declarado no se apoya en un récord de familia ni va contra el elegido en silencio | rúbrica | sostiene (un caso: Colo Colo) | núcleo: puntos 1-4 de 3.5 y (h) · historial: los casos |
+| 8 | Riesgo alto en las dos burbujas: el empate se nombra, no se carga a que siga una sola | medir | sin casos | núcleo: los tres puntos de 1.7 (a) · historial: los casos |
+| 9 | La cadena y el pronóstico por equipo dicen lo mismo que el parte | rúbrica | sin casos | núcleo: una oración en (h) · historial: los dos casos |
+| 20 | El banco del rival que nombra el falsador también se lee en el 1X2 (frena la carga, no baja del mercado) | medir | nuevo (4 fallos: Newell's, Viseu, Everton de Viña, Alianza Lima) | núcleo: los dos puntos de 6-C · historial: los casos |
