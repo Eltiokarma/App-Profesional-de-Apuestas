@@ -145,6 +145,13 @@ for rel in fuentes():
             descanso_suelto.append(f"{rel}:{i + 1}")
 check("descanso: los días entre partidos salen de jugadores.dias_descanso (por horas), no de restar fechas",
       not descanso_suelto, descanso_suelto)
+# Y el descanso SIN su liga en la base no es dato (1357, Anaitasuna «38 días»):
+# todo módulo que cuenta el descanso de un equipo antes de un partido pasa por
+# `jugadores.sin_liga_en_la_base` (directo o vía `_congestion`).
+sin_regla = [rel for rel in ("backend/analisis/tde.py", "backend/analisis/dtp_cowork.py", "backend/calendario.py")
+             if "sin_liga_en_la_base" not in leer(rel) and "_congestion(" not in leer(rel)]
+check("descanso: el TDE, el DTP y el calendario aplican la regla de «sin su liga en la base»",
+      not sin_regla, sin_regla)
 
 # 3-bis · un `no`, `off`, `yes` u `on` sin comillas en un enum del contrato es un
 # booleano en YAML 1.1 (incidencia 1059: `escenario.aparecio` y `d3` traían

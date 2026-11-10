@@ -10,6 +10,7 @@ base. Sin tablas o sin datos, degrada a plantilla vacía — nada se inventa.
 Consumidores: los endpoints /equipos/{id}/plantilla y /fixtures/{id}/ficha
 (backend/app.py) y el cruce con los skills (backend/analisis/motor.py).
 """
+import re
 import sqlite3
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
@@ -660,13 +661,68 @@ def es_baja_real(j: dict) -> bool:
     return bool(b) and b.get("lectura") not in ("ruido", "desmentida")
 
 
+# SIN SU LIGA EN LA BASE, EL DESCANSO NO ES DATO (10/11/2026, incidencia 1357,
+# Copa del Rey R128): Anaitasuna juega la regional cada semana, pero la base
+# solo ve sus partidos de copa y el TDE le daba «38 días de descanso» (F2 = 0)
+# y el DTP diasDescanso 38. Si en la ventana el equipo solo tiene copa nacional
+# o amistosos de clubes, lo que jugó entre medio no se ve: los días y los
+# partidos de los 21 días van sin dato, con el motivo. Una sola regla para
+# todos los que cuentan descanso (TDE F2, DTP, calendario).
+SIN_LIGA_ATRAS_DIAS = 60
+SIN_LIGA_ADELANTE_DIAS = 30
+_SELECCIONES_RE = re.compile(r"world cup|qualif|nations|euro|asian cup|africa|gold cup|am[eé]rica|olymp", re.I)
+
+
+def sin_liga_en_la_base(team_id: int, fecha: str) -> str:
+    """'' si la base ve el calendario del equipo; el motivo si en la ventana
+    (60 días antes, 30 después) TODO lo que tiene es copa nacional o amistoso
+    de clubes. Sin partidos en la ventana no afirma nada (''): eso ya lo dicen
+    «sin partido anterior» y el tope de días del F2."""
+    from backend.analisis import escala
+    f = str(fecha or "").replace("T", " ").rstrip("Z")[:19]
+    try:
+        d = datetime.strptime(f[:10], "%Y-%m-%d")
+    except ValueError:
+        return ""
+    filas = _query(
+        """SELECT f.league_id, l.name AS liga FROM fixtures f LEFT JOIN leagues l ON l.id=f.league_id
+           WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.date >= ? AND f.date < ?""",
+        (team_id, team_id, (d - timedelta(days=SIN_LIGA_ATRAS_DIAS)).strftime("%Y-%m-%d"),
+         (d + timedelta(days=SIN_LIGA_ADELANTE_DIAS)).strftime("%Y-%m-%d")),
+    )
+    if not filas:
+        return ""
+    try:
+        from backend.ingesta.extractor import LIGAS_INTERNACIONALES
+        inter = set(LIGAS_INTERNACIONALES)
+    except Exception:  # noqa: BLE001 — sin la ingesta importable: la lista conocida
+        inter = {2, 3, 848, 13, 11}
+
+    def _solo_copa(r) -> bool:
+        lid, nombre = r["league_id"], r["liga"] or ""
+        if lid in escala.AMISTOSOS:
+            return True
+        # una selección no tiene liga y su calendario se ve entero (eliminatorias)
+        return escala.es_copa_nacional(lid, nombre, inter) and not _SELECCIONES_RE.search(nombre)
+
+    if not all(_solo_copa(r) for r in filas):
+        return ""
+    copas = sorted({str(r["liga"] or f"liga {r['league_id']}") for r in filas})
+    return (f"su liga no está en la base: en los {SIN_LIGA_ATRAS_DIAS} días previos solo tiene "
+            f"{', '.join(copas)}; lo que juega entre medio no se ve, así que el descanso no es dato "
+            "(va de la prensa)")
+
+
 def _congestion(team_id: int, fecha_fixture: str) -> dict:
     """Días de descanso y partidos en los últimos 21 días ANTES del fixture —
     sale de fixtures ya capturados (spec §11, 0 requests). Sin amistosos: el
     de Mainz con el Waldhof Mannheim contaba como partido de los 21 días en el
-    F2 del TDE (incidencia 471)."""
+    F2 del TDE (incidencia 471). Sin su liga en la base, sin dato (1357)."""
     from backend.analisis.escala import AMISTOSOS
     fecha = fecha_fixture.replace("T", " ").rstrip("Z")
+    motivo = sin_liga_en_la_base(team_id, fecha)
+    if motivo:
+        return {"diasDescanso": None, "partidos21d": None, "sinLigaEnLaBase": motivo}
     previos = _query(
         f"""SELECT date FROM fixtures
             WHERE (home_team_id=? OR away_team_id=?) AND date < ? AND {_FIN90}

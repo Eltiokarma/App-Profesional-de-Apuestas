@@ -498,7 +498,8 @@ export interface PlantillaDTO {
 
 /** Lado de la ficha: plantilla + congestión de calendario (0 requests). */
 export interface FichaEquipoDTO extends PlantillaDTO {
-  congestion: { diasDescanso: number | null; partidos21d: number }
+  /** Sin su liga en la base (solo copa o amistosos), días y partidos21d van null con el motivo (1357). */
+  congestion: { diasDescanso: number | null; partidos21d: number | null; sinLigaEnLaBase?: string }
 }
 
 /** Ficha de partido (GET /fixtures/{id}/ficha): el puente con los skills. */
@@ -672,6 +673,8 @@ export interface PartidoCalendarioDTO {
   zonaRival: 'alta' | 'media' | 'descenso' | null
   /** Días desde el partido anterior: la congestión se lee de un vistazo. */
   diasDescanso: number | null
+  /** Por qué el descanso no es dato: su liga no está en la base (1357). */
+  descansoSinDato?: string
   /** Otro partido del equipo a menos de 24 h (892): sin descanso que contar. */
   conflicto?: string
   etiquetas: EtiquetaRivalDTO[]

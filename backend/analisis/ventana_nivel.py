@@ -272,6 +272,31 @@ def _vieja_o_corta(c: dict | None, fecha: str | None) -> str:
     return ""
 
 
+def nivel_por_defecto(team_id: int, fecha: str | None) -> str:
+    """El motivo si el nivel del equipo a `fecha` es el POR DEFECTO del motor
+    y no uno calculado; '' si es real (10/11/2026, incidencia 1366, Copa del
+    Rey R128: el local de categoría inferior con 0,5 de 2 partidos y el Trival
+    sin niveles salían «protector claro» en el P1a). La regla es la del motor
+    (MOTOR §2.2-2.3, `ingesta.niveles.calcular_niveles`): con menos de 20
+    partidos TODAS sus filas valen 0,5, y sin filas a la fecha el nivel cae al
+    0,5 de `nivel_a_fecha`. Solo se lee levels.db; el nivel no se toca."""
+    from backend.ingesta.niveles import DEFAULT_LEVEL
+    f = str(fecha).replace("T", " ").rstrip("Z")[:19] if fecha else None
+    try:
+        tot = saddb.query_one("levels", "SELECT COUNT(*) AS n FROM team_levels WHERE team_id=?", (team_id,))
+        hay = (saddb.query_one("levels", "SELECT 1 AS x FROM team_levels WHERE team_id=? AND date<=? LIMIT 1",
+                               (team_id, f)) if f else tot and tot["n"])
+    except Exception:  # noqa: BLE001 — sin levels.db legible no se afirma que el nivel sea el por defecto
+        return ""
+    n = int(tot["n"]) if tot else 0
+    if not hay:
+        return f"sin niveles a la fecha: el motor usa el {DEFAULT_LEVEL} por defecto"
+    if n < VENTANA:
+        return (f"{n} partidos en la base (menos de {VENTANA}): el motor le pone el nivel por defecto "
+                f"{DEFAULT_LEVEL} a todos")
+    return ""
+
+
 def fiabilidad_con_ventana(fia: dict, comps: dict, nombres: dict | None = None,
                            fecha: str | None = None, neutral: bool = False) -> dict:
     """La fiabilidad de μ con lo que dice la ventana de cada lado. Con

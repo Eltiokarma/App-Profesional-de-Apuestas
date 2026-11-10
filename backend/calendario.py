@@ -578,6 +578,9 @@ def calendario_de(team_id: int, n: int = PROXIMOS_DEFAULT) -> list[dict]:
     ultimos = _resultados(team_id, limite=1)
     previo = ultimos[0]["fecha"] if ultimos else None
     bucket = _hora()
+    # sin su liga en la base, el descanso no es dato (1357): la misma regla del F2 y del DTP
+    from backend.jugadores import sin_liga_en_la_base
+    sin_liga = sin_liga_en_la_base(team_id, str(filas[0]["date"] or ""))
 
     salida = []
     for i, f in enumerate(filas):
@@ -604,6 +607,8 @@ def calendario_de(team_id: int, n: int = PROXIMOS_DEFAULT) -> list[dict]:
         # DOS PARTIDOS A MENOS DE 20 H: uno está mal (843, 892); sin descanso
         # que contar, y se dice
         conflicto = bool(i and ref and f["date"] and choque(str(ref), str(f["date"])))
+        if sin_liga:
+            dias = None
         if conflicto:
             dias = None
             salida[-1]["conflicto"] = "otro partido del equipo a menos de 24 h: uno es un aplazado sin marcar o un duplicado"
@@ -622,6 +627,7 @@ def calendario_de(team_id: int, n: int = PROXIMOS_DEFAULT) -> list[dict]:
             "zonaRival": None if not pos or not total else (
                 "alta" if pos <= 4 else "descenso" if pos > total - 3 else "media"),
             "diasDescanso": dias,
+            **({"descansoSinDato": sin_liga} if sin_liga else {}),
             **({"conflicto": "otro partido del equipo a menos de 24 h: uno es un aplazado sin marcar o un "
                              "duplicado"} if conflicto else {}),
             "etiquetas": etiquetas_de_rival(rival_id, not es_local, f["league_id"],

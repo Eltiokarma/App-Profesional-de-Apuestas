@@ -498,6 +498,31 @@ def main():
           and _jug471.dias_descanso("2026-10-01", "2026-10-09") == 8)
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:   # que no los tome otro test como «el último jugado»
         _con.execute("DELETE FROM alineaciones WHERE fixture_id BETWEEN 990470 AND 990472")
+    # 1357 (Anaitasuna, Copa del Rey R128: «38 días de descanso» con la regional
+    # cada semana): sin su liga en la base, el descanso no es dato en NINGÚN
+    # módulo que lo cuente (F2 del TDE, congestión, DTP, calendario)
+    _t0s = t0.strftime("%Y-%m-%d %H:%M:%S")
+    _sl = _jug471.sin_liga_en_la_base(990102, _t0s)
+    check("1357: Bentín, con solo copa en la base, no tiene su liga a la vista (con el motivo)",
+          "Copa Bicentenario" in _sl and "no es dato" in _sl, _sl)
+    check("1357: Millwall, con su Championship, sí", _jug471.sin_liga_en_la_base(990103, _t0s) == "")
+    _c1357 = _jug471._congestion(990102, _t0s)
+    check("1357: la congestión del que solo tiene copa va sin dato, no «9 días»",
+          _c1357["diasDescanso"] is None and _c1357["partidos21d"] is None and _c1357.get("sinLigaEnLaBase"), _c1357)
+    _f1357 = _tde466.f2_calendario(990102, _t0s, {"proximos": [], "senalCalendario": "neutro"})
+    check("1357: F2 del TDE sin piso y con el motivo, no «descanso largo» con F2 = 0",
+          _f1357["diasDescanso"] is None and _f1357["scorePiso"] is None
+          and _f1357.get("sinLigaEnLaBase") and _f1357["porque"] == _f1357["sinLigaEnLaBase"], _f1357)
+    from backend.analisis import dtp_cowork as _dtp1357
+    _prev = (t0 - _dt.timedelta(days=9)).strftime("%Y-%m-%d %H:%M:%S")
+    _d1357, _d1357b = _dtp1357._descanso(990102, _prev, _t0s), _dtp1357._descanso(990103, _prev, _t0s)
+    check("1357: el diasDescanso del DTP sigue la MISMA regla (sin dato con motivo; con su liga, los días)",
+          _d1357["diasDescanso"] is None and _d1357.get("descansoSinDato") and _d1357b == {"diasDescanso": 9},
+          (_d1357, _d1357b))
+    _d797 = _dtp1357._descanso(990103, (t0 - _dt.timedelta(days=400)).strftime("%Y-%m-%d %H:%M:%S"), _t0s)
+    check("797 en el DTP: el último oficial de hace 400 días tampoco es descanso",
+          _d797["diasDescanso"] is None and "400" in _d797.get("descansoSinDato", ""), _d797)
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM fixtures WHERE id BETWEEN 990470 AND 990472")
     # incidencia 655: la roja a un suplente que no entró no cuenta; la del titular y la del que entró, sí
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
@@ -1349,6 +1374,34 @@ def main():
           else (sorted(tde["p1a"]["score"].values()) == [0.5, 0.5]), tde["p1a"])
     check("declara la compuerta 1, que es lo que P1a dispara",
           "0.5" in tde["p1a"]["compuerta1"], tde["p1a"].get("compuerta1"))
+    check("con los dos niveles calculados, P1a se afirma y no entra a noCalculables",
+          not tde["p1a"].get("sinDato") and not any(n["indicador"] == "P1a" for n in tde["noCalculables"]),
+          tde["p1a"])
+    # 1366 (Copa del Rey R128): un nivel POR DEFECTO (sin filas, o < 20 partidos
+    # con el 0,5 del motor) no es dato, y el P1a armado sobre él tampoco
+    from backend.analisis import ventana_nivel as _vn1366
+    _fx1366 = dbmod.query_one("sad", "SELECT home_team_id, away_team_id, date FROM fixtures WHERE id=?", (sin_ficha,))
+    with _sq.connect(os.path.join(tmp, "levels.db")) as _lv:
+        _lv.executemany("INSERT INTO team_levels (team_id, fixture_id, date, level) VALUES (?,?,?,0.5)",
+                        [(990103, 991300 + i, "2026-01-0%d 12:00:00" % (i + 1)) for i in range(4)])
+    check("1366: sin niveles, por defecto", "por defecto" in _vn1366.nivel_por_defecto(990102, _fx1366["date"]))
+    check("1366: con 4 partidos (< 20), por defecto",
+          "4 partidos" in _vn1366.nivel_por_defecto(990103, _fx1366["date"]))
+    check("1366: el de la demo con su historia, nivel real",
+          _vn1366.nivel_por_defecto(_fx1366["home_team_id"], _fx1366["date"]) == "")
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                     "home_team_id, away_team_id) VALUES (991366, ?, 'NS', 'Not Started', 143, 2026, 990102, ?)",
+                     (str(_fx1366["date"]), _fx1366["away_team_id"]))
+    _t1366 = c.get(f"{A}/analisis/cowork/tde/991366").json()
+    check("1366: con un nivel por defecto P1a NO es «protector claro»: sin dato, con el motivo en noCalculables",
+          _t1366["p1a"].get("sinDato") is True and "nivel por defecto" in _t1366["p1a"]["porque"]
+          and "score" not in _t1366["p1a"] and _t1366["noCalculables"][0]["indicador"] == "P1a"
+          and "990102" not in _t1366["p1a"]["porque"], _t1366["p1a"])
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM fixtures WHERE id=991366")
+    with _sq.connect(os.path.join(tmp, "levels.db")) as _lv:
+        _lv.execute("DELETE FROM team_levels WHERE team_id=990103 AND fixture_id BETWEEN 991300 AND 991303")
     check("F2 trae los días de descanso calculados",
           tde["f2"]["a"]["diasDescanso"] is not None, tde["f2"]["a"])
     check("y da un PISO, no un score cerrado: el viaje y la altitud no están en la base",
