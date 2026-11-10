@@ -339,5 +339,48 @@ _sad.execute("UPDATE fixtures SET league_id=? WHERE id IN (?, ?)", (_liga_antes,
 _sad.commit()
 _sad.close()
 
+# 12) VELOCIDAD SIN CAMBIAR UN NÚMERO (10/11/2026, usuario: «Simulación es bien lenta»)
+def _sin_cache():
+    return _orig_sim()
+
+
+_orig_sim = sim._simulacion
+
+
+_q = lambda d: _json.dumps(d, sort_keys=True, default=str)  # noqa: E731
+_a = sim.simulacion()
+check("con caché, la simulación es idéntica a la calculada sin caché", _q(_a) == _q(_sin_cache()))
+_llamadas = []
+sim._simulacion = lambda: (_llamadas.append(1), _orig_sim())[1]
+sim.simulacion()
+check("una segunda lectura sin cambios no rehace la simulación", _llamadas == [], len(_llamadas))
+_sad = _sql.connect(os.path.join(_tmp, "sad.db"))
+_sad.execute(f"UPDATE fixtures SET {gol_l}=0, {gol_v}=3, goals_home=0, goals_away=3 WHERE id=?", (fids[2],))
+_sad.commit()
+_b = sim.simulacion()
+check("un resultado nuevo en la base se ve enseguida (idéntico a sin caché)",
+      _llamadas == [1] and _q(_b) == _q(_sin_cache()) and _q(_b) != _q(_a))
+_sad.execute("UPDATE odds SET odd = odd + 0.5 WHERE fixture_id=?", (fids[0],))
+_sad.commit()
+_sad.close()
+check("una cuota nueva también", _q(sim.simulacion()) == _q(_sin_cache()) and len(_llamadas) == 2, len(_llamadas))
+with _conectar() as con:
+    _pj = _json.loads(con.execute("SELECT parte_json FROM parte_cowork WHERE fixture_id=?", (fids[0],)).fetchone()[0])
+    _pj["pronostico"]["probabilidades"] = {"local": 20, "empate": 30, "visita": 50}
+    con.execute("UPDATE parte_cowork SET parte_json=? WHERE fixture_id=?", (_json.dumps(_pj), fids[0]))
+check("y un 1X2 re-depositado (aunque no cambie la fecha de actualización)",
+      _q(sim.simulacion()) == _q(_sin_cache()) and len(_llamadas) == 3, len(_llamadas))
+sim._simulacion = _orig_sim
+
+# el prefiltro de mercados en SQL no cambia ninguna cuota: lo mismo que filtrar todo en Python
+from backend.analisis import lecciones as _lec  # noqa: E402
+from backend import db as _saddb  # noqa: E402
+_orig_q = _saddb.query
+_saddb.query = lambda db, sql, p=(): _orig_q(db, sql.split(" AND (bet_name LIKE")[0], p)
+_todas = _lec.cuotas_mercado(fids)
+_saddb.query = _orig_q
+check("cuotas_mercado con el prefiltro SQL = sin él", _q(_lec.cuotas_mercado(fids)) == _q(_todas) and _todas,
+      (_lec.cuotas_mercado(fids), _todas))
+
 print("\nTODO OK" if not fallas else f"\n{fallas} FALLA(S)")
 sys.exit(1 if fallas else 0)

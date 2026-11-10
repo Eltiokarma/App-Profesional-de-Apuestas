@@ -517,8 +517,15 @@ def cuotas_mercado(ids: list[int]) -> dict[int, dict]:
     from backend.cuota_mercados import cuota_key, sin_dc_incoherente
     fuera: dict[int, dict] = {}
     try:
+        # SOLO LOS MERCADOS QUE SE USAN (10/11/2026, Simulación lenta): la
+        # tabla trae también goles, ambos marcan y hándicap, y cada fila pasaba
+        # por `cuota_key` para tirarse. El LIKE es un SUPERCONJUNTO de lo que
+        # `cuota_key` reconoce como 1X2 o doble oportunidad (mismas palabras,
+        # sin distinguir mayúsculas): el filtro exacto sigue siendo `cuota_key`
         filas = saddb.query("sad", "SELECT fixture_id, bookmaker_name, bet_name, value, odd FROM odds "
-                                   f"WHERE fixture_id IN ({','.join('?' * len(ids))}) AND odd IS NOT NULL",
+                                   f"WHERE fixture_id IN ({','.join('?' * len(ids))}) AND odd IS NOT NULL "
+                                   "AND (bet_name LIKE '%match winner%' OR bet_name LIKE '%fulltime result%' "
+                                   "OR bet_name LIKE '1x2' OR bet_name LIKE '%double chance%')",
                             tuple(ids))
     except Exception:  # noqa: BLE001 — sin la base de cuotas la columna sale vacía
         return {}

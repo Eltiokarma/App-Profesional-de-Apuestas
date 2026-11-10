@@ -447,7 +447,58 @@ def simular(apuestas: list[dict]) -> dict:
     }
 
 
+# LA SIMULACIÓN SE REHACE SOLO SI CAMBIÓ ALGO QUE ENTRA (10/11/2026, usuario:
+# «Simulación es bien lenta»). Se sigue recalculando al leer —un partido que
+# termina mueve las bancas siguientes—, pero antes se mira la HUELLA de todo lo
+# que la decide: de cada parte desde el 28/10, lo único que la simulación lee
+# (si el JSON es válido, el 1X2, la versión, el depósito previo y la
+# cuarentena); de cada partido su fila (fecha, estado, goles, liga) con el
+# nombre de la liga (las copas quedan fuera por nombre), y sus cuotas (filas,
+# última y suma). Si la huella es la misma, la salida también: se devuelve la
+# misma. `SAD_CACHE_SIMULACION_S` es la red de seguridad (una hora; 0 apaga).
+SIMULACION_TTL_S = float(__import__("os").environ.get("SAD_CACHE_SIMULACION_S", "3600") or "0")
+_SIM_CACHE: dict[str, tuple] = {}
+
+
+def huella_simulacion() -> tuple:
+    from backend.analisis.parte import _conectar
+    with _conectar() as con:
+        partes = con.execute(
+            "SELECT fixture_id, version, creado_en, deposito_previo_en, cuarentena_json, json_valid(parte_json) AS ok, "
+            "CASE WHEN json_valid(parte_json) THEN json_extract(parte_json, '$.pronostico.probabilidades') END AS probs, "
+            "CASE WHEN json_valid(parte_json) THEN json_extract(parte_json, '$.version') END AS vparte "
+            "FROM parte_cowork WHERE fecha >= ? ORDER BY fixture_id", (DESDE[:10],)).fetchall()
+    ids = [f["fixture_id"] for f in partes]
+    fx, cu = (), ()
+    if ids:
+        marcas = ",".join("?" * len(ids))
+        fx = tuple(tuple(r) for r in saddb.query(
+            "sad", f"SELECT f.*, l.name AS liga_nombre FROM fixtures f LEFT JOIN leagues l ON l.id=f.league_id "
+                   f"WHERE f.id IN ({marcas}) ORDER BY f.id", tuple(ids)))
+        try:
+            cu = tuple(saddb.query_one(
+                "sad", f"SELECT COUNT(*), MAX(id), TOTAL(odd), TOTAL(LENGTH(bet_name) + LENGTH(value)) FROM odds "
+                       f"WHERE fixture_id IN ({marcas})", tuple(ids)))
+        except Exception:  # noqa: BLE001 — sin la tabla de cuotas la simulación tampoco las lee: la huella lo dice
+            cu = ("sin cuotas",)
+    return (tuple(tuple(f) for f in partes), fx, cu)
+
+
 def simulacion() -> dict:
+    """Arma las apuestas desde los partes y la base y las simula (con caché por huella)."""
+    import time as _t
+    if SIMULACION_TTL_S <= 0:
+        return _simulacion()
+    huella = huella_simulacion()
+    hit = _SIM_CACHE.get("v")
+    if hit and hit[0] == huella and _t.monotonic() - hit[1] < SIMULACION_TTL_S:
+        return hit[2]
+    out = _simulacion()
+    _SIM_CACHE["v"] = (huella, _t.monotonic(), out)
+    return out
+
+
+def _simulacion() -> dict:
     """Arma las apuestas desde los partes y la base y las simula."""
     from backend.analisis.parte import _conectar
     with _conectar() as con:
