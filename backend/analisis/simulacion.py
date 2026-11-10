@@ -113,6 +113,13 @@ SUBIDA_VERSION = {
     ("diagnostico-tactico", "v1.7"): "2026-11-01 13:00:00",
     ("efe-clasificador", "v1.9"): "2026-11-01 13:00:00",
     ("sad-analysis", "v4.4"): "2026-11-01 13:00:00",
+    # el usuario subió los cinco zips de la tanda del 10/11 hacia las 07:15 de
+    # Lima (avisó a las 07:17): lo de la madrugada del 10/11 corrió con la anterior
+    # (efe-dashboard v1.13 va con el EFE)
+    ("teorema-del-echado", "v0.1.26"): "2026-11-10 12:15:00",
+    ("diagnostico-tactico", "v1.8"): "2026-11-10 12:15:00",
+    ("efe-clasificador", "v1.10"): "2026-11-10 12:15:00",
+    ("sad-analysis", "v4.5"): "2026-11-10 12:15:00",
 }
 
 ESTRATEGIAS = (
