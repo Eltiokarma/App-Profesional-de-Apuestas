@@ -231,5 +231,12 @@ check("1347: «Puerta–Freuler» son dos palabras y menciona a Puerta",
       and idn.menciona("D. Puerta", "doble pivote Puerta–Freuler fijo")
       and idn.plano("Asta-Buruaga").split() == ["asta", "buruaga"] and idn.plano("Hoeneß") == "hoeness")
 
+# 1225 (10/11/2026, FUERA-EN-LA-HOJA): «Castillo» suelto con E. Castillo titular y
+# J. Castillo en el banco no tiene dueño; «J. Castillo» o «Adamo» sí
+check("1225: la mención de un apellido que también es de otro de la hoja queda sin dueño",
+      idn.mencion_compartida("E. Castillo", ["J. Castillo"], "Castillo")
+      and not idn.mencion_compartida("E. Castillo", ["J. Castillo"], "E. Castillo")
+      and not idn.mencion_compartida("V. Adamo", ["J. Castillo"], "Adamo"))
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)

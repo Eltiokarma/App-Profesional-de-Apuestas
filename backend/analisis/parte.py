@@ -2007,6 +2007,107 @@ def fuera_en_el_banco(parte: dict) -> list[dict]:
     return out
 
 
+def hoja_capturada(fixture_id: int, fx) -> dict:
+    """La hoja oficial ya capturada, por lado: {lado: {"titulares": [{id,
+    nombre}], "banca": [...]}}. Sin hoja de un lado, ese lado no viaja."""
+    if not fx:
+        return {}
+    from backend.nombres import limpiar_nombre
+    out = {}
+    for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])):
+        try:
+            filas = saddb.query("sad", "SELECT player_id, jugador, titular FROM alineaciones "
+                                       "WHERE fixture_id=? AND team_id=?", (fixture_id, tid))
+        except Exception:  # noqa: BLE001 — base sin alineaciones: no hay hoja contra la que cruzar
+            filas = []
+        if not any(f["titular"] for f in filas):
+            continue
+        js = [{"id": f["player_id"], "nombre": limpiar_nombre(f["jugador"] or "") or "", "titular": bool(f["titular"])}
+              for f in filas if f["jugador"]]
+        out[lado] = {"titulares": [j for j in js if j["titular"]], "banca": [j for j in js if not j["titular"]]}
+    return out
+
+
+def alertas_fuera_en_la_hoja(parte: dict, hoja: dict, nombres: dict) -> list[dict]:
+    """FUERA-EN-LA-HOJA (10/11/2026, incidencias 1213 y 1225, decisión del
+    usuario). Dos caras de la misma falla —el parte da por fuera de la cancha a
+    quien la hoja oficial pone en ella—:
+
+    · `caso: fuera`: un jugador de BAJA en `equipos.{lado}.fuera` que figura en
+      la hoja capturada (titular o banco). Táchira–Puerto Cabello (1646929):
+      Pollero y Alfonzo de baja por prensa y en el banco de la hoja de las
+      23:08; el rehacer los dejó de baja y Pollero entró e hizo gol y asistencia.
+    · `caso: dtpBanco`: un TITULAR de la hoja que el DTP nombra como banco en
+      `viasGol` o `veredictoRamas` (Leipzig–City 1635710: «banco ofensivo:
+      Ndiaye, Anderson, O'Reilly», titulares; Ameliano–Guaraní 1632051:
+      «banco: … R. Torales», «banco: J. García, Maldonado, Añasco»).
+
+    Quién es quién lo decide identidad.py (el id manda cuando lo hay). Tipo
+    dato: no corrige nada, dice qué re-depositar."""
+    out = []
+    eqs = parte.get("equipos") or {}
+    for lado in LADOS:
+        h = hoja.get(lado) or {}
+        en_hoja = (h.get("titulares") or []) + (h.get("banca") or [])
+        if not en_hoja:
+            continue
+        hallados = []
+        for f in (eqs.get(lado) or {}).get("fuera") or []:
+            if not isinstance(f, dict) or (f.get("estado") or "baja") != "baja":
+                continue
+            pid, nombre = f.get("jugadorId"), _txt(f.get("nombre"))
+            j = next((j for j in en_hoja if pid and j["id"] == pid), None) or \
+                next((j for j in en_hoja if _identidad.mismo_jugador(nombre, j["nombre"])), None)
+            if j:
+                hallados.append({"nombre": nombre, "enLaHoja": j["nombre"],
+                                 "hoja": "titular" if j["titular"] else "banco"})
+        if hallados:
+            out.append({
+                "codigo": "FUERA-EN-LA-HOJA", "equipo": lado, "tipo": "dato", "caso": "fuera",
+                "detalle": f"{nombres.get(lado, lado)}: el parte tiene de baja en `fuera` a "
+                           + "; ".join(f"{x['nombre']} ({x['hoja']} en la hoja oficial)" for x in hallados)
+                           + ". La hoja manda: sacarlo de `fuera` (o dejarlo como duda con la fuente que diga "
+                             "que no juega), y rehacer el bloque F, el DTP y el TDE con él disponible.",
+                "jugadores": hallados,
+            })
+    # el DTP que nombra de banco a un titular de la hoja
+    textos = []
+    for b in (parte.get("dtp") or {}).get("bloques") or []:
+        m2 = ((b.get("apertura") or {}).get("m2")) or {}
+        vias = m2.get("viasGol") or {}
+        textos += [(b.get("equipo"), "viasGol", t) for k in ("foco", "rival") for t in vias.get(k) or []]
+        textos += [(b.get("equipo"), "veredictoRamas", (r or {}).get("razon") or "")
+                   for r in (m2.get("veredictoRamas") or {}).values() if isinstance(r, dict)]
+    for lado in LADOS:
+        tit = [j["nombre"] for j in (hoja.get(lado) or {}).get("titulares") or []]
+        if not tit:
+            continue
+        rival = "b" if lado == "a" else "a"
+        # otro de la hoja con el mismo apellido (el suplente de este lado o
+        # cualquiera del rival) deja la mención sin dueño: no se afirma
+        otros = [j["nombre"] for j in (hoja.get(lado) or {}).get("banca") or []] + \
+                [j["nombre"] for k in ("titulares", "banca") for j in (hoja.get(rival) or {}).get(k) or []]
+        hallados, vistos = [], set()
+        for foco, donde, texto in textos:
+            for trozo in _dtp.nombrados_de_banco(_txt(texto)):
+                for n in tit:
+                    if n in vistos or not _identidad.menciona(n, trozo) \
+                            or _identidad.mencion_compartida(n, otros, trozo):
+                        continue
+                    vistos.add(n)
+                    hallados.append({"nombre": n, "dtp": foco, "donde": donde, "frase": _txt(texto)[:140]})
+        if hallados:
+            out.append({
+                "codigo": "FUERA-EN-LA-HOJA", "equipo": lado, "tipo": "dato", "caso": "dtpBanco",
+                "detalle": f"{nombres.get(lado, lado)}: el DTP nombra como banco a "
+                           + "; ".join(f"{x['nombre']} ({x['donde']})" for x in hallados)
+                           + ", titular(es) en la hoja oficial. Las vías de gol y las ramas se escribieron sobre "
+                             "otro once: rehacer el M2 con la hoja (GET /analisis/cowork/dtp/{id}).",
+                "titulares": hallados,
+            })
+    return out
+
+
 def alertas_dt(parte: dict, fx, nombres: dict) -> list[dict]:
     """DT-DISCREPANCIA cuando el parte (la prensa) y la base no dicen el mismo
     DT: manda el parte, y la base queda marcada para refrescarse. DT-SIN-DT
@@ -2665,7 +2766,8 @@ _ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "K-EXTREMO-CONDICION", "K
                         "COLAPSO-EN-CASCADA", "F1-DECISIVO-FUERA", "DTP-REHACER", "DTP-SIN-REFERENCIA",
                         "TIPOLOGIA-VS-INDICES", "ESPINA-SIGUE-EN-EXTREMO", "EFE-EMPATE-TECNICO",
                         "T.54-SIN-DECLARAR", "ELIMINATORIA-AL-REVES", "SANCION-SIN-DECLARAR",
-                        "ONCE-SIN-FILA-F1", "TDE-RELEVANCIA-SIN-DECLARAR", "DESCONFIAR"}
+                        "ONCE-SIN-FILA-F1", "TDE-RELEVANCIA-SIN-DECLARAR", "DESCONFIAR",
+                        "FUERA-EN-LA-HOJA"}
 # LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
 # selladas (coherencia_json), porque no son deterministas y rehacerlas al leer
 # las haría parpadear. Del depósito se descartan igual que las calculadas
@@ -3527,6 +3629,17 @@ def guardar(payload: dict) -> dict:
             faltan.append({"bloque": f"equipos.{a['equipo']}.fuera", "codigo": a["codigo"], "costara": a["detalle"],
                            "comoSeArregla": "declararlo en `fuera` con estado baja y motivo «sanción» (con zona y "
                                             "rol), o decir en la nota del equipo por qué juega, con la fuente"})
+    except Exception:  # noqa: BLE001 — un aviso nunca tumba el depósito
+        pass
+    # la baja que la hoja ya capturada pone en la cancha, o el titular que el DTP
+    # pone en el banco (1213, Táchira: se corrige en el rehacer, no en el veredicto)
+    try:
+        for a in alertas_fuera_en_la_hoja(parte, hoja_capturada(fx["id"], fx),
+                                          {"a": fx["home_name"], "b": fx["away_name"]}):
+            faltan.append({"bloque": f"equipos.{a['equipo']}.fuera" if a["caso"] == "fuera" else "dtp",
+                           "codigo": a["codigo"], "costara": a["detalle"],
+                           "comoSeArregla": "la hoja oficial manda: sacar de `fuera` a quien está en ella, y "
+                                            "reescribir las vías de gol y las ramas del DTP con su banco real"})
     except Exception:  # noqa: BLE001 — un aviso nunca tumba el depósito
         pass
     if not any((parte.get("cadena") or {}).get(l) for l in LADOS):
@@ -4722,6 +4835,10 @@ def dto(fixture_id: int) -> dict | None:
     alertas.extend(_f1_base.alertas(parte, fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # un sancionado de la base (roja o amarillas) que el parte no declaró de baja
     alertas.extend(_f1_base.alertas_sancion(parte, fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
+    # quien el parte da de baja o el DTP pone en el banco y la hoja oficial pone
+    # en la cancha (1213, 1225)
+    alertas.extend(alertas_fuera_en_la_hoja(parte, hoja_capturada(fila["fixture_id"], fx),
+                                            {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # el once oficial contra la apertura del DTP: si no cuadra, el M2 se
     # escribió sobre otro equipo
     oficial = _dtp.oficial_de(fila["fixture_id"])

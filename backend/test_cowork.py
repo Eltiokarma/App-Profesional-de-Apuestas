@@ -2735,6 +2735,42 @@ def main():
           == [] and len(_feb({"equipos": {"b": {"fuera": [{"nombre": "Weverton", "estado": "baja"}]}},
                 "dtp": {"bloques": [{"equipo": "b", "apertura": {"m1": {"senalXi":
                     "Weverton al banco como recambio"}}}]}})) == 1, "")
+    # 1213 / 1225 · FUERA-EN-LA-HOJA: la hoja oficial manda sobre `fuera` y sobre el banco del DTP
+    from backend.analisis.parte import alertas_fuera_en_la_hoja as _feh, _ALERTAS_CALCULADAS as _ac
+    _hj = lambda tit, ban: {"titulares": [{"id": i, "nombre": n, "titular": True} for i, n in tit],
+                            "banca": [{"id": i, "nombre": n, "titular": False} for i, n in ban]}
+    _h1213 = {"a": _hj([(288710, "V. Adamo"), (457727, "E. Tamiche")],
+                       [(48870, "R. Pollero"), (133132, "D. Alfonzo"), (424390, "G. Lozano")])}
+    _a1213 = _feh({"equipos": {"a": {"fuera": [{"nombre": "R. Pollero", "estado": "baja", "jugadorId": 48870},
+                                               {"nombre": "Diego Alfonzo", "estado": "baja"},
+                                               {"nombre": "A. Peñaranda", "estado": "baja", "jugadorId": 18811}]}}},
+                  _h1213, {"a": "Táchira"})
+    check("1213 (Táchira): de baja en `fuera` y en el banco de la hoja → FUERA-EN-LA-HOJA con los dos (id y nombre)",
+          len(_a1213) == 1 and _a1213[0]["codigo"] == "FUERA-EN-LA-HOJA" and _a1213[0]["tipo"] == "dato"
+          and _a1213[0]["caso"] == "fuera"
+          and sorted(x["enLaHoja"] for x in _a1213[0]["jugadores"]) == ["D. Alfonzo", "R. Pollero"]
+          and "FUERA-EN-LA-HOJA" in _ac, _a1213)
+    check("1213: de baja y fuera de la hoja (Peñaranda), una duda, o sin hoja capturada → nada",
+          _feh({"equipos": {"a": {"fuera": [{"nombre": "A. Peñaranda", "estado": "baja", "jugadorId": 18811},
+                                            {"nombre": "G. Lozano", "estado": "duda"}]}}}, _h1213, {}) == []
+          and _feh({"equipos": {"a": {"fuera": [{"nombre": "R. Pollero", "estado": "baja"}]}}}, {}, {}) == [])
+    _h1225 = {"a": _hj([(1, "A. Nusa"), (2, "D. Raum")], [(3, "T. Gomis"), (4, "C. Nkunku")]),
+              "b": _hj([(5, "I. Ndiaye"), (6, "E. Anderson"), (7, "R. Cherki")], [(8, "M. Kovačić"), (9, "F. Samba")])}
+    _d1225 = {"dtp": {"bloques": [{"equipo": "b", "apertura": {"m2": {
+        "viasGol": {"foco": ["banco ofensivo, en todas las ramas: Ndiaye, Anderson, Kovačić, Samba"],
+                    "rival": ["banco ofensivo del local: Gomis, Nkunku si no arranca"]},
+        "veredictoRamas": {"igualadoOArriba": {"veredicto": "FAVORABLE", "razon": "el banco (Cherki) y la presión"}}}}}]}}
+    _a1225 = _feh(_d1225, _h1225, {"a": "Leipzig", "b": "City"})
+    check("1225 (Leipzig–City): titulares de la hoja nombrados de banco en viasGol y en una rama → alerta del lado",
+          len(_a1225) == 1 and _a1225[0]["equipo"] == "b" and _a1225[0]["caso"] == "dtpBanco"
+          and [x["nombre"] for x in _a1225[0]["titulares"]] == ["I. Ndiaye", "E. Anderson", "R. Cherki"], _a1225)
+    _h_amb = {"a": _hj([(1, "E. Castillo"), (2, "V. Adamo")], [(3, "J. Castillo")])}
+    _d_amb = lambda t: {"dtp": {"bloques": [{"equipo": "a", "apertura": {"m2": {"viasGol": {"foco": [t]}}}}]}}
+    check("1225: con suplentes de verdad, un condicional («si arranca») o un apellido que es de otro de la hoja → nada",
+          _feh(_d_amb("banco: J. Castillo, Lozano"), _h_amb, {}) == []
+          and _feh(_d_amb("banco: Lozano, y Adamo si arranca en el banco"), _h_amb, {}) == []
+          and _feh(_d_amb("banco del que persigue: Castillo"), _h_amb, {}) == []
+          and len(_feh(_d_amb("banco: Adamo"), _h_amb, {})) == 1)
     # LA VENTANA RELATIVA AL GOL Y LA VENTANA DE LA RAMA (veredictos del 17/10/2026)
     from backend.analisis.veredicto import _ventana as _vv, ventana_relativa as _vr
     check("1218: la cláusula «ventana del reloj 60-75'» manda aunque no vaya primera; «desde el minuto 0» no es relativa",

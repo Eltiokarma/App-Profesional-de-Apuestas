@@ -299,6 +299,23 @@ def menciona(nombre: str, frase: str) -> bool:
     return False
 
 
+def mencion_compartida(nombre: str, otros, frase: str) -> bool:
+    """¿La frase nombra a `nombre` pero también podría ser OTRO de `otros` con
+    su mismo apellido? «Castillo» suelto con E. Castillo titular y J. Castillo
+    en el banco no dice de cuál habla: no se afirma nada (10/11/2026,
+    incidencia 1225, FUERA-EN-LA-HOJA: un titular nombrado de banco)."""
+    t = tokens(nombre)
+    if not t:
+        return False
+    for otro in otros or ():
+        o = tokens(otro)
+        if not o or o == t or not menciona(otro, frase):
+            continue
+        if o[-1] == t[-1] or apellido_casi(o[-1], t[-1]):
+            return True
+    return False
+
+
 def solo_como_pila_de_otro(nombre: str, frase: str) -> bool:
     """¿Toda mención de las palabras de `nombre` en la frase es la PILA de otro
     jugador? Cada vez que aparece la sigue, con un solo espacio y mayúscula,
