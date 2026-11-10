@@ -4510,6 +4510,10 @@ def main():
     check("989: desde el 01/11 hay disparo a las :12, solo de 10 a 23 de Lima",
           _dent(_u732("2026-11-01 15:03:00"), _u732("2026-11-01 15:15:00"))       # 10:12 de Lima
           and not _dent(_u732("2026-11-01 13:03:00"), _u732("2026-11-01 13:15:00")))  # 08:12: sin :12
+    check("1304: desde el 10/11 hay disparo a las :52 (un pitazo a las :10 ya tiene uno útil)",
+          _gr636(_u732("2026-11-11 15:30:00")) == ((2, 12, 22, 42, 52), 5)
+          and _dent(_u732("2026-11-11 15:43:00"), _u732("2026-11-11 15:55:00"))   # 10:52 de Lima
+          and not _dent(_u732("2026-11-09 15:43:00"), _u732("2026-11-09 15:55:00")))  # antes: sin :52
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("UPDATE alineaciones_versiones SET capturada_en='2026-10-25 15:30:00' "
                      "WHERE fixture_id=990480 AND formacion='4-3-1-2'")

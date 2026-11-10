@@ -4384,7 +4384,11 @@ REHACER_GRILLAS = (("2026-10-31 01:21:00", (2, 22, 42), 5),
                    # 989 (01/11/2026, decisión del usuario): con :02/:22/:42 el once
                    # de un partido de y media que llega después de las :03 solo tenía
                    # el :22, a 3 min del tope; el :12 corre de 10 a 23 (REHACER_SOLO_HORAS)
-                   ("2026-11-01 05:30:00", (2, 12, 22, 42), 5))
+                   ("2026-11-01 05:30:00", (2, 12, 22, 42), 5),
+                   # 1304 (10/11/2026, decisión del usuario): un pitazo a las :10 o
+                   # :15 quedaba sin disparo útil (el de :42 sin el once, el de :02
+                   # pasado el tope): disparo a las :52, de 05 a 23 de Lima
+                   ("2026-11-10 17:52:00", (2, 12, 22, 42, 52), 5))
 REHACER_DISPAROS_MIN, REHACER_PISO_ANTES = (7, 37), 15
 REHACER_HORAS_LIMA = (5, 23)
 REHACER_SOLO_HORAS = {12: (10, 23)}   # minutos que no corren todo el día

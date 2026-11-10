@@ -69,7 +69,10 @@ cae en la raíz del repo (17/10/2026).
    los que arrancan en menos de 60 minutos: un parte no se escribe con el
    pitazo encima y JAMÁS después del pitazo.
 3. **Un subagente por partido, en paralelo** (herramienta Agent, tipo
-   `general-purpose`, todos en el mismo mensaje). Es la «sesión limpia por
+   `general-purpose`), **en tandas de a 8 como mucho** (decisión del usuario,
+   10/11/2026, incidencia 1353: con ~20 subagentes leyendo a la vez el servidor
+   respondió 502 durante 20-40 s; la tanda siguiente sale cuando vuelve la
+   anterior; un POST que dio 502 puede haber guardado: GET antes de reintentar). Es la «sesión limpia por
    partido» del punto 3 del prompt: el contexto de un partido no contamina al
    otro. A cada uno le pasás el `fixtureId`, los dos equipos, la hora de
    inicio en Lima, la **hora tope** (inicio − 45 min), su fila de la agenda y
@@ -217,7 +220,8 @@ Pedido del usuario (22/10/2026), tras Sporting 2-3 LASK: DTP-REHACER sonó
 (3-4-3 en vez del 3-5-2 de la apertura) y nadie lo rehízo, como en 9 de 24
 partidos del 11/10. La app cierra el bloque F sola con la alineación, pero el
 mapa de duelos y el 1X2 quedan escritos sobre otro equipo. Esta corrida corre
-cada 20 minutos (:02, :22 y :42 de Lima desde el 31/10/2026; antes cada 30: el
+cada 20 minutos (:02, :22 y :42 de Lima desde el 31/10/2026, más :12 de 10 a 23
+desde el 01/11 y :52 desde el 10/11, incidencia 1304; antes cada 30: el
 once llega ~25 min antes y caía entre dos disparos, incidencia 636) y es CORTA:
 casi siempre no hay nada que hacer.
 
@@ -245,7 +249,7 @@ casi siempre no hay nada que hacer.
    antes. **Excepción: un partido que el disparo siguiente ya no alcanza no
    espera** (usuario, 04/11/2026, noches de Champions con 8-10 pitazos a la
    misma hora): si su hora tope (pitazo − 5) cae antes del próximo disparo de
-   la grilla (:02 · :12 · :22 · :42) más 10 minutos de trabajo, entra en ESTE
+   la grilla (:02 · :12 · :22 · :42 · :52) más 10 minutos de trabajo, entra en ESTE
    disparo aunque pase el tope. El tope solo difiere a los que todavía tienen
    otra vuelta. Un subagente por partido, en paralelo, con este encargo:
 
@@ -323,7 +327,9 @@ casi siempre no hay nada que hacer.
    más viejos primero; 45 desde el 27/10/2026: con 30 la cola llegó a 40
    vencidos tras un fin de semana; si el disparo trae otro `limite`, manda ese). Si no hay, decilo en una
    línea y terminá.
-2. Un subagente por partido, en paralelo, con este encargo:
+2. Un subagente por partido, en paralelo y **en tandas de a 8 como mucho**
+   (incidencia 1353, como en partes: el veredicto es idempotente, así que un
+   POST con 502 se verifica con GET y se reintenta), con este encargo:
 
 > Tus archivos de trabajo van SOLO en `<scratchpad>/{id}/` (otros subagentes
 > corren en paralelo). Cerrá el caso del fixture {id} con el prompt «# PROMPT CORTO — "VALIDAR LO
