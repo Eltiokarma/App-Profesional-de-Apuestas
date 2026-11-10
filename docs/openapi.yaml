@@ -3332,7 +3332,7 @@ components:
         rival: { type: string, nullable: true }
         fecha: { type: string, nullable: true }
         fixtureId: { type: integer, nullable: true }
-        apertura: { type: object, nullable: true, description: 'M1/M2/M3/M6 escritos ANTES del partido' }
+        apertura: { type: object, nullable: true, description: 'M1/M2/M3/M6 escritos ANTES del partido. Con `reciboAlCongelar` {en, marcas[]} (las marcas de faltan/rechazos del depósito que la congeló) y, si un re-depósito antes del pitazo corrigió alguna y la reemplazó (1120), `aperturaCorregidaEn` y `aperturaCorregidaMotivo`' }
         cierre: { type: object, nullable: true, description: 'M4/M5 escritos después' }
         registro:
           type: object
@@ -4698,7 +4698,7 @@ components:
             lados: { type: array, items: { type: string } }
             claseBloqueRival: { type: object, additionalProperties: { type: string } }
             aperturaEnCadena: { type: array, items: { type: string } }
-            aperturaNoGuardada: { type: array, description: "manda la primera apertura; única excepción (581): una apertura sin xiReferencia se reemplaza una vez, antes del pitazo, por una con XI (queda marcada reemplazaSinXi)", items: { type: object, additionalProperties: true } }
+            aperturaNoGuardada: { type: array, description: "manda la primera apertura; excepciones, las dos solo antes del pitazo: (581) una apertura sin xiReferencia se reemplaza una vez por una con XI (queda marcada reemplazaSinXi); (1120, 10/11/2026) la apertura guarda en `reciboAlCongelar.marcas` los `faltan` (`faltan:<bloque>:<codigo>`) y `rechazos` (`rechazo:<donde>`) del depósito que la congeló, y un re-depósito que corrige alguna de esas marcas y trae otra apertura la reemplaza, sellando `aperturaCorregidaEn` y `aperturaCorregidaMotivo` (las marcas corregidas). Después del pitazo nada cambia", items: { type: object, additionalProperties: true } }
     MarcasCowork:
       type: object
       required: [partes, total]

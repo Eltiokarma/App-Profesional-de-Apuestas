@@ -452,6 +452,20 @@ def reemplazar_apertura_sin_xi(equipo_foco: str, fixture_id: int, apertura: dict
         return True
 
 
+def reescribir_apertura(equipo_foco: str, fixture_id: int, apertura: dict) -> bool:
+    """Reescribe la apertura de un eslabón que YA existe. Solo la usa
+    `parte._sellar_o_corregir_apertura_dtp`, que controla las dos condiciones
+    (antes del pitazo, y que el depósito corrija lo que marcó el recibo del que
+    la congeló —1120—, o que sea el mismo depósito que la congeló, para sellarle
+    su recibo)."""
+    with conectar() as con:
+        cur = con.execute("UPDATE cadena_dtp SET apertura_json=? WHERE equipo_foco=? AND fixture_id=? "
+                          "AND apertura_json IS NOT NULL",
+                          (json.dumps(apertura, ensure_ascii=False), equipo_foco, fixture_id))
+        con.commit()
+        return cur.rowcount > 0
+
+
 def _fila_cadena(f) -> dict:
     return {
         "equipoFoco": f["equipo_foco"],

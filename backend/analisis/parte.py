@@ -3886,6 +3886,13 @@ def guardar(payload: dict) -> dict:
             "comoSeArregla": "o la espina sigue al riesgo, o el `porque` dice «contra el riesgo "
                              f"{x['nivel']} porque…» y el ensayo lo cuenta con esas palabras",
         })
+    # la apertura congelada guarda su recibo, y uno posterior que lo corrige
+    # antes del pitazo la reemplaza (1120)
+    try:
+        _sellar_o_corregir_apertura_dtp(fx, parte.get("dtp") or {}, faltan, parte.get("rechazos") or [],
+                                        dtp_guardado, dtp_no_guardado)
+    except Exception as e:  # noqa: BLE001 — la cadena nunca tumba el depósito; se dice en el log
+        print(f"[cowork] apertura DTP: no se pudo sellar/corregir ({e})", flush=True)
     resumen = {
         "fixtureId": parte["fixtureId"],
         "partido": f"{fx['home_name']} vs {fx['away_name']}",
@@ -4381,6 +4388,76 @@ def _guardar_apertura_dtp(fx, dtp: dict) -> tuple[list[str], list[dict]]:
                              fx["id"], _dtp.apertura_para_cadena(b))
         guardados.append(foco)
     return guardados, no
+
+
+# Lo que la apertura lleva además del DTP: no cuenta para decidir si la nueva
+# dice otra cosa que la congelada.
+_META_APERTURA = {"reciboAlCongelar", "reemplazaSinXi", "aperturaCorregidaEn", "aperturaCorregidaMotivo"}
+
+
+def _marcas_recibo(faltan: list, rechazos: list) -> list[str]:
+    """Las marcas de un recibo que identifican QUÉ se pidió corregir (sin el
+    texto, que cambia con los valores): `faltan:<bloque>:<codigo>` y
+    `rechazo:<donde>`."""
+    out = {f"faltan:{x.get('bloque') or ''}:{x.get('codigo') or ''}" for x in faltan or [] if isinstance(x, dict)}
+    out |= {f"rechazo:{x.get('donde') or ''}" for x in rechazos or [] if isinstance(x, dict)}
+    return sorted(out)
+
+
+def _sellar_o_corregir_apertura_dtp(fx, dtp: dict, faltan: list, rechazos: list,
+                                    guardados: list, no: list) -> None:
+    """LA APERTURA QUE EL MISMO RECIBO MANDÓ CORREGIR (incidencia 1120, aprobada
+    por el usuario el 10/11/2026). La primera apertura entra a `cadena_dtp` una
+    vez y no se pisa (anti-hindsight); pero el recibo del MISMO depósito que la
+    congeló podía pedir corregirla, y la cadena se quedaba con el error que la
+    app había marcado: Genoa 1550184 (P6-OTRA-SEDE), Charleroi 1558665 (la frase
+    de `equipos.fuera`), Cerro 1632044 (ELIMINATORIA-AL-REVES en `m6.otros`).
+
+    Dos pasos, después de calcular el recibo:
+    - el depósito que congela (o reemplaza) la apertura le SELLA sus marcas en
+      `reciboAlCongelar`;
+    - ANTES DEL PITAZO, un re-depósito que ya no trae alguna de esas marcas (la
+      corrigió) y cuya apertura dice otra cosa la REEMPLAZA, con
+      `aperturaCorregidaEn` y `aperturaCorregidaMotivo`. Después del pitazo nada
+      cambia; sin marcas que corregir, manda la primera como siempre. Las
+      aperturas congeladas antes de esto no traen `reciboAlCongelar`: no se tocan.
+    """
+    bloques = (dtp or {}).get("bloques") or []
+    if not bloques:
+        return
+    est = saddb.query_one("sad", "SELECT status_short FROM fixtures WHERE id=?", (fx["id"],))
+    ahora = efedb.ahora()
+    arranco = (((est["status_short"] if est else None) or "NS") not in ("NS", "TBD", "PST", "")
+               or (_utc(fx["date"]) is not None and not _antes_del_pitazo(ahora, fx["date"])))
+    marcas = _marcas_recibo(faltan, rechazos)
+    for b in bloques:
+        foco = fx["home_name"] if b["equipo"] == "a" else fx["away_name"]
+        vieja = (efedb.eslabon_de_fixture(foco, fx["id"]) or {}).get("apertura")
+        if not vieja:
+            continue
+        if foco in guardados:
+            # este depósito la congeló: sus marcas quedan con ella
+            if (vieja.get("reciboAlCongelar") or {}).get("marcas") != marcas:
+                vieja["reciboAlCongelar"] = {"en": ahora, "marcas": marcas}
+                efedb.reescribir_apertura(foco, fx["id"], vieja)
+            continue
+        if arranco:
+            continue
+        corregidas = [m for m in (vieja.get("reciboAlCongelar") or {}).get("marcas") or [] if m not in marcas]
+        if not corregidas:
+            continue
+        nueva = _dtp.apertura_para_cadena(b)
+        if {k: v for k, v in vieja.items() if k not in _META_APERTURA} == nueva:
+            continue   # corrigió otra parte del parte; la apertura ya decía esto
+        if vieja.get("reemplazaSinXi"):
+            nueva["reemplazaSinXi"] = vieja["reemplazaSinXi"]
+        nueva["reciboAlCongelar"] = {"en": ahora, "marcas": marcas}
+        nueva["aperturaCorregidaEn"] = ahora
+        nueva["aperturaCorregidaMotivo"] = ("antes del pitazo, el re-depósito corrigió lo que el recibo del "
+                                            "depósito que la congeló marcó (1120): " + ", ".join(corregidas))
+        if efedb.reescribir_apertura(foco, fx["id"], nueva):
+            guardados.append(foco)
+            no[:] = [x for x in no if x.get("equipo") != foco]
 
 
 def bloques_tde(tde) -> list[dict]:

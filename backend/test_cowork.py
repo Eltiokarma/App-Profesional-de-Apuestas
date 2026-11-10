@@ -4196,6 +4196,52 @@ def main():
     check("581: la apertura sin XI se reemplaza por la que trae XI, marcada; y ya no se vuelve a pisar",
           _ap1["m1"]["sistema"] == "5-4-1" and _ap1.get("reemplazaSinXi") and fxn["a"] in r_581["dtp"]["aperturaEnCadena"]
           and _efedb_dtp.reemplazar_apertura_sin_xi(fxn["a"], ns_dtp, _ap0) is False, (r_581.get("dtp"), _ap1.get("m1")))
+    # 1120: la apertura que el recibo del MISMO depósito mandó corregir (Genoa
+    # 1550184 con P6-OTRA-SEDE, Cerro 1632044 con ELIMINATORIA-AL-REVES) se
+    # reemplaza ANTES del pitazo si un re-depósito corrige esa marca; sin marca
+    # corregida o ya jugado, manda la primera
+    with _efedb_dtp.conectar() as _cx:
+        _cx.execute("DELETE FROM cadena_dtp WHERE equipo_foco=? AND fixture_id=?", (fxn["a"], ns_dtp)); _cx.commit()
+    p_1120 = _copy.deepcopy(p_581); p_1120.pop("cadena", None)          # el recibo pide `cadena`
+    p_1120["dtp"]["bloques"][0]["apertura"]["m1"]["sistema"] = "3-5-2"
+    r_1120a = c.post(f"{A}/analisis/cowork", json=p_1120).json()
+    _ap_a = (_efedb_dtp.eslabon_de_fixture(fxn["a"], ns_dtp) or {})["apertura"]
+    check("1120: el depósito que congela la apertura le sella las marcas de su recibo",
+          "faltan:cadena:" in (_ap_a.get("reciboAlCongelar") or {}).get("marcas", [])
+          and any(x["bloque"] == "cadena" for x in r_1120a.get("faltan", [])), _ap_a.get("reciboAlCongelar"))
+    p_1120b = _copy.deepcopy(p_1120)
+    p_1120b["cadena"] = {"a": "gana", "b": "pierde"}
+    p_1120b["dtp"]["bloques"][0]["apertura"]["m1"]["sistema"] = "4-4-2"
+    r_1120b = c.post(f"{A}/analisis/cowork", json=p_1120b).json()
+    _ap_b = (_efedb_dtp.eslabon_de_fixture(fxn["a"], ns_dtp) or {})["apertura"]
+    check("1120: antes del pitazo, el re-depósito que corrige el `faltan` reemplaza la apertura y lo sella",
+          _ap_b["m1"]["sistema"] == "4-4-2" and _ap_b.get("aperturaCorregidaEn")
+          and "faltan:cadena:" in _ap_b.get("aperturaCorregidaMotivo", "")
+          and fxn["a"] in r_1120b["dtp"]["aperturaEnCadena"]
+          and not any(x.get("equipo") == fxn["a"] for x in r_1120b["dtp"]["aperturaNoGuardada"]),
+          (r_1120b.get("dtp"), _ap_b))
+    p_1120c = _copy.deepcopy(p_1120b)
+    p_1120c["dtp"]["bloques"][0]["apertura"]["m1"]["sistema"] = "4-1-4-1"
+    c.post(f"{A}/analisis/cowork", json=p_1120c)
+    check("1120: sin marca corregida, un re-depósito NO pisa la apertura (manda la primera)",
+          (_efedb_dtp.eslabon_de_fixture(fxn["a"], ns_dtp) or {})["apertura"]["m1"]["sistema"] == "4-4-2")
+    # ya jugado: aunque corrija la marca, nada cambia
+    _ap_jug = dict(_ap_b, reciboAlCongelar={"en": "x", "marcas": ["faltan:cadena:"]})
+    _efedb_dtp.reescribir_apertura(fxn["a"], ns_dtp, _ap_jug)
+    _st = dbmod.query_one("sad", "SELECT status_short FROM fixtures WHERE id=?", (ns_dtp,))["status_short"]
+    import sqlite3 as _sq3_1120
+    with _sq3_1120.connect(dbmod.db_path("sad")) as _cs:
+        _cs.execute("UPDATE fixtures SET status_short='FT' WHERE id=?", (ns_dtp,)); _cs.commit()
+    try:
+        c.post(f"{A}/analisis/cowork", json=p_1120c)
+        _ap_d = (_efedb_dtp.eslabon_de_fixture(fxn["a"], ns_dtp) or {})["apertura"]
+    finally:
+        with _sq3_1120.connect(dbmod.db_path("sad")) as _cs:
+            _cs.execute("UPDATE fixtures SET status_short=? WHERE id=?", (_st, ns_dtp)); _cs.commit()
+    check("1120: después del pitazo, un re-depósito que corrige la marca NO pisa la apertura",
+          _ap_d["m1"]["sistema"] == "4-4-2", _ap_d.get("m1"))
+    # deja la cadena como estaba para lo que sigue
+    _efedb_dtp.reescribir_apertura(fxn["a"], ns_dtp, _ap1)
     # ── herencia DTP → TDE: C1 del bloque rival y SOB2 del rest defense ──
     p_her = _copy.deepcopy(p_dtp)
     p_her["dtp"]["bloques"][0]["apertura"]["m2"]["restDefense"].update({"nivelFoco": "pivote fijo",

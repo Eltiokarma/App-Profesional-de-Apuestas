@@ -617,6 +617,11 @@ export interface AperturaDtp {
   }
   m3_fases: { tramo: string; plan: string; palancas: string[] }[]
   m6: { competitivo: boolean; rotacion: string; fatiga: string; ausencias_clave: string; otros: string }
+  /** Las marcas de faltan/rechazos del depósito que congeló la apertura (1120). */
+  reciboAlCongelar?: { en: string; marcas: string[] }
+  /** Antes del pitazo, un re-depósito corrigió lo que ese recibo marcó y la reemplazó (1120). */
+  aperturaCorregidaEn?: string
+  aperturaCorregidaMotivo?: string
 }
 
 /** CIERRE del DTP: M4 (autopsia de goles) y M5 (contraste), escritos después. */
