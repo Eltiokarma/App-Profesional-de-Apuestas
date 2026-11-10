@@ -116,7 +116,7 @@ Es la causa más común y la menos reconocida. Presionar alto cuesta muchísimo;
 | # | Indicador | Bajo (0) | Medio (0.5) | Alto (1) |
 |---|-----------|----------|-------------|----------|
 | F1 | Rotación en los últimos 3 partidos | 3+ titulares rotados con nivel titularizable | 1–2 rotados | 0 rotados, mismos once nombres |
-| F2 | Descanso, viaje y calendario | 6+ días, sin viaje exigente, próximo partido accesible | 4–5 días o viaje con cambio de altitud | ≤3 días, o altura/calor extremo, o próximo partido de altísima exigencia |
+| F2 | Descanso, viaje y calendario | 6+ días, sin viaje exigente, próximo partido accesible | 4–5 días *(viaje con cambio de altitud: caja de sensibilidad, disciplina 21)* | ≤3 días, o próximo partido de altísima exigencia *(altura o calor extremo: caja de sensibilidad, disciplina 21)* |
 | F3 | Profundidad de banco *(hereda B5 del EFE)* | ≥2 recambios con impacto documentado | 1 recambio de impacto | Banco sin alternativas que cambien el trámite |
 | F4 | Costo energético del modelo | Bloque medio, salida directa | Presión selectiva | Presión alta sostenida y/o construcción obligada desde el arquero |
 
