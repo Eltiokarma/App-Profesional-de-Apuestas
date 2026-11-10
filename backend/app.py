@@ -810,7 +810,11 @@ def fiabilidad_mu_fixture(f, comps: dict | None = None) -> dict:
     # /predicciones y tde/{id} dicen lo mismo aunque el fixture que les llega
     # traiga o no `venue_name`
     neutral = ventana_nivel.cancha_neutral(f["home_team_id"], sede, fecha, fixture_id=fid)
-    return ventana_nivel.fiabilidad_con_ventana(fiabilidad_mu_partido(f), comps, fecha=fecha, neutral=neutral)
+    # 1333: los dos equipos con la misma sede de local en la temporada (clásico
+    # de Potosí en el Ugarte): la localía de μ no aplica, se avisa
+    compartida = ventana_nivel.sede_compartida(f["home_team_id"], f["away_team_id"], fecha)
+    return ventana_nivel.fiabilidad_con_ventana(fiabilidad_mu_partido(f), comps, fecha=fecha, neutral=neutral,
+                                                compartida=compartida)
 
 
 def gap_equipo(team_id: int, fecha: str | None) -> dict:

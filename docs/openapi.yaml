@@ -2559,6 +2559,7 @@ components:
             ventana: { type: object, additionalProperties: { type: string }, description: 'por lado (local/visitante), «6 amistosos y 3 internacionales de 20» (o «… 17 de otra liga (Championship) de 20», 1251); solo los lados que tienen alguno' }
             porVentana: { type: boolean, description: 'con 3+ amistosos en la ventana de 20 de un lado: «alta» baja a «media» (o la nota lo suma); con menos de 10 partidos en la ventana o el último de hace más de un año, «baja» (incidencia 991); μ no se toca' }
             canchaNeutral: { type: boolean, description: 'la sede no es la habitual del local (la más repetida en sus últimos 20 de local): la localía que μ suma no aplica; «alta» baja a «media» (incidencia 991)' }
+            sedeCompartida: { type: string, description: 'el estadio que los dos equipos tienen como sede de local en la temporada (el mismo venue_id, o el mismo nombre en la misma ciudad, en sus partidos de local del último año): «la localía del motor no aplica: estadio compartido»; «alta» baja a «media» y la nota lo dice. μ no se toca (incidencia 1333, Nacional Potosí–Real Potosí en el Víctor Agustín Ugarte). Ausente si no se comparte o no hay dato' }
         unXDos:
           nullable: true
           description: >

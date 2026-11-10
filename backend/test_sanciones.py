@@ -229,6 +229,21 @@ from backend import app as _app  # noqa: E402
 check("1255: a 7,5 h el refresco de cuotas todavía no lo pidió (no es hallazgo); a 4 h sin cuota, sí",
       "sin-cuotas" not in _c7 and "sin-cuotas" in _c4
       and escaneo.HORAS_CUOTAS < int(_app.REFRESCO_VENTANA_H), (_c7, _c4, escaneo.HORAS_CUOTAS))
+# 1333: el clásico con estadio compartido es un chequeo INFORMATIVO (no se deposita);
+# sin la sede en la base (esta no tiene venue_id) no se afirma
+check("1333: `sede-compartida` es informativo y sin la sede en la base no suena",
+      escaneo.CHEQUEOS["sede-compartida"].get("informativo") and ("sede-compartida", None) not in _ch)
+from backend.analisis import ventana_nivel as _vn  # noqa: E402
+_sc = _vn.sede_compartida
+try:
+    _vn.sede_compartida = lambda h, a, antes: "Estadio Víctor Agustín Ugarte" if (h, a) == (SAN, PAL) else None
+    _h1333 = [h for h in escaneo._pre({"fixtureId": 12, "partido": "Santos vs Palmeiras", "fecha": "2026-10-28",
+                                       "hora": "22:30", "equipoA": "Santos", "equipoB": "Palmeiras"}, _ahora)
+              if h["chequeo"] == "sede-compartida"]
+finally:
+    _vn.sede_compartida = _sc
+check("1333: con la sede compartida, el escaneo lo dice una vez por partido (sin lado) con el estadio",
+      len(_h1333) == 1 and "Ugarte" in _h1333[0]["detalle"] and "lado" not in _h1333[0], _h1333)
 # jugados: el 11 con parte, sin ninguna versión del once antes del pitazo y con eventos
 from backend.analisis import parte as _parte  # noqa: E402
 with _parte._conectar() as _c:

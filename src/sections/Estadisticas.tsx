@@ -212,7 +212,7 @@ export function Estadisticas({ store, m, isMobile }: Props) {
       {/* REGRESIÓN AL NIVEL (§5) */}
       <section style={{ padding: 18, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)', marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
             <div style={{ font: '700 12px var(--sans)' }}>Regresión al nivel · Ley §5</div>
             {pred.data?.fiabilidadMu && (
               <span
@@ -224,6 +224,14 @@ export function Estadisticas({ store, m, isMobile }: Props) {
                 }}
               >
                 μ CONFIANZA {pred.data.fiabilidadMu.nivel.toUpperCase()}
+              </span>
+            )}
+            {pred.data?.fiabilidadMu?.sedeCompartida && (
+              <span
+                title={`La localía del motor no aplica: estadio compartido (${pred.data.fiabilidadMu.sedeCompartida})`}
+                style={{ padding: '2px 8px', borderRadius: 5, font: '700 8.5px var(--mono)', letterSpacing: '.4px', color: 'var(--mark)', background: 'var(--mark-soft)' }}
+              >
+                ESTADIO COMPARTIDO
               </span>
             )}
           </div>

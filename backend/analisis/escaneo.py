@@ -104,6 +104,16 @@ CHEQUEOS: dict[str, dict] = {
                  "lado el motor queda el doble de lejos del mercado y μ baja a fiabilidad «media» "
                  "(Konyaspor 0-4 Galatasaray, 860)",
     },
+    # INFORMATIVO (10/11/2026, incidencia 1333, decisión del usuario): los dos
+    # equipos tienen la misma sede de local en la temporada; la localía del
+    # motor (0,382) no aplica y /predicciones ya lo avisa en fiabilidadMu.
+    "sede-compartida": {
+        "titulo": "Clásico con estadio compartido: la localía del motor no aplica",
+        "area": "otro", "severidad": "aviso", "informativo": True,
+        "regla": "el motor suma la localía a todo partido; con los dos equipos de local en el mismo estadio "
+                 "(Nacional Potosí–Real Potosí en el Ugarte: 49 % local contra 37 % del mercado, 1333) "
+                 "no hay visita real y μ baja a fiabilidad «media»",
+    },
 }
 
 # A menos de esto del pitazo, sin cuota es hallazgo. LO QUE EL REFRESCO TODAVÍA
@@ -268,6 +278,14 @@ def _pre(item: dict, ahora: datetime) -> list[dict]:
             if c and c["amistosos"] >= ventana_nivel.UMBRAL_AMISTOSOS:
                 out.append(_hallazgo("nivel-con-amistosos", item, ventana_nivel.texto(c), lado))
     except Exception:  # noqa: BLE001 — sin la tabla de ligas: no se cuenta la ventana
+        pass
+    try:
+        from backend.analisis import ventana_nivel
+        fx = saddb.query_one("sad", "SELECT date, home_team_id, away_team_id FROM fixtures WHERE id=?", (fid,))
+        sede = fx and ventana_nivel.sede_compartida(fx["home_team_id"], fx["away_team_id"], str(fx["date"]))
+        if sede:
+            out.append(_hallazgo("sede-compartida", item, f"los dos juegan de local en {sede}"))
+    except Exception:  # noqa: BLE001 — sin la sede en la base: no se afirma que se comparta
         pass
     try:
         pitazo = datetime.strptime(f"{item.get('fecha')} {item.get('hora')}", "%Y-%m-%d %H:%M").replace(
