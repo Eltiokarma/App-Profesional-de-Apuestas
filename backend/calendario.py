@@ -11,9 +11,14 @@ por un dato propio:
 | 🔥 EQUIPO SORPRESA  | rinde por encima de su expectativa            | el gap §5 con los últimos 5 de LIGA; nunca el tercio alto por nivel de su liga |
 | 🏠 LOCAL FUERTE     | ≥70% de victorias como local                  | cuenta de sus partidos en casa |
 | ✈️ VISITA DÉBIL     | <25% de victorias como visitante              | cuenta de sus partidos fuera |
-| 📉 EN CRISIS        | 3+ derrotas seguidas o cambio de DT en 4 sem. | resultados + tabla `entrenadores` |
+| 📉 EN CRISIS        | 3+ derrotas seguidas o cambio de DT en 4 sem. | resultados de los últimos 60 días sin amistosos ni derrotas de copa ante categoría superior (1362) + tabla `entrenadores` |
 | 🛡️ BLOQUE BAJO      | esquema con 5 defensores                      | formación dominante en `alineaciones` (fase A del DTP) |
 | ⚔️ CLÁSICO          | rivalidad histórica documentada               | PARCIAL: derbi de ciudad (mismo `venue_city`); con ≥ 4 clubes de la liga en esa ciudad, solo `CLASICOS_DOCUMENTADOS` |
+
+Fuera del protocolo, SIN PESO hasta medirla (incidencia 1227 (c), aprobada por
+el usuario el 10/11/2026): ÚLTIMO RIVAL FUERTE DE LOCAL, en los partidos de
+local contra un rival de zona alta: el último que jugó en casa contra uno de
+arriba de la misma tabla, con fecha y resultado. Informa; nada la suma.
 
 Cada etiqueta viaja con el DATO que la sostiene ("3 derrotas seguidas",
 "78% en casa"): sin el número es una opinión, y una opinión no debería costar
@@ -35,6 +40,18 @@ PROXIMOS_DEFAULT = 4
 FORMA_N = 5              # ventana de forma reciente (misma que el gap §5)
 CRISIS_DERROTAS = 3      # criterio G2
 CRISIS_DT_DIAS = 28      # "cambió de DT en las últimas 4 semanas"
+# LA CRISIS ES DE AHORA (10/11/2026, incidencia 1362): Real Jaén salía EN CRISIS
+# por «4 derrotas seguidas» armadas con tres eliminatorias de Copa del Rey ante
+# rivales de categoría superior (2023, 2024 y 2025) y un amistoso de agosto,
+# siendo 3.º de su grupo de Primera Federación (liga que la base no sigue). Las
+# derrotas que cuentan son las de los últimos CRISIS_VENTANA_DIAS antes del
+# partido: dos meses cubren una racha normal con un parón de selecciones de por
+# medio; lo de antes de un receso largo no es el estado de hoy. El umbral (3) y
+# CRISIS_DT_DIAS no se mueven.
+CRISIS_VENTANA_DIAS = 60
+# El rival FUERTE del protocolo es el de zona alta de la tabla (`zonaRival`
+# «alta»): la misma cifra para la zona y para ÚLTIMO RIVAL FUERTE DE LOCAL.
+RIVAL_FUERTE_POS = 4
 LOCAL_FUERTE_PCT = 0.70
 VISITA_DEBIL_PCT = 0.25
 MIN_PARTIDOS_PCT = 4     # sin muestra no se etiqueta (un 100% de 1 partido no dice nada)
@@ -86,6 +103,88 @@ def _derrotas_seguidas(res: list[dict]) -> int:
         else:
             break
     return n
+
+
+def _copa_contra_superior(team_id: int, rival_id: int, liga_id: int | None, fecha: str) -> bool:
+    """¿Partido de copa contra un rival de categoría superior? Perderlo es lo
+    esperado (Real Jaén 0-3 Cádiz en la Copa del Rey, 1362): no hace crisis. La
+    categoría sale de la misma escala que el reventón (`escala.relacion`)."""
+    from backend.analisis import escala
+    try:
+        if not escala.es_copa(liga_id):
+            return False
+        return escala.relacion(escala.base_de(team_id, fecha), escala.base_de(rival_id, fecha)) \
+            == "rival de categoría superior"
+    except Exception:  # noqa: BLE001 — sin escala no se descarta: la derrota cuenta, como antes
+        return False
+
+
+def _derrotas_para_crisis(team_id: int, fecha: str | None) -> int:
+    """Derrotas seguidas que sostienen EN CRISIS (1362): solo las de los
+    últimos CRISIS_VENTANA_DIAS antes de `fecha`, sin amistosos (ni cortan ni
+    suman: se arman para otra cosa) y sin las derrotas de copa contra un rival
+    de categoría superior (perderlas no es crisis; ganarlas sí corta la racha)."""
+    from backend.analisis.ventana_nivel import es_amistoso
+    from backend.app import liga_meta
+    try:
+        ref = datetime.strptime((fecha or "")[:10], "%Y-%m-%d") if fecha else datetime.now(timezone.utc)
+    except ValueError:
+        ref = datetime.now(timezone.utc)
+    hasta = ref.strftime("%Y-%m-%d")
+    desde = (ref - timedelta(days=CRISIS_VENTANA_DIAS)).strftime("%Y-%m-%d")
+    filas = _q(
+        f"""SELECT f.date, f.home_team_id, f.away_team_id, {_GH} AS gh, {_GA} AS ga, f.league_id
+            FROM fixtures f
+            WHERE (f.home_team_id=? OR f.away_team_id=?) AND {_FIN}
+              AND {_GH} IS NOT NULL AND {_GA} IS NOT NULL AND f.date >= ? AND f.date < ?
+            ORDER BY f.date DESC LIMIT 20""",
+        (team_id, team_id, desde, hasta),
+    )
+    n = 0
+    for r in filas:
+        if es_amistoso(r["league_id"], liga_meta(r["league_id"]).get("nombre")):
+            continue
+        es_local = r["home_team_id"] == team_id
+        gf, gc = (r["gh"], r["ga"]) if es_local else (r["ga"], r["gh"])
+        if gf >= gc:
+            break
+        rival = r["away_team_id"] if es_local else r["home_team_id"]
+        if _copa_contra_superior(team_id, rival, r["league_id"], str(r["date"])[:10]):
+            continue
+        n += 1
+    return n
+
+
+def _ultimo_fuerte_local(team_id: int, liga_id: int, temporada: int, antes: str,
+                         posiciones: dict[int, int], tabla_de: str) -> dict | None:
+    """ÚLTIMO RIVAL FUERTE DE LOCAL (incidencia 1227 (c), aprobada el
+    10/11/2026; Universitario 2-2 Sport Boys): el último partido que el equipo
+    jugó DE LOCAL en esta liga y temporada contra un rival hoy en zona alta
+    (posición <= RIVAL_FUERTE_POS de la misma tabla que `posicionRival`), con
+    fecha y resultado. SIN PESO: es informativa hasta medirla; nada la suma."""
+    fuertes = [t for t, p in posiciones.items() if p and p <= RIVAL_FUERTE_POS and t != team_id]
+    if not fuertes:
+        return None
+    marcas = ",".join("?" * len(fuertes))
+    filas = _q(
+        f"""SELECT f.date, f.away_team_id, {_GH} AS gh, {_GA} AS ga, t.name AS rival
+            FROM fixtures f LEFT JOIN teams t ON t.id=f.away_team_id
+            WHERE f.home_team_id=? AND f.league_id=? AND f.league_season=? AND {_FIN}
+              AND {_GH} IS NOT NULL AND {_GA} IS NOT NULL AND f.date < ?
+              AND f.away_team_id IN ({marcas})
+            ORDER BY f.date DESC LIMIT 1""",
+        (team_id, liga_id, temporada, antes, *fuertes),
+    )
+    if not filas:
+        return None
+    r = filas[0]
+    res = "ganó" if r["gh"] > r["ga"] else "empató" if r["gh"] == r["ga"] else "perdió"
+    pos = posiciones.get(r["away_team_id"])
+    return {"codigo": "ULTIMO_RIVAL_FUERTE_LOCAL", "label": "ÚLTIMO RIVAL FUERTE DE LOCAL",
+            "dato": (f"{str(r['date'])[:10]} vs {r['rival'] or r['away_team_id']} ({pos}.º, tabla "
+                     f"{tabla_de or 'del año'} de hoy): {r['gh']}-{r['ga']}, {res}"),
+            "nota": "sin peso hasta medirla (incidencia 1227): informa cómo le fue la última vez en casa "
+                    "contra uno de arriba; no suma ni resta a nada"}
 
 
 def _sin_ganar(res: list[dict]) -> int:
@@ -489,19 +588,18 @@ def etiquetas_de_rival(rival_id: int, rival_local: bool, liga_id: int | None,
                        ciudad_equipo: str | None, equipo_id: int | None = None) -> list[dict]:
     """Las etiquetas G2 que los DATOS sostienen, cada una con su número."""
     et: list[dict] = []
-    res = _resultados(rival_id)
 
     if _es_ascendido(rival_id, liga_id, temporada):
         et.append({"codigo": "RECIEN_ASCENDIDO", "label": "RECIÉN ASCENDIDO",
                    "dato": "primera temporada en la categoría",
                    "nota": "sus K están en cuarentena (R-KT.2): no hay línea base fiable"})
 
-    derrotas = _derrotas_seguidas(res)
+    derrotas = _derrotas_para_crisis(rival_id, fecha)
     dt_nuevo = _dt_reciente(rival_id)
     if derrotas >= CRISIS_DERROTAS or dt_nuevo:
         motivos = []
         if derrotas >= CRISIS_DERROTAS:
-            motivos.append(f"{derrotas} derrotas seguidas")
+            motivos.append(f"{derrotas} derrotas seguidas (últimos {CRISIS_VENTANA_DIAS} días, sin amistosos)")
         if dt_nuevo:
             motivos.append(f"DT nuevo desde {dt_nuevo}")
         et.append({"codigo": "EN_CRISIS", "label": "EN CRISIS", "dato": " · ".join(motivos),
@@ -625,7 +723,7 @@ def calendario_de(team_id: int, n: int = PROXIMOS_DEFAULT) -> list[dict]:
             "equiposEnLaTabla": total or None,
             # zona: lo que importa del rival en la tabla, sin adjetivos
             "zonaRival": None if not pos or not total else (
-                "alta" if pos <= 4 else "descenso" if pos > total - 3 else "media"),
+                "alta" if pos <= RIVAL_FUERTE_POS else "descenso" if pos > total - 3 else "media"),
             "diasDescanso": dias,
             **({"descansoSinDato": sin_liga} if sin_liga else {}),
             **({"conflicto": "otro partido del equipo a menos de 24 h: uno es un aplazado sin marcar o un "
@@ -634,6 +732,12 @@ def calendario_de(team_id: int, n: int = PROXIMOS_DEFAULT) -> list[dict]:
                                             f["league_season"], fecha, ciudad_equipo,
                                             equipo_id=team_id),
         })
+        # 1227 (c): de local contra uno de arriba, cómo le fue la última vez (sin peso)
+        if es_local and pos and pos <= RIVAL_FUERTE_POS:
+            ult = _ultimo_fuerte_local(team_id, f["league_id"], f["league_season"], str(f["date"]),
+                                       posiciones, tabla_de)
+            if ult:
+                salida[-1]["etiquetas"].append(ult)
     return salida
 
 

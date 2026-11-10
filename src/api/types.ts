@@ -649,6 +649,9 @@ export interface CierreDtp {
 export type CodigoEtiquetaRival =
   | 'RECIEN_ASCENDIDO' | 'EN_CRISIS' | 'LOCAL_FUERTE' | 'VISITA_DEBIL'
   | 'EQUIPO_SORPRESA' | 'BLOQUE_BAJO' | 'CLASICO'
+  /** Sin peso hasta medirla (1227 (c)): de local contra uno de arriba, cómo
+   *  le fue la última vez en casa contra un rival de zona alta. */
+  | 'ULTIMO_RIVAL_FUERTE_LOCAL'
 
 /** Una etiqueta del rival CON el dato que la sostiene: sin el número sería una
  *  opinión, y una opinión no debería entrar en un análisis. */

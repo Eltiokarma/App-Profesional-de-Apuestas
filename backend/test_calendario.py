@@ -19,6 +19,8 @@ from backend import calendario  # noqa: E402
 
 fallos = 0
 FOCO, ASCENDIDO, CRISIS, LOCALON, VISITANTE_MALO, BLOQUE, VECINO = 1, 2, 3, 4, 5, 6, 7
+JAEN, CADIZ, JAEN_HOY, MIXTO = 8, 9, 10, 11   # 1362
+COPA, AMISTOSOS = 143, 667
 LIGA, TEMP = 281, 2026
 
 
@@ -52,18 +54,21 @@ def montar():
     """)
     con.executemany("INSERT INTO teams (id, name) VALUES (?,?)", [
         (FOCO, "Equipo Foco"), (ASCENDIDO, "Recién Subido"), (CRISIS, "En Caída"),
-        (LOCALON, "Fortín"), (VISITANTE_MALO, "Malo Fuera"), (BLOQUE, "Muro FC"), (VECINO, "Vecino CF")])
+        (LOCALON, "Fortín"), (VISITANTE_MALO, "Malo Fuera"), (BLOQUE, "Muro FC"), (VECINO, "Vecino CF"),
+        (JAEN, "Real Jaén"), (CADIZ, "Cadiz"), (JAEN_HOY, "Jaén Hoy"), (MIXTO, "Mixto CF")])
     con.execute("INSERT INTO leagues (id, name) VALUES (?, 'Liga Test')", (LIGA,))
+    con.execute("INSERT INTO leagues (id, name) VALUES (?, 'Copa del Rey')", (COPA,))
+    con.execute("INSERT INTO leagues (id, name) VALUES (?, 'Friendlies Clubs')", (AMISTOSOS,))
 
     fid = 1000
 
-    def jugado(local, visita, gh, ga, fecha, ciudad="Ciudad A", temporada=TEMP):
+    def jugado(local, visita, gh, ga, fecha, ciudad="Ciudad A", temporada=TEMP, liga=LIGA):
         nonlocal fid
         fid += 1
         con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
                     "venue_city, home_team_id, away_team_id, goals_home, goals_away, fulltime_home, fulltime_away) "
                     "VALUES (?,?, 'FT','Match Finished', ?,?,?,?,?,?,?,?,?)",
-                    (fid, fecha, LIGA, temporada, ciudad, local, visita, gh, ga, gh, ga))
+                    (fid, fecha, liga, temporada, ciudad, local, visita, gh, ga, gh, ga))
 
     def programado(local, visita, fecha, ciudad="Ciudad A"):
         nonlocal fid
@@ -81,11 +86,32 @@ def montar():
     con.execute("UPDATE fixtures SET league_id=999 WHERE home_team_id=? AND league_season=?",
                 (ASCENDIDO, TEMP - 1))  # jugó, pero en OTRA categoría
     # (antes de la racha de CRISIS: un empate en medio la cortaría, y con razón)
-    jugado(ASCENDIDO, CRISIS, 1, 1, "2026-07-01 20:00:00")
+    jugado(ASCENDIDO, CRISIS, 1, 1, dia(-30))
 
-    # CRISIS: 3 derrotas seguidas
-    for i, f in enumerate(["2026-07-05", "2026-07-12", "2026-07-19"]):
-        jugado(VECINO, CRISIS, 2, 0, f + " 20:00:00")
+    # CRISIS: 3 derrotas seguidas, RECIENTES (1362: la racha cuenta dentro de
+    # CRISIS_VENTANA_DIAS; con fechas fijas de julio este caso caducaba solo)
+    for n in (-25, -18, -11):
+        jugado(VECINO, CRISIS, 2, 0, dia(n))
+
+    # 1362, Real Jaén: tres eliminatorias de copa perdidas con uno de arriba,
+    # años atrás, y un amistoso de agosto. No es crisis.
+    jugado(CADIZ, VECINO, 1, 0, dia(-40))   # Cádiz tiene liga: categoría «primera»
+    for fecha in ("2023-11-01 20:00:00", "2024-10-29 20:00:00", "2025-10-29 20:00:00"):
+        jugado(JAEN, CADIZ, 0, 3, fecha, liga=COPA, temporada=int(fecha[:4]))
+    jugado(JAEN, VECINO, 1, 2, dia(-96), liga=AMISTOSOS)
+    # …y la misma copa perdida tres veces DENTRO de la ventana: con uno de
+    # categoría superior perder es lo esperado, tampoco hace crisis
+    for n in (-30, -20, -10):
+        jugado(JAEN_HOY, CADIZ, 0, 3, dia(n), liga=COPA)
+    # MIXTO: tres derrotas de liga con un amistoso GANADO en medio: el amistoso
+    # ni corta ni suma
+    jugado(VECINO, MIXTO, 2, 0, dia(-20))
+    jugado(MIXTO, VECINO, 3, 0, dia(-15), liga=AMISTOSOS)
+    jugado(VECINO, MIXTO, 2, 0, dia(-10))
+    jugado(VECINO, MIXTO, 1, 0, dia(-5))
+
+    # 1227 (c): el foco ya recibió a Fortín (hoy de zona alta) y le ganó
+    jugado(FOCO, LOCALON, 2, 1, dia(-20))
 
     # LOCAL FUERTE: 5 de local, 4 ganados (80%)
     for i, f in enumerate(["2026-05-01", "2026-05-08", "2026-05-15", "2026-05-22", "2026-05-29"]):
@@ -179,6 +205,30 @@ def main():
           and en_liga.get("posicionRival") == 2, (en_copa, en_liga))
     check("y en la copa nadie es «recién ascendido» (la copa no tiene ascenso)",
           all(e["codigo"] != "RECIEN_ASCENDIDO" for e in en_copa.get("etiquetas", [])), en_copa.get("etiquetas"))
+
+    # 1227 (c): ÚLTIMO RIVAL FUERTE DE LOCAL, de local contra uno de zona alta (sin peso)
+    ult = next((e for e in en_liga.get("etiquetas", []) if e["codigo"] == "ULTIMO_RIVAL_FUERTE_LOCAL"), None)
+    check("1227: de local contra uno de arriba (2.º) trae el último de local contra un fuerte, con fecha y resultado",
+          bool(ult) and "Fortín" in ult["dato"] and "2-1" in ult["dato"] and "ganó" in ult["dato"]
+          and dia(-20)[:10] in ult["dato"], ult)
+    check("1227: y se declara sin peso", bool(ult) and "sin peso" in ult.get("nota", ""), ult)
+    otros = [c for c in cal_copa if c["rival"] in ("Malo Fuera", "Fortín", "En Caída")]
+    check("1227: no se cuelga contra uno de abajo ni cuando el foco juega de visita",
+          len(otros) == 3 and all(e["codigo"] != "ULTIMO_RIVAL_FUERTE_LOCAL" for c in otros for e in c["etiquetas"]),
+          [(c["rival"], [e["codigo"] for e in c["etiquetas"]]) for c in otros])
+
+    # 1362: EN CRISIS con derrotas recientes, sin amistosos ni copa contra uno de arriba
+    hoy = dia(1)[:10]
+    _cod = lambda t: {x["codigo"] for x in calendario.etiquetas_de_rival(t, False, COPA, TEMP, hoy, None)}  # noqa: E731
+    check("1362: Real Jaén no está EN CRISIS por copas de 2023-2025 y un amistoso de agosto",
+          "EN_CRISIS" not in _cod(JAEN), _cod(JAEN))
+    check("1362: perder la copa con uno de categoría superior, aunque sea reciente, no hace crisis",
+          "EN_CRISIS" not in _cod(JAEN_HOY), _cod(JAEN_HOY))
+    check("1362: un amistoso ganado en medio no corta la racha de liga (3 derrotas → EN CRISIS)",
+          "EN_CRISIS" in _cod(MIXTO), _cod(MIXTO))
+    check("1362: la misma racha fuera de la ventana ya no es crisis",
+          calendario._derrotas_para_crisis(CRISIS, dia(1 + calendario.CRISIS_VENTANA_DIAS)[:10]) == 0
+          and calendario._derrotas_para_crisis(CRISIS, hoy) == 3)
 
     # el criterio manda: sin muestra suficiente no se etiqueta
     cal_pocos = calendario.calendario_de(FOCO, n=1)
