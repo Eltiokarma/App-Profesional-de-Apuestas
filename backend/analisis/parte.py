@@ -3287,6 +3287,32 @@ def _fixture(fixture_id: int):
     )
 
 
+def _ids_alternos_de_la_base(fixture_id: int) -> dict:
+    """{jugadorId: [ids alternos]} de la tabla F1 de la base, los dos lados."""
+    try:
+        t = _f1_base.tabla(fixture_id) or {}
+    except Exception:  # noqa: BLE001 — sin la tabla F1 de la base el parte va como llegó
+        return {}
+    return {f["jugadorId"]: list(f["idsAlternos"]) for lado in LADOS
+            for f in ((t.get(lado) or {}).get("candidatos") or [])
+            if f.get("jugadorId") is not None and f.get("idsAlternos")}
+
+
+def sumar_ids_alternos(parte: dict, alternos: dict) -> dict:
+    """EL OTRO ID DE LA MISMA PERSONA VIAJA CON SU FILA (10/11/2026, incidencia
+    1349, Nacional Potosí–Real Potosí: H. Rojas 65974, titular fijo, salió «no
+    figura en la hoja» y entró al 64' con el 546779 que la tabla F1 de la base
+    ya tenía en sus `idsAlternos`; el parte copió la fila sin ellos y el bloque F
+    no los vio). Al depositar, cada fila del plantel con `jugadorId` suma los
+    alternos de la base."""
+    for lado in LADOS:
+        for f in ((parte.get("equipos") or {}).get(lado) or {}).get("plantel") or []:
+            alt = alternos.get(f.get("jugadorId")) if isinstance(f, dict) else None
+            if alt:
+                f["idsAlternos"] = sorted({*(f.get("idsAlternos") or []), *alt})
+    return parte
+
+
 def guardar(payload: dict) -> dict:
     """Deposita el parte (idempotente por fixture: el último manda).
 
@@ -3298,6 +3324,7 @@ def guardar(payload: dict) -> dict:
     """
     parte = normalizar_parte(payload)
     fx = _fixture(parte["fixtureId"])
+    sumar_ids_alternos(parte, _ids_alternos_de_la_base(parte["fixtureId"]) if fx else {})
     if not fx:
         raise ParteInvalido(f"el fixture {parte['fixtureId']} no está en nuestra base: "
                             "pide la lista con /analisis/cowork/agenda")
