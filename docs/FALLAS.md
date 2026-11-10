@@ -84,6 +84,7 @@ Tres lugares donde vive una guardia:
   - **Cola de onces:** `en_vivo.fixtures_para_xi` pide el once de todo partido con parte, de cualquier liga, y lo refresca a 40 minutos.
   - **Etiqueta del momento:** `momento_rehacer` distingue `tardio`, `sinRehacer` y `conocido`.
   - **El rehacer:** el modo rehacer de `corrida-sad` reescribe todo lo que nombra al once viejo.
+  - **La alerta condicional al once también se rehace (1190, aprobada el 10/11/2026):** una alerta declarada condicional («si repiten X–Y», EJE-DEBUTANTE del EFE v1.9) con el once oficial de su equipo ya capturado sale en `GET /analisis/cowork/rehacer` como `ALERTA-CONDICIONAL-AL-ONCE`, aunque DTP-REHACER no suene (`parte.alertas_condicionales_con_once`; Barcelona 1635627, Feyenoord 1635662). Test «1190:» en `test_cowork`.
   - **Escaneo:** chequeo `once-tarde`.
   - El chequeo `once-tarde` del escaneo no cuenta el partido cuya ficha post-partido se selló sin alineaciones: la API no la dio nunca, es cobertura (deuda 5), no un once tarde (953; Copa del Rey con clubes de Tercera).
   - El último partido de copa no corta la cadena ni fija el M1: `aperturaPrevia` busca el último partido con parte (997), y el caso del bloque toma la fecha y la competición de ese mismo partido (`dtp_cowork._anterior_con_parte`, 1016) y `ultimoOnceDeLiga` acompaña al once rotado de copa (966); una apertura que entró «sin dato» de XI se reemplaza con la que lo trae (992).

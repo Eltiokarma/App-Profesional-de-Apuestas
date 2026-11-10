@@ -7038,6 +7038,53 @@ def main():
         _p395 = next((x for x in _mv["pendientes"] if x["fixtureId"] == _ns[0]), None)
         check("395: un parte escrito 8 días antes de un partido reprogramado entra a la ventana y pide rehacerse entero",
               _p395 is not None and any(a["codigo"] == "PARTE-OTRA-FECHA" for a in _p395["alertas"]), _mv)
+        # 1190: una alerta declarada CONDICIONAL al once (EJE-DEBUTANTE, EFE v1.9) entra al rehacer
+        # cuando el once oficial de su equipo llega, aunque DTP-REHACER no suene (Barcelona 1635627)
+        import sqlite3 as _sq3_1190
+        with _pt._conectar() as _cn:
+            _pj_1190 = _cn.execute("SELECT parte_json FROM parte_cowork WHERE fixture_id=?", (_ns[0],)).fetchone()[0]
+
+        def _con_alerta_1190(detalle):
+            _p = json.loads(_pj_1190)
+            _p["alertas"] = list(_p.get("alertas") or []) + [
+                {"codigo": "EJE-DEBUTANTE", "equipo": "a", "tipo": "fecha", "detalle": detalle}]
+            with _pt._conectar() as _cn:
+                _cn.execute("UPDATE parte_cowork SET parte_json=? WHERE fixture_id=?", (json.dumps(_p), _ns[0]))
+                _cn.commit()
+
+        def _cond_1190():
+            _r = _pt.rehacer_pendientes(ahora=_pit - _td(minutes=45))
+            _x = next((x for x in _r["pendientes"] if x["fixtureId"] == _ns[0]), None)
+            return [a for a in (_x or {}).get("alertas", []) if a["codigo"] == "ALERTA-CONDICIONAL-AL-ONCE"]
+
+        _home_1190 = _sdb.query_one("sad", "SELECT home_team_id FROM fixtures WHERE id=?", (_ns[0],))["home_team_id"]
+        _ya_1190 = {r["player_id"] for r in _sdb.query("sad", "SELECT player_id FROM alineaciones WHERE fixture_id=?",
+                                                     (_ns[0],))}
+        try:
+            _con_alerta_1190("condicional: si repiten Araujo–Cubarsí, la zaga arranca junta por primera vez")
+            _sin_once = _cond_1190()
+            with _sq3_1190.connect(dbmod.db_path("sad")) as _cs:
+                _cs.executemany("INSERT OR IGNORE INTO alineaciones (fixture_id, team_id, player_id, jugador, titular) "
+                                "VALUES (?, ?, ?, ?, 1)",
+                                [(_ns[0], _home_1190, 9_190_000 + i, f"Titular {i}") for i in range(11)])
+                _cs.commit()
+            _con_once = _cond_1190()
+            _con_alerta_1190("EJE-DEBUTANTE descartada con el once oficial: Araujo–Cubarsí ya jugaron juntos")
+            _resuelta = _cond_1190()
+        finally:
+            with _pt._conectar() as _cn:
+                _cn.execute("UPDATE parte_cowork SET parte_json=? WHERE fixture_id=?", (_pj_1190, _ns[0]))
+                _cn.commit()
+            with _sq3_1190.connect(dbmod.db_path("sad")) as _cs:
+                _cs.execute("DELETE FROM alineaciones WHERE fixture_id=? AND player_id >= 9190000 "
+                            "AND player_id < 9190011", (_ns[0],))
+                _cs.commit()
+        check("1190: sin once oficial, la alerta condicional NO pide rehacer",
+              _sin_once == [] or bool(_ya_1190), (_sin_once, len(_ya_1190)))
+        check("1190: con el once oficial de su equipo, la alerta condicional al once entra a `pendientes` con el motivo",
+              len(_con_once) == 1 and _con_once[0]["alerta"] == "EJE-DEBUTANTE"
+              and _con_once[0]["detalle"].startswith("alerta condicional al once: EJE-DEBUTANTE"), _con_once)
+        check("1190: ya confirmada o descartada con el once, no vuelve a pedirse", _resuelta == [], _resuelta)
 
     # TDE v0.1.24 · DISCIPLINA 66: la ventaja por el minuto del primer gol, de la base y antes del partido
     from backend.analisis.tde import ventaja_por_minuto as _vpm, _VENTAJA_CACHE

@@ -6848,6 +6848,46 @@ REHACER_DESDE_MIN, REHACER_HASTA_MIN = 5, 80
 
 REHACER_DIAS_ATRAS = 30   # un parte reprogramado puede tener semanas
 
+# UNA ALERTA DECLARADA CONDICIONAL AL ONCE (incidencia 1190, aprobada por el
+# usuario el 10/11/2026): el EFE v1.9 manda que EJE-DEBUTANTE vaya condicional
+# sin once oficial («si repiten X–Y») y que, con el once, se declare o se
+# descarte con el grid. Sin DTP-REHACER ningún paso la volvía a mirar y quedaba
+# condicional hasta el veredicto (Barcelona 1635627: el once trajo otra zaga,
+# Gerard Martín por De Jong; Feyenoord 1635662, Kraaijeveld–Mármol). Vale para
+# cualquier alerta declarada que se diga condicional al once, no solo esa.
+_CONDICIONAL_AL_ONCE = re.compile(r"condicional|\bsi repite[n]?\b|sin (?:el )?once(?: oficial)?\b", re.I)
+# ya resuelta con el once (el rehacer la reescribe así): no vuelve a pedirse
+_CONDICIONAL_RESUELTA = re.compile(r"confirmad[ao]|descartad[ao]|sobre el grid|once tard[ií]o", re.I)
+
+
+def alertas_condicionales_con_once(fixture_id: int, alertas: list) -> list[dict]:
+    """Las alertas declaradas condicionales al once cuando el once oficial de
+    su equipo ya llegó: cada una sale como pendiente del rehacer con el motivo
+    («alerta condicional al once: EJE-DEBUTANTE»)."""
+    condicionales = [a for a in alertas or [] if isinstance(a, dict) and a.get("tipo") != "dato"
+                     and _CONDICIONAL_AL_ONCE.search(a.get("detalle") or "")
+                     and not _CONDICIONAL_RESUELTA.search(a.get("detalle") or "")]
+    if not condicionales:
+        return []
+    fx = saddb.query_one("sad", "SELECT home_team_id, away_team_id FROM fixtures WHERE id=?", (fixture_id,))
+    if not fx:
+        return []
+    con_once = {r["team_id"] for r in saddb.query(
+        "sad", "SELECT team_id FROM alineaciones WHERE fixture_id=? AND titular=1 "
+               "GROUP BY team_id HAVING COUNT(*) >= 11", (fixture_id,))}
+    lados = {"a": {fx["home_team_id"]}, "b": {fx["away_team_id"]}}
+    out = []
+    for a in condicionales:
+        equipos = lados.get(a.get("equipo"), {fx["home_team_id"], fx["away_team_id"]})
+        if not (equipos & con_once):
+            continue
+        out.append({"codigo": "ALERTA-CONDICIONAL-AL-ONCE", "tipo": "dato", "alerta": a.get("codigo"),
+                    "equipo": a.get("equipo") or "global",
+                    "detalle": f"alerta condicional al once: {a.get('codigo')} — el once oficial ya llegó: "
+                               "confirmarla o sacarla con el grid (EFE v1.9). Decía: "
+                               + (a.get("detalle") or "")[:200]})
+    return out
+
 
 def rehacer_pendientes(desde_min: int = REHACER_DESDE_MIN, hasta_min: int = REHACER_HASTA_MIN,
                        ahora: datetime | None = None) -> dict:
@@ -6888,6 +6928,7 @@ def rehacer_pendientes(desde_min: int = REHACER_DESDE_MIN, hasta_min: int = REHA
                             "detalle": f"el parte es del partido del {str(f['fecha'])[:10]} y se juega el "
                                        f"{pitazo.strftime('%Y-%m-%d')} ({movido:+d} días): rehacer el parte entero "
                                        "con la semana nueva (si no, cae en cuarentena al cerrar el veredicto)"})
+        rehacer.extend(alertas_condicionales_con_once(f["fixture_id"], d.get("alertas") or []))
         if rehacer:
             pendientes.append({**item, "alertas": rehacer})
     return {"ahora": ahora.strftime("%Y-%m-%dT%H:%M:%SZ"), "ventanaMin": [desde_min, hasta_min],

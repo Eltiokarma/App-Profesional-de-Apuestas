@@ -238,7 +238,7 @@ casi siempre no hay nada que hacer.
    incidencia 395) o **DT-VS-BANCO** (el once oficial sienta a otro DT que el
    del parte: confirmalo en prensa y corregí SOLO el DT con `POST
    /analisis/cowork/{id}/dt`, o declará `dt.banco` si el titular no se sienta;
-   desde el 27/10/2026, incidencia 711). Con `pendientes` vacío: terminá YA en una
+   desde el 27/10/2026, incidencia 711) o **ALERTA-CONDICIONAL-AL-ONCE** («alerta condicional al once: EJE-DEBUTANTE», 10/11/2026, incidencia 1190): con el once oficial, resolvé esa alerta sobre el grid —confirmala o sacala— y escribí «confirmada/descartada con el once» en su detalle, aunque DTP-REHACER no suene. Con `pendientes` vacío: terminá YA en una
    línea («Nada que rehacer a las HH:MM de Lima»), sin `git pull`, sin leer
    el resto de este skill, sin otra llamada y **sin avisar al celular** (corre
    cada 20 minutos: un aviso vacío cada vez se deja de leer).
