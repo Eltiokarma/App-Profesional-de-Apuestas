@@ -25,8 +25,16 @@ numeración. Lo nuevo va así:
   ~50 veredictos del 08-09/11 que todavía se están cerrando, y la marca
   **núcleo / historial** (sección «Núcleo e historial»).
 
+**Comprobada el 10/11/2026 con el segundo corte (04:29 UTC): 23 lecciones
+nuevas** de 18 partidos del 07-08/11, las que se cerraron después del dossier
+de las 02:13. Cada cambio lleva su «**Comprobación 10/11 (23 lecciones
+nuevas):**» debajo del «Se sostiene si…», hay un cambio nuevo (el **20**, el
+banco del rival que nombra el falsador), una sección **«Candidatos (un
+caso)»** y la **«Tabla de cambios»** al final. El cambio 1 quedó **decidido
+por el usuario el 10/11** (aviso de confianza, no de 1X2; ver el cambio).
+
 **Jev no marcó ninguna lección que pida mover un número**, tampoco en esta
-tanda: la revisión sigue fijando rúbrica.
+tanda ni en el segundo corte: la revisión sigue fijando rúbrica.
 
 ## De dónde sale
 
@@ -81,6 +89,26 @@ tanda: la revisión sigue fijando rúbrica.
   1646935:b). Ninguna con «sí». `pidenMoverSinPoder` sigue vacío.
 - **Faltan ~50 veredictos del 08-09/11** que se estaban cerrando cuando se cortó
   el dossier. Por eso cada cambio lleva su «Se sostiene si / Lo tumba si».
+
+**Lo que sumó el segundo corte (10/11 a las 04:29 UTC):**
+
+- **23 lecciones nuevas en 18 partidos**, que no estaban en el dossier de las
+  02:13: 13 del 07/11 (8 partidos) y 10 del 08/11 (10 partidos), de Perú,
+  Chile, Argentina, Colombia y Portugal. Todas `ciega` + `PRE`, cohorte c3.
+  - Las 23 son **acreditables**: ninguna de copa nacional y ninguna en
+    cuarentena (ni que enseña ni que no).
+  - Ninguna es de los cuatro partidos que esperan su cuarentena (LDU 1631509,
+    Palmeiras 1492426, Manta 1639824 y 1639827).
+  - Dos traen `nota` de un once re-capturado por `xi/auto` con el partido
+    terminado (U. Católica 1505559 y Talleres–Estudiantes 1493239): el
+    pronóstico y el DTP rehecho ya estaban sellados antes del pitazo, así que
+    cuentan como PRE.
+- **Veredicto por lado:** 7 aciertos, 5 parciales y 11 fallos. Con las 237
+  del dossier, **260 lecciones**: 112 aciertos, 57 parciales y 91 fallos.
+  **No es una tasa de acierto** (`sesgoDeAtribucion`).
+- **Versión:** las 23 son de partes escritos con la v4.4.
+- **Jev:** ninguna de las 23 trae `modoFallo` ni `proponeMoverNumero`.
+- **Dónde va cada una:** tabla «Las 23 del segundo corte» en el resumen.
 
 ## Lo medido
 
@@ -242,11 +270,32 @@ en un cambio: cada lección se cuenta una sola vez, en la tabla del final.
   que se puede nombrar (el lateral de recambio del rival), no por estar en
   récord.
 
+**Refuerzo del segundo corte (10/11, 04:29 UTC; 4 de las 23 lecciones: 1
+fallo, 1 parcial y 2 aciertos).**
+
+- **6-B con DIV-MOTOR-MERCADO:** Melgar–Juan Pablo II (1549548:a:7): motor
+  47,5 % contra mercado 77 % (la altura de Arequipa y la localía que μ no ve);
+  se publicó el mercado y ganó el local con superioridad de volumen.
+- **(e) de 1.6, con T.54 la guía es la total:** Unión La Calera–Huachipato
+  (1505562:a:7): la tarjeta débil de la condición venía de otro cuerpo
+  técnico; se siguió la total y el 1X2, y la burbuja negativa reventó con la
+  victoria.
+- **(g) de 1.6 y (e) de 1.7, incumplidas, y la burbuja reventó:** las dos con
+  K-CERCA-EXTREMO de la total y la tarjeta «sigue» leída sin un hecho de la
+  lista:
+  - Universidad de Concepción–O'Higgins (1505561:a:7): K −19,27, más baja que
+    el 92 % de las que reventaron; el 1X2 acompañó a la visita y UdeC ganó;
+  - Central Córdoba–Lanús (1493232:a:5, parcial): K −22,71, el 97 % de sus
+    reventones; el 1X2 cargó 54 % a que siguiera y reventó a cero con el
+    empate.
+
+  Las dos van también a «Incumplimientos de una regla que ya existe».
+
 **Nada de lo que sigue afloja esas reglas.**
 
 ---
 
-## Los cambios (1-7 del 08/11; 8-9 del 10/11)
+## Los cambios (1-7 del 08/11; 8-9 del 10/11 a las 02:13; 20 del 10/11 a las 04:29)
 
 ### 1. El origen de la burbuja: inflada o construida (paso 1.7, regla nueva (f))
 
@@ -256,8 +305,13 @@ en un cambio: cada lección se cuenta una sola vez, en la tabla del final.
 
 La teoría de las burbujas dice cuánto puede rendir un equipo hasta reventar.
 Hasta hoy el skill leía el TAMAÑO de la burbuja (K, racha, récord, riesgo) y
-no su ORIGEN. La medición del 08/11 (DEUDA 26) dice que el origen importa, y
-que importa **contra la casa**, no solo contra el azar:
+no su ORIGEN. La medición del 08/11 (DEUDA 26) dice que el origen importa.
+Se midió **contra la casa** (el rinde sobre la cuota de cierre) porque esa
+es la vara más dura que hay a mano: si la casa ya lo cobrara, no habría nada
+que leer. **Contra la casa es la FUENTE de la medición, no el objetivo del
+cambio**: el skill no busca valor contra el mercado (punto 19, usuario,
+03/11). Lo que el origen puede mejorar es **nuestro win rate**, a través de la
+confianza en el elegido:
 
 - **Burbuja INFLADA por un golpe.** Un equipo que acaba de ganar teniendo
   25 % o menos (un batacazo: la K sube mucho porque le ganó a uno más fuerte)
@@ -311,39 +365,39 @@ alerta (no se adivina desde el Elo).
 #### Cuándo se reabre
 
 Con 100+ apuestas por grupo en la simulación (elegido inflado, elegido
-construido). Si sobre NUESTRO acierto la inflada resta y la construida suma,
-con los intervalos fuera de cero, la revisión siguiente propone mover el
-número, con la validación por fecha de la v4.1. Si no, la regla (f) se queda
+construido). Si sobre NUESTRO win rate (el acierto del elegido contra lo que
+pide su cuota, la vara de `docs/METODO_APUESTA.md`) la inflada resta y la
+construida suma, con los intervalos fuera de cero, **el aviso mueve la
+confianza del elegido** —el tramo de confianza en que cae y el freno del
+método—, **nunca el 1X2 sobre el mercado**: ni sube al construido sobre la
+casa ni baja al inflado bajo ella. Si no se confirma, la regla (f) se queda
 como lectura o se saca.
 
-**Mueve un número:** no.
+**Mueve un número:** no. Tampoco cuando se reabra: lo que se mueve es la
+confianza, no el 1X2.
 
-**A la vista 10/11 (choca con la decisión del usuario del 03/11, punto 19).**
-La regla (f) no aparta al 1X2 del mercado: la inflada frena la subida y la
-construida no es razón para bajar. Eso va **hacia** el mercado y no choca. Lo
-que choca son dos frases:
-
-- el «Por qué» se apoya en el rinde **contra la casa** («la casa le cree el
-  golpe», «no le termina de creer»);
-- «Cuándo se reabre» dice que, si se confirma, la revisión siguiente
-  «propone mover el número».
-
-Si ese número es subir al construido sobre el mercado, eso es apartarse de la
-casa para buscar valor, y el usuario lo descartó el 03/11
-(`docs/METODO_APUESTA.md`). DEUDA 26 lo dice así: «avisos que muevan la
-confianza, no el 1X2».
-
-**Pregunta para el usuario:** ¿«Cuándo se reabre» pasa a decir «si sobre
-NUESTRO win rate la inflada resta y la construida suma (100+ por grupo,
-intervalo fuera de cero), el aviso mueve la confianza del elegido (el tramo y
-el freno del método), nunca el 1X2 sobre el mercado»? La propuesta queda
-escrita así hasta que el usuario decida. **Ninguna lección del 08-09/11 trae
-un caso de inflada o construida nombrado.**
+**Decidido por el usuario el 10/11 (vigente la del 03/11, confirmada por
+DEUDA 26).** El 03/11 el usuario decidió que se mejora el win rate y no se
+busca valor contra la casa (`docs/METODO_APUESTA.md`, punto 19); el 10/11
+preguntó si había una decisión más nueva, y la única posterior, DEUDA 26
+(08/11), la confirma: «avisos en el parte (como K-EXTREMO) que muevan la
+confianza, no el 1X2». No hay en `docs/` una decisión posterior al 08/11 que
+diga otra cosa. Por eso el «Por qué» deja el «contra la casa» como fuente de
+la medición y «Cuándo se reabre» quedó escrito en esa línea. La regla (f) ya
+iba **hacia** el mercado (la inflada frena la subida; la construida no es
+razón para bajar), así que el texto de la regla no cambia.
 
 **Se sostiene si** los veredictos del 08-09/11 con un elegido que viene de un
 batacazo (≤ 25 %) aciertan menos que su cuota y los de 10+ sin perder, más.
 **Lo tumba si** aparecen al revés con varios casos. Con estos n, ningún
 resultado de una semana decide: manda la regla de 100+ por grupo.
+
+**Comprobación 10/11 (23 lecciones nuevas): SIN CASOS.** Ninguna lección
+nombra un elegido que venga de ganar con 25 % o menos ni uno con 10+ sin
+perder. Las burbujas citadas son cortas (de 1 o 2 partidos: Alianza Lima,
+U. Católica, Palestino, Alianza Atlético, Sporting Cristal) o se leen por la K,
+no por el origen (UdeC, Central Córdoba). Lo decide la regla de 100+ por
+grupo, como estaba escrito.
 
 **Núcleo:** la regla (f) en 1.7, con sus dos definiciones y lo que hace cada
 una. **Historial:** la fuente (62.320 partidos, mitades 2012-18 / 2019-26) y
@@ -490,6 +544,73 @@ más que la frecuencia de «sigue» de la guía calibrada (35 % y 28 %).
 Porto), o si las apoyadas en los skills «por juego» aciertan tanto como las
 apoyadas en un hecho de la lista.
 
+**Comprobación 10/11 (23 lecciones nuevas): MATIZA, y en la tanda sola se
+cumple la letra del «lo tumba» [DECIDE USUARIO].** 7 lecciones en 7 partidos
+(3 fallos, 1 parcial y 3 aciertos) con una espina que dijo «sigue» contra el
+riesgo alto o muy alto:
+
+- **Se cortó, sin hecho de la lista (sostiene):**
+  - Talleres–Estudiantes (1493239:a:6): riesgo alto (contramano y el rival en
+    la zona de la condición); el pronóstico apostó a que seguía y el empate la
+    cortó. La lección escribe la regla tal cual: «con riesgo alto, el 1X2 a
+    favor de la racha necesita un hecho del partido». Con un matiz: el volumen
+    la sostenía y la cortó un autogol;
+  - FC Cajamarca–Alianza Atlético (1549549:b:6): tarjeta fuerte (54 %) y la
+    contramano «como único punto en contra». La lección no da el nivel del
+    riesgo; si ese fue el único punto, era alto (1 punto). La racha + de 2 se
+    cortó en la altura;
+  - Deportivo Garcilaso–Comerciantes Unidos (1549547:a:5): la total en riesgo
+    alto por contramano, la tarjeta de la CONDICIÓN fuerte (0,627) y en riesgo
+    bajo. La lectura siguió a la condición y la burbuja reventó con el empate.
+- **Siguió, sin hecho de la lista (en contra):**
+  - U. Católica–Deportes Limache (1505559:a:6): burbuja + de un partido en
+    riesgo alto, «sigue» contra la tarjeta apoyado en **los dos perfiles DC
+    alineados** y el bloque probado. Siguió (+10,20). Es el segundo acierto de
+    los perfiles contra el riesgo (con Venezia–Udinese): ahora 2 aciertos y 4
+    fallos;
+  - La Serena–Palestino (1505557:b:4): riesgo alto (rival en la zona fuerte),
+    el 1X2 apostó a que siguiera la negativa y la tarjeta débil decía cambio.
+    Siguió (−2,55 → −4,82). Va contra el punto 4 (la guía `pronostico` no
+    lleva a «sigue»), como Porto;
+  - Juan Pablo II–Melgar (1549548:b:7): contra el riesgo alto de la total, la
+    guía fue la condición (tarjeta débil 0,418, dos derrotas seguidas de
+    visita) y siguió. La lección no dice si la app traía `rival.favorito`; con
+    77 % del mercado al local, es probable, y entonces sería un acierto con
+    hecho de la lista.
+- **Siguió, con un hecho de la lista y otros que no lo son (parcial):**
+  Audax Italiano–Coquimbo (1505555:a:6): «sigue» negativa contra la tarjeta,
+  con T.54, el DTP y **el nivel**. Siguió a −8,64. Si el nivel es
+  `rival.aFavor`, sostiene; T.54 y el DTP no están en la lista.
+
+**Lo que cambia.** Las espinas «sigue» contra el riesgo alto sin hecho
+seguro de la lista son 6: 3 se cortaron y 3 siguieron. Es la mitad, que es
+la letra del «lo tumba». Pero son 6 lecciones elegidas (`sesgoDeAtribucion`),
+y en dos de las que siguieron (Juan Pablo II y, quizá, Audax) el hecho de la
+lista pudo estar y la lección no lo nombra. En la serie entera (51 lecciones:
+25 fallos, 9 parciales y 17 aciertos) los cortes siguen siendo más que los
+aciertos; las que van en contra suben de 7 a 10.
+
+Dos matices para el texto, si se aprueba:
+
+1. **El riesgo alto que pide el hecho es el de la total O el de la
+   condición**: Garcilaso (la total en alto, la condición en bajo) se cortó y
+   Juan Pablo II (la total en alto, guiada por la condición) siguió. Va 1 a 1,
+   y América de Cali (1549854:a:4, en el refuerzo 10/11 de arriba: la total en
+0 y la condición en muy alto) se cortó. El
+   texto propuesto dice «con riesgo alto o muy alto» sin decir de cuál:
+   **se escribe «de la total o de la condición que guía»**, como ya dice (g)
+   para el extremo.
+2. **Los perfiles DC contra el riesgo** quedan 2 a 4: siguen fuera de la
+   lista, pero el número se escribe en el historial para que se vea que no es
+   0 a 5.
+
+**[DECIDE USUARIO]:** (a) aprobar el cambio 2 ahora, como rúbrica, con los dos
+matices; o (b) dejar los puntos 1, 2 y 4 en espera hasta la alerta calculable
+`ESPINA-CONTRA-RIESGO` con n ≥ 30 («Cuándo se reabre»), y aprobar solo el
+punto 3 (el hecho que la hoja desmiente se rehace con el once), que ningún
+caso contradice. La propuesta sigue recomendando (a): la serie sostiene la
+regla y 6 lecciones elegidas de una tanda no deciden solas.
+
 **Núcleo:** los puntos 1 a 4 en 1.6 (procedimiento y reglas c y g) y la
 pregunta nueva de la Auditoría 2. **Historial:** las listas de casos.
 
@@ -554,6 +675,14 @@ condición en el extremo, leídas con la condición, siguen fallando en las dos
 direcciones. **Lo tumba si** las leídas con la condición aciertan más que las
 leídas con la total en esos mismos lados (n ≥ 15, como dice «Cuándo se
 reabre»).
+
+**Comprobación 10/11 (23 lecciones nuevas): SIN CASOS.** Ninguna lección trae
+K-EXTREMO-CONDICION ni K-CERCA-EXTREMO-CONDICION, ni una espina leída con
+`guia: condicion` en el extremo. Las dos con K-CERCA-EXTREMO (UdeC 1505561 y
+Central Córdoba 1493232) son de la total y refuerzan la prudencia vigente
+(1.7 e y 1.6 g; «Lo que la v4.4 acertó»), no la guía de este cambio. Unión La
+Calera (1505562:a:7) confirma la (e) vigente con T.54, que es la lógica en la
+que se apoya este cambio, sin ser un caso suyo.
 
 **Núcleo:** la oración nueva en (e) y (g). **Historial:** los casos.
 
@@ -636,6 +765,27 @@ riesgo alto vuelven a fallar. **Lo tumba si** la visita gana más de una de
 cada cuatro con los dos perfiles alineados (el perfil no diría ni eso), o si
 restarle con el riesgo alto acierta.
 
+**Comprobación 10/11 (23 lecciones nuevas): MATIZA.** 2 lecciones de un
+partido (2 parciales), más una cita del cambio 2:
+
+- **Fortaleza FC–Independiente Medellín (1549858:a:6 y :b:6):** los dos
+  perfiles alineados (el local no pierde 76 %, la visita no gana 69 %) y la
+  espina en `cero` de los dos lados. La K negativa de Fortaleza siguió
+  (−13,56), así que **ganó la visita**, y el récord de 13 partidos recibiendo
+  gol de Medellín no le dio el gol a Fortaleza. Lección: «el perfil DC de
+  temporada no pesó contra un local sin gol en juego abierto». Es un caso de
+  la visita que gana con los dos perfiles, que es lo que el «lo tumba» cuenta.
+  Uno solo: el 80 % medido (punto 11) deja ganar a la visita uno de cada cinco.
+- **U. Católica–Limache (1505559:a:6, cambio 2):** los dos perfiles alineados
+  y ganó el local: la visita no ganó.
+
+Va 1 a 1 en la visita que no gana, con n = 2. **No tumba el punto 1** («la
+visita no gana» es lo que mide el punto 11 con n 195), pero deja a la vista
+que el perfil es de temporada y no ve un local que no hace goles en juego
+abierto: va a **«Candidatos (un caso)»**. Ningún caso nuevo de restar a la
+visita con su burbuja negativa en riesgo alto (punto 2), ni de perfil armado
+con otro DT (punto 3).
+
 **Núcleo:** los puntos 1 a 4 en 6-B y en (c) de 1.6. **Historial:** los casos
 y la regla del usuario del 05/11 con la incidencia 1227 (queda la regla y se
 va el caso).
@@ -691,6 +841,9 @@ que está en juego para los dos no fallan por eso, y los que dieron a un equipo
 «sin objetivo» se equivocan como Sport Boys. **Lo tumba si** la obligación de
 tabla vuelve a decidir partidos contra el riesgo alto. En ese caso se vuelve
 a la lista de hechos del cambio 2, con la pregunta al usuario.
+
+**Comprobación 10/11 (23 lecciones nuevas): SIN CASOS.** Ninguna lección habla
+de la tabla, de lo que está en juego ni de a quién le sirve el empate.
 
 **Núcleo:** el punto 3 de 6-D con la frase del empate que sirve.
 **Historial:** Universitario–Sport Boys y Carabobo.
@@ -797,6 +950,30 @@ con el 1X2 acertado son cláusulas de volumen, de marcador o de una vía del
 rival, como estas cuatro. **Lo tumba si** aparecen falsadores «(1X2)» bien
 escritos que suenan con el pronóstico acertado. Ahí la etiqueta no separa, y
 el problema es otro.
+
+**Comprobación 10/11 (23 lecciones nuevas): SOSTIENE, y matiza el punto 2.**
+1 lección propia (un acierto) y 4 del cambio 20 que tocan el falsador:
+
+- **Sonó con el 1X2 acertado, y era una cláusula del marcador (sostiene el
+  punto 1):** Melgar–Juan Pablo II (1549548:a:6): «cualquier gol suyo antes
+  del 70'» sonó al 9' y el local ganó con 2,35 de xG contra 0,46. Un gol
+  suelto del débil rompe el marcador, no el 1X2: con la etiqueta, va como
+  «(marcador)».
+- **Las cláusulas «(1X2)» bien escritas sonaron con el 1X2 FALLADO (la
+  etiqueta separa; cambio 20):** Instituto–Newell's (1493236:b:5: el gol de
+  Mazzantti y el gol desde el banco), Everton de Viña–Concepción (1505556:a:6:
+  dos goles de visita, el gol desde el banco y Everton sin gol con Medina los
+  90), Los Chankas–Alianza Lima (1549551:b:6: el gol del suplente) y
+  Nacional–Académico de Viseu (1575540:b:6). Ninguna «(1X2)» bien escrita sonó con el pronóstico
+  acertado: no se cumple el «lo tumba».
+- **El matiz, sobre el punto 2 (volumen):** en Nacional–Académico de Viseu
+  (1575540:b:6) la cláusula «4+ remates al arco del local» se dio **con el
+  1X2 caído**, y la lección de Melgar pide escribir el falsador «sobre el
+  volumen o la vía». Con Vitória SC–Porto (refuerzo 10/11) son tres lecciones
+  que piden el volumen como cláusula del DOMINIO. Suma a la **pregunta para el
+  usuario** que ya está arriba (¿el xG o los remates dentro del área valen
+  como cláusula «(lectura)», no «(1X2)»?). Mientras no se decida, el punto 2
+  queda como está.
 
 **Núcleo:** los puntos 1 a 4 en 6-C y la pregunta 8 de la Auditoría 2.
 **Historial:** los ejemplos.
@@ -910,6 +1087,14 @@ cruzado, y los marcadores contra el elegido salen en la celda vecina.
 el marcador acotado (40 % prometido). Eso diría que el récord sí sirve para el
 marcador.
 
+**Comprobación 10/11 (23 lecciones nuevas): SOSTIENE, con un caso.**
+Ñublense–Colo Colo (1505558:b:5, acierto): las dos tarjetas fuertes de riesgo
+bajo siguieron y los goles acotados (Ñublense 0-1, Colo Colo 1-2) contuvieron
+el 1-2 elegido, que salió exacto, con el marcador del lado del elegido del
+1X2. Es el marcador elegido entre las celdas del acotado (puntos 1 y 2).
+Ninguna lección nueva trae un marcador apoyado en un récord de familia ni uno
+contra el elegido.
+
 **Núcleo:** los puntos 1 a 4 en 3.5 y en (h). **Historial:** los casos.
 
 ### 8. Riesgo alto o muy alto en las DOS burbujas: el empate se nombra, no se carga a que siga una sola (1.7 a)
@@ -985,6 +1170,11 @@ la que traía el elegido) más de lo que da la guía calibrada.
 **Lo tumba si** en esos partidos el elegido del mercado gana como siempre. Ahí
 el punto 2 sobra y el 1 queda como descripción.
 
+**Comprobación 10/11 (23 lecciones nuevas): SIN CASOS.** Ninguna lección dice
+que las dos totales estuvieran en riesgo alto o muy alto. Talleres–Estudiantes
+(1493239) terminó empatado con Talleres en riesgo alto, pero la lección no da
+el riesgo de Estudiantes: no entra.
+
 **Mueve un número:** no.
 
 **Núcleo:** los tres puntos en 1.7 (a), reemplazando la línea «"más empate"
@@ -1023,9 +1213,90 @@ cargaron lo que el parte frenaba y fallaron. **Lo tumba si** la cadena
 contradice al parte y acierta en la misma medida: eso diría que la cadena lee
 algo que el parte no ve, y se pregunta al usuario cuál manda.
 
+**Comprobación 10/11 (23 lecciones nuevas): SIN CASOS.** Ninguna lección
+habla de la cadena ni del pronóstico por equipo foco. La más cercana es
+Estudiantes (1493239:b:5): la rama de sensibilidad que movía el 1X2 se
+cumplió en el once y el 1X2 no se re-puntuó. Es coherencia del parte con su
+propia rama, no de la cadena: va a «Candidatos (un caso)».
+
 **Mueve un número:** no.
 
 **Núcleo:** una oración en (h). **Historial:** los dos casos.
+
+### 20. El banco del rival que nombra el falsador también se lee en el 1X2 (paso 6-C y 6-B; segundo corte del 10/11)
+
+*(Número 20 porque del 10 al 19 son los puntos de «Medido en conversación».
+Nace del segundo corte, 04:29 UTC del 10/11.)*
+
+**Qué dice hoy:** 6-C pide que el falsador tome **todas las vías del DTP**,
+el banco incluido, y el cambio 6 pide que no niegue una vía que el DTP
+escribió. Nada pide que lo que el falsador nombra como vía del rival se lea
+también en el `porque` del 1X2: hoy puede ir en el falsador y faltar en la
+lectura.
+
+**Lo que dicen las lecciones (4 lecciones en 4 partidos: 4 fallos).** El
+falsador nombró el **gol desde el banco del rival**, sonó, y el 1X2 se cayó;
+la lectura había dado al banco por menor:
+
+- Instituto–Newell's (1493236:b:5): sonaron el gol de Mazzantti y el gol de
+  un jugador que entró desde el banco; «el falsador escrito por vía nombró
+  exactamente el mecanismo que tumbó el 1-0»;
+- Nacional–Académico de Viseu (1575540:b:6): el falsador nombró a los
+  suplentes de Nacional (Pablo Ruan, Daniel Júnior, Djaló); «el banco que se
+  dio por menor fue vía; escribirlo en el falsador funcionó y debió pesar en
+  el 1X2»;
+- Everton de Viña–Concepción (1505556:a:6): se cumplieron el gol desde el
+  banco y dos goles de visita; «el banco visitante estaba subestimado y la
+  lectura "de visita produce poco" no alcanzaba para el 51 % local»;
+- Los Chankas–Alianza Lima (1549551:b:6): la cláusula 3 (gol del suplente) fue
+  la que se gatilló en el empate; la lección lo llama varianza dentro de lo
+  escrito.
+
+Del 08/11 y del 10/11 ya había casos de la misma vía: el banco de Mainz–Bayern
+(1575217:a, cambio 6), el suplente entre las vías de Crystal Palace–Liverpool
+(1557459:a:6) y el gol desde el banco de Portuguesa–Metropolitanos
+(1646934:a:5, cambio 7). **Son lecciones elegidas**: quien cierra nombra el
+falsador cuando suena y el 1X2 cae. No se sabe cuántas veces la misma cláusula
+se escribió y no sonó.
+
+**Propuesta (6-C y 6-B, rúbrica):**
+
+1. **Si el falsador nombra el banco del rival como vía de gol, el `porque` del
+   1X2 lo nombra también**, con los nombres (los del DTP). Lo que el falsador
+   cree capaz de tumbar el pronóstico no puede faltar en la lectura.
+2. **Pesa en la carga, no en el número**: con el banco del rival como vía
+   nombrada, el elegido **no sube sobre el mercado** a ese lado (1.7 a, «qué
+   es cargar»). Quedarse en el mercado no es cargar. **No baja al elegido
+   bajo el mercado**: eso sería apartarse de la casa sin un dato con su cifra
+   (6-B, punto 19, punto 13).
+
+**⚠️ Medir primero (calculable), antes de que pese más que eso:**
+
+- en nuestros partes, cuántas veces la cláusula «gol desde el banco» del
+  rival se escribió, cuántas sonó y con qué resultado del 1X2 (con el 1X2
+  acertado y fallado). La ficha trae los cambios y los goles con su minuto y
+  autor: la app lo puede contar;
+- por equipo, la parte de sus goles de la temporada que hacen los que entran
+  desde el banco, al lado del promedio de su liga, en el insumo del parte.
+  Así «el banco es vía» deja de ser un adjetivo.
+
+Si con n ≥ 30 cláusulas la del banco suena más con el 1X2 fallado que con el
+acertado, la revisión siguiente la mira como aviso de **confianza** (como el
+cambio 1), nunca como corrimiento del 1X2.
+
+**Se sostiene si**, en los próximos veredictos, los partes que nombraron el
+banco del rival en el falsador y no en la lectura vuelven a caer por esa vía.
+**Lo tumba si** la cláusula del banco suena tanto con el 1X2 acertado como
+con el fallado (sería ruido de una vía siempre posible), o si el conteo de la
+app la da por debajo del promedio de la liga en los equipos de estos casos.
+
+**Calculable (opcional):** `BANCO-EN-FALSADOR` (tipo `dato`) cuando el falsador
+nombra el gol desde el banco de un lado y el `porque` del 1X2 no lo menciona.
+
+**Mueve un número:** no.
+
+**Núcleo:** los dos puntos en 6-C (con una línea en 6-B). **Historial:** los
+cuatro casos y los tres anteriores.
 
 ---
 
@@ -1214,7 +1485,8 @@ bajados por la API). Los scripts no quedaron en el repo: el método es el texto.
   +21,0 ± 13,7 (n 46); 10+, n 13; 15+, n 3. **Pendiente: 100+ apuestas por
   grupo.**
 - **Lo que hace en el skill:** el cambio 1, como aviso que mueve la
-  **confianza** y la carga, no el 1X2 (con la pregunta del punto 19). Se
+  **confianza** y la carga, no el 1X2 (decidido por el usuario el 10/11:
+  vigente la del 03/11, confirmada por DEUDA 26; ver el punto 19). Se
   propuso como aviso, pendiente de los 100+ casos.
 
 ### 19. La decisión del usuario del 03/11: se mejora el win rate; no se busca valor contra la casa
@@ -1229,8 +1501,13 @@ bajados por la API). Los scripts no quedaron en el repo: el método es el texto.
   mercado para "encontrar valor": `valorMercado` y Kelly son alarmas de la
   app, no metas del parte.»
 - **Revisión de lo ya escrito, contra esta decisión:**
-  - **Cambio 1:** choca en el «Por qué» y en «Cuándo se reabre». Está anotado
-    en el cambio, con la pregunta.
+  - **Cambio 1: coherente con esta decisión** (decidido por el usuario el
+    10/11: vigente la del 03/11, confirmada por DEUDA 26). El «Por qué» deja
+    claro que el dato «contra la casa» es la fuente de la medición, no el
+    objetivo, y «Cuándo se reabre» dice que, si con 100+ por grupo la inflada
+    resta y la construida suma sobre NUESTRO win rate, el aviso mueve la
+    confianza del elegido (el tramo y el freno del método), nunca el 1X2
+    sobre el mercado. Ya no hay pregunta abierta en el cambio 1.
   - **«Cuándo se reabre» de esta propuesta («El valor») y el de 6-B en la v4.4:**
     reabren «el favorito sobre el mercado» si `valorMercado.nuestroFavorito`
     sale con el intervalo sobre cero. **Eso usa el valor como disparador para
@@ -1243,8 +1520,9 @@ bajados por la API). Los scripts no quedaron en el repo: el método es el texto.
     mercado».
   - **«Lo que dicen nuestras apuestas» (+8,9 sobre la cuota)** es win rate
     contra lo que pide la cuota: es la medida del método y no choca.
-  - **Cambios 2 a 9:** ninguno aparta del mercado. El 4, el 8 y el punto 11
-    empujan **hacia** el número del mercado.
+  - **Cambios 2 a 9 y 20:** ninguno aparta del mercado. El 4, el 8, el 20 y
+    el punto 11 empujan **hacia** el número del mercado (el 20 frena la
+    subida y prohíbe bajar sin dato).
 
 ---
 
@@ -1318,6 +1596,8 @@ bajados por la API). Los scripts no quedaron en el repo: el método es el texto.
       (1551036).
 
     Va mitad y mitad entre los dos cortes. El ⚠️ de (g) sigue en pie.
+    *(Segundo corte)* Suma uno a cada lado: Central Córdoba (1493232) a
+    cero y UdeC (1505561) al otro signo.
   - **En contra 10/11 del corte por defecto:** Heerenveen–Feyenoord
     (1552221:a:5). La espina negativa con la K en su récord (+24,04) falló: la
     burbuja siguió a +29,29. Lección: «el extremo pide no cargar a que la racha
@@ -1335,6 +1615,14 @@ bajados por la API). Los scripts no quedaron en el repo: el método es el texto.
     (1549535:b, 55 %, salió cero).
   - Más la tarjeta de la condición corta de Pereira (1549852:a: dos partidos
     contra un mercado de 18 %).
+  - *(Segundo corte)* Suma dos fallos en el borde: Los Chankas–Alianza Lima
+    (1549551:b:6, 53,9 %, riesgo bajo: la burbuja + de un partido se cortó
+    con el empate; la lección lo llama varianza) y FC Cajamarca–Alianza
+    Atlético (1549549:b:6, 54 %, cambio 2). Y uno arriba del borde con el once
+    degradado: ADT–Sporting Cristal (1549545:b:7, tarjeta fuerte, riesgo bajo,
+    burbuja de 2, empate) con F3 activa en la defensa (va a «Candidatos»).
+    En la otra punta, Ñublense–Colo Colo (1505558, dos fuertes en riesgo bajo)
+    siguió. Nada de esto mueve el corte sin la medición por tramo.
   - Mover el corte (≥ 50 %) es tocar un número calibrado, en los dos lados y
     con los vectores dorados. Sigue pendiente la medición calculable de la
     v4.4 (la tasa por tramo de la tarjeta, 50-52 · 53-59 · 60+); con n ≥ 30 en
@@ -1358,13 +1646,22 @@ bajados por la API). Los scripts no quedaron en el repo: el método es el texto.
   sigue como está.
 - **El delta del mercado:** uno y uno. Gualberto Villarroel (1645535) va a
   favor de leerlo, con una roja al 38'. Chicó–Inter (1549856:b) va en contra.
-  6-A se queda.
+  6-A se queda. *(Segundo corte)* Nacional–Académico de Viseu (1575540:a:6)
+  va a favor: el delta de la mañana hacia el local (2,96 → 2,85 y 2,38 →
+  2,51, con el empate quieto) se declaró sin causa y no movió el 1X2; ganó el
+  local. La lección dice que «una transferencia limpia entre local y visita
+  es dato aunque no se encuentre la causa». Van 2 a 1: no alcanza, y leerlo
+  como dato sin causa sería apartarse del número de cierre (6-B).
 - **Seguir al motor en el partido parejo:** Gimnasia–Belgrano (1493233:b, ganó
   el favorito del motor) y Lommel–Gent (1558667) suman a la serie de 6-A. Son
   dos más; no alcanza. *(10/11)* Suman Heerenveen–Feyenoord (1552221:a:4) y
   Brest–Lyon (1552812:a:5): las dos con fiabilidad media y el motor más cerca.
   En contra, cinco aciertos del mercado en la misma situación («Lo que la v4.4
-  acertó», 10/11). Y el punto 13 mide que apartarse cuesta.
+  acertó», 10/11). Y el punto 13 mide que apartarse cuesta. *(Segundo
+  corte)* Suma Cienciano–Sport Huancayo (1549546:a:7): el motor daba la
+  visita 37,5 contra 34,4 del local, el parte siguió al mercado (local 42,6)
+  y ganó la visita; la lección dice «no mueve número». A favor del mercado,
+  Melgar–Juan Pablo II (1549548:a:7, «Lo que la v4.4 acertó»).
 - **La diferencia de nivel en el extremo:** acertó en Panetolikos, Real
   Madrid, Olimpia (1632057:b) y Trabzonspor. Falló en Libertad (1639859),
   Universitario (1549535:a:3), Cagliari (1550188) y Pereira–Tolima
@@ -1385,7 +1682,40 @@ bajados por la API). Los scripts no quedaron en el repo: el método es el texto.
   - *(10/11)* Chivas–León (1551037:b:7): el 1X2 cargó a que la racha siguiera
     con riesgo alto (1.7 a). Va al cambio 8 por el patrón de las dos burbujas;
   - *(10/11)* Carabobo–La Guaira (1646935:b): probablemente el empate con
-    premio de 6-B y de (a) de 1.6, sin aplicar (cambio 5).
+    premio de 6-B y de (a) de 1.6, sin aplicar (cambio 5);
+  - *(segundo corte)* UdeC–O'Higgins (1505561:a:7) y Central Córdoba–Lanús
+    (1493232:a:5): «sigue» con K-CERCA-EXTREMO de la total sin un hecho de la
+    lista (1.6 g), y en Central Córdoba además el 1X2 cargó 54 % contra el
+    aviso (1.7 e). Las dos reventaron.
+
+## Candidatos (un caso)
+
+Del segundo corte (10/11, 04:29 UTC). Cada uno tiene un solo caso nombrado
+en las lecciones nuevas: **no son reglas**. Se vigilan y vuelven a la
+revisión siguiente si suman casos.
+
+- **F3 activa en la defensa rebaja la confianza de la tarjeta fuerte.**
+  ADT–Sporting Cristal (1549545:b:7): tarjeta fuerte, riesgo bajo y burbuja
+  de 2; reventó con el empate, que es como suelen cortarse sus positivas
+  (53 contra 44). «Con F3 activa en la defensa la tarjeta fuerte no debió
+  sostener la lectura positiva sin rebajar la confianza.» Hay un antecedente
+  del 10/11 que va en la misma línea pero se leyó por otro lado: Santa
+  Clara–Gil Vicente (1575542:a:4, «la concordancia no compensa el degradado
+  del once»). Si el usuario lo lee como el mismo patrón, son dos casos y pasa
+  a cambio (confianza, no 1X2). **Calculable:** la tasa de la tarjeta fuerte
+  con y sin F3 en el lado, en Aprendizaje.
+- **El perfil DC de temporada no pesa contra un local sin gol en juego
+  abierto.** Fortaleza FC–Independiente Medellín (1549858:a:6 y :b:6, un
+  partido, cambio 4).
+- **Una rama de sensibilidad que mueve el 1X2 y se cumple en el once obliga a
+  decir en el rehecho por qué el 1X2 se sostiene.** Talleres–Estudiantes
+  (1493239:b:5, parcial): Castro y Piovi salieron titulares, como decía la
+  rama que corría el 1X2 a la visita, y el 1X2 no se re-puntuó; Estudiantes
+  hizo 0,31 de xG, así que el partido no la confirmó. Es la lógica del punto 3
+  del cambio 2 (lo que depende del once se rehace con el once), aplicada a la
+  caja de sensibilidad. **Calculable:** que el recibo del rehecho avise
+  cuando una rama declarada como movedora del 1X2 se cumple en el once
+  oficial y el 1X2 no cambia.
 
 ## Cómo se aplica si se aprueba
 
@@ -1401,6 +1731,8 @@ bajados por la API). Los scripts no quedaron en el repo: el método es el texto.
    - *(10/11)* 1.7 (a): las dos burbujas en riesgo (cambio 8), reemplazando la
      línea «"más empate" no es regla»;
    - *(10/11)* 1.6 (h): la cadena (cambio 9);
+   - *(segundo corte, 10/11)* 6-C y una línea en 6-B: el banco del rival que
+     nombra el falsador (cambio 20);
    - *(10/11)* 6-B: los textos de los puntos 10, 13 y 19, y el del 11 si el
      usuario lo aprueba; 1.6 (c): el número del punto 10; Paso 3: el texto
      del punto 15;
@@ -1426,18 +1758,25 @@ bajados por la API). Los scripts no quedaron en el repo: el método es el texto.
       y la alerta `RIESGO-EN-LOS-DOS` (cambio 8);
    8. *(10/11)* `CADENA-VS-PARTE` (cambio 9);
    9. *(10/11)* el tramo 40-49 partido por el lado del elegido en
-      Aprendizaje (punto 13).
+      Aprendizaje (punto 13);
+   10. *(segundo corte)* el conteo de la cláusula «gol desde el banco» del
+       rival (escrita, sonó, con qué 1X2), la parte de los goles de cada
+       equipo que hacen los que entran desde el banco y la alerta
+       `BANCO-EN-FALSADOR` (cambio 20).
 
    Cada alerta nueva va a `docs/openapi.yaml` y `REGLAS_CALCULADAS_DESDE` lleva
    la fecha de la v4.5 para no cobrar hacia atrás.
 5. **Cierre:** con la v4.5 subida, el botón «Cerrar las anteriores a v4.5»
-   pasa a `aplicada` las 179 del 08/11 y las 58 del 10/11 (las 237). Las que
-   lleguen de los veredictos del 08-09/11 después de las 02:13 UTC del 10/11
-   no están leídas acá: no se cierran con el botón sin mirarlas.
+   pasa a `aplicada` las 179 del 08/11, las 58 del 10/11 a las 02:13 y las 23
+   del segundo corte de las 04:29 (las **260**). Las que lleguen después de las
+   04:29 UTC del 10/11 no están leídas acá: no se cierran con el botón sin
+   mirarlas.
 
 ## Cuándo se reabre
 
-- **Cambio 1:** con 100+ apuestas por grupo (arriba).
+- **Cambio 1:** con 100+ apuestas por grupo (arriba): si sobre NUESTRO win
+  rate la inflada resta y la construida suma, el aviso mueve la confianza del
+  elegido (tramo y freno del método), nunca el 1X2 sobre el mercado.
 - **Cambio 2:** con la alerta ESPINA-CONTRA-RIESGO (o contando a mano en
   Aprendizaje) y n ≥ 30. Si la espina «sigue» con un hecho de la lista no
   acierta más que la frecuencia de «sigue» en ese nivel (35 % alto, 28 % muy
@@ -1461,6 +1800,9 @@ bajados por la API). Los scripts no quedaron en el repo: el método es el texto.
 - *(10/11)* **Cambio 9:** si `CADENA-VS-PARTE` (o la cuenta a mano) muestra
   que la cadena que contradice al parte acierta tanto como él, se pregunta al
   usuario cuál manda.
+- *(segundo corte)* **Cambio 20:** con el conteo calculable de la cláusula
+  del banco (n ≥ 30 cláusulas): si suena más con el 1X2 fallado que con el
+  acertado, se mira como aviso de confianza; si suena igual, se saca.
 - *(10/11)* **Punto 11:** con el empate de los 195 partidos con los dos
   perfiles alineados medido contra el del mercado.
 - *(10/11)* **Puntos 13, 16 y 17:** la pista de la visita al 40-49 se mira con
@@ -1506,10 +1848,31 @@ cambios no se suman dos veces.
 | «Lo que NO se propone» (en contra, a la vista) | 4 | 2 / 2 / 0 | 4 |
 | **Total** | **58** | **21 / 8 / 29** | **40** |
 
-Los cambios 1 y 4 no tienen lecciones propias en esta tanda. El 1 lleva la
-pregunta del punto 19; el 4, la medición del punto 11 y una cita del cambio 2.
+Los cambios 1 y 4 no tienen lecciones propias en esta tanda. El 1 llevaba la
+pregunta del punto 19 (decidida el 10/11: aviso de confianza, no de 1X2); el
+4, la medición del punto 11 y una cita del cambio 2.
 **Ninguno de los cambios mueve un número.** Los puntos 10 a 19 son de la
 conversación: no son lecciones y no entran a la tabla.
+
+### Las 23 del segundo corte (10/11, 04:29 UTC; partidos del 07-08/11, todas acreditables)
+
+Igual que arriba: cada lección una vez, donde más pesa. La columna de
+partidos no se suma (Melgar–Juan Pablo II 1549548 y Talleres–Estudiantes
+1493239 tienen lecciones en dos filas).
+
+| Destino | Lecciones | Fallos / parciales / aciertos | Partidos |
+|---|---|---|---|
+| 2. Contra el riesgo alto, un hecho de la lista | 7 | 3 / 1 / 3 | 7 |
+| 4. Perfiles DC (Fortaleza–Medellín) | 2 | 0 / 2 / 0 | 1 |
+| 6. El falsador (Melgar) | 1 | 0 / 0 / 1 | 1 |
+| 7. El marcador (Colo Colo) | 1 | 0 / 0 / 1 | 1 |
+| **20. El banco del rival en el falsador (nuevo)** | 4 | 4 / 0 / 0 | 4 |
+| Confirmaciones de 6-B, (e) de 1.6 y (g)/(e) incumplidas | 4 | 1 / 1 / 2 | 4 |
+| «Lo que NO se propone» (motor, delta, tarjeta fuerte) | 3 | 3 / 0 / 0 | 3 |
+| Candidatos (Estudiantes) | 1 | 0 / 1 / 0 | 1 |
+| **Total** | **23** | **11 / 5 / 7** | **18** |
+
+Los cambios 1, 3, 5, 8 y 9 no tienen casos en el segundo corte.
 
 ## Núcleo e historial
 
