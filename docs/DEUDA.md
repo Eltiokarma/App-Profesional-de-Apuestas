@@ -874,9 +874,15 @@ conversación se pierde en la siguiente.
    nuestros partes, tras 3 fallos seguidos se acertó 20 de 30; en la base, no.
    Regla fija (100+ casos tras 3 fallos, 65 %+, intervalo sobre el promedio):
    `trasFallos` en la simulación y la rutina «SAD · criterio de contacto
-   (semanal)» `trig_011ha3sLwm2qqjCpfpHLmFYx`, lunes 07:43 de Lima, en la sesión
-   de trabajo `session_01WwsfbUajmjoAmjLG4pPY2i`. Si esa sesión se archiva, la
-   rutina se rehace en otra con el repo. `docs/METODO_APUESTA.md`.
+   (semanal, v2)» `trig_01FPQZSDDb1GsMtYdbKAAFYu`, lunes 07:43 de Lima, en su
+   PROPIA sesión fija «SAD · criterio de contacto (rutina semanal)»
+   `session_01WwsfbUaxB9wXNcyxwMHGQL` desde el 09/11 (la v1,
+   `trig_011ha3sLwm2qqjCpfpHLmFYx` en la sesión de trabajo
+   `session_01WwsfbUajmjoAmjLG4pPY2i`, quedó desactivada).
+   `docs/METODO_APUESTA.md`. Mediciones: 04/11, tras 3 fallos 6 de 9 (66,7 %),
+   promedio 62,1 %, martingala 143,69; **09/11, tras 3 fallos 12 de 28
+   (42,9 %), promedio 59,6 % (192 de 322), martingala 123,99 con caída máx.
+   33 %: en observación** (faltan 72 casos para los 100).
 
 24. **La ley anticulebras del usuario, medida** (07/11/2026, usuario: «no
    pueden ser los siete locales… si no, cualquier pastrulo gana»; el empate
