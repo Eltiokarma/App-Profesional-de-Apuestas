@@ -6302,6 +6302,15 @@ def main():
           "con la llegada vista, sí",
           _o1338["meses"] is None and _o1338.get("sinAntiguedad") and _o1338b["origenMeses"] == "base",
           (_o1338, _o1338b))
+    # 1349: la fila del parte suma los idsAlternos de la tabla F1 de la base y el bloque F la casa por ese id
+    from backend.analisis.parte import sumar_ids_alternos as _sia
+    from backend.analisis import bloque_f as _bf1349
+    _p1349 = _sia({"equipos": {"a": {"plantel": []}, "b": {"plantel": [
+        {"nombre": "H. Rojas", "zona": "MID", "rol": "TF", "jugadorId": 65974}]}}}, {65974: [546779]})
+    _r1349 = _bf1349.resolver(_p1349["equipos"]["b"]["plantel"], [], [], ["J. Rojas"], {"J. Rojas": 546779})
+    check("1349: con el id alterno de la base, el «J. Rojas» del banco es H. Rojas (no «no figura en la hoja»)",
+          _p1349["equipos"]["b"]["plantel"][0]["idsAlternos"] == [546779]
+          and [(x["estado"], x.get("hoja")) for x in _r1349["jugadores"]] == [("disponible", "banca")], _r1349)
     _rz827: list = []
     _o827 = _dte({"nombre": "Cristián Gómez", "desde": ""}, _rz827, "a", "2026-10-25", None)
     check("827: el `desde` vacío a propósito (sin fuente, como pide el prompt) no se rechaza y la antigüedad queda null",
