@@ -293,6 +293,14 @@ def main():
         _dc646.ROLES_GRID_REHACE = False
     check("646: promovida, cada rol contradicho es un motivo de rehacer",
           _r646b["rehacer"] and sum(m.startswith("rol:") for m in _r646b["motivos"]) == 2, _r646b["motivos"])
+    # 1348: «Lewis-Potter» (apellido compuesto que empieza como una pila) es «K. Lewis-Potter» del grid
+    _cas1348 = [(n if n != "M. Tel" else "K. Lewis-Potter", g) for n, g in _cas]
+    _of1348 = {"a": {**_of646["a"], "titulares": [n for n, _ in _cas1348],
+                     "casillas": [{"nombre": n, "grid": g, "carril": _carr[g]} for n, g in _cas1348]}}
+    _r1348 = _reh({"equipo": "a", "apertura": {"m1": {"sistema": "4-2-3-1", "xiReferencia": "", "rolesReasignados": [
+        "Lewis-Potter, extremo de origen, de lateral izquierdo"]}}}, _of1348)
+    check("1348: «Lewis-Potter» de lateral y el grid lo pone de medio (4:1): sale en rolesVsGrid",
+          {r["jugador"] for r in _r1348["rolesVsGrid"]} == {"K. Lewis-Potter"}, _r1348["rolesVsGrid"])
     # 1074: la aposición entre comas no es parte del nombre (Cercle Brugge 1558664, grid corregido)
     _cas1074 = [("G. Coucke", "1:1", "centro"), ("T. Adaramola", "2:1", "izquierda"), ("R. Caicedo", "2:2", "izquierda"),
                 ("G. Kondo", "2:3", "derecha"), ("I. Diakite", "2:4", "derecha"), ("H. van der Bruggen", "3:1", "izquierda"),

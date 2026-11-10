@@ -225,5 +225,11 @@ check("1337: la mención que también nombra a un jugador del rival no se avisa;
       parte.fuera_en_el_banco(_p1337) == [] and len(parte.fuera_en_el_banco(_p1337b)) == 1,
       (parte.fuera_en_el_banco(_p1337), parte.fuera_en_el_banco(_p1337b)))
 
+# 1347 (10/11/2026, Olympiakos–PAOK): la raya «–» entre dos nombres los separa
+check("1347: «Puerta–Freuler» son dos palabras y menciona a Puerta",
+      idn.plano("Puerta–Freuler").split() == ["puerta", "freuler"]
+      and idn.menciona("D. Puerta", "doble pivote Puerta–Freuler fijo")
+      and idn.plano("Asta-Buruaga").split() == ["asta", "buruaga"] and idn.plano("Hoeneß") == "hoeness")
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)

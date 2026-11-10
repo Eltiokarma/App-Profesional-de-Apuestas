@@ -39,6 +39,11 @@ def plano(texto: str) -> str:
     ni dígito hecho espacio."""
     t = (texto or "").translate(_LETRAS)
     t = re.sub(r"['’`´]", "", t)
+    # LA RAYA SEPARA (10/11/2026, incidencia 1347, Olympiakos–PAOK: «Puerta–Freuler»
+    # quedaba «puertafreuler» porque el «encode ascii ignore» tiraba la «–» antes
+    # de hacerla espacio, y el DTP no vio a Puerta en el banco). Todo signo que no
+    # es letra ni dígito se hace espacio ANTES de quitar las tildes.
+    t = re.sub(r"[^\w\s]", " ", t)
     t = unicodedata.normalize("NFKD", t).encode("ascii", "ignore").decode().lower()
     return re.sub(r"[^a-z0-9 ]+", " ", t)
 
