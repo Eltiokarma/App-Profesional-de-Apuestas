@@ -336,6 +336,24 @@ export function parteCoworkDemo(fixtureId: number, equipoA: string, equipoB: str
         visita: { nuestra: 20, mercado: 21.3, puntos: -1.3, cuota: 4.4, cuotaJusta: 5.0, valor: -0.12 },
       },
     },
+    // en quién desconfiar (10/11/2026): la demo enseña la alerta encendida
+    desconfianza: {
+      elegido: 'local' as const,
+      alerta: { activa: true, motivos: [
+        { codigo: 'SOBRE-LA-CASA' as const, detalle: 'le damos 54,0 % al elegido y la casa 51,5 % (+2,5 pts)' },
+        { codigo: 'BURBUJA-DE-UN-PARTIDO' as const, detalle: 'la racha del elegido es de un solo partido con riesgo alto' },
+      ] },
+      burbujaElegido: { signo: '+', partidos: 1, riesgo: 'alto' },
+      descarte: { resultado: 'visita' as const, nuestra: 20, casa: 21.3 },
+      dobleOportunidad: { texto: `${equipoB} no gana: ${equipoA} o empate`, seleccion: ['local' as const, 'empate' as const], nuestra: 80, casa: 78.2, resaltar: true },
+      ventajaPorFuerza: {
+        a: { prob: 51.5, tramo: '48-60 %', noGanaCon1: 0.244, noGanaCon2: 0.054 },
+        b: { prob: 21.3, tramo: '< 35 %', noGanaCon1: 0.469, noGanaCon2: 0.174 },
+      },
+      fuenteVentaja: '53.108 partidos de football-data (demo)',
+      paraElAnalista: 'la tipología ECHADA / SOB del TDE no separó quién pierde la ventaja (17,6 % contra 17,5 %): describe la vía; el número lo pone la fuerza previa',
+      nota: 'no mueve el 1X2: dice en quién desconfiar',
+    },
     matriz: {
       a: {
         ganar: { probabilidad: 54, tactica: 'acumular por fuera y cargar el segundo palo', pelotaParada: 'córner cerrado al primer palo con los dos centrales', reloj: 'doble pivote desde el 70′ si va arriba', base: 'Lago-Peñas 2014: el local gana más por ataque posicional' },

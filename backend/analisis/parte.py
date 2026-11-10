@@ -35,6 +35,7 @@ from datetime import date as date_t, datetime, timedelta, timezone
 
 from backend import identidad as _identidad
 from backend import db as saddb
+from backend.analisis import desconfianza as _desconfianza
 from backend.analisis import bloque_f, db as efedb, veredicto as vered
 from backend.analisis import coherencia as _coherencia
 from backend.analisis import modo_fallo as _modo_fallo
@@ -392,7 +393,7 @@ _LADOS_ALIAS_MATCHUP = {"a", "b", "local", "visita", "visitante"}
 # falsos y escondería los de verdad.
 _ECO_PARTE = {"partido", "estado", "creadoEn", "actualizadoEn", "xi", "veredicto",
               "timeline", "rechazos", "perdido", "aviso", "entrada", "cohorte", "cuarentena", "bancoDesmentido",
-              "xiConservados", "coherencia", "vsMercado"}
+              "xiConservados", "coherencia", "vsMercado", "desconfianza"}
 _ECO_EQUIPO = {"total", "maximoAlcanzable", "porcentaje", "clasificacion", "disponibilidad",
                "sinBloques", "bloquesSinDeclarar", "notaTotales"}
 _ECO_JUGADOR = {"soloBaja"}
@@ -2664,7 +2665,7 @@ _ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "K-EXTREMO-CONDICION", "K
                         "COLAPSO-EN-CASCADA", "F1-DECISIVO-FUERA", "DTP-REHACER", "DTP-SIN-REFERENCIA",
                         "TIPOLOGIA-VS-INDICES", "ESPINA-SIGUE-EN-EXTREMO", "EFE-EMPATE-TECNICO",
                         "T.54-SIN-DECLARAR", "ELIMINATORIA-AL-REVES", "SANCION-SIN-DECLARAR",
-                        "ONCE-SIN-FILA-F1", "TDE-RELEVANCIA-SIN-DECLARAR"}
+                        "ONCE-SIN-FILA-F1", "TDE-RELEVANCIA-SIN-DECLARAR", "DESCONFIAR"}
 # LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
 # selladas (coherencia_json), porque no son deterministas y rehacerlas al leer
 # las haría parpadear. Del depósito se descartan igual que las calculadas
@@ -3123,6 +3124,16 @@ def _ventaja_o_nada(fixture_id: int, pron: dict, texto_parte: str = "") -> dict 
             hist = None
         return ventaja_mercado(pron, m, hist, texto_parte)
     except Exception:  # noqa: BLE001 — sin cuotas no hay marca, nunca un error
+        return None
+
+
+def _desconfianza_o_nada(fixture_id: int, pron: dict | None, reventon: dict | None, nombres: dict) -> dict | None:
+    try:
+        from backend.analisis.lecciones import cuotas_mercado
+        m = cuotas_mercado([fixture_id]).get(fixture_id)
+        mercado = {k: m["prob"][k] for k in ("local", "empate", "visita")} if m else None
+        return _desconfianza.leer(pron, mercado, reventon, nombres)
+    except Exception:  # noqa: BLE001 — sin cuotas ni 1X2 no hay bloque; el parte se lee igual
         return None
 
 
@@ -4661,6 +4672,11 @@ def dto(fixture_id: int) -> dict | None:
     # lectura: lo que decide cuánto se carga tiene que verse antes que nada
     alertas.extend(alertas_extremo(reventon, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     alertas.extend(alertas_familias(reventon, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
+    # EN QUIÉN DESCONFIAR (10/11/2026, usuario): la alerta a la tira y el bloque
+    # con la ventaja por fuerza y el descarte, calculados al leer
+    desconfianza = _desconfianza_o_nada(fila["fixture_id"], parte.get("pronostico"), reventon,
+                                        {"a": fila["equipo_a"], "b": fila["equipo_b"]})
+    alertas.extend(_desconfianza.alerta_tira(desconfianza, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     alertas.extend(alertas_espina(reventon, (parte.get("lecturaSad") or {}).get("espina"),
                                   {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # dos equipos de ligas distintas: el nivel no compara entre bases, y el
@@ -4726,6 +4742,7 @@ def dto(fixture_id: int) -> dict | None:
         "pronostico": parte["pronostico"],
         # la ventaja sobre el mercado (26/10/2026): calculada al leer, nunca declarada
         "vsMercado": _ventaja_o_nada(fila["fixture_id"], parte["pronostico"], fila["parte_json"]),
+        "desconfianza": desconfianza,
         "matriz": parte.get("matriz") or {},
         "documentos": parte["documentos"],
         "pendientes": parte["pendientes"],

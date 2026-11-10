@@ -2255,6 +2255,8 @@ export interface ParteCoworkDTO {
   coherencia?: CoherenciaParte | null
   /** La ventaja del 1X2 sobre el mercado, calculada al leer (26/10/2026). */
   vsMercado?: VentajaMercado | null
+  /** En quién desconfiar, calculado al leer (10/11/2026): no mueve el 1X2. */
+  desconfianza?: DesconfianzaParte | null
   fuentes: string[]
   notas: string
   xi: Record<'a' | 'b', { once?: string[]; formacion?: string; fuente?: string; capturadoEn?: string }>
@@ -2839,4 +2841,25 @@ export interface SimulacionApuesta {
   porVersion: { version: string; partidos: number; aciertos: number; estrategias: Partial<Record<EstrategiaClave, { apostado: number; ganancia: number; apuestas: number; roi: number | null }>> }[]
   apuestas: ApuestaSimulada[]
   excluidos: { fixtureId: number; pitazo: string; partido: { local: string; visita: string; liga: string }; motivo: string }[]
+}
+
+/** Una fila de la ventaja por fuerza: cuánto NO gana con 1 o 2+ de ventaja al descanso (0-1). */
+export interface VentajaPorFuerza {
+  prob: number
+  tramo: string
+  noGanaCon1: number
+  noGanaCon2: number
+}
+
+/** En quién desconfiar (10/11/2026, docs/revisiones/ESTUDIO_ECHADOS_2026-11.md). */
+export interface DesconfianzaParte {
+  elegido: Resultado1x2
+  alerta: AlertaConfianza
+  burbujaElegido: { signo: string | null; partidos: number | null; riesgo: string | null } | null
+  descarte: { resultado: Resultado1x2; nuestra: number; casa: number | null }
+  dobleOportunidad: { texto: string; seleccion: Resultado1x2[]; nuestra: number; casa: number | null; resaltar: boolean } | null
+  ventajaPorFuerza: Partial<Record<'a' | 'b', VentajaPorFuerza | null>>
+  fuenteVentaja: string
+  paraElAnalista: string
+  nota: string
 }
