@@ -4938,6 +4938,29 @@ def main():
     _f1n = {x["jugadorId"]: x for x in _tabla_eq(_hid, "local", "2100-01-01")["candidatos"]}
     check("si la alineación lo llama distinto que la base, la fila trae nombreEnLaHoja (335)",
           _f1n[_cola[0]["id"]].get("nombreEnLaHoja") == "Dayan Pérez", _f1n.get(_cola[0]["id"]))
+    # 1330 (Pasto, 10/11/2026, aprobada): la hoja trae el id de uno con el NOMBRE de otro jugador de la
+    # plantilla que no está en esa hoja → la titularidad va al que casa por nombre, marcado idCruzado
+    _pl1330 = _jugm.plantilla_de(_hid)["jugadores"]
+    _otro1330 = next(j for j in _pl1330 if j["id"] not in {c["id"] for c in _cola}
+                     and len(j["nombre"].split()) >= 2)
+    _rec_a = _orec(_hid, "2100-01-01")["jugadores"]
+    with _sq3f.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("UPDATE alineaciones SET jugador=? WHERE fixture_id=990777 AND player_id=?",
+                     (_otro1330["nombre"], _cola[0]["id"]))
+    _rec_d = _orec(_hid, "2100-01-01")["jugadores"]
+    _t1330 = {x["jugadorId"]: x for x in _tabla_eq(_hid, "local", "2100-01-01")["candidatos"]}
+    with _sq3f.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("UPDATE alineaciones SET jugador='Dayan Pérez' WHERE fixture_id=990777 AND player_id=?",
+                     (_cola[0]["id"],))
+    _tit = lambda r, pid: (r.get(pid) or {}).get("titular", 0)  # noqa: E731
+    check("1330: la hoja con el id de uno y el nombre de otro de la plantilla acredita al del nombre (idCruzado)",
+          _tit(_rec_d, _otro1330["id"]) == _tit(_rec_a, _otro1330["id"]) + 1
+          and _tit(_rec_d, _cola[0]["id"]) == _tit(_rec_a, _cola[0]["id"]) - 1
+          and _t1330.get(_otro1330["id"], {}).get("idCruzado") == [
+              {"idEnLaHoja": _cola[0]["id"], "nombreEnLaHoja": _otro1330["nombre"], "hojas": 1}]
+          and _t1330[_otro1330["id"]].get("titularEnElUltimo") is True,
+          (_rec_a.get(_otro1330["id"]), _rec_d.get(_otro1330["id"]), _t1330.get(_otro1330["id"])))
+    _f1n = {x["jugadorId"]: x for x in _tabla_eq(_hid, "local", "2100-01-01")["candidatos"]}
     # 1032 (San Lorenzo, M. Reali): el que juega en otro club no vuelve por los onces recientes
     _jeo1032 = _f1m.juegan_en_otro
     try:
@@ -5263,6 +5286,18 @@ def main():
     _mp(_f1209, lambda a, b: False)
     check("1209: un arquero y un defensa con el mismo apellido nunca juntos NO salen posibleMismoQue",
           not any("posibleMismoQue" in f for f in _f1209), _f1209)
+    # 1330 (10/11/2026, aprobada): «Jose Sagredo» 25 PJ y 0 minutos, «Jesús Sagredo» con todos (Bolívar)
+    _f1330 = [{"jugadorId": 65657, "nombre": "Jesús Sagredo", "apps": 40, "minutos": 3284, "posicion": "Defensa"},
+              {"jugadorId": 65995, "nombre": "Jose Sagredo", "apps": 25, "minutos": 0, "posicion": "Defensa"}]
+    _f1330b = [{**x, "minutos": 900} for x in _f1330]
+    _f1330c = [dict(x) for x in _f1330]
+    _mp(_f1330, lambda a, b: False)
+    _mp(_f1330b, lambda a, b: False)
+    _mp(_f1330c, lambda a, b: True)
+    check("1330: mismo apellido, pilas distintas y los minutos en uno solo (nunca juntos) → posibleMismoQue; "
+          "con minutos en los dos o juntos en una hoja, no",
+          _f1330[0].get("posibleMismoQue") == 65995 and _f1330[1].get("posibleMismoQue") == 65657
+          and not any("posibleMismoQue" in f for f in _f1330b + _f1330c), (_f1330, _f1330b, _f1330c))
     from backend.analisis import bloque_f as _bf932
     _pl932 = [{"nombre": "L. Pratto", "jugadorId": 352477, "zona": "ATK", "rol": "TH"},
               {"nombre": "L. Pratto", "jugadorId": 6014, "zona": "ATK", "rol": "ROT"},

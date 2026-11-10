@@ -1291,7 +1291,12 @@ paths:
         mismo apellido (incidencia 904), y también dos ids que se ALTERNAN: nunca juntos en una
         hoja y 6 o más hojas entre los dos con este equipo (un arquero y uno de campo, nunca). Dos filas del mismo nombre que NUNCA compartieron una
         hoja y que los datos no alcanzan a fundir llevan `posibleMismoQue` (el id de la otra):
-        el bloque F no cuenta a una de baja si la otra jugó (932). Los de la plantilla cuya
+        el bloque F no cuenta a una de baja si la otra jugó (932); también el mismo apellido
+        con pilas distintas cuando uno de los dos registros tiene partidos y 0 minutos y el otro
+        los minutos (1330, «Jose»/«Jesús Sagredo»). Una hoja que trae el id de un jugador con
+        el NOMBRE de otro de la plantilla (y no el del dueño del id) se le acredita al del
+        nombre en los onces recientes, y su fila lleva `idCruzado` `[{idEnLaHoja,
+        nombreEnLaHoja, hojas}]` (1330, Pasto: 305596 escrito «P. Preciado», el 527180). Los de la plantilla cuya
         última hoja (de los últimos 120 días) es con OTRO club, posterior a la última con este,
         salen de la tabla y viajan en `jueganEnOtroEquipo` `[{jugadorId, nombre, equipo, teamId,
         ultimaHoja}]` (931). El diminutivo de la pila casa por una lista cerrada («Fran» /

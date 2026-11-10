@@ -68,7 +68,7 @@ def onces_recientes(team_id: int, antes: str) -> dict:
             "sad", f"SELECT fixture_id, player_id, jugador, posicion, titular, grid FROM alineaciones "
                    f"WHERE team_id=? AND fixture_id IN ({','.join('?' * len(fx))})", (team_id, *fx))
         ga = saddb.query(
-            "sad", f"SELECT jugador_id AS a, asistente_id AS b, detalle FROM fixture_eventos "
+            "sad", f"SELECT fixture_id, jugador_id AS a, asistente_id AS b, detalle FROM fixture_eventos "
                    f"WHERE equipo_id=? AND tipo='Goal' AND fixture_id IN ({','.join('?' * len(fx))})",
             (team_id, *fx))
     except Exception:  # noqa: BLE001 — base sin la tabla de alineaciones
@@ -76,9 +76,15 @@ def onces_recientes(team_id: int, antes: str) -> dict:
     js: dict[int, dict] = {}
     orden = {fid: i for i, fid in enumerate(fx)}
     lineas = _lineas_por_grid(filas)
+    cruce = _cruces(team_id, filas)
     for f in filas:
-        j = js.setdefault(f["player_id"], {"nombre": limpiar_nombre(f["jugador"] or ""), "posicion": f["posicion"] or "",
-                                           "titular": 0, "convocado": 0, "enUltimo": False})
+        pid = cruce.get((f["fixture_id"], f["player_id"]), f["player_id"])
+        j = js.setdefault(pid, {"nombre": limpiar_nombre(f["jugador"] or ""), "posicion": f["posicion"] or "",
+                                "titular": 0, "convocado": 0, "enUltimo": False})
+        if pid != f["player_id"]:
+            c = j.setdefault("_cruzado", {}).setdefault(f["player_id"], {
+                "idEnLaHoja": f["player_id"], "nombreEnLaHoja": limpiar_nombre(f["jugador"] or ""), "hojas": 0})
+            c["hojas"] += 1
         j["convocado"] += 1
         j["titular"] += 1 if f["titular"] else 0
         # todos los nombres con que figura ESE id: la API a veces nombra una
@@ -108,6 +114,8 @@ def onces_recientes(team_id: int, antes: str) -> dict:
         if f["posicion"] and not j.get("posicionBanco"):
             j["posicionBanco"] = f["posicion"]
     for j in js.values():
+        if "_cruzado" in j:
+            j["idCruzado"] = sorted(j.pop("_cruzado").values(), key=lambda c: c["idEnLaHoja"])
         # LA POSICIÓN HABITUAL, NO LA DEL ÚLTIMO ONCE (incidencias 457 y 523):
         # Pumas salió una vez en 5-4-1 y Juninho pasó a MID y Antuna a DEF; Saka
         # «MID» por un 4-2-3-1. La más repetida en sus titularidades; empate → la
@@ -126,9 +134,42 @@ def onces_recientes(team_id: int, antes: str) -> dict:
         if "own" in (g["detalle"] or "").lower() or "missed" in (g["detalle"] or "").lower():
             continue
         for pid in (g["a"], g["b"]):
+            pid = cruce.get((g["fixture_id"], pid), pid)
             if pid and pid in js:
                 js[pid]["gaRecientes"] = js[pid].get("gaRecientes", 0) + 1
     return {"onces": len(fx), "jugadores": js, "ultimo": fx[0]}
+
+
+def _nombres_plantel(team_id: int) -> dict[int, str]:
+    """{id: nombre} de la plantilla de la temporada que sirve `plantilla_de`."""
+    temporada = jug._temporada_de(team_id)
+    if temporada is None:
+        return {}
+    return {r["id"]: limpiar_nombre(r["nombre"] or "") for r in jug._query(
+        "SELECT DISTINCT s.player_id AS id, j.nombre FROM jugador_stats s JOIN jugadores j ON j.id = s.player_id "
+        "WHERE s.team_id=? AND s.season=?", (team_id, temporada))}
+
+
+def _cruces(team_id: int, filas) -> dict:
+    """{(fixture, id de la hoja): id del que la hoja NOMBRA} (incidencia 1330,
+    aprobada el 10/11/2026). Pasto trae al 305596 (Paraszhidisz) escrito «P.
+    Preciado», que es el 527180: la titularidad iba al dueño del id y Preciado,
+    el que jugó, salía SUP. Si el nombre de la hoja casa con OTRO jugador de la
+    plantilla y no con el dueño del id (`identidad.id_cruzado`), la hoja se le
+    acredita al que casa por nombre —salvo que ese otro figure en la MISMA hoja
+    con su id: entonces no hay cruce que afirmar—."""
+    plantel = _nombres_plantel(team_id)
+    if not plantel:
+        return {}
+    en_hoja: dict = {}
+    for f in filas:
+        en_hoja.setdefault(f["fixture_id"], set()).add(f["player_id"])
+    out = {}
+    for f in filas:
+        q = _id.id_cruzado(limpiar_nombre(f["jugador"] or ""), f["player_id"], plantel)
+        if q is not None and q not in en_hoja[f["fixture_id"]]:
+            out[(f["fixture_id"], f["player_id"])] = q
+    return out
 
 
 def _lineas_por_grid(filas) -> dict:
@@ -546,7 +587,8 @@ def marcar_posibles(filas: list[dict], juntos) -> None:
             if "posibleMismoQue" in a or "posibleMismoQue" in b:
                 continue
             if not (mismo_jugador(a.get("nombre") or "", b.get("nombre") or "")
-                    or _mismo_apellido(a.get("nombre") or "", b.get("nombre") or "")):
+                    or _mismo_apellido(a.get("nombre") or "", b.get("nombre") or "")
+                    or _minutos_complementarios(a, b)):
                 continue
             # UN ARQUERO Y UNO DE CAMPO SON DOS PERSONAS (04/11/2026, incidencia
             # 1209: «C. Rodriguez» defensa y «E. Rodriguez» arquero de Always
@@ -556,6 +598,21 @@ def marcar_posibles(filas: list[dict], juntos) -> None:
             if juntos(a["jugadorId"], b["jugadorId"]):
                 continue
             a["posibleMismoQue"], b["posibleMismoQue"] = b["jugadorId"], a["jugadorId"]
+
+
+def _minutos_complementarios(a: dict, b: dict) -> bool:
+    """EL MISMO APELLIDO Y LOS MINUTOS EN UNO SOLO (10/11/2026, incidencia
+    1330, aprobada por el usuario): «Jose Sagredo» 65995 con 25 partidos y 0
+    minutos y «Jesús Sagredo» 65657 con todos los minutos en Bolívar —José
+    Jesús Sagredo, con dos ids—. Las pilas enteras son distintas y ninguna
+    regla de nombres los une, pero un registro con partidos y SIN un minuto no
+    pisa los minutos del otro: es el registro roto de la API. Solo marca
+    `posibleMismoQue` (quien llama exige además que nunca compartieran hoja);
+    no funde."""
+    def roto(x):
+        return bool(x.get("apps")) and not x.get("minutos")
+    return (_id.mismo_apellido(a.get("nombre") or "", b.get("nombre") or "")
+            and ((roto(a) and bool(b.get("minutos"))) or (roto(b) and bool(a.get("minutos")))))
 
 
 def nunca_juntos(a: int, b: int) -> bool:
@@ -852,6 +909,12 @@ def tabla_equipo(team_id: int, nombre: str, antes: str = "9999") -> dict:
                 f["rolSugerido"] = rol_por_onces(tit.get(j["id"], 0), onces_disponible(rec["jugadores"].get(j["id"]),
                                                                                          rec["onces"]))
             filas.append(f)
+    # LA HOJA QUE TRAÍA SU NOMBRE CON EL ID DE OTRO (1330): la fila dice de qué
+    # id se le acreditaron esas hojas
+    for f in filas:
+        c = (rec["jugadores"].get(f["jugadorId"]) or {}).get("idCruzado")
+        if c:
+            f["idCruzado"] = c
     marcar_posibles(filas, lambda a, b: not nunca_juntos(a, b))
     return {
         "equipo": nombre, "teamId": team_id, "temporada": p.get("temporada"),
