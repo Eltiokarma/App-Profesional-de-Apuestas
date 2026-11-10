@@ -340,6 +340,20 @@ def desambiguar(nombres: dict) -> dict:
     return out
 
 
+def _descanso(team_id: int, anterior: str, fecha: str) -> dict:
+    from backend.jugadores import sin_liga_en_la_base
+    from backend.analisis.tde import F2_DESCANSO_MAX_DIAS
+    motivo = sin_liga_en_la_base(team_id, fecha)
+    if motivo:
+        return {"diasDescanso": None, "descansoSinDato": motivo}
+    dias = jug_dias_descanso(anterior, fecha)
+    if dias is not None and dias > F2_DESCANSO_MAX_DIAS:
+        return {"diasDescanso": None,
+                "descansoSinDato": (f"el último partido oficial en nuestra base es de hace {dias} días: "
+                                    "lo que jugó entre medio no se ve; descanso desconocido")}
+    return {"diasDescanso": dias}
+
+
 def insumos_equipo(team_id: int, nombre: str, fx) -> dict:
     from backend.ficha_tactica import tactica_de
 
@@ -438,7 +452,10 @@ def insumos_equipo(team_id: int, nombre: str, fx) -> dict:
                        "formacionAhora": ali.get("formacion") or ""}
     return {
         **base,
-        "diasDescanso": jug_dias_descanso(str(a["date"]), str(fecha)),  # por horas (769)
+        # por horas (769); sin su liga en la base o con el último oficial de hace
+        # más de F2_DESCANSO_MAX_DIAS, sin dato: la MISMA regla que el F2 del TDE
+        # (1357, Anaitasuna «38 días» con la regional cada semana)
+        **_descanso(team_id, str(a["date"]), str(fecha)),
         "partidoAnterior": anterior,
         "cambiosXi": cambios,
         "parejasNuevas": _parejas_nuevas(team_id, fecha, xi) if xi else [],

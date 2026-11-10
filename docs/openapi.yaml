@@ -1145,7 +1145,8 @@ paths:
         minutos ganando/empatando/perdiendo, posesión atada al rival y al marcador —regla de
         posesión condicional—, stats, XI de referencia con carriles), los cambios de XI contra el
         anterior, las parejas de la misma línea que nunca arrancaron juntas en lo capturado, los
-        días de descanso, si es primera fecha, el candidato a MECANISMO-ABIERTO (≥2 recibidos),
+        días de descanso (null con `descansoSinDato` si su liga no está en la base o el último
+        oficial es de hace más de 45 días: la misma regla que el F2 del TDE, 1357), si es primera fecha, el candidato a MECANISMO-ABIERTO (≥2 recibidos),
         `casosBloque` (DTP v1.4: los casos de la pregunta 6 que dejaron los cierres sobre el bloque
         de ESE equipo —`sostuvo`, `caso`, `conUnoMenos`, `deParte`, `fecha`—, solo de partes
         anteriores; la apertura del rival los lee para responder la 6; v1.6: con `sede` y
@@ -2824,7 +2825,8 @@ components:
               description: calculada de fixtures ya capturados (0 requests)
               properties:
                 diasDescanso: { type: integer, nullable: true }
-                partidos21d: { type: integer }
+                partidos21d: { type: integer, nullable: true }
+                sinLigaEnLaBase: { type: string, description: 'su liga no está en la base (solo copa o amistosos en la ventana, jugadores.sin_liga_en_la_base): días y partidos21d van null con este motivo (1357)' }
     FichaPartido:
       type: object
       description: 'Puente con los skills: plantillas + congestión de ambos equipos + ficha táctica'
@@ -2954,7 +2956,8 @@ components:
         tablaDe: { type: string, description: 'de qué tabla sale la posición: la fase internacional, el torneo corto en curso (con 5+ fechas) o «año»' }
         equiposEnLaTabla: { type: integer, nullable: true }
         zonaRival: { type: string, nullable: true, enum: [alta, media, descenso, null] }
-        diasDescanso: { type: integer, nullable: true, description: 'contra el partido anterior; null si choca con él (conflicto)' }
+        diasDescanso: { type: integer, nullable: true, description: 'contra el partido anterior; null si choca con él (conflicto) o si su liga no está en la base (descansoSinDato)' }
+        descansoSinDato: { type: string, description: 'por qué el descanso no es dato: el equipo solo tiene copa o amistosos en la base y lo que juega entre medio no se ve (1357); ausente si hay dato' }
         conflicto: { type: string, description: 'otro partido del equipo a menos de 24 h: uno es un aplazado sin marcar o un duplicado; ausente si no hay choque' }
         etiquetas: { type: array, items: { $ref: '#/components/schemas/EtiquetaRival' } }
     Distribucion:
@@ -4932,6 +4935,10 @@ components:
             favorito y 0 al otro cuando el margen supera el umbral; 0.5 a los dos si están
             dentro. `puedeBajar` recuerda lo único que el backend no puede saber: que un
             equipo esté obligado a ganar lleva P1a a 0.
+            Con el nivel POR DEFECTO del motor en algún lado (sin filas o menos de 20
+            partidos: el 0,5 de MOTOR §2.2, `ventana_nivel.nivel_por_defecto`) μ no es dato:
+            viaja `sinDato: true` con `porque` y `nivelPorDefecto` por lado, sin `score`, y
+            P1a entra primero en `noCalculables` (1366).
           additionalProperties: true
         f1:
           type: object
@@ -4942,7 +4949,7 @@ components:
           additionalProperties: true
         f2:
           type: object
-          description: 'Descanso antes y exigencia después, por lado. Devuelve `scorePiso`.'
+          description: 'Descanso antes y exigencia después, por lado. Devuelve `scorePiso`. Sin su liga en la base (solo copa o amistosos en la ventana) el descanso no es dato: `diasDescanso` y `scorePiso` null, con `sinLigaEnLaBase` (1357).'
           additionalProperties: true
         fiabilidadMu: { type: object, additionalProperties: true }
         nivelDeDato:

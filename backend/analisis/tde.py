@@ -282,7 +282,11 @@ def f2_calendario(team_id: int, fecha: str, contexto: dict) -> dict:
     cong = jug._congestion(team_id, fecha)
     dias = cong.get("diasDescanso")
     senal = contexto.get("senalCalendario") or ""
-    if dias is not None and dias > F2_DESCANSO_MAX_DIAS:
+    if cong.get("sinLigaEnLaBase"):
+        # la base solo ve su copa (1357, Anaitasuna «38 días»): sin dato, con el motivo
+        piso, porque = None, cong["sinLigaEnLaBase"]
+        dias = None
+    elif dias is not None and dias > F2_DESCANSO_MAX_DIAS:
         piso, porque = None, (f"el último partido oficial del equipo en nuestra base es de hace {dias} días: "
                               "su liga no está en la base (lo que jugó entre medio no se ve); descanso "
                               "desconocido, va de la prensa")
@@ -311,6 +315,7 @@ def f2_calendario(team_id: int, fecha: str, contexto: dict) -> dict:
     return {
         "diasDescanso": dias,
         **({"ultimoOficialHaceDias": cong["ultimoOficialHaceDias"]} if cong.get("ultimoOficialHaceDias") else {}),
+        **({"sinLigaEnLaBase": cong["sinLigaEnLaBase"]} if cong.get("sinLigaEnLaBase") else {}),
         "partidos21d": cong.get("partidos21d"),
         "senalCalendario": senal,
         "recuperabilidad": contexto.get("recuperabilidad"),
@@ -445,6 +450,24 @@ def ficha(fixture_id: int) -> dict | None:
                              "(alerta ESCALA-LIGAS) y el protector puede salir de la escala, no del partido; "
                              "el P1a se deja como está y se lee con esa reserva")
 
+    # UN NIVEL POR DEFECTO NO ES DATO (10/11/2026, incidencia 1366, Copa del Rey
+    # R128): con menos de 20 partidos el motor le pone 0,5 a todos, y la μ que
+    # sale de ahí daba «protector claro» como input inviolable (44 % al local de
+    # categoría inferior, 0,5 y 0,5 de 2 y 4 partidos). μ no se toca: P1a no se
+    # afirma sobre ella y pasa a `noCalculables` con el motivo.
+    from backend.analisis.ventana_nivel import nivel_por_defecto
+    por_defecto = {l: m for l, t in (("a", fx["home_team_id"]), ("b", fx["away_team_id"]))
+                   if (m := nivel_por_defecto(t, fecha))}
+    no_calc = NO_CALCULABLES
+    if por_defecto:
+        porque = ("nivel por defecto: μ no es dato (" + "; ".join(
+            f"{fx['home_name'] if l == 'a' else fx['away_name']}: {m}" for l, m in por_defecto.items())
+            + "); P1a va de la lectura del partido, no del motor")
+        p1a = {"sinDato": True, "porque": porque, "nivelPorDefecto": por_defecto,
+               "muPartido": p1a.get("muPartido"),
+               "compuerta1": "si P1a queda en 0, el bloque P entero se topa en 0.5"}
+        no_calc = [{"indicador": "P1a", "porque": porque}, *NO_CALCULABLES]
+
     # NIVEL DE DATO, declarado. El skill pide A/B/C y el A es imposible para
     # nosotros: no hay tracking. Decirlo es más honesto que dejar el campo.
     con_once = all(not f1[l].get("sinDato") for l in LADOS)
@@ -461,7 +484,7 @@ def ficha(fixture_id: int) -> dict | None:
         "notaNivelDeDato": ("nivel A (tracking: altura de línea, PPDA, distancia entre líneas) "
                             "es imposible con nuestras fuentes; esto es lo que hay"
                             + ("" if con_once else " — y sin onces capturados baja a C")),
-        "noCalculables": NO_CALCULABLES,
+        "noCalculables": no_calc,
         "referencias": {"ventajaPorMinuto": ventaja_por_minuto(fecha)},
         "nota": "esto NO es el IE. Son los insumos que el skill manda tomar del motor "
                 "(P1a es input inviolable; F2 es dato del motor o no es dato) más F1, "
