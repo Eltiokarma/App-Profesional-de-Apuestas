@@ -1027,7 +1027,10 @@ Escribís vos (es juicio, no se puede calcular):
       nivel juega a que la racha SIGA —el más fuerte con racha positiva, el
       más débil con racha negativa—: −1 (≥ 0.5) · −3 (≥ 1.0). Es la señal
       protectora más fuerte del backtest: un favorito claro rompe su racha
-      bastante menos que el resto.
+      bastante menos que el resto. Si el rival trae `nivelConAmistosos`
+      (3+ amistosos en la ventana del nivel de algún lado; 10/11/2026,
+      incidencia 1104), la diferencia de nivel sale de una ventana con N
+      amistosos: pesá ese −1/−3 con reserva y decilo; el riesgo no cambia.
   Cortes: bajo < 0 · medio 0 · alto 1-2 · muy alto ≥ 3. Es GUÍA y separa
   poco: del nivel bajo al muy alto la tasa de reventón va de ~45 % a ~72 %. Lo que el backtest
   NO sostuvo y por eso no suma: la K alta o récord, la burbuja inflada por
@@ -1241,7 +1244,10 @@ Escribís vos (es juicio, no se puede calcular):
   El marcador declarado va DENTRO del acotado salvo un hecho de este partido
   que lo saque, dicho en la lectura, y entonces el falsador nombra la vía de
   gol que lo saca de ahí (sad-analysis v4.3, pasos 3.5 y 6-C; dentro del
-  acotado el veredicto mide el intervalo solo). No mueve el 1X2. No copies los números al parte (se calculan
+  acotado el veredicto mide el intervalo solo). Con `golesAcotados.porVentana`
+  (la ventana del nivel con 3+ amistosos, corta o vieja, la misma marca de
+  `fiabilidadMu`; 10/11/2026, incidencia 1108) ese hecho existe: salir del
+  acotado nombrando la ventana (`notaVentana`) es legítimo. No mueve el 1X2. No copies los números al parte (se calculan
   al leer en `lecturaSad.golesAcotados`) y NO es señal de apuesta: contra el
   mercado de goles no hay ventaja.
 - **Los sancionados de la base van en `fuera`** (30/10/2026, incidencias 772, 778

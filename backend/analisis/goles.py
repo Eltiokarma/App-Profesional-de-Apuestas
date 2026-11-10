@@ -158,10 +158,49 @@ def acotar_lambdas(lam_l: float, lam_v: float, local: str, visita: str, modelo: 
     }
 
 
-def acotar_fixture(fx) -> dict:
+def acotar_fixture(fx, comps: dict | None = None) -> dict:
     """Los goles acotados de un fixture (`fx` con id, date, home/away), con la
     historia estrictamente anterior al partido. Sin modelo calibrado o sin
-    historia suficiente lo dice en `sinDato`."""
+    historia suficiente lo dice en `sinDato`. `comps` (opcional) es la
+    composición de la ventana del nivel de cada lado ya leída
+    (`ventana_nivel.composicion`, claves local/visitante), para no leerla dos
+    veces; sin ella se lee acá."""
+    out = _acotar_fixture(fx)
+    if not out.get("sinDato"):
+        out.update(_ventana(fx, comps))
+    return out
+
+
+def _ventana(fx, comps: dict | None = None) -> dict:
+    """LA MISMA MARCA DE VENTANA QUE `fiabilidadMu` (10/11/2026, incidencia
+    1108, decisión del usuario: Kasımpaşa–Beşiktaş 1584453 salió acotado en
+    1-0/1-1/2-0/2-1 con el mercado 59 % a la visita y 6 amistosos en la
+    ventana del nivel del local; `fiabilidadMu` traía `porVentana` y los goles
+    no). La diferencia de μ (`d`) entra al modelo de goles, así que el nivel
+    hecho con amistosos, una ventana corta o vieja pesa acá igual que en el
+    1X2. Se usa la MISMA regla (`ventana_nivel.fiabilidad_con_ventana`): solo
+    se marca, MODELO_GOLES no se toca. Un fallo no marca (no se afirma nada)."""
+    try:
+        from backend.analisis import ventana_nivel as vn
+        from backend.app import iso
+        fecha = iso(fx["date"])
+        if comps is None:
+            comps = {"local": vn.composicion(fx["home_team_id"], fecha),
+                     "visitante": vn.composicion(fx["away_team_id"], fecha)}
+        nombres = {"local": fx["home_name"], "visitante": fx["away_name"]}
+        fia = vn.fiabilidad_con_ventana({}, comps, nombres, fecha=fecha)
+    except Exception:  # noqa: BLE001 — sin la ventana legible no se marca nada (la marca es un aviso, no un dato del acotado)
+        return {}
+    if not fia.get("porVentana"):
+        return {}
+    detalle = "; ".join(f"{nombres[l]}: {t}" for l, t in (fia.get("ventana") or {}).items())
+    return {"porVentana": True, "ventana": fia.get("ventana") or {},
+            "notaVentana": (f"La diferencia de nivel que entra a los goles esperados sale de una ventana poco "
+                            f"fiable ({detalle} en la ventana de {vn.VENTANA}): el acotado puede no valer en "
+                            "este partido. Salir de él es legítimo nombrando la ventana como el hecho del partido.")}
+
+
+def _acotar_fixture(fx) -> dict:
     if not MODELO_GOLES:
         return {"sinDato": "el modelo de goles todavía no está calibrado (backtest_goles --modelo)"}
     from backend.app import constantes_de, iso, mu, niveles_de
@@ -191,7 +230,9 @@ def desde_equipo(acotado: dict, es_local: bool) -> dict:
     return {"mete": propio, "recibe": {**rival, "equipo": rival["equipo"]},
             "marcadorAcotado": acotado["marcadorAcotado"], "masProbables": acotado["masProbables"],
             "masDe2_5": acotado["masDe2_5"], "ambosMarcan": acotado["ambosMarcan"],
-            "modelo": acotado["modelo"], "nota": acotado["nota"]}
+            "modelo": acotado["modelo"], "nota": acotado["nota"],
+            # la marca de la ventana del nivel (1108) viaja igual desde el equipo
+            **{k: acotado[k] for k in ("porVentana", "ventana", "notaVentana") if k in acotado}}
 
 
 def objetivo(acotado: dict, gl: int, gv: int) -> dict | None:

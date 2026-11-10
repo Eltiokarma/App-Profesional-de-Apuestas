@@ -357,3 +357,28 @@ def fiabilidad_con_ventana(fia: dict, comps: dict, nombres: dict | None = None,
         out["nota"] = f"{out.get('nota', '')} Además: {nota}".strip()
     out["porVentana"] = True
     return out
+
+
+def marcar_rival(familias: dict, equipo: dict | None, rival: dict | None) -> None:
+    """LA DIFERENCIA DE NIVEL DEL REVENTÓN CON AMISTOSOS EN LA VENTANA
+    (10/11/2026, incidencia 1104, decisión del usuario: Strasbourg 1552808
+    sumó −3 por «rival muy favorito», 1,36 a favor de Auxerre, con 6 amistosos
+    en la ventana; el mercado lo daba favorito por más de 20 puntos sobre el
+    motor). Donde `rival.aFavor` puntúa (favorito o muy favorito), con
+    `UMBRAL_AMISTOSOS`+ amistosos en la ventana del nivel de algún lado, el
+    rival lleva `nivelConAmistosos` {equipo, rival, nota}. Los puntos y el
+    riesgo NO se mueven (calibrados, REVENTON §13.2; sacar los amistosos del
+    nivel no mejoró el 1X2, 860): se marca, como la escala."""
+    ne = (equipo or {}).get("amistosos") or 0
+    nr = (rival or {}).get("amistosos") or 0
+    if max(ne, nr) < UMBRAL_AMISTOSOS:
+        return
+    n = max(ne, nr)
+    quien = ("las dos ventanas" if min(ne, nr) >= UMBRAL_AMISTOSOS
+             else "la ventana del equipo" if ne >= UMBRAL_AMISTOSOS else "la ventana del rival")
+    nota = (f"la diferencia de nivel sale de una ventana con {n} amistoso{'s' if n != 1 else ''} "
+            f"({quien}; equipo {ne}, rival {nr} de {VENTANA}): pesar con reserva")
+    for fam in (familias or {}).values():
+        r = (fam or {}).get("rival")
+        if r and r.get("favorito") in ("favorito", "muy favorito"):
+            r["nivelConAmistosos"] = {"equipo": ne, "rival": nr, "nota": nota}

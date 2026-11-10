@@ -1770,11 +1770,18 @@ def equipo_burbujas(equipo_id: int, antesDe: int | None = None, proximo: int | N
     # cuánto mete y cuánto recibe, en un intervalo con su probabilidad. Lectura
     # del marcador, no señal de apuesta; con la historia anterior al partido.
     if prox:
-        from backend.analisis import goles as _goles
+        from backend.analisis import goles as _goles, ventana_nivel as _vn
         try:
             _fx_g = get_fixture(prox["fixtureId"])
-            r["golesAcotados"] = _goles.desde_equipo(_goles.acotar_fixture(_fx_g),
-                                                     _fx_g["home_team_id"] == equipo_id)
+            # la ventana del nivel de cada lado, leída UNA vez: marca el rival
+            # del reventón (1104) y los goles acotados (1108); no mueve puntos
+            _fecha_g = iso(_fx_g["date"])
+            _comps = {"local": _vn.composicion(_fx_g["home_team_id"], _fecha_g),
+                      "visitante": _vn.composicion(_fx_g["away_team_id"], _fecha_g)}
+            _es_local = _fx_g["home_team_id"] == equipo_id
+            _vn.marcar_rival(r.get("familias") or {}, _comps["local" if _es_local else "visitante"],
+                             _comps["visitante" if _es_local else "local"])
+            r["golesAcotados"] = _goles.desde_equipo(_goles.acotar_fixture(_fx_g, _comps), _es_local)
         except Exception as e:  # noqa: BLE001 — se declara, no tumba la tarjeta
             r["golesAcotados"] = {"sinDato": f"no se pudo calcular: {e}"}
     if antesDe is not None:

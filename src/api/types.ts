@@ -800,6 +800,8 @@ export interface FamiliaBurbujaDTO {
     /** false con escala distinta (22/10/2026): el tramo compara bases distintas; los puntos no cambian. */
     escalaComparable?: boolean
     notaEscala?: string
+    /** Con `favorito` ≠ no y 3+ amistosos en la ventana del nivel de algún lado (1104): pesar la diferencia con reserva; los puntos no cambian. */
+    nivelConAmistosos?: { equipo: number; rival: number; nota: string }
   } | null
   riesgo: RiesgoReventonDTO | null
   /** ALERTA DE EXTREMO (prudencia, no probabilidad): la burbuja abierta en su
@@ -894,6 +896,11 @@ interface GolesComunDTO {
   ambosMarcan?: number
   modelo?: { calibradoEn?: string; partidos?: number; intervaloAcierta?: number | null; marcadorAcotadoAcierta?: number | null }
   nota?: string
+  /** Solo true: el mismo `porVentana` de `fiabilidadMu` (ventana del nivel con 3+ amistosos, corta o vieja; 1108). El acotado no cambia. */
+  porVentana?: boolean
+  /** De qué está hecha la ventana de cada lado (local · visitante). */
+  ventana?: Record<string, string>
+  notaVentana?: string
 }
 /** Los goles acotados de un partido (backend/analisis/goles.py). */
 export interface GolesAcotadosDTO extends GolesComunDTO { local?: GolesLadoDTO; visita?: GolesLadoDTO }
