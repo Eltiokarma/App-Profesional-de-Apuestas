@@ -47,13 +47,33 @@ UMBRALES: dict[int, dict] = {
     262: {"cada": 5, "regla": "Liga MX: cada 5 amarillas"},
     135: {"en": (5, 10, 14, 17), "regla": "Serie A: a la 5.ª, 10.ª, 14.ª y 17.ª amarilla"},
     39: {"en": (5, 10, 15), "regla": "Premier League: a la 5.ª, 10.ª y 15.ª (con tope de fecha)"},
+    # LIGA 1 PERÚ (10/11/2026, incidencias 1067 y 1328: O. Núñez 1549539 y
+    # Figuera 1549552 cumplían la 5.ª sin marca). Reglamento Liga1 Te Apuesto
+    # 2026, art. 185.1 («cinco (5) tarjetas amarillas … y así cada cinco») y
+    # 185.2 (cada etapa —Apertura, Clausura, Playoffs— arranca de cero, que es
+    # lo que hace `_fase`): https://liga1.pe/wp-content/uploads/2026/03/Reglamento-Liga1-Te-Apuesto-2026.pdf
+    # (leído el 10/11/2026). OJO 185.3: la 5.ª de la última fecha de una etapa se
+    # cumple en la primera de la siguiente, y eso NO lo ve `_previos` (filtra por fase).
+    281: {"cada": 5, "regla": "Liga 1 Perú: cada 5 amarillas por etapa (art. 185)"},
+    # EREDIVISIE (10/11/2026, incidencia 1067: Oufkir, AZ, 1552210, suspendido
+    # por la 5.ª sin marca). Reglement Tuchtrechtspraak Betaald Voetbal, art. 29
+    # lid 2 (KNVB, edición julio 2026, cambiado el 26/05/2026): suspende la 5.ª y
+    # la 10.ª, y desde la 11.ª CADA una; vencen al terminar la temporada (lid 1g)
+    # y la copa cuenta aparte (lid 1c):
+    # https://www.knvb.nl/downloads/bestand/29888/reglementen-betaald-voetbal-seizoen-2025-26versie-januari-2026
+    # (descargado el 10/11/2026, el PDF dice «juli 2026»). Los play-offs tienen
+    # su propio conteo (art. 30: a la 2.ª y desde la 4.ª), que aquí no está.
+    88: {"en": (5, 10, *range(11, 41)),
+         "regla": "Eredivisie: a la 5.ª y 10.ª amarilla, y desde la 11.ª cada una (KNVB art. 29)"},
     # UEFA DESDE LA 2026/27 (EFE v1.10, 08/11/2026: Škriniar 1635658, Lepinjica
     # 1635745 y Marlon Gomes 1635723 salían sancionados y jugaron). Artículo
     # 63.02 del reglamento 2026/27 (uefa.com, 13/10/2026): la suspensión es a la
     # 4.ª amarilla y a cada par siguiente (6.ª, 8.ª…), en Champions, Europa y
     # Conference; antes era a la 3.ª, 5.ª, 7.ª. Las amarillas de la PREVIA se
     # borran al empezar la fase liga (solo viaja la roja) y todas vencen al
-    # terminar los cuartos (63.04): eso lo hace `_fase`.
+    # terminar los cuartos (63.04): eso lo hace `_fase`. Fuente releída el
+    # 10/11/2026 (incidencia 1067): https://www.uefa.com/uefachampionsleague/news/0295-1cd661bbe9cd-ded5a1c8b04d-1000--champions-league-europa-league-conference-league-yellow/
+    # y https://www.insideworldfootball.com/2026/08/06/uefa-confirms-rule-changes-on-bookings-and-timekeeping-in-champions-league/
     2: {"en": (4, 6, 8, 10, 12), "antes": {2025: (3, 5, 7, 9)},
         "regla": "UEFA 2026/27: a la 4.ª, 6.ª, 8.ª… amarilla; las de la previa no cuentan y vencen tras cuartos"},
     3: {"en": (4, 6, 8, 10, 12), "antes": {2025: (3, 5, 7, 9)},
