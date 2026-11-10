@@ -1,9 +1,19 @@
 ---
 name: efe-dashboard
-description: "Genera dashboards visuales EFE v1.9 (skill v1.12) (Estabilidad de Formacion del Equipo) pre-partido de futbol. Produce React JSX interactivo con gauges, barras de bloques A-E, caja de sensibilidad, alertas estructurales y por fecha, impacto ponderado de disponibilidad, minutos compartidos y matchup tactico. Activar cuando el usuario pida un EFE de cualquier equipo o partido, dashboard visual de formacion o estabilidad, comparativa pre-partido, o variantes como haceme el EFE de X vs Y, dashboard EFE, EFE visual o plantilla EFE. Activar tambien si menciona bloques A-E, la clasificacion SIN FORMACION / EN FORMACION / FORMADO, o pide evaluar estabilidad institucional, tactica o de plantel. Activar tambien para analisis tactico, escenarios de resultado, recomendaciones pre-partido, que deben hacer para ganar o empatar o perder, y matriz de escenarios."
+description: "Genera dashboards visuales EFE v1.10 (skill v1.13) (Estabilidad de Formacion del Equipo) pre-partido de futbol. Produce React JSX interactivo con gauges, barras de bloques A-E, caja de sensibilidad, alertas estructurales y por fecha, impacto ponderado de disponibilidad, minutos compartidos y matchup tactico. Activar cuando el usuario pida un EFE de cualquier equipo o partido, dashboard visual de formacion o estabilidad, comparativa pre-partido, o variantes como haceme el EFE de X vs Y, dashboard EFE, EFE visual o plantilla EFE. Activar tambien si menciona bloques A-E, la clasificacion SIN FORMACION / EN FORMACION / FORMADO, o pide evaluar estabilidad institucional, tactica o de plantel. Activar tambien para analisis tactico, escenarios de resultado, recomendaciones pre-partido, que deben hacer para ganar o empatar o perder, y matriz de escenarios."
 ---
 
-# EFE Dashboard — Skill de Visualización v1.12
+# EFE Dashboard — Skill de Visualización v1.13
+
+> **v1.13 · 10.11.2026 — Alineado con el clasificador EFE v1.10.** Ningún peso, indicador ni alerta del clasificador tocado; la banda de goleada sigue sin números. De dónde sale: dossier del 10/11, 2 lecciones del dashboard (las dos acertadas) y las del clasificador, partidos del 01 al 09/11. Propuesta: `docs/revisiones/EFE_v1.10_propuesta.md`.
+>
+> **1. La caja de sensibilidad dibuja las dos variantes del sistema** con D1 🔶 o T.54 de ≤ 2 partidos (cada una con su línea y la pieza que entra) y la rama abierta por anuncio, costumbre o equipo sin nada en juego, con los rotables de todas las líneas.
+>
+> **2. La palanca del reloj y el banco de la matriz salen del banco probable de la tabla F1** (B5 por rol), no de los dos nombres más conocidos (Independiente: Tempone).
+>
+> **3. La alerta F3 copia la tabla del clasificador:** suma la zona > 40 % de la v1.7 (faltaba) y la nota dice qué anuncia la zona (DEF: vía del rival o volumen concedido, y el arquero; ATK: volumen, dónde se remata o conversión) y quién la cubre.
+>
+> **4. La descripción** pasa a «EFE v1.10 (skill v1.13)». La lección de Konyaspor (la goleada como rama de «Para perder») ya estaba aplicada en la v1.12 y se marca aplicada.
 
 > **v1.12 · 01.11.2026 — Alineado con el clasificador EFE v1.9.** Ningún peso, indicador ni alerta del clasificador tocado; tampoco números en la banda de goleada (se calibra con más casos). Propuesta: `docs/revisiones/EFE_v1.9_propuesta.md`.
 >
@@ -160,7 +170,7 @@ Con `E-CUARENTENA` activo, la caja se aplica también a la elección de denomina
   3. **Matchup H** — perfil táctico de cada equipo, H2a/H2b/H2c con semáforo, **clasificación explícita del bloque rival (improvisado/estructural)**, diagnóstico
   4. **Lectura SAD** — 4 insight boxes + Paradoja del Partido + alertas activas con códigos
   5. **Calendario** — tabla por equipo con **columna FECHA**, etiquetas, posición, notas + diagnóstico calendárico
-- **Caja de sensibilidad** como componente propio si aplica. *(v1.12)* Dibuja, cuando estén: la zona «degradada, cubierta de oficio» (rango, no centro), el arco del día y la rama del once alternativo de los dos lados con el sistema y el banco que vuelve
+- **Caja de sensibilidad** como componente propio si aplica. *(v1.12)* Dibuja, cuando estén: la zona «degradada, cubierta de oficio» (rango, no centro), el arco del día y la rama del once alternativo de los dos lados con el sistema y el banco que vuelve. *(v1.13)* Con D1 🔶 o T.54 de ≤ 2 partidos, las dos variantes del sistema, cada una con su línea y la pieza que entra; y la rama abierta por anuncio, costumbre o equipo sin nada en juego, con los rotables de todas las líneas.
 - **Caja F4** y **caja DT** por equipo
 - **Footer:** fecha de generación + versión EFE activa + modo (`PRE` / `RETRO`) y selección si corresponde
 
@@ -192,7 +202,7 @@ Con `E-CUARENTENA` activo, la caja se aplica también a la elección de denomina
 | GK-DOWNGRADE | Estructural | GK reemplazado por **nivel inferior** |
 | **GK-SIN-CATEGORÍA** *(v1.6)* | Estructural | GK reemplazado por nivel igual/superior sin minutos en la liga |
 | CRISIS-EX | Estructural | Crisis extra-cancha |
-| F3 / F3-COND | Por fecha | IP > 7 o ≥2 titulares fijos ausentes |
+| F3 / F3-COND | Por fecha | IP > 7, ≥ 2 titulares fijos ausentes o una zona > 40 %; la nota dice qué anuncia la zona (DEF: la vía del rival o el volumen concedido, y el arquero; ATK: volumen, dónde se remata o conversión) y quién la cubre *(v1.13)* |
 | FACTOR-X | Por fecha | Jugador emergente fuera de las K |
 | **EJE-DEBUTANTE** *(v1.6, umbral v1.10)* | Por fecha | ≥2 titulares de la misma línea con ≤ 1 partido juntos como titulares |
 | **GOLEADOR-AL-BANCO** *(v1.6)* | Por fecha | Máximo goleador disponible y fuera del XI |
@@ -223,11 +233,13 @@ Después del dashboard, **solo si el usuario lo pide**, generar con `visualize:s
 
 | Escenario | Filas obligatorias |
 |-----------|-------------------|
-| **Para ganar** | Táctica central, Pelota parada, Gestión del reloj, Base científica, Probabilidad estimada |
+| **Para ganar** | Táctica central, Pelota parada, Gestión del reloj (banco probable de la F1, v1.13), Base científica, Probabilidad estimada |
 | **Para empatar** | Táctica central, Condiciones de campo, Dato estadístico, Probabilidad estimada |
 | **Para perder** | Gatillo principal, Error sistémico, Factor psicológico, Riesgo de goleada, Probabilidad estimada |
 
 *(v1.12)* **Riesgo de goleada:** con un gol temprano del rival como gatillo y el inferior obligado a perseguir, la goleada se nombra como **rama** («si recibe antes del 30' y se abre…»), no solo como banda base. Un récord de racha (`FAMILIA-RECORD`, `K-EXTREMO`) **no es argumento para bajar la banda**: es prudencia con la carga, no probabilidad.
+
+*(v1.13)* **La palanca del reloj y el banco de la matriz salen del banco probable de la tabla F1** (B5 por rol), no de los dos nombres más conocidos (Independiente: el que decidió, Tempone, no estaba en la palanca).
 
 **Principios v2.0 (anti-sesgo):**
 1. Cruzar EFE (D3, B5, B6, F2, **F6**, Bloque H) con tácticas concretas
