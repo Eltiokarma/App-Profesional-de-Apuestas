@@ -4229,6 +4229,59 @@ def main():
     check("con el bloque ambiguo C1 queda el declarado y heredadoDtp lo dice (noHeredado, sin discrepancia)",
           _hb["indicadores"]["C1"] == 0.5 and _hb["heredadoDtp"][0]["noHeredado"]
           and not _hb["heredadoDtp"][0]["discrepa"] and "ambiguo" in _hb["heredadoDtp"][0]["de"], _hb)
+    # 1056 (Westerlo, aprobada el 10/11/2026): las ramas del que persigue heredan
+    # el SOB2 del rest defense PERSIGUIENDO del DTP, y HERENCIA-DTP nombra la rama
+    from backend.analisis.parte import heredar_ramas as _her_ramas
+    _hp = _her_tde({"bloques": [{"equipo": "a", "apertura": {"m2": {"checklistBloqueRival": {},
+        "restDefense": {"nivelFoco": "fijo", "nivelFocoPersiguiendo": "sin"}}}}]})
+    _ind56 = {"C1": 0.5, "SOB1": 0, "SOB2": 0, "SOB3": 1}
+    _ram56 = {"siMarcaPrimero": {"sob1": 0, "sob2": 0},
+              "siRecibePrimero": {"sob1": 1, "sob2": 0.5, "sob3": 1, "iseRama": 8.33},
+              "siLeEmpatan": {"sob1": 1, "sob2": 1, "tipologia": "SOB-PRESION"},
+              "siIguala": {"sob1": 0, "sob2": 0.5, "tipologia": "ECHADA-VOL"}}
+    _h56 = _heredar_p({"equipo": "a", "indicadores": dict(_ind56), "reasignacion": _copy.deepcopy(_ram56)}, _hp["a"])
+    _hr56 = {h.get("rama"): h for h in _h56["heredadoDtp"] if h.get("rama")}
+    check("1056: el SOB2 del bloque sigue siendo el de hoy (fijo → 0) y la rama siRecibePrimero hereda el «sin» "
+          "persiguiendo (1): ISE de rama 10 con sob1 1 y sob3 1, lo declarado (0.5) queda en heredadoDtp",
+          _h56["indicadores"]["SOB2"] == 0.0 and _h56["reasignacion"]["siRecibePrimero"]["sob2"] == 1.0
+          and _h56["reasignacion"]["siRecibePrimero"]["iseRama"] == 10.0
+          and _hr56["siRecibePrimero"]["declarado"] == 0.5 and _hr56["siRecibePrimero"]["discrepa"], _h56)
+    check("1056: siLeEmpatan empujando hereda sin discrepar (ya decía 1); siIguala ECHADA y siMarcaPrimero no heredan",
+          not _hr56["siLeEmpatan"]["discrepa"] and set(_hr56) == {"siRecibePrimero", "siLeEmpatan"}
+          and _h56["reasignacion"]["siIguala"]["sob2"] == 0.5 and _h56["reasignacion"]["siMarcaPrimero"]["sob2"] == 0,
+          _hr56)
+    _hsin = _heredar_p({"equipo": "a", "indicadores": dict(_ind56), "reasignacion": _copy.deepcopy(_ram56)},
+                       _her_tde({"bloques": [{"equipo": "a", "apertura": {"m2": {"checklistBloqueRival": {},
+                                 "restDefense": {"nivelFoco": "fijo"}}}}]})["a"])
+    check("1056: sin nivelFocoPersiguiendo en el DTP las ramas quedan como se declararon (no se inventa)",
+          _hsin["reasignacion"]["siRecibePrimero"]["sob2"] == 0.5
+          and not any(h.get("rama") for h in _hsin["heredadoDtp"]), _hsin)
+    check("1056: el lado b hereda el persiguiendo leído desde el DTP del rival (nivelRivalPersiguiendo)",
+          _her_tde({"bloques": [{"equipo": "a", "apertura": {"m2": {"checklistBloqueRival": {},
+                    "restDefense": {"nivelRivalPersiguiendo": "depende"}}}}]})["b"]
+          .get("SOB2persiguiendo", {}).get("valor") == 0.5
+          and _her_ramas({}, None, {}) == ({}, []))
+    # de punta a punta: depósito con la rama discrepante → HERENCIA-DTP con la rama nombrada
+    p_56 = _copy.deepcopy(p_her)
+    p_56["dtp"]["bloques"][0]["apertura"]["m2"]["restDefense"]["nivelFocoPersiguiendo"] = "sin"
+    p_56["tde"]["bloques"][0]["reasignacion"] = {"siMarcaPrimero": {"sob1": 0},
+                                                 "siRecibePrimero": {"sob1": 1, "sob2": 0.5, "desenlace": "abierto"}}
+    r_56 = c.post(f"{A}/analisis/cowork", json=p_56).json()
+    lect_56 = c.get(f"{A}/analisis/cowork/{ns_dtp}").json()
+    _al56 = [x for x in lect_56["alertas"] if x["codigo"] == "HERENCIA-DTP" and x["equipo"] == "a"]
+    check("1056: la rama siRecibePrimero con sob2 0.5 contra el DTP «sin» persiguiendo → HERENCIA-DTP del lado a "
+          "con la rama nombrada, también en el recibo; y no pide el sob2 en `faltan` (lo da el DTP)",
+          any(x.get("rama") == "siRecibePrimero" and "rama siRecibePrimero" in x["detalle"] for x in _al56)
+          and any(x["codigo"] == "HERENCIA-DTP" and "rama siRecibePrimero" in x["detalle"]
+                  for x in r_56.get("alertasAlLeer") or [])
+          and not any(x["bloque"] == "tde.reasignacion.sob2" for x in r_56["faltan"]), (_al56, r_56.get("faltan")))
+    p_56b = _copy.deepcopy(p_56)
+    p_56b["tde"]["bloques"][0]["reasignacion"]["siRecibePrimero"]["sob2"] = 1
+    c.post(f"{A}/analisis/cowork", json=p_56b)
+    check("1056: con la rama igual al DTP persiguiendo no hay HERENCIA-DTP de rama",
+          not any(x["codigo"] == "HERENCIA-DTP" and x.get("rama")
+                  for x in c.get(f"{A}/analisis/cowork/{ns_dtp}").json()["alertas"]))
+    c.post(f"{A}/analisis/cowork", json=p_her)   # vuelve al parte de la prueba anterior para lo que sigue
     r_eco_h = c.post(f"{A}/analisis/cowork", json={**lect_h, "fixtureId": ns_dtp}).json()
     check("el eco del GET no arrastra HERENCIA-DTP como alerta declarada",
           not any("alertas[" in x["donde"] for x in r_eco_h["rechazos"]), r_eco_h["rechazos"])

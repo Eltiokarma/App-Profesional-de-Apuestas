@@ -1116,8 +1116,9 @@ def _bloque(x: dict, lado: str) -> dict:
                    "restDefense": {"foco": _txt(rest.get("foco")), "rival": _txt(rest.get("rival")),
                                    "nivelFoco": _nivel_seguro(rest.get("nivelFoco")),
                                    "nivelRival": _nivel_seguro(rest.get("nivelRival")),
-                                   # v1.5: la rama persiguiendo; el SOB2 del TDE sigue
-                                   # heredando nivelFoco/nivelRival hasta que el usuario decida
+                                   # v1.5: la rama persiguiendo. El SOB2 del BLOQUE del TDE
+                                   # hereda nivelFoco/nivelRival (el de hoy) y las RAMAS del
+                                   # que persigue heredan estos (incidencia 1056, 10/11/2026)
                                    "nivelFocoPersiguiendo": _nivel_seguro(rest.get("nivelFocoPersiguiendo")),
                                    "nivelRivalPersiguiendo": _nivel_seguro(rest.get("nivelRivalPersiguiendo"))},
                    "posesion": _posesion(pos),
@@ -1180,6 +1181,13 @@ def herencia_tde(dtp: dict) -> dict:
       que calculó el DTP del RIVAL (el checklist mira el bloque rival).
     - SOB2 (seguro tras la pérdida) de X sale del rest defense: primero del
       DTP del propio X (`nivelFoco`), si no del DTP del rival (`nivelRival`).
+    - SOB2persiguiendo: el SOB2 de las RAMAS del TDE en que X persigue
+      (`siRecibePrimero`, y `siLeEmpatan`/`siIguala` cuando vuelve a empujar),
+      del rest defense PERSIGUIENDO: `nivelFocoPersiguiendo` del propio X, si
+      no `nivelRivalPersiguiendo` del rival; sin ninguno de los dos, no se
+      hereda nada (no se inventa). Incidencia 1056 (Westerlo, aprobada el
+      10/11/2026): la rama siRecibePrimero declaraba sob2 0,5 con el DTP «sin»
+      persiguiendo, el ISE de la rama quedaba bajo y ninguna alerta lo decía.
     """
     out: dict[str, dict] = {l: {} for l in LADOS}
     bloques = {b["equipo"]: b for b in (dtp or {}).get("bloques") or []}
@@ -1206,6 +1214,14 @@ def herencia_tde(dtp: dict) -> dict:
         elif rd_rival.get("nivelRival"):
             out[lado]["SOB2"] = {"valor": SOB2_DE_NIVEL[rd_rival["nivelRival"]],
                                  "de": f"rest defense leído desde el DTP del rival ({rd_rival['nivelRival']})"}
+        if rd_propio.get("nivelFocoPersiguiendo"):
+            out[lado]["SOB2persiguiendo"] = {
+                "valor": SOB2_DE_NIVEL[rd_propio["nivelFocoPersiguiendo"]],
+                "de": f"rest defense persiguiendo del DTP del lado {lado} ({rd_propio['nivelFocoPersiguiendo']})"}
+        elif rd_rival.get("nivelRivalPersiguiendo"):
+            out[lado]["SOB2persiguiendo"] = {
+                "valor": SOB2_DE_NIVEL[rd_rival["nivelRivalPersiguiendo"]],
+                "de": f"rest defense persiguiendo leído desde el DTP del rival ({rd_rival['nivelRivalPersiguiendo']})"}
     return out
 
 

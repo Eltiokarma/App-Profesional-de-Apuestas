@@ -583,7 +583,8 @@ conversación se pierde en la siguiente.
      1X2: el empate parte del mercado, el favorito ≥ 50 % no se recorta bajo el
      mercado sin dato propio; bajas del ataque rival por zona). El SOB2 del TDE
      sigue heredando el nivel de hoy, no la rama persiguiendo (pendiente del
-     usuario). Y **TDE v0.1.23** (aprobada entera, incluye la v0.1.22 que nunca
+     usuario; decidido el 10/11, 1056: el bloque hereda el de hoy y las RAMAS
+     del que persigue, `nivelFocoPersiguiendo`). Y **TDE v0.1.23** (aprobada entera, incluye la v0.1.22 que nunca
      se subió): `siIguala`, `siExpulsion {propia, rival}` (→ `siExpulsionRival`),
      la línea del empate y de la expulsión exigidas en el recibo, la cuenta de
      jugadores manda en la disciplina 16, `salida: otra_via` (penal o autogol)
@@ -1029,7 +1030,10 @@ conversación se pierde en la siguiente.
    Decisiones del usuario del 10/11:
    - **1056 aprobada** (heredar y avisar): las ramas del que persigue heredan
      el SOB2 de `nivelFocoPersiguiendo` del DTP. Va en el TDE 14 y en el
-     DTP 16, que se suben juntos.
+     DTP 16, que se suben juntos. En el backend, HECHO (rama
+     `claude/mant-1011-herencia-ramas`): `herencia_tde` da `SOB2persiguiendo`,
+     `parte.heredar_ramas` lo aplica a las ramas que `rama_empuja` y
+     HERENCIA-DTP nombra la rama; el veredicto no lo cobra hacia atrás.
    - **1068 opción (c)**, empezando por la (b): la F1 suma al titular del
      once oficial que falta (`delOnceOficial`); el rehacer carga el EFE solo
      con 3+ titulares fijos cambiados o con otro arquero.

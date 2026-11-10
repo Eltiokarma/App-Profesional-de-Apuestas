@@ -3705,10 +3705,14 @@ def guardar(payload: dict) -> dict:
                              "o, si la baja es una duda, pasarlo a `estado: duda`",
         })
     # UNA RAMA QUE CAMBIA AL RÉGIMEN SOB SIN SU SEGURO DE ATRÁS (TDE v0.1.22):
-    # el SOB2 del arranque no se hereda al que persigue (Sporting–LASK)
+    # el SOB2 del arranque no se hereda al que persigue (Sporting–LASK)...
+    # salvo que el DTP traiga el rest defense PERSIGUIENDO: ese sí (1056)
+    _her_pers = {l: (h.get("SOB2persiguiendo") or {}).get("valor") is not None
+                 for l, h in _dtp.herencia_tde(parte.get("dtp") or {}).items()}
     sin_sob2 = [f"{b.get('equipo') or '?'}.{rama}" for b in tde_bloques
                 for rama, r in (b.get("reasignacion") or {}).items()
-                if rama in ("siRecibePrimero", "siLeEmpatan") and (r.get("sob1") or 0) >= 0.5 and r.get("sob2") is None]
+                if rama in ("siRecibePrimero", "siLeEmpatan") and (r.get("sob1") or 0) >= 0.5 and r.get("sob2") is None
+                and not (_her_pers.get(b.get("equipo") or "") and rama_empuja(rama, r))]
     if sin_sob2:
         faltan.append({
             "bloque": "tde.reasignacion.sob2",
@@ -4386,6 +4390,8 @@ def _heredar(bloque: dict, her: dict | None) -> dict:
         return bloque
     nuevo, heredados = dict(ind), []
     for clave, h in her.items():
+        if clave == "SOB2persiguiendo":   # es de las ramas, no del bloque: va abajo
+            continue
         declarado = ind.get(clave)
         if h["valor"] is None:   # el DTP no da valor (bloque ambiguo): queda lo declarado, y se dice
             heredados.append({"indicador": clave, "valor": declarado, "declarado": declarado, "de": h["de"],
@@ -4394,7 +4400,38 @@ def _heredar(bloque: dict, her: dict | None) -> dict:
         nuevo[clave] = h["valor"]
         heredados.append({"indicador": clave, "valor": h["valor"], "declarado": declarado, "de": h["de"],
                           "discrepa": declarado is not None and abs(float(declarado) - h["valor"]) > 1e-9})
-    return {**bloque, "indicadores": nuevo, "heredadoDtp": heredados}
+    reasig, de_ramas = heredar_ramas(bloque.get("reasignacion") or {}, her.get("SOB2persiguiendo"), nuevo)
+    out = {**bloque, "indicadores": nuevo, "heredadoDtp": heredados + de_ramas}
+    if de_ramas:
+        out["reasignacion"] = reasig
+    return out
+
+
+def heredar_ramas(reasig: dict, h: dict | None, indicadores: dict) -> tuple[dict, list[dict]]:
+    """EL SOB2 DE LAS RAMAS DEL QUE PERSIGUE SE HEREDA DEL DTP (incidencia
+    1056, aprobada por el usuario el 10/11/2026). Westerlo (31/10): la rama
+    `siRecibePrimero` declaraba sob2 0,5 con el rest defense persiguiendo del
+    DTP en «sin» (1): con la herencia el ISE de la rama era 8,33 y nadie lo
+    dijo, porque la herencia solo miraba el SOB2 del bloque (el de hoy,
+    `nivelFoco`). Las ramas que persiguen —`rama_empuja`: siRecibePrimero, y
+    siLeEmpatan/siIguala cuando vuelven a empujar— toman el SOB2 de
+    `nivelFocoPersiguiendo` (o `nivelRivalPersiguiendo` del DTP rival) y su
+    ISE se rehace con él; lo declarado queda en `heredadoDtp` con la `rama`.
+    Sin nivel persiguiendo en el DTP, nada cambia (no se inventa)."""
+    if not h or h.get("valor") is None or not reasig:
+        return reasig, []
+    nuevas, heredados = dict(reasig), []
+    for nombre, r in reasig.items():
+        if not isinstance(r, dict) or not rama_empuja(nombre, r):
+            continue
+        declarado = r.get("sob2")
+        limpia = {k: v for k, v in r.items() if k not in ("iseRama", "iseRamaHeredados", "desenlaceDefecto")}
+        limpia["sob2"] = h["valor"]
+        nuevas[nombre] = ise_de_ramas({nombre: limpia}, indicadores)[nombre]
+        heredados.append({"indicador": "SOB2", "rama": nombre, "valor": h["valor"], "declarado": declarado,
+                          "de": h["de"],
+                          "discrepa": declarado is not None and abs(float(declarado) - h["valor"]) > 1e-9})
+    return nuevas, heredados
 
 
 def _bloque_calculado(tde: dict) -> dict:
@@ -4758,7 +4795,11 @@ def dto(fixture_id: int) -> dict | None:
             if h["discrepa"] and b.get("equipo") in LADOS:
                 alertas.append({
                     "codigo": "HERENCIA-DTP", "equipo": b["equipo"], "tipo": "dato",
-                    "detalle": f"{h['indicador']} del TDE: se declaró {h['declarado']} y el DTP dice "
+                    # la rama del que persigue se nombra (1056): «SOB2 de la rama siRecibePrimero»
+                    **({"rama": h["rama"]} if h.get("rama") else {}),
+                    "detalle": f"{h['indicador']}"
+                               + (f" de la rama {h['rama']}" if h.get("rama") else "")
+                               + f" del TDE: se declaró {h['declarado']} y el DTP dice "
                                f"{h['valor']} ({h['de']}). Manda el DTP —el skill prohíbe re-estimarlo—: "
                                "se corrige el indicador del TDE al del DTP (al rehacer con el once, el "
                                "DTP NO vuelve atrás para callar esta alerta, incidencia 634); si el DTP "
