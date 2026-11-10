@@ -990,8 +990,11 @@ conversación se pierde en la siguiente.
      token, así que Simulación se midió en un banco local con volumen de
      producción). Aprendizaje, `resumen=true` en frío: ANTES 502 a los 300 s y
      115 s al reintentar; DESPUÉS 71 s una vez tras el deploy (lo calcula el
-     hilo en el fondo) y 3,5-3,9 s con veredictos entrando; el buscador pasó de
-     60 s (esperando el candado) a lo que dice la medición de #456 abajo.
+     hilo en el fondo) y 3,5-3,9 s con veredictos entrando. **Con #456
+     desplegado** (`b670de4`, 10/11 02:24 UTC): el primer pedido justo después
+     del deploy, 72 s (vigente) y 64 s (buscador), mientras el hilo calcula; a
+     partir de ahí vigente 0,56-0,63 s, página 0,56 s y buscador 0,66-0,69 s
+     (antes 60 s).
      Banco local: visita a los 31 min 3,5 s → 0,2 s; pipeline sin cambios de
      historia 3,5 s → 0,3 s. Simulación (banco): 180-236 ms → 24 ms desde la
      segunda lectura.
