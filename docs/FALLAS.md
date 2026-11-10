@@ -140,6 +140,7 @@ Tres lugares donde vive una guardia:
 - **Guardia:** la regla se CALCULA y suena en el recibo:
   - alertas `EFE-EMPATE-TECNICO`, `ESPINA-SIGUE-EN-EXTREMO`, `T.54-SIN-DECLARAR`, `TIPOLOGIA-VS-INDICES` y `HERENCIA-DTP`;
   - `vsMercado.naceDeRecorte`.
+  - Lo que el TDE hereda del DTP se hereda en TODAS sus formas en `dtp_cowork.herencia_tde`, no solo el bloque: las ramas del que persigue (`parte.heredar_ramas`, con `rama_empuja`) toman el SOB2 de `nivelFocoPersiguiendo` y `HERENCIA-DTP` nombra la rama (1056, Westerlo, aprobada el 10/11/2026). Sin nivel persiguiendo, no se inventa. El veredicto NO lo aplica a partes viejos (una regla no se cobra hacia atrás; desde la v0.1.25 el defecto de la rama es `abierto` igual).
   - Una regla nueva no se cobra hacia atrás (`REGLAS_CALCULADAS_DESDE`).
   - Una regla del skill que el recibo y el veredicto aplican vive en una función que usan los dos: `parte.rama_empuja` (qué rama del TDE declara `desenlace`, 908: la de empate en ECHADA no).
   - La alerta de una regla que el texto ya cumple (el `porque` la nombra) no va a la tira: un aviso permanente se deja de leer (ESPINA-VS-RIESGO 291, ESPINA-SIGUE-EN-EXTREMO 874).

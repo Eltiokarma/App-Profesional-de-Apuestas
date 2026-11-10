@@ -1520,6 +1520,8 @@ export interface AlertaParte {
   posteriorAlParte?: boolean
   /** Solo en COHERENCIA-*: la puso Jev al depositar y se lee sellada, no se recalcula. */
   origen?: 'jev'
+  /** Solo en HERENCIA-DTP de una rama del que persigue (1056): la rama del TDE. */
+  rama?: string
   modelo?: string
   evaluadoEn?: string
   jev?: { pregunta: string; valor: unknown; confianza: number } | null
@@ -1694,7 +1696,7 @@ export interface BloqueTde {
   /** C1 y SOB2 heredados del DTP (el skill prohíbe re-estimarlos): valor que
    *  manda, lo que Cowork había declarado y de dónde sale. */
   /** `noHeredado`: el DTP no da valor (bloque ambiguo) y queda lo declarado. */
-  heredadoDtp?: { indicador: string; valor: number | null; declarado: number | null; de: string; discrepa: boolean; noHeredado?: boolean }[]
+  heredadoDtp?: { indicador: string; valor: number | null; declarado: number | null; de: string; discrepa: boolean; noHeredado?: boolean; rama?: string }[]  // rama: SOB2 de una rama del que persigue (1056)
 }
 
 /** El TDE del PARTIDO: hasta un bloque por equipo. El índice es por equipo, y
