@@ -1,12 +1,14 @@
 # Propuesta de revisión · `teorema-del-echado` v0.1.25 → v0.1.26
 
-**Estado:** PROPUESTA, pendiente de aprobación del usuario. No se tocó el
-skill, ni el código, ni el estado de ninguna lección. **Actualizada el
+**Estado:** PROPUESTA **DECIDIDA por el usuario el 10/11/2026** (ver
+«Decisiones del 10/11» y «Lista para redactar»), todavía sin redactar en el
+skill. No se tocó el skill, ni el código, ni el estado de ninguna lección.
+**Actualizada el
 10/11/2026** con el dossier generado el 10/11 a las 02:13 UTC (865 lecciones
 pendientes, 227 de ellas de partidos del 08 y 09/11): los puntos 1 a 9 se
 conservan con su número y llevan sus «Refuerzo 10/11» / «En contra 10/11»; lo
-nuevo va del punto 10 al 14. El 14 es la incidencia 1056 y la **decide el
-usuario**. Cada punto lleva su línea de comprobación («Se sostiene si… / Lo
+nuevo va del punto 10 al 14. El 14 es la incidencia 1056 y la **decidió el
+usuario** (opción a). Cada punto lleva su línea de comprobación («Se sostiene si… / Lo
 tumba si…») para los ~50 veredictos del 08-09/11 que todavía se estaban
 cerrando cuando se cortó el dossier, y su marca de núcleo o historial.
 
@@ -27,6 +29,151 @@ Se redactó el 08/11/2026 desde:
 - el skill vigente (`docs/skills/teorema-del-echado/SKILL.md` y
   `references/`) y la propuesta anterior (`TDE_v0.1.25_propuesta.md`);
 - lo que quedó pendiente de la app en `docs/revisiones/PENDIENTES.md`.
+
+## Decisiones del 10/11
+
+El usuario decidió el 10/11/2026, en conversación: la 1056 con la (a) y «lo
+demás como recomiendas». Cada punto abierto se resolvió con la recomendación
+que la propia propuesta escribía; donde no recomendaba nada, con lo
+conservador (no aflojar una regla vigente, no mover números, lo que tiene 1-2
+casos queda como candidato).
+
+| Punto | Decisión | Efecto en el texto |
+|---|---|---|
+| 1-7, 15 (rúbrica) | Aprobados como los recomienda la propuesta | Entran al `SKILL.md` con el texto de «Lista para redactar» |
+| 1, matiz `siLeEmpatan` | Candidato (un caso: Millonarios–Tolima) | Queda en «Candidatos de la comprobación» |
+| 5, matices «banco entero» y «además de los titulares» | Candidatos (un caso cada uno: U. de Chile–Cobresal, U. Católica–Macará) | No entran a la línea del punto 5; van a candidatos |
+| 6, extensión a la rama de ventaja | Candidato (dos casos: Barcelona–Atlético, Alianza Lima–Los Chankas) | La línea nombra la pieza en la rama que persigue y en la base `SOB`, no en la de ventaja |
+| 8 · F2 a mano por viaje y altitud | **(a) manda el motor** (lo que la propuesta recomendaba) | Una línea en la disciplina 21, la fila F2 de `INDICE_IE.md` marcada y el texto de `f2.puedeSubir` (app); la (b) queda tachada como historia |
+| 9 · confirmaciones | Se cierran sin texto | Nada |
+| 10 · ventana desde el cambio | Medir primero (lo que recomendaba) | Candidato; la medición, a «Para la app» (10) |
+| 11 · SOB de la hora con 0-0 y el empate útil | **Se espera: candidato** (la propuesta no recomendaba; dos casos, sin casos nuevos y con una tensión con el punto 1) | No entra; la línea de la 18 queda escrita como candidato |
+| 12 · `S1` desde la base | App + una línea en el `S1` de la disciplina 16 (lo recomendado) | La línea entra junto a la del punto 7 |
+| 13 · rama TDE contra plan DTP | Entra la línea de rúbrica (recomendada); **sin vigilancia por Jev por ahora** (no había recomendación: lo conservador es no abrir otra pregunta del guardrail con dos casos) | Una línea en la 44 (b); el aviso de Jev queda candidato |
+| 14 · incidencia 1056 | **(a) heredar y avisar**, sin recalcular partes viejos (decisión expresa) | Línea de la 63 con la decisión; la app la implementa el mantenimiento; coordinada con el cambio 16 del DTP v1.8 |
+
+## Lista para redactar
+
+Verificado el 10/11/2026 contra el skill vigente
+(`docs/skills/teorema-del-echado/SKILL.md`, v0.1.25, 768 líneas, y
+`references/INDICE_IE.md`, 493 líneas). Cada ancla de abajo se buscó en el
+archivo y aparece **una sola vez**. Las líneas son las del archivo vigente;
+al insertar de arriba hacia abajo, se corren. Las disciplinas 44, 63 y 66 del
+archivo están escritas sin tildes: el texto nuevo para ellas va igual.
+
+| # | Entra | Dónde va (archivo vigente) | Texto nuevo listo | Caso nombrado | ¿Afloja algo vigente? | ¿Toca otro skill? |
+|---|---|---|---|---|---|---|
+| 1 | sí | `SKILL.md` 44 (f), línea 575, después de «que la pieza este disponible—.» | sí (T1) | Málaga–Racing, Getafe–Sevilla, Venezia–Udinese, Başakşehir–Samsunspor, Porto–Napoli | no: agrega lo que no es motivo; el defecto y el antecedente quedan | no (lee la vida útil del bloque del DTP, que ya existe) |
+| 2 | sí | `SKILL.md` 44 (b), línea 567, sub-ítem nuevo antes de «El antecedente tiene que parecerse…» (línea 568) | sí (T2) | Osasuna–Athletic, La Louvière–Cercle, U. Católica–U. de Chile, Sunderland–Chelsea, Gent–Kortrijk | no: el defecto de los tres queda; llena el hueco de los demás | no |
+| 3 | sí | `SKILL.md` 44 (b), línea 568 (reemplazo) + línea 570 (`ECHADA-PSI`) + línea 635 (65, «las tres coincidencias») | sí (T3) | Fulham–Newcastle, Viking–Sabah, Lille–Rennes, Estudiantes–Instituto, Estudiantes LP–Talleres | no: exige dos coincidencias más (endurece) | no |
+| 4 | sí | `SKILL.md` 16, línea 510 (reemplazo de una frase) | sí (T4) | Villarroel–Oruro, Excelsior–Twente, Hamburgo–Gladbach, Kortrijk–Mechelen, Jaguares–Bucaramanga, Santa Clara–Gil Vicente | **corrige** un texto de la v0.1.25 (el 75-90): lo desmienten 8+ casos; la cifra 11 de 12 y el ISE anulado quedan | `sad-analysis` lee la vía de gol propia de la misma línea, que no cambia |
+| 5 | sí | `SKILL.md` 66, línea 654, al final de «La rama de ventaja nombra el banco ofensivo…» | sí (T5) | Arsenal–Hull, Always Ready–ABB, Monagas–Táchira (y cinco más), Lens–Marseille | no | **sí:** EFE v1.10 cambio 10 (B5 por rol, `banco probable`) y `corrida-sad` modo `rehacer` (ver «Coherencia») |
+| 6 | sí (sin la rama de ventaja) | `SKILL.md` 63, después de la línea 622 y antes de «La evidencia puede venir…» (línea 623) | sí (T6) | Nacional–Sportivo San Lorenzo, San Lorenzo–Platense, ADO–Sparta, Westerlo–Charleroi, León–Chivas | no: no recalcula ni cambia el cobro (61) | complementa el cambio 8 del DTP v1.8 (M3: quién queda atrás); no depende de él |
+| 7 | sí | `SKILL.md` 16, párrafo de `S1` (línea 517), después de la primera oración | sí (T7) | Boca–River, Santa Clara–Gil Vicente, Huachipato–La Serena | no: el peso de `S1` no se toca | lee `f1/{id}` (EFE/app); ver 1068 en «Coherencia» |
+| 8 | sí | `SKILL.md` 21, línea 525, al final; `references/INDICE_IE.md` línea 119 (fila F2) | sí (T8) | Libertad–Emelec, Pasto–Jaguares | no: endurece la 21 (no se sube a mano) | no; la app cambia `f2.puedeSubir` («Para la app» 8) |
+| 9 | no (cierre sin texto) | — | — | — | — | — |
+| 10 | no (medir primero; candidato) | — | — | Asteras–Kalamata, Elche–Betis | — | — |
+| 11 | no (candidato, decidido el 10/11) | — | — | Atromitos–OFI, Levante–Celta | — | — |
+| 12 | sí | `SKILL.md` 16, párrafo de `S1` (línea 517), reemplaza «Mientras falte, esa parte…» | sí (T12) | Gençlerbirliği–Beşiktaş | no | lee `f1/{id}`; la parte de la app va a «Para la app» 11 |
+| 13 | sí | `SKILL.md` 44 (b), sub-ítem nuevo después de T15 (antes de «El antecedente tiene que parecerse…») | sí (T13) | Chivas–León, Union–Köln | no | lee el M3 y el veredicto por rama del DTP; el DTP no necesita cambio |
+| 14 | sí | `SKILL.md` 63, línea 623 (reemplazo de una frase) | sí (T14) | Westerlo–Charleroi, Konyaspor–Galatasaray, Como–Inter | no: la regla es la de la v0.1.23; cambia solo «pendiente» por la decisión | **sí:** DTP v1.8 cambio 16 (lo tiene) y `DEUDA.md` (no lo tiene todavía) |
+| 15 | sí | `SKILL.md` 44 (b), sub-ítem nuevo después de T2 | sí (T15) | Coquimbo–Audax, Independiente Medellín–Fortaleza, Tolima–Millonarios | no: aclara con qué se comprueba la tipología | no |
+| — | sí (changelog) | `SKILL.md` línea 16, bloque nuevo `v0.1.26` arriba del de la v0.1.25 | sí (T0) | — | — | — |
+
+**Entran al skill 12 cambios** (1-8 y 12-15), más el bloque del changelog. **Quedan fuera 3**: el 9
+(cierre sin texto), el 10 (medir primero) y el 11 (candidato). Candidatos
+nuevos del 10/11: cuatro de un caso y tres de dos (ver «Candidatos de la
+comprobación»). A la app: 13 ítems (sección «Para la app»), de los que el 9 ya
+está hecho.
+
+### Los textos
+
+**T0 · changelog (línea 16, arriba del bloque de la v0.1.25):**
+
+> **v0.1.26 · <fecha de subida> — la rama nombra por que, con que y con quien. Revision desde los dossiers del 08 y del 10/11/2026 (865 lecciones `pendiente`, 236 partidos del 01 al 09/11, mas 103 del segundo corte), todas ciegas `PRE`. Ningun numero se mueve: ni pesos, ni la formula del IE, del ISE ni del ISE de rama, ni compuertas, ni bandas, ni la ventana por defecto. El semaforo del IE sigue bajo. Una frase de la v0.1.25 se corrige (la roja propia en el 75-90).**
+>
+> **Registro al cierre de esta version: 35 filas, 51 columnas, sin altas.** IDs: los mismos de la v0.1.20.
+>
+> - **44 (f):** lo que no es motivo para «sostiene el punto» y la vida util del bloque improvisado. **44 (b):** el defecto «sigue atacando» es solo de los tres; los demas, «en su plan»; motivos nombrables y los que no lo son; «sigue atacando» se lee por la amenaza; la rama y el DTP del mismo equipo dicen lo mismo o se nombra cual manda. **44 (b) y (f):** el antecedente coincide tambien en el marcador que se cuidaba y en la cuenta de jugadores.
+> - **16:** la ventana de `siExpulsion.propia` va desde la roja y el regimen hasta el final (sale el 75-90); `S1` sobre los titulares que van al choque y con lo que la app ya trae. **21:** F2 no se sube a mano por viaje, altitud ni calor (decision del usuario del 10/11). **63:** se nombra la pieza del seguro; `HERENCIA-DTP` en el `sob2` de rama, decidido el 10/11 (incidencia 1056). **66:** el banco sale de la hoja y se nombra en todas las ramas.
+> - **Candidatos, no aplicados:** la ventana desde el cambio ofensivo (medir primero), la SOB de la hora con 0-0 y el empate util, la pieza del seguro en la rama de ventaja, la lista del 44 (f) en `siLeEmpatan`. Propuesta aprobada: `docs/revisiones/TDE_v0.1.26_propuesta.md`.
+
+**T1 · 44 (f), después de «que la pieza este disponible—.» (línea 575):**
+
+> **No son motivo por si solos para «sostiene el punto» *(v0.1.26)*:** que el empate le sirva, jugar de visita, el calendario o la fatiga, un DT nuevo o debutante, ni la cuenta de la llave. Dicen que le conviene al equipo, no que puede hacer su bloque (Malaga–Racing, «el punto fuera le sirve»; Getafe–Sevilla, el calendario; Venezia–Udinese y Basaksehir–Samsunspor, el DT nuevo; Estrela–Benfica y Vitoria–Porto, «la tabla no lo obliga a ganar», que es el empate que sirve). **Si el DTP declara el bloque improvisado**, la nota de «sostiene» dice cuando vence su vida util: desde ahi la rama deja de valer (Porto–Napoli, roto al 71' con vida util 55-65). Sin corte por minuto del empate.
+
+**T2 · 44 (b), sub-ítem nuevo antes de «El antecedente tiene que parecerse…» (línea 568):**
+
+> - **El defecto «sigue atacando» es solo de esos tres *(v0.1.26)*.** Para cualquier otro equipo **la falta de antecedente no elige tipologia**: la rama se escribe **«en su plan»** —la tipologia de su base— y su riesgo es la linea del empate, en su campo (a) (Osasuna–Athletic, margen de μ 0,24, y La Louviere–Cercle, «sigue atacando» por falta de antecedente, administraron; U. Catolica–U. de Chile: el clasico no hace obligado). **Motivos nombrables** para apartarse del defecto, con su fuente: el objetivo cumplido por la tabla (`P1b`), `F2` = 1 del motor y el plan del DT declarado en el DTP del mismo equipo (Gimnasia–Belgrano, Stuttgart–Werder, Gent–Kortrijk, Union–Koln). Son ejemplos de nombrar por que, no puntos ni pesos, y `F2` = 1 es nombrable, no un defecto que se aplica solo (Freiburg–Union siguio atacando con `F2` = 1). **No son motivo** para ninguna de las dos tipologias el anuncio de un DT, el clasico, la posicion en la tabla ni la racha (Viseu–Rio Ave; Sunderland–Chelsea, «siete sin ganar»).
+
+**T15 · 44 (b), sub-ítem nuevo después de T2:**
+
+> - **«Sigue atacando» describe la amenaza, no la pelota *(v0.1.26)*.** Se comprueba por remates y llegadas al area. La posesion de temporada y el modelo del equipo no son motivo para escribirlo (disciplina 6). El que cede la pelota y sigue llegando cumple la rama; el que cede y deja de llegar administro, y el cierre lo dice (Coquimbo–Audax: «sigue atacando con la pelota» por la posesion de temporada, se quedo con el 36 % y cerro con un defensor; Independiente Medellin–Fortaleza: con el 38 % siguio llegando, 12 remates, y amplio; Tolima–Millonarios). Sin umbral de posesion ni de remates: no hay datos por tramo.
+
+**T13 · 44 (b), sub-ítem nuevo después de T15:**
+
+> - **La rama y el DTP del mismo equipo dicen lo mismo *(v0.1.26)*.** Si el M3 o el veredicto por rama del DTP del mismo equipo dicen otra cosa que la tipologia de la rama, la nota nombra cual manda y por que; sin motivo, manda el plan del DT del DTP, que es el que tiene la fuente (Chivas–Leon: la rama decia «no administra», el M3 pedia doble pivote fijo si iba arriba, entro un defensor al 84' y concedio a los 3 minutos; Union–Koln: «sigue atacando» con el repliegue en la p5 del DTP). Es la herencia de `C1` y `SOB2` llevada a la tipologia, sin numero y sin alerta calculada.
+
+**T3 · 44 (b), línea 568, reemplazo.** Donde dice «Un antecedente sostiene «administra» solo si coincide en tres cosas: **la misma condicion** (local o visita), **un rival del mismo perfil** (que tambien queria la pelota, obligado o superior) y **las mismas piezas** (las que lo sostuvieron estan disponibles hoy).», va:
+
+> Un antecedente sostiene «administra» solo si coincide en cinco cosas: **la misma condicion** (local o visita), **un rival del mismo perfil** (que tambien queria la pelota, obligado o superior), **las mismas piezas** (las que lo sostuvieron estan disponibles hoy) y, desde la v0.1.26, **el mismo marcador que se cuidaba** (ventaja de uno, ventaja de dos o empate) y **la misma cuenta de jugadores** (Fulham–Newcastle: un 0-2 para cuidar un gol desde el 80'; Viking–Sabah, Atletico Grau–Universitario y Lille–Rennes: un 0-0 para cuidar una ventaja; Estudiantes–Instituto: un 1-0 once contra once para un 3-0 con uno mas; Estudiantes LP–Talleres: un 0-0 con uno menos). Vale igual para `ECHADA-PSI` y para «sostiene el punto» de (f).
+
+Y en la línea 570, «coinciden en condicion, perfil del rival y piezas» pasa a «coinciden en las cinco cosas de arriba»; en la línea 635 (65), «ni un antecedente que no cumpla las tres coincidencias de la 44 (b)» pasa a «ni un antecedente que no cumpla las coincidencias de la 44 (b)».
+
+**T4 · 16, línea 510, reemplazo.** Donde dice «La línea de `siExpulsion.propia` dice que el riesgo es **la vía echada en el tramo final** (ventana del reloj 75-90) y que el ISE anulado no la apaga», va:
+
+> La línea de `siExpulsion.propia` lleva su ventana **desde la roja hasta +15** y el régimen de inferioridad **hasta el final**, y dice que el ISE anulado no apaga la vía echada *(v0.1.26: la v0.1.25 la ubicaba en la ventana del reloj 75-90, que es la 44 (c) incumplida; en la cohorte de noviembre concedieron a 15 minutos o menos de la roja Villarroel–Oruro, Excelsior–Twente, Hamburgo–Gladbach, Kortrijk–Mechelen y Jaguares–Bucaramanga, y dentro del régimen pero fuera del +15 Santa Clara–Gil Vicente e Independiente Rivadavia–Gimnasia: por eso el régimen no se corta en +15)*. La ventana del reloj se sigue declarando aparte y, con roja previa, no se cobra (disciplinas 16 y 17)
+
+(los casos de la v0.1.25 entre paréntesis que siguen, Melgar–Comerciantes, Delfín–Cuenca y Barracas–Estudiantes, se conservan). Y en la 44 (d) no cambia nada: ya remite a la 16.
+
+**T5 · 66, línea 654, al final del ítem «La rama de ventaja nombra el banco ofensivo…» (después de «hasta entonces sale de la investigacion, con fuente.»):**
+
+> **La lista sale de la hoja *(v0.1.26)*.** Antes del once oficial es «probable» y se escribe asi (si el EFE trae el banco por rol en B5, es esa lista); con el once, se reescribe en el modo `rehacer` con los suplentes reales, y **un nombre que sale titular deja de ser banco** (ocho partes nombraron como banco a un titular: Monagas–Tachira, Always Ready–ABB, Arsenal–Hull aun despues de rehacer, Venezia–Udinese, Tachira–Puerto Cabello, Manchester United–Roma, 2 de Mayo–Trinidense, The Strongest–Villarroel). **Se nombra en todas las ramas donde puede entrar**, no solo en `siMarcaPrimero` (Lens–Marseille: el banco de la rama de ventaja rompio el empate en `siIguala`; Mushuc Runa–Manta; y el que no lo nombro lo pago: Union–Koln, Cercle–Antwerp, Estudiantes LP–Talleres).
+
+**T6 · 63, sub-ítem nuevo entre la línea 622 y «La evidencia puede venir…» (línea 623):**
+
+> - **La pieza que sostiene el seguro se nombra *(v0.1.26)*.** La rama que persigue —y la base `SOB`— nombra quien sostiene su `sob2`, como ya nombra las piezas de la via. **El cierre anota el minuto en que esa pieza salio, por cambio o por roja**, y lee el tramo desde ahi con el seguro roto. Es lectura del mecanismo: no recalcula el ISE de rama declarado ni cambia el cobro de la salida (disciplina 61), y el `sob2` no se sube por anticipado porque la pieza «podria salir». Casos: Nacional–Sportivo San Lorenzo (Santacruz, «el unico seguro que la rama nombraba», salio al descanso), San Lorenzo–Platense, ADO–Sparta (Mito al 56', gol al 57'), Westerlo–Charleroi (Fofana por un delantero), Boston River–Torque, Lommel–Gent, Leon–Chivas (la roja de J. Rodriguez, pieza del doble pivote).
+
+**T14 · 63, línea 623, reemplazo.** Donde dice «que `HERENCIA-DTP` compare tambien el `sob2` de la rama que persigue, no solo el de la base, esta aprobado y pendiente de la app.», va:
+
+> que `HERENCIA-DTP` compare tambien el `sob2` de las tres ramas que persiguen, no solo el de la base, lo decidio el usuario el 10/11/2026 (incidencia 1056, «heredar y avisar»): la app toma el nivel persiguiendo del DTP para `siRecibePrimero`, `siIguala` y `siLeEmpatan` cuando vuelve a empujar (`sob1` ≥ 0.5) y avisa si el declarado difiere; los partes depositados antes se leen como se declararon. Mientras la app no lo haga, lo copia el analista *(cuando el mantenimiento lo implemente, esta ultima oracion se borra)*. Casos que lo hicieron bien a mano: Westerlo–Charleroi, Konyaspor–Galatasaray, Como–Inter.
+
+**T7 · 16, párrafo de `S1` (línea 517), después de la primera oración («…no se estiman *(v0.1.25)*.**»):**
+
+> *(v0.1.26)* **`S1` se puntua sobre los titulares del once que van al choque** —zaga, pivote, el 9 que pelea— y cuenta a quien **vuelve de una roja**; nombra a toda la linea, no a un candidato (Boca–River: Martinez Quarta volvia de una suspension por roja y la vio al 10'; Santa Clara–Gil Vicente: el riesgo se nombro en uno y la vio otro; Huachipato–La Serena: las amarillas eran de suplentes y la roja fue del punta titular). El suplente que entra sigue siendo un hueco declarado (Strasbourg–Auxerre, Orense–Cuenca).
+
+**T12 · 16, párrafo de `S1` (línea 517), reemplazo.** Donde dice «Mientras falte, esa parte de `S1` se declara `sin dato` y entra en la caja de sensibilidad; no se rellena a ojo.», va:
+
+> Mientras falte, esa parte de `S1` se declara `sin dato` y entra en la caja de sensibilidad; no se rellena a ojo. **Lo que la app ya trae no se deja vacio *(v0.1.26)*:** con `amarillasEnLaCompeticion` y `sancionados` de `f1/{id}` a la vista, `S1` se puntua con ellos o se declara `sin dato` con el motivo que da la app (`conteoParcial`, jugador sin fila o sin datos de la temporada); no se puntua de memoria (Gençlerbirliği–Beşiktaş: `S1` sin dato y un central de la zaga nueva vio dos amarillas en cinco minutos, con el dato en `f1/{id}`; Nacional Potosí–Real Potosí: `S1` = 1 por las rojas de la base, y acertó).
+
+**T8 · 21, línea 525, al final; y fila F2 de `INDICE_IE.md`, línea 119.** En la 21, después de «porque el número finge precisión.»:
+
+> **El viaje, la altitud y el calor no suben F2 a mano *(v0.1.26, decisión del usuario del 10/11/2026)*.** El IE se emite con el `F2` de la app (`GET …/tde/{id}` → `f2`) y, si hay un viaje largo, un cambio de altitud o calor extremo que el motor no ve, va a la **caja de sensibilidad** como el otro extremo, con su fuente (disciplina 32). Libertad–Emelec subió F2 a 1 por ocho horas de viaje y la altura de Loja, escribió `ECHADA-FIS` y Emelec siguió atacando; Pasto–Jaguares: «la carga del viaje va en la nota, no en el indicador».
+
+En `INDICE_IE.md`, la fila F2 queda (las tres celdas de puntaje, sin mover ningún número):
+
+> `| F2 | Descanso, viaje y calendario | 6+ días, sin viaje exigente, próximo partido accesible | 4–5 días *(viaje con cambio de altitud: caja de sensibilidad, disciplina 21)* | ≤3 días, o próximo partido de altísima exigencia *(altura o calor extremo: caja de sensibilidad, disciplina 21)* |`
+
+## Coherencia entre skills
+
+| Cambio | Depende de | ¿Lo tiene la otra parte? | Qué hacer al redactar |
+|---|---|---|---|
+| 14 (1056, herencia del `sob2` de rama) | DTP `diagnostico-tactico` (M2 e Integración: «no se hereda hasta que el usuario decida») | **Sí:** `DTP_v1.8_propuesta.md`, cambio 16, con el texto nuevo de Integración («El TDE hereda `nivelFocoPersiguiendo` en las ramas del que persigue; HERENCIA-DTP avisa si difiere — aprobado 10/11, incidencia 1056») | Subir TDE v0.1.26 y DTP v1.8 juntos |
+| 14 | `docs/DEUDA.md` (entrada DTP v1.6 / TDE v0.1.23, «pendiente del usuario») | **No todavía** | Cerrar esa línea con la decisión del 10/11 al redactar (no es un skill: no bloquea) |
+| 14 | La app (`parte.py` `HEREDA_SOB2`, `_heredar`, `HERENCIA-DTP`; `dtp_cowork.herencia_tde`) | No: `HEREDA_SOB2 = ("siMarcaPrimero",)` sigue en `parte.py` línea 2475 | La redacción T14 deja «lo copia el analista» hasta que el mantenimiento lo implemente |
+| 5 (banco de la hoja) | EFE v1.10 cambio 10 (la F1 admite `banco probable` y B5 nombra el banco por rol: «esa lista es la que toman el DTP, el TDE y la matriz») | **Sí**, en la misma dirección | T5 cita la lista del B5 condicionada («si el EFE trae el banco por rol»): no se rompe si el cambio 10 del EFE no entrara |
+| 5 | `corrida-sad`, modo `rehacer`, paso 4 (reescribe todo lo que nombra al once viejo, `tde.bloques[]` con sus ramas incluido) | Sí en parte: saca de las ramas al titular nombrado como banco; no dice que se escriban los suplentes reales de la hoja. Y el `rehacer` corre solo con `DTP-REHACER` | No bloquea. Nota para el mantenimiento: el aviso del recibo («Para la app» 2) cubre los partes sin `rehacer` |
+| 7 y 12 (`S1` desde `f1/{id}`) | 1068 (c): la app suma a la F1 la fila del titular que falta (`delOnceOficial`, rol ROT, **sin stats de temporada**) | La decisión está; el código no | Esa fila no trae amarillas de la competición: para `S1` es «sin datos de la temporada» (ya en T12), nunca 0. Sin conflicto con el rehacer con EFE (3+ titulares fijos o arquero distinto): el banco del TDE se reescribe en todo `rehacer` |
+| 13 (rama contra M3) | DTP: el M3 y el veredicto por rama | Existen en el DTP vigente; el DTP v1.8 cambio 8 (M3: quién queda atrás en todas las ramas) los hace más explícitos | Nada: la regla es del lado del TDE |
+| 6 (pieza del seguro) | DTP v1.8 cambio 8 | Complementa; no depende | Nada |
+| 4 (roja) | `sad-analysis` lee la vía de gol propia de `siExpulsion.propia` | Esa parte no cambia | Nada |
+| 11 (candidato) contra 1 | — | La tensión quedó resuelta: el 11 no entra | Nada |
+
+**Bloqueos para redactar: ninguno.** Las secciones y líneas citadas existen;
+no queda una contradicción abierta (la del 1 contra el 11 se resolvió dejando
+el 11 como candidato); la única dependencia en otro skill (DTP, 1056) la tiene
+su propuesta. Lo que falta fuera de los skills: `DEUDA.md` (14) y la app (14,
+8, 12), que no impiden subir el texto.
 
 ## De dónde sale
 
@@ -138,8 +285,8 @@ Lo que se propone es rúbrica:
 6. Cuando sale la pieza que sostiene el seguro de atrás, el cierre lo dice.
 7. `S1` mira a los titulares que van al choque.
 
-Y una contradicción para que **decida el usuario**: F2 subido a mano por viaje
-y altitud (punto 8).
+Y una contradicción que **el usuario decidió el 10/11 con la (a)**: F2
+subido a mano por viaje y altitud (punto 8) no se sube; manda el motor.
 
 Casi todo lo nuevo se puede **avisar desde la app** en vez de pedírselo al
 modelo, y lo pendiente de la v0.1.25 sigue sin hacerse (sección «Para la app»).
@@ -151,8 +298,8 @@ Ninguno se cae. Se agregan:
 10. La ventana de la vía del banco rival cuenta desde que el banco entra
     (medir primero).
 11. Con 0-0 y el empate en la mano, la SOB de «si a la hora no gana, empuja»
-    pide un hecho de hoy. Tiene una tensión con el punto 1 que se deja a la
-    vista.
+    pide un hecho de hoy. Tiene una tensión con el punto 1. **Decidido el
+    10/11: se espera (candidato).**
 12. `S1` desde la base: las amarillas y las rojas que la app ya calcula (va a
     la app).
 13. La rama del TDE y el plan del DTP del mismo equipo dicen lo mismo antes de
@@ -710,8 +857,9 @@ contenedor Moya y al lateral Ramos al 77' por dos delanteros y concedió al 84'.
 minutos de cambiar a su lateral derecho amonestado, pero en la rama de ventaja,
 que este punto no cubre. Con Barcelona–Atlético (1570443:b, del «Refuerzo
 10/11») son dos casos del mismo mecanismo (amarilla de la pieza → cambio →
-concesión): la redacción del punto puede decir «la rama que persigue y la de
-ventaja» sin cambiar nada más. Si la salida de la pieza adelanta la concesión
+concesión). **Decidido el 10/11/2026:** con dos casos, la extensión a la rama
+de ventaja queda **candidato** (regla conservadora); la línea nombra la pieza
+en la rama que persigue y en la base `SOB`. Si la salida de la pieza adelanta la concesión
 sigue sin poder contarse hasta que la app marque el minuto.
 
 **Núcleo / historial.** Núcleo: «nombrar la pieza que sostiene `sob2`; el
@@ -779,7 +927,7 @@ historial disciplinario también es del equipo (punto 12).
 con quien vuelve de una roja, y con el dato de la base cuando está» (una
 línea). Historial: los casos.
 
-### 8. F2 subido a mano por viaje y altitud: una contradicción para que decida el usuario (disciplina 21 y fila F2 de `INDICE_IE.md`) — A DECIDIR
+### 8. F2 subido a mano por viaje y altitud: una contradicción que decidió el usuario (disciplina 21 y fila F2 de `INDICE_IE.md`) — DECIDIDO (a) el 10/11/2026
 
 **Qué hay.** La disciplina 21 dice «F2 es dato del motor o no es dato». La
 tabla de `references/INDICE_IE.md` pone en F2 «viaje con cambio de altitud» y
@@ -800,12 +948,14 @@ partidos: no alcanza para una regla, pero el texto se contradice solo.
   o la altitud van a la caja de sensibilidad como el otro extremo, con su
   fuente. Es la disciplina 21 al pie de la letra y la caja que ya existe. La
   app cambia el texto de `puedeSubir`.
-- **(b) Manda la tabla:** se puede subir con fuente nombrada, y los dos cierres
-  de arriba se archivan como desacuerdo.
+- ~~**(b) Manda la tabla:** se puede subir con fuente nombrada, y los dos
+  cierres de arriba se archivan como desacuerdo.~~ *(Descartada el 10/11.)*
 
-La propuesta recomienda la (a), porque F2 es del bloque de peso ×3 y la
-disciplina 21 nació de tres correcciones del motor sobre estimaciones a mano.
-El candidato `F2 × F4` de la v0.1.15 sigue como está.
+**Decidido por el usuario el 10/11/2026:** (a) manda el motor (es lo que la
+propuesta recomendaba: F2 es del bloque de peso ×3 y la disciplina 21 nació de
+tres correcciones del motor sobre estimaciones a mano). El viaje, la altitud y
+el calor van a la caja de sensibilidad con su fuente; el texto exacto está en
+«Lista para redactar». El candidato `F2 × F4` de la v0.1.15 sigue como está.
 
 **10/11.** Ninguna lección nueva sube F2 a mano. Las que tocan `F2` = 1 del
 motor van en las dos direcciones. Gent–Kortrijk (1558673:a) administró con la
@@ -827,8 +977,8 @@ Unidos–Garcilaso (1549547:b: «la vía secundaria de echada en la altura (60-7
 tampoco se pagó»). No apareció ningún viaje ni altitud que el motor no vea y
 que explique una echada, que es lo que daría razón a la (b).
 
-**Núcleo / historial.** Núcleo: la regla que el usuario elija (una línea en la
-21 y la fila de `INDICE_IE.md`). Historial: los dos cierres.
+**Núcleo / historial.** Núcleo: la (a) (una línea en la 21 y la fila de
+`INDICE_IE.md` marcada). Historial: los dos cierres.
 
 ### 9. Confirmaciones que se cierran sin cambio
 
@@ -1003,7 +1153,7 @@ app», punto 10.
 **Núcleo / historial.** Si se aprueba tras la medición, una línea en la
 44 (c). Hoy es historial (candidato).
 
-### 11. Con 0-0 y el empate en la mano, la SOB de «si a la hora no gana, empuja» pide un hecho de hoy (disciplinas 18 y 56) — RÚBRICA, CON UNA TENSIÓN A LA VISTA
+### 11. Con 0-0 y el empate en la mano, la SOB de «si a la hora no gana, empuja» pide un hecho de hoy (disciplinas 18 y 56) — CANDIDATO (decidido el 10/11/2026: se espera)
 
 **Qué dice hoy.** La 18 manda puntuar `SOB1`, `P1b` y `P1c` con la tabla. La 56
 dice que con `SOB1` = 1 el régimen empieza en el 0. No dice qué se escribe para
@@ -1023,23 +1173,26 @@ sirve**.
 A favor del mismo lado, La Guaira–Carabobo (1646935:a, punto 9): la SOB del
 obligado no se paga si el rival administra.
 
-**Qué se propone redactar** (18, una línea): **`SOB1` = 1 por la tabla abre la
+**Lo que se proponía redactar (queda como candidato, no entra a la v0.1.26)**
+(18, una línea): **`SOB1` = 1 por la tabla abre la
 SOB desde el pitazo (56). Una SOB que se escribe para la hora («si a la hora no
 gana, empuja») con 0-0 de visita necesita un hecho de hoy** (el DT que lo
 anunció, el banco ofensivo en la hoja, un rival que no administra). Si no lo
 hay, la base queda en su plan y la SOB va a la rama `siRecibePrimero`. No se
 toca la puntuación de `SOB1`.
 
-**La tensión, para el usuario.** El punto 1 dice que «el empate le sirve» y
+**La tensión (resuelta el 10/11: se espera).** El punto 1 dice que «el empate le sirve» y
 «juega de visita» **no** son motivo para «sostiene el punto» en `siIguala`
 (13 de 17 casos concedieron). Este punto dice que, con 0-0 de visita, ese
 mismo hecho **sí** frena la SOB de la hora. Las dos cosas pueden ser ciertas,
 porque son regímenes distintos: el que igualó viene empujando con el banco
 adentro, y el del 0-0 nunca persiguió. Pero es la misma frase leída en dos
 direcciones, y PAOK (1593357:b, «En contra» del punto 1) cae justo en el medio.
-**Pregunta:** ¿se aprueba el 11 tal cual, con la diferencia de régimen
-escrita, o se espera a que los veredictos del 08-09/11 separen las dos
-situaciones?
+**Decidido por el usuario el 10/11/2026:** se espera; queda como candidato
+(la propuesta no recomendaba ninguna de las dos; con la regla conservadora,
+dos casos de un mismo día y ninguno en la comprobación no hacen una regla, y
+entrar ahora dejaría la misma frase leída en dos direcciones contra el punto
+1). Se reabre con el tercer caso, en «Cuándo se reabre».
 
 **Comprobación con los veredictos del 08-09/11.** *Se sostiene si* los
 visitantes con 0-0 y el empate útil no empujan a la hora cuando la SOB no
@@ -1049,11 +1202,12 @@ abría la SOB.
 **Comprobación 10/11 (0 lecciones nuevas): SIN CASOS.** Ningún visitante con
 0-0, la tabla abajo y el empate útil. Lo más cercano, Defensa y Justicia en la
 Bombonera (1493231:b), es un visitante ya clasificado que cerró con cambios
-defensivos en el 90+1 y concedió en el 90+6: no es el régimen de este punto. La
-pregunta al usuario sigue abierta.
+defensivos en el 90+1 y concedió en el 90+6: no es el régimen de este punto.
+Decidido el 10/11: candidato.
 
-**Núcleo / historial.** Núcleo: la línea de la 18 y, si se aprueba, la frase
-que separa los dos regímenes en la 44 (f). Historial: los casos.
+**Núcleo / historial.** Hoy, historial (candidato: Atromitos, Levante). Si
+entra con el tercer caso, la línea de la 18 y la frase que separa los dos
+regímenes en la 44 (f).
 
 ### 12. `S1` desde la base: las amarillas y las rojas que la app ya calcula (bloque S, disciplina 21 aplicada a `S1`) — CALCULABLE → APP, SIN PESO
 
@@ -1122,8 +1276,10 @@ plan del DT del DTP, que es el que tiene la fuente. Es lo mismo que la
 herencia de `C1` y `SOB2`, llevado a la tipología, sin número.
 
 **Qué NO se propone.** Una alerta calculada: comparar prosa no es aritmética.
-Si el usuario lo quiere vigilado, es un candidato al guardrail de coherencia
-de Jev (que compara prosa con número), no a `HERENCIA-DTP`.
+**Decidido por el usuario el 10/11/2026:** por ahora no se vigila (la
+propuesta no recomendaba; lo conservador con dos casos es no abrir otra
+pregunta del guardrail de coherencia de Jev). Queda candidato a ese
+guardrail, nunca a `HERENCIA-DTP`.
 
 **Comprobación con los veredictos del 08-09/11.** *Se sostiene si* aparecen
 más casos en los que el equipo jugó el plan del DTP contra la rama del TDE.
@@ -1372,19 +1528,27 @@ calibrado.
    candidato a un aviso como `HERENCIA-DTP`, no regla. *Refuerzo 10/11:*
    Chivas–León (1551037:b) es el segundo caso (la rama decía «no administra», el
    M3 del DTP pedía cerrar y el equipo jugó el M3). Pasa a rúbrica en el punto
-   13. Lo que queda para la app es, si el usuario quiere vigilarlo, una
-   pregunta más del guardrail de coherencia de Jev, no una alerta calculada.
+   13. **Decidido el 10/11: no se vigila por ahora**; la pregunta del
+   guardrail de coherencia de Jev queda candidata, no se hace.
 7. **Textos viejos.** `backend/analisis/lecciones.py` (la nota de
    `desenlaceTde`) todavía dice «Lectura por defecto: ISE de rama ≥ 7 →
    se_rompe», y el rechazo de `desenlace` en `backend/analisis/parte.py` cita
    «TDE v0.1.24». El cobro ya usa `abierto`; solo la prosa quedó vieja. *Sigue igual
    el 10/11:* la nota del dossier de las 02:13 repite «Lectura por defecto: ISE de
    rama ≥ 7 → se_rompe» (`backend/analisis/lecciones.py`, línea 889).
-8. **F2 (punto 8).** Si el usuario elige la salida (a), cambiar el texto de
-   `f2.puedeSubir` en `backend/analisis/tde.py`.
+8. **F2 (punto 8), DECIDIDO (a) el 10/11.** Cambiar el texto de
+   `f2.puedeSubir` en `backend/analisis/tde.py` (línea 321) de «súbelo a mano»
+   a: «viaje largo, cambio de altitud o calor extremo no los ve el motor y no
+   suben F2: van a la caja de sensibilidad como el otro extremo, con su fuente
+   (TDE v0.1.26, disciplina 21)». Contrato primero si el campo cambia de
+   significado (`docs/openapi.yaml`), y su test.
 9. **La versión del 01/11.** Anotar en `SUBIDA_VERSION` la hora en que la
    v0.1.25 llegó a la cuenta, para separar las lecciones del 01/11 escritas con
-   la v0.1.24 (hoy el dossier no lo hace por lección).
+   la v0.1.24 (hoy el dossier no lo hace por lección). *Verificado el 10/11:*
+   ya está (`backend/analisis/simulacion.py`, `SUBIDA_VERSION`:
+   `("teorema-del-echado", "v0.1.25"): "2026-11-01 13:00:00"`); lo que falta
+   es que el dossier lo use por lección. Al subir la v0.1.26, anotar su hora
+   ahí.
 10. **Los cambios con su minuto, por tramo (punto 10).** Para cada gol
     concedido, los minutos desde el último cambio ofensivo del rival y del
     propio equipo, con el perfil del que entra (la materia de `S2` en
@@ -1488,6 +1652,15 @@ calibrado.
     (1549857:b).
   - El banco del rival se nombra entero, con los cambios del descanso y no solo
     los delanteros: U. de Chile–Cobresal (1505560:a). Cabe en el punto 5.
+  - La rama nombra el banco **además** de la vía de los titulares, no en su
+    lugar: U. Católica–Macará (1639805:b). Cabe en el punto 5.
+  - *(dos casos, decidido el 10/11)* La pieza del seguro que sale por la
+    amarilla también en la **rama de ventaja**: Barcelona–Atlético
+    (1570443:b) y Alianza Lima–Los Chankas (1549551:b). Cabe en el punto 6.
+  - *(dos casos, decidido el 10/11)* El punto 11 entero: Atromitos–OFI
+    (1593356:b) y Levante–Celta (1570444:b).
+  - *(decidido el 10/11)* Vigilar con el guardrail de Jev la rama del TDE
+    contra el M3 del DTP (punto 13): Chivas–León, Union–Köln.
   - El historial disciplinario del equipo (rojas del último partido) como dato de
     `S1`, además del del jugador: Sarmiento–Tigre (1493240:b).
   - El segundo gol rápido tras el empate como hecho repetido de un equipo:
@@ -1507,15 +1680,18 @@ calibrado.
 - **«Sostiene el punto» y la rama de ventaja (puntos 1 y 2):** si con la
   redacción y el aviso del recibo se siguen escribiendo sin motivo en la
   próxima cohorte, el problema es de lectura del skill y no de regla.
-- **F2:** con la decisión del usuario sobre el punto 8.
+- **F2:** decidido el 10/11 (a). Se reabre si aparecen viajes o altitudes
+  que el motor no ve y que explican una echada (lo que daría razón a la (b)).
 - **La ventana desde el cambio (punto 10):** cuando la app dé los minutos
   desde el cambio ofensivo por gol concedido, con n ≥ 30 por reloj.
 - **La herencia del `sob2` de rama (punto 14):** aprobada el 10/11 (a); cuando
   la app la aplique, revisar con n ≥ 10 ramas jugadas por valor (fijo · depende ·
   sin) si el heredado separa mejor que el 0.5.
-- **La SOB de la hora con el empate en la mano (punto 11):** si los veredictos
-  del 08-09/11 traen visitantes con 0-0 que empujaron y concedieron sin hecho
-  escrito, el punto se cae.
+- **La SOB de la hora con el empate en la mano (punto 11), candidato desde
+  el 10/11:** entra con el tercer caso de un visitante con 0-0, la tabla abajo
+  y el empate útil que no empujó sin un hecho escrito (de otro cruce que
+  Atromitos–OFI y Levante–Celta); se cae si aparecen visitantes así que
+  empujaron y concedieron sin hecho escrito.
 
 ## Sesgos y límites
 
@@ -1560,10 +1736,10 @@ necesita para escribir el parte) y lo que va a `references/HISTORIAL.md`:
 | 5 | 66, 65, 44 (a): el banco de la hoja, reescrito en `rehacer`, en todas las ramas | los partidos |
 | 6 | 63: nombrar la pieza del `sob2`; el cierre anota su salida (cambio o roja) | los 10 + 2 partidos |
 | 7 | bloque S: `S1` sobre los titulares que van al choque y quien vuelve de una roja | los casos |
-| 8 | 21 y fila F2 de `INDICE_IE.md`: la salida que elija el usuario | los dos cierres |
+| 8 | 21 y fila F2 de `INDICE_IE.md`: la (a), manda el motor (decidido el 10/11) | los dos cierres |
 | 9 | nada nuevo | las confirmaciones |
 | 10 | (solo si se aprueba tras medir) una línea en la 44 (c) | hoy, candidato: Asteras, Elche |
-| 11 | 18: la SOB de la hora con 0-0 de visita pide un hecho; la frase que la separa del punto 1 | Atromitos, Levante |
+| 11 | (candidato desde el 10/11; nada hasta el tercer caso) | Atromitos, Levante |
 | 12 | bloque S: con el dato de la app, `S1` se puntúa o se declara sin dato con su motivo | los casos |
 | 13 | 44 (b): si el DTP del mismo equipo dice otra cosa, se nombra cuál manda | Chivas, Union–Köln |
 | 14 | 63 sin «pendiente de la app», con las tres ramas (aprobado el 10/11) | Westerlo, Konyaspor, Como, Everton, Limache, Rayo–Celta, Xerez–Cádiz, 11 de 36 / 6 de 16 |
@@ -1583,10 +1759,10 @@ casos y los conteos de esta propuesta son todos historial.
 | 5 | El banco se toma de la hoja y se nombra en todas las ramas | 66, 65, 44 (a) | rúbrica + aviso calculable | 15 |
 | 6 | La pieza del seguro se nombra y el cierre anota cuándo salió | 63, 61 | rúbrica + calculable | 10 |
 | 7 | `S1` sobre los titulares que van al choque y quien vuelve de una roja | bloque S | rúbrica, sin peso | 5 |
-| 8 | F2 a mano por viaje y altitud: decide el usuario | 21, `INDICE_IE.md` | a decidir | 2 |
+| 8 | F2 a mano por viaje y altitud: manda el motor | 21, `INDICE_IE.md` | **decidido (a) el 10/11** | 2 |
 | 9 | Confirmaciones sin cambio (65, 61, 66, 43, 16, 14, 23, 50) | varias | cierre sin texto | el resto |
 | 10 | La ventana de la vía del banco desde que el banco entra | 44 (c), 56 | medir primero + calculable | 2 (+3 del punto 5) |
-| 11 | Con 0-0 de visita y el empate útil, la SOB de la hora pide un hecho (tensión con el 1) | 18, 56 | rúbrica, con pregunta | 2 |
+| 11 | Con 0-0 de visita y el empate útil, la SOB de la hora pide un hecho (tensión con el 1) | 18, 56 | **candidato (decidido el 10/11)** | 2 |
 | 12 | `S1` desde la base (amarillas y rojas de `sanciones.py`) | bloque S | calculable → app, sin peso | 7 |
 | 13 | La rama del TDE y el plan del DTP del mismo equipo dicen lo mismo | 44 (b), 63 | rúbrica | 2 |
 | 14 | 1056: el `sob2` de rama se hereda del DTP persiguiendo y `HERENCIA-DTP` lo compara | 63 | **APROBADO (a) el 10/11** → app (mantenimiento) + DTP + DEUDA | 5 (Westerlo, Konyaspor, Como, Everton, Limache) |
@@ -1611,10 +1787,10 @@ sale el `sob2` de la rama.
 | 5 | El banco se toma de la hoja, se reescribe en `rehacer` y se nombra en todas las ramas | rúbrica | sostiene (matiz: banco entero con los cambios del descanso) | núcleo |
 | 6 | Se nombra la pieza que sostiene `sob2`; el cierre anota cuándo salió | rúbrica | sostiene (matiz: también en la rama de ventaja) | núcleo |
 | 7 | `S1` sobre los titulares que van al choque y quien vuelve de una roja | rúbrica | sostiene | núcleo |
-| 8 | F2 subido a mano por viaje y altitud: (a) manda el motor o (b) manda la tabla | decide | sostiene la (a), débil | núcleo (la que elija el usuario) |
+| 8 | F2 subido a mano por viaje y altitud: manda el motor (a) | decidido (a) el 10/11 | sostiene la (a), débil | núcleo |
 | 9 | Confirmaciones sin cambio (65, 61, 66, 43, 16, 14, 23, 50, 17, 24) | rúbrica | sostiene | historial |
 | 10 | La ventana de la vía del banco rival cuenta desde que el banco entra | medir | matiza (casos en los dos sentidos) | historial (candidato) |
-| 11 | Con 0-0 de visita y el empate útil, la SOB de la hora pide un hecho de hoy | decide | sin casos | núcleo (si se aprueba) |
+| 11 | Con 0-0 de visita y el empate útil, la SOB de la hora pide un hecho de hoy | candidato (decidido el 10/11) | sin casos | historial (candidato) |
 | 12 | `S1` desde la base: amarillas y rojas de `sanciones.py` en `GET …/tde/{id}` | app | sostiene (un caso) | núcleo |
 | 13 | La rama del TDE y el plan del DTP del mismo equipo dicen lo mismo, o se nombra cuál manda | rúbrica | sin casos | núcleo |
 | 14 | 1056: el `sob2` de las ramas del que persigue se hereda del DTP y `HERENCIA-DTP` lo compara — APROBADO (a) el 10/11 | app | sostiene (sin «fijo» para separar) | núcleo |
