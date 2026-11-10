@@ -665,7 +665,10 @@ POST $B/analisis/cowork/incidencias
   temporada es la de la API; en la Liga MX el Clausura 2026 es la temporada
   2025: pedila con `temporada=<año−1>&fase=Clausura`); 4-1-4-1 contra
   4-2-3-1 que no suena DTP-REHACER aunque el otro lado sí haya sonado y falte
-  un titular de la referencia (1342, 1343: el umbral es 3 ausentes, 1181); y ONCE-SIN-FILA-F1
+  un titular de la referencia (1342, 1343: el umbral es 3 ausentes, 1181); el
+  titular de la hoja sin `jugadorId` (1354: lo publica así la API, el bloque F
+  lo casa por nombre); el evento VAR «Penalty confirmed» que no terminó en
+  penal (1355: es el evento de la API, se cobran el marcador y los goles); y ONCE-SIN-FILA-F1
   con 1, 2 o 3 titulares que el rehacer no rehízo en la F1 (1339: sumalo a la
   #1068, que espera la decisión; 1265).
 
