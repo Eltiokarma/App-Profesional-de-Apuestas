@@ -50,7 +50,7 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
   const recargar = () => { inv.reload(); setRecarga((n) => n + 1) }
 
   if (inv.loading && !inv.data) {
-    return <Marco><span style={{ font: '500 12px var(--sans)', color: 'var(--t3)' }}>Cargando lo aprendido… (la primera lectura del día tarda: recalcula cada veredicto)</span></Marco>
+    return <Marco><span style={{ font: '500 12px var(--sans)', color: 'var(--t3)' }}>Cargando lo aprendido… (justo después de un despliegue tarda unos minutos: recalcula cada veredicto una vez)</span></Marco>
   }
   if (inv.error || !inv.data) {
     return (

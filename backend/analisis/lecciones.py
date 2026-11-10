@@ -147,6 +147,8 @@ def _casos(limite: int = 400, ids=None) -> list[dict]:
             "creadoEn": (f["creado_en"] or "")[:10],
             "equipoA": f["equipo_a"], "equipoB": f["equipo_b"],
             "parte": parte,
+            # la huella del parte TAL COMO SE GUARDÓ: es la clave del objetivo
+            "huellaParte": huella_parte(f["parte_json"]),
             "veredicto": json.loads(f["veredicto_json"]),
             "cohorte": cohorte_de(f["cohorte"])["clave"],
             "cuarentena": cuarentena,
@@ -262,31 +264,153 @@ def _sumar_tarjeta(tar: dict, lado: str, e: dict) -> None:
         tar["contra"]["aciertaTarjeta"] += 1 if t.get("cumplida") else 0
 
 
-# EL OBJETIVO DE CADA VEREDICTO, POR UNOS MINUTOS. Se recalcula al leer (no hay
-# copia que se quede vieja), pero Aprendizaje lo pide para ~250 casos a la vez
-# y la pantalla lanza dos pedidos juntos: 21 s cada uno y la web cortaba
-# («signal is aborted without reason», 20/10/2026). La clave lleva el parte
-# entero (con su veredicto): corregir un caso cambia la clave y se rehace; lo
-# que cambia por fuera (la constante del partido, la ficha) entra en ≤ TTL.
+# EL OBJETIVO DE CADA VEREDICTO, MIENTRAS NO CAMBIE LO QUE LO DECIDE. Se
+# recalcula al leer (no hay copia que se quede vieja), pero Aprendizaje lo pide
+# para cientos de casos a la vez. Hasta el 10/11/2026 vencía a los 10 minutos:
+# cada visita pasada esa ventana rehacía TODOS los casos (en producción, 115 s
+# y un 502 a los 300 s; usuario: «la sección Aprendizaje carga mucho»). Ahora
+# la clave lleva la HUELLA DE LOS INSUMOS del objetivo —el parte entero (con su
+# veredicto), la fila del partido, sus eventos y su alineación en sad.db, y las
+# tres bases derivadas que reescribe el pipeline (constants, levels, discreto:
+# las K, los niveles y la historia «al día del partido»)—: si nada de eso
+# cambió, el objetivo es el mismo número y no se rehace; si algo cambió, se
+# rehace en el acto. `SAD_CACHE_OBJETIVO_S` queda como red de seguridad (un
+# día) para lo que la huella no mire; 0 apaga el caché (los tests).
 # El candado hace que el segundo pedido espere al primero y lea lo guardado.
-OBJETIVO_TTL_S = float(os.environ.get("SAD_CACHE_OBJETIVO_S", "600") or "0")
-_OBJ_CACHE: dict[tuple, tuple[float, dict]] = {}
+OBJETIVO_TTL_S = float(os.environ.get("SAD_CACHE_OBJETIVO_S", "86400") or "0")
+# una entrada por partido: (cuándo, huella del parte y del partido, firma de las
+# derivadas, firma estrecha de la historia, objetivo). La huella vieja se
+# reemplaza, no se acumula.
+_OBJ_CACHE: dict[int, tuple[float, tuple, tuple, tuple, dict]] = {}
 _OBJ_LOCK = threading.Lock()
+_DERIVADAS = ("constants", "levels", "discreto")
+_COLS_CONSTANTES: list[str] = []
 
 
-def _objetivo(fixture_id: int, parte: dict) -> dict:
+def firma_derivadas() -> tuple:
+    """Fecha y tamaño de las bases que reescribe el pipeline (y su WAL)."""
+    from backend import db as saddb
+    out = []
+    for nombre in _DERIVADAS:
+        ruta = saddb.db_path(nombre)
+        for r in (ruta, ruta + "-wal"):
+            try:
+                st = os.stat(r)
+                out.append((st.st_mtime_ns, st.st_size))
+            except OSError:  # sin WAL (o sin la base): la ausencia también es firma
+                out.append(None)
+    return tuple(out)
+
+
+def firma_historia(fixture_id: int) -> tuple | None:
+    """LA FIRMA ESTRECHA: lo que las derivadas dicen de los dos equipos HASTA
+    ese partido (filas, partidos y la suma de cada q y cada K de `constants`, y
+    los niveles de `team_levels`). El pipeline corre tres veces al día y
+    reescribe las tres bases enteras, pero la historia anterior a un partido ya
+    jugado casi nunca cambia: si esta firma es la misma, el objetivo también, y
+    no se rehacen cientos de casos (en producción ~1 s cada uno) por un
+    partido de anoche. Un backfill, un duplicado sacado o un marcador corregido
+    mueven las sumas y el caso se rehace."""
+    from backend import db as saddb
+    try:
+        fx = saddb.query_one("sad", "SELECT date, home_team_id, away_team_id FROM fixtures WHERE id=?",
+                             (fixture_id,))
+        if not fx:
+            return None
+        fecha = str(fx["date"] or "").replace("T", " ").rstrip("Z")
+        if not _COLS_CONSTANTES:
+            _COLS_CONSTANTES.extend(r["name"] for r in saddb.query("constants", "PRAGMA table_info(constants)")
+                                    if r["name"].startswith(("q_", "k_")))
+        sumas = ", ".join(f"TOTAL({c})" for c in _COLS_CONSTANTES)
+        out = []
+        for tid in (fx["home_team_id"], fx["away_team_id"]):
+            out.append(tuple(saddb.query_one(
+                "constants", f"SELECT COUNT(*), TOTAL(fixture_id), MAX(date), {sumas} FROM constants "
+                             "WHERE team_id=? AND date<=?", (tid, fecha))))
+            out.append(tuple(saddb.query_one(
+                "levels", "SELECT COUNT(*), TOTAL(fixture_id), MAX(date), TOTAL(level) FROM team_levels "
+                          "WHERE team_id=? AND date<=?", (tid, fecha))))
+        return tuple(out)
+    except Exception:  # noqa: BLE001 — sin firma no se reutiliza nada: el caso se rehace
+        return None
+
+
+def firmas_partidos(ids) -> dict[int, tuple]:
+    """Por partido, lo que el objetivo lee de sad.db para ESE partido: la fila
+    entera de `fixtures` (marcador, estado, penales), y cuántos eventos y filas
+    de alineación tiene con su última fila (una ficha re-ingestada entra con
+    filas nuevas). Tres consultas para todos los casos."""
+    from backend import db as saddb
+    ids = sorted({int(i) for i in ids})
+    out: dict[int, list] = {i: [None, None, None] for i in ids}
+    for k in range(0, len(ids), 900):
+        tramo = tuple(ids[k:k + 900])
+        marcas = ",".join("?" * len(tramo))
+        for pos, sql in (
+                (0, f"SELECT * FROM fixtures WHERE id IN ({marcas})"),
+                (1, f"SELECT fixture_id AS id, COUNT(*), MAX(rowid) FROM fixture_eventos "
+                    f"WHERE fixture_id IN ({marcas}) GROUP BY fixture_id"),
+                (2, f"SELECT fixture_id AS id, COUNT(*), MAX(rowid) FROM alineaciones "
+                    f"WHERE fixture_id IN ({marcas}) GROUP BY fixture_id")):
+            try:
+                filas = saddb.query("sad", sql, tramo)
+            except Exception:  # noqa: BLE001 — sin la tabla, la firma es «sin dato» (y se rehace si aparece)
+                continue
+            for r in filas:
+                out[r["id"]][pos] = tuple(r)
+    return {i: tuple(v) for i, v in out.items()}
+
+
+def huella_parte(parte_json: str) -> str:
+    return hashlib.sha1((parte_json or "").encode()).hexdigest()
+
+
+def _objetivo(fixture_id: int, parte: dict, huella: tuple | None = None) -> dict:
+    """`huella` = (huella del parte, firma del partido, firma de las derivadas);
+    quien lee muchos casos la arma en bloque (`_huellas`), uno suelto la calcula.
+
+    Vale lo guardado si el parte y el partido son los mismos y, o las derivadas
+    no se reescribieron, o se reescribieron sin tocar la historia de estos dos
+    equipos hasta ese día (`firma_historia`)."""
     if OBJETIVO_TTL_S <= 0:
-        return vered.objetivo(fixture_id, parte)
-    clave = (fixture_id, hashlib.sha1(json.dumps(parte, sort_keys=True, default=str).encode()).hexdigest())
+        return _calcular_objetivo(fixture_id, parte)
+    if huella is None:
+        huella = (huella_parte(json.dumps(parte, sort_keys=True, default=str)),
+                  firmas_partidos([fixture_id]).get(fixture_id), firma_derivadas())
+    base, derivadas = huella[:2], huella[2]
     with _OBJ_LOCK:
-        hit = _OBJ_CACHE.get(clave)
-        if hit and time.monotonic() - hit[0] < OBJETIVO_TTL_S:
-            return hit[1]
-        obj = vered.objetivo(fixture_id, parte)
-        if len(_OBJ_CACHE) > 3000:
+        hit = _OBJ_CACHE.get(fixture_id)
+        if hit and hit[1] == base and time.monotonic() - hit[0] < OBJETIVO_TTL_S:
+            if hit[2] == derivadas:
+                return hit[4]
+            historia = firma_historia(fixture_id)
+            if historia is not None and historia == hit[3]:
+                _OBJ_CACHE[fixture_id] = (hit[0], base, derivadas, historia, hit[4])
+                return hit[4]
+        else:
+            historia = firma_historia(fixture_id)
+        # la firma se toma ANTES de calcular: si el pipeline escribe en el medio,
+        # la próxima lectura ve la diferencia y rehace
+        obj = _calcular_objetivo(fixture_id, parte)
+        if len(_OBJ_CACHE) > 5000:
             _OBJ_CACHE.clear()
-        _OBJ_CACHE[clave] = (time.monotonic(), obj)
+        _OBJ_CACHE[fixture_id] = (time.monotonic(), base, derivadas, historia, obj)
         return obj
+
+
+def _calcular_objetivo(fixture_id: int, parte: dict) -> dict:
+    from backend.app import historias_compartidas
+    with historias_compartidas():
+        return vered.objetivo(fixture_id, parte)
+
+
+def _huellas(casos: list[dict]) -> dict[int, tuple]:
+    if OBJETIVO_TTL_S <= 0 or not casos:
+        return {}
+    derivadas = firma_derivadas()
+    partidos = firmas_partidos([c["fixtureId"] for c in casos])
+    return {c["fixtureId"]: (c.get("huellaParte") or huella_parte(json.dumps(c["parte"], sort_keys=True, default=str)),
+                             partidos.get(c["fixtureId"]), derivadas) for c in casos}
 
 
 def _metricas(casos: list[dict]) -> tuple[dict, dict]:
@@ -298,6 +422,7 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
     poblacion = {s: {"casos": 0, "lados": 0} for s in vered.SELECCIONES}
     poblacion["cuarentena"] = {"casos": 0, "lados": 0}
     poblacion["copa"] = {"casos": 0, "lados": 0}
+    huellas = _huellas(casos)
     acred = {"acierto": 0, "parcial": 0, "fallo": 0}
     casos_acred, briers, reales, con_reparto = 0, [], [], 0
     unxdos_ok, unxdos_de = 0, 0
@@ -351,7 +476,7 @@ def _metricas(casos: list[dict]) -> tuple[dict, dict]:
             ver = ((v.get("porLado") or {})[l]).get("veredicto", "")
             if ver in acred:
                 acred[ver] += 1
-        obj = _objetivo(caso["fixtureId"], caso["parte"])
+        obj = _objetivo(caso["fixtureId"], caso["parte"], huellas.get(caso["fixtureId"]))
         if not obj.get("jugado"):
             continue
         gac = obj.get("golesAcotados")
@@ -980,6 +1105,22 @@ def _calcular_nucleo(limite: int, clave_cohorte: str) -> dict:
             "poblacion": poblacion, "metricas": metricas}
 
 
+def calentar() -> dict:
+    """Deja calculado lo que la pantalla de Aprendizaje pide al abrir (la
+    cohorte vigente, con el límite por defecto) y lo que lee la calibración de
+    la espina (todas). Lo llama el hilo de `backend/app.py`; devuelve cuánto
+    tardó cada uno para el log."""
+    from backend.analisis.parte import COHORTE
+    out = {}
+    for clave in (COHORTE, ""):
+        t = time.monotonic()
+        _nucleo(400, clave)
+        out[clave or "todas"] = round(time.monotonic() - t, 2)
+    if any(v > 5 for v in out.values()):
+        print(f"[calentar] aprendizaje recalculado: {out} s", flush=True)
+    return out
+
+
 def coincide_busqueda(item: dict, buscar: str) -> bool:
     """El buscador de Aprendizaje (04/11/2026, usuario: «estoy scrolleando y no
     encuentro nada»): cada palabra es un número de fixture o un pedazo de nombre
@@ -1182,8 +1323,9 @@ def derrotas_favorito(cohorte: str = COHORTE_VIGENTE, limite: int = 400) -> dict
     clave = COHORTE if cohorte == COHORTE_VIGENTE else cohorte
     casos = [c for c in _casos(limite) if not clave or c["cohorte"] == clave]
     out, resumen = [], {"rama_escrita": 0, "rama_sin_escribir": 0, "sin_ficha": 0, "sin_goles": 0}
+    huellas = _huellas(casos)
     for c in casos:
-        obj = _objetivo(c["fixtureId"], c["parte"])
+        obj = _objetivo(c["fixtureId"], c["parte"], huellas.get(c["fixtureId"]))
         u = obj.get("unXDos") or {}
         fav = LADO_DE.get(u.get("declarado") or "")
         real = u.get("real") or ""

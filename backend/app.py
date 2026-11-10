@@ -10,6 +10,7 @@ Ejecutar junto a las DBs reales:
 """
 import json
 import os
+import pickle
 import re
 import secrets
 import sqlite3
@@ -17,6 +18,7 @@ import subprocess
 import sys
 import threading
 import time
+from contextlib import contextmanager
 from datetime import date as date_t, datetime, timedelta, timezone
 from functools import lru_cache
 from typing import Literal
@@ -416,6 +418,33 @@ def _en_vivo_loop() -> None:
 
 if LIVE_SEGUNDOS and not SIN_HILOS:
     threading.Thread(target=_en_vivo_loop, daemon=True, name="ingesta-en-vivo").start()
+
+# APRENDIZAJE CALIENTE (10/11/2026, usuario: «la sección Aprendizaje carga
+# mucho y es bien lenta»). El inventario de lecciones rehace el objetivo de
+# cada veredicto (~1 s por caso en producción, cientos de casos): el primer
+# pedido tras un deploy esperaba 2 a 5 minutos y el proxy cortaba a los 300 s.
+# Este hilo lo calcula en el fondo al arrancar y cada SAD_CALENTAR_S (300 por
+# defecto; 0 = apagado) lo revisa: si nada cambió, la revisión es de
+# milisegundos (las huellas de `lecciones._objetivo`); si entró un veredicto o
+# corrió el pipeline, rehace SOLO lo que cambió, antes de que alguien entre.
+# No calcula nada distinto de lo que calcularía la pantalla: la misma función,
+# antes.
+CALENTAR_S = float(os.environ.get("SAD_CALENTAR_S", "300") or "0")
+
+
+def _calentar_loop() -> None:
+    time.sleep(45)  # que el arranque (despensa, backfill) no compita por la CPU
+    while True:
+        try:
+            from backend.analisis import lecciones
+            lecciones.calentar()
+        except Exception as e:  # noqa: BLE001 — calentar es un atajo: si falla, la pantalla calcula al leer como siempre
+            print(f"[calentar] falló: {e}", flush=True)
+        time.sleep(CALENTAR_S)
+
+
+if CALENTAR_S > 0 and not SIN_HILOS:
+    threading.Thread(target=_calentar_loop, daemon=True, name="calentar-aprendizaje").start()
 
 # Despensa EN BLOQUE: la investigación versionada en el repo se deposita en
 # efe.db al arrancar. Es local, idempotente y no gasta ni un token — pero
@@ -908,7 +937,51 @@ def _nivel_rival_exacto(c, gf: int, ga: int, rival_id: int) -> float:
     return round(nivel_a_fecha(rival_id, c["date"], fallback=1.0), 4)
 
 
+# HISTORIAS COMPARTIDAS DENTRO DE UN CÁLCULO (10/11/2026, Aprendizaje lento):
+# el objetivo de un veredicto pide la historia del mismo equipo a la misma
+# fecha tres veces (reventón, otras familias y goles acotados) y cada una
+# rehacía las consultas y el armado. Dentro de `historias_compartidas()` la
+# primera se guarda (serializada: quien la reciba puede tocarla sin ensuciar a
+# la siguiente) y las otras la leen. Fuera del bloque, nada cambia. Se abre por
+# CASO, no por pedido: guardar la historia de cada equipo a cada fecha de
+# cientos de casos sería memoria facturada en Railway.
+_HISTORIAS = threading.local()
+
+
+@contextmanager
+def historias_compartidas():
+    previo = getattr(_HISTORIAS, "memo", None)
+    if previo is None:
+        _HISTORIAS.memo = {}
+    try:
+        yield
+    finally:
+        if previo is None:
+            _HISTORIAS.memo = None
+
+
+def _corte(fecha: str | None) -> str | None:
+    """La misma normalización que aplican las consultas: «…T12:00:00Z» y
+    «… 12:00:00» son el mismo corte (y la misma historia)."""
+    return fecha.replace("T", " ").rstrip("Z") if fecha else fecha
+
+
+def _historia(clave: tuple, calcular):
+    memo = getattr(_HISTORIAS, "memo", None)
+    if memo is None:
+        return calcular()
+    crudo = memo.get(clave)
+    if crudo is None:
+        crudo = memo[clave] = pickle.dumps(calcular(), protocol=pickle.HIGHEST_PROTOCOL)
+    return pickle.loads(crudo)
+
+
 def constantes_de(team_id: int, limit: int, hasta: str | None = None, antes: str | None = None) -> list[dict]:
+    return _historia(("constantes", team_id, limit, _corte(hasta), _corte(antes)),
+                     lambda: _constantes_de(team_id, limit, hasta, antes))
+
+
+def _constantes_de(team_id: int, limit: int, hasta: str | None = None, antes: str | None = None) -> list[dict]:
     """`hasta` = inclusive (foto a esa fecha); `antes` = ESTRICTO (date < fecha):
     la vista «al día del partido» excluye el propio partido, que en constants
     lleva la misma fecha que el fixture."""
@@ -1125,6 +1198,10 @@ def _historia_nivel(team_id: int) -> list[tuple]:
 
 
 def niveles_de(team_id: int, limit: int, hasta: str | None = None, antes: str | None = None) -> list[dict]:
+    return _historia(("niveles", team_id, limit, _corte(hasta), _corte(antes)), lambda: _niveles_de(team_id, limit, hasta, antes))
+
+
+def _niveles_de(team_id: int, limit: int, hasta: str | None = None, antes: str | None = None) -> list[dict]:
     from backend.ingesta.niveles import desglose_nivel
     cond, params = "", [team_id]
     if hasta:

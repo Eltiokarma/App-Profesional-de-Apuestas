@@ -2876,7 +2876,7 @@ def main():
             _caso(3, "local", "visita", None, False), _caso(4, "local", "local", "siMarcaPrimero", True),
             _caso(5, "local", "empate", "siMarcaPrimero", True), _caso(6, "empate", "visita", "siMarcaPrimero", True)]
     _lec_df._casos = lambda limite=400, ids=None: _fab
-    _lec_df._objetivo = lambda fid, parte: next(x["_obj"] for x in _fab if x["fixtureId"] == fid)
+    _lec_df._objetivo = lambda fid, parte, *_: next(x["_obj"] for x in _fab if x["fixtureId"] == fid)
     try:
         _dfab = _lec_df.derrotas_favorito("", 400)
     finally:
