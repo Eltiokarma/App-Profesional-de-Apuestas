@@ -173,6 +173,33 @@ def main():
     check("…y tocar lo que devolvió no ensucia la siguiente lectura", b[0].get("k") != "ensuciado")
     check("…también con los niveles", nv == niveles_de(tid, 1, antes="2030-01-01"))
 
+    # una lectura ya calculada no espera detrás del cálculo de OTRA clave
+    import threading
+    import time as _t
+    from backend.analisis.parte import COHORTE
+    lecciones.INVENTARIO_TTL_S = 1800
+    lecciones._INV_CACHE.clear()
+    lecciones._nucleo(400, COHORTE)
+    calc = lecciones._calcular_nucleo
+    empezo = threading.Event()
+
+    def lento(limite, clave):
+        empezo.set()
+        _t.sleep(3)
+        return calc(limite, clave)
+    lecciones._calcular_nucleo = lento
+    hilo = threading.Thread(target=lecciones._nucleo, args=(2000, ""))
+    hilo.start()
+    empezo.wait(5)
+    t0 = _t.monotonic()
+    lecciones._nucleo(400, COHORTE)
+    espera = _t.monotonic() - t0
+    hilo.join()
+    lecciones._calcular_nucleo = calc
+    check("la cohorte ya calculada se lee mientras otra clave (el buscador) se calcula", espera < 1.0, round(espera, 2))
+    check("el hilo deja calientes la vigente, todas y el buscador",
+          set(lecciones.calentar()) == {f"{COHORTE}·400", "todas·400", "todas·2000"})
+
     vered.objetivo = original
     print(f"\n{'OK' if not fallos else f'{fallos} FALLAS'}")
     raise SystemExit(1 if fallos else 0)

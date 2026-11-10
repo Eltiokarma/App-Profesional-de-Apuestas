@@ -965,6 +965,49 @@ conversación se pierde en la siguiente.
    confianza, no el 1X2. Los scripts de esta medición no quedaron en el repo:
    el método es este texto.
 
+27. **Aprendizaje y Simulación rápidos, cuarentena en un paso** (09-10/11/2026,
+   usuario: «la sección Aprendizaje carga mucho y es bien lenta, igual
+   Simulación. Poner algo en cuarentena es un dolor de huevos»). Ningún número
+   cambió: cada cambio se probó contra la salida de antes byte a byte y queda
+   `backend/test_velocidad.py` en CI.
+   - **Dónde se iba el tiempo**: el 95 % del inventario era rehacer el
+     objetivo de cada veredicto (~1 s por caso en producción), que vencía a los
+     10 minutos aunque nada hubiera cambiado, y otra vez tras cada deploy. La
+     historia del mismo equipo a la misma fecha se pedía tres veces por caso.
+   - **PR #453**: el objetivo se guarda con la HUELLA de sus insumos (parte,
+     fila del partido + eventos + alineación, derivadas; si el pipeline las
+     reescribió, una firma estrecha de la historia de los dos equipos hasta ese
+     día decide si el caso cambió); `historias_compartidas()` dentro de cada
+     caso; hilo `calentar-aprendizaje` (`SAD_CALENTAR_S`, 300 s). **PR #456**:
+     un candado por clave (una cohorte lista esperaba detrás del buscador), el
+     buscador (límite 2000) también caliente, y el chequeo de DT de cada caso
+     lee `dt_base_json`/`dt_original_json` de la fila ya leída en vez de abrir
+     dos conexiones más por caso (`_casos` 330 → 132 ms en el banco).
+   - **PR #454**: `cuotas_mercado` pide a SQL solo 1X2 y doble oportunidad (era
+     el 85 % de la simulación) y `simulacion()` se rehace solo si cambia su
+     huella (partes desde el 28/10, partidos con su liga, cuotas).
+   - **Medido** (token de Cowork; `/analisis/simulacion` no se abre a ese
+     token, así que Simulación se midió en un banco local con volumen de
+     producción). Aprendizaje, `resumen=true` en frío: ANTES 502 a los 300 s y
+     115 s al reintentar; DESPUÉS 71 s una vez tras el deploy (lo calcula el
+     hilo en el fondo) y 3,5-3,9 s con veredictos entrando; el buscador pasó de
+     60 s (esperando el candado) a lo que dice la medición de #456 abajo.
+     Banco local: visita a los 31 min 3,5 s → 0,2 s; pipeline sin cambios de
+     historia 3,5 s → 0,3 s. Simulación (banco): 180-236 ms → 24 ms desde la
+     segunda lectura.
+   - **PR #455, la cuarentena en un paso**: la incidencia trae
+     `propuestaCuarentena` (declarada por el mantenimiento en `POST …/estado`
+     con `cuarentena: {fixtures, motivo, ensena}`, o leída del texto de las
+     propuestas viejas: la 7, la 774 y la 1153 salen bien); la tarjeta
+     Decisiones pendientes la pone con un botón (formulario ya escrito,
+     editable) y la incidencia queda `resuelta` (`hecha: true` en
+     `…/decision`); en Aprendizaje, «Buscar caso · cuarentena» la pone por
+     partido sin abrir una lección. La regla no cambió: por criterio, motivo
+     de 12+ y llave maestra. El skill `corrida-sad` dice cómo mandarla.
+   - **Pendiente**: tras cada deploy el primer cálculo sigue costando ~1 min de
+     CPU en el fondo (el caché vive en memoria; guardarlo en disco exige saber
+     qué código lo produjo, y casi todo PR toca `app.py` o `parte.py`).
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel

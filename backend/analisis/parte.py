@@ -1522,7 +1522,15 @@ _mismo_apellido = _identidad.apellido_dt
 mismo_dt = _identidad.mismo_dt
 
 
-def dt_equivocado(parte: dict, fixture_id: int, desmentidos: "dict | None" = None) -> list[dict]:
+def _json_o_vacio(crudo) -> dict:
+    try:
+        return json.loads(crudo) if crudo else {}
+    except ValueError:
+        return {}
+
+
+def dt_equivocado(parte: dict, fixture_id: int, desmentidos: "dict | None" = None,
+                  fila_parte=None) -> list[dict]:
     """Los lados donde el DT que declaró el parte NO es el que se sentó en el
     banco de ESE partido (la alineación que capturó la ficha).
 
@@ -1536,14 +1544,23 @@ def dt_equivocado(parte: dict, fixture_id: int, desmentidos: "dict | None" = Non
     `desmentidos` son los lados donde el usuario probó con una fuente que el
     BANCO de la API es el que está mal (Jaguares 11/10/2026: la alineación
     traía a Bodhert, que se había ido el 28/09). Esos lados no se comparan:
-    el criterio sigue siendo de insumo, pero el insumo que falla es la API."""
+    el criterio sigue siendo de insumo, pero el insumo que falla es la API.
+
+    `fila_parte` (10/11/2026, Aprendizaje lento): la fila de `parte_cowork`
+    ya leída, con `dt_base_json` y `dt_original_json`; quien recorre cientos
+    de casos la pasa y no se abren dos conexiones más por caso para leer dos
+    columnas de la misma fila."""
     fx = _fixture(fixture_id)
     if not fx:
         return []
     out = []
     malos = set(sin_dt(parte)) | set(desmentidos or {})
-    base_al_depositar = dt_base_al_depositar(fixture_id)
-    originales = dt_original(fixture_id)
+    if fila_parte is not None:
+        base_al_depositar = _json_o_vacio(fila_parte["dt_base_json"])
+        originales = _json_o_vacio(fila_parte["dt_original_json"])
+    else:
+        base_al_depositar = dt_base_al_depositar(fixture_id)
+        originales = dt_original(fixture_id)
     for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])):
         if lado in malos:
             continue
