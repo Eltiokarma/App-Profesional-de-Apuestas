@@ -663,7 +663,9 @@ POST $B/analisis/cowork/incidencias
   prensa lo suma con su `jugadorId`). Y desde la pasada del 08/11 (tarde): la
   tabla de un torneo corto que «no sale» con la temporada del año (1340: la
   temporada es la de la API; en la Liga MX el Clausura 2026 es la temporada
-  2025: pedila con `temporada=<año−1>&fase=Clausura`); y ONCE-SIN-FILA-F1
+  2025: pedila con `temporada=<año−1>&fase=Clausura`); 4-1-4-1 contra
+  4-2-3-1 que no suena DTP-REHACER aunque el otro lado sí haya sonado y falte
+  un titular de la referencia (1342, 1343: el umbral es 3 ausentes, 1181); y ONCE-SIN-FILA-F1
   con 1, 2 o 3 titulares que el rehacer no rehízo en la F1 (1339: sumalo a la
   #1068, que espera la decisión; 1265).
 
